@@ -19,7 +19,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/cmd/nvedit.c
 +++ b/cmd/nvedit.c
-@@ -50,6 +50,7 @@ DECLARE_GLOBAL_DATA_PTR;
+@@ -48,6 +48,7 @@ DECLARE_GLOBAL_DATA_PTR;
  	defined(CONFIG_ENV_IS_IN_MMC)		|| \
  	defined(CONFIG_ENV_IS_IN_FAT)		|| \
  	defined(CONFIG_ENV_IS_IN_EXT4)		|| \
@@ -27,7 +27,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	defined(CONFIG_ENV_IS_IN_NAND)		|| \
  	defined(CONFIG_ENV_IS_IN_NVRAM)		|| \
  	defined(CONFIG_ENV_IS_IN_ONENAND)	|| \
-@@ -64,7 +65,7 @@ DECLARE_GLOBAL_DATA_PTR;
+@@ -62,7 +63,7 @@ DECLARE_GLOBAL_DATA_PTR;
  
  #if	!defined(ENV_IS_IN_DEVICE)		&& \
  	!defined(CONFIG_ENV_IS_NOWHERE)
@@ -38,7 +38,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  
 --- a/env/Kconfig
 +++ b/env/Kconfig
-@@ -19,7 +19,7 @@ config ENV_IS_NOWHERE
+@@ -37,7 +37,7 @@ config ENV_IS_NOWHERE
  		     !ENV_IS_IN_MMC && !ENV_IS_IN_NAND && \
  		     !ENV_IS_IN_NVRAM && !ENV_IS_IN_ONENAND && \
  		     !ENV_IS_IN_REMOTE && !ENV_IS_IN_SPI_FLASH && \
@@ -47,7 +47,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	help
  	  Define this if you don't want to or can't have an environment stored
  	  on a storage medium. In this case the environment will still exist
-@@ -207,6 +207,27 @@ config ENV_IS_IN_MMC
+@@ -226,6 +226,27 @@ config ENV_IS_IN_MMC
  	  This value is also in units of bytes, but must also be aligned to
  	  an MMC sector boundary.
  
@@ -75,7 +75,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  config ENV_IS_IN_NAND
  	bool "Environment in a NAND device"
  	depends on !CHAIN_OF_TRUST
-@@ -534,10 +555,16 @@ config ENV_ADDR_REDUND
+@@ -531,10 +552,16 @@ config ENV_ADDR_REDUND
  	  Offset from the start of the device (or partition) of the redundant
  	  environment location.
  
@@ -92,8 +92,8 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +		    ENV_IS_IN_SPI_FLASH || ENV_IS_IN_MTD
  	default 0x3f8000 if ARCH_ROCKCHIP && ENV_IS_IN_MMC
  	default 0x140000 if ARCH_ROCKCHIP && ENV_IS_IN_SPI_FLASH
- 	default 0x88000 if ARCH_SUNXI
-@@ -582,6 +609,12 @@ config ENV_SECT_SIZE
+ 	default 0xF0000 if ARCH_SUNXI
+@@ -581,6 +608,12 @@ config ENV_SECT_SIZE
  	help
  	  Size of the sector containing the environment.
  
@@ -389,7 +389,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +};
 --- a/include/env_internal.h
 +++ b/include/env_internal.h
-@@ -131,6 +131,7 @@ enum env_location {
+@@ -130,6 +130,7 @@ enum env_location {
  	ENVL_FAT,
  	ENVL_FLASH,
  	ENVL_MMC,

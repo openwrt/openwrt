@@ -13,8 +13,13 @@ ath79_setup_interfaces()
 	allnet,all-wap02860ac|\
 	alfa-network,ap121f|\
 	alfa-network,pi-wifi4|\
+	alfa-network,tube-2hq|\
+	araknis,an-300-ap-i-n|\
+	araknis,an-500-ap-i-ac|\
+	araknis,an-700-ap-i-ac|\
 	arduino,yun|\
 	aruba,ap-105|\
+	asus,rp-ac51|\
 	asus,rp-ac66|\
 	avm,fritz1750e|\
 	avm,fritz300e|\
@@ -44,6 +49,8 @@ ath79_setup_interfaces()
 	meraki,mr16|\
 	netgear,ex6400|\
 	netgear,ex7300|\
+	netgear,ex7300-v2|\
+	netgear,wndap360|\
 	ocedo,koala|\
 	ocedo,raccoon|\
 	onion,omega|\
@@ -58,6 +65,11 @@ ath79_setup_interfaces()
 	pisen,wmb001n|\
 	pisen,wmm003n|\
 	siemens,ws-ap3610|\
+	sophos,ap15|\
+	sophos,ap55|\
+	sophos,ap55c|\
+	sophos,ap100|\
+	sophos,ap100c|\
 	tplink,cpe210-v2|\
 	tplink,cpe210-v3|\
 	tplink,cpe510-v2|\
@@ -66,8 +78,10 @@ ath79_setup_interfaces()
 	tplink,cpe610-v2|\
 	tplink,cpe710-v1|\
 	tplink,eap225-outdoor-v1|\
+	tplink,eap225-outdoor-v3|\
 	tplink,eap225-v1|\
 	tplink,eap225-v3|\
+	tplink,eap225-v4|\
 	tplink,eap245-v1|\
 	tplink,re350k-v1|\
 	tplink,re355-v1|\
@@ -78,30 +92,28 @@ ath79_setup_interfaces()
 	tplink,tl-wa1201-v2|\
 	tplink,tl-wr902ac-v1|\
 	ubnt,bullet-ac|\
-	ubnt,bullet-m-ar7240|\
-	ubnt,bullet-m-ar7241|\
 	ubnt,bullet-m-xw|\
 	ubnt,lap-120|\
 	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac|\
-	ubnt,nanobridge-m|\
+	ubnt,nanobeam-ac-xc|\
 	ubnt,nanostation-ac-loco|\
-	ubnt,nanostation-loco-m|\
 	ubnt,nanostation-loco-m-xw|\
-	ubnt,picostation-m|\
 	ubnt,powerbeam-5ac-500|\
 	ubnt,powerbeam-5ac-gen2|\
 	ubnt,powerbeam-m2-xw|\
 	ubnt,powerbeam-m5-xw|\
-	ubnt,powerbridge-m|\
 	ubnt,rocket-5ac-lite|\
-	ubnt,rocket-m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-lr|\
 	ubnt,unifiac-mesh|\
 	ubnt,unifi|\
 	wd,mynet-wifi-rangeextender|\
-	winchannel,wb2000)
+	winchannel,wb2000|\
+	zyxel,nwa1100-nh|\
+	zyxel,nwa1121-ni|\
+	zyxel,nwa1123-ac|\
+	zyxel,nwa1123-ni)
 		ucidef_set_interface_lan "eth0"
 		;;
 	airtight,c-75)
@@ -120,6 +132,11 @@ ath79_setup_interfaces()
 	ocedo,ursus|\
 	ubnt,unifi-ap-outdoor-plus)
 		ucidef_set_interface_lan "eth0 eth1"
+		;;
+	asus,pl-ac56)
+		# port 6 (internal) is the power-line port
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:1" "2:lan:2" "3:lan:3" "6:lan:4"
 		;;
 	atheros,db120)
 		ucidef_add_switch "switch0" \
@@ -165,8 +182,7 @@ ath79_setup_interfaces()
 	tplink,archer-c60-v3|\
 	tplink,tl-wdr3500-v1|\
 	tplink,tl-wr842n-v1|\
-	tplink,tl-wr842n-v3|\
-	ubnt,airrouter)
+	tplink,tl-wr842n-v3)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
@@ -188,6 +204,7 @@ ath79_setup_interfaces()
 	compex,wpj531-16m|\
 	openmesh,a40|\
 	openmesh,a60|\
+	openmesh,om2p-v1|\
 	openmesh,om2p-v4|\
 	openmesh,om2p-hs-v4|\
 	plasmacloud,pa300|\
@@ -200,7 +217,6 @@ ath79_setup_interfaces()
 	tplink,wbs210-v2|\
 	tplink,wbs510-v1|\
 	tplink,wbs510-v2|\
-	ubnt,nanostation-m|\
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
@@ -333,6 +349,7 @@ ath79_setup_interfaces()
 		;;
 	mercury,mw4530r-v1|\
 	tplink,archer-a7-v5|\
+	tplink,archer-a9-v6|\
 	tplink,archer-c6-v2|\
 	tplink,archer-c6-v2-us|\
 	tplink,archer-c7-v4|\
@@ -357,6 +374,7 @@ ath79_setup_interfaces()
 	ubnt,nanobeam-ac-gen2|\
 	ubnt,nanostation-ac|\
 	yuncore,a782|\
+	yuncore,xd3200|\
 	yuncore,xd4200)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:wan"
@@ -432,14 +450,12 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:3" "3:lan:2"
 		;;
-	tplink,tl-wpa8630-v1|\
-	tplink,tl-wpa8630p-v2-int|\
-	tplink,tl-wpa8630p-v2.0-eu|\
-	tplink,tl-wpa8630p-v2.1-eu)
+	tplink,tl-wpa8630-v1)
 		# port 5 (internal) is the power-line port
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1" "5:lan:4"
 		;;
+	tplink,tl-wr841hp-v2|\
 	tplink,tl-wr842n-v2|\
 	tplink,tl-wr941hp-v1)
 		ucidef_set_interface_wan "eth1"
@@ -497,6 +513,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan"
 		;;
+	tplink,deco-m4r-v1)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "3:lan:1" "5:lan:2"
+		;;
+	hiwifi,hc6361|\
 	xiaomi,mi-router-4q|\
 	zbtlink,zbt-wd323)
 		ucidef_set_interface_wan "eth1"
@@ -525,6 +546,7 @@ ath79_setup_macs()
 	alfa-network,n5q|\
 	alfa-network,pi-wifi4|\
 	alfa-network,r36a|\
+	alfa-network,tube-2hq|\
 	engenius,eap300-v2|\
 	engenius,ens202ext-v1)
 		label_mac=$(mtd_get_mac_binary art 0x1002)
@@ -533,10 +555,6 @@ ath79_setup_macs()
 		base_mac=$(mtd_get_mac_binary art 0x1002)
 		lan_mac=$(macaddr_setbit $base_mac 29)
 		[ $lan_mac = $base_mac ] && lan_mac=$(macaddr_unsetbit $base_mac 29)
-		;;
-	asus,rp-ac66)
-		lan_mac=$(mtd_get_mac_binary art 0x1002)
-		label_mac=$lan_mac
 		;;
 	avm,fritz1750e|\
 	avm,fritz450e|\
@@ -583,6 +601,7 @@ ath79_setup_macs()
 	dlink,dir-825-b1)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
 		wan_mac=$(mtd_get_mac_text "caldata" 0xffb4)
+		label_mac=$wan_mac
 		;;
 	dlink,dir-505)
 		lan_mac=$(mtd_get_mac_text "mac" 0x4)
@@ -645,10 +664,6 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
-	jjplus,ja76pf2)
-		wan_mac=$(fconfig -s -r -d $(find_mtd_part "RedBoot config") -n alias/ethaddr)
-		lan_mac=$(macaddr_add "$wan_mac" 1)
-		;;
 	mercury,mw4530r-v1|\
 	tplink,tl-wdr3600-v1|\
 	tplink,tl-wdr4300-v1|\
@@ -689,6 +704,7 @@ ath79_setup_macs()
 		label_mac=$lan_mac
 		;;
 	tplink,archer-a7-v5|\
+	tplink,archer-a9-v6|\
 	tplink,archer-c7-v4|\
 	tplink,archer-c7-v5|\
 	tplink,tl-wr1043nd-v4|\
@@ -701,20 +717,12 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_text mac 0x18)
 		label_mac=$wan_mac
 		;;
-	ubnt,airrouter|\
-	ubnt,bullet-m-ar7240|\
-	ubnt,bullet-m-ar7241|\
-	ubnt,nanobridge-m|\
-	ubnt,nanostation-loco-m|\
-	ubnt,nanostation-m|\
-	ubnt,picostation-m|\
-	ubnt,powerbridge-m|\
-	ubnt,rocket-m|\
 	ubnt,unifi)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
 	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac-gen2|\
+	ubnt,nanobeam-ac-xc|\
 	ubnt,powerbeam-5ac-500|\
 	ubnt,powerbeam-5ac-gen2)
 		label_mac=$(mtd_get_mac_binary art 0x5006)

@@ -54,10 +54,9 @@ DEFAULT_PACKAGES.nas:=\
 # For router targets
 DEFAULT_PACKAGES.router:=\
 	dnsmasq \
-	firewall \
-	ip6tables \
-	iptables \
-	kmod-ipt-offload \
+	firewall4 \
+	nftables \
+	kmod-nft-offload \
 	odhcp6c \
 	odhcpd-ipv6only \
 	ppp \
@@ -174,22 +173,30 @@ USE_SUBTARGET_CONFIG = $(if $(wildcard $(LINUX_TARGET_CONFIG)),,$(if $(LINUX_SUB
 LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(if $(USE_SUBTARGET_CONFIG),$(LINUX_SUBTARGET_CONFIG)))
 LINUX_RECONFIG_TARGET = $(if $(USE_SUBTARGET_CONFIG),$(LINUX_SUBTARGET_CONFIG),$(LINUX_TARGET_CONFIG))
 
+CFG_TARGET = $(CONFIG_TARGET)
+ifeq ($(CFG_TARGET),platform)
+  CFG_TARGET = target
+  $(warning Deprecation warning: use CONFIG_TARGET=target instead.)
+else ifeq ($(CFG_TARGET),subtarget_platform)
+  CFG_TARGET = subtarget_target
+  $(warning Deprecation warning: use CONFIG_TARGET=subtarget_target instead.)
+endif
+
 # select the config file to be changed by kernel_menuconfig/kernel_oldconfig
-ifeq ($(CONFIG_TARGET),platform)
+ifeq ($(CFG_TARGET),target)
   LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG))
   LINUX_RECONFIG_TARGET = $(LINUX_TARGET_CONFIG)
-endif
-ifeq ($(CONFIG_TARGET),subtarget)
+else ifeq ($(CFG_TARGET),subtarget)
   LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(LINUX_SUBTARGET_CONFIG))
   LINUX_RECONFIG_TARGET = $(LINUX_SUBTARGET_CONFIG)
-endif
-ifeq ($(CONFIG_TARGET),subtarget_platform)
+else ifeq ($(CFG_TARGET),subtarget_target)
   LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_SUBTARGET_CONFIG) $(LINUX_TARGET_CONFIG))
   LINUX_RECONFIG_TARGET = $(LINUX_TARGET_CONFIG)
-endif
-ifeq ($(CONFIG_TARGET),env)
+else ifeq ($(CFG_TARGET),env)
   LINUX_RECONFIG_LIST = $(LINUX_KCONFIG_LIST)
   LINUX_RECONFIG_TARGET = $(TOPDIR)/env/kernel-config
+else ifneq ($(strip $(CFG_TARGET)),)
+  $(error CONFIG_TARGET=$(CFG_TARGET) is invalid. Valid: target|subtarget|subtarget_target|env)
 endif
 
 __linux_confcmd = $(2) $(patsubst %,+,$(wordlist 2,9999,$(1))) $(1)

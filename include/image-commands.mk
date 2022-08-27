@@ -37,7 +37,11 @@ define Build/package-kernel-ubifs
 endef
 
 define Build/append-image
-	dd if=$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1) >> $@
+	cp "$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)" "$@.stripmeta"
+	fwtool -s /dev/null -t "$@.stripmeta" || :
+	fwtool -i /dev/null -t "$@.stripmeta" || :
+	dd if="$@.stripmeta" >> "$@"
+	rm "$@.stripmeta"
 endef
 
 ifdef IB
@@ -46,8 +50,12 @@ define Build/append-image-stage
 endef
 else
 define Build/append-image-stage
-	dd if=$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1) of=$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1)
-	dd if=$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1) >> $@
+	cp "$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)" "$@.stripmeta"
+	fwtool -s /dev/null -t "$@.stripmeta" || :
+	fwtool -i /dev/null -t "$@.stripmeta" || :
+	dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1)"
+	dd if="$@.stripmeta" >> "$@"
+	rm "$@.stripmeta"
 endef
 endif
 
@@ -81,6 +89,7 @@ metadata_json = \
 
 define Build/append-metadata
 	$(if $(SUPPORTED_DEVICES),-echo $(call metadata_json) | fwtool -I - $@)
+	sha256sum "$@" | cut -d" " -f1 > "$@.sha256sum"
 	[ ! -s "$(BUILD_KEY)" -o ! -s "$(BUILD_KEY).ucert" -o ! -s "$@" ] || { \
 		cp "$(BUILD_KEY).ucert" "$@.ucert" ;\
 		usign -S -m "$@" -s "$(BUILD_KEY)" -x "$@.sig" ;\
@@ -100,6 +109,15 @@ define Build/append-squashfs-fakeroot-be
 		$@.fakefs $@.fakesquashfs \
 		-noappend -root-owned -be -nopad -b 65536 \
 		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
+	cat $@.fakesquashfs >> $@
+endef
+
+define Build/append-squashfs4-fakeroot
+	rm -rf $@.fakefs $@.fakesquashfs
+	mkdir $@.fakefs
+	$(STAGING_DIR_HOST)/bin/mksquashfs4 \
+		$@.fakefs $@.fakesquashfs \
+		-nopad -noappend -root-owned
 	cat $@.fakesquashfs >> $@
 endef
 
@@ -191,9 +209,13 @@ define Build/check-size
 	@imagesize="$$(stat -c%s $@)"; \
 	limitsize="$$(($(subst k,* 1024,$(subst m, * 1024k,$(if $(1),$(1),$(IMAGE_SIZE))))))"; \
 	[ $$limitsize -ge $$imagesize ] || { \
-		echo "WARNING: Image file $@ is too big: $$imagesize > $$limitsize" >&2; \
+		$(call ERROR_MESSAGE,    WARNING: Image file $@ is too big: $$imagesize > $$limitsize); \
 		rm -f $@; \
 	}
+endef
+
+define Build/copy-file
+	cat "$(1)" > "$@"
 endef
 
 define Build/elecom-product-header
@@ -257,9 +279,11 @@ endef
 define Build/fit
 	$(TOPDIR)/scripts/mkits.sh \
 		-D $(DEVICE_NAME) -o $@.its -k $@ \
-		-C $(word 1,$(1)) $(if $(word 2,$(1)),\
-		$(if $(DEVICE_DTS_OVERLAY),-d $(KERNEL_BUILD_DIR)/image-$$(basename $(word 2,$(1))),\
-			-d $(word 2,$(1)))) \
+		-C $(word 1,$(1)) \
+		$(if $(word 2,$(1)),\
+			$(if $(findstring 11,$(if $(DEVICE_DTS_OVERLAY),1)$(if $(findstring $(KERNEL_BUILD_DIR)/image-,$(word 2,$(1))),,1)), \
+				-d $(KERNEL_BUILD_DIR)/image-$$(basename $(word 2,$(1))), \
+				-d $(word 2,$(1)))) \
 		$(if $(findstring with-rootfs,$(word 3,$(1))),-r $(IMAGE_ROOTFS)) \
 		$(if $(findstring with-initrd,$(word 3,$(1))), \
 			$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE), \
@@ -289,6 +313,16 @@ define Build/install-dtb
 		), \
 		install-dtb-$(IMG_PREFIX) \
 	)
+endef
+
+define Build/iptime-crc32
+	$(STAGING_DIR_HOST)/bin/iptime-crc32 $(1) $@ $@.new
+	mv $@.new $@
+endef
+
+define Build/iptime-naspkg
+	$(STAGING_DIR_HOST)/bin/iptime-naspkg $(1) $@ $@.new
+	mv $@.new $@
 endef
 
 define Build/jffs2
@@ -351,6 +385,19 @@ define Build/netgear-dni
 		-r "$(1)" \
 		-i $@ -o $@.new
 	mv $@.new $@
+endef
+
+define Build/netgear-encrypted-factory
+	$(TOPDIR)/scripts/netgear-encrypted-factory.py \
+		--input-file $@ \
+		--output-file $@ \
+		--model $(NETGEAR_ENC_MODEL) \
+		--region $(NETGEAR_ENC_REGION) \
+		--version V1.0.0.0.$(VERSION_DIST).$(firstword $(subst -, ,$(REVISION))) \
+		--encryption-block-size 0x20000 \
+		--openssl-bin "$(STAGING_DIR_HOST)/bin/openssl" \
+		--key 6865392d342b4d212964363d6d7e7765312c7132613364316e26322a5a5e2538 \
+		--iv 4a253169516c38243d6c6d2d3b384145
 endef
 
 define Build/openmesh-image
@@ -527,9 +574,7 @@ define Build/zip
 	rm -rf $@.tmp
 	mkdir $@.tmp
 	mv $@ $@.tmp/$(word 1,$(1))
-
-	$(STAGING_DIR_HOST)/bin/zip -j -X \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="$(SOURCE_DATE_EPOCH)") \
+	TZ=UTC $(STAGING_DIR_HOST)/bin/zip -j -X \
 		$(wordlist 2,$(words $(1)),$(1)) \
 		$@ $@.tmp/$(if $(word 1,$(1)),$(word 1,$(1)),$$(basename $@))
 	rm -rf $@.tmp

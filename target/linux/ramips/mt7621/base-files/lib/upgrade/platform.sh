@@ -53,12 +53,20 @@ platform_do_upgrade() {
 	ampedwireless,ally-r1900k|\
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
+	asus,rt-ax53u|\
+	beeline,smartbox-flash|\
+	beeline,smartbox-giga|\
+	beeline,smartbox-turbo|\
 	dlink,dir-1960-a1|\
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
 	dlink,dir-853-a3|\
+	h3c,tx1800-plus|\
+	h3c,tx1801-plus|\
+	h3c,tx1806|\
 	hiwifi,hc5962|\
 	iptime,a3004t|\
+	iptime,ax2004m|\
 	iptime,t5004|\
 	jcg,q20|\
 	linksys,e5600|\
@@ -68,6 +76,7 @@ platform_do_upgrade() {
 	linksys,ea7500-v2|\
 	linksys,ea8100-v1|\
 	linksys,ea8100-v2|\
+	mts,wg430223|\
 	netgear,r6220|\
 	netgear,r6260|\
 	netgear,r6350|\
@@ -79,14 +88,21 @@ platform_do_upgrade() {
 	netgear,r7450|\
 	netgear,wac104|\
 	netgear,wac124|\
+	netgear,wax202|\
 	netis,wf2881|\
 	raisecom,msg1500-x-00|\
 	sercomm,na502|\
+	sercomm,na502s|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
 	xiaomi,mi-router-ac2100|\
-	xiaomi,redmi-router-ac2100)
+	xiaomi,mi-router-cr6606|\
+	xiaomi,mi-router-cr6608|\
+	xiaomi,mi-router-cr6609|\
+	xiaomi,redmi-router-ac2100|\
+	zyxel,nwa50ax|\
+	zyxel,nwa55axe)
 		nand_do_upgrade "$1"
 		;;
 	iodata,wn-ax1167gr2|\
@@ -104,9 +120,11 @@ platform_do_upgrade() {
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
 		;;
+	zyxel,lte3301-plus|\
 	zyxel,nr7101)
 		fw_setenv CheckBypass 0
 		fw_setenv Image1Stable 0
+		[ "$(fw_printenv -n BootingFlag)" = "0" ] || fw_setenv BootingFlag 0
 		CI_KERNPART="Kernel"
 		nand_do_upgrade "$1"
 		;;

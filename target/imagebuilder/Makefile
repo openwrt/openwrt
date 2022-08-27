@@ -78,7 +78,7 @@ ifneq ($(CONFIG_SIGNATURE_CHECK),)
 	$(CP) -L $(STAGING_DIR_ROOT)/usr/sbin/opkg-key $(PKG_BUILD_DIR)/scripts/
 endif
 
-	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
+	$(CP) -L $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
 	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
 		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
 	fi

@@ -1,16 +1,16 @@
 --- a/configs/mt7623n_bpir2_defconfig
 +++ b/configs/mt7623n_bpir2_defconfig
-@@ -4,52 +4,137 @@ CONFIG_ARCH_MEDIATEK=y
+@@ -4,53 +4,138 @@ CONFIG_ARCH_MEDIATEK=y
  CONFIG_SYS_TEXT_BASE=0x81e00000
  CONFIG_SYS_MALLOC_F_LEN=0x4000
  CONFIG_NR_DRAM_BANKS=1
 -CONFIG_ENV_SIZE=0x1000
 +CONFIG_ENV_SIZE=0x10000
  CONFIG_ENV_OFFSET=0x100000
--CONFIG_DEFAULT_DEVICE_TREE="mt7623n-bananapi-bpi-r2"
- CONFIG_TARGET_MT7623=y
-+CONFIG_DEFAULT_DEVICE_TREE="mt7623n-bananapi-bpi-r2"
+ CONFIG_DEFAULT_DEVICE_TREE="mt7623n-bananapi-bpi-r2"
 +CONFIG_USE_DEFAULT_ENV_FILE=y
+ CONFIG_TARGET_MT7623=y
+ CONFIG_SYS_LOAD_ADDR=0x84000000
  CONFIG_DISTRO_DEFAULTS=y
  CONFIG_FIT=y
 -CONFIG_FIT_VERBOSE=y
@@ -243,60 +243,3 @@
  };
  
  &eth {
---- a/board/mediatek/mt7623/mt7623_rfb.c
-+++ b/board/mediatek/mt7623/mt7623_rfb.c
-@@ -6,6 +6,17 @@
- #include <common.h>
- #include <mmc.h>
- #include <asm/global_data.h>
-+#include <config.h>
-+#include <dm.h>
-+#include <button.h>
-+#include <env.h>
-+#include <init.h>
-+#include <asm/global_data.h>
-+#include <linux/delay.h>
-+
-+#ifndef CONFIG_RESET_BUTTON_LABEL
-+#define CONFIG_RESET_BUTTON_LABEL "reset"
-+#endif
- 
- DECLARE_GLOBAL_DATA_PTR;
- 
-@@ -17,6 +28,25 @@ int board_init(void)
- 	return 0;
- }
- 
-+int board_late_init(void)
-+{
-+	struct udevice *dev;
-+
-+	if (!button_get_by_label(CONFIG_RESET_BUTTON_LABEL, &dev)) {
-+		puts("reset button found\n");
-+#ifdef CONFIG_RESET_BUTTON_SETTLE_DELAY
-+		mdelay(CONFIG_RESET_BUTTON_SETTLE_DELAY);
-+#endif
-+		if (button_get_state(dev) == BUTTON_ON) {
-+			puts("button pushed, resetting environment\n");
-+			gd->env_valid = ENV_INVALID;
-+		}
-+	}
-+
-+	env_relocate();
-+	return 0;
-+}
-+
- #ifdef CONFIG_MMC
- int mmc_get_boot_dev(void)
- {
---- a/board/mediatek/mt7623/Kconfig
-+++ b/board/mediatek/mt7623/Kconfig
-@@ -10,4 +10,8 @@ config MTK_BROM_HEADER_INFO
- 	string
- 	default "lk=1"
- 
-+config RESET_BUTTON_LABEL
-+	string "Button to trigger factory reset"
-+	default "reset"
-+
- endif

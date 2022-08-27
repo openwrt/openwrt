@@ -207,6 +207,21 @@
 				label = "ART";
 				reg = <0x170000 0x10000>;
 				read-only;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				precal_art_1000: precal@1000 {
+					reg = <0x1000 0x2f20>;
+				};
+
+				precal_art_5000: precal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
+
+				precal_art_9000: precal@9000 {
+					reg = <0x9000 0x2f20>;
+				};
 			};
 		};
 	};
@@ -346,19 +361,28 @@
 
 		wifi2: wifi@1,0 {
 			status = "okay";
+			/* Bootlog shows this is a 168c:0056 - QCA 9888v2 */
 			compatible = "qcom,ath10k";
 			reg = <0x00010000 0 0 0 0>;
+			nvmem-cell-names = "pre-calibration";
+			nvmem-cells = <&precal_art_9000>;
 			qcom,ath10k-calibration-variant = "GL-B2200";
+			ieee80211-freq-limit = <5450000 5900000>;
 		};
 	};
 };
 
 &wifi0 {
 	status = "okay";
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_1000>;
 	qcom,ath10k-calibration-variant = "GL-B2200";
 };
 
 &wifi1 {
 	status = "okay";
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_5000>;
 	qcom,ath10k-calibration-variant = "GL-B2200";
+	ieee80211-freq-limit = <5100000 5400000>;
 };

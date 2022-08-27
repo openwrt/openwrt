@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
 	aliases {
@@ -62,7 +63,39 @@
 		spi-max-frequency = <25000000>;
 
 		partitions {
-			compatible = "ecoscentric,redboot-fis-partitions";
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "RedBoot";
+				reg = <0x000000 0x030000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "loader";
+				reg = <0x030000 0x020000>;
+			};
+
+			partition@50000 {
+				label = "firmware";
+				reg = <0x050000 0xfa0000>;
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <IH_MAGIC_OKLI>;
+			};
+
+			partition@ff0000 {
+				label = "FIS directory";
+				reg = <0xff0000 0x00f000>;
+				read-only;
+			};
+
+			partition@fff000 {
+				label = "RedBoot config";
+				reg = <0xfff000 0x001000>;
+				read-only;
+			};
 		};
 	};
 };

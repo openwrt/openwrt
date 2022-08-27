@@ -7,12 +7,25 @@
 	model = "AVM FRITZ!Box 7362 SL";
 };
 
-&state_default {
-	pcie-rst {
-		lantiq,pins = "io21";
-		lantiq,open-drain = <1>;
-		lantiq,output = <1>;
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		pcie-rst {
+			lantiq,pins = "io21";
+			lantiq,pull = <0>;
+			lantiq,output = <1>;
+		};
+
+		phy-rst {
+			lantiq,pins = "io44", "io45";
+			lantiq,pull = <0>;
+			lantiq,open-drain;
+			lantiq,output = <1>;
+		};
 	};
+
 };
 
 &spi {
@@ -22,25 +35,31 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
-		reg = <4 0>;
+		reg = <4>;
 		spi-max-frequency = <1000000>;
 
-		urlader: partition@0 {
-			reg = <0x0 0x40000>;
-			label = "urlader";
-			read-only;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@40000 {
-			reg = <0x40000 0x60000>;
-			label = "tffs (1)";
-			read-only;
-		};
+			urlader: partition@0 {
+				reg = <0x0 0x40000>;
+				label = "urlader";
+				read-only;
+			};
 
-		partition@A0000 {
-			reg = <0xA0000 0x60000>;
-			label = "tffs (2)";
-			read-only;
+			partition@40000 {
+				reg = <0x40000 0x60000>;
+				label = "tffs (1)";
+				read-only;
+			};
+
+			partition@A0000 {
+				reg = <0xA0000 0x60000>;
+				label = "tffs (2)";
+				read-only;
+			};
 		};
 	};
 };
@@ -88,6 +107,14 @@
 	nvmem-cells = <&macaddr_urlader_a91>;
 	nvmem-cell-names = "mac-address";
 	mac-address-increment = <(-2)>;
+};
+
+&phy0 {
+	reset-gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
+};
+
+&phy1 {
+	reset-gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 };
 
 &urlader {

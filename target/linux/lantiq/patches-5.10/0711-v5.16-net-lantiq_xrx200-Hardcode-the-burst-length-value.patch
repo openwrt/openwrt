@@ -15,15 +15,15 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/lantiq_xrx200.c
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -23,6 +23,7 @@
- #define XRX200_DMA_DATA_LEN	0x600
+@@ -25,6 +25,7 @@
+ #define XRX200_DMA_DATA_LEN	(SZ_64K - 1)
  #define XRX200_DMA_RX		0
  #define XRX200_DMA_TX		1
 +#define XRX200_DMA_BURST_LEN	8
  
- /* cpu port mac */
- #define PMAC_RX_IPG		0x0024
-@@ -71,9 +72,6 @@ struct xrx200_priv {
+ #define XRX200_DMA_PACKET_COMPLETE	0
+ #define XRX200_DMA_PACKET_IN_PROGRESS	1
+@@ -81,9 +82,6 @@ struct xrx200_priv {
  	struct net_device *net_dev;
  	struct device *dev;
  
@@ -33,7 +33,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	__iomem void *pmac_reg;
  };
  
-@@ -320,7 +318,7 @@ static netdev_tx_t xrx200_start_xmit(str
+@@ -367,7 +365,7 @@ static netdev_tx_t xrx200_start_xmit(str
  		goto err_drop;
  
  	/* dma needs to start on a burst length value aligned address */
@@ -42,7 +42,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	desc->addr = mapping - byte_offset;
  	/* Make sure the address is written before we give it to HW */
-@@ -372,7 +370,8 @@ static int xrx200_dma_init(struct xrx200
+@@ -468,7 +466,8 @@ static int xrx200_dma_init(struct xrx200
  	int ret = 0;
  	int i;
  
@@ -52,7 +52,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	ch_rx->dma.nr = XRX200_DMA_RX;
  	ch_rx->dma.dev = priv->dev;
-@@ -490,18 +489,6 @@ static int xrx200_probe(struct platform_
+@@ -587,18 +586,6 @@ static int xrx200_probe(struct platform_
  	if (err)
  		eth_hw_addr_random(net_dev);
  

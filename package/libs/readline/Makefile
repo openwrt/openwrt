@@ -53,6 +53,7 @@ CONFIGURE_VARS += \
 	bash_cv_func_sigsetjmp=yes \
 
 TARGET_CFLAGS += $(FPIC)
+HOST_CFLAGS += $(FPIC)
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include

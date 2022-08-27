@@ -512,6 +512,46 @@ static void rtl838x_l2_learning_setup(void)
 	sw_w32(0, RTL838X_SPCL_TRAP_ARP_CTRL);
 }
 
+static void rtl838x_enable_learning(int port, bool enable)
+{
+	// Limit learning to maximum: 32k entries, after that just flood (bits 0-1)
+
+	if (enable)  {
+		// flood after 32k entries
+		sw_w32((0x3fff << 2) | 0, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+	} else {
+		// just forward
+		sw_w32(0, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+	}
+}
+
+static void rtl838x_enable_flood(int port, bool enable)
+{
+	u32 flood_mask = sw_r32(RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+
+	if (enable)  {
+		// flood
+		flood_mask &= ~3;
+		flood_mask |= 0;
+		sw_w32(flood_mask, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+	} else {
+		// drop (bit 1)
+		flood_mask &= ~3;
+		flood_mask |= 1;
+		sw_w32(flood_mask, RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
+	}
+}
+
+static void rtl838x_enable_mcast_flood(int port, bool enable)
+{
+
+}
+
+static void rtl838x_enable_bcast_flood(int port, bool enable)
+{
+
+}
+
 static void rtl838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
@@ -1581,6 +1621,78 @@ static int rtl838x_l3_setup(struct rtl838x_switch_priv *priv)
 	return 0;
 }
 
+void rtl838x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0x3, mode, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
+	else
+		sw_w32_mask(0x3 << 14, mode << 14, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
+}
+
+void rtl838x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
+{
+	if (type == PBVLAN_TYPE_INNER)
+		sw_w32_mask(0xfff << 2, pvid << 2, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
+	else
+		sw_w32_mask(0xfff << 16, pvid << 16, RTL838X_VLAN_PORT_PB_VLAN + (port << 2));
+}
+
+static int rtl838x_set_ageing_time(unsigned long msec)
+{
+	int t = sw_r32(RTL838X_L2_CTRL_1);
+
+	t &= 0x7FFFFF;
+	t = t * 128 / 625; /* Aging time in seconds. 0: L2 aging disabled */
+	pr_debug("L2 AGING time: %d sec\n", t);
+
+	t = (msec * 625 + 127000) / 128000;
+	t = t > 0x7FFFFF ? 0x7FFFFF : t;
+	sw_w32_mask(0x7FFFFF, t, RTL838X_L2_CTRL_1);
+	pr_debug("Dynamic aging for ports: %x\n", sw_r32(RTL838X_L2_PORT_AGING_OUT));
+
+	return 0;
+}
+
+static void rtl838x_set_igr_filter(int port, enum igr_filter state)
+{
+	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
+		    RTL838X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
+}
+
+static void rtl838x_set_egr_filter(int port, enum egr_filter state)
+{
+	sw_w32_mask(0x1 << (port % 0x1d), state << (port % 0x1d),
+		    RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
+}
+
+void rtl838x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+{
+	algoidx &= 1; // RTL838X only supports 2 concurrent algorithms
+	sw_w32_mask(1 << (group % 8), algoidx << (group % 8),
+		    RTL838X_TRK_HASH_IDX_CTRL + ((group >> 3) << 2));
+	sw_w32(algomsk, RTL838X_TRK_HASH_CTRL + (algoidx << 2));
+}
+
+void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+{
+	switch(type) {
+	case BPDU:
+		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+			    RTL838X_RMA_BPDU_CTRL + ((port >> 4) << 2));
+	break;
+	case PTP:
+		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+			    RTL838X_RMA_PTP_CTRL + ((port >> 4) << 2));
+	break;
+	case LLTP:
+		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
+			    RTL838X_RMA_LLTP_CTRL + ((port >> 4) << 2));
+	break;
+	default:
+	break;
+	}
+}
+
 const struct rtl838x_reg rtl838x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -1599,6 +1711,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.l2_ctrl_0 = RTL838X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL838X_L2_CTRL_1,
 	.l2_port_aging_out = RTL838X_L2_PORT_AGING_OUT,
+	.set_ageing_time = rtl838x_set_ageing_time,
 	.smi_poll_ctrl = RTL838X_SMI_POLL_CTRL,
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
 	.exec_tbl0_cmd = rtl838x_exec_tbl0_cmd,
@@ -1615,6 +1728,12 @@ const struct rtl838x_reg rtl838x_reg = {
 	.vlan_profile_dump = rtl838x_vlan_profile_dump,
 	.vlan_profile_setup = rtl838x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl838x_vlan_fwd_on_inner,
+	.set_vlan_igr_filter = rtl838x_set_igr_filter,
+	.set_vlan_egr_filter = rtl838x_set_egr_filter,
+	.enable_learning = rtl838x_enable_learning,
+	.enable_flood = rtl838x_enable_flood,
+	.enable_mcast_flood = rtl838x_enable_mcast_flood,
+	.enable_bcast_flood = rtl838x_enable_bcast_flood,
 	.stp_get = rtl838x_stp_get,
 	.stp_set = rtl838x_stp_set,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
@@ -1632,10 +1751,9 @@ const struct rtl838x_reg rtl838x_reg = {
 	.write_l2_entry_using_hash = rtl838x_write_l2_entry_using_hash,
 	.read_cam = rtl838x_read_cam,
 	.write_cam = rtl838x_write_cam,
-	.vlan_port_egr_filter = RTL838X_VLAN_PORT_EGR_FLTR,
-	.vlan_port_igr_filter = RTL838X_VLAN_PORT_IGR_FLTR,
-	.vlan_port_pb = RTL838X_VLAN_PORT_PB_VLAN,
 	.vlan_port_tag_sts_ctrl = RTL838X_VLAN_PORT_TAG_STS_CTRL,
+	.vlan_port_pvidmode_set = rtl838x_vlan_port_pvidmode_set,
+	.vlan_port_pvid_set = rtl838x_vlan_port_pvid_set,
 	.trk_mbr_ctr = rtl838x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL838X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL838X_SPCL_TRAP_EAPOL_CTRL,
@@ -1657,6 +1775,8 @@ const struct rtl838x_reg rtl838x_reg = {
 	.route_read = rtl838x_route_read,
 	.route_write = rtl838x_route_write,
 	.l3_setup = rtl838x_l3_setup,
+	.set_distribution_algorithm = rtl838x_set_distribution_algorithm,
+	.set_receive_management_action = rtl838x_set_receive_management_action,
 };
 
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
@@ -1685,13 +1805,20 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 
 int rtl838x_smi_wait_op(int timeout)
 {
-	do {
-		timeout--;
-		udelay(10);
-	} while ((sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & 0x1) && (timeout >= 0));
-	if (timeout <= 0)
-		return -1;
-	return 0;
+	unsigned long end = jiffies + usecs_to_jiffies(timeout);
+
+	while (1) {
+		if (!(sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & 0x1))
+			return 0;
+
+		if (time_after(jiffies, end))
+			break;
+
+		usleep_range(10, 20);
+	}
+
+	pr_err("rtl838x_smi_wait_op: timeout\n");
+	return -1;
 }
 
 /*
@@ -1712,7 +1839,7 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
@@ -1722,7 +1849,7 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
@@ -1748,7 +1875,7 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 		return -ENOTSUPP;
 
 	mutex_lock(&smi_lock);
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	sw_w32(BIT(port), RTL838X_SMI_ACCESS_PHY_CTRL_0);
@@ -1761,7 +1888,7 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	mutex_unlock(&smi_lock);
@@ -1781,7 +1908,7 @@ int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
@@ -1796,7 +1923,7 @@ int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 	v = 1 << 1 | 0 << 2 | 1;
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
@@ -1820,7 +1947,7 @@ int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 	val &= 0xffff;
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
@@ -1834,7 +1961,7 @@ int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 	v = 1 << 1 | 1 << 2 | 1;
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(10000))
+	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
 	mutex_unlock(&smi_lock);

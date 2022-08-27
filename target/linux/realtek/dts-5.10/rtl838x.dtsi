@@ -27,6 +27,13 @@
 		reg = <##n>; \
 	};
 
+#define EXTERNAL_SFP_PHY_FULL(n, s) \
+	phy##n: ethernet-phy@##n { \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+		sfp = <&sfp##s>; \
+		reg = <##n>; \
+	};
+
 #define SWITCH_PORT(n, s, m) \
 	port@##n { \
 		reg = <##n>; \
@@ -87,27 +94,14 @@
 		#size-cells = <1>;
 		ranges = <0x0 0x18000000 0x10000>;
 
-		intc: rtlintc@3000 {
-			compatible = "realtek,rtl-intc";
-			reg = <0x3000 0x20>;
-			#address-cells = <0>;
-			#interrupt-cells = <1>;
+		intc: interrupt-controller@3000 {
+			compatible = "realtek,rtl8380-intc", "realtek,rtl-intc";
+			reg = <0x3000 0x18>;
 			interrupt-controller;
-			interrupt-map =
-				<31 &cpuintc 2>, /* UART0 */
-				<30 &cpuintc 1>, /* UART1 */
-				<29 &cpuintc 5>, /* TC0 */
-				<28 &cpuintc 1>, /* TC1 */
-				<27 &cpuintc 1>, /* OCPTO */
-				<26 &cpuintc 1>, /* HLXTO */
-				<25 &cpuintc 1>, /* SLXTO */
-				<24 &cpuintc 4>, /* NIC */
-				<23 &cpuintc 4>, /* GPIO_ABCD */
-				<22 &cpuintc 4>, /* GPIO_EFGH */
-				<21 &cpuintc 4>, /* RTC */
-				<20 &cpuintc 3>, /* SWCORE */
-				<19 &cpuintc 4>, /* WDT_IP1 */
-				<18 &cpuintc 5>; /* WDT_IP2 */
+			#interrupt-cells = <2>;
+
+			interrupt-parent = <&cpuintc>;
+			interrupts = <2>, <3>, <4>, <5>, <6>;
 		};
 
 		spi0: spi@1200 {
@@ -125,7 +119,7 @@
 			clocks = <&lx_clk>;
 
 			interrupt-parent = <&intc>;
-			interrupts = <31>;
+			interrupts = <31 1>;
 
 			reg-io-width = <1>;
 			reg-shift = <2>;
@@ -143,7 +137,7 @@
 			clocks = <&lx_clk>;
 
 			interrupt-parent = <&intc>;
-			interrupts = <30>;
+			interrupts = <30 0>;
 
 			reg-io-width = <1>;
 			reg-shift = <2>;
@@ -164,7 +158,7 @@
 
 			interrupt-parent = <&intc>;
 			interrupt-names = "phase1", "phase2";
-			interrupts = <19>, <18>;
+			interrupts = <19 3>, <18 4>;
 		};
 
 		gpio0: gpio-controller@3500 {
@@ -178,17 +172,8 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 			interrupt-parent = <&intc>;
-			interrupts = <23>;
+			interrupts = <23 3>;
 		};
-	};
-
-	gpio1: rtl8231-gpio {
-		compatible = "realtek,rtl8231-gpio";
-		#gpio-cells = <2>;
-		indirect-access-bus-id = <0>;
-		gpio-controller;
-
-		status = "disabled";
 	};
 
 	pinmux: pinmux@1b001000 {
@@ -225,7 +210,7 @@
 		compatible = "realtek,rtl838x-eth";
 		reg = <0x1b00a300 0x100>;
 		interrupt-parent = <&intc>;
-		interrupts = <24>;
+		interrupts = <24 3>;
 		#interrupt-cells = <1>;
 		phy-mode = "internal";
 
@@ -239,6 +224,6 @@
 		compatible = "realtek,rtl83xx-switch";
 
 		interrupt-parent = <&intc>;
-		interrupts = <20>;
+		interrupts = <20 2>;
 	};
 };

@@ -197,8 +197,8 @@
 			compatible = "pci168c,0040";
 			reg = <0x00010000 0 0 0 0>;
 
-			nvmem-cells = <&macaddr_art_6>;
-			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&macaddr_art_6>, <&precal_art_1000>;
+			nvmem-cell-names = "mac-address", "pre-calibration";
 			mac-address-increment = <(1)>;
 		};
 	};
@@ -221,14 +221,14 @@
 			compatible = "pci168c,0040";
 			reg = <0x00010000 0 0 0 0>;
 
-			nvmem-cells = <&macaddr_art_6>;
-			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&macaddr_art_6>, <&precal_art_5000>;
+			nvmem-cell-names = "mac-address", "pre-calibration";
 			mac-address-increment = <(2)>;
 		};
 	};
 };
 
-&nand_controller {
+&nand {
 	status = "okay";
 
 	pinctrl-0 = <&nand_pins>;
@@ -268,10 +268,29 @@
 				read-only;
 			};
 
-			art: art@1200000 {
+			art@1200000 {
 				label = "art";
 				reg = <0x1200000 0x0140000>;
 				read-only;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_art_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_art_6: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
+
+				precal_art_1000: precal@1000 {
+					reg = <0x1000 0x2f20>;
+				};
+
+				precal_art_5000: precal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
 			};
 
 			artbak: art@1340000 {
@@ -351,19 +370,5 @@
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
-	};
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_art_6: macaddr@6 {
-		reg = <0x6 0x6>;
 	};
 };

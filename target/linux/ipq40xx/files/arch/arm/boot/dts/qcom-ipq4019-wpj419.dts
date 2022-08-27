@@ -206,6 +206,17 @@
 						label = "0:ART";
 						reg = <0x170000 0x010000>;
 						read-only;
+						compatible = "nvmem-cells";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						precal_art_1000: precal@1000 {
+							reg = <0x1000 0x2f20>;
+						};
+
+						precal_art_5000: precal@5000 {
+							reg = <0x5000 0x2f20>;
+						};
 					};
 				};
 			};
@@ -341,12 +352,6 @@
 			perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
 			wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
 		};
-
-		nand: qpic-nand@79b0000 {
-			pinctrl-0 = <&nand_pins>;
-			pinctrl-names = "default";
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -358,6 +363,12 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
+};
+
+&nand {
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gmac0 {
@@ -378,8 +389,12 @@
 
 &wifi0 {
 	status = "okay";
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_1000>;
 };
 
 &wifi1 {
 	status = "okay";
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_5000>;
 };

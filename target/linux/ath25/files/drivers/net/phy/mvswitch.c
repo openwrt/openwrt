@@ -312,7 +312,11 @@ mvswitch_config_init(struct phy_device *pdev)
 	priv->orig_features = dev->features;
 
 #ifdef HEADER_MODE
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0)
+	dev->extra_priv_flags |= IFF_NO_IP_ALIGN;
+#else
 	dev->priv_flags |= IFF_NO_IP_ALIGN;
+#endif
 	dev->features |= NETIF_F_HW_VLAN_CTAG_RX | NETIF_F_HW_VLAN_CTAG_TX;
 #else
 	dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
@@ -372,7 +376,11 @@ mvswitch_detach(struct phy_device *pdev)
 	dev->eth_mangle_rx = NULL;
 	dev->eth_mangle_tx = NULL;
 	dev->features = priv->orig_features;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0)
+	dev->extra_priv_flags &= ~IFF_NO_IP_ALIGN;
+#else
 	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
+#endif
 }
 
 static void

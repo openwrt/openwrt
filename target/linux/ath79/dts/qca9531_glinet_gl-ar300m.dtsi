@@ -37,6 +37,16 @@
 		};
 	};
 
+	reg_usb_vbus: reg_usb_vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -134,6 +144,7 @@
 &usb0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
+	vbus-supply = <&reg_usb_vbus>;
 	status = "okay";
 };
 
@@ -168,5 +179,14 @@
 
 	macaddr_art_0: macaddr@0 {
 		reg = <0x0 0x6>;
+	};
+};
+
+&pinmux {
+	pinctrl-names = "default";
+	pinctrl-0 = <&enable_gpio17>;
+
+	enable_gpio17: pinmux_enable_gpio17 {
+		pinctrl-single,bits = <0x10 0x0000 0xff00>;
 	};
 };

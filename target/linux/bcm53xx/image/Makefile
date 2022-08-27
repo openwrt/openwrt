@@ -167,6 +167,14 @@ define Device/asus_rt-ac87u
 endef
 TARGET_DEVICES += asus_rt-ac87u
 
+define Device/asus_rt-ac88u
+  $(call Device/asus)
+  DEVICE_MODEL := RT-AC88U
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC88U
+endef
+TARGET_DEVICES += asus_rt-ac88u
+
 define Device/asus_rt-n18u
   $(call Device/asus)
   DEVICE_MODEL := RT-N18U
@@ -218,7 +226,6 @@ define Device/buffalo_wzr-900dhp
 	buffalo-enc WZR-900DHP2 $$(BUFFALO_TAG_VERSION) | \
 	buffalo-tag-dhp WZR-900DHP2 JP jp | buffalo-enc-tag | \
 	buffalo-dhp-image
-  BROKEN := y
 endef
 TARGET_DEVICES += buffalo_wzr-900dhp
 
@@ -315,6 +322,23 @@ define Device/luxul_xwr-3150
 endef
 TARGET_DEVICES += luxul_xwr-3150
 
+define Device/meraki_mr26
+  DEVICE_VENDOR := Meraki
+  DEVICE_MODEL := MR26
+  DEVICE_PACKAGES := $(B43) kmod-i2c-bcm-iproc kmod-eeprom-at24 \
+	kmod-hwmon-ina2xx nu801
+  DEVICE_DTS := bcm53015-meraki-mr26
+# resize the initramfs to fit the size of the existing part.safe.
+  KERNEL_LOADADDR := 0x00008000
+  KERNEL_INITRAMFS_SUFFIX := .bin
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | uImage gzip | pad-to 9310208
+# LZMA is not supported by the uboot
+  KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
+  IMAGES += sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += meraki_mr26
+
 define Device/meraki_mr32
   DEVICE_VENDOR := Meraki
   DEVICE_MODEL := MR32
@@ -332,7 +356,6 @@ define Device/meraki_mr32
 	pad-to 10362880
   KERNEL := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
   IMAGES += sysupgrade.bin
-# Currently the only device that uses the new image check
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 
 # The loader is specifically looking for fdt@2:

@@ -105,32 +105,32 @@
 
 				map1 {
 					trip = <&cpu_alert1>;
-					cooling-device = <&fan0 1 76>;
+					cooling-device = <&fan0 1 1>;
 				};
 
 				map2 {
 					trip = <&cpu_alert2>;
-					cooling-device = <&fan0 77 101>;
+					cooling-device = <&fan0 2 4>;
 				};
 
 				map3 {
 					trip = <&cpu_alert3>;
-					cooling-device = <&fan0 102 147>;
+					cooling-device = <&fan0 4 8>;
 				};
 
 				map4 {
 					trip = <&cpu_alert4>;
-					cooling-device = <&fan0 148 207>;
+					cooling-device = <&fan0 9 12>;
 				};
 
 				map5 {
 					trip = <&cpu_alert5>;
-					cooling-device = <&fan0 208 231>;
+					cooling-device = <&fan0 13 15>;
 				};
 
 				map6 {
 					trip = <&cpu_alert6>;
-					cooling-device =<&fan0 232 THERMAL_NO_LIMIT>;
+					cooling-device =<&fan0 16 THERMAL_NO_LIMIT>;
 				};
 			};
 		};
@@ -169,13 +169,16 @@
 	dr_mode = "host";
 };
 
-&EBC0 {
-	ndfc: ndfc@1,0 {
+&ndfc {
+	status = "okay";
+	/* 128 MiB Nand Flash */
+	nand {
+		nand-is-boot-medium;
 
-		status = "okay";
-		/* 128 MiB Nand Flash */
-		nand {
-			nand-is-boot-medium;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partition@0 {
 				label = "uboot";
@@ -184,22 +187,41 @@
 			};
 
 			partition@180000 {
-				label = "kernel";
-				reg = <0x00180000 0x00380000>;
+				label = "firmware";
+				reg = <0x00180000 0x01860000>;
+
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "kernel";
+					reg = <0x00000000 0x00380000>;
+
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					/*
+					 * device-tree is @ 0x00180000 - 0x0019ffff
+					 * kernel starts from 0x20000.
+					 * this is coded into netgear's u-boot.
+					 */
+					partition@0 {
+						label = "dtb";
+						reg = <0x00000000 0x20000>;
+					};
 				/*
-				 * device-tree is @ 0x00180000 - 0x001fffff
-				 * kernel starts from 0x200000.
-				 * this is coded into netgear's u-boot.
-				 *
 				 * this partition will also contain a
 				 * fake/empty rootfs at the end to fool
 				 * Netgear's uboot rootfs integrety checks.
 				 */
-			};
+				};
 
-			partition@500000 {
-				label = "ubi";
-				reg = <0x00500000 0x014e0000>;
+				partition@380000 {
+					label = "ubi";
+					reg = <0x00380000 0x014e0000>;
+				};
 			};
 
 
@@ -244,6 +266,25 @@
 				label = "wifi_data";
 				reg = <0x07fc0000 0x00040000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_wifi_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+				macaddr_wifi_c: macaddr@c {
+					reg = <0xc 0x6>;
+				};
+
+				calibration_wifi_1000: calibration@1000 {
+					reg = <0x1000 0x440>;
+				};
+
+				calibration_wifi_5000: calibration@5000 {
+					reg = <0x5000 0x440>;
+				};
 			};
 		};
 	};
@@ -263,8 +304,6 @@
 	fan0: fan@1b {
 		compatible = "microchip,tc654";
 		reg = <0x1b>;
-		cooling-min-level = <0>;
-		cooling-max-level = <255>;
 		#cooling-cells = <2>; /* min followed by max */
 
 		gpios = <&GPIO0 16 GPIO_ACTIVE_LOW>; /* fan status */
@@ -316,7 +355,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
+		button-restart {
 			label = "Reset button";
 			gpios = <&GPIO0 15 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
@@ -325,7 +364,7 @@
 			debounce-interval = <60>;
 		};
 
-		backup_hd {
+		button-backup_hd {
 			label = "Backup HD button";
 			gpios = <&GPIO0 19 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
@@ -334,7 +373,7 @@
 			debounce-interval = <60>;
 		};
 
-		rfkill {
+		button-rfkill {
 			label = "RFKILL button";
 			gpios = <&GPIO0 20 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
@@ -343,7 +382,7 @@
 			debounce-interval = <60>;
 		};
 
-		wps {
+		button-wps {
 			label = "WPS button";
 			gpios = <&GPIO0 23 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
@@ -456,8 +495,8 @@
 					compatible = "pci168c,0030";
 					reg = <0x00430000 0 0 0 0>;
 					interrupts = <3>; /* INTC */
-					qca,no-eeprom;
-					/* wifi CAL & MAC is stored in nvram */
+					nvmem-cell-names = "mac-address", "calibration";
+					nvmem-cells = <&macaddr_wifi_0>, <&calibration_wifi_1000>;
 
 					/*
 					 * Because this was such a pain.
@@ -479,8 +518,8 @@
 					compatible = "pci168c,0033";
 					reg = <0x00440000 0 0 0 0>;
 					interrupts = <4>; /* INTD */
-					qca,no-eeprom;
-					/* wifi CAL & MAC is stored in nvram */
+					nvmem-cell-names = "mac-address", "calibration";
+					nvmem-cells = <&macaddr_wifi_c>, <&calibration_wifi_5000>;
 				};
 			};
 

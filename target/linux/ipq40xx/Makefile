@@ -6,10 +6,10 @@ BOARDNAME:=Qualcomm Atheros IPQ40XX
 FEATURES:=squashfs fpu ramdisk nand
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
-SUBTARGETS:=generic mikrotik
+SUBTARGETS:=generic chromium mikrotik
 
 KERNEL_PATCHVER:=5.10
-KERNEL_TESTING_PATCHVER:=5.10
+KERNEL_TESTING_PATCHVER:=5.15
 
 KERNELNAME:=zImage Image dtbs
 
@@ -19,6 +19,6 @@ DEFAULT_PACKAGES += \
 	kmod-leds-gpio kmod-gpio-button-hotplug swconfig \
 	kmod-ath10k-ct wpad-basic-wolfssl \
 	kmod-usb3 kmod-usb-dwc3 ath10k-firmware-qca4019-ct \
-	ath10k-board-qca4019 uboot-envtools
+	uboot-envtools
 
 $(eval $(call BuildTarget))

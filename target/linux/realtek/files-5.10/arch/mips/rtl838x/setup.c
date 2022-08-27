@@ -13,6 +13,7 @@
 #include <linux/init.h>
 #include <linux/clkdev.h>
 #include <linux/clk-provider.h>
+#include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/of_fdt.h>
 #include <linux/irqchip.h>
@@ -28,31 +29,6 @@
 
 extern struct rtl83xx_soc_info soc_info;
 
-static void __init rtl838x_setup(void)
-{
-	/* Setup System LED. Bit 15 then allows to toggle it */
-	sw_w32_mask(0, 3 << 16, RTL838X_LED_GLB_CTRL);
-}
-
-static void __init rtl839x_setup(void)
-{
-	/* Setup System LED. Bit 14 of RTL839X_LED_GLB_CTRL then allows to toggle it */
-	sw_w32_mask(0, 3 << 15, RTL839X_LED_GLB_CTRL);
-}
-
-static void __init rtl930x_setup(void)
-{
-	if (soc_info.id == 0x9302)
-		sw_w32_mask(0, 3 << 13, RTL9302_LED_GLB_CTRL);
-	else
-		sw_w32_mask(0, 3 << 13, RTL930X_LED_GLB_CTRL);
-}
-
-static void __init rtl931x_setup(void)
-{
-	sw_w32_mask(0, 3 << 12, RTL931X_LED_GLB_CTRL);
-}
-
 void __init plat_mem_setup(void)
 {
 	void *dtb;
@@ -61,7 +37,7 @@ void __init plat_mem_setup(void)
 
 	if (fw_passed_dtb) /* UHI interface */
 		dtb = (void *)fw_passed_dtb;
-	else if (__dtb_start != __dtb_end)
+	else if (&__dtb_start[0] != &__dtb_end[0])
 		dtb = (void *)__dtb_start;
 	else
 		panic("no dtb found");
@@ -71,30 +47,12 @@ void __init plat_mem_setup(void)
 	 * parsed resulting in our memory appearing
 	 */
 	__dt_setup_arch(dtb);
-
-	switch (soc_info.family) {
-	case RTL8380_FAMILY_ID:
-		rtl838x_setup();
-		break;
-	case RTL8390_FAMILY_ID:
-		rtl839x_setup();
-		break;
-	case RTL9300_FAMILY_ID:
-		rtl930x_setup();
-		break;
-	case RTL9310_FAMILY_ID:
-		rtl931x_setup();
-		break;
-	}
 }
 
-void __init plat_time_init(void)
+void plat_time_init_fallback(void)
 {
 	struct device_node *np;
 	u32 freq = 500000000;
-
-	of_clk_init(NULL);
-	timer_probe();
 
 	np = of_find_node_by_name(NULL, "cpus");
 	if (!np) {
@@ -106,8 +64,39 @@ void __init plat_time_init(void)
 			pr_info("CPU frequency from device tree: %dMHz", freq / 1000000);
 		of_node_put(np);
 	}
-
 	mips_hpt_frequency = freq / 2;
+}
+
+void __init plat_time_init(void)
+{
+/*
+ * Initialization routine resembles generic MIPS plat_time_init() with
+ * lazy error handling. The final fallback is only needed until we have
+ * converted all device trees to new clock syntax.
+ */
+	struct device_node *np;
+	struct clk *clk;
+
+	of_clk_init(NULL);
+
+	mips_hpt_frequency = 0;
+	np = of_get_cpu_node(0, NULL);
+	if (!np) {
+		pr_err("Failed to get CPU node\n");
+	} else {
+		clk = of_clk_get(np, 0);
+		if (IS_ERR(clk)) {
+			pr_err("Failed to get CPU clock: %ld\n", PTR_ERR(clk));
+		} else {
+			mips_hpt_frequency = clk_get_rate(clk) / 2;
+			clk_put(clk);
+		}
+	}
+
+	if (!mips_hpt_frequency)
+		plat_time_init_fallback();
+
+	timer_probe();
 }
 
 void __init arch_init_irq(void)

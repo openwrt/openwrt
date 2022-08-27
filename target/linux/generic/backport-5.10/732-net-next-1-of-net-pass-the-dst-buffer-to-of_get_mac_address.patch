@@ -264,7 +264,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			 ndev->dev_addr);
 --- a/drivers/net/ethernet/altera/altera_tse_main.c
 +++ b/drivers/net/ethernet/altera/altera_tse_main.c
-@@ -1351,7 +1351,6 @@ static int altera_tse_probe(struct platf
+@@ -1355,7 +1355,6 @@ static int altera_tse_probe(struct platf
  	struct resource *control_port;
  	struct resource *dma_res;
  	struct altera_tse_private *priv;
@@ -272,7 +272,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	void __iomem *descmap;
  	const struct of_device_id *of_id = NULL;
  
-@@ -1528,10 +1527,8 @@ static int altera_tse_probe(struct platf
+@@ -1532,10 +1531,8 @@ static int altera_tse_probe(struct platf
  	priv->rx_dma_buf_sz = ALTERA_RXDMABUFFER_SIZE;
  
  	/* get default MAC address from device tree */
@@ -423,7 +423,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (bgmac->irq < 0)
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -4456,7 +4456,6 @@ static int macb_probe(struct platform_de
+@@ -4487,7 +4487,6 @@ static int macb_probe(struct platform_de
  	struct net_device *dev;
  	struct resource *regs;
  	void __iomem *mem;
@@ -431,7 +431,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct macb *bp;
  	int err, val;
  
-@@ -4569,15 +4568,11 @@ static int macb_probe(struct platform_de
+@@ -4600,15 +4599,11 @@ static int macb_probe(struct platform_de
  	if (bp->caps & MACB_CAPS_NEEDS_RSTONUBR)
  		bp->rx_intr_mask |= MACB_BIT(RXUBR);
  
@@ -607,7 +607,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		/*
 --- a/drivers/net/ethernet/freescale/fman/mac.c
 +++ b/drivers/net/ethernet/freescale/fman/mac.c
-@@ -605,7 +605,6 @@ static int mac_probe(struct platform_dev
+@@ -616,7 +616,6 @@ static int mac_probe(struct platform_dev
  	struct platform_device	*of_dev;
  	struct resource		 res;
  	struct mac_priv_s	*priv;
@@ -615,7 +615,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	u32			 val;
  	u8			fman_id;
  	phy_interface_t          phy_if;
-@@ -723,11 +722,9 @@ static int mac_probe(struct platform_dev
+@@ -734,11 +733,9 @@ static int mac_probe(struct platform_dev
  	priv->cell_index = (u8)val;
  
  	/* Get the MAC address */
@@ -629,7 +629,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* Get the port handles */
  	nph = of_count_phandle_with_args(mac_node, "fsl,fman-ports", NULL);
-@@ -853,7 +850,7 @@ static int mac_probe(struct platform_dev
+@@ -864,7 +861,7 @@ static int mac_probe(struct platform_dev
  	if (err < 0)
  		dev_err(dev, "fman_set_mac_active_pause() = %d\n", err);
  
@@ -895,7 +895,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -2580,14 +2580,11 @@ static int __init mtk_init(struct net_de
+@@ -2600,14 +2600,11 @@ static int __init mtk_init(struct net_de
  {
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
@@ -1162,7 +1162,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/ethernet/stmicro/stmmac/dwmac-dwc-qos-eth.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-dwc-qos-eth.c
-@@ -444,7 +444,7 @@ static int dwc_eth_dwmac_probe(struct pl
+@@ -445,7 +445,7 @@ static int dwc_eth_dwmac_probe(struct pl
  	if (IS_ERR(stmmac_res.addr))
  		return PTR_ERR(stmmac_res.addr);
  
@@ -1294,7 +1294,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/ethernet/stmicro/stmmac/dwmac-socfpga.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-socfpga.c
-@@ -398,7 +398,7 @@ static int socfpga_dwmac_probe(struct pl
+@@ -397,7 +397,7 @@ static int socfpga_dwmac_probe(struct pl
  	if (ret)
  		return ret;
  
@@ -1327,7 +1327,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.c
-@@ -1202,7 +1202,7 @@ static int sun8i_dwmac_probe(struct plat
+@@ -1203,7 +1203,7 @@ static int sun8i_dwmac_probe(struct plat
  	if (ret)
  		return -EINVAL;
  
@@ -1360,7 +1360,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int irq;
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -4990,7 +4990,7 @@ int stmmac_dvr_probe(struct device *devi
+@@ -4987,7 +4987,7 @@ int stmmac_dvr_probe(struct device *devi
  	priv->wol_irq = res->wol_irq;
  	priv->lpi_irq = res->lpi_irq;
  
@@ -1398,7 +1398,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	phy_mode = device_get_phy_mode(&pdev->dev);
-@@ -644,7 +644,7 @@ void stmmac_remove_config_dt(struct plat
+@@ -643,7 +643,7 @@ void stmmac_remove_config_dt(struct plat
  }
  #else
  struct plat_stmmacenet_data *
@@ -1420,7 +1420,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/ethernet/ti/am65-cpsw-nuss.c
 +++ b/drivers/net/ethernet/ti/am65-cpsw-nuss.c
-@@ -1741,7 +1741,6 @@ static int am65_cpsw_nuss_init_slave_por
+@@ -1742,7 +1742,6 @@ static int am65_cpsw_nuss_init_slave_por
  
  	for_each_child_of_node(node, port_np) {
  		struct am65_cpsw_port *port;
@@ -1428,7 +1428,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		u32 port_id;
  
  		/* it is not a slave port node, continue */
-@@ -1820,15 +1819,15 @@ static int am65_cpsw_nuss_init_slave_por
+@@ -1821,15 +1820,15 @@ static int am65_cpsw_nuss_init_slave_por
  			return ret;
  		}
  
@@ -1478,7 +1478,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			if (ret)
 --- a/drivers/net/ethernet/ti/cpsw_new.c
 +++ b/drivers/net/ethernet/ti/cpsw_new.c
-@@ -1267,7 +1267,6 @@ static int cpsw_probe_dt(struct cpsw_com
+@@ -1269,7 +1269,6 @@ static int cpsw_probe_dt(struct cpsw_com
  
  	for_each_child_of_node(tmp_node, port_np) {
  		struct cpsw_slave_data *slave_data;
@@ -1486,7 +1486,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		u32 port_id;
  
  		ret = of_property_read_u32(port_np, "reg", &port_id);
-@@ -1326,10 +1325,8 @@ static int cpsw_probe_dt(struct cpsw_com
+@@ -1328,10 +1327,8 @@ static int cpsw_probe_dt(struct cpsw_com
  			goto err_node_put;
  		}
  
@@ -1595,7 +1595,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	__be32 *p;
  	bool little_endian;
  	int rc = 0;
-@@ -1561,8 +1561,8 @@ static int temac_probe(struct platform_d
+@@ -1563,8 +1563,8 @@ static int temac_probe(struct platform_d
  
  	if (temac_np) {
  		/* Retrieve the MAC address */
@@ -1608,7 +1608,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		}
 --- a/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
 +++ b/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
-@@ -1803,8 +1803,8 @@ static int axienet_probe(struct platform
+@@ -1843,8 +1843,8 @@ static int axienet_probe(struct platform
  	struct device_node *np;
  	struct axienet_local *lp;
  	struct net_device *ndev;
@@ -1618,7 +1618,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int addr_width = 32;
  	u32 value;
  
-@@ -2004,13 +2004,14 @@ static int axienet_probe(struct platform
+@@ -2044,13 +2044,14 @@ static int axienet_probe(struct platform
  		dev_info(&pdev->dev, "Ethernet core IRQ not defined\n");
  
  	/* Retrieve the MAC address */
@@ -1641,7 +1641,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	lp->coalesce_count_tx = XAXIDMA_DFT_TX_THRESHOLD;
 --- a/drivers/net/ethernet/xilinx/xilinx_emaclite.c
 +++ b/drivers/net/ethernet/xilinx/xilinx_emaclite.c
-@@ -1113,7 +1113,6 @@ static int xemaclite_of_probe(struct pla
+@@ -1107,7 +1107,6 @@ static int xemaclite_of_probe(struct pla
  	struct net_device *ndev = NULL;
  	struct net_local *lp = NULL;
  	struct device *dev = &ofdev->dev;
@@ -1649,7 +1649,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	int rc = 0;
  
-@@ -1155,12 +1154,9 @@ static int xemaclite_of_probe(struct pla
+@@ -1149,12 +1148,9 @@ static int xemaclite_of_probe(struct pla
  	lp->next_rx_buf_to_use = 0x0;
  	lp->tx_ping_pong = get_bool(ofdev, "xlnx,tx-ping-pong");
  	lp->rx_ping_pong = get_bool(ofdev, "xlnx,rx-ping-pong");
@@ -1834,7 +1834,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/*
 --- a/drivers/staging/wfx/main.c
 +++ b/drivers/staging/wfx/main.c
-@@ -334,7 +334,6 @@ int wfx_probe(struct wfx_dev *wdev)
+@@ -339,7 +339,6 @@ int wfx_probe(struct wfx_dev *wdev)
  {
  	int i;
  	int err;
@@ -1842,7 +1842,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct gpio_desc *gpio_saved;
  
  	// During first part of boot, gpio_wakeup cannot yet been used. So
-@@ -423,9 +422,9 @@ int wfx_probe(struct wfx_dev *wdev)
+@@ -428,9 +427,9 @@ int wfx_probe(struct wfx_dev *wdev)
  
  	for (i = 0; i < ARRAY_SIZE(wdev->addresses); i++) {
  		eth_zero_addr(wdev->addresses[i].addr);

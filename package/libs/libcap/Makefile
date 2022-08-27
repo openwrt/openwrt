@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libcap
-PKG_VERSION:=2.51
+PKG_VERSION:=2.65
 PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/libs/security/linux-privs/libcap2
-PKG_HASH:=6609f3ab7aebcc8f9277f53a577c657d9f3056d1352ea623da7fd7c0f00890f9
+PKG_HASH:=73e350020cc31fe15360879d19384ffa3395a825f065fcf6bda3a5cdf965bebd
 
 PKG_MAINTAINER:=Paul Wassi <p.wassi@gmx.at>
 PKG_LICENSE:=GPL-2.0-only
@@ -73,6 +73,8 @@ MAKE_FLAGS += \
     RAISE_SETFCAP="no" \
     DYNAMIC="yes" \
     lib="lib"
+
+TARGET_CFLAGS += $(FPIC)
 
 ifneq ($(CONFIG_PACKAGE_libcap-bin-capsh-shell),)
 TARGET_CFLAGS += -DSHELL='\"$(CONFIG_PACKAGE_libcap-bin-capsh-shell)\"'

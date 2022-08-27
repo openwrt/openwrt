@@ -34,7 +34,7 @@
 	status = "okay";
 };
 
-&nand_controller {
+&nand {
 	status = "okay";
 
 	pinctrl-0 = <&nand_pins>;
@@ -133,12 +133,12 @@
 
 			partition@f80000 {
 				label = "kernel1";
-				reg = <0x0f80000 0x2800000>;  /* 3 MB spill to rootfs */
+				reg = <0x0f80000 0x2800000>;  /* 4 MB, spill to rootfs */
 			};
 
-			partition@1280000 {
+			partition@1380000 {
 				label = "rootfs1";
-				reg = <0x1280000 0x2500000>;
+				reg = <0x1380000 0x2400000>;
 			};
 
 			partition@3780000 {
@@ -146,9 +146,9 @@
 				reg = <0x3780000 0x2800000>;
 			};
 
-			partition@3a80000 {
+			partition@3b80000 {
 				label = "rootfs2";
-				reg = <0x3a80000 0x2500000>;
+				reg = <0x3b80000 0x2400000>;
 			};
 		};
 	};

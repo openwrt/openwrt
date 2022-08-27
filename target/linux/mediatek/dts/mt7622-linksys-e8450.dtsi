@@ -144,6 +144,10 @@
 		switch@0 {
 			compatible = "mediatek,mt7531";
 			reg = <0>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupt-parent = <&pio>;
+			interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
 			reset-gpios = <&pio 54 0>;
 
 			ports {
@@ -338,11 +342,22 @@
 	};
 };
 
-&snand {
-	mediatek,quad-spi;
+&bch {
+	status = "okay";
+};
+
+&snfi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&serial_nand_pins>;
 	status = "okay";
+
+	snand: flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+		nand-ecc-engine = <&snfi>;
+	};
 };
 
 &spi0 {

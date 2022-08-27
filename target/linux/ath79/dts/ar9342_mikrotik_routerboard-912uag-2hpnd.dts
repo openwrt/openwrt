@@ -16,6 +16,13 @@
                 led-upgrade = &led_power;
         };
 
+	gpio_key: gpio_key {
+		compatible = "mikrotik,gpio-rb91x-key";
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio = <&gpio 15 GPIO_ACTIVE_HIGH>;
+	};
+
 	gpio_latch: gpio_latch {
 		compatible = "gpio-latch";
 		gpio-controller;
@@ -27,7 +34,7 @@
 			<0>, /* Not connected */
 			<&gpio 13 GPIO_ACTIVE_HIGH>,
 			<&gpio 14 GPIO_ACTIVE_HIGH>,
-			<&gpio 15 GPIO_ACTIVE_HIGH>,
+			<&gpio_key 0 GPIO_ACTIVE_HIGH>,
 			<&gpio 11 GPIO_ACTIVE_LOW>; /* Latch Enable */
 	};
 
@@ -40,7 +47,8 @@
 			<&gpio_latch 6 GPIO_ACTIVE_HIGH>, /* Command Latch Enable (CLE) */
 			<&gpio_latch 7 GPIO_ACTIVE_HIGH>, /* Address Latch Enable (ALE) */
 			<&gpio 12 GPIO_ACTIVE_LOW>,       /* Read/Write Enable (nRW) */
-			<&gpio_latch 8 GPIO_ACTIVE_LOW>;  /* Latch Enable (nLE) */
+			<&gpio_latch 8 GPIO_ACTIVE_LOW>,  /* Latch Enable (nLE) */
+			<&gpio_key 2 GPIO_ACTIVE_HIGH>;   /* Key poll disable */
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -61,6 +69,17 @@
 				label = "ubi";
 				reg = <0x0400000 0x7c00000>;
 			};
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		button@0 {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio_key 1 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -127,6 +146,10 @@
 	};
 };
 
+&ref {
+	clock-frequency = <25000000>;
+};
+
 &spi {
 	status = "okay";
 
@@ -150,7 +173,7 @@
 				read-only;
 			};
 
-			hard_config: hard_config {
+			hard_config {
 				read-only;
 			};
 
@@ -177,8 +200,6 @@
 &mdio0 {
 	status = "okay";
 
-	phy-mask = <0>;
-
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 	};
@@ -194,7 +215,6 @@
 	gmac-config {
 		device = <&gmac>;
 		rgmii-gmac0 = <1>;
-		rgmii-enabled = <1>;
 		rxd-delay = <1>;
 		txd-delay = <1>;
 	};

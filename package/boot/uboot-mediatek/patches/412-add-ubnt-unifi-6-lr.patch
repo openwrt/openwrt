@@ -1,12 +1,13 @@
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr_defconfig
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,141 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
 +CONFIG_TARGET_MT7622=y
 +CONFIG_SYS_TEXT_BASE=0x41e00000
 +CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_SYS_LOAD_ADDR=0x40080000
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
@@ -143,7 +144,7 @@
 +CONFIG_SPI_FLASH_XMC=y
 --- /dev/null
 +++ b/arch/arm/dts/mt7622-ubnt-unifi-6-lr.dts
-@@ -0,0 +1,202 @@
+@@ -0,0 +1,200 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 MediaTek Inc.
@@ -310,8 +311,6 @@
 +};
 +
 +&uart0 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&uart0_pins>;
 +	status = "okay";
 +};
 +
@@ -348,7 +347,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1105,6 +1105,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1204,6 +1204,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \
@@ -411,15 +410,15 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- a/common/board_r.c
 +++ b/common/board_r.c
-@@ -77,6 +77,7 @@
- #ifdef CONFIG_EFI_SETUP_EARLY
+@@ -62,6 +62,7 @@
+ #include <asm-generic/gpio.h>
  #include <efi_loader.h>
- #endif
+ #include <relocate.h>
 +#include <spi_flash.h>
  
  DECLARE_GLOBAL_DATA_PTR;
  
-@@ -416,6 +417,21 @@ static int initr_onenand(void)
+@@ -392,6 +393,20 @@ static int initr_onenand(void)
  }
  #endif
  
@@ -429,11 +428,10 @@
 +{
 +	struct udevice *new;
 +
-+	spi_flash_probe_bus_cs(CONFIG_SF_DEFAULT_BUS,
-+				CONFIG_SF_DEFAULT_CS,
-+				CONFIG_SF_DEFAULT_SPEED,
-+				CONFIG_SF_DEFAULT_MODE,
-+				&new);
++spi_flash_probe_bus_cs(CONFIG_SF_DEFAULT_BUS,
++			CONFIG_SF_DEFAULT_CS,
++			&new);
++
 +	return 0;
 +}
 +#endif
@@ -441,7 +439,7 @@
  #ifdef CONFIG_MMC
  static int initr_mmc(void)
  {
-@@ -705,6 +721,9 @@ static init_fnc_t init_sequence_r[] = {
+@@ -703,6 +718,9 @@ static init_fnc_t init_sequence_r[] = {
  #ifdef CONFIG_CMD_ONENAND
  	initr_onenand,
  #endif

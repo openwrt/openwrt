@@ -42,12 +42,17 @@
 	dr_mode = "host";
 };
 
-&EBC0 {
+&ndfc {
 	/* Buckminster has 1GiB of NAND */
-	ndfc@1,0 {
-		status = "okay";
-		nand {
-			nand-is-boot-medium;
+	status = "okay";
+
+	nand {
+		nand-is-boot-medium;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partition@0 {
 				label = "u-boot";
@@ -170,7 +175,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
+		button-restart {
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
 			gpios = <&GPIO0 16 GPIO_ACTIVE_LOW>;

@@ -20,12 +20,19 @@ define Device/mikrotik_nand
 	IMAGE/nand-sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
+define Device/mikrotik_cap-ac
+	$(call Device/mikrotik_nor)
+	DEVICE_MODEL := cAP ac
+	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
+endef
+TARGET_DEVICES += mikrotik_cap-ac
+
 define Device/mikrotik_hap-ac2
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := hAP ac2
 	SOC := qcom-ipq4018
-	DEVICE_PACKAGES := ipq-wifi-mikrotik_hap-ac2 -kmod-ath10k-ct \
-		kmod-ath10k-ct-smallbuffers
+	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
 endef
 TARGET_DEVICES += mikrotik_hap-ac2
 
@@ -36,7 +43,7 @@ define Device/mikrotik_hap-ac3
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	KERNEL_UBIFS_OPTS = -m $$(PAGESIZE) -e 124KiB -c $$(PAGESIZE) -x none
-	DEVICE_PACKAGES := kmod-ledtrig-gpio ipq-wifi-mikrotik_hap-ac3
+	DEVICE_PACKAGES := kmod-ledtrig-gpio
 endef
 TARGET_DEVICES += mikrotik_hap-ac3
 
@@ -52,6 +59,14 @@ define Device/mikrotik_sxtsq-5-ac
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := SXTsq 5 ac (RBSXTsqG-5acD)
 	SOC := qcom-ipq4018
-	DEVICE_PACKAGES := ipq-wifi-mikrotik_sxtsq-5-ac rssileds
+	DEVICE_PACKAGES := rssileds
 endef
 TARGET_DEVICES += mikrotik_sxtsq-5-ac
+
+define Device/mikrotik_wap-ac
+	$(call Device/mikrotik_nor)
+	DEVICE_MODEL := wAP ac
+	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
+endef
+TARGET_DEVICES += mikrotik_wap-ac

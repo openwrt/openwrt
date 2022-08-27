@@ -1,0 +1,42 @@
+Index: broadcom-wl-5.10.56.27.3/driver/wl_linux.c
+===================================================================
+--- broadcom-wl-5.10.56.27.3.orig/driver/wl_linux.c
++++ broadcom-wl-5.10.56.27.3/driver/wl_linux.c
+@@ -74,6 +74,10 @@
+ #error "No support for Kernel Rev <= 2.4.5, As the older kernel revs doesn't support Tasklets"
+ #endif
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
++#define ioremap_nocache	ioremap
++#endif
++
+ typedef void wlc_info_t;
+ typedef void wlc_hw_info_t;
+ #include <wlc_pub.h>
+@@ -1915,7 +1919,11 @@ wl_ioctl(struct net_device *dev, struct
+ 	}
+ 
+ 	/* optimization for direct ioctl calls from kernel */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
+ 	if (segment_eq(get_fs(), KERNEL_DS))
++#else
++	if (uaccess_kernel())
++#endif
+ 		buf = ioc.buf;
+ 
+ 	else if (ioc.buf) {
+Index: broadcom-wl-5.10.56.27.3/driver/linux_osl.c
+===================================================================
+--- broadcom-wl-5.10.56.27.3.orig/driver/linux_osl.c
++++ broadcom-wl-5.10.56.27.3/driver/linux_osl.c
+@@ -34,6 +34,10 @@
+ #define OS_HANDLE_MAGIC		0x1234abcd	/* Magic # to recognise osh */
+ #define BCM_MEM_FILENAME_LEN 	24		/* Mem. filename length */
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
++#define ioremap_nocache	ioremap
++#endif
++
+ typedef struct bcm_mem_link {
+ 	struct bcm_mem_link *prev;
+ 	struct bcm_mem_link *next;

@@ -24,7 +24,7 @@ MAKE_PATH = $(firstword $(CMAKE_BINARY_SUBDIR) .)
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   cmake_tool=$(TOOLCHAIN_DIR)/bin/$(1)
 else
-  cmake_tool=$(shell which $(1))
+  cmake_tool=$(shell command -v $(1))
 endif
 
 ifeq ($(CONFIG_CCACHE),)

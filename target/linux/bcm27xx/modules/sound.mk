@@ -919,7 +919,7 @@ define KernelPackage/sound-soc-rpi-cirrus
     CONFIG_MFD_ARIZONA=y \
     CONFIG_MFD_ARIZONA_I2C \
     CONFIG_MFD_CS47L24=n \
-    CONFIG_MFD_WM5102=n \
+    CONFIG_MFD_WM5102=y \
     CONFIG_MFD_WM5110=n \
     CONFIG_MFD_WM8997=n \
     CONFIG_MFD_WM8998=n \
@@ -932,6 +932,8 @@ define KernelPackage/sound-soc-rpi-cirrus
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM_ADSP
   FILES:= \
+    $(LINUX_DIR)/drivers/mfd/arizona.ko \
+    $(LINUX_DIR)/drivers/mfd/arizona-i2c.ko \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-cirrus.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-arizona.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm-adsp.ko \
@@ -939,8 +941,9 @@ define KernelPackage/sound-soc-rpi-cirrus
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm1794a snd-soc-rpi-cirrus)
   DEPENDS:= \
+    kmod-sound-soc-bcm2835-i2s \
     +kmod-i2c-bcm2835 \
-    kmod-sound-soc-bcm2835-i2s
+    +kmod-regmap-i2c
   $(call AddDepends/sound)
 endef
 

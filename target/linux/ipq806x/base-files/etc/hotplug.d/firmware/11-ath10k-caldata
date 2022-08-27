@@ -17,17 +17,8 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0000:01:00.0.bin")
 	case $board in
-	askey,rt4230w-rev6)
-		caldata_extract "0:ART" 0x1000 0x2f20
-		;;
 	asrock,g10)
 		caldata_extract "0:art" 0x1000 0x2f20
-		;;
-	buffalo,wxr-2533dhp |\
-	nec,wg2600hp |\
-	nec,wg2600hp3 |\
-	tplink,vr2600v)
-		caldata_extract "ART" 0x1000 0x2f20
 		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
@@ -38,16 +29,6 @@ case "$FIRMWARE" in
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x1000 0x2f20
 		;;
-	netgear,d7800 |\
-	netgear,r7500v2 |\
-	netgear,r7800 |\
-	netgear,xr500)
-		caldata_extract "art" 0x1000 0x2f20
-		;;
-	tplink,ad7200 |\
-	tplink,c2600)
-		caldata_extract "radio" 0x1000 0x2f20
-		;;
 	zyxel,nbg6817)
 		caldata_extract "0:art" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 1)
@@ -56,17 +37,8 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0001:01:00.0.bin")
 	case $board in
-	askey,rt4230w-rev6)
-		caldata_extract "0:ART" 0x5000 0x2f20
-		;;
 	asrock,g10)
 		caldata_extract "0:art" 0x5000 0x2f20
-		;;
-	buffalo,wxr-2533dhp |\
-	nec,wg2600hp |\
-	nec,wg2600hp3 |\
-	tplink,vr2600v)
-		caldata_extract "ART" 0x5000 0x2f20
 		;;
 	edgecore,ecw5410)
 		caldata_extract "0:art" 0x1000 0x2f20
@@ -80,16 +52,6 @@ case "$FIRMWARE" in
 	meraki,mr52)
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x5000 0x2f20
-		;;
-	netgear,d7800 |\
-	netgear,r7500v2 |\
-	netgear,r7800 |\
-	netgear,xr500)
-		caldata_extract "art" 0x5000 0x2f20
-		;;
-	tplink,ad7200 |\
-	tplink,c2600)
-		caldata_extract "radio" 0x5000 0x2f20
 		;;
 	zyxel,nbg6817)
 		caldata_extract "0:art" 0x5000 0x2f20

@@ -39,25 +39,18 @@ endef
 
 $(eval $(call KernelPackage,sdhci-mtk))
 
-define KernelPackage/crypto-hw-mtk
-  TITLE:= MediaTek's Crypto Engine module
-  DEPENDS:=@TARGET_mediatek
-  KCONFIG:= \
-	CONFIG_CRYPTO_HW=y \
-	CONFIG_CRYPTO_AES=y \
-	CONFIG_CRYPTO_AEAD=y \
-	CONFIG_CRYPTO_SHA1=y \
-	CONFIG_CRYPTO_SHA256=y \
-	CONFIG_CRYPTO_SHA512=y \
-	CONFIG_CRYPTO_HMAC=y \
-	CONFIG_CRYPTO_DEV_MEDIATEK
-  FILES:=$(LINUX_DIR)/drivers/crypto/mediatek/mtk-crypto.ko
-  AUTOLOAD:=$(call AutoLoad,90,mtk-crypto)
-  $(call AddDepends/crypto)
+define KernelPackage/leds-ubnt-ledbar
+  SUBMENU:=LED modules
+  TITLE:=Ubiquiti UniFi 6 LR LED support
+  KCONFIG:=CONFIG_LEDS_UBNT_LEDBAR
+  FILES:= \
+	$(LINUX_DIR)/drivers/leds/leds-ubnt-ledbar.ko
+  AUTOLOAD:=$(call AutoProbe,leds-ubnt-ledbar,1)
+  DEPENDS:=@TARGET_mediatek_mt7622 +kmod-i2c-core
 endef
 
-define KernelPackage/crypto-hw-mtk/description
-  MediaTek's EIP97 Cryptographic Engine driver.
+define KernelPackage/leds-ubnt-ledbar/description
+  LED support for Ubiquiti UniFi 6 LR
 endef
 
-$(eval $(call KernelPackage,crypto-hw-mtk))
+$(eval $(call KernelPackage,leds-ubnt-ledbar))

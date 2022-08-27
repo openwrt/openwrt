@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
 
-RAMFS_COPY_BIN="bcm4908img expr egrep fdtget fw_printenv fw_setenv tr"
+. /lib/functions/bcm4908.sh
+
+RAMFS_COPY_BIN="bcm4908img expr grep ln fdtget fw_printenv fw_setenv readlink tr"
 
 PART_NAME=firmware
 
@@ -112,19 +114,19 @@ platform_pkgtb_get_image() {
 
 	local image_name=$(platform_pkgtb_get_image_name "$1" "$cmd" "$3")
 
-	$cmd < $1 | fdtget -p - /images/$image_name | egrep -q "^data$" && {
+	$cmd < $1 | fdtget -p - /images/$image_name | grep -Eq "^data$" && {
 		$cmd < $1 | fdtget -t r - /images/$image_name data
 		return
 	}
 
-	$cmd < $1 | fdtget -p - /images/$image_name | egrep -q "^data-position$" && {
+	$cmd < $1 | fdtget -p - /images/$image_name | grep -Eq "^data-position$" && {
 		local data_position=$($cmd < $1 | fdtget - /images/$image_name data-position)
 		local data_size=$($cmd < $1 | fdtget - /images/$image_name data-size)
 		$cmd < $1 2>/dev/null | dd skip=$data_position count=$data_size iflag=skip_bytes,count_bytes
 		return
 	}
 
-	$cmd < $1 | fdtget -p - /images/$image_name | egrep -q "^data-offset" && {
+	$cmd < $1 | fdtget -p - /images/$image_name | grep -Eq "^data-offset" && {
 		local data_offset=$($cmd < $1 | fdtget - /images/$image_name data-offset)
 		local totalsize=$(get_hex_u32_be "$1" 4)
 		local data_position=$(((0x$totalsize + data_offset + 3) & ~3))
@@ -134,17 +136,7 @@ platform_pkgtb_get_image() {
 	}
 }
 
-platform_pkgtb_setup_env_config() {
-	local size=$((0x$(get_hex_u32_le /dev/ubi0_1 4)))
-
-	dd if=/dev/ubi0_1 of=/tmp/env.head count=8 iflag=count_bytes
-	dd if=/dev/ubi0_1 of=/tmp/env.body skip=8 iflag=skip_bytes
-	printf "%s\t0x%x\t0x%x\t0x%x" "/tmp/env.body" 0x0 $size $size > /tmp/env.config
-}
-
 platform_pkgtb_get_upgrade_index() {
-	platform_pkgtb_setup_env_config
-
 	case "$(fw_printenv -l /tmp -n -c /tmp/env.config COMMITTED)" in
 		1) echo 2;;
 		2) echo 1;;
@@ -159,8 +151,6 @@ platform_pkgtb_commit() {
 	local seq1
 	local seq2
 	local tmp
-
-	platform_pkgtb_setup_env_config
 
 	# Read current values
 	for valid in $(fw_printenv -l /tmp -n -c /tmp/env.config VALID | tr ',' ' '); do
@@ -272,10 +262,19 @@ platform_check_image() {
 # upgrade
 #
 
+platform_pkgtb_clean_rootfs_data() {
+	local ubidev=$(nand_find_ubi $CI_UBIPART)
+	local ubivol="$(nand_find_volume $ubidev rootfs_data)"
+
+	bcm4908_verify_rootfs_data "$ubivol"
+}
+
 platform_do_upgrade_pkgtb() {
 	local cmd="${2:-cat}"
 	local size
 	local idx bootfs_id rootfs_id
+
+	bcm4908_pkgtb_setup_env_config
 
 	idx=$(platform_pkgtb_get_upgrade_index)
 	case "$idx" in
@@ -295,6 +294,8 @@ platform_do_upgrade_pkgtb() {
 
 	platform_pkgtb_commit $idx
 
+	CI_UBIPART="image"
+	platform_pkgtb_clean_rootfs_data
 	nand_do_upgrade_success
 }
 

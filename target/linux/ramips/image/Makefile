@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-DEVICE_VARS += LOADER_TYPE LOADER_FLASH_OFFS
+DEVICE_VARS += LOADER_TYPE LOADER_FLASH_OFFS LZMA_TEXT_START
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
@@ -22,7 +22,7 @@ ldrplatform-$(CONFIG_TARGET_ramips_mt7621) := mt7621
 ldrflashstart-y := 0x1c000000
 ldrflashstart-$(CONFIG_TARGET_ramips_mt7621) := 0x1fc00000
 
-KERNEL_LOADADDR := $(loadaddr-y)
+LOADADDR := $(loadaddr-y)
 LOADER_PLATFORM := $(ldrplatform-y)
 LOADER_FLASH_START := $(ldrflashstart-y)
 
@@ -46,7 +46,8 @@ define Build/loader-common
 		PKG_BUILD_DIR="$@.src" \
 		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
 		BOARD="$(BOARDNAME)" PLATFORM="$(LOADER_PLATFORM)" \
-		LZMA_TEXT_START=0x81800000 LOADADDR=$(KERNEL_LOADADDR) \
+		LZMA_TEXT_START=$(LZMA_TEXT_START) \
+		LOADADDR=$(LOADADDR) \
 		$(1) compile loader.$(LOADER_TYPE)
 	mv "$@.$(LOADER_TYPE)" "$@"
 	rm -rf $@.src
@@ -113,7 +114,7 @@ endef
 define Build/relocate-kernel
 	rm -rf $@.relocate
 	$(CP) ../../generic/image/relocate $@.relocate
-	$(MAKE) -C $@.relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
+	$(MAKE) -C $@.relocate KERNEL_ADDR=$(if $(1),$(1),$(KERNEL_LOADADDR)) CROSS_COMPILE=$(TARGET_CROSS)
 	( \
 		dd if=$@.relocate/loader.bin bs=32 conv=sync && \
 		perl -e '@s = stat("$@"); print pack("V", @s[7])' && \
@@ -176,6 +177,8 @@ endef
 define Device/Default
   PROFILES = Default
   KERNEL := $(KERNEL_DTB) | uImage lzma
+  KERNEL_LOADADDR := $(loadaddr-y)
+  LZMA_TEXT_START := 0x81800000
   SOC := $(DEFAULT_SOC)
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(SOC)_$(1)

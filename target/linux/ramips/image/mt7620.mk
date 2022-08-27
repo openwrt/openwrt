@@ -314,6 +314,21 @@ define Device/dlink_dwr-960
 endef
 TARGET_DEVICES += dlink_dwr-960
 
+define Device/dlink_dwr-961-a1
+  $(Device/amit_jboot)
+  SOC := mt7620a
+  IMAGE_SIZE := 16256k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DWR-961
+  DEVICE_VARIANT := A1
+  DLINK_ROM_ID := DLK6E3813001
+  DLINK_FAMILY_MEMBER := 0x6E38
+  DLINK_FIRMWARE_SIZE := 0xFE0000
+  DEVICE_PACKAGES += kmod-mt76x2 kmod-usb-net-qmi-wwan kmod-usb-serial-option \
+	uqmi
+endef
+TARGET_DEVICES += dlink_dwr-961-a1
+
 define Device/domywifi_dm202
   SOC := mt7620a
   IMAGE_SIZE := 16064k
@@ -526,6 +541,20 @@ define Device/hnet_c108
 endef
 TARGET_DEVICES += hnet_c108
 
+define Device/humax_e2
+  SOC := mt7620a
+  IMAGE_SIZE := 7744k
+  DEVICE_VENDOR := HUMAX
+  DEVICE_MODEL := E2
+  DEVICE_ALT0_VENDOR := HUMAX
+  DEVICE_ALT0_MODEL := QUANTUM E2
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m RN75 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt76x0e
+endef
+TARGET_DEVICES += humax_e2
+
 define Device/sunvalley_filehub_common
   SOC := mt7620n
   IMAGE_SIZE := 6144k
@@ -700,6 +729,16 @@ define Device/microduino_microwrt
 endef
 TARGET_DEVICES += microduino_microwrt
 
+define Device/netcore_nw5212
+  SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  BLOCKSIZE := 4k
+  DEVICE_VENDOR := Netcore
+  DEVICE_MODEL := NW5212
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += netcore_nw5212
+
 define Device/netgear_ex2700
   SOC := mt7620a
   NETGEAR_HW_ID := 29764623+4+0+32+2x2+0
@@ -773,6 +812,21 @@ define Device/netgear_jwnr2010-v5
 endef
 TARGET_DEVICES += netgear_jwnr2010-v5
 
+define Device/netgear_pr2000
+  $(Device/netgear_sercomm_nor)
+  SOC := mt7620n
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 15488k
+  DEVICE_MODEL := PR2000
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+  SERCOMM_HWNAME := PR2000
+  SERCOMM_HWID := AQ7
+  SERCOMM_HWVER := A001
+  SERCOMM_SWVER := 0x0000
+  SERCOMM_PAD := 640k
+endef
+TARGET_DEVICES += netgear_pr2000
+
 define Device/netgear_wn3000rp-v3
   SOC := mt7620a
   IMAGE_SIZE := 7872k
@@ -789,6 +843,22 @@ define Device/netgear_wn3000rp-v3
   SUPPORTED_DEVICES += wn3000rpv3
 endef
 TARGET_DEVICES += netgear_wn3000rp-v3
+
+define Device/netgear_wn3100rp-v2
+  SOC := mt7620a
+  IMAGE_SIZE := 7872k
+  NETGEAR_HW_ID := 29764883+8+0+32+2x2+0
+  NETGEAR_BOARD_ID := WN3100RPv2
+  BLOCKSIZE := 4k
+  IMAGES += factory.bin
+  KERNEL := $(KERNEL_DTB) | uImage lzma | pad-offset 64k 64 | \
+	append-uImage-fakehdr filesystem
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | netgear-dni
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WN3100RP
+  DEVICE_VARIANT := v2
+endef
+TARGET_DEVICES += netgear_wn3100rp-v2
 
 define Device/netis_wf2770
   SOC := mt7620a
@@ -1150,6 +1220,18 @@ define Device/wavlink_wl-wn530hg4
   DEVICE_PACKAGES := kmod-mt76x2
 endef
 TARGET_DEVICES += wavlink_wl-wn530hg4
+
+define Device/wavlink_wl-wn535k1
+  SOC := mt7620a
+  IMAGE_SIZE := 7360k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN535K1
+  DEVICE_ALT0_VENDOR := Talius
+  DEVICE_ALT0_MODEL := TAL-WMESH1
+  KERNEL_INITRAMFS_SUFFIX := -WN535K1$$(KERNEL_SUFFIX)
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+endef
+TARGET_DEVICES += wavlink_wl-wn535k1
 
 define Device/wavlink_wl-wn579x3
   SOC := mt7620a

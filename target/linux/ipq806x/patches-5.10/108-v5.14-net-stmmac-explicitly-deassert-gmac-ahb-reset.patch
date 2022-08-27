@@ -29,7 +29,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -5023,6 +5023,10 @@ int stmmac_dvr_probe(struct device *devi
+@@ -5020,6 +5020,10 @@ int stmmac_dvr_probe(struct device *devi
  			reset_control_reset(priv->plat->stmmac_rst);
  	}
  
@@ -40,7 +40,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* Init MAC and get the capabilities */
  	ret = stmmac_hw_init(priv);
  	if (ret)
-@@ -5247,6 +5251,7 @@ int stmmac_dvr_remove(struct device *dev
+@@ -5244,6 +5248,7 @@ int stmmac_dvr_remove(struct device *dev
  	phylink_destroy(priv->phylink);
  	if (priv->plat->stmmac_rst)
  		reset_control_assert(priv->plat->stmmac_rst);
@@ -50,7 +50,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (priv->hw->pcs != STMMAC_PCS_TBI &&
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-@@ -617,6 +617,12 @@ stmmac_probe_config_dt(struct platform_d
+@@ -616,6 +616,12 @@ stmmac_probe_config_dt(struct platform_d
  		plat->stmmac_rst = NULL;
  	}
  

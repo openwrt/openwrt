@@ -137,14 +137,6 @@ define Image/BuildKernel/MkuImage
 		-n '$(call toupper,$(ARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)' -d $(4) $(5)
 endef
 
-define Image/BuildKernel/MkFIT
-	$(TOPDIR)/scripts/mkits.sh \
-		-D $(1) -o $(KDIR)/fit-$(1).its -k $(2) $(if $(3),-d $(3)) -C $(4) -a $(5) -e $(6) \
-		-c $(if $(DEVICE_DTS_CONFIG),$(DEVICE_DTS_CONFIG),"config-1") \
-		-A $(LINUX_KARCH) -v $(LINUX_VERSION)
-	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/fit-$(1).its $(KDIR)/fit-$(1)$(7).itb
-endef
-
 ifdef CONFIG_TARGET_IMAGES_GZIP
   define Image/Gzip
 	rm -f $(1).gz
@@ -184,6 +176,7 @@ endef
 # $(4) extra DTC flags
 define Image/BuildDTB
 	$(TARGET_CROSS)cpp -nostdinc -x assembler-with-cpp \
+		$(DTS_CPPFLAGS) \
 		-I$(DTS_DIR) \
 		-I$(DTS_DIR)/include \
 		-I$(LINUX_DIR)/include/ \
@@ -229,8 +222,7 @@ $(eval $(foreach S,$(NAND_BLOCKSIZE),$(call Image/mkfs/jffs2-nand/template,$(S))
 define Image/mkfs/squashfs-common
 	$(STAGING_DIR_HOST)/bin/mksquashfs4 $(call mkfs_target_dir,$(1)) $@ \
 		-nopad -noappend -root-owned \
-		-comp $(SQUASHFSCOMP) $(SQUASHFSOPT) \
-		-processors 1
+		-comp $(SQUASHFSCOMP) $(SQUASHFSOPT)
 endef
 
 ifeq ($(CONFIG_TARGET_ROOTFS_SECURITY_LABELS),y)
@@ -493,9 +485,9 @@ define Device/Build/initramfs
   $(BUILD_DIR)/json_info_files/$$(KERNEL_INITRAMFS_IMAGE).json: $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)
 	@mkdir -p $$(shell dirname $$@)
 	DEVICE_ID="$(1)" \
-	BIN_DIR="$(BIN_DIR)" \
 	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	FILE_NAME="$$(notdir $$^)" \
+	FILE_DIR="$(KDIR)/tmp" \
 	FILE_TYPE="kernel" \
 	FILE_FILESYSTEM="initramfs" \
 	DEVICE_IMG_PREFIX="$$(DEVICE_IMG_PREFIX)" \
@@ -600,9 +592,9 @@ define Device/Build/image
   $(BUILD_DIR)/json_info_files/$(call DEVICE_IMG_NAME,$(1),$(2)).json: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))$$(GZ_SUFFIX)
 	@mkdir -p $$(shell dirname $$@)
 	DEVICE_ID="$(DEVICE_NAME)" \
-	BIN_DIR="$(BIN_DIR)" \
 	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	FILE_NAME="$(DEVICE_IMG_NAME)" \
+	FILE_DIR="$(KDIR)/tmp" \
 	FILE_TYPE=$(word 1,$(subst ., ,$(2))) \
 	FILE_FILESYSTEM="$(1)" \
 	DEVICE_IMG_PREFIX="$(DEVICE_IMG_PREFIX)" \
@@ -646,9 +638,9 @@ define Device/Build/artifact
   $(BUILD_DIR)/json_info_files/$(DEVICE_IMG_PREFIX)-$(1).json: $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)
 	@mkdir -p $$(shell dirname $$@)
 	DEVICE_ID="$(DEVICE_NAME)" \
-	BIN_DIR="$(BIN_DIR)" \
 	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	FILE_NAME="$(DEVICE_IMG_PREFIX)-$(1)" \
+	FILE_DIR="$(KDIR)/tmp" \
 	FILE_TYPE="$(1)" \
 	DEVICE_IMG_PREFIX="$(DEVICE_IMG_PREFIX)" \
 	DEVICE_VENDOR="$(DEVICE_VENDOR)" \

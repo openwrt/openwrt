@@ -3,12 +3,11 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=mips
-CPU_TYPE:=4kec
 BOARD:=realtek
 BOARDNAME:=Realtek MIPS
 DEVICE_TYPE:=basic
 FEATURES:=ramdisk squashfs
-SUBTARGETS:=generic
+SUBTARGETS:=rtl838x rtl839x rtl930x rtl931x
 
 KERNEL_PATCHVER:=5.10
 
@@ -18,10 +17,8 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
-FEATURES := $(filter-out mips16,$(FEATURES))
-
 DEFAULT_PACKAGES += uboot-envtools ethtool kmod-gpio-button-hotplug \
-	dnsmasq firewall ip6tables iptables odhcp6c odhcpd-ipv6only \
-	ip-full ip-bridge tc
+	firewall4 nftables kmod-nft-offload odhcp6c \
+	ip-full ip-bridge tc-bpf
 
 $(eval $(call BuildTarget))

@@ -9,10 +9,8 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case "$board" in
-	glinet,gl-b2200)
-		caldata_extract "ART" 0x9000 0x2f20
-		;;
-	meraki,mr33)
+	meraki,mr33 |\
+	meraki,mr74)
 		caldata_extract_ubi "ART" 0x9000 0x844
 		caldata_valid "4408" || caldata_extract "ART" 0x9000 0x844
 		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 1)
@@ -26,6 +24,9 @@ case "$FIRMWARE" in
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
+	asus,rt-ac42u)
+		caldata_extract_ubi "Factory" 0x9000 0x2f20
+		;;
 	avm,fritzrepeater-3000)
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
@@ -34,11 +35,6 @@ case "$FIRMWARE" in
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
 		;;
-	buffalo,wtr-m2133hp)
-		caldata_extract "ART" 0x9000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_binary ORGDATA 0x32)
-		;;
-	engenius,eap2200 |\
 	openmesh,a62 |\
 	plasmacloud,pa2200)
 		caldata_extract "0:ART" 0x9000 0x2f20
@@ -60,32 +56,12 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-ahb-a000000.wifi.bin")
 	case "$board" in
-	8dev,habanero-dvk |\
-	8dev,jalapeno |\
-	alfa-network,ap120c-ac |\
-	cilab,meshpoint-one |\
-	glinet,gl-ap1300 |\
-	glinet,gl-b1300 |\
-	glinet,gl-b2200 |\
-	glinet,gl-s1300 |\
-	linksys,ea6350v3 |\
-	mobipromo,cm520-79f |\
-	p2w,r619ac-64m |\
-	p2w,r619ac-128m |\
 	qcom,ap-dk01.1-c1)
 		caldata_extract "ART" 0x1000 0x2f20
 		;;
-	aruba,ap-303 |\
-	aruba,ap-303h |\
-	aruba,ap-365)
-		caldata_extract "ART" 0x1000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_binary mfginfo 0x1D)
-		;;
-	asus,map-ac2200)
-		caldata_extract_ubi "Factory" 0x1000 0x2f20
-		;;
+	asus,map-ac2200|\
+	asus,rt-ac42u|\
 	asus,rt-ac58u)
-		CI_UBIPART=UBI_DEV
 		caldata_extract_ubi "Factory" 0x1000 0x2f20
 		;;
 	avm,fritzbox-4040)
@@ -101,25 +77,11 @@ case "$FIRMWARE" in
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
 		;;
-	buffalo,wtr-m2133hp)
-		caldata_extract "ART" 0x1000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_binary ORGDATA 0x26)
-		;;
 	cellc,rtl30vw |\
-	compex,wpj419 |\
-	compex,wpj428 |\
-	edgecore,ecw5211 |\
-	edgecore,oap100 |\
-	engenius,eap1300 |\
-	engenius,eap2200 |\
-	luma,wrtq-329acn|\
 	openmesh,a42 |\
 	openmesh,a62 |\
 	plasmacloud,pa1200 |\
-	plasmacloud,pa2200 |\
-	qxwlan,e2600ac-c1 |\
-	qxwlan,e2600ac-c2 |\
-	unielec,u4019-32m)
+	plasmacloud,pa2200)
 		caldata_extract "0:ART" 0x1000 0x2f20
 		;;
 	devolo,magic-2-wifi-next)
@@ -147,13 +109,16 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
 		;;
-	meraki,mr33)
+	meraki,mr33 |\
+	meraki,mr74)
 		caldata_extract_ubi "ART" 0x1000 0x2f20
 		caldata_valid "202f" || caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 2)
 		;;
+	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
-	mikrotik,hap-ac3)
+	mikrotik,hap-ac3 |\
+	mikrotik,wap-ac)
 		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x0 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x0 0x2f20 )
@@ -165,14 +130,6 @@ case "$FIRMWARE" in
 		caldata_extract_mmc "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0x0)
 		;;
-	netgear,wac510)
-		caldata_extract "0:ART" 0x1000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_binary "0:MANUDATA" 0x6)
-		;;
-	teltonika,rutx10)
-		caldata_extract "0:ART" 0x1000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 2)
-		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
 		caldata_extract "ART" 0x1000 0x2f20
@@ -182,32 +139,11 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-ahb-a800000.wifi.bin")
 	case "$board" in
-	8dev,habanero-dvk |\
-	8dev,jalapeno |\
-	alfa-network,ap120c-ac |\
-	cilab,meshpoint-one |\
-	glinet,gl-ap1300 |\
-	glinet,gl-b1300 |\
-	glinet,gl-b2200 |\
-	glinet,gl-s1300 |\
-	linksys,ea6350v3 |\
-	mobipromo,cm520-79f |\
-	p2w,r619ac-64m |\
-	p2w,r619ac-128m |\
 	qcom,ap-dk01.1-c1)
 		caldata_extract "ART" 0x5000 0x2f20
 		;;
-	aruba,ap-303 |\
-	aruba,ap-303h |\
-	aruba,ap-365)
-		caldata_extract "ART" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary mfginfo 0x1D) 1)
-		;;
-	asus,map-ac2200)
-		caldata_extract_ubi "Factory" 0x5000 0x2f20
-		;;
+	asus,map-ac2200|\
 	asus,rt-ac58u)
-		CI_UBIPART=UBI_DEV
 		caldata_extract_ubi "Factory" 0x5000 0x2f20
 		;;
 	avm,fritzbox-4040)
@@ -223,25 +159,11 @@ case "$FIRMWARE" in
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
 		;;
-	buffalo,wtr-m2133hp)
-		caldata_extract "ART" 0x5000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_binary ORGDATA 0x2c)
-		;;
 	cellc,rtl30vw |\
-	compex,wpj419 |\
-	compex,wpj428 |\
-	edgecore,ecw5211 |\
-	edgecore,oap100 |\
-	engenius,eap1300 |\
-	engenius,eap2200 |\
-	luma,wrtq-329acn|\
 	openmesh,a42 |\
 	openmesh,a62 |\
 	plasmacloud,pa1200 |\
-	plasmacloud,pa2200 |\
-	qxwlan,e2600ac-c1 |\
-	qxwlan,e2600ac-c2 |\
-	unielec,u4019-32m)
+	plasmacloud,pa2200)
 		caldata_extract "0:ART" 0x5000 0x2f20
 		;;
 	devolo,magic-2-wifi-next)
@@ -269,14 +191,17 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 3)
 		;;
-	meraki,mr33)
+	meraki,mr33 |\
+	meraki,mr74)
 		caldata_extract_ubi "ART" 0x5000 0x2f20
 		caldata_valid "202f" || caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(get_mac_binary "/sys/bus/i2c/devices/0-0050/eeprom" 0x66) 3)
 		;;
+	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
 	mikrotik,hap-ac3 |\
-	mikrotik,sxtsq-5-ac)
+	mikrotik,sxtsq-5-ac |\
+	mikrotik,wap-ac)
 		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x8000 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x0 0x2f20 )
@@ -288,18 +213,35 @@ case "$FIRMWARE" in
 		caldata_extract_mmc "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0xc)
 		;;
-	netgear,wac510)
-		caldata_extract "0:ART" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:MANUDATA" 0x6) 16)
-		;;
-	teltonika,rutx10)
-		caldata_extract "0:ART" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 3)
-		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -1)
+		;;
+	esac
+	;;
+"ath10k/QCA4019/hw1.0/board-ahb-a000000.wifi.bin")
+	case "$board" in
+	mikrotik,cap-ac |\
+	mikrotik,hap-ac2 |\
+	mikrotik,hap-ac3 |\
+	mikrotik,wap-ac)
+		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
+		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x2f20 0x2f20 ) || \
+		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x2f20 0x2f20 )
+		;;
+	esac
+	;;
+"ath10k/QCA4019/hw1.0/board-ahb-a800000.wifi.bin")
+	case "$board" in
+	mikrotik,cap-ac |\
+	mikrotik,hap-ac2 |\
+	mikrotik,hap-ac3 |\
+	mikrotik,sxtsq-5-ac |\
+	mikrotik,wap-ac)
+		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
+		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0xaf20 0x2f20 ) || \
+		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x2f20 0x2f20 )
 		;;
 	esac
 	;;

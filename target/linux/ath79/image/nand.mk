@@ -1,7 +1,7 @@
-define Build/dw-headers
-	head -c 4 $@ >> $@.tmp && \
-	head -c 8 /dev/zero >> $@.tmp && \
-	tail -c +9 $@ >> $@.tmp && \
+define Build/dongwon-header
+	head -c 4 $@ > $@.tmp
+	head -c 8 /dev/zero >> $@.tmp
+	tail -c +9 $@ >> $@.tmp
 	( \
 		header_crc="$$(head -c 68 $@.tmp | gzip -c | \
 			tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n')"; \
@@ -99,8 +99,8 @@ define Device/dongwon_dw02-412h
   KERNEL_SIZE := 8192k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | dw-headers
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma | dw-headers
+  KERNEL := $$(KERNEL) | dongwon-header
+  KERNEL_INITRAMFS := $$(KERNEL)
   UBINIZE_OPTS := -E 5
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
@@ -195,6 +195,22 @@ define Device/glinet_gl-e750
 endef
 TARGET_DEVICES += glinet_gl-e750
 
+define Device/glinet_gl-xe300
+  SOC := qca9531
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-XE300
+  DEVICE_PACKAGES := kmod-usb2 block-mount kmod-usb-serial-ch341
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 131072k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  BLOCKSIZE := 128k
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += glinet_gl-xe300
+
 # fake rootfs is mandatory, pad-offset 129 equals (2 * uimage_header + 0xff)
 define Device/netgear_ath79_nand
   DEVICE_VENDOR := NETGEAR
@@ -214,6 +230,23 @@ define Device/netgear_ath79_nand
   IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
   UBINIZE_OPTS := -E 5
 endef
+
+define Device/netgear_pgzng1
+  SOC := ar9344
+  DEVICE_MODEL := PGZNG1
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_ALT0_MODEL := Pulse Gateway
+  DEVICE_ALT0_VENDOR := ADT
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-i2c-gpio \
+    kmod-leds-pca955x kmod-rtc-isl1208 kmod-spi-dev
+  KERNEL_SIZE := 5120k
+  IMAGE_SIZE := 83968k
+  PAGESIZE := 2048
+  BLOCKSIZE := 128k
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
+endef
+TARGET_DEVICES += netgear_pgzng1
 
 define Device/netgear_r6100
   SOC := ar9344
@@ -289,6 +322,40 @@ define Device/netgear_wndr4500-v3
 endef
 TARGET_DEVICES += netgear_wndr4500-v3
 
+define Device/zte_mf286_common
+  SOC := qca9563
+  DEVICE_VENDOR := ZTE
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/zte_mf286
+  $(Device/zte_mf286_common)
+  DEVICE_MODEL := MF286
+  DEVICE_PACKAGES += ath10k-firmware-qca988x-ct kmod-usb-net-qmi-wwan \
+	kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += zte_mf286
+
+define Device/zte_mf286a
+  $(Device/zte_mf286_common)
+  DEVICE_MODEL := MF286A
+  DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-qmi-wwan \
+	kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += zte_mf286a
+
+define Device/zte_mf286r
+  $(Device/zte_mf286_common)
+  DEVICE_MODEL := MF286R
+  DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-rndis kmod-usb-acm \
+	comgt-ncm
+endef
+TARGET_DEVICES += zte_mf286r
+
 define Device/zyxel_nbg6716
   SOC := qca9558
   DEVICE_VENDOR := ZyXEL
@@ -301,8 +368,9 @@ define Device/zyxel_nbg6716
   KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  KERNEL := kernel-bin | append-dtb | uImage none | zyxel-buildkerneljffs | \
-	check-size 4096k
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none | \
+	zyxel-buildkerneljffs | check-size 4096k
   IMAGES := sysupgrade.tar sysupgrade-4M-Kernel.bin factory.bin
   IMAGE/sysupgrade.tar/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | \
 	sysupgrade-tar rootfs=$$$$@ | append-metadata
@@ -311,6 +379,12 @@ define Device/zyxel_nbg6716
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 	zyxel-factory
   UBINIZE_OPTS := -E 5
-  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_nbg6716
+
+define Device/zyxel_emg2926_q10a
+  $(Device/zyxel_nbg6716)
+  DEVICE_MODEL := EMG2926-Q10A
+  RAS_BOARD := AAVK-EMG2926Q10A
+endef
+TARGET_DEVICES += zyxel_emg2926_q10a

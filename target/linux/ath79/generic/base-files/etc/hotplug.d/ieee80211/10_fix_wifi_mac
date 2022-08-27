@@ -30,6 +30,8 @@ case "$board" in
 	dlink,dap-2680-a1|\
 	dlink,dap-2695-a1|\
 	dlink,dap-3662-a1)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_ascii bdcfg "wlanmac_a" > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii bdcfg "wlanmac" > /sys${DEVPATH}/macaddress
 		;;
@@ -65,5 +67,13 @@ case "$board" in
 		# Set mac address for 2.4g device
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii u-boot-env ethaddr > /sys${DEVPATH}/macaddress
+		;;
+	zyxel,nwa1123-ac)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_text mib0 0x66 > /sys${DEVPATH}/macaddress
+		;;
+	zyxel,nwa1123-ni)
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_text mib0 0x66 > /sys${DEVPATH}/macaddress
 		;;
 esac

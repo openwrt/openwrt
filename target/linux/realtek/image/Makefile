@@ -6,7 +6,9 @@ include $(INCLUDE_DIR)/image.mk
 KERNEL_LOADADDR = 0x80000000
 KERNEL_ENTRY = 0x80000400
 
-DEVICE_VARS += ZYXEL_VERS
+DEVICE_VARS += ZYXEL_VERS DLINK_KERNEL_PART_SIZE
+DEVICE_VARS += CAMEO_KERNEL_PART CAMEO_ROOTFS_PART CAMEO_CUSTOMER_SIGNATURE CAMEO_BOARD_VERSION
+DEVICE_VARS += H3C_PRODUCT_ID H3C_DEVICE_ID
 
 define Build/zyxel-vers
        ( echo VERS;\
@@ -14,6 +16,67 @@ define Build/zyxel-vers
                echo -n "V9.99($$hw.0) | ";\
                date -d @$(SOURCE_DATE_EPOCH) +%m/%d/%Y;\
        done ) >> $@
+endef
+
+define Build/dlink-cameo
+	$(SCRIPT_DIR)/cameo-tag.py $@ $(DLINK_KERNEL_PART_SIZE)
+endef
+
+define Build/dlink-version
+	echo -n "OpenWrt" >> $@
+	dd if=/dev/zero bs=25 count=1 >> $@
+endef
+
+define Build/dlink-headers
+        dd if=$@ bs=$(DLINK_KERNEL_PART_SIZE) count=1 of=$@.kernel_part; \
+        dd if=$@ bs=$(DLINK_KERNEL_PART_SIZE) skip=1 of=$@.rootfs_part; \
+        $(SCRIPT_DIR)/cameo-imghdr.py $@.kernel_part $@.kernel_part.hex \
+                "$(DEVICE_MODEL)" os $(CAMEO_KERNEL_PART) \
+                $(CAMEO_CUSTOMER_SIGNATURE) \
+                $(CAMEO_BOARD_VERSION) \
+                $(KERNEL_LOADADDR); \
+        $(SCRIPT_DIR)/cameo-imghdr.py $@.rootfs_part $@.rootfs_part.hex \
+                "$(DEVICE_MODEL)" squashfs $(CAMEO_ROOTFS_PART) \
+                $(CAMEO_CUSTOMER_SIGNATURE) \
+                $(CAMEO_BOARD_VERSION); \
+        cat $@.kernel_part.hex $@.rootfs_part.hex > $@
+endef
+
+define Build/7z
+	$(STAGING_DIR_HOST)/bin/7zr a $(@).new -t7z -m0=lzma $(@)
+	mv $@.new $@
+endef
+
+define Build/h3c-image
+	$(STAGING_DIR_HOST)/bin/mkh3cimg \
+		-i $(@) \
+		-o $(@).new \
+		-c 7z \
+		-p $(H3C_PRODUCT_ID) \
+		-d $(H3C_DEVICE_ID)
+	mv $@.new $@
+endef
+
+define Build/h3c-vfs
+	$(STAGING_DIR_HOST)/bin/mkh3cvfs \
+		-i $(@) \
+		-o $(@).new \
+		-f openwrt-kernel.bin
+	mv $@.new $@
+endef
+
+define Build/relocate-kernel
+	rm -rf $@.relocate
+	$(CP) ../../generic/image/relocate $@.relocate
+	$(MAKE) -j1 -C $@.relocate KERNEL_ADDR=$(KERNEL_LOADADDR) LZMA_TEXT_START=0x82000000 \
+		CROSS_COMPILE=$(TARGET_CROSS)
+	( \
+		dd if=$@.relocate/loader.bin bs=32 conv=sync && \
+		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
+		cat "$@" \
+	) > "$@.new"
+	mv "$@.new" "$@"
+	rm -rf $@.relocate
 endef
 
 define Device/Default
@@ -27,6 +90,17 @@ define Device/Default
 	check-size | append-metadata
 endef
 
+define Device/hpe_1920
+  DEVICE_VENDOR := HPE
+  IMAGE_SIZE := 29632k
+  BLOCKSIZE := 64k
+  H3C_PRODUCT_ID := 0x3c010501
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | 7z | h3c-image | h3c-vfs
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | relocate-kernel | 7z | h3c-image
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+  	pad-rootfs | check-size | append-metadata
+endef
+
 # "NGE" refers to the uImage magic
 define Device/netgear_nge
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
@@ -37,129 +111,6 @@ define Device/netgear_nge
   DEVICE_VENDOR := NETGEAR
 endef
 
-define Device/allnet_all-sg8208m
-  SOC := rtl8382
-  IMAGE_SIZE := 7168k
-  DEVICE_VENDOR := ALLNET
-  DEVICE_MODEL := ALL-SG8208M
-  UIMAGE_MAGIC := 0x00000006
-  UIMAGE_NAME := 2.2.2.0
-endef
-TARGET_DEVICES += allnet_all-sg8208m
-
-define Device/d-link_dgs-1210
-  SOC := rtl8382
-  IMAGE_SIZE := 13824k
-  DEVICE_VENDOR := D-Link
-endef
-
-define Device/d-link_dgs-1210-10p
-  $(Device/d-link_dgs-1210)
-  DEVICE_MODEL := DGS-1210-10P
-  DEVICE_PACKAGES += lua-rs232
-endef
-TARGET_DEVICES += d-link_dgs-1210-10p
-
-define Device/d-link_dgs-1210-16
-  $(Device/d-link_dgs-1210)
-  DEVICE_MODEL := DGS-1210-16
-endef
-TARGET_DEVICES += d-link_dgs-1210-16
-
-define Device/d-link_dgs-1210-28
-  $(Device/d-link_dgs-1210)
-  DEVICE_MODEL := DGS-1210-28
-endef
-TARGET_DEVICES += d-link_dgs-1210-28
-
-define Device/inaba_aml2-17gp
-  SOC := rtl8382
-  IMAGE_SIZE := 13504k
-  DEVICE_VENDOR := INABA
-  DEVICE_MODEL := Abaniact AML2-17GP
-  UIMAGE_MAGIC := 0x83800000
-endef
-TARGET_DEVICES += inaba_aml2-17gp
-
-define Device/netgear_gs108t-v3
-  $(Device/netgear_nge)
-  DEVICE_MODEL := GS108T
-  DEVICE_VARIANT := v3
-endef
-TARGET_DEVICES += netgear_gs108t-v3
-
-define Device/netgear_gs110tpp-v1
-  $(Device/netgear_nge)
-  DEVICE_MODEL := GS110TPP
-  DEVICE_VARIANT := v1
-endef
-TARGET_DEVICES += netgear_gs110tpp-v1
-
-define Device/netgear_gs308t-v1
-  $(Device/netgear_nge)
-  DEVICE_MODEL := GS308T
-  DEVICE_VARIANT := v1
-  UIMAGE_MAGIC := 0x4e474335
-endef
-TARGET_DEVICES += netgear_gs308t-v1
-
-define Device/netgear_gs310tp-v1
-  $(Device/netgear_nge)
-  DEVICE_MODEL := GS310TP
-  DEVICE_VARIANT := v1
-  UIMAGE_MAGIC := 0x4e474335
-  DEVICE_PACKAGES += lua-rs232
-endef
-TARGET_DEVICES += netgear_gs310tp-v1
-
-define Device/zyxel_gs1900
-  SOC := rtl8380
-  IMAGE_SIZE := 6976k
-  DEVICE_VENDOR := ZyXEL
-  UIMAGE_MAGIC := 0x83800000
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers | \
-	uImage gzip
-endef
-
-define Device/zyxel_gs1900-10hp
-  $(Device/zyxel_gs1900)
-  DEVICE_MODEL := GS1900-10HP
-  ZYXEL_VERS := AAZI
-endef
-TARGET_DEVICES += zyxel_gs1900-10hp
-
-define Device/zyxel_gs1900-8
-  $(Device/zyxel_gs1900)
-  DEVICE_MODEL := GS1900-8
-  ZYXEL_VERS := AAHH
-endef
-TARGET_DEVICES += zyxel_gs1900-8
-
-define Device/zyxel_gs1900-8hp-v1
-  $(Device/zyxel_gs1900)
-  DEVICE_MODEL := GS1900-8HP
-  DEVICE_VARIANT := v1
-  ZYXEL_VERS := AAHI
-  DEVICE_PACKAGES += lua-rs232
-endef
-TARGET_DEVICES += zyxel_gs1900-8hp-v1
-
-define Device/zyxel_gs1900-8hp-v2
-  $(Device/zyxel_gs1900)
-  DEVICE_MODEL := GS1900-8HP
-  DEVICE_VARIANT := v2
-  ZYXEL_VERS := AAHI
-  DEVICE_PACKAGES += lua-rs232
-endef
-TARGET_DEVICES += zyxel_gs1900-8hp-v2
-
-define Device/zyxel_gs1900-24hp-v2
-  $(Device/zyxel_gs1900)
-  SOC := rtl8382
-  DEVICE_MODEL := GS1900-24HP
-  DEVICE_VARIANT := v2
-  ZYXEL_VERS := ABTP
-endef
-TARGET_DEVICES += zyxel_gs1900-24hp-v2
+include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))

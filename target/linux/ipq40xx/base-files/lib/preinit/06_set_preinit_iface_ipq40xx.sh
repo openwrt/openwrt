@@ -3,6 +3,7 @@ set_preinit_iface() {
 
 	case $(board_name) in
 	aruba,ap-303| \
+	asus,rt-ac42u| \
 	asus,rt-ac58u| \
 	avm,fritzbox-4040| \
 	ezviz,cs-w3-wd1200g-eup| \
@@ -10,6 +11,7 @@ set_preinit_iface() {
 	linksys,ea8300| \
 	linksys,mr8300| \
 	meraki,mr33| \
+	meraki,mr74| \
 	zyxel,nbg6617)
 		ifname=eth0
 		;;

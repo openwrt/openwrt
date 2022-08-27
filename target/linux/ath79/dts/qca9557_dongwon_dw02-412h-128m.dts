@@ -7,28 +7,6 @@
 	compatible = "dongwon,dw02-412h-128m", "qca,qca9557";
 };
 
-&nand {
-	status = "okay";
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		partition@0 {
-			label = "current";
-			reg = <0x0 0x1000000>;
-			read-only;
-		};
-
-		partition@1000000 {
-			label = "kernel";
-			reg = <0x1000000 0x800000>;
-		};
-
-		partition@1800000 {
-			label = "ubi";
-			reg = <0x1800000 0x6800000>;
-		};
-	};
+&ubi {
+	reg = <0x1800000 0x6800000>;
 };

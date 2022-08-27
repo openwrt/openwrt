@@ -120,13 +120,3 @@
 &pcie0 {
 	status = "okay";
 };
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_1002: macaddr@1002 {
-		reg = <0x1002 0x6>;
-	};
-};

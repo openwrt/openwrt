@@ -36,7 +36,16 @@ case "$FIRMWARE" in
 	tplink,tl-wr740n-v3|\
 	tplink,tl-wr741-v1|\
 	tplink,tl-wr743nd-v1|\
-	tplink,tl-wr841-v7)
+	tplink,tl-wr841-v7|\
+	ubnt,airrouter|\
+	ubnt,bullet-m-ar7240|\
+	ubnt,bullet-m-ar7241|\
+	ubnt,nanobridge-m|\
+	ubnt,nanostation-loco-m|\
+	ubnt,nanostation-m|\
+	ubnt,picostation-m|\
+	ubnt,powerbridge-m|\
+	ubnt,rocket-m)
 		caldata_extract "art" 0x1000 0x1000
 		;;
 	pqi,air-pen)

@@ -29,6 +29,7 @@ ipq40xx_setup_interfaces()
 	engenius,eap1300|\
 	engenius,emd1|\
 	meraki,mr33|\
+	meraki,mr74|\
 	mikrotik,lhgg-60ad|\
 	mikrotik,sxtsq-5-ac|\
 	netgear,ex6100v2|\
@@ -46,10 +47,16 @@ ipq40xx_setup_interfaces()
 	cilab,meshpoint-one|\
 	edgecore,ecw5211|\
 	edgecore,oap100|\
+	google,wifi|\
 	openmesh,a42|\
 	openmesh,a62)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	mikrotik,cap-ac)
+		ucidef_add_switch "switch0" \
+			"0t@eth0" "4:lan" "5:wan"
+		;;
+	asus,rt-ac42u|\
 	asus,rt-ac58u|\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3|\
@@ -62,23 +69,29 @@ ipq40xx_setup_interfaces()
 		;;
 	avm,fritzbox-4040|\
 	linksys,ea6350v3|\
-	linksys,ea8300|\
-	linksys,mr8300)
+	linksys,ea8300)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
+		;;
+	linksys,mr8300)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "0u@eth1" "5:wan"
 		;;
 	avm,fritzbox-7530)
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
-	avm,fritzrepeater-3000)
+	avm,fritzrepeater-3000|\
+	linksys,whw01-v1)
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "4:lan:1" "5:lan:2"
 		;;
 	compex,wpj419|\
 	compex,wpj428|\
-	engenius,eap2200)
+	engenius,eap2200|\
+	mikrotik,wap-ac)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
 	buffalo,wtr-m2133hp)
@@ -130,10 +143,16 @@ ipq40xx_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "3:lan" "4:lan" "0u@eth1" "5:wan"
 		;;
-	unielec,u4019-32m)
+	unielec,u4019-32m |\
+	tel,x1pro)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		ucidef_add_switch "switch0" \
 			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "0u@eth1" "5:wan"
+		;;
+	zte,mf286d)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_add_switch "switch0" \
+			"0u@eth0" "2:lan:4" "3:lan:3" "4:lan:2" "0u@eth1" "5:wan"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
@@ -153,7 +172,6 @@ ipq40xx_setup_macs()
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
 		;;
 	asus,rt-ac58u)
-		CI_UBIPART=UBI_DEV
 		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
 		lan_mac=$(mtd_get_mac_binary_ubi Factory 0x5006)
 		label_mac=$wan_mac
@@ -190,6 +208,7 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
+	mikrotik,cap-ac |\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3)
 		wan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)

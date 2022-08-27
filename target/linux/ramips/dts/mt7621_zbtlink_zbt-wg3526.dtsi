@@ -49,7 +49,7 @@
 &spi0 {
 	status = "okay";
 
-	flash@0 {
+	flash0: flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <10000000>;
@@ -108,6 +108,10 @@
 			led-sources = <2>;
 		};
 	};
+};
+
+&ethernet {
+	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
 };
 
 &gmac0 {
