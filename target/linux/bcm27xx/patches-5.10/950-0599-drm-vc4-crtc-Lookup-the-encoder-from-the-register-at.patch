@@ -22,7 +22,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -431,11 +431,10 @@ static void require_hvs_enabled(struct d
+@@ -432,11 +432,10 @@ static void require_hvs_enabled(struct d
  }
  
  static int vc4_crtc_disable(struct drm_crtc *crtc,
@@ -35,7 +35,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct vc4_encoder *vc4_encoder = to_vc4_encoder(encoder);
  	struct vc4_crtc *vc4_crtc = to_vc4_crtc(crtc);
  	struct drm_device *dev = crtc->dev;
-@@ -476,10 +475,29 @@ static int vc4_crtc_disable(struct drm_c
+@@ -477,10 +476,29 @@ static int vc4_crtc_disable(struct drm_c
  	return 0;
  }
  
@@ -65,7 +65,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	int channel;
  
  	if (!(of_device_is_compatible(vc4_crtc->pdev->dev.of_node,
-@@ -498,7 +516,17 @@ int vc4_crtc_disable_at_boot(struct drm_
+@@ -499,7 +517,17 @@ int vc4_crtc_disable_at_boot(struct drm_
  	if (channel < 0)
  		return 0;
  
@@ -84,7 +84,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  }
  
  static void vc4_crtc_atomic_disable(struct drm_crtc *crtc,
-@@ -507,6 +535,8 @@ static void vc4_crtc_atomic_disable(stru
+@@ -508,6 +536,8 @@ static void vc4_crtc_atomic_disable(stru
  	struct drm_crtc_state *old_state = drm_atomic_get_old_crtc_state(state,
  									 crtc);
  	struct vc4_crtc_state *old_vc4_state = to_vc4_crtc_state(old_state);
@@ -93,7 +93,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct drm_device *dev = crtc->dev;
  
  	require_hvs_enabled(dev);
-@@ -514,7 +544,7 @@ static void vc4_crtc_atomic_disable(stru
+@@ -515,7 +545,7 @@ static void vc4_crtc_atomic_disable(stru
  	/* Disable vblank irq handling before crtc is disabled. */
  	drm_crtc_vblank_off(crtc);
  

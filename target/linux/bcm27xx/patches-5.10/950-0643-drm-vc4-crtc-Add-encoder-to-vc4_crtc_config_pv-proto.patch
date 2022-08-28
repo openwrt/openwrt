@@ -32,7 +32,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct vc4_encoder *vc4_encoder = to_vc4_encoder(encoder);
  	struct vc4_crtc *vc4_crtc = to_vc4_crtc(crtc);
  	const struct vc4_pv_data *pv_data = vc4_crtc_to_vc4_pv_data(vc4_crtc);
-@@ -581,7 +580,7 @@ static void vc4_crtc_atomic_enable(struc
+@@ -582,7 +581,7 @@ static void vc4_crtc_atomic_enable(struc
  	if (vc4_encoder->pre_crtc_configure)
  		vc4_encoder->pre_crtc_configure(encoder, state);
  

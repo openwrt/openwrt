@@ -15,7 +15,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -824,9 +824,20 @@ static int vc4_plane_mode_set(struct drm
+@@ -820,9 +820,20 @@ static int vc4_plane_mode_set(struct drm
  		u32 tile_w, tile, x_off, pix_per_tile;
  
  		if (fb->format->format == DRM_FORMAT_P030) {
@@ -37,7 +37,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  		} else {
  			hvs_format = HVS_PIXEL_FORMAT_H264;
  
-@@ -846,17 +857,16 @@ static int vc4_plane_mode_set(struct drm
+@@ -842,17 +853,16 @@ static int vc4_plane_mode_set(struct drm
  			default:
  				break;
  			}
@@ -58,7 +58,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  		/* Adjust the base pointer to the first pixel to be scanned
  		 * out.
  		 *
-@@ -872,9 +882,7 @@ static int vc4_plane_mode_set(struct drm
+@@ -868,9 +878,7 @@ static int vc4_plane_mode_set(struct drm
  			vc4_state->offsets[i] += src_y /
  						 (i ? v_subsample : 1) *
  						 tile_w;

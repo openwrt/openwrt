@@ -15,7 +15,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -310,6 +310,10 @@ static int vc4_hdmi_connector_init(struc
+@@ -312,6 +312,10 @@ static int vc4_hdmi_connector_init(struc
  	connector->doublescan_allowed = 0;
  	connector->stereo_allowed = 1;
  
@@ -26,7 +26,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	drm_connector_attach_encoder(connector, encoder);
  
  	return 0;
-@@ -449,6 +453,25 @@ static void vc4_hdmi_set_audio_infoframe
+@@ -451,6 +455,25 @@ static void vc4_hdmi_set_audio_infoframe
  	vc4_hdmi_write_infoframe(encoder, &frame);
  }
  
@@ -52,7 +52,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  static void vc4_hdmi_set_infoframes(struct drm_encoder *encoder)
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
-@@ -461,6 +484,8 @@ static void vc4_hdmi_set_infoframes(stru
+@@ -463,6 +486,8 @@ static void vc4_hdmi_set_infoframes(stru
  	 */
  	if (vc4_hdmi->audio.streaming)
  		vc4_hdmi_set_audio_infoframe(encoder);

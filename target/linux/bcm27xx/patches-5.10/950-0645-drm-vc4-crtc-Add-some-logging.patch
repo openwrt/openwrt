@@ -16,7 +16,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -525,6 +525,9 @@ static void vc4_crtc_atomic_disable(stru
+@@ -526,6 +526,9 @@ static void vc4_crtc_atomic_disable(stru
  	struct drm_encoder *encoder = vc4_get_crtc_encoder(crtc, old_state);
  	struct drm_device *dev = crtc->dev;
  
@@ -26,7 +26,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	require_hvs_enabled(dev);
  
  	/* Disable vblank irq handling before crtc is disabled. */
-@@ -556,6 +559,9 @@ static void vc4_crtc_atomic_enable(struc
+@@ -557,6 +560,9 @@ static void vc4_crtc_atomic_enable(struc
  	struct drm_encoder *encoder = vc4_get_crtc_encoder(crtc, new_state);
  	struct vc4_encoder *vc4_encoder = to_vc4_encoder(encoder);
  

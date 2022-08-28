@@ -38,7 +38,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  };
  
  static const struct hvs_format *vc4_get_hvs_format(u32 drm_format)
-@@ -769,27 +776,33 @@ static int vc4_plane_mode_set(struct drm
+@@ -765,27 +772,33 @@ static int vc4_plane_mode_set(struct drm
  		uint32_t param = fourcc_mod_broadcom_param(fb->modifier);
  		u32 tile_w, tile, x_off, pix_per_tile;
  
@@ -90,7 +90,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  			return -EINVAL;
  		}
  
-@@ -799,6 +812,13 @@ static int vc4_plane_mode_set(struct drm
+@@ -795,6 +808,13 @@ static int vc4_plane_mode_set(struct drm
  
  		/* Adjust the base pointer to the first pixel to be scanned
  		 * out.
@@ -104,7 +104,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		 */
  		for (i = 0; i < num_planes; i++) {
  			vc4_state->offsets[i] += param * tile_w * tile;
-@@ -960,7 +980,8 @@ static int vc4_plane_mode_set(struct drm
+@@ -956,7 +976,8 @@ static int vc4_plane_mode_set(struct drm
  
  	/* Pitch word 1/2 */
  	for (i = 1; i < num_planes; i++) {
@@ -114,7 +114,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  			vc4_dlist_write(vc4_state,
  					VC4_SET_FIELD(fb->pitches[i],
  						      SCALER_SRC_PITCH));
-@@ -1320,6 +1341,13 @@ static bool vc4_format_mod_supported(str
+@@ -1316,6 +1337,13 @@ static bool vc4_format_mod_supported(str
  		default:
  			return false;
  		}
@@ -128,7 +128,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	case DRM_FORMAT_RGBX1010102:
  	case DRM_FORMAT_BGRX1010102:
  	case DRM_FORMAT_RGBA1010102:
-@@ -1352,8 +1380,11 @@ struct drm_plane *vc4_plane_init(struct
+@@ -1348,8 +1376,11 @@ struct drm_plane *vc4_plane_init(struct
  	struct drm_plane *plane = NULL;
  	struct vc4_plane *vc4_plane;
  	u32 formats[ARRAY_SIZE(hvs_formats)];
@@ -140,7 +140,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	static const uint64_t modifiers[] = {
  		DRM_FORMAT_MOD_BROADCOM_VC4_T_TILED,
  		DRM_FORMAT_MOD_BROADCOM_SAND128,
-@@ -1368,13 +1399,17 @@ struct drm_plane *vc4_plane_init(struct
+@@ -1364,13 +1395,17 @@ struct drm_plane *vc4_plane_init(struct
  	if (!vc4_plane)
  		return ERR_PTR(-ENOMEM);
  
