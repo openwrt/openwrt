@@ -317,6 +317,9 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		phy_interface_t interface;
 		u32 led_set;
 
+		if (!of_device_is_available(dn))
+			continue;
+
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
