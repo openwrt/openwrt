@@ -104,6 +104,10 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 2)
 		;;
+	extreme-networks,ws-ap3915i)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR0)
+		;;
 	linksys,ea8300 |\
 	linksys,mr8300)
 		caldata_extract "ART" 0x1000 0x2f20
@@ -185,6 +189,10 @@ case "$FIRMWARE" in
 	engenius,ens620ext)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 3)
+		;;
+	extreme-networks,ws-ap3915i)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR1)
 		;;
 	linksys,ea8300 |\
 	linksys,mr8300)

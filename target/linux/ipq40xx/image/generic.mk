@@ -519,6 +519,18 @@ define Device/engenius_ens620ext
 endef
 TARGET_DEVICES += engenius_ens620ext
 
+define Device/extreme-networks_ws-ap3915i
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Extreme Networks
+	DEVICE_MODEL := WS-AP3915i
+	IMAGE_SIZE := 30080k
+	SOC := qcom-ipq4029
+	BLOCKSIZE := 128k
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-extreme-networks_ws-ap3915i
+endef
+TARGET_DEVICES += extreme-networks_ws-ap3915i
+
 define Device/ezviz_cs-w3-wd1200g-eup
 	$(call Device/FitImage)
 	DEVICE_VENDOR := EZVIZ

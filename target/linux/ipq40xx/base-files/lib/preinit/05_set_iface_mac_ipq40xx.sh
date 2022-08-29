@@ -15,6 +15,9 @@ preinit_set_mac_address() {
 		base_mac=$(cat /sys/class/net/eth0/address)
 		ip link set dev eth1 address $(macaddr_add "$base_mac" 1)
 		;;
+	extreme-networks,ws-ap3915i)
+		ip link set dev eth0 address $(mtd_get_mac_ascii CFG1 ethaddr)
+		;;
 	linksys,ea8300|\
 	linksys,mr8300)
 		base_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
