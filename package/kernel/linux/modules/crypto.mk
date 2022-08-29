@@ -106,7 +106,7 @@ $(eval $(call KernelPackage,crypto-ccm))
 
 define KernelPackage/crypto-chacha20poly1305
   TITLE:=ChaCha20-Poly1305 AEAD support, RFC7539 (used by strongSwan IPsec VPN)
-  DEPENDS:=+kmod-crypto-aead +kmod-crypto-manager
+  DEPENDS:=+kmod-crypto-chacha20 +kmod-crypto-poly1305 +kmod-crypto-aead +kmod-crypto-manager
   KCONFIG:=CONFIG_CRYPTO_CHACHA20POLY1305
   FILES:=$(LINUX_DIR)/crypto/chacha20poly1305.ko
   AUTOLOAD:=$(call AutoLoad,09,chacha20poly1305)
@@ -114,6 +114,18 @@ define KernelPackage/crypto-chacha20poly1305
 endef
 
 $(eval $(call KernelPackage,crypto-chacha20poly1305))
+
+
+define KernelPackage/crypto-chacha20
+  TITLE:=ChaCha20 module
+  DEPENDS:=+kmod-crypto-lib-chacha20
+  KCONFIG:=CONFIG_CRYPTO_CHACHA20
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/crypto/chacha_generic.ko
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-chacha20))
 
 
 define KernelPackage/crypto-cmac
@@ -491,7 +503,7 @@ endef
 # NEON is not supported, hence all arm targets can utilize lib-chacha20/arm
 define KernelPackage/crypto-lib-chacha20/arm
   KCONFIG+=CONFIG_CRYPTO_CHACHA20_NEON
-  FILES:=$(LINUX_DIR)/arch/arm/crypto/chacha-neon.ko
+  FILES+=$(LINUX_DIR)/arch/arm/crypto/chacha-neon.ko
 endef
 
 define KernelPackage/crypto-lib-chacha20/aarch64
@@ -584,12 +596,12 @@ endef
 
 define KernelPackage/crypto-lib-poly1305/arm
   KCONFIG+=CONFIG_CRYPTO_POLY1305_ARM
-  FILES:=$(LINUX_DIR)/arch/arm/crypto/poly1305-arm.ko
+  FILES+=$(LINUX_DIR)/arch/arm/crypto/poly1305-arm.ko
 endef
 
 define KernelPackage/crypto-lib-poly1305/aarch64
   KCONFIG+=CONFIG_CRYPTO_POLY1305_NEON
-  FILES:=$(LINUX_DIR)/arch/arm64/crypto/poly1305-neon.ko
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/poly1305-neon.ko
 endef
 
 define KernelPackage/crypto-lib-poly1305/mips
@@ -792,6 +804,18 @@ define KernelPackage/crypto-pcbc
 endef
 
 $(eval $(call KernelPackage,crypto-pcbc))
+
+
+define KernelPackage/crypto-poly1305
+  TITLE:=Poly1305 module
+  DEPENDS:=+kmod-crypto-lib-poly1305
+  KCONFIG:=CONFIG_CRYPTO_POLY1305
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/crypto/poly1305_generic.ko
+  $(call AddDepends/crypto,+PACKAGE_kmod-crypto-hash:kmod-crypto-hash)
+endef
+
+$(eval $(call KernelPackage,crypto-poly1305))
 
 
 define KernelPackage/crypto-rsa
