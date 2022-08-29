@@ -1,26 +1,20 @@
-diff -rpN x/drivers/clk/Kconfig y/drivers/clk/Kconfig
-*** x/drivers/clk/Kconfig	2022-07-29 14:28:59.704481188 +0200
---- y/drivers/clk/Kconfig	2022-07-29 14:29:56.886053322 +0200
-*************** source "drivers/clk/mediatek/Kconfig"
-*** 372,377 ****
---- 372,378 ----
-  source "drivers/clk/meson/Kconfig"
-  source "drivers/clk/mvebu/Kconfig"
-  source "drivers/clk/qcom/Kconfig"
-+ source "drivers/clk/realtek/Kconfig"
-  source "drivers/clk/renesas/Kconfig"
-  source "drivers/clk/rockchip/Kconfig"
-  source "drivers/clk/samsung/Kconfig"
-diff -rpN x/drivers/clk/Makefile y/drivers/clk/Makefile
-*** x/drivers/clk/Makefile	2022-07-29 13:34:36.638231518 +0200
---- y/drivers/clk/Makefile	2022-07-29 13:34:19.105060958 +0200
-*************** obj-$(CONFIG_COMMON_CLK_NXP)		+= nxp/
-*** 100,105 ****
---- 100,106 ----
-  obj-$(CONFIG_MACH_PISTACHIO)		+= pistachio/
-  obj-$(CONFIG_COMMON_CLK_PXA)		+= pxa/
-  obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
-+ obj-$(CONFIG_COMMON_CLK_REALTEK)	+= realtek/
-  obj-y					+= renesas/
-  obj-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip/
-  obj-$(CONFIG_COMMON_CLK_SAMSUNG)	+= samsung/
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -372,6 +372,7 @@ source "drivers/clk/mediatek/Kconfig"
+ source "drivers/clk/meson/Kconfig"
+ source "drivers/clk/mvebu/Kconfig"
+ source "drivers/clk/qcom/Kconfig"
++source "drivers/clk/realtek/Kconfig"
+ source "drivers/clk/renesas/Kconfig"
+ source "drivers/clk/rockchip/Kconfig"
+ source "drivers/clk/samsung/Kconfig"
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -100,6 +100,7 @@ obj-$(CONFIG_COMMON_CLK_NXP)		+= nxp/
+ obj-$(CONFIG_MACH_PISTACHIO)		+= pistachio/
+ obj-$(CONFIG_COMMON_CLK_PXA)		+= pxa/
+ obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
++obj-$(CONFIG_COMMON_CLK_REALTEK)	+= realtek/
+ obj-y					+= renesas/
+ obj-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip/
+ obj-$(CONFIG_COMMON_CLK_SAMSUNG)	+= samsung/
