@@ -366,6 +366,9 @@ static unsigned long rtcl_recalc_rate(struct clk_hw *hw, unsigned long parent_ra
 
 	switch (rtcl_ccu->soc) {
 	case SOC_RTL838X:
+		if ((ctrl0 == 0) && (ctrl1 == 0) && (clk->idx == CLK_LXB))
+			return 200000000;
+
 		cmu_divn2_selb = RTL838X_PLL_CTRL1_CMU_DIVN2_SELB(ctrl1);
 		cmu_divn3_sel = rtcl_divn3[RTL838X_PLL_CTRL1_CMU_DIVN3_SEL(ctrl1)];
 		break;
