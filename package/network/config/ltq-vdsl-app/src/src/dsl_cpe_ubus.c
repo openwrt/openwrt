@@ -431,7 +431,7 @@ static void g977_get_snr(int fd, DSL_AccessDir_t direction) {
 	void *c = blobmsg_open_array(&b, "data");
 	
 	for (uint16_t i  = 0  ; i < out.data.deltSnr.nNumData ; i++) { //uint16_t i = 0; i < len; ++i
-		if (out.data.deltSnr.nNSCData[i] != 255) {
+		if (out.data.deltSnr.nNSCData[i] != 255 && out.data.deltSnr.nNSCData[i] != 255 != 0) {
 			m_double("", -32 + (double)out.data.deltSnr.nNSCData[i] / 2); // SNR -32 ... 95 dB
 		} else {
 			m_str("", "NaN");
@@ -449,7 +449,7 @@ static void g977_get_qln(int fd, DSL_AccessDir_t direction) {
 	void *c = blobmsg_open_array(&b, "data");
 	
 	for (uint16_t i  = 0  ; i < out.data.deltQln.nNumData ; i++) {
-		if (out.data.deltQln.nNSCData[i] != 255) {
+		if (out.data.deltQln.nNSCData[i] != 255 && out.data.deltQln.nNSCData[i] != 0) {
 			m_double("", -23 - (double)out.data.deltQln.nNSCData[i] / 2); // QLN -150 ... -23 dBm/Hz
 		} else {
 			m_str("", "NaN");
@@ -468,7 +468,7 @@ static void g977_get_hlog(int fd, DSL_AccessDir_t direction) {
 	void *c = blobmsg_open_array(&b, "data");
 	
 	for (uint16_t i  = 0  ; i < out.data.deltHlog.nNumData ; i++) {
-		if (out.data.deltHlog.nNSCData[i] != 1023) {
+		if (out.data.deltHlog.nNSCData[i] != 1023 && out.data.deltHlog.nNSCData[i] != 0) {
 			m_double("", 6 - (double)out.data.deltHlog.nNSCData[i] / 10); // HLOG +6 ... -96 dB
 		} else {
 			m_str("", "NaN");
