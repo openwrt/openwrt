@@ -123,20 +123,22 @@ pipeline {
           stages {
             stage('Prep x86_64') {
               steps {
-		if (buildBranch =~ /^mfw\+owrt/) {
-		   // force master
-		   branch = 'master'
-		} else {
-		   branch = buildBranch
-		}
+                script {
+		  if (buildBranch =~ /^mfw\+owrt/) {
+		     // force master
+		     branch = 'master'
+		  } else {
+		     branch = buildBranch
+		  }
 
-		dir(toolsDir) {
-		  git url:"git@github.com:untangle/mfw_build", branch:branch, credentialsId:credentialsId
-		}
+		  dir(toolsDir) {
+		    git url:"git@github.com:untangle/mfw_build", branch:branch, credentialsId:credentialsId
+		  }
 
-                unstash(name:"rootfs-${device}")
-                sh("test -f ${rootfsTarballPath}")
-		sh("mv -f ${rootfsTarballPath} ${toolsDir}")
+		  unstash(name:"rootfs-${device}")
+		  sh("test -f ${rootfsTarballPath}")
+		  sh("mv -f ${rootfsTarballPath} ${toolsDir}")
+                }
               }
             }
 
