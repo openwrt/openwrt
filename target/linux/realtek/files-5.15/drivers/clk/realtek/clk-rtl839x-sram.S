@@ -139,4 +139,3 @@ wait_pllclock:
 .globl	rtcl_839x_dram_size
 rtcl_839x_dram_size:
 	.word .-rtcl_839x_dram_start
-

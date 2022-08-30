@@ -3,9 +3,7 @@
 #ifndef _RTL838X_ETH_H
 #define _RTL838X_ETH_H
 
-/*
- * Register definition
- */
+/* Register definition */
 
 /* Per port MAC control */
 #define RTL838X_MAC_PORT_CTRL			(0xd560)

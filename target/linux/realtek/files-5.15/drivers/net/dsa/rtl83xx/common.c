@@ -9,8 +9,8 @@
 #include <linux/inetdevice.h>
 #include <linux/rhashtable.h>
 #include <linux/of_net.h>
-
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+
 #include "rtl83xx.h"
 
 extern struct rtl83xx_soc_info soc_info;
@@ -90,8 +90,7 @@ void rtl_table_init(void)
 		mutex_init(&rtl838x_tbl_regs[i].lock);
 }
 
-/*
- * Request access to table t in table access register r
+/* Request access to table t in table access register r
  * Returns a handle to a lock for that table
  */
 struct table_reg *rtl_table_get(rtl838x_tbl_reg_t r, int t)
@@ -108,9 +107,7 @@ struct table_reg *rtl_table_get(rtl838x_tbl_reg_t r, int t)
 	return &rtl838x_tbl_regs[r];
 }
 
-/*
- * Release a table r, unlock the corresponding lock
- */
+/* Release a table r, unlock the corresponding lock */
 void rtl_table_release(struct table_reg *r)
 {
 	if (!r)
@@ -146,24 +143,19 @@ static int rtl_table_exec(struct table_reg *r, bool is_write, int idx)
 	return ret;
 }
 
-/*
- * Reads table index idx into the data registers of the table
- */
+/* Reads table index idx into the data registers of the table */
 int rtl_table_read(struct table_reg *r, int idx)
 {
 	return rtl_table_exec(r, false, idx);
 }
 
-/*
- * Writes the content of the table data registers into the table at index idx
- */
+/* Writes the content of the table data registers into the table at index idx */
 int rtl_table_write(struct table_reg *r, int idx)
 {
 	return rtl_table_exec(r, true, idx);
 }
 
-/*
- * Returns the address of the ith data register of table register r
+/* Returns the address of the ith data register of table register r
  * the address is relative to the beginning of the Switch-IO block at 0xbb000000
  */
 inline u16 rtl_table_data(struct table_reg *r, int i)
@@ -196,7 +188,7 @@ void rtl838x_set_port_reg(u64 set, int reg)
 
 u64 rtl838x_get_port_reg(int reg)
 {
-	return ((u64) sw_r32(reg));
+	return ((u64)sw_r32(reg));
 }
 
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
@@ -212,6 +204,7 @@ u64 rtl839x_get_port_reg_be(int reg)
 
 	v <<= 32;
 	v |= sw_r32(reg + 4);
+
 	return v;
 }
 
@@ -239,6 +232,7 @@ u64 rtl839x_get_port_reg_le(int reg)
 
 	v <<= 32;
 	v |= sw_r32(reg);
+
 	return v;
 }
 
@@ -254,6 +248,7 @@ int read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	case RTL9310_FAMILY_ID:
 		return rtl931x_read_phy(port, page, reg, val);
 	}
+
 	return -1;
 }
 
@@ -269,6 +264,7 @@ int write_phy(u32 port, u32 page, u32 reg, u32 val)
 	case RTL9310_FAMILY_ID:
 		return rtl931x_write_phy(port, page, reg, val);
 	}
+
 	return -1;
 }
 
@@ -303,8 +299,7 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 	bus->name = "rtl838x slave mii";
 
-	/*
-	 * Since the NIC driver is loaded first, we can use the mdio rw functions
+	/* Since the NIC driver is loaded first, we can use the mdio rw functions
 	 * assigned there.
 	 */
 	bus->read = priv->mii_bus->read;
@@ -379,21 +374,21 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 				priv->ports[pn].phy = PHY_RTL930X_SDS;
 			}
 		} else {
-			if (of_property_read_bool(phy_node, "phy-is-integrated")
-				&& !of_property_read_bool(phy_node, "sfp")) {
+			if (of_property_read_bool(phy_node, "phy-is-integrated") &&
+			    !of_property_read_bool(phy_node, "sfp")) {
 				priv->ports[pn].phy = PHY_RTL8218B_INT;
 				continue;
 			}
 		}
 
-		if (!of_property_read_bool(phy_node, "phy-is-integrated")
-		    && of_property_read_bool(phy_node, "sfp")) {
+		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
+		    of_property_read_bool(phy_node, "sfp")) {
 			priv->ports[pn].phy = PHY_RTL8214FC;
 			continue;
 		}
 
-		if (!of_property_read_bool(phy_node, "phy-is-integrated")
-		    && !of_property_read_bool(phy_node, "sfp")) {
+		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
+		    !of_property_read_bool(phy_node, "sfp")) {
 			priv->ports[pn].phy = PHY_RTL8218B_EXT;
 			continue;
 		}
@@ -419,6 +414,7 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	}
 
 	pr_debug("%s done\n", __func__);
+
 	return 0;
 }
 
@@ -435,6 +431,7 @@ static int __init rtl83xx_get_l2aging(struct rtl838x_switch_priv *priv)
 
 	pr_debug("L2 AGING time: %d sec\n", t);
 	pr_debug("Dynamic aging for ports: %x\n", sw_r32(priv->r->l2_port_aging_out));
+
 	return t;
 }
 
@@ -469,6 +466,7 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 		pr_err("%s: Port %d already member of LAG %d.\n", __func__, port, i);
 		return -ENOSPC;
 	}
+
 	switch(info->hash_type) {
 	case NETDEV_LAG_HASH_L2:
 		algomsk |= TRUNK_DISTRIBUTION_ALGO_DMAC_BIT;
@@ -497,6 +495,7 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 
 	pr_info("%s: Added port %d to LAG %d. Members now %016llx.\n",
 		 __func__, port, group, priv->lags_port_members[group]);
+
 	return 0;
 }
 
@@ -526,12 +525,11 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 
 	pr_info("%s: Removed port %d from LAG %d. Members now %016llx.\n",
 		 __func__, port, group, priv->lags_port_members[group]);
+
 	return 0;
 }
 
-/*
- * Allocate a 64 bit octet counter located in the LOG HW table
- */
+/* Allocate a 64 bit octet counter located in the LOG HW table */
 static int rtl83xx_octet_cntr_alloc(struct rtl838x_switch_priv *priv)
 {
 	int idx;
@@ -550,8 +548,7 @@ static int rtl83xx_octet_cntr_alloc(struct rtl838x_switch_priv *priv)
 	return idx;
 }
 
-/*
- * Allocate a 32-bit packet counter
+/* Allocate a 32-bit packet counter
  * 2 32-bit packet counters share the location of a 64-bit octet counter
  * Initially there are no free packet counters and 2 new ones need to be freed
  * by allocating the corresponding octet counter
@@ -585,8 +582,7 @@ int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
 	return idx;
 }
 
-/*
- * Add an L2 nexthop entry for the L3 routing system / PIE forwarding in the SoC
+/* Add an L2 nexthop entry for the L3 routing system / PIE forwarding in the SoC
  * Use VID and MAC in rtl838x_l2_entry to identify either a free slot in the L2 hash table
  * or mark an existing entry as a nexthop by setting it's nexthop bit
  * Called from the L3 layer
@@ -655,8 +651,7 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_next
 	return 0;
 }
 
-/*
- * Removes a Layer 2 next hop entry in the forwarding database
+/* Removes a Layer 2 next hop entry in the forwarding database
  * If it was static, the entire entry is removed, otherwise the nexthop bit is cleared
  * and we wait until the entry ages out
  */
@@ -733,11 +728,11 @@ static int rtl83xx_handle_changeupper(struct rtl838x_switch_priv *priv,
 
 out:
 	mutex_unlock(&priv->reg_mutex);
+
 	return 0;
 }
 
-/*
- * Is the lower network device a DSA slave network device of our RTL930X-switch?
+/* Is the lower network device a DSA slave network device of our RTL930X-switch?
  * Unfortunately we cannot just follow dev->dsa_prt as this is only set for the
  * DSA master device.
  */
@@ -757,6 +752,7 @@ int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_p
 		if (priv->ports[i].dp->slave == dev)
 			return i;
 	}
+
 	return -EINVAL;
 }
 
@@ -791,9 +787,7 @@ const static struct rhashtable_params route_ht_params = {
 	.head_offset = offsetof(struct rtl83xx_route, linkage),
 };
 
-/*
- * Updates an L3 next hop entry in the ROUTING table
- */
+/* Updates an L3 next hop entry in the ROUTING table */
 static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 ip_addr, u64 mac)
 {
 	struct rtl83xx_route *r;
@@ -865,6 +859,7 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 		}
 	}
 	rcu_read_unlock();
+
 	return 0;
 }
 
@@ -895,6 +890,7 @@ static int rtl83xx_port_ipv4_resolve(struct rtl838x_switch_priv *priv,
 	}
 
 	neigh_release(n);
+
 	return err;
 }
 
@@ -970,6 +966,7 @@ static struct rtl83xx_route *rtl83xx_route_alloc(struct rtl838x_switch_priv *pri
 
 out_free:
 	kfree(r);
+
 	return NULL;
 }
 
@@ -991,7 +988,8 @@ static struct rtl83xx_route *rtl83xx_host_route_alloc(struct rtl838x_switch_priv
 	}
 
 	/* We require a unique route ID irrespective of whether it is a prefix or host
-	 * route (on RTL93xx) as we use this ID to associate a DMAC and next-hop entry */
+	 * route (on RTL93xx) as we use this ID to associate a DMAC and next-hop entry
+	 */
 	r->id = idx + MAX_ROUTES;
 
 	r->gw_ip = ip;
@@ -1013,6 +1011,7 @@ static struct rtl83xx_route *rtl83xx_host_route_alloc(struct rtl838x_switch_priv
 
 out_free:
 	kfree(r);
+
 	return NULL;
 }
 
@@ -1082,8 +1081,7 @@ static int rtl83xx_fib4_del(struct rtl838x_switch_priv *priv,
 	return 0;
 }
 
-/*
- * On the RTL93xx, an L3 termination endpoint MAC address on which the router waits
+/* On the RTL93xx, an L3 termination endpoint MAC address on which the router waits
  * for packets to be routed needs to be allocated.
  */
 static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
@@ -1269,6 +1267,7 @@ static int rtl83xx_fib6_add(struct rtl838x_switch_priv *priv,
 {
 	pr_debug("In %s\n", __func__);
 //	nh->fib_nh_flags |= RTNH_F_OFFLOAD;
+
 	return 0;
 }
 
@@ -1557,14 +1556,14 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		 */
 		return err;
 	}
+
 	err = dsa_register_switch(priv->ds);
 	if (err) {
 		dev_err(dev, "Error registering switch: %d\n", err);
 		return err;
 	}
 
-	/*
-	 * dsa_to_port returns dsa_port from the port list in
+	/* dsa_to_port returns dsa_port from the port list in
 	 * dsa_switch_tree, the tree is built when the switch
 	 * is registered by dsa_register_switch
 	 */
@@ -1582,19 +1581,19 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	switch (priv->family_id) {
 	case RTL8380_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl838x_switch_irq,
-				IRQF_SHARED, "rtl838x-link-state", priv->ds);
+		                  IRQF_SHARED, "rtl838x-link-state", priv->ds);
 		break;
 	case RTL8390_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl839x_switch_irq,
-				IRQF_SHARED, "rtl839x-link-state", priv->ds);
+		                  IRQF_SHARED, "rtl839x-link-state", priv->ds);
 		break;
 	case RTL9300_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl930x_switch_irq,
-				IRQF_SHARED, "rtl930x-link-state", priv->ds);
+				  IRQF_SHARED, "rtl930x-link-state", priv->ds);
 		break;
 	case RTL9310_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl931x_switch_irq,
-				IRQF_SHARED, "rtl931x-link-state", priv->ds);
+		                  IRQF_SHARED, "rtl931x-link-state", priv->ds);
 		break;
 	}
 	if (err) {
@@ -1616,9 +1615,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	for (i = 0; i < 4; i++)
 		priv->mirror_group_ports[i] = -1;
 
-	/*
-	 * Register netdevice event callback to catch changes in link aggregation groups
-	 */
+	/* Register netdevice event callback to catch changes in link aggregation groups */
 	priv->nb.notifier_call = rtl83xx_netdevice_event;
 	if (register_netdevice_notifier(&priv->nb)) {
 		priv->nb.notifier_call = NULL;
@@ -1629,8 +1626,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	// Initialize hash table for L3 routing
 	rhltable_init(&priv->routes, &route_ht_params);
 
-	/*
-	 * Register netevent notifier callback to catch notifications about neighboring
+	/* Register netevent notifier callback to catch notifications about neighboring
 	 * changes to update nexthop entries for L3 routing.
 	 */
 	priv->ne_nb.notifier_call = rtl83xx_netevent_event;
@@ -1642,8 +1638,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	priv->fib_nb.notifier_call = rtl83xx_fib_event;
 
-	/*
-	 * Register Forwarding Information Base notifier to offload routes where
+	/* Register Forwarding Information Base notifier to offload routes where
 	 * where possible
 	 * Only FIBs pointing to our own netdevs are programmed into
 	 * the device, so no need to pass a callback.
@@ -1680,6 +1675,7 @@ static int rtl83xx_sw_remove(struct platform_device *pdev)
 {
 	// TODO:
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
+
 	return 0;
 }
 

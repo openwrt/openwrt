@@ -11,7 +11,7 @@
 
 #include <mach-rtl83xx.h>
 
-/* 
+/*
  * Timer registers
  * the RTL9300/9310 SoCs have 6 timers, each register block 0x10 apart
  */
@@ -59,6 +59,7 @@ static irqreturn_t rtl9300_timer_interrupt(int irq, void *dev_id)
 	writel(v, rtl_clk->base + RTL9300_TC_INT);
 
 	clk->event_handler(clk);
+
 	return IRQ_HANDLED;
 }
 
@@ -101,6 +102,7 @@ static int rtl9300_state_periodic(struct clock_event_device *clk)
 	rtl9300_clock_stop(base);
 	writel(RTL9300_CLOCK_RATE / HZ, base + RTL9300_TC_DATA);
 	rtl9300_timer_start(base, TIMER_MODE_REPEAT);
+
 	return 0;
 }
 
@@ -112,6 +114,7 @@ static int rtl9300_state_oneshot(struct clock_event_device *clk)
 	rtl9300_clock_stop(base);
 	writel(RTL9300_CLOCK_RATE / HZ, base + RTL9300_TC_DATA);
 	rtl9300_timer_start(base, TIMER_MODE_ONCE);
+
 	return 0;
 }
 
@@ -121,6 +124,7 @@ static int rtl9300_shutdown(struct clock_event_device *clk)
 
 	pr_debug("------------- rtl9300_shutdown %08x\n", (u32)base);
 	rtl9300_clock_stop(base);
+
 	return 0;
 }
 

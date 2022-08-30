@@ -134,4 +134,3 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
 
 #endif /* _NET_DSA_RTL83XX_H */
-
