@@ -619,7 +619,8 @@ define KernelPackage/crypto-md5
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_CRYPTO_MD5 \
-	CONFIG_CRYPTO_MD5_OCTEON
+	CONFIG_CRYPTO_MD5_OCTEON \
+	CONFIG_CRYPTO_MD5_PPC
   FILES:=$(LINUX_DIR)/crypto/md5.ko
   AUTOLOAD:=$(call AutoLoad,09,md5)
   $(call AddDepends/crypto)
@@ -628,6 +629,11 @@ endef
 define KernelPackage/crypto-md5/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-md5.ko
   AUTOLOAD+=$(call AutoLoad,09,octeon-md5)
+endef
+
+define KernelPackage/crypto-md5/mpc85xx
+  FILES+=$(LINUX_DIR)/arch/powerpc/crypto/md5-ppc.ko
+  AUTOLOAD+=$(call AutoLoad,09,md5-ppc)
 endef
 
 $(eval $(call KernelPackage,crypto-md5))
@@ -829,6 +835,7 @@ define KernelPackage/crypto-sha1
 	CONFIG_CRYPTO_SHA1_ARM \
 	CONFIG_CRYPTO_SHA1_ARM_NEON \
 	CONFIG_CRYPTO_SHA1_OCTEON \
+	CONFIG_CRYPTO_SHA1_PPC_SPE \
 	CONFIG_CRYPTO_SHA1_SSSE3
   FILES:=$(LINUX_DIR)/crypto/sha1_generic.ko
   AUTOLOAD:=$(call AutoLoad,09,sha1_generic)
@@ -857,6 +864,11 @@ endef
 
 KernelPackage/crypto-sha1/tegra=$(KernelPakcage/crypto-sha1/arm)
 
+define KernelPackage/crypto-sha1/mpc85xx
+  FILES+=$(LINUX_DIR)/arch/powerpc/crypto/sha1-ppc-spe.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha1-ppc-spe)
+endef
+
 define KernelPackage/crypto-sha1/x86/64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/sha1-ssse3.ko
   AUTOLOAD+=$(call AutoLoad,09,sha1-ssse3)
@@ -871,6 +883,7 @@ define KernelPackage/crypto-sha256
   KCONFIG:= \
 	CONFIG_CRYPTO_SHA256 \
 	CONFIG_CRYPTO_SHA256_OCTEON \
+	CONFIG_CRYPTO_SHA256_PPC_SPE \
 	CONFIG_CRYPTO_SHA256_SSSE3
   FILES:= \
 	$(LINUX_DIR)/crypto/sha256_generic.ko \
@@ -882,6 +895,11 @@ endef
 define KernelPackage/crypto-sha256/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha256.ko
   AUTOLOAD+=$(call AutoLoad,09,octeon-sha256)
+endef
+
+define KernelPackage/crypto-sha256/mpc85xx
+  FILES+=$(LINUX_DIR)/arch/powerpc/crypto/sha256-ppc-spe.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha256-ppc-spe)
 endef
 
 define KernelPackage/crypto-sha256/x86/64
