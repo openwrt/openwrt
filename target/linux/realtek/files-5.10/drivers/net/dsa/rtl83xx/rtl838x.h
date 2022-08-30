@@ -398,7 +398,7 @@
 #define RTL839X_SPCL_TRAP_SWITCH_IPV4_ADDR_CTRL	(0x106C)
 #define RTL839X_SPCL_TRAP_CRC_CTRL		(0x1070)
 /* special port action controls */
-/* 
+/*
     values:
 	0 = FORWARD (default)
 	1 = DROP
@@ -429,17 +429,17 @@ typedef enum {
 	COPY2CPU,
 } action_type_t;
 
-#define RTL838X_RMA_BPDU_CTRL			(0x4330) 
+#define RTL838X_RMA_BPDU_CTRL			(0x4330)
 #define RTL839X_RMA_BPDU_CTRL			(0x122C)
 #define RTL930X_RMA_BPDU_CTRL			(0x9E7C)
 #define RTL931X_RMA_BPDU_CTRL			(0x881C)
 
-#define RTL838X_RMA_PTP_CTRL			(0x4338) 
+#define RTL838X_RMA_PTP_CTRL			(0x4338)
 #define RTL839X_RMA_PTP_CTRL			(0x123C)
 #define RTL930X_RMA_PTP_CTRL			(0x9E88)
 #define RTL931X_RMA_PTP_CTRL			(0x8834)
 
-#define RTL838X_RMA_LLTP_CTRL			(0x4340) 
+#define RTL838X_RMA_LLTP_CTRL			(0x4340)
 #define RTL839X_RMA_LLTP_CTRL			(0x124C)
 #define RTL930X_RMA_LLTP_CTRL			(0x9EFC)
 #define RTL931X_RMA_LLTP_CTRL			(0x8918)

@@ -44,8 +44,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 				flow->rule.frame_type_l4 = 0;
 			if (match.key->ip_proto == IPPROTO_TCP)
 				flow->rule.frame_type_l4 = 1;
-			if (match.key->ip_proto == IPPROTO_ICMP
-				|| match.key->ip_proto ==IPPROTO_ICMPV6)
+			if (match.key->ip_proto == IPPROTO_ICMP || match.key->ip_proto == IPPROTO_ICMPV6)
 				flow->rule.frame_type_l4 = 2;
 			if (match.key->ip_proto == IPPROTO_TCP)
 				flow->rule.frame_type_l4 = 3;
@@ -150,7 +149,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 	pr_debug("%s\n", __func__);
 
 	rtl83xx_parse_flow_rule(priv, rule, flow);
-	
+
 	flow_action_for_each(i, act, &rule->action) {
 		switch (act->id) {
 		case FLOW_ACTION_DROP:

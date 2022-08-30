@@ -414,8 +414,8 @@ static void rtl93xx_phylink_validate(struct dsa_switch *ds, int port,
 	}
 
 	// Internal phys of the RTL93xx family provide 10G
-	if (priv->ports[port].phy_is_integrated
-		&& state->interface == PHY_INTERFACE_MODE_1000BASEX) {
+	if (priv->ports[port].phy_is_integrated &&
+	    state->interface == PHY_INTERFACE_MODE_1000BASEX) {
 		phylink_set(mask, 1000baseX_Full);
 	} else if (priv->ports[port].phy_is_integrated) {
 		phylink_set(mask, 1000baseX_Full);
@@ -988,7 +988,7 @@ static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
 
 	set_bit(mc_group, priv->mc_group_bm);
 	mc_group++;  // We cannot use group 0, as this is used for lookup miss flooding
-	portmask = BIT_ULL(port) | BIT_ULL(priv->cpu_port); 
+	portmask = BIT_ULL(port) | BIT_ULL(priv->cpu_port);
 	priv->r->write_mcast_pmask(mc_group, portmask);
 
 	return mc_group;
@@ -1158,8 +1158,9 @@ static int rtl93xx_get_mac_eee(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	e->supported = SUPPORTED_100baseT_Full | SUPPORTED_1000baseT_Full
-			| SUPPORTED_2500baseX_Full;
+	e->supported = SUPPORTED_100baseT_Full |
+	               SUPPORTED_1000baseT_Full |
+	               SUPPORTED_2500baseX_Full;
 
 	priv->r->eee_port_ability(priv, e, port);
 
@@ -1880,7 +1881,7 @@ static int rtl83xx_port_mirror_add(struct dsa_switch *ds, int port,
 	/* We support 4 mirror groups, one destination port per group */
 	int group;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int ctrl_reg, dpm_reg, spm_reg;	
+	int ctrl_reg, dpm_reg, spm_reg;
 
 	pr_debug("In %s\n", __func__);
 
@@ -2128,8 +2129,9 @@ int dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
 	u32 offset = 0;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	if (phy_addr >= 24 && phy_addr <= 27
-		&& priv->ports[24].phy == PHY_RTL838X_SDS) {
+	if ((phy_addr >= 24) &&
+	    (phy_addr <= 27) &&
+	    (priv->ports[24].phy == PHY_RTL838X_SDS)) {
 		if (phy_addr == 26)
 			offset = 0x100;
 		val = sw_r32(RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2)) & 0xffff;
@@ -2145,8 +2147,9 @@ int dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
 	u32 offset = 0;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	if (phy_addr >= 24 && phy_addr <= 27
-	     && priv->ports[24].phy == PHY_RTL838X_SDS) {
+	if ((phy_addr >= 24) &&
+	    (phy_addr <= 27) &&
+	    (priv->ports[24].phy == PHY_RTL838X_SDS)) {
 		if (phy_addr == 26)
 			offset = 0x100;
 		sw_w32(val, RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2));

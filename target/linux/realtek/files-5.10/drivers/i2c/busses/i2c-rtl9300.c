@@ -23,7 +23,7 @@ struct i2c_drv_data {
 	void (*config_io)(struct rtl9300_i2c *i2c, int scl_num, int sda_num);
 	u32 mst2_offset;
 };
-			
+
 DEFINE_MUTEX(i2c_lock);
 
 static void rtl9300_i2c_reg_addr_set(struct rtl9300_i2c *i2c, u32 reg, u16 len)
@@ -347,7 +347,7 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
 	int ret = 0;
 
 	pr_info("%s probing I2C adapter\n", __func__);
-	
+
 	if (!node) {
 		dev_err(i2c->dev, "No DT found\n");
 		return -EINVAL;
@@ -376,7 +376,7 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
 	case I2C_MAX_STANDARD_MODE_FREQ:
 		i2c->bus_freq = RTL9300_I2C_STD_FREQ;
 		break;
-	
+
 	case I2C_MAX_FAST_MODE_FREQ:
 		i2c->bus_freq = RTL9300_I2C_FAST_FREQ;
 		break;
@@ -451,7 +451,7 @@ struct i2c_drv_data rtl9300_i2c_drv_data = {
 };
 
 struct i2c_drv_data rtl9310_i2c_drv_data = {
-	.scl0_pin = 13, 
+	.scl0_pin = 13,
 	.scl1_pin = 14,
 	.sda0_pin = 0,
 	.read = rtl9310_i2c_read,

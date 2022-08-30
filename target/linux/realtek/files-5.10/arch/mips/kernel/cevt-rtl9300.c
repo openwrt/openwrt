@@ -11,7 +11,7 @@
 
 #include <mach-rtl83xx.h>
 
-/* 
+/*
  * Timer registers
  * the RTL9300/9310 SoCs have 6 timers, each register block 0x10 apart
  */

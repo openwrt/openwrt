@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+
 #include "rtl83xx.h"
 
 #define RTL931X_VLAN_PORT_TAG_STS_INTERNAL			0x0
@@ -142,12 +143,12 @@ void rtl931x_vlan_profile_dump(int index)
 		return;
 
 	profile[0] = sw_r32(RTL931X_VLAN_PROFILE_SET(index));
-	profile[1] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 4) & 0x1FFFFFFFULL) << 32
-		| (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 8) & 0xFFFFFFFF);
-	profile[2] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 16) & 0x1FFFFFFFULL) << 32
-		| (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 12) & 0xFFFFFFFF);
-	profile[3] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 20) & 0x1FFFFFFFULL) << 32
-		| (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 24) & 0xFFFFFFFF);
+	profile[1] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 4) & 0x1FFFFFFFULL) << 32 |
+	             (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 8) & 0xFFFFFFFF);
+	profile[2] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 16) & 0x1FFFFFFFULL) << 32 |
+	             (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 12) & 0xFFFFFFFF);
+	profile[3] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 20) & 0x1FFFFFFFULL) << 32 |
+	             (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 24) & 0xFFFFFFFF);
 
 	pr_info("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, \
 		IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx",
@@ -157,10 +158,10 @@ void rtl931x_vlan_profile_dump(int index)
 static void rtl931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
-	u32 cmd = 1 << 20 /* Execute cmd */
-		| 0 << 19 /* Read */
-		| 5 << 15 /* Table type 0b101 */
-		| (msti & 0x3fff);
+	u32 cmd = 1 << 20 | /* Execute cmd */
+	          0 << 19 | /* Read */
+	          5 << 15 | /* Table type 0b101 */
+	          (msti & 0x3fff);
 	priv->r->exec_tbl0_cmd(cmd);
 
 	for (i = 0; i < 4; i++)
@@ -170,10 +171,10 @@ static void rtl931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 static void rtl931x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
-	u32 cmd = 1 << 20 /* Execute cmd */
-		| 1 << 19 /* Write */
-		| 5 << 15 /* Table type 0b101 */
-		| (msti & 0x3fff);
+	u32 cmd = 1 << 20 | /* Execute cmd */
+	          1 << 19 | /* Write */
+	          5 << 15 | /* Table type 0b101 */
+	          (msti & 0x3fff);
 	for (i = 0; i < 4; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
 	priv->r->exec_tbl0_cmd(cmd);
@@ -711,9 +712,12 @@ static void rtl931x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 
 	r[2] = BIT(31);	// Set valid bit
 
-	r[0] = ((u32)e->mac[0]) << 24 | ((u32)e->mac[1]) << 16
-		| ((u32)e->mac[2]) << 8 | ((u32)e->mac[3]);
-	r[1] = ((u32)e->mac[4]) << 24 | ((u32)e->mac[5]) << 16;
+	r[0] = ((u32)e->mac[0]) << 24 |
+	       ((u32)e->mac[1]) << 16 |
+	       ((u32)e->mac[2]) << 8 |
+	       ((u32)e->mac[3]);
+	r[1] = ((u32)e->mac[4]) << 24 |
+	       ((u32)e->mac[5]) << 16;
 
 	r[2] |= e->next_hop ? BIT(12) : 0;
 
@@ -785,8 +789,12 @@ static u64 rtl931x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	if (!e->valid)
 		return 0;
 
-	mac = ((u64)e->mac[0]) << 40 | ((u64)e->mac[1]) << 32 | ((u64)e->mac[2]) << 24
-		| ((u64)e->mac[3]) << 16 | ((u64)e->mac[4]) << 8 | ((u64)e->mac[5]);
+	mac = ((u64)e->mac[0]) << 40 |
+	      ((u64)e->mac[1]) << 32 |
+	      ((u64)e->mac[2]) << 24 |
+	      ((u64)e->mac[3]) << 16 |
+	      ((u64)e->mac[4]) << 8 |
+	      ((u64)e->mac[5]);
 
 	seed = rtl931x_l2_hash_seed(mac, e->rvid);
 	pr_debug("%s: mac %016llx, seed %016llx\n", __func__, mac, seed);
@@ -1031,7 +1039,6 @@ int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr
 		*data = pr->sip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
 		*data_m = pr->sip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
 		break;
-
 	case TEMPLATE_FIELD_DIP0:
 		if (pr->is_ipv6) {
 			*data = pr->dip6.s6_addr16[7];
@@ -1050,7 +1057,6 @@ int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr
 			*data_m = pr->dip_m >> 16;
 		}
 		break;
-
 	case TEMPLATE_FIELD_DIP2:
 	case TEMPLATE_FIELD_DIP3:
 	case TEMPLATE_FIELD_DIP4:
@@ -1060,7 +1066,6 @@ int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr
 		*data = pr->dip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
 		*data_m = pr->dip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
 		break;
-
 	case TEMPLATE_FIELD_IP_TOS_PROTO:
 		*data = pr->tos_proto;
 		*data_m = pr->tos_proto_m;
@@ -1327,13 +1332,17 @@ static int rtl931x_pie_verify_template(struct rtl838x_switch_priv *priv,
 		return -1;
 
 	if (pr->is_ipv6) {
-		if ((pr->sip6_m.s6_addr32[0] || pr->sip6_m.s6_addr32[1]
-			|| pr->sip6_m.s6_addr32[2] || pr->sip6_m.s6_addr32[3])
-			&& !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
+		if ((pr->sip6_m.s6_addr32[0] ||
+		     pr->sip6_m.s6_addr32[1] ||
+		     pr->sip6_m.s6_addr32[2] ||
+		     pr->sip6_m.s6_addr32[3]) &&
+		    !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
 			return -1;
-		if ((pr->dip6_m.s6_addr32[0] || pr->dip6_m.s6_addr32[1]
-			|| pr->dip6_m.s6_addr32[2] || pr->dip6_m.s6_addr32[3])
-			&& !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
+		if ((pr->dip6_m.s6_addr32[0] ||
+		     pr->dip6_m.s6_addr32[1] ||
+		     pr->dip6_m.s6_addr32[2] ||
+		     pr->dip6_m.s6_addr32[3]) &&
+		    !rtl931x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
 			return -1;
 	}
 
@@ -1698,4 +1707,3 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l3_setup = rtl931x_l3_setup,
 	.led_init = rtl931x_led_init,
 };
-

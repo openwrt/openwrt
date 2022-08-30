@@ -467,9 +467,9 @@ static long rtcl_round_rate(struct clk_hw *hw, unsigned long rate, unsigned long
  */
 
 #define RTCL_SRAM_FUNC(SOC, PBASE, FN) ({				\
-	rtcl_##SOC##_sram_##FN = ((void *)&rtcl_##SOC##_dram_##FN	\
-				- (void *)&rtcl_##SOC##_dram_start)	\
-				+ (void *)PBASE; })
+        rtcl_##SOC##_sram_##FN = ((void *)&rtcl_##SOC##_dram_##FN -	\
+                                  (void *)&rtcl_##SOC##_dram_start) +	\
+                                  (void *)PBASE; })
 
 static const struct clk_ops rtcl_clk_ops = {
 	.set_rate = rtcl_set_rate,

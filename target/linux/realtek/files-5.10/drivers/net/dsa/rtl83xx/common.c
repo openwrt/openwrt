@@ -368,21 +368,21 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 				priv->ports[pn].phy = PHY_RTL930X_SDS;
 			}
 		} else {
-			if (of_property_read_bool(phy_node, "phy-is-integrated")
-				&& !of_property_read_bool(phy_node, "sfp")) {
+			if (of_property_read_bool(phy_node, "phy-is-integrated") &&
+			    !of_property_read_bool(phy_node, "sfp")) {
 				priv->ports[pn].phy = PHY_RTL8218B_INT;
 				continue;
 			}
 		}
 
-		if (!of_property_read_bool(phy_node, "phy-is-integrated")
-		    && of_property_read_bool(phy_node, "sfp")) {
+		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
+		    of_property_read_bool(phy_node, "sfp")) {
 			priv->ports[pn].phy = PHY_RTL8214FC;
 			continue;
 		}
 
-		if (!of_property_read_bool(phy_node, "phy-is-integrated")
-		    && !of_property_read_bool(phy_node, "sfp")) {
+		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
+		    !of_property_read_bool(phy_node, "sfp")) {
 			priv->ports[pn].phy = PHY_RTL8218B_EXT;
 			continue;
 		}
@@ -1570,19 +1570,19 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	switch (priv->family_id) {
 	case RTL8380_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl838x_switch_irq,
-				IRQF_SHARED, "rtl838x-link-state", priv->ds);
+		                  IRQF_SHARED, "rtl838x-link-state", priv->ds);
 		break;
 	case RTL8390_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl839x_switch_irq,
-				IRQF_SHARED, "rtl839x-link-state", priv->ds);
+		                  IRQF_SHARED, "rtl839x-link-state", priv->ds);
 		break;
 	case RTL9300_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl930x_switch_irq,
-				IRQF_SHARED, "rtl930x-link-state", priv->ds);
+				  IRQF_SHARED, "rtl930x-link-state", priv->ds);
 		break;
 	case RTL9310_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl931x_switch_irq,
-				IRQF_SHARED, "rtl931x-link-state", priv->ds);
+		                  IRQF_SHARED, "rtl931x-link-state", priv->ds);
 		break;
 	}
 	if (err) {

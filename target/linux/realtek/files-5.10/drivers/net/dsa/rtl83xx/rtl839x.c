@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+
 #include "rtl83xx.h"
 
 #define RTL839X_VLAN_PORT_TAG_STS_UNTAG				0x0
@@ -260,18 +261,18 @@ static u32 rtl839x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	u32 h1, h2, h;
 
 	if (sw_r32(priv->r->l2_ctrl_0) & 1) {
-		h1 = (u32) (((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f)
-				^ ((seed >> 36) & 0x3f) ^ ((seed >> 30) & 0x3f)
-				^ ((seed >> 12) & 0x3f) ^ ((seed >> 6) & 0x3f));
-		h2 = (u32) (((seed >> 48) & 0x3f) ^ ((seed >> 42) & 0x3f)
-				^ ((seed >> 24) & 0x3f) ^ ((seed >> 18) & 0x3f)
-				^ (seed & 0x3f));
+		h1 = (u32) (((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f) ^
+		           ((seed >> 36) & 0x3f) ^ ((seed >> 30) & 0x3f) ^
+		           ((seed >> 12) & 0x3f) ^ ((seed >> 6) & 0x3f));
+		h2 = (u32) (((seed >> 48) & 0x3f) ^ ((seed >> 42) & 0x3f) ^
+		           ((seed >> 24) & 0x3f) ^ ((seed >> 18) & 0x3f) ^
+		           (seed & 0x3f));
 		h = (h1 << 6) | h2;
 	} else {
-		h = (seed >> 60)
-			^ ((((seed >> 48) & 0x3f) << 6) | ((seed >> 54) & 0x3f))
-			^ ((seed >> 36) & 0xfff) ^ ((seed >> 24) & 0xfff)
-			^ ((seed >> 12) & 0xfff) ^ (seed & 0xfff);
+		h = (seed >> 60) ^
+		    ((((seed >> 48) & 0x3f) << 6) | ((seed >> 54) & 0x3f)) ^
+		    ((seed >> 36) & 0xfff) ^ ((seed >> 24) & 0xfff) ^
+		    ((seed >> 12) & 0xfff) ^ (seed & 0xfff);
 	}
 
 	return h;
@@ -838,10 +839,10 @@ void rtl839x_vlan_profile_dump(int profile)
 static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
-	u32 cmd = 1 << 16 /* Execute cmd */
-		| 0 << 15 /* Read */
-		| 5 << 12 /* Table type 0b101 */
-		| (msti & 0xfff);
+	u32 cmd = 1 << 16 | /* Execute cmd */
+	          0 << 15 | /* Read */
+	          5 << 12 | /* Table type 0b101 */
+	          (msti & 0xfff);
 	priv->r->exec_tbl0_cmd(cmd);
 
 	for (i = 0; i < 4; i++)
@@ -851,10 +852,10 @@ static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 static void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
-	u32 cmd = 1 << 16 /* Execute cmd */
-		| 1 << 15 /* Write */
-		| 5 << 12 /* Table type 0b101 */
-		| (msti & 0xfff);
+	u32 cmd = 1 << 16 | /* Execute cmd */
+	          1 << 15 | /* Write */
+	          5 << 12 | /* Table type 0b101 */
+	          (msti & 0xfff);
 	for (i = 0; i < 4; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
 	priv->r->exec_tbl0_cmd(cmd);
@@ -1067,7 +1068,6 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->sip_m >> 16;
 			}
 			break;
-
 		case TEMPLATE_FIELD_SIP2:
 		case TEMPLATE_FIELD_SIP3:
 		case TEMPLATE_FIELD_SIP4:
@@ -1077,7 +1077,6 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 			data = pr->sip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
 			data_m = pr->sip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
 			break;
-
 		case TEMPLATE_FIELD_DIP0:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[7];
@@ -1087,7 +1086,6 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m;
 			}
 			break;
-
 		case TEMPLATE_FIELD_DIP1:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[6];
@@ -1097,7 +1095,6 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m >> 16;
 			}
 			break;
-
 		case TEMPLATE_FIELD_DIP2:
 		case TEMPLATE_FIELD_DIP3:
 		case TEMPLATE_FIELD_DIP4:
@@ -1107,7 +1104,6 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 			data = pr->dip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
 			data_m = pr->dip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
 			break;
-
 		case TEMPLATE_FIELD_IP_TOS_PROTO:
 			data = pr->tos_proto;
 			data_m = pr->tos_proto_m;
@@ -1541,13 +1537,17 @@ static int rtl839x_pie_verify_template(struct rtl838x_switch_priv *priv,
 		return -1;
 
 	if (pr->is_ipv6) {
-		if ((pr->sip6_m.s6_addr32[0] || pr->sip6_m.s6_addr32[1]
-			|| pr->sip6_m.s6_addr32[2] || pr->sip6_m.s6_addr32[3])
-			&& !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
+		if ((pr->sip6_m.s6_addr32[0] ||
+		     pr->sip6_m.s6_addr32[1] ||
+		     pr->sip6_m.s6_addr32[2] ||
+		     pr->sip6_m.s6_addr32[3]) &&
+		    !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
 			return -1;
-		if ((pr->dip6_m.s6_addr32[0] || pr->dip6_m.s6_addr32[1]
-			|| pr->dip6_m.s6_addr32[2] || pr->dip6_m.s6_addr32[3])
-			&& !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
+		if ((pr->dip6_m.s6_addr32[0] ||
+		     pr->dip6_m.s6_addr32[1] ||
+		     pr->dip6_m.s6_addr32[2] ||
+		     pr->dip6_m.s6_addr32[3]) &&
+		    !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
 			return -1;
 	}
 
@@ -1836,17 +1836,17 @@ void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	case BPDU:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL839X_RMA_BPDU_CTRL + ((port >> 4) << 2));
-	break;
+		break;
 	case PTP:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL839X_RMA_PTP_CTRL + ((port >> 4) << 2));
-	break;
+		break;
 	case LLTP:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL839X_RMA_LLTP_CTRL + ((port >> 4) << 2));
-	break;
+		break;
 	default:
-	break;
+		break;
 	}
 }
 
@@ -1917,7 +1917,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.init_eee = rtl839x_init_eee,
 	.port_eee_set = rtl839x_port_eee_set,
 	.eee_port_ability = rtl839x_eee_port_ability,
-	.l2_hash_seed = rtl839x_l2_hash_seed, 
+	.l2_hash_seed = rtl839x_l2_hash_seed,
 	.l2_hash_key = rtl839x_l2_hash_key,
 	.read_mcast_pmask = rtl839x_read_mcast_pmask,
 	.write_mcast_pmask = rtl839x_write_mcast_pmask,

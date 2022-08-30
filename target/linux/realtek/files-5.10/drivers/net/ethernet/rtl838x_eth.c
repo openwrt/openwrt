@@ -214,7 +214,7 @@ extern int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
 extern int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 
 /*
- * On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of 
+ * On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of
  * the rings. Writing x into these registers substracts x from its content.
  * When the content reaches the ring size, the ASIC no longer adds
  * packets to this receive queue.
@@ -349,15 +349,16 @@ static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
 			pr_debug("Got something: %d\n", ring->c_rx[r]);
 			h = &ring->rx_header[r][ring->c_rx[r]];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->rx_space
-					+ r * priv->rxringlen * RING_BUFFER
-					+ ring->c_rx[r] * RING_BUFFER);
+			h->buf = (u8 *)KSEG1ADDR(ring->rx_space +
+			                         r * priv->rxringlen * RING_BUFFER +
+			                         ring->c_rx[r] * RING_BUFFER);
 			h->size = RING_BUFFER;
 			/* make sure the header is visible to the ASIC */
 			mb();
 
-			ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1
-				| (ring->c_rx[r] == (priv->rxringlen - 1) ? WRAP : 0x1);
+			ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 | (ring->c_rx[r] == (priv->rxringlen - 1) ?
+			                               WRAP :
+			                               0x1);
 			ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
 		} while (&ring->rx_r[r][ring->c_rx[r]] != last);
 	}
@@ -520,7 +521,7 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 	/* RX buffer overrun */
 	if (status_rx_r) {
 		pr_debug("RX buffer overrun: status %x, mask: %x\n",
-			 status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
+		         status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
 		sw_w32(status_rx_r, priv->r->dma_if_intr_rx_runout_sts);
 		rtl838x_rb_cleanup(priv, status_rx_r);
 	}
@@ -645,7 +646,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 	u32 int_saved, nbuf;
 	u32 reset_mask;
 	int i, pos;
-	
+
 	pr_info("RESETTING %x, CPU_PORT %d\n", priv->family_id, priv->cpu_port);
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
 	mdelay(100);
@@ -699,7 +700,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 			pos = (i % 3) * 10;
 			sw_w32_mask(0x3ff << pos, 0, priv->r->dma_if_rx_ring_size(i));
 			sw_w32_mask(0x3ff << pos, priv->rxringlen,
-				    priv->r->dma_if_rx_ring_cntr(i));
+			            priv->r->dma_if_rx_ring_cntr(i));
 		}
 	}
 
@@ -828,13 +829,14 @@ static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring
 		for (j = 0; j < priv->rxringlen; j++) {
 			h = &ring->rx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->rx_space
-					+ i * priv->rxringlen * RING_BUFFER
-					+ j * RING_BUFFER);
+			h->buf = (u8 *)KSEG1ADDR(ring->rx_space +
+			                         i * priv->rxringlen * RING_BUFFER +
+			                         j * RING_BUFFER);
 			h->size = RING_BUFFER;
 			/* All rings owned by switch, last one wraps */
-			ring->rx_r[i][j] = KSEG1ADDR(h) | 1 
-					   | (j == (priv->rxringlen - 1) ? WRAP : 0);
+			ring->rx_r[i][j] = KSEG1ADDR(h) | 1 | (j == (priv->rxringlen - 1) ?
+			                   WRAP :
+			                   0);
 		}
 		ring->c_rx[i] = 0;
 	}
@@ -843,14 +845,14 @@ static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring
 		for (j = 0; j < TXRINGLEN; j++) {
 			h = &ring->tx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->tx_space
-					+ i * TXRINGLEN * RING_BUFFER
-					+ j * RING_BUFFER);
+			h->buf = (u8 *)KSEG1ADDR(ring->tx_space +
+			                         i * TXRINGLEN * RING_BUFFER +
+			                         j * RING_BUFFER);
 			h->size = RING_BUFFER;
 			ring->tx_r[i][j] = KSEG1ADDR(&ring->tx_header[i][j]);
 		}
 		/* Last header is wrapping around */
-		ring->tx_r[i][j-1] |= WRAP;
+		ring->tx_r[i][j - 1] |= WRAP;
 		ring->c_tx[i] = 0;
 	}
 }
@@ -1147,13 +1149,14 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 	len = skb->len;
 
 	/* Check for DSA tagging at the end of the buffer */
-	if (netdev_uses_dsa(dev) && skb->data[len-4] == 0x80
-			&& skb->data[len-3] < priv->cpu_port
-			&& skb->data[len-2] == 0x10
-			&& skb->data[len-1] == 0x00) {
+	if (netdev_uses_dsa(dev) &&
+	    skb->data[len - 4] == 0x80 &&
+	    skb->data[len - 3] < priv->cpu_port &&
+	    skb->data[len - 2] == 0x10 &&
+	    skb->data[len - 1] == 0x00) {
 		/* Reuse tag space for CRC if possible */
-		dest_port = skb->data[len-3];
-		skb->data[len-4] = skb->data[len-3] = skb->data[len-2] = skb->data[len-1] = 0x00;
+		dest_port = skb->data[len - 3];
+		skb->data[len - 4] = skb->data[len - 3] = skb->data[len - 2] = skb->data[len - 1] = 0x00;
 		len -= 4;
 	}
 
@@ -1198,8 +1201,7 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 		}
 
 		/* Tell switch to send data */
-		if (priv->family_id == RTL9310_FAMILY_ID
-			|| priv->family_id == RTL9300_FAMILY_ID) {
+		if (priv->family_id == RTL9310_FAMILY_ID || priv->family_id == RTL9300_FAMILY_ID) {
 			// Ring ID q == 0: Low priority, Ring ID = 1: High prio queue
 			if (!q)
 				sw_w32_mask(0, BIT(2), priv->r->dma_if_ctrl);
@@ -1308,12 +1310,12 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 			/* Overwrite CRC with cpu_tag */
 			if (dsa) {
 				priv->r->decode_tag(h, &tag);
-				skb->data[len-4] = 0x80;
-				skb->data[len-3] = tag.port;
-				skb->data[len-2] = 0x10;
-				skb->data[len-1] = 0x00;
+				skb->data[len - 4] = 0x80;
+				skb->data[len - 3] = tag.port;
+				skb->data[len - 2] = 0x10;
+				skb->data[len - 1] = 0x00;
 				if (tag.l2_offloaded)
-					skb->data[len-3] |= 0x40;
+					skb->data[len - 3] |= 0x40;
 			}
 
 			if (tag.queue >= 0)
@@ -1342,8 +1344,9 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		h->buf = data;
 		h->size = RING_BUFFER;
 
-		ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 
-			| (ring->c_rx[r] == (priv->rxringlen - 1) ? WRAP : 0x1);
+		ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 | (ring->c_rx[r] == (priv->rxringlen - 1) ?
+		                               WRAP :
+		                               0x1);
 		ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
@@ -2358,7 +2361,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	rxrings = (soc_info.family == RTL8380_FAMILY_ID 
+	rxrings = (soc_info.family == RTL8380_FAMILY_ID
 			|| soc_info.family == RTL8390_FAMILY_ID) ? 8 : 32;
 	rxrings = rxrings > MAX_RXRINGS ? MAX_RXRINGS : rxrings;
 	rxringlen = MAX_ENTRIES / rxrings;
@@ -2392,9 +2395,9 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	}
 
 	/* Allocate buffer memory */
-	priv->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER
-				+ sizeof(struct ring_b) + sizeof(struct notify_b),
-				(void *)&dev->mem_start, GFP_KERNEL);
+	priv->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER +
+	                                    sizeof(struct ring_b) + sizeof(struct notify_b),
+	                                    (void *)&dev->mem_start, GFP_KERNEL);
 	if (!priv->membase) {
 		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
 		err = -ENOMEM;

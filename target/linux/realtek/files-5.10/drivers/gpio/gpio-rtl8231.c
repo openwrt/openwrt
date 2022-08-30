@@ -55,7 +55,7 @@ static u32 rtl8231_read(struct rtl8231_gpios *gpios, u32 reg)
 
 	if (n >= USEC_TIMEOUT)
 		return 0x80000000;
-	
+
 	pr_debug("%s: %x, %x, %x\n", __func__, gpios->smi_bus_id,
 		reg, (t & 0xffff0000) >> 16);
 

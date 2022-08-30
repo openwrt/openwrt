@@ -20,28 +20,28 @@ int dot1p_priority_remapping[] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 static void rtl839x_read_scheduling_table(int port)
 {
-	u32 cmd = 1 << 9 /* Execute cmd */
-		| 0 << 8 /* Read */
-		| 0 << 6 /* Table type 0b00 */
-		| (port & 0x3f);
+	u32 cmd = 1 << 9 | /* Execute cmd */
+	          0 << 8 | /* Read */
+	          0 << 6 | /* Table type 0b00 */
+	          (port & 0x3f);
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 
 static void rtl839x_write_scheduling_table(int port)
 {
-	u32 cmd = 1 << 9 /* Execute cmd */
-		| 1 << 8 /* Write */
-		| 0 << 6 /* Table type 0b00 */
-		| (port & 0x3f);
+	u32 cmd = 1 << 9 | /* Execute cmd */
+	          1 << 8 | /* Write */
+	          0 << 6 | /* Table type 0b00 */
+	          (port & 0x3f);
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 
 static void rtl839x_read_out_q_table(int port)
 {
-	u32 cmd = 1 << 9 /* Execute cmd */
-		| 0 << 8 /* Read */
-		| 2 << 6 /* Table type 0b10 */
-		| (port & 0x3f);
+	u32 cmd = 1 << 9 | /* Execute cmd */
+	          0 << 8 | /* Read */
+	          2 << 6 | /* Table type 0b10 */
+	          (port & 0x3f);
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 
@@ -180,7 +180,7 @@ int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
 	sw_w32_mask(0xfff << 20, rate << 20, RTL839X_TBL_ACCESS_DATA_2(8));
 
 	rtl839x_write_scheduling_table(port);
-	
+
 	mutex_unlock(&priv->reg_mutex);
 
 	return old_rate;
@@ -317,7 +317,7 @@ void rtl839x_setup_prio2queue_matrix(int *min_queues)
 /* Sets the CPU queue depending on the internal priority of a packet */
 void rtl83xx_setup_prio2queue_cpu_matrix(int *max_queues)
 {
-	int reg = soc_info.family == RTL8380_FAMILY_ID ? RTL838X_QM_PKT2CPU_INTPRI_MAP 
+	int reg = soc_info.family == RTL8380_FAMILY_ID ? RTL838X_QM_PKT2CPU_INTPRI_MAP
 					: RTL839X_QM_PKT2CPU_INTPRI_MAP;
 	int i;
 	u32 v;
@@ -351,7 +351,6 @@ void rtl83xx_set_ingress_priority(int port, int priority)
 		sw_w32(priority << ((port % 10) *3), RTL838X_PRI_SEL_PORT_PRI(port));
 	else
 		sw_w32(priority << ((port % 10) *3), RTL839X_PRI_SEL_PORT_PRI(port));
-	
 }
 
 int rtl839x_get_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port)
@@ -386,7 +385,7 @@ void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port
 
 		// Get current OAM state
 		oam_port_state = sw_r32(RTL839X_OAM_PORT_ACT_CTRL(port));
-	
+
 		// Disable OAM to block traffice
 		v = sw_r32(RTL839X_OAM_CTRL);
 		sw_w32_mask(0, 1, RTL839X_OAM_CTRL);
@@ -397,7 +396,7 @@ void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port
 
 		// Set port egress rate to unlimited
 		egress_rate = rtl839x_set_egress_rate(priv, port, 0xFFFFF);
-	
+
 		// Wait until the egress used page count of that port is 0
 		i = 0;
 		do {
@@ -528,7 +527,7 @@ void rtl839x_config_qos(void)
 	for (p = 0; p < 8; p++)
 		v |= (dot1p_priority_remapping[p] & 0x7) << (p * 3);
 	sw_w32(v, RTL839X_PRI_SEL_IPRI_REMAP);
-	
+
 	/* Configure Drop Precedence for Drop Eligible Indicator (DEI)
 	 * Index 0: 0
 	 * Index 1: 2
@@ -572,5 +571,4 @@ void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv)
 		rtl838x_rate_control_init(priv);
 	else if (priv->family_id == RTL8390_FAMILY_ID)
 		rtl839x_rate_control_init(priv);
-	
 }
