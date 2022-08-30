@@ -16,15 +16,21 @@ use strict;
 use warnings;
 
 my $indata;
+my $var_name = "stdin";
+my $full_output = 1;
 
 {
 	local $/;
 	my $fh;
 
-	if (@ARGV) {
-		open($fh, '<:raw', $ARGV[0]) || die("Unable to open $ARGV[0]: $!\n");
-	} else {
+	if ($#ARGV == 1 && $ARGV[0] eq '-i') {
+		$var_name = $ARGV[1];
+		open($fh, '<:raw', $var_name) || die("xxdi.pl: Unable to open $var_name: $!\n");
+	} elsif ((!@ARGV && !(-t STDIN)) || ($#ARGV == 0 && $ARGV[0] eq '-i')) {
 		$fh = \*STDIN;
+		$full_output = 0 if @ARGV;
+	} else {
+		die "usage: xxdi.pl [-i] [infile]\n";
 	}
 
 	$indata = readline $fh;
@@ -34,31 +40,30 @@ my $indata;
 
 my $len_data = length($indata);
 my $num_digits_per_line = 12;
-my $var_name;
-my $outdata;
+my $outdata = "";
 
 # Use the variable name of the file we read from, converting '/' and '.
 # to '_', or, if this is stdin, just use "stdin" as the name.
-if (@ARGV) {
-	$var_name = $ARGV[0];
-	$var_name =~ s/\//_/g;
-	$var_name =~ s/\./_/g;
-} else {
-	$var_name = "stdin";
-}
+$var_name =~ s/\//_/g;
+$var_name =~ s/\./_/g;
+$var_name = "__$var_name" if $var_name =~ /^\d/;
 
-$outdata .= "unsigned char $var_name\[] = {";
+$outdata = "unsigned char $var_name\[] = { " if ($full_output);
 
-# trailing ',' is acceptable, so instead of duplicating the logic for
-# just the last character, live with the extra ','.
 for (my $key= 0; $key < $len_data; $key++) {
 	if ($key % $num_digits_per_line == 0) {
-		$outdata .= "\n\t";
+		$outdata = substr($outdata, 0, -1)."\n  ";
 	}
 	$outdata .= sprintf("0x%.2x, ", ord(substr($indata, $key, 1)));
 }
 
-$outdata .= "\n};\nunsigned int $var_name\_len = $len_data;\n";
+$outdata = substr($outdata, 0, -2);
+
+if ($full_output) {
+	$outdata .= "\n};\nunsigned int $var_name\_len = $len_data;\n";
+} else {
+	$outdata .= "\n";
+}
 
 binmode STDOUT;
 print {*STDOUT} $outdata;
