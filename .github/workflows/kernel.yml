@@ -1,10 +1,11 @@
-name: Build Kernel
+name: Build Everything
 
 on:
+  push:
   pull_request:
     paths:
       - '.github/workflows/kernel.yml'
-      - 'include/kernel-*'
+      - 'include/*'
       - 'package/kernel/**'
       - 'target/linux/generic/**'
 jobs:
@@ -21,9 +22,7 @@ jobs:
       - name: Set targets
         id: find_targets
         run: |
-          export TARGETS="$(perl ./scripts/dump-target-info.pl targets 2>/dev/null \
-            | sort -u -t '/' -k1,1 \
-            | awk '{ print $1 }')"
+          export TARGETS="mediatek/mt7622 bcm4908/generic"
 
           JSON='['
           FIRST=1
@@ -118,8 +117,6 @@ jobs:
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
-          echo CONFIG_ALL_KMODS=y >> .config
-
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
             --overwrite-config \
@@ -142,10 +139,10 @@ jobs:
         working-directory: openwrt
         run: make toolchain/install -j$(nproc) BUILD_LOG=1
 
-      - name: Build Kernel
+      - name: Build everything
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
-        run: make target/compile -j$(nproc) BUILD_LOG=1
+        run: make -j$(nproc) BUILD_LOG=1
 
       - name: Show build failures
         if: failure()
