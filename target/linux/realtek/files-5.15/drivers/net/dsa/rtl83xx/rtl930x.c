@@ -242,8 +242,7 @@ static void rtl930x_vlan_set_untagged(u32 vlan, u64 portmask)
 	rtl_table_release(r);
 }
 
-/* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer
- */
+/* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer */
 static void rtl930x_vlan_fwd_on_inner(int port, bool is_set)
 {
 	// Always set all tag modes to fwd based on either inner or outer tag
@@ -289,10 +288,10 @@ static void rtl930x_l2_learning_setup(void)
 static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
-	u32 cmd = 1 << 17 /* Execute cmd */
-		| 0 << 16 /* Read */
-		| 4 << 12 /* Table type 0b10 */
-		| (msti & 0xfff);
+	u32 cmd = 1 << 17 | /* Execute cmd */
+	          0 << 16 | /* Read */
+	          4 << 12 | /* Table type 0b10 */
+	          (msti & 0xfff);
 	priv->r->exec_tbl0_cmd(cmd);
 
 	for (i = 0; i < 2; i++)
@@ -303,10 +302,10 @@ static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
-	u32 cmd = 1 << 17 /* Execute cmd */
-		| 1 << 16 /* Write */
-		| 4 << 12 /* Table type 4 */
-		| (msti & 0xfff);
+	u32 cmd = 1 << 17 | /* Execute cmd */
+	          1 << 16 | /* Write */
+	          4 << 12 | /* Table type 4 */
+	          (msti & 0xfff);
 
 	for (i = 0; i < 2; i++)
 		sw_w32(port_state[i], RTL930X_TBL_ACCESS_DATA_0(i));
@@ -338,8 +337,7 @@ static u64 rtl930x_l2_hash_seed(u64 mac, u32 vid)
 	return v;
 }
 
-/*
- * Calculate both the block 0 and the block 1 hash by applyingthe same hash
+/* Calculate both the block 0 and the block 1 hash by applyingthe same hash
  * algorithm as the one used currently by the ASIC to the seed, and return
  * both hashes in the lower and higher word of the return value since only 12 bit of
  * the hash are significant
@@ -348,9 +346,12 @@ static u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 {
 	u32 k0, k1, h1, h2, h;
 
-	k0 = (u32) (((seed >> 55) & 0x1f) ^ ((seed >> 44) & 0x7ff)
-		^ ((seed >> 33) & 0x7ff) ^ ((seed >> 22) & 0x7ff)
-		^ ((seed >> 11) & 0x7ff) ^ (seed & 0x7ff));
+	k0 = (u32) (((seed >> 55) & 0x1f) ^
+	           ((seed >> 44) & 0x7ff) ^
+	           ((seed >> 33) & 0x7ff) ^
+	           ((seed >> 22) & 0x7ff) ^
+	           ((seed >> 11) & 0x7ff) ^
+	           (seed & 0x7ff));
 
 	h1 = (seed >> 11) & 0x7ff;
 	h1 = ((h1 & 0x1f) << 6) | ((h1 >> 5) & 0x3f);
@@ -358,9 +359,12 @@ static u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	h2 = (seed >> 33) & 0x7ff;
 	h2 = ((h2 & 0x3f) << 5)| ((h2 >> 6) & 0x3f);
 
-	k1 = (u32) (((seed << 55) & 0x1f) ^ ((seed >> 44) & 0x7ff) ^ h2
-		    ^ ((seed >> 22) & 0x7ff) ^ h1
-		    ^ (seed & 0x7ff));
+	k1 = (u32) (((seed << 55) & 0x1f) ^
+	           ((seed >> 44) & 0x7ff) ^
+	           h2 ^
+	           ((seed >> 22) & 0x7ff) ^
+	           h1 ^
+	           (seed & 0x7ff));
 
 	// Algorithm choice for block 0
 	if (sw_r32(RTL930X_L2_CTRL) & BIT(0))
@@ -382,9 +386,7 @@ static u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	return h;
 }
 
-/*
- * Fills an L2 entry structure from the SoC registers
- */
+/* Fills an L2 entry structure from the SoC registers */
 static void rtl930x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 {
 	pr_debug("In %s valid?\n", __func__);
@@ -443,9 +445,7 @@ static void rtl930x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 	}
 }
 
-/*
- * Fills the 3 SoC table registers r[] with the information of in the rtl838x_l2_entry
- */
+/* Fills the 3 SoC table registers r[] with the information of in the rtl838x_l2_entry */
 static void rtl930x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 {
 	u32 port;
@@ -457,9 +457,12 @@ static void rtl930x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 
 	r[2] = BIT(31);	// Set valid bit
 
-	r[0] = ((u32)e->mac[0]) << 24 | ((u32)e->mac[1]) << 16 
-		| ((u32)e->mac[2]) << 8 | ((u32)e->mac[3]);
-	r[1] = ((u32)e->mac[4]) << 24 | ((u32)e->mac[5]) << 16;
+	r[0] = ((u32)e->mac[0]) << 24 |
+	       ((u32)e->mac[1]) << 16 |
+	       ((u32)e->mac[2]) << 8 |
+	       ((u32)e->mac[3]);
+	r[1] = ((u32)e->mac[4]) << 24 |
+	       ((u32)e->mac[5]) << 16;
 
 	r[2] |= e->next_hop ? BIT(12) : 0;
 
@@ -490,8 +493,7 @@ static void rtl930x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 	}
 }
 
-/*
- * Read an L2 UC or MC entry out of a hash bucket of the L2 forwarding table
+/* Read an L2 UC or MC entry out of a hash bucket of the L2 forwarding table
  * hash is the id of the bucket and pos is the position of the entry in that bucket
  * The data read from the SoC is filled into rtl838x_l2_entry
  */
@@ -506,9 +508,10 @@ static u64 rtl930x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 
 	pr_debug("%s: hash %08x, pos: %d\n", __func__, hash, pos);
 
-	/* On the RTL93xx, 2 different hash algorithms are used making it a total of
-	 * 8 buckets that need to be searched, 4 for each hash-half
-	 * Use second hash space when bucket is between 4 and 8 */
+	/* On the RTL93xx, 2 different hash algorithms are used making it a
+	 * total of 8 buckets that need to be searched, 4 for each hash-half
+	 * Use second hash space when bucket is between 4 and 8
+	 */
 	if (pos >= 4) {
 		pos -= 4;
 		hash >>= 16;
@@ -531,11 +534,16 @@ static u64 rtl930x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	if (!e->valid)
 		return 0;
 
-	mac = ((u64)e->mac[0]) << 40 | ((u64)e->mac[1]) << 32 | ((u64)e->mac[2]) << 24
-		| ((u64)e->mac[3]) << 16 | ((u64)e->mac[4]) << 8 | ((u64)e->mac[5]);
+	mac = ((u64)e->mac[0]) << 40 |
+	      ((u64)e->mac[1]) << 32 |
+	      ((u64)e->mac[2]) << 24 |
+	      ((u64)e->mac[3]) << 16 |
+	      ((u64)e->mac[4]) << 8 |
+	      ((u64)e->mac[5]);
 
 	seed = rtl930x_l2_hash_seed(mac, e->rvid);
 	pr_debug("%s: mac %016llx, seed %016llx\n", __func__, mac, seed);
+
 	// return vid with concatenated mac as unique id
 	return seed;
 }
@@ -553,7 +561,7 @@ static void rtl930x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 
 	rtl930x_fill_l2_row(r, e);
 
-	for (i= 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -567,7 +575,7 @@ static u64 rtl930x_read_cam(int idx, struct rtl838x_l2_entry *e)
 	int i;
 
 	rtl_table_read(q, idx);
-	for (i= 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -588,7 +596,7 @@ static void rtl930x_write_cam(int idx, struct rtl838x_l2_entry *e)
 
 	rtl930x_fill_l2_row(r, e);
 
-	for (i= 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -607,6 +615,7 @@ static u64 rtl930x_read_mcast_pmask(int idx)
 	rtl_table_release(q);
 
 	pr_debug("%s: Index idx %d has portmask %08x\n", __func__, idx, portmask);
+
 	return portmask;
 }
 
@@ -632,12 +641,12 @@ u64 rtl930x_traffic_get(int source)
 	rtl_table_read(r, source);
 	v = sw_r32(rtl_table_data(r, 0));
 	rtl_table_release(r);
-	return v >> 3;
+	v = v >> 3;
+
+	return v;
 }
 
-/*
- * Enable traffic between a source port and a destination port matrix
- */
+/* Enable traffic between a source port and a destination port matrix */
 void rtl930x_traffic_set(int source, u64 dest_matrix)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
@@ -698,7 +707,8 @@ irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 	for (i = 0; i < 28; i++) {
 		if (ports & BIT(i)) {
 			/* Read the register twice because of issues with latency at least
-			 * with the external RTL8226 PHY on the XGS1210 */
+			 * with the external RTL8226 PHY on the XGS1210
+			 */
 			link = sw_r32(RTL930X_MAC_LINK_STS);
 			link = sw_r32(RTL930X_MAC_LINK_STS);
 			if (link & BIT(i))
@@ -772,9 +782,7 @@ int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	return err;
 }
 
-/*
- * Write to an mmd register of the PHY
- */
+/* Write to an mmd register of the PHY */
 int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
 	int err = 0;
@@ -803,9 +811,7 @@ int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 	return err;
 }
 
-/*
- * Read an mmd register of the PHY
- */
+/* Read an mmd register of the PHY */
 int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 {
 	int err = 0;
@@ -834,8 +840,7 @@ int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	return err;
 }
 
-/*
- * Calculate both the block 0 and the block 1 hash, and return in
+/* Calculate both the block 0 and the block 1 hash, and return in
  * lower and higher word of the return value since only 12 bit of
  * the hash are significant
  */
@@ -843,19 +848,25 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 {
 	u32 k0, k1, h1, h2, h;
 
-	k0 = (u32) (((seed >> 55) & 0x1f) ^ ((seed >> 44) & 0x7ff)
-		^ ((seed >> 33) & 0x7ff) ^ ((seed >> 22) & 0x7ff)
-		^ ((seed >> 11) & 0x7ff) ^ (seed & 0x7ff));
+	k0 = (u32) (((seed >> 55) & 0x1f) ^
+	            ((seed >> 44) & 0x7ff) ^
+	            ((seed >> 33) & 0x7ff) ^
+	            ((seed >> 22) & 0x7ff) ^
+	            ((seed >> 11) & 0x7ff) ^
+	            (seed & 0x7ff));
 
 	h1 = (seed >> 11) & 0x7ff;
 	h1 = ((h1 & 0x1f) << 6) | ((h1 >> 5) & 0x3f);
 
 	h2 = (seed >> 33) & 0x7ff;
-	h2 = ((h2 & 0x3f) << 5)| ((h2 >> 6) & 0x3f);
+	h2 = ((h2 & 0x3f) << 5) | ((h2 >> 6) & 0x3f);
 
-	k1 = (u32) (((seed << 55) & 0x1f) ^ ((seed >> 44) & 0x7ff) ^ h2
-		    ^ ((seed >> 22) & 0x7ff) ^ h1
-		    ^ (seed & 0x7ff));
+	k1 = (u32) (((seed << 55) & 0x1f) ^
+	           ((seed >> 44) & 0x7ff) ^
+	           h2 ^
+	           ((seed >> 22) & 0x7ff) ^
+	           h1 ^
+	           (seed & 0x7ff));
 
 	// Algorithm choice for block 0
 	if (sw_r32(RTL930X_L2_CTRL) & BIT(0))
@@ -877,9 +888,7 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 	return h;
 }
 
-/*
- * Enables or disables the EEE/EEEP capability of a port
- */
+/* Enables or disables the EEE/EEEP capability of a port */
 void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
 	u32 v;
@@ -901,9 +910,7 @@ void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
 	priv->ports[port].eee_enabled = enable;
 }
 
-/*
- * Get EEE own capabilities and negotiation result
- */
+/* Get EEE own capabilities and negotiation result */
 int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
 {
 	u32 link, a;
@@ -1012,41 +1019,41 @@ static u32 rtl930x_l3_hash6(struct in6_addr *ip6, int algorithm, bool move_dip)
 	rows[9] = (HASH_PICK(ip6->s6_addr[9], 0, 6) << 3) | HASH_PICK(ip6->s6_addr[10], 5, 3);
 	rows[10] = (HASH_PICK(ip6->s6_addr[10], 0, 5) << 4) | HASH_PICK(ip6->s6_addr[11], 4, 4);
 	if (!algorithm) {
-		rows[11] = (HASH_PICK(ip6->s6_addr[11], 0, 4) << 5)
-				| (HASH_PICK(ip6->s6_addr[12], 3, 5) << 0);
-		rows[12] = (HASH_PICK(ip6->s6_addr[12], 0, 3) << 6)
-				| (HASH_PICK(ip6->s6_addr[13], 2, 6) << 0);
-		rows[13] = (HASH_PICK(ip6->s6_addr[13], 0, 2) << 7)
-				| (HASH_PICK(ip6->s6_addr[14], 1, 7) << 0);
+		rows[11] = (HASH_PICK(ip6->s6_addr[11], 0, 4) << 5) |
+		           (HASH_PICK(ip6->s6_addr[12], 3, 5) << 0);
+		rows[12] = (HASH_PICK(ip6->s6_addr[12], 0, 3) << 6) |
+		           (HASH_PICK(ip6->s6_addr[13], 2, 6) << 0);
+		rows[13] = (HASH_PICK(ip6->s6_addr[13], 0, 2) << 7) |
+		           (HASH_PICK(ip6->s6_addr[14], 1, 7) << 0);
 		if (!move_dip) {
-			rows[14] = (HASH_PICK(ip6->s6_addr[14], 0, 1) << 8)
-					| (HASH_PICK(ip6->s6_addr[15], 0, 8) << 0);
+			rows[14] = (HASH_PICK(ip6->s6_addr[14], 0, 1) << 8) |
+			           (HASH_PICK(ip6->s6_addr[15], 0, 8) << 0);
 		}
-		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3] ^ rows[4] ^ rows[5] ^ rows[6]
-			^ rows[7] ^ rows[8] ^ rows[9] ^ rows[10] ^ rows[11] ^ rows[12]
-			^ rows[13] ^ rows[14];
+		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3] ^ rows[4] ^
+		       rows[5] ^ rows[6] ^ rows[7] ^ rows[8] ^ rows[9] ^
+		       rows[10] ^ rows[11] ^ rows[12] ^ rows[13] ^ rows[14];
 	} else {
 		rows[11] = (HASH_PICK(ip6->s6_addr[11], 0, 4) << 5);
 		rows[12] = (HASH_PICK(ip6->s6_addr[12], 3, 5) << 0);
-		rows[13] = (HASH_PICK(ip6->s6_addr[12], 0, 3) << 6)
-				| HASH_PICK(ip6->s6_addr[13], 2, 6);
-		rows[14] = (HASH_PICK(ip6->s6_addr[13], 0, 2) << 7)
-				| HASH_PICK(ip6->s6_addr[14], 1, 7);
+		rows[13] = (HASH_PICK(ip6->s6_addr[12], 0, 3) << 6) |
+		           HASH_PICK(ip6->s6_addr[13], 2, 6);
+		rows[14] = (HASH_PICK(ip6->s6_addr[13], 0, 2) << 7) |
+		           HASH_PICK(ip6->s6_addr[14], 1, 7);
 		if (!move_dip) {
-			rows[15] = (HASH_PICK(ip6->s6_addr[14], 0, 1) << 8)
-					| (HASH_PICK(ip6->s6_addr[15], 0, 8) << 0);
+			rows[15] = (HASH_PICK(ip6->s6_addr[14], 0, 1) << 8) |
+			           (HASH_PICK(ip6->s6_addr[15], 0, 8) << 0);
 		}
 		s0 = rows[12] + rows[13] + rows[14];
 		s1 = (s0 & 0x1ff) + ((s0 & (0x1ff << 9)) >> 9);
 		pH = (s1 & 0x1ff) + ((s1 & (0x1ff << 9)) >> 9);
-		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3] ^ rows[4] ^ rows[5] ^ rows[6]
-			^ rows[7] ^ rows[8] ^ rows[9] ^ rows[10] ^ rows[11] ^ pH ^ rows[15];
+		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3] ^ rows[4] ^
+		       rows[5] ^ rows[6] ^ rows[7] ^ rows[8] ^ rows[9] ^
+		       rows[10] ^ rows[11] ^ pH ^ rows[15];
 	}
 	return hash;
 }
 
-/*
- * Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
+/* Read a prefix route entry from the L3_PREFIX_ROUTE_IPUC table
  * We currently only support IPv4 and IPv6 unicast route
  */
 static void rtl930x_route_read(int idx, struct rtl83xx_route *rt)
@@ -1128,8 +1135,7 @@ static void rtl930x_net6_mask(int prefix_len, struct in6_addr *ip6_m)
 	ip6_m->s6_addr[o] |= b ? 0xff00 >> b : 0x00;
 }
 
-/*
- * Read a host route entry from the table using its index
+/* Read a host route entry from the table using its index
  * We currently only support IPv4 and IPv6 unicast route
  */
 static void rtl930x_host_route_read(int idx, struct rtl83xx_route *rt)
@@ -1181,8 +1187,7 @@ out:
 	rtl_table_release(r);
 }
 
-/*
- * Write a host route entry from the table using its index
+/* Write a host route entry from the table using its index
  * We currently only support IPv4 and IPv6 unicast route
  */
 static void rtl930x_host_route_write(int idx, struct rtl83xx_route *rt)
@@ -1237,8 +1242,7 @@ out:
 	rtl_table_release(r);
 }
 
-/*
- * Look up the index of a prefix route in the routing table CAM for unicast IPv4/6 routes
+/* Look up the index of a prefix route in the routing table CAM for unicast IPv4/6 routes
  * using hardware offload.
  */
 static int rtl930x_route_lookup_hw(struct rtl83xx_route *rt)
@@ -1317,8 +1321,7 @@ static int rtl930x_find_l3_slot(struct rtl83xx_route *rt, bool must_exist)
 	return -1;
 }
 
-/*
- * Write a prefix route into the routing table CAM at position idx
+/* Write a prefix route into the routing table CAM at position idx
  * Currently only IPv4 and IPv6 unicast routes are supported
  */
 static void rtl930x_route_write(int idx, struct rtl83xx_route *rt)
@@ -1400,8 +1403,7 @@ static void rtl930x_route_write(int idx, struct rtl83xx_route *rt)
 }
 
 
-/*
- * Get the destination MAC and L3 egress interface ID of a nexthop entry from
+/* Get the destination MAC and L3 egress interface ID of a nexthop entry from
  * the SoC's L3_NEXTHOP table
  */
 static void rtl930x_get_l3_nexthop(int idx, u16 *dmac_id, u16 *interface)
@@ -1467,9 +1469,7 @@ static int rtl930x_l3_mtu_add(struct rtl838x_switch_priv *priv, int mtu)
 	return mtu_id;
 }
 
-/*
- * Creates an interface for a route by setting up the HW tables in the SoC
- */
+/* Creates an interface for a route by setting up the HW tables in the SoC */
 static int rtl930x_l3_intf_add(struct rtl838x_switch_priv *priv, struct rtl838x_l3_intf *intf)
 {
 	int i, intf_id, mtu_id;
@@ -1501,8 +1501,7 @@ static int rtl930x_l3_intf_add(struct rtl838x_switch_priv *priv, struct rtl838x_
 	}
 }
 
-/*
- * Set the destination MAC and L3 egress interface ID for a nexthop entry in the SoC's
+/* Set the destination MAC and L3 egress interface ID for a nexthop entry in the SoC's
  * L3_NEXTHOP table. The nexthop entry is identified by idx.
  * dmac_id is the reference to the L2 entry in the L2 forwarding table, special values are
  * 0x7ffe: TRAP2CPU
@@ -1530,8 +1529,7 @@ static void rtl930x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int inde
 	sw_w32_mask(0, BIT(block), RTL930X_PIE_BLK_LOOKUP_CTRL);
 }
 
-/*
- * Reads the intermediate representation of the templated match-fields of the
+/* Reads the intermediate representation of the templated match-fields of the
  * PIE rule in the pie_rule structure and fills in the raw data fields in the
  * raw register space r[].
  * The register space configuration size is identical for the RTL8380/90 and RTL9300,
@@ -1624,7 +1622,6 @@ static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->sip_m >> 16;
 			}
 			break;
-
 		case TEMPLATE_FIELD_SIP2:
 		case TEMPLATE_FIELD_SIP3:
 		case TEMPLATE_FIELD_SIP4:
@@ -1634,7 +1631,6 @@ static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 			data = pr->sip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
 			data_m = pr->sip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
 			break;
-
 		case TEMPLATE_FIELD_DIP0:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[7];
@@ -1644,7 +1640,6 @@ static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m;
 			}
 			break;
-
 		case TEMPLATE_FIELD_DIP1:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[6];
@@ -1654,7 +1649,6 @@ static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m >> 16;
 			}
 			break;
-
 		case TEMPLATE_FIELD_DIP2:
 		case TEMPLATE_FIELD_DIP3:
 		case TEMPLATE_FIELD_DIP4:
@@ -1664,7 +1658,6 @@ static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 			data = pr->dip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
 			data_m = pr->dip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
 			break;
-
 		case TEMPLATE_FIELD_IP_TOS_PROTO:
 			data = pr->tos_proto;
 			data_m = pr->tos_proto_m;
@@ -1900,8 +1893,7 @@ static bool rtl930x_pie_templ_has(int t, enum template_field_id field_type)
 	return false;
 }
 
-/*
- * Verify that the rule pr is compatible with a given template t in block block
+/* Verify that the rule pr is compatible with a given template t in block block
  * Note that this function is SoC specific since the values of e.g. TEMPLATE_FIELD_SIP0
  * depend on the SoC
  */
@@ -1917,13 +1909,17 @@ static int rtl930x_pie_verify_template(struct rtl838x_switch_priv *priv,
 		return -1;
 
 	if (pr->is_ipv6) {
-		if ((pr->sip6_m.s6_addr32[0] || pr->sip6_m.s6_addr32[1]
-			|| pr->sip6_m.s6_addr32[2] || pr->sip6_m.s6_addr32[3])
-			&& !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
+		if ((pr->sip6_m.s6_addr32[0] ||
+		     pr->sip6_m.s6_addr32[1] ||
+		     pr->sip6_m.s6_addr32[2] ||
+		     pr->sip6_m.s6_addr32[3]) &&
+		    !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
 			return -1;
-		if ((pr->dip6_m.s6_addr32[0] || pr->dip6_m.s6_addr32[1]
-			|| pr->dip6_m.s6_addr32[2] || pr->dip6_m.s6_addr32[3])
-			&& !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
+		if ((pr->dip6_m.s6_addr32[0] ||
+		     pr->dip6_m.s6_addr32[1] ||
+		     pr->dip6_m.s6_addr32[2] ||
+		     pr->dip6_m.s6_addr32[3]) &&
+		    !rtl930x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
 			return -1;
 	}
 
@@ -1991,9 +1987,7 @@ static int rtl930x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 	return 0;
 }
 
-/*
- * Delete a range of Packet Inspection Engine rules
- */
+/* Delete a range of Packet Inspection Engine rules */
 static int rtl930x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
 {
 	u32 v = (index_from << 1)| (index_to << 12 ) | BIT(0);
@@ -2040,7 +2034,7 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 
 	// Assign blocks 0-7 to VACL phase (bit = 0), blocks 8-15 to IACL (bit = 1)
 	sw_w32(0xff00, RTL930X_PIE_BLK_PHASE_CTRL);
-	
+
 	// Enable predefined templates 0, 1 for first quarter of all blocks
 	template_selectors = 0 | (1 << 4);
 	for (i = 0; i < priv->n_pie_blocks / 4; i++)
@@ -2063,8 +2057,7 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 
 }
 
-/*
- * Sets up an egress interface for L3 actions
+/* Sets up an egress interface for L3 actions
  * Actions for ip4/6_icmp_redirect, ip4/6_pbr_icmp_redirect are:
  * 0: FORWARD, 1: DROP, 2: TRAP2CPU, 3: COPY2CPU, 4: TRAP2MASTERCPU 5: COPY2MASTERCPU
  * 6: HARDDROP
@@ -2097,8 +2090,7 @@ static void rtl930x_set_l3_egress_intf(int idx, struct rtl838x_l3_intf *intf)
 	rtl_table_release(r);
 }
 
-/*
- * Reads a MAC entry for L3 termination as entry point for routing
+/* Reads a MAC entry for L3 termination as entry point for routing
  * from the hardware table
  * idx is the index into the L3_ROUTER_MAC table
  */
@@ -2121,18 +2113,17 @@ static void rtl930x_get_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
 	m->vid = v & 0xfff;
 	m->vid_mask = w & 0xfff;
 	m->action = sw_r32(rtl_table_data(r, 6)) & 0x7;
-	m->mac_mask = ((((u64)sw_r32(rtl_table_data(r, 5))) << 32) & 0xffffffffffffULL)
-			| (sw_r32(rtl_table_data(r, 4)));
-	m->mac = ((((u64)sw_r32(rtl_table_data(r, 1))) << 32) & 0xffffffffffffULL)
-			| (sw_r32(rtl_table_data(r, 2)));
+	m->mac_mask = ((((u64)sw_r32(rtl_table_data(r, 5))) << 32) & 0xffffffffffffULL) |
+	              (sw_r32(rtl_table_data(r, 4)));
+	m->mac = ((((u64)sw_r32(rtl_table_data(r, 1))) << 32) & 0xffffffffffffULL) |
+	         (sw_r32(rtl_table_data(r, 2)));
 	// Bits L3_INTF and BMSK_L3_INTF are 0
 
 out:
 	rtl_table_release(r);
 }
 
-/*
- * Writes a MAC entry for L3 termination as entry point for routing
+/* Writes a MAC entry for L3 termination as entry point for routing
  * into the hardware table
  * idx is the index into the L3_ROUTER_MAC table
  */
@@ -2172,8 +2163,7 @@ static void rtl930x_set_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
 	rtl_table_release(r);
 }
 
-/*
- * Get the Destination-MAC of an L3 egress interface or the Source MAC for routed packets
+/* Get the Destination-MAC of an L3 egress interface or the Source MAC for routed packets
  * from the SoC's L3_EGR_INTF_MAC table
  * Indexes 0-2047 are DMACs, 2048+ are SMACs
  */
@@ -2192,8 +2182,8 @@ static u64 rtl930x_get_l3_egress_mac(u32 idx)
 
 	return mac;
 }
-/*
- * Set the Destination-MAC of a route or the Source MAC of an L3 egress interface
+
+/* Set the Destination-MAC of a route or the Source MAC of an L3 egress interface
  * in the SoC's L3_EGR_INTF_MAC table
  * Indexes 0-2047 are DMACs, 2048+ are SMACs
  */
@@ -2211,8 +2201,7 @@ static void rtl930x_set_l3_egress_mac(u32 idx, u64 mac)
 	rtl_table_release(r);
 }
 
-/*
- * Configure L3 routing settings of the device:
+/* Configure L3 routing settings of the device:
  * - MTUs
  * - Egress interface
  * - The router's MAC address on which routed packets are expected
@@ -2425,7 +2414,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		return;
 	}
 
-	for (i= 0; i < priv->cpu_port; i++) {
+	for (i = 0; i < priv->cpu_port; i++) {
 		pos = (i << 1) % 32;
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));

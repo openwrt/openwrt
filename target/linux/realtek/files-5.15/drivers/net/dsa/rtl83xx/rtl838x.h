@@ -5,9 +5,7 @@
 
 #include <net/dsa.h>
 
-/*
- * Register definition
- */
+/* Register definition */
 #define RTL838X_MAC_PORT_CTRL(port)		(0xd560 + (((port) << 7)))
 #define RTL839X_MAC_PORT_CTRL(port)		(0x8004 + (((port) << 7)))
 #define RTL930X_MAC_PORT_CTRL(port)		(0x3260 + (((port) << 6)))
@@ -398,17 +396,16 @@
 #define RTL839X_SPCL_TRAP_SWITCH_IPV4_ADDR_CTRL	(0x106C)
 #define RTL839X_SPCL_TRAP_CRC_CTRL		(0x1070)
 /* special port action controls */
-/* 
-    values:
-	0 = FORWARD (default)
-	1 = DROP
-	2 = TRAP2CPU
-	3 = FLOOD IN ALL PORT
-
-	Register encoding.
-	offset = CTRL + (port >> 4) << 2
-	value/mask = 3 << ((port&0xF) << 1)
-*/
+/* values:
+ *      0 = FORWARD (default)
+ *      1 = DROP
+ *      2 = TRAP2CPU
+ *      3 = FLOOD IN ALL PORT
+ *
+ *      Register encoding.
+ *      offset = CTRL + (port >> 4) << 2
+ *      value/mask = 3 << ((port & 0xF) << 1)
+ */
 
 typedef enum {
 	BPDU = 0,
@@ -429,17 +426,17 @@ typedef enum {
 	COPY2CPU,
 } action_type_t;
 
-#define RTL838X_RMA_BPDU_CTRL			(0x4330) 
+#define RTL838X_RMA_BPDU_CTRL			(0x4330)
 #define RTL839X_RMA_BPDU_CTRL			(0x122C)
 #define RTL930X_RMA_BPDU_CTRL			(0x9E7C)
 #define RTL931X_RMA_BPDU_CTRL			(0x881C)
 
-#define RTL838X_RMA_PTP_CTRL			(0x4338) 
+#define RTL838X_RMA_PTP_CTRL			(0x4338)
 #define RTL839X_RMA_PTP_CTRL			(0x123C)
 #define RTL930X_RMA_PTP_CTRL			(0x9E88)
 #define RTL931X_RMA_PTP_CTRL			(0x8834)
 
-#define RTL838X_RMA_LLTP_CTRL			(0x4340) 
+#define RTL838X_RMA_LLTP_CTRL			(0x4340)
 #define RTL839X_RMA_LLTP_CTRL			(0x124C)
 #define RTL930X_RMA_LLTP_CTRL			(0x9EFC)
 #define RTL931X_RMA_LLTP_CTRL			(0x8918)
@@ -871,8 +868,7 @@ struct rtl838x_l3_intf {
 	u8 ip6_pbr_icmp_redirect;
 };
 
-/*
- * An entry in the RTL93XX SoC's ROUTER_MAC tables setting up a termination point
+/* An entry in the RTL93XX SoC's ROUTER_MAC tables setting up a termination point
  * for the L3 routing system. Packets arriving and matching an entry in this table
  * will be considered for routing.
  * Mask fields state whether the corresponding data fields matter for matching

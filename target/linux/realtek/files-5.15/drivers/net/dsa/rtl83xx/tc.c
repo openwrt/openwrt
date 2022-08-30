@@ -5,14 +5,12 @@
 #include <linux/netdevice.h>
 #include <net/flow_offload.h>
 #include <linux/rhashtable.h>
-
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+
 #include "rtl83xx.h"
 #include "rtl838x.h"
 
-/*
- * Parse the flow rule for the matching conditions
- */
+/* Parse the flow rule for the matching conditions */
 static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 			      struct flow_rule *rule, struct rtl83xx_flow *flow)
 {
@@ -44,8 +42,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 				flow->rule.frame_type_l4 = 0;
 			if (match.key->ip_proto == IPPROTO_TCP)
 				flow->rule.frame_type_l4 = 1;
-			if (match.key->ip_proto == IPPROTO_ICMP
-				|| match.key->ip_proto ==IPPROTO_ICMPV6)
+			if (match.key->ip_proto == IPPROTO_ICMP || match.key->ip_proto == IPPROTO_ICMPV6)
 				flow->rule.frame_type_l4 = 2;
 			if (match.key->ip_proto == IPPROTO_TCP)
 				flow->rule.frame_type_l4 = 3;
@@ -150,7 +147,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 	pr_debug("%s\n", __func__);
 
 	rtl83xx_parse_flow_rule(priv, rule, flow);
-	
+
 	flow_action_for_each(i, act, &rule->action) {
 		switch (act->id) {
 		case FLOW_ACTION_DROP:
@@ -288,6 +285,7 @@ out_free:
 	kfree(flow);
 out:
 	pr_err("%s: error %d\n", __func__, err);
+
 	return err;
 }
 
@@ -311,6 +309,7 @@ static int rtl83xx_delete_flower(struct rtl838x_switch_priv *priv,
 	kfree_rcu(flow, rcu_head);
 
 	rcu_read_unlock();
+
 	return 0;
 }
 
@@ -335,7 +334,8 @@ static int rtl83xx_stats_flower(struct rtl838x_switch_priv *priv,
 
 	// TODO: We need a second PIE rule to count the bytes
 	flow_stats_update(&cls_flower->stats, 100 * new_packets, new_packets, 0, lastused,
-			  FLOW_ACTION_HW_STATS_IMMEDIATE);
+	                  FLOW_ACTION_HW_STATS_IMMEDIATE);
+
 	return 0;
 }
 

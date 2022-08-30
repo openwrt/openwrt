@@ -147,4 +147,3 @@ wait_cpu:
 .globl	rtcl_838x_dram_size
 rtcl_838x_dram_size:
 	.word .-rtcl_838x_dram_start
-

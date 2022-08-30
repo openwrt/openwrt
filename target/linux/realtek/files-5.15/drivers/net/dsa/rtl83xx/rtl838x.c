@@ -75,8 +75,7 @@ enum template_field_id {
 	TEMPLATE_FIELD_FLOW_LABEL = 41,
 };
 
-/*
- * The RTL838X SoCs use 5 fixed templates with definitions for which data fields are to
+/* The RTL838X SoCs use 5 fixed templates with definitions for which data fields are to
  * be copied from the Ethernet Frame header into the 12 User-definable fields of the Packet
  * Inspection Engine's buffer. The following defines the field contents for each of the fixed
  * templates. Additionally, 3 user-definable templates can be set up via the definitions
@@ -216,8 +215,7 @@ static u64 rtl838x_l2_hash_seed(u64 mac, u32 vid)
 	return mac << 12 | vid;
 }
 
-/*
- * Applies the same hash algorithm as the one used currently by the ASIC to the seed
+/* Applies the same hash algorithm as the one used currently by the ASIC to the seed
  * and returns a key into the L2 hash table
  */
 static u32 rtl838x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
@@ -237,9 +235,9 @@ static u32 rtl838x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 		h = h1 ^ h2 ^ h3 ^ ((seed >> 55) & 0x1ff);
 		h ^= ((seed >> 22) & 0x7ff) ^ (seed & 0x7ff);
 	} else {
-		h = ((seed >> 55) & 0x1ff) ^ ((seed >> 44) & 0x7ff)
-			^ ((seed >> 33) & 0x7ff) ^ ((seed >> 22) & 0x7ff)
-			^ ((seed >> 11) & 0x7ff) ^ (seed & 0x7ff);
+		h = ((seed >> 55) & 0x1ff) ^ ((seed >> 44) & 0x7ff) ^
+		    ((seed >> 33) & 0x7ff) ^ ((seed >> 22) & 0x7ff) ^
+		    ((seed >> 11) & 0x7ff) ^ (seed & 0x7ff);
 	}
 
 	return h;
@@ -275,9 +273,7 @@ inline static int rtl838x_trk_mbr_ctr(int group)
 	return RTL838X_TRK_MBR_CTR + (group << 2);
 }
 
-/*
- * Fills an L2 entry structure from the SoC registers
- */
+/* Fills an L2 entry structure from the SoC registers */
 static void rtl838x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 {
 	/* Table contains different entry types, we need to identify the right one:
@@ -316,9 +312,10 @@ static void rtl838x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 			}
 			e->age = (r[0] >> 17) & 0x3;
 			e->valid = true;
-			
+
 			/* A valid entry has one of mutli-cast, aging, sa/da-blocking,
-			 * next-hop or static entry bit set */
+			 * next-hop or static entry bit set
+			 */
 			if (!(r[0] & 0x007c0000) && !(r[1] & 0xd0000000))
 				e->valid = false;
 			else
@@ -341,9 +338,7 @@ static void rtl838x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 		e->type = IP6_MULTICAST;
 }
 
-/*
- * Fills the 3 SoC table registers r[] with the information of in the rtl838x_l2_entry
- */
+/* Fills the 3 SoC table registers r[] with the information of in the rtl838x_l2_entry */
 static void rtl838x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 {
 	u64 mac = ether_addr_to_u64(e->mac);
@@ -389,21 +384,19 @@ static void rtl838x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 	}
 }
 
-/*
- * Read an L2 UC or MC entry out of a hash bucket of the L2 forwarding table
+/* Read an L2 UC or MC entry out of a hash bucket of the L2 forwarding table
  * hash is the id of the bucket and pos is the position of the entry in that bucket
  * The data read from the SoC is filled into rtl838x_l2_entry
  */
 static u64 rtl838x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
 {
-	u64 entry;
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_L2, 0); // Access L2 Table 0
 	u32 idx = (0 << 14) | (hash << 2) | pos; // Search SRAM, with hash and at pos in bucket
 	int i;
 
 	rtl_table_read(q, idx);
-	for (i= 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -412,8 +405,7 @@ static u64 rtl838x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	if (!e->valid)
 		return 0;
 
-	entry = (((u64) r[1]) << 32) | (r[2]);  // mac and vid concatenated as hash seed
-	return entry;
+	return (((u64) r[1]) << 32) | (r[2]);  // mac and vid concatenated as hash seed
 }
 
 static void rtl838x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
@@ -426,7 +418,7 @@ static void rtl838x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 
 	rtl838x_fill_l2_row(r, e);
 
-	for (i= 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -435,13 +427,12 @@ static void rtl838x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 
 static u64 rtl838x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
-	u64 entry;
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_L2, 1); // Access L2 Table 1
 	int i;
 
 	rtl_table_read(q, idx);
-	for (i= 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -453,8 +444,7 @@ static u64 rtl838x_read_cam(int idx, struct rtl838x_l2_entry *e)
 	pr_debug("Found in CAM: R1 %x R2 %x R3 %x\n", r[0], r[1], r[2]);
 
 	// Return MAC with concatenated VID ac concatenated ID
-	entry = (((u64) r[1]) << 32) | r[2];
-	return entry;
+	return (((u64) r[1]) << 32) | r[2];
 }
 
 static void rtl838x_write_cam(int idx, struct rtl838x_l2_entry *e)
@@ -465,7 +455,7 @@ static void rtl838x_write_cam(int idx, struct rtl838x_l2_entry *e)
 
 	rtl838x_fill_l2_row(r, e);
 
-	for (i= 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -539,8 +529,7 @@ static void rtl838x_enable_learning(int port, bool enable)
 
 static void rtl838x_enable_flood(int port, bool enable)
 {
-	/*
-	 * 0: Forward
+	/* 0: Forward
 	 * 1: Disable
 	 * 2: to CPU
 	 * 3: Copy to CPU
@@ -562,10 +551,10 @@ static void rtl838x_enable_bcast_flood(int port, bool enable)
 static void rtl838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
-	u32 cmd = 1 << 15 /* Execute cmd */
-		| 1 << 14 /* Read */
-		| 2 << 12 /* Table type 0b10 */
-		| (msti & 0xfff);
+	u32 cmd = 1 << 15 | /* Execute cmd */
+	          1 << 14 | /* Read */
+	          2 << 12 | /* Table type 0b10 */
+	          (msti & 0xfff);
 	priv->r->exec_tbl0_cmd(cmd);
 
 	for (i = 0; i < 2; i++)
@@ -575,10 +564,10 @@ static void rtl838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 static void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
-	u32 cmd = 1 << 15 /* Execute cmd */
-		| 0 << 14 /* Write */
-		| 2 << 12 /* Table type 0b10 */
-		| (msti & 0xfff);
+	u32 cmd = 1 << 15 | /* Execute cmd */
+	          0 << 14 | /* Write */
+	          2 << 12 | /* Table type 0b10 */
+	          (msti & 0xfff);
 
 	for (i = 0; i < 2; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
@@ -605,9 +594,7 @@ void rtl838x_traffic_disable(int source, int dest)
 	rtl838x_mask_port_reg(BIT(dest), 0, rtl838x_port_iso_ctrl(source));
 }
 
-/*
- * Enables or disables the EEE/EEEP capability of a port
- */
+/* Enables or disables the EEE/EEEP capability of a port */
 static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
 	u32 v;
@@ -634,9 +621,7 @@ static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, boo
 }
 
 
-/*
- * Get EEE own capabilities and negotiation result
- */
+/* Get EEE own capabilities and negotiation result */
 static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
 				    struct ethtool_eee *e, int port)
 {
@@ -729,8 +714,7 @@ static void rtl838x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_fro
 	mutex_unlock(&priv->reg_mutex);
 }
 
-/*
- * Reads the intermediate representation of the templated match-fields of the
+/* Reads the intermediate representation of the templated match-fields of the
  * PIE rule in the pie_rule structure and fills in the raw data fields in the
  * raw register space r[].
  * The register space configuration size is identical for the RTL8380/90 and RTL9300,
@@ -826,7 +810,6 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->sip_m >> 16;
 			}
 			break;
-
 		case TEMPLATE_FIELD_SIP2:
 		case TEMPLATE_FIELD_SIP3:
 		case TEMPLATE_FIELD_SIP4:
@@ -836,7 +819,6 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 			data = pr->sip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
 			data_m = pr->sip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
 			break;
-
 		case TEMPLATE_FIELD_DIP0:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[7];
@@ -846,7 +828,6 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m;
 			}
 			break;
-
 		case TEMPLATE_FIELD_DIP1:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[6];
@@ -856,7 +837,6 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m >> 16;
 			}
 			break;
-
 		case TEMPLATE_FIELD_DIP2:
 		case TEMPLATE_FIELD_DIP3:
 		case TEMPLATE_FIELD_DIP4:
@@ -866,7 +846,6 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 			data = pr->dip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
 			data_m = pr->dip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
 			break;
-
 		case TEMPLATE_FIELD_IP_TOS_PROTO:
 			data = pr->tos_proto;
 			data_m = pr->tos_proto_m;
@@ -897,8 +876,7 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 	}
 }
 
-/*
- * Creates the intermediate representation of the templated match-fields of the
+/* Creates the intermediate representation of the templated match-fields of the
  * PIE rule in the pie_rule structure by reading the raw data fields in the
  * raw register space r[].
  * The register space configuration size is identical for the RTL8380/90 and RTL9300,
@@ -1002,7 +980,6 @@ static void rtl838x_read_pie_templated(u32 r[], struct pie_rule *pr, enum templa
 		case TEMPLATE_FIELD_SIP6:
 		case TEMPLATE_FIELD_SIP7:
 			break;
-
 		case TEMPLATE_FIELD_DIP0:
 			pr->dip = data;
 			pr->dip_m = data_m;
@@ -1434,13 +1411,17 @@ static int rtl838x_pie_verify_template(struct rtl838x_switch_priv *priv,
 		return -1;
 
 	if (pr->is_ipv6) {
-		if ((pr->sip6_m.s6_addr32[0] || pr->sip6_m.s6_addr32[1]
-			|| pr->sip6_m.s6_addr32[2] || pr->sip6_m.s6_addr32[3])
-			&& !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
+		if ((pr->sip6_m.s6_addr32[0] ||
+		     pr->sip6_m.s6_addr32[1] ||
+		     pr->sip6_m.s6_addr32[2] ||
+		     pr->sip6_m.s6_addr32[3]) &&
+		    !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
 			return -1;
-		if ((pr->dip6_m.s6_addr32[0] || pr->dip6_m.s6_addr32[1]
-			|| pr->dip6_m.s6_addr32[2] || pr->dip6_m.s6_addr32[3])
-			&& !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
+		if ((pr->dip6_m.s6_addr32[0] ||
+		     pr->dip6_m.s6_addr32[1] ||
+		     pr->dip6_m.s6_addr32[2] ||
+		     pr->dip6_m.s6_addr32[3]) &&
+		    !rtl838x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
 			return -1;
 	}
 
@@ -1497,6 +1478,7 @@ static int rtl838x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 	rtl838x_pie_rule_write(priv, idx, pr);
 
 	mutex_unlock(&priv->pie_mutex);
+
 	return 0;
 }
 
@@ -1508,8 +1490,7 @@ static void rtl838x_pie_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rul
 	clear_bit(idx, priv->pie_use_bm);
 }
 
-/*
- * Initializes the Packet Inspection Engine:
+/* Initializes the Packet Inspection Engine:
  * powers it up, enables default matching templates for all blocks
  * and clears all rules possibly installed by u-boot
  */
@@ -1695,17 +1676,17 @@ void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	case BPDU:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL838X_RMA_BPDU_CTRL + ((port >> 4) << 2));
-	break;
+		break;
 	case PTP:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL838X_RMA_PTP_CTRL + ((port >> 4) << 2));
-	break;
+		break;
 	case LLTP:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL838X_RMA_LLTP_CTRL + ((port >> 4) << 2));
-	break;
+		break;
 	default:
-	break;
+		break;
 	}
 }
 
@@ -1776,7 +1757,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.init_eee = rtl838x_init_eee,
 	.port_eee_set = rtl838x_port_eee_set,
 	.eee_port_ability = rtl838x_eee_port_ability,
-	.l2_hash_seed = rtl838x_l2_hash_seed, 
+	.l2_hash_seed = rtl838x_l2_hash_seed,
 	.l2_hash_key = rtl838x_l2_hash_key,
 	.read_mcast_pmask = rtl838x_read_mcast_pmask,
 	.write_mcast_pmask = rtl838x_write_mcast_pmask,
@@ -1816,6 +1797,7 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 				dsa_port_phylink_mac_change(ds, i, false);
 		}
 	}
+
 	return IRQ_HANDLED;
 }
 
@@ -1832,11 +1814,10 @@ int rtl838x_smi_wait_op(int timeout)
 	return ret;
 }
 
-/*
- * Reads a register in a page from the PHY
- */
+/* Reads a register in a page from the PHY */
 int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
+	int err = -ETIMEDOUT;
 	u32 v;
 	u32 park_page;
 
@@ -1865,19 +1846,18 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
 
-	mutex_unlock(&smi_lock);
-	return 0;
+	err = 0;
 
 timeout:
 	mutex_unlock(&smi_lock);
+
 	return -ETIMEDOUT;
 }
 
-/*
- * Write to a register in a page of the PHY
- */
+/* Write to a register in a page of the PHY */
 int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
+	int err = -ETIMEDOUT;
 	u32 v;
 	u32 park_page;
 
@@ -1902,19 +1882,18 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
-	mutex_unlock(&smi_lock);
-	return 0;
+	err = 0;
 
 timeout:
 	mutex_unlock(&smi_lock);
+
 	return -ETIMEDOUT;
 }
 
-/*
- * Read an mmd register of a PHY
- */
+/* Read an mmd register of a PHY */
 int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 {
+	int err = -ETIMEDOUT;
 	u32 v;
 
 	mutex_lock(&smi_lock);
@@ -1939,19 +1918,18 @@ int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
 
-	mutex_unlock(&smi_lock);
-	return 0;
+	err = 0;
 
 timeout:
 	mutex_unlock(&smi_lock);
-	return -ETIMEDOUT;
+
+	return err;
 }
 
-/*
- * Write to an mmd register of a PHY
- */
+/* Write to an mmd register of a PHY */
 int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 {
+	int err = -ETIMEDOUT;
 	u32 v;
 
 	pr_debug("MMD write: port %d, dev %d, reg %d, val %x\n", port, addr, reg, val);
@@ -1975,12 +1953,11 @@ int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
-	mutex_unlock(&smi_lock);
-	return 0;
+	err = 0;
 
 timeout:
 	mutex_unlock(&smi_lock);
-	return -ETIMEDOUT;
+	return err;
 }
 
 void rtl8380_get_version(struct rtl838x_switch_priv *priv)

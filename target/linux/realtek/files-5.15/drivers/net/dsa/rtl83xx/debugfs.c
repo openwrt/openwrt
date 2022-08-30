@@ -2,8 +2,8 @@
 
 #include <linux/debugfs.h>
 #include <linux/kernel.h>
-
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+
 #include "rtl83xx.h"
 
 #define RTL838X_DRIVER_NAME "rtl838x"

@@ -123,8 +123,8 @@ static struct device_node *mux_parent_adapter(struct device *dev, struct rtl9300
 	if (!parent)
 		return ERR_PTR(-EPROBE_DEFER);
 
-	if (!(of_device_is_compatible(parent_np, "realtek,rtl9300-i2c")
-		|| of_device_is_compatible(parent_np, "realtek,rtl9310-i2c"))){
+	if (!(of_device_is_compatible(parent_np, "realtek,rtl9300-i2c") ||
+	    of_device_is_compatible(parent_np, "realtek,rtl9310-i2c"))){
 		dev_err(dev, "I2C parent not an RTL9300 I2C controller\n");
 		return ERR_PTR(-ENODEV);
 	}
@@ -147,7 +147,7 @@ struct i2c_mux_data rtl9300_i2c_mux_data = {
 };
 
 struct i2c_mux_data rtl9310_i2c_mux_data = {
-	.scl0_pin = 13, 
+	.scl0_pin = 13,
 	.scl1_pin = 14,
 	.sda0_pin = 0,
 	.sda_pins = 16,
@@ -177,7 +177,7 @@ static int rtl9300_i2c_mux_probe(struct platform_device *pdev)
 	int ret;
 
 	pr_info("%s probing I2C adapter\n", __func__);
-	
+
 	if (!node) {
 		dev_err(dev, "No DT found\n");
 		return -EINVAL;
