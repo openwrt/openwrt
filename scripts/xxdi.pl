@@ -17,18 +17,18 @@ use warnings;
 
 my $indata;
 my $var_name = "stdin";
-my $full_output = 1;
+my $full_output = (@ARGV > 0 && $ARGV[0] eq '-i') ? shift @ARGV : undef;
 
 {
 	local $/;
 	my $fh;
 
-	if ($#ARGV == 1 && $ARGV[0] eq '-i') {
-		$var_name = $ARGV[1];
+	if (@ARGV) {
+		$var_name = $ARGV[0];
 		open($fh, '<:raw', $var_name) || die("xxdi.pl: Unable to open $var_name: $!\n");
-	} elsif ((!@ARGV && !(-t STDIN)) || ($#ARGV == 0 && $ARGV[0] eq '-i')) {
+	} elsif (! -t STDIN) {
 		$fh = \*STDIN;
-		$full_output = 0 if @ARGV;
+		undef $full_output;
 	} else {
 		die "usage: xxdi.pl [-i] [infile]\n";
 	}
@@ -48,7 +48,7 @@ $var_name =~ s/\//_/g;
 $var_name =~ s/\./_/g;
 $var_name = "__$var_name" if $var_name =~ /^\d/;
 
-$outdata = "unsigned char $var_name\[] = { " if ($full_output);
+$outdata = "unsigned char $var_name\[] = { " if $full_output;
 
 for (my $key= 0; $key < $len_data; $key++) {
 	if ($key % $num_digits_per_line == 0) {
@@ -58,13 +58,9 @@ for (my $key= 0; $key < $len_data; $key++) {
 }
 
 $outdata = substr($outdata, 0, -2);
+$outdata .= "\n";
 
-if ($full_output) {
-	$outdata .= "\n};\nunsigned int $var_name\_len = $len_data;\n";
-} else {
-	$outdata .= "\n";
-}
+$outdata .= "};\nunsigned int $var_name\_len = $len_data;\n" if $full_output;
 
 binmode STDOUT;
-print {*STDOUT} $outdata;
-
+print $outdata;
