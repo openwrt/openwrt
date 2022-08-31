@@ -42,6 +42,8 @@ define Device/asus_rt-ac1200
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-AC1200
+  DEVICE_ALT0_VENDOR := Asus
+  DEVICE_ALT0_MODEL := RT-N600
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
 endef
