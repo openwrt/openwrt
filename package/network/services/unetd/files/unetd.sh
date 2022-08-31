@@ -16,8 +16,8 @@ proto_unet_init_config() {
 	proto_config_add_string file
 	proto_config_add_int keepalive
 	proto_config_add_string domain
-	proto_config_add_string "tunnels:list(string)"
-	proto_config_add_string "connect:list(string)"
+	proto_config_add_array "tunnels:list(string)"
+	proto_config_add_array "connect:list(string)"
 	no_device=1
 	available=1
 	no_proto_task=1
@@ -27,7 +27,9 @@ proto_unet_setup() {
 	local config="$1"
 
 	local device type key file keepalive domain tunnels
-	json_get_vars device type auth_key key file keepalive domain tunnels connect
+	json_get_vars device type auth_key key file keepalive domain
+	json_get_values tunnels tunnels
+	json_get_values connect connect
 	device="${device:-$config}"
 
 	[ -n "$auth_key" ] && type="${type:-dynamic}"
