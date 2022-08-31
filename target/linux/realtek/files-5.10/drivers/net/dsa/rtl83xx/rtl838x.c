@@ -1809,7 +1809,8 @@ int rtl838x_smi_wait_op(int timeout)
 	int ret = 0;
 	u32 val;
 
-	ret = readx_poll_timeout(sw_r32, RTL838X_SMI_ACCESS_PHY_CTRL_1, val, val & 0x1, 20, timeout);
+	ret = readx_poll_timeout(sw_r32, RTL838X_SMI_ACCESS_PHY_CTRL_1,
+				 val, !(val & 0x1), 20, timeout);
 	if (ret)
 		pr_err("%s: timeout\n", __func__);
 
