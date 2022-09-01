@@ -18,6 +18,7 @@ proto_unet_init_config() {
 	proto_config_add_string domain
 	proto_config_add_array "tunnels:list(string)"
 	proto_config_add_array "connect:list(string)"
+	proto_config_add_array "peer_data:list(string)"
 	no_device=1
 	available=1
 	no_proto_task=1
@@ -30,6 +31,7 @@ proto_unet_setup() {
 	json_get_vars device type auth_key key file keepalive domain
 	json_get_values tunnels tunnels
 	json_get_values connect connect
+	json_get_values peer_data peer_data
 	device="${device:-$config}"
 
 	[ -n "$auth_key" ] && type="${type:-dynamic}"
@@ -56,6 +58,12 @@ proto_unet_setup() {
 
 	json_add_array auth_connect
 	for c in $connect; do
+		json_add_string "" "$c"
+	done
+	json_close_array
+
+	json_add_array peer_data
+	for c in $peer_data; do
 		json_add_string "" "$c"
 	done
 	json_close_array
