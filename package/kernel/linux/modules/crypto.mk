@@ -288,9 +288,7 @@ $(eval $(call KernelPackage,crypto-gf128))
 define KernelPackage/crypto-ghash
   TITLE:=GHASH digest CryptoAPI module
   DEPENDS:=+kmod-crypto-gf128 +kmod-crypto-hash
-  KCONFIG:= \
-	CONFIG_CRYPTO_GHASH \
-	CONFIG_CRYPTO_GHASH_ARM_CE
+  KCONFIG:=CONFIG_CRYPTO_GHASH
   FILES:=$(LINUX_DIR)/crypto/ghash-generic.ko
   AUTOLOAD:=$(call AutoLoad,09,ghash-generic)
   $(call AddDepends/crypto)
@@ -298,12 +296,24 @@ endef
 
 define KernelPackage/crypto-ghash/arm-ce
   FILES+= $(LINUX_DIR)/arch/arm/crypto/ghash-arm-ce.ko
+  KCONFIG+=CONFIG_CRYPTO_GHASH_ARM_CE
   AUTOLOAD+=$(call AutoLoad,09,ghash-arm-ce)
 endef
 
 KernelPackage/crypto-ghash/imx=$(KernelPackage/crypto-ghash/arm-ce)
 KernelPackage/crypto-ghash/ipq40xx=$(KernelPackage/crypto-ghash/arm-ce)
 KernelPackage/crypto-ghash/mvebu/cortexa9=$(KernelPackage/crypto-ghash/arm-ce)
+
+define KernelPackage/crypto-ghash/aarch64
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/ghash-ce.ko
+  KCONFIG+=CONFIG_CRYPTO_GHASH_ARM64_CE
+  AUTOLOAD+=$(call AutoLoad,09,ghash-ce)
+endef
+
+ifdef KernelPackage/crypto-ghash/$(ARCH)
+  KernelPackage/crypto-ghash/$(CRYPTO_TARGET)=\
+	  $(KernelPackage/crypto-ghash/$(ARCH))
+endif
 
 $(eval $(call KernelPackage,crypto-ghash))
 
