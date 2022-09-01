@@ -6,7 +6,6 @@ define KernelPackage/rtc-sunxi
     SUBMENU:=$(OTHER_MENU)
     TITLE:=Sunxi SoC built-in RTC support
     DEPENDS:=@TARGET_sunxi
-    $(call AddDepends/rtc)
     KCONFIG:= \
 	CONFIG_RTC_DRV_SUNXI \
 	CONFIG_RTC_CLASS=y
@@ -24,7 +23,6 @@ define KernelPackage/sunxi-ir
     SUBMENU:=$(OTHER_MENU)
     TITLE:=Sunxi SoC built-in IR support (A20)
     DEPENDS:=@TARGET_sunxi +kmod-input-core
-    $(call AddDepends/rtc)
     KCONFIG:= \
 	CONFIG_MEDIA_SUPPORT=y \
 	CONFIG_MEDIA_RC_SUPPORT=y \
