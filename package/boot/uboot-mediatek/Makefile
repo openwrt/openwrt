@@ -249,6 +249,31 @@ define U-Boot/mt7986_xiaomi_redmi-router-ax6000
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr4
 endef
 
+define U-Boot/mt7981_emmc-rfb
+  NAME:=MT7981 Reference Board EMMC
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7981-emmc-rfb
+  UBOOT_CONFIG:=mt7981_emmc_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3
+endef
+
+define U-Boot/mt7981_norplusemmc
+  NAME:=MT7981 Nor Plus EMMC
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7981-norplusemmc
+  UBOOT_CONFIG:=mt7981_norplusemmc
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3
+endef
+
+
 UBOOT_TARGETS := \
 	mt7620_mt7530_rfb \
 	mt7620_rfb \
@@ -265,6 +290,8 @@ UBOOT_TARGETS := \
 	mt7628_rfb \
 	ravpower_rp-wd009 \
 	mt7629_rfb \
+	mt7981_emmc-rfb \
+	mt7981_norplusemmc \
 	mt7986_bananapi_bpi-r3-emmc \
 	mt7986_bananapi_bpi-r3-sdmmc \
 	mt7986_bananapi_bpi-r3-snand \
