@@ -30,6 +30,7 @@ define Trusted-Firmware-A/Default
   DDR3_FLYBY:=
   DDR_TYPE:=
   NAND_TYPE:=
+  BOARD_QFN:=
 endef
 
 define Trusted-Firmware-A/mt7622-nor-1ddr
@@ -200,6 +201,7 @@ TFA_MAKE_FLAGS += \
 	$(if $(NAND_TYPE),NAND_TYPE=$(NAND_TYPE)) \
 	HAVE_DRAM_OBJ_FILE=yes \
 	$(if $(DDR3_FLYBY),DDR3_FLYBY=1) \
+	$(if $(BOARD_QFN),BOARD_QFN=1,BOARD_BGA=1) \
 	all
 
 define Package/trusted-firmware-a/install
