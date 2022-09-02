@@ -36,6 +36,7 @@ define Package/ltq-adsl-app
   TITLE:=Lantiq DSL userland tool
   URL:=http://www.lantiq.com/
   DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy||TARGET_lantiq_ase) +libpthread +ltq-dsl-base +libubox +libubus
+  PROVIDES:=ltq-dsl-app
   MENU:=1
 endef
 

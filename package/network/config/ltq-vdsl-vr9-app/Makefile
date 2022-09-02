@@ -30,6 +30,7 @@ define Package/ltq-vdsl-vr9-app
   TITLE:=Lantiq VDSL userland tool
   URL:=http://www.lantiq.com/
   DEPENDS:=@TARGET_lantiq_xrx200 +libpthread +librt +ltq-dsl-base +libubox +libubus
+  PROVIDES:=ltq-dsl-app
 endef
 
 define Package/ltq-vdsl-vr9-app/description
