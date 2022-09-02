@@ -174,6 +174,14 @@ define Trusted-Firmware-A/mt7986-spim-nand-ddr3
   DDR_TYPE:=ddr3
 endef
 
+define Trusted-Firmware-A/mt7981-emmc-ddr3
+  NAME:=MediaTek MT7981 (eMMC, DDR3)
+  BOOT_DEVICE:=emmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
+endef
+
 TFA_TARGETS:= \
 	mt7622-nor-1ddr \
 	mt7622-nor-2ddr \
@@ -183,6 +191,7 @@ TFA_TARGETS:= \
 	mt7622-emmc-2ddr \
 	mt7622-sdmmc-1ddr \
 	mt7622-sdmmc-2ddr \
+	mt7981-emmc-ddr3 \
 	mt7986-emmc-ddr3 \
 	mt7986-nor-ddr3 \
 	mt7986-sdmmc-ddr3 \
