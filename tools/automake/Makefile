@@ -9,6 +9,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=automake
 PKG_CPE_ID:=cpe:/a:gnu:automake
 PKG_VERSION:=1.15.1
+PKG_API_VERSION:=$(word 2,$(subst ., ,$(PKG_VERSION)))
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/automake
@@ -34,11 +35,13 @@ define Host/Install
 	$(call Host/Compile/Default,install)
 	mv $(STAGING_DIR_HOST)/bin/aclocal $(STAGING_DIR_HOST)/bin/aclocal.real
 	$(INSTALL_BIN) ./files/aclocal $(STAGING_DIR_HOST)/bin
-	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.9
-	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.10
-	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.11
-	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.11.6
-	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.15
+	( \
+		api=$(PKG_API_VERSION); \
+		while [ "$$$$api" -ge 11 ]; do \
+			ln -sf aclocal "$(STAGING_DIR_HOST)/bin/aclocal-1.$$$$api"; \
+			api=$$$$(($$$$api - 1)); \
+		done; \
+	)
 endef
 
 define Host/Uninstall
