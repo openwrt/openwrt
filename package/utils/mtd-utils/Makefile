@@ -24,6 +24,7 @@ PKG_BUILD_DEPENDS:=util-linux
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
+PKG_CPE_ID:=cpe:/a:mtd-utils_project:mtd-utils
 
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
