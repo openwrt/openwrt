@@ -1249,7 +1249,7 @@ define Device/midea_morr-qr011
   DEVICE_VENDOR := MIDEA
   DEVICE_MODEL := MORR-QR011
   DEVICE_COMPAT_VERSION := 1.1
-  DEVICE_PACKAGES := -wpad-openssl
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb3
   SUPPORTED_DEVICES += mt7621
 endef
 TARGET_DEVICES += midea_morr-qr011
