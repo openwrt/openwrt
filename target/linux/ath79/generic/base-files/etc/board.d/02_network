@@ -42,6 +42,7 @@ ath79_setup_interfaces()
 	engenius,ecb1200|\
 	engenius,ecb1750|\
 	engenius,ecb600|\
+	engenius,emr3000-v2|\
 	enterasys,ws-ap3705i|\
 	extreme-networks,ws-ap3805i|\
 	glinet,gl-ar300m-lite|\
@@ -635,6 +636,13 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		label_mac=$lan_mac
 		;;
+	engenius,emr3000-v2|\
+	sitecom,wlr-7100|\
+	sitecom,wlr-8100)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
+		label_mac=$lan_mac
+		;;
 	engenius,epg5000)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
@@ -697,12 +705,6 @@ ath79_setup_macs()
 	rosinson,wr818)
 		wan_mac=$(mtd_get_mac_binary factory 0x0)
 		lan_mac=$(macaddr_setbit_la "$wan_mac")
-		;;
-	sitecom,wlr-7100|\
-	sitecom,wlr-8100)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
-		label_mac=$lan_mac
 		;;
 	tplink,archer-a7-v5|\
 	tplink,archer-a9-v6|\

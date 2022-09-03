@@ -1210,6 +1210,20 @@ define Device/engenius_ecb600
 endef
 TARGET_DEVICES += engenius_ecb600
 
+define Device/engenius_emr3000-v2
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := EMR3000
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-usb2
+  IMAGE_SIZE := 32064k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | \
+	senao-header -r 0x101 -p 0x83 -t 2
+endef
+TARGET_DEVICES += engenius_emr3000-v2
+
 define Device/engenius_ens202ext-v1
   $(Device/senao_loader_okli)
   SOC := ar9341
