@@ -81,6 +81,13 @@ define Device/lemaker_bananapi
 endef
 TARGET_DEVICES += lemaker_bananapi
 
+define Device/pinecube
+  DEVICE_VENDOR := Pine64
+  DEVICE_MODEL := PineCube
+  SOC := sun8i-s3
+endef
+TARGET_DEVICES += pinecube
+
 define Device/sinovoip_bananapi-m2-berry
   DEVICE_VENDOR := Sinovoip
   DEVICE_MODEL := Banana Pi M2 Berry

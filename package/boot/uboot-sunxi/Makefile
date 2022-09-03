@@ -157,6 +157,12 @@ define U-Boot/Lamobo_R1
   BUILD_DEVICES:=lamobo_lamobo-r1
 endef
 
+define U-Boot/pinecube
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Pine64 PineCube
+  BUILD_DEVICES:=pinecube
+endef
+
 define U-Boot/nanopi_m1_plus
   BUILD_SUBTARGET:=cortexa7
   NAME:=NanoPi M1 Plus (H3)
@@ -379,6 +385,7 @@ UBOOT_TARGETS := \
 	orangepi_pc2 \
 	pangolin \
 	pine64_plus \
+	pinecube \
 	sopine_baseboard \
 	orangepi_zero_plus \
 	libretech_all_h3_cc_h5
