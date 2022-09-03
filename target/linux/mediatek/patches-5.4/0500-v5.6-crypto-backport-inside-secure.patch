@@ -590,7 +590,7 @@
  	clk_disable_unprepare(priv->clk);
  
  	for (i = 0; i < priv->config.rings; i++)
-@@ -1666,9 +1795,7 @@ static struct platform_driver  crypto_sa
+@@ -1668,9 +1797,7 @@ static struct platform_driver  crypto_sa
  		.of_match_table = safexcel_of_match_table,
  	},
  };
@@ -600,7 +600,7 @@
  /* PCIE devices - i.e. Inside Secure development boards */
  
  static int safexcel_pci_probe(struct pci_dev *pdev,
-@@ -1759,7 +1886,7 @@ static int safexcel_pci_probe(struct pci
+@@ -1761,7 +1888,7 @@ static int safexcel_pci_probe(struct pci
  	return rc;
  }
  
@@ -609,7 +609,7 @@
  {
  	struct safexcel_crypto_priv *priv = pci_get_drvdata(pdev);
  	int i;
-@@ -1789,54 +1916,32 @@ static struct pci_driver safexcel_pci_dr
+@@ -1791,54 +1918,32 @@ static struct pci_driver safexcel_pci_dr
  	.probe         = safexcel_pci_probe,
  	.remove        = safexcel_pci_remove,
  };
