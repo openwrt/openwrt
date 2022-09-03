@@ -1273,6 +1273,15 @@ define Device/xiaomi_miwifi-mini
 endef
 TARGET_DEVICES += xiaomi_miwifi-mini
 
+define Device/bolt_bl201
+  SOC := mt7620a
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Bolt
+  DEVICE_MODEL := BL 201
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += bolt_bl201
+
 define Device/youku_yk-l1
   SOC := mt7620a
   IMAGE_SIZE := 32448k

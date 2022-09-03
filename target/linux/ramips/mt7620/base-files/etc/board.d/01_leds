@@ -225,6 +225,10 @@ xiaomi,miwifi-mini)
 	ucidef_set_led_switch "lan2" "lan2" "green:lan2" "switch0" "0x01"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
 	;;
+bolt,bl201)
+	ucidef_set_led_netdev "wlan0" "wlan0-link" "blue:wlan" "wlan0"
+	ucidef_set_led_netdev "wan" "eth0.2-link" "blue:wan" "eth0.2" "link"
+	;;
 zbtlink,zbt-ape522ii)
 	ucidef_set_led_netdev "wlan2g4" "wlan1-link" "green:wlan2g4" "wlan1"
 	ucidef_set_led_netdev "sys1" "wlan1" "green:sys1" "wlan1" "tx rx"
