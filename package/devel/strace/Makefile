@@ -19,7 +19,7 @@ PKG_HASH:=aa3dc1c8e60e4f6ff3d396514aa247f3c7bf719d8a8dc4dd4fa793be786beca3
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=LGPL-2.1-or-later
 PKG_LICENSE_FILES:=COPYING
-PKG_CPE_ID:=cpe:/a:paul_kranenburg:strace
+PKG_CPE_ID:=cpe:/a:strace_project:strace
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
