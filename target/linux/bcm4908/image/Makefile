@@ -90,7 +90,7 @@ TARGET_DEVICES += asus_gt-ac5300
 define Device/asus_gt-ax6000
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := GT-AX6000
-  DEVICE_DTS := broadcom/bcmbca/bcm4912-asus-gt-ax6000
+  KERNEL := kernel-bin | bootfs
   IMAGES := pkgtb
   IMAGE/pkgtb := append-rootfs | pkgtb
   SOC := bcm4912
