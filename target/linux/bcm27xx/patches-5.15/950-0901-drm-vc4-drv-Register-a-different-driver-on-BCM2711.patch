@@ -83,7 +83,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static int compare_dev(struct device *dev, void *data)
  {
  	return dev == data;
-@@ -254,6 +288,7 @@ static bool firmware_kms(void)
+@@ -255,6 +289,7 @@ static bool firmware_kms(void)
  static int vc4_drm_bind(struct device *dev)
  {
  	struct platform_device *pdev = to_platform_device(dev);
@@ -91,7 +91,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct rpi_firmware *firmware = NULL;
  	struct drm_device *drm;
  	struct vc4_dev *vc4;
-@@ -265,12 +300,10 @@ static int vc4_drm_bind(struct device *d
+@@ -266,12 +301,10 @@ static int vc4_drm_bind(struct device *d
  	dev->coherent_dma_mask = DMA_BIT_MASK(32);
  
  	is_vc5 = of_device_is_compatible(dev->of_node, "brcm,bcm2711-vc5");
@@ -108,7 +108,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	node = of_find_matching_node_and_match(NULL, vc4_dma_range_matches,
  					       NULL);
-@@ -282,7 +315,7 @@ static int vc4_drm_bind(struct device *d
+@@ -283,7 +316,7 @@ static int vc4_drm_bind(struct device *d
  			return ret;
  	}
  
@@ -117,7 +117,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (IS_ERR(vc4))
  		return PTR_ERR(vc4);
  	vc4->is_vc5 = is_vc5;
-@@ -314,7 +347,7 @@ static int vc4_drm_bind(struct device *d
+@@ -315,7 +348,7 @@ static int vc4_drm_bind(struct device *d
  			return -EPROBE_DEFER;
  	}
  

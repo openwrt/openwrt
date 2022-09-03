@@ -13,6 +13,7 @@ PKG_HASH:=53422dc649153838e03820330ba17cb10afe3e330ecde0db11e4d5f1361a33e6
 
 PKG_MAINTAINER:=Vladimir Vid <vladimir.vid@sartura.hr>
 
+include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/trusted-firmware-a.mk
 include $(INCLUDE_DIR)/package.mk
 

@@ -14,9 +14,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_drv.c
 +++ b/drivers/gpu/drm/vc4/vc4_drv.c
-@@ -218,6 +218,7 @@ static void vc4_match_add_drivers(struct
- 
- const struct of_device_id vc4_dma_range_matches[] = {
+@@ -219,6 +219,7 @@ static void vc4_match_add_drivers(struct
+ static const struct of_device_id vc4_dma_range_matches[] = {
+ 	{ .compatible = "brcm,bcm2711-hvs" },
  	{ .compatible = "brcm,bcm2835-hvs" },
 +	{ .compatible = "brcm,bcm2711-hvs" },
  	{ .compatible = "raspberrypi,rpi-firmware-kms" },

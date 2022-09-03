@@ -12,18 +12,31 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/jow-/ucode.git
-PKG_SOURCE_DATE:=2022-06-01
-PKG_SOURCE_VERSION:=b211ca0e420d8086d3fa0358413a6f8b44df1115
-PKG_MIRROR_HASH:=9d0a8583d9ed10a634866b54a30162f47f6a1700e10287aba94bffbc60e9cbf2
+PKG_SOURCE_DATE:=2022-08-29
+PKG_SOURCE_VERSION:=344fa9e69da43ecdc4d8f7768d85d42639352405
+PKG_MIRROR_HASH:=94e1ae6779536b2bd8957db8c2922ec32dcef75258401707505b1d34b6f16d0b
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=ISC
 
-PKG_ABI_VERSION:=20220322
+PKG_ABI_VERSION:=20220812
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 CMAKE_OPTIONS += -DSOVERSION=$(PKG_ABI_VERSION)
+CMAKE_HOST_OPTIONS += \
+	-DSOVERSION=$(PKG_ABI_VERSION) \
+	-DFS_SUPPORT=ON \
+	-DMATH_SUPPORT=ON \
+	-DNL80211_SUPPORT=OFF \
+	-DRESOLV_SUPPORT=OFF \
+	-DRTNL_SUPPORT=OFF \
+	-DSTRUCT_SUPPORT=ON \
+	-DUBUS_SUPPORT=OFF \
+	-DUCI_SUPPORT=OFF \
+	-DULOOP_SUPPORT=OFF
+
 
 define Package/ucode/default
   SECTION:=utils
@@ -143,6 +156,18 @@ define Package/ucode-mod-uci/description
 endef
 
 
+define Package/ucode-mod-uloop
+  $(Package/ucode/default)
+  TITLE+= (uloop module)
+  DEPENDS:=ucode +libubox
+endef
+
+define Package/ucode-mod-uloop/description
+ The uloop module allows ucode scripts to interact with OpenWrt uloop event
+ loop implementation.
+endef
+
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/include/ucode
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/ucode/*.h $(1)/usr/include/ucode/
@@ -200,6 +225,10 @@ define Package/ucode-mod-uci/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/ucode/uci.so $(1)/usr/lib/ucode/
 endef
 
+define Package/ucode-mod-uloop/install
+	$(INSTALL_DIR) $(1)/usr/lib/ucode
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/ucode/uloop.so $(1)/usr/lib/ucode/
+endef
 
 $(eval $(call BuildPackage,libucode))
 $(eval $(call BuildPackage,ucode))
@@ -211,3 +240,5 @@ $(eval $(call BuildPackage,ucode-mod-rtnl))
 $(eval $(call BuildPackage,ucode-mod-struct))
 $(eval $(call BuildPackage,ucode-mod-ubus))
 $(eval $(call BuildPackage,ucode-mod-uci))
+$(eval $(call BuildPackage,ucode-mod-uloop))
+$(eval $(call HostBuild))

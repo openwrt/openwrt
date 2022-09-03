@@ -68,7 +68,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		 */
 --- a/drivers/gpu/drm/vc4/vc4_drv.c
 +++ b/drivers/gpu/drm/vc4/vc4_drv.c
-@@ -246,10 +246,13 @@ static int vc4_drm_bind(struct device *d
+@@ -247,10 +247,13 @@ static int vc4_drm_bind(struct device *d
  	struct vc4_dev *vc4;
  	struct device_node *node;
  	struct drm_crtc *crtc;
@@ -82,7 +82,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	/* If VC4 V3D is missing, don't advertise render nodes. */
  	node = of_find_matching_node_and_match(NULL, vc4_v3d_dt_match, NULL);
  	if (!node || !of_device_is_available(node))
-@@ -269,6 +272,7 @@ static int vc4_drm_bind(struct device *d
+@@ -270,6 +273,7 @@ static int vc4_drm_bind(struct device *d
  	vc4 = devm_drm_dev_alloc(dev, &vc4_drm_driver, struct vc4_dev, base);
  	if (IS_ERR(vc4))
  		return PTR_ERR(vc4);
