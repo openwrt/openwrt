@@ -17,6 +17,7 @@ PKG_HASH:=0cb77fd7634401347b8311db1bf64d4fc3890acba90915e2cc2c5f79045ddbf0
 
 PKG_MAINTAINER:=Stijn Tintel <stijn@linux-ipv6.be>
 PKG_LICENSE:=ISC
+PKG_CPE_ID:=cpe:/a:lldpd_project:lldpd
 
 PKG_FIXUP:=autoreconf
 PKG_BUILD_PARALLEL:=1
