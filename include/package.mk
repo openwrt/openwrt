@@ -92,6 +92,7 @@ STAMP_CONFIGURED=$(PKG_BUILD_DIR)/.configured$(if $(DUMP),,_$(call confvar,$(PKG
 STAMP_CONFIGURED_WILDCARD=$(PKG_BUILD_DIR)/.configured_*
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),)_installed
+STAMP_REMOVED:=$(PKG_SOURCE_DIR)/.removed
 
 PKG_INSTALL_STAMP:=$(PKG_INFO_DIR)/$(PKG_DIR_NAME).$(if $(BUILD_VARIANT),$(BUILD_VARIANT),default).install
 
@@ -265,8 +266,8 @@ define Build/CoreTargets
 
   ifneq ($(CONFIG_AUTOREMOVE),)
     compile:
-		-touch -r $(PKG_SOURCE_DIR)/.built $(PKG_SOURCE_DIR)/.autoremove 2>/dev/null >/dev/null
-		$$(call find_depth,$(PKG_SOURCE_DIR),'!' '(' -type f -name '.*' -size 0 ')' ! -name '.pkgdir',1,1) | \
+		touch -r $(STAMP_BUILT) $(STAMP_REMOVED) 2>/dev/null >/dev/null
+		-$$(call find_depth,$(PKG_SOURCE_DIR),'!' '(' -type f -name '.*' -size 0 ')' ! -name '.pkgdir',1,1) | \
 			$(XARGS) $(RM) -r
   endif
 endef
@@ -345,7 +346,7 @@ install: compile
 force-clean-build: FORCE
 	$(RM) -r $(PKG_BUILD_DIR) $(PKG_INSTALL_DIR) $(STAMP_BUILT)
 
-clean-build: $(if $(wildcard $(PKG_SOURCE_DIR)/.autoremove),force-clean-build)
+clean-build: $(if $(wildcard $(STAMP_REMOVED)),force-clean-build)
 
 clean: force-clean-build
 	$(CleanStaging)

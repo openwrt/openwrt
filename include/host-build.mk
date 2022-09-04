@@ -27,6 +27,7 @@ HOST_STAMP_CONFIGURED:=$(HOST_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
 HOST_BUILD_PREFIX?=$(if $(IS_PACKAGE_BUILD),$(STAGING_DIR_HOSTPKG),$(STAGING_DIR_HOST))
 HOST_STAMP_INSTALLED:=$(HOST_BUILD_PREFIX)/stamp/.$(PKG_NAME)_installed
+HOST_STAMP_REMOVED:=$(HOST_BUILD_DIR)/.removed
 
 override MAKEFLAGS=
 
@@ -219,7 +220,8 @@ ifndef DUMP
 
     ifneq ($(CONFIG_AUTOREMOVE),)
       host-compile:
-		$$(call find_depth,$(HOST_SOURCE_DIR),'!' '(' -type f -name '.*' -size 0 ')',1,1) | \
+		touch -r $(HOST_STAMP_BUILT) $(HOST_STAMP_REMOVED) 2>/dev/null >/dev/null
+		-$$(call find_depth,$(HOST_SOURCE_DIR),'!' '(' -type f -name '.*' -size 0 ')',1,1) | \
 			$(XARGS) $(RM) -r
     endif
   endef
