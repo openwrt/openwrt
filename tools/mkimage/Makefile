@@ -43,11 +43,22 @@ endef
 define Host/Install
 	$(CP) $(HOST_BUILD_DIR)/tools/mkimage $(STAGING_DIR_HOST)/bin/
 	$(CP) $(HOST_BUILD_DIR)/tools/mkenvimage $(STAGING_DIR_HOST)/bin/
+
+	$(STAGING_DIR_HOST)/bin/pip install $(HOST_BUILD_DIR)/tools/binman \
+		--no-cache-dir
+	$(STAGING_DIR_HOST)/bin/pip install $(HOST_BUILD_DIR)/tools/dtoc \
+		--no-cache-dir
+	$(STAGING_DIR_HOST)/bin/pip install $(HOST_BUILD_DIR)/tools/patman \
+		--no-cache-dir
 endef
 
 define Host/Clean
 	rm -f $(STAGING_DIR_HOST)/bin/mkimage
 	rm -f $(STAGING_DIR_HOST)/bin/mkenvimage
+
+	$(STAGING_DIR_HOST)/bin/pip uninstall -y binman
+	$(STAGING_DIR_HOST)/bin/pip uninstall -y dtoc
+	$(STAGING_DIR_HOST)/bin/pip uninstall -y patman
 endef
 
 $(eval $(call HostBuild))
