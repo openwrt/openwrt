@@ -1004,6 +1004,19 @@ define Device/qxwlan_e2600ac-c2
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
 
+define Device/sony_ncp-hg100-cellular
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Sony
+	DEVICE_MODEL := NCP-HG100/Cellular
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c4
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 8192k
+	IMAGE_SIZE := 128m
+	DEVICE_PACKAGES := e2fsprogs ipq-wifi-sony_ncp-hg100-cellular \
+		kmod-fs-ext4 uqmi
+endef
+TARGET_DEVICES += sony_ncp-hg100-cellular
+
 define Device/teltonika_rutx10
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

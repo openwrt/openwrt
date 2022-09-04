@@ -37,6 +37,7 @@ ALLWIFIBOARDS:= \
 	pakedge_wr-1 \
 	qxwlan_e2600ac-c1 \
 	qxwlan_e2600ac-c2 \
+	sony_ncp-hg100-cellular \
 	teltonika_rutx
 
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
@@ -110,6 +111,7 @@ $(eval $(call generate-ipq-wifi-package,p2w_r619ac,P&W R619AC))
 $(eval $(call generate-ipq-wifi-package,pakedge_wr-1,Pakedge WR-1))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac-c1,Qxwlan E2600AC C1))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac-c2,Qxwlan E2600AC C2))
+$(eval $(call generate-ipq-wifi-package,sony_ncp-hg100-cellular,Sony NCP-HG100/Cellular))
 $(eval $(call generate-ipq-wifi-package,teltonika_rutx,Teltonika RUTX))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
