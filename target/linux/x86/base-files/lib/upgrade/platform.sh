@@ -31,8 +31,7 @@ platform_check_image() {
 
 	if [ -n "$diff" ]; then
 		v "Partition layout has changed. Full image will be written."
-		ask_bool 0 "Abort" && exit 1
-		return 0
+		return 1
 	fi
 }
 
