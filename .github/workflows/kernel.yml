@@ -53,7 +53,11 @@ jobs:
        matrix:
          target: ${{fromJson(needs.determine_targets.outputs.target)}}
 
-    container: registry.gitlab.com/openwrt/buildbot/buildworker-3.4.1
+    container: ghcr.io/${{ github.repository_owner }}/tools:latest
+
+    permissions:
+      contents: read
+      packages: read
 
     steps:
       - name: Checkout master directory
@@ -129,18 +133,23 @@ jobs:
           wget -O - https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/${TOOLCHAIN_FILE}.tar.xz \
             | tar --xz -xf -
 
+      - name: Extract prebuilt tools
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: ./scripts/ext-tools.sh --tools /tools.tar
+
       - name: Configure external toolchain
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
           echo CONFIG_ALL_KMODS=y >> .config
+          echo CONFIG_DEVEL=y >> .config
+          echo CONFIG_AUTOREMOVE=y >> .config
 
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
             --overwrite-config \
             --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
-
-          make defconfig
 
       - name: Show configuration
         shell: su buildbot -c "sh -e {0}"
