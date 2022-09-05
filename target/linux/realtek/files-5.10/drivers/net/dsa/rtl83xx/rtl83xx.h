@@ -122,6 +122,9 @@ void rtl930x_vlan_profile_dump(int index);
 int rtl9300_sds_power(int mac, int val);
 void rtl9300_sds_rst(int sds_num, u32 mode);
 int rtl9300_serdes_setup(int sds_num, phy_interface_t phy_mode);
+int rtl9300_rtl8226_mode_set(int port, int sds_num, phy_interface_t phy_mode);
+void rtl9300_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v);
+u32 rtl9300_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit);
 void rtl930x_print_matrix(void);
 
 /* RTL931x-specific */
