@@ -103,21 +103,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	return 0;
  }
  
-@@ -2615,20 +2641,11 @@ static int vc4_hdmi_bind(struct device *
+@@ -2625,8 +2651,9 @@ static int vc4_hdmi_bind(struct device *
  	if (ret)
- 		goto err_put_ddc;
- 
--	/*
--	 * We need to have the device powered up at this point to call
--	 * our reset hook and for the CEC init.
--	 */
--	ret = vc4_hdmi_runtime_resume(dev);
--	if (ret)
--		goto err_put_ddc;
--
--	pm_runtime_get_noresume(dev);
--	pm_runtime_set_active(dev);
- 	pm_runtime_enable(dev);
+ 		goto err_disable_runtime_pm;
  
 -	if (vc4_hdmi->variant->reset)
 -		vc4_hdmi->variant->reset(vc4_hdmi);
