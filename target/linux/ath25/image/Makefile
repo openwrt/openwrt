@@ -43,7 +43,7 @@ endef
 define Build/copy-kernel
 	rm -f $@ $@.elf
 	cp $< $@
-	cp $< $@.elf
+	cp $<.elf $@.elf
 endef
 
 define Build/elf-kernel
@@ -54,6 +54,9 @@ endef
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)
   KERNEL := copy-kernel | lzma-kernel
+  KERNEL_INITRAMFS = kernel-bin
+  KERNEL_INITRAMFS_NAME := vmlinux-initramfs.elf
+  KERNEL_INITRAMFS_SUFFIX := -kernel.elf
   IMAGES := sysupgrade.bin
   FILESYSTEMS := squashfs
 endef

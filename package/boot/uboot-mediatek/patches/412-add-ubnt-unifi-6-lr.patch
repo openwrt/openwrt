@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr_defconfig
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,142 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -142,9 +142,10 @@
 +CONFIG_SPI_FLASH_SST=y
 +CONFIG_SPI_FLASH_WINBOND=y
 +CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_USE_4K_SECTORS=y
 --- /dev/null
 +++ b/arch/arm/dts/mt7622-ubnt-unifi-6-lr.dts
-@@ -0,0 +1,202 @@
+@@ -0,0 +1,187 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 MediaTek Inc.
@@ -283,19 +284,6 @@
 +	};
 +};
 +
-+&snfi {
-+	pinctrl-names = "default", "snfi";
-+	pinctrl-0 = <&snor_pins>;
-+	pinctrl-1 = <&snfi_pins>;
-+	status = "okay";
-+
-+	spi-flash@0 {
-+		compatible = "jedec,spi-nor";
-+		reg = <0>;
-+		u-boot,dm-pre-reloc;
-+	};
-+};
-+
 +&snor {
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&snor_pins>;
@@ -311,8 +299,6 @@
 +};
 +
 +&uart0 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&uart0_pins>;
 +	status = "okay";
 +};
 +
@@ -366,10 +352,10 @@
 +loadaddr=0x48000000
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_nor ; fi
 +bootdelay=0
-+bootfile=openwrt-mediatek-mt7622-ubnt_unifi-6-lr-ubootmod-initramfs-recovery.itb
-+bootfile_bl2=openwrt-mediatek-mt7622-ubnt_unifi-6-lr-ubootmod-preloader.bin
-+bootfile_fip=openwrt-mediatek-mt7622-ubnt_unifi-6-lr-ubootmod-bl31-uboot.fip
-+bootfile_upg=openwrt-mediatek-mt7622-ubnt_unifi-6-lr-ubootmod-squashfs-sysupgrade.itb
++bootfile=openwrt-mediatek-mt7622-ubnt_unifi-6-lr-v1-ubootmod-initramfs-recovery.itb
++bootfile_bl2=openwrt-mediatek-mt7622-ubnt_unifi-6-lr-v1-ubootmod-preloader.bin
++bootfile_fip=openwrt-mediatek-mt7622-ubnt_unifi-6-lr-v1-ubootmod-bl31-uboot.fip
++bootfile_upg=openwrt-mediatek-mt7622-ubnt_unifi-6-lr-v1-ubootmod-squashfs-sysupgrade.itb
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
@@ -403,7 +389,7 @@
 +reset_factory=mtd erase nor0 0xc0000 0x10000 && reset
 +nor_read_production=mtd read nor0 $loadaddr 0x1000000 0x1000 && imsz $loadaddr image_size && mtd read nor0 $loadaddr 0x1000000 $image_size
 +nor_read_recovery=mtd read nor0 $loadaddr 0x120000 0x1000 && imsz $loadaddr image_size && mtd read nor0 $loadaddr 0x120000 $image_size
-+nor_pad_size=imsz $loadaddr image_size ; setexpr image_eb $image_size / 0x1000 ; setexpr tmp1 image_size % 0x1000 ; test 0x$tmp1 -gt 0 && setexpr image_eb $image_eb + 1 ; setexpr image_eb $image_eb * 0x1000
++nor_pad_size=imsz $loadaddr image_size ; setexpr image_eb 0x$image_size / 0x1000 ; setexpr tmp1 0x$image_size % 0x1000 ; test 0x$tmp1 -gt 0 && setexpr image_eb 0x$image_eb + 1 ; setexpr image_eb 0x$image_eb * 0x1000
 +nor_write_production=run nor_pad_size ; test 0x$image_eb -le 0x3000000 && mtd erase nor0 0x1000000 0x$image_eb && mtd write nor0 $loadaddr 0x1000000 $filesize
 +nor_write_recovery=run nor_pad_size ; test 0x$image_eb -le 0xee0000 && mtd erase nor0 0x120000 0x$image_eb && mtd write nor0 $loadaddr 0x120000 $filesize
 +_init_env=setenv _init_env ; saveenv

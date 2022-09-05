@@ -16,7 +16,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -420,7 +420,9 @@ static void require_hvs_enabled(struct d
+@@ -422,7 +422,9 @@ static void require_hvs_enabled(struct d
  		     SCALER_DISPCTRL_ENABLE);
  }
  
@@ -27,7 +27,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  {
  	struct drm_encoder *encoder = vc4_get_crtc_encoder(crtc);
  	struct vc4_encoder *vc4_encoder = to_vc4_encoder(encoder);
-@@ -452,13 +454,13 @@ static int vc4_crtc_disable(struct drm_c
+@@ -454,13 +456,13 @@ static int vc4_crtc_disable(struct drm_c
  	mdelay(20);
  
  	if (vc4_encoder && vc4_encoder->post_crtc_disable)
@@ -43,7 +43,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	return 0;
  }
-@@ -485,7 +487,7 @@ int vc4_crtc_disable_at_boot(struct drm_
+@@ -487,7 +489,7 @@ int vc4_crtc_disable_at_boot(struct drm_
  	if (channel < 0)
  		return 0;
  
@@ -52,7 +52,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  }
  
  static void vc4_crtc_atomic_disable(struct drm_crtc *crtc,
-@@ -501,7 +503,7 @@ static void vc4_crtc_atomic_disable(stru
+@@ -503,7 +505,7 @@ static void vc4_crtc_atomic_disable(stru
  	/* Disable vblank irq handling before crtc is disabled. */
  	drm_crtc_vblank_off(crtc);
  
@@ -61,7 +61,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	/*
  	 * Make sure we issue a vblank event after disabling the CRTC if
-@@ -535,14 +537,14 @@ static void vc4_crtc_atomic_enable(struc
+@@ -537,14 +539,14 @@ static void vc4_crtc_atomic_enable(struc
  	vc4_hvs_atomic_enable(crtc, state);
  
  	if (vc4_encoder->pre_crtc_configure)
@@ -78,7 +78,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	/* When feeding the transposer block the pixelvalve is unneeded and
  	 * should not be enabled.
-@@ -551,7 +553,7 @@ static void vc4_crtc_atomic_enable(struc
+@@ -553,7 +555,7 @@ static void vc4_crtc_atomic_enable(struc
  		   CRTC_READ(PV_V_CONTROL) | PV_VCONTROL_VIDEN);
  
  	if (vc4_encoder->post_crtc_enable)
@@ -89,7 +89,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static enum drm_mode_status vc4_crtc_mode_valid(struct drm_crtc *crtc,
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
-@@ -449,12 +449,12 @@ struct vc4_encoder {
+@@ -448,12 +448,12 @@ struct vc4_encoder {
  	enum vc4_encoder_type type;
  	u32 clock_select;
  
@@ -109,7 +109,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static inline struct vc4_encoder *
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -412,7 +412,8 @@ static void vc4_hdmi_set_infoframes(stru
+@@ -416,7 +416,8 @@ static void vc4_hdmi_set_infoframes(stru
  		vc4_hdmi_set_audio_infoframe(encoder);
  }
  
@@ -119,7 +119,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  
-@@ -425,7 +426,8 @@ static void vc4_hdmi_encoder_post_crtc_d
+@@ -429,7 +430,8 @@ static void vc4_hdmi_encoder_post_crtc_d
  		   HDMI_READ(HDMI_VID_CTL) | VC4_HD_VID_CTL_BLANKPIX);
  }
  
@@ -129,7 +129,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  	int ret;
-@@ -638,7 +640,8 @@ static void vc4_hdmi_recenter_fifo(struc
+@@ -642,7 +644,8 @@ static void vc4_hdmi_recenter_fifo(struc
  		  "VC4_HDMI_FIFO_CTL_RECENTER_DONE");
  }
  
@@ -139,7 +139,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  {
  	struct drm_display_mode *mode = &encoder->crtc->state->adjusted_mode;
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
-@@ -720,7 +723,8 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -724,7 +727,8 @@ static void vc4_hdmi_encoder_pre_crtc_co
  		vc4_hdmi->variant->set_timings(vc4_hdmi, mode);
  }
  
@@ -149,7 +149,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  {
  	struct drm_display_mode *mode = &encoder->crtc->state->adjusted_mode;
  	struct vc4_hdmi_encoder *vc4_encoder = to_vc4_hdmi_encoder(encoder);
-@@ -742,7 +746,8 @@ static void vc4_hdmi_encoder_pre_crtc_en
+@@ -746,7 +750,8 @@ static void vc4_hdmi_encoder_pre_crtc_en
  	HDMI_WRITE(HDMI_FIFO_CTL, VC4_HDMI_FIFO_CTL_MASTER_SLAVE_N);
  }
  

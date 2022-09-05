@@ -139,7 +139,7 @@
 +CONFIG_USB_STORAGE=y
 --- /dev/null
 +++ b/arch/arm/dts/mt7622-linksys-e8450-ubi.dts
-@@ -0,0 +1,195 @@
+@@ -0,0 +1,193 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 MediaTek Inc.
@@ -302,8 +302,6 @@
 +};
 +
 +&uart0 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&uart0_pins>;
 +	status = "okay";
 +};
 +
@@ -392,7 +390,7 @@
 +boot_write_bl2=mtd erase bl2 && mtd write spi-nand0 $loadaddr 0x0 0x20000 && mtd write spi-nand0 $loadaddr 0x20000 0x20000 && mtd write spi-nand0 $loadaddr 0x40000 0x20000 && mtd write spi-nand0 $loadaddr 0x60000 0x20000
 +boot_write_fip=mtd erase fip && mtd write fip $loadaddr
 +check_ubi=ubi part ubi || run ubi_format
-+reset_factory=ubi part ubi ; ubi write 0x0 ubootenv 0x0 ; ubi write 0x0 ubootenv2 0x0 ; ubi remove rootfs_data
++reset_factory=mw $loadaddr 0x0 0x100000 ; ubi part ubi ; ubi write $loadaddr ubootenv 0x100000 ; ubi write $loadaddr ubootenv2 0x100000 ; ubi remove rootfs_data
 +ubi_format=ubi detach ; mtd erase ubi && ubi part ubi ; reset
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
 +ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs

@@ -251,19 +251,6 @@ iptables extensions for extra NAT targets.
   - NETMAP
 endef
 
-define Package/iptables-mod-ulog
-$(call Package/iptables/Module, +kmod-ipt-ulog)
-  TITLE:=user-space packet logging
-endef
-
-define Package/iptables-mod-ulog/description
-iptables extensions for user-space packet logging.
-
- Targets:
-  - ULOG
-
-endef
-
 define Package/iptables-mod-nflog
 $(call Package/iptables/Module, +kmod-nfnetlink-log +kmod-ipt-nflog)
   TITLE:=Netfilter NFLOG target
@@ -764,11 +751,11 @@ $(eval $(call BuildPackage,libiptext))
 $(eval $(call BuildPackage,libiptext6))
 $(eval $(call BuildPackage,libiptext-nft))
 $(eval $(call BuildPackage,xtables-legacy))
-$(eval $(call BuildPackage,iptables-zz-legacy))
 $(eval $(call BuildPackage,xtables-nft))
 $(eval $(call BuildPackage,arptables-nft))
 $(eval $(call BuildPackage,ebtables-nft))
 $(eval $(call BuildPackage,iptables-nft))
+$(eval $(call BuildPackage,iptables-zz-legacy))
 $(eval $(call BuildPlugin,iptables-mod-conntrack-extra,$(IPT_CONNTRACK_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-conntrack-label,$(IPT_CONNTRACK_LABEL-m)))
 $(eval $(call BuildPlugin,iptables-mod-extra,$(IPT_EXTRA-m)))
@@ -780,7 +767,6 @@ $(eval $(call BuildPlugin,iptables-mod-nat-extra,$(IPT_NAT_EXTRA-m)))
 $(eval $(call BuildPlugin,iptables-mod-iprange,$(IPT_IPRANGE-m)))
 $(eval $(call BuildPlugin,iptables-mod-cluster,$(IPT_CLUSTER-m)))
 $(eval $(call BuildPlugin,iptables-mod-clusterip,$(IPT_CLUSTERIP-m)))
-$(eval $(call BuildPlugin,iptables-mod-ulog,$(IPT_ULOG-m)))
 $(eval $(call BuildPlugin,iptables-mod-hashlimit,$(IPT_HASHLIMIT-m)))
 $(eval $(call BuildPlugin,iptables-mod-rpfilter,$(IPT_RPFILTER-m)))
 $(eval $(call BuildPlugin,iptables-mod-led,$(IPT_LED-m)))
@@ -792,8 +778,8 @@ $(eval $(call BuildPlugin,iptables-mod-nflog,$(IPT_NFLOG-m)))
 $(eval $(call BuildPlugin,iptables-mod-trace,$(IPT_DEBUG-m)))
 $(eval $(call BuildPlugin,iptables-mod-nfqueue,$(IPT_NFQUEUE-m)))
 $(eval $(call BuildPlugin,iptables-mod-checksum,$(IPT_CHECKSUM-m)))
-$(eval $(call BuildPackage,ip6tables-zz-legacy))
 $(eval $(call BuildPackage,ip6tables-nft))
+$(eval $(call BuildPackage,ip6tables-zz-legacy))
 $(eval $(call BuildPlugin,ip6tables-extra,$(IPT_IPV6_EXTRA-m)))
 $(eval $(call BuildPlugin,ip6tables-mod-nat,$(IPT_NAT6-m)))
 

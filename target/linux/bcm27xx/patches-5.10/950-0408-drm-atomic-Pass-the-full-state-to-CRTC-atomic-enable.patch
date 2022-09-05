@@ -955,7 +955,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -489,8 +489,10 @@ int vc4_crtc_disable_at_boot(struct drm_
+@@ -491,8 +491,10 @@ int vc4_crtc_disable_at_boot(struct drm_
  }
  
  static void vc4_crtc_atomic_disable(struct drm_crtc *crtc,
@@ -967,7 +967,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  	struct vc4_crtc_state *old_vc4_state = to_vc4_crtc_state(old_state);
  	struct drm_device *dev = crtc->dev;
  
-@@ -516,8 +518,10 @@ static void vc4_crtc_atomic_disable(stru
+@@ -518,8 +520,10 @@ static void vc4_crtc_atomic_disable(stru
  }
  
  static void vc4_crtc_atomic_enable(struct drm_crtc *crtc,

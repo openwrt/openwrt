@@ -87,6 +87,16 @@ define Device/asus_gt-ac5300
 endef
 TARGET_DEVICES += asus_gt-ac5300
 
+define Device/asus_gt-ax6000
+  DEVICE_VENDOR := Asus
+  DEVICE_MODEL := GT-AX6000
+  DEVICE_DTS := broadcom/bcmbca/bcm4912-asus-gt-ax6000
+  IMAGES := pkgtb
+  IMAGE/pkgtb := append-rootfs | pkgtb
+  SOC := bcm4912
+endef
+# TARGET_DEVICES += asus_gt-ax6000
+
 define Device/netgear_r8000p
   DEVICE_VENDOR := Netgear
   DEVICE_MODEL := R8000P

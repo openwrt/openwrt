@@ -20,7 +20,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201203132543.861591-6-maxi
 
 --- a/drivers/gpu/drm/vc4/vc4_dsi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dsi.c
-@@ -1316,6 +1316,13 @@ static const struct drm_encoder_helper_f
+@@ -1374,6 +1374,13 @@ static const struct drm_encoder_helper_f
  	.mode_fixup = vc4_dsi_encoder_mode_fixup,
  };
  
@@ -34,7 +34,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201203132543.861591-6-maxi
  static const struct vc4_dsi_variant bcm2835_dsi1_variant = {
  	.port			= 1,
  	.broken_axi_workaround	= true,
-@@ -1325,6 +1332,7 @@ static const struct vc4_dsi_variant bcm2
+@@ -1383,6 +1390,7 @@ static const struct vc4_dsi_variant bcm2
  };
  
  static const struct of_device_id vc4_dsi_dt_match[] = {

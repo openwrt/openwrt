@@ -18,7 +18,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
 
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -628,6 +628,53 @@ static int vc4_plane_allocate_lbm(struct
+@@ -624,6 +624,53 @@ static int vc4_plane_allocate_lbm(struct
  	return 0;
  }
  
@@ -72,7 +72,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  /* Writes out a full display list for an active plane to the plane's
   * private dlist state.
   */
-@@ -992,9 +1039,20 @@ static int vc4_plane_mode_set(struct drm
+@@ -988,9 +1035,20 @@ static int vc4_plane_mode_set(struct drm
  
  	/* Colorspace conversion words */
  	if (vc4_state->is_yuv) {
@@ -96,7 +96,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  	}
  
  	vc4_state->lbm_offset = 0;
-@@ -1423,6 +1481,14 @@ struct drm_plane *vc4_plane_init(struct
+@@ -1419,6 +1477,14 @@ struct drm_plane *vc4_plane_init(struct
  					   DRM_MODE_REFLECT_X |
  					   DRM_MODE_REFLECT_Y);
  

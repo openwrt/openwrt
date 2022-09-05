@@ -44,7 +44,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	vc4_hdmi.o \
 --- a/drivers/gpu/drm/vc4/vc4_drv.c
 +++ b/drivers/gpu/drm/vc4/vc4_drv.c
-@@ -307,9 +307,11 @@ static int vc4_drm_bind(struct device *d
+@@ -308,9 +308,11 @@ static int vc4_drm_bind(struct device *d
  	if (ret)
  		return ret;
  
@@ -59,7 +59,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	drm_fb_helper_remove_conflicting_framebuffers(NULL, "vc4drmfb", false);
  
-@@ -317,8 +319,10 @@ static int vc4_drm_bind(struct device *d
+@@ -318,8 +320,10 @@ static int vc4_drm_bind(struct device *d
  	if (ret < 0)
  		goto unbind_all;
  
@@ -72,7 +72,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	ret = drm_dev_register(drm, 0);
  	if (ret < 0)
-@@ -356,6 +360,7 @@ static struct platform_driver *const com
+@@ -357,6 +361,7 @@ static struct platform_driver *const com
  	&vc4_hvs_driver,
  	&vc4_txp_driver,
  	&vc4_crtc_driver,
@@ -82,7 +82,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
-@@ -74,12 +74,17 @@ struct vc4_perfmon {
+@@ -74,11 +74,16 @@ struct vc4_perfmon {
  struct vc4_dev {
  	struct drm_device base;
  
@@ -93,14 +93,13 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	struct vc4_hvs *hvs;
  	struct vc4_v3d *v3d;
  	struct vc4_dpi *dpi;
- 	struct vc4_dsi *dsi1;
  	struct vc4_vec *vec;
  	struct vc4_txp *txp;
 +	struct vc4_fkms *fkms;
  
  	struct vc4_hang_state *hang_state;
  
-@@ -877,6 +882,9 @@ extern struct platform_driver vc4_dsi_dr
+@@ -876,6 +881,9 @@ extern struct platform_driver vc4_dsi_dr
  /* vc4_fence.c */
  extern const struct dma_fence_ops vc4_fence_ops;
  

@@ -57,6 +57,10 @@ case "$FIRMWARE" in
 		caldata_extract "calibrate" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env0 RADIOADDR1)
 		;;
+	extreme-networks,ws-ap3805i)
+		caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_ascii cfg1 RADIOADDR1)
+		;;
 	nec,wg800hp)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_text board_data 0x680)

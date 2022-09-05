@@ -44,9 +44,9 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 +	return (mode->clock * 1000) > HDMI_14_MAX_TMDS_CLK;
 +}
  
- static int vc4_hdmi_debugfs_regs(struct seq_file *m, void *unused)
- {
-@@ -473,16 +480,10 @@ static void vc4_hdmi_set_spd_infoframe(s
+ #define HDMI_14_MAX_TMDS_CLK   (340 * 1000 * 1000)
+ 
+@@ -475,16 +482,10 @@ static void vc4_hdmi_set_spd_infoframe(s
  static void vc4_hdmi_set_audio_infoframe(struct drm_encoder *encoder)
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
@@ -65,7 +65,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	vc4_hdmi_write_infoframe(encoder, &frame);
  }
  
-@@ -1215,18 +1216,10 @@ static inline struct vc4_hdmi *dai_to_hd
+@@ -1217,18 +1218,10 @@ static inline struct vc4_hdmi *dai_to_hd
  	return snd_soc_card_get_drvdata(card);
  }
  
@@ -86,7 +86,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	/*
  	 * If the HDMI encoder hasn't probed, or the encoder is
-@@ -1236,15 +1229,18 @@ static int vc4_hdmi_audio_startup(struct
+@@ -1238,15 +1231,18 @@ static int vc4_hdmi_audio_startup(struct
  				VC4_HDMI_RAM_PACKET_ENABLE))
  		return -ENODEV;
  
@@ -112,7 +112,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return 0;
  }
  
-@@ -1264,17 +1260,20 @@ static void vc4_hdmi_audio_reset(struct
+@@ -1266,17 +1262,20 @@ static void vc4_hdmi_audio_reset(struct
  	HDMI_WRITE(HDMI_MAI_CTL, VC4_HD_MAI_CTL_FLUSH);
  }
  
@@ -140,7 +140,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  }
  
  static int sample_rate_to_mai_fmt(int samplerate)
-@@ -1316,42 +1315,35 @@ static int sample_rate_to_mai_fmt(int sa
+@@ -1318,42 +1317,35 @@ static int sample_rate_to_mai_fmt(int sa
  }
  
  /* HDMI audio codec callbacks */
@@ -198,7 +198,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		mai_audio_format = VC4_HDMI_MAI_FORMAT_HBR;
  	else
  		mai_audio_format = VC4_HDMI_MAI_FORMAT_PCM;
-@@ -1388,148 +1380,12 @@ static int vc4_hdmi_audio_prepare(struct
+@@ -1390,148 +1382,12 @@ static int vc4_hdmi_audio_prepare(struct
  	HDMI_WRITE(HDMI_AUDIO_PACKET_CONFIG, audio_packet_config);
  	vc4_hdmi_set_n_cts(vc4_hdmi);
  
@@ -348,7 +348,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static const struct snd_soc_dapm_widget vc4_hdmi_audio_widgets[] = {
  	SND_SOC_DAPM_OUTPUT("TX"),
  };
-@@ -1540,8 +1396,6 @@ static const struct snd_soc_dapm_route v
+@@ -1542,8 +1398,6 @@ static const struct snd_soc_dapm_route v
  
  static const struct snd_soc_component_driver vc4_hdmi_audio_component_drv = {
  	.name			= "vc4-hdmi-codec-dai-component",
@@ -357,7 +357,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	.dapm_widgets		= vc4_hdmi_audio_widgets,
  	.num_dapm_widgets	= ARRAY_SIZE(vc4_hdmi_audio_widgets),
  	.dapm_routes		= vc4_hdmi_audio_routes,
-@@ -1552,28 +1406,6 @@ static const struct snd_soc_component_dr
+@@ -1554,28 +1408,6 @@ static const struct snd_soc_component_dr
  	.non_legacy_dai_naming	= 1,
  };
  
@@ -386,7 +386,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static const struct snd_soc_component_driver vc4_hdmi_audio_cpu_dai_comp = {
  	.name = "vc4-hdmi-cpu-dai-component",
  };
-@@ -1600,7 +1432,6 @@ static struct snd_soc_dai_driver vc4_hdm
+@@ -1602,7 +1434,6 @@ static struct snd_soc_dai_driver vc4_hdm
  			 SNDRV_PCM_RATE_192000,
  		.formats = SNDRV_PCM_FMTBIT_IEC958_SUBFRAME_LE,
  	},
@@ -394,7 +394,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  };
  
  static const struct snd_dmaengine_pcm_config pcm_conf = {
-@@ -1608,6 +1439,31 @@ static const struct snd_dmaengine_pcm_co
+@@ -1610,6 +1441,31 @@ static const struct snd_dmaengine_pcm_co
  	.prepare_slave_config = snd_dmaengine_pcm_prepare_slave_config,
  };
  
@@ -426,13 +426,13 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static int vc4_hdmi_audio_init(struct vc4_hdmi *vc4_hdmi)
  {
  	const struct vc4_hdmi_register *mai_data =
-@@ -1615,6 +1471,7 @@ static int vc4_hdmi_audio_init(struct vc
+@@ -1617,6 +1473,7 @@ static int vc4_hdmi_audio_init(struct vc
  	struct snd_soc_dai_link *dai_link = &vc4_hdmi->audio.link;
  	struct snd_soc_card *card = &vc4_hdmi->audio.card;
  	struct device *dev = &vc4_hdmi->pdev->dev;
 +	struct platform_device *codec_pdev;
  	const __be32 *addr;
- 	int index;
+ 	int index, len;
  	int ret;
 @@ -1650,11 +1507,6 @@ static int vc4_hdmi_audio_init(struct vc
  	vc4_hdmi->audio.dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;

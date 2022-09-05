@@ -57,7 +57,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	return NULL;
  }
-@@ -534,8 +522,7 @@ static void vc4_crtc_atomic_disable(stru
+@@ -535,8 +523,7 @@ static void vc4_crtc_atomic_disable(stru
  	struct drm_crtc_state *old_state = drm_atomic_get_old_crtc_state(state,
  									 crtc);
  	struct vc4_crtc_state *old_vc4_state = to_vc4_crtc_state(old_state);
@@ -67,7 +67,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct drm_device *dev = crtc->dev;
  
  	require_hvs_enabled(dev);
-@@ -562,10 +549,11 @@ static void vc4_crtc_atomic_disable(stru
+@@ -563,10 +550,11 @@ static void vc4_crtc_atomic_disable(stru
  static void vc4_crtc_atomic_enable(struct drm_crtc *crtc,
  				   struct drm_atomic_state *state)
  {

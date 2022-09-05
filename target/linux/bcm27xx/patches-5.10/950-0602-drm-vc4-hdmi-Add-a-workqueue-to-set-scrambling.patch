@@ -18,7 +18,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -538,6 +538,8 @@ static bool vc4_hdmi_supports_scrambling
+@@ -540,6 +540,8 @@ static bool vc4_hdmi_supports_scrambling
  	return true;
  }
  
@@ -27,7 +27,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static void vc4_hdmi_enable_scrambling(struct drm_encoder *encoder)
  {
  	struct drm_display_mode *mode = &encoder->crtc->state->adjusted_mode;
-@@ -554,6 +556,9 @@ static void vc4_hdmi_enable_scrambling(s
+@@ -556,6 +558,9 @@ static void vc4_hdmi_enable_scrambling(s
  
  	HDMI_WRITE(HDMI_SCRAMBLER_CTL, HDMI_READ(HDMI_SCRAMBLER_CTL) |
  		   VC5_HDMI_SCRAMBLER_CTL_ENABLE);
@@ -37,7 +37,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  }
  
  static void vc4_hdmi_disable_scrambling(struct drm_encoder *encoder)
-@@ -572,6 +577,9 @@ static void vc4_hdmi_disable_scrambling(
+@@ -574,6 +579,9 @@ static void vc4_hdmi_disable_scrambling(
  	if (crtc && !vc4_hdmi_mode_needs_scrambling(&crtc->mode))
  		return;
  
@@ -47,7 +47,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	HDMI_WRITE(HDMI_SCRAMBLER_CTL, HDMI_READ(HDMI_SCRAMBLER_CTL) &
  		   ~VC5_HDMI_SCRAMBLER_CTL_ENABLE);
  
-@@ -579,6 +587,22 @@ static void vc4_hdmi_disable_scrambling(
+@@ -581,6 +589,22 @@ static void vc4_hdmi_disable_scrambling(
  	drm_scdc_set_high_tmds_clock_ratio(vc4_hdmi->ddc, false);
  }
  

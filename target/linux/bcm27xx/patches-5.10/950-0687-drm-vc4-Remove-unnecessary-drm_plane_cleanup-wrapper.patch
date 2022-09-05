@@ -16,7 +16,7 @@ Acked-by: Daniel Vetter <daniel.vetter@ffwll.ch>
 
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -1363,11 +1363,6 @@ static const struct drm_plane_helper_fun
+@@ -1364,11 +1364,6 @@ static const struct drm_plane_helper_fun
  	.atomic_async_update = vc4_plane_atomic_async_update,
  };
  
@@ -28,7 +28,7 @@ Acked-by: Daniel Vetter <daniel.vetter@ffwll.ch>
  static bool vc4_format_mod_supported(struct drm_plane *plane,
  				     uint32_t format,
  				     uint64_t modifier)
-@@ -1425,7 +1420,7 @@ static bool vc4_format_mod_supported(str
+@@ -1426,7 +1421,7 @@ static bool vc4_format_mod_supported(str
  static const struct drm_plane_funcs vc4_plane_funcs = {
  	.update_plane = drm_atomic_helper_update_plane,
  	.disable_plane = drm_atomic_helper_disable_plane,

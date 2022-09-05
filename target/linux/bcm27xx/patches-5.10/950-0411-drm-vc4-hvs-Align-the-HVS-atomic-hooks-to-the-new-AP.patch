@@ -19,7 +19,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -520,8 +520,6 @@ static void vc4_crtc_atomic_disable(stru
+@@ -522,8 +522,6 @@ static void vc4_crtc_atomic_disable(stru
  static void vc4_crtc_atomic_enable(struct drm_crtc *crtc,
  				   struct drm_atomic_state *state)
  {
@@ -28,7 +28,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct drm_device *dev = crtc->dev;
  	struct vc4_crtc *vc4_crtc = to_vc4_crtc(crtc);
  	struct drm_encoder *encoder = vc4_get_crtc_encoder(crtc);
-@@ -534,7 +532,7 @@ static void vc4_crtc_atomic_enable(struc
+@@ -536,7 +534,7 @@ static void vc4_crtc_atomic_enable(struc
  	 */
  	drm_crtc_vblank_on(crtc);
  
@@ -39,7 +39,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		vc4_encoder->pre_crtc_configure(encoder);
 --- a/drivers/gpu/drm/vc4/vc4_drv.h
 +++ b/drivers/gpu/drm/vc4/vc4_drv.h
-@@ -926,8 +926,8 @@ extern struct platform_driver vc4_hvs_dr
+@@ -925,8 +925,8 @@ extern struct platform_driver vc4_hvs_dr
  void vc4_hvs_stop_channel(struct drm_device *dev, unsigned int output);
  int vc4_hvs_get_fifo_from_output(struct drm_device *dev, unsigned int output);
  int vc4_hvs_atomic_check(struct drm_crtc *crtc, struct drm_crtc_state *state);
