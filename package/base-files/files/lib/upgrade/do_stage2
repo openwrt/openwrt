@@ -11,6 +11,22 @@ else
 	default_do_upgrade "$IMAGE"
 fi
 
+partdev=null
+if export_bootdevice && export_partdevice partdev 0; then
+	overlay_dev=$(blkid /dev/${partdev}* 2>/dev/null | grep 'UUID="f3178596-4427-2d3b-35c7-648b65e20d5e"' -m1 | cut -d: -f1)
+	if test -b "$overlay_dev"; then
+		if [ -n "$UPGRADE_BACKUP" ]; then
+			mkdir -p /mnt
+			if mount -t ext4 -o rw,noatime "$overlay_dev" /mnt; then
+				cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
+				umount /mnt
+				UPGRADE_BACKUP=""
+			fi
+		fi
+		echo erase >"$overlay_dev"
+	fi
+fi
+
 if [ -n "$UPGRADE_BACKUP" ] && type 'platform_copy_config' >/dev/null 2>/dev/null; then
 	platform_copy_config
 fi

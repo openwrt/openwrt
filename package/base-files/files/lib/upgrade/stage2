@@ -37,6 +37,7 @@ switch_to_ramfs() {
 	RAMFS_COPY_LVM="$(command -v lvm)"
 
 	for binary in \
+		/usr/sbin/blkid \
 		/bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount	\
 		pivot_root mount_root reboot sync kill sleep		\
 		md5sum hexdump cat zcat dd tar gzip			\
