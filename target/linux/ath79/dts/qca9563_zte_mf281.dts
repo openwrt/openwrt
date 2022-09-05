@@ -1,0 +1,275 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// Copyright (c) 2021 Cezary Jackiewicz
+// Copyright (c) 2021, 2022 Lech Perczak
+// Copyright (c) 2022 David Bauer <mail@david-bauer.net>
+
+#include "qca956x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "ZTE MF281";
+	compatible = "zte,mf281", "qca,qca9563";
+
+	aliases {
+		led-boot = &led_debug;
+		led-failsafe = &led_debug;
+		led-running = &led_debug;
+		led-upgrade = &led_debug;
+		label-mac-device = &eth0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&enable_wlan_led_gpio>;
+
+		/* Hidden SMD LED below signal strength LEDs.
+		 * Visible through slits underside of the case.
+		 */
+		led_debug: debug {
+			label = "green:debug";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	/* This GPIO is used to reset whole board _including_ the modem */
+	gpio-restart {
+		compatible = "gpio-restart";
+		gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		active-delay = <3000>;
+		inactive-delay = <1000>;
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xa0000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "u-boot-env";
+				reg = <0xa0000 0x20000>;
+				read-only;
+			};
+		};
+	};
+
+	flash@1 {
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "fota-flag";
+				reg = <0x000000 0xa0000>;
+				read-only;
+			};
+
+			partition@a0000 {
+				label = "art";
+				reg = <0xa0000 0x80000>;
+				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_caldata_1000: cal@1000 {
+					reg = <0x1000 0x440>;
+				};
+
+				cal_caldata_5000: cal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
+			};
+
+			partition@120000 {
+				label = "mac";
+				reg = <0x120000 0x80000>;
+				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_mac_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+			};
+
+			partition@1a0000 {
+				label = "reserved2";
+				reg = <0x1a0000 0xc0000>;
+				read-only;
+			};
+
+			partition@260000 {
+				label = "cfg-param";
+				reg = <0x260000 0x400000>;
+				read-only;
+			};
+
+			partition@660000 {
+				label = "log";
+				reg = <0x660000 0x400000>;
+				read-only;
+			};
+
+			partition@a60000 {
+				label = "oops";
+				reg = <0xa60000 0xa0000>;
+				read-only;
+			};
+
+			partition@b00000 {
+				label = "reserved3";
+				reg = <0xb00000 0x500000>;
+				read-only;
+			};
+
+			partition@1000000 {
+				label = "web";
+				reg = <0x1000000 0x800000>;
+				read-only;
+			};
+
+			partition@1800000 {
+				label = "firmware";
+				reg = <0x1800000 0x1d00000>;
+
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "kernel";
+					reg = <0x0 0x600000>;
+				};
+
+				partition@600000 {
+					label = "ubi";
+					reg = <0x600000 0x1700000>;
+				};
+			};
+
+			partition@3500000 {
+				label = "data";
+				reg = <0x3500000 0x1900000>;
+				read-only;
+			};
+
+			partition@4e00000 {
+				label = "fota";
+				reg = <0x4e00000 0x3200000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "sgmii";
+
+		qca,ar8327-initvals = <
+			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
+			0x7c 0x0000007e /* PORT0_STATUS */
+		>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_mac_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&pcie {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0 0 0 0 0>;
+
+		nvmem-cells = <&macaddr_mac_0>, <&cal_caldata_5000>;
+		nvmem-cell-names = "mac-address", "pre-calibration";
+		mac-address-increment = <1>;
+	};
+};
+
+&pinmux {
+	enable_wlan_led_gpio: pinmux_wlan_led_gpio {
+		pinctrl-single,bits = <0x10 0x0 0xff000000>;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_mac_0>, <&cal_caldata_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb_phy1 {
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+};
