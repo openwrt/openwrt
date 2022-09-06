@@ -128,12 +128,14 @@ struct rtcl_reg_set {
 };
 
 /*
- * The following configuration tables are valid operation points for their corresponding PLLs.
- * The magic numbers are precalculated mulitpliers and dividers to keep the driver simple. They
- * also provide rates outside the allowed physical specifications. E.g. DDR3 memory has a lower
- * limit of 303 MHz or the CPU might get unstable if set to anything above its startup frequency.
- * Additionally the Realtek SOCs tend to expect CPU speed > MEM speed > LXB speed. The caller or
- * DT configuration must take care that only valid operating points are selected.
+ * The following configuration tables are valid operation points for their
+ * corresponding PLLs. The magic numbers are precalculated mulitpliers and
+ * dividers to keep the driver simple. They also provide rates outside the
+ * allowed physical specifications. E.g. DDR3 memory has a lower limit of 303
+ * MHz or the CPU might get unstable if set to anything above its startup
+ * frequency. Additionally the Realtek SOCs tend to expect CPU speed larger
+ * than MEM speed larger than LXB speed. The caller or DT configuration must
+ * take care that only valid operating points are selected.
  */
 
 static const struct rtcl_reg_set rtcl_838x_cpu_reg_set[] = {
@@ -327,8 +329,8 @@ struct rtcl_ccu *rtcl_ccu;
 #define rtcl_hw_to_clk(_hw) container_of(_hw, struct rtcl_clk, hw)
 
 /*
- * SRAM relocatable assembler functions. The dram() parts point to normal kernel memory while
- * the sram() parts are the same functions but relocated to SRAM.
+ * SRAM relocatable assembler functions. The dram() parts point to normal kernel
+ * memory while the sram() parts are the same functions but relocated to SRAM.
  */
 
 extern void	rtcl_838x_dram_start(void);
@@ -425,8 +427,9 @@ static int rtcl_set_rate(struct clk_hw *hw, unsigned long rate, unsigned long pa
 	if ((parent_rate != OSC_RATE) || (!rtcl_ccu->sram.vbase))
 		return -EINVAL;
 /*
- * Currently we do not know if SRAM is stable on these devices. Maybe someone changes memory in
- * this region and does not care about proper allocation. So check if something might go wrong.
+ * Currently we do not know if SRAM is stable on these devices. Maybe someone
+ * changes memory in this region and does not care about proper allocation. So
+ * check if something might go wrong.
  */
 	if (unlikely(*rtcl_ccu->sram.pmark != RTL_SRAM_MARKER)) {
 		dev_err(&rtcl_ccu->pdev->dev, "SRAM code lost\n");
@@ -534,11 +537,12 @@ int rtcl_register_clkhw(int clk_idx)
 		break;
 	default:
 /*
- * TODO: This driver supports PLL reclocking and nothing else. Additional required steps for non
- * CPU PLLs are missing. E.g. if we want to change memory clocks the right way we must adapt a lot
- * of other settings like MCR and DTRx timing registers (0xb80001000, 0xb8001008, ...) and initiate
- * a DLL reset so that hardware operates in the allowed limits. This is far too complex without
- * official support. Avoid this for now.
+ * TODO: This driver supports PLL reclocking and nothing else. Additional
+ * required steps for non CPU PLLs are missing. E.g. if we want to change memory
+ * clocks the right way we must adapt a lot of other settings. This includes
+ * MCR and DTRx timing registers (0xb80001000, 0xb8001008, ...) and a DLL reset
+ * so that hardware operates in the allowed limits. This is far too complex
+ * without official support. Avoid this for now.
  */
 		rclk->min = rclk->max = rclk->startup;
 		break;
@@ -696,8 +700,9 @@ void rtcl_ccu_log_late(void)
 }
 
 /*
- * Early registration: This module provides core startup clocks that are needed for generic SOC
- * init and for further builtin devices (e.g. UART). Register asap via clock framework.
+ * Early registration: This module provides core startup clocks that are needed
+ * for generic SOC init and for further builtin devices (e.g. UART). Register
+ * asap via clock framework.
  */
 
 static void __init rtcl_probe_early(struct device_node *np)
@@ -715,8 +720,8 @@ CLK_OF_DECLARE_DRIVER(rtl838x_clk, "realtek,rtl8380-clock", rtcl_probe_early);
 CLK_OF_DECLARE_DRIVER(rtl839x_clk, "realtek,rtl8390-clock", rtcl_probe_early);
 
 /*
- * Late registration: Finally register as normal platform driver. At this point we can make use
- * of other modules like SRAM.
+ * Late registration: Finally register as normal platform driver. At this point
+ * we can make use of other modules like SRAM.
  */
 
 static const struct of_device_id rtcl_dt_ids[] = {
@@ -757,8 +762,9 @@ static int __init rtcl_init_subsys(void)
 }
 
 /*
- * The driver does not know when SRAM module has finally loaded. With an arch_initcall() we might
- * overtake SRAM initialization. Be polite and give the system a little more time.
+ * The driver does not know when SRAM module has finally loaded. With an
+ * arch_initcall() we might overtake SRAM initialization. Be polite and give the
+ * system a little more time.
  */
 
 subsys_initcall(rtcl_init_subsys);
