@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-only
+/* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Realtek RTL83XX clock driver
  * Copyright (C) 2022 Markus Stockhausen <markus.stockhausen@gmx.de>
@@ -34,15 +34,13 @@
 #define RTCL_DDR2		2
 #define RTCL_DDR3		3
 
-#define REG_CTRL0		0
-#define REG_CTRL1		1
-#define REG_COUNT		2
+#define RTCL_REGCNT		2
 
 #define RTCL_XTAL_RATE		25000000
 
 #define RTCL_SOC_CLK(soc,clk)	((soc << 8) + clk)
 
-static const int rtcl_regs[RTCL_SOCCNT][REG_COUNT][CLK_COUNT] = {
+static const int rtcl_regs[RTCL_SOCCNT][RTCL_REGCNT][CLK_COUNT] = {
 	{
 		{
 			RTL_SW_CORE_BASE + RTL838X_PLL_CPU_CTRL0,
@@ -74,7 +72,7 @@ static const int rtcl_regs[RTCL_SOCCNT][REG_COUNT][CLK_COUNT] = {
 	}
 
 struct rtcl_reg_set {
-	unsigned int rate;
+	unsigned long rate;
 	unsigned int ctrl0;
 	unsigned int ctrl1;
 };
@@ -175,11 +173,7 @@ struct rtcl_rtab_set {
 	const struct rtcl_reg_set *rset;
 };
 
-#define RTCL_RTAB_SET(_rset)			\
-	{					\
-		.count = ARRAY_SIZE(_rset),	\
-		.rset = _rset,			\
-	}
+#define RTCL_RTAB_SET(_rset) { .count = ARRAY_SIZE(_rset), .rset = _rset }
 
 static const struct rtcl_rtab_set rtcl_rtab_set[RTCL_SOCCNT][CLK_COUNT] = {
 	{
@@ -281,13 +275,13 @@ struct rtcl_ccu *rtcl_ccu;
 extern void	rtcl_838x_dram_start(void);
 extern int	rtcl_838x_dram_size;
 
-extern void	(*rtcl_838x_dram_set_rate)(int clk_idx, int ctrl0, int ctrl1);
+extern void	rtcl_838x_dram_set_rate(int clk_idx, int ctrl0, int ctrl1);
 static void	(*rtcl_838x_sram_set_rate)(int clk_idx, int ctrl0, int ctrl1);
 
 extern void	rtcl_839x_dram_start(void);
 extern int	rtcl_839x_dram_size;
 
-extern void	(*rtcl_839x_dram_set_rate)(int clk_idx, int ctrl0, int ctrl1);
+extern void	rtcl_839x_dram_set_rate(int clk_idx, int ctrl0, int ctrl1);
 static void	(*rtcl_839x_sram_set_rate)(int clk_idx, int ctrl0, int ctrl1);
 
 /*
@@ -482,11 +476,13 @@ int rtcl_register_clkhw(int clk_idx)
 	int ret;
 	struct clk *clk;
 	struct clk_init_data hw_init = { };
+	struct clk_parent_data parent_data = { };
 	struct rtcl_clk *rclk = &rtcl_ccu->clks[clk_idx];
-	struct clk_parent_data parent_data = { .fw_name = rtcl_clk_info[clk_idx].parent_name };
 
 	rclk->idx = clk_idx;
 	rclk->hw.init = &hw_init;
+
+	parent_data.fw_name = rtcl_clk_info[clk_idx].parent_name;
 
 	hw_init.num_parents = 1;
 	hw_init.ops = &rtcl_clk_ops;
@@ -667,6 +663,8 @@ void rtcl_ccu_log_late(void)
 
 	for (clk_idx = 0; clk_idx < CLK_COUNT; clk_idx++) {
 		rclk = &rtcl_ccu->clks[clk_idx];
+		if (rclk->min == rclk->max)
+			continue;
 		overclock |= rclk->max > rclk->startup;
 		sprintf(clkinfo, ", %s %lu-%lu MHz", rtcl_clk_info[clk_idx].display_name,
 			rclk->min / 1000000, rclk->max / 1000000);
