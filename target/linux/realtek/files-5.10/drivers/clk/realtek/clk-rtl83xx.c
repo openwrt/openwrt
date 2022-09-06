@@ -28,7 +28,8 @@
 
 #define RTCL_SOC838X		0
 #define RTCL_SOC839X		1
-#define RTCL_SOCCNT		2
+#define RTCL_SOC930X		2
+#define RTCL_SOCCNT		3
 
 #define RTCL_DDR1		1
 #define RTCL_DDR2		2
@@ -64,6 +65,18 @@ static const int rtcl_regs[RTCL_SOCCNT][RTCL_REGCNT][CLK_COUNT] = {
 			RTL_SW_CORE_BASE + RTL839X_PLL_CPU_CTRL1,
 			RTL_SW_CORE_BASE + RTL839X_PLL_MEM_CTRL1,
 			RTL_SW_CORE_BASE + RTL839X_PLL_LXB_CTRL1
+		}
+	}, {
+		{
+			RTL_SW_CORE_BASE + RTL930X_PLL_SW_CTRL0,
+			RTL_SW_CORE_BASE + RTL930X_PLL_CPU_CTRL0,
+			RTL_SOC_BASE + RTL930X_PLL_MEM_CTRL2,
+			RTL_SW_CORE_BASE + RTL930X_PLL_SW_DIV_CTRL
+		}, {
+			RTL_SW_CORE_BASE + RTL930X_PLL_SW_CTRL1,
+			RTL_SW_CORE_BASE + RTL930X_PLL_CPU_MISC_CTRL,
+			RTL_SOC_BASE + RTL930X_PLL_MEM_CTRL3,
+			RTL_SW_CORE_BASE + RTL930X_PLL_SW_DIV_CTRL
 		}
 	}
 };
@@ -172,6 +185,49 @@ static const struct rtcl_reg_set rtcl_839x_lxb_reg_set[] = {
 	RTCL_REG_SET(200000000, 0x0414, 7)
 };
 
+static const struct rtcl_reg_set rtcl_930x_cpu_reg_set[] = {
+/*
+ * TODO: The SRAM runs on 250 MHz. Depending on the the CPU speed we need
+ * additional magic register settings to make things work. For now remember
+ * that, provide all PLL values and exclude unwanted settings in DT.
+ */
+	RTCL_REG_SET(400000000, 0x002e, 4), /* sram_oc0_pulse=1 oc0_sram_pulse=0 */
+	RTCL_REG_SET(425000000, 0x0031, 4), /* ... */
+	RTCL_REG_SET(450000000, 0x0034, 4),
+	RTCL_REG_SET(475000000, 0x0037, 4), /* sram_oc0_pulse=1 oc0_sram_pulse=0 */
+	RTCL_REG_SET(500000000, 0x003a, 4), /* sram_oc0_pulse=1 oc0_sram_pulse=1 */
+	RTCL_REG_SET(525000000, 0x0032, 3), /* sram_oc0_pulse=0 oc0_sram_pulse=1 */
+	RTCL_REG_SET(550000000, 0x0035, 3), /* ... */
+	RTCL_REG_SET(575000000, 0x0037, 3),
+	RTCL_REG_SET(600000000, 0x002e, 2),
+	RTCL_REG_SET(625000000, 0x0030, 2),
+	RTCL_REG_SET(650000000, 0x0032, 2),
+	RTCL_REG_SET(675000000, 0x0034, 2),
+	RTCL_REG_SET(700000000, 0x0036, 2),
+	RTCL_REG_SET(725000000, 0x0038, 2),
+	RTCL_REG_SET(750000000, 0x003a, 2),
+	RTCL_REG_SET(775000000, 0x003c, 2),
+	RTCL_REG_SET(800000000, 0x003e, 2),
+	RTCL_REG_SET(825000000, 0x0040, 2),
+	RTCL_REG_SET(850000000, 0x0042, 2),
+	RTCL_REG_SET(875000000, 0x0044, 2),
+	RTCL_REG_SET(900000000, 0x0046, 2),
+	RTCL_REG_SET(925000000, 0x0048, 2),
+	RTCL_REG_SET(950000000, 0x004a, 2),
+	RTCL_REG_SET(975000000, 0x004c, 2), /* sram_oc0_pulse=0 oc0_sram_pulse=1 */
+	RTCL_REG_SET(1000000000, 0x004e, 2), /* sram_oc0_pulse=0 oc0_sram_pulse=2 */
+	RTCL_REG_SET(1025000000, 0x0050, 2), /* ... */
+};
+
+static const struct rtcl_reg_set rtcl_930x_mem_reg_set[] = {
+	RTCL_REG_SET(600000000, 0x0000, 0),
+};
+
+static const struct rtcl_reg_set rtcl_930x_lxb_reg_set[] = {
+	RTCL_REG_SET(153125000, 0x0c00, 0),
+	RTCL_REG_SET(175000000, 0x0a00, 0)
+};
+
 struct rtcl_rtab_set {
 	int count;
 	const struct rtcl_reg_set *rset;
@@ -191,6 +247,11 @@ static const struct rtcl_rtab_set rtcl_rtab_set[RTCL_SOCCNT][CLK_COUNT] = {
 		RTCL_RTAB_SET(rtcl_839x_cpu_reg_set),
 		RTCL_RTAB_SET(rtcl_839x_mem_reg_set),
 		RTCL_RTAB_SET(rtcl_839x_lxb_reg_set)
+	}, {
+		RTCL_RTAB_SET_NONE,
+		RTCL_RTAB_SET(rtcl_930x_cpu_reg_set),
+		RTCL_RTAB_SET(rtcl_930x_mem_reg_set),
+		RTCL_RTAB_SET(rtcl_930x_lxb_reg_set)
 	}
 };
 
@@ -214,6 +275,11 @@ static const struct rtcl_round_set rtcl_round_set[RTCL_SOCCNT][CLK_COUNT] = {
 		RTCL_ROUND_SET(400000000,	850000000,	25000000),
 		RTCL_ROUND_SET(100000000,	400000000,	25000000),
 		RTCL_ROUND_SET(50000000,	200000000,	50000000)
+	}, {
+		RTCL_ROUND_SET_NONE,
+		RTCL_ROUND_SET(400000000,	975000000,	25000000),
+		RTCL_ROUND_SET(600000000,	600000000,	1),
+		RTCL_ROUND_SET(153125000,	175000000,	21875000)
 	}
 };
 
@@ -224,12 +290,13 @@ static const int rtcl_xdiv[] = { 1, 2, 4, 2 };
  * module data structures
  */
 
-#define RTCL_CLK_INFO(_idx, _name, _pname0, _pname1, _dname)		\
+#define RTCL_CLK_INFO(_idx, _name, _pname0, _pname1, _pname2, _dname)	\
 	{								\
 		.idx = _idx,						\
 		.name = _name,						\
 		.parent_name[RTCL_SOC838X] = _pname0,			\
 		.parent_name[RTCL_SOC839X] = _pname1,			\
+		.parent_name[RTCL_SOC930X] = _pname2,			\
 		.display_name = _dname,					\
 	}
 
@@ -247,12 +314,16 @@ struct rtcl_clk {
 	unsigned long max;
 	unsigned long startup;
 };
-
+/*
+ * PLLs on the devices are mostly pretty straight forward derived from 25 MHz
+ * oscillator clock. Only exception is RTL930X where LXB clock has only dividers
+ * and is derived from switch clock.
+ */
 static const struct rtcl_clk_info rtcl_clk_info[CLK_COUNT] = {
-	RTCL_CLK_INFO(CLK_SW, "sw_clk", "xtal_clk", "xtal_clk", "SW"),
-	RTCL_CLK_INFO(CLK_CPU, "cpu_clk", "xtal_clk", "xtal_clk", "CPU"),
-	RTCL_CLK_INFO(CLK_MEM, "mem_clk", "xtal_clk", "xtal_clk", "MEM"),
-	RTCL_CLK_INFO(CLK_LXB, "lxb_clk", "xtal_clk", "xtal_clk", "LXB")
+	RTCL_CLK_INFO(CLK_SW, "sw_clk", "xtal_clk", "xtal_clk", "xtal_clk", "SW"),
+	RTCL_CLK_INFO(CLK_CPU, "cpu_clk", "xtal_clk", "xtal_clk", "xtal_clk", "CPU"),
+	RTCL_CLK_INFO(CLK_MEM, "mem_clk", "xtal_clk", "xtal_clk", "xtal_clk", "MEM"),
+	RTCL_CLK_INFO(CLK_LXB, "lxb_clk", "xtal_clk", "xtal_clk", "sw_clk", "LXB")
 };
 
 struct rtcl_dram {
@@ -295,6 +366,12 @@ extern int	rtcl_839x_dram_size;
 
 extern void	rtcl_839x_dram_set_rate(int clk_idx, int ctrl0, int ctrl1);
 static void	(*rtcl_839x_sram_set_rate)(int clk_idx, int ctrl0, int ctrl1);
+
+extern void	rtcl_930x_dram_start(void);
+extern int	rtcl_930x_dram_size;
+
+extern void	rtcl_930x_dram_set_rate(int clk_idx, int ctrl0, int ctrl1);
+static void	(*rtcl_930x_sram_set_rate)(int clk_idx, int ctrl0, int ctrl1);
 
 /*
  * clock setter/getter functions
@@ -346,6 +423,26 @@ static unsigned long rtcl_recalc_rate(struct clk_hw *hw, unsigned long parent_ra
 		mul2 = RTL_PLL_CTRL0_CMU_SEL_DIV4(read0) ? 4 : 1;
 		div1 = 1 << RTL_PLL_CTRL0_CMU_SEL_PREDIV(read0);
 		break;
+	case RTCL_SOC_CLK(RTCL_SOC930X, CLK_CPU):
+		mul1 = (RTL_PLL_CTRL0_CMU_NCODE_IN(read0) + 2) * 2;
+		mul2 = RTL_PLL_CTRL0_CMU_SEL_DIV4(read0) ? 4 : 1;
+		div1 = 1 << RTL_PLL_CTRL0_CMU_SEL_PREDIV(read0);
+		div2 = RTL930X_PLL_MISC_CMU_DIVN2(read1) + 2;
+		div3 = RTL930X_PLL_CTRL0_CMU_DIVN3_CPU(read0) + 1;
+		break;
+	case RTCL_SOC_CLK(RTCL_SOC930X, CLK_SW):
+		mul1 = (RTL_PLL_CTRL0_CMU_NCODE_IN(read0) + 2) * 2;
+		mul2 = RTL_PLL_CTRL0_CMU_SEL_DIV4(read0) ? 4 : 1;
+		div1 = 1 << RTL_PLL_CTRL0_CMU_SEL_PREDIV(read0);
+		break;
+	case RTCL_SOC_CLK(RTCL_SOC930X, CLK_MEM):
+		mul1 = RTL930X_PLL_MEM_CTRL3_CMU_NCODE_IN(read1) + 2;
+		div1 = 1 << RTL930X_PLL_MEM_CTRL2_PREDIV(read0);
+		div2 = 2;
+		break;
+	case RTCL_SOC_CLK(RTCL_SOC930X, CLK_LXB):
+		div1 = (RTL930X_PLL_SW_DIV_CTRL_DIVN2_LXB(read0) + 2) * 2;
+		break;
 	}
 /*
  * Do the math in a way that interim values stay inside 32 bit bounds
@@ -384,6 +481,23 @@ static int rtcl_839x_set_rate(int clk_idx, const struct rtcl_reg_set *reg)
 	return 0;
 }
 
+static int rtcl_930x_set_rate(int clk_idx, const struct rtcl_reg_set *reg)
+{
+	unsigned long vpflags;
+	unsigned long irqflags;
+/*
+ * Runtime of this function (including locking)
+ * CPU: up 19000 cycles / up to 48 us at 400 MHz (half default speed)
+ */
+	spin_lock_irqsave(&rtcl_ccu->lock, irqflags);
+	vpflags = dvpe();
+	rtcl_930x_dram_set_rate(clk_idx, reg->ctrl0, reg->ctrl1);
+	evpe(vpflags);
+	spin_unlock_irqrestore(&rtcl_ccu->lock, irqflags);
+
+	return 0;
+}
+
 static int rtcl_set_rate(struct clk_hw *hw, unsigned long rate, unsigned long parent_rate)
 {
 	int tab_idx;
@@ -412,6 +526,8 @@ static int rtcl_set_rate(struct clk_hw *hw, unsigned long rate, unsigned long pa
 		return rtcl_838x_set_rate(clk->idx, &rtab->rset[tab_idx]);
 	case RTCL_SOC839X:
 		return rtcl_839x_set_rate(clk->idx, &rtab->rset[tab_idx]);
+	case RTCL_SOC930X:
+		return rtcl_930x_set_rate(clk->idx, &rtab->rset[tab_idx]);
 	}
 
 	return -ENXIO;
@@ -473,6 +589,8 @@ static int rtcl_ccu_create(struct device_node *np)
 		soc = RTCL_SOC838X;
 	else if (of_device_is_compatible(np, "realtek,rtl8390-clock"))
 		soc = RTCL_SOC839X;
+	else if (of_device_is_compatible(np, "realtek,rtl9300-clock"))
+		soc = RTCL_SOC930X;
 	else
 		return -ENXIO;
 
@@ -603,6 +721,10 @@ int rtcl_init_sram(void)
 		dram_start = &rtcl_839x_dram_start;
 		dram_size = rtcl_839x_dram_size;
 		break;
+	case RTCL_SOC930X:
+		dram_start = &rtcl_930x_dram_start;
+		dram_size = rtcl_930x_dram_size;
+		break;
 	default:
 		return -ENXIO;
 	}
@@ -642,6 +764,9 @@ int rtcl_init_sram(void)
 		break;
 	case RTCL_SOC839X:
 		RTCL_SRAM_FUNC(839x, sram_pbase, set_rate);
+		break;
+	case RTCL_SOC930X:
+		RTCL_SRAM_FUNC(930x, sram_pbase, set_rate);
 		break;
 	}
 
@@ -714,6 +839,7 @@ static void __init rtcl_probe_early(struct device_node *np)
 
 CLK_OF_DECLARE_DRIVER(rtl838x_clk, "realtek,rtl8380-clock", rtcl_probe_early);
 CLK_OF_DECLARE_DRIVER(rtl839x_clk, "realtek,rtl8390-clock", rtcl_probe_early);
+CLK_OF_DECLARE_DRIVER(rtl930x_clk, "realtek,rtl9300-clock", rtcl_probe_early);
 
 /*
  * Late registration: Finally register as normal platform driver. At this point
@@ -723,6 +849,7 @@ CLK_OF_DECLARE_DRIVER(rtl839x_clk, "realtek,rtl8390-clock", rtcl_probe_early);
 static const struct of_device_id rtcl_dt_ids[] = {
 	{ .compatible = "realtek,rtl8380-clock" },
 	{ .compatible = "realtek,rtl8390-clock" },
+	{ .compatible = "realtek,rtl9300-clock" },
 	{}
 };
 
