@@ -2,64 +2,6 @@
 /*
  * Realtek RTL83XX clock driver
  * Copyright (C) 2022 Markus Stockhausen <markus.stockhausen@gmx.de>
- *
- * This driver provides basic clock support for the central core clock unit (CCU) and its PLLs
- * inside the RTL838X and RTL8389X SOC. Currently CPU, memory and LXB clock information can be
- * accessed. To make use of the driver add the following devices and configurations at the
- * appropriate locations to the DT.
- *
- * #include <dt-bindings/clock/rtl83xx-clk.h>
- *
- * sram0: sram@9f000000 {
- *   compatible = "mmio-sram";
- *   reg = <0x9f000000 0x18000>;
- *   #address-cells = <1>;
- *   #size-cells = <1>;
- *   ranges = <0 0x9f000000 0x18000>;
- * };
- *
- * osc: oscillator {
- *   compatible = "fixed-clock";
- *   #clock-cells = <0>;
- *   clock-frequency = <25000000>;
- * };
- *
- * ccu: clock-controller {
- *   compatible = "realtek,rtl8380-clock";
- *   #clock-cells = <1>;
- *   clocks = <&osc>;
- *   clock-names = "ref_clk";
- * };
- *
- *
- * The SRAM part is needed to be able to set clocks. When changing clocks the code must not run
- * from DRAM. Otherwise system might freeze. Take care to adjust CCU compatibility, SRAM address
- * and size to the target SOC device. Afterwards one can access/identify the clocks in the other
- * DT devices with <&ccu CLK_CPU>, <&ccu CLK_MEM> or <&ccu CLK_LXB>. Additionally the clocks can
- * be used inside the kernel with
- *
- * cpu_clk = clk_get(NULL, "cpu_clk");
- * mem_clk = clk_get(NULL, "mem_clk");
- * lxb_clk = clk_get(NULL, "lxb_clk");
- *
- * This driver can be directly used by the DT based cpufreq driver (CONFIG_CPUFREQ_DT) if CPU
- * references the right clock and sane operating points (OPP) are provided. E.g.
- *
- * cpu@0 {
- *   compatible = "mips,mips4KEc";
- *   reg = <0>;
- *   clocks = <&ccu CLK_CPU>;
- *   operating-points-v2 = <&cpu_opp_table>;
- * };
- *
- * cpu_opp_table: opp-table-0 {
- *   compatible = "operating-points-v2";
- *   opp-shared;
- *   opp00 {
- *     opp-hz = /bits/ 64 <425000000>;
- *   };
- *   ...
- * }
  */
 
 #include <asm/cacheflush.h>

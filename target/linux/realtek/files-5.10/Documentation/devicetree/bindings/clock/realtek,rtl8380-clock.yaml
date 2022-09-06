@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: GPL-2.0
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/clock/realtek,rtl8380-clock.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Realtek clock control unit Device Tree Bindings
+
+maintainers:
+  - Markus Stockhausen <markus.stockhausen@gmx.de>
+
+description: |
+  The driver provides basic clock support for the central core clock unit (CCU)
+  and its PLLs inside the RTL838X, RTL8389X and RTL930X SOC. All provided clocks
+  are derived from an oscillator that runs at a fixed speed of 25 MHz. Currently
+  switch, CPU, memory and LXB (Lexra Bus) clock information can be accessed. The
+  clocks can be referenced by 'include/dt-bindings/clock/rtl83xx-clk.h'.
+
+  If changing of clock speeds is required then SRAM must be defined via DT.
+  The relevant code is copied to SRAM and run from there. To provide SRAM
+  see http://devicetree.org/schemas/sram/sram.yaml#. E.g.
+ 
+  sram0: sram@9f000000 {
+      compatible = "mmio-sram";
+      reg = <0x9f000000 0x18000>;
+      #address-cells = <1>;
+      #size-cells = <1>;
+      ranges = <0 0x9f000000 0x18000>;
+  };
+
+  If SRAM is enabled and clock changing is allowed the driver can be directly
+  used by the DT based cpufreq driver (enabled by CONFIG_CPUFREQ_DT). At least
+  if CPU references the right clock and sane operating points (OPP) are
+  provided. E.g.
+ 
+  cpu@0 {
+      compatible = "mips,mips4KEc";
+      reg = <0>;
+      clocks = <&ccu CLK_CPU>;
+      operating-points-v2 = <&cpu_opp_table>;
+  };
+ 
+  cpu_opp_table: opp-table-0 {
+      compatible = "operating-points-v2";
+      opp-shared;
+      opp00 {
+          opp-hz = /bits/ 64 <425000000>;
+      };
+      ...
+  }
+
+  Changing of clocks is often realized by busy waiting. When using that feature
+  the additional load should be considered.      
+
+properties:
+  "#clock-cells":
+    const: 1
+
+  compatible:
+    enum:
+      - realtek,rtl8380-clock
+      - realtek,rtl8390-clock
+      - realtek,rtl9300-clock
+
+required:
+  - "#clock-cells"
+  - compatible
+
+examples:
+  - |
+    ccu: clock-controller {
+        compatible = "realtek,rtl9300-clock";
+        #clock-cells = <1>;
+    };
+
+...
