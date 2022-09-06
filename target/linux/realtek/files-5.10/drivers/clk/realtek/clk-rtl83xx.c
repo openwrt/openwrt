@@ -80,12 +80,6 @@
 
 #include "clk-rtl83xx.h"
 
-#define read_sw(reg)		ioread32(((void *)RTL_SW_CORE_BASE) + reg)
-#define read_soc(reg)		ioread32(((void *)RTL_SOC_BASE) + reg)
-
-#define write_sw(val, reg)	iowrite32(val, ((void *)RTL_SW_CORE_BASE) + reg)
-#define write_soc(val, reg)	iowrite32(val, ((void *)RTL_SOC_BASE) + reg)
-
 /*
  * some hardware specific definitions
  */
@@ -106,11 +100,25 @@
 
 static const int rtcl_regs[RTCL_SOCCNT][REG_COUNT][CLK_COUNT] = {
 	{
-		{ RTL838X_PLL_CPU_CTRL0, RTL838X_PLL_MEM_CTRL0, RTL838X_PLL_LXB_CTRL0 },
-		{ RTL838X_PLL_CPU_CTRL1, RTL838X_PLL_MEM_CTRL1, RTL838X_PLL_LXB_CTRL1 },
+		{
+			RTL_SW_CORE_BASE + RTL838X_PLL_CPU_CTRL0,
+			RTL_SW_CORE_BASE + RTL838X_PLL_MEM_CTRL0,
+			RTL_SW_CORE_BASE + RTL838X_PLL_LXB_CTRL0,
+		}, {
+			RTL_SW_CORE_BASE + RTL838X_PLL_CPU_CTRL1,
+			RTL_SW_CORE_BASE + RTL838X_PLL_MEM_CTRL1,
+			RTL_SW_CORE_BASE + RTL838X_PLL_LXB_CTRL1
+		}
 	}, {
-		{ RTL839X_PLL_CPU_CTRL0, RTL839X_PLL_MEM_CTRL0, RTL839X_PLL_LXB_CTRL0 },
-		{ RTL839X_PLL_CPU_CTRL1, RTL839X_PLL_MEM_CTRL1, RTL839X_PLL_LXB_CTRL1 },
+		{
+			RTL_SW_CORE_BASE + RTL839X_PLL_CPU_CTRL0,
+			RTL_SW_CORE_BASE + RTL839X_PLL_MEM_CTRL0,
+			RTL_SW_CORE_BASE + RTL839X_PLL_LXB_CTRL0
+		}, {
+			RTL_SW_CORE_BASE + RTL839X_PLL_CPU_CTRL1,
+			RTL_SW_CORE_BASE + RTL839X_PLL_MEM_CTRL1,
+			RTL_SW_CORE_BASE + RTL839X_PLL_LXB_CTRL1
+		}
 	}
 };
 
@@ -355,8 +363,8 @@ static unsigned long rtcl_recalc_rate(struct clk_hw *hw, unsigned long parent_ra
 	if ((clk->idx >= CLK_COUNT) || (!rtcl_ccu) || (rtcl_ccu->soc >= RTCL_SOCCNT))
 		return 0;
 
-	ctrl0 = read_sw(rtcl_regs[rtcl_ccu->soc][0][clk->idx]);
-	ctrl1 = read_sw(rtcl_regs[rtcl_ccu->soc][1][clk->idx]);
+	ctrl0 = ioread32((void *)rtcl_regs[rtcl_ccu->soc][0][clk->idx]);
+	ctrl1 = ioread32((void *)rtcl_regs[rtcl_ccu->soc][1][clk->idx]);
 
 	cmu_sel_prediv = 1 << RTL_PLL_CTRL0_CMU_SEL_PREDIV(ctrl0);
 	cmu_sel_div4 = RTL_PLL_CTRL0_CMU_SEL_DIV4(ctrl0) ? 4 : 1;
@@ -493,8 +501,8 @@ static int rtcl_ccu_create(struct device_node *np)
 
 	rtcl_ccu->np = np;
 	rtcl_ccu->soc = soc;
-	rtcl_ccu->dram.type = RTL_MC_MCR_DRAMTYPE(read_soc(RTL_MC_MCR));
-	rtcl_ccu->dram.buswidth = RTL_MC_DCR_BUSWIDTH(read_soc(RTL_MC_DCR));
+	rtcl_ccu->dram.type = RTL_MC_MCR_DRAMTYPE(ioread32((void *)RTL_SOC_BASE + RTL_MC_MCR));
+	rtcl_ccu->dram.buswidth = RTL_MC_DCR_BUSWIDTH(ioread32((void *)RTL_SOC_BASE + RTL_MC_DCR));
 	spin_lock_init(&rtcl_ccu->lock);
 
 	return 0;
