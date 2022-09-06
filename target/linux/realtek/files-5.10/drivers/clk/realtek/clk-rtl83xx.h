@@ -30,7 +30,8 @@
 #define RTL_PLL_CTRL0_CMU_SEL_PREDIV(v)		(((v) >> 0) & 0x3)
 #define RTL_PLL_CTRL0_CMU_SEL_DIV4(v)		(((v) >> 2) & 0x1)
 #define RTL_PLL_CTRL0_CMU_NCODE_IN(v)		(((v) >> 4) & 0xff)
-#define RTL_PLL_CTRL0_CMU_DIVN2(v)		(((v) >> 12) & 0xff)
+
+#define RTL83XX_PLL_CTRL0_CMU_DIVN2(v)		(((v) >> 12) & 0xff)
 
 #define RTL838X_INT_RW_CTRL_READ_EN		(1 << 0)
 #define RTL838X_INT_RW_CTRL_WRITE_EN		(1 << 1)

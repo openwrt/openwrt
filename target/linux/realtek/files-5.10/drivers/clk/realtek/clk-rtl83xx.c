@@ -98,6 +98,8 @@
 
 #define RTCL_XTAL_RATE		25000000
 
+#define RTCL_SOC_CLK(soc,clk)	((soc << 8) + clk)
+
 static const int rtcl_regs[RTCL_SOCCNT][REG_COUNT][CLK_COUNT] = {
 	{
 		{
@@ -357,35 +359,48 @@ static void	(*rtcl_839x_sram_set_rate)(int clk_idx, int ctrl0, int ctrl1);
 static unsigned long rtcl_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 {
 	struct rtcl_clk *clk = rtcl_hw_to_clk(hw);
-	unsigned int ctrl0, ctrl1, div1, div2, cmu_ncode_in;
-	unsigned int cmu_sel_prediv, cmu_sel_div4, cmu_divn2, cmu_divn2_selb, cmu_divn3_sel;
+	unsigned int read0, read1;
+	unsigned int mul1 = 1, mul2 = 1, div1 = 1, div2 = 1, div3 = 1;
+	unsigned int cmu_divn2, cmu_divn2_selb, cmu_divn3_sel;
 
 	if ((clk->idx >= CLK_COUNT) || (!rtcl_ccu) || (rtcl_ccu->soc >= RTCL_SOCCNT))
 		return 0;
 
-	ctrl0 = ioread32((void *)rtcl_regs[rtcl_ccu->soc][0][clk->idx]);
-	ctrl1 = ioread32((void *)rtcl_regs[rtcl_ccu->soc][1][clk->idx]);
+	read0 = ioread32((void *)rtcl_regs[rtcl_ccu->soc][0][clk->idx]);
+	read1 = ioread32((void *)rtcl_regs[rtcl_ccu->soc][1][clk->idx]);
 
-	cmu_sel_prediv = 1 << RTL_PLL_CTRL0_CMU_SEL_PREDIV(ctrl0);
-	cmu_sel_div4 = RTL_PLL_CTRL0_CMU_SEL_DIV4(ctrl0) ? 4 : 1;
-	cmu_ncode_in = RTL_PLL_CTRL0_CMU_NCODE_IN(ctrl0) + 4;
-	cmu_divn2 = RTL_PLL_CTRL0_CMU_DIVN2(ctrl0) + 4;
+	switch (RTCL_SOC_CLK(rtcl_ccu->soc, clk->idx)) {
+	case RTCL_SOC_CLK(RTCL_SOC838X, CLK_LXB):
+	case RTCL_SOC_CLK(RTCL_SOC838X, CLK_CPU):
+	case RTCL_SOC_CLK(RTCL_SOC838X, CLK_MEM):
+		cmu_divn2 = RTL83XX_PLL_CTRL0_CMU_DIVN2(read0) + 4;
+		cmu_divn2_selb = RTL838X_PLL_CTRL1_CMU_DIVN2_SELB(read1);
+		cmu_divn3_sel = rtcl_divn3[RTL838X_PLL_CTRL1_CMU_DIVN3_SEL(read1)];
 
-	switch (rtcl_ccu->soc) {
-	case RTCL_SOC838X:
-		cmu_divn2_selb = RTL838X_PLL_CTRL1_CMU_DIVN2_SELB(ctrl1);
-		cmu_divn3_sel = rtcl_divn3[RTL838X_PLL_CTRL1_CMU_DIVN3_SEL(ctrl1)];
+		mul1 = RTL_PLL_CTRL0_CMU_NCODE_IN(read0) + 4;
+		mul2 = RTL_PLL_CTRL0_CMU_SEL_DIV4(read0) ? 4 : 1;
+		div1 = 1 << RTL_PLL_CTRL0_CMU_SEL_PREDIV(read0);
+		div2 = cmu_divn2_selb ? cmu_divn3_sel : cmu_divn2;
+		div3 = rtcl_xdiv[clk->idx];
 		break;
-	case RTCL_SOC839X:
-		cmu_divn2_selb = RTL839X_PLL_CTRL1_CMU_DIVN2_SELB(ctrl1);
-		cmu_divn3_sel = rtcl_divn3[RTL839X_PLL_CTRL1_CMU_DIVN3_SEL(ctrl1)];
+	case RTCL_SOC_CLK(RTCL_SOC839X, CLK_CPU):
+	case RTCL_SOC_CLK(RTCL_SOC839X, CLK_MEM):
+	case RTCL_SOC_CLK(RTCL_SOC839X, CLK_LXB):
+		cmu_divn2 = RTL83XX_PLL_CTRL0_CMU_DIVN2(read0) + 4;
+		cmu_divn2_selb = RTL839X_PLL_CTRL1_CMU_DIVN2_SELB(read1);
+		cmu_divn3_sel = rtcl_divn3[RTL839X_PLL_CTRL1_CMU_DIVN3_SEL(read1)];
+
+		mul1 = RTL_PLL_CTRL0_CMU_NCODE_IN(read0) + 4;
+		mul2 = RTL_PLL_CTRL0_CMU_SEL_DIV4(read0) ? 4 : 1;
+		div1 = 1 << RTL_PLL_CTRL0_CMU_SEL_PREDIV(read0);
+		div2 = cmu_divn2_selb ? cmu_divn3_sel : cmu_divn2;
+		div3 = rtcl_xdiv[clk->idx];
 		break;
 	}
-	div1 = cmu_divn2_selb ? cmu_divn3_sel : cmu_divn2;
-	div2 = rtcl_xdiv[clk->idx];
-
-	return (((parent_rate / 16) * cmu_ncode_in) / (div1 * div2)) *
-		cmu_sel_prediv * cmu_sel_div4 * 16;
+/*
+ * Do the math in a way that interim values stay inside 32 bit bounds
+ */
+	return (((parent_rate / 16) * mul1) / (div1 * div2 * div3)) * mul2 * 16;
 }
 
 static int rtcl_838x_set_rate(int clk_idx, const struct rtcl_reg_set *reg)
