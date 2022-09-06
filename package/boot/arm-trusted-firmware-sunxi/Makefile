@@ -12,9 +12,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/ARM-software/arm-trusted-firmware
-PKG_SOURCE_DATE:=2020-11-17
-PKG_SOURCE_VERSION:=e2c509a39c6cc4dda8734e6509cdbe6e3603cdfc
-PKG_MIRROR_HASH:=b212d369a5286ebbf6a5616486efa05fa54d4294fd6e9ba2e54fdfae9eda918d
+PKG_SOURCE_DATE:=2022-06-01
+PKG_SOURCE_VERSION:=35f4c7295bafeb32c8bcbdfb6a3f2e74a57e732b
+PKG_MIRROR_HASH:=88a282242ca5c921ce43eb913112e964ae87ddf85a87f2d4d6d192d1fe943370
 
 PKG_LICENSE:=BSD-3-Clause
 PKG_LICENSE_FILES:=license.md
@@ -42,6 +42,11 @@ define Package/arm-trusted-firmware-sunxi-h6
     VARIANT:=sun50i_h6
 endef
 
+define Package/arm-trusted-firmware-sunxi-h616
+    $(call Package/arm-trusted-firmware-sunxi/Default)
+    VARIANT:=sun50i_h616
+endef
+
 export GCC_HONOUR_COPTS=s
 
 MAKE_VARS = \
@@ -61,3 +66,4 @@ endef
 
 $(eval $(call BuildPackage,arm-trusted-firmware-sunxi-a64))
 $(eval $(call BuildPackage,arm-trusted-firmware-sunxi-h6))
+$(eval $(call BuildPackage,arm-trusted-firmware-sunxi-h616))
