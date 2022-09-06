@@ -214,18 +214,19 @@ static const int rtcl_xdiv[] = { 2, 4, 2 };
  * module data structures
  */
 
-#define RTCL_CLK_INFO(_idx, _name, _pname, _dname)	\
-	{						\
-		.idx = _idx,				\
-		.name = _name,				\
-		.parent_name = _pname,			\
-		.display_name = _dname,			\
+#define RTCL_CLK_INFO(_idx, _name, _pname0, _pname1, _dname)		\
+	{								\
+		.idx = _idx,						\
+		.name = _name,						\
+		.parent_name[RTCL_SOC838X] = _pname0,			\
+		.parent_name[RTCL_SOC839X] = _pname1,			\
+		.display_name = _dname,					\
 	}
 
 struct rtcl_clk_info {
 	unsigned int idx;
 	const char *name;
-	const char *parent_name;
+	const char *parent_name[RTCL_SOCCNT];
 	const char *display_name;
 };
 
@@ -238,9 +239,9 @@ struct rtcl_clk {
 };
 
 static const struct rtcl_clk_info rtcl_clk_info[CLK_COUNT] = {
-	RTCL_CLK_INFO(CLK_CPU, "cpu_clk", "xtal_clk", "CPU"),
-	RTCL_CLK_INFO(CLK_MEM, "mem_clk", "xtal_clk", "MEM"),
-	RTCL_CLK_INFO(CLK_LXB, "lxb_clk", "xtal_clk", "LXB")
+	RTCL_CLK_INFO(CLK_CPU, "cpu_clk", "xtal_clk", "xtal_clk", "CPU"),
+	RTCL_CLK_INFO(CLK_MEM, "mem_clk", "xtal_clk", "xtal_clk", "MEM"),
+	RTCL_CLK_INFO(CLK_LXB, "lxb_clk", "xtal_clk", "xtal_clk", "LXB")
 };
 
 struct rtcl_dram {
@@ -482,7 +483,7 @@ int rtcl_register_clkhw(int clk_idx)
 	rclk->idx = clk_idx;
 	rclk->hw.init = &hw_init;
 
-	parent_data.fw_name = rtcl_clk_info[clk_idx].parent_name;
+	parent_data.fw_name = rtcl_clk_info[clk_idx].parent_name[rtcl_ccu->soc];
 
 	hw_init.num_parents = 1;
 	hw_init.ops = &rtcl_clk_ops;
