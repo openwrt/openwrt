@@ -899,6 +899,7 @@ define Device/pakedge_wr-1
 	DEVICE_VENDOR := Pakedge
 	DEVICE_MODEL := WR-1
 	DEVICE_DTS_CONFIG := config@ap.dk01.1-c1
+	DEVICE_PACKAGES := ipq-wifi-pakedge_wr-1
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 64k
 	IMAGE_SIZE := 31232k
