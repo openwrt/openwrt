@@ -43,20 +43,24 @@
 static const int rtcl_regs[RTCL_SOCCNT][RTCL_REGCNT][CLK_COUNT] = {
 	{
 		{
+			RTL_SW_CORE_BASE + RTL838X_PLL_SW_CTRL0,
 			RTL_SW_CORE_BASE + RTL838X_PLL_CPU_CTRL0,
 			RTL_SW_CORE_BASE + RTL838X_PLL_MEM_CTRL0,
 			RTL_SW_CORE_BASE + RTL838X_PLL_LXB_CTRL0,
 		}, {
+			RTL_SW_CORE_BASE + RTL838X_PLL_SW_CTRL1,
 			RTL_SW_CORE_BASE + RTL838X_PLL_CPU_CTRL1,
 			RTL_SW_CORE_BASE + RTL838X_PLL_MEM_CTRL1,
 			RTL_SW_CORE_BASE + RTL838X_PLL_LXB_CTRL1
 		}
 	}, {
 		{
+			RTL_SW_CORE_BASE + RTL839X_PLL_SW_CTRL,
 			RTL_SW_CORE_BASE + RTL839X_PLL_CPU_CTRL0,
 			RTL_SW_CORE_BASE + RTL839X_PLL_MEM_CTRL0,
 			RTL_SW_CORE_BASE + RTL839X_PLL_LXB_CTRL0
 		}, {
+			RTL_SW_CORE_BASE + RTL839X_PLL_SW_CTRL,
 			RTL_SW_CORE_BASE + RTL839X_PLL_CPU_CTRL1,
 			RTL_SW_CORE_BASE + RTL839X_PLL_MEM_CTRL1,
 			RTL_SW_CORE_BASE + RTL839X_PLL_LXB_CTRL1
@@ -174,13 +178,16 @@ struct rtcl_rtab_set {
 };
 
 #define RTCL_RTAB_SET(_rset) { .count = ARRAY_SIZE(_rset), .rset = _rset }
+#define RTCL_RTAB_SET_NONE { .count = 0, .rset = NULL }
 
 static const struct rtcl_rtab_set rtcl_rtab_set[RTCL_SOCCNT][CLK_COUNT] = {
 	{
+		RTCL_RTAB_SET_NONE,
 		RTCL_RTAB_SET(rtcl_838x_cpu_reg_set),
 		RTCL_RTAB_SET(rtcl_838x_mem_reg_set),
 		RTCL_RTAB_SET(rtcl_838x_lxb_reg_set)
 	}, {
+		RTCL_RTAB_SET_NONE,
 		RTCL_RTAB_SET(rtcl_839x_cpu_reg_set),
 		RTCL_RTAB_SET(rtcl_839x_mem_reg_set),
 		RTCL_RTAB_SET(rtcl_839x_lxb_reg_set)
@@ -188,6 +195,7 @@ static const struct rtcl_rtab_set rtcl_rtab_set[RTCL_SOCCNT][CLK_COUNT] = {
 };
 
 #define RTCL_ROUND_SET(_min, _max, _s) { .min = _min, .max = _max, .step = _s }
+#define RTCL_ROUND_SET_NONE { .min = 0, .max = 0, .step = 1 }
 
 struct rtcl_round_set {
 	unsigned long min;
@@ -197,10 +205,12 @@ struct rtcl_round_set {
 
 static const struct rtcl_round_set rtcl_round_set[RTCL_SOCCNT][CLK_COUNT] = {
 	{
+		RTCL_ROUND_SET_NONE,
 		RTCL_ROUND_SET(300000000,	625000000,	25000000),
 		RTCL_ROUND_SET(200000000,	375000000,	25000000),
 		RTCL_ROUND_SET(100000000,	200000000,	25000000)
 	}, {
+		RTCL_ROUND_SET_NONE,
 		RTCL_ROUND_SET(400000000,	850000000,	25000000),
 		RTCL_ROUND_SET(100000000,	400000000,	25000000),
 		RTCL_ROUND_SET(50000000,	200000000,	50000000)
@@ -208,7 +218,7 @@ static const struct rtcl_round_set rtcl_round_set[RTCL_SOCCNT][CLK_COUNT] = {
 };
 
 static const int rtcl_divn3[] = { 2, 3, 4, 6 };
-static const int rtcl_xdiv[] = { 2, 4, 2 };
+static const int rtcl_xdiv[] = { 1, 2, 4, 2 };
 
 /*
  * module data structures
@@ -239,6 +249,7 @@ struct rtcl_clk {
 };
 
 static const struct rtcl_clk_info rtcl_clk_info[CLK_COUNT] = {
+	RTCL_CLK_INFO(CLK_SW, "sw_clk", "xtal_clk", "xtal_clk", "SW"),
 	RTCL_CLK_INFO(CLK_CPU, "cpu_clk", "xtal_clk", "xtal_clk", "CPU"),
 	RTCL_CLK_INFO(CLK_MEM, "mem_clk", "xtal_clk", "xtal_clk", "MEM"),
 	RTCL_CLK_INFO(CLK_LXB, "lxb_clk", "xtal_clk", "xtal_clk", "LXB")
@@ -328,6 +339,12 @@ static unsigned long rtcl_recalc_rate(struct clk_hw *hw, unsigned long parent_ra
 		div1 = 1 << RTL_PLL_CTRL0_CMU_SEL_PREDIV(read0);
 		div2 = cmu_divn2_selb ? cmu_divn3_sel : cmu_divn2;
 		div3 = rtcl_xdiv[clk->idx];
+		break;
+	case RTCL_SOC_CLK(RTCL_SOC838X, CLK_SW):
+	case RTCL_SOC_CLK(RTCL_SOC839X, CLK_SW):
+		mul1 = RTL_PLL_CTRL0_CMU_NCODE_IN(read0) + 4;
+		mul2 = RTL_PLL_CTRL0_CMU_SEL_DIV4(read0) ? 4 : 1;
+		div1 = 1 << RTL_PLL_CTRL0_CMU_SEL_PREDIV(read0);
 		break;
 	}
 /*
