@@ -62,17 +62,9 @@
 
 	compatible = "realtek,rtl838x-soc";
 
-	osc: oscillator {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <25000000>;
-	};
-
 	ccu: clock-controller {
 		compatible = "realtek,rtl8380-clock";
 		#clock-cells = <1>;
-		clocks = <&osc>;
-		clock-names = "ref_clk";
 	};
 
 	cpus {
@@ -272,10 +264,10 @@
 
 	sram0: sram@9f000000 {
 		compatible = "mmio-sram";
-		reg = <0x9f000000 0x10000>;
+		reg = <0x9f000000 0x20000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0 0x9f000000 0x10000>;
+		ranges = <0 0x9f000000 0x20000>;
 	};
 
 	switch0: switch@1b000000 {
