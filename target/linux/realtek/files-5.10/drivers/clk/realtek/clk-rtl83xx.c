@@ -249,12 +249,7 @@ static const struct rtcl_rtab_set rtcl_rtab_set[RTCL_SOCCNT][CLK_COUNT] = {
 	}
 };
 
-#define RTCL_ROUND_SET(_min, _max, _step)	\
-	{					\
-		.min = _min,			\
-		.max = _max,			\
-		.step = _step,			\
-	}
+#define RTCL_ROUND_SET(_min, _max, _s) { .min = _min, .max = _max, .step = _s }
 
 struct rtcl_round_set {
 	unsigned long min;
@@ -264,13 +259,13 @@ struct rtcl_round_set {
 
 static const struct rtcl_round_set rtcl_round_set[RTCL_SOCCNT][CLK_COUNT] = {
 	{
-		RTCL_ROUND_SET(300000000, 625000000, 25000000),
-		RTCL_ROUND_SET(200000000, 375000000, 25000000),
-		RTCL_ROUND_SET(100000000, 200000000, 25000000)
+		RTCL_ROUND_SET(300000000,	625000000,	25000000),
+		RTCL_ROUND_SET(200000000,	375000000,	25000000),
+		RTCL_ROUND_SET(100000000,	200000000,	25000000)
 	}, {
-		RTCL_ROUND_SET(400000000, 850000000, 25000000),
-		RTCL_ROUND_SET(100000000, 400000000, 25000000),
-		RTCL_ROUND_SET(50000000, 200000000, 50000000)
+		RTCL_ROUND_SET(400000000,	850000000,	25000000),
+		RTCL_ROUND_SET(100000000,	400000000,	25000000),
+		RTCL_ROUND_SET(50000000,	200000000,	50000000)
 	}
 };
 
@@ -301,14 +296,13 @@ struct rtcl_clk {
 	unsigned int idx;
 	unsigned long min;
 	unsigned long max;
-	unsigned long rate;
 	unsigned long startup;
 };
 
 static const struct rtcl_clk_info rtcl_clk_info[CLK_COUNT] = {
-	RTCL_CLK_INFO(CLK_CPU, "cpu_clk", "ref_clk", "CPU"),
-	RTCL_CLK_INFO(CLK_MEM, "mem_clk", "ref_clk", "MEM"),
-	RTCL_CLK_INFO(CLK_LXB, "lxb_clk", "ref_clk", "LXB")
+	RTCL_CLK_INFO(CLK_CPU, "cpu_clk", "xtal_clk", "CPU"),
+	RTCL_CLK_INFO(CLK_MEM, "mem_clk", "xtal_clk", "MEM"),
+	RTCL_CLK_INFO(CLK_LXB, "lxb_clk", "xtal_clk", "LXB")
 };
 
 struct rtcl_dram {
@@ -441,7 +435,7 @@ static int rtcl_set_rate(struct clk_hw *hw, unsigned long rate, unsigned long pa
 	const struct rtcl_rtab_set *rtab = &rtcl_rtab_set[rtcl_ccu->soc][clk->idx];
 	const struct rtcl_round_set *round = &rtcl_round_set[rtcl_ccu->soc][clk->idx];
 
-	if ((parent_rate != RTCL_XTAL_RATE) || (!rtcl_ccu->sram.vbase))
+	if ((clk->idx != CLK_CPU) || (!rtcl_ccu->sram.vbase))
 		return -EINVAL;
 /*
  * Currently we do not know if SRAM is stable on these devices. Maybe someone changes memory in
@@ -455,8 +449,6 @@ static int rtcl_set_rate(struct clk_hw *hw, unsigned long rate, unsigned long pa
 	tab_idx = (rate - round->min) / round->step;
 	if ((tab_idx < 0) || (tab_idx >= rtab->count) || (rtab->rset[tab_idx].rate != rate))
 		return -EINVAL;
-
-	rtcl_ccu->clks[clk->idx].rate = rate;
 
 	switch (rtcl_ccu->soc) {
 	case RTCL_SOC838X:
@@ -600,7 +592,11 @@ static struct clk_hw *rtcl_get_clkhw(struct of_phandle_args *clkspec, void *prv)
 
 static int rtcl_ccu_register_clocks(void)
 {
+	struct clk *clk;
 	int clk_idx, ret;
+
+	clk = clk_register_fixed_rate(NULL, "xtal_clk", NULL, 0, RTCL_XTAL_RATE);
+	clk_register_clkdev(clk, "xtal_clk", NULL);
 
 	for (clk_idx = 0; clk_idx < CLK_COUNT; clk_idx++) {
 		ret = rtcl_register_clkhw(clk_idx);
