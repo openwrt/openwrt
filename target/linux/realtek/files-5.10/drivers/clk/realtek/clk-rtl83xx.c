@@ -90,21 +90,21 @@
  * some hardware specific definitions
  */
 
-#define SOC_RTL838X		0
-#define SOC_RTL839X		1
-#define SOC_COUNT		2
+#define RTCL_SOC838X		0
+#define RTCL_SOC839X		1
+#define RTCL_SOCCNT		2
 
-#define MEM_DDR1		1
-#define MEM_DDR2		2
-#define MEM_DDR3		3
+#define RTCL_DDR1		1
+#define RTCL_DDR2		2
+#define RTCL_DDR3		3
 
 #define REG_CTRL0		0
 #define REG_CTRL1		1
 #define REG_COUNT		2
 
-#define OSC_RATE		25000000
+#define RTCL_XTAL_RATE		25000000
 
-static const int rtcl_regs[SOC_COUNT][REG_COUNT][CLK_COUNT] = {
+static const int rtcl_regs[RTCL_SOCCNT][REG_COUNT][CLK_COUNT] = {
 	{
 		{ RTL838X_PLL_CPU_CTRL0, RTL838X_PLL_MEM_CTRL0, RTL838X_PLL_LXB_CTRL0 },
 		{ RTL838X_PLL_CPU_CTRL1, RTL838X_PLL_MEM_CTRL1, RTL838X_PLL_LXB_CTRL1 },
@@ -228,7 +228,7 @@ struct rtcl_rtab_set {
 		.rset = _rset,			\
 	}
 
-static const struct rtcl_rtab_set rtcl_rtab_set[SOC_COUNT][CLK_COUNT] = {
+static const struct rtcl_rtab_set rtcl_rtab_set[RTCL_SOCCNT][CLK_COUNT] = {
 	{
 		RTCL_RTAB_SET(rtcl_838x_cpu_reg_set),
 		RTCL_RTAB_SET(rtcl_838x_mem_reg_set),
@@ -253,7 +253,7 @@ struct rtcl_round_set {
 	unsigned long step;
 };
 
-static const struct rtcl_round_set rtcl_round_set[SOC_COUNT][CLK_COUNT] = {
+static const struct rtcl_round_set rtcl_round_set[RTCL_SOCCNT][CLK_COUNT] = {
 	{
 		RTCL_ROUND_SET(300000000, 625000000, 25000000),
 		RTCL_ROUND_SET(200000000, 375000000, 25000000),
@@ -353,11 +353,11 @@ static unsigned long rtcl_recalc_rate(struct clk_hw *hw, unsigned long parent_ra
 	unsigned int ctrl0, ctrl1, div1, div2, cmu_ncode_in;
 	unsigned int cmu_sel_prediv, cmu_sel_div4, cmu_divn2, cmu_divn2_selb, cmu_divn3_sel;
 
-	if ((clk->idx >= CLK_COUNT) || (!rtcl_ccu) || (rtcl_ccu->soc >= SOC_COUNT))
+	if ((clk->idx >= CLK_COUNT) || (!rtcl_ccu) || (rtcl_ccu->soc >= RTCL_SOCCNT))
 		return 0;
 
-	ctrl0 = read_sw(rtcl_regs[rtcl_ccu->soc][REG_CTRL0][clk->idx]);
-	ctrl1 = read_sw(rtcl_regs[rtcl_ccu->soc][REG_CTRL1][clk->idx]);
+	ctrl0 = read_sw(rtcl_regs[rtcl_ccu->soc][0][clk->idx]);
+	ctrl1 = read_sw(rtcl_regs[rtcl_ccu->soc][1][clk->idx]);
 
 	cmu_sel_prediv = 1 << RTL_PLL_CTRL0_CMU_SEL_PREDIV(ctrl0);
 	cmu_sel_div4 = RTL_PLL_CTRL0_CMU_SEL_DIV4(ctrl0) ? 4 : 1;
@@ -365,14 +365,14 @@ static unsigned long rtcl_recalc_rate(struct clk_hw *hw, unsigned long parent_ra
 	cmu_divn2 = RTL_PLL_CTRL0_CMU_DIVN2(ctrl0) + 4;
 
 	switch (rtcl_ccu->soc) {
-	case SOC_RTL838X:
+	case RTCL_SOC838X:
 		if ((ctrl0 == 0) && (ctrl1 == 0) && (clk->idx == CLK_LXB))
 			return 200000000;
 
 		cmu_divn2_selb = RTL838X_PLL_CTRL1_CMU_DIVN2_SELB(ctrl1);
 		cmu_divn3_sel = rtcl_divn3[RTL838X_PLL_CTRL1_CMU_DIVN3_SEL(ctrl1)];
 		break;
-	case SOC_RTL839X:
+	case RTCL_SOC839X:
 		cmu_divn2_selb = RTL839X_PLL_CTRL1_CMU_DIVN2_SELB(ctrl1);
 		cmu_divn3_sel = rtcl_divn3[RTL839X_PLL_CTRL1_CMU_DIVN3_SEL(ctrl1)];
 		break;
@@ -422,7 +422,7 @@ static int rtcl_set_rate(struct clk_hw *hw, unsigned long rate, unsigned long pa
 	const struct rtcl_rtab_set *rtab = &rtcl_rtab_set[rtcl_ccu->soc][clk->idx];
 	const struct rtcl_round_set *round = &rtcl_round_set[rtcl_ccu->soc][clk->idx];
 
-	if ((parent_rate != OSC_RATE) || (!rtcl_ccu->sram.vbase))
+	if ((parent_rate != RTCL_XTAL_RATE) || (!rtcl_ccu->sram.vbase))
 		return -EINVAL;
 /*
  * Currently we do not know if SRAM is stable on these devices. Maybe someone changes memory in
@@ -440,9 +440,9 @@ static int rtcl_set_rate(struct clk_hw *hw, unsigned long rate, unsigned long pa
 	rtcl_ccu->clks[clk->idx].rate = rate;
 
 	switch (rtcl_ccu->soc) {
-	case SOC_RTL838X:
+	case RTCL_SOC838X:
 		return rtcl_838x_set_rate(clk->idx, &rtab->rset[tab_idx]);
-	case SOC_RTL839X:
+	case RTCL_SOC839X:
 		return rtcl_839x_set_rate(clk->idx, &rtab->rset[tab_idx]);
 	}
 
@@ -482,9 +482,9 @@ static int rtcl_ccu_create(struct device_node *np)
 	int soc;
 
 	if (of_device_is_compatible(np, "realtek,rtl8380-clock"))
-		soc = SOC_RTL838X;
+		soc = RTCL_SOC838X;
 	else if (of_device_is_compatible(np, "realtek,rtl8390-clock"))
-		soc = SOC_RTL839X;
+		soc = RTCL_SOC839X;
 	else
 		return -ENXIO;
 
@@ -600,11 +600,11 @@ int rtcl_init_sram(void)
 	const char *wrn = ", rate setting disabled.\n";
 
 	switch (rtcl_ccu->soc) {
-	case SOC_RTL838X:
+	case RTCL_SOC838X:
 		dram_start = &rtcl_838x_dram_start;
 		dram_size = rtcl_838x_dram_size;
 		break;
-	case SOC_RTL839X:
+	case RTCL_SOC839X:
 		dram_start = &rtcl_839x_dram_start;
 		dram_size = rtcl_839x_dram_size;
 		break;
@@ -642,10 +642,10 @@ int rtcl_init_sram(void)
 	flush_icache_range((unsigned long)sram_pbase, (unsigned long)(sram_pbase + dram_size));
 
 	switch (rtcl_ccu->soc) {
-	case SOC_RTL838X:
+	case RTCL_SOC838X:
 		RTCL_SRAM_FUNC(838x, sram_pbase, set_rate);
 		break;
-	case SOC_RTL839X:
+	case RTCL_SOC839X:
 		RTCL_SRAM_FUNC(839x, sram_pbase, set_rate);
 		break;
 	}
