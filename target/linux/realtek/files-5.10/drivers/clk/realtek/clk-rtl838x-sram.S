@@ -13,6 +13,7 @@
 #define rMSK	$t2
 #define rSLP	$t3
 #define rTMP	$t4
+#define rSEL	$t5
 
 .set	noreorder
 
@@ -20,8 +21,8 @@
 rtcl_838x_dram_start:
 
 /*
- * Functions start here and should avoid access to normal memory. REMARK! Do not forget about
- * stack pointer and dirty caches that might interfere.
+ * Functions start here and should avoid access to normal memory. REMARK! Do not
+ * forget about stack pointer and dirty caches that might interfere.
  */
 
 .globl	rtcl_838x_dram_set_rate
@@ -44,7 +45,7 @@ pre_lxb:
 	ori	rMSK, $0, RTL838X_GLB_CTRL_EN_LXB_PLL_MASK
 pre_mem:
 	/* simple 64K data cache flush to avoid unexpected memory access */
-	li	rMSK, RTL_SRAM_BASE
+	li	rMSK, RTL_SRAM_BASE_CACHED
 	li	rTMP, 2048
 pre_flush:
 	lw	$0, 0(rMSK)
@@ -61,11 +62,9 @@ pre_cpu:
 	/* switch CPU to LXB clock */
 	ori	rMSK, $0, RTL838X_GLB_CTRL_CPU_PLL_SC_MUX_MASK
 	nor	rMSK, rMSK, $0
-	sync
 	lw	rTMP, 0(rGLB)
 	and	rTMP, rTMP, rMSK
 	sw	rTMP, 0(rGLB)
-	sync
 
 	ori	rSLP, $0, RTL838X_GLB_CTRL_CPU_PLL_READY_MASK
 	addiu	rCTR, rCTR, RTL838X_PLL_CPU_CTRL0
@@ -73,26 +72,28 @@ pre_cpu:
 main_set:
 	/* disable PLL */
 	nor	rMSK, rMSK, 0
-	sync
 	lw	rTMP, 0(rGLB)
-	sync
 	and	rTMP, rTMP, rMSK
-	sync
 	sw	rTMP, 0(rGLB)
 
 	/* set new PLL values */
-	sync
-	sw	$a1, 0(rCTR)
-	sw	$a2, 4(rCTR)
-	sync
+	lw	rTMP, 0(rCTR)
+	li	rSEL, 0xfff0000f
+	and	rTMP, rTMP, rSEL
+	sll	$a1, $a1, 4
+	or	rTMP, rTMP, $a1
+	sw	rTMP, 0(rCTR)
+	lw	rTMP, 4(rCTR)
+	li	rSEL, 0xe3ffffff
+	and	rTMP, rTMP, rSEL
+	sll	$a2, $a2, 26
+	or	rTMP, rTMP, $a2
+	sw	rTMP, 4(rCTR)
 
 	/* enable PLL (will reset it and clear ready status) */
 	nor	rMSK, rMSK, 0
-	sync
 	lw	rTMP, 0(rGLB)
-	sync
 	or	rTMP, rTMP, rMSK
-	sync
 	sw	rTMP, 0(rGLB)
 
 	/* wait for PLL to become ready */

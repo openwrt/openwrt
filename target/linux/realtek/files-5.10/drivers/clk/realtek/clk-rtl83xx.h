@@ -72,4 +72,4 @@
  */
 
 #define RTL_SRAM_MARKER				(0x5eaf00d5)
-#define RTL_SRAM_BASE				(0x9f000000)
+#define RTL_SRAM_BASE_CACHED			(0x9f000000)

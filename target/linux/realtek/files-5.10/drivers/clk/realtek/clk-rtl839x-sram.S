@@ -16,7 +16,8 @@
 #define rSLP2	$t4
 #define rSLP3	$t5
 #define rTMP	$t6
-#define rCP0	$t7
+#define rSEL	$t7
+#define rCP0	$t8
 
 .set	noreorder
 
@@ -24,8 +25,8 @@
 rtcl_839x_dram_start:
 
 /*
- * Functions start here and should avoid access to normal memory. REMARK! Do not forget about
- * stack pointer and dirty caches that might interfere.
+ * Functions start here and should avoid access to normal memory. REMARK! Do not
+ * forget about stack pointer and dirty caches that might interfere.
  */
 
 .globl	rtcl_839x_dram_set_rate
@@ -55,7 +56,7 @@ pre_lxb:
 	ori	rMSK, $0, RTL839X_GLB_CTRL_LXB_CLKSEL_MASK
 pre_mem:
 	/* try to avoid memory access with simple 64K data cache flush */
-	li	rMSK, RTL_SRAM_BASE
+	li	rMSK, RTL_SRAM_BASE_CACHED
 	li	rTMP, 2048
 pre_flush:
 	lw	$0, 0(rMSK)
@@ -78,11 +79,8 @@ pre_cpu:
 	ori	rMSK, $0, RTL839X_GLB_CTRL_CPU_CLKSEL_MASK
 main_set:
 	/* switch to fixed clock */
-	sync
 	lw	rTMP, 0(rGLB)
-	sync
 	or	rTMP, rTMP, rMSK
-	sync
 	sw	rTMP, 0(rGLB)
 
 	/* wait until fixed clock in use */
@@ -92,10 +90,17 @@ wait_fixclock:
 	addiu	rTMP, rTMP, -1
 
 	/* set new PLL values */
-	sync
-	sw	$a1, 0(rCTR)
-	sw	$a2, 4(rCTR)
-	sync
+	lw	rTMP, 0(rCTR)
+	li	rSEL, 0xfff0000f
+	and	rTMP, rTMP, rSEL
+	sll	$a1, $a1, 4
+	or	rTMP, rTMP, $a1
+	sw	rTMP, 0(rCTR)
+	lw	rTMP, 4(rCTR)
+	li	rSEL, 0xfffffff8
+	and	rTMP, rTMP, rSEL
+	or	rTMP, rTMP, $a2
+	sw	rTMP, 4(rCTR)
 
 	/* wait for value takeover */
 	or	rTMP, rSLP2, $0
@@ -105,11 +110,8 @@ wait_pll:
 
 	/* switch back to PLL clock*/
 	nor	rMSK, rMSK, $0
-	sync
 	lw	rTMP, 0(rGLB)
-	sync
 	and	rTMP, rTMP, rMSK
-	sync
 	sw	rTMP, 0(rGLB)
 
 	/* wait until PLL clock in use */
