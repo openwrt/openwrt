@@ -373,9 +373,6 @@ static unsigned long rtcl_recalc_rate(struct clk_hw *hw, unsigned long parent_ra
 
 	switch (rtcl_ccu->soc) {
 	case RTCL_SOC838X:
-		if ((ctrl0 == 0) && (ctrl1 == 0) && (clk->idx == CLK_LXB))
-			return 200000000;
-
 		cmu_divn2_selb = RTL838X_PLL_CTRL1_CMU_DIVN2_SELB(ctrl1);
 		cmu_divn3_sel = rtcl_divn3[RTL838X_PLL_CTRL1_CMU_DIVN3_SEL(ctrl1)];
 		break;
@@ -483,6 +480,26 @@ static const struct clk_ops rtcl_clk_ops = {
 	.round_rate = rtcl_round_rate,
 	.recalc_rate = rtcl_recalc_rate,
 };
+
+static void rtcl_unlock_registers(void)
+{
+	u32 enable, reg;
+
+	if (rtcl_ccu->soc != RTCL_SOC838X)
+		return;
+/*
+ * Some RTL838X devices are shipped with register access locked. In this case
+ * we cannot read and/or write to LXB or SW PLL registers. As there is no real
+ * benefit of always unlocking/locking these registers just open up everything.
+ */
+	enable = RTL838X_INT_RW_CTRL_READ_EN | RTL838X_INT_RW_CTRL_WRITE_EN;
+	reg = ioread32((void *)RTL_SW_CORE_BASE + RTL838X_INT_RW_CTRL);
+	if ((reg & enable) != enable) {
+		reg |= enable;
+		iowrite32(reg, (void *)RTL_SW_CORE_BASE + RTL838X_INT_RW_CTRL);
+		pr_warn("%s: registers unlocked\n", __func__);
+	}
+}
 
 static int rtcl_ccu_create(struct device_node *np)
 {
@@ -714,6 +731,7 @@ static void __init rtcl_probe_early(struct device_node *np)
 	if (rtcl_ccu_create(np))
 		return;
 
+	rtcl_unlock_registers();
 	if (rtcl_ccu_register_clocks())
 		kfree(rtcl_ccu);
 	else

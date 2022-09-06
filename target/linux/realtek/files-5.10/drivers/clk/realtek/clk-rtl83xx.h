@@ -10,6 +10,7 @@
 
 #define RTL_SW_CORE_BASE			(0xbb000000)
 
+#define RTL838X_INT_RW_CTRL			(0x0058)
 #define RTL838X_PLL_GLB_CTRL			(0x0fc0)
 #define RTL838X_PLL_CPU_CTRL0			(0x0fc4)
 #define RTL838X_PLL_CPU_CTRL1			(0x0fc8)
@@ -31,6 +32,8 @@
 #define RTL_PLL_CTRL0_CMU_NCODE_IN(v)		(((v) >> 4) & 0xff)
 #define RTL_PLL_CTRL0_CMU_DIVN2(v)		(((v) >> 12) & 0xff)
 
+#define RTL838X_INT_RW_CTRL_READ_EN		(1 << 0)
+#define RTL838X_INT_RW_CTRL_WRITE_EN		(1 << 1)
 #define RTL838X_GLB_CTRL_EN_CPU_PLL_MASK	(1 << 0)
 #define RTL838X_GLB_CTRL_EN_LXB_PLL_MASK	(1 << 1)
 #define RTL838X_GLB_CTRL_EN_MEM_PLL_MASK	(1 << 2)
