@@ -894,6 +894,18 @@ define Device/p2w_r619ac-128m
 endef
 TARGET_DEVICES += p2w_r619ac-128m
 
+define Device/pakedge_wr-1
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Pakedge
+	DEVICE_MODEL := WR-1
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c1
+	SOC := qcom-ipq4018
+	BLOCKSIZE := 64k
+	IMAGE_SIZE := 31232k
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += pakedge_wr-1
+
 define Device/plasmacloud_pa1200
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Plasma Cloud
