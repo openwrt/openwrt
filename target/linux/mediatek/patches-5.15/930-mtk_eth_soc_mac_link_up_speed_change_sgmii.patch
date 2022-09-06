@@ -1,0 +1,97 @@
+From d93089b74931f18b0d2a282ee1ad34c40fc0f2f5 Mon Sep 17 00:00:00 2001
+From: Alexander Couzens <lynxis@fe80.eu>
+Date: Mon, 5 Sep 2022 08:46:48 +0200
+Subject: [PATCH 1/3] mac_link_up: change sgmii speed
+
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 26 +++++++++++++++++++++
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h |  5 ++++
+ drivers/net/ethernet/mediatek/mtk_sgmii.c   |  6 ++---
+ 3 files changed, 34 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index ad872a815759..68fd575f47f9 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -597,7 +597,9 @@ static void mtk_mac_link_up(struct phylink_config *config,
+ {
+ 	struct mtk_mac *mac = container_of(config, struct mtk_mac,
+ 					   phylink_config);
++	
+ 	u32 mcr;
++	unsigned int sid;
+
+ 	mcr = mtk_r32(mac->hw, MTK_MAC_MCR(mac->id));
+ 	mcr &= ~(MAC_MCR_SPEED_100 | MAC_MCR_SPEED_1000 |
+@@ -627,6 +629,30 @@ static void mtk_mac_link_up(struct phylink_config *config,
+
+ 	mcr |= MAC_MCR_TX_EN | MAC_MCR_RX_EN;
+ 	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
++
++	
++	/* Decide how GMAC and SGMIISYS be mapped */
++	sid = (MTK_HAS_CAPS(mac->hw->soc->caps, MTK_SHARED_SGMII)) ?
++	       0 : mac->id;
++	if (mode == MLO_AN_PHY && 
++			(interface == PHY_INTERFACE_MODE_SGMII ||
++			 interface == PHY_INTERFACE_MODE_1000BASEX ||
++			 interface == PHY_INTERFACE_MODE_2500BASEX)) {
++		struct mtk_pcs *pcs = &mac->hw->sgmii->pcs[sid];
++		if (!pcs->pcs.ops)
++			return;
++
++		switch (speed) {
++		case SPEED_2500:
++			mtk_pcs_setup_mode_force(pcs, PHY_INTERFACE_MODE_2500BASEX);
++			break;
++		case SPEED_1000:
++		case SPEED_100:
++		case SPEED_10:
++			mtk_pcs_setup_mode_an(pcs, PHY_INTERFACE_MODE_SGMII);
++			break;
++		}
++	}
+ }
+
+ static const struct phylink_mac_ops mtk_phylink_ops = {
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+index 0a632896451a..499cd81572b0 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -1124,5 +1124,10 @@ int mtk_eth_setup_tc(struct net_device *dev, enum tc_setup_type type,
+ 		     void *type_data);
+ void mtk_eth_set_dma_device(struct mtk_eth *eth, struct device *dma_dev);
+
++/* pcs */
++int mtk_pcs_setup_mode_force(struct mtk_pcs *mpcs,
++			     phy_interface_t interface);
++int mtk_pcs_setup_mode_an(struct mtk_pcs *mpcs, phy_interface_t interface);
++
+
+ #endif /* MTK_ETH_H */
+diff --git a/drivers/net/ethernet/mediatek/mtk_sgmii.c b/drivers/net/ethernet/mediatek/mtk_sgmii.c
+index e5eb6716f7a5..66681aa80d7a 100644
+--- a/drivers/net/ethernet/mediatek/mtk_sgmii.c
++++ b/drivers/net/ethernet/mediatek/mtk_sgmii.c
+@@ -21,7 +21,7 @@ static struct mtk_pcs *pcs_to_mtk_pcs(struct phylink_pcs *pcs)
+ }
+
+ /* For SGMII interface mode */
+-static int mtk_pcs_setup_mode_an(struct mtk_pcs *mpcs, phy_interface_t interface)
++int mtk_pcs_setup_mode_an(struct mtk_pcs *mpcs, phy_interface_t interface)
+ {
+ 	unsigned int val;
+
+@@ -61,8 +61,8 @@ static int mtk_pcs_setup_mode_an(struct mtk_pcs *mpcs, phy_interface_t interface
+ /* For 1000BASE-X and 2500BASE-X interface modes, which operate at a
+  * fixed speed.
+  */
+-static int mtk_pcs_setup_mode_force(struct mtk_pcs *mpcs,
+-				    phy_interface_t interface)
++int mtk_pcs_setup_mode_force(struct mtk_pcs *mpcs,
++			     phy_interface_t interface)
+ {
+ 	unsigned int val;
+
+-- 
+2.35.1

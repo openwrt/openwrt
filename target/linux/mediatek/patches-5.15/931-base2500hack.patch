@@ -1,0 +1,241 @@
+From 566a7e55f0c3413e489b35bd8ec63ea9f229e15f Mon Sep 17 00:00:00 2001
+From: Alexander Couzens <lynxis@fe80.eu>
+Date: Mon, 5 Sep 2022 09:21:25 +0200
+Subject: [PATCH 2/3] base2500 hack
+
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 220 +++++++++++++++++++-
+ 1 file changed, 219 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -655,8 +655,226 @@ static void mtk_mac_link_up(struct phylink_config *config,
+ 	}
+ }
+
++static void base2500_hack_validate(struct phylink_config *config,
++			      unsigned long *supported,
++			      struct phylink_link_state *state)
++{
++	unsigned long caps = MAC_SYM_PAUSE | MAC_ASYM_PAUSE;
++	__ETHTOOL_DECLARE_LINK_MODE_MASK(mask) = { 0, };
++
++	phylink_set_port_modes(mask);
++	phylink_set(mask, Autoneg);
++
++	switch (state->interface) {
++	case PHY_INTERFACE_MODE_USXGMII:
++		caps |= MAC_10000FD | MAC_5000FD;
++		fallthrough;
++
++	case PHY_INTERFACE_MODE_2500BASEX:
++		caps |= MAC_2500FD;
++		fallthrough;
++
++	case PHY_INTERFACE_MODE_RGMII_TXID:
++	case PHY_INTERFACE_MODE_RGMII_RXID:
++	case PHY_INTERFACE_MODE_RGMII_ID:
++	case PHY_INTERFACE_MODE_RGMII:
++	case PHY_INTERFACE_MODE_QSGMII:
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_GMII:
++		caps |= MAC_1000HD | MAC_1000FD;
++		fallthrough;
++
++	case PHY_INTERFACE_MODE_REVRMII:
++	case PHY_INTERFACE_MODE_RMII:
++	case PHY_INTERFACE_MODE_REVMII:
++	case PHY_INTERFACE_MODE_MII:
++		caps |= MAC_10HD | MAC_10FD;
++		fallthrough;
++
++	case PHY_INTERFACE_MODE_100BASEX:
++		caps |= MAC_100HD | MAC_100FD;
++		break;
++
++	case PHY_INTERFACE_MODE_TBI:
++	case PHY_INTERFACE_MODE_MOCA:
++	case PHY_INTERFACE_MODE_RTBI:
++	case PHY_INTERFACE_MODE_1000BASEX:
++		caps |= MAC_1000HD;
++		fallthrough;
++	case PHY_INTERFACE_MODE_TRGMII:
++		caps |= MAC_1000FD;
++		break;
++
++	case PHY_INTERFACE_MODE_5GBASER:
++		caps |= MAC_5000FD;
++		break;
++
++	case PHY_INTERFACE_MODE_XGMII:
++	case PHY_INTERFACE_MODE_RXAUI:
++	case PHY_INTERFACE_MODE_XAUI:
++	case PHY_INTERFACE_MODE_10GBASER:
++	case PHY_INTERFACE_MODE_10GKR:
++		caps |= MAC_10000FD;
++		break;
++
++	case PHY_INTERFACE_MODE_25GBASER:
++		caps |= MAC_25000FD;
++		break;
++
++	case PHY_INTERFACE_MODE_XLGMII:
++		caps |= MAC_40000FD;
++		break;
++
++	case PHY_INTERFACE_MODE_INTERNAL:
++		caps |= ~0;
++		break;
++
++	case PHY_INTERFACE_MODE_NA:
++	case PHY_INTERFACE_MODE_MAX:
++	case PHY_INTERFACE_MODE_SMII:
++		break;
++	}
++
++	if (caps & MAC_SYM_PAUSE)
++		__set_bit(ETHTOOL_LINK_MODE_Pause_BIT, mask);
++
++	if (caps & MAC_ASYM_PAUSE)
++		__set_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, mask);
++
++	if (caps & MAC_10HD)
++		__set_bit(ETHTOOL_LINK_MODE_10baseT_Half_BIT, mask);
++
++	if (caps & MAC_10FD)
++		__set_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT, mask);
++
++	if (caps & MAC_100HD) {
++		__set_bit(ETHTOOL_LINK_MODE_100baseT_Half_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100baseFX_Half_BIT, mask);
++	}
++
++	if (caps & MAC_100FD) {
++		__set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100baseT1_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100baseFX_Full_BIT, mask);
++	}
++
++	if (caps & MAC_1000HD)
++		__set_bit(ETHTOOL_LINK_MODE_1000baseT_Half_BIT, mask);
++
++	if (caps & MAC_1000FD) {
++		__set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_1000baseT1_Full_BIT, mask);
++	}
++
++	if (caps & MAC_2500FD) {
++		__set_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_2500baseX_Full_BIT, mask);
++	}
++
++	if (caps & MAC_5000FD)
++		__set_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT, mask);
++
++	if (caps & MAC_10000FD) {
++		__set_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_10000baseKX4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_10000baseKR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_10000baseR_FEC_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_10000baseCR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_10000baseSR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_10000baseLR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_10000baseLRM_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_10000baseER_Full_BIT, mask);
++	}
++
++	if (caps & MAC_25000FD) {
++		__set_bit(ETHTOOL_LINK_MODE_25000baseCR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_25000baseKR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_25000baseSR_Full_BIT, mask);
++	}
++
++	if (caps & MAC_40000FD) {
++		__set_bit(ETHTOOL_LINK_MODE_40000baseKR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_40000baseCR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_40000baseSR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_40000baseLR4_Full_BIT, mask);
++	}
++
++	if (caps & MAC_50000FD) {
++		__set_bit(ETHTOOL_LINK_MODE_50000baseCR2_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_50000baseKR2_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_50000baseSR2_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_50000baseKR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_50000baseSR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_50000baseCR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_50000baseLR_ER_FR_Full_BIT,
++			  mask);
++		__set_bit(ETHTOOL_LINK_MODE_50000baseDR_Full_BIT, mask);
++	}
++
++	if (caps & MAC_56000FD) {
++		__set_bit(ETHTOOL_LINK_MODE_56000baseKR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_56000baseCR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_56000baseSR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_56000baseLR4_Full_BIT, mask);
++	}
++
++	if (caps & MAC_100000FD) {
++		__set_bit(ETHTOOL_LINK_MODE_100000baseKR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseSR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseCR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseLR4_ER4_Full_BIT,
++			  mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseKR2_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseSR2_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseCR2_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseLR2_ER2_FR2_Full_BIT,
++			  mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseDR2_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseKR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseSR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseLR_ER_FR_Full_BIT,
++			  mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseCR_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_100000baseDR_Full_BIT, mask);
++	}
++
++	if (caps & MAC_200000FD) {
++		__set_bit(ETHTOOL_LINK_MODE_200000baseKR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_200000baseSR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_200000baseLR4_ER4_FR4_Full_BIT,
++			  mask);
++		__set_bit(ETHTOOL_LINK_MODE_200000baseDR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_200000baseCR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_200000baseKR2_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_200000baseSR2_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_200000baseLR2_ER2_FR2_Full_BIT,
++			  mask);
++		__set_bit(ETHTOOL_LINK_MODE_200000baseDR2_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_200000baseCR2_Full_BIT, mask);
++	}
++
++	if (caps & MAC_400000FD) {
++		__set_bit(ETHTOOL_LINK_MODE_400000baseKR8_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_400000baseSR8_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_400000baseLR8_ER8_FR8_Full_BIT,
++			  mask);
++		__set_bit(ETHTOOL_LINK_MODE_400000baseDR8_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_400000baseCR8_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_400000baseKR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_400000baseSR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_400000baseLR4_ER4_FR4_Full_BIT,
++			  mask);
++		__set_bit(ETHTOOL_LINK_MODE_400000baseDR4_Full_BIT, mask);
++		__set_bit(ETHTOOL_LINK_MODE_400000baseCR4_Full_BIT, mask);
++	}
++
++	linkmode_and(supported, supported, mask);
++	linkmode_and(state->advertising, state->advertising, mask);
++}
++
+ static const struct phylink_mac_ops mtk_phylink_ops = {
+-	.validate = phylink_generic_validate,
++	.validate = base2500_hack_validate,
+ 	.mac_select_pcs = mtk_mac_select_pcs,
+ 	.mac_pcs_get_state = mtk_mac_pcs_get_state,
+ 	.mac_config = mtk_mac_config,
+-- 
+2.35.1
