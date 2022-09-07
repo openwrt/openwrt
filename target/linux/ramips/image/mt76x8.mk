@@ -310,6 +310,17 @@ define Device/jotale_js76x8-32m
 endef
 TARGET_DEVICES += jotale_js76x8-32m
 
+define Device/kroks_kndrt31r19
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Kroks
+  DEVICE_MODEL := Rt-Pot mXw DS RSIM
+  DEVICE_ALT0_VENDOR := Kroks
+  DEVICE_ALT0_MODEL := KNdRt31R19
+  DEVICE_PACKAGES := kmod-usb2 uqmi
+  SUPPORTED_DEVICES += kndrt31r19
+endef
+TARGET_DEVICES += kroks_kndrt31r19
+
 define Device/mediatek_linkit-smart-7688
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := MediaTek
