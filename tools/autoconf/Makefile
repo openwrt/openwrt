@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -15,23 +15,15 @@ PKG_HASH:=64ebcec9f8ac5b2487125a86a7760d2591ac9e1d3dbd59489633f9de62a57684
 
 include $(INCLUDE_DIR)/host-build.mk
 
-HOST_CONFIGURE_ARGS += \
-	--datarootdir=$(STAGING_DIR_HOST)/share
-
 HOST_CONFIGURE_VARS += \
 	PERL="/usr/bin/env perl"
 
 define Host/Compile
-	export SHELL="$(BASH)"; $(MAKE) -C $(HOST_BUILD_DIR)
+	$(call Host/Compile/Default)
 endef
 
-define Host/Install
-	export SHELL="$(BASH)"; $(MAKE) -C $(HOST_BUILD_DIR) install
-endef
-
-define Host/Clean
-	-export SHELL="$(BASH)"; $(MAKE) -C $(HOST_BUILD_DIR) uninstall
-	$(call Host/Clean/Default)
+define Host/Uninstall
+	-$(call Host/Compile/Default,uninstall)
 endef
 
 $(eval $(call HostBuild))
