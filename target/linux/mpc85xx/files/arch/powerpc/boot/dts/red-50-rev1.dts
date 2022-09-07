@@ -1,0 +1,263 @@
+// SPDX-License-Identifier: GPL-2.0-or-later or MIT
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/include/ "fsl/p1020si-pre.dtsi"
+/ {
+	model = "Sophos RED 50 Rev.1";
+	compatible = "sophos,red-50-rev1";
+
+	aliases {
+		led-boot = &led_error;
+		label-mac-device = &enet0;
+	};
+
+	memory {
+		device_type = "memory";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_error: error {
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "red50:red:error";
+		};
+	};
+
+	lbc: localbus@ffe05000 {
+		reg = <0 0xffe05000 0 0x1000>;
+		/* NOR, NAND Flashes and Vitesse 5 port L2 switch */
+		ranges = <0x0 0x0 0x0 0xefe00000 0x00200000
+			  0x1 0x0 0x0 0xffa00000 0x00040000>;
+
+		nor@0,0 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "cfi-flash";
+			reg = <0x0 0x0 0x200000>;
+			bank-width = <2>;
+			device-width = <1>;
+
+			partition@0 {
+				reg = <0x0 0x000e0000>;
+				label = "NOR reserved";
+			};
+
+			partition@e0000 {
+				reg = <0x000e0000 0x00010000>;
+				label = "NOR env flash2";
+			};
+
+			partition@f0000 {
+				/* 64KB for env  */
+				reg = <0x000f0000 0x00010000>;
+				label = "NOR env flash";
+			};
+
+			partition@100000 {
+				/* 512KB for bootloader */
+				reg = <0x00100000 0x00080000>;
+				label = "NOR Normal mode";
+			};
+
+			partition@180000 {
+				/* 512KB for bootloader backup mode */
+				reg = <0x00180000 0x00080000>;
+				label = "NOR  Backup mode";
+			};
+		};
+
+		nand@1,0 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "fsl,p1020-fcm-nand",
+				     "fsl,elbc-fcm-nand";
+			nand-ecc-mode = "none";
+			reg = <0x01 0x00 0x40000>;
+
+			partition@0 {
+				/* 1MB */
+				reg = <0x0 0x00100000>;
+				label = "fdt1";
+			};
+
+			partition@100000 {
+				/* 16MB */
+				reg = <0x00100000 0x01000000>;
+				label = "uimage1";
+			};
+
+			partition@1100000 {
+				/* 64MB */
+				reg = <0x01100000 0x04000000>;
+				label = "rootfs1";
+			};
+
+			partition@5100000 {
+				/* 1MB */
+				reg = <0x05100000 0x00100000>;
+				label = "fdt2";
+			};
+
+			partition@5200000 {
+				/* 16MB */
+				reg = <0x05200000 0x01000000>;
+				label = "kernel";
+			};
+
+			partition@6200000 {
+				/* 64MB */
+				reg = <0x06200000 0x09E00000>;
+				label = "ubi";
+			};
+		};
+	};
+
+	soc: soc@ffe00000 {
+		ranges = <0x0 0x0 0xffe00000 0x100000>;
+
+		gpio0: gpio-controller@f000 {
+			#gpio-cells = <2>;
+			compatible = "fsl,mpc8572-gpio";
+			reg = <0xf000 0x100>;
+			interrupts = <47 0x2>;
+			interrupt-parent = <&mpic>;
+			gpio-controller;
+		};
+
+		mdio@24000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "fsl,etsec2-mdio";
+			reg = <0x24000 0x1000 0xb0030 0x4>;
+
+			phy0: ethernet-phy@0 {
+				interrupt-parent = <&mpic>;
+				interrupts = <3 1>;
+				reg = <0x10>;
+			};
+
+			phy1: ethernet-phy@1 {
+				interrupt-parent = <&mpic>;
+				interrupts = <4 1>;
+				reg = <0x12>;
+			};
+		};
+
+	        mdio@25000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "fsl,etsec2-tbi";
+			reg = <0x25000 0x1000 0xb1030 0x4>;
+
+			tbi0: tbi-phy@12 {
+				reg = <0x12>;
+				device_type = "tbi-phy";
+			};
+		};
+
+		enet0: ethernet@b0000 {
+			phy-connection-type = "rgmii-id";
+			fixed-link = <2 1 1000 0 0>;
+			/* phy-handle = <&phy0>; */
+		};
+
+		enet1: ethernet@b1000 {
+			status = "okay";
+			phy-connection-type = "sgmii";
+			phy-handle = <&phy1>;
+			tbi-handle = <&tbi0>;
+		};
+
+		enet2: ethernet@b2000 {
+			status = "okay";
+			fixed-link = <2 1 1000 0 0>;
+			phy-connection-type = "rgmii-id";
+		};
+
+		usb@22000 {
+			status = "okay";
+			dr_mode = "host";
+			interrupt-parent = <&mpic>;
+			interrupts = <28 0x2>;
+		};
+
+		usb@23000 {
+			status = "disabled";
+		};
+
+		crypto@30000 {
+			compatible = "fsl,sec3.3", "fsl,sec3.1",
+				    "fsl,sec3.0", "fsl,sec2.4",
+				    "fsl,sec2.2", "fsl,sec2.1", "fsl,sec2.0";
+			reg = <0x30000 0x10000>;
+			interrupts = <45 2 58 2>;
+			interrupt-parent = <&mpic>;
+			fsl,num-channels = <4>;
+			fsl,channel-fifo-len = <24>;
+			fsl,exec-units-mask = <0x97c>;
+			fsl,descriptor-types-mask = <0x3a30abf>;
+			fsl,multi-host-mode = "dual";
+			fsl,channel-remap = <0x3>;
+		};
+	};
+
+	pci0: pcie@ffe09000 {
+		status = "disabled";
+		ranges = <0x2000000 0x0 0xa0000000 0 0xa0000000 0x0 0x20000000
+			  0x1000000 0x0 0x00000000 0 0xffc30000 0x0 0x10000>;
+		reg = <0 0xffe09000 0 0x1000>;
+		clock-frequency = <33333333>;
+		interrupt-parent = <&mpic>;
+		interrupts = <16 2>;
+		interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
+		interrupt-map = <
+			/* IDSEL 0x0 */
+			0000 0x0 0x0 0x1 &mpic 0x4 0x1
+			0000 0x0 0x0 0x2 &mpic 0x5 0x1
+			0000 0x0 0x0 0x3 &mpic 0x6 0x1
+			0000 0x0 0x0 0x4 &mpic 0x7 0x1
+			>;
+
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xa0000000
+				  0x2000000 0x0 0xa0000000
+				  0x0 0x20000000
+
+				  0x1000000 0x0 0x0
+				  0x1000000 0x0 0x0
+				  0x0 0x100000>;
+		};
+	};
+
+	pci1: pcie@ffe0a000 {
+		status = "disabled";
+		reg = <0 0xffe0a000 0 0x1000>;
+		ranges = <0x2000000 0x0 0xc0000000 0 0xc0000000 0x0 0x20000000
+			  0x1000000 0x0 0x00000000 0 0xffc20000 0x0 0x10000>;
+		clock-frequency = <33333333>;
+		interrupt-parent = <&mpic>;
+		interrupts = <16 2>;
+		interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
+		interrupt-map = <
+			/* IDSEL 0x0 */
+			0000 0x0 0x0 0x1 &mpic 0x0 0x1
+			0000 0x0 0x0 0x2 &mpic 0x1 0x1
+			0000 0x0 0x0 0x3 &mpic 0x2 0x1
+			0000 0x0 0x0 0x4 &mpic 0x3 0x1
+			>;
+
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xc0000000
+				  0x2000000 0x0 0xc0000000
+				  0x0 0x20000000
+
+				  0x1000000 0x0 0x0
+				  0x1000000 0x0 0x0
+				  0x0 0x100000>;
+		};
+	};
+};
+/include/ "fsl/p1020si-post.dtsi"
