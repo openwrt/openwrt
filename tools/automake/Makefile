@@ -17,7 +17,6 @@ PKG_HASH:=af6ba39142220687c500f79b4aa2f181d9b24e4f8d8ec497cea4ba26c64bedaf
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_ARGS += \
-	--datarootdir=$(STAGING_DIR_HOST)/share \
 	--disable-silent-rules
 
 HOST_CONFIGURE_VARS += \
@@ -31,9 +30,8 @@ endef
 
 define Host/Install
 	# remove old automake resources to avoid version conflicts
-	rm -rf $(STAGING_DIR_HOST)/share/aclocal-[0-9]*
-	rm -rf $(STAGING_DIR_HOST)/share/automake-[0-9]*
-	$(MAKE) -C $(HOST_BUILD_DIR) install
+	$(call Host/Uninstall)
+	$(call Host/Compile/Default,install)
 	mv $(STAGING_DIR_HOST)/bin/aclocal $(STAGING_DIR_HOST)/bin/aclocal.real
 	$(INSTALL_BIN) ./files/aclocal $(STAGING_DIR_HOST)/bin
 	ln -sf aclocal $(STAGING_DIR_HOST)/bin/aclocal-1.9
@@ -45,6 +43,8 @@ endef
 
 define Host/Uninstall
 	-$(call Host/Compile/Default,uninstall)
+	rm -rf $(STAGING_DIR_HOST)/share/aclocal-[0-9]*
+	rm -rf $(STAGING_DIR_HOST)/share/automake-[0-9]*
 endef
 
 $(eval $(call HostBuild))
