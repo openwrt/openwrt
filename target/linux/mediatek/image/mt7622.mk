@@ -87,7 +87,7 @@ define Device/bananapi_bpi-r64
 				   pad-to 512k | bl2 sdmmc-2ddr |\
 				   pad-to 2048k | bl31-uboot bananapi_bpi-r64-sdmmc |\
 				$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
-				   pad-to 6144k | append-image-stage initramfs-recovery.itb | checksize 38912k |\
+				   pad-to 6144k | append-image-stage initramfs-recovery.itb | check-size 38912k |\
 				) \
 				   pad-to 38912k | mt7622-gpt emmc |\
 				   pad-to 39424k | bl2 emmc-2ddr |\
