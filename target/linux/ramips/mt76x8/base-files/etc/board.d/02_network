@@ -117,6 +117,13 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "6@eth0"
 		;;
+	kroks,kndrt31r19)
+		ucidef_add_switch "switch0" \
+			"0:lan" "6@eth0"
+		ucidef_add_switch_attr "switch0" "enable" "false"
+		ucidef_set_interface_lan "eth0"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
+		;;
 	motorola,mwr03)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "0:wan" "6@eth0"
@@ -132,7 +139,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
-	kroks,kndrt31r19|\
 	tplink,tl-mr3020-v3)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
