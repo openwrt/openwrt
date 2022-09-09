@@ -474,7 +474,7 @@ define Device/Build/initramfs
   $(KDIR)/$$(KERNEL_INITRAMFS_NAME):: image_prepare
   $(1)-images: $$(if $$(KERNEL_INITRAMFS),$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE))
   $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE)
-	cp $$^ $$@
+	mv $$^ $$@
 
   $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_INITRAMFS_NAME) $(CURDIR)/Makefile $$(KERNEL_DEPENDS) image_prepare
 	@rm -f $$@
@@ -487,7 +487,7 @@ define Device/Build/initramfs
 	DEVICE_ID="$(1)" \
 	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	FILE_NAME="$$(notdir $$^)" \
-	FILE_DIR="$(KDIR)/tmp" \
+	BIN_DIR="$(BIN_DIR)" \
 	FILE_TYPE="kernel" \
 	FILE_FILESYSTEM="initramfs" \
 	DEVICE_IMG_PREFIX="$$(DEVICE_IMG_PREFIX)" \
@@ -547,7 +547,7 @@ define Device/Build/kernel
   $$(_TARGET): $$(if $$(KERNEL_INSTALL),$(BIN_DIR)/$$(KERNEL_IMAGE))
   $(call Device/Export,$$(KDIR_KERNEL_IMAGE),$(1))
   $(BIN_DIR)/$$(KERNEL_IMAGE): $$(KDIR_KERNEL_IMAGE)
-	cp $$^ $$@
+	mv $$^ $$@
   ifndef IB
     ifdef CONFIG_IB
       install: $$(KDIR_KERNEL_IMAGE)
@@ -585,16 +585,17 @@ define Device/Build/image
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)).gz: $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
 	gzip -c -9n $$^ > $$@
+	rm $$^
 
   $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2)): $(KDIR)/tmp/$(call DEVICE_IMG_NAME,$(1),$(2))
-	cp $$^ $$@
+	mv $$^ $$@
 
   $(BUILD_DIR)/json_info_files/$(call DEVICE_IMG_NAME,$(1),$(2)).json: $(BIN_DIR)/$(call DEVICE_IMG_NAME,$(1),$(2))$$(GZ_SUFFIX)
 	@mkdir -p $$(shell dirname $$@)
 	DEVICE_ID="$(DEVICE_NAME)" \
 	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	FILE_NAME="$(DEVICE_IMG_NAME)" \
-	FILE_DIR="$(KDIR)/tmp" \
+	BIN_DIR="$(BIN_DIR)" \
 	FILE_TYPE=$(word 1,$(subst ., ,$(2))) \
 	FILE_FILESYSTEM="$(1)" \
 	DEVICE_IMG_PREFIX="$(DEVICE_IMG_PREFIX)" \
@@ -633,14 +634,14 @@ define Device/Build/artifact
   .IGNORE: $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)
 
   $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1): $(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1)
-	cp $$^ $$@
+	mv $$^ $$@
 
   $(BUILD_DIR)/json_info_files/$(DEVICE_IMG_PREFIX)-$(1).json: $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)
 	@mkdir -p $$(shell dirname $$@)
 	DEVICE_ID="$(DEVICE_NAME)" \
 	SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	FILE_NAME="$(DEVICE_IMG_PREFIX)-$(1)" \
-	FILE_DIR="$(KDIR)/tmp" \
+	BIN_DIR="$(BIN_DIR)" \
 	FILE_TYPE="$(1)" \
 	DEVICE_IMG_PREFIX="$(DEVICE_IMG_PREFIX)" \
 	DEVICE_VENDOR="$(DEVICE_VENDOR)" \

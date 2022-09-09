@@ -11,7 +11,7 @@ if len(argv) != 2:
     exit(1)
 
 json_path = Path(argv[1])
-file_path = Path(getenv("FILE_DIR")) / getenv("FILE_NAME")
+file_path = Path(getenv("BIN_DIR")) / getenv("FILE_NAME")
 
 
 if not file_path.is_file():
