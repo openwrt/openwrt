@@ -1030,6 +1030,20 @@ static int rtl838x_eth_stop(struct net_device *ndev)
 	return 0;
 }
 
+static void rtl838x_eth_set_multicast_list(struct net_device *ndev)
+{
+	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
+		sw_w32(0x0, RTL838X_RMA_CTRL_0);
+		sw_w32(0x0, RTL838X_RMA_CTRL_1);
+	}
+	if (ndev->flags & IFF_ALLMULTI)
+		sw_w32(0x1fffff, RTL838X_RMA_CTRL_0);
+	if (ndev->flags & IFF_PROMISC) {
+		sw_w32(0x1fffff, RTL838X_RMA_CTRL_0);
+		sw_w32(0x7fff, RTL838X_RMA_CTRL_1);
+	}
+}
+
 static void rtl839x_eth_set_multicast_list(struct net_device *ndev)
 {
 	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
@@ -1048,25 +1062,6 @@ static void rtl839x_eth_set_multicast_list(struct net_device *ndev)
 		sw_w32(0x7fffffff, RTL839X_RMA_CTRL_1);
 		sw_w32(0x7fffffff, RTL839X_RMA_CTRL_2);
 		sw_w32(0x3ff, RTL839X_RMA_CTRL_3);
-	}
-}
-
-static void rtl838x_eth_set_multicast_list(struct net_device *ndev)
-{
-	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
-
-	if (priv->family_id == RTL8390_FAMILY_ID)
-		return rtl839x_eth_set_multicast_list(ndev);
-
-	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
-		sw_w32(0x0, RTL838X_RMA_CTRL_0);
-		sw_w32(0x0, RTL838X_RMA_CTRL_1);
-	}
-	if (ndev->flags & IFF_ALLMULTI)
-		sw_w32(0x1fffff, RTL838X_RMA_CTRL_0);
-	if (ndev->flags & IFF_PROMISC) {
-		sw_w32(0x1fffff, RTL838X_RMA_CTRL_0);
-		sw_w32(0x7fff, RTL838X_RMA_CTRL_1);
 	}
 }
 
