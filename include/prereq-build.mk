@@ -190,6 +190,10 @@ $(eval $(call TestHostCommand,python3-distutils, \
 	Please install the Python3 distutils module, \
 	$(STAGING_DIR_HOST)/bin/python3 -c 'from distutils import util'))
 
+$(eval $(call TestHostCommand,python3-stdlib, \
+	Please install the Python3 stdlib module, \
+	$(STAGING_DIR_HOST)/bin/python3 -c 'import ntpath'))
+
 $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 	file --version 2>&1 | grep file))
 
