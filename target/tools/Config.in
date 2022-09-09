@@ -1,0 +1,15 @@
+config MAKE_TOOLS
+	bool "Package the OpenWrt-based build tools"
+	imply BUILD_ALL_HOST_TOOLS
+	imply AUTOREMOVE
+	default BUILDBOT
+	help
+	  Package the local build tools as a tarball under the bin/ directory as
+	  openwrt-tools.$(HOST_OS)-$(HOST_ARCH).tar.xz
+	  This can be copied into another buildroot and unpacked
+	  to overwrite current tools with the ones in this prebuilt set
+	  or to skip the need to build the tools altogether.
+	  The buildroot that this is used with must have
+	  CONFIG_AUTOREMOVE enabled.
+	  Unpack directly in the top level directory (openwrt folder)
+	  $ xzcat openwrt-tools.Linux-x86_64.tar.xz | tar -xf - -C openwrt

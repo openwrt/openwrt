@@ -1,0 +1,18 @@
+This is part of the Openwrt SDK. It contains just the build tools created
+by the buildroot.
+
+It can be copied to another Openwrt buildroot and unpacked there,
+the paths for default staging_dir and build_dir are preserved.
+
+The buildroot that this is used with must have
+CONFIG_AUTOREMOVE enabled.
+
+This should be unpacked directly in the top level directory (openwrt folder)
+
+example:
+
+	$ make defconfig; make prereq
+	$ cd ..
+	$ xzcat openwrt-tools.Linux-x86_64.tar.xz | tar -xf - -C openwrt
+	$ cd openwrt
+	$ make tools/compile CONFIG_AUTOREMOVE=y HOST_SKIP_DOWNLOAD=1
