@@ -319,8 +319,7 @@
 +};
 --- /dev/null
 +++ b/configs/pangolin_defconfig
-@@ -0,0 +1,36 @@
-+CONFIG_SUNXI_PANGOLIN=y
+@@ -0,0 +1,35 @@
 +CONFIG_SPL=y
 +CONFIG_SYS_EXTRA_OPTIONS="USB_EHCI,SUNXI_GMAC,RGMII"
 +CONFIG_DEFAULT_DEVICE_TREE="sun6i-a31-pangolin"
@@ -356,20 +355,3 @@
 +CONFIG_DM_SPI=y
 +CONFIG_DM_SPI_FLASH=y
 +CONFIG_SUNXI_SPI=y
---- a/arch/arm/mach-sunxi/Kconfig
-+++ b/arch/arm/mach-sunxi/Kconfig
-@@ -935,6 +935,14 @@ config VIDEO_DE2
- 	Say y here if you want to build DE2 video driver which is present on
- 	newer SoCs. Currently only HDMI output is supported.
- 
-+choice
-+	prompt "Sunxi Board Variant"
-+	optional
-+
-+config SUNXI_PANGOLIN
-+	bool "Theobroma A31 uQ7 Board"
-+
-+endchoice
- 
- choice
- 	prompt "LCD panel support"
