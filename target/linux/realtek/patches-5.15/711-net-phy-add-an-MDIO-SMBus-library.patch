@@ -15,7 +15,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 
 --- a/drivers/net/mdio/Kconfig
 +++ b/drivers/net/mdio/Kconfig
-@@ -40,6 +40,17 @@ config MDIO_SUN4I
+@@ -54,6 +54,17 @@ config MDIO_SUN4I
  	  interface units of the Allwinner SoC that have an EMAC (A10,
  	  A12, A10s, etc.)
  
@@ -35,7 +35,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  	depends on ARCH_XGENE || COMPILE_TEST
 --- a/drivers/net/mdio/Makefile
 +++ b/drivers/net/mdio/Makefile
-@@ -17,6 +17,7 @@ obj-$(CONFIG_MDIO_MOXART)		+= mdio-moxar
+@@ -19,6 +19,7 @@ obj-$(CONFIG_MDIO_MOXART)		+= mdio-moxar
  obj-$(CONFIG_MDIO_MSCC_MIIM)		+= mdio-mscc-miim.o
  obj-$(CONFIG_MDIO_MVUSB)		+= mdio-mvusb.o
  obj-$(CONFIG_MDIO_OCTEON)		+= mdio-octeon.o

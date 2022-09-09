@@ -47,7 +47,7 @@ Signed-off-by: Bartosz Golaszewski <brgl@bgdev.pl>
  };
  
  static struct realtek_gpio_ctrl *irq_data_to_ctrl(struct irq_data *data)
-@@ -250,14 +258,61 @@ static void realtek_gpio_irq_handler(str
+@@ -247,14 +255,61 @@ static void realtek_gpio_irq_handler(str
  	chained_irq_exit(irq_chip, desc);
  }
  
@@ -109,7 +109,7 @@ Signed-off-by: Bartosz Golaszewski <brgl@bgdev.pl>
  	}
  
  	return 0;
-@@ -269,6 +324,7 @@ static struct irq_chip realtek_gpio_irq_
+@@ -266,6 +321,7 @@ static struct irq_chip realtek_gpio_irq_
  	.irq_mask = realtek_gpio_irq_mask,
  	.irq_unmask = realtek_gpio_irq_unmask,
  	.irq_set_type = realtek_gpio_irq_set_type,
@@ -117,7 +117,7 @@ Signed-off-by: Bartosz Golaszewski <brgl@bgdev.pl>
  };
  
  static const struct of_device_id realtek_gpio_of_match[] = {
-@@ -293,8 +349,10 @@ static int realtek_gpio_probe(struct pla
+@@ -290,8 +346,10 @@ static int realtek_gpio_probe(struct pla
  	unsigned int dev_flags;
  	struct gpio_irq_chip *girq;
  	struct realtek_gpio_ctrl *ctrl;
@@ -129,7 +129,7 @@ Signed-off-by: Bartosz Golaszewski <brgl@bgdev.pl>
  
  	ctrl = devm_kzalloc(dev, sizeof(*ctrl), GFP_KERNEL);
  	if (!ctrl)
-@@ -355,6 +413,21 @@ static int realtek_gpio_probe(struct pla
+@@ -352,6 +410,21 @@ static int realtek_gpio_probe(struct pla
  		girq->init_hw = realtek_gpio_irq_init;
  	}
  

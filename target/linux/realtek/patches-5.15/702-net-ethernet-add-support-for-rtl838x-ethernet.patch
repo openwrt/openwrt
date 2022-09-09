@@ -22,7 +22,7 @@ Submitted-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
-@@ -163,6 +163,13 @@ source "drivers/net/ethernet/rdc/Kconfig
+@@ -166,6 +166,13 @@ source "drivers/net/ethernet/rdc/Kconfig
  source "drivers/net/ethernet/realtek/Kconfig"
  source "drivers/net/ethernet/renesas/Kconfig"
  source "drivers/net/ethernet/rocker/Kconfig"
@@ -35,10 +35,10 @@ Submitted-by: John Crispin <john@phrozen.org>
 +
  source "drivers/net/ethernet/samsung/Kconfig"
  source "drivers/net/ethernet/seeq/Kconfig"
- source "drivers/net/ethernet/sfc/Kconfig"
+ source "drivers/net/ethernet/sgi/Kconfig"
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
-@@ -75,6 +75,7 @@ obj-$(CONFIG_NET_VENDOR_REALTEK) += real
+@@ -77,6 +77,7 @@ obj-$(CONFIG_NET_VENDOR_REALTEK) += real
  obj-$(CONFIG_NET_VENDOR_RENESAS) += renesas/
  obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
  obj-$(CONFIG_NET_VENDOR_ROCKER) += rocker/

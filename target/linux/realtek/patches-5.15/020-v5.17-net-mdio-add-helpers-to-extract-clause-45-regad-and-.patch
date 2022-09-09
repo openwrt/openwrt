@@ -34,7 +34,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #define MII_REGADDR_C45_MASK	GENMASK(15, 0)
  
  struct gpio_desc;
-@@ -342,6 +344,16 @@ static inline u32 mdiobus_c45_addr(int d
+@@ -355,6 +357,16 @@ static inline u32 mdiobus_c45_addr(int d
  	return MII_ADDR_C45 | devad << MII_DEVADDR_C45_SHIFT | regnum;
  }
  

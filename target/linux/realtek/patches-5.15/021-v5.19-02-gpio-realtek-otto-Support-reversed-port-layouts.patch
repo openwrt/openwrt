@@ -91,7 +91,7 @@ Signed-off-by: Bartosz Golaszewski <brgl@bgdev.pl>
  }
  
  /* Set the rising and falling edge mask bits for a GPIO port pin */
-@@ -253,6 +289,7 @@ MODULE_DEVICE_TABLE(of, realtek_gpio_of_
+@@ -250,6 +286,7 @@ MODULE_DEVICE_TABLE(of, realtek_gpio_of_
  static int realtek_gpio_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
@@ -99,7 +99,7 @@ Signed-off-by: Bartosz Golaszewski <brgl@bgdev.pl>
  	unsigned int dev_flags;
  	struct gpio_irq_chip *girq;
  	struct realtek_gpio_ctrl *ctrl;
-@@ -280,10 +317,20 @@ static int realtek_gpio_probe(struct pla
+@@ -277,10 +314,20 @@ static int realtek_gpio_probe(struct pla
  
  	raw_spin_lock_init(&ctrl->lock);
  

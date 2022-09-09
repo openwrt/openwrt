@@ -143,7 +143,7 @@ Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
  
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  
-@@ -279,9 +315,11 @@ static int __init realtek_rtl_of_init(st
+@@ -285,9 +321,11 @@ static int __init realtek_rtl_of_init(st
  			cpumask_set_cpu(cpu, &realtek_ictl_cpu_configurable);
  
  			/* Disable all cascaded interrupts and clear routing */

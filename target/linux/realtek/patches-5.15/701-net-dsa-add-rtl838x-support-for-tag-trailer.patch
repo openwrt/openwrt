@@ -34,7 +34,7 @@ Submitted-by: John Crispin <john@phrozen.org>
  	trailer[2] = 0x10;
  	trailer[3] = 0x00;
  
-@@ -34,12 +39,23 @@ static struct sk_buff *trailer_rcv(struc
+@@ -33,12 +38,23 @@ static struct sk_buff *trailer_rcv(struc
  		return NULL;
  
  	trailer = skb_tail_pointer(skb) - 4;

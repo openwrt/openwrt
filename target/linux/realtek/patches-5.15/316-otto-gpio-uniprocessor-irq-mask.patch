@@ -22,7 +22,7 @@ Submitted-by: Sander Vanheule <sander@svanheule.net>
 
 --- a/drivers/gpio/gpio-realtek-otto.c
 +++ b/drivers/gpio/gpio-realtek-otto.c
-@@ -304,6 +304,7 @@ static int realtek_gpio_irq_set_affinity
+@@ -301,6 +301,7 @@ static int realtek_gpio_irq_set_affinity
  static int realtek_gpio_irq_init(struct gpio_chip *gc)
  {
  	struct realtek_gpio_ctrl *ctrl = gpiochip_get_data(gc);
@@ -30,7 +30,7 @@ Submitted-by: Sander Vanheule <sander@svanheule.net>
  	unsigned int port;
  	int cpu;
  
-@@ -311,8 +312,16 @@ static int realtek_gpio_irq_init(struct
+@@ -308,8 +309,16 @@ static int realtek_gpio_irq_init(struct
  		realtek_gpio_write_imr(ctrl, port, 0, 0);
  		realtek_gpio_clear_isr(ctrl, port, GENMASK(7, 0));
  

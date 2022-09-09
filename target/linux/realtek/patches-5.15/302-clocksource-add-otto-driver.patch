@@ -20,7 +20,7 @@
  	depends on HAS_IOMEM
 --- a/drivers/clocksource/Makefile
 +++ b/drivers/clocksource/Makefile
-@@ -63,6 +63,7 @@ obj-$(CONFIG_MILBEAUT_TIMER)	+= timer-mi
+@@ -58,6 +58,7 @@ obj-$(CONFIG_MILBEAUT_TIMER)	+= timer-mi
  obj-$(CONFIG_SPRD_TIMER)	+= timer-sprd.o
  obj-$(CONFIG_NPCM7XX_TIMER)	+= timer-npcm7xx.o
  obj-$(CONFIG_RDA_TIMER)		+= timer-rda.o
@@ -30,7 +30,7 @@
  obj-$(CONFIG_ARM_ARCH_TIMER)		+= arm_arch_timer.o
 --- a/include/linux/cpuhotplug.h
 +++ b/include/linux/cpuhotplug.h
-@@ -133,6 +133,7 @@ enum cpuhp_state {
+@@ -177,6 +177,7 @@ enum cpuhp_state {
  	CPUHP_AP_MARCO_TIMER_STARTING,
  	CPUHP_AP_MIPS_GIC_TIMER_STARTING,
  	CPUHP_AP_ARC_TIMER_STARTING,
