@@ -398,4 +398,17 @@ endef
 define Package/u-boot/install/default
 endef
 
+$(eval $(call TestHostCommand,swig,Please install 'swig', \
+	swig -version))
+
+$(eval $(call TestHostCommand,python3-dev, \
+	Please install the Python3 headers. , \
+	echo 'int main(int argc, char **argv) { Py_Initialize(); return 0; }' | \
+		gcc -include Python.h -x c -o $(TMP_DIR)/a.out - \
+		$$$$$$$$(python3-config --cflags --ldflags --embed)))
+
+$(eval $(call TestHostCommand,python3-pkg-resources, \
+	Please install the Python3 pkg_resources module, \
+	$(STAGING_DIR_HOST)/bin/python3 -c 'import pkg_resources'))
+
 $(eval $(call BuildPackage/U-Boot))
