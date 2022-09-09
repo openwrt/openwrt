@@ -102,12 +102,23 @@ jobs:
       - name: Parse toolchain file
         working-directory: openwrt
         run: |
-          TOOLCHAIN_FILE=$(curl "https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
-            | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
+          TOOLCHAIN_STRING="$(curl "https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
+            | grep ".*openwrt-toolchain.*tar.xz")"
+          TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
+          TOOLCHAIN_SHA256=$(echo "$TOOLCHAIN_STRING" | cut -d ' ' -f 1)
 
           echo "TOOLCHAIN_FILE=$TOOLCHAIN_FILE" >> "$GITHUB_ENV"
+          echo "TOOLCHAIN_SHA256=$TOOLCHAIN_SHA256" >> "$GITHUB_ENV"
+
+      - name: Cache external toolchain
+        id: cache-external-toolchain
+        uses: actions/cache@v3
+        with:
+          path: openwrt/${{ env.TOOLCHAIN_FILE }}
+          key: ${{ env.TOOLCHAIN_FILE }}-${{ env.TOOLCHAIN_SHA256 }}
 
       - name: Download external toolchain
+        if: ${{ steps.cache-external-toolchain.outputs.cache-hit != 'true' }}
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
