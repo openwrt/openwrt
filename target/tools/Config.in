@@ -1,0 +1,11 @@
+config MAKE_TOOLS
+	bool "Package the OpenWrt-based build tools"
+	depends on !EXTERNAL_TOOLCHAIN
+	default BUILDBOT
+	help
+	  Package the created build tools as a tarball under the bin/ directory as
+	  openwrt-tools-$(BOARD)-$(SUBTARGET)-gcc-$(GCCV)$(DIR_SUFFIX).
+	  This can be copied into another buildroot and unpacked
+	  to overwrite the tools in staging_dir with this prebuilt set.
+	  The buildroot that this is used on must have the same option
+	  for CONFIG_AUTOREMOVE as the buildroot this was built on.
