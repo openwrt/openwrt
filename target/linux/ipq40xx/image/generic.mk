@@ -553,7 +553,7 @@ define Device/glinet_gl-ap1300
 	PAGESIZE := 2048
 	IMAGE_SIZE := 131072k
 	KERNEL_INSTALL := 1
-	DEVICE_PACKAGES := ipq-wifi-glinet_gl-ap1300
+	DEVICE_PACKAGES := ipq-wifi-glinet_gl-ap1300 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += glinet_gl-ap1300
 
