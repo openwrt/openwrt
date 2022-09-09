@@ -1,6 +1,6 @@
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -549,6 +549,7 @@ dtb-$(CONFIG_MACH_SUN6I) += \
+@@ -574,6 +574,7 @@ dtb-$(CONFIG_MACH_SUN6I) += \
  	sun6i-a31-m9.dtb \
  	sun6i-a31-mele-a1000g-quad.dtb \
  	sun6i-a31-mixtile-loftq.dtb \
@@ -10,16 +10,16 @@
  	sun6i-a31s-inet-q972.dtb \
 --- a/arch/arm/dts/sun6i-a31.dtsi
 +++ b/arch/arm/dts/sun6i-a31.dtsi
-@@ -641,6 +641,11 @@
+@@ -682,6 +682,11 @@
  				function = "lcd0";
  			};
  
-+			i2c3_pins_a: i2c3@0 {
-+				allwinner,pins = "PB5", "PB6";
-+				allwinner,function = "i2c3";
++			i2c3_pins: i2c3-pins {
++				pins = "PB5", "PB6";
++				function = "i2c3";
 +			};
 +
- 			mmc0_pins_a: mmc0@0 {
+ 			mmc0_pins: mmc0-pins {
  				pins = "PF0", "PF1", "PF2",
  						 "PF3", "PF4", "PF5";
 --- /dev/null
@@ -358,9 +358,9 @@
 +CONFIG_SUNXI_SPI=y
 --- a/arch/arm/mach-sunxi/Kconfig
 +++ b/arch/arm/mach-sunxi/Kconfig
-@@ -955,6 +955,14 @@ config VIDEO_LCD_PANEL_I2C_SCL
- 	Set the SCL pin for the LCD i2c interface. This takes a string in the
- 	format understood by sunxi_name_to_gpio, e.g. PH1 for pin 1 of port H.
+@@ -935,6 +935,14 @@ config VIDEO_DE2
+ 	Say y here if you want to build DE2 video driver which is present on
+ 	newer SoCs. Currently only HDMI output is supported.
  
 +choice
 +	prompt "Sunxi Board Variant"
@@ -371,5 +371,5 @@
 +
 +endchoice
  
- # Note only one of these may be selected at a time! But hidden choices are
- # not supported by Kconfig
+ choice
+ 	prompt "LCD panel support"
