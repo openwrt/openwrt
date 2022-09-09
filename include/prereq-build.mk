@@ -188,7 +188,7 @@ $(eval $(call SetupHostCommand,python3,Please install Python >= 3.6, \
 
 $(eval $(call TestHostCommand,python3-distutils, \
 	Please install the Python3 distutils module, \
-	$(STAGING_DIR_HOST)/bin/python3 -c 'import distutils'))
+	$(STAGING_DIR_HOST)/bin/python3 -c 'from distutils import util'))
 
 $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 	file --version 2>&1 | grep file))
