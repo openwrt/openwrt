@@ -83,7 +83,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  }
-@@ -44,137 +86,247 @@ static void realtek_ictl_mask_irq(struct
+@@ -44,52 +86,137 @@ static void realtek_ictl_mask_irq(struct
  {
  	unsigned long flags;
  	u32 value;
@@ -144,19 +144,18 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  static int intc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
  {
--	irq_set_chip_and_handler(hw, &realtek_ictl_irq, handle_level_irq);
 +	struct realtek_ictl_output *output = d->host_data;
 +	unsigned long flags;
 +
-+	irq_set_chip_and_handler(irq, &realtek_ictl_irq, handle_level_irq);
-+
+ 	irq_set_chip_and_handler(irq, &realtek_ictl_irq, handle_level_irq);
+ 
 +	raw_spin_lock_irqsave(&irq_lock, flags);
 +
 +	output->child_mask |= BIT(hw);
 +	write_irr(REG(RTL_ICTL_IRR0, 0), hw, output->output_index + 1);
 +
 +	raw_spin_unlock_irqrestore(&irq_lock, flags);
- 
++
  	return 0;
  }
  
@@ -208,37 +207,32 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	struct realtek_ictl_output *output = irq_desc_get_handler_data(desc);
  	struct irq_chip *chip = irq_desc_get_chip(desc);
 -	struct irq_domain *domain;
--	unsigned int pending;
 +	int cpu = smp_processor_id();
-+	unsigned long pending;
-+	unsigned int soc_int;
+ 	unsigned long pending;
+ 	unsigned int soc_int;
  
  	chained_irq_enter(chip, desc);
 -	pending = readl(REG(RTL_ICTL_GIMR)) & readl(REG(RTL_ICTL_GISR));
 +	pending = readl(REG(RTL_ICTL_GIMR, cpu)) & readl(REG(RTL_ICTL_GISR, cpu))
 +		& output->child_mask;
-+
+ 
  	if (unlikely(!pending)) {
  		spurious_interrupt();
  		goto out;
  	}
+ 
 -	domain = irq_desc_get_handler_data(desc);
--	generic_handle_irq(irq_find_mapping(domain, __ffs(pending)));
-+
+-	for_each_set_bit(soc_int, &pending, 32)
+-		generic_handle_domain_irq(domain, soc_int);
 +	for_each_set_bit(soc_int, &pending, RTL_ICTL_NUM_INPUTS)
-+		generic_handle_irq(irq_find_mapping(output->domain, soc_int));
-+//		generic_handle_domain_irq(output->domain, soc_int);
++		generic_handle_domain_irq(output->domain, soc_int);
  
  out:
  	chained_irq_exit(chip, desc);
- }
- 
--/*
-- * SoC interrupts are cascaded to MIPS CPU interrupts according to the
-- * interrupt-map in the device tree. Each SoC interrupt gets 4 bits for
-- * the CPU interrupt in an Interrupt Routing Register. Max 32 SoC interrupts
-- * thus go into 4 IRRs.
-- */
+@@ -102,85 +229,110 @@ out:
+  * thus go into 4 IRRs. A routing value of '0' means the interrupt is left
+  * disconnected. Routing values {1..15} connect to output lines {0..14}.
+  */
 -static int __init map_interrupts(struct device_node *node, struct irq_domain *domain)
 +static int __init setup_parent_interrupts(struct device_node *node, int *parents,
 +	unsigned int num_parents)
@@ -282,12 +276,12 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 -		if (!cpu_ictl)
 -			return -EINVAL;
 -		ret = of_property_read_u32(cpu_ictl, "#interrupt-cells", &tmp);
+-		of_node_put(cpu_ictl);
 -		if (ret || tmp != 1)
 -			return -EINVAL;
--		of_node_put(cpu_ictl);
 -
 -		cpu_int = be32_to_cpup(imap + 2);
--		if (cpu_int > 7)
+-		if (cpu_int > 7 || cpu_int < 2)
 -			return -EINVAL;
 -
 -		if (!(mips_irqs_set & BIT(cpu_int))) {
@@ -299,7 +293,8 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +		if (!domain)
 +			goto domain_err;
  
--		regs[(soc_int * 4) / 32] |= cpu_int << (soc_int * 4) % 32;
+-		/* Use routing values (1..6) for CPU interrupts (2..7) */
+-		regs[(soc_int * 4) / 32] |= (cpu_int - 1) << (soc_int * 4) % 32;
 -		imap += 3;
 -	}
 +		output->fwnode = of_node_to_fwnode(node);

@@ -30,7 +30,6 @@ Signed-off-by: Bartosz Golaszewski <brgl@bgdev.pl>
 
 Update patch for missing upstream changes:
   - commit a01a40e33499 ("gpio: realtek-otto: Make the irqchip immutable")
-  - commit dbd1c54fc820 ("gpio: Bulk conversion to generic_handle_domain_irq()")
 Signed-off-by: Sander Vanheule <sander@svanheule.net>
 
 ---
@@ -241,13 +240,12 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
  	raw_spin_unlock_irqrestore(&ctrl->lock, flags);
  
  	return 0;
-@@ -238,31 +248,24 @@ static void realtek_gpio_irq_handler(str
+@@ -238,28 +248,21 @@ static void realtek_gpio_irq_handler(str
  	struct gpio_chip *gc = irq_desc_get_handler_data(desc);
  	struct realtek_gpio_ctrl *ctrl = gpiochip_get_data(gc);
  	struct irq_chip *irq_chip = irq_desc_get_chip(desc);
 -	unsigned int lines_done;
 -	unsigned int port_pin_count;
- 	unsigned int irq;
  	unsigned long status;
  	int offset;
  
@@ -256,15 +254,12 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 -	for (lines_done = 0; lines_done < gc->ngpio; lines_done += 8) {
 -		status = realtek_gpio_read_isr(ctrl, lines_done / 8);
 -		port_pin_count = min(gc->ngpio - lines_done, 8U);
--		for_each_set_bit(offset, &status, port_pin_count) {
--			irq = irq_find_mapping(gc->irq.domain, offset + lines_done);
--			generic_handle_irq(irq);
--		}
+-		for_each_set_bit(offset, &status, port_pin_count)
+-			generic_handle_domain_irq(gc->irq.domain, offset + lines_done);
+-	}
 +	status = realtek_gpio_read_isr(ctrl);
-+	for_each_set_bit(offset, &status, gc->ngpio) {
-+		irq = irq_find_mapping(gc->irq.domain, offset);
-+		generic_handle_irq(irq);
- 	}
++	for_each_set_bit(offset, &status, gc->ngpio)
++		generic_handle_domain_irq(gc->irq.domain, offset);
  
  	chained_irq_exit(irq_chip, desc);
  }
@@ -279,7 +274,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
  }
  
  static int realtek_gpio_irq_set_affinity(struct irq_data *data,
-@@ -270,12 +273,10 @@ static int realtek_gpio_irq_set_affinity
+@@ -267,12 +270,10 @@ static int realtek_gpio_irq_set_affinity
  {
  	struct realtek_gpio_ctrl *ctrl = irq_data_to_ctrl(data);
  	unsigned int line = irqd_to_hwirq(data);
@@ -293,7 +288,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
  
  	if (!ctrl->cpumask_base)
  		return -ENXIO;
-@@ -283,15 +284,15 @@ static int realtek_gpio_irq_set_affinity
+@@ -280,15 +281,15 @@ static int realtek_gpio_irq_set_affinity
  	raw_spin_lock_irqsave(&ctrl->lock, flags);
  
  	for_each_cpu(cpu, &ctrl->cpu_irq_maskable) {
@@ -314,7 +309,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
  	}
  
  	raw_spin_unlock_irqrestore(&ctrl->lock, flags);
-@@ -305,22 +306,23 @@ static int realtek_gpio_irq_init(struct
+@@ -302,22 +303,23 @@ static int realtek_gpio_irq_init(struct
  {
  	struct realtek_gpio_ctrl *ctrl = gpiochip_get_data(gc);
  	void __iomem *irq_cpu_mask;
@@ -352,7 +347,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
  		}
  	}
  
-@@ -393,12 +395,14 @@ static int realtek_gpio_probe(struct pla
+@@ -390,12 +392,14 @@ static int realtek_gpio_probe(struct pla
  
  	if (dev_flags & GPIO_PORTS_REVERSED) {
  		bgpio_flags = 0;

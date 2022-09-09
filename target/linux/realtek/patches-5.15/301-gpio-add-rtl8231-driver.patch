@@ -25,9 +25,9 @@ Submitted-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -508,6 +508,12 @@ config GPIO_REG
- 	  A 32-bit single register GPIO fixed in/out implementation.  This
- 	  can be used to represent any register as a set of GPIO signals.
+@@ -529,6 +529,12 @@ config GPIO_ROCKCHIP
+ 	help
+ 	  Say yes here to support GPIO on Rockchip SoCs.
  
 +config GPIO_RTL8231
 +	tristate "RTL8231 GPIO"
@@ -40,10 +40,10 @@ Submitted-by: John Crispin <john@phrozen.org>
  	depends on MFD_SYSCON
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -127,6 +127,7 @@ obj-$(CONFIG_GPIO_RDA)			+= gpio-rda.o
- obj-$(CONFIG_GPIO_RDC321X)		+= gpio-rdc321x.o
+@@ -129,6 +129,7 @@ obj-$(CONFIG_GPIO_RDC321X)		+= gpio-rdc3
  obj-$(CONFIG_GPIO_REALTEK_OTTO)		+= gpio-realtek-otto.o
  obj-$(CONFIG_GPIO_REG)			+= gpio-reg.o
+ obj-$(CONFIG_GPIO_ROCKCHIP)	+= gpio-rockchip.o
 +obj-$(CONFIG_GPIO_RTL8231)		+= gpio-rtl8231.o
  obj-$(CONFIG_ARCH_SA1100)		+= gpio-sa1100.o
  obj-$(CONFIG_GPIO_SAMA5D2_PIOBU)	+= gpio-sama5d2-piobu.o
