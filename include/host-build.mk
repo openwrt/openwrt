@@ -199,7 +199,7 @@ ifndef DUMP
 
     ifneq ($(CONFIG_AUTOREMOVE),)
       host-compile:
-		$(FIND) $(HOST_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -print0 | \
+		-$(FIND) $(HOST_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -print0 | \
 			$(XARGS) -0 rm -rf
 		touch $(HOST_STAMP_REMOVED)
     endif

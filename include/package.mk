@@ -259,7 +259,7 @@ define Build/CoreTargets
 
   ifneq ($(CONFIG_AUTOREMOVE),)
     compile:
-		$(FIND) $(PKG_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -and -not -name '.pkgdir'  -print0 | \
+		-$(FIND) $(PKG_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -and -not -name '.pkgdir'  -print0 | \
 			$(XARGS) -0 rm -rf
 		touch $(STAMP_REMOVED)
   endif
