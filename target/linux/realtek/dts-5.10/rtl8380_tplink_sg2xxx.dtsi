@@ -65,24 +65,6 @@
 		/* SGM706 specs: typical 1.6s, but minimum 1.0s. */
 		hw_margin_ms = <1000>;
 	};
-
-	virtual_flash {
-		compatible = "mtd-concat";
-
-		devices = <&syspart &usrpart>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				compatible = "denx,uimage";
-				label = "firmware";
-				reg = <0x0 0x1a00000>;
-			};
-		};
-	};
 };
 
 &gpio0 {
@@ -116,13 +98,10 @@
 				label = "u-boot-env";
 				reg = <0xe0000 0x20000>;
 			};
-			syspart: partition@100000 {
-				label = "sys";
-				reg = <0x100000 0x600000>;
-			};
-			usrpart: partition@700000 {
-				label = "usrimg1";
-				reg = <0x700000 0x1400000>;
+			partition@100000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x100000 0x1a00000>;
 			};
 			partition@1b00000 {
 				label = "usrappfs";
