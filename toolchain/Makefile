@@ -85,12 +85,12 @@ $(curdir)/ := .config prereq
 $(curdir)//compile = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk $(tools/stamp-compile)
 
 ifndef DUMP_TARGET_DB
-$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed:
+$(TOOLCHAIN_DIR)/stamp/.gcc_final_installed:
 endif
 
 $(curdir)/install: $(curdir)/compile
 
-$(eval $(call stampfile,$(curdir),toolchain,compile,$(TOOLCHAIN_DIR)/stamp/.gcc-initial_installed,,$(TOOLCHAIN_DIR)))
+$(eval $(call stampfile,$(curdir),toolchain,compile,$(TOOLCHAIN_DIR)/stamp/.gcc_final_installed,,$(TOOLCHAIN_DIR)))
 $(eval $(call stampfile,$(curdir),toolchain,check,$(TMP_DIR)/.build))
 $(eval $(call subdir,$(curdir)))
 
