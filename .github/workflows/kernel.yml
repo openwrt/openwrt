@@ -158,6 +158,11 @@ jobs:
         working-directory: openwrt
         run: make target/compile -j$(nproc) BUILD_LOG=1
 
+      - name: Build Kernel Kmods
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: make package/linux/compile -j$(nproc) BUILD_LOG=1
+
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@v2
