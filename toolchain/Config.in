@@ -169,6 +169,7 @@ menuconfig EXTERNAL_TOOLCHAIN
 		string
 		prompt "Toolchain include path"  if DEVEL
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "./usr/include ./include/fortify ./include" if EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL
 		default "./usr/include ./include"
 		help
 		  Specify additional directories searched for header files (override
