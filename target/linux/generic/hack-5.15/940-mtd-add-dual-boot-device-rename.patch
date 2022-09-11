@@ -1,0 +1,62 @@
+From 414dfe2c48cbe537584d0d186d7c4c5e3472d839 Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Sun, 11 Sep 2022 15:45:15 +0800
+Subject: [PATCH] mtd: add dual-boot device rename
+
+---
+ drivers/mtd/parsers/ofpart_core.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/drivers/mtd/parsers/ofpart_core.c b/drivers/mtd/parsers/ofpart_core.c
+index 193dd5a..677f0a4 100644
+--- a/drivers/mtd/parsers/ofpart_core.c
++++ b/drivers/mtd/parsers/ofpart_core.c
+@@ -15,6 +15,7 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/slab.h>
+ #include <linux/mtd/partitions.h>
++#include <linux/ctype.h>
+ 
+ #include "ofpart_bcm4908.h"
+ #include "ofpart_linksys_ns.h"
+@@ -103,6 +104,10 @@
+ 		const __be32 *reg;
+ 		int len;
+ 		int a_cells, s_cells;
++		const char *cmdline_match = NULL;
++		const char *match_partname;
++		char match_partname_auto[64];
++		int i;
+ 
+ 		if (!dedicated && node_has_compatible(pp))
+ 			continue;
+@@ -136,6 +141,26 @@
+ 		partname = of_get_property(pp, "label", &len);
+ 		if (!partname)
+ 			partname = of_get_property(pp, "name", &len);
++
++		/* Support dual-boot */
++		of_property_read_string(pp, "openwrt,cmdline-match", &cmdline_match);
++		if (cmdline_match && strstr(saved_command_line, cmdline_match)) {
++			match_partname = of_get_property(pp, "openwrt,cmdline-match-label", &len);
++
++			if (match_partname)
++				partname = match_partname;
++			else {
++				/* If no openwrt,cmdline-match-label provided, remove any digital suffix */
++				strlcpy(match_partname_auto, partname, sizeof(match_partname_auto));
++				for (i = strlen(match_partname_auto) - 1; i >= 0; i--) {
++					if (!isdigit(match_partname_auto[i]))
++						break;
++					match_partname_auto[i] = '\0';
++				}
++				partname = match_partname_auto;
++			}
++		}
++
+ 		parts[i].name = partname;
+ 
+ 		if (of_get_property(pp, "read-only", &len))
+-- 
+2.35.1
+
