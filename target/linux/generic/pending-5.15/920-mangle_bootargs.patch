@@ -31,19 +31,27 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	help
 --- a/init/main.c
 +++ b/init/main.c
-@@ -616,6 +616,29 @@ static inline void setup_nr_cpu_ids(void
+@@ -616,6 +616,37 @@ static inline void setup_nr_cpu_ids(void
  static inline void smp_prepare_cpus(unsigned int maxcpus) { }
  #endif
  
 +#ifdef CONFIG_MANGLE_BOOTARGS
 +static void __init mangle_bootargs(char *command_line)
 +{
-+	char *rootdev;
++	char *rootdev = NULL;
++	char *next_rootdev = command_line;
 +	char *rootfs;
 +
-+	rootdev = strstr(command_line, "root=/dev/mtdblock");
++	/*
++	 * Find the last bootargs, so buggy bootargs can be masked with
++	 * "bootargs-append" DT property.
++	 */
++	while (next_rootdev = strstr(next_rootdev, "root=")) {
++		rootdev = next_rootdev;
++		next_rootdev += 5;
++	}
 +
-+	if (rootdev)
++	if (rootdev && !strncmp(rootdev, "root=/dev/mtdblock", 18)
 +		strncpy(rootdev, "mangled_rootblock=", 18);
 +
 +	rootfs = strstr(command_line, "rootfstype");
@@ -61,7 +69,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  /*
   * We need to store the untouched command line for future reference.
   * We also need to store the touched command line since the parameter
-@@ -956,6 +979,7 @@ asmlinkage __visible void __init __no_sa
+@@ -956,6 +987,7 @@ asmlinkage __visible void __init __no_sa
  	pr_notice("%s", linux_banner);
  	early_security_init();
  	setup_arch(&command_line);
