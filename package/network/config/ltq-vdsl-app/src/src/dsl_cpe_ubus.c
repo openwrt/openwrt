@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "dsl_cpe_control.h"
 #include <drv_dsl_cpe_api_ioctl.h>
@@ -138,7 +139,11 @@ static struct ubus_context *ctx;
 static struct blob_buf b;
 
 static inline void m_double(const char *id, double value) {
-	blobmsg_add_double(&b, id, value);
+	if (!isnan(value)) {
+		blobmsg_add_double(&b, id, value);
+	} else {
+		blobmsg_add_string(&b, id, "none");
+	}
 }
 
 static inline void m_bool(const char *id, bool value) {
@@ -431,10 +436,10 @@ static void g977_get_snr(int fd, DSL_AccessDir_t direction) {
 	void *c = blobmsg_open_array(&b, "data");
 	
 	for (uint16_t i  = 0  ; i < out.data.deltSnr.nNumData ; i++) { //uint16_t i = 0; i < len; ++i
-		if (out.data.deltSnr.nNSCData[i] != 255 && out.data.deltSnr.nNSCData[i] != 255 != 0) {
+		if (out.data.deltSnr.nNSCData[i] != 255 && out.data.deltSnr.nNSCData[i] != 0) {
 			m_double("", -32 + (double)out.data.deltSnr.nNSCData[i] / 2); // SNR -32 ... 95 dB
 		} else {
-			m_str("", "NaN");
+                        m_double("", NAN);
 		}
 	};
 	
@@ -452,7 +457,7 @@ static void g977_get_qln(int fd, DSL_AccessDir_t direction) {
 		if (out.data.deltQln.nNSCData[i] != 255 && out.data.deltQln.nNSCData[i] != 0) {
 			m_double("", -23 - (double)out.data.deltQln.nNSCData[i] / 2); // QLN -150 ... -23 dBm/Hz
 		} else {
-			m_str("", "NaN");
+                        m_double("", NAN);
 		}
 	};
 	
@@ -471,7 +476,7 @@ static void g977_get_hlog(int fd, DSL_AccessDir_t direction) {
 		if (out.data.deltHlog.nNSCData[i] != 1023 && out.data.deltHlog.nNSCData[i] != 0) {
 			m_double("", 6 - (double)out.data.deltHlog.nNSCData[i] / 10); // HLOG +6 ... -96 dB
 		} else {
-			m_str("", "NaN");
+                        m_double("", NAN);
 		}
 	};
 
