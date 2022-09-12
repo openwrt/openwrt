@@ -138,12 +138,12 @@ static DSL_CPE_ThreadCtrl_t thread;
 static struct ubus_context *ctx;
 static struct blob_buf b;
 
+static inline void m_null() {
+	blobmsg_add_field(&b, BLOBMSG_TYPE_UNSPEC, "", NULL, 0);
+}
+
 static inline void m_double(const char *id, double value) {
-	if (!isnan(value)) {
-		blobmsg_add_double(&b, id, value);
-	} else {
-		blobmsg_add_string(&b, id, "none");
-	}
+	blobmsg_add_double(&b, id, value);
 }
 
 static inline void m_bool(const char *id, bool value) {
@@ -439,7 +439,7 @@ static void g977_get_snr(int fd, DSL_AccessDir_t direction) {
 		if (out.data.deltSnr.nNSCData[i] != 255 && out.data.deltSnr.nNSCData[i] != 0) {
 			m_double("", -32 + (double)out.data.deltSnr.nNSCData[i] / 2); // SNR -32 ... 95 dB
 		} else {
-                        m_double("", NAN);
+                        m_null();
 		}
 	};
 	
@@ -457,7 +457,7 @@ static void g977_get_qln(int fd, DSL_AccessDir_t direction) {
 		if (out.data.deltQln.nNSCData[i] != 255 && out.data.deltQln.nNSCData[i] != 0) {
 			m_double("", -23 - (double)out.data.deltQln.nNSCData[i] / 2); // QLN -150 ... -23 dBm/Hz
 		} else {
-                        m_double("", NAN);
+                        m_null();
 		}
 	};
 	
@@ -476,7 +476,7 @@ static void g977_get_hlog(int fd, DSL_AccessDir_t direction) {
 		if (out.data.deltHlog.nNSCData[i] != 1023 && out.data.deltHlog.nNSCData[i] != 0) {
 			m_double("", 6 - (double)out.data.deltHlog.nNSCData[i] / 10); // HLOG +6 ... -96 dB
 		} else {
-                        m_double("", NAN);
+                        m_null();
 		}
 	};
 
