@@ -128,6 +128,7 @@ TARGET_DEVICES += alfa-network_quad-e4g
 
 define Device/ampedwireless_ally_common
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := Amped Wireless
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware uboot-envtools
   IMAGE_SIZE := 32768k
@@ -135,7 +136,7 @@ define Device/ampedwireless_ally_common
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   UBINIZE_OPTS := -E 5
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma -n 'flashable-initramfs' |\
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | uImage lzma |\
 	edimax-header -s CSYS -m RN68 -f 0x001c0000 -S 0x01100000
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
