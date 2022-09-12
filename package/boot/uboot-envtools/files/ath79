@@ -67,6 +67,9 @@ openmesh,om5p-ac-v1|\
 openmesh,om5p-ac-v2|\
 samsung,wam250|\
 ubnt,nanostation-m|\
+watchguard,ap100|\
+watchguard,ap200|\
+watchguard,ap300|\
 yuncore,a770|\
 yuncore,a782|\
 yuncore,a930|\
@@ -125,6 +128,10 @@ plasmacloud,pa300e)
 	;;
 qihoo,c301)
 	ubootenv_add_uci_config "/dev/mtd9" "0x0" "0x10000" "0x10000"
+	;;
+ruckus,zf7321|\
+ruckus,zf7372)
+	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x40000" "0x10000"
 	;;
 sophos,ap15|\
 sophos,ap55|\

@@ -70,6 +70,30 @@ define Build/iodata-mstc-header
 	)
 endef
 
+define Build/belkin-header
+	$(eval magic=$(word 1,$(1)))
+	$(eval hw_ver=$(word 2,$(1)))
+	$(eval fw_ver=$(word 3,$(1)))
+
+	( \
+		type_fw_date=$$(printf "01%02x%02x%02x" \
+			$$(date -d "@$(SOURCE_DATE_EPOCH)" "+%y %m %d")); \
+		hw_fw_ver=$$(printf "%02x%02x%02x%02x" \
+			$(hw_ver) $$(echo $(fw_ver) | cut -d. -f-3 | tr . ' ')); \
+		fw_len_crc=$$(gzip -c $@ | tail -c 8 | od -An -tx8 | tr -d ' \n'); \
+		fw_crc_len="$${fw_len_crc:8:8}$${fw_len_crc:0:8}"; \
+		\
+		printf "$(magic)" | dd bs=4 count=1 conv=sync 2>/dev/null; \
+		printf "$$(echo $${type_fw_date}$${hw_fw_ver} | \
+			sed 's/../\\x&/g')"; \
+		printf "$$(echo $${fw_crc_len}$${fw_crc_len} | \
+			sed 's/../\\x&/g')"; \
+		printf "\x5c\x78\x00\x00"; \
+		cat $@; \
+	) > $@.new
+	mv $@.new $@
+endef
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:7' > $(1).compat; \
@@ -340,6 +364,27 @@ define Device/beeline_smartbox-turbo
 	kmod-usb3 uboot-envtools
 endef
 TARGET_DEVICES += beeline_smartbox-turbo
+
+define Device/belkin_rt1800
+  $(Device/dsa-migration)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_VENDOR := Belkin
+  DEVICE_MODEL := RT1800
+  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3 uboot-envtools
+  UBINIZE_OPTS := -E 5
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+	append-squashfs4-fakeroot
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-ubi | check-size | belkin-header RT18 1 9.9.9
+endef
+TARGET_DEVICES += belkin_rt1800
 
 define Device/buffalo_wsr-1166dhp
   $(Device/dsa-migration)
@@ -1147,6 +1192,15 @@ define Device/linksys_e5600
 endef
 TARGET_DEVICES += linksys_e5600
 
+define Device/linksys_e7350
+  $(Device/belkin_rt1800)
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := E7350
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-ubi | check-size | belkin-header GOLF 1 9.9.9
+endef
+TARGET_DEVICES += linksys_e7350
+
 define Device/linksys_ea7xxx
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1892,6 +1946,17 @@ define Device/ubnt_unifi-6-lite
   IMAGE_SIZE := 15424k
 endef
 TARGET_DEVICES += ubnt_unifi-6-lite
+
+define Device/ubnt_unifi-flexhd
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi FlexHD
+  DEVICE_DTS_CONFIG := config@2
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+  IMAGE_SIZE := 15552k
+endef
+TARGET_DEVICES += ubnt_unifi-flexhd
 
 define Device/ubnt_unifi-nanohd
   $(Device/dsa-migration)

@@ -247,6 +247,10 @@
 		enable_uart1: pinmux_enable_uart1 {
 			pinctrl-single,bits = <0x0 0x1 0x3>;
 		};
+
+		disable_jtag: pinmux_disable_jtag {
+			pinctrl-single,bits = <0x0 0x2 0x3>;
+		};
 	};
 
 	/* LED_GLB_CTRL */

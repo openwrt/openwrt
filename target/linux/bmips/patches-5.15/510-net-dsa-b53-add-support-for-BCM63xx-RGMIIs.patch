@@ -60,7 +60,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	if (is531x5(dev) && phy_interface_is_rgmii(phydev)) {
  		if (port == dev->imp_port)
  			off = B53_RGMII_CTRL_IMP;
-@@ -1421,6 +1454,9 @@ void b53_phylink_mac_link_up(struct dsa_
+@@ -1419,6 +1452,9 @@ void b53_phylink_mac_link_up(struct dsa_
  {
  	struct b53_device *dev = ds->priv;
  

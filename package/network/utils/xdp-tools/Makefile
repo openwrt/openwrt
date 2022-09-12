@@ -85,13 +85,17 @@ CONFIGURE_VARS += \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	CLANG="$(CLANG)" \
-	BPF_CFLAGS="$(BPF_CFLAGS)" \
 	BPF_TARGET="$(BPF_TARGET)" \
 	LLC="$(LLVM_LLC)"
 
 MAKE_VARS += \
 	PREFIX=/usr \
 	RUNDIR=/tmp/run
+
+define Build/Configure
+	$(call Build/Configure/Default)
+	echo "BPF_CFLAGS += -I$(BPF_HEADERS_DIR)/tools/lib" >> $(PKG_BUILD_DIR)/config.mk
+endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/xdp

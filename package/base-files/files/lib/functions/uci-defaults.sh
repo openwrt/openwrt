@@ -114,6 +114,14 @@ ucidef_set_network_device_mac() {
 	json_select ..
 }
 
+ucidef_set_network_device_path() {
+	json_select_object "network_device"
+	json_select_object "$1"
+	json_add_string path "$2"
+	json_select ..
+	json_select ..
+}
+
 _ucidef_add_switch_port() {
 	# inherited: $num $device $need_tag $want_untag $role $index $prev_role
 	# inherited: $n_cpu $n_ports $n_vlan $cpu0 $cpu1 $cpu2 $cpu3 $cpu4 $cpu5
