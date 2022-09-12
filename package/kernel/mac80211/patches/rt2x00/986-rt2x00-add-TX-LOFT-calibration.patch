@@ -1,3 +1,18 @@
+From: =?UTF-8?q?Tomislav=20Po=C5=BEega?= <pozega.tomislav@gmail.com>
+Date: Thu, 11 Jan 2018 19:53:49 +0100
+Subject: [PATCH] rt2x00: add TX LOFT calibration
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add TX LOFT calibration from mtk driver.
+
+Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+---
+ .../net/wireless/ralink/rt2x00/rt2800lib.c    | 938 ++++++++++++++++++
+ .../net/wireless/ralink/rt2x00/rt2800lib.h    |  10 +
+ 2 files changed, 948 insertions(+)
+
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -9079,6 +9079,943 @@ restore_value:
@@ -630,7 +645,7 @@
 +
 +				if (vga_gain[ch_idx] < 0)
 +					vga_gain[ch_idx] = 0;
-+		 	}
++			}
 +
 +			rfvalue = rfvga_gain_table[vga_gain[ch_idx]];
 +
