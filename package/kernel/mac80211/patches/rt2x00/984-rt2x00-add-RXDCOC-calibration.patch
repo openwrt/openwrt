@@ -1,3 +1,17 @@
+From: =?UTF-8?q?Tomislav=20Po=C5=BEega?= <pozega.tomislav@gmail.com>
+Date: Mon, 8 Jan 2018 13:43:37 +0100
+Subject: [PATCH] rt2x00: add RXDCOC calibration
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add RXDCOC calibration code from mtk driver.
+
+Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+---
+ .../net/wireless/ralink/rt2x00/rt2800lib.c    | 65 +++++++++++++++++++
+ 1 file changed, 65 insertions(+)
+
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -8637,6 +8637,70 @@ static void rt2800_r_calibration(struct

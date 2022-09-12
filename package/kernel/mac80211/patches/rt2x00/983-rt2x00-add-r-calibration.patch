@@ -1,3 +1,17 @@
+From: =?UTF-8?q?Tomislav=20Po=C5=BEega?= <pozega.tomislav@gmail.com>
+Date: Mon, 8 Jan 2018 13:42:58 +0100
+Subject: [PATCH] rt2x00: add r calibration
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add r calibration code as found in mtk driver.
+
+Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+---
+ .../net/wireless/ralink/rt2x00/rt2800lib.c    | 150 ++++++++++++++++++
+ 1 file changed, 150 insertions(+)
+
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -8488,6 +8488,155 @@ static void rt2800_rf_self_txdc_cal(stru
