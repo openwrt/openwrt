@@ -40,10 +40,22 @@
 	leds {
 		compatible = "gpio-leds";
 
+		led-wps {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
 		led_power: led-power {
 			label = "white:power";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "on";
+		};
+
+		led-wan2 {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		led-wan {
@@ -122,6 +134,13 @@
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x0000>;
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uart3", "jtag", "wdt";
+		function = "gpio";
 	};
 };
 
