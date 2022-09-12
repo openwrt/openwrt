@@ -14,6 +14,9 @@ DEP_FINDPARAMS := -x "*/.svn*" -x ".*" -x "*:*" -x "*\!*" -x "* *" -x "*\\\#*" -
 find_md5=$(TOPDIR)/scripts/timestamp.pl -P -a "-type f" $(DEP_FINDPARAMS) $(2) -- $(wildcard $(1)) | \
 	 sort | $(MKHASH) md5
 
+find_ts=$(TOPDIR)/scripts/timestamp.pl -t -a "-type f" $(DEP_FINDPARAMS) $(2) -- $(wildcard $(1)) | \
+	 sort | tail -n 1
+
 define rdep
   .PRECIOUS: $(2)
   .SILENT: $(2)_check
@@ -29,7 +32,9 @@ ifneq ($(wildcard $(2)),)
 	) \
 	{ \
 		[ -f "$(2)_check.1" ] && mv "$(2)_check.1" "$(2)_check"; \
-		$(foreach depfile,$(1) $(2),$(TOPDIR)/scripts/timestamp.pl $(DEP_FINDPARAMS) $(4) -n $(depfile) &&) { \
+		$(foreach depfile,$(1) $(2),$(TOPDIR)/scripts/timestamp.pl $(DEP_FINDPARAMS) $(4) -n $(depfile) &&) \
+		[ "$$$$($(call find_ts,$(1),$(4)))" -le "$$$$($(call find_ts,$(2)))" ] && \
+		{ \
 			$(call debug_eval,$(SUBDIR),r,echo "No need to rebuild $(2)";) \
 			touch -r "$(2)" "$(2)_check"; \
 		} \
