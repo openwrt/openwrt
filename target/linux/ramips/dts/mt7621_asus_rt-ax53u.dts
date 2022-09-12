@@ -53,6 +53,8 @@
 &nand {
 	status = "okay";
 
+	mediatek,nmbm;
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -97,12 +99,7 @@
 
 		partition@7e0000 {
 			label = "ubi";
-			reg = <0x7e0000 0x2e00000>;
-		};
-
-		partition@35e0000 {
-			label = "firmware2";
-			reg = <0x35e0000 0x3200000>;
+			reg = <0x7e0000 0x7020000>;
 		};
 
 		/* Last 8M possibly store the bad block table */
