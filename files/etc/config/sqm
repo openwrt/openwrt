@@ -1,0 +1,16 @@
+
+config queue 'eth1'
+        option enabled '0'
+        option interface 'eth1'
+        option download '85000'
+        option upload '10000'
+        option qdisc 'cake'
+        option script 'piece_of_cake.qos'
+        option qdisc_advanced '0'
+        option ingress_ecn 'ECN'
+        option egress_ecn 'ECN'
+        option qdisc_really_really_advanced '0'
+        option itarget 'auto'
+        option etarget 'auto'
+        option linklayer 'none'
+

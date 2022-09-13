@@ -1,0 +1,102 @@
+
+config interface 'loopback'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+	option device 'lo'
+
+config device
+	option name 'br-wan'
+	option type 'bridge'
+	list ports 'eth0'
+
+config bridge-vlan
+	option device 'br-wan'
+	option vlan '2'
+	list ports 'eth0'
+
+config bridge-vlan
+	option device 'br-wan'
+	option vlan '5'
+	list ports 'eth0:t'
+
+config interface 'WAN1'
+	option device 'br-wan.2'
+	option proto 'dhcp'
+	option metric '15'
+
+config interface 'WAN1v6'
+	option device 'br-wan.2'
+	option proto 'dhcpv6'
+	option reqaddress 'try'
+	option reqprefix '64'
+
+config interface 'WAN2'
+	option device 'br-wan.5'
+	option proto 'dhcp'
+	option metric '10'
+
+config interface 'WAN2v6'
+	option device 'br-wan.5'
+	option proto 'dhcpv6'
+	option reqaddress 'try'
+	option reqprefix '60'
+
+config device
+	option name 'br-lan'
+	option type 'bridge'
+	list ports 'eth1'
+
+config bridge-vlan
+	option device 'br-lan'
+	option vlan '1'
+	list ports 'eth1'
+
+config bridge-vlan
+	option device 'br-lan'
+	option vlan '3'
+	list ports 'eth1:t'
+
+config bridge-vlan
+	option device 'br-lan'
+	option vlan '4'
+	list ports 'eth1:t'
+
+config interface 'LAN'
+	option device 'br-lan.1'
+	option proto 'static'
+	option ipaddr '10.0.0.1'
+	option netmask '255.255.255.0'
+	option ip6assign '64'
+	list ip6class 'WAN1v6'
+
+config interface 'VIDEO'
+	option device 'br-lan.3'
+	option proto 'static'
+	option ipaddr '10.0.3.1'
+	option netmask '255.255.255.0'
+
+config interface 'IoT'
+	option device 'br-lan.4'
+	option proto 'static'
+	option ipaddr '10.0.4.1'
+	option netmask '255.255.255.0'
+	option ip6assign '64'
+	option ip6class 'WAN1v62'
+
+config interface 'WAN1v62'
+	option device '@WAN1'
+	option proto 'dhcpv6'
+	option clientid 'E45F01622F2F'
+	option reqaddress 'try'
+	option reqprefix 'auto'
+
+config route
+	option interface 'WAN2'
+	option target '192.168.100.0'
+	option netmask '255.255.255.0'
+
+config interface 'TS0'
+	option proto 'none'
+	option device 'tailscale0'
+

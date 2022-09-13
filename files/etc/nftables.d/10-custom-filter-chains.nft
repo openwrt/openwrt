@@ -1,0 +1,39 @@
+## The firewall4 input, forward and output chains are registered with
+## priority `filter` (0).
+
+
+## Uncomment the chains below if you want to stage rules *before* the
+## default firewall input, forward and output chains.
+
+# chain user_pre_input {
+#     type filter hook input priority -1; policy accept;
+#     tcp dport ssh ct state new log prefix "SSH connection attempt: "
+# }
+#
+# chain user_pre_forward {
+#     type filter hook forward priority -1; policy accept;
+# }
+#
+# chain user_pre_output {
+#     type filter hook output priority -1; policy accept;
+# }
+
+
+## Uncomment the chains below if you want to stage rules *after* the
+## default firewall input, forward and output chains.
+
+# chain user_post_input {
+#     type filter hook input priority 1; policy accept;
+#     ct state new log prefix "Firewall4 accepted ingress: "
+# }
+#
+# chain user_post_forward {
+#     type filter hook forward priority 1; policy accept;
+#     ct state new log prefix "Firewall4 accepted forward: "
+# }
+#
+# chain user_post_output {
+#     type filter hook output priority 1; policy accept;
+#     ct state new log prefix "Firewall4 accepted egress: "
+# }
+

@@ -1,0 +1,123 @@
+# For full documentation of mwan3 configuration:
+# https://openwrt.org/docs/guide-user/network/wan/multiwan/mwan3#mwan3_configuration
+
+config globals 'globals'
+	option mmx_mask '0x3F00'
+
+config interface 'wan'
+	option enabled '1'
+	list track_ip '8.8.4.4'
+	list track_ip '8.8.8.8'
+	list track_ip '208.67.222.222'
+	list track_ip '208.67.220.220'
+	option family 'ipv4'
+	option reliability '2'
+
+config interface 'wan6'
+	option enabled '0'
+	list track_ip '2001:4860:4860::8844'
+	list track_ip '2001:4860:4860::8888'
+	list track_ip '2620:0:ccd::2'
+	list track_ip '2620:0:ccc::2'
+	option family 'ipv6'
+	option reliability '2'
+
+config interface 'wanb'
+	option enabled '0'
+	list track_ip '8.8.4.4'
+	list track_ip '8.8.8.8'
+	list track_ip '208.67.222.222'
+	list track_ip '208.67.220.220'
+	option family 'ipv4'
+	option reliability '1'
+
+config interface 'wanb6'
+	option enabled '0'
+	list track_ip '2001:4860:4860::8844'
+	list track_ip '2001:4860:4860::8888'
+	list track_ip '2620:0:ccd::2'
+	list track_ip '2620:0:ccc::2'
+	option family 'ipv6'
+	option reliability '1'
+
+config member 'wan_m1_w3'
+	option interface 'wan'
+	option metric '1'
+	option weight '3'
+
+config member 'wan_m2_w3'
+	option interface 'wan'
+	option metric '2'
+	option weight '3'
+
+config member 'wanb_m1_w2'
+	option interface 'wanb'
+	option metric '1'
+	option weight '2'
+
+config member 'wanb_m2_w2'
+	option interface 'wanb'
+	option metric '2'
+	option weight '2'
+
+config member 'wan6_m1_w3'
+	option interface 'wan6'
+	option metric '1'
+	option weight '3'
+
+config member 'wan6_m2_w3'
+	option interface 'wan6'
+	option metric '2'
+	option weight '3'
+
+config member 'wanb6_m1_w2'
+	option interface 'wanb6'
+	option metric '1'
+	option weight '2'
+
+config member 'wanb6_m2_w2'
+	option interface 'wanb6'
+	option metric '2'
+	option weight '2'
+
+config policy 'wan_only'
+	list use_member 'wan_m1_w3'
+	list use_member 'wan6_m1_w3'
+
+config policy 'wanb_only'
+	list use_member 'wanb_m1_w2'
+	list use_member 'wanb6_m1_w2'
+
+config policy 'balanced'
+	list use_member 'wan_m1_w3'
+	list use_member 'wanb_m1_w2'
+	list use_member 'wan6_m1_w3'
+	list use_member 'wanb6_m1_w2'
+
+config policy 'wan_wanb'
+	list use_member 'wan_m1_w3'
+	list use_member 'wanb_m2_w2'
+	list use_member 'wan6_m1_w3'
+	list use_member 'wanb6_m2_w2'
+
+config policy 'wanb_wan'
+	list use_member 'wan_m2_w3'
+	list use_member 'wanb_m1_w2'
+	list use_member 'wan6_m2_w3'
+	list use_member 'wanb6_m1_w2'
+
+config rule 'https'
+	option sticky '1'
+	option dest_port '443'
+	option proto 'tcp'
+	option use_policy 'balanced'
+
+config rule 'default_rule_v4'
+	option dest_ip '0.0.0.0/0'
+	option use_policy 'balanced'
+	option family 'ipv4'
+
+config rule 'default_rule_v6'
+	option dest_ip '::/0'
+	option use_policy 'balanced'
+	option family 'ipv6'
