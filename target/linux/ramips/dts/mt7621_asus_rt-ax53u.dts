@@ -54,6 +54,9 @@
 	status = "okay";
 
 	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+	mediatek,bmt-remap-range = <0x000000 0x7e0000>;
 
 	partitions {
 		compatible = "fixed-partitions";
