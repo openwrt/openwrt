@@ -464,7 +464,6 @@ static void g977_get_qln(int fd, DSL_AccessDir_t direction) {
 	blobmsg_close_array(&b, c);
 }
 
-
 static void g977_get_hlog(int fd, DSL_AccessDir_t direction) {
 	IOCTL_DIR_DELT(DSL_G997_DeltHlog_t, DSL_FIO_G997_DELT_HLOG_GET, direction, DSL_DELT_DATA_SHOWTIME);
 	m_u32("groupsize", out.data.nGroupSize);
@@ -482,7 +481,6 @@ static void g977_get_hlog(int fd, DSL_AccessDir_t direction) {
 
 	blobmsg_close_array(&b, c);
 }
-
 
 static void g997_power_management_status(int fd) {
 	IOCTL(DSL_G997_PowerManagementStatus_t, DSL_FIO_G997_POWER_MANAGEMENT_STATUS_GET)
