@@ -188,6 +188,17 @@ define Device/tplink_sg2008p-v1
 endef
 TARGET_DEVICES += tplink_sg2008p-v1
 
+define Device/tplink_sg2210p-v3
+  SOC := rtl8380
+  KERNEL_SIZE := 6m
+  IMAGE_SIZE := 26m
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := SG2210P
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-hwmon-tps23861
+endef
+TARGET_DEVICES += tplink_sg2210p-v3
+
 define Device/zyxel_gs1900
   SOC := rtl8380
   IMAGE_SIZE := 6976k
