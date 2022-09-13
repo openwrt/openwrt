@@ -36,6 +36,7 @@ make4.1+ perl python3.6+ rsync subversion unzip which
 
 2. Run `./scripts/feeds install -a` to install symlinks for all obtained
    packages into package/feeds/
+   a. You may need to run `./scripts/feeds install libpam` if you get some errors about it missing
 
 3. Run `make menuconfig` to select your preferred configuration for the
    toolchain, target system & firmware packages.
