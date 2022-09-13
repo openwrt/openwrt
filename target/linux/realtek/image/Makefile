@@ -90,16 +90,6 @@ define Device/Default
 	check-size | append-metadata
 endef
 
-# "NGE" refers to the uImage magic
-define Device/netgear_nge
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
-  SOC := rtl8380
-  IMAGE_SIZE := 14848k
-  UIMAGE_MAGIC := 0x4e474520
-  DEVICE_VENDOR := NETGEAR
-endef
-
 include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))
