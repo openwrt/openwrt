@@ -1,0 +1,211 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "linksys,ea4500-v3", "qca,qca9558";
+	model = "Linksys EA4500 v3";
+
+	aliases {
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+		label-mac-device = &eth1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system: system {
+			label = "green:system";
+			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "pci168c,0033";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_ath9k_pci>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "uboot";
+			reg = <0x0 0x100000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "u_env";
+			reg = <0x100000 0x40000>;
+		};
+
+		partition@140000 {
+			label = "caldata";
+			reg = <0x140000 0x40000>;
+			read-only;
+
+			compatible = "nvmem-cells";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			cal_macaddr: macaddr@0 {
+				reg = <0x6 0x6>;
+			};
+
+			cal_ath9k_soc: cal_ath9k@1000 {
+				reg = <0x1000 0x440>;
+			};
+
+			cal_ath9k_pci: cal_ath9k@5000 {
+				reg = <0x5000 0x440>;
+			};
+		};
+
+		partition@180000 {
+			label = "s_env";
+			reg = <0x180000 0x40000>;
+			read-only;
+		};
+
+		partition@1c0000 {
+			label = "devinfo";
+			reg = <0x1c0000 0x100000>;
+			read-only;
+		};
+
+		partition@2c0000 {
+			label = "firmware";
+			reg = <0x2c0000 0x5000000>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x400000>;
+			};
+
+			partition@400000 {
+				label = "ubi";
+				reg = <0x400000 0x4c00000>;
+			};
+
+			/* Original layout for secondary partitions */
+			/* partition@2800000 {
+				label = "kernel2";
+				reg = <0x2800000 0x400000>;
+			};
+
+			partition@2c00000 {
+				label = "ubi2";
+				reg = <0x2c00000 0x2400000>;
+			}; */
+		};
+
+		partition@52c0000 {
+			label = "syscfg";
+			reg = <0x52c0000 0x2d40000>;
+			read-only;
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+
+		qca,ar8327-initvals = <
+			0x04 0x07600000 /* PORT0 PAD MODE CTRL: RGMII, to eth0 */
+			0x0c 0x00000080 /* PORT6 PAD MODE CTRL: SGMII, to eth1 */
+			0x50 0xc833c833 /* LED_CTRL0: orange, blinking with act */
+			0x54 0xcf85cf85 /* LED_CTRL1: green, on with link */
+			0x58 0x00000000	/* LED_CTRL2: unpopulated */
+			0x5c 0x00f3cf00 /* LED_CTRL3: enable led 0 and 1 */
+			0x7c 0x0000007e /* PORT0_STATUS */
+			0x94 0x0000007e /* PORT6 STATUS */
+		>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&cal_macaddr>;
+	nvmem-cell-names = "mac-address";
+	phy-handle = <&phy0>;
+	pll-data = <0x96000000 0x00000101 0x00001616>;
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-enabled = <1>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&cal_macaddr>;
+	nvmem-cell-names = "mac-address";
+	pll-data = <0x03000101 0x00000101 0x00001616>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&cal_ath9k_soc>;
+	nvmem-cell-names = "calibration";
+};
