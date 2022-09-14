@@ -25,7 +25,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  platform-$(CONFIG_SGI_IP28)		+= sgi-ip22/
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1053,8 +1053,59 @@ config NLM_XLP_BOARD
+@@ -1053,8 +1053,58 @@ config NLM_XLP_BOARD
  	  This board is based on Netlogic XLP Processor.
  	  Say Y here if you have a XLP based board.
  
@@ -68,8 +68,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	bool "Realtek RTL930X based platforms"
 +	depends on RTL83XX
 +	select MIPS_CPU_SCACHE
-+	select CSRC_R4K
-+	select CEVT_RTL9300
++	select MIPS_EXTERNAL_TIMER
 +	select SYS_SUPPORTS_MULTITHREADING
 +
 +config RTL931X
