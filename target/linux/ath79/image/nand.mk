@@ -211,6 +211,25 @@ define Device/glinet_gl-xe300
 endef
 TARGET_DEVICES += glinet_gl-xe300
 
+define Device/linksys_ea4500-v3
+  SOC := qca9558
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := EA4500
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-usb2
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 81920k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  LINKSYS_HWNAME := EA4500V3
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-ubi | check-size | linksys-image type=$$$$(LINKSYS_HWNAME)
+  UBINIZE_OPTS := -E 5
+endef
+TARGET_DEVICES += linksys_ea4500-v3
+
 # fake rootfs is mandatory, pad-offset 129 equals (2 * uimage_header + 0xff)
 define Device/netgear_ath79_nand
   DEVICE_VENDOR := NETGEAR
