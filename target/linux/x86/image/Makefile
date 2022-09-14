@@ -142,6 +142,12 @@ define Device/Default
     IMAGES-$$(CONFIG_GRUB_IMAGES) += combined.vmdk
     IMAGES-$$(CONFIG_GRUB_EFI_IMAGES) += combined-efi.vmdk
   endif
+  ifeq ($(CONFIG_ESXI_VMDK_IMAGES),y)
+    IMAGES-$$(CONFIG_GRUB_IMAGES) += combined-esxi.vmdk
+    IMAGES-$$(CONFIG_GRUB_IMAGES) += combined-esxi-flat.vmdk
+    IMAGES-$$(CONFIG_GRUB_EFI_IMAGES) += combined-efi-esxi.vmdk
+    IMAGES-$$(CONFIG_GRUB_EFI_IMAGES) += combined-efi-esxi-flat.vmdk
+  endif
   IMAGES := $$(IMAGES-y)
   ARTIFACTS := $$(ARTIFACTS-y)
   SUPPORTED_DEVICES :=
