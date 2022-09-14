@@ -27,7 +27,8 @@ mikrotik,hap-ac3)
 sony,ncp-hg100-cellular)
 	ucidef_add_gpio_switch "uart_dbgcon_en" "debug console enable" "427" "1"
 	;;
-zte,mf286d)
+zte,mf286d|\
+zte,mf289f)
 	ucidef_add_gpio_switch "power_btn_block" "Power button blocker" "421" "0"
 	;;
 esac
