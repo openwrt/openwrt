@@ -6,6 +6,7 @@ include $(INCLUDE_DIR)/download.mk
 
 HOST_BUILD_DIR ?= $(BUILD_DIR_HOST)/$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
 HOST_INSTALL_DIR ?= $(HOST_BUILD_DIR)/host-install
+HOST_SKIP_DOWNLOAD ?= $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED)))
 HOST_BUILD_PARALLEL ?=
 
 HOST_MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) $(if $(filter 3.% 4.0 4.1,$(MAKE_VERSION)),-j))
@@ -208,5 +209,5 @@ endif
 
 define HostBuild
   $(HostBuild/Core)
-  $(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
+  $(if $(HOST_SKIP_DOWNLOAD),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
 endef
