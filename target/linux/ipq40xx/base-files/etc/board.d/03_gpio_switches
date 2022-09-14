@@ -24,7 +24,8 @@ mikrotik,cap-ac)
 mikrotik,hap-ac3)
 	ucidef_add_gpio_switch "poe_passtrough" "PoE Passthrough" "452" "0"
 	;;
-zte,mf286d)
+zte,mf286d|\
+zte,mf289f)
 	ucidef_add_gpio_switch "power_btn_block" "Power button blocker" "421" "0"
 	;;
 esac
