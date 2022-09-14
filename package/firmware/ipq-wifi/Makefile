@@ -37,7 +37,9 @@ ALLWIFIBOARDS:= \
 	pakedge_wr-1 \
 	qxwlan_e2600ac-c1 \
 	qxwlan_e2600ac-c2 \
-	teltonika_rutx
+	teltonika_rutx \
+        zte_mf289f
+
 
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
@@ -111,5 +113,6 @@ $(eval $(call generate-ipq-wifi-package,pakedge_wr-1,Pakedge WR-1))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac-c1,Qxwlan E2600AC C1))
 $(eval $(call generate-ipq-wifi-package,qxwlan_e2600ac-c2,Qxwlan E2600AC C2))
 $(eval $(call generate-ipq-wifi-package,teltonika_rutx,Teltonika RUTX))
+$(eval $(call generate-ipq-wifi-package,zte_mf289f,ZTE MF289F))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
