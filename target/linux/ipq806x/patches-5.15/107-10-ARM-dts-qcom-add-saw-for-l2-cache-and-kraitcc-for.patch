@@ -20,11 +20,11 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
  	};
  
  	clocks {
-+//		qsb: qsb {
-+//			compatible = "fixed-clock";
-+//			clock-frequency = <384000000>;
-+//			#clock-cells = <0>;
-+//		};
++		qsb: qsb {
++			compatible = "fixed-clock";
++			clock-frequency = <225000000>;
++			#clock-cells = <0>;
++		};
 +
  		cxo_board: cxo_board {
  			compatible = "fixed-clock";
@@ -85,10 +85,10 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
 +		kraitcc: clock-controller {
 +			compatible = "qcom,krait-cc-v1";
 +			clocks = <&gcc PLL9>, <&gcc PLL10>, <&gcc PLL12>,
-+				 <&acc0>, <&acc1>, <&l2cc>; // <&qsb>
++				 <&acc0>, <&acc1>, <&l2cc>, <&qsb>, <&pxo_board>;
 +			clock-names = "hfpll0", "hfpll1", "hfpll_l2",
-+				      "acpu0_aux", "acpu1_aux", "acpu_l2_aux";
-+//				      "qsb";
++				      "acpu0_aux", "acpu1_aux", "acpu_l2_aux",
++				      "qsb", "pxo";
 +			#clock-cells = <1>;
  		};
  
