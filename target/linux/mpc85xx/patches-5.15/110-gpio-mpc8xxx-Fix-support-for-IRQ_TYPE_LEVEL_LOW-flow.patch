@@ -25,10 +25,8 @@ Signed-off-by: Pali Rohár <pali@kernel.org>
  drivers/gpio/gpio-mpc8xxx.c | 1 +
  1 file changed, 1 insertion(+)
 
-Index: linux-5.15.67/drivers/gpio/gpio-mpc8xxx.c
-===================================================================
---- linux-5.15.67.orig/drivers/gpio/gpio-mpc8xxx.c
-+++ linux-5.15.67/drivers/gpio/gpio-mpc8xxx.c
+--- a/drivers/gpio/gpio-mpc8xxx.c
++++ b/drivers/gpio/gpio-mpc8xxx.c
 @@ -172,6 +172,7 @@ static int mpc8xxx_irq_set_type(struct i
  
  	switch (flow_type) {
