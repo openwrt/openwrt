@@ -17,10 +17,8 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  arch/powerpc/platforms/85xx/Makefile |  1 +
  4 files changed, 20 insertions(+), 1 deletion(-)
 
-Index: linux-5.15.67/arch/powerpc/boot/Makefile
-===================================================================
---- linux-5.15.67.orig/arch/powerpc/boot/Makefile
-+++ linux-5.15.67/arch/powerpc/boot/Makefile
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
 @@ -162,6 +162,7 @@ src-plat-$(CONFIG_PPC_PSERIES) += pserie
  src-plat-$(CONFIG_PPC_POWERNV) += pseries-head.S
  src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) += pseries-head.S
@@ -38,10 +36,8 @@ Index: linux-5.15.67/arch/powerpc/boot/Makefile
  # Board ports in arch/powerpc/platform/86xx/Kconfig
  image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
  
-Index: linux-5.15.67/arch/powerpc/boot/wrapper
-===================================================================
---- linux-5.15.67.orig/arch/powerpc/boot/wrapper
-+++ linux-5.15.67/arch/powerpc/boot/wrapper
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
 @@ -326,6 +326,11 @@ adder875-redboot)
      platformo="$object/fixed-head.o $object/redboot-8xx.o"
      binary=y
@@ -54,10 +50,8 @@ Index: linux-5.15.67/arch/powerpc/boot/wrapper
  simpleboot-*)
      platformo="$object/fixed-head.o $object/simpleboot.o"
      binary=y
-Index: linux-5.15.67/arch/powerpc/platforms/85xx/Kconfig
-===================================================================
---- linux-5.15.67.orig/arch/powerpc/platforms/85xx/Kconfig
-+++ linux-5.15.67/arch/powerpc/platforms/85xx/Kconfig
+--- a/arch/powerpc/platforms/85xx/Kconfig
++++ b/arch/powerpc/platforms/85xx/Kconfig
 @@ -170,6 +170,18 @@ config STX_GP3
  	select CPM2
  	select DEFAULT_UIMAGE
@@ -77,10 +71,8 @@ Index: linux-5.15.67/arch/powerpc/platforms/85xx/Kconfig
  config TQM8540
  	bool "TQ Components TQM8540"
  	help
-Index: linux-5.15.67/arch/powerpc/platforms/85xx/Makefile
-===================================================================
---- linux-5.15.67.orig/arch/powerpc/platforms/85xx/Makefile
-+++ linux-5.15.67/arch/powerpc/platforms/85xx/Makefile
+--- a/arch/powerpc/platforms/85xx/Makefile
++++ b/arch/powerpc/platforms/85xx/Makefile
 @@ -27,6 +27,7 @@ obj-$(CONFIG_TWR_P102x)   += twr_p102x.o
  obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
  obj-$(CONFIG_FB_FSL_DIU)	+= t1042rdb_diu.o
