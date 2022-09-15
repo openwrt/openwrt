@@ -36,7 +36,7 @@
  LIBS += $(DRV_AP_LIBS)
  
  ifdef CONFIG_L2_PACKET
-@@ -1291,6 +1297,12 @@ install: $(addprefix $(DESTDIR)$(BINDIR)
+@@ -1378,6 +1384,12 @@ install: $(addprefix $(DESTDIR)$(BINDIR)
  _OBJS_VAR := OBJS
  include ../src/objs.mk
  
@@ -49,7 +49,7 @@
  hostapd: $(OBJS)
  	$(Q)$(CC) $(LDFLAGS) -o hostapd $(OBJS) $(LIBS)
  	@$(E) "  LD " $@
-@@ -1365,6 +1377,12 @@ include ../src/objs.mk
+@@ -1458,6 +1470,12 @@ include ../src/objs.mk
  _OBJS_VAR := SOBJS
  include ../src/objs.mk
  
@@ -128,7 +128,7 @@
  NEED_AES_WRAP=y
  OBJS += ../src/ap/wpa_auth.o
  OBJS += ../src/ap/wpa_auth_ie.o
-@@ -1920,6 +1937,12 @@ wpa_priv: $(BCHECK) $(OBJS_priv)
+@@ -1996,6 +2013,12 @@ wpa_priv: $(BCHECK) $(OBJS_priv)
  
  _OBJS_VAR := OBJS
  include ../src/objs.mk
@@ -141,7 +141,7 @@
  wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)
  	$(Q)$(LDO) $(LDFLAGS) -o wpa_supplicant $(OBJS) $(LIBS) $(EXTRALIBS)
  	@$(E) "  LD " $@
-@@ -2052,6 +2075,12 @@ eap_gpsk.so: $(SRC_EAP_GPSK)
+@@ -2128,6 +2151,12 @@ eap_gpsk.so: $(SRC_EAP_GPSK)
  	$(Q)sed -e 's|\@BINDIR\@|$(BINDIR)|g' $< >$@
  	@$(E) "  sed" $<
  
