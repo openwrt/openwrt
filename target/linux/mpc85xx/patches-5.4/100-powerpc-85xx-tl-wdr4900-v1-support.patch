@@ -38,7 +38,11 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
+<<<<<<< HEAD:target/linux/mpc85xx/patches-5.4/100-powerpc-85xx-tl-wdr4900-v1-support.patch
 @@ -323,6 +323,11 @@ adder875-redboot)
+=======
+@@ -326,6 +326,11 @@ adder875-redboot)
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/mpc85xx/patches-5.15/100-powerpc-85xx-tl-wdr4900-v1-support.patch
      platformo="$object/fixed-head.o $object/redboot-8xx.o"
      binary=y
      ;;
@@ -73,7 +77,12 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  	help
 --- a/arch/powerpc/platforms/85xx/Makefile
 +++ b/arch/powerpc/platforms/85xx/Makefile
+<<<<<<< HEAD:target/linux/mpc85xx/patches-5.4/100-powerpc-85xx-tl-wdr4900-v1-support.patch
 @@ -26,6 +26,7 @@ obj-$(CONFIG_CORENET_GENERIC)   += coren
+=======
+@@ -27,6 +27,7 @@ obj-$(CONFIG_TWR_P102x)   += twr_p102x.o
+ obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/mpc85xx/patches-5.15/100-powerpc-85xx-tl-wdr4900-v1-support.patch
  obj-$(CONFIG_FB_FSL_DIU)	+= t1042rdb_diu.o
  obj-$(CONFIG_STX_GP3)	  += stx_gp3.o
  obj-$(CONFIG_TQM85xx)	  += tqm85xx.o

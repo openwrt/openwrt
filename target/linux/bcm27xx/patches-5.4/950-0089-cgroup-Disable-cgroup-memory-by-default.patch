@@ -17,7 +17,11 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/kernel/cgroup/cgroup.c
 +++ b/kernel/cgroup/cgroup.c
+<<<<<<< HEAD:target/linux/bcm27xx/patches-5.4/950-0089-cgroup-Disable-cgroup-memory-by-default.patch
 @@ -5860,6 +5860,9 @@ int __init cgroup_init_early(void)
+=======
+@@ -5875,6 +5875,9 @@ int __init cgroup_init_early(void)
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/bcm27xx/patches-5.15/950-0035-cgroup-Disable-cgroup-memory-by-default.patch
  	return 0;
  }
  
@@ -27,7 +31,11 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  /**
   * cgroup_init - cgroup initialization
   *
+<<<<<<< HEAD:target/linux/bcm27xx/patches-5.4/950-0089-cgroup-Disable-cgroup-memory-by-default.patch
 @@ -5898,6 +5901,12 @@ int __init cgroup_init(void)
+=======
+@@ -5913,6 +5916,12 @@ int __init cgroup_init(void)
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/bcm27xx/patches-5.15/950-0035-cgroup-Disable-cgroup-memory-by-default.patch
  
  	mutex_unlock(&cgroup_mutex);
  
@@ -40,7 +48,11 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	for_each_subsys(ss, ssid) {
  		if (ss->early_init) {
  			struct cgroup_subsys_state *css =
+<<<<<<< HEAD:target/linux/bcm27xx/patches-5.4/950-0089-cgroup-Disable-cgroup-memory-by-default.patch
 @@ -6307,6 +6316,10 @@ static int __init cgroup_disable(char *s
+=======
+@@ -6497,6 +6506,10 @@ static int __init cgroup_disable(char *s
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/bcm27xx/patches-5.15/950-0035-cgroup-Disable-cgroup-memory-by-default.patch
  			    strcmp(token, ss->legacy_name))
  				continue;
  
@@ -51,7 +63,11 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  			static_branch_disable(cgroup_subsys_enabled_key[i]);
  			pr_info("Disabling %s control group subsystem\n",
  				ss->name);
+<<<<<<< HEAD:target/linux/bcm27xx/patches-5.4/950-0089-cgroup-Disable-cgroup-memory-by-default.patch
 @@ -6316,6 +6329,31 @@ static int __init cgroup_disable(char *s
+=======
+@@ -6515,6 +6528,31 @@ static int __init cgroup_disable(char *s
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/bcm27xx/patches-5.15/950-0035-cgroup-Disable-cgroup-memory-by-default.patch
  }
  __setup("cgroup_disable=", cgroup_disable);
  

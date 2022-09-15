@@ -9,7 +9,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
+<<<<<<< HEAD:target/linux/generic/pending-5.4/655-increase_skb_pad.patch
 @@ -2660,7 +2660,7 @@ static inline int pskb_network_may_pull(
+=======
+@@ -2817,7 +2817,7 @@ static inline int pskb_network_may_pull(
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/generic/pending-5.15/655-increase_skb_pad.patch
   * NET_IP_ALIGN(2) + ethernet_header(14) + IP_header(20/40) + ports(8)
   */
  #ifndef NET_SKB_PAD

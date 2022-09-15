@@ -1,6 +1,10 @@
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
+<<<<<<< HEAD:target/linux/ipq806x/patches-5.4/900-arm-add-cmdline-override.patch
 @@ -1836,6 +1836,14 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_MANGL
+=======
+@@ -1729,6 +1729,14 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/mediatek/patches-5.15/901-arm-add-cmdline-override.patch
  
  endchoice
  
@@ -17,7 +21,11 @@
  	default ""
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
+<<<<<<< HEAD:target/linux/ipq806x/patches-5.4/900-arm-add-cmdline-override.patch
 @@ -1060,6 +1060,17 @@ int __init early_init_dt_scan_chosen(uns
+=======
+@@ -1162,6 +1162,17 @@ int __init early_init_dt_scan_chosen(uns
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/mediatek/patches-5.15/901-arm-add-cmdline-override.patch
  	if (p != NULL && l > 0)
  		strlcpy(data, p, min(l, COMMAND_LINE_SIZE));
  

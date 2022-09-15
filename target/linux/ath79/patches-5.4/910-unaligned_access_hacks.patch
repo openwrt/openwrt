@@ -706,7 +706,11 @@
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
+<<<<<<< HEAD:target/linux/ath79/patches-5.4/910-unaligned_access_hacks.patch
 @@ -3998,14 +3998,16 @@ static bool tcp_parse_aligned_timestamp(
+=======
+@@ -4151,14 +4151,16 @@ static bool tcp_parse_aligned_timestamp(
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/ath79/patches-5.15/910-unaligned_access_hacks.patch
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  

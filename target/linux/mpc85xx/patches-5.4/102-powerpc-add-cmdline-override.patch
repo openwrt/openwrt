@@ -1,8 +1,14 @@
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
+<<<<<<< HEAD:target/linux/mpc85xx/patches-5.4/102-powerpc-add-cmdline-override.patch
 @@ -885,6 +885,14 @@ config CMDLINE_FORCE
  	  This is useful if you cannot or don't want to change the
  	  command-line options your boot loader passes to the kernel.
+=======
+@@ -915,6 +915,14 @@ config CMDLINE_FORCE
+ 
+ endchoice
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/mpc85xx/patches-5.15/102-powerpc-add-cmdline-override.patch
  
 +config CMDLINE_OVERRIDE
 +    bool "Use alternative cmdline from device tree"
@@ -17,7 +23,11 @@
  	help
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
+<<<<<<< HEAD:target/linux/mpc85xx/patches-5.4/102-powerpc-add-cmdline-override.patch
 @@ -1060,6 +1060,17 @@ int __init early_init_dt_scan_chosen(uns
+=======
+@@ -1162,6 +1162,17 @@ int __init early_init_dt_scan_chosen(uns
+>>>>>>> fe209fa47d (kernel: bump 5.15 to 5.15.68):target/linux/mpc85xx/patches-5.15/102-powerpc-add-cmdline-override.patch
  	if (p != NULL && l > 0)
  		strlcpy(data, p, min(l, COMMAND_LINE_SIZE));
  
