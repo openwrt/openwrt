@@ -660,14 +660,17 @@ define KernelPackage/sound-soc-hifiberry-digi
   TITLE:=Support for HifiBerry Digi / Digi+ / Digi+ Pro
   KCONFIG:= \
     CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI \
-    CONFIG_SND_SOC_WM8804
+    CONFIG_SND_SOC_WM8804 \
+    CONFIG_SND_SOC_WM8804_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804)
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804 snd-soc-wm8804-i2c)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
     +kmod-sound-soc-rpi-wm8804-soundcard \
-    +kmod-i2c-bcm2835
+    +kmod-i2c-bcm2835 \
+    +kmod-regmap-i2c
   $(call AddDepends/sound)
 endef
 
