@@ -1233,7 +1233,7 @@ drv_mac80211_setup() {
 	local primary_ap=${NEWAPLIST%% *}
 	[ -n "$hostapd_ctrl" ] && {
 		local no_reload=1
-		if [ -n "$(ubus list | grep hostapd.$primary_ap)" ]; then
+		ubus list | grep -q hostapd.$primary_ap && {
 			no_reload=0
 			[ "${NEW_MD5}" = "${OLD_MD5}" ] || {
 				ubus call hostapd.$primary_ap reload
@@ -1247,7 +1247,7 @@ drv_mac80211_setup() {
 					for_each_interface "sta adhoc mesh monitor" mac80211_prepare_vif
 				fi
 			}
-		fi
+		}
 		if [ "$no_reload" != "0" ]; then
 			add_ap=1
 			ubus wait_for hostapd
