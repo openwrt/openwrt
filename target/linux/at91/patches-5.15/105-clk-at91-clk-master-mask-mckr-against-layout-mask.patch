@@ -33,7 +33,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  
 +	val &= master->layout->mask;
  	pres = (val >> master->layout->pres_shift) & MASTER_PRES_MASK;
- 	if (pres == 3 && characteristics->have_div3_pres)
+ 	if (pres == MASTER_PRES_MAX && characteristics->have_div3_pres)
  		pres = 3;
 @@ -403,6 +404,8 @@ static u8 clk_master_pres_get_parent(str
  	regmap_read(master->regmap, master->layout->offset, &mckr);
