@@ -144,6 +144,16 @@ define Device/comfast_cf-wr758ac-v2
 endef
 TARGET_DEVICES += comfast_cf-wr758ac-v2
 
+define Device/cudy_lt500_v2
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := LT500 v2
+  # TODO confirm this works:
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap
+  SUPPORTED_DEVICES += lt500_v2
+endef
+TARGET_DEVICES += cudy_wr1000
+
 define Device/cudy_wr1000
   IMAGE_SIZE := 7872k
   IMAGES += factory.bin
