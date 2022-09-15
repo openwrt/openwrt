@@ -45,6 +45,12 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && echo -n ${addr:0:9}'1'${addr:10:7} > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && echo -n ${addr:0:9}'7'${addr:10:7} > /sys${DEVPATH}/macaddress
 		;;
+	haier,har-20s2u1|\
+	jcg,y2|\
+	sim,simax1800t)
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_setbit_la "$(mtd_get_mac_binary factory 0x4)" > /sys${DEVPATH}/macaddress
+		;;
 	hiwifi,hc5962)
 		label_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac ")
 		[ "$PHYNBR" = "0" ] && [ -n "$label_mac" ] && \
@@ -68,10 +74,6 @@ case "$board" in
 	jcg,q20)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0x4)" > /sys${DEVPATH}/macaddress
-		;;
-	jcg,y2)
-		[ "$PHYNBR" = "1" ] && \
-			macaddr_setbit_la "$(mtd_get_mac_binary factory 0x4)" > /sys${DEVPATH}/macaddress
 		;;
 	linksys,e5600|\
 	linksys,ea6350-v4|\
