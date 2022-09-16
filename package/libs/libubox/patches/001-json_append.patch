@@ -1,0 +1,105 @@
+--- a/jshn.c
++++ b/jshn.c
+@@ -172,7 +172,7 @@ static int add_json_element(const char *
+ 	return 0;
+ }
+ 
+-static int jshn_parse(const char *str)
++static int jshn_parse(const char *str, bool append)
+ {
+ 	json_object *obj;
+ 
+@@ -183,7 +183,9 @@ static int jshn_parse(const char *str)
+ 		fprintf(stderr, "Failed to parse message data\n");
+ 		return 1;
+ 	}
+-	fprintf(stdout, "json_init;\n");
++	if (!append) {
++		fprintf(stdout, "json_init;\n");
++	}
+ 	add_json_object(obj);
+ 	fflush(stdout);
+ 	json_object_put(obj);
+@@ -313,7 +315,7 @@ out:
+ 
+ static int usage(const char *progname)
+ {
+-	fprintf(stderr, "Usage: %s [-n] [-i] -r <message>|-R <file>|-o <file>|-p <prefix>|-w\n", progname);
++	fprintf(stderr, "Usage: %s [-n] [-i] [-a] -r <message>|-R <file>|-o <file>|-p <prefix>|-w\n", progname);
+ 	return 2;
+ }
+ 
+@@ -338,7 +340,7 @@ static int avl_strcmp_var(const void *k1
+ 	return c1 - c2;
+ }
+ 
+-static int jshn_parse_file(const char *path)
++static int jshn_parse_file(const char *path, bool append)
+ {
+ 	struct stat sb;
+ 	int ret = 0;
+@@ -369,7 +371,7 @@ static int jshn_parse_file(const char *p
+ 		return 3;
+ 	}
+ 
+-	ret = jshn_parse(fbuf);
++	ret = jshn_parse(fbuf, append);
+ 	free(fbuf);
+ 	close(fd);
+ 
+@@ -397,6 +399,7 @@ int main(int argc, char **argv)
+ {
+ 	extern char **environ;
+ 	bool no_newline = false;
++	bool append_object = false;
+ 	bool indent = false;
+ 	struct env_var *vars;
+ 	int i;
+@@ -423,17 +426,17 @@ int main(int argc, char **argv)
+ 		avl_insert(&env_vars, &vars[i].avl);
+ 	}
+ 
+-	while ((ch = getopt(argc, argv, "p:nir:R:o:w")) != -1) {
++	while ((ch = getopt(argc, argv, "p:anir:R:o:w")) != -1) {
+ 		switch(ch) {
+ 		case 'p':
+ 			var_prefix = optarg;
+ 			var_prefix_len = strlen(var_prefix);
+ 			break;
+ 		case 'r':
+-			ret = jshn_parse(optarg);
++			ret = jshn_parse(optarg, append_object);
+ 			goto exit;
+ 		case 'R':
+-			ret = jshn_parse_file(optarg);
++			ret = jshn_parse_file(optarg, append_object);
+ 			goto exit;
+ 		case 'w':
+ 			ret = jshn_format(no_newline, indent, stdout);
+@@ -441,6 +444,9 @@ int main(int argc, char **argv)
+ 		case 'o':
+ 			ret = jshn_format_file(optarg, no_newline, indent);
+ 			goto exit;
++		case 'a':
++			append_object = true;
++			break;
+ 		case 'n':
+ 			no_newline = true;
+ 			break;
+--- a/sh/jshn.sh
++++ b/sh/jshn.sh
+@@ -180,6 +180,14 @@ json_load() {
+ 	eval "`jshn -r "$1"`"
+ }
+ 
++json_append() {
++	eval "`jshn -a -r "$1"`"
++}
++
++json_append_file() {
++	eval "`jshn -a -R "$1"`"
++}
++
+ json_load_file() {
+ 	eval "`jshn -R "$1"`"
+ }
