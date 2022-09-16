@@ -11,7 +11,7 @@ board=$(board_name)
 
 case "$board" in
 	beeline,smartbox-flash)
-		hw_mac_addr=$(macaddr_add $(mtd_get_mac_encrypted_arcadyan "board_data") 1)
+		hw_mac_addr=$(macaddr_add $(mtd_get_mac_encrypted_arcadyan "board_data" "2A4B303D7644395C3B2B7053553C5200") 1)
 		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
 		hw_mac_addr=$(macaddr_setbit   $hw_mac_addr 26)
 		hw_mac_addr=$(macaddr_unsetbit $hw_mac_addr 27)
@@ -96,7 +96,7 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
 		;;
 	mts,wg430223)
-		hw_mac_addr=$(macaddr_add $(mtd_get_mac_encrypted_arcadyan "board_data") 1)
+		hw_mac_addr=$(macaddr_add $(mtd_get_mac_encrypted_arcadyan "board_data" "2A4B303D7644395C3B2B7053553C5200") 1)
 		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
 		hw_mac_addr=$(macaddr_unsetbit $hw_mac_addr 26)
 		hw_mac_addr=$(macaddr_setbit   $hw_mac_addr 27)
