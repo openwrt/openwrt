@@ -11,8 +11,8 @@
 
 DEP_FINDPARAMS := -x "*/.svn*" -x ".*" -x "*:*" -x "*\!*" -x "* *" -x "*\\\#*" -x "*/.*_check" -x "*/.*.swp" -x "*/.pkgdir*"
 
-find_md5=$(TOPDIR)/scripts/timestamp.pl -P -a "-type f" $(DEP_FINDPARAMS) $(2) -- $(wildcard $(1)) | \
-	 sort | $(MKHASH) md5
+find_md5=$(TOPDIR)/scripts/timestamp.pl -p -a "-type f" $(DEP_FINDPARAMS) $(2) -- $(wildcard $(1)) | \
+	 xargs $(MKHASH) md5 | sort | $(MKHASH) md5
 
 find_ts=$(TOPDIR)/scripts/timestamp.pl -t -a "-type f" $(DEP_FINDPARAMS) $(2) -- $(wildcard $(1)) | \
 	 sort | tail -n 1
