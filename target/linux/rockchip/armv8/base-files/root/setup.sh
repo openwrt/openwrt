@@ -27,13 +27,19 @@ function init_firewall() {
 	uci set firewall.@defaults[0].forward='ACCEPT'
 
 	case "$boardname" in
-	nanopi-r5s)
+	nanopi-r5s | nanopi-r2s | nanopi-r2)
 		uci set firewall.@defaults[0].flow_offloading='1'
 		;;
 	*)
 		uci set firewall.@defaults[0].flow_offloading='0'
 		;;
 	esac
+
+	if [ -f /sys/module/nft_fullcone/refcnt ]; then
+		uci set firewall.@defaults[0].fullcone='1'
+	else
+		uci set firewall.@defaults[0].fullcone='0'
+	fi
 
 	zone_name=$(uci -q get firewall.@zone[1].name)
 	if [ "$zone_name" = "wan" ]; then
