@@ -22,6 +22,7 @@ include $(INCLUDE_DIR)/depends.mk
 include $(INCLUDE_DIR)/quilt.mk
 
 BUILD_TYPES += host
+HOST_HASH_PREPARED=$(if $(HOST_QUILT)$(DUMP),,_$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPENDS),)))
 HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared$(if $(HOST_QUILT)$(DUMP),,_$(call confvar,CONFIG_AUTOREMOVE $(HOST_PREPARED_DEPENDS)))
 HOST_STAMP_CONFIGURED:=$(HOST_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
@@ -30,7 +31,7 @@ HOST_BUILD_PREFIX?=$(if $(IS_PACKAGE_BUILD),$(STAGING_DIR_HOSTPKG),$(STAGING_DIR
 HOST_STAMP_INSTALLED:=$(HOST_BUILD_PREFIX)/stamp/.$(PKG_NAME)_installed
 
 ifeq ($(HOST_SKIP_DOWNLOAD),)
-  DOWNLOAD_RDEP += $(HOST_STAMP_PREPARED)
+  DOWNLOAD_RDEP += $(HOST_STAMP_PREPARED) $(HOST_STAMP_PREPARED)$(HOST_HASH_PREPARED)
 endif
 
 override MAKEFLAGS=
@@ -126,7 +127,7 @@ endef
 
 ifneq ($(if $(HOST_QUILT),,$(CONFIG_AUTOREBUILD)),)
   define HostHost/Autoclean
-    $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(HOST_STAMP_PREPARED))
+    $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(HOST_STAMP_PREPARED)$(HOST_HASH_PREPARED))
     $(if $(if $(Host/Compile),$(filter prepare,$(MAKECMDGOALS)),1),,$(call rdep,$(HOST_BUILD_DIR),$(if $(CONFIG_AUTOREMOVE),$(HOST_STAMP_REMOVED),$(HOST_STAMP_BUILT))))
   endef
 endif
@@ -148,16 +149,16 @@ ifndef DUMP
   $(if $(HOST_QUILT),$(Host/Quilt))
   $(if $(DUMP),,$(call HostHost/Autoclean))
 
-  $(HOST_STAMP_PREPARED):
+  $(HOST_STAMP_PREPARED) $(HOST_STAMP_PREPARED)$(HOST_HASH_PREPARED):
 	@-rm -rf $(HOST_BUILD_DIR)
 	@mkdir -p $(HOST_BUILD_DIR)
 	$(foreach hook,$(Hooks/HostPrepare/Pre),$(call $(hook))$(sep))
 	$(call Host/Prepare)
 	$(foreach hook,$(Hooks/HostPrepare/Post),$(call $(hook))$(sep))
-	touch $$@
+	touch $(HOST_STAMP_PREPARED) $(HOST_STAMP_PREPARED)$(HOST_HASH_PREPARED)
 
   $(call Host/Exports,$(HOST_STAMP_CONFIGURED))
-  $(HOST_STAMP_CONFIGURED): $(HOST_STAMP_PREPARED)
+  $(HOST_STAMP_CONFIGURED): $(HOST_STAMP_PREPARED)$(if $(CONFIG_AUTOREBUILD),$(HOST_HASH_PREPARED))
 	$(foreach hook,$(Hooks/HostConfigure/Pre),$(call $(hook))$(sep))
 	$(call Host/Configure)
 	$(foreach hook,$(Hooks/HostConfigure/Post),$(call $(hook))$(sep))
@@ -189,7 +190,7 @@ ifndef DUMP
 
   $(call check_download_integrity)
 
-  $(_host_target)host-prepare: $(HOST_STAMP_PREPARED)
+  $(_host_target)host-prepare: $(HOST_STAMP_PREPARED)$(if $(CONFIG_AUTOREBUILD),$(HOST_HASH_PREPARED))
   $(_host_target)host-configure: $(HOST_STAMP_CONFIGURED)
   $(_host_target)host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED)
   host-install: host-compile

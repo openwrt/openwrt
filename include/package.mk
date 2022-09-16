@@ -80,6 +80,7 @@ find_library_dependencies = \
 
 PKG_DIR_NAME:=$(lastword $(subst /,$(space),$(CURDIR)))
 STAMP_NO_AUTOREBUILD=$(wildcard $(PKG_BUILD_DIR)/.no_autorebuild)
+HASH_PREPARED=$(if $(QUILT)$(DUMP),,_$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPENDS),)))
 PREV_STAMP_PREPARED:=$(if $(STAMP_NO_AUTOREBUILD),$(wildcard $(PKG_BUILD_DIR)/.prepared*))
 ifneq ($(PREV_STAMP_PREPARED),)
   STAMP_PREPARED:=$(PREV_STAMP_PREPARED)
@@ -94,7 +95,7 @@ STAMP_REMOVED:=$(PKG_BUILD_DIR)/.autoremove
 STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),)_installed
 
 ifeq ($(PKG_SKIP_DOWNLOAD),)
-  DOWNLOAD_RDEP += $(STAMP_PREPARED)
+  DOWNLOAD_RDEP += $(STAMP_PREPARED) $(STAMP_PREPARED)$(HASH_PREPARED)
 endif
 
 STAGING_FILES_LIST:=$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),).list
@@ -131,8 +132,8 @@ unexport QUIET CONFIG_SITE
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
     define Build/Autoclean
-      $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
-      $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(STAMP_PREPARED),$(PKG_BUILD_DIR)/.dep_files,-x "*/.dep_*")
+      $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)$(HASH_PREPARED)
+      $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(STAMP_PREPARED)$(HASH_PREPARED),$(PKG_BUILD_DIR)/.dep_files,-x "*/.dep_*")
       $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(if $(CONFIG_AUTOREMOVE),$(STAMP_REMOVED),$(STAMP_BUILT)),,-x "*/.dep_*" -x "*/ipkg*"))
     endef
   endif
@@ -182,6 +183,7 @@ endef
 Build/Exports=$(Build/Exports/Default)
 
 define Build/CoreTargets
+  HASH_PREPARED:=$$(HASH_PREPARED)
   STAMP_PREPARED:=$$(STAMP_PREPARED)
   STAMP_CONFIGURED:=$$(STAMP_CONFIGURED)
 
@@ -196,18 +198,18 @@ define Build/CoreTargets
 		$(call $(hook))$(sep)
 	)
 
-  $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG)
-  $(STAMP_PREPARED): $(STAMP_PREPARED_DEPENDS)
+  $(STAMP_PREPARED) $(STAMP_PREPARED)$(HASH_PREPARED): export PATH=$$(TARGET_PATH_PKG)
+  $(STAMP_PREPARED) $(STAMP_PREPARED)$(HASH_PREPARED): $(STAMP_PREPARED_DEPENDS)
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
-	touch $$@_check
+	touch $(STAMP_PREPARED)_check $(STAMP_PREPARED)$(HASH_PREPARED)_check
 	$(foreach hook,$(Hooks/Prepare/Pre),$(call $(hook))$(sep))
 	$(Build/Prepare)
 	$(foreach hook,$(Hooks/Prepare/Post),$(call $(hook))$(sep))
-	touch $$@
+	touch $(STAMP_PREPARED) $(STAMP_PREPARED)$(HASH_PREPARED)
 
   $(call Build/Exports,$(STAMP_CONFIGURED))
-  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(STAMP_CONFIGURED_DEPENDS)
+  $(STAMP_CONFIGURED): $(STAMP_PREPARED)$(if $(CONFIG_AUTOREBUILD),$(HASH_PREPARED)) $(STAMP_CONFIGURED_DEPENDS)
 	rm -f $(STAMP_CONFIGURED_WILDCARD)
 	$(CleanStaging)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
@@ -256,7 +258,7 @@ define Build/CoreTargets
     $(_pkg_target)compile: $(STAMP_INSTALLED)
   endif
 
-  $(_pkg_target)prepare: $(STAMP_PREPARED)
+  $(_pkg_target)prepare: $(STAMP_PREPARED)$(if $(CONFIG_AUTOREBUILD),$(HASH_PREPARED))
   $(_pkg_target)configure: $(STAMP_CONFIGURED)
   $(_pkg_target)dist: $(STAMP_CONFIGURED)
   $(_pkg_target)distcheck: $(STAMP_CONFIGURED)

@@ -33,7 +33,11 @@ ifneq ($(wildcard $(2)),)
 	{ \
 		[ -f "$(2)_check.1" ] && mv "$(2)_check.1" "$(2)_check"; \
 		$(foreach depfile,$(1) $(2),$(TOPDIR)/scripts/timestamp.pl $(DEP_FINDPARAMS) $(4) -n $(depfile) &&) \
-		[ "$$$$($(call find_ts,$(1),$(4)))" -le "$$$$($(call find_ts,$(2)))" ] && \
+		{ \
+			[ "$$$$($(call find_ts,$(1),$(4)))" -le "$$$$($(call find_ts,$(2)))" ] || \
+			[ "$(findstring $(shell $(call find_md5,$(1),$(4))),$(2))" ] \
+			; \
+		} && \
 		{ \
 			$(call debug_eval,$(SUBDIR),r,echo "No need to rebuild $(2)";) \
 			touch -r "$(2)" "$(2)_check"; \
