@@ -16,6 +16,7 @@ proto_unet_init_config() {
 	proto_config_add_string file
 	proto_config_add_int keepalive
 	proto_config_add_string domain
+	proto_config_add_boolean dht
 	proto_config_add_array "tunnels:list(string)"
 	proto_config_add_array "connect:list(string)"
 	proto_config_add_array "peer_data:list(string)"
@@ -28,7 +29,7 @@ proto_unet_setup() {
 	local config="$1"
 
 	local device type key file keepalive domain tunnels
-	json_get_vars device type auth_key key file keepalive domain
+	json_get_vars device type auth_key key file keepalive domain dht
 	json_get_values tunnels tunnels
 	json_get_values connect connect
 	json_get_values peer_data peer_data
@@ -45,6 +46,7 @@ proto_unet_setup() {
 	json_add_string key "$key"
 	json_add_string file "$file"
 	[ -n "$keepalive" ] && json_add_int keepalive "$keepalive"
+	[ -n "$dht" ] && json_add_boolean dht "$dht"
 	json_add_string domain "$domain"
 
 	json_add_object tunnels

@@ -10,9 +10,9 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=unetd
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/unetd.git
-PKG_SOURCE_DATE:=2022-09-01
-PKG_SOURCE_VERSION:=d7fb9e5b065bf9eecb5bcbcf741b5f89695c5dcc
-PKG_MIRROR_HASH:=a693c2b4b4bda5e1e44b493019e8e6e6d39c4048f417b581c801a9931e6b9b39
+PKG_SOURCE_DATE:=2022-09-16
+PKG_SOURCE_VERSION:=a089e8ae7504e55e05b1a88c3d8d1327460b8d4f
+PKG_MIRROR_HASH:=15ebeb7ccf4fae0ac46df638999d51a8150d3b0859232537b80e6dcb03ffb165
 
 PKG_LICENSE:=GPL-2.0
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -42,6 +42,13 @@ define Package/unetd/config
 		depends on HAS_BPF_TOOLCHAIN
 		default y
 
+endef
+
+define Package/unet-dht
+  SECTION:=net
+  CATEGORY:=Network
+  DEPENDS:=unetd
+  TITLE:=unetd DHT discovery support
 endef
 
 define Package/unet-cli
@@ -88,10 +95,19 @@ define Package/unetd/install
 	$(INSTALL_BIN) ./files/unetd.sh $(1)/lib/netifd/proto
 endef
 
+define Package/unet-dht/install
+	$(INSTALL_DIR) \
+		$(1)/etc/init.d \
+		$(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/unet-dht $(1)/usr/sbin
+	$(INSTALL_BIN) ./files/unet-dht.init $(1)/etc/init.d/unet-dht
+endef
+
 define Package/unet-cli/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/scripts/unet-cli $(1)/usr/sbin
 endef
 
 $(eval $(call BuildPackage,unetd))
+$(eval $(call BuildPackage,unet-dht))
 $(eval $(call BuildPackage,unet-cli))
