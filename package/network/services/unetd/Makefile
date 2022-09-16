@@ -47,7 +47,7 @@ endef
 define Package/unet-cli
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=unetd +ucode +ucode-mod-fs
+  DEPENDS:=+unetd +ucode +ucode-mod-fs
   TITLE:=unetd administration command line utility
 endef
 
