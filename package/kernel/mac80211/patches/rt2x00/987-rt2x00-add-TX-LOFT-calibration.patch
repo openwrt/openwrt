@@ -1,25 +1,38 @@
-From: =?UTF-8?q?Tomislav=20Po=C5=BEega?= <pozega.tomislav@gmail.com>
+From e02adea15f762d2add77b2b7714706f5c3c2f9c9 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
 Date: Thu, 11 Jan 2018 19:53:49 +0100
-Subject: [PATCH] rt2x00: add TX LOFT calibration
+Subject: [PATCH 09/16] rt2x00: add TX LOFT calibration for MT7620
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
+To: linux-wireless@vger.kernel.org,
+    Stanislaw Gruszka <stf_xl@wp.pl>,
+    Helmut Schaa <helmut.schaa@googlemail.com>
+Cc: Kalle Valo <kvalo@kernel.org>,
+    David S. Miller <davem@davemloft.net>,
+    Eric Dumazet <edumazet@google.com>,
+    Jakub Kicinski <kuba@kernel.org>,
+    Paolo Abeni <pabeni@redhat.com>,
+    Johannes Berg <johannes.berg@intel.com>
+
+From: Tomislav Požega <pozega.tomislav@gmail.com>
 
 Add TX LOFT calibration from mtk driver.
 
 Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 ---
- .../net/wireless/ralink/rt2x00/rt2800lib.c    | 938 ++++++++++++++++++
+ .../net/wireless/ralink/rt2x00/rt2800lib.c    | 922 ++++++++++++++++++
  .../net/wireless/ralink/rt2x00/rt2800lib.h    |  10 +
- 2 files changed, 948 insertions(+)
+ 2 files changed, 932 insertions(+)
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -9079,6 +9079,943 @@ restore_value:
+@@ -9080,6 +9080,927 @@ restore_value:
  	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, savemacsysctrl);
  }
  
-+static void rt2800_rf_configstore(struct rt2x00_dev *rt2x00dev, rf_reg_pair rf_reg_record[][13], u8 chain)
++static void rt2800_rf_configstore(struct rt2x00_dev *rt2x00dev,
++				  struct rf_reg_pair rf_reg_record[][13], u8 chain)
 +{
 +	u8 rfvalue = 0;
 +
@@ -131,13 +144,11 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +		rf_reg_record[CHAIN_1][12].value = rfvalue;
 +	} else {
 +		rt2x00_warn(rt2x00dev, "Unknown chain = %u\n", chain);
-+		return;
 +	}
-+
-+	return;
 +}
 +
-+static void rt2800_rf_configrecover(struct rt2x00_dev *rt2x00dev, rf_reg_pair rf_record[][13])
++static void rt2800_rf_configrecover(struct rt2x00_dev *rt2x00dev,
++				    struct rf_reg_pair rf_record[][13])
 +{
 +	u8 chain_index = 0, record_index = 0;
 +	u8 bank = 0, rf_register = 0, value = 0;
@@ -148,11 +159,10 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +			rf_register = rf_record[chain_index][record_index].reg;
 +			value = rf_record[chain_index][record_index].value;
 +			rt2800_rfcsr_write_bank(rt2x00dev, bank, rf_register, value);
-+			rt2x00_dbg(rt2x00dev, "bank: %d, rf_register: %d, value: %x\n", bank, rf_register, value);
++			rt2x00_dbg(rt2x00dev, "bank: %d, rf_register: %d, value: %x\n",
++				   bank, rf_register, value);
 +		}
 +	}
-+
-+	return;
 +}
 +
 +static void rt2800_setbbptonegenerator(struct rt2x00_dev *rt2x00dev)
@@ -170,15 +180,13 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	rt2800_bbp_write(rt2x00dev, 159, 0x3F);
 +
 +	rt2800_bbp_write(rt2x00dev, 244, 0x40);
-+
-+	return;
 +}
 +
 +static u32 rt2800_do_fft_accumulation(struct rt2x00_dev *rt2x00dev, u8 tidx, u8 read_neg)
 +{
 +	u32 macvalue = 0;
 +	int fftout_i = 0, fftout_q = 0;
-+	u32 ptmp=0, pint = 0;
++	u32 ptmp = 0, pint = 0;
 +	u8 bbp = 0;
 +	u8 tidxi;
 +
@@ -188,7 +196,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	bbp = 0x9b;
 +
 +	while (bbp == 0x9b) {
-+		udelay(10);
++		usleep_range(10, 50);
 +		bbp = rt2800_bbp_read(rt2x00dev, 159);
 +		bbp = bbp & 0xff;
 +	}
@@ -233,10 +241,11 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	return pint;
 +}
 +
-+static u32 rt2800_read_fft_accumulation(struct rt2x00_dev *rt2x00dev, u8 tidx) {
++static u32 rt2800_read_fft_accumulation(struct rt2x00_dev *rt2x00dev, u8 tidx)
++{
 +	u32 macvalue = 0;
 +	int fftout_i = 0, fftout_q = 0;
-+	u32 ptmp=0, pint = 0;
++	u32 ptmp = 0, pint = 0;
 +
 +	rt2800_bbp_write(rt2x00dev, 158, 0xBA);
 +	rt2800_bbp_write(rt2x00dev, 159, tidx);
@@ -252,7 +261,6 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	ptmp = (fftout_i * fftout_i);
 +	ptmp = ptmp + (fftout_q * fftout_q);
 +	pint = ptmp;
-+	rt2x00_info(rt2x00dev, "I = %d,  Q = %d, power = %x\n", fftout_i, fftout_q, pint);
 +
 +	return pint;
 +}
@@ -266,18 +274,17 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	rt2800_bbp_write(rt2x00dev, 159, bbp);
 +
 +	if (ch_idx == 0)
-+		bbp = (iorq == 0) ? 0xb1: 0xb2;
++		bbp = (iorq == 0) ? 0xb1 : 0xb2;
 +	else
-+		bbp = (iorq == 0) ? 0xb8: 0xb9;
++		bbp = (iorq == 0) ? 0xb8 : 0xb9;
 +
 +	rt2800_bbp_write(rt2x00dev, 158, bbp);
 +	bbp = dc;
 +	rt2800_bbp_write(rt2x00dev, 159, bbp);
-+
-+	return;
 +}
 +
-+static void rt2800_loft_search(struct rt2x00_dev *rt2x00dev, u8 ch_idx, u8 alc_idx, u8 dc_result[][RF_ALC_NUM][2])
++static void rt2800_loft_search(struct rt2x00_dev *rt2x00dev, u8 ch_idx,
++			       u8 alc_idx, u8 dc_result[][RF_ALC_NUM][2])
 +{
 +	u32 p0 = 0, p1 = 0, pf = 0;
 +	char idx0 = 0, idx1 = 0;
@@ -303,16 +310,17 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +				p0 = rt2800_do_fft_accumulation(rt2x00dev, 0x0A, 0);
 +			}
 +
-+			idx1 = idxf[iorq] + ((bidx == 5) ? 0 : ibit);
++			idx1 = idxf[iorq] + (bidx == 5 ? 0 : ibit);
 +			idx1 = idx1 & 0x3F;
 +			rt2800_write_dc(rt2x00dev, ch_idx, 0, iorq, idx1);
 +			p1 = rt2800_do_fft_accumulation(rt2x00dev, 0x0A, 0);
 +
-+			rt2x00_dbg(rt2x00dev, "alc=%u, IorQ=%u, idx_final=%2x\n", alc_idx, iorq, idxf[iorq]);
-+			rt2x00_dbg(rt2x00dev, "p0=%x, p1=%x, pf=%x, idx_0=%x, idx_1=%x, ibit=%x !\n", p0, p1, pf, idx0, idx1, ibit);
++			rt2x00_dbg(rt2x00dev, "alc=%u, IorQ=%u, idx_final=%2x\n",
++				   alc_idx, iorq, idxf[iorq]);
++			rt2x00_dbg(rt2x00dev, "p0=%x, p1=%x, pf=%x, idx_0=%x, idx_1=%x, ibit=%x\n",
++				   p0, p1, pf, idx0, idx1, ibit);
 +
-+			if ((bidx != 5) && (pf <= p0) && (pf < p1)) {
-+				pf = pf;
++			if (bidx != 5 && pf <= p0 && pf < p1) {
 +				idxf[iorq] = idxf[iorq];
 +			} else if (p0 < p1) {
 +				pf = p0;
@@ -321,17 +329,15 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +				pf = p1;
 +				idxf[iorq] = idx1 & 0x3F;
 +			}
-+			rt2x00_dbg(rt2x00dev, "IorQ=%u, idx_final[%u]:%x, pf:%8x\n", iorq, iorq, idxf[iorq], pf);
++			rt2x00_dbg(rt2x00dev, "IorQ=%u, idx_final[%u]:%x, pf:%8x\n",
++				   iorq, iorq, idxf[iorq], pf);
 +
 +			rt2800_write_dc(rt2x00dev, ch_idx, 0, iorq, idxf[iorq]);
-+
 +		}
 +		ibit = ibit >> 1;
 +	}
 +	dc_result[ch_idx][alc_idx][0] = idxf[0];
 +	dc_result[ch_idx][alc_idx][1] = idxf[1];
-+
-+	return;
 +}
 +
 +static void rt2800_iq_search(struct rt2x00_dev *rt2x00dev, u8 ch_idx, u8 *ges, u8 *pes)
@@ -349,26 +355,27 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	u8 bbp = 0;
 +	char bidx;
 +
-+	rt2x00_info(rt2x00dev, "IQCalibration Start!\n");
 +	for (bidx = 5; bidx >= 1; bidx--) {
 +		for (gop = 0; gop < 2; gop++) {
-+			rt2x00_dbg(rt2x00dev, "\n========================================================\n");
++			rt2x00_dbg(rt2x00dev, "\n==============================================\n");
 +
-+			if ((gop == 1) || (bidx < 4)) {
++			if (gop == 1 || bidx < 4) {
 +				if (gop == 0)
 +					iq_err = gerr;
 +				else
 +					iq_err = perr;
 +
 +				first_search = (gop == 0) ? (bidx == 3) : (bidx == 5);
-+				touch_neg_max = (gop) ? ((iq_err & 0x0F) == 0x08) : ((iq_err & 0x3F) == 0x20);
++				touch_neg_max = (gop) ? ((iq_err & 0x0F) == 0x08) :
++							((iq_err & 0x3F) == 0x20);
 +
 +				if (touch_neg_max) {
 +					p0 = pf;
 +					idx0 = iq_err;
 +				} else {
 +					idx0 = iq_err - ibit;
-+					bbp = (ch_idx == 0) ? ((gop == 0) ? 0x28 : 0x29): ((gop == 0) ? 0x46 : 0x47);
++					bbp = (ch_idx == 0) ? ((gop == 0) ? 0x28 : 0x29) :
++							      ((gop == 0) ? 0x46 : 0x47);
 +
 +					rt2800_bbp_write(rt2x00dev, 158, bbp);
 +					rt2800_bbp_write(rt2x00dev, 159, idx0);
@@ -379,26 +386,30 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +				idx1 = iq_err + (first_search ? 0 : ibit);
 +				idx1 = (gop == 0) ? (idx1 & 0x0F) : (idx1 & 0x3F);
 +
-+				bbp = (ch_idx == 0) ? (gop == 0) ? 0x28 : 0x29 : (gop == 0) ? 0x46 : 0x47;
++				bbp = (ch_idx == 0) ? (gop == 0) ? 0x28 : 0x29 :
++				      (gop == 0) ? 0x46 : 0x47;
 +
 +				rt2800_bbp_write(rt2x00dev, 158, bbp);
 +				rt2800_bbp_write(rt2x00dev, 159, idx1);
 +
 +				p1 = rt2800_do_fft_accumulation(rt2x00dev, 0x14, 1);
 +
-+				rt2x00_dbg(rt2x00dev, "p0=%x, p1=%x, pwer_final=%x, idx0=%x, idx1=%x, iq_err=%x, gop=%d, ibit=%x !\n", p0, p1, pf, idx0, idx1, iq_err, gop, ibit);
++				rt2x00_dbg(rt2x00dev,
++					   "p0=%x, p1=%x, pwer_final=%x, idx0=%x, idx1=%x, iq_err=%x, gop=%d, ibit=%x\n",
++					   p0, p1, pf, idx0, idx1, iq_err, gop, ibit);
 +
-+				if ((!first_search) && (pf <= p0) && (pf < p1)) {
-+					pf = pf;
-+				} else if (p0 < p1) {
-+					pf = p0;
-+					iq_err = idx0;
-+				} else {
-+					pf = p1;
-+					iq_err = idx1;
++				if (!(!first_search && pf <= p0 && pf < p1)) {
++					if (p0 < p1) {
++						pf = p0;
++						iq_err = idx0;
++					} else {
++						pf = p1;
++						iq_err = idx1;
++					}
 +				}
 +
-+				bbp = (ch_idx == 0) ? (gop == 0) ? 0x28 : 0x29 : (gop == 0) ? 0x46 : 0x47;
++				bbp = (ch_idx == 0) ? (gop == 0) ? 0x28 : 0x29 :
++						      (gop == 0) ? 0x46 : 0x47;
 +
 +				rt2800_bbp_write(rt2x00dev, 158, bbp);
 +				rt2800_bbp_write(rt2x00dev, 159, iq_err);
@@ -408,8 +419,8 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +				else
 +					perr = iq_err;
 +
-+				rt2x00_dbg(rt2x00dev, "IQCalibration pf=%8x (%2x, %2x) !\n", pf, gerr & 0x0F, perr & 0x3F);
-+
++				rt2x00_dbg(rt2x00dev, "IQCalibration pf=%8x (%2x, %2x) !\n",
++					   pf, gerr & 0x0F, perr & 0x3F);
 +			}
 +		}
 +
@@ -438,25 +449,21 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +			rt2800_bbp_write(rt2x00dev, 159, pef & 0x3F);
 +
 +			p1 = rt2800_do_fft_accumulation(rt2x00dev, 0x14, 1);
-+			if ((gef == gsta) && (pef == psta)) {
++			if (gef == gsta && pef == psta) {
++				pf = p1;
++				gerr = gef;
++				perr = pef;
++			} else if (pf > p1) {
 +				pf = p1;
 +				gerr = gef;
 +				perr = pef;
 +			}
-+			else if (pf > p1){
-+				pf = p1;
-+				gerr = gef;
-+				perr = pef;
-+			}
-+			rt2x00_dbg(rt2x00dev, "Fine IQCalibration p1=%8x pf=%8x (%2x, %2x) !\n", p1, pf, gef & 0x0F, pef & 0x3F);
++			rt2x00_dbg(rt2x00dev, "Fine IQCalibration p1=%8x pf=%8x (%2x, %2x) !\n",
++				   p1, pf, gef & 0x0F, pef & 0x3F);
 +		}
 +
 +	ges[ch_idx] = gerr & 0x0F;
 +	pes[ch_idx] = perr & 0x3F;
-+
-+	rt2x00_info(rt2x00dev, "IQCalibration Done! CH = %u, (gain=%2x, phase=%2x)\n", ch_idx, gerr & 0x0F, perr & 0x3F);
-+
-+	return;
 +}
 +
 +static void rt2800_rf_aux_tx0_loopback(struct rt2x00_dev *rt2x00dev)
@@ -495,7 +502,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +
 +void rt2800_loft_iq_calibration(struct rt2x00_dev *rt2x00dev)
 +{
-+	rf_reg_pair rf_store[CHAIN_NUM][13];
++	struct rf_reg_pair rf_store[CHAIN_NUM][13];
 +	u32 macorg1 = 0;
 +	u32 macorg2 = 0;
 +	u32 macorg3 = 0;
@@ -514,8 +521,8 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	u8 loft_dc_search_result[CHAIN_NUM][RF_ALC_NUM][2];
 +	u8 ger[CHAIN_NUM], per[CHAIN_NUM];
 +	u8 rf_gain[] = {0x00, 0x01, 0x02, 0x04, 0x08, 0x0c};
-+	u8 rfvga_gain_table[] = {0x24, 0x25, 0x26, 0x27, 0x28, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3F};
-+
++	u8 rfvga_gain_table[] = {0x24, 0x25, 0x26, 0x27, 0x28, 0x2c, 0x2d, 0x2e, 0x2f, 0x30,
++				 0x31, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3F};
 +	u8 vga_gain[] = {14, 14};
 +	u8 bbp_2324gain[] = {0x16, 0x14, 0x12, 0x10, 0x0c, 0x08};
 +	u8 bbp = 0, ch_idx = 0, rf_alc_idx = 0, idx = 0;
@@ -542,7 +549,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	for (mtxcycle = 0; mtxcycle < 10000; mtxcycle++) {
 +		macvalue = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
 +		if (macvalue & 0x01)
-+			udelay(50);
++			usleep_range(50, 100);
 +		else
 +			break;
 +	}
@@ -554,14 +561,13 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	for (mtxcycle = 0; mtxcycle < 10000; mtxcycle++) {
 +		macvalue = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
 +		if (macvalue & 0x02)
-+			udelay(50);
++			usleep_range(50, 100);
 +		else
 +			break;
 +	}
 +
-+	for (ch_idx = 0; ch_idx < 2; ch_idx++) {
++	for (ch_idx = 0; ch_idx < 2; ch_idx++)
 +		rt2800_rf_configstore(rt2x00dev, rf_store, ch_idx);
-+	}
 +
 +	bbpr30 = rt2800_bbp_read(rt2x00dev, 30);
 +	rfb0r39 = rt2800_rfcsr_read_bank(rt2x00dev, 0, 39);
@@ -576,7 +582,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +
 +	rt2800_setbbptonegenerator(rt2x00dev);
 +
-+	for (ch_idx = 0; ch_idx < 2; ch_idx ++) {
++	for (ch_idx = 0; ch_idx < 2; ch_idx++) {
 +		rt2800_bbp_write(rt2x00dev, 23, 0x00);
 +		rt2800_bbp_write(rt2x00dev, 24, 0x00);
 +		rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, 0x00);
@@ -586,18 +592,17 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +		rt2800_register_write(rt2x00dev, 0x13b8, 0x10);
 +		udelay(1);
 +
-+		if (ch_idx == 0) {
++		if (ch_idx == 0)
 +			rt2800_rf_aux_tx0_loopback(rt2x00dev);
-+		} else {
++		else
 +			rt2800_rf_aux_tx1_loopback(rt2x00dev);
-+		}
++
 +		udelay(1);
 +
-+		if (ch_idx == 0) {
++		if (ch_idx == 0)
 +			rt2800_register_write(rt2x00dev, RF_CONTROL0, 0x00001004);
-+		} else {
++		else
 +			rt2800_register_write(rt2x00dev, RF_CONTROL0, 0x00002004);
-+		}
 +
 +		rt2800_bbp_write(rt2x00dev, 158, 0x05);
 +		rt2800_bbp_write(rt2x00dev, 159, 0x00);
@@ -623,7 +628,8 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +
 +			if (rf_alc_idx == 0) {
 +				rt2800_write_dc(rt2x00dev, ch_idx, 0, 1, 0x21);
-+				for (;vga_gain[ch_idx] > 0;vga_gain[ch_idx] = vga_gain[ch_idx] - 2) {
++				for (; vga_gain[ch_idx] > 0;
++				     vga_gain[ch_idx] = vga_gain[ch_idx] - 2) {
 +					rfvalue = rfvga_gain_table[vga_gain[ch_idx]];
 +					rt2800_rfcsr_write_dccal(rt2x00dev, 3, rfvalue);
 +					rt2800_rfcsr_write_dccal(rt2x00dev, 4, rfvalue);
@@ -633,15 +639,15 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +					rt2800_write_dc(rt2x00dev, ch_idx, 0, 0, 0x21);
 +					p1 = rt2800_do_fft_accumulation(rt2x00dev, 0x0A, 0);
 +					rt2x00_dbg(rt2x00dev, "LOFT AGC %d %d\n", p0, p1);
-+					if ((p0 < 7000*7000) && (p1 < (7000*7000))) {
++					if ((p0 < 7000 * 7000) && (p1 < (7000 * 7000)))
 +						break;
-+					}
 +				}
 +
 +				rt2800_write_dc(rt2x00dev, ch_idx, 0, 0, 0x00);
 +				rt2800_write_dc(rt2x00dev, ch_idx, 0, 1, 0x00);
 +
-+				rt2x00_dbg(rt2x00dev, "Used VGA %d %x\n",vga_gain[ch_idx], rfvga_gain_table[vga_gain[ch_idx]]);
++				rt2x00_dbg(rt2x00dev, "Used VGA %d %x\n", vga_gain[ch_idx],
++					   rfvga_gain_table[vga_gain[ch_idx]]);
 +
 +				if (vga_gain[ch_idx] < 0)
 +					vga_gain[ch_idx] = 0;
@@ -659,7 +665,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	for (rf_alc_idx = 0; rf_alc_idx < 3; rf_alc_idx++) {
 +		for (idx = 0; idx < 4; idx++) {
 +			rt2800_bbp_write(rt2x00dev, 158, 0xB0);
-+			bbp = (idx<<2) + rf_alc_idx;
++			bbp = (idx << 2) + rf_alc_idx;
 +			rt2800_bbp_write(rt2x00dev, 159, bbp);
 +			rt2x00_dbg(rt2x00dev, " ALC %2x,", bbp);
 +
@@ -720,8 +726,6 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	rt2800_register_write(rt2x00dev, RF_BYPASS2, orig52c);
 +	rt2800_register_write(rt2x00dev, 0x13b8, mac13b8);
 +
-+	rt2x00_info(rt2x00dev, "LOFT Calibration Done!\n");
-+
 +	savemacsysctrl = rt2800_register_read(rt2x00dev, MAC_SYS_CTRL);
 +	macorg1 = rt2800_register_read(rt2x00dev, TX_PIN_CFG);
 +	macorg2 = rt2800_register_read(rt2x00dev, RF_CONTROL0);
@@ -741,7 +745,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	for (mtxcycle = 0; mtxcycle < 10000; mtxcycle++) {
 +		macvalue = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
 +		if (macvalue & 0x01)
-+			udelay(50);
++			usleep_range(50, 100);
 +		else
 +			break;
 +	}
@@ -752,7 +756,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	for (mtxcycle = 0; mtxcycle < 10000; mtxcycle++) {
 +		macvalue = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
 +		if (macvalue & 0x02)
-+			udelay(50);
++			usleep_range(50, 100);
 +		else
 +			break;
 +	}
@@ -791,9 +795,8 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +
 +	rt2800_register_write(rt2x00dev, 0x13b8, 0x00000010);
 +
-+	for (ch_idx = 0; ch_idx < 2; ch_idx++) {
++	for (ch_idx = 0; ch_idx < 2; ch_idx++)
 +		rt2800_rf_configstore(rt2x00dev, rf_store, ch_idx);
-+	}
 +
 +	rt2800_rfcsr_write_dccal(rt2x00dev, 3, 0x3B);
 +	rt2800_rfcsr_write_dccal(rt2x00dev, 4, 0x3B);
@@ -803,7 +806,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	rt2800_bbp_write(rt2x00dev, 158, 0xB0);
 +	rt2800_bbp_write(rt2x00dev, 159, 0x80);
 +
-+	for (ch_idx = 0; ch_idx < 2; ch_idx ++) {
++	for (ch_idx = 0; ch_idx < 2; ch_idx++) {
 +		rt2800_bbp_write(rt2x00dev, 23, 0x00);
 +		rt2800_bbp_write(rt2x00dev, 24, 0x00);
 +
@@ -846,7 +849,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +			count_step = 2;
 +		}
 +
-+		for (;vga_gain[ch_idx] < 19; vga_gain[ch_idx]=(vga_gain[ch_idx] + count_step)) {
++		for (; vga_gain[ch_idx] < 19; vga_gain[ch_idx] = (vga_gain[ch_idx] + count_step)) {
 +			rfvalue = rfvga_gain_table[vga_gain[ch_idx]];
 +			rt2800_rfcsr_write_dccal(rt2x00dev, 3, rfvalue);
 +			rt2800_rfcsr_write_dccal(rt2x00dev, 4, rfvalue);
@@ -855,37 +858,35 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +			rt2800_bbp_write(rt2x00dev, 158, bbp);
 +			rt2800_bbp_write(rt2x00dev, 159, 0x00);
 +			p0 = rt2800_do_fft_accumulation(rt2x00dev, 0x14, 0);
-+			if (test_bit(CAPABILITY_EXTERNAL_PA_TX0, &rt2x00dev->cap_flags)) {
++			if (test_bit(CAPABILITY_EXTERNAL_PA_TX0, &rt2x00dev->cap_flags))
 +				p0_idx10 = rt2800_read_fft_accumulation(rt2x00dev, 0x0A);
-+			}
 +
 +			bbp = (ch_idx == 0) ? 0x29 : 0x47;
 +			rt2800_bbp_write(rt2x00dev, 158, bbp);
 +			rt2800_bbp_write(rt2x00dev, 159, 0x21);
 +			p1 = rt2800_do_fft_accumulation(rt2x00dev, 0x14, 0);
-+			if (test_bit(CAPABILITY_EXTERNAL_PA_TX1, &rt2x00dev->cap_flags)) {
++			if (test_bit(CAPABILITY_EXTERNAL_PA_TX1, &rt2x00dev->cap_flags))
 +				p1_idx10 = rt2800_read_fft_accumulation(rt2x00dev, 0x0A);
-+			}
 +
 +			rt2x00_dbg(rt2x00dev, "IQ AGC %d %d\n", p0, p1);
 +
 +			if (test_bit(CAPABILITY_EXTERNAL_PA_TX0, &rt2x00dev->cap_flags)) {
 +				rt2x00_dbg(rt2x00dev, "IQ AGC IDX 10 %d %d\n", p0_idx10, p1_idx10);
-+				if ((p0_idx10 > 7000*7000) || (p1_idx10 > 7000*7000)) {
-+					if (vga_gain[ch_idx]!=0)
-+						vga_gain[ch_idx] = vga_gain[ch_idx]-1;
++				if ((p0_idx10 > 7000 * 7000) || (p1_idx10 > 7000 * 7000)) {
++					if (vga_gain[ch_idx] != 0)
++						vga_gain[ch_idx] = vga_gain[ch_idx] - 1;
 +					break;
 +				}
 +			}
 +
-+			if ((p0 > 2500*2500) || (p1 > 2500*2500)) {
++			if ((p0 > 2500 * 2500) || (p1 > 2500 * 2500))
 +				break;
-+			}
 +		}
 +
 +		if (vga_gain[ch_idx] > 18)
 +			vga_gain[ch_idx] = 18;
-+		rt2x00_dbg(rt2x00dev, "Used VGA %d %x\n",vga_gain[ch_idx], rfvga_gain_table[vga_gain[ch_idx]]);
++		rt2x00_dbg(rt2x00dev, "Used VGA %d %x\n", vga_gain[ch_idx],
++			   rfvga_gain_table[vga_gain[ch_idx]]);
 +
 +		bbp = (ch_idx == 0) ? 0x29 : 0x47;
 +		rt2800_bbp_write(rt2x00dev, 158, bbp);
@@ -930,9 +931,8 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	rt2800_rfcsr_write_bank(rt2x00dev, 0, 39, rfb0r39);
 +	rt2800_rfcsr_write_bank(rt2x00dev, 0, 42, rfb0r42);
 +
-+	if (test_bit(CAPABILITY_EXTERNAL_PA_TX0, &rt2x00dev->cap_flags)) {
++	if (test_bit(CAPABILITY_EXTERNAL_PA_TX0, &rt2x00dev->cap_flags))
 +		rt2800_bbp_write(rt2x00dev, 4, bbpr4);
-+	}
 +
 +	rt2800_bbp_write(rt2x00dev, 21, 0x01);
 +	udelay(1);
@@ -950,16 +950,12 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	rt2800_register_write(rt2x00dev, RF_BYPASS3, macorg5);
 +	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, savemacsysctrl);
 +	rt2800_register_write(rt2x00dev, 0x13b8, mac13b8);
-+
-+	rt2x00_info(rt2x00dev, "TX IQ Calibration Done!\n");
-+
-+	return;
 +}
 +
  static void rt2800_bbp_core_soft_reset(struct rt2x00_dev *rt2x00dev,
  				       bool set_bw, bool is_ht40)
  {
-@@ -9691,6 +10628,7 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -9692,6 +10613,7 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rxdcoc_calibration(rt2x00dev);
  	rt2800_bw_filter_calibration(rt2x00dev, true);
  	rt2800_bw_filter_calibration(rt2x00dev, false);
@@ -978,11 +974,11 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +#define RF_ALC_NUM	6
 +#define CHAIN_NUM	2
 +
-+typedef struct rf_reg_pair {
++struct rf_reg_pair {
 +	u8 bank;
 +	u8 reg;
 +	u8 value;
-+} rf_reg_pair;
++};
  
  /* RT2800 driver data structure */
  struct rt2800_drv_data {

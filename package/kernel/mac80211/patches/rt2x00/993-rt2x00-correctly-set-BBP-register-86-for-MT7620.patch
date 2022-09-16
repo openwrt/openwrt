@@ -1,0 +1,36 @@
+From 3ae108de9e64e44c724ce150d804c56a4e72ea4e Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Sep 2022 20:42:11 +0100
+Subject: [PATCH 15/16] rt2x00: correctly set BBP register 86 for MT7620
+To: linux-wireless@vger.kernel.org,
+    Stanislaw Gruszka <stf_xl@wp.pl>,
+    Helmut Schaa <helmut.schaa@googlemail.com>
+Cc: Kalle Valo <kvalo@kernel.org>,
+    David S. Miller <davem@davemloft.net>,
+    Eric Dumazet <edumazet@google.com>,
+    Jakub Kicinski <kuba@kernel.org>,
+    Paolo Abeni <pabeni@redhat.com>,
+    Johannes Berg <johannes.berg@intel.com>
+
+Instead of 0 set the correct value for BBP register 86 for MT7620.
+
+Reported-by: Serge Vasilugin <vasilugin@yandex.ru>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -4193,7 +4193,10 @@ static void rt2800_config_channel(struct
+ 		rt2800_bbp_write(rt2x00dev, 62, 0x37 - rt2x00dev->lna_gain);
+ 		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
+ 		rt2800_bbp_write(rt2x00dev, 64, 0x37 - rt2x00dev->lna_gain);
+-		rt2800_bbp_write(rt2x00dev, 86, 0);
++		if (rt2x00_rt(rt2x00dev, RT6352))
++			rt2800_bbp_write(rt2x00dev, 86, 0x38);
++		else
++			rt2800_bbp_write(rt2x00dev, 86, 0);
+ 	}
+ 
+ 	if (rf->channel <= 14) {

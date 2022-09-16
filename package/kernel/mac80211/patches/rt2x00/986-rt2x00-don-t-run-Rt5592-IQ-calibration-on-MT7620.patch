@@ -1,0 +1,35 @@
+From 5f921753b95927c964a5061b5b64c310b968ff3e Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Sep 2022 20:43:14 +0100
+Subject: [PATCH 08/16] rt2x00: don't run Rt5592 IQ calibration on MT7620
+To: linux-wireless@vger.kernel.org,
+    Stanislaw Gruszka <stf_xl@wp.pl>,
+    Helmut Schaa <helmut.schaa@googlemail.com>
+Cc: Kalle Valo <kvalo@kernel.org>,
+    David S. Miller <davem@davemloft.net>,
+    Eric Dumazet <edumazet@google.com>,
+    Jakub Kicinski <kuba@kernel.org>,
+    Paolo Abeni <pabeni@redhat.com>,
+    Johannes Berg <johannes.berg@intel.com>
+
+The function rt2800_iq_calibrate is intended for Rt5592 only.
+Don't call it for MT7620 which has it's own calibration functions.
+
+Reported-by: Serge Vasilugin <vasilugin@yandex.ru>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -4366,7 +4366,8 @@ static void rt2800_config_channel(struct
+ 		reg = (rf->channel <= 14 ? 0x1c : 0x24) + 2*rt2x00dev->lna_gain;
+ 		rt2800_bbp_write_with_rx_chain(rt2x00dev, 66, reg);
+ 
+-		rt2800_iq_calibrate(rt2x00dev, rf->channel);
++		if (!rt2x00_rt(rt2x00dev, RT6352))
++			rt2800_iq_calibrate(rt2x00dev, rf->channel);
+ 	}
+ 
+ 	if (rt2x00_rt(rt2x00dev, RT6352)) {

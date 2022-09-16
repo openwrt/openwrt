@@ -1,26 +1,21 @@
-From patchwork Thu Dec 27 14:05:26 2018
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Patchwork-Submitter: Tom Psyborg <pozega.tomislav@gmail.com>
-X-Patchwork-Id: 10743707
-X-Patchwork-Delegate: kvalo@adurom.com
-From: =?utf-8?q?Tomislav_Po=C5=BEega?= <pozega.tomislav@gmail.com>
-To: linux-wireless@vger.kernel.org
-Cc: kvalo@codeaurora.org, hauke@hauke-m.de, nbd@nbd.name,
-        john@phrozen.org, sgruszka@redhat.com, daniel@makrotopia.org
-Subject: [PATCH 2/2] rt2x00: define RF5592 in init_eeprom routine
+From 15eed6b853b7e06f08632ef3cbe6cc42ac3eb858 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
 Date: Thu, 27 Dec 2018 15:05:26 +0100
-Message-Id: <1545919526-4074-2-git-send-email-pozega.tomislav@gmail.com>
-X-Mailer: git-send-email 1.7.0.4
-In-Reply-To: <1545919526-4074-1-git-send-email-pozega.tomislav@gmail.com>
-References: <1545919526-4074-1-git-send-email-pozega.tomislav@gmail.com>
+Subject: [PATCH 01/16] rt2x00: define RF5592 in init_eeprom routine
 MIME-Version: 1.0
-Sender: linux-wireless-owner@vger.kernel.org
-Precedence: bulk
-List-ID: <linux-wireless.vger.kernel.org>
-X-Mailing-List: linux-wireless@vger.kernel.org
-X-Virus-Scanned: ClamAV using ClamSMTP
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+To: linux-wireless@vger.kernel.org,
+    Stanislaw Gruszka <stf_xl@wp.pl>,
+    Helmut Schaa <helmut.schaa@googlemail.com>
+Cc: Kalle Valo <kvalo@kernel.org>,
+    David S. Miller <davem@davemloft.net>,
+    Eric Dumazet <edumazet@google.com>,
+    Jakub Kicinski <kuba@kernel.org>,
+    Paolo Abeni <pabeni@redhat.com>,
+    Johannes Berg <johannes.berg@intel.com>
+
+From: Tomislav Požega <pozega.tomislav@gmail.com>
 
 This patch fixes following crash on Linksys EA2750 during 5GHz wifi
 init:
@@ -35,8 +30,8 @@ init:
 
 Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 ---
- drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c

@@ -1,0 +1,54 @@
+From 6569ed4ba88105d7ee877abba8f22e4965a29856 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Sep 2022 20:38:20 +0100
+Subject: [PATCH 14/16] rt2x00: set SoC wmac clock register
+To: linux-wireless@vger.kernel.org,
+    Stanislaw Gruszka <stf_xl@wp.pl>,
+    Helmut Schaa <helmut.schaa@googlemail.com>
+Cc: Kalle Valo <kvalo@kernel.org>,
+    David S. Miller <davem@davemloft.net>,
+    Eric Dumazet <edumazet@google.com>,
+    Jakub Kicinski <kuba@kernel.org>,
+    Paolo Abeni <pabeni@redhat.com>,
+    Johannes Berg <johannes.berg@intel.com>
+
+Instead of using the default value 33 (pci), set US_CYC_CNT init based
+on Programming guide:
+If available, set chipset bus clock with fallback to cpu clock/3.
+
+Reported-by: Serge Vasilugin <vasilugin@yandex.ru>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../net/wireless/ralink/rt2x00/rt2800lib.c    | 21 +++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -6197,6 +6197,27 @@ static int rt2800_init_registers(struct
+ 		reg = rt2800_register_read(rt2x00dev, US_CYC_CNT);
+ 		rt2x00_set_field32(&reg, US_CYC_CNT_CLOCK_CYCLE, 125);
+ 		rt2800_register_write(rt2x00dev, US_CYC_CNT, reg);
++	} else if (rt2x00_is_soc(rt2x00dev)) {
++		struct clk *clk = clk_get_sys("bus", NULL);
++		int rate;
++
++		if (IS_ERR(clk)) {
++			clk = clk_get_sys("cpu", NULL);
++
++			if (IS_ERR(clk)) {
++				rate = 125;
++			} else {
++				rate = clk_get_rate(clk) / 3000000;
++				clk_put(clk);
++			}
++		} else {
++			rate = clk_get_rate(clk) / 1000000;
++			clk_put(clk);
++		}
++
++		reg = rt2800_register_read(rt2x00dev, US_CYC_CNT);
++		rt2x00_set_field32(&reg, US_CYC_CNT_CLOCK_CYCLE, rate);
++		rt2800_register_write(rt2x00dev, US_CYC_CNT, reg);
+ 	}
+ 
+ 	reg = rt2800_register_read(rt2x00dev, HT_FBK_CFG0);

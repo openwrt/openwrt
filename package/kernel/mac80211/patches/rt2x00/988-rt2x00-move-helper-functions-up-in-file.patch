@@ -1,0 +1,78 @@
+From f06bc3d756e7bfdaa03f060ae68797321b2e281a Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 16 Sep 2022 20:22:04 +0100
+Subject: [PATCH 10/16] rt2x00: move helper functions up in file
+To: linux-wireless@vger.kernel.org,
+    Stanislaw Gruszka <stf_xl@wp.pl>,
+    Helmut Schaa <helmut.schaa@googlemail.com>
+Cc: Kalle Valo <kvalo@kernel.org>,
+    David S. Miller <davem@davemloft.net>,
+    Eric Dumazet <edumazet@google.com>,
+    Jakub Kicinski <kuba@kernel.org>,
+    Paolo Abeni <pabeni@redhat.com>,
+    Johannes Berg <johannes.berg@intel.com>
+
+Move register access helper functions up to the head of the file so
+they can be used in all functions.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ .../net/wireless/ralink/rt2x00/rt2800lib.c    | 40 +++++++++----------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -199,6 +199,26 @@ static void rt2800_rfcsr_write_dccal(str
+ 	rt2800_rfcsr_write_bank(rt2x00dev, 7, reg, value);
+ }
+ 
++static void rt2800_bbp_dcoc_write(struct rt2x00_dev *rt2x00dev,
++				  const u8 reg, const u8 value)
++{
++	rt2800_bbp_write(rt2x00dev, 158, reg);
++	rt2800_bbp_write(rt2x00dev, 159, value);
++}
++
++static u8 rt2800_bbp_dcoc_read(struct rt2x00_dev *rt2x00dev, const u8 reg)
++{
++	rt2800_bbp_write(rt2x00dev, 158, reg);
++	return rt2800_bbp_read(rt2x00dev, 159);
++}
++
++static void rt2800_bbp_glrt_write(struct rt2x00_dev *rt2x00dev,
++				  const u8 reg, const u8 value)
++{
++	rt2800_bbp_write(rt2x00dev, 195, reg);
++	rt2800_bbp_write(rt2x00dev, 196, value);
++}
++
+ static u8 rt2800_rfcsr_read(struct rt2x00_dev *rt2x00dev,
+ 			    const unsigned int word)
+ {
+@@ -6955,26 +6975,6 @@ static void rt2800_init_bbp_5592(struct
+ 		rt2800_bbp_write(rt2x00dev, 103, 0xc0);
+ }
+ 
+-static void rt2800_bbp_glrt_write(struct rt2x00_dev *rt2x00dev,
+-				  const u8 reg, const u8 value)
+-{
+-	rt2800_bbp_write(rt2x00dev, 195, reg);
+-	rt2800_bbp_write(rt2x00dev, 196, value);
+-}
+-
+-static void rt2800_bbp_dcoc_write(struct rt2x00_dev *rt2x00dev,
+-				  const u8 reg, const u8 value)
+-{
+-	rt2800_bbp_write(rt2x00dev, 158, reg);
+-	rt2800_bbp_write(rt2x00dev, 159, value);
+-}
+-
+-static u8 rt2800_bbp_dcoc_read(struct rt2x00_dev *rt2x00dev, const u8 reg)
+-{
+-	rt2800_bbp_write(rt2x00dev, 158, reg);
+-	return rt2800_bbp_read(rt2x00dev, 159);
+-}
+-
+ static void rt2800_init_bbp_6352(struct rt2x00_dev *rt2x00dev)
+ {
+ 	u8 bbp;
