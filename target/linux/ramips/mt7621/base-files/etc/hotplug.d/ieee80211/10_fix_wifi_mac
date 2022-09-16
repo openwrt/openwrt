@@ -10,6 +10,15 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
+	arcadyan,wg630223)
+		hw_mac_addr=$(mtd_get_mac_encrypted_arcadyan "board_data" "42583038694070636D5964652324252A")
+		hw_mac_addr=$(macaddr_setbit $hw_mac_addr 7)
+		hw_mac_addr=$(macaddr_unsetbit $hw_mac_addr 25)
+		hw_mac_addr=$(macaddr_setbit $hw_mac_addr 28)
+		[ "$PHYNBR" = "0" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
+		hw_mac_addr=$(macaddr_setbit $hw_mac_addr 27)
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
+		;;
 	beeline,smartbox-flash)
 		hw_mac_addr=$(macaddr_add $(mtd_get_mac_encrypted_arcadyan "board_data" "2A4B303D7644395C3B2B7053553C5200") 1)
 		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress

@@ -195,6 +195,26 @@ define Device/ampedwireless_ally-00x19k
 endef
 TARGET_DEVICES += ampedwireless_ally-00x19k
 
+define Device/arcadyan_wg630223
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Arcadyan
+  DEVICE_MODEL := WG630223
+  IMAGE_SIZE := 24576k
+  KERNEL_SIZE := 4352k
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb \
+	    | arcadyan-trx 0x30524448 | pad-to $$(KERNEL_SIZE)
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+		      fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  IMAGES += factory.trx
+  IMAGE/factory.trx := append-kernel | append-ubi | check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e uboot-envtools uencrypt
+endef
+TARGET_DEVICES += arcadyan_wg630223
+
 define Device/asiarf_ap7621-001
   $(Device/dsa-migration)
   IMAGE_SIZE := 16000k

@@ -48,6 +48,7 @@ ramips_setup_interfaces()
 	winstars,ws-wn583a6)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
+	arcadayan,wg630223|\
 	asiarf,ap7621-nv1|\
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
@@ -127,6 +128,11 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
+	arcadyan,wg630223)
+		label_mac=$(mtd_get_mac_encrypted_arcadyan "board_data" "42583038694070636D5964652324252A")
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add "$lan_mac" 3)
+		;;
 	ampedwireless,ally-00x19k)
 		lan_mac=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
 		label_mac=$lan_mac
