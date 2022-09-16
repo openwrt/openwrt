@@ -157,6 +157,7 @@ detect_mac80211() {
 		channel=""
 		htmode=""
 		ht_capab=""
+		cell_density=""
 
 		get_band_defaults "$dev"
 
@@ -165,6 +166,19 @@ detect_mac80211() {
 		path="$(iwinfo nl80211 path "$dev")"
 		if [ -x /usr/bin/readlink -a -h /sys/class/ieee80211/${dev} ]; then
 			product=`cat $(readlink -f /sys/class/ieee80211/${dev}/device)/uevent | grep PRODUCT= | cut -d= -f 2`
+			if [ -z "$product" ]; then
+				# {{ added by friendlyelec
+				# hack for intel ax200
+				driver=`cat $(readlink -f /sys/class/ieee80211/${dev}/device)/uevent | grep DRIVER= | cut -d= -f 2`
+				if [ $driver = "iwlwifi" ]; then
+					pci_id=`cat $(readlink -f /sys/class/ieee80211/${dev}/device)/uevent | grep PCI_ID= | cut -d= -f 2`
+					product="pcie-${driver}-${pci_id}"
+				elif [ $driver = "rtw_8822ce" ]; then
+					pci_id=`cat $(readlink -f /sys/class/ieee80211/${dev}/device)/uevent | grep PCI_ID= | cut -d= -f 2`
+					product="pcie-${driver}-${pci_id}"
+				fi
+				# }}
+			fi
 		else
 			product=""
 		fi
@@ -178,10 +192,27 @@ detect_mac80211() {
 		case "${product}" in
 		"bda/b812/210" | \
 		"bda/c820/200")
-			mode_band='g'
+			mode_band='2g'
 			ht_capab="set wireless.radio${devidx}.htmode=HT20"
 			channel=7
 			country="set wireless.radio${devidx}.country='00'"
+			;;
+
+		# ax200
+		"pcie-iwlwifi-8086:2723")
+			mode_band='2g'
+			ht_capab="set wireless.radio${devidx}.htmode=HT40"
+			channel=7
+			country=""
+			cell_density="set wireless.radio${devidx}.cell_density='0'"
+			;;
+
+		# rtl8822ce
+		"pcie-rtw_8822ce-10EC:C822")
+			mode_band='5g'
+			ht_capab="set wireless.radio${devidx}.htmode=VHT80"
+			channel=157
+			country="set wireless.radio${devidx}.country='CN'"
 			;;
 
 		"bda/8812/0")
@@ -218,7 +249,8 @@ detect_mac80211() {
 			set wireless.radio${devidx}.htmode=$htmode
 			${ht_capab}
 			${country}
-			set wireless.radio${devidx}.disabled=0
+			${cell_density}
+			set wireless.radio${devidx}.disabled=1
 
 			set wireless.default_radio${devidx}=wifi-iface
 			set wireless.default_radio${devidx}.device=radio${devidx}
