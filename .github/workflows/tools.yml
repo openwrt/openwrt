@@ -120,7 +120,7 @@ jobs:
       - name: Build tools
         run: |
           cd "$WORKPATH"
-          make tools/install -j$(nproc) BUILD_LOG=1
+          make tools/install -j1 V=s BUILD_LOG=1
 
       - name: Move logs to GITHUB_WORKSPACE
         if: always()
