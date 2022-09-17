@@ -64,7 +64,7 @@ endef
 TARGET_DEVICES += engenius_ews2910p
 
 define Device/hpe_1920-8g
-  $(Device/hpe_1920)
+  $(Build/hpe_1920)
   SOC := rtl8380
   DEVICE_MODEL := 1920-8G (JG920A)
   H3C_DEVICE_ID := 0x00010023
@@ -72,7 +72,7 @@ endef
 TARGET_DEVICES += hpe_1920-8g
 
 define Device/hpe_1920-16g
-  $(Device/hpe_1920)
+  $(Build/hpe_1920)
   SOC := rtl8382
   DEVICE_MODEL := 1920-16G (JG923A)
   H3C_DEVICE_ID := 0x00010026
@@ -80,7 +80,7 @@ endef
 TARGET_DEVICES += hpe_1920-16g
 
 define Device/hpe_1920-24g
-  $(Device/hpe_1920)
+  $(Build/hpe_1920)
   SOC := rtl8382
   DEVICE_MODEL := 1920-24G (JG924A)
   H3C_DEVICE_ID := 0x00010027

@@ -14,3 +14,14 @@ define Build/d-link_dgs-1210
         append-rootfs | pad-rootfs | pad-to 16 | check-size | \
         dlink-version | dlink-headers
 endef
+
+define Build/hpe_1920
+  DEVICE_VENDOR := HPE
+  IMAGE_SIZE := 29632k
+  BLOCKSIZE := 64k
+  H3C_PRODUCT_ID := 0x3c010501
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | 7z | h3c-image | h3c-vfs
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | relocate-kernel | 7z | h3c-image
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs | check-size | append-metadata
+endef
