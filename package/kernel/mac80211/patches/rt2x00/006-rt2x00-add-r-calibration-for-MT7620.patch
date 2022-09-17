@@ -1,32 +1,60 @@
-From b75efecd6473e6a044d214571c17cad8ae88ed42 Mon Sep 17 00:00:00 2001
-From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 8 Jan 2018 13:42:58 +0100
-Subject: [PATCH 05/16] rt2x00: add r calibration for MT7620
+From patchwork Sat Sep 17 20:27:41 2022
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-To: linux-wireless@vger.kernel.org,
-    Stanislaw Gruszka <stf_xl@wp.pl>,
-    Helmut Schaa <helmut.schaa@googlemail.com>
+X-Patchwork-Submitter: Daniel Golle <daniel@makrotopia.org>
+X-Patchwork-Id: 12979247
+X-Patchwork-Delegate: kvalo@adurom.com
+Return-Path: <linux-wireless-owner@kernel.org>
+Date: Sat, 17 Sep 2022 21:27:41 +0100
+From: Daniel Golle <daniel@makrotopia.org>
+To: linux-wireless@vger.kernel.org, Stanislaw Gruszka <stf_xl@wp.pl>,
+        Helmut Schaa <helmut.schaa@googlemail.com>
 Cc: Kalle Valo <kvalo@kernel.org>,
-    David S. Miller <davem@davemloft.net>,
-    Eric Dumazet <edumazet@google.com>,
-    Jakub Kicinski <kuba@kernel.org>,
-    Paolo Abeni <pabeni@redhat.com>,
-    Johannes Berg <johannes.berg@intel.com>
+        "David S. Miller" <davem@davemloft.net>,
+        Eric Dumazet <edumazet@google.com>,
+        Jakub Kicinski <kuba@kernel.org>,
+        Paolo Abeni <pabeni@redhat.com>,
+        Johannes Berg <johannes.berg@intel.com>
+Subject: [PATCH v3 06/16] rt2x00: add r calibration for MT7620
+Message-ID: 
+ <e0c34f233089bec4eb73826bc4f512166ee25934.1663445157.git.daniel@makrotopia.org>
+References: <cover.1663445157.git.daniel@makrotopia.org>
+MIME-Version: 1.0
+Content-Disposition: inline
+In-Reply-To: <cover.1663445157.git.daniel@makrotopia.org>
+Precedence: bulk
+List-ID: <linux-wireless.vger.kernel.org>
+X-Mailing-List: linux-wireless@vger.kernel.org
 
 From: Tomislav Požega <pozega.tomislav@gmail.com>
 
 Add r calibration code as found in mtk driver.
 
 Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
 ---
- .../net/wireless/ralink/rt2x00/rt2800lib.c    | 150 ++++++++++++++++++
- 1 file changed, 150 insertions(+)
+v2: use rt2800_wait_bbp_rf_ready()
 
+ drivers/net/wireless/ralink/rt2x00/rt2800.h   |   2 +
+ .../net/wireless/ralink/rt2x00/rt2800lib.c    | 133 ++++++++++++++++++
+ 2 files changed, 135 insertions(+)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
+@@ -1016,6 +1016,8 @@
+  */
+ #define MAC_STATUS_CFG			0x1200
+ #define MAC_STATUS_CFG_BBP_RF_BUSY	FIELD32(0x00000003)
++#define MAC_STATUS_CFG_BBP_RF_BUSY_TX	FIELD32(0x00000001)
++#define MAC_STATUS_CFG_BBP_RF_BUSY_RX	FIELD32(0x00000002)
+ 
+ /*
+  * PWR_PIN_CFG:
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -8483,6 +8483,155 @@ static void rt2800_rf_self_txdc_cal(stru
+@@ -8475,6 +8475,138 @@ static void rt2800_rf_self_txdc_cal(stru
  	rt2800_register_write(rt2x00dev, RF_BYPASS2, mac052c);
  }
  
@@ -54,8 +82,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	char d1 = 0, d2 = 0;
 +	u8 rfvalue;
 +	u32 MAC_RF_BYPASS0, MAC_RF_CONTROL0, MAC_PWR_PIN_CFG;
-+	u32 maccfg, macstatus;
-+	int i;
++	u32 maccfg;
 +
 +	saverfb0r1 = rt2800_rfcsr_read_bank(rt2x00dev, 0, 1);
 +	saverfb0r34 = rt2800_rfcsr_read_bank(rt2x00dev, 0, 34);
@@ -79,30 +106,14 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	maccfg &= (~0x04);
 +	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, maccfg);
 +
-+	for (i = 0; i < 10000; i++) {
-+		macstatus = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
-+		if (macstatus & 0x1)
-+			usleep_range(50, 100);
-+		else
-+			break;
-+	}
-+
-+	if (i == 10000)
++	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY_TX)))
 +		rt2x00_warn(rt2x00dev, "Wait MAC Tx Status to MAX !!!\n");
 +
 +	maccfg = rt2800_register_read(rt2x00dev, MAC_SYS_CTRL);
 +	maccfg &= (~0x04);
 +	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, maccfg);
 +
-+	for (i = 0; i < 10000; i++) {
-+		macstatus = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
-+		if (macstatus & 0x2)
-+			usleep_range(50, 100);
-+		else
-+			break;
-+		}
-+
-+	if (i == 10000)
++	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY_RX)))
 +		rt2x00_warn(rt2x00dev, "Wait MAC Rx Status to MAX !!!\n");
 +
 +	rfvalue = (MAC_RF_BYPASS0 | 0x3004);
@@ -182,7 +193,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
  static void rt2800_bbp_core_soft_reset(struct rt2x00_dev *rt2x00dev,
  				       bool set_bw, bool is_ht40)
  {
-@@ -9090,6 +9239,7 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -9082,6 +9214,7 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
  

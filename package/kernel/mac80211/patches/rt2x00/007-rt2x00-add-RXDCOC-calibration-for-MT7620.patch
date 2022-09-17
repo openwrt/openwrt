@@ -1,41 +1,54 @@
-From 865823b63f608ac024d326a465ba8fc1a28868cd Mon Sep 17 00:00:00 2001
-From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 8 Jan 2018 13:43:37 +0100
-Subject: [PATCH 06/16] rt2x00: add RXDCOC calibration for MT7620
+From patchwork Sat Sep 17 20:27:56 2022
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-To: linux-wireless@vger.kernel.org,
-    Stanislaw Gruszka <stf_xl@wp.pl>,
-    Helmut Schaa <helmut.schaa@googlemail.com>
+X-Patchwork-Submitter: Daniel Golle <daniel@makrotopia.org>
+X-Patchwork-Id: 12979248
+X-Patchwork-Delegate: kvalo@adurom.com
+Return-Path: <linux-wireless-owner@kernel.org>
+Date: Sat, 17 Sep 2022 21:27:56 +0100
+From: Daniel Golle <daniel@makrotopia.org>
+To: linux-wireless@vger.kernel.org, Stanislaw Gruszka <stf_xl@wp.pl>,
+        Helmut Schaa <helmut.schaa@googlemail.com>
 Cc: Kalle Valo <kvalo@kernel.org>,
-    David S. Miller <davem@davemloft.net>,
-    Eric Dumazet <edumazet@google.com>,
-    Jakub Kicinski <kuba@kernel.org>,
-    Paolo Abeni <pabeni@redhat.com>,
-    Johannes Berg <johannes.berg@intel.com>
+        "David S. Miller" <davem@davemloft.net>,
+        Eric Dumazet <edumazet@google.com>,
+        Jakub Kicinski <kuba@kernel.org>,
+        Paolo Abeni <pabeni@redhat.com>,
+        Johannes Berg <johannes.berg@intel.com>
+Subject: [PATCH v3 07/16] rt2x00: add RXDCOC calibration for MT7620
+Message-ID: 
+ <850b30f652e88de30d79e968af4eb47aa5bc2511.1663445157.git.daniel@makrotopia.org>
+References: <cover.1663445157.git.daniel@makrotopia.org>
+MIME-Version: 1.0
+Content-Disposition: inline
+In-Reply-To: <cover.1663445157.git.daniel@makrotopia.org>
+Precedence: bulk
+List-ID: <linux-wireless.vger.kernel.org>
+X-Mailing-List: linux-wireless@vger.kernel.org
 
 From: Tomislav Požega <pozega.tomislav@gmail.com>
 
 Add RXDCOC calibration code from mtk driver.
 
-Signed-off-by: Daniel Golle <daniel@makrotopia.org>
-[fixed typo reported by Serge Vasilugin <vasilugin@yandex.ru>]
 Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+[fixed typo reported by Serge Vasilugin <vasilugin@yandex.ru>]
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
 ---
- .../net/wireless/ralink/rt2x00/rt2800lib.c    | 65 +++++++++++++++++++
- 1 file changed, 65 insertions(+)
+ .../net/wireless/ralink/rt2x00/rt2800lib.c    | 60 +++++++++++++++++++
+ 1 file changed, 60 insertions(+)
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -8632,6 +8632,70 @@ static void rt2800_r_calibration(struct
+@@ -8607,6 +8607,65 @@ static void rt2800_r_calibration(struct
  	rt2800_register_write(rt2x00dev, PWR_PIN_CFG, MAC_PWR_PIN_CFG);
  }
  
 +static void rt2800_rxdcoc_calibration(struct rt2x00_dev *rt2x00dev)
 +{
 +	u8 bbpreg = 0;
-+	u32 macvalue = 0, macvalue1 = 0;
++	u32 macvalue = 0;
 +	u8 saverfb0r2, saverfb5r4, saverfb7r4, rfvalue;
 +	int i;
 +
@@ -52,13 +65,8 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	macvalue = rt2800_register_read(rt2x00dev, MAC_SYS_CTRL);
 +	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, 0x8);
 +
-+	for (i = 0; i < 10000; i++) {
-+		macvalue1 = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
-+		if (macvalue1 & 0x1)
-+			usleep_range(50, 100);
-+		else
-+			break;
-+	}
++	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY_TX)))
++		rt2x00_warn(rt2x00dev, "RF TX busy in RX RXDCOC calibration\n");
 +
 +	saverfb5r4 = rt2800_rfcsr_read_bank(rt2x00dev, 5, 4);
 +	saverfb7r4 = rt2800_rfcsr_read_bank(rt2x00dev, 7, 4);
@@ -99,7 +107,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
  static void rt2800_bbp_core_soft_reset(struct rt2x00_dev *rt2x00dev,
  				       bool set_bw, bool is_ht40)
  {
-@@ -9241,6 +9305,7 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -9216,6 +9275,7 @@ static void rt2800_init_rfcsr_6352(struc
  
  	rt2800_r_calibration(rt2x00dev);
  	rt2800_rf_self_txdc_cal(rt2x00dev);

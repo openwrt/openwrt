@@ -1,33 +1,51 @@
-From e02adea15f762d2add77b2b7714706f5c3c2f9c9 Mon Sep 17 00:00:00 2001
-From: Daniel Golle <daniel@makrotopia.org>
-Date: Thu, 11 Jan 2018 19:53:49 +0100
-Subject: [PATCH 09/16] rt2x00: add TX LOFT calibration for MT7620
+From patchwork Sat Sep 17 20:28:43 2022
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-To: linux-wireless@vger.kernel.org,
-    Stanislaw Gruszka <stf_xl@wp.pl>,
-    Helmut Schaa <helmut.schaa@googlemail.com>
+X-Patchwork-Submitter: Daniel Golle <daniel@makrotopia.org>
+X-Patchwork-Id: 12979251
+X-Patchwork-Delegate: kvalo@adurom.com
+Return-Path: <linux-wireless-owner@kernel.org>
+Date: Sat, 17 Sep 2022 21:28:43 +0100
+From: Daniel Golle <daniel@makrotopia.org>
+To: linux-wireless@vger.kernel.org, Stanislaw Gruszka <stf_xl@wp.pl>,
+        Helmut Schaa <helmut.schaa@googlemail.com>
 Cc: Kalle Valo <kvalo@kernel.org>,
-    David S. Miller <davem@davemloft.net>,
-    Eric Dumazet <edumazet@google.com>,
-    Jakub Kicinski <kuba@kernel.org>,
-    Paolo Abeni <pabeni@redhat.com>,
-    Johannes Berg <johannes.berg@intel.com>
+        "David S. Miller" <davem@davemloft.net>,
+        Eric Dumazet <edumazet@google.com>,
+        Jakub Kicinski <kuba@kernel.org>,
+        Paolo Abeni <pabeni@redhat.com>,
+        Johannes Berg <johannes.berg@intel.com>
+Subject: [PATCH v3 10/16] rt2x00: add TX LOFT calibration for MT7620
+Message-ID: 
+ <d9295a9138a1f552b648aacb84e1419d38f5c896.1663445157.git.daniel@makrotopia.org>
+References: <cover.1663445157.git.daniel@makrotopia.org>
+MIME-Version: 1.0
+Content-Disposition: inline
+In-Reply-To: <cover.1663445157.git.daniel@makrotopia.org>
+Precedence: bulk
+List-ID: <linux-wireless.vger.kernel.org>
+X-Mailing-List: linux-wireless@vger.kernel.org
 
 From: Tomislav Požega <pozega.tomislav@gmail.com>
 
 Add TX LOFT calibration from mtk driver.
 
 Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
- .../net/wireless/ralink/rt2x00/rt2800lib.c    | 922 ++++++++++++++++++
+v2: use helper functions, make tables static const, remove useless
+    debug prints
+v3: don't export function not used anywhere else
+Reported-by: kernel test robot <lkp@intel.com>
+
+ .../net/wireless/ralink/rt2x00/rt2800lib.c    | 902 ++++++++++++++++++
  .../net/wireless/ralink/rt2x00/rt2800lib.h    |  10 +
- 2 files changed, 932 insertions(+)
+ 2 files changed, 912 insertions(+)
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -9080,6 +9080,927 @@ restore_value:
+@@ -9041,6 +9041,907 @@ restore_value:
  	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, savemacsysctrl);
  }
  
@@ -298,8 +316,6 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +
 +	for (bidx = 5; bidx >= 0; bidx--) {
 +		for (iorq = 0; iorq <= 1; iorq++) {
-+			rt2x00_dbg(rt2x00dev, "\n========================================================\n");
-+
 +			if (idxf[iorq] == 0x20) {
 +				idx0 = 0x20;
 +				p0 = pf;
@@ -357,8 +373,6 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +
 +	for (bidx = 5; bidx >= 1; bidx--) {
 +		for (gop = 0; gop < 2; gop++) {
-+			rt2x00_dbg(rt2x00dev, "\n==============================================\n");
-+
 +			if (gop == 1 || bidx < 4) {
 +				if (gop == 0)
 +					iq_err = gerr;
@@ -500,7 +514,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	rt2800_rfcsr_write_bank(rt2x00dev, 7, 20, 0x20);
 +}
 +
-+void rt2800_loft_iq_calibration(struct rt2x00_dev *rt2x00dev)
++static void rt2800_loft_iq_calibration(struct rt2x00_dev *rt2x00dev)
 +{
 +	struct rf_reg_pair rf_store[CHAIN_NUM][13];
 +	u32 macorg1 = 0;
@@ -511,7 +525,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	u32 orig528 = 0;
 +	u32 orig52c = 0;
 +
-+	u32 savemacsysctrl = 0, mtxcycle = 0;
++	u32 savemacsysctrl = 0;
 +	u32 macvalue = 0;
 +	u32 mac13b8 = 0;
 +	u32 p0 = 0, p1 = 0;
@@ -520,17 +534,19 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	u8 rfvalue;
 +	u8 loft_dc_search_result[CHAIN_NUM][RF_ALC_NUM][2];
 +	u8 ger[CHAIN_NUM], per[CHAIN_NUM];
-+	u8 rf_gain[] = {0x00, 0x01, 0x02, 0x04, 0x08, 0x0c};
-+	u8 rfvga_gain_table[] = {0x24, 0x25, 0x26, 0x27, 0x28, 0x2c, 0x2d, 0x2e, 0x2f, 0x30,
-+				 0x31, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3F};
++
 +	u8 vga_gain[] = {14, 14};
-+	u8 bbp_2324gain[] = {0x16, 0x14, 0x12, 0x10, 0x0c, 0x08};
 +	u8 bbp = 0, ch_idx = 0, rf_alc_idx = 0, idx = 0;
 +	u8 bbpr30, rfb0r39, rfb0r42;
 +	u8 bbpr1;
 +	u8 bbpr4;
 +	u8 bbpr241, bbpr242;
 +	u8 count_step;
++
++	static const u8 rf_gain[] = {0x00, 0x01, 0x02, 0x04, 0x08, 0x0c};
++	static const u8 rfvga_gain_table[] = {0x24, 0x25, 0x26, 0x27, 0x28, 0x2c, 0x2d, 0x2e, 0x2f, 0x30,
++					      0x31, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3F};
++	static const u8 bbp_2324gain[] = {0x16, 0x14, 0x12, 0x10, 0x0c, 0x08};
 +
 +	savemacsysctrl = rt2800_register_read(rt2x00dev, MAC_SYS_CTRL);
 +	macorg1 = rt2800_register_read(rt2x00dev, TX_PIN_CFG);
@@ -546,25 +562,15 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	macvalue &= (~0x04);
 +	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, macvalue);
 +
-+	for (mtxcycle = 0; mtxcycle < 10000; mtxcycle++) {
-+		macvalue = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
-+		if (macvalue & 0x01)
-+			usleep_range(50, 100);
-+		else
-+			break;
-+	}
++	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY_TX)))
++		rt2x00_warn(rt2x00dev, "RF TX busy in LOFT IQ calibration\n");
 +
 +	macvalue = rt2800_register_read(rt2x00dev, MAC_SYS_CTRL);
 +	macvalue &= (~0x08);
 +	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, macvalue);
 +
-+	for (mtxcycle = 0; mtxcycle < 10000; mtxcycle++) {
-+		macvalue = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
-+		if (macvalue & 0x02)
-+			usleep_range(50, 100);
-+		else
-+			break;
-+	}
++	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY_RX)))
++		rt2x00_warn(rt2x00dev, "RF RX busy in LOFT IQ calibration\n");
 +
 +	for (ch_idx = 0; ch_idx < 2; ch_idx++)
 +		rt2800_rf_configstore(rt2x00dev, rf_store, ch_idx);
@@ -742,24 +748,16 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	macvalue = rt2800_register_read(rt2x00dev, MAC_SYS_CTRL);
 +	macvalue &= (~0x04);
 +	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, macvalue);
-+	for (mtxcycle = 0; mtxcycle < 10000; mtxcycle++) {
-+		macvalue = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
-+		if (macvalue & 0x01)
-+			usleep_range(50, 100);
-+		else
-+			break;
-+	}
++
++	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY_TX)))
++		rt2x00_warn(rt2x00dev, "RF TX busy in LOFT IQ calibration\n");
 +
 +	macvalue = rt2800_register_read(rt2x00dev, MAC_SYS_CTRL);
 +	macvalue &= (~0x08);
 +	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, macvalue);
-+	for (mtxcycle = 0; mtxcycle < 10000; mtxcycle++) {
-+		macvalue = rt2800_register_read(rt2x00dev, MAC_STATUS_CFG);
-+		if (macvalue & 0x02)
-+			usleep_range(50, 100);
-+		else
-+			break;
-+	}
++
++	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY_RX)))
++		rt2x00_warn(rt2x00dev, "RF RX busy in LOFT IQ calibration\n");
 +
 +	if (test_bit(CAPABILITY_EXTERNAL_PA_TX0, &rt2x00dev->cap_flags)) {
 +		rt2800_register_write(rt2x00dev, RF_CONTROL3, 0x00000101);
@@ -955,7 +953,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
  static void rt2800_bbp_core_soft_reset(struct rt2x00_dev *rt2x00dev,
  				       bool set_bw, bool is_ht40)
  {
-@@ -9692,6 +10613,7 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -9653,6 +10554,7 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rxdcoc_calibration(rt2x00dev);
  	rt2800_bw_filter_calibration(rt2x00dev, true);
  	rt2800_bw_filter_calibration(rt2x00dev, false);

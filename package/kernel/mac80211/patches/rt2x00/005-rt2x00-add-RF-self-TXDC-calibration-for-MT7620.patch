@@ -1,32 +1,48 @@
-From 21f2acf0f9e9da35fbdb96ee0aea97b02472030b Mon Sep 17 00:00:00 2001
-From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 8 Jan 2018 13:42:27 +0100
-Subject: [PATCH 04/16] rt2x00: add RF self TXDC calibration for MT7620
+From patchwork Sat Sep 17 20:27:26 2022
+Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-To: linux-wireless@vger.kernel.org,
-    Stanislaw Gruszka <stf_xl@wp.pl>,
-    Helmut Schaa <helmut.schaa@googlemail.com>
+X-Patchwork-Submitter: Daniel Golle <daniel@makrotopia.org>
+X-Patchwork-Id: 12979246
+X-Patchwork-Delegate: kvalo@adurom.com
+Return-Path: <linux-wireless-owner@kernel.org>
+Date: Sat, 17 Sep 2022 21:27:26 +0100
+From: Daniel Golle <daniel@makrotopia.org>
+To: linux-wireless@vger.kernel.org, Stanislaw Gruszka <stf_xl@wp.pl>,
+        Helmut Schaa <helmut.schaa@googlemail.com>
 Cc: Kalle Valo <kvalo@kernel.org>,
-    David S. Miller <davem@davemloft.net>,
-    Eric Dumazet <edumazet@google.com>,
-    Jakub Kicinski <kuba@kernel.org>,
-    Paolo Abeni <pabeni@redhat.com>,
-    Johannes Berg <johannes.berg@intel.com>
+        "David S. Miller" <davem@davemloft.net>,
+        Eric Dumazet <edumazet@google.com>,
+        Jakub Kicinski <kuba@kernel.org>,
+        Paolo Abeni <pabeni@redhat.com>,
+        Johannes Berg <johannes.berg@intel.com>
+Subject: [PATCH v3 05/16] rt2x00: add RF self TXDC calibration for MT7620
+Message-ID: 
+ <dbb6e5a0c12d6101477bd09e83253091d21512c9.1663445157.git.daniel@makrotopia.org>
+References: <cover.1663445157.git.daniel@makrotopia.org>
+MIME-Version: 1.0
+Content-Disposition: inline
+In-Reply-To: <cover.1663445157.git.daniel@makrotopia.org>
+Precedence: bulk
+List-ID: <linux-wireless.vger.kernel.org>
+X-Mailing-List: linux-wireless@vger.kernel.org
 
 From: Tomislav Požega <pozega.tomislav@gmail.com>
 
 Add TX self calibration based on mtk driver.
 
 Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
 ---
+v2: use ++i instead of i = i + 1 in loops
+
  .../net/wireless/ralink/rt2x00/rt2800lib.c    | 48 +++++++++++++++++++
  1 file changed, 48 insertions(+)
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -8436,6 +8436,53 @@ static void rt2800_init_rfcsr_5592(struc
+@@ -8428,6 +8428,53 @@ static void rt2800_init_rfcsr_5592(struc
  	rt2800_led_open_drain_enable(rt2x00dev);
  }
  
@@ -52,7 +68,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	rfb7r1_org = rt2800_rfcsr_read_bank(rt2x00dev, 7, 1);
 +
 +	rt2800_rfcsr_write_bank(rt2x00dev, 5, 1, 0x4);
-+	for (i = 0; i < 100; i = i + 1) {
++	for (i = 0; i < 100; ++i) {
 +		usleep_range(50, 100);
 +		rfvalue = rt2800_rfcsr_read_bank(rt2x00dev, 5, 1);
 +		if ((rfvalue & 0x04) != 0x4)
@@ -61,7 +77,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
 +	rt2800_rfcsr_write_bank(rt2x00dev, 5, 1, rfb5r1_org);
 +
 +	rt2800_rfcsr_write_bank(rt2x00dev, 7, 1, 0x4);
-+	for (i = 0; i < 100; i = i + 1) {
++	for (i = 0; i < 100; ++i) {
 +		usleep_range(50, 100);
 +		rfvalue = rt2800_rfcsr_read_bank(rt2x00dev, 7, 1);
 +		if ((rfvalue & 0x04) != 0x4)
@@ -80,7 +96,7 @@ Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
  static void rt2800_bbp_core_soft_reset(struct rt2x00_dev *rt2x00dev,
  				       bool set_bw, bool is_ht40)
  {
-@@ -9043,6 +9090,7 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -9035,6 +9082,7 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
  
