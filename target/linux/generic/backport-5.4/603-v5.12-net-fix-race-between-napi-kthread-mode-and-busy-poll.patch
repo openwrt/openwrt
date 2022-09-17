@@ -45,7 +45,7 @@ Cc: Hannes Frederic Sowa <hannes@stressinduktion.org>
  enum gro_result {
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3921,6 +3921,8 @@ static inline void ____napi_schedule(str
+@@ -3922,6 +3922,8 @@ static inline void ____napi_schedule(str
  		 */
  		thread = READ_ONCE(napi->thread);
  		if (thread) {
@@ -54,7 +54,7 @@ Cc: Hannes Frederic Sowa <hannes@stressinduktion.org>
  			wake_up_process(thread);
  			return;
  		}
-@@ -6081,7 +6083,8 @@ bool napi_complete_done(struct napi_stru
+@@ -6082,7 +6084,8 @@ bool napi_complete_done(struct napi_stru
  
  		WARN_ON_ONCE(!(val & NAPIF_STATE_SCHED));
  
@@ -64,7 +64,7 @@ Cc: Hannes Frederic Sowa <hannes@stressinduktion.org>
  
  		/* If STATE_MISSED was set, leave STATE_SCHED set,
  		 * because we will call napi->poll() one more time.
-@@ -6514,16 +6517,25 @@ static int napi_poll(struct napi_struct
+@@ -6515,16 +6518,25 @@ static int napi_poll(struct napi_struct
  
  static int napi_thread_wait(struct napi_struct *napi)
  {

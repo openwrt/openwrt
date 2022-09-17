@@ -21,7 +21,7 @@ Signed-off-by: Peter Chen <peter.chen@nxp.com>
 
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -193,7 +193,7 @@ int xhci_reset(struct xhci_hcd *xhci, u6
+@@ -195,7 +195,7 @@ int xhci_reset(struct xhci_hcd *xhci, u6
  	 * Without this delay, the subsequent HC register access,
  	 * may result in a system hang very rarely.
  	 */

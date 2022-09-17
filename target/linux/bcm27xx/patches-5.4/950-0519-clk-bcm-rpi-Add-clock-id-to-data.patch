@@ -44,7 +44,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 -					 &val);
 +					 data->id, &val);
  	if (ret)
- 		return ret;
+ 		return 0;
  
 @@ -133,8 +133,7 @@ static int raspberrypi_fw_pll_set_rate(s
  
