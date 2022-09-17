@@ -560,34 +560,22 @@ static void rtl839x_l2_learning_setup(void)
 
 static void rtl839x_enable_learning(int port, bool enable)
 {
-	// Limit learning to maximum: 32k entries, after that just flood (bits 0-1)
+	// Limit learning to maximum: 32k entries
 
-	if (enable) {
-		// flood after 32k entries
-		sw_w32((0x7fff << 2) | 0, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
-	} else {
-		// just forward
-		sw_w32(0, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
-	}
-
+	sw_w32_mask(0x7fff << 2, enable ? (0x7fff << 2) : 0,
+		    RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
 }
 
 static void rtl839x_enable_flood(int port, bool enable)
 {
-	u32 flood_mask = sw_r32(RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
-
-	if (enable)  {
-		// flood
-		flood_mask &= ~3;
-		flood_mask |= 0;
-		sw_w32(flood_mask, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
-	} else {
-		// drop (bit 1)
-		flood_mask &= ~3;
-		flood_mask |= 1;
-		sw_w32(flood_mask, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
-	}
-
+	/*
+	 * 0: Forward
+	 * 1: Disable
+	 * 2: to CPU
+	 * 3: Copy to CPU
+	 */
+	sw_w32_mask(0x3, enable ? 0 : 1,
+		    RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
 }
 
 static void rtl839x_enable_mcast_flood(int port, bool enable)
