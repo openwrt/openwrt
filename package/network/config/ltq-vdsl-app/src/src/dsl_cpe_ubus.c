@@ -571,6 +571,20 @@ static void band_plan_status(int fd, profile_t *profile) {
 #endif
 }
 
+static void line_loop_length(int fd) {
+	DSL_LoopLengthStatus_t in_out;
+	DSL_uint32_t avg;
+
+	memset(&in_out, 0, sizeof(DSL_LoopLengthStatus_t));
+	in_out.nUnit = DSL_UNIT_METER;
+	if (ioctl(fd, DSL_FIO_LOOP_LENGTH_STATUS_GET, &in_out))
+		return;
+
+	avg = (in_out.data.nLength_Awg24 + in_out.data.nLength_Awg26) / 2;
+	m_u32("loop_length", avg);
+	m_u32("loop_length_err", avg - in_out.data.nLength_Awg26);
+}
+
 static void line_feature_config(int fd, DSL_AccessDir_t direction) {
 	IOCTL_DIR(DSL_LineFeature_t, DSL_FIO_LINE_FEATURE_STATUS_GET, direction)
 
@@ -767,6 +781,8 @@ static int metrics(struct ubus_context *ctx, struct ubus_object *obj,
 	}
 
 	describe_mode(standard, profile, vector);
+
+	line_loop_length(fd);
 
 	c = blobmsg_open_table(&b, "upstream");
 	switch (vector) {
