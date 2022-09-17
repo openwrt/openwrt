@@ -402,6 +402,8 @@ define Device/asus_rp-ac51
   DEVICE_MODEL := RP-AC51
   IMAGE_SIZE := 16000k
   IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct \
 	-swconfig
 endef
