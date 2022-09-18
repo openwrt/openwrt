@@ -29,6 +29,28 @@ extern const char __appended_dtb;
 struct rtl83xx_soc_info soc_info;
 const void *fdt;
 
+#ifdef CONFIG_MIPS_MT_SMP
+extern const struct plat_smp_ops vsmp_smp_ops;
+
+static void rtl_init_secondary(void)
+{
+/*
+ * MIPS timer interrupt might fire like crazy if not used or initialized
+ * properly. Silence it by setting the maximum possible interval.
+ */
+	write_c0_compare(0);
+/*
+ * Enable all CPU interrupts, as everything is managed by the external
+ * controller. TODO: Standard vsmp_init_secondary() has special treatment for
+ * Malta if external GIC is available. Maybe we need this too.
+ */
+	if (mips_gic_present())
+		pr_warn("%s: GIC present. Maybe interrupt enabling required.\n", __func__);
+	else
+		set_c0_status(ST0_IM);
+}
+#endif
+
 const char *get_system_type(void)
 {
 	return soc_info.name;
@@ -193,15 +215,19 @@ void __init prom_init(void)
 
 	prom_init_cmdline();
 
-#ifdef  CONFIG_MIPS_CPS
-	if (!register_cps_smp_ops()) {
+	if (!register_cps_smp_ops())
 		return;
-	}
-#endif
+
 #ifdef CONFIG_MIPS_MT_SMP
-	if (!register_vsmp_smp_ops()) {
+	if (cpu_has_mipsmt) {
+		struct plat_smp_ops rtl_smp_ops;
+
+		rtl_smp_ops = vsmp_smp_ops;
+		rtl_smp_ops.init_secondary = rtl_init_secondary;
+		register_smp_ops(&rtl_smp_ops);
 		return;
 	}
 #endif
+
 	register_up_smp_ops();
 }
