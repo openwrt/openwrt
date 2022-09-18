@@ -395,6 +395,15 @@ define Device/aruba_ap-105
 endef
 TARGET_DEVICES += aruba_ap-105
 
+define Device/aruba_ap-175
+  SOC := ar7161
+  DEVICE_VENDOR := Aruba
+  DEVICE_MODEL := AP-175
+  IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES := kmod-gpio-pca953x kmod-hwmon-lm75 kmod-i2c-gpio kmod-rtc-ds1374
+endef
+TARGET_DEVICES += aruba_ap-175
+
 define Device/asus_pl-ac56
   SOC := qca9563
   DEVICE_VENDOR := ASUS
