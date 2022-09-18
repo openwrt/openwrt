@@ -184,12 +184,12 @@ define Build/CoreTargets
   $(call Build/Autoclean)
   $(call DefaultTargets)
 
-  $(call check_download_integrity)
-
   download:
 	$(foreach hook,$(Hooks/Download),
 		$(call $(hook))$(sep)
 	)
+
+  $(call Download/Check)
 
   $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG)
   $(STAMP_PREPARED): $(STAMP_PREPARED_DEPENDS)

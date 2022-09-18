@@ -164,7 +164,7 @@ sub download
 
 		if ($? >> 8) {
 			print STDERR "Download failed.\n";
-			cleanup();
+			trash();
 			return;
 		}
 	}
@@ -176,13 +176,12 @@ sub download
 
 		if ($sum ne $file_hash) {
 			print STDERR "Hash of the downloaded file does not match (file: $sum, requested: $file_hash) - deleting download.\n";
-			cleanup();
+			trash();
 			return;
 		}
 	};
 
-	unlink "$target/$filename";
-	system("mv", "$target/$filename.dl", "$target/$filename");
+	system("mv", "-f", "$target/$filename.dl", "$target/$filename");
 	cleanup();
 }
 
@@ -190,6 +189,12 @@ sub cleanup
 {
 	unlink "$target/$filename.dl";
 	unlink "$target/$filename.hash";
+}
+
+sub trash
+{
+	cleanup();
+	unlink "$target/$filename";
 }
 
 @mirrors = localmirrors();
@@ -274,7 +279,7 @@ push @mirrors, 'https://sources.cdn.openwrt.org';
 push @mirrors, 'https://sources.openwrt.org';
 push @mirrors, 'https://mirror2.openwrt.org/sources';
 
-if (-f "$target/$filename") {
+if (-s "$target/$filename") {
 	$hash_cmd and do {
 		if (system("cat '$target/$filename' | $hash_cmd > '$target/$filename.hash'")) {
 			die "Failed to generate hash for $filename\n";
@@ -286,18 +291,18 @@ if (-f "$target/$filename") {
 
 		cleanup();
 		exit 0 if $sum eq $file_hash;
+		trash();
 
 		die "Hash of the local file $filename does not match (file: $sum, requested: $file_hash) - deleting download.\n";
-		unlink "$target/$filename";
 	};
 }
 
-while (!-f "$target/$filename") {
+while (! -s "$target/$filename") {
 	my $mirror = shift @mirrors;
 	$mirror or die "No more mirrors to try - giving up.\n";
 
 	download($mirror, $url_filename);
-	if (!-f "$target/$filename" && $url_filename ne $filename) {
+	if (! -s "$target/$filename" && $url_filename ne $filename) {
 		download($mirror, $filename);
 	}
 }
