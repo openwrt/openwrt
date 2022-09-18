@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-define Build/d-link_dgs-1210
+define Device/d-link_dgs-1210
   IMAGE_SIZE := 13824k
   DEVICE_VENDOR := D-Link
   DLINK_KERNEL_PART_SIZE := 1572864
@@ -11,11 +11,11 @@ define Build/d-link_dgs-1210
   CAMEO_BOARD_VERSION := 32
   IMAGES += factory_image1.bin
   IMAGE/factory_image1.bin := append-kernel | pad-to 64k | \
-        append-rootfs | pad-rootfs | pad-to 16 | check-size | \
-        dlink-version | dlink-headers
+	append-rootfs | pad-rootfs | pad-to 16 | check-size | \
+	dlink-version | dlink-headers
 endef
 
-define Build/hpe_1920
+define Device/hpe_1920
   DEVICE_VENDOR := HPE
   IMAGE_SIZE := 29632k
   BLOCKSIZE := 64k

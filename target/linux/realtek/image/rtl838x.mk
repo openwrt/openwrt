@@ -13,7 +13,7 @@ endef
 TARGET_DEVICES += allnet_all-sg8208m
 
 define Device/d-link_dgs-1210-10mp-f
-  $(Build/d-link_dgs-1210)
+  $(Device/d-link_dgs-1210)
   SOC := rtl8380
   DEVICE_MODEL := DGS-1210-10MP
   DEVICE_VARIANT := F
@@ -22,7 +22,7 @@ endef
 TARGET_DEVICES += d-link_dgs-1210-10mp-f
 
 define Device/d-link_dgs-1210-10p
-  $(Build/d-link_dgs-1210)
+  $(Device/d-link_dgs-1210)
   SOC := rtl8382
   DEVICE_MODEL := DGS-1210-10P
   DEVICE_PACKAGES += lua-rs232
@@ -30,21 +30,21 @@ endef
 TARGET_DEVICES += d-link_dgs-1210-10p
 
 define Device/d-link_dgs-1210-16
-  $(Build/d-link_dgs-1210)
+  $(Device/d-link_dgs-1210)
   SOC := rtl8382
   DEVICE_MODEL := DGS-1210-16
 endef
 TARGET_DEVICES += d-link_dgs-1210-16
 
 define Device/d-link_dgs-1210-20
-  $(Build/d-link_dgs-1210)
+  $(Device/d-link_dgs-1210)
   SOC := rtl8382
   DEVICE_MODEL := DGS-1210-20
 endef
 TARGET_DEVICES += d-link_dgs-1210-20
 
 define Device/d-link_dgs-1210-28
-  $(Build/d-link_dgs-1210)
+  $(Device/d-link_dgs-1210)
   SOC := rtl8382
   DEVICE_MODEL := DGS-1210-28
 endef
@@ -64,7 +64,7 @@ endef
 TARGET_DEVICES += engenius_ews2910p
 
 define Device/hpe_1920-8g
-  $(Build/hpe_1920)
+  $(Device/hpe_1920)
   SOC := rtl8380
   DEVICE_MODEL := 1920-8G (JG920A)
   H3C_DEVICE_ID := 0x00010023
@@ -72,7 +72,7 @@ endef
 TARGET_DEVICES += hpe_1920-8g
 
 define Device/hpe_1920-16g
-  $(Build/hpe_1920)
+  $(Device/hpe_1920)
   SOC := rtl8382
   DEVICE_MODEL := 1920-16G (JG923A)
   H3C_DEVICE_ID := 0x00010026
@@ -80,7 +80,7 @@ endef
 TARGET_DEVICES += hpe_1920-16g
 
 define Device/hpe_1920-24g
-  $(Build/hpe_1920)
+  $(Device/hpe_1920)
   SOC := rtl8382
   DEVICE_MODEL := 1920-24G (JG924A)
   H3C_DEVICE_ID := 0x00010027

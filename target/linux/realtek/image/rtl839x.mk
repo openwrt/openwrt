@@ -3,7 +3,7 @@
 include ./common.mk
 
 define Device/d-link_dgs-1210-52
-  $(Build/d-link_dgs-1210)
+  $(Device/d-link_dgs-1210)
   SOC := rtl8393
   DEVICE_MODEL := DGS-1210-52
 endef
