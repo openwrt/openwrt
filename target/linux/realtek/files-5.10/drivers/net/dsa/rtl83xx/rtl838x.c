@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+#include <linux/iopoll.h>
 #include <net/nexthop.h>
 
 #include "rtl83xx.h"
@@ -1805,20 +1806,15 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 
 int rtl838x_smi_wait_op(int timeout)
 {
-	unsigned long end = jiffies + usecs_to_jiffies(timeout);
+	int ret = 0;
+	u32 val;
 
-	while (1) {
-		if (!(sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & 0x1))
-			return 0;
+	ret = readx_poll_timeout(sw_r32, RTL838X_SMI_ACCESS_PHY_CTRL_1,
+				 val, !(val & 0x1), 20, timeout);
+	if (ret)
+		pr_err("%s: timeout\n", __func__);
 
-		if (time_after(jiffies, end))
-			break;
-
-		usleep_range(10, 20);
-	}
-
-	pr_err("rtl838x_smi_wait_op: timeout\n");
-	return -1;
+	return ret;
 }
 
 /*

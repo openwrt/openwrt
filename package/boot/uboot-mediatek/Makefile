@@ -291,7 +291,7 @@ endef
 
 define Build/Compile
 	$(call Build/Compile/U-Boot)
-ifeq ($(UBOOT_IMAGE),u-boot.fip))
+ifeq ($(UBOOT_IMAGE),u-boot.fip)
 	$(call Build/fip-image)
 endif
 endef

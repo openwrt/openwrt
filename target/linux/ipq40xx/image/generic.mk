@@ -640,6 +640,7 @@ define Device/linksys_ea6350v3
 	UBINIZE_OPTS := -E 5
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA6350v3
+	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea6350v3
 
@@ -656,6 +657,7 @@ define Device/linksys_ea8300
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA8300
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-linksys_ea8300 kmod-usb-ledtrig-usbport
+	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea8300
 
@@ -672,6 +674,7 @@ define Device/linksys_mr8300
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR8300
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-usb-ledtrig-usbport
+	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_mr8300
 

@@ -37,7 +37,7 @@
 	};
 
 #define SWITCH_PORT(n, s, m) \
-	port@##n { \
+	port##n: port@##n { \
 		reg = <##n>; \
 		label = SWITCH_PORT_LABEL(s) ; \
 		phy-handle = <&phy##n>; \
@@ -45,7 +45,7 @@
 	};
 
 #define SWITCH_SFP_PORT(n, s, m) \
-	port@##n { \
+	port##n: port@##n { \
 		reg = <##n>; \
 		label = SWITCH_PORT_LABEL(s) ; \
 		phy-handle = <&phy##n>; \

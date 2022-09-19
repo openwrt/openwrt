@@ -90,27 +90,6 @@ define Device/Default
 	check-size | append-metadata
 endef
 
-define Device/hpe_1920
-  DEVICE_VENDOR := HPE
-  IMAGE_SIZE := 29632k
-  BLOCKSIZE := 64k
-  H3C_PRODUCT_ID := 0x3c010501
-  KERNEL := kernel-bin | append-dtb | relocate-kernel | 7z | h3c-image | h3c-vfs
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | relocate-kernel | 7z | h3c-image
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
-  	pad-rootfs | check-size | append-metadata
-endef
-
-# "NGE" refers to the uImage magic
-define Device/netgear_nge
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
-  SOC := rtl8380
-  IMAGE_SIZE := 14848k
-  UIMAGE_MAGIC := 0x4e474520
-  DEVICE_VENDOR := NETGEAR
-endef
-
 include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))

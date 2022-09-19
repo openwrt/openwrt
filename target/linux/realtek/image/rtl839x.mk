@@ -1,5 +1,14 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
+include ./common.mk
+
+define Device/d-link_dgs-1210-52
+  $(Device/d-link_dgs-1210)
+  SOC := rtl8393
+  DEVICE_MODEL := DGS-1210-52
+endef
+TARGET_DEVICES += d-link_dgs-1210-52
+
 define Device/panasonic_m48eg-pn28480k
   SOC := rtl8393
   IMAGE_SIZE := 16384k

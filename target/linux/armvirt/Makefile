@@ -9,8 +9,7 @@ BOARDNAME:=QEMU ARM Virtual Machine
 FEATURES:=fpu pci rtc usb
 FEATURES+=cpiogz ext4 ramdisk squashfs targz
 
-KERNEL_PATCHVER:=5.10
-KERNEL_TESTING_PATCHVER:=5.15
+KERNEL_PATCHVER:=5.15
 
 include $(INCLUDE_DIR)/target.mk
 
