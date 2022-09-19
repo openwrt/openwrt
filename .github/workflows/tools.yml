@@ -6,6 +6,9 @@ on:
       - 'tools/**'
       - '.github/workflows/tools.yml'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: tools-${{ matrix.os }}
