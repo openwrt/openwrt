@@ -17,6 +17,7 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES+=libwolfsslcpu-crypto
 KERNELNAME:=Image
 
 $(eval $(call BuildTarget))
