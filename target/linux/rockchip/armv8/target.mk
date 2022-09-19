@@ -1,6 +1,7 @@
 ARCH:=aarch64
 SUBTARGET:=armv8
 BOARDNAME:=RK33xx boards (64 bit)
+DEFAULT_PACKAGES+=libwolfsslcpu-crypto
 
 define Target/Description
 	Build firmware image for Rockchip RK33xx devices.
