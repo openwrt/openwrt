@@ -56,6 +56,7 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-ahb-a000000.wifi.bin")
 	case "$board" in
+	glinet,gl-a1300 |\
 	qcom,ap-dk01.1-c1)
 		caldata_extract "ART" 0x1000 0x2f20
 		;;
@@ -147,6 +148,7 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-ahb-a800000.wifi.bin")
 	case "$board" in
+	glinet,gl-a1300 |\
 	qcom,ap-dk01.1-c1)
 		caldata_extract "ART" 0x5000 0x2f20
 		;;
