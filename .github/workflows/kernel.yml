@@ -7,6 +7,10 @@ on:
       - 'include/kernel-*'
       - 'package/kernel/**'
       - 'target/linux/generic/**'
+
+permissions:
+  contents: read
+
 jobs:
   determine_targets:
     name: Set targets
