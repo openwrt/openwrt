@@ -332,7 +332,11 @@
 	status = "disabled";
 };
 
-&ss_phy_0 {		/* USB3 port 0 SS phy */
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
 	status = "okay";
 
 	rx_eq = <2>;
@@ -340,12 +344,24 @@
 	mpll = <160>;
 };
 
-&ss_phy_1 {		/* USB3 port 1 SS phy */
+&usb3_0 {
+	status = "okay";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
 	status = "okay";
 
 	rx_eq = <2>;
 	tx_deamp_3_5db = <32>;
 	mpll = <160>;
+};
+
+&usb3_1 {
+	status = "okay";
 };
 
 &pcie0 {
@@ -450,14 +466,6 @@
 			bias-pull-up;
 		};
 	};
-};
-
-&usb3_0 {
-	status = "okay";
-};
-
-&usb3_1 {
-	status = "okay";
 };
 
 &tcsr {
