@@ -149,15 +149,18 @@ class Entry:
         self.fileext = ""
         self.filenoext = ""
 
-        for ext in extensions:
-            if filename.endswith(ext):
-                filename = filename[0 : 0 - len(ext)]
-                self.filenoext = filename
-                self.fileext = ext
-                break
+        if os.path.isdir(self.getPath()):
+            self.filenoext = filename
         else:
-            print(self.filename, "has an unknown file-extension")
-            raise EntryParseError("ext")
+            for ext in extensions:
+                if filename.endswith(ext):
+                    filename = filename[0 : 0 - len(ext)]
+                    self.filenoext = filename
+                    self.fileext = ext
+                    break
+            else:
+                print(self.filename, "has an unknown file-extension")
+                raise EntryParseError("ext")
         for (regex, parseVersion) in versionRegex:
             match = regex.match(filename)
             if match:
@@ -184,7 +187,10 @@ class Entry:
         path = self.getPath()
         print("Deleting", path)
         if not opt_dryrun:
-            os.unlink(path)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.unlink(path)
 
     def deleteBuildDir(self):
         paths = self.getBuildPaths()
@@ -301,6 +307,9 @@ def main(argv):
         lastVersion = None
         versions = progmap[prog]
         for version in versions:
+            if lastVersion:
+                if os.path.isdir(lastVersion.getPath()) and not os.path.isdir(version.getPath()):
+                    continue
             if lastVersion is None or version >= lastVersion:
                 lastVersion = version
         if lastVersion:
