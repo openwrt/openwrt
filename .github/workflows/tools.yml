@@ -5,6 +5,9 @@ on:
     paths:
       - 'tools/**'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build tools on ${{ matrix.os }}
