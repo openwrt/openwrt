@@ -1,3 +1,15 @@
+From: Jonas Gorski <jogo@openwrt.org>
+Subject: ar71xx: add a workaround for ar8316 not always driving the TA bit to low
+
+AR8316 behind a GPIO bitbanged MDIO bus fails to drive the turnaround bit
+to low despite returning a valid value. Ignore it and just use the
+returned value anyway.
+
+SVN-Revision: 28422
+---
+ drivers/net/mdio/mdio-bitbang.c               | 16 ++-----------------
+ 1 file changed, 2 insertions(+), 14 deletions(-)
+
 --- a/drivers/net/mdio/mdio-bitbang.c
 +++ b/drivers/net/mdio/mdio-bitbang.c
 @@ -152,7 +152,7 @@ static int mdiobb_cmd_addr(struct mdiobb

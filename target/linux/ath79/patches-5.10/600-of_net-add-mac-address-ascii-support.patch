@@ -1,3 +1,14 @@
+From: Yousong Zhou <yszhou4tech@gmail.com>
+Subject: [PATCH] ath79: add nvmem cell mac-address-ascii support
+
+This is needed for devices with mac address stored in ascii format, e.g.
+HiWiFi HC6361 to be ported in the following patch.
+
+Submitted-by: Yousong Zhou <yszhou4tech@gmail.com>
+---
+ net/ethernet/eth.c                            | 83 ++++++++++++------
+ 1 files changed, 72 insertions(+), 11 deletions(-)
+
 --- a/net/ethernet/eth.c
 +++ b/net/ethernet/eth.c
 @@ -545,6 +545,63 @@ int eth_platform_get_mac_address(struct

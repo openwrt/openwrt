@@ -1,3 +1,18 @@
+From: Daniel Golle <daniel@makrotopia.org>
+Subject: [PATCH] ath79: add support for Atheros AR934x HS UART
+
+AR934x chips also got the 'old' qca,ar9330-uart in addition to the
+'new' ns16550a compatible one. Add support for UART1 clock selector as
+well as device-tree bindings in ar934x.dtsi to make use of that uart.
+
+Reported-by: Piotr Dymacz <pepe2k@gmail.com>
+Submitted-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/mips/ath79/clock.c                       | 7 +++++++
+ .../mips/include/asm/mach-ath79/ar71xx_regs.h | 1 +
+ include/dt-bindings/clock/ath79-clk.h         | 3 ++-
+ 3 files changed, 10 insertions(+), 1 deletion(-)
+
 --- a/arch/mips/ath79/clock.c
 +++ b/arch/mips/ath79/clock.c
 @@ -40,6 +40,7 @@ static const char * const clk_names[ATH7

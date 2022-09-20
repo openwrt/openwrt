@@ -1,3 +1,14 @@
+From: Gabor Juhos <juhosg@openwrt.org>
+Subject: [PATCH] ar71xx: swizzle address for PCI byte/word access on AR71xx
+
+Closes #11683.
+
+SVN-Revision: 32639
+---
+ .../mips/include/asm/mach-ath79/mangle-port.h | 111 ++++++++++++++++++
+ 1 file changed, 111 insertions(+)
+ create mode 100644 arch/mips/include/asm/mach-ath79/mangle-port.h
+
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ath79/mangle-port.h
 @@ -0,0 +1,37 @@

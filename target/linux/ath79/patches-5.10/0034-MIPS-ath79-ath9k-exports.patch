@@ -1,3 +1,12 @@
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] ath79: make ahb wifi work
+
+Submitted-by: John Crispin <john@phrozen.org>
+---
+ arch/mips/ath79/common.c                      | 3 +++
+ mips/include/asm/mach-ath79/ath79.h           | 1+
+ 1 file changed, 4 insertions(+)
+
 --- a/arch/mips/ath79/common.c
 +++ b/arch/mips/ath79/common.c
 @@ -31,11 +31,13 @@ EXPORT_SYMBOL_GPL(ath79_ddr_freq);

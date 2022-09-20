@@ -1,3 +1,11 @@
+From: Gabor Juhos <juhosg@openwrt.org>
+Subject: [PATCH] ar71xx: Link SPI before MTD
+
+SVN-Revision: 22863
+---
+ drivers/Makefile                              |   2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
 @@ -81,8 +81,8 @@ obj-y				+= scsi/

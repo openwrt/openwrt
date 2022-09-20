@@ -1,3 +1,12 @@
+From: Gabor Juhos <juhosg@openwrt.org>
+Subject: ar71xx: ar934x_nfc: experimental NAND Flash Controller driver for AR934x
+
+SVN-Revision: 33385
+---
+ drivers/mtd/nand/raw/Kconfig                  | 8 ++++++++
+ drivers/mtd/nand/raw/Makefile                 | 1 +
+ 2 files changed, 9 insertions(+)
+
 --- a/drivers/mtd/nand/raw/Kconfig
 +++ b/drivers/mtd/nand/raw/Kconfig
 @@ -556,4 +556,12 @@ config MTD_NAND_DISKONCHIP_BBTWRITE
