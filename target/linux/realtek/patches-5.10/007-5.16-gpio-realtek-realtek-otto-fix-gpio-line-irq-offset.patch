@@ -1,4 +1,5 @@
-gpio: realtek-otto: fix GPIO line IRQ offset
+From: Sander Vanheule <sander@svanheule.net>
+Subject: gpio: realtek-otto: fix GPIO line IRQ offset
 
 The irqchip uses one domain for all GPIO lines, so th line offset should be
 determined w.r.t. the first line of the first port, not the first line of the

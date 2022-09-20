@@ -1,3 +1,17 @@
+From 6c18e9c491959ac0674ebe36b09f9ddc3f2c9bce Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Fri, 31 Dec 2021 11:56:49 +0100
+Subject: [PATCH] realtek: Add VPE support for the IRQ driver
+
+In order to support VSMP, enable support for both VPEs
+of the RTL839X and RTL930X SoCs in the irq-realtek-rtl
+driver. Add support for IRQ affinity setting.
+
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+---
+ drivers/irqchip/irq-realtek-rtl.c             | 152 +++++++++++++++---
+ 1 file changed, 73 insertions(+), 76 deletions(-)
+
 --- a/drivers/irqchip/irq-realtek-rtl.c
 +++ b/drivers/irqchip/irq-realtek-rtl.c
 @@ -21,21 +21,63 @@

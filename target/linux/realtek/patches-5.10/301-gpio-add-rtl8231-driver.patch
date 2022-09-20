@@ -1,3 +1,28 @@
+From 2b88563ee5aafd9571d965b7f2093a0f58d98a31 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Thu, 26 Nov 2020 12:02:21 +0100
+Subject: [PATCH] realtek: update the tree to the latest refactored version
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+* rename the target to realtek
+* add refactored DSA driver
+* add latest gpio driver
+* lots of arch cleanups
+* new irq driver
+* additional boards
+
+Submitted-by: Bert Vermeulen <bert@biot.com>
+Submitted-by: Birger Koblitz <mail@birger-koblitz.de>
+Submitted-by: Sander Vanheule <sander@svanheule.net>
+Submitted-by: Bjørn Mork <bjorn@mork.no>
+Submitted-by: John Crispin <john@phrozen.org>
+---
+ drivers/gpio/Kconfig                          |    6 ++++++
+ drivers/gpio/Makefile                         |    1 +
+ 2 files changed, 7 insertions(+)
+
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -508,6 +508,12 @@ config GPIO_REG

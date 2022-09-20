@@ -1,3 +1,21 @@
+From afa3ab54c03d5126b14651f367b38165fab5b3cc Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Tue, 18 Jan 2022 17:18:43 +0100
+Subject: net: brflood API
+
+Adds the DSA API for bridge configuration (flooding, L2 learning,
+and aging) offload as found in Linux 5.12 so that we can implement
+it in our drivver.
+
+Submitted-by: Sebastian Gottschall <s.gottschall@dd-wrt.com>
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+---
+ include/net/dsa.h                             |  6 +++++++--
+ net/dsa/dsa_priv.h                            |  6 +++---
+ net/dsa/port.c                                | 28 ++++++++----
+ net/dsa/slave.c                               |  6 +++---
+ 4 file changed, 29 insertions(+), 13 deletions(-)
+
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
 @@ -552,8 +552,14 @@ struct dsa_switch_ops {
