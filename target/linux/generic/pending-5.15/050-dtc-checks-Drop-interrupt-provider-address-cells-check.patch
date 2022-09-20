@@ -19,8 +19,6 @@ Signed-off-by: David Gibson <david@gibson.dropbear.id.au>
  		FAIL(c, dti, node,
  		     "Missing #interrupt-cells in interrupt provider");
 -
--	prop = get_property(node, "#address-cells");
--	if (!prop)
 -		FAIL(c, dti, node,
 -		     "Missing #address-cells in interrupt provider");
  }
