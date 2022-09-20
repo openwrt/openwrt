@@ -1,3 +1,25 @@
+From: Gabor Juhos <juhosg@openwrt.org>
+Subject: mtd: Add new Kconfig option for firmware partition split
+
+Add a new kernel config option for generic firmware partition
+split support and change the uImage split support to depend on
+the new option. Aslo rename the MTD_UIMAGE_SPLIT_NAME option to
+MTD_SPLIT_FIRMWARE_NAME to make it more generic.
+
+The patch is in preparation for multiple firmware format
+support.
+
+Submitted-by: Gabor Juhos <juhosg@openwrt.org>
+
+SVN-Revision: 38002
+---
+ drivers/mtd/Kconfig                           |  19 +
+ drivers/mtd/mtdpart.c                         | 144 +++++++++++++-----
+ include/linux/mtd/partitions.h                |   7 +
+ drivers/mtd/Makefile                          |   2 +
+ include/linux/mtd/mtd.h                       |  25 +
+ 5 files changed, 171 insertions(+), 25 deletions(-)
+
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
 @@ -12,6 +12,25 @@ menuconfig MTD

@@ -1,3 +1,43 @@
+From f32085fc0b87049491b07e198d924d738a1a2834 Mon Sep 17 00:00:00 2001
+From: Daniel Danzberger <daniel@dd-wrt.com>
+Date: Wed, 3 Aug 2022 17:31:03 +0200
+Subject: [PATCH] mtd: spinand: Add support for Etron EM73D044VCx
+
+Airoha is a new ARM platform based on Cortex-A53 which has recently been
+merged into linux-next.
+
+Due to BootROM limitations on this platform, the Cortex-A53 can't run in
+Aarch64 mode and code must be compiled for 32-Bit ARM.
+
+This support is based mostly on those linux-next commits backported
+for kernel 5.15.
+
+Patches:
+1 - platform support = linux-next
+2 - clock driver = linux-next
+3 - gpio driver = linux-next
+4 - linux,usable-memory-range dts support = linux-next
+5 - mtd spinand driver
+6 - spi driver
+7 - pci driver (kconfig only, uses mediatek PCI) = linux-next
+
+Still missing:
+- Ethernet driver
+- Sysupgrade support
+
+A.t.m there exists one subtarget EN7523 with only one evaluation
+board.
+
+The initramfs can be run with the following commands from u-boot:
+-
+u-boot> setenv bootfile \
+	openwrt-airoha-airoha_en7523-evb-initramfs-kernel.bin
+u-boot> tftpboot
+u-boot> bootm 0x81800000
+-
+
+Submitted-by: Daniel Danzberger <daniel@dd-wrt.com>
+
 --- a/drivers/mtd/nand/spi/Makefile
 +++ b/drivers/mtd/nand/spi/Makefile
 @@ -1,3 +1,3 @@

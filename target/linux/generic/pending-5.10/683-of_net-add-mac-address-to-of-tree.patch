@@ -1,3 +1,19 @@
+From: David Bauer <mail@david-bauer.net>
+Subject: of/net: Add MAC address to of tree
+
+The label-mac logic relies on the mac-address property of a netdev
+devices of-node. However, the mac address can also be stored as a
+different property or read from e.g. an mtd device.
+
+Create this node when reading a mac-address from OF if it does not
+already exist and copy the mac-address used for the device to this
+property. This way, the MAC address can be accessed using procfs.
+
+Submitted-by: David Bauer <mail@david-bauer.net>
+---
+ drivers/of/of_net.c                           | 22 ++++++++++++++
+ 1 files changed, 22 insertions(+)
+
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
 @@ -95,6 +95,27 @@ static int of_get_mac_addr_nvmem(struct

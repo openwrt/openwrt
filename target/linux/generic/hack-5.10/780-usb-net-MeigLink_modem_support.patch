@@ -1,3 +1,17 @@
+From: Daniel Golle <daniel@makrotopia.org>
+Subject: wwan: Add MeigLink SLM750 modem support
+
+Add patch found in Teltonika RUT9_R_00.07.01.4 GPL SDK download[1]
+adding USB IDs of the MeigLink SLM750 to the relevant kernel drivers.
+Newer versions of Teltonika's 2G/3G/4G RUT9XX WWAN router series come
+with this kind of modem.
+
+[1]: https://wiki.teltonika-networks.com/view/GPL
+Submitted-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/usb/qmi_wwan.c                    | 8 ++++++
+ 1 file changed, 8 insertions(+)
+
 --- a/drivers/net/usb/qmi_wwan.c
 +++ b/drivers/net/usb/qmi_wwan.c
 @@ -1024,6 +1024,7 @@ static const struct usb_device_id produc
