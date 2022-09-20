@@ -20,8 +20,7 @@ mediatek_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
-	ubnt,unifi-6-lr|\
-	ubnt,unifi-6-lr-ubootmod)
+	ubnt,unifi-6-lr*)
 		ucidef_set_interface_lan "eth0"
 		;;
 	xiaomi,redmi-router-ax6s)
