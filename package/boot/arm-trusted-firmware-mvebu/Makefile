@@ -97,6 +97,16 @@ define Trusted-Firmware-A/udpu
   PLAT:=a3700
 endef
 
+define Trusted-Firmware-A/edpu
+  NAME:=Methode eDPU
+  DEPENDS:=+u-boot-eDPU
+  BUILD_DEVICES:=methode_edpu
+  UBOOT:=eDPU
+  DDR_TOPOLOGY:=0
+  CLOCKSPRESET:=CPU_1000_DDR_800
+  PLAT:=a3700
+endef
+
 
 TFA_TARGETS:= \
 	espressobin-512mb \
@@ -105,7 +115,8 @@ TFA_TARGETS:= \
 	espressobin-v3-v5-2gb \
 	espressobin-v7-1gb \
 	espressobin-v7-2gb \
-	udpu
+	udpu \
+	edpu
 
 TFA_MAKE_FLAGS += \
 		CROSS_CM3=$(BUILD_DIR)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
