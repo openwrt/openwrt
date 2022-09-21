@@ -55,12 +55,18 @@ define U-Boot/uDPU
   BUILD_SUBTARGET:=cortexa53
 endef
 
+define U-Boot/eDPU
+  NAME:=Methode eDPU
+  BUILD_SUBTARGET:=cortexa53
+endef
+
 UBOOT_TARGETS:= \
 	clearfog \
 	helios4 \
 	omnia \
 	espressobin \
-	uDPU
+	uDPU \
+	eDPU
 
 define Package/u-boot/install
 	$(if $(findstring cortexa53,$(BUILD_SUBTARGET)),,$(Package/u-boot/install/default))
