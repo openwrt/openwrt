@@ -34,7 +34,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  		if (!chan_bw_allowed(chan, bw, 1, 1)) {
  			wpa_printf(MSG_DEBUG,
  				   "ACS: Channel %d: BW %u is not supported",
-@@ -1065,6 +1071,9 @@ static int * acs_request_scan_add_freqs(
+@@ -1067,6 +1073,9 @@ static int * acs_request_scan_add_freqs(
  		if (chan->max_tx_power < iface->conf->min_tx_power)
  			continue;
  

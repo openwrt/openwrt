@@ -2,8 +2,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xdp-tools
 PKG_RELEASE:=$(AUTORELEASE)
-PKG_VERSION:=1.2.6
-PKG_HASH:=e1bead15014adf404c1ae93b5bb24e6625840b4aadef6c1acfb47e0b99039f52
+PKG_VERSION:=1.2.8
+PKG_HASH:=2c575e5242e60055b0e7fc720f5b6ea87d74911f967dde3d50046d751f35bff0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/xdp-project/xdp-tools/tar.gz/v$(PKG_VERSION)?

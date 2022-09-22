@@ -11,11 +11,9 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  wpa_supplicant/ctrl_iface.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/wpa_supplicant/ctrl_iface.c b/wpa_supplicant/ctrl_iface.c
-index ac337e0f5..6e23114e6 100644
 --- a/wpa_supplicant/ctrl_iface.c
 +++ b/wpa_supplicant/ctrl_iface.c
-@@ -12185,7 +12185,7 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
+@@ -12241,7 +12241,7 @@ char * wpa_supplicant_ctrl_iface_process
  		if (wpas_ctrl_iface_coloc_intf_report(wpa_s, buf + 18))
  			reply_len = -1;
  #endif /* CONFIG_WNM */
@@ -24,7 +22,7 @@ index ac337e0f5..6e23114e6 100644
  	} else if (os_strncmp(buf, "DISASSOC_IMMINENT ", 18) == 0) {
  		if (ap_ctrl_iface_disassoc_imminent(wpa_s, buf + 18))
  			reply_len = -1;
-@@ -12195,7 +12195,7 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
+@@ -12251,7 +12251,7 @@ char * wpa_supplicant_ctrl_iface_process
  	} else if (os_strncmp(buf, "BSS_TM_REQ ", 11) == 0) {
  		if (ap_ctrl_iface_bss_tm_req(wpa_s, buf + 11))
  			reply_len = -1;
@@ -33,6 +31,3 @@ index ac337e0f5..6e23114e6 100644
  	} else if (os_strcmp(buf, "FLUSH") == 0) {
  		wpa_supplicant_ctrl_iface_flush(wpa_s);
  	} else if (os_strncmp(buf, "RADIO_WORK ", 11) == 0) {
--- 
-2.35.1
-

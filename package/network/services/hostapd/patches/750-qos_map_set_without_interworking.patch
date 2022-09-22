@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1598,6 +1598,8 @@ static int parse_anqp_elem(struct hostap
+@@ -1602,6 +1602,8 @@ static int parse_anqp_elem(struct hostap
  	return 0;
  }
  
@@ -9,7 +9,7 @@
  
  static int parse_qos_map_set(struct hostapd_bss_config *bss,
  			     char *buf, int line)
-@@ -1639,8 +1641,6 @@ static int parse_qos_map_set(struct host
+@@ -1643,8 +1645,6 @@ static int parse_qos_map_set(struct host
  	return 0;
  }
  
@@ -18,7 +18,7 @@
  
  #ifdef CONFIG_HS20
  static int hs20_parse_conn_capab(struct hostapd_bss_config *bss, char *buf,
-@@ -4042,10 +4042,10 @@ static int hostapd_config_fill(struct ho
+@@ -4046,10 +4046,10 @@ static int hostapd_config_fill(struct ho
  		bss->gas_frag_limit = val;
  	} else if (os_strcmp(buf, "gas_comeback_delay") == 0) {
  		bss->gas_comeback_delay = atoi(pos);
@@ -32,7 +32,7 @@
  		os_free(bss->dump_msk_file);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1423,6 +1423,7 @@ static int hostapd_setup_bss(struct host
+@@ -1424,6 +1424,7 @@ static int hostapd_setup_bss(struct host
  		wpa_printf(MSG_ERROR, "GAS server initialization failed");
  		return -1;
  	}
@@ -40,7 +40,7 @@
  
  	if (conf->qos_map_set_len &&
  	    hostapd_drv_set_qos_map(hapd, conf->qos_map_set,
-@@ -1430,7 +1431,6 @@ static int hostapd_setup_bss(struct host
+@@ -1431,7 +1432,6 @@ static int hostapd_setup_bss(struct host
  		wpa_printf(MSG_ERROR, "Failed to initialize QoS Map");
  		return -1;
  	}
@@ -81,7 +81,7 @@
  			   data->assoc_info.resp_ies_len, WLAN_EID_VHT_CAP))
 --- a/src/ap/ieee802_11_shared.c
 +++ b/src/ap/ieee802_11_shared.c
-@@ -1098,13 +1098,11 @@ u8 * hostapd_eid_rsnxe(struct hostapd_da
+@@ -1100,13 +1100,11 @@ u8 * hostapd_eid_rsnxe(struct hostapd_da
  u16 check_ext_capab(struct hostapd_data *hapd, struct sta_info *sta,
  		    const u8 *ext_capab_ie, size_t ext_capab_ie_len)
  {
