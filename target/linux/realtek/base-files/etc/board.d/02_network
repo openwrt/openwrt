@@ -20,7 +20,10 @@ ucidef_set_poe() {
 board=$(board_name)
 board_config_update
 
-lan_list=$(ls -1 -v -d /sys/class/net/lan* | xargs -n1 basename | xargs)
+# Busybox's 'sort' does not support -g sort, e.g. with a prefix, strip and readd
+port_list="$(for _port in '/sys/class/net/lan'[0-9]* ; do test -L "${_port:-}" && echo "${_port##*'/lan'} "; done | sort -n)"
+lan_list="$(for _port in ${port_list}; do printf "lan${_port} "; done)"
+
 ucidef_set_bridge_device
 ucidef_set_interface_lan "$lan_list"
 
