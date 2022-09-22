@@ -95,8 +95,6 @@ preinit_config_board() {
 		json_select "network_device"
 			json_select "$netdev"
 				json_get_vars path path
-				next_eth="$(echo "$netdev" | grep 'eth[0-9]*' | tr -dc '[0-9]')"
-				[ "$next_eth" -gt "$max_eth" ] && max_eth=$next_eth
 				if [ -n "$path" -a -h "/sys/class/net/$netdev" ]; then
 					ip link set "$netdev" down
 					ip link set "$netdev" name eth$((++max_eth))
