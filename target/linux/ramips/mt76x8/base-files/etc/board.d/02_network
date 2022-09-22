@@ -141,6 +141,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
+	oraybox,x1)
+		ucidef_add_switch "switch0" \
+			"3:lan" "6@eth0"
+		;;
 	rakwireless,rak633)
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
