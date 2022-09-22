@@ -21,7 +21,7 @@ board=$(board_name)
 board_config_update
 
 lan_list=$(ls -1 -v -d /sys/class/net/lan* | xargs -n1 basename | xargs)
-ucidef_set_bridge_device switch
+ucidef_set_bridge_device
 ucidef_set_interface_lan "$lan_list"
 
 lan_mac=""
