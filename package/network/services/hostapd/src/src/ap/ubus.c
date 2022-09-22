@@ -1983,6 +1983,20 @@ void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *
 	ubus_notify(ctx, &hapd->ubus.obj, type, b.head, -1);
 }
 
+void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *sta,
+				    const char *auth_alg)
+{
+	if (!hapd->ubus.obj.has_subscribers)
+		return;
+
+	blob_buf_init(&b, 0);
+	blobmsg_add_macaddr(&b, "address", sta->addr);
+	if (auth_alg)
+		blobmsg_add_string(&b, "auth-alg", auth_alg);
+
+	ubus_notify(ctx, &hapd->ubus.obj, "sta-authorized", b.head, -1);
+}
+
 void hostapd_ubus_notify_beacon_report(
 	struct hostapd_data *hapd, const u8 *addr, u8 token, u8 rep_mode,
 	struct rrm_measurement_beacon_report *rep, size_t len)

@@ -250,8 +250,62 @@
  		ap_free_sta(hapd, sta);
  		break;
  	}
-@@ -1329,6 +1331,7 @@ void ap_sta_set_authorized(struct hostap
- 					  buf, ip_addr, keyid_buf);
+@@ -1298,12 +1300,25 @@ void ap_sta_set_authorized(struct hostap
+ 					sta->addr, authorized, dev_addr);
+ 
+ 	if (authorized) {
++		static const char * const auth_algs[] = {
++			[WLAN_AUTH_OPEN] = "open",
++			[WLAN_AUTH_SHARED_KEY] = "shared",
++			[WLAN_AUTH_FT] = "ft",
++			[WLAN_AUTH_SAE] = "sae",
++			[WLAN_AUTH_FILS_SK] = "fils-sk",
++			[WLAN_AUTH_FILS_SK_PFS] = "fils-sk-pfs",
++			[WLAN_AUTH_FILS_PK] = "fils-pk",
++			[WLAN_AUTH_PASN] = "pasn",
++		};
++		const char *auth_alg = NULL;
+ 		const char *keyid;
+ 		char keyid_buf[100];
+ 		char ip_addr[100];
++		char alg_buf[100];
+ 
+ 		keyid_buf[0] = '\0';
+ 		ip_addr[0] = '\0';
++		alg_buf[0] = '\0';
+ #ifdef CONFIG_P2P
+ 		if (wpa_auth_get_ip_addr(sta->wpa_sm, ip_addr_buf) == 0) {
+ 			os_snprintf(ip_addr, sizeof(ip_addr),
+@@ -1313,22 +1328,31 @@ void ap_sta_set_authorized(struct hostap
+ 		}
+ #endif /* CONFIG_P2P */
+ 
++		if (sta->auth_alg < ARRAY_SIZE(auth_algs))
++			auth_alg = auth_algs[sta->auth_alg];
++
++		if (auth_alg)
++			os_snprintf(alg_buf, sizeof(alg_buf),
++				    " auth_alg=%s", auth_alg);
++
+ 		keyid = ap_sta_wpa_get_keyid(hapd, sta);
+ 		if (keyid) {
+ 			os_snprintf(keyid_buf, sizeof(keyid_buf),
+ 				    " keyid=%s", keyid);
+ 		}
+ 
+-		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_CONNECTED "%s%s%s",
+-			buf, ip_addr, keyid_buf);
++		hostapd_ubus_notify_authorized(hapd, sta, auth_alg);
++		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_CONNECTED "%s%s%s%s",
++			buf, ip_addr, keyid_buf, alg_buf);
+ 
+ 		if (hapd->msg_ctx_parent &&
+ 		    hapd->msg_ctx_parent != hapd->msg_ctx)
+ 			wpa_msg_no_global(hapd->msg_ctx_parent, MSG_INFO,
+-					  AP_STA_CONNECTED "%s%s%s",
+-					  buf, ip_addr, keyid_buf);
++					  AP_STA_CONNECTED "%s%s%s%s",
++					  buf, ip_addr, keyid_buf, alg_buf);
  	} else {
  		wpa_msg(hapd->msg_ctx, MSG_INFO, AP_STA_DISCONNECTED "%s", buf);
 +		hostapd_ubus_notify(hapd, "disassoc", sta->addr);
