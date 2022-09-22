@@ -176,6 +176,7 @@ define KernelPackage/hermes
   $(call KernelPackage/mac80211/Default)
   TITLE:=Hermes 802.11b chipset support
   DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-cfg80211 +@DRIVER_WEXT_SUPPORT +kmod-crypto-michael-mic
+  DEFAULT:=n
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/intersil/orinoco/orinoco.ko
   AUTOLOAD:=$(call AutoProbe,orinoco)
 endef
