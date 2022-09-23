@@ -226,6 +226,7 @@ define KernelPackage/lib80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=802.11 Networking stack
   DEPENDS:=+kmod-cfg80211 +kmod-crypto-hash +kmod-crypto-ccm
+  HIDDEN:=1
   FILES:= \
 	$(PKG_BUILD_DIR)/net/wireless/lib80211.ko \
 	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_wep.ko \
