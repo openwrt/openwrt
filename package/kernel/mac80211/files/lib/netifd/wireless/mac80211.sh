@@ -667,13 +667,28 @@ mac80211_iw_interface_add() {
 	return $rc
 }
 
+mac80211_set_ifname() {
+	local phy="$1"
+	local prefix="$2"
+	eval "ifname=\"$phy-$prefix\${idx_$prefix:-0}\"; idx_$prefix=\$((\${idx_$prefix:-0 } + 1))"
+}
+
 mac80211_prepare_vif() {
 	json_select config
 
 	json_get_vars ifname mode ssid wds powersave macaddr enable wpa_psk_file vlan_file
 
-	[ -n "$ifname" ] || ifname="wlan${phy#phy}${if_idx:+-$if_idx}"
-	if_idx=$((${if_idx:-0} + 1))
+	[ -n "$ifname" ] || {
+		local prefix;
+
+		case "$mode" in
+		ap|sta|mesh) prefix=$mode;;
+		adhoc) prefix=ibss;;
+		monitor) prefix=mon;;
+		esac
+
+		mac80211_set_ifname "$phy" "$prefix"
+	}
 
 	set_default wds 0
 	set_default powersave 0
