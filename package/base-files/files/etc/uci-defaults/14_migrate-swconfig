@@ -1,0 +1,72 @@
+findPorts()
+# Differentiate ports between user and cpu ports. Display DSA interface name of user ports.
+# Check compiled devicetree to do this.
+
+{
+	local port=$1
+
+	# Devicetree path is currently hardcoded for Linksys WRT32X.
+	# It should be changed to automatically find the "ports/port@" directory in "/proc/device-tree".
+	# Check dsa-port.yaml for other accepted node names like "ethernet-ports/ethernet-port@".
+
+	# A port may be missing from DSA bindings (it's usually the second CPU port), ignore these ports.
+	if [[ ! -d "/proc/device-tree/soc/internal-regs/mdio@72004/switch@0/ports/port@${port}" ]]
+	then
+	  return
+	fi
+
+	# Check if ethernet property exists to find CPU ports, only CPU ports use this property.
+	if [[ -f "/proc/device-tree/soc/internal-regs/mdio@72004/switch@0/ports/port@${port}/ethernet" ]]
+	then
+	  echo "${port} = cpu_port"
+
+	# If it doesn't exist, it must be a user port.
+	else
+	  echo "${port} = user_port"
+
+	  for user_port in ${port}
+	  do
+	    # Print the name of the DSA interface.
+	    echo "$(cat /proc/device-tree/soc/internal-regs/mdio@72004/switch@0/ports/port@${user_port}/label)"
+	  done
+	fi
+}
+
+findDSAInterfaces()
+# Read old UCI config with swconfig options.
+
+{
+#	echo "ports = ${ports}"
+#	echo "vlan = ${vlan}"
+	for port in ${ports}
+	do
+	  # swconfig configuration can either have a number or a number with "t" next to it.
+	  case $port in
+	  *t)
+#	    echo "tagged_port = ${port}"
+
+	    # string manipulation (substring removal) %*t prints before "t".
+	    # Feed this to findPorts with "t" removed.
+	    findPorts ${port%*t}
+	    ;;
+	  *)
+#	    echo "port = ${port}"
+	    findPorts ${port}
+	    ;;
+	  esac
+	done
+}
+
+validate_section_swconfig_ports()
+# Take related config options from UCI.
+{
+	uci_load_validate network-old switch_vlan "$1" "$2" \
+		'vlan:uinteger' \
+		'ports:string'
+}
+
+	. /lib/functions.sh
+	. /lib/functions/procd.sh
+
+	config_load "network-old"
+	config_foreach validate_section_swconfig_ports switch_vlan findDSAInterfaces
