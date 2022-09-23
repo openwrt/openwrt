@@ -165,31 +165,38 @@ detect_mac80211() {
 
 		get_band_defaults "$dev"
 
-		path="$(iwinfo nl80211 path "$dev")"
-		if [ -n "$path" ]; then
-			dev_id="set wireless.radio${devidx}.path='$path'"
-		else
-			dev_id="set wireless.radio${devidx}.macaddr=$(cat /sys/class/ieee80211/${dev}/macaddress)"
-		fi
+		name="radio${devidx}"
+		devidx=$(($devidx + 1))
+		case "$dev" in
+			phy*)
+				path="$(iwinfo nl80211 path "$dev")"
+				if [ -n "$path" ]; then
+					dev_id="set wireless.${name}.path='$path'"
+				else
+					dev_id="set wireless.${name}.macaddr=$(cat /sys/class/ieee80211/${dev}/macaddress)"
+				fi
+				;;
+			*)
+				dev_id="set wireless.${name}.phy='$dev'"
+				;;
+		esac
 
 		uci -q batch <<-EOF
-			set wireless.radio${devidx}=wifi-device
-			set wireless.radio${devidx}.type=mac80211
+			set wireless.${name}=wifi-device
+			set wireless.${name}.type=mac80211
 			${dev_id}
-			set wireless.radio${devidx}.channel=${channel}
-			set wireless.radio${devidx}.band=${mode_band}
-			set wireless.radio${devidx}.htmode=$htmode
-			set wireless.radio${devidx}.disabled=1
+			set wireless.${name}.channel=${channel}
+			set wireless.${name}.band=${mode_band}
+			set wireless.${name}.htmode=$htmode
+			set wireless.${name}.disabled=1
 
-			set wireless.default_radio${devidx}=wifi-iface
-			set wireless.default_radio${devidx}.device=radio${devidx}
-			set wireless.default_radio${devidx}.network=lan
-			set wireless.default_radio${devidx}.mode=ap
-			set wireless.default_radio${devidx}.ssid=OpenWrt
-			set wireless.default_radio${devidx}.encryption=none
+			set wireless.default_${name}=wifi-iface
+			set wireless.default_${name}.device=${name}
+			set wireless.default_${name}.network=lan
+			set wireless.default_${name}.mode=ap
+			set wireless.default_${name}.ssid=OpenWrt
+			set wireless.default_${name}.encryption=none
 EOF
 		uci -q commit wireless
-
-		devidx=$(($devidx + 1))
 	done
 }
