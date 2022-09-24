@@ -15,6 +15,7 @@ _C=0
 NO_EXPORT=1
 LOAD_STATE=1
 LIST_SEP=" "
+MTD_REGEX="mtd\([0-9]\+\):[[:space:]]*\([0-9A-Fa-f]\+\)[[:space:]]*\([0-9A-Fa-f]\+\)[[:space:]]*"
 
 # xor multiple hex values of the same length
 xor() {
@@ -316,10 +317,7 @@ include() {
 }
 
 find_mtd_index() {
-	local PART="$(grep "\"$1\"" /proc/mtd | awk -F: '{print $1}')"
-	local INDEX="${PART##mtd}"
-
-	echo ${INDEX}
+	sed -n "s|^${MTD_REGEX}\"${1:?}\"$|\1|p" '/proc/mtd'
 }
 
 find_mtd_part() {
