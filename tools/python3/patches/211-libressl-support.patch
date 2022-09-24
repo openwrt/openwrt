@@ -1,0 +1,27 @@
+--- a/Modules/_ssl.c
++++ b/Modules/_ssl.c
+@@ -67,6 +67,12 @@
+ #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
+ #endif
+ 
++#ifdef LIBRESSL_VERSION_NUMBER
++static int SSL_CTX_get_security_level(const SSL_CTX *ctx)
++{
++    return 1;
++}
++#endif
+ 
+ 
+ struct py_ssl_error_code {
+@@ -169,7 +175,11 @@ extern const SSL_METHOD *TLSv1_2_method(
+  * Based on Hynek's excellent blog post (update 2021-02-11)
+  * https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
+  */
++#ifndef LIBRESSL_VERSION_NUMBER
+   #define PY_SSL_DEFAULT_CIPHER_STRING "@SECLEVEL=2:ECDH+AESGCM:ECDH+CHACHA20:ECDH+AES:DHE+AES:!aNULL:!eNULL:!aDSS:!SHA1:!AESCCM"
++#else
++  #define PY_SSL_DEFAULT_CIPHER_STRING "ECDH+AESGCM:ECDH+CHACHA20:ECDH+AES:DHE+AES:!aNULL:!eNULL:!aDSS:!SHA1:!AESCCM"
++#endif
+   #ifndef PY_SSL_MIN_PROTOCOL
+     #define PY_SSL_MIN_PROTOCOL TLS1_2_VERSION
+   #endif
