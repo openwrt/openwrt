@@ -320,6 +320,22 @@ find_mtd_index() {
 	sed -n "s|^${MTD_REGEX}\"${1:?}\"$|\1|p" '/proc/mtd'
 }
 
+find_mtd_size() {
+	sed -n "s|^${MTD_REGEX}\"${1:?}\"$|0x\2|p" '/proc/mtd'
+}
+
+find_mtd_erasesize() {
+	sed -n "s|^${MTD_REGEX}\"${1:?}\"$|0x\3|p" '/proc/mtd'
+}
+
+find_mtd_env() {
+	if [ "${1:?}" != "${1#'/dev/mtd'}" ]; then
+		sed -n "s|^mtd${1#${1%%[0-9]*}}:[[:space:]]*\([0-9A-Fa-f]\+\)[[:space:]]*\([0-9A-Fa-f]\+\)[[:space:]]*\".*\"$|${1:?} ${2:-0x0} 0x\1 0x\2|p" '/proc/mtd'
+	else
+		sed -n "s|^${MTD_REGEX}\"${1:?}\"$|/dev/mtd\1 ${2:-0x0} 0x\2 0x\3|p" '/proc/mtd'
+	fi
+}
+
 find_mtd_part() {
 	local INDEX=$(find_mtd_index "$1")
 	local PREFIX=/dev/mtdblock
