@@ -6,13 +6,13 @@
 #
 include $(TOPDIR)/rules.mk
 
-PKG_NAME := cbootimage
-PKG_VERSION := 1.8
+PKG_NAME:=cbootimage
+PKG_VERSION:=1.8
+PKG_RELEASE:=1
 
-PKG_SOURCE_PROTO := git
-PKG_SOURCE_URL := https://github.com/NVIDIA/cbootimage.git
-PKG_SOURCE_VERSION := 7c9db585d06cce9efffa2a82245f233233680060
-PKG_MIRROR_HASH := e38b1e9581524fcabc7b24fff1c18d13f7e3a93accf73c55caf33832249bfd03
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/NVIDIA/cbootimage/tar.gz/v$(PKG_VERSION)?
+PKG_HASH:=46cce01f07df977668de9e1d49884d8ed539169994215606a9719d17b9db8804
 
 HOST_BUILD_PARALLEL := 1
 
