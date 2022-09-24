@@ -87,6 +87,21 @@ menu "Global build settings"
 	config DISPLAY_SUPPORT
 		bool "Show packages that require graphics support (local or remote)"
 
+	config BUILD_HOST_PYTHON
+		default BUILD_ALL_HOST_TOOLS
+		bool "Build python instead of requiring python to build"
+		help
+		  Instead of requiring python before building
+		  build a host copy of python
+
+	config HOST_PYTHON_MODULES
+		default n
+		bool "Install extra python modules"
+		imply BUILD_HOST_PYTHON
+		help
+		  Use pip to try to install extra modules
+		  after building a host copy of python
+
 	config BUILD_PATENTED
 		bool "Compile with support for patented functionality"
 		help

@@ -186,6 +186,7 @@ $(eval $(call SetupHostCommand,install,Please install 'install', \
 $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
 	perl --version | grep "perl.*v5"))
 
+ifneq ($(CONFIG_BUILD_HOST_PYTHON),y)
 $(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
 	python3.13 -V 2>&1 | grep 'Python 3', \
 	python3.12 -V 2>&1 | grep 'Python 3', \
@@ -214,6 +215,7 @@ $(eval $(call TestHostCommand,python3-distutils, \
 $(eval $(call TestHostCommand,python3-stdlib, \
 	Please install the Python3 stdlib module, \
 	$(STAGING_DIR_HOST)/bin/python3 -c 'import ntpath'))
+endif
 
 $(eval $(call SetupHostCommand,file,Please install the 'file' package, \
 	file --version 2>&1 | grep file))
