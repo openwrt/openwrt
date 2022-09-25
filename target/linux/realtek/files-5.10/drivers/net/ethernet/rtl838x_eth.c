@@ -116,7 +116,7 @@ static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 	// h->cpu_tag[1] |= BIT(1) | BIT(0); // Bypass filter 1/2
 	if (dest_port >= 32) {
 		dest_port -= 32;
-		h->cpu_tag[2] = BIT(dest_port) >> 16;
+		h->cpu_tag[2] |= (BIT(dest_port) >> 16) & 0xf;
 		h->cpu_tag[3] = BIT(dest_port) & 0xffff;
 	} else {
 		h->cpu_tag[4] = BIT(dest_port) >> 16;
