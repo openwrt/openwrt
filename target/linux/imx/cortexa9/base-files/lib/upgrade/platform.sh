@@ -46,7 +46,7 @@ platform_check_image() {
 	gw,imx6q-gw5910|\
 	gw,imx6q-gw5912|\
 	gw,imx6q-gw5913)
-		nand_do_platform_check $board $1
+		nand_do_platform_check "${board//,/_}" $1
 		return $?;
 		;;
 	toradex,apalis_imx6q-eval|\

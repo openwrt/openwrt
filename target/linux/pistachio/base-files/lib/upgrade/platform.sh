@@ -10,7 +10,7 @@ platform_check_image()
 {
 	local board=$(board_name)
 
-	nand_do_platform_check $board $1
+	nand_do_platform_check "${board//,/_}" $1
 	return $?
 }
 

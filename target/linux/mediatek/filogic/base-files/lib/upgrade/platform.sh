@@ -47,8 +47,8 @@ platform_check_image() {
 		return 0
 		;;
 	*)
-		nand_do_platform_check "$board" "$1"
-		return 0
+		nand_do_platform_check "${board//,/_}" "$1"
+		return $?
 		;;
 	esac
 

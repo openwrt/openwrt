@@ -72,7 +72,8 @@ platform_check_image() {
 	mediatek,mt7622-rfb1-ubi|\
 	totolink,a8000ru|\
 	xiaomi,redmi-router-ax6s)
-		nand_do_platform_check "$board" "$1"
+		nand_do_platform_check "${board//,/_}" "$1"
+		return $?
 		;;
 	*)
 		[ "$magic" != "d00dfeed" ] && {
