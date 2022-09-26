@@ -31,6 +31,7 @@ const void *fdt;
 
 #ifdef CONFIG_MIPS_MT_SMP
 extern const struct plat_smp_ops vsmp_smp_ops;
+static struct plat_smp_ops rtl_smp_ops;
 
 static void rtl_init_secondary(void)
 {
@@ -220,8 +221,6 @@ void __init prom_init(void)
 
 #ifdef CONFIG_MIPS_MT_SMP
 	if (cpu_has_mipsmt) {
-		struct plat_smp_ops rtl_smp_ops;
-
 		rtl_smp_ops = vsmp_smp_ops;
 		rtl_smp_ops.init_secondary = rtl_init_secondary;
 		register_smp_ops(&rtl_smp_ops);
