@@ -215,7 +215,15 @@ endef
 
 define Device/uimage-lzma-loader
   LOADER_TYPE := bin
-  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+  KERNEL/lzma-loader := kernel-bin | append-dtb | lzma | loader-kernel
+  KERNEL := $$(KERNEL/lzma-loader) | uImage none
+endef
+
+define Device/seama-lzma-loader
+  $(Device/seama)
+  $(Device/uimage-lzma-loader)
+  KERNEL := $$(KERNEL/lzma-loader) | relocate-kernel | lzma -a0
+  KERNEL_INITRAMFS := $$(KERNEL/lzma-loader) | uImage none
 endef
 
 include $(SUBTARGET).mk
