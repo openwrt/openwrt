@@ -804,7 +804,9 @@ dnsmasq_ipset_add() {
 	add_nftset() {
 		local IFS=,
 		for set in $1; do
-			local family=$(nft -t list set inet "$table" "$set" 2>&1 | sed -nre 's#^\t\ttype .*\bipv([46])_addr\b.*$#\1#p')
+			local family=$(echo "$set" | sed -nre 's#^.*[^0-9]([46])$#\1#p')
+			[ -n "$family" ] || \
+				family=$(nft -t list set inet "$table" "$set" 2>&1 | sed -nre 's#^\t\ttype .*\bipv([46])_addr\b.*$#\1#p')
 
 			[ -n "$family" ] || \
 				logger -t dnsmasq "Cannot infer address family from non-existent nftables set '$set'"
