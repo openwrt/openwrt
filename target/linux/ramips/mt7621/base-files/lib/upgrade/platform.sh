@@ -164,7 +164,9 @@ platform_do_upgrade() {
 		;;
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
-		platform_upgrade_ubnt_erx "$1"
+		CI_KERNPART="kernel1"
+		CI_KERNPART_EXT="kernel2"
+		nand_do_upgrade "$1"
 		;;
 	xwrt,wr1800k-ax-norplusemmc)
 		norplusemmc_do_upgrade "$1"
