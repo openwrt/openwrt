@@ -32,12 +32,10 @@ endef
 TARGET_DEVICES += belkin_f9k1109v1
 
 define Device/dlink_dir-645
-  $(Device/seama)
-  $(Device/uimage-lzma-loader)
+  $(Device/seama-lzma-loader)
   SOC := rt3662
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7872k
-  KERNEL := kernel-bin | append-dtb | lzma -d10
   SEAMA_SIGNATURE := wrgn39_dlob.hans_dir645
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-645
