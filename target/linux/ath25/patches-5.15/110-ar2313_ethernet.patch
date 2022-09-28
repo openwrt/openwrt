@@ -16,7 +16,7 @@
  	help
  	  If you have a network (Ethernet) card belonging to this class, say Y.
  
-@@ -87,4 +87,10 @@ config ALX
+@@ -88,4 +88,10 @@ config ALX
  	  To compile this driver as a module, choose M here.  The module
  	  will be called alx.
  
@@ -1518,7 +1518,7 @@
  
 --- a/arch/mips/ath25/ar5312.c
 +++ b/arch/mips/ath25/ar5312.c
-@@ -128,6 +128,10 @@ static void ar5312_irq_dispatch(void)
+@@ -127,6 +127,10 @@ static void ar5312_irq_dispatch(void)
  
  	if (pending & CAUSEF_IP2)
  		do_IRQ(AR5312_IRQ_WLAN0);
@@ -1529,7 +1529,7 @@
  	else if (pending & CAUSEF_IP5)
  		do_IRQ(AR5312_IRQ_WLAN1);
  	else if (pending & CAUSEF_IP6)
-@@ -161,6 +165,36 @@ void __init ar5312_arch_init_irq(void)
+@@ -160,6 +164,36 @@ void __init ar5312_arch_init_irq(void)
  	ar5312_misc_irq_domain = domain;
  }
  
@@ -1566,7 +1566,7 @@
  static struct physmap_flash_data ar5312_flash_data = {
  	.width = 2,
  };
-@@ -241,6 +275,7 @@ static void __init ar5312_flash_init(voi
+@@ -240,6 +274,7 @@ static void __init ar5312_flash_init(voi
  void __init ar5312_init_devices(void)
  {
  	struct ath25_boarddata *config;
@@ -1574,7 +1574,7 @@
  
  	ar5312_flash_init();
  
-@@ -264,8 +299,30 @@ void __init ar5312_init_devices(void)
+@@ -263,8 +298,30 @@ void __init ar5312_init_devices(void)
  
  	platform_device_register(&ar5312_gpio);
  
@@ -1605,7 +1605,7 @@
  		if (!ath25_board.radio)
  			return;
  
-@@ -274,8 +331,18 @@ void __init ar5312_init_devices(void)
+@@ -273,8 +330,18 @@ void __init ar5312_init_devices(void)
  
  		ath25_add_wmac(0, AR5312_WLAN0_BASE, AR5312_IRQ_WLAN0);
  		break;

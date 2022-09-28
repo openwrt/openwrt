@@ -11,7 +11,7 @@ FEATURES:=squashfs low_mem small_flash source-only
 SUBTARGETS:=generic
 
 KERNEL_PATCHVER:=5.10
-KERNEL_TESTING_PATCHVER:=5.10
+KERNEL_TESTING_PATCHVER:=5.15
 
 define Target/Description
 	Build firmware images for Atheros SoC boards
