@@ -70,29 +70,30 @@ sub hash_cmd() {
 	return undef;
 }
 
+sub tool_present {
+	my $tool_name = shift;
+	my $compare_line = shift;
+	my $present = 0;
+
+	if (open TOOL, "$tool_name --version 2>/dev/null |") {
+		if (defined(my $line = readline TOOL)) {
+			$present = 1 if $line =~ /^$compare_line /;
+		}
+		close TOOL;
+	}
+
+	return $present
+}
+
 sub download_cmd {
 	my $url = shift;
-	my $have_curl = 0;
-	my $have_aria2c = 0;
 	my $filename = shift;
 	my $additional_mirrors = join(" ", map "$_/$filename", @_);
 
 	my @chArray = ('a'..'z', 'A'..'Z', 0..9);
 	my $rfn = join '', "${filename}_", map{ $chArray[int rand @chArray] } 0..9;
-	if (open CURL, '-|', 'curl', '--version') {
-		if (defined(my $line = readline CURL)) {
-			$have_curl = 1 if $line =~ /^curl /;
-		}
-		close CURL;
-	}
-	if (open ARIA2C, '-|', 'aria2c', '--version') {
-		if (defined(my $line = readline ARIA2C)) {
-			$have_aria2c = 1 if $line =~ /^aria2 /;
-		}
-		close ARIA2C;
-	}
 
-	if ($have_aria2c) {
+	if (tool_present('aria2c', 'aria2')) {
 		@mirrors=();
 		return join(" ", "[ -d $ENV{'TMPDIR'}/aria2c ] || mkdir $ENV{'TMPDIR'}/aria2c;",
 			"touch $ENV{'TMPDIR'}/aria2c/${rfn}_spp;",
@@ -103,7 +104,7 @@ sub download_cmd {
 			"-d $ENV{'TMPDIR'}/aria2c -o $rfn;",
 			"cat $ENV{'TMPDIR'}/aria2c/$rfn;",
 			"rm $ENV{'TMPDIR'}/aria2c/$rfn $ENV{'TMPDIR'}/aria2c/${rfn}_spp");
-	} elsif ($have_curl) {
+	} elsif (tool_present('curl', 'curl')) {
 		return (qw(curl -f --connect-timeout 20 --retry 5 --location),
 			$check_certificate ? () : '--insecure',
 			shellwords($ENV{CURL_OPTIONS} || ''),
