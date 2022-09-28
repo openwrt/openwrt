@@ -69,4 +69,5 @@ define Device/mikrotik_wap-ac
 	SOC := qcom-ipq4018
 	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
 endef
-TARGET_DEVICES += mikrotik_wap-ac
+# Missing DSA Setup
+#TARGET_DEVICES += mikrotik_wap-ac
