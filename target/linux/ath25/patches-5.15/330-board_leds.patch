@@ -78,7 +78,7 @@
  #include <asm/bootinfo.h>
  #include <asm/reboot.h>
  #include <asm/time.h>
-@@ -229,6 +230,23 @@ static struct platform_device ar5312_gpi
+@@ -228,6 +229,23 @@ static struct platform_device ar5312_gpi
  	.num_resources = ARRAY_SIZE(ar5312_gpio_res),
  };
  
@@ -102,7 +102,7 @@
  static void __init ar5312_flash_init(void)
  {
  	void __iomem *flashctl_base;
-@@ -299,6 +317,11 @@ void __init ar5312_init_devices(void)
+@@ -298,6 +316,11 @@ void __init ar5312_init_devices(void)
  
  	platform_device_register(&ar5312_gpio);
  

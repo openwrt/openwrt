@@ -8,18 +8,18 @@
 +	if (!buf)
 +		return -ENOMEM;
 +
-+ restart:
- 	if ( directory < 0 ) {
++restart:
+ 	if (directory < 0) {
  		offset = master->size + directory * master->erasesize;
  		while (mtd_block_isbad(master, offset)) {
  			if (!offset) {
- 			nogood:
- 				printk(KERN_NOTICE "Failed to find a non-bad block to check for RedBoot partition table\n");
+ nogood:
+ 				pr_notice("Failed to find a non-bad block to check for RedBoot partition table\n");
 +				vfree(buf);
  				return -EIO;
  			}
  			offset -= master->erasesize;
-@@ -112,10 +118,6 @@ static int parse_redboot_partitions(stru
+@@ -112,10 +118,6 @@ nogood:
  				goto nogood;
  		}
  	}
@@ -28,9 +28,9 @@
 -	if (!buf)
 -		return -ENOMEM;
  
- 	printk(KERN_NOTICE "Searching for RedBoot partition table in %s at offset 0x%lx\n",
- 	       master->name, offset);
-@@ -188,6 +190,11 @@ static int parse_redboot_partitions(stru
+ 	pr_notice("Searching for RedBoot partition table in %s at offset 0x%lx\n",
+ 		  master->name, offset);
+@@ -187,6 +189,11 @@ nogood:
  	}
  	if (i == numslots) {
  		/* Didn't find it */
@@ -39,6 +39,6 @@
 +			directory++;
 +			goto restart;
 +		}
- 		printk(KERN_NOTICE "No RedBoot partition table detected in %s\n",
- 		       master->name);
+ 		pr_notice("No RedBoot partition table detected in %s\n",
+ 			  master->name);
  		ret = 0;
