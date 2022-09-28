@@ -75,7 +75,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	if (debug_dump_regs) {
  		struct drm_printer p = drm_info_printer(&dsi->pdev->dev);
  		dev_info(&dsi->pdev->dev, "DSI regs after:\n");
-@@ -1578,7 +1552,6 @@ static int vc4_dsi_bind(struct device *d
+@@ -1588,7 +1562,6 @@ static int vc4_dsi_bind(struct device *d
  	if (!vc4_dsi_encoder)
  		return -ENOMEM;
  
@@ -83,10 +83,10 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	vc4_dsi_encoder->base.type = dsi->variant->port ?
  			VC4_ENCODER_TYPE_DSI1 : VC4_ENCODER_TYPE_DSI0;
  	vc4_dsi_encoder->dsi = dsi;
-@@ -1718,12 +1691,6 @@ static int vc4_dsi_bind(struct device *d
- 		dev_err(dev, "bridge attach failed: %d\n", ret);
- 		goto err_free_dma;
- 	}
+@@ -1717,12 +1690,6 @@ static int vc4_dsi_bind(struct device *d
+ 	ret = drm_bridge_attach(dsi->encoder, dsi->out_bridge, NULL, 0);
+ 	if (ret)
+ 		return ret;
 -	/* Disable the atomic helper calls into the bridge.  We
 -	 * manually call the bridge pre_enable / enable / etc. calls
 -	 * from our driver, since we need to sequence them within the
@@ -96,9 +96,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	vc4_debugfs_add_regset32(drm, dsi->variant->debugfs_name, &dsi->regset);
  
-@@ -1753,11 +1720,6 @@ static void vc4_dsi_unbind(struct device
- 	if (dsi->out_bridge)
- 		pm_runtime_disable(dev);
+@@ -1738,11 +1705,6 @@ static void vc4_dsi_unbind(struct device
+ 
+ 	pm_runtime_disable(dev);
  
 -	/*
 -	 * Restore the bridge_chain so the bridge detach procedure can happen
@@ -106,5 +106,5 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 -	 */
 -	list_splice_init(&dsi->bridge_chain, &dsi->encoder->bridge_chain);
  	drm_encoder_cleanup(dsi->encoder);
+ }
  
- 	if (dsi->reg_dma_chan) {

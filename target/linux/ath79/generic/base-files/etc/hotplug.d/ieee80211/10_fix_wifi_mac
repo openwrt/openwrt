@@ -68,4 +68,12 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii u-boot-env ethaddr > /sys${DEVPATH}/macaddress
 		;;
+	zyxel,nwa1123-ac)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_text mib0 0x66 > /sys${DEVPATH}/macaddress
+		;;
+	zyxel,nwa1123-ni)
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_text mib0 0x66 > /sys${DEVPATH}/macaddress
+		;;
 esac

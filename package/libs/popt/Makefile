@@ -8,15 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=popt
-PKG_VERSION:=1.16
-PKG_RELEASE:=2
+PKG_VERSION:=1.18
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:= \
-	http://distfiles.gentoo.org/distfiles/ \
-	http://distcache.freebsd.org/ports-distfiles/ \
-	http://rpm5.org/files/popt/
-PKG_HASH:=e728ed296fe9f069a0e005003c3d6b2dde3d9cad453422a10d6558616d304cc8
+PKG_SOURCE_URL:=http://ftp.rpm.org/popt/releases/popt-1.x/
+PKG_HASH:=5159bc03a20b28ce363aa96765f37df99ea4d8850b1ece17d1e6ad5c24fdc5d1
 PKG_LICENSE:=MIT
 
 PKG_FIXUP:=autoreconf
@@ -33,7 +30,7 @@ define Package/libpopt
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=A command line option parsing library
-  URL:=http://rpm5.org/files/popt/
+  URL:=https://github.com/rpm-software-management/popt
   ABI_VERSION:=0
 endef
 

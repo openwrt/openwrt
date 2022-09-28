@@ -493,6 +493,18 @@ define Device/tplink_deco-m4r-v1
 endef
 TARGET_DEVICES += tplink_deco-m4r-v1
 
+define Device/tplink_deco-s4-v2
+  $(Device/tplink-safeloader-uimage)
+  SOC := qca9563
+  IMAGE_SIZE := 13824k
+  DEVICE_MODEL := Deco S4
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct uencrypt
+  SUPPORTED_DEVICES += deco-s4-v2
+  TPLINK_BOARD_ID := DECO-S4-V2
+endef
+TARGET_DEVICES += tplink_deco-s4-v2
+
 define Device/tplink_re350k-v1
   $(Device/tplink-safeloader)
   SOC := qca9558

@@ -65,6 +65,7 @@ config WPA_WOLFSSL
 
 config DRIVER_WEXT_SUPPORT
 	bool
+	select KERNEL_WIRELESS_EXT
 	default n
 
 config DRIVER_11N_SUPPORT

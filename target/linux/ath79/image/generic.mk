@@ -9,7 +9,7 @@ DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX DAP_SIGNATURE
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
-DEVICE_VARS += OPENMESH_CE_TYPE
+DEVICE_VARS += OPENMESH_CE_TYPE ZYXEL_MODEL_STRING
 
 define Build/add-elecom-factory-initramfs
   $(eval edimax_model=$(word 1,$(1)))
@@ -161,6 +161,13 @@ define Build/wrgg-pad-rootfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 64 >>$@
 endef
 
+define Build/zyxel-tar-bz2
+	mkdir -p $@.tmp
+	mv $@ $@.tmp/$(word 2,$(1))
+	cp $(KDIR)/loader-$(DEVICE_NAME).uImage $@.tmp/$(word 1,$(1)).lzma.uImage
+	$(TAR) -cjf $@ -C $@.tmp .
+	rm -rf $@.tmp
+endef
 
 define Device/seama
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
@@ -395,6 +402,8 @@ define Device/asus_rp-ac51
   DEVICE_MODEL := RP-AC51
   IMAGE_SIZE := 16000k
   IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct \
 	-swconfig
 endef
@@ -1270,6 +1279,16 @@ define Device/etactica_eg200
   SUPPORTED_DEVICES += rme-eg200
 endef
 TARGET_DEVICES += etactica_eg200
+
+define Device/extreme-networks_ws-ap3805i
+  SOC := qca9557
+  BLOCKSIZE := 256k
+  DEVICE_VENDOR := Extreme Networks
+  DEVICE_MODEL := WS-AP3805i
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 29440k
+endef
+TARGET_DEVICES += extreme-networks_ws-ap3805i
 
 define Device/glinet_6408
   $(Device/tplink-8mlzma)
@@ -2363,6 +2382,29 @@ define Device/rosinson_wr818
 endef
 TARGET_DEVICES += rosinson_wr818
 
+define Device/ruckus_zf73xx_common
+  DEVICE_VENDOR := Ruckus
+  DEVICE_PACKAGES := -swconfig kmod-usb2 kmod-usb-chipidea2
+  IMAGE_SIZE := 31744k
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+endef
+
+define Device/ruckus_zf7321
+  $(Device/ruckus_zf73xx_common)
+  SOC := ar9342
+  DEVICE_MODEL := ZoneFlex 7321[-U]
+endef
+TARGET_DEVICES += ruckus_zf7321
+
+define Device/ruckus_zf7372
+  $(Device/ruckus_zf73xx_common)
+  SOC := ar9344
+  DEVICE_MODEL := ZoneFlex 7352/7372[-E/-U]
+endef
+TARGET_DEVICES += ruckus_zf7372
+
 define Device/samsung_wam250
   SOC := ar9344
   DEVICE_VENDOR := Samsung
@@ -2549,6 +2591,49 @@ define Device/wallys_dr531
 endef
 TARGET_DEVICES += wallys_dr531
 
+define Device/watchguard_ap100
+  $(Device/senao_loader_okli)
+  SOC := ar9344
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := AP100
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-ap100
+  WATCHGUARD_MAGIC := 82kdlzk2
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+	check-size | senao-tar-gz $$$$(SENAO_IMGNAME) | watchguard-cksum $$$$(WATCHGUARD_MAGIC)
+endef
+TARGET_DEVICES += watchguard_ap100
+
+define Device/watchguard_ap200
+  $(Device/senao_loader_okli)
+  SOC := ar9344
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := AP200
+  IMAGE_SIZE := 12096k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-ap200
+  WATCHGUARD_MAGIC := 82kdlzk2
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+	check-size | senao-tar-gz $$$$(SENAO_IMGNAME) | watchguard-cksum $$$$(WATCHGUARD_MAGIC)
+endef
+TARGET_DEVICES += watchguard_ap200
+
+define Device/watchguard_ap300
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := WatchGuard
+  DEVICE_MODEL := AP300
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := senao-ap300
+  WATCHGUARD_MAGIC := 82kdlzk2
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
+	check-size | senao-tar-gz $$$$(SENAO_IMGNAME) | watchguard-cksum $$$$(WATCHGUARD_MAGIC)
+endef
+TARGET_DEVICES += watchguard_ap300
+
 define Device/wd_mynet-n600
   $(Device/seama)
   SOC := ar9344
@@ -2686,6 +2771,54 @@ define Device/zbtlink_zbt-wd323
 	kmod-usb-serial-cp210x uqmi
 endef
 TARGET_DEVICES += zbtlink_zbt-wd323
+
+define Device/zyxel_nwa11xx
+  $(Device/loader-okli-uimage)
+  SOC := ar9342
+  DEVICE_VENDOR := ZyXEL
+  LOADER_FLASH_OFFS := 0x050000
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGE_SIZE := 8192k
+  IMAGES += factory-$$$$(ZYXEL_MODEL_STRING).bin
+  IMAGE/factory-$$$$(ZYXEL_MODEL_STRING).bin := \
+	append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs | pad-to 8192k | check-size | zyxel-tar-bz2 \
+	vmlinux_mi124_f1e mi124_f1e-jffs2 | append-md5sum-bin
+endef
+
+define Device/zyxel_nwa1100-nh
+  $(Device/zyxel_nwa11xx)
+  DEVICE_MODEL := NWA1100
+  DEVICE_VARIANT := NH
+  ZYXEL_MODEL_STRING := AASI
+endef
+TARGET_DEVICES += zyxel_nwa1100-nh
+
+define Device/zyxel_nwa1121-ni
+  $(Device/zyxel_nwa11xx)
+  DEVICE_MODEL := NWA1121
+  DEVICE_VARIANT := NI
+  ZYXEL_MODEL_STRING := AABJ
+endef
+TARGET_DEVICES += zyxel_nwa1121-ni
+
+define Device/zyxel_nwa1123-ac
+  $(Device/zyxel_nwa11xx)
+  DEVICE_MODEL := NWA1123
+  DEVICE_VARIANT := AC
+  ZYXEL_MODEL_STRING := AAOX
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers \
+	ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += zyxel_nwa1123-ac
+
+define Device/zyxel_nwa1123-ni
+  $(Device/zyxel_nwa11xx)
+  DEVICE_MODEL := NWA1123
+  DEVICE_VARIANT := NI
+  ZYXEL_MODEL_STRING := AAEO
+endef
+TARGET_DEVICES += zyxel_nwa1123-ni
 
 define Device/zyxel_nbg6616
   SOC := qca9557

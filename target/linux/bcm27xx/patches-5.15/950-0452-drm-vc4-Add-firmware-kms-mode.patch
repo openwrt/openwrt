@@ -104,7 +104,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  				    minor->debugfs_root, &vc4->load_tracker_enabled);
 --- a/drivers/gpu/drm/vc4/vc4_drv.c
 +++ b/drivers/gpu/drm/vc4/vc4_drv.c
-@@ -226,6 +226,18 @@ const struct of_device_id vc4_dma_range_
+@@ -227,6 +227,18 @@ static const struct of_device_id vc4_dma
  	{}
  };
  
@@ -123,7 +123,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  static int vc4_drm_bind(struct device *dev)
  {
  	struct platform_device *pdev = to_platform_device(dev);
-@@ -289,7 +301,7 @@ static int vc4_drm_bind(struct device *d
+@@ -290,7 +302,7 @@ static int vc4_drm_bind(struct device *d
  	if (ret)
  		return ret;
  
@@ -132,7 +132,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  		ret = rpi_firmware_property(firmware,
  					    RPI_FIRMWARE_NOTIFY_DISPLAY_DONE,
  					    NULL, 0);
-@@ -303,16 +315,20 @@ static int vc4_drm_bind(struct device *d
+@@ -304,16 +316,20 @@ static int vc4_drm_bind(struct device *d
  	if (ret)
  		return ret;
  
@@ -158,7 +158,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
  
  	ret = drm_dev_register(drm, 0);
  	if (ret < 0)
-@@ -359,6 +375,7 @@ static struct platform_driver *const com
+@@ -360,6 +376,7 @@ static struct platform_driver *const com
  	&vc4_dsi_driver,
  	&vc4_txp_driver,
  	&vc4_crtc_driver,

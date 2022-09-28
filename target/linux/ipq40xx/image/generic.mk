@@ -5,19 +5,19 @@ DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
 
 define Device/FitImage
 	KERNEL_SUFFIX := -fit-uImage.itb
-	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+	KERNEL = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
 endef
 
 define Device/FitImageLzma
 	KERNEL_SUFFIX := -fit-uImage.itb
-	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
 endef
 
 define Device/FitzImage
 	KERNEL_SUFFIX := -fit-zImage.itb
-	KERNEL = kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL_NAME := zImage
 endef
 
@@ -43,7 +43,8 @@ define Build/append-rootfshdr
 		-O linux -T filesystem \
 		-C lzma -a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
 		-n root.squashfs -d $(IMAGE_ROOTFS) $@.new
-	dd if=$@.new bs=64 count=1 >> $(IMAGE_KERNEL)
+	cat $(IMAGE_KERNEL) > $@.$1
+	dd if=$@.new bs=64 count=1 >> $@.$1
 endef
 
 define Build/append-rutx-metadata
@@ -89,7 +90,7 @@ endef
 
 define Build/qsdk-ipq-factory-nand-askey
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its\
-		askey_kernel $(IMAGE_KERNEL) \
+		askey_kernel $@.$1 \
 		askey_fs $(IMAGE_ROOTFS) \
 		ubifs $@
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
@@ -308,13 +309,13 @@ TARGET_DEVICES += buffalo_wtr-m2133hp
 
 define Device/cellc_rtl30vw
 	KERNEL_SUFFIX := -fit-zImage.itb
-	KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-	KERNEL = kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
+	KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
 	KERNEL_NAME := zImage
 	KERNEL_IN_UBI :=
 	IMAGES := nand-factory.bin nand-sysupgrade.bin
-	IMAGE/nand-factory.bin := append-rootfshdr | append-ubi | qsdk-ipq-factory-nand-askey
-	IMAGE/nand-sysupgrade.bin := append-rootfshdr | sysupgrade-tar | append-metadata
+	IMAGE/nand-factory.bin := append-rootfshdr kernel | append-ubi | qsdk-ipq-factory-nand-askey kernel
+	IMAGE/nand-sysupgrade.bin := append-rootfshdr kernel | sysupgrade-tar kernel=$$$$@.kernel | append-metadata
 	DEVICE_VENDOR := Cell C
 	DEVICE_MODEL := RTL30VW
 	SOC := qcom-ipq4019
@@ -376,7 +377,7 @@ define Device/devolo_magic-2-wifi-next
 
 	# If the bootloader sees 0xDEADC0DE and this trailer at the 64k boundary of a TFTP image
 	# it will bootm it, just like we want for the initramfs.
-	KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to 64k |\
+	KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb | pad-to 64k |\
 		append-string -e '\xDE\xAD\xC0\xDE{"fl_initramfs":""}\x00'
 
 	IMAGE_SIZE := 26624k
@@ -519,6 +520,18 @@ define Device/engenius_ens620ext
 endef
 TARGET_DEVICES += engenius_ens620ext
 
+define Device/extreme-networks_ws-ap3915i
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Extreme Networks
+	DEVICE_MODEL := WS-AP3915i
+	IMAGE_SIZE := 30080k
+	SOC := qcom-ipq4029
+	BLOCKSIZE := 128k
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-extreme-networks_ws-ap3915i
+endef
+TARGET_DEVICES += extreme-networks_ws-ap3915i
+
 define Device/ezviz_cs-w3-wd1200g-eup
 	$(call Device/FitImage)
 	DEVICE_VENDOR := EZVIZ
@@ -547,7 +560,7 @@ define Device/glinet_gl-ap1300
 	PAGESIZE := 2048
 	IMAGE_SIZE := 131072k
 	KERNEL_INSTALL := 1
-	DEVICE_PACKAGES := ipq-wifi-glinet_gl-ap1300
+	DEVICE_PACKAGES := ipq-wifi-glinet_gl-ap1300 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += glinet_gl-ap1300
 
@@ -627,6 +640,7 @@ define Device/linksys_ea6350v3
 	UBINIZE_OPTS := -E 5
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA6350v3
+	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea6350v3
 
@@ -643,6 +657,7 @@ define Device/linksys_ea8300
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA8300
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-linksys_ea8300 kmod-usb-ledtrig-usbport
+	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea8300
 
@@ -659,6 +674,7 @@ define Device/linksys_mr8300
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR8300
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-usb-ledtrig-usbport
+	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_mr8300
 
@@ -832,7 +848,7 @@ define Device/openmesh_a42
 	SOC := qcom-ipq4018
 	DEVICE_DTS_CONFIG := config@om.a42
 	BLOCKSIZE := 64k
-	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
+	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
 	IMAGE_SIZE := 15616k
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=A42
@@ -847,7 +863,7 @@ define Device/openmesh_a62
 	SOC := qcom-ipq4019
 	DEVICE_DTS_CONFIG := config@om.a62
 	BLOCKSIZE := 64k
-	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
+	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
 	IMAGE_SIZE := 15552k
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=A62
@@ -882,6 +898,19 @@ define Device/p2w_r619ac-128m
 endef
 TARGET_DEVICES += p2w_r619ac-128m
 
+define Device/pakedge_wr-1
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Pakedge
+	DEVICE_MODEL := WR-1
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c1
+	DEVICE_PACKAGES := ipq-wifi-pakedge_wr-1
+	SOC := qcom-ipq4018
+	BLOCKSIZE := 64k
+	IMAGE_SIZE := 31232k
+	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += pakedge_wr-1
+
 define Device/plasmacloud_pa1200
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Plasma Cloud
@@ -889,7 +918,7 @@ define Device/plasmacloud_pa1200
 	SOC := qcom-ipq4018
 	DEVICE_DTS_CONFIG := config@pc.pa1200
 	BLOCKSIZE := 64k
-	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
+	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
 	IMAGE_SIZE := 15616k
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA1200
@@ -904,7 +933,7 @@ define Device/plasmacloud_pa2200
 	SOC := qcom-ipq4019
 	DEVICE_DTS_CONFIG := config@pc.pa2200
 	BLOCKSIZE := 64k
-	KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
+	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb | pad-to $$(BLOCKSIZE)
 	IMAGE_SIZE := 15552k
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA2200
@@ -975,6 +1004,19 @@ define Device/qxwlan_e2600ac-c2
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
 
+define Device/sony_ncp-hg100-cellular
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Sony
+	DEVICE_MODEL := NCP-HG100/Cellular
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c4
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 8192k
+	IMAGE_SIZE := 128m
+	DEVICE_PACKAGES := e2fsprogs ipq-wifi-sony_ncp-hg100-cellular \
+		kmod-fs-ext4 uqmi
+endef
+TARGET_DEVICES += sony_ncp-hg100-cellular
+
 define Device/teltonika_rutx10
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -1018,10 +1060,9 @@ define Device/unielec_u4019-32m
 endef
 TARGET_DEVICES += unielec_u4019-32m
 
-define Device/zte_mf286d
+define Device/zte_mf28x_common
 	$(call Device/FitzImage)
 	DEVICE_VENDOR := ZTE
-	DEVICE_MODEL := MF286D
 	SOC := qcom-ipq4019
 	DEVICE_DTS_CONFIG := config@ap.dk04.1-c1
 	BLOCKSIZE := 128k
@@ -1029,7 +1070,19 @@ define Device/zte_mf286d
 	KERNEL_IN_UBI := 1
 	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
+
+define Device/zte_mf286d
+	$(call Device/zte_mf28x_common)
+	DEVICE_MODEL := MF286D
+endef
 TARGET_DEVICES += zte_mf286d
+
+define Device/zte_mf289f
+	$(call Device/zte_mf28x_common)
+	DEVICE_MODEL := MF289F
+	DEVICE_PACKAGES += ipq-wifi-zte_mf289f ath10k-firmware-qca9984-ct
+endef
+TARGET_DEVICES += zte_mf289f
 
 define Device/zyxel_nbg6617
 	$(call Device/FitImageLzma)

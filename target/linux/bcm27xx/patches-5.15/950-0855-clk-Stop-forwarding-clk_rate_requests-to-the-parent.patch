@@ -126,7 +126,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		}
  	}
  
-@@ -1450,6 +1480,8 @@ static bool clk_core_can_round(struct cl
+@@ -1449,6 +1479,8 @@ static bool clk_core_can_round(struct cl
  static int clk_core_round_rate_nolock(struct clk_core *core,
  				      struct clk_rate_request *req)
  {
@@ -135,7 +135,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	lockdep_assert_held(&prepare_lock);
  
  	if (!core) {
-@@ -1459,8 +1491,20 @@ static int clk_core_round_rate_nolock(st
+@@ -1458,8 +1490,20 @@ static int clk_core_round_rate_nolock(st
  
  	if (clk_core_can_round(core))
  		return clk_core_determine_round_nolock(core, req);

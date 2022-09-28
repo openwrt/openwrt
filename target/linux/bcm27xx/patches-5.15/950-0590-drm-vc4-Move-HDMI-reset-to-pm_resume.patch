@@ -22,7 +22,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -2195,7 +2195,6 @@ static int vc4_hdmi_cec_init(struct vc4_
+@@ -2193,7 +2193,6 @@ static int vc4_hdmi_cec_init(struct vc4_
  	struct platform_device *pdev = vc4_hdmi->pdev;
  	struct device *dev = &pdev->dev;
  	unsigned long flags;
@@ -30,7 +30,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	int ret;
  
  	if (!of_find_property(dev->of_node, "interrupts", NULL)) {
-@@ -2214,15 +2213,6 @@ static int vc4_hdmi_cec_init(struct vc4_
+@@ -2212,15 +2211,6 @@ static int vc4_hdmi_cec_init(struct vc4_
  	cec_fill_conn_info_from_drm(&conn_info, &vc4_hdmi->connector);
  	cec_s_conn_info(vc4_hdmi->cec_adap, &conn_info);
  
@@ -46,7 +46,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	if (vc4_hdmi->variant->external_irq_controller) {
  		ret = request_threaded_irq(platform_get_irq_byname(pdev, "cec-rx"),
  					   vc4_cec_irq_handler_rx_bare,
-@@ -2285,6 +2275,29 @@ static void vc4_hdmi_cec_exit(struct vc4
+@@ -2283,6 +2273,29 @@ static void vc4_hdmi_cec_exit(struct vc4
  
  	cec_unregister_adapter(vc4_hdmi->cec_adap);
  }
@@ -76,7 +76,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  #else
  static int vc4_hdmi_cec_init(struct vc4_hdmi *vc4_hdmi)
  {
-@@ -2293,6 +2306,10 @@ static int vc4_hdmi_cec_init(struct vc4_
+@@ -2291,6 +2304,10 @@ static int vc4_hdmi_cec_init(struct vc4_
  
  static void vc4_hdmi_cec_exit(struct vc4_hdmi *vc4_hdmi) {};
  
@@ -87,7 +87,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  #endif
  
  static int vc4_hdmi_build_regset(struct vc4_hdmi *vc4_hdmi,
-@@ -2527,6 +2544,15 @@ static int vc4_hdmi_runtime_resume(struc
+@@ -2525,6 +2542,15 @@ static int vc4_hdmi_runtime_resume(struc
  	if (ret)
  		return ret;
  
@@ -103,30 +103,6 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	return 0;
  }
  
-@@ -2617,20 +2643,11 @@ static int vc4_hdmi_bind(struct device *
- 	if (ret)
- 		goto err_put_ddc;
- 
--	/*
--	 * We need to have the device powered up at this point to call
--	 * our reset hook and for the CEC init.
--	 */
--	ret = vc4_hdmi_runtime_resume(dev);
--	if (ret)
--		goto err_put_ddc;
--
--	pm_runtime_get_noresume(dev);
--	pm_runtime_set_active(dev);
- 	pm_runtime_enable(dev);
- 
--	if (vc4_hdmi->variant->reset)
--		vc4_hdmi->variant->reset(vc4_hdmi);
-+	ret = pm_runtime_resume_and_get(dev);
-+	if (ret)
-+		goto err_put_ddc;
- 
- 	if ((of_device_is_compatible(dev->of_node, "brcm,bcm2711-hdmi0") ||
- 	     of_device_is_compatible(dev->of_node, "brcm,bcm2711-hdmi1")) &&
 --- a/drivers/gpu/drm/vc4/vc4_hdmi_regs.h
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi_regs.h
 @@ -417,7 +417,7 @@ static inline u32 vc4_hdmi_read(struct v

@@ -57,6 +57,7 @@ platform_do_upgrade() {
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
 	beeline,smartbox-turbo|\
+	belkin,rt1800|\
 	dlink,dir-1960-a1|\
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
@@ -70,6 +71,7 @@ platform_do_upgrade() {
 	iptime,t5004|\
 	jcg,q20|\
 	linksys,e5600|\
+	linksys,e7350|\
 	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\

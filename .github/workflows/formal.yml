@@ -3,6 +3,9 @@ name: Test Formalities
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Test Formalities
@@ -24,7 +27,7 @@ jobs:
 
       - name: Test formalities
         run: |
-          source .github/workflows/ci_helpers.sh
+          source .github/workflows/scripts/ci_helpers.sh
 
           RET=0
           for commit in $(git rev-list HEAD ^origin/$BRANCH); do

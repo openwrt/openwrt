@@ -31,24 +31,3 @@
  #ifdef CONFIG_CEVT_R4K
  	return r4k_clockevent_init();
  #else
---- a/arch/mips/kernel/smp-mt.c
-+++ b/arch/mips/kernel/smp-mt.c
-@@ -108,12 +108,18 @@ static void __init smvp_tc_init(unsigned
- static void vsmp_init_secondary(void)
- {
- 	/* This is Malta specific: IPI,performance and timer interrupts */
-+
-+	/* RTL9300 Clear internal timer interrupt */
-+	write_c0_compare(0);
-+
- 	if (mips_gic_present())
- 		change_c0_status(ST0_IM, STATUSF_IP2 | STATUSF_IP3 |
- 					 STATUSF_IP4 | STATUSF_IP5 |
- 					 STATUSF_IP6 | STATUSF_IP7);
- 	else
- 		change_c0_status(ST0_IM, STATUSF_IP0 | STATUSF_IP1 |
-+					 STATUSF_IP2 | STATUSF_IP3 |
-+					 STATUSF_IP4 | STATUSF_IP5 |
- 					 STATUSF_IP6 | STATUSF_IP7);
- }
- 

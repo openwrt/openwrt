@@ -79,6 +79,56 @@ mtd_get_mac_ascii() {
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
 }
 
+mtd_get_mac_encrypted_arcadyan() {
+	local iv="00000000000000000000000000000000"
+	local key="2A4B303D7644395C3B2B7053553C5200"
+	local mac_dirty
+	local mtdname="$1"
+	local part
+	local size
+
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "mtd_get_mac_encrypted_arcadyan: partition $mtdname not found!" >&2
+		return
+	fi
+
+	# Config decryption and getting mac. Trying uencrypt and openssl utils.
+	size=$((0x$(dd if=$part skip=9 bs=1 count=4 2>/dev/null | hexdump -v -e '1/4 "%08x"')))
+	if [[ -f  "/usr/bin/uencrypt" ]]; then
+		mac_dirty=$(dd if=$part bs=1 count=$size skip=$((0x100)) 2>/dev/null | \
+			uencrypt -d -n -k $key -i $iv | grep mac | cut -c 5-)
+	elif [[ -f  "/usr/bin/openssl" ]]; then
+		mac_dirty=$(dd if=$part bs=1 count=$size skip=$((0x100)) 2>/dev/null | \
+			openssl aes-128-cbc -d -nopad -K $key -iv $iv | grep mac | cut -c 5-)
+	else
+		echo "mtd_get_mac_encrypted_arcadyan: Neither uencrypt nor openssl was found!" >&2
+		return
+	fi
+
+	# "canonicalize" mac
+	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
+}
+
+mtd_get_mac_encrypted_deco() {
+	local mtdname="$1"
+
+	if ! [ -e "$mtdname" ]; then
+		echo "mtd_get_mac_encrypted_deco: file $mtdname not found!" >&2
+		return
+	fi
+
+	tplink_key="3336303032384339"
+
+	key=$(dd if=$mtdname bs=1 skip=16 count=8 2>/dev/null | \
+		uencrypt -n -d -k $tplink_key -c des-ecb | hexdump -v -n 8 -e '1/1 "%02x"')
+
+	macaddr=$(dd if=$mtdname bs=1 skip=32 count=8 2>/dev/null | \
+		uencrypt -n -d -k $key -c des-ecb | hexdump -v -n 6 -e '5/1 "%02x:" 1/1 "%02x"')
+
+	echo $macaddr
+}
+
 mtd_get_mac_text() {
 	local mtdname=$1
 	local offset=$(($2))

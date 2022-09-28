@@ -110,7 +110,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		drm_dbg_atomic(&dev_priv->drm,
 --- a/drivers/gpu/drm/msm/msm_atomic.c
 +++ b/drivers/gpu/drm/msm/msm_atomic.c
-@@ -246,6 +246,8 @@ void msm_atomic_commit_tail(struct drm_a
+@@ -231,6 +231,8 @@ void msm_atomic_commit_tail(struct drm_a
  		/* async updates are limited to single-crtc updates: */
  		WARN_ON(crtc_mask != drm_crtc_mask(async_crtc));
  

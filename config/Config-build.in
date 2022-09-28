@@ -58,6 +58,10 @@ menu "Global build settings"
 		bool "Enable signature checking in opkg"
 		default SIGNED_PACKAGES
 
+	config DOWNLOAD_CHECK_CERTIFICATE
+		bool "Enable TLS certificate verification during package download"
+		default y
+
 	comment "General build options"
 
 	config TESTING_KERNEL
@@ -150,17 +154,12 @@ menu "Global build settings"
 		  Adds -g3 to the CFLAGS.
 
 	config IPV6
-		bool
-		prompt "Enable IPv6 support in packages"
-		default y
-		help
-		  Enables IPv6 support in kernel (builtin) and packages.
+		def_bool y
 
 	comment "Stripping options"
 
 	choice
 		prompt "Binary stripping method"
-		default USE_STRIP   if EXTERNAL_TOOLCHAIN
 		default USE_STRIP   if USE_GLIBC
 		default USE_SSTRIP
 		help

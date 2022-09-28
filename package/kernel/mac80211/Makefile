@@ -56,7 +56,6 @@ config_package=$(if $(CONFIG_PACKAGE_kmod-$(1)),m)
 
 config-y:= \
 	WLAN \
-	CFG80211_WEXT \
 	CFG80211_CERTIFICATION_ONUS \
 	MAC80211_RC_MINSTREL \
 	MAC80211_RC_MINSTREL_HT \
@@ -177,6 +176,7 @@ define KernelPackage/hermes
   $(call KernelPackage/mac80211/Default)
   TITLE:=Hermes 802.11b chipset support
   DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-cfg80211 +@DRIVER_WEXT_SUPPORT +kmod-crypto-michael-mic
+  DEFAULT:=n
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/intersil/orinoco/orinoco.ko
   AUTOLOAD:=$(call AutoProbe,orinoco)
 endef
@@ -226,6 +226,7 @@ define KernelPackage/lib80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=802.11 Networking stack
   DEPENDS:=+kmod-cfg80211 +kmod-crypto-hash +kmod-crypto-ccm
+  HIDDEN:=1
   FILES:= \
 	$(PKG_BUILD_DIR)/net/wireless/lib80211.ko \
 	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_wep.ko \

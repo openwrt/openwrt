@@ -58,6 +58,7 @@ struct p_hdr {
 	uint16_t	size;		/* buffer size */
 	uint16_t	offset;
 	uint16_t	len;		/* pkt len */
+	/* cpu_tag[0] is a reserved uint16_t on RTL83xx */
 	uint16_t	cpu_tag[10];
 } __packed __aligned(1);
 
@@ -115,7 +116,7 @@ static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 	// h->cpu_tag[1] |= BIT(1) | BIT(0); // Bypass filter 1/2
 	if (dest_port >= 32) {
 		dest_port -= 32;
-		h->cpu_tag[2] = BIT(dest_port) >> 16;
+		h->cpu_tag[2] |= (BIT(dest_port) >> 16) & 0xf;
 		h->cpu_tag[3] = BIT(dest_port) & 0xffff;
 	} else {
 		h->cpu_tag[4] = BIT(dest_port) >> 16;
@@ -262,13 +263,14 @@ struct dsa_tag {
 
 bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
-	t->reason = h->cpu_tag[3] & 0xf;
-	t->queue = (h->cpu_tag[0] & 0xe0) >> 5;
+	/* cpu_tag[0] is reserved. Fields are off-by-one */
+	t->reason = h->cpu_tag[4] & 0xf;
+	t->queue = (h->cpu_tag[1] & 0xe0) >> 5;
 	t->port = h->cpu_tag[1] & 0x1f;
 	t->crc_error = t->reason == 13;
 
 	pr_debug("Reason: %d\n", t->reason);
-	if (t->reason != 4) // NIC_RX_REASON_SPECIAL_TRAP
+	if (t->reason != 6) // NIC_RX_REASON_SPECIAL_TRAP
 		t->l2_offloaded = 1;
 	else
 		t->l2_offloaded = 0;
@@ -278,10 +280,11 @@ bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 
 bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
+	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[5] & 0x1f;
-	t->queue = (h->cpu_tag[3] & 0xe000) >> 13;
+	t->queue = (h->cpu_tag[4] & 0xe000) >> 13;
 	t->port = h->cpu_tag[1] & 0x3f;
-	t->crc_error = h->cpu_tag[3] & BIT(2);
+	t->crc_error = h->cpu_tag[4] & BIT(6);
 
 	pr_debug("Reason: %d\n", t->reason);
 	if ((t->reason >= 7 && t->reason <= 13) || // NIC_RX_REASON_RMA

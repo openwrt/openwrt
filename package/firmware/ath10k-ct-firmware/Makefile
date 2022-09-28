@@ -4,6 +4,8 @@ PKG_NAME:=ath10k-ct-firmware
 PKG_VERSION:=2020-11-08
 PKG_RELEASE:=1
 
+DL_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+
 include $(INCLUDE_DIR)/package.mk
 
 CT_FIRMWARE_FILE = $(1)-$($(1)_FIRMWARE_FILE_CT)

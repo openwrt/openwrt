@@ -15,9 +15,9 @@
 +#define CONFIG_RESET_BUTTON_LABEL "reset"
 +#endif
  
- DECLARE_GLOBAL_DATA_PTR;
- 
-@@ -20,7 +27,19 @@ int board_init(void)
+ #include <mtd.h>
+ #include <linux/mtd/mtd.h>
+@@ -25,7 +32,19 @@ int board_init(void)
  
  int board_late_init(void)
  {
@@ -40,9 +40,9 @@
  }
 --- a/arch/arm/mach-mediatek/Kconfig
 +++ b/arch/arm/mach-mediatek/Kconfig
-@@ -115,4 +115,8 @@ config MTK_BROM_HEADER_INFO
- 	default "media=emmc" if TARGET_MT8516 || TARGET_MT8365 || TARGET_MT8183
- 	default "lk=1" if TARGET_MT7623
+@@ -140,4 +140,8 @@ config MTK_BROM_HEADER_INFO
+ 
+ source "board/mediatek/mt7629/Kconfig"
  
 +config RESET_BUTTON_LABEL
 +	string "Button to trigger factory reset"

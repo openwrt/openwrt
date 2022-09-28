@@ -96,7 +96,7 @@ ucidef_set_interfaces_lan_wan() {
 
 ucidef_set_bridge_device() {
 	json_select_object bridge
-	json_add_string name "${1:switch0}"
+	json_add_string name "${1:-switch0}"
 	json_select ..
 }
 
@@ -110,6 +110,14 @@ ucidef_set_network_device_mac() {
 	json_select_object "network-device"
 	json_select_object "${1}"
 	json_add_string macaddr "${2}"
+	json_select ..
+	json_select ..
+}
+
+ucidef_set_network_device_path() {
+	json_select_object "network_device"
+	json_select_object "$1"
+	json_add_string path "$2"
 	json_select ..
 	json_select ..
 }

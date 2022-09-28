@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/clock/rtl83xx-clk.h>
+
 /dts-v1/;
 
 #define STRINGIZE(s) #s
@@ -35,7 +37,7 @@
 	};
 
 #define SWITCH_PORT(n, s, m) \
-	port@##n { \
+	port##n: port@##n { \
 		reg = <##n>; \
 		label = SWITCH_PORT_LABEL(s) ; \
 		phy-handle = <&phy##n>; \
@@ -43,7 +45,7 @@
 	};
 
 #define SWITCH_SFP_PORT(n, s, m) \
-	port@##n { \
+	port##n: port@##n { \
 		reg = <##n>; \
 		label = SWITCH_PORT_LABEL(s) ; \
 		phy-handle = <&phy##n>; \
@@ -60,25 +62,63 @@
 
 	compatible = "realtek,rtl838x-soc";
 
+	osc: oscillator {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <25000000>;
+	};
+
+	ccu: clock-controller {
+		compatible = "realtek,rtl8380-clock";
+		#clock-cells = <1>;
+		clocks = <&osc>;
+		clock-names = "ref_clk";
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		frequency = <500000000>;
 
 		cpu@0 {
 			compatible = "mips,mips4KEc";
 			reg = <0>;
+			clocks = <&ccu CLK_CPU>;
+			operating-points-v2 = <&cpu_opp_table>;
+		};
+	};
+
+	cpu_opp_table: opp-table-0 {
+		compatible = "operating-points-v2";
+		opp-shared;
+
+		opp00 {
+			opp-hz = /bits/ 64 <325000000>;
+		};
+		opp01 {
+			opp-hz = /bits/ 64 <350000000>;
+		};
+		opp02 {
+			opp-hz = /bits/ 64 <375000000>;
+		};
+		opp03 {
+			opp-hz = /bits/ 64 <400000000>;
+		};
+		opp04 {
+			opp-hz = /bits/ 64 <425000000>;
+		};
+		opp05 {
+			opp-hz = /bits/ 64 <450000000>;
+		};
+		opp06 {
+			opp-hz = /bits/ 64 <475000000>;
+		};
+		opp07 {
+			opp-hz = /bits/ 64 <500000000>;
 		};
 	};
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
-	};
-
-	lx_clk: lx_clk {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <200000000>;
 	};
 
 	cpuintc: cpuintc {
@@ -116,7 +156,7 @@
 			compatible = "ns16550a";
 			reg = <0x2000 0x100>;
 
-			clocks = <&lx_clk>;
+			clocks = <&ccu CLK_LXB>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <31 1>;
@@ -134,7 +174,7 @@
 			compatible = "ns16550a";
 			reg = <0x2100 0x100>;
 
-			clocks = <&lx_clk>;
+			clocks = <&ccu CLK_LXB>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <30 0>;
@@ -153,7 +193,7 @@
 
 			realtek,reset-mode = "soc";
 
-			clocks = <&lx_clk>;
+			clocks = <&ccu CLK_LXB>;
 			timeout-sec = <30>;
 
 			interrupt-parent = <&intc>;
@@ -218,6 +258,14 @@
 			speed = <1000>;
 			full-duplex;
 		};
+	};
+
+	sram0: sram@9f000000 {
+		compatible = "mmio-sram";
+		reg = <0x9f000000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0 0x9f000000 0x10000>;
 	};
 
 	switch0: switch@1b000000 {

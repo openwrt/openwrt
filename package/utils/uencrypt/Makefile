@@ -22,16 +22,17 @@ CMAKE_OPTIONS+=$(if $(CONFIG_UENCRYPT_WOLFSSL),-DUSE_WOLFSSL=1)
 define Package/uencrypt
   SECTION:=utils
   CATEGORY:=Base system
-  TITLE:=Decryption utility for Arcadyan WG4xx223
-  DEPENDS:=@TARGET_ramips_mt7621 +UENCRYPT_WOLFSSL:libwolfssl +UENCRYPT_OPENSSL:libopenssl
+  TITLE:=Decryption utility for Arcadyan WG4xx223 and TP-Link Deco S4
+  DEPENDS:=+UENCRYPT_WOLFSSL:libwolfssl +UENCRYPT_OPENSSL:libopenssl
 endef
 
 define Package/uencrypt/description
-  This is a small AES-128-CBC encrypton/decryption program.
-  Even though it can be used for regular encryption and
-  decryption operations using AES-128-CBC, it is included
-  here to unencrypt the configuration from mtd on Arcadyan
-  WG430223 and WG443223 routers.
+  This is a small encrypton/decryption program. It defaults
+  to AES-128-CBC, but supports any encryption provided by
+  the available openssl/wolfssl library. Even though it can
+  be used for regular encryption and decryption operations,
+  it is included here to unencrypt the configuration from mtd
+  on Arcadyan WG430223/WG443223 and TP-Link Deco S4 routers
 endef
 
 define Package/uencrypt/config

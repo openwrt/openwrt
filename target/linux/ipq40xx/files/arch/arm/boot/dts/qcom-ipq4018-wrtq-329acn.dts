@@ -182,6 +182,14 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
+				macaddr_art_0: macaddr@0{
+					reg = <0x0000 0x0006>;
+				};
+
+				macaddr_art_6: macaddr@6{
+					reg = <0x0006 0x0006>;
+				};
+
 				precal_art_1000: precal@1000 {
 					reg = <0x1000 0x2f20>;
 				};
@@ -227,11 +235,15 @@
 &gmac0 {
 	qcom,phy_mdio_addr = <2>;
 	qcom,poll_required = <1>;
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_6>;
 };
 
 &gmac1 {
 	qcom,phy_mdio_addr = <4>;
 	qcom,poll_required = <1>;
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_0>;
 };
 
 &tlmm {

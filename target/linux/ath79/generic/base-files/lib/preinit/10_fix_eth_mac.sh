@@ -1,4 +1,4 @@
-. /lib/functions.sh
+. /lib/functions/system.sh
 
 preinit_set_mac_address() {
 	case $(board_name) in
@@ -15,8 +15,13 @@ preinit_set_mac_address() {
 	enterasys,ws-ap3705i)
 		ip link set dev eth0 address $(mtd_get_mac_ascii u-boot-env0 ethaddr)
 		;;
+	extreme-networks,ws-ap3805i|\
 	siemens,ws-ap3610)
 		ip link set dev eth0 address $(mtd_get_mac_ascii cfg1 ethaddr)
+		;;
+	tplink,deco-s4-v2)
+		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
+		ip link set dev eth0 address $base_mac
 		;;
 	zyxel,nbg6616)
 		ethaddr=$(mtd_get_mac_ascii u-boot-env ethaddr)

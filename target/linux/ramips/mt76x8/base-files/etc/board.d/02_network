@@ -39,6 +39,7 @@ ramips_setup_interfaces()
 	hilink,hlk-7628n|\
 	hilink,hlk-7688a|\
 	hiwifi,hc5861b|\
+	kroks,kndrt31r16|\
 	skylab,skw92a|\
 	tplink,archer-c20-v4|\
 	tplink,archer-c20-v5|\
@@ -131,6 +132,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
+	kroks,kndrt31r19|\
 	tplink,tl-mr3020-v3)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"

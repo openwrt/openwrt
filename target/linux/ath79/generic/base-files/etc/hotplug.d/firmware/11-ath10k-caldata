@@ -15,7 +15,8 @@ case "$FIRMWARE" in
 	araknis,an-700-ap-i-ac|\
 	engenius,eap1200h|\
 	engenius,enstationac-v1|\
-	glinet,gl-x750)
+	glinet,gl-x750|\
+	watchguard,ap300)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) 2)
 		;;
@@ -92,6 +93,10 @@ case "$FIRMWARE" in
 	engenius,ews511ap)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		;;
+	extreme-networks,ws-ap3805i)
+		caldata_extract "art" 0x5000 0x844
+		ath10k_patch_mac $(mtd_get_mac_ascii cfg1 RADIOADDR0)
 		;;
 	glinet,gl-ar750)
 		caldata_extract "art" 0x5000 0x844
@@ -255,6 +260,13 @@ case "$FIRMWARE" in
 	tplink,deco-m4r-v1)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary config 0x8) -1)
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
+		;;
+	tplink,deco-s4-v2)
+		caldata_extract "art" 0x5000 0x2f20
+		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
+		ath10k_patch_mac $(macaddr_add $base_mac 2)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;

@@ -104,6 +104,10 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 2)
 		;;
+	extreme-networks,ws-ap3915i)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR0)
+		;;
 	linksys,ea8300 |\
 	linksys,mr8300)
 		caldata_extract "ART" 0x1000 0x2f20
@@ -129,6 +133,17 @@ case "$FIRMWARE" in
 	netgear,srs60)
 		caldata_extract_mmc "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0x0)
+		;;
+	pakedge,wr-1)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(get_mac_label) 2)
+		;;
+	teltonika,rutx10)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 2)
+		;;
+	sony,ncp-hg100-cellular)
+		caldata_extract_mmc "0:ART" 0x1000 0x2f20
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)
@@ -186,6 +201,10 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 3)
 		;;
+	extreme-networks,ws-ap3915i)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR1)
+		;;
 	linksys,ea8300 |\
 	linksys,mr8300)
 		caldata_extract "ART" 0x5000 0x2f20
@@ -212,6 +231,17 @@ case "$FIRMWARE" in
 	netgear,srs60)
 		caldata_extract_mmc "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0xc)
+		;;
+	pakedge,wr-1)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(get_mac_label) 4)
+		;;
+	teltonika,rutx10)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 3)
+		;;
+	sony,ncp-hg100-cellular)
+		caldata_extract_mmc "0:ART" 0x5000 0x2f20
 		;;
 	zyxel,nbg6617 |\
 	zyxel,wre6606)

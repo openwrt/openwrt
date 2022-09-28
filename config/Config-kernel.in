@@ -1108,6 +1108,22 @@ config KERNEL_NET_L3_MASTER_DEV
 	  This module provides glue between core networking code and device
 	  drivers to support L3 master devices like VRF.
 
+config KERNEL_WIRELESS_EXT
+	def_bool n
+
+config KERNEL_WEXT_CORE
+	def_bool KERNEL_WIRELESS_EXT
+
+config KERNEL_WEXT_PRIV
+	def_bool KERNEL_WIRELESS_EXT
+
+config KERNEL_WEXT_PROC
+	def_bool KERNEL_WIRELESS_EXT
+
+config KERNEL_WEXT_SPY
+	def_bool KERNEL_WIRELESS_EXT
+
+
 #
 # NFS related symbols
 #

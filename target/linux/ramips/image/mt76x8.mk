@@ -42,6 +42,8 @@ define Device/asus_rt-ac1200
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Asus
   DEVICE_MODEL := RT-AC1200
+  DEVICE_ALT0_VENDOR := Asus
+  DEVICE_ALT0_MODEL := RT-N600
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
 endef
@@ -309,6 +311,28 @@ define Device/jotale_js76x8-32m
   DEVICE_VARIANT := 32M
 endef
 TARGET_DEVICES += jotale_js76x8-32m
+
+define Device/kroks_kndrt31r16
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Kroks
+  DEVICE_MODEL := Rt-Cse5 UW DRSIM
+  DEVICE_ALT0_VENDOR := Kroks
+  DEVICE_ALT0_MODEL := KNdRt31R16
+  DEVICE_PACKAGES := kmod-usb2
+  SUPPORTED_DEVICES += kndrt31r16
+endef
+TARGET_DEVICES += kroks_kndrt31r16
+
+define Device/kroks_kndrt31r19
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Kroks
+  DEVICE_MODEL := Rt-Pot mXw DS RSIM
+  DEVICE_ALT0_VENDOR := Kroks
+  DEVICE_ALT0_MODEL := KNdRt31R19
+  DEVICE_PACKAGES := kmod-usb2 uqmi
+  SUPPORTED_DEVICES += kndrt31r19
+endef
+TARGET_DEVICES += kroks_kndrt31r19
 
 define Device/mediatek_linkit-smart-7688
   IMAGE_SIZE := 32448k

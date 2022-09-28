@@ -13,6 +13,7 @@ define KernelPackage/libertas-usb
   $(call KernelPackage/mac80211/Default)
   DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +kmod-usb-core +kmod-lib80211 +@DRIVER_WEXT_SUPPORT +libertas-usb-firmware
   TITLE:=Marvell 88W8015 Wireless Driver
+  DEFAULT:=n
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/libertas.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/usb8xxx.ko
@@ -23,6 +24,7 @@ define KernelPackage/libertas-sdio
   $(call KernelPackage/mac80211/Default)
   DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +kmod-mmc +@DRIVER_WEXT_SUPPORT @!TARGET_uml +libertas-sdio-firmware
   TITLE:=Marvell 88W8686 Wireless Driver
+  DEFAULT:=n
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/libertas.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/marvell/libertas/libertas_sdio.ko
@@ -33,6 +35,7 @@ define KernelPackage/libertas-spi
   $(call KernelPackage/mac80211/Default)
   SUBMENU:=Wireless Drivers
   DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +@DRIVER_WEXT_SUPPORT @!TARGET_uml +libertas-spi-firmware
+  DEFAULT:=n
   KCONFIG := \
 	CONFIG_SPI=y \
 	CONFIG_SPI_MASTER=y

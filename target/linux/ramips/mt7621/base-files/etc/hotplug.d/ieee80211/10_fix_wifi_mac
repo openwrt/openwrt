@@ -10,12 +10,13 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
-	beeline,smartbox-flash|\
-	mts,wg430223)
-		hw_mac_addr_ra0="$(mtd_get_mac_ascii u-boot-env ra0macaddr)"
-		hw_mac_addr_rax0="$(mtd_get_mac_ascii u-boot-env rax0macaddr)"
-		[ "$PHYNBR" = "0" ] && echo -n $hw_mac_addr_ra0 > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && echo -n $hw_mac_addr_rax0 > /sys${DEVPATH}/macaddress
+	beeline,smartbox-flash)
+		hw_mac_addr=$(macaddr_add $(mtd_get_mac_encrypted_arcadyan "board_data") 1)
+		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
+		hw_mac_addr=$(macaddr_setbit   $hw_mac_addr 26)
+		hw_mac_addr=$(macaddr_unsetbit $hw_mac_addr 27)
+		hw_mac_addr=$(macaddr_unsetbit $hw_mac_addr 28)
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
 		;;
 	cudy,x6)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
@@ -83,10 +84,24 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
+	belkin,rt1800|\
+	linksys,e7350)
+		hw_mac_addr=$(mtd_get_mac_ascii Config wan_hwaddr)
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
+		;;
 	netgear,wax202)
 		hw_mac_addr=$(mtd_get_mac_ascii Config mac)
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
+		;;
+	mts,wg430223)
+		hw_mac_addr=$(macaddr_add $(mtd_get_mac_encrypted_arcadyan "board_data") 1)
+		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
+		hw_mac_addr=$(macaddr_unsetbit $hw_mac_addr 26)
+		hw_mac_addr=$(macaddr_setbit   $hw_mac_addr 27)
+		hw_mac_addr=$(macaddr_unsetbit $hw_mac_addr 28)
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
 		;;
 	oraybox,x3a)
 		if [ "$PHYNBR" = "1" ]; then

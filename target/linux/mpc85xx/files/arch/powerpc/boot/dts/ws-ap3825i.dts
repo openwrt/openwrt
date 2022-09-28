@@ -126,13 +126,11 @@
 				partition@3f00000 {
 					reg = <0x3f00000 0x20000>;
 					label = "cfg2";
-					read-only;
 				};
 
 				partition@3f20000 {
 					reg = <0x3f20000 0x20000>;
 					label = "cfg1";
-					read-only;
 				};
 			};
 		};
@@ -253,3 +251,16 @@
 };
 
 /include/ "fsl/p1020si-post.dtsi"
+
+/*
+ * For the OpenWrt 22.03 release, since Linux 5.10.138 now uses
+ * aliases to determine PCI domain numbers, drop aliases so as not to
+ * change the sysfs path of our wireless netdevs.
+ */
+
+/ {
+	aliases {
+		/delete-property/ pci0;
+		/delete-property/ pci1;
+	};
+};

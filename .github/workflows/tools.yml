@@ -6,6 +6,9 @@ on:
       - 'tools/**'
       - '.github/workflows/tools.yml'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: tools-${{ matrix.os }}
@@ -120,7 +123,7 @@ jobs:
       - name: Build tools
         run: |
           cd "$WORKPATH"
-          make tools/install -j$(nproc) BUILD_LOG=1
+          make tools/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Move logs to GITHUB_WORKSPACE
         if: always()

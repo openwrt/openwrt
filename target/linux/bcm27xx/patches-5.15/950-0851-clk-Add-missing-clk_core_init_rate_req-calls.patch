@@ -19,7 +19,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -1479,7 +1479,7 @@ unsigned long clk_hw_round_rate(struct c
+@@ -1478,7 +1478,7 @@ unsigned long clk_hw_round_rate(struct c
  	int ret;
  	struct clk_rate_request req;
  
@@ -28,7 +28,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	ret = clk_core_round_rate_nolock(hw->core, &req);
  	if (ret)
-@@ -1511,7 +1511,7 @@ long clk_round_rate(struct clk *clk, uns
+@@ -1510,7 +1510,7 @@ long clk_round_rate(struct clk *clk, uns
  	if (clk->exclusive_count)
  		clk_core_rate_unprotect(clk->core);
  
@@ -37,7 +37,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	ret = clk_core_round_rate_nolock(clk->core, &req);
  
-@@ -2215,8 +2215,7 @@ static unsigned long clk_core_req_round_
+@@ -2214,8 +2214,7 @@ static unsigned long clk_core_req_round_
  	if (cnt < 0)
  		return cnt;
  

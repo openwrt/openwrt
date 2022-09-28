@@ -13,6 +13,7 @@
 #include <linux/init.h>
 #include <linux/clkdev.h>
 #include <linux/clk-provider.h>
+#include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/of_fdt.h>
 #include <linux/irqchip.h>
@@ -48,13 +49,10 @@ void __init plat_mem_setup(void)
 	__dt_setup_arch(dtb);
 }
 
-void __init plat_time_init(void)
+void plat_time_init_fallback(void)
 {
 	struct device_node *np;
 	u32 freq = 500000000;
-
-	of_clk_init(NULL);
-	timer_probe();
 
 	np = of_find_node_by_name(NULL, "cpus");
 	if (!np) {
@@ -66,8 +64,39 @@ void __init plat_time_init(void)
 			pr_info("CPU frequency from device tree: %dMHz", freq / 1000000);
 		of_node_put(np);
 	}
-
 	mips_hpt_frequency = freq / 2;
+}
+
+void __init plat_time_init(void)
+{
+/*
+ * Initialization routine resembles generic MIPS plat_time_init() with
+ * lazy error handling. The final fallback is only needed until we have
+ * converted all device trees to new clock syntax.
+ */
+	struct device_node *np;
+	struct clk *clk;
+
+	of_clk_init(NULL);
+
+	mips_hpt_frequency = 0;
+	np = of_get_cpu_node(0, NULL);
+	if (!np) {
+		pr_err("Failed to get CPU node\n");
+	} else {
+		clk = of_clk_get(np, 0);
+		if (IS_ERR(clk)) {
+			pr_err("Failed to get CPU clock: %ld\n", PTR_ERR(clk));
+		} else {
+			mips_hpt_frequency = clk_get_rate(clk) / 2;
+			clk_put(clk);
+		}
+	}
+
+	if (!mips_hpt_frequency)
+		plat_time_init_fallback();
+
+	timer_probe();
 }
 
 void __init arch_init_irq(void)
