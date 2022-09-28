@@ -26,7 +26,7 @@ jobs:
         id: find_targets
         run: |
           export TARGETS="$(perl ./scripts/dump-target-info.pl targets 2>/dev/null \
-            | sort -u -t '/' -k1,1 \
+            | sort -u -t '/' -k1 \
             | awk '{ print $1 }')"
 
           JSON='['
