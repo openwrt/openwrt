@@ -12,11 +12,11 @@
  	};
  
  	chosen {
-@@ -88,11 +93,10 @@
- 
- 	leds {
+@@ -89,11 +94,10 @@
+ 	led-controller {
  		compatible = "pwm-leds";
--		heartbeat {
+ 
+-		led-1 {
 +		led_heartbeat: heartbeat {
  			label = "marduk:red:heartbeat";
  			pwms = <&pwm 3 300000>;
