@@ -1,3 +1,4 @@
+From 2830e314778dc7d0a939befed0910a7622ec5ef0 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Fri, 22 Jul 2022 09:06:19 +0200
 Subject: [PATCH] net: ethernet: mtk-ppe: fix traffic offload with bridged wlan
@@ -13,6 +14,8 @@ Tested-by: Paolo Valerio <pvalerio@redhat.com>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ .../net/ethernet/mediatek/mtk_ppe_offload.c   | 30 ++++++++-----------
+ 1 file changed, 13 insertions(+), 17 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c

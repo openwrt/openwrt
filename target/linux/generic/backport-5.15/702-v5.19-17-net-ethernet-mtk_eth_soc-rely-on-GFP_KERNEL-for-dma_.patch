@@ -1,3 +1,4 @@
+From 62dfb4cc444649b3f841ddb4f472a12ed6422714 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Fri, 20 May 2022 20:11:26 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: rely on GFP_KERNEL for
@@ -10,6 +11,8 @@ context.
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

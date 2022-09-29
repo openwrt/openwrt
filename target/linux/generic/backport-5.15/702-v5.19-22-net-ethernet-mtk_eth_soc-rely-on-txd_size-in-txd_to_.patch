@@ -1,3 +1,4 @@
+From e70a5634c1f58a352aea3dbf2a50e98a0cadd68c Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Fri, 20 May 2022 20:11:31 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: rely on txd_size in txd_to_idx
@@ -8,6 +9,8 @@ Tested-by: Sam Shih <sam.shih@mediatek.com>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

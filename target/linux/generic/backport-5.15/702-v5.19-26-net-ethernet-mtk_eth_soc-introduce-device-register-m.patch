@@ -1,3 +1,4 @@
+From 8cb42714cdc1fc1d91f0a67aa710b794280b7af0 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Fri, 20 May 2022 20:11:35 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: introduce device register map
@@ -10,6 +11,9 @@ Tested-by: Sam Shih <sam.shih@mediatek.com>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 223 +++++++++++++-------
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h | 146 ++++---------
+ 2 files changed, 188 insertions(+), 181 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

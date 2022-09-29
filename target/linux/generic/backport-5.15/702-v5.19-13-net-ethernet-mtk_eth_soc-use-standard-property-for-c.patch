@@ -1,3 +1,4 @@
+From 4263f77a5144f708a00aa8e9570b392777ab2482 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Mon, 11 Apr 2022 12:13:25 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: use standard property for
@@ -10,6 +11,9 @@ Update mt7622 dts binding.
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ arch/arm64/boot/dts/mediatek/mt7622.dtsi    | 2 +-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
 --- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi

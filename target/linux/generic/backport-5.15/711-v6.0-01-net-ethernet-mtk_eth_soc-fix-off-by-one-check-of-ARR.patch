@@ -1,3 +1,4 @@
+From 3696c952da0733b843c8da3441345055b1cbacd9 Mon Sep 17 00:00:00 2001
 From: Tom Rix <trix@redhat.com>
 Date: Sat, 16 Jul 2022 17:46:54 -0400
 Subject: [PATCH] net: ethernet: mtk_eth_soc: fix off by one check of
@@ -17,6 +18,8 @@ Signed-off-by: Tom Rix <trix@redhat.com>
 Link: https://lore.kernel.org/r/20220716214654.1540240-1-trix@redhat.com
 Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
+ drivers/net/ethernet/mediatek/mtk_wed.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c

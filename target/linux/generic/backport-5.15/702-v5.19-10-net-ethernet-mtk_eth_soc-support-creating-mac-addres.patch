@@ -1,7 +1,8 @@
+From 33fc42de33278b2b3ec6f3390512987bc29a62b7 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Wed, 23 Feb 2022 10:56:34 +0100
-Subject: [PATCH] net: ethernet: mtk_eth_soc: support creating mac
- address based offload entries
+Date: Tue, 5 Apr 2022 21:57:55 +0200
+Subject: [PATCH] net: ethernet: mtk_eth_soc: support creating mac address
+ based offload entries
 
 This will be used to implement a limited form of bridge offloading.
 Since the hardware does not support flow table entries with just source
@@ -18,7 +19,12 @@ either the hardware flowtable entry expires, is replaced, or if the offload
 rule they belong to is removed
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_ppe.c       | 241 ++++++++++++++++--
+ drivers/net/ethernet/mediatek/mtk_ppe.h       |  44 +++-
+ .../net/ethernet/mediatek/mtk_ppe_offload.c   |  60 ++++-
+ 3 files changed, 299 insertions(+), 46 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c

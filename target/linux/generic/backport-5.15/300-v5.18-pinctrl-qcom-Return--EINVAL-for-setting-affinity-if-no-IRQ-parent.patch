@@ -1,13 +1,8 @@
+From b9dc88de4d772999074680292d80b2d9119e841b Mon Sep 17 00:00:00 2001
 From: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
-To: linus.walleij@linaro.org
-Cc: bjorn.andersson@linaro.org, dianders@chromium.org,
-        linux-arm-msm@vger.kernel.org, linux-gpio@vger.kernel.org,
-        linux-kernel@vger.kernel.org,
-        Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Date: Thu, 13 Jan 2022 21:56:17 +0530
 Subject: [PATCH] pinctrl: qcom: Return -EINVAL for setting affinity if no IRQ
  parent
-Date: Thu, 13 Jan 2022 21:56:17 +0530
-Message-Id: <20220113162617.131697-1-manivannan.sadhasivam@linaro.org>
 
 The MSM GPIO IRQ controller relies on the parent IRQ controller to set the
 CPU affinity for the IRQ. And this is only valid if there is any wakeup
@@ -22,6 +17,8 @@ Otherwise, below warning will be printed by genirq:
 genirq: irq_chip msmgpio did not update eff. affinity mask of irq 70
 
 Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Link: https://lore.kernel.org/r/20220113162617.131697-1-manivannan.sadhasivam@linaro.org
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 ---
  drivers/pinctrl/qcom/pinctrl-msm.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)

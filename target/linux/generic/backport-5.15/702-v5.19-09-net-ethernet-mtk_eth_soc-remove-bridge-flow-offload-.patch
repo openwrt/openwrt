@@ -1,12 +1,17 @@
+From 8ff25d377445dcc587584b7c0228bf0eafb26f9f Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Mon, 21 Feb 2022 15:55:19 +0100
-Subject: [PATCH] net: ethernet: mtk_eth_soc: remove bridge flow offload
- type entry support
+Date: Tue, 5 Apr 2022 21:57:54 +0200
+Subject: [PATCH] net: ethernet: mtk_eth_soc: remove bridge flow offload type
+ entry support
 
 According to MediaTek, this feature is not supported in current hardware
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_ppe.c         | 8 --------
+ drivers/net/ethernet/mediatek/mtk_ppe_debugfs.c | 1 -
+ 2 files changed, 9 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c

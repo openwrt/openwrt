@@ -1,3 +1,4 @@
+From 670ff7dabbb0f317305fa8ccdc87ac88d0c87809 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Fri, 20 May 2022 20:11:32 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: add rxd_size to mtk_soc_data
@@ -10,6 +11,9 @@ Tested-by: Sam Shih <sam.shih@mediatek.com>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 13 +++++++++----
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h |  2 ++
+ 2 files changed, 11 insertions(+), 4 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

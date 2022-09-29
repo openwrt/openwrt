@@ -1,13 +1,17 @@
+From e9b65ecb7c3050dd34ee22ce17f1cf95e8405b15 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sat, 5 Feb 2022 18:36:36 +0100
-Subject: [PATCH] arm64: dts: mediatek: mt7622: introduce nodes for
- Wireless Ethernet Dispatch
+Date: Tue, 5 Apr 2022 21:57:49 +0200
+Subject: [PATCH] arm64: dts: mediatek: mt7622: introduce nodes for Wireless
+ Ethernet Dispatch
 
 Introduce wed0 and wed1 nodes in order to enable offloading forwarding
 between ethernet and wireless devices on the mt7622 chipset.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ arch/arm64/boot/dts/mediatek/mt7622.dtsi | 28 ++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
 --- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi

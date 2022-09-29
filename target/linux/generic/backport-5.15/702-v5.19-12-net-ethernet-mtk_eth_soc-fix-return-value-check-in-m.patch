@@ -1,3 +1,4 @@
+From b559edfaf3f3f3eb726f99f65b181ab310b3d4bc Mon Sep 17 00:00:00 2001
 From: Yang Yingliang <yangyingliang@huawei.com>
 Date: Fri, 8 Apr 2022 11:22:46 +0800
 Subject: [PATCH] net: ethernet: mtk_eth_soc: fix return value check in
@@ -11,6 +12,8 @@ Reported-by: Hulk Robot <hulkci@huawei.com>
 Signed-off-by: Yang Yingliang <yangyingliang@huawei.com>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_wed.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c

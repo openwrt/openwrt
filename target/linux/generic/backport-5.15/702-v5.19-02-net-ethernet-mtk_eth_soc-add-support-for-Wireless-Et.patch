@@ -1,7 +1,8 @@
+From 804775dfc2885e93a0a4b35db1914c2cc25172b5 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sat, 5 Feb 2022 17:56:08 +0100
-Subject: [PATCH] net: ethernet: mtk_eth_soc: add support for Wireless
- Ethernet Dispatch (WED)
+Date: Tue, 5 Apr 2022 21:57:47 +0200
+Subject: [PATCH] net: ethernet: mtk_eth_soc: add support for Wireless Ethernet
+ Dispatch (WED)
 
 The Wireless Ethernet Dispatch subsystem on the MT7622 SoC can be
 configured to intercept and handle access to the DMA queues and
@@ -13,7 +14,19 @@ This can be used to implement hardware flow offloading from ethernet to
 WLAN.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/Kconfig         |   4 +
+ drivers/net/ethernet/mediatek/Makefile        |   5 +
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c   |  17 +
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h   |   3 +
+ drivers/net/ethernet/mediatek/mtk_wed.c       | 875 ++++++++++++++++++
+ drivers/net/ethernet/mediatek/mtk_wed.h       | 128 +++
+ .../net/ethernet/mediatek/mtk_wed_debugfs.c   | 175 ++++
+ drivers/net/ethernet/mediatek/mtk_wed_ops.c   |   8 +
+ drivers/net/ethernet/mediatek/mtk_wed_regs.h  | 251 +++++
+ include/linux/soc/mediatek/mtk_wed.h          | 131 +++
+ 10 files changed, 1597 insertions(+)
  create mode 100644 drivers/net/ethernet/mediatek/mtk_wed.c
  create mode 100644 drivers/net/ethernet/mediatek/mtk_wed.h
  create mode 100644 drivers/net/ethernet/mediatek/mtk_wed_debugfs.c

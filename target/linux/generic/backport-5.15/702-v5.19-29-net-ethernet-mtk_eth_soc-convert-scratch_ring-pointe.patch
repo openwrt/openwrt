@@ -1,3 +1,4 @@
+From 4d6426904f13bdb5ab20a2dddfb3427dc518f1f8 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Fri, 20 May 2022 20:11:38 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: convert scratch_ring pointer to
@@ -8,6 +9,9 @@ Simplify the code converting scratch_ring pointer to void
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 2 +-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

@@ -1,14 +1,23 @@
+From a333215e10cb5d3b1e0685ca117f0e9452215485 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sat, 5 Feb 2022 18:29:22 +0100
-Subject: [PATCH] net: ethernet: mtk_eth_soc: implement flow offloading
- to WED devices
+Date: Tue, 5 Apr 2022 21:57:48 +0200
+Subject: [PATCH] net: ethernet: mtk_eth_soc: implement flow offloading to WED
+ devices
 
 This allows hardware flow offloading from Ethernet to WLAN on MT7622 SoC
 
 Co-developed-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_ppe.c       | 18 ++++++
+ drivers/net/ethernet/mediatek/mtk_ppe.h       | 14 +++--
+ .../net/ethernet/mediatek/mtk_ppe_offload.c   | 56 ++++++++++++++++++-
+ drivers/net/ethernet/mediatek/mtk_wed.h       |  7 +++
+ include/linux/netdevice.h                     |  7 +++
+ net/core/dev.c                                |  4 ++
+ 6 files changed, 98 insertions(+), 8 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c

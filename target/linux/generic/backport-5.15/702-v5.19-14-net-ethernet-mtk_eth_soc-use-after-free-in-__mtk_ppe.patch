@@ -1,3 +1,4 @@
+From 17a5f6a78dc7b8db385de346092d7d9f9dc24df6 Mon Sep 17 00:00:00 2001
 From: Dan Carpenter <dan.carpenter@oracle.com>
 Date: Tue, 12 Apr 2022 12:24:19 +0300
 Subject: [PATCH] net: ethernet: mtk_eth_soc: use after free in
@@ -11,6 +12,8 @@ Fixes: 33fc42de3327 ("net: ethernet: mtk_eth_soc: support creating mac address b
 Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_ppe.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c

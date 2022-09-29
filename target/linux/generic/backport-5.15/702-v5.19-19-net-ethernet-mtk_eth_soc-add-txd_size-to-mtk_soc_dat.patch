@@ -1,3 +1,4 @@
+From eb067347aa87eaf8a42d945d3e877b1e8333f5ea Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Fri, 20 May 2022 20:11:28 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: add txd_size to mtk_soc_data
@@ -11,6 +12,9 @@ Tested-by: Sam Shih <sam.shih@mediatek.com>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 47 +++++++++++++++------
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h |  4 ++
+ 2 files changed, 38 insertions(+), 13 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

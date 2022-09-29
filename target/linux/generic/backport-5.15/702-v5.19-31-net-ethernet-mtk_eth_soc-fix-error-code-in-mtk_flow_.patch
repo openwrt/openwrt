@@ -1,3 +1,4 @@
+From 0097e86c8ec5a68f20bc1ae19f5c21fb0e751f83 Mon Sep 17 00:00:00 2001
 From: Dan Carpenter <dan.carpenter@oracle.com>
 Date: Thu, 19 May 2022 17:08:00 +0300
 Subject: [PATCH] net: ethernet: mtk_eth_soc: fix error code in
@@ -10,6 +11,8 @@ Fixes: c4f033d9e03e ("net: ethernet: mtk_eth_soc: rework hardware flow table man
 Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_ppe_offload.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c

@@ -1,3 +1,4 @@
+From 06da3e8f390aba135ae8808e9424e8a68e53d261 Mon Sep 17 00:00:00 2001
 From: Jakub Kicinski <kuba@kernel.org>
 Date: Fri, 20 May 2022 12:56:03 -0700
 Subject: [PATCH] eth: mtk_eth_soc: silence the GCC 12 array-bounds warning
@@ -12,6 +13,8 @@ so we won't allow any new instances.
 Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/Makefile | 5 +++++
+ 1 file changed, 5 insertions(+)
 
 --- a/drivers/net/ethernet/mediatek/Makefile
 +++ b/drivers/net/ethernet/mediatek/Makefile

@@ -1,3 +1,4 @@
+From 197c9e9b17b115e04c30d9e185ced582b1fee2a8 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Fri, 20 May 2022 20:11:39 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: introduce support for mt7986
@@ -9,6 +10,9 @@ Tested-by: Sam Shih <sam.shih@mediatek.com>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 55 ++++++++++++++++++++-
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h | 18 +++++++
+ 2 files changed, 72 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

@@ -1,14 +1,18 @@
+From d776a57e4a284b33bc839687afe9c381f3577eee Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sat, 5 Feb 2022 17:59:07 +0100
-Subject: [PATCH] net: ethernet: mtk_eth_soc: add support for coherent
- DMA
+Date: Tue, 5 Apr 2022 21:57:43 +0200
+Subject: [PATCH] net: ethernet: mtk_eth_soc: add support for coherent DMA
 
 It improves performance by eliminating the need for a cache flush on rx and tx
 In preparation for supporting WED (Wireless Ethernet Dispatch), also add a
 function for disabling coherent DMA at runtime.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 95 +++++++++++++++------
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h |  9 ++
+ 2 files changed, 80 insertions(+), 24 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

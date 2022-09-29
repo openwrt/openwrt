@@ -1,12 +1,15 @@
+From 3abd063019b6a01762f9fccc39505f29d029360a Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Mon, 7 Feb 2022 10:27:22 +0100
-Subject: [PATCH] arm64: dts: mediatek: mt7622: add support for coherent
- DMA
+Date: Tue, 5 Apr 2022 21:57:44 +0200
+Subject: [PATCH] arm64: dts: mediatek: mt7622: add support for coherent DMA
 
 It improves performance by eliminating the need for a cache flush on rx and tx
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ arch/arm64/boot/dts/mediatek/mt7622.dtsi | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
 --- a/arch/arm64/boot/dts/mediatek/mt7622.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7622.dtsi

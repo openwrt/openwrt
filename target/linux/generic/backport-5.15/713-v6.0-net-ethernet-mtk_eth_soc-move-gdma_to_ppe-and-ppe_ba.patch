@@ -1,36 +1,14 @@
-From patchwork Thu Sep  8 19:33:38 2022
-Content-Type: text/plain; charset="utf-8"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-X-Patchwork-Submitter: Lorenzo Bianconi <lorenzo@kernel.org>
-X-Patchwork-Id: 12970556
-X-Patchwork-Delegate: kuba@kernel.org
+From 329bce5139cfb00dba40f038ec090572b81ff2a9 Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-To: netdev@vger.kernel.org
-Cc: nbd@nbd.name, john@phrozen.org, sean.wang@mediatek.com,
-        Mark-MC.Lee@mediatek.com, davem@davemloft.net, edumazet@google.com,
-        kuba@kernel.org, pabeni@redhat.com, matthias.bgg@gmail.com,
-        linux-mediatek@lists.infradead.org, lorenzo.bianconi@redhat.com,
-        Bo.Jiao@mediatek.com, sujuan.chen@mediatek.com,
-        ryder.Lee@mediatek.com, evelyn.tsai@mediatek.com,
-        devicetree@vger.kernel.org, robh@kernel.org
-Subject: [PATCH net-next 03/12] net: ethernet: mtk_eth_soc: move gdma_to_ppe
- and ppe_base definitions in mtk register map
-Date: Thu,  8 Sep 2022 21:33:37 +0200
-Message-Id: 
- <95938fc9cbe0223714be2658a49ca58e9baace00.1662661555.git.lorenzo@kernel.org>
-X-Mailer: git-send-email 2.37.3
-In-Reply-To: <cover.1662661555.git.lorenzo@kernel.org>
-References: <cover.1662661555.git.lorenzo@kernel.org>
-MIME-Version: 1.0
-Precedence: bulk
-List-ID: <netdev.vger.kernel.org>
-X-Mailing-List: netdev@vger.kernel.org
-X-Patchwork-Delegate: kuba@kernel.org
+Date: Tue, 20 Sep 2022 12:11:15 +0200
+Subject: [PATCH] net: ethernet: mtk_eth_soc: move gdma_to_ppe and ppe_base
+ definitions in mtk register map
 
 This is a preliminary patch to introduce mt7986 hw packet engine.
 
+Tested-by: Daniel Golle <daniel@makrotopia.org>
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 ---
  drivers/net/ethernet/mediatek/mtk_eth_soc.c | 15 +++++++++++----
  drivers/net/ethernet/mediatek/mtk_eth_soc.h |  3 ++-

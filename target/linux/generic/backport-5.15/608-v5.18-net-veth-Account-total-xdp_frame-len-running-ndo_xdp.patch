@@ -1,21 +1,24 @@
-commit 5142239a22219921a7863cf00c9ab853c00689d8
-Author: Lorenzo Bianconi <lorenzo@kernel.org>
-Date:   Fri Mar 11 10:14:18 2022 +0100
+From 5142239a22219921a7863cf00c9ab853c00689d8 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Fri, 11 Mar 2022 10:14:18 +0100
+Subject: [PATCH] net: veth: Account total xdp_frame len running ndo_xdp_xmit
 
-    net: veth: Account total xdp_frame len running ndo_xdp_xmit
-    
-    Even if this is a theoretical issue since it is not possible to perform
-    XDP_REDIRECT on a non-linear xdp_frame, veth driver does not account
-    paged area in ndo_xdp_xmit function pointer.
-    Introduce xdp_get_frame_len utility routine to get the xdp_frame full
-    length and account total frame size running XDP_REDIRECT of a
-    non-linear xdp frame into a veth device.
-    
-    Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
-    Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
-    Acked-by: Toke Hoiland-Jorgensen <toke@redhat.com>
-    Acked-by: John Fastabend <john.fastabend@gmail.com>
-    Link: https://lore.kernel.org/bpf/54f9fd3bb65d190daf2c0bbae2f852ff16cfbaa0.1646989407.git.lorenzo@kernel.org
+Even if this is a theoretical issue since it is not possible to perform
+XDP_REDIRECT on a non-linear xdp_frame, veth driver does not account
+paged area in ndo_xdp_xmit function pointer.
+Introduce xdp_get_frame_len utility routine to get the xdp_frame full
+length and account total frame size running XDP_REDIRECT of a
+non-linear xdp frame into a veth device.
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+Acked-by: Toke Hoiland-Jorgensen <toke@redhat.com>
+Acked-by: John Fastabend <john.fastabend@gmail.com>
+Link: https://lore.kernel.org/bpf/54f9fd3bb65d190daf2c0bbae2f852ff16cfbaa0.1646989407.git.lorenzo@kernel.org
+---
+ drivers/net/veth.c |  4 ++--
+ include/net/xdp.h  | 14 ++++++++++++++
+ 2 files changed, 16 insertions(+), 2 deletions(-)
 
 --- a/drivers/net/veth.c
 +++ b/drivers/net/veth.c

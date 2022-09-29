@@ -1,3 +1,4 @@
+From da6e113ff010815fdd21ee1e9af2e8d179a2680f Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Mon, 6 Jun 2022 21:49:00 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: enable rx cksum offload for
@@ -9,6 +10,8 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Link: https://lore.kernel.org/r/c8699805c18f7fd38315fcb8da2787676d83a32c.1654544585.git.lorenzo@kernel.org
 Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

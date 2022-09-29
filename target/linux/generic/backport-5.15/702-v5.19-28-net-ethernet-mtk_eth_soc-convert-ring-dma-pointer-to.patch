@@ -1,3 +1,4 @@
+From 7173eca8eeb7d58f885f7506f808f17851f934ce Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Fri, 20 May 2022 20:11:37 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: convert ring dma pointer to void
@@ -7,6 +8,9 @@ Simplify the code converting {tx,rx} ring dma pointer to void
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 32 +++++++++------------
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h |  4 +--
+ 2 files changed, 16 insertions(+), 20 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

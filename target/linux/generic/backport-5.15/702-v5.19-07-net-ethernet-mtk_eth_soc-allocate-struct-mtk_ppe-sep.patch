@@ -1,12 +1,20 @@
+From 1ccc723b5829d63a29627e1d2de2da84efd037c2 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Mon, 21 Feb 2022 15:38:20 +0100
+Date: Tue, 5 Apr 2022 21:57:52 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc: allocate struct mtk_ppe
  separately
 
 Preparation for adding more data to it, which will increase its size.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c     | 11 ++++++-----
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h     |  2 +-
+ drivers/net/ethernet/mediatek/mtk_ppe.c         | 11 ++++++++---
+ drivers/net/ethernet/mediatek/mtk_ppe.h         |  3 +--
+ drivers/net/ethernet/mediatek/mtk_ppe_offload.c | 12 ++++++------
+ 5 files changed, 22 insertions(+), 17 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c

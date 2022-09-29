@@ -1,16 +1,19 @@
-commit f3c5264f452a5b0ac1de1f2f657efbabdea3c76a
-Author: Lorenzo Bianconi <lorenzo@kernel.org>
-Date:   Tue Apr 12 18:31:58 2022 +0200
+From f3c5264f452a5b0ac1de1f2f657efbabdea3c76a Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 12 Apr 2022 18:31:58 +0200
+Subject: [PATCH] net: page_pool: introduce ethtool stats
 
-    net: page_pool: introduce ethtool stats
-    
-    Introduce page_pool APIs to report stats through ethtool and reduce
-    duplicated code in each driver.
-    
-    Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
-    Reviewed-by: Jakub Kicinski <kuba@kernel.org>
-    Reviewed-by: Ilias Apalodimas <ilias.apalodimas@linaro.org>
-    Signed-off-by: David S. Miller <davem@davemloft.net>
+Introduce page_pool APIs to report stats through ethtool and reduce
+duplicated code in each driver.
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Reviewed-by: Jakub Kicinski <kuba@kernel.org>
+Reviewed-by: Ilias Apalodimas <ilias.apalodimas@linaro.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ include/net/page_pool.h | 21 ++++++++++++++
+ net/core/page_pool.c    | 63 ++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 83 insertions(+), 1 deletion(-)
 
 --- a/include/net/page_pool.h
 +++ b/include/net/page_pool.h

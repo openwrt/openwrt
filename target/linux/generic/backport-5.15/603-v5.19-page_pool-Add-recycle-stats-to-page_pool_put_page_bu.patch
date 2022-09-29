@@ -1,16 +1,18 @@
-commit 590032a4d2133ecc10d3078a8db1d85a4842f12c
-Author: Lorenzo Bianconi <lorenzo@kernel.org>
-Date:   Mon Apr 11 16:05:26 2022 +0200
+From 590032a4d2133ecc10d3078a8db1d85a4842f12c Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Mon, 11 Apr 2022 16:05:26 +0200
+Subject: [PATCH] page_pool: Add recycle stats to page_pool_put_page_bulk
 
-    page_pool: Add recycle stats to page_pool_put_page_bulk
-    
-    Add missing recycle stats to page_pool_put_page_bulk routine.
-    
-    Reviewed-by: Joe Damato <jdamato@fastly.com>
-    Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
-    Reviewed-by: Ilias Apalodimas <ilias.apalodimas@linaro.org>
-    Link: https://lore.kernel.org/r/3712178b51c007cfaed910ea80e68f00c916b1fa.1649685634.git.lorenzo@kernel.org
-    Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+Add missing recycle stats to page_pool_put_page_bulk routine.
+
+Reviewed-by: Joe Damato <jdamato@fastly.com>
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Reviewed-by: Ilias Apalodimas <ilias.apalodimas@linaro.org>
+Link: https://lore.kernel.org/r/3712178b51c007cfaed910ea80e68f00c916b1fa.1649685634.git.lorenzo@kernel.org
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ net/core/page_pool.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
 
 --- a/net/core/page_pool.c
 +++ b/net/core/page_pool.c

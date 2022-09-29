@@ -1,3 +1,4 @@
+From 4d65f9b6869a756e89172d858671688349e77671 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
 Date: Fri, 8 Apr 2022 10:59:45 +0200
 Subject: [PATCH] net: ethernet: mtk_eth_soc/wed: fix sparse endian warnings
@@ -9,6 +10,8 @@ Reported-by: kernel test robot <lkp@intel.com>
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
+ drivers/net/ethernet/mediatek/mtk_wed.c | 21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
