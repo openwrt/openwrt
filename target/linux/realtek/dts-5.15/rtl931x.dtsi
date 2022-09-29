@@ -28,9 +28,15 @@
 		device_type = "memory";
 		reg = <0x0 0x10000000>;
 	};
-	
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart1;
+	};
+
 	chosen {
-		bootargs = "console=ttyS0,115200";
+		bootargs = "earlycon";
+		stdout-path = "serial0:115200n8";
 	};
 
 	lx_clk: lx_clk {

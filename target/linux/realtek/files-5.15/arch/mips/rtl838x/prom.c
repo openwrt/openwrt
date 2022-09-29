@@ -117,9 +117,6 @@ void __init prom_init(void)
 {
 	uint32_t model;
 
-	/* uart0 */
-	setup_8250_early_printk_port(0xb8002000, 2, 0);
-
 	model = sw_r32(RTL838X_MODEL_NAME_INFO);
 	pr_info("RTL838X model is %x\n", model);
 	model = model >> 16 & 0xFFFF;
