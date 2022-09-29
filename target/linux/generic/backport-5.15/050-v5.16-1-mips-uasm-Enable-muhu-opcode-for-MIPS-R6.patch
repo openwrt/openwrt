@@ -1,6 +1,7 @@
-From: Johan Almbladh <johan.almbladh@anyfinetworks.com>
+From e737547eab6af8b57d77f7ba323c8d2d6b1a0008 Mon Sep 17 00:00:00 2001
+From: Tony Ambardar <Tony.Ambardar@gmail.com>
 Date: Tue, 5 Oct 2021 18:54:02 +0200
-Subject: [PATCH] MIPS: uasm: Enable muhu opcode for MIPS R6
+Subject: [PATCH 1/7] mips, uasm: Enable muhu opcode for MIPS R6
 
 Enable the 'muhu' instruction, complementing the existing 'mulu', needed
 to implement a MIPS32 BPF JIT.
@@ -8,12 +9,18 @@ to implement a MIPS32 BPF JIT.
 Also fix a typo in the existing definition of 'dmulu'.
 
 Signed-off-by: Tony Ambardar <Tony.Ambardar@gmail.com>
-
-This patch is a dependency for my 32-bit MIPS eBPF JIT.
-
 Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
+Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+Signed-off-by: Andrii Nakryiko <andrii@kernel.org>
+Link: https://lore.kernel.org/bpf/20211005165408.2305108-2-johan.almbladh@anyfinetworks.com
 ---
+ arch/mips/include/asm/uasm.h | 1 +
+ arch/mips/mm/uasm-mips.c     | 4 +++-
+ arch/mips/mm/uasm.c          | 3 ++-
+ 3 files changed, 6 insertions(+), 2 deletions(-)
 
+diff --git a/arch/mips/include/asm/uasm.h b/arch/mips/include/asm/uasm.h
+index f7effca791a5..5efa4e2dc9ab 100644
 --- a/arch/mips/include/asm/uasm.h
 +++ b/arch/mips/include/asm/uasm.h
 @@ -145,6 +145,7 @@ Ip_u1(_mtlo);
@@ -24,9 +31,11 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
  Ip_u3u1u2(_nor);
  Ip_u3u1u2(_or);
  Ip_u2u1u3(_ori);
+diff --git a/arch/mips/mm/uasm-mips.c b/arch/mips/mm/uasm-mips.c
+index 7154a1d99aad..e15c6700cd08 100644
 --- a/arch/mips/mm/uasm-mips.c
 +++ b/arch/mips/mm/uasm-mips.c
-@@ -90,7 +90,7 @@ static const struct insn insn_table[insn
+@@ -90,7 +90,7 @@ static const struct insn insn_table[insn_invalid] = {
  				RS | RT | RD},
  	[insn_dmtc0]	= {M(cop0_op, dmtc_op, 0, 0, 0, 0), RT | RD | SET},
  	[insn_dmultu]	= {M(spec_op, 0, 0, 0, 0, dmultu_op), RS | RT},
@@ -35,7 +44,7 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
  				RS | RT | RD},
  	[insn_drotr]	= {M(spec_op, 1, 0, 0, 0, dsrl_op), RT | RD | RE},
  	[insn_drotr32]	= {M(spec_op, 1, 0, 0, 0, dsrl32_op), RT | RD | RE},
-@@ -150,6 +150,8 @@ static const struct insn insn_table[insn
+@@ -150,6 +150,8 @@ static const struct insn insn_table[insn_invalid] = {
  	[insn_mtlo]	= {M(spec_op, 0, 0, 0, 0, mtlo_op), RS},
  	[insn_mulu]	= {M(spec_op, 0, 0, 0, multu_mulu_op, multu_op),
  				RS | RT | RD},
@@ -44,6 +53,8 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
  #ifndef CONFIG_CPU_MIPSR6
  	[insn_mul]	= {M(spec2_op, 0, 0, 0, 0, mul_op), RS | RT | RD},
  #else
+diff --git a/arch/mips/mm/uasm.c b/arch/mips/mm/uasm.c
+index 81dd226d6b6b..125140979d62 100644
 --- a/arch/mips/mm/uasm.c
 +++ b/arch/mips/mm/uasm.c
 @@ -59,7 +59,7 @@ enum opcode {
@@ -63,3 +74,6 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
  I_u3u1u2(_nor)
  I_u3u1u2(_or)
  I_u2u1u3(_ori)
+-- 
+2.35.1
+

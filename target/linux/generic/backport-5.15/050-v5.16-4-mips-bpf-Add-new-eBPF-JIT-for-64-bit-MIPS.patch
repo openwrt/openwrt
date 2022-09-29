@@ -1,17 +1,26 @@
+From fbc802de6b10669bfe2d4ebc4dcf12563bba117c Mon Sep 17 00:00:00 2001
 From: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 Date: Tue, 5 Oct 2021 18:54:05 +0200
-Subject: [PATCH] mips: bpf: Add new eBPF JIT for 64-bit MIPS
+Subject: [PATCH 4/7] mips, bpf: Add new eBPF JIT for 64-bit MIPS
 
 This is an implementation on of an eBPF JIT for 64-bit MIPS III-V and
 MIPS64r1-r6. It uses the same framework introduced by the 32-bit JIT.
 
 Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
+Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+Signed-off-by: Andrii Nakryiko <andrii@kernel.org>
+Link: https://lore.kernel.org/bpf/20211005165408.2305108-5-johan.almbladh@anyfinetworks.com
 ---
+ arch/mips/net/bpf_jit_comp64.c | 1052 ++++++++++++++++++++++++++++++++
+ 1 file changed, 1052 insertions(+)
  create mode 100644 arch/mips/net/bpf_jit_comp64.c
 
+diff --git a/arch/mips/net/bpf_jit_comp64.c b/arch/mips/net/bpf_jit_comp64.c
+new file mode 100644
+index 000000000000..ca49d3ef7ff4
 --- /dev/null
 +++ b/arch/mips/net/bpf_jit_comp64.c
-@@ -0,0 +1,991 @@
+@@ -0,0 +1,1052 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Just-In-Time compiler for eBPF bytecode on MIPS.
@@ -392,21 +401,50 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +	emit(ctx, lld, t1, off, dst);
 +	switch (code) {
 +	case BPF_ADD:
++	case BPF_ADD | BPF_FETCH:
 +		emit(ctx, daddu, t2, t1, src);
 +		break;
 +	case BPF_AND:
++	case BPF_AND | BPF_FETCH:
 +		emit(ctx, and, t2, t1, src);
 +		break;
 +	case BPF_OR:
++	case BPF_OR | BPF_FETCH:
 +		emit(ctx, or, t2, t1, src);
 +		break;
 +	case BPF_XOR:
++	case BPF_XOR | BPF_FETCH:
 +		emit(ctx, xor, t2, t1, src);
++		break;
++	case BPF_XCHG:
++		emit(ctx, move, t2, src);
 +		break;
 +	}
 +	emit(ctx, scd, t2, off, dst);
 +	emit(ctx, beqz, t2, -16);
 +	emit(ctx, nop); /* Delay slot */
++
++	if (code & BPF_FETCH) {
++		emit(ctx, move, src, t1);
++		clobber_reg(ctx, src);
++	}
++}
++
++/* Atomic compare-and-exchange */
++static void emit_cmpxchg_r64(struct jit_context *ctx, u8 dst, u8 src, s16 off)
++{
++	u8 r0 = bpf2mips64[BPF_REG_0];
++	u8 t1 = MIPS_R_T6;
++	u8 t2 = MIPS_R_T7;
++
++	emit(ctx, lld, t1, off, dst);
++	emit(ctx, bne, t1, r0, 12);
++	emit(ctx, move, t2, src);      /* Delay slot */
++	emit(ctx, scd, t2, off, dst);
++	emit(ctx, beqz, t2, -20);
++	emit(ctx, move, r0, t1);      /* Delay slot */
++
++	clobber_reg(ctx, r0);
 +}
 +
 +/* Function call */
@@ -602,6 +640,7 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +{
 +	u8 dst = bpf2mips64[insn->dst_reg];
 +	u8 src = bpf2mips64[insn->src_reg];
++	u8 res = bpf2mips64[BPF_REG_0];
 +	u8 code = insn->code;
 +	s16 off = insn->off;
 +	s32 imm = insn->imm;
@@ -811,18 +850,49 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +	case BPF_ST | BPF_NOSPEC:
 +		break;
 +	/* Atomics */
-+	case BPF_STX | BPF_XADD | BPF_W:
-+	case BPF_STX | BPF_XADD | BPF_DW:
++	case BPF_STX | BPF_ATOMIC | BPF_W:
++	case BPF_STX | BPF_ATOMIC | BPF_DW:
 +		switch (imm) {
 +		case BPF_ADD:
++		case BPF_ADD | BPF_FETCH:
 +		case BPF_AND:
++		case BPF_AND | BPF_FETCH:
 +		case BPF_OR:
++		case BPF_OR | BPF_FETCH:
 +		case BPF_XOR:
++		case BPF_XOR | BPF_FETCH:
++		case BPF_XCHG:
 +			if (BPF_SIZE(code) == BPF_DW) {
 +				emit_atomic_r64(ctx, dst, src, off, imm);
++			} else if (imm & BPF_FETCH) {
++				u8 tmp = dst;
++
++				if (src == dst) { /* Don't overwrite dst */
++					emit_mov_r(ctx, MIPS_R_T4, dst);
++					tmp = MIPS_R_T4;
++				}
++				emit_sext(ctx, src, src);
++				emit_atomic_r(ctx, tmp, src, off, imm);
++				emit_zext_ver(ctx, src);
 +			} else { /* 32-bit, no fetch */
 +				emit_sext(ctx, MIPS_R_T4, src);
 +				emit_atomic_r(ctx, dst, MIPS_R_T4, off, imm);
++			}
++			break;
++		case BPF_CMPXCHG:
++			if (BPF_SIZE(code) == BPF_DW) {
++				emit_cmpxchg_r64(ctx, dst, src, off);
++			} else {
++				u8 tmp = res;
++
++				if (res == dst)   /* Don't overwrite dst */
++					tmp = MIPS_R_T4;
++				emit_sext(ctx, tmp, res);
++				emit_sext(ctx, MIPS_R_T5, src);
++				emit_cmpxchg_r(ctx, dst, MIPS_R_T5, tmp, off);
++				if (res == dst)   /* Restore result */
++					emit_mov_r(ctx, res, MIPS_R_T4);
++				/* Result zext inserted by verifier */
 +			}
 +			break;
 +		default:
@@ -1003,3 +1073,6 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +	}
 +	return 0;
 +}
+-- 
+2.35.1
+

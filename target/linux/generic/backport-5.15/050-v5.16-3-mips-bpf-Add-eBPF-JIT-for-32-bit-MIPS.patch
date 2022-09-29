@@ -1,6 +1,7 @@
+From eb63cfcd2ee8ec3805f6881f43341f589c3d2278 Mon Sep 17 00:00:00 2001
 From: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 Date: Tue, 5 Oct 2021 18:54:04 +0200
-Subject: [PATCH] mips: bpf: Add eBPF JIT for 32-bit MIPS
+Subject: [PATCH 3/7] mips, bpf: Add eBPF JIT for 32-bit MIPS
 
 This is an implementation of an eBPF JIT for 32-bit MIPS I-V and MIPS32.
 The implementation supports all 32-bit and 64-bit ALU and JMP operations,
@@ -77,11 +78,21 @@ initialized in the prologue, and propagated to the tail-callee by skipping
 the initialization instructions when emitting the tail call.
 
 Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
+Signed-off-by: Daniel Borkmann <daniel@iogearbox.net>
+Signed-off-by: Andrii Nakryiko <andrii@kernel.org>
+Link: https://lore.kernel.org/bpf/20211005165408.2305108-4-johan.almbladh@anyfinetworks.com
 ---
+ arch/mips/net/Makefile         |    7 +-
+ arch/mips/net/bpf_jit_comp.c   | 1032 +++++++++++++++++
+ arch/mips/net/bpf_jit_comp.h   |  211 ++++
+ arch/mips/net/bpf_jit_comp32.c | 1899 ++++++++++++++++++++++++++++++++
+ 4 files changed, 3148 insertions(+), 1 deletion(-)
  create mode 100644 arch/mips/net/bpf_jit_comp.c
  create mode 100644 arch/mips/net/bpf_jit_comp.h
  create mode 100644 arch/mips/net/bpf_jit_comp32.c
 
+diff --git a/arch/mips/net/Makefile b/arch/mips/net/Makefile
+index d55912349039..e057ee4ba75e 100644
 --- a/arch/mips/net/Makefile
 +++ b/arch/mips/net/Makefile
 @@ -2,4 +2,9 @@
@@ -95,9 +106,12 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +else
 +        obj-$(CONFIG_MIPS_EBPF_JIT) += ebpf_jit.o
 +endif
+diff --git a/arch/mips/net/bpf_jit_comp.c b/arch/mips/net/bpf_jit_comp.c
+new file mode 100644
+index 000000000000..7eb95fc57710
 --- /dev/null
 +++ b/arch/mips/net/bpf_jit_comp.c
-@@ -0,0 +1,1020 @@
+@@ -0,0 +1,1032 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Just-In-Time compiler for eBPF bytecode on MIPS.
@@ -507,21 +521,33 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +	emit(ctx, ll, MIPS_R_T9, off, dst);
 +	switch (code) {
 +	case BPF_ADD:
++	case BPF_ADD | BPF_FETCH:
 +		emit(ctx, addu, MIPS_R_T8, MIPS_R_T9, src);
 +		break;
 +	case BPF_AND:
++	case BPF_AND | BPF_FETCH:
 +		emit(ctx, and, MIPS_R_T8, MIPS_R_T9, src);
 +		break;
 +	case BPF_OR:
++	case BPF_OR | BPF_FETCH:
 +		emit(ctx, or, MIPS_R_T8, MIPS_R_T9, src);
 +		break;
 +	case BPF_XOR:
++	case BPF_XOR | BPF_FETCH:
 +		emit(ctx, xor, MIPS_R_T8, MIPS_R_T9, src);
++		break;
++	case BPF_XCHG:
++		emit(ctx, move, MIPS_R_T8, src);
 +		break;
 +	}
 +	emit(ctx, sc, MIPS_R_T8, off, dst);
 +	emit(ctx, beqz, MIPS_R_T8, -16);
 +	emit(ctx, nop); /* Delay slot */
++
++	if (code & BPF_FETCH) {
++		emit(ctx, move, src, MIPS_R_T9);
++		clobber_reg(ctx, src);
++	}
 +}
 +
 +/* Atomic compare-and-exchange (32-bit) */
@@ -1118,6 +1144,9 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +		bpf_jit_binary_free(header);
 +	goto out;
 +}
+diff --git a/arch/mips/net/bpf_jit_comp.h b/arch/mips/net/bpf_jit_comp.h
+new file mode 100644
+index 000000000000..44787cf377dd
 --- /dev/null
 +++ b/arch/mips/net/bpf_jit_comp.h
 @@ -0,0 +1,211 @@
@@ -1332,9 +1361,12 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +int build_insn(const struct bpf_insn *insn, struct jit_context *ctx);
 +
 +#endif /* _BPF_JIT_COMP_H */
+diff --git a/arch/mips/net/bpf_jit_comp32.c b/arch/mips/net/bpf_jit_comp32.c
+new file mode 100644
+index 000000000000..9d7041a2e5d7
 --- /dev/null
 +++ b/arch/mips/net/bpf_jit_comp32.c
-@@ -0,0 +1,1741 @@
+@@ -0,0 +1,1899 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Just-In-Time compiler for eBPF bytecode on MIPS.
@@ -2062,30 +2094,60 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +	 * Argument 2: src if xchg, othersize dst+off, passed in register a1
 +	 */
 +	emit(ctx, move, MIPS_R_T9, dst);
-+	emit(ctx, move, MIPS_R_A0, src);
-+	emit(ctx, addiu, MIPS_R_A1, MIPS_R_T9, off);
++	if (code == BPF_XCHG) {
++		emit(ctx, move, MIPS_R_A1, src);
++		emit(ctx, addiu, MIPS_R_A0, MIPS_R_T9, off);
++	} else {
++		emit(ctx, move, MIPS_R_A0, src);
++		emit(ctx, addiu, MIPS_R_A1, MIPS_R_T9, off);
++	}
 +
 +	/* Emit function call */
 +	switch (code) {
 +	case BPF_ADD:
 +		addr = (u32)&atomic_add;
 +		break;
++	case BPF_ADD | BPF_FETCH:
++		addr = (u32)&atomic_fetch_add;
++		break;
 +	case BPF_SUB:
 +		addr = (u32)&atomic_sub;
++		break;
++	case BPF_SUB | BPF_FETCH:
++		addr = (u32)&atomic_fetch_sub;
 +		break;
 +	case BPF_OR:
 +		addr = (u32)&atomic_or;
 +		break;
++	case BPF_OR | BPF_FETCH:
++		addr = (u32)&atomic_fetch_or;
++		break;
 +	case BPF_AND:
 +		addr = (u32)&atomic_and;
 +		break;
++	case BPF_AND | BPF_FETCH:
++		addr = (u32)&atomic_fetch_and;
++		break;
 +	case BPF_XOR:
 +		addr = (u32)&atomic_xor;
++		break;
++	case BPF_XOR | BPF_FETCH:
++		addr = (u32)&atomic_fetch_xor;
++		break;
++	case BPF_XCHG:
++		addr = (u32)&atomic_xchg;
 +		break;
 +	}
 +	emit_mov_i(ctx, MIPS_R_T9, addr);
 +	emit(ctx, jalr, MIPS_R_RA, MIPS_R_T9);
 +	emit(ctx, nop); /* Delay slot */
++
++	/* Update src register with old value, if specified */
++	if (code & BPF_FETCH) {
++		emit(ctx, move, src, MIPS_R_V0);
++		exclude = BIT(src);
++		clobber_reg(ctx, src);
++	}
 +
 +	/* Restore caller-saved registers, except any fetched value */
 +	pop_regs(ctx, ctx->clobbered & JIT_CALLER_REGS,
@@ -2094,10 +2156,17 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +	clobber_reg(ctx, MIPS_R_RA);
 +}
 +
++/* Helper function for 64-bit atomic exchange */
++static s64 jit_xchg64(s64 a, atomic64_t *v)
++{
++	return atomic64_xchg(v, a);
++}
++
 +/* Atomic read-modify-write (64-bit) */
 +static void emit_atomic_r64(struct jit_context *ctx,
 +			    u8 dst, const u8 src[], s16 off, u8 code)
 +{
++	const u8 *r0 = bpf2mips32[BPF_REG_0]; /* Mapped to v0-v1 */
 +	const u8 *r1 = bpf2mips32[BPF_REG_1]; /* Mapped to a0-a1 */
 +	u32 exclude = 0;
 +	u32 addr = 0;
@@ -2119,27 +2188,124 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +	case BPF_ADD:
 +		addr = (u32)&atomic64_add;
 +		break;
++	case BPF_ADD | BPF_FETCH:
++		addr = (u32)&atomic64_fetch_add;
++		break;
 +	case BPF_SUB:
 +		addr = (u32)&atomic64_sub;
++		break;
++	case BPF_SUB | BPF_FETCH:
++		addr = (u32)&atomic64_fetch_sub;
 +		break;
 +	case BPF_OR:
 +		addr = (u32)&atomic64_or;
 +		break;
++	case BPF_OR | BPF_FETCH:
++		addr = (u32)&atomic64_fetch_or;
++		break;
 +	case BPF_AND:
 +		addr = (u32)&atomic64_and;
 +		break;
++	case BPF_AND | BPF_FETCH:
++		addr = (u32)&atomic64_fetch_and;
++		break;
 +	case BPF_XOR:
 +		addr = (u32)&atomic64_xor;
++		break;
++	case BPF_XOR | BPF_FETCH:
++		addr = (u32)&atomic64_fetch_xor;
++		break;
++	case BPF_XCHG:
++		addr = (u32)&jit_xchg64;
 +		break;
 +	}
 +	emit_mov_i(ctx, MIPS_R_T9, addr);
 +	emit(ctx, jalr, MIPS_R_RA, MIPS_R_T9);
 +	emit(ctx, nop); /* Delay slot */
 +
++	/* Update src register with old value, if specified */
++	if (code & BPF_FETCH) {
++		emit(ctx, move, lo(src), lo(r0));
++		emit(ctx, move, hi(src), hi(r0));
++		exclude = BIT(src[0]) | BIT(src[1]);
++		clobber_reg64(ctx, src);
++	}
++
 +	/* Restore caller-saved registers, except any fetched value */
 +	pop_regs(ctx, ctx->clobbered & JIT_CALLER_REGS,
 +		 exclude, JIT_RESERVED_STACK);
 +	emit_load_delay(ctx);
++	clobber_reg(ctx, MIPS_R_RA);
++}
++
++/* Atomic compare-and-exchange (32-bit, non-ll/sc fallback) */
++static void emit_cmpxchg_r32(struct jit_context *ctx, u8 dst, u8 src, s16 off)
++{
++	const u8 *r0 = bpf2mips32[BPF_REG_0];
++
++	/* Push caller-saved registers on stack */
++	push_regs(ctx, ctx->clobbered & JIT_CALLER_REGS,
++		  JIT_RETURN_REGS, JIT_RESERVED_STACK + 2 * sizeof(u32));
++	/*
++	 * Argument 1: 32-bit dst+off, passed in register a0
++	 * Argument 2: 32-bit r0, passed in register a1
++	 * Argument 3: 32-bit src, passed in register a2
++	 */
++	emit(ctx, addiu, MIPS_R_T9, dst, off);
++	emit(ctx, move, MIPS_R_T8, src);
++	emit(ctx, move, MIPS_R_A1, lo(r0));
++	emit(ctx, move, MIPS_R_A0, MIPS_R_T9);
++	emit(ctx, move, MIPS_R_A2, MIPS_R_T8);
++
++	/* Emit function call */
++	emit_mov_i(ctx, MIPS_R_T9, (u32)&atomic_cmpxchg);
++	emit(ctx, jalr, MIPS_R_RA, MIPS_R_T9);
++	emit(ctx, nop); /* Delay slot */
++
++#ifdef __BIG_ENDIAN
++	emit(ctx, move, lo(r0), MIPS_R_V0);
++#endif
++	/* Restore caller-saved registers, except the return value */
++	pop_regs(ctx, ctx->clobbered & JIT_CALLER_REGS,
++		 JIT_RETURN_REGS, JIT_RESERVED_STACK + 2 * sizeof(u32));
++	emit_load_delay(ctx);
++	clobber_reg(ctx, MIPS_R_V0);
++	clobber_reg(ctx, MIPS_R_V1);
++	clobber_reg(ctx, MIPS_R_RA);
++}
++
++/* Atomic compare-and-exchange (64-bit) */
++static void emit_cmpxchg_r64(struct jit_context *ctx,
++			     u8 dst, const u8 src[], s16 off)
++{
++	const u8 *r0 = bpf2mips32[BPF_REG_0];
++	const u8 *r2 = bpf2mips32[BPF_REG_2];
++
++	/* Push caller-saved registers on stack */
++	push_regs(ctx, ctx->clobbered & JIT_CALLER_REGS,
++		  JIT_RETURN_REGS, JIT_RESERVED_STACK + 2 * sizeof(u32));
++	/*
++	 * Argument 1: 32-bit dst+off, passed in register a0 (a1 unused)
++	 * Argument 2: 64-bit r0, passed in registers a2-a3
++	 * Argument 3: 64-bit src, passed on stack
++	 */
++	push_regs(ctx, BIT(src[0]) | BIT(src[1]), 0, JIT_RESERVED_STACK);
++	emit(ctx, addiu, MIPS_R_T9, dst, off);
++	emit(ctx, move, r2[0], r0[0]);
++	emit(ctx, move, r2[1], r0[1]);
++	emit(ctx, move, MIPS_R_A0, MIPS_R_T9);
++
++	/* Emit function call */
++	emit_mov_i(ctx, MIPS_R_T9, (u32)&atomic64_cmpxchg);
++	emit(ctx, jalr, MIPS_R_RA, MIPS_R_T9);
++	emit(ctx, nop); /* Delay slot */
++
++	/* Restore caller-saved registers, except the return value */
++	pop_regs(ctx, ctx->clobbered & JIT_CALLER_REGS,
++		 JIT_RETURN_REGS, JIT_RESERVED_STACK + 2 * sizeof(u32));
++	emit_load_delay(ctx);
++	clobber_reg(ctx, MIPS_R_V0);
++	clobber_reg(ctx, MIPS_R_V1);
 +	clobber_reg(ctx, MIPS_R_RA);
 +}
 +
@@ -2660,6 +2826,7 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +{
 +	const u8 *dst = bpf2mips32[insn->dst_reg];
 +	const u8 *src = bpf2mips32[insn->src_reg];
++	const u8 *res = bpf2mips32[BPF_REG_0];
 +	const u8 *tmp = bpf2mips32[JIT_REG_TMP];
 +	u8 code = insn->code;
 +	s16 off = insn->off;
@@ -2882,30 +3049,53 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +	case BPF_ST | BPF_NOSPEC:
 +		break;
 +	/* Atomics */
-+	case BPF_STX | BPF_XADD | BPF_W:
++	case BPF_STX | BPF_ATOMIC | BPF_W:
 +		switch (imm) {
 +		case BPF_ADD:
++		case BPF_ADD | BPF_FETCH:
 +		case BPF_AND:
++		case BPF_AND | BPF_FETCH:
 +		case BPF_OR:
++		case BPF_OR | BPF_FETCH:
 +		case BPF_XOR:
++		case BPF_XOR | BPF_FETCH:
++		case BPF_XCHG:
 +			if (cpu_has_llsc)
 +				emit_atomic_r(ctx, lo(dst), lo(src), off, imm);
 +			else /* Non-ll/sc fallback */
 +				emit_atomic_r32(ctx, lo(dst), lo(src),
 +						off, imm);
++			if (imm & BPF_FETCH)
++				emit_zext_ver(ctx, src);
++			break;
++		case BPF_CMPXCHG:
++			if (cpu_has_llsc)
++				emit_cmpxchg_r(ctx, lo(dst), lo(src),
++					       lo(res), off);
++			else /* Non-ll/sc fallback */
++				emit_cmpxchg_r32(ctx, lo(dst), lo(src), off);
++			/* Result zero-extension inserted by verifier */
 +			break;
 +		default:
 +			goto notyet;
 +		}
 +		break;
 +	/* Atomics (64-bit) */
-+	case BPF_STX | BPF_XADD | BPF_DW:
++	case BPF_STX | BPF_ATOMIC | BPF_DW:
 +		switch (imm) {
 +		case BPF_ADD:
++		case BPF_ADD | BPF_FETCH:
 +		case BPF_AND:
++		case BPF_AND | BPF_FETCH:
 +		case BPF_OR:
++		case BPF_OR | BPF_FETCH:
 +		case BPF_XOR:
++		case BPF_XOR | BPF_FETCH:
++		case BPF_XCHG:
 +			emit_atomic_r64(ctx, lo(dst), src, off, imm);
++			break;
++		case BPF_CMPXCHG:
++			emit_cmpxchg_r64(ctx, lo(dst), src, off);
 +			break;
 +		default:
 +			goto notyet;
@@ -3076,3 +3266,6 @@ Signed-off-by: Johan Almbladh <johan.almbladh@anyfinetworks.com>
 +	}
 +	return 0;
 +}
+-- 
+2.35.1
+
