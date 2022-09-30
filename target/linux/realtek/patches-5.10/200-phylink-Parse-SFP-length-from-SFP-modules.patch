@@ -1,0 +1,178 @@
+From 0fb0cbeb0487dd46d4d3b7d6a92799b23fd5c287 Mon Sep 17 00:00:00 2001
+From: Olliver Schinagl <oliver@schinagl.nl>
+Date: Fri, 30 Sep 2022 16:08:57 +0200
+Subject: [PATCH 1/2] phylink: Parse SFP length from SFP modules
+
+Whenever we insert an SFP module, we really would like to know the
+length of the link, as this may be needed for link calibration later. As
+we do not want to expose the eeprom or parse the data elsewhere, add a
+helper for this purpose.
+
+Signed-off-by: Olliver Schinagl <oliver@schinagl.nl>
+---
+ drivers/net/phy/phylink.c |  2 +
+ drivers/net/phy/sfp-bus.c | 78 +++++++++++++++++++++++++++++++++++++++
+ include/linux/sfp.h       | 12 +++++-
+ 3 files changed, 91 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/phy/phylink.c b/drivers/net/phy/phylink.c
+index 1a3d587f37c9..6ef48af3b77b 100644
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -81,6 +81,7 @@ struct phylink {
+ 	bool sfp_may_have_phy;
+ 	__ETHTOOL_DECLARE_LINK_MODE_MASK(sfp_support);
+ 	u8 sfp_port;
++	unsigned int sfp_link_len_cm;
+ };
+ 
+ #define phylink_printk(level, pl, fmt, ...) \
+@@ -2671,6 +2672,7 @@ static int phylink_sfp_module_insert(void *upstream,
+ 	linkmode_zero(support);
+ 	sfp_parse_support(pl->sfp_bus, id, support);
+ 	pl->sfp_port = sfp_parse_port(pl->sfp_bus, id, support);
++	pl->sfp_link_len_cm = sfp_parse_length(id);
+ 
+ 	/* If this module may have a PHY connecting later, defer until later */
+ 	pl->sfp_may_have_phy = sfp_may_have_phy(pl->sfp_bus, id);
+diff --git a/drivers/net/phy/sfp-bus.c b/drivers/net/phy/sfp-bus.c
+index 15aa5ac1ff49..948fba8424e0 100644
+--- a/drivers/net/phy/sfp-bus.c
++++ b/drivers/net/phy/sfp-bus.c
+@@ -1,4 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
++#include <linux/bitops.h>
+ #include <linux/export.h>
+ #include <linux/kref.h>
+ #include <linux/list.h>
+@@ -10,6 +11,14 @@
+ 
+ #include "sfp.h"
+ 
++#define SFP_COPPER_LINK_LEN_MULTI_OFFSET  6
++#define SFP_COPPER_LINK_LEN_MULTI_MASK    GENMASK(7, 6)
++#define SFP_COPPER_LINK_LEN_MULTI(r) \
++        (((r) & SFP_COPPER_LINK_LEN_MULTI_MASK) >> SFP_COPPER_LINK_LEN_MULTI_OFFSET)
++#define SFP_COPPER_LINK_LEN_MASK          GENMASK(5, 0)
++#define SFP_COPPER_LINK_LEN(r) \
++        ((r) & SFP_COPPER_LINK_LEN_MASK)
++
+ struct sfp_quirk {
+ 	const char *vendor;
+ 	const char *part;
+@@ -200,6 +209,75 @@ int sfp_parse_port(struct sfp_bus *bus, const struct sfp_eeprom_id *id,
+ }
+ EXPORT_SYMBOL_GPL(sfp_parse_port);
+ 
++/**
++ * sfp_parse_length() - Parse the EEPROM base ID, setting the link length
++ * @id: a pointer to the module's &struct sfp_eeprom_id
++ *
++ * Parse the EEPROM identification given in @id, and return the maximally
++ * supported link length in centimeters.
++ *
++ * A value of 0 indicates it wasn't possible to determine link-length.
++ * A value of UINT_MAX indicates the link supports more then the maximum value
++ * that can be stored in the eeprom, usually exceeding 2.54km or 25.4km.
++ */
++unsigned int sfp_parse_length(const struct sfp_eeprom_id *id)
++{
++	unsigned int cable_len = 0;
++
++	if ((id->base.link_len_sm_km >= 255) ||
++			(id->base.link_len_sm_100m >= 255) ||
++			(id->base.link_len_50um_om4_10m >= 255) ||
++			(id->base.link_len_50um_om3_10m >= 255) ||
++			(id->base.link_len_50um_om2_10m >= 255) ||
++			(id->base.link_len_62_5um_om1_10m >= 255))
++		return UINT_MAX;
++
++	if (id->base.connector == SFF8024_CONNECTOR_COPPER_PIGTAIL) {
++		cable_len = id->base.link_len_50um_om4_10m;
++
++		if (cable_len == 0) {
++			cable_len = id->base.link_len_50um_om3_10m;
++			switch (SFP_COPPER_LINK_LEN_MULTI(id->base.link_len_50um_om3_10m)) {
++				case 0b11:
++					cable_len *= (100 * 10);
++					break;
++				case 0b10:
++					cable_len *= (10 * 10);
++					break;
++				case 0b01:
++					cable_len *= (1 * 10);
++					break;
++				case 0b00:
++					fallthrough; /* Cable length is already in cm */
++				default:
++					break;
++			}
++		}
++	} else {
++		cable_len = id->base.link_len_sm_km * 1000;
++
++		if (cable_len == 0)
++				cable_len = id->base.link_len_sm_100m * 100;
++
++		if (cable_len == 0)
++			cable_len = id->base.link_len_50um_om4_10m * 10;
++
++		if (cable_len == 0)
++			cable_len = id->base.link_len_50um_om3_10m * 10;
++
++		if (cable_len == 0)
++			cable_len = id->base.link_len_50um_om2_10m * 10;
++
++		if (cable_len == 0)
++			cable_len = id->base.link_len_62_5um_om1_10m * 10;
++
++		cable_len *= 100; /* Convert to cm */
++	}
++
++	return cable_len;
++}
++EXPORT_SYMBOL_GPL(sfp_parse_length);
++
+ /**
+  * sfp_may_have_phy() - indicate whether the module may have a PHY
+  * @bus: a pointer to the &struct sfp_bus structure for the sfp module
+diff --git a/include/linux/sfp.h b/include/linux/sfp.h
+index 302094b855fb..27bb425a5430 100644
+--- a/include/linux/sfp.h
++++ b/include/linux/sfp.h
+@@ -157,7 +157,12 @@ struct sfp_eeprom_base {
+ 	u8 encoding;
+ 	u8 br_nominal;
+ 	u8 rate_id;
+-	u8 link_len[6];
++	u8 link_len_sm_km;
++	u8 link_len_sm_100m;
++	u8 link_len_50um_om2_10m;
++	u8 link_len_62_5um_om1_10m;
++	u8 link_len_50um_om4_10m;
++	u8 link_len_50um_om3_10m;
+ 	char vendor_name[16];
+ 	u8 extended_cc;
+ 	char vendor_oui[3];
+@@ -531,6 +536,7 @@ struct sfp_upstream_ops {
+ };
+ 
+ #if IS_ENABLED(CONFIG_SFP)
++unsigned int sfp_parse_length(const struct sfp_eeprom_id *id);
+ int sfp_parse_port(struct sfp_bus *bus, const struct sfp_eeprom_id *id,
+ 		   unsigned long *support);
+ bool sfp_may_have_phy(struct sfp_bus *bus, const struct sfp_eeprom_id *id);
+@@ -553,6 +559,10 @@ int sfp_bus_add_upstream(struct sfp_bus *bus, void *upstream,
+ 			 const struct sfp_upstream_ops *ops);
+ void sfp_bus_del_upstream(struct sfp_bus *bus);
+ #else
++static inline unsigned int sfp_parse_length(const struct sfp_eeprom_id *id)
++{
++	return 0;
++}
+ static inline int sfp_parse_port(struct sfp_bus *bus,
+ 				 const struct sfp_eeprom_id *id,
+ 				 unsigned long *support)
+-- 
+2.37.3
+

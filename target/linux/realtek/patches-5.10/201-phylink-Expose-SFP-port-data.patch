@@ -1,0 +1,90 @@
+From 82ae415c9248ce284415129e78a53a3ea137e950 Mon Sep 17 00:00:00 2001
+From: Olliver Schinagl <oliver@schinagl.nl>
+Date: Fri, 30 Sep 2022 09:47:01 +0200
+Subject: [PATCH 2/2] phylink: Expose SFP port data
+
+When an SFP[+] port gets inserted into a system, a few things run,
+including sfp_parse which stores the found/detected port type and the
+link length (from the SFP eeprom) in the phylink struct variable.
+This struct however is not exposed and not available to the system.
+
+Users of an SFP based link, might have to do calibration of such a link,
+especially those that run on Direct Attached Copper (DAC) TwinAx cables.
+
+Signed-off-by: Olliver Schinagl <oliver@schinagl.nl>
+---
+ drivers/net/phy/phylink.c | 24 ++++++++++++++++++++++++
+ include/linux/phylink.h   | 15 +++++++++++++++
+ 2 files changed, 39 insertions(+)
+
+diff --git a/drivers/net/phy/phylink.c b/drivers/net/phy/phylink.c
+index 6ef48af3b77b..95c19531f7e2 100644
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -117,6 +117,30 @@ do {									\
+ })
+ #endif
+ 
++/**
++ * phylink_sfp_port() - get the port type for an SFP port
++ * @pl: phylink struct
++ *
++ * Return the &enum phylink_port indicating an SFP port type.
++ */
++enum phylink_port phylink_sfp_port(struct phylink *pl)
++{
++	return pl->sfp_port;
++}
++
++/**
++ * phylink_sfp_link_len_cm() - get the length of an SFP link
++ * @pl: phylink struct
++ *
++ * Return the SFP port link length in centimeters. A value of 0 indicates
++ * the link length could not be determined, a value of UINT_MAX indicates
++ * the link length capabilities exceed what could have been calculated.
++ */
++unsigned int phylink_sfp_link_len_cm(struct phylink *pl)
++{
++	return pl->sfp_link_len_cm;
++}
++
+ /**
+  * phylink_set_port_modes() - set the port type modes in the ethtool mask
+  * @mask: ethtool link mode mask
+diff --git a/include/linux/phylink.h b/include/linux/phylink.h
+index 9ff921a51760..9036bfc8be82 100644
+--- a/include/linux/phylink.h
++++ b/include/linux/phylink.h
+@@ -4,6 +4,7 @@
+ #include <linux/phy.h>
+ #include <linux/spinlock.h>
+ #include <linux/workqueue.h>
++#include <uapi/linux/ethtool.h>
+ 
+ struct device_node;
+ struct ethtool_cmd;
+@@ -45,6 +46,20 @@ enum {
+ 	MAC_400000FD	= BIT(18),
+ };
+ 
++enum phylink_port {
++	PHYLINK_PORT_TP         = PORT_TP,
++	PHYLINK_PORT_AUI        = PORT_AUI,
++	PHYLINK_PORT_MII        = PORT_MII,
++	PHYLINK_PORT_FIBRE      = PORT_FIBRE,
++	PHYLINK_PORT_BNC        = PORT_BNC,
++	PHYLINK_PORT_DA         = PORT_DA,
++	PHYLINK_PORT_NONE       = PORT_NONE,
++	PHYLINK_PORT_OTHER      = PORT_OTHER,
++};
++
++enum phylink_port phylink_sfp_port(struct phylink *);
++unsigned int phylink_sfp_link_len_cm(struct phylink *);
++
+ static inline bool phylink_autoneg_inband(unsigned int mode)
+ {
+ 	return mode == MLO_AN_INBAND;
+-- 
+2.37.3
+
