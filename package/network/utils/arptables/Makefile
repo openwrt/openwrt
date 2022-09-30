@@ -10,7 +10,7 @@ PKG_VERSION:=0.0.5
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://ftp.netfilter.org/pub/arptables
+PKG_SOURCE_URL:=https://ftp.netfilter.org/pub/arptables
 PKG_HASH:=4f9a0656ce5c90868f551cd4deeb2d04f33899667e1fb2818b64e432fe8f629c
 
 PKG_LICENSE:=GPL-2.0

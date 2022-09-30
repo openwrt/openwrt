@@ -12,7 +12,7 @@ PKG_VERSION:=3.19.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://sourceware.org/pub/valgrind/
+PKG_SOURCE_URL:=https://sourceware.org/pub/valgrind/
 PKG_HASH:=dd5e34486f1a483ff7be7300cc16b4d6b24690987877c3278d797534d6738f02
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
