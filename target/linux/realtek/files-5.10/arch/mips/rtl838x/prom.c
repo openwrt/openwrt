@@ -35,11 +35,17 @@ static struct plat_smp_ops rtl_smp_ops;
 
 static void rtl_init_secondary(void)
 {
+#ifndef CONFIG_CEVT_R4K
 /*
- * MIPS timer interrupt might fire like crazy if not used or initialized
- * properly. Silence it by setting the maximum possible interval.
+ * These devices are low on resources. There might be the chance that CEVT_R4K
+ * is not enabled in kernel build. Nevertheless the timer and interrupt 7 might
+ * be active by default after startup of secondary VPE. With no registered
+ * handler that leads to continuous unhandeled interrupts. In this case disable
+ * counting (DC) in the core and confirm a pending interrupt.
  */
+	write_c0_cause(read_c0_cause() | CAUSE_DC);
 	write_c0_compare(0);
+#endif /* CONFIG_CEVT_R4K */
 /*
  * Enable all CPU interrupts, as everything is managed by the external
  * controller. TODO: Standard vsmp_init_secondary() has special treatment for
@@ -50,7 +56,7 @@ static void rtl_init_secondary(void)
 	else
 		set_c0_status(ST0_IM);
 }
-#endif
+#endif /* CONFIG_MIPS_MT_SMP */
 
 const char *get_system_type(void)
 {
