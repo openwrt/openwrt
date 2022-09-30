@@ -55,6 +55,15 @@ extern struct mutex smi_lock;
 
 #define RTL9300_PHY_ID_MASK 0xf0ffffff
 
+struct sds_tx_eye_param {
+	u8 pre_amp;
+	u8 post_amp;
+	u8 pre_en;
+	u8 post_en;
+	u8 main_amp;
+	u8 impedance;
+};
+
 /*
  * This lock protects the state of the SoC automatically polling the PHYs over the SMI
  * bus to detect e.g. link and media changes. For operations on the PHYs such as
@@ -1847,15 +1856,270 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 	pr_info("%s --------------------- serdes %d forced to %x DONE\n", __func__, sds, sds_mode);
 }
 
+static const struct sds_tx_eye_param rtl9301_24G_tx_sds4 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_tx_sds6 = {
+	.pre_amp = 0x1,
+	.post_amp = 0x0,
+	.pre_en = 0x1,
+	.post_en = 0x0,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_tx_sds8 = {
+	.pre_amp = 0x1,
+	.post_amp = 0x1,
+	.pre_en = 0x1,
+	.post_en = 0x1,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_tx_sds9 = {
+	.pre_amp = 0x1,
+	.post_amp = 0x1,
+	.pre_en = 0x1,
+	.post_en = 0x1,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_DAC_tx_sds4 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_DAC_tx_sds6 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_DAC_tx_sds8 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_DAC_tx_sds9 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_cascade_master_tx_sds8 = {
+	.pre_amp = 0x1,
+	.post_amp = 0x2,
+	.pre_en = 0x1,
+	.post_en = 0x1,
+	.main_amp = 0xc,
+	.impedance = 0xf,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_cascade_master_tx_sds9 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x2,
+	.pre_en = 0x1,
+	.post_en = 0x1,
+	.main_amp = 0xb,
+	.impedance = 0xf,
+};
+
+static const struct sds_tx_eye_param rtl9302_2G5_tx_sds6 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x8,
+	.pre_en = 0x0,
+	.post_en = 0x1,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_DAC_cascade_master_tx_sds8 = {
+	.pre_amp = 0x8,
+	.post_amp = 0xe,
+	.pre_en = 0x1,
+	.post_en = 0x1,
+	.main_amp = 0x1f,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9301_24G_DAC_cascade_master_tx_sds9 = {
+	.pre_amp = 0x8,
+	.post_amp = 0xc,
+	.pre_en = 0x1,
+	.post_en = 0x1,
+	.main_amp = 0x1f,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_tx_sds2 = {
+	.pre_amp = 0x2,
+	.post_amp = 0x2,
+	.pre_en = 0x1,
+	.post_en = 0x1,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_tx_sds3 = {
+	.pre_amp = 0x9,
+	.post_amp = 0x1,
+	.pre_en = 0x1,
+	.post_en = 0x1,
+	.main_amp = 0x9,
+	.impedance = 0x1,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_tx_sds4 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_tx_sds5 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_tx_sds6 = {
+	.pre_amp = 0x1,
+	.post_amp = 0x0,
+	.pre_en = 0x1,
+	.post_en = 0x0,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_tx_sds7 = {
+	.pre_amp = 0x2,
+	.post_amp = 0x0,
+	.pre_en = 0x1,
+	.post_en = 0x0,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_tx_sds8 = {
+	.pre_amp = 0x1,
+	.post_amp = 0x1,
+	.pre_en = 0x1,
+	.post_en = 0x1,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_tx_sds9 = {
+	.pre_amp = 0x2,
+	.post_amp = 0x2,
+	.pre_en = 0x1,
+	.post_en = 0x1,
+	.main_amp = 0x9,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_DAC_tx_sds2 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_DAC_tx_sds3 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_DAC_tx_sds4 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_DAC_tx_sds5 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_DAC_tx_sds6 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_DAC_tx_sds7 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_DAC_tx_sds8 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
+static const struct sds_tx_eye_param rtl9303_80G_DAC_tx_sds9 = {
+	.pre_amp = 0x0,
+	.post_amp = 0x0,
+	.pre_en = 0x0,
+	.post_en = 0x0,
+	.main_amp = 0x10,
+	.impedance = 0x8,
+};
+
 void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 {
-	// parameters: rtl9303_80G_txParam_s2
-	int impedance = 0x8;
-	int pre_amp = 0x2;
-	int main_amp = 0x9;
-	int post_amp = 0x2;
-	int pre_en = 0x1;
-	int post_en = 0x1;
+	struct sds_tx_eye_param *sds_eye = &rtl9303_80G_tx_sds2;
 	int page;
 
 	switch(phy_if) {
@@ -1863,6 +2127,7 @@ void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 		page = 0x25;
 		break;
 	case PHY_INTERFACE_MODE_HSGMII:
+		fallthrough;
 	case PHY_INTERFACE_MODE_2500BASEX:
 		page = 0x29;
 		break;
@@ -1874,14 +2139,17 @@ void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 		return;
 	}
 
+	if (!sds_eye)
+		return;
+
 	pr_info("%s SerDes %d, pre-amp 0x%02x, post-amp 0x%02x, pre-en 0x%02x, post-en enable 0x%02x, main-amp val 0x%02x, impedance 0x%02x\n",
-		__func__, sds, pre_amp, post_amp, pre_en, post_en, main_amp, impedance);
-	rtl9300_sds_field_w(sds, page, 0x1, 15, 11, pre_amp);
-	rtl9300_sds_field_w(sds, page, 0x7, 0, 0, pre_en);
-	rtl9300_sds_field_w(sds, page, 0x7, 8, 4, main_amp);
-	rtl9300_sds_field_w(sds, page, 0x6, 4, 0, post_amp);
-	rtl9300_sds_field_w(sds, page, 0x7, 3, 3, post_en);
-	rtl9300_sds_field_w(sds, page, 0x18, 15, 12, impedance);
+		__func__, sds, sds_eye->pre_amp, sds_eye->post_amp, sds_eye->pre_en, sds_eye->post_en, sds_eye->main_amp, sds_eye->impedance);
+	rtl9300_sds_field_w(sds, page, 0x1, 15, 11, sds_eye->pre_amp);
+	rtl9300_sds_field_w(sds, page, 0x6, 4, 0, sds_eye->post_amp);
+	rtl9300_sds_field_w(sds, page, 0x7, 0, 0, sds_eye->pre_en);
+	rtl9300_sds_field_w(sds, page, 0x7, 3, 3, sds_eye->post_en);
+	rtl9300_sds_field_w(sds, page, 0x7, 8, 4, sds_eye->main_amp);
+	rtl9300_sds_field_w(sds, page, 0x18, 15, 12, sds_eye->impedance);
 }
 
 /*
