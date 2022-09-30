@@ -38,8 +38,6 @@ HOST_CONFIGURE_ARGS := \
 	--system-zstd \
 	--generator=Ninja
 
-HOST_LDFLAGS += -Wl,-rpath,$(STAGING_DIR_HOST)/lib
-
 define Host/Compile/Default
 	+$(NINJA) -C $(HOST_BUILD_DIR) $(1)
 endef
