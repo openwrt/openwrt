@@ -44,20 +44,6 @@
  
  EXPORT(_stext)
  
-@@ -79,11 +81,13 @@ FEXPORT(__kernel_entry)
- 	j	kernel_entry
- #endif /* CONFIG_BOOT_RAW */
- 
-+#ifndef CONFIG_RTL931X
- #ifdef CONFIG_IMAGE_CMDLINE_HACK
- 	.ascii	"CMDLINE:"
- EXPORT(__image_cmdline)
- 	.fill	0x400
- #endif /* CONFIG_IMAGE_CMDLINE_HACK */
-+#endif
- 
- 	__REF
- 
 --- a/arch/mips/kernel/vmlinux.lds.S
 +++ b/arch/mips/kernel/vmlinux.lds.S
 @@ -55,7 +55,11 @@ SECTIONS
