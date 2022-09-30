@@ -1953,7 +1953,7 @@ define Device/ubnt_unifi-flexhd
   DEVICE_MODEL := UniFi FlexHD
   DEVICE_DTS_CONFIG := config@2
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware kmod-leds-ubnt-ledbar
   IMAGE_SIZE := 15552k
 endef
 TARGET_DEVICES += ubnt_unifi-flexhd
