@@ -231,6 +231,8 @@ foreach my $mirror (@ARGV) {
 		push @mirrors, "https://ftp.debian.org/debian/$1";
 		push @mirrors, "https://mirror.leaseweb.com/debian/$1";
 		push @mirrors, "https://mirror.netcologne.de/debian/$1";
+		push @mirrors, "https://mirrors.tuna.tsinghua.edu.cn/debian/$1";
+		push @mirrors, "https://mirrors.ustc.edu.cn/debian/$1"
 	} elsif ($mirror =~ /^\@APACHE\/(.+)$/) {
 		push @mirrors, "https://mirror.netcologne.de/apache.org/$1";
 		push @mirrors, "https://mirror.aarnet.edu.au/pub/apache/$1";
@@ -241,6 +243,8 @@ foreach my $mirror (@ARGV) {
 		push @mirrors, "http://ftp.jaist.ac.jp/pub/apache/$1";
 		push @mirrors, "ftp://apache.cs.utah.edu/apache.org/$1";
 		push @mirrors, "ftp://apache.mirrors.ovh.net/ftp.apache.org/dist/$1";
+		push @mirrors, "https://mirrors.tuna.tsinghua.edu.cn/apache/$1";
+		push @mirrors, "https://mirrors.ustc.edu.cn/apache/$1";
 	} elsif ($mirror =~ /^\@GITHUB\/(.+)$/) {
 		# give github a few more tries (different mirrors)
 		for (1 .. 5) {
@@ -256,6 +260,8 @@ foreach my $mirror (@ARGV) {
 		push @mirrors, "ftp://mirrors.rit.edu/gnu/$1";
 		push @mirrors, "ftp://download.xs4all.nl/pub/gnu/$1";
 		push @mirrors, "https://ftp.gnu.org/gnu/$1";
+		push @mirrors, "https://mirrors.tuna.tsinghua.edu.cn/gnu/$1";
+		push @mirrors, "https://mirrors.ustc.edu.cn/gnu/$1";
 	} elsif ($mirror =~ /^\@SAVANNAH\/(.+)$/) {
 		push @mirrors, "https://mirror.netcologne.de/savannah/$1";
 		push @mirrors, "https://mirror.csclub.uwaterloo.ca/nongnu/$1";
@@ -279,6 +285,8 @@ foreach my $mirror (@ARGV) {
 			push @mirrors, "http://www.ring.gr.jp/archives/linux/kernel.org/$dir";
 			push @mirrors, "ftp://ftp.riken.jp/Linux/kernel.org/$dir";
 			push @mirrors, "ftp://www.mirrorservice.org/sites/ftp.kernel.org/pub/$dir";
+			push @mirrors, "https://mirrors.tuna.tsinghua.edu.cn/kernel/$dir";
+			push @mirrors, "https://mirrors.ustc.edu.cn/kernel.org/$dir";
 		}
 	} elsif ($mirror =~ /^\@GNOME\/(.+)$/) {
 		push @mirrors, "https://download.gnome.org/sources/$1";
@@ -290,6 +298,7 @@ foreach my $mirror (@ARGV) {
 		push @mirrors, "http://ftp.belnet.be/ftp.gnome.org/sources/$1";
 		push @mirrors, "ftp://ftp.cse.buffalo.edu/pub/Gnome/sources/$1";
 		push @mirrors, "ftp://ftp.nara.wide.ad.jp/pub/X11/GNOME/sources/$1";
+		push @mirrors, "https://mirrors.ustc.edu.cn/gnome/sources/$1";
 	} else {
 		push @mirrors, $mirror;
 	}
