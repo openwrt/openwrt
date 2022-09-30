@@ -9,12 +9,13 @@
 #include <linux/delay.h>
 #include <linux/of.h>
 #include <linux/phy.h>
+#include <linux/phylink.h>
 #include <linux/netdevice.h>
 #include <linux/firmware.h>
 #include <linux/crc32.h>
 #include <linux/sfp.h>
+#include <uapi/linux/ethtool.h>
 
-#include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl83xx-phy.h"
 
 extern struct rtl83xx_soc_info soc_info;
@@ -2136,6 +2137,8 @@ static const struct sds_tx_eye_param rtl9303_80G_DAC_tx_sds9 = {
 /*
  * Configure the transmitter of the SerDes, in particular the pre- main- and post-amplifiers
  * phy_if is the physical interface to the phy, not the protocol currently in use
+ * TODO Currently, this uses hard coded tables linked to a serdes (by name)
+ * which in turn is linked to a mode via an arg phy_if.
  */
 void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 {
@@ -2625,7 +2628,9 @@ void rtl9300_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
 	}
 }
 
-void rtl9300_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
+void rtl9300_do_rx_calibration_1(const enum phylink_port sfp_port,
+			         const unsigned int link_len,
+			         int sds, phy_interface_t phy_mode)
 {
 	// From both rtl9300_rxCaliConf_serdes_myParam and rtl9300_rxCaliConf_phy_myParam
 	int tap0_init_val = 0x1f; // Initial Decision Fed Equalizer 0 tap
@@ -2692,15 +2697,11 @@ void rtl9300_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
 	/* end_1.1.4 */
 
 	/* start_1.1.5 LEQ and DFE setting */
-	// TODO: make this work for DAC cables of different lengths
-	// For a 10GBit serdes wit Fibre, SDS 8 or 9
-	if (phy_mode == PHY_INTERFACE_MODE_10GBASER || PHY_INTERFACE_MODE_1000BASEX)
-		rtl9300_sds_field_w(sds, 0x2e, 0x16,  3,  2, 0x02);
+	pr_debug("%s: phy_mode %d (%s); sfp_port %d length: (%d)\n", __func__, phy_mode, phy_modes(phy_mode), link_len);
+	if ((sfp_port == PHYLINK_PORT_DA) && (link_len <= 300))
+		rtl9300_sds_field_w(sds, 0x2e, 0x16,  3,  2, 0x01);
 	else
-		pr_err("%s not PHY-based or SerDes, implement DAC!\n", __func__);
-
-	// No serdes, check for Aquantia PHYs
-	rtl9300_sds_field_w(sds, 0x2e, 0x16,  3,  2, 0x02);
+		rtl9300_sds_field_w(sds, 0x2e, 0x16,  3,  2, 0x02);
 
 	rtl9300_sds_field_w(sds, 0x2e, 0x0f,  6,  0, 0x5f);
 	rtl9300_sds_field_w(sds, 0x2f, 0x05,  7,  2, 0x1f);
@@ -2951,7 +2952,7 @@ void rtl9300_do_rx_calibration(int sds, phy_interface_t phy_mode)
 	u32 latch_sts;
 
 	pr_debug("Serdes %u Rx Calibration...\n", sds);
-	rtl9300_do_rx_calibration_1(sds, phy_mode);
+	rtl9300_do_rx_calibration_1(PORT_TP, UINT_MAX, sds, phy_mode);
 	rtl9300_do_rx_calibration_2(sds);
 	rtl9300_do_rx_calibration_4(sds);
 	rtl9300_do_rx_calibration_5(sds, phy_mode);
@@ -3905,7 +3906,7 @@ int rtl9300_configure_rtl8226(struct phy_device *phydev)
 	sw_w32_mask(1, 0, RTL930X_MAC_FORCE_MODE_CTRL + 4 * phy_addr);
 
 	/* Set initial RX calibration parameter, but do not perform actual calibration */
-	rtl9300_do_rx_calibration_1(sds_num, phy_mode);
+	rtl9300_do_rx_calibration_1(PORT_TP, UINT_MAX, sds_num, phy_mode);
 
 	/* Re-enable SDS with new mode */
 	rtl9300_force_sds_mode(sds_num, phy_mode);
@@ -3935,7 +3936,7 @@ int rtl9300_rtl8226_mode_set(int port, int sds_num, phy_interface_t phy_mode)
 	sw_w32_mask(1, 0, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port);
 
 	/* Set initial RX calibration parameter, but do not perform actual calibration */
-	rtl9300_do_rx_calibration_1(sds_num, PHY_INTERFACE_MODE_HSGMII);
+	rtl9300_do_rx_calibration_1(PORT_TP, UINT_MAX, sds_num, PHY_INTERFACE_MODE_HSGMII);
 
 	/* Re-enable SDS with new mode */
 	rtl9300_force_sds_mode(sds_num, phy_mode);
@@ -3945,7 +3946,9 @@ int rtl9300_rtl8226_mode_set(int port, int sds_num, phy_interface_t phy_mode)
 	return 0;
 }
 
-int rtl9300_configure_serdes(int port, int sds_num, phy_interface_t phy_mode)
+int rtl9300_configure_serdes(int port, const enum phylink_port sfp_port,
+			     const unsigned int link_length,
+			     int sds_num, phy_interface_t phy_mode)
 {
 	pr_info("%s CMU BAND is %d\n", __func__, rtl9300_sds_cmu_band_get(sds_num));
 
@@ -3978,7 +3981,7 @@ int rtl9300_configure_serdes(int port, int sds_num, phy_interface_t phy_mode)
 	rtl9300_sds_field_w(sds_num, 0x20, 2, 12, 12, 0);
 
 	// Do RX calibration
-	rtl9300_do_rx_calibration_1(sds_num, phy_mode);
+	rtl9300_do_rx_calibration_1(sfp_port, link_length, sds_num, phy_mode);
 
 	rtl9300_sds_tx_config(sds_num, phy_mode);
 

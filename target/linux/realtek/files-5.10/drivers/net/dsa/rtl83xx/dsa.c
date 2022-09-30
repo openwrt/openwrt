@@ -772,6 +772,7 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 					unsigned int mode,
 					const struct phylink_link_state *state)
 {
+	struct dsa_port *dp = dsa_to_port(ds, port);
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int sds_num, sds_mode;
 	u32 forced_mode;
@@ -792,7 +793,10 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	if ((state->interface == PHY_INTERFACE_MODE_1000BASEX) ||
 	    (state->interface == PHY_INTERFACE_MODE_10GBASER))
-		rtl9300_configure_serdes(port, sds_num, state->interface);
+		rtl9300_configure_serdes(port,
+		                         phylink_sfp_port(dp->pl),
+		                         phylink_sfp_link_len_cm(dp->pl),
+		                         sds_num, state->interface);
 
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	reg &= ~(0xf << 3);
