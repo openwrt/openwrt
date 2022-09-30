@@ -20,11 +20,11 @@ define KernelPackage/leds-ubnt-ledbar
   FILES:= \
 	$(PKG_BUILD_DIR)/leds-ubnt-ledbar.ko
   AUTOLOAD:=$(call AutoProbe,leds-ubnt-ledbar,1)
-  DEPENDS:=@TARGET_mediatek_mt7622 +kmod-i2c-core
+  DEPENDS:=+kmod-i2c-core
 endef
 
 define KernelPackage/leds-ubnt-ledbar/description
-  LED support for Ubiquiti UniFi 6 LR
+  LED support for some Ubiquiti UniFi access points.
 endef
 
 define Build/Compile
