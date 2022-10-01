@@ -43,7 +43,7 @@ static void rtl_init_secondary(void)
  * handler that leads to continuous unhandeled interrupts. In this case disable
  * counting (DC) in the core and confirm a pending interrupt.
  */
-	write_c0_cause(read_c0_cause() | CAUSE_DC);
+	write_c0_cause(read_c0_cause() | CAUSEF_DC);
 	write_c0_compare(0);
 #endif /* CONFIG_CEVT_R4K */
 /*
