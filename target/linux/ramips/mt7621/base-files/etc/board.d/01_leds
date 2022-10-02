@@ -147,6 +147,11 @@ tplink,re350-v1)
 	ucidef_set_led_netdev "eth_act" "LAN act" "green:eth_act" "lan" "tx rx"
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "lan" "link"
 	;;
+tplink,mr600-v2-eu)
+	ucidef_set_led_netdev "lan" "LAN" "white:lan" "br-lan"
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan"
+	ucidef_set_led_netdev "4g" "4G" "white:4g" "wwan0"
+	;;
 tplink,re500-v1|\
 tplink,re650-v1|\
 tplink,re650-v2)
