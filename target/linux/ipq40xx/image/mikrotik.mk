@@ -47,6 +47,14 @@ define Device/mikrotik_hap-ac3
 endef
 TARGET_DEVICES += mikrotik_hap-ac3
 
+define Device/mikrotik_hap-ac3-lte6-kit
+        $(call Device/mikrotik_nor)
+        DEVICE_MODEL := hAP ac3 LTE6 kit
+        SOC := qcom-ipq4019
+        DEVICE_PACKAGES := kmod-ledtrig-gpio kmod-usb-acm kmod-usb-net-rndis
+endef
+TARGET_DEVICES += mikrotik_hap-ac3-lte6-kit
+
 define Device/mikrotik_lhgg-60ad
 	$(call Device/mikrotik_nor)
 	DEVICE_MODEL := Wireless Wire Dish LHGG-60ad
