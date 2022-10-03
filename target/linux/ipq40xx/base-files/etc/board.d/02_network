@@ -20,6 +20,7 @@ ipq40xx_setup_interfaces()
 	linksys,mr8300|\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3|\
+	mikrotik,hap-ac3-lte6-kit|\
 	p2w,r619ac-64m|\
 	p2w,r619ac-128m|\
 	pakedge,wr-1|\
@@ -138,7 +139,8 @@ ipq40xx_setup_macs()
 		;;
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2|\
-	mikrotik,hap-ac3)
+	mikrotik,hap-ac3|\
+	mikrotik,hap-ac3-lte6-kit)
 		wan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
 		lan_mac=$(macaddr_add $wan_mac 1)
 		label_mac="$wan_mac"
