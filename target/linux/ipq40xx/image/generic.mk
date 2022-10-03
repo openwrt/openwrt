@@ -938,8 +938,7 @@ define Device/pakedge_wr-1
 	IMAGE_SIZE := 31232k
 	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | append-metadata
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += pakedge_wr-1
+TARGET_DEVICES += pakedge_wr-1
 
 define Device/plasmacloud_pa1200
 	$(call Device/FitImageLzma)
