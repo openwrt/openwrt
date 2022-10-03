@@ -228,8 +228,7 @@ define Device/asus_rt-ac42u
 	UIMAGE_NAME:=$(shell echo -e '\03\01\01\01RT-AC82U')
 	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct kmod-usb-ledtrig-usbport
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += asus_rt-ac42u
+TARGET_DEVICES += asus_rt-ac42u
 
 define Device/asus_rt-ac58u
 	$(call Device/FitImageLzma)

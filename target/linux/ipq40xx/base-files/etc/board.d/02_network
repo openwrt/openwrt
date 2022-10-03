@@ -13,6 +13,7 @@ ipq40xx_setup_interfaces()
 	case "$board" in
 	8dev,habanero-dvk|\
 	avm,fritzbox-4040|\
+	asus,rt-ac42u|\
 	asus,rt-ac58u|\
 	linksys,ea6350v3|\
 	linksys,ea8300|\
@@ -80,6 +81,9 @@ ipq40xx_setup_macs()
 	case "$board" in
 	8dev,habanero-dvk)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
+		;;
+	asus,rt-ac42u)
+		label_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
 		;;
 	asus,rt-ac58u)
 		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)

@@ -8,8 +8,13 @@ preinit_set_mac_address() {
 		ip link set dev eth1 address $(macaddr_add "$base_mac" 3)
 		;;
 	asus,rt-ac42u)
-		ip link set dev eth0 address $(mtd_get_mac_binary_ubi Factory 0x1006)
-		ip link set dev eth1 address $(mtd_get_mac_binary_ubi Factory 0x9006)
+		base_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
+		ip link set dev eth0 address $base_mac
+		ip link set dev lan1 address $base_mac
+		ip link set dev lan2 address $base_mac
+		ip link set dev lan3 address $base_mac
+		ip link set dev lan4 address $base_mac
+		ip link set dev wan address $(mtd_get_mac_binary_ubi Factory 0x9006)
 		;;
 	engenius,eap2200)
 		base_mac=$(cat /sys/class/net/eth0/address)

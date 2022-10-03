@@ -13,10 +13,11 @@ alfa-network,ap120c-ac)
 	ucidef_set_led_netdev "wan" "WAN" "amber:wan" "wan"
 	;;
 asus,rt-ac42u)
-	ucidef_set_led_switch "lan1" "LAN1" "blue:lan-1" "switch0" "0x02"
-	ucidef_set_led_switch "lan2" "LAN2" "blue:lan-2" "switch0" "0x04"
-	ucidef_set_led_switch "lan3" "LAN3" "blue:lan-3" "switch0" "0x08"
-	ucidef_set_led_switch "lan4" "LAN4" "blue:lan-4" "switch0" "0x10"
+	ucidef_set_led_netdev "lan1" "LAN1" "blue:lan-1" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "blue:lan-2" "lan2"
+	ucidef_set_led_netdev "lan3" "LAN3" "blue:lan-3" "lan3"
+	ucidef_set_led_netdev "lan4" "LAN4" "blue:lan-4" "lan4"
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan"
 	;;
 asus,rt-ac58u)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
