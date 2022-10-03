@@ -17,10 +17,18 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       target: ${{ steps.find_targets.outputs.target }}
+      owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Set lower case owner name
+        id: lower_owner
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" \
+            | tr '[:upper:]' '[:lower:]')
+          echo "::set-output name=owner_lc::$OWNER_LC"
 
       - name: Set targets
         id: find_targets
@@ -53,7 +61,7 @@ jobs:
        matrix:
          target: ${{fromJson(needs.determine_targets.outputs.target)}}
 
-    container: ghcr.io/${{ github.repository_owner }}/tools:latest
+    container: ghcr.io/${{ needs.determine_targets.outputs.owner_lc }}/tools:latest
 
     permissions:
       contents: read
