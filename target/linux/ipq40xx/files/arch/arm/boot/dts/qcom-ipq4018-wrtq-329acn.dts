@@ -45,10 +45,6 @@
 			status = "okay";
 		};
 
-		mdio@90000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -213,6 +209,45 @@
 	status = "okay";
 };
 
+&gmac {
+	status = "okay";
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_6>;
+};
+
+&swport5 {
+	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_0>;
+};
+
 &tlmm {
 	serial0_pins: serial0_pinmux {
 		mux {
@@ -250,18 +285,6 @@
 
 &usb3_ss_phy {
 	status = "okay";
-};
-
-&ethphy0 {
-	status = "disabled";
-};
-
-&ethphy1 {
-	status = "disabled";
-};
-
-&ethphy3 {
-	status = "disabled";
 };
 
 &wifi0 {

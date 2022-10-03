@@ -727,8 +727,7 @@ define Device/luma_wrtq-329acn
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += luma_wrtq-329acn
+TARGET_DEVICES += luma_wrtq-329acn
 
 define Device/meraki_mr33
 	$(call Device/FitImage)
