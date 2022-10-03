@@ -167,6 +167,12 @@ jobs:
       packages: write
 
     steps:
+      - name: Set lower case owner name
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >> "$GITHUB_ENV"
+
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -190,5 +196,5 @@ jobs:
         with:
           context: openwrt
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/tools:latest
+          tags: ghcr.io/${{ env.OWNER_LC }}/tools:latest
           file: openwrt/.github/workflows/Dockerfile.tools
