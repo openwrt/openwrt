@@ -11,6 +11,7 @@
 		led-failsafe = &led_status_red;
 		led-running = &led_status_green;
 		led-upgrade = &led_status_blue;
+		label-mac-device = &gmac;
 	};
 
 	soc {
@@ -264,6 +265,42 @@
 
 &cryptobam {
 	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+
+	label = "wan";
+};
+
+&swport2 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan3";
+};
+
+&ethphy4 {
+	status = "disabled";
 };
 
 &pcie0 {
