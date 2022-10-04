@@ -18,6 +18,7 @@ jobs:
     outputs:
       target: ${{ steps.find_targets.outputs.target }}
       owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
+      ccache_hash: ${{ steps.ccache_hash.outputs.ccache_hash }}
 
     steps:
       - name: Checkout
@@ -29,6 +30,13 @@ jobs:
           OWNER_LC=$(echo "${{ github.repository_owner }}" \
             | tr '[:upper:]' '[:lower:]')
           echo "::set-output name=owner_lc::$OWNER_LC"
+
+      - name: Generate ccache hash
+        id: ccache_hash
+        run: |
+          CCACHE_HASH=$(md5sum include/kernel-* | awk '{ print $1 }' \
+           | md5sum | awk '{ print $1 }')
+          echo "::set-output name=ccache_hash::$CCACHE_HASH"
 
       - name: Set targets
         id: find_targets
@@ -133,6 +141,14 @@ jobs:
           path: openwrt/${{ env.TOOLCHAIN_FILE }}
           key: ${{ env.TOOLCHAIN_FILE }}-${{ env.TOOLCHAIN_SHA256 }}
 
+      - name: Cache ccache
+        uses: actions/cache@v3
+        with:
+          path: openwrt/.ccache
+          key: ccache-kernel-${{ env.TARGET }}/${{ env.SUBTARGET }}-${{ needs.determine_targets.outputs.ccache_hash }}
+          restore-keys: |
+            ccache-kernel-${{ env.TARGET }}/${{ env.SUBTARGET }}-
+
       - name: Download external toolchain
         if: ${{ steps.cache-external-toolchain.outputs.cache-hit != 'true' }}
         shell: su buildbot -c "sh -e {0}"
@@ -153,6 +169,7 @@ jobs:
           echo CONFIG_ALL_KMODS=y >> .config
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
+          echo CONFIG_CCACHE=y >> .config
 
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
