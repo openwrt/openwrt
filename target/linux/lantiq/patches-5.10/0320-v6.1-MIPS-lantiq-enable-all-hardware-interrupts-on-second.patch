@@ -1,6 +1,6 @@
-From 2025bc9c3a949b65bfd0601f727678b37962c6c5 Mon Sep 17 00:00:00 2001
+From 730320fd770d4114a2ecb6fb223dcc8c3cecdc5b Mon Sep 17 00:00:00 2001
 From: Aleksander Jan Bajkowski <olek2@wp.pl>
-Date: Fri, 4 Jun 2021 18:27:58 +0200
+Date: Wed, 21 Sep 2022 22:59:44 +0200
 Subject: [PATCH] MIPS: lantiq: enable all hardware interrupts on second VPE
 
 This patch is needed to handle interrupts by the second VPE on the Lantiq
@@ -32,6 +32,7 @@ Tested on Lantiq xRX200.
 
 Suggested-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 ---
  arch/mips/lantiq/prom.c | 26 ++++++++++++++++++++++++--
  1 file changed, 24 insertions(+), 2 deletions(-)
