@@ -19,7 +19,7 @@ endif
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
 # Export options for download.pl
-export DOWNLOAD_CHECK_CERTIFICATE:=$(CONFIG_DOWNLOAD_CHECK_CERTIFICATE)
+export DOWNLOAD_CHECK_CERTIFICATE:=$(if $(PKG_SKIP_CHECK_CERTIFICATE),,$(CONFIG_DOWNLOAD_CHECK_CERTIFICATE))
 
 define dl_method_git
 $(if $(filter https://github.com/% git://github.com/%,$(1)),github_archive,git)
