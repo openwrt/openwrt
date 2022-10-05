@@ -16,7 +16,7 @@
 		led-failsafe = &led_cloud_red;
 		led-running = &led_cloud_green;
 		led-upgrade = &led_cloud_green;
-		label-mac-device = &gmac0;
+		label-mac-device = &gmac;
 	};
 
 	chosen {
@@ -57,21 +57,7 @@
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		dma@7984000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-			switch_mac_mode = <0x0>; /* mac mode for RGMII RMII */
-			switch_initvlas = <0x0007c 0x54>; /* PORT0_STATUS */
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -614,6 +600,24 @@
 
 &usb3_ss_phy {
 	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan";
+};
+
+&swport5 {
+	status = "okay";
+	label = "wan";
 };
 
 &wifi0 {
