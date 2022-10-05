@@ -32,7 +32,7 @@ Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
        - rev-mii
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -293,6 +293,7 @@ static int phylink_parse_mode(struct phy
+@@ -629,6 +629,7 @@ static int phylink_parse_mode(struct phy
  
  		switch (pl->link_config.interface) {
  		case PHY_INTERFACE_MODE_SGMII:
@@ -50,7 +50,7 @@ Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
  	PHY_INTERFACE_MODE_QSGMII,
  	PHY_INTERFACE_MODE_TRGMII,
  	PHY_INTERFACE_MODE_100BASEX,
-@@ -209,6 +210,8 @@ static inline const char *phy_modes(phy_
+@@ -243,6 +244,8 @@ static inline const char *phy_modes(phy_
  		return "xlgmii";
  	case PHY_INTERFACE_MODE_MOCA:
  		return "moca";
