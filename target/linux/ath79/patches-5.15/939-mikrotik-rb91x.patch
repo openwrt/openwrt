@@ -44,8 +44,8 @@ Tested-by: Koen Vandeputte <koen.vandeputte@ncentric.com>
  	tristate "Xylon LogiCVC GPIO support"
  	depends on MFD_SYSCON && OF
 @@ -529,6 +536,10 @@ config GPIO_ROCKCHIP
-	help
-	  Say yes here to support GPIO on Rockchip SoCs.
+ 	help
+ 	  Say yes here to support GPIO on Rockchip SoCs.
  
 +config GPIO_RB91X_KEY
 +	tristate "MikroTik RB91x board series reset key support"
