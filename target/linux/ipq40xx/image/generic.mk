@@ -1048,8 +1048,7 @@ define Device/sony_ncp-hg100-cellular
 	DEVICE_PACKAGES := e2fsprogs ipq-wifi-sony_ncp-hg100-cellular \
 		kmod-fs-ext4 uqmi
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += sony_ncp-hg100-cellular
+TARGET_DEVICES += sony_ncp-hg100-cellular
 
 define Device/teltonika_rutx10
 	$(call Device/FitImage)
