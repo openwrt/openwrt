@@ -17,6 +17,6 @@ define Target/Description
 endef
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += kmod-leds-gpio kmod-gpio-button-hotplug kmod-usb-ehci kmod-usb2 kmod-usb-ohci
+DEFAULT_PACKAGES += kmod-leds-gpio kmod-gpio-button-hotplug
 
 $(eval $(call BuildTarget))
