@@ -33,7 +33,8 @@ ipq40xx_setup_interfaces()
 	glinet,gl-b2200|\
 	luma,wrtq-329acn|\
 	mikrotik,cap-ac|\
-	netgear,wac510)
+	netgear,wac510|\
+	zte,mf289f)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	aruba,ap-303|\
@@ -58,11 +59,6 @@ ipq40xx_setup_interfaces()
 		;;
 	zte,mf286d)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
-		;;
-	zte,mf289f)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
-		ucidef_add_switch "switch0" \
-			"0u@eth0" "0u@eth1" "2:lan:1" "5:lan:2"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"

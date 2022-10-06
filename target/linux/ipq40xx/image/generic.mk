@@ -1119,8 +1119,7 @@ define Device/zte_mf289f
 	DEVICE_MODEL := MF289F
 	DEVICE_PACKAGES += ipq-wifi-zte_mf289f ath10k-firmware-qca9984-ct
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += zte_mf289f
+TARGET_DEVICES += zte_mf289f
 
 define Device/zyxel_nbg6617
 	$(call Device/FitImageLzma)
