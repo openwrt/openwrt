@@ -1,12 +1,32 @@
 # To-do:
+# - Add every DSA interface under "option device" with "list ports".
+
+# - Increment the bridge number if it already exists until the incremented bridge doesn't exist on the config.
+
 # - Check for tagged/untagged status for CPU ports which are not defined on DSA binding as well.
 # Therefore set "local option '0'" if it's anything other than tagged.
-# - Add every DSA interfaces under "option device" with "list ports".
-# - Change ethX interfaces on the old config to the bridge interface.
+# This is just minor a inconvinience. There will be just an unused brX.X interface since the local option won't be disabled.
+
+# - Change ethX.X interfaces on the old config to the bridge interface.
+# There can be multiple CPU ports set as tagged on a single VLAN.
+# In that case, there will be multiple br0.1 interfaces after converting eth0.1, eth1.1, etc. to bridge interface.
+# Check to make sure we don't have duplicate bridge interfaces.
+
 # - Support multiple switch configuration.
 #   - Create a bridge per switch?
 #   - Create a single bridge and put all DSA interfaces of multiple switches on it?
-# - Increment the bridge number if it already exists until the incremented bridge doesn't exist on the config.
+#   - Check Linksys EA9500 on OpenWrt 19.07. See how multiple switches are configured with swconfig.
+
+# Along with the migration script, increment the image version for specific (sub)targets and make these warnings on the info section for image version mismatch.
+
+# This update automatically converts swconfig configuration to DSA with bridge VLAN filtering.
+# Before updating, read below to make ready your current configuration.
+
+# DO NOT USE UNTAGGED FOR CPU PORTS
+# UCI doesn't support untagged CPU ports on Bridge VLAN filtering. You'd have to manually associate the VLAN to the bridge interface as untagged with the bridge(8) tool.
+
+# DO NOT USE MULTIPLE TAGGED CPU PORTS ON A SINGLE VLAN
+# DSA only has one CPU port, you cannot have multiple networks on the same VLAN using multiple ethX.X interfaces anymore.
 
 findDSASwitch()
 {
@@ -70,29 +90,31 @@ findPorts()
 	local tag_type=$2
 
 	# Find the path for the DSA bindings on the devicetree.
-	# Automatically find the directory for "port@" or "ethernet-port@" in "/proc/device-tree".
+	# Automatically find the directory for "ethernet-port@" or "port@" in "/proc/device-tree/".
 	# Refer to dsa.yaml.
 	dsa_dt_path=$(find /proc/device-tree/ -name "*port@*" | head -1)
 	dsa_dt_path=$(echo "$dsa_dt_path" | sed 's/ethernet-port@.*$\|port@.*$//g')
 
-	# Some ports may be missing from DSA bindings (it's always another CPU port), ignore these ports.
+	# Some ports may be missing from DSA bindings, it's always another CPU port.
+	# These must be treated as CPU ports along with the ones on the second check.
 	if [[ ! -d "${dsa_dt_path}port@${port}" ]]; then
 		undefined_cpu_ports=$(echo "$port")
-		#echo $undefined_cpu_ports
 		return
 	fi
 
 	# Check if ethernet property exists, to find CPU ports. Only CPU ports use this property.
 	if [[ -f "${dsa_dt_path}port@${port}/ethernet" ]]; then
 		all_cpu_ports=$(echo "$undefined_cpu_ports" "$port")
-		#echo $all_cpu_ports
+
+		# This checks for tagged/untagged status of the CPU ports.
+		# Move this part to somewhere else where it takes CPU port information from both checks.
 		if [ "$tag_type" == "untagged" ]; then
 			echo "${all_cpu_ports} = cpu_port untagged"
 		else
 			echo "${all_cpu_ports} = cpu_port tagged"
 		fi
 
-	# If it doesn't exist, it must be a user port.
+	# Anything else must be a user port.
 	else
 		# echo "${port} = user_port"
 		for user_port in ${port}; do
