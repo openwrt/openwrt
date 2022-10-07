@@ -9,7 +9,6 @@
 findPorts()
 # Differentiate ports between user and cpu ports. Display DSA interface name of user ports.
 # Check compiled devicetree to do this.
-
 {
 	local port=$1
 	local tag_type=$2
@@ -21,84 +20,76 @@ findPorts()
 	dsa_dt_path=$(echo "$dsa_dt_path" | sed 's/ports\/port.*$/ports\//g' | sed 's/ports\/ethernet-port.*$//g')
 
 	# A port may be missing from DSA bindings (it's usually the second CPU port), ignore these ports.
-	if [[ ! -d "${dsa_dt_path}port@${port}" ]]
-	then
-	  return
+	if [[ ! -d "${dsa_dt_path}port@${port}" ]]; then
+		return
 	fi
 
 	# Check if ethernet property exists to find CPU ports, only CPU ports use this property.
-	if [[ -f "${dsa_dt_path}port@${port}/ethernet" ]]
-	then
-	
-	 if [ "$tag_type" == "untagged" ]; then
-		echo "${port} = cpu_port untagged"
-	 else
-		echo "${port} = cpu_port tagged"
-	 fi
+	if [[ -f "${dsa_dt_path}port@${port}/ethernet" ]]; then
+		if [ "$tag_type" == "untagged" ]; then
+			echo "${port} = cpu_port untagged"
+		else
+			echo "${port} = cpu_port tagged"
+		fi
 
 	# If it doesn't exist, it must be a user port.
 	else
-	  #echo "${port} = user_port"
+		# echo "${port} = user_port"
 
-	  for user_port in ${port}
-	  do
-		if [[ ! -z "$user_port" ]]; then
-	#	echo "$tag_type $user_port"
-	    # Print the name of the DSA interface.
-	   		if [ "$tag_type" == "tagged" ]; then
-	            		echo "$(cat ${dsa_dt_path}port@${user_port}/label):t"
-	   		else
-	            		echo "$(cat ${dsa_dt_path}port@${user_port}/label)"
-	   		fi
-		fi
-	  done
+		for user_port in ${port}; do
+			if [[ ! -z "$user_port" ]]; then
+				# echo "$tag_type $user_port"
+				# Print the name of the DSA interface.
+				if [ "$tag_type" == "tagged" ]; then
+					echo "$(cat ${dsa_dt_path}port@${user_port}/label):t"
+				else
+					echo "$(cat ${dsa_dt_path}port@${user_port}/label)"
+				fi
+			fi
+		done
 	fi
 }
 
 findDSAInterfaces()
 # Read old UCI config with swconfig options.
-
 {
-#	echo "ports = ${ports}"
-#	echo "vlan = ${vlan}"
-#	echo "$device"
-
+	# echo "ports = ${ports}"
+	# echo "vlan = ${vlan}"
+	# echo "$device"
 
 	echo "config bridge-vlan"
 	echo "	option vlan '$vlan'"
 
-	test=""
-	for port in ${ports}
-	do
-	 if [[ ! -z "$port" ]]; then
-	  # swconfig configuration can either have a number or a number with "t" next to it.
-	  case $port in
-	  *t)
-	    # echo "tagged_port = ${port%.t}"
-	    # string manipulation (substring removal) %*t prints before "t".
-	    # Feed this to findPorts with "t" removed.
-	   test="tagged"
-#	    echo $(echo "list ports" && findPorts ${port%*t} "tagged")
-	    ;;
-	  *)
-		test="untagged"
-#	    echo "port = ${port}"
-#	   test = $(findPorts ${port} "untagged")
-#	    echo $(echo "list ports" && findPorts ${port} "untagged")
-	    ;;
-	  esac
-		is_valid=$(findPorts ${port%*t} "$test")
-		if [[ ! -z "$is_valid" ]]; then
-			if [[ "$(echo $is_valid | grep "cpu_port tagged")" ]]; then
-				echo "	option local '0'"
-			else
-	                        echo "	list ports" "'$is_valid'"
+	for port in ${ports}; do
+		if [[ ! -z "$port" ]]; then
+			# swconfig configuration can either have a number or a number with "t" next to it.
+			case $port in
+				*t)
+					# echo "tagged_port = ${port%.t}"
+					# string manipulation (substring removal) %*t prints before "t".
+					# Feed this to findPorts with "t" removed.
+					test="tagged"
+					# echo $(echo "list ports" && findPorts ${port%*t} "tagged")
+					;;
+				*)
+					test="untagged"
+					#echo "port = ${port}"
+					#test = $(findPorts ${port} "untagged")
+					#echo $(echo "list ports" && findPorts ${port} "untagged")
+					;;
+			esac
+
+			is_valid=$(findPorts ${port%*t} "$test")
+
+			if [[ ! -z "$is_valid" ]]; then
+				if [[ "$(echo $is_valid | grep "cpu_port tagged")" ]]; then
+					echo "	option local '0'"
+				else
+					echo "	list ports" "'$is_valid'"
+				fi
 			fi
 		fi
-	fi
 	done
-
-	
 }
 
 findDSASwitch()
