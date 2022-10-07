@@ -1,10 +1,66 @@
 # To-do:
-# - Fix "option local '0'". It's still being set even though CPU port is tagged.
+# - Check for tagged/untagged status for CPU ports which are not defined on DSA binding as well.
+# Therefore set "local option '0'" if it's anything other than tagged.
 # - Add every DSA interfaces under "option device" with "list ports".
 # - Change ethX interfaces on the old config to the bridge interface.
 # - Support multiple switch configuration.
 #   - Create a bridge per switch?
 #   - Create a single bridge and put all DSA interfaces of multiple switches on it?
+# - Increment the bridge number if it already exists until the incremented bridge doesn't exist on the config.
+
+findDSASwitch()
+{
+	echo "config device"
+	echo -e "\toption type 'bridge'"
+	# Hardcode bridge interface name for now.
+	bridgeInterface=br0
+	echo -e "\toption name '$bridgeInterface'"
+}
+
+findDSAInterfaces()
+# Read old UCI config with swconfig options.
+{
+	# echo "ports = ${ports}"
+	# echo "vlan = ${vlan}"
+	# echo "$device"
+
+	echo "config bridge-vlan"
+	echo -e "\toption device '$bridgeInterface'"
+	echo -e "\toption vlan '$vlan'"
+
+	for port in ${ports}; do
+		if [[ ! -z "$port" ]]; then
+			# swconfig configuration can either have a number or a number with "t" next to it.
+			case $port in
+				*t)
+					# echo "tagged_port = ${port%.t}"
+					# string manipulation (substring removal) %*t prints before "t".
+					# Feed this to findPorts with "t" removed.
+					tag_type="tagged"
+					# echo $(echo "list ports" && findPorts ${port%*t} "tagged")
+					;;
+				*)
+					tag_type="untagged"
+					#echo "port = ${port}"
+					#test = $(findPorts ${port} "untagged")
+					#echo $(echo "list ports" && findPorts ${port} "untagged")
+					;;
+			esac
+
+			is_valid=$(findPorts ${port%*t} "$tag_type")
+
+			if [[ ! -z "$is_valid" ]]; then
+				if [[ ! -z "$(echo $is_valid | grep "cpu_port")" ]]; then
+					if [[ -z "$(echo $is_valid | grep "cpu_port tagged")" ]]; then
+						echo -e "\toption local '0'"
+					fi
+				else
+					echo -e "\tlist ports" "'$is_valid'"
+				fi
+			fi
+		fi
+	done
+}
 
 findPorts()
 # Differentiate ports between user and cpu ports. Display DSA interface name of user ports.
@@ -13,29 +69,32 @@ findPorts()
 	local port=$1
 	local tag_type=$2
 
-	# Find the DSA binding path on the devicetree.
-	# Automatically find the directory for "port@" and "ethernet-port@" in "/proc/device-tree".
-	# Check dsa.yaml for reference.
+	# Find the path for the DSA bindings on the devicetree.
+	# Automatically find the directory for "port@" or "ethernet-port@" in "/proc/device-tree".
+	# Refer to dsa.yaml.
 	dsa_dt_path=$(find /proc/device-tree/ -name "*port@*" | head -1)
-	dsa_dt_path=$(echo "$dsa_dt_path" | sed 's/ports\/port.*$/ports\//g' | sed 's/ports\/ethernet-port.*$//g')
+	dsa_dt_path=$(echo "$dsa_dt_path" | sed 's/ethernet-port@.*$\|port@.*$//g')
 
-	# A port may be missing from DSA bindings (it's usually the second CPU port), ignore these ports.
+	# Some ports may be missing from DSA bindings (it's always another CPU port), ignore these ports.
 	if [[ ! -d "${dsa_dt_path}port@${port}" ]]; then
+		undefined_cpu_ports=$(echo "$port")
+		#echo $undefined_cpu_ports
 		return
 	fi
 
-	# Check if ethernet property exists to find CPU ports, only CPU ports use this property.
+	# Check if ethernet property exists, to find CPU ports. Only CPU ports use this property.
 	if [[ -f "${dsa_dt_path}port@${port}/ethernet" ]]; then
+		all_cpu_ports=$(echo "$undefined_cpu_ports" "$port")
+		#echo $all_cpu_ports
 		if [ "$tag_type" == "untagged" ]; then
-			echo "${port} = cpu_port untagged"
+			echo "${all_cpu_ports} = cpu_port untagged"
 		else
-			echo "${port} = cpu_port tagged"
+			echo "${all_cpu_ports} = cpu_port tagged"
 		fi
 
 	# If it doesn't exist, it must be a user port.
 	else
 		# echo "${port} = user_port"
-
 		for user_port in ${port}; do
 			if [[ ! -z "$user_port" ]]; then
 				# echo "$tag_type $user_port"
@@ -50,58 +109,15 @@ findPorts()
 	fi
 }
 
-findDSAInterfaces()
-# Read old UCI config with swconfig options.
+validate_section_switch()
+# Take sections in switch option from UCI.
 {
-	# echo "ports = ${ports}"
-	# echo "vlan = ${vlan}"
-	# echo "$device"
-
-	echo "config bridge-vlan"
-	echo "	option vlan '$vlan'"
-
-	for port in ${ports}; do
-		if [[ ! -z "$port" ]]; then
-			# swconfig configuration can either have a number or a number with "t" next to it.
-			case $port in
-				*t)
-					# echo "tagged_port = ${port%.t}"
-					# string manipulation (substring removal) %*t prints before "t".
-					# Feed this to findPorts with "t" removed.
-					test="tagged"
-					# echo $(echo "list ports" && findPorts ${port%*t} "tagged")
-					;;
-				*)
-					test="untagged"
-					#echo "port = ${port}"
-					#test = $(findPorts ${port} "untagged")
-					#echo $(echo "list ports" && findPorts ${port} "untagged")
-					;;
-			esac
-
-			is_valid=$(findPorts ${port%*t} "$test")
-
-			if [[ ! -z "$is_valid" ]]; then
-				if [[ "$(echo $is_valid | grep "cpu_port tagged")" ]]; then
-					echo "	option local '0'"
-				else
-					echo "	list ports" "'$is_valid'"
-				fi
-			fi
-		fi
-	done
+	uci_load_validate network-test switch "$1" "$2" \
+		'name:string'
 }
 
-findDSASwitch()
-{
-	echo "config device"
-	echo "	option type 'bridge'"
-	# increment the bridge number if it already exists until the incremented bridge doesn't exist on the config.
-	echo "	option name 'br0'"
-}
-
-validate_section_swconfig_ports()
-# Take related config options from UCI.
+validate_section_switch_vlan()
+# Take sections in switch_vlan option from UCI.
 {
 	uci_load_validate network-test switch_vlan "$1" "$2" \
 		'device:string' \
@@ -109,15 +125,16 @@ validate_section_swconfig_ports()
 		'ports:string'
 }
 
-validate_section_swconfig_switch()
+validate_section_device()
 {
-	uci_load_validate network-test switch "$1" "$2" \
-		'name:string'
+	uci_load_validate network-test device "$1" "$2" \
+		'ifname:string'
 }
 
 	. /lib/functions.sh
 	. /lib/functions/procd.sh
 
 	config_load "network-test"
-	config_foreach validate_section_swconfig_ports switch_vlan findDSAInterfaces
-	config_foreach validate_section_swconfig_switch switch findDSASwitch
+	config_foreach validate_section_switch switch findDSASwitch
+	config_foreach validate_section_switch_vlan switch_vlan findDSAInterfaces
+	config_foreach validate_section_device device replaceToBridgeInterface
