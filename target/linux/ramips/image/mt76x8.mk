@@ -916,7 +916,7 @@ define Device/xiaomi_mi-router-4c
   IMAGE_SIZE := 14976k
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 4C
-  DEVICE_PACKAGES := uboot-envtools
+  DEVICE_PACKAGES := uboot-envtools kmod-usb2 kmod-usb-ohci kmod-usb-ehci
 endef
 TARGET_DEVICES += xiaomi_mi-router-4c
 
