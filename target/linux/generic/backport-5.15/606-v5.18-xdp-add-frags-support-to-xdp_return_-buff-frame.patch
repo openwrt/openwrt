@@ -17,8 +17,6 @@ Signed-off-by: Alexei Starovoitov <ast@kernel.org>
  net/core/xdp.c    | 54 ++++++++++++++++++++++++++++++++++++++++++++++-
  2 files changed, 69 insertions(+), 3 deletions(-)
 
-diff --git a/include/net/xdp.h b/include/net/xdp.h
-index 1f8641ec658e..8463dea8b4db 100644
 --- a/include/net/xdp.h
 +++ b/include/net/xdp.h
 @@ -275,10 +275,24 @@ void __xdp_release_frame(void *data, str
