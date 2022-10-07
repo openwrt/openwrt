@@ -9,7 +9,7 @@ define Device/d-link_dgs-1210
 	append-dtb | \
 	libdeflate-gzip | \
 	uImage gzip | \
-	dlink-cameo
+	cameo-tag
   CAMEO_KERNEL_PART := 2
   CAMEO_ROOTFS_PART := 3
   CAMEO_CUSTOMER_SIGNATURE := 2
@@ -22,8 +22,8 @@ define Device/d-link_dgs-1210
 	pad-rootfs | \
 	pad-to 16 | \
 	check-size | \
-	dlink-version | \
-	dlink-headers
+	cameo-version | \
+	cameo-headers
 endef
 
 define Device/hpe_1920
