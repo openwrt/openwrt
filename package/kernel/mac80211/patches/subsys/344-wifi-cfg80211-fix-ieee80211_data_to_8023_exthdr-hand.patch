@@ -15,16 +15,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/wireless/util.c
 +++ b/net/wireless/util.c
-@@ -557,8 +557,6 @@ int ieee80211_data_to_8023_exthdr(struct
+@@ -557,7 +557,7 @@ int ieee80211_data_to_8023_exthdr(struct
  		return -1;
  
  	hdrlen = ieee80211_hdrlen(hdr->frame_control) + data_offset;
 -	if (skb->len < hdrlen + 8)
--		return -1;
++	if (skb->len < hdrlen)
+ 		return -1;
  
  	/* convert IEEE 802.11 header + possible LLC headers into Ethernet
- 	 * header
-@@ -572,8 +570,9 @@ int ieee80211_data_to_8023_exthdr(struct
+@@ -572,8 +572,9 @@ int ieee80211_data_to_8023_exthdr(struct
  	memcpy(tmp.h_dest, ieee80211_get_DA(hdr), ETH_ALEN);
  	memcpy(tmp.h_source, ieee80211_get_SA(hdr), ETH_ALEN);
  
@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	mesh_flags &= MESH_FLAGS_AE;
  
-@@ -593,11 +592,12 @@ int ieee80211_data_to_8023_exthdr(struct
+@@ -593,11 +594,12 @@ int ieee80211_data_to_8023_exthdr(struct
  		if (iftype == NL80211_IFTYPE_MESH_POINT) {
  			if (mesh_flags == MESH_FLAGS_AE_A4)
  				return -1;
@@ -54,7 +54,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			hdrlen += __ieee80211_get_mesh_hdrlen(mesh_flags);
  		}
  		break;
-@@ -611,10 +611,11 @@ int ieee80211_data_to_8023_exthdr(struct
+@@ -611,10 +613,11 @@ int ieee80211_data_to_8023_exthdr(struct
  		if (iftype == NL80211_IFTYPE_MESH_POINT) {
  			if (mesh_flags == MESH_FLAGS_AE_A5_A6)
  				return -1;
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			hdrlen += __ieee80211_get_mesh_hdrlen(mesh_flags);
  		}
  		break;
-@@ -626,18 +627,18 @@ int ieee80211_data_to_8023_exthdr(struct
+@@ -626,18 +629,18 @@ int ieee80211_data_to_8023_exthdr(struct
  		break;
  	}
  
@@ -78,12 +78,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	tmp.h_proto = payload.proto;
 -
 -	if (likely((!is_amsdu && ether_addr_equal(payload.hdr, rfc1042_header) &&
-+	if (likely(skb_copy_bits(skb, hdrlen, &payload, sizeof(payload)) == 0) &&
-+	    likely((!is_amsdu && ether_addr_equal(payload.hdr, rfc1042_header) &&
- 		    tmp.h_proto != htons(ETH_P_AARP) &&
- 		    tmp.h_proto != htons(ETH_P_IPX)) ||
+-		    tmp.h_proto != htons(ETH_P_AARP) &&
+-		    tmp.h_proto != htons(ETH_P_IPX)) ||
 -		   ether_addr_equal(payload.hdr, bridge_tunnel_header)))
-+		   ether_addr_equal(payload.hdr, bridge_tunnel_header))) {
++	if (likely(skb_copy_bits(skb, hdrlen, &payload, sizeof(payload)) == 0 &&
++	           ((!is_amsdu && ether_addr_equal(payload.hdr, rfc1042_header) &&
++		     payload.proto != htons(ETH_P_AARP) &&
++		     payload.proto != htons(ETH_P_IPX)) ||
++		    ether_addr_equal(payload.hdr, bridge_tunnel_header)))) {
  		/* remove RFC1042 or Bridge-Tunnel encapsulation and
  		 * replace EtherType */
  		hdrlen += ETH_ALEN + 2;
