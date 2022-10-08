@@ -1,5 +1,13 @@
 # To-do:
+
+# Use config_foreach for mapping information to variables.
+# Create a new function for printing the new config using the variables.
+
+# ---
+
 # - Add every DSA interface under "option device" with "list ports".
+
+# - If the CPU port doesn't exist on a switch_vlan, "local option '0'" must be issued for that bridge-vlan.
 
 # - Increment the bridge number if it already exists until the incremented bridge doesn't exist on the config.
 
@@ -26,7 +34,7 @@
 # UCI doesn't support untagged CPU ports on Bridge VLAN filtering. You'd have to manually associate the VLAN to the bridge interface as untagged with the bridge(8) tool.
 
 # DO NOT USE MULTIPLE TAGGED CPU PORTS ON A SINGLE VLAN
-# DSA only has one CPU port, you cannot have multiple networks on the same VLAN using multiple ethX.X interfaces anymore.
+# DSA uses only one CPU port, you cannot have multiple networks on the same VLAN using multiple ethX.X interfaces anymore.
 
 findDSASwitch()
 {
@@ -35,6 +43,7 @@ findDSASwitch()
 	# Hardcode bridge interface name for now.
 	bridgeInterface=br0
 	echo -e "\toption name '$bridgeInterface'"
+	echo -e "\tlist ports ''"
 }
 
 findDSAInterfaces()
@@ -109,9 +118,9 @@ findPorts()
 		# This checks for tagged/untagged status of the CPU ports.
 		# Move this part to somewhere else where it takes CPU port information from both checks.
 		if [ "$tag_type" == "untagged" ]; then
-			echo "${all_cpu_ports} = cpu_port untagged"
+			echo "${port} = cpu_port untagged"
 		else
-			echo "${all_cpu_ports} = cpu_port tagged"
+			echo "${port} = cpu_port tagged"
 		fi
 
 	# Anything else must be a user port.
@@ -131,6 +140,10 @@ findPorts()
 	fi
 }
 
+#print_new_config()
+#{
+#}
+
 validate_section_switch()
 # Take sections in switch option from UCI.
 {
@@ -148,6 +161,7 @@ validate_section_switch_vlan()
 }
 
 validate_section_device()
+# Take sections in device option from UCI.
 {
 	uci_load_validate network-test device "$1" "$2" \
 		'ifname:string'
@@ -159,4 +173,4 @@ validate_section_device()
 	config_load "network-test"
 	config_foreach validate_section_switch switch findDSASwitch
 	config_foreach validate_section_switch_vlan switch_vlan findDSAInterfaces
-	config_foreach validate_section_device device replaceToBridgeInterface
+	# config_foreach validate_section_device device replaceToBridgeInterface
