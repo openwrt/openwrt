@@ -7,6 +7,12 @@ on:
       - 'include/kernel-*'
       - 'package/kernel/**'
       - 'target/linux/generic/**'
+  push:
+    paths:
+      - '.github/workflows/kernel.yml'
+      - 'include/kernel-*'
+      - 'package/kernel/**'
+      - 'target/linux/generic/**'
 
 permissions:
   contents: read
