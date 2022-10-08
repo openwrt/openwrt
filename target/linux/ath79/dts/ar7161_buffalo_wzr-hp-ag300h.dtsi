@@ -12,13 +12,6 @@
 		led-upgrade = &led_diag;
 	};
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-output-names = "ref";
-		clock-frequency = <40000000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -216,10 +209,6 @@
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
-};
-
-&pll {
-	clocks = <&extosc>;
 };
 
 &spi {

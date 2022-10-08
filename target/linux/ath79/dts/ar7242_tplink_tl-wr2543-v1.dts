@@ -21,12 +21,6 @@
 		bootargs = "console=ttyS0,115200n8";
 	};
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <40000000>;
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -93,10 +87,6 @@
 			};
 		};
 	};
-};
-
-&pll {
-	clocks = <&extosc>;
 };
 
 &spi {

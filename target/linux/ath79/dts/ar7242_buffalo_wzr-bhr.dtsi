@@ -12,12 +12,6 @@
 		led-upgrade = &led_diag;
 	};
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <40000000>;
-	};
-
 	keys: keys {
 		compatible = "gpio-keys";
 
@@ -134,10 +128,6 @@
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
-};
-
-&pll {
-	clocks = <&extosc>;
 };
 
 &usb_phy {

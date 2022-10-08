@@ -11,12 +11,6 @@
 		led-upgrade = &led_diag;
 	};
 
-	clock40mhz: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <40000000>;
-	};
-
 	/* There is a GPIO driven NXP 74HC153 dual 4-way multiplexer on board
 	 * used for buttons that are on top of the the device.
          */
@@ -248,10 +242,6 @@
 
 &uart {
 	status = "okay";
-};
-
-&pll {
-	clocks = <&clock40mhz>;
 };
 
 &usb {
