@@ -95,14 +95,9 @@ platform_do_upgrade() {
 	raisecom,msg1500-x-00|\
 	sercomm,na502|\
 	sercomm,na502s|\
-	xiaomi,mi-router-3g|\
-	xiaomi,mi-router-3-pro|\
-	xiaomi,mi-router-4|\
-	xiaomi,mi-router-ac2100|\
 	xiaomi,mi-router-cr6606|\
 	xiaomi,mi-router-cr6608|\
 	xiaomi,mi-router-cr6609|\
-	xiaomi,redmi-router-ac2100|\
 	zyxel,nwa50ax|\
 	zyxel,nwa55axe)
 		nand_do_upgrade "$1"
@@ -121,6 +116,13 @@ platform_do_upgrade() {
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
+		;;
+	xiaomi,mi-router-3g|\
+	xiaomi,mi-router-3-pro|\
+	xiaomi,mi-router-4|\
+	xiaomi,mi-router-ac2100|\
+	xiaomi,redmi-router-ac2100)
+		xiaomi_do_upgrade "$board" "$1"
 		;;
 	zyxel,lte3301-plus|\
 	zyxel,nr7101)
