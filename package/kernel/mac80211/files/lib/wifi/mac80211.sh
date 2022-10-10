@@ -135,14 +135,19 @@ get_band_defaults() {
 	done
 }
 
+check_devidx() {
+	case "$1" in
+	radio[0-9]*)
+		local idx="${1#radio}"
+		[ "$devidx" -ge "${1#radio}" ] && devidx=$((idx + 1))
+		;;
+	esac
+}
+
 detect_mac80211() {
 	devidx=0
 	config_load wireless
-	while :; do
-		config_get type "radio$devidx" type
-		[ -n "$type" ] || break
-		devidx=$(($devidx + 1))
-	done
+	config_foreach check_devidx wifi-device
 
 	for _dev in /sys/class/ieee80211/*; do
 		[ -e "$_dev" ] || continue
