@@ -63,11 +63,12 @@ read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
 	return 0;
 }
 
-static void uimage_parse_dt(struct mtd_info *master, int *extralen,
-			    u32 *ih_magic, u32 *ih_type,
-			    u32 *header_offset, u32 *part_magic)
+static int uimage_parse_dt(struct mtd_info *master, int *extralen,
+			   u32 *ih_magic, u32 *ih_type,
+			   u32 *header_offset, u32 *part_magic)
 {
 	struct device_node *np = mtd_get_of_node(master);
+	int ret;
 
 	/*
 	 * use "partitions" node when the parser is called for
@@ -77,7 +78,12 @@ static void uimage_parse_dt(struct mtd_info *master, int *extralen,
 		np = of_get_child_by_name(np, "partitions");
 
 	if (!np || !of_device_is_compatible(np, "openwrt,uimage"))
-		return;
+		return 0;
+
+	/* check NVMEM cell for bootindex */
+	ret = mtd_check_nvmem_bootindex(np);
+	if (ret)
+		return ret;
 
 	if (!of_property_read_u32(np, "openwrt,padding", extralen))
 		pr_debug("got openwrt,padding=%d from device-tree\n", *extralen);
@@ -89,6 +95,8 @@ static void uimage_parse_dt(struct mtd_info *master, int *extralen,
 		pr_debug("got ih-start=%u from device-tree\n", *header_offset);
 	if (!of_property_read_u32(np, "openwrt,partition-magic", part_magic))
 		pr_debug("got openwrt,partition-magic=%08x from device-tree\n", *part_magic);
+
+	return 0;
 }
 
 static ssize_t uimage_verify_default(u_char *buf, u32 ih_magic, u32 ih_type)
@@ -150,7 +158,11 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	if (!parts)
 		return -ENOMEM;
 
-	uimage_parse_dt(master, &extralen, &ih_magic, &ih_type, &header_offset, &part_magic);
+	ret = uimage_parse_dt(master, &extralen, &ih_magic, &ih_type,
+			      &header_offset, &part_magic);
+	if (ret)
+		goto err_free_parts;
+
 	buflen = sizeof(struct uimage_header) + header_offset;
 	buf = vmalloc(buflen);
 	if (!buf) {
