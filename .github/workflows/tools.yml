@@ -84,14 +84,14 @@ jobs:
 
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: macos-latest-logs
           path: ${{ env.WORKPATH }}/openwrt/logs
 
       - name: Upload config
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: macos-latest-config
           path: ${{ env.WORKPATH }}/openwrt/.config
@@ -132,14 +132,14 @@ jobs:
 
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: linux-buildbot-logs
           path: openwrt/logs
 
       - name: Upload config
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: linux-buildbot-config
           path: openwrt/.config
@@ -152,7 +152,7 @@ jobs:
 
       - name: Upload prebuilt tools
         if: github.event_name == 'push'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: linux-buildbot-prebuilt-tools
           path: openwrt/tools.tar
@@ -180,7 +180,7 @@ jobs:
           path: 'openwrt'
 
       - name: Download prebuilt tools from build job
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: linux-buildbot-prebuilt-tools
           path: openwrt
