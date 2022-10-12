@@ -69,6 +69,13 @@ static void uimage_parse_dt(struct mtd_info *master, int *extralen,
 {
 	struct device_node *np = mtd_get_of_node(master);
 
+	/*
+	 * use "partitions" node when the parser is called for
+	 * parsing top-level partitions, instead of mtd's node
+	 */
+	if (np && !mtd_is_partition(master))
+		np = of_get_child_by_name(np, "partitions");
+
 	if (!np || !of_device_is_compatible(np, "openwrt,uimage"))
 		return;
 
