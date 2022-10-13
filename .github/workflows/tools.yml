@@ -1,16 +1,9 @@
 name: Build host tools
 
 on:
-  pull_request:
-    paths:
-      - 'tools/**'
-      - '.github/workflows/build-tools.yml'
-      - '.github/workflows/tools.yml'
   push:
-    paths:
-      - 'tools/**'
-      - '.github/workflows/build-tools.yml'
-      - '.github/workflows/tools.yml'
+    tags:
+      - '*'
 
 permissions:
   contents: read
