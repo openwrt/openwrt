@@ -56,7 +56,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -3180,6 +3180,49 @@ static void ieee80211_process_sa_query_r
+@@ -3182,6 +3182,49 @@ static void ieee80211_process_sa_query_r
  	ieee80211_tx_skb(sdata, skb);
  }
  
@@ -106,7 +106,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static ieee80211_rx_result debug_noinline
  ieee80211_rx_h_mgmt_check(struct ieee80211_rx_data *rx)
  {
-@@ -3205,6 +3248,9 @@ ieee80211_rx_h_mgmt_check(struct ieee802
+@@ -3207,6 +3250,9 @@ ieee80211_rx_h_mgmt_check(struct ieee802
  	    !(rx->flags & IEEE80211_RX_BEACON_REPORTED)) {
  		int sig = 0;
  
