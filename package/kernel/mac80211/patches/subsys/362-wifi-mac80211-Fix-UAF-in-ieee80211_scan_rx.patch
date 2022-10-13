@@ -29,7 +29,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/net/mac80211/scan.c
 +++ b/net/mac80211/scan.c
-@@ -461,16 +461,19 @@ static void __ieee80211_scan_completed(s
+@@ -465,16 +465,19 @@ static void __ieee80211_scan_completed(s
  	scan_req = rcu_dereference_protected(local->scan_req,
  					     lockdep_is_held(&local->mtx));
  
