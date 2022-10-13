@@ -164,6 +164,10 @@ define Package/base-files/install
 		$(1)/usr/lib/os-release
 
 
+ifdef CONFIG_WIFIOPT
+	$(VERSION_SED_SCRIPT) $(1)/etc/openwrt_wifi_defaults
+endif
+
 	$(SED) "s#%PATH%#$(TARGET_INIT_PATH)#g" \
 		$(1)/sbin/hotplug-call \
 		$(1)/etc/preinit \
