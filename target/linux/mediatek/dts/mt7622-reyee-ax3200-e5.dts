@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 /dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
 #include "mt7622-ruijie-rg-ew3200.dtsi"
 
 / {
-	model = "Ruijie RG-EW3200GX PRO";
-	compatible = "ruijie,rg-ew3200gx-pro", "mediatek,mt7622";
+	model = "reyee AX3200 E5";
+	compatible = "reyee,ax3200-e5", "mediatek,mt7622";
 };
 
 &nor_flash {
@@ -26,49 +29,49 @@
 
 			partition@0 {
 				label = "Preloader";
-				reg = <0x0 0x40000>;
+				reg = <0x0 0x20000>;
 				read-only;
 			};
 
-			partition@40000 {
+			partition@20000 {
 				label = "ATF";
-				reg = <0x40000 0x20000>;
+				reg = <0x20000 0x30000>;
 				read-only;
 			};
 
-			partition@60000 {
+			partition@30000 {
 				label = "u-boot";
-				reg = <0x60000 0x50000>;
+				reg = <0x30000 0x80000>;
 				read-only;
 			};
 
-			partition@B0000 {
+			partition@80000 {
 				label = "u-boot-env";
-				reg = <0xb0000 0x20000>;
+				reg = <0x80000 0x90000>;
 			};
 
-			factory: partition@D0000 {
+			factory: partition@90000 {
 				label = "Factory";
-				reg = <0xd0000 0x80000>;
+				reg = <0x90000 0xd0000>;
 				read-only;
 			};
 
-			partition@150000 {
+			partition@d0000 {
 				label = "product_info";
-				reg = <0x150000 0x10000>;
+				reg = <0xd0000 0xe0000>;
 				read-only;
 			};
 
-			partition@160000 {
+			partition@e0000 {
 				label = "kdump";
-				reg = <0x160000 0x10000>;
+				reg = <0xe0000 0xf0000>;
 				read-only;
 			};
 
-			partition@170000 {
+			partition@f0000 {
 				compatible = "denx,fit";
 				label = "firmware";
-				reg = <0x170000 0xe90000>;
+				reg = <0xf0000 0x1000000>;
 			};
 		};
 	};
