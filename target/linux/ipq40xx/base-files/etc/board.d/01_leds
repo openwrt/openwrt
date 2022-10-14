@@ -81,9 +81,9 @@ mikrotik,sxtsq-5-ac)
 	ucidef_set_led_rssi "rssihigh" "rssihigh" "green:rssihigh" "wlan0" "81" "100"
 	;;
 mobipromo,cm520-79f)
-	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
-	ucidef_set_led_switch "lan1" "LAN1" "blue:lan1" "switch0" "0x10"
-	ucidef_set_led_switch "lan2" "LAN2" "blue:lan2" "switch0" "0x08"
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan"
+	ucidef_set_led_netdev "lan1" "LAN1" "blue:lan1" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "blue:lan2" "lan2"
 	;;
 netgear,ex6100v2 |\
 netgear,ex6150v2)

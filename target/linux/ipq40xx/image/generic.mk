@@ -761,8 +761,7 @@ define Device/mobipromo_cm520-79f
 	PAGESIZE := 2048
 	DEVICE_PACKAGES := kmod-usb-ledtrig-usbport
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += mobipromo_cm520-79f
+TARGET_DEVICES += mobipromo_cm520-79f
 
 define Device/netgear_ex61x0v2
 	$(call Device/DniImage)

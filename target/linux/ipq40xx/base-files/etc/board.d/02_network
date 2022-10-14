@@ -56,7 +56,8 @@ ipq40xx_setup_interfaces()
 	compex,wpj428)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
-	glinet,gl-b1300)
+	glinet,gl-b1300|\
+	mobipromo,cm520-79f)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
 	mikrotik,wap-ac)
