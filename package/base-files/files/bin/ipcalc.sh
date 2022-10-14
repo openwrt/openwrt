@@ -10,14 +10,20 @@ function bitcount(c) {
 }
 
 function ip2int(ip) {
-	for (ret=0,n=split(ip,a,"\."),x=1;x<=n;x++) ret=or(lshift(ret,8),a[x])
+	ret=0
+	n=split(ip,a,"\.")
+	for (x=1;x<=n;x++)
+		ret=or(lshift(ret,8),a[x])
 	return ret
 }
 
 function int2ip(ip,ret,x) {
 	ret=and(ip,255)
 	ip=rshift(ip,8)
-	for(;x<3;ret=and(ip,255)"."ret,ip=rshift(ip,8),x++);
+	for(;x<3;x++) {
+		ret=and(ip,255)"."ret
+		ip=rshift(ip,8)
+	}
 	return ret
 }
 
