@@ -15,9 +15,12 @@
 #include <linux/export.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
+#include <linux/slab.h>
 #include <linux/magic.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
+#include <linux/nvmem-consumer.h>
+#include <linux/of.h>
 #include <linux/byteorder/generic.h>
 
 #include "mtdsplit.h"
@@ -70,6 +73,62 @@ EXPORT_SYMBOL_GPL(mtd_get_squashfs_len);
 static ssize_t mtd_next_eb(struct mtd_info *mtd, size_t offset)
 {
 	return mtd_rounddown_to_eb(offset, mtd) + mtd->erasesize;
+}
+
+int mtd_check_nvmem_bootindex(struct device_node *np)
+{
+	const char *idxstr = NULL;
+	u32 idxval;
+	struct nvmem_cell *cell;
+	void *cell_val;
+	size_t len;
+	int ret;
+
+	ret = of_property_read_u32(np, "openwrt,boot-index", &idxval);
+	if (ret == -EINVAL)
+		ret = of_property_read_string(np, "openwrt,boot-index-ascii",
+					      &idxstr);
+	/*
+	 * return 0 on ret=-EINVAL (property doesn't exist) to
+	 * skip bootindex checking on each mtdsplit driver
+	 */
+	if (ret)
+		return ret == -EINVAL ? 0 : ret;
+
+	cell = of_nvmem_cell_get(np, "bootindex");
+	if (IS_ERR(cell))
+		return PTR_ERR(cell);
+
+	cell_val = nvmem_cell_read(cell, &len);
+	nvmem_cell_put(cell);
+	if (IS_ERR(cell_val))
+		return PTR_ERR(cell_val);
+
+	ret = 0;
+	if (idxstr) {
+		pr_debug(pr_fmt("got nvmem cell value: \"%s\" (len: %u)\n"),
+			 (char *)cell_val, len);
+		if (strlen(cell_val) == 0 || strncmp(cell_val, idxstr, len))
+			ret = -ENODEV;
+	} else {
+		u32 val = 0;
+
+		if (len > sizeof(u32)) {
+			pr_err(pr_fmt("raw bootindex cell is too long! (> 4 bytes)\n"));
+			kfree(cell_val);
+			return -EINVAL;
+		}
+
+		memcpy(&val, cell_val, len);
+		val = be32_to_cpu(val) >> ((sizeof(u32) - len) * BITS_PER_BYTE);
+		pr_debug(pr_fmt("got nvmem cell value: 0x%08x (len: %u)\n"),
+			 val, len);
+		if (val != idxval)
+			ret = -ENODEV;
+	}
+
+	kfree(cell_val);
+	return ret;
 }
 
 int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset,

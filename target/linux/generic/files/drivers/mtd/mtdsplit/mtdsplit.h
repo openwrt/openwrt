@@ -31,6 +31,8 @@ int mtd_get_squashfs_len(struct mtd_info *master,
 			 size_t offset,
 			 size_t *squashfs_len);
 
+int mtd_check_nvmem_bootindex(struct device_node *np);
+
 int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset,
 			   enum mtdsplit_part_type *type);
 
@@ -44,6 +46,11 @@ int mtd_find_rootfs_from(struct mtd_info *mtd,
 static inline int mtd_get_squashfs_len(struct mtd_info *master,
 				       size_t offset,
 				       size_t *squashfs_len)
+{
+	return -ENODEV;
+}
+
+int mtd_check_nvmem_bootindex(struct device_node *np)
 {
 	return -ENODEV;
 }
