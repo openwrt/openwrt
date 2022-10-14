@@ -270,6 +270,109 @@ static const struct file_operations drop_counter_fops = {
 	.read = drop_counter_read,
 };
 
+static void l2_table_print_entry(struct seq_file *m, struct rtl838x_switch_priv *priv,
+				 struct rtl838x_l2_entry *e)
+{
+	u64 portmask;
+	int i;
+
+	if (e->type == L2_UNICAST) {
+		seq_puts(m, "L2_UNICAST\n");
+
+		seq_printf(m, "  mac %02x:%02x:%02x:%02x:%02x:%02x vid %u rvid %u\n",
+			e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
+			e->vid, e->rvid);
+
+		seq_printf(m, "  port %d age %d", e->port, e->age);
+		if (e->is_static)
+			seq_puts(m, " static");
+		if (e->block_da)
+			seq_puts(m, " block_da");
+		if (e->block_sa)
+			seq_puts(m, " block_sa");
+		if (e->suspended)
+			seq_puts(m, " suspended");
+		if (e->next_hop)
+			seq_printf(m, " next_hop route_id %u", e->nh_route_id);
+		seq_puts(m, "\n");
+
+	} else {
+		if (e->type == L2_MULTICAST) {
+			seq_puts(m, "L2_MULTICAST\n");
+
+			seq_printf(m, "  mac %02x:%02x:%02x:%02x:%02x:%02x vid %u rvid %u\n",
+				e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
+				e->vid, e->rvid);
+		}
+
+		if (e->type == IP4_MULTICAST || e->type == IP6_MULTICAST) {
+			seq_puts(m, (e->type == IP4_MULTICAST) ?
+				    "IP4_MULTICAST\n" : "IP6_MULTICAST\n");
+
+			seq_printf(m, "  gip %08x sip %08x vid %u rvid %u\n",
+				e->mc_gip, e->mc_sip, e->vid, e->rvid);
+		}
+
+		portmask = priv->r->read_mcast_pmask(e->mc_portmask_index);
+		seq_printf(m, "  index %u ports", e->mc_portmask_index);
+		for (i = 0; i < 64; i++) {
+			if (portmask & BIT_ULL(i))
+				seq_printf(m, " %d", i);
+		}
+		seq_puts(m, "\n");
+	}
+
+	seq_puts(m, "\n");
+}
+
+static int l2_table_show(struct seq_file *m, void *v)
+{
+	struct rtl838x_switch_priv *priv = m->private;
+	struct rtl838x_l2_entry e;
+	int i, bucket, index;
+
+	mutex_lock(&priv->reg_mutex);
+
+	for (i = 0; i < priv->fib_entries; i++) {
+		bucket = i >> 2;
+		index = i & 0x3;
+		priv->r->read_l2_entry_using_hash(bucket, index, &e);
+
+		if (!e.valid)
+			continue;
+
+		seq_printf(m, "Hash table bucket %d index %d ", bucket, index);
+		l2_table_print_entry(m, priv, &e);
+	}
+
+	for (i = 0; i < 64; i++) {
+		priv->r->read_cam(i, &e);
+
+		if (!e.valid)
+			continue;
+
+		seq_printf(m, "CAM index %d ", i);
+		l2_table_print_entry(m, priv, &e);
+	}
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int l2_table_open(struct inode *inode, struct file *filp)
+{
+	return single_open(filp, l2_table_show, inode->i_private);
+}
+
+static const struct file_operations l2_table_fops = {
+	.owner = THIS_MODULE,
+	.open = l2_table_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
 static ssize_t age_out_read(struct file *filp, char __user *buffer, size_t count,
 			     loff_t *ppos)
 {
@@ -608,6 +711,8 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 
 	debugfs_create_file("drop_counters", 0400, rtl838x_dir, priv, &drop_counter_fops);
 
+	debugfs_create_file("l2_table", 0400, rtl838x_dir, priv, &l2_table_fops);
+
 	return;
 err:
 	rtl838x_dbgfs_cleanup(priv);
@@ -625,4 +730,6 @@ void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv)
 	priv->dbgfs_dir = dbg_dir;
 
 	debugfs_create_file("drop_counters", 0400, dbg_dir, priv, &drop_counter_fops);
+
+	debugfs_create_file("l2_table", 0400, dbg_dir, priv, &l2_table_fops);
 }
