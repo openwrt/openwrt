@@ -630,9 +630,23 @@ int rtl8390_sds_power(int mac, int val)
 	return 0;
 }
 
+static int rtl839x_smi_wait_op(int timeout)
+{
+	int ret = 0;
+	u32 val;
+
+	ret = readx_poll_timeout(sw_r32, RTL839X_PHYREG_ACCESS_CTRL,
+				 val, !(val & 0x1), 20, timeout);
+	if (ret)
+		pr_err("%s: timeout\n", __func__);
+
+	return ret;
+}
+
 int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
 	u32 v;
+	int err = 0;
 
 	if (port > 63 || page > 4095 || reg > 31)
 		return -ENOTSUPP;
@@ -652,13 +666,15 @@ int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	v |= 1;
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
-	do {
-	} while (sw_r32(RTL839X_PHYREG_ACCESS_CTRL) & 0x1);
+	err = rtl839x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	*val = sw_r32(RTL839X_PHYREG_DATA_CTRL) & 0xffff;
 
+errout:
 	mutex_unlock(&smi_lock);
-	return 0;
+	return err;
 }
 
 int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
@@ -689,12 +705,14 @@ int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	v |= BIT(3) | 1; /* Write operation and execute */
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
-	do {
-	} while (sw_r32(RTL839X_PHYREG_ACCESS_CTRL) & 0x1);
+	err = rtl839x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	if (sw_r32(RTL839X_PHYREG_ACCESS_CTRL) & 0x2)
 		err = -EIO;
 
+errout:
 	mutex_unlock(&smi_lock);
 	return err;
 }
@@ -722,15 +740,16 @@ int rtl839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	v = BIT(2) | BIT(0); // MMD-access | EXEC
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
-	do {
-		v = sw_r32(RTL839X_PHYREG_ACCESS_CTRL);
-	} while (v & BIT(0));
+	err = rtl839x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
 	// There is no error-checking via BIT 1 of v, as it does not seem to be set correctly
 	*val = (sw_r32(RTL839X_PHYREG_DATA_CTRL) & 0xffff);
 	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, *val, err);
 
+errout:
 	mutex_unlock(&smi_lock);
-
 	return err;
 }
 
@@ -760,11 +779,13 @@ int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 	v = BIT(3) | BIT(2) | BIT(0); // WRITE | MMD-access | EXEC
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
-	do {
-		v = sw_r32(RTL839X_PHYREG_ACCESS_CTRL);
-	} while (v & BIT(0));
+	err = rtl839x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, val, err);
+
+errout:
 	mutex_unlock(&smi_lock);
 	return err;
 }
