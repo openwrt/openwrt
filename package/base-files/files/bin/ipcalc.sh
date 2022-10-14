@@ -11,7 +11,7 @@ function bitcount(c) {
 
 function ip2int(ip) {
 	ret=0
-	n=split(ip,a,"\.")
+	n=split(ip,a,"\\.")
 	for (x=1;x<=n;x++)
 		ret=or(lshift(ret,8),a[x])
 	return ret
