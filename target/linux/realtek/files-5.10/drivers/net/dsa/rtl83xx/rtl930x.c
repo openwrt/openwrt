@@ -579,22 +579,6 @@ static void rtl930x_write_cam(int idx, struct rtl838x_l2_entry *e)
 	rtl_table_release(q);
 }
 
-static void dump_l2_entry(struct rtl838x_l2_entry *e)
-{
-	pr_info("MAC: %02x:%02x:%02x:%02x:%02x:%02x vid: %d, rvid: %d, port: %d, valid: %d\n",
-		e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
-		e->vid, e->rvid, e->port, e->valid);
-	pr_info("Type: %d, is_static: %d, is_ip_mc: %d, is_ipv6_mc: %d, block_da: %d\n",
-		e->type, e->is_static, e->is_ip_mc, e->is_ipv6_mc, e->block_da);
-	pr_info("  block_sa: %d, suspended: %d, next_hop: %d, age: %d, is_trunk: %d, trunk: %d\n",
-		e->block_sa, e->suspended, e->next_hop, e->age, e->is_trunk, e->trunk);
-	if (e->is_ip_mc || e->is_ipv6_mc)
-		pr_info("  mc_portmask_index: %d, mc_gip: %d, mc_sip: %d\n",
-			e->mc_portmask_index, e->mc_gip, e->mc_sip);
-	pr_info("  stac_dev: %d, nh_route_id: %d, port: %d, dev_id\n",
-		e->stack_dev, e->nh_route_id, e->port);
-}
-
 static u64 rtl930x_read_mcast_pmask(int idx)
 {
 	u32 portmask;
