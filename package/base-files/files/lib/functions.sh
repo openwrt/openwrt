@@ -155,7 +155,7 @@ config_foreach() {
 	for section in ${CONFIG_SECTIONS}; do
 		config_get cfgtype "$section" TYPE
 		[ -n "$___type" ] && [ "x$cfgtype" != "x$___type" ] && continue
-		eval "$___function \"\$section\" \"\$@\""
+		eval "$___function \"\$section\" \"\$@\"" || break
 	done
 }
 

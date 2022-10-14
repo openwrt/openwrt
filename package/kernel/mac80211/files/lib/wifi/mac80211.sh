@@ -54,6 +54,8 @@ check_mac80211_device() {
 		config_get phy "$1" phy
 	}
 	[ "$phy" = "$dev" ] && found=1
+
+	return 0
 }
 
 
