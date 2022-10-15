@@ -103,6 +103,8 @@
 
 		ess-switch@c000000 {
 			status = "okay";
+			switch_lan_bmp = <0x20>;
+			switch_wan_bmp = <0x4>;
 		};
 
 		edma@c080000 {
@@ -322,12 +324,14 @@
 &gmac0 {
 	nvmem-cell-names = "mac-address";
 	nvmem-cells = <&macaddr_mac_0>;
+	vlan_tag = <1 0x20>;
 };
 
 &gmac1 {
 	nvmem-cell-names = "mac-address";
 	nvmem-cells = <&macaddr_mac_0>;
 	mac-address-increment = <1>;
+	vlan_tag = <2 0x4>;
 };
 
 
