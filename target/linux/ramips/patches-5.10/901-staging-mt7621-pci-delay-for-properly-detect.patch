@@ -1,0 +1,22 @@
+--- a/drivers/staging/mt7621-pci/pci-mt7621.c
++++ b/drivers/staging/mt7621-pci/pci-mt7621.c
+@@ -502,8 +502,9 @@
+ 	int err;
+ 
+ 	rt_sysc_m32(PERST_MODE_MASK, PERST_MODE_GPIO, MT7621_GPIO_MODE);
+-
++	mdelay(250);
+ 	mt7621_pcie_reset_assert(pcie);
++	mdelay(250);
+ 	mt7621_pcie_reset_rc_deassert(pcie);
+ 
+ 	list_for_each_entry_safe(port, tmp, &pcie->ports, list) {
+@@ -520,7 +521,7 @@
+ 			list_del(&port->list);
+ 		}
+ 	}
+-
++	mdelay(250);
+ 	mt7621_pcie_reset_ep_deassert(pcie);
+ 
+ 	tmp = NULL;
