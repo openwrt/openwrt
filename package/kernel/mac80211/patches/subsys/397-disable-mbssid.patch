@@ -1,6 +1,6 @@
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -1406,6 +1406,7 @@ static size_t ieee802_11_find_bssid_prof
+@@ -1402,6 +1402,7 @@ static size_t ieee802_11_find_bssid_prof
  	if (!bss_bssid || !transmitter_bssid)
  		return profile_len;
  
@@ -10,7 +10,7 @@
  			continue;
 --- a/net/wireless/scan.c
 +++ b/net/wireless/scan.c
-@@ -1982,6 +1982,7 @@ static const struct element
+@@ -2010,6 +2010,7 @@ static const struct element
  	const struct element *next_mbssid;
  	const struct element *next_sub;
  
@@ -18,7 +18,7 @@
  	next_mbssid = cfg80211_find_elem(WLAN_EID_MULTIPLE_BSSID,
  					 mbssid_end,
  					 ielen - (mbssid_end - ie));
-@@ -2063,6 +2064,7 @@ static void cfg80211_parse_mbssid_data(s
+@@ -2091,6 +2092,7 @@ static void cfg80211_parse_mbssid_data(s
  	u16 capability;
  	struct cfg80211_bss *bss;
  
@@ -26,15 +26,15 @@
  	if (!non_tx_data)
  		return;
  	if (!cfg80211_find_ie(WLAN_EID_MULTIPLE_BSSID, ie, ielen))
-@@ -2221,6 +2223,7 @@ cfg80211_update_notlisted_nontrans(struc
+@@ -2251,6 +2253,7 @@ cfg80211_update_notlisted_nontrans(struc
  	const struct cfg80211_bss_ies *old;
- 	u8 cpy_len;
+ 	size_t cpy_len;
  
 +	return;
  	lockdep_assert_held(&wiphy_to_rdev(wiphy)->bss_lock);
  
  	ie = mgmt->u.probe_resp.variable;
-@@ -2436,6 +2439,7 @@ cfg80211_inform_bss_frame_data(struct wi
+@@ -2468,6 +2471,7 @@ cfg80211_inform_bss_frame_data(struct wi
  
  	res = cfg80211_inform_single_bss_frame_data(wiphy, data, mgmt,
  						    len, gfp);

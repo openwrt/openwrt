@@ -49,7 +49,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  /**
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -736,6 +736,9 @@ static const struct nla_policy nl80211_p
+@@ -741,6 +741,9 @@ static const struct nla_policy nl80211_p
  		NLA_POLICY_EXACT_LEN(IEEE80211_S1G_CAPABILITY_LEN),
  	[NL80211_ATTR_S1G_CAPABILITY_MASK] =
  		NLA_POLICY_EXACT_LEN(IEEE80211_S1G_CAPABILITY_LEN),
@@ -59,7 +59,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
  };
  
-@@ -9763,6 +9766,12 @@ static int nl80211_crypto_settings(struc
+@@ -9778,6 +9781,12 @@ static int nl80211_crypto_settings(struc
  			nla_len(info->attrs[NL80211_ATTR_SAE_PASSWORD]);
  	}
  

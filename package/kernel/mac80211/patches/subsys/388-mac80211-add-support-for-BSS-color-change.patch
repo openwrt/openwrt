@@ -433,7 +433,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct list_head assigned_chanctx_list; /* protected by chanctx_mtx */
  	struct list_head reserved_chanctx_list; /* protected by chanctx_mtx */
  
-@@ -1900,6 +1908,9 @@ void ieee80211_csa_finalize_work(struct
+@@ -1905,6 +1913,9 @@ void ieee80211_csa_finalize_work(struct
  int ieee80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
  			     struct cfg80211_csa_settings *params);
  
