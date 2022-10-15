@@ -327,7 +327,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -863,16 +863,20 @@ enum txq_info_flags {
+@@ -862,16 +862,20 @@ enum txq_info_flags {
   * @def_flow: used as a fallback flow when a packet destined to @tin hashes to
   *	a fq_flow which is already owned by a different tin
   * @def_cvars: codel vars for @def_flow
@@ -350,7 +350,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	unsigned long flags;
  
  	/* keep last! */
-@@ -949,8 +953,6 @@ struct ieee80211_sub_if_data {
+@@ -948,8 +952,6 @@ struct ieee80211_sub_if_data {
  	struct ieee80211_tx_queue_params tx_conf[IEEE80211_NUM_ACS];
  	struct mac80211_qos_map __rcu *qos_map;
  
@@ -359,7 +359,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct work_struct csa_finalize_work;
  	bool csa_block_tx; /* write-protected by sdata_lock and local->mtx */
  	struct cfg80211_chan_def csa_chandef;
-@@ -1185,44 +1187,6 @@ enum mac80211_scan_state {
+@@ -1184,44 +1186,6 @@ enum mac80211_scan_state {
  	SCAN_ABORT,
  };
  
@@ -404,7 +404,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  DECLARE_STATIC_KEY_FALSE(aql_disable);
  
  struct ieee80211_local {
-@@ -1236,8 +1200,13 @@ struct ieee80211_local {
+@@ -1235,8 +1199,13 @@ struct ieee80211_local {
  	struct codel_params cparams;
  
  	/* protects active_txqs and txqi->schedule_order */
@@ -419,7 +419,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u32 aql_threshold;
  	atomic_t aql_total_pending_airtime;
  
-@@ -1654,125 +1623,6 @@ static inline bool txq_has_queue(struct
+@@ -1660,125 +1629,6 @@ static inline bool txq_has_queue(struct
  	return !(skb_queue_empty(&txqi->frags) && !txqi->tin.backlog_packets);
  }
  
@@ -545,7 +545,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static inline int ieee80211_bssid_match(const u8 *raddr, const u8 *addr)
  {
  	return ether_addr_equal(raddr, addr) ||
-@@ -2018,14 +1868,6 @@ int ieee80211_tx_control_port(struct wip
+@@ -2024,14 +1874,6 @@ int ieee80211_tx_control_port(struct wip
  			      u64 *cookie);
  int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
  			      const u8 *buf, size_t len);
