@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -4265,6 +4265,7 @@ void ieee80211_check_fast_rx(struct sta_
+@@ -4267,6 +4267,7 @@ void ieee80211_check_fast_rx(struct sta_
  		.vif_type = sdata->vif.type,
  		.control_port_protocol = sdata->control_port_protocol,
  	}, *old, *new = NULL;
@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool set_offload = false;
  	bool assign = false;
  	bool offload;
-@@ -4380,10 +4381,10 @@ void ieee80211_check_fast_rx(struct sta_
+@@ -4382,10 +4383,10 @@ void ieee80211_check_fast_rx(struct sta_
  	if (assign)
  		new = kmemdup(&fastrx, sizeof(fastrx), GFP_KERNEL);
  
