@@ -19,11 +19,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  include/linux/dsa/tag_qca.h      |  2 +-
  2 files changed, 9 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/net/dsa/qca/qca8k-8xxx.c b/drivers/net/dsa/qca/qca8k-8xxx.c
-index 644338ca0510..c5c3b4e92f28 100644
 --- a/drivers/net/dsa/qca/qca8k-8xxx.c
 +++ b/drivers/net/dsa/qca/qca8k-8xxx.c
-@@ -1518,9 +1518,9 @@ static void qca8k_mib_autocast_handler(struct dsa_switch *ds, struct sk_buff *sk
+@@ -1668,9 +1668,9 @@ static void qca8k_mib_autocast_handler(s
  	struct qca8k_priv *priv = ds->priv;
  	const struct qca8k_mib_desc *mib;
  	struct mib_ethhdr *mib_ethhdr;
@@ -35,7 +33,7 @@ index 644338ca0510..c5c3b4e92f28 100644
  
  	mib_ethhdr = (struct mib_ethhdr *)skb_mac_header(skb);
  	mib_eth_data = &priv->mib_eth_data;
-@@ -1532,28 +1532,24 @@ static void qca8k_mib_autocast_handler(struct dsa_switch *ds, struct sk_buff *sk
+@@ -1682,28 +1682,24 @@ static void qca8k_mib_autocast_handler(s
  	if (port != mib_eth_data->req_port)
  		goto exit;
  
@@ -70,11 +68,9 @@ index 644338ca0510..c5c3b4e92f28 100644
  	}
  
  exit:
-diff --git a/include/linux/dsa/tag_qca.h b/include/linux/dsa/tag_qca.h
-index 0e176da1e43f..b1b5720d89a5 100644
 --- a/include/linux/dsa/tag_qca.h
 +++ b/include/linux/dsa/tag_qca.h
-@@ -73,7 +73,7 @@ enum mdio_cmd {
+@@ -68,7 +68,7 @@ enum mdio_cmd {
  };
  
  struct mib_ethhdr {
@@ -83,6 +79,3 @@ index 0e176da1e43f..b1b5720d89a5 100644
  	__be16 hdr;		/* qca hdr */
  } __packed;
  
--- 
-2.37.2
-

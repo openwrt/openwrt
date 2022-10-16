@@ -35,25 +35,21 @@ Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
  scripts/mod/modpost.c             | 4 +++-
  3 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index b9e0b5c604af..cfe400032f96 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -416,7 +416,8 @@ HOSTCXX	= g++
+@@ -432,7 +432,8 @@ HOSTCXX	= g++
  endif
-
+ 
  export KBUILD_USERCFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes \
 -			      -O2 -fomit-frame-pointer -std=gnu89
 +			      -O2 -fomit-frame-pointer -std=gnu89 \
 +			      -Wdeclaration-after-statement
  export KBUILD_USERLDFLAGS :=
-
+ 
  KBUILD_HOSTCFLAGS   := $(KBUILD_USERCFLAGS) $(HOST_LFS_CFLAGS) $(HOSTCFLAGS)
-diff --git a/arch/arm64/kernel/vdso32/Makefile b/arch/arm64/kernel/vdso32/Makefile
-index abad38c576e1..33cd7ed3f94f 100644
 --- a/arch/arm64/kernel/vdso32/Makefile
 +++ b/arch/arm64/kernel/vdso32/Makefile
-@@ -76,6 +76,7 @@ VDSO_CFLAGS += -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+@@ -76,6 +76,7 @@ VDSO_CFLAGS += -Wall -Wundef -Wstrict-pr
                 -fno-strict-aliasing -fno-common \
                 -Werror-implicit-function-declaration \
                 -Wno-format-security \
@@ -61,21 +57,17 @@ index abad38c576e1..33cd7ed3f94f 100644
                 -std=gnu89
  VDSO_CFLAGS  += -O2
  # Some useful compiler-dependent flags from top-level Makefile
-diff --git a/scripts/mod/modpost.c b/scripts/mod/modpost.c
-index 3c27a177b28b..d2b17ed27e6e 100644
 --- a/scripts/mod/modpost.c
 +++ b/scripts/mod/modpost.c
-@@ -844,8 +844,10 @@ static int match(const char *sym, const char * const pat[])
+@@ -833,8 +833,10 @@ static int match(const char *sym, const
  {
-	const char *p;
-	while (*pat) {
+ 	const char *p;
+ 	while (*pat) {
 +		const char *endp;
 +
-		p = *pat++;
+ 		p = *pat++;
 -		const char *endp = p + strlen(p) - 1;
 +		endp = p + strlen(p) - 1;
-
-		/* "*foo*" */
-		if (*p == '*' && *endp == '*') {
---
-2.37.2
+ 
+ 		/* "*foo*" */
+ 		if (*p == '*' && *endp == '*') {

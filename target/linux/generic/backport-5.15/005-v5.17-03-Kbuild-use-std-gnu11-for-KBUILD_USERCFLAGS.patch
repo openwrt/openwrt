@@ -30,18 +30,14 @@ Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
  Makefile | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Makefile b/Makefile
-index fe86758acaaa..e569fccfb009 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -416,7 +416,7 @@ HOSTCXX	= g++
+@@ -432,7 +432,7 @@ HOSTCXX	= g++
  endif
-
+ 
  export KBUILD_USERCFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes \
 -			      -O2 -fomit-frame-pointer -std=gnu89 \
 +			      -O2 -fomit-frame-pointer -std=gnu11 \
-			      -Wdeclaration-after-statement
+ 			      -Wdeclaration-after-statement
  export KBUILD_USERLDFLAGS :=
-
---
-2.37.2
+ 

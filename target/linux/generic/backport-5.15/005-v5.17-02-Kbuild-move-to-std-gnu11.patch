@@ -47,18 +47,14 @@ Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
  Makefile | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Makefile b/Makefile
-index cfe400032f96..fe86758acaaa 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -498,7 +498,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Werror=strict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE \
-		   -Werror=implicit-function-declaration -Werror=implicit-int \
-		   -Werror=return-type -Wno-format-security \
+@@ -516,7 +516,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Werror
+ 		   -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE \
+ 		   -Werror=implicit-function-declaration -Werror=implicit-int \
+ 		   -Werror=return-type -Wno-format-security \
 -		   -std=gnu89
 +		   -std=gnu11
  KBUILD_CPPFLAGS := -D__KERNEL__
  KBUILD_AFLAGS_KERNEL :=
  KBUILD_CFLAGS_KERNEL :=
---
-2.37.2
