@@ -50,9 +50,9 @@ Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
 --- a/Makefile
 +++ b/Makefile
 @@ -498,7 +498,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Werror
-		   -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE \
-		   -Werror=implicit-function-declaration -Werror=implicit-int \
-		   -Werror=return-type -Wno-format-security \
+ 		   -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE \
+ 		   -Werror=implicit-function-declaration -Werror=implicit-int \
+ 		   -Werror=return-type -Wno-format-security \
 -		   -std=gnu89
 +		   -std=gnu11
  KBUILD_CPPFLAGS := -D__KERNEL__

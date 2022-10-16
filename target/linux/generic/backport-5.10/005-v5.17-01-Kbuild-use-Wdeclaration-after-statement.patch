@@ -39,13 +39,13 @@ Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
 +++ b/Makefile
 @@ -416,7 +416,8 @@ HOSTCXX	= g++
  endif
-
+ 
  export KBUILD_USERCFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes \
 -			      -O2 -fomit-frame-pointer -std=gnu89
 +			      -O2 -fomit-frame-pointer -std=gnu89 \
 +			      -Wdeclaration-after-statement
  export KBUILD_USERLDFLAGS :=
-
+ 
  KBUILD_HOSTCFLAGS   := $(KBUILD_USERCFLAGS) $(HOST_LFS_CFLAGS) $(HOSTCFLAGS)
 --- a/arch/arm64/kernel/vdso32/Makefile
 +++ b/arch/arm64/kernel/vdso32/Makefile
@@ -61,13 +61,13 @@ Signed-off-by: Masahiro Yamada <masahiroy@kernel.org>
 +++ b/scripts/mod/modpost.c
 @@ -844,8 +844,10 @@ static int match(const char *sym, const
  {
-	const char *p;
-	while (*pat) {
+ 	const char *p;
+ 	while (*pat) {
 +		const char *endp;
 +
-		p = *pat++;
+ 		p = *pat++;
 -		const char *endp = p + strlen(p) - 1;
 +		endp = p + strlen(p) - 1;
-
-		/* "*foo*" */
-		if (*p == '*' && *endp == '*') {
+ 
+ 		/* "*foo*" */
+ 		if (*p == '*' && *endp == '*') {
