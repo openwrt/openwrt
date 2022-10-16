@@ -14,11 +14,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/clk/qcom/krait-cc.c  |  7 +++--
  3 files changed, 42 insertions(+), 33 deletions(-)
 
-diff --git a/drivers/clk/qcom/clk-krait.c b/drivers/clk/qcom/clk-krait.c
-index 293a9dfa7151..1d40dd1acb0f 100644
 --- a/drivers/clk/qcom/clk-krait.c
 +++ b/drivers/clk/qcom/clk-krait.c
-@@ -97,53 +97,58 @@ const struct clk_ops krait_mux_clk_ops = {
+@@ -97,53 +97,58 @@ const struct clk_ops krait_mux_clk_ops =
  EXPORT_SYMBOL_GPL(krait_mux_clk_ops);
  
  /* The divider can divide by 2, 4, 6 and 8. But we only really need div-2. */
@@ -103,8 +101,6 @@ index 293a9dfa7151..1d40dd1acb0f 100644
  };
 -EXPORT_SYMBOL_GPL(krait_div2_clk_ops);
 +EXPORT_SYMBOL_GPL(krait_div_clk_ops);
-diff --git a/drivers/clk/qcom/clk-krait.h b/drivers/clk/qcom/clk-krait.h
-index f930538c539e..94c798f8e834 100644
 --- a/drivers/clk/qcom/clk-krait.h
 +++ b/drivers/clk/qcom/clk-krait.h
 @@ -25,17 +25,20 @@ struct krait_mux_clk {
@@ -132,11 +128,9 @@ index f930538c539e..94c798f8e834 100644
 +extern const struct clk_ops krait_div_clk_ops;
  
  #endif
-diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
-index 90dee71e7c38..949657186fdb 100644
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -76,11 +76,11 @@ static int krait_notifier_register(struct device *dev, struct clk *clk,
+@@ -76,11 +76,11 @@ static int krait_notifier_register(struc
  static struct clk *
  krait_add_div(struct device *dev, int id, const char *s, unsigned int offset)
  {
@@ -150,7 +144,7 @@ index 90dee71e7c38..949657186fdb 100644
  		.flags = CLK_SET_RATE_PARENT,
  	};
  	struct clk *clk;
-@@ -90,7 +90,8 @@ krait_add_div(struct device *dev, int id, const char *s, unsigned int offset)
+@@ -90,7 +90,8 @@ krait_add_div(struct device *dev, int id
  	if (!div)
  		return ERR_PTR(-ENOMEM);
  
@@ -160,6 +154,3 @@ index 90dee71e7c38..949657186fdb 100644
  	div->shift = 6;
  	div->lpl = id >= 0;
  	div->offset = offset;
--- 
-2.37.2
-

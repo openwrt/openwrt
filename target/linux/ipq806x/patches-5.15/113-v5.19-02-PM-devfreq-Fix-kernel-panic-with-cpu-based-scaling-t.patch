@@ -20,11 +20,9 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
  drivers/devfreq/governor_passive.c | 3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/drivers/devfreq/governor_passive.c b/drivers/devfreq/governor_passive.c
-index 72c67979ebe1..091a69e1f487 100644
 --- a/drivers/devfreq/governor_passive.c
 +++ b/drivers/devfreq/governor_passive.c
-@@ -407,8 +407,7 @@ static int devfreq_passive_event_handler(struct devfreq *devfreq,
+@@ -401,8 +401,7 @@ static int devfreq_passive_event_handler
  	if (!p_data)
  		return -EINVAL;
  
@@ -34,6 +32,3 @@ index 72c67979ebe1..091a69e1f487 100644
  
  	switch (event) {
  	case DEVFREQ_GOV_START:
--- 
-2.37.2
-

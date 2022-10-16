@@ -14,11 +14,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/clk/qcom/krait-cc.c | 126 +++++++++++++++++++-----------------
  1 file changed, 66 insertions(+), 60 deletions(-)
 
-diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
-index cfd961d5cc45..84f0048961f5 100644
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -69,21 +69,22 @@ static int krait_notifier_register(struct device *dev, struct clk *clk,
+@@ -69,21 +69,22 @@ static int krait_notifier_register(struc
  	return ret;
  }
  
@@ -45,7 +43,7 @@ index cfd961d5cc45..84f0048961f5 100644
  
  	div->width = 2;
  	div->shift = 6;
-@@ -93,43 +94,49 @@ krait_add_div(struct device *dev, int id, const char *s, unsigned int offset)
+@@ -93,43 +94,49 @@ krait_add_div(struct device *dev, int id
  
  	init.name = kasprintf(GFP_KERNEL, "hfpll%s_div", s);
  	if (!init.name)
@@ -109,7 +107,7 @@ index cfd961d5cc45..84f0048961f5 100644
  
  	mux->offset = offset;
  	mux->lpl = id >= 0;
-@@ -149,44 +156,51 @@ krait_add_sec_mux(struct device *dev, int id, const char *s,
+@@ -149,44 +156,51 @@ krait_add_sec_mux(struct device *dev, in
  
  	init.name = kasprintf(GFP_KERNEL, "krait%s_sec_mux", s);
  	if (!init.name)
@@ -173,7 +171,7 @@ index cfd961d5cc45..84f0048961f5 100644
  
  	mux = devm_kzalloc(dev, sizeof(*mux), GFP_KERNEL);
  	if (!mux)
-@@ -204,36 +218,29 @@ krait_add_pri_mux(struct device *dev, int id, const char *s,
+@@ -204,36 +218,29 @@ krait_add_pri_mux(struct device *dev, in
  	if (!init.name)
  		return ERR_PTR(-ENOMEM);
  
@@ -224,7 +222,7 @@ index cfd961d5cc45..84f0048961f5 100644
  	kfree(init.name);
  	return clk;
  }
-@@ -241,11 +248,10 @@ krait_add_pri_mux(struct device *dev, int id, const char *s,
+@@ -241,11 +248,10 @@ err_p0:
  /* id < 0 for L2, otherwise id == physical CPU number */
  static struct clk *krait_add_clks(struct device *dev, int id, bool unique_aux)
  {
@@ -237,7 +235,7 @@ index cfd961d5cc45..84f0048961f5 100644
  
  	if (id >= 0) {
  		offset = 0x4501 + (0x1000 * id);
-@@ -257,19 +263,19 @@ static struct clk *krait_add_clks(struct device *dev, int id, bool unique_aux)
+@@ -257,19 +263,19 @@ static struct clk *krait_add_clks(struct
  		s = "_l2";
  	}
  
@@ -264,6 +262,3 @@ index cfd961d5cc45..84f0048961f5 100644
  err:
  	kfree(p);
  	return clk;
--- 
-2.37.2
-
