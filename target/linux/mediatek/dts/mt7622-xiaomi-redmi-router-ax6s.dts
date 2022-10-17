@@ -295,7 +295,6 @@
 			 */
 			partition@2c0000 {
 				label = "kernel";
-				compatible = "denx,fit";
 				reg = <0x2c0000 0x400000>;
 			};
 
@@ -308,7 +307,7 @@
 			 */
 			partition@6c0000 {
 				label = "ubi";
-				reg = <0x6C0000 0x6f00000>;
+				reg = <0x6c0000 0x6f00000>;
 			};
 		};
 	};
