@@ -42,7 +42,7 @@ MAKE_FLAGS+= \
 	ARCH=$(LINUX_KARCH) \
 	TARGET_SUFFIX=$(CONFIG_TARGET_SUFFIX) \
 	GCC_VERSION=$(GCC_VERSION) \
-	EXTRA_CFLAGS=-fno-stack-protector -I$(STAGING_DIR)/usr/include \
+	EXTRA_CFLAGS='-fno-PIC -fno-stack-protector -I$(STAGING_DIR)/usr/include' \
 	$(LNX_CONFIG_OPTS)
 
 ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq807x")
