@@ -8,6 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnftnl
+PKG_CPE_ID:=cpe:/a:netfilter:libnftnl
 PKG_VERSION:=1.2.3
 PKG_RELEASE:=$(AUTORELEASE)
 
