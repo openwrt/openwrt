@@ -1,0 +1,69 @@
+From 33958ad3fc02aeb06a4634e59689a9559d968e1f Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sat, 26 Feb 2022 14:52:29 +0100
+Subject: [PATCH 09/14] clk: qcom: clk-rcg: add clk_rcg_floor_ops ops
+
+Add clk_rcg_floor_ops for clock that can't provide a stable freq and
+require to use a floor freq to provide the requested frequency.
+
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+Reviewed-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Reviewed-by: Stephen Boyd <sboyd@kernel.org>
+Tested-by: Jonathan McDowell <noodles@earth.li>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Link: https://lore.kernel.org/r/20220226135235.10051-10-ansuelsmth@gmail.com
+---
+ drivers/clk/qcom/clk-rcg.c | 24 ++++++++++++++++++++++++
+ drivers/clk/qcom/clk-rcg.h |  1 +
+ 2 files changed, 25 insertions(+)
+
+--- a/drivers/clk/qcom/clk-rcg.c
++++ b/drivers/clk/qcom/clk-rcg.c
+@@ -526,6 +526,19 @@ static int clk_rcg_set_rate(struct clk_h
+ 	return __clk_rcg_set_rate(rcg, f);
+ }
+ 
++static int clk_rcg_set_floor_rate(struct clk_hw *hw, unsigned long rate,
++				  unsigned long parent_rate)
++{
++	struct clk_rcg *rcg = to_clk_rcg(hw);
++	const struct freq_tbl *f;
++
++	f = qcom_find_freq_floor(rcg->freq_tbl, rate);
++	if (!f)
++		return -EINVAL;
++
++	return __clk_rcg_set_rate(rcg, f);
++}
++
+ static int clk_rcg_bypass_set_rate(struct clk_hw *hw, unsigned long rate,
+ 				unsigned long parent_rate)
+ {
+@@ -816,6 +829,17 @@ const struct clk_ops clk_rcg_ops = {
+ };
+ EXPORT_SYMBOL_GPL(clk_rcg_ops);
+ 
++const struct clk_ops clk_rcg_floor_ops = {
++	.enable = clk_enable_regmap,
++	.disable = clk_disable_regmap,
++	.get_parent = clk_rcg_get_parent,
++	.set_parent = clk_rcg_set_parent,
++	.recalc_rate = clk_rcg_recalc_rate,
++	.determine_rate = clk_rcg_determine_rate,
++	.set_rate = clk_rcg_set_floor_rate,
++};
++EXPORT_SYMBOL_GPL(clk_rcg_floor_ops);
++
+ const struct clk_ops clk_rcg_bypass_ops = {
+ 	.enable = clk_enable_regmap,
+ 	.disable = clk_disable_regmap,
+--- a/drivers/clk/qcom/clk-rcg.h
++++ b/drivers/clk/qcom/clk-rcg.h
+@@ -86,6 +86,7 @@ struct clk_rcg {
+ };
+ 
+ extern const struct clk_ops clk_rcg_ops;
++extern const struct clk_ops clk_rcg_floor_ops;
+ extern const struct clk_ops clk_rcg_bypass_ops;
+ extern const struct clk_ops clk_rcg_bypass2_ops;
+ extern const struct clk_ops clk_rcg_pixel_ops;

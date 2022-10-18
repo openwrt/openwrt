@@ -1,0 +1,71 @@
+From cdab30b44518513003607ecfc8a22de3dbbb78ed Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 7 Jul 2022 12:20:38 +0200
+Subject: [PATCH 1/1] hwspinlock: qcom: Add support for mmio usage to
+ sfpb-mutex
+
+Allow sfpb-mutex to use mmio in addition to syscon.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Link: https://lore.kernel.org/r/20220707102040.1859-1-ansuelsmth@gmail.com
+---
+ drivers/hwspinlock/qcom_hwspinlock.c | 28 +++++++++++++++++++++++-----
+ 1 file changed, 23 insertions(+), 5 deletions(-)
+
+--- a/drivers/hwspinlock/qcom_hwspinlock.c
++++ b/drivers/hwspinlock/qcom_hwspinlock.c
+@@ -19,6 +19,11 @@
+ #define QCOM_MUTEX_APPS_PROC_ID	1
+ #define QCOM_MUTEX_NUM_LOCKS	32
+ 
++struct qcom_hwspinlock_of_data {
++	u32 offset;
++	u32 stride;
++};
++
+ static int qcom_hwspinlock_trylock(struct hwspinlock *lock)
+ {
+ 	struct regmap_field *field = lock->priv;
+@@ -63,9 +68,20 @@ static const struct hwspinlock_ops qcom_
+ 	.unlock		= qcom_hwspinlock_unlock,
+ };
+ 
++static const struct qcom_hwspinlock_of_data of_sfpb_mutex = {
++	.offset = 0x4,
++	.stride = 0x4,
++};
++
++/* All modern platform has offset 0 and stride of 4k */
++static const struct qcom_hwspinlock_of_data of_tcsr_mutex = {
++	.offset = 0,
++	.stride = 0x1000,
++};
++
+ static const struct of_device_id qcom_hwspinlock_of_match[] = {
+-	{ .compatible = "qcom,sfpb-mutex" },
+-	{ .compatible = "qcom,tcsr-mutex" },
++	{ .compatible = "qcom,sfpb-mutex", .data = &of_sfpb_mutex },
++	{ .compatible = "qcom,tcsr-mutex", .data = &of_tcsr_mutex },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, qcom_hwspinlock_of_match);
+@@ -112,12 +128,14 @@ static const struct regmap_config tcsr_m
+ static struct regmap *qcom_hwspinlock_probe_mmio(struct platform_device *pdev,
+ 						 u32 *offset, u32 *stride)
+ {
++	const struct qcom_hwspinlock_of_data *data;
+ 	struct device *dev = &pdev->dev;
+ 	void __iomem *base;
+ 
+-	/* All modern platform has offset 0 and stride of 4k */
+-	*offset = 0;
+-	*stride = 0x1000;
++	data = of_device_get_match_data(dev);
++
++	*offset = data->offset;
++	*stride = data->stride;
+ 
+ 	base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base))
