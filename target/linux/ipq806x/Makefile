@@ -11,6 +11,7 @@ CPU_SUBTYPE:=neon-vfpv4
 SUBTARGETS:=generic chromium
 
 KERNEL_PATCHVER:=5.15
+KERNEL_TESTING_PATCHVER:=6.1
 
 KERNELNAME:=zImage Image dtbs
 
