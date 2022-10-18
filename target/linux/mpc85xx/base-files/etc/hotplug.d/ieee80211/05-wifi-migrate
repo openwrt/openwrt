@@ -53,8 +53,8 @@ WIRELESS_CHANGED=false
 
 case "$(board_name)" in
 tplink,tl-wdr4900-v1)
-	migrate_radio 'ffe09000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0' 'ffe09000.pcie/pci9000:00/9000:00:00.0/9000:01:00.0'
-	migrate_radio 'ffe0a000.pcie/pci0001:02/0001:02:00.0/0001:03:00.0' 'ffe0a000.pcie/pcia000:02/a000:02:00.0/a000:03:00.0'
+	migrate_radio 'ffe09000.pcie/pci9000:00/9000:00:00.0/9000:01:00.0' 'ffe09000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0'
+	migrate_radio 'ffe0a000.pcie/pcia000:02/a000:02:00.0/a000:03:00.0' 'ffe0a000.pcie/pci0001:02/0001:02:00.0/0001:03:00.0'
 	;;
 esac
 
