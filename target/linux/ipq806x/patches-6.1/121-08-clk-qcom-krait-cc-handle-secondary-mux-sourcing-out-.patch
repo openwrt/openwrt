@@ -19,9 +19,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/clk/qcom/krait-cc.c | 19 ++++++++++++++++++-
  1 file changed, 18 insertions(+), 1 deletion(-)
 
+diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
+index e4fb3ff2b5b5..717eff44b6a4 100644
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -317,7 +317,7 @@ static int krait_cc_probe(struct platfor
+@@ -317,7 +317,7 @@ static int krait_cc_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
  	const struct of_device_id *id;
@@ -30,7 +32,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	int cpu;
  	struct clk *clk;
  	struct clk **clks;
-@@ -327,6 +327,15 @@ static int krait_cc_probe(struct platfor
+@@ -327,6 +327,15 @@ static int krait_cc_probe(struct platform_device *pdev)
  	if (!id)
  		return -ENODEV;
  
@@ -46,7 +48,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	/*
  	 * Per Documentation qsb should be provided from DTS.
  	 * To address old implementation, register the fixed clock anyway.
-@@ -394,6 +403,10 @@ static int krait_cc_probe(struct platfor
+@@ -394,6 +403,10 @@ static int krait_cc_probe(struct platform_device *pdev)
  		dev_info(dev, "L2 @ QSB rate. Forcing new rate.\n");
  		cur_rate = aux_rate;
  	}
@@ -57,7 +59,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	clk_set_rate(l2_pri_mux_clk, aux_rate);
  	clk_set_rate(l2_pri_mux_clk, 2);
  	clk_set_rate(l2_pri_mux_clk, cur_rate);
-@@ -405,6 +418,10 @@ static int krait_cc_probe(struct platfor
+@@ -405,6 +418,10 @@ static int krait_cc_probe(struct platform_device *pdev)
  			dev_info(dev, "CPU%d @ QSB rate. Forcing new rate.\n", cpu);
  			cur_rate = aux_rate;
  		}
@@ -68,3 +70,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  		clk_set_rate(clk, aux_rate);
  		clk_set_rate(clk, 2);
+-- 
+2.37.2
+

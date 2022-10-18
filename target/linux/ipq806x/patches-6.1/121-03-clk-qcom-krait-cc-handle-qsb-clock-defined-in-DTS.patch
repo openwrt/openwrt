@@ -12,9 +12,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/clk/qcom/krait-cc.c | 14 +++++++++++---
  1 file changed, 11 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
+index 84f0048961f5..f1d64b16cac3 100644
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -305,7 +305,7 @@ static int krait_cc_probe(struct platfor
+@@ -305,7 +305,7 @@ static int krait_cc_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
  	const struct of_device_id *id;
@@ -23,7 +25,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	int cpu;
  	struct clk *clk;
  	struct clk **clks;
-@@ -315,11 +315,19 @@ static int krait_cc_probe(struct platfor
+@@ -315,11 +315,19 @@ static int krait_cc_probe(struct platform_device *pdev)
  	if (!id)
  		return -ENODEV;
  
@@ -45,3 +47,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	if (!id->data) {
  		clk = clk_register_fixed_factor(dev, "acpu_aux",
  						"gpll0_vote", 0, 1, 2);
+-- 
+2.37.2
+

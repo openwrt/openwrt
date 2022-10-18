@@ -11,15 +11,16 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/clk/qcom/kpss-xcc.c | 13 +++++++++----
  1 file changed, 9 insertions(+), 4 deletions(-)
 
+diff --git a/drivers/clk/qcom/kpss-xcc.c b/drivers/clk/qcom/kpss-xcc.c
+index b1b370274ec4..97358c98c6c9 100644
 --- a/drivers/clk/qcom/kpss-xcc.c
 +++ b/drivers/clk/qcom/kpss-xcc.c
-@@ -31,13 +31,14 @@ MODULE_DEVICE_TABLE(of, kpss_xcc_match_t
+@@ -31,12 +31,13 @@ MODULE_DEVICE_TABLE(of, kpss_xcc_match_table);
  
  static int kpss_xcc_driver_probe(struct platform_device *pdev)
  {
 +	struct device *dev = &pdev->dev;
  	const struct of_device_id *id;
- 	struct resource *res;
  	void __iomem *base;
  	struct clk_hw *hw;
  	const char *name;
@@ -29,7 +30,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	if (!id)
  		return -ENODEV;
  
-@@ -47,7 +48,7 @@ static int kpss_xcc_driver_probe(struct
+@@ -45,7 +46,7 @@ static int kpss_xcc_driver_probe(struct platform_device *pdev)
  		return PTR_ERR(base);
  
  	if (id->data) {
@@ -38,7 +39,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  						  "clock-output-names",
  						  0, &name))
  			return -ENODEV;
-@@ -57,12 +58,16 @@ static int kpss_xcc_driver_probe(struct
+@@ -55,12 +56,16 @@ static int kpss_xcc_driver_probe(struct platform_device *pdev)
  		base += 0x28;
  	}
  
@@ -57,3 +58,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static struct platform_driver kpss_xcc_driver = {
+-- 
+2.37.2
+

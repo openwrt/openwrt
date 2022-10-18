@@ -14,9 +14,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/clk/qcom/krait-cc.c | 126 +++++++++++++++++++-----------------
  1 file changed, 66 insertions(+), 60 deletions(-)
 
+diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
+index cfd961d5cc45..84f0048961f5 100644
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -69,21 +69,22 @@ static int krait_notifier_register(struc
+@@ -69,21 +69,22 @@ static int krait_notifier_register(struct device *dev, struct clk *clk,
  	return ret;
  }
  
@@ -43,7 +45,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	div->width = 2;
  	div->shift = 6;
-@@ -93,43 +94,49 @@ krait_add_div(struct device *dev, int id
+@@ -93,43 +94,49 @@ krait_add_div(struct device *dev, int id, const char *s, unsigned int offset)
  
  	init.name = kasprintf(GFP_KERNEL, "hfpll%s_div", s);
  	if (!init.name)
@@ -107,7 +109,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	mux->offset = offset;
  	mux->lpl = id >= 0;
-@@ -149,44 +156,51 @@ krait_add_sec_mux(struct device *dev, in
+@@ -149,44 +156,51 @@ krait_add_sec_mux(struct device *dev, int id, const char *s,
  
  	init.name = kasprintf(GFP_KERNEL, "krait%s_sec_mux", s);
  	if (!init.name)
@@ -171,7 +173,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	mux = devm_kzalloc(dev, sizeof(*mux), GFP_KERNEL);
  	if (!mux)
-@@ -204,36 +218,29 @@ krait_add_pri_mux(struct device *dev, in
+@@ -204,36 +218,29 @@ krait_add_pri_mux(struct device *dev, int id, const char *s,
  	if (!init.name)
  		return ERR_PTR(-ENOMEM);
  
@@ -222,7 +224,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	kfree(init.name);
  	return clk;
  }
-@@ -241,11 +248,10 @@ err_p0:
+@@ -241,11 +248,10 @@ krait_add_pri_mux(struct device *dev, int id, const char *s,
  /* id < 0 for L2, otherwise id == physical CPU number */
  static struct clk *krait_add_clks(struct device *dev, int id, bool unique_aux)
  {
@@ -235,7 +237,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	if (id >= 0) {
  		offset = 0x4501 + (0x1000 * id);
-@@ -257,19 +263,19 @@ static struct clk *krait_add_clks(struct
+@@ -257,19 +263,19 @@ static struct clk *krait_add_clks(struct device *dev, int id, bool unique_aux)
  		s = "_l2";
  	}
  
@@ -262,3 +264,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  err:
  	kfree(p);
  	return clk;
+-- 
+2.37.2
+

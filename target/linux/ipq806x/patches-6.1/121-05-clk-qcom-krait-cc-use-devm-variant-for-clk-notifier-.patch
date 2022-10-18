@@ -12,9 +12,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/clk/qcom/krait-cc.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
+index e91275663973..33a78b7de0bd 100644
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -64,7 +64,7 @@ static int krait_notifier_register(struc
+@@ -64,7 +64,7 @@ static int krait_notifier_register(struct device *dev, struct clk *clk,
  	int ret = 0;
  
  	mux->clk_nb.notifier_call = krait_notifier_cb;
@@ -23,3 +25,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	if (ret)
  		dev_err(dev, "failed to register clock notifier: %d\n", ret);
  
+-- 
+2.37.2
+

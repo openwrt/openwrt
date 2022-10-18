@@ -10,9 +10,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/clk/qcom/krait-cc.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
+diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
+index b71067a49ee7..e4fb3ff2b5b5 100644
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -391,25 +391,25 @@ static int krait_cc_probe(struct platfor
+@@ -391,25 +391,25 @@ static int krait_cc_probe(struct platform_device *pdev)
  	cur_rate = clk_get_rate(l2_pri_mux_clk);
  	aux_rate = 384000000;
  	if (cur_rate == qsb_rate) {
@@ -42,3 +44,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	}
  
  	of_clk_add_provider(dev->of_node, krait_of_get, clks);
+-- 
+2.37.2
+
