@@ -51,14 +51,16 @@ jobs:
             | sort -u -t '/' -k1,1 \
             | awk '{ print $1 }')"
 
-          JSON='['
-          FIRST=1
-          for TARGET in $TARGETS; do
-            [[ $FIRST -ne 1 ]] && JSON="$JSON"','
-            JSON="$JSON"'"'"${TARGET}"'"'
-            FIRST=0
-          done
-          JSON="$JSON"']'
+          # JSON='['
+          # FIRST=1
+          # for TARGET in $TARGETS; do
+          #   [[ $FIRST -ne 1 ]] && JSON="$JSON"','
+          #   JSON="$JSON"'"'"${TARGET}"'"'
+          #   FIRST=0
+          # done
+          # JSON="$JSON"']'
+
+          JSON='["ipq806x/generic",]'
 
            echo -e "\n---- targets ----\n"
            echo "$JSON"
