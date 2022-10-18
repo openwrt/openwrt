@@ -24,13 +24,13 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 --- a/drivers/net/phy/mxl-gpy.c
 +++ b/drivers/net/phy/mxl-gpy.c
 @@ -8,6 +8,7 @@
- 
- #include <linux/module.h>
  #include <linux/bitfield.h>
+ #include <linux/hwmon.h>
+ #include <linux/mutex.h>
 +#include <linux/of.h>
  #include <linux/phy.h>
+ #include <linux/polynomial.h>
  #include <linux/netdevice.h>
- 
 @@ -30,6 +31,7 @@
  #define PHY_MIISTAT		0x18	/* MII state */
  #define PHY_IMASK		0x19	/* interrupt mask */
@@ -46,7 +46,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +#define PHY_LED_NUM_LEDS	4
 +
  #define PHY_FWV_REL_MASK	BIT(15)
- #define PHY_FWV_TYPE_MASK	GENMASK(11, 8)
+ #define PHY_FWV_MAJOR_MASK	GENMASK(11, 8)
  #define PHY_FWV_MINOR_MASK	GENMASK(7, 0)
  
 +/* LED */

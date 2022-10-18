@@ -26,10 +26,10 @@ Subject: [PATCH] net/bridge: add bridge offload
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
 @@ -59,6 +59,7 @@ struct br_ip_list {
- #define BR_MRP_LOST_IN_CONT	BIT(19)
  #define BR_TX_FWD_OFFLOAD	BIT(20)
- #define BR_BPDU_FILTER		BIT(21)
-+#define BR_OFFLOAD		BIT(22)
+ #define BR_PORT_LOCKED		BIT(21)
+ #define BR_BPDU_FILTER		BIT(22)
++#define BR_OFFLOAD		BIT(23)
  
  #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
  
@@ -103,16 +103,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  
  static const struct rhashtable_params br_fdb_rht_params = {
  	.head_offset = offsetof(struct net_bridge_fdb_entry, rhnode),
-@@ -518,6 +519,8 @@ static struct net_bridge_fdb_entry *fdb_
- 		fdb->key.vlan_id = vid;
- 		fdb->flags = flags;
- 		fdb->updated = fdb->used = jiffies;
-+		INIT_HLIST_HEAD(&fdb->offload_in);
-+		INIT_HLIST_HEAD(&fdb->offload_out);
- 		if (rhashtable_lookup_insert_fast(&br->fdb_hash_tbl,
- 						  &fdb->rhnode,
- 						  br_fdb_rht_params)) {
-@@ -794,6 +797,8 @@ static void fdb_notify(struct net_bridge
+@@ -185,6 +185,8 @@ static void fdb_notify(struct net_bridge
  	struct sk_buff *skb;
  	int err = -ENOBUFS;
  
@@ -121,6 +112,15 @@ Subject: [PATCH] net/bridge: add bridge offload
  	if (swdev_notify)
  		br_switchdev_fdb_notify(br, fdb, type);
  
+@@ -518,6 +519,8 @@ static struct net_bridge_fdb_entry *fdb_
+ 	fdb->key.vlan_id = vid;
+ 	fdb->flags = flags;
+ 	fdb->updated = fdb->used = jiffies;
++	INIT_HLIST_HEAD(&fdb->offload_in);
++	INIT_HLIST_HEAD(&fdb->offload_out);
+	err = rhashtable_lookup_insert_fast(&br->fdb_hash_tbl, &fdb->rhnode,
+ 					    br_fdb_rht_params);
+ 	if (err) {
 --- a/net/bridge/br_forward.c
 +++ b/net/bridge/br_forward.c
 @@ -16,6 +16,7 @@
