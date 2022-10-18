@@ -18,15 +18,15 @@ Subject: [PATCH] mtd/nand: add MediaTek NAND bad block managment table
 +	bool "Support MediaTek NAND Bad-block Management Table"
 +	default n
 +
- endmenu
- 
- endmenu
+ config MTD_NAND_ECC_MXIC
+ 	bool "Macronix external hardware ECC engine"
+ 	depends on HAS_IOMEM
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
 @@ -2,6 +2,7 @@
- 
  nandcore-objs := core.o bbt.o
  obj-$(CONFIG_MTD_NAND_CORE) += nandcore.o
+ obj-$(CONFIG_MTD_NAND_ECC_MEDIATEK) += ecc-mtk.o
 +obj-$(CONFIG_MTD_NAND_MTK_BMT)	+= mtk_bmt.o mtk_bmt_v2.o mtk_bmt_bbt.o mtk_bmt_nmbm.o
  
  obj-y	+= onenand/

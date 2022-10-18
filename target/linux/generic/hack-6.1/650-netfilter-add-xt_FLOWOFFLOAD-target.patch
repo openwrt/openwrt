@@ -6,71 +6,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
  create mode 100644 net/netfilter/xt_OFFLOAD.c
 
---- a/net/ipv4/netfilter/Kconfig
-+++ b/net/ipv4/netfilter/Kconfig
-@@ -56,8 +56,6 @@ config NF_TABLES_ARP
- 	help
- 	  This option enables the ARP support for nf_tables.
- 
--endif # NF_TABLES
--
- config NF_FLOW_TABLE_IPV4
- 	tristate "Netfilter flow table IPv4 module"
- 	depends on NF_FLOW_TABLE
-@@ -66,6 +64,8 @@ config NF_FLOW_TABLE_IPV4
- 
- 	  To compile it as a module, choose M here.
- 
-+endif # NF_TABLES
-+
- config NF_DUP_IPV4
- 	tristate "Netfilter IPv4 packet duplication to alternate destination"
- 	depends on !NF_CONNTRACK || NF_CONNTRACK
---- a/net/ipv6/netfilter/Kconfig
-+++ b/net/ipv6/netfilter/Kconfig
-@@ -45,7 +45,6 @@ config NFT_FIB_IPV6
- 	  multicast or blackhole.
- 
- endif # NF_TABLES_IPV6
--endif # NF_TABLES
- 
- config NF_FLOW_TABLE_IPV6
- 	tristate "Netfilter flow table IPv6 module"
-@@ -55,6 +54,8 @@ config NF_FLOW_TABLE_IPV6
- 
- 	  To compile it as a module, choose M here.
- 
-+endif # NF_TABLES
-+
- config NF_DUP_IPV6
- 	tristate "Netfilter IPv6 packet duplication to alternate destination"
- 	depends on !NF_CONNTRACK || NF_CONNTRACK
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -707,8 +707,6 @@ config NFT_REJECT_NETDEV
- 
- endif # NF_TABLES_NETDEV
- 
--endif # NF_TABLES
--
- config NF_FLOW_TABLE_INET
- 	tristate "Netfilter flow table mixed IPv4/IPv6 module"
- 	depends on NF_FLOW_TABLE
-@@ -717,11 +715,12 @@ config NF_FLOW_TABLE_INET
- 
- 	  To compile it as a module, choose M here.
- 
-+endif # NF_TABLES
-+
- config NF_FLOW_TABLE
- 	tristate "Netfilter flow table module"
- 	depends on NETFILTER_INGRESS
- 	depends on NF_CONNTRACK
--	depends on NF_TABLES
- 	help
- 	  This option adds the flow table core infrastructure.
- 
-@@ -1010,6 +1009,15 @@ config NETFILTER_XT_TARGET_NOTRACK
+@@ -1011,6 +1010,15 @@ config NETFILTER_XT_TARGET_NOTRACK
  	depends on NETFILTER_ADVANCED
  	select NETFILTER_XT_TARGET_CT
  
@@ -822,7 +760,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 +EXPORT_SYMBOL_GPL(nf_flow_table_iterate);
  
- void nf_flow_table_gc_run(struct nf_flowtable *flow_table)
+ static void nf_flow_offload_work_gc(struct work_struct *work)
  {
 --- /dev/null
 +++ b/include/uapi/linux/netfilter/xt_FLOWOFFLOAD.h
@@ -846,7 +784,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#endif /* _XT_FLOWOFFLOAD_H */
 --- a/include/net/netfilter/nf_flow_table.h
 +++ b/include/net/netfilter/nf_flow_table.h
-@@ -276,6 +276,11 @@ void nf_flow_table_free(struct nf_flowta
+@@ -275,6 +275,11 @@ void nf_flow_table_free(struct nf_flowta
  
  void flow_offload_teardown(struct flow_offload *flow);
  

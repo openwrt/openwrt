@@ -56,10 +56,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}								\
  									\
  	/* __*init sections */						\
-@@ -1017,6 +1027,8 @@
- 
+@@ -1018,6 +1028,8 @@
  #define COMMON_DISCARDS							\
  	SANITIZER_DISCARDS						\
+ 	PATCHABLE_DISCARDS						\
 +	SYMTAB_DISCARD							\
 +	SYMTAB_DISCARD_GPL						\
  	*(.discard)							\
@@ -81,9 +81,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * For every exported symbol, do the following:
   *
 @@ -101,7 +107,7 @@ struct kernel_symbol {
+ 	extern typeof(sym) sym;							\
  	extern const char __kstrtab_##sym[];					\
  	extern const char __kstrtabns_##sym[];					\
- 	__CRC_SYMBOL(sym, sec);							\
 -	asm("	.section \"__ksymtab_strings\",\"aMS\",%progbits,1	\n"	\
 +	asm("	.section \"__ksymtab_strings" __EXPORT_SUFFIX(sym) "\",\"aMS\",%progbits,1	\n"	\
  	    "__kstrtab_" #sym ":					\n"	\

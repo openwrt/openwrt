@@ -86,8 +86,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  struct kernel_param;
  
---- a/init/Kconfig
-+++ b/init/Kconfig
+--- a/kernel/module/Kconfig
++++ b/kernel/module/Kconfig
 @@ -2352,6 +2352,13 @@ config UNUSED_KSYMS_WHITELIST
  	  one per line. The path can be absolute, or relative to the kernel
  	  source tree.
@@ -102,14 +102,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  endif # MODULES
  
  config MODULES_TREE_LOOKUP
---- a/kernel/module.c
-+++ b/kernel/module.c
+--- a/kernel/module/main.c
++++ b/kernel/module/main.c
 @@ -1218,6 +1218,7 @@ static struct module_attribute *modinfo_
  
  static const char vermagic[] = VERMAGIC_STRING;
  
 +#if defined(CONFIG_MODVERSIONS) || !defined(CONFIG_MODULE_STRIPPED)
- static int try_to_force_load(struct module *mod, const char *reason)
+ int try_to_force_load(struct module *mod, const char *reason)
  {
  #ifdef CONFIG_MODULE_FORCE_LOAD
 @@ -1229,6 +1230,7 @@ static int try_to_force_load(struct modu
@@ -118,8 +118,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 +#endif
  
- #ifdef CONFIG_MODVERSIONS
- 
+ static char *get_modinfo(const struct load_info *info, const char *tag);
+ static char *get_next_modinfo(const struct load_info *info, const char *tag,
 @@ -3266,9 +3268,11 @@ static int setup_load_info(struct load_i
  
  static int check_modinfo(struct module *mod, struct load_info *info, int flags)
@@ -143,7 +143,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/scripts/mod/modpost.c
 +++ b/scripts/mod/modpost.c
-@@ -2036,7 +2036,9 @@ static void read_symbols(const char *mod
+@@ -2034,7 +2034,9 @@ static void read_symbols(const char *mod
  		symname = remove_dot(info.strtab + sym->st_name);
  
  		handle_symbol(mod, &info, sym, symname);
@@ -153,7 +153,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	for (sym = info.symtab_start; sym < info.symtab_stop; sym++) {
-@@ -2215,8 +2217,10 @@ static void add_header(struct buffer *b,
+@@ -2213,8 +2215,10 @@ static void add_header(struct buffer *b,
  	buf_printf(b, "BUILD_SALT;\n");
  	buf_printf(b, "BUILD_LTO_INFO;\n");
  	buf_printf(b, "\n");
@@ -164,29 +164,29 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	buf_printf(b, "\n");
  	buf_printf(b, "__visible struct module __this_module\n");
  	buf_printf(b, "__section(\".gnu.linkonce.this_module\") = {\n");
-@@ -2233,8 +2237,10 @@ static void add_header(struct buffer *b,
+@@ -2231,8 +2235,10 @@ static void add_header(struct buffer *b,
+ 	buf_printf(b, "\t.arch = MODULE_ARCH_INIT,\n");
+ 	buf_printf(b, "};\n");
  
- static void add_intree_flag(struct buffer *b, int is_intree)
- {
 +#ifndef CONFIG_MODULE_STRIPPED
- 	if (is_intree)
+ 	if (!external_module)
  		buf_printf(b, "\nMODULE_INFO(intree, \"Y\");\n");
 +#endif
- }
  
- /* Cannot check for assembler */
-@@ -2247,8 +2253,10 @@ static void add_retpoline(struct buffer
+ 	buf_printf(b,
+ 		   "\n"
+@@ -2245,8 +2251,10 @@ static void add_retpoline(struct buffer
+ 		   "MODULE_INFO(retpoline, \"Y\");\n"
+ 		   "#endif\n");
  
- static void add_staging_flag(struct buffer *b, const char *name)
- {
 +#ifndef CONFIG_MODULE_STRIPPED
- 	if (strstarts(name, "drivers/staging"))
+ 	if (strstarts(mod->name, "drivers/staging"))
  		buf_printf(b, "\nMODULE_INFO(staging, \"Y\");\n");
 +#endif
- }
  
- /**
-@@ -2328,11 +2336,13 @@ static void add_depends(struct buffer *b
+ 	if (strstarts(mod->name, "tools/testing"))
+ 		buf_printf(b, "\nMODULE_INFO(test, \"Y\");\n");
+@@ -2326,11 +2334,13 @@ static void add_depends(struct buffer *b
  
  static void add_srcversion(struct buffer *b, struct module *mod)
  {
@@ -200,13 +200,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void write_buf(struct buffer *b, const char *fname)
-@@ -2581,7 +2591,9 @@ int main(int argc, char **argv)
- 		add_staging_flag(&buf, mod->name);
- 		add_versions(&buf, mod);
- 		add_depends(&buf, mod);
+@@ -2579,7 +2589,9 @@ int main(int argc, char **argv)
+ 	add_exported_symbols(&buf, mod);
+ 	add_versions(&buf, mod);
+ 	add_depends(&buf, mod);
 +#ifndef CONFIG_MODULE_STRIPPED
- 		add_moddevtable(&buf, mod);
+ 	add_moddevtable(&buf, mod);
 +#endif
- 		add_srcversion(&buf, mod);
+ 	add_srcversion(&buf, mod);
  
- 		sprintf(fname, "%s.mod.c", mod->name);
+ 	ret = snprintf(fname, sizeof(fname), "%s.mod.c", mod->name);
