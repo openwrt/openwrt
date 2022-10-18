@@ -95,22 +95,21 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* using the '\0' symbol last allows compress_symbols to use standard
  	 * fast string functions */
  	for (i = 255; i >= 0; i--) {
-@@ -773,6 +783,8 @@ int main(int argc, char **argv)
- 				absolute_percpu = 1;
- 			else if (strcmp(argv[i], "--base-relative") == 0)
- 				base_relative = 1;
-+			else if (strcmp(argv[i], "--uncompressed") == 0)
-+				uncompressed = 1;
- 			else
- 				usage();
- 		}
+@@ -773,6 +783,7 @@ int main(int argc, char **argv)
+ 			{"all-symbols",     no_argument, &all_symbols,     1},
+ 			{"absolute-percpu", no_argument, &absolute_percpu, 1},
+ 			{"base-relative",   no_argument, &base_relative,   1},
++			{"uncompressed",   no_argument, &uncompressed,   1},
+ 			{},
+ 		};
+ 
 --- a/scripts/link-vmlinux.sh
 +++ b/scripts/link-vmlinux.sh
-@@ -257,6 +257,10 @@ kallsyms()
+@@ -266,6 +266,10 @@ kallsyms()
  		kallsymopt="${kallsymopt} --base-relative"
  	fi
  
-+	if [ -n "${CONFIG_KALLSYMS_UNCOMPRESSED}" ]; then
++	if is_enabled CONFIG_KALLSYMS_UNCOMPRESSED; then
 +		kallsymopt="${kallsymopt} --uncompressed"
 +	fi
 +

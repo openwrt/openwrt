@@ -9,17 +9,23 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
 
 --- a/net/netfilter/nf_conntrack_proto_tcp.c
 +++ b/net/netfilter/nf_conntrack_proto_tcp.c
-@@ -465,6 +465,9 @@ static bool tcp_in_window(struct nf_conn
+@@ -465,11 +465,15 @@ static bool tcp_in_window(struct nf_conn
+ 	struct ip_ct_tcp *state = &ct->proto.tcp;
+ 	struct ip_ct_tcp_state *sender = &state->seen[dir];
+ 	struct ip_ct_tcp_state *receiver = &state->seen[!dir];
++	const struct nf_tcp_net *tn = nf_tcp_pernet(nf_ct_net(ct));
+ 	__u32 seq, ack, sack, end, win, swin;
+ 	bool in_recv_win, seq_ok;
  	s32 receiver_offset;
- 	bool res, in_recv_win;
+ 	u16 win_raw;
  
 +	if (tn->tcp_no_window_check)
-+		return true;
++		return NFCT_TCP_ACCEPT;
 +
  	/*
  	 * Get the required data from the packet.
  	 */
-@@ -1191,7 +1194,7 @@ int nf_conntrack_tcp_packet(struct nf_co
+@@ -1160,7 +1163,7 @@ int nf_conntrack_tcp_packet(struct nf_co
  		 IP_CT_TCP_FLAG_DATA_UNACKNOWLEDGED &&
  		 timeouts[new_state] > timeouts[TCP_CONNTRACK_UNACK])
  		timeout = timeouts[TCP_CONNTRACK_UNACK];
@@ -28,7 +34,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  		 timeouts[new_state] > timeouts[TCP_CONNTRACK_RETRANS])
  		timeout = timeouts[TCP_CONNTRACK_RETRANS];
  	else
-@@ -1507,6 +1510,9 @@ void nf_conntrack_tcp_init_net(struct ne
+@@ -1476,6 +1479,9 @@ void nf_conntrack_tcp_init_net(struct ne
  	 */
  	tn->tcp_be_liberal = 0;
  

@@ -10,13 +10,14 @@ Signed-off-by: Koen Vandeputte <koen.vandeputte@ncentric.com>
 
 --- a/drivers/mtd/spi-nor/gigadevice.c
 +++ b/drivers/mtd/spi-nor/gigadevice.c
-@@ -24,6 +24,9 @@ static struct spi_nor_fixups gd25q256_fi
+@@ -24,6 +24,10 @@ static struct spi_nor_fixups gd25q256_fi
  };
  
- static const struct flash_info gigadevice_parts[] = {
-+	{ "gd25q05", INFO(0xc84010, 0, 64 * 1024,  1,
-+			  SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
-+			  SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB) },
- 	{ "gd25q16", INFO(0xc84015, 0, 64 * 1024,  32,
- 			  SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ |
- 			  SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB) },
+ static const struct flash_info gigadevice_nor_parts[] = {
++	{ "gd25q05", INFO(0xc84010, 0, 64 * 1024,  1)
++		FLAGS(SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB) 
++		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
++			      SPI_NOR_QUAD_READ) },
+ 	{ "gd25q16", INFO(0xc84015, 0, 64 * 1024,  32)
+ 		FLAGS(SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
+ 		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
