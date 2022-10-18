@@ -64,9 +64,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
 @@ -5,3 +5,4 @@ pcs_xpcs-$(CONFIG_PCS_XPCS)	:= pcs-xpcs.
- 
- obj-$(CONFIG_PCS_XPCS)		+= pcs_xpcs.o
  obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
+ obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
+ obj-$(CONFIG_PCS_ALTERA_TSE)	+= pcs-altera-tse.o
 +obj-$(CONFIG_PCS_MTK_LYNXI)	+= pcs-mtk-lynxi.o
 --- /dev/null
 +++ b/drivers/net/pcs/pcs-mtk-lynxi.c

@@ -137,8 +137,8 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	if (!compatible || strlen(compatible) > cplen)
  		return -ENODEV;
  	p = strchr(compatible, ',');
--	strlcpy(modalias, p ? p + 1 : compatible, len);
-+	strlcpy(alias, p ? p + 1 : compatible, len);
+-	strscpy(modalias, p ? p + 1 : compatible, len);
++	strscpy(alias, p ? p + 1 : compatible, len);
  	return 0;
  }
 -EXPORT_SYMBOL_GPL(of_modalias_node);

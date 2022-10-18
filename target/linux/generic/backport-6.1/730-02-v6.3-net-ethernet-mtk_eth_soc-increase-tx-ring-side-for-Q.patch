@@ -102,7 +102,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (ring->buf) {
 -		for (i = 0; i < MTK_DMA_SIZE; i++)
 +		for (i = 0; i < ring->dma_size; i++)
- 			mtk_tx_unmap(eth, &ring->buf[i], false);
+ 			mtk_tx_unmap(eth, &ring->buf[i], NULL, false);
  		kfree(ring->buf);
  		ring->buf = NULL;
 @@ -2247,14 +2253,14 @@ static void mtk_tx_clean(struct mtk_eth

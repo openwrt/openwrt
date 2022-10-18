@@ -31,9 +31,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/net/dsa/dsa.c
 +++ b/net/dsa/dsa.c
 @@ -20,6 +20,7 @@
- #include <linux/phy_fixed.h>
+ #include <linux/netdevice.h>
+ #include <linux/sysfs.h>
  #include <linux/ptp_classify.h>
- #include <linux/etherdevice.h>
 +#include <net/dst_metadata.h>
  
  #include "dsa_priv.h"
