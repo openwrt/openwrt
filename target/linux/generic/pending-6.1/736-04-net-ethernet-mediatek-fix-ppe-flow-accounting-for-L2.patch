@@ -78,9 +78,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  static void mtk_ppe_cache_clear(struct mtk_ppe *ppe)
 @@ -508,13 +523,6 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
- 		hwe->ib1 &= ~MTK_FOE_IB1_STATE;
  		hwe->ib1 |= FIELD_PREP(MTK_FOE_IB1_STATE, MTK_FOE_STATE_INVALID);
  		dma_wmb();
+ 		mtk_ppe_cache_clear(ppe);
 -		if (ppe->accounting) {
 -			struct mtk_foe_accounting *acct;
 -

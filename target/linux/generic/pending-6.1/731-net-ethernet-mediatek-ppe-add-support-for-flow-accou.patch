@@ -167,9 +167,9 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  {
  	ppe_set(ppe, MTK_PPE_CACHE_CTL, MTK_PPE_CACHE_CTL_CLEAR);
 @@ -464,6 +506,13 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
- 		hwe->ib1 &= ~MTK_FOE_IB1_STATE;
  		hwe->ib1 |= FIELD_PREP(MTK_FOE_IB1_STATE, MTK_FOE_STATE_INVALID);
  		dma_wmb();
+ 		mtk_ppe_cache_clear(ppe);
 +		if (ppe->accounting) {
 +			struct mtk_foe_accounting *acct;
 +
@@ -335,10 +335,10 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
 -struct mtk_ppe *mtk_ppe_init(struct mtk_eth *eth, void __iomem *base,
 -			     int version, int index);
 +struct mtk_ppe *mtk_ppe_init(struct mtk_eth *eth, void __iomem *base, int index);
+ void mtk_ppe_deinit(struct mtk_eth *eth);
  void mtk_ppe_start(struct mtk_ppe *ppe);
  int mtk_ppe_stop(struct mtk_ppe *ppe);
- int mtk_ppe_prepare_reset(struct mtk_ppe *ppe);
-@@ -358,5 +376,7 @@ int mtk_foe_entry_commit(struct mtk_ppe
+@@ -354,5 +373,7 @@ int mtk_foe_entry_commit(struct mtk_ppe
  void mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
  int mtk_foe_entry_idle_time(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
  int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index);

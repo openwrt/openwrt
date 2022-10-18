@@ -31,17 +31,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/mtd/spi-nor/Makefile
 +++ b/drivers/mtd/spi-nor/Makefile
-@@ -17,6 +17,7 @@ spi-nor-objs			+= sst.o
+@@ -17,7 +17,8 @@ spi-nor-objs			+= sst.o
  spi-nor-objs			+= winbond.o
  spi-nor-objs			+= xilinx.o
  spi-nor-objs			+= xmc.o
 +spi-nor-objs			+= xtx.o
+ spi-nor-$(CONFIG_DEBUG_FS)	+= debugfs.o
  obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor.o
  
  obj-$(CONFIG_MTD_SPI_NOR)	+= controllers/
 --- /dev/null
 +++ b/drivers/mtd/spi-nor/xtx.c
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,17 @@
 +// SPDX-License-Identifier: GPL-2.0
 +#include <linux/mtd/spi-nor.h>
 +
@@ -49,7 +50,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +static const struct flash_info xtx_parts[] = {
 +	/* XTX Technology (Shenzhen) Limited */
-+	{ "xt25f128b", INFO(0x0B4018, 0, 64 * 1024, 256, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++	{ "xt25f128b", INFO(0x0B4018, 0, 64 * 1024, 256)
++		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ |
++			      SPI_NOR_QUAD_READ) },
 +};
 +
 +const struct spi_nor_manufacturer spi_nor_xtx = {

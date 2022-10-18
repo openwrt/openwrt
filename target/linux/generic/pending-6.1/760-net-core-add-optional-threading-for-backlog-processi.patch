@@ -31,9 +31,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -4574,7 +4574,7 @@ static int rps_ipi_queued(struct softnet
- #ifdef CONFIG_RPS
  	struct softnet_data *mysd = this_cpu_ptr(&softnet_data);
  
+ #ifdef CONFIG_RPS
 -	if (sd != mysd) {
 +	if (sd != mysd && !test_bit(NAPI_STATE_THREADED, &sd->backlog.state)) {
  		sd->rps_ipi_next = mysd->rps_ipi_list;
@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct sk_buff *skb, *tmp;
  	struct softnet_data *sd;
  
-@@ -5770,9 +5772,18 @@ static void flush_backlog(struct work_st
+@@ -5770,8 +5772,17 @@ static void flush_backlog(struct work_st
  			input_queue_head_incr(sd);
  		}
  	}
@@ -58,8 +58,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			 !skb_queue_empty_lockless(&sd->process_queue);
 +	if (flush_processq)
 +		process_queue_empty = sd->process_queue_empty;
- 	rps_unlock(sd);
- 	local_irq_enable();
+ 	rps_unlock_irq_enable(sd);
  
 +	if (threaded)
 +		goto out;
@@ -67,7 +66,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	skb_queue_walk_safe(&sd->process_queue, skb, tmp) {
  		if (skb->dev->reg_state == NETREG_UNREGISTERING) {
  			__skb_unlink(skb, &sd->process_queue);
-@@ -5780,7 +5791,18 @@ static void flush_backlog(struct work_st
+@@ -5780,7 +5791,16 @@ static void flush_backlog(struct work_st
  			input_queue_head_incr(sd);
  		}
  	}
@@ -77,19 +76,17 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	while (flush_processq) {
 +		msleep(1);
-+		local_irq_disable();
-+		rps_lock(sd);
++		rps_lock_irq_disable(sd);
 +		flush_processq = process_queue_empty == sd->process_queue_empty;
-+		rps_unlock(sd);
-+		local_irq_enable();
++		rps_unlock_irq_enable(sd);
 +	}
  }
  
  static bool flush_required(int cpu)
 @@ -6463,6 +6485,7 @@ static int process_backlog(struct napi_s
- 
- 		local_irq_disable();
- 		rps_lock(sd);
+ 		}
+
+ 		rps_lock_irq_disable(sd);
 +		sd->process_queue_empty++;
  		if (skb_queue_empty(&sd->input_pkt_queue)) {
  			/*
@@ -104,7 +101,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			again = false;
  		} else {
  			skb_queue_splice_tail_init(&sd->input_pkt_queue,
-@@ -6889,6 +6913,57 @@ int dev_set_threaded(struct net_device *
+@@ -6889,6 +6913,55 @@ int dev_set_threaded(struct net_device *
  }
  EXPORT_SYMBOL(dev_set_threaded);
  
@@ -146,20 +143,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		struct napi_struct *n = &sd->backlog;
 +		unsigned long flags;
 +
-+		local_irq_save(flags);
-+		rps_lock(sd);
++		rps_lock_irqsave(sd, &flags);
 +		if (threaded)
 +			n->state |= NAPIF_STATE_THREADED;
 +		else
 +			n->state &= ~NAPIF_STATE_THREADED;
-+		rps_unlock(sd);
-+		local_irq_restore(flags);
++		rps_unlock_irq_restore(sd, &flags);
 +	}
 +
 +	return err;
 +}
 +
- void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
+ void netif_napi_add_weight(struct net_device *dev, struct napi_struct *napi,
  		    int (*poll)(struct napi_struct *, int), int weight)
  {
 @@ -11367,6 +11442,9 @@ static int dev_cpu_dead(unsigned int old
@@ -187,8 +182,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int min_rcvbuf = SOCK_MIN_RCVBUF;
  static int max_skb_frags = MAX_SKB_FRAGS;
 +static int backlog_threaded;
- static long long_one __maybe_unused = 1;
- static long long_max __maybe_unused = LONG_MAX;
+ 
+ static int net_msg_warn;	/* Unused, but still a sysctl */
  
 @@ -114,6 +115,23 @@ static int rps_sock_flow_sysctl(struct c
  }
