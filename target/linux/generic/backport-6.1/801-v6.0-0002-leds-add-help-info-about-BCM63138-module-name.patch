@@ -1,0 +1,28 @@
+From bcc607cdbb1f931111196699426f0cb83bfb296a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Sun, 17 Jul 2022 14:42:47 +0200
+Subject: [PATCH] leds: add help info about BCM63138 module name
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It's what we do for all other LEDs drivers.
+
+Reported-by: Pavel Machek <pavel@ucw.cz>
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Pavel Machek <pavel@ucw.cz>
+---
+ drivers/leds/blink/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/leds/blink/Kconfig
++++ b/drivers/leds/blink/Kconfig
+@@ -10,6 +10,8 @@ config LEDS_BCM63138
+ 	  BCM63138 SoC. The same hardware block is known to be also used
+ 	  in BCM4908, BCM6848, BCM6858, BCM63148, BCM63381 and BCM68360.
+ 
++	  If compiled as module it will be called leds-bcm63138.
++
+ config LEDS_LGM
+        tristate "LED support for LGM SoC series"
+        depends on X86 || COMPILE_TEST
