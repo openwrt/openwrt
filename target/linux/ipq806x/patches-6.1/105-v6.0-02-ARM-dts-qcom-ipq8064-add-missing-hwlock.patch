@@ -1,0 +1,31 @@
+From fbe4be367b2169602f6a5949a20d2917b25714d4 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 7 Jul 2022 12:20:39 +0200
+Subject: [PATCH 1/2] ARM: dts: qcom: ipq8064: add missing hwlock
+
+Add missing hwlock for ipq8064 dtsi provided by qcom,sfpb-mutex.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+[bjorn: Moved the node inside /soc]
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Link: https://lore.kernel.org/r/20220707102040.1859-2-ansuelsmth@gmail.com
+---
+ arch/arm/boot/dts/qcom-ipq8064.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -1357,5 +1357,12 @@
+ 				dma-names = "tx", "rx";
+ 			};
+ 		};
++
++		sfpb_mutex: hwlock@1200600 {
++			compatible = "qcom,sfpb-mutex";
++			reg = <0x01200600 0x100>;
++
++			#hwlock-cells = <1>;
++		};
+ 	};
+ };
