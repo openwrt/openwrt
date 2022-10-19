@@ -126,6 +126,11 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0xe000)" > /sys${DEVPATH}/macaddress
 		;;
+	yuncore,fap640)
+		hw_mac_addr="$(mtd_get_mac_binary Factory 0x4)"
+		[ "$PHYNBR" = "0" ] && macaddr_setbit_la "$hw_mac_addr" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
+		;;
 	zyxel,nwa50ax|\
 	zyxel,nwa55axe)
 		hw_mac_addr="$(mtd_get_mac_binary mrd 0x1fff8)"
