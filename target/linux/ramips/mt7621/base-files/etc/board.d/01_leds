@@ -94,13 +94,6 @@ keenetic,kn-3010)
 linksys,e5600)
 	ucidef_set_led_netdev "wan" "wan link" "blue:wan" "wan" "link"
 	;;
-linksys,e7350)
-	ucidef_set_led_netdev "lan1" "lan1" "blue:lan-1" "lan1"
-	ucidef_set_led_netdev "lan2" "lan2" "blue:lan-2" "lan2"
-	ucidef_set_led_netdev "lan3" "lan4" "blue:lan-3" "lan3"
-	ucidef_set_led_netdev "lan4" "lan4" "blue:lan-4" "lan4"
-	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
-	;;
 linksys,ea6350-v4|\
 linksys,ea7300-v1|\
 linksys,ea7300-v2|\
@@ -149,9 +142,6 @@ netgear,r7450)
 	;;
 netgear,wax202)
 	ucidef_set_led_netdev "internet" "Internet" "green:net" "wan"
-	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "lan1"
-	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "lan2"
-	ucidef_set_led_netdev "lan3" "LAN3" "green:lan3" "lan3"
 	;;
 oraybox,x3a)
 	ucidef_set_led_netdev "wan" "wan link" "red:status" "wan"
@@ -202,13 +192,6 @@ yuncore,fap690)
 	;;
 yuncore,ax820)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
-	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
-	;;
-zbtlink,zbt-wg1608-16m)
-	ucidef_set_led_netdev "lan1" "LAN1" "green:lan-1" "lan1"
-	ucidef_set_led_netdev "lan2" "LAN2" "green:lan-2" "lan2"
-	ucidef_set_led_netdev "lan3" "LAN3" "green:lan-3" "lan3"
-	ucidef_set_led_netdev "lan4" "LAN4" "green:lan-4" "lan4"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
 zyxel,lte3301-plus)
