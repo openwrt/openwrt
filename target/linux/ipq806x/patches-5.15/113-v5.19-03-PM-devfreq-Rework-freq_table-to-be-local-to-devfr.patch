@@ -1,0 +1,269 @@
+From 46d05776a1a5dd8eb479e868f5ff4f4b97d68238 Mon Sep 17 00:00:00 2001
+From: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
+Date: Mon, 6 Jun 2022 12:39:19 +0200
+Subject: [PATCH v4 3/4] PM / devfreq: Rework freq_table to be local to devfreq
+ struct
+
+Currently we reference the freq_table to the profile defined one and we
+make changes on it. Devfreq never supported PROBE_DEFER before the cpu
+based scaling support to the passive governor and assumed that a devfreq
+device could only had error and be done with it.
+Now that a device can PROBE_DEFER a rework to the freq_table logic is
+required.
+
+If a device PROBE_DEFER on the GOV_START, the freq_table is already set
+in the device profile struct and its init is skipped. This is due to the
+fact that it's common for devs to declare this kind of struct static.
+This cause the devfreq logic to find a freq table declared (freq_table
+not NULL) with random data and poiting to the old addrs freed by devm.
+
+This problem CAN be solved by devs by clearing the freq_table in their
+profile struct on driver exit path but it should not be trusted and it
+looks to use a flawed logic.
+
+A better solution is to move the freq_table and max_state to the
+devfreq struct and never change the profile struct.
+This permit to correctly handle PROBE_DEFER since the devfreq struct is
+reallocated and contains new values.
+Also the profile struct should only be used to init the driver and should
+not be used by the devfreq to write the freq_table if it's not provided
+by the driver.
+
+Fixes: a03dacb0316f ("PM / devfreq: Add cpu based scaling support to passive governor")
+Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
+---
+ drivers/devfreq/devfreq.c          | 71 ++++++++++++++----------------
+ drivers/devfreq/governor_passive.c | 14 +++---
+ include/linux/devfreq.h            |  4 ++
+ 3 files changed, 45 insertions(+), 44 deletions(-)
+
+--- a/drivers/devfreq/devfreq.c
++++ b/drivers/devfreq/devfreq.c
+@@ -123,7 +123,7 @@ void devfreq_get_freq_range(struct devfr
+ 			    unsigned long *min_freq,
+ 			    unsigned long *max_freq)
+ {
+-	unsigned long *freq_table = devfreq->profile->freq_table;
++	unsigned long *freq_table = devfreq->freq_table;
+ 	s32 qos_min_freq, qos_max_freq;
+ 
+ 	lockdep_assert_held(&devfreq->lock);
+@@ -133,11 +133,11 @@ void devfreq_get_freq_range(struct devfr
+ 	 * The devfreq drivers can initialize this in either ascending or
+ 	 * descending order and devfreq core supports both.
+ 	 */
+-	if (freq_table[0] < freq_table[devfreq->profile->max_state - 1]) {
++	if (freq_table[0] < freq_table[devfreq->max_state - 1]) {
+ 		*min_freq = freq_table[0];
+-		*max_freq = freq_table[devfreq->profile->max_state - 1];
++		*max_freq = freq_table[devfreq->max_state - 1];
+ 	} else {
+-		*min_freq = freq_table[devfreq->profile->max_state - 1];
++		*min_freq = freq_table[devfreq->max_state - 1];
+ 		*max_freq = freq_table[0];
+ 	}
+ 
+@@ -169,8 +169,8 @@ static int devfreq_get_freq_level(struct
+ {
+ 	int lev;
+ 
+-	for (lev = 0; lev < devfreq->profile->max_state; lev++)
+-		if (freq == devfreq->profile->freq_table[lev])
++	for (lev = 0; lev < devfreq->max_state; lev++)
++		if (freq == devfreq->freq_table[lev])
+ 			return lev;
+ 
+ 	return -EINVAL;
+@@ -178,7 +178,6 @@ static int devfreq_get_freq_level(struct
+ 
+ static int set_freq_table(struct devfreq *devfreq)
+ {
+-	struct devfreq_dev_profile *profile = devfreq->profile;
+ 	struct dev_pm_opp *opp;
+ 	unsigned long freq;
+ 	int i, count;
+@@ -188,25 +187,22 @@ static int set_freq_table(struct devfreq
+ 	if (count <= 0)
+ 		return -EINVAL;
+ 
+-	profile->max_state = count;
+-	profile->freq_table = devm_kcalloc(devfreq->dev.parent,
+-					profile->max_state,
+-					sizeof(*profile->freq_table),
+-					GFP_KERNEL);
+-	if (!profile->freq_table) {
+-		profile->max_state = 0;
++	devfreq->max_state = count;
++	devfreq->freq_table = devm_kcalloc(devfreq->dev.parent,
++					   devfreq->max_state,
++					   sizeof(*devfreq->freq_table),
++					   GFP_KERNEL);
++	if (!devfreq->freq_table)
+ 		return -ENOMEM;
+-	}
+ 
+-	for (i = 0, freq = 0; i < profile->max_state; i++, freq++) {
++	for (i = 0, freq = 0; i < devfreq->max_state; i++, freq++) {
+ 		opp = dev_pm_opp_find_freq_ceil(devfreq->dev.parent, &freq);
+ 		if (IS_ERR(opp)) {
+-			devm_kfree(devfreq->dev.parent, profile->freq_table);
+-			profile->max_state = 0;
++			devm_kfree(devfreq->dev.parent, devfreq->freq_table);
+ 			return PTR_ERR(opp);
+ 		}
+ 		dev_pm_opp_put(opp);
+-		profile->freq_table[i] = freq;
++		devfreq->freq_table[i] = freq;
+ 	}
+ 
+ 	return 0;
+@@ -246,7 +242,7 @@ int devfreq_update_status(struct devfreq
+ 
+ 	if (lev != prev_lev) {
+ 		devfreq->stats.trans_table[
+-			(prev_lev * devfreq->profile->max_state) + lev]++;
++			(prev_lev * devfreq->max_state) + lev]++;
+ 		devfreq->stats.total_trans++;
+ 	}
+ 
+@@ -835,6 +831,9 @@ struct devfreq *devfreq_add_device(struc
+ 		if (err < 0)
+ 			goto err_dev;
+ 		mutex_lock(&devfreq->lock);
++	} else {
++		devfreq->freq_table = devfreq->profile->freq_table;
++		devfreq->max_state = devfreq->profile->max_state;
+ 	}
+ 
+ 	devfreq->scaling_min_freq = find_available_min_freq(devfreq);
+@@ -870,8 +869,8 @@ struct devfreq *devfreq_add_device(struc
+ 
+ 	devfreq->stats.trans_table = devm_kzalloc(&devfreq->dev,
+ 			array3_size(sizeof(unsigned int),
+-				    devfreq->profile->max_state,
+-				    devfreq->profile->max_state),
++				    devfreq->max_state,
++				    devfreq->max_state),
+ 			GFP_KERNEL);
+ 	if (!devfreq->stats.trans_table) {
+ 		mutex_unlock(&devfreq->lock);
+@@ -880,7 +879,7 @@ struct devfreq *devfreq_add_device(struc
+ 	}
+ 
+ 	devfreq->stats.time_in_state = devm_kcalloc(&devfreq->dev,
+-			devfreq->profile->max_state,
++			devfreq->max_state,
+ 			sizeof(*devfreq->stats.time_in_state),
+ 			GFP_KERNEL);
+ 	if (!devfreq->stats.time_in_state) {
+@@ -1639,9 +1638,9 @@ static ssize_t available_frequencies_sho
+ 
+ 	mutex_lock(&df->lock);
+ 
+-	for (i = 0; i < df->profile->max_state; i++)
++	for (i = 0; i < df->max_state; i++)
+ 		count += scnprintf(&buf[count], (PAGE_SIZE - count - 2),
+-				"%lu ", df->profile->freq_table[i]);
++				"%lu ", df->freq_table[i]);
+ 
+ 	mutex_unlock(&df->lock);
+ 	/* Truncate the trailing space */
+@@ -1664,7 +1663,7 @@ static ssize_t trans_stat_show(struct de
+ 
+ 	if (!df->profile)
+ 		return -EINVAL;
+-	max_state = df->profile->max_state;
++	max_state = df->max_state;
+ 
+ 	if (max_state == 0)
+ 		return sprintf(buf, "Not Supported.\n");
+@@ -1681,19 +1680,17 @@ static ssize_t trans_stat_show(struct de
+ 	len += sprintf(buf + len, "           :");
+ 	for (i = 0; i < max_state; i++)
+ 		len += sprintf(buf + len, "%10lu",
+-				df->profile->freq_table[i]);
++				df->freq_table[i]);
+ 
+ 	len += sprintf(buf + len, "   time(ms)\n");
+ 
+ 	for (i = 0; i < max_state; i++) {
+-		if (df->profile->freq_table[i]
+-					== df->previous_freq) {
++		if (df->freq_table[i] == df->previous_freq)
+ 			len += sprintf(buf + len, "*");
+-		} else {
++		else
+ 			len += sprintf(buf + len, " ");
+-		}
+-		len += sprintf(buf + len, "%10lu:",
+-				df->profile->freq_table[i]);
++
++		len += sprintf(buf + len, "%10lu:", df->freq_table[i]);
+ 		for (j = 0; j < max_state; j++)
+ 			len += sprintf(buf + len, "%10u",
+ 				df->stats.trans_table[(i * max_state) + j]);
+@@ -1717,7 +1714,7 @@ static ssize_t trans_stat_store(struct d
+ 	if (!df->profile)
+ 		return -EINVAL;
+ 
+-	if (df->profile->max_state == 0)
++	if (df->max_state == 0)
+ 		return count;
+ 
+ 	err = kstrtoint(buf, 10, &value);
+@@ -1725,11 +1722,11 @@ static ssize_t trans_stat_store(struct d
+ 		return -EINVAL;
+ 
+ 	mutex_lock(&df->lock);
+-	memset(df->stats.time_in_state, 0, (df->profile->max_state *
++	memset(df->stats.time_in_state, 0, (df->max_state *
+ 					sizeof(*df->stats.time_in_state)));
+ 	memset(df->stats.trans_table, 0, array3_size(sizeof(unsigned int),
+-					df->profile->max_state,
+-					df->profile->max_state));
++					df->max_state,
++					df->max_state));
+ 	df->stats.total_trans = 0;
+ 	df->stats.last_update = get_jiffies_64();
+ 	mutex_unlock(&df->lock);
+--- a/drivers/devfreq/governor_passive.c
++++ b/drivers/devfreq/governor_passive.c
+@@ -145,18 +145,18 @@ static int get_target_freq_with_devfreq(
+ 		goto out;
+ 
+ 	/* Use interpolation if required opps is not available */
+-	for (i = 0; i < parent_devfreq->profile->max_state; i++)
+-		if (parent_devfreq->profile->freq_table[i] == *freq)
++	for (i = 0; i < parent_devfreq->max_state; i++)
++		if (parent_devfreq->freq_table[i] == *freq)
+ 			break;
+ 
+-	if (i == parent_devfreq->profile->max_state)
++	if (i == parent_devfreq->max_state)
+ 		return -EINVAL;
+ 
+-	if (i < devfreq->profile->max_state) {
+-		child_freq = devfreq->profile->freq_table[i];
++	if (i < devfreq->max_state) {
++		child_freq = devfreq->freq_table[i];
+ 	} else {
+-		count = devfreq->profile->max_state;
+-		child_freq = devfreq->profile->freq_table[count - 1];
++		count = devfreq->max_state;
++		child_freq = devfreq->freq_table[count - 1];
+ 	}
+ 
+ out:
+--- a/include/linux/devfreq.h
++++ b/include/linux/devfreq.h
+@@ -185,6 +185,10 @@ struct devfreq {
+ 	struct notifier_block nb;
+ 	struct delayed_work work;
+ 
++	/* devfreq local freq_table */
++	unsigned long *freq_table;
++	unsigned int max_state;
++
+ 	unsigned long previous_freq;
+ 	struct devfreq_dev_status last_status;
+ 

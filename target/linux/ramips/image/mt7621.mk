@@ -880,6 +880,7 @@ TARGET_DEVICES += hilink_hlk-7621a-evb
 
 define Device/hiwifi_hc5962
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
@@ -1133,6 +1134,7 @@ TARGET_DEVICES += jcg_jhr-ac876m
 
 define Device/jcg_q20
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   UBINIZE_OPTS := -E 5
@@ -1390,6 +1392,7 @@ TARGET_DEVICES += mts_wg430223
 
 define Device/netgear_ex6150
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX6150
   DEVICE_PACKAGES := kmod-mt76x2

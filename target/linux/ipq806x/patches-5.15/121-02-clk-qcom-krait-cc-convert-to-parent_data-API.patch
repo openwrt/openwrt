@@ -1,0 +1,264 @@
+From 334c1540d5753a3c83a4cb84d935d606cb47a03b Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 17 Feb 2022 23:02:59 +0100
+Subject: [PATCH 2/9] clk: qcom: krait-cc: convert to parent_data API
+
+Modernize the krait-cc driver to parent-data API and refactor to drop
+any use of clk_names. From Documentation all the required clocks should
+be declared in DTS so fw_name can be correctly used to get the parents
+for all the muxes. .name is also declared to save compatibility with old
+implementation.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/qcom/krait-cc.c | 126 +++++++++++++++++++-----------------
+ 1 file changed, 66 insertions(+), 60 deletions(-)
+
+--- a/drivers/clk/qcom/krait-cc.c
++++ b/drivers/clk/qcom/krait-cc.c
+@@ -69,21 +69,22 @@ static int krait_notifier_register(struc
+ 	return ret;
+ }
+ 
+-static int
++static struct clk *
+ krait_add_div(struct device *dev, int id, const char *s, unsigned int offset)
+ {
+ 	struct krait_div2_clk *div;
++	static struct clk_parent_data p_data[1];
+ 	struct clk_init_data init = {
+-		.num_parents = 1,
++		.num_parents = ARRAY_SIZE(p_data),
+ 		.ops = &krait_div2_clk_ops,
+ 		.flags = CLK_SET_RATE_PARENT,
+ 	};
+-	const char *p_names[1];
+ 	struct clk *clk;
++	char *parent_name;
+ 
+ 	div = devm_kzalloc(dev, sizeof(*div), GFP_KERNEL);
+ 	if (!div)
+-		return -ENOMEM;
++		return ERR_PTR(-ENOMEM);
+ 
+ 	div->width = 2;
+ 	div->shift = 6;
+@@ -93,43 +94,49 @@ krait_add_div(struct device *dev, int id
+ 
+ 	init.name = kasprintf(GFP_KERNEL, "hfpll%s_div", s);
+ 	if (!init.name)
+-		return -ENOMEM;
++		return ERR_PTR(-ENOMEM);
+ 
+-	init.parent_names = p_names;
+-	p_names[0] = kasprintf(GFP_KERNEL, "hfpll%s", s);
+-	if (!p_names[0]) {
+-		kfree(init.name);
+-		return -ENOMEM;
++	init.parent_data = p_data;
++	parent_name = kasprintf(GFP_KERNEL, "hfpll%s", s);
++	if (!parent_name) {
++		clk = ERR_PTR(-ENOMEM);
++		goto err_parent_name;
+ 	}
+ 
++	p_data[0].fw_name = parent_name;
++	p_data[0].name = parent_name;
++
+ 	clk = devm_clk_register(dev, &div->hw);
+-	kfree(p_names[0]);
++
++	kfree(parent_name);
++err_parent_name:
+ 	kfree(init.name);
+ 
+-	return PTR_ERR_OR_ZERO(clk);
++	return clk;
+ }
+ 
+-static int
++static struct clk *
+ krait_add_sec_mux(struct device *dev, int id, const char *s,
+ 		  unsigned int offset, bool unique_aux)
+ {
+ 	int ret;
+ 	struct krait_mux_clk *mux;
+-	static const char *sec_mux_list[] = {
+-		"acpu_aux",
+-		"qsb",
++	static struct clk_parent_data sec_mux_list[2] = {
++		{ .name = "qsb", .fw_name = "qsb" },
++		{},
+ 	};
+ 	struct clk_init_data init = {
+-		.parent_names = sec_mux_list,
++		.parent_data = sec_mux_list,
+ 		.num_parents = ARRAY_SIZE(sec_mux_list),
+ 		.ops = &krait_mux_clk_ops,
+ 		.flags = CLK_SET_RATE_PARENT,
+ 	};
+ 	struct clk *clk;
++	char *parent_name;
+ 
+ 	mux = devm_kzalloc(dev, sizeof(*mux), GFP_KERNEL);
+ 	if (!mux)
+-		return -ENOMEM;
++		return ERR_PTR(-ENOMEM);
+ 
+ 	mux->offset = offset;
+ 	mux->lpl = id >= 0;
+@@ -149,44 +156,51 @@ krait_add_sec_mux(struct device *dev, in
+ 
+ 	init.name = kasprintf(GFP_KERNEL, "krait%s_sec_mux", s);
+ 	if (!init.name)
+-		return -ENOMEM;
++		return ERR_PTR(-ENOMEM);
+ 
+ 	if (unique_aux) {
+-		sec_mux_list[0] = kasprintf(GFP_KERNEL, "acpu%s_aux", s);
+-		if (!sec_mux_list[0]) {
++		parent_name = kasprintf(GFP_KERNEL, "acpu%s_aux", s);
++		if (!parent_name) {
+ 			clk = ERR_PTR(-ENOMEM);
+ 			goto err_aux;
+ 		}
++		sec_mux_list[1].fw_name = parent_name;
++		sec_mux_list[1].name = parent_name;
++	} else {
++		sec_mux_list[1].name = "apu_aux";
+ 	}
+ 
+ 	clk = devm_clk_register(dev, &mux->hw);
++	if (IS_ERR(clk))
++		goto err_clk;
+ 
+ 	ret = krait_notifier_register(dev, clk, mux);
+ 	if (ret)
+-		goto unique_aux;
++		clk = ERR_PTR(ret);
+ 
+-unique_aux:
++err_clk:
+ 	if (unique_aux)
+-		kfree(sec_mux_list[0]);
++		kfree(parent_name);
+ err_aux:
+ 	kfree(init.name);
+-	return PTR_ERR_OR_ZERO(clk);
++	return clk;
+ }
+ 
+ static struct clk *
+-krait_add_pri_mux(struct device *dev, int id, const char *s,
+-		  unsigned int offset)
++krait_add_pri_mux(struct device *dev, struct clk *hfpll_div, struct clk *sec_mux,
++		  int id, const char *s, unsigned int offset)
+ {
+ 	int ret;
+ 	struct krait_mux_clk *mux;
+-	const char *p_names[3];
++	static struct clk_parent_data p_data[3];
+ 	struct clk_init_data init = {
+-		.parent_names = p_names,
+-		.num_parents = ARRAY_SIZE(p_names),
++		.parent_data = p_data,
++		.num_parents = ARRAY_SIZE(p_data),
+ 		.ops = &krait_mux_clk_ops,
+ 		.flags = CLK_SET_RATE_PARENT,
+ 	};
+ 	struct clk *clk;
++	char *hfpll_name;
+ 
+ 	mux = devm_kzalloc(dev, sizeof(*mux), GFP_KERNEL);
+ 	if (!mux)
+@@ -204,36 +218,29 @@ krait_add_pri_mux(struct device *dev, in
+ 	if (!init.name)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	p_names[0] = kasprintf(GFP_KERNEL, "hfpll%s", s);
+-	if (!p_names[0]) {
++	hfpll_name = kasprintf(GFP_KERNEL, "hfpll%s", s);
++	if (!hfpll_name) {
+ 		clk = ERR_PTR(-ENOMEM);
+-		goto err_p0;
++		goto err_hfpll;
+ 	}
+ 
+-	p_names[1] = kasprintf(GFP_KERNEL, "hfpll%s_div", s);
+-	if (!p_names[1]) {
+-		clk = ERR_PTR(-ENOMEM);
+-		goto err_p1;
+-	}
++	p_data[0].fw_name = hfpll_name;
++	p_data[0].name = hfpll_name;
+ 
+-	p_names[2] = kasprintf(GFP_KERNEL, "krait%s_sec_mux", s);
+-	if (!p_names[2]) {
+-		clk = ERR_PTR(-ENOMEM);
+-		goto err_p2;
+-	}
++	p_data[1].hw = __clk_get_hw(hfpll_div);
++	p_data[2].hw = __clk_get_hw(sec_mux);
+ 
+ 	clk = devm_clk_register(dev, &mux->hw);
++	if (IS_ERR(clk))
++		goto err_clk;
+ 
+ 	ret = krait_notifier_register(dev, clk, mux);
+ 	if (ret)
+-		goto err_p3;
+-err_p3:
+-	kfree(p_names[2]);
+-err_p2:
+-	kfree(p_names[1]);
+-err_p1:
+-	kfree(p_names[0]);
+-err_p0:
++		clk = ERR_PTR(ret);
++
++err_clk:
++	kfree(hfpll_name);
++err_hfpll:
+ 	kfree(init.name);
+ 	return clk;
+ }
+@@ -241,11 +248,10 @@ err_p0:
+ /* id < 0 for L2, otherwise id == physical CPU number */
+ static struct clk *krait_add_clks(struct device *dev, int id, bool unique_aux)
+ {
+-	int ret;
+ 	unsigned int offset;
+ 	void *p = NULL;
+ 	const char *s;
+-	struct clk *clk;
++	struct clk *hfpll_div, *sec_mux, *clk;
+ 
+ 	if (id >= 0) {
+ 		offset = 0x4501 + (0x1000 * id);
+@@ -257,19 +263,19 @@ static struct clk *krait_add_clks(struct
+ 		s = "_l2";
+ 	}
+ 
+-	ret = krait_add_div(dev, id, s, offset);
+-	if (ret) {
+-		clk = ERR_PTR(ret);
++	hfpll_div = krait_add_div(dev, id, s, offset);
++	if (IS_ERR(hfpll_div)) {
++		clk = hfpll_div;
+ 		goto err;
+ 	}
+ 
+-	ret = krait_add_sec_mux(dev, id, s, offset, unique_aux);
+-	if (ret) {
+-		clk = ERR_PTR(ret);
++	sec_mux = krait_add_sec_mux(dev, id, s, offset, unique_aux);
++	if (IS_ERR(sec_mux)) {
++		clk = sec_mux;
+ 		goto err;
+ 	}
+ 
+-	clk = krait_add_pri_mux(dev, id, s, offset);
++	clk = krait_add_pri_mux(dev, hfpll_div, sec_mux, id, s, offset);
+ err:
+ 	kfree(p);
+ 	return clk;
