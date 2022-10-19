@@ -141,8 +141,7 @@ case "$board" in
 		;;
 	raisecom,msg1500-x-00)
 		[ "$PHYNBR" = "0" ] && \
-			macaddr_setbit_la "$(mtd_get_mac_ascii Config protest_lan_mac)" \
-				> /sys${DEVPATH}/macaddress
+			macaddr_setbit_la "$(get_mac_label)" > /sys${DEVPATH}/macaddress
 		;;
 	snr,snr-cpe-me2-sfp)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x8004)"
