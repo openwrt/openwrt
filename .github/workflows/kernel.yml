@@ -4,13 +4,13 @@ on:
   pull_request:
     paths:
       - '.github/workflows/kernel.yml'
-      - 'include/kernel-*'
+      - 'include/kernel*'
       - 'package/kernel/**'
       - 'target/linux/generic/**'
   push:
     paths:
       - '.github/workflows/kernel.yml'
-      - 'include/kernel-*'
+      - 'include/kernel*'
       - 'package/kernel/**'
       - 'target/linux/generic/**'
 
