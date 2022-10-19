@@ -611,6 +611,7 @@ ${json}{
 "version":"$pkg->{version}",
 "category":"$pkg->{category}",
 "license":"$pkg->{license}",
+"cpe_id":"$pkg->{cpe_id}",
 "maintainer": [$pkg_maintainer],
 "depends":[$pkg_deps]},
 END_JSON
