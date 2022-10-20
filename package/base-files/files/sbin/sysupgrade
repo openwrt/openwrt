@@ -259,10 +259,10 @@ do_save_conffiles() {
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
 	sed -i -e 's,^/,,' "$CONFFILES"
 	tar c${TAR_V}zf "$conf_tar" -C / -T "$CONFFILES"
-	if [ "$?" -ne 0 ]; then
+	local err=$?
+	if [ "$err" -ne 0 ]; then
 		echo "Failed to create the configuration backup."
 		rm -f "$conf_tar"
-		exit 1
 	fi
 
 	[ "$UMOUNT_ETCBACKUP_DIR" -eq 1 ] && {
@@ -270,6 +270,8 @@ do_save_conffiles() {
 		rm -rf "$RAMFS"
 	}
 	rm -f "$CONFFILES"
+
+	return "$err"
 }
 
 if [ $CONF_BACKUP_LIST -eq 1 ]; then
@@ -282,7 +284,7 @@ fi
 
 if [ -n "$CONF_BACKUP" ]; then
 	do_save_conffiles "$CONF_BACKUP"
-	exit $?
+	exit
 fi
 
 if [ -n "$CONF_RESTORE" ]; then
@@ -351,7 +353,7 @@ if [ -n "$CONF_IMAGE" ]; then
 	get_image "$CONF_IMAGE" "cat" > "$CONF_TAR"
 	export SAVE_CONFIG=1
 elif ask_bool $SAVE_CONFIG "Keep config files over reflash"; then
-	[ $TEST -eq 1 ] || do_save_conffiles "$CONF_TAR"
+	[ $TEST -eq 1 ] || do_save_conffiles "$CONF_TAR" || exit
 	export SAVE_CONFIG=1
 else
 	[ $TEST -eq 1 ] || rm -f "$CONF_TAR"
