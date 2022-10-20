@@ -203,7 +203,7 @@ add_overlayfiles() {
 
 if [ $SAVE_OVERLAY = 1 ]; then
 	[ ! -d /overlay/upper/etc ] && {
-		echo "Cannot find '/overlay/upper/etc', required for '-c'" >&2
+		echo "Cannot find '/overlay/upper/etc', required for '-c' or '-o'" >&2
 		exit 1
 	}
 	sysupgrade_init_conffiles="add_overlayfiles"
@@ -246,7 +246,7 @@ do_save_conffiles() {
 				ask_bool 0 "Abort" && exit
 			}
 
-		# Format: pkg-name<TAB>{rom,overlay,unkown}
+		# Format: pkg-name<TAB>{rom,overlay,unknown}
 		# rom is used for pkgs in /rom, even if updated later
 		find /usr/lib/opkg/info -name "*.control" \( \
 			\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
