@@ -1148,21 +1148,44 @@ endef
 $(eval $(call KernelPackage,nft-nat))
 
 
+define KernelPackage/nft-offload-ipv4
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter nf_tables routing/NAT offload support (ipv4)
+  DEPENDS:=@!LINUX_6_1 +kmod-nf-flow +kmod-nft-nat
+  KCONFIG:= CONFIG_NF_FLOW_TABLE_IPV4@lt5.17
+  FILES:= $(LINUX_DIR)/net/ipv4/netfilter/nf_flow_table_ipv4.ko@lt5.17
+  HIDDEN:=y
+  AUTOLOAD:=$(call AutoProbe,nf_flow_table_ipv4)
+endef
+
+$(eval $(call KernelPackage,nft-offload-ipv4))
+
+
+define KernelPackage/nft-offload-ipv6
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter nf_tables routing/NAT offload support (ipv6)
+  DEPENDS:=@!LINUX_6_1 @IPV6 +kmod-nf-flow +kmod-nft-nat
+  KCONFIG:= CONFIG_NF_FLOW_TABLE_IPV6@lt5.17
+  FILES:= $(LINUX_DIR)/net/ipv6/netfilter/nf_flow_table_ipv6.ko@lt5.17
+  HIDDEN:=y
+  AUTOLOAD:=$(call AutoProbe,nf_flow_table_ipv6)
+endef
+
+$(eval $(call KernelPackage,nft-offload-ipv6))
+
+
 define KernelPackage/nft-offload
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables routing/NAT offload support
-  DEPENDS:=@IPV6 +kmod-nf-flow +kmod-nft-nat
+  DEPENDS:=@IPV6 +kmod-nf-flow +kmod-nft-nat \
+	+kmod-nft-offload-ipv4 +kmod-nft-offload-ipv6
   KCONFIG:= \
 	CONFIG_NF_FLOW_TABLE_INET \
-	CONFIG_NF_FLOW_TABLE_IPV4 \
-	CONFIG_NF_FLOW_TABLE_IPV6 \
 	CONFIG_NFT_FLOW_OFFLOAD
   FILES:= \
 	$(LINUX_DIR)/net/netfilter/nf_flow_table_inet.ko \
-	$(LINUX_DIR)/net/ipv4/netfilter/nf_flow_table_ipv4.ko \
-	$(LINUX_DIR)/net/ipv6/netfilter/nf_flow_table_ipv6.ko \
 	$(LINUX_DIR)/net/netfilter/nft_flow_offload.ko
-  AUTOLOAD:=$(call AutoProbe,nf_flow_table_inet nf_flow_table_ipv4 nf_flow_table_ipv6 nft_flow_offload)
+  AUTOLOAD:=$(call AutoProbe,nf_flow_table_inet nft_flow_offload)
 endef
 
 $(eval $(call KernelPackage,nft-offload))
