@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cypress-firmware
 PKG_VERSION:=5.4.18-2021_0812
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/Infineon/ifx-linux-firmware/
@@ -95,6 +95,27 @@ define Package/cypress-firmware-43362-sdio/install
 endef
 
 $(eval $(call BuildPackage,cypress-firmware-43362-sdio))
+
+# Cypress 4339 SDIO Firmware
+define Package/cypress-firmware-4339-sdio
+  $(Package/cypress-firmware-default)
+  TITLE:=CYW4339 FullMac SDIO firmware
+  PROVIDES:=brcmfmac-firmware-4339-sdio
+  CONFLICTS:=brcmfmac-firmware-4339-sdio
+endef
+
+define Package/cypress-firmware-4339-sdio/install
+	$(INSTALL_DIR) $(1)/lib/firmware/cypress
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/firmware/cyfmac4339-sdio.bin \
+		$(1)/lib/firmware/cypress/
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(LN) \
+		../cypress/cyfmac4339-sdio.bin \
+		$(1)/lib/firmware/brcm/brcmfmac4339-sdio.bin
+endef
+
+$(eval $(call BuildPackage,cypress-firmware-4339-sdio))
 
 # Cypress 43430 SDIO Firmware
 define Package/cypress-firmware-43430-sdio
