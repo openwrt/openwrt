@@ -20,9 +20,60 @@ PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=gpl-2.0.txt
 PKG_CPE_ID:=cpe:/a:arm:mbed_tls
 
-PKG_CONFIG_DEPENDS := \
-	CONFIG_LIBMBEDTLS_DEBUG_C \
-	CONFIG_LIBMBEDTLS_HKDF_C
+MBEDTLS_BUILD_OPTS_CURVES= \
+  CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_SECP224R1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_SECP384R1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_SECP192K1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_SECP224K1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_SECP256K1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_BP256R1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_BP384R1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_BP512R1_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_CURVE25519_ENABLED \
+  CONFIG_MBEDTLS_ECP_DP_CURVE448_ENABLED
+
+MBEDTLS_BUILD_OPTS_CIPHERS= \
+  CONFIG_MBEDTLS_AES_C \
+  CONFIG_MBEDTLS_CAMELLIA_C \
+  CONFIG_MBEDTLS_CCM_C \
+  CONFIG_MBEDTLS_CMAC_C \
+  CONFIG_MBEDTLS_DES_C \
+  CONFIG_MBEDTLS_GCM_C \
+  CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED \
+  CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED \
+  CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED \
+  CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED \
+  CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_ENABLED \
+  CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED \
+  CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED \
+  CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED \
+  CONFIG_MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED \
+  CONFIG_MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED \
+  CONFIG_MBEDTLS_NIST_KW_C \
+  CONFIG_MBEDTLS_RIPEMD160_C \
+  CONFIG_MBEDTLS_RSA_NO_CRT \
+  CONFIG_MBEDTLS_XTEA_C
+
+MBEDTLS_BUILD_OPTS= \
+  $(MBEDTLS_BUILD_OPTS_CURVES) \
+  $(MBEDTLS_BUILD_OPTS_CIPHERS) \
+  CONFIG_MBEDTLS_CERTS_C \
+  CONFIG_MBEDTLS_CIPHER_MODE_OFB \
+  CONFIG_MBEDTLS_CIPHER_MODE_XTS \
+  CONFIG_MBEDTLS_DEBUG_C \
+  CONFIG_MBEDTLS_ENTROPY_FORCE_SHA256 \
+  CONFIG_MBEDTLS_HKDF_C \
+  CONFIG_MBEDTLS_PLATFORM_C \
+  CONFIG_MBEDTLS_SELF_TEST \
+  CONFIG_MBEDTLS_SSL_RENEGOTIATION \
+  CONFIG_MBEDTLS_SSL_TRUNCATED_HMAC \
+  CONFIG_MBEDTLS_VERSION_C \
+  CONFIG_MBEDTLS_VERSION_FEATURES
+
+PKG_CONFIG_DEPENDS := $(MBEDTLS_BUILD_OPTS)
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -44,28 +95,11 @@ $(call Package/mbedtls/Default)
   SUBMENU:=SSL
   TITLE+= (library)
   ABI_VERSION:=12
+  MENU:=1
 endef
 
 define Package/libmbedtls/config
-config LIBMBEDTLS_DEBUG_C
-	depends on PACKAGE_libmbedtls
-	bool "Enable debug functions"
-	default n
-	help
-	 This option enables mbedtls library's debug functions.
-
-	 It increases the uncompressed libmbedtls binary size
-	 by around 60 KiB (for an ARMv5 platform).
-
-	 Usually, you don't need this, so don't select this if you're unsure.
-
-config LIBMBEDTLS_HKDF_C
-	depends on PACKAGE_libmbedtls
-	bool "Enable the HKDF algorithm (RFC 5869)"
-	default n
-	help
-	 This option adds support for the Hashed Message Authentication Code
-	 (HMAC)-based key derivation function (HKDF).
+	source "$(SOURCE)/Config.in"
 endef
 
 define Package/mbedtls-util
@@ -97,24 +131,19 @@ CMAKE_OPTIONS += \
 	-DENABLE_PROGRAMS:Bool=ON
 
 define Build/Configure
-	$(Build/Configure/Default)
-
-	awk 'BEGIN { rc = 1 } \
-	     /#define MBEDTLS_DEBUG_C/ { $$$$0 = "$(if $(CONFIG_LIBMBEDTLS_DEBUG_C),,// )#define MBEDTLS_DEBUG_C"; rc = 0 } \
-	     { print } \
-	     END { exit(rc) }' $(PKG_BUILD_DIR)/include/mbedtls/config.h \
-	     >$(PKG_BUILD_DIR)/include/mbedtls/config.h.new && \
-	mv $(PKG_BUILD_DIR)/include/mbedtls/config.h.new $(PKG_BUILD_DIR)/include/mbedtls/config.h
-
-	awk 'BEGIN { rc = 1 } \
-	     /#define MBEDTLS_HKDF_C/ { $$$$0 = "$(if $(CONFIG_LIBMBEDTLS_HKDF_C),,// )#define MBEDTLS_HKDF_C"; rc = 0 } \
-	     { print } \
-	     END { exit(rc) }' $(PKG_BUILD_DIR)/include/mbedtls/config.h \
-	     >$(PKG_BUILD_DIR)/include/mbedtls/config.h.new && \
-	mv $(PKG_BUILD_DIR)/include/mbedtls/config.h.new $(PKG_BUILD_DIR)/include/mbedtls/config.h
+	$(call Build/Configure/Default)
 
 	sed -i '/fuzz/d' $(PKG_BUILD_DIR)/programs/CMakeLists.txt
 	sed -i '/test/d' $(PKG_BUILD_DIR)/programs/CMakeLists.txt
+endef
+
+define Build/Prepare
+       $(call Build/Prepare/Default)
+
+       $(foreach opt,$(MBEDTLS_BUILD_OPTS),
+	 $(PKG_BUILD_DIR)/scripts/config.py \
+	 -f $(PKG_BUILD_DIR)/include/mbedtls/config.h \
+	 $(if $($(opt)),set,unset) $(patsubst CONFIG_%,%,$(opt)))
 endef
 
 define Build/InstallDev
