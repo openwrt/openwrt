@@ -74,6 +74,7 @@ platform_do_upgrade() {
 	asus,rt-ac85p|\
 	asus,rt-ax53u|\
 	asus,rt-ax54|\
+	asus,4g-ax56|\
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
 	beeline,smartbox-pro|\
