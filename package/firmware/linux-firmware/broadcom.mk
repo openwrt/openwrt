@@ -43,11 +43,11 @@ define Package/brcmfmac-firmware-43430-sdio-rpi-3b/install
 endef
 $(eval $(call BuildPackage,brcmfmac-firmware-43430-sdio-rpi-3b))
 
-Package/brcmfmac-firmware-43430-sdio-rpi-zero-w = $(call Package/firmware-default,Broadcom BCM43430 NVRAM for Raspberry Pi Zero W)
+Package/brcmfmac-firmware-43430-sdio-rpi-zero-w = $(call Package/firmware-default,Broadcom BCM43430 NVRAM for Raspberry Pi Zero W,+brcmfmac-firmware-43430-sdio-rpi-3b)
 define Package/brcmfmac-firmware-43430-sdio-rpi-zero-w/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/brcm/brcmfmac43430-sdio.raspberrypi,3-model-b.txt \
+	$(LN) \
+		brcmfmac43430-sdio.raspberrypi,3-model-b.txt \
 		$(1)/lib/firmware/brcm/brcmfmac43430-sdio.raspberrypi,model-zero-w.txt
 endef
 $(eval $(call BuildPackage,brcmfmac-firmware-43430-sdio-rpi-zero-w))
@@ -78,6 +78,15 @@ define Package/brcmfmac-firmware-43455-sdio-rpi-4b/install
 		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.raspberrypi,4-model-b.txt
 endef
 $(eval $(call BuildPackage,brcmfmac-firmware-43455-sdio-rpi-4b))
+
+Package/brcmfmac-firmware-43455-sdio-rpi-cm4 = $(call Package/firmware-default,Broadcom BCM43455 NVRAM for Raspberry Pi CM4,+brcmfmac-firmware-43455-sdio-rpi-4b)
+define Package/brcmfmac-firmware-43455-sdio-rpi-cm4/install
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+	$(LN) \
+		brcmfmac43455-sdio.raspberrypi,4-model-b.txt \
+		$(1)/lib/firmware/brcm/brcmfmac43455-sdio.raspberrypi,4-compute-module.txt
+endef
+$(eval $(call BuildPackage,brcmfmac-firmware-43455-sdio-rpi-cm4))
 
 Package/brcmfmac-firmware-usb = $(call Package/firmware-default,Broadcom BCM43xx fullmac USB firmware)
 define Package/brcmfmac-firmware-usb/install
