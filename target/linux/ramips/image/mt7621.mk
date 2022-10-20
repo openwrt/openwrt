@@ -317,6 +317,24 @@ define Device/asus_rt-ax53u
 endef
 TARGET_DEVICES += asus_rt-ax53u
 
+define Device/asus_4g-ax56
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := 4G-AX56
+  IMAGE_SIZE := 51200k
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3 kmod-usb-serial-option \
+	kmod-usb-net-cdc-ncm
+endef
+TARGET_DEVICES += asus_4g-ax56
+
 define Device/beeline_smartbox-flash
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
