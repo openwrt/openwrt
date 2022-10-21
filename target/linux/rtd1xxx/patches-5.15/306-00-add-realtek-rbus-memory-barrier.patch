@@ -1,0 +1,41 @@
+From 123a202d12fb6b8f8e4c2e95532f4aeec6e2f544 Mon Sep 17 00:00:00 2001
+From: phinex <phinex@realtek.com>
+Date: Fri, 21 Oct 2022 19:43:56 +0800
+Subject: [PATCH] soc: realtek: rtk_barrier : Add Rbus Memory Barrier for
+ rtd129x
+
+Change-Id: Ia5300a4f589e33516e4f53c07afaecbc13a42461
+---
+ arch/arm64/include/asm/barrier.h          |  9 +++++
+ drivers/soc/realtek/Kconfig               |  7 ++++
+ drivers/soc/realtek/Makefile              |  1 +
+ drivers/soc/realtek/rtd129x/Makefile      |  1 +
+ drivers/soc/realtek/rtd129x/rtk_barrier.c | 48 +++++++++++++++++++++++
+ 1 files changed, 9 insertions(+)
+
+--- a/arch/arm64/include/asm/barrier.h
++++ b/arch/arm64/include/asm/barrier.h
+@@ -11,6 +11,10 @@
+ 
+ #include <linux/kasan-checks.h>
+ 
++#if IS_ENABLED(CONFIG_REALTEK_RBUS_BARRIER)
++extern void rtk_bus_sync(void);
++#endif /* CONFIG_REALTEK_RBUS_BARRIER */
++
+ #define __nops(n)	".rept	" #n "\nnop\n.endr\n"
+ #define nops(n)		asm volatile(__nops(n))
+ 
+@@ -40,7 +44,12 @@
+ 
+ #define mb()		dsb(sy)
+ #define rmb()		dsb(ld)
++
++#if IS_ENABLED(CONFIG_REALTEK_RBUS_BARRIER)
++#define wmb()		do { dsb(st); rtk_bus_sync(); } while (0)
++#else
+ #define wmb()		dsb(st)
++#endif /* CONFIG_REALTEK_RBUS_BARRIER */
+ 
+ #define dma_mb()	dmb(osh)
+ #define dma_rmb()	dmb(oshld)

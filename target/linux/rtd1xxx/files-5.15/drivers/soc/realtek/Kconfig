@@ -9,6 +9,13 @@ config REALTEK_SOC
 
 	  If unsure, say N.
 
+config REALTEK_RBUS_BARRIER
+	bool "Realtek rbus barrier"
+	default ARCH_REALTEK
+	default n
+	help
+	  Enable helper functions for R-bus barrier. If unsure, say N.
+
 source "drivers/soc/realtek/common/Kconfig"
 
 endmenu
