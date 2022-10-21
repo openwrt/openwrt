@@ -291,6 +291,7 @@ TARGET_DEVICES += asus_rt-ac85p
 
 define Device/asus_rt-n56u-b1
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N56U
   DEVICE_VARIANT := B1
