@@ -1,0 +1,124 @@
+From 6a0d1089a4de97364087405802c53dcd87238947 Mon Sep 17 00:00:00 2001
+From: Florian Eckert <fe@dev.tdt.de>
+Date: Fri, 21 Oct 2022 13:08:38 +0200
+Subject: [PATCH] ubus: add bootup time measurement
+
+Until now it was not possible to determine the booting time. This change
+adds two new elements to the 'ubus system info'.
+
+booting:
+This flag indicates whether the system is still booting.
+
+bootime:
+This value shows in seconds how long the system took until the procd
+reached STATE_INIT. The procd message in the log with '- init -'
+indicates this.
+
+Signed-off-by: Florian Eckert <fe@dev.tdt.de>
+---
+ procd.h  |  1 +
+ state.c  | 23 +++++++++++++++++++++++
+ system.c |  6 ++++++
+ 3 files changed, 30 insertions(+)
+
+diff --git a/procd.h b/procd.h
+index fd29a12..492d376 100644
+--- a/procd.h
++++ b/procd.h
+@@ -42,6 +42,7 @@ void procd_preinit(void);
+ void procd_signal(void);
+ void procd_signal_preinit(void);
+ void procd_inittab(void);
++unsigned long procd_boot_time(void);
+ void procd_inittab_run(const char *action);
+ void procd_inittab_kill(void);
+ void procd_bcast_event(char *event, struct blob_attr *msg);
+diff --git a/state.c b/state.c
+index fb81248..4c8c904 100644
+--- a/state.c
++++ b/state.c
+@@ -15,6 +15,9 @@
+ #include <fcntl.h>
+ #include <pwd.h>
+ #include <sys/reboot.h>
++#ifdef linux
++#include <sys/sysinfo.h>
++#endif
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+@@ -42,6 +45,7 @@ enum {
+ 
+ static int state = STATE_NONE;
+ static int reboot_event;
++static unsigned long boot_time = 0;
+ 
+ static void set_stdio(const char* tty)
+ {
+@@ -123,6 +127,19 @@ static void perform_halt()
+ 		sleep(1);
+ }
+ 
++static unsigned long get_boot_time(void)
++{
++	unsigned long boot = 0;
++
++#ifdef linux
++	struct sysinfo s_info;
++	sysinfo(&s_info);
++	boot = s_info.uptime;
++#endif
++
++	return boot;
++}
++
+ static void state_enter(void)
+ {
+ 	char ubus_cmd[] = "/sbin/ubusd";
+@@ -172,6 +189,7 @@ static void state_enter(void)
+ 		LOG("- init complete -\n");
+ 		procd_inittab_run("respawnlate");
+ 		procd_inittab_run("askconsolelate");
++		boot_time = get_boot_time();
+ 		break;
+ 
+ 	case STATE_SHUTDOWN:
+@@ -206,6 +224,11 @@ static void state_enter(void)
+ 	};
+ }
+ 
++unsigned long procd_boot_time(void)
++{
++	return boot_time;
++}
++
+ void procd_state_next(void)
+ {
+ 	DEBUG(4, "Change state %d -> %d\n", state, state + 1);
+diff --git a/system.c b/system.c
+index 93eac59..f660800 100644
+--- a/system.c
++++ b/system.c
+@@ -339,6 +339,7 @@ static int system_info(struct ubus_context *ctx, struct ubus_object *obj,
+ 		"/",    "root",
+ 		"/tmp", "tmp",
+ 	};
++	unsigned long boot_time;
+ 
+ 	if (sysinfo(&info))
+ 		return UBUS_STATUS_UNKNOWN_ERROR;
+@@ -379,6 +380,11 @@ static int system_info(struct ubus_context *ctx, struct ubus_object *obj,
+ #ifdef linux
+ 	blobmsg_add_u32(&b, "uptime",    info.uptime);
+ 
++	boot_time = procd_boot_time();
++	blobmsg_add_u8(&b, "booting", boot_time == 0);
++	if (boot_time > 0)
++		blobmsg_add_u32(&b, "boottime", boot_time);
++
+ 	c = blobmsg_open_array(&b, "load");
+ 	blobmsg_add_u32(&b, NULL, info.loads[0]);
+ 	blobmsg_add_u32(&b, NULL, info.loads[1]);
+-- 
+2.30.2
+
