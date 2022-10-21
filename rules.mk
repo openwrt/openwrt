@@ -208,7 +208,6 @@ ifndef DUMP
       ifneq ($(TOOLCHAIN_LIB_DIRS),)
         TARGET_LDFLAGS+= $(patsubst %,-L%,$(TOOLCHAIN_LIB_DIRS))
       endif
-      TARGET_PATH:=$(TOOLCHAIN_DIR)/bin:$(TARGET_PATH)
     endif
   endif
 endif
@@ -243,20 +242,13 @@ HOST_CXXFLAGS:=
 HOST_CFLAGS:=-O2 $(HOST_CPPFLAGS)
 HOST_LDFLAGS:=-L$(STAGING_DIR_HOST)/lib $(if $(IS_PACKAGE_BUILD),-L$(STAGING_DIR_HOSTPKG)/lib -L$(STAGING_DIR)/host/lib)
 
-ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
-  TARGET_AR:=$(TARGET_CROSS)gcc-ar
-  TARGET_RANLIB:=$(TARGET_CROSS)gcc-ranlib
-  TARGET_NM:=$(TARGET_CROSS)gcc-nm
-else
-  TARGET_AR:=$(TARGET_CROSS)ar
-  TARGET_RANLIB:=$(TARGET_CROSS)ranlib
-  TARGET_NM:=$(TARGET_CROSS)nm
-endif
-
 BUILD_KEY=$(TOPDIR)/key-build
 
 FAKEROOT:=$(STAGING_DIR_HOST)/bin/fakeroot
 
+TARGET_AR:=$(TARGET_CROSS)gcc-ar
+TARGET_RANLIB:=$(TARGET_CROSS)gcc-ranlib
+TARGET_NM:=$(TARGET_CROSS)gcc-nm
 TARGET_CC:=$(TARGET_CROSS)gcc
 TARGET_CXX:=$(TARGET_CROSS)g++
 KPATCH:=$(SCRIPT_DIR)/patch-kernel.sh
@@ -265,6 +257,9 @@ ESED:=$(STAGING_DIR_HOST)/bin/sed -E -i -e
 MKHASH:=$(STAGING_DIR_HOST)/bin/mkhash
 # MKHASH is used in /scripts, so we export it here.
 export MKHASH
+# DOWNLOAD_CHECK_CERTIFICATE is used in /scripts, so we export it here.
+DOWNLOAD_CHECK_CERTIFICATE:=$(CONFIG_DOWNLOAD_CHECK_CERTIFICATE)
+export DOWNLOAD_CHECK_CERTIFICATE
 CP:=cp -fpR
 LN:=ln -sf
 XARGS:=xargs -r

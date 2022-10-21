@@ -89,25 +89,18 @@ ath79_setup_interfaces()
 	tplink,tl-wa1201-v2|\
 	tplink,tl-wr902ac-v1|\
 	ubnt,bullet-ac|\
-	ubnt,bullet-m-ar7240|\
-	ubnt,bullet-m-ar7241|\
 	ubnt,bullet-m-xw|\
 	ubnt,lap-120|\
 	ubnt,litebeam-ac-gen2|\
 	ubnt,nanobeam-ac|\
 	ubnt,nanobeam-ac-xc|\
-	ubnt,nanobridge-m|\
 	ubnt,nanostation-ac-loco|\
-	ubnt,nanostation-loco-m|\
 	ubnt,nanostation-loco-m-xw|\
-	ubnt,picostation-m|\
 	ubnt,powerbeam-5ac-500|\
 	ubnt,powerbeam-5ac-gen2|\
 	ubnt,powerbeam-m2-xw|\
 	ubnt,powerbeam-m5-xw|\
-	ubnt,powerbridge-m|\
 	ubnt,rocket-5ac-lite|\
-	ubnt,rocket-m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-lr|\
 	ubnt,unifiac-mesh|\
@@ -177,8 +170,7 @@ ath79_setup_interfaces()
 	tplink,archer-c60-v3|\
 	tplink,tl-wdr3500-v1|\
 	tplink,tl-wr842n-v1|\
-	tplink,tl-wr842n-v3|\
-	ubnt,airrouter)
+	tplink,tl-wr842n-v3)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
@@ -213,7 +205,6 @@ ath79_setup_interfaces()
 	tplink,wbs210-v2|\
 	tplink,wbs510-v1|\
 	tplink,wbs510-v2|\
-	ubnt,nanostation-m|\
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
@@ -713,15 +704,6 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_text mac 0x18)
 		label_mac=$wan_mac
 		;;
-	ubnt,airrouter|\
-	ubnt,bullet-m-ar7240|\
-	ubnt,bullet-m-ar7241|\
-	ubnt,nanobridge-m|\
-	ubnt,nanostation-loco-m|\
-	ubnt,nanostation-m|\
-	ubnt,picostation-m|\
-	ubnt,powerbridge-m|\
-	ubnt,rocket-m|\
 	ubnt,unifi)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;

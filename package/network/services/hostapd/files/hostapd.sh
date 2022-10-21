@@ -361,7 +361,7 @@ hostapd_common_add_bss_config() {
 	config_add_array airtime_sta_weight
 	config_add_int airtime_bss_weight airtime_bss_limit
 
-	config_add_boolean multicast_to_unicast proxy_arp per_sta_vif
+	config_add_boolean multicast_to_unicast multicast_to_unicast_all proxy_arp per_sta_vif
 
 	config_add_array hostapd_bss_options
 	config_add_boolean default_disabled
@@ -545,7 +545,7 @@ hostapd_set_bss_options() {
 		bss_load_update_period chan_util_avg_period sae_require_mfp sae_pwe \
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key skip_inactivity_poll \
 		airtime_bss_weight airtime_bss_limit airtime_sta_weight \
-		multicast_to_unicast proxy_arp per_sta_vif \
+		multicast_to_unicast_all proxy_arp per_sta_vif \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id \
 		vendor_elements fils
 
@@ -1096,9 +1096,9 @@ hostapd_set_bss_options() {
 		[ -n "$server_id" ] && append bss_conf "server_id=$server_id" "$N"
 	fi
 
-	set_default multicast_to_unicast 0
-	if [ "$multicast_to_unicast" -gt 0 ]; then
-		append bss_conf "multicast_to_unicast=$multicast_to_unicast" "$N"
+	set_default multicast_to_unicast_all 0
+	if [ "$multicast_to_unicast_all" -gt 0 ]; then
+		append bss_conf "multicast_to_unicast=$multicast_to_unicast_all" "$N"
 	fi
 	set_default proxy_arp 0
 	if [ "$proxy_arp" -gt 0 ]; then

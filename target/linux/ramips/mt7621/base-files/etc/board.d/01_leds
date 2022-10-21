@@ -50,10 +50,8 @@ dlink,dir-882-a1|\
 dlink,dir-882-r1)
 	ucidef_set_led_netdev "wan" "wan" "green:net" "wan"
 	;;
-gnubee,gb-pc1|\
 gnubee,gb-pc2)
-	ucidef_set_led_netdev "ethblack_act" "ethblack act" "green:ethblack_act" "ethblack" "tx rx"
-	ucidef_set_led_netdev "ethblue_act" "ethblue act" "green:ethblue_act" "ethblue" "tx rx"
+	ucidef_set_led_netdev "ethyellow" "ethyellow" "orange:ethyellow" "ethyellow" "link tx rx"
 	;;
 linksys,e5600)
 	ucidef_set_led_netdev "wan" "wan link" "blue:wan" "wan" "link"

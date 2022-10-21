@@ -9,7 +9,8 @@
 		compatible = "ubnt,ledbar";
 		reg = <0x30>;
 
-		enable-gpio = <&pio 59 0>;
+		enable-gpio = <&pio 59 GPIO_ACTIVE_LOW>;
+		reset-gpio = <&pio 60 GPIO_ACTIVE_LOW>;
 
 		red {
 			label = "red";

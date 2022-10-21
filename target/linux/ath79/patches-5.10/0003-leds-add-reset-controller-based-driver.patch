@@ -13,9 +13,9 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -931,6 +931,17 @@ config LEDS_ACER_A500
- 
- source "drivers/leds/blink/Kconfig"
+@@ -941,6 +941,17 @@ config LEDS_UBNT_LEDBAR
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called leds-ubnt-ledbar.
  
 +config LEDS_RESET
 +	tristate "LED support for reset-controller API"
@@ -176,11 +176,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +MODULE_ALIAS("platform:leds-reset");
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -93,6 +93,7 @@ obj-$(CONFIG_LEDS_TURRIS_OMNIA)		+= leds
- obj-$(CONFIG_LEDS_WM831X_STATUS)	+= leds-wm831x-status.o
- obj-$(CONFIG_LEDS_WM8350)		+= leds-wm8350.o
- obj-$(CONFIG_LEDS_WRAP)			+= leds-wrap.o
+@@ -80,6 +80,7 @@ obj-$(CONFIG_LEDS_PM8058)		+= leds-pm805
+ obj-$(CONFIG_LEDS_POWERNV)		+= leds-powernv.o
+ obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
+ obj-$(CONFIG_LEDS_REGULATOR)		+= leds-regulator.o
 +obj-$(CONFIG_LEDS_RESET)		+= leds-reset.o
- 
- # LED SPI Drivers
- obj-$(CONFIG_LEDS_CR0014114)		+= leds-cr0014114.o
+ obj-$(CONFIG_LEDS_S3C24XX)		+= leds-s3c24xx.o
+ obj-$(CONFIG_LEDS_SC27XX_BLTC)		+= leds-sc27xx-bltc.o
+ obj-$(CONFIG_LEDS_SGM3140)		+= leds-sgm3140.o
