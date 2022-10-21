@@ -2,7 +2,7 @@ This patch makes it possible to set a custom image magic.
 
 --- a/tools/mkimage.c
 +++ b/tools/mkimage.c
-@@ -25,6 +25,7 @@ static struct image_tool_params params =
+@@ -26,6 +26,7 @@ static struct image_tool_params params =
  	.arch = IH_ARCH_PPC,
  	.type = IH_TYPE_KERNEL,
  	.comp = IH_COMP_GZIP,
@@ -10,7 +10,7 @@ This patch makes it possible to set a custom image magic.
  	.dtc = MKIMAGE_DEFAULT_DTC_OPTIONS,
  	.imagename = "",
  	.imagename2 = "",
-@@ -88,11 +89,12 @@ static void usage(const char *msg)
+@@ -89,11 +90,12 @@ static void usage(const char *msg)
  			 "          -q ==> quiet\n",
  		params.cmdname);
  	fprintf(stderr,
@@ -24,16 +24,16 @@ This patch makes it possible to set a custom image magic.
  		"          -a ==> set load address to 'addr' (hex)\n"
  		"          -e ==> set entry point to 'ep' (hex)\n"
  		"          -n ==> set image name to 'name'\n"
-@@ -163,7 +165,7 @@ static void process_args(int argc, char
- 	int opt;
+@@ -159,7 +161,7 @@ static int add_content(int type, const c
+ }
  
- 	while ((opt = getopt(argc, argv,
--		   "a:A:b:B:c:C:d:D:e:Ef:FG:k:i:K:ln:N:p:o:O:rR:qstT:vVx")) != -1) {
-+		   "a:A:b:B:c:C:d:D:e:Ef:FG:k:i:K:lM:n:N:p:o:O:rR:qstT:vVx")) != -1) {
- 		switch (opt) {
- 		case 'a':
- 			params.addr = strtoull(optarg, &ptr, 16);
-@@ -254,6 +256,14 @@ static void process_args(int argc, char
+ static const char optstring[] =
+-	"a:A:b:B:c:C:d:D:e:Ef:Fg:G:i:k:K:ln:N:o:O:p:qrR:stT:vVx";
++	"a:A:b:B:c:C:d:D:e:Ef:Fg:G:i:k:K:lM:n:N:o:O:p:qrR:stT:vVx";
+ 
+ static const struct option longopts[] = {
+ 	{ "load-address", required_argument, NULL, 'a' },
+@@ -298,6 +300,14 @@ static void process_args(int argc, char
  		case 'l':
  			params.lflag = 1;
  			break;
