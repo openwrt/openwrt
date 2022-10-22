@@ -76,7 +76,7 @@ define Device/rpi
 	raspberrypi,model-zero raspberrypi,model-zero-w
   DEVICE_PACKAGES := \
 	cypress-firmware-43430-sdio \
-	cypress-nvram-43430-sdio-rpi-zero-w \
+	brcmfmac-firmware-43430-sdio-rpi-zero-w \
 	kmod-brcmfmac wpad-basic-wolfssl
 endef
 ifeq ($(SUBTARGET),bcm2708)
@@ -107,11 +107,11 @@ define Device/rpi-2
 	raspberrypi,model-zero-2
   DEVICE_PACKAGES := \
 	cypress-firmware-43430-sdio \
-	cypress-nvram-43430-sdio-rpi-3b \
+	brcmfmac-firmware-43430-sdio-rpi-3b \
 	cypress-firmware-43455-sdio \
-	cypress-nvram-43455-sdio-rpi-3b-plus \
-	cypress-nvram-43455-sdio-rpi-4b \
-	cypress-nvram-43455-sdio-rpi-cm4 \
+	brcmfmac-firmware-43455-sdio-rpi-3b-plus \
+	brcmfmac-firmware-43455-sdio-rpi-4b \
+	brcmfmac-firmware-43455-sdio-rpi-cm4 \
 	kmod-brcmfmac wpad-basic-wolfssl
   IMAGE/sysupgrade.img.gz := boot-common | boot-2708 | boot-2711 | sdcard-img | gzip | append-metadata
   IMAGE/factory.img.gz := boot-common | boot-2708 | boot-2711 | sdcard-img | gzip
@@ -140,9 +140,9 @@ define Device/rpi-3
 	raspberrypi,model-zero-2
   DEVICE_PACKAGES := \
 	cypress-firmware-43430-sdio \
-	cypress-nvram-43430-sdio-rpi-3b \
+	brcmfmac-firmware-43430-sdio-rpi-3b \
 	cypress-firmware-43455-sdio \
-	cypress-nvram-43455-sdio-rpi-3b-plus \
+	brcmfmac-firmware-43455-sdio-rpi-3b-plus \
 	kmod-brcmfmac wpad-basic-wolfssl
 endef
 ifeq ($(SUBTARGET),bcm2710)
@@ -163,8 +163,8 @@ define Device/rpi-4
 	raspberrypi,4-model-b
   DEVICE_PACKAGES := \
 	cypress-firmware-43455-sdio \
-	cypress-nvram-43455-sdio-rpi-4b \
-	cypress-nvram-43455-sdio-rpi-cm4 \
+	brcmfmac-firmware-43455-sdio-rpi-4b \
+	brcmfmac-firmware-43455-sdio-rpi-cm4 \
 	kmod-brcmfmac wpad-basic-wolfssl \
 	kmod-usb-net-lan78xx
   IMAGE/sysupgrade.img.gz := boot-common | boot-2711 | sdcard-img | gzip | append-metadata
