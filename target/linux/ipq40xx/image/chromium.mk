@@ -33,5 +33,4 @@ define Device/google_wifi
 	DEVICE_PACKAGES := partx-utils mkf2fs e2fsprogs \
 			   kmod-fs-ext4 kmod-fs-f2fs kmod-google-firmware
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += google_wifi
+TARGET_DEVICES += google_wifi

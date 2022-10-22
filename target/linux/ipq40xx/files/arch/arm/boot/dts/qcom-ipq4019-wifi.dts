@@ -13,6 +13,10 @@
 	model = "Google WiFi (Gale)";
 	compatible = "google,wifi", "google,gale-v2", "qcom,ipq4019";
 
+	aliases {
+		label-mac-device = &gmac0;
+	};
+
 	chosen {
 		/*
 		 * rootwait: in case we're booting from slow/async USB storage.
@@ -24,6 +28,26 @@
 	memory {
 		device_type = "memory";
 		reg = <0x80000000 0x20000000>; /* 512MB */
+	};
+
+	soc {
+		edma@c080000 {
+			/*
+			 * Factory bootloader (depthcharge) will fail to boot
+			 * if this exact path (soc/edma@c080000/gmac0) doesn't
+			 * exist.
+			 */
+			gmac0: gmac0 {
+			};
+
+			/*
+			 * Factory bootloader (depthcharge) will fail to boot
+			 * if this exact path (soc/edma@c080000/gmac1) doesn't
+			 * exist.
+			 */
+			gmac1 {
+			};
+		};
 	};
 };
 
@@ -325,6 +349,10 @@
 	status = "okay";
 };
 
+&gmac {
+	status = "okay";
+};
+
 &mdio {
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
@@ -342,6 +370,20 @@
 	clock-frequency = <192000000>;
 	vqmmc-supply = <&vqmmc>;
 	non-removable;
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&swport5 {
+	status = "okay";
 };
 
 &usb2 {
