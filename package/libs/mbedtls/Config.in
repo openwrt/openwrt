@@ -17,20 +17,20 @@ config MBEDTLS_CCM_C
 	default n
 
 config MBEDTLS_CMAC_C
-	bool "MBEDTLS_CMAC_C"
-	default n
+	bool "MBEDTLS_CMAC_C (old but used by hostapd)"
+	default y
 
 config MBEDTLS_DES_C
-	bool "MBEDTLS_DES_C"
-	default n
+	bool "MBEDTLS_DES_C (old but used by hostapd)"
+	default y
 
 config MBEDTLS_GCM_C
 	bool "MBEDTLS_GCM_C"
 	default y
 
 config MBEDTLS_NIST_KW_C
-	bool "MBEDTLS_NIST_KW_C"
-	default n
+	bool "MBEDTLS_NIST_KW_C (old but used by hostapd)"
+	default y
 
 config MBEDTLS_RIPEMD160_C
 	bool "MBEDTLS_RIPEMD160_C"
