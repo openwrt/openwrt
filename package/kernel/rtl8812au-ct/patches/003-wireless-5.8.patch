@@ -1,6 +1,6 @@
 --- a/os_dep/linux/ioctl_cfg80211.c
 +++ b/os_dep/linux/ioctl_cfg80211.c
-@@ -5177,6 +5177,15 @@ exit:
+@@ -5196,6 +5196,15 @@ exit:
  	return ret;
  }
  
@@ -16,7 +16,7 @@
  #if defined(CONFIG_TDLS) && (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
  static int cfg80211_rtw_tdls_mgmt(struct wiphy *wiphy,
  		struct net_device *ndev,
-@@ -5990,7 +5999,10 @@ static struct cfg80211_ops rtw_cfg80211_
+@@ -6009,7 +6018,10 @@ static struct cfg80211_ops rtw_cfg80211_
  	.cancel_remain_on_channel = cfg80211_rtw_cancel_remain_on_channel,
  #endif
  
