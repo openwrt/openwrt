@@ -7,6 +7,7 @@ on:
       - 'include/kernel*'
       - 'package/kernel/**'
       - 'target/linux/generic/**'
+      - 'target/linux/ath79/**'
   push:
     paths:
       - '.github/workflows/kernel.yml'
@@ -59,6 +60,7 @@ jobs:
             FIRST=0
           done
           JSON="$JSON"']'
+          JSON='["ath79/generic","ath79/nand","ath79/tiny","ath79/mikrotik"]'
 
            echo -e "\n---- targets ----\n"
            echo "$JSON"
@@ -172,10 +174,12 @@ jobs:
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
-          echo CONFIG_ALL_KMODS=y >> .config
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
           echo CONFIG_CCACHE=y >> .config
+          echo CONFIG_TARGET_MULTI_PROFILE=y >> .config
+          echo CONFIG_TARGET_ALL_PROFILES=y >> .config
+          echo CONFIG_TARGET_PER_DEVICE_ROOTFS=y >> .config
 
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
@@ -202,10 +206,10 @@ jobs:
         working-directory: openwrt
         run: make target/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
-      - name: Build Kernel Kmods
+      - name: Build images to test dts syntax
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
-        run: make package/linux/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
+        run: make -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Upload logs
         if: failure()
