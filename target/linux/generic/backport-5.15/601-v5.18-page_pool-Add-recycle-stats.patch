@@ -1,20 +1,23 @@
-commit ad6fa1e1ab1b8164f1ba296b1b4dc556a483bcad
-Author: Joe Damato <jdamato@fastly.com>
-Date:   Tue Mar 1 23:55:48 2022 -0800
+From ad6fa1e1ab1b8164f1ba296b1b4dc556a483bcad Mon Sep 17 00:00:00 2001
+From: Joe Damato <jdamato@fastly.com>
+Date: Tue, 1 Mar 2022 23:55:48 -0800
+Subject: [PATCH 2/3] page_pool: Add recycle stats
 
-    page_pool: Add recycle stats
-    
-    Add per-cpu stats tracking page pool recycling events:
-            - cached: recycling placed page in the page pool cache
-            - cache_full: page pool cache was full
-            - ring: page placed into the ptr ring
-            - ring_full: page released from page pool because the ptr ring was full
-            - released_refcnt: page released (and not recycled) because refcnt > 1
-    
-    Signed-off-by: Joe Damato <jdamato@fastly.com>
-    Acked-by: Jesper Dangaard Brouer <brouer@redhat.com>
-    Reviewed-by: Ilias Apalodimas <ilias.apalodimas@linaro.org>
-    Signed-off-by: David S. Miller <davem@davemloft.net>
+Add per-cpu stats tracking page pool recycling events:
+	- cached: recycling placed page in the page pool cache
+	- cache_full: page pool cache was full
+	- ring: page placed into the ptr ring
+	- ring_full: page released from page pool because the ptr ring was full
+	- released_refcnt: page released (and not recycled) because refcnt > 1
+
+Signed-off-by: Joe Damato <jdamato@fastly.com>
+Acked-by: Jesper Dangaard Brouer <brouer@redhat.com>
+Reviewed-by: Ilias Apalodimas <ilias.apalodimas@linaro.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ include/net/page_pool.h | 16 ++++++++++++++++
+ net/core/page_pool.c    | 30 ++++++++++++++++++++++++++++--
+ 2 files changed, 44 insertions(+), 2 deletions(-)
 
 --- a/include/net/page_pool.h
 +++ b/include/net/page_pool.h

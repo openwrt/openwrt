@@ -1,3 +1,16 @@
+From: John Crispin <john@phrozen.org>
+Subject: [PATCH] ath79: add new OF only target for QCA MIPS silicon
+
+This target aims to replace ar71xx mid-term. The big part that is still
+missing is making the MMIO/AHB wifi work using OF. NAND and mikrotik
+subtargets will follow.
+
+Submitted-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/ethernet/atheros/Kconfig          | 8 +-------
+ drivers/net/ethernet/atheros/Makefile         | 2 +-
+ 2 files changed, 2 insertions(+), 8 deletions(-)
+
 --- a/drivers/net/ethernet/atheros/Kconfig
 +++ b/drivers/net/ethernet/atheros/Kconfig
 @@ -17,13 +17,7 @@ config NET_VENDOR_ATHEROS

@@ -21,10 +21,6 @@
 			status = "okay";
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -48,17 +44,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			switch_lan_bmp = <0x10>;
-			switch_wan_bmp = <0x20>;
-
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -167,14 +152,6 @@
 
 &cryptobam {
 	status = "okay";
-};
-
-&gmac0 {
-	qcom,phy_mdio_addr = <3>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <1 0x10>;
 };
 
 &pcie0 {

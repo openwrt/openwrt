@@ -1,3 +1,31 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: bridge: Add a fast path for the bridge code
+
+This caches flows between MAC addresses on separate ports, including their VLAN
+in order to bypass the normal bridge forwarding code.
+In my test on MT7622, this reduces LAN->WLAN bridging CPU usage by 6-10%,
+potentially even more on weaker platforms
+
+Submitted-by: Felix Fietkau <nbd@nbd.name>
+---
+ include/linux/if_bridge.h                     |   1 +
+ net/bridge/Makefile                           |   2 +-
+ net/bridge/br.c                               |   8 +++
+ net/bridge/br_device.c                        |   7 +++
+ net/bridge/br_forward.c                       |   3 ++
+ net/bridge/br_if.c                            |   7 ++-
+ net/bridge/br_input.c                         |   5 ++
+ net/bridge/br_offload.c                       | 436 +++++++++++++++
+ net/bridge/br_private.h                       |  22 ++++-
+ net/bridge/br_private_offload.h               |  21 +++++
+ net/bridge/br_stp.c                           |   3 +
+ net/bridge/br_sysfs_br.c                      |  35 ++++++
+ net/bridge/br_sysfs_if.c                      |   2 +
+ net/bridge/br_vlan_tunnel.c                   |   3 ++
+ 14 files changed, 552 insertions(+), 3 deletions(-)
+ create mode 100644 net/bridge/br_offload.c
+ create mode 100644 net/bridge/br_private_offload.h
+
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
 @@ -57,6 +57,7 @@ struct br_ip_list {

@@ -1,3 +1,16 @@
+From 800d5fb3c6a16661932c932bacd660e38d06b727 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Thu, 25 Aug 2022 08:22:36 +0200
+Subject: [PATCH] realtek: add patch to enable new clock driver in kernel
+
+Allow building the clock driver with kernel config options.
+
+Submitted-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+---
+ drivers/clk/Kconfig                           | 1 +
+ drivers/clk/Makefile                          | 1 +
+ 2 files changed, 2 insertions(+)
+
 --- a/drivers/clk/Kconfig
 +++ b/drivers/clk/Kconfig
 @@ -372,6 +372,7 @@ source "drivers/clk/mediatek/Kconfig"

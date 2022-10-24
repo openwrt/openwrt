@@ -1,3 +1,13 @@
+From: John Crispin <john@phrozen.org>
+Subject: ath79: fix remove irq code from pci driver patch
+
+This patch got mangled in the void while rebasing it.
+
+Submitted-by: John Crispin <john@phrozen.org>
+---
+ arch/mips/pci/pci-ar71xx.c                    | 107 ------------------
+ 1 file changed, 141 deletions(-)
+
 --- a/arch/mips/pci/pci-ar71xx.c
 +++ b/arch/mips/pci/pci-ar71xx.c
 @@ -51,11 +51,9 @@

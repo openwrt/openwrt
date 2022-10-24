@@ -58,9 +58,8 @@
 };
 
 &gmac1 {
-	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cells = <&macaddr_factory_e006>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &factory {
@@ -70,5 +69,9 @@
 
 	macaddr_factory_e000: macaddr@e000 {
 		reg = <0xe000 0x6>;
+	};
+
+	macaddr_factory_e006: macaddr@e006 {
+		reg = <0xe006 0x6>;
 	};
 };

@@ -1,3 +1,20 @@
+From: David Bauer <mail@david-bauer.net>
+Subject: Kconfig: exit on unset symbol
+
+When a target configuration has unset Kconfig symbols, the build will
+fail when OpenWrt is compiled with V=s and stdin is connected to a tty.
+
+In case OpenWrt is compiled without either of these preconditions, the
+build will succeed with the symbols in question being unset.
+
+Modify the kernel configuration in a way it fails on unset symbols
+regardless of the aforementioned preconditions.
+
+Submitted-by: David Bauer <mail@david-bauer.net>
+---
+ scripts/kconfig/conf.c                                |  2 +
+ 1 files changed, 2 insertions(+)
+
 --- a/scripts/kconfig/conf.c
 +++ b/scripts/kconfig/conf.c
 @@ -215,6 +215,8 @@ static int conf_sym(struct menu *menu)

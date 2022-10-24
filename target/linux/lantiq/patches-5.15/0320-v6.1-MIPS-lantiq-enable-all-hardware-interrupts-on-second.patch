@@ -1,0 +1,87 @@
+From 730320fd770d4114a2ecb6fb223dcc8c3cecdc5b Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Wed, 21 Sep 2022 22:59:44 +0200
+Subject: [PATCH] MIPS: lantiq: enable all hardware interrupts on second VPE
+
+This patch is needed to handle interrupts by the second VPE on the Lantiq
+ARX100, xRX200, xRX300 and xRX330 SoCs. Switching some ICU interrupts to
+the second VPE results in a hang. Currently, the vsmp_init_secondary()
+function is responsible for enabling these interrupts. It only enables
+Malta-specific interrupts (SW0, SW1, HW4 and HW5).
+
+The MIPS core has 8 interrupts defined. On Lantiq SoCs, hardware
+interrupts are wired to an ICU instance. Each VPE has an independent
+instance of the ICU. The mapping of the ICU interrupts is shown below:
+SW0(IP0) - IPI call,
+SW1(IP1) - IPI resched,
+HW0(IP2) - ICU 0-31,
+HW1(IP3) - ICU 32-63,
+HW2(IP4) - ICU 64-95,
+HW3(IP5) - ICU 96-127,
+HW4(IP6) - ICU 128-159,
+HW5(IP7) - timer.
+
+This patch enables all interrupt lines on the second VPE.
+
+This problem affects multithreaded SoCs with a custom interrupt controller.
+SOCs with 1004Kc core and newer use the MIPS GIC. At this point, I am aware
+that the Realtek RTL839x and RTL930x SoCs may need a similar fix. In the
+future, this may be replaced with some generic solution.
+
+Tested on Lantiq xRX200.
+
+Suggested-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/lantiq/prom.c | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -37,6 +37,14 @@ static struct ltq_soc_info soc_info;
+ /* for Multithreading (APRP), vpe.c will use it */
+ unsigned long cp0_memsize;
+ 
++/*
++ * These structs are used to override vsmp_init_secondary()
++ */
++#if defined(CONFIG_MIPS_MT_SMP)
++extern const struct plat_smp_ops vsmp_smp_ops;
++static struct plat_smp_ops lantiq_smp_ops;
++#endif
++
+ const char *get_system_type(void)
+ {
+ 	return soc_info.sys_type;
+@@ -93,6 +101,17 @@ void __init device_tree_init(void)
+ 	unflatten_and_copy_device_tree();
+ }
+ 
++#if defined(CONFIG_MIPS_MT_SMP)
++static void lantiq_init_secondary(void)
++{
++	/*
++	 * MIPS CPU startup function vsmp_init_secondary() will only
++	 * enable some of the interrupts for the second CPU/VPE.
++	 */
++	set_c0_status(ST0_IM);
++}
++#endif
++
+ void __init prom_init(void)
+ {
+ 	/* call the soc specific detetcion code and get it to fill soc_info */
+@@ -104,7 +123,10 @@ void __init prom_init(void)
+ 	prom_init_cmdline();
+ 
+ #if defined(CONFIG_MIPS_MT_SMP)
+-	if (register_vsmp_smp_ops())
+-		panic("failed to register_vsmp_smp_ops()");
++	if (cpu_has_mipsmt) {
++		lantiq_smp_ops = vsmp_smp_ops;
++		lantiq_smp_ops.init_secondary = lantiq_init_secondary;
++		register_smp_ops(&lantiq_smp_ops);
++	}
+ #endif
+ }

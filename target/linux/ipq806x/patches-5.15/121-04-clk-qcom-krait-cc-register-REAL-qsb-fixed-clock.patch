@@ -1,0 +1,54 @@
+From fca6f185a9d9ef0892a719bc6da955b22d326ec7 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 15 Sep 2022 02:24:33 +0200
+Subject: [PATCH 4/9] clk: qcom: krait-cc: register REAL qsb fixed clock
+
+With some tools it was discovered the real frequency of the qsb fixed
+clock. While not 100% correct it's still better than using 1 as a dummy
+frequency.
+Correctly register the qsb fixed clock with the frequency of 225 MHz
+instead of 1.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/qcom/krait-cc.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/clk/qcom/krait-cc.c
++++ b/drivers/clk/qcom/krait-cc.c
+@@ -15,6 +15,8 @@
+ 
+ #include "clk-krait.h"
+ 
++#define QSB_RATE	2250000000
++
+ static unsigned int sec_mux_map[] = {
+ 	2,
+ 	0,
+@@ -322,7 +324,7 @@ static int krait_cc_probe(struct platfor
+ 	 */
+ 	clk = clk_get(dev, "qsb");
+ 	if (IS_ERR(clk))
+-		clk = clk_register_fixed_rate(dev, "qsb", NULL, 0, 1);
++		clk = clk_register_fixed_rate(dev, "qsb", NULL, 0, QSB_RATE);
+ 	if (IS_ERR(clk))
+ 		return PTR_ERR(clk);
+ 
+@@ -378,7 +380,7 @@ static int krait_cc_probe(struct platfor
+ 	 */
+ 	cur_rate = clk_get_rate(l2_pri_mux_clk);
+ 	aux_rate = 384000000;
+-	if (cur_rate == 1) {
++	if (cur_rate == qsb_rate) {
+ 		pr_info("L2 @ QSB rate. Forcing new rate.\n");
+ 		cur_rate = aux_rate;
+ 	}
+@@ -389,7 +391,7 @@ static int krait_cc_probe(struct platfor
+ 	for_each_possible_cpu(cpu) {
+ 		clk = clks[cpu];
+ 		cur_rate = clk_get_rate(clk);
+-		if (cur_rate == 1) {
++		if (cur_rate == qsb_rate) {
+ 			pr_info("CPU%d @ QSB rate. Forcing new rate.\n", cpu);
+ 			cur_rate = aux_rate;
+ 		}

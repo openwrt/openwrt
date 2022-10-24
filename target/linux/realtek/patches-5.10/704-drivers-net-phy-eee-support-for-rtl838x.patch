@@ -1,3 +1,24 @@
+From 2b88563ee5aafd9571d965b7f2093a0f58d98a31 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Thu, 26 Nov 2020 12:02:21 +0100
+Subject: net: phy: EEE support for rtl838x
+
+* rename the target to realtek
+* add refactored DSA driver
+* add latest gpio driver
+* lots of arch cleanups
+* new irq driver
+* additional boards
+
+Submitted-by: Bert Vermeulen <bert@biot.com>
+Submitted-by: Birger Koblitz <mail@birger-koblitz.de>
+Submitted-by: Sander Vanheule <sander@svanheule.net>
+Submitted-by: Bjørn Mork <bjorn@mork.no>
+Submitted-by: John Crispin <john@phrozen.org>
+---
+ drivers/net/phy/phylink.                      | 14 +++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
 @@ -1449,6 +1449,11 @@ int phylink_ethtool_ksettings_set(struct

@@ -1,3 +1,19 @@
+From 0b8dfe085180b58b81d2657c76b080168e3bc8df Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Wed, 19 Jan 2022 18:14:02 +0100
+Subject: [PATCH] realtek: Add RTL931X sub-target
+
+We add the RTL931X sub-target with kernel configuration for
+a dual core MIPS InterAptive CPU.
+
+Submitted-by: Sebastian Gottschall <s.gottschall@dd-wrt.com>
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+---
+ arch/mips/Makefile                            | 10 +++++++++++++--
+ arch/mips/kernel/head.S                       |  4 ++++
+ aarch/mips/kernel/vmlinux.lds.S               |  4 ++++
+ 3 files changed, 18 insertions(+), 2 deletions(-)
+
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
 @@ -307,14 +307,24 @@ endif
@@ -43,20 +59,6 @@
 +#endif
  
  EXPORT(_stext)
- 
-@@ -79,11 +81,13 @@ FEXPORT(__kernel_entry)
- 	j	kernel_entry
- #endif /* CONFIG_BOOT_RAW */
- 
-+#ifndef CONFIG_RTL931X
- #ifdef CONFIG_IMAGE_CMDLINE_HACK
- 	.ascii	"CMDLINE:"
- EXPORT(__image_cmdline)
- 	.fill	0x400
- #endif /* CONFIG_IMAGE_CMDLINE_HACK */
-+#endif
- 
- 	__REF
  
 --- a/arch/mips/kernel/vmlinux.lds.S
 +++ b/arch/mips/kernel/vmlinux.lds.S

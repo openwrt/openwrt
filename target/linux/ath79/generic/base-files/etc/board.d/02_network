@@ -634,7 +634,8 @@ ath79_setup_macs()
 		;;
 	elecom,wrc-1750ghbk2-i|\
 	elecom,wrc-300ghbk2-i)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" -2)
+		wan_mac=$(mtd_get_mac_ascii hwconfig "HW.WAN.MAC.Address")
+		label_mac=$wan_mac
 		;;
 	engenius,ecb1200|\
 	engenius,ecb1750)

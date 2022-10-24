@@ -25,10 +25,6 @@
 			pinctrl-names = "default";
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		counter@4a1000 {
 			compatible = "qcom,qca-gcnt";
 			reg = <0x4a1000 0x4>;
@@ -65,17 +61,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-
-			switch_lan_bmp = <0x1c>;
-			switch_wan_bmp = <0x02>;
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -279,15 +264,6 @@
 
 &cryptobam {
 	status = "okay";
-};
-
-&gmac0 {
-	vlan_tag = <1 0x1c>;
-};
-
-&gmac1 {
-	qcom,phy_mdio_addr = <0>;
-	vlan_tag = <2 0x02>;
 };
 
 &pcie0 {

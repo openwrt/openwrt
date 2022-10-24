@@ -34,6 +34,17 @@ mediatek_setup_interfaces()
 	esac
 }
 
+DEV_PATH_WMAC=platform/18000000.wmac
+DEV_PATH_PCIE0=1a143000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0
+DEV_PATH_PCIE1=1a145000.pcie/pci0001:00/0001:00:01.0/0001:01:00.0
+
+mediatek_setup_wlan()
+{
+	dt_is_enabled wmac@18000000 && ucidef_add_wlan $DEV_PATH_WMAC
+	dt_is_enabled pcie@1a143000 && ucidef_add_wlan $DEV_PATH_PCIE0
+	dt_is_enabled pcie@1a145000 && ucidef_add_wlan $DEV_PATH_PCIE1
+}
+
 mediatek_setup_macs()
 {
 	local board="$1"
@@ -60,6 +71,7 @@ board_config_update
 board=$(board_name)
 mediatek_setup_interfaces $board
 mediatek_setup_macs $board
+mediatek_setup_wlan $board
 board_config_flush
 
 exit 0

@@ -1,3 +1,17 @@
+From 9d9bf16aa8d966834ac1280f96c37d22552c33d1 Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Wed, 8 Sep 2021 16:13:18 +0200
+Subject: phy: Add PHY hsgmii mode
+
+This adds RTL93xx-specific MAC configuration routines that allow also configuration
+of 10GBit links for phylink. There is support for the Realtek-specific HISGMI
+protocol.
+
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+---
+ include/linux/phy.h                           | 3 +++
+ 1 file changed, 3 insertions(+)
+
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
 @@ -134,6 +134,7 @@ typedef enum {

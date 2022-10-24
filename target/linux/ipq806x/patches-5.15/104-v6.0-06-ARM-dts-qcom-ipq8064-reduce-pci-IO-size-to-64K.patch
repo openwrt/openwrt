@@ -1,0 +1,51 @@
+From 8fafb7e5c041814876266259e5e439f93571dcef Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 7 Jul 2022 03:09:40 +0200
+Subject: [PATCH 6/8] ARM: dts: qcom: ipq8064: reduce pci IO size to 64K
+
+The current value for pci IO is problematic for ath10k wifi card
+commonly connected to ipq8064 SoC.
+The current value is probably a typo and is actually uncommon to find
+1MB IO space even on a x86 arch. Also with recent changes to the pci
+driver, pci1 and pci2 now fails to function as any connected device
+fails any reg read/write. Reduce this to 64K as it should be more than
+enough and 3 * 64K of total IO space doesn't exceed the IO_SPACE_LIMIT
+hardcoded for the ARM arch.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Tested-by: Jonathan McDowell <noodles@earth.li>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Link: https://lore.kernel.org/r/20220707010943.20857-7-ansuelsmth@gmail.com
+---
+ arch/arm/boot/dts/qcom-ipq8064.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -885,7 +885,7 @@
+ 			#address-cells = <3>;
+ 			#size-cells = <2>;
+ 
+-			ranges = <0x81000000 0 0x0fe00000 0x0fe00000 0 0x00100000   /* downstream I/O */
++			ranges = <0x81000000 0 0x0fe00000 0x0fe00000 0 0x00010000   /* downstream I/O */
+ 				  0x82000000 0 0x08000000 0x08000000 0 0x07e00000>; /* non-prefetchable memory */
+ 
+ 			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
+@@ -936,7 +936,7 @@
+ 			#address-cells = <3>;
+ 			#size-cells = <2>;
+ 
+-			ranges = <0x81000000 0 0x31e00000 0x31e00000 0 0x00100000   /* downstream I/O */
++			ranges = <0x81000000 0 0x31e00000 0x31e00000 0 0x00010000   /* downstream I/O */
+ 				  0x82000000 0 0x2e000000 0x2e000000 0 0x03e00000>; /* non-prefetchable memory */
+ 
+ 			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>;
+@@ -987,7 +987,7 @@
+ 			#address-cells = <3>;
+ 			#size-cells = <2>;
+ 
+-			ranges = <0x81000000 0 0x35e00000 0x35e00000 0 0x00100000   /* downstream I/O */
++			ranges = <0x81000000 0 0x35e00000 0x35e00000 0 0x00010000   /* downstream I/O */
+ 				  0x82000000 0 0x32000000 0x32000000 0 0x03e00000>; /* non-prefetchable memory */
+ 
+ 			interrupts = <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;

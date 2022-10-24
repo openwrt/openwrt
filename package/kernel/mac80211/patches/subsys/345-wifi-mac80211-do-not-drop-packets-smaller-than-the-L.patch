@@ -1,0 +1,25 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 7 Oct 2022 10:58:26 +0200
+Subject: [PATCH] wifi: mac80211: do not drop packets smaller than the
+ LLC-SNAP header on fast-rx
+
+Since STP TCN frames are only 7 bytes, the pskb_may_pull call returns an error.
+Instead of dropping those packets, bump them back to the slow path for proper
+processing.
+
+Fixes: 49ddf8e6e234 ("mac80211: add fast-rx path")
+Reported-by: Chad Monroe <chad.monroe@smartrg.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -4603,7 +4603,7 @@ static bool ieee80211_invoke_fast_rx(str
+ 
+ 	if (!(status->rx_flags & IEEE80211_RX_AMSDU)) {
+ 		if (!pskb_may_pull(skb, snap_offs + sizeof(*payload)))
+-			goto drop;
++			return false;
+ 
+ 		payload = (void *)(skb->data + snap_offs);
+ 

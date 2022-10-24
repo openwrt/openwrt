@@ -2019,6 +2019,7 @@ void hostapd_ubus_notify_beacon_report(
 	blobmsg_add_macaddr(&b, "bssid", rep->bssid);
 	blobmsg_add_u16(&b, "antenna-id", rep->antenna_id);
 	blobmsg_add_u16(&b, "parent-tsf", rep->parent_tsf);
+	blobmsg_add_u16(&b, "rep-mode", rep_mode);
 
 	ubus_notify(ctx, &hapd->ubus.obj, "beacon-report", b.head, -1);
 }

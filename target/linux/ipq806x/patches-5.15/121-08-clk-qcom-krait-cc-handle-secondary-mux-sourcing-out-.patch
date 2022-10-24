@@ -1,0 +1,70 @@
+From b6655ca513b3f1b40417287ab7f706409455fe48 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 15 Sep 2022 02:56:47 +0200
+Subject: [PATCH 8/9] clk: qcom: krait-cc: handle secondary mux sourcing out of
+ PXO
+
+The secondary mux can sourc out of PXO as the secondary MUX is attached
+to QSB and to another mux that can source out of PXO or PLL8_VOTE.
+
+Many device may run with uncorrect configuration with the mux sourcing
+out of PXO instead of PLL8_VOTE.
+
+To handle this case we add also PXO as required clocks and we check if
+the frequency is currently set to PXO and force a correct rate if it's
+the case.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/qcom/krait-cc.c | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+--- a/drivers/clk/qcom/krait-cc.c
++++ b/drivers/clk/qcom/krait-cc.c
+@@ -317,7 +317,7 @@ static int krait_cc_probe(struct platfor
+ {
+ 	struct device *dev = &pdev->dev;
+ 	const struct of_device_id *id;
+-	unsigned long cur_rate, aux_rate, qsb_rate;
++	unsigned long cur_rate, aux_rate, qsb_rate, pxo_rate;
+ 	int cpu;
+ 	struct clk *clk;
+ 	struct clk **clks;
+@@ -327,6 +327,15 @@ static int krait_cc_probe(struct platfor
+ 	if (!id)
+ 		return -ENODEV;
+ 
++	clk = clk_get(dev, "pxo");
++	if (IS_ERR(clk))
++		clk = __clk_lookup("pxo_board");
++
++	if (IS_ERR_OR_NULL(clk))
++		return clk == NULL ? -ENODEV : PTR_ERR(clk);
++
++	pxo_rate = clk_get_rate(clk);
++
+ 	/*
+ 	 * Per Documentation qsb should be provided from DTS.
+ 	 * To address old implementation, register the fixed clock anyway.
+@@ -394,6 +403,10 @@ static int krait_cc_probe(struct platfor
+ 		dev_info(dev, "L2 @ QSB rate. Forcing new rate.\n");
+ 		cur_rate = aux_rate;
+ 	}
++	if (cur_rate == pxo_rate) {
++		dev_info(dev, "L2 @ PXO rate. Forcing new rate.\n");
++		cur_rate = aux_rate;
++	}
+ 	clk_set_rate(l2_pri_mux_clk, aux_rate);
+ 	clk_set_rate(l2_pri_mux_clk, 2);
+ 	clk_set_rate(l2_pri_mux_clk, cur_rate);
+@@ -405,6 +418,10 @@ static int krait_cc_probe(struct platfor
+ 			dev_info(dev, "CPU%d @ QSB rate. Forcing new rate.\n", cpu);
+ 			cur_rate = aux_rate;
+ 		}
++		if (cur_rate ==pxo_rate) {
++			dev_info(dev, "CPU%d @ PXO rate. Forcing new rate.\n", cpu);
++			cur_rate = aux_rate;
++		}
+ 
+ 		clk_set_rate(clk, aux_rate);
+ 		clk_set_rate(clk, 2);

@@ -49,14 +49,6 @@
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -195,17 +187,22 @@
 	status = "okay";
 };
 
-&gmac0 {
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <2 0x20>;
+&gmac {
+	status = "okay";
 };
 
-&gmac1 {
-	qcom,phy_mdio_addr = <3>;
-	vlan_tag = <1 0x10>;
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "sw-eth2";
+};
+
+&swport5 {
+	status = "okay";
+	label = "sw-eth1";
 };
 
 &wifi0 {

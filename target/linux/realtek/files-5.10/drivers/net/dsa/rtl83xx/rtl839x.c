@@ -560,34 +560,22 @@ static void rtl839x_l2_learning_setup(void)
 
 static void rtl839x_enable_learning(int port, bool enable)
 {
-	// Limit learning to maximum: 32k entries, after that just flood (bits 0-1)
+	// Limit learning to maximum: 32k entries
 
-	if (enable) {
-		// flood after 32k entries
-		sw_w32((0x7fff << 2) | 0, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
-	} else {
-		// just forward
-		sw_w32(0, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
-	}
-
+	sw_w32_mask(0x7fff << 2, enable ? (0x7fff << 2) : 0,
+		    RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
 }
 
 static void rtl839x_enable_flood(int port, bool enable)
 {
-	u32 flood_mask = sw_r32(RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
-
-	if (enable)  {
-		// flood
-		flood_mask &= ~3;
-		flood_mask |= 0;
-		sw_w32(flood_mask, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
-	} else {
-		// drop (bit 1)
-		flood_mask &= ~3;
-		flood_mask |= 1;
-		sw_w32(flood_mask, RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
-	}
-
+	/*
+	 * 0: Forward
+	 * 1: Disable
+	 * 2: to CPU
+	 * 3: Copy to CPU
+	 */
+	sw_w32_mask(0x3, enable ? 0 : 1,
+		    RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
 }
 
 static void rtl839x_enable_mcast_flood(int port, bool enable)
@@ -642,9 +630,23 @@ int rtl8390_sds_power(int mac, int val)
 	return 0;
 }
 
+static int rtl839x_smi_wait_op(int timeout)
+{
+	int ret = 0;
+	u32 val;
+
+	ret = readx_poll_timeout(sw_r32, RTL839X_PHYREG_ACCESS_CTRL,
+				 val, !(val & 0x1), 20, timeout);
+	if (ret)
+		pr_err("%s: timeout\n", __func__);
+
+	return ret;
+}
+
 int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
 	u32 v;
+	int err = 0;
 
 	if (port > 63 || page > 4095 || reg > 31)
 		return -ENOTSUPP;
@@ -664,13 +666,15 @@ int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	v |= 1;
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
-	do {
-	} while (sw_r32(RTL839X_PHYREG_ACCESS_CTRL) & 0x1);
+	err = rtl839x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	*val = sw_r32(RTL839X_PHYREG_DATA_CTRL) & 0xffff;
 
+errout:
 	mutex_unlock(&smi_lock);
-	return 0;
+	return err;
 }
 
 int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
@@ -701,12 +705,14 @@ int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	v |= BIT(3) | 1; /* Write operation and execute */
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
-	do {
-	} while (sw_r32(RTL839X_PHYREG_ACCESS_CTRL) & 0x1);
+	err = rtl839x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	if (sw_r32(RTL839X_PHYREG_ACCESS_CTRL) & 0x2)
 		err = -EIO;
 
+errout:
 	mutex_unlock(&smi_lock);
 	return err;
 }
@@ -734,15 +740,16 @@ int rtl839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	v = BIT(2) | BIT(0); // MMD-access | EXEC
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
-	do {
-		v = sw_r32(RTL839X_PHYREG_ACCESS_CTRL);
-	} while (v & BIT(0));
+	err = rtl839x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
 	// There is no error-checking via BIT 1 of v, as it does not seem to be set correctly
 	*val = (sw_r32(RTL839X_PHYREG_DATA_CTRL) & 0xffff);
 	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, *val, err);
 
+errout:
 	mutex_unlock(&smi_lock);
-
 	return err;
 }
 
@@ -772,11 +779,13 @@ int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 	v = BIT(3) | BIT(2) | BIT(0); // WRITE | MMD-access | EXEC
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
-	do {
-		v = sw_r32(RTL839X_PHYREG_ACCESS_CTRL);
-	} while (v & BIT(0));
+	err = rtl839x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, val, err);
+
+errout:
 	mutex_unlock(&smi_lock);
 	return err;
 }

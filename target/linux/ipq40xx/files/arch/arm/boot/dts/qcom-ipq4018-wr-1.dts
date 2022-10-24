@@ -11,7 +11,7 @@
 	compatible = "pakedge,wr-1";
 
 	aliases {
-		label-mac-device = &gmac0;
+		label-mac-device = &gmac;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -60,10 +60,6 @@
 	};
 
 	soc {
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -86,14 +82,6 @@
 			compatible = "qcom,tcsr";
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
 		};
 	};
 };
@@ -190,11 +178,47 @@
 	status = "okay";
 };
 
+&gmac {
+	status = "okay";
+};
+
 &mdio {
 	status = "okay";
 };
 
 &prng {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+
+	label = "lan4";
+};
+
+&swport2 {
+	status = "okay";
+
+	label = "lan3";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&swport5 {
 	status = "okay";
 };
 

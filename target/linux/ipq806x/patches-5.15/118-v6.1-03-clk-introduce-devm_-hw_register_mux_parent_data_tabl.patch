@@ -1,0 +1,46 @@
+From e4cacac0cae3ce7399b70df3bce92eac03151624 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 12 Apr 2022 16:48:39 +0200
+Subject: [PATCH 3/4] clk: introduce (devm_)hw_register_mux_parent_data_table
+ API
+
+Introduce (devm_)hw_register_mux_parent_data_table new API. We have
+basic support for clk_register_mux using parent_data but we lack any API
+to provide a custom parent_map. Add these 2 new API to correctly handle
+these special configuration instead of using the generic
+__(devm_)clk_hw_register_mux API.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ include/linux/clk-provider.h | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/include/linux/clk-provider.h
++++ b/include/linux/clk-provider.h
+@@ -932,12 +932,26 @@ struct clk *clk_register_mux_table(struc
+ 	__clk_hw_register_mux((dev), NULL, (name), (num_parents), NULL, NULL, \
+ 			      (parent_data), (flags), (reg), (shift),	      \
+ 			      BIT((width)) - 1, (clk_mux_flags), NULL, (lock))
++#define clk_hw_register_mux_parent_data_table(dev, name, parent_data,	      \
++					      num_parents, flags, reg, shift, \
++					      width, clk_mux_flags, table,    \
++					      lock)			      \
++	__clk_hw_register_mux((dev), NULL, (name), (num_parents), NULL, NULL, \
++			      (parent_data), (flags), (reg), (shift),	      \
++			      BIT((width)) - 1, (clk_mux_flags), table, (lock))
+ #define devm_clk_hw_register_mux(dev, name, parent_names, num_parents, flags, reg, \
+ 			    shift, width, clk_mux_flags, lock)		      \
+ 	__devm_clk_hw_register_mux((dev), NULL, (name), (num_parents),	      \
+ 			      (parent_names), NULL, NULL, (flags), (reg),     \
+ 			      (shift), BIT((width)) - 1, (clk_mux_flags),     \
+ 			      NULL, (lock))
++#define devm_clk_hw_register_mux_parent_data_table(dev, name, parent_data,    \
++					      num_parents, flags, reg, shift, \
++					      width, clk_mux_flags, table,    \
++					      lock)			      \
++	__devm_clk_hw_register_mux((dev), NULL, (name), (num_parents), NULL,  \
++			      NULL, (parent_data), (flags), (reg), (shift),   \
++			      BIT((width)) - 1, (clk_mux_flags), table, (lock))
+ 
+ int clk_mux_val_to_index(struct clk_hw *hw, u32 *table, unsigned int flags,
+ 			 unsigned int val);
