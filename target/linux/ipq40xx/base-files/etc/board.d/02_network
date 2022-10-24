@@ -77,7 +77,8 @@ ipq40xx_setup_interfaces()
 	openmesh,a62)
 		ucidef_set_interfaces_lan_wan "ethernet2" "ethernet1"
 		;;
-	plasmacloud,pa1200)
+	plasmacloud,pa1200|\
+	plasmacloud,pa2200)
 		ucidef_set_interfaces_lan_wan "ethernet1" "ethernet2"
 		;;
 	zte,mf286d)
