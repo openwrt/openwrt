@@ -29,6 +29,10 @@ preinit_set_mac_address() {
 		ip link set dev lan1 address $(macaddr_add "$base_mac" 1)
 		ip link set dev eth0 address $(macaddr_setbit "$base_mac" 7)
 		;;
+	openmesh,a42)
+		ip link set dev ethernet1 address $(mtd_get_mac_binary "0:ART" 0x0)
+		ip link set dev ethernet2 address $(mtd_get_mac_binary "0:ART" 0x6)
+		;;
 	mikrotik,wap-ac)
 		base_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
 		ip link set dev sw-eth1 address "$base_mac"
