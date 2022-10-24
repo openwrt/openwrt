@@ -17,10 +17,6 @@
 			status = "okay";
 		};
 
-		mdio@90000 {
-			status = "okay";
-		};
-
 		tcsr@194b000 {
 			/* select hostmode */
 			compatible = "qcom,tcsr";
@@ -192,6 +188,28 @@
 			ieee80211-freq-limit = <5170000 5350000>;
 		};
 	};
+};
+
+&mdio {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "ethernet1";
+};
+
+&swport5 {
+	status = "okay";
+	label = "ethernet2";
 };
 
 &wifi0 {
