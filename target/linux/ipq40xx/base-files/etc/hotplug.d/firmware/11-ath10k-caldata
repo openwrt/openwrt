@@ -34,7 +34,6 @@ case "$FIRMWARE" in
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
 		;;
-	openmesh,a62 |\
 	plasmacloud,pa2200)
 		caldata_extract "0:ART" 0x9000 0x2f20
 		;;
@@ -77,7 +76,6 @@ case "$FIRMWARE" in
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
 		;;
 	cellc,rtl30vw |\
-	openmesh,a62 |\
 	plasmacloud,pa1200 |\
 	plasmacloud,pa2200)
 		caldata_extract "0:ART" 0x1000 0x2f20
@@ -173,7 +171,6 @@ case "$FIRMWARE" in
 		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
 		;;
 	cellc,rtl30vw |\
-	openmesh,a62 |\
 	plasmacloud,pa1200 |\
 	plasmacloud,pa2200)
 		caldata_extract "0:ART" 0x5000 0x2f20
