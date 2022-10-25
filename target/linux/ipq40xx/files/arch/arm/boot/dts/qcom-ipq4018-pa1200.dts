@@ -140,7 +140,32 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <24000000>;
+
 		/* partitions are passed via bootloader */
+		partitions {
+			partition-art {
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				label = "0:ART";
+
+				precal_art_1000: precal@1000 {
+					reg = <0x1000 0x2f20>;
+				};
+
+				precal_art_5000: precal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
+
+				macaddr_gmac0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_gmac1: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
+			};
+		};
 	};
 };
 
@@ -161,9 +186,15 @@
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "PlasmaCloud-PA1200";
+
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_1000>;
 };
 
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "PlasmaCloud-PA1200";
+
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_5000>;
 };
