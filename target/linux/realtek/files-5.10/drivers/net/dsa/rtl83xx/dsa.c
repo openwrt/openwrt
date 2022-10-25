@@ -162,6 +162,16 @@ static void rtl83xx_setup_bpdu_traps(struct rtl838x_switch_priv *priv)
 		priv->r->set_receive_management_action(i, BPDU, COPY2CPU);
 }
 
+static void rtl83xx_port_set_salrn(struct rtl838x_switch_priv *priv,
+				   int port, bool enable)
+{
+	int shift = SALRN_PORT_SHIFT(port);
+	int val = enable ? SALRN_MODE_HARDWARE : SALRN_MODE_DISABLED;
+
+	sw_w32_mask(SALRN_MODE_MASK << shift, val << shift,
+		    priv->r->l2_port_new_salrn(port));
+}
+
 static int rtl83xx_setup(struct dsa_switch *ds)
 {
 	int i;
@@ -204,6 +214,9 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 	ds->configure_vlan_while_not_filtering = true;
 
 	priv->r->l2_learning_setup();
+
+	rtl83xx_port_set_salrn(priv, priv->cpu_port, false);
+	ds->assisted_learning_on_cpu_port = true;
 
 	/*
 	 *  Make sure all frames sent to the switch's MAC are trapped to the CPU-port
@@ -262,6 +275,9 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	ds->configure_vlan_while_not_filtering = true;
 
 	priv->r->l2_learning_setup();
+
+	rtl83xx_port_set_salrn(priv, priv->cpu_port, false);
+	ds->assisted_learning_on_cpu_port = true;
 
 	rtl83xx_enable_phy_polling(priv);
 

@@ -245,6 +245,12 @@
 #define RTL839X_L2_PORT_NEW_SALRN(p)		(0x38F0 + (((p >> 4) << 2)))
 #define RTL930X_L2_PORT_SALRN(p)		(0x8FEC + (((p >> 4) << 2)))
 #define RTL931X_L2_PORT_NEW_SALRN(p)		(0xC820 + (((p >> 4) << 2)))
+
+#define SALRN_PORT_SHIFT(p)			((p % 16) * 2)
+#define SALRN_MODE_MASK				0x3
+#define SALRN_MODE_HARDWARE			0
+#define SALRN_MODE_DISABLED			2
+
 #define RTL838X_L2_PORT_NEW_SA_FWD(p)		(0x3294 + (((p >> 4) << 2)))
 #define RTL839X_L2_PORT_NEW_SA_FWD(p)		(0x3900 + (((p >> 4) << 2)))
 #define RTL930X_L2_PORT_NEW_SA_FWD(p)		(0x8FF4 + (((p / 10) << 2)))
