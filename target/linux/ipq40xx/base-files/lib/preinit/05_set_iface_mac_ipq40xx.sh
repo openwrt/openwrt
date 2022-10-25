@@ -29,7 +29,6 @@ preinit_set_mac_address() {
 		ip link set dev lan1 address $(macaddr_add "$base_mac" 1)
 		ip link set dev eth0 address $(macaddr_setbit "$base_mac" 7)
 		;;
-	openmesh,a42|\
 	openmesh,a62)
 		ip link set dev ethernet1 address $(mtd_get_mac_binary "0:ART" 0x0)
 		ip link set dev ethernet2 address $(mtd_get_mac_binary "0:ART" 0x6)
