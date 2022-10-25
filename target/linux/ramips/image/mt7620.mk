@@ -75,6 +75,19 @@ define Device/amit_jboot
   DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-ohci
 endef
 
+define Device/ampedwireless_b1200ex
+  SOC := mt7620a
+  DEVICE_VENDOR := Amped Wireless
+  DEVICE_MODEL := B1200EX
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7744k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m RN10 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+endef
+TARGET_DEVICES += ampedwireless_b1200ex
+
 define Device/asus_rp-n53
   SOC := mt7620a
   IMAGE_SIZE := 7872k
