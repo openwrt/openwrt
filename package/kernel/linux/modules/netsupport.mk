@@ -1316,7 +1316,8 @@ define KernelPackage/9pnet
 	CONFIG_NET_9P \
 	CONFIG_NET_9P_DEBUG=n \
 	CONFIG_NET_9P_XEN=n \
-	CONFIG_NET_9P_VIRTIO
+	CONFIG_NET_9P_VIRTIO \
+	CONFIG_NET_9P_FD=n@ge5.17
   FILES:= \
 	$(LINUX_DIR)/net/9p/9pnet.ko \
 	$(LINUX_DIR)/net/9p/9pnet_virtio.ko
