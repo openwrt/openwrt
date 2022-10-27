@@ -104,7 +104,9 @@
 
 				#clock-cells = <1>;
 				clock-output-names = "cpu", "ddr", "ahb";
+
 				clocks = <&extosc>;
+				clock-names = "ref";
 			};
 
 			wdt: wdt@18060008 {
