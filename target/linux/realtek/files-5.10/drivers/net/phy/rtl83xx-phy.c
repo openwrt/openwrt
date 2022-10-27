@@ -3442,7 +3442,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtl931x_read_sds_phy(dSds, 0x0, 0xe));
 	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtl931x_read_sds_phy(dSds + 1, 0x0, 0xe));
 
-	model_info = sw_r32(RTL93XX_MODEL_NAME_INFO);
+	model_info = ioread32(RTL93XX_MODEL_NAME_INFO);
 	if ((model_info >> 4) & 0x1) {
 		pr_info("detected chiptype 1\n");
 		chiptype = 1;

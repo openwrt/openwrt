@@ -81,7 +81,7 @@ void __init device_tree_init(void)
 
 void __init identify_rtl9302(void)
 {
-	switch (sw_r32(RTL93XX_MODEL_NAME_INFO) & 0xfffffff0) {
+	switch (ioread32(RTL93XX_MODEL_NAME_INFO) & 0xfffffff0) {
 	case 0x93020810:
 		soc_info.name = "RTL9302A 12x2.5G";
 		break;
@@ -116,26 +116,40 @@ void __init identify_rtl9302(void)
 
 void __init prom_init(void)
 {
-	uint32_t model;
+	uint32_t model, submodel = 0;
 
 	/* uart0 */
 	setup_8250_early_printk_port(0xb8002000, 2, 0);
 
-	model = sw_r32(RTL838X_MODEL_NAME_INFO);
-	pr_info("RTL838X model is %x\n", model);
-	model = model >> 16 & 0xFFFF;
+	if (!submodel) {
+		submodel = ioread32(RTL83XX_MODEL_NAME_INFO);
+		model = submodel >> 16 & 0xffff;
 
-	if ((model != 0x8328) && (model != 0x8330) && (model != 0x8332)
-	    && (model != 0x8380) && (model != 0x8382)) {
-		model = sw_r32(RTL839X_MODEL_NAME_INFO);
-		pr_info("RTL839X model is %x\n", model);
-		model = model >> 16 & 0xFFFF;
+		if ((model == 0x8328) || (model == 0x8330) || (model == 0x8332) ||
+		    (model == 0x8380) || (model == 0x8382))
+			pr_info("RTL83XX, submodel %x\n", submodel);
+		else
+			submodel = 0;
 	}
 
-	if ((model & 0x8390) != 0x8380 && (model & 0x8390) != 0x8390) {
-		model = sw_r32(RTL93XX_MODEL_NAME_INFO);
-		pr_info("RTL93XX model is %x\n", model);
-		model = model >> 16 & 0xFFFF;
+	if (!submodel) {
+		submodel = ioread32(RTL839X_MODEL_NAME_INFO);
+		model = submodel >> 16 & 0xffff;
+
+		if ((model & 0x8390) == 0x8390)
+			pr_info("RTL839X, submodel %x\n", submodel);
+		else
+			submodel = 0;
+	}
+
+	if (!submodel) {
+		submodel = ioread32(RTL93XX_MODEL_NAME_INFO);
+		model = submodel >> 16 & 0xffff;
+
+		if ((model & 0x9300) == 0x9300 || (model & 0x9310) == 0x9310)
+			pr_info("RTL93XX, submodel %x\n", submodel);
+		else
+			submodel = 0;
 	}
 
 	soc_info.id = model;
