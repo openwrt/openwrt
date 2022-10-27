@@ -1800,7 +1800,8 @@ int rtl838x_smi_wait_op(int timeout)
 	u32 val;
 
 	ret = readx_poll_timeout(sw_r32, RTL838X_SMI_ACCESS_PHY_CTRL_1,
-				 val, !(val & 0x1), 20, timeout);
+				 val, !(val & RTL838X_SMI_ACCESS_PHY_CTRL_1_CMD),
+				 20, timeout);
 	if (ret)
 		pr_err("%s: timeout\n", __func__);
 
@@ -1828,17 +1829,21 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
-	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+	sw_w32_mask(RTL838X_SMI_ACCESS_PHY_CTRL_2_INDATA,
+	            FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_2_INDATA, port),
+	            RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
-	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & ((0x1f << 15) | 0x2);
-	v = reg << 20 | page << 3;
+	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & RTL838X_SMI_ACCESS_PHY_CTRL_1_PARK_PAGE;
+	v = FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_1_REG_ADDR, reg) |
+	    FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_1_MAIN_PAGE, page) |
+	    RTL838X_SMI_ACCESS_PHY_CTRL_1_TYPE;
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+	sw_w32_mask(0, RTL838X_SMI_ACCESS_PHY_CTRL_1_CMD, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
-	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
+	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & RTL838X_SMI_ACCESS_PHY_CTRL_2_DATA;
 
 	mutex_unlock(&smi_lock);
 	return 0;
@@ -1864,15 +1869,21 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
-	sw_w32(BIT(port), RTL838X_SMI_ACCESS_PHY_CTRL_0);
+	sw_w32(FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_0_PHY_MASK, BIT(port)),
+	       RTL838X_SMI_ACCESS_PHY_CTRL_0);
 	mdelay(10);
 
-	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+	sw_w32_mask(RTL838X_SMI_ACCESS_PHY_CTRL_2_INDATA,
+	            FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_2_INDATA, val),
+	            RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
-	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & ((0x1f << 15) | 0x2);
-	v = reg << 20 | page << 3 | 0x4;
+	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & RTL838X_SMI_ACCESS_PHY_CTRL_1_PARK_PAGE;
+	v = FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_1_REG_ADDR, reg) |
+	    FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_1_MAIN_PAGE, page) |
+	    RTL838X_SMI_ACCESS_PHY_CTRL_1_RWOP |
+	    RTL838X_SMI_ACCESS_PHY_CTRL_1_TYPE;
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+	sw_w32_mask(0, RTL838X_SMI_ACCESS_PHY_CTRL_1_CMD, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
@@ -1897,22 +1908,26 @@ int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
+	sw_w32(FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_0_PHY_MASK, BIT(port)),
+	       RTL838X_SMI_ACCESS_PHY_CTRL_0);
 	mdelay(10);
 
-	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+	sw_w32_mask(RTL838X_SMI_ACCESS_PHY_CTRL_2_INDATA,
+	            FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_2_INDATA, port),
+	            RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
-	v = addr << 16 | reg;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_3);
+	sw_w32(FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_MMD_DEVAD, addr) |
+	       FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_MMD_REGAD, reg),
+	       RTL838X_SMI_ACCESS_PHY_CTRL_3);
 
-	/* mmd-access | read | cmd-start */
-	v = 1 << 1 | 0 << 2 | 1;
+	v = RTL838X_SMI_ACCESS_PHY_CTRL_1_TYPE |
+	    RTL838X_SMI_ACCESS_PHY_CTRL_1_CMD;
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
-	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
+	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & RTL838X_SMI_ACCESS_PHY_CTRL_2_DATA;
 
 	mutex_unlock(&smi_lock);
 	return 0;
@@ -1936,15 +1951,24 @@ int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
+	sw_w32(FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_0_PHY_MASK, BIT(port)),
+	       RTL838X_SMI_ACCESS_PHY_CTRL_0);
 	mdelay(10);
 
-	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+	sw_w32_mask(RTL838X_SMI_ACCESS_PHY_CTRL_2_INDATA,
+	            FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_2_INDATA, val),
+	            RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
-	sw_w32_mask(0x1f << 16, addr << 16, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-	sw_w32_mask(0xffff, reg, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-	/* mmd-access | write | cmd-start */
-	v = 1 << 1 | 1 << 2 | 1;
+	sw_w32_mask(RTL838X_SMI_ACCESS_PHY_CTRL_MMD_DEVAD |
+	       FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_MMD_DEVAD, addr),
+	       RTL838X_SMI_ACCESS_PHY_CTRL_3);
+	sw_w32_mask(RTL838X_SMI_ACCESS_PHY_CTRL_MMD_REGAD |
+	       FIELD_PREP(RTL838X_SMI_ACCESS_PHY_CTRL_MMD_REGAD, reg),
+	       RTL838X_SMI_ACCESS_PHY_CTRL_3);
+
+	v = RTL838X_SMI_ACCESS_PHY_CTRL_1_RWOP |
+	    RTL838X_SMI_ACCESS_PHY_CTRL_1_TYPE |
+	    RTL838X_SMI_ACCESS_PHY_CTRL_1_CMD;
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	if (rtl838x_smi_wait_op(100000))
