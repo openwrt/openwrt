@@ -22,14 +22,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -858,6 +858,7 @@ struct sk_buff {
- #ifdef CONFIG_TLS_DEVICE
- 	__u8			decrypted:1;
+@@ -864,6 +864,7 @@ struct sk_buff {
+ #ifdef CONFIG_NET_SCHED
+ 	__u16			tc_index;	/* traffic control index */
  #endif
 +	__u8			gro_skip:1;
  
- #ifdef CONFIG_NET_SCHED
- 	__u16			tc_index;	/* traffic control index */
+ 	union {
+ 		__wsum		csum;
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -6067,6 +6067,9 @@ static enum gro_result dev_gro_receive(s
