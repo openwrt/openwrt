@@ -152,9 +152,23 @@ void __init prom_init(void)
 			submodel = 0;
 	}
 
+	if (!submodel) {
+		submodel = ioread32(RTL819X_MODEL_NAME_INFO);
+		model = submodel >> 16 & 0xffff;
+
+		if ((model & 0x8190) == 0x8190)
+			pr_info("RTL819X, submodel %x\n", submodel);
+		else
+			submodel = 0;
+	}
+
 	soc_info.id = model;
 
 	switch (model) {
+	case 0x8198:
+		soc_info.name = "RTL8198C";
+		soc_info.family = RTL8190_FAMILY_ID;
+		break;
 	case 0x8328:
 		soc_info.name = "RTL8328";
 		soc_info.family = RTL8328_FAMILY_ID;

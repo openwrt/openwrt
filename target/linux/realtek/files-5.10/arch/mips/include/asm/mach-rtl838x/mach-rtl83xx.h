@@ -221,6 +221,7 @@
 #define RTL930X_GPIO_PAB_IMR            (RTL930X_GPIO_CTRL_REG_BASE + 0x14)
 #define RTL930X_GPIO_PCD_IMR            (RTL930X_GPIO_CTRL_REG_BASE + 0x18)
 
+#define RTL819X_MODEL_NAME_INFO         ((void *)0xb8000000)
 #define RTL83XX_MODEL_NAME_INFO         ((void *)0xbb0000d4)
 #define RTL839X_MODEL_NAME_INFO         ((void *)0xbb000ff0)
 #define RTL93XX_MODEL_NAME_INFO         ((void *)0xbb000004)
@@ -375,6 +376,7 @@
 #define RTL931X_ISR_PORT_LINK_STS_CHG	(0x12B8)
 
 /* Definition of family IDs */
+#define RTL8190_FAMILY_ID   (0x8190)
 #define RTL8389_FAMILY_ID   (0x8389)
 #define RTL8328_FAMILY_ID   (0x8328)
 #define RTL8390_FAMILY_ID   (0x8390)
