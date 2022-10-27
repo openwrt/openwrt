@@ -112,7 +112,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}
  }
  
-@@ -576,6 +586,7 @@ static int bcm4908_enet_poll_rx(struct n
+@@ -574,6 +584,7 @@ static int bcm4908_enet_poll_rx(struct n
  	while (handled < weight) {
  		struct bcm4908_enet_dma_ring_bd *buf_desc;
  		struct bcm4908_enet_dma_ring_slot slot;
@@ -120,7 +120,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		u32 ctl;
  		int len;
  		int err;
-@@ -599,16 +610,24 @@ static int bcm4908_enet_poll_rx(struct n
+@@ -597,16 +608,24 @@ static int bcm4908_enet_poll_rx(struct n
  
  		if (len < ETH_ZLEN ||
  		    (ctl & (DMA_CTL_STATUS_SOP | DMA_CTL_STATUS_EOP)) != (DMA_CTL_STATUS_SOP | DMA_CTL_STATUS_EOP)) {
