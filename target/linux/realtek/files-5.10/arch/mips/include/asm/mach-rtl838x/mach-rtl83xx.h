@@ -310,10 +310,29 @@
  * MDIO via Realtek's SMI interface
  */
 #define RTL838X_SMI_GLB_CTRL		(0xa100)
-#define RTL838X_SMI_ACCESS_PHY_CTRL_0	(0xa1b8)
-#define RTL838X_SMI_ACCESS_PHY_CTRL_1	(0xa1bc)
-#define RTL838X_SMI_ACCESS_PHY_CTRL_2	(0xa1c0)
-#define RTL838X_SMI_ACCESS_PHY_CTRL_3	(0xa1c4)
+
+#define RTL838X_SMI_ACCESS_PHY_CTRL_0                   (0xa1b8)
+/* Reserved                                                     31 - 29 */
+#define RTL838X_SMI_ACCESS_PHY_CTRL_0_PHY_MASK                  GENMASK(28, 0)
+
+#define RTL838X_SMI_ACCESS_PHY_CTRL_1                   (0xa1bc)
+/* Reserved                                                     31 - 25 */
+#define RTL838X_SMI_ACCESS_PHY_CTRL_1_REG_ADDR                  GENMASK(24, 20)
+#define RTL838X_SMI_ACCESS_PHY_CTRL_1_PARK_PAGE                 GENMASK(19, 15)
+#define RTL838X_SMI_ACCESS_PHY_CTRL_1_MAIN_PAGE                 GENMASK(14, 3)
+#define RTL838X_SMI_ACCESS_PHY_CTRL_1_RWOP                      BIT(2) /* Write (1), Read (0) */
+#define RTL838X_SMI_ACCESS_PHY_CTRL_1_TYPE                      BIT(1) /* Clause 45 (1), Clause 22 (0) */
+#define RTL838X_SMI_ACCESS_PHY_CTRL_1_CMD                       BIT(0) /* Executes MDIO command, self-clears on completion */
+
+#define RTL838X_SMI_ACCESS_PHY_CTRL_2                   (0xa1c0)
+#define RTL838X_SMI_ACCESS_PHY_CTRL_2_INDATA                    GENMASK(31, 16)
+#define RTL838X_SMI_ACCESS_PHY_CTRL_2_DATA                      GENMASK(15, 0)
+
+#define RTL838X_SMI_ACCESS_PHY_CTRL_3                   (0xa1c4)
+/* Reserved                                                     31 - 21 */
+#define RTL838X_SMI_ACCESS_PHY_CTRL_MMD_DEVAD                   GENMASK(20, 16)
+#define RTL838X_SMI_ACCESS_PHY_CTRL_MMD_REGAD                   GENMASK(15, 0)
+
 #define RTL838X_SMI_PORT0_5_ADDR_CTRL	(0xa1c8)
 #define RTL838X_SMI_POLL_CTRL		(0xa17c)
 
