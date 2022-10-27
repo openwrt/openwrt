@@ -2247,7 +2247,7 @@ static int rtl83xx_set_features(struct net_device *dev, netdev_features_t featur
 		if (!(features & NETIF_F_RXCSUM))
 			sw_w32_mask(BIT(3), 0, priv->r->mac_port_ctrl(priv->cpu_port));
 		else
-			sw_w32_mask(0, BIT(4), priv->r->mac_port_ctrl(priv->cpu_port));
+			sw_w32_mask(0, BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
 	}
 
 	return 0;
