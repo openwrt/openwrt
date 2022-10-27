@@ -65,6 +65,23 @@ define Build/h3c-vfs
 	mv $@.new $@
 endef
 
+define Build/loader-common
+        rm -rf $@.src
+        $(MAKE) -C lzma-loader \
+                PKG_BUILD_DIR="$@.src" \
+                TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
+                BOARD="$(BOARDNAME)" PLATFORM="$(LOADER_PLATFORM)" \
+                LZMA_TEXT_START=$(LZMA_TEXT_START) \
+                LOADADDR=$(LOADADDR) \
+                $(1) compile loader.$(LOADER_TYPE)
+        mv "$@.$(LOADER_TYPE)" "$@"
+        rm -rf $@.src
+endef
+
+define Build/loader-kernel
+        $(call Build/loader-common,LOADER_DATA="$@")
+endef
+
 define Build/relocate-kernel
 	rm -rf $@.relocate
 	$(CP) ../../generic/image/relocate $@.relocate
