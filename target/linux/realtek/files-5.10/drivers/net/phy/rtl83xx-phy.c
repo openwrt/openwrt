@@ -460,7 +460,7 @@ static int rtl8226_read_status(struct phy_device *phydev)
 	val = phy_read_mmd(phydev, MMD_VEND2, 0xA434);
 	if (val < 0)
 		goto out;
-	phydev->duplex = !!(val & BIT(3));
+	phydev->duplex = (val & BIT(3)) == BIT(3) ? DUPLEX_FULL : DUPLEX_HALF;
 
 	// Read speed
 	val = phy_read_mmd(phydev, MMD_VEND2, 0xA434);
