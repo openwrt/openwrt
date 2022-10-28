@@ -116,7 +116,16 @@
 +		break;
 +	case 1:
 +		pll = rt_memc_r32(MEMC_REG_CPU_PLL);
-+		fbdiv = (pll >> CPU_PLL_FBDIV_SHIFT) & CPU_PLL_FBDIV_MASK;
++		      if ((pll & 0x7f0) == 0x2b0) {
++	   		       volatile u32 i;
++			          pr_info("CPU Clock: 880MHz, start overclocking\n");
++			          pll &= ~0x7ff;
++          /* pll：1000Mhz=0x312 1100Mhz=0x362 1200Mhz=0x3B2 */
++			          pll |= 0x362;
++			          rt_memc_w32(pll, MEMC_REG_CPU_PLL);
++			          for (i = 0; i < 1000; i++);
++		} 
++ fbdiv = (pll >> CPU_PLL_FBDIV_SHIFT) & CPU_PLL_FBDIV_MASK;
 +		prediv = (pll >> CPU_PLL_PREDIV_SHIFT) & CPU_PLL_PREDIV_MASK;
 +		cpu_clk = ((fbdiv + 1) * xtal_clk) >> prediv_tbl[prediv];
 +		break;
