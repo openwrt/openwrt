@@ -691,13 +691,13 @@ static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 		reg &= ~(RTL838X_DUPLEX_MODE | RTL838X_FORCE_LINK_EN);
 		if (state->link)
 			reg |= RTL838X_FORCE_LINK_EN;
-		if (state->duplex == RTL838X_DUPLEX_MODE)
+		if (state->duplex == DUPLEX_FULL)
 			reg |= RTL838X_DUPLEX_MODE;
 	} else if (priv->family_id == RTL8390_FAMILY_ID) {
 		reg &= ~(RTL839X_DUPLEX_MODE | RTL839X_FORCE_LINK_EN);
 		if (state->link)
 			reg |= RTL839X_FORCE_LINK_EN;
-		if (state->duplex == RTL839X_DUPLEX_MODE)
+		if (state->duplex == DUPLEX_FULL)
 			reg |= RTL839X_DUPLEX_MODE;
 	}
 
