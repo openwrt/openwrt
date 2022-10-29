@@ -89,7 +89,7 @@ if [ -n "${COMPATIBLE}" ]; then
 fi
 
 [ "$DTOVERLAY" ] && {
-	dtbsize=$(wc -c "$DTB" | cut -d' ' -f1)
+	dtbsize=$(wc -c "$DTB" | awk '{print $1}')
 	DTADDR=$(printf "0x%08x" $(($LOAD_ADDR - $dtbsize)) )
 }
 
@@ -168,7 +168,7 @@ OVCONFIGS=""
 	overlay_blob=${overlay##*:}
 	ovname=${overlay%%:*}
 	ovnode="fdt-$ovname"
-	ovsize=$(wc -c "$overlay_blob" | cut -d' ' -f1)
+	ovsize=$(wc -c "$overlay_blob" | awk '{print $1}')
 	echo "$ovname ($overlay_blob) : $ovsize" >&2
 	DTADDR=$(printf "0x%08x" $(($DTADDR - $ovsize)))
 	FDTOVERLAY_NODE="$FDTOVERLAY_NODE
