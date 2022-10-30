@@ -1,0 +1,38 @@
+From a244ec3640e0dfe90f31750033433cb2c99446e8 Mon Sep 17 00:00:00 2001
+From: Saravana Kannan <saravanak@google.com>
+Date: Thu, 23 Jun 2022 01:03:43 -0700
+Subject: [PATCH] of: base: Avoid console probe delay when fw_devlink.strict=1
+
+Commit 71066545b48e ("driver core: Set fw_devlink.strict=1 by default")
+enabled iommus and dmas dependency enforcement by default. On some
+systems, this caused the console device's probe to get delayed until the
+deferred_probe_timeout expires.
+
+We need consoles to work as soon as possible, so mark the console device
+node with FWNODE_FLAG_BEST_EFFORT so that fw_delink knows not to delay
+the probe of the console device for suppliers without drivers. The
+driver can then make the decision on where it can probe without those
+suppliers or defer its probe.
+
+Fixes: 71066545b48e ("driver core: Set fw_devlink.strict=1 by default")
+Reported-by: Sascha Hauer <sha@pengutronix.de>
+Reported-by: Peng Fan <peng.fan@nxp.com>
+Tested-by: Peng Fan <peng.fan@nxp.com>
+Signed-off-by: Saravana Kannan <saravanak@google.com>
+Link: https://lore.kernel.org/r/20220623080344.783549-3-saravanak@google.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/of/base.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/of/base.c
++++ b/drivers/of/base.c
+@@ -1875,6 +1875,8 @@ void of_alias_scan(void * (*dt_alloc)(u6
+ 			of_property_read_string(of_aliases, "stdout", &name);
+ 		if (name)
+ 			of_stdout = of_find_node_opts_by_path(name, &of_stdout_options);
++		if (of_stdout)
++			of_stdout->fwnode.flags |= FWNODE_FLAG_BEST_EFFORT;
+ 	}
+ 
+ 	if (!of_aliases)

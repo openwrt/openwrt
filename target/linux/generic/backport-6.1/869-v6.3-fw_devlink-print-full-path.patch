@@ -1,0 +1,45 @@
+From 0c058fb94ae0e2a68639f4569de1c3abf5df7ad7 Mon Sep 17 00:00:00 2001
+From: Saravana Kannan <saravanak@google.com>
+Date: Fri, 24 Feb 2023 22:54:42 -0800
+Subject: [PATCH] driver core: fw_devlink: Print full path and name of fwnode
+
+Some of the log messages were printing just the fwnode name. While it's
+short, it's not always uniquely identifiable in system. So print the
+full path and name to make debugging easier.
+
+Signed-off-by: Saravana Kannan <saravanak@google.com>
+Link: https://lore.kernel.org/r/20230225065443.278284-1-saravanak@google.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/core.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/base/core.c
++++ b/drivers/base/core.c
+@@ -97,7 +97,7 @@ static int __fwnode_link_add(struct fwno
+ 
+ 	list_add(&link->s_hook, &sup->consumers);
+ 	list_add(&link->c_hook, &con->suppliers);
+-	pr_debug("%pfwP Linked as a fwnode consumer to %pfwP\n",
++	pr_debug("%pfwf Linked as a fwnode consumer to %pfwf\n",
+ 		 con, sup);
+ 
+ 	return 0;
+@@ -121,7 +121,7 @@ int fwnode_link_add(struct fwnode_handle
+  */
+ static void __fwnode_link_del(struct fwnode_link *link)
+ {
+-	pr_debug("%pfwP Dropping the fwnode link to %pfwP\n",
++	pr_debug("%pfwf Dropping the fwnode link to %pfwf\n",
+ 		 link->consumer, link->supplier);
+ 	list_del(&link->s_hook);
+ 	list_del(&link->c_hook);
+@@ -1103,7 +1103,7 @@ int device_links_check_suppliers(struct
+ 		if (!dev_is_best_effort(dev)) {
+ 			fwnode_ret = -EPROBE_DEFER;
+ 			dev_err_probe(dev, -EPROBE_DEFER,
+-				    "wait for supplier %pfwP\n", sup_fw);
++				    "wait for supplier %pfwf\n", sup_fw);
+ 		} else {
+ 			fwnode_ret = -EAGAIN;
+ 		}

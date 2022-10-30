@@ -1,0 +1,129 @@
+From 2b28a1a84a0eb3412bad1a2d5cce2bb4addec626 Mon Sep 17 00:00:00 2001
+From: Saravana Kannan <saravanak@google.com>
+Date: Fri, 29 Apr 2022 15:09:32 -0700
+Subject: [PATCH] driver core: Extend deferred probe timeout on driver
+ registration
+
+The deferred probe timer that's used for this currently starts at
+late_initcall and runs for driver_deferred_probe_timeout seconds. The
+assumption being that all available drivers would be loaded and
+registered before the timer expires. This means, the
+driver_deferred_probe_timeout has to be pretty large for it to cover the
+worst case. But if we set the default value for it to cover the worst
+case, it would significantly slow down the average case. For this
+reason, the default value is set to 0.
+
+Also, with CONFIG_MODULES=y and the current default values of
+driver_deferred_probe_timeout=0 and fw_devlink=on, devices with missing
+drivers will cause their consumer devices to always defer their probes.
+This is because device links created by fw_devlink defer the probe even
+before the consumer driver's probe() is called.
+
+Instead of a fixed timeout, if we extend an unexpired deferred probe
+timer on every successful driver registration, with the expectation more
+modules would be loaded in the near future, then the default value of
+driver_deferred_probe_timeout only needs to be as long as the worst case
+time difference between two consecutive module loads.
+
+So let's implement that and set the default value to 10 seconds when
+CONFIG_MODULES=y.
+
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: "Rafael J. Wysocki" <rjw@rjwysocki.net>
+Cc: Rob Herring <robh@kernel.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+Cc: Will Deacon <will@kernel.org>
+Cc: Ulf Hansson <ulf.hansson@linaro.org>
+Cc: Kevin Hilman <khilman@kernel.org>
+Cc: Thierry Reding <treding@nvidia.com>
+Cc: Mark Brown <broonie@kernel.org>
+Cc: Pavel Machek <pavel@ucw.cz>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Cc: Paul Kocialkowski <paul.kocialkowski@bootlin.com>
+Cc: linux-gpio@vger.kernel.org
+Cc: linux-pm@vger.kernel.org
+Cc: iommu@lists.linux-foundation.org
+Reviewed-by: Mark Brown <broonie@kernel.org>
+Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Saravana Kannan <saravanak@google.com>
+Link: https://lore.kernel.org/r/20220429220933.1350374-1-saravanak@google.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ .../admin-guide/kernel-parameters.txt         |  6 ++++--
+ drivers/base/base.h                           |  1 +
+ drivers/base/dd.c                             | 19 +++++++++++++++++++
+ drivers/base/driver.c                         |  1 +
+ 4 files changed, 25 insertions(+), 2 deletions(-)
+
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -931,8 +931,10 @@
+ 			[KNL] Debugging option to set a timeout in seconds for
+ 			deferred probe to give up waiting on dependencies to
+ 			probe. Only specific dependencies (subsystems or
+-			drivers) that have opted in will be ignored. A timeout of 0
+-			will timeout at the end of initcalls. This option will also
++			drivers) that have opted in will be ignored. A timeout
++			of 0 will timeout at the end of initcalls. If the time
++			out hasn't expired, it'll be restarted by each
++			successful driver registration. This option will also
+ 			dump out devices still on the deferred probe list after
+ 			retrying.
+ 
+--- a/drivers/base/base.h
++++ b/drivers/base/base.h
+@@ -159,6 +159,7 @@ extern char *make_class_name(const char
+ extern int devres_release_all(struct device *dev);
+ extern void device_block_probing(void);
+ extern void device_unblock_probing(void);
++extern void deferred_probe_extend_timeout(void);
+ 
+ /* /sys/devices directory */
+ extern struct kset *devices_kset;
+--- a/drivers/base/dd.c
++++ b/drivers/base/dd.c
+@@ -255,7 +255,12 @@ static int deferred_devs_show(struct seq
+ }
+ DEFINE_SHOW_ATTRIBUTE(deferred_devs);
+ 
++#ifdef CONFIG_MODULES
++int driver_deferred_probe_timeout = 10;
++#else
+ int driver_deferred_probe_timeout;
++#endif
++
+ EXPORT_SYMBOL_GPL(driver_deferred_probe_timeout);
+ 
+ static int __init deferred_probe_timeout_setup(char *str)
+@@ -314,6 +319,20 @@ static void deferred_probe_timeout_work_
+ }
+ static DECLARE_DELAYED_WORK(deferred_probe_timeout_work, deferred_probe_timeout_work_func);
+ 
++void deferred_probe_extend_timeout(void)
++{
++	/*
++	 * If the work hasn't been queued yet or if the work expired, don't
++	 * start a new one.
++	 */
++	if (cancel_delayed_work(&deferred_probe_timeout_work)) {
++		schedule_delayed_work(&deferred_probe_timeout_work,
++				driver_deferred_probe_timeout * HZ);
++		pr_debug("Extended deferred probe timeout by %d secs\n",
++					driver_deferred_probe_timeout);
++	}
++}
++
+ /**
+  * deferred_probe_initcall() - Enable probing of deferred devices
+  *
+--- a/drivers/base/driver.c
++++ b/drivers/base/driver.c
+@@ -177,6 +177,7 @@ int driver_register(struct device_driver
+ 		return ret;
+ 	}
+ 	kobject_uevent(&drv->p->kobj, KOBJ_ADD);
++	deferred_probe_extend_timeout();
+ 
+ 	return ret;
+ }
