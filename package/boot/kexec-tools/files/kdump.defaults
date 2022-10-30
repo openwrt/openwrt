@@ -1,11 +1,14 @@
 #!/bin/sh
 
-# kB disable if mem low than 256MB
+# kB disable if mem low than 512MB
 memtotal=`grep MemTotal /proc/meminfo | awk '{print $2}'`
-if test $memtotal -le 262144; then
+if test $memtotal -le 524288; then
 	exit 0
 fi
 KZ=128
+if test $memtotal -le 1048576; then
+	KZ=64
+fi
 if test $memtotal -ge 8388608; then
 	KZ=512
 elif test $memtotal -ge 4194304; then
