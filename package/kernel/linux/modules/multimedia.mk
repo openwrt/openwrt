@@ -24,7 +24,7 @@ define KernelPackage/dvb-usb-v2
 	CONFIG_MEDIA_ANALOG_TV_SUPPORT=y \
 	CONFIG_DVB_CORE=m \
 	CONFIG_DVB_USB_V2=m
-  DEPENDS:=+kmod-i2c-core +kmod-i2c-mux +kmod-multimedia
+  DEPENDS:=+kmod-i2c-mux +kmod-usb-core +kmod-multimedia
   FILES:= \
 	$(LINUX_DIR)/drivers/media/dvb-core/dvb-core.ko \
 	$(LINUX_DIR)/drivers/media/usb/dvb-usb-v2/dvb_usb_v2.ko
@@ -58,7 +58,7 @@ define KernelPackage/dvb-tuner-r820t
   SUBMENU:=$(MMEDIA_MENU)
   TITLE:=DVB Tuner Rafael Micro R820T
   KCONFIG:=CONFIG_MEDIA_TUNER_R820T=m
-  DEPENDS:=+kmod-multimedia
+  DEPENDS:=+kmod-i2c-core +kmod-multimedia
   FILES:=$(LINUX_DIR)/drivers/media/tuners/r820t.ko
   AUTOLOAD:=$(call AutoLoad,82,r820t)
 endef
@@ -71,7 +71,7 @@ define KernelPackage/dvb-frontend-mn88472
   SUBMENU:=$(MMEDIA_MENU)
   TITLE:=DVB-T Panasonic MN88472 (no firmware)
   KCONFIG:=CONFIG_DVB_MN88472=m
-  DEPENDS:=+kmod-i2c-core +kmod-multimedia
+  DEPENDS:=+kmod-regmap-i2c +kmod-dvb-usb-v2
   FILES:=$(LINUX_DIR)/drivers/media/dvb-frontends/mn88472.ko
   AUTOLOAD:=$(call AutoLoad,82,mn88472)
 endef
@@ -88,7 +88,7 @@ define KernelPackage/dvb-frontend-mn88473
   SUBMENU:=$(MMEDIA_MENU)
   TITLE:=DVB-T Panasonic MN88473 (no firmware)
   KCONFIG:=CONFIG_DVB_MN88473=m
-  DEPENDS:=+kmod-i2c-core +kmod-multimedia
+  DEPENDS:=+kmod-regmap-i2c +kmod-dvb-usb-v2
   FILES:=$(LINUX_DIR)/drivers/media/dvb-frontends/mn88473.ko
   AUTOLOAD:=$(call AutoLoad,82,mn88473)
 endef
@@ -105,7 +105,7 @@ define KernelPackage/dvb-frontend-cxd2841er
   SUBMENU:=$(MMEDIA_MENU)
   TITLE:=DVB-C Sony CXD2841ER
   KCONFIG:=CONFIG_DVB_CXD2841ER=m
-  DEPENDS:=+kmod-i2c-core +kmod-multimedia +kmod-dvb-usb-v2
+  DEPENDS:=+kmod-i2c-core +kmod-dvb-usb-v2
   FILES:=$(LINUX_DIR)/drivers/media/dvb-frontends/cxd2841er.ko
   AUTOLOAD:=$(call AutoLoad,82,cxd2841er)
 endef
