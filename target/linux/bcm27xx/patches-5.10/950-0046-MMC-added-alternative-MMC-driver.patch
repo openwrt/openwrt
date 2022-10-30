@@ -221,7 +221,7 @@ Signed-off-by: Yaroslav Rosomakho <yaroslavros@gmail.com>
  static inline int mmc_blk_part_switch(struct mmc_card *card,
  				      unsigned int part_type);
  static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
-@@ -2896,6 +2903,7 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2901,6 +2908,7 @@ static int mmc_blk_probe(struct mmc_card
  {
  	struct mmc_blk_data *md, *part_md;
  	char cap_str[10];
@@ -229,7 +229,7 @@ Signed-off-by: Yaroslav Rosomakho <yaroslavros@gmail.com>
  
  	/*
  	 * Check that the card supports the command class(es) we need.
-@@ -2903,7 +2911,16 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2908,7 +2916,16 @@ static int mmc_blk_probe(struct mmc_card
  	if (!(card->csd.cmdclass & CCC_BLOCK_READ))
  		return -ENODEV;
  
@@ -247,7 +247,7 @@ Signed-off-by: Yaroslav Rosomakho <yaroslavros@gmail.com>
  
  	card->complete_wq = alloc_workqueue("mmc_complete",
  					WQ_MEM_RECLAIM | WQ_HIGHPRI, 0);
-@@ -2918,9 +2935,14 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2923,9 +2940,14 @@ static int mmc_blk_probe(struct mmc_card
  
  	string_get_size((u64)get_capacity(md->disk), 512, STRING_UNITS_2,
  			cap_str, sizeof(cap_str));
@@ -278,9 +278,9 @@ Signed-off-by: Yaroslav Rosomakho <yaroslavros@gmail.com>
  }
 --- a/drivers/mmc/core/quirks.h
 +++ b/drivers/mmc/core/quirks.h
-@@ -99,6 +99,14 @@ static const struct mmc_fixup __maybe_un
- 	MMC_FIXUP("V10016", CID_MANFID_KINGSTON, CID_OEMID_ANY, add_quirk_mmc,
- 		  MMC_QUIRK_TRIM_BROKEN),
+@@ -105,6 +105,14 @@ static const struct mmc_fixup __maybe_un
+ 	MMC_FIXUP(CID_NAME_ANY, CID_MANFID_SANDISK_SD, 0x5344, add_quirk_sd,
+ 		  MMC_QUIRK_BROKEN_SD_DISCARD),
  
 +	/*
 +	 *  On some Kingston SD cards, multiple erases of less than 64
@@ -1922,9 +1922,9 @@ Signed-off-by: Yaroslav Rosomakho <yaroslavros@gmail.com>
 +MODULE_AUTHOR("Gellert Weisz");
 --- a/include/linux/mmc/card.h
 +++ b/include/linux/mmc/card.h
-@@ -271,6 +271,8 @@ struct mmc_card {
- #define MMC_QUIRK_TRIM_BROKEN	(1<<12)		/* Skip trim */
+@@ -272,6 +272,8 @@ struct mmc_card {
  #define MMC_QUIRK_BROKEN_HPI	(1<<13)		/* Disable broken HPI support */
+ #define MMC_QUIRK_BROKEN_SD_DISCARD	(1<<14)	/* Disable broken SD discard support */
  
 +#define MMC_QUIRK_ERASE_BROKEN	(1<<31)		/* Skip erase */
 +
