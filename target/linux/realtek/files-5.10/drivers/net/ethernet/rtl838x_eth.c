@@ -1252,6 +1252,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->membase;
 	struct sk_buff *skb;
+	LIST_HEAD(rx_list);
 	unsigned long flags;
 	int i, len, work_done = 0;
 	u8 *data, *skb_data;
@@ -1329,7 +1330,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 			dev->stats.rx_packets++;
 			dev->stats.rx_bytes += len;
 
-			netif_receive_skb(skb);
+			list_add_tail(&skb->list, &rx_list);
 		} else {
 			if (net_ratelimit())
 				dev_warn(&dev->dev, "low on memory - packet dropped\n");
@@ -1346,6 +1347,8 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
+
+	netif_receive_skb_list(&rx_list);
 
 	// Update counters
 	priv->r->update_cntr(r, 0);
