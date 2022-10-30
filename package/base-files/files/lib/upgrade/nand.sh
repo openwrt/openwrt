@@ -418,12 +418,20 @@ nand_do_upgrade() {
 	local file="$1"
 
 	sync
-	if nand_do_flash_file "$file" && nand_do_restore_config && sync; then
+	nand_do_flash_file "$file" && nand_do_upgrade_success
+	nand_do_upgrade_failed
+}
+
+nand_do_upgrade_success() {
+	if nand_do_restore_config && sync; then
 		echo "sysupgrade successful"
 		umount -a
 		reboot -f
 	fi
+	nand_do_upgrade_failed
+}
 
+nand_do_upgrade_failed() {
 	sync
 	echo "sysupgrade failed"
 	# Should we reboot or bring up some failsafe mode instead?
