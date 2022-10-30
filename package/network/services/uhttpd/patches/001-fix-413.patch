@@ -1,0 +1,10 @@
+--- a/client.c
++++ b/client.c
+@@ -532,6 +532,7 @@ void uh_client_read_cb(struct client *cl
+ 
+ 		if (!read_cbs[cl->state](cl, str, len)) {
+ 			if (len == us->r.buffer_len &&
++			    cl->state != CLIENT_STATE_DONE &&
+ 			    cl->state != CLIENT_STATE_DATA)
+ 				uh_header_error(cl, 413, "Request Entity Too Large");
+ 			break;
