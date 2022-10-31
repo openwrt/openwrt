@@ -22,6 +22,11 @@ nanopi-r5s)
 	ucidef_set_led_netdev "lan1" "LAN1" "lan1_led" "eth1" "link"
 	ucidef_set_led_netdev "lan2" "LAN2" "lan2_led" "eth2" "link"
 	;;
+nanopi-r6s)
+	ucidef_set_led_netdev "wan" "WAN" "wan_led" "eth2" "link"
+	ucidef_set_led_netdev "lan1" "LAN1" "lan1_led" "eth1" "link"
+	ucidef_set_led_netdev "lan2" "LAN2" "lan2_led" "eth0" "link"
+	;;
 esac
 
 board_config_flush
