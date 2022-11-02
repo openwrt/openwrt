@@ -93,6 +93,7 @@ platform_do_upgrade() {
 	netgear,wax202|\
 	netis,wf2881|\
 	raisecom,msg1500-x-00|\
+	rostelecom,rt-sf-1|\
 	sercomm,na502|\
 	sercomm,na502s|\
 	xiaomi,mi-router-3g|\
