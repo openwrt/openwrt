@@ -238,9 +238,6 @@ define KernelPackage/ipsec4/description
  - ah4
  - esp4
  - ipcomp4
- - xfrm4_mode_beet
- - xfrm4_mode_transport
- - xfrm4_mode_tunnel
  - xfrm4_tunnel
 endef
 
@@ -273,9 +270,6 @@ define KernelPackage/ipsec6/description
  - ah6
  - esp6
  - ipcomp6
- - xfrm6_mode_beet
- - xfrm6_mode_transport
- - xfrm6_mode_tunnel
  - xfrm6_tunnel
 endef
 
