@@ -17,8 +17,8 @@ ubus_wifi_cmd() {
 	local dev="$2"
 
 	json_init
-	[ -n "$2" ] && json_add_string device "$2"
-	ubus call network.wireless "$1" "$(json_dump)"
+	[ -n "$dev" ] && json_add_string device "$dev"
+	ubus call network.wireless "$cmd" "$(json_dump)"
 }
 
 find_net_config() {(
