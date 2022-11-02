@@ -244,17 +244,6 @@ endef
 $(eval $(call KernelPackage,fs-f2fs))
 
 
-define KernelPackage/fs-netfs
-  SUBMENU:=$(FS_MENU)
-  TITLE:=Network Filesystems support
-  DEPENDS:=@LINUX_5_15
-  KCONFIG:= CONFIG_NETFS_SUPPORT
-  FILES:=$(LINUX_DIR)/fs/netfs/netfs.ko
-  AUTOLOAD:=$(call AutoLoad,28,netfs)
-endef
-
-$(eval $(call KernelPackage,fs-netfs))
-
 define KernelPackage/fs-fscache
   SUBMENU:=$(FS_MENU)
   TITLE:=General filesystem local cache manager
@@ -373,6 +362,18 @@ define KernelPackage/fs-msdos/description
 endef
 
 $(eval $(call KernelPackage,fs-msdos))
+
+
+define KernelPackage/fs-netfs
+  SUBMENU:=$(FS_MENU)
+  TITLE:=Network Filesystems support
+  DEPENDS:=@LINUX_5_15
+  KCONFIG:= CONFIG_NETFS_SUPPORT
+  FILES:=$(LINUX_DIR)/fs/netfs/netfs.ko
+  AUTOLOAD:=$(call AutoLoad,28,netfs)
+endef
+
+$(eval $(call KernelPackage,fs-netfs))
 
 
 define KernelPackage/fs-nfs
@@ -523,25 +524,21 @@ endef
 $(eval $(call KernelPackage,fs-ntfs))
 
 
-define KernelPackage/pstore
+define KernelPackage/fs-ntfs3
   SUBMENU:=$(FS_MENU)
-  TITLE:=Pstore file system
-  DEFAULT:=m if ALL_KMODS
-  KCONFIG:= \
-	CONFIG_PSTORE \
-	CONFIG_PSTORE_COMPRESS=y \
-	CONFIG_PSTORE_COMPRESS_DEFAULT="deflate" \
-	CONFIG_PSTORE_DEFLATE_COMPRESS=y \
-	CONFIG_PSTORE_DEFLATE_COMPRESS_DEFAULT=y
-  FILES:= $(LINUX_DIR)/fs/pstore/pstore.ko
-  AUTOLOAD:=$(call AutoLoad,30,pstore,1)
+  TITLE:=Ntfs3 support
+  KCONFIG:= CONFIG_NTFS3_FS CONFIG_NTFS3_FS_POSIX_ACL=y
+  FILES:=$(LINUX_DIR)/fs/ntfs3/ntfs3.ko
+  $(call AddDepends/nls)
+  DEPENDS+=@!LINUX_5_10
+  AUTOLOAD:=$(call AutoLoad,80,ntfs3)
 endef
 
-define KernelPackage/pstore/description
- Kernel module for pstore filesystem support
+define KernelPackage/fuse/description
+ Kernel module for new NTFS3 filesystem support
 endef
 
-$(eval $(call KernelPackage,pstore))
+$(eval $(call KernelPackage,fs-ntfs3))
 
 
 define KernelPackage/fs-reiserfs
@@ -643,18 +640,22 @@ endef
 $(eval $(call KernelPackage,fuse))
 
 
-define KernelPackage/fs-ntfs3
+define KernelPackage/pstore
   SUBMENU:=$(FS_MENU)
-  TITLE:=Ntfs3 support
-  KCONFIG:= CONFIG_NTFS3_FS CONFIG_NTFS3_FS_POSIX_ACL=y
-  FILES:=$(LINUX_DIR)/fs/ntfs3/ntfs3.ko
-  $(call AddDepends/nls)
-  DEPENDS+=@!LINUX_5_10
-  AUTOLOAD:=$(call AutoLoad,80,ntfs3)
+  TITLE:=Pstore file system
+  DEFAULT:=m if ALL_KMODS
+  KCONFIG:= \
+	CONFIG_PSTORE \
+	CONFIG_PSTORE_COMPRESS=y \
+	CONFIG_PSTORE_COMPRESS_DEFAULT="deflate" \
+	CONFIG_PSTORE_DEFLATE_COMPRESS=y \
+	CONFIG_PSTORE_DEFLATE_COMPRESS_DEFAULT=y
+  FILES:= $(LINUX_DIR)/fs/pstore/pstore.ko
+  AUTOLOAD:=$(call AutoLoad,30,pstore,1)
 endef
 
-define KernelPackage/fuse/description
- Kernel module for new NTFS3 filesystem support
+define KernelPackage/pstore/description
+ Kernel module for pstore filesystem support
 endef
 
-$(eval $(call KernelPackage,fs-ntfs3))
+$(eval $(call KernelPackage,pstore))
