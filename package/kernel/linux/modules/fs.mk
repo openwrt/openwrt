@@ -510,7 +510,7 @@ $(eval $(call KernelPackage,fs-nfsd))
 
 define KernelPackage/fs-ntfs
   SUBMENU:=$(FS_MENU)
-  TITLE:=NTFS filesystem support
+  TITLE:=NTFS filesystem read-only (old driver) support
   KCONFIG:=CONFIG_NTFS_FS
   FILES:=$(LINUX_DIR)/fs/ntfs/ntfs.ko
   AUTOLOAD:=$(call AutoLoad,30,ntfs)
@@ -518,7 +518,8 @@ define KernelPackage/fs-ntfs
 endef
 
 define KernelPackage/fs-ntfs/description
- Kernel module for NTFS filesystem support
+ Kernel module for limited NTFS filesystem support. Support for writing
+ is extremely limited and disabled as a result.
 endef
 
 $(eval $(call KernelPackage,fs-ntfs))
@@ -526,7 +527,7 @@ $(eval $(call KernelPackage,fs-ntfs))
 
 define KernelPackage/fs-ntfs3
   SUBMENU:=$(FS_MENU)
-  TITLE:=Ntfs3 support
+  TITLE:=NTFS filesystem read & write (new driver) support
   KCONFIG:= CONFIG_NTFS3_FS CONFIG_NTFS3_FS_POSIX_ACL=y
   FILES:=$(LINUX_DIR)/fs/ntfs3/ntfs3.ko
   $(call AddDepends/nls)
@@ -535,7 +536,10 @@ define KernelPackage/fs-ntfs3
 endef
 
 define KernelPackage/fuse/description
- Kernel module for new NTFS3 filesystem support
+ Kernel module for fully functional NTFS filesystem support. It allows
+ reading as well as writing.
+
+ It supports NTFS versions up to 3.1.
 endef
 
 $(eval $(call KernelPackage,fs-ntfs3))
