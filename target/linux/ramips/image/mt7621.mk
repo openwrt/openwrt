@@ -1740,6 +1740,19 @@ define Device/renkforce_ws-wn530hp3-a
 endef
 TARGET_DEVICES += renkforce_ws-wn530hp3-a
 
+define Device/rostelecom_rt-sf-1
+  $(Device/sercomm_dxx)
+  IMAGE_SIZE := 32768k
+  SERCOMM_HWID := DKG
+  SERCOMM_HWVER := 10110
+  SERCOMM_SWVER := 1026
+  DEVICE_VENDOR := Rostelecom
+  DEVICE_MODEL := RT-SF-1
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	kmod-usb3 uboot-envtools
+endef
+TARGET_DEVICES += rostelecom_rt-sf-1
+
 define Device/samknows_whitebox-v8
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
