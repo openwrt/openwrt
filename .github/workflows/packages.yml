@@ -112,6 +112,8 @@ jobs:
           echo CONFIG_ALL=y >> .config
           echo CONFIG_ALL_KMODS=y >> .config
           echo CONFIG_ALL_NONSHARED=y >> .config
+          echo CONFIG_DEVEL=y >> .config
+          echo CONFIG_AUTOREMOVE=y >> .config
 
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
