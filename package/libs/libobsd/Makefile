@@ -5,12 +5,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libobsd
-PKG_VERSION:=1.1.1
+PKG_VERSION:=9942023632f9c5a5b32db61cee6d37e996e0b1dd
 PKG_RELEASE:=$(AUTORELEASE)
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=https://github.com/guijan/libobsd/releases/download/v$(PKG_VERSION)/
-PKG_HASH:=332b72ba5f9a76c40f8a526771b78dae3ac3388f689f818c0ac4ab77ef52809d
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://github.com/guijan/libobsd/archive/$(PKG_VERSION)/
+PKG_HASH:=ffbc3593e7bb81fc1c2055f4da631c6792b0e1f48859ab951f740131a2c2a990
 
 PKG_MAINTAINER:=Guilherme Janczak <guilherme.janczak@yandex.com>
 PKG_LICENSE:=ISC AND BSD-3-Clause AND BSD-4-Clause
