@@ -775,8 +775,8 @@ ret_t rtl8367c_setAsicSvlanSP2CConf(rtk_uint32 index, rtl8367c_svlan_s2c_t* pSvl
         if(retVal != RT_ERR_OK)
             return retVal;
 
-        accessPtr ++;
         regData = *accessPtr;
+        accessPtr ++;
     }
 
     return retVal;
