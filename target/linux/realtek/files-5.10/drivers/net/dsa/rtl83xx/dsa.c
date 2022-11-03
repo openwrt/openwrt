@@ -1446,7 +1446,7 @@ static void rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int v;
 
-	pr_debug("%s port %d, vid_end %d, vid_end %d, flags %x\n", __func__,
+	pr_debug("%s port %d, vid_begin %d, vid_end %d, flags %x\n", __func__,
 		port, vlan->vid_begin, vlan->vid_end, vlan->flags);
 
 	if (vlan->vid_begin > 4095 || vlan->vid_end > 4095) {
@@ -1511,7 +1511,7 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 	int v;
 	u16 pvid;
 
-	pr_debug("%s: port %d, vid_end %d, vid_end %d, flags %x\n", __func__,
+	pr_debug("%s: port %d, vid_begin %d, vid_end %d, flags %x\n", __func__,
 		port, vlan->vid_begin, vlan->vid_end, vlan->flags);
 
 	if (vlan->vid_begin > 4095 || vlan->vid_end > 4095) {
