@@ -2031,6 +2031,18 @@ define Device/sim_simax1800t
 endef
 TARGET_DEVICES += sim_simax1800t
 
+define Device/snr_snr-cpe-me1
+	$(Device/dsa-migration)
+	$(Device/uimage-lzma-loader)
+	IMAGE_SIZE := 15040k
+	DEVICE_VENDOR := SNR
+	DEVICE_MODEL := SNR-CPE-ME1
+	UIMAGE_NAME := SNR-CPE-ME1-5GHZ-MT
+	DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x0e kmod-usb3 \
+		kmod-usb-ledtrig-usbport uboot-envtools
+endef
+TARGET_DEVICES += snr_snr-cpe-me1
+
 define Device/snr_snr-cpe-me2-lite
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
