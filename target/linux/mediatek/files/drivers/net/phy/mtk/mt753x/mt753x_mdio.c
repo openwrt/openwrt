@@ -542,7 +542,7 @@ static int mt753x_remove(struct platform_device *pdev)
 		cancel_work_sync(&gsw->irq_worker);
 
 	if (gsw->reset_pin >= 0)
-		devm_gpio_free(&pdev->dev, gsw->reset_pin);
+		gpio_free(gsw->reset_pin);
 
 #ifdef CONFIG_SWCONFIG
 	mt753x_swconfig_destroy(gsw);

@@ -89,7 +89,7 @@ static int rtl8367s_hw_reset(void)
 
 	mdelay(500);
 
-	devm_gpio_free(gsw->dev, gsw->reset_pin);
+	gpio_free(gsw->reset_pin);
 
 	return 0;
 	
