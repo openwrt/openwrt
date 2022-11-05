@@ -6,6 +6,8 @@ on:
       target:
         required: true
         type: string
+      build_toolchain:
+        type: boolean
       include_feeds:
         type: boolean
       build_full:
@@ -109,6 +111,7 @@ jobs:
           ./scripts/feeds install -a
 
       - name: Parse toolchain file
+        if: inputs.build_toolchain == false
         working-directory: openwrt
         run: |
           TOOLCHAIN_STRING="$(curl "https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
@@ -120,6 +123,7 @@ jobs:
           echo "TOOLCHAIN_SHA256=$TOOLCHAIN_SHA256" >> "$GITHUB_ENV"
 
       - name: Cache external toolchain
+        if: inputs.build_toolchain == false
         id: cache-external-toolchain
         uses: actions/cache@v3
         with:
@@ -135,7 +139,7 @@ jobs:
             ccache-kernel-${{ env.TARGET }}/${{ env.SUBTARGET }}-
 
       - name: Download external toolchain
-        if: steps.cache-external-toolchain.outputs.cache-hit != 'true'
+        if: inputs.build_toolchain == false && steps.cache-external-toolchain.outputs.cache-hit != 'true'
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
@@ -162,6 +166,7 @@ jobs:
           echo CONFIG_ALL=y >> .config
 
       - name: Configure external toolchain
+        if: inputs.build_toolchain == false
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
@@ -173,6 +178,20 @@ jobs:
             --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
             --overwrite-config \
             --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
+
+      - name: Configure internal toolchain
+        if: inputs.build_toolchain == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          echo CONFIG_DEVEL=y >> .config
+          echo CONFIG_AUTOREMOVE=y >> .config
+          echo CONFIG_CCACHE=y >> .config
+
+          echo "CONFIG_TARGET_${{ env.TARGET }}=y" >> .config
+          echo "CONFIG_TARGET_${{ env.TARGET }}_${{ env.SUBTARGET }}=y" >> .config
+
+          make defconfig
 
       - name: Show configuration
         shell: su buildbot -c "sh -e {0}"
