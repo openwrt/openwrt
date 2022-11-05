@@ -156,7 +156,7 @@ jobs:
             ccache-kernel-${{ env.TARGET }}/${{ env.SUBTARGET }}-
 
       - name: Download external toolchain
-        if: ${{ steps.cache-external-toolchain.outputs.cache-hit != 'true' }}
+        if: steps.cache-external-toolchain.outputs.cache-hit != 'true'
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
