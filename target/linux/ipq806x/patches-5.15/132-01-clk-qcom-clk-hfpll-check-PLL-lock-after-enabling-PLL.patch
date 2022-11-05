@@ -1,0 +1,81 @@
+From 384f8d8594af5457422b1f409ed5e81472a013be Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 4 Nov 2022 17:41:48 +0100
+Subject: [PATCH 1/2] clk: qcom: clk-hfpll: check PLL lock after enabling PLL
+ output
+
+In the original QSDK code there was a HW raccomandation to check PLL
+lock again after enabling PLL output. This is probably needed as hfpll
+require some time to set the new pll values.
+
+Add the missing lock to make sure hfpll are correctly setup and ready.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/qcom/clk-hfpll.c | 34 +++++++++++++++++++++++-----------
+ 1 file changed, 23 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/clk/qcom/clk-hfpll.c b/drivers/clk/qcom/clk-hfpll.c
+index 7dd17c184b69..93707d5ad30d 100644
+--- a/drivers/clk/qcom/clk-hfpll.c
++++ b/drivers/clk/qcom/clk-hfpll.c
+@@ -50,13 +50,31 @@ static void __clk_hfpll_init_once(struct clk_hw *hw)
+ 	h->init_done = true;
+ }
+ 
+-static void __clk_hfpll_enable(struct clk_hw *hw)
++static void __clk_hfpll_wait_lock(struct clk_hw *hw)
+ {
+ 	struct clk_hfpll *h = to_clk_hfpll(hw);
+ 	struct hfpll_data const *hd = h->d;
+ 	struct regmap *regmap = h->clkr.regmap;
+ 	u32 val;
+ 
++	if (hd->status_reg)
++		/*
++		 * Busy wait. Should never timeout, we add a timeout to
++		 * prevent any sort of stall.
++		 */
++		regmap_read_poll_timeout(regmap, hd->status_reg, val,
++					 !(val & BIT(hd->lock_bit)), 0,
++					 100 * USEC_PER_MSEC);
++	else
++		udelay(60);
++}
++
++static void __clk_hfpll_enable(struct clk_hw *hw)
++{
++	struct clk_hfpll *h = to_clk_hfpll(hw);
++	struct hfpll_data const *hd = h->d;
++	struct regmap *regmap = h->clkr.regmap;
++
+ 	__clk_hfpll_init_once(hw);
+ 
+ 	/* Disable PLL bypass mode. */
+@@ -72,19 +90,13 @@ static void __clk_hfpll_enable(struct clk_hw *hw)
+ 	regmap_update_bits(regmap, hd->mode_reg, PLL_RESET_N, PLL_RESET_N);
+ 
+ 	/* Wait for PLL to lock. */
+-	if (hd->status_reg)
+-		/*
+-		 * Busy wait. Should never timeout, we add a timeout to
+-		 * prevent any sort of stall.
+-		 */
+-		regmap_read_poll_timeout(regmap, hd->status_reg, val,
+-					 !(val & BIT(hd->lock_bit)), 0,
+-					 100 * USEC_PER_MSEC);
+-	else
+-		udelay(60);
++	__clk_hfpll_wait_lock(hw);
+ 
+ 	/* Enable PLL output. */
+ 	regmap_update_bits(regmap, hd->mode_reg, PLL_OUTCTRL, PLL_OUTCTRL);
++
++	/* Wait for PLL to lock again. */
++	__clk_hfpll_wait_lock(hw);
+ }
+ 
+ /* Enable an already-configured HFPLL. */
+-- 
+2.37.2
+

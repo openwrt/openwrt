@@ -1,0 +1,407 @@
+From e0577018d5a5419f3af9adc081933a244ca8b0cd Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 4 Nov 2022 18:30:13 +0100
+Subject: [PATCH 2/2] clk: qcom: krait-cc: set every mux to safe sel while
+ scaling cores
+
+From the original code there seems to be a HW contraint where krait
+cores can't operate at 384MHz when L2 is at 1GHz.
+
+This may happen while the cpu are scaled to a different frequency as
+they need to be put to a safe selection that makes the cpu run at
+384MHz.
+
+To handle this hw contraint, put everything to a safe mux on scaling and
+lock scaling under spinlock.
+
+This require major rework of the krait-cc core with many changes and the
+introduction of virtual clks to handle global mux locking and the
+handling of switching to safe rate when configuring the hfpll.
+
+As a side effect with these new virtual clks, we can drop the clk
+notifier logic as they are all handled by the se virtual clks.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/qcom/krait-cc.c | 242 +++++++++++++++++++++++++-----------
+ 1 file changed, 168 insertions(+), 74 deletions(-)
+
+diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
+index 949657186fdb..e37cf6ed4f3c 100644
+--- a/drivers/clk/qcom/krait-cc.c
++++ b/drivers/clk/qcom/krait-cc.c
+@@ -15,8 +15,8 @@
+ 
+ #include "clk-krait.h"
+ 
+-#define QSB_RATE	225000000
+-#define AUX_RATE	384000000
++#define QSB_RATE	225000000 /* safe rate for sec mux */
++#define AUX_RATE	384000000 /* safe rate for pri mux */
+ #define HFPLL_RATE	600000000
+ 
+ static unsigned int sec_mux_map[] = {
+@@ -30,47 +30,138 @@ static unsigned int pri_mux_map[] = {
+ 	0,
+ };
+ 
+-/*
+- * Notifier function for switching the muxes to safe parent
+- * while the hfpll is getting reprogrammed.
+- */
+-static int krait_notifier_cb(struct notifier_block *nb,
+-			     unsigned long event,
+-			     void *data)
++#define L2_INDEX	4
++struct mux_cc {
++	/* Krait configurations have at most 4 CPUs and one L2 */
++	struct clk_hw *clks[5];
++	spinlock_t lock;
++};
++
++struct mux_cc_clk {
++	struct clk_hw hw;
++	struct clk *mux;
++	struct mux_cc *mux_cc;
++	unsigned long safe_rate;
++	unsigned long old_rate;
++	int index;
++};
++#define to_mux_cc_clk(_hw) container_of(_hw, struct mux_cc_clk, hw)
++
++struct krait_cc_global {
++	struct mux_cc pri_mux_cc;
++	struct mux_cc sec_mux_cc;
++};
++
++static int mux_cc_set_rate(struct clk_hw *hw, unsigned long rate,
++			     unsigned long parent_rate)
+ {
+-	int ret = 0;
+-	struct krait_mux_clk *mux = container_of(nb, struct krait_mux_clk,
+-						 clk_nb);
+-	/* Switch to safe parent */
+-	if (event == PRE_RATE_CHANGE) {
+-		mux->old_index = krait_mux_clk_ops.get_parent(&mux->hw);
+-		ret = krait_mux_clk_ops.set_parent(&mux->hw, mux->safe_sel);
+-		mux->reparent = false;
+-	/*
+-	 * By the time POST_RATE_CHANGE notifier is called,
+-	 * clk framework itself would have changed the parent for the new rate.
+-	 * Only otherwise, put back to the old parent.
++	struct mux_cc_clk *mux_cc_clk, *target_mux_cc_clk = to_mux_cc_clk(hw);
++	struct mux_cc *mux_cc = target_mux_cc_clk->mux_cc;
++	unsigned long flags;
++	int cpu;
++
++	/* Since we can operate on multiple mux, change mux configuration under lock */
++	spin_lock_irqsave(&mux_cc->lock, flags);
++
++	/* Krait contraint.
++	 * cpu can't operate with L2 at 1GHz. When scaling mux,
++	 * move everything to safe parent if we are scaling core.
+ 	 */
+-	} else if (event == POST_RATE_CHANGE) {
+-		if (!mux->reparent)
+-			ret = krait_mux_clk_ops.set_parent(&mux->hw,
+-							   mux->old_index);
++	if (likely(target_mux_cc_clk->index != L2_INDEX)) {
++		/* Set L2 to safe rate */
++		mux_cc_clk = to_mux_cc_clk(mux_cc->clks[4]);
++		mux_cc_clk->old_rate = clk_get_rate(mux_cc_clk->mux);
++		clk_set_rate(mux_cc_clk->mux, mux_cc_clk->safe_rate);
++
++		for_each_possible_cpu(cpu) {
++			mux_cc_clk = to_mux_cc_clk(mux_cc->clks[cpu]);
++			if (mux_cc_clk == target_mux_cc_clk)
++				continue;
++			mux_cc_clk->old_rate = clk_get_rate(mux_cc_clk->mux);
++			clk_set_rate(mux_cc_clk->mux, mux_cc_clk->safe_rate);
++		}
+ 	}
+ 
+-	return notifier_from_errno(ret);
++	clk_set_rate(target_mux_cc_clk->mux, target_mux_cc_clk->safe_rate);
++	clk_set_rate(target_mux_cc_clk->mux, rate);
++
++	/* If we are scaling core, restore old rate */
++	if (likely(target_mux_cc_clk->index != L2_INDEX)) {
++		for_each_possible_cpu(cpu) {
++			mux_cc_clk = to_mux_cc_clk(mux_cc->clks[cpu]);
++			if (mux_cc_clk == target_mux_cc_clk)
++				continue;
++			clk_set_rate(mux_cc_clk->mux, mux_cc_clk->old_rate);
++		}
++
++		/* Set L2 to old rate */
++		mux_cc_clk = to_mux_cc_clk(mux_cc->clks[4]);
++		clk_set_rate(mux_cc_clk->mux, mux_cc_clk->old_rate);
++	}
++
++	spin_unlock_irqrestore(&mux_cc->lock, flags);
++
++	return 0;
++}
++
++static unsigned long mux_cc_recalc_rate(struct clk_hw *hw,
++					  unsigned long parent_rate)
++{
++	return clk_get_rate(to_mux_cc_clk(hw)->mux);
+ }
+ 
+-static int krait_notifier_register(struct device *dev, struct clk *clk,
+-				   struct krait_mux_clk *mux)
++static int mux_cc_determine_rate(struct clk_hw *hw,
++				 struct clk_rate_request *req)
+ {
+-	int ret = 0;
++	return 0;
++}
+ 
+-	mux->clk_nb.notifier_call = krait_notifier_cb;
+-	ret = devm_clk_notifier_register(dev, clk, &mux->clk_nb);
+-	if (ret)
+-		dev_err(dev, "failed to register clock notifier: %d\n", ret);
++const struct clk_ops mux_cc_clk_ops = {
++	.set_rate = mux_cc_set_rate,
++	.recalc_rate = mux_cc_recalc_rate,
++	.determine_rate = mux_cc_determine_rate,
++};
+ 
+-	return ret;
++static struct clk *
++krait_add_mux_cc_clk(struct device *dev, struct krait_mux_clk *mux, int id,
++		     unsigned long safe_rate, const char *s, const char *name,
++		     struct mux_cc *mux_cc)
++{
++	struct clk_init_data init = {
++		.num_parents = 0,
++		.ops = &mux_cc_clk_ops,
++	};
++	struct clk *clk;
++	struct mux_cc_clk *mux_cc_clk;
++	int index = id >= 0 ? id : L2_INDEX;
++	int cpu;
++
++	mux_cc_clk = devm_kzalloc(dev, sizeof(*mux_cc_clk), GFP_KERNEL);
++	if (!mux_cc_clk)
++		return ERR_PTR(-ENOMEM);
++
++	mux_cc_clk->mux = mux->hw.clk;
++	mux_cc_clk->hw.init = &init;
++	mux_cc_clk->safe_rate = safe_rate;
++	mux_cc_clk->index = index;
++	mux_cc_clk->mux_cc = mux_cc;
++
++	mux_cc->clks[index] = &mux_cc_clk->hw;
++
++	init.name = kasprintf(GFP_KERNEL, "krait%s_%s_cc", s, name);
++	if (!init.name)
++		return ERR_PTR(-ENOMEM);
++
++	clk = devm_clk_register(dev, &mux_cc_clk->hw);
++
++	if (id < 0)
++		for_each_possible_cpu(cpu)
++			clk_prepare_enable(clk);
++	else
++		clk_prepare_enable(clk);
++
++	kfree(init.name);
++	return clk;
+ }
+ 
+ static struct clk *
+@@ -122,7 +213,7 @@ krait_add_div(struct device *dev, int id, const char *s, unsigned int offset)
+ 
+ static struct clk *
+ krait_add_sec_mux(struct device *dev, int id, const char *s,
+-		  unsigned int offset, bool unique_aux)
++		  unsigned int offset, bool unique_aux, struct mux_cc *mux_cc)
+ {
+ 	int ret, cpu;
+ 	struct krait_mux_clk *mux;
+@@ -179,10 +270,6 @@ krait_add_sec_mux(struct device *dev, int id, const char *s,
+ 	if (IS_ERR(clk))
+ 		goto err_clk;
+ 
+-	ret = krait_notifier_register(dev, clk, mux);
+-	if (ret)
+-		clk = ERR_PTR(ret);
+-
+ 	/* The secondary mux MUST be enabled or clk-krait silently
+ 	 * ignore any request.
+ 	 * Increase refcount for every CPU if it's the L2 secondary mux.
+@@ -193,6 +280,10 @@ krait_add_sec_mux(struct device *dev, int id, const char *s,
+ 	else
+ 		clk_prepare_enable(clk);
+ 
++	clk = krait_add_mux_cc_clk(dev, mux, id, QSB_RATE, s, "sec_mux", mux_cc);
++	if (IS_ERR(clk))
++		goto err_clk;
++
+ err_clk:
+ 	if (unique_aux)
+ 		kfree(parent_name);
+@@ -203,7 +294,7 @@ krait_add_sec_mux(struct device *dev, int id, const char *s,
+ 
+ static struct clk *
+ krait_add_pri_mux(struct device *dev, struct clk *hfpll_div, struct clk *sec_mux,
+-		  int id, const char *s, unsigned int offset)
++		  int id, const char *s, unsigned int offset, struct mux_cc *mux_cc)
+ {
+ 	int ret;
+ 	struct krait_mux_clk *mux;
+@@ -216,6 +307,7 @@ krait_add_pri_mux(struct device *dev, struct clk *hfpll_div, struct clk *sec_mux
+ 	};
+ 	struct clk *clk;
+ 	char *hfpll_name;
++	int cpu;
+ 
+ 	mux = devm_kzalloc(dev, sizeof(*mux), GFP_KERNEL);
+ 	if (!mux)
+@@ -249,19 +341,26 @@ krait_add_pri_mux(struct device *dev, struct clk *hfpll_div, struct clk *sec_mux
+ 	if (IS_ERR(clk))
+ 		goto err_clk;
+ 
+-	ret = krait_notifier_register(dev, clk, mux);
+-	if (ret)
+-		clk = ERR_PTR(ret);
++	if (id < 0)
++		for_each_possible_cpu(cpu)
++			clk_prepare_enable(clk);
++	else
++		clk_prepare_enable(clk);
++
++	clk = krait_add_mux_cc_clk(dev, mux, id, AUX_RATE, s, "pri_mux", mux_cc);
++	if (IS_ERR(clk))
++		goto err_clk;
+ 
+ err_clk:
+ 	kfree(hfpll_name);
+ err_hfpll:
+ 	kfree(init.name);
+-	return clk;
++	return clk; 
+ }
+ 
+ /* id < 0 for L2, otherwise id == physical CPU number */
+-static struct clk *krait_add_clks(struct device *dev, int id, bool unique_aux)
++static struct clk *krait_add_clks(struct device *dev, int id, bool unique_aux,
++				  struct krait_cc_global *krait_cc_global)
+ {
+ 	unsigned int offset;
+ 	void *p = NULL;
+@@ -284,13 +383,16 @@ static struct clk *krait_add_clks(struct device *dev, int id, bool unique_aux)
+ 		goto err;
+ 	}
+ 
+-	sec_mux = krait_add_sec_mux(dev, id, s, offset, unique_aux);
++	sec_mux = krait_add_sec_mux(dev, id, s, offset, unique_aux,
++				    &krait_cc_global->sec_mux_cc);
+ 	if (IS_ERR(sec_mux)) {
+ 		clk = sec_mux;
+ 		goto err;
+ 	}
+ 
+-	clk = krait_add_pri_mux(dev, hfpll_div, sec_mux, id, s, offset);
++	clk = krait_add_pri_mux(dev, hfpll_div, sec_mux, id, s, offset,
++				&krait_cc_global->pri_mux_cc);
++
+ err:
+ 	kfree(p);
+ 	return clk;
+@@ -299,14 +401,14 @@ static struct clk *krait_add_clks(struct device *dev, int id, bool unique_aux)
+ static struct clk *krait_of_get(struct of_phandle_args *clkspec, void *data)
+ {
+ 	unsigned int idx = clkspec->args[0];
+-	struct clk **clks = data;
++	struct clk_hw **clks = data;
+ 
+ 	if (idx >= 5) {
+ 		pr_err("%s: invalid clock index %d\n", __func__, idx);
+ 		return ERR_PTR(-EINVAL);
+ 	}
+ 
+-	return clks[idx] ? : ERR_PTR(-ENODEV);
++	return clks[idx]->clk ? : ERR_PTR(-ENODEV);
+ }
+ 
+ static const struct of_device_id krait_cc_match_table[] = {
+@@ -323,8 +425,9 @@ static int krait_cc_probe(struct platform_device *pdev)
+ 	unsigned long cur_rate, qsb_rate, pxo_rate;
+ 	int cpu;
+ 	struct clk *clk;
+-	struct clk **clks;
+ 	struct clk *l2_pri_mux_clk;
++	static struct clk_hw **clks;
++	struct krait_cc_global *krait_cc_global;
+ 
+ 	id = of_match_device(krait_cc_match_table, dev);
+ 	if (!id)
+@@ -359,36 +462,26 @@ static int krait_cc_probe(struct platform_device *pdev)
+ 			return PTR_ERR(clk);
+ 	}
+ 
+-	/* Krait configurations have at most 4 CPUs and one L2 */
+-	clks = devm_kcalloc(dev, 5, sizeof(*clks), GFP_KERNEL);
+-	if (!clks)
++	krait_cc_global = devm_kzalloc(dev, sizeof(*krait_cc_global),
++				       GFP_KERNEL);
++	if (!krait_cc_global)
+ 		return -ENOMEM;
+ 
+-	for_each_possible_cpu(cpu) {
+-		clk = krait_add_clks(dev, cpu, id->data);
+-		if (IS_ERR(clk))
+-			return PTR_ERR(clk);
+-		clks[cpu] = clk;
+-	}
++	spin_lock_init(&krait_cc_global->pri_mux_cc.lock);
++	spin_lock_init(&krait_cc_global->sec_mux_cc.lock);
+ 
+-	l2_pri_mux_clk = krait_add_clks(dev, -1, id->data);
++	l2_pri_mux_clk = krait_add_clks(dev, -1, id->data, krait_cc_global);
+ 	if (IS_ERR(l2_pri_mux_clk))
+ 		return PTR_ERR(l2_pri_mux_clk);
+-	clks[4] = l2_pri_mux_clk;
+ 
+-	/*
+-	 * We don't want the CPU or L2 clocks to be turned off at late init
+-	 * if CPUFREQ or HOTPLUG configs are disabled. So, bump up the
+-	 * refcount of these clocks. Any cpufreq/hotplug manager can assume
+-	 * that the clocks have already been prepared and enabled by the time
+-	 * they take over.
+-	 */
+-	for_each_online_cpu(cpu) {
+-		clk_prepare_enable(l2_pri_mux_clk);
+-		WARN(clk_prepare_enable(clks[cpu]),
+-		     "Unable to turn on CPU%d clock", cpu);
++	for_each_possible_cpu(cpu) {
++		clk = krait_add_clks(dev, cpu, id->data, krait_cc_global);
++		if (IS_ERR(clk))
++			return PTR_ERR(clk);
+ 	}
+ 
++	clks = krait_cc_global->pri_mux_cc.clks;
++
+ 	/*
+ 	 * Force reinit of HFPLLs and muxes to overwrite any potential
+ 	 * incorrect configuration of HFPLLs and muxes by the bootloader.
+@@ -404,10 +497,11 @@ static int krait_cc_probe(struct platform_device *pdev)
+ 		const char *l2_s = "L2";
+ 		char cpu_s[5];
+ 
+-		clk = clks[cpu];
+-		if (!clk)
++		if (!clks[cpu])
+ 			continue;
+ 
++		clk = clks[cpu]->clk;
++
+ 		if (cpu < 4)
+ 			snprintf(cpu_s, 5, "CPU%d", cpu);
+ 
+-- 
+2.37.2
+
