@@ -1,0 +1,1184 @@
+From fe39ffdc202f04397f31557f17170b40bc42b77a Mon Sep 17 00:00:00 2001
+From: Vladimir Mezentsev <vladimir.mezentsev@oracle.com>
+Date: Wed, 14 Sep 2022 01:11:45 -0700
+Subject: [PATCH] gprofng: fix build issues on musl
+
+gprofng/ChangeLog
+2022-09-14  Vladimir Mezentsev  <vladimir.mezentsev@oracle.com>
+
+	PR gprofng/29477
+	* configure.ac: Set __MUSL_LIBC.
+	* configure: Rebuild.
+	* common/config.h.in: Rebuild.
+	* src/collector_module.h: Fix compiler errors because mmap64, open64,
+	pwrite64 are macros and getcontext() is absent on musl.
+	* libcollector/collector.c: Likewise.
+	* libcollector/hwprofile.c: Likewise.
+	* libcollector/iolib.c: Likewise.
+	* libcollector/libcol_util.c: Likewise.
+	* libcollector/linetrace.c: Likewise.
+	* libcollector/memmgr.c: Likewise.
+	* libcollector/profile.c: Likewise.
+	* libcollector/unwind.c: Likewise.
+	* libcollector/dispatcher.c: Likewise.
+	* src/Experiment.cc: Likewise.
+	* libcollector/collector.h: Use dlsym() because dlvsym() is not defined
+	on musl.
+	* libcollector/iotrace.c: Remove interposition of versioned functions.
+	* libcollector/mmaptrace.c: Likewise.
+	* libcollector/libcol_util.h: Fix -Wint-to-pointer-cast warnings.
+	* libcollector/jprofile.c: Likewise.
+	* libcollector/synctrace.c: Include "collector.h".
+	* src/Print.cc: Use get_basename() because basename() is not defined
+	on musl.
+	* common/hwcdrv.c: Fix -Wformat= warnings.
+---
+ gprofng/common/config.h.in         |   3 +
+ gprofng/common/hwcdrv.c            |   6 +-
+ gprofng/configure                  |  30 ++++-
+ gprofng/configure.ac               |  27 ++++-
+ gprofng/libcollector/collector.c   |   9 +-
+ gprofng/libcollector/collector.h   |   6 +-
+ gprofng/libcollector/dispatcher.c  |   4 +-
+ gprofng/libcollector/hwprofile.c   |  11 +-
+ gprofng/libcollector/iolib.c       |  52 ++++-----
+ gprofng/libcollector/iotrace.c     | 179 +++++++++++++++--------------
+ gprofng/libcollector/jprofile.c    |   6 -
+ gprofng/libcollector/libcol_util.c |  19 ++-
+ gprofng/libcollector/libcol_util.h |   9 +-
+ gprofng/libcollector/linetrace.c   |   4 +-
+ gprofng/libcollector/memmgr.c      |   2 +-
+ gprofng/libcollector/mmaptrace.c   | 132 ++++++++-------------
+ gprofng/libcollector/profile.c     |   2 +-
+ gprofng/libcollector/synctrace.c   |   3 +-
+ gprofng/libcollector/unwind.c      |   2 +-
+ gprofng/src/Experiment.cc          |   4 +-
+ gprofng/src/Print.cc               |   6 +-
+ gprofng/src/collector_module.h     |   6 +-
+ 22 files changed, 277 insertions(+), 245 deletions(-)
+
+diff --git a/gprofng/common/config.h.in b/gprofng/common/config.h.in
+index 8409ce74a57..f8484f238fd 100644
+--- a/gprofng/common/config.h.in
++++ b/gprofng/common/config.h.in
+@@ -118,3 +118,6 @@
+ 
+ /* Define to 1 if you need to in order for `stat' and other things to work. */
+ #undef _POSIX_SOURCE
++
++/* Build with musl-libc. */
++#undef __MUSL_LIBC
+diff --git a/gprofng/common/hwcdrv.c b/gprofng/common/hwcdrv.c
+index caab9839b49..05390e239df 100644
+--- a/gprofng/common/hwcdrv.c
++++ b/gprofng/common/hwcdrv.c
+@@ -440,7 +440,7 @@ typedef struct
+ { // per-thread context
+   counter_state_t *ctr_list;
+   int signal_fd;                // fd that caused the most recent signal
+-  pthread_t tid;                // for debugging signal delivery problems
++  pid_t tid;			// for debugging signal delivery problems
+ } hdrv_pcl_ctx_t;
+ 
+ /*---------------------------------------------------------------------------*/
+@@ -1321,7 +1321,7 @@ hwcdrv_free_counters () // note: only performs shutdown for this thread
+   for (int ii = 0; ii < hdrv_pcl_state.hwcdef_cnt; ii++)
+     if (stop_one_ctr (ii, ctr_list))
+       hwc_rc = HWCFUNCS_ERROR_GENERIC;
+-  TprintfT (DBG_LT1, "hwcdrv: hwcdrv_free_counters(tid=0x%lx).\n", pctx->tid);
++  TprintfT (DBG_LT1, "hwcdrv: hwcdrv_free_counters(tid=0x%lx).\n", (long) pctx->tid);
+   pctx->ctr_list = NULL;
+   return hwc_rc;
+ }
+@@ -1351,7 +1351,7 @@ hwcdrv_start (void) /* must be called from each thread ? */
+       return HWCFUNCS_ERROR_UNEXPECTED;
+     }
+   pctx->tid = hwcdrv_gettid ();
+-  TprintfT (DBG_LT1, "hwcdrv: hwcdrv_start(tid=0x%lx)\n", pctx->tid);
++  TprintfT (DBG_LT1, "hwcdrv: hwcdrv_start(tid=0x%lx)\n", (long) pctx->tid);
+ 
+   /*
+    * create per-thread counter list
+diff --git a/gprofng/configure b/gprofng/configure
+index fad5b030072..301ac10050b 100755
+--- a/gprofng/configure
++++ b/gprofng/configure
+@@ -16572,7 +16572,7 @@ class Simple{
+   }
+ }
+ EOF
+-      if { ac_try='$JAVAC conftest.java &5 2>&1'
++      if { ac_try='$JAVAC configtest.java &5 2>&1'
+   { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
+   (eval $ac_try) 2>&5
+   ac_status=$?
+@@ -16608,6 +16608,34 @@ $as_echo "#define DEBUG 1" >>confdefs.h
+ 
+ fi
+ 
++cat > "dummy.c" << EOF
++#include <features.h>
++#if defined(__UCLIBC__)
++LIBC=uclibc
++#elif defined(__dietlibc__)
++LIBC=dietlibc
++#elif defined(__GLIBC__)
++LIBC=gnu
++#else
++#include <stdarg.h>
++/* First heuristic to detect musl libc.  */
++#ifdef __DEFINED_va_list
++LIBC=musl
++#else
++LIBC=gnu
++#endif
++#endif
++EOF
++cc_set_libc=`$CC -E "dummy.c" 2>/dev/null | grep '^LIBC=' | sed 's, ,,g'`
++eval "$cc_set_libc"
++echo "cc_set_libc=$cc_set_libc;"
++if test "$LIBC" = musl; then
++
++$as_echo "#define __MUSL_LIBC 1" >>confdefs.h
++
++fi
++
++
+ # Check if linker supports --as-needed and --no-as-needed options.
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking linker --as-needed support" >&5
+ $as_echo_n "checking linker --as-needed support... " >&6; }
+diff --git a/gprofng/configure.ac b/gprofng/configure.ac
+index e9453109602..2d7640dfdc8 100644
+--- a/gprofng/configure.ac
++++ b/gprofng/configure.ac
+@@ -142,7 +142,7 @@ class Simple{
+   }
+ }
+ EOF
+-      if AC_TRY_COMMAND($JAVAC conftest.java &AS_MESSAGE_LOG_FD 2>&1); then
++      if AC_TRY_COMMAND($JAVAC configtest.java &AS_MESSAGE_LOG_FD 2>&1); then
+ 	GPROFNG_BROKEN_JAVAC=no
+       else
+ 	GPROFNG_BROKEN_JAVAC=yes
+@@ -159,6 +159,31 @@ if test "${enable_gprofng_debug}" = yes; then
+     AC_DEFINE(DEBUG, 1, [Enable debugging output.])
+ fi
+ 
++cat > "dummy.c" << EOF
++#include <features.h>
++#if defined(__UCLIBC__)
++LIBC=uclibc
++#elif defined(__dietlibc__)
++LIBC=dietlibc
++#elif defined(__GLIBC__)
++LIBC=gnu
++#else
++#include <stdarg.h>
++/* First heuristic to detect musl libc.  */
++#ifdef __DEFINED_va_list
++LIBC=musl
++#else
++LIBC=gnu
++#endif
++#endif
++EOF
++cc_set_libc=`$CC -E "dummy.c" 2>/dev/null | grep '^LIBC=' | sed 's, ,,g'`
++eval "$cc_set_libc"
++if test "$LIBC" = musl; then
++  AC_DEFINE(__MUSL_LIBC, 1, [Build with musl-libc.])
++fi
++
++
+ # Check if linker supports --as-needed and --no-as-needed options.
+ AC_CACHE_CHECK(linker --as-needed support, bfd_cv_ld_as_needed,
+ 	[bfd_cv_ld_as_needed=no
+diff --git a/gprofng/libcollector/collector.c b/gprofng/libcollector/collector.c
+index ceff2c1cacc..93015305587 100644
+--- a/gprofng/libcollector/collector.c
++++ b/gprofng/libcollector/collector.c
+@@ -2155,7 +2155,7 @@ log_header_write (sp_origin_t origin)
+   ucontext_t ucp;
+   ucp.uc_stack.ss_sp = NULL;
+   ucp.uc_stack.ss_size = 0;
+-  if (getcontext (&ucp) == 0)
++  if (CALL_UTIL (getcontext) (&ucp) == 0)
+     {
+       (void) __collector_log_write ("<process stackbase=\"0x%lx\"></process>\n",
+ 				    (unsigned long) ucp.uc_stack.ss_sp + ucp.uc_stack.ss_size);
+@@ -2413,10 +2413,9 @@ __collector_dlog (int tflag, int level, char *format, ...)
+   int left = bufsz;
+   if ((tflag & SP_DUMP_NOHEADER) == 0)
+     {
+-      p += CALL_UTIL (snprintf)(p, left, "P%d,L%02u,t%02lu",
+-				(int) getpid (),
+-				(unsigned int) __collector_lwp_self (),
+-				__collector_no_threads ? 0 : __collector_thr_self ());
++      p += CALL_UTIL (snprintf) (p, left, "P%ld,L%02lu,t%02lu",
++	 (long) getpid (), (unsigned long) __collector_lwp_self (),
++	 (unsigned long) (__collector_no_threads ? 0 : __collector_thr_self ()));
+       left = bufsz - (p - buf);
+       if (tflag)
+ 	{
+diff --git a/gprofng/libcollector/collector.h b/gprofng/libcollector/collector.h
+index c54568d891c..b589d3f3d18 100644
+--- a/gprofng/libcollector/collector.h
++++ b/gprofng/libcollector/collector.h
+@@ -21,7 +21,6 @@
+ #ifndef _COLLECTOR_H
+ #define _COLLECTOR_H
+ 
+-#include <ucontext.h>
+ #include <signal.h>
+ 
+ #include "gp-defs.h"
+@@ -31,6 +30,11 @@
+ 
+ #define GETRELTIME()    (__collector_gethrtime() - __collector_start_time)
+ 
++#if defined(__MUSL_LIBC)
++#define dlvsym(f, nm, v)  dlsym (f, nm)
++#define SIGEV_THREAD_ID   4
++#endif
++
+ extern hrtime_t __collector_start_time;
+ 
+ /* ========================================================== */
+diff --git a/gprofng/libcollector/dispatcher.c b/gprofng/libcollector/dispatcher.c
+index f0308605d76..d3e4c52d667 100644
+--- a/gprofng/libcollector/dispatcher.c
++++ b/gprofng/libcollector/dispatcher.c
+@@ -30,9 +30,7 @@
+ #include <unistd.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <ucontext.h>
+ #include <sys/param.h>
+-#include <sys/signal.h>
+ #include <sys/syscall.h>
+ #include <time.h>
+ #include <signal.h>
+@@ -575,7 +573,9 @@ collector_timer_create (timer_t * ptimerid)
+   sigev.sigev_notify = SIGEV_THREAD_ID | SIGEV_SIGNAL;
+   sigev.sigev_signo = SIGPROF;
+   sigev.sigev_value.sival_ptr = ptimerid;
++#if !defined(__MUSL_LIBC)
+   sigev._sigev_un._tid = __collector_gettid ();
++#endif
+   if (CALL_REAL (timer_create)(CLOCK_THREAD_CPUTIME_ID, &sigev, ptimerid) == -1)
+     {
+       TprintfT (DBG_LT2, "collector_timer_settime() failed! errno=%d\n", errno);
+diff --git a/gprofng/libcollector/hwprofile.c b/gprofng/libcollector/hwprofile.c
+index 6fdaf1bd8ff..e360068ea30 100644
+--- a/gprofng/libcollector/hwprofile.c
++++ b/gprofng/libcollector/hwprofile.c
+@@ -29,7 +29,6 @@
+ #include <errno.h>
+ #include <sys/syscall.h>
+ #include <signal.h>
+-#include <ucontext.h>
+ 
+ #include "gp-defs.h"
+ #define _STRING_H 1  /* XXX MEZ: temporary workaround */
+@@ -378,23 +377,23 @@ static void
+ init_ucontexts (void)
+ {
+   /* initialize dummy context for "collector" frames */
+-  getcontext (&expr_dummy_uc);
++  CALL_UTIL (getcontext) (&expr_dummy_uc);
+   SETFUNCTIONCONTEXT (&expr_dummy_uc, NULL);
+ 
+   /* initialize dummy context for "out-of-range" frames */
+-  getcontext (&expr_out_of_range_uc);
++  CALL_UTIL (getcontext) (&expr_out_of_range_uc);
+   SETFUNCTIONCONTEXT (&expr_out_of_range_uc, &__collector_hwcs_out_of_range);
+ 
+   /* initialize dummy context for "frozen" frames */
+-  getcontext (&expr_frozen_uc);
++  CALL_UTIL (getcontext) (&expr_frozen_uc);
+   SETFUNCTIONCONTEXT (&expr_frozen_uc, &__collector_hwcs_frozen);
+ 
+   /* initialize dummy context for non-program-related frames */
+-  getcontext (&expr_nopc_uc);
++  CALL_UTIL (getcontext) (&expr_nopc_uc);
+   SETFUNCTIONCONTEXT (&expr_nopc_uc, &__collector_not_program_related);
+ 
+   /* initialize dummy context for lost-counts-related frames */
+-  getcontext (&expr_lostcounts_uc);
++  CALL_UTIL (getcontext) (&expr_lostcounts_uc);
+   SETFUNCTIONCONTEXT (&expr_lostcounts_uc, &__collector_hwc_samples_lost);
+ }
+ /* initialize the signal handler */
+diff --git a/gprofng/libcollector/iolib.c b/gprofng/libcollector/iolib.c
+index 6881f02fd30..861843c183d 100644
+--- a/gprofng/libcollector/iolib.c
++++ b/gprofng/libcollector/iolib.c
+@@ -243,16 +243,14 @@ __collector_create_handle (char *descp)
+     {
+       /* allocate our buffers in virtual memory */
+       /* later, we will remap buffers individually to the file */
+-      uint8_t *memory = (uint8_t*) CALL_UTIL (mmap64)(0,
+-						      (size_t) (NBUFS * blksz),
+-						      PROT_READ | PROT_WRITE,
++      uint8_t *memory = (uint8_t*) CALL_UTIL (mmap64_) (0,
++	      (size_t) (NBUFS * blksz), PROT_READ | PROT_WRITE,
+ #if ARCH(SPARC)
+ 	      MAP_SHARED | MAP_ANON,
+ #else
+ 	      MAP_PRIVATE | MAP_ANON,
+ #endif
+-	      -1,
+-						      (off64_t) 0);
++	      -1, (off64_t) 0);
+       if (memory == MAP_FAILED)
+ 	{
+ 	  TprintfT (0, "create_handle: can't mmap MAP_ANON (for %s): %s\n", hndl->fname, CALL_UTIL (strerror)(errno));
+@@ -516,9 +514,8 @@ allocateChunk (DataHandle *hndl, unsigned ichunk)
+       if (__collector_cas_ptr (&hndl->chunks[ichunk], NULL, CHUNK_BUSY) == NULL)
+ 	{
+ 	  /* allocate virtual memory */
+-	  uint8_t *newchunk = (uint8_t*) CALL_UTIL (mmap64)(0,
+-							    (size_t) (blksz * hndl->nflow),
+-							    PROT_READ | PROT_WRITE,
++	  uint8_t *newchunk = (uint8_t*) CALL_UTIL (mmap64_) (0,
++		  (size_t) (blksz * hndl->nflow), PROT_READ | PROT_WRITE,
+ #if ARCH(SPARC)
+ 		  MAP_SHARED | MAP_ANON,
+ #else
+@@ -611,8 +608,10 @@ remapBlock (DataHandle *hndl, unsigned iflow, unsigned ichunk)
+ 		  char errmsg[MAXPATHLEN + 50];
+ 		  hrtime_t teo = __collector_gethrtime ();
+ 		  double deltato = (double) (teo - tso) / 1000000.;
+-		  (void) CALL_UTIL (snprintf) (errmsg, sizeof (errmsg), " t=%d, %s: open-retries-failed = %d, %3.6f ms.; remap",
+-					       __collector_thr_self (), hndl->fname, iter, deltato);
++		  (void) CALL_UTIL (snprintf) (errmsg, sizeof (errmsg),
++			" t=%lu, %s: open-retries-failed=%d, %3.6f ms.; remap\n",
++			(unsigned long) __collector_thr_self (), hndl->fname,
++			iter, deltato);
+ 		  __collector_log_write ("<event kind=\"%s\" id=\"%d\">%s</event>\n",
+ 					 SP_JCMD_COMMENT, COL_COMMENT_NONE, errmsg);
+ 		  rc = 1;
+@@ -623,9 +622,9 @@ remapBlock (DataHandle *hndl, unsigned iflow, unsigned ichunk)
+ 	    }
+ 	  deleteHandle (hndl);
+ 	  TprintfT (0, "remapBlock: can't open file: %s: %s\n", hndl->fname, STR (CALL_UTIL (strerror)(errno)));
+-	  __collector_log_write ("<event kind=\"%s\" id=\"%d\" ec=\"%d\">t=%llu, %s: remap </event>\n",
++	  __collector_log_write ("<event kind=\"%s\" id=\"%d\" ec=\"%d\">t=%lu, %s: remap </event>\n",
+ 				 SP_JCMD_CERROR, COL_ERROR_FILEOPN, errno,
+-				 (unsigned long long) __collector_thr_self (),
++				 (unsigned long) __collector_thr_self (),
+ 				 hndl->fname);
+ 	  rc = 1;
+ 	  goto exit;
+@@ -640,15 +639,18 @@ remapBlock (DataHandle *hndl, unsigned iflow, unsigned ichunk)
+       char errmsg[MAXPATHLEN + 50];
+       hrtime_t teo = __collector_gethrtime ();
+       double deltato = (double) (teo - tso) / 1000000.;
+-      (void) CALL_UTIL (snprintf) (errmsg, sizeof (errmsg), " t=%d, %s: open-retries = %d, %3.6f ms.; remap",
+-				   __collector_thr_self (), hndl->fname, iter, deltato);
++      (void) CALL_UTIL (snprintf) (errmsg, sizeof (errmsg),
++	      " t=%d, %s: open-retries=%lu, %3.6f ms.; remap\n",
++	      (unsigned long) __collector_thr_self (), hndl->fname,
++	      iter, deltato);
+       __collector_log_write ("<event kind=\"%s\" id=\"%d\">%s</event>\n",
+ 			     SP_JCMD_COMMENT, COL_COMMENT_NONE, errmsg);
+     }
+ 
+   /* Ensure disk space is allocated and the block offset is 0 */
+   uint32_t zero = 0;
+-  int n = CALL_UTIL (pwrite64)(fd, &zero, sizeof (zero), (off64_t) (offset + blksz - sizeof (zero)));
++  int n = CALL_UTIL (pwrite64_) (fd, &zero, sizeof (zero),
++				(off64_t) (offset + blksz - sizeof (zero)));
+   if (n <= 0)
+     {
+       deleteHandle (hndl);
+@@ -663,13 +665,9 @@ remapBlock (DataHandle *hndl, unsigned iflow, unsigned ichunk)
+ 
+   /* Map block to file */
+   uint8_t *bptr = getBlock (hndl, iflow, ichunk);
+-  uint8_t *vaddr = (uint8_t *) CALL_UTIL (mmap64)(
+-						  (void*) bptr,
+-						  (size_t) blksz,
+-						  PROT_READ | PROT_WRITE,
+-						  MAP_SHARED | MAP_FIXED,
+-						  fd,
+-						  offset);
++  uint8_t *vaddr = (uint8_t *) CALL_UTIL (mmap64_) ((void*) bptr,
++	  (size_t) blksz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED,
++	  fd, offset);
+ 
+   if (vaddr != bptr)
+     {
+@@ -784,8 +782,9 @@ __collector_write_packet (DataHandle *hndl, CM_Packet *pckt)
+       TprintfT (0, "collector_write_packet: packet too long: %d (max %ld)\n", recsz, blksz);
+       return 1;
+     }
+-  unsigned tid = (__collector_no_threads ? __collector_lwp_self () : __collector_thr_self ());
+-  unsigned iflow = tid % hndl->nflow;
++  collector_thread_t tid = __collector_no_threads ? __collector_lwp_self ()
++						  : __collector_thr_self ();
++  unsigned iflow = (unsigned) (((unsigned long) tid) % hndl->nflow);
+ 
+   /* Acquire block */
+   uint32_t *sptr = &hndl->blkstate[iflow * NCHUNKS];
+@@ -925,7 +924,8 @@ mapBuffer (char *fname, Buffer *buf, off64_t foff)
+ 
+   /* ensure disk space is allocated */
+   char nl = '\n';
+-  int n = CALL_UTIL (pwrite64)(fd, &nl, sizeof (nl), (off64_t) (foff + blksz - sizeof (nl)));
++  int n = CALL_UTIL (pwrite64_) (fd, &nl, sizeof (nl),
++				 (off64_t) (foff + blksz - sizeof (nl)));
+   if (n <= 0)
+     {
+       TprintfT (0, "mapBuffer ERROR: can't pwrite file %s at 0x%llx\n", fname,
+@@ -937,7 +937,7 @@ mapBuffer (char *fname, Buffer *buf, off64_t foff)
+       goto exit;
+     }
+   /* mmap buf->vaddr to fname at foff */
+-  uint8_t *vaddr = CALL_UTIL (mmap64)(buf->vaddr, (size_t) blksz,
++  uint8_t *vaddr = CALL_UTIL (mmap64_) (buf->vaddr, (size_t) blksz,
+ 	  PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, foff);
+   if (vaddr != buf->vaddr)
+     {
+diff --git a/gprofng/libcollector/iotrace.c b/gprofng/libcollector/iotrace.c
+index 9b47724bab9..d94daefa89b 100644
+--- a/gprofng/libcollector/iotrace.c
++++ b/gprofng/libcollector/iotrace.c
+@@ -34,7 +34,7 @@
+ #include <fcntl.h>
+ 
+ #include "gp-defs.h"
+-#include "collector_module.h"
++#include "collector.h"
+ #include "gp-experiment.h"
+ #include "data_pckts.h"
+ #include "tsd.h"
+@@ -999,6 +999,22 @@ init_io_intf ()
+   return rc;
+ }
+ 
++static void
++write_io_packet (int fd, ssize_t ret, hrtime_t reqt, int iotype)
++{
++  IOTrace_packet iopkt;
++  collector_memset (&iopkt, 0, sizeof ( IOTrace_packet));
++  iopkt.comm.tsize = sizeof (IOTrace_packet);
++  iopkt.comm.tstamp = gethrtime ();
++  iopkt.requested = reqt;
++  iopkt.iotype = iotype;
++  iopkt.fd = fd;
++  iopkt.nbyte = ret;
++  iopkt.comm.frinfo = collector_interface->getFrameInfo (io_hndl,
++			iopkt.comm.tstamp, FRINFO_FROM_STACK, &iopkt);
++  collector_interface->writeDataRecord (io_hndl, (Common_packet*) & iopkt);
++}
++
+ /*------------------------------------------------------------- open */
+ int
+ open (const char *path, int oflag, ...)
+@@ -2412,162 +2428,147 @@ pread (int fildes, void *buf, size_t nbyte, off_t offset)
+ }
+ 
+ /*------------------------------------------------------------- pwrite */
+-#if ARCH(Intel) && WSIZE(32)
++
++#if !defined(__MUSL_LIBC) && ARCH(Intel) && WSIZE(32)
+ // map interposed symbol versions
+-static int
+-__collector_pwrite_symver (int(real_pwrite) (), int fildes, const void *buf, size_t nbyte, off_t offset);
+ 
+ SYMVER_ATTRIBUTE (__collector_pwrite_2_2, pwrite@@GLIBC_2.2)
+ int
+ __collector_pwrite_2_2 (int fildes, const void *buf, size_t nbyte, off_t offset)
+ {
+-  TprintfT (DBG_LTT, "iotrace: __collector_pwrite_2_2@%p(fildes=%d, buf=%p, nbyte=%lld, offset=%lld)\n",
+-	    CALL_REAL (pwrite_2_2), fildes, buf, (long long) nbyte, (long long) offset);
+-  if (NULL_PTR (pwrite))
++  int *guard;
++  if (NULL_PTR (pwrite_2_2))
+     init_io_intf ();
+-  return __collector_pwrite_symver (CALL_REAL (pwrite_2_2), fildes, buf, nbyte, offset);
++  if (CHCK_REENTRANCE (guard))
++    return CALL_REAL (pwrite_2_2)(fildes, buf, nbyte, offset);
++  PUSH_REENTRANCE (guard);
++  hrtime_t reqt = gethrtime ();
++  ssize_t ret = CALL_REAL (pwrite_2_2)(fildes, buf, nbyte, offset);
++  if (RECHCK_REENTRANCE (guard))
++    {
++      POP_REENTRANCE (guard);
++      return ret;
++    }
++  write_io_packet (fildes, ret, reqt, ret >= 0 ? WRITE_TRACE : WRITE_TRACE_ERROR);
++  POP_REENTRANCE (guard);
++  return ret;
+ }
+ 
+ SYMVER_ATTRIBUTE (__collector_pwrite_2_1, pwrite@GLIBC_2.1)
+ int
+ __collector_pwrite_2_1 (int fildes, const void *buf, size_t nbyte, off_t offset)
+ {
+-  TprintfT (DBG_LTT, "iotrace: __collector_pwrite_2_1@%p(fildes=%d, buf=%p, nbyte=%lld, offset=%lld)\n",
+-	    CALL_REAL (pwrite_2_1), fildes, buf, (long long) nbyte, (long long) offset);
+-  if (NULL_PTR (pwrite))
++  int *guard;
++  if (NULL_PTR (pwrite_2_1))
+     init_io_intf ();
+-  return __collector_pwrite_symver (CALL_REAL (pwrite_2_1), fildes, buf, nbyte, offset);
++  if (CHCK_REENTRANCE (guard))
++    return CALL_REAL (pwrite_2_1)(fildes, buf, nbyte, offset);
++  PUSH_REENTRANCE (guard);
++  hrtime_t reqt = gethrtime ();
++  ssize_t ret = CALL_REAL (pwrite_2_1)(fildes, buf, nbyte, offset);
++  if (RECHCK_REENTRANCE (guard))
++    {
++      POP_REENTRANCE (guard);
++      return ret;
++    }
++  write_io_packet (fildes, ret, reqt, ret >= 0 ? WRITE_TRACE : WRITE_TRACE_ERROR);
++  POP_REENTRANCE (guard);
++  return ret;
+ }
+-
+-static int
+-__collector_pwrite_symver (int(real_pwrite) (), int fildes, const void *buf, size_t nbyte, off_t offset)
+-{
+-#else /* ^ARCH(Intel) && WSIZE(32) */
++#endif /* !defined(__MUSL_LIBC) && ARCH(Intel) && WSIZE(32) */
+ 
+ ssize_t
+ pwrite (int fildes, const void *buf, size_t nbyte, off_t offset)
+ {
+-#endif /* ^ARCH(Intel) && WSIZE(32) */
+   int *guard;
+-  ssize_t ret;
+-  IOTrace_packet iopkt;
+   if (NULL_PTR (pwrite))
+     init_io_intf ();
+   if (CHCK_REENTRANCE (guard))
+-    {
+-#if ARCH(Intel) && WSIZE(32)
+-      return (real_pwrite) (fildes, buf, nbyte, offset);
+-#else
+-      return CALL_REAL (pwrite)(fildes, buf, nbyte, offset);
+-#endif
+-    }
++    return CALL_REAL (pwrite)(fildes, buf, nbyte, offset);
+   PUSH_REENTRANCE (guard);
+   hrtime_t reqt = gethrtime ();
+-#if ARCH(Intel) && WSIZE(32)
+-  ret = (real_pwrite) (fildes, buf, nbyte, offset);
+-#else
+-  ret = CALL_REAL (pwrite)(fildes, buf, nbyte, offset);
+-#endif
++  ssize_t ret = CALL_REAL (pwrite)(fildes, buf, nbyte, offset);
+   if (RECHCK_REENTRANCE (guard))
+     {
+       POP_REENTRANCE (guard);
+       return ret;
+     }
+-  hrtime_t grnt = gethrtime ();
+-  collector_memset (&iopkt, 0, sizeof ( IOTrace_packet));
+-  iopkt.comm.tsize = sizeof ( IOTrace_packet);
+-  iopkt.comm.tstamp = grnt;
+-  iopkt.requested = reqt;
+-  if (ret >= 0)
+-    iopkt.iotype = WRITE_TRACE;
+-  else
+-    iopkt.iotype = WRITE_TRACE_ERROR;
+-  iopkt.fd = fildes;
+-  iopkt.nbyte = ret;
+-  iopkt.comm.frinfo = collector_interface->getFrameInfo (io_hndl, iopkt.comm.tstamp, FRINFO_FROM_STACK, &iopkt);
+-  collector_interface->writeDataRecord (io_hndl, (Common_packet*) & iopkt);
++  write_io_packet (fildes, ret, reqt, ret >= 0 ? WRITE_TRACE : WRITE_TRACE_ERROR);
+   POP_REENTRANCE (guard);
+   return ret;
+ }
+ 
+ /*------------------------------------------------------------- pwrite64 */
++#if !defined(__MUSL_LIBC)
+ #if ARCH(Intel) && WSIZE(32)
+ // map interposed symbol versions
+-static int
+-__collector_pwrite64_symver (int(real_pwrite64) (), int fildes, const void *buf, size_t nbyte, off64_t offset);
+ 
+ SYMVER_ATTRIBUTE (__collector_pwrite64_2_2, pwrite64@@GLIBC_2.2)
+-int
++ssize_t
+ __collector_pwrite64_2_2 (int fildes, const void *buf, size_t nbyte, off64_t offset)
+ {
+-  TprintfT (DBG_LTT, "iotrace: __collector_pwrite64_2_2@%p(fildes=%d, buf=%p, nbyte=%lld, offset=%lld)\n",
+-	    CALL_REAL (pwrite64_2_2), fildes, buf, (long long) nbyte, (long long) offset);
+-  if (NULL_PTR (pwrite64))
++  int *guard;
++  if (NULL_PTR (pwrite64_2_2))
+     init_io_intf ();
+-  return __collector_pwrite64_symver (CALL_REAL (pwrite64_2_2), fildes, buf, nbyte, offset);
++  if (CHCK_REENTRANCE (guard))
++    return CALL_REAL (pwrite64_2_2)(fildes, buf, nbyte, offset);
++  PUSH_REENTRANCE (guard);
++  hrtime_t reqt = gethrtime ();
++  ssize_t ret = CALL_REAL (pwrite64_2_2)(fildes, buf, nbyte, offset);
++  if (RECHCK_REENTRANCE (guard))
++    {
++      POP_REENTRANCE (guard);
++      return ret;
++    }
++  write_io_packet (fildes, ret, reqt, ret >= 0 ? WRITE_TRACE : WRITE_TRACE_ERROR);
++  POP_REENTRANCE (guard);
++  return ret;
+ }
+ 
+ SYMVER_ATTRIBUTE (__collector_pwrite64_2_1, pwrite64@GLIBC_2.1)
+ int
+ __collector_pwrite64_2_1 (int fildes, const void *buf, size_t nbyte, off64_t offset)
+ {
+-  TprintfT (DBG_LTT, "iotrace: __collector_pwrite64_2_1@%p(fildes=%d, buf=%p, nbyte=%lld, offset=%lld)\n",
+-	    CALL_REAL (pwrite64_2_1), fildes, buf, (long long) nbyte, (long long) offset);
+-  if (NULL_PTR (pwrite64))
++  int *guard;
++  if (NULL_PTR (pwrite64_2_1))
+     init_io_intf ();
+-  return __collector_pwrite64_symver (CALL_REAL (pwrite64_2_1), fildes, buf, nbyte, offset);
++  if (CHCK_REENTRANCE (guard))
++    return CALL_REAL (pwrite64_2_1)(fildes, buf, nbyte, offset);
++  PUSH_REENTRANCE (guard);
++  hrtime_t reqt = gethrtime ();
++  ssize_t ret = CALL_REAL (pwrite64_2_1)(fildes, buf, nbyte, offset);
++  if (RECHCK_REENTRANCE (guard))
++    {
++      POP_REENTRANCE (guard);
++      return ret;
++    }
++  write_io_packet (fildes, ret, reqt, ret >= 0 ? WRITE_TRACE : WRITE_TRACE_ERROR);
++  POP_REENTRANCE (guard);
++  return ret;
+ }
+-
+-static int
+-__collector_pwrite64_symver (int(real_pwrite64) (), int fildes, const void *buf, size_t nbyte, off64_t offset)
+-{
+-#else /* ^ARCH(Intel) && WSIZE(32) */
++#endif
+ 
+ ssize_t
+ pwrite64 (int fildes, const void *buf, size_t nbyte, off64_t offset)
+ {
+-#endif /* ^ARCH(Intel) && WSIZE(32) */
+   int *guard;
+-  ssize_t ret;
+-  IOTrace_packet iopkt;
+   if (NULL_PTR (pwrite64))
+     init_io_intf ();
+   if (CHCK_REENTRANCE (guard))
+-    {
+-#if ARCH(Intel) && WSIZE(32)
+-      return (real_pwrite64) (fildes, buf, nbyte, offset);
+-#else
+-      return CALL_REAL (pwrite64)(fildes, buf, nbyte, offset);
+-#endif
+-    }
++    return CALL_REAL (pwrite64)(fildes, buf, nbyte, offset);
+   PUSH_REENTRANCE (guard);
+   hrtime_t reqt = gethrtime ();
+-#if ARCH(Intel) && WSIZE(32)
+-  ret = (real_pwrite64) (fildes, buf, nbyte, offset);
+-#else
+-  ret = CALL_REAL (pwrite64)(fildes, buf, nbyte, offset);
+-#endif
++  ssize_t ret = CALL_REAL (pwrite64)(fildes, buf, nbyte, offset);
+   if (RECHCK_REENTRANCE (guard))
+     {
+       POP_REENTRANCE (guard);
+       return ret;
+     }
+-  hrtime_t grnt = gethrtime ();
+-  collector_memset (&iopkt, 0, sizeof ( IOTrace_packet));
+-  iopkt.comm.tsize = sizeof ( IOTrace_packet);
+-  iopkt.comm.tstamp = grnt;
+-  iopkt.requested = reqt;
+-  if (ret >= 0)
+-    iopkt.iotype = WRITE_TRACE;
+-  else
+-    iopkt.iotype = WRITE_TRACE_ERROR;
+-  iopkt.fd = fildes;
+-  iopkt.nbyte = ret;
+-  iopkt.comm.frinfo = collector_interface->getFrameInfo (io_hndl, iopkt.comm.tstamp, FRINFO_FROM_STACK, &iopkt);
+-  collector_interface->writeDataRecord (io_hndl, (Common_packet*) & iopkt);
++  write_io_packet (fildes, ret, reqt, ret >= 0 ? WRITE_TRACE : WRITE_TRACE_ERROR);
+   POP_REENTRANCE (guard);
+   return ret;
+ }
++#endif
+ 
+ /*------------------------------------------------------------- fgets */
+ char*
+diff --git a/gprofng/libcollector/jprofile.c b/gprofng/libcollector/jprofile.c
+index 9daaa5a267e..52114066726 100644
+--- a/gprofng/libcollector/jprofile.c
++++ b/gprofng/libcollector/jprofile.c
+@@ -285,12 +285,6 @@ __collector_jprofile_start_attach (void)
+ 	    {
+ 	      jthread thread;
+ 	      (*jvmti)->GetCurrentThread (jvmti, &thread);
+-#ifdef DEBUG
+-	      collector_thread_t tid;
+-	      tid = __collector_thr_self ();
+-	      TprintfT (0, "jprofile attach: AttachCurrentThread: thread: %lu jni_env=%p jthread=%p\n",
+-			(unsigned long) tid, jni_env, thread);
+-#endif /* DEBUG */
+ 	      jvmti_VMInit (jvmti, jni_env, thread);
+ 	      (*jvmti)->GenerateEvents (jvmti, JVMTI_EVENT_COMPILED_METHOD_LOAD);
+ 	      (*jvmti)->GenerateEvents (jvmti, JVMTI_EVENT_DYNAMIC_CODE_GENERATED);
+diff --git a/gprofng/libcollector/libcol_util.c b/gprofng/libcollector/libcol_util.c
+index c709b3c5ed1..d682aa0ab29 100644
+--- a/gprofng/libcollector/libcol_util.c
++++ b/gprofng/libcollector/libcol_util.c
+@@ -1116,9 +1116,9 @@ __collector_util_init ()
+   /*    internal calls for mapping in libcollector call mmap64 */
+   ptr = dlsym (libc, "mmap64");
+   if (ptr)
+-    __collector_util_funcs.mmap64 = (void*(*)(void *, size_t, int, int, int, off_t))ptr;
++    __collector_util_funcs.mmap64_ = (void*(*)(void *, size_t, int, int, int, off_t))ptr;
+   else
+-    __collector_util_funcs.mmap64 = __collector_util_funcs.mmap;
++    __collector_util_funcs.mmap64_ = __collector_util_funcs.mmap;
+ 
+   ptr = dlsym (libc, "munmap");
+   if (ptr)
+@@ -1214,16 +1214,16 @@ __collector_util_init ()
+ #if ARCH(Intel) && WSIZE(32)
+   ptr = dlvsym (libc, "pwrite64", "GLIBC_2.2"); // it is in /lib/libpthread.so.0
+   if (ptr)
+-    __collector_util_funcs.pwrite64 = (ssize_t (*)())ptr;
++    __collector_util_funcs.pwrite64_ = (ssize_t (*)())ptr;
+   else
+     {
+       Tprintf (DBG_LT0, "libcol_util: WARNING: dlvsym for %s@%s failed. Using dlsym() instead.", "pwrite64", "GLIBC_2.2");
+ #endif /* ARCH(Intel) && WSIZE(32) */
+       ptr = dlsym (libc, "pwrite64");
+       if (ptr)
+-	__collector_util_funcs.pwrite64 = (ssize_t (*)())ptr;
++	__collector_util_funcs.pwrite64_ = (ssize_t (*)())ptr;
+       else
+-	__collector_util_funcs.pwrite64 = __collector_util_funcs.pwrite;
++	__collector_util_funcs.pwrite64_ = __collector_util_funcs.pwrite;
+ #if ARCH(Intel) && WSIZE(32)
+     }
+ #endif /* ARCH(Intel) && WSIZE(32) */
+@@ -1319,6 +1319,15 @@ __collector_util_init ()
+   __collector_util_funcs.getcpuid = __collector_getcpuid;
+   __collector_util_funcs.memset = collector_memset;
+ 
++  ptr = dlsym (libc, "getcontext");
++  if (ptr)
++    __collector_util_funcs.getcontext = (int(*)())ptr;
++  else
++    {
++      CALL_UTIL (fprintf)(stderr, "collector_util_init COL_ERROR_UTIL_INIT getcontext: %s\n", dlerror ());
++      err = COL_ERROR_UTIL_INIT;
++    }
++
+   ptr = dlsym (libc, "malloc");
+   if (ptr)
+     __collector_util_funcs.malloc = (void *(*)(size_t))ptr;
+diff --git a/gprofng/libcollector/libcol_util.h b/gprofng/libcollector/libcol_util.h
+index e13a02ea6d7..c32c76f091b 100644
+--- a/gprofng/libcollector/libcol_util.h
++++ b/gprofng/libcollector/libcol_util.h
+@@ -59,12 +59,11 @@ extern int __collector_xml_snprintf (char *s, size_t n, const char *format, ...)
+ extern int __collector_xml_vsnprintf (char *s, size_t n, const char *format, va_list args);
+ 
+ /* -------  collector_thread ----------------- */
+-pid_t __collector_gettid ();
++extern pid_t __collector_gettid ();
+ extern void __collector_ext_gettid_tsd_create_key ();
+-#define collector_thread_t pthread_t            // not using pid_t, since tid is defined as pthread_t in package structures, and other codes assume this type
+-#define statvfs_t  struct statvfs
+-#define __collector_lwp_self() (collector_thread_t)__collector_gettid() // not using pthread_self()
+-#define __collector_thr_self() (collector_thread_t)__collector_gettid() // not using pthread_self()
++typedef pthread_t collector_thread_t;
++#define __collector_lwp_self() ((collector_thread_t) ((unsigned long) __collector_gettid()))
++#define __collector_thr_self() ((collector_thread_t) ((unsigned long) __collector_gettid()))
+ 
+ /* -------  collector_mutex ----------------- */
+ /*
+diff --git a/gprofng/libcollector/linetrace.c b/gprofng/libcollector/linetrace.c
+index 978c5503e2e..a209308c767 100644
+--- a/gprofng/libcollector/linetrace.c
++++ b/gprofng/libcollector/linetrace.c
+@@ -29,6 +29,8 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <sys/mman.h>
++#include <limits.h>
++
+ 
+ #include "descendants.h"
+ 
+@@ -360,7 +362,7 @@ check_fd_dynamic (int fd)
+   size_t sz = (size_t) 8192; /* one page should suffice */
+   if (sz > off)
+     sz = off;
+-  char *p = CALL_UTIL (mmap64)((char *) 0, sz, PROT_READ, MAP_PRIVATE, fd, (off64_t) 0);
++  char *p = CALL_UTIL (mmap64_)((char *) 0, sz, PROT_READ, MAP_PRIVATE, fd, (off64_t) 0);
+   if (p == MAP_FAILED)
+     {
+       TprintfT (DBG_LT0, "check_fd_dynamic(): ERROR/WARNING: mmap failed for `%d'\n", fd);
+diff --git a/gprofng/libcollector/memmgr.c b/gprofng/libcollector/memmgr.c
+index 5ada421f3f4..aa13ea77852 100644
+--- a/gprofng/libcollector/memmgr.c
++++ b/gprofng/libcollector/memmgr.c
+@@ -131,7 +131,7 @@ alloc_chunk (unsigned sz, int log)
+   if (log == 1)
+     Tprintf (DBG_LT2, "alloc_chunk mapping %u, rounded up from %u\n", (unsigned int) chunksz, sz);
+   /* mmap64 is only in 32-bits; this call goes to mmap in 64-bits */
+-  ptr = (char*) CALL_UTIL (mmap64)(0, chunksz, PROT_READ | PROT_WRITE,
++  ptr = (char*) CALL_UTIL (mmap64_)(0, chunksz, PROT_READ | PROT_WRITE,
+ 				   MAP_PRIVATE | MAP_ANON, (int) -1, (off64_t) 0);
+   if (ptr == MAP_FAILED)
+     {
+diff --git a/gprofng/libcollector/mmaptrace.c b/gprofng/libcollector/mmaptrace.c
+index ba5c9129f4c..bd299e6f64f 100644
+--- a/gprofng/libcollector/mmaptrace.c
++++ b/gprofng/libcollector/mmaptrace.c
+@@ -441,13 +441,9 @@ checksum_mapname (MapInfo* map)
+ }
+ 
+ 
+-#if (ARCH(Intel) && WSIZE(32)) || ARCH(SPARC)
+-static void*
+-dlopen_searchpath_symver (void*(real_dlopen) (), void* caller_addr, const char* basename, int mode)
+-#else
+ static void*
+-dlopen_searchpath (void* caller_addr, const char* basename, int mode)
+-#endif
++dlopen_searchpath (void*(real_dlopen) (const char *, int),
++		void *caller_addr, const char *basename, int mode)
+ {
+   TprintfT (DBG_LT2, "dlopen_searchpath(%p, %s, %d)\n", caller_addr, basename, mode);
+   Dl_info dl_info;
+@@ -458,7 +454,8 @@ dlopen_searchpath (void* caller_addr, const char* basename, int mode)
+     }
+   TprintfT (DBG_LT2, "dladdr(%p): %p fname=%s\n",
+ 	    caller_addr, dl_info.dli_fbase, dl_info.dli_fname);
+-  int noload = RTLD_BINDING_MASK | RTLD_NOLOAD; //XXXX why RTLD_BINDING_MASK?
++  int noload = RTLD_LAZY | RTLD_NOW | RTLD_NOLOAD;
++  void *caller_hndl = NULL;
+ #define WORKAROUND_RTLD_BUG 1
+ #ifdef WORKAROUND_RTLD_BUG
+   // A dynamic linker dlopen bug can result in corruption/closure of open streams
+@@ -470,29 +467,20 @@ dlopen_searchpath (void* caller_addr, const char* basename, int mode)
+ #endif
+   const char* tmp_path =
+ 	  (dl_info.dli_fbase == (void*) MAINBASE) ? NULL : dl_info.dli_fname;
+-  void* caller_hndl = NULL;
+-#if ((ARCH(Intel) && WSIZE(32)) || ARCH(SPARC))
+-  caller_hndl = (real_dlopen) (tmp_path, noload);
+-#else
+-  caller_hndl = CALL_REAL (dlopen)(tmp_path, noload);
+-#endif
++  caller_hndl = real_dlopen (tmp_path, noload);
+ 
+ #else //XXXX workaround should be removed once linker patches are all available
+ 
+-  void* caller_hndl = NULL;
+-#if (ARCH(Intel) && WSIZE(32) || ARCH(SPARC)
+-  caller_hndl = (real_dlopen) (dl_info.dli_fname, noload);
+-#else
+-  caller_hndl = CALL_REAL (dlopen)(dl_info.dli_fname, noload);
+-#endif
++  caller_hndl = real_dlopen (dl_info.dli_fname, noload);
+ 
+ #endif //XXXX workaround should be removed once linker patches are all available
+ 
+   if (!caller_hndl)
+     {
+       TprintfT (0, "ERROR: dlopen(%s,NOLOAD): %s\n", dl_info.dli_fname, dlerror ());
+-      return 0;
++      return NULL;
+     }
++#if !defined(__MUSL_LIBC)
+   Dl_serinfo _info, *info = &_info;
+   Dl_serpath *path;
+ 
+@@ -546,7 +534,7 @@ dlopen_searchpath (void* caller_addr, const char* basename, int mode)
+       I have already confirmed with our user that the workaround
+       is working with his real application. Additionally,
+       the dlopen_searchpath() function is called only by the
+-      libcorrector init() function when the experiment is started.
++      libcollector init() function when the experiment is started.
+       Therefore, allocating some extra bytes on the stack which
+       is local to this routine is harmless.
+    */
+@@ -575,7 +563,8 @@ dlopen_searchpath (void* caller_addr, const char* basename, int mode)
+       if (ret)
+ 	return ret; // success!
+     }
+-  return 0;
++#endif
++  return NULL;
+ }
+ 
+ static void
+@@ -1550,40 +1539,9 @@ munmap (void *start, size_t length)
+ 
+ 
+ /*------------------------------------------------------------- dlopen */
+-// map interposed symbol versions
+-#if (ARCH(Intel) && WSIZE(32)) || ARCH(SPARC)
+-
+-static void *
+-__collector_dlopen_symver (void*(real_dlopen) (), void *caller, const char *pathname, int mode);
+-
+-SYMVER_ATTRIBUTE (__collector_dlopen_2_1, dlopen@@GLIBC_2.1)
+-void *
+-__collector_dlopen_2_1 (const char *pathname, int mode)
+-{
+-  if (NULL_PTR (dlopen))
+-    init_mmap_intf ();
+-  void *caller = __builtin_return_address (0); // must be called inside dlopen first layer interpostion
+-  return __collector_dlopen_symver (CALL_REAL (dlopen_2_1), caller, pathname, mode);
+-}
+-
+-SYMVER_ATTRIBUTE (__collector_dlopen_2_0, dlopen@GLIBC_2.0)
+-void *
+-__collector_dlopen_2_0 (const char *pathname, int mode)
+-{
+-  if (NULL_PTR (dlopen))
+-    init_mmap_intf ();
+-  void* caller = __builtin_return_address (0); // must be called inside dlopen first layer interpostion
+-  return __collector_dlopen_symver (CALL_REAL (dlopen_2_0), caller, pathname, mode);
+-}
+-#endif
+-
+-#if (ARCH(Intel) && WSIZE(32)) || ARCH(SPARC)
+ static void *
+-__collector_dlopen_symver (void*(real_dlopen) (), void *caller, const char *pathname, int mode)
+-#else
+-void *
+-dlopen (const char *pathname, int mode)
+-#endif
++__collector_dlopen_symver (void*(real_dlopen) (const char *, int),
++			   void *caller, const char *pathname, int mode)
+ {
+   const char * real_pathname = pathname;
+   char new_pathname[MAXPATHLEN];
+@@ -1595,10 +1553,6 @@ dlopen (const char *pathname, int mode)
+     origin_offset = 10;
+   if (origin_offset)
+     {
+-#if ! ((ARCH(Intel) && WSIZE(32)) || ARCH(SPARC))
+-      // 'caller' is not passed as an argument
+-      void * caller = __builtin_return_address (0); // must be called inside dlopen first layer interpostion
+-#endif
+       Dl_info dl_info;
+       if (caller && dladdr (caller, &dl_info) != 0)
+ 	{
+@@ -1619,37 +1573,18 @@ dlopen (const char *pathname, int mode)
+     init_mmap_intf ();
+   TprintfT (DBG_LT2, "libcollector.dlopen(%s,%d) interposing\n",
+ 	    pathname ? pathname : "", mode);
+-  void* ret = NULL;
++  void *ret = NULL;
+ 
+   // set guard for duration of handling dlopen, since want to ensure
+   // new mappings are resolved after the actual dlopen has occurred
+   PUSH_REENTRANCE;
+   hrtime_t hrt = GETRELTIME ();
+ 
+-  if (real_pathname && !__collector_strchr (real_pathname, '/'))
+-    { // got an unqualified name
+-      // get caller and use its searchpath
+-#if ! ((ARCH(Intel) && WSIZE(32)) || ARCH(SPARC))
+-      void* caller = __builtin_return_address (0); // must be called inside dlopen
+-#endif
+-      if (caller)
+-	{
+-#if (ARCH(Intel) && WSIZE(32)) || ARCH(SPARC)
+-	  ret = dlopen_searchpath_symver (real_dlopen, caller, real_pathname, mode);
+-#else
+-	  ret = dlopen_searchpath (caller, real_pathname, mode);
+-#endif
+-	}
+-    }
++  if (caller && real_pathname && !__collector_strchr (real_pathname, '/'))
++    ret = dlopen_searchpath (real_dlopen, caller, real_pathname, mode);
+ 
+   if (!ret)
+-    {
+-#if (ARCH(Intel) && WSIZE(32)) || ARCH(SPARC)
+-      ret = (real_dlopen) (real_pathname, mode);
+-#else
+-      ret = CALL_REAL (dlopen)(real_pathname, mode);
+-#endif
+-    }
++    ret = real_dlopen (real_pathname, mode);
+   TprintfT (DBG_LT2, "libcollector -- dlopen(%s) returning %p\n", pathname, ret);
+ 
+   /* Don't call update if dlopen failed: preserve dlerror() */
+@@ -1660,6 +1595,39 @@ dlopen (const char *pathname, int mode)
+   return ret;
+ }
+ 
++void *
++dlopen (const char *pathname, int mode)
++{
++  if (NULL_PTR (dlopen))
++    init_mmap_intf ();
++  void* caller = __builtin_return_address (0); // must be called inside dlopen first layer interpostion
++  return __collector_dlopen_symver (CALL_REAL (dlopen), caller, pathname, mode);
++}
++
++#if !defined(__MUSL_LIBC) && ((ARCH(Intel) && WSIZE(32)) || ARCH(SPARC))
++// map interposed symbol versions
++
++SYMVER_ATTRIBUTE (__collector_dlopen_2_1, dlopen@@GLIBC_2.1)
++void *
++__collector_dlopen_2_1 (const char *pathname, int mode)
++{
++  if (NULL_PTR (dlopen_2_1))
++    init_mmap_intf ();
++  void *caller = __builtin_return_address (0); // must be called inside dlopen first layer interpostion
++  return __collector_dlopen_symver (CALL_REAL (dlopen_2_1), caller, pathname, mode);
++}
++
++SYMVER_ATTRIBUTE (__collector_dlopen_2_0, dlopen@GLIBC_2.0)
++void *
++__collector_dlopen_2_0 (const char *pathname, int mode)
++{
++  if (NULL_PTR (dlopen_2_0))
++    init_mmap_intf ();
++  void* caller = __builtin_return_address (0); // must be called inside dlopen first layer interpostion
++  return __collector_dlopen_symver (CALL_REAL (dlopen_2_0), caller, pathname, mode);
++}
++#endif
++
+ /*------------------------------------------------------------- dlclose */
+ int
+ dlclose (void *handle)
+diff --git a/gprofng/libcollector/profile.c b/gprofng/libcollector/profile.c
+index 996d3f09198..ee9fb7d3b0c 100644
+--- a/gprofng/libcollector/profile.c
++++ b/gprofng/libcollector/profile.c
+@@ -268,7 +268,7 @@ __collector_ext_profile_handler (siginfo_t *info, ucontext_t *context)
+       /* assume this case is rare, and accept overhead of creating dummy_uc */
+       TprintfT (0, "collector_profile_handler: ERROR: got NULL context!\n");
+       context = &uctxmem;
+-      getcontext (context);     /* initialize dummy context */
++      CALL_UTIL (getcontext) (context);     /* initialize dummy context */
+       SETFUNCTIONCONTEXT (context, &__collector_lost_profile_context);
+     }
+   ClockPacket pckt;
+diff --git a/gprofng/libcollector/synctrace.c b/gprofng/libcollector/synctrace.c
+index 492ef9993f7..d48aeaa2d2d 100644
+--- a/gprofng/libcollector/synctrace.c
++++ b/gprofng/libcollector/synctrace.c
+@@ -32,10 +32,9 @@
+ #include <pthread.h>
+ 
+ #include "gp-defs.h"
+-#include "collector_module.h"
++#include "collector.h"
+ #include "gp-experiment.h"
+ #include "data_pckts.h"
+-#include "i18n.h"
+ #include "tsd.h"
+ #include "cc_libcollector.h"
+ 
+diff --git a/gprofng/libcollector/unwind.c b/gprofng/libcollector/unwind.c
+index f8e11823c81..009b5ab8456 100644
+--- a/gprofng/libcollector/unwind.c
++++ b/gprofng/libcollector/unwind.c
+@@ -232,7 +232,7 @@ memory_error_func (int status ATTRIBUTE_UNUSED, bfd_vma addr ATTRIBUTE_UNUSED,
+ 
+ #elif ARCH(Aarch64)
+ #define FILL_CONTEXT(context) \
+-    { getcontext(context);  \
++    { CALL_UTIL (getcontext) (context);  \
+       context->uc_mcontext.sp = (__u64) __builtin_frame_address(0); \
+     }
+ 
+diff --git a/gprofng/src/Experiment.cc b/gprofng/src/Experiment.cc
+index c797724af07..98aae9714ac 100644
+--- a/gprofng/src/Experiment.cc
++++ b/gprofng/src/Experiment.cc
+@@ -6466,7 +6466,7 @@ int
+ Experiment::copy_file_to_archive (const char *name, const char *aname, int hide_msg)
+ {
+   errno = 0;
+-  int fd_w = open64 (aname, O_WRONLY | O_CREAT | O_EXCL, 0644);
++  int fd_w = ::open64 (aname, O_WRONLY | O_CREAT | O_EXCL, 0644);
+   if (fd_w == -1)
+     {
+       if (errno == EEXIST)
+@@ -6484,7 +6484,7 @@ Experiment::copy_file_to_archive (const char *name, const char *aname, int hide_
+       return 1;
+     }
+ 
+-  int fd_r = open64 (name, O_RDONLY);
++  int fd_r = ::open64 (name, O_RDONLY);
+   if (fd_r == -1)
+     {
+       fprintf (stderr, GTXT ("er_archive: unable to open `%s': %s\n"),
+diff --git a/gprofng/src/Print.cc b/gprofng/src/Print.cc
+index d415d591e1e..03932530956 100644
+--- a/gprofng/src/Print.cc
++++ b/gprofng/src/Print.cc
+@@ -2209,14 +2209,14 @@ print_anno_file (char *name, const char *sel, const char *srcFile,
+ 	    {
+ 	      fitem = func->getDefSrc ();
+ 	      found = (func->line_first > 0)
+-		      && strcmp (basename (srcFile),
+-				 basename (fitem->get_name ())) == 0;
++		      && strcmp (get_basename (srcFile),
++				 get_basename (fitem->get_name ())) == 0;
+ 	    }
+ 	  else
+ 	    {
+ 	      Vec_loop (SourceFile*, sources, index, fitem)
+ 	      {
+-		if (strcmp (basename (srcFile), basename (fitem->get_name ())) == 0)
++		if (strcmp (get_basename (srcFile), get_basename (fitem->get_name ())) == 0)
+ 		  {
+ 		    found = true;
+ 		    break;
+diff --git a/gprofng/src/collector_module.h b/gprofng/src/collector_module.h
+index f608dab5831..6cf53d5b27f 100644
+--- a/gprofng/src/collector_module.h
++++ b/gprofng/src/collector_module.h
+@@ -25,6 +25,7 @@
+ #include <stdarg.h>
+ #include <stdio.h>
+ #include <unistd.h>
++#include <ucontext.h>
+ #include <dirent.h>
+ 
+ #include "gp-defs.h"
+@@ -55,6 +56,7 @@ typedef struct CollectorUtilFuncs
+   int (*fprintf)(FILE *stream, const char *format, ...);
+   void (*free)(void *ptr);
+   int (*fstat)(int fd, struct stat *buf);
++  int (*getcontext)(ucontext_t *ucp);
+   int (*getcpuid)();
+   char *(*getcwd)(char *buf, size_t size);
+   char *(*getenv)(const char *name);
+@@ -66,7 +68,7 @@ typedef struct CollectorUtilFuncs
+   int (*mkdir)();
+   time_t (*mktime)(struct tm *timeptr);
+   void *(*mmap)(void *, size_t, int, int, int, off_t);
+-  void *(*mmap64)();
++  void *(*mmap64_)();
+   int (*munmap)();
+   int (*open)(const char *, int, ...);
+   int (*open_bare)(const char *, int, ...);
+@@ -75,7 +77,7 @@ typedef struct CollectorUtilFuncs
+   FILE *(*popen)(const char *command, const char *mode);
+   int (*putenv)(char *string);
+   ssize_t (*pwrite)();
+-  ssize_t (*pwrite64)();
++  ssize_t (*pwrite64_)();
+   ssize_t (*read)();
+   int (*setenv)(const char *name, const char *value, int overwrite);
+   int (*sigfillset)(sigset_t *set);
+-- 
+2.31.1
+
