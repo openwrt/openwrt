@@ -35,6 +35,7 @@ usage() {
 	printf "\n\t-l ==> legacy mode character (@ etc otherwise -)"
 	printf "\n\t-o ==> create output file 'its_file'"
 	printf "\n\t-O ==> create config with dt overlay 'name:dtb'"
+	printf "\n\t-s ==> set FDT load address to 'addr' (hex)"
 	printf "\n\t\t(can be specified more than once)\n"
 	exit 1
 }
@@ -48,7 +49,7 @@ LOADABLES=
 DTOVERLAY=
 DTADDR=
 
-while getopts ":A:a:c:C:D:d:e:f:i:k:l:n:o:O:v:r:H:" OPTION
+while getopts ":A:a:c:C:D:d:e:f:i:k:l:n:o:O:v:r:s:H:" OPTION
 do
 	case $OPTION in
 		A ) ARCH=$OPTARG;;
@@ -66,6 +67,7 @@ do
 		o ) OUTPUT=$OPTARG;;
 		O ) DTOVERLAY="$DTOVERLAY ${OPTARG}";;
 		r ) ROOTFS=$OPTARG;;
+		s ) FDTADDR=$OPTARG;;
 		H ) HASH=$OPTARG;;
 		v ) VERSION=$OPTARG;;
 		* ) echo "Invalid option passed to '$0' (options:$*)"
@@ -89,6 +91,10 @@ fi
 [ "$DTOVERLAY" ] && {
 	dtbsize=$(wc -c "$DTB" | cut -d' ' -f1)
 	DTADDR=$(printf "0x%08x" $(($LOAD_ADDR - $dtbsize)) )
+}
+
+[ "$FDTADDR" ] && {
+	DTADDR="$FDTADDR"
 }
 
 # Conditionally create fdt information
