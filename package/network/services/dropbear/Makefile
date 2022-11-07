@@ -116,6 +116,9 @@ DB_OPT_COMMON = \
 	DROPBEAR_CLI_NETCAT|0 \
 	DROPBEAR_DSS|0 \
 	DO_MOTD|0 \
+	DROPBEAR_RSA_SHA1|0 \
+	DROPBEAR_DH_GROUP14_SHA1|0 \
+	DROPBEAR_SHA1_HMAC|0 \
 
 
 ##############################################################################
