@@ -1,0 +1,19 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat Apr 10 17:00:57 2021 +0200
+Subject: [PATCH] mtd: fix squashfs root on targets with CONFIG_FIT_PARTITION
+
+Fix assumption about the block device index
+---
+
+--- a/drivers/mtd/mtdcore.c
++++ b/drivers/mtd/mtdcore.c
+@@ -767,6 +767,9 @@ int add_mtd_device(struct mtd_info *mtd)
+ 		unsigned int index = mtd->index;
+ 		pr_notice("mtd: device %d (%s) set to be root filesystem\n",
+ 			  mtd->index, mtd->name);
++#ifdef CONFIG_FIT_PARTITION
++		index <<= 2;
++#endif
+ 		ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, index);
+ 	}
+ 
