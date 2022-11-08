@@ -1,0 +1,30 @@
+From 0b2528145eb5e9207e45e7fc150d574afc1ff628 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Thu, 24 Nov 2022 15:23:26 +0100
+Subject: [PATCH] bn_mul.h: workaround for gcc-11.2.0 issues
+
+Currently curl fails on mpc85xx with:
+  curl[7227]: illegal instruction (4) at b7c94288 nip b7c94288 lr b7c6b528 code 1 in libmbedcrypto.so.2.28.1[b7c3e000+7e000]
+  curl[7227]: code: 3d7e0000 809e8004 91490000 816b814c 7d6903a6 4e800421 80010024 83c10018
+  curl[7227]: code: 38210020 7c0803a6 4e800020 9421fff0 <7d4d42e6> 7c6c42e6 7d2d42e6 7c0a4840
+
+This is due to a bug in gcc-11.2.0. It is fixed with gcc-11.3.0.
+is planed. Instead, remove the code for mpc85xx that is the cause of the
+issue.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ include/mbedtls/bn_mul.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/include/mbedtls/bn_mul.h
++++ b/include/mbedtls/bn_mul.h
+@@ -406,7 +406,7 @@
+ 
+ #endif /* __MACH__ && __APPLE__ */
+ 
+-#elif defined(__powerpc__) || defined(__ppc__) /* end PPC64/begin PPC32  */
++#elif (defined(__powerpc__) || defined(__ppc__)) && GCC_VERSION != 110200 /* end PPC64/begin PPC32  */
+ 
+ #if defined(__MACH__) && defined(__APPLE__)
+ 
