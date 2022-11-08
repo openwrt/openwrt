@@ -1083,6 +1083,19 @@ define Device/dlink_dir-859-a1
 endef
 TARGET_DEVICES += dlink_dir-859-a1
 
+define Device/dptechnics_dpt-module-v1
+  $(Device/tplink-16mlzma)
+  SOC := ar9331
+  BLOCKSIZE := 32k
+  DEVICE_VENDOR := DPTechnics
+  DEVICE_MODEL := DPT-Module v1
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb-chipidea2
+  SUPPORTED_DEVICES += dptechnics-dpt-module-v1
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  TPLINK_HWID := 0xD0000101
+endef
+TARGET_DEVICES += dptechnics_dpt-module-v1
+
 define Device/elecom_wrc-1750ghbk2-i
   SOC := qca9563
   DEVICE_VENDOR := ELECOM

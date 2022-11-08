@@ -285,6 +285,9 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
 		;;
+	dptechnics,dpt-module-v1)
+                ucidef_set_interfaces_lan_wan "eth0" "eth1"
+                ;;
 	elecom,wrc-1750ghbk2-i|\
 	elecom,wrc-300ghbk2-i|\
 	sitecom,wlr-8100)
