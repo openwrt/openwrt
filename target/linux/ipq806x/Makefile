@@ -5,7 +5,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=ipq806x
 BOARDNAME:=Qualcomm Atheros IPQ806X
-FEATURES:=squashfs nand fpu ramdisk
+FEATURES:=squashfs nand fpu gpio ramdisk
 CPU_TYPE:=cortex-a15
 CPU_SUBTYPE:=neon-vfpv4
 SUBTARGETS:=generic

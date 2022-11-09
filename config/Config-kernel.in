@@ -1256,6 +1256,15 @@ config KERNEL_GPIOLIB
 	help
 	  Enable GPIO support through the generic GPIO library.
 
+config KERNEL_GPIO_CDEV
+	bool "GPIO character device support (/dev/gpiochipN)"
+	default GPIO_SUPPORT
+	depends on KERNEL_GPIOLIB
+	help
+	  Say Y here to add the character device /dev/gpiochipN interface
+	  for GPIOs. The character device allows userspace to control GPIOs
+	  using ioctl() operations.
+
 config KERNEL_DEVMEM
 	bool "/dev/mem virtual device support"
 	help
