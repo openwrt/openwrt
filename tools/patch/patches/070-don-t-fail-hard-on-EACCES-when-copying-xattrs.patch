@@ -1,0 +1,40 @@
+From f42cbe1a91a3a6f79d1eec594ce7c72aec79179b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <thomas@t-8ch.de>
+Date: Wed, 9 Nov 2022 05:08:22 +0100
+Subject: [PATCH] don't fail hard on EACCES when copying xattrs
+
+On btrfs the xattr "btrfs.compressed" requires privileges to set,
+otherwise EACCES is returned.
+When patch tries to do copy this attribute it receives the error and
+aborts.
+---
+ src/util.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/util.c b/src/util.c
+index c3ff5dd..90d1744 100644
+--- a/src/util.c
++++ b/src/util.c
+@@ -182,7 +182,7 @@ copy_attr_error (struct error_context *ctx, char const *fmt, ...)
+   int err = errno;
+   va_list ap;
+ 
+-  if (err != ENOSYS && err != ENOTSUP && err != EPERM)
++  if (err != ENOSYS && err != ENOTSUP && err != EPERM && err != EACCES)
+     {
+       /* use verror module to print error message */
+       va_start (ap, fmt);
+@@ -284,7 +284,7 @@ set_file_attributes (char const *to, enum file_attributes attr,
+     }
+   if (attr & FA_XATTRS)
+     if (copy_attr (from, to) != 0
+-	&& errno != ENOSYS && errno != ENOTSUP && errno != EPERM)
++	&& errno != ENOSYS && errno != ENOTSUP && errno != EPERM && errno != EACCES)
+       fatal_exit (0);
+   if (attr & FA_MODE)
+     {
+
+base-commit: c835ecc67b7e37c0d0b7dd7e032209fdaa285808
+-- 
+2.38.1
+
