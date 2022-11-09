@@ -1265,6 +1265,16 @@ config KERNEL_GPIO_CDEV
 	  for GPIOs. The character device allows userspace to control GPIOs
 	  using ioctl() operations.
 
+config KERNEL_GPIO_CDEV_V1
+	bool "GPIO character device ABI v1"
+	depends on KERNEL_GPIO_CDEV
+	default n
+	help
+	  Say Y here to support version 1 of the GPIO CDEV ABI.
+
+	  This ABI version is deprecated.
+	  Please use the latest ABI for new developments.
+
 config KERNEL_DEVMEM
 	bool "/dev/mem virtual device support"
 	help
