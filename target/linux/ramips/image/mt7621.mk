@@ -37,6 +37,18 @@ define Build/h3c-blank-header
 	mv $@.blank $@
 endef
 
+define Build/haier-sim_wr1800k-factory
+  -[ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) ] && \
+  mkdir -p "$(1).tmp" && \
+  $(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) "$(1).tmp/UploadBrush-bin.img" && \
+  $(MKHASH) md5 "$(1).tmp/UploadBrush-bin.img" | head -c32 > "$(1).tmp/check_MD5.txt" && \
+  $(TAR) -czf $(1).tmp.tgz -C "$(1).tmp" UploadBrush-bin.img check_MD5.txt && \
+  $(STAGING_DIR_HOST)/bin/openssl aes-256-cbc -e -salt -in $(1).tmp.tgz -out "$(1)" -k QiLunSmartWL && \
+  printf %32s "$(DEVICE_MODEL)" >> "$(1)" && \
+  rm -rf "$(1).tmp" $(1).tmp.tgz && \
+  $(CP) $(1) $(BIN_DIR)/
+endef
+
 define Build/iodata-factory
 	$(eval fw_size=$(word 1,$(1)))
 	$(eval fw_type=$(word 2,$(1)))
@@ -868,6 +880,29 @@ define Device/h3c_tx1806
   DEVICE_MODEL := TX1806
 endef
 TARGET_DEVICES += h3c_tx1806
+
+define Device/haier-sim_wr1800k
+  $(Device/dsa-migration)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 125440k
+  UBINIZE_OPTS := -E 5
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := $$(KERNEL) | \
+	haier-sim_wr1800k-factory $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e uboot-envtools
+endef
+
+define Device/haier_har-20s2u1
+  $(Device/haier-sim_wr1800k)
+  DEVICE_VENDOR := Haier
+  DEVICE_MODEL := HAR-20S2U1
+endef
+TARGET_DEVICES += haier_har-20s2u1
 
 define Device/hilink_hlk-7621a-evb
   $(Device/dsa-migration)
@@ -1729,6 +1764,13 @@ define Device/sercomm_na502s
 endef
 TARGET_DEVICES += sercomm_na502s
 
+define Device/sim_simax1800t
+  $(Device/haier-sim_wr1800k)
+  DEVICE_VENDOR := SIM
+  DEVICE_MODEL := SIMAX1800T
+endef
+TARGET_DEVICES += sim_simax1800t
+
 define Device/snr_snr-cpe-me2-lite
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1868,6 +1910,21 @@ define Device/tplink_eap615-wall-v1
 endef
 TARGET_DEVICES += tplink_eap615-wall-v1
 
+define Device/tplink_mr600-v2-eu
+  $(Device/dsa-migration)
+  $(Device/tplink-v2)
+  DEVICE_MODEL := MR600
+  DEVICE_VARIANT := v2 (EU)
+  TPLINK_FLASHLAYOUT := 16Mltq
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+		kmod-usb-net-qmi-wwan uqmi kmod-usb3
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | tplink-v2-header
+  TPLINK_BOARD_ID := MR600-V2-EU
+  IMAGE_SIZE := 16384k
+endef
+TARGET_DEVICES += tplink_mr600-v2-eu
+
 define Device/tplink_re350-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
@@ -1959,6 +2016,7 @@ define Device/ubnt_unifi-6-lite
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi 6 Lite
   DEVICE_DTS_CONFIG := config@1
+  DEVICE_DTS_LOADADDR := 0x87000000
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt7915e
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 15424k
@@ -2251,6 +2309,8 @@ define Device/youku_yk-l2
   DEVICE_MODEL := YK-L2
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport
+  UIMAGE_MAGIC := 0x12291000
+  UIMAGE_NAME := 400000000000000000003000
 endef
 TARGET_DEVICES += youku_yk-l2
 
@@ -2262,6 +2322,26 @@ define Device/yuncore_ax820
   DEVICE_PACKAGES := kmod-mt7915e
 endef
 TARGET_DEVICES += yuncore_ax820
+
+define Device/yuncore_fap640
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := FAP640
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += yuncore_fap640
+
+define Device/yuncore_fap690
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := FAP690
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += yuncore_fap690
 
 define Device/zbtlink_zbt-we1326
   $(Device/dsa-migration)
@@ -2296,6 +2376,30 @@ define Device/zbtlink_zbt-wg1602-16m
 	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += zbtlink_zbt-wg1602-16m
+
+define Device/zbtlink_zbt-wg1602-v04-16m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG1602-V04
+  DEVICE_VARIANT := 16M
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+        kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += zbtlink_zbt-wg1602-v04-16m
+
+define Device/zbtlink_zbt-wg1602-v04-32m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 32128k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG1602-V04
+  DEVICE_VARIANT := 32M
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+        kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += zbtlink_zbt-wg1602-v04-32m
 
 define Device/zbtlink_zbt-wg1608-16m
   $(Device/dsa-migration)

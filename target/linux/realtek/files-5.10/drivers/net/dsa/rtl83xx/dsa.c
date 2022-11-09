@@ -162,6 +162,16 @@ static void rtl83xx_setup_bpdu_traps(struct rtl838x_switch_priv *priv)
 		priv->r->set_receive_management_action(i, BPDU, COPY2CPU);
 }
 
+static void rtl83xx_port_set_salrn(struct rtl838x_switch_priv *priv,
+				   int port, bool enable)
+{
+	int shift = SALRN_PORT_SHIFT(port);
+	int val = enable ? SALRN_MODE_HARDWARE : SALRN_MODE_DISABLED;
+
+	sw_w32_mask(SALRN_MODE_MASK << shift, val << shift,
+		    priv->r->l2_port_new_salrn(port));
+}
+
 static int rtl83xx_setup(struct dsa_switch *ds)
 {
 	int i;
@@ -204,6 +214,9 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 	ds->configure_vlan_while_not_filtering = true;
 
 	priv->r->l2_learning_setup();
+
+	rtl83xx_port_set_salrn(priv, priv->cpu_port, false);
+	ds->assisted_learning_on_cpu_port = true;
 
 	/*
 	 *  Make sure all frames sent to the switch's MAC are trapped to the CPU-port
@@ -262,6 +275,9 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	ds->configure_vlan_while_not_filtering = true;
 
 	priv->r->l2_learning_setup();
+
+	rtl83xx_port_set_salrn(priv, priv->cpu_port, false);
+	ds->assisted_learning_on_cpu_port = true;
 
 	rtl83xx_enable_phy_polling(priv);
 
@@ -1430,7 +1446,7 @@ static void rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int v;
 
-	pr_debug("%s port %d, vid_end %d, vid_end %d, flags %x\n", __func__,
+	pr_debug("%s port %d, vid_begin %d, vid_end %d, flags %x\n", __func__,
 		port, vlan->vid_begin, vlan->vid_end, vlan->flags);
 
 	if (vlan->vid_begin > 4095 || vlan->vid_end > 4095) {
@@ -1495,7 +1511,7 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 	int v;
 	u16 pvid;
 
-	pr_debug("%s: port %d, vid_end %d, vid_end %d, flags %x\n", __func__,
+	pr_debug("%s: port %d, vid_begin %d, vid_end %d, flags %x\n", __func__,
 		port, vlan->vid_begin, vlan->vid_end, vlan->flags);
 
 	if (vlan->vid_begin > 4095 || vlan->vid_end > 4095) {
@@ -1537,23 +1553,32 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 
 static void rtl83xx_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port, int vid, u64 mac)
 {
-	e->is_ip_mc = e->is_ipv6_mc  = false;
+	memset(e, 0, sizeof(*e));
+
+	e->type = L2_UNICAST;
 	e->valid = true;
+
 	e->age = 3;
-	e->port = port,
-	e->vid = vid;
+	e->is_static = true;
+
+	e->port = port;
+
+	e->rvid = e->vid = vid;
+	e->is_ip_mc = e->is_ipv6_mc = false;
 	u64_to_ether_addr(mac, e->mac);
 }
 
-static void rtl83xx_setup_l2_mc_entry(struct rtl838x_switch_priv *priv,
-				      struct rtl838x_l2_entry *e, int vid, u64 mac, int mc_group)
+static void rtl83xx_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 mac, int mc_group)
 {
-	e->is_ip_mc = e->is_ipv6_mc  = false;
-	e->valid = true;
-	e->mc_portmask_index = mc_group;
+	memset(e, 0, sizeof(*e));
+
 	e->type = L2_MULTICAST;
+	e->valid = true;
+
+	e->mc_portmask_index = mc_group;
+
 	e->rvid = e->vid = vid;
-	pr_debug("%s: vid: %d, rvid: %d\n", __func__, e->vid, e->rvid);
+	e->is_ip_mc = e->is_ipv6_mc = false;
 	u64_to_ether_addr(mac, e->mac);
 }
 
@@ -1768,7 +1793,7 @@ static void rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 				err = -ENOTSUPP;
 				goto out;
 			}
-			rtl83xx_setup_l2_mc_entry(priv, &e, vid, mac, mc_group);
+			rtl83xx_setup_l2_mc_entry(&e, vid, mac, mc_group);
 			priv->r->write_l2_entry_using_hash(idx >> 2, idx & 0x3, &e);
 		}
 		goto out;
@@ -1789,7 +1814,7 @@ static void rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 				err = -ENOTSUPP;
 				goto out;
 			}
-			rtl83xx_setup_l2_mc_entry(priv, &e, vid, mac, mc_group);
+			rtl83xx_setup_l2_mc_entry(&e, vid, mac, mc_group);
 			priv->r->write_cam(idx, &e);
 		}
 		goto out;

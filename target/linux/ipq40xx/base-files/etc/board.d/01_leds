@@ -72,6 +72,14 @@ mikrotik,hap-ac3)
 	ucidef_set_led_netdev "lan4" "LAN4" "green:lan4" "lan4"
 	ucidef_set_led_gpio "poe" "POE" "red:poe" "452" "0"
 	;;
+mikrotik,hap-ac3-lte6-kit)
+        ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+        ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "lan1"
+        ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "lan2"
+        ucidef_set_led_netdev "lan3" "LAN3" "green:lan3" "lan3"
+        ucidef_set_led_netdev "lan4" "LAN4" "green:lan4" "lan4"
+        ;;
+
 mikrotik,sxtsq-5-ac)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "rssilow" "green:rssilow" "wlan0" "1" "100"

@@ -815,8 +815,7 @@ define Device/netgear_rbr50
 	DEVICE_VARIANT := v1
 	NETGEAR_BOARD_ID := RBR50
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += netgear_rbr50
+TARGET_DEVICES += netgear_rbr50
 
 define Device/netgear_rbs50
 	$(call Device/netgear_rbx50)
@@ -824,8 +823,7 @@ define Device/netgear_rbs50
 	DEVICE_VARIANT := v1
 	NETGEAR_BOARD_ID := RBS50
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += netgear_rbs50
+TARGET_DEVICES += netgear_rbs50
 
 define Device/netgear_srx60
 	$(call Device/netgear_orbi)
@@ -840,16 +838,14 @@ define Device/netgear_srr60
 	DEVICE_MODEL := SRR60
 	NETGEAR_BOARD_ID := SRR60
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += netgear_srr60
+TARGET_DEVICES += netgear_srr60
 
 define Device/netgear_srs60
 	$(call Device/netgear_srx60)
 	DEVICE_MODEL := SRS60
 	NETGEAR_BOARD_ID := SRS60
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += netgear_srs60
+TARGET_DEVICES += netgear_srs60
 
 define Device/netgear_wac510
 	$(call Device/FitImage)

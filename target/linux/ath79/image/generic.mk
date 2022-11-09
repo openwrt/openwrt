@@ -2554,6 +2554,22 @@ define Device/teltonika_rut955-h7v3c0
 endef
 TARGET_DEVICES += teltonika_rut955-h7v3c0
 
+define Device/trendnet_tew-673gru
+  SOC := ar7161
+  DEVICE_VENDOR := Trendnet
+  DEVICE_MODEL := TEW-673GRU
+  DEVICE_VARIANT := v1.0R
+  DEVICE_PACKAGES := -uboot-envtools kmod-usb-ohci kmod-usb2 \
+	kmod-owl-loader kmod-switch-rtl8366s
+  IMAGE_SIZE := 7808k
+  FACTORY_SIZE := 6144k
+  IMAGES += factory.bin
+  IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs | check-size $$$$(FACTORY_SIZE) | pad-to $$$$(FACTORY_SIZE) | \
+	append-string AP94-AR7161-RT-080619-01
+endef
+TARGET_DEVICES += trendnet_tew-673gru
+
 define Device/trendnet_tew-823dru
   SOC := qca9558
   DEVICE_VENDOR := Trendnet

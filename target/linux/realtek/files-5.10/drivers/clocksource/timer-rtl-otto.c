@@ -227,6 +227,7 @@ struct rttm_cs rttm_cs = {
 		.name	= "realtek_otto_timer",
 		.rating	= 400,
 		.mask	= CLOCKSOURCE_MASK(RTTM_BIT_COUNT),
+		.flags	= CLOCK_SOURCE_IS_CONTINUOUS,
 		.read	= rttm_read_clocksource,
 		.enable	= rttm_enable_clocksource
 	}

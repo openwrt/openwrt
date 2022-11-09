@@ -84,14 +84,13 @@ define Device/bananapi_bpi-r3
 endef
 TARGET_DEVICES += bananapi_bpi-r3
 
-define Device/mediatek_mt7986a-rfb
+define Device/mediatek_mt7986a-rfb-nand
   DEVICE_VENDOR := MediaTek
-  DEVICE_MODEL := MTK7986 rfba AP
-  DEVICE_DTS := mt7986a-rfb
+  DEVICE_MODEL := MT7986 rfba AP (NAND)
+  DEVICE_DTS := mt7986a-rfb-spim-nand
   DEVICE_DTS_DIR := $(DTS_DIR)/
   KERNEL_LOADADDR := 0x48000000
-  DEVICE_DTS_OVERLAY := mt7986a-rfb-spim-nand mt7986a-rfb-spim-nor
-  SUPPORTED_DEVICES := mediatek,mt7986a-rfb
+  SUPPORTED_DEVICES := mediatek,mt7986a-rfb-snand
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -101,12 +100,12 @@ define Device/mediatek_mt7986a-rfb
   IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   KERNEL = kernel-bin | lzma | \
-	fit lzma $$(KDIR)/$$(firstword $$(DEVICE_DTS)).dtb
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_INITRAMFS = kernel-bin | lzma | \
-	fit lzma $$(KDIR)/$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
   DTC_FLAGS += -@ --space 32768
 endef
-TARGET_DEVICES += mediatek_mt7986a-rfb
+TARGET_DEVICES += mediatek_mt7986a-rfb-nand
 
 define Device/mediatek_mt7986b-rfb
   DEVICE_VENDOR := MediaTek
@@ -125,3 +124,17 @@ define Device/mediatek_mt7986b-rfb
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += mediatek_mt7986b-rfb
+
+define Device/xiaomi_redmi-router-ax6000
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Redmi Router AX6000
+  DEVICE_DTS := mt7986a-xiaomi-redmi-router-ax6000
+  DEVICE_DTS_DIR := ../dts
+  KERNEL_LOADADDR := 0x48000000
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += xiaomi_redmi-router-ax6000
