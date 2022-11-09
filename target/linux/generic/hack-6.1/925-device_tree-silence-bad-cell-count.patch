@@ -1,0 +1,11 @@
+--- a/drivers/of/address.c
++++ b/drivers/of/address.c
+@@ -538,7 +538,7 @@ static u64 __of_translate_address(struct
+ 		pbus = of_match_bus(parent);
+ 		pbus->count_cells(dev, &pna, &pns);
+ 		if (!OF_CHECK_COUNTS(pna, pns)) {
+-			pr_err("Bad cell count for %pOF\n", dev);
++			pr_debug("Bad cell count for parent bus of %pOF\n", dev);
+ 			break;
+ 		}
+ 
