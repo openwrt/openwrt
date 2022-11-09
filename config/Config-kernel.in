@@ -1246,6 +1246,16 @@ menu "Filesystem ACL and attr support options"
 
 endmenu
 
+#
+# GPIO related symbols
+#
+
+config KERNEL_GPIOLIB
+	bool "GPIO support"
+	default GPIO_SUPPORT
+	help
+	  Enable GPIO support through the generic GPIO library.
+
 config KERNEL_DEVMEM
 	bool "/dev/mem virtual device support"
 	help
