@@ -1,0 +1,7 @@
+
+config PINCTRL_RTD
+	tristate "Realtek DHC pin controller driver"
+	depends on ARCH_REALTEK
+	default y
+	select PINMUX
+	select GENERIC_PINCONF

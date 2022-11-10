@@ -1,0 +1,31 @@
+From 7d1a7a052f7b9e7bc4bfb0309ad3d92b8fa177cc Mon Sep 17 00:00:00 2001
+From: James Tai <james.tai@realtek.com>
+Date: Thu, 10 Nov 2022 17:30:35 +0800
+Subject: [PATCH] pinctrl: realtek: add Realtek DHC SoCs pinctrl driver
+
+Change-Id: I0be0e5bdcd3c88cf6384201b54753c95d5c1e881
+---
+ drivers/pinctrl/Kconfig                    |    1 +
+ drivers/pinctrl/Makefile                   |    1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/drivers/pinctrl/Kconfig
++++ b/drivers/pinctrl/Kconfig
+@@ -438,6 +438,7 @@ source "drivers/pinctrl/nuvoton/Kconfig"
+ source "drivers/pinctrl/pxa/Kconfig"
+ source "drivers/pinctrl/qcom/Kconfig"
+ source "drivers/pinctrl/ralink/Kconfig"
++source "drivers/pinctrl/realtek/Kconfig"
+ source "drivers/pinctrl/renesas/Kconfig"
+ source "drivers/pinctrl/samsung/Kconfig"
+ source "drivers/pinctrl/spear/Kconfig"
+--- a/drivers/pinctrl/Makefile
++++ b/drivers/pinctrl/Makefile
+@@ -61,6 +61,7 @@ obj-$(CONFIG_ARCH_NPCM7XX)	+= nuvoton/
+ obj-$(CONFIG_PINCTRL_PXA)	+= pxa/
+ obj-$(CONFIG_ARCH_QCOM)		+= qcom/
+ obj-$(CONFIG_PINCTRL_RALINK)	+= ralink/
++obj-$(CONFIG_ARCH_REALTEK)	+= realtek/
+ obj-$(CONFIG_PINCTRL_RENESAS)	+= renesas/
+ obj-$(CONFIG_PINCTRL_SAMSUNG)	+= samsung/
+ obj-$(CONFIG_PINCTRL_SPEAR)	+= spear/
