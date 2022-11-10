@@ -1,0 +1,14 @@
+menu "Realtek SoC drivers"
+
+config REALTEK_SOC
+	bool
+	depends on ARCH_REALTEK
+	default y
+	help
+	  Realtek SoC drivers.
+
+	  If unsure, say N.
+
+source "drivers/soc/realtek/common/Kconfig"
+
+endmenu

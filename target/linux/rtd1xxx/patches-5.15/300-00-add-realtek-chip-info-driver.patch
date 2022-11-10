@@ -1,0 +1,31 @@
+From af07b6e3612558b5f5c6fd4faab20e93be063234 Mon Sep 17 00:00:00 2001
+From: James Tai <james.tai@realtek.com>
+Date: Thu, 10 Nov 2022 17:28:28 +0800
+Subject: [PATCH 1/2] soc: realtek: common: add Realtek chip info driver
+
+Change-Id: Ie8576b79af4256ebaa1004dba16ee6e2d52405c8
+---
+ drivers/soc/Kconfig                   |   1 +
+ drivers/soc/Makefile                  |   1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/drivers/soc/Kconfig
++++ b/drivers/soc/Kconfig
+@@ -13,6 +13,7 @@ source "drivers/soc/ixp4xx/Kconfig"
+ source "drivers/soc/litex/Kconfig"
+ source "drivers/soc/mediatek/Kconfig"
+ source "drivers/soc/qcom/Kconfig"
++source "drivers/soc/realtek/Kconfig"
+ source "drivers/soc/renesas/Kconfig"
+ source "drivers/soc/rockchip/Kconfig"
+ source "drivers/soc/samsung/Kconfig"
+--- a/drivers/soc/Makefile
++++ b/drivers/soc/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_LITEX_SOC_CONTROLLER) += li
+ obj-y				+= mediatek/
+ obj-y				+= amlogic/
+ obj-y				+= qcom/
++obj-$(CONFIG_ARCH_REALTEK)	+= realtek/
+ obj-y				+= renesas/
+ obj-$(CONFIG_ARCH_ROCKCHIP)	+= rockchip/
+ obj-$(CONFIG_SOC_SAMSUNG)	+= samsung/
