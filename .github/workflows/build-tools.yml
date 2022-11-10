@@ -61,7 +61,7 @@ jobs:
         if: inputs.generate_prebuilt_artifacts == true
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
-        run: tar --mtime=now -cf tools.tar staging_dir/host build_dir/host
+        run: tar -cf tools.tar staging_dir/host build_dir/host
 
       - name: Upload prebuilt tools
         if: inputs.generate_prebuilt_artifacts == true

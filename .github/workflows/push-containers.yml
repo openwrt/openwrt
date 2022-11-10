@@ -70,6 +70,10 @@ jobs:
           name: linux-buildbot-prebuilt-tools
           path: openwrt
 
+      - name: Extract prebuild tools
+        working-directory: openwrt
+        run: tar -xf tools.tar
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:

@@ -84,10 +84,15 @@ jobs:
           echo "TARGET=$TARGET" >> "$GITHUB_ENV"
           echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
 
-      - name: Extract prebuilt tools
+      - name: Prepare prebuilt tools
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
-        run: ./scripts/ext-tools.sh --tools /tools.tar
+        run: |
+          mkdir -p staging_dir build_dir
+          ln -sf /prebuilt_tools/staging_dir/host staging_dir/host
+          ln -sf /prebuilt_tools/build_dir/host build_dir/host
+
+          ./scripts/ext-tools.sh --refresh
 
       - name: Configure testing kernel
         if: inputs.testing == true

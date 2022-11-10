@@ -1,3 +1,4 @@
 FROM registry.gitlab.com/openwrt/buildbot/buildworker-3.4.1
 
-COPY --chown=buildbot:buildbot tools.tar /tools.tar
+COPY --chown=buildbot staging_dir/host /prebuilt_tools/staging_dir/host
+COPY --chown=buildbot build_dir/host /prebuilt_tools/build_dir/host
