@@ -1,0 +1,37 @@
+From 4c0ac740c6f56ff0d04122e370a19ca6d4bd4401 Mon Sep 17 00:00:00 2001
+From: James Tai <james.tai@realtek.com>
+Date: Thu, 10 Nov 2022 17:29:53 +0800
+Subject: [PATCH 2/2] irqchip: add irq mux driver for Realtek DHC SoCs
+
+Change-Id: Ice1fdc02426ba7bc8030fe49a07e25e07eced038
+---
+ drivers/irqchip/Kconfig           |   6 +
+ drivers/irqchip/Makefile          |   1 +
+ drivers/irqchip/irq-realtek-mux.c | 794 ++++++++++++++++++++++++++++++
+ 2 files changed, 7 insertions(+)
+
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -214,6 +214,12 @@ config RDA_INTC
+ 	bool
+ 	select IRQ_DOMAIN
+ 
++config REALTEK_DHC_INTC
++	tristate "Realtek DHC SoC family interrupt controller"
++	depends on ARCH_REALTEK
++	default ARCH_REALTEK
++	select IRQ_DOMAIN
++
+ config RENESAS_INTC_IRQPIN
+ 	bool "Renesas INTC External IRQ Pin Support" if COMPILE_TEST
+ 	select IRQ_DOMAIN
+--- a/drivers/irqchip/Makefile
++++ b/drivers/irqchip/Makefile
+@@ -48,6 +48,7 @@ obj-$(CONFIG_IRQ_MIPS_CPU)		+= irq-mips-
+ obj-$(CONFIG_IXP4XX_IRQ)		+= irq-ixp4xx.o
+ obj-$(CONFIG_JCORE_AIC)			+= irq-jcore-aic.o
+ obj-$(CONFIG_RDA_INTC)			+= irq-rda-intc.o
++obj-$(CONFIG_REALTEK_DHC_INTC)		+= irq-realtek-mux.o
+ obj-$(CONFIG_RENESAS_INTC_IRQPIN)	+= irq-renesas-intc-irqpin.o
+ obj-$(CONFIG_RENESAS_IRQC)		+= irq-renesas-irqc.o
+ obj-$(CONFIG_RENESAS_RZA1_IRQC)		+= irq-renesas-rza1.o
