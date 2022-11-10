@@ -193,6 +193,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1"
 		;;
+	teltonika,rut300)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:1" "2:lan:4" "3:lan:3" "4:lan:2"
+		;;
 	buffalo,wzr-hp-g300nh-rb|\
 	buffalo,wzr-hp-g300nh-s|\
 	dlink,dir-825-b1|\
