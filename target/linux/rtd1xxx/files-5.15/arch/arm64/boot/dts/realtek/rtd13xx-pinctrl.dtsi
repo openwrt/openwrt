@@ -1,0 +1,668 @@
+&pinctrl {
+	sdcard_pins_low: sdcard_low {
+		pins= "gpio_32",
+			"gpio_33",
+			"hif_data",
+			"hif_en",
+			"hif_rdy",
+			"hif_clk";
+		function="sd";
+		bias-pull-down;
+	};
+
+	sdcard_pins_high: sdcard_high {
+		pins="gpio_35", "gpio_34";
+		function="sd";
+		bias-pull-up;
+	};
+
+	sdio_pins_0: sdio_pins_0 {
+		pins= "gpio_32",
+			"gpio_33",
+			"hif_data",
+			"hif_en",
+			"hif_rdy",
+			"hif_clk",
+			"sdio_loc";
+		function = "sdio_loc0";
+	};
+
+	sdio_pins_1: sdio_pins_1 {
+		pins = "gpio_40",
+			"gpio_41",
+			"gpio_42",
+			"gpio_43",
+			"gpio_44",
+			"gpio_45",
+			"sdio_loc";
+		function = "sdio_loc1";
+	};
+
+	rgmii_mdio_pins: rgmii_mdio_pins {
+		pins = "gpio_14",
+			"gpio_15";
+		function = "rgmii";
+	};
+
+	rgmii_txrx_pins: rgmii_txrx_pins {
+		pins = "gpio_65",
+			"gpio_66",
+			"gpio_67",
+			"gpio_68",
+			"gpio_69",
+			"gpio_70",
+			"gpio_71",
+			"gpio_72",
+			"gpio_73",
+			"gpio_74",
+			"gpio_75",
+			"gpio_76";
+		function = "rgmii";
+	};
+
+	uart0_pins: uart0_pins {
+		pins = "ur0_rx",
+			"ur0_tx";
+		function = "uart0";
+	};
+
+	uart1_pins: uart1_pins {
+		pins = "gpio_8",
+			"gpio_9";
+		function = "uart1";
+	};
+
+	uart2_pins_0: uart2_pins_0 {
+		pins = "ur2_loc",
+			"gpio_18",
+			"gpio_19";
+		function = "uart2_loc0";
+	};
+
+	uart2_pins_1: uart2_pins_1 {
+		pins ="ur2_loc",
+			"gpio_26",
+			"gpio_27";
+		function = "uart2_loc1";
+	};
+
+	i2c_pins_0: i2c_pins_0 {
+		pins = "gpio_12",
+			"gpio_13";
+		function = "i2c0";
+		drive-strength = <4>;
+	};
+
+	i2c_pins_0_HS: i2c_pins_0_HS {
+		pins = "gpio_12",
+			"gpio_13";
+		function = "i2c0";
+		drive-strength = <8>;
+	};
+
+	i2c_pins_1: i2c_pins_1 {
+		pins = "gpio_16",
+			"gpio_17";
+		function = "i2c1";
+		drive-strength = <8>;
+	};
+
+	i2c_pins_1_gpio: i2c_pins_1_gpio {
+		pins = "gpio_16",
+			"gpio_17";
+		function = "gpio";
+	};
+
+	i2c_pins_3: i2c_pins_3 {
+		pins = "gpio_63",
+			"gpio_64";
+		function = "i2c3";
+	};
+
+
+	i2c_pins_5: i2c_pins_5 {
+		pins = "gpio_29",
+			"gpio_46";
+		function = "i2c5";
+	};
+
+	spi_pins_enable: spi-pins-enable {
+		pins = "sf_en";
+		function = "sf_enable";
+	};
+
+	spi_pins_loc_spi: spi_pins_loc_spi {
+		pins = "spi_ce_n",
+			"spi_sck",
+			"spi_so",
+			"spi_si";
+		function = "spi";
+	};
+
+	gspi_pins_0: gspi_pins_0 {
+		pins = "gspi_loc",
+			"gpio_18",
+			"gpio_19",
+			"gpio_20",
+			"gpio_31";
+		function = "gspi_loc0";
+	};
+
+	gspi_pins_1: gspi_pins_1 {
+		pins = "gspi_loc",
+			"gpio_8",
+			"gpio_9",
+			"gpio_10",
+			"gpio_11";
+		function = "gspi_loc1";
+	};
+
+	iso_gspi_pins_0: iso_gspi_pins_0 {
+		pins = "iso_gspi_loc",
+			"gpio_18",
+			"gpio_19",
+			"gpio_20",
+			"gpio_31";
+		function = "iso_gspi_loc0";
+	};
+
+	iso_gspi_pins_1: iso_gspi_pins_1 {
+		pins = "iso_gspi_loc",
+			"gpio_8",
+			"gpio_9",
+			"gpio_10",
+			"gpio_11";
+		function = "iso_gspi_loc1";
+	};
+
+	smartcard_pins_0:smartcard_pins_0{
+		pins = "gpio_18",
+			"gpio_19",
+			"gpio_20",
+			"gpio_31";
+		function = "sc0";
+	};
+
+	smartcard_pins_1:smartcard_pins_1{
+		pins = "gpio_2",
+			"gpio_3",
+			"gpio_4",
+			"gpio_5";
+		function = "sc1";
+	};
+
+	tp_common_pins: tp-common-pins {
+		pins = "gpio_66",
+		       "gpio_67",
+		       "gpio_68",
+		       "gpio_73",
+		       "gpio_74",
+		       "gpio_75",
+		       "gpio_76";
+		function = "tp0";
+	};
+
+	tp0_parallel_pins: tp0-parallel-pins {
+		pins = "gpio_69",
+		       "gpio_70",
+		       "gpio_71",
+		       "gpio_72";
+		function = "tp0";
+	};
+
+	tp1_serial_pins: tp1-serial-pins {
+		pins = "gpio_69",
+		       "gpio_70",
+		       "gpio_71",
+		       "gpio_72";
+		function = "tp1";
+	};
+
+	ao_pins: ao_pins {
+		pins = "gpio_66",
+			"gpio_67",
+			"gpio_68",
+			"gpio_69",
+			"gpio_70",
+			"gpio_71",
+			"gpio_72";
+		function = "ao";
+	};
+
+	ao_pins_1: ao_pins_1 {
+		pins = "gpio_66",
+			"gpio_67",
+			"gpio_68",
+			"gpio_69";
+		function = "ao";
+	};
+
+	ir_rx_pins: ir_rx_pins {
+		pins = "ir_rx";
+		function = "ir_rx";
+	};
+
+	spdif_pins: spdif_pins {
+		pins = "gpio_50";
+		function = "spdif";
+	};
+
+	/*spdif_optical_pins: spdif_optical_pins {
+		pins = "gpio_21", "gpio_68", "gpio_85";
+		function = "spdif";
+		pull_en =  <0>;
+	};*/
+
+	ai_loc0_pins: ai_loc0_pins {
+		pins = "gpio_57",
+			"gpio_58",
+			"gpio_59",
+			"gpio_60",
+			"gpio_61",
+			"gpio_62",
+			"gpio_63";
+		function = "ai_loc0";
+	};
+
+	ai_loc1_pins: ai_loc1_pins {
+		pins = "gpio_32",
+			"gpio_33",
+			"gpio_34",
+			"hif_data",
+			"hif_en",
+			"hif_rdy",
+			"hif_clk";
+		function = "ai_loc1";
+	};
+
+	dmic_loc0_pins: dmic_loc0_pins {
+		pins = "dmic_loc",
+			"gpio_57",
+			"gpio_58",
+			"gpio_59",
+			"gpio_60",
+			"gpio_61",
+			"gpio_62",
+			"gpio_63",
+			"gpio_64";
+		function = "dmic_loc0";
+	};
+
+	dmic_loc1_pins: dmic_loc1_pins {
+		pins = "dmic_loc",
+			"gpio_32",
+			"gpio_33",
+			"gpio_34",
+			"gpio_35",
+			"hif_data",
+			"hif_en",
+			"hif_rdy",
+			"hif_clk";
+		function = "dmic_loc1";
+	};
+
+	tdm_loc0_pins: tdm_loc0_pins {
+		pins =
+			"gpio_57",
+			"gpio_58",
+			"gpio_59",
+			"gpio_60";
+		function = "tdm_ai_loc0";
+	};
+
+
+	tdm_loc1_pins: tdm_loc1_pins {
+		pins =
+			"hif_data",
+			"hif_en",
+			"hif_rdy",
+			"hif_clk";
+		function = "tdm_ai_loc1";
+	};
+
+
+	/*i2s_out_4pins: i2s_out_4pins {
+		pins ="tp_data_1",
+		"tp_data_2",
+		"tp_data_3",
+		"tp_data_4";
+		function = "ao";
+	};*/
+
+	/*i2s_in_pins: i2s_in_pins {
+		pins = "gpio_6";
+		function = "ai";
+	};*/
+	emmc_pins: emmc_pins {
+		pins = "emmc_rst",
+			"emmc_dd_sb",
+			"emmc_clk",
+			"emmc_cmd",
+			"emmc_data_0",
+			"emmc_data_1",
+			"emmc_data_2",
+			"emmc_data_3",
+			"emmc_data_4",
+			"emmc_data_5",
+			"emmc_data_6",
+			"emmc_data_7";
+		function = "emmc";
+	};
+
+	emmc_pins_sdr50: emmc_pins_sdr50 {
+		pins = "emmc_clk",
+			"emmc_cmd",
+			"emmc_data_0",
+			"emmc_data_1",
+			"emmc_data_2",
+			"emmc_data_3",
+			"emmc_data_4",
+			"emmc_data_5",
+			"emmc_data_6",
+			"emmc_data_7";
+		function = "emmc";
+		realtek,pdrive = <0x0>;
+		realtek,ndrive = <0x1>;
+	};
+
+	emmc_pins_ddr50: emmc_pins_ddr50 {
+		pins = "emmc_clk",
+			"emmc_cmd",
+			"emmc_data_0",
+			"emmc_data_1",
+			"emmc_data_2",
+			"emmc_data_3",
+			"emmc_data_4",
+			"emmc_data_5",
+			"emmc_data_6",
+			"emmc_data_7";
+		function = "emmc";
+		realtek,pdrive = <0x0>;
+		realtek,ndrive = <0x1>;
+	};
+
+	emmc_pins_hs200: emmc_pins_hs200 {
+		pins = "emmc_clk",
+			"emmc_cmd",
+			"emmc_data_0",
+			"emmc_data_1",
+			"emmc_data_2",
+			"emmc_data_3",
+			"emmc_data_4",
+			"emmc_data_5",
+			"emmc_data_6",
+			"emmc_data_7";
+		function = "emmc";
+		realtek,pdrive = <0x2>;
+		realtek,ndrive = <0x3>;
+	};
+
+	emmc_pins_hs400: emmc_pins_hs400 {
+		pins = "emmc_clk",
+			"emmc_cmd",
+			"emmc_data_0",
+			"emmc_data_1",
+			"emmc_data_2",
+			"emmc_data_3",
+			"emmc_data_4",
+			"emmc_data_5",
+			"emmc_data_6",
+			"emmc_data_7";
+		function = "emmc";
+		realtek,pdrive = <0x4>;
+		realtek,ndrive = <0x5>;
+	};
+
+	emmc_pins_tune0: emmc_pins_tune0 {
+		pins = "emmc_clk",
+			"emmc_cmd",
+			"emmc_data_0",
+			"emmc_data_1",
+			"emmc_data_2",
+			"emmc_data_3",
+			"emmc_data_4",
+			"emmc_data_5",
+			"emmc_data_6",
+			"emmc_data_7";
+		function = "emmc";
+		realtek,pdrive = <0x0>;
+		realtek,ndrive = <0x1>;
+	};
+
+	emmc_pins_tune1: emmc_pins_tune1 {
+		pins = "emmc_clk",
+			"emmc_cmd",
+			"emmc_data_0",
+			"emmc_data_1",
+			"emmc_data_2",
+			"emmc_data_3",
+			"emmc_data_4",
+			"emmc_data_5",
+			"emmc_data_6",
+			"emmc_data_7";
+		function = "emmc";
+		realtek,pdrive = <0x1>;
+		realtek,ndrive = <0x2>;
+	};
+
+	emmc_pins_tune2: emmc_pins_tune2 {
+		pins = "emmc_clk",
+			"emmc_cmd",
+			"emmc_data_0",
+			"emmc_data_1",
+			"emmc_data_2",
+			"emmc_data_3",
+			"emmc_data_4",
+			"emmc_data_5",
+			"emmc_data_6",
+			"emmc_data_7";
+		function = "emmc";
+		realtek,pdrive = <0x2>;
+		realtek,ndrive = <0x3>;
+	};
+
+	emmc_pins_tune3: emmc_pins_tune3 {
+		pins = "emmc_clk",
+			"emmc_cmd",
+			"emmc_data_0",
+			"emmc_data_1",
+			"emmc_data_2",
+			"emmc_data_3",
+			"emmc_data_4",
+			"emmc_data_5",
+			"emmc_data_6",
+			"emmc_data_7";
+		function = "emmc";
+		realtek,pdrive = <0x3>;
+		realtek,ndrive = <0x4>;
+	};
+
+	emmc_pins_tune4: emmc_pins_tune4 {
+		pins = "emmc_clk",
+		       "emmc_cmd",
+		       "emmc_data_0",
+		       "emmc_data_1",
+		       "emmc_data_2",
+		       "emmc_data_3",
+		       "emmc_data_4",
+		       "emmc_data_5",
+		       "emmc_data_6",
+		       "emmc_data_7";
+		function = "emmc";
+		realtek,pdrive = <0x6>;
+		realtek,ndrive = <0x7>;
+	};
+
+	etn_led_pins: etn_led_pins {
+		pins = "gpio_14",
+			"gpio_15";
+		function = "etn_led";
+	};
+
+
+	pcie_clk_pins_0: pcie_clk_pins_0 {
+		pins = "gpio_46";
+		function = "pcie0";
+	};
+
+	pcie_clk_pins_1: pcie_clk_pins_1 {
+		pins = "gpio_25";
+		function = "pcie1";
+	};
+
+	pcie_clk_pins_2: pcie_clk_pins_2 {
+		pins = "gpio_52";
+		function = "pcie2";
+	};
+
+	scpu_ejtag_pins_loc_0: scpu_ejtag_pins_loc_0 {
+		pins = "gpio_2",
+			"gpio_3",
+			"gpio_4",
+			"gpio_5",
+			"gpio_6",
+			"ejtag_scpu_loc";
+		function = "scpu_ejtag_loc0";
+	};
+
+	scpu_ejtag_pins_loc_1: scpu_ejtag_pins_loc_1 {
+		pins = "gpio_32",
+			"gpio_33",
+			"hif_data",
+			"hif_en",
+			"hif_clk",
+			"ejtag_scpu_loc";
+		function = "scpu_ejtag_loc1";
+	};
+
+	scpu_ejtag_pins_disable: scpu_ejtag_pins_disable {
+		pins = "ejtag_scpu_loc";
+		function = "scpu_ejtag_disable";
+	};
+
+	acpu_ejtag_pins_loc_0: acpu_ejtag_pins_loc_0 {
+		pins = "gpio_2",
+			"gpio_3",
+			"gpio_4",
+			"gpio_5",
+			"gpio_6",
+			"ejtag_acpu_loc";
+		function = "acpu_ejtag_loc0";
+	};
+
+	acpu_ejtag_pins_loc_1: acpu_ejtag_pins_loc_1 {
+		pins = "gpio_32",
+			"gpio_33",
+			"hif_data",
+			"hif_en",
+			"hif_clk",
+			"ejtag_acpu_loc";
+		function = "acpu_ejtag_loc1";
+	};
+
+	acpu_ejtag_pins_disable:acpu_ejtag_pins_disable{
+		pins = "ejtag_acpu_loc";
+		function = "acpu_ejtag_disable";
+	};
+
+	vcpu_ejtag_pins_loc_0: avpu_ejtag_pins_loc_0 {
+		pins = "gpio_2",
+			"gpio_3",
+			"gpio_4",
+			"gpio_5",
+			"gpio_6",
+			"ejtag_vcpu_loc";
+		function = "vcpu_ejtag_loc0";
+	};
+
+	vcpu_ejtag_pins_loc_1: vcpu_ejtag_pins_loc_1 {
+		pins = "gpio_32",
+			"gpio_33",
+			"hif_data",
+			"hif_en",
+			"hif_clk",
+			"ejtag_vcpu_loc";
+		function = "vcpu_ejtag_loc1";
+	};
+
+	vcpu_ejtag_pins_disable:vcpu_ejtag_pins_disable{
+		pins = "ejtag_vcpu_loc";
+		function = "vcpu_ejtag_disable";
+	};
+
+	dc_fan_sensor_pins: dc_fan_sensor_pins {
+		pins = "gpio_47";
+		function = "dc_fan";
+	};
+
+	pwm0_0_pins: pwm0_0_pins {
+		pins = "gpio_12";
+		function = "pwm0";
+	};
+
+	pwm0_1_pins: pwm0_1_pins {
+		pins = "gpio_20";
+		function = "pwm0";
+	};
+
+	pwm1_0_pins: pwm1_0_pins {
+		pins = "gpio_13";
+		function = "pwm1";
+	};
+
+	pwm1_1_pins: pwm1_1_pins {
+		pins = "gpio_21";
+		function = "pwm1";
+	};
+
+	pwm2_0_pins: pwm2_0_pins {
+		pins = "gpio_14";
+		function = "pwm2";
+	};
+
+	pwm2_1_pins: pwm2_1_pins {
+		pins = "gpio_22";
+		function = "pwm2";
+	};
+
+	pwm3_0_pins: pwm3_0_pins {
+		pins = "gpio_15";
+		function = "pwm3";
+	};
+
+	pwm3_1_pins: pwm3_1_pins {
+		pins = "gpio_23";
+		function = "pwm3";
+	};
+
+	usb_cc1_pins: usb_cc1_pins {
+		pins = "usb_cc1";
+		function = "usb_cc1";
+	};
+
+	usb_cc2_pins: usb_cc2_pins {
+		pins = "usb_cc2";
+		function = "usb_cc2";
+	};
+
+	demod_pins: demod-pins {
+		pins = "gpio_21";
+		function = "qam_agc_if";
+	};
+
+	/*rtc_pins: rtc_pins {
+		pins = "gpio_25";
+		function = "rtc";
+	};*/
+
+	/*prob0_pins: prob0_pins{
+		pins = "prob_0";
+		function = "gpio";
+	};
+
+	prob1_pins: prob1_pins{
+		pins = "prob_1";
+		function = "gpio";
+	};*/
+};
+
