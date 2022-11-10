@@ -52,39 +52,43 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		}
  
  		skb_record_rx_queue(skb, 0);
-@@ -2793,15 +2800,25 @@ static netdev_features_t mtk_fix_feature
+@@ -2793,15 +2800,30 @@ static netdev_features_t mtk_fix_feature
  
  static int mtk_set_features(struct net_device *dev, netdev_features_t features)
  {
 -	int err = 0;
--
--	if (!((dev->features ^ features) & NETIF_F_LRO))
--		return 0;
 +	struct mtk_mac *mac = netdev_priv(dev);
 +	struct mtk_eth *eth = mac->hw;
 +	netdev_features_t diff = dev->features ^ features;
 +	int i;
++
++	if ((diff & NETIF_F_LRO) && !(features & NETIF_F_LRO))
++		mtk_hwlro_netdev_disable(dev);
+ 
+-	if (!((dev->features ^ features) & NETIF_F_LRO))
++	/* Set RX VLAN offloading */
++	if (!(diff & NETIF_F_HW_VLAN_CTAG_RX))
+ 		return 0;
  
 -	if (!(features & NETIF_F_LRO))
-+	if ((diff & NETIF_F_LRO) && !(features & NETIF_F_LRO))
- 		mtk_hwlro_netdev_disable(dev);
+-		mtk_hwlro_netdev_disable(dev);
++	mtk_w32(eth, !!(features & NETIF_F_HW_VLAN_CTAG_RX),
++		MTK_CDMP_EG_CTRL);
  
 -	return err;
-+	/* Set RX VLAN offloading */
-+	if (diff & NETIF_F_HW_VLAN_CTAG_RX)
-+		mtk_w32(eth, !!(features & NETIF_F_HW_VLAN_CTAG_RX),
-+			MTK_CDMP_EG_CTRL);
-+
 +	/* sync features with other MAC */
-+	for (i = 0; i < MTK_MAC_COUNT; i++)
-+		if (eth->netdev[i] && eth->netdev[i] != dev)
-+			eth->netdev[i]->features = features;
++	for (i = 0; i < MTK_MAC_COUNT; i++) {
++		if (!eth->netdev[i] || eth->netdev[i] == dev)
++			continue;
++		eth->netdev[i]->features &= ~NETIF_F_HW_VLAN_CTAG_RX;
++		eth->netdev[i]->features |= features & NETIF_F_HW_VLAN_CTAG_RX;
++	}
 +
 +	return 0;
  }
  
  /* wait for DMA to finish whatever it is doing before we start using it again */
-@@ -3083,11 +3100,45 @@ found:
+@@ -3083,11 +3105,45 @@ found:
  	return NOTIFY_DONE;
  }
  
@@ -131,7 +135,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	err = phylink_of_phy_connect(mac->phylink, mac->of_node, 0);
  	if (err) {
-@@ -3417,6 +3468,10 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -3417,6 +3473,10 @@ static int mtk_hw_init(struct mtk_eth *e
  	 */
  	val = mtk_r32(eth, MTK_CDMQ_IG_CTRL);
  	mtk_w32(eth, val | MTK_CDMQ_STAG_EN, MTK_CDMQ_IG_CTRL);
@@ -142,7 +146,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* Enable RX VLan Offloading */
  	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
-@@ -3634,6 +3689,12 @@ static int mtk_free_dev(struct mtk_eth *
+@@ -3634,6 +3694,12 @@ static int mtk_free_dev(struct mtk_eth *
  		free_netdev(eth->netdev[i]);
  	}
  
