@@ -1,0 +1,31 @@
+From ceda5d6663f73fa6dfa9d6a90cfd7bd5fa94f6fe Mon Sep 17 00:00:00 2001
+From: James Tai <james.tai@realtek.com>
+Date: Thu, 10 Nov 2022 17:26:55 +0800
+Subject: [PATCH] clk: realtek: add Realtek DHC SoCs clock drivers
+
+Change-Id: Ibd0aa4294539ec1c81a90f2855715686b349d848
+---
+ drivers/clk/Kconfig                   |   1 +
+ drivers/clk/Makefile                  |   1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -406,6 +406,7 @@ source "drivers/clk/mvebu/Kconfig"
+ source "drivers/clk/pistachio/Kconfig"
+ source "drivers/clk/qcom/Kconfig"
+ source "drivers/clk/ralink/Kconfig"
++source "drivers/clk/realtek/Kconfig"
+ source "drivers/clk/renesas/Kconfig"
+ source "drivers/clk/rockchip/Kconfig"
+ source "drivers/clk/samsung/Kconfig"
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -101,6 +101,7 @@ obj-$(CONFIG_COMMON_CLK_PISTACHIO)	+= pi
+ obj-$(CONFIG_COMMON_CLK_PXA)		+= pxa/
+ obj-$(CONFIG_COMMON_CLK_QCOM)		+= qcom/
+ obj-y					+= ralink/
++obj-$(CONFIG_COMMON_CLK_REALTEK)	+= realtek/
+ obj-y					+= renesas/
+ obj-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip/
+ obj-$(CONFIG_COMMON_CLK_SAMSUNG)	+= samsung/

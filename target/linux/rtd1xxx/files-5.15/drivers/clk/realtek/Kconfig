@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: GPL-2.0-only
+menuconfig COMMON_CLK_REALTEK
+	bool "Realtek Clock drivers"
+	depends on ARCH_REALTEK || COMPILE_TEST
+	default y
+
+if COMMON_CLK_REALTEK
+
+config RTK_CLK_COMMON
+	tristate
+	select RESET_CONTROLLER
+	select MFD_SYSCON
+
+config RTK_CLK_PLL_MMC
+	bool
+
+config COMMON_CLK_RTD1295
+	tristate "RTD1295 Clock Controller"
+	select RTK_CLK_COMMON
+	default y
+	help
+	  Support for the clock controller on RTD1295
+
+config COMMON_CLK_RTD1319
+	tristate "RTD1319 Clock Controller"
+	select RTK_CLK_COMMON
+	select RTK_CLK_PLL_DIF
+	select RTK_CLK_PLL_MMC
+	default y
+	help
+	  Support for the clock controller on RTD1319
+
+config COMMON_CLK_RTD1619B
+	tristate "RTD1619B Clock Controller"
+	select RTK_CLK_COMMON
+	select RTK_CLK_PLL_MMC
+	default y
+	help
+	  Support for the clock controller on RTD1619B
+endif
