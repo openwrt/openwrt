@@ -22,28 +22,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  #include "mtk_eth_soc.h"
  #include "mtk_wed.h"
-@@ -1960,23 +1961,27 @@ static int mtk_poll_rx(struct napi_struc
- 		if (reason == MTK_PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED)
- 			mtk_ppe_check_skb(eth->ppe[0], skb, hash);
- 
--		if (netdev->features & NETIF_F_HW_VLAN_CTAG_RX) {
--			if (MTK_HAS_CAPS(eth->soc->caps, MTK_NETSYS_V2)) {
--				if (trxd.rxd3 & RX_DMA_VTAG_V2)
--					__vlan_hwaccel_put_tag(skb,
--						htons(RX_DMA_VPID(trxd.rxd4)),
--						RX_DMA_VID(trxd.rxd4));
--			} else if (trxd.rxd2 & RX_DMA_VTAG) {
+@@ -1967,16 +1968,22 @@ static int mtk_poll_rx(struct napi_struc
+ 						htons(RX_DMA_VPID(trxd.rxd4)),
+ 						RX_DMA_VID(trxd.rxd4));
+ 			} else if (trxd.rxd2 & RX_DMA_VTAG) {
 -				__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q),
--						       RX_DMA_VID(trxd.rxd3));
--			}
-+		if (MTK_HAS_CAPS(eth->soc->caps, MTK_NETSYS_V2)) {
-+			if (trxd.rxd3 & RX_DMA_VTAG_V2)
-+				__vlan_hwaccel_put_tag(skb,
-+					htons(RX_DMA_VPID(trxd.rxd4)),
-+					RX_DMA_VID(trxd.rxd4));
-+		} else if (trxd.rxd2 & RX_DMA_VTAG) {
-+			__vlan_hwaccel_put_tag(skb, htons(RX_DMA_VPID(trxd.rxd3)),
-+					       RX_DMA_VID(trxd.rxd3));
++				__vlan_hwaccel_put_tag(skb, htons(RX_DMA_VPID(trxd.rxd3)),
+ 						       RX_DMA_VID(trxd.rxd3));
+ 			}
 +		}
 +
 +		/* When using VLAN untagging in combination with DSA, the
@@ -51,10 +37,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		 */
 +		if (skb_vlan_tag_present(skb) && netdev_uses_dsa(netdev)) {
 +			unsigned int port = ntohs(skb->vlan_proto) & GENMASK(2, 0);
-+
-+			if (port < ARRAY_SIZE(eth->dsa_meta) &&
-+			    eth->dsa_meta[port])
-+				skb_dst_set_noref(skb, &eth->dsa_meta[port]->dst);
  
 -			/* If the device is attached to a dsa switch, the special
 -			 * tag inserted in VLAN field by hw switch can * be offloaded
@@ -62,11 +44,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -			 */
 -			if (netdev_uses_dsa(netdev))
 -				__vlan_hwaccel_clear_tag(skb);
++			if (port < ARRAY_SIZE(eth->dsa_meta) &&
++			    eth->dsa_meta[port])
++				skb_dst_set_noref(skb, &eth->dsa_meta[port]->dst);
++
 +			__vlan_hwaccel_clear_tag(skb);
  		}
  
  		skb_record_rx_queue(skb, 0);
-@@ -2793,15 +2798,19 @@ static netdev_features_t mtk_fix_feature
+@@ -2793,15 +2800,25 @@ static netdev_features_t mtk_fix_feature
  
  static int mtk_set_features(struct net_device *dev, netdev_features_t features)
  {
@@ -77,6 +63,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	struct mtk_mac *mac = netdev_priv(dev);
 +	struct mtk_eth *eth = mac->hw;
 +	netdev_features_t diff = dev->features ^ features;
++	int i;
  
 -	if (!(features & NETIF_F_LRO))
 +	if ((diff & NETIF_F_LRO) && !(features & NETIF_F_LRO))
@@ -88,11 +75,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		mtk_w32(eth, !!(features & NETIF_F_HW_VLAN_CTAG_RX),
 +			MTK_CDMP_EG_CTRL);
 +
++	/* sync features with other MAC */
++	for (i = 0; i < MTK_MAC_COUNT; i++)
++		if (eth->netdev[i] && eth->netdev[i] != dev)
++			eth->netdev[i]->features = features;
++
 +	return 0;
  }
  
  /* wait for DMA to finish whatever it is doing before we start using it again */
-@@ -3083,11 +3092,45 @@ found:
+@@ -3083,11 +3100,45 @@ found:
  	return NOTIFY_DONE;
  }
  
@@ -139,7 +131,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	err = phylink_of_phy_connect(mac->phylink, mac->of_node, 0);
  	if (err) {
-@@ -3417,6 +3460,10 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -3417,6 +3468,10 @@ static int mtk_hw_init(struct mtk_eth *e
  	 */
  	val = mtk_r32(eth, MTK_CDMQ_IG_CTRL);
  	mtk_w32(eth, val | MTK_CDMQ_STAG_EN, MTK_CDMQ_IG_CTRL);
@@ -150,7 +142,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* Enable RX VLan Offloading */
  	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
-@@ -3634,6 +3681,12 @@ static int mtk_free_dev(struct mtk_eth *
+@@ -3634,6 +3689,12 @@ static int mtk_free_dev(struct mtk_eth *
  		free_netdev(eth->netdev[i]);
  	}
  
