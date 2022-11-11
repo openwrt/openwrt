@@ -1216,6 +1216,20 @@ define Device/jcg_y2
 endef
 TARGET_DEVICES += jcg_y2
 
+define Device/keenetic_kn-3010
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 31488k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-3010
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 8400912 -v "KN-3010"
+endef
+TARGET_DEVICES += keenetic_kn-3010
+
 define Device/lenovo_newifi-d1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
