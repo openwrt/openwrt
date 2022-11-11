@@ -5,7 +5,7 @@ HOST_BUILD_DIR=$(pwd)/"build_dir/host"
 HOST_STAGING_DIR_STAMP=$(pwd)/"staging_dir/host/stamp"
 
 refresh_timestamps() {
-	find "$1" -not -type l -print0 | xargs -0 touch
+	find -H "$1" -not -type l -print0 | xargs -0 touch
 }
 
 extract_prebuilt_tar() {
