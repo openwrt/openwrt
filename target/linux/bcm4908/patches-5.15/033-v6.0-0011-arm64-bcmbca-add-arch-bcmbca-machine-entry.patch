@@ -1,0 +1,31 @@
+From fdcd652ce2b6b819f5c4dc3cead5215c84ee6933 Mon Sep 17 00:00:00 2001
+From: William Zhang <william.zhang@broadcom.com>
+Date: Wed, 1 Jun 2022 15:56:50 -0700
+Subject: [PATCH] arm64: bcmbca: add arch bcmbca machine entry
+
+Add ARCH_BCMBCA config for Broadcom Broadband SoC chipsets
+
+Signed-off-by: William Zhang <william.zhang@broadcom.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm64/Kconfig.platforms | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -65,6 +65,15 @@ config ARCH_BCM_IPROC
+ 	help
+ 	  This enables support for Broadcom iProc based SoCs
+ 
++config ARCH_BCMBCA
++	bool "Broadcom Broadband SoC"
++	help
++	  Say Y if you intend to run the kernel on a Broadcom Broadband ARM-based
++	  BCA chipset.
++
++	  This enables support for Broadcom BCA ARM-based broadband chipsets,
++	  including the DSL, PON and Wireless family of chips.
++
+ config ARCH_BERLIN
+ 	bool "Marvell Berlin SoC Family"
+ 	select DW_APB_ICTL
