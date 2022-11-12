@@ -21,7 +21,6 @@
 #include <net/switchdev.h>
 #include <asm/cacheflush.h>
 
-#include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl838x_eth.h"
 
 extern struct rtl83xx_soc_info soc_info;

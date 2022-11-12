@@ -3,6 +3,76 @@
 #ifndef _RTL838X_ETH_H
 #define _RTL838X_ETH_H
 
+struct rtl83xx_soc_info {
+	unsigned char *name;
+	unsigned int id;
+	unsigned int family;
+	unsigned char *compatible;
+	volatile void *sw_base;
+	volatile void *icu_base;
+	int cpu_port;
+};
+
+#define RTL838X_SW_BASE		((volatile void *) 0xBB000000)
+
+#define sw_r32(reg)		readl(RTL838X_SW_BASE + reg)
+#define sw_w32(val, reg)	writel(val, RTL838X_SW_BASE + reg)
+#define sw_w32_mask(clear, set, reg)	\
+				sw_w32((sw_r32(reg) & ~(clear)) | (set), reg)
+
+/* Definition of family IDs */
+#define RTL8389_FAMILY_ID			(0x8389)
+#define RTL8328_FAMILY_ID			(0x8328)
+#define RTL8390_FAMILY_ID			(0x8390)
+#define RTL8350_FAMILY_ID			(0x8350)
+#define RTL8380_FAMILY_ID			(0x8380)
+#define RTL8330_FAMILY_ID			(0x8330)
+#define RTL9300_FAMILY_ID			(0x9300)
+#define RTL9310_FAMILY_ID			(0x9310)
+
+/* CPU Ports */
+#define RTL838X_CPU_PORT			28
+#define RTL839X_CPU_PORT			52
+#define RTL930X_CPU_PORT			28
+#define RTL931X_CPU_PORT			56
+
+/* Reset */
+#define RTL838X_RST_GLB_CTRL_0			(0x003c)
+#define RTL838X_RST_GLB_CTRL_1			(0x0040)
+#define RTL839X_RST_GLB_CTRL			(0x0014)
+#define RTL930X_RST_GLB_CTRL_0			(0x000c)
+#define RTL931X_RST_GLB_CTRL			(0x0400)
+
+#define RTL838X_ISR_PORT_LINK_STS_CHG		(0x114C)
+#define RTL838X_IMR_PORT_LINK_STS_CHG		(0x1104)
+
+#define RTL839X_ISR_PORT_LINK_STS_CHG		(0x00a0)
+#define RTL839X_IMR_PORT_LINK_STS_CHG		(0x0068)
+
+#define RTL930X_ISR_PORT_LINK_STS_CHG		(0xC660)
+#define RTL930X_IMR_PORT_LINK_STS_CHG		(0xC62C)
+
+#define RTL931X_ISR_PORT_LINK_STS_CHG		(0x12B8)
+#define RTL931X_IMR_PORT_LINK_STS_CHG		(0x126C)
+#define RTL931X_MAC_L2_GLOBAL_CTRL2		(0x1358)
+
+#define RTL838X_SMI_GLB_CTRL			(0xa100)
+#define RTL838X_SMI_POLL_CTRL			(0xa17c)
+
+#define RTL839X_SMI_GLB_CTRL			(0x03f8)
+#define RTL839X_SMI_PORT_POLLING_CTRL		(0x03fc)
+
+#define RTL930X_SMI_GLB_CTRL			(0xCA00)
+#define RTL930X_SMI_POLL_CTRL			(0xca90)
+#define RTL930X_SMI_PORT0_5_ADDR		(0xCB80)
+
+#define RTL931X_SMI_GLB_CTRL0			(0x0CC0)
+#define RTL931X_SMI_GLB_CTRL1			(0x0CBC)
+#define RTL931X_SMI_PORT_POLLING_CTRL		(0x0CCC)
+#define RTL931X_SMI_PORT_POLLING_SEL		(0x0C9C)
+#define RTL931X_SMI_PORT_ADDR			(0x0C74)
+#define RTL931X_SPI_CTRL0			(0x103C)
+
 /*
  * Register definition
  */
