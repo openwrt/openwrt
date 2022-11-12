@@ -78,3 +78,14 @@ define Device/mikrotik_wap-ac
 	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers
 endef
 TARGET_DEVICES += mikrotik_wap-ac
+
+define Device/mikrotik_wap-r-ac
+	$(call Device/mikrotik_nor)
+	DEVICE_MODEL := wAP R ac
+	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := -kmod-ath10k-ct kmod-ath10k-ct-smallbuffers \
+		kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi \
+		kmod-usb-acm kmod-usb-net-rndis
+	DEVICE_DTS := qcom-ipq4018-wap-r-ac
+endef
+TARGET_DEVICES += mikrotik_wap-r-ac

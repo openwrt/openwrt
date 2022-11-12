@@ -177,7 +177,8 @@ platform_do_upgrade() {
 	mikrotik,hap-ac3-lte6-kit|\
 	mikrotik,lhgg-60ad|\
 	mikrotik,sxtsq-5-ac|\
-	mikrotik,wap-ac)
+	mikrotik,wap-ac|\
+	mikrotik,wap-r-ac)
 		[ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
 		default_do_upgrade "$1"
 		;;
