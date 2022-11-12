@@ -1255,7 +1255,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	LIST_HEAD(rx_list);
 	unsigned long flags;
 	int i, len, work_done = 0;
-	u8 *data, *skb_data;
+	u8 *data;
 	unsigned int val;
 	u32	*last;
 	struct p_hdr *h;
@@ -1301,11 +1301,10 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 				}
 			}
 
-			skb_data = skb_put(skb, len);
-			/* Make sure data is visible */
+			/* Make new data visible for CPU */
 			mb();
 			dma_sync_single_for_device(&priv->pdev->dev, CPHYSADDR(data), len, DMA_FROM_DEVICE);
-			memcpy(skb->data, (u8 *)KSEG0ADDR(data), len);
+			skb_put_data(skb, (u8 *)KSEG0ADDR(data), len);
 			/* Overwrite CRC with cpu_tag */
 			if (dsa) {
 				priv->r->decode_tag(h, &tag);
