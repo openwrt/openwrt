@@ -78,6 +78,11 @@ ramips_setup_interfaces()
 		uci add_list firewall.@zone[1].network='eth_data'
 		uci add_list firewall.@zone[1].network='eth_om'
 		;;
+	cudy,m1800|\
+	yuncore,ax820|\
+	zyxel,nt7101)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	gnubee,gb-pc1)
 		ucidef_set_interface_lan "ethblack ethblue"
 		;;
@@ -116,10 +121,6 @@ ramips_setup_interfaces()
 		;;
 	ubnt,usw-flex)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
-		;;
-	yuncore,ax820|\
-	zyxel,nr7101)
-		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	zyxel,wap6805)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"

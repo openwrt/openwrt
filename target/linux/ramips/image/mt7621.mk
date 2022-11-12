@@ -426,6 +426,16 @@ define Device/bolt_arion
 endef
 TARGET_DEVICES += bolt_arion
 
+define Device/cudy_m1800
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := M1800
+  IMAGE_SIZE := 16064k
+  UIMAGE_NAME := R17
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += cudy_m1800
+
 define Device/cudy_wr1300-v1
   $(Device/dsa-migration)
   IMAGE_SIZE := 15872k
