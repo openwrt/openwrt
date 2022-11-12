@@ -460,7 +460,7 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 
 	/* RX buffer overrun */
 	if (status & 0x000ff) {
-		pr_debug("RX buffer overrun: status %x, mask: %x\n",
+		pr_err("RX buffer overrun: status %x, mask: %x\n",
 			 status, sw_r32(priv->r->dma_if_intr_msk));
 		sw_w32(status, priv->r->dma_if_intr_sts);
 		rtl838x_rb_cleanup(priv, status & 0xff);
