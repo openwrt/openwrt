@@ -1282,10 +1282,9 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 			break;
 		work_done++;
 
-		len -= 4; /* strip the CRC */
-		/* Add 4 bytes for cpu_tag */
-		if (dsa)
-			len += 4;
+		/* Reuse CRC for DSA tag or strip it otherwise */
+		if (!dsa)
+			len -= 4;
 
 		skb = netdev_alloc_skb(dev, len + 4);
 		skb_reserve(skb, NET_IP_ALIGN);
