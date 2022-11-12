@@ -1287,8 +1287,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		if (!dsa)
 			len -= 4;
 
-		skb = netdev_alloc_skb(dev, len + 4);
-		skb_reserve(skb, NET_IP_ALIGN);
+		skb = netdev_alloc_skb_ip_align(dev, len);
 
 		if (likely(skb)) {
 			/* BUG: Prevent bug on RTL838x SoCs*/
