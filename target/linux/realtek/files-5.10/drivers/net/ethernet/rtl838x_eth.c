@@ -1254,7 +1254,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	struct sk_buff *skb;
 	LIST_HEAD(rx_list);
 	unsigned long flags;
-	int i, len, work_done = 0;
+	int i, len, work_done = 0, idx;
 	u8 *data;
 	unsigned int val;
 	u32	*last;
@@ -1265,17 +1265,18 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	pr_debug("---------------------------------------------------------- RX - %d\n", r);
 	spin_lock_irqsave(&priv->lock, flags);
 	last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
+	idx = ring->c_rx[r];
 
 	do {
-		if ((ring->rx_r[r][ring->c_rx[r]] & 0x1)) {
-			if (&ring->rx_r[r][ring->c_rx[r]] != last) {
+		if ((ring->rx_r[r][idx] & 0x1)) {
+			if (&ring->rx_r[r][idx] != last) {
 				netdev_warn(dev, "Ring contention: r: %x, last %x, cur %x\n",
-				    r, (uint32_t)last, (u32) &ring->rx_r[r][ring->c_rx[r]]);
+				    r, (uint32_t)last, (u32) &ring->rx_r[r][idx]);
 			}
 			break;
 		}
 
-		h = &ring->rx_header[r][ring->c_rx[r]];
+		h = &ring->rx_header[r][idx];
 		data = (u8 *)KSEG1ADDR(h->buf);
 		len = h->len;
 		if (!len)
@@ -1341,16 +1342,17 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		h->buf = data;
 		h->size = RING_BUFFER;
 
-		ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 
-			| (ring->c_rx[r] == (priv->rxringlen - 1) ? WRAP : 0x1);
-		ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
+		ring->rx_r[r][idx] = KSEG1ADDR(h) | 0x1
+			| (idx == (priv->rxringlen - 1) ? WRAP : 0x1);
+		idx = (idx + 1) % priv->rxringlen;
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
-	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
+	} while (&ring->rx_r[r][idx] != last && work_done < budget);
 
 	netif_receive_skb_list(&rx_list);
 
 	// Update counters
 	priv->r->update_cntr(r, 0);
+	ring->c_rx[r] = idx;
 
 	spin_unlock_irqrestore(&priv->lock, flags);
 
