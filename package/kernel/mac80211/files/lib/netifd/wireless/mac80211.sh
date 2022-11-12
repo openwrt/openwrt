@@ -1251,7 +1251,7 @@ drv_mac80211_setup() {
 		if [ "$no_reload" != "0" ]; then
 			add_ap=1
 			ubus wait_for hostapd
-			local hostapd_res="$(ubus call hostapd config_add "{\"iface\":\"$primary_ap\", \"config\":\"${hostapd_conf_file}\"}")"
+			local hostapd_res="$(ubus call hostapd config_add "{\"iface\":\"$primary_ap\",\"config\":\"${hostapd_conf_file}\"}")"
 			ret="$?"
 			[ "$ret" != 0 -o -z "$hostapd_res" ] && {
 				wireless_setup_failed HOSTAPD_START_FAILED
