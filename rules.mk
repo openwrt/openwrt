@@ -208,6 +208,9 @@ ifndef DUMP
       ifneq ($(TOOLCHAIN_LIB_DIRS),)
         TARGET_LDFLAGS+= $(patsubst %,-L%,$(TOOLCHAIN_LIB_DIRS))
       endif
+      ifeq ($(CONFIG_USE_MUSL),y)
+        TARGET_CPPFLAGS+= -I$(TOOLCHAIN_ROOT_DIR)/include/fortify
+      endif
     endif
   endif
 endif
