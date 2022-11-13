@@ -1,0 +1,43 @@
+From 0d5ea34245433a403c3c6bb2b1f4070c92d02451 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Mon, 21 Nov 2022 13:48:43 +0100
+Subject: [PATCH 08/17] nl80211: add "band" to iwinfo_freqlist_entry
+
+So that consumers don't have to fiddle around with mapping frequencies
+to bands, which everyone seems to do a little differently.
+
+Note: This changes the ABI.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ include/iwinfo.h | 1 +
+ iwinfo_nl80211.c | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/include/iwinfo.h b/include/iwinfo.h
+index d003d2c..71c4c80 100644
+--- a/include/iwinfo.h
++++ b/include/iwinfo.h
+@@ -271,6 +271,7 @@ struct iwinfo_txpwrlist_entry {
+ };
+ 
+ struct iwinfo_freqlist_entry {
++	uint8_t band;
+ 	uint8_t channel;
+ 	uint32_t mhz;
+ 	uint8_t restricted;
+diff --git a/iwinfo_nl80211.c b/iwinfo_nl80211.c
+index 630fdbf..50caf01 100644
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -3009,6 +3009,7 @@ static int nl80211_get_freqlist_cb(struct nl_msg *msg, void *arg)
+ 					    freqs[NL80211_FREQUENCY_ATTR_DISABLED])
+ 						continue;
+ 
++					e->band = nl80211_get_band(band->nla_type);
+ 					e->mhz = nla_get_u32(freqs[NL80211_FREQUENCY_ATTR_FREQ]);
+ 					e->channel = nl80211_freq2channel(e->mhz);
+ 
+-- 
+2.38.1
+

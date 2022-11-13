@@ -1,0 +1,53 @@
+From 8ee7971c76314b44ff01385c47ac7a98edce79d9 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 11 Jan 2023 11:39:32 +0100
+Subject: [PATCH 16/17] lib: add IWINFO_FREQ_FLAG_NAMES
+
+The same as with the other defines/enums which allow consumers to
+iterate over all known ones.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ include/iwinfo.h |  2 ++
+ iwinfo_lib.c     | 12 ++++++++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/include/iwinfo.h b/include/iwinfo.h
+index c76aab7..b9a482c 100644
+--- a/include/iwinfo.h
++++ b/include/iwinfo.h
+@@ -153,6 +153,8 @@ enum iwinfo_freq_flag {
+ #define IWINFO_FREQ_NO_IR          (1 << IWINFO_FREQ_NO_IR)
+ #define IWINFO_FREQ_INDOOR_ONLY    (1 << IWINFO_FREQ_INDOOR_ONLY)
+ 
++extern const char * const IWINFO_FREQ_FLAG_NAMES[IWINFO_FREQ_FLAG_COUNT];
++
+ 
+ enum iwinfo_opmode {
+ 	IWINFO_OPMODE_UNKNOWN = 0,
+diff --git a/iwinfo_lib.c b/iwinfo_lib.c
+index 9f787ac..579efc4 100644
+--- a/iwinfo_lib.c
++++ b/iwinfo_lib.c
+@@ -95,6 +95,18 @@ const char * const IWINFO_HTMODE_NAMES[IWINFO_HTMODE_COUNT] = {
+ 	"HE160"
+ };
+ 
++const char * const IWINFO_FREQ_FLAG_NAMES[IWINFO_FREQ_FLAG_COUNT] = {
++	"NO_10MHZ",
++	"NO_20MHZ",
++	"NO_HT40+",
++	"NO_HT40-",
++	"NO_80MHZ",
++	"NO_160MHZ",
++	"NO_HE",
++	"NO_IR",
++	"INDOOR_ONLY",
++};
++
+ const char * const ht_secondary_offset[4] = {
+ 	"no secondary",
+ 	"above",
+-- 
+2.38.1
+

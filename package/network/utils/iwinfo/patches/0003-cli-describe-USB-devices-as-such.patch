@@ -1,0 +1,30 @@
+From dbc0ee7c57134f848726f7bbe7638ab10d8596e8 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 18 Jan 2023 14:24:36 +0100
+Subject: [PATCH 03/17] cli: describe USB devices as such
+
+This makes it clear if the hardware is embedded or usb/pci based.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ iwinfo_cli.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/iwinfo_cli.c b/iwinfo_cli.c
+index 9b3e8e3..3bce96e 100644
+--- a/iwinfo_cli.c
++++ b/iwinfo_cli.c
+@@ -337,6 +337,10 @@ static char * print_hardware_id(const struct iwinfo_ops *iw, const char *ifname)
+ 	{
+ 		if (strlen(ids.compatible) > 0)
+ 			snprintf(buf, sizeof(buf), "embedded");
++		else if (ids.vendor_id == 0 && ids.device_id == 0 &&
++			 ids.subsystem_vendor_id != 0 && ids.subsystem_device_id != 0)
++			snprintf(buf, sizeof(buf), "USB %04X:%04X",
++				ids.subsystem_vendor_id, ids.subsystem_device_id);
+ 		else
+ 			snprintf(buf, sizeof(buf), "%04X:%04X %04X:%04X",
+ 				ids.vendor_id, ids.device_id,
+-- 
+2.38.1
+

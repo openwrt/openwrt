@@ -1,0 +1,26 @@
+From 891acee6186d3600e5516c95fe613360b353c897 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 18 Jan 2023 14:24:35 +0100
+Subject: [PATCH 02/17] devices: add MediaTek MT7628 card
+
+This adds the single missing compatible supported by the mt76 driver,
+which is used by a bunch of ramips mt7628an devices.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ devices.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/devices.txt b/devices.txt
+index 4da663d..e316d60 100644
+--- a/devices.txt
++++ b/devices.txt
+@@ -208,4 +208,5 @@
+ "qcom,ipq4019-wifi"     0      0  "Qualcomm Atheros" "IPQ4019"
+ "qcom,ipq8074-wifi"     0      0  "Qualcomm Atheros" "IPQ8074"
+ "mediatek,mt7622-wmac"  0      0  "MediaTek" "MT7622"
++"mediatek,mt7628-wmac"  0      0  "MediaTek" "MT7628"
+ "mediatek,mt7986-wmac"  0      0  "MediaTek" "MT7986"
+-- 
+2.38.1
+

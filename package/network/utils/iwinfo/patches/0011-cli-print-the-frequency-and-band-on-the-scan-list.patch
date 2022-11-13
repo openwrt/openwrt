@@ -1,0 +1,31 @@
+From 0172c977592484804a3a8f72781e428fca844cba Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Thu, 24 Nov 2022 17:37:16 +0100
+Subject: [PATCH 11/17] cli: print the frequency and band on the scan list
+
+Provide band and frequency info on scan list dump.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ iwinfo_cli.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/iwinfo_cli.c b/iwinfo_cli.c
+index 02296ac..c1242bf 100644
+--- a/iwinfo_cli.c
++++ b/iwinfo_cli.c
+@@ -659,8 +659,10 @@ static void print_scanlist(const struct iwinfo_ops *iw, const char *ifname)
+ 			format_bssid(e->mac));
+ 		printf("          ESSID: %s\n",
+ 			format_ssid(e->ssid));
+-		printf("          Mode: %s  Channel: %s\n",
++		printf("          Mode: %s  Frequency: %s  Band: %s  Channel: %s\n",
+ 			IWINFO_OPMODE_NAMES[e->mode],
++			format_frequency(e->mhz),
++			format_band(e->band),
+ 			format_channel(e->channel));
+ 		printf("          Signal: %s  Quality: %s/%s\n",
+ 			format_signal(e->signal - 0x100),
+-- 
+2.38.1
+

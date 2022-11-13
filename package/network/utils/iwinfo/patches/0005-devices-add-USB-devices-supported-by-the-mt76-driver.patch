@@ -1,0 +1,73 @@
+From 9b47b031c027f4800b5afca8762fbdcef8d3df27 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 18 Jan 2023 14:24:38 +0100
+Subject: [PATCH 05/17] devices: add USB devices supported by the mt76 driver
+
+A nice and stable working mainline driver deserves first class support,
+and this adds all USB devices supported by it.
+
+The PIDs/VIDs are taken directly from the driver, in the very same order
+to make future syncs easy.
+
+The single left out entry is the unknown 148f:760a.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ devices.txt | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/devices.txt b/devices.txt
+index e316d60..82d8421 100644
+--- a/devices.txt
++++ b/devices.txt
+@@ -195,7 +195,47 @@
+ 
+ # USB devices
+ # 0x0000 | 0x0000 | vendor id | product id | ...
++# mt7921/usb.c
+ 0x0000 0x0000 0x0e8d 0x7961    0      0  "MediaTek" "MT7921AU"
++# mt76x2/usb.c
++0x0000 0x0000 0x0b05 0x1833    0      0  "ASUS" "USB-AC54"
++0x0000 0x0000 0x0b05 0x17eb    0      0  "ASUS" "USB-AC55"
++0x0000 0x0000 0x0b05 0x180b    0      0  "ASUS" "USB-N53 B1"
++0x0000 0x0000 0x0e8d 0x7612    0      0  "Aukey" "USBAC1200" /* Alfa AWUS036ACM */
++0x0000 0x0000 0x057c 0x8503    0      0  "AVM" "FRITZ!WLAN AC860"
++0x0000 0x0000 0x7392 0xb711    0      0  "Edimax" "EW-7722UAC"
++0x0000 0x0000 0x0e8d 0x7632    0      0  "High Cloud" "HC-M7662BU1"
++0x0000 0x0000 0x2c4e 0x0103    0      0  "Mercury" "UD13"
++0x0000 0x0000 0x0846 0x9053    0      0  "Netgear" "A6210"
++0x0000 0x0000 0x045e 0x02e6    0      0  "Microsoft" "XBox One Wireless Adapter"
++0x0000 0x0000 0x045e 0x02fe    0      0  "Microsoft" "XBox One Wireless Adapter"
++# mt76x0/usb.c
++0x0000 0x0000 0x148f 0x7610    0      0  "MediaTek" "MT7610U"
++0x0000 0x0000 0x13b1 0x003e    0      0  "Linksys" "AE6000"
++0x0000 0x0000 0x0e8d 0x7610    0      0  "Sabrent" "NTWLAC"
++0x0000 0x0000 0x7392 0xa711    0      0  "Edimax" "7711MAC"
++0x0000 0x0000 0x148f 0x761a    0      0  "TP-Link" "TL-WDN5200"
++0x0000 0x0000 0x0b05 0x17d1    0      0  "ASUS" "USB-AC51"
++0x0000 0x0000 0x0b05 0x17db    0      0  "ASUS" "USB-AC50"
++0x0000 0x0000 0x0df6 0x0075    0      0  "Sitecom" "WLA-3100"
++0x0000 0x0000 0x2019 0xab31    0      0  "Planex" "GW-450D"
++0x0000 0x0000 0x2001 0x3d02    0      0  "D-Link" "DWA-171 rev B1"
++0x0000 0x0000 0x0586 0x3425    0      0  "Zyxel" "NWD6505"
++0x0000 0x0000 0x07b8 0x7610    0      0  "AboCom" "AU7212"
++0x0000 0x0000 0x04bb 0x0951    0      0  "I-O DATA" "WN-AC433UK"
++0x0000 0x0000 0x057c 0x8502    0      0  "AVM" "FRITZ!WLAN AC430"
++0x0000 0x0000 0x293c 0x5702    0      0  "Comcast" "Xfinity KXW02AAA"
++0x0000 0x0000 0x20f4 0x806b    0      0  "TRENDnet" "TEW-806UBH"
++0x0000 0x0000 0x7392 0xc711    0      0  "Devolo" "WiFi Stick ac"
++0x0000 0x0000 0x0df6 0x0079    0      0  "Sitecom" "WL-356"
++0x0000 0x0000 0x2357 0x0123    0      0  "TP-Link" "T2UHP US v1"
++0x0000 0x0000 0x2357 0x010b    0      0  "TP-Link" "T2UHP UN v1"
++0x0000 0x0000 0x2357 0x0105    0      0  "TP-Link" "Archer T1U"
++0x0000 0x0000 0x0e8d 0x7630    0      0  "MediaTek" "MT7630U"
++0x0000 0x0000 0x0e8d 0x7650    0      0  "MediaTek" "MT7650U"
++# mt7615/usb.c
++0x0000 0x0000 0x0e8d 0x7663    0      0  "MediaTek" "MT7663U"
++0x0000 0x0000 0x043e 0x310c    0      0  "LG" "LGSBWAC02"
+ 
+ # FDT compatible strings
+ # "compatible" | txpower offset | frequency offset | ...
+-- 
+2.38.1
+

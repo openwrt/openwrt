@@ -1,0 +1,61 @@
+From 2c4ee842e57b02cc7d2dd748ccb6ac61561a3ac4 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Sat, 24 Dec 2022 12:03:01 +0100
+Subject: [PATCH 14/17] nl80211: prefer non-supplicant-based devices
+
+If a phy has multiple devices, prefer non-supplicant-based ones as per
+link_mode, see [0] and [1].
+
+The nl80211 API provides more information than wpa_supplicant/hostapd does,
+like HT/VHT operation, which are used by e.g. luci's channel analysis.
+
+[0] https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net
+[1] https://github.com/openwrt/luci/issues/6167#issuecomment-1364500296
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ iwinfo_nl80211.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/iwinfo_nl80211.c b/iwinfo_nl80211.c
+index d7e7d90..f598ef5 100644
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -807,10 +807,9 @@ nla_put_failure:
+ 
+ static char * nl80211_phy2ifname(const char *ifname)
+ {
+-	int ifidx = -1, cifidx = -1, phyidx = -1;
++	int ifidx = -1, cifidx, lmode = 1, clmode, phyidx;
+ 	char buffer[512];
+ 	static char nif[IFNAMSIZ] = { 0 };
+-
+ 	DIR *d;
+ 	struct dirent *e;
+ 
+@@ -835,11 +834,20 @@ static char * nl80211_phy2ifname(const char *ifname)
+ 		{
+ 			snprintf(buffer, sizeof(buffer),
+ 			         "/sys/class/net/%s/ifindex", e->d_name);
++			cifidx = nl80211_readint(buffer);
++
++			if (cifidx < 0)
++				continue;
++
++			snprintf(buffer, sizeof(buffer),
++			         "/sys/class/net/%s/link_mode", e->d_name);
++			clmode = nl80211_readint(buffer);
+ 
+-			if ((cifidx = nl80211_readint(buffer)) >= 0 &&
+-			    ((ifidx < 0) || (cifidx < ifidx)))
++			/* prefer non-supplicant-based devices */
++			if ((ifidx < 0) || (cifidx < ifidx) || ((lmode == 1) && (clmode != 1)))
+ 			{
+ 				ifidx = cifidx;
++				lmode = clmode;
+ 				strncpy(nif, e->d_name, sizeof(nif) - 1);
+ 			}
+ 		}
+-- 
+2.38.1
+

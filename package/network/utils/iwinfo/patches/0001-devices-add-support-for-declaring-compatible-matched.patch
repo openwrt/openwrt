@@ -1,0 +1,269 @@
+From fac0787ab007243d7dc51948bd06eceea7299bba Mon Sep 17 00:00:00 2001
+From: Jo-Philipp Wich <jo@mein.io>
+Date: Mon, 9 Jan 2023 20:49:53 +0100
+Subject: [PATCH 01/17] devices: add support for declaring compatible matched
+ devices
+
+Some device have embedded wifi card that are not connected with usb or
+internall with pci. Such device have fake device_id and only the
+vendor_id actually reflect something real but internally they don't have
+any id and are just matched by the node compatible binding in DT.
+
+We currently match this with a big if-else to match the single devices
+but this can be improved and be matched directly in devices.txt
+
+Rework this so that we can drop the big if-else and move the matching
+to devices.txt
+
+When a device is matched using compatible in iwinfo the hardware will be
+flagged as embedded and won't print empty ids.
+
+Update devices.txt by migrating all the compatible matching device from
+fake id to compatible matching.
+
+Tested-by: Christian Marangi <ansuelsmth@gmail.com> # ipq4019
+Co-developed-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Jo-Philipp Wich <jo@mein.io>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Tested-by: Robert Marko <robimarko@gmail.com> # ipq8074
+Reviewed-by: Andre Heider <a.heider@gmail.com>
+---
+ devices.txt      | 23 +++++++++-------
+ include/iwinfo.h |  2 ++
+ iwinfo_cli.c     |  9 ++++--
+ iwinfo_nl80211.c | 71 ++++++------------------------------------------
+ iwinfo_utils.c   |  8 +++++-
+ 5 files changed, 36 insertions(+), 77 deletions(-)
+
+diff --git a/devices.txt b/devices.txt
+index d76bbca..4da663d 100644
+--- a/devices.txt
++++ b/devices.txt
+@@ -141,7 +141,6 @@
+ 0x168c 0x002a 0x0777 0xe202   12      0  "Ubiquiti" "Bullet M2"
+ 0x168c 0x002a 0x0777 0xe805    5      0  "Ubiquiti" "Bullet M5"
+ 0x168c 0x002a 0x0777 0xe345    0      0  "Ubiquiti" "WispStation M5" /* ToDo: confirm offset - Wrong! */
+-0x168c 0x0029 0x168c 0x9130    0      0  "Atheros"  "AR9130"
+ 0x168c 0x0029 0x168c 0xa094    0      0  "Atheros"  "AR9220"
+ 0x168c 0x0029 0x168c 0xa095    0      0  "Atheros"  "AR9223"
+ 0x168c 0x002a 0x168c 0xa093    0      0  "Atheros"  "AR9280"
+@@ -151,11 +150,6 @@
+ 0x168c 0x002e 0x0777 0xe0a2    8      0  "Ubiquiti" "NanoStation Loco M2 (XM)" /* wrong offset! */
+ 0x168c 0x002e 0x168c 0x30a4    0      0  "Atheros"  "AR9287"
+ 0x168c 0x0030 0x168c 0x3114    0      0  "Atheros"  "AR9390"
+-0x168c 0x0030 0x168c 0x9330    0      0  "Atheros"  "AR9330"
+-0x168c 0x0030 0x168c 0x9340    0      0  "Atheros"  "AR9340"
+-0x168c 0x0033 0x168c 0x9530    0      0  "Qualcomm Atheros"  "QCA9530"
+-0x168c 0x0033 0x168c 0x9550    0      0  "Qualcomm Atheros"  "QCA9550"
+-0x168c 0x0033 0x168c 0x9560    0      0  "Qualcomm Atheros"  "QCA9560"
+ 0x168c 0x0033 0x168c 0xa120    0      0  "Atheros"  "AR9580"
+ 0x168c 0x0033 0x168c 0xa136    0      0  "Atheros"  "AR9580"
+ 0x168c 0x0033 0x19b6 0xd014    0      0  "MikroTik" "R11e-5HnD"
+@@ -166,8 +160,6 @@
+ 0x168c 0x003c 0x168c 0x3223    0      0  "Qualcomm Atheros" "QCA9880"
+ 0x168c 0x003c 0x1a56 0x1420    0      0  "Qualcomm Atheros" "QCA9862"
+ 0x168c 0x003c 0x19b6 0xd03c    0      0  "Mikrotik" "R11e-5HacT"
+-0x168c 0x003c 0x168c 0x4019    0      0  "Qualcomm Atheros" "IPQ4019"
+-0x168c 0x8074 0x168c 0x8074    0      0  "Qualcomm Atheros" "IPQ8074"
+ 0x168c 0x003c 0x19b6 0xd075    0      0  "Mikrotik" "R11e-5HacD"
+ 0x168c 0x0040 0x168c 0x0002    0      0  "Qualcomm Atheros" "QCA9990"
+ 0x168c 0x0046 0x168c 0xcafe    0      0  "Qualcomm Atheros" "QCA9984"
+@@ -193,12 +185,10 @@
+ 0x14c3 0x7663 0x14c3 0x7663    0      0  "MediaTek" "MT7613BE"
+ 0x14c3 0x7615 0x7615 0x14c3    0      0  "MediaTek" "MT7615E"
+ 0x14c3 0x7620 0x14c3 0x000c    0      0  "MediaTek" "MT7620"
+-0x14c3 0x7622 0x14c3 0x7622    0      0  "MediaTek" "MT7622"
+ 0x14c3 0x7628 0x14c3 0x0004    0      0  "MediaTek" "MT76x8"
+ 0x14c3 0x7650 0x14c3 0x7650    0      0  "MediaTek" "MT7610E"
+ 0x14c3 0x7662 0x14c3 0x7662    0      0  "MediaTek" "MT76x2E"
+ 0x14c3 0x7915 0x14c3 0x7915    0      0  "MediaTek" "MT7915E"
+-0x14c3 0x7986 0x14c3 0x7986    0      0  "MediaTek" "MT7986"
+ 0x14e4 0xaa52 0x14e4 0xaa52    0      0  "Broadcom" "BCM43602"
+ 0x02d0 0xa9a6 0x0000 0x0000    0      0  "Cypress"  "CYW43455"
+ 0x1ae9 0x0310 0x1ae9 0x0000    0      0  "Wilocity" "Wil6210"
+@@ -206,3 +196,16 @@
+ # USB devices
+ # 0x0000 | 0x0000 | vendor id | product id | ...
+ 0x0000 0x0000 0x0e8d 0x7961    0      0  "MediaTek" "MT7921AU"
++
++# FDT compatible strings
++# "compatible" | txpower offset | frequency offset | ...
++"qca,ar9130-wmac"       0      0  "Atheros"  "AR9130"
++"qca,ar9330-wmac"       0      0  "Atheros"  "AR9330"
++"qca,ar9340-wmac"       0      0  "Atheros"  "AR9340"
++"qca,qca9530-wmac"      0      0  "Qualcomm Atheros"  "QCA9530"
++"qca,qca9550-wmac"      0      0  "Qualcomm Atheros"  "QCA9550"
++"qca,qca9560-wmac"      0      0  "Qualcomm Atheros"  "QCA9560"
++"qcom,ipq4019-wifi"     0      0  "Qualcomm Atheros" "IPQ4019"
++"qcom,ipq8074-wifi"     0      0  "Qualcomm Atheros" "IPQ8074"
++"mediatek,mt7622-wmac"  0      0  "MediaTek" "MT7622"
++"mediatek,mt7986-wmac"  0      0  "MediaTek" "MT7986"
+diff --git a/include/iwinfo.h b/include/iwinfo.h
+index e87ad18..4b63f1e 100644
+--- a/include/iwinfo.h
++++ b/include/iwinfo.h
+@@ -243,6 +243,7 @@ struct iwinfo_hardware_id {
+ 	uint16_t device_id;
+ 	uint16_t subsystem_vendor_id;
+ 	uint16_t subsystem_device_id;
++	char compatible[128];
+ };
+ 
+ struct iwinfo_hardware_entry {
+@@ -254,6 +255,7 @@ struct iwinfo_hardware_entry {
+ 	uint16_t subsystem_device_id;
+ 	int16_t txpower_offset;
+ 	int16_t frequency_offset;
++	char compatible[128];
+ };
+ 
+ extern const struct iwinfo_iso3166_label IWINFO_ISO3166_NAMES[];
+diff --git a/iwinfo_cli.c b/iwinfo_cli.c
+index d70f7fb..9b3e8e3 100644
+--- a/iwinfo_cli.c
++++ b/iwinfo_cli.c
+@@ -335,9 +335,12 @@ static char * print_hardware_id(const struct iwinfo_ops *iw, const char *ifname)
+ 
+ 	if (!iw->hardware_id(ifname, (char *)&ids))
+ 	{
+-		snprintf(buf, sizeof(buf), "%04X:%04X %04X:%04X",
+-			ids.vendor_id, ids.device_id,
+-			ids.subsystem_vendor_id, ids.subsystem_device_id);
++		if (strlen(ids.compatible) > 0)
++			snprintf(buf, sizeof(buf), "embedded");
++		else
++			snprintf(buf, sizeof(buf), "%04X:%04X %04X:%04X",
++				ids.vendor_id, ids.device_id,
++				ids.subsystem_vendor_id, ids.subsystem_device_id);
+ 	}
+ 	else
+ 	{
+diff --git a/iwinfo_nl80211.c b/iwinfo_nl80211.c
+index 916192f..a9e2adf 100644
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -3445,7 +3445,7 @@ static int nl80211_get_mbssid_support(const char *ifname, int *buf)
+ 
+ static int nl80211_hardware_id_from_fdt(struct iwinfo_hardware_id *id, const char *ifname)
+ {
+-	char *phy, compat[64], path[PATH_MAX];
++	char *phy, path[PATH_MAX];
+ 
+ 	/* Try to determine the phy name from the given interface */
+ 	phy = nl80211_ifname2phy(ifname);
+@@ -3453,62 +3453,10 @@ static int nl80211_hardware_id_from_fdt(struct iwinfo_hardware_id *id, const cha
+ 	snprintf(path, sizeof(path), "/sys/class/%s/%s/device/of_node/compatible",
+ 	         phy ? "ieee80211" : "net", phy ? phy : ifname);
+ 
+-	if (nl80211_readstr(path, compat, sizeof(compat)) <= 0)
++	if (nl80211_readstr(path, id->compatible, sizeof(id->compatible)) <= 0)
+ 		return -1;
+ 
+-	if (!strcmp(compat, "qca,ar9130-wmac")) {
+-		id->vendor_id = 0x168c;
+-		id->device_id = 0x0029;
+-		id->subsystem_vendor_id = 0x168c;
+-		id->subsystem_device_id = 0x9130;
+-	} else if (!strcmp(compat, "qca,ar9330-wmac")) {
+-		id->vendor_id = 0x168c;
+-		id->device_id = 0x0030;
+-		id->subsystem_vendor_id = 0x168c;
+-		id->subsystem_device_id = 0x9330;
+-	} else if (!strcmp(compat, "qca,ar9340-wmac")) {
+-		id->vendor_id = 0x168c;
+-		id->device_id = 0x0030;
+-		id->subsystem_vendor_id = 0x168c;
+-		id->subsystem_device_id = 0x9340;
+-	} else if (!strcmp(compat, "qca,qca9530-wmac")) {
+-		id->vendor_id = 0x168c;
+-		id->device_id = 0x0033;
+-		id->subsystem_vendor_id = 0x168c;
+-		id->subsystem_device_id = 0x9530;
+-	} else if (!strcmp(compat, "qca,qca9550-wmac")) {
+-		id->vendor_id = 0x168c;
+-		id->device_id = 0x0033;
+-		id->subsystem_vendor_id = 0x168c;
+-		id->subsystem_device_id = 0x9550;
+-	} else if (!strcmp(compat, "qca,qca9560-wmac")) {
+-		id->vendor_id = 0x168c;
+-		id->device_id = 0x0033;
+-		id->subsystem_vendor_id = 0x168c;
+-		id->subsystem_device_id = 0x9560;
+-	} else if (!strcmp(compat, "qcom,ipq4019-wifi")) {
+-		id->vendor_id = 0x168c;
+-		id->device_id = 0x003c;
+-		id->subsystem_vendor_id = 0x168c;
+-		id->subsystem_device_id = 0x4019;
+-	} else if (!strcmp(compat, "qcom,ipq8074-wifi")) {
+-		id->vendor_id = 0x168c;
+-		id->device_id = 0x8074;
+-		id->subsystem_vendor_id = 0x168c;
+-		id->subsystem_device_id = 0x8074;
+-	} else if (!strcmp(compat, "mediatek,mt7622-wmac")) {
+-		id->vendor_id = 0x14c3;
+-		id->device_id = 0x7622;
+-		id->subsystem_vendor_id = 0x14c3;
+-		id->subsystem_device_id = 0x7622;
+-	} else if (!strcmp(compat, "mediatek,mt7986-wmac")) {
+-		id->vendor_id = 0x14c3;
+-		id->device_id = 0x7986;
+-		id->subsystem_vendor_id = 0x14c3;
+-		id->subsystem_device_id = 0x7986;
+-	}
+-
+-	return (id->vendor_id && id->device_id) ? 0 : -1;
++	return 0;
+ }
+ 
+ 
+@@ -3542,16 +3490,13 @@ static int nl80211_get_hardware_id(const char *ifname, char *buf)
+ 			*lookup[i].dest = strtoul(num, NULL, 16);
+ 	}
+ 
+-	/* Failed to obtain hardware IDs, try FDT */
+-	if (id->vendor_id == 0 && id->device_id == 0 &&
+-	    id->subsystem_vendor_id == 0 && id->subsystem_device_id == 0)
+-		if (!nl80211_hardware_id_from_fdt(id, ifname))
+-			return 0;
+-
+-	/* Failed to obtain hardware IDs, search board config */
++	/* Failed to obtain hardware PCI/USB IDs... */
+ 	if (id->vendor_id == 0 && id->device_id == 0 &&
+ 	    id->subsystem_vendor_id == 0 && id->subsystem_device_id == 0)
+-		return iwinfo_hardware_id_from_mtd(id);
++		/* ... first fallback to FDT ... */
++		if (nl80211_hardware_id_from_fdt(id, ifname) == -1)
++			/* ... then board config */
++			return iwinfo_hardware_id_from_mtd(id);
+ 
+ 	return 0;
+ }
+diff --git a/iwinfo_utils.c b/iwinfo_utils.c
+index a342b6a..ecd1dff 100644
+--- a/iwinfo_utils.c
++++ b/iwinfo_utils.c
+@@ -286,7 +286,10 @@ struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
+ 			       &e.vendor_id, &e.device_id,
+ 			       &e.subsystem_vendor_id, &e.subsystem_device_id,
+ 			       &e.txpower_offset, &e.frequency_offset,
+-			       e.vendor_name, e.device_name) < 8)
++			       e.vendor_name, e.device_name) != 8 &&
++			sscanf(buf, "\"%127[^\"]\" %hd %hd \"%63[^\"]\" \"%63[^\"]\"",
++			       e.compatible, &e.txpower_offset, &e.frequency_offset,
++			       e.vendor_name, e.device_name) != 5)
+ 			continue;
+ 
+ 		if ((e.vendor_id != 0xffff) && (e.vendor_id != id->vendor_id))
+@@ -303,6 +306,9 @@ struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
+ 			(e.subsystem_device_id != id->subsystem_device_id))
+ 			continue;
+ 
++		if (strcmp(e.compatible, id->compatible))
++			continue;
++
+ 		rv = &e;
+ 		break;
+ 	}
+-- 
+2.38.1
+

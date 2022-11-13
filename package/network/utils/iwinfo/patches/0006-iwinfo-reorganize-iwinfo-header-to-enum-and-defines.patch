@@ -1,0 +1,291 @@
+From 7e3d7ded29d7b41e4b1ddc7aca965a5d39c52baf Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 20 Jan 2023 16:53:38 +0100
+Subject: [PATCH 06/17] iwinfo: reorganize iwinfo header to enum and defines
+
+iwinfo.h have a mixed way to declare defines, some use enum, some define
+bits in enum and other have their own special way. In all of this case
+the count of all this defines is hardcoded to an arbitrary number.
+
+To make code less error prone, convert everything to a common pattern
+and use enum way to calculate the count of each flags.
+
+Also drop defining number for each flag and just declare that the enum
+starts from 0.
+
+Move the related char array just below the define declaration to improve
+code readability.
+
+No functionl change intended.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ include/iwinfo.h | 235 ++++++++++++++++++++++++++++++++---------------
+ 1 file changed, 162 insertions(+), 73 deletions(-)
+
+diff --git a/include/iwinfo.h b/include/iwinfo.h
+index 4b63f1e..d370e8f 100644
+--- a/include/iwinfo.h
++++ b/include/iwinfo.h
+@@ -23,96 +23,185 @@
+ #define IWINFO_BUFSIZE	24 * 1024
+ #define IWINFO_ESSID_MAX_SIZE	32
+ 
+-#define IWINFO_80211_A       (1 << 0)
+-#define IWINFO_80211_B       (1 << 1)
+-#define IWINFO_80211_G       (1 << 2)
+-#define IWINFO_80211_N       (1 << 3)
+-#define IWINFO_80211_AC      (1 << 4)
+-#define IWINFO_80211_AD      (1 << 5)
+-#define IWINFO_80211_AX      (1 << 6)
+-#define IWINFO_80211_COUNT   7
+-
+-#define IWINFO_BAND_24       (1 << 0)
+-#define IWINFO_BAND_5        (1 << 1)
+-#define IWINFO_BAND_6        (1 << 2)
+-#define IWINFO_BAND_60       (1 << 3)
+-#define IWINFO_BAND_COUNT    4
+-
+-#define IWINFO_CIPHER_NONE    (1 << 0)
+-#define IWINFO_CIPHER_WEP40   (1 << 1)
+-#define IWINFO_CIPHER_TKIP    (1 << 2)
+-#define IWINFO_CIPHER_WRAP    (1 << 3)
+-#define IWINFO_CIPHER_CCMP    (1 << 4)
+-#define IWINFO_CIPHER_WEP104  (1 << 5)
+-#define IWINFO_CIPHER_AESOCB  (1 << 6)
+-#define IWINFO_CIPHER_CKIP    (1 << 7)
+-#define IWINFO_CIPHER_GCMP    (1 << 8)
+-#define IWINFO_CIPHER_CCMP256 (1 << 9)
+-#define IWINFO_CIPHER_GCMP256 (1 << 10)
+-#define IWINFO_CIPHER_COUNT  11
+-
+-#define IWINFO_KMGMT_NONE    (1 << 0)
+-#define IWINFO_KMGMT_8021x   (1 << 1)
+-#define IWINFO_KMGMT_PSK     (1 << 2)
+-#define IWINFO_KMGMT_SAE     (1 << 3)
+-#define IWINFO_KMGMT_OWE     (1 << 4)
+-#define IWINFO_KMGMT_COUNT   5
+-
+-#define IWINFO_AUTH_OPEN     (1 << 0)
+-#define IWINFO_AUTH_SHARED   (1 << 1)
+-#define IWINFO_AUTH_COUNT    2
+-
+-#define IWINFO_FREQ_NO_10MHZ		(1 << 0)
+-#define IWINFO_FREQ_NO_20MHZ		(1 << 1)
+-#define IWINFO_FREQ_NO_HT40PLUS		(1 << 2)
+-#define IWINFO_FREQ_NO_HT40MINUS	(1 << 3)
+-#define IWINFO_FREQ_NO_80MHZ		(1 << 4)
+-#define IWINFO_FREQ_NO_160MHZ		(1 << 5)
+-#define IWINFO_FREQ_NO_HE		(1 << 6)
++enum iwinfo_80211 {
++	IWINFO_80211_A = 0,
++	IWINFO_80211_B,
++	IWINFO_80211_G,
++	IWINFO_80211_N,
++	IWINFO_80211_AC,
++	IWINFO_80211_AD,
++	IWINFO_80211_AX,
++
++	/* keep last */
++	IWINFO_80211_COUNT
++};
++
++#define IWINFO_80211_A       (1 << IWINFO_80211_A)
++#define IWINFO_80211_B       (1 << IWINFO_80211_B)
++#define IWINFO_80211_G       (1 << IWINFO_80211_G)
++#define IWINFO_80211_N       (1 << IWINFO_80211_N)
++#define IWINFO_80211_AC      (1 << IWINFO_80211_AC)
++#define IWINFO_80211_AD      (1 << IWINFO_80211_AD)
++#define IWINFO_80211_AX      (1 << IWINFO_80211_AX)
+ 
+ extern const char * const IWINFO_80211_NAMES[IWINFO_80211_COUNT];
++
++
++enum iwinfo_band {
++	IWINFO_BAND_24 = 0,
++	IWINFO_BAND_5,
++	IWINFO_BAND_6,
++	IWINFO_BAND_60,
++
++	/* keep last */
++	IWINFO_BAND_COUNT
++};
++
++#define IWINFO_BAND_24       (1 << IWINFO_BAND_24)
++#define IWINFO_BAND_5        (1 << IWINFO_BAND_5)
++#define IWINFO_BAND_6        (1 << IWINFO_BAND_6)
++#define IWINFO_BAND_60       (1 << IWINFO_BAND_60)
++
+ extern const char * const IWINFO_BAND_NAMES[IWINFO_BAND_COUNT];
++
++
++enum iwinfo_cipher {
++	IWINFO_CIPHER_NONE = 0,
++	IWINFO_CIPHER_WEP40,
++	IWINFO_CIPHER_TKIP,
++	IWINFO_CIPHER_WRAP,
++	IWINFO_CIPHER_CCMP,
++	IWINFO_CIPHER_WEP104,
++	IWINFO_CIPHER_AESOCB,
++	IWINFO_CIPHER_CKIP,
++	IWINFO_CIPHER_GCMP,
++	IWINFO_CIPHER_CCMP256,
++	IWINFO_CIPHER_GCMP256,
++
++	/* keep last */
++	IWINFO_CIPHER_COUNT
++};
++
++#define IWINFO_CIPHER_NONE    (1 << IWINFO_CIPHER_NONE)
++#define IWINFO_CIPHER_WEP40   (1 << IWINFO_CIPHER_WEP40)
++#define IWINFO_CIPHER_TKIP    (1 << IWINFO_CIPHER_TKIP)
++#define IWINFO_CIPHER_WRAP    (1 << IWINFO_CIPHER_WRAP)
++#define IWINFO_CIPHER_CCMP    (1 << IWINFO_CIPHER_CCMP)
++#define IWINFO_CIPHER_WEP104  (1 << IWINFO_CIPHER_WEP104)
++#define IWINFO_CIPHER_AESOCB  (1 << IWINFO_CIPHER_AESOCB)
++#define IWINFO_CIPHER_CKIP    (1 << IWINFO_CIPHER_CKIP)
++#define IWINFO_CIPHER_GCMP    (1 << IWINFO_CIPHER_GCMP)
++#define IWINFO_CIPHER_CCMP256 (1 << IWINFO_CIPHER_CCMP256)
++#define IWINFO_CIPHER_GCMP256 (1 << IWINFO_CIPHER_GCMP256)
++
+ extern const char * const IWINFO_CIPHER_NAMES[IWINFO_CIPHER_COUNT];
++
++
++enum iwinfo_kmgmt {
++	IWINFO_KMGMT_NONE = 0,
++	IWINFO_KMGMT_8021x,
++	IWINFO_KMGMT_PSK,
++	IWINFO_KMGMT_SAE,
++	IWINFO_KMGMT_OWE,
++
++	/* keep last */
++	IWINFO_KMGMT_COUNT
++};
++
++#define IWINFO_KMGMT_NONE    (1 << IWINFO_KMGMT_NONE)
++#define IWINFO_KMGMT_8021x   (1 << IWINFO_KMGMT_8021x)
++#define IWINFO_KMGMT_PSK     (1 << IWINFO_KMGMT_PSK)
++#define IWINFO_KMGMT_SAE     (1 << IWINFO_KMGMT_SAE)
++#define IWINFO_KMGMT_OWE     (1 << IWINFO_KMGMT_OWE)
++
+ extern const char * const IWINFO_KMGMT_NAMES[IWINFO_KMGMT_COUNT];
++
++
++enum iwinfo_auth {
++	IWINFO_AUTH_OPEN = 0,
++	IWINFO_AUTH_SHARED,
++
++	/* keep last */
++	IWINFO_AUTH_COUNT
++};
++
+ extern const char * const IWINFO_AUTH_NAMES[IWINFO_AUTH_COUNT];
+ 
+ 
++enum iwinfo_freq_flag {
++	IWINFO_FREQ_NO_10MHZ = 0,
++	IWINFO_FREQ_NO_20MHZ,
++	IWINFO_FREQ_NO_HT40PLUS,
++	IWINFO_FREQ_NO_HT40MINUS,
++	IWINFO_FREQ_NO_80MHZ,
++	IWINFO_FREQ_NO_160MHZ,
++	IWINFO_FREQ_NO_HE,
++
++	/* keep last */
++	IWINFO_FREQ_FLAG_COUNT,
++};
++
++#define IWINFO_FREQ_NO_10MHZ       (1 << IWINFO_FREQ_NO_10MHZ)
++#define IWINFO_FREQ_NO_20MHZ       (1 << IWINFO_FREQ_NO_20MHZ)
++#define IWINFO_FREQ_NO_HT40PLUS    (1 << IWINFO_FREQ_NO_HT40PLUS)
++#define IWINFO_FREQ_NO_HT40MINUS   (1 << IWINFO_FREQ_NO_HT40MINUS)
++#define IWINFO_FREQ_NO_80MHZ       (1 << IWINFO_FREQ_NO_80MHZ)
++#define IWINFO_FREQ_NO_160MHZ      (1 << IWINFO_FREQ_NO_160MHZ)
++#define IWINFO_FREQ_NO_HE          (1 << IWINFO_FREQ_NO_HE)
++
++
+ enum iwinfo_opmode {
+-	IWINFO_OPMODE_UNKNOWN    = 0,
+-	IWINFO_OPMODE_MASTER     = 1,
+-	IWINFO_OPMODE_ADHOC      = 2,
+-	IWINFO_OPMODE_CLIENT     = 3,
+-	IWINFO_OPMODE_MONITOR    = 4,
+-	IWINFO_OPMODE_AP_VLAN    = 5,
+-	IWINFO_OPMODE_WDS        = 6,
+-	IWINFO_OPMODE_MESHPOINT  = 7,
+-	IWINFO_OPMODE_P2P_CLIENT = 8,
+-	IWINFO_OPMODE_P2P_GO     = 9,
+-
+-	IWINFO_OPMODE_COUNT      = 10,
++	IWINFO_OPMODE_UNKNOWN = 0,
++	IWINFO_OPMODE_MASTER,
++	IWINFO_OPMODE_ADHOC,
++	IWINFO_OPMODE_CLIENT,
++	IWINFO_OPMODE_MONITOR,
++	IWINFO_OPMODE_AP_VLAN,
++	IWINFO_OPMODE_WDS,
++	IWINFO_OPMODE_MESHPOINT,
++	IWINFO_OPMODE_P2P_CLIENT,
++	IWINFO_OPMODE_P2P_GO,
++
++	/* keep last */
++	IWINFO_OPMODE_COUNT
+ };
+ 
+ extern const char * const IWINFO_OPMODE_NAMES[IWINFO_OPMODE_COUNT];
+ 
+ 
+ enum iwinfo_htmode {
+-	IWINFO_HTMODE_HT20       = (1 << 0),
+-	IWINFO_HTMODE_HT40       = (1 << 1),
+-	IWINFO_HTMODE_VHT20      = (1 << 2),
+-	IWINFO_HTMODE_VHT40      = (1 << 3),
+-	IWINFO_HTMODE_VHT80      = (1 << 4),
+-	IWINFO_HTMODE_VHT80_80   = (1 << 5),
+-	IWINFO_HTMODE_VHT160     = (1 << 6),
+-	IWINFO_HTMODE_NOHT       = (1 << 7),
+-	IWINFO_HTMODE_HE20       = (1 << 8),
+-	IWINFO_HTMODE_HE40       = (1 << 9),
+-	IWINFO_HTMODE_HE80       = (1 << 10),
+-	IWINFO_HTMODE_HE80_80    = (1 << 11),
+-	IWINFO_HTMODE_HE160      = (1 << 12),
+-
+-	IWINFO_HTMODE_COUNT      = 13
++	IWINFO_HTMODE_HT20 = 0,
++	IWINFO_HTMODE_HT40,
++	IWINFO_HTMODE_VHT20,
++	IWINFO_HTMODE_VHT40,
++	IWINFO_HTMODE_VHT80,
++	IWINFO_HTMODE_VHT80_80,
++	IWINFO_HTMODE_VHT160,
++	IWINFO_HTMODE_NOHT,
++	IWINFO_HTMODE_HE20,
++	IWINFO_HTMODE_HE40,
++	IWINFO_HTMODE_HE80,
++	IWINFO_HTMODE_HE80_80,
++	IWINFO_HTMODE_HE160,
++
++	/* keep last */
++	IWINFO_HTMODE_COUNT
+ };
+ 
++#define IWINFO_HTMODE_HT20       (1 << IWINFO_HTMODE_HT20)
++#define IWINFO_HTMODE_HT40       (1 << IWINFO_HTMODE_HT40)
++#define IWINFO_HTMODE_VHT20      (1 << IWINFO_HTMODE_VHT20)
++#define IWINFO_HTMODE_VHT40      (1 << IWINFO_HTMODE_VHT40)
++#define IWINFO_HTMODE_VHT80      (1 << IWINFO_HTMODE_VHT80)
++#define IWINFO_HTMODE_VHT80_80   (1 << IWINFO_HTMODE_VHT80_80)
++#define IWINFO_HTMODE_VHT160     (1 << IWINFO_HTMODE_VHT160)
++#define IWINFO_HTMODE_NOHT       (1 << IWINFO_HTMODE_NOHT)
++#define IWINFO_HTMODE_HE20       (1 << IWINFO_HTMODE_HE20)
++#define IWINFO_HTMODE_HE40       (1 << IWINFO_HTMODE_HE40)
++#define IWINFO_HTMODE_HE80       (1 << IWINFO_HTMODE_HE80)
++#define IWINFO_HTMODE_HE80_80    (1 << IWINFO_HTMODE_HE80_80)
++#define IWINFO_HTMODE_HE160      (1 << IWINFO_HTMODE_HE160)
++
+ extern const char * const IWINFO_HTMODE_NAMES[IWINFO_HTMODE_COUNT];
+ 
+ 
+-- 
+2.38.1
+

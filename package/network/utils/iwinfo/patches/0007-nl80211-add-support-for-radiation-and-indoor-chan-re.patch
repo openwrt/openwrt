@@ -1,0 +1,70 @@
+From dba0f0690bec6b997a0567831ef6dd9e1cacb49b Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 21 Jan 2022 01:07:50 +0100
+Subject: [PATCH 07/17] nl80211: add support for radiation and indoor chan
+ restriction
+
+Add new 'flags' bits to declare these two channel restrictions.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ include/iwinfo.h |  4 ++++
+ iwinfo_nl80211.c | 13 ++++++++-----
+ 2 files changed, 12 insertions(+), 5 deletions(-)
+
+diff --git a/include/iwinfo.h b/include/iwinfo.h
+index d370e8f..d003d2c 100644
+--- a/include/iwinfo.h
++++ b/include/iwinfo.h
+@@ -136,6 +136,8 @@ enum iwinfo_freq_flag {
+ 	IWINFO_FREQ_NO_80MHZ,
+ 	IWINFO_FREQ_NO_160MHZ,
+ 	IWINFO_FREQ_NO_HE,
++	IWINFO_FREQ_NO_IR,
++	IWINFO_FREQ_INDOOR_ONLY,
+ 
+ 	/* keep last */
+ 	IWINFO_FREQ_FLAG_COUNT,
+@@ -148,6 +150,8 @@ enum iwinfo_freq_flag {
+ #define IWINFO_FREQ_NO_80MHZ       (1 << IWINFO_FREQ_NO_80MHZ)
+ #define IWINFO_FREQ_NO_160MHZ      (1 << IWINFO_FREQ_NO_160MHZ)
+ #define IWINFO_FREQ_NO_HE          (1 << IWINFO_FREQ_NO_HE)
++#define IWINFO_FREQ_NO_IR          (1 << IWINFO_FREQ_NO_IR)
++#define IWINFO_FREQ_INDOOR_ONLY    (1 << IWINFO_FREQ_INDOOR_ONLY)
+ 
+ 
+ enum iwinfo_opmode {
+diff --git a/iwinfo_nl80211.c b/iwinfo_nl80211.c
+index a9e2adf..630fdbf 100644
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -3012,11 +3012,6 @@ static int nl80211_get_freqlist_cb(struct nl_msg *msg, void *arg)
+ 					e->mhz = nla_get_u32(freqs[NL80211_FREQUENCY_ATTR_FREQ]);
+ 					e->channel = nl80211_freq2channel(e->mhz);
+ 
+-					e->restricted = (
+-						freqs[NL80211_FREQUENCY_ATTR_NO_IR] &&
+-						!freqs[NL80211_FREQUENCY_ATTR_RADAR]
+-					) ? 1 : 0;
+-
+ 					if (freqs[NL80211_FREQUENCY_ATTR_NO_HT40_MINUS])
+ 						e->flags |= IWINFO_FREQ_NO_HT40MINUS;
+ 					if (freqs[NL80211_FREQUENCY_ATTR_NO_HT40_PLUS])
+@@ -3031,6 +3026,14 @@ static int nl80211_get_freqlist_cb(struct nl_msg *msg, void *arg)
+ 						e->flags |= IWINFO_FREQ_NO_10MHZ;
+ 					if (freqs[NL80211_FREQUENCY_ATTR_NO_HE])
+ 						e->flags |= IWINFO_FREQ_NO_HE;
++					if (freqs[NL80211_FREQUENCY_ATTR_NO_IR] &&
++					    !freqs[NL80211_FREQUENCY_ATTR_RADAR])
++						e->flags |= IWINFO_FREQ_NO_IR;
++					if (freqs[NL80211_FREQUENCY_ATTR_INDOOR_ONLY])
++						e->flags |= IWINFO_FREQ_INDOOR_ONLY;
++
++					/* keep backwards compatibility */
++					e->restricted = (e->flags & IWINFO_FREQ_NO_IR) ? 1 : 0;
+ 
+ 					e++;
+ 					arr->count++;
+-- 
+2.38.1
+

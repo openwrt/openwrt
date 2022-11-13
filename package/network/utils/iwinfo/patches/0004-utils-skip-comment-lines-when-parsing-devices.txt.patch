@@ -1,0 +1,29 @@
+From c0fda7cf249008315a52093a81beae440b2ed005 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 18 Jan 2023 14:24:37 +0100
+Subject: [PATCH 04/17] utils: skip comment lines when parsing devices.txt
+
+Just a small optimization, skip the line early if it starts with a #.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ iwinfo_utils.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/iwinfo_utils.c b/iwinfo_utils.c
+index ecd1dff..d96cbb3 100644
+--- a/iwinfo_utils.c
++++ b/iwinfo_utils.c
+@@ -280,6 +280,9 @@ struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
+ 
+ 	while (fgets(buf, sizeof(buf) - 1, db) != NULL)
+ 	{
++		if (buf[0] == '#')
++			continue;
++
+ 		memset(&e, 0, sizeof(e));
+ 
+ 		if (sscanf(buf, "%hx %hx %hx %hx %hd %hd \"%63[^\"]\" \"%63[^\"]\"",
+-- 
+2.38.1
+

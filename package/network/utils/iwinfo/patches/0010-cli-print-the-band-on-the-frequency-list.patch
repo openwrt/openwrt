@@ -1,0 +1,49 @@
+From bbe424f394b8a3956887cfbad0601d2bdd7f5592 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Tue, 22 Nov 2022 09:55:06 +0100
+Subject: [PATCH 10/17] cli: print the band on the frequency list
+
+Provide band info on frequency list dump.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ iwinfo_cli.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/iwinfo_cli.c b/iwinfo_cli.c
+index 3bce96e..02296ac 100644
+--- a/iwinfo_cli.c
++++ b/iwinfo_cli.c
+@@ -44,6 +44,17 @@ static char * format_ssid(char *ssid)
+ 	return buf;
+ }
+ 
++static const char *format_band(int band)
++{
++	const char *name;
++
++	name = iwinfo_band_name(band);
++	if (name)
++		return name;
++
++	return "unknown";
++}
++
+ static char * format_channel(int ch)
+ {
+ 	static char buf[16];
+@@ -729,9 +740,10 @@ static void print_freqlist(const struct iwinfo_ops *iw, const char *ifname)
+ 	{
+ 		e = (struct iwinfo_freqlist_entry *) &buf[i];
+ 
+-		printf("%s %s (Channel %s)%s\n",
++		printf("%s %s (Band: %s, Channel %s)%s\n",
+ 			(freq == e->mhz) ? "*" : " ",
+ 			format_frequency(e->mhz),
++			format_band(e->band),
+ 			format_channel(e->channel),
+ 			e->restricted ? " [restricted]" : "");
+ 	}
+-- 
+2.38.1
+

@@ -1,0 +1,64 @@
+From acbf4fe47d8f6dca340ff05c84779bf4fa16b5dd Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Sat, 24 Dec 2022 11:45:43 +0100
+Subject: [PATCH 12/17] nl80211: remove redundant check in nl80211_phy2ifname()
+
+phyidx is already checked for <0 a few lines above.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ iwinfo_nl80211.c | 29 +++++++++++++----------------
+ 1 file changed, 13 insertions(+), 16 deletions(-)
+
+diff --git a/iwinfo_nl80211.c b/iwinfo_nl80211.c
+index 7a67467..6b2a87a 100644
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -826,31 +826,28 @@ static char * nl80211_phy2ifname(const char *ifname)
+ 
+ 	memset(nif, 0, sizeof(nif));
+ 
+-	if (phyidx > -1)
++	if ((d = opendir("/sys/class/net")) != NULL)
+ 	{
+-		if ((d = opendir("/sys/class/net")) != NULL)
++		while ((e = readdir(d)) != NULL)
+ 		{
+-			while ((e = readdir(d)) != NULL)
++			snprintf(buffer, sizeof(buffer),
++			         "/sys/class/net/%s/phy80211/index", e->d_name);
++
++			if (nl80211_readint(buffer) == phyidx)
+ 			{
+ 				snprintf(buffer, sizeof(buffer),
+-				         "/sys/class/net/%s/phy80211/index", e->d_name);
++				         "/sys/class/net/%s/ifindex", e->d_name);
+ 
+-				if (nl80211_readint(buffer) == phyidx)
++				if ((cifidx = nl80211_readint(buffer)) >= 0 &&
++				    ((ifidx < 0) || (cifidx < ifidx)))
+ 				{
+-					snprintf(buffer, sizeof(buffer),
+-					         "/sys/class/net/%s/ifindex", e->d_name);
+-
+-					if ((cifidx = nl80211_readint(buffer)) >= 0 &&
+-					    ((ifidx < 0) || (cifidx < ifidx)))
+-					{
+-						ifidx = cifidx;
+-						strncpy(nif, e->d_name, sizeof(nif) - 1);
+-					}
++					ifidx = cifidx;
++					strncpy(nif, e->d_name, sizeof(nif) - 1);
+ 				}
+ 			}
+-
+-			closedir(d);
+ 		}
++
++		closedir(d);
+ 	}
+ 
+ 	return nif[0] ? nif : NULL;
+-- 
+2.38.1
+
