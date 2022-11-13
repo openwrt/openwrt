@@ -1008,7 +1008,7 @@ endef
 define Device/zte_mf286d
 	$(call Device/zte_mf28x_common)
 	DEVICE_MODEL := MF286D
-	DEVICE_PACKAGES := ipq-wifi-zte_mf286d
+	DEVICE_PACKAGES += ipq-wifi-zte_mf286d
 endef
 TARGET_DEVICES += zte_mf286d
 
