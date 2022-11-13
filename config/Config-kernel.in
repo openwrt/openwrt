@@ -1099,6 +1099,19 @@ if KERNEL_IPV6
 endif
 
 #
+# Multipath TCP configuration
+#
+
+config KERNEL_MPTCP
+
+if KERNEL_IPV6
+
+	config KERNEL_MPTCP_IPV6
+		def_bool y
+
+endif
+
+#
 # Miscellaneous network configuration
 #
 
