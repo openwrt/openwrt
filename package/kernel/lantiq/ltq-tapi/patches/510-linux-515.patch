@@ -1,0 +1,14 @@
+--- a/src/drv_tapi_linux.c
++++ b/src/drv_tapi_linux.c
+@@ -3779,8 +3779,10 @@ IFX_void_t TAPI_OS_ThreadKill(IFXOS_Thre
+          mb();
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
+          kill_proc(pThrCntrl->tid, SIGKILL, 1);
+-#else
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0)
+          kill_pid(find_vpid(pThrCntrl->tid), SIGKILL, 1);
++#else
++         kill_pid(get_task_pid(pThrCntrl->tid, PIDTYPE_PID), SIGKILL, 1);
+ #endif
+          /* release the big kernel lock */
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33)

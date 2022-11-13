@@ -20,3 +20,14 @@
  
  #include "ifx_types.h"
  #include "ifxos_rt_if_check.h"
+--- a/src/include/linux/ifxos_linux_interrupt.h
++++ b/src/include/linux/ifxos_linux_interrupt.h
+@@ -31,7 +31,7 @@
+    IFX Linux adaptation - Includes
+    ========================================================================= */
+ #include "ifx_types.h"
+-#include <asm/irq.h>
++#include <linux/interrupt.h>
+ 
+ /* ============================================================================
+    IFX Linux adaptation - supported features

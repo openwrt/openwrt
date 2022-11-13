@@ -10,6 +10,7 @@ DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX DAP_SIGNATURE
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
 DEVICE_VARS += OPENMESH_CE_TYPE ZYXEL_MODEL_STRING
+DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
 
 define Build/addpattern
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(ADDPATTERN_ID) \
@@ -137,6 +138,35 @@ define Build/teltonika-v1-header
 		-m $(TPLINK_HEADER_VERSION) -N "$(VERSION_DIST)" -V "RUT2xx      " \
 		-k $@ -o $@.new $(1)
 	@mv $@.new $@
+endef
+
+metadata_json_teltonika = \
+	'{ $(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
+		"metadata_version": "1.1", \
+		"compat_version": "$(call json_quote,$(compat_version))", \
+		"version":"$(call json_quote,$(VERSION_DIST))-$(call json_quote,$(VERSION_NUMBER))-$(call json_quote,$(REVISION))", \
+		"device_code": [".*"], \
+		"hwver": [".*"], \
+		"batch": [".*"], \
+		"serial": [".*"], \
+		$(if $(DEVICE_COMPAT_MESSAGE),"compat_message": "$(call json_quote,$(DEVICE_COMPAT_MESSAGE))"$(comma)) \
+		$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices": \
+			[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma) \
+			"supported_devices": ["$(call json_quote,$(legacy_supported_message))"]$(comma)) \
+		$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma)) \
+		"version_wrt": { \
+			"dist": "$(call json_quote,$(VERSION_DIST))", \
+			"version": "$(call json_quote,$(VERSION_NUMBER))", \
+			"revision": "$(call json_quote,$(REVISION))", \
+			"target": "$(call json_quote,$(TARGETID))", \
+			"board": "$(call json_quote,$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)))" \
+		}, \
+		"hw_support": {}, \
+		"hw_mods": {} \
+	}'
+
+define Build/append-metadata-teltonika
+	echo $(call metadata_json_teltonika) | fwtool -I - $@
 endef
 
 define Build/wrgg-pad-rootfs
@@ -2527,6 +2557,23 @@ define Device/teltonika_rut230-v1
 endef
 TARGET_DEVICES += teltonika_rut230-v1
 
+define Device/teltonika_rut300
+  SOC := qca9531
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT300
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut30x
+  DEVICE_PACKAGES := -kmod-ath9k -uboot-envtools -wpad-basic-wolfssl kmod-usb2
+  IMAGE_SIZE := 15552k
+  IMAGES += factory.bin
+  IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
+			 append-rootfs | pad-rootfs | append-metadata-teltonika | \
+			 check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
+			 append-rootfs | pad-rootfs | append-metadata | \
+			 check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += teltonika_rut300
+
 define Device/teltonika_rut955
   SOC := ar9344
   DEVICE_VENDOR := Teltonika
@@ -2553,6 +2600,22 @@ define Device/teltonika_rut955-h7v3c0
   DEVICE_VARIANT := H7V3C0
 endef
 TARGET_DEVICES += teltonika_rut955-h7v3c0
+
+define Device/trendnet_tew-673gru
+  SOC := ar7161
+  DEVICE_VENDOR := Trendnet
+  DEVICE_MODEL := TEW-673GRU
+  DEVICE_VARIANT := v1.0R
+  DEVICE_PACKAGES := -uboot-envtools kmod-usb-ohci kmod-usb2 \
+	kmod-owl-loader kmod-switch-rtl8366s
+  IMAGE_SIZE := 7808k
+  FACTORY_SIZE := 6144k
+  IMAGES += factory.bin
+  IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs | check-size $$$$(FACTORY_SIZE) | pad-to $$$$(FACTORY_SIZE) | \
+	append-string AP94-AR7161-RT-080619-01
+endef
+TARGET_DEVICES += trendnet_tew-673gru
 
 define Device/trendnet_tew-823dru
   SOC := qca9558

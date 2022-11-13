@@ -20,6 +20,7 @@ ipq40xx_setup_interfaces()
 	linksys,mr8300|\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3|\
+	mikrotik,hap-ac3-lte6-kit|\
 	p2w,r619ac-64m|\
 	p2w,r619ac-128m|\
 	pakedge,wr-1|\
@@ -42,6 +43,7 @@ ipq40xx_setup_interfaces()
 		;;
 	aruba,ap-303|\
 	avm,fritzrepeater-1200|\
+	dlink,dap-2610|\
 	meraki,mr33|\
 	meraki,mr74|\
 	mikrotik,lhgg-60ad|\
@@ -57,6 +59,7 @@ ipq40xx_setup_interfaces()
 	compex,wpj428)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
+	glinet,gl-a1300|\
 	glinet,gl-b1300|\
 	mobipromo,cm520-79f)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
@@ -69,6 +72,10 @@ ipq40xx_setup_interfaces()
 	netgear,srr60|\
 	netgear,srs60)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	openmesh,a42|\
+	openmesh,a62)
+		ucidef_set_interfaces_lan_wan "ethernet2" "ethernet1"
 		;;
 	zte,mf286d)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
@@ -138,7 +145,8 @@ ipq40xx_setup_macs()
 		;;
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2|\
-	mikrotik,hap-ac3)
+	mikrotik,hap-ac3|\
+	mikrotik,hap-ac3-lte6-kit)
 		wan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
 		lan_mac=$(macaddr_add $wan_mac 1)
 		label_mac="$wan_mac"

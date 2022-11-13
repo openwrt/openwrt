@@ -8,5 +8,9 @@ boot() {
 	glinet,gl-ar300m-nand)
 		fw_setenv bootcount 0
 		;;
+	linksys,ea4500-v3)
+		[ $(fw_printenv -n auto_recovery) = yes ] && \
+			fw_setenv auto_recovery no
+		;;
 	esac
 }

@@ -111,6 +111,7 @@ platform_do_upgrade() {
 	edgecore,ecw5211 |\
 	edgecore,oap100 |\
 	engenius,eap2200 |\
+	glinet,gl-a1300 |\
 	glinet,gl-ap1300 |\
 	luma,wrtq-329acn |\
 	mobipromo,cm520-79f |\
@@ -173,6 +174,7 @@ platform_do_upgrade() {
 		;;
 	mikrotik,cap-ac|\
 	mikrotik,hap-ac2|\
+	mikrotik,hap-ac3-lte6-kit|\
 	mikrotik,lhgg-60ad|\
 	mikrotik,sxtsq-5-ac|\
 	mikrotik,wap-ac)

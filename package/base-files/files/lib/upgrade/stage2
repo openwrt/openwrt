@@ -39,9 +39,9 @@ switch_to_ramfs() {
 	for binary in \
 		/bin/busybox /bin/ash /bin/sh /bin/mount /bin/umount	\
 		pivot_root mount_root reboot sync kill sleep		\
-		md5sum hexdump cat zcat dd tar				\
+		md5sum hexdump cat zcat dd tar gzip			\
 		ls basename find cp mv rm mkdir rmdir mknod touch chmod \
-		'[' printf wc grep awk sed cut				\
+		'[' printf wc grep awk sed cut sort			\
 		mtd partx losetup mkfs.ext4 nandwrite flash_erase	\
 		ubiupdatevol ubiattach ubiblock ubiformat		\
 		ubidetach ubirsvol ubirmvol ubimkvol			\

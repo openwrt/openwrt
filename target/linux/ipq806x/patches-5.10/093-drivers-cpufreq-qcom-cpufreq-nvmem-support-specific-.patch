@@ -21,7 +21,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  };
  
  struct qcom_cpufreq_drv {
-@@ -250,6 +251,7 @@ static const struct qcom_cpufreq_match_d
+@@ -253,6 +254,7 @@ static const struct qcom_cpufreq_match_d
  
  static const struct qcom_cpufreq_match_data match_data_krait = {
  	.get_version = qcom_cpufreq_krait_name_version,
@@ -29,7 +29,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  };
  
  static const char *qcs404_genpd_names[] = { "cpr", NULL };
-@@ -385,6 +387,19 @@ static int qcom_cpufreq_probe(struct pla
+@@ -389,6 +391,19 @@ static int qcom_cpufreq_probe(struct pla
  		}
  	}
  

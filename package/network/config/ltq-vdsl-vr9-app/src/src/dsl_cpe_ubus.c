@@ -137,6 +137,10 @@ static DSL_CPE_ThreadCtrl_t thread;
 static struct ubus_context *ctx;
 static struct blob_buf b;
 
+static inline void m_null() {
+	blobmsg_add_field(&b, BLOBMSG_TYPE_UNSPEC, "", NULL, 0);
+}
+
 static inline void m_double(const char *id, double value) {
 	blobmsg_add_double(&b, id, value);
 }
@@ -153,14 +157,15 @@ static inline void m_str(const char *id, const char *value) {
 	blobmsg_add_string(&b, id, value);
 }
 
-static inline void m_db(const char *id, int value) {
-	m_double(id, (double)value / 10);
+static inline void m_db(const char *id, int value, int invalid) {
+	if (value != invalid)
+		m_double(id, (double)value / 10);
 }
 
-static inline void m_array(const char *id, const uint8_t *value, uint8_t len) {
+static inline void m_array(const char *id, const uint8_t *value, size_t len) {
 	void *c = blobmsg_open_array(&b, id);
 
-	for (uint8_t i = 0; i < len; ++i)
+	for (size_t i = 0; i < len; ++i)
 		blobmsg_add_u16(&b, "", value[i]);
 
 	blobmsg_close_array(&b, c);
@@ -413,6 +418,69 @@ static void g997_line_inventory(int fd) {
 	m_array("serial", out.data.SerialNumber, DSL_G997_LI_MAXLEN_SERIAL);
 }
 
+static void g977_get_bit_allocation(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR(DSL_G997_BitAllocationNsc_t, DSL_FIO_G997_BIT_ALLOCATION_NSC_GET, direction);
+
+	// create default value to obtain consistent JSON structure
+	m_u32("groupsize", 1);
+	m_u32("groups", out.data.bitAllocationNsc.nNumData);
+	m_array("data", out.data.bitAllocationNsc.nNSCData, out.data.bitAllocationNsc.nNumData);
+}
+
+static void g977_get_snr(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR_DELT(DSL_G997_DeltSnr_t, DSL_FIO_G997_DELT_SNR_GET, direction, DSL_DELT_DATA_SHOWTIME);
+
+	m_u32("groupsize", out.data.nGroupSize);
+	m_u32("groups", out.data.deltSnr.nNumData);
+
+	void *c = blobmsg_open_array(&b, "data");
+
+	// SNR -32 ... 95 dB
+	for (uint16_t i  = 0  ; i < out.data.deltSnr.nNumData ; i++)
+		if (out.data.deltSnr.nNSCData[i] != 255 && out.data.deltSnr.nNSCData[i] != 0)
+			m_double("", -32 + (double)out.data.deltSnr.nNSCData[i] / 2);
+		else
+			m_null();
+
+	blobmsg_close_array(&b, c);
+}
+
+static void g977_get_qln(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR_DELT(DSL_G997_DeltQln_t, DSL_FIO_G997_DELT_QLN_GET, direction, DSL_DELT_DATA_SHOWTIME);
+
+	m_u32("groupsize", out.data.nGroupSize);
+	m_u32("groups", out.data.deltQln.nNumData);
+
+	void *c = blobmsg_open_array(&b, "data");
+
+	// QLN -150 ... -23 dBm/Hz
+	for (uint16_t i  = 0  ; i < out.data.deltQln.nNumData ; i++)
+		if (out.data.deltQln.nNSCData[i] != 255 && out.data.deltQln.nNSCData[i] != 0)
+			m_double("", -23 - (double)out.data.deltQln.nNSCData[i] / 2);
+		else
+			m_null();
+
+	blobmsg_close_array(&b, c);
+}
+
+static void g977_get_hlog(int fd, DSL_AccessDir_t direction) {
+	IOCTL_DIR_DELT(DSL_G997_DeltHlog_t, DSL_FIO_G997_DELT_HLOG_GET, direction, DSL_DELT_DATA_SHOWTIME);
+
+	m_u32("groupsize", out.data.nGroupSize);
+	m_u32("groups", out.data.deltHlog.nNumData);
+
+	void *c = blobmsg_open_array(&b, "data");
+
+	// HLOG +6 ... -96 dB
+	for (uint16_t i  = 0  ; i < out.data.deltHlog.nNumData ; i++)
+		if (out.data.deltHlog.nNSCData[i] != 1023 && out.data.deltHlog.nNSCData[i] != 0)
+			m_double("", 6 - (double)out.data.deltHlog.nNSCData[i] / 10);
+		else
+			m_null();
+
+	blobmsg_close_array(&b, c);
+}
+
 static void g997_power_management_status(int fd) {
 	IOCTL(DSL_G997_PowerManagementStatus_t, DSL_FIO_G997_POWER_MANAGEMENT_STATUS_GET)
 
@@ -595,11 +663,12 @@ static void g997_channel_status(int fd, DSL_AccessDir_t direction) {
 static void g997_line_status(int fd, DSL_AccessDir_t direction) {
 	IOCTL_DIR_DELT(DSL_G997_LineStatus_t, DSL_FIO_G997_LINE_STATUS_GET, direction, DSL_DELT_DATA_SHOWTIME);
 
-	m_db("latn", out.data.LATN);
-	m_db("satn", out.data.SATN);
-	m_db("snr", out.data.SNR);
-	m_db("actps", out.data.ACTPS);
-	m_db("actatp", out.data.ACTATP);
+	// invalid value indicators taken from drv_dsl_cpe_api_g997.h
+	m_db("latn", out.data.LATN, 1271);
+	m_db("satn", out.data.SATN, 1271);
+	m_db("snr", out.data.SNR, -641);
+	m_db("actps", out.data.ACTPS, -901);
+	m_db("actatp", out.data.ACTATP, -512);
 	m_u32("attndr", out.data.ATTNDR);
 }
 
@@ -724,6 +793,66 @@ static void describe_mode(standard_t standard, profile_t profile, vector_t vecto
 	m_str("mode", buf);
 }
 
+static int line_statistics(struct ubus_context *ctx, struct ubus_object *obj,
+                   struct ubus_request_data *req, const char *method,
+                   struct blob_attr *msg)
+{
+	int fd;
+	void *c, *c2;
+
+#ifndef INCLUDE_DSL_CPE_API_DANUBE
+	fd = open(DSL_CPE_DEVICE_NAME "/0", O_RDWR, 0644);
+#else
+	fd = open(DSL_CPE_DEVICE_NAME, O_RDWR, 0644);
+#endif
+	if (fd < 0)
+		return UBUS_STATUS_UNKNOWN_ERROR;
+
+	blob_buf_init(&b, 0);
+
+	c = blobmsg_open_table(&b, "bits");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_bit_allocation(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_bit_allocation(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "snr");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_snr(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_snr(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "qln");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_qln(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_qln(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	c = blobmsg_open_table(&b, "hlog");
+	c2 = blobmsg_open_table(&b, "downstream");
+	g977_get_hlog(fd, DSL_DOWNSTREAM);
+	blobmsg_close_table(&b, c2);
+	c2 = blobmsg_open_table(&b, "upstream");
+	g977_get_hlog(fd, DSL_UPSTREAM);
+	blobmsg_close_table(&b, c2);
+	blobmsg_close_table(&b, c);
+
+	ubus_send_reply(ctx, req, b.head);
+
+	close(fd);
+
+	return 0;
+}
+
 static int metrics(struct ubus_context *ctx, struct ubus_object *obj,
 		   struct ubus_request_data *req, const char *method,
 		   struct blob_attr *msg)
@@ -837,6 +966,7 @@ static int metrics(struct ubus_context *ctx, struct ubus_object *obj,
 
 static const struct ubus_method dsl_methods[] = {
 	UBUS_METHOD_NOARG("metrics", metrics),
+	UBUS_METHOD_NOARG("statistics", line_statistics)
 };
 
 static struct ubus_object_type dsl_object_type =

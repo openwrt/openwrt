@@ -26,6 +26,7 @@ ubootenv_mtdinfo () {
 	fi
 
 	sectors=$(( $ubootenv_size / $mtd_erase ))
+	sectors=$(printf "0x%x" $sectors )
 	echo /dev/$mtd_dev 0x0 $ubootenv_size $mtd_erase $sectors
 }
 
@@ -33,6 +34,7 @@ case "$board" in
 alfa-network,ap120c-ac|\
 devolo,magic-2-wifi-next|\
 edgecore,ecw5211|\
+glinet,gl-a1300 |\
 glinet,gl-ap1300|\
 glinet,gl-b1300|\
 glinet,gl-b2200|\

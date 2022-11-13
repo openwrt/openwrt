@@ -419,8 +419,7 @@ define Device/dlink_dap-2610
 	IMAGE/factory.bin    := append-kernel | pad-offset 6144k 160 | append-rootfs | wrgg-image | check-size
 	IMAGE/sysupgrade.bin := append-kernel | wrgg-image | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += dlink_dap-2610
+TARGET_DEVICES += dlink_dap-2610
 
 define Device/edgecore_ecw5211
 	$(call Device/FitImage)
@@ -564,6 +563,20 @@ define Device/ezviz_cs-w3-wd1200g-eup
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += ezviz_cs-w3-wd1200g-eup
+
+define Device/glinet_gl-a1300
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := GL.iNet
+	DEVICE_MODEL := GL-A1300
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 131072k
+	DEVICE_PACKAGE := ipq-wifi-glinet_gl-a1300
+endef
+TARGET_DEVICES += glinet_gl-a1300
 
 define Device/glinet_gl-ap1300
 	$(call Device/FitImage)
@@ -875,8 +888,7 @@ define Device/openmesh_a42
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=A42
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += openmesh_a42
+TARGET_DEVICES += openmesh_a42
 
 define Device/openmesh_a62
 	$(call Device/FitImageLzma)
@@ -892,8 +904,7 @@ define Device/openmesh_a62
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += openmesh_a62
+TARGET_DEVICES += openmesh_a62
 
 define Device/p2w_r619ac
 	$(call Device/FitzImage)

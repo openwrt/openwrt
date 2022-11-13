@@ -28,6 +28,12 @@
 		bootargs = "console=ttyATH0,115200";
 	};
 
+	ref: ref {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-output-names = "ref";
+	};
+
 	ahb {
 		apb {
 			ddr_ctrl: memory-controller@18000000 {
@@ -83,7 +89,11 @@
 				compatible = "qca,ar9330-pll";
 				reg = <0x18050000 0x100>;
 
+				clocks = <&ref>;
+				clock-names = "ref";
+
 				#clock-cells = <1>;
+				clock-output-names = "cpu", "ddr", "ahb";
 			};
 
 			wdt: wdt@18060008 {
@@ -119,6 +129,11 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			hub_port: port@1 {
+				reg = <1>;
+				#trigger-source-cells = <0>;
+			};
 		};
 
 		spi: spi@1f000000 {

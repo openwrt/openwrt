@@ -33,6 +33,7 @@ platform_do_upgrade() {
 			fw_setenv --lock / bootImage 0 || exit 1
 		fi
 		;;
+	mikrotik,ltap-2hnd|\
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m11g|\
@@ -65,6 +66,7 @@ platform_do_upgrade() {
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
 	h3c,tx1806|\
+	haier,har-20s2u1|\
 	hiwifi,hc5962|\
 	iptime,a3004t|\
 	iptime,ax2004m|\
@@ -95,6 +97,7 @@ platform_do_upgrade() {
 	raisecom,msg1500-x-00|\
 	sercomm,na502|\
 	sercomm,na502s|\
+	sim,simax1800t|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
