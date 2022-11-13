@@ -332,7 +332,7 @@ bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
  */
 static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
 {
-	int r;
+	int r, idx;
 	u32	*last;
 	struct p_hdr *h;
 	struct ring_b *ring = priv->membase;
@@ -340,23 +340,25 @@ static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
 	for (r = 0; r < priv->rxrings; r++) {
 		pr_debug("In %s working on r: %d\n", __func__, r);
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
+		idx = ring->c_rx[r];
 		do {
-			if ((ring->rx_r[r][ring->c_rx[r]] & 0x1))
+			if ((ring->rx_r[r][idx] & 0x1))
 				break;
-			pr_debug("Got something: %d\n", ring->c_rx[r]);
-			h = &ring->rx_header[r][ring->c_rx[r]];
+			pr_debug("Got something: %d\n", idx);
+			h = &ring->rx_header[r][idx];
 			memset(h, 0, sizeof(struct p_hdr));
 			h->buf = (u8 *)KSEG1ADDR(ring->rx_space
 					+ r * priv->rxringlen * RING_BUFFER
-					+ ring->c_rx[r] * RING_BUFFER);
+					+ idx * RING_BUFFER);
 			h->size = RING_BUFFER;
 			/* make sure the header is visible to the ASIC */
 			mb();
 
-			ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1
-				| (ring->c_rx[r] == (priv->rxringlen - 1) ? WRAP : 0x1);
-			ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
-		} while (&ring->rx_r[r][ring->c_rx[r]] != last);
+			ring->rx_r[r][idx] = KSEG1ADDR(h) | 0x1
+				| (idx == (priv->rxringlen - 1) ? WRAP : 0x1);
+			idx = (idx + 1) % priv->rxringlen;
+		} while (&ring->rx_r[r][idx] != last);
+		ring->c_rx[r] = idx;
 	}
 }
 
