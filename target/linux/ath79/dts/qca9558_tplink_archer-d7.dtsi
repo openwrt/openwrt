@@ -141,16 +141,9 @@
 };
 
 &usb0 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	dr_mode = "host";
 	vbus-supply = <&reg_usb0_vbus>;
 	status = "okay";
-
-	hub_port0: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &usb_phy1 {
@@ -158,14 +151,7 @@
 };
 
 &usb1 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	dr_mode = "host";
 	vbus-supply = <&reg_usb1_vbus>;
 	status = "okay";
-
-	hub_port1: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };

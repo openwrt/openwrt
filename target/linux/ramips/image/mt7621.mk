@@ -444,15 +444,28 @@ define Device/bolt_arion
 endef
 TARGET_DEVICES += bolt_arion
 
-define Device/cudy_wr1300
+define Device/cudy_wr1300-v1
   $(Device/dsa-migration)
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := WR1300
+  DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += cudy,wr1300 R10
 endef
-TARGET_DEVICES += cudy_wr1300
+TARGET_DEVICES += cudy_wr1300-v1
+
+define Device/cudy_wr1300-v2
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := WR1300
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  SUPPORTED_DEVICES += cudy,wr1300 R23
+endef
+TARGET_DEVICES += cudy_wr1300-v2
 
 define Device/cudy_wr2100
   $(Device/dsa-migration)
@@ -551,11 +564,8 @@ TARGET_DEVICES += dlink_dir-853-r1
 
 define Device/dlink_dir-860l-b1
   $(Device/dsa-migration)
-  $(Device/seama)
+  $(Device/seama-lzma-loader)
   SEAMA_SIGNATURE := wrgac13_dlink.2013gui_dir860lb
-  LOADER_TYPE := bin
-  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | relocate-kernel | \
-	lzma -a0 | uImage lzma
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-860L
@@ -1349,6 +1359,13 @@ define Device/MikroTik
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | \
 	append-metadata
 endef
+
+define Device/mikrotik_ltap-2hnd
+  $(Device/MikroTik)
+  DEVICE_MODEL := LtAP-2HnD
+  DEVICE_PACKAGES += kmod-ath9k kmod-pps-gpio rssileds
+endef
+TARGET_DEVICES += mikrotik_ltap-2hnd
 
 define Device/mikrotik_routerboard-750gr3
   $(Device/MikroTik)

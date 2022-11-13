@@ -1,16 +1,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mt76
-PKG_RELEASE=4
+PKG_RELEASE=5
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/openwrt/mt76
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2022-11-11
-PKG_SOURCE_VERSION:=4a27f23fc4f22510db81513680666be7e72ccb61
-PKG_MIRROR_HASH:=2cb9a446c6df7d56efc8ace46227964b492bdc3cae6bdbcc2e03fdd1b836b5a6
+PKG_SOURCE_DATE:=2022-11-12
+PKG_SOURCE_VERSION:=4bf2607362fc64fc4cb7d662feb736b7536c0811
+PKG_MIRROR_HASH:=fd4291ac89e14750073cc8c345772883d756bf32cf19fc7205fa344b5b3b91d0
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_USE_NINJA:=0
@@ -238,11 +238,16 @@ define KernelPackage/mt7986-firmware
   TITLE:=MediaTek MT7986 firmware
 endef
 
+define KernelPackage/mt7921-firmware
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7921 firmware
+endef
+
 define KernelPackage/mt7921-common
   $(KernelPackage/mt76-default)
   TITLE:=MediaTek MT7615 wireless driver common code
   HIDDEN:=1
-  DEPENDS+=+kmod-mt76-connac +@DRIVER_11AX_SUPPORT
+  DEPENDS+=+kmod-mt76-connac +kmod-mt7921-firmware +@DRIVER_11AX_SUPPORT
   FILES:= $(PKG_BUILD_DIR)/mt7921/mt7921-common.ko
 endef
 
@@ -488,7 +493,7 @@ define KernelPackage/mt7986-firmware/install
 		$(1)/lib/firmware/mediatek
 endef
 
-define KernelPackage/mt7921e/install
+define KernelPackage/mt7921-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	cp \
 		$(PKG_BUILD_DIR)/firmware/WIFI_MT7961_patch_mcu_1_2_hdr.bin \
@@ -525,6 +530,7 @@ $(eval $(call KernelPackage,mt7663s))
 $(eval $(call KernelPackage,mt7915e))
 $(eval $(call KernelPackage,mt7916-firmware))
 $(eval $(call KernelPackage,mt7986-firmware))
+$(eval $(call KernelPackage,mt7921-firmware))
 $(eval $(call KernelPackage,mt7921-common))
 $(eval $(call KernelPackage,mt7921u))
 $(eval $(call KernelPackage,mt7921s))
