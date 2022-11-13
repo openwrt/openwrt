@@ -219,6 +219,7 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii Config lan_hwaddr)
 		wan_mac=$(mtd_get_mac_ascii Config wan_hwaddr)
 		label_mac=$lan_mac
+		;;
 	mikrotik,ltap-2hnd)
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		lan_mac=$label_mac
