@@ -3,22 +3,30 @@
 #ifndef _RTL838X_ETH_H
 #define _RTL838X_ETH_H
 
-struct rtl83xx_soc_info {
-	unsigned char *name;
-	unsigned int id;
-	unsigned int family;
-	unsigned char *compatible;
-	volatile void *sw_base;
-	volatile void *icu_base;
-	int cpu_port;
-};
-
 #define RTL838X_SW_BASE		((volatile void *) 0xBB000000)
 
 #define sw_r32(reg)		readl(RTL838X_SW_BASE + reg)
 #define sw_w32(val, reg)	writel(val, RTL838X_SW_BASE + reg)
 #define sw_w32_mask(clear, set, reg)	\
 				sw_w32((sw_r32(reg) & ~(clear)) | (set), reg)
+
+#define RTL838X_MODEL_NAME_INFO			(0x00D4)
+#define RTL839X_MODEL_NAME_INFO			(0x0FF0)
+#define RTL93XX_MODEL_NAME_INFO			(0x0004)
+
+/* Definition of SOC IDs */
+#define RTL8328_SOC_ID				(0x8328)
+#define RTL8332_SOC_ID				(0x8332)
+#define RTL8380_SOC_ID				(0x8380)
+#define RTL8382_SOC_ID				(0x8382)
+#define RTL8390_SOC_ID				(0x8390)
+#define RTL8391_SOC_ID				(0x8391)
+#define RTL8392_SOC_ID				(0x8392)
+#define RTL8393_SOC_ID				(0x8393)
+#define RTL9301_SOC_ID				(0x9301)
+#define RTL9302_SOC_ID				(0x9302)
+#define RTL9303_SOC_ID				(0x9303)
+#define RTL9313_SOC_ID				(0x9313)
 
 /* Definition of family IDs */
 #define RTL8389_FAMILY_ID			(0x8389)
