@@ -178,6 +178,7 @@ struct rtl838x_rx_q {
 struct rtl838x_eth_priv {
 	struct net_device *netdev;
 	struct platform_device *pdev;
+	dma_addr_t	membase_dma;
 	void		*membase;
 	spinlock_t	lock;
 	struct mii_bus	*mii_bus;
@@ -2400,29 +2401,10 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	SET_NETDEV_DEV(dev, &pdev->dev);
 	priv = netdev_priv(dev);
 
-	/* obtain buffer memory space */
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (res) {
-		mem = devm_request_mem_region(&pdev->dev, res->start,
-			resource_size(res), res->name);
-		if (!mem) {
-			dev_err(&pdev->dev, "cannot request memory space\n");
-			err = -ENXIO;
-			goto err_free;
-		}
-
-		dev->mem_start = mem->start;
-		dev->mem_end   = mem->end;
-	} else {
-		dev_err(&pdev->dev, "cannot request IO resource\n");
-		err = -ENXIO;
-		goto err_free;
-	}
-
 	/* Allocate buffer memory */
 	priv->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER
 				+ sizeof(struct ring_b) + sizeof(struct notify_b),
-				(void *)&dev->mem_start, GFP_KERNEL);
+				&priv->membase_dma, GFP_KERNEL);
 	if (!priv->membase) {
 		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
 		err = -ENOMEM;
