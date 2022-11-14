@@ -456,11 +456,8 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 		}
 	}
 
-	/* RX buffer overrun */
+	/* RX buffer overrun interrupts are ignored for now */
 	if (status & 0x0000ff) {
-		pr_err("RX buffer overrun: status %x, mask: %x\n",
-			 status, sw_r32(priv->r->dma_if_intr_msk));
-		rtl838x_rb_cleanup(priv, status & 0xff);
 	}
 
 	/* Notification interrupts */
@@ -1259,7 +1256,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	do {
 		if ((ring->rx_r[r][idx] & R_OWN_ETH)) {
 			if (&ring->rx_r[r][idx] != last) {
-				netdev_warn(dev, "Ring contention: r: %x, last %x, cur %x\n",
+				netdev_dbg(dev, "Ring contention: r: %x, last %x, cur %x\n",
 				    r, (uint32_t)last, (u32) &ring->rx_r[r][idx]);
 			}
 			break;
