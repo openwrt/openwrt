@@ -77,8 +77,6 @@ struct ring_b {
 	struct	p_hdr	tx_header[TXRINGS][TXRINGLEN];
 	uint32_t	c_rx[MAX_RXRINGS];
 	uint32_t	c_tx[TXRINGS];
-	uint8_t		tx_space[TXRINGS * TXRINGLEN * RING_BUFFER];
-	uint8_t		*rx_space;
 };
 
 struct notify_block {
@@ -182,6 +180,10 @@ struct rtl838x_eth_priv {
 	void		*membase;
 	dma_addr_t	notify_dma;
 	struct notify_b *notify;
+	dma_addr_t	rxspace_dma;
+	char		*rxspace;
+	dma_addr_t	txspace_dma;
+	char		*txspace;
 	spinlock_t	lock;
 	struct mii_bus	*mii_bus;
 	struct rtl838x_rx_q rx_qs[MAX_RXRINGS];
@@ -352,7 +354,7 @@ static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
 			pr_debug("Got something: %d\n", idx);
 			h = &ring->rx_header[r][idx];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->rx_space
+			h->buf = (u8 *)KSEG1ADDR(priv->rxspace
 					+ r * priv->rxringlen * RING_BUFFER
 					+ idx * RING_BUFFER);
 			h->size = RING_BUFFER;
@@ -818,7 +820,7 @@ static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring
 		for (j = 0; j < priv->rxringlen; j++) {
 			h = &ring->rx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->rx_space
+			h->buf = (u8 *)KSEG1ADDR(priv->rxspace
 					+ i * priv->rxringlen * RING_BUFFER
 					+ j * RING_BUFFER);
 			h->size = RING_BUFFER;
@@ -833,7 +835,7 @@ static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring
 		for (j = 0; j < TXRINGLEN; j++) {
 			h = &ring->tx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->tx_space
+			h->buf = (u8 *)KSEG1ADDR(priv->txspace
 					+ i * TXRINGLEN * RING_BUFFER
 					+ j * RING_BUFFER);
 			h->size = RING_BUFFER;
@@ -2369,7 +2371,6 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
 	int err = 0, i, rxrings, rxringlen;
-	struct ring_b *ring;
 	int soc_id, soc_family;
 
 	pr_info("Probing Realtek SoC ethernet pdev: %x, dev: %x\n",
@@ -2411,17 +2412,29 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		goto err_free;
 	}
 
-	priv->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER
-				+ sizeof(struct ring_b), &priv->membase_dma, GFP_KERNEL);
+	priv->rxspace = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER,
+					    &priv->rxspace_dma, GFP_KERNEL);
+	if (!priv->notify) {
+		dev_err(&pdev->dev, "cannot allocate RX buffer\n");
+		err = -ENOMEM;
+		goto err_free;
+	}
+
+	priv->txspace = dmam_alloc_coherent(&pdev->dev, TXRINGS * TXRINGLEN * RING_BUFFER,
+					    &priv->txspace_dma, GFP_KERNEL);
+	if (!priv->notify) {
+		dev_err(&pdev->dev, "cannot allocate TX buffer\n");
+		err = -ENOMEM;
+		goto err_free;
+	}
+
+	priv->membase = dmam_alloc_coherent(&pdev->dev, sizeof(struct ring_b),
+					    &priv->membase_dma, GFP_KERNEL);
 	if (!priv->membase) {
 		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
 		err = -ENOMEM;
 		goto err_free;
 	}
-
-	// Allocate ring-buffer space at the end of the allocated memory
-	ring = priv->membase;
-	ring->rx_space = priv->membase + sizeof(struct ring_b);
 
 	spin_lock_init(&priv->lock);
 
