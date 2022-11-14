@@ -218,7 +218,8 @@ sub update_feed_via($$$$$) {
 			system(sprintf($m->{'init'}, $src, $safepath)) == 0 or return 1;
 		}
 	} elsif ($m->{'init_commit'} and $commit) {
-		# in case git hash has been provided don't update the feed
+		# Update the feed with commit
+                system("cd $localpath && git checkout $commit . && cd -");
 	} else {
 		my $update_cmd = $m->{'update'};
 		if ($force && exists $m->{'update_force'}) {
