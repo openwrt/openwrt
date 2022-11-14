@@ -440,17 +440,14 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 
 	pr_debug("IRQ: %08x\n", status);
 
-	/*  Ignore TX interrupt */
-	if ((status & 0xf0000)) {
-		/* Clear ISR */
-		sw_w32(0x000f0000, priv->r->dma_if_intr_sts);
+	/*  TX interrupts are ignored for now */
+	if ((status & 0x0f0000)) {
 	}
 
 	/* RX interrupt */
-	if (status & 0x0ff00) {
-		/* ACK and disable RX interrupt for this ring */
-		sw_w32_mask(0xff00 & status, 0, priv->r->dma_if_intr_msk);
-		sw_w32(0x0000ff00 & status, priv->r->dma_if_intr_sts);
+	if (status & 0x00ff00) {
+		/* Disable RX interrupt until end of NAPI receiving */
+		sw_w32_mask(0x00ff00 & status, 0, priv->r->dma_if_intr_msk);
 		for (i = 0; i < priv->rxrings; i++) {
 			if (status & BIT(i + 8)) {
 				pr_debug("Scheduling queue: %d\n", i);
@@ -460,28 +457,20 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 	}
 
 	/* RX buffer overrun */
-	if (status & 0x000ff) {
+	if (status & 0x0000ff) {
 		pr_err("RX buffer overrun: status %x, mask: %x\n",
 			 status, sw_r32(priv->r->dma_if_intr_msk));
-		sw_w32(status, priv->r->dma_if_intr_sts);
 		rtl838x_rb_cleanup(priv, status & 0xff);
 	}
 
-	if (priv->family_id == RTL8390_FAMILY_ID && status & 0x00100000) {
-		sw_w32(0x00100000, priv->r->dma_if_intr_sts);
-		rtl839x_l2_notification_handler(priv);
+	/* Notification interrupts */
+	if (status & 0x700000) {
+		if (priv->family_id == RTL8390_FAMILY_ID)
+			rtl839x_l2_notification_handler(priv);
 	}
 
-	if (priv->family_id == RTL8390_FAMILY_ID && status & 0x00200000) {
-		sw_w32(0x00200000, priv->r->dma_if_intr_sts);
-		rtl839x_l2_notification_handler(priv);
-	}
-
-	if (priv->family_id == RTL8390_FAMILY_ID && status & 0x00400000) {
-		sw_w32(0x00400000, priv->r->dma_if_intr_sts);
-		rtl839x_l2_notification_handler(priv);
-	}
-
+	/* Acknowledge interrupts */
+	sw_w32(status, priv->r->dma_if_intr_sts);
 	return IRQ_HANDLED;
 }
 
