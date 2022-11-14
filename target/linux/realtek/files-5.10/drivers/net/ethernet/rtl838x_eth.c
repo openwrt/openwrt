@@ -813,36 +813,32 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring_b *ring)
 {
 	int i, j;
-
+	char *buf;
 	struct p_hdr *h;
 
+	buf = (u8 *)KSEG1ADDR(priv->rxspace);
 	for (i = 0; i < priv->rxrings; i++) {
-		for (j = 0; j < priv->rxringlen; j++) {
+		for (j = 0; j < priv->rxringlen; j++, buf += RING_BUFFER) {
 			h = &ring->rx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(priv->rxspace
-					+ i * priv->rxringlen * RING_BUFFER
-					+ j * RING_BUFFER);
+			h->buf = buf;
 			h->size = RING_BUFFER;
-			/* All rings owned by switch, last one wraps */
 			ring->rx_r[i][j] = KSEG1ADDR(h) | R_OWN_ETH;
 		}
-		ring->rx_r[i][j-1] |= R_WRAP;
+		ring->rx_r[i][j - 1] |= R_WRAP;
 		ring->c_rx[i] = 0;
 	}
 
+	buf = (u8 *)KSEG1ADDR(priv->txspace);
 	for (i = 0; i < TXRINGS; i++) {
-		for (j = 0; j < TXRINGLEN; j++) {
+		for (j = 0; j < TXRINGLEN; j++, buf += RING_BUFFER) {
 			h = &ring->tx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(priv->txspace
-					+ i * TXRINGLEN * RING_BUFFER
-					+ j * RING_BUFFER);
+			h->buf = buf;
 			h->size = RING_BUFFER;
 			ring->tx_r[i][j] = KSEG1ADDR(h) | R_OWN_CPU;
 		}
-		/* Last header is wrapping around */
-		ring->tx_r[i][j-1] |= R_WRAP;
+		ring->tx_r[i][j - 1] |= R_WRAP;
 		ring->c_tx[i] = 0;
 	}
 }
