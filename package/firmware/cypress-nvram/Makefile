@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cypress-nvram
-PKG_RELEASE:=5
+PKG_RELEASE:=6
 
 PKG_MAINTAINER:=Álvaro Fernández Rojas <noltari@gmail.com>
 
@@ -28,7 +28,7 @@ endef
 define Package/cypress-nvram-4339-sdio-ap6335
   $(Package/cypress-nvram-default)
   TITLE:=BCM4339 NVRAM for AP6335
-  CONFLICTS:=brcmfmac-firmware-4339-sdio-ap6335
+  CONFLICTS:=brcmfmac-nvram-4339-sdio
 endef
 
 define Package/cypress-nvram-4339-sdio-ap6335/install
@@ -45,7 +45,7 @@ define Package/cypress-nvram-4339-sdio-pico-pi-imx7d
   $(Package/cypress-nvram-default)
   TITLE:=BCM4339 NVRAM for TechNexion PICO-PI-IMX7D
   DEPENDS:=+cypress-nvram-4339-sdio-ap6335
-  CONFLICTS:=brcmfmac-firmware-4339-sdio-pico-pi-imx7d
+  CONFLICTS:=brcmfmac-nvram-4339-sdio
 endef
 
 define Package/cypress-nvram-4339-sdio-pico-pi-imx7d/install
