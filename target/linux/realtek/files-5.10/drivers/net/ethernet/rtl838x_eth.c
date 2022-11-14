@@ -176,8 +176,8 @@ struct rtl838x_rx_q {
 struct rtl838x_eth_priv {
 	struct net_device *netdev;
 	struct platform_device *pdev;
-	dma_addr_t	membase_dma;
-	void		*membase;
+	dma_addr_t	ring_dma;
+	struct ring_b	*ring;
 	dma_addr_t	notify_dma;
 	struct notify_b *notify;
 	dma_addr_t	rxspace_dma;
@@ -342,7 +342,7 @@ static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
 	int r, idx;
 	u32	*last;
 	struct p_hdr *h;
-	struct ring_b *ring = priv->membase;
+	struct ring_b *ring = priv->ring;
 
 	for (r = 0; r < priv->rxrings; r++) {
 		pr_debug("In %s working on r: %d\n", __func__, r);
@@ -711,7 +711,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 static void rtl838x_hw_ring_setup(struct rtl838x_eth_priv *priv)
 {
 	int i;
-	struct ring_b *ring = priv->membase;
+	struct ring_b *ring = priv->ring;
 
 	for (i = 0; i < priv->rxrings; i++)
 		sw_w32(KSEG1ADDR(&ring->rx_r[i]), priv->r->dma_rx_base + i * 4);
@@ -810,11 +810,12 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 		sw_w32(0x2a1d, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 }
 
-static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring_b *ring)
+static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv)
 {
 	int i, j;
 	char *buf;
 	struct p_hdr *h;
+	struct ring_b *ring = priv->ring;
 
 	buf = (u8 *)KSEG1ADDR(priv->rxspace);
 	for (i = 0; i < priv->rxrings; i++) {
@@ -867,7 +868,6 @@ static int rtl838x_eth_open(struct net_device *ndev)
 {
 	unsigned long flags;
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
-	struct ring_b *ring = priv->membase;
 	int i;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
@@ -875,7 +875,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 
 	spin_lock_irqsave(&priv->lock, flags);
 	rtl838x_hw_reset(priv);
-	rtl838x_setup_ring_buffer(priv, ring);
+	rtl838x_setup_ring_buffer(priv);
 	if (priv->family_id == RTL8390_FAMILY_ID) {
 		rtl839x_setup_notify_ring_buffer(priv);
 		/* Make sure the ring structure is visible to the ASIC */
@@ -1120,7 +1120,7 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 {
 	int len, i;
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
-	struct ring_b *ring = priv->membase;
+	struct ring_b *ring = priv->ring;
 	uint32_t val;
 	int ret;
 	unsigned long flags;
@@ -1238,7 +1238,7 @@ u16 rtl93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
-	struct ring_b *ring = priv->membase;
+	struct ring_b *ring = priv->ring;
 	struct sk_buff *skb;
 	unsigned long flags;
 	int i, len, work_done = 0, idx;
@@ -2424,10 +2424,10 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		goto err_free;
 	}
 
-	priv->membase = dmam_alloc_coherent(&pdev->dev, sizeof(struct ring_b),
-					    &priv->membase_dma, GFP_KERNEL);
-	if (!priv->membase) {
-		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
+	priv->ring = dmam_alloc_coherent(&pdev->dev, sizeof(struct ring_b),
+					    &priv->ring_dma, GFP_KERNEL);
+	if (!priv->ring) {
+		dev_err(&pdev->dev, "cannot allocate ring buffer\n");
 		err = -ENOMEM;
 		goto err_free;
 	}
