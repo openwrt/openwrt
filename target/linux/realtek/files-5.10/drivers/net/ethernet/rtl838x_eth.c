@@ -1241,7 +1241,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	struct sk_buff *skb;
 	unsigned long flags;
 	int i, len, work_done = 0, idx;
-	u8 *data;
 	unsigned int val;
 	struct p_hdr *h;
 	bool dsa = netdev_uses_dsa(dev);
@@ -1254,7 +1253,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	while (!(ring->rx_r[r][idx] & R_OWN_ETH) && (work_done < budget)) {
 
 		h = &ring->rx_header[r][idx];
-		data = (u8 *)KSEG1ADDR(h->buf);
 		len = h->len;
 		if (!len)
 			break;
@@ -1279,8 +1277,8 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 
 			/* Make new data visible for CPU */
 			mb();
-			dma_sync_single_for_device(&priv->pdev->dev, CPHYSADDR(data), len, DMA_FROM_DEVICE);
-			skb_put_data(skb, (u8 *)KSEG0ADDR(data), len);
+			dma_sync_single_for_device(&priv->pdev->dev, CPHYSADDR(h->buf), len, DMA_FROM_DEVICE);
+			skb_put_data(skb, (u8 *)KSEG0ADDR(h->buf), len);
 			/* Overwrite CRC with cpu_tag */
 			if (dsa) {
 				priv->r->decode_tag(h, &tag);
@@ -1312,11 +1310,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 				dev_warn(&dev->dev, "low on memory - packet dropped\n");
 			dev->stats.rx_dropped++;
 		}
-
-		/* Reset header structure */
-		memset(h, 0, sizeof(struct p_hdr));
-		h->buf = data;
-		h->size = RING_BUFFER;
 
 		ring->rx_r[r][idx] = KSEG1ADDR(h) |
 			(idx == (priv->rxringlen - 1) ? R_OWN_ETH | R_WRAP : R_OWN_ETH);
