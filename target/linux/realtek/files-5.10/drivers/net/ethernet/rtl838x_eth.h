@@ -361,17 +361,17 @@ inline int rtnc_931x_dma_if_rx_ring_cntr(int i)
 	return RTL931X_DMA_IF_RX_RING_CNTR + ((i / 3) << 2);
 }
 
-inline u32 rtl838x_get_mac_link_sts(int port)
+inline u32 rtnc_838x_get_mac_link_sts(int port)
 {
 	return (sw_r32(RTL838X_MAC_LINK_STS) & BIT(port));
 }
 
-inline u32 rtl839x_get_mac_link_sts(int p)
+inline u32 rtnc_839x_get_mac_link_sts(int p)
 {
 	return (sw_r32(RTL839X_MAC_LINK_STS + ((p >> 5) << 2)) & BIT(p % 32));
 }
 
-inline u32 rtl930x_get_mac_link_sts(int port)
+inline u32 rtnc_930x_get_mac_link_sts(int port)
 {
 	u32 link = sw_r32(RTL930X_MAC_LINK_STS);
 
@@ -380,32 +380,32 @@ inline u32 rtl930x_get_mac_link_sts(int port)
 	return link & BIT(port);
 }
 
-inline u32 rtl931x_get_mac_link_sts(int p)
+inline u32 rtnc_931x_get_mac_link_sts(int p)
 {
 	return (sw_r32(RTL931X_MAC_LINK_STS + ((p >> 5) << 2)) & BIT(p % 32));
 }
 
-inline u32 rtl838x_get_mac_link_dup_sts(int port)
+inline u32 rtnc_838x_get_mac_link_dup_sts(int port)
 {
 	return (sw_r32(RTL838X_MAC_LINK_DUP_STS) & BIT(port));
 }
 
-inline u32 rtl839x_get_mac_link_dup_sts(int p)
+inline u32 rtnc_839x_get_mac_link_dup_sts(int p)
 {
 	return (sw_r32(RTL839X_MAC_LINK_DUP_STS + ((p >> 5) << 2)) & BIT(p % 32));
 }
 
-inline u32 rtl930x_get_mac_link_dup_sts(int port)
+inline u32 rtnc_930x_get_mac_link_dup_sts(int port)
 {
 	return (sw_r32(RTL930X_MAC_LINK_DUP_STS) & BIT(port));
 }
 
-inline u32 rtl931x_get_mac_link_dup_sts(int p)
+inline u32 rtnc_931x_get_mac_link_dup_sts(int p)
 {
 	return (sw_r32(RTL931X_MAC_LINK_DUP_STS + ((p >> 5) << 2)) & BIT(p % 32));
 }
 
-inline u32 rtl838x_get_mac_link_spd_sts(int port)
+inline u32 rtnc_838x_get_mac_link_spd_sts(int port)
 {
 	int r = RTL838X_MAC_LINK_SPD_STS + ((port >> 4) << 2);
 	u32 speed = sw_r32(r);
@@ -414,7 +414,7 @@ inline u32 rtl838x_get_mac_link_spd_sts(int port)
 	return (speed & 0x3);
 }
 
-inline u32 rtl839x_get_mac_link_spd_sts(int port)
+inline u32 rtnc_839x_get_mac_link_spd_sts(int port)
 {
 	int r = RTL839X_MAC_LINK_SPD_STS + ((port >> 4) << 2);
 	u32 speed = sw_r32(r);
@@ -424,7 +424,7 @@ inline u32 rtl839x_get_mac_link_spd_sts(int port)
 }
 
 
-inline u32 rtl930x_get_mac_link_spd_sts(int port)
+inline u32 rtnc_930x_get_mac_link_spd_sts(int port)
 {
 	int r = RTL930X_MAC_LINK_SPD_STS + ((port / 10) << 2);
 	u32 speed = sw_r32(r);
@@ -433,7 +433,7 @@ inline u32 rtl930x_get_mac_link_spd_sts(int port)
 	return (speed & 0x7);
 }
 
-inline u32 rtl931x_get_mac_link_spd_sts(int port)
+inline u32 rtnc_931x_get_mac_link_spd_sts(int port)
 {
 	int r = RTL931X_MAC_LINK_SPD_STS + ((port >> 3) << 2);
 	u32 speed = sw_r32(r);
@@ -442,42 +442,42 @@ inline u32 rtl931x_get_mac_link_spd_sts(int port)
 	return (speed & 0xf);
 }
 
-inline u32 rtl838x_get_mac_rx_pause_sts(int port)
+inline u32 rtnc_838x_get_mac_rx_pause_sts(int port)
 {
 	return (sw_r32(RTL838X_MAC_RX_PAUSE_STS) & (1 << port));
 }
 
-inline u32 rtl839x_get_mac_rx_pause_sts(int p)
+inline u32 rtnc_839x_get_mac_rx_pause_sts(int p)
 {
 	return (sw_r32(RTL839X_MAC_RX_PAUSE_STS + ((p >> 5) << 2)) & BIT(p % 32));
 }
 
-inline u32 rtl930x_get_mac_rx_pause_sts(int port)
+inline u32 rtnc_930x_get_mac_rx_pause_sts(int port)
 {
 	return (sw_r32(RTL930X_MAC_RX_PAUSE_STS) & (1 << port));
 }
 
-inline u32 rtl931x_get_mac_rx_pause_sts(int p)
+inline u32 rtnc_931x_get_mac_rx_pause_sts(int p)
 {
 	return (sw_r32(RTL931X_MAC_RX_PAUSE_STS + ((p >> 5) << 2)) & BIT(p % 32));
 }
 
-inline u32 rtl838x_get_mac_tx_pause_sts(int port)
+inline u32 rtnc_838x_get_mac_tx_pause_sts(int port)
 {
 	return (sw_r32(RTL838X_MAC_TX_PAUSE_STS) & (1 << port));
 }
 
-inline u32 rtl839x_get_mac_tx_pause_sts(int p)
+inline u32 rtnc_839x_get_mac_tx_pause_sts(int p)
 {
 	return (sw_r32(RTL839X_MAC_TX_PAUSE_STS + ((p >> 5) << 2)) & BIT(p % 32));
 }
 
-inline u32 rtl930x_get_mac_tx_pause_sts(int port)
+inline u32 rtnc_930x_get_mac_tx_pause_sts(int port)
 {
 	return (sw_r32(RTL930X_MAC_TX_PAUSE_STS) & (1 << port));
 }
 
-inline u32 rtl931x_get_mac_tx_pause_sts(int p)
+inline u32 rtnc_931x_get_mac_tx_pause_sts(int p)
 {
 	return (sw_r32(RTL931X_MAC_TX_PAUSE_STS + ((p >> 5) << 2)) & BIT(p % 32));
 }
