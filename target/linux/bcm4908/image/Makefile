@@ -75,7 +75,7 @@ define Device/Default
 endef
 
 define Device/asus_gt-ac5300
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := GT-AC5300
   DEVICE_DTS := broadcom/bcmbca/bcm4908-asus-gt-ac5300
   IMAGES := bin
@@ -88,7 +88,7 @@ endef
 TARGET_DEVICES += asus_gt-ac5300
 
 define Device/asus_gt-ax6000
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := GT-AX6000
   DEVICE_DTS := broadcom/bcmbca/bcm4912-asus-gt-ax6000
   IMAGES := pkgtb

@@ -40,9 +40,9 @@ TARGET_DEVICES += alfa-network_awusfree1
 
 define Device/asus_rt-ac1200
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC1200
-  DEVICE_ALT0_VENDOR := Asus
+  DEVICE_ALT0_VENDOR := ASUS
   DEVICE_ALT0_MODEL := RT-N600
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
@@ -52,7 +52,7 @@ TARGET_DEVICES += asus_rt-ac1200
 define Device/asus_rt-ac1200-v2
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC1200
   DEVICE_VARIANT := V2
   IMAGES += factory.bin
@@ -64,7 +64,7 @@ TARGET_DEVICES += asus_rt-ac1200-v2
 
 define Device/asus_rt-n10p-v3
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N10P
   DEVICE_VARIANT := V3
 endef
@@ -72,7 +72,7 @@ TARGET_DEVICES += asus_rt-n10p-v3
 
 define Device/asus_rt-n11p-b1
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N11P
   DEVICE_VARIANT := B1
   DEVICE_ALT0_VENDOR := ASUS
@@ -86,7 +86,7 @@ TARGET_DEVICES += asus_rt-n11p-b1
 
 define Device/asus_rt-n12-vp-b1
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N12 VP
   DEVICE_VARIANT := B1
 endef
