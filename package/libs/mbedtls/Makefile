@@ -140,10 +140,11 @@ endef
 define Build/Prepare
        $(call Build/Prepare/Default)
 
-       $(foreach opt,$(MBEDTLS_BUILD_OPTS),
+       $(if $(strip $(foreach opt,$(MBEDTLS_BUILD_OPTS),$($(opt)))),
+	 $(foreach opt,$(MBEDTLS_BUILD_OPTS),
 	 $(PKG_BUILD_DIR)/scripts/config.py \
 	 -f $(PKG_BUILD_DIR)/include/mbedtls/config.h \
-	 $(if $($(opt)),set,unset) $(patsubst CONFIG_%,%,$(opt)))
+	 $(if $($(opt)),set,unset) $(patsubst CONFIG_%,%,$(opt))),)
 endef
 
 define Build/InstallDev
