@@ -1,0 +1,44 @@
+From 50b2e8711462409cd368c41067405aa446dfa2af Mon Sep 17 00:00:00 2001
+From: taozhang <taozhang@bestechnic.com>
+Date: Sat, 15 Oct 2022 17:38:31 +0800
+Subject: [PATCH] wifi: mac80211: fix memory free error when registering wiphy
+ fail
+
+ieee80211_register_hw free the allocated cipher suites when
+registering wiphy fail, and ieee80211_free_hw will re-free it.
+
+set wiphy_ciphers_allocated to false after freeing allocated
+cipher suites.
+
+Signed-off-by: taozhang <taozhang@bestechnic.com>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ net/mac80211/main.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -1362,8 +1362,10 @@ int ieee80211_register_hw(struct ieee802
+ 	ieee80211_led_exit(local);
+ 	destroy_workqueue(local->workqueue);
+  fail_workqueue:
+-	if (local->wiphy_ciphers_allocated)
++	if (local->wiphy_ciphers_allocated) {
+ 		kfree(local->hw.wiphy->cipher_suites);
++		local->wiphy_ciphers_allocated = false;
++	}
+ 	kfree(local->int_scan_req);
+ 	return result;
+ }
+@@ -1431,8 +1433,10 @@ void ieee80211_free_hw(struct ieee80211_
+ 	mutex_destroy(&local->iflist_mtx);
+ 	mutex_destroy(&local->mtx);
+ 
+-	if (local->wiphy_ciphers_allocated)
++	if (local->wiphy_ciphers_allocated) {
+ 		kfree(local->hw.wiphy->cipher_suites);
++		local->wiphy_ciphers_allocated = false;
++	}
+ 
+ 	idr_for_each(&local->ack_status_frames,
+ 		     ieee80211_free_ack_frame, NULL);
