@@ -191,7 +191,7 @@ struct rtnc_priv {
 	struct phylink_config phylink_config;
 	u16 id;
 	u16 family_id;
-	const struct rtl838x_eth_reg *r;
+	const struct rtnc_reg *r;
 	u8 cpu_port;
 	u32 lastEvent;
 	u16 rxrings;
@@ -520,7 +520,7 @@ static irqreturn_t rtnc_93xx_net_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static const struct rtl838x_eth_reg rtl838x_reg = {
+static const struct rtnc_reg rtnc_838x_reg = {
 	.net_irq = rtnc_83xx_net_irq,
 	.mac_port_ctrl = rtnc_838x_mac_port_ctrl,
 	.dma_if_intr_sts = RTL838X_DMA_IF_INTR_STS,
@@ -529,8 +529,8 @@ static const struct rtl838x_eth_reg rtl838x_reg = {
 	.mac_force_mode_ctrl = RTL838X_MAC_FORCE_MODE_CTRL,
 	.dma_rx_base = RTL838X_DMA_RX_BASE,
 	.dma_tx_base = RTL838X_DMA_TX_BASE,
-	.dma_if_rx_ring_size = rtl838x_dma_if_rx_ring_size,
-	.dma_if_rx_ring_cntr = rtl838x_dma_if_rx_ring_cntr,
+	.dma_if_rx_ring_size = rtnc_838x_dma_if_rx_ring_size,
+	.dma_if_rx_ring_cntr = rtnc_838x_dma_if_rx_ring_cntr,
 	.dma_if_rx_cur = RTL838X_DMA_IF_RX_CUR,
 	.rst_glb_ctrl = RTL838X_RST_GLB_CTRL_0,
 	.get_mac_link_sts = rtl838x_get_mac_link_sts,
@@ -545,7 +545,7 @@ static const struct rtl838x_eth_reg rtl838x_reg = {
 	.decode_tag = rtl838x_decode_tag,
 };
 
-static const struct rtl838x_eth_reg rtl839x_reg = {
+static const struct rtnc_reg rtnc_839x_reg = {
 	.net_irq = rtnc_83xx_net_irq,
 	.mac_port_ctrl = rtnc_839x_mac_port_ctrl,
 	.dma_if_intr_sts = RTL839X_DMA_IF_INTR_STS,
@@ -554,8 +554,8 @@ static const struct rtl838x_eth_reg rtl839x_reg = {
 	.mac_force_mode_ctrl = RTL839X_MAC_FORCE_MODE_CTRL,
 	.dma_rx_base = RTL839X_DMA_RX_BASE,
 	.dma_tx_base = RTL839X_DMA_TX_BASE,
-	.dma_if_rx_ring_size = rtl839x_dma_if_rx_ring_size,
-	.dma_if_rx_ring_cntr = rtl839x_dma_if_rx_ring_cntr,
+	.dma_if_rx_ring_size = rtnc_839x_dma_if_rx_ring_size,
+	.dma_if_rx_ring_cntr = rtnc_839x_dma_if_rx_ring_cntr,
 	.dma_if_rx_cur = RTL839X_DMA_IF_RX_CUR,
 	.rst_glb_ctrl = RTL839X_RST_GLB_CTRL,
 	.get_mac_link_sts = rtl839x_get_mac_link_sts,
@@ -570,7 +570,7 @@ static const struct rtl838x_eth_reg rtl839x_reg = {
 	.decode_tag = rtl839x_decode_tag,
 };
 
-static const struct rtl838x_eth_reg rtl930x_reg = {
+static const struct rtnc_reg rtnc_930x_reg = {
 	.net_irq = rtnc_93xx_net_irq,
 	.mac_port_ctrl = rtnc_930x_mac_port_ctrl,
 	.dma_if_intr_rx_runout_sts = RTL930X_DMA_IF_INTR_RX_RUNOUT_STS,
@@ -585,8 +585,8 @@ static const struct rtl838x_eth_reg rtl930x_reg = {
 	.mac_force_mode_ctrl = RTL930X_MAC_FORCE_MODE_CTRL,
 	.dma_rx_base = RTL930X_DMA_RX_BASE,
 	.dma_tx_base = RTL930X_DMA_TX_BASE,
-	.dma_if_rx_ring_size = rtl930x_dma_if_rx_ring_size,
-	.dma_if_rx_ring_cntr = rtl930x_dma_if_rx_ring_cntr,
+	.dma_if_rx_ring_size = rtnc_930x_dma_if_rx_ring_size,
+	.dma_if_rx_ring_cntr = rtnc_930x_dma_if_rx_ring_cntr,
 	.dma_if_rx_cur = RTL930X_DMA_IF_RX_CUR,
 	.rst_glb_ctrl = RTL930X_RST_GLB_CTRL_0,
 	.get_mac_link_sts = rtl930x_get_mac_link_sts,
@@ -601,7 +601,7 @@ static const struct rtl838x_eth_reg rtl930x_reg = {
 	.decode_tag = rtl930x_decode_tag,
 };
 
-static const struct rtl838x_eth_reg rtl931x_reg = {
+static const struct rtnc_reg rtnc_931x_reg = {
 	.net_irq = rtnc_93xx_net_irq,
 	.mac_port_ctrl = rtnc_931x_mac_port_ctrl,
 	.dma_if_intr_rx_runout_sts = RTL931X_DMA_IF_INTR_RX_RUNOUT_STS,
@@ -616,8 +616,8 @@ static const struct rtl838x_eth_reg rtl931x_reg = {
 	.mac_force_mode_ctrl = RTL931X_MAC_FORCE_MODE_CTRL,
 	.dma_rx_base = RTL931X_DMA_RX_BASE,
 	.dma_tx_base = RTL931X_DMA_TX_BASE,
-	.dma_if_rx_ring_size = rtl931x_dma_if_rx_ring_size,
-	.dma_if_rx_ring_cntr = rtl931x_dma_if_rx_ring_cntr,
+	.dma_if_rx_ring_size = rtnc_931x_dma_if_rx_ring_size,
+	.dma_if_rx_ring_cntr = rtnc_931x_dma_if_rx_ring_cntr,
 	.dma_if_rx_cur = RTL931X_DMA_IF_RX_CUR,
 	.rst_glb_ctrl = RTL931X_RST_GLB_CTRL,
 	.get_mac_link_sts = rtl931x_get_mac_link_sts,
@@ -1235,7 +1235,7 @@ u16 rtnc_93xx_ndo_select_queue(struct net_device *dev, struct sk_buff *skb,
 	return 0;
 }
 
-static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
+static int rtnc_hw_receive(struct net_device *dev, int r, int budget)
 {
 	struct rtnc_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->ring;
@@ -1335,7 +1335,7 @@ static int rtnc_poll_rx(struct napi_struct *napi, int budget)
 	int work;
 
 	while (work_done < budget) {
-		work = rtl838x_hw_receive(priv->netdev, r, budget - work_done);
+		work = rtnc_hw_receive(priv->netdev, r, budget - work_done);
 		if (!work)
 			break;
 		work_done += work;
@@ -1352,7 +1352,7 @@ static int rtnc_poll_rx(struct napi_struct *napi, int budget)
 }
 
 
-static void rtl838x_validate(struct phylink_config *config,
+static void rtnc_validate(struct phylink_config *config,
 			 unsigned long *supported,
 			 struct phylink_link_state *state)
 {
@@ -1498,7 +1498,7 @@ static void rtl838x_mac_link_up(struct phylink_config *config,
 	sw_w32_mask(0, 0x03, priv->r->mac_port_ctrl(priv->cpu_port));
 }
 
-static void rtl838x_set_mac_hw(struct net_device *dev, u8 *mac)
+static void rtnc_set_mac_hw(struct net_device *dev, u8 *mac)
 {
 	struct rtnc_priv *priv = netdev_priv(dev);
 	unsigned long flags;
@@ -1531,24 +1531,24 @@ static int rtnc_set_mac_address(struct net_device *dev, void *p)
 		return -EADDRNOTAVAIL;
 
 	memcpy(dev->dev_addr, addr->sa_data, ETH_ALEN);
-	rtl838x_set_mac_hw(dev, mac);
+	rtnc_set_mac_hw(dev, mac);
 
 	pr_info("Using MAC %08x%08x\n", sw_r32(priv->r->mac), sw_r32(priv->r->mac + 4));
 	return 0;
 }
 
-static int rtl8390_init_mac(struct rtnc_priv *priv)
+static int rtnc_839x_init_mac(struct rtnc_priv *priv)
 {
 	// We will need to set-up EEE and the egress-rate limitation
 	return 0;
 }
 
-static int rtl8380_init_mac(struct rtnc_priv *priv)
+static int rtnc_838x_init_mac(struct rtnc_priv *priv)
 {
 	int i;
 
 	if (priv->family_id == RTL8390_FAMILY_ID)
-		return rtl8390_init_mac(priv);
+		return rtnc_839x_init_mac(priv);
 
     // At present we do not know how to set up EEE on any other SoC than RTL8380
 	if (priv->family_id != RTL8380_FAMILY_ID)
@@ -2292,7 +2292,7 @@ static const struct net_device_ops rtl931x_eth_netdev_ops = {
 };
 
 static const struct phylink_mac_ops rtl838x_phylink_ops = {
-	.validate = rtl838x_validate,
+	.validate = rtnc_validate,
 	.mac_pcs_get_state = rtl838x_mac_pcs_get_state,
 	.mac_an_restart = rtl838x_mac_an_restart,
 	.mac_config = rtl838x_mac_config,
@@ -2446,22 +2446,22 @@ static int __init rtnc_probe(struct platform_device *pdev)
 	switch (priv->family_id) {
 	case RTL8380_FAMILY_ID:
 		priv->cpu_port = RTL838X_CPU_PORT;
-		priv->r = &rtl838x_reg;
+		priv->r = &rtnc_838x_reg;
 		dev->netdev_ops = &rtl838x_eth_netdev_ops;
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->cpu_port = RTL839X_CPU_PORT;
-		priv->r = &rtl839x_reg;
+		priv->r = &rtnc_839x_reg;
 		dev->netdev_ops = &rtl839x_eth_netdev_ops;
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->cpu_port = RTL930X_CPU_PORT;
-		priv->r = &rtl930x_reg;
+		priv->r = &rtnc_930x_reg;
 		dev->netdev_ops = &rtl930x_eth_netdev_ops;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->cpu_port = RTL931X_CPU_PORT;
-		priv->r = &rtl931x_reg;
+		priv->r = &rtnc_931x_reg;
 		dev->netdev_ops = &rtl931x_eth_netdev_ops;
 		rtl931x_chip_init(priv);
 		break;
@@ -2487,7 +2487,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 		goto err_free;
 	}
 
-	rtl8380_init_mac(priv);
+	rtnc_838x_init_mac(priv);
 
 	/* try to get mac address in the following order:
 	 * 1) from device tree data
@@ -2495,7 +2495,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 	 */
 	of_get_mac_address(pdev->dev.of_node, dev->dev_addr);
 	if (is_valid_ether_addr(dev->dev_addr)) {
-		rtl838x_set_mac_hw(dev, (u8 *)dev->dev_addr);
+		rtnc_set_mac_hw(dev, (u8 *)dev->dev_addr);
 	} else {
 		dev->dev_addr[0] = (sw_r32(priv->r->mac) >> 8) & 0xff;
 		dev->dev_addr[1] = sw_r32(priv->r->mac) & 0xff;

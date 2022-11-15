@@ -321,42 +321,42 @@ inline int rtnc_931x_mac_port_ctrl(int p)
 	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
 }
 
-inline int rtl838x_dma_if_rx_ring_size(int i)
+inline int rtnc_838x_dma_if_rx_ring_size(int i)
 {
 	return RTL838X_DMA_IF_RX_RING_SIZE + ((i >> 3) << 2);
 }
 
-inline int rtl839x_dma_if_rx_ring_size(int i)
+inline int rtnc_839x_dma_if_rx_ring_size(int i)
 {
 	return RTL839X_DMA_IF_RX_RING_SIZE + ((i >> 3) << 2);
 }
 
-inline int rtl930x_dma_if_rx_ring_size(int i)
+inline int rtnc_930x_dma_if_rx_ring_size(int i)
 {
 	return RTL930X_DMA_IF_RX_RING_SIZE + ((i / 3) << 2);
 }
 
-inline int rtl931x_dma_if_rx_ring_size(int i)
+inline int rtnc_931x_dma_if_rx_ring_size(int i)
 {
 	return RTL931X_DMA_IF_RX_RING_SIZE + ((i / 3) << 2);
 }
 
-inline int rtl838x_dma_if_rx_ring_cntr(int i)
+inline int rtnc_838x_dma_if_rx_ring_cntr(int i)
 {
 	return RTL838X_DMA_IF_RX_RING_CNTR + ((i >> 3) << 2);
 }
 
-inline int rtl839x_dma_if_rx_ring_cntr(int i)
+inline int rtnc_839x_dma_if_rx_ring_cntr(int i)
 {
 	return RTL839X_DMA_IF_RX_RING_CNTR + ((i >> 3) << 2);
 }
 
-inline int rtl930x_dma_if_rx_ring_cntr(int i)
+inline int rtnc_930x_dma_if_rx_ring_cntr(int i)
 {
 	return RTL930X_DMA_IF_RX_RING_CNTR + ((i / 3) << 2);
 }
 
-inline int rtl931x_dma_if_rx_ring_cntr(int i)
+inline int rtnc_931x_dma_if_rx_ring_cntr(int i)
 {
 	return RTL931X_DMA_IF_RX_RING_CNTR + ((i / 3) << 2);
 }
@@ -485,7 +485,7 @@ inline u32 rtl931x_get_mac_tx_pause_sts(int p)
 struct rtnc_hdr;
 struct rtnc_dsa_tag;
 
-struct rtl838x_eth_reg {
+struct rtnc_reg {
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
 	int (*mac_port_ctrl)(int port);
 	int dma_if_intr_sts;
