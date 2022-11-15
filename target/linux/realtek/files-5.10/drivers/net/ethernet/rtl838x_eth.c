@@ -167,13 +167,13 @@ static void rtl93xx_header_vlan_set(struct p_hdr *h, int vlan)
 	h->cpu_tag[3] |= (vlan & 0xff) << 8;
 }
 
-struct rtl838x_rx_q {
+struct rtnc_rx_q {
 	int id;
-	struct rtl838x_eth_priv *priv;
+	struct rtnc_priv *priv;
 	struct napi_struct napi;
 };
 
-struct rtl838x_eth_priv {
+struct rtnc_priv {
 	struct net_device *netdev;
 	struct platform_device *pdev;
 	dma_addr_t	ring_dma;
@@ -186,7 +186,7 @@ struct rtl838x_eth_priv {
 	char		*txspace;
 	spinlock_t	lock;
 	struct mii_bus	*mii_bus;
-	struct rtl838x_rx_q rx_qs[MAX_RXRINGS];
+	struct rtnc_rx_q rx_qs[MAX_RXRINGS];
 	struct phylink *phylink;
 	struct phylink_config phylink_config;
 	u16 id;
@@ -204,7 +204,7 @@ struct rtl838x_eth_priv {
 	phy_interface_t interfaces[MAX_PORTS];
 };
 
-extern int rtl838x_phy_init(struct rtl838x_eth_priv *priv);
+extern int rtl838x_phy_init(struct rtnc_priv *priv);
 extern int rtl838x_read_sds_phy(int phy_addr, int phy_reg);
 extern int rtl839x_read_sds_phy(int phy_addr, int phy_reg);
 extern int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v);
@@ -256,7 +256,7 @@ void rtl931x_update_cntr(int r, int released)
 	sw_w32(v, reg);
 }
 
-struct dsa_tag {
+struct rtnc_dsa_tag {
 	u8	reason;
 	u8	queue;
 	u16	port;
@@ -265,7 +265,7 @@ struct dsa_tag {
 	bool	crc_error;
 };
 
-bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+bool rtl838x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[4] & 0xf;
@@ -282,7 +282,7 @@ bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+bool rtl839x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[5] & 0x1f;
@@ -300,7 +300,7 @@ bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-bool rtl930x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+bool rtl930x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
 {
 	t->reason = h->cpu_tag[7] & 0x3f;
 	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
@@ -316,7 +316,7 @@ bool rtl930x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+bool rtl931x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
 {
 	t->reason = h->cpu_tag[7] & 0x3f;
 	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
@@ -337,7 +337,7 @@ bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
  * Discard the RX ring-buffers, called as part of the net-ISR
  * when the buffer runs over
  */
-static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
+static void rtnc_rb_cleanup(struct rtnc_priv *priv, int status)
 {
 	int r, idx;
 	u32	*last;
@@ -375,7 +375,7 @@ struct fdb_update_work {
 	u64 macs[NOTIFY_EVENTS + 1];
 };
 
-void rtl838x_fdb_sync(struct work_struct *work)
+void rtnc_fdb_sync(struct work_struct *work)
 {
 	const struct fdb_update_work *uw =
 		container_of(work, struct fdb_update_work, work);
@@ -398,7 +398,7 @@ void rtl838x_fdb_sync(struct work_struct *work)
 	kfree(work);
 }
 
-static void rtl839x_l2_notification_handler(struct rtl838x_eth_priv *priv)
+static void rtl839x_l2_notification_handler(struct rtnc_priv *priv)
 {
 	struct notify_b *nb = priv->notify;
 	u32 e = priv->lastEvent;
@@ -413,7 +413,7 @@ static void rtl839x_l2_notification_handler(struct rtl838x_eth_priv *priv)
 			pr_err("Out of memory: %s", __func__);
 			return;
 		}
-		INIT_WORK(&w->work, rtl838x_fdb_sync);
+		INIT_WORK(&w->work, rtnc_fdb_sync);
 
 		for (i = 0; i < NOTIFY_EVENTS; i++) {
 			event = &nb->blocks[e].events[i];
@@ -439,7 +439,7 @@ static void rtl839x_l2_notification_handler(struct rtl838x_eth_priv *priv)
 static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 	u32 status = sw_r32(priv->r->dma_if_intr_sts);
 	int i;
 
@@ -479,7 +479,7 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 	u32 status_rx_r = sw_r32(priv->r->dma_if_intr_rx_runout_sts);
 	u32 status_rx = sw_r32(priv->r->dma_if_intr_rx_done_sts);
 	u32 status_tx = sw_r32(priv->r->dma_if_intr_tx_done_sts);
@@ -514,7 +514,7 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 		pr_debug("RX buffer overrun: status %x, mask: %x\n",
 			 status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
 		sw_w32(status_rx_r, priv->r->dma_if_intr_rx_runout_sts);
-		rtl838x_rb_cleanup(priv, status_rx_r);
+		rtnc_rb_cleanup(priv, status_rx_r);
 	}
 
 	return IRQ_HANDLED;
@@ -632,7 +632,7 @@ static const struct rtl838x_eth_reg rtl931x_reg = {
 	.decode_tag = rtl931x_decode_tag,
 };
 
-static void rtnc_hw_reset(struct rtl838x_eth_priv *priv)
+static void rtnc_hw_reset(struct rtnc_priv *priv)
 {
 	u32 int_saved, nbuf;
 	u32 reset_mask;
@@ -708,7 +708,7 @@ static void rtnc_hw_reset(struct rtl838x_eth_priv *priv)
 	}
 }
 
-static void rtnc_hw_ring_setup(struct rtl838x_eth_priv *priv)
+static void rtnc_hw_ring_setup(struct rtnc_priv *priv)
 {
 	int i;
 	struct ring_b *ring = priv->ring;
@@ -720,7 +720,7 @@ static void rtnc_hw_ring_setup(struct rtl838x_eth_priv *priv)
 		sw_w32(KSEG1ADDR(&ring->tx_r[i]), priv->r->dma_tx_base + i * 4);
 }
 
-static void rtl838x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
+static void rtl838x_hw_en_rxtx(struct rtnc_priv *priv)
 {
 	/* Disable Head of Line features for all RX rings */
 	sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
@@ -747,7 +747,7 @@ static void rtl838x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	sw_w32_mask(0, BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
 }
 
-static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
+static void rtl839x_hw_en_rxtx(struct rtnc_priv *priv)
 {
 	/* Setup CPU-Port: RX Buffer */
 	sw_w32(0x0000c808, priv->r->dma_if_ctrl);
@@ -771,7 +771,7 @@ static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	sw_w32_mask(0, 3, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 }
 
-static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
+static void rtl93xx_hw_en_rxtx(struct rtnc_priv *priv)
 {
 	int i, pos;
 	u32 v;
@@ -810,7 +810,7 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 		sw_w32(0x2a1d, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 }
 
-static void rtnc_setup_ring_buffer(struct rtl838x_eth_priv *priv)
+static void rtnc_setup_ring_buffer(struct rtnc_priv *priv)
 {
 	int i, j;
 	char *buf;
@@ -844,7 +844,7 @@ static void rtnc_setup_ring_buffer(struct rtl838x_eth_priv *priv)
 	}
 }
 
-static void rtl839x_setup_notify_ring_buffer(struct rtl838x_eth_priv *priv)
+static void rtl839x_setup_notify_ring_buffer(struct rtnc_priv *priv)
 {
 	int i;
 	struct notify_b *b = priv->notify;
@@ -867,7 +867,7 @@ static void rtl839x_setup_notify_ring_buffer(struct rtl838x_eth_priv *priv)
 static int rtnc_ndo_open(struct net_device *ndev)
 {
 	unsigned long flags;
-	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
+	struct rtnc_priv *priv = netdev_priv(ndev);
 	int i;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
@@ -935,7 +935,7 @@ static int rtnc_ndo_open(struct net_device *ndev)
 	return 0;
 }
 
-static void rtnc_hw_stop(struct rtl838x_eth_priv *priv)
+static void rtnc_hw_stop(struct rtnc_priv *priv)
 {
 	u32 force_mac = priv->family_id == RTL8380_FAMILY_ID ? 0x6192C : 0x75;
 	u32 clear_irq = priv->family_id == RTL8380_FAMILY_ID ? 0x000fffff : 0x007fffff;
@@ -1003,7 +1003,7 @@ static int rtnc_ndo_stop(struct net_device *ndev)
 {
 	unsigned long flags;
 	int i;
-	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
+	struct rtnc_priv *priv = netdev_priv(ndev);
 
 	pr_info("in %s\n", __func__);
 
@@ -1104,7 +1104,7 @@ static void rtl931x_eth_set_multicast_list(struct net_device *ndev)
 static void rtnc_ndo_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 {
 	unsigned long flags;
-	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
+	struct rtnc_priv *priv = netdev_priv(ndev);
 
 	pr_warn("%s\n", __func__);
 	spin_lock_irqsave(&priv->lock, flags);
@@ -1119,7 +1119,7 @@ static void rtnc_ndo_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 {
 	int len, i;
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->ring;
 	uint32_t val;
 	int ret;
@@ -1237,7 +1237,7 @@ u16 rtl93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 
 static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 {
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->ring;
 	struct sk_buff *skb;
 	unsigned long flags;
@@ -1245,7 +1245,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	unsigned int val;
 	struct p_hdr *h;
 	bool dsa = netdev_uses_dsa(dev);
-	struct dsa_tag tag;
+	struct rtnc_dsa_tag tag;
 
 	pr_debug("---------------------------------------------------------- RX - %d\n", r);
 	spin_lock_irqsave(&priv->lock, flags);
@@ -1328,8 +1328,8 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 
 static int rtnc_poll_rx(struct napi_struct *napi, int budget)
 {
-	struct rtl838x_rx_q *rx_q = container_of(napi, struct rtl838x_rx_q, napi);
-	struct rtl838x_eth_priv *priv = rx_q->priv;
+	struct rtnc_rx_q *rx_q = container_of(napi, struct rtnc_rx_q, napi);
+	struct rtnc_priv *priv = rx_q->priv;
 	int work_done = 0;
 	int r = rx_q->id;
 	int work;
@@ -1414,7 +1414,7 @@ static void rtl838x_mac_config(struct phylink_config *config,
 static void rtl838x_mac_an_restart(struct phylink_config *config)
 {
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 
 	/* This works only on RTL838x chips */
 	if (priv->family_id != RTL8380_FAMILY_ID)
@@ -1432,7 +1432,7 @@ static void rtl838x_mac_pcs_get_state(struct phylink_config *config,
 {
 	u32 speed;
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 	int port = priv->cpu_port;
 
 	pr_info("In %s\n", __func__);
@@ -1478,7 +1478,7 @@ static void rtl838x_mac_link_down(struct phylink_config *config,
 				  phy_interface_t interface)
 {
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 
 	pr_debug("In %s\n", __func__);
 	/* Stop TX/RX to port */
@@ -1491,7 +1491,7 @@ static void rtl838x_mac_link_up(struct phylink_config *config,
 			    bool tx_pause, bool rx_pause)
 {
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 
 	pr_debug("In %s\n", __func__);
 	/* Restart TX/RX to port */
@@ -1500,7 +1500,7 @@ static void rtl838x_mac_link_up(struct phylink_config *config,
 
 static void rtl838x_set_mac_hw(struct net_device *dev, u8 *mac)
 {
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 	unsigned long flags;
 
 	spin_lock_irqsave(&priv->lock, flags);
@@ -1523,7 +1523,7 @@ static void rtl838x_set_mac_hw(struct net_device *dev, u8 *mac)
 
 static int rtl838x_set_mac_address(struct net_device *dev, void *p)
 {
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 	const struct sockaddr *addr = p;
 	u8 *mac = (u8 *) (addr->sa_data);
 
@@ -1537,13 +1537,13 @@ static int rtl838x_set_mac_address(struct net_device *dev, void *p)
 	return 0;
 }
 
-static int rtl8390_init_mac(struct rtl838x_eth_priv *priv)
+static int rtl8390_init_mac(struct rtnc_priv *priv)
 {
 	// We will need to set-up EEE and the egress-rate limitation
 	return 0;
 }
 
-static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
+static int rtl8380_init_mac(struct rtnc_priv *priv)
 {
 	int i;
 
@@ -1574,7 +1574,7 @@ static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 static int rtl838x_get_link_ksettings(struct net_device *ndev,
 				      struct ethtool_link_ksettings *cmd)
 {
-	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
+	struct rtnc_priv *priv = netdev_priv(ndev);
 
 	pr_debug("%s called\n", __func__);
 	return phylink_ethtool_ksettings_get(priv->phylink, cmd);
@@ -1583,7 +1583,7 @@ static int rtl838x_get_link_ksettings(struct net_device *ndev,
 static int rtl838x_set_link_ksettings(struct net_device *ndev,
 				      const struct ethtool_link_ksettings *cmd)
 {
-	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
+	struct rtnc_priv *priv = netdev_priv(ndev);
 
 	pr_debug("%s called\n", __func__);
 	return phylink_ethtool_ksettings_set(priv->phylink, cmd);
@@ -1593,7 +1593,7 @@ static int rtl838x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, in
 {
 	u32 val;
 	int err;
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtnc_priv *priv = bus->priv;
 
 	if (mii_id >= 24 && mii_id <= 27 && priv->id == RTL8380_SOC_ID)
 		return rtl838x_read_sds_phy(mii_id, regnum);
@@ -1623,7 +1623,7 @@ static int rtl839x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, in
 {
 	u32 val;
 	int err;
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtnc_priv *priv = bus->priv;
 
 	if (mii_id >= 48 && mii_id <= 49 && priv->id == RTL8393_SOC_ID)
 		return rtl839x_read_sds_phy(mii_id, regnum);
@@ -1653,7 +1653,7 @@ static int rtl930x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, in
 {
 	u32 val;
 	int err;
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtnc_priv *priv = bus->priv;
 
 	if (priv->phy_is_internal[mii_id])
 		return rtl930x_read_sds_phy(priv->sds_id[mii_id], page, regnum);
@@ -1683,7 +1683,7 @@ static int rtl931x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, in
 {
 	u32 val;
 	int err, v;
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtnc_priv *priv = bus->priv;
 
 	pr_debug("%s: In here, port %d\n", __func__, mii_id);
 	if (priv->phy_is_internal[mii_id]) {
@@ -1722,7 +1722,7 @@ static int rtl838x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
 				    int regnum, u16 value)
 {
 	u32 offset = 0;
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtnc_priv *priv = bus->priv;
 	int err;
 
 	if (mii_id >= 24 && mii_id <= 27 && priv->id == RTL8380_SOC_ID) {
@@ -1755,7 +1755,7 @@ static int rtl838x_mdio_write(struct mii_bus *bus, int mii_id,
 static int rtl839x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
 				    int regnum, u16 value)
 {
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtnc_priv *priv = bus->priv;
 	int err;
 
 	if (mii_id >= 48 && mii_id <= 49 && priv->id == RTL8393_SOC_ID)
@@ -1785,7 +1785,7 @@ static int rtl839x_mdio_write(struct mii_bus *bus, int mii_id,
 static int rtl930x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
 				    int regnum, u16 value)
 {
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtnc_priv *priv = bus->priv;
 	int err;
 
 	if (priv->phy_is_internal[mii_id])
@@ -1809,7 +1809,7 @@ static int rtl930x_mdio_write(struct mii_bus *bus, int mii_id,
 static int rtl931x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
 				    int regnum, u16 value)
 {
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtnc_priv *priv = bus->priv;
 	int err;
 
 	if (priv->phy_is_internal[mii_id])
@@ -1872,7 +1872,7 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 {
 	int i;
 	int pos;
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtnc_priv *priv = bus->priv;
 	u32 c45_mask = 0;
 	u32 poll_sel[2];
 	u32 poll_ctrl = 0;
@@ -1977,7 +1977,7 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 {
 	int i;
 	int pos;
-	struct rtl838x_eth_priv *priv = bus->priv;
+	struct rtnc_priv *priv = bus->priv;
 	u32 c45_mask = 0;
 	u32 poll_sel[4];
 	u32 poll_ctrl = 0;
@@ -2032,7 +2032,7 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 	return 0;
 }
 
-static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
+static int rtl931x_chip_init(struct rtnc_priv *priv)
 {
 	pr_info("In %s\n", __func__);
 
@@ -2068,7 +2068,7 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 	return 0;
 }
 
-static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
+static int rtl838x_mdio_init(struct rtnc_priv *priv)
 {
 	struct device_node *mii_np, *dn;
 	u32 pn;
@@ -2190,7 +2190,7 @@ err_put_node:
 	return ret;
 }
 
-static int rtl838x_mdio_remove(struct rtl838x_eth_priv *priv)
+static int rtl838x_mdio_remove(struct rtnc_priv *priv)
 {
 	pr_debug("%s called\n", __func__);
 	if (!priv->mii_bus)
@@ -2210,7 +2210,7 @@ static netdev_features_t rtl838x_fix_features(struct net_device *dev,
 
 static int rtl83xx_set_features(struct net_device *dev, netdev_features_t features)
 {
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 
 	if ((features ^ dev->features) & NETIF_F_RXCSUM) {
 		if (!(features & NETIF_F_RXCSUM))
@@ -2224,7 +2224,7 @@ static int rtl83xx_set_features(struct net_device *dev, netdev_features_t featur
 
 static int rtl93xx_set_features(struct net_device *dev, netdev_features_t features)
 {
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 
 	if ((features ^ dev->features) & NETIF_F_RXCSUM) {
 		if (!(features & NETIF_F_RXCSUM))
@@ -2362,7 +2362,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
-	struct rtl838x_eth_priv *priv;
+	struct rtnc_priv *priv;
 	struct resource *res, *mem;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
@@ -2392,7 +2392,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 	rxringlen = MAX_ENTRIES / rxrings;
 	rxringlen = rxringlen > MAX_RXLEN ? MAX_RXLEN : rxringlen;
 
-	dev = alloc_etherdev_mqs(sizeof(struct rtl838x_eth_priv), TXRINGS, rxrings);
+	dev = alloc_etherdev_mqs(sizeof(struct rtnc_priv), TXRINGS, rxrings);
 	if (!dev) {
 		err = -ENOMEM;
 		goto err_free;
@@ -2566,7 +2566,7 @@ err_free:
 static int rtnc_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
-	struct rtl838x_eth_priv *priv = netdev_priv(dev);
+	struct rtnc_priv *priv = netdev_priv(dev);
 	int i;
 
 	if (dev) {

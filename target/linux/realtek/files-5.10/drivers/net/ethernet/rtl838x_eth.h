@@ -483,7 +483,7 @@ inline u32 rtl931x_get_mac_tx_pause_sts(int p)
 }
 
 struct p_hdr;
-struct dsa_tag;
+struct rtnc_dsa_tag;
 
 struct rtl838x_eth_reg {
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
@@ -515,7 +515,7 @@ struct rtl838x_eth_reg {
 	int l2_tbl_flush_ctrl;
 	void (*update_cntr)(int r, int work_done);
 	void (*create_tx_header)(struct p_hdr *h, unsigned int dest_port, int prio);
-	bool (*decode_tag)(struct p_hdr *h, struct dsa_tag *tag);
+	bool (*decode_tag)(struct p_hdr *h, struct rtnc_dsa_tag *tag);
 };
 
 int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
