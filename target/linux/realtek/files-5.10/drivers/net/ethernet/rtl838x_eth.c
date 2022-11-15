@@ -632,7 +632,7 @@ static const struct rtl838x_eth_reg rtl931x_reg = {
 	.decode_tag = rtl931x_decode_tag,
 };
 
-static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
+static void rtnc_hw_reset(struct rtl838x_eth_priv *priv)
 {
 	u32 int_saved, nbuf;
 	u32 reset_mask;
@@ -708,7 +708,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 	}
 }
 
-static void rtl838x_hw_ring_setup(struct rtl838x_eth_priv *priv)
+static void rtnc_hw_ring_setup(struct rtl838x_eth_priv *priv)
 {
 	int i;
 	struct ring_b *ring = priv->ring;
@@ -810,7 +810,7 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 		sw_w32(0x2a1d, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 }
 
-static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv)
+static void rtnc_setup_ring_buffer(struct rtl838x_eth_priv *priv)
 {
 	int i, j;
 	char *buf;
@@ -864,7 +864,7 @@ static void rtl839x_setup_notify_ring_buffer(struct rtl838x_eth_priv *priv)
 	priv->lastEvent = 0;
 }
 
-static int rtl838x_eth_open(struct net_device *ndev)
+static int rtnc_ndo_open(struct net_device *ndev)
 {
 	unsigned long flags;
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
@@ -874,8 +874,8 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		__func__, priv->rxrings, priv->rxringlen, TXRINGS, TXRINGLEN);
 
 	spin_lock_irqsave(&priv->lock, flags);
-	rtl838x_hw_reset(priv);
-	rtl838x_setup_ring_buffer(priv);
+	rtnc_hw_reset(priv);
+	rtnc_setup_ring_buffer(priv);
 	if (priv->family_id == RTL8390_FAMILY_ID) {
 		rtl839x_setup_notify_ring_buffer(priv);
 		/* Make sure the ring structure is visible to the ASIC */
@@ -883,7 +883,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		flush_cache_all();
 	}
 
-	rtl838x_hw_ring_setup(priv);
+	rtnc_hw_ring_setup(priv);
 	phylink_start(priv->phylink);
 
 	for (i = 0; i < priv->rxrings; i++)
@@ -935,7 +935,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	return 0;
 }
 
-static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
+static void rtnc_hw_stop(struct rtl838x_eth_priv *priv)
 {
 	u32 force_mac = priv->family_id == RTL8380_FAMILY_ID ? 0x6192C : 0x75;
 	u32 clear_irq = priv->family_id == RTL8380_FAMILY_ID ? 0x000fffff : 0x007fffff;
@@ -999,7 +999,7 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 	mdelay(200);
 }
 
-static int rtl838x_eth_stop(struct net_device *ndev)
+static int rtnc_ndo_stop(struct net_device *ndev)
 {
 	unsigned long flags;
 	int i;
@@ -1008,7 +1008,7 @@ static int rtl838x_eth_stop(struct net_device *ndev)
 	pr_info("in %s\n", __func__);
 
 	phylink_stop(priv->phylink);
-	rtl838x_hw_stop(priv);
+	rtnc_hw_stop(priv);
 
 	for (i = 0; i < priv->rxrings; i++)
 		napi_disable(&priv->rx_qs[i].napi);
@@ -1101,15 +1101,15 @@ static void rtl931x_eth_set_multicast_list(struct net_device *ndev)
 	}
 }
 
-static void rtl838x_eth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
+static void rtnc_ndo_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 {
 	unsigned long flags;
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
 	pr_warn("%s\n", __func__);
 	spin_lock_irqsave(&priv->lock, flags);
-	rtl838x_hw_stop(priv);
-	rtl838x_hw_ring_setup(priv);
+	rtnc_hw_stop(priv);
+	rtnc_hw_ring_setup(priv);
 	rtl838x_hw_en_rxtx(priv);
 	netif_trans_update(ndev);
 	netif_start_queue(ndev);
@@ -1326,7 +1326,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	return work_done;
 }
 
-static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
+static int rtnc_poll_rx(struct napi_struct *napi, int budget)
 {
 	struct rtl838x_rx_q *rx_q = container_of(napi, struct rtl838x_rx_q, napi);
 	struct rtl838x_eth_priv *priv = rx_q->priv;
@@ -2237,56 +2237,56 @@ static int rtl93xx_set_features(struct net_device *dev, netdev_features_t featur
 }
 
 static const struct net_device_ops rtl838x_eth_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rtnc_ndo_open,
+	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
 	.ndo_select_queue = rtl83xx_pick_tx_queue,
 	.ndo_set_mac_address = rtl838x_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl838x_eth_set_multicast_list,
-	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
+	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
 	.ndo_set_features = rtl83xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
 static const struct net_device_ops rtl839x_eth_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rtnc_ndo_open,
+	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
 	.ndo_select_queue = rtl83xx_pick_tx_queue,
 	.ndo_set_mac_address = rtl838x_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl839x_eth_set_multicast_list,
-	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
+	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
 	.ndo_set_features = rtl83xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
 static const struct net_device_ops rtl930x_eth_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rtnc_ndo_open,
+	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
 	.ndo_select_queue = rtl93xx_pick_tx_queue,
 	.ndo_set_mac_address = rtl838x_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl930x_eth_set_multicast_list,
-	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
+	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
 	.ndo_set_features = rtl93xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
 static const struct net_device_ops rtl931x_eth_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rtnc_ndo_open,
+	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
 	.ndo_select_queue = rtl93xx_pick_tx_queue,
 	.ndo_set_mac_address = rtl838x_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl931x_eth_set_multicast_list,
-	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
+	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
 	.ndo_set_features = rtl93xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
 };
@@ -2358,7 +2358,7 @@ static void get_soc_info(int *soc_id, int *soc_family)
 	*soc_family = 1;
 }
 
-static int __init rtl838x_eth_probe(struct platform_device *pdev)
+static int __init rtnc_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
@@ -2531,7 +2531,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	for (i = 0; i < priv->rxrings; i++) {
 		priv->rx_qs[i].id = i;
 		priv->rx_qs[i].priv = priv;
-		netif_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx, NAPI_POLL_WEIGHT);
+		netif_napi_add(dev, &priv->rx_qs[i].napi, rtnc_poll_rx, NAPI_POLL_WEIGHT);
 	}
 
 	platform_set_drvdata(pdev, dev);
@@ -2563,7 +2563,7 @@ err_free:
 	return err;
 }
 
-static int rtl838x_eth_remove(struct platform_device *pdev)
+static int rtnc_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
@@ -2572,7 +2572,7 @@ static int rtl838x_eth_remove(struct platform_device *pdev)
 	if (dev) {
 		pr_info("Removing platform driver for rtl838x-eth\n");
 		rtl838x_mdio_remove(priv);
-		rtl838x_hw_stop(priv);
+		rtnc_hw_stop(priv);
 
 		netif_tx_stop_all_queues(dev);
 
@@ -2585,23 +2585,23 @@ static int rtl838x_eth_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static const struct of_device_id rtl838x_eth_of_ids[] = {
+static const struct of_device_id rtnc_of_ids[] = {
 	{ .compatible = "realtek,rtl838x-eth"},
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, rtl838x_eth_of_ids);
+MODULE_DEVICE_TABLE(of, rtnc_of_ids);
 
-static struct platform_driver rtl838x_eth_driver = {
-	.probe = rtl838x_eth_probe,
-	.remove = rtl838x_eth_remove,
+static struct platform_driver rtnc_driver = {
+	.probe = rtnc_probe,
+	.remove = rtnc_remove,
 	.driver = {
 		.name = "rtl838x-eth",
 		.pm = NULL,
-		.of_match_table = rtl838x_eth_of_ids,
+		.of_match_table = rtnc_of_ids,
 	},
 };
 
-module_platform_driver(rtl838x_eth_driver);
+module_platform_driver(rtnc_driver);
 
 MODULE_AUTHOR("B. Koblitz");
 MODULE_DESCRIPTION("RTL838X SoC Ethernet Driver");
