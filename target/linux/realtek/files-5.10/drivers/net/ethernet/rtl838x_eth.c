@@ -31,25 +31,24 @@
  * for an RX ring, MAX_ENTRIES the maximum number of entries
  * available in total for all queues.
  */
-#define MAX_RXRINGS	32
-#define MAX_RXLEN	300
-#define MAX_ENTRIES	(300 * 8)
-#define TXRINGS		2
-#define TXRINGLEN	160
-#define NOTIFY_EVENTS	10
-#define NOTIFY_BLOCKS	10
-#define TX_EN		0x8
-#define RX_EN		0x4
-#define TX_EN_93XX	0x20
-#define RX_EN_93XX	0x10
-#define TX_DO		0x2
-#define R_OWN_CPU	0x0
-#define R_OWN_ETH	0x1
-#define R_WRAP		0x2
-#define MAX_PORTS	57
-#define MAX_SMI_BUSSES	4
-
-#define RING_BUFFER	1600
+#define RTNC_MAX_RXRINGS	32
+#define RTNC_MAX_RXLEN		300
+#define RTNC_MAX_ENTRIES	(300 * 8)
+#define RTNC_TXRINGS		2
+#define RTNC_TXRINGLEN		160
+#define RTNC_NOTIFY_EVENTS	10
+#define RTNC_NOTIFY_BLOCKS	10
+#define RTNC_TX_EN_83XX		0x8
+#define RTNC_RX_EN_83XX		0x4
+#define RTNC_TX_EN_93XX		0x20
+#define RTNC_RX_EN_93XX		0x10
+#define RTNC_TX_DO		0x2
+#define RTNC_OWN_CPU		0x0
+#define RTNC_OWN_ETH		0x1
+#define RTNC_WRAP		0x2
+#define RTNC_MAX_PORTS		57
+#define RTNC_MAX_SMI_BUSSES	4
+#define RTNC_RING_BUFFER	1600
 
 struct rtnc_hdr {
 	uint8_t		*buf;
@@ -71,22 +70,22 @@ struct n_event {
 } __packed __aligned(1);
 
 struct ring_b {
-	uint32_t	rx_r[MAX_RXRINGS][MAX_RXLEN];
-	uint32_t	tx_r[TXRINGS][TXRINGLEN];
-	struct	rtnc_hdr	rx_header[MAX_RXRINGS][MAX_RXLEN];
-	struct	rtnc_hdr	tx_header[TXRINGS][TXRINGLEN];
-	uint32_t	c_rx[MAX_RXRINGS];
-	uint32_t	c_tx[TXRINGS];
+	uint32_t	rx_r[RTNC_MAX_RXRINGS][RTNC_MAX_RXLEN];
+	uint32_t	tx_r[RTNC_TXRINGS][RTNC_TXRINGLEN];
+	struct rtnc_hdr	rx_header[RTNC_MAX_RXRINGS][RTNC_MAX_RXLEN];
+	struct rtnc_hdr	tx_header[RTNC_TXRINGS][RTNC_TXRINGLEN];
+	uint32_t	c_rx[RTNC_MAX_RXRINGS];
+	uint32_t	c_tx[RTNC_TXRINGS];
 };
 
 struct notify_block {
-	struct n_event	events[NOTIFY_EVENTS];
+	struct n_event	events[RTNC_NOTIFY_EVENTS];
 };
 
 struct notify_b {
-	struct notify_block	blocks[NOTIFY_BLOCKS];
+	struct notify_block	blocks[RTNC_NOTIFY_BLOCKS];
 	u32			reserved1[8];
-	u32			ring[NOTIFY_BLOCKS];
+	u32			ring[RTNC_NOTIFY_BLOCKS];
 	u32			reserved2[8];
 };
 
@@ -186,7 +185,7 @@ struct rtnc_priv {
 	char		*txspace;
 	spinlock_t	lock;
 	struct mii_bus	*mii_bus;
-	struct rtnc_rx_q rx_qs[MAX_RXRINGS];
+	struct rtnc_rx_q rx_qs[RTNC_MAX_RXRINGS];
 	struct phylink *phylink;
 	struct phylink_config phylink_config;
 	u16 id;
@@ -196,12 +195,12 @@ struct rtnc_priv {
 	u32 lastEvent;
 	u16 rxrings;
 	u16 rxringlen;
-	u8 smi_bus[MAX_PORTS];
-	u8 smi_addr[MAX_PORTS];
-	u32 sds_id[MAX_PORTS];
-	bool smi_bus_isc45[MAX_SMI_BUSSES];
-	bool phy_is_internal[MAX_PORTS];
-	phy_interface_t interfaces[MAX_PORTS];
+	u8 smi_bus[RTNC_MAX_PORTS];
+	u8 smi_addr[RTNC_MAX_PORTS];
+	u32 sds_id[RTNC_MAX_PORTS];
+	bool smi_bus_isc45[RTNC_MAX_SMI_BUSSES];
+	bool phy_is_internal[RTNC_MAX_PORTS];
+	phy_interface_t interfaces[RTNC_MAX_PORTS];
 };
 
 extern int rtl838x_phy_init(struct rtnc_priv *priv);
@@ -355,14 +354,14 @@ static void rtnc_rb_cleanup(struct rtnc_priv *priv, int status)
 			h = &ring->rx_header[r][idx];
 			memset(h, 0, sizeof(struct rtnc_hdr));
 			h->buf = (u8 *)KSEG1ADDR(priv->rxspace
-					+ r * priv->rxringlen * RING_BUFFER
-					+ idx * RING_BUFFER);
-			h->size = RING_BUFFER;
+					+ r * priv->rxringlen * RTNC_RING_BUFFER
+					+ idx * RTNC_RING_BUFFER);
+			h->size = RTNC_RING_BUFFER;
 			/* make sure the header is visible to the ASIC */
 			mb();
 
 			ring->rx_r[r][idx] = KSEG1ADDR(h) |
-				(idx == (priv->rxringlen - 1) ? R_OWN_ETH | R_WRAP : R_OWN_ETH);
+				(idx == (priv->rxringlen - 1) ? RTNC_OWN_ETH | RTNC_WRAP : RTNC_OWN_ETH);
 			idx = (idx + 1) % priv->rxringlen;
 		} while (&ring->rx_r[r][idx] != last);
 		ring->c_rx[r] = idx;
@@ -372,7 +371,7 @@ static void rtnc_rb_cleanup(struct rtnc_priv *priv, int status)
 struct fdb_update_work {
 	struct work_struct work;
 	struct net_device *ndev;
-	u64 macs[NOTIFY_EVENTS + 1];
+	u64 macs[RTNC_NOTIFY_EVENTS + 1];
 };
 
 void rtnc_fdb_sync(struct work_struct *work)
@@ -415,7 +414,7 @@ static void rtnc_839x_l2_notification_handler(struct rtnc_priv *priv)
 		}
 		INIT_WORK(&w->work, rtnc_fdb_sync);
 
-		for (i = 0; i < NOTIFY_EVENTS; i++) {
+		for (i = 0; i < RTNC_NOTIFY_EVENTS; i++) {
 			event = &nb->blocks[e].events[i];
 			if (!event->valid)
 				continue;
@@ -427,8 +426,8 @@ static void rtnc_839x_l2_notification_handler(struct rtnc_priv *priv)
 		}
 
 		/* Hand the ring entry back to the switch */
-		nb->ring[e] = nb->ring[e] | R_OWN_ETH;
-		e = (e + 1) % NOTIFY_BLOCKS;
+		nb->ring[e] = nb->ring[e] | RTNC_OWN_ETH;
+		e = (e + 1) % RTNC_NOTIFY_BLOCKS;
 
 		w->macs[i] = 0ULL;
 		schedule_work(&w->work);
@@ -716,7 +715,7 @@ static void rtnc_hw_ring_setup(struct rtnc_priv *priv)
 	for (i = 0; i < priv->rxrings; i++)
 		sw_w32(KSEG1ADDR(&ring->rx_r[i]), priv->r->dma_rx_base + i * 4);
 
-	for (i = 0; i < TXRINGS; i++)
+	for (i = 0; i < RTNC_TXRINGS; i++)
 		sw_w32(KSEG1ADDR(&ring->tx_r[i]), priv->r->dma_tx_base + i * 4);
 }
 
@@ -732,7 +731,7 @@ static void rtnc_838x_hw_en_rxtx(struct rtnc_priv *priv)
 	sw_w32(0xffff, priv->r->dma_if_intr_msk);
 
 	/* Enable DMA, engine expects empty FCS field */
-	sw_w32_mask(0, RX_EN | TX_EN, priv->r->dma_if_ctrl);
+	sw_w32_mask(0, RTNC_RX_EN_83XX | RTNC_TX_EN_83XX, priv->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port */
 	sw_w32_mask(0x0, 0x3, priv->r->mac_port_ctrl(priv->cpu_port));
@@ -756,7 +755,7 @@ static void rtnc_839x_hw_en_rxtx(struct rtnc_priv *priv)
 	sw_w32(0x0070ffff, priv->r->dma_if_intr_msk); // Notify IRQ!
 
 	/* Enable DMA */
-	sw_w32_mask(0, RX_EN | TX_EN, priv->r->dma_if_ctrl);
+	sw_w32_mask(0, RTNC_RX_EN_83XX | RTNC_TX_EN_83XX, priv->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	sw_w32_mask(0x0, 0x3 | BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
@@ -794,7 +793,7 @@ static void rtnc_93xx_hw_en_rxtx(struct rtnc_priv *priv)
 	sw_w32(0x0000000f, priv->r->dma_if_intr_tx_done_msk);
 
 	/* Enable DMA */
-	sw_w32_mask(0, RX_EN_93XX | TX_EN_93XX, priv->r->dma_if_ctrl);
+	sw_w32_mask(0, RTNC_RX_EN_93XX | RTNC_TX_EN_93XX, priv->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	sw_w32_mask(0x0, 0x3 | BIT(4), priv->r->mac_port_ctrl(priv->cpu_port));
@@ -819,27 +818,27 @@ static void rtnc_setup_ring_buffer(struct rtnc_priv *priv)
 
 	buf = (u8 *)KSEG1ADDR(priv->rxspace);
 	for (i = 0; i < priv->rxrings; i++) {
-		for (j = 0; j < priv->rxringlen; j++, buf += RING_BUFFER) {
+		for (j = 0; j < priv->rxringlen; j++, buf += RTNC_RING_BUFFER) {
 			h = &ring->rx_header[i][j];
 			memset(h, 0, sizeof(struct rtnc_hdr));
 			h->buf = buf;
-			h->size = RING_BUFFER;
-			ring->rx_r[i][j] = KSEG1ADDR(h) | R_OWN_ETH;
+			h->size = RTNC_RING_BUFFER;
+			ring->rx_r[i][j] = KSEG1ADDR(h) | RTNC_OWN_ETH;
 		}
-		ring->rx_r[i][j - 1] |= R_WRAP;
+		ring->rx_r[i][j - 1] |= RTNC_WRAP;
 		ring->c_rx[i] = 0;
 	}
 
 	buf = (u8 *)KSEG1ADDR(priv->txspace);
-	for (i = 0; i < TXRINGS; i++) {
-		for (j = 0; j < TXRINGLEN; j++, buf += RING_BUFFER) {
+	for (i = 0; i < RTNC_TXRINGS; i++) {
+		for (j = 0; j < RTNC_TXRINGLEN; j++, buf += RTNC_RING_BUFFER) {
 			h = &ring->tx_header[i][j];
 			memset(h, 0, sizeof(struct rtnc_hdr));
 			h->buf = buf;
-			h->size = RING_BUFFER;
-			ring->tx_r[i][j] = KSEG1ADDR(h) | R_OWN_CPU;
+			h->size = RTNC_RING_BUFFER;
+			ring->tx_r[i][j] = KSEG1ADDR(h) | RTNC_OWN_CPU;
 		}
-		ring->tx_r[i][j - 1] |= R_WRAP;
+		ring->tx_r[i][j - 1] |= RTNC_WRAP;
 		ring->c_tx[i] = 0;
 	}
 }
@@ -849,8 +848,8 @@ static void rtnc_839x_setup_notify_ring_buffer(struct rtnc_priv *priv)
 	int i;
 	struct notify_b *b = priv->notify;
 
-	for (i = 0; i < NOTIFY_BLOCKS; i++)
-		b->ring[i] = KSEG1ADDR(&b->blocks[i]) | 1 | (i == (NOTIFY_BLOCKS - 1) ? R_WRAP : 0);
+	for (i = 0; i < RTNC_NOTIFY_BLOCKS; i++)
+		b->ring[i] = KSEG1ADDR(&b->blocks[i]) | 1 | (i == (RTNC_NOTIFY_BLOCKS - 1) ? RTNC_WRAP : 0);
 
 	sw_w32((u32) b->ring, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
 	sw_w32_mask(0x3ff << 2, 100 << 2, RTL839X_L2_NOTIFICATION_CTRL);
@@ -871,7 +870,7 @@ static int rtnc_ndo_open(struct net_device *ndev)
 	int i;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
-		__func__, priv->rxrings, priv->rxringlen, TXRINGS, TXRINGLEN);
+		__func__, priv->rxrings, priv->rxringlen, RTNC_TXRINGS, RTNC_TXRINGLEN);
 
 	spin_lock_irqsave(&priv->lock, flags);
 	rtnc_hw_reset(priv);
@@ -946,9 +945,9 @@ static void rtnc_hw_stop(struct rtnc_priv *priv)
 
 	/* Disable traffic */
 	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
-		sw_w32_mask(RX_EN_93XX | TX_EN_93XX, 0, priv->r->dma_if_ctrl);
+		sw_w32_mask(RTNC_RX_EN_93XX | RTNC_TX_EN_93XX, 0, priv->r->dma_if_ctrl);
 	else
-		sw_w32_mask(RX_EN | TX_EN, 0, priv->r->dma_if_ctrl);
+		sw_w32_mask(RTNC_RX_EN_83XX | RTNC_TX_EN_83XX, 0, priv->r->dma_if_ctrl);
 	mdelay(200); // Test, whether this is needed
 
 	/* Block all ports */
@@ -1126,7 +1125,7 @@ static int rtnc_ndo_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	unsigned long flags;
 	struct rtnc_hdr *h;
 	int dest_port = -1;
-	int q = skb_get_queue_mapping(skb) % TXRINGS;
+	int q = skb_get_queue_mapping(skb) % RTNC_TXRINGS;
 
 	if (q) // Check for high prio queue
 		pr_debug("SKB priority: %d\n", skb->priority);
@@ -1153,7 +1152,7 @@ static int rtnc_ndo_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	/* We can send this packet if CPU owns the descriptor */
-	if (!(ring->tx_r[q][ring->c_tx[q]] & R_OWN_ETH)) {
+	if (!(ring->tx_r[q][ring->c_tx[q]] & RTNC_OWN_ETH)) {
 
 		/* Set descriptor for tx */
 		h = &ring->tx_header[q][ring->c_tx[q]];
@@ -1174,7 +1173,7 @@ static int rtnc_ndo_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		wmb();
 
 		/* Hand over to switch */
-		ring->tx_r[q][ring->c_tx[q]] |= R_OWN_ETH;
+		ring->tx_r[q][ring->c_tx[q]] |= RTNC_OWN_ETH;
 
 		// Before starting TX, prevent a Lextra bus bug on RTL8380 SoCs
 		if (priv->family_id == RTL8380_FAMILY_ID) {
@@ -1194,13 +1193,13 @@ static int rtnc_ndo_start_xmit(struct sk_buff *skb, struct net_device *dev)
 			else
 				sw_w32_mask(0, BIT(3), priv->r->dma_if_ctrl);
 		} else {
-			sw_w32_mask(0, TX_DO, priv->r->dma_if_ctrl);
+			sw_w32_mask(0, RTNC_TX_DO, priv->r->dma_if_ctrl);
 		}
 
 		dev->stats.tx_packets++;
 		dev->stats.tx_bytes += len;
 		dev_kfree_skb(skb);
-		ring->c_tx[q] = (ring->c_tx[q] + 1) % TXRINGLEN;
+		ring->c_tx[q] = (ring->c_tx[q] + 1) % RTNC_TXRINGLEN;
 		ret = NETDEV_TX_OK;
 	} else {
 		dev_warn(&priv->pdev->dev, "Data is owned by switch\n");
@@ -1221,7 +1220,7 @@ u16 rtnc_83xx_ndo_select_queue(struct net_device *dev, struct sk_buff *skb,
 	static u8 last = 0;
 
 	last++;
-	return last % TXRINGS;
+	return last % RTNC_TXRINGS;
 }
 
 /*
@@ -1251,7 +1250,7 @@ static int rtnc_hw_receive(struct net_device *dev, int r, int budget)
 	spin_lock_irqsave(&priv->lock, flags);
 
 	idx = ring->c_rx[r];
-	while (!(ring->rx_r[r][idx] & R_OWN_ETH) && (work_done < budget)) {
+	while (!(ring->rx_r[r][idx] & RTNC_OWN_ETH) && (work_done < budget)) {
 
 		h = &ring->rx_header[r][idx];
 		len = h->len;
@@ -1313,7 +1312,7 @@ static int rtnc_hw_receive(struct net_device *dev, int r, int budget)
 		}
 
 		ring->rx_r[r][idx] = KSEG1ADDR(h) |
-			(idx == (priv->rxringlen - 1) ? R_OWN_ETH | R_WRAP : R_OWN_ETH);
+			(idx == (priv->rxringlen - 1) ? RTNC_OWN_ETH | RTNC_WRAP : RTNC_OWN_ETH);
 		idx = (idx + 1) % priv->rxringlen;
 	};
 
@@ -2150,7 +2149,7 @@ static int rtl838x_mdio_init(struct rtnc_priv *priv)
 			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
 		}
 
-		if (pn < MAX_PORTS) {
+		if (pn < RTNC_MAX_PORTS) {
 			priv->smi_bus[pn] = smi_addr[0];
 			priv->smi_addr[pn] = smi_addr[1];
 		} else {
@@ -2388,11 +2387,11 @@ static int __init rtnc_probe(struct platform_device *pdev)
 
 	rxrings = (soc_family == RTL8380_FAMILY_ID 
 			|| soc_family == RTL8390_FAMILY_ID) ? 8 : 32;
-	rxrings = rxrings > MAX_RXRINGS ? MAX_RXRINGS : rxrings;
-	rxringlen = MAX_ENTRIES / rxrings;
-	rxringlen = rxringlen > MAX_RXLEN ? MAX_RXLEN : rxringlen;
+	rxrings = rxrings > RTNC_MAX_RXRINGS ? RTNC_MAX_RXRINGS : rxrings;
+	rxringlen = RTNC_MAX_ENTRIES / rxrings;
+	rxringlen = rxringlen > RTNC_MAX_RXLEN ? RTNC_MAX_RXLEN : rxringlen;
 
-	dev = alloc_etherdev_mqs(sizeof(struct rtnc_priv), TXRINGS, rxrings);
+	dev = alloc_etherdev_mqs(sizeof(struct rtnc_priv), RTNC_TXRINGS, rxrings);
 	if (!dev) {
 		err = -ENOMEM;
 		goto err_free;
@@ -2408,7 +2407,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 		goto err_free;
 	}
 
-	priv->rxspace = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER,
+	priv->rxspace = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RTNC_RING_BUFFER,
 					    &priv->rxspace_dma, GFP_KERNEL);
 	if (!priv->notify) {
 		dev_err(&pdev->dev, "cannot allocate RX buffer\n");
@@ -2416,7 +2415,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 		goto err_free;
 	}
 
-	priv->txspace = dmam_alloc_coherent(&pdev->dev, TXRINGS * TXRINGLEN * RING_BUFFER,
+	priv->txspace = dmam_alloc_coherent(&pdev->dev, RTNC_TXRINGS * RTNC_TXRINGLEN * RTNC_RING_BUFFER,
 					    &priv->txspace_dma, GFP_KERNEL);
 	if (!priv->notify) {
 		dev_err(&pdev->dev, "cannot allocate TX buffer\n");
