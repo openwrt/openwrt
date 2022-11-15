@@ -160,7 +160,7 @@ static void rtnc_931x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_por
 		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
-static void rtl93xx_header_vlan_set(struct rtnc_hdr *h, int vlan)
+static void rtnc_93xx_header_vlan_set(struct rtnc_hdr *h, int vlan)
 {
 	h->cpu_tag[2] |= BIT(4); // Enable VLAN forwarding offload
 	h->cpu_tag[2] |= (vlan >> 8) & 0xf;
@@ -223,17 +223,17 @@ extern int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
  * When the content reaches the ring size, the ASIC no longer adds
  * packets to this receive queue.
  */
-void rtl838x_update_cntr(int r, int released)
+void rtnc_838x_update_cntr(int r, int released)
 {
 	// This feature is not available on RTL838x SoCs
 }
 
-void rtl839x_update_cntr(int r, int released)
+void rtnc_839x_update_cntr(int r, int released)
 {
 	// This feature is not available on RTL839x SoCs
 }
 
-void rtl930x_update_cntr(int r, int released)
+void rtnc_930x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
 	u32 reg = RTL930X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
@@ -245,7 +245,7 @@ void rtl930x_update_cntr(int r, int released)
 	sw_w32(v, reg);
 }
 
-void rtl931x_update_cntr(int r, int released)
+void rtnc_931x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
 	u32 reg = RTL931X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
@@ -540,7 +540,7 @@ static const struct rtl838x_eth_reg rtl838x_reg = {
 	.get_mac_tx_pause_sts = rtl838x_get_mac_tx_pause_sts,
 	.mac = RTL838X_MAC,
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl838x_update_cntr,
+	.update_cntr = rtnc_838x_update_cntr,
 	.create_tx_header = rtnc_838x_create_tx_header,
 	.decode_tag = rtl838x_decode_tag,
 };
@@ -565,7 +565,7 @@ static const struct rtl838x_eth_reg rtl839x_reg = {
 	.get_mac_tx_pause_sts = rtl839x_get_mac_tx_pause_sts,
 	.mac = RTL839X_MAC,
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl839x_update_cntr,
+	.update_cntr = rtnc_839x_update_cntr,
 	.create_tx_header = rtnc_839x_create_tx_header,
 	.decode_tag = rtl839x_decode_tag,
 };
@@ -596,7 +596,7 @@ static const struct rtl838x_eth_reg rtl930x_reg = {
 	.get_mac_tx_pause_sts = rtl930x_get_mac_tx_pause_sts,
 	.mac = RTL930X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl930x_update_cntr,
+	.update_cntr = rtnc_930x_update_cntr,
 	.create_tx_header = rtnc_930x_create_tx_header,
 	.decode_tag = rtl930x_decode_tag,
 };
@@ -627,7 +627,7 @@ static const struct rtl838x_eth_reg rtl931x_reg = {
 	.get_mac_tx_pause_sts = rtl931x_get_mac_tx_pause_sts,
 	.mac = RTL931X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl931x_update_cntr,
+	.update_cntr = rtnc_931x_update_cntr,
 	.create_tx_header = rtnc_931x_create_tx_header,
 	.decode_tag = rtl931x_decode_tag,
 };
@@ -1215,8 +1215,8 @@ txdone:
  * Return queue number for TX. On the RTL83XX, these queues have equal priority
  * so we do round-robin
  */
-u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
-			  struct net_device *sb_dev)
+u16 rtnc_83xx_ndo_select_queue(struct net_device *dev, struct sk_buff *skb,
+			       struct net_device *sb_dev)
 {
 	static u8 last = 0;
 
@@ -1227,8 +1227,8 @@ u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 /*
  * Return queue number for TX. On the RTL93XX, queue 1 is the high priority queue
  */
-u16 rtl93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
-			  struct net_device *sb_dev)
+u16 rtnc_93xx_ndo_select_queue(struct net_device *dev, struct sk_buff *skb,
+			       struct net_device *sb_dev)
 {
 	if (skb->priority >= TC_PRIO_CONTROL)
 		return 1;
@@ -1521,7 +1521,7 @@ static void rtl838x_set_mac_hw(struct net_device *dev, u8 *mac)
 	spin_unlock_irqrestore(&priv->lock, flags);
 }
 
-static int rtl838x_set_mac_address(struct net_device *dev, void *p)
+static int rtnc_set_mac_address(struct net_device *dev, void *p)
 {
 	struct rtnc_priv *priv = netdev_priv(dev);
 	const struct sockaddr *addr = p;
@@ -2240,8 +2240,8 @@ static const struct net_device_ops rtl838x_eth_netdev_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtnc_ndo_start_xmit,
-	.ndo_select_queue = rtl83xx_pick_tx_queue,
-	.ndo_set_mac_address = rtl838x_set_mac_address,
+	.ndo_select_queue = rtnc_83xx_ndo_select_queue,
+	.ndo_set_mac_address = rtnc_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl838x_eth_set_multicast_list,
 	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
@@ -2254,8 +2254,8 @@ static const struct net_device_ops rtl839x_eth_netdev_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtnc_ndo_start_xmit,
-	.ndo_select_queue = rtl83xx_pick_tx_queue,
-	.ndo_set_mac_address = rtl838x_set_mac_address,
+	.ndo_select_queue = rtnc_83xx_ndo_select_queue,
+	.ndo_set_mac_address = rtnc_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl839x_eth_set_multicast_list,
 	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
@@ -2268,8 +2268,8 @@ static const struct net_device_ops rtl930x_eth_netdev_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtnc_ndo_start_xmit,
-	.ndo_select_queue = rtl93xx_pick_tx_queue,
-	.ndo_set_mac_address = rtl838x_set_mac_address,
+	.ndo_select_queue = rtnc_93xx_ndo_select_queue,
+	.ndo_set_mac_address = rtnc_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl930x_eth_set_multicast_list,
 	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
@@ -2282,8 +2282,8 @@ static const struct net_device_ops rtl931x_eth_netdev_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtnc_ndo_start_xmit,
-	.ndo_select_queue = rtl93xx_pick_tx_queue,
-	.ndo_set_mac_address = rtl838x_set_mac_address,
+	.ndo_select_queue = rtnc_93xx_ndo_select_queue,
+	.ndo_set_mac_address = rtnc_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl931x_eth_set_multicast_list,
 	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
@@ -2305,7 +2305,7 @@ static const struct ethtool_ops rtl838x_ethtool_ops = {
 	.set_link_ksettings     = rtl838x_set_link_ksettings,
 };
 
-static void get_soc_info(int *soc_id, int *soc_family)
+static void rtnc_soc_info(int *soc_id, int *soc_family)
 {
 	int id;
 
@@ -2377,7 +2377,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	get_soc_info(&soc_id, &soc_family);
+	rtnc_soc_info(&soc_id, &soc_family);
 	if (soc_id) {
 		pr_info("Realtek SoC ethernet ID %4x, family %4x\n",
 			soc_id, soc_family);
@@ -2511,7 +2511,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 		netdev_warn(dev, "Invalid MAC address, using random\n");
 		eth_hw_addr_random(dev);
 		memcpy(sa.sa_data, dev->dev_addr, ETH_ALEN);
-		if (rtl838x_set_mac_address(dev, &sa))
+		if (rtnc_set_mac_address(dev, &sa))
 			netdev_warn(dev, "Failed to set MAC address.\n");
 	}
 	pr_info("Using MAC %08x%08x\n", sw_r32(priv->r->mac),
