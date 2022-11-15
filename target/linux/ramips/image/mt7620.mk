@@ -91,7 +91,7 @@ TARGET_DEVICES += ampedwireless_b1200ex
 define Device/asus_rp-n53
   SOC := mt7620a
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RP-N53
   DEVICE_PACKAGES := kmod-rt2800-pci
   SUPPORTED_DEVICES += rp-n53
@@ -101,7 +101,7 @@ TARGET_DEVICES += asus_rp-n53
 define Device/asus_rt-ac51u
   SOC := mt7620a
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC51U
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
@@ -112,7 +112,7 @@ TARGET_DEVICES += asus_rt-ac51u
 define Device/asus_rt-ac54u
   SOC := mt7620a
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC54U
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
@@ -122,7 +122,7 @@ TARGET_DEVICES += asus_rt-ac54u
 define Device/asus_rt-n12p
   SOC := mt7620n
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N11P/RT-N12+/RT-N12Eb1
   SUPPORTED_DEVICES += rt-n12p
 endef
@@ -131,7 +131,7 @@ TARGET_DEVICES += asus_rt-n12p
 define Device/asus_rt-n14u
   SOC := mt7620n
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N14u
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
   SUPPORTED_DEVICES += rt-n14u
