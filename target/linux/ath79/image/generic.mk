@@ -1907,7 +1907,7 @@ define Device/ocedo_koala
   DEVICE_MODEL := Koala
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   SUPPORTED_DEVICES += koala
-  IMAGE_SIZE := 7424k
+  IMAGE_SIZE := 14848k
 endef
 TARGET_DEVICES += ocedo_koala
 
@@ -1915,7 +1915,7 @@ define Device/ocedo_raccoon
   SOC := ar9344
   DEVICE_VENDOR := Ocedo
   DEVICE_MODEL := Raccoon
-  IMAGE_SIZE := 7424k
+  IMAGE_SIZE := 14848k
 endef
 TARGET_DEVICES += ocedo_raccoon
 
@@ -1924,7 +1924,7 @@ define Device/ocedo_ursus
   DEVICE_VENDOR := Ocedo
   DEVICE_MODEL := Ursus
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 7424k
+  IMAGE_SIZE := 14848k
 endef
 TARGET_DEVICES += ocedo_ursus
 
