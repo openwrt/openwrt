@@ -51,7 +51,7 @@
 
 #define RING_BUFFER	1600
 
-struct p_hdr {
+struct rtnc_hdr {
 	uint8_t		*buf;
 	uint16_t	reserved;
 	uint16_t	size;		/* buffer size */
@@ -73,8 +73,8 @@ struct n_event {
 struct ring_b {
 	uint32_t	rx_r[MAX_RXRINGS][MAX_RXLEN];
 	uint32_t	tx_r[TXRINGS][TXRINGLEN];
-	struct	p_hdr	rx_header[MAX_RXRINGS][MAX_RXLEN];
-	struct	p_hdr	tx_header[TXRINGS][TXRINGLEN];
+	struct	rtnc_hdr	rx_header[MAX_RXRINGS][MAX_RXLEN];
+	struct	rtnc_hdr	tx_header[TXRINGS][TXRINGLEN];
 	uint32_t	c_rx[MAX_RXRINGS];
 	uint32_t	c_tx[TXRINGS];
 };
@@ -90,7 +90,7 @@ struct notify_b {
 	u32			reserved2[8];
 };
 
-static void rtl838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rtnc_838x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
 	// cpu_tag[0] is reserved on the RTL83XX SoCs
 	h->cpu_tag[1] = 0x0401;  // BIT 10: RTL8380_CPU_TAG, BIT0: L2LEARNING on
@@ -104,7 +104,7 @@ static void rtl838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 12;
 }
 
-static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rtnc_839x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
 	// cpu_tag[0] is reserved on the RTL83XX SoCs
 	h->cpu_tag[1] = 0x0100; // RTL8390_CPU_TAG marker
@@ -125,7 +125,7 @@ static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 8;
 }
 
-static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rtnc_930x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  // CPU tag marker
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
@@ -140,7 +140,7 @@ static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
-static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rtnc_931x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  // CPU tag marker
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
@@ -160,7 +160,7 @@ static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
-static void rtl93xx_header_vlan_set(struct p_hdr *h, int vlan)
+static void rtl93xx_header_vlan_set(struct rtnc_hdr *h, int vlan)
 {
 	h->cpu_tag[2] |= BIT(4); // Enable VLAN forwarding offload
 	h->cpu_tag[2] |= (vlan >> 8) & 0xf;
@@ -265,7 +265,7 @@ struct rtnc_dsa_tag {
 	bool	crc_error;
 };
 
-bool rtl838x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
+bool rtl838x_decode_tag(struct rtnc_hdr *h, struct rtnc_dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[4] & 0xf;
@@ -282,7 +282,7 @@ bool rtl838x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-bool rtl839x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
+bool rtl839x_decode_tag(struct rtnc_hdr *h, struct rtnc_dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[5] & 0x1f;
@@ -300,7 +300,7 @@ bool rtl839x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-bool rtl930x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
+bool rtl930x_decode_tag(struct rtnc_hdr *h, struct rtnc_dsa_tag *t)
 {
 	t->reason = h->cpu_tag[7] & 0x3f;
 	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
@@ -316,7 +316,7 @@ bool rtl930x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-bool rtl931x_decode_tag(struct p_hdr *h, struct rtnc_dsa_tag *t)
+bool rtl931x_decode_tag(struct rtnc_hdr *h, struct rtnc_dsa_tag *t)
 {
 	t->reason = h->cpu_tag[7] & 0x3f;
 	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
@@ -341,7 +341,7 @@ static void rtnc_rb_cleanup(struct rtnc_priv *priv, int status)
 {
 	int r, idx;
 	u32	*last;
-	struct p_hdr *h;
+	struct rtnc_hdr *h;
 	struct ring_b *ring = priv->ring;
 
 	for (r = 0; r < priv->rxrings; r++) {
@@ -353,7 +353,7 @@ static void rtnc_rb_cleanup(struct rtnc_priv *priv, int status)
 				break;
 			pr_debug("Got something: %d\n", idx);
 			h = &ring->rx_header[r][idx];
-			memset(h, 0, sizeof(struct p_hdr));
+			memset(h, 0, sizeof(struct rtnc_hdr));
 			h->buf = (u8 *)KSEG1ADDR(priv->rxspace
 					+ r * priv->rxringlen * RING_BUFFER
 					+ idx * RING_BUFFER);
@@ -436,7 +436,7 @@ static void rtl839x_l2_notification_handler(struct rtnc_priv *priv)
 	priv->lastEvent = e;
 }
 
-static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
+static irqreturn_t rtnc_83xx_net_irq(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
 	struct rtnc_priv *priv = netdev_priv(dev);
@@ -476,7 +476,7 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
+static irqreturn_t rtnc_93xx_net_irq(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
 	struct rtnc_priv *priv = netdev_priv(dev);
@@ -521,8 +521,8 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 }
 
 static const struct rtl838x_eth_reg rtl838x_reg = {
-	.net_irq = rtl83xx_net_irq,
-	.mac_port_ctrl = rtl838x_mac_port_ctrl,
+	.net_irq = rtnc_83xx_net_irq,
+	.mac_port_ctrl = rtnc_838x_mac_port_ctrl,
 	.dma_if_intr_sts = RTL838X_DMA_IF_INTR_STS,
 	.dma_if_intr_msk = RTL838X_DMA_IF_INTR_MSK,
 	.dma_if_ctrl = RTL838X_DMA_IF_CTRL,
@@ -541,13 +541,13 @@ static const struct rtl838x_eth_reg rtl838x_reg = {
 	.mac = RTL838X_MAC,
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
 	.update_cntr = rtl838x_update_cntr,
-	.create_tx_header = rtl838x_create_tx_header,
+	.create_tx_header = rtnc_838x_create_tx_header,
 	.decode_tag = rtl838x_decode_tag,
 };
 
 static const struct rtl838x_eth_reg rtl839x_reg = {
-	.net_irq = rtl83xx_net_irq,
-	.mac_port_ctrl = rtl839x_mac_port_ctrl,
+	.net_irq = rtnc_83xx_net_irq,
+	.mac_port_ctrl = rtnc_839x_mac_port_ctrl,
 	.dma_if_intr_sts = RTL839X_DMA_IF_INTR_STS,
 	.dma_if_intr_msk = RTL839X_DMA_IF_INTR_MSK,
 	.dma_if_ctrl = RTL839X_DMA_IF_CTRL,
@@ -566,13 +566,13 @@ static const struct rtl838x_eth_reg rtl839x_reg = {
 	.mac = RTL839X_MAC,
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
 	.update_cntr = rtl839x_update_cntr,
-	.create_tx_header = rtl839x_create_tx_header,
+	.create_tx_header = rtnc_839x_create_tx_header,
 	.decode_tag = rtl839x_decode_tag,
 };
 
 static const struct rtl838x_eth_reg rtl930x_reg = {
-	.net_irq = rtl93xx_net_irq,
-	.mac_port_ctrl = rtl930x_mac_port_ctrl,
+	.net_irq = rtnc_93xx_net_irq,
+	.mac_port_ctrl = rtnc_930x_mac_port_ctrl,
 	.dma_if_intr_rx_runout_sts = RTL930X_DMA_IF_INTR_RX_RUNOUT_STS,
 	.dma_if_intr_rx_done_sts = RTL930X_DMA_IF_INTR_RX_DONE_STS,
 	.dma_if_intr_tx_done_sts = RTL930X_DMA_IF_INTR_TX_DONE_STS,
@@ -597,13 +597,13 @@ static const struct rtl838x_eth_reg rtl930x_reg = {
 	.mac = RTL930X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.update_cntr = rtl930x_update_cntr,
-	.create_tx_header = rtl930x_create_tx_header,
+	.create_tx_header = rtnc_930x_create_tx_header,
 	.decode_tag = rtl930x_decode_tag,
 };
 
 static const struct rtl838x_eth_reg rtl931x_reg = {
-	.net_irq = rtl93xx_net_irq,
-	.mac_port_ctrl = rtl931x_mac_port_ctrl,
+	.net_irq = rtnc_93xx_net_irq,
+	.mac_port_ctrl = rtnc_931x_mac_port_ctrl,
 	.dma_if_intr_rx_runout_sts = RTL931X_DMA_IF_INTR_RX_RUNOUT_STS,
 	.dma_if_intr_rx_done_sts = RTL931X_DMA_IF_INTR_RX_DONE_STS,
 	.dma_if_intr_tx_done_sts = RTL931X_DMA_IF_INTR_TX_DONE_STS,
@@ -628,7 +628,7 @@ static const struct rtl838x_eth_reg rtl931x_reg = {
 	.mac = RTL931X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.update_cntr = rtl931x_update_cntr,
-	.create_tx_header = rtl931x_create_tx_header,
+	.create_tx_header = rtnc_931x_create_tx_header,
 	.decode_tag = rtl931x_decode_tag,
 };
 
@@ -814,14 +814,14 @@ static void rtnc_setup_ring_buffer(struct rtnc_priv *priv)
 {
 	int i, j;
 	char *buf;
-	struct p_hdr *h;
+	struct rtnc_hdr *h;
 	struct ring_b *ring = priv->ring;
 
 	buf = (u8 *)KSEG1ADDR(priv->rxspace);
 	for (i = 0; i < priv->rxrings; i++) {
 		for (j = 0; j < priv->rxringlen; j++, buf += RING_BUFFER) {
 			h = &ring->rx_header[i][j];
-			memset(h, 0, sizeof(struct p_hdr));
+			memset(h, 0, sizeof(struct rtnc_hdr));
 			h->buf = buf;
 			h->size = RING_BUFFER;
 			ring->rx_r[i][j] = KSEG1ADDR(h) | R_OWN_ETH;
@@ -834,7 +834,7 @@ static void rtnc_setup_ring_buffer(struct rtnc_priv *priv)
 	for (i = 0; i < TXRINGS; i++) {
 		for (j = 0; j < TXRINGLEN; j++, buf += RING_BUFFER) {
 			h = &ring->tx_header[i][j];
-			memset(h, 0, sizeof(struct p_hdr));
+			memset(h, 0, sizeof(struct rtnc_hdr));
 			h->buf = buf;
 			h->size = RING_BUFFER;
 			ring->tx_r[i][j] = KSEG1ADDR(h) | R_OWN_CPU;
@@ -1116,7 +1116,7 @@ static void rtnc_ndo_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 	spin_unlock_irqrestore(&priv->lock, flags);
 }
 
-static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
+static int rtnc_ndo_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	int len, i;
 	struct rtnc_priv *priv = netdev_priv(dev);
@@ -1124,7 +1124,7 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 	uint32_t val;
 	int ret;
 	unsigned long flags;
-	struct p_hdr *h;
+	struct rtnc_hdr *h;
 	int dest_port = -1;
 	int q = skb_get_queue_mapping(skb) % TXRINGS;
 
@@ -1243,7 +1243,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	unsigned long flags;
 	int i, len, work_done = 0, idx;
 	unsigned int val;
-	struct p_hdr *h;
+	struct rtnc_hdr *h;
 	bool dsa = netdev_uses_dsa(dev);
 	struct rtnc_dsa_tag tag;
 
@@ -2239,7 +2239,7 @@ static int rtl93xx_set_features(struct net_device *dev, netdev_features_t featur
 static const struct net_device_ops rtl838x_eth_netdev_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
-	.ndo_start_xmit = rtl838x_eth_tx,
+	.ndo_start_xmit = rtnc_ndo_start_xmit,
 	.ndo_select_queue = rtl83xx_pick_tx_queue,
 	.ndo_set_mac_address = rtl838x_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
@@ -2253,7 +2253,7 @@ static const struct net_device_ops rtl838x_eth_netdev_ops = {
 static const struct net_device_ops rtl839x_eth_netdev_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
-	.ndo_start_xmit = rtl838x_eth_tx,
+	.ndo_start_xmit = rtnc_ndo_start_xmit,
 	.ndo_select_queue = rtl83xx_pick_tx_queue,
 	.ndo_set_mac_address = rtl838x_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
@@ -2267,7 +2267,7 @@ static const struct net_device_ops rtl839x_eth_netdev_ops = {
 static const struct net_device_ops rtl930x_eth_netdev_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
-	.ndo_start_xmit = rtl838x_eth_tx,
+	.ndo_start_xmit = rtnc_ndo_start_xmit,
 	.ndo_select_queue = rtl93xx_pick_tx_queue,
 	.ndo_set_mac_address = rtl838x_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
@@ -2281,7 +2281,7 @@ static const struct net_device_ops rtl930x_eth_netdev_ops = {
 static const struct net_device_ops rtl931x_eth_netdev_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
-	.ndo_start_xmit = rtl838x_eth_tx,
+	.ndo_start_xmit = rtnc_ndo_start_xmit,
 	.ndo_select_queue = rtl93xx_pick_tx_queue,
 	.ndo_set_mac_address = rtl838x_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,

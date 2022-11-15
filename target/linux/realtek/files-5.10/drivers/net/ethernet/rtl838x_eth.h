@@ -296,12 +296,12 @@
 /* Registers of the internal Serdes of the 8380 */
 #define RTL838X_SDS4_FIB_REG0			(0xF800)
 
-inline int rtl838x_mac_port_ctrl(int p)
+inline int rtnc_838x_mac_port_ctrl(int p)
 {
 	return RTL838X_MAC_PORT_CTRL + (p << 7);
 }
 
-inline int rtl839x_mac_port_ctrl(int p)
+inline int rtnc_839x_mac_port_ctrl(int p)
 {
 	return RTL839X_MAC_PORT_CTRL + (p << 7);
 }
@@ -311,12 +311,12 @@ inline int rtl839x_mac_port_ctrl(int p)
  * by the Ethernet driver is in the same bits now in RTL931X_MAC_L2_PORT_CTRL
  */
 
-inline int rtl930x_mac_port_ctrl(int p)
+inline int rtnc_930x_mac_port_ctrl(int p)
 {
 	return RTL930X_MAC_L2_PORT_CTRL + (p << 6);
 }
 
-inline int rtl931x_mac_port_ctrl(int p)
+inline int rtnc_931x_mac_port_ctrl(int p)
 {
 	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
 }
@@ -482,7 +482,7 @@ inline u32 rtl931x_get_mac_tx_pause_sts(int p)
 	return (sw_r32(RTL931X_MAC_TX_PAUSE_STS + ((p >> 5) << 2)) & BIT(p % 32));
 }
 
-struct p_hdr;
+struct rtnc_hdr;
 struct rtnc_dsa_tag;
 
 struct rtl838x_eth_reg {
@@ -514,8 +514,8 @@ struct rtl838x_eth_reg {
 	int mac;
 	int l2_tbl_flush_ctrl;
 	void (*update_cntr)(int r, int work_done);
-	void (*create_tx_header)(struct p_hdr *h, unsigned int dest_port, int prio);
-	bool (*decode_tag)(struct p_hdr *h, struct rtnc_dsa_tag *tag);
+	void (*create_tx_header)(struct rtnc_hdr *h, unsigned int dest_port, int prio);
+	bool (*decode_tag)(struct rtnc_hdr *h, struct rtnc_dsa_tag *tag);
 };
 
 int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
