@@ -398,7 +398,7 @@ void rtnc_fdb_sync(struct work_struct *work)
 	kfree(work);
 }
 
-static void rtl839x_l2_notification_handler(struct rtnc_priv *priv)
+static void rtnc_839x_l2_notification_handler(struct rtnc_priv *priv)
 {
 	struct notify_b *nb = priv->notify;
 	u32 e = priv->lastEvent;
@@ -468,7 +468,7 @@ static irqreturn_t rtnc_83xx_net_irq(int irq, void *dev_id)
 	/* Notification interrupts */
 	if (status & 0x700000) {
 		if (priv->family_id == RTL8390_FAMILY_ID)
-			rtl839x_l2_notification_handler(priv);
+			rtnc_839x_l2_notification_handler(priv);
 	}
 
 	/* Acknowledge interrupts */
@@ -844,7 +844,7 @@ static void rtnc_setup_ring_buffer(struct rtnc_priv *priv)
 	}
 }
 
-static void rtl839x_setup_notify_ring_buffer(struct rtnc_priv *priv)
+static void rtnc_839x_setup_notify_ring_buffer(struct rtnc_priv *priv)
 {
 	int i;
 	struct notify_b *b = priv->notify;
@@ -877,7 +877,7 @@ static int rtnc_ndo_open(struct net_device *ndev)
 	rtnc_hw_reset(priv);
 	rtnc_setup_ring_buffer(priv);
 	if (priv->family_id == RTL8390_FAMILY_ID) {
-		rtl839x_setup_notify_ring_buffer(priv);
+		rtnc_839x_setup_notify_ring_buffer(priv);
 		/* Make sure the ring structure is visible to the ASIC */
 		mb();
 		flush_cache_all();
@@ -1400,7 +1400,7 @@ static void rtnc_validate(struct phylink_config *config,
 }
 
 
-static void rtl838x_mac_config(struct phylink_config *config,
+static void rtnc_mac_config(struct phylink_config *config,
 			       unsigned int mode,
 			       const struct phylink_link_state *state)
 {
@@ -1571,7 +1571,7 @@ static int rtnc_838x_init_mac(struct rtnc_priv *priv)
 	return 0;
 }
 
-static int rtl838x_get_link_ksettings(struct net_device *ndev,
+static int rtnc_get_link_ksettings(struct net_device *ndev,
 				      struct ethtool_link_ksettings *cmd)
 {
 	struct rtnc_priv *priv = netdev_priv(ndev);
@@ -1580,7 +1580,7 @@ static int rtl838x_get_link_ksettings(struct net_device *ndev,
 	return phylink_ethtool_ksettings_get(priv->phylink, cmd);
 }
 
-static int rtl838x_set_link_ksettings(struct net_device *ndev,
+static int rtnc_set_link_ksettings(struct net_device *ndev,
 				      const struct ethtool_link_ksettings *cmd)
 {
 	struct rtnc_priv *priv = netdev_priv(ndev);
@@ -2032,7 +2032,7 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 	return 0;
 }
 
-static int rtl931x_chip_init(struct rtnc_priv *priv)
+static int rtnc_931x_chip_init(struct rtnc_priv *priv)
 {
 	pr_info("In %s\n", __func__);
 
@@ -2202,13 +2202,13 @@ static int rtl838x_mdio_remove(struct rtnc_priv *priv)
 	return 0;
 }
 
-static netdev_features_t rtl838x_fix_features(struct net_device *dev,
+static netdev_features_t rtnc_ndo_fix_features(struct net_device *dev,
 					  netdev_features_t features)
 {
 	return features;
 }
 
-static int rtl83xx_set_features(struct net_device *dev, netdev_features_t features)
+static int rtnc_83xx_ndo_set_features(struct net_device *dev, netdev_features_t features)
 {
 	struct rtnc_priv *priv = netdev_priv(dev);
 
@@ -2222,7 +2222,7 @@ static int rtl83xx_set_features(struct net_device *dev, netdev_features_t featur
 	return 0;
 }
 
-static int rtl93xx_set_features(struct net_device *dev, netdev_features_t features)
+static int rtnc_93xx_ndo_set_features(struct net_device *dev, netdev_features_t features)
 {
 	struct rtnc_priv *priv = netdev_priv(dev);
 
@@ -2236,7 +2236,7 @@ static int rtl93xx_set_features(struct net_device *dev, netdev_features_t featur
 	return 0;
 }
 
-static const struct net_device_ops rtl838x_eth_netdev_ops = {
+static const struct net_device_ops rtnc_838x_net_device_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtnc_ndo_start_xmit,
@@ -2245,12 +2245,12 @@ static const struct net_device_ops rtl838x_eth_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtnc_838x_ndo_set_rx_mode,
 	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
-	.ndo_set_features = rtl83xx_set_features,
-	.ndo_fix_features = rtl838x_fix_features,
+	.ndo_set_features = rtnc_83xx_ndo_set_features,
+	.ndo_fix_features = rtnc_ndo_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
-static const struct net_device_ops rtl839x_eth_netdev_ops = {
+static const struct net_device_ops rtnc_839x_net_device_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtnc_ndo_start_xmit,
@@ -2259,12 +2259,12 @@ static const struct net_device_ops rtl839x_eth_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtnc_839x_ndo_set_rx_mode,
 	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
-	.ndo_set_features = rtl83xx_set_features,
-	.ndo_fix_features = rtl838x_fix_features,
+	.ndo_set_features = rtnc_83xx_ndo_set_features,
+	.ndo_fix_features = rtnc_ndo_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
-static const struct net_device_ops rtl930x_eth_netdev_ops = {
+static const struct net_device_ops rtnc_930x_net_device_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtnc_ndo_start_xmit,
@@ -2273,12 +2273,12 @@ static const struct net_device_ops rtl930x_eth_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtnc_930x_ndo_set_rx_mode,
 	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
-	.ndo_set_features = rtl93xx_set_features,
-	.ndo_fix_features = rtl838x_fix_features,
+	.ndo_set_features = rtnc_93xx_ndo_set_features,
+	.ndo_fix_features = rtnc_ndo_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
-static const struct net_device_ops rtl931x_eth_netdev_ops = {
+static const struct net_device_ops rtnc_931x_net_device_ops = {
 	.ndo_open = rtnc_ndo_open,
 	.ndo_stop = rtnc_ndo_stop,
 	.ndo_start_xmit = rtnc_ndo_start_xmit,
@@ -2287,22 +2287,22 @@ static const struct net_device_ops rtl931x_eth_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtnc_931x_ndo_set_rx_mode,
 	.ndo_tx_timeout = rtnc_ndo_tx_timeout,
-	.ndo_set_features = rtl93xx_set_features,
-	.ndo_fix_features = rtl838x_fix_features,
+	.ndo_set_features = rtnc_93xx_ndo_set_features,
+	.ndo_fix_features = rtnc_ndo_fix_features,
 };
 
-static const struct phylink_mac_ops rtl838x_phylink_ops = {
+static const struct phylink_mac_ops rtnc_phylink_mac_ops = {
 	.validate = rtnc_validate,
 	.mac_pcs_get_state = rtnc_mac_pcs_get_state,
 	.mac_an_restart = rtnc_mac_an_restart,
-	.mac_config = rtl838x_mac_config,
+	.mac_config = rtnc_mac_config,
 	.mac_link_down = rtnc_mac_link_down,
 	.mac_link_up = rtnc_mac_link_up,
 };
 
-static const struct ethtool_ops rtl838x_ethtool_ops = {
-	.get_link_ksettings     = rtl838x_get_link_ksettings,
-	.set_link_ksettings     = rtl838x_set_link_ksettings,
+static const struct ethtool_ops rtnc_ethtool_ops = {
+	.get_link_ksettings = rtnc_get_link_ksettings,
+	.set_link_ksettings = rtnc_set_link_ksettings,
 };
 
 static void rtnc_soc_info(int *soc_id, int *soc_family)
@@ -2434,7 +2434,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 
 	spin_lock_init(&priv->lock);
 
-	dev->ethtool_ops = &rtl838x_ethtool_ops;
+	dev->ethtool_ops = &rtnc_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
 	dev->max_mtu = 1536;
 	dev->features = NETIF_F_RXCSUM | NETIF_F_HW_CSUM;
@@ -2447,23 +2447,23 @@ static int __init rtnc_probe(struct platform_device *pdev)
 	case RTL8380_FAMILY_ID:
 		priv->cpu_port = RTL838X_CPU_PORT;
 		priv->r = &rtnc_838x_reg;
-		dev->netdev_ops = &rtl838x_eth_netdev_ops;
+		dev->netdev_ops = &rtnc_838x_net_device_ops;
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->cpu_port = RTL839X_CPU_PORT;
 		priv->r = &rtnc_839x_reg;
-		dev->netdev_ops = &rtl839x_eth_netdev_ops;
+		dev->netdev_ops = &rtnc_839x_net_device_ops;
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->cpu_port = RTL930X_CPU_PORT;
 		priv->r = &rtnc_930x_reg;
-		dev->netdev_ops = &rtl930x_eth_netdev_ops;
+		dev->netdev_ops = &rtnc_930x_net_device_ops;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->cpu_port = RTL931X_CPU_PORT;
 		priv->r = &rtnc_931x_reg;
-		dev->netdev_ops = &rtl931x_eth_netdev_ops;
-		rtl931x_chip_init(priv);
+		dev->netdev_ops = &rtnc_931x_net_device_ops;
+		rtnc_931x_chip_init(priv);
 		break;
 	default:
 		pr_err("Unknown SoC family\n");
@@ -2547,7 +2547,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 	priv->phylink_config.type = PHYLINK_NETDEV;
 
 	phylink = phylink_create(&priv->phylink_config, pdev->dev.fwnode,
-				 phy_mode, &rtl838x_phylink_ops);
+				 phy_mode, &rtnc_phylink_mac_ops);
 
 	if (IS_ERR(phylink)) {
 		err = PTR_ERR(phylink);
