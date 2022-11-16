@@ -602,42 +602,6 @@ static int rtmd_931x_reset(struct mii_bus *bus)
 	return 0;
 }
 
-static int rtnc_931x_chip_init(struct rtnc_priv *priv)
-{
-	pr_info("In %s\n", __func__);
-
-	// Initialize Encapsulation memory and wait until finished
-	sw_w32(0x1, RTL931X_MEM_ENCAP_INIT);
-	do { } while (sw_r32(RTL931X_MEM_ENCAP_INIT) & 1);
-	pr_info("%s: init ENCAP done\n", __func__);
-
-	// Initialize Managemen Information Base memory and wait until finished
-	sw_w32(0x1, RTL931X_MEM_MIB_INIT);
-	do { } while (sw_r32(RTL931X_MEM_MIB_INIT) & 1);
-	pr_info("%s: init MIB done\n", __func__);
-
-	// Initialize ACL (PIE) memory and wait until finished
-	sw_w32(0x1, RTL931X_MEM_ACL_INIT);
-	do { } while (sw_r32(RTL931X_MEM_ACL_INIT) & 1);
-	pr_info("%s: init ACL done\n", __func__);
-
-	// Initialize ALE memory and wait until finished
-	sw_w32(0xFFFFFFFF, RTL931X_MEM_ALE_INIT_0);
-	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_0));
-	sw_w32(0x7F, RTL931X_MEM_ALE_INIT_1);
-	sw_w32(0x7ff, RTL931X_MEM_ALE_INIT_2);
-	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_2) & 0x7ff);
-	pr_info("%s: init ALE done\n", __func__);
-
-	// Enable ESD auto recovery
-	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
-
-	// Init SPI, is this for thermal control or what?
-	sw_w32_mask(0x7 << 11, 0x2 << 11, RTL931X_SPI_CTRL0);
-
-	return 0;
-}
-
 static int rtmd_init(struct rtnc_priv *priv)
 {
 	struct device_node *mii_np, *dn;
@@ -2365,6 +2329,42 @@ static void rtnc_soc_info(int *soc_id, int *soc_family)
 
 	*soc_id = 0;
 	*soc_family = 1;
+}
+
+static int rtnc_931x_chip_init(struct rtnc_priv *priv)
+{
+	pr_info("In %s\n", __func__);
+
+	// Initialize Encapsulation memory and wait until finished
+	sw_w32(0x1, RTL931X_MEM_ENCAP_INIT);
+	do { } while (sw_r32(RTL931X_MEM_ENCAP_INIT) & 1);
+	pr_info("%s: init ENCAP done\n", __func__);
+
+	// Initialize Managemen Information Base memory and wait until finished
+	sw_w32(0x1, RTL931X_MEM_MIB_INIT);
+	do { } while (sw_r32(RTL931X_MEM_MIB_INIT) & 1);
+	pr_info("%s: init MIB done\n", __func__);
+
+	// Initialize ACL (PIE) memory and wait until finished
+	sw_w32(0x1, RTL931X_MEM_ACL_INIT);
+	do { } while (sw_r32(RTL931X_MEM_ACL_INIT) & 1);
+	pr_info("%s: init ACL done\n", __func__);
+
+	// Initialize ALE memory and wait until finished
+	sw_w32(0xFFFFFFFF, RTL931X_MEM_ALE_INIT_0);
+	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_0));
+	sw_w32(0x7F, RTL931X_MEM_ALE_INIT_1);
+	sw_w32(0x7ff, RTL931X_MEM_ALE_INIT_2);
+	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_2) & 0x7ff);
+	pr_info("%s: init ALE done\n", __func__);
+
+	// Enable ESD auto recovery
+	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
+
+	// Init SPI, is this for thermal control or what?
+	sw_w32_mask(0x7 << 11, 0x2 << 11, RTL931X_SPI_CTRL0);
+
+	return 0;
 }
 
 static int __init rtnc_probe(struct platform_device *pdev)
