@@ -415,7 +415,7 @@ static int rtmd_838x_reset(struct mii_bus *bus)
 	/* Enable PHY control via SoC */
 	sw_w32_mask(0, 1 << 15, RTL838X_SMI_GLB_CTRL);
 
-	// Probably should reset all PHYs here...
+	/* Probably should reset all PHYs here... */
 	return 0;
 }
 
@@ -431,7 +431,7 @@ static int rtmd_839x_reset(struct mii_bus *bus)
 	/* Disable PHY polling via SoC */
 	sw_w32_mask(1 << 7, 0, RTL839X_SMI_GLB_CTRL);
 
-	// Probably should reset all PHYs here...
+	/* Probably should reset all PHYs here... */
 	return 0;
 }
 
@@ -448,10 +448,10 @@ static int rtmd_930x_reset(struct mii_bus *bus)
 	u32 poll_ctrl = 0;
 	u32 private_poll_mask = 0;
 	u32 v;
-	bool uses_usxgmii = false; // For the Aquantia PHYs
-	bool uses_hisgmii = false; // For the RTL8221/8226
+	bool uses_usxgmii = false; /* For the Aquantia PHYs */
+	bool uses_hisgmii = false; /* For the RTL8221/8226 */
 
-	// Mapping of port to phy-addresses on an SMI bus
+	/* Mapping of port to phy-addresses on an SMI bus */
 	poll_sel[0] = poll_sel[1] = 0;
 	for (i = 0; i < RTL930X_CPU_PORT; i++) {
 		if (priv->smi_bus[i] > 3)
@@ -465,14 +465,14 @@ static int rtmd_930x_reset(struct mii_bus *bus)
 		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
 	}
 
-	// Configure which SMI bus is behind which port number
+	/* Configure which SMI bus is behind which port number */
 	sw_w32(poll_sel[0], RTL930X_SMI_PORT0_15_POLLING_SEL);
 	sw_w32(poll_sel[1], RTL930X_SMI_PORT16_27_POLLING_SEL);
 
-	// Disable POLL_SEL for any SMI bus with a normal PHY (not RTL8295R for SFP+)
+	/* Disable POLL_SEL for any SMI bus with a normal PHY (not RTL8295R for SFP+) */
 	sw_w32_mask(poll_ctrl, 0, RTL930X_SMI_GLB_CTRL);
 
-	// Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus
+	/* Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus */
 	for (i = 0; i < 4; i++)
 		if (priv->smi_bus_isc45[i])
 			c45_mask |= BIT(i + 16);
@@ -480,13 +480,15 @@ static int rtmd_930x_reset(struct mii_bus *bus)
 	pr_info("c45_mask: %08x\n", c45_mask);
 	sw_w32_mask(0, c45_mask, RTL930X_SMI_GLB_CTRL);
 
-	// Set the MAC type of each port according to the PHY-interface
-	// Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0
+	/*
+	 * Set the MAC type of each port according to the PHY-interface
+	 * Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0
+	 */
 	v = 0;
 	for (i = 0; i < RTL930X_CPU_PORT; i++) {
 		switch (priv->interfaces[i]) {
 		case PHY_INTERFACE_MODE_10GBASER:
-			break;			// Serdes: Value = 0
+			break; /* Serdes: Value = 0 */
 
 		case PHY_INTERFACE_MODE_HSGMII:
 			private_poll_mask |= BIT(i);
@@ -507,12 +509,14 @@ static int rtmd_930x_reset(struct mii_bus *bus)
 	}
 	sw_w32(v, RTL930X_SMI_MAC_TYPE_CTRL);
 
-	// Set the private polling mask for all Realtek PHYs (i.e. not the 10GBit Aquantia ones)
+	/* Set the private polling mask for all Realtek PHYs (i.e. not the 10GBit Aquantia ones) */
 	sw_w32(private_poll_mask, RTL930X_SMI_PRVTE_POLLING_CTRL);
 
-	/* The following magic values are found in the port configuration, they seem to
+	/*
+	 * The following magic values are found in the port configuration, they seem to
 	 * define different ways of polling a PHY. The below is for the Aquantia PHYs of
-	 * the XGS1250 and the RTL8226 of the XGS1210 */
+	 * the XGS1250 and the RTL8226 of the XGS1210
+	 */
 	if (uses_usxgmii) {
 		sw_w32(0x01010000, RTL930X_SMI_10GPHY_POLLING_REG0_CFG);
 		sw_w32(0x01E7C400, RTL930X_SMI_10GPHY_POLLING_REG9_CFG);
@@ -554,13 +558,13 @@ static int rtmd_931x_reset(struct mii_bus *bus)
 	bool mdc_on[4];
 
 	pr_info("%s called\n", __func__);
-	// Disable port polling for configuration purposes
+	/* Disable port polling for configuration purposes */
 	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL);
 	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL + 4);
 	msleep(100);
 
 	mdc_on[0] = mdc_on[1] = mdc_on[2] = mdc_on[3] = false;
-	// Mapping of port to phy-addresses on an SMI bus
+	/* Mapping of port to phy-addresses on an SMI bus */
 	poll_sel[0] = poll_sel[1] = poll_sel[2] = poll_sel[3] = 0;
 	for (i = 0; i < 56; i++) {
 		pos = (i % 6) * 5;
@@ -571,20 +575,20 @@ static int rtmd_931x_reset(struct mii_bus *bus)
 		mdc_on[priv->smi_bus[i]] = true;
 	}
 
-	// Configure which SMI bus is behind which port number
+	/* Configure which SMI bus is behind which port number */
 	for (i = 0; i < 4; i++) {
 		pr_info("poll sel %d, %08x\n", i, poll_sel[i]);
 		sw_w32(poll_sel[i], RTL931X_SMI_PORT_POLLING_SEL + (i * 4));
 	}
 
-	// Configure which SMI busses
+	/* Configure which SMI busses */
 	pr_info("%s: WAS RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 	for (i = 0; i < 4; i++) {
-		// bus is polled in c45
+		/* bus is polled in c45 */
 		if (priv->smi_bus_isc45[i])
-			c45_mask |= 0x2 << (i * 2);  // Std. C45, non-standard is 0x3
-		// Enable bus access via MDC
+			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
+		/* Enable bus access via MDC */
 		if (mdc_on[i])
 			sw_w32_mask(0, BIT(9 + i), RTL931X_MAC_L2_GLOBAL_CTRL2);
 	}
@@ -592,11 +596,12 @@ static int rtmd_931x_reset(struct mii_bus *bus)
 	pr_info("%s: RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 
-	/* We have a 10G PHY enable polling
-	sw_w32(0x01010000, RTL931X_SMI_10GPHY_POLLING_SEL2);
-	sw_w32(0x01E7C400, RTL931X_SMI_10GPHY_POLLING_SEL3);
-	sw_w32(0x01E7E820, RTL931X_SMI_10GPHY_POLLING_SEL4);
-*/
+	/*
+	 * We have a 10G PHY enable polling
+	 * sw_w32(0x01010000, RTL931X_SMI_10GPHY_POLLING_SEL2);
+	 * sw_w32(0x01E7C400, RTL931X_SMI_10GPHY_POLLING_SEL3);
+	 * sw_w32(0x01E7E820, RTL931X_SMI_10GPHY_POLLING_SEL4);
+	 */
 	sw_w32_mask(0xff, c45_mask, RTL931X_SMI_GLB_CTRL1);
 
 	return 0;
@@ -743,9 +748,9 @@ static int rtmd_remove(struct rtnc_priv *priv)
 
 static void rtnc_838x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
-	// cpu_tag[0] is reserved on the RTL83XX SoCs
-	h->cpu_tag[1] = 0x0401;  // BIT 10: RTL8380_CPU_TAG, BIT0: L2LEARNING on
-	h->cpu_tag[2] = 0x0200;  // Set only AS_DPM, to enable DPM settings below
+	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
+	h->cpu_tag[1] = 0x0401;  /* BIT 10: RTL8380_CPU_TAG, BIT0: L2LEARNING on */
+	h->cpu_tag[2] = 0x0200;  /* Set only AS_DPM, to enable DPM settings below */
 	h->cpu_tag[3] = 0x0000;
 	h->cpu_tag[4] = BIT(dest_port) >> 16;
 	h->cpu_tag[5] = BIT(dest_port) & 0xffff;
@@ -757,11 +762,11 @@ static void rtnc_838x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_por
 
 static void rtnc_839x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
-	// cpu_tag[0] is reserved on the RTL83XX SoCs
-	h->cpu_tag[1] = 0x0100; // RTL8390_CPU_TAG marker
+	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
+	h->cpu_tag[1] = 0x0100; /* RTL8390_CPU_TAG marker */
 	h->cpu_tag[2] = BIT(4) | BIT(7); /* AS_DPM (4) and L2LEARNING (7) flags */
 	h->cpu_tag[3] = h->cpu_tag[4] = h->cpu_tag[5] = 0;
-	// h->cpu_tag[1] |= BIT(1) | BIT(0); // Bypass filter 1/2
+	/* h->cpu_tag[1] |= BIT(1) | BIT(0); Bypass filter 1/2 */
 	if (dest_port >= 32) {
 		dest_port -= 32;
 		h->cpu_tag[2] |= (BIT(dest_port) >> 16) & 0xf;
@@ -778,7 +783,7 @@ static void rtnc_839x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_por
 
 static void rtnc_930x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
-	h->cpu_tag[0] = 0x8000;  // CPU tag marker
+	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = 0;
@@ -793,7 +798,7 @@ static void rtnc_930x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_por
 
 static void rtnc_931x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
-	h->cpu_tag[0] = 0x8000;  // CPU tag marker
+	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = h->cpu_tag[5] = h->cpu_tag[6] = h->cpu_tag[7] = 0;
@@ -813,7 +818,7 @@ static void rtnc_931x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_por
 
 static void rtnc_93xx_header_vlan_set(struct rtnc_hdr *h, int vlan)
 {
-	h->cpu_tag[2] |= BIT(4); // Enable VLAN forwarding offload
+	h->cpu_tag[2] |= BIT(4); /* Enable VLAN forwarding offload */
 	h->cpu_tag[2] |= (vlan >> 8) & 0xf;
 	h->cpu_tag[3] |= (vlan & 0xff) << 8;
 }
@@ -826,12 +831,12 @@ static void rtnc_93xx_header_vlan_set(struct rtnc_hdr *h, int vlan)
  */
 void rtnc_838x_update_cntr(int r, int released)
 {
-	// This feature is not available on RTL838x SoCs
+	/* This feature is not available on RTL838x SoCs */
 }
 
 void rtnc_839x_update_cntr(int r, int released)
 {
-	// This feature is not available on RTL839x SoCs
+	/* This feature is not available on RTL839x SoCs */
 }
 
 void rtnc_930x_update_cntr(int r, int released)
@@ -866,7 +871,7 @@ bool rtnc_838x_decode_tag(struct rtnc_hdr *h, struct rtnc_dsa_tag *t)
 	t->crc_error = t->reason == 13;
 
 	pr_debug("Reason: %d\n", t->reason);
-	if (t->reason != 6) // NIC_RX_REASON_SPECIAL_TRAP
+	if (t->reason != 6) /* NIC_RX_REASON_SPECIAL_TRAP */
 		t->l2_offloaded = 1;
 	else
 		t->l2_offloaded = 0;
@@ -883,8 +888,8 @@ bool rtnc_839x_decode_tag(struct rtnc_hdr *h, struct rtnc_dsa_tag *t)
 	t->crc_error = h->cpu_tag[4] & BIT(6);
 
 	pr_debug("Reason: %d\n", t->reason);
-	if ((t->reason >= 7 && t->reason <= 13) || // NIC_RX_REASON_RMA
-	    (t->reason >= 23 && t->reason <= 25))  // NIC_RX_REASON_SPECIAL_TRAP
+	if ((t->reason >= 7 && t->reason <= 13) || /* NIC_RX_REASON_RMA */
+	    (t->reason >= 23 && t->reason <= 25))  /* NIC_RX_REASON_SPECIAL_TRAP */
 		t->l2_offloaded = 0;
 	else
 		t->l2_offloaded = 1;
@@ -917,7 +922,7 @@ bool rtnc_931x_decode_tag(struct rtnc_hdr *h, struct rtnc_dsa_tag *t)
 
 	if (t->reason != 63)
 		pr_info("%s: Reason %d, port %d, queue %d\n", __func__, t->reason, t->port, t->queue);
-	if (t->reason >= 19 && t->reason <= 27)	// NIC_RX_REASON_RMA
+	if (t->reason >= 19 && t->reason <= 27)	/* NIC_RX_REASON_RMA */
 		t->l2_offloaded = 0;
 	else
 		t->l2_offloaded = 1;
@@ -1269,7 +1274,7 @@ static void rtnc_hw_reset(struct rtnc_priv *priv)
 
 	/* Setup Head of Line */
 	if (priv->family_id == RTL8380_FAMILY_ID)
-		sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);  // Disabled on RTL8380
+		sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);  /* Disabled on RTL8380 */
 	if (priv->family_id == RTL8390_FAMILY_ID)
 		sw_w32(0xffffffff, RTL839X_DMA_IF_RX_RING_CNTR);
 	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
@@ -1322,7 +1327,8 @@ static void rtnc_838x_hw_en_rxtx(struct rtnc_priv *priv)
 
 	/* Restart TX/RX to CPU port */
 	sw_w32_mask(0x0, 0x3, priv->r->mac_port_ctrl(priv->cpu_port));
-	/* Set Speed, duplex, flow control
+	/*
+	 * Set Speed, duplex, flow control
 	 * FORCE_EN | LINK_EN | NWAY_EN | DUP_SEL
 	 * | SPD_SEL = 0b10 | FORCE_FC_EN | PHY_MASTER_SLV_MANUAL_EN
 	 * | MEDIA_SEL
@@ -1339,7 +1345,7 @@ static void rtnc_839x_hw_en_rxtx(struct rtnc_priv *priv)
 	sw_w32(0x0000c808, priv->r->dma_if_ctrl);
 
 	/* Enable Notify, RX done and RX overflow interrupts */
-	sw_w32(0x0070ffff, priv->r->dma_if_intr_msk); // Notify IRQ!
+	sw_w32(0x0070ffff, priv->r->dma_if_intr_msk); /* Notify IRQ! */
 
 	/* Enable DMA */
 	sw_w32_mask(0, RTNC_RX_EN_83XX | RTNC_TX_EN_83XX, priv->r->dma_if_ctrl);
@@ -1348,7 +1354,7 @@ static void rtnc_839x_hw_en_rxtx(struct rtnc_priv *priv)
 	sw_w32_mask(0x0, 0x3 | BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
 
 	/* CPU port joins Lookup Miss Flooding Portmask */
-	// TODO: The code below should also work for the RTL838x
+	/* TODO: The code below should also work for the RTL838x */
 	sw_w32(0x28000, RTL839X_TBL_ACCESS_L2_CTRL);
 	sw_w32_mask(0, 0x80000000, RTL839X_TBL_ACCESS_L2_DATA(0));
 	sw_w32(0x38000, RTL839X_TBL_ACCESS_L2_CTRL);
@@ -1369,7 +1375,7 @@ static void rtnc_93xx_hw_en_rxtx(struct rtnc_priv *priv)
 		pos = (i % 3) * 10;
 		sw_w32_mask(0x3ff << pos, priv->rxringlen << pos, priv->r->dma_if_rx_ring_size(i));
 
-		// Some SoCs have issues with missing underflow protection
+		/* Some SoCs have issues with missing underflow protection */
 		v = (sw_r32(priv->r->dma_if_rx_ring_cntr(i)) >> pos) & 0x3ff;
 		sw_w32_mask(0x3ff << pos, v, priv->r->dma_if_rx_ring_cntr(i));
 	}
@@ -1442,8 +1448,8 @@ static void rtnc_839x_setup_notify_ring_buffer(struct rtnc_priv *priv)
 	sw_w32_mask(0x3ff << 2, 100 << 2, RTL839X_L2_NOTIFICATION_CTRL);
 
 	/* Setup notification events */
-	sw_w32_mask(0, 1 << 14, RTL839X_L2_CTRL_0); // RTL8390_L2_CTRL_0_FLUSH_NOTIFY_EN
-	sw_w32_mask(0, 1 << 12, RTL839X_L2_NOTIFICATION_CTRL); // SUSPEND_NOTIFICATION_EN
+	sw_w32_mask(0, 1 << 14, RTL839X_L2_CTRL_0); /* RTL8390_L2_CTRL_0_FLUSH_NOTIFY_EN */
+	sw_w32_mask(0, 1 << 12, RTL839X_L2_NOTIFICATION_CTRL); /* SUSPEND_NOTIFICATION_EN */
 
 	/* Enable Notification */
 	sw_w32_mask(0, 1 << 0, RTL839X_L2_NOTIFICATION_CTRL);
@@ -1486,7 +1492,7 @@ static int rtnc_ndo_open(struct net_device *ndev)
 
 	case RTL8390_FAMILY_ID:
 		rtnc_839x_hw_en_rxtx(priv);
-		// Trap MLD and IGMP messages to CPU_PORT
+		/* Trap MLD and IGMP messages to CPU_PORT */
 		sw_w32(0x3, RTL839X_SPCL_TRAP_IGMP_CTRL);
 		/* Flush learned FDB entries on link down of a port */
 		sw_w32_mask(0, BIT(7), RTL839X_L2_CTRL_0);
@@ -1496,20 +1502,20 @@ static int rtnc_ndo_open(struct net_device *ndev)
 		rtnc_93xx_hw_en_rxtx(priv);
 		/* Flush learned FDB entries on link down of a port */
 		sw_w32_mask(0, BIT(7), RTL930X_L2_CTRL);
-		// Trap MLD and IGMP messages to CPU_PORT
+		/* Trap MLD and IGMP messages to CPU_PORT */
 		sw_w32((0x2 << 3) | 0x2,  RTL930X_VLAN_APP_PKT_CTRL);
 		break;
 
 	case RTL9310_FAMILY_ID:
 		rtnc_93xx_hw_en_rxtx(priv);
 
-		// Trap MLD and IGMP messages to CPU_PORT
+		/* Trap MLD and IGMP messages to CPU_PORT */
 		sw_w32((0x2 << 3) | 0x2,  RTL931X_VLAN_APP_PKT_CTRL);
 
-		// Disable External CPU access to switch, clear EXT_CPU_EN
+		/* Disable External CPU access to switch, clear EXT_CPU_EN */
 		sw_w32_mask(BIT(2), 0, RTL931X_MAC_L2_GLOBAL_CTRL2);
 
-		// Set PCIE_PWR_DOWN
+		/* Set PCIE_PWR_DOWN */
 		sw_w32_mask(0, BIT(1), RTL931X_PS_SOC_CTRL);
 		break;
 	}
@@ -1527,7 +1533,7 @@ static void rtnc_hw_stop(struct rtnc_priv *priv)
 	u32 clear_irq = priv->family_id == RTL8380_FAMILY_ID ? 0x000fffff : 0x007fffff;
 	int i;
 
-	// Disable RX/TX from/to CPU-port
+	/* Disable RX/TX from/to CPU-port */
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
 
 	/* Disable traffic */
@@ -1535,7 +1541,7 @@ static void rtnc_hw_stop(struct rtnc_priv *priv)
 		sw_w32_mask(RTNC_RX_EN_93XX | RTNC_TX_EN_93XX, 0, priv->r->dma_if_ctrl);
 	else
 		sw_w32_mask(RTNC_RX_EN_83XX | RTNC_TX_EN_83XX, 0, priv->r->dma_if_ctrl);
-	mdelay(200); // Test, whether this is needed
+	mdelay(200); /* Test, whether this is needed */
 
 	/* Block all ports */
 	if (priv->family_id == RTL8380_FAMILY_ID) {
@@ -1556,7 +1562,7 @@ static void rtnc_hw_stop(struct rtnc_priv *priv)
 			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & (1 << 28));
 		}
 	}
-	// TODO: L2 flush register is 64 bit on RTL931X and 930X
+	/* TODO: L2 flush register is 64 bit on RTL931X and 930X */
 
 	/* CPU-Port: Link down */
 	if (priv->family_id == RTL8380_FAMILY_ID || priv->family_id == RTL8390_FAMILY_ID)
@@ -1714,7 +1720,7 @@ static int rtnc_ndo_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	int dest_port = -1;
 	int q = skb_get_queue_mapping(skb) % RTNC_TXRINGS;
 
-	if (q) // Check for high prio queue
+	if (q) /* Check for high prio queue */
 		pr_debug("SKB priority: %d\n", skb->priority);
 
 	spin_lock_irqsave(&priv->lock, flags);
@@ -1731,7 +1737,7 @@ static int rtnc_ndo_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		len -= 4;
 	}
 
-	len += 4; // Add space for CRC
+	len += 4; /* Add space for CRC */
 
 	if (skb_padto(skb, len)) {
 		ret = NETDEV_TX_OK;
@@ -1745,7 +1751,7 @@ static int rtnc_ndo_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		h = &ring->tx_header[q][ring->c_tx[q]];
 		h->size = len;
 		h->len = len;
-		// On RTL8380 SoCs, small packet lengths being sent need adjustments
+		/* On RTL8380 SoCs, small packet lengths being sent need adjustments */
 		if (priv->family_id == RTL8380_FAMILY_ID) {
 			if (len < ETH_ZLEN - 4)
 				h->len -= 4;
@@ -1762,7 +1768,7 @@ static int rtnc_ndo_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		/* Hand over to switch */
 		ring->tx_r[q][ring->c_tx[q]] |= RTNC_OWN_ETH;
 
-		// Before starting TX, prevent a Lextra bus bug on RTL8380 SoCs
+		/* Before starting TX, prevent a Lextra bus bug on RTL8380 SoCs */
 		if (priv->family_id == RTL8380_FAMILY_ID) {
 			for (i = 0; i < 10; i++) {
 				val = sw_r32(priv->r->dma_if_ctrl);
@@ -1774,7 +1780,7 @@ static int rtnc_ndo_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		/* Tell switch to send data */
 		if (priv->family_id == RTL9310_FAMILY_ID
 			|| priv->family_id == RTL9300_FAMILY_ID) {
-			// Ring ID q == 0: Low priority, Ring ID = 1: High prio queue
+			/* Ring ID q == 0: Low priority, Ring ID = 1: High prio queue */
 			if (!q)
 				sw_w32_mask(0, BIT(2), priv->r->dma_if_ctrl);
 			else
@@ -1903,7 +1909,7 @@ static int rtnc_hw_receive(struct net_device *dev, int r, int budget)
 		idx = (idx + 1) % priv->rxringlen;
 	};
 
-	// Update counters
+	/* Update counters */
 	priv->r->update_cntr(r, 0);
 	ring->c_rx[r] = idx;
 
@@ -2125,7 +2131,7 @@ static int rtnc_set_mac_address(struct net_device *dev, void *p)
 
 static int rtnc_839x_init_mac(struct rtnc_priv *priv)
 {
-	// We will need to set-up EEE and the egress-rate limitation
+	/* We will need to set-up EEE and the egress-rate limitation */
 	return 0;
 }
 
@@ -2136,7 +2142,7 @@ static int rtnc_838x_init_mac(struct rtnc_priv *priv)
 	if (priv->family_id == RTL8390_FAMILY_ID)
 		return rtnc_839x_init_mac(priv);
 
-    // At present we do not know how to set up EEE on any other SoC than RTL8380
+	/* At present we do not know how to set up EEE on any other SoC than RTL8380 */
 	if (priv->family_id != RTL8380_FAMILY_ID)
 		return 0;
 
@@ -2335,22 +2341,22 @@ static int rtnc_931x_chip_init(struct rtnc_priv *priv)
 {
 	pr_info("In %s\n", __func__);
 
-	// Initialize Encapsulation memory and wait until finished
+	/* Initialize Encapsulation memory and wait until finished */
 	sw_w32(0x1, RTL931X_MEM_ENCAP_INIT);
 	do { } while (sw_r32(RTL931X_MEM_ENCAP_INIT) & 1);
 	pr_info("%s: init ENCAP done\n", __func__);
 
-	// Initialize Managemen Information Base memory and wait until finished
+	/* Initialize Management Information Base memory and wait until finished */
 	sw_w32(0x1, RTL931X_MEM_MIB_INIT);
 	do { } while (sw_r32(RTL931X_MEM_MIB_INIT) & 1);
 	pr_info("%s: init MIB done\n", __func__);
 
-	// Initialize ACL (PIE) memory and wait until finished
+	/* Initialize ACL (PIE) memory and wait until finished */
 	sw_w32(0x1, RTL931X_MEM_ACL_INIT);
 	do { } while (sw_r32(RTL931X_MEM_ACL_INIT) & 1);
 	pr_info("%s: init ACL done\n", __func__);
 
-	// Initialize ALE memory and wait until finished
+	/* Initialize ALE memory and wait until finished */
 	sw_w32(0xFFFFFFFF, RTL931X_MEM_ALE_INIT_0);
 	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_0));
 	sw_w32(0x7F, RTL931X_MEM_ALE_INIT_1);
@@ -2358,10 +2364,10 @@ static int rtnc_931x_chip_init(struct rtnc_priv *priv)
 	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_2) & 0x7ff);
 	pr_info("%s: init ALE done\n", __func__);
 
-	// Enable ESD auto recovery
+	/* Enable ESD auto recovery */
 	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
 
-	// Init SPI, is this for thermal control or what?
+	/* Init SPI, is this for thermal control or what? */
 	sw_w32_mask(0x7 << 11, 0x2 << 11, RTL931X_SPI_CTRL0);
 
 	return 0;
