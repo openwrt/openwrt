@@ -1,5 +1,3 @@
-diff --git a/configure.ac b/configure.ac
-index 144c857e4..de7f6b45a 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -32,7 +32,7 @@ AC_ARG_PROGRAM
@@ -10,4 +8,4 @@ index 144c857e4..de7f6b45a 100644
 +LT_PREREQ([2.4])
  LT_INIT([disable-static win32-dll])
  
- #shared library versioning
+ AC_ARG_VAR(EXTRA_CFLAGS, [Extra CFLAGS to add to autoconf-computed arg list.  Can also supply directly to make.])
