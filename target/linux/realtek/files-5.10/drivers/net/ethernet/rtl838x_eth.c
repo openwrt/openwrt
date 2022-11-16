@@ -823,22 +823,17 @@ static void rtnc_93xx_header_vlan_set(struct rtnc_hdr *h, int vlan)
 	h->cpu_tag[3] |= (vlan & 0xff) << 8;
 }
 
+void rtnc_83xx_update_cntr(int r, int released)
+{
+	/* This feature is not available on RTL838x/RTL839x SoCs */
+}
+
 /*
  * On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of 
  * the rings. Writing x into these registers substracts x from its content.
  * When the content reaches the ring size, the ASIC no longer adds
  * packets to this receive queue.
  */
-void rtnc_838x_update_cntr(int r, int released)
-{
-	/* This feature is not available on RTL838x SoCs */
-}
-
-void rtnc_839x_update_cntr(int r, int released)
-{
-	/* This feature is not available on RTL839x SoCs */
-}
-
 void rtnc_930x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
@@ -1131,7 +1126,7 @@ static const struct rtnc_reg rtnc_838x_reg = {
 	.get_mac_tx_pause_sts = rtnc_838x_get_mac_tx_pause_sts,
 	.mac = RTL838X_MAC,
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtnc_838x_update_cntr,
+	.update_cntr = rtnc_83xx_update_cntr,
 	.create_tx_header = rtnc_838x_create_tx_header,
 	.decode_tag = rtnc_838x_decode_tag,
 };
@@ -1156,7 +1151,7 @@ static const struct rtnc_reg rtnc_839x_reg = {
 	.get_mac_tx_pause_sts = rtnc_839x_get_mac_tx_pause_sts,
 	.mac = RTL839X_MAC,
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtnc_839x_update_cntr,
+	.update_cntr = rtnc_83xx_update_cntr,
 	.create_tx_header = rtnc_839x_create_tx_header,
 	.decode_tag = rtnc_839x_decode_tag,
 };
