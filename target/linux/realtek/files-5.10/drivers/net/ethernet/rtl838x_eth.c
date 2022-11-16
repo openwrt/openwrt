@@ -953,8 +953,7 @@ static void rtnc_rb_cleanup(struct rtnc_priv *priv, int status)
 			/* make sure the header is visible to the ASIC */
 			mb();
 
-			ring->rx_r[r][idx] = KSEG1ADDR(h) |
-				(idx == (priv->rxringlen - 1) ? RTNC_OWN_ETH | RTNC_WRAP : RTNC_OWN_ETH);
+			ring->rx_r[r][idx] |= RTNC_OWN_ETH;
 			idx = (idx + 1) % priv->rxringlen;
 		} while (&ring->rx_r[r][idx] != last);
 		ring->c_rx[r] = idx;
@@ -1899,8 +1898,7 @@ static int rtnc_hw_receive(struct net_device *dev, int r, int budget)
 			dev->stats.rx_dropped++;
 		}
 
-		ring->rx_r[r][idx] = KSEG1ADDR(h) |
-			(idx == (priv->rxringlen - 1) ? RTNC_OWN_ETH | RTNC_WRAP : RTNC_OWN_ETH);
+		ring->rx_r[r][idx] |= RTNC_OWN_ETH;
 		idx = (idx + 1) % priv->rxringlen;
 	};
 
