@@ -1,0 +1,104 @@
+--- a/drivers/base/core.c
++++ b/drivers/base/core.c
+@@ -103,13 +103,44 @@ static int __fwnode_link_add(struct fwno
+ 	return 0;
+ }
+ 
++int __fwnode_link_to_parents(struct fwnode_handle *con, struct fwnode_handle *sup,
++			     bool loop)
++{
++	int ret = -EINVAL;
++	struct fwnode_handle *parent;
++
++	fwnode_for_each_parent_node(sup, parent) {
++		/* Ignore the root node */
++		if (fwnode_count_parents(parent) &&
++		    fwnode_device_is_available(parent) &&
++		  !(parent->flags & FWNODE_FLAG_NOT_DEVICE) &&
++		  !(parent->flags & FWNODE_FLAG_PARENT_IS_DEV)) {
++			ret = __fwnode_link_add(con, parent, 0);
++		}
++
++		if (!loop && !ret) {
++			fwnode_handle_put(parent);
++			return 0;
++		}
++	}
++
++	return ret;
++}
++
+ int fwnode_link_add(struct fwnode_handle *con, struct fwnode_handle *sup)
+ {
+ 	int ret;
+ 
+ 	mutex_lock(&fwnode_link_lock);
+-	ret = __fwnode_link_add(con, sup, 0);
++
++	if ((sup->flags & FWNODE_FLAG_NOT_DEVICE) &&
++	    (sup->flags & FWNODE_FLAG_PARENT_IS_DEV))
++		ret = __fwnode_link_to_parents(con, sup, false);
++	else
++		ret = __fwnode_link_add(con, sup, 0);
++
+ 	mutex_unlock(&fwnode_link_lock);
++
+ 	return ret;
+ }
+ 
+@@ -229,7 +260,8 @@ static void __fwnode_links_move_consumer
+  * MANAGED device links to this device, so leave @fwnode and its descendant's
+  * fwnode links alone.
+  *
+- * Otherwise, move its consumers to the new supplier @new_sup.
++ * Otherwise, flag descendants of @fwnode as having a parent fwnode for a device
++ * that has probed and move bad fwnode consumer links from @fwnode to @new_sup
+  */
+ static void __fw_devlink_pickup_dangling_consumers(struct fwnode_handle *fwnode,
+ 						   struct fwnode_handle *new_sup)
+@@ -239,8 +271,11 @@ static void __fw_devlink_pickup_dangling
+ 	if (fwnode->dev && fwnode->dev->driver)
+ 		return;
+ 
+-	fwnode->flags |= FWNODE_FLAG_NOT_DEVICE;
+-	__fwnode_links_move_consumers(fwnode, new_sup);
++	if (fwnode->flags & FWNODE_FLAG_NOT_DEVICE)
++		__fwnode_links_move_consumers(fwnode, new_sup);
++
++	fwnode->flags |= FWNODE_FLAG_PARENT_IS_DEV;
++	new_sup->flags &= ~(FWNODE_FLAG_PARENT_IS_DEV);
+ 
+ 	fwnode_for_each_available_child_node(fwnode, child)
+ 		__fw_devlink_pickup_dangling_consumers(child, new_sup);
+@@ -2067,8 +2102,9 @@ static int fw_devlink_create_devlink(str
+ 		device_links_write_unlock();
+ 	}
+ 
+-	if (sup_handle->flags & FWNODE_FLAG_NOT_DEVICE)
+-		sup_dev = fwnode_get_next_parent_dev(sup_handle);
++	if ((sup_handle->flags & FWNODE_FLAG_NOT_DEVICE) &&
++	   !(sup_handle->flags & FWNODE_FLAG_PARENT_IS_DEV))
++		return -EINVAL;
+ 	else
+ 		sup_dev = get_dev_from_fwnode(sup_handle);
+ 
+--- a/include/linux/fwnode.h
++++ b/include/linux/fwnode.h
+@@ -30,6 +30,9 @@ struct device;
+  * BEST_EFFORT: The fwnode/device needs to probe early and might be missing some
+  *		suppliers. Only enforce ordering with suppliers that have
+  *		drivers.
++ * PARENT_IS_DEV: The fwnode is a child of a fwnode that is or will be populated as a
++ *		  struct device, which is more suitable for device links
++ *		  than the fwnode child which may never have a struct device.
+  */
+ #define FWNODE_FLAG_LINKS_ADDED			BIT(0)
+ #define FWNODE_FLAG_NOT_DEVICE			BIT(1)
+@@ -37,6 +40,7 @@ struct device;
+ #define FWNODE_FLAG_NEEDS_CHILD_BOUND_ON_ADD	BIT(3)
+ #define FWNODE_FLAG_BEST_EFFORT			BIT(4)
+ #define FWNODE_FLAG_VISITED			BIT(5)
++#define FWNODE_FLAG_PARENT_IS_DEV		BIT(6)
+ 
+ struct fwnode_handle {
+ 	struct fwnode_handle *secondary;
