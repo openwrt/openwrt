@@ -134,7 +134,7 @@ struct rtnc_dsa_tag {
 	bool			crc_error;
 };
 
-struct fdb_update_work {
+struct rtnc_fdb_update {
 	struct work_struct	work;
 	struct net_device	*ndev;
 	u64			macs[RTNC_NOTIFY_EVENTS + 1];
@@ -962,8 +962,8 @@ static void rtnc_rb_cleanup(struct rtnc_priv *priv, int status)
 
 void rtnc_fdb_sync(struct work_struct *work)
 {
-	const struct fdb_update_work *uw =
-		container_of(work, struct fdb_update_work, work);
+	const struct rtnc_fdb_update *uw =
+		container_of(work, struct rtnc_fdb_update, work);
 	struct switchdev_notifier_fdb_info info;
 	u8 addr[ETH_ALEN];
 	int i = 0;
@@ -990,7 +990,7 @@ static void rtnc_839x_l2_notification_handler(struct rtnc_priv *priv)
 	struct n_event *event;
 	int i;
 	u64 mac;
-	struct fdb_update_work *w;
+	struct rtnc_fdb_update *w;
 
 	while (!(nb->ring[e] & 1)) {
 		w = kzalloc(sizeof(*w), GFP_ATOMIC);
