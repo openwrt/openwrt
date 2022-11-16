@@ -153,6 +153,630 @@ extern int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 extern int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
 extern int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 
+/*
+ * ----------------------------------------------------------------------------
+ * The following part contains MDIO functions that might justify a separate
+ * driver in /drivers/net/mdio. For the time being keep them here.
+ */
+
+static int rtl838x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
+{
+	u32 val;
+	int err;
+	struct rtnc_priv *priv = bus->priv;
+
+	if (mii_id >= 24 && mii_id <= 27 && priv->id == RTL8380_SOC_ID)
+		return rtl838x_read_sds_phy(mii_id, regnum);
+
+	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
+		err = rtl838x_read_mmd_phy(mii_id,
+					   mdiobus_c45_devad(regnum),
+					   regnum, &val);
+		pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
+			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
+			 val, err);
+	} else {
+		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
+		err = rtl838x_read_phy(mii_id, page, regnum, &val);
+	}
+	if (err)
+		return err;
+	return val;
+}
+
+static int rtl838x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+{
+	return rtl838x_mdio_read_paged(bus, mii_id, 0, regnum);
+}
+
+static int rtl839x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
+{
+	u32 val;
+	int err;
+	struct rtnc_priv *priv = bus->priv;
+
+	if (mii_id >= 48 && mii_id <= 49 && priv->id == RTL8393_SOC_ID)
+		return rtl839x_read_sds_phy(mii_id, regnum);
+
+	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
+		err = rtl839x_read_mmd_phy(mii_id,
+					   mdiobus_c45_devad(regnum),
+					   regnum, &val);
+		pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
+			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
+			 val, err);
+	} else {
+		err = rtl839x_read_phy(mii_id, page, regnum, &val);
+		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
+	}
+		if (err)
+		return err;
+	return val;
+}
+
+static int rtl839x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+{
+	return rtl839x_mdio_read_paged(bus, mii_id, 0, regnum);
+}
+
+static int rtl930x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
+{
+	u32 val;
+	int err;
+	struct rtnc_priv *priv = bus->priv;
+
+	if (priv->phy_is_internal[mii_id])
+		return rtl930x_read_sds_phy(priv->sds_id[mii_id], page, regnum);
+
+	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
+		err = rtl930x_read_mmd_phy(mii_id,
+					   mdiobus_c45_devad(regnum),
+					   regnum, &val);
+		pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
+			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
+			 val, err);
+	} else {
+		err = rtl930x_read_phy(mii_id, page, regnum, &val);
+		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
+	}
+	if (err)
+		return err;
+	return val;
+}
+
+static int rtl930x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+{
+	return rtl930x_mdio_read_paged(bus, mii_id, 0, regnum);
+}
+
+static int rtl931x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
+{
+	u32 val;
+	int err, v;
+	struct rtnc_priv *priv = bus->priv;
+
+	pr_debug("%s: In here, port %d\n", __func__, mii_id);
+	if (priv->phy_is_internal[mii_id]) {
+		v = rtl931x_read_sds_phy(priv->sds_id[mii_id], page, regnum);
+		if (v < 0) {
+			err = v;
+		} else {
+			err = 0;
+			val = v;
+		}
+	} else {
+		if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
+			err = rtl931x_read_mmd_phy(mii_id,
+						   mdiobus_c45_devad(regnum),
+						   regnum, &val);
+			pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
+				 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
+				 val, err);
+		} else {
+			err = rtl931x_read_phy(mii_id, page, regnum, &val);
+			pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
+		}
+	}
+
+	if (err)
+		return err;
+	return val;
+}
+
+static int rtl931x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+{
+	return rtl931x_mdio_read_paged(bus, mii_id, 0, regnum);
+}
+
+static int rtl838x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
+				    int regnum, u16 value)
+{
+	u32 offset = 0;
+	struct rtnc_priv *priv = bus->priv;
+	int err;
+
+	if (mii_id >= 24 && mii_id <= 27 && priv->id == RTL8380_SOC_ID) {
+		if (mii_id == 26)
+			offset = 0x100;
+		sw_w32(value, RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2));
+		return 0;
+	}
+
+	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
+		err = rtl838x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
+					    regnum, value);
+		pr_debug("MMD: %d dev %x register %x write %x, err %d\n", mii_id,
+			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
+			 value, err);
+
+		return err;
+	}
+	err = rtl838x_write_phy(mii_id, page, regnum, value);
+	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+	return err;
+}
+
+static int rtl838x_mdio_write(struct mii_bus *bus, int mii_id,
+			      int regnum, u16 value)
+{
+	return rtl838x_mdio_write_paged(bus, mii_id, 0, regnum, value);
+}
+
+static int rtl839x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
+				    int regnum, u16 value)
+{
+	struct rtnc_priv *priv = bus->priv;
+	int err;
+
+	if (mii_id >= 48 && mii_id <= 49 && priv->id == RTL8393_SOC_ID)
+		return rtl839x_write_sds_phy(mii_id, regnum, value);
+
+	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
+		err = rtl839x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
+					    regnum, value);
+		pr_debug("MMD: %d dev %x register %x write %x, err %d\n", mii_id,
+			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
+			 value, err);
+
+		return err;
+	}
+
+	err = rtl839x_write_phy(mii_id, page, regnum, value);
+	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+	return err;
+}
+
+static int rtl839x_mdio_write(struct mii_bus *bus, int mii_id,
+			      int regnum, u16 value)
+{
+	return rtl839x_mdio_write_paged(bus, mii_id, 0, regnum, value);
+}
+
+static int rtl930x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
+				    int regnum, u16 value)
+{
+	struct rtnc_priv *priv = bus->priv;
+	int err;
+
+	if (priv->phy_is_internal[mii_id])
+		return rtl930x_write_sds_phy(priv->sds_id[mii_id], page, regnum, value);
+
+	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD))
+		return rtl930x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
+					     regnum, value);
+
+	err = rtl930x_write_phy(mii_id, page, regnum, value);
+	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+	return err;
+}
+
+static int rtl930x_mdio_write(struct mii_bus *bus, int mii_id,
+			      int regnum, u16 value)
+{
+	return rtl930x_mdio_write_paged(bus, mii_id, 0, regnum, value);
+}
+
+static int rtl931x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
+				    int regnum, u16 value)
+{
+	struct rtnc_priv *priv = bus->priv;
+	int err;
+
+	if (priv->phy_is_internal[mii_id])
+		return rtl931x_write_sds_phy(priv->sds_id[mii_id], page, regnum, value);
+
+	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
+		err = rtl931x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
+					    regnum, value);
+		pr_debug("MMD: %d dev %x register %x write %x, err %d\n", mii_id,
+			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
+			 value, err);
+
+		return err;
+	}
+
+	err = rtl931x_write_phy(mii_id, page, regnum, value);
+	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+	return err;
+}
+
+static int rtl931x_mdio_write(struct mii_bus *bus, int mii_id,
+			      int regnum, u16 value)
+{
+	return rtl931x_mdio_write_paged(bus, mii_id, 0, regnum, value);
+}
+
+static int rtl838x_mdio_reset(struct mii_bus *bus)
+{
+	pr_debug("%s called\n", __func__);
+	/* Disable MAC polling the PHY so that we can start configuration */
+	sw_w32(0x00000000, RTL838X_SMI_POLL_CTRL);
+
+	/* Enable PHY control via SoC */
+	sw_w32_mask(0, 1 << 15, RTL838X_SMI_GLB_CTRL);
+
+	// Probably should reset all PHYs here...
+	return 0;
+}
+
+static int rtl839x_mdio_reset(struct mii_bus *bus)
+{
+	return 0;
+
+	pr_debug("%s called\n", __func__);
+	/* BUG: The following does not work, but should! */
+	/* Disable MAC polling the PHY so that we can start configuration */
+	sw_w32(0x00000000, RTL839X_SMI_PORT_POLLING_CTRL);
+	sw_w32(0x00000000, RTL839X_SMI_PORT_POLLING_CTRL + 4);
+	/* Disable PHY polling via SoC */
+	sw_w32_mask(1 << 7, 0, RTL839X_SMI_GLB_CTRL);
+
+	// Probably should reset all PHYs here...
+	return 0;
+}
+
+u8 mac_type_bit[RTL930X_CPU_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6,
+				     8, 8, 8, 8, 10, 10, 10, 10, 12, 15, 18, 21};
+
+static int rtl930x_mdio_reset(struct mii_bus *bus)
+{
+	int i;
+	int pos;
+	struct rtnc_priv *priv = bus->priv;
+	u32 c45_mask = 0;
+	u32 poll_sel[2];
+	u32 poll_ctrl = 0;
+	u32 private_poll_mask = 0;
+	u32 v;
+	bool uses_usxgmii = false; // For the Aquantia PHYs
+	bool uses_hisgmii = false; // For the RTL8221/8226
+
+	// Mapping of port to phy-addresses on an SMI bus
+	poll_sel[0] = poll_sel[1] = 0;
+	for (i = 0; i < RTL930X_CPU_PORT; i++) {
+		if (priv->smi_bus[i] > 3)
+			continue;
+		pos = (i % 6) * 5;
+		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos,
+			    RTL930X_SMI_PORT0_5_ADDR + (i / 6) * 4);
+
+		pos = (i * 2) % 32;
+		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
+		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
+	}
+
+	// Configure which SMI bus is behind which port number
+	sw_w32(poll_sel[0], RTL930X_SMI_PORT0_15_POLLING_SEL);
+	sw_w32(poll_sel[1], RTL930X_SMI_PORT16_27_POLLING_SEL);
+
+	// Disable POLL_SEL for any SMI bus with a normal PHY (not RTL8295R for SFP+)
+	sw_w32_mask(poll_ctrl, 0, RTL930X_SMI_GLB_CTRL);
+
+	// Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus
+	for (i = 0; i < 4; i++)
+		if (priv->smi_bus_isc45[i])
+			c45_mask |= BIT(i + 16);
+
+	pr_info("c45_mask: %08x\n", c45_mask);
+	sw_w32_mask(0, c45_mask, RTL930X_SMI_GLB_CTRL);
+
+	// Set the MAC type of each port according to the PHY-interface
+	// Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0
+	v = 0;
+	for (i = 0; i < RTL930X_CPU_PORT; i++) {
+		switch (priv->interfaces[i]) {
+		case PHY_INTERFACE_MODE_10GBASER:
+			break;			// Serdes: Value = 0
+
+		case PHY_INTERFACE_MODE_HSGMII:
+			private_poll_mask |= BIT(i);
+			// fallthrough
+		case PHY_INTERFACE_MODE_USXGMII:
+			v |= BIT(mac_type_bit[i]);
+			uses_usxgmii = true;
+			break;
+
+		case PHY_INTERFACE_MODE_QSGMII:
+			private_poll_mask |= BIT(i);
+			v |= 3 << mac_type_bit[i];
+			break;
+
+		default:
+			break;
+		}
+	}
+	sw_w32(v, RTL930X_SMI_MAC_TYPE_CTRL);
+
+	// Set the private polling mask for all Realtek PHYs (i.e. not the 10GBit Aquantia ones)
+	sw_w32(private_poll_mask, RTL930X_SMI_PRVTE_POLLING_CTRL);
+
+	/* The following magic values are found in the port configuration, they seem to
+	 * define different ways of polling a PHY. The below is for the Aquantia PHYs of
+	 * the XGS1250 and the RTL8226 of the XGS1210 */
+	if (uses_usxgmii) {
+		sw_w32(0x01010000, RTL930X_SMI_10GPHY_POLLING_REG0_CFG);
+		sw_w32(0x01E7C400, RTL930X_SMI_10GPHY_POLLING_REG9_CFG);
+		sw_w32(0x01E7E820, RTL930X_SMI_10GPHY_POLLING_REG10_CFG);
+	}
+	if (uses_hisgmii) {
+		sw_w32(0x011FA400, RTL930X_SMI_10GPHY_POLLING_REG0_CFG);
+		sw_w32(0x013FA412, RTL930X_SMI_10GPHY_POLLING_REG9_CFG);
+		sw_w32(0x017FA414, RTL930X_SMI_10GPHY_POLLING_REG10_CFG);
+	}
+
+	pr_debug("%s: RTL930X_SMI_GLB_CTRL %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_GLB_CTRL));
+	pr_debug("%s: RTL930X_SMI_PORT0_15_POLLING_SEL %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_PORT0_15_POLLING_SEL));
+	pr_debug("%s: RTL930X_SMI_PORT16_27_POLLING_SEL %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_PORT16_27_POLLING_SEL));
+	pr_debug("%s: RTL930X_SMI_MAC_TYPE_CTRL %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_MAC_TYPE_CTRL));
+	pr_debug("%s: RTL930X_SMI_10GPHY_POLLING_REG0_CFG %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_10GPHY_POLLING_REG0_CFG));
+	pr_debug("%s: RTL930X_SMI_10GPHY_POLLING_REG9_CFG %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_10GPHY_POLLING_REG9_CFG));
+	pr_debug("%s: RTL930X_SMI_10GPHY_POLLING_REG10_CFG %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_10GPHY_POLLING_REG10_CFG));
+	pr_debug("%s: RTL930X_SMI_PRVTE_POLLING_CTRL %08x\n", __func__,
+		 sw_r32(RTL930X_SMI_PRVTE_POLLING_CTRL));
+	return 0;
+}
+
+static int rtl931x_mdio_reset(struct mii_bus *bus)
+{
+	int i;
+	int pos;
+	struct rtnc_priv *priv = bus->priv;
+	u32 c45_mask = 0;
+	u32 poll_sel[4];
+	u32 poll_ctrl = 0;
+	bool mdc_on[4];
+
+	pr_info("%s called\n", __func__);
+	// Disable port polling for configuration purposes
+	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL);
+	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL + 4);
+	msleep(100);
+
+	mdc_on[0] = mdc_on[1] = mdc_on[2] = mdc_on[3] = false;
+	// Mapping of port to phy-addresses on an SMI bus
+	poll_sel[0] = poll_sel[1] = poll_sel[2] = poll_sel[3] = 0;
+	for (i = 0; i < 56; i++) {
+		pos = (i % 6) * 5;
+		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos, RTL931X_SMI_PORT_ADDR + (i / 6) * 4);
+		pos = (i * 2) % 32;
+		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
+		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
+		mdc_on[priv->smi_bus[i]] = true;
+	}
+
+	// Configure which SMI bus is behind which port number
+	for (i = 0; i < 4; i++) {
+		pr_info("poll sel %d, %08x\n", i, poll_sel[i]);
+		sw_w32(poll_sel[i], RTL931X_SMI_PORT_POLLING_SEL + (i * 4));
+	}
+
+	// Configure which SMI busses
+	pr_info("%s: WAS RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
+	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
+	for (i = 0; i < 4; i++) {
+		// bus is polled in c45
+		if (priv->smi_bus_isc45[i])
+			c45_mask |= 0x2 << (i * 2);  // Std. C45, non-standard is 0x3
+		// Enable bus access via MDC
+		if (mdc_on[i])
+			sw_w32_mask(0, BIT(9 + i), RTL931X_MAC_L2_GLOBAL_CTRL2);
+	}
+
+	pr_info("%s: RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
+	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
+
+	/* We have a 10G PHY enable polling
+	sw_w32(0x01010000, RTL931X_SMI_10GPHY_POLLING_SEL2);
+	sw_w32(0x01E7C400, RTL931X_SMI_10GPHY_POLLING_SEL3);
+	sw_w32(0x01E7E820, RTL931X_SMI_10GPHY_POLLING_SEL4);
+*/
+	sw_w32_mask(0xff, c45_mask, RTL931X_SMI_GLB_CTRL1);
+
+	return 0;
+}
+
+static int rtnc_931x_chip_init(struct rtnc_priv *priv)
+{
+	pr_info("In %s\n", __func__);
+
+	// Initialize Encapsulation memory and wait until finished
+	sw_w32(0x1, RTL931X_MEM_ENCAP_INIT);
+	do { } while (sw_r32(RTL931X_MEM_ENCAP_INIT) & 1);
+	pr_info("%s: init ENCAP done\n", __func__);
+
+	// Initialize Managemen Information Base memory and wait until finished
+	sw_w32(0x1, RTL931X_MEM_MIB_INIT);
+	do { } while (sw_r32(RTL931X_MEM_MIB_INIT) & 1);
+	pr_info("%s: init MIB done\n", __func__);
+
+	// Initialize ACL (PIE) memory and wait until finished
+	sw_w32(0x1, RTL931X_MEM_ACL_INIT);
+	do { } while (sw_r32(RTL931X_MEM_ACL_INIT) & 1);
+	pr_info("%s: init ACL done\n", __func__);
+
+	// Initialize ALE memory and wait until finished
+	sw_w32(0xFFFFFFFF, RTL931X_MEM_ALE_INIT_0);
+	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_0));
+	sw_w32(0x7F, RTL931X_MEM_ALE_INIT_1);
+	sw_w32(0x7ff, RTL931X_MEM_ALE_INIT_2);
+	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_2) & 0x7ff);
+	pr_info("%s: init ALE done\n", __func__);
+
+	// Enable ESD auto recovery
+	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
+
+	// Init SPI, is this for thermal control or what?
+	sw_w32_mask(0x7 << 11, 0x2 << 11, RTL931X_SPI_CTRL0);
+
+	return 0;
+}
+
+static int rtl838x_mdio_init(struct rtnc_priv *priv)
+{
+	struct device_node *mii_np, *dn;
+	u32 pn;
+	int ret;
+
+	pr_debug("%s called\n", __func__);
+	mii_np = of_get_child_by_name(priv->pdev->dev.of_node, "mdio-bus");
+
+	if (!mii_np) {
+		dev_err(&priv->pdev->dev, "no %s child node found", "mdio-bus");
+		return -ENODEV;
+	}
+
+	if (!of_device_is_available(mii_np)) {
+		ret = -ENODEV;
+		goto err_put_node;
+	}
+
+	priv->mii_bus = devm_mdiobus_alloc(&priv->pdev->dev);
+	if (!priv->mii_bus) {
+		ret = -ENOMEM;
+		goto err_put_node;
+	}
+
+	switch(priv->family_id) {
+	case RTL8380_FAMILY_ID:
+		priv->mii_bus->name = "rtl838x-eth-mdio";
+		priv->mii_bus->read = rtl838x_mdio_read;
+		priv->mii_bus->read_paged = rtl838x_mdio_read_paged;
+		priv->mii_bus->write = rtl838x_mdio_write;
+		priv->mii_bus->write_paged = rtl838x_mdio_write_paged;
+		priv->mii_bus->reset = rtl838x_mdio_reset;
+		break;
+	case RTL8390_FAMILY_ID:
+		priv->mii_bus->name = "rtl839x-eth-mdio";
+		priv->mii_bus->read = rtl839x_mdio_read;
+		priv->mii_bus->read_paged = rtl839x_mdio_read_paged;
+		priv->mii_bus->write = rtl839x_mdio_write;
+		priv->mii_bus->write_paged = rtl839x_mdio_write_paged;
+		priv->mii_bus->reset = rtl839x_mdio_reset;
+		break;
+	case RTL9300_FAMILY_ID:
+		priv->mii_bus->name = "rtl930x-eth-mdio";
+		priv->mii_bus->read = rtl930x_mdio_read;
+		priv->mii_bus->read_paged = rtl930x_mdio_read_paged;
+		priv->mii_bus->write = rtl930x_mdio_write;
+		priv->mii_bus->write_paged = rtl930x_mdio_write_paged;
+		priv->mii_bus->reset = rtl930x_mdio_reset;
+		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
+		break;
+	case RTL9310_FAMILY_ID:
+		priv->mii_bus->name = "rtl931x-eth-mdio";
+		priv->mii_bus->read = rtl931x_mdio_read;
+		priv->mii_bus->read_paged = rtl931x_mdio_read_paged;
+		priv->mii_bus->write = rtl931x_mdio_write;
+		priv->mii_bus->write_paged = rtl931x_mdio_write_paged;
+		priv->mii_bus->reset = rtl931x_mdio_reset;
+		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
+		break;
+	}
+	priv->mii_bus->access_capabilities = MDIOBUS_ACCESS_C22_MMD;
+	priv->mii_bus->priv = priv;
+	priv->mii_bus->parent = &priv->pdev->dev;
+
+	for_each_node_by_name(dn, "ethernet-phy") {
+		u32 smi_addr[2];
+
+		if (of_property_read_u32(dn, "reg", &pn))
+			continue;
+
+		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
+			smi_addr[0] = 0;
+			smi_addr[1] = pn;
+		}
+
+		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
+			priv->sds_id[pn] = -1;
+		else {
+			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
+		}
+
+		if (pn < RTNC_MAX_PORTS) {
+			priv->smi_bus[pn] = smi_addr[0];
+			priv->smi_addr[pn] = smi_addr[1];
+		} else {
+			pr_err("%s: illegal port number %d\n", __func__, pn);
+		}
+
+		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
+			priv->smi_bus_isc45[smi_addr[0]] = true;
+
+		if (of_property_read_bool(dn, "phy-is-integrated")) {
+			priv->phy_is_internal[pn] = true;
+		}
+	}
+
+	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
+	if (!dn) {
+		dev_err(&priv->pdev->dev, "No RTL switch node in DTS\n");
+		return -ENODEV;
+	}
+
+	for_each_node_by_name(dn, "port") {
+		if (of_property_read_u32(dn, "reg", &pn))
+			continue;
+		pr_debug("%s Looking at port %d\n", __func__, pn);
+		if (pn > priv->cpu_port)
+			continue;
+		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
+			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
+		pr_debug("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
+	}
+
+	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
+	ret = of_mdiobus_register(priv->mii_bus, mii_np);
+
+err_put_node:
+	of_node_put(mii_np);
+	return ret;
+}
+
+static int rtl838x_mdio_remove(struct rtnc_priv *priv)
+{
+	pr_debug("%s called\n", __func__);
+	if (!priv->mii_bus)
+		return 0;
+
+	mdiobus_unregister(priv->mii_bus);
+	mdiobus_free(priv->mii_bus);
+
+	return 0;
+}
+
+/*
+ * End of MDIO driver part.
+ * ----------------------------------------------------------------------------
+ */
+
 static void rtnc_838x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
 	// cpu_tag[0] is reserved on the RTL83XX SoCs
@@ -1585,619 +2209,6 @@ static int rtnc_set_link_ksettings(struct net_device *ndev,
 
 	pr_debug("%s called\n", __func__);
 	return phylink_ethtool_ksettings_set(priv->phylink, cmd);
-}
-
-static int rtl838x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
-{
-	u32 val;
-	int err;
-	struct rtnc_priv *priv = bus->priv;
-
-	if (mii_id >= 24 && mii_id <= 27 && priv->id == RTL8380_SOC_ID)
-		return rtl838x_read_sds_phy(mii_id, regnum);
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl838x_read_mmd_phy(mii_id,
-					   mdiobus_c45_devad(regnum),
-					   regnum, &val);
-		pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 val, err);
-	} else {
-		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
-		err = rtl838x_read_phy(mii_id, page, regnum, &val);
-	}
-	if (err)
-		return err;
-	return val;
-}
-
-static int rtl838x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
-{
-	return rtl838x_mdio_read_paged(bus, mii_id, 0, regnum);
-}
-
-static int rtl839x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
-{
-	u32 val;
-	int err;
-	struct rtnc_priv *priv = bus->priv;
-
-	if (mii_id >= 48 && mii_id <= 49 && priv->id == RTL8393_SOC_ID)
-		return rtl839x_read_sds_phy(mii_id, regnum);
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl839x_read_mmd_phy(mii_id,
-					   mdiobus_c45_devad(regnum),
-					   regnum, &val);
-		pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 val, err);
-	} else {
-		err = rtl839x_read_phy(mii_id, page, regnum, &val);
-		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
-	}
-		if (err)
-		return err;
-	return val;
-}
-
-static int rtl839x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
-{
-	return rtl839x_mdio_read_paged(bus, mii_id, 0, regnum);
-}
-
-static int rtl930x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
-{
-	u32 val;
-	int err;
-	struct rtnc_priv *priv = bus->priv;
-
-	if (priv->phy_is_internal[mii_id])
-		return rtl930x_read_sds_phy(priv->sds_id[mii_id], page, regnum);
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl930x_read_mmd_phy(mii_id,
-					   mdiobus_c45_devad(regnum),
-					   regnum, &val);
-		pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 val, err);
-	} else {
-		err = rtl930x_read_phy(mii_id, page, regnum, &val);
-		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
-	}
-	if (err)
-		return err;
-	return val;
-}
-
-static int rtl930x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
-{
-	return rtl930x_mdio_read_paged(bus, mii_id, 0, regnum);
-}
-
-static int rtl931x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, int regnum)
-{
-	u32 val;
-	int err, v;
-	struct rtnc_priv *priv = bus->priv;
-
-	pr_debug("%s: In here, port %d\n", __func__, mii_id);
-	if (priv->phy_is_internal[mii_id]) {
-		v = rtl931x_read_sds_phy(priv->sds_id[mii_id], page, regnum);
-		if (v < 0) {
-			err = v;
-		} else {
-			err = 0;
-			val = v;
-		}
-	} else {
-		if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-			err = rtl931x_read_mmd_phy(mii_id,
-						   mdiobus_c45_devad(regnum),
-						   regnum, &val);
-			pr_debug("MMD: %d dev %x register %x read %x, err %d\n", mii_id,
-				 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-				 val, err);
-		} else {
-			err = rtl931x_read_phy(mii_id, page, regnum, &val);
-			pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
-		}
-	}
-
-	if (err)
-		return err;
-	return val;
-}
-
-static int rtl931x_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
-{
-	return rtl931x_mdio_read_paged(bus, mii_id, 0, regnum);
-}
-
-static int rtl838x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
-				    int regnum, u16 value)
-{
-	u32 offset = 0;
-	struct rtnc_priv *priv = bus->priv;
-	int err;
-
-	if (mii_id >= 24 && mii_id <= 27 && priv->id == RTL8380_SOC_ID) {
-		if (mii_id == 26)
-			offset = 0x100;
-		sw_w32(value, RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2));
-		return 0;
-	}
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl838x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
-					    regnum, value);
-		pr_debug("MMD: %d dev %x register %x write %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 value, err);
-
-		return err;
-	}
-	err = rtl838x_write_phy(mii_id, page, regnum, value);
-	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
-	return err;
-}
-
-static int rtl838x_mdio_write(struct mii_bus *bus, int mii_id,
-			      int regnum, u16 value)
-{
-	return rtl838x_mdio_write_paged(bus, mii_id, 0, regnum, value);
-}
-
-static int rtl839x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
-				    int regnum, u16 value)
-{
-	struct rtnc_priv *priv = bus->priv;
-	int err;
-
-	if (mii_id >= 48 && mii_id <= 49 && priv->id == RTL8393_SOC_ID)
-		return rtl839x_write_sds_phy(mii_id, regnum, value);
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl839x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
-					    regnum, value);
-		pr_debug("MMD: %d dev %x register %x write %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 value, err);
-
-		return err;
-	}
-
-	err = rtl839x_write_phy(mii_id, page, regnum, value);
-	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
-	return err;
-}
-
-static int rtl839x_mdio_write(struct mii_bus *bus, int mii_id,
-			      int regnum, u16 value)
-{
-	return rtl839x_mdio_write_paged(bus, mii_id, 0, regnum, value);
-}
-
-static int rtl930x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
-				    int regnum, u16 value)
-{
-	struct rtnc_priv *priv = bus->priv;
-	int err;
-
-	if (priv->phy_is_internal[mii_id])
-		return rtl930x_write_sds_phy(priv->sds_id[mii_id], page, regnum, value);
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD))
-		return rtl930x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
-					     regnum, value);
-
-	err = rtl930x_write_phy(mii_id, page, regnum, value);
-	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
-	return err;
-}
-
-static int rtl930x_mdio_write(struct mii_bus *bus, int mii_id,
-			      int regnum, u16 value)
-{
-	return rtl930x_mdio_write_paged(bus, mii_id, 0, regnum, value);
-}
-
-static int rtl931x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
-				    int regnum, u16 value)
-{
-	struct rtnc_priv *priv = bus->priv;
-	int err;
-
-	if (priv->phy_is_internal[mii_id])
-		return rtl931x_write_sds_phy(priv->sds_id[mii_id], page, regnum, value);
-
-	if (regnum & (MII_ADDR_C45 | MII_ADDR_C22_MMD)) {
-		err = rtl931x_write_mmd_phy(mii_id, mdiobus_c45_devad(regnum),
-					    regnum, value);
-		pr_debug("MMD: %d dev %x register %x write %x, err %d\n", mii_id,
-			 mdiobus_c45_devad(regnum), mdiobus_c45_regad(regnum),
-			 value, err);
-
-		return err;
-	}
-
-	err = rtl931x_write_phy(mii_id, page, regnum, value);
-	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
-	return err;
-}
-
-static int rtl931x_mdio_write(struct mii_bus *bus, int mii_id,
-			      int regnum, u16 value)
-{
-	return rtl931x_mdio_write_paged(bus, mii_id, 0, regnum, value);
-}
-
-static int rtl838x_mdio_reset(struct mii_bus *bus)
-{
-	pr_debug("%s called\n", __func__);
-	/* Disable MAC polling the PHY so that we can start configuration */
-	sw_w32(0x00000000, RTL838X_SMI_POLL_CTRL);
-
-	/* Enable PHY control via SoC */
-	sw_w32_mask(0, 1 << 15, RTL838X_SMI_GLB_CTRL);
-
-	// Probably should reset all PHYs here...
-	return 0;
-}
-
-static int rtl839x_mdio_reset(struct mii_bus *bus)
-{
-	return 0;
-
-	pr_debug("%s called\n", __func__);
-	/* BUG: The following does not work, but should! */
-	/* Disable MAC polling the PHY so that we can start configuration */
-	sw_w32(0x00000000, RTL839X_SMI_PORT_POLLING_CTRL);
-	sw_w32(0x00000000, RTL839X_SMI_PORT_POLLING_CTRL + 4);
-	/* Disable PHY polling via SoC */
-	sw_w32_mask(1 << 7, 0, RTL839X_SMI_GLB_CTRL);
-
-	// Probably should reset all PHYs here...
-	return 0;
-}
-
-u8 mac_type_bit[RTL930X_CPU_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6,
-				     8, 8, 8, 8, 10, 10, 10, 10, 12, 15, 18, 21};
-
-static int rtl930x_mdio_reset(struct mii_bus *bus)
-{
-	int i;
-	int pos;
-	struct rtnc_priv *priv = bus->priv;
-	u32 c45_mask = 0;
-	u32 poll_sel[2];
-	u32 poll_ctrl = 0;
-	u32 private_poll_mask = 0;
-	u32 v;
-	bool uses_usxgmii = false; // For the Aquantia PHYs
-	bool uses_hisgmii = false; // For the RTL8221/8226
-
-	// Mapping of port to phy-addresses on an SMI bus
-	poll_sel[0] = poll_sel[1] = 0;
-	for (i = 0; i < RTL930X_CPU_PORT; i++) {
-		if (priv->smi_bus[i] > 3)
-			continue;
-		pos = (i % 6) * 5;
-		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos,
-			    RTL930X_SMI_PORT0_5_ADDR + (i / 6) * 4);
-
-		pos = (i * 2) % 32;
-		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
-		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
-	}
-
-	// Configure which SMI bus is behind which port number
-	sw_w32(poll_sel[0], RTL930X_SMI_PORT0_15_POLLING_SEL);
-	sw_w32(poll_sel[1], RTL930X_SMI_PORT16_27_POLLING_SEL);
-
-	// Disable POLL_SEL for any SMI bus with a normal PHY (not RTL8295R for SFP+)
-	sw_w32_mask(poll_ctrl, 0, RTL930X_SMI_GLB_CTRL);
-
-	// Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus
-	for (i = 0; i < 4; i++)
-		if (priv->smi_bus_isc45[i])
-			c45_mask |= BIT(i + 16);
-
-	pr_info("c45_mask: %08x\n", c45_mask);
-	sw_w32_mask(0, c45_mask, RTL930X_SMI_GLB_CTRL);
-
-	// Set the MAC type of each port according to the PHY-interface
-	// Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0
-	v = 0;
-	for (i = 0; i < RTL930X_CPU_PORT; i++) {
-		switch (priv->interfaces[i]) {
-		case PHY_INTERFACE_MODE_10GBASER:
-			break;			// Serdes: Value = 0
-
-		case PHY_INTERFACE_MODE_HSGMII:
-			private_poll_mask |= BIT(i);
-			// fallthrough
-		case PHY_INTERFACE_MODE_USXGMII:
-			v |= BIT(mac_type_bit[i]);
-			uses_usxgmii = true;
-			break;
-
-		case PHY_INTERFACE_MODE_QSGMII:
-			private_poll_mask |= BIT(i);
-			v |= 3 << mac_type_bit[i];
-			break;
-
-		default:
-			break;
-		}
-	}
-	sw_w32(v, RTL930X_SMI_MAC_TYPE_CTRL);
-
-	// Set the private polling mask for all Realtek PHYs (i.e. not the 10GBit Aquantia ones)
-	sw_w32(private_poll_mask, RTL930X_SMI_PRVTE_POLLING_CTRL);
-
-	/* The following magic values are found in the port configuration, they seem to
-	 * define different ways of polling a PHY. The below is for the Aquantia PHYs of
-	 * the XGS1250 and the RTL8226 of the XGS1210 */
-	if (uses_usxgmii) {
-		sw_w32(0x01010000, RTL930X_SMI_10GPHY_POLLING_REG0_CFG);
-		sw_w32(0x01E7C400, RTL930X_SMI_10GPHY_POLLING_REG9_CFG);
-		sw_w32(0x01E7E820, RTL930X_SMI_10GPHY_POLLING_REG10_CFG);
-	}
-	if (uses_hisgmii) {
-		sw_w32(0x011FA400, RTL930X_SMI_10GPHY_POLLING_REG0_CFG);
-		sw_w32(0x013FA412, RTL930X_SMI_10GPHY_POLLING_REG9_CFG);
-		sw_w32(0x017FA414, RTL930X_SMI_10GPHY_POLLING_REG10_CFG);
-	}
-
-	pr_debug("%s: RTL930X_SMI_GLB_CTRL %08x\n", __func__,
-		 sw_r32(RTL930X_SMI_GLB_CTRL));
-	pr_debug("%s: RTL930X_SMI_PORT0_15_POLLING_SEL %08x\n", __func__,
-		 sw_r32(RTL930X_SMI_PORT0_15_POLLING_SEL));
-	pr_debug("%s: RTL930X_SMI_PORT16_27_POLLING_SEL %08x\n", __func__,
-		 sw_r32(RTL930X_SMI_PORT16_27_POLLING_SEL));
-	pr_debug("%s: RTL930X_SMI_MAC_TYPE_CTRL %08x\n", __func__,
-		 sw_r32(RTL930X_SMI_MAC_TYPE_CTRL));
-	pr_debug("%s: RTL930X_SMI_10GPHY_POLLING_REG0_CFG %08x\n", __func__,
-		 sw_r32(RTL930X_SMI_10GPHY_POLLING_REG0_CFG));
-	pr_debug("%s: RTL930X_SMI_10GPHY_POLLING_REG9_CFG %08x\n", __func__,
-		 sw_r32(RTL930X_SMI_10GPHY_POLLING_REG9_CFG));
-	pr_debug("%s: RTL930X_SMI_10GPHY_POLLING_REG10_CFG %08x\n", __func__,
-		 sw_r32(RTL930X_SMI_10GPHY_POLLING_REG10_CFG));
-	pr_debug("%s: RTL930X_SMI_PRVTE_POLLING_CTRL %08x\n", __func__,
-		 sw_r32(RTL930X_SMI_PRVTE_POLLING_CTRL));
-	return 0;
-}
-
-static int rtl931x_mdio_reset(struct mii_bus *bus)
-{
-	int i;
-	int pos;
-	struct rtnc_priv *priv = bus->priv;
-	u32 c45_mask = 0;
-	u32 poll_sel[4];
-	u32 poll_ctrl = 0;
-	bool mdc_on[4];
-
-	pr_info("%s called\n", __func__);
-	// Disable port polling for configuration purposes
-	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL);
-	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL + 4);
-	msleep(100);
-
-	mdc_on[0] = mdc_on[1] = mdc_on[2] = mdc_on[3] = false;
-	// Mapping of port to phy-addresses on an SMI bus
-	poll_sel[0] = poll_sel[1] = poll_sel[2] = poll_sel[3] = 0;
-	for (i = 0; i < 56; i++) {
-		pos = (i % 6) * 5;
-		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos, RTL931X_SMI_PORT_ADDR + (i / 6) * 4);
-		pos = (i * 2) % 32;
-		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
-		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
-		mdc_on[priv->smi_bus[i]] = true;
-	}
-
-	// Configure which SMI bus is behind which port number
-	for (i = 0; i < 4; i++) {
-		pr_info("poll sel %d, %08x\n", i, poll_sel[i]);
-		sw_w32(poll_sel[i], RTL931X_SMI_PORT_POLLING_SEL + (i * 4));
-	}
-
-	// Configure which SMI busses
-	pr_info("%s: WAS RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
-	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
-	for (i = 0; i < 4; i++) {
-		// bus is polled in c45
-		if (priv->smi_bus_isc45[i])
-			c45_mask |= 0x2 << (i * 2);  // Std. C45, non-standard is 0x3
-		// Enable bus access via MDC
-		if (mdc_on[i])
-			sw_w32_mask(0, BIT(9 + i), RTL931X_MAC_L2_GLOBAL_CTRL2);
-	}
-
-	pr_info("%s: RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
-	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
-
-	/* We have a 10G PHY enable polling
-	sw_w32(0x01010000, RTL931X_SMI_10GPHY_POLLING_SEL2);
-	sw_w32(0x01E7C400, RTL931X_SMI_10GPHY_POLLING_SEL3);
-	sw_w32(0x01E7E820, RTL931X_SMI_10GPHY_POLLING_SEL4);
-*/
-	sw_w32_mask(0xff, c45_mask, RTL931X_SMI_GLB_CTRL1);
-
-	return 0;
-}
-
-static int rtnc_931x_chip_init(struct rtnc_priv *priv)
-{
-	pr_info("In %s\n", __func__);
-
-	// Initialize Encapsulation memory and wait until finished
-	sw_w32(0x1, RTL931X_MEM_ENCAP_INIT);
-	do { } while (sw_r32(RTL931X_MEM_ENCAP_INIT) & 1);
-	pr_info("%s: init ENCAP done\n", __func__);
-
-	// Initialize Managemen Information Base memory and wait until finished
-	sw_w32(0x1, RTL931X_MEM_MIB_INIT);
-	do { } while (sw_r32(RTL931X_MEM_MIB_INIT) & 1);
-	pr_info("%s: init MIB done\n", __func__);
-
-	// Initialize ACL (PIE) memory and wait until finished
-	sw_w32(0x1, RTL931X_MEM_ACL_INIT);
-	do { } while (sw_r32(RTL931X_MEM_ACL_INIT) & 1);
-	pr_info("%s: init ACL done\n", __func__);
-
-	// Initialize ALE memory and wait until finished
-	sw_w32(0xFFFFFFFF, RTL931X_MEM_ALE_INIT_0);
-	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_0));
-	sw_w32(0x7F, RTL931X_MEM_ALE_INIT_1);
-	sw_w32(0x7ff, RTL931X_MEM_ALE_INIT_2);
-	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_2) & 0x7ff);
-	pr_info("%s: init ALE done\n", __func__);
-
-	// Enable ESD auto recovery
-	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
-
-	// Init SPI, is this for thermal control or what?
-	sw_w32_mask(0x7 << 11, 0x2 << 11, RTL931X_SPI_CTRL0);
-
-	return 0;
-}
-
-static int rtl838x_mdio_init(struct rtnc_priv *priv)
-{
-	struct device_node *mii_np, *dn;
-	u32 pn;
-	int ret;
-
-	pr_debug("%s called\n", __func__);
-	mii_np = of_get_child_by_name(priv->pdev->dev.of_node, "mdio-bus");
-
-	if (!mii_np) {
-		dev_err(&priv->pdev->dev, "no %s child node found", "mdio-bus");
-		return -ENODEV;
-	}
-
-	if (!of_device_is_available(mii_np)) {
-		ret = -ENODEV;
-		goto err_put_node;
-	}
-
-	priv->mii_bus = devm_mdiobus_alloc(&priv->pdev->dev);
-	if (!priv->mii_bus) {
-		ret = -ENOMEM;
-		goto err_put_node;
-	}
-
-	switch(priv->family_id) {
-	case RTL8380_FAMILY_ID:
-		priv->mii_bus->name = "rtl838x-eth-mdio";
-		priv->mii_bus->read = rtl838x_mdio_read;
-		priv->mii_bus->read_paged = rtl838x_mdio_read_paged;
-		priv->mii_bus->write = rtl838x_mdio_write;
-		priv->mii_bus->write_paged = rtl838x_mdio_write_paged;
-		priv->mii_bus->reset = rtl838x_mdio_reset;
-		break;
-	case RTL8390_FAMILY_ID:
-		priv->mii_bus->name = "rtl839x-eth-mdio";
-		priv->mii_bus->read = rtl839x_mdio_read;
-		priv->mii_bus->read_paged = rtl839x_mdio_read_paged;
-		priv->mii_bus->write = rtl839x_mdio_write;
-		priv->mii_bus->write_paged = rtl839x_mdio_write_paged;
-		priv->mii_bus->reset = rtl839x_mdio_reset;
-		break;
-	case RTL9300_FAMILY_ID:
-		priv->mii_bus->name = "rtl930x-eth-mdio";
-		priv->mii_bus->read = rtl930x_mdio_read;
-		priv->mii_bus->read_paged = rtl930x_mdio_read_paged;
-		priv->mii_bus->write = rtl930x_mdio_write;
-		priv->mii_bus->write_paged = rtl930x_mdio_write_paged;
-		priv->mii_bus->reset = rtl930x_mdio_reset;
-		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
-		break;
-	case RTL9310_FAMILY_ID:
-		priv->mii_bus->name = "rtl931x-eth-mdio";
-		priv->mii_bus->read = rtl931x_mdio_read;
-		priv->mii_bus->read_paged = rtl931x_mdio_read_paged;
-		priv->mii_bus->write = rtl931x_mdio_write;
-		priv->mii_bus->write_paged = rtl931x_mdio_write_paged;
-		priv->mii_bus->reset = rtl931x_mdio_reset;
-		priv->mii_bus->probe_capabilities = MDIOBUS_C22_C45;
-		break;
-	}
-	priv->mii_bus->access_capabilities = MDIOBUS_ACCESS_C22_MMD;
-	priv->mii_bus->priv = priv;
-	priv->mii_bus->parent = &priv->pdev->dev;
-
-	for_each_node_by_name(dn, "ethernet-phy") {
-		u32 smi_addr[2];
-
-		if (of_property_read_u32(dn, "reg", &pn))
-			continue;
-
-		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
-			smi_addr[0] = 0;
-			smi_addr[1] = pn;
-		}
-
-		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
-			priv->sds_id[pn] = -1;
-		else {
-			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
-		}
-
-		if (pn < RTNC_MAX_PORTS) {
-			priv->smi_bus[pn] = smi_addr[0];
-			priv->smi_addr[pn] = smi_addr[1];
-		} else {
-			pr_err("%s: illegal port number %d\n", __func__, pn);
-		}
-
-		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
-			priv->smi_bus_isc45[smi_addr[0]] = true;
-
-		if (of_property_read_bool(dn, "phy-is-integrated")) {
-			priv->phy_is_internal[pn] = true;
-		}
-	}
-
-	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
-	if (!dn) {
-		dev_err(&priv->pdev->dev, "No RTL switch node in DTS\n");
-		return -ENODEV;
-	}
-
-	for_each_node_by_name(dn, "port") {
-		if (of_property_read_u32(dn, "reg", &pn))
-			continue;
-		pr_debug("%s Looking at port %d\n", __func__, pn);
-		if (pn > priv->cpu_port)
-			continue;
-		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
-			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
-		pr_debug("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
-	}
-
-	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
-	ret = of_mdiobus_register(priv->mii_bus, mii_np);
-
-err_put_node:
-	of_node_put(mii_np);
-	return ret;
-}
-
-static int rtl838x_mdio_remove(struct rtnc_priv *priv)
-{
-	pr_debug("%s called\n", __func__);
-	if (!priv->mii_bus)
-		return 0;
-
-	mdiobus_unregister(priv->mii_bus);
-	mdiobus_free(priv->mii_bus);
-
-	return 0;
 }
 
 static netdev_features_t rtnc_ndo_fix_features(struct net_device *dev,
