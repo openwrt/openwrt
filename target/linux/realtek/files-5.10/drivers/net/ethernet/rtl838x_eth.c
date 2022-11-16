@@ -51,35 +51,34 @@
 #define RTNC_RING_BUFFER	1600
 
 struct rtnc_hdr {
-	uint8_t		*buf;
-	uint16_t	reserved;
-	uint16_t	size;		/* buffer size */
-	uint16_t	offset;
-	uint16_t	len;		/* pkt len */
-	/* cpu_tag[0] is a reserved uint16_t on RTL83xx */
-	uint16_t	cpu_tag[10];
+	uint8_t			*buf;
+	uint16_t		reserved;
+	uint16_t		size;		/* buffer size */
+	uint16_t		offset;
+	uint16_t		len;		/* pkt len */
+	uint16_t		cpu_tag[10];	/* tag[0] reserved on RTL83xx */
 } __packed __aligned(1);
 
 struct n_event {
-	uint32_t	type:2;
-	uint32_t	fidVid:12;
-	uint64_t	mac:48;
-	uint32_t	slp:6;
-	uint32_t	valid:1;
-	uint32_t	reserved:27;
+	uint32_t		type:2;
+	uint32_t		fidVid:12;
+	uint64_t		mac:48;
+	uint32_t		slp:6;
+	uint32_t		valid:1;
+	uint32_t		reserved:27;
 } __packed __aligned(1);
 
 struct ring_b {
-	uint32_t	rx_r[RTNC_MAX_RXRINGS][RTNC_MAX_RXLEN];
-	uint32_t	tx_r[RTNC_TXRINGS][RTNC_TXRINGLEN];
-	struct rtnc_hdr	rx_header[RTNC_MAX_RXRINGS][RTNC_MAX_RXLEN];
-	struct rtnc_hdr	tx_header[RTNC_TXRINGS][RTNC_TXRINGLEN];
-	uint32_t	c_rx[RTNC_MAX_RXRINGS];
-	uint32_t	c_tx[RTNC_TXRINGS];
+	uint32_t		rx_r[RTNC_MAX_RXRINGS][RTNC_MAX_RXLEN];
+	uint32_t		tx_r[RTNC_TXRINGS][RTNC_TXRINGLEN];
+	struct rtnc_hdr		rx_header[RTNC_MAX_RXRINGS][RTNC_MAX_RXLEN];
+	struct rtnc_hdr		tx_header[RTNC_TXRINGS][RTNC_TXRINGLEN];
+	uint32_t		c_rx[RTNC_MAX_RXRINGS];
+	uint32_t		c_tx[RTNC_TXRINGS];
 };
 
 struct notify_block {
-	struct n_event	events[RTNC_NOTIFY_EVENTS];
+	struct n_event		events[RTNC_NOTIFY_EVENTS];
 };
 
 struct notify_b {
@@ -88,6 +87,71 @@ struct notify_b {
 	u32			ring[RTNC_NOTIFY_BLOCKS];
 	u32			reserved2[8];
 };
+
+struct rtnc_rx_q {
+	int			id;
+	struct rtnc_priv	*priv;
+	struct napi_struct	napi;
+};
+
+struct rtnc_priv {
+	struct net_device	*netdev;
+	struct platform_device	*pdev;
+	dma_addr_t		ring_dma;
+	struct ring_b		*ring;
+	dma_addr_t		notify_dma;
+	struct notify_b		*notify;
+	dma_addr_t		rxspace_dma;
+	char			*rxspace;
+	dma_addr_t		txspace_dma;
+	char			*txspace;
+	spinlock_t		lock;
+	struct mii_bus		*mii_bus;
+	struct rtnc_rx_q	rx_qs[RTNC_MAX_RXRINGS];
+	struct phylink		*phylink;
+	struct phylink_config	phylink_config;
+	u16			id;
+	u16			family_id;
+	const struct rtnc_reg	*r;
+	u8			cpu_port;
+	u32			lastEvent;
+	u16			rxrings;
+	u16			rxringlen;
+	u8			smi_bus[RTNC_MAX_PORTS];
+	u8			smi_addr[RTNC_MAX_PORTS];
+	u32			sds_id[RTNC_MAX_PORTS];
+	bool			smi_bus_isc45[RTNC_MAX_SMI_BUSSES];
+	bool			phy_is_internal[RTNC_MAX_PORTS];
+	phy_interface_t		interfaces[RTNC_MAX_PORTS];
+};
+
+struct rtnc_dsa_tag {
+	u8			reason;
+	u8			queue;
+	u16			port;
+	u8			l2_offloaded;
+	u8			prio;
+	bool			crc_error;
+};
+
+struct fdb_update_work {
+	struct work_struct	work;
+	struct net_device	*ndev;
+	u64			macs[RTNC_NOTIFY_EVENTS + 1];
+};
+
+extern int rtl838x_phy_init(struct rtnc_priv *priv);
+extern int rtl838x_read_sds_phy(int phy_addr, int phy_reg);
+extern int rtl839x_read_sds_phy(int phy_addr, int phy_reg);
+extern int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v);
+extern int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg);
+extern int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+extern int rtl931x_read_sds_phy(int phy_addr, int page, int phy_reg);
+extern int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
+extern int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
+extern int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
+extern int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
+extern int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 
 static void rtnc_838x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
@@ -166,56 +230,6 @@ static void rtnc_93xx_header_vlan_set(struct rtnc_hdr *h, int vlan)
 	h->cpu_tag[3] |= (vlan & 0xff) << 8;
 }
 
-struct rtnc_rx_q {
-	int id;
-	struct rtnc_priv *priv;
-	struct napi_struct napi;
-};
-
-struct rtnc_priv {
-	struct net_device *netdev;
-	struct platform_device *pdev;
-	dma_addr_t	ring_dma;
-	struct ring_b	*ring;
-	dma_addr_t	notify_dma;
-	struct notify_b *notify;
-	dma_addr_t	rxspace_dma;
-	char		*rxspace;
-	dma_addr_t	txspace_dma;
-	char		*txspace;
-	spinlock_t	lock;
-	struct mii_bus	*mii_bus;
-	struct rtnc_rx_q rx_qs[RTNC_MAX_RXRINGS];
-	struct phylink *phylink;
-	struct phylink_config phylink_config;
-	u16 id;
-	u16 family_id;
-	const struct rtnc_reg *r;
-	u8 cpu_port;
-	u32 lastEvent;
-	u16 rxrings;
-	u16 rxringlen;
-	u8 smi_bus[RTNC_MAX_PORTS];
-	u8 smi_addr[RTNC_MAX_PORTS];
-	u32 sds_id[RTNC_MAX_PORTS];
-	bool smi_bus_isc45[RTNC_MAX_SMI_BUSSES];
-	bool phy_is_internal[RTNC_MAX_PORTS];
-	phy_interface_t interfaces[RTNC_MAX_PORTS];
-};
-
-extern int rtl838x_phy_init(struct rtnc_priv *priv);
-extern int rtl838x_read_sds_phy(int phy_addr, int phy_reg);
-extern int rtl839x_read_sds_phy(int phy_addr, int phy_reg);
-extern int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v);
-extern int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg);
-extern int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
-extern int rtl931x_read_sds_phy(int phy_addr, int page, int phy_reg);
-extern int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
-extern int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
-extern int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
-extern int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
-extern int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
-
 /*
  * On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of 
  * the rings. Writing x into these registers substracts x from its content.
@@ -254,15 +268,6 @@ void rtnc_931x_update_cntr(int r, int released)
 	sw_w32_mask(0x3ff << pos, released << pos, reg);
 	sw_w32(v, reg);
 }
-
-struct rtnc_dsa_tag {
-	u8	reason;
-	u8	queue;
-	u16	port;
-	u8	l2_offloaded;
-	u8	prio;
-	bool	crc_error;
-};
 
 bool rtnc_838x_decode_tag(struct rtnc_hdr *h, struct rtnc_dsa_tag *t)
 {
@@ -367,12 +372,6 @@ static void rtnc_rb_cleanup(struct rtnc_priv *priv, int status)
 		ring->c_rx[r] = idx;
 	}
 }
-
-struct fdb_update_work {
-	struct work_struct work;
-	struct net_device *ndev;
-	u64 macs[RTNC_NOTIFY_EVENTS + 1];
-};
 
 void rtnc_fdb_sync(struct work_struct *work)
 {
