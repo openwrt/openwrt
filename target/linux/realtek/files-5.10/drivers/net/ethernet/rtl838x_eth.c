@@ -49,6 +49,7 @@
 #define RTNC_MAX_PORTS		57
 #define RTNC_MAX_SMI_BUSSES	4
 #define RTNC_RING_BUFFER	1600
+#define RTNC_MAX_RX_LEN		1600
 
 struct rtnc_hdr {
 	uint8_t			*buf;
@@ -1310,8 +1311,10 @@ static void rtnc_838x_hw_en_rxtx(struct rtnc_priv *priv)
 	/* Disable Head of Line features for all RX rings */
 	sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
 
-	/* Truncate RX buffer to 0x640 (1600) bytes, pad TX */
-	sw_w32(0x06400020, priv->r->dma_if_ctrl);
+	/* set and enforce maximum RX len */
+	sw_w32((RTNC_MAX_RX_LEN << 16) | 0x10, priv->r->dma_if_ctrl);
+	/* pad TX */
+	sw_w32_mask(0, 0x20, priv->r->dma_if_ctrl);
 
 	/* Enable RX done and RX overflow interrupts */
 	sw_w32(0xffff, priv->r->dma_if_intr_msk);
@@ -1335,8 +1338,8 @@ static void rtnc_838x_hw_en_rxtx(struct rtnc_priv *priv)
 
 static void rtnc_839x_hw_en_rxtx(struct rtnc_priv *priv)
 {
-	/* Setup CPU-Port: RX Buffer */
-	sw_w32(0x0000c808, priv->r->dma_if_ctrl);
+	/* set and enforce maximum RX len */
+	sw_w32((RTNC_MAX_RX_LEN << 5) | 0x10, priv->r->dma_if_ctrl);
 
 	/* Enable Notify, RX done and RX overflow interrupts */
 	sw_w32(0x0070ffff, priv->r->dma_if_intr_msk); /* Notify IRQ! */
@@ -1362,8 +1365,8 @@ static void rtnc_93xx_hw_en_rxtx(struct rtnc_priv *priv)
 	int i, pos;
 	u32 v;
 
-	/* Setup CPU-Port: RX Buffer truncated at 1600 Bytes */
-	sw_w32(0x06400040, priv->r->dma_if_ctrl);
+	/* set and enforce maximum RX len */
+	sw_w32((RTNC_MAX_RX_LEN << 16) | 0x40, priv->r->dma_if_ctrl);
 
 	for (i = 0; i < priv->rxrings; i++) {
 		pos = (i % 3) * 10;
