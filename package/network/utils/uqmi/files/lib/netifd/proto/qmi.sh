@@ -6,6 +6,14 @@
 	init_proto "$@"
 }
 
+proto_qmi_inject_uqmi() {
+	uqmi() {
+		local t="${TIMEOUT-10}"
+
+		timeout -k "$(( t + 2 ))" "$(( t + 1 ))" /sbin/uqmi -t "$(( t * 1000 ))" "$@"
+	}
+}
+
 proto_qmi_init_config() {
 	available=1
 	no_device=1
@@ -78,6 +86,8 @@ proto_qmi_setup() {
 		echo "Setting MTU to $mtu"
 		/sbin/ip link set dev $ifname mtu $mtu
 	}
+
+	proto_qmi_inject_uqmi
 
 	echo "Waiting for SIM initialization"
 	local uninitialized_timeout=0
@@ -469,6 +479,8 @@ proto_qmi_teardown() {
 	json_load "$(ubus call network.interface.$interface status)"
 	json_select data
 	json_get_vars cid_4 pdh_4 cid_6 pdh_6
+
+	proto_qmi_inject_uqmi
 
 	qmi_wds_stop "$cid_4" "$pdh_4"
 	qmi_wds_stop "$cid_6" "$pdh_6"
