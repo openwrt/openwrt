@@ -23,9 +23,9 @@ endef
 
 define Device/UbiFit
 	KERNEL_IN_UBI := 1
-	IMAGES := nand-factory.ubi nand-sysupgrade.bin
-	IMAGE/nand-factory.ubi := append-ubi
-	IMAGE/nand-sysupgrade.bin := sysupgrade-tar | append-metadata
+	IMAGES := factory.ubi sysupgrade.bin
+	IMAGE/factory.ubi := append-ubi
+	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
 define Device/DniImage
@@ -160,8 +160,8 @@ define Device/alfa-network_ap120c-ac
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	IMAGE_SIZE := 65536k
-	IMAGES := nand-factory.bin nand-sysupgrade.bin
-	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+	IMAGES := factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
 endef
 TARGET_DEVICES += alfa-network_ap120c-ac
 
@@ -317,9 +317,9 @@ define Device/cellc_rtl30vw
 	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
 	KERNEL_NAME := zImage
 	KERNEL_IN_UBI :=
-	IMAGES := nand-factory.bin nand-sysupgrade.bin
-	IMAGE/nand-factory.bin := append-rootfshdr kernel | append-ubi | qsdk-ipq-factory-nand-askey kernel
-	IMAGE/nand-sysupgrade.bin := append-rootfshdr kernel | sysupgrade-tar kernel=$$$$@.kernel | append-metadata
+	IMAGES := factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-rootfshdr kernel | append-ubi | qsdk-ipq-factory-nand-askey kernel
+	IMAGE/sysupgrade.bin := append-rootfshdr kernel | sysupgrade-tar kernel=$$$$@.kernel | append-metadata
 	DEVICE_VENDOR := Cell C
 	DEVICE_MODEL := RTL30VW
 	SOC := qcom-ipq4019
@@ -442,7 +442,7 @@ define Device/edgecore_oap100
 	SOC := qcom-ipq4019
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	IMAGES := nand-sysupgrade.bin
+	IMAGES := sysupgrade.bin
 	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
 	DEVICE_PACKAGES := ipq-wifi-edgecore_oap100 kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-qmi uqmi
 endef
@@ -869,8 +869,8 @@ define Device/netgear_wac510
 	DEVICE_DTS_CONFIG := config@5
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	IMAGES += nand-factory.tar
-	IMAGE/nand-factory.tar := append-ubi | wac5xx-netgear-tar
+	IMAGES += factory.tar
+	IMAGE/factory.tar := append-ubi | wac5xx-netgear-tar
 	DEVICE_PACKAGES := uboot-envtools
 endef
 TARGET_DEVICES += netgear_wac510
@@ -921,8 +921,8 @@ endef
 define Device/p2w_r619ac-64m
 	$(call Device/p2w_r619ac)
 	DEVICE_VARIANT := 64M NAND
-	IMAGES += nand-factory.bin
-	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
 endef
 TARGET_DEVICES += p2w_r619ac-64m
 
@@ -1064,7 +1064,7 @@ define Device/teltonika_rutx10
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	FILESYSTEMS := squashfs
-	IMAGE/nand-factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
+	IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
 	DEVICE_PACKAGES := ipq-wifi-teltonika_rutx kmod-bluetooth
 endef
 # Missing DSA Setup
