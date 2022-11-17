@@ -262,10 +262,10 @@ proto_qmi_setup() {
 		else
 			# registration_state is 'registration_denied' or 'unknown' or ''
 			echo "Network registration failed (reason: '$registration_state')"
+			proto_block_restart "$interface"
 		fi
 
 		proto_notify_error "$interface" NETWORK_REGISTRATION_FAILED
-		proto_block_restart "$interface"
 		return 1
 	done
 
