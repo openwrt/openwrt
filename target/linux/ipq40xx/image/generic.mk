@@ -4,19 +4,19 @@ DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
 
 define Device/FitImage
-	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL_SUFFIX := -uImage.itb
 	KERNEL = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
 endef
 
 define Device/FitImageLzma
-	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL_SUFFIX := -uImage.itb
 	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
 endef
 
 define Device/FitzImage
-	KERNEL_SUFFIX := -fit-zImage.itb
+	KERNEL_SUFFIX := -zImage.itb
 	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL_NAME := zImage
 endef
@@ -312,7 +312,7 @@ endef
 #TARGET_DEVICES += buffalo_wtr-m2133hp
 
 define Device/cellc_rtl30vw
-	KERNEL_SUFFIX := -fit-zImage.itb
+	KERNEL_SUFFIX := -zImage.itb
 	KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
 	KERNEL_NAME := zImage
