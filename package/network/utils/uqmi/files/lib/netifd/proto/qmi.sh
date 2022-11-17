@@ -54,7 +54,7 @@ proto_qmi_setup() {
 
 	[ "$metric" = "" ] && metric="0"
 
-	[ -n "$ctl_device" ] && device=$ctl_device
+	[ -n "$ctl_device" ] && device="$ctl_device"
 
 	[ -n "$device" ] || {
 		echo "No control device specified"
@@ -65,7 +65,7 @@ proto_qmi_setup() {
 
 	[ -n "$delay" ] && sleep "$delay"
 
-	device="$(readlink -f $device)"
+	device="$(readlink -f "$device")"
 	[ -c "$device" ] || {
 		echo "The specified control device does not exist"
 		proto_notify_error "$interface" NO_DEVICE
@@ -92,7 +92,7 @@ proto_qmi_setup() {
 
 	[ -n "$mtu" ] && {
 		echo "Setting MTU to $mtu"
-		/sbin/ip link set dev $ifname mtu $mtu
+		/sbin/ip link set dev "$ifname" mtu "$mtu"
 	}
 
 	proto_qmi_inject_uqmi
@@ -190,8 +190,8 @@ proto_qmi_setup() {
 				echo "Setting PLMN to auto"
 			fi
 		elif [ "$mcc" -ne "${plmn:0:3}" -o "$mnc" -ne "${plmn:3}" ]; then
-			mcc=${plmn:0:3}
-			mnc=${plmn:3}
+			mcc="${plmn:0:3}"
+			mnc="${plmn:3}"
 			echo "Setting PLMN to $plmn"
 		else
 			mcc=""
@@ -224,13 +224,13 @@ proto_qmi_setup() {
 
 	if [ "$dataformat" = '"raw-ip"' ]; then
 
-		[ -f /sys/class/net/$ifname/qmi/raw_ip ] || {
+		[ -f "/sys/class/net/$ifname/qmi/raw_ip" ] || {
 			echo "Device only supports raw-ip mode but is missing this required driver attribute: /sys/class/net/$ifname/qmi/raw_ip"
 			return 1
 		}
 
 		echo "Device does not support 802.3 mode. Informing driver of raw-ip only for $ifname .."
-		echo "Y" > /sys/class/net/$ifname/qmi/raw_ip
+		echo "Y" > "/sys/class/net/$ifname/qmi/raw_ip"
 	fi
 
 	uqmi -s -d "$device" --sync > /dev/null 2>&1
@@ -244,7 +244,7 @@ proto_qmi_setup() {
 	local registration_timeout=0
 	local registration_state=""
 	while true; do
-		registration_state=$(uqmi -s -d "$device" --get-serving-system 2>/dev/null | jsonfilter -e "@.registration" 2>/dev/null)
+		registration_state="$(uqmi -s -d "$device" --get-serving-system 2>/dev/null | jsonfilter -e "@.registration" 2>/dev/null)"
 
 		[ "$registration_state" = "registered" ] && break
 
@@ -480,7 +480,7 @@ proto_qmi_teardown() {
 	local device cid_4 pdh_4 cid_6 pdh_6
 	json_get_vars device
 
-	[ -n "$ctl_device" ] && device=$ctl_device
+	[ -n "$ctl_device" ] && device="$ctl_device"
 
 	echo "Stopping network $interface"
 
