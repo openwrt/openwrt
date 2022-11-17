@@ -16,8 +16,8 @@ define Device/mikrotik_nand
 	KERNEL_INITRAMFS := kernel-bin | append-dtb-elf
 	KERNEL := kernel-bin | append-dtb-elf | package-kernel-ubifs | \
 		ubinize-kernel
-	IMAGES := nand-sysupgrade.bin
-	IMAGE/nand-sysupgrade.bin := sysupgrade-tar | append-metadata
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
 define Device/mikrotik_cap-ac
