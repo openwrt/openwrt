@@ -1260,7 +1260,7 @@ static void rtnc_hw_reset(struct rtnc_priv *priv)
 	else
 		reset_mask = 0xc;
 
-	sw_w32(reset_mask, priv->r->rst_glb_ctrl);
+	sw_w32_mask(0, reset_mask, priv->r->rst_glb_ctrl);
 
 	do { /* Wait for reset of NIC and Queues done */
 		udelay(20);
