@@ -202,6 +202,8 @@ proto_qmi_setup() {
 	uqmi -s -d "$device" --wda-set-data-format 802.3 > /dev/null 2>&1
 	dataformat="$(uqmi -s -d "$device" --wda-get-data-format)"
 
+	ip l set "$ifname" down
+
 	if [ "$dataformat" = '"raw-ip"' ]; then
 
 		[ -f /sys/class/net/$ifname/qmi/raw_ip ] || {
@@ -214,6 +216,8 @@ proto_qmi_setup() {
 	fi
 
 	uqmi -s -d "$device" --sync > /dev/null 2>&1
+
+	ip l set "$ifname" up
 
 	uqmi -s -d "$device" --network-register > /dev/null 2>&1
 
