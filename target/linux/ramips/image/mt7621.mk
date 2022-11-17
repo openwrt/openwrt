@@ -2130,7 +2130,7 @@ define Device/ubnt_usw-flex
   DEVICE_DTS_CONFIG := config@1
   DEVICE_DTS_LOADADDR := 0x87000000
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  IMAGE_SIZE := 7360k
+  IMAGE_SIZE := 14720k
 endef
 TARGET_DEVICES += ubnt_usw-flex
 
