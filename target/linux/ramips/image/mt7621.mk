@@ -2064,6 +2064,7 @@ define Device/ubnt_unifi-flexhd
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi FlexHD
   DEVICE_DTS_CONFIG := config@2
+  DEVICE_DTS_LOADADDR := 0x87000000
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware kmod-leds-ubnt-ledbar
   IMAGE_SIZE := 15552k
@@ -2084,6 +2085,7 @@ define Device/ubnt_usw-flex
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi Switch Flex
   DEVICE_DTS_CONFIG := config@1
+  DEVICE_DTS_LOADADDR := 0x87000000
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 7360k
 endef
