@@ -30,15 +30,16 @@ proto_wwan_init_config() {
 	proto_config_add_string username
 	proto_config_add_string password
 	proto_config_add_string pincode
+	proto_config_add_string pdptype
 	proto_config_add_string delay
 	proto_config_add_string modes
 	proto_config_add_string bus
 }
 
 proto_wwan_setup() {
-	local driver usb devicename desc bus
+	local driver usb devicename desc bus ip4table ip6table pdptype
 
-	json_get_vars bus
+	json_get_vars bus ip4table ip6table pdptype
 
 	if [ -L "/sys/bus/usb/devices/${bus}" ]; then
 		if [ -f "/sys/bus/usb/devices/${bus}/idVendor" ] \
@@ -118,6 +119,9 @@ proto_wwan_setup() {
 	uci_set_state network "$interface" driver "$driver"
 	uci_set_state network "$interface" ctl_device "$ctl_device"
 	uci_set_state network "$interface" dat_device "$dat_device"
+	[ -n "$ip4table" ] && uci_set_state network "$interface" ip4table "$ip4table"
+	[ -n "$ip6table" ] && uci_set_state network "$interface" ip6table "$ip6table"
+	[ -n "$pdptype" ] && uci_set_state network "$interface" pdptype "$pdptype"
 
 	case $driver in
 	qmi_wwan)		proto_qmi_setup $@ ;;
