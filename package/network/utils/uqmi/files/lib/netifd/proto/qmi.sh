@@ -18,6 +18,7 @@ proto_qmi_init_config() {
 	available=1
 	no_device=1
 	proto_config_add_string "device:device"
+	proto_config_add_boolean no_if_rename
 	proto_config_add_string apn
 	proto_config_add_string auth
 	proto_config_add_string username
@@ -39,13 +40,13 @@ proto_qmi_init_config() {
 proto_qmi_setup() {
 	local interface="$1"
 	local dataformat connstat plmn_mode mcc mnc
-	local device apn auth username password pincode delay modes pdptype
+	local device ifname want_ifname apn auth username password pincode delay modes pdptype
 	local profile dhcp dhcpv6 autoconnect plmn timeout mtu $PROTO_DEFAULT_OPTIONS
 	local ip4table ip6table
 	local cid_4 pdh_4 cid_6 pdh_6
 	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
 
-	json_get_vars device apn auth username password pincode delay modes
+	json_get_vars device ifname apn auth username password pincode delay modes
 	json_get_vars pdptype profile dhcp dhcpv6 autoconnect plmn ip4table
 	json_get_vars ip6table timeout mtu $PROTO_DEFAULT_OPTIONS
 
@@ -72,14 +73,21 @@ proto_qmi_setup() {
 		return 1
 	}
 
+	want_ifname="$ifname"
+
 	devname="$(basename "$device")"
 	devpath="$(readlink -f /sys/class/usbmisc/$devname/device/)"
-	ifname="$( ls "$devpath"/net )"
+	ifname="$(ls "$devpath"/net)"
 	[ -n "$ifname" ] || {
 		echo "The interface could not be found."
 		proto_notify_error "$interface" NO_IFACE
 		proto_set_available "$interface" 0
 		return 1
+	}
+
+	[ -n "$want_ifname" -a "$ifname" != "$want_ifname" ] && {
+		ip l set "$ifname" down
+		ip l set "$ifname" name "$want_ifname" && ifname="$want_ifname"
 	}
 
 	[ -n "$mtu" ] && {
