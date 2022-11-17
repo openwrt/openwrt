@@ -1,15 +1,10 @@
-#
-# Copyright (C) 2019-2020 OpenWrt.org
-#
-# This is free software, licensed under the GNU General Public License v2.
-# See /LICENSE for more information.
-#
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cypress-firmware
 PKG_VERSION:=5.4.18-2021_0812
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/Infineon/ifx-linux-firmware/
@@ -212,10 +207,10 @@ define Package/cypress-firmware-4356-pcie/install
 		$(1)/lib/firmware/cypress/
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
 	$(LN) \
-		../firmware/cyfmac4356-pcie.bin \
+		../cypress/cyfmac4356-pcie.bin \
 		$(1)/lib/firmware/brcm/brcmfmac4356-pcie.bin
 	$(LN) \
-		../firmware/cyfmac4356-pcie.clm_blob \
+		../cypress/cyfmac4356-pcie.clm_blob \
 		$(1)/lib/firmware/brcm/brcmfmac4356-pcie.clm_blob
 endef
 
