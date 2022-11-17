@@ -807,7 +807,7 @@ TARGET_DEVICES += compex_wpj563
 
 define Device/devolo_dlan-pro-1200plus-ac
   SOC := ar9344
-  DEVICE_VENDOR := Devolo
+  DEVICE_VENDOR := devolo
   DEVICE_MODEL := dLAN pro 1200+ WiFi ac
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15872k
@@ -870,7 +870,7 @@ TARGET_DEVICES += devolo_dvl1750x
 
 define Device/devolo_magic-2-wifi
   SOC := ar9344
-  DEVICE_VENDOR := Devolo
+  DEVICE_VENDOR := devolo
   DEVICE_MODEL := Magic 2 WiFi
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15872k
