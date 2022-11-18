@@ -20,6 +20,16 @@ define Build/boot-common
 	$(CP) $(IMAGE_KERNEL) $@.boot/kernel.img
 endef
 
+define Build/boot-common-legacy
+	# This creates a new folder copies the dtb (as rockchip.dtb)
+	# and the kernel image (as kernel.img)
+	rm -fR $@.boot
+	mkdir -p $@.boot
+
+	$(CP) $(DTS_DIR)/$(DEVICE_DTS).dtb $@.boot/rockchip.dtb
+	$(CP) $(IMAGE_KERNEL) $@.boot/kernel.img
+endef
+
 define Build/boot-script
 	# Make an U-boot image and copy it to the boot partition
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d $(if $(1),$(1),mmc).bootscript $@.boot/boot.scr
