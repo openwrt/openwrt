@@ -934,41 +934,6 @@ bool rtnc_931x_decode_tag(struct rtnc_hdr *h, struct rtnc_dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-/*
- * Discard the RX ring-buffers, called as part of the net-ISR
- * when the buffer runs over
- */
-static void rtnc_rb_cleanup(struct rtnc_priv *priv, int status)
-{
-	int r, idx;
-	u32	*last;
-	struct rtnc_hdr *h;
-	struct ring_b *ring = priv->ring;
-
-	for (r = 0; r < priv->rxrings; r++) {
-		pr_debug("In %s working on r: %d\n", __func__, r);
-		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
-		idx = ring->c_rx[r];
-		do {
-			if ((ring->rx_r[r][idx] & 0x1))
-				break;
-			pr_debug("Got something: %d\n", idx);
-			h = &ring->rx_header[r][idx];
-			memset(h, 0, sizeof(struct rtnc_hdr));
-			h->buf = (u8 *)KSEG1ADDR(priv->rxspace
-					+ r * priv->rxringlen * RTNC_RING_BUFFER
-					+ idx * RTNC_RING_BUFFER);
-			h->size = RTNC_RING_BUFFER;
-			/* make sure the header is visible to the ASIC */
-			mb();
-
-			ring->rx_r[r][idx] |= RTNC_OWN_ETH;
-			idx = (idx + 1) % priv->rxringlen;
-		} while (&ring->rx_r[r][idx] != last);
-		ring->c_rx[r] = idx;
-	}
-}
-
 void rtnc_fdb_sync(struct work_struct *work)
 {
 	const struct rtnc_fdb_update *uw =
@@ -1108,7 +1073,6 @@ static irqreturn_t rtnc_93xx_net_irq(int irq, void *dev_id)
 		pr_debug("RX buffer overrun: status %x, mask: %x\n",
 			 status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
 		sw_w32(status_rx_r, priv->r->dma_if_intr_rx_runout_sts);
-		rtnc_rb_cleanup(priv, status_rx_r);
 	}
 
 	return IRQ_HANDLED;
