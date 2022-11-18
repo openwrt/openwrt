@@ -65,7 +65,7 @@ Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
  		arm64_dma32_phys_limit = max_zone_phys(32);
 --- a/arch/powerpc/include/asm/page.h
 +++ b/arch/powerpc/include/asm/page.h
-@@ -334,13 +334,4 @@ struct vm_area_struct;
+@@ -341,13 +341,4 @@ struct vm_area_struct;
  #endif /* __ASSEMBLY__ */
  #include <asm/slice.h>
  
@@ -89,7 +89,7 @@ Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
  
  #include <asm/pgalloc.h>
  #include <asm/prom.h>
-@@ -223,10 +224,10 @@ static int __init mark_nonram_nosave(voi
+@@ -224,10 +225,10 @@ static int __init mark_nonram_nosave(voi
   * everything else. GFP_DMA32 page allocations automatically fall back to
   * ZONE_DMA.
   *
@@ -104,7 +104,7 @@ Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
   */
  static unsigned long max_zone_pfns[MAX_NR_ZONES];
  
-@@ -259,9 +260,18 @@ void __init paging_init(void)
+@@ -260,9 +261,18 @@ void __init paging_init(void)
  	printk(KERN_DEBUG "Memory hole size: %ldMB\n",
  	       (long int)((top_of_ram - total_ram) >> 20));
  
@@ -184,7 +184,7 @@ Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
  		return GFP_DMA;
  	if (*phys_mask <= DMA_BIT_MASK(32))
  		return GFP_DMA32;
-@@ -396,7 +395,7 @@ int dma_direct_supported(struct device *
+@@ -397,7 +396,7 @@ int dma_direct_supported(struct device *
  	u64 min_mask;
  
  	if (IS_ENABLED(CONFIG_ZONE_DMA))

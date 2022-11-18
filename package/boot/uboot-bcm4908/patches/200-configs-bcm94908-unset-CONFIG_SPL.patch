@@ -23,7 +23,8 @@ shipped with every firmware.
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 ---
  configs/bcm94908_defconfig | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ configs/bcm94912_defconfig | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
 --- a/configs/bcm94908_defconfig
 +++ b/configs/bcm94908_defconfig
@@ -36,3 +37,14 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  CONFIG_SPL_LIBDISK_SUPPORT=y
  CONFIG_ENV_VARS_UBOOT_CONFIG=y
  CONFIG_TPL_SYS_MALLOC_F_LEN=0x11000
+--- a/configs/bcm94912_defconfig
++++ b/configs/bcm94912_defconfig
+@@ -22,7 +22,7 @@ CONFIG_TPL_LIBCOMMON_SUPPORT=y
+ CONFIG_TPL_LIBGENERIC_SUPPORT=y
+ CONFIG_SPL_SYS_MALLOC_F_LEN=0x2000
+ CONFIG_NR_DRAM_BANKS=2
+-CONFIG_SPL=y
++# CONFIG_SPL is not set
+ CONFIG_SPL_LIBDISK_SUPPORT=y
+ CONFIG_ENV_VARS_UBOOT_CONFIG=y
+ CONFIG_TPL_SYS_MALLOC_F_LEN=0x10000

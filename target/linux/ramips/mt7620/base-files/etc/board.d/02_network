@@ -134,9 +134,13 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
-	engenius,esr600)
+	engenius,esr600|\
+	sitecom,wlr-4100-v1-002)
 		ucidef_add_switch "switch0" \
 			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan" "0@eth0"
+		ucidef_add_switch "switch1" \
+			"5:lan" "6@eth0"
+		ucidef_add_switch_attr "switch1" "enable" "false"
 		;;
 	fon,fon2601)
 		ucidef_add_switch "switch0" \
@@ -169,6 +173,9 @@ ramips_setup_interfaces()
 	lava,lr-25g001)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
+		ucidef_add_switch "switch1" \
+			"5:lan" "6@eth0"
+		ucidef_add_switch_attr "switch1" "enable" "false"
 		;;
 	lenovo,newifi-y1|\
 	xiaomi,miwifi-mini)
@@ -216,7 +223,12 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:wan" "6@eth0"
 		;;
-	youku,yk1)
+	wavlink,wl-wn579x3)
+		ucidef_add_switch "switch0" \
+			"5:lan" "4:wan" "6@eth0"
+		;;
+	youku,yk-l1|\
+	youku,yk-l1c)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "4:wan" "6@eth0"
 		;;
@@ -339,7 +351,8 @@ ramips_setup_macs()
 	lenovo,newifi-y1s|\
 	ohyeah,oy-0001|\
 	wavlink,wl-wn530hg4|\
-	youku,yk1)
+	youku,yk-l1|\
+	youku,yk-l1c)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		;;
 	linksys,e1700)

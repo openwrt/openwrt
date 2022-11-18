@@ -40,7 +40,7 @@ it on BCM4708 family.
  /* called during probe() after chip reset completes */
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -156,6 +156,49 @@ int xhci_start(struct xhci_hcd *xhci)
+@@ -158,6 +158,49 @@ int xhci_start(struct xhci_hcd *xhci)
  	return ret;
  }
  
@@ -127,7 +127,7 @@ it on BCM4708 family.
  /*
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1877,6 +1877,7 @@ struct xhci_hcd {
+@@ -1880,6 +1880,7 @@ struct xhci_hcd {
  #define XHCI_DEFAULT_PM_RUNTIME_ALLOW	BIT_ULL(33)
  #define XHCI_RESET_PLL_ON_DISCONNECT	BIT_ULL(34)
  #define XHCI_SNPS_BROKEN_SUSPEND    BIT_ULL(35)
