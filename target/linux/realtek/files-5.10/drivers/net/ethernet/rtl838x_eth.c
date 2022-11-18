@@ -853,24 +853,17 @@ void rtnc_83xx_update_cntr(int r, int released)
 void rtnc_930x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
-	u32 reg = RTL930X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
-	u32 v = sw_r32(reg);
+	u32 reg = rtnc_930x_dma_if_rx_ring_cntr(r);
 
-	v = (v >> pos) & 0x3ff;
-	pr_debug("RX: Work done %d, old value: %d, pos %d, reg %04x\n", released, v, pos, reg);
-	sw_w32_mask(0x3ff << pos, released << pos, reg);
-	sw_w32(v, reg);
+	sw_w32(released << pos, reg);
 }
 
 void rtnc_931x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
-	u32 reg = RTL931X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
-	u32 v = sw_r32(reg);
+	u32 reg = rtnc_931x_dma_if_rx_ring_cntr(r);
 
-	v = (v >> pos) & 0x3ff;
-	sw_w32_mask(0x3ff << pos, released << pos, reg);
-	sw_w32(v, reg);
+	sw_w32(released << pos, reg);
 }
 
 bool rtnc_838x_decode_tag(struct rtnc_hdr *h, struct rtnc_dsa_tag *t)
@@ -1366,7 +1359,7 @@ static void rtnc_839x_hw_en_rxtx(struct rtnc_priv *priv)
 
 static void rtnc_93xx_hw_en_rxtx(struct rtnc_priv *priv)
 {
-	int i, pos;
+	int i, pos, cnt;
 	u32 v;
 
 	/* set and enforce maximum RX len */
@@ -1375,7 +1368,8 @@ static void rtnc_93xx_hw_en_rxtx(struct rtnc_priv *priv)
 	/* Configure Head of Line feature for all RX rings */
 	for (i = 0; i < priv->rxrings; i++) {
 		pos = (i % 3) * 10;
-		sw_w32_mask(0x3ff << pos, priv->rxringlen << pos, priv->r->dma_if_rx_ring_size(i));
+		cnt = min(priv->rxringlen - 2, 0x3ff);
+		sw_w32_mask(0x3ff << pos, cnt << pos, priv->r->dma_if_rx_ring_size(i));
 
 		/* Some SoCs have issues with missing underflow protection */
 		v = (sw_r32(priv->r->dma_if_rx_ring_cntr(i)) >> pos) & 0x3ff;
@@ -1911,7 +1905,7 @@ static int rtnc_hw_receive(struct net_device *dev, int r, int budget)
 	};
 
 	/* Update counters */
-	priv->r->update_cntr(r, 0);
+	priv->r->update_cntr(r, work_done);
 	ring->c_rx[r] = idx;
 
 	spin_unlock_irqrestore(&priv->lock, flags);
