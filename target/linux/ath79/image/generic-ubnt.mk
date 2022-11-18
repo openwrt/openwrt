@@ -43,6 +43,7 @@ define Device/ubnt_edgeswitch-8xp
   $(Device/ubnt-sw)
   DEVICE_MODEL := EdgeSwitch 8XP
   DEVICE_PACKAGES += kmod-switch-bcm53xx-mdio
+  DEFAULT := n
 endef
 TARGET_DEVICES += ubnt_edgeswitch-8xp
 
