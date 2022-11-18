@@ -41,3 +41,23 @@ define Device/radxa_rock-pi-4a
   IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
 endef
 TARGET_DEVICES += radxa_rock-pi-4a
+
+define Device/radxa_rock-3a
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 3A
+  SOC := rk3568
+  SUPPORTED_DEVICES := radxa,rock3a
+  UBOOT_DEVICE_NAME := rock-3a-rk3568
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script rk3568-mmc | pine64-img | gzip | append-metadata
+endef
+TARGET_DEVICES += radxa_rock-3a
+
+define Device/evb_evb1-v10
+  DEVICE_VENDOR := Rockchip
+  DEVICE_MODEL := ROCKCHIP EVB1
+  SOC := rk3568
+  SUPPORTED_DEVICES := rockchip,rk3568
+  UBOOT_DEVICE_NAME := rock-3a-rk3568
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script rk3568-mmc | pine64-img | gzip | append-metadata
+endef
+TARGET_DEVICES += evb_evb1-v10
