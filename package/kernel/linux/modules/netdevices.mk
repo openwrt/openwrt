@@ -538,6 +538,44 @@ endef
 
 $(eval $(call KernelPackage,dsa))
 
+
+define KernelPackage/dsa-b53
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Broadcom BCM53xx managed switch DSA support
+  DEPENDS:=+kmod-dsa @!TARGET_bcm47xx
+  KCONFIG:=CONFIG_B53 \
+  CONFIG_NET_DSA_TAG_BRCM \
+  CONFIG_NET_DSA_TAG_BRCM_LEGACY \
+  CONFIG_NET_DSA_TAG_BRCM_PREPEND
+  FILES:= \
+  $(LINUX_DIR)/drivers/net/dsa/b53/b53_common.ko \
+  $(LINUX_DIR)/net/dsa/tag_brcm.ko
+  AUTOLOAD:=$(call AutoProbe,b53_common)
+endef
+
+define KernelPackage/dsa-b53/description
+  Broadcom BCM53xx managed switch support
+endef
+
+$(eval $(call KernelPackage,dsa-b53))
+
+
+define KernelPackage/dsa-b53-mdio
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=B53 MDIO connected switch DSA driver
+  DEPENDS:=+kmod-dsa-b53 @!TARGET_bcm47xx
+  KCONFIG:=CONFIG_B53_MDIO_DRIVER
+  FILES:=$(LINUX_DIR)/drivers/net/dsa/b53/b53_mdio.ko
+  AUTOLOAD:=$(call AutoProbe,b53_mdio)
+endef
+
+define KernelPackage/dsa-b53-mdio/description
+  B53 MDIO connected switch driver
+endef
+
+$(eval $(call KernelPackage,dsa-b53-mdio))
+
+
 define KernelPackage/dsa-tag-dsa
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Marvell DSA type DSA and EDSA taggers
@@ -610,7 +648,7 @@ $(eval $(call KernelPackage,swconfig))
 define KernelPackage/switch-bcm53xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Broadcom bcm53xx switch support
-  DEPENDS:=+kmod-swconfig
+  DEPENDS:=+kmod-swconfig @TARGET_bcm47xx
   KCONFIG:=CONFIG_SWCONFIG_B53
   FILES:=$(LINUX_DIR)/drivers/net/phy/b53/b53_common.ko
   AUTOLOAD:=$(call AutoLoad,42,b53_common)
@@ -625,7 +663,7 @@ $(eval $(call KernelPackage,switch-bcm53xx))
 define KernelPackage/switch-bcm53xx-mdio
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Broadcom bcm53xx switch MDIO support
-  DEPENDS:=+kmod-switch-bcm53xx
+  DEPENDS:=+kmod-switch-bcm53xx @TARGET_bcm47xx
   KCONFIG:=CONFIG_SWCONFIG_B53_PHY_DRIVER
   FILES:=$(LINUX_DIR)/drivers/net/phy/b53/b53_mdio.ko
   AUTOLOAD:=$(call AutoLoad,42,b53_mdio)
