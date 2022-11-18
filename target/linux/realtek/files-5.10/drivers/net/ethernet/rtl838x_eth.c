@@ -1282,20 +1282,6 @@ static void rtnc_hw_reset(struct rtnc_priv *priv)
 	} while (sw_r32(priv->r->rst_glb_ctrl) & reset_mask);
 	mdelay(100);
 
-	/* Setup Head of Line */
-	if (priv->family_id == RTL8380_FAMILY_ID)
-		sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);  /* Disabled on RTL8380 */
-	if (priv->family_id == RTL8390_FAMILY_ID)
-		sw_w32(0xffffffff, RTL839X_DMA_IF_RX_RING_CNTR);
-	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
-		for (i = 0; i < priv->rxrings; i++) {
-			pos = (i % 3) * 10;
-			sw_w32_mask(0x3ff << pos, 0, priv->r->dma_if_rx_ring_size(i));
-			sw_w32_mask(0x3ff << pos, priv->rxringlen,
-				    priv->r->dma_if_rx_ring_cntr(i));
-		}
-	}
-
 	/* Re-enable link change interrupt */
 	if (priv->family_id == RTL8390_FAMILY_ID) {
 		sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG);
@@ -1323,13 +1309,13 @@ static void rtnc_hw_ring_setup(struct rtnc_priv *priv)
 
 static void rtnc_838x_hw_en_rxtx(struct rtnc_priv *priv)
 {
-	/* Disable Head of Line features for all RX rings */
-	sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
-
 	/* set and enforce maximum RX len */
 	sw_w32((RTNC_MAX_RX_LEN << 16) | 0x10, priv->r->dma_if_ctrl);
 	/* pad TX */
 	sw_w32_mask(0, 0x20, priv->r->dma_if_ctrl);
+
+	/* Disable Head of Line feature for all RX rings */
+	sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
 
 	/* Enable RX done and RX overflow interrupts */
 	sw_w32(0xffff, priv->r->dma_if_intr_msk);
@@ -1355,6 +1341,9 @@ static void rtnc_839x_hw_en_rxtx(struct rtnc_priv *priv)
 {
 	/* set and enforce maximum RX len */
 	sw_w32((RTNC_MAX_RX_LEN << 5) | 0x10, priv->r->dma_if_ctrl);
+
+	/* Disable Head of Line feature for all RX rings */
+	sw_w32(0xffffffff, RTL839X_DMA_IF_RX_RING_CNTR);
 
 	/* Enable Notify, RX done and RX overflow interrupts */
 	sw_w32(0x0070ffff, priv->r->dma_if_intr_msk); /* Notify IRQ! */
@@ -1383,6 +1372,7 @@ static void rtnc_93xx_hw_en_rxtx(struct rtnc_priv *priv)
 	/* set and enforce maximum RX len */
 	sw_w32((RTNC_MAX_RX_LEN << 16) | 0x40, priv->r->dma_if_ctrl);
 
+	/* Configure Head of Line feature for all RX rings */
 	for (i = 0; i < priv->rxrings; i++) {
 		pos = (i % 3) * 10;
 		sw_w32_mask(0x3ff << pos, priv->rxringlen << pos, priv->r->dma_if_rx_ring_size(i));
