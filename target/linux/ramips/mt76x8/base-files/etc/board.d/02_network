@@ -14,6 +14,7 @@ ramips_setup_interfaces()
 	glinet,microuter-n300|\
 	glinet,vixmini|\
 	hak5,wifi-pineapple-mk7|\
+	hiwifi,hc5611|\
 	mediatek,linkit-smart-7688|\
 	minew,g1-c|\
 	onion,omega2p|\
@@ -226,6 +227,7 @@ ramips_setup_macs()
 	zyxel,keenetic-extra-ii)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
 		;;
+	hiwifi,hc5611|\
 	hiwifi,hc5661a|\
 	hiwifi,hc5761a|\
 	hiwifi,hc5861b)
