@@ -12,11 +12,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/core/flow_dissector.c
 +++ b/net/core/flow_dissector.c
-@@ -941,11 +941,13 @@ bool __skb_flow_dissect(const struct net
+@@ -940,12 +940,14 @@ bool __skb_flow_dissect(const struct net
+ #if IS_ENABLED(CONFIG_NET_DSA)
  		if (unlikely(skb->dev && netdev_uses_dsa(skb->dev) &&
  			     proto == htons(ETH_P_XDSA))) {
- 			const struct dsa_device_ops *ops;
 +			struct metadata_dst *md_dst = skb_metadata_dst(skb);
+ 			const struct dsa_device_ops *ops;
  			int offset = 0;
  
  			ops = skb->dev->dsa_ptr->tag_ops;
@@ -53,7 +54,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (md_dst && md_dst->type == METADATA_HW_PORT_MUX) {
 +		unsigned int port = md_dst->u.port_info.port_id;
 +
-+		skb_dst_set(skb, NULL);
++		skb_dst_drop(skb);
 +		if (!skb_has_extensions(skb))
 +			skb->slow_gro = 0;
 +

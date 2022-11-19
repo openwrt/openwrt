@@ -109,7 +109,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	int err;
 +	int i, err;
 +
-+	if (mtk_uses_dsa(dev)) {
++	if (mtk_uses_dsa(dev) && !eth->prog) {
 +		for (i = 0; i < ARRAY_SIZE(eth->dsa_meta); i++) {
 +			struct metadata_dst *md_dst = eth->dsa_meta[i];
 +
