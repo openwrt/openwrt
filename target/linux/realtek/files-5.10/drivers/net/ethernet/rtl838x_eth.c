@@ -839,17 +839,37 @@ static void rtnc_93xx_header_vlan_set(struct rtnc_hdr *h, int vlan)
 	h->cpu_tag[3] |= (vlan & 0xff) << 8;
 }
 
-void rtnc_83xx_update_cntr(int r, int released)
+/*
+ * On all SOCs, the DMA_IF_RX_RING_CNTR track the fill level of the rings.
+ * Writing x into these registers substracts x from its content.
+ * When the DMA_IF_RX_RING_SIZE is not zero and the content reaches the ring
+ * size, the SOC no longer adds packets to a receive queue.
+ */
+
+void rtnc_838x_update_cntr(int r, int released)
 {
-	/* This feature is not available on RTL838x/RTL839x SoCs */
+	int pos = r * 4;
+	u32 reg = rtnc_838x_dma_if_rx_ring_cntr(r);
+
+	/*
+	 * The RTL838X counter modifications are not atomic. A decrement
+	 * from the CPU might get lost when new packets arrive and the counter
+	 * is increased in the same moment from the SOC. As software buffers
+	 * are much larger than the maximum possible value of 15 it is no
+	 * problem to clear the counter.
+	 */
+	sw_w32(sw_r32(reg) & (0xf << pos), reg);
 }
 
-/*
- * On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of 
- * the rings. Writing x into these registers substracts x from its content.
- * When the content reaches the ring size, the ASIC no longer adds
- * packets to this receive queue.
- */
+void rtnc_839x_update_cntr(int r, int released)
+{
+	/*
+	 * The RTL839X is the only SOC that will not crash when it finds
+	 * a CPU owned ring buffer. No ring size limit is set and there is
+	 * no need to update the counters accordingly.
+	 */
+}
+
 void rtnc_930x_update_cntr(int r, int released)
 {
 	int pos = (r % 3) * 10;
@@ -1098,7 +1118,7 @@ static const struct rtnc_reg rtnc_838x_reg = {
 	.get_mac_tx_pause_sts = rtnc_838x_get_mac_tx_pause_sts,
 	.mac = RTL838X_MAC,
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtnc_83xx_update_cntr,
+	.update_cntr = rtnc_838x_update_cntr,
 	.create_tx_header = rtnc_838x_create_tx_header,
 	.decode_tag = rtnc_838x_decode_tag,
 };
@@ -1123,7 +1143,7 @@ static const struct rtnc_reg rtnc_839x_reg = {
 	.get_mac_tx_pause_sts = rtnc_839x_get_mac_tx_pause_sts,
 	.mac = RTL839X_MAC,
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtnc_83xx_update_cntr,
+	.update_cntr = rtnc_839x_update_cntr,
 	.create_tx_header = rtnc_839x_create_tx_header,
 	.decode_tag = rtnc_839x_decode_tag,
 };
@@ -1804,6 +1824,8 @@ static int rtnc_hw_receive(struct net_device *dev, int r, int budget)
 
 	idx = ring->c_rx[r];
 	while (!(ring->rx_r[r][idx] & RTNC_OWN_ETH) && (work_done < budget)) {
+		 /* Update counters in advance for more speed on RTL838X */
+		priv->r->update_cntr(r, 1);
 
 		h = &ring->rx_header[r][idx];
 		len = h->len;
@@ -1818,16 +1840,6 @@ static int rtnc_hw_receive(struct net_device *dev, int r, int budget)
 		skb = napi_alloc_skb(&priv->rx_qs[r].napi, len);
 
 		if (likely(skb)) {
-			/* BUG: Prevent bug on RTL838x SoCs*/
-			if (priv->family_id == RTL8380_FAMILY_ID) {
-				sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
-				for (i = 0; i < priv->rxrings; i++) {
-					/* Update each ring cnt */
-					val = sw_r32(priv->r->dma_if_rx_ring_cntr(i));
-					sw_w32(val, priv->r->dma_if_rx_ring_cntr(i));
-				}
-			}
-
 			/* Make new data visible for CPU */
 			mb();
 			dma_sync_single_for_device(&priv->pdev->dev, CPHYSADDR(h->buf), len, DMA_FROM_DEVICE);
@@ -1868,8 +1880,6 @@ static int rtnc_hw_receive(struct net_device *dev, int r, int budget)
 		idx = (idx + 1) % priv->rxringlen;
 	};
 
-	/* Update counters */
-	priv->r->update_cntr(r, work_done);
 	ring->c_rx[r] = idx;
 
 	spin_unlock_irqrestore(&priv->lock, flags);
