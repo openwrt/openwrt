@@ -390,32 +390,6 @@ hostapd_bss_get_features(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
-/* Imported from iw/util.c
- *  https://git.kernel.org/pub/scm/linux/kernel/git/jberg/iw.git/tree/util.c?id=4b25ae3537af48dbf9d0abf94132e5ba01b32c18#n200
- */
-int ieee80211_frequency_to_channel(int freq)
-{
-	/* see 802.11-2007 17.3.8.3.2 and Annex J */
-	if (freq == 2484)
-		return 14;
-	/* see 802.11ax D6.1 27.3.23.2 and Annex E */
-	else if (freq == 5935)
-		return 2;
-	else if (freq < 2484)
-		return (freq - 2407) / 5;
-	else if (freq >= 4910 && freq <= 4980)
-		return (freq - 4000) / 5;
-	else if (freq < 5950)
-		return (freq - 5000) / 5;
-	else if (freq <= 45000) /* DMG band lower limit */
-		/* see 802.11ax D6.1 27.3.23.2 */
-		return (freq - 5950) / 5;
-	else if (freq >= 58320 && freq <= 70200)
-		return (freq - 56160) / 2160;
-	else
-		return 0;
-}
-
 static int
 hostapd_bss_get_status(struct ubus_context *ctx, struct ubus_object *obj,
 		       struct ubus_request_data *req, const char *method,
