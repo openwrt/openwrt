@@ -1,3 +1,11 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 24 Feb 2013 00:00:00 +0100
+Subject: [PATCH] mac80211: disable ipv4/ipv6 address notifiers
+
+---
+ net/mac80211/main.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
 @@ -337,7 +337,7 @@ void ieee80211_restart_hw(struct ieee802
