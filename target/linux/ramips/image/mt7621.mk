@@ -1664,6 +1664,7 @@ TARGET_DEVICES += netgear_wndr3700-v5
 
 define Device/netis_wf2881
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   FILESYSTEMS := squashfs
@@ -1671,7 +1672,7 @@ define Device/netis_wf2881
   IMAGE_SIZE := 129280k
   UBINIZE_OPTS := -E 5
   UIMAGE_NAME := WF2881_0.0.00
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | netis-tail WF2881 | uImage lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | netis-tail WF2881
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
