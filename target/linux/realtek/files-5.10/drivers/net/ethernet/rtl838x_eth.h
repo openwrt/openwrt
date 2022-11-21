@@ -44,6 +44,10 @@
 #define RTL930X_CPU_PORT			28
 #define RTL931X_CPU_PORT			56
 
+/* Hardware ring sizes */
+#define RTL83XX_HW_RINGSIZE			15
+#define RTL93XX_HW_RINGSIZE			1023
+
 /* Reset */
 #define RTL838X_RST_GLB_CTRL_0			(0x003c)
 #define RTL838X_RST_GLB_CTRL_1			(0x0040)

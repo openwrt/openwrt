@@ -1284,15 +1284,44 @@ static void rtnc_hw_ring_setup(struct rtnc_priv *priv)
 		sw_w32(KSEG1ADDR(&ring->tx_r[i]), priv->r->dma_tx_base + i * 4);
 }
 
+static void rtnc_setup_counters(struct rtnc_priv *priv)
+{
+	int shift, size, mask, v, r;
+
+	for (r = 0; r < priv->rxrings; r++) {
+		switch (priv->family_id) {
+		case RTL8380_FAMILY_ID:
+			shift = r * 4;
+			mask = RTL83XX_HW_RINGSIZE;
+			size = RTL83XX_HW_RINGSIZE;
+			break;
+		case RTL8390_FAMILY_ID:
+			shift = r * 4;
+			mask = RTL83XX_HW_RINGSIZE;
+			size = 0; /* buffer ownership limits the input */
+			break;
+		default: /* RTL93XX */
+			shift = (r % 3) * 10;
+			mask = RTL93XX_HW_RINGSIZE;
+			size = min(priv->rxringlen - 2, RTL93XX_HW_RINGSIZE);
+		}
+
+		/* Set each ring size and reset counters */
+		sw_w32_mask(mask << shift, size << shift, priv->r->dma_if_rx_ring_size(r));
+		v = sw_r32(priv->r->dma_if_rx_ring_cntr(r)) & (mask << shift);
+		sw_w32(v, priv->r->dma_if_rx_ring_cntr(r));
+	}
+}
+
 static void rtnc_838x_hw_en_rxtx(struct rtnc_priv *priv)
 {
 	/* set and enforce maximum RX len */
 	sw_w32((RTNC_MAX_RX_LEN << 16) | 0x10, priv->r->dma_if_ctrl);
+
+	rtnc_setup_counters(priv);
+
 	/* pad TX */
 	sw_w32_mask(0, 0x20, priv->r->dma_if_ctrl);
-
-	/* Disable Head of Line feature for all RX rings */
-	sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
 
 	/* Enable RX done and RX overflow interrupts */
 	sw_w32(0xffff, priv->r->dma_if_intr_msk);
@@ -1319,8 +1348,7 @@ static void rtnc_839x_hw_en_rxtx(struct rtnc_priv *priv)
 	/* set and enforce maximum RX len */
 	sw_w32((RTNC_MAX_RX_LEN << 5) | 0x10, priv->r->dma_if_ctrl);
 
-	/* Disable Head of Line feature for all RX rings */
-	sw_w32(0xffffffff, RTL839X_DMA_IF_RX_RING_CNTR);
+	rtnc_setup_counters(priv);
 
 	/* Enable Notify, RX done and RX overflow interrupts */
 	sw_w32(0x0070ffff, priv->r->dma_if_intr_msk); /* Notify IRQ! */
@@ -1343,22 +1371,10 @@ static void rtnc_839x_hw_en_rxtx(struct rtnc_priv *priv)
 
 static void rtnc_93xx_hw_en_rxtx(struct rtnc_priv *priv)
 {
-	int i, pos, cnt;
-	u32 v;
-
 	/* set and enforce maximum RX len */
 	sw_w32((RTNC_MAX_RX_LEN << 16) | 0x40, priv->r->dma_if_ctrl);
 
-	/* Configure Head of Line feature for all RX rings */
-	for (i = 0; i < priv->rxrings; i++) {
-		pos = (i % 3) * 10;
-		cnt = min(priv->rxringlen - 2, 0x3ff);
-		sw_w32_mask(0x3ff << pos, cnt << pos, priv->r->dma_if_rx_ring_size(i));
-
-		/* Some SoCs have issues with missing underflow protection */
-		v = (sw_r32(priv->r->dma_if_rx_ring_cntr(i)) >> pos) & 0x3ff;
-		sw_w32_mask(0x3ff << pos, v, priv->r->dma_if_rx_ring_cntr(i));
-	}
+	rtnc_setup_counters(priv);
 
 	/* Enable Notify, RX done, RX overflow and TX done interrupts */
 	sw_w32(0xffffffff, priv->r->dma_if_intr_rx_runout_msk);
