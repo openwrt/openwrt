@@ -1,0 +1,39 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 19 Nov 2022 18:48:42 +0100
+Subject: [PATCH] netfilter: nf_flow_table: add missing locking
+
+nf_flow_table_block_setup and the driver TC_SETUP_FT call can modify the flow
+block cb list while they are being traversed elsewhere, causing a crash.
+Add a write lock around the calls to protect readers
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/netfilter/nf_flow_table_offload.c
++++ b/net/netfilter/nf_flow_table_offload.c
+@@ -1074,6 +1074,7 @@ static int nf_flow_table_block_setup(str
+ 	struct flow_block_cb *block_cb, *next;
+ 	int err = 0;
+ 
++	down_write(&flowtable->flow_block_lock);
+ 	switch (cmd) {
+ 	case FLOW_BLOCK_BIND:
+ 		list_splice(&bo->cb_list, &flowtable->flow_block.cb_list);
+@@ -1088,6 +1089,7 @@ static int nf_flow_table_block_setup(str
+ 		WARN_ON_ONCE(1);
+ 		err = -EOPNOTSUPP;
+ 	}
++	up_write(&flowtable->flow_block_lock);
+ 
+ 	return err;
+ }
+@@ -1144,7 +1146,9 @@ static int nf_flow_table_offload_cmd(str
+ 
+ 	nf_flow_table_block_offload_init(bo, dev_net(dev), cmd, flowtable,
+ 					 extack);
++	down_write(&flowtable->flow_block_lock);
+ 	err = dev->netdev_ops->ndo_setup_tc(dev, TC_SETUP_FT, bo);
++	up_write(&flowtable->flow_block_lock);
+ 	if (err < 0)
+ 		return err;
+ 
