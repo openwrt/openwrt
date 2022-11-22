@@ -216,7 +216,6 @@ case "$FIRMWARE" in
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
-	netgear,ex6400|\
 	netgear,ex7300)
 		caldata_extract "caldata" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary caldata 0xc)
