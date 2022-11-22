@@ -220,7 +220,7 @@ static int rtl9300_i2c_mux_probe(struct platform_device *pdev)
 			goto err_children;
 		}
 
-		if (chan >= NUM_MASTERS * NUM_BUSSES) {
+		if (chan > NUM_MASTERS * NUM_BUSSES) {
 			dev_err(dev, "invalid reg %u\n", chan);
 			ret = -EINVAL;
 			goto err_children;
