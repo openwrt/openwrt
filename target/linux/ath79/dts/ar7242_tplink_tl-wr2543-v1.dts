@@ -115,7 +115,7 @@
 				reg = <0x020000 0x7d0000>;
 			};
 
-			partition@7f0000 {
+			art: partition@7f0000 {
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
@@ -139,9 +139,8 @@
 		reg = <0x0000 0 0 0 0>;
 		#gpio-cells = <2>;
 		gpio-controller;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_uboot_1fc00>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_uboot_1fc00>, <&cal_art_1000>;
+		nvmem-cell-names = "mac-address", "calibration";
 	};
 };
 
@@ -166,5 +165,15 @@
 
 	macaddr_uboot_1fc00: macaddr@1fc00 {
 		reg = <0x1fc00 0x6>;
+	};
+};
+
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cal_art_1000: cal@1000 {
+		reg = <0x1000 0x440>;
 	};
 };
