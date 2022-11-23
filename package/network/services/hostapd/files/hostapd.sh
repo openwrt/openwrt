@@ -1372,11 +1372,11 @@ wpa_supplicant_add_network() {
 
 			key_mgmt="$wpa_key_mgmt"
 
-			if [ ${#key} -eq 64 ]; then
-				passphrase="psk=${key}"
+			if [ "$_w_mode" = "mesh" ] || [ "$auth_type" = "sae" ]; then
+				passphrase="sae_password=\"${key}\""
 			else
-				if [ "$_w_mode" = "mesh" ]; then
-					passphrase="sae_password=\"${key}\""
+				if [ ${#key} -eq 64 ]; then
+					passphrase="psk=${key}"
 				else
 					passphrase="psk=\"${key}\""
 				fi
