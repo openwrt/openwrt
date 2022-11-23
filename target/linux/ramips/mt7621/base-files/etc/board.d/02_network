@@ -215,6 +215,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan:1" "2:lan:2" "3:lan:3" "4:wan" "6@eth0" "5@eth1"
 		;;
+	ruijie,rg-ew1800gx)
+		ucidef_add_switch "switch0" \
+			"1:lan:3" "2:lan:2" "4:lan:1" "0:wan" "6@eth0" "5@eth1"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
@@ -380,6 +384,9 @@ ramips_setup_macs()
 	xwrt,x-sdwan-1200)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 2)
+		;;
+	ruijie,rg-ew1800gx)
+		label_mac=$(mtd_get_mac_ascii product_info "ethaddr")
 		;;
 	esac
 

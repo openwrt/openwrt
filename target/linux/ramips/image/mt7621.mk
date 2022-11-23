@@ -2988,6 +2988,18 @@ define Device/xwrt_wr1800k-ax-nor
 endef
 TARGET_DEVICES += xwrt_wr1800k-ax-nor
 
+define Device/ruijie_rg-ew1800gx
+  $(Device/uimage-lzma-loader)
+  $(Device/dsa-migration)
+  DEVICE_COMPAT_VERSION := 1.0
+  DEVICE_COMPAT_MESSAGE := Config is compat with swconfig
+  DEVICE_VENDOR := Ruijie
+  DEVICE_MODEL := RG-EW1800GX
+  DEVICE_PACKAGES += kmod-mt7915-firmware uboot-envtools
+  IMAGE_SIZE := 15616k
+endef
+TARGET_DEVICES += ruijie_rg-ew1800gx
+
 define Device/xwrt_dm2-t-mb2ep-v02-nor
   $(Device/uimage-lzma-loader)
   $(Device/dsa-migration)

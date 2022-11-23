@@ -250,6 +250,9 @@ xwrt,ms1800k-ax-nor)
 	ucidef_set_led_netdev "wan" "wan" "ether:blue" "eth1"
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "wlan:green" "wlan0" "link"
 	;;
+ruijie,rg-ew1800gx)
+	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "status:green" "wlan0" "link"
+	;;
 xwrt,wr1800k-ax-norplusemmc|\
 xwrt,wr1800k-ax-nor)
 	ucidef_set_led_switch "wan" "wan" "ether:blue" "switch0" "0x10"

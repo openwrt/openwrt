@@ -1,0 +1,219 @@
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "ruijie,rg-ew1800gx", "mediatek,mt7621-soc";
+	model = "Ruijie RG-EW1800GX";
+
+	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status: status {
+			label = "status:blue";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_green: green {
+			label = "status:green";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_red: red {
+			label = "status:red";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x00000 0x50000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "u-boot-env";
+				reg = <0x50000 0x10000>;
+			};
+
+			factory: partition@60000 {
+				label = "factory";
+				reg = <0x60000 0x40000>;
+				read-only;
+			};
+
+			partition@a0000 {
+				label = "product_info";
+				reg = <0xa0000 0x10000>;
+				read-only;
+			};
+
+			partition@b0000 {
+				label = "kdump";
+				reg = <0xb0000 0x10000>;
+			};
+
+			partition@c0000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0xc0000 0xf40000>;
+			};
+		};
+	};
+};
+
+&xhci {
+	status = "disabled";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0000>;
+		mtd-mac-address = <&factory 0x4>;
+		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cell-names = "mac-address";
+		mediatek,disable-radar-background;
+	};
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+};
+
+&gmac0 {
+	phy-mode = "trgmii";
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&factory 0x4>;
+	mac-address-increment = <(-1)>;
+};
+
+&gmac1 {
+	status = "okay";
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&factory 0x4>;
+	mac-address-increment = <(-2)>;
+	phy-mode = "rgmii";
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		pause;
+	};
+};
+
+&mdio {
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+&switch0 {
+	/* must delete compatible property */
+	/delete-property/ compatible;
+};
+
+&gsw {
+	compatible = "mediatek,mt753x";
+	status = "okay";
+
+	mediatek,mdio = <&mdio>;
+	mediatek,portmap = "llllw";
+	mt7530,direct-phy-access;
+	resets = <&rstctrl 2>;
+	reset-names = "mcm";
+	mediatek,mcm;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	port5: port@5 {
+		compatible = "mediatek,mt753x-port";
+		reg = <5>;
+		phy-mode = "rgmii";
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+	};
+
+	port6: port@6 {
+		compatible = "mediatek,mt753x-port";
+		reg = <6>;
+		phy-mode = "trgmii";
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "uart2", "uart3";
+		function = "gpio";
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_4: macaddr@4 {
+		reg = <0x4 0x6>;
+	};
+};

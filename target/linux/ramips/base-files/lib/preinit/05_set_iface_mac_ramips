@@ -19,6 +19,13 @@ preinit_set_mac_address() {
 				done
 			}
 			;;
+		ruijie,rg-ew1800gx)
+			wan_mac=$(mtd_get_mac_ascii product_info "ethaddr")
+			[ -n "$wan_mac" ] && {
+				ifconfig eth1 hw ether "$wan_mac"
+				ifconfig eth0 hw ether $(macaddr_add $wan_mac +1)
+			}
+			;;
 		*)
 			;;
 	esac

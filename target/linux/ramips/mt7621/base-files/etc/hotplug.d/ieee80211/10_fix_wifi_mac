@@ -139,6 +139,11 @@ case "$board" in
 			macaddr_setbit_la "$(mtd_get_mac_ascii Config protest_lan_mac)" \
 				> /sys${DEVPATH}/macaddress
 		;;
+	ruijie,rg-ew1800gx)
+		label_mac=$(mtd_get_mac_ascii product_info "ethaddr")
+		[ "$PHYNBR" = "0" ] && macaddr_add $label_mac 2 >/sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la "$(macaddr_add $label_mac 2)" >/sys${DEVPATH}/macaddress
+		;;
 	tenbay,t-mb5eu-v01)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr "0x100000" > /sys${DEVPATH}/macaddress
