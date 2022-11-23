@@ -1,0 +1,34 @@
+From 85094a21e538b1005c73005906096090db66f30f Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 21 Jan 2022 01:07:51 +0100
+Subject: [PATCH 1/3] iwinfo: add flags to freqlist output
+
+A channel can declare restriction where it should be used only indoors
+or should not be used at all.
+Expose these restriction in the channel data as additional info with the
+restricted info.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ iwinfo.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/iwinfo.c b/iwinfo.c
+index c93982f..e088ea6 100644
+--- a/iwinfo.c
++++ b/iwinfo.c
+@@ -635,6 +635,11 @@ rpc_iwinfo_freqlist(struct ubus_context *ctx, struct ubus_object *obj,
+ 			blobmsg_add_u32(&buf, "mhz", f->mhz);
+ 			blobmsg_add_u8(&buf, "restricted", f->restricted);
+ 
++			rpc_iwinfo_add_bit_array("flags", f->flags,
++						IWINFO_FREQ_FLAG_NAMES,
++						IWINFO_FREQ_FLAG_COUNT,
++						true, 0);
++
+ 			if (ch > -1)
+ 				blobmsg_add_u8(&buf, "active", f->channel == ch);
+ 
+-- 
+2.39.0
+

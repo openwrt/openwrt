@@ -1,0 +1,41 @@
+From 02e3934792e10f4ae604020f36a9301485dcba9b Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Thu, 24 Nov 2022 18:16:51 +0100
+Subject: [PATCH 3/3] iwinfo: add "band" and "mhz" to the scan output
+
+Providing the channel alone isn't clear as there're overlapping channels
+on e.g. band 2 and 6.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ iwinfo.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/iwinfo.c b/iwinfo.c
+index 904b268..ad2ba0d 100644
+--- a/iwinfo.c
++++ b/iwinfo.c
+@@ -366,7 +366,7 @@ rpc_iwinfo_scan(struct ubus_context *ctx, struct ubus_object *obj,
+                 struct ubus_request_data *req, const char *method,
+                 struct blob_attr *msg)
+ {
+-	int i, rv, len;
++	int i, rv, len, band;
+ 	void *c, *d, *t;
+ 	char mac[18];
+ 	char res[IWINFO_BUFSIZE];
+@@ -399,7 +399,11 @@ rpc_iwinfo_scan(struct ubus_context *ctx, struct ubus_object *obj,
+ 
+ 			blobmsg_add_string(&buf, "mode", IWINFO_OPMODE_NAMES[e->mode]);
+ 
++			band = iwinfo_band2ghz(e->band);
++			if (band > 0)
++				blobmsg_add_u32(&buf, "band", band);
+ 			blobmsg_add_u32(&buf, "channel", e->channel);
++			blobmsg_add_u32(&buf, "mhz", e->mhz);
+ 			blobmsg_add_u32(&buf, "signal", (uint32_t)(e->signal - 0x100));
+ 
+ 			blobmsg_add_u32(&buf, "quality", e->quality);
+-- 
+2.39.0
+

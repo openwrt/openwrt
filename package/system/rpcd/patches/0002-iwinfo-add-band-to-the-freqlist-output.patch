@@ -1,0 +1,39 @@
+From 98f0534535ba0aa702b945472c5f90715895b833 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Tue, 22 Nov 2022 11:41:13 +0100
+Subject: [PATCH 2/3] iwinfo: add "band" to the freqlist output
+
+So that consumers don't have to fiddle around with mapping frequencies
+to bands, which everyone seems to do a little differently.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ iwinfo.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/iwinfo.c b/iwinfo.c
+index e088ea6..904b268 100644
+--- a/iwinfo.c
++++ b/iwinfo.c
+@@ -607,7 +607,7 @@ rpc_iwinfo_freqlist(struct ubus_context *ctx, struct ubus_object *obj,
+                     struct ubus_request_data *req, const char *method,
+                     struct blob_attr *msg)
+ {
+-	int i, rv, len, ch;
++	int i, rv, len, ch, band;
+ 	char res[IWINFO_BUFSIZE];
+ 	struct iwinfo_freqlist_entry *f;
+ 	void *c, *d;
+@@ -631,6 +631,9 @@ rpc_iwinfo_freqlist(struct ubus_context *ctx, struct ubus_object *obj,
+ 			f = (struct iwinfo_freqlist_entry *)&res[i];
+ 			d = blobmsg_open_table(&buf, NULL);
+ 
++			band = iwinfo_band2ghz(f->band);
++			if (band > 0)
++				blobmsg_add_u32(&buf, "band", band);
+ 			blobmsg_add_u32(&buf, "channel", f->channel);
+ 			blobmsg_add_u32(&buf, "mhz", f->mhz);
+ 			blobmsg_add_u8(&buf, "restricted", f->restricted);
+-- 
+2.39.0
+
