@@ -89,18 +89,31 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_art_0>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_0>, <&calibration_ath9k>;
+	nvmem-cell-names = "mac-address", "calibration";
 	mac-address-increment = <1>;
+};
+
+&ath10k {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_0>, <&calibration_ath10k>;
+	nvmem-cell-names = "mac-address", "calibration";
+	mac-address-increment = <2>;
 };
 
 &art {
 	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	macaddr_art_0: macaddr@0 {
 		reg = <0x0 0x6>;
+	};
+
+	calibration_ath9k: calibration@1000 {
+		reg = <0x1000 0x440>;
+	};
+
+	calibration_ath10k: calibration@5000 {
+		reg = <0x5000 0x844>;
 	};
 };
