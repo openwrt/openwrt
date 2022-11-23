@@ -12,6 +12,7 @@ use warnings;
 use File::Basename;
 use File::Copy;
 use Text::ParseWords;
+use List::Util 'shuffle';
 
 @ARGV > 2 or die "Syntax: $0 <target dir> <filename> <hash> <url filename> [<mirror> ...]\n";
 
@@ -323,6 +324,7 @@ foreach my $mirror (@ARGV) {
 	} else {
 		push @mirrors, $mirror;
 	}
+	my @mirrors = shuffle(@mirrors);
 }
 
 push @mirrors, 'https://sources.cdn.openwrt.org';
