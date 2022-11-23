@@ -24,12 +24,12 @@ hostapd_append_wep_key() {
 		[1234])
 			for idx in 1 2 3 4; do
 				local zidx
-				zidx=$(($idx - 1))
+				zidx="$(($idx - 1))"
 				json_get_var ckey "key${idx}"
 				[ -n "$ckey" ] && \
 					append $var "wep_key${zidx}=$(prepare_key_wep "$ckey")" "$N$T"
 			done
-			wep_keyidx=$((key - 1))
+			wep_keyidx="$((key - 1))"
 		;;
 		*)
 			append $var "wep_key0=$(prepare_key_wep "$key")" "$N$T"
@@ -787,7 +787,7 @@ hostapd_set_bss_options() {
 		;;
 	esac
 
-	local auth_algs=$((($auth_mode_shared << 1) | $auth_mode_open))
+	local auth_algs="$((($auth_mode_shared << 1) | $auth_mode_open))"
 	append bss_conf "auth_algs=${auth_algs:-1}" "$N"
 	append bss_conf "wpa=$wpa" "$N"
 	[ -n "$wpa_pairwise" ] && append bss_conf "wpa_pairwise=$wpa_pairwise" "$N"
@@ -1156,7 +1156,7 @@ hostapd_set_bss_options() {
 		append bss_conf "$val" "$N"
 	done
 
-	bss_md5sum=$(echo $bss_conf | md5sum | cut -d" " -f1)
+	bss_md5sum="$(echo $bss_conf | md5sum | cut -d" " -f1)"
 	append bss_conf "config_id=$bss_md5sum" "$N"
 
 	append "$var" "$bss_conf" "$N"
@@ -1178,7 +1178,7 @@ hostapd_set_log_options() {
 	set_default log_iapp   1
 	set_default log_mlme   1
 
-	local log_mask=$(( \
+	local log_mask="$(( \
 		($log_80211  << 0) | \
 		($log_8021x  << 1) | \
 		($log_radius << 2) | \
@@ -1186,7 +1186,7 @@ hostapd_set_log_options() {
 		($log_driver << 4) | \
 		($log_iapp   << 5) | \
 		($log_mlme   << 6)   \
-	))
+	))"
 
 	append "$var" "logger_syslog=$log_mask" "$N"
 	append "$var" "logger_syslog_level=$log_level" "$N"
