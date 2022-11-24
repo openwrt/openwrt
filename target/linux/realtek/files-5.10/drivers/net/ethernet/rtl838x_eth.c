@@ -1922,8 +1922,11 @@ static int rtnc_poll_rx(struct napi_struct *napi, int budget)
 		/* Enable RX interrupt */
 		if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
 			sw_w32(0xffffffff, priv->r->dma_if_intr_rx_done_msk);
-		else
+		else {
 			sw_w32_mask(0, 0x000ff | BIT(r + 8), priv->r->dma_if_intr_msk);
+			/* Avoid stalls during high load */
+			priv->r->update_cntr(r, 0);
+		}
 	}
 	return work_done;
 }
