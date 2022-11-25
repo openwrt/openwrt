@@ -10,7 +10,7 @@
  	bss->freq = 0;
  	nl80211_put_wiphy_data_ap(bss);
 -	msg = nl80211_drv_msg(drv, 0, NL80211_CMD_DEL_BEACON);
-+	msg = nl80211_bss_msg(drv, 0, NL80211_CMD_DEL_BEACON);
++	msg = nl80211_bss_msg(bss, 0, NL80211_CMD_DEL_BEACON);
  	return send_and_recv_msgs(drv, msg, NULL, NULL, NULL, NULL);
  }
  
