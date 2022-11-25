@@ -118,9 +118,9 @@
  
 --- a/include/uapi/linux/ip.h
 +++ b/include/uapi/linux/ip.h
-@@ -103,7 +103,7 @@ struct iphdr {
- 	__be32	saddr;
- 	__be32	daddr;
+@@ -105,7 +105,7 @@ struct iphdr {
+ 		__be32	daddr;
+ 	);
  	/*The options start here. */
 -};
 +} __attribute__((packed, aligned(2)));
@@ -129,10 +129,10 @@
  struct ip_auth_hdr {
 --- a/include/uapi/linux/ipv6.h
 +++ b/include/uapi/linux/ipv6.h
-@@ -132,7 +132,7 @@ struct ipv6hdr {
- 
- 	struct	in6_addr	saddr;
- 	struct	in6_addr	daddr;
+@@ -134,7 +134,7 @@ struct ipv6hdr {
+ 		struct	in6_addr	saddr;
+ 		struct	in6_addr	daddr;
+ 	);
 -};
 +} __attribute__((packed, aligned(2)));
  
