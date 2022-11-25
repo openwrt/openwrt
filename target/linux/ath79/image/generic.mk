@@ -10,6 +10,7 @@ DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX DAP_SIGNATURE
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
 DEVICE_VARS += OPENMESH_CE_TYPE ZYXEL_MODEL_STRING
+DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
 
 define Build/addpattern
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(ADDPATTERN_ID) \
@@ -137,6 +138,35 @@ define Build/teltonika-v1-header
 		-m $(TPLINK_HEADER_VERSION) -N "$(VERSION_DIST)" -V "RUT2xx      " \
 		-k $@ -o $@.new $(1)
 	@mv $@.new $@
+endef
+
+metadata_json_teltonika = \
+	'{ $(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
+		"metadata_version": "1.1", \
+		"compat_version": "$(call json_quote,$(compat_version))", \
+		"version":"$(call json_quote,$(VERSION_DIST))-$(call json_quote,$(VERSION_NUMBER))-$(call json_quote,$(REVISION))", \
+		"device_code": [".*"], \
+		"hwver": [".*"], \
+		"batch": [".*"], \
+		"serial": [".*"], \
+		$(if $(DEVICE_COMPAT_MESSAGE),"compat_message": "$(call json_quote,$(DEVICE_COMPAT_MESSAGE))"$(comma)) \
+		$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices": \
+			[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma) \
+			"supported_devices": ["$(call json_quote,$(legacy_supported_message))"]$(comma)) \
+		$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma)) \
+		"version_wrt": { \
+			"dist": "$(call json_quote,$(VERSION_DIST))", \
+			"version": "$(call json_quote,$(VERSION_NUMBER))", \
+			"revision": "$(call json_quote,$(REVISION))", \
+			"target": "$(call json_quote,$(TARGETID))", \
+			"board": "$(call json_quote,$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)))" \
+		}, \
+		"hw_support": {}, \
+		"hw_mods": {} \
+	}'
+
+define Build/append-metadata-teltonika
+	echo $(call metadata_json_teltonika) | fwtool -I - $@
 endef
 
 define Build/wrgg-pad-rootfs
@@ -777,7 +807,7 @@ TARGET_DEVICES += compex_wpj563
 
 define Device/devolo_dlan-pro-1200plus-ac
   SOC := ar9344
-  DEVICE_VENDOR := Devolo
+  DEVICE_VENDOR := devolo
   DEVICE_MODEL := dLAN pro 1200+ WiFi ac
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15872k
@@ -840,7 +870,7 @@ TARGET_DEVICES += devolo_dvl1750x
 
 define Device/devolo_magic-2-wifi
   SOC := ar9344
-  DEVICE_VENDOR := Devolo
+  DEVICE_VENDOR := devolo
   DEVICE_MODEL := Magic 2 WiFi
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15872k
@@ -2372,13 +2402,26 @@ define Device/rosinson_wr818
 endef
 TARGET_DEVICES += rosinson_wr818
 
-define Device/ruckus_zf73xx_common
+define Device/ruckus_common
   DEVICE_VENDOR := Ruckus
-  DEVICE_PACKAGES := -swconfig kmod-usb2 kmod-usb-chipidea2
-  IMAGE_SIZE := 31744k
   LOADER_TYPE := bin
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+endef
+
+define Device/ruckus_zf7025
+  $(Device/ruckus_common)
+  SOC := ar7240
+  DEVICE_MODEL := ZoneFlex 7025
+  IMAGE_SIZE := 15616k
+  BLOCKSIZE := 256k
+endef
+TARGET_DEVICES += ruckus_zf7025
+
+define Device/ruckus_zf73xx_common
+  $(Device/ruckus_common)
+  DEVICE_PACKAGES := -swconfig kmod-usb2 kmod-usb-chipidea2
+  IMAGE_SIZE := 31744k
 endef
 
 define Device/ruckus_zf7321
@@ -2526,6 +2569,23 @@ define Device/teltonika_rut230-v1
 	check-size
 endef
 TARGET_DEVICES += teltonika_rut230-v1
+
+define Device/teltonika_rut300
+  SOC := qca9531
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT300
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut30x
+  DEVICE_PACKAGES := -kmod-ath9k -uboot-envtools -wpad-basic-wolfssl kmod-usb2
+  IMAGE_SIZE := 15552k
+  IMAGES += factory.bin
+  IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
+			 append-rootfs | pad-rootfs | append-metadata-teltonika | \
+			 check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
+			 append-rootfs | pad-rootfs | append-metadata | \
+			 check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += teltonika_rut300
 
 define Device/teltonika_rut955
   SOC := ar9344

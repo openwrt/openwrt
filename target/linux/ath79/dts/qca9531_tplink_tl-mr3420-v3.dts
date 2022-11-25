@@ -102,7 +102,7 @@
 		usb {
 			label = "green:usb";
 			gpios = <&led_gpio 7 GPIO_ACTIVE_LOW>;
-			trigger-sources = <&hub_port>;
+			trigger-sources = <&hub_port0>;
 			linux,default-trigger = "usbport";
 		};
 
@@ -190,14 +190,7 @@
 };
 
 &usb0 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
-
-	hub_port: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &usb_phy {

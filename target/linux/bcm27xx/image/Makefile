@@ -76,7 +76,7 @@ define Device/rpi
 	raspberrypi,model-zero raspberrypi,model-zero-w
   DEVICE_PACKAGES := \
 	cypress-firmware-43430-sdio \
-	cypress-nvram-43430-sdio-rpi-zero-w \
+	brcmfmac-nvram-43430-sdio \
 	kmod-brcmfmac wpad-basic-wolfssl
 endef
 ifeq ($(SUBTARGET),bcm2708)
@@ -87,10 +87,10 @@ define Device/rpi-2
   DEVICE_MODEL := 2B/2B 1.2
   DEVICE_VARIANT := (32bit)
   DEVICE_ALT0_VENDOR := Raspberry Pi
-  DEVICE_ALT0_MODEL := 3B/3B+/3CM
+  DEVICE_ALT0_MODEL := 3B/3B+/CM3
   DEVICE_ALT0_VARIANT := (32bit)
   DEVICE_ALT1_VENDOR := Raspberry Pi
-  DEVICE_ALT1_MODEL := 4B/400/4CM
+  DEVICE_ALT1_MODEL := 4B/400/CM4
   DEVICE_ALT1_VARIANT := (32bit)
   DEVICE_DTS := \
 	bcm2709-rpi-2-b bcm2710-rpi-2-b \
@@ -107,9 +107,9 @@ define Device/rpi-2
 	raspberrypi,model-zero-2
   DEVICE_PACKAGES := \
 	cypress-firmware-43430-sdio \
-	cypress-nvram-43430-sdio-rpi-3b \
+	brcmfmac-nvram-43430-sdio \
 	cypress-firmware-43455-sdio \
-	cypress-nvram-43455-sdio-rpi-3b-plus cypress-nvram-43455-sdio-rpi-4b \
+	brcmfmac-nvram-43455-sdio \
 	kmod-brcmfmac wpad-basic-wolfssl
   IMAGE/sysupgrade.img.gz := boot-common | boot-2708 | boot-2711 | sdcard-img | gzip | append-metadata
   IMAGE/factory.img.gz := boot-common | boot-2708 | boot-2711 | sdcard-img | gzip
@@ -119,7 +119,7 @@ ifeq ($(SUBTARGET),bcm2709)
 endif
 
 define Device/rpi-3
-  DEVICE_MODEL := 3B/3B+/3CM
+  DEVICE_MODEL := 3B/3B+/CM3
   DEVICE_VARIANT := (64bit)
   DEVICE_ALT0_VENDOR := Raspberry Pi
   DEVICE_ALT0_MODEL := 2B-1.2
@@ -138,9 +138,9 @@ define Device/rpi-3
 	raspberrypi,model-zero-2
   DEVICE_PACKAGES := \
 	cypress-firmware-43430-sdio \
-	cypress-nvram-43430-sdio-rpi-3b \
+	brcmfmac-nvram-43430-sdio \
 	cypress-firmware-43455-sdio \
-	cypress-nvram-43455-sdio-rpi-3b-plus \
+	brcmfmac-nvram-43455-sdio \
 	kmod-brcmfmac wpad-basic-wolfssl
 endef
 ifeq ($(SUBTARGET),bcm2710)
@@ -148,7 +148,7 @@ ifeq ($(SUBTARGET),bcm2710)
 endif
 
 define Device/rpi-4
-  DEVICE_MODEL := 4B/400/4CM
+  DEVICE_MODEL := 4B/400/CM4
   DEVICE_VARIANT := (64bit)
   KERNEL_IMG := kernel8.img
   DEVICE_DTS := \
@@ -161,7 +161,7 @@ define Device/rpi-4
 	raspberrypi,4-model-b
   DEVICE_PACKAGES := \
 	cypress-firmware-43455-sdio \
-	cypress-nvram-43455-sdio-rpi-4b \
+	brcmfmac-nvram-43455-sdio \
 	kmod-brcmfmac wpad-basic-wolfssl \
 	kmod-usb-net-lan78xx
   IMAGE/sysupgrade.img.gz := boot-common | boot-2711 | sdcard-img | gzip | append-metadata

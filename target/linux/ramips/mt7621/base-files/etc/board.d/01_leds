@@ -25,7 +25,8 @@ asus,rt-n56u-b1)
 	;;
 beeline,smartbox-flash|\
 beeline,smartbox-giga|\
-beeline,smartbox-turbo)
+beeline,smartbox-turbo|\
+rostelecom,rt-sf-1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
 belkin,rt1800)
@@ -54,6 +55,10 @@ dlink,dir-2640-a1|\
 dlink,dir-2660-a1)
 	ucidef_set_led_netdev "wan" "wan" "white:net" "wan"
 	;;
+dlink,dir-3060-a1)
+	ucidef_set_led_netdev "net_white" "WAN Link" "white:net" "wan" "link"
+	ucidef_set_led_netdev "net_orange" "WAN Activity" "orange:net" "wan" "tx rx"
+	;;
 dlink,dir-853-a3)
 	ucidef_set_led_netdev "wan" "wan" "blue:net" "wan"
 	;;
@@ -69,6 +74,9 @@ dlink,dir-882-r1)
 	;;
 gnubee,gb-pc2)
 	ucidef_set_led_netdev "ethyellow" "ethyellow" "orange:ethyellow" "ethyellow" "link tx rx"
+	;;
+keenetic,kn-3010)
+	ucidef_set_led_netdev "internet" "internet" "green:internet" "wan"
 	;;
 linksys,e5600)
 	ucidef_set_led_netdev "wan" "wan link" "blue:wan" "wan" "link"
@@ -95,6 +103,7 @@ linksys,ea8100-v2)
 mikrotik,routerboard-760igs)
 	ucidef_set_led_netdev "sfp" "SFP" "blue:sfp" "sfp"
 	;;
+mikrotik,ltap-2hnd|\
 mikrotik,routerboard-m11g)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "RSSILOW" "green:rssi0" "wlan0" "1" "100"

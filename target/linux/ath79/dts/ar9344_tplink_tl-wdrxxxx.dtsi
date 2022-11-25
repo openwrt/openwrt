@@ -106,14 +106,39 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
 		#gpio-cells = <2>;
 		gpio-controller;
+		nvmem-cells = <&macaddr_uboot_1fc00>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
 	};
 };
 
 &wmac {
 	status = "okay";
+	nvmem-cells = <&macaddr_uboot_1fc00>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
 
-	mtd-cal-data = <&art 0x1000>;
+&uboot {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_uboot_1fc00: macaddr@1fc00 {
+		reg = <0x1fc00 0x6>;
+	};
+};
+
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cal_art_1000: cal@1000 {
+		reg = <0x1000 0x440>;
+	};
+
+	cal_art_5000: cal@5000 {
+		reg = <0x5000 0x440>;
+	};
 };

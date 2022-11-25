@@ -43,6 +43,7 @@ ipq40xx_setup_interfaces()
 		;;
 	aruba,ap-303|\
 	avm,fritzrepeater-1200|\
+	dlink,dap-2610|\
 	meraki,mr33|\
 	meraki,mr74|\
 	mikrotik,lhgg-60ad|\
@@ -58,6 +59,7 @@ ipq40xx_setup_interfaces()
 	compex,wpj428)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
+	glinet,gl-a1300|\
 	glinet,gl-b1300|\
 	mobipromo,cm520-79f)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
@@ -70,6 +72,14 @@ ipq40xx_setup_interfaces()
 	netgear,srr60|\
 	netgear,srs60)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	openmesh,a42|\
+	openmesh,a62)
+		ucidef_set_interfaces_lan_wan "ethernet2" "ethernet1"
+		;;
+	plasmacloud,pa1200|\
+	plasmacloud,pa2200)
+		ucidef_set_interfaces_lan_wan "ethernet1" "ethernet2"
 		;;
 	zte,mf286d)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
