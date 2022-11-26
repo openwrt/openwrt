@@ -117,8 +117,7 @@ static void __init ds_setup(void)
 	ath79_gpio_function_disable(AR933X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
 								AR933X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
 								AR933X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
-								AR933X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
-								AR933X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
+								AR933X_GPIO_FUNC_ETH_SWITCH_LED3_EN);
 
 	//Disable the Function for some pins to have GPIO functionality active
 	// GPIO6-7-8 and GPIO11
@@ -141,7 +140,7 @@ static void __init ds_setup(void)
 
 	// enable OE of level shifter
 	if (gpio_request_one(DS_GPIO_OE,
-	    GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED, "OE-1") != 0)
+	    GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED, "OE-1") != 0)
 		printk("Error setting GPIO OE\n");
 
 	if (gpio_request_one(DS_GPIO_UART_ENA,
@@ -150,7 +149,7 @@ static void __init ds_setup(void)
 
 	// enable OE of level shifter
 	if (gpio_request_one(DS_GPIO_OE2,
-	    GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED, "OE-2") != 0)
+	    GPIOF_OUT_INIT_LOW | GPIOF_EXPORT_DIR_FIXED, "OE-2") != 0)
 		printk("Error setting GPIO OE2\n");
 }
 

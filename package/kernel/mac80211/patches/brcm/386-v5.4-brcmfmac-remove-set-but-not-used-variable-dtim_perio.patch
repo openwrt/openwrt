@@ -21,7 +21,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
-@@ -2974,8 +2974,6 @@ static s32 brcmf_update_bss_info(struct
+@@ -2977,8 +2977,6 @@ static s32 brcmf_update_bss_info(struct
  	struct brcmf_pub *drvr = cfg->pub;
  	struct brcmf_bss_info_le *bi;
  	const struct brcmf_tlv *tim;
@@ -30,7 +30,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  	size_t ie_len;
  	u8 *ie;
  	s32 err = 0;
-@@ -2999,12 +2997,9 @@ static s32 brcmf_update_bss_info(struct
+@@ -3002,12 +3000,9 @@ static s32 brcmf_update_bss_info(struct
  
  	ie = ((u8 *)bi) + le16_to_cpu(bi->ie_offset);
  	ie_len = le32_to_cpu(bi->ie_length);
@@ -44,7 +44,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		/*
  		* active scan was done so we could not get dtim
  		* information out of probe response.
-@@ -3016,7 +3011,6 @@ static s32 brcmf_update_bss_info(struct
+@@ -3019,7 +3014,6 @@ static s32 brcmf_update_bss_info(struct
  			bphy_err(drvr, "wl dtim_assoc failed (%d)\n", err);
  			goto update_bss_info_out;
  		}

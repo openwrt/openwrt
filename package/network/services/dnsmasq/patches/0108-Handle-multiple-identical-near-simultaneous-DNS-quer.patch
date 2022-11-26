@@ -1,0 +1,352 @@
+From 15b60ddf935a531269bb8c68198de012a4967156 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Wed, 18 Nov 2020 18:34:55 +0000
+Subject: Handle multiple identical near simultaneous DNS queries better.
+
+Previously, such queries would all be forwarded
+independently. This is, in theory, inefficent but in practise
+not a problem, _except_ that is means that an answer for any
+of the forwarded queries will be accepted and cached.
+An attacker can send a query multiple times, and for each repeat,
+another {port, ID} becomes capable of accepting the answer he is
+sending in the blind, to random IDs and ports. The chance of a
+succesful attack is therefore multiplied by the number of repeats
+of the query. The new behaviour detects repeated queries and
+merely stores the clients sending repeats so that when the
+first query completes, the answer can be sent to all the
+clients who asked. Refer: CERT VU#434904.
+---
+ CHANGELOG     |  16 +++++-
+ src/dnsmasq.h |  19 ++++---
+ src/forward.c | 142 ++++++++++++++++++++++++++++++++++++++++++--------
+ 3 files changed, 147 insertions(+), 30 deletions(-)
+
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -4,13 +4,27 @@
+ 
+ 	Be sure to only accept UDP DNS query replies at the address
+ 	from which the query was originated. This keeps as much entropy
+-	in the {query-ID, random-port} tuple as possible, help defeat
++	in the {query-ID, random-port} tuple as possible, to help defeat
+ 	cache poisoning attacks. Refer: CERT VU#434904.
+ 
+ 	Use the SHA-256 hash function to verify that DNS answers
+ 	received are for the questions originally asked. This replaces
+ 	the slightly insecure SHA-1 (when compiled with DNSSEC) or
+ 	the very insecure CRC32 (otherwise). Refer: CERT VU#434904.
++
++	Handle multiple identical near simultaneous DNS queries better.
++	Previously, such queries would all be forwarded
++	independently. This is, in theory, inefficent but in practise
++	not a problem, _except_ that is means that an answer for any
++	of the forwarded queries will be accepted and cached.
++	An attacker can send a query multiple times, and for each repeat,
++	another {port, ID} becomes capable of accepting the answer he is
++	sending in the blind, to random IDs and ports. The chance of a
++	succesful attack is therefore multiplied by the number of repeats
++	of the query. The new behaviour detects repeated queries and
++	merely stores the clients sending repeats so that when the
++	first query completes, the answer can be sent to all the
++	clients who asked. Refer: CERT VU#434904.
+ 	
+ 
+ version 2.81
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -642,19 +642,24 @@ struct hostsfile {
+ #define FREC_DO_QUESTION       64
+ #define FREC_ADDED_PHEADER    128
+ #define FREC_TEST_PKTSZ       256
+-#define FREC_HAS_EXTRADATA    512        
++#define FREC_HAS_EXTRADATA    512
++#define FREC_HAS_PHEADER     1024
+ 
+ #define HASH_SIZE 32 /* SHA-256 digest size */
+ 
+ struct frec {
+-  union mysockaddr source;
+-  union all_addr dest;
++  struct frec_src {
++    union mysockaddr source;
++    union all_addr dest;
++    unsigned int iface, log_id;
++    unsigned short orig_id;
++    struct frec_src *next;
++  } frec_src;
+   struct server *sentto; /* NULL means free */
+   struct randfd *rfd4;
+   struct randfd *rfd6;
+-  unsigned int iface;
+-  unsigned short orig_id, new_id;
+-  int log_id, fd, forwardall, flags;
++  unsigned short new_id;
++  int fd, forwardall, flags;
+   time_t time;
+   unsigned char *hash[HASH_SIZE];
+ #ifdef HAVE_DNSSEC 
+@@ -1069,6 +1074,8 @@ extern struct daemon {
+   int back_to_the_future;
+ #endif
+   struct frec *frec_list;
++  struct frec_src *free_frec_src;
++  int frec_src_count;
+   struct serverfd *sfds;
+   struct irec *interfaces;
+   struct listener *listeners;
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -20,6 +20,8 @@ static struct frec *lookup_frec(unsigned
+ static struct frec *lookup_frec_by_sender(unsigned short id,
+ 					  union mysockaddr *addr,
+ 					  void *hash);
++static struct frec *lookup_frec_by_query(void *hash, unsigned int flags);
++
+ static unsigned short get_id(void);
+ static void free_frec(struct frec *f);
+ 
+@@ -247,6 +249,7 @@ static int forward_query(int udpfd, unio
+   int type = SERV_DO_DNSSEC, norebind = 0;
+   union all_addr *addrp = NULL;
+   unsigned int flags = 0;
++  unsigned int fwd_flags = 0;
+   struct server *start = NULL;
+   void *hash = hash_questions(header, plen, daemon->namebuff);
+ #ifdef HAVE_DNSSEC
+@@ -255,7 +258,18 @@ static int forward_query(int udpfd, unio
+   unsigned int gotname = extract_request(header, plen, daemon->namebuff, NULL);
+   unsigned char *oph = find_pseudoheader(header, plen, NULL, NULL, NULL, NULL);
+   (void)do_bit;
+-
++  
++  if (header->hb4 & HB4_CD)
++    fwd_flags |= FREC_CHECKING_DISABLED;
++  if (ad_reqd)
++    fwd_flags |= FREC_AD_QUESTION;
++  if (oph)
++    fwd_flags |= FREC_HAS_PHEADER;
++#ifdef HAVE_DNSSEC
++  if (do_bit)
++    fwd_flags |= FREC_DO_QUESTION;
++#endif
++  
+   /* may be no servers available. */
+   if (forward || (forward = lookup_frec_by_sender(ntohs(header->id), udpaddr, hash)))
+     {
+@@ -328,6 +342,39 @@ static int forward_query(int udpfd, unio
+     }
+   else 
+     {
++      /* Query from new source, but the same query may be in progress
++	 from another source. If so, just add this client to the
++	 list that will get the reply.
++	 
++	 Note that is the EDNS client subnet option is in use, we can't do this,
++	 as the clients (and therefore query EDNS options) will be different
++	 for each query. The EDNS subnet code has checks to avoid
++	 attacks in this case. */
++      if (!option_bool(OPT_CLIENT_SUBNET) && (forward = lookup_frec_by_query(hash, fwd_flags)))
++	{
++	  /* Note whine_malloc() zeros memory. */
++	  if (!daemon->free_frec_src &&
++	      daemon->frec_src_count < daemon->ftabsize &&
++	      (daemon->free_frec_src = whine_malloc(sizeof(struct frec_src))))
++	    daemon->frec_src_count++;
++	  
++	  /* If we've been spammed with many duplicates, just drop the query. */
++	  if (daemon->free_frec_src)
++	    {
++	      struct frec_src *new = daemon->free_frec_src;
++	      daemon->free_frec_src = new->next;
++	      new->next = forward->frec_src.next;
++	      forward->frec_src.next = new;
++	      new->orig_id = ntohs(header->id);
++	      new->source = *udpaddr;
++	      new->dest = *dst_addr;
++	      new->log_id = daemon->log_id;
++	      new->iface = dst_iface;
++	    }
++	  
++	  return 1;
++	}
++	
+       if (gotname)
+ 	flags = search_servers(now, &addrp, gotname, daemon->namebuff, &type, &domain, &norebind);
+       
+@@ -335,22 +382,22 @@ static int forward_query(int udpfd, unio
+       do_dnssec = type & SERV_DO_DNSSEC;
+ #endif
+       type &= ~SERV_DO_DNSSEC;      
+-
++      
+       if (daemon->servers && !flags)
+ 	forward = get_new_frec(now, NULL, 0);
+       /* table full - flags == 0, return REFUSED */
+       
+       if (forward)
+ 	{
+-	  forward->source = *udpaddr;
+-	  forward->dest = *dst_addr;
+-	  forward->iface = dst_iface;
+-	  forward->orig_id = ntohs(header->id);
++	  forward->frec_src.source = *udpaddr;
++	  forward->frec_src.orig_id = ntohs(header->id);
++	  forward->frec_src.dest = *dst_addr;
++	  forward->frec_src.iface = dst_iface;
+ 	  forward->new_id = get_id();
+ 	  forward->fd = udpfd;
+ 	  memcpy(forward->hash, hash, HASH_SIZE);
+ 	  forward->forwardall = 0;
+-	  forward->flags = 0;
++	  forward->flags = fwd_flags;
+ 	  if (norebind)
+ 	    forward->flags |= FREC_NOREBIND;
+ 	  if (header->hb4 & HB4_CD)
+@@ -405,9 +452,9 @@ static int forward_query(int udpfd, unio
+       unsigned char *pheader;
+       
+       /* If a query is retried, use the log_id for the retry when logging the answer. */
+-      forward->log_id = daemon->log_id;
++      forward->frec_src.log_id = daemon->log_id;
+       
+-      plen = add_edns0_config(header, plen, ((unsigned char *)header) + PACKETSZ, &forward->source, now, &subnet);
++      plen = add_edns0_config(header, plen, ((unsigned char *)header) + PACKETSZ, &forward->frec_src.source, now, &subnet);
+       
+       if (subnet)
+ 	forward->flags |= FREC_HAS_SUBNET;
+@@ -544,7 +591,7 @@ static int forward_query(int udpfd, unio
+ 	return 1;
+       
+       /* could not send on, prepare to return */ 
+-      header->id = htons(forward->orig_id);
++      header->id = htons(forward->frec_src.orig_id);
+       free_frec(forward); /* cancel */
+     }	  
+   
+@@ -796,8 +843,8 @@ void reply_query(int fd, int family, tim
+ 
+   /* log_query gets called indirectly all over the place, so 
+      pass these in global variables - sorry. */
+-  daemon->log_display_id = forward->log_id;
+-  daemon->log_source_addr = &forward->source;
++  daemon->log_display_id = forward->frec_src.log_id;
++  daemon->log_source_addr = &forward->frec_src.source;
+   
+   if (daemon->ignore_addr && RCODE(header) == NOERROR &&
+       check_for_ignored_address(header, n, daemon->ignore_addr))
+@@ -1065,6 +1112,7 @@ void reply_query(int fd, int family, tim
+ 		      new->sentto = server;
+ 		      new->rfd4 = NULL;
+ 		      new->rfd6 = NULL;
++		      new->frec_src.next = NULL;
+ 		      new->flags &= ~(FREC_DNSKEY_QUERY | FREC_DS_QUERY | FREC_HAS_EXTRADATA);
+ 		      new->forwardall = 0;
+ 		      
+@@ -1199,9 +1247,11 @@ void reply_query(int fd, int family, tim
+       
+       if ((nn = process_reply(header, now, forward->sentto, (size_t)n, check_rebind, no_cache_dnssec, cache_secure, bogusanswer, 
+ 			      forward->flags & FREC_AD_QUESTION, forward->flags & FREC_DO_QUESTION, 
+-			      forward->flags & FREC_ADDED_PHEADER, forward->flags & FREC_HAS_SUBNET, &forward->source)))
++			      forward->flags & FREC_ADDED_PHEADER, forward->flags & FREC_HAS_SUBNET, &forward->frec_src.source)))
+ 	{
+-	  header->id = htons(forward->orig_id);
++	  struct frec_src *src;
++
++	  header->id = htons(forward->frec_src.orig_id);
+ 	  header->hb4 |= HB4_RA; /* recursion if available */
+ #ifdef HAVE_DNSSEC
+ 	  /* We added an EDNSO header for the purpose of getting DNSSEC RRs, and set the value of the UDP payload size
+@@ -1217,13 +1267,26 @@ void reply_query(int fd, int family, tim
+ 	    }
+ #endif
+ 
++	  for (src = &forward->frec_src; src; src = src->next)
++	    {
++	      header->id = htons(src->orig_id);
++	      
+ #ifdef HAVE_DUMPFILE
+-	  dump_packet(DUMP_REPLY, daemon->packet, (size_t)nn, NULL, &forward->source);
++	      dump_packet(DUMP_REPLY, daemon->packet, (size_t)nn, NULL, &src->source);
+ #endif
+-	  
+-	  send_from(forward->fd, option_bool(OPT_NOWILD) || option_bool (OPT_CLEVERBIND), daemon->packet, nn, 
+-		    &forward->source, &forward->dest, forward->iface);
++	      
++	      send_from(forward->fd, option_bool(OPT_NOWILD) || option_bool (OPT_CLEVERBIND), daemon->packet, nn, 
++			&src->source, &src->dest, src->iface);
++
++	      if (option_bool(OPT_EXTRALOG) && src != &forward->frec_src)
++		{
++		  daemon->log_display_id = src->log_id;
++		  daemon->log_source_addr = &src->source;
++		  log_query(F_UPSTREAM, "query", NULL, "duplicate");
++		}
++	    }
+ 	}
++
+       free_frec(forward); /* cancel */
+     }
+ }
+@@ -2153,6 +2216,17 @@ void free_rfd(struct randfd *rfd)
+ 
+ static void free_frec(struct frec *f)
+ {
++  struct frec_src *src, *tmp;
++
++   /* add back to freelist of not the record builtin to every frec. */
++  for (src = f->frec_src.next; src; src = tmp)
++    {
++      tmp = src->next;
++      src->next = daemon->free_frec_src;
++      daemon->free_frec_src = src;
++    }
++  
++  f->frec_src.next = NULL;    
+   free_rfd(f->rfd4);
+   f->rfd4 = NULL;
+   f->sentto = NULL;
+@@ -2292,17 +2366,39 @@ static struct frec *lookup_frec_by_sende
+ 					  void *hash)
+ {
+   struct frec *f;
++  struct frec_src *src;
++
++  for (f = daemon->frec_list; f; f = f->next)
++    if (f->sentto &&
++	!(f->flags & (FREC_DNSKEY_QUERY | FREC_DS_QUERY)) &&
++	memcmp(hash, f->hash, HASH_SIZE) == 0)
++      for (src = &f->frec_src; src; src = src->next)
++	if (src->orig_id == id && 
++	    sockaddr_isequal(&src->source, addr))
++	  return f;
++  
++  return NULL;
++}
++
++static struct frec *lookup_frec_by_query(void *hash, unsigned int flags)
++{
++  struct frec *f;
++
++  /* FREC_DNSKEY and FREC_DS_QUERY are never set in flags, so the test below 
++     ensures that no frec created for internal DNSSEC query can be returned here. */
++
++#define FLAGMASK (FREC_CHECKING_DISABLED | FREC_AD_QUESTION | FREC_DO_QUESTION \
++		  | FREC_HAS_PHEADER | FREC_DNSKEY_QUERY | FREC_DS_QUERY)
+   
+   for(f = daemon->frec_list; f; f = f->next)
+     if (f->sentto &&
+-	f->orig_id == id && 
+-	memcmp(hash, f->hash, HASH_SIZE) == 0 &&
+-	sockaddr_isequal(&f->source, addr))
++	(f->flags & FLAGMASK) == flags &&
++	memcmp(hash, f->hash, HASH_SIZE) == 0)
+       return f;
+-   
++  
+   return NULL;
+ }
+- 
++
+ /* Send query packet again, if we can. */
+ void resend_query()
+ {

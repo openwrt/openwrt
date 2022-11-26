@@ -176,7 +176,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #include <linux/netfilter_bridge.h>
  #include <linux/seq_file.h>
  #include <linux/rcupdate.h>
-@@ -108,6 +110,35 @@ void nf_queue_nf_hook_drop(struct net *n
+@@ -121,6 +123,35 @@ void nf_queue_nf_hook_drop(struct net *n
  }
  EXPORT_SYMBOL_GPL(nf_queue_nf_hook_drop);
  
@@ -212,12 +212,11 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  static int __nf_queue(struct sk_buff *skb, const struct nf_hook_state *state,
  		      const struct nf_hook_entries *entries,
  		      unsigned int index, unsigned int queuenum)
-@@ -148,7 +179,16 @@ static int __nf_queue(struct sk_buff *sk
- 	};
+@@ -165,7 +196,15 @@ static int __nf_queue(struct sk_buff *sk
+ 		return -ENOTCONN;
+ 	}
  
- 	nf_queue_entry_get_refs(entry);
 -	afinfo->saveroute(skb, entry);
-+
 +	switch (entry->state.pf) {
 +	case AF_INET:
 +		nf_ip_saveroute(skb, entry);

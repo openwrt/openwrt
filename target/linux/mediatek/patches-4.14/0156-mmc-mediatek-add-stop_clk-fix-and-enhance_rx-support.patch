@@ -114,7 +114,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  };
  
  static const struct of_device_id msdc_of_ids[] = {
-@@ -1282,15 +1303,31 @@ static void msdc_init_hw(struct msdc_hos
+@@ -1284,15 +1305,31 @@ static void msdc_init_hw(struct msdc_hos
  	sdr_set_field(host->base + MSDC_PATCH_BIT, MSDC_CKGEN_MSDC_DLY_SEL, 1);
  	writel(0xffff4089, host->base + MSDC_PATCH_BIT1);
  	sdr_set_bits(host->base + EMMC50_CFG0, EMMC50_CFG_CFCSTS_SEL);
@@ -150,7 +150,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  		/* use async fifo, then no need tune internal delay */
  		sdr_clr_bits(host->base + MSDC_PATCH_BIT2,
  			     MSDC_PATCH_BIT2_CFGRESP);
-@@ -1936,6 +1973,7 @@ static void msdc_save_reg(struct msdc_ho
+@@ -1938,6 +1975,7 @@ static void msdc_save_reg(struct msdc_ho
  	host->save_para.pad_ds_tune = readl(host->base + PAD_DS_TUNE);
  	host->save_para.pad_cmd_tune = readl(host->base + PAD_CMD_TUNE);
  	host->save_para.emmc50_cfg0 = readl(host->base + EMMC50_CFG0);
@@ -158,7 +158,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  }
  
  static void msdc_restore_reg(struct msdc_host *host)
-@@ -1952,6 +1990,7 @@ static void msdc_restore_reg(struct msdc
+@@ -1954,6 +1992,7 @@ static void msdc_restore_reg(struct msdc
  	writel(host->save_para.pad_ds_tune, host->base + PAD_DS_TUNE);
  	writel(host->save_para.pad_cmd_tune, host->base + PAD_CMD_TUNE);
  	writel(host->save_para.emmc50_cfg0, host->base + EMMC50_CFG0);

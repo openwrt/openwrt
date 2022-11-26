@@ -58,7 +58,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  		sdr_set_field(host->base + PAD_CMD_TUNE,
  			      MSDC_PAD_TUNE_CMDRRDLY,
  			      host->hs400_cmd_int_delay);
-@@ -1597,7 +1603,8 @@ static int msdc_execute_tuning(struct mm
+@@ -1599,7 +1605,8 @@ static int msdc_execute_tuning(struct mm
  	struct msdc_host *host = mmc_priv(mmc);
  	int ret;
  

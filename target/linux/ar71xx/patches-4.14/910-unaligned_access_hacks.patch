@@ -223,7 +223,7 @@
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -819,10 +820,10 @@ static void tcp_v6_send_response(const s
+@@ -835,10 +836,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -240,7 +240,7 @@
  #ifdef CONFIG_TCP_MD5SIG
 --- a/include/linux/ipv6.h
 +++ b/include/linux/ipv6.h
-@@ -6,6 +6,7 @@
+@@ -7,6 +7,7 @@
  
  #define ipv6_optlen(p)  (((p)->hdrlen+1) << 3)
  #define ipv6_authlen(p) (((p)->hdrlen+2) << 2)
@@ -276,7 +276,7 @@
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/ip6_gre.c
 +++ b/net/ipv6/ip6_gre.c
-@@ -397,7 +397,7 @@ static void ip6gre_err(struct sk_buff *s
+@@ -399,7 +399,7 @@ static void ip6gre_err(struct sk_buff *s
  		return;
  	ipv6h = (const struct ipv6hdr *)skb->data;
  	greh = (const struct gre_base_hdr *)(skb->data + offset);
@@ -312,7 +312,7 @@
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1352,8 +1352,8 @@ struct sk_buff **inet_gro_receive(struct
+@@ -1355,8 +1355,8 @@ struct sk_buff **inet_gro_receive(struct
  	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
  		goto out_unlock;
  
@@ -325,7 +325,7 @@
  	for (p = *head; p; p = p->next) {
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -464,7 +464,7 @@ static struct neighbour *ipv4_neigh_look
+@@ -466,7 +466,7 @@ static struct neighbour *ipv4_neigh_look
  	else if (skb)
  		pkey = &ip_hdr(skb)->daddr;
  
@@ -576,7 +576,7 @@
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -221,7 +221,7 @@ static struct sk_buff **ipv6_gro_receive
+@@ -223,7 +223,7 @@ static struct sk_buff **ipv6_gro_receive
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);
@@ -598,7 +598,7 @@
  #include <net/if_inet6.h>
 --- a/include/net/inet_ecn.h
 +++ b/include/net/inet_ecn.h
-@@ -125,9 +125,9 @@ static inline int IP6_ECN_set_ce(struct
+@@ -126,9 +126,9 @@ static inline int IP6_ECN_set_ce(struct
  	if (INET_ECN_is_not_ect(ipv6_get_dsfield(iph)))
  		return 0;
  
@@ -610,7 +610,7 @@
  	if (skb->ip_summed == CHECKSUM_COMPLETE)
  		skb->csum = csum_add(csum_sub(skb->csum, (__force __wsum)from),
  				     (__force __wsum)to);
-@@ -136,7 +136,7 @@ static inline int IP6_ECN_set_ce(struct
+@@ -137,7 +137,7 @@ static inline int IP6_ECN_set_ce(struct
  
  static inline void IP6_ECN_clear(struct ipv6hdr *iph)
  {
@@ -757,7 +757,7 @@
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3878,14 +3878,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3881,14 +3881,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
@@ -850,7 +850,7 @@
  		*sum = csum_fold(csum_partial(diff, sizeof(diff),
 --- a/drivers/net/vxlan.c
 +++ b/drivers/net/vxlan.c
-@@ -1868,15 +1868,15 @@ static int vxlan_build_skb(struct sk_buf
+@@ -1878,15 +1878,15 @@ static int vxlan_build_skb(struct sk_buf
  		return err;
  
  	vxh = __skb_push(skb, sizeof(*vxh));
@@ -937,6 +937,6 @@
  	     ipv6_hdr(skb)->hop_limit != hop_limit ||
 -	     flowlabel != *((u_int32_t *)ipv6_hdr(skb)))) {
 +	     flowlabel != net_hdr_word(ipv6_hdr(skb)))) {
- 		err = ip6_route_me_harder(state->net, skb);
+ 		err = ip6_route_me_harder(state->net, state->sk, skb);
  		if (err < 0)
  			ret = NF_DROP_ERR(err);

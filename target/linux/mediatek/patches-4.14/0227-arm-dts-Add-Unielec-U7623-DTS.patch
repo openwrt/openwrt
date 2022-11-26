@@ -63,7 +63,7 @@ Subject: [PATCH] arm: dts: Add Unielec U7623 DTS
 +	};
 +
 +	chosen {
-+		bootargs = "root=/dev/mmcblk0p2 rootfstype=squashfs,f2fs";
++		bootargs = "root=/dev/mmcblk0p2 rootfstype=squashfs,f2fs console=ttyS0,115200 blkdevparts=mmcblk0:3M@6M(recovery),256M@9M(root)";
 +		stdout-path = "serial2:115200n8";
 +	};
 +

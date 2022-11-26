@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
-PKG_VERSION:=4.3.0-stable
+PKG_VERSION:=5.2.0-stable
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/wolfSSL/wolfssl/archive/v$(PKG_VERSION)
-PKG_HASH:=6896f8ad6c44aff3e583006eeee839600848a0e37118ebbb7514eca9409ae08b
+PKG_HASH:=409b4646c5f54f642de0e9f3544c3b83de7238134f5b1ff93fb44527bf119d05
 
 PKG_FIXUP:=libtool
 PKG_INSTALL:=1
@@ -31,7 +31,7 @@ PKG_CONFIG_DEPENDS:=\
 	CONFIG_WOLFSSL_HAS_DH CONFIG_WOLFSSL_HAS_DTLS \
 	CONFIG_WOLFSSL_HAS_ECC25519 CONFIG_WOLFSSL_HAS_OCSP \
 	CONFIG_WOLFSSL_HAS_SESSION_TICKET CONFIG_WOLFSSL_HAS_TLSV10 \
-	CONFIG_WOLFSSL_HAS_TLSV13 CONFIG_WOLFSSL_HAS_WPAS
+	CONFIG_WOLFSSL_HAS_TLSV13 CONFIG_WOLFSSL_HAS_WPAS CONFIG_WOLFSSL_ALT_NAMES
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -44,7 +44,7 @@ define Package/libwolfssl
   MENU:=1
   PROVIDES:=libcyassl
   DEPENDS:=+WOLFSSL_HAS_DEVCRYPTO:kmod-cryptodev +WOLFSSL_HAS_AFALG:kmod-crypto-user
-  ABI_VERSION:=24
+  ABI_VERSION:=32
 endef
 
 define Package/libwolfssl/description
@@ -56,13 +56,24 @@ define Package/libwolfssl/config
 	source "$(SOURCE)/Config.in"
 endef
 
-TARGET_CFLAGS += $(FPIC) -DFP_MAX_BITS=8192
+TARGET_CFLAGS += \
+	$(FPIC) \
+	-fomit-frame-pointer \
+	-flto \
+	-DFP_MAX_BITS=8192 \
+	$(if $(CONFIG_WOLFSSL_ALT_NAMES),-DWOLFSSL_ALT_NAMES)
+
+TARGET_LDFLAGS += -flto
 
 # --enable-stunnel needed for OpenSSL API compatibility bits
 CONFIGURE_ARGS += \
+	--enable-reproducible-build \
+	--enable-opensslall \
 	--enable-opensslextra \
 	--enable-sni \
 	--enable-stunnel \
+	--enable-altcertchains \
+	--disable-crypttests \
 	--disable-examples \
 	--disable-jobserver \
 	--$(if $(CONFIG_IPV6),enable,disable)-ipv6 \
@@ -88,7 +99,7 @@ endif
 
 ifeq ($(CONFIG_WOLFSSL_HAS_WPAS),y)
 CONFIGURE_ARGS += \
-	--enable-wpas --enable-sha512 --enable-fortress --enable-fastmath
+	--enable-wpas --enable-fortress --enable-fastmath
 endif
 
 define Build/InstallDev

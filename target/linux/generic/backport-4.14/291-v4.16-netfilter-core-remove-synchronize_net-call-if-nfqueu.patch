@@ -32,7 +32,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  void nf_register_queue_handler(struct net *net, const struct nf_queue_handler *qh);
 --- a/net/netfilter/core.c
 +++ b/net/netfilter/core.c
-@@ -341,7 +341,6 @@ void nf_unregister_net_hook(struct net *
+@@ -342,7 +342,6 @@ void nf_unregister_net_hook(struct net *
  {
  	struct nf_hook_entries __rcu **pp;
  	struct nf_hook_entries *p;
@@ -40,7 +40,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	pp = nf_hook_entry_head(net, reg);
  	if (!pp)
-@@ -364,10 +363,7 @@ void nf_unregister_net_hook(struct net *
+@@ -365,10 +364,7 @@ void nf_unregister_net_hook(struct net *
  
  	synchronize_net();
  
@@ -65,7 +65,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  int __init netfilter_log_init(void);
 --- a/net/netfilter/nf_queue.c
 +++ b/net/netfilter/nf_queue.c
-@@ -96,18 +96,15 @@ void nf_queue_entry_get_refs(struct nf_q
+@@ -109,18 +109,15 @@ bool nf_queue_entry_get_refs(struct nf_q
  }
  EXPORT_SYMBOL_GPL(nf_queue_entry_get_refs);
  
@@ -88,7 +88,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 --- a/net/netfilter/nfnetlink_queue.c
 +++ b/net/netfilter/nfnetlink_queue.c
-@@ -941,23 +941,18 @@ static struct notifier_block nfqnl_dev_n
+@@ -948,23 +948,18 @@ static struct notifier_block nfqnl_dev_n
  	.notifier_call	= nfqnl_rcv_dev_event,
  };
  

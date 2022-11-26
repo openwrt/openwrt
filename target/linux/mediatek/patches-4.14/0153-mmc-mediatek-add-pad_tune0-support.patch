@@ -78,7 +78,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  		writel(host->saved_tune_para.pad_cmd_tune,
  		       host->base + PAD_CMD_TUNE);
  	}
-@@ -1226,6 +1233,7 @@ static irqreturn_t msdc_irq(int irq, voi
+@@ -1228,6 +1235,7 @@ static irqreturn_t msdc_irq(int irq, voi
  static void msdc_init_hw(struct msdc_host *host)
  {
  	u32 val;
@@ -86,7 +86,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  
  	/* Configure to MMC/SD mode, clock free running */
  	sdr_set_bits(host->base + MSDC_CFG, MSDC_CFG_MODE | MSDC_CFG_CKPDN);
-@@ -1241,7 +1249,7 @@ static void msdc_init_hw(struct msdc_hos
+@@ -1243,7 +1251,7 @@ static void msdc_init_hw(struct msdc_hos
  	val = readl(host->base + MSDC_INT);
  	writel(val, host->base + MSDC_INT);
  
@@ -95,7 +95,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	writel(0, host->base + MSDC_IOCON);
  	sdr_set_field(host->base + MSDC_IOCON, MSDC_IOCON_DDLSEL, 0);
  	writel(0x403c0046, host->base + MSDC_PATCH_BIT);
-@@ -1261,7 +1269,7 @@ static void msdc_init_hw(struct msdc_hos
+@@ -1263,7 +1271,7 @@ static void msdc_init_hw(struct msdc_hos
  	sdr_set_field(host->base + SDC_CFG, SDC_CFG_DTOC, 3);
  
  	host->def_tune_para.iocon = readl(host->base + MSDC_IOCON);
@@ -104,7 +104,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	dev_dbg(host->dev, "init hardware done!");
  }
  
-@@ -1404,18 +1412,19 @@ static int msdc_tune_response(struct mmc
+@@ -1406,18 +1414,19 @@ static int msdc_tune_response(struct mmc
  	struct msdc_delay_phase internal_delay_phase;
  	u8 final_delay, final_maxlen;
  	u32 internal_delay = 0;
@@ -126,7 +126,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  			      MSDC_PAD_TUNE_CMDRDLY, i);
  		/*
  		 * Using the same parameters, it may sometimes pass the test,
-@@ -1439,7 +1448,7 @@ static int msdc_tune_response(struct mmc
+@@ -1441,7 +1450,7 @@ static int msdc_tune_response(struct mmc
  
  	sdr_set_bits(host->base + MSDC_IOCON, MSDC_IOCON_RSPL);
  	for (i = 0; i < PAD_DELAY_MAX; i++) {
@@ -135,7 +135,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  			      MSDC_PAD_TUNE_CMDRDLY, i);
  		/*
  		 * Using the same parameters, it may sometimes pass the test,
-@@ -1464,12 +1473,12 @@ skip_fall:
+@@ -1466,12 +1475,12 @@ skip_fall:
  		final_maxlen = final_fall_delay.maxlen;
  	if (final_maxlen == final_rise_delay.maxlen) {
  		sdr_clr_bits(host->base + MSDC_IOCON, MSDC_IOCON_RSPL);
@@ -150,7 +150,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  			      final_fall_delay.final_phase);
  		final_delay = final_fall_delay.final_phase;
  	}
-@@ -1477,7 +1486,7 @@ skip_fall:
+@@ -1479,7 +1488,7 @@ skip_fall:
  		goto skip_internal;
  
  	for (i = 0; i < PAD_DELAY_MAX; i++) {
@@ -159,7 +159,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  			      MSDC_PAD_TUNE_CMDRRDLY, i);
  		mmc_send_tuning(mmc, opcode, &cmd_err);
  		if (!cmd_err)
-@@ -1485,7 +1494,7 @@ skip_fall:
+@@ -1487,7 +1496,7 @@ skip_fall:
  	}
  	dev_dbg(host->dev, "Final internal delay: 0x%x\n", internal_delay);
  	internal_delay_phase = get_best_delay(host, internal_delay);
@@ -168,7 +168,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  		      internal_delay_phase.final_phase);
  skip_internal:
  	dev_dbg(host->dev, "Final cmd pad delay: %x\n", final_delay);
-@@ -1548,12 +1557,13 @@ static int msdc_tune_data(struct mmc_hos
+@@ -1550,12 +1559,13 @@ static int msdc_tune_data(struct mmc_hos
  	u32 rise_delay = 0, fall_delay = 0;
  	struct msdc_delay_phase final_rise_delay, final_fall_delay = { 0,};
  	u8 final_delay, final_maxlen;
@@ -183,7 +183,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  			      MSDC_PAD_TUNE_DATRRDLY, i);
  		ret = mmc_send_tuning(mmc, opcode, NULL);
  		if (!ret)
-@@ -1568,7 +1578,7 @@ static int msdc_tune_data(struct mmc_hos
+@@ -1570,7 +1580,7 @@ static int msdc_tune_data(struct mmc_hos
  	sdr_set_bits(host->base + MSDC_IOCON, MSDC_IOCON_DSPL);
  	sdr_set_bits(host->base + MSDC_IOCON, MSDC_IOCON_W_DSPL);
  	for (i = 0; i < PAD_DELAY_MAX; i++) {
@@ -192,7 +192,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  			      MSDC_PAD_TUNE_DATRRDLY, i);
  		ret = mmc_send_tuning(mmc, opcode, NULL);
  		if (!ret)
-@@ -1581,14 +1591,14 @@ skip_fall:
+@@ -1583,14 +1593,14 @@ skip_fall:
  	if (final_maxlen == final_rise_delay.maxlen) {
  		sdr_clr_bits(host->base + MSDC_IOCON, MSDC_IOCON_DSPL);
  		sdr_clr_bits(host->base + MSDC_IOCON, MSDC_IOCON_W_DSPL);
@@ -209,7 +209,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  			      MSDC_PAD_TUNE_DATRRDLY,
  			      final_fall_delay.final_phase);
  		final_delay = final_fall_delay.final_phase;
-@@ -1602,6 +1612,7 @@ static int msdc_execute_tuning(struct mm
+@@ -1604,6 +1614,7 @@ static int msdc_execute_tuning(struct mm
  {
  	struct msdc_host *host = mmc_priv(mmc);
  	int ret;
@@ -217,7 +217,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  
  	if (host->hs400_mode &&
  	    host->dev_comp->hs400_tune)
-@@ -1619,7 +1630,7 @@ static int msdc_execute_tuning(struct mm
+@@ -1621,7 +1632,7 @@ static int msdc_execute_tuning(struct mm
  	}
  
  	host->saved_tune_para.iocon = readl(host->base + MSDC_IOCON);
@@ -226,7 +226,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	host->saved_tune_para.pad_cmd_tune = readl(host->base + PAD_CMD_TUNE);
  	return ret;
  }
-@@ -1860,10 +1871,12 @@ static int msdc_drv_remove(struct platfo
+@@ -1862,10 +1873,12 @@ static int msdc_drv_remove(struct platfo
  #ifdef CONFIG_PM
  static void msdc_save_reg(struct msdc_host *host)
  {
@@ -240,7 +240,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	host->save_para.patch_bit0 = readl(host->base + MSDC_PATCH_BIT);
  	host->save_para.patch_bit1 = readl(host->base + MSDC_PATCH_BIT1);
  	host->save_para.pad_ds_tune = readl(host->base + PAD_DS_TUNE);
-@@ -1873,10 +1886,12 @@ static void msdc_save_reg(struct msdc_ho
+@@ -1875,10 +1888,12 @@ static void msdc_save_reg(struct msdc_ho
  
  static void msdc_restore_reg(struct msdc_host *host)
  {

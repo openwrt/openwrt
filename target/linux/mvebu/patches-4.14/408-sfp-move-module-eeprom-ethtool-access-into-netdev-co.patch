@@ -15,7 +15,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -4044,22 +4044,6 @@ static int mvneta_ethtool_set_wol(struct
+@@ -4051,22 +4051,6 @@ static int mvneta_ethtool_set_wol(struct
  	return ret;
  }
  
@@ -38,7 +38,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  static int mvneta_ethtool_get_eee(struct net_device *dev,
  				  struct ethtool_eee *eee)
  {
-@@ -4144,8 +4128,6 @@ static const struct ethtool_ops mvneta_e
+@@ -4151,8 +4135,6 @@ static const struct ethtool_ops mvneta_e
  	.set_link_ksettings = mvneta_ethtool_set_link_ksettings,
  	.get_wol        = mvneta_ethtool_get_wol,
  	.set_wol        = mvneta_ethtool_set_wol,
@@ -49,7 +49,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  };
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1060,34 +1060,6 @@ int phylink_ethtool_set_pauseparam(struc
+@@ -1065,34 +1065,6 @@ int phylink_ethtool_set_pauseparam(struc
  }
  EXPORT_SYMBOL_GPL(phylink_ethtool_set_pauseparam);
  
@@ -129,7 +129,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  /* 802.11 specific */
  struct wireless_dev;
  /* 802.15.4 specific */
-@@ -1940,6 +1941,7 @@ struct net_device {
+@@ -1941,6 +1942,7 @@ struct net_device {
  	struct netprio_map __rcu *priomap;
  #endif
  	struct phy_device	*phydev;

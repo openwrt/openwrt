@@ -204,8 +204,15 @@ static struct device_info boards[] = {
 			"SupportList:\r\n"
 			"CPE210(TP-LINK|EU|N300-2|45550000):3.0\r\n"
 			"CPE210(TP-LINK|UN|N300-2|00000000):3.0\r\n"
+			"CPE210(TP-LINK|US|N300-2|55530000):3.0\r\n"
 			"CPE210(TP-LINK|UN|N300-2):3.0\r\n"
-			"CPE210(TP-LINK|EU|N300-2):3.0\r\n",
+			"CPE210(TP-LINK|EU|N300-2):3.0\r\n"
+			"CPE210(TP-LINK|EU|N300-2|45550000):3.1\r\n"
+			"CPE210(TP-LINK|UN|N300-2|00000000):3.1\r\n"
+			"CPE210(TP-LINK|US|N300-2|55530000):3.1\r\n"
+			"CPE210(TP-LINK|EU|N300-2|45550000):3.20\r\n"
+			"CPE210(TP-LINK|UN|N300-2|00000000):3.20\r\n"
+			"CPE210(TP-LINK|US|N300-2|55530000):3.20\r\n",
 		.support_trail = '\xff',
 		.soft_ver = NULL,
 
@@ -703,7 +710,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:52550000}\r\n"
 			"{product_name:Archer C6,product_ver:2.0.0,special_id:4A500000}\r\n",
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.1.1\n",
+		.soft_ver = "soft_ver:1.9.1\n",
 
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
@@ -931,7 +938,7 @@ static struct device_info boards[] = {
 			"{product_name:Archer C7,product_ver:5.0.0,special_id:4B520000}\n",
 
 		.support_trail = '\x00',
-		.soft_ver = "soft_ver:1.0.0\n",
+		.soft_ver = "soft_ver:7.0.0\n",
 
 		/* We're using a dynamic kernel/rootfs split here */
 		.partitions = {

@@ -47,7 +47,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  };
 --- a/net/netfilter/nf_conntrack_core.c
 +++ b/net/netfilter/nf_conntrack_core.c
-@@ -974,6 +974,9 @@ static unsigned int early_drop_list(stru
+@@ -980,6 +980,9 @@ static unsigned int early_drop_list(stru
  	hlist_nulls_for_each_entry_rcu(h, n, head, hnnode) {
  		tmp = nf_ct_tuplehash_to_ctrack(h);
  
@@ -57,7 +57,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		if (nf_ct_is_expired(tmp)) {
  			nf_ct_gc_expired(tmp);
  			continue;
-@@ -1051,6 +1054,18 @@ static bool gc_worker_can_early_drop(con
+@@ -1057,6 +1060,18 @@ static bool gc_worker_can_early_drop(con
  	return false;
  }
  
@@ -76,7 +76,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  static void gc_worker(struct work_struct *work)
  {
  	unsigned int min_interval = max(HZ / GC_MAX_BUCKETS_DIV, 1u);
-@@ -1087,6 +1102,11 @@ static void gc_worker(struct work_struct
+@@ -1093,6 +1108,11 @@ static void gc_worker(struct work_struct
  			tmp = nf_ct_tuplehash_to_ctrack(h);
  
  			scanned++;
@@ -90,7 +90,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  				expired_count++;
 --- a/net/netfilter/nf_conntrack_netlink.c
 +++ b/net/netfilter/nf_conntrack_netlink.c
-@@ -1123,6 +1123,14 @@ static const struct nla_policy ct_nla_po
+@@ -1128,6 +1128,14 @@ static const struct nla_policy ct_nla_po
  				    .len = NF_CT_LABELS_MAX_SIZE },
  };
  
@@ -105,7 +105,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  static int ctnetlink_flush_conntrack(struct net *net,
  				     const struct nlattr * const cda[],
  				     u32 portid, int report)
-@@ -1135,7 +1143,7 @@ static int ctnetlink_flush_conntrack(str
+@@ -1140,7 +1148,7 @@ static int ctnetlink_flush_conntrack(str
  			return PTR_ERR(filter);
  	}
  
@@ -114,7 +114,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  				  portid, report);
  	kfree(filter);
  
-@@ -1181,6 +1189,11 @@ static int ctnetlink_del_conntrack(struc
+@@ -1186,6 +1194,11 @@ static int ctnetlink_del_conntrack(struc
  
  	ct = nf_ct_tuplehash_to_ctrack(h);
  
@@ -140,7 +140,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #endif
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -309,10 +309,12 @@ static int ct_seq_show(struct seq_file *
+@@ -310,10 +310,12 @@ static int ct_seq_show(struct seq_file *
  	WARN_ON(!l4proto);
  
  	ret = -ENOSPC;
@@ -156,7 +156,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	if (l4proto->print_conntrack)
  		l4proto->print_conntrack(s, ct);
-@@ -339,7 +341,9 @@ static int ct_seq_show(struct seq_file *
+@@ -340,7 +342,9 @@ static int ct_seq_show(struct seq_file *
  	if (seq_print_acct(s, ct, IP_CT_DIR_REPLY))
  		goto release;
  

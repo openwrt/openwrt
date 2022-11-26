@@ -13,7 +13,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/net/netfilter/core.c
 +++ b/net/netfilter/core.c
-@@ -356,7 +356,7 @@ int nf_register_net_hook(struct net *net
+@@ -357,7 +357,7 @@ int nf_register_net_hook(struct net *net
  EXPORT_SYMBOL(nf_register_net_hook);
  
  /*
@@ -22,7 +22,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
   *
   * @oldp: current address of hook blob
   * @unreg: hook to unregister
-@@ -364,8 +364,8 @@ EXPORT_SYMBOL(nf_register_net_hook);
+@@ -365,8 +365,8 @@ EXPORT_SYMBOL(nf_register_net_hook);
   * This cannot fail, hook unregistration must always succeed.
   * Therefore replace the to-be-removed hook with a dummy hook.
   */
@@ -33,7 +33,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  {
  	struct nf_hook_ops **orig_ops;
  	bool found = false;
-@@ -411,7 +411,7 @@ void nf_unregister_net_hook(struct net *
+@@ -412,7 +412,7 @@ void nf_unregister_net_hook(struct net *
  		return;
  	}
  

@@ -48,7 +48,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #include <net/protocol.h>
  #include <net/netfilter/nf_queue.h>
  #include <net/dst.h>
-@@ -145,9 +147,9 @@ static int __nf_queue(struct sk_buff *sk
+@@ -158,9 +160,9 @@ static int __nf_queue(struct sk_buff *sk
  {
  	int status = -ENOENT;
  	struct nf_queue_entry *entry = NULL;
@@ -59,7 +59,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	/* QUEUE == DROP if no one is waiting, to be safe. */
  	qh = rcu_dereference(net->nf.queue_handler);
-@@ -156,11 +158,19 @@ static int __nf_queue(struct sk_buff *sk
+@@ -169,11 +171,19 @@ static int __nf_queue(struct sk_buff *sk
  		goto err;
  	}
  
@@ -83,7 +83,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (!entry) {
  		status = -ENOMEM;
  		goto err;
-@@ -175,7 +185,7 @@ static int __nf_queue(struct sk_buff *sk
+@@ -188,7 +198,7 @@ static int __nf_queue(struct sk_buff *sk
  		.skb	= skb,
  		.state	= *state,
  		.hook_index = index,
@@ -91,4 +91,4 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +		.size	= sizeof(*entry) + route_key_size,
  	};
  
- 	nf_queue_entry_get_refs(entry);
+ 	if (!nf_queue_entry_get_refs(entry)) {

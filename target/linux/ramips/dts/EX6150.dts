@@ -97,6 +97,7 @@
 			label = "AP/Extender toggle";
 			gpios = <&gpio1 16 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
 			/* Active when switch is set to "Access Point" */
 		};
 	};

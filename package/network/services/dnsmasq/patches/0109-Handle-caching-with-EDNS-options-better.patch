@@ -1,0 +1,350 @@
+From 25e63f1e56f5acdcf91893a1b92ad1e0f2f552d8 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Wed, 25 Nov 2020 21:17:52 +0000
+Subject: Handle caching with EDNS options better.
+
+If we add the EDNS client subnet option, or the client's
+MAC address, then the reply we get back may very depending on
+that. Since the cache is ignorant of such things, it's not safe to
+cache such replies. This patch determines when a dangerous EDNS
+option is being added and disables caching.
+
+Note that for much the same reason, we can't combine multiple
+queries for the same question when dangerous EDNS options are
+being added, and the code now handles that in the same way. This
+query combining is required for security against cache poisoning,
+so disabling the cache has a security function as well as a
+correctness one.
+---
+ man/dnsmasq.8 |  4 +--
+ src/dnsmasq.h |  3 ++-
+ src/edns0.c   | 75 ++++++++++++++++++++++++++++++++-------------------
+ src/forward.c | 41 ++++++++++++++++++----------
+ 4 files changed, 78 insertions(+), 45 deletions(-)
+
+--- a/man/dnsmasq.8
++++ b/man/dnsmasq.8
+@@ -690,8 +690,8 @@ still marks the request so that no upstr
+ address information either. The default is zero for both IPv4 and
+ IPv6. Note that upstream nameservers may be configured to return
+ different results based on this information, but the dnsmasq cache
+-does not take account. If a dnsmasq instance is configured such that
+-different results may be encountered, caching should be disabled.
++does not take account. Caching is therefore disabled for such replies,
++unless the subnet address being added is constant.
+ 
+ For example,
+ .B --add-subnet=24,96
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -644,6 +644,7 @@ struct hostsfile {
+ #define FREC_TEST_PKTSZ       256
+ #define FREC_HAS_EXTRADATA    512
+ #define FREC_HAS_PHEADER     1024
++#define FREC_NO_CACHE        2048
+ 
+ #define HASH_SIZE 32 /* SHA-256 digest size */
+ 
+@@ -1628,7 +1629,7 @@ size_t add_pseudoheader(struct dns_heade
+ 			unsigned short udp_sz, int optno, unsigned char *opt, size_t optlen, int set_do, int replace);
+ size_t add_do_bit(struct dns_header *header, size_t plen, unsigned char *limit);
+ size_t add_edns0_config(struct dns_header *header, size_t plen, unsigned char *limit, 
+-			union mysockaddr *source, time_t now, int *check_subnet);
++			union mysockaddr *source, time_t now, int *check_subnet, int *cacheable);
+ int check_source(struct dns_header *header, size_t plen, unsigned char *pseudoheader, union mysockaddr *peer);
+ 
+ /* arp.c */
+--- a/src/edns0.c
++++ b/src/edns0.c
+@@ -264,7 +264,8 @@ static void encoder(unsigned char *in, c
+   out[3] = char64(in[2]);
+ }
+ 
+-static size_t add_dns_client(struct dns_header *header, size_t plen, unsigned char *limit, union mysockaddr *l3, time_t now)
++static size_t add_dns_client(struct dns_header *header, size_t plen, unsigned char *limit,
++			     union mysockaddr *l3, time_t now, int *cacheablep)
+ {
+   int maclen, replace = 2; /* can't get mac address, just delete any incoming. */
+   unsigned char mac[DHCP_CHADDR_MAX];
+@@ -273,6 +274,7 @@ static size_t add_dns_client(struct dns_
+   if ((maclen = find_mac(l3, mac, 1, now)) == 6)
+     {
+       replace = 1;
++      *cacheablep = 0;
+ 
+       if (option_bool(OPT_MAC_HEX))
+ 	print_mac(encode, mac, maclen);
+@@ -288,14 +290,18 @@ static size_t add_dns_client(struct dns_
+ }
+ 
+ 
+-static size_t add_mac(struct dns_header *header, size_t plen, unsigned char *limit, union mysockaddr *l3, time_t now)
++static size_t add_mac(struct dns_header *header, size_t plen, unsigned char *limit,
++		      union mysockaddr *l3, time_t now, int *cacheablep)
+ {
+   int maclen;
+   unsigned char mac[DHCP_CHADDR_MAX];
+ 
+   if ((maclen = find_mac(l3, mac, 1, now)) != 0)
+-    plen = add_pseudoheader(header, plen, limit, PACKETSZ, EDNS0_OPTION_MAC, mac, maclen, 0, 0); 
+-    
++    {
++      *cacheablep = 0;
++      plen = add_pseudoheader(header, plen, limit, PACKETSZ, EDNS0_OPTION_MAC, mac, maclen, 0, 0); 
++    }
++  
+   return plen; 
+ }
+ 
+@@ -313,17 +319,18 @@ static void *get_addrp(union mysockaddr
+   return &addr->in.sin_addr;
+ }
+ 
+-static size_t calc_subnet_opt(struct subnet_opt *opt, union mysockaddr *source)
++static size_t calc_subnet_opt(struct subnet_opt *opt, union mysockaddr *source, int *cacheablep)
+ {
+   /* http://tools.ietf.org/html/draft-vandergaast-edns-client-subnet-02 */
+   
+   int len;
+   void *addrp = NULL;
+   int sa_family = source->sa.sa_family;
+-
++  int cacheable = 0;
++  
+   opt->source_netmask = 0;
+   opt->scope_netmask = 0;
+-
++    
+   if (source->sa.sa_family == AF_INET6 && daemon->add_subnet6)
+     {
+       opt->source_netmask = daemon->add_subnet6->mask;
+@@ -331,6 +338,7 @@ static size_t calc_subnet_opt(struct sub
+ 	{
+ 	  sa_family = daemon->add_subnet6->addr.sa.sa_family;
+ 	  addrp = get_addrp(&daemon->add_subnet6->addr, sa_family);
++	  cacheable = 1;
+ 	} 
+       else 
+ 	addrp = &source->in6.sin6_addr;
+@@ -343,6 +351,7 @@ static size_t calc_subnet_opt(struct sub
+ 	{
+ 	  sa_family = daemon->add_subnet4->addr.sa.sa_family;
+ 	  addrp = get_addrp(&daemon->add_subnet4->addr, sa_family);
++	  cacheable = 1; /* Address is constant */
+ 	} 
+ 	else 
+ 	  addrp = &source->in.sin_addr;
+@@ -350,8 +359,6 @@ static size_t calc_subnet_opt(struct sub
+   
+   opt->family = htons(sa_family == AF_INET6 ? 2 : 1);
+   
+-  len = 0;
+-  
+   if (addrp && opt->source_netmask != 0)
+     {
+       len = ((opt->source_netmask - 1) >> 3) + 1;
+@@ -359,18 +366,26 @@ static size_t calc_subnet_opt(struct sub
+       if (opt->source_netmask & 7)
+ 	opt->addr[len-1] &= 0xff << (8 - (opt->source_netmask & 7));
+     }
++  else
++    {
++      cacheable = 1; /* No address ever supplied. */
++      len = 0;
++    }
++
++  if (cacheablep)
++    *cacheablep = cacheable;
+   
+   return len + 4;
+ }
+  
+-static size_t add_source_addr(struct dns_header *header, size_t plen, unsigned char *limit, union mysockaddr *source)
++static size_t add_source_addr(struct dns_header *header, size_t plen, unsigned char *limit, union mysockaddr *source, int *cacheable)
+ {
+   /* http://tools.ietf.org/html/draft-vandergaast-edns-client-subnet-02 */
+   
+   int len;
+   struct subnet_opt opt;
+   
+-  len = calc_subnet_opt(&opt, source);
++  len = calc_subnet_opt(&opt, source, cacheable);
+   return add_pseudoheader(header, plen, (unsigned char *)limit, PACKETSZ, EDNS0_OPTION_CLIENT_SUBNET, (unsigned char *)&opt, len, 0, 0);
+ }
+ 
+@@ -383,18 +398,18 @@ int check_source(struct dns_header *head
+   unsigned char *p;
+   int code, i, rdlen;
+   
+-   calc_len = calc_subnet_opt(&opt, peer);
+-   
+-   if (!(p = skip_name(pseudoheader, header, plen, 10)))
+-     return 1;
+-   
+-   p += 8; /* skip UDP length and RCODE */
++  calc_len = calc_subnet_opt(&opt, peer, NULL);
+    
+-   GETSHORT(rdlen, p);
+-   if (!CHECK_LEN(header, p, plen, rdlen))
+-     return 1; /* bad packet */
+-   
+-   /* check if option there */
++  if (!(p = skip_name(pseudoheader, header, plen, 10)))
++    return 1;
++  
++  p += 8; /* skip UDP length and RCODE */
++  
++  GETSHORT(rdlen, p);
++  if (!CHECK_LEN(header, p, plen, rdlen))
++    return 1; /* bad packet */
++  
++  /* check if option there */
+    for (i = 0; i + 4 < rdlen; i += len + 4)
+      {
+        GETSHORT(code, p);
+@@ -412,24 +427,28 @@ int check_source(struct dns_header *head
+    return 1;
+ }
+ 
++/* Set *check_subnet if we add a client subnet option, which needs to checked 
++   in the reply. Set *cacheable to zero if we add an option which the answer
++   may depend on. */
+ size_t add_edns0_config(struct dns_header *header, size_t plen, unsigned char *limit, 
+-			union mysockaddr *source, time_t now, int *check_subnet)    
++			union mysockaddr *source, time_t now, int *check_subnet, int *cacheable)    
+ {
+   *check_subnet = 0;
+-
++  *cacheable = 1;
++  
+   if (option_bool(OPT_ADD_MAC))
+-    plen  = add_mac(header, plen, limit, source, now);
++    plen  = add_mac(header, plen, limit, source, now, cacheable);
+   
+   if (option_bool(OPT_MAC_B64) || option_bool(OPT_MAC_HEX))
+-    plen = add_dns_client(header, plen, limit, source, now);
+-
++    plen = add_dns_client(header, plen, limit, source, now, cacheable);
++  
+   if (daemon->dns_client_id)
+     plen = add_pseudoheader(header, plen, limit, PACKETSZ, EDNS0_OPTION_NOMCPEID, 
+ 			    (unsigned char *)daemon->dns_client_id, strlen(daemon->dns_client_id), 0, 1);
+   
+   if (option_bool(OPT_CLIENT_SUBNET))
+     {
+-      plen = add_source_addr(header, plen, limit, source); 
++      plen = add_source_addr(header, plen, limit, source, cacheable); 
+       *check_subnet = 1;
+     }
+ 	  
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -344,13 +344,10 @@ static int forward_query(int udpfd, unio
+     {
+       /* Query from new source, but the same query may be in progress
+ 	 from another source. If so, just add this client to the
+-	 list that will get the reply.
++	 list that will get the reply.*/
+ 	 
+-	 Note that is the EDNS client subnet option is in use, we can't do this,
+-	 as the clients (and therefore query EDNS options) will be different
+-	 for each query. The EDNS subnet code has checks to avoid
+-	 attacks in this case. */
+-      if (!option_bool(OPT_CLIENT_SUBNET) && (forward = lookup_frec_by_query(hash, fwd_flags)))
++      if (!option_bool(OPT_ADD_MAC) && !option_bool(OPT_MAC_B64) &&
++	  (forward = lookup_frec_by_query(hash, fwd_flags)))
+ 	{
+ 	  /* Note whine_malloc() zeros memory. */
+ 	  if (!daemon->free_frec_src &&
+@@ -447,18 +444,21 @@ static int forward_query(int udpfd, unio
+   if (!flags && forward)
+     {
+       struct server *firstsentto = start;
+-      int subnet, forwarded = 0;
++      int subnet, cacheable, forwarded = 0;
+       size_t edns0_len;
+       unsigned char *pheader;
+       
+       /* If a query is retried, use the log_id for the retry when logging the answer. */
+       forward->frec_src.log_id = daemon->log_id;
+       
+-      plen = add_edns0_config(header, plen, ((unsigned char *)header) + PACKETSZ, &forward->frec_src.source, now, &subnet);
++      plen = add_edns0_config(header, plen, ((unsigned char *)header) + PACKETSZ, &forward->frec_src.source, now, &subnet, &cacheable);
+       
+       if (subnet)
+ 	forward->flags |= FREC_HAS_SUBNET;
+-      
++
++      if (!cacheable)
++	forward->flags |= FREC_NO_CACHE;
++
+ #ifdef HAVE_DNSSEC
+       if (option_bool(OPT_DNSSEC_VALID) && do_dnssec)
+ 	{
+@@ -642,7 +642,7 @@ static size_t process_reply(struct dns_h
+ 	}
+     }
+ #endif
+-  
++
+   if ((pheader = find_pseudoheader(header, n, &plen, &sizep, &is_sign, NULL)))
+     {
+       /* Get extended RCODE. */
+@@ -1244,6 +1244,11 @@ void reply_query(int fd, int family, tim
+ 	header->hb4 |= HB4_CD;
+       else
+ 	header->hb4 &= ~HB4_CD;
++
++      /* Never cache answers which are contingent on the source or MAC address EDSN0 option,
++	 since the cache is ignorant of such things. */
++      if (forward->flags & FREC_NO_CACHE)
++	no_cache_dnssec = 1;
+       
+       if ((nn = process_reply(header, now, forward->sentto, (size_t)n, check_rebind, no_cache_dnssec, cache_secure, bogusanswer, 
+ 			      forward->flags & FREC_AD_QUESTION, forward->flags & FREC_DO_QUESTION, 
+@@ -1788,7 +1793,7 @@ unsigned char *tcp_request(int confd, ti
+   int local_auth = 0;
+ #endif
+   int checking_disabled, do_bit, added_pheader = 0, have_pseudoheader = 0;
+-  int check_subnet, no_cache_dnssec = 0, cache_secure = 0, bogusanswer = 0;
++  int check_subnet, cacheable, no_cache_dnssec = 0, cache_secure = 0, bogusanswer = 0;
+   size_t m;
+   unsigned short qtype;
+   unsigned int gotname;
+@@ -1959,7 +1964,7 @@ unsigned char *tcp_request(int confd, ti
+ 	      char *domain = NULL;
+ 	      unsigned char *oph = find_pseudoheader(header, size, NULL, NULL, NULL, NULL);
+ 
+-	      size = add_edns0_config(header, size, ((unsigned char *) header) + 65536, &peer_addr, now, &check_subnet);
++	      size = add_edns0_config(header, size, ((unsigned char *) header) + 65536, &peer_addr, now, &check_subnet, &cacheable);
+ 
+ 	      if (gotname)
+ 		flags = search_servers(now, &addrp, gotname, daemon->namebuff, &type, &domain, &norebind);
+@@ -2122,6 +2127,11 @@ unsigned char *tcp_request(int confd, ti
+ 			  break;
+ 			}
+ 
++		      /* Never cache answers which are contingent on the source or MAC address EDSN0 option,
++			 since the cache is ignorant of such things. */
++		      if (!cacheable)
++			no_cache_dnssec = 1;
++		      
+ 		      m = process_reply(header, now, last_server, (unsigned int)m, 
+ 					option_bool(OPT_NO_REBIND) && !norebind, no_cache_dnssec, cache_secure, bogusanswer,
+ 					ad_reqd, do_bit, added_pheader, check_subnet, &peer_addr); 
+@@ -2385,10 +2395,13 @@ static struct frec *lookup_frec_by_query
+   struct frec *f;
+ 
+   /* FREC_DNSKEY and FREC_DS_QUERY are never set in flags, so the test below 
+-     ensures that no frec created for internal DNSSEC query can be returned here. */
++     ensures that no frec created for internal DNSSEC query can be returned here.
++     
++     Similarly FREC_NO_CACHE is never set in flags, so a query which is
++     contigent on a particular source address EDNS0 option will never be matched. */
+ 
+ #define FLAGMASK (FREC_CHECKING_DISABLED | FREC_AD_QUESTION | FREC_DO_QUESTION \
+-		  | FREC_HAS_PHEADER | FREC_DNSKEY_QUERY | FREC_DS_QUERY)
++		  | FREC_HAS_PHEADER | FREC_DNSKEY_QUERY | FREC_DS_QUERY | FREC_NO_CACHE)
+   
+   for(f = daemon->frec_list; f; f = f->next)
+     if (f->sentto &&

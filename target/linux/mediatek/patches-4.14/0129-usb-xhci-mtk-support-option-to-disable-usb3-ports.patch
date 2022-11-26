@@ -63,7 +63,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  		value = readl(&ippc->u3_ctrl_p[i]);
  		value |= CTRL_U3_PORT_PDN;
  		writel(value, &ippc->u3_ctrl_p[i]);
-@@ -573,6 +582,9 @@ static int xhci_mtk_probe(struct platfor
+@@ -580,6 +589,9 @@ static int xhci_mtk_probe(struct platfor
  	}
  
  	mtk->lpm_support = of_property_read_bool(node, "usb3-lpm-capable");

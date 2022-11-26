@@ -21,7 +21,7 @@ Cc: linux-kernel@vger.kernel.org
 
 --- a/arch/mips/pci/pci-rt2880.c
 +++ b/arch/mips/pci/pci-rt2880.c
-@@ -246,6 +246,8 @@ static int rt288x_pci_probe(struct platf
+@@ -233,6 +233,8 @@ static int rt288x_pci_probe(struct platf
  	rt2880_pci_write_u32(PCI_BASE_ADDRESS_0, 0x08000000);
  	(void) rt2880_pci_read_u32(PCI_BASE_ADDRESS_0);
  

@@ -1,0 +1,181 @@
+From 2024f9729713fd657d65e64c2e4e471baa0a3e5b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20Men=C5=A1=C3=ADk?= <pemensik@redhat.com>
+Date: Wed, 25 Nov 2020 17:18:55 +0100
+Subject: Support hash function from nettle (only)
+
+Unlike COPTS=-DHAVE_DNSSEC, allow usage of just sha256 function from
+nettle, but keep DNSSEC disabled at build time. Skips use of internal
+hash implementation without support for validation built-in.
+---
+ Makefile             |  8 +++++---
+ bld/pkg-wrapper      | 41 ++++++++++++++++++++++-------------------
+ src/config.h         |  8 ++++++++
+ src/crypto.c         |  7 +++++++
+ src/dnsmasq.h        |  2 +-
+ src/hash_questions.c |  2 +-
+ 6 files changed, 44 insertions(+), 24 deletions(-)
+
+--- a/Makefile
++++ b/Makefile
+@@ -53,7 +53,7 @@ top?=$(CURDIR)
+ 
+ dbus_cflags =   `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DBUS $(PKG_CONFIG) --cflags dbus-1` 
+ dbus_libs =     `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DBUS $(PKG_CONFIG) --libs dbus-1` 
+-ubus_libs =     `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_UBUS "" --copy -lubox -lubus`
++ubus_libs =     `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_UBUS "" --copy '-lubox -lubus'`
+ idn_cflags =    `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_IDN $(PKG_CONFIG) --cflags libidn` 
+ idn_libs =      `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_IDN $(PKG_CONFIG) --libs libidn` 
+ idn2_cflags =   `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_LIBIDN2 $(PKG_CONFIG) --cflags libidn2`
+@@ -62,8 +62,10 @@ ct_cflags =     `echo $(COPTS) | $(top)/
+ ct_libs =       `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_CONNTRACK $(PKG_CONFIG) --libs libnetfilter_conntrack`
+ lua_cflags =    `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_LUASCRIPT $(PKG_CONFIG) --cflags lua5.2` 
+ lua_libs =      `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_LUASCRIPT $(PKG_CONFIG) --libs lua5.2` 
+-nettle_cflags = `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC $(PKG_CONFIG) --cflags nettle hogweed`
+-nettle_libs =   `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC $(PKG_CONFIG) --libs nettle hogweed`
++nettle_cflags = `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC     $(PKG_CONFIG) --cflags 'nettle hogweed' \
++                                                        HAVE_NETTLEHASH $(PKG_CONFIG) --cflags nettle`
++nettle_libs =   `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC     $(PKG_CONFIG) --libs 'nettle hogweed' \
++                                                        HAVE_NETTLEHASH $(PKG_CONFIG) --libs nettle`
+ gmp_libs =      `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC NO_GMP --copy -lgmp`
+ sunos_libs =    `if uname | grep SunOS >/dev/null 2>&1; then echo -lsocket -lnsl -lposix4; fi`
+ version =     -DVERSION='\"`$(top)/bld/get-version $(top)`\"'
+--- a/bld/pkg-wrapper
++++ b/bld/pkg-wrapper
+@@ -1,35 +1,37 @@
+ #!/bin/sh
+ 
+-search=$1
+-shift
+-pkg=$1
+-shift
+-op=$1
+-shift
+-
+ in=`cat`
+ 
+-if grep "^\#[[:space:]]*define[[:space:]]*$search" config.h >/dev/null 2>&1 || \
+-    echo $in | grep $search >/dev/null 2>&1; then
++search()
++{
++    grep "^\#[[:space:]]*define[[:space:]]*$1" config.h >/dev/null 2>&1 || \
++    echo $in | grep $1 >/dev/null 2>&1
++}
++
++while [ "$#" -gt 0 ]; do
++    search=$1
++    pkg=$2
++    op=$3
++    lib=$4
++    shift 4
++if search "$search"; then
++
+ # Nasty, nasty, in --copy, arg 2 (if non-empty) is another config to search for, used with NO_GMP
+     if [ $op = "--copy" ]; then
+ 	if [ -z "$pkg" ]; then
+-	    pkg="$*"
+-	elif grep "^\#[[:space:]]*define[[:space:]]*$pkg" config.h >/dev/null 2>&1 || \
+-		 echo $in | grep $pkg >/dev/null 2>&1; then
++	    pkg="$lib"
++	elif search "$pkg"; then
+ 	    pkg=""
+ 	else 
+-	    pkg="$*"
++	    pkg="$lib"
+ 	fi
+-    elif grep "^\#[[:space:]]*define[[:space:]]*${search}_STATIC" config.h >/dev/null 2>&1 || \
+-	     echo $in | grep ${search}_STATIC >/dev/null 2>&1; then
+-	pkg=`$pkg  --static $op $*`
++    elif search "${search}_STATIC"; then
++	pkg=`$pkg  --static $op $lib`
+     else
+-	pkg=`$pkg $op $*`
++	pkg=`$pkg $op $lib`
+     fi
+     
+-    if grep "^\#[[:space:]]*define[[:space:]]*${search}_STATIC" config.h >/dev/null 2>&1 || \
+-	   echo $in | grep ${search}_STATIC >/dev/null 2>&1; then
++    if search "${search}_STATIC"; then
+ 	if [ $op = "--libs" ] || [ $op = "--copy" ]; then
+ 	    echo "-Wl,-Bstatic $pkg -Wl,-Bdynamic"
+ 	else
+@@ -40,3 +42,4 @@ if grep "^\#[[:space:]]*define[[:space:]
+     fi
+ fi
+ 
++done
+--- a/src/config.h
++++ b/src/config.h
+@@ -117,6 +117,9 @@ HAVE_AUTH
+    define this to include the facility to act as an authoritative DNS
+    server for one or more zones.
+ 
++HAVE_NETTLEHASH
++   include just hash function from nettle, but no DNSSEC.
++
+ HAVE_DNSSEC
+    include DNSSEC validator.
+ 
+@@ -184,6 +187,7 @@ RESOLVFILE
+ /* #define HAVE_IDN */
+ /* #define HAVE_LIBIDN2 */
+ /* #define HAVE_CONNTRACK */
++/* #define HAVE_NETTLEHASH */
+ /* #define HAVE_DNSSEC */
+ 
+ 
+@@ -408,6 +412,10 @@ static char *compile_opts =
+ "no-"
+ #endif
+ "auth "
++#if !defined(HAVE_NETTLEHASH) && !defined(HAVE_DNSSEC)
++"no-"
++#endif
++"nettlehash "
+ #ifndef HAVE_DNSSEC
+ "no-"
+ #endif
+--- a/src/crypto.c
++++ b/src/crypto.c
+@@ -23,6 +23,9 @@
+ #include <nettle/ecdsa.h>
+ #include <nettle/ecc-curve.h>
+ #include <nettle/eddsa.h>
++#endif
++
++#if defined(HAVE_DNSSEC) || defined(HAVE_NETTLEHASH)
+ #include <nettle/nettle-meta.h>
+ #include <nettle/bignum.h>
+ 
+@@ -165,6 +168,10 @@ int hash_init(const struct nettle_hash *
+ 
+   return 1;
+ }
++
++#endif
++
++#ifdef HAVE_DNSSEC
+   
+ static int dnsmasq_rsa_verify(struct blockdata *key_data, unsigned int key_len, unsigned char *sig, size_t sig_len,
+ 			      unsigned char *digest, size_t digest_len, int algo)
+--- a/src/dnsmasq.h
++++ b/src/dnsmasq.h
+@@ -150,7 +150,7 @@ extern int capget(cap_user_header_t head
+ #include <priv.h>
+ #endif
+ 
+-#ifdef HAVE_DNSSEC
++#if defined(HAVE_DNSSEC) || defined(HAVE_NETTLEHASH)
+ #  include <nettle/nettle-meta.h>
+ #endif
+ 
+--- a/src/hash_questions.c
++++ b/src/hash_questions.c
+@@ -28,7 +28,7 @@
+ 
+ #include "dnsmasq.h"
+ 
+-#ifdef HAVE_DNSSEC
++#if defined(HAVE_DNSSEC) || defined(HAVE_NETTLEHASH)
+ unsigned char *hash_questions(struct dns_header *header, size_t plen, char *name)
+ {
+   int q;

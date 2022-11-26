@@ -1,0 +1,29 @@
+From cc0b4489c782f6b90ca118abb18e716a7a831289 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 15 Jan 2021 22:21:52 +0000
+Subject: Update to new struct frec fields in conntrack code.
+
+---
+ src/forward.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -530,7 +530,7 @@ static int forward_query(int udpfd, unio
+ 		  if (option_bool(OPT_CONNTRACK))
+ 		    {
+ 		      unsigned int mark;
+-		      if (get_incoming_mark(&forward->source, &forward->dest, 0, &mark))
++		      if (get_incoming_mark(&forward->frec_src.source, &forward->frec_src.dest, 0, &mark))
+ 			setsockopt(fd, SOL_SOCKET, SO_MARK, &mark, sizeof(unsigned int));
+ 		    }
+ #endif
+@@ -1178,7 +1178,7 @@ void reply_query(int fd, int family, tim
+ 			  if (option_bool(OPT_CONNTRACK))
+ 			    {
+ 			      unsigned int mark;
+-			      if (get_incoming_mark(&orig->source, &orig->dest, 0, &mark))
++			      if (get_incoming_mark(&orig->frec_src.source, &orig->frec_src.dest, 0, &mark))
+ 				setsockopt(fd, SOL_SOCKET, SO_MARK, &mark, sizeof(unsigned int));
+ 			    }
+ #endif

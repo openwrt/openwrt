@@ -382,7 +382,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	dwc->lpm_nyet_threshold = lpm_nyet_threshold;
  	dwc->tx_de_emphasis = tx_de_emphasis;
  
-@@ -1376,12 +1541,14 @@ static int dwc3_resume_common(struct dwc
+@@ -1387,12 +1552,14 @@ static int dwc3_resume_common(struct dwc
  
  	switch (dwc->dr_mode) {
  	case USB_DR_MODE_PERIPHERAL:
@@ -442,7 +442,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  /* Global User Control 1 Register */
  #define DWC3_GUCTL1_PARKMODE_DISABLE_SS	BIT(17)
  #define DWC3_GUCTL1_TX_IPGAP_LINECHECK_DIS	BIT(28)
-@@ -478,6 +507,14 @@
+@@ -479,6 +508,14 @@
  #define DWC3_DEV_IMOD_INTERVAL_SHIFT	0
  #define DWC3_DEV_IMOD_INTERVAL_MASK	(0xffff << 0)
  
@@ -457,7 +457,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  /* Structures */
  
  struct dwc3_trb;
-@@ -789,6 +826,7 @@ struct dwc3_scratchpad_array {
+@@ -790,6 +827,7 @@ struct dwc3_scratchpad_array {
   * @regs: base address for our registers
   * @regs_size: address space size
   * @fladj: frame length adjustment
@@ -465,7 +465,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
   * @irq_gadget: peripheral controller's IRQ number
   * @nr_scratch: number of scratch buffers
   * @u1u2: only used on revisions <1.83a for workaround
-@@ -844,6 +882,7 @@ struct dwc3_scratchpad_array {
+@@ -845,6 +883,7 @@ struct dwc3_scratchpad_array {
   * @setup_packet_pending: true when there's a Setup Packet in FIFO. Workaround
   * @three_stage_setup: set if we perform a three phase setup
   * @usb3_lpm_capable: set if hadrware supports Link Power Management
@@ -473,7 +473,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
   * @disable_scramble_quirk: set if we enable the disable scramble quirk
   * @u2exit_lfps_quirk: set if we enable u2exit lfps quirk
   * @u2ss_inp3_quirk: set if we enable P3 OK for U2/SS Inactive quirk
-@@ -925,6 +964,12 @@ struct dwc3 {
+@@ -926,6 +965,12 @@ struct dwc3 {
  	enum usb_phy_interface	hsphy_mode;
  
  	u32			fladj;
@@ -486,7 +486,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	u32			irq_gadget;
  	u32			nr_scratch;
  	u32			u1u2;
-@@ -1009,6 +1054,7 @@ struct dwc3 {
+@@ -1010,6 +1055,7 @@ struct dwc3 {
  	unsigned		setup_packet_pending:1;
  	unsigned		three_stage_setup:1;
  	unsigned		usb3_lpm_capable:1;
@@ -494,7 +494,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  
  	unsigned		disable_scramble_quirk:1;
  	unsigned		u2exit_lfps_quirk:1;
-@@ -1029,6 +1075,11 @@ struct dwc3 {
+@@ -1030,6 +1076,11 @@ struct dwc3 {
  
  	unsigned		tx_de_emphasis_quirk:1;
  	unsigned		tx_de_emphasis:2;
@@ -508,7 +508,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  
 --- a/drivers/usb/dwc3/ep0.c
 +++ b/drivers/usb/dwc3/ep0.c
-@@ -391,7 +391,7 @@ static int dwc3_ep0_handle_u1(struct dwc
+@@ -394,7 +394,7 @@ static int dwc3_ep0_handle_u1(struct dwc
  		return -EINVAL;
  
  	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
@@ -517,7 +517,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		reg |= DWC3_DCTL_INITU1ENA;
  	else
  		reg &= ~DWC3_DCTL_INITU1ENA;
-@@ -413,7 +413,7 @@ static int dwc3_ep0_handle_u2(struct dwc
+@@ -416,7 +416,7 @@ static int dwc3_ep0_handle_u2(struct dwc
  		return -EINVAL;
  
  	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
@@ -528,7 +528,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		reg &= ~DWC3_DCTL_INITU2ENA;
 --- a/drivers/usb/dwc3/gadget.c
 +++ b/drivers/usb/dwc3/gadget.c
-@@ -3216,6 +3216,7 @@ int dwc3_gadget_init(struct dwc3 *dwc)
+@@ -3259,6 +3259,7 @@ int dwc3_gadget_init(struct dwc3 *dwc)
  {
  	int ret;
  	int irq;
@@ -536,7 +536,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  
  	irq = dwc3_gadget_get_irq(dwc);
  	if (irq < 0) {
-@@ -3294,6 +3295,12 @@ int dwc3_gadget_init(struct dwc3 *dwc)
+@@ -3337,6 +3338,12 @@ int dwc3_gadget_init(struct dwc3 *dwc)
  
  	dwc3_gadget_set_speed(&dwc->gadget, dwc->maximum_speed);
  
@@ -1183,7 +1183,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  #endif				/* _EHCI_FSL_H */
 --- a/drivers/usb/host/ehci-hub.c
 +++ b/drivers/usb/host/ehci-hub.c
-@@ -305,6 +305,8 @@ static int ehci_bus_suspend (struct usb_
+@@ -304,6 +304,8 @@ static int ehci_bus_suspend (struct usb_
  						USB_PORT_STAT_HIGH_SPEED)
  				fs_idle_delay = true;
  			ehci_writel(ehci, t2, reg);
@@ -1206,7 +1206,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	struct list_head	cached_itd_list;
 --- a/drivers/usb/host/fsl-mph-dr-of.c
 +++ b/drivers/usb/host/fsl-mph-dr-of.c
-@@ -229,6 +229,17 @@ static int fsl_usb2_mph_dr_of_probe(stru
+@@ -232,6 +232,17 @@ static int fsl_usb2_mph_dr_of_probe(stru
  	pdata->has_fsl_erratum_a005697 =
  		of_property_read_bool(np, "fsl,usb_erratum-a005697");
  
@@ -1226,7 +1226,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	 * by reading property in device tree
 --- a/drivers/usb/host/xhci-hub.c
 +++ b/drivers/usb/host/xhci-hub.c
-@@ -689,12 +689,34 @@ void xhci_set_link_state(struct xhci_hcd
+@@ -690,12 +690,34 @@ void xhci_set_link_state(struct xhci_hcd
  				int port_id, u32 link_state)
  {
  	u32 temp;
@@ -1289,7 +1289,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		xhci->quirks |= XHCI_BROKEN_PORT_PED;
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -1978,10 +1978,12 @@ static int finish_td(struct xhci_hcd *xh
+@@ -2029,10 +2029,12 @@ static int finish_td(struct xhci_hcd *xh
  	union xhci_trb *ep_trb, struct xhci_transfer_event *event,
  	struct xhci_virt_ep *ep, int *status)
  {
@@ -1302,7 +1302,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	u32 trb_comp_code;
  	int ep_index;
  
-@@ -2004,14 +2006,30 @@ static int finish_td(struct xhci_hcd *xh
+@@ -2055,14 +2057,30 @@ static int finish_td(struct xhci_hcd *xh
  	if (trb_comp_code == COMP_STALL_ERROR ||
  		xhci_requires_manual_halt_cleanup(xhci, ep_ctx,
  						trb_comp_code)) {
@@ -1340,7 +1340,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		while (ep_ring->dequeue != td->last_trb)
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -1604,13 +1604,38 @@ static int xhci_urb_dequeue(struct usb_h
+@@ -1625,13 +1625,38 @@ static int xhci_urb_dequeue(struct usb_h
  			ret = -ENOMEM;
  			goto done;
  		}
@@ -1387,7 +1387,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	spin_unlock_irqrestore(&xhci->lock, flags);
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1794,7 +1794,7 @@ struct xhci_hcd {
+@@ -1795,7 +1795,7 @@ struct xhci_hcd {
  #define XHCI_STATE_DYING	(1 << 0)
  #define XHCI_STATE_HALTED	(1 << 1)
  #define XHCI_STATE_REMOVING	(1 << 2)
@@ -1396,7 +1396,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  #define	XHCI_LINK_TRB_QUIRK	BIT_ULL(0)
  #define XHCI_RESET_EP_QUIRK	BIT_ULL(1)
  #define XHCI_NEC_HOST		BIT_ULL(2)
-@@ -1830,6 +1830,9 @@ struct xhci_hcd {
+@@ -1831,6 +1831,9 @@ struct xhci_hcd {
  #define XHCI_SSIC_PORT_UNUSED	BIT_ULL(22)
  #define XHCI_NO_64BIT_SUPPORT	BIT_ULL(23)
  #define XHCI_MISSING_CAS	BIT_ULL(24)
@@ -1406,7 +1406,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  /* For controller with a broken Port Disable implementation */
  #define XHCI_BROKEN_PORT_PED	BIT_ULL(25)
  #define XHCI_LIMIT_ENDPOINT_INTERVAL_7	BIT_ULL(26)
-@@ -1838,8 +1841,9 @@ struct xhci_hcd {
+@@ -1839,8 +1842,9 @@ struct xhci_hcd {
  #define XHCI_HW_LPM_DISABLE	BIT_ULL(29)
  #define XHCI_SUSPEND_DELAY	BIT_ULL(30)
  #define XHCI_INTEL_USB_ROLE_SW	BIT_ULL(31)
@@ -1515,7 +1515,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  			return IRQ_HANDLED;
  		}
  	}
-@@ -920,12 +929,32 @@ int usb_otg_start(struct platform_device
+@@ -922,12 +931,32 @@ int usb_otg_start(struct platform_device
  	temp &= ~(PORTSC_PHY_TYPE_SEL | PORTSC_PTW);
  	switch (pdata->phy_mode) {
  	case FSL_USB2_PHY_ULPI:

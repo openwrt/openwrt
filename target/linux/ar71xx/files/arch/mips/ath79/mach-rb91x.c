@@ -318,6 +318,7 @@ static void __init rb711gr100_setup(void)
 	ath79_init_mac(ath79_eth0_data.mac_addr, ath79_mac_base, 0);
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ath79_eth0_data.phy_mask = BIT(0);
+	ath79_eth0_pll_data.pll_10 = 0x00001313;
 	ath79_eth0_pll_data.pll_1000 = 0x02000000;
 
 	ath79_register_eth(0);

@@ -1,0 +1,21 @@
+From 1bb90881971c226d45c0abd1ac16ce3d6b77fc5f Mon Sep 17 00:00:00 2001
+From: "Jason A. Donenfeld" <Jason@zx2c4.com>
+Date: Sun, 24 Jan 2021 14:09:09 +0100
+Subject: compat: skb_mark_not_on_list was backported to 4.14
+
+Signed-off-by: Jason A. Donenfeld <Jason@zx2c4.com>
+---
+ src/compat/compat.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/compat/compat.h
++++ b/src/compat/compat.h
+@@ -826,7 +826,7 @@ static __always_inline void old_rcu_barr
+ #define COMPAT_CANNOT_DEPRECIATE_BH_RCU
+ #endif
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 10) && !defined(ISRHEL8) && !defined(ISOPENSUSE15)
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 10) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0) && !defined(ISRHEL8)) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 217)
+ static inline void skb_mark_not_on_list(struct sk_buff *skb)
+ {
+ 	skb->next = NULL;

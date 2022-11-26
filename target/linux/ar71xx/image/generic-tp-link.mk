@@ -525,6 +525,8 @@ define Device/tl-wr902ac-v1
   SUPPORTED_DEVICES := tl-wr902ac-v1
   IMAGE_SIZE := 7360k
   MTDPARTS := spi0.0:128k(u-boot)ro,7360k(firmware),640k(tplink)ro,64k(art)ro
+  KERNEL := kernel-bin | patch-cmdline | lzma | tplink-v1-header -O
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | tplink-v1-header
 endef
 TARGET_DEVICES += tl-wr902ac-v1
 

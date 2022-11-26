@@ -12,7 +12,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -991,6 +991,11 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -992,6 +992,11 @@ mt7530_setup(struct dsa_switch *ds)
  	val = mt7530_read(priv, MT7530_MHWTRAP);
  	val &= ~MHWTRAP_P6_DIS & ~MHWTRAP_PHY_ACCESS;
  	val |= MHWTRAP_MANUAL;

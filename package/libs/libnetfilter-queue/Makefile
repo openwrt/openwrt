@@ -27,15 +27,15 @@ define Package/libnetfilter-queue
   SECTION:=libs
   CATEGORY:=Libraries
   DEPENDS:=+libmnl +libnfnetlink
-  TITLE:=API to the in-kernel connection tracking queue infrastructure
+  TITLE:=Userspace API to packets queued by kernel packet filter
   URL:=http://www.netfilter.org/projects/libnetfilter_queue/
   ABI_VERSION:=1
 endef
 
 define Package/libnetfilter-queue/description
  libnetfilter_queue is a userspace library providing a programming
- interface (API) to the in-kernel connection tracking state table.
- This library is currently used by conntrack-tools.
+ interface (API) to packets that have been queued by the kernel
+ packet filter.
 endef
 
 TARGET_CFLAGS += $(FPIC) -D_GNU_SOURCE=1

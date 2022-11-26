@@ -72,6 +72,30 @@
 			gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	usb0_vbus: regulator-usb0-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB0_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 50 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	usb1_vbus: regulator-usb1-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB1_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 51 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
 };
 
 &gpio {
@@ -101,6 +125,26 @@
 	phy-mode = "mii";
 	mtd-mac-address = <&ath9k_cal 0xa91>;
 	mtd-mac-address-increment = <(-2)>;
+};
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		usb0_vbus {
+			lantiq,pins = "io50";
+			lantiq,pull = <0>;
+			lantiq,open-drain = <0>;
+			lantiq,output = <1>;
+		};
+		usb1_vbus {
+			lantiq,pins = "io51";
+			lantiq,pull = <0>;
+			lantiq,open-drain = <0>;
+			lantiq,output = <1>;
+		};
+	};
 };
 
 &localbus {
@@ -164,8 +208,10 @@
 
 &usb0 {
 	status = "okay";
+	vbus-supply = <&usb0_vbus>;
 };
 
 &usb1 {
 	status = "okay";
+	vbus-supply = <&usb1_vbus>;
 };

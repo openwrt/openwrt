@@ -44,8 +44,12 @@ config WOLFSSL_HAS_WPAS
 	default y
 
 config WOLFSSL_HAS_ECC25519
-	bool "Include ECC Curve 22519 support"
+	bool "Include ECC Curve 25519 support"
 	default n
+
+config WOLFSSL_ALT_NAMES
+	bool "Include SAN (Subject Alternative Name) support"
+	default y
 
 config WOLFSSL_HAS_DEVCRYPTO
 	bool

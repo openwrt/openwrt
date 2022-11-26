@@ -468,7 +468,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* platform data specifying hardware features and callbacks.
  	 * hardware features were copied from Allwinner drivers.
-@@ -979,9 +1047,34 @@ static int sun8i_dwmac_probe(struct plat
+@@ -981,9 +1049,34 @@ static int sun8i_dwmac_probe(struct plat
  
  	ret = stmmac_dvr_probe(&pdev->dev, plat_dat, &stmmac_res);
  	if (ret)

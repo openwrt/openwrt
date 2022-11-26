@@ -70,7 +70,7 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
  config MDIO_GPIO
  	tristate "GPIO lib-based bitbanged MDIO buses"
  	depends on MDIO_BITBANG && GPIOLIB
-@@ -303,6 +321,16 @@ config AT803X_PHY
+@@ -304,6 +322,16 @@ config AT803X_PHY
  	---help---
  	  Currently supports the AT8030 and AT8035 model
  
@@ -87,7 +87,7 @@ Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
  config BCM63XX_PHY
  	tristate "Broadcom 63xx SOCs internal PHY"
  	depends on BCM63XX
-@@ -385,6 +413,11 @@ config ICPLUS_PHY
+@@ -386,6 +414,11 @@ config ICPLUS_PHY
  	---help---
  	  Currently supports the IP175C and IP1001 PHYs.
  

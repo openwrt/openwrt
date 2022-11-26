@@ -1,0 +1,56 @@
+From 6a6e06fbb0d4690507ceaf2bb6f0d8910f3d4914 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Fri, 4 Dec 2020 18:35:11 +0000
+Subject: Small cleanups in frec_src datastucture handling.
+
+---
+ src/forward.c | 22 +++++++++++++---------
+ 1 file changed, 13 insertions(+), 9 deletions(-)
+
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -353,7 +353,10 @@ static int forward_query(int udpfd, unio
+ 	  if (!daemon->free_frec_src &&
+ 	      daemon->frec_src_count < daemon->ftabsize &&
+ 	      (daemon->free_frec_src = whine_malloc(sizeof(struct frec_src))))
+-	    daemon->frec_src_count++;
++	    {
++	      daemon->frec_src_count++;
++	      daemon->free_frec_src->next = NULL;
++	    }
+ 	  
+ 	  /* If we've been spammed with many duplicates, just drop the query. */
+ 	  if (daemon->free_frec_src)
+@@ -390,6 +393,7 @@ static int forward_query(int udpfd, unio
+ 	  forward->frec_src.orig_id = ntohs(header->id);
+ 	  forward->frec_src.dest = *dst_addr;
+ 	  forward->frec_src.iface = dst_iface;
++	  forward->frec_src.next = NULL;
+ 	  forward->new_id = get_id();
+ 	  forward->fd = udpfd;
+ 	  memcpy(forward->hash, hash, HASH_SIZE);
+@@ -2226,16 +2230,16 @@ void free_rfd(struct randfd *rfd)
+ 
+ static void free_frec(struct frec *f)
+ {
+-  struct frec_src *src, *tmp;
+-
+-   /* add back to freelist of not the record builtin to every frec. */
+-  for (src = f->frec_src.next; src; src = tmp)
++  struct frec_src *last;
++  
++  /* add back to freelist if not the record builtin to every frec. */
++  for (last = f->frec_src.next; last && last->next; last = last->next) ;
++  if (last)
+     {
+-      tmp = src->next;
+-      src->next = daemon->free_frec_src;
+-      daemon->free_frec_src = src;
++      last->next = daemon->free_frec_src;
++      daemon->free_frec_src = f->frec_src.next;
+     }
+-  
++    
+   f->frec_src.next = NULL;    
+   free_rfd(f->rfd4);
+   f->rfd4 = NULL;

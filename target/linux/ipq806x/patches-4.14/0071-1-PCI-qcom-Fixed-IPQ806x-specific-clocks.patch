@@ -20,7 +20,7 @@ Signed-off-by: Sham Muthayyan <smuthayy@codeaurora.org>
  	struct reset_control *pci_reset;
  	struct reset_control *axi_reset;
  	struct reset_control *ahb_reset;
-@@ -249,6 +251,14 @@ static int qcom_pcie_get_resources_2_1_0
+@@ -250,6 +252,14 @@ static int qcom_pcie_get_resources_2_1_0
  	if (IS_ERR(res->phy_clk))
  		return PTR_ERR(res->phy_clk);
  
@@ -35,7 +35,7 @@ Signed-off-by: Sham Muthayyan <smuthayy@codeaurora.org>
  	res->pci_reset = devm_reset_control_get_exclusive(dev, "pci");
  	if (IS_ERR(res->pci_reset))
  		return PTR_ERR(res->pci_reset);
-@@ -281,6 +291,8 @@ static void qcom_pcie_deinit_2_1_0(struc
+@@ -287,6 +297,8 @@ static void qcom_pcie_deinit_2_1_0(struc
  	clk_disable_unprepare(res->iface_clk);
  	clk_disable_unprepare(res->core_clk);
  	clk_disable_unprepare(res->phy_clk);
@@ -44,7 +44,7 @@ Signed-off-by: Sham Muthayyan <smuthayy@codeaurora.org>
  	regulator_disable(res->vdda);
  	regulator_disable(res->vdda_phy);
  	regulator_disable(res->vdda_refclk);
-@@ -324,16 +336,28 @@ static int qcom_pcie_init_2_1_0(struct q
+@@ -330,16 +342,28 @@ static int qcom_pcie_init_2_1_0(struct q
  		goto err_assert_ahb;
  	}
  
@@ -76,7 +76,7 @@ Signed-off-by: Sham Muthayyan <smuthayy@codeaurora.org>
  	}
  
  	ret = reset_control_deassert(res->ahb_reset);
-@@ -389,10 +413,14 @@ static int qcom_pcie_init_2_1_0(struct q
+@@ -401,10 +425,14 @@ static int qcom_pcie_init_2_1_0(struct q
  	return 0;
  
  err_deassert_ahb:

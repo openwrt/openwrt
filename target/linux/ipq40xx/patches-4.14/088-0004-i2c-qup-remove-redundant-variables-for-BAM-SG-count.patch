@@ -149,7 +149,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  					      DMA_PREP_INTERRUPT);
  		if (!rxd) {
  			dev_err(qup->dev, "failed to get rx desc\n");
-@@ -844,7 +838,7 @@ static int qup_i2c_bam_do_xfer(struct qu
+@@ -845,7 +839,7 @@ static int qup_i2c_bam_do_xfer(struct qu
  			goto desc_err;
  		}
  
@@ -158,7 +158,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  			writel(QUP_BAM_INPUT_EOT,
  			       qup->base + QUP_OUT_FIFO_BASE);
  
-@@ -862,10 +856,10 @@ static int qup_i2c_bam_do_xfer(struct qu
+@@ -863,10 +857,10 @@ static int qup_i2c_bam_do_xfer(struct qu
  	}
  
  desc_err:

@@ -24,8 +24,9 @@ drv_mac80211_init_device_config() {
 	config_add_string path phy 'macaddr:macaddr'
 	config_add_string hwmode
 	config_add_string tx_burst
+	config_add_string distance
 	config_add_int beacon_int chanbw frag rts
-	config_add_int rxantenna txantenna antenna_gain txpower distance
+	config_add_int rxantenna txantenna antenna_gain txpower
 	config_add_boolean noscan ht_coex
 	config_add_array ht_capab
 	config_add_array channels
@@ -352,7 +353,7 @@ mac80211_get_addr() {
 	local phy="$1"
 	local idx="$(($2 + 1))"
 
-	head -n $(($macidx + 1)) /sys/class/ieee80211/${phy}/addresses | tail -n1
+	head -n $idx /sys/class/ieee80211/${phy}/addresses | tail -n1
 }
 
 mac80211_generate_mac() {

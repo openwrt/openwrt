@@ -51,7 +51,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  	dma_addr_t base_dma;
  
  	struct clk *core_clk;
-@@ -751,6 +761,66 @@ static int prepare_bam_async_desc(struct
+@@ -753,6 +763,66 @@ static int prepare_bam_async_desc(struct
  }
  
  /*
@@ -118,7 +118,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
   * Prepares the data descriptor for BAM DMA which will be used for NAND
   * data reads and writes.
   */
-@@ -868,19 +938,22 @@ static int read_reg_dma(struct qcom_nand
+@@ -870,19 +940,22 @@ static int read_reg_dma(struct qcom_nand
  {
  	bool flow_control = false;
  	void *vaddr;
@@ -148,7 +148,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  }
  
  /*
-@@ -897,13 +970,9 @@ static int write_reg_dma(struct qcom_nan
+@@ -899,13 +972,9 @@ static int write_reg_dma(struct qcom_nan
  	bool flow_control = false;
  	struct nandc_regs *regs = nandc->regs;
  	void *vaddr;
@@ -162,7 +162,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  	if (first == NAND_ERASED_CW_DETECT_CFG) {
  		if (flags & NAND_ERASED_CW_SET)
  			vaddr = &regs->erased_cw_detect_cfg_set;
-@@ -920,10 +989,15 @@ static int write_reg_dma(struct qcom_nan
+@@ -922,10 +991,15 @@ static int write_reg_dma(struct qcom_nan
  	if (first == NAND_DEV_CMD_VLD_RESTORE || first == NAND_DEV_CMD_VLD)
  		first = dev_cmd_reg_addr(nandc, NAND_DEV_CMD_VLD);
  
@@ -181,7 +181,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  }
  
  /*
-@@ -1187,7 +1261,8 @@ static int submit_descs(struct qcom_nand
+@@ -1189,7 +1263,8 @@ static int submit_descs(struct qcom_nand
  		}
  
  		if (bam_txn->cmd_sgl_pos > bam_txn->cmd_sgl_start) {
@@ -191,7 +191,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  			if (r)
  				return r;
  		}
-@@ -2725,6 +2800,7 @@ static int qcom_nandc_probe(struct platf
+@@ -2728,6 +2803,7 @@ static int qcom_nandc_probe(struct platf
  	if (IS_ERR(nandc->base))
  		return PTR_ERR(nandc->base);
  

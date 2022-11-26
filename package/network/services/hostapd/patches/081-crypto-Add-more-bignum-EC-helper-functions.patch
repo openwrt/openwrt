@@ -1,0 +1,309 @@
+From 208e5687ff2e48622e28d8888ce5444a54353bbd Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@codeaurora.org>
+Date: Tue, 27 Aug 2019 16:33:15 +0300
+Subject: [PATCH 1/4] crypto: Add more bignum/EC helper functions
+
+These are needed for implementing SAE hash-to-element.
+
+Signed-off-by: Jouni Malinen <jouni@codeaurora.org>
+---
+ src/crypto/crypto.h         | 45 ++++++++++++++++++
+ src/crypto/crypto_openssl.c | 94 +++++++++++++++++++++++++++++++++++++
+ src/crypto/crypto_wolfssl.c | 66 ++++++++++++++++++++++++++
+ 3 files changed, 205 insertions(+)
+
+--- a/src/crypto/crypto.h
++++ b/src/crypto/crypto.h
+@@ -519,6 +519,13 @@ struct crypto_bignum * crypto_bignum_ini
+ struct crypto_bignum * crypto_bignum_init_set(const u8 *buf, size_t len);
+ 
+ /**
++ * crypto_bignum_init_set - Allocate memory for bignum and set the value (uint)
++ * @val: Value to set
++ * Returns: Pointer to allocated bignum or %NULL on failure
++ */
++struct crypto_bignum * crypto_bignum_init_uint(unsigned int val);
++
++/**
+  * crypto_bignum_deinit - Free bignum
+  * @n: Bignum from crypto_bignum_init() or crypto_bignum_init_set()
+  * @clear: Whether to clear the value from memory
+@@ -613,6 +620,19 @@ int crypto_bignum_div(const struct crypt
+ 		      struct crypto_bignum *c);
+ 
+ /**
++ * crypto_bignum_addmod - d = a + b (mod c)
++ * @a: Bignum
++ * @b: Bignum
++ * @c: Bignum
++ * @d: Bignum; used to store the result of (a + b) % c
++ * Returns: 0 on success, -1 on failure
++ */
++int crypto_bignum_addmod(const struct crypto_bignum *a,
++			 const struct crypto_bignum *b,
++			 const struct crypto_bignum *c,
++			 struct crypto_bignum *d);
++
++/**
+  * crypto_bignum_mulmod - d = a * b (mod c)
+  * @a: Bignum
+  * @b: Bignum
+@@ -626,6 +646,28 @@ int crypto_bignum_mulmod(const struct cr
+ 			 struct crypto_bignum *d);
+ 
+ /**
++ * crypto_bignum_sqrmod - c = a^2 (mod b)
++ * @a: Bignum
++ * @b: Bignum
++ * @c: Bignum; used to store the result of a^2 % b
++ * Returns: 0 on success, -1 on failure
++ */
++int crypto_bignum_sqrmod(const struct crypto_bignum *a,
++			 const struct crypto_bignum *b,
++			 struct crypto_bignum *c);
++
++/**
++ * crypto_bignum_sqrtmod - returns sqrt(a) (mod b)
++ * @a: Bignum
++ * @b: Bignum
++ * @c: Bignum; used to store the result
++ * Returns: 0 on success, -1 on failure
++ */
++int crypto_bignum_sqrtmod(const struct crypto_bignum *a,
++			  const struct crypto_bignum *b,
++			  struct crypto_bignum *c);
++
++/**
+  * crypto_bignum_rshift - r = a >> n
+  * @a: Bignum
+  * @n: Number of bits
+@@ -731,6 +773,9 @@ const struct crypto_bignum * crypto_ec_g
+  */
+ const struct crypto_bignum * crypto_ec_get_order(struct crypto_ec *e);
+ 
++const struct crypto_bignum * crypto_ec_get_a(struct crypto_ec *e);
++const struct crypto_bignum * crypto_ec_get_b(struct crypto_ec *e);
++
+ /**
+  * struct crypto_ec_point - Elliptic curve point
+  *
+--- a/src/crypto/crypto_openssl.c
++++ b/src/crypto/crypto_openssl.c
+@@ -1283,6 +1283,24 @@ struct crypto_bignum * crypto_bignum_ini
+ }
+ 
+ 
++struct crypto_bignum * crypto_bignum_init_uint(unsigned int val)
++{
++	BIGNUM *bn;
++
++	if (TEST_FAIL())
++		return NULL;
++
++	bn = BN_new();
++	if (!bn)
++		return NULL;
++	if (BN_set_word(bn, val) != 1) {
++		BN_free(bn);
++		return NULL;
++	}
++	return (struct crypto_bignum *) bn;
++}
++
++
+ void crypto_bignum_deinit(struct crypto_bignum *n, int clear)
+ {
+ 	if (clear)
+@@ -1449,6 +1467,28 @@ int crypto_bignum_div(const struct crypt
+ }
+ 
+ 
++int crypto_bignum_addmod(const struct crypto_bignum *a,
++			 const struct crypto_bignum *b,
++			 const struct crypto_bignum *c,
++			 struct crypto_bignum *d)
++{
++	int res;
++	BN_CTX *bnctx;
++
++	if (TEST_FAIL())
++		return -1;
++
++	bnctx = BN_CTX_new();
++	if (!bnctx)
++		return -1;
++	res = BN_mod_add((BIGNUM *) d, (const BIGNUM *) a, (const BIGNUM *) b,
++			 (const BIGNUM *) c, bnctx);
++	BN_CTX_free(bnctx);
++
++	return res ? 0 : -1;
++}
++
++
+ int crypto_bignum_mulmod(const struct crypto_bignum *a,
+ 			 const struct crypto_bignum *b,
+ 			 const struct crypto_bignum *c,
+@@ -1472,6 +1512,48 @@ int crypto_bignum_mulmod(const struct cr
+ }
+ 
+ 
++int crypto_bignum_sqrmod(const struct crypto_bignum *a,
++			 const struct crypto_bignum *b,
++			 struct crypto_bignum *c)
++{
++	int res;
++	BN_CTX *bnctx;
++
++	if (TEST_FAIL())
++		return -1;
++
++	bnctx = BN_CTX_new();
++	if (!bnctx)
++		return -1;
++	res = BN_mod_sqr((BIGNUM *) c, (const BIGNUM *) a, (const BIGNUM *) b,
++			 bnctx);
++	BN_CTX_free(bnctx);
++
++	return res ? 0 : -1;
++}
++
++
++int crypto_bignum_sqrtmod(const struct crypto_bignum *a,
++			  const struct crypto_bignum *b,
++			  struct crypto_bignum *c)
++{
++	BN_CTX *bnctx;
++	BIGNUM *res;
++
++	if (TEST_FAIL())
++		return -1;
++
++	bnctx = BN_CTX_new();
++	if (!bnctx)
++		return -1;
++	res = BN_mod_sqrt((BIGNUM *) c, (const BIGNUM *) a, (const BIGNUM *) b,
++			  bnctx);
++	BN_CTX_free(bnctx);
++
++	return res ? 0 : -1;
++}
++
++
+ int crypto_bignum_rshift(const struct crypto_bignum *a, int n,
+ 			 struct crypto_bignum *r)
+ {
+@@ -1682,6 +1764,18 @@ const struct crypto_bignum * crypto_ec_g
+ }
+ 
+ 
++const struct crypto_bignum * crypto_ec_get_a(struct crypto_ec *e)
++{
++	return (const struct crypto_bignum *) e->a;
++}
++
++
++const struct crypto_bignum * crypto_ec_get_b(struct crypto_ec *e)
++{
++	return (const struct crypto_bignum *) e->b;
++}
++
++
+ void crypto_ec_point_deinit(struct crypto_ec_point *p, int clear)
+ {
+ 	if (clear)
+--- a/src/crypto/crypto_wolfssl.c
++++ b/src/crypto/crypto_wolfssl.c
+@@ -1042,6 +1042,26 @@ struct crypto_bignum * crypto_bignum_ini
+ }
+ 
+ 
++struct crypto_bignum * crypto_bignum_init_uint(unsigned int val)
++{
++	mp_int *a;
++
++	if (TEST_FAIL())
++		return NULL;
++
++	a = (mp_int *) crypto_bignum_init();
++	if (!a)
++		return NULL;
++
++	if (mp_set_int(a, val) != MP_OKAY) {
++		os_free(a);
++		a = NULL;
++	}
++
++	return (struct crypto_bignum *) a;
++}
++
++
+ void crypto_bignum_deinit(struct crypto_bignum *n, int clear)
+ {
+ 	if (!n)
+@@ -1168,6 +1188,19 @@ int crypto_bignum_div(const struct crypt
+ }
+ 
+ 
++int crypto_bignum_addmod(const struct crypto_bignum *a,
++			 const struct crypto_bignum *b,
++			 const struct crypto_bignum *c,
++			 struct crypto_bignum *d)
++{
++	if (TEST_FAIL())
++		return -1;
++
++	return mp_addmod((mp_int *) a, (mp_int *) b, (mp_int *) c,
++			 (mp_int *) d) == MP_OKAY ?  0 : -1;
++}
++
++
+ int crypto_bignum_mulmod(const struct crypto_bignum *a,
+ 			 const struct crypto_bignum *b,
+ 			 const struct crypto_bignum *m,
+@@ -1181,6 +1214,27 @@ int crypto_bignum_mulmod(const struct cr
+ }
+ 
+ 
++int crypto_bignum_sqrmod(const struct crypto_bignum *a,
++			 const struct crypto_bignum *b,
++			 struct crypto_bignum *c)
++{
++	if (TEST_FAIL())
++		return -1;
++
++	return mp_sqrmod((mp_int *) a, (mp_int *) b,
++			 (mp_int *) c) == MP_OKAY ?  0 : -1;
++}
++
++
++int crypto_bignum_sqrtmod(const struct crypto_bignum *a,
++			  const struct crypto_bignum *b,
++			  struct crypto_bignum *c)
++{
++	/* TODO */
++	return -1;
++}
++
++
+ int crypto_bignum_rshift(const struct crypto_bignum *a, int n,
+ 			 struct crypto_bignum *r)
+ {
+@@ -1386,6 +1440,18 @@ const struct crypto_bignum * crypto_ec_g
+ }
+ 
+ 
++const struct crypto_bignum * crypto_ec_get_a(struct crypto_ec *e)
++{
++	return (const struct crypto_bignum *) &e->a;
++}
++
++
++const struct crypto_bignum * crypto_ec_get_b(struct crypto_ec *e)
++{
++	return (const struct crypto_bignum *) &e->b;
++}
++
++
+ void crypto_ec_point_deinit(struct crypto_ec_point *p, int clear)
+ {
+ 	ecc_point *point = (ecc_point *) p;

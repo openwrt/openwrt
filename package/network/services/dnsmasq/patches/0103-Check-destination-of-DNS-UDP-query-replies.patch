@@ -1,0 +1,106 @@
+From 257ac0c5f7732cbc6aa96fdd3b06602234593aca Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Thu, 12 Nov 2020 18:49:23 +0000
+Subject: Check destination of DNS UDP query replies.
+
+At any time, dnsmasq will have a set of sockets open, bound to
+random ports, on which it sends queries to upstream nameservers.
+This patch fixes the existing problem that a reply for ANY in-flight
+query would be accepted via ANY open port, which increases the
+chances of an attacker flooding answers "in the blind" in an
+attempt to poison the DNS cache. CERT VU#434904 refers.
+---
+ CHANGELOG     |  6 +++++-
+ src/forward.c | 37 ++++++++++++++++++++++++++++---------
+ 2 files changed, 33 insertions(+), 10 deletions(-)
+
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -2,8 +2,12 @@
+ 	dnsmasq with DNSSEC compiled in and enabled is vulnerable to this,
+ 	referenced by CERT VU#434904.
+ 
++	Be sure to only accept UDP DNS query replies at the address
++	from which the query was originated. This keeps as much entropy
++	in the {query-ID, random-port} tuple as possible, help defeat
++	cache poisoning attacks. Refer: CERT VU#434904.
++
+ 
+->>>>>>> Fix remote buffer overflow CERT VU#434904
+ version 2.81
+ 	Impove cache behaviour for TCP connections. For ease of
+ 	implementaion, dnsmasq has always forked a new process to handle
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -16,7 +16,7 @@
+ 
+ #include "dnsmasq.h"
+ 
+-static struct frec *lookup_frec(unsigned short id, void *hash);
++static struct frec *lookup_frec(unsigned short id, int fd, int family, void *hash);
+ static struct frec *lookup_frec_by_sender(unsigned short id,
+ 					  union mysockaddr *addr,
+ 					  void *hash);
+@@ -797,7 +797,7 @@ void reply_query(int fd, int family, tim
+   crc = questions_crc(header, n, daemon->namebuff);
+ #endif
+   
+-  if (!(forward = lookup_frec(ntohs(header->id), hash)))
++  if (!(forward = lookup_frec(ntohs(header->id), fd, family, hash)))
+     return;
+   
+ #ifdef HAVE_DUMPFILE
+@@ -2289,14 +2289,25 @@ struct frec *get_new_frec(time_t now, in
+ }
+ 
+ /* crc is all-ones if not known. */
+-static struct frec *lookup_frec(unsigned short id, void *hash)
++static struct frec *lookup_frec(unsigned short id, int fd, int family, void *hash)
+ {
+   struct frec *f;
+ 
+   for(f = daemon->frec_list; f; f = f->next)
+     if (f->sentto && f->new_id == id && 
+ 	(!hash || memcmp(hash, f->hash, HASH_SIZE) == 0))
+-      return f;
++      {
++	/* sent from random port */
++	if (family == AF_INET && f->rfd4 && f->rfd4->fd == fd)
++	  return f;
++
++	if (family == AF_INET6 && f->rfd6 && f->rfd6->fd == fd)
++	  return f;
++
++	/* sent to upstream from bound socket. */
++	if (f->sentto->sfd && f->sentto->sfd->fd == fd)
++	  return f;
++      }
+       
+   return NULL;
+ }
+@@ -2357,12 +2368,20 @@ void server_gone(struct server *server)
+ static unsigned short get_id(void)
+ {
+   unsigned short ret = 0;
++  struct frec *f;
+   
+-  do 
+-    ret = rand16();
+-  while (lookup_frec(ret, NULL));
+-  
+-  return ret;
++  while (1)
++    {
++      ret = rand16();
++
++      /* ensure id is unique. */
++      for (f = daemon->frec_list; f; f = f->next)
++	if (f->sentto && f->new_id == ret)
++	  break;
++
++      if (!f)
++	return ret;
++    }
+ }
+ 
+ 

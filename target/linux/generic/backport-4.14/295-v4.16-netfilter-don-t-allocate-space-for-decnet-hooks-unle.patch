@@ -55,7 +55,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	default:
  		WARN_ON_ONCE(1);
  		return NULL;
-@@ -573,7 +575,9 @@ static int __net_init netfilter_net_init
+@@ -574,7 +576,9 @@ static int __net_init netfilter_net_init
  	__netfilter_net_init(net->nf.hooks_ipv6, ARRAY_SIZE(net->nf.hooks_ipv6));
  	__netfilter_net_init(net->nf.hooks_arp, ARRAY_SIZE(net->nf.hooks_arp));
  	__netfilter_net_init(net->nf.hooks_bridge, ARRAY_SIZE(net->nf.hooks_bridge));

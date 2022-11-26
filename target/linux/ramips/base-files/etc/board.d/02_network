@@ -99,7 +99,6 @@ ramips_setup_interfaces()
 	kn|\
 	kn_rc|\
 	mac1200rv2|\
-	miwifi-mini|\
 	miwifi-nano|\
 	mt7621|\
 	mt7628|\
@@ -360,6 +359,12 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "7t@eth0"
 		;;
+	miwifi-mini|\
+	y1|\
+	zbtlink,zbt-we1226)
+		ucidef_add_switch "switch0" \
+			"0:lan:2" "1:lan:1" "4:wan" "6@eth0"
+		;;
 	mlwg2|\
 	wizard8800|\
 	wl-330n)
@@ -470,11 +475,6 @@ ramips_setup_interfaces()
 	xiaomi,mir4a-100m)
 		ucidef_add_switch "switch0" \
 			"4:lan:1" "2:lan:2" "0:wan" "6@eth0"
-		;;
-	zbtlink,zbt-we1226|\
-	y1)
-		ucidef_add_switch "switch0" \
-			"0:lan:2" "1:lan:1" "4:wan" "6@eth0"
 		;;
 	zyxel,keenetic-start)
 		ucidef_add_switch "switch0" \

@@ -139,11 +139,17 @@ case "$FIRMWARE" in
 		;;
 	buffalo,whr-g301n|\
 	buffalo,wzr-hp-g302h-a1a0|\
+	tplink,tl-wa701nd-v1|\
+	tplink,tl-wa730re-v1|\
+	tplink,tl-wa801nd-v1|\
+	tplink,tl-wa830re-v1|\
+	tplink,tl-wa901nd-v1|\
 	tplink,tl-wr841-v5|\
 	tplink,tl-wr941-v4)
 		ath9k_eeprom_extract "art" 4096 3768
 		;;
-	buffalo,wzr-hp-g450h)
+	buffalo,wzr-hp-g450h|\
+	ubnt,unifi)
 		ath9k_eeprom_extract "art" 4096 1088
 		;;
 	dlink,dir-825-c1|\
@@ -183,9 +189,6 @@ case "$FIRMWARE" in
 		;;
 	pqi,air-pen)
 		ath9k_eeprom_extract "art" 4096 2002
-		;;
-	ubnt,unifi)
-		ath9k_eeprom_extract "art" 4096 2048
 		;;
 	wd,mynet-n750)
 		ath9k_eeprom_extract "art" 20480 1088

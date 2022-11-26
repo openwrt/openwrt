@@ -12,28 +12,30 @@
 
 	aliases {
 		serial0 = &uart;
-		led-boot = &wlan;
-		led-failsafe = &wlan;
-		led-upgrade = &wlan;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		wlan: wlan {
+		wlan {
 			label = "gl-ar150:orange:wlan";
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
-		lan {
-			label = "gl-ar150:green:lan";
+		configurable {
+			label = "gl-ar150:green:configurable";
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 
-		wan {
-			label = "gl-ar150:green:wan";
+		led_power: power {
+			label = "gl-ar150:green:power";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
 		};
 	};
 
@@ -62,10 +64,6 @@
 };
 
 &uart {
-	status = "okay";
-};
-
-&gpio {
 	status = "okay";
 };
 

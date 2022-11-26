@@ -1,0 +1,38 @@
+From 78d52a28c66ad0fd2af250038fdcf4239ad37bf2 Mon Sep 17 00:00:00 2001
+From: Remi NGUYEN VAN <remi.nguyenvan+openwrt@gmail.com>
+Date: Sat, 15 Aug 2020 13:50:27 +0900
+Subject: [PATCH] options: fix parsing of boolean attributes
+
+Boolean attributes were parsed the same way as string attributes,
+so a value of { "bool_attr": "true" } would be parsed correctly, but
+{ "bool_attr": true } (without quotes) was parsed as false.
+
+Fixes FS#3284
+
+Signed-off-by: Remi NGUYEN VAN <remi.nguyenvan+openwrt@gmail.com>
+---
+ options.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/options.c
++++ b/options.c
+@@ -1170,6 +1170,9 @@ fw3_parse_blob_options(void *s, const st
+ 						if (blobmsg_type(e) == BLOBMSG_TYPE_INT32) {
+ 							snprintf(buf, sizeof(buf), "%d", blobmsg_get_u32(e));
+ 							v = buf;
++						} else if (blobmsg_type(o) == BLOBMSG_TYPE_BOOL) {
++							snprintf(buf, sizeof(buf), "%d", blobmsg_get_bool(o));
++							v = buf;
+ 						} else {
+ 							v = blobmsg_get_string(e);
+ 						}
+@@ -1189,6 +1192,9 @@ fw3_parse_blob_options(void *s, const st
+ 				if (blobmsg_type(o) == BLOBMSG_TYPE_INT32) {
+ 					snprintf(buf, sizeof(buf), "%d", blobmsg_get_u32(o));
+ 					v = buf;
++				} else if (blobmsg_type(o) == BLOBMSG_TYPE_BOOL) {
++					snprintf(buf, sizeof(buf), "%d", blobmsg_get_bool(o));
++					v = buf;
+ 				} else {
+ 					v = blobmsg_get_string(o);
+ 				}

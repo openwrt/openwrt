@@ -32,7 +32,7 @@ endef
 # UBNT_BOARD e.g. one of (XS2, XS5, RS, XM)
 # UBNT_TYPE e.g. one of (BZ, XM, XW)
 # UBNT_CHIP e.g. one of (ar7240, ar933x, ar934x)
-# UBNT_VERSION e.g. one of (6.0.0, 8.5.0)
+# UBNT_VERSION e.g. one of (6.0.0, 8.5.3)
 define Device/ubnt
   DEVICE_PACKAGES := kmod-usb-core kmod-usb2
   IMAGE_SIZE := 7552k
@@ -64,7 +64,7 @@ define Device/ubnt-wa
   UBNT_TYPE := WA
   UBNT_CHIP := ar934x
   UBNT_BOARD := WA
-  UBNT_VERSION := 8.5.0
+  UBNT_VERSION := 8.5.3
   ATH_SOC := ar9342
 endef
 

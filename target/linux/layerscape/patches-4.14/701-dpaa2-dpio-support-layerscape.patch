@@ -371,7 +371,7 @@ Signed-off-by: Youri Querry <youri.querry_1@nxp.com>
  static irqreturn_t dpio_irq_handler(int irq_num, void *arg)
  {
  	struct device *dev = (struct device *)arg;
-@@ -113,7 +91,7 @@ static int dpaa2_dpio_probe(struct fsl_m
+@@ -110,7 +88,7 @@ static int dpaa2_dpio_probe(struct fsl_m
  	struct dpio_priv *priv;
  	int err = -ENOMEM;
  	struct device *dev = &dpio_dev->dev;
@@ -380,7 +380,7 @@ Signed-off-by: Youri Querry <youri.querry_1@nxp.com>
  
  	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
  	if (!priv)
-@@ -135,6 +113,12 @@ static int dpaa2_dpio_probe(struct fsl_m
+@@ -132,6 +110,12 @@ static int dpaa2_dpio_probe(struct fsl_m
  		goto err_open;
  	}
  
@@ -393,7 +393,7 @@ Signed-off-by: Youri Querry <youri.querry_1@nxp.com>
  	err = dpio_get_attributes(dpio_dev->mc_io, 0, dpio_dev->mc_handle,
  				  &dpio_attrs);
  	if (err) {
-@@ -155,26 +139,35 @@ static int dpaa2_dpio_probe(struct fsl_m
+@@ -152,26 +136,35 @@ static int dpaa2_dpio_probe(struct fsl_m
  	desc.dpio_id = dpio_dev->obj_desc.id;
  
  	/* get the cpu to use for the affinity hint */
@@ -444,7 +444,7 @@ Signed-off-by: Youri Querry <youri.querry_1@nxp.com>
  
  	err = fsl_mc_allocate_irqs(dpio_dev);
  	if (err) {
-@@ -186,7 +179,7 @@ static int dpaa2_dpio_probe(struct fsl_m
+@@ -183,7 +176,7 @@ static int dpaa2_dpio_probe(struct fsl_m
  	if (err)
  		goto err_register_dpio_irq;
  
@@ -453,7 +453,7 @@ Signed-off-by: Youri Querry <youri.querry_1@nxp.com>
  	if (!priv->io) {
  		dev_err(dev, "dpaa2_io_create failed\n");
  		goto err_dpaa2_io_create;
-@@ -196,7 +189,6 @@ static int dpaa2_dpio_probe(struct fsl_m
+@@ -193,7 +186,6 @@ static int dpaa2_dpio_probe(struct fsl_m
  	dev_dbg(dev, "   receives_notifications = %d\n",
  		desc.receives_notifications);
  	dpio_close(dpio_dev->mc_io, 0, dpio_dev->mc_handle);
@@ -461,7 +461,7 @@ Signed-off-by: Youri Querry <youri.querry_1@nxp.com>
  
  	return 0;
  
-@@ -207,6 +199,7 @@ err_register_dpio_irq:
+@@ -204,6 +196,7 @@ err_register_dpio_irq:
  err_allocate_irqs:
  	dpio_disable(dpio_dev->mc_io, 0, dpio_dev->mc_handle);
  err_get_attr:
@@ -469,7 +469,7 @@ Signed-off-by: Youri Querry <youri.querry_1@nxp.com>
  	dpio_close(dpio_dev->mc_io, 0, dpio_dev->mc_handle);
  err_open:
  	fsl_mc_portal_free(dpio_dev->mc_io);
-@@ -227,7 +220,7 @@ static int dpaa2_dpio_remove(struct fsl_
+@@ -224,7 +217,7 @@ static int dpaa2_dpio_remove(struct fsl_
  {
  	struct device *dev;
  	struct dpio_priv *priv;
@@ -478,7 +478,7 @@ Signed-off-by: Youri Querry <youri.querry_1@nxp.com>
  
  	dev = &dpio_dev->dev;
  	priv = dev_get_drvdata(dev);
-@@ -236,11 +229,8 @@ static int dpaa2_dpio_remove(struct fsl_
+@@ -233,11 +226,8 @@ static int dpaa2_dpio_remove(struct fsl_
  
  	dpio_teardown_irqs(dpio_dev);
  
@@ -492,7 +492,7 @@ Signed-off-by: Youri Querry <youri.querry_1@nxp.com>
  
  	err = dpio_open(dpio_dev->mc_io, 0, dpio_dev->obj_desc.id,
  			&dpio_dev->mc_handle);
-@@ -261,7 +251,7 @@ static int dpaa2_dpio_remove(struct fsl_
+@@ -258,7 +248,7 @@ static int dpaa2_dpio_remove(struct fsl_
  
  err_open:
  	fsl_mc_portal_free(dpio_dev->mc_io);
@@ -501,7 +501,7 @@ Signed-off-by: Youri Querry <youri.querry_1@nxp.com>
  	return err;
  }
  
-@@ -285,11 +275,16 @@ static struct fsl_mc_driver dpaa2_dpio_d
+@@ -282,11 +272,16 @@ static struct fsl_mc_driver dpaa2_dpio_d
  
  static int dpio_driver_init(void)
  {

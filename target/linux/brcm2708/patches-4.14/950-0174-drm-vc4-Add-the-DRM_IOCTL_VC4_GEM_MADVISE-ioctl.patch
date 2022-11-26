@@ -181,7 +181,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20171019125748.3152-1-boris.
  					    enum vc4_kernel_bo_type type)
 @@ -294,6 +419,9 @@ struct drm_gem_object *vc4_create_object
  	if (!bo)
- 		return ERR_PTR(-ENOMEM);
+ 		return NULL;
  
 +	bo->madv = VC4_MADV_WILLNEED;
 +	refcount_set(&bo->usecnt, 0);

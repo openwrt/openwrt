@@ -155,7 +155,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				IPC_SEM_IDS, sysvipc_sem_proc_show);
 --- a/ipc/shm.c
 +++ b/ipc/shm.c
-@@ -122,6 +122,8 @@ pure_initcall(ipc_ns_init);
+@@ -123,6 +123,8 @@ pure_initcall(ipc_ns_init);
  
  void __init shm_init(void)
  {
@@ -243,7 +243,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
-@@ -1951,10 +1951,12 @@ void __init init_mm_internals(void)
+@@ -1954,10 +1954,12 @@ void __init init_mm_internals(void)
  	start_shepherd_timer();
  #endif
  #ifdef CONFIG_PROC_FS
@@ -283,7 +283,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto err;
 --- a/net/core/net-procfs.c
 +++ b/net/core/net-procfs.c
-@@ -320,10 +320,12 @@ static int __net_init dev_proc_net_init(
+@@ -350,10 +350,12 @@ static int __net_init dev_proc_net_init(
  
  	if (!proc_create("dev", S_IRUGO, net->proc_net, &dev_seq_fops))
  		goto out;
@@ -298,7 +298,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto out_softnet;
  
  	if (wext_proc_init(net))
-@@ -332,9 +334,11 @@ static int __net_init dev_proc_net_init(
+@@ -362,9 +364,11 @@ static int __net_init dev_proc_net_init(
  out:
  	return rc;
  out_ptype:
@@ -312,7 +312,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  out_dev:
  	remove_proc_entry("dev", net->proc_net);
  	goto out;
-@@ -344,8 +348,10 @@ static void __net_exit dev_proc_net_exit
+@@ -374,8 +378,10 @@ static void __net_exit dev_proc_net_exit
  {
  	wext_proc_exit(net);
  
@@ -327,7 +327,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -3387,6 +3387,8 @@ static __net_initdata struct pernet_oper
+@@ -3427,6 +3427,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
@@ -393,7 +393,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -426,6 +426,9 @@ static struct pernet_operations ip_rt_pr
+@@ -428,6 +428,9 @@ static struct pernet_operations ip_rt_pr
  
  static int __init ip_rt_proc_init(void)
  {

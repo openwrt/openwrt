@@ -8611,7 +8611,7 @@ Signed-off-by: Stuart Yoder <stuart.yoder@nxp.com>
 +}
 --- a/drivers/staging/fsl-mc/bus/mc-io.c
 +++ /dev/null
-@@ -1,292 +0,0 @@
+@@ -1,297 +0,0 @@
 -// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
 -/*
 - * Copyright 2013-2016 Freescale Semiconductor Inc.
@@ -8754,7 +8754,12 @@ Signed-off-by: Stuart Yoder <stuart.yoder@nxp.com>
 - */
 -void fsl_destroy_mc_io(struct fsl_mc_io *mc_io)
 -{
--	struct fsl_mc_device *dpmcp_dev = mc_io->dpmcp_dev;
+-	struct fsl_mc_device *dpmcp_dev;
+-
+-	if (!mc_io)
+-		return;
+-
+-	dpmcp_dev = mc_io->dpmcp_dev;
 -
 -	if (dpmcp_dev)
 -		fsl_mc_io_unset_dpmcp(mc_io);
@@ -8906,7 +8911,7 @@ Signed-off-by: Stuart Yoder <stuart.yoder@nxp.com>
 -EXPORT_SYMBOL_GPL(fsl_mc_portal_reset);
 --- /dev/null
 +++ b/drivers/bus/fsl-mc/mc-io.c
-@@ -0,0 +1,281 @@
+@@ -0,0 +1,286 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
 +/*
 + * Copyright 2013-2016 Freescale Semiconductor Inc.
@@ -9038,7 +9043,12 @@ Signed-off-by: Stuart Yoder <stuart.yoder@nxp.com>
 + */
 +void fsl_destroy_mc_io(struct fsl_mc_io *mc_io)
 +{
-+	struct fsl_mc_device *dpmcp_dev = mc_io->dpmcp_dev;
++	struct fsl_mc_device *dpmcp_dev;
++
++	if (!mc_io)
++		return;
++
++	dpmcp_dev = mc_io->dpmcp_dev;
 +
 +	if (dpmcp_dev)
 +		fsl_mc_io_unset_dpmcp(mc_io);

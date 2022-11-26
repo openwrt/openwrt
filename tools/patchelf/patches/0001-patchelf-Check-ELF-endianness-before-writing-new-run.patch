@@ -1,0 +1,41 @@
+From 9c9efd0525ac1e11f83029b8df5303a47ab6fe56 Mon Sep 17 00:00:00 2001
+From: Bryce Ferguson <bryce.ferguson@rockwellcollins.com>
+Date: Mon, 25 Jun 2018 13:50:46 -0500
+Subject: [PATCH] patchelf: Check ELF endianness before writing new runpath
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+[ upstream commit e88d83c8b4e42a3358a90b781a5a98efa279ff15 ]
+
+This commit modifies the way fields are written in the dynamic
+section in order to account the architecture of the target ELF
+file. Instead of copying the raw data, use the helper functions
+to convert endianness.
+
+Signed-off-by: Bryce Ferguson <bryce.ferguson@rockwellcollins.com>
+Signed-off-by: Petr Štetiar <ynezz@true.cz> [version 0.9 backport]
+---
+ src/patchelf.cc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/patchelf.cc b/src/patchelf.cc
+index 136098fbeeda..383c78a46ee4 100644
+--- a/src/patchelf.cc
++++ b/src/patchelf.cc
+@@ -1171,13 +1171,13 @@ void ElfFile<ElfFileParamNames>::modifyRPath(RPathOp op, string newRPath)
+     debug("new rpath is `%s'\n", newRPath.c_str());
+ 
+     if (!forceRPath && dynRPath && !dynRunPath) { /* convert DT_RPATH to DT_RUNPATH */
+-        dynRPath->d_tag = DT_RUNPATH;
++        wri(dynRPath->d_tag, DT_RUNPATH);
+         dynRunPath = dynRPath;
+         dynRPath = 0;
+     }
+ 
+     if (forceRPath && dynRPath && dynRunPath) { /* convert DT_RUNPATH to DT_RPATH */
+-        dynRunPath->d_tag = DT_IGNORE;
++        wri(dynRunPath->d_tag, DT_IGNORE);
+     }
+ 
+     if (newRPath.size() <= rpathSize) {

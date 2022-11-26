@@ -33,7 +33,7 @@
 
 		led_run: run {
 			label = "wizfi630s:green:run";
-			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		};
 
 		ledwps {
@@ -66,20 +66,22 @@
 
 		wps {
 			label = "wps";
-			gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
 		scm1 {
 			label = "SCM1";
-			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_1>;
+			linux,input-type = <EV_SW>;
 		};
 
 		scm2 {
 			label = "SCM2";
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			linux,code = <BTN_2>;
+			linux,input-type = <EV_SW>;
 		};
 
 	};
@@ -88,35 +90,10 @@
 &pinctrl {
 	state_default: pinctrl0 {
 		gpio {
-			ralink,group = "gpio";
-			ralink,function = "gpio";
-		};
-
-		i2s {
-			ralink,group = "i2s";
-			ralink,function = "gpio";
-		};
-
-		wdt {
-			ralink,group = "wdt";
-			ralink,function = "gpio";
-		};
-
-
-		i2c {
-			ralink,group = "i2c";
-			ralink,function = "gpio";
-		};
-
-		refclk {
-			ralink,group = "refclk";
+			ralink,group = "gpio", "i2s", "i2c", "wdt", "refclk", "p1led_an", "p2led_an";
 			ralink,function = "gpio";
 		};
 	};
-};
-
-&wmac {
-	status = "okay";
 };
 
 &spi0 {
@@ -163,11 +140,11 @@
 	};
 };
 
-&i2c {
+&uart1 {
 	status = "okay";
 };
 
-&uart1 {
+&uart2 {
 	status = "okay";
 };
 
@@ -181,6 +158,7 @@
 
 &esw {
 	mediatek,portmap = <0x3e>;
+	mediatek,portdisable = <0x26>;
 };
 
 &sdhci {

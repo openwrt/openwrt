@@ -283,7 +283,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  }
  
  static void qup_i2c_set_blk_data(struct qup_i2c_dev *qup,
-@@ -1006,64 +1075,6 @@ err:
+@@ -1007,64 +1076,6 @@ err:
  	return ret;
  }
  
@@ -348,7 +348,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  static void qup_i2c_set_read_mode_v2(struct qup_i2c_dev *qup, int len)
  {
  	int tx_len = qup->blk.tx_tag_len;
-@@ -1086,44 +1097,27 @@ static void qup_i2c_set_read_mode_v2(str
+@@ -1087,44 +1098,27 @@ static void qup_i2c_set_read_mode_v2(str
  	}
  }
  
@@ -402,7 +402,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  }
  
  static int qup_i2c_read_fifo_v2(struct qup_i2c_dev *qup,
-@@ -1224,49 +1218,130 @@ err:
+@@ -1225,49 +1219,130 @@ err:
  	return ret;
  }
  
@@ -552,7 +552,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  static int qup_i2c_xfer(struct i2c_adapter *adap,
  			struct i2c_msg msgs[],
  			int num)
-@@ -1305,10 +1380,11 @@ static int qup_i2c_xfer(struct i2c_adapt
+@@ -1306,10 +1381,11 @@ static int qup_i2c_xfer(struct i2c_adapt
  			goto out;
  		}
  
@@ -566,7 +566,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  
  		if (ret)
  			break;
-@@ -1487,6 +1563,10 @@ static int qup_i2c_probe(struct platform
+@@ -1488,6 +1564,10 @@ static int qup_i2c_probe(struct platform
  	if (of_device_is_compatible(pdev->dev.of_node, "qcom,i2c-qup-v1.1.1")) {
  		qup->adap.algo = &qup_i2c_algo;
  		qup->adap.quirks = &qup_i2c_quirks;

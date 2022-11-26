@@ -1,6 +1,6 @@
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -252,6 +252,37 @@ int ehci_reset(struct ehci_hcd *ehci)
+@@ -253,6 +253,37 @@ int ehci_reset(struct ehci_hcd *ehci)
  	command |= CMD_RESET;
  	dbg_cmd (ehci, "reset", command);
  	ehci_writel(ehci, command, &ehci->regs->command);

@@ -57,7 +57,7 @@ else
 	find $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.ipk' -exec $(CP) {} $(PKG_BUILD_DIR)/packages/ \;
 endif
 
-	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
+	$(CP) -L $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
 	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
 		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
 	fi
@@ -77,6 +77,8 @@ endif
 		$(CP) -L $(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/dts/* $(IB_DTSDIR); \
 	fi
 	$(SED) 's,^# REVISION:=.*,REVISION:=$(REVISION),g' $(PKG_BUILD_DIR)/include/version.mk
+	$(SED) 's,^# SOURCE_DATE_EPOCH:=.*,SOURCE_DATE_EPOCH:=$(SOURCE_DATE_EPOCH),g' $(PKG_BUILD_DIR)/include/version.mk
+	$(SED) '/LINUX_VERMAGIC:=/ { s,unknown,$(LINUX_VERMAGIC),g }' $(PKG_BUILD_DIR)/include/kernel.mk
 	find $(PKG_BUILD_DIR) -name CVS -o -name .git -o -name .svn \
 	  | $(XARGS) rm -rf
 	$(INSTALL_DIR) $(IB_IDIR)

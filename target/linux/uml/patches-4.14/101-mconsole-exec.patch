@@ -153,7 +153,7 @@
  	int (*init)(struct subprocess_info *info, struct cred *new);
 --- a/kernel/umh.c
 +++ b/kernel/umh.c
-@@ -25,6 +25,7 @@
+@@ -26,6 +26,7 @@
  #include <linux/ptrace.h>
  #include <linux/async.h>
  #include <linux/uaccess.h>
@@ -161,7 +161,7 @@
  
  #include <trace/events/module.h>
  
-@@ -70,6 +71,28 @@ static int call_usermodehelper_exec_asyn
+@@ -71,6 +72,28 @@ static int call_usermodehelper_exec_asyn
  	flush_signal_handlers(current, 1);
  	spin_unlock_irq(&current->sighand->siglock);
  
@@ -188,9 +188,9 @@
 +	}
 +
  	/*
- 	 * Our parent (unbound workqueue) runs with elevated scheduling
- 	 * priority. Avoid propagating that into the userspace child.
-@@ -393,6 +416,20 @@ struct subprocess_info *call_usermodehel
+ 	 * Initial kernel threads share ther FS with init, in order to
+ 	 * get the init root directory. But we've now created a new
+@@ -402,6 +425,20 @@ struct subprocess_info *call_usermodehel
  }
  EXPORT_SYMBOL(call_usermodehelper_setup);
  

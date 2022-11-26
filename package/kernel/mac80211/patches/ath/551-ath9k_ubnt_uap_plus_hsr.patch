@@ -343,7 +343,7 @@
  
  u8 ath9k_parse_mpdudensity(u8 mpdudensity)
  {
-@@ -649,6 +651,7 @@ void ath_reset_work(struct work_struct *
+@@ -656,6 +658,7 @@ void ath_reset_work(struct work_struct *
  static int ath9k_start(struct ieee80211_hw *hw)
  {
  	struct ath_softc *sc = hw->priv;
@@ -351,7 +351,7 @@
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ieee80211_channel *curchan = sc->cur_chan->chandef.chan;
-@@ -727,6 +730,11 @@ static int ath9k_start(struct ieee80211_
+@@ -734,6 +737,11 @@ static int ath9k_start(struct ieee80211_
  					  AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
  	}
  

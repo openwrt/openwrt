@@ -16,7 +16,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -279,6 +279,7 @@ config BCM63XX
+@@ -282,6 +282,7 @@ config BCM63XX
  	select GPIOLIB
  	select HAVE_CLK
  	select MIPS_L1_CACHE_SHIFT_4
@@ -34,7 +34,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <linux/delay.h>
  #include <bcm63xx_cpu.h>
  #include <bcm63xx_io.h>
-@@ -359,44 +360,103 @@ long clk_round_rate(struct clk *clk, uns
+@@ -371,44 +372,103 @@ long clk_round_rate(struct clk *clk, uns
  }
  EXPORT_SYMBOL_GPL(clk_round_rate);
  
@@ -176,7 +176,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  
  #define HSSPI_PLL_HZ_6328	133333333
  #define HSSPI_PLL_HZ_6362	400000000
-@@ -404,11 +464,31 @@ EXPORT_SYMBOL(clk_put);
+@@ -416,11 +476,31 @@ EXPORT_SYMBOL(clk_put);
  static int __init bcm63xx_clk_init(void)
  {
  	switch (bcm63xx_get_cpu_id()) {

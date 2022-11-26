@@ -62,7 +62,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
 
 --- a/drivers/base/core.c
 +++ b/drivers/base/core.c
-@@ -162,10 +162,10 @@ static int device_reorder_to_tail(struct
+@@ -177,10 +177,10 @@ static int device_reorder_to_tail(struct
   * of the link.  If DL_FLAG_PM_RUNTIME is not set, DL_FLAG_RPM_ACTIVE will be
   * ignored.
   *
@@ -77,7 +77,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   *
   * A side effect of the link creation is re-ordering of dpm_list and the
   * devices_kset list by moving the consumer device and all devices depending
-@@ -183,7 +183,8 @@ struct device_link *device_link_add(stru
+@@ -198,7 +198,8 @@ struct device_link *device_link_add(stru
  	bool rpm_put_supplier = false;
  
  	if (!consumer || !supplier ||
@@ -87,7 +87,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		return NULL;
  
  	if (flags & DL_FLAG_PM_RUNTIME && flags & DL_FLAG_RPM_ACTIVE) {
-@@ -209,8 +210,10 @@ struct device_link *device_link_add(stru
+@@ -224,8 +225,10 @@ struct device_link *device_link_add(stru
  	}
  
  	list_for_each_entry(link, &supplier->links.consumers, s_node)
@@ -99,7 +99,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	link = kzalloc(sizeof(*link), GFP_KERNEL);
  	if (!link)
-@@ -237,6 +240,7 @@ struct device_link *device_link_add(stru
+@@ -252,6 +255,7 @@ struct device_link *device_link_add(stru
  	link->consumer = consumer;
  	INIT_LIST_HEAD(&link->c_node);
  	link->flags = flags;
@@ -107,7 +107,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	/* Determine the initial link state. */
  	if (flags & DL_FLAG_STATELESS) {
-@@ -311,8 +315,10 @@ static void __device_link_free_srcu(stru
+@@ -326,8 +330,10 @@ static void __device_link_free_srcu(stru
  	device_link_free(container_of(rhead, struct device_link, rcu_head));
  }
  
@@ -119,7 +119,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	dev_info(link->consumer, "Dropping the link to %s\n",
  		 dev_name(link->supplier));
  
-@@ -324,8 +330,10 @@ static void __device_link_del(struct dev
+@@ -339,8 +345,10 @@ static void __device_link_del(struct dev
  	call_srcu(&device_links_srcu, &link->rcu_head, __device_link_free_srcu);
  }
  #else /* !CONFIG_SRCU */
@@ -131,7 +131,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	dev_info(link->consumer, "Dropping the link to %s\n",
  		 dev_name(link->supplier));
  
-@@ -343,18 +351,50 @@ static void __device_link_del(struct dev
+@@ -358,18 +366,50 @@ static void __device_link_del(struct dev
   * @link: Device link to delete.
   *
   * The caller must ensure proper synchronization of this function with runtime
@@ -184,7 +184,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static void device_links_missing_supplier(struct device *dev)
  {
  	struct device_link *link;
-@@ -462,8 +502,8 @@ static void __device_links_no_driver(str
+@@ -477,8 +517,8 @@ static void __device_links_no_driver(str
  		if (link->flags & DL_FLAG_STATELESS)
  			continue;
  
@@ -195,7 +195,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		else if (link->status != DL_STATE_SUPPLIER_UNBIND)
  			WRITE_ONCE(link->status, DL_STATE_AVAILABLE);
  	}
-@@ -498,8 +538,18 @@ void device_links_driver_cleanup(struct
+@@ -513,8 +553,18 @@ void device_links_driver_cleanup(struct
  		if (link->flags & DL_FLAG_STATELESS)
  			continue;
  
@@ -215,7 +215,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		WRITE_ONCE(link->status, DL_STATE_DORMANT);
  	}
  
-@@ -616,13 +666,13 @@ static void device_links_purge(struct de
+@@ -631,13 +681,13 @@ static void device_links_purge(struct de
  
  	list_for_each_entry_safe_reverse(link, ln, &dev->links.suppliers, c_node) {
  		WARN_ON(link->status == DL_STATE_ACTIVE);
@@ -231,7 +231,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	device_links_write_unlock();
-@@ -1044,6 +1094,34 @@ static ssize_t online_store(struct devic
+@@ -1059,6 +1109,34 @@ static ssize_t online_store(struct devic
  }
  static DEVICE_ATTR_RW(online);
  
@@ -266,7 +266,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  int device_add_groups(struct device *dev, const struct attribute_group **groups)
  {
  	return sysfs_create_groups(&dev->kobj, groups);
-@@ -1215,8 +1293,20 @@ static int device_add_attrs(struct devic
+@@ -1230,8 +1308,20 @@ static int device_add_attrs(struct devic
  			goto err_remove_dev_groups;
  	}
  
@@ -287,7 +287,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   err_remove_dev_groups:
  	device_remove_groups(dev, dev->groups);
   err_remove_type_groups:
-@@ -1234,6 +1324,8 @@ static void device_remove_attrs(struct d
+@@ -1249,6 +1339,8 @@ static void device_remove_attrs(struct d
  	struct class *class = dev->class;
  	const struct device_type *type = dev->type;
  
@@ -509,7 +509,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
   * @dma_pfn_offset: offset of DMA memory range relatively of RAM
   * @dma_parms:	A low level driver may set these to teach IOMMU code about
   * 		segment limitations.
-@@ -930,6 +938,7 @@ struct device {
+@@ -931,6 +939,7 @@ struct device {
  					     not all hardware supports
  					     64 bit addresses for consistent
  					     allocations such descriptors. */
@@ -517,7 +517,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	unsigned long	dma_pfn_offset;
  
  	struct device_dma_parameters *dma_parms;
-@@ -1268,6 +1277,7 @@ extern const char *dev_driver_string(con
+@@ -1269,6 +1278,7 @@ extern const char *dev_driver_string(con
  struct device_link *device_link_add(struct device *consumer,
  				    struct device *supplier, u32 flags);
  void device_link_del(struct device_link *link);
@@ -539,7 +539,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -2349,7 +2349,8 @@ int register_netdevice_notifier(struct n
+@@ -2351,7 +2351,8 @@ int register_netdevice_notifier(struct n
  int unregister_netdevice_notifier(struct notifier_block *nb);
  
  struct netdev_notifier_info {
@@ -549,7 +549,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  };
  
  struct netdev_notifier_info_ext {
-@@ -2381,6 +2382,7 @@ static inline void netdev_notifier_info_
+@@ -2383,6 +2384,7 @@ static inline void netdev_notifier_info_
  					     struct net_device *dev)
  {
  	info->dev = dev;
@@ -557,7 +557,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  static inline struct net_device *
-@@ -2389,6 +2391,12 @@ netdev_notifier_info_to_dev(const struct
+@@ -2391,6 +2393,12 @@ netdev_notifier_info_to_dev(const struct
  	return info->dev;
  }
  
@@ -580,7 +580,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  void  __kfree_skb(struct sk_buff *skb);
  extern struct kmem_cache *skbuff_head_cache;
  
-@@ -3315,6 +3316,7 @@ static inline void skb_free_datagram_loc
+@@ -3353,6 +3354,7 @@ static inline void skb_free_datagram_loc
  }
  int skb_kill_datagram(struct sock *sk, struct sk_buff *skb, unsigned int flags);
  int skb_copy_bits(const struct sk_buff *skb, int offset, void *to, int len);
@@ -623,7 +623,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  EXPORT_SYMBOL(dma_noop_ops);
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -4366,8 +4366,14 @@ void page_frag_free(void *addr)
+@@ -4373,8 +4373,14 @@ void page_frag_free(void *addr)
  {
  	struct page *page = virt_to_head_page(addr);
  
@@ -642,7 +642,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -162,7 +162,6 @@ static struct list_head offload_base __r
+@@ -163,7 +163,6 @@ static struct list_head offload_base __r
  
  static int netif_rx_internal(struct sk_buff *skb);
  static int call_netdevice_notifiers_info(unsigned long val,
@@ -650,7 +650,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  					 struct netdev_notifier_info *info);
  static struct napi_struct *napi_by_id(unsigned int napi_id);
  
-@@ -1312,10 +1311,11 @@ EXPORT_SYMBOL(netdev_features_change);
+@@ -1308,10 +1307,11 @@ EXPORT_SYMBOL(netdev_features_change);
  void netdev_state_change(struct net_device *dev)
  {
  	if (dev->flags & IFF_UP) {
@@ -665,7 +665,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  					      &change_info.info);
  		rtmsg_ifinfo(RTM_NEWLINK, dev, 0, GFP_KERNEL);
  	}
-@@ -1536,9 +1536,10 @@ EXPORT_SYMBOL(dev_disable_lro);
+@@ -1532,9 +1532,10 @@ EXPORT_SYMBOL(dev_disable_lro);
  static int call_netdevice_notifier(struct notifier_block *nb, unsigned long val,
  				   struct net_device *dev)
  {
@@ -678,7 +678,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return nb->notifier_call(nb, val, &info);
  }
  
-@@ -1663,11 +1664,9 @@ EXPORT_SYMBOL(unregister_netdevice_notif
+@@ -1659,11 +1660,9 @@ EXPORT_SYMBOL(unregister_netdevice_notif
   */
  
  static int call_netdevice_notifiers_info(unsigned long val,
@@ -690,7 +690,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	return raw_notifier_call_chain(&netdev_chain, val, info);
  }
  
-@@ -1682,9 +1681,11 @@ static int call_netdevice_notifiers_info
+@@ -1678,9 +1677,11 @@ static int call_netdevice_notifiers_info
  
  int call_netdevice_notifiers(unsigned long val, struct net_device *dev)
  {
@@ -704,7 +704,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  EXPORT_SYMBOL(call_netdevice_notifiers);
  
-@@ -1707,7 +1708,7 @@ static int call_netdevice_notifiers_mtu(
+@@ -1703,7 +1704,7 @@ static int call_netdevice_notifiers_mtu(
  
  	BUILD_BUG_ON(offsetof(struct netdev_notifier_info_ext, info) != 0);
  
@@ -713,7 +713,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  }
  
  #ifdef CONFIG_NET_INGRESS
-@@ -6342,7 +6343,15 @@ static int __netdev_upper_dev_link(struc
+@@ -6347,7 +6348,15 @@ static int __netdev_upper_dev_link(struc
  				   struct net_device *upper_dev, bool master,
  				   void *upper_priv, void *upper_info)
  {
@@ -730,7 +730,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	int ret = 0;
  
  	ASSERT_RTNL();
-@@ -6360,12 +6369,7 @@ static int __netdev_upper_dev_link(struc
+@@ -6365,12 +6374,7 @@ static int __netdev_upper_dev_link(struc
  	if (master && netdev_master_upper_dev_get(dev))
  		return -EBUSY;
  
@@ -744,7 +744,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  					    &changeupper_info.info);
  	ret = notifier_to_errno(ret);
  	if (ret)
-@@ -6377,7 +6381,7 @@ static int __netdev_upper_dev_link(struc
+@@ -6382,7 +6386,7 @@ static int __netdev_upper_dev_link(struc
  		return ret;
  
  	netdev_update_addr_mask(dev);
@@ -753,7 +753,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  					    &changeupper_info.info);
  	ret = notifier_to_errno(ret);
  	if (ret)
-@@ -6441,21 +6445,25 @@ EXPORT_SYMBOL(netdev_master_upper_dev_li
+@@ -6446,21 +6450,25 @@ EXPORT_SYMBOL(netdev_master_upper_dev_li
  void netdev_upper_dev_unlink(struct net_device *dev,
  			     struct net_device *upper_dev)
  {
@@ -784,7 +784,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  				      &changeupper_info.info);
  }
  EXPORT_SYMBOL(netdev_upper_dev_unlink);
-@@ -6471,11 +6479,13 @@ EXPORT_SYMBOL(netdev_upper_dev_unlink);
+@@ -6476,11 +6484,13 @@ EXPORT_SYMBOL(netdev_upper_dev_unlink);
  void netdev_bonding_info_change(struct net_device *dev,
  				struct netdev_bonding_info *bonding_info)
  {
@@ -800,7 +800,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  				      &info.info);
  }
  EXPORT_SYMBOL(netdev_bonding_info_change);
-@@ -6601,11 +6611,13 @@ EXPORT_SYMBOL(dev_get_nest_level);
+@@ -6606,11 +6616,13 @@ EXPORT_SYMBOL(dev_get_nest_level);
  void netdev_lower_state_changed(struct net_device *lower_dev,
  				void *lower_state_info)
  {
@@ -816,7 +816,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  				      &changelowerstate_info.info);
  }
  EXPORT_SYMBOL(netdev_lower_state_changed);
-@@ -6896,11 +6908,14 @@ void __dev_notify_flags(struct net_devic
+@@ -6901,11 +6913,14 @@ void __dev_notify_flags(struct net_devic
  
  	if (dev->flags & IFF_UP &&
  	    (changes & ~(IFF_UP | IFF_PROMISC | IFF_ALLMULTI | IFF_VOLATILE))) {
@@ -837,7 +837,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -803,6 +803,32 @@ void napi_consume_skb(struct sk_buff *sk
+@@ -812,6 +812,32 @@ void napi_consume_skb(struct sk_buff *sk
  }
  EXPORT_SYMBOL(napi_consume_skb);
  
@@ -870,7 +870,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  /* Make sure a field is enclosed inside headers_start/headers_end section */
  #define CHECK_SKB_FIELD(field) \
  	BUILD_BUG_ON(offsetof(struct sk_buff, field) <		\
-@@ -1322,7 +1348,7 @@ static void skb_headers_offset_update(st
+@@ -1331,7 +1357,7 @@ static void skb_headers_offset_update(st
  	skb->inner_mac_header += off;
  }
  
@@ -879,7 +879,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  {
  	__copy_skb_header(new, old);
  
-@@ -1330,6 +1356,7 @@ static void copy_skb_header(struct sk_bu
+@@ -1339,6 +1365,7 @@ static void copy_skb_header(struct sk_bu
  	skb_shinfo(new)->gso_segs = skb_shinfo(old)->gso_segs;
  	skb_shinfo(new)->gso_type = skb_shinfo(old)->gso_type;
  }

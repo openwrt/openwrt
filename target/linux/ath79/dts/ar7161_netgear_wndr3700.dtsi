@@ -14,10 +14,6 @@
 		led-upgrade = &power_orange;
 	};
 
-	chosen {
-		bootargs = "console=ttyS0,115200";
-	};
-
 	extosc: ref {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
@@ -158,6 +154,25 @@
 		qca,no-eeprom;
 		#gpio-cells = <2>;
 		gpio-controller;
+
+		/* all WNDR3700 variants have four antennae dedicated
+		 * to the 2.4GHz radio. Two antennae are available for
+		 * each chain. The following configuration is the
+		 * default setting which taken from the vendor's wifi
+		 * code for that radio.
+		 *
+		 * All possible options [GPIO6,GPIO7,GPIO8,GPIO9]:
+		 *	[0,1,0,1], [0,1,1,0], [1,0,0,1], [1,0,1,0]
+		 */
+		antenna-demux {
+			gpio-hog;
+			line-name = "fixed antenna group 1";
+			gpios = <6 GPIO_ACTIVE_LOW>,
+				<7 GPIO_ACTIVE_HIGH>,
+				<8 GPIO_ACTIVE_LOW>,
+				<9 GPIO_ACTIVE_HIGH>;
+			output-high;
+		};
 	};
 
 	ath9k1: wifi@0,12 {

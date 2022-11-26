@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1508,7 +1508,15 @@ static void sta_ps_start(struct sta_info
+@@ -1507,7 +1507,15 @@ static void sta_ps_start(struct sta_info
  		return;
  
  	for (tid = 0; tid < ARRAY_SIZE(sta->sta.txq); tid++) {

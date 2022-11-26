@@ -406,7 +406,7 @@
  	if (!cpu_has_ic_fills_f_dc) {
  		if (dc_lsize)
  			vaddr ? flush_dcache_line(addr & ~(dc_lsize - 1))
-@@ -1880,6 +1894,17 @@ static void coherency_setup(void)
+@@ -1884,6 +1898,17 @@ static void coherency_setup(void)
  	 * silly idea of putting something else there ...
  	 */
  	switch (current_cpu_type()) {
@@ -424,7 +424,7 @@
  	case CPU_R4000PC:
  	case CPU_R4000SC:
  	case CPU_R4000MC:
-@@ -1926,6 +1951,15 @@ void r4k_cache_init(void)
+@@ -1930,6 +1955,15 @@ void r4k_cache_init(void)
  	extern void build_copy_page(void);
  	struct cpuinfo_mips *c = &current_cpu_data;
  
@@ -440,7 +440,7 @@
  	probe_pcache();
  	probe_vcache();
  	setup_scache();
-@@ -2004,7 +2038,15 @@ void r4k_cache_init(void)
+@@ -2008,7 +2042,15 @@ void r4k_cache_init(void)
  	 */
  	local_r4k___flush_cache_all(NULL);
  

@@ -631,7 +631,6 @@ define Device/tplink_c2-v1
   TPLINK_FLASHLAYOUT := 8Mmtk
   TPLINK_HWID := 0xc7500001
   TPLINK_HWREV := 50
-  IMAGES += factory.bin
   DEVICE_TITLE := TP-Link Archer C2 v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-switch-rtl8366-smi kmod-switch-rtl8367b
 endef
@@ -644,7 +643,6 @@ define Device/tplink_c20-v1
   TPLINK_HWID := 0xc2000001
   TPLINK_HWREV := 0x44
   TPLINK_HWREVADD := 0x1
-  IMAGES += factory.bin
   DEVICE_TITLE := TP-Link ArcherC20 v1
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 endef

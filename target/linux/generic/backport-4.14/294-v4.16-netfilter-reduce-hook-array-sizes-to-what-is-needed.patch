@@ -64,7 +64,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		return net->nf.hooks_decnet + reg->hooknum;
  	default:
  		WARN_ON_ONCE(1);
-@@ -549,21 +559,21 @@ void (*nf_nat_decode_session_hook)(struc
+@@ -550,21 +560,21 @@ void (*nf_nat_decode_session_hook)(struc
  EXPORT_SYMBOL(nf_nat_decode_session_hook);
  #endif
  

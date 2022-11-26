@@ -50,7 +50,7 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  		dev_err(qup->dev, "normal trans timed out\n");
  		ret = -ETIMEDOUT;
  	}
-@@ -1605,6 +1610,8 @@ nodma:
+@@ -1606,6 +1611,8 @@ nodma:
  	 */
  	one_bit_t = (USEC_PER_SEC / clk_freq) + 1;
  	qup->one_byte_t = one_bit_t * 9;

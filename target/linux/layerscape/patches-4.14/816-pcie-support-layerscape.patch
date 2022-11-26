@@ -3128,7 +3128,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	/* Parse and map our Configuration Space windows */
 --- a/drivers/pci/host/pcie-xilinx-nwl.c
 +++ b/drivers/pci/host/pcie-xilinx-nwl.c
-@@ -778,16 +778,7 @@ static int nwl_pcie_parse_dt(struct nwl_
+@@ -780,16 +780,7 @@ static int nwl_pcie_parse_dt(struct nwl_
  			     struct platform_device *pdev)
  {
  	struct device *dev = pcie->dev;
@@ -5604,9 +5604,9 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	 * them, we have to fall back to INTx or other interrupts, e.g., a
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -3394,6 +3394,13 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_A
- DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x0033, quirk_no_bus_reset);
- DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_ATHEROS, 0x0034, quirk_no_bus_reset);
+@@ -3432,6 +3432,13 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_A
+  */
+ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_TI, 0xb005, quirk_no_bus_reset);
  
 +/*
 + * NXP (Freescale Vendor ID) LS1088 chips do not behave correctly after
@@ -5618,18 +5618,6 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static void quirk_no_pm_reset(struct pci_dev *dev)
  {
  	/*
-@@ -4918,3 +4925,11 @@ static void quirk_no_ats(struct pci_dev
- DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_ATI, 0x98e4, quirk_no_ats);
- DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_ATI, 0x6900, quirk_no_ats);
- #endif /* CONFIG_PCI_ATS */
-+
-+/* Freescale PCIe doesn't support MSI in RC mode */
-+static void quirk_fsl_no_msi(struct pci_dev *pdev)
-+{
-+	if (pci_pcie_type(pdev) == PCI_EXP_TYPE_ROOT_PORT)
-+		pdev->no_msi = 1;
-+}
-+DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_FREESCALE, PCI_ANY_ID, quirk_fsl_no_msi);
 --- a/include/linux/pci-ep-cfs.h
 +++ b/include/linux/pci-ep-cfs.h
 @@ -1,12 +1,9 @@
@@ -5820,7 +5808,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct pci_epc		*epc;
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1946,6 +1946,7 @@ void pcibios_release_device(struct pci_d
+@@ -1947,6 +1947,7 @@ void pcibios_release_device(struct pci_d
  void pcibios_penalize_isa_irq(int irq, int active);
  int pcibios_alloc_irq(struct pci_dev *dev);
  void pcibios_free_irq(struct pci_dev *dev);

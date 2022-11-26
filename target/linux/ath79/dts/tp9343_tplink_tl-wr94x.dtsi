@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "tp9343_tplink_tl-wx.dtsi"
+
+/ {
+	keys {
+		compatible = "gpio-keys";
+
+		wifi_button {
+			label = "WiFi button";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		reset_button {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+};

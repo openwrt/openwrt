@@ -4,6 +4,7 @@ define Device/globalscale_espressobin
   $(call Device/Default-arm64)
   DEVICE_TITLE := ESPRESSObin (Marvell Armada 3700 Community Board)
   DEVICE_DTS := armada-3720-espressobin
+  BOOT_SCRIPT := espressobin
 endef
 TARGET_DEVICES += globalscale_espressobin
 
@@ -11,6 +12,7 @@ define Device/globalscale_espressobin-emmc
   $(call Device/Default-arm64)
   DEVICE_TITLE := ESPRESSObin eMMC (Marvell Armada 3700 Community Board)
   DEVICE_DTS := armada-3720-espressobin-emmc
+  BOOT_SCRIPT := espressobin
 endef
 TARGET_DEVICES += globalscale_espressobin-emmc
 
@@ -18,6 +20,7 @@ define Device/globalscale_espressobin-v7
   $(call Device/Default-arm64)
   DEVICE_TITLE := ESPRESSObin V7 (Marvell Armada 3700 Community Board)
   DEVICE_DTS := armada-3720-espressobin-v7
+  BOOT_SCRIPT := espressobin
 endef
 TARGET_DEVICES += globalscale_espressobin-v7
 
@@ -25,6 +28,7 @@ define Device/globalscale_espressobin-v7-emmc
   $(call Device/Default-arm64)
   DEVICE_TITLE := ESPRESSObin V7 eMMC (Marvell Armada 3700 Community Board)
   DEVICE_DTS := armada-3720-espressobin-v7-emmc
+  BOOT_SCRIPT := espressobin
 endef
 TARGET_DEVICES += globalscale_espressobin-v7-emmc
 

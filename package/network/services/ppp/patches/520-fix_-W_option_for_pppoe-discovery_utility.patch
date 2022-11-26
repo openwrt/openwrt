@@ -1,0 +1,60 @@
+From 22d9c14ae3930fe10f26bafc3eab45e3a17eb3fa Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>
+Date: Sun, 19 Jul 2020 11:55:43 +0200
+Subject: [PATCH] Fix -W option for pppoe-discovery utility
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+pppoe-discovery's -W option is totally broken. pppoe-discovery currently
+expects that Host-Unique attribute equals to its own process pid if set.
+
+This patch fixes parsing received PPPoE PADO packets when -W option is set.
+Same implementation is in pppd pppoe plugin.
+
+Signed-off-by: Pali Rohár <pali@kernel.org>
+---
+ pppd/plugins/rp-pppoe/pppoe-discovery.c | 18 +++++++-----------
+ 1 file changed, 7 insertions(+), 11 deletions(-)
+
+--- a/pppd/plugins/rp-pppoe/pppoe-discovery.c
++++ b/pppd/plugins/rp-pppoe/pppoe-discovery.c
+@@ -327,14 +327,10 @@ void
+ parseForHostUniq(UINT16_t type, UINT16_t len, unsigned char *data,
+ 		 void *extra)
+ {
+-    int *val = (int *) extra;
+-    if (type == TAG_HOST_UNIQ && len == sizeof(pid_t)) {
+-	pid_t tmp;
+-	memcpy(&tmp, data, len);
+-	if (tmp == getpid()) {
+-	    *val = 1;
+-	}
+-    }
++    PPPoETag *tag = extra;
++
++    if (type == TAG_HOST_UNIQ && len == ntohs(tag->length))
++	tag->length = memcmp(data, tag->payload, len);
+ }
+ 
+ /**********************************************************************
+@@ -351,7 +347,7 @@ parseForHostUniq(UINT16_t type, UINT16_t
+ int
+ packetIsForMe(PPPoEConnection *conn, PPPoEPacket *packet)
+ {
+-    int forMe = 0;
++    PPPoETag hostUniq = conn->hostUniq;
+ 
+     /* If packet is not directed to our MAC address, forget it */
+     if (memcmp(packet->ethHdr.h_dest, conn->myEth, ETH_ALEN)) return 0;
+@@ -359,8 +355,8 @@ packetIsForMe(PPPoEConnection *conn, PPP
+     /* If we're not using the Host-Unique tag, then accept the packet */
+     if (!conn->hostUniq.length) return 1;
+ 
+-    parsePacket(packet, parseForHostUniq, &forMe);
+-    return forMe;
++    parsePacket(packet, parseForHostUniq, &hostUniq);
++    return !hostUniq.length;
+ }
+ 
+ /**********************************************************************
