@@ -40,7 +40,7 @@ define KernelPackage/mt76-default
   SUBMENU:=Wireless Drivers
   DEPENDS:= \
 	+kmod-mac80211 \
-	+@DRIVER_11AC_SUPPORT +@DRIVER_11N_SUPPORT
+	+@DRIVER_11AC_SUPPORT
 endef
 
 define KernelPackage/mt76
