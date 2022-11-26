@@ -75,10 +75,23 @@ define Device/amit_jboot
   DEVICE_PACKAGES := jboot-tools kmod-usb2 kmod-usb-ohci
 endef
 
+define Device/ampedwireless_b1200ex
+  SOC := mt7620a
+  DEVICE_VENDOR := Amped Wireless
+  DEVICE_MODEL := B1200EX
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7744k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m RN10 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek
+endef
+TARGET_DEVICES += ampedwireless_b1200ex
+
 define Device/asus_rp-n53
   SOC := mt7620a
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RP-N53
   DEVICE_PACKAGES := kmod-rt2800-pci
   SUPPORTED_DEVICES += rp-n53
@@ -88,7 +101,7 @@ TARGET_DEVICES += asus_rp-n53
 define Device/asus_rt-ac51u
   SOC := mt7620a
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC51U
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
@@ -99,7 +112,7 @@ TARGET_DEVICES += asus_rt-ac51u
 define Device/asus_rt-ac54u
   SOC := mt7620a
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC54U
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
@@ -109,7 +122,7 @@ TARGET_DEVICES += asus_rt-ac54u
 define Device/asus_rt-n12p
   SOC := mt7620n
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N11P/RT-N12+/RT-N12Eb1
   SUPPORTED_DEVICES += rt-n12p
 endef
@@ -118,7 +131,7 @@ TARGET_DEVICES += asus_rt-n12p
 define Device/asus_rt-n14u
   SOC := mt7620n
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N14u
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
   SUPPORTED_DEVICES += rt-n14u
@@ -1273,6 +1286,18 @@ define Device/xiaomi_miwifi-mini
 endef
 TARGET_DEVICES += xiaomi_miwifi-mini
 
+define Device/youku_x2
+  SOC := mt7620a
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Youku
+  DEVICE_MODEL := X2
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
+	kmod-sdhci-mt7620 kmod-usb-ledtrig-usbport
+  UIMAGE_MAGIC := 0x12291000
+  UIMAGE_NAME := 400000000000000000001000
+endef
+TARGET_DEVICES += youku_x2
+
 define Device/youku_yk-l1
   SOC := mt7620a
   IMAGE_SIZE := 32448k
@@ -1281,6 +1306,8 @@ define Device/youku_yk-l1
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
 	kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += youku-yk1 youku,yk1
+  UIMAGE_MAGIC := 0x12291000
+  UIMAGE_NAME := 400000000000000000000000
 endef
 TARGET_DEVICES += youku_yk-l1
 
@@ -1291,6 +1318,8 @@ define Device/youku_yk-l1c
   DEVICE_MODEL := YK-L1c
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
 	kmod-usb-ledtrig-usbport
+  UIMAGE_MAGIC := 0x12291000
+  UIMAGE_NAME := 400000000000000000000000
 endef
 TARGET_DEVICES += youku_yk-l1c
 

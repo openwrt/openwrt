@@ -4,28 +4,28 @@ DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
 
 define Device/FitImage
-	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL_SUFFIX := -uImage.itb
 	KERNEL = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
 endef
 
 define Device/FitImageLzma
-	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL_SUFFIX := -uImage.itb
 	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
 endef
 
 define Device/FitzImage
-	KERNEL_SUFFIX := -fit-zImage.itb
+	KERNEL_SUFFIX := -zImage.itb
 	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL_NAME := zImage
 endef
 
 define Device/UbiFit
 	KERNEL_IN_UBI := 1
-	IMAGES := nand-factory.ubi nand-sysupgrade.bin
-	IMAGE/nand-factory.ubi := append-ubi
-	IMAGE/nand-sysupgrade.bin := sysupgrade-tar | append-metadata
+	IMAGES := factory.ubi sysupgrade.bin
+	IMAGE/factory.ubi := append-ubi
+	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
 define Device/DniImage
@@ -160,8 +160,8 @@ define Device/alfa-network_ap120c-ac
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	IMAGE_SIZE := 65536k
-	IMAGES := nand-factory.bin nand-sysupgrade.bin
-	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+	IMAGES := factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
 endef
 TARGET_DEVICES += alfa-network_ap120c-ac
 
@@ -312,14 +312,14 @@ endef
 #TARGET_DEVICES += buffalo_wtr-m2133hp
 
 define Device/cellc_rtl30vw
-	KERNEL_SUFFIX := -fit-zImage.itb
+	KERNEL_SUFFIX := -zImage.itb
 	KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
 	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb | uImage lzma | pad-to 2048
 	KERNEL_NAME := zImage
 	KERNEL_IN_UBI :=
-	IMAGES := nand-factory.bin nand-sysupgrade.bin
-	IMAGE/nand-factory.bin := append-rootfshdr kernel | append-ubi | qsdk-ipq-factory-nand-askey kernel
-	IMAGE/nand-sysupgrade.bin := append-rootfshdr kernel | sysupgrade-tar kernel=$$$$@.kernel | append-metadata
+	IMAGES := factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-rootfshdr kernel | append-ubi | qsdk-ipq-factory-nand-askey kernel
+	IMAGE/sysupgrade.bin := append-rootfshdr kernel | sysupgrade-tar kernel=$$$$@.kernel | append-metadata
 	DEVICE_VENDOR := Cell C
 	DEVICE_MODEL := RTL30VW
 	SOC := qcom-ipq4019
@@ -419,8 +419,7 @@ define Device/dlink_dap-2610
 	IMAGE/factory.bin    := append-kernel | pad-offset 6144k 160 | append-rootfs | wrgg-image | check-size
 	IMAGE/sysupgrade.bin := append-kernel | wrgg-image | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += dlink_dap-2610
+TARGET_DEVICES += dlink_dap-2610
 
 define Device/edgecore_ecw5211
 	$(call Device/FitImage)
@@ -443,7 +442,7 @@ define Device/edgecore_oap100
 	SOC := qcom-ipq4019
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	IMAGES := nand-sysupgrade.bin
+	IMAGES := sysupgrade.bin
 	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
 	DEVICE_PACKAGES := ipq-wifi-edgecore_oap100 kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-qmi uqmi
 endef
@@ -564,6 +563,20 @@ define Device/ezviz_cs-w3-wd1200g-eup
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += ezviz_cs-w3-wd1200g-eup
+
+define Device/glinet_gl-a1300
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := GL.iNet
+	DEVICE_MODEL := GL-A1300
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE_SIZE := 131072k
+	DEVICE_PACKAGE := ipq-wifi-glinet_gl-a1300
+endef
+TARGET_DEVICES += glinet_gl-a1300
 
 define Device/glinet_gl-ap1300
 	$(call Device/FitImage)
@@ -856,8 +869,8 @@ define Device/netgear_wac510
 	DEVICE_DTS_CONFIG := config@5
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	IMAGES += nand-factory.tar
-	IMAGE/nand-factory.tar := append-ubi | wac5xx-netgear-tar
+	IMAGES += factory.tar
+	IMAGE/factory.tar := append-ubi | wac5xx-netgear-tar
 	DEVICE_PACKAGES := uboot-envtools
 endef
 TARGET_DEVICES += netgear_wac510
@@ -875,8 +888,7 @@ define Device/openmesh_a42
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=A42
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += openmesh_a42
+TARGET_DEVICES += openmesh_a42
 
 define Device/openmesh_a62
 	$(call Device/FitImageLzma)
@@ -892,8 +904,7 @@ define Device/openmesh_a62
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += openmesh_a62
+TARGET_DEVICES += openmesh_a62
 
 define Device/p2w_r619ac
 	$(call Device/FitzImage)
@@ -910,8 +921,8 @@ endef
 define Device/p2w_r619ac-64m
 	$(call Device/p2w_r619ac)
 	DEVICE_VARIANT := 64M NAND
-	IMAGES += nand-factory.bin
-	IMAGE/nand-factory.bin := append-ubi | qsdk-ipq-factory-nand
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
 endef
 TARGET_DEVICES += p2w_r619ac-64m
 
@@ -947,8 +958,7 @@ define Device/plasmacloud_pa1200
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | openmesh-image ce_type=PA1200
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += plasmacloud_pa1200
+TARGET_DEVICES += plasmacloud_pa1200
 
 define Device/plasmacloud_pa2200
 	$(call Device/FitImageLzma)
@@ -964,8 +974,7 @@ define Device/plasmacloud_pa2200
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += plasmacloud_pa2200
+TARGET_DEVICES += plasmacloud_pa2200
 
 define Device/qcom_ap-dk01.1-c1
 	DEVICE_VENDOR := Qualcomm Atheros
@@ -1055,7 +1064,7 @@ define Device/teltonika_rutx10
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	FILESYSTEMS := squashfs
-	IMAGE/nand-factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
+	IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
 	DEVICE_PACKAGES := ipq-wifi-teltonika_rutx kmod-bluetooth
 endef
 # Missing DSA Setup

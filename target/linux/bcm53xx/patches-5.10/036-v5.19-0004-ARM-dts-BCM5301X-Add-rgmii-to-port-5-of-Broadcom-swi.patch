@@ -1,0 +1,29 @@
+From 4b7a67420a34ebd8fbf0111221a8bfd8001d418d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ar=C4=B1n=C3=A7=20=C3=9CNAL?= <arinc.unal@arinc9.com>
+Date: Fri, 1 Apr 2022 13:20:00 +0300
+Subject: [PATCH] ARM: dts: BCM5301X: Add rgmii to port@5 of Broadcom switch on
+ Asus RT-AC88U
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Define phy-mode of the Broadcom switch's port@5 as rgmii. This doesn't seem
+to matter but let's explicitly define it since phy-mode as rgmii is defined
+on the other side which is port@6 of the Realtek switch.
+
+Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm/boot/dts/bcm47094-asus-rt-ac88u.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/boot/dts/bcm47094-asus-rt-ac88u.dts
++++ b/arch/arm/boot/dts/bcm47094-asus-rt-ac88u.dts
+@@ -205,6 +205,7 @@
+ 		sw0_p5: port@5 {
+ 			reg = <5>;
+ 			label = "extsw";
++			phy-mode = "rgmii";
+ 
+ 			fixed-link {
+ 				speed = <1000>;

@@ -32,7 +32,8 @@ ampedwireless,ally-r1900k)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000" "4"
 	;;
 beeline,smartbox-giga|\
-beeline,smartbox-turbo)
+beeline,smartbox-turbo|\
+rostelecom,rt-sf-1)
 	ubootenv_add_uci_config "/dev/mtd0" "0x80000" "0x1000" "0x20000"
 	;;
 buffalo,wsr-1166dhp|\
@@ -55,6 +56,11 @@ jcg,q20|\
 linksys,e7350|\
 netgear,wax202)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	;;
+haier,har-20s2u1|\
+sim,simax1800t)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	ubootenv_add_uci_sys_config "/dev/mtd1" "0x40000" "0x40000" "0x20000"
 	;;
 hootoo,ht-tm05|\
 ravpower,rp-wd03)

@@ -89,12 +89,6 @@ case "$FIRMWARE" in
 	engenius,ecb600|\
 	mercury,mw4530r-v1|\
 	ocedo,raccoon|\
-	tplink,tl-wdr3500-v1|\
-	tplink,tl-wdr3600-v1|\
-	tplink,tl-wdr4300-v1|\
-	tplink,tl-wdr4300-v1-il|\
-	tplink,tl-wdr4310-v1|\
-	tplink,tl-wdr4900-v2|\
 	ubnt,unifi-ap-pro|\
 	watchguard,ap100|\
 	watchguard,ap200|\
@@ -160,7 +154,8 @@ case "$FIRMWARE" in
 	netgear,wndap360)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
-	dlink,dir-825-b1)
+	dlink,dir-825-b1|\
+	trendnet,tew-673gru)
 		caldata_extract "caldata" 0x1000 0xeb8
 		ath9k_patch_mac_crc $(mtd_get_mac_text "caldata" 0xffa0) 0x20c
 		;;
@@ -179,7 +174,8 @@ case "$FIRMWARE" in
 	netgear,wndap360)
 		caldata_extract "art" 0x5000 0xeb8
 		;;
-	dlink,dir-825-b1)
+	dlink,dir-825-b1|\
+	trendnet,tew-673gru)
 		caldata_extract "caldata" 0x5000 0xeb8
 		ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_text "caldata" 0xffb4) 1) 0x20c
 		;;
