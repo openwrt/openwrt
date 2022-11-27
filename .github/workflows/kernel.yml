@@ -25,6 +25,7 @@ jobs:
       target: ${{ steps.find_targets.outputs.target }}
       owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
       ccache_hash: ${{ steps.ccache_hash.outputs.ccache_hash }}
+      container_tag: ${{ steps.determine_tools_container.outputs.container_tag }}
 
     steps:
       - name: Checkout
@@ -36,6 +37,32 @@ jobs:
           OWNER_LC=$(echo "${{ github.repository_owner }}" \
             | tr '[:upper:]' '[:lower:]')
           echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
+
+      # Per branch tools container tag
+      # By default stick to latest
+      # For official test targetting openwrt stable branch
+      # Get the branch or parse the tag and push dedicated tools containers
+      - name: Determine tools container tag
+        id: determine_tools_container
+        run: |
+          CONTAINER_TAG=latest
+
+          if [ -n "${{ github.base_ref }}" ]; then
+            if echo "${{ github.base_ref }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]'; then
+              CONTAINER_TAG="${{ github.base_ref }}"
+            fi
+          elif [ ${{ github.ref_type }} == "branch" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]'; then
+              CONTAINER_TAG="${{ github.ref_name }}"
+            fi
+          elif [ ${{ github.ref_type }} == "tag" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E 'v[0-9][0-9]\.[0-9][0-9]\..+'; then
+              CONTAINER_TAG=openwrt-"$(echo ${{ github.ref_name }} | sed 's/v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
+            fi
+          fi
+
+          echo "Tools container to use tools:$CONTAINER_TAG"
+          echo "container_tag=$CONTAINER_TAG" >> $GITHUB_OUTPUT
 
       - name: Generate ccache hash
         id: ccache_hash
@@ -75,7 +102,7 @@ jobs:
        matrix:
          target: ${{fromJson(needs.determine_targets.outputs.target)}}
 
-    container: ghcr.io/${{ needs.determine_targets.outputs.owner_lc }}/tools:latest
+    container: ghcr.io/${{ needs.determine_targets.outputs.owner_lc }}/tools:${{ needs.determine_targets.outputs.container_tag }}
 
     permissions:
       contents: read
@@ -223,7 +250,7 @@ jobs:
        matrix:
          target: ${{fromJson(needs.determine_targets.outputs.target)}}
 
-    container: ghcr.io/${{ needs.determine_targets.outputs.owner_lc }}/tools:latest
+    container: ghcr.io/${{ needs.determine_targets.outputs.owner_lc }}/tools:${{ needs.determine_targets.outputs.container_tag }}
 
     permissions:
       contents: read
