@@ -41,7 +41,7 @@ Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -8607,6 +8607,65 @@ static void rt2800_r_calibration(struct
+@@ -8633,6 +8633,65 @@ static void rt2800_r_calibration(struct
  	rt2800_register_write(rt2x00dev, PWR_PIN_CFG, MAC_PWR_PIN_CFG);
  }
  
@@ -107,7 +107,7 @@ Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
  static void rt2800_bbp_core_soft_reset(struct rt2x00_dev *rt2x00dev,
  				       bool set_bw, bool is_ht40)
  {
-@@ -9216,6 +9275,7 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -9242,6 +9301,7 @@ static void rt2800_init_rfcsr_6352(struc
  
  	rt2800_r_calibration(rt2x00dev);
  	rt2800_rf_self_txdc_cal(rt2x00dev);

@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -4601,7 +4601,7 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4603,7 +4603,7 @@ static bool ieee80211_invoke_fast_rx(str
  
  	if (!(status->rx_flags & IEEE80211_RX_AMSDU)) {
  		if (!pskb_may_pull(skb, snap_offs + sizeof(*payload)))

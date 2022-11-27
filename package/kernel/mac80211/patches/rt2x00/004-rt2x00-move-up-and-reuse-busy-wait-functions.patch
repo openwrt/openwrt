@@ -120,7 +120,7 @@ Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
  
  	if (chan->center_freq > 2457) {
  		bbp = rt2800_bbp_read(rt2x00dev, 30);
-@@ -6249,46 +6282,6 @@ static int rt2800_init_registers(struct
+@@ -6275,46 +6308,6 @@ static int rt2800_init_registers(struct
  	return 0;
  }
  
@@ -167,7 +167,7 @@ Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
  
  static void rt2800_bbp4_mac_if_ctrl(struct rt2x00_dev *rt2x00dev)
  {
-@@ -9110,7 +9103,7 @@ int rt2800_enable_radio(struct rt2x00_de
+@@ -9136,7 +9129,7 @@ int rt2800_enable_radio(struct rt2x00_de
  	/*
  	 * Wait BBP/RF to wake up.
  	 */
