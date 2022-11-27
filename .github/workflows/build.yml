@@ -31,6 +31,7 @@ jobs:
     outputs:
       owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
       ccache_hash: ${{ steps.ccache_hash.outputs.ccache_hash }}
+      container_tag: ${{ steps.determine_tools_container.outputs.container_tag }}
 
     steps:
       - name: Checkout
@@ -50,12 +51,38 @@ jobs:
            | md5sum | awk '{ print $1 }')
           echo "ccache_hash=$CCACHE_HASH" >> $GITHUB_OUTPUT
 
+      # Per branch tools container tag
+      # By default stick to latest
+      # For official test targetting openwrt stable branch
+      # Get the branch or parse the tag and push dedicated tools containers
+      # For local test to use the correct container for stable release testing
+      # you need to use for the branch name a prefix of openwrt-[0-9][0-9].[0-9][0-9]-
+      - name: Determine tools container tag
+        id: determine_tools_container
+        run: |
+          CONTAINER_TAG=latest
+          if [ -n "${{ github.base_ref }}" ]; then
+            if echo "${{ github.base_ref }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]'; then
+              CONTAINER_TAG="${{ github.base_ref }}"
+            fi
+          elif [ ${{ github.ref_type }} == "branch" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]-'; then
+              CONTAINER_TAG="$(echo ${{ github.ref_name }} | sed 's/^\(openwrt-[0-9][0-9]\.[0-9][0-9]\)-.*/\1/')"
+            fi
+          elif [ ${{ github.ref_type }} == "tag" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E 'v[0-9][0-9]\.[0-9][0-9]\..+'; then
+              CONTAINER_TAG=openwrt-"$(echo ${{ github.ref_name }} | sed 's/v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
+            fi
+          fi
+          echo "Tools container to use tools:$CONTAINER_TAG"
+          echo "container_tag=$CONTAINER_TAG" >> $GITHUB_OUTPUT
+
   build:
     name: Build with external toolchain
     needs: setup_build
     runs-on: ubuntu-latest
 
-    container: ghcr.io/${{ needs.setup_build.outputs.owner_lc }}/tools:latest
+    container: ghcr.io/${{ needs.setup_build.outputs.owner_lc }}/tools:${{ needs.setup_build.outputs.container_tag }}
 
     permissions:
       contents: read
