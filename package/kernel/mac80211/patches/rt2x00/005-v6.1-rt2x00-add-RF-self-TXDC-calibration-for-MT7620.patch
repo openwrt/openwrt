@@ -42,7 +42,7 @@ v2: use ++i instead of i = i + 1 in loops
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -8428,6 +8428,53 @@ static void rt2800_init_rfcsr_5592(struc
+@@ -8454,6 +8454,53 @@ static void rt2800_init_rfcsr_5592(struc
  	rt2800_led_open_drain_enable(rt2x00dev);
  }
  
@@ -96,7 +96,7 @@ v2: use ++i instead of i = i + 1 in loops
  static void rt2800_bbp_core_soft_reset(struct rt2x00_dev *rt2x00dev,
  				       bool set_bw, bool is_ht40)
  {
-@@ -9035,6 +9082,7 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -9061,6 +9108,7 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
  
