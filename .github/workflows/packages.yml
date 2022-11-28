@@ -103,6 +103,7 @@ jobs:
 
       - name: Parse toolchain file
         working-directory: openwrt
+        id: parse-toolchain
         run: |
           TOOLCHAIN_PATH=snapshots
           if [ -n "${{ github.base_ref }}" ]; then
@@ -127,23 +128,37 @@ jobs:
             fi
           fi
 
-          TOOLCHAIN_STRING="$(curl "https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
-            | grep ".*openwrt-toolchain.*tar.xz")"
-          TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
-          TOOLCHAIN_SHA256=$(echo "$TOOLCHAIN_STRING" | cut -d ' ' -f 1)
+          SUMS_FILE="https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums"
+          if curl $SUMS_FILE | grep -q ".*openwrt-toolchain.*tar.xz"; then
+            TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*openwrt-toolchain.*tar.xz")"
+            TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
+            TOOLCHAIN_SHA256=$(echo "$TOOLCHAIN_STRING" | cut -d ' ' -f 1)
 
-          echo "TOOLCHAIN_FILE=$TOOLCHAIN_FILE" >> "$GITHUB_ENV"
-          echo "TOOLCHAIN_SHA256=$TOOLCHAIN_SHA256" >> "$GITHUB_ENV"
-          echo "TOOLCHAIN_PATH=$TOOLCHAIN_PATH" >> "$GITHUB_ENV"
+            echo "TOOLCHAIN_FILE=$TOOLCHAIN_FILE" >> "$GITHUB_ENV"
+            echo "TOOLCHAIN_SHA256=$TOOLCHAIN_SHA256" >> "$GITHUB_ENV"
+            echo "TOOLCHAIN_PATH=$TOOLCHAIN_PATH" >> "$GITHUB_ENV"
+            echo "toolchain-type=external_toolchain" >> $GITHUB_OUTPUT
+          elif curl $SUMS_FILE | grep -q ".*openwrt-sdk.*tar.xz"; then
+            TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*openwrt-sdk.*tar.xz")"
+            TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-sdk.*\).tar.xz/\1/p')
+            TOOLCHAIN_SHA256=$(echo "$TOOLCHAIN_STRING" | cut -d ' ' -f 1)
 
-      - name: Cache external toolchain
+            echo "TOOLCHAIN_FILE=$TOOLCHAIN_FILE" >> "$GITHUB_ENV"
+            echo "TOOLCHAIN_SHA256=$TOOLCHAIN_SHA256" >> "$GITHUB_ENV"
+            echo "TOOLCHAIN_PATH=$TOOLCHAIN_PATH" >> "$GITHUB_ENV"
+            echo "toolchain-type=external_sdk" >> $GITHUB_OUTPUT
+          else
+            echo "toolchain-type=internal" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cache external toolchain/sdk
         id: cache-external-toolchain
         uses: actions/cache@v3
         with:
           path: openwrt/${{ env.TOOLCHAIN_FILE }}
-          key: ${{ env.TOOLCHAIN_FILE }}-${{ env.TOOLCHAIN_SHA256 }}
+          key: ${{ env.TOOLCHAIN_FILE }}-${{ steps.parse-toolchain.outputs.toolchain-type }}-${{ env.TOOLCHAIN_SHA256 }}
 
-      - name: Download external toolchain
+      - name: Download external toolchain/sdk
         if: ${{ steps.cache-external-toolchain.outputs.cache-hit != 'true' }}
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
@@ -166,8 +181,23 @@ jobs:
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
 
+      - name: Setup toolchain with external toolchain
+        if: ${{ steps.parse-toolchain.outputs.toolchain-type == 'external_toolchain' }}
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
+            --overwrite-config \
+            --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
+
+      - name: Setup toolchain with external sdk
+        if: ${{ steps.parse-toolchain.outputs.toolchain-type == 'external_sdk' }}
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          ./scripts/ext-toolchain.sh \
+            --toolchain ${{ env.TOOLCHAIN_FILE }}/staging_dir/toolchain-* \
             --overwrite-config \
             --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
 
