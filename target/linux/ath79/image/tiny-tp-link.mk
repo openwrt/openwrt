@@ -234,6 +234,7 @@ define Device/tplink_tl-wpa8630p-v2
     so the JFFS2 settings partition MUST be reformatted to avoid data corruption. \
     Backup your settings before upgrading, then during sysupgrade, \
     de-select "Keep settings" and select "Force" to continue (equivilant to "sysupgrade -n -F").
+  DEFAULT := n
 endef
 
 define Device/tplink_tl-wpa8630p-v2-int
