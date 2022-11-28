@@ -64,8 +64,12 @@ Reviewed-by: Peter Chen <peter.chen@nxp.com>
  
 --- a/drivers/usb/dwc3/host.c
 +++ b/drivers/usb/dwc3/host.c
-@@ -11,6 +11,44 @@
+@@ -9,8 +9,48 @@
  
+ #include <linux/platform_device.h>
+ 
++#include "../host/xhci.h"
++
  #include "core.h"
  
 +#define XHCI_HCSPARAMS1		0x4
@@ -109,7 +113,7 @@ Reviewed-by: Peter Chen <peter.chen@nxp.com>
  static int dwc3_host_get_irq(struct dwc3 *dwc)
  {
  	struct platform_device	*dwc3_pdev = to_platform_device(dwc->dev);
-@@ -50,6 +88,13 @@ int dwc3_host_init(struct dwc3 *dwc)
+@@ -50,6 +90,13 @@ int dwc3_host_init(struct dwc3 *dwc)
  	struct platform_device	*dwc3_pdev = to_platform_device(dwc->dev);
  	int			prop_idx = 0;
  
