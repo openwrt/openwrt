@@ -145,13 +145,38 @@ jobs:
         if: inputs.build_toolchain == false
         working-directory: openwrt
         run: |
-          TOOLCHAIN_STRING="$(curl "https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
+          TOOLCHAIN_PATH=snapshots
+
+          if [ -n "${{ github.base_ref }}" ]; then
+            if echo "${{ github.base_ref }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]'; then
+              major_ver="$(echo ${{ github.base_ref }} | sed 's/openwrt-/v/')"
+            fi
+          elif [ "${{ github.ref_type }}" = "branch" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]-'; then
+              major_ver="$(echo ${{ github.ref_name }} | sed 's/openwrt-\([0-9][0-9]\.[0-9][0-9]\)-.*/v\1/')"
+            fi
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E 'v[0-9][0-9]\.[0-9][0-9]\..+'; then
+              major_ver="$(sed 's/\(v[0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
+            fi
+          fi
+
+          if [ -n "$major_ver" ]; then
+            git fetch --tags
+            latest_tag="$(git tag --sort=-creatordate -l $major_ver* | head -n1)"
+            if [ -n "$latest_tag" ]; then
+              TOOLCHAIN_PATH=releases/$(echo $latest_tag | sed 's/^v//')
+            fi
+          fi
+
+          TOOLCHAIN_STRING="$(curl "https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
             | grep ".*openwrt-toolchain.*tar.xz")"
           TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
           TOOLCHAIN_SHA256=$(echo "$TOOLCHAIN_STRING" | cut -d ' ' -f 1)
 
           echo "TOOLCHAIN_FILE=$TOOLCHAIN_FILE" >> "$GITHUB_ENV"
           echo "TOOLCHAIN_SHA256=$TOOLCHAIN_SHA256" >> "$GITHUB_ENV"
+          echo "TOOLCHAIN_PATH=$TOOLCHAIN_PATH" >> "$GITHUB_ENV"
 
       - name: Cache external toolchain
         if: inputs.build_toolchain == false
@@ -174,7 +199,7 @@ jobs:
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
-          wget -O - https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/${TOOLCHAIN_FILE}.tar.xz \
+          wget -O - https://downloads.cdn.openwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/${{ env.TOOLCHAIN_FILE }}.tar.xz \
             | tar --xz -xf -
 
       - name: Extract prebuilt tools
