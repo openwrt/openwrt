@@ -44,7 +44,22 @@ Reviewed-by: Peter Chen <peter.chen@nxp.com>
  
 --- a/drivers/usb/dwc3/core.h
 +++ b/drivers/usb/dwc3/core.h
-@@ -1049,6 +1049,8 @@ struct dwc3_scratchpad_array {
+@@ -617,6 +617,14 @@
+ #define DWC3_OSTS_VBUSVLD		BIT(1)
+ #define DWC3_OSTS_CONIDSTS		BIT(0)
+ 
++/* Partial XHCI Register and Bit fields for quirk */
++#define XHCI_HCSPARAMS1		0x4
++#define XHCI_PORTSC_BASE	0x400
++#define PORT_POWER			(1 << 9)
++#define HCS_MAX_PORTS(p)	(((p) >> 24) & 0x7f)
++#define XHCI_HC_LENGTH(p)	(((p)>>00)&0x00ff)
++#define HC_LENGTH(p)		XHCI_HC_LENGTH(p)
++
+ /* Structures */
+ 
+ struct dwc3_trb;
+@@ -1049,6 +1057,8 @@ struct dwc3_scratchpad_array {
   * 	3	- Reserved
   * @dis_metastability_quirk: set to disable metastability quirk.
   * @dis_split_quirk: set to disable split boundary.
@@ -53,7 +68,7 @@ Reviewed-by: Peter Chen <peter.chen@nxp.com>
   * @imod_interval: set the interrupt moderation interval in 250ns
   *                 increments or 0 to disable.
   */
-@@ -1245,6 +1247,8 @@ struct dwc3 {
+@@ -1245,6 +1255,8 @@ struct dwc3 {
  
  	unsigned		dis_split_quirk:1;
  
