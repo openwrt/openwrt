@@ -127,8 +127,6 @@ jobs:
             fi
           fi
 
-          echo curl "https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums"
-
           TOOLCHAIN_STRING="$(curl "https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
             | grep ".*openwrt-toolchain.*tar.xz")"
           TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
