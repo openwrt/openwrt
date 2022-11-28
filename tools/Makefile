@@ -70,22 +70,35 @@ tools-y += util-linux
 tools-y += xz
 tools-y += zip
 tools-y += zlib
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS),y) += liblzo
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_B43_TOOLS),y) += b43-tools
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_BZIP2_TOOLS),y) += bzip2
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_ISL),y) += isl
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_LZ4_TOOLS),y) += lz4
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_LZO_TOOLS),y) += lzop
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_TOOLCHAIN),y) += gmp mpc mpfr
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini),y) += genext2fs
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_ath79),y) += lzma-old squashfs3-lzma
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_mxs),y) += elftosb sdimage
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_realtek),y) += 7z
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_tegra),y) += cbootimage cbootimage-configs
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USES_MINOR),y) += kernel2minor
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_SPARSE),y) += sparse
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_LLVM_BUILD),y) += llvm-bpf
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_MOLD),y) += mold
+
+# buildall list: every optional tool; should include everything in the next section
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS),y) += 7z b43-tools bzip2
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS),y) += cbootimage cbootimage-configs
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS),y) += elftosb genext2fs gmp isl
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS),y) += kernel2minor liblzo llvm-bpf
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS),y) += lzma-old lz4 lzop mold
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS),y) += mpc mpfr sdimage sparse squashfs3-lzma
+
+# buildoptional list: anything added here must be added in the previous section
+tools-$(if $(BUILD_B43_TOOLS),y) += b43-tools
+tools-$(if $(BUILD_BZIP2_TOOLS),y) += bzip2
+tools-$(if $(BUILD_ISL),y) += isl
+tools-$(if $(BUILD_LZ4_TOOLS),y) += lz4
+tools-$(if $(BUILD_LZO_TOOLS),y) += lzop
+tools-$(if $(BUILD_TOOLCHAIN),y) += gmp mpc mpfr
+tools-$(if $(CONFIG_TARGET_apm821xx),y) += genext2fs
+tools-$(if $(CONFIG_TARGET_ath79),y) += lzma-old squashfs3-lzma
+tools-$(if $(CONFIG_TARGET_gemini),y) += genext2fs
+tools-$(if $(CONFIG_TARGET_mxs),y) += elftosb sdimage
+tools-$(if $(CONFIG_TARGET_realtek),y) += 7z
+tools-$(if $(CONFIG_TARGET_tegra),y) += cbootimage cbootimage-configs
+tools-$(if $(CONFIG_USE_LLVM_BUILD),y) += llvm-bpf
+tools-$(if $(CONFIG_USE_MOLD),y) += mold
+tools-$(if $(CONFIG_USE_SPARSE),y) += sparse
+tools-$(if $(CONFIG_USES_MINOR),y) += kernel2minor
+
+# sort also removes duplicates, enabling the above multi-referencing
+tools-y:=$(sort $(tools-y))
 
 # builddir dependencies
 $(curdir)/autoconf/compile := $(curdir)/m4/compile
