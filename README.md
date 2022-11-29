@@ -34,6 +34,7 @@ cp feeds.conf.default feeds.conf
 packages into package/feeds/
 ```bash
 ./scripts/feeds install luci-base
+./scripts/feeds install luci-lib-base
 ./scripts/feeds install luci-compat
 ./scripts/feeds install luci-mod-status
 ./scripts/feeds install luci-mod-system
