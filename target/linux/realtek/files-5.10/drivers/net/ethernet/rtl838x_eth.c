@@ -1929,6 +1929,7 @@ static int rtnc_poll_rx(struct napi_struct *napi, int budget)
 {
 	struct rtnc_rx_q *rx_q = container_of(napi, struct rtnc_rx_q, napi);
 	struct rtnc_priv *priv = rx_q->priv;
+	unsigned long flags;
 	int work_done = 0;
 	int r = rx_q->id;
 	int work;
@@ -1941,14 +1942,16 @@ static int rtnc_poll_rx(struct napi_struct *napi, int budget)
 	}
 
 	if (work_done < budget && napi_complete_done(napi, work_done)) {
+		spin_lock_irqsave(&priv->lock, flags);
 		/* Enable RX interrupt */
 		if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
-			sw_w32(0xffffffff, priv->r->dma_if_intr_rx_done_msk);
+			sw_w32_mask(0, BIT(r), priv->r->dma_if_intr_rx_done_msk);
 		else {
-			sw_w32_mask(0, 0x000ff | BIT(r + 8), priv->r->dma_if_intr_msk);
+			sw_w32_mask(0, BIT(r + 8), priv->r->dma_if_intr_msk);
 			/* Avoid stalls during high load */
 			priv->r->update_cntr(r, 0);
 		}
+		spin_unlock_irqrestore(&priv->lock, flags);
 	}
 	return work_done;
 }
