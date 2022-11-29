@@ -230,7 +230,7 @@ define Device/linksys_ea4500-v3
 endef
 TARGET_DEVICES += linksys_ea4500-v3
 
-# fake rootfs is mandatory, pad-offset 129 equals (2 * uimage_header + 0xff)
+# fake rootfs is mandatory, pad-offset 64 equals (1 * uimage_header)
 define Device/netgear_ath79_nand
   DEVICE_VENDOR := NETGEAR
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport
@@ -238,15 +238,12 @@ define Device/netgear_ath79_nand
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   IMAGE_SIZE := 25600k
-  KERNEL := kernel-bin | append-dtb | lzma -d20 | \
-	pad-offset $$(KERNEL_SIZE) 129 | uImage lzma | \
-	append-string -e '\xff' | \
-	append-uImage-fakehdr filesystem $$(UIMAGE_MAGIC)
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma -d20 | uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | \
+	pad-offset $$(BLOCKSIZE) 64 | append-uImage-fakehdr filesystem $$(UIMAGE_MAGIC)
   IMAGES := sysupgrade.bin factory.img
-  IMAGE/factory.img := append-kernel | append-ubi | netgear-dni | \
-	check-size
-  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-ubi | check-size | netgear-dni
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
 endef
 
@@ -262,8 +259,7 @@ define Device/netgear_pgzng1
   IMAGE_SIZE := 83968k
   PAGESIZE := 2048
   BLOCKSIZE := 128k
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
-  IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += netgear_pgzng1
 
