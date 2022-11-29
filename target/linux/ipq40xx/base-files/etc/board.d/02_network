@@ -18,6 +18,9 @@ ipq40xx_setup_interfaces()
 	linksys,ea6350v3|\
 	linksys,ea8300|\
 	linksys,mr8300|\
+	linksys,whw01-v1)
+		ucidef_set_interfaces_lan "lan1 lan2"
+		;;
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3|\
 	mikrotik,hap-ac3-lte6-kit|\

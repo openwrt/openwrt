@@ -726,8 +726,7 @@ define Device/linksys_whw01-v1
 		check-size
 	DEVICE_PACKAGES := uboot-envtools kmod-leds-pca963x
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += linksys_whw01-v1
+TARGET_DEVICES += linksys_whw01-v1
 
 define Device/luma_wrtq-329acn
 	$(call Device/FitImage)
