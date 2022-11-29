@@ -17,3 +17,7 @@ jobs:
       - uses: actions/labeler@v4
         with:
           repo-token: '${{ secrets.GITHUB_TOKEN }}'
+
+      - uses: ffittschen/pr-branch-labeler@fb82ac8ee94d19a8b183938ffca89f6c4031d10c
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
