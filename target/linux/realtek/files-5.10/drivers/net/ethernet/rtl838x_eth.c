@@ -24,16 +24,20 @@
 #include "rtl838x_eth.h"
 
 /*
- * Maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX
- * The ring is assigned by switch based on packet/port priortity
- * Maximum number of TX rings is 2, Ring 2 being the high priority
- * ring on the RTL93xx SoCs. MAX_RXLEN gives the maximum length
- * for an RX ring, MAX_ENTRIES the maximum number of entries
- * available in total for all queues.
+ * The maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX. For
+ * incoming packets the ring is selected based on packet/port/queue/priortity.
+ * Because of limited hardware resources the driver will only activate the
+ * first 8 RX rings and disable incoming packets for all other rings. This
+ * number is already much too high but RTL83XX cannot force CPU packets to
+ * less then 8 RX rings. For now this works on RTL93XX as default mapping
+ * only points to the first 8 rings.
  */
-#define RTNC_MAX_RXRINGS	32
-#define RTNC_MAX_RXLEN		300
-#define RTNC_MAX_ENTRIES	(300 * 8)
+#define RTNC_RXRINGS		8
+#define RTNC_RXRINGLEN		256
+/*
+ * The maximum number of TX rings is 2, Ring 2 being the high priority ring on
+ * the RTL93xx SoCs.
+ */
 #define RTNC_TXRINGS		2
 #define RTNC_TXRINGLEN		160
 #define RTNC_NOTIFY_EVENTS	10
@@ -70,11 +74,11 @@ struct n_event {
 } __packed __aligned(1);
 
 struct ring_b {
-	uint32_t		rx_r[RTNC_MAX_RXRINGS][RTNC_MAX_RXLEN];
+	uint32_t		rx_r[RTNC_RXRINGS][RTNC_RXRINGLEN];
 	uint32_t		tx_r[RTNC_TXRINGS][RTNC_TXRINGLEN];
-	struct rtnc_hdr		rx_header[RTNC_MAX_RXRINGS][RTNC_MAX_RXLEN];
+	struct rtnc_hdr		rx_header[RTNC_RXRINGS][RTNC_RXRINGLEN];
 	struct rtnc_hdr		tx_header[RTNC_TXRINGS][RTNC_TXRINGLEN];
-	uint32_t		c_rx[RTNC_MAX_RXRINGS];
+	uint32_t		c_rx[RTNC_RXRINGS];
 	uint32_t		c_tx[RTNC_TXRINGS];
 };
 
@@ -108,7 +112,7 @@ struct rtnc_priv {
 	char			*txspace;
 	spinlock_t		lock;
 	struct mii_bus		*mii_bus;
-	struct rtnc_rx_q	rx_qs[RTNC_MAX_RXRINGS];
+	struct rtnc_rx_q	rx_qs[RTNC_RXRINGS];
 	struct phylink		*phylink;
 	struct phylink_config	phylink_config;
 	u16			id;
@@ -116,8 +120,6 @@ struct rtnc_priv {
 	const struct rtnc_reg	*r;
 	u8			cpu_port;
 	u32			lastEvent;
-	u16			rxrings;
-	u16			rxringlen;
 	int			smi_bus[RTNC_MAX_PORTS];
 	u8			smi_addr[RTNC_MAX_PORTS];
 	u32			sds_id[RTNC_MAX_PORTS];
@@ -762,6 +764,12 @@ static int rtmd_remove(struct rtnc_priv *priv)
  * ----------------------------------------------------------------------------
  */
 
+static inline int rtnc_rx_ring_count(struct rtnc_priv *priv)
+{
+	return (priv->family_id == RTL8380_FAMILY_ID ||
+		priv->family_id == RTL8390_FAMILY_ID) ? 8 : 32;
+}
+
 static void rtnc_838x_create_tx_header(struct rtnc_hdr *h, unsigned int dest_port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
@@ -1020,6 +1028,7 @@ static irqreturn_t rtnc_83xx_net_irq(int irq, void *dev_id)
 	struct net_device *dev = dev_id;
 	struct rtnc_priv *priv = netdev_priv(dev);
 	u32 status = sw_r32(priv->r->dma_if_intr_sts);
+	int rxrings = min(RTNC_RXRINGS, rtnc_rx_ring_count(priv));
 	int i;
 
 	pr_debug("IRQ: %08x\n", status);
@@ -1032,7 +1041,7 @@ static irqreturn_t rtnc_83xx_net_irq(int irq, void *dev_id)
 	if (status & 0x00ff00) {
 		/* Disable RX interrupt until end of NAPI receiving */
 		sw_w32_mask(0x00ff00 & status, 0, priv->r->dma_if_intr_msk);
-		for (i = 0; i < priv->rxrings; i++) {
+		for (i = 0; i < rxrings; i++) {
 			if (status & BIT(i + 8)) {
 				pr_debug("Scheduling queue: %d\n", i);
 				napi_schedule(&priv->rx_qs[i].napi);
@@ -1062,6 +1071,7 @@ static irqreturn_t rtnc_93xx_net_irq(int irq, void *dev_id)
 	u32 status_rx_r = sw_r32(priv->r->dma_if_intr_rx_runout_sts);
 	u32 status_rx = sw_r32(priv->r->dma_if_intr_rx_done_sts);
 	u32 status_tx = sw_r32(priv->r->dma_if_intr_tx_done_sts);
+	int rxrings = min(RTNC_RXRINGS, rtnc_rx_ring_count(priv));
 	int i;
 
 	pr_debug("In %s, status_tx: %08x, status_rx: %08x, status_rx_r: %08x\n",
@@ -1080,7 +1090,7 @@ static irqreturn_t rtnc_93xx_net_irq(int irq, void *dev_id)
 		/* ACK and disable RX interrupt for given rings */
 		sw_w32(status_rx, priv->r->dma_if_intr_rx_done_sts);
 		sw_w32_mask(status_rx, 0, priv->r->dma_if_intr_rx_done_msk);
-		for (i = 0; i < priv->rxrings; i++) {
+		for (i = 0; i < rxrings; i++) {
 			if (status_rx & BIT(i)) {
 				pr_debug("Scheduling queue: %d\n", i);
 				napi_schedule(&priv->rx_qs[i].napi);
@@ -1276,8 +1286,9 @@ static void rtnc_hw_ring_setup(struct rtnc_priv *priv)
 {
 	int i;
 	struct ring_b *ring = priv->ring;
+	int rxrings = min(RTNC_RXRINGS, rtnc_rx_ring_count(priv));
 
-	for (i = 0; i < priv->rxrings; i++)
+	for (i = 0; i < rxrings; i++)
 		sw_w32(KSEG1ADDR(&ring->rx_r[i]), priv->r->dma_rx_base + i * 4);
 
 	for (i = 0; i < RTNC_TXRINGS; i++)
@@ -1287,8 +1298,9 @@ static void rtnc_hw_ring_setup(struct rtnc_priv *priv)
 static void rtnc_setup_counters(struct rtnc_priv *priv)
 {
 	int shift, size, mask, v, r;
+	int rxrings = rtnc_rx_ring_count(priv);
 
-	for (r = 0; r < priv->rxrings; r++) {
+	for (r = 0; r < rxrings; r++) {
 		switch (priv->family_id) {
 		case RTL8380_FAMILY_ID:
 			shift = r * 4;
@@ -1303,14 +1315,24 @@ static void rtnc_setup_counters(struct rtnc_priv *priv)
 		default: /* RTL93XX */
 			shift = (r % 3) * 10;
 			mask = RTL93XX_HW_RINGSIZE;
-			size = min(priv->rxringlen - 2, RTL93XX_HW_RINGSIZE);
+			size = min(RTNC_RXRINGLEN - 2, RTL93XX_HW_RINGSIZE);
 		}
 
-		/* Set each ring size and reset counters */
+		/* Set each ring size and reset counter */
 		sw_w32_mask(mask << shift, size << shift, priv->r->dma_if_rx_ring_size(r));
 		v = sw_r32(priv->r->dma_if_rx_ring_cntr(r)) & (mask << shift);
 		sw_w32(v, priv->r->dma_if_rx_ring_cntr(r));
+
+		/* for unwanted RX rings: set size to 1 and wrap counter */
+		if (r >= RTNC_RXRINGS) {
+			sw_w32_mask(mask << shift, 1 << shift, priv->r->dma_if_rx_ring_size(r));
+			sw_w32_mask(mask << shift, 1 << shift, priv->r->dma_if_rx_ring_cntr(r));
+		}
 	}
+
+	if (rxrings > RTNC_RXRINGS)
+		dev_warn(&priv->pdev->dev, "only %d of %d RX rings enabled on CPU port\n",
+			RTNC_RXRINGS, rxrings);
 }
 
 static void rtnc_838x_hw_en_rxtx(struct rtnc_priv *priv)
@@ -1406,8 +1428,8 @@ static void rtnc_setup_ring_buffer(struct rtnc_priv *priv)
 	struct ring_b *ring = priv->ring;
 
 	buf = (u8 *)KSEG1ADDR(priv->rxspace);
-	for (i = 0; i < priv->rxrings; i++) {
-		for (j = 0; j < priv->rxringlen; j++, buf += RTNC_RING_BUFFER) {
+	for (i = 0; i < RTNC_RXRINGS; i++) {
+		for (j = 0; j < RTNC_RXRINGLEN; j++, buf += RTNC_RING_BUFFER) {
 			h = &ring->rx_header[i][j];
 			memset(h, 0, sizeof(struct rtnc_hdr));
 			h->buf = buf;
@@ -1459,7 +1481,7 @@ static int rtnc_ndo_open(struct net_device *ndev)
 	int i;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
-		__func__, priv->rxrings, priv->rxringlen, RTNC_TXRINGS, RTNC_TXRINGLEN);
+		__func__, RTNC_RXRINGS, RTNC_RXRINGLEN, RTNC_TXRINGS, RTNC_TXRINGLEN);
 
 	spin_lock_irqsave(&priv->lock, flags);
 	rtnc_hw_reset(priv);
@@ -1474,7 +1496,7 @@ static int rtnc_ndo_open(struct net_device *ndev)
 	rtnc_hw_ring_setup(priv);
 	phylink_start(priv->phylink);
 
-	for (i = 0; i < priv->rxrings; i++)
+	for (i = 0; i < RTNC_RXRINGS; i++)
 		napi_enable(&priv->rx_qs[i].napi);
 
 	switch (priv->family_id) {
@@ -1598,7 +1620,7 @@ static int rtnc_ndo_stop(struct net_device *ndev)
 	phylink_stop(priv->phylink);
 	rtnc_hw_stop(priv);
 
-	for (i = 0; i < priv->rxrings; i++)
+	for (i = 0; i < RTNC_RXRINGS; i++)
 		napi_disable(&priv->rx_qs[i].napi);
 
 	netif_tx_stop_all_queues(ndev);
@@ -1893,7 +1915,7 @@ static int rtnc_hw_receive(struct net_device *dev, int r, int budget)
 		}
 
 		ring->rx_r[r][idx] |= RTNC_OWN_ETH;
-		idx = (idx + 1) % priv->rxringlen;
+		idx = (idx + 1) % RTNC_RXRINGLEN;
 	};
 
 	ring->c_rx[r] = idx;
@@ -2369,7 +2391,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 	struct resource *res, *mem;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
-	int err = 0, i, rxrings, rxringlen;
+	int err = 0, i;
 	int soc_id, soc_family;
 
 	pr_info("Probing Realtek SoC ethernet pdev: %x, dev: %x\n",
@@ -2389,13 +2411,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	rxrings = (soc_family == RTL8380_FAMILY_ID 
-			|| soc_family == RTL8390_FAMILY_ID) ? 8 : 32;
-	rxrings = rxrings > RTNC_MAX_RXRINGS ? RTNC_MAX_RXRINGS : rxrings;
-	rxringlen = RTNC_MAX_ENTRIES / rxrings;
-	rxringlen = rxringlen > RTNC_MAX_RXLEN ? RTNC_MAX_RXLEN : rxringlen;
-
-	dev = alloc_etherdev_mqs(sizeof(struct rtnc_priv), RTNC_TXRINGS, rxrings);
+	dev = alloc_etherdev_mqs(sizeof(struct rtnc_priv), RTNC_TXRINGS, RTNC_RXRINGS);
 	if (!dev) {
 		err = -ENOMEM;
 		goto err_free;
@@ -2411,7 +2427,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 		goto err_free;
 	}
 
-	priv->rxspace = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RTNC_RING_BUFFER,
+	priv->rxspace = dmam_alloc_coherent(&pdev->dev, RTNC_RXRINGS * RTNC_RXRINGLEN * RTNC_RING_BUFFER,
 					    &priv->rxspace_dma, GFP_KERNEL);
 	if (!priv->notify) {
 		dev_err(&pdev->dev, "cannot allocate RX buffer\n");
@@ -2472,8 +2488,6 @@ static int __init rtnc_probe(struct platform_device *pdev)
 		pr_err("Unknown SoC family\n");
 		return -ENODEV;
 	}
-	priv->rxringlen = rxringlen;
-	priv->rxrings = rxrings;
 
 	/* Obtain device IRQ number */
 	dev->irq = platform_get_irq(pdev, 0);
@@ -2531,7 +2545,7 @@ static int __init rtnc_probe(struct platform_device *pdev)
 	if (err)
 		goto err_free;
 
-	for (i = 0; i < priv->rxrings; i++) {
+	for (i = 0; i < RTNC_RXRINGS; i++) {
 		priv->rx_qs[i].id = i;
 		priv->rx_qs[i].priv = priv;
 		netif_napi_add(dev, &priv->rx_qs[i].napi, rtnc_poll_rx, NAPI_POLL_WEIGHT);
@@ -2579,7 +2593,7 @@ static int rtnc_remove(struct platform_device *pdev)
 
 		netif_tx_stop_all_queues(dev);
 
-		for (i = 0; i < priv->rxrings; i++)
+		for (i = 0; i < RTNC_RXRINGS; i++)
 			netif_napi_del(&priv->rx_qs[i].napi);
 
 		unregister_netdev(dev);
