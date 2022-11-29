@@ -1398,10 +1398,10 @@ static void rtnc_93xx_hw_en_rxtx(struct rtnc_priv *priv)
 
 	rtnc_setup_counters(priv);
 
-	/* Enable Notify, RX done, RX overflow and TX done interrupts */
+	/* Enable RX done and RX overflow interrupts */
 	sw_w32(0xffffffff, priv->r->dma_if_intr_rx_runout_msk);
 	sw_w32(0xffffffff, priv->r->dma_if_intr_rx_done_msk);
-	sw_w32(0x0000000f, priv->r->dma_if_intr_tx_done_msk);
+	sw_w32(0x00000000, priv->r->dma_if_intr_tx_done_msk);
 
 	/* Enable DMA */
 	sw_w32_mask(0, RTNC_RX_EN_93XX | RTNC_TX_EN_93XX, priv->r->dma_if_ctrl);
