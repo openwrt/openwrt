@@ -2145,6 +2145,23 @@ define Device/wavlink_wl-wn533a8
 endef
 TARGET_DEVICES += wavlink_wl-wn533a8
 
+define Device/wavlink_ws-wn572hp3-4g
+  $(Device/dsa-migration)
+  BLOCKSIZE := 64k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WS-WN572HP3
+  DEVICE_VARIANT := 4G
+  IMAGE_SIZE := 15040k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb3 kmod-usb-net-rndis comgt-ncm
+endef
+TARGET_DEVICES += wavlink_ws-wn572hp3-4g
+
 define Device/wevo_11acnas
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
