@@ -1228,7 +1228,7 @@ static void rtnc_hw_reset(struct rtnc_priv *priv)
 	
 	pr_info("RESETTING %x, CPU_PORT %d\n", priv->family_id, priv->cpu_port);
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
-	mdelay(100);
+	msleep(100);
 
 	/* Disable and clear interrupts */
 	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
@@ -1267,7 +1267,7 @@ static void rtnc_hw_reset(struct rtnc_priv *priv)
 	do { /* Wait for reset of NIC and Queues done */
 		udelay(20);
 	} while (sw_r32(priv->r->rst_glb_ctrl) & reset_mask);
-	mdelay(100);
+	msleep(100);
 
 	/* Re-enable link change interrupt */
 	if (priv->family_id == RTL8390_FAMILY_ID) {
@@ -1559,7 +1559,7 @@ static void rtnc_hw_stop(struct rtnc_priv *priv)
 		sw_w32_mask(RTNC_RX_EN_93XX | RTNC_TX_EN_93XX, 0, priv->r->dma_if_ctrl);
 	else
 		sw_w32_mask(RTNC_RX_EN_83XX | RTNC_TX_EN_83XX, 0, priv->r->dma_if_ctrl);
-	mdelay(200); /* Test, whether this is needed */
+	msleep(200); /* Test, whether this is needed */
 
 	/* Block all ports */
 	if (priv->family_id == RTL8380_FAMILY_ID) {
@@ -1589,7 +1589,7 @@ static void rtnc_hw_stop(struct rtnc_priv *priv)
 		sw_w32_mask(0x3, 0, priv->r->mac_force_mode_ctrl + priv->cpu_port *4);
 	else if (priv->family_id == RTL9310_FAMILY_ID)
 		sw_w32_mask(BIT(0) | BIT(9), 0, priv->r->mac_force_mode_ctrl + priv->cpu_port *4);
-	mdelay(100);
+	msleep(100);
 
 	/* Disable all TX/RX interrupts */
 	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
@@ -1606,7 +1606,7 @@ static void rtnc_hw_stop(struct rtnc_priv *priv)
 
 	/* Disable TX/RX DMA */
 	sw_w32(0x00000000, priv->r->dma_if_ctrl);
-	mdelay(200);
+	msleep(200);
 }
 
 static int rtnc_ndo_stop(struct net_device *ndev)
@@ -2028,7 +2028,7 @@ static void rtnc_mac_an_restart(struct phylink_config *config)
 	pr_debug("In %s\n", __func__);
 	/* Restart by disabling and re-enabling link */
 	sw_w32(0x6192D, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
-	mdelay(20);
+	msleep(20);
 	sw_w32(0x6192F, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 }
 
