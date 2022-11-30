@@ -49,23 +49,6 @@ define Build/haier-sim_wr1800k-factory
   $(CP) $(1) $(BIN_DIR)/
 endef
 
-define Build/iodata-factory
-	$(eval fw_size=$(word 1,$(1)))
-	$(eval fw_type=$(word 2,$(1)))
-	$(eval product=$(word 3,$(1)))
-	$(eval factory_bin=$(word 4,$(1)))
-	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
-		$(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
-		$(STAGING_DIR_HOST)/bin/mksenaofw \
-			-r 0x30a -p $(product) -t $(fw_type) \
-			-e $(factory_bin) -o $(factory_bin).new; \
-		mv $(factory_bin).new $(factory_bin); \
-		$(CP) $(factory_bin) $(BIN_DIR)/; \
-	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image (actual $$(stat -c%s $@); max $(fw_size))" >&2; \
-	fi
-endef
-
 define Build/iodata-mstc-header
 	( \
 		data_size_crc="$$(dd if=$@ ibs=64 skip=1 2>/dev/null | gzip -c | \
@@ -972,10 +955,11 @@ define Device/iodata_wn-ax1167gr
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 15552k
-  KERNEL_INITRAMFS := $$(KERNEL) | \
-	iodata-factory 7864320 4 0x1055 $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-AX1167GR
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
+	check-size 7680k | senao-header -r 0x30a -p 0x1055 -t 4
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr
