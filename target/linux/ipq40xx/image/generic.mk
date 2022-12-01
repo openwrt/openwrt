@@ -637,74 +637,86 @@ endef
 # Missing DSA Setup
 #TARGET_DEVICES += glinet_gl-s1300
 
+define Device/kernel-size-6350-8300
+	DEVICE_COMPAT_VERSION := 2.0
+	DEVICE_COMPAT_MESSAGE := Kernel partition size must be increased for \
+	this OpenWrt version. Before continuing, you MUST issue either the \
+	command "fw_setenv kernsize 500000" from the OpenWrt command line, \
+	or "setenv kernsize 500000 ; saveenv" from the U-Boot serial console. \
+	Instead of the sysupgrade image, you must then install the OpenWrt \
+	factory image, setting the force flag and wiping the configuration. \
+	(e.g. "sysupgrade -n -F openwrt-squashfs-factory.bin" on command line)
+endef
+
 define Device/linksys_ea6350v3
 	# The Linksys EA6350v3 has a uboot bootloader that does not
 	# support either booting lzma kernel images nor booting UBI
 	# partitions. This uboot, however, supports raw kernel images and
 	# gzipped images.
 	#
-	# As for the time of writing this, the device will boot the kernel
-	# from a fixed address with a fixed length of 3MiB. Also, the
-	# device has a hard-coded kernel command line that requieres the
+	# As configured by the OEM factory, the device will boot the kernel
+	# from a fixed address with a fixed length of 3 MiB. Also, the
+	# device has a hard-coded kernel command line that requires the
 	# rootfs and alt_rootfs to be in mtd11 and mtd13 respectively.
 	# Oh... and the kernel partition overlaps with the rootfs
 	# partition (the same for alt_kernel and alt_rootfs).
 	#
 	# If you are planing re-partitioning the device, you may want to
-	# keep those details in mind:
-	# 1. The kernel adresses you should honor are 0x00000000 and
+	# keep these details in mind:
+	# 1. The kernel addresses you should honor are 0x00000000 and
 	#    0x02800000 respectively.
-	# 2. The kernel size (plus the dtb) cannot exceed 3.00MiB in size.
+	# 2. The kernel size (plus the dtb) cannot exceed 3 MiB in size
+	#    unless the uboot environment variable "kernsize" is increased.
 	# 3. You can use 'zImage', but not a raw 'Image' packed with lzma.
 	# 4. The kernel command line from uboot is harcoded to boot with
 	#    rootfs either in mtd11 or mtd13.
 	$(call Device/FitzImage)
+	$(call Device/kernel-size-6350-8300)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := EA6350
 	DEVICE_VARIANT := v3
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	KERNEL_SIZE := 3072k
-	IMAGE_SIZE := 37888k
+	KERNEL_SIZE := 5120k
+	IMAGE_SIZE := 35840k
 	UBINIZE_OPTS := -E 5
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA6350v3
-	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea6350v3
 
 define Device/linksys_ea8300
 	$(call Device/FitzImage)
+	$(call Device/kernel-size-6350-8300)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := EA8300
 	SOC := qcom-ipq4019
-	KERNEL_SIZE := 3072k
-	IMAGE_SIZE := 87040k
+	KERNEL_SIZE := 5120k
+	IMAGE_SIZE := 84992k
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA8300
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-linksys_ea8300 kmod-usb-ledtrig-usbport
-	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea8300
 
 define Device/linksys_mr8300
 	$(call Device/FitzImage)
+	$(call Device/kernel-size-6350-8300)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := MR8300
 	SOC := qcom-ipq4019
-	KERNEL_SIZE := 3072k
-	IMAGE_SIZE := 87040k
+	KERNEL_SIZE := 5120k
+	IMAGE_SIZE := 84992k
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR8300
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-usb-ledtrig-usbport
-	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_mr8300
 
