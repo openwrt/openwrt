@@ -22,12 +22,12 @@ jobs:
         id: check-branch
         run: |
           if echo "${{ github.base_ref }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]'; then
-              echo "apply-tag=yes" >> $GITHUB_OUTPUT
+              echo "release-tag=$(echo ${{ github.base_ref }} | sed 's/openwrt-/release\//')" >> $GITHUB_OUTPUT
           fi
 
       - uses: buildsville/add-remove-label@v2.0.0
-        if: ${{ steps.check-branch.outputs.apply-tag }}
+        if: ${{ steps.check-branch.outputs.release-tag }}
         with:
           token: ${{secrets.GITHUB_TOKEN}}
-          labels: ${{ github.base_ref }}
+          labels: ${{ steps.check-branch.outputs.release-tag }}
           type: add
