@@ -673,23 +673,55 @@ irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
 	u32 ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
+	u32 media = sw_r32(RTL930X_MAC_LINK_MEDIA_STS);
+	static unsigned int irq_retry = 3;
 	u32 link;
 	int i;
 
 	/* Clear status */
 	sw_w32(ports, RTL930X_ISR_PORT_LINK_STS_CHG);
 
-	for (i = 0; i < 28; i++) {
+	/*
+	 * It is not uncommon having to read the link status register twice.
+	 * At least the 93xx needs this with an external RTL8226 PHY, but
+	 * likely all configurations.
+	 */
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	pr_debug("%s link status: %08x, media %08x\n", __func__, link, media);
+
+	for (i = 0; i < RTL930X_CPU_PORT; i++) {
 		if (ports & BIT(i)) {
-			/* Read the register twice because of issues with latency at least
-			 * with the external RTL8226 PHY on the XGS1210 */
-			link = sw_r32(RTL930X_MAC_LINK_STS);
-			link = sw_r32(RTL930X_MAC_LINK_STS);
 			if (link & BIT(i))
 				dsa_port_phylink_mac_change(ds, i, true);
 			else
 				dsa_port_phylink_mac_change(ds, i, false);
 		}
+	}
+
+	/* Handle SDS link faults */
+	ports = sw_r32(RTL930X_ISR_SERDES_LINK_FAULT_P);
+	if (ports) {
+		pr_info("%s link faults: %08x\n", __func__, ports);
+		sw_w32(ports, RTL930X_ISR_SERDES_LINK_FAULT_P);
+		if (irq_retry == 0)
+			sw_w32(0, RTL930X_IMR_SERDES_LINK_FAULT_P);
+		else
+			irq_retry--;
+	}
+
+	/* Handle SDS RX symbol errors */
+	ports = sw_r32(RTL930X_ISR_SERDES_RX_SYM_ERR);
+	if (ports) {
+		pr_info("%s RX symbol errors: %08x\n", __func__, ports);
+		sw_w32(ports, RTL930X_ISR_SERDES_RX_SYM_ERR);
+	}
+
+	/* Handle SDS PHYSTS errors */
+	ports = sw_r32(RTL930X_ISR_SDS_UPD_PHYSTS);
+	if (ports) {
+		pr_info("%s SDS_UPD_PHYSTS: %08x\n", __func__, ports);
+		sw_w32(ports, RTL930X_ISR_SDS_UPD_PHYSTS);
 	}
 
 	return IRQ_HANDLED;
@@ -748,8 +780,6 @@ int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 		err = -EIO;
 	}
 	*val = (sw_r32(RTL930X_SMI_ACCESS_PHY_CTRL_2) & 0xffff);
-
-	pr_debug("%s: port %d, page: %d, reg: %x, val: %x\n", __func__, port, page, reg, *val);
 
 	mutex_unlock(&smi_lock);
 
@@ -872,7 +902,9 @@ void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
 	if (port >= 26)
 		return;
 
-	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+	pr_info("In %s: setting port %d to %d\n", __func__, port, enable);
+	priv->ports[port].eee_enabled = enable;
+
 	v = enable ? 0x3f : 0x0;
 
 	// Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit
@@ -881,8 +913,6 @@ void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
 	// Set TX/RX EEE state
 	v = enable ? 0x3 : 0x0;
 	sw_w32(v, RTL930X_EEE_CTRL(port));
-
-	priv->ports[port].eee_enabled = enable;
 }
 
 /*
@@ -890,7 +920,7 @@ void rtl930x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
  */
 int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
 {
-	u32 link, a;
+	u32 link, a, speed, v;
 
 	if (port >= 26)
 		return -ENOTSUPP;
@@ -901,31 +931,36 @@ int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 	if (!(link & BIT(port)))
 		return 0;
 
-	pr_info("Setting advertised\n");
-	if (sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(10))
-		e->advertised |= ADVERTISED_100baseT_Full;
-
-	if (sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(12))
-		e->advertised |= ADVERTISED_1000baseT_Full;
-
-	if (priv->ports[port].is2G5 && sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(13)) {
-		pr_info("ADVERTISING 2.5G EEE\n");
-		e->advertised |= ADVERTISED_2500baseX_Full;
-	}
-
-	if (priv->ports[port].is10G && sw_r32(rtl930x_mac_force_mode_ctrl(port)) & BIT(15))
-		e->advertised |= ADVERTISED_10000baseT_Full;
-
 	a = sw_r32(RTL930X_MAC_EEE_ABLTY);
 	a = sw_r32(RTL930X_MAC_EEE_ABLTY);
-	pr_info("Link partner: %08x\n", a);
+	pr_info("Link partner negotiated result: %08x\n", a);
 	if (a & BIT(port)) {
-		e->lp_advertised = ADVERTISED_100baseT_Full;
-		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-		if (priv->ports[port].is2G5)
-			e->lp_advertised |= ADVERTISED_2500baseX_Full;
-		if (priv->ports[port].is10G)
-			e->lp_advertised |= ADVERTISED_10000baseT_Full;
+		speed = priv->r->get_port_reg_le(priv->r->mac_link_spd_sts(port));
+		speed >>= (port % 8) << 2;
+		switch (speed & 0xf) {
+		case 1:
+			v = sw_r32(RTL930X_EEE_TX_MINIFG_CTRL0) & 0xffff;
+			break;
+		case 2:
+		case 7:
+			v = sw_r32(RTL930X_EEE_TX_MINIFG_CTRL1) & 0xffff;
+			break;
+		case 4:
+			v = sw_r32(RTL930X_EEE_TX_MINIFG_CTRL1) >> 16;
+			break;
+		case 5:
+		case 8:
+			v = sw_r32(RTL930X_EEE_TX_MINIFG_CTRL2) & 0xffff;
+			break;
+		case 6:
+			v = sw_r32(RTL930X_EEE_TX_MINIFG_CTRL2) >> 16;
+			break;
+		default:
+			v = 0;
+		}
+		e->tx_lpi_timer = v;
+		if (v)
+			e->tx_lpi_enabled = true;
 	}
 
 	// Read 2x to clear latched state
@@ -938,18 +973,9 @@ int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 
 static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
-	int i;
-
 	pr_info("Setting up EEE, state: %d\n", enable);
-
-	// Setup EEE on all ports
-	for (i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy)
-			rtl930x_port_eee_set(priv, i, enable);
-	}
-
-	priv->eee_enabled = enable;
 }
+
 #define HASH_PICK(val, lsb, len)   ((val & (((1 << len) - 1) << lsb)) >> lsb)
 
 static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
@@ -1231,16 +1257,20 @@ static int rtl930x_route_lookup_hw(struct rtl83xx_route *rt)
 	struct in6_addr ip6_m;
 	int i;
 
-	if (rt->attr.type == 1 || rt->attr.type == 3) // Hardware only supports UC routes
-		return -1;
+	/* Verify hardware limitations: only unicast supported */
+	if ((rt->attr.type == RTL903X_L3_HW_LU_KEY_CTRL_ROUTE_TYPE_IPV4MC) ||
+	    (rt->attr.type == RTL903X_L3_HW_LU_KEY_CTRL_ROUTE_TYPE_IPV6MC))
+		return -EOPNOTSUPP;
 
-	sw_w32_mask(0x3 << 19, rt->attr.type, RTL930X_L3_HW_LU_KEY_CTRL);
-	if (rt->attr.type) { // IPv6
+	/* Set entry type being searched, all other fields are 0 */
+	sw_w32(RTL903X_L3_HW_LU_KEY_CTRL_ROUTE_TYPE(rt->attr.type), RTL930X_L3_HW_LU_KEY_CTRL);
+
+	if (rt->attr.type == RTL903X_L3_HW_LU_KEY_CTRL_ROUTE_TYPE_IPV6UC) {
 		rtl930x_net6_mask(rt->prefix_len, &ip6_m);
 		for (i = 0; i < 4; i++)
-			sw_w32(rt->dst_ip6.s6_addr32[0] & ip6_m.s6_addr32[0],
+			sw_w32(rt->dst_ip6.s6_addr32[i] & ip6_m.s6_addr32[i],
 			       RTL930X_L3_HW_LU_KEY_IP_CTRL + (i << 2));
-	} else { // IPv4
+	} else { /* RTL903X_L3_HW_LU_KEY_CTRL_ROUTE_TYPE_IPV4UC */
 		ip4_m = inet_make_mask(rt->prefix_len);
 		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL);
 		sw_w32(0, RTL930X_L3_HW_LU_KEY_IP_CTRL + 4);
@@ -2305,7 +2335,7 @@ void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan
 	if (type == PBVLAN_TYPE_INNER)
 		sw_w32_mask(0x3, mode, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
 	else
-		sw_w32_mask(0x3 << 14, mode << 14 ,RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
+		sw_w32_mask(0x3 << 14, mode << 14, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
 }
 
 void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid)
@@ -2391,9 +2421,9 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	u32 setlen;
 	const __be32 *led_set;
 	char set_name[9];
+	u8 led_counts[4];
 	struct device_node *node;
 
-	pr_info("%s called\n", __func__);
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
 		pr_info("%s No compatible LED node found\n", __func__);
@@ -2407,13 +2437,6 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 
 		if (!priv->ports[i].phy)
 			continue;
-
-		v = 0x1;
-		if (priv->ports[i].is10G)
-			v = 0x3;
-		if (priv->ports[i].phy_is_integrated)
-			v = 0x1;
-		sw_w32_mask(0x3 << pos, v << pos, RTL930X_LED_PORT_NUM_CTRL(i));
 
 		pm |= BIT(i);
 
@@ -2431,6 +2454,22 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32(v, RTL930X_LED_SET0_0_CTRL - 4 - i * 8);
 		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
 		sw_w32(v, RTL930X_LED_SET0_0_CTRL - i * 8);
+
+		led_counts[i] = 0;
+		for (unsigned int j = 0; j < 4; j++) {
+			if (be32_to_cpup(led_set + j) && be32_to_cpup(led_set + j) != 0xffff)
+				led_counts[i]++;
+		}
+		pr_debug("%s: Led COUNT %d is %d\n", __func__, i, led_counts[i]);
+	}
+
+	for (i = 0; i < priv->cpu_port; i++) {
+		pos = (i << 1) % 32;
+		if (priv->ports[i].phy)
+			v = priv->ports[i].led_set < 4 ? led_counts[priv->ports[i].led_set] - 1:0;
+		else
+			v = 0x2;
+		sw_w32_mask(0x3 << pos, v << pos, RTL930X_LED_PORT_NUM_CTRL(i));
 	}
 
 	// Set LED mode to serial (0x1)
@@ -2440,9 +2479,6 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	sw_w32(pm, RTL930X_LED_PORT_COPR_MASK_CTRL);
 	sw_w32(pm, RTL930X_LED_PORT_FIB_MASK_CTRL);
 	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
-
-	for (i = 0; i < 24; i++)
-		pr_info("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
 }
 
 const struct rtl838x_reg rtl930x_reg = {

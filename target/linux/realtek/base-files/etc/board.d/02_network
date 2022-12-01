@@ -17,52 +17,149 @@ ucidef_set_poe() {
 	json_select ..
 }
 
+parse_mac_addr()
+{
+	if ! macaddr_valid "${label_mac:-}"; then
+		label_mac="$(get_mac_label)"
+	fi
+
+	if [ -f '/etc/fw_env.config' ] && \
+	   command -v 'fw_printenv'; then
+		if ! macaddr_valid "${label_mac:-}" > '/dev/null'; then
+			label_mac="$(fw_printenv -n 'ethaddr')"
+		fi
+
+		if ! macaddr_valid "${lan_mac_start:-}" > '/dev/null'; then
+			lan_mac_start="$(fw_printenv -n 'mac_start')"
+		fi
+
+		if ! macaddr_valid "${lan_mac_end:-}" > '/dev/null'; then
+			lan_mac_end="$(fw_printenv -n 'mac_end')"
+		fi
+	fi
+
+	if [ -f '/etc/fw_sys.config' ] && \
+	   command -v 'fw_printsys'; then
+		if ! macaddr_valid "${label_mac:-}" > '/dev/null'; then
+			label_mac="$(fw_printsys -n 'ethaddr')"
+		fi
+
+		if ! macaddr_valid "${lan_mac_start:-}" > '/dev/null'; then
+			lan_mac_start="$(fw_printsys -n 'mac_start')"
+		fi
+
+		if ! macaddr_valid "${lan_mac_end:-}" > '/dev/null'; then
+			lan_mac_end="$(fw_printsys -n 'mac_end')"
+		fi
+	fi
+
+	if [ -n "$(find_mtd_index 'u-boot-env')" ]; then
+		if ! macaddr_valid "${label_mac:-}" > '/dev/null'; then
+			label_mac="$(mtd_get_mac_ascii 'u-boot-env' 'ethaddr')"
+		fi
+
+		if ! macaddr_valid "${lan_mac_start:-}" > '/dev/null'; then
+			lan_mac_start="$(mtd_get_mac_ascii 'u-boot-env' 'mac_start')"
+		fi
+
+		if ! macaddr_valid "${lan_mac_end:-}" > '/dev/null'; then
+			lan_mac_end="$(mtd_get_mac_ascii 'u-boot-env' 'mac_end')"
+		fi
+	fi
+
+	if [ -n "$(find_mtd_index 'u-boot-sysenv')" ]; then
+		if ! macaddr_valid "${label_mac:-}" > '/dev/null'; then
+			label_mac="$(mtd_get_mac_ascii 'u-boot-sysenv' 'ethaddr')"
+		fi
+
+		if ! macaddr_valid "${lan_mac_start:-}" > '/dev/null'; then
+			lan_mac_start="$(mtd_get_mac_ascii 'u-boot-sysenv' 'mac_start')"
+		fi
+
+		if ! macaddr_valid "${lan_mac_end:-}" > '/dev/null'; then
+			lan_mac_end="$(mtd_get_mac_ascii 'u-boot-sysenv' 'mac_end')"
+		fi
+	fi
+
+	if [ -n "$(find_mtd_index 'u-boot-env2')" ]; then
+		if ! macaddr_valid "${label_mac:-}" > '/dev/null'; then
+			label_mac="$(mtd_get_mac_ascii 'u-boot-env2' 'ethaddr')"
+		fi
+
+		if ! macaddr_valid "${lan_mac_start:-}" > '/dev/null'; then
+			lan_mac_start="$(mtd_get_mac_ascii 'u-boot-env2' 'mac_start')"
+		fi
+
+		if ! macaddr_valid "${lan_mac_end:-}" > '/dev/null'; then
+			lan_mac_end="$(mtd_get_mac_ascii 'u-boot-env2' 'mac_end')"
+		fi
+	fi
+
+	if ! macaddr_valid "${label_mac:-}" > '/dev/null'; then
+		echo 'Unable to find valid (label) MAC address, using random' >&2
+		label_mac="$(macaddr_random)"
+	fi
+}
+
 board=$(board_name)
 board_config_update
 
-lan_list=$(ls -1 -v -d /sys/class/net/lan* | xargs -n1 basename | xargs)
-ucidef_set_bridge_device switch
+# Busybox's 'sort' does not support -g sort, e.g. with a prefix, strip and readd
+port_list="$(for _port in '/sys/class/net/lan'[0-9]* ; do test -L "${_port:-}" && echo "${_port##*'/lan'} "; done | sort -n)"
+lan_list="$(for _port in ${port_list}; do printf "lan${_port} "; done)"
+
+ucidef_set_bridge_device
 ucidef_set_interface_lan "$lan_list"
 
-lan_mac=""
-lan_mac_start=""
-lan_mac_end=""
-label_mac=""
 case $board in
 hpe,1920-8g|\
 hpe,1920-16g|\
 hpe,1920-24g)
-	label_mac=$(mtd_get_mac_binary factory 0x68)
-	lan_mac=$label_mac
+	label_mac="$(macaddr_valid "$(mtd_get_mac_binary 'factory' '0x68')")"
 	mac_count1=$(hexdump -v -n 4 -s 0x110 -e '4 "%d"' $(find_mtd_part factory) 2>/dev/null)
 	mac_count2=$(hexdump -v -n 4 -s 0x114 -e '4 "%d"' $(find_mtd_part factory) 2>/dev/null)
-	lan_mac_start=$(macaddr_add $lan_mac 2)
-	lan_mac_end=$(macaddr_add $lan_mac $((mac_count2-mac_count1)))
-	;;
-tplink,sg2008p-v1|\
-tplink,sg2210p-v3|\
-tplink,sg2452p-v4)
-	label_mac=$(get_mac_label)
-	lan_mac="$label_mac"
+	lan_mac_start="$(macaddr_valid "$(macaddr_add "${label_mac:-}" 2)")"
+	lan_mac_end="$(macaddr_valid "$(macaddr_add "${label_mac:-}" "$((mac_count2 - mac_count1))")")"
 	;;
 *)
-	lan_mac=$(mtd_get_mac_ascii u-boot-env2 mac_start)
-	lan_mac_end=$(mtd_get_mac_ascii u-boot-env2 mac_end)
-	label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-	[ -z "$lan_mac" ] && lan_mac=$label_mac
+	parse_mac_addr
 	;;
 esac
 
-ucidef_set_interface_macaddr "lan" $lan_mac
-ucidef_set_bridge_mac "$lan_mac"
-ucidef_set_network_device_mac eth0 $lan_mac
-[ -z "$lan_mac_start" ] && lan_mac_start=$lan_mac
-for lan in $lan_list; do
-	ucidef_set_network_device_mac $lan $lan_mac_start
-	[ -z "$lan_mac_end" ] || [ "$lan_mac_start" == "$lan_mac_end" ] && lan_mac_start=$(macaddr_setbit_la $lan_mac_start)
-	lan_mac_start=$(macaddr_add $lan_mac_start 1)
-done
-[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
+# Cross copy MAC address variables, incorrect content will be caught after.
+if ! macaddr_valid "${label_mac:-}" > '/dev/null'; then
+	label_mac="${lan_mac_start:-}"
+fi
+if ! macaddr_valid "${lan_mac_start:-}" > '/dev/null'; then
+	lan_mac_start="${label_mac:-}"
+fi
+
+if macaddr_valid "${label_mac:-}" > '/dev/null' && \
+   macaddr_valid "${lan_mac_start:-}" > '/dev/null'; then
+	ucidef_set_label_macaddr "${label_mac}"
+	ucidef_set_network_device_mac 'eth0' "${label_mac}"
+	ucidef_set_bridge_mac "${label_mac}"
+
+	if ! macaddr_valid "${lan_mac_end:-}" > '/dev/null'; then
+		lan_mac_start="$(macaddr_setbit_la "${lan_mac_start}")"
+	fi
+
+	if [ "${lan_mac_start}" = "${label_mac}" ]; then
+		lan_mac_start="$(macaddr_add "${lan_mac_start}" 1)"
+	fi
+
+	ucidef_set_interface_macaddr 'lan' "${lan_mac_start}"
+
+	lan_mac="${lan_mac_start}"
+	for _lan in ${lan_list}; do
+		ucidef_set_network_device_mac "${_lan}" "${lan_mac}"
+
+		if [ "${lan_mac}" = "${lan_mac_end:-}" ]; then
+			lan_mac="$(macaddr_setbit_la "${lan_mac}")"
+		fi
+		lan_mac="$(macaddr_add "${lan_mac}" 1)"
+	done
+fi
 
 case $board in
 netgear,gs110tpp-v1)

@@ -281,9 +281,13 @@
 #define	RGCR				(0x1E70)
 #define RTL838X_RST_GLB_CTRL_0		(0x003c)
 #define RTL838X_RST_GLB_CTRL_1		(0x0040)
+#define RTL83XX_RST_GLB_CTRL_SW_NIC_RST         BIT(3)
+#define RTL83XX_RST_GLB_CTRL_SW_Q_RST           BIT(2)
 #define RTL839X_RST_GLB_CTRL		(0x0014)
 #define RTL930X_RST_GLB_CTRL_0		(0x000c)
 #define RTL931X_RST_GLB_CTRL		(0x0400)
+#define RTL93XX_RST_GLB_CTRL_SW_NIC_RST         BIT(2)
+#define RTL93XX_RST_GLB_CTRL_SW_Q_RST           BIT(1)
 
 /* LED control by switch */
 #define RTL838X_LED_MODE_SEL		(0x1004)

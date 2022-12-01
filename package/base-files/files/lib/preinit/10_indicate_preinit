@@ -96,8 +96,13 @@ preinit_config_board() {
 			json_select "$netdev"
 				json_get_vars path path
 				next_eth="$(echo "$netdev" | grep 'eth[0-9]*' | tr -dc '[0-9]')"
-				[ "$next_eth" -gt "$max_eth" ] && max_eth=$next_eth
-				if [ -n "$path" -a -h "/sys/class/net/$netdev" ]; then
+				if [ -n "${next_eth:-}" ] && \
+				   [ "${next_eth}" -gt "${max_eth}" ]; then
+					max_eth="${next_eth}"
+				fi
+				if [ -n "${path}" ] && \
+				   [ -L "/sys/class/net/${netdev}" ] && \
+				   [ "$(readlink -f "/sys/class/net/${next_eth}")" != "/sys/devices/${path}/net/${next_eth}" ]; then
 					ip link set "$netdev" down
 					ip link set "$netdev" name eth$((++max_eth))
 				fi

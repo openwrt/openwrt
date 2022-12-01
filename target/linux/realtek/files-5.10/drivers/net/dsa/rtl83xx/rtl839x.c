@@ -592,21 +592,21 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	struct dsa_switch *ds = dev_id;
 	u32 status = sw_r32(RTL839X_ISR_GLB_SRC);
 	u64 ports = rtl839x_get_port_reg_le(RTL839X_ISR_PORT_LINK_STS_CHG);
+	u64 ports_m = rtl839x_get_port_reg_le(RTL839X_ISR_PORT_MEDIA_CHG);
 	u64 link;
 	int i;
 
 	/* Clear status */
 	rtl839x_set_port_reg_le(ports, RTL839X_ISR_PORT_LINK_STS_CHG);
+	rtl839x_set_port_reg_le(ports_m, RTL839X_ISR_PORT_MEDIA_CHG);
 	pr_debug("RTL8390 Link change: status: %x, ports %llx\n", status, ports);
 
+	link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
 	for (i = 0; i < RTL839X_CPU_PORT; i++) {
-		if (ports & BIT_ULL(i)) {
-			link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
-			if (link & BIT_ULL(i))
-				dsa_port_phylink_mac_change(ds, i, true);
-			else
-				dsa_port_phylink_mac_change(ds, i, false);
-		}
+		if (ports & BIT_ULL(i))
+			dsa_port_phylink_mac_change(ds, i, !!(link & BIT_ULL(i)));
+		else if (ports_m & BIT_ULL(i))
+			dsa_port_phylink_mac_change(ds, i, !!(link & BIT_ULL(i)));
 	}
 	return IRQ_HANDLED;
 }
@@ -852,12 +852,12 @@ void rtl839x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
 {
 	u32 v;
 
-	// This works only for Ethernet ports, and on the RTL839X, ports above 47 are SFP
-	if (port >= 48)
+	// This works only for Ethernet ports, and on the RTL839X
+	if (priv->ports[port].phy_is_integrated)
 		return;
 
 	enable = true;
-	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+	pr_info("In %s: setting port %d to %d\n", __func__, port, enable);
 	v = enable ? 0xf : 0x0;
 
 	// Set EEE for 100, 500, 1000MBit and 10GBit
@@ -875,27 +875,42 @@ void rtl839x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
  */
 int rtl839x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
 {
-	u64 link, a;
+	u64 link, a, speed;
+	u32 v;
+	bool lp_active;
 
-	if (port >= 48)
+	// Can't set this for non-ethernet ports
+	if (priv->ports[port].phy_is_integrated)
 		return 0;
 
+	pr_info("In %s\n", __func__);
 	link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
 	if (!(link & BIT_ULL(port)))
 		return 0;
 
-	if (sw_r32(rtl839x_mac_force_mode_ctrl(port)) & BIT(8))
-		e->advertised |= ADVERTISED_100baseT_Full;
-
-	if (sw_r32(rtl839x_mac_force_mode_ctrl(port)) & BIT(10))
-		e->advertised |= ADVERTISED_1000baseT_Full;
-
 	a = rtl839x_get_port_reg_le(RTL839X_MAC_EEE_ABLTY);
-	pr_info("Link partner: %016llx\n", a);
-	if (rtl839x_get_port_reg_le(RTL839X_MAC_EEE_ABLTY) & BIT_ULL(port)) {
-		e->lp_advertised = ADVERTISED_100baseT_Full;
-		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-		return 1;
+	pr_debug("Link partner EEE negotiation result: %016llx\n", a);
+	lp_active = !!(a & BIT_ULL(port));
+
+	if (lp_active) {
+		speed = priv->r->get_port_reg_le(priv->r->mac_link_spd_sts(port));
+		speed >>= (port % 16) << 1;
+		speed &= 0x3;
+		switch(speed) {
+		case 0x3: // 10G
+			v = sw_r32(RTL839X_EEE_TX_SEL_CTRL1) & 0xffff;
+			break;
+
+		case 0x2: // 1G
+			v = sw_r32(RTL839X_EEE_TX_SEL_CTRL1) & 0xffff;
+			break;
+
+		default: // 100M and lower
+			v = sw_r32(RTL839X_EEE_TX_SEL_CTRL0) >> 16;
+		}
+		e->tx_lpi_timer = v;
+		if (v)
+			e->tx_lpi_enabled = true;
 	}
 
 	return 0;
@@ -903,8 +918,6 @@ int rtl839x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 
 static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
-	int i;
-
 	pr_info("Setting up EEE, state: %d\n", enable);
 
 	// Set wake timer for TX and pause timer both to 0x21
@@ -913,13 +926,6 @@ static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_GIGA_CTRL);
 	// Set pause wake timer for 10GBit ports to 0x11
 	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_10G_CTRL);
-
-	// Setup EEE on all ports
-	for (i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy)
-			rtl839x_port_eee_set(priv, i, enable);
-	}
-	priv->eee_enabled = enable;
 }
 
 static void rtl839x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int index)

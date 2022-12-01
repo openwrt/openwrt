@@ -192,7 +192,7 @@ struct rtl838x_eth_priv {
 	u32 lastEvent;
 	u16 rxrings;
 	u16 rxringlen;
-	u8 smi_bus[MAX_PORTS];
+	u32 smi_bus[MAX_PORTS];
 	u8 smi_addr[MAX_PORTS];
 	u32 sds_id[MAX_PORTS];
 	bool smi_bus_isc45[MAX_SMI_BUSSES];
@@ -676,13 +676,12 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 		sw_w32(0xffffffff, priv->r->dma_if_intr_sts);
 	}
 
-	/* Reset NIC (SW_NIC_RST) and queues (SW_Q_RST) */
 	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
-		reset_mask = 0x6;
+		reset_mask = RTL93XX_RST_GLB_CTRL_SW_NIC_RST | RTL93XX_RST_GLB_CTRL_SW_Q_RST;
 	else
-		reset_mask = 0xc;
+		reset_mask = RTL83XX_RST_GLB_CTRL_SW_NIC_RST | RTL83XX_RST_GLB_CTRL_SW_Q_RST;
 
-	sw_w32(reset_mask, priv->r->rst_glb_ctrl);
+	sw_w32_mask(0, reset_mask, priv->r->rst_glb_ctrl);
 
 	do { /* Wait for reset of NIC and Queues done */
 		udelay(20);
@@ -1918,7 +1917,7 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 	// Mapping of port to phy-addresses on an SMI bus
 	poll_sel[0] = poll_sel[1] = 0;
 	for (i = 0; i < RTL930X_CPU_PORT; i++) {
-		if (priv->smi_bus[i] > 3)
+		if ((priv->smi_bus[i] < 0) || (priv->smi_bus[i] > MAX_SMI_BUSSES))
 			continue;
 		pos = (i % 6) * 5;
 		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos,
@@ -2026,7 +2025,9 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 	mdc_on[0] = mdc_on[1] = mdc_on[2] = mdc_on[3] = false;
 	// Mapping of port to phy-addresses on an SMI bus
 	poll_sel[0] = poll_sel[1] = poll_sel[2] = poll_sel[3] = 0;
-	for (i = 0; i < 56; i++) {
+	for (i = 0; i < RTL931X_CPU_PORT; i++) {
+		if ((priv->smi_bus[i] < 0) || (priv->smi_bus[i] > MAX_SMI_BUSSES))
+			continue;
 		pos = (i % 6) * 5;
 		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos, RTL931X_SMI_PORT_ADDR + (i / 6) * 4);
 		pos = (i * 2) % 32;
@@ -2056,11 +2057,6 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 	pr_info("%s: RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 
-	/* We have a 10G PHY enable polling
-	sw_w32(0x01010000, RTL931X_SMI_10GPHY_POLLING_SEL2);
-	sw_w32(0x01E7C400, RTL931X_SMI_10GPHY_POLLING_SEL3);
-	sw_w32(0x01E7E820, RTL931X_SMI_10GPHY_POLLING_SEL4);
-*/
 	sw_w32_mask(0xff, c45_mask, RTL931X_SMI_GLB_CTRL1);
 
 	return 0;
@@ -2108,7 +2104,6 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 	u32 pn;
 	int ret;
 
-	pr_debug("%s called\n", __func__);
 	mii_np = of_get_child_by_name(priv->pdev->dev.of_node, "mdio-bus");
 
 	if (!mii_np) {
@@ -2170,33 +2165,43 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 	for_each_node_by_name(dn, "ethernet-phy") {
 		u32 smi_addr[2];
 
-		if (of_property_read_u32(dn, "reg", &pn))
+		if (of_property_read_u32(dn, "reg", &pn)) {
+			pr_err("%s: missing reg property on port %d\n", __func__, pn);
 			continue;
-
-		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
-			smi_addr[0] = 0;
-			smi_addr[1] = pn;
 		}
+
+		if (pn >= MAX_PORTS) {
+			pr_err("%s: illegal port number %d\n", __func__, pn);
+			continue;
+		}
+
+		priv->phy_is_internal[pn] = of_property_read_bool(dn, "phy-is-integrated");
 
 		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
 			priv->sds_id[pn] = -1;
-		else {
-			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
-		}
 
-		if (pn < MAX_PORTS) {
+		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
+			/* Integrated PHYs associated to a SerDes do not have an smi_bus */
+			if (priv->phy_is_internal[pn] && priv->sds_id[pn] >= 0) {
+				priv->smi_bus[pn] = -1;
+			/* PHYs whether integrated or not, not associated to an SDS use an smi_bus */
+			} else {
+				/* For RTL83xx, PHY-id is port ID on smi_bus 0 */
+				priv->smi_bus[pn] = 0;
+				priv->smi_addr[pn] = pn;
+			}
+		} else {
 			priv->smi_bus[pn] = smi_addr[0];
 			priv->smi_addr[pn] = smi_addr[1];
-		} else {
-			pr_err("%s: illegal port number %d\n", __func__, pn);
 		}
 
-		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
-			priv->smi_bus_isc45[smi_addr[0]] = true;
-
-		if (of_property_read_bool(dn, "phy-is-integrated")) {
-			priv->phy_is_internal[pn] = true;
+		if (priv->smi_bus[pn] > MAX_SMI_BUSSES) {
+			pr_err("%s: illegal SMI bus number %d\n", __func__, priv->smi_bus[pn]);
+			continue;
 		}
+
+		if (priv->smi_bus[pn] >= 0)
+			priv->smi_bus_isc45[priv->smi_bus[pn]] = !!of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45");
 	}
 
 	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
@@ -2213,9 +2218,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 			continue;
 		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
 			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
-		pr_debug("%s phy mode of port %d is %s\n", __func__, pn, phy_modes(priv->interfaces[pn]));
 	}
-
 	snprintf(priv->mii_bus->id, MII_BUS_ID_SIZE, "%pOFn", mii_np);
 	ret = of_mdiobus_register(priv->mii_bus, mii_np);
 

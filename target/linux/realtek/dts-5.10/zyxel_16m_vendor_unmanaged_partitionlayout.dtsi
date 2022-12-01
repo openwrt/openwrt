@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+
+&partitions {
+	/delete-node/ partition@fe0000;
+	partition@810000 {
+		/*
+		 * This partition gets written to by the
+		 * U-Boot built-in realtek HTP self-test!
+		 * Do not use for critical data!
+		 */
+		label = "HTP_logs";
+		reg = <0x810000 0x10000>;
+	};
+	/delete-node/ partition@ff0000;
+	partition@8f0000 {
+		/*
+		 * This partition gets written to by the
+		 * U-Boot built-in realtek HTP flash write
+		 * test! Do not use for critical data!
+		 */
+		label = "flash_write_test";
+		reg = <0x8f0000 0x10000>;
+	};
+
+	// TODO: How can we let openwrt use this data somehow?
+	partition@820000 {
+		label = "user_data";
+		reg = <0x820000 0x7e0000>;
+	};
+};
+
+&firmware_partition {
+		reg = <0x10000 0x71000>;
+};

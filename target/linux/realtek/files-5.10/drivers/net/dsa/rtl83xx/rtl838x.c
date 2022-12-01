@@ -619,30 +619,34 @@ static void rtl838x_port_eee_set(struct rtl838x_switch_priv *priv, int port, boo
 
 
 /*
- * Get EEE own capabilities and negotiation result
+ * Get EEE own capabilities and negotiation result for MAC
  */
 static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
 				    struct ethtool_eee *e, int port)
 {
-	u64 link;
+	u32 v, speed;
+	bool lp_active;
 
 	if (port >= 24)
 		return 0;
 
-	link = rtl839x_get_port_reg_le(RTL838X_MAC_LINK_STS);
-	if (!(link & BIT(port)))
-		return 0;
+	v = sw_r32(RTL838X_MAC_EEE_ABLTY); // The EEE negotiation result
+	lp_active = !!(v & BIT(port));
+	pr_debug("%s EEE active according to MAC: %d\n", __func__, lp_active);
 
-	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(9))
-		e->advertised |= ADVERTISED_100baseT_Full;
-
-	if (sw_r32(rtl838x_mac_force_mode_ctrl(port)) & BIT(10))
-		e->advertised |= ADVERTISED_1000baseT_Full;
-
-	if (sw_r32(RTL838X_MAC_EEE_ABLTY) & BIT(port)) {
-		e->lp_advertised = ADVERTISED_100baseT_Full;
-		e->lp_advertised |= ADVERTISED_1000baseT_Full;
-		return 1;
+	v = sw_r32(RTL838X_EEE_EEEP_PORT_TX_STS);
+	v = sw_r32(RTL838X_EEE_EEEP_PORT_TX_STS); // Latched: read 2x
+	if (v & BIT(port)) {
+		speed = sw_r32(RTL838X_MAC_LINK_SPD_STS(port));
+		speed >>= (port % 16) << 1;
+		speed &= 0x3;
+		if (speed == 0x2) // 1G
+			v = sw_r32(RTL838X_EEE_TX_SEL_CTRL1) & 0xffff;
+		else // 100M and lower
+			v = sw_r32(RTL838X_EEE_TX_SEL_CTRL0) >> 16;
+		e->tx_lpi_timer = v;
+		if (v)
+			e->tx_lpi_enabled = true;
 	}
 
 	return 0;
@@ -650,21 +654,13 @@ static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
 
 static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
-	int i;
-
 	pr_info("Setting up EEE, state: %d\n", enable);
-	sw_w32_mask(0x4, 0, RTL838X_SMI_GLB_CTRL);
+	// To enable clear SMI_DISEEE_ALLPORT
+	sw_w32_mask(BIT(2), enable ? 0 : BIT(2), RTL838X_SMI_GLB_CTRL);
 
 	/* Set timers for EEE */
 	sw_w32(0x5001411, RTL838X_EEE_TX_TIMER_GIGA_CTRL);
 	sw_w32(0x5001417, RTL838X_EEE_TX_TIMER_GELITE_CTRL);
-
-	// Enable EEE MAC support on ports
-	for (i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy)
-			rtl838x_port_eee_set(priv, i, enable);
-	}
-	priv->eee_enabled = enable;
 }
 
 static void rtl838x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int index)
@@ -1775,6 +1771,7 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 	struct dsa_switch *ds = dev_id;
 	u32 status = sw_r32(RTL838X_ISR_GLB_SRC);
 	u32 ports = sw_r32(RTL838X_ISR_PORT_LINK_STS_CHG);
+	u32 ports_m = sw_r32(RTL838X_ISR_PORT_MEDIA_CHG);
 	u32 link;
 	int i;
 
@@ -1782,7 +1779,7 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 	sw_w32(ports, RTL838X_ISR_PORT_LINK_STS_CHG);
 	pr_info("RTL8380 Link change: status: %x, ports %x\n", status, ports);
 
-	for (i = 0; i < 28; i++) {
+	for (i = 0; i < RTL838X_CPU_PORT; i++) {
 		if (ports & BIT(i)) {
 			link = sw_r32(RTL838X_MAC_LINK_STS);
 			if (link & BIT(i))
@@ -1791,6 +1788,12 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 				dsa_port_phylink_mac_change(ds, i, false);
 		}
 	}
+
+	if (ports_m) {
+		sw_w32(ports_m, RTL839X_ISR_PORT_MEDIA_CHG);
+		pr_info("%s media change detected: %08x\n", __func__, ports_m);
+	}
+
 	return IRQ_HANDLED;
 }
 
@@ -1891,26 +1894,26 @@ timeout:
 int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 {
 	u32 v;
+	u32 park_page;
 
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(100000))
-		goto timeout;
-
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+	reg = mdiobus_c45_regad(reg);
+	pr_debug("%s port %d, addr %d, reg %d\n", __func__, port, addr, reg);
+	sw_w32(port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
 	v = addr << 16 | reg;
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_3);
 
-	/* mmd-access | read | cmd-start */
-	v = 1 << 1 | 0 << 2 | 1;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & ((0x1f << 15) | 0x2);
+	/* mmd-access | read: BIT(2) not set | cmd-start */
+	v = BIT(1) | BIT(0);
+	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
+
+	sw_w32(park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
 
@@ -1928,29 +1931,31 @@ timeout:
 int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 {
 	u32 v;
+	u32 park_page;
 
 	pr_debug("MMD write: port %d, dev %d, reg %d, val %x\n", port, addr, reg, val);
 	val &= 0xffff;
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(100000))
-		goto timeout;
-
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
+	reg = mdiobus_c45_regad(reg);
 	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
 	sw_w32_mask(0x1f << 16, addr << 16, RTL838X_SMI_ACCESS_PHY_CTRL_3);
 	sw_w32_mask(0xffff, reg, RTL838X_SMI_ACCESS_PHY_CTRL_3);
+
+	park_page = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_1) & ((0x1f << 15) | 0x2);
+
 	/* mmd-access | write | cmd-start */
-	v = 1 << 1 | 1 << 2 | 1;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+	v = BIT(1) | BIT(2) | BIT(0);
+	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	if (rtl838x_smi_wait_op(100000))
 		goto timeout;
 
+	sw_w32(park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+
 	mutex_unlock(&smi_lock);
+
 	return 0;
 
 timeout:
