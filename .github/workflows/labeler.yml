@@ -17,3 +17,17 @@ jobs:
       - uses: actions/labeler@v4
         with:
           repo-token: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: Check Branch
+        id: check-branch
+        run: |
+          if echo "${{ github.base_ref }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]'; then
+              echo "release-tag=$(echo ${{ github.base_ref }} | sed 's/openwrt-/release\//')" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: buildsville/add-remove-label@v2.0.0
+        if: ${{ steps.check-branch.outputs.release-tag }}
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          labels: ${{ steps.check-branch.outputs.release-tag }}
+          type: add

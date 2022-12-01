@@ -11,7 +11,7 @@
  	mt7986a-sd-rfb.dtb \
 --- /dev/null
 +++ b/configs/mt7986a_bpi-r3-emmc_defconfig
-@@ -0,0 +1,192 @@
+@@ -0,0 +1,193 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -204,9 +204,10 @@
 +CONFIG_CMD_SF=y
 +CONFIG_CMD_NAND=y
 +CONFIG_CMD_NAND_TRIMFFS=y
++CONFIG_LMB_MAX_REGIONS=64
 --- /dev/null
 +++ b/configs/mt7986a_bpi-r3-nor_defconfig
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,192 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -398,11 +399,10 @@
 +# CONFIG_SPI_FLASH_USE_4K_SECTORS is not set
 +CONFIG_CMD_MTD=y
 +CONFIG_CMD_SF=y
-+#CONFIG_CMD_NAND=y
-+#CONFIG_CMD_NAND_TRIMFFS=y
++CONFIG_LMB_MAX_REGIONS=64
 --- /dev/null
 +++ b/configs/mt7986a_bpi-r3-sd_defconfig
-@@ -0,0 +1,192 @@
+@@ -0,0 +1,193 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -595,9 +595,10 @@
 +CONFIG_CMD_SF=y
 +CONFIG_CMD_NAND=y
 +CONFIG_CMD_NAND_TRIMFFS=y
++CONFIG_LMB_MAX_REGIONS=64
 --- /dev/null
 +++ b/configs/mt7986a_bpi-r3-snand_defconfig
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,194 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -791,6 +792,7 @@
 +#CONFIG_CMD_SF=y
 +CONFIG_CMD_NAND=y
 +CONFIG_CMD_NAND_TRIMFFS=y
++CONFIG_LMB_MAX_REGIONS=64
 --- /dev/null
 +++ b/arch/arm/dts/mt7986a-bpi-r3-emmc.dts
 @@ -0,0 +1,33 @@

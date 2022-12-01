@@ -1015,12 +1015,14 @@ define Device/dlink_dir-825-b1
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-825
   DEVICE_VARIANT := B1
-  IMAGE_SIZE := 6208k
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
-	check-size | append-metadata
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
 	kmod-leds-reset kmod-owl-loader kmod-switch-rtl8366s
-  SUPPORTED_DEVICES += dir-825-b1
+  IMAGE_SIZE := 7808k
+  FACTORY_SIZE := 6144k
+  IMAGES += factory.bin
+  IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs | check-size $$$$(FACTORY_SIZE) | pad-to $$$$(FACTORY_SIZE) | \
+	append-string 01AP94-AR7161-RT-080619-00
 endef
 TARGET_DEVICES += dlink_dir-825-b1
 
@@ -1171,6 +1173,18 @@ define Device/engenius_eap1200h
   SENAO_IMGNAME := ar71xx-generic-eap1200h
 endef
 TARGET_DEVICES += engenius_eap1200h
+
+define Device/engenius_eap1750h
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := EAP1750H
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := ar71xx-generic-eap1750h
+endef
+TARGET_DEVICES += engenius_eap1750h
 
 define Device/engenius_eap300-v2
   $(Device/senao_loader_okli)
