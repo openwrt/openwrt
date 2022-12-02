@@ -966,7 +966,7 @@ $(eval $(call KernelPackage,tg3))
 define KernelPackage/hfcpci
   TITLE:=HFC PCI cards (single port) support for mISDN
   KCONFIG:=CONFIG_MISDN_HFCPCI
-  DEPENDS:=+kmod-misdn
+  DEPENDS:=@PCI_SUPPORT +kmod-misdn
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/isdn/hardware/mISDN/hfcpci.ko
   AUTOLOAD:=$(call AutoLoad,31,hfcpci)
@@ -983,7 +983,7 @@ $(eval $(call KernelPackage,hfcpci))
 define KernelPackage/hfcmulti
   TITLE:=HFC multiport cards (HFC-4S/8S/E1) support for mISDN
   KCONFIG:=CONFIG_MISDN_HFCMULTI
-  DEPENDS:=+kmod-misdn
+  DEPENDS:=@PCI_SUPPORT +kmod-misdn
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/isdn/hardware/mISDN/hfcmulti.ko
   AUTOLOAD:=$(call AutoLoad,31,hfcmulti)
