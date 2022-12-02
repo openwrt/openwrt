@@ -37,12 +37,34 @@
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
 
-		/* is this pin 30 on the external RTL8231 (&gpio1)? */
-		/*mode {
+		mode {
+			label = "mode";
+			gpios = <&gpio1 30 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_LIGHTS_TOGGLE>;
+		};
+
+		reset {
 			label = "reset";
-			gpios = <&gpio0 94 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 33 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-		};*/
+		};
+	};
+
+	leds {
+		link_act {
+			label = "green:link_act";
+			gpios = <&gpio1 28 GPIO_ACTIVE_LOW>;
+		};
+
+		poe {
+			label = "green:poe";
+			gpios = <&gpio1 29 GPIO_ACTIVE_LOW>;
+		};
+
+		poe_max {
+			label = "yellow:poe_max";
+			gpios = <&gpio1 27 GPIO_ACTIVE_LOW>;
+		};
 	};
 
 	gpio1: rtl8231-gpio {
