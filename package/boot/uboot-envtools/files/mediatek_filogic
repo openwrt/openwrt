@@ -41,6 +41,9 @@ xiaomi,redmi-router-ax6000-stock)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x20000"
 	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x10000" "0x20000"
 	;;
+tplink,tl-xdr4288|\
+tplink,tl-xdr6086|\
+tplink,tl-xdr6088|\
 xiaomi,redmi-router-ax6000-ubootmod)
 	. /lib/upgrade/nand.sh
 	local envubi=$(nand_find_ubi ubi)
