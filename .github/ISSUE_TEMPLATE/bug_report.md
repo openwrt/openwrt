@@ -11,6 +11,8 @@ assignees: ''
 
 Version: release/commit hash
 Device: target/subtarget/profile
+- [ ] Downloaded image
+- [ ] Self built image
 
 > A clear and concise description of what the bug is.
 
