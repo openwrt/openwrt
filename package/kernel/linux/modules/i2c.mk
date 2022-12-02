@@ -103,7 +103,7 @@ I2C_DWPCI_MODULES:= \
 define KernelPackage/i2c-designware-pci
   $(call i2c_defaults,$(I2C_DWPCI_MODULES),59)
   TITLE:=Synopsys DesignWare PCI
-  DEPENDS:=+kmod-i2c-designware-core
+  DEPENDS:=@PCI_SUPPORT +kmod-i2c-designware-core
 endef
 
 define KernelPackage/i2c-designware-pci/description
