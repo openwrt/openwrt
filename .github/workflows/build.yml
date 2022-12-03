@@ -6,6 +6,8 @@ on:
       target:
         required: true
         type: string
+      testing:
+        type: boolean
       build_toolchain:
         type: boolean
       include_feeds:
@@ -15,6 +17,8 @@ on:
       build_all_modules:
         type: boolean
       build_all_kmods:
+        type: boolean
+      build_all_boards:
         type: boolean
 
 permissions:
@@ -151,6 +155,13 @@ jobs:
         working-directory: openwrt
         run: ./scripts/ext-tools.sh --tools /tools.tar
 
+      - name: Configure testing kernel
+        if: inputs.testing == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          echo CONFIG_TESTING_KERNEL=y >> .config
+
       - name: Configure all kernel modules
         if: inputs.build_all_kmods == true
         shell: su buildbot -c "sh -e {0}"
@@ -164,6 +175,15 @@ jobs:
         working-directory: openwrt
         run: |
           echo CONFIG_ALL=y >> .config
+
+      - name: Configure all boards
+        if: inputs.build_all_boards == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          echo CONFIG_TARGET_MULTI_PROFILE=y >> .config
+          echo CONFIG_TARGET_PER_DEVICE_ROOTFS=y >> .config
+          echo CONFIG_TARGET_ALL_PROFILES=y >> .config
 
       - name: Configure external toolchain
         if: inputs.build_toolchain == false
