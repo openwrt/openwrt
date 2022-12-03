@@ -1,0 +1,48 @@
+Copyright (C) 2022 Aodzip <aodzip@gmail.com>
+--- a/eeprom.c	2022-05-26 14:53:21.103004472 +0800
++++ b/eeprom.c	2022-05-26 14:53:13.250974442 +0800
+@@ -7,6 +7,7 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/etherdevice.h>
++#include <linux/firmware.h>
+ #include "mt76.h"
+ 
+ int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int offset, int len)
+@@ -15,6 +16,8 @@
+ 	struct device_node *np = dev->dev->of_node;
+ 	struct mtd_info *mtd;
+ 	const __be32 *list;
++	const char *eepfilename;
++	const struct firmware *eepfile;
+ 	const void *data;
+ 	const char *part;
+ 	phandle phandle;
+@@ -25,6 +28,27 @@
+ 	if (!np)
+ 		return -ENOENT;
+ 
++	eepfile = NULL;
++	ret = of_property_read_string(np, "mediatek,eeprom-file", &eepfilename);
++	if (ret == 0) {
++		ret = request_firmware(&eepfile, eepfilename, dev->dev);
++		if (ret) {
++			dev_err(dev->dev, "Failed to load eeprom file %s\n", eepfilename);
++			goto out_eepfile;
++		}
++		if (eepfile->size > len) {
++			dev_err(dev->dev, "eeprom file %s is too large\n", eepfilename);
++			ret = -1;
++			goto out_eepfile;
++		}
++		memcpy(eep, eepfile->data, eepfile->size);
++	}
++out_eepfile:
++	if(eepfile)
++		release_firmware(eepfile);
++	if(ret == 0)
++		return 0;
++
+ 	data = of_get_property(np, "mediatek,eeprom-data", &size);
+ 	if (data) {
+ 		if (size > len)

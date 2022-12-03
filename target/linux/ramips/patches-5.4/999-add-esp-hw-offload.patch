@@ -1,0 +1,11 @@
+--- a/net/ipv4/Kconfig
++++ b/net/ipv4/Kconfig
+@@ -353,6 +353,7 @@
+ config INET_ESP
+ 	tristate "IP: ESP transformation"
+ 	select XFRM_ALGO
++	select XFRM_OFFLOAD
+ 	select CRYPTO
+ 	select CRYPTO_AUTHENC
+ 	select CRYPTO_HMAC
+

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+BUS="0"
+ADDR="0x51"
+TIMEOUT="0x78" # 120 seconds
+let TICK="5"
+
+trap "" INT HUP
+
+i2cset -y -f ${BUS} ${ADDR} 0x0F ${TIMEOUT}	# reset Timer
+i2cset -y -f ${BUS} ${ADDR} 0x0E 0x82 # enable Timer countdown
+i2cset -y -f ${BUS} ${ADDR} 0x01 0x11 # enable Timer interrupt
+
+while true; do
+	i2cset -y -f ${BUS} ${ADDR} 0x0F ${TIMEOUT} # reset Timer
+	sleep ${TICK}
+done

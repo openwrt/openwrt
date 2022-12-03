@@ -1,0 +1,13 @@
+--- a/arch/mips/ralink/mt7621.c	2022-05-07 15:37:03.999765557 +0800
++++ b/arch/mips/ralink/mt7621.c	2022-05-07 13:52:33.624212000 +0800
+@@ -172,8 +172,8 @@
+ 	/* addr doesn't wrap around at dm + 256M, assume 512M memory. */
+ 	add_memory_region(MT7621_LOWMEM_BASE, MT7621_LOWMEM_MAX_SIZE,
+ 			  BOOT_MEM_RAM);
+-	add_memory_region(MT7621_HIGHMEM_BASE, MT7621_HIGHMEM_SIZE,
+-			  BOOT_MEM_RAM);
++	// add_memory_region(MT7621_HIGHMEM_BASE, MT7621_HIGHMEM_SIZE,
++	// 		  BOOT_MEM_RAM);
+ }
+ 
+ void __init ralink_clk_init(void)

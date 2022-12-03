@@ -1,0 +1,149 @@
+Copyright (C) 2022 Aodzip <aodzip@gmail.com>
+--- a/drivers/net/phy/realtek.c	2022-02-11 16:07:52.000000000 +0800
++++ b/drivers/net/phy/realtek.c	2022-03-26 18:52:58.728003873 +0800
+@@ -39,6 +39,11 @@
+ #define RTL8366RB_POWER_SAVE			0x15
+ #define RTL8366RB_POWER_SAVE_ON			BIT(12)
+ 
++#define RTL8211FS_SGMII_ESR			0x0F
++#define RTL8211FS_MODE_MASK			0xC000
++#define RTL8211F_MODE_UTP			0
++#define RTL8211FS_MODE_SGMII			1
++
+ #define RTL_SUPPORTS_5000FULL			BIT(14)
+ #define RTL_SUPPORTS_2500FULL			BIT(13)
+ #define RTL_SUPPORTS_10000FULL			BIT(0)
+@@ -49,6 +54,11 @@
+ 
+ #define RTL_GENERIC_PHYID			0x001cc800
+ 
++struct rtl8211f_priv {
++	int lastmode;
++	int autotxid;
++};
++
+ MODULE_DESCRIPTION("Realtek PHY driver");
+ MODULE_AUTHOR("Johnson Leung");
+ MODULE_LICENSE("GPL");
+@@ -443,6 +453,105 @@
+ 	       rtlgen_supports_2_5gbps(phydev);
+ }
+ 
++static int rtl8211f_probe(struct phy_device *phydev)
++{
++	struct device *dev = &phydev->mdio.dev;
++	struct rtl8211f_priv *priv;
++
++	priv = devm_kzalloc(dev, sizeof(struct rtl8211f_priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++	
++	memset(priv, 0x00, sizeof(struct rtl8211f_priv));
++
++	priv->lastmode = RTL8211F_MODE_UTP;
++	priv->autotxid = device_property_read_bool(dev, "realtek,autotxid");
++
++	phydev->priv = priv;
++
++	return 0;
++}
++
++static void rtl8211f_remove(struct phy_device *phydev)
++{
++	struct device *dev = &phydev->mdio.dev;
++	struct rtl8211f_priv *priv = phydev->priv;
++
++	if (priv)
++		devm_kfree(dev, priv);
++}
++
++static int rtl8211f_mode(struct phy_device *phydev)
++{
++	u16 val;
++
++	val = phy_read(phydev, RTL8211FS_SGMII_ESR);
++	val &= RTL8211FS_MODE_MASK;
++
++	if (val)
++		return RTL8211FS_MODE_SGMII;
++
++	return RTL8211F_MODE_UTP;
++}
++
++static int rtl8211f_config_aneg(struct phy_device *phydev)
++{
++	int ret;
++
++	struct rtl8211f_priv *priv = phydev->priv;
++
++	ret = genphy_read_abilities(phydev);
++	if(ret < 0)
++		return ret;
++
++	linkmode_copy(phydev->advertising, phydev->supported);
++
++	if (rtl8211f_mode(phydev) == RTL8211FS_MODE_SGMII) {
++		dev_info(&phydev->mdio.dev, "SGMII Mode");
++		priv->lastmode = RTL8211FS_MODE_SGMII;
++		return genphy_c37_config_aneg(phydev);
++	}
++
++	dev_info(&phydev->mdio.dev, "UTP Mode");
++	priv->lastmode = RTL8211F_MODE_UTP;
++	return genphy_config_aneg(phydev);
++}
++
++static int rtl8211f_read_status(struct phy_device *phydev)
++{
++	int val, ret;
++	struct rtl8211f_priv *priv = phydev->priv;
++
++	if (rtl8211f_mode(phydev) != priv->lastmode) {
++		ret = rtl8211f_config_aneg(phydev);
++		if (ret < 0)
++			return ret;
++
++		ret = genphy_restart_aneg(phydev);
++		if (ret < 0)
++			return ret;
++	}
++
++	if (rtl8211f_mode(phydev) == RTL8211FS_MODE_SGMII) {
++		ret = genphy_c37_read_status(phydev);
++	} else {
++		ret = genphy_read_status(phydev);
++	}
++	if (ret < 0)
++		return ret;
++
++	if (priv->autotxid) {
++		val = 0;
++		if (phydev->speed < SPEED_1000)
++			val = RTL8211F_TX_DELAY;
++
++		ret = phy_modify_paged_changed(phydev, 0xd08, 0x11,
++			RTL8211F_TX_DELAY, val);
++	}
++
++	return ret;
++}
++
+ static struct phy_driver realtek_drvs[] = {
+ 	{
+ 		PHY_ID_MATCH_EXACT(0x00008201),
+@@ -513,10 +622,14 @@
+ 		.write_page	= rtl821x_write_page,
+ 	}, {
+ 		PHY_ID_MATCH_EXACT(0x001cc916),
+-		.name		= "RTL8211F Gigabit Ethernet",
++		.name		= "RTL8211F(S) Gigabit Ethernet",
++		.probe		= rtl8211f_probe,
++		.remove		= rtl8211f_remove,
+ 		.config_init	= &rtl8211f_config_init,
+ 		.ack_interrupt	= &rtl8211f_ack_interrupt,
+ 		.config_intr	= &rtl8211f_config_intr,
++		.config_aneg	= rtl8211f_config_aneg,
++		.read_status	= rtl8211f_read_status,
+ 		.suspend	= genphy_suspend,
+ 		.resume		= genphy_resume,
+ 		.read_page	= rtl821x_read_page,

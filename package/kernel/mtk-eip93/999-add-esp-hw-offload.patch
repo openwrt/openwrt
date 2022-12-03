@@ -1,0 +1,10 @@
+--- a/net/ipv4/Kconfig
++++ b/net/ipv4/Kconfig
+@@ -356,6 +356,7 @@ config INET_AH
+ config INET_ESP
+ 	tristate "IP: ESP transformation"
+ 	select XFRM_ESP
++	select XFRM_OFFLOAD
+ 	help
+ 	  Support for IPsec ESP (Encapsulating Security Payload).
+ 

@@ -1,0 +1,11 @@
+--- a/drivers/gpio/gpio-mt7621.c
++++ b/drivers/gpio/gpio-mt7621.c
+@@ -312,7 +312,7 @@ mediatek_gpio_probe(struct platform_devi
+ 	mtk->dev = dev;
+ 	platform_set_drvdata(pdev, mtk);
+ 
+-	for (i = 0; i < MTK_BANK_CNT; i++) {
++	for (i = MTK_BANK_CNT - 1; i >= 0; i--) {
+ 		ret = mediatek_gpio_bank_probe(dev, np, i);
+ 		if (ret)
+ 			return ret;

@@ -1,0 +1,68 @@
+PC <------> WAN router LAN <---> mac mini (iperf3 server)
+    IPSec
+
+iperf3 -c server-ip --bidir -P2 
+
+
+[ ID][Role] Interval           Transfer     Bitrate         Retr
+[  5][TX-C]   0.00-10.00  sec   133 MBytes   112 Mbits/sec   60             sender
+[  5][TX-C]   0.00-10.02  sec   133 MBytes   111 Mbits/sec                  receiver
+[  7][TX-C]   0.00-10.00  sec   118 MBytes  99.2 Mbits/sec   33             sender
+[  7][TX-C]   0.00-10.02  sec   117 MBytes  98.4 Mbits/sec                  receiver
+[SUM][TX-C]   0.00-10.00  sec   251 MBytes   211 Mbits/sec   93             sender
+[SUM][TX-C]   0.00-10.02  sec   250 MBytes   209 Mbits/sec                  receiver
+[  9][RX-C]   0.00-10.00  sec  72.9 MBytes  61.2 Mbits/sec                  sender
+[  9][RX-C]   0.00-10.02  sec  72.5 MBytes  60.7 Mbits/sec                  receiver
+[ 11][RX-C]   0.00-10.00  sec  67.5 MBytes  56.6 Mbits/sec                  sender
+[ 11][RX-C]   0.00-10.02  sec  67.2 MBytes  56.3 Mbits/sec                  receiver
+[SUM][RX-C]   0.00-10.00  sec   140 MBytes   118 Mbits/sec                  sender
+[SUM][RX-C]   0.00-10.02  sec   140 MBytes   117 Mbits/sec                  receiver
+
+AES128-SHA1
+
+SUM TX 210
+SUM RX 117
+
+TOTAL: 327 Mbps Full Duplex
+
+[ ID][Role] Interval           Transfer     Bitrate         Retr
+[  5][TX-C]   0.00-10.00  sec   151 MBytes   127 Mbits/sec    4             sender
+[  5][TX-C]   0.00-10.02  sec   149 MBytes   125 Mbits/sec                  receiver
+[  7][TX-C]   0.00-10.00  sec   132 MBytes   110 Mbits/sec    3             sender
+[  7][TX-C]   0.00-10.02  sec   131 MBytes   110 Mbits/sec                  receiver
+[SUM][TX-C]   0.00-10.00  sec   283 MBytes   237 Mbits/sec    7             sender
+[SUM][TX-C]   0.00-10.02  sec   280 MBytes   234 Mbits/sec                  receiver
+[  9][RX-C]   0.00-10.00  sec  43.6 MBytes  36.6 Mbits/sec                  sender
+[  9][RX-C]   0.00-10.02  sec  43.2 MBytes  36.2 Mbits/sec                  receiver
+[ 11][RX-C]   0.00-10.00  sec  79.3 MBytes  66.5 Mbits/sec                  sender
+[ 11][RX-C]   0.00-10.02  sec  78.7 MBytes  65.9 Mbits/sec                  receiver
+[SUM][RX-C]   0.00-10.00  sec   123 MBytes   103 Mbits/sec                  sender
+[SUM][RX-C]   0.00-10.02  sec   122 MBytes   102 Mbits/sec                  receiver
+
+AES256-SHA256
+
+SUM TX 235
+SUM RX 102
+
+TOTAL: 337 Mbps Full Duplex
+
+[ ID][Role] Interval           Transfer     Bitrate         Retr
+[  5][TX-C]   0.00-10.00  sec   165 MBytes   138 Mbits/sec  189             sender
+[  5][TX-C]   0.00-10.02  sec   162 MBytes   136 Mbits/sec                  receiver
+[  7][TX-C]   0.00-10.00  sec  90.5 MBytes  75.9 Mbits/sec   92             sender
+[  7][TX-C]   0.00-10.02  sec  89.3 MBytes  74.7 Mbits/sec                  receiver
+[SUM][TX-C]   0.00-10.00  sec   255 MBytes   214 Mbits/sec  281             sender
+[SUM][TX-C]   0.00-10.02  sec   252 MBytes   211 Mbits/sec                  receiver
+[  9][RX-C]   0.00-10.00  sec  68.6 MBytes  57.5 Mbits/sec                  sender
+[  9][RX-C]   0.00-10.02  sec  68.3 MBytes  57.1 Mbits/sec                  receiver
+[ 11][RX-C]   0.00-10.00  sec   106 MBytes  88.6 Mbits/sec                  sender
+[ 11][RX-C]   0.00-10.02  sec   105 MBytes  88.0 Mbits/sec                  receiver
+[SUM][RX-C]   0.00-10.00  sec   174 MBytes   146 Mbits/sec                  sender
+[SUM][RX-C]   0.00-10.02  sec   173 MBytes   145 Mbits/sec                  receiver
+
+AES128CTR-SHA256
+
+SUM TX 212
+SUM RX 145
+
+TOTAL: 357 Mbps Ful Duplex

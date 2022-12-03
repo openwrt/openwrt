@@ -668,7 +668,7 @@ $(eval $(call KernelPackage,igbvf))
 define KernelPackage/ixgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +kmod-ipsec
   KCONFIG:=CONFIG_IXGBE \
     CONFIG_IXGBE_VXLAN=n \
     CONFIG_IXGBE_HWMON=y \

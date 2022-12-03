@@ -1,0 +1,142 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -2466,6 +2466,17 @@ config SB1_PASS_2_1_WORKAROUNDS
+ 	depends on CPU_SB1 && CPU_SB1_PASS_2
+ 	default y
+ 
++config MIPS_ER35_WORKAROUNDS
++	bool
++	depends on SYS_SUPPORTS_MIPS_CPS
++	select ZONE_DMA
++	default y
++
++config MIPS_ER35_RESERVED_SPACE
++	hex
++	default 0x1000000
++	depends on MIPS_ER35_WORKAROUNDS
++
+ choice
+ 	prompt "SmartMIPS or microMIPS ASE support"
+ 
+--- a/arch/mips/include/asm/dma.h
++++ b/arch/mips/include/asm/dma.h
+@@ -87,6 +87,8 @@
+ #if defined(CONFIG_SGI_IP22) || defined(CONFIG_SGI_IP28)
+ /* don't care; ISA bus master won't work, ISA slave DMA supports 32bit addr */
+ #define MAX_DMA_ADDRESS		PAGE_OFFSET
++#elif defined(CONFIG_MIPS_ER35_WORKAROUNDS)
++#define MAX_DMA_ADDRESS		(PAGE_OFFSET + CONFIG_MIPS_ER35_RESERVED_SPACE)
+ #else
+ #define MAX_DMA_ADDRESS		(PAGE_OFFSET + 0x01000000)
+ #endif
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -22,6 +22,7 @@
+ #include <asm/irqflags.h>
+ #include <asm/regdef.h>
+ #include <asm/mipsregs.h>
++#include <asm/cacheops.h>
+ #include <asm/stackframe.h>
+ 
+ #include <kernel-entry-init.h>
+@@ -93,6 +94,67 @@ NESTED(kernel_entry, 16, sp)			# kernel entry point
+ 
+ 	setup_c0_status_pri
+ 
++#ifdef CONFIG_MIPS_ER35_WORKAROUNDS
++	/* Jump to KSEG1 so that we can perform cache related operations */
++	PTR_LA	t0, 0f
++	li	t1, 5
++	ins	t0, t1, 29, 3
++	jr	t0
++	nop
++0:
++
++	/* Calculate L2 Cache size */
++	MFC0	t0, CP0_CONFIG, 2
++	ext	t1, t0, 4, 4
++	li	t2, 2
++	sllv	t1, t2, t1		/* Cache line size */
++
++	ext	t2, t0, 8, 4
++	li	t3, 64
++	sllv	t2, t3, t2		/* Sets per way */
++
++	ext	t3, t0, 0, 4
++	addiu	t3, 1			/* Number of ways */
++
++	mul	t2, t2, t3		/* Number of sets */
++
++
++	/* Flush L2 Cache before setting CCA overrides */
++	move	t3, zero
++1:
++	cache	Index_Writeback_Inv_SD, 0(t3)
++	sub	t2, 1
++	add	t3, t3, t1
++	bne	t2, zero, 1b
++	nop
++
++	sync
++
++	/*
++	 * Override bottom CONFIG_MIPS_ER35_RESERVED_SPACE of DDR to
++	 * Uncached (which will be reserved as DMA zone)
++	 */
++	MFC0	t0, CP0_CMGCRBASE
++	PTR_SLL	t0, t0, 4
++	li	t1, 5
++	ins	t0, t1, 29, 3
++
++	/* GCR_REG2_MASK */
++	lui	t1, (~((CONFIG_MIPS_ER35_RESERVED_SPACE - 1) >> 16)) & 0xffff
++	ori	t1, t1, 0x0051
++	sw	t1, 0xb8(t0)
++
++	/* GCR_REG2_BASE */
++	sw	zero, 0xb0(t0)
++
++	/* Set default override to Write-through */
++	lw	t1, 0x08(t0)
++	li	t2, 0xffff8000
++	and	t1, t1, t2
++	ori	t1, 0x10
++	sw	t1, 0x08(t0)
++#endif
++
+ 	/* We might not get launched at the address the kernel is linked to,
+ 	   so we jump there.  */
+ 	PTR_LA	t0, 0f
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -59,6 +59,8 @@ choice
+ 		select HAVE_PCI if PCI_MT7621
+ 		select WEAK_REORDERING_BEYOND_LLSC
+ 		select GENERIC_CLOCKEVENTS_BROADCAST
++		select MIPS_ER35_WORKAROUNDS
++
+ endchoice
+ 
+ choice
+--- a/arch/mips/ralink/Platform
++++ b/arch/mips/ralink/Platform
+@@ -30,5 +30,5 @@ cflags-$(CONFIG_SOC_MT7620)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt
+ 
+ # Ralink MT7621
+ #
+-load-$(CONFIG_SOC_MT7621)	+= 0xffffffff80001000
++load-$(CONFIG_SOC_MT7621)	+= 0xffffffff80001000+$(CONFIG_MIPS_ER35_RESERVED_SPACE)
+ cflags-$(CONFIG_SOC_MT7621)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7621
+--- a/kernel/dma/direct.c
++++ b/kernel/dma/direct.c
+@@ -91,6 +91,10 @@ struct page *__dma_direct_alloc_pages(struct device *dev, size_t size,
+ 	struct page *page = NULL;
+ 	u64 phys_mask;
+ 
++#ifdef CONFIG_MIPS_ER35_WORKAROUNDS
++	gfp |= __GFP_DMA;
++#endif
++
+ 	if (attrs & DMA_ATTR_NO_WARN)
+ 		gfp |= __GFP_NOWARN;
+ 
