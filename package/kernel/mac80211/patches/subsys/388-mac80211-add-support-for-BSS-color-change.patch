@@ -179,7 +179,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		if (err < 0) {
  			kfree(sdata->u.ap.next_beacon);
  			return err;
-@@ -3428,6 +3436,15 @@ static int ieee80211_set_csa_beacon(stru
+@@ -3425,6 +3433,15 @@ static int ieee80211_set_csa_beacon(stru
  	return 0;
  }
  
@@ -195,7 +195,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static int
  __ieee80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
  			   struct cfg80211_csa_settings *params)
-@@ -3496,6 +3513,10 @@ __ieee80211_channel_switch(struct wiphy
+@@ -3493,6 +3510,10 @@ __ieee80211_channel_switch(struct wiphy
  		goto out;
  	}
  
@@ -206,7 +206,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	err = ieee80211_set_csa_beacon(sdata, params, &changed);
  	if (err) {
  		ieee80211_vif_unreserve_chanctx(sdata);
-@@ -4147,6 +4168,196 @@ static int ieee80211_set_sar_specs(struc
+@@ -4144,6 +4165,196 @@ static int ieee80211_set_sar_specs(struc
  	return local->ops->set_sar_specs(&local->hw, sar);
  }
  
@@ -403,7 +403,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  const struct cfg80211_ops mac80211_config_ops = {
  	.add_virtual_intf = ieee80211_add_iface,
  	.del_virtual_intf = ieee80211_del_iface,
-@@ -4251,4 +4462,5 @@ const struct cfg80211_ops mac80211_confi
+@@ -4248,4 +4459,5 @@ const struct cfg80211_ops mac80211_confi
  	.set_tid_config = ieee80211_set_tid_config,
  	.reset_tid_config = ieee80211_reset_tid_config,
  	.set_sar_specs = ieee80211_set_sar_specs,

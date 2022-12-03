@@ -25,7 +25,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				      struct ieee80211_sta *sta, bool enabled);
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -4136,6 +4136,17 @@ static int ieee80211_reset_tid_config(st
+@@ -4133,6 +4133,17 @@ static int ieee80211_reset_tid_config(st
  	return ret;
  }
  
@@ -43,7 +43,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  const struct cfg80211_ops mac80211_config_ops = {
  	.add_virtual_intf = ieee80211_add_iface,
  	.del_virtual_intf = ieee80211_del_iface,
-@@ -4239,4 +4250,5 @@ const struct cfg80211_ops mac80211_confi
+@@ -4236,4 +4247,5 @@ const struct cfg80211_ops mac80211_confi
  	.probe_mesh_link = ieee80211_probe_mesh_link,
  	.set_tid_config = ieee80211_set_tid_config,
  	.reset_tid_config = ieee80211_reset_tid_config,
