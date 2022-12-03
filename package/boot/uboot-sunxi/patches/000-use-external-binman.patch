@@ -1,0 +1,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -1301,7 +1301,7 @@ u-boot.ldr:	u-boot
+ default_dt := $(if $(DEVICE_TREE),$(DEVICE_TREE),$(CONFIG_DEFAULT_DEVICE_TREE))
+ 
+ quiet_cmd_binman = BINMAN  $@
+-cmd_binman = $(srctree)/tools/binman/binman $(if $(BINMAN_DEBUG),-D) \
++cmd_binman = $(STAGING_PREFIX)/bin/binman $(if $(BINMAN_DEBUG),-D) \
+                 --toolpath $(objtree)/tools \
+ 		$(if $(BINMAN_VERBOSE),-v$(BINMAN_VERBOSE)) \
+ 		build -u -d u-boot.dtb -O . -m --allow-missing \

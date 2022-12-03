@@ -9,9 +9,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2020.04
+PKG_VERSION:=2022.01
+PKG_RELEASE:=$(AUTORELEASE)
 
-PKG_HASH:=fe732aaf037d9cc3c0909bad8362af366ae964bbdac6913a34081ff4ad565372
+PKG_HASH:=81b4543227db228c03f8a1bf5ddbc813b0bb8f6555ce46064ef721a6fc680413
 
 PKG_MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
@@ -154,6 +155,12 @@ define U-Boot/Lamobo_R1
   BUILD_SUBTARGET:=cortexa7
   NAME:=Lamobo R1
   BUILD_DEVICES:=lamobo_lamobo-r1
+endef
+
+define U-Boot/pinecube
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Pine64 PineCube
+  BUILD_DEVICES:=pinecube
 endef
 
 define U-Boot/nanopi_m1_plus
@@ -378,6 +385,7 @@ UBOOT_TARGETS := \
 	orangepi_pc2 \
 	pangolin \
 	pine64_plus \
+	pinecube \
 	sopine_baseboard \
 	orangepi_zero_plus \
 	libretech_all_h3_cc_h5

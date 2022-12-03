@@ -116,3 +116,27 @@ define SetupHostCommand
 
   $$(eval $$(call Require,$(1),$(if $(2),$(2),Missing $(1) command)))
 endef
+
+define SetupHostPython
+  define Require/$(1)
+	[ -f "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0; \
+	for cmd in $(call QuoteHostCommand,$(3)) $(call QuoteHostCommand,$(4)) \
+	           $(call QuoteHostCommand,$(5)) $(call QuoteHostCommand,$(6)) \
+	           $(call QuoteHostCommand,$(7)) $(call QuoteHostCommand,$(8)) \
+	           $(call QuoteHostCommand,$(9)) $(call QuoteHostCommand,$(10)) \
+	           $(call QuoteHostCommand,$(11)) $(call QuoteHostCommand,$(12)); do \
+		if [ -n "$$$$$$$$cmd" ]; then \
+			bin="$$$$$$$$(PATH="$(subst $(space),:,$(filter-out $(STAGING_DIR_HOST)/%,$(subst :,$(space),$(PATH))))" \
+				command -v "$$$$$$$${cmd%% *}")"; \
+			if [ -x "$$$$$$$$bin" ] && eval "$$$$$$$$cmd" >/dev/null 2>/dev/null; then \
+				mkdir -p "$(STAGING_DIR_HOST)/"; \
+				"$$$$$$$$bin" -m venv "$(STAGING_DIR_HOST)/"; \
+				exit 0; \
+			fi; \
+		fi; \
+	done; \
+	exit 1
+  endef
+
+  $$(eval $$(call Require,$(1),$(if $(2),$(2),Missing $(1) command)))
+endef
