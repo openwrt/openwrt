@@ -6,6 +6,8 @@ on:
       target:
         required: true
         type: string
+      testing:
+        type: boolean
 
 permissions:
   contents: read
@@ -57,6 +59,13 @@ jobs:
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: ./scripts/ext-tools.sh --tools /tools.tar
+
+      - name: Configure testing kernel
+        if: inputs.testing == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          echo CONFIG_TESTING_KERNEL=y >> .config
 
       - name: Configure system
         shell: su buildbot -c "sh -e {0}"
