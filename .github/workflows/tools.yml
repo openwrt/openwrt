@@ -10,9 +10,6 @@ on:
       - 'tools/**'
       - '.github/workflows/tools.yml'
 
-permissions:
-  contents: read
-
 jobs:
   build-macos-latest:
     if: github.event_name != 'push'
