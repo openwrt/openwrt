@@ -54,7 +54,7 @@ v2: use rt2800_wait_bbp_rf_ready()
   * PWR_PIN_CFG:
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -8475,6 +8475,138 @@ static void rt2800_rf_self_txdc_cal(stru
+@@ -8501,6 +8501,138 @@ static void rt2800_rf_self_txdc_cal(stru
  	rt2800_register_write(rt2x00dev, RF_BYPASS2, mac052c);
  }
  
@@ -193,7 +193,7 @@ v2: use rt2800_wait_bbp_rf_ready()
  static void rt2800_bbp_core_soft_reset(struct rt2x00_dev *rt2x00dev,
  				       bool set_bw, bool is_ht40)
  {
-@@ -9082,6 +9214,7 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -9108,6 +9240,7 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
  

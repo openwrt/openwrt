@@ -2575,6 +2575,7 @@ TARGET_DEVICES += zyxel_nwa55axe
 
 define Device/zyxel_wap6805
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
@@ -2583,7 +2584,7 @@ define Device/zyxel_wap6805
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := WAP6805
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7621-qtn-rgmii
-  KERNEL := $(KERNEL_DTB) | uImage lzma | uimage-padhdr 160
+  KERNEL := $$(KERNEL/lzma-loader) | uImage none | uimage-padhdr 160
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zyxel_wap6805

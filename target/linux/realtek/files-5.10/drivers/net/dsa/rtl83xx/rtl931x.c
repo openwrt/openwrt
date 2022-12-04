@@ -3,6 +3,26 @@
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl83xx.h"
 
+#define RTL931X_VLAN_PORT_TAG_STS_INTERNAL			0x0
+#define RTL931X_VLAN_PORT_TAG_STS_UNTAG				0x1
+#define RTL931X_VLAN_PORT_TAG_STS_TAGGED			0x2
+#define RTL931X_VLAN_PORT_TAG_STS_PRIORITY_TAGGED		0x3
+
+#define RTL931X_VLAN_PORT_TAG_CTRL_BASE				0x4860
+/* port 0-56 */
+#define RTL931X_VLAN_PORT_TAG_CTRL(port) \
+		RTL931X_VLAN_PORT_TAG_CTRL_BASE + (port << 2)
+#define RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK			GENMASK(13,12)
+#define RTL931X_VLAN_PORT_TAG_EGR_ITAG_STS_MASK			GENMASK(11,10)
+#define RTL931X_VLAN_PORT_TAG_EGR_OTAG_KEEP_MASK		GENMASK(9,9)
+#define RTL931X_VLAN_PORT_TAG_EGR_ITAG_KEEP_MASK		GENMASK(8,8)
+#define RTL931X_VLAN_PORT_TAG_IGR_OTAG_KEEP_MASK		GENMASK(7,7)
+#define RTL931X_VLAN_PORT_TAG_IGR_ITAG_KEEP_MASK		GENMASK(6,6)
+#define RTL931X_VLAN_PORT_TAG_OTPID_IDX_MASK			GENMASK(5,4)
+#define RTL931X_VLAN_PORT_TAG_OTPID_KEEP_MASK			GENMASK(3,3)
+#define RTL931X_VLAN_PORT_TAG_ITPID_IDX_MASK			GENMASK(2,1)
+#define RTL931X_VLAN_PORT_TAG_ITPID_KEEP_MASK			GENMASK(0,0)
+
 extern struct mutex smi_lock;
 extern struct rtl83xx_soc_info soc_info;
 
@@ -1470,6 +1490,15 @@ int rtl931x_l3_setup(struct rtl838x_switch_priv *priv)
 	return 0;
 }
 
+void rtl931x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+{
+	sw_w32(FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK,
+			  keep_outer ? RTL931X_VLAN_PORT_TAG_STS_TAGGED : RTL931X_VLAN_PORT_TAG_STS_UNTAG) |
+	       FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_ITAG_STS_MASK,
+			  keep_inner ? RTL931X_VLAN_PORT_TAG_STS_TAGGED : RTL931X_VLAN_PORT_TAG_STS_UNTAG),
+	       RTL931X_VLAN_PORT_TAG_CTRL(port));
+}
+
 void rtl931x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
@@ -1651,7 +1680,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.write_l2_entry_using_hash = rtl931x_write_l2_entry_using_hash,
 	.read_cam = rtl931x_read_cam,
 	.write_cam = rtl931x_write_cam,
-	.vlan_port_tag_sts_ctrl = RTL931X_VLAN_PORT_TAG_CTRL,
+	.vlan_port_keep_tag_set = rtl931x_vlan_port_keep_tag_set,
 	.vlan_port_pvidmode_set = rtl931x_vlan_port_pvidmode_set,
 	.vlan_port_pvid_set = rtl931x_vlan_port_pvid_set,
 	.trk_mbr_ctr = rtl931x_trk_mbr_ctr,

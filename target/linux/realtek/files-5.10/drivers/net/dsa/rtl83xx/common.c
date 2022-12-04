@@ -1401,7 +1401,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
 	case FIB_EVENT_ENTRY_DEL:
-		pr_debug("%s: FIB_ENTRY ADD/DELL, event %ld\n", __func__, event);
+		pr_debug("%s: FIB_ENTRY ADD/DEL, event %ld\n", __func__, event);
 		if (info->family == AF_INET) {
 			struct fib_entry_notifier_info *fen_info = ptr;
 
@@ -1420,7 +1420,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 
 		} else if (info->family == AF_INET6) {
 			struct fib6_entry_notifier_info *fen6_info = ptr;
-			pr_warn("%s: FIB_RULE ADD/DELL for IPv6 not supported\n", __func__);
+			pr_warn("%s: FIB_RULE ADD/DEL for IPv6 not supported\n", __func__);
 			kfree(fib_work);
 			return NOTIFY_DONE;
 		}
@@ -1428,7 +1428,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 
 	case FIB_EVENT_RULE_ADD:
 	case FIB_EVENT_RULE_DEL:
-		pr_debug("%s: FIB_RULE ADD/DELL, event: %ld\n", __func__, event);
+		pr_debug("%s: FIB_RULE ADD/DEL, event: %ld\n", __func__, event);
 		memcpy(&fib_work->fr_info, ptr, sizeof(fib_work->fr_info));
 		fib_rule_get(fib_work->fr_info.rule);
 		break;

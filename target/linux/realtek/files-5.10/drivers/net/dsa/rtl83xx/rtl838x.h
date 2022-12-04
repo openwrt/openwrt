@@ -69,29 +69,24 @@
 #define RTL838X_VLAN_PORT_EGR_FLTR		(0x3A84)
 #define RTL838X_VLAN_PORT_PB_VLAN		(0x3C00)
 #define RTL838X_VLAN_PORT_IGR_FLTR		(0x3A7C)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL		(0xA530)
 
 #define RTL839X_VLAN_PROFILE(idx)		(0x25C0 + (((idx) << 3)))
 #define RTL839X_VLAN_CTRL			(0x26D4)
 #define RTL839X_VLAN_PORT_PB_VLAN		(0x26D8)
 #define RTL839X_VLAN_PORT_IGR_FLTR		(0x27B4)
 #define RTL839X_VLAN_PORT_EGR_FLTR		(0x27C4)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL		(0x6828)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL		(0x6828)
 
 #define RTL930X_VLAN_PROFILE_SET(idx)		(0x9c60 + (((idx) * 20)))
 #define RTL930X_VLAN_CTRL			(0x82D4)
 #define RTL930X_VLAN_PORT_PB_VLAN		(0x82D8)
 #define RTL930X_VLAN_PORT_IGR_FLTR		(0x83C0)
 #define RTL930X_VLAN_PORT_EGR_FLTR		(0x83C8)
-#define RTL930X_VLAN_PORT_TAG_STS_CTRL		(0xCE24)
 
 #define RTL931X_VLAN_PROFILE_SET(idx)		(0x9800 + (((idx) * 28)))
 #define RTL931X_VLAN_CTRL			(0x94E4)
 #define RTL931X_VLAN_PORT_IGR_CTRL		(0x94E8)
 #define RTL931X_VLAN_PORT_IGR_FLTR		(0x96B4)
 #define RTL931X_VLAN_PORT_EGR_FLTR		(0x96C4)
-#define RTL931X_VLAN_PORT_TAG_CTRL		(0x4860)
 
 /* Table access registers */
 #define RTL838X_TBL_ACCESS_CTRL_0		(0x6914)
@@ -980,6 +975,7 @@ struct rtl838x_reg {
 	void (*vlan_profile_setup)(int profile);
 	void (*vlan_port_pvidmode_set)(int port, enum pbvlan_type type, enum pbvlan_mode mode);
 	void (*vlan_port_pvid_set)(int port, enum pbvlan_type type, int pvid);
+	void (*vlan_port_keep_tag_set)(int port, bool keep_outer, bool keep_inner);
 	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
 	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
 	void (*enable_learning)(int port, bool enable);
@@ -1005,8 +1001,6 @@ struct rtl838x_reg {
 	void (*write_l2_entry_using_hash)(u32 hash, u32 pos, struct rtl838x_l2_entry *e);
 	u64 (*read_cam)(int idx, struct rtl838x_l2_entry *e);
 	void (*write_cam)(int idx, struct rtl838x_l2_entry *e);
-	int vlan_port_tag_sts_ctrl;
-	int (*rtl838x_vlan_port_tag_sts_ctrl)(int port);
 	int (*trk_mbr_ctr)(int group);
 	int rma_bpdu_fld_pmask;
 	int spcl_trap_eapol_ctrl;
