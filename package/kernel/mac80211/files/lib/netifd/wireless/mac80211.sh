@@ -1033,7 +1033,7 @@ mac80211_setup_vif() {
 		mesh)
 			wireless_vif_parse_encryption
 			[ -z "$htmode" ] && htmode="NOHT";
-			if [ "$wpa" -gt 0 -o "$auto_channel" -gt 0 ] || chan_is_dfs "$phy" "$channel"; then
+			if wpa_supplicant -vmesh || [ "$wpa" -gt 0 -o "$auto_channel" -gt 0 ] || chan_is_dfs "$phy" "$channel"; then
 				mac80211_setup_supplicant $vif_enable || failed=1
 			else
 				mac80211_setup_mesh $vif_enable
