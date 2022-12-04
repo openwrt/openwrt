@@ -1,0 +1,19 @@
+name: 'Pull Request Labeler'
+on:
+  - pull_request_target
+
+permissions:
+  contents: read
+
+jobs:
+  labeler:
+    permissions:
+      contents: read # to determine modified files (actions/labeler)
+      pull-requests: write # to add labels to PRs (actions/labeler)
+
+    name: Pull Request Labeler
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v4
+        with:
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
