@@ -30,6 +30,7 @@ load_led() {
 	config_get message $1 message ""
 	config_get gpio $1 gpio "0"
 	config_get_bool inverted $1 inverted "0"
+	config_get intensity $1 intensity "200 200 200"
 
 	# execute application led trigger
 	[ -f "/usr/libexec/led-trigger/${trigger}" ] && {
@@ -63,6 +64,9 @@ load_led() {
 
 		[ $default = 1 ] &&
 			cat /sys/class/leds/${sysfs}/max_brightness > /sys/class/leds/${sysfs}/brightness
+
+		[ -e /sys/class/leds/${sysfs}/multi_intensity ] &&
+			echo "${intensity}" > /sys/class/leds/${sysfs}/multi_intensity
 
 		[ $ret = 0 ] || {
 			echo >&2 "Skipping trigger '$trigger' for led '$name' due to missing kernel module"
