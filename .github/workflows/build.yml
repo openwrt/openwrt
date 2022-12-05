@@ -266,6 +266,34 @@ jobs:
             --overwrite-config \
             --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
 
+      - name: Adapt external sdk to external toolchain format
+        if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_sdk'
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          TOOLCHAIN_DIR=${{ env.TOOLCHAIN_FILE }}/staging_dir/$(ls ${{ env.TOOLCHAIN_FILE }}/staging_dir | grep toolchain)
+          TOOLCHAIN_BIN=$TOOLCHAIN_DIR/bin
+          OPENWRT_DIR=$(pwd)
+
+          # Find target name from toolchain info.mk
+          GNU_TARGET_NAME=$(cat $TOOLCHAIN_DIR/info.mk | grep TARGET_CROSS | sed 's/^TARGET_CROSS=\(.*\)-$/\1/')
+
+          cd $TOOLCHAIN_BIN
+
+          # Revert sdk wrapper scripts applied to all the bins
+          for app in $(find . -name "*.bin"); do
+            TARGET_APP=$(echo $app | sed 's/\.\/\.\(.*\)\.bin/\1/')
+            rm $TARGET_APP
+            mv .$TARGET_APP.bin $TARGET_APP
+          done
+
+          # Setup the wrapper script in the sdk toolchain dir simulating an external toolchain build
+          cp $OPENWRT_DIR/target/toolchain/files/wrapper.sh $GNU_TARGET_NAME-wrapper.sh
+          for app in cc gcc g++ c++ cpp ld as ; do
+            [ -f $GNU_TARGET_NAME-$app ] && mv $GNU_TARGET_NAME-$app $GNU_TARGET_NAME-$app.bin
+            ln -sf $GNU_TARGET_NAME-wrapper.sh $GNU_TARGET_NAME-$app
+          done
+
       - name: Configure external toolchain with sdk
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_sdk'
         shell: su buildbot -c "sh -e {0}"
