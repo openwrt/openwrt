@@ -196,7 +196,6 @@ define Device/linksys_wrt32x
   KERNEL_SIZE := 6144k
   KERNEL := kernel-bin | append-dtb
   SUPPORTED_DEVICES += armada-385-linksys-venom linksys,venom
-  DEFAULT := y
 endef
 TARGET_DEVICES += linksys_wrt32x
 
