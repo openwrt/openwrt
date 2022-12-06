@@ -34,7 +34,7 @@ define U-Boot/rock-3a-rk3568
     radxa_rock-3a
   DEPENDS:=+PACKAGE_u-boot-rock-3a-rk3568:arm-trusted-firmware-rockchip-legacy
   PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip-legacy
-  DDR_BLOB:=rk35/rk3568_ddr_1560MHz_v1.10.bin
+  DDR_BLOB:=rk35/rk3568_ddr_1560MHz_v1.13.bin
   BL31_BLOB:=rk35/rk3568_bl31_v1.34.elf
 endef
 
