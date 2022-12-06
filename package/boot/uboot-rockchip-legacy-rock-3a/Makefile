@@ -8,7 +8,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/radxa/u-boot.git
+PKG_SOURCE_URL:=https://github.com/pengphei/rockchip-uboot.git
 PKG_SOURCE_DATE:=2022-11-15
 PKG_SOURCE_VERSION:=26d3b6963ed2d2215348f1baba8b9646ed3dc6ea
 PKG_MIRROR_HASH:=c72bc8c267663fe36bcb7edac43ee45fec1b566a943f1084a4689fbb2affefaf
