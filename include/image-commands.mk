@@ -348,6 +348,12 @@ define Build/qemu-image-esxi
 	fi
 endef
 
+# Wait for an image created by another target, to avoid failing on
+# -flat.vmdk in -j32 scenarios
+define Build/wait
+	timeout $1 bash -c "while [ ! -f $@ ] ; do sleep 1 ; done"
+endef
+
 define Build/qsdk-ipq-factory-nand
 	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh \
 		$@.its ubi $@
