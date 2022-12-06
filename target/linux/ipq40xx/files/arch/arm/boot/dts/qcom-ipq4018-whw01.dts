@@ -316,3 +316,21 @@
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_5000>;
 };
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "eth1";
+};
+
+&swport5 {
+	status = "okay";
+	label = "eth2";
+};

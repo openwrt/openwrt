@@ -734,8 +734,7 @@ define Device/linksys_whw01
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=WHW01
 	DEVICE_PACKAGES := uboot-envtools kmod-leds-pca963x
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += linksys_whw01
+TARGET_DEVICES += linksys_whw01
 
 define Device/luma_wrtq-329acn
 	$(call Device/FitImage)
