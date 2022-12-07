@@ -14,6 +14,8 @@ on:
         type: boolean
       build_full:
         type: boolean
+      build_kernel:
+        type: boolean
       build_all_modules:
         type: boolean
       build_all_kmods:
@@ -338,11 +340,13 @@ jobs:
         run: make toolchain/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Build Kernel
+        if: inputs.build_kernel == true
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: make target/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Build Kernel Kmods
+        if: inputs.build_kernel == true
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: make package/linux/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
