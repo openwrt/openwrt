@@ -232,72 +232,6 @@
 	pinctrl-0 = <&pmic_bus_pins>;
 };
 
-&nor_flash {
-	status = "okay";
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&spi_nor_pins>;
-
-	flash@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
-		spi-max-frequency = <50000000>;
-
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				label = "Preloader";
-				reg = <0x0 0x40000>;
-				read-only;
-			};
-
-			partition@40000 {
-				label = "ATF";
-				reg = <0x40000 0x20000>;
-				read-only;
-			};
-
-			partition@60000 {
-				label = "u-boot";
-				reg = <0x60000 0x50000>;
-				read-only;
-			};
-
-			partition@B0000 {
-				label = "u-boot-env";
-				reg = <0xb0000 0x20000>;
-			};
-
-			factory: partition@D0000 {
-				label = "Factory";
-				reg = <0xd0000 0x80000>;
-				read-only;
-			};
-
-			partition@150000 {
-				label = "product_info";
-				reg = <0x150000 0x10000>;
-				read-only;
-			};
-
-			partition@160000 {
-				label = "kdump";
-				reg = <0x160000 0x10000>;
-				read-only;
-			};
-
-			partition@170000 {
-				compatible = "denx,fit";
-				label = "firmware";
-				reg = <0x170000 0xe90000>;
-			};
-		};
-	};
-};
-
 &rtc {
 	status = "disabled";
 };
@@ -314,12 +248,4 @@
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&watchdog_pins>;
-};
-
-&wmac {
-	status = "okay";
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&epa_elna_pins>;
-	mediatek,mtd-eeprom = <&factory 0x0>;
 };

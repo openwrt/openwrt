@@ -76,3 +76,11 @@
 		};
 	};
 };
+
+&wmac {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&epa_elna_pins>;
+	mediatek,mtd-eeprom = <&factory 0x0>;
+};
