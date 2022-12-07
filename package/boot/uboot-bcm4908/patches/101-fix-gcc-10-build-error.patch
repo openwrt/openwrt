@@ -1,0 +1,12 @@
+Index: u-boot-2022-03-15-0625aad7/scripts/dtc/dtc-lexer.l
+===================================================================
+--- u-boot-2022-03-15-0625aad7.orig/scripts/dtc/dtc-lexer.l	2022-03-15 14:24:21.000000000 +0100
++++ u-boot-2022-03-15-0625aad7/scripts/dtc/dtc-lexer.l	2022-12-07 18:18:18.469149911 +0100
+@@ -38,7 +38,6 @@
+ #include "srcpos.h"
+ #include "dtc-parser.tab.h"
+ 
+-YYLTYPE yylloc;
+ extern bool treesource_error;
+ 
+ /* CAUTION: this will stop working if we ever use yyless() or yyunput() */
