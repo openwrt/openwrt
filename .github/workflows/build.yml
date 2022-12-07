@@ -267,7 +267,7 @@ jobs:
             --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
 
       - name: Adapt external sdk to external toolchain format
-        if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_sdk'
+        if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_sdk' && steps.cache-external-toolchain.outputs.cache-hit != 'true'
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
