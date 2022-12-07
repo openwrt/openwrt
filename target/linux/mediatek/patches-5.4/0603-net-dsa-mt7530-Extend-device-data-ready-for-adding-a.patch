@@ -47,7 +47,7 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  		return -EINVAL;
  	}
  
-@@ -1332,12 +1334,11 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -1333,12 +1335,11 @@ mt7530_setup(struct dsa_switch *ds)
  	return 0;
  }
  
@@ -63,7 +63,7 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  
  	switch (port) {
  	case 0: /* Internal phy */
-@@ -1346,33 +1347,114 @@ static void mt7530_phylink_mac_config(st
+@@ -1347,33 +1348,114 @@ static void mt7530_phylink_mac_config(st
  	case 3:
  	case 4:
  		if (state->interface != PHY_INTERFACE_MODE_GMII)
@@ -189,7 +189,7 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  		return;
  	}
  
-@@ -1440,61 +1522,44 @@ static void mt7530_phylink_mac_link_up(s
+@@ -1441,61 +1523,44 @@ static void mt7530_phylink_mac_link_up(s
  	mt7530_set(priv, MT7530_PMCR_P(port), mcr);
  }
  
@@ -274,7 +274,7 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  	phylink_set(mask, Pause);
  	phylink_set(mask, Asym_Pause);
  
-@@ -1590,12 +1655,45 @@ static int mt7530_set_mac_eee(struct dsa
+@@ -1591,12 +1656,45 @@ static int mt7530_set_mac_eee(struct dsa
  	return 0;
  }
  
@@ -323,7 +323,7 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  	.get_ethtool_stats	= mt7530_get_ethtool_stats,
  	.get_sset_count		= mt7530_get_sset_count,
  	.port_enable		= mt7530_port_enable,
-@@ -1612,18 +1710,43 @@ static const struct dsa_switch_ops mt753
+@@ -1613,18 +1711,43 @@ static const struct dsa_switch_ops mt753
  	.port_vlan_del		= mt7530_port_vlan_del,
  	.port_mirror_add	= mt7530_port_mirror_add,
  	.port_mirror_del	= mt7530_port_mirror_del,
@@ -372,7 +372,7 @@ Signed-off-by: Sean Wang <sean.wang@mediatek.com>
  	{ /* sentinel */ },
  };
  MODULE_DEVICE_TABLE(of, mt7530_of_match);
-@@ -1661,8 +1784,21 @@ mt7530_probe(struct mdio_device *mdiodev
+@@ -1662,8 +1785,21 @@ mt7530_probe(struct mdio_device *mdiodev
  	/* Get the hardware identifier from the devicetree node.
  	 * We will need it for some of the clock and regulator setup.
  	 */

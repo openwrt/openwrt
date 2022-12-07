@@ -80,9 +80,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +}
 +
  static enum dsa_tag_protocol
- mtk_get_tag_protocol(struct dsa_switch *ds, int port)
- {
-@@ -1520,6 +1578,8 @@ static const struct dsa_switch_ops mt753
+ mtk_get_tag_protocol(struct dsa_switch *ds, int port,
+ 		     enum dsa_tag_protocol mp)
+@@ -1521,6 +1579,8 @@ static const struct dsa_switch_ops mt753
  	.port_vlan_prepare	= mt7530_port_vlan_prepare,
  	.port_vlan_add		= mt7530_port_vlan_add,
  	.port_vlan_del		= mt7530_port_vlan_del,
