@@ -1,0 +1,43 @@
+From cd169d799beeb738fa2d3e891960924cdcaf8414 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Thu, 30 Apr 2020 11:49:10 -0700
+Subject: [PATCH] net: dsa: b53: Bound check ARL searches
+
+ARL searches are done by reading two ARL entries at a time, do not cap
+the search at 1024 which would only limit us to half of the possible ARL
+capacity, but use b53_max_arl_entries() instead which does the right
+multiplication between bins and indexes.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_common.c | 2 +-
+ drivers/net/dsa/b53/b53_priv.h   | 5 +++++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1715,7 +1715,7 @@ int b53_fdb_dump(struct dsa_switch *ds,
+ 				break;
+ 		}
+ 
+-	} while (count++ < 1024);
++	} while (count++ < b53_max_arl_entries(priv) / 2);
+ 
+ 	return 0;
+ }
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -213,6 +213,11 @@ static inline int is58xx(struct b53_devi
+ #define B53_CPU_PORT_25	5
+ #define B53_CPU_PORT	8
+ 
++static inline unsigned int b53_max_arl_entries(struct b53_device *dev)
++{
++	return dev->num_arl_buckets * dev->num_arl_bins;
++}
++
+ struct b53_device *b53_switch_alloc(struct device *base,
+ 				    const struct b53_io_ops *ops,
+ 				    void *priv);
