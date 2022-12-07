@@ -60,6 +60,7 @@ platform_do_upgrade() {
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
 	beeline,smartbox-turbo|\
+	beeline,smartbox-turbo-plus|\
 	belkin,rt1800|\
 	dlink,dap-x1860-a1|\
 	dlink,dir-1960-a1|\
