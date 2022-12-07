@@ -170,6 +170,28 @@ endef
 $(eval $(call KernelPackage,lib-lz4))
 
 
+define KernelPackage/lib-842
+  SUBMENU:=$(LIB_MENU)
+  TITLE:=842 support
+  DEPENDS:=+kmod-crypto-acompress +kmod-crypto-crc32
+  KCONFIG:= \
+	CONFIG_CRYPTO_842 \
+	CONFIG_842_COMPRESS \
+	CONFIG_842_DECOMPRESS
+  FILES:= \
+	$(LINUX_DIR)/crypto/842.ko \
+	$(LINUX_DIR)/lib/842/842_compress.ko \
+	$(LINUX_DIR)/lib/842/842_decompress.ko
+  AUTOLOAD:=$(call AutoProbe,842 842_compress 842_decompress)
+endef
+
+define KernelPackage/lib-842/description
+ Kernel module for 842 compression/decompression support
+endef
+
+$(eval $(call KernelPackage,lib-842))
+
+
 define KernelPackage/lib-raid6
   SUBMENU:=$(LIB_MENU)
   TITLE:=RAID6 algorithm support
