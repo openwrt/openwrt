@@ -197,14 +197,14 @@ for BIN in "$@"; do
 		RUN="${LDSO#ld-}"; RUN="run-${RUN%%.so*}.sh"
 		REL="$(_relpath "$DIR/lib" "$BIN")"
 
-		_mv "$BIN" "$RUNDIR/.${BIN##*/}.bin"
+		_mv "$BIN" "$RUNDIR/${BIN##*/}.bin"
 
 		cat <<-EOF > "$BIN"
 			#!/usr/bin/env bash
 			dir="\$(dirname "\$0")"
 			export RUNAS_ARG0="\$0"
 			export LD_PRELOAD="\${LD_PRELOAD:+\$LD_PRELOAD:}\$dir/${REL:+$REL/}runas.so"
-			exec "\$dir/${REL:+$REL/}$LDSO" --library-path "\$dir/${REL:+$REL/}" "\$dir/.${BIN##*/}.bin" "\$@"
+			exec "\$dir/${REL:+$REL/}$LDSO" --library-path "\$dir/${REL:+$REL/}" "\$dir/${BIN##*/}.bin" "\$@"
 		EOF
 
 		chmod ${VERBOSE:+-v} 0755 "$BIN"
