@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   setup_build:
-    name: Setup build
+    name: Setup build ${{ inputs.target }}
     runs-on: ubuntu-latest
     outputs:
       owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
@@ -80,7 +80,7 @@ jobs:
           echo "container_tag=$CONTAINER_TAG" >> $GITHUB_OUTPUT
 
   build:
-    name: Build with external toolchain
+    name: Build ${{ inputs.target }}
     needs: setup_build
     runs-on: ubuntu-latest
 
