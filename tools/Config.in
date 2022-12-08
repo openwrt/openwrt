@@ -1,0 +1,76 @@
+config TOOLS_BUILD_7z
+	bool
+	default y if TARGET_realtek
+
+config TOOLS_BUILD_b43-tools
+	bool
+	default y if SDK || PACKAGE_kmod-b43 || BRCMSMAC_USE_FW_FROM_WL
+	help
+	  Build tools for kmod-b43 and broadcom firmware
+
+config TOOLS_BUILD_bzip2
+	bool
+	default y if SDK || TARGET_INITRAMFS_COMPRESSION_BZIP2
+
+config TOOLS_BUILD_cbootimage
+	bool
+	default y if TARGET_tegra
+
+config TOOLS_BUILD_dwarves
+	bool
+	default y if DWARVES
+
+config TOOLS_BUILD_elftosb-sdimage
+	bool
+	default y if TARGET_mxs
+
+config TOOLS_BUILD_genext2fs
+	bool
+	default y if TARGET_apm821xx || TARGET_gemini
+
+config TOOLS_BUILD_gmp
+	bool
+	default y if !EXTERNAL_TOOLCHAIN
+
+config TOOLS_BUILD_isl
+	bool
+	default y if !EXTERNAL_TOOLCHAIN && GCC_USE_GRAPHITE
+
+config TOOLS_BUILD_kernel2minor
+	bool
+	default y if USES_MINOR
+
+config TOOLS_BUILD_liblzo
+	bool
+
+config TOOLS_BUILD_llvm-bpf
+	bool
+	default y if USE_LLVM_BUILD
+
+config TOOLS_BUILD_lz4
+	bool
+	default y if SDK || TARGET_INITRAMFS_COMPRESSION_LZ4
+
+config TOOLS_BUILD_lzop
+	bool
+	default y if SDK || TARGET_INITRAMFS_COMPRESSION_LZO
+
+config TOOLS_BUILD_mold
+	bool
+	default y if USE_MOLD
+
+config TOOLS_BUILD_mpc
+	bool
+	default y if !EXTERNAL_TOOLCHAIN
+
+config TOOLS_BUILD_mpfr
+	bool
+	default y if !EXTERNAL_TOOLCHAIN
+
+config TOOLS_BUILD_sparse
+	bool
+	default y if USE_SPARSE
+
+config TOOLS_BUILD_squashfs3-lzma
+	bool
+	default y if TARGET_ath79
