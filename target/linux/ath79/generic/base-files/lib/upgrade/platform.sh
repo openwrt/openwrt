@@ -45,6 +45,7 @@ platform_do_upgrade() {
 	watchguard,ap100|\
 	watchguard,ap200|\
 	watchguard,ap300)
+		ENV_SCRIPT="/tmp/fw_env"
 		IMAGE_LIST="tar tzf $1"
 		IMAGE_CMD="tar xzOf $1"
 		KERNEL_PART="loader"
