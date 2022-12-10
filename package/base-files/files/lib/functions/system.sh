@@ -141,10 +141,10 @@ mtd_get_mac_uci_config_ubi() {
 }
 
 mtd_get_mac_text() {
-	local mtdname=$1
-	local offset=$(($2))
+	local mtdname="$1"
+	local offset=$((${2:-0}))
+	local length="${3:-17}"
 	local part
-	local mac_dirty
 
 	part=$(find_mtd_part "$mtdname")
 	if [ -z "$part" ]; then
@@ -152,15 +152,9 @@ mtd_get_mac_text() {
 		return
 	fi
 
-	if [ -z "$offset" ]; then
-		echo "mtd_get_mac_text: offset missing!" >&2
-		return
-	fi
+	[ $((offset + length)) -le $(mtd_get_part_size "$mtdname") ] || return
 
-	mac_dirty=$(dd if="$part" bs=1 skip="$offset" count=17 2>/dev/null)
-
-	# "canonicalize" mac
-	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
+	macaddr_canonicalize $(dd bs=1 if="$part" skip="$offset" count="$length" 2>/dev/null)
 }
 
 mtd_get_mac_binary() {
