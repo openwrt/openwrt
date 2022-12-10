@@ -49,23 +49,6 @@ define Build/haier-sim_wr1800k-factory
   $(CP) $(1) $(BIN_DIR)/
 endef
 
-define Build/iodata-factory
-	$(eval fw_size=$(word 1,$(1)))
-	$(eval fw_type=$(word 2,$(1)))
-	$(eval product=$(word 3,$(1)))
-	$(eval factory_bin=$(word 4,$(1)))
-	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
-		$(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
-		$(STAGING_DIR_HOST)/bin/mksenaofw \
-			-r 0x30a -p $(product) -t $(fw_type) \
-			-e $(factory_bin) -o $(factory_bin).new; \
-		mv $(factory_bin).new $(factory_bin); \
-		$(CP) $(factory_bin) $(BIN_DIR)/; \
-	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image (actual $$(stat -c%s $@); max $(fw_size))" >&2; \
-	fi
-endef
-
 define Build/iodata-mstc-header
 	( \
 		data_size_crc="$$(dd if=$@ ibs=64 skip=1 2>/dev/null | gzip -c | \
@@ -972,10 +955,11 @@ define Device/iodata_wn-ax1167gr
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 15552k
-  KERNEL_INITRAMFS := $$(KERNEL) | \
-	iodata-factory 7864320 4 0x1055 $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-AX1167GR
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
+	check-size 7680k | senao-header -r 0x30a -p 0x1055 -t 4
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr
@@ -1680,6 +1664,7 @@ TARGET_DEVICES += netgear_wndr3700-v5
 
 define Device/netis_wf2881
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   FILESYSTEMS := squashfs
@@ -1687,7 +1672,7 @@ define Device/netis_wf2881
   IMAGE_SIZE := 129280k
   UBINIZE_OPTS := -E 5
   UIMAGE_NAME := WF2881_0.0.00
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | netis-tail WF2881 | uImage lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | netis-tail WF2881
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
@@ -2079,6 +2064,7 @@ define Device/ubnt_unifi-flexhd
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi FlexHD
   DEVICE_DTS_CONFIG := config@2
+  DEVICE_DTS_LOADADDR := 0x87000000
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware kmod-leds-ubnt-ledbar
   IMAGE_SIZE := 15552k
@@ -2099,6 +2085,7 @@ define Device/ubnt_usw-flex
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi Switch Flex
   DEVICE_DTS_CONFIG := config@1
+  DEVICE_DTS_LOADADDR := 0x87000000
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 7360k
 endef
@@ -2157,6 +2144,23 @@ define Device/wavlink_wl-wn533a8
   IMAGE_SIZE := 15040k
 endef
 TARGET_DEVICES += wavlink_wl-wn533a8
+
+define Device/wavlink_ws-wn572hp3-4g
+  $(Device/dsa-migration)
+  BLOCKSIZE := 64k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WS-WN572HP3
+  DEVICE_VARIANT := 4G
+  IMAGE_SIZE := 15040k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb3 kmod-usb-net-rndis comgt-ncm
+endef
+TARGET_DEVICES += wavlink_ws-wn572hp3-4g
 
 define Device/wevo_11acnas
   $(Device/dsa-migration)
