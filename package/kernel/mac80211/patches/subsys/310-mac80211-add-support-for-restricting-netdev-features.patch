@@ -59,10 +59,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		flow = fq_find_fattest_flow(fq);
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1685,6 +1685,10 @@ enum ieee80211_offload_flags {
-  *	write-protected by sdata_lock and local->mtx so holding either is fine
-  *	for read access.
-  * @mu_mimo_owner: indicates interface owns MU-MIMO capability
+@@ -1807,6 +1807,10 @@ struct ieee80211_vif_cfg {
+  * @addr: address of this interface
+  * @p2p: indicates whether this AP or STA interface is a p2p
+  *	interface, i.e. a GO or p2p-sta respectively
 + * @netdev_features: tx netdev features supported by the hardware for this
 + *	vif. mac80211 initializes this to hw->netdev_features, and the driver
 + *	can mask out specific tx features. mac80211 will handle software fixup
@@ -70,9 +70,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @driver_flags: flags/capabilities the driver has for this interface,
   *	these need to be set (or cleared) when the interface is added
   *	or, if supported by the driver, the interface type is changed
-@@ -1736,6 +1740,7 @@ struct ieee80211_vif {
+@@ -1848,6 +1852,7 @@ struct ieee80211_vif {
  
- 	struct ieee80211_chanctx_conf __rcu *chanctx_conf;
+ 	struct ieee80211_txq *txq;
  
 +	netdev_features_t netdev_features;
  	u32 driver_flags;
@@ -80,8 +80,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -2209,6 +2209,7 @@ int ieee80211_if_add(struct ieee80211_lo
- 		ndev->features |= local->hw.netdev_features;
+@@ -2179,6 +2179,7 @@ int ieee80211_if_add(struct ieee80211_lo
+ 		ndev->priv_flags |= IFF_LIVE_ADDR_CHANGE;
  		ndev->hw_features |= ndev->features &
  					MAC80211_SUPPORTED_FEATURES_TX;
 +		sdata->vif.netdev_features = local->hw.netdev_features;
@@ -90,7 +90,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1310,7 +1310,11 @@ static struct txq_info *ieee80211_get_tx
+@@ -1355,7 +1355,11 @@ static struct txq_info *ieee80211_get_tx
  
  static void ieee80211_set_skb_enqueue_time(struct sk_buff *skb)
  {
@@ -103,7 +103,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static u32 codel_skb_len_func(const struct sk_buff *skb)
-@@ -3499,47 +3503,71 @@ ieee80211_xmit_fast_finish(struct ieee80
+@@ -3578,55 +3582,79 @@ ieee80211_xmit_fast_finish(struct ieee80
  	return TX_CONTINUE;
  }
  
@@ -167,8 +167,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +		consume_skb(skb);
 +		return segs;
-+	}
-+
+ 	}
+ 
+-	/* after this point (skb is modified) we cannot return false */
 +	if (skb_needs_linearize(skb, features) && __skb_linearize(skb))
 +		goto free;
 +
@@ -182,9 +183,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +		if (skb_csum_hwoffload_help(skb, features))
 +			goto free;
- 	}
- 
--	/* after this point (skb is modified) we cannot return false */
++	}
++
 +	skb_mark_not_on_list(skb);
 +	return skb;
 +
@@ -207,15 +207,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	int extra_head = fast_tx->hdr_len - (ETH_HLEN - 2);
 +	struct ethhdr eth;
  
- 	if (skb_shared(skb)) {
- 		struct sk_buff *tmp_skb = skb;
-@@ -3548,12 +3576,12 @@ static bool ieee80211_xmit_fast(struct i
- 		kfree_skb(tmp_skb);
- 
- 		if (!skb)
--			return true;
-+			return;
- 	}
+ 	skb = skb_share_check(skb, GFP_ATOMIC);
+ 	if (unlikely(!skb))
+-		return true;
++		return;
  
  	if ((hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_QOS_DATA)) &&
  	    ieee80211_amsdu_aggregate(sdata, sta, fast_tx, skb))
@@ -224,7 +219,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* will not be crypto-handled beyond what we do here, so use false
  	 * as the may-encrypt argument for the resize to not account for
-@@ -3562,10 +3590,8 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3635,10 +3663,8 @@ static bool ieee80211_xmit_fast(struct i
  	if (unlikely(ieee80211_skb_resize(sdata, skb,
  					  max_t(int, extra_head + hw_headroom -
  						     skb_headroom(skb), 0),
@@ -237,16 +232,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	memcpy(&eth, skb->data, ETH_HLEN - 2);
  	hdr = skb_push(skb, extra_head);
-@@ -3579,7 +3605,7 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3652,7 +3678,7 @@ static bool ieee80211_xmit_fast(struct i
  	info->control.vif = &sdata->vif;
  	info->flags = IEEE80211_TX_CTL_FIRST_FRAGMENT |
  		      IEEE80211_TX_CTL_DONTFRAG |
 -		      (tid_tx ? IEEE80211_TX_CTL_AMPDU : 0);
 +		      (ampdu ? IEEE80211_TX_CTL_AMPDU : 0);
- 	info->control.flags = IEEE80211_TX_CTRL_FAST_XMIT;
- 
- #ifdef CPTCFG_MAC80211_DEBUGFS
-@@ -3601,16 +3627,14 @@ static bool ieee80211_xmit_fast(struct i
+ 	info->control.flags = IEEE80211_TX_CTRL_FAST_XMIT |
+ 			      u32_encode_bits(IEEE80211_LINK_UNSPECIFIED,
+ 					      IEEE80211_TX_CTRL_MLO_LINK);
+@@ -3676,16 +3702,14 @@ static bool ieee80211_xmit_fast(struct i
  	tx.key = fast_tx->key;
  
  	if (ieee80211_queue_skb(local, sdata, sta, skb))
@@ -266,7 +261,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
  		sdata = container_of(sdata->bss,
-@@ -3618,6 +3642,55 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3693,6 +3717,56 @@ static bool ieee80211_xmit_fast(struct i
  
  	__skb_queue_tail(&tx.skbs, skb);
  	ieee80211_tx_frags(local, &sdata->vif, sta, &tx.skbs, false);
@@ -310,6 +305,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		}
 +	}
 +
++	/* after this point (skb is modified) we cannot return false */
 +	skb = ieee80211_tx_skb_fixup(skb, ieee80211_sdata_netdev_features(sdata));
 +	if (!skb)
 +		return true;
@@ -322,7 +318,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return true;
  }
  
-@@ -4123,31 +4196,14 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4193,31 +4267,14 @@ void __ieee80211_subif_start_xmit(struct
  			goto out;
  	}
  
@@ -362,7 +358,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	skb_list_walk_safe(skb, skb, next) {
-@@ -4310,9 +4366,11 @@ netdev_tx_t ieee80211_subif_start_xmit(s
+@@ -4435,9 +4492,11 @@ normal:
  	return NETDEV_TX_OK;
  }
  
@@ -377,7 +373,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_tx_control control = {};
-@@ -4321,14 +4379,6 @@ static bool ieee80211_tx_8023(struct iee
+@@ -4446,14 +4505,6 @@ static bool ieee80211_tx_8023(struct iee
  	unsigned long flags;
  	int q = info->hw_queue;
  
@@ -392,7 +388,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
  
  	if (local->queue_stop_reasons[q] ||
-@@ -4355,27 +4405,50 @@ static bool ieee80211_tx_8023(struct iee
+@@ -4480,6 +4531,26 @@ static bool ieee80211_tx_8023(struct iee
  	return true;
  }
  
@@ -419,9 +415,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
  				struct net_device *dev, struct sta_info *sta,
  				struct ieee80211_key *key, struct sk_buff *skb)
- {
--	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
-+	struct ieee80211_tx_info *info;
+@@ -4487,9 +4558,13 @@ static void ieee80211_8023_xmit(struct i
+ 	struct ieee80211_tx_info *info;
  	struct ieee80211_local *local = sdata->local;
  	struct tid_ampdu_tx *tid_tx;
 +	struct sk_buff *seg, *next;
@@ -429,25 +424,23 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	u16 queue;
  	u8 tid;
  
- 	if (local->ops->wake_tx_queue) {
--		u16 queue = __ieee80211_select_queue(sdata, sta, skb);
-+		queue = __ieee80211_select_queue(sdata, sta, skb);
- 		skb_set_queue_mapping(skb, queue);
- 		skb_get_hash(skb);
-+	} else {
-+		queue = skb_get_queue_mapping(skb);
- 	}
+-	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
++	queue = ieee80211_select_queue(sdata, sta, skb);
++	skb_set_queue_mapping(skb, queue);
  
  	if (unlikely(test_bit(SCAN_SW_SCANNING, &local->scanning)) &&
  	    test_bit(SDATA_STATE_OFFCHANNEL, &sdata->state))
- 		goto out_free;
+@@ -4499,9 +4574,6 @@ static void ieee80211_8023_xmit(struct i
+ 	if (unlikely(!skb))
+ 		return;
  
+-	info = IEEE80211_SKB_CB(skb);
 -	memset(info, 0, sizeof(*info));
 -
  	ieee80211_aggr_check(sdata, sta, skb);
  
  	tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
-@@ -4387,22 +4460,20 @@ static void ieee80211_8023_xmit(struct i
+@@ -4515,22 +4587,20 @@ static void ieee80211_8023_xmit(struct i
  			return;
  		}
  
@@ -472,13 +465,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 -	dev_sw_netstats_tx_add(dev, 1, skb->len);
 -
--	sta->tx_stats.bytes[skb_get_queue_mapping(skb)] += skb->len;
--	sta->tx_stats.packets[skb_get_queue_mapping(skb)]++;
+-	sta->deflink.tx_stats.bytes[skb_get_queue_mapping(skb)] += skb->len;
+-	sta->deflink.tx_stats.packets[skb_get_queue_mapping(skb)]++;
 +	info->hw_queue = sdata->vif.hw_queue[queue];
  
  	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
  		sdata = container_of(sdata->bss,
-@@ -4414,6 +4485,24 @@ static void ieee80211_8023_xmit(struct i
+@@ -4542,6 +4612,24 @@ static void ieee80211_8023_xmit(struct i
  	if (key)
  		info->control.hw_key = &key->conf;
  
@@ -495,15 +488,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +							     &info->flags, NULL);
 +
 +	dev_sw_netstats_tx_add(dev, skbs, len);
-+	sta->tx_stats.packets[queue] += skbs;
-+	sta->tx_stats.bytes[queue] += len;
++	sta->deflink.tx_stats.packets[queue] += skbs;
++	sta->deflink.tx_stats.bytes[queue] += len;
 +
 +	ieee80211_tpt_led_trig_tx(local, len);
 +
  	ieee80211_tx_8023(sdata, skb, sta, false);
  
  	return;
-@@ -4455,6 +4544,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4583,6 +4671,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  		    key->conf.cipher == WLAN_CIPHER_SUITE_TKIP))
  		goto skip_offload;
  
