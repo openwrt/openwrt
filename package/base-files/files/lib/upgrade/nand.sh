@@ -146,6 +146,42 @@ nand_remove_ubiblock() {
 	fi
 }
 
+nand_attach_ubi() {
+	local ubipart="$1"
+	local has_env="${2:-0}"
+
+	local mtdnum="$( find_mtd_index "$ubipart" )"
+	if [ ! "$mtdnum" ]; then
+		>&2 echo "cannot find ubi mtd partition $ubipart"
+		return 1
+	fi
+
+	local ubidev="$( nand_find_ubi "$ubipart" )"
+	if [ ! "$ubidev" ]; then
+		>&2 ubiattach -m "$mtdnum"
+		ubidev="$( nand_find_ubi "$ubipart" )"
+
+		if [ ! "$ubidev" ]; then
+			>&2 ubiformat /dev/mtd$mtdnum -y
+			>&2 ubiattach -m "$mtdnum"
+			ubidev="$( nand_find_ubi "$ubipart" )"
+
+			if [ ! "$ubidev" ]; then
+				>&2 echo "cannot attach ubi mtd partition $ubipart"
+				return 1
+			fi
+
+			if [ "$has_env" -gt 0 ]; then
+				>&2 ubimkvol /dev/$ubidev -n 0 -N ubootenv -s 1MiB
+				>&2 ubimkvol /dev/$ubidev -n 1 -N ubootenv2 -s 1MiB
+			fi
+		fi
+	fi
+
+	echo "$ubidev"
+	return 0
+}
+
 nand_detach_ubi() {
 	local ubipart="$1"
 
@@ -180,33 +216,8 @@ nand_upgrade_prepare_ubi() {
 
 	[ -n "$rootfs_length" -o -n "$kernel_length" ] || return 1
 
-	local mtdnum="$( find_mtd_index "$CI_UBIPART" )"
-	if [ ! "$mtdnum" ]; then
-		echo "cannot find ubi mtd partition $CI_UBIPART"
-		return 1
-	fi
-
-	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
-	if [ ! "$ubidev" ]; then
-		ubiattach -m "$mtdnum"
-		ubidev="$( nand_find_ubi "$CI_UBIPART" )"
-
-		if [ ! "$ubidev" ]; then
-			ubiformat /dev/mtd$mtdnum -y
-			ubiattach -m "$mtdnum"
-			ubidev="$( nand_find_ubi "$CI_UBIPART" )"
-
-			if [ ! "$ubidev" ]; then
-				echo "cannot attach ubi mtd partition $CI_UBIPART"
-				return 1
-			fi
-
-			if [ "$has_env" -gt 0 ]; then
-				ubimkvol /dev/$ubidev -n 0 -N ubootenv -s 1MiB
-				ubimkvol /dev/$ubidev -n 1 -N ubootenv2 -s 1MiB
-			fi
-		fi
-	fi
+	local ubidev="$( nand_attach_ubi "$CI_UBIPART" "$has_env" )"
+	[ -n "$ubidev" ] || return 1
 
 	local kern_ubivol="$( nand_find_volume $ubidev "$CI_KERNPART" )"
 	local root_ubivol="$( nand_find_volume $ubidev "$CI_ROOTPART" )"
