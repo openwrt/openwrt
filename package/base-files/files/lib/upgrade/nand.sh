@@ -7,6 +7,8 @@
 CI_KERNPART="${CI_KERNPART:-kernel}"
 
 # 'ubi' partition on NAND contains UBI
+# There are also CI_KERN_UBIPART and CI_ROOT_UBIPART if kernel
+# and rootfs are on separated UBIs.
 CI_UBIPART="${CI_UBIPART:-ubi}"
 
 # 'rootfs' UBI volume on NAND contains the rootfs
@@ -104,7 +106,7 @@ identify_if_gzip() {
 }
 
 nand_restore_config() {
-	local ubidev=$( nand_find_ubi "$CI_UBIPART" )
+	local ubidev=$( nand_find_ubi "${CI_ROOT_UBIPART:-$CI_UBIPART}" )
 	local ubivol="$( nand_find_volume $ubidev rootfs_data )"
 	if [ ! "$ubivol" ]; then
 		ubivol="$( nand_find_volume $ubidev "$CI_ROOTPART" )"
@@ -213,15 +215,25 @@ nand_upgrade_prepare_ubi() {
 
 	local kernel_length="$3"
 	local has_env="${4:-0}"
+	local kern_ubidev
+	local root_ubidev
 
 	[ -n "$rootfs_length" -o -n "$kernel_length" ] || return 1
 
-	local ubidev="$( nand_attach_ubi "$CI_UBIPART" "$has_env" )"
-	[ -n "$ubidev" ] || return 1
+	if [ -n "$CI_KERN_UBIPART" -a -n "$CI_ROOT_UBIPART" ]; then
+		kern_ubidev="$( nand_attach_ubi "$CI_KERN_UBIPART" "$has_env" )"
+		[ -n "$kern_ubidev" ] || return 1
+		root_ubidev="$( nand_attach_ubi "$CI_ROOT_UBIPART" )"
+		[ -n "$root_ubidev" ] || return 1
+	else
+		kern_ubidev="$( nand_attach_ubi "$CI_UBIPART" "$has_env" )"
+		[ -n "$kern_ubidev" ] || return 1
+		root_ubidev="$kern_ubidev"
+	fi
 
-	local kern_ubivol="$( nand_find_volume $ubidev "$CI_KERNPART" )"
-	local root_ubivol="$( nand_find_volume $ubidev "$CI_ROOTPART" )"
-	local data_ubivol="$( nand_find_volume $ubidev rootfs_data )"
+	local kern_ubivol="$( nand_find_volume $kern_ubidev "$CI_KERNPART" )"
+	local root_ubivol="$( nand_find_volume $root_ubidev "$CI_ROOTPART" )"
+	local data_ubivol="$( nand_find_volume $root_ubidev rootfs_data )"
 	[ "$root_ubivol" = "$kern_ubivol" ] && root_ubivol=
 
 	# remove ubiblocks
@@ -230,13 +242,13 @@ nand_upgrade_prepare_ubi() {
 	[ "$data_ubivol" ] && { nand_remove_ubiblock $data_ubivol || return 1; }
 
 	# kill volumes
-	[ "$kern_ubivol" ] && ubirmvol /dev/$ubidev -N "$CI_KERNPART" || :
-	[ "$root_ubivol" ] && ubirmvol /dev/$ubidev -N "$CI_ROOTPART" || :
-	[ "$data_ubivol" ] && ubirmvol /dev/$ubidev -N rootfs_data || :
+	[ "$kern_ubivol" ] && ubirmvol /dev/$kern_ubidev -N "$CI_KERNPART" || :
+	[ "$root_ubivol" ] && ubirmvol /dev/$root_ubidev -N "$CI_ROOTPART" || :
+	[ "$data_ubivol" ] && ubirmvol /dev/$root_ubidev -N rootfs_data || :
 
 	# create kernel vol
 	if [ -n "$kernel_length" ]; then
-		if ! ubimkvol /dev/$ubidev -N "$CI_KERNPART" -s $kernel_length; then
+		if ! ubimkvol /dev/$kern_ubidev -N "$CI_KERNPART" -s $kernel_length; then
 			echo "cannot create kernel volume"
 			return 1;
 		fi
@@ -250,7 +262,7 @@ nand_upgrade_prepare_ubi() {
 		else
 			rootfs_size_param="-s $rootfs_length"
 		fi
-		if ! ubimkvol /dev/$ubidev -N "$CI_ROOTPART" $rootfs_size_param; then
+		if ! ubimkvol /dev/$root_ubidev -N "$CI_ROOTPART" $rootfs_size_param; then
 			echo "cannot create rootfs volume"
 			return 1;
 		fi
@@ -262,8 +274,8 @@ nand_upgrade_prepare_ubi() {
 		if [ -n "$rootfs_data_max" ]; then
 			rootfs_data_size_param="-s $rootfs_data_max"
 		fi
-		if ! ubimkvol /dev/$ubidev -N rootfs_data $rootfs_data_size_param; then
-			if ! ubimkvol /dev/$ubidev -N rootfs_data -m; then
+		if ! ubimkvol /dev/$root_ubidev -N rootfs_data $rootfs_data_size_param; then
+			if ! ubimkvol /dev/$root_ubidev -N rootfs_data -m; then
 				echo "cannot initialize rootfs_data volume"
 				return 1
 			fi
@@ -347,8 +359,8 @@ nand_upgrade_tar() {
 	local has_env=0
 	nand_upgrade_prepare_ubi "$rootfs_length" "$rootfs_type" "$ubi_kernel_length" "$has_env" || return 1
 
-	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
 	if [ "$rootfs_length" ]; then
+		local ubidev="$( nand_find_ubi "${CI_ROOT_UBIPART:-$CI_UBIPART}" )"
 		local root_ubivol="$( nand_find_volume $ubidev "$CI_ROOTPART" )"
 		tar xO${gz}f "$tar_file" "$board_dir/root" | \
 			ubiupdatevol /dev/$root_ubivol -s "$rootfs_length" -
@@ -358,6 +370,7 @@ nand_upgrade_tar() {
 			tar xO${gz}f "$tar_file" "$board_dir/kernel" | \
 				mtd write - "$CI_KERNPART"
 		else
+			local ubidev="$( nand_find_ubi "${CI_KERN_UBIPART:-$CI_UBIPART}" )"
 			local kern_ubivol="$( nand_find_volume $ubidev "$CI_KERNPART" )"
 			tar xO${gz}f "$tar_file" "$board_dir/kernel" | \
 				ubiupdatevol /dev/$kern_ubivol -s "$kernel_length" -
