@@ -1,0 +1,75 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344_fortinet_ap-dual.dtsi"
+
+/ {
+	compatible = "fortinet,fap-221-b", "qca,ar9344";
+	model = "Fortinet FAP-221-B";
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power_green {
+			label = "green:power";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		power_amber {
+			label = "amber:power";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		eth_green {
+			label = "green:eth";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		eth_amber {
+			label = "amber:eth";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi5g {
+			label = "green:wifi5g";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wifi2g {
+			label = "amber:wifi2g";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	virtual_flash {
+		devices = <&fwconcat0 &fwconcat1 &fwconcat2>;
+	};
+};
+
+&ath9k {
+	ieee80211-freq-limit = <2402000 2482000>;
+
+	nvmem-cells = <&calibration_pcie>;
+	nvmem-cell-names = "calibration";
+};
+
+&wmac {
+	ieee80211-freq-limit = <2402000 2482000 4900000 5990000>;
+
+	nvmem-cells = <&calibration_wmac>;
+	nvmem-cell-names = "calibration";
+};
+
+&art {
+	compatible = "nvmem-cells";
+
+	calibration_wmac: calibration@1000 {
+		reg = <0x1000 0x440>;
+	};
+
+	calibration_pcie: calibration@5000 {
+		reg = <0x5000 0x440>;
+	};
+};
