@@ -163,7 +163,11 @@ define Device/rpi-4
 	cypress-firmware-43455-sdio \
 	brcmfmac-nvram-43455-sdio \
 	kmod-brcmfmac wpad-basic-wolfssl \
-	kmod-usb-net-lan78xx
+	kmod-usb-net-lan78xx \
+	kmod-mdio-devres \
+	kmod-phy-realtek \
+	kmod-r8169 \
+	r8169-firmware
   IMAGE/sysupgrade.img.gz := boot-common | boot-2711 | sdcard-img | gzip | append-metadata
   IMAGE/factory.img.gz := boot-common | boot-2711 | sdcard-img | gzip
 endef
