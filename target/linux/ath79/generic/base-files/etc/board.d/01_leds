@@ -268,6 +268,11 @@ hiwifi,hc6361)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "blue:wlan" "phy0tpt"
 	;;
+kuwfi,c910)
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "white:lan1" "switch0" "0x10"
+	ucidef_set_led_switch "lan2" "LAN2" "white:lan2" "switch0" "0x02"
+	;;
 meraki,mr12|\
 tplink,cpe210-v2|\
 tplink,cpe210-v3)
