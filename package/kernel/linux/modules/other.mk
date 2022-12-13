@@ -1079,6 +1079,7 @@ define KernelPackage/ptp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PTP clock support
   DEPENDS:=+kmod-pps
+  DEPENDS+=@!(LINUX_5_15&&(TARGET_kirkwood||TARGET_mvebu||TARGET_qoriq))
   KCONFIG:= \
 	CONFIG_PTP_1588_CLOCK \
 	CONFIG_NET_PTP_CLASSIFY=y
