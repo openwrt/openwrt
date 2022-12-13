@@ -22,6 +22,20 @@ endef
 
 $(eval $(call KernelPackage,leds-gpio))
 
+define KernelPackage/leds-ws2812b
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=WS2812B RGB LED support
+  KCONFIG:=CONFIG_LEDS_WS2812B
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-ws2812b.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-ws2812b,1)
+endef
+
+define KernelPackage/leds-ws2812b/description
+ Kernel module for SPI driven WS2812B RGB LED
+endef
+
+$(eval $(call KernelPackage,leds-ws2812b))
+
 LED_TRIGGER_DIR=$(LINUX_DIR)/drivers/leds/trigger
 
 define KernelPackage/ledtrig-activity
