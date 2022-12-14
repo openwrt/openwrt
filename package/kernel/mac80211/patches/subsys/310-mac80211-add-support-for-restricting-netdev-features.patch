@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -2179,6 +2179,7 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -2181,6 +2181,7 @@ int ieee80211_if_add(struct ieee80211_lo
  		ndev->priv_flags |= IFF_LIVE_ADDR_CHANGE;
  		ndev->hw_features |= ndev->features &
  					MAC80211_SUPPORTED_FEATURES_TX;
