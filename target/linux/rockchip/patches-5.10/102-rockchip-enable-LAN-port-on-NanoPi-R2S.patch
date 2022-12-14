@@ -1,4 +1,4 @@
-From 0fc3b9b7619c4878f73a6a7989863f0d1a3fd392 Mon Sep 17 00:00:00 2001
+From 6c700ada045c23305b37d3ec8a0d31be9adae604 Mon Sep 17 00:00:00 2001
 From: David Bauer <mail@david-bauer.net>
 Date: Fri, 10 Jul 2020 21:12:16 +0200
 Subject: [PATCH] rockchip: enabled LAN port on NanoPi R2S
@@ -7,13 +7,17 @@ Enable the USB3 port on the FriendlyARM NanoPi R2S.
 This is required for the USB3 attached LAN port to work.
 
 Signed-off-by: David Bauer <mail@david-bauer.net>
+[ fixes misplaced pin config 'rtl8153_en_drv' ]
+Signed-off-by: Jensen Huang <jensenhuang@friendlyarm.com>
 ---
  .../boot/dts/rockchip/rk3328-nanopi-r2s.dts   | 27 +++++++++++++++++++
  1 file changed, 27 insertions(+)
 
+diff --git a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
+index 35d50c6e6d96..407d2b58ce5a 100644
 --- a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
-@@ -44,6 +44,18 @@
+@@ -44,6 +44,18 @@ reset {
  		};
  	};
  
@@ -32,20 +36,20 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  	leds {
  		compatible = "gpio-leds";
  		pinctrl-0 = <&lan_led_pin>,  <&sys_led_pin>, <&wan_led_pin>;
-@@ -271,6 +283,12 @@
- 			};
+@@ -297,6 +309,12 @@ eth_phy_reset_pin: eth-phy-reset-pin {
  		};
  	};
-+
-+	usb {
+ 
++	ethernet-usb {
 +		rtl8153_en_drv: rtl8153-en-drv {
 +			rockchip,pins = <2 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
- };
- 
- &io_domains {
-@@ -377,3 +395,12 @@
++
+ 	leds {
+ 		lan_led_pin: lan-led-pin {
+ 			rockchip,pins = <2 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
+@@ -377,3 +395,12 @@ &usb_host0_ehci {
  &usb_host0_ohci {
  	status = "okay";
  };
@@ -58,3 +62,6 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +	dr_mode = "host";
 +	status = "okay";
 +};
+-- 
+2.38.1
+
