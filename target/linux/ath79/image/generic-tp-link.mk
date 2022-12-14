@@ -350,6 +350,16 @@ define Device/tplink_cpe510-v3
 endef
 TARGET_DEVICES += tplink_cpe510-v3
 
+define Device/tplink_cpe605-v1
+  $(Device/tplink-safeloader-okli)
+  SOC := ar9344
+  IMAGE_SIZE := 7680k
+  DEVICE_MODEL := CPE605
+  DEVICE_VARIANT := v1
+  TPLINK_BOARD_ID := CPE605V1
+endef
+TARGET_DEVICES += tplink_cpe605-v1
+
 define Device/tplink_cpe610-v1
   $(Device/tplink-safeloader-okli)
   SOC := ar9344
