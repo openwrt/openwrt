@@ -63,6 +63,8 @@
 		mosi-gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		sck-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 		num-chipselects = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		beamforming-2g-gpio@0 {
 			compatible = "fairchild,74hc595";
@@ -79,6 +81,8 @@
 		mosi-gpios = <&ath9k 15 GPIO_ACTIVE_HIGH>;
 		sck-gpios = <&ath9k 14 GPIO_ACTIVE_HIGH>;
 		num-chipselects = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		beamforming-5g-gpio@0 {
 			compatible = "fairchild,74hc595";
