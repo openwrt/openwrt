@@ -687,13 +687,15 @@ hostapd_set_bss_options() {
 			json_get_vars \
 				auth_server auth_secret auth_port \
 				dae_client dae_secret dae_port \
-				ownip radius_client_addr \
+				dynamic_ownip ownip radius_client_addr \
 				eap_reauth_period request_cui \
 				erp_domain mobility_domain \
 				fils_realm fils_dhcp
 
 			# radius can provide VLAN ID for clients
 			vlan_possible=1
+
+			set_default dynamic_ownip 1
 
 			# legacy compatibility
 			[ -n "$auth_server" ] || json_get_var auth_server server
@@ -743,7 +745,12 @@ hostapd_set_bss_options() {
 			}
 			json_for_each_item append_radius_auth_req_attr radius_auth_req_attr
 
-			[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
+			if [ -n "$ownip" ]; then
+				append bss_conf "own_ip_addr=$ownip" "$N"
+			elif [ "$dynamic_ownip" -gt 0 ]; then
+				append bss_conf "dynamic_own_ip_addr=$dynamic_ownip" "$N"
+			fi
+
 			[ -n "$radius_client_addr" ] && append bss_conf "radius_client_addr=$radius_client_addr" "$N"
 			append bss_conf "eapol_key_index_workaround=1" "$N"
 			append bss_conf "ieee8021x=1" "$N"
