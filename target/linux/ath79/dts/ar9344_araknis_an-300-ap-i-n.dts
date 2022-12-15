@@ -90,7 +90,7 @@
 		nvmem-cells = <&macaddr_art_0>, <&calibration_art_5000>;
 		nvmem-cell-names = "mac-address", "calibration";
 		mac-address-increment = <1>;
-		qca,disable-5ghz;
+		ieee80211-freq-limit = <2402000 2482000>;
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
@@ -99,7 +99,7 @@
 &wmac {
 	status = "okay";
 
-	qca,disable-2ghz;
+	ieee80211-freq-limit = <4900000 5990000>;
 
 	nvmem-cells = <&macaddr_art_0>, <&calibration_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
