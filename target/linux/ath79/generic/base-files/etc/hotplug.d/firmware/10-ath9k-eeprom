@@ -83,13 +83,9 @@ case "$FIRMWARE" in
 	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
-	engenius,eap600|\
-	engenius,ecb600|\
 	mercury,mw4530r-v1|\
 	ocedo,raccoon|\
 	ubnt,unifi-ap-pro|\
-	watchguard,ap100|\
-	watchguard,ap200|\
 	winchannel,wb2000)
 		caldata_extract "art" 0x5000 0x440
 		;;
