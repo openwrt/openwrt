@@ -115,14 +115,16 @@
 	wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0 0 0 0 0>;
-		qca,no-eeprom;
+		nvmem-cells = <&calibration_ath9k_5000>;
+		nvmem-cell-names = "calibration";
 	};
 };
 
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
+	nvmem-cells = <&calibration_ath9k_1000>;
+	nvmem-cell-names = "calibration";
 };
 
 &mdio0 {
@@ -155,6 +157,14 @@
 	compatible = "nvmem-cells";
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	calibration_ath9k_1000: calibration@1000 {
+		reg = <0x1000 0x440>;
+	};
+
+	calibration_ath9k_5000: calibration@5000 {
+		reg = <0x5000 0x440>;
+	};
 
 	macaddr_art_0: macaddr@0 {
 		reg = <0x0 0x6>;
