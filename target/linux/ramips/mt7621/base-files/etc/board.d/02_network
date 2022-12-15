@@ -99,6 +99,9 @@ ramips_setup_interfaces()
 	tplink,eap615-wall-v1)
 		ucidef_set_interface_lan "lan0 lan1 lan2 lan3"
 		;;
+	tplink,er605-v2)
+		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"
+		;;
 	tplink,tl-wpa8631p-v3)
 		ucidef_set_interface_lan "lan1 lan2 lan3 plc0"
 		;;
@@ -224,6 +227,12 @@ ramips_setup_macs()
 	mikrotik,ltap-2hnd)
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		lan_mac=$label_mac
+		;;
+	tplink,er605-v2)
+		CI_UBIPART="firmware"
+		label_mac=$(mtd_get_mac_uci_config_ubi "tddp")
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add "$label_mac" 1)
 		;;
 	tplink,mr600-v2-eu)
 		label_mac=$(cat "/sys/class/net/eth0/address")

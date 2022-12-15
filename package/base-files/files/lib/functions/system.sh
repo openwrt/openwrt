@@ -129,6 +129,17 @@ mtd_get_mac_encrypted_deco() {
 	echo $macaddr
 }
 
+mtd_get_mac_uci_config_ubi() {
+	local volumename="$1"
+
+	. /lib/upgrade/nand.sh
+
+	local ubidev=$(nand_attach_ubi $CI_UBIPART)
+	local part=$(nand_find_volume $ubidev $volumename)
+
+	cat "/dev/$part" | sed -n 's/^\s*option macaddr\s*'"'"'\?\([0-9A-F:]\+\)'"'"'\?/\1/Ip'
+}
+
 mtd_get_mac_text() {
 	local mtdname=$1
 	local offset=$(($2))

@@ -1961,6 +1961,24 @@ define Device/tplink_eap615-wall-v1
 endef
 TARGET_DEVICES += tplink_eap615-wall-v1
 
+define Device/tplink_er605-v2
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := ER605
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := -wpad-basic-wolfssl kmod-usb3
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  KERNEL_IN_UBI := 1
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += sysupgrade.tar
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE_SIZE := 127744k
+endef
+TARGET_DEVICES += tplink_er605-v2
+
 define Device/tplink_mr600-v2-eu
   $(Device/dsa-migration)
   $(Device/tplink-v2)
