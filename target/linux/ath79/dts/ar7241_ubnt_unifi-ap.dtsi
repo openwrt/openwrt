@@ -68,13 +68,30 @@
 				read-only;
 			};
 
-			art: partition@7f0000 {
+			partition@7f0000 {
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_art_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				calibration_art_1000: calibration@1000 {
+					reg = <0x1000 0x440>;
+				};
 			};
 		};
 	};
+};
+
+&wifi {
+	nvmem-cells = <&calibration_art_1000>;
+	nvmem-cell-names = "calibration";
 };
 
 &eth0 {
@@ -84,14 +101,4 @@
 
 &eth1 {
 	compatible = "syscon", "simple-mfd";
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
 };
