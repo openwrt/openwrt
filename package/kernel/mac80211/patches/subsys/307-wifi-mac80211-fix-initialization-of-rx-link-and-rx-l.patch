@@ -186,15 +186,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	stats->dropped++;
  	return true;
-@@ -4787,7 +4813,6 @@ static bool ieee80211_prepare_and_rx_han
+@@ -4787,8 +4813,8 @@ static bool ieee80211_prepare_and_rx_han
  	struct ieee80211_local *local = rx->local;
  	struct ieee80211_sub_if_data *sdata = rx->sdata;
  	struct ieee80211_hdr *hdr = (void *)skb->data;
 -	struct link_sta_info *link_sta = NULL;
- 	struct ieee80211_link_data *link;
+-	struct ieee80211_link_data *link;
++	struct link_sta_info *link_sta = rx->link_sta;
++	struct ieee80211_link_data *link = rx->link;
  
  	rx->skb = skb;
-@@ -4810,35 +4835,6 @@ static bool ieee80211_prepare_and_rx_han
+ 
+@@ -4810,35 +4836,6 @@ static bool ieee80211_prepare_and_rx_han
  	if (!ieee80211_accept_frame(rx))
  		return false;
  
@@ -230,7 +233,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!consume) {
  		struct skb_shared_hwtstamps *shwt;
  
-@@ -4858,16 +4854,16 @@ static bool ieee80211_prepare_and_rx_han
+@@ -4858,7 +4855,7 @@ static bool ieee80211_prepare_and_rx_han
  		shwt->hwtstamp = skb_hwtstamps(skb)->hwtstamp;
  	}
  
@@ -239,18 +242,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		/* translate to MLD addresses */
  		if (ether_addr_equal(link->conf->addr, hdr->addr1))
  			ether_addr_copy(hdr->addr1, rx->sdata->vif.addr);
--		if (ether_addr_equal(link_sta->addr, hdr->addr2))
-+		if (ether_addr_equal(rx->link_sta->addr, hdr->addr2))
- 			ether_addr_copy(hdr->addr2, rx->sta->addr);
- 		/* translate A3 only if it's the BSSID */
- 		if (!ieee80211_has_tods(hdr->frame_control) &&
- 		    !ieee80211_has_fromds(hdr->frame_control)) {
--			if (ether_addr_equal(link_sta->addr, hdr->addr3))
-+			if (ether_addr_equal(rx->link_sta->addr, hdr->addr3))
- 				ether_addr_copy(hdr->addr3, rx->sta->addr);
- 			else if (ether_addr_equal(link->conf->addr, hdr->addr3))
- 				ether_addr_copy(hdr->addr3, rx->sdata->vif.addr);
-@@ -4888,6 +4884,7 @@ static void __ieee80211_rx_handle_8023(s
+@@ -4888,6 +4885,7 @@ static void __ieee80211_rx_handle_8023(s
  	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
  	struct ieee80211_fast_rx *fast_rx;
  	struct ieee80211_rx_data rx;
@@ -258,7 +250,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	memset(&rx, 0, sizeof(rx));
  	rx.skb = skb;
-@@ -4904,12 +4901,8 @@ static void __ieee80211_rx_handle_8023(s
+@@ -4904,12 +4902,8 @@ static void __ieee80211_rx_handle_8023(s
  	if (!pubsta)
  		goto drop;
  
@@ -273,7 +265,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/*
  	 * TODO: Should the frame be dropped if the right link_id is not
-@@ -4918,19 +4911,8 @@ static void __ieee80211_rx_handle_8023(s
+@@ -4918,19 +4912,8 @@ static void __ieee80211_rx_handle_8023(s
  	 * link_id is used only for stats purpose and updating the stats on
  	 * the deflink is fine?
  	 */
@@ -295,7 +287,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	fast_rx = rcu_dereference(rx.sta->fast_rx);
  	if (!fast_rx)
-@@ -4948,6 +4930,8 @@ static bool ieee80211_rx_for_interface(s
+@@ -4948,6 +4931,8 @@ static bool ieee80211_rx_for_interface(s
  {
  	struct link_sta_info *link_sta;
  	struct ieee80211_hdr *hdr = (void *)skb->data;
@@ -304,7 +296,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/*
  	 * Look up link station first, in case there's a
-@@ -4957,24 +4941,19 @@ static bool ieee80211_rx_for_interface(s
+@@ -4957,24 +4942,19 @@ static bool ieee80211_rx_for_interface(s
  	 */
  	link_sta = link_sta_info_get_bss(rx->sdata, hdr->addr2);
  	if (link_sta) {
@@ -337,7 +329,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return ieee80211_prepare_and_rx_handle(rx, skb, consume);
  }
  
-@@ -5033,19 +5012,15 @@ static void __ieee80211_rx_handle_packet
+@@ -5033,19 +5013,15 @@ static void __ieee80211_rx_handle_packet
  
  	if (ieee80211_is_data(fc)) {
  		struct sta_info *sta, *prev_sta;
@@ -362,7 +354,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			/*
  			 * In MLO connection, fetch the link_id using addr2
  			 * when the driver does not pass link_id in status.
-@@ -5063,7 +5038,7 @@ static void __ieee80211_rx_handle_packet
+@@ -5063,7 +5039,7 @@ static void __ieee80211_rx_handle_packet
  				if (!link_sta)
  					goto out;
  
@@ -371,7 +363,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			}
  
  			if (ieee80211_prepare_and_rx_handle(&rx, skb, true))
-@@ -5079,30 +5054,25 @@ static void __ieee80211_rx_handle_packet
+@@ -5079,30 +5055,25 @@ static void __ieee80211_rx_handle_packet
  				continue;
  			}
  
