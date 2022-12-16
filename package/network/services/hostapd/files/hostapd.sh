@@ -611,7 +611,9 @@ hostapd_set_bss_options() {
 		[ -n "$wpa_strict_rekey" ] && append bss_conf "wpa_strict_rekey=$wpa_strict_rekey" "$N"
 	}
 
-	[ -n "$nasid" ] && append bss_conf "nas_identifier=$nasid" "$N"
+	set_default nasid "${macaddr//\:}"
+	append bss_conf "nas_identifier=$nasid" "$N"
+
 	[ -n "$acct_server" ] && {
 		append bss_conf "acct_server_addr=$acct_server" "$N"
 		append bss_conf "acct_server_port=$acct_port" "$N"
@@ -912,7 +914,6 @@ hostapd_set_bss_options() {
 			append bss_conf "ft_psk_generate_local=$ft_psk_generate_local" "$N"
 			append bss_conf "ft_over_ds=$ft_over_ds" "$N"
 			append bss_conf "reassociation_deadline=$reassociation_deadline" "$N"
-			[ -n "$nasid" ] || append bss_conf "nas_identifier=${macaddr//\:}" "$N"
 
 			if [ "$ft_psk_generate_local" -eq "0" ]; then
 				json_get_vars r0_key_lifetime r1_key_holder pmk_r1_push
