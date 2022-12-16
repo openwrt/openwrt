@@ -16,6 +16,9 @@ bcm53xx_setup_interfaces()
 	asus,rt-ac88u)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 extsw" "wan"
 		;;
+	dlink,dwl-8610ap)
+		ucidef_set_interface_lan "eth0 eth1" "dhcp"
+		;;
 	linksys,panamera)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 extsw" "wan"
 		;;
