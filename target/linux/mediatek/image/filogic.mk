@@ -130,6 +130,7 @@ define Device/xiaomi_redmi-router-ax6000
   DEVICE_MODEL := Redmi Router AX6000
   DEVICE_DTS := mt7986a-xiaomi-redmi-router-ax6000
   DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-leds-ws2812b
   KERNEL_LOADADDR := 0x48000000
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
