@@ -167,6 +167,10 @@ detect_mac80211() {
 
 		path="$(iwinfo nl80211 path "$dev")"
 		macaddr="$(cat /sys/class/ieee80211/${dev}/macaddress)"
+
+		# work around phy rename related race condition
+		[ -n "$path" -o -n "$macaddr" ] || continue
+
 		board_dev=
 		fallback_board_dev=
 		json_for_each_item check_board_phy wlan
