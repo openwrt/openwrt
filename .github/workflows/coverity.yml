@@ -17,6 +17,7 @@ jobs:
       packages: read
     uses: ./.github/workflows/build.yml
     with:
+      container_name: toolchain
       target: x86
       subtarget: 64
       build_full: true

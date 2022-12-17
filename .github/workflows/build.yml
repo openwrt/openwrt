@@ -176,6 +176,11 @@ jobs:
         id: parse-toolchain
         working-directory: openwrt
         run: |
+          if [ -d /external-toolchain/ ]; then
+            echo "toolchain-type=external_container" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
           TOOLCHAIN_PATH=snapshots
 
           if [ -n "${{ github.base_ref }}" ]; then
@@ -251,7 +256,7 @@ jobs:
             ccache-kernel-${{ inputs.target }}/${{ inputs.subtarget }}-
 
       - name: Download external toolchain/sdk
-        if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type != 'internal'
+        if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type != 'internal' && steps.parse-toolchain.outputs.toolchain-type != 'external_container'
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
@@ -287,6 +292,20 @@ jobs:
           echo CONFIG_TARGET_MULTI_PROFILE=y >> .config
           echo CONFIG_TARGET_PER_DEVICE_ROOTFS=y >> .config
           echo CONFIG_TARGET_ALL_PROFILES=y >> .config
+
+      - name: Configure external toolchain in container
+        if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_container'
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          echo CONFIG_DEVEL=y >> .config
+          echo CONFIG_AUTOREMOVE=y >> .config
+          echo CONFIG_CCACHE=y >> .config
+
+          ./scripts/ext-toolchain.sh \
+            --toolchain /external-toolchain/$(ls /external-toolchain/ | grep openwrt-toolchain)/toolchain-* \
+            --overwrite-config \
+            --config ${{ inputs.target }}/${{ inputs.subtarget }}
 
       - name: Configure external toolchain
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_toolchain'
