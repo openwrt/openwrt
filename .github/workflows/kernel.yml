@@ -109,6 +109,7 @@ jobs:
          include: ${{fromJson(needs.determine_targets.outputs.targets_subtargets)}}
     uses: ./.github/workflows/build.yml
     with:
+      container_name: toolchain
       target: ${{ matrix.target }}
       subtarget: ${{ matrix.subtarget }}
       build_kernel: true
