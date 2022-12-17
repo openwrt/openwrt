@@ -306,7 +306,7 @@ define Device/asus_rt-ax53u
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
-  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3 uboot-envtools \
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 uboot-envtools \
 	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += asus_rt-ax53u
@@ -367,7 +367,7 @@ define Device/belkin_rt1800
   IMAGE_SIZE := 49152k
   DEVICE_VENDOR := Belkin
   DEVICE_MODEL := RT1800
-  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3 uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 uboot-envtools
   UBINIZE_OPTS := -E 5
   KERNEL_LOADADDR := 0x82000000
   KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
@@ -431,7 +431,7 @@ define Device/cudy_m1800
   DEVICE_MODEL := M1800
   IMAGE_SIZE := 16064k
   UIMAGE_NAME := R17
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += cudy_m1800
 
@@ -474,7 +474,7 @@ define Device/cudy_x6
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := X6
   UIMAGE_NAME := R13
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += cudy_x6
 
@@ -881,7 +881,7 @@ define Device/h3c_tx180x
   KERNEL := $$(KERNEL_INITRAMFS) | h3c-blank-header
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_VENDOR := H3C
-  DEVICE_PACKAGES := kmod-mt7915e uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7915-firmware uboot-envtools
 endef
 
 define Device/h3c_tx1800-plus
@@ -918,7 +918,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	haier-sim_wr1800k-factory
 endif
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := kmod-mt7915e uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7915-firmware uboot-envtools
 endef
 
 define Device/haier_har-20s2u1
@@ -1161,7 +1161,7 @@ define Device/iptime_ax2004m
 	check-size | iptime-crc32 ax2004m
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := AX2004M
-  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3
 endef
 TARGET_DEVICES += iptime_ax2004m
 
@@ -1207,7 +1207,7 @@ define Device/jcg_q20
 	check-size
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := Q20
-  DEVICE_PACKAGES := kmod-mt7915e uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7915-firmware uboot-envtools
 endef
 TARGET_DEVICES += jcg_q20
 
@@ -1649,7 +1649,7 @@ define Device/netgear_wax202
   $(Device/dsa-migration)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WAX202
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
   NETGEAR_ENC_MODEL := WAX202
   NETGEAR_ENC_REGION := US
   BLOCKSIZE := 128k
@@ -1866,7 +1866,7 @@ define Device/tenbay_t-mb5eu-v01
   DEVICE_VENDOR := Tenbay
   DEVICE_MODEL := T-MB5EU-V01
   DEVICE_DTS_CONFIG := config@1
-  DEVICE_PACKAGES += kmod-mt7915e kmod-usb3
+  DEVICE_PACKAGES += kmod-mt7915-firmware kmod-usb3
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 15808k
   SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
@@ -1900,7 +1900,7 @@ define Device/totolink_x5000r
   UIMAGE_NAME := C8343R-9999
   DEVICE_VENDOR := TOTOLINK
   DEVICE_MODEL := X5000R
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += totolink_x5000r
 
@@ -1962,7 +1962,7 @@ define Device/tplink_eap615-wall-v1
   $(Device/tplink-safeloader)
   DEVICE_MODEL := EAP615-Wall
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
   TPLINK_BOARD_ID := EAP615-WALL-V1
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-to 64k
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
@@ -2095,7 +2095,7 @@ define Device/ubnt_unifi-6-lite
   DEVICE_MODEL := UniFi 6 Lite
   DEVICE_DTS_CONFIG := config@1
   DEVICE_DTS_LOADADDR := 0x87000000
-  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7915e
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7915-firmware
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 15424k
 endef
@@ -2353,7 +2353,7 @@ define Device/xiaomi_mi-router-cr660x
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/firmware.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
-  DEVICE_PACKAGES += kmod-mt7915e uboot-envtools
+  DEVICE_PACKAGES += kmod-mt7915-firmware uboot-envtools
 endef
 
 define Device/xiaomi_mi-router-cr6606
@@ -2428,7 +2428,7 @@ define Device/yuncore_ax820
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := YunCore
   DEVICE_MODEL := AX820
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += yuncore_ax820
 
@@ -2438,7 +2438,7 @@ define Device/yuncore_fap640
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := YunCore
   DEVICE_MODEL := FAP640
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += yuncore_fap640
 
@@ -2448,7 +2448,7 @@ define Device/yuncore_fap690
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := YunCore
   DEVICE_MODEL := FAP690
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += yuncore_fap690
 
@@ -2611,7 +2611,7 @@ define Device/zyxel_nwa-ax
   PAGESIZE := 2048
   KERNEL_SIZE := 8192k
   UBINIZE_OPTS := -E 5
-  DEVICE_PACKAGES := kmod-mt7915e uboot-envtools zyxel-bootconfig
+  DEVICE_PACKAGES := kmod-mt7915-firmware uboot-envtools zyxel-bootconfig
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGES += factory.bin ramboot-factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | zyxel-nwa-fit
