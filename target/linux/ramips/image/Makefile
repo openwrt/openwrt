@@ -28,11 +28,6 @@ LOADER_FLASH_START := $(ldrflashstart-y)
 
 KERNEL_DTB = kernel-bin | append-dtb | lzma
 
-define Build/edimax-header
-	$(STAGING_DIR_HOST)/bin/mkedimaximg -i $@ -o $@.new $(1)
-	@mv $@.new $@
-endef
-
 define Build/jcg-header
 	$(STAGING_DIR_HOST)/bin/jcgimage -v $(1) \
 		$(if $(JCG_MAXSIZE), -m $$(($(subst k, * 1024,$(JCG_MAXSIZE)))),) \
@@ -218,7 +213,15 @@ endef
 
 define Device/uimage-lzma-loader
   LOADER_TYPE := bin
-  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+  KERNEL/lzma-loader := kernel-bin | append-dtb | lzma | loader-kernel
+  KERNEL := $$(KERNEL/lzma-loader) | uImage none
+endef
+
+define Device/seama-lzma-loader
+  $(Device/seama)
+  $(Device/uimage-lzma-loader)
+  KERNEL := $$(KERNEL/lzma-loader) | relocate-kernel | lzma -a0
+  KERNEL_INITRAMFS := $$(KERNEL/lzma-loader) | uImage none
 endef
 
 include $(SUBTARGET).mk

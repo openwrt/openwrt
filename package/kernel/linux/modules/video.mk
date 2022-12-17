@@ -256,6 +256,20 @@ endef
 
 $(eval $(call KernelPackage,drm-ttm))
 
+
+define KernelPackage/drm-ttm-helper
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Helpers for ttm-based gem objects
+  HIDDEN:=1
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-ttm
+  KCONFIG:=CONFIG_DRM_TTM_HELPER
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_ttm_helper.ko
+  AUTOLOAD:=$(call AutoProbe,drm_ttm_helper)
+endef
+
+$(eval $(call KernelPackage,drm-ttm-helper))
+
+
 define KernelPackage/drm-kms-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=CRTC helpers for KMS drivers
@@ -278,7 +292,7 @@ define KernelPackage/drm-amdgpu
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=AMDGPU DRM support
   DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-ttm \
-	+kmod-drm-kms-helper +kmod-i2c-algo-bit +amdgpu-firmware
+	+kmod-drm-ttm-helper +kmod-drm-kms-helper +kmod-i2c-algo-bit +amdgpu-firmware
   KCONFIG:=CONFIG_DRM_AMDGPU \
 	CONFIG_DRM_AMDGPU_SI=y \
 	CONFIG_DRM_AMDGPU_CIK=y \
@@ -376,7 +390,7 @@ define KernelPackage/drm-radeon
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Radeon DRM support
   DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-kms-helper \
-	+kmod-drm-ttm +kmod-i2c-algo-bit +radeon-firmware
+	+kmod-drm-ttm +kmod-drm-ttm-helper +kmod-i2c-algo-bit +radeon-firmware
   KCONFIG:=CONFIG_DRM_RADEON
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/radeon/radeon.ko
   AUTOLOAD:=$(call AutoProbe,radeon)

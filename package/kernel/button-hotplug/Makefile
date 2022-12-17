@@ -28,23 +28,8 @@ define KernelPackage/button-hotplug/description
   If your device uses GPIO buttons, see gpio-button-hotplug.
 endef
 
-EXTRA_KCONFIG:= \
-	CONFIG_BUTTON_HOTPLUG=m
-
-EXTRA_CFLAGS:= \
-	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(EXTRA_KCONFIG)))) \
-	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(EXTRA_KCONFIG)))) \
-
-MAKE_OPTS:= \
-	$(KERNEL_MAKE_FLAGS) \
-	M="$(PKG_BUILD_DIR)" \
-	EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
-	$(EXTRA_KCONFIG)
-
 define Build/Compile
-	$(MAKE) -C "$(LINUX_DIR)" \
-		$(MAKE_OPTS) \
-		modules
+	$(KERNEL_MAKE) M="$(PKG_BUILD_DIR)" modules
 endef
 
 $(eval $(call KernelPackage,button-hotplug))

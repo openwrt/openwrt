@@ -131,7 +131,7 @@ hostapd_prepare_device_config() {
 
 	local base_cfg=
 
-	json_get_vars country country3 country_ie beacon_int:100 dtim_period:2 doth require_mode legacy_rates \
+	json_get_vars country country3 country_ie beacon_int:100 doth require_mode legacy_rates \
 		acs_chan_bias local_pwr_constraint spectrum_mgmt_required airtime_mode cell_density \
 		rts_threshold beacon_rate rssi_reject_assoc_rssi rssi_ignore_probe_request maxassoc
 
@@ -232,7 +232,6 @@ hostapd_prepare_device_config() {
 	[ -n "$brlist" ] && append base_cfg "basic_rates=$brlist" "$N"
 	append base_cfg "beacon_int=$beacon_int" "$N"
 	[ -n "$rts_threshold" ] && append base_cfg "rts_threshold=$rts_threshold" "$N"
-	append base_cfg "dtim_period=$dtim_period" "$N"
 	[ "$airtime_mode" -gt 0 ] && append base_cfg "airtime_mode=$airtime_mode" "$N"
 	[ -n "$maxassoc" ] && append base_cfg "iface_max_num_sta=$maxassoc" "$N"
 
@@ -612,7 +611,9 @@ hostapd_set_bss_options() {
 		[ -n "$wpa_strict_rekey" ] && append bss_conf "wpa_strict_rekey=$wpa_strict_rekey" "$N"
 	}
 
-	[ -n "$nasid" ] && append bss_conf "nas_identifier=$nasid" "$N"
+	set_default nasid "${macaddr//\:}"
+	append bss_conf "nas_identifier=$nasid" "$N"
+
 	[ -n "$acct_server" ] && {
 		append bss_conf "acct_server_addr=$acct_server" "$N"
 		append bss_conf "acct_server_port=$acct_port" "$N"
@@ -688,13 +689,15 @@ hostapd_set_bss_options() {
 			json_get_vars \
 				auth_server auth_secret auth_port \
 				dae_client dae_secret dae_port \
-				ownip radius_client_addr \
+				dynamic_ownip ownip radius_client_addr \
 				eap_reauth_period request_cui \
 				erp_domain mobility_domain \
 				fils_realm fils_dhcp
 
 			# radius can provide VLAN ID for clients
 			vlan_possible=1
+
+			set_default dynamic_ownip 1
 
 			# legacy compatibility
 			[ -n "$auth_server" ] || json_get_var auth_server server
@@ -744,7 +747,12 @@ hostapd_set_bss_options() {
 			}
 			json_for_each_item append_radius_auth_req_attr radius_auth_req_attr
 
-			[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
+			if [ -n "$ownip" ]; then
+				append bss_conf "own_ip_addr=$ownip" "$N"
+			elif [ "$dynamic_ownip" -gt 0 ]; then
+				append bss_conf "dynamic_own_ip_addr=$dynamic_ownip" "$N"
+			fi
+
 			[ -n "$radius_client_addr" ] && append bss_conf "radius_client_addr=$radius_client_addr" "$N"
 			append bss_conf "eapol_key_index_workaround=1" "$N"
 			append bss_conf "ieee8021x=1" "$N"
@@ -906,7 +914,6 @@ hostapd_set_bss_options() {
 			append bss_conf "ft_psk_generate_local=$ft_psk_generate_local" "$N"
 			append bss_conf "ft_over_ds=$ft_over_ds" "$N"
 			append bss_conf "reassociation_deadline=$reassociation_deadline" "$N"
-			[ -n "$nasid" ] || append bss_conf "nas_identifier=${macaddr//\:}" "$N"
 
 			if [ "$ft_psk_generate_local" -eq "0" ]; then
 				json_get_vars r0_key_lifetime r1_key_holder pmk_r1_push
@@ -1323,7 +1330,7 @@ wpa_supplicant_add_network() {
 	}
 
 	[ "$_w_mode" = "mesh" ] && {
-		json_get_vars mesh_id mesh_fwding mesh_rssi_threshold
+		json_get_vars mesh_id mesh_fwding mesh_rssi_threshold encryption
 		[ -n "$mesh_id" ] && ssid="${mesh_id}"
 
 		append network_data "mode=5" "$N$T"
@@ -1331,7 +1338,7 @@ wpa_supplicant_add_network() {
 		[ -n "$mesh_rssi_threshold" ] && append network_data "mesh_rssi_threshold=${mesh_rssi_threshold}" "$N$T"
 		[ -n "$freq" ] && wpa_supplicant_set_fixed_freq "$freq" "$htmode"
 		[ "$noscan" = "1" ] && append network_data "noscan=1" "$N$T"
-		append wpa_key_mgmt "SAE"
+		[ "$encryption" = "none" -o -z "$encryption" ] || append wpa_key_mgmt "SAE"
 		scan_ssid=""
 	}
 

@@ -97,6 +97,16 @@ define Trusted-Firmware-A/udpu
   PLAT:=a3700
 endef
 
+define Trusted-Firmware-A/edpu
+  NAME:=Methode eDPU
+  DEPENDS:=+u-boot-eDPU
+  BUILD_DEVICES:=methode_edpu
+  UBOOT:=eDPU
+  DDR_TOPOLOGY:=0
+  CLOCKSPRESET:=CPU_1000_DDR_800
+  PLAT:=a3700
+endef
+
 
 TFA_TARGETS:= \
 	espressobin-512mb \
@@ -105,15 +115,16 @@ TFA_TARGETS:= \
 	espressobin-v3-v5-2gb \
 	espressobin-v7-1gb \
 	espressobin-v7-2gb \
-	udpu
+	udpu \
+	edpu
 
 TFA_MAKE_FLAGS += \
-		CROSS_CM3=$(STAGING_DIR_IMAGE)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
+		CROSS_CM3=$(BUILD_DIR)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
 		BL33=$(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.bin \
-		MV_DDR_PATH=$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
-		WTP=$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
-		WTMI_IMG=$(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE)/wtmi_app.bin \
-		CRYPTOPP_PATH=$(STAGING_DIR_IMAGE)/$(CRYPTOPP_NAME) \
+		MV_DDR_PATH=$(BUILD_DIR)/$(MV_DDR_NAME) \
+		WTP=$(BUILD_DIR)/$(A3700_UTILS_NAME) \
+		WTMI_IMG=$(BUILD_DIR)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE)/wtmi_app.bin \
+		CRYPTOPP_PATH=$(BUILD_DIR)/$(CRYPTOPP_NAME) \
 		USE_COHERENT_MEM=0 \
 		FIP_ALIGN=0x100 \
 		DDR_TOPOLOGY=$(DDR_TOPOLOGY) \
@@ -190,11 +201,11 @@ endef
 
 define Build/Clean
 	rm -rf \
-		$(STAGING_DIR_IMAGE)/$(CRYPTOPP_NAME) \
-		$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME) \
-		$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME) \
-		$(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
-		$(STAGING_DIR_IMAGE)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)
+		$(BUILD_DIR)/$(CRYPTOPP_NAME) \
+		$(BUILD_DIR)/$(A3700_UTILS_NAME) \
+		$(BUILD_DIR)/$(MV_DDR_NAME) \
+		$(BUILD_DIR)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
+		$(BUILD_DIR)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)
 endef
 
 define Build/Prepare
@@ -207,23 +218,22 @@ define Build/Prepare
 
 	$(call Build/Prepare/Default,)
 
-	mkdir -p $(STAGING_DIR_IMAGE)
-	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(CRYPTOPP_SOURCE)
-	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(A3700_UTILS_SOURCE)
-	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(A3700_UTILS_NAME),./patches-a3700-utils)
-	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(MV_DDR_SOURCE)
-	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(MV_DDR_NAME),./patches-mv-ddr-marvell)
-	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(MOX_BB_SOURCE)
-	$(call PatchDir/Default,$(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE),./patches-mox-boot-builder)
-	$(TAR) -C $(STAGING_DIR_IMAGE) -xf $(DL_DIR)/$(CM3_GCC_SOURCE)
+	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(CRYPTOPP_SOURCE)
+	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(A3700_UTILS_SOURCE)
+	$(call PatchDir/Default,$(BUILD_DIR)/$(A3700_UTILS_NAME),./patches-a3700-utils)
+	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(MV_DDR_SOURCE)
+	$(call PatchDir/Default,$(BUILD_DIR)/$(MV_DDR_NAME),./patches-mv-ddr-marvell)
+	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(MOX_BB_SOURCE)
+	$(call PatchDir/Default,$(BUILD_DIR)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE),./patches-mox-boot-builder)
+	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(CM3_GCC_SOURCE)
 endef
 
 define Build/Compile
 	+$(MAKE) \
-		CROSS_CM3=$(STAGING_DIR_IMAGE)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
+		CROSS_CM3=$(BUILD_DIR)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
 		WTMI_VERSION=$(MOX_BB_RELEASE) \
 		CRYPTOPP_PATH=$PWD/cryptopp/ \
-		-C $(STAGING_DIR_IMAGE)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
+		-C $(BUILD_DIR)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
 		wtmi_app.bin
 	$(call Build/Compile/Default)
 endef

@@ -13,7 +13,6 @@ case "$FIRMWARE" in
 	allnet,all-wap02860ac|\
 	araknis,an-500-ap-i-ac|\
 	araknis,an-700-ap-i-ac|\
-	engenius,eap1200h|\
 	engenius,enstationac-v1|\
 	glinet,gl-x750|\
 	watchguard,ap300)
@@ -73,9 +72,6 @@ case "$FIRMWARE" in
 	dlink,dir-859-a1)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
-		;;
-	elecom,wrc-1750ghbk2-i)
-		caldata_extract "art" 0x5000 0x844
 		;;
 	engenius,ecb1200|\
 	engenius,ecb1750)

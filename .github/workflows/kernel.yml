@@ -3,10 +3,24 @@ name: Build Kernel
 on:
   pull_request:
     paths:
+      - '.github/workflows/check-kernel-patches.yml'
+      - '.github/workflows/build.yml'
       - '.github/workflows/kernel.yml'
-      - 'include/kernel-*'
+      - 'include/kernel*'
       - 'package/kernel/**'
       - 'target/linux/generic/**'
+  push:
+    paths:
+      - '.github/workflows/check-kernel-patches.yml'
+      - '.github/workflows/build.yml'
+      - '.github/workflows/kernel.yml'
+      - 'include/kernel*'
+      - 'package/kernel/**'
+      - 'target/linux/generic/**'
+
+permissions:
+  contents: read
+
 jobs:
   determine_targets:
     name: Set targets
@@ -16,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set targets
         id: find_targets
@@ -38,134 +52,35 @@ jobs:
            echo "$JSON"
            echo -e "\n---- targets ----\n"
 
-           echo "::set-output name=target::$JSON"
+           echo "target=$JSON" >> $GITHUB_OUTPUT
 
   build:
     name: Build Kernel with external toolchain
     needs: determine_targets
-    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     strategy:
        fail-fast: False
        matrix:
          target: ${{fromJson(needs.determine_targets.outputs.target)}}
+    uses: ./.github/workflows/build.yml
+    with:
+      target: ${{ matrix.target }}
+      build_kernel: true
+      build_all_kmods: true
 
-    container: registry.gitlab.com/openwrt/buildbot/buildworker-3.4.1
+  check-kernel-patches:
+    name: Check Kernel patches
+    needs: determine_targets
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+       fail-fast: False
+       matrix:
+         target: ${{fromJson(needs.determine_targets.outputs.target)}}
+    uses: ./.github/workflows/check-kernel-patches.yml
+    with:
+      target: ${{ matrix.target }}
 
-    steps:
-      - name: Checkout master directory
-        uses: actions/checkout@v2
-        with:
-          path: openwrt
-
-      - name: Checkout packages feed
-        uses: actions/checkout@v2
-        with:
-          repository: openwrt/packages
-          path: openwrt/feeds/packages
-
-      - name: Checkout luci feed
-        uses: actions/checkout@v2
-        with:
-          repository: openwrt/luci
-          path: openwrt/feeds/luci
-
-      - name: Checkout routing feed
-        uses: actions/checkout@v2
-        with:
-          repository: openwrt/routing
-          path: openwrt/feeds/routing
-
-      - name: Checkout telephony feed
-        uses: actions/checkout@v2
-        with:
-          repository: openwrt/telephony
-          path: openwrt/feeds/telephony
-
-      - name: Fix permission
-        run: |
-          chown -R buildbot:buildbot openwrt
-
-      - name: Initialization environment
-        run: |
-          TARGET=$(echo ${{ matrix.target }} | cut -d "/" -f 1)
-          SUBTARGET=$(echo ${{ matrix.target }} | cut -d "/" -f 2)
-          echo "TARGET=$TARGET" >> "$GITHUB_ENV"
-          echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
-
-      - name: Update & Install feeds
-        shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
-        run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-
-      - name: Parse toolchain file
-        working-directory: openwrt
-        run: |
-          TOOLCHAIN_STRING="$(curl "https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums" \
-            | grep ".*openwrt-toolchain.*tar.xz")"
-          TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
-          TOOLCHAIN_SHA256=$(echo "$TOOLCHAIN_STRING" | cut -d ' ' -f 1)
-
-          echo "TOOLCHAIN_FILE=$TOOLCHAIN_FILE" >> "$GITHUB_ENV"
-          echo "TOOLCHAIN_SHA256=$TOOLCHAIN_SHA256" >> "$GITHUB_ENV"
-
-      - name: Cache external toolchain
-        id: cache-external-toolchain
-        uses: actions/cache@v3
-        with:
-          path: openwrt/${{ env.TOOLCHAIN_FILE }}
-          key: ${{ env.TOOLCHAIN_FILE }}-${{ env.TOOLCHAIN_SHA256 }}
-
-      - name: Download external toolchain
-        if: ${{ steps.cache-external-toolchain.outputs.cache-hit != 'true' }}
-        shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
-        run: |
-          wget -O - https://downloads.cdn.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/${TOOLCHAIN_FILE}.tar.xz \
-            | tar --xz -xf -
-
-      - name: Configure external toolchain
-        shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
-        run: |
-          echo CONFIG_ALL_KMODS=y >> .config
-
-          ./scripts/ext-toolchain.sh \
-            --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
-            --overwrite-config \
-            --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
-
-          make defconfig
-
-      - name: Show configuration
-        shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
-        run: ./scripts/diffconfig.sh
-
-      - name: Build tools
-        shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
-        run: make tools/install -j$(nproc) BUILD_LOG=1
-
-      - name: Build toolchain
-        shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
-        run: make toolchain/install -j$(nproc) BUILD_LOG=1
-
-      - name: Build Kernel
-        shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
-        run: make target/compile -j$(nproc) BUILD_LOG=1
-
-      - name: Build Kernel Kmods
-        shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
-        run: make package/linux/compile -j$(nproc) BUILD_LOG=1
-
-      - name: Upload logs
-        if: failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ env.TARGET }}-${{ env.SUBTARGET }}-logs
-          path: "openwrt/logs"

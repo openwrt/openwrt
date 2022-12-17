@@ -237,6 +237,15 @@ define Device/ruijie_rg-ew3200gx-pro
 endef
 TARGET_DEVICES += ruijie_rg-ew3200gx-pro
 
+define Device/reyee_ax3200-e5
+  DEVICE_VENDOR := reyee
+  DEVICE_MODEL := AX3200 E5
+  DEVICE_DTS := mt7622-reyee-ax3200-e5
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += reyee_ax3200-e5
+
 define Device/totolink_a8000ru
   DEVICE_VENDOR := TOTOLINK
   DEVICE_MODEL := A8000RU

@@ -779,7 +779,7 @@ if KERNEL_CGROUPS
 		bool "Memory Resource Controller for Control Groups"
 		default y
 		select KERNEL_FREEZER
-		depends on KERNEL_RESOURCE_COUNTERS || !LINUX_3_18
+		depends on KERNEL_RESOURCE_COUNTERS
 		help
 		  Provides a memory resource controller that manages both anonymous
 		  memory and page cache. (See Documentation/cgroups/memory.txt)
@@ -1107,6 +1107,22 @@ config KERNEL_NET_L3_MASTER_DEV
 	help
 	  This module provides glue between core networking code and device
 	  drivers to support L3 master devices like VRF.
+
+config KERNEL_WIRELESS_EXT
+	def_bool n
+
+config KERNEL_WEXT_CORE
+	def_bool KERNEL_WIRELESS_EXT
+
+config KERNEL_WEXT_PRIV
+	def_bool KERNEL_WIRELESS_EXT
+
+config KERNEL_WEXT_PROC
+	def_bool KERNEL_WIRELESS_EXT
+
+config KERNEL_WEXT_SPY
+	def_bool KERNEL_WIRELESS_EXT
+
 
 #
 # NFS related symbols

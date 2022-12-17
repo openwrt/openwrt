@@ -8,11 +8,7 @@ define Device/Default
   FILESYSTEMS := squashfs
   KERNEL := kernel-bin | gzip | uImage gzip
   KERNEL_INITRAMFS = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-ifdef CONFIG_LINUX_5_4
-  KERNEL_LOADADDR := 0x80080000
-else
   KERNEL_LOADADDR := 0x80000000
-endif
   DEVICE_DTS = freescale/$(subst _,-,$(1))
   IMAGE_SIZE := 64m
   IMAGE/sysupgrade.bin = \
@@ -50,7 +46,6 @@ define Device/fsl_ls1012a-frdm
     append-rootfs | pad-rootfs | \
     check-size $(LS_SYSUPGRADE_IMAGE_SIZE) | append-metadata
   KERNEL := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-  KERNEL_INITRAMFS := kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb
 endef
 TARGET_DEVICES += fsl_ls1012a-frdm
 
@@ -115,11 +110,7 @@ define Device/fsl_ls1043a-rdb
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
-ifdef CONFIG_LINUX_5_4
-  DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
-else
   DEVICE_DTS := freescale/fsl-ls1043a-rdb
-endif
   IMAGE/firmware.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
@@ -145,11 +136,7 @@ define Device/fsl_ls1043a-rdb-sdboot
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
-ifdef CONFIG_LINUX_5_4
-  DEVICE_DTS := freescale/fsl-ls1043a-rdb-sdk
-else
   DEVICE_DTS := freescale/fsl-ls1043a-rdb
-endif
   IMAGE/sdcard.img.gz := \
     ls-clean | \
     ls-append-sdhead $(1) | pad-to 4K | \
@@ -169,11 +156,7 @@ define Device/fsl_ls1046a-frwy
   DEVICE_PACKAGES += \
     layerscape-fman \
     tfa-ls1046a-frwy
-ifdef CONFIG_LINUX_5_4
-  DEVICE_DTS := freescale/fsl-ls1046a-frwy-sdk
-else
   DEVICE_DTS := freescale/fsl-ls1046a-frwy
-endif
   IMAGE/firmware.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
@@ -194,11 +177,7 @@ define Device/fsl_ls1046a-frwy-sdboot
   DEVICE_PACKAGES += \
     layerscape-fman \
     tfa-ls1046a-frwy-sdboot
-ifdef CONFIG_LINUX_5_4
-  DEVICE_DTS := freescale/fsl-ls1046a-frwy-sdk
-else
   DEVICE_DTS := freescale/fsl-ls1046a-frwy
-endif
   IMAGE/sdcard.img.gz := \
     ls-clean | \
     ls-append-sdhead $(1) | pad-to 4K | \
@@ -223,11 +202,7 @@ define Device/fsl_ls1046a-rdb
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
-ifdef CONFIG_LINUX_5_4
-  DEVICE_DTS := freescale/fsl-ls1046a-rdb-sdk
-else
   DEVICE_DTS := freescale/fsl-ls1046a-rdb
-endif
   IMAGE/firmware.bin := \
     ls-clean | \
     ls-append $(1)-bl2.pbl | pad-to 1M | \
@@ -253,11 +228,7 @@ define Device/fsl_ls1046a-rdb-sdboot
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
     kmod-hwmon-lm90
-ifdef CONFIG_LINUX_5_4
-  DEVICE_DTS := freescale/fsl-ls1046a-rdb-sdk
-else
   DEVICE_DTS := freescale/fsl-ls1046a-rdb
-endif
   IMAGE/sdcard.img.gz := \
     ls-clean | \
     ls-append-sdhead $(1) | pad-to 4K | \

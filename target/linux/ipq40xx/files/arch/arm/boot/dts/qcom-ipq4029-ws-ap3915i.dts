@@ -14,7 +14,6 @@
 		led-failsafe = &led_system_amber;
 		led-running = &led_system_green;
 		led-upgrade = &led_system_amber;
-		label-mac-device = &gmac0;
 	};
 
 	soc {
@@ -26,10 +25,6 @@
 			status = "okay";
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
 		};
 
 		tcsr@1949000 {
@@ -56,17 +51,6 @@
 
 		watchdog@b017000 {
 			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-			switch_lan_bmp = <0x20>;
-			switch_wan_bmp = <0x00>;
-		};
-
-		edma@c080000 {
-			status = "okay";
-			qcom,num_gmac = <1>;
 		};
 	};
 
@@ -261,12 +245,4 @@
 			};
 		};
 	};
-};
-
-&gmac0 {
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <1 0x20>;
 };

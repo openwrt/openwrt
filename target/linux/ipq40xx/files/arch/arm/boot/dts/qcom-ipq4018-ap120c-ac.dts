@@ -14,6 +14,7 @@
 		led-failsafe = &status;
 		led-running = &status;
 		led-upgrade = &status;
+		ethernet1 = &swport5;
 	};
 
 	keys {
@@ -65,10 +66,6 @@
 			pinctrl-names = "default";
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		counter@4a1000 {
 			compatible = "qcom,qca-gcnt";
 			reg = <0x4a1000 0x4>;
@@ -116,17 +113,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-
-			switch_lan_bmp = <0x10>;
-			switch_wan_bmp = <0x20>;
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -277,22 +263,6 @@
 	#gpio-cells = <2>;
 };
 
-&gmac0 {
-	qcom,forced_duplex = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,phy_mdio_addr = <3>;
-	qcom,poll_required = <1>;
-	vlan_tag = <1 0x10>;
-};
-
-&gmac1 {
-	qcom,forced_duplex = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
-	vlan_tag = <2 0x20>;
-};
-
 &tlmm {
 	i2c0_pins: i2c0_pinmux {
 		mux_i2c {
@@ -348,6 +318,24 @@
 };
 
 &usb3_hs_phy {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&swport5 {
 	status = "okay";
 };
 

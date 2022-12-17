@@ -38,6 +38,7 @@ ramips_setup_interfaces()
 			"3:lan" "4:wan" "6@eth0"
 		;;
 	alfa-network,tube-e4g|\
+	ampedwireless,b1200ex|\
 	buffalo,wmr-300|\
 	dlink,dch-m225|\
 	edimax,ew-7476rpc|\
@@ -237,6 +238,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"5:lan" "4:wan" "6@eth0"
 		;;
+	youku,x2)
+		ucidef_add_switch "switch0" \
+			"1:lan:2" "4:lan:1" "0:wan" "6@eth0"
+		;;
 	youku,yk-l1|\
 	youku,yk-l1c)
 		ucidef_add_switch "switch0" \
@@ -368,6 +373,7 @@ ramips_setup_macs()
 	ohyeah,oy-0001|\
 	wavlink,wl-wn530hg4|\
 	wevo,air-duo|\
+	youku,x2|\
 	youku,yk-l1|\
 	youku,yk-l1c)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)

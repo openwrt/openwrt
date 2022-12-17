@@ -95,6 +95,7 @@
 				clock-output-names = "cpu", "ddr", "ahb";
 
 				clocks = <&extosc>;
+				clock-names = "ref";
 			};
 
 			wdt: wdt@18060008 {
@@ -203,6 +204,11 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			hub_port0: port@1 {
+				reg = <1>;
+				#trigger-source-cells = <0>;
+			};
 		};
 
 		usb1: usb@1b400000 {
@@ -225,6 +231,11 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			hub_port1: port@1 {
+				reg = <1>;
+				#trigger-source-cells = <0>;
+			};
 		};
 
 		spi: spi@1f000000 {

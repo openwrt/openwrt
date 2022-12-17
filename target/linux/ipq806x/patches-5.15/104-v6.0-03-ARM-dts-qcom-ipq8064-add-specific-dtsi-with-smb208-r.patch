@@ -1,0 +1,66 @@
+From 5c47a46d5e942ea6b041c8b7727b201817c1ff76 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 7 Jul 2022 03:09:37 +0200
+Subject: [PATCH 3/8] ARM: dts: qcom: ipq8064: add specific dtsi with smb208
+ rpm regulators
+
+Add specific ipq8064 dtsi with smb208 rpm regulators.
+
+Qcom advise to use this configuration but it's not mandatory and OEM
+can decide to implement their own regulators.
+smb208 regulators are used to scale CPU voltage, L2 cache voltage and
+Ubi32 cores.
+
+There regulators are controlled by rpm and to correctly works gsbi4-i2c
+require to be NEVER disabled or rpm will reject any regulator change
+request.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Tested-by: Jonathan McDowell <noodles@earth.li>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Link: https://lore.kernel.org/r/20220707010943.20857-4-ansuelsmth@gmail.com
+---
+ arch/arm/boot/dts/qcom-ipq8064-smb208.dtsi | 37 ++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+ create mode 100644 arch/arm/boot/dts/qcom-ipq8064-smb208.dtsi
+
+--- /dev/null
++++ b/arch/arm/boot/dts/qcom-ipq8064-smb208.dtsi
+@@ -0,0 +1,37 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#include "qcom-ipq8064.dtsi"
++
++&rpm {
++	smb208_regulators: regulators {
++		compatible = "qcom,rpm-smb208-regulators";
++
++		smb208_s1a: s1a {
++			regulator-min-microvolt = <1050000>;
++			regulator-max-microvolt = <1150000>;
++
++			qcom,switch-mode-frequency = <1200000>;
++		};
++
++		smb208_s1b: s1b {
++			regulator-min-microvolt = <1050000>;
++			regulator-max-microvolt = <1150000>;
++
++			qcom,switch-mode-frequency = <1200000>;
++		};
++
++		smb208_s2a: s2a {
++			regulator-min-microvolt = < 800000>;
++			regulator-max-microvolt = <1250000>;
++
++			qcom,switch-mode-frequency = <1200000>;
++		};
++
++		smb208_s2b: s2b {
++			regulator-min-microvolt = < 800000>;
++			regulator-max-microvolt = <1250000>;
++
++			qcom,switch-mode-frequency = <1200000>;
++		};
++	};
++};

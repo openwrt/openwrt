@@ -17,47 +17,47 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
     BUILD_ISL = y
   endif
 endif
-ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_b43legacy-firmware)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
+ifneq ($(CONFIG_SDK)$(CONFIG_PACKAGE_kmod-b43)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
   BUILD_B43_TOOLS = y
 endif
 
 tools-y += autoconf autoconf-archive automake bc bison cmake cpio dosfstools
-tools-y += e2fsprogs fakeroot findutils firmware-utils flex gengetopt
+tools-y += e2fsprogs expat fakeroot findutils firmware-utils flex gengetopt
 tools-y += libressl libtool lzma m4 make-ext4fs meson missing-macros mkimage
 tools-y += mklibs mtd-utils mtools ninja padjffs2 patch-image
 tools-y += patchelf pkgconf quilt squashfskit4 sstrip zip zlib zstd
-tools-$(BUILD_B43_TOOLS) += b43-tools
-tools-$(BUILD_ISL) += isl
-tools-$(BUILD_TOOLCHAIN) += expat gmp mpc mpfr
-tools-$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini) += genext2fs
-tools-$(CONFIG_TARGET_ath79) += lzma-old squashfs
-tools-$(CONFIG_TARGET_mxs) += elftosb sdimage
-tools-$(CONFIG_TARGET_realtek) += 7z
-tools-$(CONFIG_TARGET_tegra) += cbootimage cbootimage-configs
-tools-$(CONFIG_USES_MINOR) += kernel2minor
-tools-$(CONFIG_USE_SPARSE) += sparse
-tools-$(CONFIG_USE_LLVM_BUILD) += llvm-bpf
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_B43_TOOLS),y) += b43-tools
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_ISL),y) += isl
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_TOOLCHAIN),y) += gmp mpc mpfr
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini),y) += genext2fs
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_ath79),y) += lzma-old squashfs
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_mxs),y) += elftosb sdimage
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_realtek),y) += 7z
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_tegra),y) += cbootimage cbootimage-configs
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USES_MINOR),y) += kernel2minor
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_SPARSE),y) += sparse
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_LLVM_BUILD),y) += llvm-bpf
 
 # builddir dependencies
 $(curdir)/autoconf/compile := $(curdir)/m4/compile
-$(curdir)/automake/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/pkgconf/compile $(curdir)/xz/compile
+$(curdir)/automake/compile := $(curdir)/autoconf/compile $(curdir)/pkgconf/compile $(curdir)/xz/compile
 $(curdir)/b43-tools/compile := $(curdir)/bison/compile
 $(curdir)/bc/compile := $(curdir)/bison/compile $(curdir)/libtool/compile
 $(curdir)/bison/compile := $(curdir)/flex/compile
 $(curdir)/cbootimage/compile += $(curdir)/automake/compile
-$(curdir)/cmake/compile += $(curdir)/libressl/compile $(curdir)/ninja/compile
-$(curdir)/dosfstools/compile := $(curdir)/autoconf/compile $(curdir)/automake/compile
-$(curdir)/expat/compile := $(curdir)/cmake/compile
+$(curdir)/cmake/compile += $(curdir)/libressl/compile $(curdir)/ninja/compile $(curdir)/expat/compile $(curdir)/xz/compile $(curdir)/zlib/compile $(curdir)/zstd/compile
+$(curdir)/dosfstools/compile := $(curdir)/automake/compile
 $(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile
 $(curdir)/fakeroot/compile := $(curdir)/libtool/compile
 $(curdir)/findutils/compile := $(curdir)/bison/compile
-$(curdir)/firmware-utils/compile += $(curdir)/libressl/compile $(curdir)/zlib/compile
+$(curdir)/firmware-utils/compile += $(curdir)/cmake/compile
 $(curdir)/flex/compile := $(curdir)/libtool/compile
+$(curdir)/genext2fs/compile := $(curdir)/libtool/compile
 $(curdir)/gengetopt/compile := $(curdir)/libtool/compile
 $(curdir)/gmp/compile := $(curdir)/libtool/compile
 $(curdir)/isl/compile := $(curdir)/gmp/compile
 $(curdir)/libressl/compile := $(curdir)/pkgconf/compile
-$(curdir)/libtool/compile := $(curdir)/m4/compile $(curdir)/autoconf/compile $(curdir)/automake/compile $(curdir)/missing-macros/compile
+$(curdir)/libtool/compile := $(curdir)/automake/compile $(curdir)/missing-macros/compile
 $(curdir)/lzma-old/compile := $(curdir)/zlib/compile
 $(curdir)/llvm-bpf/compile := $(curdir)/cmake/compile
 $(curdir)/make-ext4fs/compile := $(curdir)/zlib/compile
@@ -75,7 +75,6 @@ $(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compil
 $(curdir)/sdcc/compile := $(curdir)/bison/compile
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/compile
 $(curdir)/squashfskit4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
-$(curdir)/zlib/compile := $(curdir)/cmake/compile
 $(curdir)/zstd/compile := $(curdir)/meson/compile
 
 ifneq ($(HOST_OS),Linux)
@@ -87,14 +86,14 @@ ifeq ($(HOST_OS),Darwin)
 else
   $(curdir)/dwarves/compile += $(curdir)/elfutils/compile
   $(curdir)/elfutils/compile := $(curdir)/m4/compile $(curdir)/zlib/compile
-  tools-$(CONFIG_DWARVES) += dwarves
+  tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_DWARVES),y) += dwarves
   tools-y += elfutils
 endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
-$(foreach tool, $(filter-out xz zstd pkgconf patch ninja meson libressl cmake,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
+$(foreach tool, $(filter-out zstd zlib xz pkgconf patch ninja meson libressl expat cmake,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
 tools-y += ccache
-$(curdir)/ccache/compile := $(curdir)/cmake/compile $(curdir)/zstd/compile
+$(curdir)/ccache/compile := $(curdir)/cmake/compile
 endif
 
 # in case there is no patch tool on the host we need to make patch tool a

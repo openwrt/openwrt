@@ -3,7 +3,7 @@
 /*
  * Device Tree Source for Linksys xx8300 (Dallas)
  *
- * Copyright (C) 2019 Jeff Kletsky
+ * Copyright (C) 2019, 2022 Jeff Kletsky
  * Updated 2020 Hans Geiblinger
  *
  */
@@ -32,10 +32,6 @@
 		};
 
 		mdio@90000 {
-			status = "okay";
-		};
-
-		ess-psgmii@98000 {
 			status = "okay";
 		};
 
@@ -101,14 +97,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -297,4 +285,32 @@
 
 &usb3_ss_phy {
 	status = "okay";
+};
+
+&gmac {
+      status = "okay";
+};
+
+&switch {
+      status = "okay";
+};
+
+&swport1 {
+      status = "okay";
+};
+
+&swport2 {
+      status = "okay";
+};
+
+&swport3 {
+      status = "okay";
+};
+
+&swport4 {
+      status = "okay";
+};
+
+&swport5 {
+      status = "okay";
 };

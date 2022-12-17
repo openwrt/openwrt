@@ -80,7 +80,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
 
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -163,6 +163,15 @@ static ssize_t mtd_erasesize_show(struct
+@@ -164,6 +164,15 @@ static ssize_t mtd_erasesize_show(struct
  }
  static DEVICE_ATTR(erasesize, S_IRUGO, mtd_erasesize_show, NULL);
  
@@ -96,7 +96,7 @@ Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
  static ssize_t mtd_writesize_show(struct device *dev,
  		struct device_attribute *attr, char *buf)
  {
-@@ -312,6 +321,7 @@ static struct attribute *mtd_attrs[] = {
+@@ -313,6 +322,7 @@ static struct attribute *mtd_attrs[] = {
  	&dev_attr_flags.attr,
  	&dev_attr_size.attr,
  	&dev_attr_erasesize.attr,

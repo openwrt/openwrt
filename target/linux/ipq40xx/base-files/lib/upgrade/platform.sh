@@ -25,7 +25,8 @@ Once this is done. Retry.
 EOF
 		return 1
 		;;
-	zte,mf286d)
+	zte,mf286d |\
+	zte,mf289f)
 		CI_UBIPART="rootfs"
 		local mtdnum="$( find_mtd_index $CI_UBIPART )"
 		[ ! "$mtdnum" ] && return 1
@@ -110,6 +111,7 @@ platform_do_upgrade() {
 	edgecore,ecw5211 |\
 	edgecore,oap100 |\
 	engenius,eap2200 |\
+	glinet,gl-a1300 |\
 	glinet,gl-ap1300 |\
 	luma,wrtq-329acn |\
 	mobipromo,cm520-79f |\
@@ -172,9 +174,12 @@ platform_do_upgrade() {
 		;;
 	mikrotik,cap-ac|\
 	mikrotik,hap-ac2|\
+	mikrotik,hap-ac3-lte6-kit|\
 	mikrotik,lhgg-60ad|\
 	mikrotik,sxtsq-5-ac|\
-	mikrotik,wap-ac)
+	mikrotik,wap-ac|\
+	mikrotik,wap-ac-lte|\
+	mikrotik,wap-r-ac)
 		[ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
 		default_do_upgrade "$1"
 		;;
@@ -194,8 +199,12 @@ platform_do_upgrade() {
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;
+	sony,ncp-hg100-cellular)
+		sony_emmc_do_upgrade "$1"
+		;;
 	teltonika,rutx10 |\
-	zte,mf286d)
+	zte,mf286d |\
+	zte,mf289f)
 		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;

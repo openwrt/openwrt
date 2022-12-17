@@ -10,24 +10,7 @@ DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX DAP_SIGNATURE
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
 DEVICE_VARS += OPENMESH_CE_TYPE ZYXEL_MODEL_STRING
-
-define Build/add-elecom-factory-initramfs
-  $(eval edimax_model=$(word 1,$(1)))
-  $(eval product=$(word 2,$(1)))
-
-  $(STAGING_DIR_HOST)/bin/mkedimaximg \
-	-b -s CSYS -m $(edimax_model) \
-	-f 0x70000 -S 0x01100000 \
-	-i $@ -o $@.factory
-
-  $(call Build/elecom-product-header,$(product) $@.factory)
-
-  if [ "$$(stat -c%s $@.factory)" -le $$(($(subst k,* 1024,$(subst m, * 1024k,$(IMAGE_SIZE))))) ]; then \
-	mv $@.factory $(BIN_DIR)/$(KERNEL_INITRAMFS_PREFIX)-factory.bin; \
-  else \
-	echo "WARNING: initramfs kernel image too big, cannot generate factory image" >&2; \
-  fi
-endef
+DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
 
 define Build/addpattern
 	-$(STAGING_DIR_HOST)/bin/addpattern -B $(ADDPATTERN_ID) \
@@ -155,6 +138,35 @@ define Build/teltonika-v1-header
 		-m $(TPLINK_HEADER_VERSION) -N "$(VERSION_DIST)" -V "RUT2xx      " \
 		-k $@ -o $@.new $(1)
 	@mv $@.new $@
+endef
+
+metadata_json_teltonika = \
+	'{ $(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
+		"metadata_version": "1.1", \
+		"compat_version": "$(call json_quote,$(compat_version))", \
+		"version":"$(call json_quote,$(VERSION_DIST))-$(call json_quote,$(VERSION_NUMBER))-$(call json_quote,$(REVISION))", \
+		"device_code": [".*"], \
+		"hwver": [".*"], \
+		"batch": [".*"], \
+		"serial": [".*"], \
+		$(if $(DEVICE_COMPAT_MESSAGE),"compat_message": "$(call json_quote,$(DEVICE_COMPAT_MESSAGE))"$(comma)) \
+		$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices": \
+			[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma) \
+			"supported_devices": ["$(call json_quote,$(legacy_supported_message))"]$(comma)) \
+		$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma)) \
+		"version_wrt": { \
+			"dist": "$(call json_quote,$(VERSION_DIST))", \
+			"version": "$(call json_quote,$(VERSION_NUMBER))", \
+			"revision": "$(call json_quote,$(REVISION))", \
+			"target": "$(call json_quote,$(TARGETID))", \
+			"board": "$(call json_quote,$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)))" \
+		}, \
+		"hw_support": {}, \
+		"hw_mods": {} \
+	}'
+
+define Build/append-metadata-teltonika
+	echo $(call metadata_json_teltonika) | fwtool -I - $@
 endef
 
 define Build/wrgg-pad-rootfs
@@ -402,6 +414,8 @@ define Device/asus_rp-ac51
   DEVICE_MODEL := RP-AC51
   IMAGE_SIZE := 16000k
   IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct \
 	-swconfig
 endef
@@ -793,7 +807,7 @@ TARGET_DEVICES += compex_wpj563
 
 define Device/devolo_dlan-pro-1200plus-ac
   SOC := ar9344
-  DEVICE_VENDOR := Devolo
+  DEVICE_VENDOR := devolo
   DEVICE_MODEL := dLAN pro 1200+ WiFi ac
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15872k
@@ -856,7 +870,7 @@ TARGET_DEVICES += devolo_dvl1750x
 
 define Device/devolo_magic-2-wifi
   SOC := ar9344
-  DEVICE_VENDOR := Devolo
+  DEVICE_VENDOR := devolo
   DEVICE_MODEL := Magic 2 WiFi
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15872k
@@ -1001,12 +1015,14 @@ define Device/dlink_dir-825-b1
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-825
   DEVICE_VARIANT := B1
-  IMAGE_SIZE := 6208k
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
-	check-size | append-metadata
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
 	kmod-leds-reset kmod-owl-loader kmod-switch-rtl8366s
-  SUPPORTED_DEVICES += dir-825-b1
+  IMAGE_SIZE := 7808k
+  FACTORY_SIZE := 6144k
+  IMAGES += factory.bin
+  IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs | check-size $$$$(FACTORY_SIZE) | pad-to $$$$(FACTORY_SIZE) | \
+	append-string 01AP94-AR7161-RT-080619-00
 endef
 TARGET_DEVICES += dlink_dir-825-b1
 
@@ -1104,8 +1120,12 @@ define Device/elecom_wrc-1750ghbk2-i
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-1750GHBK2-I/C
   IMAGE_SIZE := 15808k
-  KERNEL_INITRAMFS := $$(KERNEL) | pad-to 2 | \
-	add-elecom-factory-initramfs RN68 WRC-1750GHBK2
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image initramfs-kernel.bin | \
+	pad-to 2 | edimax-header -b -s CSYS -m RN68 -f 0x70000 -S 0x01100000 | \
+	elecom-product-header WRC-1750GHBK2 | check-size
+endif
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 TARGET_DEVICES += elecom_wrc-1750ghbk2-i
@@ -1115,8 +1135,12 @@ define Device/elecom_wrc-300ghbk2-i
   DEVICE_VENDOR := ELECOM
   DEVICE_MODEL := WRC-300GHBK2-I
   IMAGE_SIZE := 7616k
-  KERNEL_INITRAMFS := $$(KERNEL) | pad-to 2 | \
-	add-elecom-factory-initramfs RN51 WRC-300GHBK2-I
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image initramfs-kernel.bin | \
+	pad-to 2 | edimax-header -b -s CSYS -m RN51 -f 0x70000 -S 0x01100000 | \
+	elecom-product-header WRC-300GHBK2-I | check-size
+endif
 endef
 TARGET_DEVICES += elecom_wrc-300ghbk2-i
 
@@ -1149,6 +1173,18 @@ define Device/engenius_eap1200h
   SENAO_IMGNAME := ar71xx-generic-eap1200h
 endef
 TARGET_DEVICES += engenius_eap1200h
+
+define Device/engenius_eap1750h
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := EAP1750H
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := ar71xx-generic-eap1750h
+endef
+TARGET_DEVICES += engenius_eap1750h
 
 define Device/engenius_eap300-v2
   $(Device/senao_loader_okli)
@@ -2380,13 +2416,26 @@ define Device/rosinson_wr818
 endef
 TARGET_DEVICES += rosinson_wr818
 
-define Device/ruckus_zf73xx_common
+define Device/ruckus_common
   DEVICE_VENDOR := Ruckus
-  DEVICE_PACKAGES := -swconfig kmod-usb2 kmod-usb-chipidea2
-  IMAGE_SIZE := 31744k
   LOADER_TYPE := bin
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+endef
+
+define Device/ruckus_zf7025
+  $(Device/ruckus_common)
+  SOC := ar7240
+  DEVICE_MODEL := ZoneFlex 7025
+  IMAGE_SIZE := 15616k
+  BLOCKSIZE := 256k
+endef
+TARGET_DEVICES += ruckus_zf7025
+
+define Device/ruckus_zf73xx_common
+  $(Device/ruckus_common)
+  DEVICE_PACKAGES := -swconfig kmod-usb2 kmod-usb-chipidea2
+  IMAGE_SIZE := 31744k
 endef
 
 define Device/ruckus_zf7321
@@ -2535,6 +2584,23 @@ define Device/teltonika_rut230-v1
 endef
 TARGET_DEVICES += teltonika_rut230-v1
 
+define Device/teltonika_rut300
+  SOC := qca9531
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT300
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut30x
+  DEVICE_PACKAGES := -kmod-ath9k -uboot-envtools -wpad-basic-wolfssl kmod-usb2
+  IMAGE_SIZE := 15552k
+  IMAGES += factory.bin
+  IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
+			 append-rootfs | pad-rootfs | append-metadata-teltonika | \
+			 check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
+			 append-rootfs | pad-rootfs | append-metadata | \
+			 check-size $$$$(IMAGE_SIZE)
+endef
+TARGET_DEVICES += teltonika_rut300
+
 define Device/teltonika_rut955
   SOC := ar9344
   DEVICE_VENDOR := Teltonika
@@ -2561,6 +2627,22 @@ define Device/teltonika_rut955-h7v3c0
   DEVICE_VARIANT := H7V3C0
 endef
 TARGET_DEVICES += teltonika_rut955-h7v3c0
+
+define Device/trendnet_tew-673gru
+  SOC := ar7161
+  DEVICE_VENDOR := Trendnet
+  DEVICE_MODEL := TEW-673GRU
+  DEVICE_VARIANT := v1.0R
+  DEVICE_PACKAGES := -uboot-envtools kmod-usb-ohci kmod-usb2 \
+	kmod-owl-loader kmod-switch-rtl8366s
+  IMAGE_SIZE := 7808k
+  FACTORY_SIZE := 6144k
+  IMAGES += factory.bin
+  IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs | check-size $$$$(FACTORY_SIZE) | pad-to $$$$(FACTORY_SIZE) | \
+	append-string AP94-AR7161-RT-080619-01
+endef
+TARGET_DEVICES += trendnet_tew-673gru
 
 define Device/trendnet_tew-823dru
   SOC := qca9558

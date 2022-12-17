@@ -26,13 +26,6 @@
 		led-upgrade = &led_d2;
 	};
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-output-names = "ref";
-		clock-frequency = <40000000>;
-	};
-
 	i2c {
 		compatible = "i2c-gpio";
 		sda-gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;

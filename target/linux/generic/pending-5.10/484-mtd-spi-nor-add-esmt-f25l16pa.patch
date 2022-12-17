@@ -1,3 +1,16 @@
+From: Jihoon Han <rapid_renard@renard.ga>
+Subject: mtd/spi-nor/esmt: Add support for ESMT F25L16PA(2S) SPI-NOR
+
+This fixes support for Dongwon T&I DW02-412H which uses F25L16PA(2S) flash.
+
+Submitted-by: Jihoon Han <rapid_renard@renard.ga>
+Reviewed-by: Sungbo Eo <mans0n@gorani.run>
+[refresh patches]
+Submitted-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
+---
+ drivers/mtd/spi-nor/esmt.c                            |  2 ++
+ 1 files changed, 2 insertions(+)
+
 --- a/drivers/mtd/spi-nor/esmt.c
 +++ b/drivers/mtd/spi-nor/esmt.c
 @@ -10,6 +10,8 @@

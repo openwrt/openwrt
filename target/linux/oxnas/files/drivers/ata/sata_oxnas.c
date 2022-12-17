@@ -2232,9 +2232,6 @@ static struct scsi_host_template sata_oxnas_sht = {
 	.can_queue = SATA_OXNAS_QUEUE_DEPTH,
 	.sg_tablesize = SATA_OXNAS_MAX_PRD,
 	.dma_boundary = ATA_DMA_BOUNDARY,
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0)
-	.unchecked_isa_dma  = 0,
-#endif
 };
 
 

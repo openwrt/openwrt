@@ -37,21 +37,16 @@ define Build/h3c-blank-header
 	mv $@.blank $@
 endef
 
-define Build/iodata-factory
-	$(eval fw_size=$(word 1,$(1)))
-	$(eval fw_type=$(word 2,$(1)))
-	$(eval product=$(word 3,$(1)))
-	$(eval factory_bin=$(word 4,$(1)))
-	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(fw_size)" ]; then \
-		$(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) $(factory_bin); \
-		$(STAGING_DIR_HOST)/bin/mksenaofw \
-			-r 0x30a -p $(product) -t $(fw_type) \
-			-e $(factory_bin) -o $(factory_bin).new; \
-		mv $(factory_bin).new $(factory_bin); \
-		$(CP) $(factory_bin) $(BIN_DIR)/; \
-	else \
-		echo "WARNING: initramfs kernel image too big, cannot generate factory image (actual $$(stat -c%s $@); max $(fw_size))" >&2; \
-	fi
+define Build/haier-sim_wr1800k-factory
+  -[ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) ] && \
+  mkdir -p "$(1).tmp" && \
+  $(CP) $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) "$(1).tmp/UploadBrush-bin.img" && \
+  $(MKHASH) md5 "$(1).tmp/UploadBrush-bin.img" | head -c32 > "$(1).tmp/check_MD5.txt" && \
+  $(TAR) -czf $(1).tmp.tgz -C "$(1).tmp" UploadBrush-bin.img check_MD5.txt && \
+  $(STAGING_DIR_HOST)/bin/openssl aes-256-cbc -e -salt -in $(1).tmp.tgz -out "$(1)" -k QiLunSmartWL && \
+  printf %32s "$(DEVICE_MODEL)" >> "$(1)" && \
+  rm -rf "$(1).tmp" $(1).tmp.tgz && \
+  $(CP) $(1) $(BIN_DIR)/
 endef
 
 define Build/iodata-mstc-header
@@ -311,6 +306,7 @@ TARGET_DEVICES += asus_rt-ac85p
 
 define Device/asus_rt-n56u-b1
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N56U
   DEVICE_VARIANT := B1
@@ -451,15 +447,28 @@ define Device/bolt_arion
 endef
 TARGET_DEVICES += bolt_arion
 
-define Device/cudy_wr1300
+define Device/cudy_wr1300-v1
   $(Device/dsa-migration)
   IMAGE_SIZE := 15872k
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := WR1300
+  DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += cudy,wr1300 R10
 endef
-TARGET_DEVICES += cudy_wr1300
+TARGET_DEVICES += cudy_wr1300-v1
+
+define Device/cudy_wr1300-v2
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := WR1300
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  SUPPORTED_DEVICES += cudy,wr1300 R23
+endef
+TARGET_DEVICES += cudy_wr1300-v2
 
 define Device/cudy_wr2100
   $(Device/dsa-migration)
@@ -541,6 +550,13 @@ define Device/dlink_dir-2660-a1
 endef
 TARGET_DEVICES += dlink_dir-2660-a1
 
+define Device/dlink_dir-3060-a1
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_MODEL := DIR-3060
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-3060-a1
+
 define Device/dlink_dir-853-a3
   $(Device/dlink_dir-xx60-a1)
   DEVICE_MODEL := DIR-853
@@ -558,11 +574,8 @@ TARGET_DEVICES += dlink_dir-853-r1
 
 define Device/dlink_dir-860l-b1
   $(Device/dsa-migration)
-  $(Device/seama)
+  $(Device/seama-lzma-loader)
   SEAMA_SIGNATURE := wrgac13_dlink.2013gui_dir860lb
-  LOADER_TYPE := bin
-  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | relocate-kernel | \
-	lzma -a0 | uImage lzma
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-860L
@@ -805,6 +818,19 @@ define Device/elecom_wrc-2533gst2
 endef
 TARGET_DEVICES += elecom_wrc-2533gst2
 
+define Device/etisalat_s3
+  $(Device/sercomm_dxx)
+  IMAGE_SIZE := 32768k
+  SERCOMM_HWID := DDK
+  SERCOMM_HWVER := 10000
+  SERCOMM_SWVER := 4009
+  DEVICE_VENDOR := Etisalat
+  DEVICE_MODEL := S3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	kmod-usb3 uboot-envtools
+endef
+TARGET_DEVICES += etisalat_s3
+
 define Device/firefly_firewrt
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
@@ -888,6 +914,29 @@ define Device/h3c_tx1806
 endef
 TARGET_DEVICES += h3c_tx1806
 
+define Device/haier-sim_wr1800k
+  $(Device/dsa-migration)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 125440k
+  UBINIZE_OPTS := -E 5
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := $$(KERNEL) | \
+	haier-sim_wr1800k-factory $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e uboot-envtools
+endef
+
+define Device/haier_har-20s2u1
+  $(Device/haier-sim_wr1800k)
+  DEVICE_VENDOR := Haier
+  DEVICE_MODEL := HAR-20S2U1
+endef
+TARGET_DEVICES += haier_har-20s2u1
+
 define Device/hilink_hlk-7621a-evb
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -900,6 +949,7 @@ TARGET_DEVICES += hilink_hlk-7621a-evb
 
 define Device/hiwifi_hc5962
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
@@ -938,10 +988,11 @@ define Device/iodata_wn-ax1167gr
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 15552k
-  KERNEL_INITRAMFS := $$(KERNEL) | \
-	iodata-factory 7864320 4 0x1055 $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-AX1167GR
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
+	check-size 7680k | senao-header -r 0x30a -p 0x1055 -t 4
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr
@@ -1153,6 +1204,7 @@ TARGET_DEVICES += jcg_jhr-ac876m
 
 define Device/jcg_q20
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   UBINIZE_OPTS := -E 5
@@ -1180,6 +1232,20 @@ define Device/jcg_y2
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
 endef
 TARGET_DEVICES += jcg_y2
+
+define Device/keenetic_kn-3010
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 31488k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-3010
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 8400912 -v "KN-3010"
+endef
+TARGET_DEVICES += keenetic_kn-3010
 
 define Device/lenovo_newifi-d1
   $(Device/dsa-migration)
@@ -1290,6 +1356,7 @@ TARGET_DEVICES += linksys_ea8100-v2
 
 define Device/linksys_re6500
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := RE6500
@@ -1330,6 +1397,13 @@ define Device/MikroTik
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | \
 	append-metadata
 endef
+
+define Device/mikrotik_ltap-2hnd
+  $(Device/MikroTik)
+  DEVICE_MODEL := LtAP-2HnD
+  DEVICE_PACKAGES += kmod-ath9k kmod-pps-gpio rssileds
+endef
+TARGET_DEVICES += mikrotik_ltap-2hnd
 
 define Device/mikrotik_routerboard-750gr3
   $(Device/MikroTik)
@@ -1409,6 +1483,7 @@ TARGET_DEVICES += mts_wg430223
 
 define Device/netgear_ex6150
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX6150
   DEVICE_PACKAGES := kmod-mt76x2
@@ -1622,6 +1697,7 @@ TARGET_DEVICES += netgear_wndr3700-v5
 
 define Device/netis_wf2881
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   FILESYSTEMS := squashfs
@@ -1629,7 +1705,7 @@ define Device/netis_wf2881
   IMAGE_SIZE := 129280k
   UBINIZE_OPTS := -E 5
   UIMAGE_NAME := WF2881_0.0.00
-  KERNEL_INITRAMFS := $(KERNEL_DTB) | netis-tail WF2881 | uImage lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | netis-tail WF2881
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
@@ -1685,6 +1761,8 @@ define Device/raisecom_msg1500-x-00
   DEVICE_VENDOR := RAISECOM
   DEVICE_MODEL := MSG1500
   DEVICE_VARIANT := X.00
+  DEVICE_ALT0_VENDOR := Nokia
+  DEVICE_ALT0_MODEL := A-040W-Q
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
 	kmod-usb-ledtrig-usbport uboot-envtools
 endef
@@ -1700,6 +1778,19 @@ define Device/renkforce_ws-wn530hp3-a
   IMAGE_SIZE := 15040k
 endef
 TARGET_DEVICES += renkforce_ws-wn530hp3-a
+
+define Device/rostelecom_rt-sf-1
+  $(Device/sercomm_dxx)
+  IMAGE_SIZE := 32768k
+  SERCOMM_HWID := DKG
+  SERCOMM_HWVER := 10110
+  SERCOMM_SWVER := 1026
+  DEVICE_VENDOR := Rostelecom
+  DEVICE_MODEL := RT-SF-1
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	kmod-usb3 uboot-envtools
+endef
+TARGET_DEVICES += rostelecom_rt-sf-1
 
 define Device/samknows_whitebox-v8
   $(Device/dsa-migration)
@@ -1741,6 +1832,24 @@ define Device/sercomm_na502s
   		kmod-usb-serial-xr_usb_serial_common
 endef
 TARGET_DEVICES += sercomm_na502s
+
+define Device/sim_simax1800t
+  $(Device/haier-sim_wr1800k)
+  DEVICE_VENDOR := SIM
+  DEVICE_MODEL := SIMAX1800T
+endef
+TARGET_DEVICES += sim_simax1800t
+
+define Device/snr_snr-cpe-me2-lite
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := SNR
+  DEVICE_MODEL := SNR-CPE-ME2-Lite
+  UIMAGE_NAME := $$(DEVICE_MODEL)
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += snr_snr-cpe-me2-lite
 
 define Device/storylink_sap-g3200u3
   $(Device/dsa-migration)
@@ -1870,6 +1979,21 @@ define Device/tplink_eap615-wall-v1
 endef
 TARGET_DEVICES += tplink_eap615-wall-v1
 
+define Device/tplink_mr600-v2-eu
+  $(Device/dsa-migration)
+  $(Device/tplink-v2)
+  DEVICE_MODEL := MR600
+  DEVICE_VARIANT := v2 (EU)
+  TPLINK_FLASHLAYOUT := 16Mltq
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+		kmod-usb-net-qmi-wwan uqmi kmod-usb3
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | tplink-v2-header
+  TPLINK_BOARD_ID := MR600-V2-EU
+  IMAGE_SIZE := 16384k
+endef
+TARGET_DEVICES += tplink_mr600-v2-eu
+
 define Device/tplink_re350-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
@@ -1961,6 +2085,7 @@ define Device/ubnt_unifi-6-lite
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi 6 Lite
   DEVICE_DTS_CONFIG := config@1
+  DEVICE_DTS_LOADADDR := 0x87000000
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt7915e
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 15424k
@@ -1972,8 +2097,9 @@ define Device/ubnt_unifi-flexhd
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi FlexHD
   DEVICE_DTS_CONFIG := config@2
+  DEVICE_DTS_LOADADDR := 0x87000000
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware kmod-leds-ubnt-ledbar
   IMAGE_SIZE := 15552k
 endef
 TARGET_DEVICES += ubnt_unifi-flexhd
@@ -1992,6 +2118,7 @@ define Device/ubnt_usw-flex
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi Switch Flex
   DEVICE_DTS_CONFIG := config@1
+  DEVICE_DTS_LOADADDR := 0x87000000
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 7360k
 endef
@@ -2050,6 +2177,23 @@ define Device/wavlink_wl-wn533a8
   IMAGE_SIZE := 15040k
 endef
 TARGET_DEVICES += wavlink_wl-wn533a8
+
+define Device/wavlink_ws-wn572hp3-4g
+  $(Device/dsa-migration)
+  BLOCKSIZE := 64k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WS-WN572HP3
+  DEVICE_VARIANT := 4G
+  IMAGE_SIZE := 15040k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb3 kmod-usb-net-rndis comgt-ncm
+endef
+TARGET_DEVICES += wavlink_ws-wn572hp3-4g
 
 define Device/wevo_11acnas
   $(Device/dsa-migration)
@@ -2253,6 +2397,8 @@ define Device/youku_yk-l2
   DEVICE_MODEL := YK-L2
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport
+  UIMAGE_MAGIC := 0x12291000
+  UIMAGE_NAME := 400000000000000000003000
 endef
 TARGET_DEVICES += youku_yk-l2
 
@@ -2264,6 +2410,26 @@ define Device/yuncore_ax820
   DEVICE_PACKAGES := kmod-mt7915e
 endef
 TARGET_DEVICES += yuncore_ax820
+
+define Device/yuncore_fap640
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := FAP640
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += yuncore_fap640
+
+define Device/yuncore_fap690
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := FAP690
+  DEVICE_PACKAGES := kmod-mt7915e
+endef
+TARGET_DEVICES += yuncore_fap690
 
 define Device/zbtlink_zbt-we1326
   $(Device/dsa-migration)
@@ -2298,6 +2464,30 @@ define Device/zbtlink_zbt-wg1602-16m
 	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += zbtlink_zbt-wg1602-16m
+
+define Device/zbtlink_zbt-wg1602-v04-16m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG1602-V04
+  DEVICE_VARIANT := 16M
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+        kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += zbtlink_zbt-wg1602-v04-16m
+
+define Device/zbtlink_zbt-wg1602-v04-32m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 32128k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG1602-V04
+  DEVICE_VARIANT := 32M
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 kmod-usb3 \
+        kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += zbtlink_zbt-wg1602-v04-32m
 
 define Device/zbtlink_zbt-wg1608-16m
   $(Device/dsa-migration)
@@ -2422,6 +2612,7 @@ TARGET_DEVICES += zyxel_nwa55axe
 
 define Device/zyxel_wap6805
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
@@ -2430,7 +2621,7 @@ define Device/zyxel_wap6805
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := WAP6805
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7621-qtn-rgmii
-  KERNEL := $(KERNEL_DTB) | uImage lzma | uimage-padhdr 160
+  KERNEL := $$(KERNEL/lzma-loader) | uImage none | uimage-padhdr 160
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zyxel_wap6805

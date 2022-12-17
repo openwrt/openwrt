@@ -163,6 +163,7 @@ define Device/linksys_ea7500-v1
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 		append-ubi | pad-to $$$$(PAGESIZE)
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea7500-v1
 
@@ -184,6 +185,7 @@ define Device/linksys_ea8500
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 		append-ubi
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea8500
 
@@ -407,7 +409,7 @@ define Device/tplink_ad7200
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	TPLINK_BOARD_ID := AD7200
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-wil6210
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-ramoops kmod-wil6210
 endef
 TARGET_DEVICES += tplink_ad7200
 
@@ -422,7 +424,7 @@ define Device/tplink_c2600
 	BOARD_NAME := c2600
 	SUPPORTED_DEVICES += c2600
 	TPLINK_BOARD_ID := C2600
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-ramoops
 endef
 TARGET_DEVICES += tplink_c2600
 

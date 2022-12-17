@@ -12,7 +12,7 @@ PKG_VERSION:=4.99.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.tcpdump.org/release/
+PKG_SOURCE_URL:=https://www.tcpdump.org/release/
 PKG_HASH:=79b36985fb2703146618d87c4acde3e068b91c553fb93f021a337f175fd10ebe
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>

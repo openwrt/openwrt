@@ -14,7 +14,8 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
-		label-mac-device = &gmac0;
+		ethernet0 = &swport5;
+		ethernet1 = &gmac;
 	};
 
 	chosen {
@@ -54,10 +55,6 @@
 
 	soc {
 		rng@22000 {
-			status = "okay";
-		};
-
-		ess-psgmii@98000 {
 			status = "okay";
 		};
 
@@ -108,17 +105,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-
-			switch_lan_bmp = <0x10>;
-			switch_wan_bmp = <0x20>;
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -303,16 +289,22 @@
 	pinctrl-names = "default";
 };
 
-&gmac0 {
-	qcom,poll_required = <1>;
-	qcom,phy_mdio_addr = <4>;
-	vlan_tag = <2 0x20>;
+&gmac {
+	status = "okay";
 };
 
-&gmac1 {
-	qcom,poll_required = <1>;
-	qcom,phy_mdio_addr = <3>;
-	vlan_tag = <1 0x10>;
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&swport5 {
+	status = "okay";
 };
 
 &wifi0 {

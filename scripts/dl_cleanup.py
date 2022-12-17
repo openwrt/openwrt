@@ -149,15 +149,18 @@ class Entry:
         self.fileext = ""
         self.filenoext = ""
 
-        for ext in extensions:
-            if filename.endswith(ext):
-                filename = filename[0 : 0 - len(ext)]
-                self.filenoext = filename
-                self.fileext = ext
-                break
+        if os.path.isdir(self.getPath()):
+            self.filenoext = filename
         else:
-            print(self.filename, "has an unknown file-extension")
-            raise EntryParseError("ext")
+            for ext in extensions:
+                if filename.endswith(ext):
+                    filename = filename[0 : 0 - len(ext)]
+                    self.filenoext = filename
+                    self.fileext = ext
+                    break
+            else:
+                print(self.filename, "has an unknown file-extension")
+                raise EntryParseError("ext")
         for (regex, parseVersion) in versionRegex:
             match = regex.match(filename)
             if match:
@@ -184,7 +187,10 @@ class Entry:
         path = self.getPath()
         print("Deleting", path)
         if not opt_dryrun:
-            os.unlink(path)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.unlink(path)
 
     def deleteBuildDir(self):
         paths = self.getBuildPaths()
@@ -218,7 +224,7 @@ def main(argv):
     try:
         (opts, args) = getopt.getopt(
             argv[1:],
-            "hdBwDb:",
+            "hdBw:D:b:",
             [
                 "help",
                 "dry-run",
@@ -262,12 +268,15 @@ def main(argv):
         if o in ("-b", "--build-dir"):
             builddir = v
 
+    if args:
+        directory = args[0]
+
     if not os.path.exists(directory):
-        print("Can't find dl path", directory)
+        print("Can't find download directory", directory)
         return 1
 
     if not os.path.exists(builddir):
-        print("Can't find dl path", builddir)
+        print("Can't find build directory", builddir)
         return 1
 
     # Create a directory listing and parse the file names.
@@ -301,6 +310,9 @@ def main(argv):
         lastVersion = None
         versions = progmap[prog]
         for version in versions:
+            if lastVersion:
+                if os.path.isdir(lastVersion.getPath()) and not os.path.isdir(version.getPath()):
+                    continue
             if lastVersion is None or version >= lastVersion:
                 lastVersion = version
         if lastVersion:

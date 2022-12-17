@@ -29,10 +29,6 @@
 			reset-delay-us = <5000>;
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -62,14 +58,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -263,14 +251,4 @@
 	qcom,ath10k-calibration-variant = "ezviz-cs-w3-wd1200g-eup";
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_5000>;
-};
-
-&gmac0 {
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_art_6>;
-};
-
-&gmac1 {
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_art_0>;
 };

@@ -76,24 +76,11 @@
 			status = "okay";
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		crypto@8e3a000 {
 			status = "okay";
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-			switch_lan_bmp = <0x10>;
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -187,10 +174,6 @@
 
 &cryptobam {
 	status = "okay";
-};
-
-&gmac0 {
-	vlan_tag = <1 0x10>;
 };
 
 &nand {
