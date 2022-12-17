@@ -343,6 +343,9 @@ static int l2_table_show(struct seq_file *m, void *v)
 
 		seq_printf(m, "Hash table bucket %d index %d ", bucket, index);
 		l2_table_print_entry(m, priv, &e);
+
+		if (!((i + 1) % 64))
+			cond_resched();
 	}
 
 	for (i = 0; i < 64; i++) {

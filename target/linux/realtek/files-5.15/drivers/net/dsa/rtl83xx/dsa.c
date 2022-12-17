@@ -1725,6 +1725,9 @@ static int rtl83xx_port_fdb_dump(struct dsa_switch *ds, int port,
 
 		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
 			cb(e.mac, e.vid, e.is_static, data);
+
+		if (!((i + 1) % 64))
+			cond_resched();
 	}
 
 	for (i = 0; i < 64; i++) {
