@@ -5,6 +5,9 @@ on:
     secrets:
       coverity_api_token:
     inputs:
+      container_name:
+        type: string
+        default: tools
       target:
         required: true
         type: string
@@ -112,7 +115,7 @@ jobs:
     needs: setup_build
     runs-on: ubuntu-latest
 
-    container: ghcr.io/${{ needs.setup_build.outputs.owner_lc }}/tools:${{ needs.setup_build.outputs.container_tag }}
+    container: ghcr.io/${{ needs.setup_build.outputs.owner_lc }}/${{ inputs.container_name }}:${{ needs.setup_build.outputs.container_tag }}
 
     permissions:
       contents: read
