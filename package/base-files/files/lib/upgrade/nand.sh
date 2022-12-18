@@ -453,7 +453,11 @@ nand_do_platform_check() {
 
 	local gz="$(identify_if_gzip "$file")"
 	local file_type="$(identify "$file" "" "$gz")"
-	local control_length=$( (tar xO${gz}f "$file" "sysupgrade-$board_name/CONTROL" | wc -c) 2> /dev/null)
+	local control_length=$( (tar xO${gz}f "$file" "sysupgrade-${board_name//,/_}/CONTROL" | wc -c) 2> /dev/null)
+
+	if [ "$control_length" = 0 ]; then
+		control_length=$( (tar xO${gz}f "$file" "sysupgrade-${board_name//_/,}/CONTROL" | wc -c) 2> /dev/null)
+	fi
 
 	if [ "$control_length" != 0 ]; then
 		nand_verify_tar_file "$file" "$gz" || return 1
