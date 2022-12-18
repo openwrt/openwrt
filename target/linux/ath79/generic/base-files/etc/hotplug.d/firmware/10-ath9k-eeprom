@@ -23,10 +23,12 @@ case "$FIRMWARE" in
 	avm,fritzdvbc)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
-	dlink,dir-505|\
+	dlink,dir-505)
+		caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_text "mac" 0x4)
+		;;
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
-		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_text "mac" 0x4)
 		;;
 	dlink,dir-842-c1|\
@@ -88,7 +90,6 @@ case "$FIRMWARE" in
 		;;
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
-		caldata_extract "art" 0x5000 0x440
 		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_text "mac" 0x18) 1)
 		;;
 	enterasys,ws-ap3705i)
