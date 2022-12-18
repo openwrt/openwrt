@@ -2147,6 +2147,18 @@ define Device/unielec_u7621-06-16m
 endef
 TARGET_DEVICES += unielec_u7621-06-16m
 
+define Device/unielec_u7621-06-32m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := UniElec
+  DEVICE_MODEL := U7621-06
+  DEVICE_VARIANT := 32M
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 -wpad-basic-wolfssl
+  SUPPORTED_DEVICES += unielec,u7621-06-32m
+endef
+TARGET_DEVICES += unielec_u7621-06-32m
+
 define Device/unielec_u7621-06-64m
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
