@@ -58,7 +58,6 @@ case "$FIRMWARE" in
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
 	enterasys,ws-ap3705i)
-		caldata_extract "calibrate" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env0 RADIOADDR1)
 		;;
 	extreme-networks,ws-ap3805i)
@@ -93,7 +92,6 @@ case "$FIRMWARE" in
 		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_text "mac" 0x18) 1)
 		;;
 	enterasys,ws-ap3705i)
-		caldata_extract "calibrate" 0x5000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env0 RADIOADDR0)
 		;;
 	wd,mynet-n600|\
