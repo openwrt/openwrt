@@ -8,6 +8,7 @@ ARCH:=aarch64
 BOARD:=octeontx
 BOARDNAME:=Octeon-TX
 FEATURES:=targz pcie gpio rtc usb fpu
+SUBTARGETS:=generic
 
 KERNEL_PATCHVER:=5.10
 
