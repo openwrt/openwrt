@@ -19,7 +19,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
 
 --- a/drivers/media/common/videobuf2/videobuf2-core.c
 +++ b/drivers/media/common/videobuf2/videobuf2-core.c
-@@ -2140,12 +2140,12 @@ static int __find_plane_by_offset(struct
+@@ -2191,12 +2191,12 @@ static int __find_plane_by_offset(struct
  	return -EINVAL;
  }
  
@@ -35,7 +35,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  	struct dma_buf *dbuf;
  
  	if (q->memory != VB2_MEMORY_MMAP) {
-@@ -2195,6 +2195,21 @@ int vb2_core_expbuf(struct vb2_queue *q,
+@@ -2246,6 +2246,21 @@ int vb2_core_expbuf(struct vb2_queue *q,
  		return -EINVAL;
  	}
  
