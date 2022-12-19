@@ -133,10 +133,22 @@
 				label = "u-boot-env";
 			};
 
-			art: partition@50000 {
+			partition@50000 {
 				reg = <0x50000 0x10000>;
 				label = "art";
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_art_120c: macaddr@120c {
+					reg = <0x120c 0x6>;
+				};
+
+				calibration_art_1000: calibration@1000 {
+					reg = <0x1000 0xeb8>;
+				};
 			};
 
 			partition@60000 {
@@ -197,9 +209,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,002a";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_art_120c>;
-		nvmem-cell-names = "mac-address";
-		qca,no-eeprom;
+		nvmem-cells = <&macaddr_art_120c>, <&calibration_art_1000>;
+		nvmem-cell-names = "mac-address", "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
@@ -211,14 +222,4 @@
 
 &usb {
 	status = "okay";
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_120c: macaddr@120c {
-		reg = <0x120c 0x6>;
-	};
 };

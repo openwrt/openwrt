@@ -1583,6 +1583,22 @@ define Device/joyit_jt-or750i
 endef
 TARGET_DEVICES += joyit_jt-or750i
 
+define Device/kuwfi_c910
+  $(Device/loader-okli-uimage)
+  SOC := qca9533
+  DEVICE_VENDOR := KuWFi
+  DEVICE_MODEL := C910
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-net-cdc-ether comgt-ncm
+  LOADER_FLASH_OFFS := 0x50000
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGE_SIZE := 15936k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | pad-to 14528k | \
+	append-loader-okli-uimage $(1) | pad-to 64k
+endef
+TARGET_DEVICES += kuwfi_c910
+
 define Device/letv_lba-047-ch
   $(Device/loader-okli-uimage)
   SOC := qca9531

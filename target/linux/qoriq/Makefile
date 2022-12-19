@@ -11,8 +11,7 @@ CPU_TYPE:=e5500
 FEATURES:=boot-part ext4 fpu legacy-sdcard powerpc64 ramdisk rootfs-part rtc source-only
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=5.10
-KERNEL_TESTING_PATCHVER:=5.15
+KERNEL_PATCHVER:=5.15
 
 KERNELNAME:=zImage
 
