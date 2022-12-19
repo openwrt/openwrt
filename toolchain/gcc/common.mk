@@ -178,7 +178,7 @@ define Host/SetToolchainInfo
 endef
 
 
-ifdef CONFIG_GCC_USE_VERSION_12
+ifeq ($(GCC_MAJOR_VERSION),12)
 	GCC_VERSION_FILE:=gcc/genversion.cc
 else
 	GCC_VERSION_FILE:=gcc/version.c
