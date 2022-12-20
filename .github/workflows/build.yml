@@ -47,6 +47,10 @@ on:
           mbedtls
           wolfssl
           openssl
+      build_external_toolchain:
+        type: boolean
+      upload_external_toolchain:
+        type: boolean
 
 permissions:
   contents: read
@@ -368,6 +372,12 @@ jobs:
         working-directory: openwrt
         run: make -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
+      - name: Build external toolchain
+        if: inputs.build_external_toolchain == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: make target/toolchain/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
+
       - name: Coverity prepare toolchain
         if: inputs.coverity_check_packages != ''
         shell: su buildbot -c "sh -e {0}"
@@ -425,3 +435,19 @@ jobs:
         with:
           name: ${{ inputs.target }}-${{ inputs.subtarget }}-logs
           path: "openwrt/logs"
+
+      - name: Find external toolchain name
+        id: get-toolchain-name
+        if: inputs.upload_external_toolchain == true
+        working-directory: openwrt
+        run: |
+          TOOLCHAIN_NAME=$(ls bin/targets/${{inputs.target }}/${{ inputs.subtarget }} | grep toolchain)
+          echo "toolchain-name=$TOOLCHAIN_NAME" >> $GITHUB_OUTPUT
+
+      - name: Upload prebuilt toolchain
+        if: inputs.upload_external_toolchain == true
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.target }}-${{ inputs.subtarget }}-external-toolchain
+          path: openwrt/bin/targets/${{ inputs.target }}/${{ inputs.subtarget }}/${{ steps.get-toolchain-name.outputs.toolchain-name }}
+          retention-days: 1
