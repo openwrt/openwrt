@@ -52,14 +52,16 @@ LOCAL_AND_LIB_VARIANT=$(patsubst hostapd-%,%,\
 LOCAL_VARIANT=$(patsubst %-internal,%,\
 	      $(patsubst %-openssl,%,\
 	      $(patsubst %-wolfssl,%,\
+	      $(patsubst %-mbedtls,%,\
 	      $(LOCAL_AND_LIB_VARIANT)\
-	      )))
+	      ))))
 
 SSL_VARIANT=$(strip \
 		$(if $(findstring openssl,$(LOCAL_AND_LIB_VARIANT)),openssl,\
 		$(if $(findstring wolfssl,$(LOCAL_AND_LIB_VARIANT)),wolfssl,\
+		$(if $(findstring mbedtls,$(LOCAL_AND_LIB_VARIANT)),mbedtls,\
 		internal\
-		)))
+		))))
 
 CONFIG_VARIANT:=$(LOCAL_VARIANT)
 ifeq ($(LOCAL_VARIANT),mesh)
@@ -104,6 +106,21 @@ endif
 ifeq ($(SSL_VARIANT),wolfssl)
   DRIVER_MAKEOPTS += CONFIG_TLS=wolfssl CONFIG_SAE=y
   TARGET_LDFLAGS += -lwolfssl
+
+  ifeq ($(LOCAL_VARIANT),basic)
+    DRIVER_MAKEOPTS += CONFIG_OWE=y
+  endif
+  ifeq ($(LOCAL_VARIANT),mesh)
+    DRIVER_MAKEOPTS += CONFIG_AP=y CONFIG_MESH=y CONFIG_WPS_NFC=1
+  endif
+  ifeq ($(LOCAL_VARIANT),full)
+    DRIVER_MAKEOPTS += CONFIG_OWE=y CONFIG_SUITEB192=y CONFIG_AP=y CONFIG_MESH=y CONFIG_WPS_NFC=1
+  endif
+endif
+
+ifeq ($(SSL_VARIANT),mbedtls)
+  DRIVER_MAKEOPTS += CONFIG_TLS=mbedtls CONFIG_SAE=y
+  TARGET_LDFLAGS += -lmbedcrypto -lmbedx509 -lmbedtls
 
   ifeq ($(LOCAL_VARIANT),basic)
     DRIVER_MAKEOPTS += CONFIG_OWE=y
@@ -173,6 +190,15 @@ endef
 
 Package/hostapd-wolfssl/description = $(Package/hostapd/description)
 
+define Package/hostapd-mbedtls
+$(call Package/hostapd/Default,$(1))
+  TITLE+= (mbedTLS full)
+  VARIANT:=full-mbedtls
+  DEPENDS+=+PACKAGE_hostapd-mbedtls:libmbedtls
+endef
+
+Package/hostapd-mbedtls/description = $(Package/hostapd/description)
+
 define Package/hostapd-basic
 $(call Package/hostapd/Default,$(1))
   TITLE+= (WPA-PSK, 11r, 11w)
@@ -202,6 +228,17 @@ $(call Package/hostapd/Default,$(1))
 endef
 
 define Package/hostapd-basic-wolfssl/description
+ This package contains a basic IEEE 802.1x/WPA Authenticator with WPA-PSK, 802.11r and 802.11w support.
+endef
+
+define Package/hostapd-basic-mbedtls
+$(call Package/hostapd/Default,$(1))
+  TITLE+= (WPA-PSK, 11r and 11w)
+  VARIANT:=basic-mbedtls
+  DEPENDS+=+PACKAGE_hostapd-basic-mbedtls:libmbedtls
+endef
+
+define Package/hostapd-basic-mbedtls/description
  This package contains a basic IEEE 802.1x/WPA Authenticator with WPA-PSK, 802.11r and 802.11w support.
 endef
 
@@ -260,6 +297,15 @@ endef
 
 Package/wpad-wolfssl/description = $(Package/wpad/description)
 
+define Package/wpad-mbedtls
+$(call Package/wpad/Default,$(1))
+  TITLE+= (mbedTLS full)
+  VARIANT:=wpad-full-mbedtls
+  DEPENDS+=+PACKAGE_wpad-mbedtls:libmbedtls
+endef
+
+Package/wpad-mbedtls/description = $(Package/wpad/description)
+
 define Package/wpad-basic
 $(call Package/wpad/Default,$(1))
   TITLE+= (WPA-PSK, 11r, 11w)
@@ -289,6 +335,17 @@ $(call Package/wpad/Default,$(1))
 endef
 
 define Package/wpad-basic-wolfssl/description
+ This package contains a basic IEEE 802.1x/WPA Authenticator and Supplicant with WPA-PSK, SAE (WPA3-Personal), 802.11r and 802.11w support.
+endef
+
+define Package/wpad-basic-mbedtls
+$(call Package/wpad/Default,$(1))
+  TITLE+= (mbedTLS, 11r, 11w)
+  VARIANT:=wpad-basic-mbedtls
+  DEPENDS+=+PACKAGE_wpad-basic-mbedtls:libmbedtls
+endef
+
+define Package/wpad-basic-mbedtls/description
  This package contains a basic IEEE 802.1x/WPA Authenticator and Supplicant with WPA-PSK, SAE (WPA3-Personal), 802.11r and 802.11w support.
 endef
 
@@ -330,6 +387,15 @@ endef
 
 Package/wpad-mesh-wolfssl/description = $(Package/wpad-mesh/description)
 
+define Package/wpad-mesh-mbedtls
+$(call Package/wpad-mesh,$(1))
+  TITLE+= (mbedTLS, 11s, SAE)
+  DEPENDS+=+PACKAGE_wpad-mesh-mbedtls:libmbedtls
+  VARIANT:=wpad-mesh-mbedtls
+endef
+
+Package/wpad-mesh-mbedtls/description = $(Package/wpad-mesh/description)
+
 
 define Package/wpa-supplicant/Default
   SECTION:=net
@@ -365,6 +431,13 @@ $(call Package/wpa-supplicant/Default,$(1))
   DEPENDS+=+PACKAGE_wpa-supplicant-wolfssl:libwolfssl
 endef
 
+define Package/wpa-supplicant-mbedtls
+$(call Package/wpa-supplicant/Default,$(1))
+  TITLE+= (mbedTLS full)
+  VARIANT:=supplicant-full-mbedtls
+  DEPENDS+=+PACKAGE_wpa-supplicant-mbedtls:libmbedtls
+endef
+
 define Package/wpa-supplicant/config
 	source "$(SOURCE)/Config.in"
 endef
@@ -394,6 +467,13 @@ $(call Package/wpa-supplicant-mesh/Default,$(1))
   TITLE+= (wolfSSL, 11s, SAE)
   VARIANT:=supplicant-mesh-wolfssl
   DEPENDS+=+PACKAGE_wpa-supplicant-mesh-wolfssl:libwolfssl
+endef
+
+define Package/wpa-supplicant-mesh-mbedtls
+$(call Package/wpa-supplicant-mesh/Default,$(1))
+  TITLE+= (mbedTLS, 11s, SAE)
+  VARIANT:=supplicant-mesh-mbedtls
+  DEPENDS+=+PACKAGE_wpa-supplicant-mesh-mbedtls:libmbedtls
 endef
 
 define Package/wpa-supplicant-basic
@@ -469,6 +549,15 @@ define Package/eapol-test-wolfssl
   VARIANT:=supplicant-full-wolfssl
   CONFLICTS:=$(filter-out eapol-test-openssl ,$(filter-out eapol-test-wolfssl ,$(EAPOL_TEST_PROVIDERS)))
   DEPENDS+=+PACKAGE_eapol-test-wolfssl:libwolfssl
+  PROVIDES:=eapol-test
+endef
+
+define Package/eapol-test-mbedtls
+  $(call Package/eapol-test/Default,$(1))
+  TITLE+= (mbedTLS full)
+  VARIANT:=supplicant-full-mbedtls
+  CONFLICTS:=$(filter-out eapol-test-openssl ,$(filter-out eapol-test-mbedtls ,$(EAPOL_TEST_PROVIDERS)))
+  DEPENDS+=+PACKAGE_eapol-test-mbedtls:libmbedtls
   PROVIDES:=eapol-test
 endef
 
@@ -580,6 +669,12 @@ define Build/Compile/supplicant-full-wolfssl
 	)
 endef
 
+define Build/Compile/supplicant-full-mbedtls
+	+$(call Build/RunMake,wpa_supplicant, \
+		eapol_test \
+	)
+endef
+
 define Build/Compile
 	$(Build/Compile/$(LOCAL_TYPE))
 	$(Build/Compile/$(BUILD_VARIANT))
@@ -610,9 +705,11 @@ endef
 Package/hostapd-basic/install = $(Package/hostapd/install)
 Package/hostapd-basic-openssl/install = $(Package/hostapd/install)
 Package/hostapd-basic-wolfssl/install = $(Package/hostapd/install)
+Package/hostapd-basic-mbedtls/install = $(Package/hostapd/install)
 Package/hostapd-mini/install = $(Package/hostapd/install)
 Package/hostapd-openssl/install = $(Package/hostapd/install)
 Package/hostapd-wolfssl/install = $(Package/hostapd/install)
+Package/hostapd-mbedtls/install = $(Package/hostapd/install)
 
 ifneq ($(LOCAL_TYPE),supplicant)
   define Package/hostapd-utils/install
@@ -631,11 +728,14 @@ endef
 Package/wpad-basic/install = $(Package/wpad/install)
 Package/wpad-basic-openssl/install = $(Package/wpad/install)
 Package/wpad-basic-wolfssl/install = $(Package/wpad/install)
+Package/wpad-basic-mbedtls/install = $(Package/wpad/install)
 Package/wpad-mini/install = $(Package/wpad/install)
 Package/wpad-openssl/install = $(Package/wpad/install)
 Package/wpad-wolfssl/install = $(Package/wpad/install)
+Package/wpad-mbedtls/install = $(Package/wpad/install)
 Package/wpad-mesh-openssl/install = $(Package/wpad/install)
 Package/wpad-mesh-wolfssl/install = $(Package/wpad/install)
+Package/wpad-mesh-mbedtls/install = $(Package/wpad/install)
 
 define Package/wpa-supplicant/install
 	$(call Install/supplicant,$(1))
@@ -646,8 +746,10 @@ Package/wpa-supplicant-mini/install = $(Package/wpa-supplicant/install)
 Package/wpa-supplicant-p2p/install = $(Package/wpa-supplicant/install)
 Package/wpa-supplicant-openssl/install = $(Package/wpa-supplicant/install)
 Package/wpa-supplicant-wolfssl/install = $(Package/wpa-supplicant/install)
+Package/wpa-supplicant-mbedtls/install = $(Package/wpa-supplicant/install)
 Package/wpa-supplicant-mesh-openssl/install = $(Package/wpa-supplicant/install)
 Package/wpa-supplicant-mesh-wolfssl/install = $(Package/wpa-supplicant/install)
+Package/wpa-supplicant-mesh-mbedtls/install = $(Package/wpa-supplicant/install)
 
 ifneq ($(LOCAL_TYPE),hostapd)
   define Package/wpa-cli/install
@@ -677,6 +779,13 @@ ifeq ($(BUILD_VARIANT),supplicant-full-wolfssl)
   endef
 endif
 
+ifeq ($(BUILD_VARIANT),supplicant-full-mbedtls)
+  define Package/eapol-test-mbedtls/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/wpa_supplicant/eapol_test $(1)/usr/sbin/
+  endef
+endif
+
 # Build hostapd-common before its dependents, to avoid
 # spurious rebuilds when building multiple variants.
 $(eval $(call BuildPackage,hostapd-common))
@@ -684,28 +793,36 @@ $(eval $(call BuildPackage,hostapd))
 $(eval $(call BuildPackage,hostapd-basic))
 $(eval $(call BuildPackage,hostapd-basic-openssl))
 $(eval $(call BuildPackage,hostapd-basic-wolfssl))
+$(eval $(call BuildPackage,hostapd-basic-mbedtls))
 $(eval $(call BuildPackage,hostapd-mini))
 $(eval $(call BuildPackage,hostapd-openssl))
 $(eval $(call BuildPackage,hostapd-wolfssl))
+$(eval $(call BuildPackage,hostapd-mbedtls))
 $(eval $(call BuildPackage,wpad))
 $(eval $(call BuildPackage,wpad-mesh-openssl))
 $(eval $(call BuildPackage,wpad-mesh-wolfssl))
+$(eval $(call BuildPackage,wpad-mesh-mbedtls))
 $(eval $(call BuildPackage,wpad-basic))
 $(eval $(call BuildPackage,wpad-basic-openssl))
 $(eval $(call BuildPackage,wpad-basic-wolfssl))
+$(eval $(call BuildPackage,wpad-basic-mbedtls))
 $(eval $(call BuildPackage,wpad-mini))
 $(eval $(call BuildPackage,wpad-openssl))
 $(eval $(call BuildPackage,wpad-wolfssl))
+$(eval $(call BuildPackage,wpad-mbedtls))
 $(eval $(call BuildPackage,wpa-supplicant))
 $(eval $(call BuildPackage,wpa-supplicant-mesh-openssl))
 $(eval $(call BuildPackage,wpa-supplicant-mesh-wolfssl))
+$(eval $(call BuildPackage,wpa-supplicant-mesh-mbedtls))
 $(eval $(call BuildPackage,wpa-supplicant-basic))
 $(eval $(call BuildPackage,wpa-supplicant-mini))
 $(eval $(call BuildPackage,wpa-supplicant-p2p))
 $(eval $(call BuildPackage,wpa-supplicant-openssl))
 $(eval $(call BuildPackage,wpa-supplicant-wolfssl))
+$(eval $(call BuildPackage,wpa-supplicant-mbedtls))
 $(eval $(call BuildPackage,wpa-cli))
 $(eval $(call BuildPackage,hostapd-utils))
 $(eval $(call BuildPackage,eapol-test))
 $(eval $(call BuildPackage,eapol-test-openssl))
 $(eval $(call BuildPackage,eapol-test-wolfssl))
+$(eval $(call BuildPackage,eapol-test-mbedtls))
