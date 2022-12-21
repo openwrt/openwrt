@@ -181,8 +181,7 @@ define Device/aruba_ap-303h
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-303H
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += aruba_ap-303h
+TARGET_DEVICES += aruba_ap-303h
 
 define Device/aruba_ap-365
 	$(call Device/aruba_glenmorangie)
