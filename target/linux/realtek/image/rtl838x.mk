@@ -67,7 +67,10 @@ define Device/engenius_ews2910p
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EWP2910P
   UIMAGE_MAGIC := 0x03802910
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | \
+  KERNEL_INITRAMFS := \
+	kernel-bin | \
+	append-dtb | \
+	gzip | \
 	uImage gzip -n 'IMG-0.00.00-c0.0.00'
 endef
 TARGET_DEVICES += engenius_ews2910p
@@ -116,8 +119,16 @@ TARGET_DEVICES += iodata_bsh-g24mb
 
 # "NGE" refers to the uImage magic
 define Device/netgear_nge
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL := \
+	kernel-bin | \
+	append-dtb | \
+	lzma | \
+	uImage lzma
+  KERNEL_INITRAMFS := \
+	kernel-bin | \
+	append-dtb | \
+	lzma | \
+	uImage lzma
   SOC := rtl8380
   IMAGE_SIZE := 14848k
   UIMAGE_MAGIC := 0x4e474520
@@ -212,7 +223,11 @@ define Device/zyxel_gs1900
   IMAGE_SIZE := 6976k
   DEVICE_VENDOR := ZyXEL
   UIMAGE_MAGIC := 0x83800000
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | zyxel-vers | \
+  KERNEL_INITRAMFS := \
+	kernel-bin | \
+	append-dtb | \
+	gzip | \
+	zyxel-vers | \
 	uImage gzip
 endef
 
