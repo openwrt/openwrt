@@ -1,0 +1,29 @@
+From 20abdd7feefbb4fccef5c653e045911670237e8b Mon Sep 17 00:00:00 2001
+From: Stijn Tintel <stijn@linux-ipv6.be>
+Date: Thu, 22 Dec 2022 00:35:07 +0200
+Subject: [PATCH] arm: sunxi: increase SYS_MALLOC_F_LEN
+
+Version 2020.10 throws the following output after loading bl31:
+alloc space exhausted
+
+This has been fixed in v2022.07, but the change is too intrusive to
+backport. Instead, just modify the default for ARCH_SUNXI for now.
+
+See e05689242238 ("Kconfig: Change SYS_MALLOC_F_LEN default to 0x2000").
+
+Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
+---
+ Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/Kconfig
++++ b/Kconfig
+@@ -146,7 +146,7 @@ config SYS_MALLOC_F_LEN
+ 	default 0x2000 if (ARCH_IMX8 || ARCH_IMX8M || ARCH_MX7 || \
+ 			   ARCH_MX7ULP || ARCH_MX6 || ARCH_MX5 || \
+ 			   ARCH_LS1012A || ARCH_LS1021A || ARCH_LS1043A || \
+-			   ARCH_LS1046A || ARCH_QEMU)
++			   ARCH_LS1046A || ARCH_QEMU || ARCH_SUNXI)
+ 	default 0x400
+ 	help
+ 	  Before relocation, memory is very limited on many platforms. Still,
