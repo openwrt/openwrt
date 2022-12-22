@@ -214,7 +214,6 @@ static ssize_t drop_counter_read(struct file *filp, char __user *buffer, size_t 
 			     loff_t *ppos)
 {
 	struct rtl838x_switch_priv *priv = filp->private_data;
-	int i;
 	const char **d;
 	u32 v;
 	char *buf;
@@ -248,7 +247,7 @@ static ssize_t drop_counter_read(struct file *filp, char __user *buffer, size_t 
 	if (!buf)
 		return -ENOMEM;
 
-	for (i = 0; i < num; i++) {
+	for (int i = 0; i < num; i++) {
 		v = sw_r32(offset + (i << 2)) & 0xffff;
 		n += sprintf(buf + n, "%s: %d\n", d[i], v);
 	}
@@ -274,7 +273,6 @@ static void l2_table_print_entry(struct seq_file *m, struct rtl838x_switch_priv 
 				 struct rtl838x_l2_entry *e)
 {
 	u64 portmask;
-	int i;
 
 	if (e->type == L2_UNICAST) {
 		seq_puts(m, "L2_UNICAST\n");
@@ -315,7 +313,7 @@ static void l2_table_print_entry(struct seq_file *m, struct rtl838x_switch_priv 
 
 		portmask = priv->r->read_mcast_pmask(e->mc_portmask_index);
 		seq_printf(m, "  index %u ports", e->mc_portmask_index);
-		for (i = 0; i < 64; i++) {
+		for (int i = 0; i < 64; i++) {
 			if (portmask & BIT_ULL(i))
 				seq_printf(m, " %d", i);
 		}
@@ -329,11 +327,11 @@ static int l2_table_show(struct seq_file *m, void *v)
 {
 	struct rtl838x_switch_priv *priv = m->private;
 	struct rtl838x_l2_entry e;
-	int i, bucket, index;
+	int bucket, index;
 
 	mutex_lock(&priv->reg_mutex);
 
-	for (i = 0; i < priv->fib_entries; i++) {
+	for (int i = 0; i < priv->fib_entries; i++) {
 		bucket = i >> 2;
 		index = i & 0x3;
 		priv->r->read_l2_entry_using_hash(bucket, index, &e);
@@ -348,7 +346,7 @@ static int l2_table_show(struct seq_file *m, void *v)
 			cond_resched();
 	}
 
-	for (i = 0; i < 64; i++) {
+	for (int i = 0; i < 64; i++) {
 		priv->r->read_cam(i, &e);
 
 		if (!e.valid)
@@ -517,9 +515,6 @@ static int rtl838x_dbgfs_port_init(struct dentry *parent, struct rtl838x_switch_
 static int rtl838x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv *priv)
 {
 	struct dentry *led_dir;
-	int p;
-	char led_sw_p_ctrl_name[20];
-	char port_led_name[20];
 
 	led_dir = debugfs_create_dir("led", parent);
 
@@ -540,20 +535,24 @@ static int rtl838x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv 
 				(u32 *)(RTL838X_SW_BASE + RTL8380_LED1_SW_P_EN_CTRL));
 		debugfs_create_x32("led2_sw_p_en_ctrl", 0644, led_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL8380_LED2_SW_P_EN_CTRL));
-		for (p = 0; p < 28; p++) {
+		for (int p = 0; p < 28; p++) {
+			char led_sw_p_ctrl_name[20];
+
 			snprintf(led_sw_p_ctrl_name, sizeof(led_sw_p_ctrl_name),
 				 "led_sw_p_ctrl.%02d", p);
 			debugfs_create_x32(led_sw_p_ctrl_name, 0644, led_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL8380_LED_SW_P_CTRL(p)));
 		}
 	} else if (priv->family_id == RTL8390_FAMILY_ID) {
+		char port_led_name[20];
+
 		debugfs_create_x32("led_glb_ctrl", 0644, led_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL8390_LED_GLB_CTRL));
 		debugfs_create_x32("led_set_2_3", 0644, led_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL8390_LED_SET_2_3_CTRL));
 		debugfs_create_x32("led_set_0_1", 0644, led_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL8390_LED_SET_0_1_CTRL));
-		for (p = 0; p < 4; p++) {
+		for (int p = 0; p < 4; p++) {
 			snprintf(port_led_name, sizeof(port_led_name), "led_copr_set_sel.%1d", p);
 			debugfs_create_x32(port_led_name, 0644, led_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL8390_LED_COPR_SET_SEL_CTRL(p << 4)));
@@ -575,12 +574,12 @@ static int rtl838x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv 
 				(u32 *)(RTL838X_SW_BASE + RTL8390_LED_COMBO_CTRL(32)));
 		debugfs_create_x32("led_sw_ctrl", 0644, led_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL8390_LED_SW_CTRL));
-		for (p = 0; p < 5; p++) {
+		for (int p = 0; p < 5; p++) {
 			snprintf(port_led_name, sizeof(port_led_name), "led_sw_p_en_ctrl.%1d", p);
 			debugfs_create_x32(port_led_name, 0644, led_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL8390_LED_SW_P_EN_CTRL(p * 10)));
 		}
-		for (p = 0; p < 28; p++) {
+		for (int p = 0; p < 28; p++) {
 			snprintf(port_led_name, sizeof(port_led_name), "led_sw_p_ctrl.%02d", p);
 			debugfs_create_x32(port_led_name, 0644, led_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL8390_LED_SW_P_CTRL(p)));
@@ -595,7 +594,7 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 	struct dentry *port_dir;
 	struct dentry *mirror_dir;
 	struct debugfs_regset32 *port_ctrl_regset;
-	int ret, i;
+	int ret;
 	char lag_name[10];
 	char mirror_name[10];
 
@@ -610,7 +609,7 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 			   (u32 *)(RTL838X_SW_BASE + RTL838X_MODEL_NAME_INFO));
 
 	/* Create one directory per port */
-	for (i = 0; i < priv->cpu_port; i++) {
+	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy) {
 			ret = rtl838x_dbgfs_port_init(rtl838x_dir, priv, i);
 			if (ret)
@@ -633,7 +632,7 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 	debugfs_create_u8("id", 0444, port_dir, &priv->cpu_port);
 
 	/* Create entries for LAGs */
-	for (i = 0; i < priv->n_lags; i++) {
+	for (int i = 0; i < priv->n_lags; i++) {
 		snprintf(lag_name, sizeof(lag_name), "lag.%02d", i);
 		if (priv->family_id == RTL8380_FAMILY_ID)
 			debugfs_create_x32(lag_name, 0644, rtl838x_dir,
@@ -644,7 +643,7 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 	}
 
 	/* Create directories for mirror groups */
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		snprintf(mirror_name, sizeof(mirror_name), "mirror.%1d", i);
 		mirror_dir = debugfs_create_dir(mirror_name, rtl838x_dir);
 		if (priv->family_id == RTL8380_FAMILY_ID) {

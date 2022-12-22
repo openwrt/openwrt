@@ -123,13 +123,12 @@ static int rtl9310_i2c_config_xfer(struct rtl9300_i2c *i2c, u16 addr, u16 len)
 
 static int i2c_read(void __iomem *r0, u8 *buf, int len)
 {
-	int i;
-	u32 v;
-
 	if (len > 16)
 		return -EIO;
 
-	for (i = 0; i < len; i++) {
+	for (int i = 0; i < len; i++) {
+		u32 v;
+
 		if (i % 4 == 0)
 			v = readl(r0 + i);
 		buf[i] = v;
@@ -141,13 +140,12 @@ static int i2c_read(void __iomem *r0, u8 *buf, int len)
 
 static int i2c_write(void __iomem *r0, u8 *buf, int len)
 {
-	u32 v;
-	int i;
-
 	if (len > 16)
 		return -EIO;
 
-	for (i = 0; i < len; i++) {
+	for (int i = 0; i < len; i++) {
+		u32 v;
+
 		if (! (i % 4))
 			v = 0;
 		v <<= 8;

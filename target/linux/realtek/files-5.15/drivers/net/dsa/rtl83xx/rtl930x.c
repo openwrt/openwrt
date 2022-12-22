@@ -118,10 +118,9 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 
 void rtl930x_print_matrix(void)
 {
-	int i;
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
 
-	for (i = 0; i < 29; i++) {
+	for (int i = 0; i < 29; i++) {
 		rtl_table_read(r, i);
 		pr_debug("> %08x\n", sw_r32(rtl_table_data(r, 0)));
 	}
@@ -287,27 +286,25 @@ static void rtl930x_l2_learning_setup(void)
 
 static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	int i;
 	u32 cmd = 1 << 17 | /* Execute cmd */
 	          0 << 16 | /* Read */
 	          4 << 12 | /* Table type 0b10 */
 	          (msti & 0xfff);
 	priv->r->exec_tbl0_cmd(cmd);
 
-	for (i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 		port_state[i] = sw_r32(RTL930X_TBL_ACCESS_DATA_0(i));
 	pr_debug("MSTI: %d STATE: %08x, %08x\n", msti, port_state[0], port_state[1]);
 }
 
 static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	int i;
 	u32 cmd = 1 << 17 | /* Execute cmd */
 	          1 << 16 | /* Write */
 	          4 << 12 | /* Table type 4 */
 	          (msti & 0xfff);
 
-	for (i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 		sw_w32(port_state[i], RTL930X_TBL_ACCESS_DATA_0(i));
 	priv->r->exec_tbl0_cmd(cmd);
 }
@@ -502,7 +499,6 @@ static u64 rtl930x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 0);
 	u32 idx;
-	int i;
 	u64 mac;
 	u64 seed;
 
@@ -523,7 +519,7 @@ static u64 rtl930x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	pr_debug("%s: NOW hash %08x, pos: %d\n", __func__, hash, pos);
 
 	rtl_table_read(q, idx);
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -553,7 +549,6 @@ static void rtl930x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 0);
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
-	int i;
 
 	pr_debug("%s: hash %d, pos %d\n", __func__, hash, pos);
 	pr_debug("%s: index %d -> mac %02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
@@ -561,7 +556,7 @@ static void rtl930x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 
 	rtl930x_fill_l2_row(r, e);
 
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -572,10 +567,9 @@ static u64 rtl930x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 1);
-	int i;
 
 	rtl_table_read(q, idx);
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -592,11 +586,10 @@ static void rtl930x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL9300_TBL_L2, 1); /* Access L2 Table 1 */
-	int i;
 
 	rtl930x_fill_l2_row(r, e);
 
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -676,10 +669,9 @@ void rtl930x_traffic_disable(int source, int dest)
 
 void rtl9300_dump_debug(void)
 {
-	int i;
 	u16 r = RTL930X_STAT_PRVTE_DROP_COUNTER0;
 
-	for (i = 0; i < 10; i ++) {
+	for (int i = 0; i < 10; i ++) {
 		pr_info("# %d %08x %08x %08x %08x %08x %08x %08x %08x\n", i * 8,
 			sw_r32(r), sw_r32(r + 4), sw_r32(r + 8), sw_r32(r + 12),
 			sw_r32(r + 16), sw_r32(r + 20), sw_r32(r + 24), sw_r32(r + 28));
@@ -699,12 +691,11 @@ irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
 	struct dsa_switch *ds = dev_id;
 	u32 ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
 	u32 link;
-	int i;
 
 	/* Clear status */
 	sw_w32(ports, RTL930X_ISR_PORT_LINK_STS_CHG);
 
-	for (i = 0; i < 28; i++) {
+	for (int i = 0; i < 28; i++) {
 		if (ports & BIT(i)) {
 			/* Read the register twice because of issues with latency at least
 			 * with the external RTL8226 PHY on the XGS1210
@@ -961,12 +952,10 @@ int rtl930x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 
 static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
-	int i;
-
 	pr_info("Setting up EEE, state: %d\n", enable);
 
 	/* Setup EEE on all ports */
-	for (i = 0; i < priv->cpu_port; i++) {
+	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy)
 			rtl930x_port_eee_set(priv, i, enable);
 	}
@@ -1249,7 +1238,6 @@ static int rtl930x_route_lookup_hw(struct rtl83xx_route *rt)
 {
 	u32 ip4_m, v;
 	struct in6_addr ip6_m;
-	int i;
 
 	if (rt->attr.type == 1 || rt->attr.type == 3) /* Hardware only supports UC routes */
 		return -1;
@@ -1257,7 +1245,7 @@ static int rtl930x_route_lookup_hw(struct rtl83xx_route *rt)
 	sw_w32_mask(0x3 << 19, rt->attr.type, RTL930X_L3_HW_LU_KEY_CTRL);
 	if (rt->attr.type) { /* IPv6 */
 		rtl930x_net6_mask(rt->prefix_len, &ip6_m);
-		for (i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 			sw_w32(rt->dst_ip6.s6_addr32[0] & ip6_m.s6_addr32[0],
 			       RTL930X_L3_HW_LU_KEY_IP_CTRL + (i << 2));
 	} else { /* IPv4 */
@@ -1289,20 +1277,20 @@ static int rtl930x_route_lookup_hw(struct rtl83xx_route *rt)
 
 static int rtl930x_find_l3_slot(struct rtl83xx_route *rt, bool must_exist)
 {
-	int t, s, slot_width, algorithm, addr, idx;
+	int slot_width, algorithm, addr, idx;
 	u32 hash;
 	struct rtl83xx_route route_entry;
 
 	/* IPv6 entries take up 3 slots */
 	slot_width = (rt->attr.type == 0) || (rt->attr.type == 2) ? 1 : 3;
 
-	for (t = 0; t < 2; t++) {
+	for (int t = 0; t < 2; t++) {
 		algorithm = (sw_r32(RTL930X_L3_HOST_TBL_CTRL) >> (2 + t)) & 0x1;
 		hash = rtl930x_l3_hash4(rt->dst_ip, algorithm, false);
 
 		pr_debug("%s: table %d, algorithm %d, hash %04x\n", __func__, t, algorithm, hash);
 
-		for (s = 0; s < 6; s += slot_width) {
+		for (int s = 0; s < 6; s += slot_width) {
 			addr = (t << 12) | ((hash & 0x1ff) << 3) | s;
 			pr_debug("%s physical address %d\n", __func__, addr);
 			idx = ((addr / 8) * 6) + (addr % 8);
@@ -1539,13 +1527,9 @@ static void rtl930x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int inde
  */
 static void rtl930x_write_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
 {
-	int i;
-	enum template_field_id field_type;
-	u16 data, data_m;
-
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
-		field_type = t[i];
-		data = data_m = 0;
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id field_type = t[i];
+		u16 data = 0, data_m = 0;
 
 		switch (field_type) {
 		case TEMPLATE_FIELD_SPM0:
@@ -1847,13 +1831,12 @@ static int rtl930x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	/* Access IACL table (2) via register 0 */
 	struct table_reg *q = rtl_table_get(RTL9300_TBL_0, 2);
 	u32 r[19];
-	int i;
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL930X_PIE_BLK_TMPLTE_CTRL(block));
 
 	pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
 
-	for (i = 0; i < 19; i++)
+	for (int i = 0; i < 19; i++)
 		r[i] = 0;
 
 	if (!pr->valid) {
@@ -1870,7 +1853,7 @@ static int rtl930x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 
 /*	rtl930x_pie_rule_dump_raw(r); */
 
-	for (i = 0; i < 19; i++)
+	for (int i = 0; i < 19; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -1881,11 +1864,8 @@ static int rtl930x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 
 static bool rtl930x_pie_templ_has(int t, enum template_field_id field_type)
 {
-	int i;
-	enum template_field_id ft;
-
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
-		ft = fixed_templates[t][i];
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id ft = fixed_templates[t][i];
 		if (field_type == ft)
 			return true;
 	}
@@ -2016,14 +1996,13 @@ static void rtl930x_pie_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rul
 
 static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 {
-	int i;
 	u32 template_selectors;
 
 	mutex_init(&priv->pie_mutex);
 
 	pr_info("%s\n", __func__);
 	/* Enable ACL lookup on all ports, including CPU_PORT */
-	for (i = 0; i <= priv->cpu_port; i++)
+	for (int i = 0; i <= priv->cpu_port; i++)
 		sw_w32(1, RTL930X_ACL_PORT_LOOKUP_CTRL(i));
 
 	/* Include IPG in metering */
@@ -2037,22 +2016,22 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 
 	/* Enable predefined templates 0, 1 for first quarter of all blocks */
 	template_selectors = 0 | (1 << 4);
-	for (i = 0; i < priv->n_pie_blocks / 4; i++)
+	for (int i = 0; i < priv->n_pie_blocks / 4; i++)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 2, 3 for second quarter of all blocks */
 	template_selectors = 2 | (3 << 4);
-	for (i = priv->n_pie_blocks / 4; i < priv->n_pie_blocks / 2; i++)
+	for (int i = priv->n_pie_blocks / 4; i < priv->n_pie_blocks / 2; i++)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 0, 1 for third half of all blocks */
 	template_selectors = 0 | (1 << 4);
-	for (i = priv->n_pie_blocks / 2; i < priv->n_pie_blocks * 3 / 4; i++)
+	for (int i = priv->n_pie_blocks / 2; i < priv->n_pie_blocks * 3 / 4; i++)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 2, 3 for fourth quater of all blocks */
 	template_selectors = 2 | (3 << 4);
-	for (i = priv->n_pie_blocks * 3 / 4; i < priv->n_pie_blocks; i++)
+	for (int i = priv->n_pie_blocks * 3 / 4; i < priv->n_pie_blocks; i++)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 
 }
@@ -2209,10 +2188,8 @@ static void rtl930x_set_l3_egress_mac(u32 idx, u64 mac)
  */
 int rtl930x_l3_setup(struct rtl838x_switch_priv *priv)
 {
-	int i;
-
 	/* Setup MTU with id 0 for default interface */
-	for (i = 0; i < MAX_INTF_MTUS; i++)
+	for (int i = 0; i < MAX_INTF_MTUS; i++)
 		priv->intf_mtu_count[i] = priv->intf_mtus[i] = 0;
 
 	priv->intf_mtu_count[0] = 0; /* Needs to stay forever */
@@ -2229,7 +2206,7 @@ int rtl930x_l3_setup(struct rtl838x_switch_priv *priv)
 	sw_w32_mask(0xffff0000, DEFAULT_MTU << 16, RTL930X_L3_IP6_MTU_CTRL(1));
 
 	/* Clear all source port MACs */
-	for (i = 0; i < MAX_SMACS; i++)
+	for (int i = 0; i < MAX_SMACS; i++)
 		rtl930x_set_l3_egress_mac(L3_EGRESS_DMACS + i, 0ULL);
 
 	/* Configure the default L3 hash algorithm */
@@ -2400,12 +2377,8 @@ void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 
 static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 {
-	int i, pos;
-	u32 v, pm = 0, set;
-	u32 setlen;
-	const __be32 *led_set;
-	char set_name[9];
 	struct device_node *node;
+	u32 pm = 0;
 
 	pr_info("%s called\n", __func__);
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
@@ -2414,8 +2387,11 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		return;
 	}
 
-	for (i = 0; i < priv->cpu_port; i++) {
-		pos = (i << 1) % 32;
+	for (int i = 0; i < priv->cpu_port; i++) {
+		int pos = (i << 1) % 32;
+		u32 set;
+		u32 v;
+
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
@@ -2436,7 +2412,12 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 	}
 
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
+		const __be32 *led_set;
+		char set_name[9];
+		u32 setlen;
+		u32 v;
+
 		sprintf(set_name, "led_set%d", i);
 		led_set = of_get_property(node, set_name, &setlen);
 		if (!led_set || setlen != 16)
@@ -2455,7 +2436,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	sw_w32(pm, RTL930X_LED_PORT_FIB_MASK_CTRL);
 	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
 
-	for (i = 0; i < 24; i++)
+	for (int i = 0; i < 24; i++)
 		pr_info("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
 }
 

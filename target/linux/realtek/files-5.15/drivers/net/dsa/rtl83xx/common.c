@@ -84,9 +84,7 @@ static struct table_reg rtl838x_tbl_regs[] = {
 
 void rtl_table_init(void)
 {
-	int i;
-
-	for (i = 0; i < RTL_TBL_END; i++)
+	for (int i = 0; i < RTL_TBL_END; i++)
 		mutex_init(&rtl838x_tbl_regs[i].lock);
 }
 
@@ -593,7 +591,7 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_next
 	struct rtl838x_l2_entry e;
 	u64 seed = priv->r->l2_hash_seed(nh->mac, nh->rvid);
 	u32 key = priv->r->l2_hash_key(priv, seed);
-	int i, idx = -1;
+	int idx = -1;
 	u64 entry;
 
 	pr_debug("%s searching for %08llx vid %d with key %d, seed: %016llx\n",
@@ -604,7 +602,7 @@ int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83xx_next
 	e.port = nh->port;
 
 	/* Loop over all entries in the hash-bucket and over the second block on 93xx SoCs */
-	for (i = 0; i < priv->l2_bucket_size; i++) {
+	for (int i = 0; i < priv->l2_bucket_size; i++) {
 		entry = priv->r->read_l2_entry_using_hash(key, i, &e);
 
 		if (!e.valid || ((entry & 0x0fffffffffffffffULL) == seed)) {
@@ -738,8 +736,6 @@ out:
  */
 int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_priv *priv)
 {
-	int i;
-
 /* TODO: On 5.12:
  * 	if(!dsa_slave_dev_check(dev)) {
  *		netdev_info(dev, "%s: not a DSA device.\n", __func__);
@@ -747,7 +743,7 @@ int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_p
  *	}
  */
 
-	for (i = 0; i < priv->cpu_port; i++) {
+	for (int i = 0; i < priv->cpu_port; i++) {
 		if (!priv->ports[i].dp)
 			continue;
 		if (priv->ports[i].dp->slave == dev)
@@ -1087,11 +1083,11 @@ static int rtl83xx_fib4_del(struct rtl838x_switch_priv *priv,
  */
 static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
 {
-	int i, free_mac = -1;
+	int free_mac = -1;
 	struct rtl93xx_rt_mac m;
 
 	mutex_lock(&priv->reg_mutex);
-	for (i = 0; i < MAX_ROUTER_MACS; i++) {
+	for (int i = 0; i < MAX_ROUTER_MACS; i++) {
 		priv->r->get_l3_router_mac(i, &m);
 		if (free_mac < 0 && !m.valid) {
 			free_mac = i;
@@ -1127,12 +1123,12 @@ static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
 
 static int rtl83xx_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, int vlan)
 {
-	int i, free_mac = -1;
+	int free_mac = -1;
 	struct rtl838x_l3_intf intf;
 	u64 m;
 
 	mutex_lock(&priv->reg_mutex);
-	for (i = 0; i < MAX_SMACS; i++) {
+	for (int i = 0; i < MAX_SMACS; i++) {
 		m = priv->r->get_l3_egress_mac(L3_EGRESS_DMACS + i);
 		if (free_mac < 0 && !m) {
 			free_mac = i;
@@ -1452,7 +1448,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 
 static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 {
-	int err = 0, i;
+	int err = 0;
 	struct rtl838x_switch_priv *priv;
 	struct device *dev = &pdev->dev;
 	u64 bpdu_mask;
@@ -1568,7 +1564,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	 * dsa_switch_tree, the tree is built when the switch
 	 * is registered by dsa_register_switch
 	 */
-	for (i = 0; i <= priv->cpu_port; i++)
+	for (int i = 0; i <= priv->cpu_port; i++)
 		priv->ports[i].dp = dsa_to_port(priv->ds, i);
 
 	/* Enable link and media change interrupts. Are the SERDES masks needed? */
@@ -1613,7 +1609,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	priv->r->l3_setup(priv);
 
 	/* Clear all destination ports for mirror groups */
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		priv->mirror_group_ports[i] = -1;
 
 	/* Register netdevice event callback to catch changes in link aggregation groups */

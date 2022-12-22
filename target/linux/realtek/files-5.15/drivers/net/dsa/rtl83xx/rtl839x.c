@@ -123,10 +123,9 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 void rtl839x_print_matrix(void)
 {
 	volatile u64 *ptr9;
-	int i;
 
 	ptr9 = RTL838X_SW_BASE + RTL839X_PORT_ISO_CTRL(0);
-	for (i = 0; i < 52; i += 4)
+	for (int i = 0; i < 52; i += 4)
 		pr_debug("> %16llx %16llx %16llx %16llx\n",
 			ptr9[i + 0], ptr9[i + 1], ptr9[i + 2], ptr9[i + 3]);
 	pr_debug("CPU_PORT> %16llx\n", ptr9[52]);
@@ -421,10 +420,9 @@ static u64 rtl839x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 0);
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Search SRAM, with hash and at pos in bucket */
-	int i;
 
 	rtl_table_read(q, idx);
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -440,13 +438,12 @@ static void rtl839x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 {
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 0);
-	int i;
 
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
 
 	rtl839x_fill_l2_row(r, e);
 
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -457,10 +454,9 @@ static u64 rtl839x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 1); /* Access L2 Table 1 */
-	int i;
 
 	rtl_table_read(q, idx);
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -479,11 +475,10 @@ static void rtl839x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 1); /* Access L2 Table 1 */
-	int i;
 
 	rtl839x_fill_l2_row(r, e);
 
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -601,13 +596,12 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	u32 status = sw_r32(RTL839X_ISR_GLB_SRC);
 	u64 ports = rtl839x_get_port_reg_le(RTL839X_ISR_PORT_LINK_STS_CHG);
 	u64 link;
-	int i;
 
 	/* Clear status */
 	rtl839x_set_port_reg_le(ports, RTL839X_ISR_PORT_LINK_STS_CHG);
 	pr_debug("RTL8390 Link change: status: %x, ports %llx\n", status, ports);
 
-	for (i = 0; i < RTL839X_CPU_PORT; i++) {
+	for (int i = 0; i < RTL839X_CPU_PORT; i++) {
 		if (ports & BIT_ULL(i)) {
 			link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
 			if (link & BIT_ULL(i))
@@ -831,25 +825,23 @@ void rtl839x_vlan_profile_dump(int profile)
 
 static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	int i;
 	u32 cmd = 1 << 16 | /* Execute cmd */
 	          0 << 15 | /* Read */
 	          5 << 12 | /* Table type 0b101 */
 	          (msti & 0xfff);
 	priv->r->exec_tbl0_cmd(cmd);
 
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
 }
 
 static void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	int i;
 	u32 cmd = 1 << 16 | /* Execute cmd */
 	          1 << 15 | /* Write */
 	          5 << 12 | /* Table type 0b101 */
 	          (msti & 0xfff);
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
 	priv->r->exec_tbl0_cmd(cmd);
 }
@@ -908,8 +900,6 @@ int rtl839x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 
 static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
-	int i;
-
 	pr_info("Setting up EEE, state: %d\n", enable);
 
 	/* Set wake timer for TX and pause timer both to 0x21 */
@@ -920,7 +910,7 @@ static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_10G_CTRL);
 
 	/* Setup EEE on all ports */
-	for (i = 0; i < priv->cpu_port; i++) {
+	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy)
 			rtl839x_port_eee_set(priv, i, enable);
 	}
@@ -964,13 +954,9 @@ static int rtl839x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from
  */
 static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
 {
-	int i;
-	enum template_field_id field_type;
-	u16 data, data_m;
-
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
-		field_type = t[i];
-		data = data_m = 0;
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id field_type = t[i];
+		u16 data = 0, data_m = 0;
 
 		switch (field_type) {
 		case TEMPLATE_FIELD_SPM0:
@@ -1132,12 +1118,10 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
  */
 void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
 {
-	int i;
-	enum template_field_id field_type;
-	u16 data, data_m;
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id field_type = t[i];
+		u16 data, data_m;
 
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
-		field_type = t[i];
 		if (!(i % 2)) {
 			data = r[5 - i / 2];
 			data_m = r[12 - i / 2];
@@ -1435,13 +1419,12 @@ static int rtl839x_pie_rule_read(struct rtl838x_switch_priv *priv, int idx, stru
 	/* Read IACL table (2) via register 0 */
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_0, 2);
 	u32 r[17];
-	int i;
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
 
 	memset(pr, 0, sizeof(*pr));
 	rtl_table_read(q, idx);
-	for (i = 0; i < 17; i++)
+	for (int i = 0; i < 17; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -1465,13 +1448,12 @@ static int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	/* Access IACL table (2) via register 0 */
 	struct table_reg *q = rtl_table_get(RTL8390_TBL_0, 2);
 	u32 r[17];
-	int i;
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
 
 	pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
 
-	for (i = 0; i < 17; i++)
+	for (int i = 0; i < 17; i++)
 		r[i] = 0;
 
 	if (!pr->valid) {
@@ -1488,7 +1470,7 @@ static int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 
 /*	rtl839x_pie_rule_dump_raw(r); */
 
-	for (i = 0; i < 17; i++)
+	for (int i = 0; i < 17; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -1499,11 +1481,8 @@ static int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 
 static bool rtl839x_pie_templ_has(int t, enum template_field_id field_type)
 {
-	int i;
-	enum template_field_id ft;
-
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
-		ft = fixed_templates[t][i];
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id ft = fixed_templates[t][i];
 		if (field_type == ft)
 			return true;
 	}
@@ -1607,13 +1586,12 @@ static void rtl839x_pie_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rul
 
 static void rtl839x_pie_init(struct rtl838x_switch_priv *priv)
 {
-	int i;
 	u32 template_selectors;
 
 	mutex_init(&priv->pie_mutex);
 
 	/* Power on all PIE blocks */
-	for (i = 0; i < priv->n_pie_blocks; i++)
+	for (int i = 0; i < priv->n_pie_blocks; i++)
 		sw_w32_mask(0, BIT(i), RTL839X_PS_ACL_PWR_CTRL);
 
 	/* Set ingress and egress ACL blocks to 50/50: first Egress block is 9 */
@@ -1627,32 +1605,32 @@ static void rtl839x_pie_init(struct rtl838x_switch_priv *priv)
 
 	/* Enable predefined templates 0, 1 for blocks 0-2 */
 	template_selectors = 0 | (1 << 3);
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 2, 3 for blocks 3-5 */
 	template_selectors = 2 | (3 << 3);
-	for (i = 3; i < 6; i++)
+	for (int i = 3; i < 6; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 1, 4 for blocks 6-8 */
 	template_selectors = 2 | (3 << 3);
-	for (i = 6; i < 9; i++)
+	for (int i = 6; i < 9; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 0, 1 for blocks 9-11 */
 	template_selectors = 0 | (1 << 3);
-	for (i = 9; i < 12; i++)
+	for (int i = 9; i < 12; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 2, 3 for blocks 12-14 */
 	template_selectors = 2 | (3 << 3);
-	for (i = 12; i < 15; i++)
+	for (int i = 12; i < 15; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 1, 4 for blocks 15-17 */
 	template_selectors = 2 | (3 << 3);
-	for (i = 15; i < 18; i++)
+	for (int i = 15; i < 18; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 }
 
@@ -1733,7 +1711,6 @@ static void rtl839x_route_write(int idx, struct rtl83xx_route *rt)
 /* Configure the switch's own MAC addresses used when routing packets */
 static void rtl839x_setup_port_macs(struct rtl838x_switch_priv *priv)
 {
-	int i;
 	struct net_device *dev;
 	u64 mac;
 
@@ -1741,7 +1718,7 @@ static void rtl839x_setup_port_macs(struct rtl838x_switch_priv *priv)
 	dev = priv->ports[priv->cpu_port].dp->slave;
 	mac = ether_addr_to_u64(dev->dev_addr);
 
-	for (i = 0; i < 15; i++) {
+	for (int i = 0; i < 15; i++) {
 		mac++;  /* BUG: VRRP for testing */
 		sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + i * 8);
 		sw_w32(mac, RTL839X_ROUTING_SA_CTRL + i * 8 + 4);
