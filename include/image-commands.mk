@@ -298,7 +298,7 @@ define Build/fit
 endef
 
 define Build/gzip
-	$(STAGING_DIR_HOST)/bin/gzip -f -9n -c $@ $(1) > $@.new
+	gzip -f -9n -c $@ $(1) > $@.new
 	@mv $@.new $@
 endef
 
