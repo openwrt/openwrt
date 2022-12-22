@@ -157,25 +157,23 @@ void rtl931x_vlan_profile_dump(int index)
 
 static void rtl931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	int i;
 	u32 cmd = 1 << 20 | /* Execute cmd */
 	          0 << 19 | /* Read */
 	          5 << 15 | /* Table type 0b101 */
 	          (msti & 0x3fff);
 	priv->r->exec_tbl0_cmd(cmd);
 
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
 }
 
 static void rtl931x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	int i;
 	u32 cmd = 1 << 20 | /* Execute cmd */
 	          1 << 19 | /* Write */
 	          5 << 15 | /* Table type 0b101 */
 	          (msti & 0x3fff);
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
 	priv->r->exec_tbl0_cmd(cmd);
 }
@@ -295,7 +293,6 @@ irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
 	u32 status = sw_r32(RTL931X_ISR_GLB_SRC);
 	u64 ports = rtl839x_get_port_reg_le(RTL931X_ISR_PORT_LINK_STS_CHG);
 	u64 link;
-	int i;
 
 	/* Clear status */
 	rtl839x_set_port_reg_le(ports, RTL931X_ISR_PORT_LINK_STS_CHG);
@@ -306,7 +303,7 @@ irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
 	link = rtl839x_get_port_reg_le(RTL931X_MAC_LINK_STS);
 	pr_debug("RTL931X Link change: status: %x, link status %016llx\n", status, link);
 
-	for (i = 0; i < 56; i++) {
+	for (int i = 0; i < 56; i++) {
 		if (ports & BIT_ULL(i)) {
 			if (link & BIT_ULL(i)) {
 				pr_info("%s port %d up\n", __func__, i);
@@ -467,9 +464,8 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 void rtl931x_print_matrix(void)
 {
 	volatile u64 *ptr = RTL838X_SW_BASE + RTL839X_PORT_ISO_CTRL(0);
-	int i;
 
-	for (i = 0; i < 52; i += 4)
+	for (int i = 0; i < 52; i += 4)
 		pr_info("> %16llx %16llx %16llx %16llx\n",
 			ptr[i + 0], ptr[i + 1], ptr[i + 2], ptr[i + 3]);
 	pr_info("CPU_PORT> %16llx\n", ptr[52]);
@@ -752,7 +748,6 @@ static u64 rtl931x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	u32 r[4];
 	struct table_reg *q = rtl_table_get(RTL9310_TBL_0, 0);
 	u32 idx;
-	int i;
 	u64 mac;
 	u64 seed;
 
@@ -773,7 +768,7 @@ static u64 rtl931x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	pr_debug("%s: NOW hash %08x, pos: %d\n", __func__, hash, pos);
 
 	rtl_table_read(q, idx);
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -812,7 +807,6 @@ static void rtl931x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 	u32 r[4];
 	struct table_reg *q = rtl_table_get(RTL9310_TBL_0, 0);
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
-	int i;
 
 	pr_info("%s: hash %d, pos %d\n", __func__, hash, pos);
 	pr_info("%s: index %d -> mac %02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
@@ -821,7 +815,7 @@ static void rtl931x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 	rtl931x_fill_l2_row(r, e);
 	pr_info("%s: %d: %08x %08x %08x\n", __func__, idx, r[0], r[1], r[2]);
 
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -840,7 +834,6 @@ static void rtl931x_vlan_fwd_on_inner(int port, bool is_set)
 static void rtl931x_vlan_profile_setup(int profile)
 {
 	u32 p[7];
-	int i;
 
 	pr_info("In %s\n", __func__);
 
@@ -1103,10 +1096,9 @@ int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_rule *pr
  */
 static void rtl931x_write_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
 {
-	int i;
-	u16 data, data_m;
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		u16 data, data_m;
 
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
 		rtl931x_pie_data_fill(t[i], pr, &data, &data_m);
 
 		/* On the RTL9300, the mask fields are not word aligned! */
@@ -1264,13 +1256,12 @@ static int rtl931x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	/* Access IACL table (0) via register 1, the table size is 4096 */
 	struct table_reg *q = rtl_table_get(RTL9310_TBL_1, 0);
 	u32 r[22];
-	int i;
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block));
 
 	pr_info("%s: %d, t_select: %08x\n", __func__, idx, t_select);
 
-	for (i = 0; i < 22; i++)
+	for (int i = 0; i < 22; i++)
 		r[i] = 0;
 
 	if (!pr->valid) {
@@ -1287,7 +1278,7 @@ static int rtl931x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 
 	rtl931x_pie_rule_dump_raw(r);
 
-	for (i = 0; i < 22; i++)
+	for (int i = 0; i < 22; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -1298,11 +1289,8 @@ static int rtl931x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 
 static bool rtl931x_pie_templ_has(int t, enum template_field_id field_type)
 {
-	int i;
-	enum template_field_id ft;
-
-	for (i = 0; i < N_FIXED_FIELDS_RTL931X; i++) {
-		ft = fixed_templates[t][i];
+	for (int i = 0; i < N_FIXED_FIELDS_RTL931X; i++) {
+		enum template_field_id ft = fixed_templates[t][i];
 		if (field_type == ft)
 			return true;
 	}
@@ -1358,7 +1346,7 @@ static int rtl931x_pie_verify_template(struct rtl838x_switch_priv *priv,
 
 static int rtl931x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
 {
-	int idx, block, j, t;
+	int idx, block, j;
 	int min_block = 0;
 	int max_block = priv->n_pie_blocks / 2;
 
@@ -1372,7 +1360,7 @@ static int rtl931x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 
 	for (block = min_block; block < max_block; block++) {
 		for (j = 0; j < 2; j++) {
-			t = (sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block)) >> (j * 4)) & 0xf;
+			int t = (sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block)) >> (j * 4)) & 0xf;
 			pr_info("Testing block %d, template %d, template id %d\n", block, j, t);
 			pr_info("%s: %08x\n",
 				__func__, sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block)));
@@ -1435,14 +1423,13 @@ static void rtl931x_pie_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rul
 
 static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 {
-	int i;
 	u32 template_selectors;
 
 	mutex_init(&priv->pie_mutex);
 
 	pr_info("%s\n", __func__);
 	/* Enable ACL lookup on all ports, including CPU_PORT */
-	for (i = 0; i <= priv->cpu_port; i++)
+	for (int i = 0; i <= priv->cpu_port; i++)
 		sw_w32(1, RTL931X_ACL_PORT_LOOKUP_CTRL(i));
 
 	/* Include IPG in metering */
@@ -1456,7 +1443,7 @@ static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 	/* 6: Disabled, 0: VACL, 1: IACL, 2: EACL */
 	/* And for OpenFlow Flow blocks: 3: Ingress Flow table 0, */
 	/* 4: Ingress Flow Table 3, 5: Egress flow table 0 */
-	for (i = 0; i < priv->n_pie_blocks; i++) {
+	for (int i = 0; i < priv->n_pie_blocks; i++) {
 		int pos = (i % 10) * 3;
 		u32 r = RTL931X_PIE_BLK_PHASE_CTRL + 4 * (i / 10);
 
@@ -1468,22 +1455,22 @@ static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 
 	/* Enable predefined templates 0, 1 for first quarter of all blocks */
 	template_selectors = 0 | (1 << 4);
-	for (i = 0; i < priv->n_pie_blocks / 4; i++)
+	for (int i = 0; i < priv->n_pie_blocks / 4; i++)
 		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 2, 3 for second quarter of all blocks */
 	template_selectors = 2 | (3 << 4);
-	for (i = priv->n_pie_blocks / 4; i < priv->n_pie_blocks / 2; i++)
+	for (int i = priv->n_pie_blocks / 4; i < priv->n_pie_blocks / 2; i++)
 		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 0, 1 for third quater of all blocks */
 	template_selectors = 0 | (1 << 4);
-	for (i = priv->n_pie_blocks / 2; i < priv->n_pie_blocks * 3 / 4; i++)
+	for (int i = priv->n_pie_blocks / 2; i < priv->n_pie_blocks * 3 / 4; i++)
 		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 2, 3 for fourth quater of all blocks */
 	template_selectors = 2 | (3 << 4);
-	for (i = priv->n_pie_blocks * 3 / 4; i < priv->n_pie_blocks; i++)
+	for (int i = priv->n_pie_blocks * 3 / 4; i < priv->n_pie_blocks; i++)
 		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
 
 }
@@ -1572,12 +1559,7 @@ void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 
 static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 {
-	int i, pos;
-	u32 v, set;
 	u64 pm_copper = 0, pm_fiber = 0;
-	u32 setlen;
-	const __be32 *led_set;
-	char set_name[9];
 	struct device_node *node;
 
 	pr_info("%s called\n", __func__);
@@ -1587,8 +1569,11 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 		return;
 	}
 
-	for (i = 0; i < priv->cpu_port; i++) {
-		pos = (i << 1) % 32;
+	for (int i = 0; i < priv->cpu_port; i++) {
+		int pos = (i << 1) % 32;
+		u32 set;
+		u32 v;
+
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
@@ -1608,7 +1593,12 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 	}
 
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
+		const __be32 *led_set;
+		char set_name[9];
+		u32 setlen;
+		u32 v;
+
 		sprintf(set_name, "led_set%d", i);
 		pr_info(">%s<\n", set_name);
 		led_set = of_get_property(node, set_name, &setlen);
@@ -1627,7 +1617,7 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 	rtl839x_set_port_reg_le(pm_fiber, RTL931X_LED_PORT_FIB_MASK_CTRL);
 	rtl839x_set_port_reg_le(pm_copper | pm_fiber, RTL931X_LED_PORT_COMBO_MASK_CTRL);
 
-	for (i = 0; i < 32; i++)
+	for (int i = 0; i < 32; i++)
 		pr_info("%s %08x: %08x\n",__func__, 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 

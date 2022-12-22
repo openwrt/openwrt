@@ -93,8 +93,6 @@ void rtl838x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
 
 static void rtl838x_rate_control_init(struct rtl838x_switch_priv *priv)
 {
-	int i;
-
 	pr_info("Enabling Storm control\n");
 	/* TICK_PERIOD_PPS */
 	if (priv->id == 0x8380)
@@ -120,7 +118,7 @@ static void rtl838x_rate_control_init(struct rtl838x_switch_priv *priv)
 	/* Enable storm control on all ports with a PHY and limit rates,
 	 * for UC and MC for both known and unknown addresses
 	 */
-	for (i = 0; i < priv->cpu_port; i++) {
+	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy) {
 			sw_w32((1 << 18) | 0x8000, RTL838X_STORM_CTRL_PORT_UC(i));
 			sw_w32((1 << 18) | 0x8000, RTL838X_STORM_CTRL_PORT_MC(i));
@@ -222,8 +220,6 @@ void rtl839x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
 
 static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 {
-	int p, q;
-
 	pr_info("%s: enabling rate control\n", __func__);
 	/* Tick length and token size settings for SoC with 250MHz,
 	 * RTL8350 family would use 50MHz
@@ -256,7 +252,7 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 	 * for UC, MC and BC
 	 * For 1G port, the minimum burst rate is 1700, maximum 65535,
 	 * For 10G ports it is 2650 and 1048575 respectively */
-	for (p = 0; p < priv->cpu_port; p++) {
+	for (int p = 0; p < priv->cpu_port; p++) {
 		if (priv->ports[p].phy && !priv->ports[p].is10G) {
 			sw_w32_mask(0xffff, 0x8000, RTL839X_STORM_CTRL_PORT_UC_1(p));
 			sw_w32_mask(0xffff, 0x8000, RTL839X_STORM_CTRL_PORT_MC_1(p));
@@ -265,7 +261,7 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 	}
 
 	/* Setup ingress/egress per-port rate control */
-	for (p = 0; p < priv->cpu_port; p++) {
+	for (int p = 0; p < priv->cpu_port; p++) {
 		if (!priv->ports[p].phy)
 			continue;
 
@@ -275,7 +271,7 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 			rtl839x_set_egress_rate(priv, p, 62500);  /* 1GB/s */
 
 		/* Setup queues: all RTL83XX SoCs have 8 queues, maximum rate */
-		for (q = 0; q < 8; q++)
+		for (int q = 0; q < 8; q++)
 			rtl839x_egress_rate_queue_limit(priv, p, q, 0xfffff);
 
 		if (priv->ports[p].is10G) {
@@ -295,22 +291,19 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 
 void rtl838x_setup_prio2queue_matrix(int *min_queues)
 {
-	int i;
 	u32 v;
 
 	pr_info("Current Intprio2queue setting: %08x\n", sw_r32(RTL838X_QM_INTPRI2QID_CTRL));
-	for (i = 0; i < MAX_PRIOS; i++)
+	for (int i = 0; i < MAX_PRIOS; i++)
 		v |= i << (min_queues[i] * 3);
 	sw_w32(v, RTL838X_QM_INTPRI2QID_CTRL);
 }
 
 void rtl839x_setup_prio2queue_matrix(int *min_queues)
 {
-	int i, q;
-
 	pr_info("Current Intprio2queue setting: %08x\n", sw_r32(RTL839X_QM_INTPRI2QID_CTRL(0)));
-	for (i = 0; i < MAX_PRIOS; i++) {
-		q = min_queues[i];
+	for (int i = 0; i < MAX_PRIOS; i++) {
+		int q = min_queues[i];
 		sw_w32(i << (q * 3), RTL839X_QM_INTPRI2QID_CTRL(q));
 	}
 }
@@ -320,11 +313,10 @@ void rtl83xx_setup_prio2queue_cpu_matrix(int *max_queues)
 {
 	int reg = soc_info.family == RTL8380_FAMILY_ID ? RTL838X_QM_PKT2CPU_INTPRI_MAP
 					: RTL839X_QM_PKT2CPU_INTPRI_MAP;
-	int i;
 	u32 v;
 
 	pr_info("QM_PKT2CPU_INTPRI_MAP: %08x\n", sw_r32(reg));
-	for (i = 0; i < MAX_PRIOS; i++)
+	for (int i = 0; i < MAX_PRIOS; i++)
 		v |= max_queues[i] << (i * 3);
 	sw_w32(v, reg);
 }
@@ -432,17 +424,16 @@ void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port
 void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv, int port,
 					  int *queue_weights)
 {
-	int i, lsb, low_byte, start_bit, high_mask;
-
 	mutex_lock(&priv->reg_mutex);
 
 	rtl839x_read_scheduling_table(port);
 
-	for (i = 0; i < 8; i++) {
-		lsb = 48 + i * 8;
-		low_byte = 8 - (lsb >> 5);
-		start_bit = lsb - (low_byte << 5);
-		high_mask = 0x3ff >> (32 - start_bit);
+	for (int i = 0; i < 8; i++) {
+		int lsb = 48 + i * 8;
+		int low_byte = 8 - (lsb >> 5);
+		int start_bit = lsb - (low_byte << 5);
+		int high_mask = 0x3ff >> (32 - start_bit);
+
 		sw_w32_mask(0x3ff << start_bit, (queue_weights[i] & 0x3ff) << start_bit,
 				RTL839X_TBL_ACCESS_DATA_2(low_byte));
 		if (high_mask)
@@ -456,7 +447,6 @@ void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv, int 
 
 void rtl838x_config_qos(void)
 {
-	int i, p;
 	u32 v;
 
 	pr_info("Setting up RTL838X QoS\n");
@@ -474,18 +464,18 @@ void rtl838x_config_qos(void)
 
 	/* Set the inner and outer priority one-to-one to re-marked outer dot1p priority */
 	v = 0;
-	for (p = 0; p < 8; p++)
+	for (int p = 0; p < 8; p++)
 		v |= p << (3 * p);
 	sw_w32(v, RTL838X_RMK_OPRI_CTRL);
 	sw_w32(v, RTL838X_RMK_IPRI_CTRL);
 
 	v = 0;
-	for (p = 0; p < 8; p++)
+	for (int p = 0; p < 8; p++)
 		v |= (dot1p_priority_remapping[p] & 0x7) << (p * 3);
 	sw_w32(v, RTL838X_PRI_SEL_IPRI_REMAP);
 
 	/* On all ports set scheduler type to WFQ */
-	for (i = 0; i <= soc_info.cpu_port; i++)
+	for (int i = 0; i <= soc_info.cpu_port; i++)
 		sw_w32(0, RTL838X_SCHED_P_TYPE_CTRL(i));
 
 	/* Enable egress scheduler for CPU-Port */
@@ -502,7 +492,6 @@ void rtl838x_config_qos(void)
 
 void rtl839x_config_qos(void)
 {
-	int port, p, q;
 	u32 v;
 	struct rtl838x_switch_priv *priv = switch_priv;
 
@@ -510,13 +499,13 @@ void rtl839x_config_qos(void)
 	pr_info("RTL839X_PRI_SEL_TBL_CTRL(i): %08x\n", sw_r32(RTL839X_PRI_SEL_TBL_CTRL(0)));
 	rtl83xx_setup_default_prio2queue();
 
-	for (port = 0; port < soc_info.cpu_port; port++)
+	for (int port = 0; port < soc_info.cpu_port; port++)
 		sw_w32(7, RTL839X_QM_PORT_QNUM(port));
 
 	/* CPU-port gets queue number 7 */
 	sw_w32(7, RTL839X_QM_PORT_QNUM(soc_info.cpu_port));
 
-	for (port = 0; port <= soc_info.cpu_port; port++) {
+	for (int port = 0; port <= soc_info.cpu_port; port++) {
 		rtl83xx_set_ingress_priority(port, 0);
 		rtl839x_set_scheduling_algorithm(priv, port, WEIGHTED_FAIR_QUEUE);
 		rtl839x_set_scheduling_queue_weights(priv, port, default_queue_weights);
@@ -526,7 +515,7 @@ void rtl839x_config_qos(void)
 
 	/* Remap dot1p priorities to internal priority, for this the outer tag needs be re-marked */
 	v = 0;
-	for (p = 0; p < 8; p++)
+	for (int p = 0; p < 8; p++)
 		v |= (dot1p_priority_remapping[p] & 0x7) << (p * 3);
 	sw_w32(v, RTL839X_PRI_SEL_IPRI_REMAP);
 
@@ -551,7 +540,7 @@ void rtl839x_config_qos(void)
 	/* Set queue-based congestion avoidance properties, register fields are as
 	 * for forward RTL839X_WRED_PORT_THR_CTRL
 	 */
-	for (q = 0; q < 8; q++) {
+	for (int q = 0; q < 8; q++) {
 		sw_w32(255 << 24 | 78 << 12 | 68, RTL839X_WRED_QUEUE_THR_CTRL(q, 0));
 		sw_w32(255 << 24 | 74 << 12 | 64, RTL839X_WRED_QUEUE_THR_CTRL(q, 0));
 		sw_w32(255 << 24 | 70 << 12 | 60, RTL839X_WRED_QUEUE_THR_CTRL(q, 0));

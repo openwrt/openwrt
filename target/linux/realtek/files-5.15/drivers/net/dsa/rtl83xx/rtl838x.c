@@ -116,10 +116,9 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 void rtl838x_print_matrix(void)
 {
 	unsigned volatile int *ptr8;
-	int i;
 
 	ptr8 = RTL838X_SW_BASE + RTL838X_PORT_ISO_CTRL(0);
-	for (i = 0; i < 28; i += 8)
+	for (int i = 0; i < 28; i += 8)
 		pr_debug("> %8x %8x %8x %8x %8x %8x %8x %8x\n",
 			ptr8[i + 0], ptr8[i + 1], ptr8[i + 2], ptr8[i + 3],
 			ptr8[i + 4], ptr8[i + 5], ptr8[i + 6], ptr8[i + 7]);
@@ -393,10 +392,9 @@ static u64 rtl838x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_L2, 0); /* Access L2 Table 0 */
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Search SRAM, with hash and at pos in bucket */
-	int i;
 
 	rtl_table_read(q, idx);
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -412,13 +410,12 @@ static void rtl838x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 {
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_L2, 0);
-	int i;
 
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
 
 	rtl838x_fill_l2_row(r, e);
 
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -429,10 +426,9 @@ static u64 rtl838x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_L2, 1); /* Access L2 Table 1 */
-	int i;
 
 	rtl_table_read(q, idx);
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -451,11 +447,10 @@ static void rtl838x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_L2, 1); /* Access L2 Table 1 */
-	int i;
 
 	rtl838x_fill_l2_row(r, e);
 
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -550,26 +545,24 @@ static void rtl838x_enable_bcast_flood(int port, bool enable)
 
 static void rtl838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	int i;
 	u32 cmd = 1 << 15 | /* Execute cmd */
 	          1 << 14 | /* Read */
 	          2 << 12 | /* Table type 0b10 */
 	          (msti & 0xfff);
 	priv->r->exec_tbl0_cmd(cmd);
 
-	for (i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
 }
 
 static void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	int i;
 	u32 cmd = 1 << 15 | /* Execute cmd */
 	          0 << 14 | /* Write */
 	          2 << 12 | /* Table type 0b10 */
 	          (msti & 0xfff);
 
-	for (i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
 	priv->r->exec_tbl0_cmd(cmd);
 }
@@ -651,8 +644,6 @@ static int rtl838x_eee_port_ability(struct rtl838x_switch_priv *priv,
 
 static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
-	int i;
-
 	pr_info("Setting up EEE, state: %d\n", enable);
 	sw_w32_mask(0x4, 0, RTL838X_SMI_GLB_CTRL);
 
@@ -661,7 +652,7 @@ static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	sw_w32(0x5001417, RTL838X_EEE_TX_TIMER_GELITE_CTRL);
 
 	/* Enable EEE MAC support on ports */
-	for (i = 0; i < priv->cpu_port; i++) {
+	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy)
 			rtl838x_port_eee_set(priv, i, enable);
 	}
@@ -683,7 +674,6 @@ static void rtl838x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_fro
 	int block_from = index_from / PIE_BLOCK_SIZE;
 	int block_to = index_to / PIE_BLOCK_SIZE;
 	u32 v = (index_from << 1)| (index_to << 12 ) | BIT(0);
-	int block;
 	u32 block_state;
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
@@ -693,7 +683,7 @@ static void rtl838x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_fro
 	block_state = sw_r32(RTL838X_ACL_BLK_LOOKUP_CTRL);
 
 	/* Make sure rule-lookup is disabled in the relevant blocks */
-	for (block = block_from; block <= block_to; block++) {
+	for (int block = block_from; block <= block_to; block++) {
 		if (block_state & BIT(block))
 			sw_w32(block_state & (~BIT(block)), RTL838X_ACL_BLK_LOOKUP_CTRL);
 	}
@@ -706,7 +696,7 @@ static void rtl838x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_fro
 	} while (sw_r32(RTL838X_ACL_CLR_CTRL) & BIT(0));
 
 	/* Re-enable rule lookup */
-	for (block = block_from; block <= block_to; block++) {
+	for (int block = block_from; block <= block_to; block++) {
 		if (!(block_state & BIT(block)))
 			sw_w32(block_state | BIT(block), RTL838X_ACL_BLK_LOOKUP_CTRL);
 	}
@@ -723,13 +713,9 @@ static void rtl838x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_fro
  */
 static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
 {
-	int i;
-	enum template_field_id field_type;
-	u16 data, data_m;
-
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
-		field_type = t[i];
-		data = data_m = 0;
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id field_type = t[i];
+		u16 data = 0, data_m = 0;
 
 		switch (field_type) {
 		case TEMPLATE_FIELD_SPM0:
@@ -884,11 +870,10 @@ static void rtl838x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
  */
 static void rtl838x_read_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
 {
-	int i;
-	enum template_field_id field_type;
-	u16 data, data_m;
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id field_type = t[i];
+		u16 data, data_m;
 
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
 		field_type = t[i];
 		if (!(i % 2)) {
 			data = r[5 - i / 2];
@@ -1321,13 +1306,12 @@ static int rtl838x_pie_rule_read(struct rtl838x_switch_priv *priv, int idx, stru
 	/* Read IACL table (1) via register 0 */
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_0, 1);
 	u32 r[18];
-	int i;
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL838X_ACL_BLK_TMPLTE_CTRL(block));
 
 	memset(pr, 0, sizeof(*pr));
 	rtl_table_read(q, idx);
-	for (i = 0; i < 18; i++)
+	for (int i = 0; i < 18; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -1351,13 +1335,13 @@ static int rtl838x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	/* Access IACL table (1) via register 0 */
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_0, 1);
 	u32 r[18];
-	int i, err = 0;
+	int err = 0;
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL838X_ACL_BLK_TMPLTE_CTRL(block));
 
 	pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
 
-	for (i = 0; i < 18; i++)
+	for (int i = 0; i < 18; i++)
 		r[i] = 0;
 
 	if (!pr->valid)
@@ -1375,7 +1359,7 @@ static int rtl838x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 
 /*	rtl838x_pie_rule_dump_raw(r); */
 
-	for (i = 0; i < 18; i++)
+	for (int i = 0; i < 18; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 err_out:
@@ -1387,10 +1371,9 @@ err_out:
 
 static bool rtl838x_pie_templ_has(int t, enum template_field_id field_type)
 {
-	int i;
 	enum template_field_id ft;
 
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
 		ft = fixed_templates[t][i];
 		if (field_type == ft)
 			return true;
@@ -1443,7 +1426,7 @@ static int rtl838x_pie_verify_template(struct rtl838x_switch_priv *priv,
 
 static int rtl838x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rule *pr)
 {
-	int idx, block, j, t;
+	int idx, block, j;
 
 	pr_debug("In %s\n", __func__);
 
@@ -1451,7 +1434,7 @@ static int rtl838x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 
 	for (block = 0; block < priv->n_pie_blocks; block++) {
 		for (j = 0; j < 3; j++) {
-			t = (sw_r32(RTL838X_ACL_BLK_TMPLTE_CTRL(block)) >> (j * 3)) & 0x7;
+			int t = (sw_r32(RTL838X_ACL_BLK_TMPLTE_CTRL(block)) >> (j * 3)) & 0x7;
 			pr_debug("Testing block %d, template %d, template id %d\n", block, j, t);
 			idx = rtl838x_pie_verify_template(priv, pr, t, block);
 			if (idx >= 0)
@@ -1496,17 +1479,16 @@ static void rtl838x_pie_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rul
  */
 static void rtl838x_pie_init(struct rtl838x_switch_priv *priv)
 {
-	int i;
 	u32 template_selectors;
 
 	mutex_init(&priv->pie_mutex);
 
 	/* Enable ACL lookup on all ports, including CPU_PORT */
-	for (i = 0; i <= priv->cpu_port; i++)
+	for (int i = 0; i <= priv->cpu_port; i++)
 		sw_w32(1, RTL838X_ACL_PORT_LOOKUP_CTRL(i));
 
 	/* Power on all PIE blocks */
-	for (i = 0; i < priv->n_pie_blocks; i++)
+	for (int i = 0; i < priv->n_pie_blocks; i++)
 		sw_w32_mask(0, BIT(i), RTL838X_ACL_BLK_PWR_CTRL);
 
 	/* Include IPG in metering */
@@ -1522,12 +1504,12 @@ static void rtl838x_pie_init(struct rtl838x_switch_priv *priv)
 
 	/* Enable predefined templates 0, 1 and 2 for even blocks */
 	template_selectors = 0 | (1 << 3) | (2 << 6);
-	for (i = 0; i < 6; i += 2)
+	for (int i = 0; i < 6; i += 2)
 		sw_w32(template_selectors, RTL838X_ACL_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 0, 3 and 4 (IPv6 support) for odd blocks */
 	template_selectors = 0 | (3 << 3) | (4 << 6);
-	for (i = 1; i < priv->n_pie_blocks; i += 2)
+	for (int i = 1; i < priv->n_pie_blocks; i += 2)
 		sw_w32(template_selectors, RTL838X_ACL_BLK_TMPLTE_CTRL(i));
 
 	/* Group each pair of physical blocks together to a logical block */
@@ -1782,13 +1764,12 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 	u32 status = sw_r32(RTL838X_ISR_GLB_SRC);
 	u32 ports = sw_r32(RTL838X_ISR_PORT_LINK_STS_CHG);
 	u32 link;
-	int i;
 
 	/* Clear status */
 	sw_w32(ports, RTL838X_ISR_PORT_LINK_STS_CHG);
 	pr_info("RTL8380 Link change: status: %x, ports %x\n", status, ports);
 
-	for (i = 0; i < 28; i++) {
+	for (int i = 0; i < 28; i++) {
 		if (ports & BIT(i)) {
 			link = sw_r32(RTL838X_MAC_LINK_STS);
 			if (link & BIT(i))
