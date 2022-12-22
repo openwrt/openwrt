@@ -28,22 +28,22 @@ DEFINE_MUTEX(i2c_lock);
 
 static void rtl9300_i2c_reg_addr_set(struct rtl9300_i2c *i2c, u32 reg, u16 len)
 {
-	// Set register address width
+	/* Set register address width */
 	REG_MASK(i2c, 0x3 << RTL9300_I2C_CTRL2_MADDR_WIDTH, len << RTL9300_I2C_CTRL2_MADDR_WIDTH,
 		 RTL9300_I2C_CTRL2);
 
-	// Set register address
+	/* Set register address */
 	REG_MASK(i2c, 0xffffff << RTL9300_I2C_CTRL1_MEM_ADDR, reg << RTL9300_I2C_CTRL1_MEM_ADDR,
 		 RTL9300_I2C_CTRL1);
 }
 
 static void rtl9310_i2c_reg_addr_set(struct rtl9300_i2c *i2c, u32 reg, u16 len)
 {
-	// Set register address width
+	/* Set register address width */
 	REG_MASK(i2c, 0x3 << RTL9310_I2C_CTRL_MADDR_WIDTH, len << RTL9310_I2C_CTRL_MADDR_WIDTH,
 		 RTL9310_I2C_CTRL);
 
-	// Set register address
+	/* Set register address */
 	writel(reg, REG(i2c, RTL9310_I2C_MEMADDR));
 }
 
@@ -51,14 +51,14 @@ static void rtl9300_i2c_config_io(struct rtl9300_i2c *i2c, int scl_num, int sda_
 {
 	u32 v;
 
-	// Set SCL pin
+	/* Set SCL pin */
 	REG_MASK(i2c, 0, BIT(RTL9300_I2C_CTRL1_GPIO8_SCL_SEL), RTL9300_I2C_CTRL1);
 
-	// Set SDA pin
+	/* Set SDA pin */
 	REG_MASK(i2c, 0x7 << RTL9300_I2C_CTRL1_SDA_OUT_SEL,
 		 i2c->sda_num << RTL9300_I2C_CTRL1_SDA_OUT_SEL, RTL9300_I2C_CTRL1);
 
-	// Set SDA pin to I2C functionality
+	/* Set SDA pin to I2C functionality */
 	v = readl(i2c->base + RTL9300_I2C_MST_GLB_CTRL);
 	v |= BIT(i2c->sda_num);
 	writel(v, i2c->base + RTL9300_I2C_MST_GLB_CTRL);
@@ -68,14 +68,14 @@ static void rtl9310_i2c_config_io(struct rtl9300_i2c *i2c, int scl_num, int sda_
 {
 	u32 v;
 
-	// Set SCL pin
+	/* Set SCL pin */
 	REG_MASK(i2c, 0, BIT(RTL9310_I2C_MST_IF_SEL_GPIO_SCL_SEL + scl_num), RTL9310_I2C_MST_IF_SEL);
 
-	// Set SDA pin
+	/* Set SDA pin */
 	REG_MASK(i2c, 0x7 << RTL9310_I2C_CTRL_SDA_OUT_SEL,
 		 i2c->sda_num << RTL9310_I2C_CTRL_SDA_OUT_SEL, RTL9310_I2C_CTRL);
 
-	// Set SDA pin to I2C functionality
+	/* Set SDA pin to I2C functionality */
 	v = readl(i2c->base + RTL9310_I2C_MST_IF_SEL);
 	v |= BIT(i2c->sda_num);
 	writel(v, i2c->base + RTL9310_I2C_MST_IF_SEL);
@@ -83,19 +83,19 @@ static void rtl9310_i2c_config_io(struct rtl9300_i2c *i2c, int scl_num, int sda_
 
 static int rtl9300_i2c_config_xfer(struct rtl9300_i2c *i2c, u16 addr, u16 len)
 {
-	// Set bus frequency
+	/* Set bus frequency */
 	REG_MASK(i2c, 0x3 << RTL9300_I2C_CTRL2_SCL_FREQ,
 		 i2c->bus_freq << RTL9300_I2C_CTRL2_SCL_FREQ, RTL9300_I2C_CTRL2);
 
-	// Set slave device address
+	/* Set slave device address */
 	REG_MASK(i2c, 0x7f << RTL9300_I2C_CTRL2_DEV_ADDR,
 		 addr << RTL9300_I2C_CTRL2_DEV_ADDR, RTL9300_I2C_CTRL2);
 
-	// Set data length
+	/* Set data length */
 	REG_MASK(i2c, 0xf << RTL9300_I2C_CTRL2_DATA_WIDTH,
 		 ((len - 1) & 0xf) << RTL9300_I2C_CTRL2_DATA_WIDTH, RTL9300_I2C_CTRL2);
 
-	// Set read mode to random
+	/* Set read mode to random */
 	REG_MASK(i2c, 0x1 << RTL9300_I2C_CTRL2_READ_MODE, 0, RTL9300_I2C_CTRL2);
 
 	return 0;
@@ -103,19 +103,19 @@ static int rtl9300_i2c_config_xfer(struct rtl9300_i2c *i2c, u16 addr, u16 len)
 
 static int rtl9310_i2c_config_xfer(struct rtl9300_i2c *i2c, u16 addr, u16 len)
 {
-	// Set bus frequency
+	/* Set bus frequency */
 	REG_MASK(i2c, 0x3 << RTL9310_I2C_CTRL_SCL_FREQ,
 		 i2c->bus_freq << RTL9310_I2C_CTRL_SCL_FREQ, RTL9310_I2C_CTRL);
 
-	// Set slave device address
+	/* Set slave device address */
 	REG_MASK(i2c, 0x7f << RTL9310_I2C_CTRL_DEV_ADDR,
 		 addr << RTL9310_I2C_CTRL_DEV_ADDR, RTL9310_I2C_CTRL);
 
-	// Set data length
+	/* Set data length */
 	REG_MASK(i2c, 0xf << RTL9310_I2C_CTRL_DATA_WIDTH,
 		 ((len - 1) & 0xf) << RTL9310_I2C_CTRL_DATA_WIDTH, RTL9310_I2C_CTRL);
 
-	// Set read mode to random
+	/* Set read mode to random */
 	REG_MASK(i2c, 0x1 << RTL9310_I2C_CTRL_READ_MODE, 0, RTL9310_I2C_CTRL);
 
 	return 0;
