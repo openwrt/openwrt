@@ -64,6 +64,10 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART=ubi
 		nand_do_upgrade "$1"
 		;;
+	xiaomi,redmi-router-ax6000-ubootmod)
+		CI_KERNPART="fit"
+		nand_do_upgrade "$1"
+		;;
 	*)
 		nand_do_upgrade "$1"
 		;;
