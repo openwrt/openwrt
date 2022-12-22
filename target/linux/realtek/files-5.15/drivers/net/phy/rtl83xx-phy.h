@@ -18,7 +18,7 @@ struct __attribute__ ((__packed__)) fw_header {
 	struct part parts[10];
 };
 
-// TODO: fixed path?
+/* TODO: fixed path? */
 #define FIRMWARE_838X_8380_1	"rtl838x_phy/rtl838x_8380.fw"
 #define FIRMWARE_838X_8214FC_1	"rtl838x_phy/rtl838x_8214fc.fw"
 #define FIRMWARE_838X_8218b_1	"rtl838x_phy/rtl838x_8218b.fw"
@@ -35,7 +35,7 @@ struct __attribute__ ((__packed__)) fw_header {
 #define PHY_ID_RTL8393_I	0x001c8393
 #define PHY_ID_RTL9300_I	0x70d03106
 
-// PHY MMD devices
+/* PHY MMD devices */
 #define MMD_AN		7
 #define MMD_VEND2	31
 

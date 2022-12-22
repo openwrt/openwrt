@@ -47,7 +47,7 @@ static void rtl839x_read_out_q_table(int port)
 
 static void rtl838x_storm_enable(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
-	// Enable Storm control for that port for UC, MC, and BC
+	/* Enable Storm control for that port for UC, MC, and BC */
 	if (enable)
 		sw_w32(0x7, RTL838X_STORM_CTRL_LB_CTRL(port));
 	else
@@ -96,24 +96,24 @@ static void rtl838x_rate_control_init(struct rtl838x_switch_priv *priv)
 	int i;
 
 	pr_info("Enabling Storm control\n");
-	// TICK_PERIOD_PPS
+	/* TICK_PERIOD_PPS */
 	if (priv->id == 0x8380)
 		sw_w32_mask(0x3ff << 20, 434 << 20, RTL838X_SCHED_LB_TICK_TKN_CTRL_0);
 
-	// Set burst rate
-	sw_w32(0x00008000, RTL838X_STORM_CTRL_BURST_0); // UC
-	sw_w32(0x80008000, RTL838X_STORM_CTRL_BURST_1); // MC and BC
+	/* Set burst rate */
+	sw_w32(0x00008000, RTL838X_STORM_CTRL_BURST_0); /* UC */
+	sw_w32(0x80008000, RTL838X_STORM_CTRL_BURST_1); /* MC and BC */
 
-	// Set burst Packets per Second to 32
-	sw_w32(0x00000020, RTL838X_STORM_CTRL_BURST_PPS_0); // UC
-	sw_w32(0x00200020, RTL838X_STORM_CTRL_BURST_PPS_1); // MC and BC
+	/* Set burst Packets per Second to 32 */
+	sw_w32(0x00000020, RTL838X_STORM_CTRL_BURST_PPS_0); /* UC */
+	sw_w32(0x00200020, RTL838X_STORM_CTRL_BURST_PPS_1); /* MC and BC */
 
-	// Include IFG in storm control, rate based on bytes/s (0 = packets)
+	/* Include IFG in storm control, rate based on bytes/s (0 = packets) */
 	sw_w32_mask(0, 1 << 6 | 1 << 5, RTL838X_STORM_CTRL);
-	// Bandwidth control includes preamble and IFG (10 Bytes)
+	/* Bandwidth control includes preamble and IFG (10 Bytes) */
 	sw_w32_mask(0, 1, RTL838X_SCHED_CTRL);
 
-	// On SoCs except RTL8382M, set burst size of port egress
+	/* On SoCs except RTL8382M, set burst size of port egress */
 	if (priv->id != 0x8382)
 		sw_w32_mask(0xffff, 0x800, RTL838X_SCHED_LB_THR);
 
@@ -129,14 +129,14 @@ static void rtl838x_rate_control_init(struct rtl838x_switch_priv *priv)
 		}
 	}
 
-	// Attack prevention, enable all attack prevention measures
-	//sw_w32(0x1ffff, RTL838X_ATK_PRVNT_CTRL);
+	/* Attack prevention, enable all attack prevention measures */
+	/* sw_w32(0x1ffff, RTL838X_ATK_PRVNT_CTRL); */
 	/* Attack prevention, drop (bit = 0) problematic packets on all ports.
 	 * Setting bit = 1 means: trap to CPU
 	 */
-	//sw_w32(0, RTL838X_ATK_PRVNT_ACT);
-	// Enable attack prevention on all ports
-	//sw_w32(0x0fffffff, RTL838X_ATK_PRVNT_PORT_EN);
+	/* sw_w32(0, RTL838X_ATK_PRVNT_ACT); */
+	/* Enable attack prevention on all ports */
+	/* sw_w32(0x0fffffff, RTL838X_ATK_PRVNT_PORT_EN); */
 }
 
 /* Sets the rate limit, 10MBit/s is equal to a rate value of 625 */
@@ -228,21 +228,21 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 	/* Tick length and token size settings for SoC with 250MHz,
 	 * RTL8350 family would use 50MHz
 	 */
-	// Set the special tick period
+	/* Set the special tick period */
 	sw_w32(976563, RTL839X_STORM_CTRL_SPCL_LB_TICK_TKN_CTRL);
-	// Ingress tick period and token length 10G
+	/* Ingress tick period and token length 10G */
 	sw_w32(18 << 11 | 151, RTL839X_IGR_BWCTRL_LB_TICK_TKN_CTRL_0);
-	// Ingress tick period and token length 1G
+	/* Ingress tick period and token length 1G */
 	sw_w32(245 << 11 | 129, RTL839X_IGR_BWCTRL_LB_TICK_TKN_CTRL_1);
-	// Egress tick period 10G, bytes/token 10G and tick period 1G, bytes/token 1G
+	/* Egress tick period 10G, bytes/token 10G and tick period 1G, bytes/token 1G */
 	sw_w32(18 << 24 | 151 << 16 | 185 << 8 | 97, RTL839X_SCHED_LB_TICK_TKN_CTRL);
-	// Set the tick period of the CPU and the Token Len
+	/* Set the tick period of the CPU and the Token Len */
 	sw_w32(3815 << 8 | 1, RTL839X_SCHED_LB_TICK_TKN_PPS_CTRL);
 
-	// Set the Weighted Fair Queueing burst size
+	/* Set the Weighted Fair Queueing burst size */
 	sw_w32_mask(0xffff, 4500, RTL839X_SCHED_LB_THR);
 
-	// Storm-rate calculation is based on bytes/sec (bit 5), include IFG (bit 6)
+	/* Storm-rate calculation is based on bytes/sec (bit 5), include IFG (bit 6) */
 	sw_w32_mask(0, 1 << 5 | 1 << 6, RTL839X_STORM_CTRL);
 
 	/* Based on the rate control mode being bytes/s
@@ -270,24 +270,24 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 			continue;
 
 		if (priv->ports[p].is10G)
-			rtl839x_set_egress_rate(priv, p, 625000); // 10GB/s
+			rtl839x_set_egress_rate(priv, p, 625000); /* 10GB/s */
 		else
-			rtl839x_set_egress_rate(priv, p, 62500);  // 1GB/s
+			rtl839x_set_egress_rate(priv, p, 62500);  /* 1GB/s */
 
-		// Setup queues: all RTL83XX SoCs have 8 queues, maximum rate
+		/* Setup queues: all RTL83XX SoCs have 8 queues, maximum rate */
 		for (q = 0; q < 8; q++)
 			rtl839x_egress_rate_queue_limit(priv, p, q, 0xfffff);
 
 		if (priv->ports[p].is10G) {
-			// Set high threshold to maximum
+			/* Set high threshold to maximum */
 			sw_w32_mask(0xffff, 0xffff, RTL839X_IGR_BWCTRL_PORT_CTRL_10G_0(p));
 		} else {
-			// Set high threshold to maximum
+			/* Set high threshold to maximum */
 			sw_w32_mask(0xffff, 0xffff, RTL839X_IGR_BWCTRL_PORT_CTRL_1(p));
 		}
 	}
 
-	// Set global ingress low watermark rate
+	/* Set global ingress low watermark rate */
 	sw_w32(65532, RTL839X_IGR_BWCTRL_CTRL_LB_THR);
 }
 
@@ -382,24 +382,24 @@ void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port
 	mutex_lock(&priv->reg_mutex);
 	/* Check whether we need to empty the egress queue of that port due to Errata E0014503 */
 	if (sched == WEIGHTED_FAIR_QUEUE && t == WEIGHTED_ROUND_ROBIN && port != priv->cpu_port) {
-		// Read Operations, Adminstatrion and Management control register
+		/* Read Operations, Adminstatrion and Management control register */
 		oam_state = sw_r32(RTL839X_OAM_CTRL);
 
-		// Get current OAM state
+		/* Get current OAM state */
 		oam_port_state = sw_r32(RTL839X_OAM_PORT_ACT_CTRL(port));
 
-		// Disable OAM to block traffice
+		/* Disable OAM to block traffice */
 		v = sw_r32(RTL839X_OAM_CTRL);
 		sw_w32_mask(0, 1, RTL839X_OAM_CTRL);
 		v = sw_r32(RTL839X_OAM_CTRL);
 
-		// Set to trap action OAM forward (bits 1, 2) and OAM Mux Action Drop (bit 0)
+		/* Set to trap action OAM forward (bits 1, 2) and OAM Mux Action Drop (bit 0) */
 		sw_w32(0x2, RTL839X_OAM_PORT_ACT_CTRL(port));
 
-		// Set port egress rate to unlimited
+		/* Set port egress rate to unlimited */
 		egress_rate = rtl839x_set_egress_rate(priv, port, 0xFFFFF);
 
-		// Wait until the egress used page count of that port is 0
+		/* Wait until the egress used page count of that port is 0 */
 		i = 0;
 		do {
 			usleep_range(100, 200);
@@ -410,19 +410,19 @@ void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port
 		} while (i < 3500 && count > 0);
 	}
 
-	// Actually set the scheduling algorithm
+	/* Actually set the scheduling algorithm */
 	rtl839x_read_scheduling_table(port);
 	sw_w32_mask(BIT(19), sched ? BIT(19) : 0, RTL839X_TBL_ACCESS_DATA_2(8));
 	rtl839x_write_scheduling_table(port);
 
 	if (sched == WEIGHTED_FAIR_QUEUE && t == WEIGHTED_ROUND_ROBIN && port != priv->cpu_port) {
-		// Restore OAM state to control register
+		/* Restore OAM state to control register */
 		sw_w32(oam_state, RTL839X_OAM_CTRL);
 
-		// Restore trap action state
+		/* Restore trap action state */
 		sw_w32(oam_port_state, RTL839X_OAM_PORT_ACT_CTRL(port));
 
-		// Restore port egress rate
+		/* Restore port egress rate */
 		rtl839x_set_egress_rate(priv, port, egress_rate);
 	}
 
@@ -463,7 +463,7 @@ void rtl838x_config_qos(void)
 	pr_info("RTL838X_PRI_SEL_TBL_CTRL(i): %08x\n", sw_r32(RTL838X_PRI_SEL_TBL_CTRL(0)));
 	rtl83xx_setup_default_prio2queue();
 
-	// Enable inner (bit 12) and outer (bit 13) priority remapping from DSCP
+	/* Enable inner (bit 12) and outer (bit 13) priority remapping from DSCP */
 	sw_w32_mask(0, BIT(12) | BIT(13), RTL838X_PRI_DSCP_INVLD_CTRL0);
 
 	/* Set default weight for calculating internal priority, in prio selection group 0
@@ -472,7 +472,7 @@ void rtl838x_config_qos(void)
 	v = 3 | (4 << 3) | (5 << 6) | (6 << 9) | (7 << 12);
 	sw_w32(v, RTL838X_PRI_SEL_TBL_CTRL(0));
 
-	// Set the inner and outer priority one-to-one to re-marked outer dot1p priority
+	/* Set the inner and outer priority one-to-one to re-marked outer dot1p priority */
 	v = 0;
 	for (p = 0; p < 8; p++)
 		v |= p << (3 * p);
@@ -484,19 +484,19 @@ void rtl838x_config_qos(void)
 		v |= (dot1p_priority_remapping[p] & 0x7) << (p * 3);
 	sw_w32(v, RTL838X_PRI_SEL_IPRI_REMAP);
 
-	// On all ports set scheduler type to WFQ
+	/* On all ports set scheduler type to WFQ */
 	for (i = 0; i <= soc_info.cpu_port; i++)
 		sw_w32(0, RTL838X_SCHED_P_TYPE_CTRL(i));
 
-	// Enable egress scheduler for CPU-Port
+	/* Enable egress scheduler for CPU-Port */
 	sw_w32_mask(0, BIT(8), RTL838X_SCHED_LB_CTRL(soc_info.cpu_port));
 
-	// Enable egress drop allways on
+	/* Enable egress drop allways on */
 	sw_w32_mask(0, BIT(11), RTL838X_FC_P_EGR_DROP_CTRL(soc_info.cpu_port));
 
-	// Give special trap frames priority 7 (BPDUs) and routing exceptions:
+	/* Give special trap frames priority 7 (BPDUs) and routing exceptions: */
 	sw_w32_mask(0, 7 << 3 | 7, RTL838X_QM_PKT2CPU_INTPRI_2);
-	// Give RMA frames priority 7:
+	/* Give RMA frames priority 7: */
 	sw_w32_mask(0, 7, RTL838X_QM_PKT2CPU_INTPRI_1);
 }
 
@@ -513,18 +513,18 @@ void rtl839x_config_qos(void)
 	for (port = 0; port < soc_info.cpu_port; port++)
 		sw_w32(7, RTL839X_QM_PORT_QNUM(port));
 
-	// CPU-port gets queue number 7
+	/* CPU-port gets queue number 7 */
 	sw_w32(7, RTL839X_QM_PORT_QNUM(soc_info.cpu_port));
 
 	for (port = 0; port <= soc_info.cpu_port; port++) {
 		rtl83xx_set_ingress_priority(port, 0);
 		rtl839x_set_scheduling_algorithm(priv, port, WEIGHTED_FAIR_QUEUE);
 		rtl839x_set_scheduling_queue_weights(priv, port, default_queue_weights);
-		// Do re-marking based on outer tag
+		/* Do re-marking based on outer tag */
 		sw_w32_mask(0, BIT(port % 32), RTL839X_RMK_PORT_DEI_TAG_CTRL(port));
 	}
 
-	// Remap dot1p priorities to internal priority, for this the outer tag needs be re-marked
+	/* Remap dot1p priorities to internal priority, for this the outer tag needs be re-marked */
 	v = 0;
 	for (p = 0; p < 8; p++)
 		v |= (dot1p_priority_remapping[p] & 0x7) << (p * 3);
@@ -537,7 +537,7 @@ void rtl839x_config_qos(void)
 	 */
 	sw_w32(2 << 2, RTL839X_PRI_SEL_DEI2DP_REMAP);
 
-	// Re-mark DEI: 4 bit-fields of 2 bits each, field 0 is bits 0-1, ...
+	/* Re-mark DEI: 4 bit-fields of 2 bits each, field 0 is bits 0-1, ... */
 	sw_w32((0x1 << 2) | (0x1 << 4), RTL839X_RMK_DEI_CTRL);
 
 	/* Set Congestion avoidance drop probability to 0 for drop precedences 0-2 (bits 24-31)

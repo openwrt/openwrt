@@ -24,11 +24,11 @@
 #define RTL9300_TC_INT_IP	BIT(16)
 #define RTL9300_TC_INT_IE	BIT(20)
 
-// Timer modes
+/* Timer modes */
 #define TIMER_MODE_REPEAT	1
 #define TIMER_MODE_ONCE		0
 
-// Minimum divider is 2
+/* Minimum divider is 2 */
 #define DIVISOR_RTL9300		2
 
 #define N_BITS			28
@@ -54,7 +54,7 @@ static irqreturn_t rtl9300_timer_interrupt(int irq, void *dev_id)
 
 	u32 v = readl(rtl_clk->base + RTL9300_TC_INT);
 
-	// Acknowledge the IRQ
+	/* Acknowledge the IRQ */
 	v |= RTL9300_TC_INT_IP;
 	writel(v, rtl_clk->base + RTL9300_TC_INT);
 
@@ -69,7 +69,7 @@ static void rtl9300_clock_stop(void __iomem *base)
 
 	writel(0, base + RTL9300_TC_CTRL);
 
-	// Acknowledge possibly pending IRQ
+	/* Acknowledge possibly pending IRQ */
 	v = readl(base + RTL9300_TC_INT);
 	writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
 }
@@ -132,14 +132,14 @@ static void rtl9300_clock_setup(void __iomem *base)
 {
 	u32 v;
 
-	// Disable timer
+	/* Disable timer */
 	writel(0, base + RTL9300_TC_CTRL);
 
-	// Acknowledge possibly pending IRQ
+	/* Acknowledge possibly pending IRQ */
 	v = readl(base + RTL9300_TC_INT);
 	writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
 
-	// Setup maximum period (for use as clock-source)
+	/* Setup maximum period (for use as clock-source) */
 	writel(0x0fffffff, base + RTL9300_TC_DATA);
 }
 

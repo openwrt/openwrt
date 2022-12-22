@@ -45,7 +45,7 @@ static u32 rtl8231_read(struct rtl8231_gpios *gpios, u32 reg)
 	/* Set execution bit: cleared when operation completed */
 	t |= 1;
 
-	// Start execution
+	/* Start execution */
 	sw_w32(t, gpios->ext_gpio_indrt_access);
 	do {
 		udelay(1);
@@ -76,7 +76,7 @@ static int rtl8231_write(struct rtl8231_gpios *gpios, u32 reg, u32 data)
 	/* Set execution bit: cleared when operation completed */
 	t |= 1;
 
-	// Start execution
+	/* Start execution */
 	sw_w32(t, gpios->ext_gpio_indrt_access);
 	do {
 		udelay(1);
@@ -259,10 +259,10 @@ int rtl8231_init(struct rtl8231_gpios *gpios)
 	gpios->reg_cached = 0;
 
 	if (soc_info.family == RTL8390_FAMILY_ID) {
-		// RTL8390: Enable external gpio in global led control register
+		/* RTL8390: Enable external gpio in global led control register */
 		sw_w32_mask(0x7 << 18, 0x4 << 18, RTL839X_LED_GLB_CTRL);
 	} else if (soc_info.family == RTL8380_FAMILY_ID) {
-		// RTL8380: Enable RTL8231 indirect access mode
+		/* RTL8380: Enable RTL8231 indirect access mode */
 		sw_w32_mask(0, 1, RTL838X_EXTRA_GPIO_CTRL);
 		sw_w32_mask(3, 1, RTL838X_DMY_REG5);
 	}
