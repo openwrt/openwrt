@@ -19,6 +19,11 @@ asus,rp-ac87)
 	ucidef_set_led_rssi "rssimed-wlan1" "RSSIMED" "green:rssimed-wlan1" "wlan1" "40" "100"
 	ucidef_set_led_rssi "rssihigh-wlan1" "RSSIHIGH" "green:rssihigh-wlan1" "wlan1" "70" "100"
 	;;
+asus,rt-ax53u)
+	ucidef_set_led_usbport "usb" "USB" "blue:usb" "usb1-port2"
+	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "mt76-phy0" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "mt76-phy1" "phy1tpt"
+	;;
 asus,rt-n56u-b1)
 	ucidef_set_led_netdev "lan" "LAN link" "blue:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN link" "blue:wan" "wan"
