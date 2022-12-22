@@ -55,7 +55,7 @@ pipeline {
 		    def artifactsDir = "tmp/artifacts"
 
 		    // default values for US build
-		    def buildDir = "${env.HOME}/build-mfw-${buildBranch}-${myDevice}"
+		    def buildDir = "${env.HOME}/build-mfw-${env.BRANCH_NAME}-${myDevice}"
 		    def toolsDir = "${env.HOME}/tools-mfw-${buildBranch}-${myDevice}"
 
                     if (myRegion != 'us') {
