@@ -23,7 +23,6 @@ menu "Global build settings"
 	config DEBUG
 		bool
 		prompt "Compile packages with debugging info"
-		default n
 		help
 		  Adds -g3 to the CFLAGS.
 
@@ -69,7 +68,6 @@ menu "Advanced configuration options (for developers)"
 
 	config BROKEN
 		bool "Show broken packages"
-		default n
 
 	config DOWNLOAD_FOLDER
 		string "Download folder"
@@ -101,19 +99,16 @@ menu "Advanced configuration options (for developers)"
 
 	config CCACHE
 		bool "Use ccache"
-		default n
 		help
 		  Compiler cache; see https://ccache.samba.org/
 
 	config BUILD_LOG
 		bool "Enable log files during build process"
-		default n
 		help
 		  If enabled, log files will be written to the ./log directory.
 
 	config SRC_TREE_OVERRIDE
 		bool "Enable package source tree override"
-		default n
 		help
 		  If enabled, you can force a package to use a git tree as source
 		  code instead of the normal tarball. Create a symlink 'git-src'

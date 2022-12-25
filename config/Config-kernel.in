@@ -47,12 +47,10 @@ config KERNEL_MIPS_FP_SUPPORT
 
 config KERNEL_ARM_PMU
 	bool
-	default n
 	depends on (arm || aarch64)
 
 config KERNEL_X86_VSYSCALL_EMULATION
 	bool "Enable vsyscall emulation"
-	default n
 	depends on x86_64
 	help
 	  This enables emulation of the legacy vsyscall page.  Disabling
@@ -70,12 +68,10 @@ config KERNEL_X86_VSYSCALL_EMULATION
 
 config KERNEL_PERF_EVENTS
 	bool "Compile the kernel with performance events and counters"
-	default n
 	select KERNEL_ARM_PMU if (arm || aarch64)
 
 config KERNEL_PROFILING
 	bool "Compile the kernel with profiling enabled"
-	default n
 	select KERNEL_PERF_EVENTS
 	help
 	  Enable the extended profiling support mechanisms used by profilers such
@@ -255,7 +251,6 @@ config KERNEL_KCOV_INSTRUMENT_ALL
 
 config KERNEL_TASKSTATS
 	bool "Compile the kernel with task resource/io statistics and accounting"
-	default n
 	help
 	  Enable the collection and publishing of task/io statistics and
 	  accounting.  Enable this option to enable i/o monitoring in system
@@ -283,37 +278,30 @@ config KERNEL_KALLSYMS
 config KERNEL_FTRACE
 	bool "Compile the kernel with tracing support"
 	depends on !TARGET_uml
-	default n
 
 config KERNEL_FTRACE_SYSCALLS
 	bool "Trace system calls"
 	depends on KERNEL_FTRACE
-	default n
 
 config KERNEL_ENABLE_DEFAULT_TRACERS
 	bool "Trace process context switches and events"
 	depends on KERNEL_FTRACE
-	default n
 
 config KERNEL_FUNCTION_TRACER
 	bool "Function tracer"
 	depends on KERNEL_FTRACE
-	default n
 
 config KERNEL_FUNCTION_GRAPH_TRACER
 	bool "Function graph tracer"
 	depends on KERNEL_FUNCTION_TRACER
-	default n
 
 config KERNEL_DYNAMIC_FTRACE
 	bool "Enable/disable function tracing dynamically"
 	depends on KERNEL_FUNCTION_TRACER
-	default n
 
 config KERNEL_FUNCTION_PROFILER
 	bool "Function profiler"
 	depends on KERNEL_FUNCTION_TRACER
-	default n
 
 config KERNEL_IRQSOFF_TRACER
 	bool "Interrupts-off Latency Tracer"
@@ -364,7 +352,6 @@ config KERNEL_HIST_TRIGGERS
 
 config KERNEL_DEBUG_KERNEL
 	bool
-	default n
 
 config KERNEL_DEBUG_INFO
 	bool "Compile the kernel with debug information"
@@ -376,7 +363,6 @@ config KERNEL_DEBUG_INFO
 config KERNEL_DEBUG_INFO_BTF
 
 	bool "Enable additional BTF type information"
-	default n
 	depends on !HOST_OS_MACOS
 	depends on KERNEL_DEBUG_INFO && !KERNEL_DEBUG_INFO_REDUCED
 	select DWARVES
@@ -403,12 +389,10 @@ config KERNEL_DEBUG_INFO_REDUCED
 
 config KERNEL_DEBUG_LL_UART_NONE
 	bool
-	default n
 	depends on arm
 
 config KERNEL_DEBUG_LL
 	bool
-	default n
 	depends on arm
 	select KERNEL_DEBUG_LL_UART_NONE
 	help
@@ -417,7 +401,6 @@ config KERNEL_DEBUG_LL
 config KERNEL_DEBUG_VIRTUAL
 	bool "Compile the kernel with VM translations debugging"
 	select KERNEL_DEBUG_KERNEL
-	default n
 	help
 	  Enable checks sanity checks to catch invalid uses of
 	  virt_to_phys()/phys_to_virt() against the non-linear address space.
@@ -425,7 +408,6 @@ config KERNEL_DEBUG_VIRTUAL
 config KERNEL_DYNAMIC_DEBUG
 	bool "Compile the kernel with dynamic printk"
 	select KERNEL_DEBUG_FS
-	default n
 	help
 	  Compiles debug level messages into the kernel, which would not
 	  otherwise be available at runtime. These messages can then be
@@ -437,7 +419,6 @@ config KERNEL_DYNAMIC_DEBUG
 config KERNEL_EARLY_PRINTK
 	bool "Compile the kernel with early printk"
 	default y if TARGET_bcm53xx
-	default n
 	depends on arm
 	select KERNEL_DEBUG_KERNEL
 	select KERNEL_DEBUG_LL if arm
@@ -448,7 +429,6 @@ config KERNEL_EARLY_PRINTK
 
 config KERNEL_KPROBES
 	bool "Compile the kernel with kprobes support"
-	default n
 	select KERNEL_FTRACE
 	select KERNEL_PERF_EVENTS
 	help
@@ -465,7 +445,6 @@ config KERNEL_KPROBE_EVENTS
 
 config KERNEL_BPF_EVENTS
 	bool "Compile the kernel with BPF event support"
-	default n
 	select KERNEL_KPROBES
 	help
 	  Allows to attach BPF programs to kprobe, uprobe and tracepoint events.
@@ -475,7 +454,6 @@ config KERNEL_BPF_EVENTS
 
 config KERNEL_BPF_KPROBE_OVERRIDE
 	bool
-	default n
 	depends on KERNEL_KPROBES
 
 config KERNEL_AIO
@@ -496,7 +474,6 @@ config KERNEL_FANOTIFY
 
 config KERNEL_BLK_DEV_BSG
 	bool "Compile the kernel with SCSI generic v4 support for any block device"
-	default n
 
 config KERNEL_TRANSPARENT_HUGEPAGE
 	bool
@@ -520,7 +497,6 @@ config KERNEL_HUGETLB_PAGE
 	bool "Compile the kernel with HugeTLB support"
 	select KERNEL_TRANSPARENT_HUGEPAGE
 	select KERNEL_HUGETLBFS
-	default n
 
 config KERNEL_MAGIC_SYSRQ
 	bool "Compile the kernel with SysRq support"
@@ -545,7 +521,6 @@ config KERNEL_ELF_CORE
 config KERNEL_PROVE_LOCKING
 	bool "Enable kernel lock checking"
 	select KERNEL_DEBUG_KERNEL
-	default n
 
 config KERNEL_SOFTLOCKUP_DETECTOR
 	bool "Compile the kernel with detect Soft Lockups"
@@ -647,11 +622,9 @@ config USE_RFKILL
 
 config USE_SPARSE
 	bool "Enable sparse check during kernel build"
-	default n
 
 config KERNEL_DEVTMPFS
 	bool "Compile the kernel with device tmpfs enabled"
-	default n
 	help
 	  devtmpfs is a simple, kernel-managed /dev filesystem. The kernel creates
 	  devices nodes for all registered devices to simplify boot, but leaves more
@@ -661,7 +634,6 @@ if KERNEL_DEVTMPFS
 
 	config KERNEL_DEVTMPFS_MOUNT
 		bool "Automatically mount devtmpfs after root filesystem is mounted"
-		default n
 
 endif
 
@@ -672,17 +644,14 @@ config KERNEL_KEYS
 config KERNEL_PERSISTENT_KEYRINGS
 	bool "Enable kernel persistent keyrings"
 	depends on KERNEL_KEYS
-	default n
 
 config KERNEL_KEYS_REQUEST_CACHE
 	bool "Enable temporary caching of the last request_key() result"
 	depends on KERNEL_KEYS
-	default n
 
 config KERNEL_BIG_KEYS
 	bool "Enable large payload keys on kernel keyrings"
 	depends on KERNEL_KEYS
-	default n
 
 #
 # CGROUP support symbols
@@ -696,7 +665,6 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_DEBUG
 		bool "Example debug cgroup subsystem"
-		default n
 		help
 		  This option enables a simple cgroup subsystem that
 		  exports useful debugging information about the cgroups
@@ -707,7 +675,6 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_FREEZER
 		bool "legacy Freezer cgroup subsystem"
-		default n
 		select KERNEL_FREEZER
 		help
 		  Provides a way to freeze and unfreeze all tasks in a
@@ -717,7 +684,6 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_DEVICE
 		bool "legacy Device controller for cgroups"
-		default n
 		help
 		  Provides a cgroup implementing whitelists for devices which
 		  a process in the cgroup can mknod or open.
@@ -725,7 +691,6 @@ if KERNEL_CGROUPS
 
 	config KERNEL_CGROUP_HUGETLB
 		bool "HugeTLB controller"
-		default n
 		select KERNEL_HUGETLB_PAGE
 
 	config KERNEL_CGROUP_PIDS
@@ -754,7 +719,6 @@ if KERNEL_CGROUPS
 
 	config KERNEL_PROC_PID_CPUSET
 		bool "Include legacy /proc/<pid>/cpuset file"
-		default n
 		depends on KERNEL_CPUSETS
 
 	config KERNEL_CGROUP_CPUACCT
@@ -820,7 +784,6 @@ if KERNEL_CGROUPS
 
 	config KERNEL_MEMCG_SWAP_ENABLED
 		bool "Memory Resource Controller Swap Extension enabled by default"
-		default n
 		depends on KERNEL_MEMCG_SWAP
 		help
 		  Memory Resource Controller Swap Extension comes with its price in
@@ -849,7 +812,6 @@ if KERNEL_CGROUPS
 	config KERNEL_CGROUP_PERF
 		bool "Enable perf_event per-cpu per-container group (cgroup) monitoring"
 		select KERNEL_PERF_EVENTS
-		default n
 		help
 		  This option extends the per-cpu mode to restrict monitoring to
 		  threads which belong to the cgroup specified and run on the
@@ -926,7 +888,6 @@ if KERNEL_CGROUPS
 
 	config KERNEL_DEBUG_BLK_CGROUP
 		bool "Enable Block IO controller debugging"
-		default n
 		depends on KERNEL_BLK_CGROUP
 		help
 		  Enable some debugging help. Currently it exports additional stat
@@ -934,15 +895,12 @@ if KERNEL_CGROUPS
 
 	config KERNEL_NET_CLS_CGROUP
 		bool "legacy Control Group Classifier"
-		default n
 
 	config KERNEL_CGROUP_NET_CLASSID
 		bool "legacy Network classid cgroup"
-		default n
 
 	config KERNEL_CGROUP_NET_PRIO
 		bool "legacy Network priority cgroup"
-		default n
 
 endif
 
@@ -1168,7 +1126,6 @@ endif
 menu "Filesystem ACL and attr support options"
 	config USE_FS_ACL_ATTR
 		bool "Use filesystem ACL and attr support by default"
-		default n
 		help
 		  Make using ACLs (e.g. POSIX ACL, NFSv4 ACL) the default
 		  for kernel and packages, except tmpfs, flash filesystems,
@@ -1193,17 +1150,14 @@ menu "Filesystem ACL and attr support options"
 	config KERNEL_F2FS_FS_POSIX_ACL
 		bool "Enable POSIX ACL for F2FS Filesystems"
 		select KERNEL_FS_POSIX_ACL
-		default n
 
 	config KERNEL_JFFS2_FS_POSIX_ACL
 		bool "Enable POSIX ACL for JFFS2 Filesystems"
 		select KERNEL_FS_POSIX_ACL
-		default n
 
 	config KERNEL_TMPFS_POSIX_ACL
 		bool "Enable POSIX ACL for TMPFS Filesystems"
 		select KERNEL_FS_POSIX_ACL
-		default n
 
 	config KERNEL_CIFS_ACL
 		bool "Enable CIFS ACLs"
@@ -1226,15 +1180,12 @@ menu "Filesystem ACL and attr support options"
 
 	config KERNEL_NFS_V3_ACL_SUPPORT
 		bool "Enable ACLs for NFSv3"
-		default n
 
 	config KERNEL_NFSD_V2_ACL_SUPPORT
 		bool "Enable ACLs for NFSDv2"
-		default n
 
 	config KERNEL_NFSD_V3_ACL_SUPPORT
 		bool "Enable ACLs for NFSDv3"
-		default n
 
 	config KERNEL_REISER_FS_POSIX_ACL
 		bool "Enable POSIX ACLs for ReiserFS"

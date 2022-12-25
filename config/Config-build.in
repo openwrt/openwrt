@@ -5,7 +5,6 @@
 
 config EXPERIMENTAL
 	bool "Enable experimental features by default"
-	default n
 	help
 	  Set this option to build with latest bleeding edge features
 	  which may or may not work as expected.
@@ -42,7 +41,6 @@ menu "Global build settings"
 
 	config BUILDBOT
 		bool "Set build defaults for automatic builds (e.g. via buildbot)"
-		default n
 		help
 		  This option changes several defaults to be more suitable for
 		  automatic builds. This includes the following changes:
@@ -75,10 +73,8 @@ menu "Global build settings"
 
 	config DISPLAY_SUPPORT
 		bool "Show packages that require graphics support (local or remote)"
-		default n
 
 	config BUILD_PATENTED
-		default n
 		bool "Compile with support for patented functionality"
 		help
 		  When this option is disabled, software which provides patented functionality
@@ -86,7 +82,6 @@ menu "Global build settings"
 		  functionality, this optional support will get disabled for this package.
 
 	config BUILD_NLS
-		default n
 		bool "Compile with full language support"
 		help
 		  When this option is enabled, packages are built with the full versions of
@@ -100,7 +95,6 @@ menu "Global build settings"
 	config CLEAN_IPKG
 		bool
 		prompt "Remove ipkg/opkg status data files in final images"
-		default n
 		help
 		  This removes all ipkg/opkg status data files from the target directory
 		  before building the root filesystem.
@@ -108,14 +102,12 @@ menu "Global build settings"
 	config IPK_FILES_CHECKSUMS
 		bool
 		prompt "Record files checksums in package metadata"
-		default n
 		help
 		  This makes file checksums part of package metadata. It increases size
 		  but provides you with pkg_check command to check for flash corruptions.
 
 	config INCLUDE_CONFIG
 		bool "Include build configuration in firmware" if DEVEL
-		default n
 		help
 		  If enabled, buildinfo files will be stored in /etc/build.* of firmware.
 
@@ -149,7 +141,6 @@ menu "Global build settings"
 	config DEBUG
 		bool
 		prompt "Compile packages with debugging info"
-		default n
 		help
 		  Adds -g3 to the CFLAGS.
 
