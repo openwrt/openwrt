@@ -60,12 +60,21 @@
 
 		partition@0 {
 			label = "u-boot";
-			reg = <0x0 0xe0000>;
+			reg = <0x0 0x80000>;
 			read-only;
 		};
 
-		partition@e0000 {
+		/*
+		 * u-boot gets split here while keeping u-boot read-only,
+		 * which allows safe usage of fw_setenv
+		 */
+		partition@80000 {
 			label = "u-boot-env";
+			reg = <0x80000 0x60000>;
+		};
+
+		partition@e0000 {
+			label = "nvram";
 			reg = <0xe0000 0x100000>;
 			read-only;
 		};
