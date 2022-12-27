@@ -1,0 +1,54 @@
+From 3cb53c10831be59d967d9dce8e7980fee4703500 Mon Sep 17 00:00:00 2001
+From: Sebastian Huber <sebastian.huber@embedded-brains.de>
+Date: Tue, 18 Jan 2022 12:44:53 +0100
+Subject: [PATCH] powerpc: Fix asm machine directive for some CPUs
+
+For some CPUs, the assembler machine directive cannot be determined by ISA
+flags.
+
+gcc/
+
+	PR target/104090
+	* config/rs6000/rs6000.c (rs6000_machine_from_flags): Use also
+	rs6000_cpu.
+---
+ gcc/config/rs6000/rs6000.c | 28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+--- a/gcc/config/rs6000/rs6000.c
++++ b/gcc/config/rs6000/rs6000.c
+@@ -5780,6 +5780,34 @@ const char *rs6000_machine;
+ const char *
+ rs6000_machine_from_flags (void)
+ {
++  /* For some CPUs, the machine cannot be determined by ISA flags.  We have to
++     check them first.  */
++  switch (rs6000_cpu)
++    {
++    case PROCESSOR_PPC8540:
++    case PROCESSOR_PPC8548:
++      return "e500";
++
++    case PROCESSOR_PPCE300C2:
++    case PROCESSOR_PPCE300C3:
++      return "e300";
++
++    case PROCESSOR_PPCE500MC:
++      return "e500mc";
++
++    case PROCESSOR_PPCE500MC64:
++      return "e500mc64";
++
++    case PROCESSOR_PPCE5500:
++      return "e5500";
++
++    case PROCESSOR_PPCE6500:
++      return "e6500";
++
++    default:
++      break;
++    }
++
+   HOST_WIDE_INT flags = rs6000_isa_flags;
+ 
+   /* Disable the flags that should never influence the .machine selection.  */
