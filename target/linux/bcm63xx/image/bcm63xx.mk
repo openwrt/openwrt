@@ -816,6 +816,18 @@ define Device/inventel_livebox-1
 endef
 TARGET_DEVICES += inventel_livebox-1
 
+### Netcomm ###
+define Device/netcomm_3g42wt
+  $(Device/bcm63xx)
+  DEVICE_VENDOR := Netcomm
+  DEVICE_MODEL := 3G42WT
+  CHIP_ID := 6368
+  FLASH_MB := 8
+  CFE_BOARD_ID := 96369G-1331N
+  DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+endef
+TARGET_DEVICES += netcomm_3g42wt
+
 ### Netgear ###
 define Device/netgear_cvg834g
   $(Device/bcm33xx)

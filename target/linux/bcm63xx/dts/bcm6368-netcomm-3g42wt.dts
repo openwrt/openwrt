@@ -1,0 +1,60 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6368.dtsi"
+
+#include <dt-bindings/input/input.h>
+
+/ {
+       model = "Netcomm 3G42WT";
+       compatible = "netcomm,3g42wt", "brcm,bcm6368";
+
+       chosen {
+               bootargs = "rootfstype=squashfs noinitrd console=ttyS0,115200";
+               stdout-path = "serial0:115200n8";
+       };
+
+       keys {
+               compatible = "gpio-keys-polled";
+               #address-cells = <1>;
+               #size-cells = <0>;
+               poll-interval = <20>;
+
+	       reset {
+                       label = "reset";
+                       gpios = <&pinctrl 34 1>;
+                       linux,code = <KEY_RESTART>;
+                       debounce-interval = <60>;
+               };
+       };
+
+       leds {
+          	compatible = "gpio-leds";
+	        lan1_blue {
+			label = "blue:lan1";
+			gpios = <&pinctrl 6 1>;
+	        };
+	        lan2_blue {
+			label = "blue:lan2";
+			gpios = <&pinctrl 7 1>;
+	        };
+	        lan3_blue {
+			label = "blue:lan3";
+			gpios = <&pinctrl 8 1>;
+	        };
+	        lan4_blue {
+			label = "blue:lan4";
+			gpios = <&pinctrl 9 1>;
+	        };
+       };
+};
+
+&pflash {
+       status = "okay";
+       partitions {
+		compatible = "brcm,bcm963xx-cfe-nor-partitions";
+       };
+};
+
+&uart0 {
+       status = "okay";
+};

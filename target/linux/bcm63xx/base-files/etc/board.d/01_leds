@@ -60,6 +60,9 @@ inventel,livebox-1)
 	ucidef_set_led_netdev "wan" "WAN" "red:adsl" "eth1"
 	ucidef_set_led_netdev "wlan0" "WIFI" "red:wifi" "wlan0"
 	;;
+netcomm,3g42wt)
+	ucidef_set_led_netdev "wan" "WAN" "blue:lan4" "eth0.2"
+	;;
 netgear,dgnd3700-v1)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0.1"
 	ucidef_set_led_netdev "wan" "WAN" "green:inet" "eth0.2"
