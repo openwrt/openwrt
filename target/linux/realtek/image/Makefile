@@ -102,11 +102,11 @@ define Device/Default
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := \
 	append-kernel | \
-	append-metadata | \
+	pad-to 64k | \
 	append-rootfs | \
-	check-size | \
 	pad-rootfs | \
-	pad-to 64k
+	check-size | \
+	append-metadata
 endef
 
 include $(SUBTARGET).mk
