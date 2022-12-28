@@ -218,21 +218,9 @@ define Device/tplink_sg2210p-v3
 endef
 TARGET_DEVICES += tplink_sg2210p-v3
 
-define Device/zyxel_gs1900
-  SOC := rtl8380
-  IMAGE_SIZE := 6976k
-  DEVICE_VENDOR := ZyXEL
-  UIMAGE_MAGIC := 0x83800000
-  KERNEL_INITRAMFS := \
-	kernel-bin | \
-	append-dtb | \
-	gzip | \
-	zyxel-vers | \
-	uImage gzip
-endef
-
 define Device/zyxel_gs1900-10hp
   $(Device/zyxel_gs1900)
+  SOC := rtl8380
   DEVICE_MODEL := GS1900-10HP
   ZYXEL_VERS := AAZI
 endef
@@ -248,6 +236,7 @@ TARGET_DEVICES += zyxel_gs1900-16
 
 define Device/zyxel_gs1900-8
   $(Device/zyxel_gs1900)
+  SOC := rtl8380
   DEVICE_MODEL := GS1900-8
   ZYXEL_VERS := AAHH
 endef
@@ -255,6 +244,7 @@ TARGET_DEVICES += zyxel_gs1900-8
 
 define Device/zyxel_gs1900-8hp-v1
   $(Device/zyxel_gs1900)
+  SOC := rtl8380
   DEVICE_MODEL := GS1900-8HP
   DEVICE_VARIANT := v1
   ZYXEL_VERS := AAHI
@@ -264,6 +254,7 @@ TARGET_DEVICES += zyxel_gs1900-8hp-v1
 
 define Device/zyxel_gs1900-8hp-v2
   $(Device/zyxel_gs1900)
+  SOC := rtl8380
   DEVICE_MODEL := GS1900-8HP
   DEVICE_VARIANT := v2
   ZYXEL_VERS := AAHI

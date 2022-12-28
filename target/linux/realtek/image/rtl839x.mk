@@ -37,17 +37,9 @@ endef
 TARGET_DEVICES += tplink_sg2452p-v4
 
 define Device/zyxel_gs1900-48
+  $(Device/zyxel_gs1900)
   SOC := rtl8393
-  IMAGE_SIZE := 6976k
-  DEVICE_VENDOR := ZyXEL
-  UIMAGE_MAGIC := 0x83800000
-  ZYXEL_VERS := AAHN
   DEVICE_MODEL := GS1900-48
-  KERNEL_INITRAMFS := \
-	kernel-bin | \
-	append-dtb | \
-	gzip | \
-	zyxel-vers $$$$(ZYXEL_VERS) | \
-	uImage gzip
+  ZYXEL_VERS := AAHN
 endef
 TARGET_DEVICES += zyxel_gs1900-48
