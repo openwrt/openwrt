@@ -48,11 +48,11 @@ static int rtl9300_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 {
 	struct rtl9300_mux *mux = i2c_mux_priv(muxc);
 
-	// Set SCL pin
+	/* Set SCL pin */
 	REG_MASK(channels[chan].scl_num, 0,
 		 BIT(RTL9300_I2C_CTRL1_GPIO8_SCL_SEL), RTL9300_I2C_CTRL1);
 
-	// Set SDA pin
+	/* Set SDA pin */
 	REG_MASK(channels[chan].scl_num, 0x7 << RTL9300_I2C_CTRL1_SDA_OUT_SEL,
 		 channels[chan].sda_num << RTL9300_I2C_CTRL1_SDA_OUT_SEL, RTL9300_I2C_CTRL1);
 
@@ -66,11 +66,11 @@ static int rtl9310_i2c_mux_select(struct i2c_mux_core *muxc, u32 chan)
 {
 	struct rtl9300_mux *mux = i2c_mux_priv(muxc);
 
-	// Set SCL pin
+	/* Set SCL pin */
 	REG_MASK(0, 0, BIT(RTL9310_I2C_MST_IF_SEL_GPIO_SCL_SEL + channels[chan].scl_num),
 		 RTL9310_I2C_MST_IF_SEL);
 
-	// Set SDA pin
+	/* Set SDA pin */
 	REG_MASK(channels[chan].scl_num, 0xf << RTL9310_I2C_CTRL_SDA_OUT_SEL,
 		 channels[chan].sda_num << RTL9310_I2C_CTRL_SDA_OUT_SEL, RTL9310_I2C_CTRL);
 
@@ -90,7 +90,7 @@ static void rtl9300_sda_sel(struct i2c_mux_core *muxc, int pin)
 	struct rtl9300_mux *mux = i2c_mux_priv(muxc);
 	u32 v;
 
-	// Set SDA pin to I2C functionality
+	/* Set SDA pin to I2C functionality */
 	v = readl(REG(0, RTL9300_I2C_MST_GLB_CTRL));
 	v |= BIT(pin);
 	writel(v, REG(0, RTL9300_I2C_MST_GLB_CTRL));
@@ -101,7 +101,7 @@ static void rtl9310_sda_sel(struct i2c_mux_core *muxc, int pin)
 	struct rtl9300_mux *mux = i2c_mux_priv(muxc);
 	u32 v;
 
-	// Set SDA pin to I2C functionality
+	/* Set SDA pin to I2C functionality */
 	v = readl(REG(0, RTL9310_I2C_MST_IF_SEL));
 	v |= BIT(pin);
 	writel(v, REG(0, RTL9310_I2C_MST_IF_SEL));
@@ -123,8 +123,8 @@ static struct device_node *mux_parent_adapter(struct device *dev, struct rtl9300
 	if (!parent)
 		return ERR_PTR(-EPROBE_DEFER);
 
-	if (!(of_device_is_compatible(parent_np, "realtek,rtl9300-i2c")
-		|| of_device_is_compatible(parent_np, "realtek,rtl9310-i2c"))){
+	if (!(of_device_is_compatible(parent_np, "realtek,rtl9300-i2c") ||
+	    of_device_is_compatible(parent_np, "realtek,rtl9310-i2c"))){
 		dev_err(dev, "I2C parent not an RTL9300 I2C controller\n");
 		return ERR_PTR(-ENODEV);
 	}
@@ -147,7 +147,7 @@ struct i2c_mux_data rtl9300_i2c_mux_data = {
 };
 
 struct i2c_mux_data rtl9310_i2c_mux_data = {
-	.scl0_pin = 13, 
+	.scl0_pin = 13,
 	.scl1_pin = 14,
 	.sda0_pin = 0,
 	.sda_pins = 16,
@@ -177,7 +177,7 @@ static int rtl9300_i2c_mux_probe(struct platform_device *pdev)
 	int ret;
 
 	pr_info("%s probing I2C adapter\n", __func__);
-	
+
 	if (!node) {
 		dev_err(dev, "No DT found\n");
 		return -EINVAL;

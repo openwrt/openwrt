@@ -36,8 +36,7 @@ extern struct mutex smi_lock;
 #define RTL821X_PAGE_STATE		0x0b80
 #define RTL821X_PAGE_PATCH		0x0b82
 
-/*
- * Using the special page 0xfff with the MDIO controller found in
+/* Using the special page 0xfff with the MDIO controller found in
  * RealTek SoCs allows to access the PHY in RAW mode, ie. bypassing
  * the cache and paging engine of the MDIO controller.
  */
@@ -55,8 +54,7 @@ extern struct mutex smi_lock;
 
 #define RTL9300_PHY_ID_MASK 0xf0ffffff
 
-/*
- * This lock protects the state of the SoC automatically polling the PHYs over the SMI
+/* This lock protects the state of the SoC automatically polling the PHYs over the SMI
  * bus to detect e.g. link and media changes. For operations on the PHYs such as
  * patching or other configuration changes such as EEE, polling needs to be disabled
  * since otherwise these operations may fails or lead to unpredictable results.
@@ -83,7 +81,7 @@ static u64 disable_polling(int port)
 		saved_state <<= 32;
 		saved_state |= sw_r32(RTL839X_SMI_PORT_POLLING_CTRL);
 		sw_w32_mask(BIT(port % 32), 0,
-			    RTL839X_SMI_PORT_POLLING_CTRL + ((port >> 5) << 2));
+		            RTL839X_SMI_PORT_POLLING_CTRL + ((port >> 5) << 2));
 		break;
 	case RTL9300_FAMILY_ID:
 		saved_state = sw_r32(RTL930X_SMI_POLL_CTRL);
@@ -145,13 +143,12 @@ static void rtl8380_phy_reset(struct phy_device *phydev)
 	phy_modify(phydev, 0, BIT(15), BIT(15));
 }
 
-// The access registers for SDS_MODE_SEL and the LSB for each SDS within
+/* The access registers for SDS_MODE_SEL and the LSB for each SDS within */
 u16 rtl9300_sds_regs[] = { 0x0194, 0x0194, 0x0194, 0x0194, 0x02a0, 0x02a0, 0x02a0, 0x02a0,
 			   0x02A4, 0x02A4, 0x0198, 0x0198 };
 u8  rtl9300_sds_lsb[]  = { 0, 6, 12, 18, 0, 6, 12, 18, 0, 6, 0, 6};
 
-/*
- * Reset the SerDes by powering it off and set a new operations mode
+/* Reset the SerDes by powering it off and set a new operations mode
  * of the SerDes. 0x1f is off. Other modes are
  * 0x02: SGMII		0x04: 1000BX_FIBER	0x05: FIBER100
  * 0x06: QSGMII		0x09: RSGMII		0x0d: USXGMII
@@ -176,7 +173,7 @@ void rtl9300_sds_rst(int sds_num, u32 mode)
 	mdelay(10);
 
 	pr_debug("%s: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n", __func__,
-		sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
+	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
 }
 
 void rtl9300_sds_set(int sds_num, u32 mode)
@@ -192,7 +189,7 @@ void rtl9300_sds_set(int sds_num, u32 mode)
 	mdelay(10);
 
 	pr_debug("%s: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n", __func__,
-		sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
+	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
 }
 
 u32 rtl9300_sds_mode_get(int sds_num)
@@ -210,8 +207,7 @@ u32 rtl9300_sds_mode_get(int sds_num)
 	return v & 0x1f;
 }
 
-/*
- * On the RTL839x family of SoCs with inbuilt SerDes, these SerDes are accessed through
+/* On the RTL839x family of SoCs with inbuilt SerDes, these SerDes are accessed through
  * a 2048 bit register that holds the contents of the PHY being simulated by the SoC.
  */
 int rtl839x_read_sds_phy(int phy_addr, int phy_reg)
@@ -223,8 +219,7 @@ int rtl839x_read_sds_phy(int phy_addr, int phy_reg)
 	if (phy_addr == 49)
 		offset = 0x100;
 
-	/*
-	 * For the RTL8393 internal SerDes, we simulate a PHY ID in registers 2/3
+	/* For the RTL8393 internal SerDes, we simulate a PHY ID in registers 2/3
 	 * which would otherwise read as 0.
 	 */
 	if (soc_info.id == 0x8393) {
@@ -234,8 +229,7 @@ int rtl839x_read_sds_phy(int phy_addr, int phy_reg)
 			return 0x8393;
 	}
 
-	/*
-	 * Register RTL839X_SDS12_13_XSG0 is 2048 bit broad, the MSB (bit 15) of the
+	/* Register RTL839X_SDS12_13_XSG0 is 2048 bit broad, the MSB (bit 15) of the
 	 * 0th PHY register is bit 1023 (in byte 0x80). Because PHY-registers are 16
 	 * bit broad, we offset by reg << 1. In the SoC 2 registers are stored in
 	 * one 32 bit register.
@@ -247,11 +241,11 @@ int rtl839x_read_sds_phy(int phy_addr, int phy_reg)
 		val = (val >> 16) & 0xffff;
 	else
 		val &= 0xffff;
+
 	return val;
 }
 
-/*
- * On the RTL930x family of SoCs, the internal SerDes are accessed through an IO
+/* On the RTL930x family of SoCs, the internal SerDes are accessed through an IO
  * register which simulates commands to an internal MDIO bus.
  */
 int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg)
@@ -314,6 +308,7 @@ int rtl931x_read_sds_phy(int phy_addr, int page, int phy_reg)
 		return -EIO;
 
 	pr_debug("%s: returning %04x\n", __func__, sw_r32(RTL931X_SERDES_INDRT_DATA_CTRL) & 0xffff);
+
 	return sw_r32(RTL931X_SERDES_INDRT_DATA_CTRL) & 0xffff;
 }
 
@@ -326,7 +321,7 @@ int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v)
 	sw_w32(cmd, RTL931X_SERDES_INDRT_ACCESS_CTRL);
 
 	sw_w32(v, RTL931X_SERDES_INDRT_DATA_CTRL);
-		
+
 	cmd =  sw_r32(RTL931X_SERDES_INDRT_ACCESS_CTRL) | 0x3;
 	sw_w32(cmd, RTL931X_SERDES_INDRT_ACCESS_CTRL);
 
@@ -342,8 +337,7 @@ int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v)
 	return 0;
 }
 
-/*
- * On the RTL838x SoCs, the internal SerDes is accessed through direct access to
+/* On the RTL838x SoCs, the internal SerDes is accessed through direct access to
  * standard PHY registers, where a 32 bit register holds a 16 bit word as found
  * in a standard page 0 of a PHY
  */
@@ -439,30 +433,31 @@ static int rtl8226_write_page(struct phy_device *phydev, int page)
 
 static int rtl8226_read_status(struct phy_device *phydev)
 {
-	int ret = 0, i;
+	int ret = 0;
 	u32 val;
 
-// TODO: ret = genphy_read_status(phydev);
-// 	if (ret < 0) {
-// 		pr_info("%s: genphy_read_status failed\n", __func__);
-// 		return ret;
-// 	}
+/* TODO: ret = genphy_read_status(phydev);
+ * 	if (ret < 0) {
+ * 		pr_info("%s: genphy_read_status failed\n", __func__);
+ * 		return ret;
+ * 	}
+ */
 
-	// Link status must be read twice
-	for (i = 0; i < 2; i++) {
+	/* Link status must be read twice */
+	for (int i = 0; i < 2; i++)
 		val = phy_read_mmd(phydev, MMD_VEND2, 0xA402);
-	}
+
 	phydev->link = val & BIT(2) ? 1 : 0;
 	if (!phydev->link)
 		goto out;
 
-	// Read duplex status
+	/* Read duplex status */
 	val = phy_read_mmd(phydev, MMD_VEND2, 0xA434);
 	if (val < 0)
 		goto out;
 	phydev->duplex = !!(val & BIT(3));
 
-	// Read speed
+	/* Read speed */
 	val = phy_read_mmd(phydev, MMD_VEND2, 0xA434);
 	switch (val & 0x0630) {
 	case 0x0000:
@@ -486,6 +481,7 @@ static int rtl8226_read_status(struct phy_device *phydev)
 	default:
 		break;
 	}
+
 out:
 	return ret;
 }
@@ -501,24 +497,24 @@ static int rtl8226_advertise_aneg(struct phy_device *phydev)
 	if (v < 0)
 		goto out;
 
-	v |= BIT(5); // HD 10M
-	v |= BIT(6); // FD 10M
-	v |= BIT(7); // HD 100M
-	v |= BIT(8); // FD 100M
+	v |= BIT(5); /* HD 10M */
+	v |= BIT(6); /* FD 10M */
+	v |= BIT(7); /* HD 100M */
+	v |= BIT(8); /* FD 100M */
 
 	ret = phy_write_mmd(phydev, MMD_AN, 16, v);
 
-	// Allow 1GBit
+	/* Allow 1GBit */
 	v = phy_read_mmd(phydev, MMD_VEND2, 0xA412);
 	if (v < 0)
 		goto out;
-	v |= BIT(9); // FD 1000M
+	v |= BIT(9); /* FD 1000M */
 
 	ret = phy_write_mmd(phydev, MMD_VEND2, 0xA412, v);
 	if (ret < 0)
 		goto out;
 
-	// Allow 2.5G
+	/* Allow 2.5G */
 	v = phy_read_mmd(phydev, MMD_AN, 32);
 	if (v < 0)
 		goto out;
@@ -540,17 +536,17 @@ static int rtl8226_config_aneg(struct phy_device *phydev)
 		ret = rtl8226_advertise_aneg(phydev);
 		if (ret)
 			goto out;
-		// AutoNegotiationEnable
+		/* AutoNegotiationEnable */
 		v = phy_read_mmd(phydev, MMD_AN, 0);
 		if (v < 0)
 			goto out;
 
-		v |= BIT(12); // Enable AN
+		v |= BIT(12); /* Enable AN */
 		ret = phy_write_mmd(phydev, MMD_AN, 0, v);
 		if (ret < 0)
 			goto out;
 
-		// RestartAutoNegotiation
+		/* RestartAutoNegotiation */
 		v = phy_read_mmd(phydev, MMD_VEND2, 0xA400);
 		if (v < 0)
 			goto out;
@@ -559,14 +555,14 @@ static int rtl8226_config_aneg(struct phy_device *phydev)
 		ret = phy_write_mmd(phydev, MMD_VEND2, 0xA400, v);
 	}
 
-//	TODO: ret = __genphy_config_aneg(phydev, ret);
+/*	TODO: ret = __genphy_config_aneg(phydev, ret); */
 
 out:
 	return ret;
 }
 
 static int rtl8226_get_eee(struct phy_device *phydev,
-				     struct ethtool_eee *e)
+			   struct ethtool_eee *e)
 {
 	u32 val;
 	int addr = phydev->mdio.addr;
@@ -597,11 +593,11 @@ static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 
 	poll_state = disable_polling(port);
 
-	// Remember aneg state
+	/* Remember aneg state */
 	val = phy_read_mmd(phydev, MMD_AN, 0);
 	an_enabled = !!(val & BIT(12));
 
-	// Setup 100/1000MBit
+	/* Setup 100/1000MBit */
 	val = phy_read_mmd(phydev, MMD_AN, 60);
 	if (e->eee_enabled)
 		val |= 0x6;
@@ -609,7 +605,7 @@ static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 		val &= 0x6;
 	phy_write_mmd(phydev, MMD_AN, 60, val);
 
-	// Setup 2.5GBit
+	/* Setup 2.5GBit */
 	val = phy_read_mmd(phydev, MMD_AN, 62);
 	if (e->eee_enabled)
 		val |= 0x1;
@@ -617,7 +613,7 @@ static int rtl8226_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 		val &= 0x1;
 	phy_write_mmd(phydev, MMD_AN, 62, val);
 
-	// RestartAutoNegotiation
+	/* RestartAutoNegotiation */
 	val = phy_read_mmd(phydev, MMD_VEND2, 0xA400);
 	val |= BIT(9);
 	phy_write_mmd(phydev, MMD_VEND2, 0xA400, val);
@@ -706,13 +702,13 @@ static int rtl8390_configure_generic(struct phy_device *phydev)
 
 	/* Internal RTL8218B, version 2 */
 	phydev_info(phydev, "Detected unknown %x\n", val);
+
 	return 0;
 }
 
 static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 {
 	u32 val, phy_id;
-	int i, p, ipd_flag;
 	int mac = phydev->mdio.addr;
 	struct fw_header *h;
 	u32 *rtl838x_6275B_intPhy_perport;
@@ -744,14 +740,12 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 		return -1;
 	}
 
-	rtl838x_6275B_intPhy_perport = (void *)h + sizeof(struct fw_header)
-			+ h->parts[8].start;
+	rtl838x_6275B_intPhy_perport = (void *)h + sizeof(struct fw_header) + h->parts[8].start;
+	rtl8218b_6276B_hwEsd_perport = (void *)h + sizeof(struct fw_header) + h->parts[9].start;
 
-	rtl8218b_6276B_hwEsd_perport = (void *)h + sizeof(struct fw_header)
-			+ h->parts[9].start;
-
-	if (sw_r32(RTL838X_DMY_REG31) == 0x1)
-		ipd_flag = 1;
+	if (sw_r32(RTL838X_DMY_REG31) == 0x1) {
+		int ipd_flag = 1;
+	}
 
 	val = phy_read(phydev, 0);
 	if (val & BIT(11))
@@ -761,12 +755,14 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 	msleep(100);
 
 	/* Ready PHY for patch */
-	for (p = 0; p < 8; p++) {
+	for (int p = 0; p < 8; p++) {
 		phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
 		phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW, 0x10, 0x0010);
 	}
 	msleep(500);
-	for (p = 0; p < 8; p++) {
+	for (int p = 0; p < 8; p++) {
+		int i;
+
 		for (i = 0; i < 100 ; i++) {
 			val = phy_package_port_read_paged(phydev, p, RTL821X_PAGE_STATE, 0x10);
 			if (val & 0x40)
@@ -774,34 +770,36 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 		}
 		if (i >= 100) {
 			phydev_err(phydev,
-				   "ERROR: Port %d not ready for patch.\n",
-				   mac + p);
+			           "ERROR: Port %d not ready for patch.\n",
+			           mac + p);
 			return -1;
 		}
 	}
-	for (p = 0; p < 8; p++) {
+	for (int p = 0; p < 8; p++) {
+		int i;
+
 		i = 0;
 		while (rtl838x_6275B_intPhy_perport[i * 2]) {
 			phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW,
-				rtl838x_6275B_intPhy_perport[i * 2],
-				rtl838x_6275B_intPhy_perport[i * 2 + 1]);
+			                             rtl838x_6275B_intPhy_perport[i * 2],
+			                             rtl838x_6275B_intPhy_perport[i * 2 + 1]);
 			i++;
 		}
 		i = 0;
 		while (rtl8218b_6276B_hwEsd_perport[i * 2]) {
 			phy_package_port_write_paged(phydev, p, RTL83XX_PAGE_RAW,
-				rtl8218b_6276B_hwEsd_perport[i * 2],
-				rtl8218b_6276B_hwEsd_perport[i * 2 + 1]);
+			                             rtl8218b_6276B_hwEsd_perport[i * 2],
+			                             rtl8218b_6276B_hwEsd_perport[i * 2 + 1]);
 			i++;
 		}
 	}
+
 	return 0;
 }
 
 static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 {
 	u32 val, ipd, phy_id;
-	int i, l;
 	int mac = phydev->mdio.addr;
 	struct fw_header *h;
 	u32 *rtl8380_rtl8218b_perchip;
@@ -836,14 +834,9 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 		return -1;
 	}
 
-	rtl8380_rtl8218b_perchip = (void *)h + sizeof(struct fw_header)
-			+ h->parts[0].start;
-
-	rtl8218B_6276B_rtl8380_perport = (void *)h + sizeof(struct fw_header)
-			+ h->parts[1].start;
-
-	rtl8380_rtl8218b_perport = (void *)h + sizeof(struct fw_header)
-			+ h->parts[2].start;
+	rtl8380_rtl8218b_perchip = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
+	rtl8218B_6276B_rtl8380_perport = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
+	rtl8380_rtl8218b_perport = (void *)h + sizeof(struct fw_header) + h->parts[2].start;
 
 	val = phy_read(phydev, 0);
 	if (val & (1 << 11))
@@ -860,24 +853,22 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 
 	phydev_info(phydev, "Detected chip revision %04x\n", val);
 
-	i = 0;
-	while (rtl8380_rtl8218b_perchip[i * 3]
-		&& rtl8380_rtl8218b_perchip[i * 3 + 1]) {
-			phy_package_port_write_paged(phydev, rtl8380_rtl8218b_perchip[i * 3],
-					  RTL83XX_PAGE_RAW, rtl8380_rtl8218b_perchip[i * 3 + 1],
-					  rtl8380_rtl8218b_perchip[i * 3 + 2]);
-		i++;
+	for (int i = 0; rtl8380_rtl8218b_perchip[i * 3] &&
+	                rtl8380_rtl8218b_perchip[i * 3 + 1]; i++) {
+		phy_package_port_write_paged(phydev, rtl8380_rtl8218b_perchip[i * 3],
+					     RTL83XX_PAGE_RAW, rtl8380_rtl8218b_perchip[i * 3 + 1],
+					     rtl8380_rtl8218b_perchip[i * 3 + 2]);
 	}
 
 	/* Enable PHY */
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
 		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, 0x00, 0x1140);
 	}
 	mdelay(100);
 
 	/* Request patch */
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
 		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
 		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, 0x10, 0x0010);
 	}
@@ -885,7 +876,9 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	mdelay(300);
 
 	/* Verify patch readiness */
-	for (i = 0; i < 8; i++) {
+	for (int i = 0; i < 8; i++) {
+		int l;
+
 		for (l = 0; l < 100; l++) {
 			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_STATE, 0x10);
 			if (val & 0x40)
@@ -908,14 +901,12 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	phy_write_paged(phydev, 0, 30, 0);
 	ipd = (ipd >> 4) & 0xf; /* unused ? */
 
-	i = 0;
-	while (rtl8218B_6276B_rtl8380_perport[i * 2]) {
+	for (int i = 0; rtl8218B_6276B_rtl8380_perport[i * 2]; i++) {
 		phy_write_paged(phydev, RTL83XX_PAGE_RAW, rtl8218B_6276B_rtl8380_perport[i * 2],
-				  rtl8218B_6276B_rtl8380_perport[i * 2 + 1]);
-		i++;
+		                rtl8218B_6276B_rtl8380_perport[i * 2 + 1]);
 	}
 
-	/*Disable broadcast ID*/
+	/* Disable broadcast ID */
 	rtl821x_phy_setup_package_broadcast(phydev, false);
 
 	return 0;
@@ -1036,6 +1027,7 @@ static int rtl8214fc_set_port(struct phy_device *phydev, int port)
 	pr_debug("%s port %d to %d\n", __func__, addr, port);
 
 	rtl8214fc_media_set(phydev, is_fibre);
+
 	return 0;
 }
 
@@ -1046,11 +1038,11 @@ static int rtl8214fc_get_port(struct phy_device *phydev)
 	pr_debug("%s: port %d\n", __func__, addr);
 	if (rtl8214fc_media_is_fibre(phydev))
 		return PORT_FIBRE;
+
 	return PORT_MII;
 }
 
-/*
- * Enable EEE on the RTL8218B PHYs
+/* Enable EEE on the RTL8218B PHYs
  * The method used is not the preferred way (which would be based on the MAC-EEE state,
  * but the only way that works since the kernel first enables EEE in the MAC
  * and then sets up the PHY. The MAC-based approach would require the oppsite.
@@ -1087,12 +1079,12 @@ void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 		phy_write(phydev, 0, val);
 	}
 
-	/* GPHY page back to auto*/
+	/* GPHY page back to auto */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 }
 
 static int rtl8218b_get_eee(struct phy_device *phydev,
-				     struct ethtool_eee *e)
+			    struct ethtool_eee *e)
 {
 	u32 val;
 	int addr = phydev->mdio.addr;
@@ -1104,7 +1096,7 @@ static int rtl8218b_get_eee(struct phy_device *phydev,
 
 	val = phy_read_paged(phydev, 7, 60);
 	if (e->eee_enabled) {
-		// Verify vs MAC-based EEE
+		/* Verify vs MAC-based EEE */
 		e->eee_enabled = !!(val & BIT(7));
 		if (!e->eee_enabled) {
 			val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
@@ -1120,7 +1112,7 @@ static int rtl8218b_get_eee(struct phy_device *phydev,
 }
 
 static int rtl8218d_get_eee(struct phy_device *phydev,
-				     struct ethtool_eee *e)
+			    struct ethtool_eee *e)
 {
 	u32 val;
 	int addr = phydev->mdio.addr;
@@ -1142,7 +1134,7 @@ static int rtl8218d_get_eee(struct phy_device *phydev,
 }
 
 static int rtl8214fc_set_eee(struct phy_device *phydev,
-				     struct ethtool_eee *e)
+			     struct ethtool_eee *e)
 {
 	u32 poll_state;
 	int port = phydev->mdio.addr;
@@ -1161,13 +1153,13 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 	/* Set GPHY page to copper */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
-	// Get auto-negotiation status
+	/* Get auto-negotiation status */
 	val = phy_read(phydev, 0);
 	an_enabled = val & BIT(12);
 
 	pr_info("%s: aneg: %d\n", __func__, an_enabled);
 	val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
-	val &= ~BIT(5);  // Use MAC-based EEE
+	val &= ~BIT(5);  /* Use MAC-based EEE */
 	phy_write_paged(phydev, RTL821X_PAGE_MAC, 25, val);
 
 	/* Enable 100M (bit 1) / 1000M (bit 2) EEE */
@@ -1190,7 +1182,7 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 		phy_write(phydev, 0, val);
 	}
 
-	/* GPHY page back to auto*/
+	/* GPHY page back to auto */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	resume_polling(poll_state);
@@ -1199,7 +1191,7 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 }
 
 static int rtl8214fc_get_eee(struct phy_device *phydev,
-				      struct ethtool_eee *e)
+			     struct ethtool_eee *e)
 {
 	int addr = phydev->mdio.addr;
 
@@ -1257,7 +1249,7 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 		phy_write(phydev, 0, val);
 	}
 
-	/* GPHY page back to auto*/
+	/* GPHY page back to auto */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	pr_info("%s done\n", __func__);
@@ -1302,17 +1294,18 @@ static int rtl8380_configure_rtl8214c(struct phy_device *phydev)
 
 	/* GPHY auto conf */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
 	return 0;
 }
 
 static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 {
-	u32 phy_id, val, page = 0;
-	int i, l;
 	int mac = phydev->mdio.addr;
 	struct fw_header *h;
 	u32 *rtl8380_rtl8214fc_perchip;
 	u32 *rtl8380_rtl8214fc_perport;
+	u32 phy_id;
+	u32 val;
 
 	val = phy_read(phydev, 2);
 	phy_id = val << 16;
@@ -1339,11 +1332,9 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 		return -1;
 	}
 
-	rtl8380_rtl8214fc_perchip = (void *)h + sizeof(struct fw_header)
-		   + h->parts[0].start;
+	rtl8380_rtl8214fc_perchip = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
 
-	rtl8380_rtl8214fc_perport = (void *)h + sizeof(struct fw_header)
-		   + h->parts[1].start;
+	rtl8380_rtl8214fc_perport = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
 
 	/* detect phy version */
 	phy_write_paged(phydev, RTL83XX_PAGE_RAW, 27, 0x0004);
@@ -1358,15 +1349,15 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	msleep(100);
 	phy_write_paged(phydev, 0, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
-	i = 0;
-	while (rtl8380_rtl8214fc_perchip[i * 3]
-	       && rtl8380_rtl8214fc_perchip[i * 3 + 1]) {
+	for (int i = 0; rtl8380_rtl8214fc_perchip[i * 3] &&
+	                rtl8380_rtl8214fc_perchip[i * 3 + 1]; i++) {
+		u32 page = 0;
+
 		if (rtl8380_rtl8214fc_perchip[i * 3 + 1] == 0x1f)
 			page = rtl8380_rtl8214fc_perchip[i * 3 + 2];
 		if (rtl8380_rtl8214fc_perchip[i * 3 + 1] == 0x13 && page == 0x260) {
 			val = phy_read_paged(phydev, 0x260, 13);
-			val = (val & 0x1f00) | (rtl8380_rtl8214fc_perchip[i * 3 + 2]
-				& 0xe0ff);
+			val = (val & 0x1f00) | (rtl8380_rtl8214fc_perchip[i * 3 + 2] & 0xe0ff);
 			phy_write_paged(phydev, RTL83XX_PAGE_RAW,
 					rtl8380_rtl8214fc_perchip[i * 3 + 1], val);
 		} else {
@@ -1374,24 +1365,25 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 					rtl8380_rtl8214fc_perchip[i * 3 + 1],
 					rtl8380_rtl8214fc_perchip[i * 3 + 2]);
 		}
-		i++;
 	}
 
 	/* Force copper medium */
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
 		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 	}
 
 	/* Enable PHY */
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
 		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, 0x00, 0x1140);
 	}
 	mdelay(100);
 
 	/* Disable Autosensing */
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
+		int l;
+
 		for (l = 0; l < 100; l++) {
 			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_GPHY, 0x10);
 			if ((val & 0x7) >= 3)
@@ -1404,14 +1396,16 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	}
 
 	/* Request patch */
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
 		phy_package_port_write_paged(phydev, i, RTL83XX_PAGE_RAW, 0x10, 0x0010);
 	}
 	mdelay(300);
 
 	/* Verify patch readiness */
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
+		int l;
+
 		for (l = 0; l < 100; l++) {
 			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_STATE, 0x10);
 			if (val & 0x40)
@@ -1425,18 +1419,16 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	/* Use Broadcast ID method for patching */
 	rtl821x_phy_setup_package_broadcast(phydev, true);
 
-	i = 0;
-	while (rtl8380_rtl8214fc_perport[i * 2]) {
+	for (int i = 0; rtl8380_rtl8214fc_perport[i * 2]; i++) {
 		phy_write_paged(phydev, RTL83XX_PAGE_RAW, rtl8380_rtl8214fc_perport[i * 2],
-				  rtl8380_rtl8214fc_perport[i * 2 + 1]);
-		i++;
+		                rtl8380_rtl8214fc_perport[i * 2 + 1]);
 	}
 
-	/*Disable broadcast ID*/
+	/* Disable broadcast ID */
 	rtl821x_phy_setup_package_broadcast(phydev, false);
 
 	/* Auto medium selection */
-	for (i = 0; i < 4; i++) {
+	for (int i = 0; i < 4; i++) {
 		phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
 		phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 	}
@@ -1477,29 +1469,21 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 		return -1;
 	}
 
-	rtl8380_sds_take_reset = (void *)h + sizeof(struct fw_header)
-		   + h->parts[0].start;
+	rtl8380_sds_take_reset = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
 
-	rtl8380_sds_common = (void *)h + sizeof(struct fw_header)
-		   + h->parts[1].start;
+	rtl8380_sds_common = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
 
-	rtl8380_sds01_qsgmii_6275b = (void *)h + sizeof(struct fw_header)
-		   + h->parts[2].start;
+	rtl8380_sds01_qsgmii_6275b = (void *)h + sizeof(struct fw_header) + h->parts[2].start;
 
-	rtl8380_sds23_qsgmii_6275b = (void *)h + sizeof(struct fw_header)
-		   + h->parts[3].start;
+	rtl8380_sds23_qsgmii_6275b = (void *)h + sizeof(struct fw_header) + h->parts[3].start;
 
-	rtl8380_sds4_fiber_6275b = (void *)h + sizeof(struct fw_header)
-		   + h->parts[4].start;
+	rtl8380_sds4_fiber_6275b = (void *)h + sizeof(struct fw_header) + h->parts[4].start;
 
-	rtl8380_sds5_fiber_6275b = (void *)h + sizeof(struct fw_header)
-		   + h->parts[5].start;
+	rtl8380_sds5_fiber_6275b = (void *)h + sizeof(struct fw_header) + h->parts[5].start;
 
-	rtl8380_sds_reset = (void *)h + sizeof(struct fw_header)
-		   + h->parts[6].start;
+	rtl8380_sds_reset = (void *)h + sizeof(struct fw_header) + h->parts[6].start;
 
-	rtl8380_sds_release_reset = (void *)h + sizeof(struct fw_header)
-		   + h->parts[7].start;
+	rtl8380_sds_release_reset = (void *)h + sizeof(struct fw_header) + h->parts[7].start;
 
 	/* Back up serdes power off value */
 	sds_conf_value = sw_r32(RTL838X_SDS_CFG_REG);
@@ -1538,7 +1522,7 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 	i = 0;
 	while (rtl8380_sds01_qsgmii_6275b[2 * i]) {
 		sw_w32(rtl8380_sds01_qsgmii_6275b[2 * i + 1],
-			rtl8380_sds01_qsgmii_6275b[2 * i]);
+		       rtl8380_sds01_qsgmii_6275b[2 * i]);
 		i++;
 	}
 
@@ -1576,6 +1560,7 @@ static int rtl8380_configure_serdes(struct phy_device *phydev)
 	sw_w32(sds_conf_value, RTL838X_SDS_CFG_REG);
 
 	pr_info("Configuration of SERDES done\n");
+
 	return 0;
 }
 
@@ -1647,7 +1632,7 @@ static int rtl9300_read_status(struct phy_device *phydev)
 
 	mode = rtl9300_sds_mode_get(sds_num);
 	pr_info("%s got SDS mode %02x\n", __func__, mode);
-	if (mode == 0x1a) {		// 10GR mode
+	if (mode == 0x1a) { /* 10GR mode */
 		status = rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
 		latch_status = rtl9300_sds_field_r(sds_num, 0x4, 1, 2, 2);
 		status |= rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
@@ -1676,7 +1661,7 @@ static int rtl9300_read_status(struct phy_device *phydev)
 
 void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
 {
-	int page = 0x2e; // 10GR and USXGMII
+	int page = 0x2e; /* 10GR and USXGMII */
 
 	if (phy_if == PHY_INTERFACE_MODE_1000BASEX)
 		page = 0x24;
@@ -1686,17 +1671,15 @@ void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
 	rtl9300_sds_field_w(sds_num, page, 0x15, 4, 4, 0x0);
 }
 
-/*
- * Force PHY modes on 10GBit Serdes
+/* Force PHY modes on 10GBit Serdes
  */
 void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 {
+	int lc_value;
 	int sds_mode;
 	bool lc_on;
-	int i, lc_value;
 	int lane_0 = (sds % 2) ? sds - 1 : sds;
-	u32 v, cr_0, cr_1, cr_2;
-	u32 m_bit, l_bit;
+	u32 v;
 
 	pr_info("%s: SDS: %d, mode %d\n", __func__, sds, phy_if);
 	switch (phy_if) {
@@ -1709,7 +1692,7 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 	case PHY_INTERFACE_MODE_HSGMII:
 		sds_mode = 0x12;
 		lc_value = 0x3;
-		// Configure LC
+		/* Configure LC */
 		break;
 
 	case PHY_INTERFACE_MODE_1000BASEX:
@@ -1720,7 +1703,7 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 	case PHY_INTERFACE_MODE_2500BASEX:
 		sds_mode = 0x16;
 		lc_value = 0x3;
-		// Configure LC
+		/* Configure LC */
 		break;
 
 	case PHY_INTERFACE_MODE_10GBASER:
@@ -1730,7 +1713,7 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 		break;
 
 	case PHY_INTERFACE_MODE_NA:
-		// This will disable SerDes
+		/* This will disable SerDes */
 		sds_mode = 0x1f;
 		break;
 
@@ -1741,12 +1724,12 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 	}
 
 	pr_info("%s --------------------- serdes %d forcing to %x ...\n", __func__, sds, sds_mode);
-	// Power down SerDes
+	/* Power down SerDes */
 	rtl9300_sds_field_w(sds, 0x20, 0, 7, 6, 0x3);
 	if (sds == 5) pr_info("%s after %x\n", __func__, rtl930x_read_sds_phy(sds, 0x20, 0));
 
 	if (sds == 5) pr_info("%s a %x\n", __func__, rtl930x_read_sds_phy(sds, 0x1f, 9));
-	// Force mode enable
+	/* Force mode enable */
 	rtl9300_sds_field_w(sds, 0x1f, 9, 6, 6, 0x1);
 	if (sds == 5) pr_info("%s b %x\n", __func__, rtl930x_read_sds_phy(sds, 0x1f, 9));
 
@@ -1757,7 +1740,7 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 		return;
 
 	if (sds == 5) pr_info("%s c %x\n", __func__, rtl930x_read_sds_phy(sds, 0x20, 18));
-	// Enable LC and ring
+	/* Enable LC and ring */
 	rtl9300_sds_field_w(lane_0, 0x20, 18, 3, 0, 0xf);
 
 	if (sds == lane_0)
@@ -1772,7 +1755,7 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 	else
 		rtl9300_sds_field_w(lane_0, 0x20, 18, 15, 12, lc_value);
 
-	// Force analog LC & ring on
+	/* Force analog LC & ring on */
 	rtl9300_sds_field_w(lane_0, 0x21, 11, 3, 0, 0xf);
 
 	v = lc_on ? 0x3 : 0x1;
@@ -1782,12 +1765,15 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 	else
 		rtl9300_sds_field_w(lane_0, 0x20, 18, 7, 6, v);
 
-	// Force SerDes mode
+	/* Force SerDes mode */
 	rtl9300_sds_field_w(sds, 0x1f, 9, 6, 6, 1);
 	rtl9300_sds_field_w(sds, 0x1f, 9, 11, 7, sds_mode);
 
-	// Toggle LC or Ring
-	for (i = 0; i < 20; i++) {
+	/* Toggle LC or Ring */
+	for (int i = 0; i < 20; i++) {
+		u32 cr_0, cr_1, cr_2;
+		u32 m_bit, l_bit;
+
 		mdelay(200);
 
 		rtl930x_write_sds_phy(lane_0, 0x1f, 2, 53);
@@ -1803,25 +1789,26 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 
 		if (cr_0 && cr_1 && cr_2) {
 			u32 t;
+
 			if (phy_if != PHY_INTERFACE_MODE_10GBASER)
 				break;
 
 			t = rtl9300_sds_field_r(sds, 0x6, 0x1, 2, 2);
 			rtl9300_sds_field_w(sds, 0x6, 0x1, 2, 2, 0x1);
 
-			// Reset FSM
+			/* Reset FSM */
 			rtl9300_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x1);
 			mdelay(10);
 			rtl9300_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x0);
 			mdelay(10);
 
-			// Need to read this twice
+			/* Need to read this twice */
 			v = rtl9300_sds_field_r(sds, 0x5, 0, 12, 12);
 			v = rtl9300_sds_field_r(sds, 0x5, 0, 12, 12);
 
 			rtl9300_sds_field_w(sds, 0x6, 0x1, 2, 2, t);
 
-			// Reset FSM again
+			/* Reset FSM again */
 			rtl9300_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x1);
 			mdelay(10);
 			rtl9300_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x0);
@@ -1841,7 +1828,7 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 
 	rtl930x_sds_rx_rst(sds, phy_if);
 
-	// Re-enable power
+	/* Re-enable power */
 	rtl9300_sds_field_w(sds, 0x20, 0, 7, 6, 0);
 
 	pr_info("%s --------------------- serdes %d forced to %x DONE\n", __func__, sds, sds_mode);
@@ -1849,7 +1836,7 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 
 void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 {
-	// parameters: rtl9303_80G_txParam_s2
+	/* parameters: rtl9303_80G_txParam_s2 */
 	int impedance = 0x8;
 	int pre_amp = 0x2;
 	int main_amp = 0x9;
@@ -1874,16 +1861,15 @@ void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 		return;
 	}
 
-	rtl9300_sds_field_w(sds, page, 0x1, 15, 11, pre_amp);
-	rtl9300_sds_field_w(sds, page, 0x7, 0, 0, pre_en);
-	rtl9300_sds_field_w(sds, page, 0x7, 8, 4, main_amp);
-	rtl9300_sds_field_w(sds, page, 0x6, 4, 0, post_amp);
-	rtl9300_sds_field_w(sds, page, 0x7, 3, 3, post_en);
+	rtl9300_sds_field_w(sds, page, 0x01, 15, 11, pre_amp);
+	rtl9300_sds_field_w(sds, page, 0x06,  4,  0, post_amp);
+	rtl9300_sds_field_w(sds, page, 0x07,  0,  0, pre_en);
+	rtl9300_sds_field_w(sds, page, 0x07,  3,  3, post_en);
+	rtl9300_sds_field_w(sds, page, 0x07,  8,  4, main_amp);
 	rtl9300_sds_field_w(sds, page, 0x18, 15, 12, impedance);
 }
 
-/*
- * Wait for clock ready, this assumes the SerDes is in XGMII mode
+/* Wait for clock ready, this assumes the SerDes is in XGMII mode
  * timeout is in ms
  */
 int rtl9300_sds_clock_wait(int timeout)
@@ -1905,8 +1891,8 @@ void rtl9300_serdes_mac_link_config(int sds, bool tx_normal, bool rx_normal)
 {
 	u32 v10, v1;
 
-	v10 = rtl930x_read_sds_phy(sds, 6, 2); // 10GBit, page 6, reg 2
-	v1 = rtl930x_read_sds_phy(sds, 0, 0); // 1GBit, page 0, reg 0
+	v10 = rtl930x_read_sds_phy(sds, 6, 2); /* 10GBit, page 6, reg 2 */
+	v1 = rtl930x_read_sds_phy(sds, 0, 0); /* 1GBit, page 0, reg 0 */
 	pr_info("%s: registers before %08x %08x\n", __func__, v10, v1);
 
 	v10 &= ~(BIT(13) | BIT(14));
@@ -1932,8 +1918,8 @@ void rtl9300_sds_rxcal_dcvs_manual(u32 sds_num, u32 dcvs_id, bool manual, u32 dv
 		switch(dcvs_id) {
 		case 0:
 			rtl9300_sds_field_w(sds_num, 0x2e, 0x1e, 14, 14, 0x1);
-			rtl9300_sds_field_w(sds_num, 0x2f, 0x03, 5, 5, dvcs_list[0]);
-			rtl9300_sds_field_w(sds_num, 0x2f, 0x03, 4, 0, dvcs_list[1]);
+			rtl9300_sds_field_w(sds_num, 0x2f, 0x03,  5,  5, dvcs_list[0]);
+			rtl9300_sds_field_w(sds_num, 0x2f, 0x03,  4,  0, dvcs_list[1]);
 			break;
 		case 1:
 			rtl9300_sds_field_w(sds_num, 0x2e, 0x1e, 13, 13, 0x1);
@@ -1943,22 +1929,22 @@ void rtl9300_sds_rxcal_dcvs_manual(u32 sds_num, u32 dcvs_id, bool manual, u32 dv
 		case 2:
 			rtl9300_sds_field_w(sds_num, 0x2e, 0x1e, 12, 12, 0x1);
 			rtl9300_sds_field_w(sds_num, 0x2e, 0x1d, 10, 10, dvcs_list[0]);
-			rtl9300_sds_field_w(sds_num, 0x2e, 0x1d, 9, 6, dvcs_list[1]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x1d,  9,  6, dvcs_list[1]);
 			break;
 		case 3:
 			rtl9300_sds_field_w(sds_num, 0x2e, 0x1e, 11, 11, 0x1);
-			rtl9300_sds_field_w(sds_num, 0x2e, 0x1d, 5, 5, dvcs_list[0]);
-			rtl9300_sds_field_w(sds_num, 0x2e, 0x1d, 4, 1, dvcs_list[1]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x1d,  5,  5, dvcs_list[0]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x1d,  4,  1, dvcs_list[1]);
 			break;
 		case 4:
 			rtl9300_sds_field_w(sds_num, 0x2e, 0x01, 15, 15, 0x1);
 			rtl9300_sds_field_w(sds_num, 0x2e, 0x11, 10, 10, dvcs_list[0]);
-			rtl9300_sds_field_w(sds_num, 0x2e, 0x11, 9, 6, dvcs_list[1]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x11,  9,  6, dvcs_list[1]);
 			break;
 		case 5:
 			rtl9300_sds_field_w(sds_num, 0x2e, 0x02, 11, 11, 0x1);
-			rtl9300_sds_field_w(sds_num, 0x2e, 0x11, 4, 4, dvcs_list[0]);
-			rtl9300_sds_field_w(sds_num, 0x2e, 0x11, 3, 0, dvcs_list[1]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x11,  4,  4, dvcs_list[0]);
+			rtl9300_sds_field_w(sds_num, 0x2e, 0x11,  3,  0, dvcs_list[1]);
 			break;
 		default:
 			break;
@@ -2000,10 +1986,10 @@ void rtl9300_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[])
 	else
 		rtl930x_write_sds_phy(sds_num - 1, 0x1f, 0x2, 0x31);
 
-	// ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1]
+	/* ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1] */
 	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 9, 9, 0x1);
 
-	// ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x]
+	/* ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x] */
 	rtl9300_sds_field_w(sds_num, 0x21, 0x06, 11, 6, 0x20);
 
 	switch(dcvs_id) {
@@ -2011,9 +1997,9 @@ void rtl9300_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[])
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x22);
 		mdelay(1);
 
-		// ##DCVS0 Read Out
-		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 4);
-		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 3, 0);
+		/* ##DCVS0 Read Out */
+		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
 		dcvs_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x1e, 14, 14);
 		break;
 
@@ -2021,9 +2007,9 @@ void rtl9300_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[])
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x23);
 		mdelay(1);
 
-		// ##DCVS0 Read Out
-		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 4);
-		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 3, 0);
+		/* ##DCVS0 Read Out */
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
 		dcvs_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x1e, 13, 13);
 		break;
 
@@ -2031,28 +2017,28 @@ void rtl9300_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[])
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x24);
 		mdelay(1);
 
-		// ##DCVS0 Read Out
-		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 4);
-		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 3, 0);
+		/* ##DCVS0 Read Out */
+		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
 		dcvs_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x1e, 12, 12);
 		break;
 	case 3:
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x25);
 		mdelay(1);
 
-		// ##DCVS0 Read Out
-		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 4);
-		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 3, 0);
-		dcvs_manual = rtl9300_sds_field_r(sds_num, 0x2e, 0x1e, 11, 11);
+		/* ##DCVS0 Read Out */
+		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
+		dcvs_manual   = rtl9300_sds_field_r(sds_num, 0x2e, 0x1e, 11, 11);
 		break;
 
 	case 4:
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x2c);
 		mdelay(1);
 
-		// ##DCVS0 Read Out
-		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 4);
-		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 3, 0);
+		/* ##DCVS0 Read Out */
+		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
 		dcvs_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x01, 15, 15);
 		break;
 
@@ -2060,10 +2046,10 @@ void rtl9300_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[])
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0x2d);
 		mdelay(1);
 
-		// ##DCVS0 Read Out
-		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 4);
-		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 3, 0);
-		dcvs_manual = rtl9300_sds_field_r(sds_num, 0x2e, 0x02, 11, 11);
+		/* ##DCVS0 Read Out */
+		dcvs_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  4,  4);
+		dcvs_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14,  3,  0);
+		dcvs_manual   = rtl9300_sds_field_r(sds_num, 0x2e, 0x02, 11, 11);
 		break;
 
 	default:
@@ -2140,14 +2126,14 @@ u32 rtl9300_sds_rxcal_leq_read(int sds_num)
 	else
 		rtl930x_write_sds_phy(sds_num - 1, 0x1f, 0x2, 0x31);
 
-	// ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1]
+	/* ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1] */
 	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 9, 9, 0x1);
 
-	// ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[0 1 x x x x]
+	/* ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[0 1 x x x x] */
 	rtl9300_sds_field_w(sds_num, 0x21, 0x06, 11, 6, 0x10);
 	mdelay(1);
 
-	// ##LEQ Read Out
+	/* ##LEQ Read Out */
 	leq_gray = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 7, 3);
 	leq_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x18, 15, 15);
 	leq_bin = rtl9300_sds_rxcal_gray_to_binary(leq_gray);
@@ -2162,8 +2148,8 @@ void rtl9300_sds_rxcal_vth_manual(u32 sds_num, bool manual, u32 vth_list[])
 {
 	if (manual) {
 		rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, 13, 13, 0x1);
-		rtl9300_sds_field_w(sds_num, 0x2e, 0x13, 5, 3, vth_list[0]);
-		rtl9300_sds_field_w(sds_num, 0x2e, 0x13, 2, 0, vth_list[1]);
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x13,  5,  3, vth_list[0]);
+		rtl9300_sds_field_w(sds_num, 0x2e, 0x13,  2,  0, vth_list[1]);
 	} else {
 		rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, 13, 13, 0x0);
 		mdelay(10);
@@ -2174,25 +2160,25 @@ void rtl9300_sds_rxcal_vth_get(u32  sds_num, u32 vth_list[])
 {
 	u32 vth_manual;
 
-	//##Page0x1F, Reg0x02[15 0], REG_DBGO_SEL=[0x002F]; //Lane0
-	//##Page0x1F, Reg0x02[15 0], REG_DBGO_SEL=[0x0031]; //Lane1
+	/* ##Page0x1F, Reg0x02[15 0], REG_DBGO_SEL=[0x002F]; */ /* Lane0 */
+	/* ##Page0x1F, Reg0x02[15 0], REG_DBGO_SEL=[0x0031]; */ /* Lane1 */
 	if (!(sds_num % 2))
 		rtl930x_write_sds_phy(sds_num, 0x1f, 0x2, 0x2f);
 	else
 		rtl930x_write_sds_phy(sds_num - 1, 0x1f, 0x2, 0x31);
 
-	//##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1]
+	/* ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1] */
 	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 9, 9, 0x1);
-	//##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x]
+	/* ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x] */
 	rtl9300_sds_field_w(sds_num, 0x21, 0x06, 11, 6, 0x20);
-	//##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 1 1 0 0]
+	/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 1 1 0 0] */
 	rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0xc);
 
 	mdelay(1);
 
-	//##VthP & VthN Read Out
-	vth_list[0] = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 2, 0); // v_thp set bin
-	vth_list[1] = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 3); // v_thn set bin
+	/* ##VthP & VthN Read Out */
+	vth_list[0] = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 2, 0); /* v_thp set bin */
+	vth_list[1] = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 3); /* v_thn set bin */
 
 	pr_info("vth_set_bin = %d", vth_list[0]);
 	pr_info("vth_set_bin = %d", vth_list[1]);
@@ -2206,7 +2192,7 @@ void rtl9300_sds_rxcal_tap_manual(u32 sds_num, int tap_id, bool manual, u32 tap_
 	if (manual) {
 		switch(tap_id) {
 		case 0:
-			//##REG0_LOAD_IN_INIT[0]=1; REG0_TAP0_INIT[5:0]=Tap0_Value
+			/* ##REG0_LOAD_IN_INIT[0]=1; REG0_TAP0_INIT[5:0]=Tap0_Value */
 			rtl9300_sds_field_w(sds_num, 0x2e, 0x0f, tap_id + 7, tap_id + 7, 0x1);
 			rtl9300_sds_field_w(sds_num, 0x2f, 0x03, 5, 5, tap_list[0]);
 			rtl9300_sds_field_w(sds_num, 0x2f, 0x03, 4, 0, tap_list[1]);
@@ -2263,15 +2249,15 @@ void rtl9300_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
 	else
 		rtl930x_write_sds_phy(sds_num - 1, 0x1f, 0x2, 0x31);
 
-	//##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1]
+	/* ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1] */
 	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 9, 9, 0x1);
-	//##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x]
+	/* ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x] */
 	rtl9300_sds_field_w(sds_num, 0x21, 0x06, 11, 6, 0x20);
 
 	if (!tap_id) {
-		//##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 0 0 0 1]
+		/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 0 0 0 1] */
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0);
-		//##Tap1 Even Read Out
+		/* ##Tap1 Even Read Out */
 		mdelay(1);
 		tap0_sign_out = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 5);
 		tap0_coef_bin = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 0);
@@ -2289,16 +2275,16 @@ void rtl9300_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
 		tap_manual = !!rtl9300_sds_field_r(sds_num, 0x2e, 0x0f, 7, 7);
 		pr_info("tap0 manual = %u",tap_manual);
 	} else {
-		//##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 0 0 0 1]
+		/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 0 0 0 1] */
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, tap_id);
 		mdelay(1);
-		//##Tap1 Even Read Out
+		/* ##Tap1 Even Read Out */
 		tap_sign_out_even = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 5);
 		tap_coef_bin_even = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 0);
 
-		//##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 0 1 1 0]
+		/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 0 1 1 0] */
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, (tap_id + 5));
-		//##Tap1 Odd Read Out
+		/* ##Tap1 Odd Read Out */
 		tap_sign_out_odd = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 5);
 		tap_coef_bin_odd = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 4, 0);
 
@@ -2328,93 +2314,93 @@ void rtl9300_sds_rxcal_tap_get(u32 sds_num, u32 tap_id, u32 tap_list[])
 
 void rtl9300_do_rx_calibration_1(int sds, phy_interface_t phy_mode)
 {
-	// From both rtl9300_rxCaliConf_serdes_myParam and rtl9300_rxCaliConf_phy_myParam
-	int tap0_init_val       = 0x1f; // Initial Decision Fed Equalizer 0 tap
-	int vth_min             = 0x0;
+	/* From both rtl9300_rxCaliConf_serdes_myParam and rtl9300_rxCaliConf_phy_myParam */
+	int tap0_init_val = 0x1f; /* Initial Decision Fed Equalizer 0 tap */
+	int vth_min       = 0x0;
 
 	pr_info("start_1.1.1 initial value for sds %d\n", sds);
 	rtl930x_write_sds_phy(sds, 6,  0, 0);
 
-	// FGCAL
-	rtl9300_sds_field_w(sds, 0x2e, 0x01, 14, 14, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x1c, 10, 5, 0x20);
-	rtl9300_sds_field_w(sds, 0x2f, 0x02, 0, 0, 0x1);
+	/* FGCAL */
+	rtl9300_sds_field_w(sds, 0x2e, 0x01, 14, 14, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x1c, 10,  5, 0x20);
+	rtl9300_sds_field_w(sds, 0x2f, 0x02,  0,  0, 0x01);
 
-	// DCVS
-	rtl9300_sds_field_w(sds, 0x2e, 0x1e, 14, 11, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x01, 15, 15, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x02, 11, 11, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x1c, 4, 0, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x1d, 15, 11, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x1d, 10, 6, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x1d, 5, 1, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x02, 10, 6, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x11, 4, 0, 0x0);
-	rtl9300_sds_field_w(sds, 0x2f, 0x00, 3, 0, 0xf);
-	rtl9300_sds_field_w(sds, 0x2e, 0x04, 6, 6, 0x1);
-	rtl9300_sds_field_w(sds, 0x2e, 0x04, 7, 7, 0x1);
+	/* DCVS */
+	rtl9300_sds_field_w(sds, 0x2e, 0x1e, 14, 11, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x01, 15, 15, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x02, 11, 11, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x1c,  4,  0, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x1d, 15, 11, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x1d, 10,  6, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x1d,  5,  1, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x02, 10,  6, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x11,  4,  0, 0x00);
+	rtl9300_sds_field_w(sds, 0x2f, 0x00,  3,  0, 0x0f);
+	rtl9300_sds_field_w(sds, 0x2e, 0x04,  6,  6, 0x01);
+	rtl9300_sds_field_w(sds, 0x2e, 0x04,  7,  7, 0x01);
 
-	// LEQ (Long Term Equivalent signal level)
-	rtl9300_sds_field_w(sds, 0x2e, 0x16, 14, 8, 0x0);
+	/* LEQ (Long Term Equivalent signal level) */
+	rtl9300_sds_field_w(sds, 0x2e, 0x16, 14,  8, 0x00);
 
-	// DFE (Decision Fed Equalizer)
-	rtl9300_sds_field_w(sds, 0x2f, 0x03, 5, 0, tap0_init_val);
-	rtl9300_sds_field_w(sds, 0x2e, 0x09, 11, 6, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x09, 5, 0, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x0a, 5, 0, 0x0);
-	rtl9300_sds_field_w(sds, 0x2f, 0x01, 5, 0, 0x0);
-	rtl9300_sds_field_w(sds, 0x2f, 0x12, 5, 0, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x0a, 11, 6, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x06, 5, 0, 0x0);
-	rtl9300_sds_field_w(sds, 0x2f, 0x01, 5, 0, 0x0);
+	/* DFE (Decision Fed Equalizer) */
+	rtl9300_sds_field_w(sds, 0x2f, 0x03,  5,  0, tap0_init_val);
+	rtl9300_sds_field_w(sds, 0x2e, 0x09, 11,  6, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x09,  5,  0, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x0a,  5,  0, 0x00);
+	rtl9300_sds_field_w(sds, 0x2f, 0x01,  5,  0, 0x00);
+	rtl9300_sds_field_w(sds, 0x2f, 0x12,  5,  0, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x0a, 11,  6, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x06,  5,  0, 0x00);
+	rtl9300_sds_field_w(sds, 0x2f, 0x01,  5,  0, 0x00);
 
-	// Vth
-	rtl9300_sds_field_w(sds, 0x2e, 0x13, 5, 3, 0x7);
-	rtl9300_sds_field_w(sds, 0x2e, 0x13, 2, 0, 0x7);
-	rtl9300_sds_field_w(sds, 0x2f, 0x0b, 5, 3, vth_min);
+	/* Vth */
+	rtl9300_sds_field_w(sds, 0x2e, 0x13,  5,  3, 0x07);
+	rtl9300_sds_field_w(sds, 0x2e, 0x13,  2,  0, 0x07);
+	rtl9300_sds_field_w(sds, 0x2f, 0x0b,  5,  3, vth_min);
 
 	pr_info("end_1.1.1 --\n");
 
 	pr_info("start_1.1.2 Load DFE init. value\n");
 
-	rtl9300_sds_field_w(sds, 0x2e, 0x0f, 13, 7, 0x7f);
+	rtl9300_sds_field_w(sds, 0x2e, 0x0f, 13,  7, 0x7f);
 
 	pr_info("end_1.1.2\n");
 
 	pr_info("start_1.1.3 disable LEQ training,enable DFE clock\n");
 
-	rtl9300_sds_field_w(sds, 0x2e, 0x17, 7, 7, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x17, 6, 2, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x0c, 8, 8, 0x0);
-	rtl9300_sds_field_w(sds, 0x2e, 0x0b, 4, 4, 0x1);
-	rtl9300_sds_field_w(sds, 0x2e, 0x12, 14, 14, 0x0);
-	rtl9300_sds_field_w(sds, 0x2f, 0x02, 15, 15, 0x0);
+	rtl9300_sds_field_w(sds, 0x2e, 0x17,  7,  7, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x17,  6,  2, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x0c,  8,  8, 0x00);
+	rtl9300_sds_field_w(sds, 0x2e, 0x0b,  4,  4, 0x01);
+	rtl9300_sds_field_w(sds, 0x2e, 0x12, 14, 14, 0x00);
+	rtl9300_sds_field_w(sds, 0x2f, 0x02, 15, 15, 0x00);
 
 	pr_info("end_1.1.3 --\n");
 
 	pr_info("start_1.1.4 offset cali setting\n");
 
-	rtl9300_sds_field_w(sds, 0x2e, 0x0f, 15, 14, 0x3);
+	rtl9300_sds_field_w(sds, 0x2e, 0x0f, 15, 14, 0x03);
 
 	pr_info("end_1.1.4\n");
 
 	pr_info("start_1.1.5 LEQ and DFE setting\n");
 
-	// TODO: make this work for DAC cables of different lengths
-	// For a 10GBit serdes wit Fibre, SDS 8 or 9
+	/* TODO: make this work for DAC cables of different lengths */
+	/* For a 10GBit serdes wit Fibre, SDS 8 or 9 */
 	if (phy_mode == PHY_INTERFACE_MODE_10GBASER || PHY_INTERFACE_MODE_1000BASEX)
-		rtl9300_sds_field_w(sds, 0x2e, 0x16, 3, 2, 0x2);
+		rtl9300_sds_field_w(sds, 0x2e, 0x16,  3,  2, 0x02);
 	else
 		pr_err("%s not PHY-based or SerDes, implement DAC!\n", __func__);
 
-	// No serdes, check for Aquantia PHYs
-	rtl9300_sds_field_w(sds, 0x2e, 0x16, 3, 2, 0x2);
+	/* No serdes, check for Aquantia PHYs */
+	rtl9300_sds_field_w(sds, 0x2e, 0x16,  3,  2, 0x02);
 
-	rtl9300_sds_field_w(sds, 0x2e, 0x0f, 6, 0, 0x5f);
-	rtl9300_sds_field_w(sds, 0x2f, 0x05, 7, 2, 0x1f);
-	rtl9300_sds_field_w(sds, 0x2e, 0x19, 9, 5, 0x1f);
-	rtl9300_sds_field_w(sds, 0x2f, 0x0b, 15, 9, 0x3c);
-	rtl9300_sds_field_w(sds, 0x2e, 0x0b, 1, 0, 0x3);
+	rtl9300_sds_field_w(sds, 0x2e, 0x0f,  6,  0, 0x5f);
+	rtl9300_sds_field_w(sds, 0x2f, 0x05,  7,  2, 0x1f);
+	rtl9300_sds_field_w(sds, 0x2e, 0x19,  9,  5, 0x1f);
+	rtl9300_sds_field_w(sds, 0x2f, 0x0b, 15,  9, 0x3c);
+	rtl9300_sds_field_w(sds, 0x2e, 0x0b,  1,  0, 0x03);
 
 	pr_info("end_1.1.5\n");
 }
@@ -2423,18 +2409,18 @@ void rtl9300_do_rx_calibration_2_1(u32 sds_num)
 {
 	pr_info("start_1.2.1 ForegroundOffsetCal_Manual\n");
 
-	// Gray config endis to 1
-	rtl9300_sds_field_w(sds_num, 0x2f, 0x02, 2, 2, 0x1);
+	/* Gray config endis to 1 */
+	rtl9300_sds_field_w(sds_num, 0x2f, 0x02,  2,  2, 0x01);
 
-	// ForegroundOffsetCal_Manual(auto mode)
-	rtl9300_sds_field_w(sds_num, 0x2e, 0x01, 14, 14, 0x0);
+	/* ForegroundOffsetCal_Manual(auto mode) */
+	rtl9300_sds_field_w(sds_num, 0x2e, 0x01, 14, 14, 0x00);
 
 	pr_info("end_1.2.1");
 }
 
 void rtl9300_do_rx_calibration_2_2(int sds_num)
 {
-	//Force Rx-Run = 0
+	/* Force Rx-Run = 0 */
 	rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 8, 8, 0x0);
 
 	rtl930x_sds_rx_rst(sds_num, PHY_INTERFACE_MODE_10GBASER);
@@ -2453,21 +2439,21 @@ void rtl9300_do_rx_calibration_2_3(int sds_num)
 		else
 			rtl930x_write_sds_phy(sds_num -1 , 0x1f, 0x2, 0x31);
 
-		// ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1]
+		/* ##Page0x2E, Reg0x15[9], REG0_RX_EN_TEST=[1] */
 		rtl9300_sds_field_w(sds_num, 0x2e, 0x15, 9, 9, 0x1);
-		// ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x]
+		/* ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x] */
 		rtl9300_sds_field_w(sds_num, 0x21, 0x06, 11, 6, 0x20);
-		// ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 1 1 1 1]
+		/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 1 1 1 1] */
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0xf);
-		// ##FGCAL read gray
+		/* ##FGCAL read gray */
 		fgcal_gray = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 0);
-		// ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 1 1 1 0]
+		/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 1 1 1 0] */
 		rtl9300_sds_field_w(sds_num, 0x2f, 0x0c, 5, 0, 0xe);
-		// ##FGCAL read binary
+		/* ##FGCAL read binary */
 		fgcal_binary = rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 5, 0);
 
 		pr_info("%s: fgcal_gray: %d, fgcal_binary %d\n",
-			__func__, fgcal_gray, fgcal_binary);
+		        __func__, fgcal_gray, fgcal_binary);
 
 		offset_range = rtl9300_sds_field_r(sds_num, 0x2e, 0x15, 15, 14);
 
@@ -2499,7 +2485,7 @@ void rtl9300_sds_rxcal_3_1(int sds_num, phy_interface_t phy_mode)
 {
 	pr_info("start_1.3.1");
 
-	// ##1.3.1
+	/* ##1.3.1 */
 	if (phy_mode != PHY_INTERFACE_MODE_10GBASER && phy_mode != PHY_INTERFACE_MODE_1000BASEX)
 		rtl9300_sds_field_w(sds_num, 0x2e, 0xc, 8, 8, 0);
 
@@ -2517,11 +2503,11 @@ void rtl9300_sds_rxcal_3_2(int sds_num, phy_interface_t phy_mode)
 	int i;
 
 	if (phy_mode == PHY_INTERFACE_MODE_10GBASER || phy_mode == PHY_INTERFACE_MODE_1000BASEX) {
-		// rtl9300_rxCaliConf_serdes_myParam
+		/* rtl9300_rxCaliConf_serdes_myParam */
 		dac_long_cable_offset = 3;
 		eq_hold_enabled = true;
 	} else {
-		// rtl9300_rxCaliConf_phy_myParam
+		/* rtl9300_rxCaliConf_phy_myParam */
 		dac_long_cable_offset = 0;
 		eq_hold_enabled = false;
 	}
@@ -2582,7 +2568,7 @@ void rtl9300_do_rx_calibration_4_1(int sds_num)
 
 	pr_info("start_1.4.1");
 
-	// ##1.4.1
+	/* ##1.4.1 */
 	rtl9300_sds_rxcal_vth_manual(sds_num, false, vth_list);
 	rtl9300_sds_rxcal_tap_manual(sds_num, 0, false, tap0_list);
 	mdelay(200);
@@ -2635,7 +2621,7 @@ void rtl9300_do_rx_calibration_5_2(u32 sds_num)
 
 void rtl9300_do_rx_calibration_5(u32 sds_num, phy_interface_t phy_mode)
 {
-	if (phy_mode == PHY_INTERFACE_MODE_10GBASER) // dfeTap1_4Enable true
+	if (phy_mode == PHY_INTERFACE_MODE_10GBASER) /* dfeTap1_4Enable true */
 		rtl9300_do_rx_calibration_5_2(sds_num);
 }
 
@@ -2665,7 +2651,7 @@ void rtl9300_do_rx_calibration(int sds, phy_interface_t phy_mode)
 	rtl9300_do_rx_calibration_5(sds, phy_mode);
 	mdelay(20);
 
-	// Do this only for 10GR mode, SDS active in mode 0x1a
+	/* Do this only for 10GR mode, SDS active in mode 0x1a */
 	if (rtl9300_sds_field_r(sds, 0x1f, 9, 11, 7) == 0x1a) {
 		pr_info("%s: SDS enabled\n", __func__);
 		latch_sts = rtl9300_sds_field_r(sds, 0x4, 1, 2, 2);
@@ -2686,7 +2672,7 @@ int rtl9300_sds_sym_err_reset(int sds_num, phy_interface_t phy_mode)
 		break;
 
 	case PHY_INTERFACE_MODE_10GBASER:
-		// Read twice to clear
+		/* Read twice to clear */
 		rtl930x_read_sds_phy(sds_num, 5, 1);
 		rtl930x_read_sds_phy(sds_num, 5, 1);
 		break;
@@ -2731,7 +2717,7 @@ int rtl9300_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
 	rtl9300_sds_sym_err_reset(sds_num, phy_mode);
 	rtl9300_sds_sym_err_reset(sds_num, phy_mode);
 
-	// Count errors during 1ms
+	/* Count errors during 1ms */
 	errors1 = rtl9300_sds_sym_err_get(sds_num, phy_mode);
 	mdelay(1);
 	errors2 = rtl9300_sds_sym_err_get(sds_num, phy_mode);
@@ -2739,8 +2725,8 @@ int rtl9300_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
 	switch (phy_mode) {
 		case PHY_INTERFACE_MODE_XGMII:
 
-			if ((errors2 - errors1 > 100)
-			    || (errors1 >= 0xffff00) || (errors2 >= 0xffff00)) {
+			if ((errors2 - errors1 > 100) ||
+			    (errors1 >= 0xffff00) || (errors2 >= 0xffff00)) {
 				pr_info("%s XSGMII error rate too high\n", __func__);
 				return 1;
 			}
@@ -2754,6 +2740,7 @@ int rtl9300_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
 		default:
 			return 1;
 	}
+
 	return 0;
 }
 
@@ -2761,21 +2748,21 @@ void rtl9300_phy_enable_10g_1g(int sds_num)
 {
 	u32 v;
 
-	// Enable 1GBit PHY
+	/* Enable 1GBit PHY */
 	v = rtl930x_read_sds_phy(sds_num, PHY_PAGE_2, PHY_CTRL_REG);
 	pr_info("%s 1gbit phy: %08x\n", __func__, v);
 	v &= ~BIT(PHY_POWER_BIT);
 	rtl930x_write_sds_phy(sds_num, PHY_PAGE_2, PHY_CTRL_REG, v);
 	pr_info("%s 1gbit phy enabled: %08x\n", __func__, v);
 
-	// Enable 10GBit PHY
+	/* Enable 10GBit PHY */
 	v = rtl930x_read_sds_phy(sds_num, PHY_PAGE_4, PHY_CTRL_REG);
 	pr_info("%s 10gbit phy: %08x\n", __func__, v);
 	v &= ~BIT(PHY_POWER_BIT);
 	rtl930x_write_sds_phy(sds_num, PHY_PAGE_4, PHY_CTRL_REG, v);
 	pr_info("%s 10gbit phy after: %08x\n", __func__, v);
 
-	// dal_longan_construct_mac_default_10gmedia_fiber
+	/* dal_longan_construct_mac_default_10gmedia_fiber */
 	v = rtl930x_read_sds_phy(sds_num, 0x1f, 11);
 	pr_info("%s set medium: %08x\n", __func__, v);
 	v |= BIT(1);
@@ -2784,7 +2771,7 @@ void rtl9300_phy_enable_10g_1g(int sds_num)
 }
 
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
-// phy_mode = PHY_INTERFACE_MODE_10GBASER, sds_mode = 0x1a
+/* phy_mode = PHY_INTERFACE_MODE_10GBASER, sds_mode = 0x1a */
 int rtl9300_serdes_setup(int sds_num, phy_interface_t phy_mode)
 {
 	int sds_mode;
@@ -2811,15 +2798,15 @@ int rtl9300_serdes_setup(int sds_num, phy_interface_t phy_mode)
 		return -EINVAL;
 	}
 
-	// Maybe use dal_longan_sds_init
+	/* Maybe use dal_longan_sds_init */
 
-	// dal_longan_construct_serdesConfig_init		// Serdes Construct
+	/* dal_longan_construct_serdesConfig_init */ /* Serdes Construct */
 	rtl9300_phy_enable_10g_1g(sds_num);
 
-	// Set Serdes Mode
-	rtl9300_sds_set(sds_num, 0x1a);	 // 0x1b: RTK_MII_10GR1000BX_AUTO
+	/* Set Serdes Mode */
+	rtl9300_sds_set(sds_num, 0x1a); /* 0x1b: RTK_MII_10GR1000BX_AUTO */
 
-	// Do RX calibration
+	/* Do RX calibration */
 	do {
 		rtl9300_do_rx_calibration(sds_num, phy_mode);
 		calib_tries++;
@@ -2838,7 +2825,7 @@ typedef struct {
 
 sds_config rtl9300_a_sds_10gr_lane0[] =
 {
-	/*1G*/
+	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
 	{0x21, 0x05, 0x40B0}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F},
 	{0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009}, {0x21, 0x0E, 0x0000},
@@ -2855,7 +2842,7 @@ sds_config rtl9300_a_sds_10gr_lane0[] =
 	{0x2D, 0x18, 0x8E88}, {0x2D, 0x19, 0x4902}, {0x2D, 0x1D, 0x2641},
 	{0x2F, 0x13, 0x0050}, {0x2F, 0x18, 0x8E88}, {0x2F, 0x19, 0x4902},
 	{0x2F, 0x1D, 0x66E1},
-	/*3.125G*/
+	/* 3.125G */
 	{0x28, 0x00, 0x0668}, {0x28, 0x02, 0xD020}, {0x28, 0x06, 0xC000},
 	{0x28, 0x0B, 0x1892}, {0x28, 0x0F, 0xFFDF}, {0x28, 0x12, 0x01C4},
 	{0x28, 0x13, 0x027F}, {0x28, 0x14, 0x1311}, {0x28, 0x16, 0x00C9},
@@ -2864,7 +2851,7 @@ sds_config rtl9300_a_sds_10gr_lane0[] =
 	{0x29, 0x05, 0x7F7C}, {0x29, 0x07, 0x8100}, {0x29, 0x08, 0x0001},
 	{0x29, 0x09, 0xFFD4}, {0x29, 0x0A, 0x7C2F}, {0x29, 0x0E, 0x003F},
 	{0x29, 0x0F, 0x0121}, {0x29, 0x10, 0x0020}, {0x29, 0x11, 0x8840},
-	/*10G*/
+	/* 10G */
 	{0x06, 0x0D, 0x0F00}, {0x06, 0x00, 0x0000}, {0x06, 0x01, 0xC800},
 	{0x21, 0x03, 0x8206}, {0x21, 0x05, 0x40B0}, {0x21, 0x06, 0x0010},
 	{0x21, 0x07, 0xF09F}, {0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009},
@@ -2886,7 +2873,7 @@ sds_config rtl9300_a_sds_10gr_lane0[] =
 
 sds_config rtl9300_a_sds_10gr_lane1[] =
 {
-	/*1G*/
+	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
 	{0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F}, {0x21, 0x0A, 0x0003},
 	{0x21, 0x0B, 0x0005}, {0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009},
@@ -2901,7 +2888,7 @@ sds_config rtl9300_a_sds_10gr_lane1[] =
 	{0x25, 0x0F, 0x0121}, {0x25, 0x10, 0x0020}, {0x25, 0x11, 0x8840},
 	{0x2B, 0x13, 0x3D87}, {0x2B, 0x14, 0x3108}, {0x2D, 0x13, 0x3C87},
 	{0x2D, 0x14, 0x1808},
-	/*3.125G*/
+	/* 3.125G */
 	{0x28, 0x00, 0x0668}, {0x28, 0x02, 0xD020}, {0x28, 0x06, 0xC000},
 	{0x28, 0x0B, 0x1892}, {0x28, 0x0F, 0xFFDF}, {0x28, 0x12, 0x01C4},
 	{0x28, 0x13, 0x027F}, {0x28, 0x14, 0x1311}, {0x28, 0x16, 0x00C9},
@@ -2910,7 +2897,7 @@ sds_config rtl9300_a_sds_10gr_lane1[] =
 	{0x29, 0x03, 0xFFDF}, {0x29, 0x05, 0x7F7C}, {0x29, 0x07, 0x8100},
 	{0x29, 0x08, 0x0001}, {0x29, 0x0A, 0x7C2F}, {0x29, 0x0E, 0x003F},
 	{0x29, 0x0F, 0x0121}, {0x29, 0x10, 0x0020}, {0x29, 0x11, 0x8840},
-	/*10G*/
+	/* 10G */
 	{0x06, 0x0D, 0x0F00}, {0x06, 0x00, 0x0000}, {0x06, 0x01, 0xC800},
 	{0x21, 0x03, 0x8206}, {0x21, 0x05, 0x40B0}, {0x21, 0x06, 0x0010},
 	{0x21, 0x07, 0xF09F}, {0x21, 0x0A, 0x0003}, {0x21, 0x0B, 0x0005},
@@ -2933,15 +2920,15 @@ int rtl9300_sds_cmu_band_get(int sds)
 	u32 en;
 	u32 cmu_band;
 
-//	page = rtl9300_sds_cmu_page_get(sds);
-	page = 0x25; // 10GR and 1000BX
+/*	page = rtl9300_sds_cmu_page_get(sds); */
+	page = 0x25; /* 10GR and 1000BX */
 	sds = (sds % 2) ? (sds - 1) : (sds);
 
 	rtl9300_sds_field_w(sds, page, 0x1c, 15, 15, 1);
 	rtl9300_sds_field_w(sds + 1, page, 0x1c, 15, 15, 1);
 
 	en = rtl9300_sds_field_r(sds, page, 27, 1, 1);
-	if(!en) { // Auto mode
+	if(!en) { /* Auto mode */
 		rtl930x_write_sds_phy(sds, 0x1f, 0x02, 31);
 
 		cmu_band = rtl9300_sds_field_r(sds, 0x1f, 0x15, 5, 1);
@@ -2954,15 +2941,16 @@ int rtl9300_sds_cmu_band_get(int sds)
 
 int rtl9300_configure_serdes(struct phy_device *phydev)
 {
+	int phy_mode = PHY_INTERFACE_MODE_10GBASER;
 	struct device *dev = &phydev->mdio.dev;
-	int phy_addr = phydev->mdio.addr;
-	struct device_node *dn;
+	int calib_tries = 0;
 	u32 sds_num = 0;
-	int sds_mode, calib_tries = 0, phy_mode = PHY_INTERFACE_MODE_10GBASER, i;
+	int sds_mode;
 
 	if (dev->of_node) {
-		dn = dev->of_node;
-		
+		struct device_node *dn = dev->of_node;
+		int phy_addr = phydev->mdio.addr;
+
 		if (of_property_read_u32(dn, "sds", &sds_num))
 			sds_num = -1;
 		pr_info("%s: Port %d, SerDes is %d\n", __func__, phy_addr, sds_num);
@@ -2974,7 +2962,7 @@ int rtl9300_configure_serdes(struct phy_device *phydev)
 	if (sds_num < 0)
 		return 0;
 
-	if (phy_mode != PHY_INTERFACE_MODE_10GBASER) // TODO: for now we only patch 10GR SerDes
+	if (phy_mode != PHY_INTERFACE_MODE_10GBASER) /* TODO: for now we only patch 10GR SerDes */
 		return 0;
 
 	switch (phy_mode) {
@@ -3000,48 +2988,48 @@ int rtl9300_configure_serdes(struct phy_device *phydev)
 
 	pr_info("%s CMU BAND is %d\n", __func__, rtl9300_sds_cmu_band_get(sds_num));
 
-	// Turn Off Serdes
+	/* Turn Off Serdes */
 	rtl9300_sds_rst(sds_num, 0x1f);
 
 	pr_info("%s PATCHING SerDes %d\n", __func__, sds_num);
 	if (sds_num % 2) {
-		for (i = 0; i < sizeof(rtl9300_a_sds_10gr_lane1) / sizeof(sds_config); ++i) {
+		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane1) / sizeof(sds_config); ++i) {
 			rtl930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane1[i].page,
-						rtl9300_a_sds_10gr_lane1[i].reg,
-						rtl9300_a_sds_10gr_lane1[i].data);
+			                      rtl9300_a_sds_10gr_lane1[i].reg,
+			                      rtl9300_a_sds_10gr_lane1[i].data);
 		}
 	} else {
-		for (i = 0; i < sizeof(rtl9300_a_sds_10gr_lane0) / sizeof(sds_config); ++i) {
+		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane0) / sizeof(sds_config); ++i) {
 			rtl930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane0[i].page,
-						rtl9300_a_sds_10gr_lane0[i].reg,
-						rtl9300_a_sds_10gr_lane0[i].data);
+			                      rtl9300_a_sds_10gr_lane0[i].reg,
+			                      rtl9300_a_sds_10gr_lane0[i].data);
 		}
 	}
 
 	rtl9300_phy_enable_10g_1g(sds_num);
 
-	// Disable MAC
+	/* Disable MAC */
 	sw_w32_mask(0, 1, RTL930X_MAC_FORCE_MODE_CTRL);
 	mdelay(20);
 
-	// ----> dal_longan_sds_mode_set
+	/* ----> dal_longan_sds_mode_set */
 	pr_info("%s: Configuring RTL9300 SERDES %d, mode %02x\n", __func__, sds_num, sds_mode);
 
-	// Configure link to MAC
-	rtl9300_serdes_mac_link_config(sds_num, true, true);	// MAC Construct
+	/* Configure link to MAC */
+	rtl9300_serdes_mac_link_config(sds_num, true, true);	/* MAC Construct */
 
-	// Disable MAC
+	/* Disable MAC */
 	sw_w32_mask(0, 1, RTL930X_MAC_FORCE_MODE_CTRL);
 	mdelay(20);
 
 	rtl9300_force_sds_mode(sds_num, PHY_INTERFACE_MODE_NA);
 
-	// Re-Enable MAC
+	/* Re-Enable MAC */
 	sw_w32_mask(1, 0, RTL930X_MAC_FORCE_MODE_CTRL);
 
 	rtl9300_force_sds_mode(sds_num, phy_mode);
 
-	// Do RX calibration
+	/* Do RX calibration */
 	do {
 		rtl9300_do_rx_calibration(sds_num, phy_mode);
 		calib_tries++;
@@ -3053,7 +3041,7 @@ int rtl9300_configure_serdes(struct phy_device *phydev)
 
 	rtl9300_sds_tx_config(sds_num, phy_mode);
 
-	// The clock needs only to be configured on the FPGA implementation
+	/* The clock needs only to be configured on the FPGA implementation */
 
 	return 0;
 }
@@ -3074,7 +3062,6 @@ void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit,
 	rtl931x_write_sds_phy(sds, page, reg, data);
 }
 
-
 u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
 {
 	int l = end_bit - start_bit + 1;
@@ -3091,8 +3078,8 @@ static void rtl931x_sds_rst(u32 sds)
 	u32 o, v, o_mode;
 	int shift = ((sds & 0x3) << 3);
 
-	// TODO: We need to lock this!
-	
+	/* TODO: We need to lock this! */
+
 	o = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
 	v = o | BIT(sds);
 	sw_w32(v, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
@@ -3107,29 +3094,29 @@ static void rtl931x_sds_rst(u32 sds)
 
 static void rtl931x_symerr_clear(u32 sds, phy_interface_t mode)
 {
-	u32 i;
-	u32 xsg_sdsid_0, xsg_sdsid_1;
 
 	switch (mode) {
 	case PHY_INTERFACE_MODE_NA:
 		break;
 	case PHY_INTERFACE_MODE_XGMII:
+		u32 xsg_sdsid_0, xsg_sdsid_1;
+
 		if (sds < 2)
 			xsg_sdsid_0 = sds;
 		else
 			xsg_sdsid_0 = (sds - 1) * 2;
 		xsg_sdsid_1 = xsg_sdsid_0 + 1;
 
-		for (i = 0; i < 4; ++i) {
-			rtl9310_sds_field_w(xsg_sdsid_0, 0x1, 24, 2, 0, i);
-			rtl9310_sds_field_w(xsg_sdsid_0, 0x1, 3, 15, 8, 0x0);
-			rtl9310_sds_field_w(xsg_sdsid_0, 0x1, 2, 15, 0, 0x0);
+		for (int i = 0; i < 4; ++i) {
+			rtl9310_sds_field_w(xsg_sdsid_0, 0x1, 24,  2, 0, i);
+			rtl9310_sds_field_w(xsg_sdsid_0, 0x1,  3, 15, 8, 0x0);
+			rtl9310_sds_field_w(xsg_sdsid_0, 0x1,  2, 15, 0, 0x0);
 		}
 
-		for (i = 0; i < 4; ++i) {
-			rtl9310_sds_field_w(xsg_sdsid_1, 0x1, 24, 2, 0, i);
-			rtl9310_sds_field_w(xsg_sdsid_1, 0x1, 3, 15, 8, 0x0);
-			rtl9310_sds_field_w(xsg_sdsid_1, 0x1, 2, 15, 0, 0x0);
+		for (int i = 0; i < 4; ++i) {
+			rtl9310_sds_field_w(xsg_sdsid_1, 0x1, 24,  2, 0, i);
+			rtl9310_sds_field_w(xsg_sdsid_1, 0x1,  3, 15, 8, 0x0);
+			rtl9310_sds_field_w(xsg_sdsid_1, 0x1,  2, 15, 0, 0x0);
 		}
 
 		rtl9310_sds_field_w(xsg_sdsid_0, 0x1, 0, 15, 0, 0x0);
@@ -3150,6 +3137,7 @@ static u32 rtl931x_get_analog_sds(u32 sds)
 
 	if (sds < 14)
 		return sds_map[sds];
+
 	return sds;
 }
 
@@ -3207,30 +3195,31 @@ static int rtl931x_sds_cmu_page_get(phy_interface_t mode)
 {
 	switch (mode) {
 	case PHY_INTERFACE_MODE_SGMII:
-	case PHY_INTERFACE_MODE_1000BASEX:	// MII_1000BX_FIBER / 100BX_FIBER / 1000BX100BX_AUTO
+	case PHY_INTERFACE_MODE_1000BASEX:	/* MII_1000BX_FIBER / 100BX_FIBER / 1000BX100BX_AUTO */
 		return 0x24;
 	case PHY_INTERFACE_MODE_HSGMII:
-	case PHY_INTERFACE_MODE_2500BASEX:	// MII_2500Base_X:
+	case PHY_INTERFACE_MODE_2500BASEX:	/* MII_2500Base_X: */
 		return 0x28;
-//	case MII_HISGMII_5G:
-//		return 0x2a;
+/*	case MII_HISGMII_5G: */
+/*		return 0x2a; */
 	case PHY_INTERFACE_MODE_QSGMII:
-		return 0x2a;			// Code also has 0x34
-	case PHY_INTERFACE_MODE_XAUI:		// MII_RXAUI_LITE:
+		return 0x2a;			/* Code also has 0x34 */
+	case PHY_INTERFACE_MODE_XAUI:		/* MII_RXAUI_LITE: */
 		return 0x2c;
-	case PHY_INTERFACE_MODE_XGMII:		// MII_XSGMII
+	case PHY_INTERFACE_MODE_XGMII:		/* MII_XSGMII */
 	case PHY_INTERFACE_MODE_10GKR:
-	case PHY_INTERFACE_MODE_10GBASER:	// MII_10GR
+	case PHY_INTERFACE_MODE_10GBASER:	/* MII_10GR */
 		return 0x2e;
 	default:
 		return -1;
 	}
+
 	return -1;
 }
 
 static void rtl931x_cmu_type_set(u32 asds, phy_interface_t mode, int chiptype)
 {
-	int cmu_type = 0; // Clock Management Unit
+	int cmu_type = 0; /* Clock Management Unit */
 	u32 cmu_page = 0;
 	u32 frc_cmu_spd;
 	u32 evenSds;
@@ -3300,7 +3289,7 @@ static void rtl931x_cmu_type_set(u32 asds, phy_interface_t mode, int chiptype)
 	evenSds = asds - lane;
 
 	pr_info("%s: cmu_type %0d cmu_page %x frc_cmu_spd %d lane %d asds %d\n",
-		__func__, cmu_type, cmu_page, frc_cmu_spd, lane, asds);
+	        __func__, cmu_type, cmu_page, frc_cmu_spd, lane, asds);
 
 	if (cmu_type == 1) {
 		pr_info("%s A CMU page 0x28 0x7 %08x\n", __func__, rtl931x_read_sds_phy(asds, 0x28, 0x7));
@@ -3358,7 +3347,7 @@ static void rtl931x_sds_mii_mode_set(u32 sds, phy_interface_t mode)
 		val = 0x6;
 		break;
 	case PHY_INTERFACE_MODE_XGMII:
-		val = 0x10; // serdes mode XSGMII
+		val = 0x10; /* serdes mode XSGMII */
 		break;
 	case PHY_INTERFACE_MODE_USXGMII:
 	case PHY_INTERFACE_MODE_2500BASEX:
@@ -3405,19 +3394,18 @@ static sds_config sds_config_10p3125g_cmu_type1[] = {
 
 void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 {
-
-	u32 board_sds_tx_type1[] = { 0x1C3, 0x1C3, 0x1C3, 0x1A3, 0x1A3,
-		0x1A3, 0x143, 0x143, 0x143, 0x143, 0x163, 0x163
+	u32 board_sds_tx_type1[] = {
+		0x01c3, 0x01c3, 0x01c3, 0x01a3, 0x01a3, 0x01a3,
+		0x0143, 0x0143, 0x0143, 0x0143, 0x0163, 0x0163,
 	};
-
-	u32 board_sds_tx[] = { 0x1A00, 0x1A00, 0x200, 0x200, 0x200,
-		0x200, 0x1A3, 0x1A3, 0x1A3, 0x1A3, 0x1E3, 0x1E3
+	u32 board_sds_tx[] = {
+		0x1a00, 0x1a00, 0x0200, 0x0200, 0x0200, 0x0200,
+		0x01a3, 0x01a3, 0x01a3, 0x01a3, 0x01e3, 0x01e3
 	};
-
-	u32 board_sds_tx2[] = { 0xDC0, 0x1C0, 0x200, 0x180, 0x160,
-		0x123, 0x123, 0x163, 0x1A3, 0x1A0, 0x1C3, 0x9C3
+	u32 board_sds_tx2[] = {
+		0x0dc0, 0x01c0, 0x0200, 0x0180, 0x0160, 0x0123,
+		0x0123, 0x0163, 0x01a3, 0x01a0, 0x01c3, 0x09c3,
 	};
-
 	u32 asds, dSds, ori, model_info, val;
 	int chiptype = 0;
 
@@ -3456,7 +3444,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		dSds = (sds - 1) * 2;
 
 	pr_info("%s: 2.5gbit %08X dsds %d", __func__,
-		rtl931x_read_sds_phy(dSds, 0x1, 0x14), dSds);
+	        rtl931x_read_sds_phy(dSds, 0x1, 0x14), dSds);
 
 	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
 	ori = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
@@ -3467,12 +3455,12 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	case PHY_INTERFACE_MODE_NA:
 		break;
 
-	case PHY_INTERFACE_MODE_XGMII: // MII_XSGMII
+	case PHY_INTERFACE_MODE_XGMII: /* MII_XSGMII */
 
 		if (chiptype) {
 			u32 xsg_sdsid_1;
 			xsg_sdsid_1 = dSds + 1;
-			//fifo inv clk
+			/* fifo inv clk */
 			rtl9310_sds_field_w(dSds, 0x1, 0x1, 7, 4, 0xf);
 			rtl9310_sds_field_w(dSds, 0x1, 0x1, 3, 0, 0xf);
 
@@ -3485,22 +3473,22 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		rtl9310_sds_field_w(dSds + 1, 0x0, 0xE, 12, 12, 1);
 		break;
 
-	case PHY_INTERFACE_MODE_USXGMII: // MII_USXGMII_10GSXGMII/10GDXGMII/10GQXGMII:
-		u32 i, evenSds;
+	case PHY_INTERFACE_MODE_USXGMII: /* MII_USXGMII_10GSXGMII/10GDXGMII/10GQXGMII: */
 		u32 op_code = 0x6003;
+		u32 evenSds;
 
 		if (chiptype) {
 			rtl9310_sds_field_w(asds, 0x6, 0x2, 12, 12, 1);
 
-			for (i = 0; i < sizeof(sds_config_10p3125g_type1) / sizeof(sds_config); ++i) {
+			for (int i = 0; i < sizeof(sds_config_10p3125g_type1) / sizeof(sds_config); ++i) {
 				rtl931x_write_sds_phy(asds, sds_config_10p3125g_type1[i].page - 0x4, sds_config_10p3125g_type1[i].reg, sds_config_10p3125g_type1[i].data);
 			}
 
 			evenSds = asds - (asds % 2);
 
-			for (i = 0; i < sizeof(sds_config_10p3125g_cmu_type1) / sizeof(sds_config); ++i) {
+			for (int i = 0; i < sizeof(sds_config_10p3125g_cmu_type1) / sizeof(sds_config); ++i) {
 				rtl931x_write_sds_phy(evenSds,
-						      sds_config_10p3125g_cmu_type1[i].page - 0x4, sds_config_10p3125g_cmu_type1[i].reg, sds_config_10p3125g_cmu_type1[i].data);
+				                      sds_config_10p3125g_cmu_type1[i].page - 0x4, sds_config_10p3125g_cmu_type1[i].reg, sds_config_10p3125g_cmu_type1[i].data);
 			}
 
 			rtl9310_sds_field_w(asds, 0x6, 0x2, 12, 12, 0);
@@ -3526,18 +3514,18 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		}
 		break;
 
-	case PHY_INTERFACE_MODE_10GBASER: // MII_10GR / MII_10GR1000BX_AUTO:
-		// configure 10GR fiber mode=1
+	case PHY_INTERFACE_MODE_10GBASER: /* MII_10GR / MII_10GR1000BX_AUTO: */
+	                                  /* configure 10GR fiber mode=1 */
 		rtl9310_sds_field_w(asds, 0x1f, 0xb, 1, 1, 1);
 
-		// init fiber_1g
+		/* init fiber_1g */
 		rtl9310_sds_field_w(dSds, 0x3, 0x13, 15, 14, 0);
 
 		rtl9310_sds_field_w(dSds, 0x2, 0x0, 12, 12, 1);
 		rtl9310_sds_field_w(dSds, 0x2, 0x0, 6, 6, 1);
 		rtl9310_sds_field_w(dSds, 0x2, 0x0, 13, 13, 0);
 
-		// init auto
+		/* init auto */
 		rtl9310_sds_field_w(asds, 0x1f, 13, 15, 0, 0x109e);
 		rtl9310_sds_field_w(asds, 0x1f, 0x6, 14, 10, 0x8);
 		rtl9310_sds_field_w(asds, 0x1f, 0x7, 10, 4, 0x7f);
@@ -3547,7 +3535,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		rtl9310_sds_field_w(dSds, 0x1, 0x14, 8, 8, 1);
 		break;
 
-	case PHY_INTERFACE_MODE_1000BASEX: // MII_1000BX_FIBER
+	case PHY_INTERFACE_MODE_1000BASEX: /* MII_1000BX_FIBER */
 		rtl9310_sds_field_w(dSds, 0x3, 0x13, 15, 14, 0);
 
 		rtl9310_sds_field_w(dSds, 0x2, 0x0, 12, 12, 1);
@@ -3566,7 +3554,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	case PHY_INTERFACE_MODE_QSGMII:
 	default:
 		pr_info("%s: PHY mode %s not supported by SerDes %d\n",
-			__func__, phy_modes(mode), sds);
+		        __func__, phy_modes(mode), sds);
 		return;
 	}
 
@@ -3579,7 +3567,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 			val = 0xa0000;
 			sw_w32(val, RTL931X_CHIP_INFO_ADDR);
 			val = sw_r32(RTL931X_CHIP_INFO_ADDR);
-			if (val & BIT(28)) // consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit))
+			if (val & BIT(28)) /* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
 			{
 				rtl931x_write_sds_phy(asds, 0x2E, 0x1, board_sds_tx2[sds - 2]);
 			} else {
@@ -3594,9 +3582,11 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	sw_w32(val, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
 	pr_debug("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
 
-	if (mode == PHY_INTERFACE_MODE_XGMII || mode == PHY_INTERFACE_MODE_QSGMII
-	    || mode == PHY_INTERFACE_MODE_HSGMII || mode == PHY_INTERFACE_MODE_SGMII
-	    || mode == PHY_INTERFACE_MODE_USXGMII) {
+	if (mode == PHY_INTERFACE_MODE_XGMII ||
+	    mode == PHY_INTERFACE_MODE_QSGMII ||
+	    mode == PHY_INTERFACE_MODE_HSGMII ||
+	    mode == PHY_INTERFACE_MODE_SGMII ||
+	    mode == PHY_INTERFACE_MODE_USXGMII) {
 		if (mode == PHY_INTERFACE_MODE_XGMII)
 			rtl931x_sds_mii_mode_set(sds, mode);
 		else
@@ -3621,7 +3611,7 @@ int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mod
 		rtl9310_sds_field_w(asds, page, 0x7, 13, 13, 0);
 		rtl9310_sds_field_w(asds, page, 0x7, 11, 11, 0);
 	}
-		
+
 	rtl9310_sds_field_w(asds, page, 0x7, 4, 0, band);
 
 	rtl931x_sds_rst(sds);
@@ -3674,6 +3664,7 @@ int rtl931x_link_sts_get(u32 sds)
 
 	pr_info("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
 		sds, sts, sts1, latch_sts, latch_sts1);
+
 	return sts1;
 }
 
@@ -3741,6 +3732,7 @@ static int rtl8214c_phy_probe(struct phy_device *phydev)
 		/* Configuration must be done whil patching still possible */
 		return rtl8380_configure_rtl8214c(phydev);
 	}
+
 	return 0;
 }
 
@@ -3805,8 +3797,9 @@ static int rtl8218d_phy_probe(struct phy_device *phydev)
 		struct rtl83xx_shared_private *shared = phydev->shared->priv;
 		shared->name = "RTL8218D";
 		/* Configuration must be done while patching still possible */
-// TODO:		return configure_rtl8218d(phydev);
+/* TODO:		return configure_rtl8218d(phydev); */
 	}
+
 	return 0;
 }
 
@@ -3825,6 +3818,7 @@ static int rtl838x_serdes_probe(struct phy_device *phydev)
 			return rtl8380_configure_serdes(phydev);
 		return 0;
 	}
+
 	return -ENODEV;
 }
 

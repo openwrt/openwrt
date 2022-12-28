@@ -350,9 +350,7 @@
 #define RTL931X_MAC_L2_GLOBAL_CTRL2	(0x1358)
 #define RTL931X_MAC_L2_GLOBAL_CTRL1	(0x5548)
 
-/*
- * Switch interrupts
- */
+/* Switch interrupts */
 #define RTL838X_IMR_GLB			(0x1100)
 #define RTL838X_IMR_PORT_LINK_STS_CHG	(0x1104)
 #define RTL838X_ISR_GLB_SRC		(0x1148)
@@ -368,7 +366,7 @@
 #define RTL930X_ISR_GLB			(0xC658)
 #define RTL930X_ISR_PORT_LINK_STS_CHG	(0xC660)
 
-// IMR_GLB does not exit on RTL931X
+/* IMR_GLB does not exit on RTL931X */
 #define RTL931X_IMR_PORT_LINK_STS_CHG	(0x126C)
 #define RTL931X_ISR_GLB_SRC		(0x12B4)
 #define RTL931X_ISR_PORT_LINK_STS_CHG	(0x12B8)

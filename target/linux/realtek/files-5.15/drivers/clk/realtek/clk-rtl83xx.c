@@ -467,9 +467,9 @@ static long rtcl_round_rate(struct clk_hw *hw, unsigned long rate, unsigned long
  */
 
 #define RTCL_SRAM_FUNC(SOC, PBASE, FN) ({				\
-	rtcl_##SOC##_sram_##FN = ((void *)&rtcl_##SOC##_dram_##FN	\
-				- (void *)&rtcl_##SOC##_dram_start)	\
-				+ (void *)PBASE; })
+        rtcl_##SOC##_sram_##FN = ((void *)&rtcl_##SOC##_dram_##FN -	\
+                                  (void *)&rtcl_##SOC##_dram_start) +	\
+                                  (void *)PBASE; })
 
 static const struct clk_ops rtcl_clk_ops = {
 	.set_rate = rtcl_set_rate,
@@ -663,11 +663,10 @@ err_put_device:
 
 void rtcl_ccu_log_early(void)
 {
-	int clk_idx;
 	char meminfo[80], clkinfo[255], msg[255] = "rtl83xx-clk: initialized";
 
 	sprintf(meminfo, " (%d Bit DDR%d)", rtcl_ccu->dram.buswidth, rtcl_ccu->dram.type);
-	for (clk_idx = 0; clk_idx < CLK_COUNT; clk_idx++) {
+	for (int clk_idx = 0; clk_idx < CLK_COUNT; clk_idx++) {
 		sprintf(clkinfo, ", %s %lu MHz", rtcl_clk_info[clk_idx].display_name,
 			rtcl_ccu->clks[clk_idx].startup / 1000000);
 		if (clk_idx == CLK_MEM)
@@ -679,12 +678,11 @@ void rtcl_ccu_log_early(void)
 
 void rtcl_ccu_log_late(void)
 {
-	int clk_idx;
 	struct rtcl_clk *rclk;
 	bool overclock = false;
 	char clkinfo[80], msg[255] = "rate setting enabled";
 
-	for (clk_idx = 0; clk_idx < CLK_COUNT; clk_idx++) {
+	for (int clk_idx = 0; clk_idx < CLK_COUNT; clk_idx++) {
 		rclk = &rtcl_ccu->clks[clk_idx];
 		overclock |= rclk->max > rclk->startup;
 		sprintf(clkinfo, ", %s %lu-%lu MHz", rtcl_clk_info[clk_idx].display_name,

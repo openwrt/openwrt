@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+
 #include "rtl83xx.h"
 
 #define RTL839X_VLAN_PORT_TAG_STS_UNTAG				0x0
@@ -24,18 +25,18 @@ extern struct rtl83xx_soc_info soc_info;
 /* Definition of the RTL839X-specific template field IDs as used in the PIE */
 enum template_field_id {
 	TEMPLATE_FIELD_SPMMASK = 0,
-	TEMPLATE_FIELD_SPM0 = 1,		// Source portmask ports 0-15
-	TEMPLATE_FIELD_SPM1 = 2,		// Source portmask ports 16-31
-	TEMPLATE_FIELD_SPM2 = 3,		// Source portmask ports 32-47
-	TEMPLATE_FIELD_SPM3 = 4,		// Source portmask ports 48-56
-	TEMPLATE_FIELD_DMAC0 = 5,		// Destination MAC [15:0]
-	TEMPLATE_FIELD_DMAC1 = 6,		// Destination MAC [31:16]
-	TEMPLATE_FIELD_DMAC2 = 7,		// Destination MAC [47:32]
-	TEMPLATE_FIELD_SMAC0 = 8,		// Source MAC [15:0]
-	TEMPLATE_FIELD_SMAC1 = 9,		// Source MAC [31:16]
-	TEMPLATE_FIELD_SMAC2 = 10,		// Source MAC [47:32]
-	TEMPLATE_FIELD_ETHERTYPE = 11,		// Ethernet frame type field
-	// Field-ID 12 is not used
+	TEMPLATE_FIELD_SPM0 = 1,		/* Source portmask ports 0-15 */
+	TEMPLATE_FIELD_SPM1 = 2,		/* Source portmask ports 16-31 */
+	TEMPLATE_FIELD_SPM2 = 3,		/* Source portmask ports 32-47 */
+	TEMPLATE_FIELD_SPM3 = 4,		/* Source portmask ports 48-56 */
+	TEMPLATE_FIELD_DMAC0 = 5,		/* Destination MAC [15:0] */
+	TEMPLATE_FIELD_DMAC1 = 6,		/* Destination MAC [31:16] */
+	TEMPLATE_FIELD_DMAC2 = 7,		/* Destination MAC [47:32] */
+	TEMPLATE_FIELD_SMAC0 = 8,		/* Source MAC [15:0] */
+	TEMPLATE_FIELD_SMAC1 = 9,		/* Source MAC [31:16] */
+	TEMPLATE_FIELD_SMAC2 = 10,		/* Source MAC [47:32] */
+	TEMPLATE_FIELD_ETHERTYPE = 11,		/* Ethernet frame type field */
+	/* Field-ID 12 is not used */
 	TEMPLATE_FIELD_OTAG = 13,
 	TEMPLATE_FIELD_ITAG = 14,
 	TEMPLATE_FIELD_SIP0 = 15,
@@ -87,7 +88,7 @@ enum template_field_id {
 	TEMPLATE_FIELD_DIP7 = 61,
 };
 
-// Number of fixed templates predefined in the SoC
+/* Number of fixed templates predefined in the SoC */
 #define N_FIXED_TEMPLATES 5
 static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS] =
 {
@@ -122,10 +123,9 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 void rtl839x_print_matrix(void)
 {
 	volatile u64 *ptr9;
-	int i;
 
 	ptr9 = RTL838X_SW_BASE + RTL839X_PORT_ISO_CTRL(0);
-	for (i = 0; i < 52; i += 4)
+	for (int i = 0; i < 52; i += 4)
 		pr_debug("> %16llx %16llx %16llx %16llx\n",
 			ptr9[i + 0], ptr9[i + 1], ptr9[i + 2], ptr9[i + 3]);
 	pr_debug("CPU_PORT> %16llx\n", ptr9[52]);
@@ -162,7 +162,7 @@ static inline int rtl839x_tbl_access_data_0(int i)
 static void rtl839x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 {
 	u32 u, v, w;
-	// Read VLAN table (0) via register 0
+	/* Read VLAN table (0) via register 0 */
 	struct table_reg *r = rtl_table_get(RTL8390_TBL_0, 0);
 
 	rtl_table_read(r, vlan);
@@ -178,7 +178,7 @@ static void rtl839x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	info->hash_uc_fid = !!(w & BIT(3));
 	info->fid = (v >> 3) & 0xff;
 
-	// Read UNTAG table (0) via table register 1
+	/* Read UNTAG table (0) via table register 1 */
 	r = rtl_table_get(RTL8390_TBL_1, 0);
 	rtl_table_read(r, vlan);
 	u = sw_r32(rtl_table_data(r, 0));
@@ -192,7 +192,7 @@ static void rtl839x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 static void rtl839x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 {
 	u32 u, v, w;
-	// Access VLAN table (0) via register 0
+	/* Access VLAN table (0) via register 0 */
 	struct table_reg *r = rtl_table_get(RTL8390_TBL_0, 0);
 
 	u = info->tagged_ports >> 21;
@@ -215,7 +215,7 @@ static void rtl839x_vlan_set_untagged(u32 vlan, u64 portmask)
 {
 	u32 u, v;
 
-	// Access UNTAG table (0) via table register 1
+	/* Access UNTAG table (0) via table register 1 */
 	struct table_reg *r = rtl_table_get(RTL8390_TBL_1, 0);
 
 	u = portmask >> 21;
@@ -228,8 +228,7 @@ static void rtl839x_vlan_set_untagged(u32 vlan, u64 portmask)
 	rtl_table_release(r);
 }
 
-/* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer
- */
+/* Sets the L2 forwarding to be based on either the inner VLAN tag or the outer */
 static void rtl839x_vlan_fwd_on_inner(int port, bool is_set)
 {
 	if (is_set)
@@ -238,9 +237,7 @@ static void rtl839x_vlan_fwd_on_inner(int port, bool is_set)
 		rtl839x_mask_port_reg_be(0ULL, BIT_ULL(port), RTL839X_VLAN_PORT_FWD);
 }
 
-/*
- * Hash seed is vid (actually rvid) concatenated with the MAC address
- */
+/* Hash seed is vid (actually rvid) concatenated with the MAC address */
 static u64 rtl839x_l2_hash_seed(u64 mac, u32 vid)
 {
 	u64 v = vid;
@@ -251,8 +248,7 @@ static u64 rtl839x_l2_hash_seed(u64 mac, u32 vid)
 	return v;
 }
 
-/*
- * Applies the same hash algorithm as the one used currently by the ASIC to the seed
+/* Applies the same hash algorithm as the one used currently by the ASIC to the seed
  * and returns a key into the L2 hash table
  */
 static u32 rtl839x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
@@ -260,18 +256,18 @@ static u32 rtl839x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	u32 h1, h2, h;
 
 	if (sw_r32(priv->r->l2_ctrl_0) & 1) {
-		h1 = (u32) (((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f)
-				^ ((seed >> 36) & 0x3f) ^ ((seed >> 30) & 0x3f)
-				^ ((seed >> 12) & 0x3f) ^ ((seed >> 6) & 0x3f));
-		h2 = (u32) (((seed >> 48) & 0x3f) ^ ((seed >> 42) & 0x3f)
-				^ ((seed >> 24) & 0x3f) ^ ((seed >> 18) & 0x3f)
-				^ (seed & 0x3f));
+		h1 = (u32) (((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f) ^
+		           ((seed >> 36) & 0x3f) ^ ((seed >> 30) & 0x3f) ^
+		           ((seed >> 12) & 0x3f) ^ ((seed >> 6) & 0x3f));
+		h2 = (u32) (((seed >> 48) & 0x3f) ^ ((seed >> 42) & 0x3f) ^
+		           ((seed >> 24) & 0x3f) ^ ((seed >> 18) & 0x3f) ^
+		           (seed & 0x3f));
 		h = (h1 << 6) | h2;
 	} else {
-		h = (seed >> 60)
-			^ ((((seed >> 48) & 0x3f) << 6) | ((seed >> 54) & 0x3f))
-			^ ((seed >> 36) & 0xfff) ^ ((seed >> 24) & 0xfff)
-			^ ((seed >> 12) & 0xfff) ^ (seed & 0xfff);
+		h = (seed >> 60) ^
+		    ((((seed >> 48) & 0x3f) << 6) | ((seed >> 54) & 0x3f)) ^
+		    ((seed >> 36) & 0xfff) ^ ((seed >> 24) & 0xfff) ^
+		    ((seed >> 12) & 0xfff) ^ (seed & 0xfff);
 	}
 
 	return h;
@@ -352,7 +348,7 @@ static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 			e->mc_portmask_index = (r[2] >> 6) & 0xfff;
 			e->vid = e->rvid;
 		}
-	} else { // IPv4 and IPv6 multicast
+	} else { /* IPv4 and IPv6 multicast */
 		e->vid = e->rvid = (r[0] << 20) & 0xfff;
 		e->mc_gip = r[1];
 		e->mc_portmask_index = (r[2] >> 6) & 0xfff;
@@ -365,12 +361,10 @@ static void rtl839x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 		e->valid = true;
 		e->type = IP6_MULTICAST;
 	}
-	// pr_info("%s: vid %d, rvid: %d\n", __func__, e->vid, e->rvid);
+	/* pr_info("%s: vid %d, rvid: %d\n", __func__, e->vid, e->rvid); */
 }
 
-/*
- * Fills the 3 SoC table registers r[] with the information in the rtl838x_l2_entry
- */
+/* Fills the 3 SoC table registers r[] with the information in the rtl838x_l2_entry */
 static void rtl839x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 {
 	if (!e->valid) {
@@ -390,7 +384,7 @@ static void rtl839x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 		r[1] |= ((u32)e->mac[4]) << 12;
 		r[1] |= ((u32)e->mac[5]) << 4;
 
-		if (!(e->mac[0] & 1)) { // Not multicast
+		if (!(e->mac[0] & 1)) { /* Not multicast */
 			r[2] |= e->is_static ? BIT(18) : 0;
 			r[0] |= ((u32)e->rvid) << 20;
 			r[2] |= e->port << 24;
@@ -406,19 +400,18 @@ static void rtl839x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 				r[2] |= e->vid << 4;
 			}
 			pr_debug("Write L2 NH: %08x %08x %08x\n", r[0], r[1], r[2]);
-		} else {  // L2 Multicast
+		} else {  /* L2 Multicast */
 			r[0] |= ((u32)e->rvid) << 20;
 			r[2] |= ((u32)e->mc_portmask_index) << 6;
 		}
-	} else { // IPv4 or IPv6 MC entry
+	} else { /* IPv4 or IPv6 MC entry */
 		r[0] = ((u32)e->rvid) << 20;
 		r[1] = e->mc_gip;
 		r[2] |= ((u32)e->mc_portmask_index) << 6;
 	}
 }
 
-/*
- * Read an L2 UC or MC entry out of a hash bucket of the L2 forwarding table
+/* Read an L2 UC or MC entry out of a hash bucket of the L2 forwarding table
  * hash is the id of the bucket and pos is the position of the entry in that bucket
  * The data read from the SoC is filled into rtl838x_l2_entry
  */
@@ -426,11 +419,10 @@ static u64 rtl839x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 {
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 0);
-	u32 idx = (0 << 14) | (hash << 2) | pos; // Search SRAM, with hash and at pos in bucket
-	int i;
+	u32 idx = (0 << 14) | (hash << 2) | pos; /* Search SRAM, with hash and at pos in bucket */
 
 	rtl_table_read(q, idx);
-	for (i= 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -446,13 +438,12 @@ static void rtl839x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 {
 	u32 r[3];
 	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 0);
-	int i;
 
-	u32 idx = (0 << 14) | (hash << 2) | pos; // Access SRAM, with hash and at pos in bucket
+	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
 
 	rtl839x_fill_l2_row(r, e);
 
-	for (i= 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -462,11 +453,10 @@ static void rtl839x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 static u64 rtl839x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
-	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 1); // Access L2 Table 1
-	int i;
+	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 1); /* Access L2 Table 1 */
 
 	rtl_table_read(q, idx);
-	for (i= 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -477,19 +467,18 @@ static u64 rtl839x_read_cam(int idx, struct rtl838x_l2_entry *e)
 
 	pr_debug("Found in CAM: R1 %x R2 %x R3 %x\n", r[0], r[1], r[2]);
 
-	// Return MAC with concatenated VID ac concatenated ID
+	/* Return MAC with concatenated VID ac concatenated ID */
 	return rtl839x_l2_hash_seed(ether_addr_to_u64(&e->mac[0]), e->rvid);
 }
 
 static void rtl839x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[3];
-	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 1); // Access L2 Table 1
-	int i;
+	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 1); /* Access L2 Table 1 */
 
 	rtl839x_fill_l2_row(r, e);
 
-	for (i= 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -499,14 +488,14 @@ static void rtl839x_write_cam(int idx, struct rtl838x_l2_entry *e)
 static u64 rtl839x_read_mcast_pmask(int idx)
 {
 	u64 portmask;
-	// Read MC_PMSK (2) via register RTL8390_TBL_L2
+	/* Read MC_PMSK (2) via register RTL8390_TBL_L2 */
 	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 2);
 
 	rtl_table_read(q, idx);
 	portmask = sw_r32(rtl_table_data(q, 0));
 	portmask <<= 32;
 	portmask |= sw_r32(rtl_table_data(q, 1));
-	portmask >>= 11;  // LSB is bit 11 in data registers
+	portmask >>= 11;  /* LSB is bit 11 in data registers */
 	rtl_table_release(q);
 
 	return portmask;
@@ -514,10 +503,10 @@ static u64 rtl839x_read_mcast_pmask(int idx)
 
 static void rtl839x_write_mcast_pmask(int idx, u64 portmask)
 {
-	// Access MC_PMSK (2) via register RTL8380_TBL_L2
+	/* Access MC_PMSK (2) via register RTL8380_TBL_L2 */
 	struct table_reg *q = rtl_table_get(RTL8390_TBL_L2, 2);
 
-	portmask <<= 11; // LSB is bit 11 in data registers
+	portmask <<= 11; /* LSB is bit 11 in data registers */
 	sw_w32((u32)(portmask >> 32), rtl_table_data(q, 0));
 	sw_w32((u32)((portmask & 0xfffff800)), rtl_table_data(q, 1));
 	rtl_table_write(q, idx);
@@ -529,8 +518,8 @@ static void rtl839x_vlan_profile_setup(int profile)
 	u32 p[2];
 	u32 pmask_id = UNKNOWN_MC_PMASK;
 
-	p[0] = pmask_id; // Use portmaks 0xfff for unknown IPv6 MC flooding
-	// Enable L2 Learning BIT 0, portmask UNKNOWN_MC_PMASK for IP/L2-MC traffic flooding
+	p[0] = pmask_id; /* Use portmaks 0xfff for unknown IPv6 MC flooding */
+	/* Enable L2 Learning BIT 0, portmask UNKNOWN_MC_PMASK for IP/L2-MC traffic flooding */
 	p[1] = 1 | pmask_id << 1 | pmask_id << 13;
 
 	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
@@ -566,16 +555,16 @@ static void rtl839x_l2_learning_setup(void)
 	 * also for multicast flooding */
 	sw_w32(UNKNOWN_MC_PMASK << 12 | UNKNOWN_MC_PMASK, RTL839X_L2_FLD_PMSK);
 
-	// Limit learning to maximum: 32k entries, after that just flood (bits 0-1)
+	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	sw_w32((0x7fff << 2) | 0, RTL839X_L2_LRN_CONSTRT);
 
-	// Do not trap ARP packets to CPU_PORT
+	/* Do not trap ARP packets to CPU_PORT */
 	sw_w32(0, RTL839X_SPCL_TRAP_ARP_CTRL);
 }
 
 static void rtl839x_enable_learning(int port, bool enable)
 {
-	// Limit learning to maximum: 32k entries
+	/* Limit learning to maximum: 32k entries */
 
 	sw_w32_mask(0x7fff << 2, enable ? (0x7fff << 2) : 0,
 		    RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
@@ -583,8 +572,7 @@ static void rtl839x_enable_learning(int port, bool enable)
 
 static void rtl839x_enable_flood(int port, bool enable)
 {
-	/*
-	 * 0: Forward
+	/* 0: Forward
 	 * 1: Disable
 	 * 2: to CPU
 	 * 3: Copy to CPU
@@ -608,13 +596,12 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	u32 status = sw_r32(RTL839X_ISR_GLB_SRC);
 	u64 ports = rtl839x_get_port_reg_le(RTL839X_ISR_PORT_LINK_STS_CHG);
 	u64 link;
-	int i;
 
 	/* Clear status */
 	rtl839x_set_port_reg_le(ports, RTL839X_ISR_PORT_LINK_STS_CHG);
 	pr_debug("RTL8390 Link change: status: %x, ports %llx\n", status, ports);
 
-	for (i = 0; i < RTL839X_CPU_PORT; i++) {
+	for (int i = 0; i < RTL839X_CPU_PORT; i++) {
 		if (ports & BIT_ULL(i)) {
 			link = rtl839x_get_port_reg_le(RTL839X_MAC_LINK_STS);
 			if (link & BIT_ULL(i))
@@ -623,10 +610,11 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 				dsa_port_phylink_mac_change(ds, i, false);
 		}
 	}
+
 	return IRQ_HANDLED;
 }
 
-// TODO: unused
+/* TODO: unused */
 int rtl8390_sds_power(int mac, int val)
 {
 	u32 offset = (mac == 48) ? 0x0 : 0x100;
@@ -639,7 +627,7 @@ int rtl8390_sds_power(int mac, int val)
 		return -1;
 	}
 
-	// Set bit 1003. 1000 starts at 7c
+	/* Set bit 1003. 1000 starts at 7c */
 	sw_w32_mask(BIT(11), mode << 11, RTL839X_SDS12_13_PWR0 + offset);
 
 	return 0;
@@ -666,7 +654,7 @@ int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	if (port > 63 || page > 4095 || reg > 31)
 		return -ENOTSUPP;
 
-	// Take bug on RTL839x Rev <= C into account
+	/* Take bug on RTL839x Rev <= C into account */
 	if (port >= RTL839X_CPU_PORT)
 		return -EIO;
 
@@ -689,6 +677,7 @@ int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 
 errout:
 	mutex_unlock(&smi_lock);
+
 	return err;
 }
 
@@ -701,13 +690,13 @@ int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	if (port > 63 || page > 4095 || reg > 31)
 		return -ENOTSUPP;
 
-	// Take bug on RTL839x Rev <= C into account
+	/* Take bug on RTL839x Rev <= C into account */
 	if (port >= RTL839X_CPU_PORT)
 		return -EIO;
 
 	mutex_lock(&smi_lock);
 
-	// Set PHY to access
+	/* Set PHY to access */
 	rtl839x_set_port_reg_le(BIT_ULL(port), RTL839X_PHYREG_PORT_CTRL);
 
 	sw_w32_mask(0xffff0000, val << 16, RTL839X_PHYREG_DATA_CTRL);
@@ -729,69 +718,67 @@ int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 
 errout:
 	mutex_unlock(&smi_lock);
+
 	return err;
 }
 
-/*
- * Read an mmd register of the PHY
- */
+/* Read an mmd register of the PHY */
 int rtl839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 {
 	int err = 0;
 	u32 v;
 
-	// Take bug on RTL839x Rev <= C into account
+	/* Take bug on RTL839x Rev <= C into account */
 	if (port >= RTL839X_CPU_PORT)
 		return -EIO;
 
 	mutex_lock(&smi_lock);
 
-	// Set PHY to access
+	/* Set PHY to access */
 	sw_w32_mask(0xffff << 16, port << 16, RTL839X_PHYREG_DATA_CTRL);
 
-	// Set MMD device number and register to write to
+	/* Set MMD device number and register to write to */
 	sw_w32(devnum << 16 | (regnum & 0xffff), RTL839X_PHYREG_MMD_CTRL);
 
-	v = BIT(2) | BIT(0); // MMD-access | EXEC
+	v = BIT(2) | BIT(0); /* MMD-access | EXEC */
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
 	err = rtl839x_smi_wait_op(100000);
 	if (err)
 		goto errout;
 
-	// There is no error-checking via BIT 1 of v, as it does not seem to be set correctly
+	/* There is no error-checking via BIT 1 of v, as it does not seem to be set correctly */
 	*val = (sw_r32(RTL839X_PHYREG_DATA_CTRL) & 0xffff);
 	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, *val, err);
 
 errout:
 	mutex_unlock(&smi_lock);
+
 	return err;
 }
 
-/*
- * Write to an mmd register of the PHY
- */
+/* Write to an mmd register of the PHY */
 int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
 	int err = 0;
 	u32 v;
 
-	// Take bug on RTL839x Rev <= C into account
+	/* Take bug on RTL839x Rev <= C into account */
 	if (port >= RTL839X_CPU_PORT)
 		return -EIO;
 
 	mutex_lock(&smi_lock);
 
-	// Set PHY to access
+	/* Set PHY to access */
 	rtl839x_set_port_reg_le(BIT_ULL(port), RTL839X_PHYREG_PORT_CTRL);
 
-	// Set data to write
+	/* Set data to write */
 	sw_w32_mask(0xffff << 16, val << 16, RTL839X_PHYREG_DATA_CTRL);
 
-	// Set MMD device number and register to write to
+	/* Set MMD device number and register to write to */
 	sw_w32(devnum << 16 | (regnum & 0xffff), RTL839X_PHYREG_MMD_CTRL);
 
-	v = BIT(3) | BIT(2) | BIT(0); // WRITE | MMD-access | EXEC
+	v = BIT(3) | BIT(2) | BIT(0); /* WRITE | MMD-access | EXEC */
 	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
 
 	err = rtl839x_smi_wait_op(100000);
@@ -802,6 +789,7 @@ int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 
 errout:
 	mutex_unlock(&smi_lock);
+
 	return err;
 }
 
@@ -837,37 +825,33 @@ void rtl839x_vlan_profile_dump(int profile)
 
 static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	int i;
-	u32 cmd = 1 << 16 /* Execute cmd */
-		| 0 << 15 /* Read */
-		| 5 << 12 /* Table type 0b101 */
-		| (msti & 0xfff);
+	u32 cmd = 1 << 16 | /* Execute cmd */
+	          0 << 15 | /* Read */
+	          5 << 12 | /* Table type 0b101 */
+	          (msti & 0xfff);
 	priv->r->exec_tbl0_cmd(cmd);
 
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
 }
 
 static void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
-	int i;
-	u32 cmd = 1 << 16 /* Execute cmd */
-		| 1 << 15 /* Write */
-		| 5 << 12 /* Table type 0b101 */
-		| (msti & 0xfff);
-	for (i = 0; i < 4; i++)
+	u32 cmd = 1 << 16 | /* Execute cmd */
+	          1 << 15 | /* Write */
+	          5 << 12 | /* Table type 0b101 */
+	          (msti & 0xfff);
+	for (int i = 0; i < 4; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
 	priv->r->exec_tbl0_cmd(cmd);
 }
 
-/*
- * Enables or disables the EEE/EEEP capability of a port
- */
+/* Enables or disables the EEE/EEEP capability of a port */
 void rtl839x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
 {
 	u32 v;
 
-	// This works only for Ethernet ports, and on the RTL839X, ports above 47 are SFP
+	/* This works only for Ethernet ports, and on the RTL839X, ports above 47 are SFP */
 	if (port >= 48)
 		return;
 
@@ -875,19 +859,17 @@ void rtl839x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enabl
 	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
 	v = enable ? 0xf : 0x0;
 
-	// Set EEE for 100, 500, 1000MBit and 10GBit
+	/* Set EEE for 100, 500, 1000MBit and 10GBit */
 	sw_w32_mask(0xf << 8, v << 8, rtl839x_mac_force_mode_ctrl(port));
 
-	// Set TX/RX EEE state
+	/* Set TX/RX EEE state */
 	v = enable ? 0x3 : 0x0;
 	sw_w32(v, RTL839X_EEE_CTRL(port));
 
 	priv->ports[port].eee_enabled = enable;
 }
 
-/*
- * Get EEE own capabilities and negotiation result
- */
+/* Get EEE own capabilities and negotiation result */
 int rtl839x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_eee *e, int port)
 {
 	u64 link, a;
@@ -918,19 +900,17 @@ int rtl839x_eee_port_ability(struct rtl838x_switch_priv *priv, struct ethtool_ee
 
 static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 {
-	int i;
-
 	pr_info("Setting up EEE, state: %d\n", enable);
 
-	// Set wake timer for TX and pause timer both to 0x21
+	/* Set wake timer for TX and pause timer both to 0x21 */
 	sw_w32_mask(0xff << 20| 0xff, 0x21 << 20| 0x21, RTL839X_EEE_TX_TIMER_GELITE_CTRL);
-	// Set pause wake timer for GIGA-EEE to 0x11
+	/* Set pause wake timer for GIGA-EEE to 0x11 */
 	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_GIGA_CTRL);
-	// Set pause wake timer for 10GBit ports to 0x11
+	/* Set pause wake timer for 10GBit ports to 0x11 */
 	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_10G_CTRL);
 
-	// Setup EEE on all ports
-	for (i = 0; i < priv->cpu_port; i++) {
+	/* Setup EEE on all ports */
+	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy)
 			rtl839x_port_eee_set(priv, i, enable);
 	}
@@ -944,9 +924,7 @@ static void rtl839x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int inde
 	sw_w32_mask(0, BIT(block), RTL839X_ACL_BLK_LOOKUP_CTRL);
 }
 
-/*
- * Delete a range of Packet Inspection Engine rules
- */
+/* Delete a range of Packet Inspection Engine rules */
 static int rtl839x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
 {
 	u32 v = (index_from << 1)| (index_to << 13 ) | BIT(0);
@@ -954,19 +932,19 @@ static int rtl839x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
 	mutex_lock(&priv->reg_mutex);
 
-	// Write from-to and execute bit into control register
+	/* Write from-to and execute bit into control register */
 	sw_w32(v, RTL839X_ACL_CLR_CTRL);
 
-	// Wait until command has completed
+	/* Wait until command has completed */
 	do {
 	} while (sw_r32(RTL839X_ACL_CLR_CTRL) & BIT(0));
 
 	mutex_unlock(&priv->reg_mutex);
+
 	return 0;
 }
 
-/*
- * Reads the intermediate representation of the templated match-fields of the
+/* Reads the intermediate representation of the templated match-fields of the
  * PIE rule in the pie_rule structure and fills in the raw data fields in the
  * raw register space r[].
  * The register space configuration size is identical for the RTL8380/90 and RTL9300,
@@ -976,13 +954,9 @@ static int rtl839x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from
  */
 static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
 {
-	int i;
-	enum template_field_id field_type;
-	u16 data, data_m;
-
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
-		field_type = t[i];
-		data = data_m = 0;
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id field_type = t[i];
+		u16 data = 0, data_m = 0;
 
 		switch (field_type) {
 		case TEMPLATE_FIELD_SPM0:
@@ -1067,7 +1041,6 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->sip_m >> 16;
 			}
 			break;
-
 		case TEMPLATE_FIELD_SIP2:
 		case TEMPLATE_FIELD_SIP3:
 		case TEMPLATE_FIELD_SIP4:
@@ -1077,7 +1050,6 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 			data = pr->sip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
 			data_m = pr->sip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_SIP2)];
 			break;
-
 		case TEMPLATE_FIELD_DIP0:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[7];
@@ -1087,7 +1059,6 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m;
 			}
 			break;
-
 		case TEMPLATE_FIELD_DIP1:
 			if (pr->is_ipv6) {
 				data = pr->dip6.s6_addr16[6];
@@ -1097,7 +1068,6 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 				data_m = pr->dip_m >> 16;
 			}
 			break;
-
 		case TEMPLATE_FIELD_DIP2:
 		case TEMPLATE_FIELD_DIP3:
 		case TEMPLATE_FIELD_DIP4:
@@ -1107,7 +1077,6 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 			data = pr->dip6.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
 			data_m = pr->dip6_m.s6_addr16[5 - (field_type - TEMPLATE_FIELD_DIP2)];
 			break;
-
 		case TEMPLATE_FIELD_IP_TOS_PROTO:
 			data = pr->tos_proto;
 			data_m = pr->tos_proto_m;
@@ -1128,7 +1097,7 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 			pr_info("%s: unknown field %d\n", __func__, field_type);
 		}
 
-		// On the RTL8390, the mask fields are not word aligned!
+		/* On the RTL8390, the mask fields are not word aligned! */
 		if (!(i % 2)) {
 			r[5 - i / 2] = data;
 			r[12 - i / 2] |= ((u32)data_m << 8);
@@ -1140,8 +1109,7 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 	}
 }
 
-/*
- * Creates the intermediate representation of the templated match-fields of the
+/* Creates the intermediate representation of the templated match-fields of the
  * PIE rule in the pie_rule structure by reading the raw data fields in the
  * raw register space r[].
  * The register space configuration size is identical for the RTL8380/90 and RTL9300,
@@ -1150,12 +1118,10 @@ static void rtl839x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
  */
 void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum template_field_id t[])
 {
-	int i;
-	enum template_field_id field_type;
-	u16 data, data_m;
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id field_type = t[i];
+		u16 data, data_m;
 
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
-		field_type = t[i];
 		if (!(i % 2)) {
 			data = r[5 - i / 2];
 			data_m = r[12 - i / 2];
@@ -1231,7 +1197,7 @@ void rtl839x_read_pie_templated(u32 r[], struct pie_rule *pr, enum template_fiel
 			break;
 		case TEMPLATE_FIELD_SIP2:
 			pr->is_ipv6 = true;
-			// Make use of limitiations on the position of the match values
+			/* Make use of limitiations on the position of the match values */
 			ipv6_addr_set(&pr->sip6, pr->sip, r[5 - i / 2],
 				      r[4 - i / 2], r[3 - i / 2]);
 			ipv6_addr_set(&pr->sip6_m, pr->sip_m, r[5 - i / 2],
@@ -1362,7 +1328,7 @@ static void rtl839x_write_pie_fixed_fields(u32 r[],  struct pie_rule *pr)
 static void rtl839x_write_pie_action(u32 r[],  struct pie_rule *pr)
 {
 	if (pr->drop) {
-		r[13] |= 0x9;	// Set ACT_MASK_FWD & FWD_ACT = DROP
+		r[13] |= 0x9;	/* Set ACT_MASK_FWD & FWD_ACT = DROP */
 		r[13] |= BIT(3);
 	} else {
 		r[13] |= pr->fwd_sel ? BIT(3) : 0;
@@ -1398,7 +1364,7 @@ static void rtl839x_write_pie_action(u32 r[],  struct pie_rule *pr)
 
 static void rtl839x_read_pie_action(u32 r[],  struct pie_rule *pr)
 {
-	if (r[13] & BIT(3)) { // ACT_MASK_FWD set, is it a drop?
+	if (r[13] & BIT(3)) { /* ACT_MASK_FWD set, is it a drop? */
 		if ((r[14] & 0x7) == 1) {
 			pr->drop = true;
 		} else {
@@ -1416,7 +1382,7 @@ static void rtl839x_read_pie_action(u32 r[],  struct pie_rule *pr)
 	pr->mir_sel = r[13] & BIT(5);
 	pr->log_sel = r[13] & BIT(4);
 
-	// TODO: Read in data fields
+	/* TODO: Read in data fields */
 
 	pr->bypass_all = r[16] & BIT(9);
 	pr->bypass_igr_stp = r[16] & BIT(8);
@@ -1450,16 +1416,15 @@ void rtl839x_pie_rule_dump(struct  pie_rule *pr)
 
 static int rtl839x_pie_rule_read(struct rtl838x_switch_priv *priv, int idx, struct  pie_rule *pr)
 {
-	// Read IACL table (2) via register 0
+	/* Read IACL table (2) via register 0 */
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_0, 2);
 	u32 r[17];
-	int i;
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
 
 	memset(pr, 0, sizeof(*pr));
 	rtl_table_read(q, idx);
-	for (i = 0; i < 17; i++)
+	for (int i = 0; i < 17; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -1480,16 +1445,15 @@ static int rtl839x_pie_rule_read(struct rtl838x_switch_priv *priv, int idx, stru
 
 static int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, struct pie_rule *pr)
 {
-	// Access IACL table (2) via register 0
+	/* Access IACL table (2) via register 0 */
 	struct table_reg *q = rtl_table_get(RTL8390_TBL_0, 2);
 	u32 r[17];
-	int i;
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL839X_ACL_BLK_TMPLTE_CTRL(block));
 
 	pr_debug("%s: %d, t_select: %08x\n", __func__, idx, t_select);
 
-	for (i = 0; i < 17; i++)
+	for (int i = 0; i < 17; i++)
 		r[i] = 0;
 
 	if (!pr->valid) {
@@ -1504,9 +1468,9 @@ static int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 
 	rtl839x_write_pie_action(r, pr);
 
-//	rtl839x_pie_rule_dump_raw(r);
+/*	rtl839x_pie_rule_dump_raw(r); */
 
-	for (i = 0; i < 17; i++)
+	for (int i = 0; i < 17; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
 	rtl_table_write(q, idx);
@@ -1517,11 +1481,8 @@ static int rtl839x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 
 static bool rtl839x_pie_templ_has(int t, enum template_field_id field_type)
 {
-	int i;
-	enum template_field_id ft;
-
-	for (i = 0; i < N_FIXED_FIELDS; i++) {
-		ft = fixed_templates[t][i];
+	for (int i = 0; i < N_FIXED_FIELDS; i++) {
+		enum template_field_id ft = fixed_templates[t][i];
 		if (field_type == ft)
 			return true;
 	}
@@ -1541,13 +1502,17 @@ static int rtl839x_pie_verify_template(struct rtl838x_switch_priv *priv,
 		return -1;
 
 	if (pr->is_ipv6) {
-		if ((pr->sip6_m.s6_addr32[0] || pr->sip6_m.s6_addr32[1]
-			|| pr->sip6_m.s6_addr32[2] || pr->sip6_m.s6_addr32[3])
-			&& !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
+		if ((pr->sip6_m.s6_addr32[0] ||
+		     pr->sip6_m.s6_addr32[1] ||
+		     pr->sip6_m.s6_addr32[2] ||
+		     pr->sip6_m.s6_addr32[3]) &&
+		    !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_SIP2))
 			return -1;
-		if ((pr->dip6_m.s6_addr32[0] || pr->dip6_m.s6_addr32[1]
-			|| pr->dip6_m.s6_addr32[2] || pr->dip6_m.s6_addr32[3])
-			&& !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
+		if ((pr->dip6_m.s6_addr32[0] ||
+		     pr->dip6_m.s6_addr32[1] ||
+		     pr->dip6_m.s6_addr32[2] ||
+		     pr->dip6_m.s6_addr32[3]) &&
+		    !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_DIP2))
 			return -1;
 	}
 
@@ -1557,7 +1522,7 @@ static int rtl839x_pie_verify_template(struct rtl838x_switch_priv *priv,
 	if (ether_addr_to_u64(pr->dmac) && !rtl839x_pie_templ_has(t, TEMPLATE_FIELD_DMAC0))
 		return -1;
 
-	// TODO: Check more
+	/* TODO: Check more */
 
 	i = find_first_zero_bit(&priv->pie_use_bm[block * 4], PIE_BLOCK_SIZE);
 
@@ -1599,7 +1564,7 @@ static int rtl839x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 	set_bit(idx, priv->pie_use_bm);
 
 	pr->valid = true;
-	pr->tid = j;  // Mapped to template number
+	pr->tid = j;  /* Mapped to template number */
 	pr->tid_m = 0x3;
 	pr->id = idx;
 
@@ -1607,6 +1572,7 @@ static int rtl839x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 	rtl839x_pie_rule_write(priv, idx, pr);
 
 	mutex_unlock(&priv->pie_mutex);
+
 	return 0;
 }
 
@@ -1620,52 +1586,51 @@ static void rtl839x_pie_rule_rm(struct rtl838x_switch_priv *priv, struct pie_rul
 
 static void rtl839x_pie_init(struct rtl838x_switch_priv *priv)
 {
-	int i;
 	u32 template_selectors;
 
 	mutex_init(&priv->pie_mutex);
 
-	// Power on all PIE blocks
-	for (i = 0; i < priv->n_pie_blocks; i++)
+	/* Power on all PIE blocks */
+	for (int i = 0; i < priv->n_pie_blocks; i++)
 		sw_w32_mask(0, BIT(i), RTL839X_PS_ACL_PWR_CTRL);
 
-	// Set ingress and egress ACL blocks to 50/50: first Egress block is 9
-	sw_w32_mask(0x1f, 9, RTL839X_ACL_CTRL);  // Writes 9 to cutline field
+	/* Set ingress and egress ACL blocks to 50/50: first Egress block is 9 */
+	sw_w32_mask(0x1f, 9, RTL839X_ACL_CTRL);  /* Writes 9 to cutline field */
 
-	// Include IPG in metering
+	/* Include IPG in metering */
 	sw_w32(1, RTL839X_METER_GLB_CTRL);
 
-	// Delete all present rules
+	/* Delete all present rules */
 	rtl839x_pie_rule_del(priv, 0, priv->n_pie_blocks * PIE_BLOCK_SIZE - 1);
 
-	// Enable predefined templates 0, 1 for blocks 0-2
+	/* Enable predefined templates 0, 1 for blocks 0-2 */
 	template_selectors = 0 | (1 << 3);
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
-	// Enable predefined templates 2, 3 for blocks 3-5
+	/* Enable predefined templates 2, 3 for blocks 3-5 */
 	template_selectors = 2 | (3 << 3);
-	for (i = 3; i < 6; i++)
+	for (int i = 3; i < 6; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
-	// Enable predefined templates 1, 4 for blocks 6-8
+	/* Enable predefined templates 1, 4 for blocks 6-8 */
 	template_selectors = 2 | (3 << 3);
-	for (i = 6; i < 9; i++)
+	for (int i = 6; i < 9; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
-	// Enable predefined templates 0, 1 for blocks 9-11
+	/* Enable predefined templates 0, 1 for blocks 9-11 */
 	template_selectors = 0 | (1 << 3);
-	for (i = 9; i < 12; i++)
+	for (int i = 9; i < 12; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
-	// Enable predefined templates 2, 3 for blocks 12-14
+	/* Enable predefined templates 2, 3 for blocks 12-14 */
 	template_selectors = 2 | (3 << 3);
-	for (i = 12; i < 15; i++)
+	for (int i = 12; i < 15; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 
-	// Enable predefined templates 1, 4 for blocks 15-17
+	/* Enable predefined templates 1, 4 for blocks 15-17 */
 	template_selectors = 2 | (3 << 3);
-	for (i = 15; i < 18; i++)
+	for (int i = 15; i < 18; i++)
 		sw_w32(template_selectors, RTL839X_ACL_BLK_TMPLTE_CTRL(i));
 }
 
@@ -1673,13 +1638,13 @@ static u32 rtl839x_packet_cntr_read(int counter)
 {
 	u32 v;
 
-	// Read LOG table (4) via register RTL8390_TBL_0
+	/* Read LOG table (4) via register RTL8390_TBL_0 */
 	struct table_reg *r = rtl_table_get(RTL8390_TBL_0, 4);
 
 	pr_debug("In %s, id %d\n", __func__, counter);
 	rtl_table_read(r, counter / 2);
 
-	// The table has a size of 2 registers
+	/* The table has a size of 2 registers */
 	if (counter % 2)
 		v = sw_r32(rtl_table_data(r, 0));
 	else
@@ -1692,11 +1657,11 @@ static u32 rtl839x_packet_cntr_read(int counter)
 
 static void rtl839x_packet_cntr_clear(int counter)
 {
-	// Access LOG table (4) via register RTL8390_TBL_0
+	/* Access LOG table (4) via register RTL8390_TBL_0 */
 	struct table_reg *r = rtl_table_get(RTL8390_TBL_0, 4);
 
 	pr_debug("In %s, id %d\n", __func__, counter);
-	// The table has a size of 2 registers
+	/* The table has a size of 2 registers */
 	if (counter % 2)
 		sw_w32(0, rtl_table_data(r, 0));
 	else
@@ -1710,13 +1675,13 @@ static void rtl839x_packet_cntr_clear(int counter)
 static void rtl839x_route_read(int idx, struct rtl83xx_route *rt)
 {
 	u64 v;
-	// Read ROUTING table (2) via register RTL8390_TBL_1
+	/* Read ROUTING table (2) via register RTL8390_TBL_1 */
 	struct table_reg *r = rtl_table_get(RTL8390_TBL_1, 2);
 
 	pr_debug("In %s\n", __func__);
 	rtl_table_read(r, idx);
 
-	// The table has a size of 2 registers
+	/* The table has a size of 2 registers */
 	v = sw_r32(rtl_table_data(r, 0));
 	v <<= 32;
 	v |= sw_r32(rtl_table_data(r, 1));
@@ -1730,7 +1695,7 @@ static void rtl839x_route_write(int idx, struct rtl83xx_route *rt)
 {
 	u32 v;
 
-	// Read ROUTING table (2) via register RTL8390_TBL_1
+	/* Read ROUTING table (2) via register RTL8390_TBL_1 */
 	struct table_reg *r = rtl_table_get(RTL8390_TBL_1, 2);
 
 	pr_debug("In %s\n", __func__);
@@ -1743,12 +1708,9 @@ static void rtl839x_route_write(int idx, struct rtl83xx_route *rt)
 	rtl_table_release(r);
 }
 
-/*
- * Configure the switch's own MAC addresses used when routing packets
- */
+/* Configure the switch's own MAC addresses used when routing packets */
 static void rtl839x_setup_port_macs(struct rtl838x_switch_priv *priv)
 {
-	int i;
 	struct net_device *dev;
 	u64 mac;
 
@@ -1756,8 +1718,8 @@ static void rtl839x_setup_port_macs(struct rtl838x_switch_priv *priv)
 	dev = priv->ports[priv->cpu_port].dp->slave;
 	mac = ether_addr_to_u64(dev->dev_addr);
 
-	for (i = 0; i < 15; i++) {
-		mac++;  // BUG: VRRP for testing
+	for (int i = 0; i < 15; i++) {
+		mac++;  /* BUG: VRRP for testing */
 		sw_w32(mac >> 32, RTL839X_ROUTING_SA_CTRL + i * 8);
 		sw_w32(mac, RTL839X_ROUTING_SA_CTRL + i * 8 + 4);
 	}
@@ -1836,17 +1798,17 @@ void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_typ
 	case BPDU:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL839X_RMA_BPDU_CTRL + ((port >> 4) << 2));
-	break;
+		break;
 	case PTP:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL839X_RMA_PTP_CTRL + ((port >> 4) << 2));
-	break;
+		break;
 	case LLTP:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL839X_RMA_LLTP_CTRL + ((port >> 4) << 2));
-	break;
+		break;
 	default:
-	break;
+		break;
 	}
 }
 
@@ -1917,7 +1879,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.init_eee = rtl839x_init_eee,
 	.port_eee_set = rtl839x_port_eee_set,
 	.eee_port_ability = rtl839x_eee_port_ability,
-	.l2_hash_seed = rtl839x_l2_hash_seed, 
+	.l2_hash_seed = rtl839x_l2_hash_seed,
 	.l2_hash_key = rtl839x_l2_hash_key,
 	.read_mcast_pmask = rtl839x_read_mcast_pmask,
 	.write_mcast_pmask = rtl839x_write_mcast_pmask,

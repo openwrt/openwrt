@@ -55,8 +55,8 @@ struct rtl9300_i2c {
 	struct device *dev;
 	struct i2c_adapter adap;
 	u8 bus_freq;
-	u8 sda_num;			// SDA channel number
-	u8 scl_num;			// SCL channel, mapping to master 1 or 2
+	u8 sda_num;			/* SDA channel number */
+	u8 scl_num;			/* SCL channel, mapping to master 1 or 2 */
 };
 
 #endif

@@ -129,9 +129,9 @@
 				label = "jffs2";
 				reg = <0x160000 0x100000>;
 			};
-			partition@b260000 {
+			partition@260000 {
 				label = "firmware";
-				reg = <0x260000 0xda0000>;
+				reg = <0x260000 0x6d0000>;
 				compatible = "openwrt,uimage", "denx,uimage";
 				openwrt,ih-magic = <0x83800000>;
 			};

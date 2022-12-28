@@ -11,7 +11,7 @@
 
 #include <mach-rtl83xx.h>
 
-/* 
+/*
  * Timer registers
  * the RTL9300/9310 SoCs have 6 timers, each register block 0x10 apart
  */
@@ -24,11 +24,11 @@
 #define RTL9300_TC_INT_IP	BIT(16)
 #define RTL9300_TC_INT_IE	BIT(20)
 
-// Timer modes
+/* Timer modes */
 #define TIMER_MODE_REPEAT	1
 #define TIMER_MODE_ONCE		0
 
-// Minimum divider is 2
+/* Minimum divider is 2 */
 #define DIVISOR_RTL9300		2
 
 #define N_BITS			28
@@ -54,11 +54,12 @@ static irqreturn_t rtl9300_timer_interrupt(int irq, void *dev_id)
 
 	u32 v = readl(rtl_clk->base + RTL9300_TC_INT);
 
-	// Acknowledge the IRQ
+	/* Acknowledge the IRQ */
 	v |= RTL9300_TC_INT_IP;
 	writel(v, rtl_clk->base + RTL9300_TC_INT);
 
 	clk->event_handler(clk);
+
 	return IRQ_HANDLED;
 }
 
@@ -68,7 +69,7 @@ static void rtl9300_clock_stop(void __iomem *base)
 
 	writel(0, base + RTL9300_TC_CTRL);
 
-	// Acknowledge possibly pending IRQ
+	/* Acknowledge possibly pending IRQ */
 	v = readl(base + RTL9300_TC_INT);
 	writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
 }
@@ -101,6 +102,7 @@ static int rtl9300_state_periodic(struct clock_event_device *clk)
 	rtl9300_clock_stop(base);
 	writel(RTL9300_CLOCK_RATE / HZ, base + RTL9300_TC_DATA);
 	rtl9300_timer_start(base, TIMER_MODE_REPEAT);
+
 	return 0;
 }
 
@@ -112,6 +114,7 @@ static int rtl9300_state_oneshot(struct clock_event_device *clk)
 	rtl9300_clock_stop(base);
 	writel(RTL9300_CLOCK_RATE / HZ, base + RTL9300_TC_DATA);
 	rtl9300_timer_start(base, TIMER_MODE_ONCE);
+
 	return 0;
 }
 
@@ -121,6 +124,7 @@ static int rtl9300_shutdown(struct clock_event_device *clk)
 
 	pr_debug("------------- rtl9300_shutdown %08x\n", (u32)base);
 	rtl9300_clock_stop(base);
+
 	return 0;
 }
 
@@ -128,14 +132,14 @@ static void rtl9300_clock_setup(void __iomem *base)
 {
 	u32 v;
 
-	// Disable timer
+	/* Disable timer */
 	writel(0, base + RTL9300_TC_CTRL);
 
-	// Acknowledge possibly pending IRQ
+	/* Acknowledge possibly pending IRQ */
 	v = readl(base + RTL9300_TC_INT);
 	writel(v | RTL9300_TC_INT_IP, base + RTL9300_TC_INT);
 
-	// Setup maximum period (for use as clock-source)
+	/* Setup maximum period (for use as clock-source) */
 	writel(0x0fffffff, base + RTL9300_TC_DATA);
 }
 

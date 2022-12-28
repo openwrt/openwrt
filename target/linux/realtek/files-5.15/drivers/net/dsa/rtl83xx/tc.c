@@ -5,14 +5,12 @@
 #include <linux/netdevice.h>
 #include <net/flow_offload.h>
 #include <linux/rhashtable.h>
-
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+
 #include "rtl83xx.h"
 #include "rtl838x.h"
 
-/*
- * Parse the flow rule for the matching conditions
- */
+/* Parse the flow rule for the matching conditions */
 static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 			      struct flow_rule *rule, struct rtl83xx_flow *flow)
 {
@@ -44,8 +42,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 				flow->rule.frame_type_l4 = 0;
 			if (match.key->ip_proto == IPPROTO_TCP)
 				flow->rule.frame_type_l4 = 1;
-			if (match.key->ip_proto == IPPROTO_ICMP
-				|| match.key->ip_proto ==IPPROTO_ICMPV6)
+			if (match.key->ip_proto == IPPROTO_ICMP || match.key->ip_proto == IPPROTO_ICMPV6)
 				flow->rule.frame_type_l4 = 2;
 			if (match.key->ip_proto == IPPROTO_TCP)
 				flow->rule.frame_type_l4 = 3;
@@ -72,7 +69,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 		flow_rule_match_vlan(rule, &match);
 		flow->rule.itag = match.key->vlan_id;
 		flow->rule.itag_m = match.mask->vlan_id;
-		// TODO: What about match.key->vlan_priority ?
+		/* TODO: What about match.key->vlan_priority? */
 	}
 
 	if (flow_rule_match_key(rule, FLOW_DISSECTOR_KEY_IPV4_ADDRS)) {
@@ -108,7 +105,7 @@ static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
 		flow->rule.sport_m = match.mask->src;
 	}
 
-	// TODO: ICMP
+	/* TODO: ICMP */
 	return 0;
 }
 
@@ -150,7 +147,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 	pr_debug("%s\n", __func__);
 
 	rtl83xx_parse_flow_rule(priv, rule, flow);
-	
+
 	flow_action_for_each(i, act, &rule->action) {
 		switch (act->id) {
 		case FLOW_ACTION_DROP:
@@ -176,7 +173,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 
 		case FLOW_ACTION_VLAN_PUSH:
 			pr_debug("%s: VLAN_PUSH\n", __func__);
-//			TODO: act->vlan.proto
+/*			TODO: act->vlan.proto */
 			flow->rule.ivid_act = PIE_ACT_VID_ASSIGN;
 			flow->rule.ivid_sel = true;
 			flow->rule.ivid_data = htons(act->vlan.vid);
@@ -271,9 +268,9 @@ rcu_unlock:
 		goto out_free;
 	}
 
-	rtl83xx_add_flow(priv, f, flow); // TODO: check error
+	rtl83xx_add_flow(priv, f, flow); /* TODO: check error */
 
-	// Add log action to flow
+	/* Add log action to flow */
 	flow->rule.packet_cntr = rtl83xx_packet_cntr_alloc(priv);
 	if (flow->rule.packet_cntr >= 0) {
 		pr_debug("Using packet counter %d\n", flow->rule.packet_cntr);
@@ -288,6 +285,7 @@ out_free:
 	kfree(flow);
 out:
 	pr_err("%s: error %d\n", __func__, err);
+
 	return err;
 }
 
@@ -311,6 +309,7 @@ static int rtl83xx_delete_flower(struct rtl838x_switch_priv *priv,
 	kfree_rcu(flow, rcu_head);
 
 	rcu_read_unlock();
+
 	return 0;
 }
 
@@ -333,9 +332,10 @@ static int rtl83xx_stats_flower(struct rtl838x_switch_priv *priv,
 		flow->rule.last_packet_cnt = total_packets;
 	}
 
-	// TODO: We need a second PIE rule to count the bytes
+	/* TODO: We need a second PIE rule to count the bytes */
 	flow_stats_update(&cls_flower->stats, 100 * new_packets, new_packets, 0, lastused,
-			  FLOW_ACTION_HW_STATS_IMMEDIATE);
+	                  FLOW_ACTION_HW_STATS_IMMEDIATE);
+
 	return 0;
 }
 

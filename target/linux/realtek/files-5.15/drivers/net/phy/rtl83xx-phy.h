@@ -18,7 +18,7 @@ struct __attribute__ ((__packed__)) fw_header {
 	struct part parts[10];
 };
 
-// TODO: fixed path?
+/* TODO: fixed path? */
 #define FIRMWARE_838X_8380_1	"rtl838x_phy/rtl838x_8380.fw"
 #define FIRMWARE_838X_8214FC_1	"rtl838x_phy/rtl838x_8214fc.fw"
 #define FIRMWARE_838X_8218b_1	"rtl838x_phy/rtl838x_8218b.fw"
@@ -35,7 +35,7 @@ struct __attribute__ ((__packed__)) fw_header {
 #define PHY_ID_RTL8393_I	0x001c8393
 #define PHY_ID_RTL9300_I	0x70d03106
 
-// PHY MMD devices
+/* PHY MMD devices */
 #define MMD_AN		7
 #define MMD_VEND2	31
 
@@ -60,7 +60,7 @@ struct __attribute__ ((__packed__)) fw_header {
 #define RTL930X_SDS_INDACS_DATA			(0x03B4)
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
 
-/*Registers of the internal SerDes of the 9310 */
+/* Registers of the internal SerDes of the 9310 */
 #define RTL931X_SERDES_INDRT_ACCESS_CTRL	(0x5638)
 #define RTL931X_SERDES_INDRT_DATA_CTRL		(0x563C)
 #define RTL931X_SERDES_MODE_CTRL		(0x13cc)

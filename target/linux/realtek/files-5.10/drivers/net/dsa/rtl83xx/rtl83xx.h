@@ -67,8 +67,8 @@ typedef enum {
 void rtl_table_init(void);
 struct table_reg *rtl_table_get(rtl838x_tbl_reg_t r, int t);
 void rtl_table_release(struct table_reg *r);
-void rtl_table_read(struct table_reg *r, int idx);
-void rtl_table_write(struct table_reg *r, int idx);
+int rtl_table_read(struct table_reg *r, int idx);
+int rtl_table_write(struct table_reg *r, int idx);
 inline u16 rtl_table_data(struct table_reg *r, int i);
 inline u32 rtl_table_data_r(struct table_reg *r, int i);
 inline void rtl_table_data_w(struct table_reg *r, u32 v, int i);

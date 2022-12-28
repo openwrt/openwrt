@@ -3,9 +3,7 @@
 #ifndef _RTL838X_ETH_H
 #define _RTL838X_ETH_H
 
-/*
- * Register definition
- */
+/* Register definition */
 
 /* Per port MAC control */
 #define RTL838X_MAC_PORT_CTRL			(0xd560)
@@ -118,7 +116,7 @@
 #define RTL930X_MAC_LINK_DUP_STS		(0xCB28)
 #define RTL931X_MAC_LINK_DUP_STS		(0x0ef0)
 
-// TODO: RTL8390_MAC_LINK_MEDIA_STS_ADDR ???
+/* TODO: RTL8390_MAC_LINK_MEDIA_STS_ADDR??? */
 
 #define RTL838X_MAC_TX_PAUSE_STS		(0xa1a0)
 #define RTL839X_MAC_TX_PAUSE_STS		(0x03b8)

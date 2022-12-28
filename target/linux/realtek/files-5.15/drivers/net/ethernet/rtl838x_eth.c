@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-/*
- * linux/drivers/net/ethernet/rtl838x_eth.c
+/* linux/drivers/net/ethernet/rtl838x_eth.c
  * Copyright (C) 2020 B. Koblitz
  */
 
@@ -26,8 +25,7 @@
 
 extern struct rtl83xx_soc_info soc_info;
 
-/*
- * Maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX
+/* Maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX
  * The ring is assigned by switch based on packet/port priortity
  * Maximum number of TX rings is 2, Ring 2 being the high priority
  * ring on the RTL93xx SoCs. MAX_RXLEN gives the maximum length
@@ -95,9 +93,9 @@ struct notify_b {
 
 static void rtl838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
-	// cpu_tag[0] is reserved on the RTL83XX SoCs
-	h->cpu_tag[1] = 0x0401;  // BIT 10: RTL8380_CPU_TAG, BIT0: L2LEARNING on
-	h->cpu_tag[2] = 0x0200;  // Set only AS_DPM, to enable DPM settings below
+	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
+	h->cpu_tag[1] = 0x0400;  /* BIT 10: RTL8380_CPU_TAG */
+	h->cpu_tag[2] = 0x0200;  /* Set only AS_DPM, to enable DPM settings below */
 	h->cpu_tag[3] = 0x0000;
 	h->cpu_tag[4] = BIT(dest_port) >> 16;
 	h->cpu_tag[5] = BIT(dest_port) & 0xffff;
@@ -109,11 +107,11 @@ static void rtl838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 
 static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
-	// cpu_tag[0] is reserved on the RTL83XX SoCs
-	h->cpu_tag[1] = 0x0100; // RTL8390_CPU_TAG marker
-	h->cpu_tag[2] = BIT(4) | BIT(7); /* AS_DPM (4) and L2LEARNING (7) flags */
+	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
+	h->cpu_tag[1] = 0x0100; /* RTL8390_CPU_TAG marker */
+	h->cpu_tag[2] = BIT(4); /* AS_DPM flag */
 	h->cpu_tag[3] = h->cpu_tag[4] = h->cpu_tag[5] = 0;
-	// h->cpu_tag[1] |= BIT(1) | BIT(0); // Bypass filter 1/2
+	/* h->cpu_tag[1] |= BIT(1) | BIT(0); */ /* Bypass filter 1/2 */
 	if (dest_port >= 32) {
 		dest_port -= 32;
 		h->cpu_tag[2] |= (BIT(dest_port) >> 16) & 0xf;
@@ -130,7 +128,7 @@ static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 
 static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
-	h->cpu_tag[0] = 0x8000;  // CPU tag marker
+	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = 0;
@@ -145,7 +143,7 @@ static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 
 static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
-	h->cpu_tag[0] = 0x8000;  // CPU tag marker
+	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = h->cpu_tag[5] = h->cpu_tag[6] = h->cpu_tag[7] = 0;
@@ -165,7 +163,7 @@ static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 
 static void rtl93xx_header_vlan_set(struct p_hdr *h, int vlan)
 {
-	h->cpu_tag[2] |= BIT(4); // Enable VLAN forwarding offload
+	h->cpu_tag[2] |= BIT(4); /* Enable VLAN forwarding offload */
 	h->cpu_tag[2] |= (vlan >> 8) & 0xf;
 	h->cpu_tag[3] |= (vlan & 0xff) << 8;
 }
@@ -179,9 +177,9 @@ struct rtl838x_rx_q {
 struct rtl838x_eth_priv {
 	struct net_device *netdev;
 	struct platform_device *pdev;
-	void		*membase;
-	spinlock_t	lock;
-	struct mii_bus	*mii_bus;
+	void *membase;
+	spinlock_t lock;
+	struct mii_bus *mii_bus;
 	struct rtl838x_rx_q rx_qs[MAX_RXRINGS];
 	struct phylink *phylink;
 	struct phylink_config phylink_config;
@@ -213,20 +211,19 @@ extern int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 extern int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
 extern int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 
-/*
- * On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of 
+/* On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of
  * the rings. Writing x into these registers substracts x from its content.
  * When the content reaches the ring size, the ASIC no longer adds
  * packets to this receive queue.
  */
 void rtl838x_update_cntr(int r, int released)
 {
-	// This feature is not available on RTL838x SoCs
+	/* This feature is not available on RTL838x SoCs */
 }
 
 void rtl839x_update_cntr(int r, int released)
 {
-	// This feature is not available on RTL839x SoCs
+	/* This feature is not available on RTL839x SoCs */
 }
 
 void rtl930x_update_cntr(int r, int released)
@@ -270,7 +267,7 @@ bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	t->crc_error = t->reason == 13;
 
 	pr_debug("Reason: %d\n", t->reason);
-	if (t->reason != 6) // NIC_RX_REASON_SPECIAL_TRAP
+	if (t->reason != 6) /* NIC_RX_REASON_SPECIAL_TRAP */
 		t->l2_offloaded = 1;
 	else
 		t->l2_offloaded = 0;
@@ -287,8 +284,8 @@ bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	t->crc_error = h->cpu_tag[4] & BIT(6);
 
 	pr_debug("Reason: %d\n", t->reason);
-	if ((t->reason >= 7 && t->reason <= 13) || // NIC_RX_REASON_RMA
-	    (t->reason >= 23 && t->reason <= 25))  // NIC_RX_REASON_SPECIAL_TRAP
+	if ((t->reason >= 7 && t->reason <= 13) || /* NIC_RX_REASON_RMA */
+	    (t->reason >= 23 && t->reason <= 25))  /* NIC_RX_REASON_SPECIAL_TRAP */
 		t->l2_offloaded = 0;
 	else
 		t->l2_offloaded = 1;
@@ -321,7 +318,7 @@ bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 
 	if (t->reason != 63)
 		pr_info("%s: Reason %d, port %d, queue %d\n", __func__, t->reason, t->port, t->queue);
-	if (t->reason >= 19 && t->reason <= 27)	// NIC_RX_REASON_RMA
+	if (t->reason >= 19 && t->reason <= 27)	/* NIC_RX_REASON_RMA */
 		t->l2_offloaded = 0;
 	else
 		t->l2_offloaded = 1;
@@ -329,18 +326,16 @@ bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-/*
- * Discard the RX ring-buffers, called as part of the net-ISR
+/* Discard the RX ring-buffers, called as part of the net-ISR
  * when the buffer runs over
  */
 static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
 {
-	int r;
-	u32	*last;
-	struct p_hdr *h;
-	struct ring_b *ring = priv->membase;
+	for (int r = 0; r < priv->rxrings; r++) {
+		struct ring_b *ring = priv->membase;
+		struct p_hdr *h;
+		u32 *last;
 
-	for (r = 0; r < priv->rxrings; r++) {
 		pr_debug("In %s working on r: %d\n", __func__, r);
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 		do {
@@ -349,15 +344,16 @@ static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
 			pr_debug("Got something: %d\n", ring->c_rx[r]);
 			h = &ring->rx_header[r][ring->c_rx[r]];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->rx_space
-					+ r * priv->rxringlen * RING_BUFFER
-					+ ring->c_rx[r] * RING_BUFFER);
+			h->buf = (u8 *)KSEG1ADDR(ring->rx_space +
+			                         r * priv->rxringlen * RING_BUFFER +
+			                         ring->c_rx[r] * RING_BUFFER);
 			h->size = RING_BUFFER;
 			/* make sure the header is visible to the ASIC */
 			mb();
 
-			ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1
-				| (ring->c_rx[r] == (priv->rxringlen - 1) ? WRAP : 0x1);
+			ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 | (ring->c_rx[r] == (priv->rxringlen - 1) ?
+			                               WRAP :
+			                               0x1);
 			ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
 		} while (&ring->rx_r[r][ring->c_rx[r]] != last);
 	}
@@ -371,23 +367,22 @@ struct fdb_update_work {
 
 void rtl838x_fdb_sync(struct work_struct *work)
 {
-	const struct fdb_update_work *uw =
-		container_of(work, struct fdb_update_work, work);
-	struct switchdev_notifier_fdb_info info;
-	u8 addr[ETH_ALEN];
-	int i = 0;
-	int action;
+	const struct fdb_update_work *uw = container_of(work, struct fdb_update_work, work);
 
-	while (uw->macs[i]) {
-		action = (uw->macs[i] & (1ULL << 63)) ? SWITCHDEV_FDB_ADD_TO_BRIDGE
-				: SWITCHDEV_FDB_DEL_TO_BRIDGE;
+	for (int i = 0; uw->macs[i]; i++) {
+	        struct switchdev_notifier_fdb_info info;
+	        u8 addr[ETH_ALEN];
+	        int action;
+
+		action = (uw->macs[i] & (1ULL << 63)) ?
+		         SWITCHDEV_FDB_ADD_TO_BRIDGE :
+		         SWITCHDEV_FDB_DEL_TO_BRIDGE;
 		u64_to_ether_addr(uw->macs[i] & 0xffffffffffffULL, addr);
 		info.addr = &addr[0];
 		info.vid = 0;
 		info.offloaded = 1;
 		pr_debug("FDB entry %d: %llx, action %d\n", i, uw->macs[0], action);
 		call_switchdev_notifiers(action, uw->ndev, &info.info, NULL);
-		i++;
 	}
 	kfree(work);
 }
@@ -395,13 +390,14 @@ void rtl838x_fdb_sync(struct work_struct *work)
 static void rtl839x_l2_notification_handler(struct rtl838x_eth_priv *priv)
 {
 	struct notify_b *nb = priv->membase + sizeof(struct ring_b);
-	u32 e = priv->lastEvent;
-	struct n_event *event;
-	int i;
-	u64 mac;
-	struct fdb_update_work *w;
+        u32 e = priv->lastEvent;
 
 	while (!(nb->ring[e] & 1)) {
+                struct fdb_update_work *w;
+                struct n_event *event;
+                u64 mac;
+                int i;
+
 		w = kzalloc(sizeof(*w), GFP_ATOMIC);
 		if (!w) {
 			pr_err("Out of memory: %s", __func__);
@@ -435,7 +431,6 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 	struct net_device *dev = dev_id;
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	u32 status = sw_r32(priv->r->dma_if_intr_sts);
-	int i;
 
 	pr_debug("IRQ: %08x\n", status);
 
@@ -450,7 +445,7 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 		/* ACK and disable RX interrupt for this ring */
 		sw_w32_mask(0xff00 & status, 0, priv->r->dma_if_intr_msk);
 		sw_w32(0x0000ff00 & status, priv->r->dma_if_intr_sts);
-		for (i = 0; i < priv->rxrings; i++) {
+		for (int i = 0; i < priv->rxrings; i++) {
 			if (status & BIT(i + 8)) {
 				pr_debug("Scheduling queue: %d\n", i);
 				napi_schedule(&priv->rx_qs[i].napi);
@@ -491,7 +486,6 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 	u32 status_rx_r = sw_r32(priv->r->dma_if_intr_rx_runout_sts);
 	u32 status_rx = sw_r32(priv->r->dma_if_intr_rx_done_sts);
 	u32 status_tx = sw_r32(priv->r->dma_if_intr_tx_done_sts);
-	int i;
 
 	pr_debug("In %s, status_tx: %08x, status_rx: %08x, status_rx_r: %08x\n",
 		__func__, status_tx, status_rx, status_rx_r);
@@ -509,7 +503,7 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 		/* ACK and disable RX interrupt for given rings */
 		sw_w32(status_rx, priv->r->dma_if_intr_rx_done_sts);
 		sw_w32_mask(status_rx, 0, priv->r->dma_if_intr_rx_done_msk);
-		for (i = 0; i < priv->rxrings; i++) {
+		for (int i = 0; i < priv->rxrings; i++) {
 			if (status_rx & BIT(i)) {
 				pr_debug("Scheduling queue: %d\n", i);
 				napi_schedule(&priv->rx_qs[i].napi);
@@ -520,7 +514,7 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 	/* RX buffer overrun */
 	if (status_rx_r) {
 		pr_debug("RX buffer overrun: status %x, mask: %x\n",
-			 status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
+		         status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
 		sw_w32(status_rx_r, priv->r->dma_if_intr_rx_runout_sts);
 		rtl838x_rb_cleanup(priv, status_rx_r);
 	}
@@ -644,8 +638,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 {
 	u32 int_saved, nbuf;
 	u32 reset_mask;
-	int i, pos;
-	
+
 	pr_info("RESETTING %x, CPU_PORT %d\n", priv->family_id, priv->cpu_port);
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
 	mdelay(100);
@@ -682,7 +675,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 	else
 		reset_mask = 0xc;
 
-	sw_w32(reset_mask, priv->r->rst_glb_ctrl);
+	sw_w32_mask(0, reset_mask, priv->r->rst_glb_ctrl);
 
 	do { /* Wait for reset of NIC and Queues done */
 		udelay(20);
@@ -691,15 +684,16 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 
 	/* Setup Head of Line */
 	if (priv->family_id == RTL8380_FAMILY_ID)
-		sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);  // Disabled on RTL8380
+		sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);  /* Disabled on RTL8380 */
 	if (priv->family_id == RTL8390_FAMILY_ID)
 		sw_w32(0xffffffff, RTL839X_DMA_IF_RX_RING_CNTR);
 	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
-		for (i = 0; i < priv->rxrings; i++) {
-			pos = (i % 3) * 10;
+		for (int i = 0; i < priv->rxrings; i++) {
+			int pos = (i % 3) * 10;
+
 			sw_w32_mask(0x3ff << pos, 0, priv->r->dma_if_rx_ring_size(i));
 			sw_w32_mask(0x3ff << pos, priv->rxringlen,
-				    priv->r->dma_if_rx_ring_cntr(i));
+			            priv->r->dma_if_rx_ring_cntr(i));
 		}
 	}
 
@@ -718,13 +712,12 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 
 static void rtl838x_hw_ring_setup(struct rtl838x_eth_priv *priv)
 {
-	int i;
 	struct ring_b *ring = priv->membase;
 
-	for (i = 0; i < priv->rxrings; i++)
+	for (int i = 0; i < priv->rxrings; i++)
 		sw_w32(KSEG1ADDR(&ring->rx_r[i]), priv->r->dma_rx_base + i * 4);
 
-	for (i = 0; i < TXRINGS; i++)
+	for (int i = 0; i < TXRINGS; i++)
 		sw_w32(KSEG1ADDR(&ring->tx_r[i]), priv->r->dma_tx_base + i * 4);
 }
 
@@ -761,7 +754,7 @@ static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	sw_w32(0x0000c808, priv->r->dma_if_ctrl);
 
 	/* Enable Notify, RX done, RX overflow and TX done interrupts */
-	sw_w32(0x007fffff, priv->r->dma_if_intr_msk); // Notify IRQ!
+	sw_w32(0x007fffff, priv->r->dma_if_intr_msk); /* Notify IRQ! */
 
 	/* Enable DMA */
 	sw_w32_mask(0, RX_EN | TX_EN, priv->r->dma_if_ctrl);
@@ -770,7 +763,7 @@ static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	sw_w32_mask(0x0, 0x3 | BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
 
 	/* CPU port joins Lookup Miss Flooding Portmask */
-	// TODO: The code below should also work for the RTL838x
+	/* TODO: The code below should also work for the RTL838x */
 	sw_w32(0x28000, RTL839X_TBL_ACCESS_L2_CTRL);
 	sw_w32_mask(0, 0x80000000, RTL839X_TBL_ACCESS_L2_DATA(0));
 	sw_w32(0x38000, RTL839X_TBL_ACCESS_L2_CTRL);
@@ -781,17 +774,16 @@ static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 
 static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 {
-	int i, pos;
-	u32 v;
-
 	/* Setup CPU-Port: RX Buffer truncated at 1600 Bytes */
 	sw_w32(0x06400040, priv->r->dma_if_ctrl);
 
-	for (i = 0; i < priv->rxrings; i++) {
-		pos = (i % 3) * 10;
+	for (int i = 0; i < priv->rxrings; i++) {
+		int pos = (i % 3) * 10;
+		u32 v;
+
 		sw_w32_mask(0x3ff << pos, priv->rxringlen << pos, priv->r->dma_if_rx_ring_size(i));
 
-		// Some SoCs have issues with missing underflow protection
+		/* Some SoCs have issues with missing underflow protection */
 		v = (sw_r32(priv->r->dma_if_rx_ring_cntr(i)) >> pos) & 0x3ff;
 		sw_w32_mask(0x3ff << pos, v, priv->r->dma_if_rx_ring_cntr(i));
 	}
@@ -820,55 +812,57 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 
 static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring_b *ring)
 {
-	int i, j;
+	for (int i = 0; i < priv->rxrings; i++) {
+	        struct p_hdr *h;
+                int j;
 
-	struct p_hdr *h;
-
-	for (i = 0; i < priv->rxrings; i++) {
 		for (j = 0; j < priv->rxringlen; j++) {
 			h = &ring->rx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->rx_space
-					+ i * priv->rxringlen * RING_BUFFER
-					+ j * RING_BUFFER);
+			h->buf = (u8 *)KSEG1ADDR(ring->rx_space +
+			                         i * priv->rxringlen * RING_BUFFER +
+			                         j * RING_BUFFER);
 			h->size = RING_BUFFER;
 			/* All rings owned by switch, last one wraps */
-			ring->rx_r[i][j] = KSEG1ADDR(h) | 1 
-					   | (j == (priv->rxringlen - 1) ? WRAP : 0);
+			ring->rx_r[i][j] = KSEG1ADDR(h) | 1 | (j == (priv->rxringlen - 1) ?
+			                   WRAP :
+			                   0);
 		}
 		ring->c_rx[i] = 0;
 	}
 
-	for (i = 0; i < TXRINGS; i++) {
+	for (int i = 0; i < TXRINGS; i++) {
+		struct p_hdr *h;
+		int j;
+
 		for (j = 0; j < TXRINGLEN; j++) {
 			h = &ring->tx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->tx_space
-					+ i * TXRINGLEN * RING_BUFFER
-					+ j * RING_BUFFER);
+			h->buf = (u8 *)KSEG1ADDR(ring->tx_space +
+			                         i * TXRINGLEN * RING_BUFFER +
+			                         j * RING_BUFFER);
 			h->size = RING_BUFFER;
 			ring->tx_r[i][j] = KSEG1ADDR(&ring->tx_header[i][j]);
 		}
 		/* Last header is wrapping around */
-		ring->tx_r[i][j-1] |= WRAP;
+		ring->tx_r[i][j - 1] |= WRAP;
 		ring->c_tx[i] = 0;
 	}
 }
 
 static void rtl839x_setup_notify_ring_buffer(struct rtl838x_eth_priv *priv)
 {
-	int i;
 	struct notify_b *b = priv->membase + sizeof(struct ring_b);
 
-	for (i = 0; i < NOTIFY_BLOCKS; i++)
+	for (int i = 0; i < NOTIFY_BLOCKS; i++)
 		b->ring[i] = KSEG1ADDR(&b->blocks[i]) | 1 | (i == (NOTIFY_BLOCKS - 1) ? WRAP : 0);
 
 	sw_w32((u32) b->ring, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
 	sw_w32_mask(0x3ff << 2, 100 << 2, RTL839X_L2_NOTIFICATION_CTRL);
 
 	/* Setup notification events */
-	sw_w32_mask(0, 1 << 14, RTL839X_L2_CTRL_0); // RTL8390_L2_CTRL_0_FLUSH_NOTIFY_EN
-	sw_w32_mask(0, 1 << 12, RTL839X_L2_NOTIFICATION_CTRL); // SUSPEND_NOTIFICATION_EN
+	sw_w32_mask(0, 1 << 14, RTL839X_L2_CTRL_0); /* RTL8390_L2_CTRL_0_FLUSH_NOTIFY_EN */
+	sw_w32_mask(0, 1 << 12, RTL839X_L2_NOTIFICATION_CTRL); /* SUSPEND_NOTIFICATION_EN
 
 	/* Enable Notification */
 	sw_w32_mask(0, 1 << 0, RTL839X_L2_NOTIFICATION_CTRL);
@@ -880,7 +874,6 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	unsigned long flags;
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 	struct ring_b *ring = priv->membase;
-	int i;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
 		__func__, priv->rxrings, priv->rxringlen, TXRINGS, TXRINGLEN);
@@ -898,7 +891,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	rtl838x_hw_ring_setup(priv);
 	phylink_start(priv->phylink);
 
-	for (i = 0; i < priv->rxrings; i++)
+	for (int i = 0; i < priv->rxrings; i++)
 		napi_enable(&priv->rx_qs[i].napi);
 
 	switch (priv->family_id) {
@@ -912,7 +905,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 
 	case RTL8390_FAMILY_ID:
 		rtl839x_hw_en_rxtx(priv);
-		// Trap MLD and IGMP messages to CPU_PORT
+		/* Trap MLD and IGMP messages to CPU_PORT */
 		sw_w32(0x3, RTL839X_SPCL_TRAP_IGMP_CTRL);
 		/* Flush learned FDB entries on link down of a port */
 		sw_w32_mask(0, BIT(7), RTL839X_L2_CTRL_0);
@@ -922,20 +915,20 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		rtl93xx_hw_en_rxtx(priv);
 		/* Flush learned FDB entries on link down of a port */
 		sw_w32_mask(0, BIT(7), RTL930X_L2_CTRL);
-		// Trap MLD and IGMP messages to CPU_PORT
+		/* Trap MLD and IGMP messages to CPU_PORT */
 		sw_w32((0x2 << 3) | 0x2,  RTL930X_VLAN_APP_PKT_CTRL);
 		break;
 
 	case RTL9310_FAMILY_ID:
 		rtl93xx_hw_en_rxtx(priv);
 
-		// Trap MLD and IGMP messages to CPU_PORT
+		/* Trap MLD and IGMP messages to CPU_PORT */
 		sw_w32((0x2 << 3) | 0x2,  RTL931X_VLAN_APP_PKT_CTRL);
 
-		// Disable External CPU access to switch, clear EXT_CPU_EN
+		/* Disable External CPU access to switch, clear EXT_CPU_EN */
 		sw_w32_mask(BIT(2), 0, RTL931X_MAC_L2_GLOBAL_CTRL2);
 
-		// Set PCIE_PWR_DOWN
+		/* Set PCIE_PWR_DOWN */
 		sw_w32_mask(0, BIT(1), RTL931X_PS_SOC_CTRL);
 		break;
 	}
@@ -951,9 +944,8 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 {
 	u32 force_mac = priv->family_id == RTL8380_FAMILY_ID ? 0x6192C : 0x75;
 	u32 clear_irq = priv->family_id == RTL8380_FAMILY_ID ? 0x000fffff : 0x007fffff;
-	int i;
 
-	// Disable RX/TX from/to CPU-port
+	/* Disable RX/TX from/to CPU-port */
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
 
 	/* Disable traffic */
@@ -961,7 +953,7 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 		sw_w32_mask(RX_EN_93XX | TX_EN_93XX, 0, priv->r->dma_if_ctrl);
 	else
 		sw_w32_mask(RX_EN | TX_EN, 0, priv->r->dma_if_ctrl);
-	mdelay(200); // Test, whether this is needed
+	mdelay(200); /* Test, whether this is needed */
 
 	/* Block all ports */
 	if (priv->family_id == RTL8380_FAMILY_ID) {
@@ -972,17 +964,17 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 
 	/* Flush L2 address cache */
 	if (priv->family_id == RTL8380_FAMILY_ID) {
-		for (i = 0; i <= priv->cpu_port; i++) {
+		for (int i = 0; i <= priv->cpu_port; i++) {
 			sw_w32(1 << 26 | 1 << 23 | i << 5, priv->r->l2_tbl_flush_ctrl);
 			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & (1 << 26));
 		}
 	} else if (priv->family_id == RTL8390_FAMILY_ID) {
-		for (i = 0; i <= priv->cpu_port; i++) {
+		for (int i = 0; i <= priv->cpu_port; i++) {
 			sw_w32(1 << 28 | 1 << 25 | i << 5, priv->r->l2_tbl_flush_ctrl);
 			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & (1 << 28));
 		}
 	}
-	// TODO: L2 flush register is 64 bit on RTL931X and 930X
+	/* TODO: L2 flush register is 64 bit on RTL931X and 930X */
 
 	/* CPU-Port: Link down */
 	if (priv->family_id == RTL8380_FAMILY_ID || priv->family_id == RTL8390_FAMILY_ID)
@@ -1013,8 +1005,6 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 
 static int rtl838x_eth_stop(struct net_device *ndev)
 {
-	unsigned long flags;
-	int i;
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
 	pr_info("in %s\n", __func__);
@@ -1022,7 +1012,7 @@ static int rtl838x_eth_stop(struct net_device *ndev)
 	phylink_stop(priv->phylink);
 	rtl838x_hw_stop(priv);
 
-	for (i = 0; i < priv->rxrings; i++)
+	for (int i = 0; i < priv->rxrings; i++)
 		napi_disable(&priv->rx_qs[i].napi);
 
 	netif_tx_stop_all_queues(ndev);
@@ -1032,8 +1022,7 @@ static int rtl838x_eth_stop(struct net_device *ndev)
 
 static void rtl838x_eth_set_multicast_list(struct net_device *ndev)
 {
-	/*
-	 * Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(21, 0) = 0x3FFFFF
 	 */
 	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
@@ -1050,8 +1039,7 @@ static void rtl838x_eth_set_multicast_list(struct net_device *ndev)
 
 static void rtl839x_eth_set_multicast_list(struct net_device *ndev)
 {
-	/*
-	 * Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
@@ -1077,8 +1065,7 @@ static void rtl839x_eth_set_multicast_list(struct net_device *ndev)
 
 static void rtl930x_eth_set_multicast_list(struct net_device *ndev)
 {
-	/*
-	 * Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
@@ -1096,8 +1083,7 @@ static void rtl930x_eth_set_multicast_list(struct net_device *ndev)
 
 static void rtl931x_eth_set_multicast_list(struct net_device *ndev)
 {
-	/*
-	 * Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
 	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00.
 	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
@@ -1130,34 +1116,34 @@ static void rtl838x_eth_tx_timeout(struct net_device *ndev, unsigned int txqueue
 
 static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 {
-	int len, i;
+	int len;
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->membase;
-	uint32_t val;
 	int ret;
 	unsigned long flags;
 	struct p_hdr *h;
 	int dest_port = -1;
 	int q = skb_get_queue_mapping(skb) % TXRINGS;
 
-	if (q) // Check for high prio queue
+	if (q) /* Check for high prio queue */
 		pr_debug("SKB priority: %d\n", skb->priority);
 
 	spin_lock_irqsave(&priv->lock, flags);
 	len = skb->len;
 
 	/* Check for DSA tagging at the end of the buffer */
-	if (netdev_uses_dsa(dev) && skb->data[len-4] == 0x80
-			&& skb->data[len-3] < priv->cpu_port
-			&& skb->data[len-2] == 0x10
-			&& skb->data[len-1] == 0x00) {
+	if (netdev_uses_dsa(dev) &&
+	    skb->data[len - 4] == 0x80 &&
+	    skb->data[len - 3] < priv->cpu_port &&
+	    skb->data[len - 2] == 0x10 &&
+	    skb->data[len - 1] == 0x00) {
 		/* Reuse tag space for CRC if possible */
-		dest_port = skb->data[len-3];
-		skb->data[len-4] = skb->data[len-3] = skb->data[len-2] = skb->data[len-1] = 0x00;
+		dest_port = skb->data[len - 3];
+		skb->data[len - 4] = skb->data[len - 3] = skb->data[len - 2] = skb->data[len - 1] = 0x00;
 		len -= 4;
 	}
 
-	len += 4; // Add space for CRC
+	len += 4; /* Add space for CRC */
 
 	if (skb_padto(skb, len)) {
 		ret = NETDEV_TX_OK;
@@ -1171,7 +1157,7 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 		h = &ring->tx_header[q][ring->c_tx[q]];
 		h->size = len;
 		h->len = len;
-		// On RTL8380 SoCs, small packet lengths being sent need adjustments
+		/* On RTL8380 SoCs, small packet lengths being sent need adjustments */
 		if (priv->family_id == RTL8380_FAMILY_ID) {
 			if (len < ETH_ZLEN - 4)
 				h->len -= 4;
@@ -1188,19 +1174,18 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 		/* Hand over to switch */
 		ring->tx_r[q][ring->c_tx[q]] |= 1;
 
-		// Before starting TX, prevent a Lextra bus bug on RTL8380 SoCs
+		/* Before starting TX, prevent a Lextra bus bug on RTL8380 SoCs */
 		if (priv->family_id == RTL8380_FAMILY_ID) {
-			for (i = 0; i < 10; i++) {
-				val = sw_r32(priv->r->dma_if_ctrl);
+			for (int i = 0; i < 10; i++) {
+				u32 val = sw_r32(priv->r->dma_if_ctrl);
 				if ((val & 0xc) == 0xc)
 					break;
 			}
 		}
 
 		/* Tell switch to send data */
-		if (priv->family_id == RTL9310_FAMILY_ID
-			|| priv->family_id == RTL9300_FAMILY_ID) {
-			// Ring ID q == 0: Low priority, Ring ID = 1: High prio queue
+		if (priv->family_id == RTL9310_FAMILY_ID || priv->family_id == RTL9300_FAMILY_ID) {
+			/* Ring ID q == 0: Low priority, Ring ID = 1: High prio queue */
 			if (!q)
 				sw_w32_mask(0, BIT(2), priv->r->dma_if_ctrl);
 			else
@@ -1218,13 +1203,14 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 		dev_warn(&priv->pdev->dev, "Data is owned by switch\n");
 		ret = NETDEV_TX_BUSY;
 	}
+
 txdone:
 	spin_unlock_irqrestore(&priv->lock, flags);
+
 	return ret;
 }
 
-/*
- * Return queue number for TX. On the RTL83XX, these queues have equal priority
+/* Return queue number for TX. On the RTL83XX, these queues have equal priority
  * so we do round-robin
  */
 u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
@@ -1236,14 +1222,14 @@ u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 	return last % TXRINGS;
 }
 
-/*
- * Return queue number for TX. On the RTL93XX, queue 1 is the high priority queue
+/* Return queue number for TX. On the RTL93XX, queue 1 is the high priority queue
  */
 u16 rtl93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 			  struct net_device *sb_dev)
 {
 	if (skb->priority >= TC_PRIO_CONTROL)
 		return 1;
+
 	return 0;
 }
 
@@ -1251,22 +1237,24 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->membase;
-	struct sk_buff *skb;
 	LIST_HEAD(rx_list);
 	unsigned long flags;
-	int i, len, work_done = 0;
-	u8 *data, *skb_data;
-	unsigned int val;
+	int work_done = 0;
 	u32	*last;
-	struct p_hdr *h;
 	bool dsa = netdev_uses_dsa(dev);
-	struct dsa_tag tag;
 
 	pr_debug("---------------------------------------------------------- RX - %d\n", r);
 	spin_lock_irqsave(&priv->lock, flags);
 	last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 
 	do {
+		struct sk_buff *skb;
+		struct dsa_tag tag;
+		struct p_hdr *h;
+		u8 *skb_data;
+		u8 *data;
+		int len;
+
 		if ((ring->rx_r[r][ring->c_rx[r]] & 0x1)) {
 			if (&ring->rx_r[r][ring->c_rx[r]] != last) {
 				netdev_warn(dev, "Ring contention: r: %x, last %x, cur %x\n",
@@ -1291,10 +1279,12 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		skb_reserve(skb, NET_IP_ALIGN);
 
 		if (likely(skb)) {
-			/* BUG: Prevent bug on RTL838x SoCs*/
+			/* BUG: Prevent bug on RTL838x SoCs */
 			if (priv->family_id == RTL8380_FAMILY_ID) {
 				sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
-				for (i = 0; i < priv->rxrings; i++) {
+				for (int i = 0; i < priv->rxrings; i++) {
+					unsigned int val;
+
 					/* Update each ring cnt */
 					val = sw_r32(priv->r->dma_if_rx_ring_cntr(i));
 					sw_w32(val, priv->r->dma_if_rx_ring_cntr(i));
@@ -1308,12 +1298,12 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 			/* Overwrite CRC with cpu_tag */
 			if (dsa) {
 				priv->r->decode_tag(h, &tag);
-				skb->data[len-4] = 0x80;
-				skb->data[len-3] = tag.port;
-				skb->data[len-2] = 0x10;
-				skb->data[len-1] = 0x00;
+				skb->data[len - 4] = 0x80;
+				skb->data[len - 3] = tag.port;
+				skb->data[len - 2] = 0x10;
+				skb->data[len - 1] = 0x00;
 				if (tag.l2_offloaded)
-					skb->data[len-3] |= 0x40;
+					skb->data[len - 3] |= 0x40;
 			}
 
 			if (tag.queue >= 0)
@@ -1342,15 +1332,16 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		h->buf = data;
 		h->size = RING_BUFFER;
 
-		ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 
-			| (ring->c_rx[r] == (priv->rxringlen - 1) ? WRAP : 0x1);
+		ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 | (ring->c_rx[r] == (priv->rxringlen - 1) ?
+		                               WRAP :
+		                               0x1);
 		ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
 
 	netif_receive_skb_list(&rx_list);
 
-	// Update counters
+	/* Update counters */
 	priv->r->update_cntr(r, 0);
 
 	spin_unlock_irqrestore(&priv->lock, flags);
@@ -1382,6 +1373,7 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 		else
 			sw_w32_mask(0, 0xf00ff | BIT(r + 8), priv->r->dma_if_intr_msk);
 	}
+
 	return work_done;
 }
 
@@ -1568,23 +1560,22 @@ static int rtl838x_set_mac_address(struct net_device *dev, void *p)
 	rtl838x_set_mac_hw(dev, mac);
 
 	pr_info("Using MAC %08x%08x\n", sw_r32(priv->r->mac), sw_r32(priv->r->mac + 4));
+
 	return 0;
 }
 
 static int rtl8390_init_mac(struct rtl838x_eth_priv *priv)
 {
-	// We will need to set-up EEE and the egress-rate limitation
+	/* We will need to set-up EEE and the egress-rate limitation */
 	return 0;
 }
 
 static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 {
-	int i;
-
 	if (priv->family_id == 0x8390)
 		return rtl8390_init_mac(priv);
 
-    // At present we do not know how to set up EEE on any other SoC than RTL8380
+	/* At present we do not know how to set up EEE on any other SoC than RTL8380 */
 	if (priv->family_id != 0x8380)
 		return 0;
 
@@ -1595,13 +1586,14 @@ static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 
 	/* Init VLAN. TODO: Understand what is being done, here */
 	if (priv->id == 0x8382) {
-		for (i = 0; i <= 28; i++)
+		for (int i = 0; i <= 28; i++)
 			sw_w32(0, 0xd57c + i * 0x80);
 	}
 	if (priv->id == 0x8380) {
-		for (i = 8; i <= 28; i++)
+		for (int i = 8; i <= 28; i++)
 			sw_w32(0, 0xd57c + i * 0x80);
 	}
+
 	return 0;
 }
 
@@ -1611,6 +1603,7 @@ static int rtl838x_get_link_ksettings(struct net_device *ndev,
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
 	pr_debug("%s called\n", __func__);
+
 	return phylink_ethtool_ksettings_get(priv->phylink, cmd);
 }
 
@@ -1620,6 +1613,7 @@ static int rtl838x_set_link_ksettings(struct net_device *ndev,
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
 	pr_debug("%s called\n", __func__);
+
 	return phylink_ethtool_ksettings_set(priv->phylink, cmd);
 }
 
@@ -1645,6 +1639,7 @@ static int rtl838x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, in
 	}
 	if (err)
 		return err;
+
 	return val;
 }
 
@@ -1673,8 +1668,10 @@ static int rtl839x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, in
 		err = rtl839x_read_phy(mii_id, page, regnum, &val);
 		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
 	}
-		if (err)
+
+	if (err)
 		return err;
+
 	return val;
 }
 
@@ -1703,8 +1700,10 @@ static int rtl930x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, in
 		err = rtl930x_read_phy(mii_id, page, regnum, &val);
 		pr_debug("PHY: %d register %x read %x, err %d\n", mii_id, regnum, val, err);
 	}
+
 	if (err)
 		return err;
+
 	return val;
 }
 
@@ -1744,6 +1743,7 @@ static int rtl931x_mdio_read_paged(struct mii_bus *bus, int mii_id, u16 page, in
 
 	if (err)
 		return err;
+
 	return val;
 }
 
@@ -1777,6 +1777,7 @@ static int rtl838x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
 	}
 	err = rtl838x_write_phy(mii_id, page, regnum, value);
 	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+
 	return err;
 }
 
@@ -1807,6 +1808,7 @@ static int rtl839x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
 
 	err = rtl839x_write_phy(mii_id, page, regnum, value);
 	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+
 	return err;
 }
 
@@ -1831,6 +1833,7 @@ static int rtl930x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
 
 	err = rtl930x_write_phy(mii_id, page, regnum, value);
 	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+
 	return err;
 }
 
@@ -1861,6 +1864,7 @@ static int rtl931x_mdio_write_paged(struct mii_bus *bus, int mii_id, u16 page,
 
 	err = rtl931x_write_phy(mii_id, page, regnum, value);
 	pr_debug("PHY: %d register %x write %x, err %d\n", mii_id, regnum, value, err);
+
 	return err;
 }
 
@@ -1879,7 +1883,7 @@ static int rtl838x_mdio_reset(struct mii_bus *bus)
 	/* Enable PHY control via SoC */
 	sw_w32_mask(0, 1 << 15, RTL838X_SMI_GLB_CTRL);
 
-	// Probably should reset all PHYs here...
+	/* Probably should reset all PHYs here... */
 	return 0;
 }
 
@@ -1895,7 +1899,7 @@ static int rtl839x_mdio_reset(struct mii_bus *bus)
 	/* Disable PHY polling via SoC */
 	sw_w32_mask(1 << 7, 0, RTL839X_SMI_GLB_CTRL);
 
-	// Probably should reset all PHYs here...
+	/* Probably should reset all PHYs here... */
 	return 0;
 }
 
@@ -1904,20 +1908,20 @@ u8 mac_type_bit[RTL930X_CPU_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6
 
 static int rtl930x_mdio_reset(struct mii_bus *bus)
 {
-	int i;
-	int pos;
 	struct rtl838x_eth_priv *priv = bus->priv;
 	u32 c45_mask = 0;
 	u32 poll_sel[2];
 	u32 poll_ctrl = 0;
 	u32 private_poll_mask = 0;
 	u32 v;
-	bool uses_usxgmii = false; // For the Aquantia PHYs
-	bool uses_hisgmii = false; // For the RTL8221/8226
+	bool uses_usxgmii = false; /* For the Aquantia PHYs */
+	bool uses_hisgmii = false; /* For the RTL8221/8226 */
 
-	// Mapping of port to phy-addresses on an SMI bus
+	/* Mapping of port to phy-addresses on an SMI bus */
 	poll_sel[0] = poll_sel[1] = 0;
-	for (i = 0; i < RTL930X_CPU_PORT; i++) {
+	for (int i = 0; i < RTL930X_CPU_PORT; i++) {
+		int pos;
+
 		if (priv->smi_bus[i] > 3)
 			continue;
 		pos = (i % 6) * 5;
@@ -1929,54 +1933,52 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
 	}
 
-	// Configure which SMI bus is behind which port number
+	/* Configure which SMI bus is behind which port number */
 	sw_w32(poll_sel[0], RTL930X_SMI_PORT0_15_POLLING_SEL);
 	sw_w32(poll_sel[1], RTL930X_SMI_PORT16_27_POLLING_SEL);
 
-	// Disable POLL_SEL for any SMI bus with a normal PHY (not RTL8295R for SFP+)
+	/* Disable POLL_SEL for any SMI bus with a normal PHY (not RTL8295R for SFP+) */
 	sw_w32_mask(poll_ctrl, 0, RTL930X_SMI_GLB_CTRL);
 
-	// Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus
-	for (i = 0; i < 4; i++)
+	/* Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus */
+	for (int i = 0; i < 4; i++)
 		if (priv->smi_bus_isc45[i])
 			c45_mask |= BIT(i + 16);
 
 	pr_info("c45_mask: %08x\n", c45_mask);
 	sw_w32_mask(0, c45_mask, RTL930X_SMI_GLB_CTRL);
 
-	// Set the MAC type of each port according to the PHY-interface
-	// Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0
+	/* Set the MAC type of each port according to the PHY-interface */
+	/* Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0 */
 	v = 0;
-	for (i = 0; i < RTL930X_CPU_PORT; i++) {
+	for (int i = 0; i < RTL930X_CPU_PORT; i++) {
 		switch (priv->interfaces[i]) {
 		case PHY_INTERFACE_MODE_10GBASER:
-			break;			// Serdes: Value = 0
-
+			break;			/* Serdes: Value = 0 */
 		case PHY_INTERFACE_MODE_HSGMII:
 			private_poll_mask |= BIT(i);
-			// fallthrough
+			/* fallthrough */
 		case PHY_INTERFACE_MODE_USXGMII:
 			v |= BIT(mac_type_bit[i]);
 			uses_usxgmii = true;
 			break;
-
 		case PHY_INTERFACE_MODE_QSGMII:
 			private_poll_mask |= BIT(i);
 			v |= 3 << mac_type_bit[i];
 			break;
-
 		default:
 			break;
 		}
 	}
 	sw_w32(v, RTL930X_SMI_MAC_TYPE_CTRL);
 
-	// Set the private polling mask for all Realtek PHYs (i.e. not the 10GBit Aquantia ones)
+	/* Set the private polling mask for all Realtek PHYs (i.e. not the 10GBit Aquantia ones) */
 	sw_w32(private_poll_mask, RTL930X_SMI_PRVTE_POLLING_CTRL);
 
 	/* The following magic values are found in the port configuration, they seem to
 	 * define different ways of polling a PHY. The below is for the Aquantia PHYs of
-	 * the XGS1250 and the RTL8226 of the XGS1210 */
+	 * the XGS1250 and the RTL8226 of the XGS1210
+	 */
 	if (uses_usxgmii) {
 		sw_w32(0x01010000, RTL930X_SMI_10GPHY_POLLING_REG0_CFG);
 		sw_w32(0x01E7C400, RTL930X_SMI_10GPHY_POLLING_REG9_CFG);
@@ -2004,13 +2006,12 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 		 sw_r32(RTL930X_SMI_10GPHY_POLLING_REG10_CFG));
 	pr_debug("%s: RTL930X_SMI_PRVTE_POLLING_CTRL %08x\n", __func__,
 		 sw_r32(RTL930X_SMI_PRVTE_POLLING_CTRL));
+
 	return 0;
 }
 
 static int rtl931x_mdio_reset(struct mii_bus *bus)
 {
-	int i;
-	int pos;
 	struct rtl838x_eth_priv *priv = bus->priv;
 	u32 c45_mask = 0;
 	u32 poll_sel[4];
@@ -2018,15 +2019,17 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 	bool mdc_on[4];
 
 	pr_info("%s called\n", __func__);
-	// Disable port polling for configuration purposes
+	/* Disable port polling for configuration purposes */
 	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL);
 	sw_w32(0, RTL931X_SMI_PORT_POLLING_CTRL + 4);
 	msleep(100);
 
 	mdc_on[0] = mdc_on[1] = mdc_on[2] = mdc_on[3] = false;
-	// Mapping of port to phy-addresses on an SMI bus
+	/* Mapping of port to phy-addresses on an SMI bus */
 	poll_sel[0] = poll_sel[1] = poll_sel[2] = poll_sel[3] = 0;
-	for (i = 0; i < 56; i++) {
+	for (int i = 0; i < 56; i++) {
+		u32 pos;
+
 		pos = (i % 6) * 5;
 		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos, RTL931X_SMI_PORT_ADDR + (i / 6) * 4);
 		pos = (i * 2) % 32;
@@ -2035,20 +2038,20 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 		mdc_on[priv->smi_bus[i]] = true;
 	}
 
-	// Configure which SMI bus is behind which port number
-	for (i = 0; i < 4; i++) {
+	/* Configure which SMI bus is behind which port number */
+	for (int i = 0; i < 4; i++) {
 		pr_info("poll sel %d, %08x\n", i, poll_sel[i]);
 		sw_w32(poll_sel[i], RTL931X_SMI_PORT_POLLING_SEL + (i * 4));
 	}
 
-	// Configure which SMI busses
+	/* Configure which SMI busses */
 	pr_info("%s: WAS RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
-	for (i = 0; i < 4; i++) {
-		// bus is polled in c45
+	for (int i = 0; i < 4; i++) {
+		/* bus is polled in c45 */
 		if (priv->smi_bus_isc45[i])
-			c45_mask |= 0x2 << (i * 2);  // Std. C45, non-standard is 0x3
-		// Enable bus access via MDC
+			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
+		/* Enable bus access via MDC */
 		if (mdc_on[i])
 			sw_w32_mask(0, BIT(9 + i), RTL931X_MAC_L2_GLOBAL_CTRL2);
 	}
@@ -2057,10 +2060,10 @@ static int rtl931x_mdio_reset(struct mii_bus *bus)
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 
 	/* We have a 10G PHY enable polling
-	sw_w32(0x01010000, RTL931X_SMI_10GPHY_POLLING_SEL2);
-	sw_w32(0x01E7C400, RTL931X_SMI_10GPHY_POLLING_SEL3);
-	sw_w32(0x01E7E820, RTL931X_SMI_10GPHY_POLLING_SEL4);
-*/
+	 * sw_w32(0x01010000, RTL931X_SMI_10GPHY_POLLING_SEL2);
+	 * sw_w32(0x01E7C400, RTL931X_SMI_10GPHY_POLLING_SEL3);
+	 * sw_w32(0x01E7E820, RTL931X_SMI_10GPHY_POLLING_SEL4);
+	 */
 	sw_w32_mask(0xff, c45_mask, RTL931X_SMI_GLB_CTRL1);
 
 	return 0;
@@ -2070,22 +2073,22 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 {
 	pr_info("In %s\n", __func__);
 
-	// Initialize Encapsulation memory and wait until finished
+	/* Initialize Encapsulation memory and wait until finished */
 	sw_w32(0x1, RTL931X_MEM_ENCAP_INIT);
 	do { } while (sw_r32(RTL931X_MEM_ENCAP_INIT) & 1);
 	pr_info("%s: init ENCAP done\n", __func__);
 
-	// Initialize Managemen Information Base memory and wait until finished
+	/* Initialize Managemen Information Base memory and wait until finished */
 	sw_w32(0x1, RTL931X_MEM_MIB_INIT);
 	do { } while (sw_r32(RTL931X_MEM_MIB_INIT) & 1);
 	pr_info("%s: init MIB done\n", __func__);
 
-	// Initialize ACL (PIE) memory and wait until finished
+	/* Initialize ACL (PIE) memory and wait until finished */
 	sw_w32(0x1, RTL931X_MEM_ACL_INIT);
 	do { } while (sw_r32(RTL931X_MEM_ACL_INIT) & 1);
 	pr_info("%s: init ACL done\n", __func__);
 
-	// Initialize ALE memory and wait until finished
+	/* Initialize ALE memory and wait until finished */
 	sw_w32(0xFFFFFFFF, RTL931X_MEM_ALE_INIT_0);
 	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_0));
 	sw_w32(0x7F, RTL931X_MEM_ALE_INIT_1);
@@ -2093,10 +2096,10 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 	do { } while (sw_r32(RTL931X_MEM_ALE_INIT_2) & 0x7ff);
 	pr_info("%s: init ALE done\n", __func__);
 
-	// Enable ESD auto recovery
+	/* Enable ESD auto recovery */
 	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
 
-	// Init SPI, is this for thermal control or what?
+	/* Init SPI, is this for thermal control or what? */
 	sw_w32_mask(0x7 << 11, 0x2 << 11, RTL931X_SPI_CTRL0);
 
 	return 0;
@@ -2221,6 +2224,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 
 err_put_node:
 	of_node_put(mii_np);
+
 	return ret;
 }
 
@@ -2347,7 +2351,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	struct resource *res, *mem;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
-	int err = 0, i, rxrings, rxringlen;
+	int err = 0, rxrings, rxringlen;
 	struct ring_b *ring;
 
 	pr_info("Probing RTL838X eth device pdev: %x, dev: %x\n",
@@ -2358,7 +2362,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	rxrings = (soc_info.family == RTL8380_FAMILY_ID 
+	rxrings = (soc_info.family == RTL8380_FAMILY_ID
 			|| soc_info.family == RTL8390_FAMILY_ID) ? 8 : 32;
 	rxrings = rxrings > MAX_RXRINGS ? MAX_RXRINGS : rxrings;
 	rxringlen = MAX_ENTRIES / rxrings;
@@ -2392,16 +2396,16 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	}
 
 	/* Allocate buffer memory */
-	priv->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER
-				+ sizeof(struct ring_b) + sizeof(struct notify_b),
-				(void *)&dev->mem_start, GFP_KERNEL);
+	priv->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER +
+	                                    sizeof(struct ring_b) + sizeof(struct notify_b),
+	                                    (void *)&dev->mem_start, GFP_KERNEL);
 	if (!priv->membase) {
 		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
 		err = -ENOMEM;
 		goto err_free;
 	}
 
-	// Allocate ring-buffer space at the end of the allocated memory
+	/* Allocate ring-buffer space at the end of the allocated memory */
 	ring = priv->membase;
 	ring->rx_space = priv->membase + sizeof(struct ring_b) + sizeof(struct notify_b);
 
@@ -2469,7 +2473,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	rtl8380_init_mac(priv);
 
-	/* try to get mac address in the following order:
+	/* Try to get mac address in the following order:
 	 * 1) from device tree data
 	 * 2) from internal registers set by bootloader
 	 */
@@ -2508,7 +2512,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	if (err)
 		goto err_free;
 
-	for (i = 0; i < priv->rxrings; i++) {
+	for (int i = 0; i < priv->rxrings; i++) {
 		priv->rx_qs[i].id = i;
 		priv->rx_qs[i].priv = priv;
 		netif_napi_add(dev, &priv->rx_qs[i].napi, rtl838x_poll_rx, 64);
@@ -2540,6 +2544,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 err_free:
 	pr_err("Error setting up netdev, freeing it again.\n");
 	free_netdev(dev);
+
 	return err;
 }
 
@@ -2547,7 +2552,6 @@ static int rtl838x_eth_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
-	int i;
 
 	if (dev) {
 		pr_info("Removing platform driver for rtl838x-eth\n");
@@ -2556,12 +2560,13 @@ static int rtl838x_eth_remove(struct platform_device *pdev)
 
 		netif_tx_stop_all_queues(dev);
 
-		for (i = 0; i < priv->rxrings; i++)
+		for (int i = 0; i < priv->rxrings; i++)
 			netif_napi_del(&priv->rx_qs[i].napi);
 
 		unregister_netdev(dev);
 		free_netdev(dev);
 	}
+
 	return 0;
 }
 

@@ -86,7 +86,8 @@ case "$FIRMWARE" in
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
-	buffalo,wzr-hp-g450h)
+	buffalo,wzr-hp-g450h|\
+	pcs,cap324)
 		caldata_extract "art" 0x1000 0x440
 		;;
 	dlink,dir-825-c1|\
@@ -103,9 +104,8 @@ case "$FIRMWARE" in
 		;;
 	netgear,wnr2200-8m|\
 	netgear,wnr2200-16m|\
-	pcs,cap324|\
 	tplink,tl-wr842n-v1)
-		caldata_extract "art" 0x1000 0x1000
+		caldata_extract "art" 0x1000 0x3e0
 		;;
 	wd,mynet-n600|\
 	wd,mynet-n750)
@@ -113,7 +113,7 @@ case "$FIRMWARE" in
 		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
 		;;
 	wd,mynet-wifi-rangeextender)
-		caldata_extract "art" 0x1000 0x1000
+		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(nvram get wl0_hwaddr)
 		;;
 	*)
