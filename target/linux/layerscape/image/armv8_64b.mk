@@ -29,7 +29,7 @@ define Device/fsl_ls1012a-frdm
   DEVICE_MODEL := FRDM-LS1012A
   DEVICE_PACKAGES += \
     layerscape-ppfe \
-    tfa-ls1012a-frdm \
+    trusted-firmware-a-ls1012a-frdm \
     kmod-ppfe
   BLOCKSIZE := 256KiB
   IMAGE/firmware.bin := \
@@ -55,7 +55,7 @@ define Device/fsl_ls1012a-rdb
   DEVICE_MODEL := LS1012A-RDB
   DEVICE_PACKAGES += \
     layerscape-ppfe \
-    tfa-ls1012a-rdb \
+    trusted-firmware-a-ls1012a-rdb \
     kmod-hwmon-ina2xx \
     kmod-iio-fxas21002c-i2c \
     kmod-iio-fxos8700-i2c \
@@ -79,7 +79,7 @@ define Device/fsl_ls1012a-frwy-sdboot
   DEVICE_MODEL := FRWY-LS1012A
   DEVICE_PACKAGES += \
     layerscape-ppfe \
-    tfa-ls1012a-frwy-sdboot \
+    trusted-firmware-a-ls1012a-frwy-sdboot \
     kmod-ppfe
   DEVICE_DTS := freescale/fsl-ls1012a-frwy
   IMAGES += firmware.bin
@@ -105,7 +105,7 @@ define Device/fsl_ls1043a-rdb
   DEVICE_VARIANT := Default
   DEVICE_PACKAGES += \
     layerscape-fman \
-    tfa-ls1043a-rdb \
+    trusted-firmware-a-ls1043a-rdb \
     fmc fmc-eth-config \
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
@@ -131,7 +131,7 @@ define Device/fsl_ls1043a-rdb-sdboot
   DEVICE_VARIANT := SD Card Boot
   DEVICE_PACKAGES += \
     layerscape-fman \
-    tfa-ls1043a-rdb-sdboot \
+    trusted-firmware-a-ls1043a-rdb-sdboot \
     fmc fmc-eth-config \
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
@@ -155,7 +155,7 @@ define Device/fsl_ls1046a-frwy
   DEVICE_VARIANT := Default
   DEVICE_PACKAGES += \
     layerscape-fman \
-    tfa-ls1046a-frwy
+    trusted-firmware-a-ls1046a-frwy
   DEVICE_DTS := freescale/fsl-ls1046a-frwy
   IMAGE/firmware.bin := \
     ls-clean | \
@@ -176,7 +176,7 @@ define Device/fsl_ls1046a-frwy-sdboot
   DEVICE_VARIANT := SD Card Boot
   DEVICE_PACKAGES += \
     layerscape-fman \
-    tfa-ls1046a-frwy-sdboot
+    trusted-firmware-a-ls1046a-frwy-sdboot
   DEVICE_DTS := freescale/fsl-ls1046a-frwy
   IMAGE/sdcard.img.gz := \
     ls-clean | \
@@ -197,7 +197,7 @@ define Device/fsl_ls1046a-rdb
   DEVICE_VARIANT := Default
   DEVICE_PACKAGES += \
     layerscape-fman \
-    tfa-ls1046a-rdb \
+    trusted-firmware-a-ls1046a-rdb \
     fmc fmc-eth-config \
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
@@ -223,7 +223,7 @@ define Device/fsl_ls1046a-rdb-sdboot
   DEVICE_VARIANT := SD Card Boot
   DEVICE_PACKAGES += \
     layerscape-fman \
-    tfa-ls1046a-rdb-sdboot \
+    trusted-firmware-a-ls1046a-rdb-sdboot \
     fmc fmc-eth-config \
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
@@ -249,7 +249,7 @@ define Device/fsl_ls1088a-rdb
   DEVICE_PACKAGES += \
     layerscape-mc \
     layerscape-dpl \
-    tfa-ls1088a-rdb \
+    trusted-firmware-a-ls1088a-rdb \
     restool \
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
@@ -277,7 +277,7 @@ define Device/fsl_ls1088a-rdb-sdboot
   DEVICE_PACKAGES += \
     layerscape-mc \
     layerscape-dpl \
-    tfa-ls1088a-rdb-sdboot \
+    trusted-firmware-a-ls1088a-rdb-sdboot \
     restool \
     kmod-ahci-qoriq \
     kmod-hwmon-ina2xx \
@@ -304,7 +304,7 @@ define Device/fsl_ls2088a-rdb
   DEVICE_PACKAGES += \
     layerscape-mc \
     layerscape-dpl \
-    tfa-ls2088a-rdb \
+    trusted-firmware-a-ls2088a-rdb \
     restool \
     kmod-ahci-qoriq
   IMAGE/firmware.bin := \
@@ -329,7 +329,7 @@ define Device/fsl_lx2160a-rdb
     layerscape-mc \
     layerscape-dpl \
     layerscape-ddr-phy \
-    tfa-lx2160a-rdb \
+    trusted-firmware-a-lx2160a-rdb \
     restool
   IMAGE/firmware.bin := \
     ls-clean | \
@@ -355,7 +355,7 @@ define Device/fsl_lx2160a-rdb-sdboot
     layerscape-mc \
     layerscape-dpl \
     layerscape-ddr-phy \
-    tfa-lx2160a-rdb-sdboot \
+    trusted-firmware-a-lx2160a-rdb-sdboot \
     restool
   DEVICE_DTS := freescale/fsl-lx2160a-rdb
   IMAGE/sdcard.img.gz := \
