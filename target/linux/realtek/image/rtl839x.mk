@@ -38,7 +38,7 @@ TARGET_DEVICES += tplink_sg2452p-v4
 
 define Device/zyxel_gs1900-48
   SOC := rtl8393
-  IMAGE_SIZE := 13952k
+  IMAGE_SIZE := 6976k
   DEVICE_VENDOR := ZyXEL
   UIMAGE_MAGIC := 0x83800000
   ZYXEL_VERS := AAHN
