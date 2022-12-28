@@ -25,6 +25,7 @@ Once this is done. Retry.
 EOF
 		return 1
 		;;
+	zte,mf18a |\
 	zte,mf286d |\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
@@ -203,6 +204,7 @@ platform_do_upgrade() {
 		sony_emmc_do_upgrade "$1"
 		;;
 	teltonika,rutx10 |\
+	zte,mf18a |\
 	zte,mf286d |\
 	zte,mf289f)
 		CI_UBIPART="rootfs"

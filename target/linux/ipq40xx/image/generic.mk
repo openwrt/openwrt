@@ -1106,6 +1106,19 @@ endef
 # Missing DSA Setup
 #TARGET_DEVICES += unielec_u4019-32m
 
+define Device/zte_mf18a
+	$(call Device/FitImage)
+	DEVICE_VENDOR := ZTE
+	DEVICE_MODEL := MF18A
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_IN_UBI := 1
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct ipq-wifi-zte_mf18a
+endef
+TARGET_DEVICES += zte_mf18a
+
 define Device/zte_mf28x_common
 	$(call Device/FitzImage)
 	DEVICE_VENDOR := ZTE
