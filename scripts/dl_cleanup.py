@@ -13,6 +13,7 @@ import sys
 import os
 import re
 import getopt
+import shutil
 
 # Commandline options
 opt_dryrun = False
@@ -119,8 +120,10 @@ versionRegex = (
     (re.compile(r"(.+)[-_](\d\d\d\d)-?(\d\d)-?(\d\d)"), parseVer_ymd),  # xxx-YYYY-MM-DD
     (re.compile(r"(.+)[-_]([0-9a-fA-F]{40,40})"), parseVer_GIT),  # xxx-GIT_SHASUM
     (re.compile(r"(.+)[-_](\d+)\.(\d+)\.(\d+)(\w?)"), parseVer_123),  # xxx-1.2.3a
+    (re.compile(r"(.+)[-_]v(\d+)\.(\d+)\.(\d+)(\w?)"), parseVer_123),  # xxx-v1.2.3a
     (re.compile(r"(.+)[-_](\d+)_(\d+)_(\d+)"), parseVer_123),  # xxx-1_2_3
     (re.compile(r"(.+)[-_](\d+)\.(\d+)(\w?)"), parseVer_12),  # xxx-1.2a
+    (re.compile(r"(.+)[-_]v(\d+)\.(\d+)(\w?)"), parseVer_12),  # xxx-v1.2a
     (re.compile(r"(.+)[-_]r?(\d+)"), parseVer_r),  # xxx-r1111
 )
 
@@ -138,20 +141,26 @@ class EntryParseError(Exception):
 
 
 class Entry:
-    def __init__(self, directory, filename):
+    def __init__(self, directory, builddir, filename):
         self.directory = directory
         self.filename = filename
+        self.builddir = builddir
         self.progname = ""
         self.fileext = ""
+        self.filenoext = ""
 
-        for ext in extensions:
-            if filename.endswith(ext):
-                filename = filename[0 : 0 - len(ext)]
-                self.fileext = ext
-                break
+        if os.path.isdir(self.getPath()):
+            self.filenoext = filename
         else:
-            print(self.filename, "has an unknown file-extension")
-            raise EntryParseError("ext")
+            for ext in extensions:
+                if filename.endswith(ext):
+                    filename = filename[0 : 0 - len(ext)]
+                    self.filenoext = filename
+                    self.fileext = ext
+                    break
+            else:
+                print(self.filename, "has an unknown file-extension")
+                raise EntryParseError("ext")
         for (regex, parseVersion) in versionRegex:
             match = regex.match(filename)
             if match:
@@ -166,11 +175,29 @@ class Entry:
     def getPath(self):
         return (self.directory + "/" + self.filename).replace("//", "/")
 
+    def getBuildPaths(self):
+        paths = []
+        for subdir in os.scandir(self.builddir):
+            package_build_dir = os.path.join(subdir.path, self.filenoext)
+            if os.path.exists(package_build_dir):
+                paths.append(package_build_dir)
+        return paths
+
     def deleteFile(self):
         path = self.getPath()
         print("Deleting", path)
         if not opt_dryrun:
-            os.unlink(path)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.unlink(path)
+
+    def deleteBuildDir(self):
+        paths = self.getBuildPaths()
+        for path in paths:
+            print("Deleting BuildDir", path)
+            if not opt_dryrun:
+                    shutil.rmtree(path)
 
     def __ge__(self, y):
         return self.version >= y.version
@@ -183,6 +210,12 @@ def usage():
     print(" -d|--dry-run            Do a dry-run. Don't delete any files")
     print(" -B|--show-blacklist     Show the blacklist and exit")
     print(" -w|--whitelist ITEM     Remove ITEM from blacklist")
+    print(
+        " -D|--download-dir       Provide path to dl dir to clean also the build directory"
+    )
+    print(
+        " -b|--build-dir          Provide path to build dir to clean also the build directory"
+    )
 
 
 def main(argv):
@@ -191,25 +224,22 @@ def main(argv):
     try:
         (opts, args) = getopt.getopt(
             argv[1:],
-            "hdBw:",
+            "hdBw:D:b:",
             [
                 "help",
                 "dry-run",
                 "show-blacklist",
                 "whitelist=",
+                "download-dir=",
+                "build-dir=",
             ],
         )
-        if len(args) != 1:
-            usage()
-            return 1
     except getopt.GetoptError as e:
         usage()
         return 1
-    directory = args[0]
 
-    if not os.path.exists(directory):
-        print("Can't find dl path", directory)
-        return 1
+    directory = "dl/"
+    builddir = "build_dir/"
 
     for (o, v) in opts:
         if o in ("-h", "--help"):
@@ -233,6 +263,21 @@ def main(argv):
                     sep = "\t"
                 print("%s%s(%s)" % (name, sep, regex.pattern))
             return 0
+        if o in ("-D", "--download-dir"):
+            directory = v
+        if o in ("-b", "--build-dir"):
+            builddir = v
+
+    if args:
+        directory = args[0]
+
+    if not os.path.exists(directory):
+        print("Can't find download directory", directory)
+        return 1
+
+    if not os.path.exists(builddir):
+        print("Can't find build directory", builddir)
+        return 1
 
     # Create a directory listing and parse the file names.
     entries = []
@@ -246,7 +291,7 @@ def main(argv):
                 break
         else:
             try:
-                entries.append(Entry(directory, filename))
+                entries.append(Entry(directory, builddir, filename))
             except EntryParseError as e:
                 pass
 
@@ -265,12 +310,17 @@ def main(argv):
         lastVersion = None
         versions = progmap[prog]
         for version in versions:
+            if lastVersion:
+                if os.path.isdir(lastVersion.getPath()) and not os.path.isdir(version.getPath()):
+                    continue
             if lastVersion is None or version >= lastVersion:
                 lastVersion = version
         if lastVersion:
             for version in versions:
                 if version is not lastVersion:
                     version.deleteFile()
+                    if builddir:
+                        version.deleteBuildDir()
             if opt_dryrun:
                 print("Keeping", lastVersion.getPath())
 

@@ -96,10 +96,9 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_uboot_1fc00>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_uboot_1fc00>, <&cal_ath9k_pci>;
+		nvmem-cell-names = "mac-address", "calibration";
 		mac-address-increment = <(-2)>;
-		qca,no-eeprom;
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
@@ -110,14 +109,7 @@
 };
 
 &usb0 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
-
-	hub_port0: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &usb_phy1 {
@@ -125,14 +117,7 @@
 };
 
 &usb1 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
-
-	hub_port1: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &spi {
@@ -152,6 +137,14 @@
 				label = "u-boot";
 				reg = <0x000000 0x020000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_uboot_1fc00: macaddr@1fc00 {
+					reg = <0x1fc00 0x6>;
+				};
 			};
 
 			partition@20000 {
@@ -164,6 +157,18 @@
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_ath9k_soc: cal_ath9k@1000 {
+					reg = <0x1000 0x440>;
+				};
+
+				cal_ath9k_pci: cal_ath9k@5000 {
+					reg = <0x5000 0x440>;
+				};
 			};
 		};
 	};
@@ -219,18 +224,7 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_uboot_1fc00>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_uboot_1fc00>, <&cal_ath9k_soc>;
+	nvmem-cell-names = "mac-address", "calibration";
 	mac-address-increment = <(-1)>;
-};
-
-&uboot {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_uboot_1fc00: macaddr@1fc00 {
-		reg = <0x1fc00 0x6>;
-	};
 };

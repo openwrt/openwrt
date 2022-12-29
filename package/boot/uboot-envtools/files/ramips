@@ -32,11 +32,15 @@ ampedwireless,ally-r1900k)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000" "4"
 	;;
 beeline,smartbox-giga|\
-beeline,smartbox-turbo)
+beeline,smartbox-turbo|\
+etisalat,s3|\
+rostelecom,rt-sf-1)
 	ubootenv_add_uci_config "/dev/mtd0" "0x80000" "0x1000" "0x20000"
 	;;
 buffalo,wsr-1166dhp|\
 buffalo,wsr-600dhp|\
+kroks,kndrt31r16|\
+kroks,kndrt31r19|\
 mediatek,linkit-smart-7688|\
 samknows,whitebox-v8|\
 xiaomi,mi-router-4c|\
@@ -45,12 +49,20 @@ zbtlink,zbt-wg2626|\
 zte,mf283plus)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
 	;;
+asus,rt-ax53u|\
+belkin,rt1800|\
 h3c,tx1800-plus|\
 h3c,tx1801-plus|\
 h3c,tx1806|\
 jcg,q20|\
+linksys,e7350|\
 netgear,wax202)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	;;
+haier,har-20s2u1|\
+sim,simax1800t)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
+	ubootenv_add_uci_sys_config "/dev/mtd1" "0x40000" "0x40000" "0x20000"
 	;;
 hootoo,ht-tm05|\
 ravpower,rp-wd03)
@@ -67,6 +79,11 @@ linksys,ea8100-v1|\
 linksys,ea8100-v2|\
 mts,wg430223)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
+	;;
+snr,cpe-w4n-mt)
+	idx="$(find_mtd_index uboot-env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x1000"
 	;;
 xiaomi,mi-router-3g-v2|\
 xiaomi,mi-router-4a-gigabit|\

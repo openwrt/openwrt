@@ -1,3 +1,25 @@
+From: Gabor Juhos <juhosg@openwrt.org>
+Subject: mtd: Add new Kconfig option for firmware partition split
+
+Add a new kernel config option for generic firmware partition
+split support and change the uImage split support to depend on
+the new option. Aslo rename the MTD_UIMAGE_SPLIT_NAME option to
+MTD_SPLIT_FIRMWARE_NAME to make it more generic.
+
+The patch is in preparation for multiple firmware format
+support.
+
+Submitted-by: Gabor Juhos <juhosg@openwrt.org>
+
+SVN-Revision: 38002
+---
+ drivers/mtd/Kconfig                           |  19 +
+ drivers/mtd/mtdpart.c                         | 144 +++++++++++++-----
+ include/linux/mtd/partitions.h                |   7 +
+ drivers/mtd/Makefile                          |   2 +
+ include/linux/mtd/mtd.h                       |  25 +
+ 5 files changed, 171 insertions(+), 25 deletions(-)
+
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
 @@ -12,6 +12,25 @@ menuconfig MTD
@@ -42,7 +64,7 @@
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -237,6 +239,146 @@ static int mtd_add_partition_attrs(struc
+@@ -237,6 +239,147 @@ static int mtd_add_partition_attrs(struc
  	return ret;
  }
  
@@ -174,7 +196,8 @@
 +	if (rootfs_found)
 +		return;
 +
-+	if (!strcmp(part->name, "rootfs")) {
++	if (of_find_property(mtd_get_of_node(part), "linux,rootfs", NULL) ||
++	    !strcmp(part->name, "rootfs")) {
 +		run_parsers_by_type(part, MTD_PARSER_TYPE_ROOTFS);
 +
 +		rootfs_found = 1;
@@ -189,7 +212,7 @@
  int mtd_add_partition(struct mtd_info *parent, const char *name,
  		      long long offset, long long length)
  {
-@@ -275,6 +417,7 @@ int mtd_add_partition(struct mtd_info *p
+@@ -275,6 +418,7 @@ int mtd_add_partition(struct mtd_info *p
  	if (ret)
  		goto err_remove_part;
  
@@ -197,7 +220,7 @@
  	mtd_add_partition_attrs(child);
  
  	return 0;
-@@ -423,6 +566,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -423,6 +567,7 @@ int add_mtd_partitions(struct mtd_info *
  			goto err_del_partitions;
  		}
  
@@ -205,7 +228,7 @@
  		mtd_add_partition_attrs(child);
  
  		/* Look for subpartitions */
-@@ -439,31 +583,6 @@ err_del_partitions:
+@@ -439,31 +584,6 @@ err_del_partitions:
  	return ret;
  }
  

@@ -24,7 +24,16 @@ mikrotik,cap-ac)
 mikrotik,hap-ac3)
 	ucidef_add_gpio_switch "poe_passtrough" "PoE Passthrough" "452" "0"
 	;;
-zte,mf286d)
+mikrotik,hap-ac3-lte6-kit)
+	ucidef_add_gpio_switch "lte_ant_sw1" "LTE Antenna SW 1" "457" "0"
+	ucidef_add_gpio_switch "lte_ant_sw2" "LTE Antenna SW 2" "458" "0"
+	ucidef_add_gpio_switch "lte_reset" "LTE reset" "461" "0"
+	;;
+sony,ncp-hg100-cellular)
+	ucidef_add_gpio_switch "uart_dbgcon_en" "debug console enable" "427" "1"
+	;;
+zte,mf286d|\
+zte,mf289f)
 	ucidef_add_gpio_switch "power_btn_block" "Power button blocker" "421" "0"
 	;;
 esac

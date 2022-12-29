@@ -13,21 +13,18 @@ board=$(board_name)
 
 case "$board" in
 bananapi,bpi-r3)
-	. /lib/upgrade/common.sh
-	export_bootdevice
-	export_partdevice rootdev 0
-	case "$rootdev" in
-	mmc*)
+	case "$(cmdline_get_var root)" in
+	/dev/mmc*)
 		local envdev=$(find_mmc_part "ubootenv" $rootdev)
 		ubootenv_add_uci_config "$envdev" "0x0" "0x40000" "0x40000" "1"
 		ubootenv_add_uci_config "$envdev" "0x40000" "0x40000" "0x40000" "1"
 		;;
-	mtd*)
+	/dev/mtd*)
 		local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
 		ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
 		ubootenv_add_uci_config "$envdev" "0x20000" "0x20000" "0x20000" "1"
 		;;
-	*)
+	/dev/ubi*)
 		. /lib/upgrade/nand.sh
 		local envubi=$(nand_find_ubi ubi)
 		local envdev=/dev/$(nand_find_volume $envubi ubootenv)
@@ -37,9 +34,14 @@ bananapi,bpi-r3)
 		;;
 	esac
 	;;
+xiaomi,redmi-router-ax6000|\
+xiaomi,redmi-router-ax6000-stock)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x20000"
+	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x10000" "0x20000"
+	;;
 esac
 
 config_load ubootenv
-config_foreach ubootenv_add_app_config ubootenv
+config_foreach ubootenv_add_app_config
 
 exit 0

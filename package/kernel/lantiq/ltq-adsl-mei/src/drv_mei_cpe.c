@@ -28,6 +28,7 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/mod_devicetable.h>
 #include <linux/version.h>
 #include <generated/utsrelease.h>
 #include <linux/types.h>

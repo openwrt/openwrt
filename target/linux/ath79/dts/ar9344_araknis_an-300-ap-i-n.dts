@@ -87,11 +87,10 @@
 	ath9k: wifi@0,0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0 0 0 0 0>;
-		nvmem-cells = <&macaddr_art_0>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_art_0>, <&calibration_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
 		mac-address-increment = <1>;
-		qca,disable-5ghz;
-		qca,no-eeprom;
+		ieee80211-freq-limit = <2402000 2482000>;
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
@@ -100,12 +99,10 @@
 &wmac {
 	status = "okay";
 
-	qca,disable-2ghz;
+	ieee80211-freq-limit = <4900000 5990000>;
 
-	mtd-cal-data = <&art 0x1000>;
-
-	nvmem-cells = <&macaddr_art_0>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_0>, <&calibration_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 	mac-address-increment = <2>;
 };
 
@@ -116,5 +113,13 @@
 
 	macaddr_art_0: macaddr@0 {
 		reg = <0x0 0x6>;
+	};
+
+	calibration_art_1000: calibration@1000 {
+		reg = <0x1000 0x440>;
+	};
+
+	calibration_art_5000: calibration@5000 {
+		reg = <0x5000 0x440>;
 	};
 };

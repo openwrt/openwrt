@@ -116,8 +116,8 @@ endef
 
 define U-Boot/Marsboard_A10
   BUILD_SUBTARGET:=cortexa8
-  NAME:=Marsboard
-  BUILD_DEVICES:=marsboard_a10-marsboard
+  NAME:=HAOYU Marsboard A10
+  BUILD_DEVICES:=haoyu_a10-marsboard
 endef
 
 define U-Boot/Mele_M9

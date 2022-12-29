@@ -110,6 +110,25 @@ mtd_get_mac_encrypted_arcadyan() {
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
 }
 
+mtd_get_mac_encrypted_deco() {
+	local mtdname="$1"
+
+	if ! [ -e "$mtdname" ]; then
+		echo "mtd_get_mac_encrypted_deco: file $mtdname not found!" >&2
+		return
+	fi
+
+	tplink_key="3336303032384339"
+
+	key=$(dd if=$mtdname bs=1 skip=16 count=8 2>/dev/null | \
+		uencrypt -n -d -k $tplink_key -c des-ecb | hexdump -v -n 8 -e '1/1 "%02x"')
+
+	macaddr=$(dd if=$mtdname bs=1 skip=32 count=8 2>/dev/null | \
+		uencrypt -n -d -k $key -c des-ecb | hexdump -v -n 6 -e '5/1 "%02x:" 1/1 "%02x"')
+
+	echo $macaddr
+}
+
 mtd_get_mac_text() {
 	local mtdname=$1
 	local offset=$(($2))
@@ -183,6 +202,14 @@ macaddr_add() {
 
 	nic=$(printf "%06x" $((0x${nic//:/} + val & 0xffffff)) | sed 's/^\(.\{2\}\)\(.\{2\}\)\(.\{2\}\)/\1:\2:\3/')
 	echo $oui:$nic
+}
+
+macaddr_generate_from_mmc_cid() {
+	local mmc_dev=$1
+
+	local sd_hash=$(sha256sum /sys/class/block/$mmc_dev/device/cid)
+	local mac_base=$(macaddr_canonicalize "$(echo "${sd_hash}" | dd bs=1 count=12 2>/dev/null)")
+	echo "$(macaddr_unsetbit_mc "$(macaddr_setbit_la "${mac_base}")")"
 }
 
 macaddr_geteui() {
@@ -263,4 +290,8 @@ macaddr_canonicalize() {
 	[ ${#canon} -ne 17 ] && return
 
 	printf "%02x:%02x:%02x:%02x:%02x:%02x" 0x${canon// / 0x} 2>/dev/null
+}
+
+dt_is_enabled() {
+	grep -q okay "/proc/device-tree/$1/status"
 }

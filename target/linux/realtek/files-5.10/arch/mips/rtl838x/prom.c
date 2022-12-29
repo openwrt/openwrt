@@ -18,6 +18,7 @@
 #include <asm/addrspace.h>
 #include <asm/page.h>
 #include <asm/cpu.h>
+#include <asm/fw/fw.h>
 #include <asm/smp-ops.h>
 #include <asm/mips-cps.h>
 
@@ -28,6 +29,35 @@ extern const char __appended_dtb;
 
 struct rtl83xx_soc_info soc_info;
 const void *fdt;
+
+#ifdef CONFIG_MIPS_MT_SMP
+extern const struct plat_smp_ops vsmp_smp_ops;
+static struct plat_smp_ops rtl_smp_ops;
+
+static void rtl_init_secondary(void)
+{
+#ifndef CONFIG_CEVT_R4K
+/*
+ * These devices are low on resources. There might be the chance that CEVT_R4K
+ * is not enabled in kernel build. Nevertheless the timer and interrupt 7 might
+ * be active by default after startup of secondary VPE. With no registered
+ * handler that leads to continuous unhandeled interrupts. In this case disable
+ * counting (DC) in the core and confirm a pending interrupt.
+ */
+	write_c0_cause(read_c0_cause() | CAUSEF_DC);
+	write_c0_compare(0);
+#endif /* CONFIG_CEVT_R4K */
+/*
+ * Enable all CPU interrupts, as everything is managed by the external
+ * controller. TODO: Standard vsmp_init_secondary() has special treatment for
+ * Malta if external GIC is available. Maybe we need this too.
+ */
+	if (mips_gic_present())
+		pr_warn("%s: GIC present. Maybe interrupt enabling required.\n", __func__);
+	else
+		set_c0_status(ST0_IM);
+}
+#endif /* CONFIG_MIPS_MT_SMP */
 
 const char *get_system_type(void)
 {
@@ -47,25 +77,6 @@ void __init device_tree_init(void)
 	}
 	initial_boot_params = (void *)fdt;
 	unflatten_and_copy_device_tree();
-}
-
-static void __init prom_init_cmdline(void)
-{
-	int argc = fw_arg0;
-	char **argv = (char **) KSEG1ADDR(fw_arg1);
-	int i;
-
-	arcs_cmdline[0] = '\0';
-
-	for (i = 0; i < argc; i++) {
-		char *p = (char *) KSEG1ADDR(argv[i]);
-
-		if (CPHYSADDR(p) && *p) {
-			strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
-			strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
-		}
-	}
-	pr_info("Kernel command line: %s\n", arcs_cmdline);
 }
 
 void __init identify_rtl9302(void)
@@ -185,23 +196,21 @@ void __init prom_init(void)
 
 	pr_info("SoC Type: %s\n", get_system_type());
 
-	/* Early detection of CMP support */
-	if(soc_info.family == RTL9310_FAMILY_ID) {
-		mips_cm_probe();
-		mips_cpc_probe();
-	}
+	fw_init_cmdline();
 
-	prom_init_cmdline();
+	mips_cpc_probe();
 
-#ifdef  CONFIG_MIPS_CPS
-	if (!register_cps_smp_ops()) {
+	if (!register_cps_smp_ops())
 		return;
-	}
-#endif
+
 #ifdef CONFIG_MIPS_MT_SMP
-	if (!register_vsmp_smp_ops()) {
+	if (cpu_has_mipsmt) {
+		rtl_smp_ops = vsmp_smp_ops;
+		rtl_smp_ops.init_secondary = rtl_init_secondary;
+		register_smp_ops(&rtl_smp_ops);
 		return;
 	}
 #endif
+
 	register_up_smp_ops();
 }

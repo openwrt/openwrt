@@ -40,8 +40,10 @@ TARGET_DEVICES += alfa-network_awusfree1
 
 define Device/asus_rt-ac1200
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC1200
+  DEVICE_ALT0_VENDOR := ASUS
+  DEVICE_ALT0_MODEL := RT-N600
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport
 endef
@@ -50,7 +52,7 @@ TARGET_DEVICES += asus_rt-ac1200
 define Device/asus_rt-ac1200-v2
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16064k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC1200
   DEVICE_VARIANT := V2
   IMAGES += factory.bin
@@ -62,7 +64,7 @@ TARGET_DEVICES += asus_rt-ac1200-v2
 
 define Device/asus_rt-n10p-v3
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N10P
   DEVICE_VARIANT := V3
 endef
@@ -70,7 +72,7 @@ TARGET_DEVICES += asus_rt-n10p-v3
 
 define Device/asus_rt-n11p-b1
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N11P
   DEVICE_VARIANT := B1
   DEVICE_ALT0_VENDOR := ASUS
@@ -84,7 +86,7 @@ TARGET_DEVICES += asus_rt-n11p-b1
 
 define Device/asus_rt-n12-vp-b1
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N12 VP
   DEVICE_VARIANT := B1
 endef
@@ -241,6 +243,14 @@ define Device/hilink_hlk-7688a
 endef
 TARGET_DEVICES += hilink_hlk-7688a
 
+define Device/hiwifi_hc5611
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := HiWiFi
+  DEVICE_MODEL := HC5611
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += hiwifi_hc5611
+
 define Device/hiwifi_hc5661a
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
@@ -309,6 +319,43 @@ define Device/jotale_js76x8-32m
   DEVICE_VARIANT := 32M
 endef
 TARGET_DEVICES += jotale_js76x8-32m
+
+define Device/kroks_kndrt31r16
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Kroks
+  DEVICE_MODEL := Rt-Cse5 UW DRSIM
+  DEVICE_ALT0_VENDOR := Kroks
+  DEVICE_ALT0_MODEL := KNdRt31R16
+  DEVICE_PACKAGES := kmod-usb2
+  SUPPORTED_DEVICES += kndrt31r16
+endef
+TARGET_DEVICES += kroks_kndrt31r16
+
+define Device/kroks_kndrt31r19
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Kroks
+  DEVICE_MODEL := Rt-Pot mXw DS RSIM
+  DEVICE_ALT0_VENDOR := Kroks
+  DEVICE_ALT0_MODEL := KNdRt31R19
+  DEVICE_PACKAGES := kmod-usb2 uqmi
+  SUPPORTED_DEVICES += kndrt31r19
+endef
+TARGET_DEVICES += kroks_kndrt31r19
+
+define Device/linksys_e5400
+  IMAGE_SIZE := 16000k
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := E5400
+  DEVICE_ALT0_VENDOR := Linksys
+  DEVICE_ALT0_MODEL := E2500
+  DEVICE_ALT0_VARIANT := v4
+  DEVICE_ALT1_VENDOR := Linksys
+  DEVICE_ALT1_MODEL := E5300
+  DEVICE_ALT2_VENDOR := Linksys
+  DEVICE_ALT2_MODEL := E5350
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += linksys_e5400
 
 define Device/mediatek_linkit-smart-7688
   IMAGE_SIZE := 32448k

@@ -26,7 +26,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/arch/arm/boot/compressed/vmlinux.lds.S
 +++ b/arch/arm/boot/compressed/vmlinux.lds.S
-@@ -101,6 +101,13 @@ SECTIONS
+@@ -103,6 +103,13 @@ SECTIONS
  
    _edata = .;
  
@@ -40,7 +40,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
    /*
     * The image_end section appears after any additional loadable sections
     * that the linker may decide to insert in the binary image.  Having
-@@ -138,4 +145,4 @@ SECTIONS
+@@ -140,4 +147,4 @@ SECTIONS
  
    ARM_ASSERTS
  }

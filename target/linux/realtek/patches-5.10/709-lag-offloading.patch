@@ -1,6 +1,28 @@
+From afa3ab54c03d5126b14651f367b38165fab5b3cc Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Tue, 18 Jan 2022 17:18:43 +0100
+Subject: [PATCH] realtek: Backport bridge configuration for DSA
+
+Adds the DSA API for bridge configuration (flooding, L2 learning,
+and aging) offload as found in Linux 5.12 so that we can implement
+it in our drivver.
+
+Submitted-by: Sebastian Gottschall <s.gottschall@dd-wrt.com>
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+---
+ drivers/net/bonding/bond_main.c               |  2 ++
+ include/net/dsa.h                             | 79 ++++++++++++++++-
+ net/dsa/dsa2.c                                | 88 +++++++++++++++++++
+ net/dsa/dsa_priv.h                            | 74 ++++++++++++++
+ net/dsa/port.c                                | 92 ++++++++++++++++++++
+ net/dsa/slave.c                               | 88 ++++++++++++++++---
+ net/dsa/switch.c                              | 49 ++++++++++
+ net/sda/tag_dsa.c                             | 13 +++++-
+ 8 file changed, 460 insertions(+), 25 deletions(-)
+
 --- a/drivers/net/bonding/bond_main.c
 +++ b/drivers/net/bonding/bond_main.c
-@@ -2046,6 +2046,8 @@ int bond_enslave(struct net_device *bond
+@@ -2045,6 +2045,8 @@ int bond_enslave(struct net_device *bond
  		goto err_unregister;
  	}
  

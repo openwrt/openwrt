@@ -105,7 +105,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		if (ret) {
  			dev_err(rpi->dev, "Failed to initialize clkdev\n");
  			return ERR_PTR(ret);
-@@ -266,30 +305,27 @@ static int raspberrypi_discover_clocks(s
+@@ -271,30 +310,27 @@ static int raspberrypi_discover_clocks(s
  		return ret;
  
  	while (clks->id) {

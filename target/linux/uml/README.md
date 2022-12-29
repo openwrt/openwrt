@@ -28,7 +28,7 @@ console prompt. If you would like it in xterms, substitute `con=xterm` and
 `con0=xterm`. **No networking is configured** but it's a starting point. The
 resulting file system has just enough free space to start kicking the tires and
 playing in the world of 'embedded routers' along with all the resource
-restrictions that come with that world.  
+restrictions that come with that world.
 
 To configure networking and more refer to the *user mode linux* documentation
 online. A quick start goes along this line. Install the `uml-utilities`

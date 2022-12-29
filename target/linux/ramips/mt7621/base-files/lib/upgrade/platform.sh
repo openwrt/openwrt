@@ -33,6 +33,7 @@ platform_do_upgrade() {
 			fw_setenv --lock / bootImage 0 || exit 1
 		fi
 		;;
+	mikrotik,ltap-2hnd|\
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m11g|\
@@ -57,19 +58,24 @@ platform_do_upgrade() {
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
 	beeline,smartbox-turbo|\
+	belkin,rt1800|\
 	dlink,dir-1960-a1|\
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
+	dlink,dir-3060-a1|\
 	dlink,dir-853-a3|\
+	etisalat,s3|\
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
 	h3c,tx1806|\
+	haier,har-20s2u1|\
 	hiwifi,hc5962|\
 	iptime,a3004t|\
 	iptime,ax2004m|\
 	iptime,t5004|\
 	jcg,q20|\
 	linksys,e5600|\
+	linksys,e7350|\
 	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
@@ -91,8 +97,10 @@ platform_do_upgrade() {
 	netgear,wax202|\
 	netis,wf2881|\
 	raisecom,msg1500-x-00|\
+	rostelecom,rt-sf-1|\
 	sercomm,na502|\
 	sercomm,na502s|\
+	sim,simax1800t|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\

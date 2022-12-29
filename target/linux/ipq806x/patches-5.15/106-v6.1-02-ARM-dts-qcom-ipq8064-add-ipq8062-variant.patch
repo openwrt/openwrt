@@ -1,0 +1,67 @@
+From 41d9fa8de7845bd92d9c963196fdfd7ea9232bb2 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 18 Jul 2022 18:07:26 +0200
+Subject: [PATCH 2/3] ARM: dts: qcom: ipq8064: add ipq8062 variant
+
+ipq8062 SoC is based on ipq8064-v2.0 with lower supported freq, lack of
+usb port and a reduced voltage output with the smb208 regulators.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ arch/arm/boot/dts/qcom-ipq8062-smb208.dtsi | 37 ++++++++++++++++++++++
+ arch/arm/boot/dts/qcom-ipq8062.dtsi        |  8 +++++
+ 2 files changed, 45 insertions(+)
+ create mode 100644 arch/arm/boot/dts/qcom-ipq8062-smb208.dtsi
+ create mode 100644 arch/arm/boot/dts/qcom-ipq8062.dtsi
+
+--- /dev/null
++++ b/arch/arm/boot/dts/qcom-ipq8062-smb208.dtsi
+@@ -0,0 +1,37 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#include "qcom-ipq8062.dtsi"
++
++&rpm {
++	smb208_regulators: regulators {
++		compatible = "qcom,rpm-smb208-regulators";
++
++		smb208_s1a: s1a {
++			regulator-min-microvolt = <1050000>;
++			regulator-max-microvolt = <1150000>;
++
++			qcom,switch-mode-frequency = <1200000>;
++		};
++
++		smb208_s1b: s1b {
++			regulator-min-microvolt = <1050000>;
++			regulator-max-microvolt = <1150000>;
++
++			qcom,switch-mode-frequency = <1200000>;
++		};
++
++		smb208_s2a: s2a {
++			regulator-min-microvolt = < 800000>;
++			regulator-max-microvolt = <1150000>;
++
++			qcom,switch-mode-frequency = <1200000>;
++		};
++
++		smb208_s2b: s2b {
++			regulator-min-microvolt = < 800000>;
++			regulator-max-microvolt = <1150000>;
++
++			qcom,switch-mode-frequency = <1200000>;
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/qcom-ipq8062.dtsi
+@@ -0,0 +1,8 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#include "qcom-ipq8064-v2.0.dtsi"
++
++/ {
++	model = "Qualcomm Technologies, Inc. IPQ8062";
++	compatible = "qcom,ipq8062", "qcom,ipq8064";
++};

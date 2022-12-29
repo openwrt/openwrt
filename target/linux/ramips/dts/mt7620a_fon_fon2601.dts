@@ -143,8 +143,10 @@
 
 &wmac {
 	ralink,mtd-eeprom = <&factory 0x0>;
-	pinctrl-names = "default";
+
+	pinctrl-names = "default", "pa_gpio";
 	pinctrl-0 = <&pa_pins>, <&wled_pins>;
+	pinctrl-1 = <&pa_gpio_pins>, <&wled_pins>;
 };
 
 &pcie {

@@ -1,0 +1,47 @@
+From 666c1b745e93ccddde841d5057c33f97b29a316a Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 15 Sep 2022 02:19:28 +0200
+Subject: [PATCH 3/9] clk: qcom: krait-cc: handle qsb clock defined in DTS
+
+qsb fixed clk may be defined in DTS and correctly passed in the clocks
+list. Add related code to handle this and modify the logic to
+dynamically read qsb clock frequency.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/qcom/krait-cc.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+--- a/drivers/clk/qcom/krait-cc.c
++++ b/drivers/clk/qcom/krait-cc.c
+@@ -305,7 +305,7 @@ static int krait_cc_probe(struct platfor
+ {
+ 	struct device *dev = &pdev->dev;
+ 	const struct of_device_id *id;
+-	unsigned long cur_rate, aux_rate;
++	unsigned long cur_rate, aux_rate, qsb_rate;
+ 	int cpu;
+ 	struct clk *clk;
+ 	struct clk **clks;
+@@ -315,11 +315,19 @@ static int krait_cc_probe(struct platfor
+ 	if (!id)
+ 		return -ENODEV;
+ 
+-	/* Rate is 1 because 0 causes problems for __clk_mux_determine_rate */
+-	clk = clk_register_fixed_rate(dev, "qsb", NULL, 0, 1);
++	/*
++	 * Per Documentation qsb should be provided from DTS.
++	 * To address old implementation, register the fixed clock anyway.
++	 * Rate is 1 because 0 causes problems for __clk_mux_determine_rate
++	 */
++	clk = clk_get(dev, "qsb");
++	if (IS_ERR(clk))
++		clk = clk_register_fixed_rate(dev, "qsb", NULL, 0, 1);
+ 	if (IS_ERR(clk))
+ 		return PTR_ERR(clk);
+ 
++	qsb_rate = clk_get_rate(clk);
++
+ 	if (!id->data) {
+ 		clk = clk_register_fixed_factor(dev, "acpu_aux",
+ 						"gpll0_vote", 0, 1, 2);

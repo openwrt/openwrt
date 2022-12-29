@@ -239,6 +239,18 @@ endef
 $(eval $(call KernelPackage,crypto-echainiv))
 
 
+define KernelPackage/crypto-essiv
+  TITLE:=ESSIV support for block encryption
+  DEPENDS:=+kmod-crypto-authenc
+  KCONFIG:=CONFIG_CRYPTO_ESSIV
+  FILES:= $(LINUX_DIR)/crypto/essiv.ko
+  AUTOLOAD:=$(call AutoLoad,10,essiv)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-essiv))
+
+
 define KernelPackage/crypto-fcrypt
   TITLE:=FCRYPT cipher CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_FCRYPT
@@ -715,10 +727,10 @@ ifndef CONFIG_TARGET_x86_64
     FILES+= \
 	$(LINUX_DIR)/arch/x86/crypto/twofish-i586.ko \
 	$(LINUX_DIR)/arch/x86/crypto/serpent-sse2-i586.ko \
-	$(LINUX_DIR)/arch/x86/crypto/glue_helper.ko \
+	$(LINUX_DIR)/arch/x86/crypto/glue_helper.ko@lt5.12 \
 	$(LINUX_DIR)/crypto/cryptd.ko \
 	$(LINUX_DIR)/crypto/crypto_simd.ko
-    AUTOLOAD+= $(call AutoLoad,10,cryptd glue_helper \
+    AUTOLOAD+= $(call AutoLoad,10,cryptd glue_helper@lt5.12 \
 	serpent-sse2-i586 twofish-i586 blowfish_generic)
   endef
 endif

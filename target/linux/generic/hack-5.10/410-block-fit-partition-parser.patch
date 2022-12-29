@@ -1,3 +1,30 @@
+From: Daniel Golle <daniel@makrotopia.org>
+Subject: [PATCH] kernel: fix FIT partition parser compatibility issues
+
+The uImage.FIT partition parser used to squeeze in FIT partitions in
+the range where partition editor tools (fdisk and such) expect the
+regular partition. This is confusing people and tools when adding
+additional partitions on top of the partition used for OpenWrt's
+uImage.FIT.
+Instead of squeezing in the additional partitions, rather start with
+all uImage.FIT partitions at offset 64.
+
+Submitted-by: Daniel Golle <daniel@makrotopia.org>
+---
+ block/blk.h                                            |  2 ++
+ block/partitions/Kconfig                               |  7 +++
+ block/partitions/Makefile                              |  1 +
+ block/partitions/check.h                               |  3 ++
+ block/partitions/core.c                                | 15 +++++++
+ drivers/mtd/ubi/block.c                                |  7 +++
+ block/partitions/efi.c                                 |  8 +++++++
+ block/partitions/efi.h                                 |  3 ++
+ drivers/mtd/mtdblock.c                                 |  4 +++
+ drivers/mtd/mtd_blkdevs.c                              | 14 +------
+ block/partitions/msdos.c                               | 10 ++++++
+ include/linux/msdos_partition.h                        |  1 +
+ 12 files changed, 52 insertions(+), 13 deletions(-)
+
 --- a/block/blk.h
 +++ b/block/blk.h
 @@ -361,6 +361,8 @@ char *disk_name(struct gendisk *hd, int
@@ -74,7 +101,7 @@
  #ifdef CONFIG_SGI_PARTITION
  	sgi_partition,
  #endif
-@@ -694,6 +701,14 @@ static bool blk_add_partition(struct gen
+@@ -701,6 +708,14 @@ static bool blk_add_partition(struct gen
  	    (state->parts[p].flags & ADDPART_FLAG_RAID))
  		md_autodetect_dev(part_to_dev(part)->devt);
  

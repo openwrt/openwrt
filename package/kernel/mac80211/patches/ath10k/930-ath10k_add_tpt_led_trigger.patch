@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -9894,6 +9894,21 @@ static int ath10k_mac_init_rd(struct ath
+@@ -9909,6 +9909,21 @@ static int ath10k_mac_init_rd(struct ath
  	return 0;
  }
  
@@ -22,7 +22,7 @@
  int ath10k_mac_register(struct ath10k *ar)
  {
  	static const u32 cipher_suites[] = {
-@@ -10252,6 +10267,12 @@ int ath10k_mac_register(struct ath10k *a
+@@ -10267,6 +10282,12 @@ int ath10k_mac_register(struct ath10k *a
  
  	ar->hw->weight_multiplier = ATH10K_AIRTIME_WEIGHT_MULTIPLIER;
  

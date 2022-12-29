@@ -18,6 +18,7 @@ PKG_HASH:=147d471040b44900283ce2c935f1d35d13d7f40008e7cb8fab2b69f54da01a4f
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
+PKG_CPE_ID:=cpe:/a:f2fs-tools_project:f2fs-tools
 
 PKG_FIXUP:=autoreconf
 PKG_BUILD_PARALLEL:=1

@@ -101,6 +101,7 @@ edimax,br-6478ac-v2|\
 edimax,ew-7478apc)
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wlan" "wlan0"
 	;;
+ampedwireless,b1200ex|\
 edimax,ew-7476rpc|\
 edimax,ew-7478ac)
 	ucidef_set_led_switch "lan" "lan" "green:lan"  "switch0" "0x20"
@@ -149,6 +150,11 @@ kingston,mlw221|\
 kingston,mlwg2|\
 sanlinking,d240)
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wifi" "wlan0"
+	;;
+snr,cpe-w4n-mt)
+	ucidef_set_led_heartbeat "wps" "WPS" "green:wps"
+	ucidef_set_led_timer "sys" "System" "green:sys" "500" "500"
+	ucidef_set_led_wlan "wlan" "Wi-Fi" "green:wlan" "phy0tpt"
 	;;
 lenovo,newifi-y1)
 	ucidef_set_led_netdev "wifi" "WIFI" "blue:wifi" "wlan1"

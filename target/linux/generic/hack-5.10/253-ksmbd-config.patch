@@ -1,3 +1,15 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: Kconfig: add help text to kernel config
+
+These options will be used for ksmbd. Once kernel 5.15
+makes it in, this patch can go away.
+
+Submitted-by: Rosen Penev <rosenp@gmail.com>
+---
+ init/Kconfig | 2 +-
+ lib/Kconfig  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -2384,7 +2384,7 @@ config PADATA

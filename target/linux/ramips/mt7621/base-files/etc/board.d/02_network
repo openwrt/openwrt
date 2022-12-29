@@ -12,6 +12,7 @@ ramips_setup_interfaces()
 	asus,rp-ac56|\
 	asus,rp-ac87|\
 	edimax,re23s|\
+	mikrotik,ltap-2hnd|\
 	mikrotik,routerboard-m11g|\
 	netgear,ex6150|\
 	sercomm,na502|\
@@ -22,18 +23,23 @@ ramips_setup_interfaces()
 	tplink,re650-v1|\
 	tplink,re650-v2|\
 	ubnt,unifi-6-lite|\
+	ubnt,unifi-flexhd|\
 	ubnt,unifi-nanohd|\
+	yuncore,fap690|\
 	zyxel,nwa50ax|\
 	zyxel,nwa55axe)
 		ucidef_set_interface_lan "lan"
 		;;
 	ampedwireless,ally-r1900k|\
+	asus,rt-ax53u|\
 	gehua,ghl-r-001|\
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
 	h3c,tx1806|\
+	haier,har-20s2u1|\
 	hiwifi,hc5962|\
 	netgear,wax202|\
+	sim,simax1800t|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-ac2100|\
 	xiaomi,mi-router-cr6606|\
@@ -44,6 +50,7 @@ ramips_setup_interfaces()
 		;;
 	asiarf,ap7621-001|\
 	humax,e10|\
+	wavlink,ws-wn572hp3-4g|\
 	winstars,ws-wn583a6)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
@@ -94,6 +101,9 @@ ramips_setup_interfaces()
 		;;
 	tplink,tl-wpa8631p-v3)
 		ucidef_set_interface_lan "lan1 lan2 lan3 plc0"
+		;;
+	tplink,mr600-v2-eu)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	ubnt,edgerouter-x)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"
@@ -146,9 +156,9 @@ ramips_setup_macs()
 		lan_mac=$label_mac
 		;;
 	buffalo,wsr-1166dhp)
-		local index="$(find_mtd_index "board_data")"
-		wan_mac="$(grep -m1 mac= "/dev/mtd${index}" | cut -d= -f2)"
+		wan_mac=$(mtd_get_mac_ascii board_data "mac")
 		lan_mac=$wan_mac
+		label_mac=$wan_mac
 		;;
 	dlink,dir-860l-b1)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)
@@ -204,6 +214,21 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		wan_mac=$lan_mac
 		label_mac=$lan_mac
+		;;
+	belkin,rt1800|\
+	linksys,e7350)
+		lan_mac=$(mtd_get_mac_ascii Config lan_hwaddr)
+		wan_mac=$(mtd_get_mac_ascii Config wan_hwaddr)
+		label_mac=$lan_mac
+		;;
+	mikrotik,ltap-2hnd)
+		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
+		lan_mac=$label_mac
+		;;
+	tplink,mr600-v2-eu)
+		label_mac=$(cat "/sys/class/net/eth0/address")
+		wwan_mac=$(macaddr_add $label_mac 1)
+		ucidef_set_interface "wwan0" device "/dev/cdc-wdm0" protocol "qmi" macaddr "$wwan_mac"
 		;;
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-760igs|\

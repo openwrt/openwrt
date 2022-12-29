@@ -79,9 +79,9 @@ define Device/sercomm_dxx
 	lzma -a0 | uImage lzma
   IMAGES += factory.img
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGE/factory.img := append-ubi | sercomm-part-tag rootfs | \
-	sercomm-prepend-tagged-kernel kernel | gzip | sercomm-payload | \
-	sercomm-crypto
+  IMAGE/factory.img := append-ubi | check-size | \
+	sercomm-part-tag rootfs | sercomm-prepend-tagged-kernel kernel | \
+	gzip | sercomm-payload | sercomm-crypto
   SERCOMM_KERNEL_OFFSET := 0x400100
   SERCOMM_ROOTFS_OFFSET := 0x1000000
 endef

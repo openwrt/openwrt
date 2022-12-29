@@ -86,19 +86,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-switch@c000000 {
-			switch_mac_mode = <0x3>; /* mac mode for RGMII RMII */
-			switch_lan_bmp = <0x0>; /* lan port bitmap */
-			switch_wan_bmp = <0x10>; /* wan port bitmap */
-		};
-
-		edma@c080000 {
-			qcom,single-phy;
-			qcom,num_gmac = <1>;
-			phy-mode = "rgmii-rxid";
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -136,21 +123,22 @@
 	status = "okay";
 };
 
-&gmac0 {
-	qcom,phy_mdio_addr = <1>;
-	qcom,poll_required = <1>;
-	vlan_tag = <0 0x20>;
-};
-
 &blsp1_i2c3 {
 	pinctrl-0 = <&i2c_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	at24@50 {
+
+	eeprom@50 {
 		compatible = "atmel,24c64";
 		pagesize = <32>;
 		reg = <0x50>;
 		read-only; /* This holds our MAC & Meraki board-data */
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mac_address: mac-address@66 {
+			reg = <0x66 0x6>;
+		};
 	};
 };
 
@@ -296,6 +284,9 @@
 			compatible = "qcom,ath10k";
 			status = "okay";
 			reg = <0x00010000 0 0 0 0>;
+			nvmem-cells = <&mac_address>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <1>;
 		};
 	};
 };
@@ -399,9 +390,55 @@
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "Meraki-MR33";
+	nvmem-cells = <&mac_address>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <2>;
 };
 
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "Meraki-MR33";
+	nvmem-cells = <&mac_address>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <3>;
+};
+
+&gmac {
+	status = "okay";
+	nvmem-cells = <&mac_address>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+
+	/delete-property/ psgmii-ethphy;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&ethphy1>;
+	phy-mode = "rgmii-rxid";
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy2 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
+};
+
+&ethphy4 {
+	status = "disabled";
+};
+
+&psgmiiphy {
+	status = "disabled";
 };

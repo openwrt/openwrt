@@ -1,0 +1,47 @@
+From a0f6d7abe7f5da1a9b435eed89acace7cde4add6 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 15 Sep 2022 02:39:11 +0200
+Subject: [PATCH 6/9] clk: qcom: krait-cc: fix never enabled secondary mux
+
+While never actually used as a pure mux, the secondary mux is used as a
+safe selection for the primary mux to switch while the hfpll are
+reprogrammed.
+The secondary muxes were never enabled and this cause the krait-clk
+drivers to silently ignore any set parent request without any error.
+Enable the secondary mux to actually apply the parent and apply the
+requested frequency.
+
+Fixes: bb5c4a85051e ("clk: qcom: Add Krait clock controller driver")
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/qcom/krait-cc.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+--- a/drivers/clk/qcom/krait-cc.c
++++ b/drivers/clk/qcom/krait-cc.c
+@@ -121,7 +121,7 @@ static struct clk *
+ krait_add_sec_mux(struct device *dev, int id, const char *s,
+ 		  unsigned int offset, bool unique_aux)
+ {
+-	int ret;
++	int ret, cpu;
+ 	struct krait_mux_clk *mux;
+ 	static struct clk_parent_data sec_mux_list[2] = {
+ 		{ .name = "qsb", .fw_name = "qsb" },
+@@ -180,6 +180,16 @@ krait_add_sec_mux(struct device *dev, in
+ 	if (ret)
+ 		clk = ERR_PTR(ret);
+ 
++	/* The secondary mux MUST be enabled or clk-krait silently
++	 * ignore any request.
++	 * Increase refcount for every CPU if it's the L2 secondary mux.
++	 */
++	if (id < 0)
++		for_each_possible_cpu(cpu)
++			clk_prepare_enable(clk);
++	else
++		clk_prepare_enable(clk);
++
+ err_clk:
+ 	if (unique_aux)
+ 		kfree(parent_name);
