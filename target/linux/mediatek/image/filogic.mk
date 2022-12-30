@@ -125,21 +125,6 @@ define Device/mediatek_mt7986b-rfb
 endef
 TARGET_DEVICES += mediatek_mt7986b-rfb
 
-define Device/xiaomi_redmi-router-ax6000
-  DEVICE_VENDOR := Xiaomi
-  DEVICE_MODEL := Redmi Router AX6000
-  DEVICE_DTS := mt7986a-xiaomi-redmi-router-ax6000
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-leds-ws2812b
-  KERNEL_LOADADDR := 0x48000000
-  UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  KERNEL_IN_UBI := 1
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-endef
-TARGET_DEVICES += xiaomi_redmi-router-ax6000
-
 define Device/xiaomi_redmi-router-ax6000-stock
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Redmi Router AX6000 (stock layout)
