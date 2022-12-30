@@ -17,6 +17,17 @@ define Device/asus_rt-n56u
 endef
 TARGET_DEVICES += asus_rt-n56u
 
+define Device/asus_rt-n65u
+  $(Device/uimage-lzma-loader)
+  SOC := rt3883
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-N65U
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb-ledtrig-usbport kmod-switch-rtl8367b
+endef
+TARGET_DEVICES += asus_rt-n65u
+
 define Device/belkin_f9k1109v1
   $(Device/uimage-lzma-loader)
   SOC := rt3883
