@@ -118,6 +118,11 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "6@eth0"
 		;;
+	keenetic,kn-1613|\
+	motorola,mwr03)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "0:wan" "6@eth0"
+		;;
 	kroks,kndrt31r19)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
@@ -128,10 +133,6 @@ ramips_setup_interfaces()
 	linksys,e5400)
 		ucidef_add_switch "switch0" \
 			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:wan" "6@eth0"
-		;;
-	motorola,mwr03)
-		ucidef_add_switch "switch0" \
-			"1:lan" "2:lan" "3:lan" "0:wan" "6@eth0"
 		;;
 	netgear,r6020|\
 	netgear,r6080|\
@@ -251,6 +252,9 @@ ramips_setup_macs()
 	skylab,skw92a|\
 	totolink,lr1200)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
+		;;
+	keenetic,kn-1613)
+		wan_mac=$(mtd_get_mac_binary rf-eeprom 0x28)
 		;;
 	linksys,e5400)
 		wan_mac=$(mtd_get_mac_binary factory 0x22)
