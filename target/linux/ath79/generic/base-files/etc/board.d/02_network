@@ -67,6 +67,7 @@ ath79_setup_interfaces()
 	pisen,wmb001n|\
 	pisen,wmm003n|\
 	ruckus,zf7321|\
+	ruckus,zf7351|\
 	siemens,ws-ap3610|\
 	sophos,ap15|\
 	sophos,ap55|\
@@ -744,6 +745,7 @@ ath79_setup_macs()
 		;;
 	ruckus,zf7025|\
 	ruckus,zf7321|\
+	ruckus,zf7351|\
 	ruckus,zf7372)
 		lan_mac=$(mtd_get_mac_binary board-data 0x807E)
 		label_mac=$lan_mac
