@@ -119,8 +119,7 @@
 	label = "ethyellow";
 	phy-handle = <&ethphy5>;
 
-	nvmem-cells = <&macaddr_factory_e000>;
-	nvmem-cell-names = "mac-address";
+	mtd-mac-address = <&factory 0xe000>;
 };
 
 &mdio {
