@@ -55,6 +55,11 @@
 &nand {
 	status = "okay";
 
+	mediatek,bbt;
+	mediatek,bmt-remap-range =
+		<0x0000000 0x0800000>,
+		<0x3600000 0x4980000>;
+
 	partitions: partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

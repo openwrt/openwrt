@@ -127,15 +127,11 @@
 	pinctrl-0 = <&spi_flash_pins>;
 	status = "okay";
 
-	flash@0 {
+	spi_nand_flash: flash@0 {
 		compatible = "spi-nand";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		reg = <0>;
-
-		mediatek,nmbm;
-		mediatek,bmt-max-ratio = <1>;
-		mediatek,bmt-max-reserved-blocks = <64>;
 
 		spi-max-frequency = <20000000>;
 		spi-tx-buswidth = <4>;
@@ -179,18 +175,6 @@
 			partition@380000 {
 				label = "FIP";
 				reg = <0x380000 0x200000>;
-				read-only;
-			};
-
-			partition@580000 {
-				label = "crash";
-				reg = <0x580000 0x40000>;
-				read-only;
-			};
-
-			partition@5c0000 {
-				label = "crash_log";
-				reg = <0x5c0000 0x40000>;
 				read-only;
 			};
 		};
