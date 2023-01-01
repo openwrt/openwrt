@@ -1,0 +1,33 @@
+Date: Mon, 26 Dec 2022 21:20:30 -0500
+From: Vincent Tremblay <vincent@vtremblay.dev>
+Subject: [PATCH v2 2/2] spidev: Add Silicon Labs EM3581 device compatible
+
+Add compatible string for Silicon Labs EM3581 device.
+
+Signed-off-by: Vincent Tremblay <vincent@vtremblay.dev>
+---
+ drivers/spi/spidev.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/spi/spidev.c b/drivers/spi/spidev.c
+index 6313e7d0cdf8..46f53ca03f8d 100644
+--- a/drivers/spi/spidev.c
++++ b/drivers/spi/spidev.c
+@@ -702,6 +702,7 @@ static const struct spi_device_id spidev_spi_ids[] = {
+        { .name = "m53cpld" },
+        { .name = "spi-petra" },
+        { .name = "spi-authenta" },
++       { .name = "em3581" },
+        {},
+ };
+ MODULE_DEVICE_TABLE(spi, spidev_spi_ids);
+@@ -728,6 +729,7 @@ static const struct of_device_id spidev_dt_ids[] = {
+        { .compatible = "menlo,m53cpld", .data = &spidev_of_check },
+        { .compatible = "cisco,spi-petra", .data = &spidev_of_check },
+        { .compatible = "micron,spi-authenta", .data = &spidev_of_check },
++       { .compatible = "silabs,em3581", .data = &spidev_of_check },
+        {},
+ };
+ MODULE_DEVICE_TABLE(of, spidev_dt_ids);
+--
+2.37.2
