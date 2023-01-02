@@ -6,8 +6,8 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	model = "Linksys WHW01 v1";
-	compatible = "linksys,whw01-v1";
+	model = "Linksys WHW01";
+	compatible = "linksys,whw01";
 
 	aliases {
 		serial0 = &blsp1_uart1;
@@ -315,4 +315,22 @@
 	qcom,ath10k-calibration-variant = "linksys-whw01-v1";
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_5000>;
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "eth1";
+};
+
+&swport5 {
+	status = "okay";
+	label = "eth2";
 };

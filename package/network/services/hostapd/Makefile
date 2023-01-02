@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=$(AUTORELEASE).1
+PKG_RELEASE:=$(AUTORELEASE).2
 
 PKG_SOURCE_URL:=http://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
@@ -137,11 +137,6 @@ ifneq ($(LOCAL_TYPE),hostapd)
   ifdef CONFIG_WPA_RFKILL_SUPPORT
     DRIVER_MAKEOPTS += NEED_RFKILL=y
   endif
-endif
-
-ifdef CONFIG_USE_GLIBC
-  TARGET_LDFLAGS += -lrt
-  TARGET_LDFLAGS_C += -lrt
 endif
 
 DRV_DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny

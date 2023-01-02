@@ -59,6 +59,9 @@ ipq40xx_setup_interfaces()
 	compex,wpj428)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
+	linksys,whw01)
+		ucidef_set_interface_lan "eth1 eth2"
+		;;
 	glinet,gl-a1300|\
 	glinet,gl-b1300|\
 	mobipromo,cm520-79f)
@@ -69,6 +72,7 @@ ipq40xx_setup_interfaces()
 	mikrotik,wap-r-ac)
 		ucidef_set_interface_lan "sw-eth1 sw-eth2"
 		;;
+	aruba,ap-303h|\
 	netgear,rbr50|\
 	netgear,rbs50|\
 	netgear,srr60|\

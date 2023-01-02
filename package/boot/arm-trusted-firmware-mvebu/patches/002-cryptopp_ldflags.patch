@@ -1,0 +1,13 @@
+Forward the host compiler flags to the compilation of the cryptopp library.
+
+--- a/plat/marvell/armada/a3k/common/a3700_common.mk
++++ b/plat/marvell/armada/a3k/common/a3700_common.mk
+@@ -149,7 +149,7 @@ $(TBB): FORCE
+ 	$(if $(wildcard $(CRYPTOPP_LIBDIR)/*),,$(error "Either 'CRYPTOPP_PATH' or 'CRYPTOPP_LIB' was set to '$(CRYPTOPP_LIBDIR)', but '$(CRYPTOPP_LIBDIR)' does not exist"))
+ 	$(if $(wildcard $(CRYPTOPP_INCDIR)/*),,$(error "Either 'CRYPTOPP_PATH' or 'CRYPTOPP_INCDIR' was set to '$(CRYPTOPP_INCDIR)', but '$(CRYPTOPP_INCDIR)' does not exist"))
+ ifdef CRYPTOPP_PATH
+-	$(Q)$(MAKE) --no-print-directory -C $(CRYPTOPP_PATH) -f GNUmakefile
++	$(Q)$(MAKE) --no-print-directory -C $(CRYPTOPP_PATH) -f GNUmakefile LDFLAGS="$(HOST_LDFLAGS)" CPPFLAGS="$(HOST_CPPFLAGS)"
+ endif
+ 	$(Q)$(MAKE) --no-print-directory -C $(WTP)/wtptp/src/TBB_Linux -f TBB_linux.mak LIBDIR=$(CRYPTOPP_LIBDIR) INCDIR=$(CRYPTOPP_INCDIR)
+ 
