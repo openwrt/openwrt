@@ -12,14 +12,14 @@ define Device/wd_mybooklive
   SUPPORTED_DEVICES += mbl wd,mybooklive-duo
   BLOCKSIZE := 1k
   DTB_SIZE := 16384
-  KERNEL := kernel-bin | dtb | gzip | uImage gzip
-  KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
+  KERNEL := kernel-bin | dtb | libdeflate-gzip | uImage gzip
+  KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | dtb | MuImage-initramfs gzip
   IMAGES := factory.img.gz sysupgrade.img.gz
   ARTIFACTS := apollo3g.dtb
   DEVICE_DTB := apollo3g.dtb
   FILESYSTEMS := ext4 squashfs
-  IMAGE/factory.img.gz := boot-script | boot-img | hdd-img | gzip
-  IMAGE/sysupgrade.img.gz := boot-script | boot-img | hdd-img | gzip | append-metadata
+  IMAGE/factory.img.gz := boot-script | boot-img | hdd-img | libdeflate-gzip
+  IMAGE/sysupgrade.img.gz := boot-script | boot-img | hdd-img | libdeflate-gzip | append-metadata
   ARTIFACT/apollo3g.dtb := export-dtb
 endef
 

@@ -51,7 +51,7 @@ define Device/meraki_mx60
   IMAGES := sysupgrade.bin
   DTB_SIZE := 20480
   IMAGE_SIZE := 1021m
-  KERNEL := kernel-bin | gzip | dtb | MuImage-initramfs gzip
+  KERNEL := kernel-bin | libdeflate-gzip | dtb | MuImage-initramfs gzip
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
   DEVICE_COMPAT_VERSION := 2.0
@@ -70,7 +70,7 @@ define Device/netgear_wndap6x0
   IMAGE_SIZE := 27392k
   IMAGES := sysupgrade.bin factory.img
   KERNEL_SIZE := 6080k
-  KERNEL := dtb | kernel-bin | gzip | MuImage-initramfs gzip
+  KERNEL := dtb | kernel-bin | libdeflate-gzip | MuImage-initramfs gzip
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   UBINIZE_OPTS := -E 5
@@ -114,7 +114,7 @@ define Device/netgear_wndr4700
   # CHECK_DNI_FIRMWARE_ROOTFS_INTEGRITY in do_chk_dniimg()
   KERNEL := kernel-bin | lzma -d16 | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | \
 	    append-uImage-fakehdr filesystem | dtb | create-uImage-dtb | prepend-dtb
-  KERNEL_INITRAMFS := kernel-bin | gzip | dtb | MuImage-initramfs gzip
+  KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | dtb | MuImage-initramfs gzip
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 		       netgear-dni | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
