@@ -182,6 +182,24 @@ endef
 $(eval $(call KernelPackage,leds-pwm))
 
 
+define KernelPackage/leds-tca6507
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED Support for TCA6507 I2C chip
+  DEPENDS:=+kmod-i2c-core
+  KCONFIG:=CONFIG_LEDS_TCA6507
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-tca6507.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-tca6507,1)
+endef
+
+define KernelPackage/leds-tca6507/description
+ This option enables support for LEDs connected to TCA6507
+ LED driver chips accessed via the I2C bus.
+ Driver support brightness control and hardware-assisted blinking.
+endef
+
+$(eval $(call KernelPackage,leds-tca6507))
+
+
 define KernelPackage/leds-tlc591xx
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED driver for TLC59108 and TLC59116 controllers
