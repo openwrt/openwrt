@@ -131,6 +131,22 @@ endef
 $(eval $(call KernelPackage,leds-apu))
 
 
+define KernelPackage/leds-lp55xx-common
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED driver common code for LP55XX controllers
+  #DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c
+  KCONFIG:=CONFIG_LEDS_LP55XX_COMMON
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-lp55xx-common.ko
+  AUTOLOAD:=$(call AutoLoad,50,leds-lp55xx-common,1)
+endef
+
+define KernelPackage/leds-lp55xx-common/description
+ This option enables support for LP55XX LED controllers.
+endef
+
+$(eval $(call KernelPackage,leds-lp55xx-common))
+
+
 define KernelPackage/leds-pca955x
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED driver for PCA955x I2C chips
