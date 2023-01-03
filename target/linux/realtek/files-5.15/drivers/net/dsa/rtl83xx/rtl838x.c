@@ -1832,7 +1832,7 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 timeout:
 	mutex_unlock(&smi_lock);
 
-	return -ETIMEDOUT;
+	return err;
 }
 
 /* Write to a register in a page of the PHY */
@@ -1868,7 +1868,7 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 timeout:
 	mutex_unlock(&smi_lock);
 
-	return -ETIMEDOUT;
+	return err;
 }
 
 /* Read an mmd register of a PHY */
