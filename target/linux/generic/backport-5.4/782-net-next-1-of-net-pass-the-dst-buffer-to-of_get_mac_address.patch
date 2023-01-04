@@ -1385,7 +1385,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			if (ret)
 --- a/drivers/net/ethernet/ti/davinci_emac.c
 +++ b/drivers/net/ethernet/ti/davinci_emac.c
-@@ -1685,7 +1685,6 @@ davinci_emac_of_get_pdata(struct platfor
+@@ -1697,7 +1697,6 @@ davinci_emac_of_get_pdata(struct platfor
  	const struct of_device_id *match;
  	const struct emac_platform_data *auxdata;
  	struct emac_platform_data *pdata = NULL;
@@ -1393,7 +1393,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	if (!IS_ENABLED(CONFIG_OF) || !pdev->dev.of_node)
  		return dev_get_platdata(&pdev->dev);
-@@ -1697,11 +1696,8 @@ davinci_emac_of_get_pdata(struct platfor
+@@ -1709,11 +1708,8 @@ davinci_emac_of_get_pdata(struct platfor
  	np = pdev->dev.of_node;
  	pdata->version = EMAC_VERSION_2;
  
