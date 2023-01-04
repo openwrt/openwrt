@@ -39,6 +39,17 @@
 			gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		fan {
+			gpio-export,name = "fan";
+			gpio-export,output = <0>;
+			gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
+		};
+	};
 };
 
 &tlmm {
