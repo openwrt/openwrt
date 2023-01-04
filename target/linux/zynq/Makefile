@@ -19,6 +19,7 @@ define Target/Description
 endef
 
 KERNEL_PATCHVER:=5.10
+KERNEL_TESTING_PATCHVER:=5.15
 
 include $(INCLUDE_DIR)/target.mk
 
