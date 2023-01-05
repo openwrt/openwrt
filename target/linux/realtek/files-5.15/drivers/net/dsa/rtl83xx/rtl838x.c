@@ -1335,7 +1335,7 @@ static int rtl838x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	/* Access IACL table (1) via register 0 */
 	struct table_reg *q = rtl_table_get(RTL8380_TBL_0, 1);
 	u32 r[18];
-	int err = 0;
+	int err;
 	int block = idx / PIE_BLOCK_SIZE;
 	u32 t_select = sw_r32(RTL838X_ACL_BLK_TMPLTE_CTRL(block));
 
@@ -1344,17 +1344,21 @@ static int rtl838x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	for (int i = 0; i < 18; i++)
 		r[i] = 0;
 
-	if (!pr->valid)
-		goto err_out;
+	if (!pr->valid) {
+		err = -EINVAL;
+		pr_err("Rule invalid\n");
+		goto errout;
+	}
 
 	rtl838x_write_pie_fixed_fields(r, pr);
 
 	pr_debug("%s: template %d\n", __func__, (t_select >> (pr->tid * 3)) & 0x7);
 	rtl838x_write_pie_templated(r, pr, fixed_templates[(t_select >> (pr->tid * 3)) & 0x7]);
 
-	if (rtl838x_write_pie_action(r, pr)) {
+	err = rtl838x_write_pie_action(r, pr);
+	if (err) {
 		pr_err("Rule actions too complex\n");
-		goto err_out;
+		goto errout;
 	}
 
 /*	rtl838x_pie_rule_dump_raw(r); */
@@ -1362,7 +1366,7 @@ static int rtl838x_pie_rule_write(struct rtl838x_switch_priv *priv, int idx, str
 	for (int i = 0; i < 18; i++)
 		sw_w32(r[i], rtl_table_data(q, i));
 
-err_out:
+errout:
 	rtl_table_write(q, idx);
 	rtl_table_release(q);
 
