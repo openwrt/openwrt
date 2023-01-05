@@ -1798,7 +1798,7 @@ int rtl838x_smi_wait_op(int timeout)
 /* Reads a register in a page from the PHY */
 int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
-	int err = -ETIMEDOUT;
+	int err;
 	u32 v;
 	u32 park_page;
 
@@ -1812,8 +1812,9 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(100000))
-		goto timeout;
+	err = rtl838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
@@ -1822,14 +1823,15 @@ int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(100000))
-		goto timeout;
+	err = rtl838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
 
 	err = 0;
 
-timeout:
+errout:
 	mutex_unlock(&smi_lock);
 
 	return err;
@@ -1838,7 +1840,7 @@ timeout:
 /* Write to a register in a page of the PHY */
 int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
-	int err = -ETIMEDOUT;
+	int err;
 	u32 v;
 	u32 park_page;
 
@@ -1847,8 +1849,9 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 		return -ENOTSUPP;
 
 	mutex_lock(&smi_lock);
-	if (rtl838x_smi_wait_op(100000))
-		goto timeout;
+	err = rtl838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	sw_w32(BIT(port), RTL838X_SMI_ACCESS_PHY_CTRL_0);
 	mdelay(10);
@@ -1860,12 +1863,13 @@ int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(100000))
-		goto timeout;
+	err = rtl838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	err = 0;
 
-timeout:
+errout:
 	mutex_unlock(&smi_lock);
 
 	return err;
@@ -1874,13 +1878,14 @@ timeout:
 /* Read an mmd register of a PHY */
 int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 {
-	int err = -ETIMEDOUT;
+	int err;
 	u32 v;
 
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(100000))
-		goto timeout;
+	err = rtl838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
 	mdelay(10);
@@ -1894,14 +1899,15 @@ int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 	v = 1 << 1 | 0 << 2 | 1;
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(100000))
-		goto timeout;
+	err = rtl838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
 
 	err = 0;
 
-timeout:
+errout:
 	mutex_unlock(&smi_lock);
 
 	return err;
@@ -1910,15 +1916,16 @@ timeout:
 /* Write to an mmd register of a PHY */
 int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 {
-	int err = -ETIMEDOUT;
+	int err;
 	u32 v;
 
 	pr_debug("MMD write: port %d, dev %d, reg %d, val %x\n", port, addr, reg, val);
 	val &= 0xffff;
 	mutex_lock(&smi_lock);
 
-	if (rtl838x_smi_wait_op(100000))
-		goto timeout;
+	err = rtl838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
 	mdelay(10);
@@ -1931,12 +1938,13 @@ int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 	v = 1 << 1 | 1 << 2 | 1;
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
-	if (rtl838x_smi_wait_op(100000))
-		goto timeout;
+	err = rtl838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
 
 	err = 0;
 
-timeout:
+errout:
 	mutex_unlock(&smi_lock);
 	return err;
 }
