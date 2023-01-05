@@ -71,20 +71,6 @@ define Build/h3c-vfs
 	mv $@.new $@
 endef
 
-define Build/relocate-kernel
-	rm -rf $@.relocate
-	$(CP) ../../generic/image/relocate $@.relocate
-	$(MAKE) -j1 -C $@.relocate KERNEL_ADDR=$(KERNEL_LOADADDR) LZMA_TEXT_START=0x82000000 \
-		CROSS_COMPILE=$(TARGET_CROSS)
-	( \
-		dd if=$@.relocate/loader.bin bs=32 conv=sync && \
-		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
-		cat "$@" \
-	) > "$@.new"
-	mv "$@.new" "$@"
-	rm -rf $@.relocate
-endef
-
 define Device/Default
   PROFILES = Default
   KERNEL := \
