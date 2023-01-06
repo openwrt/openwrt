@@ -231,6 +231,11 @@ ramips_setup_macs()
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		lan_mac=$label_mac
 		;;
+	tplink,ec330-g5u-v1)
+		label_mac="$(mtd_get_mac_text factory 0x165)"
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add $label_mac 1)
+		;;
 	tplink,er605-v2)
 		CI_UBIPART="firmware"
 		label_mac=$(mtd_get_mac_uci_config_ubi "tddp")

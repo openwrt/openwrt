@@ -153,6 +153,11 @@ tplink,archer-c6u-v1)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
+tplink,ec330-g5u-v1)
+	ucidef_set_led_netdev "lan" "Ethernet" "blue:ethernet" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "Internet" "blue:internet" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "Internet-off" "amber:internet" "wan" "link"
+	;;
 tplink,re350-v1)
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "blue:wifi2G" "wlan0"
 	ucidef_set_led_netdev "wifi5g" "Wifi 5G" "blue:wifi5G" "wlan1"
