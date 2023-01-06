@@ -1,0 +1,29 @@
+From 7af526c740bdbd5b4dcebba04ace5b3b0c07801f Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Tue, 14 Sep 2021 11:29:49 +0200
+Subject: [PATCH] nvmem: NVMEM_NINTENDO_OTP should depend on WII
+
+The Nintendo Wii and Wii U OTP is only present on Nintendo Wii and Wii U
+consoles.  Hence add a dependency on WII, to prevent asking the user
+about this driver when configuring a kernel without Nintendo Wii and Wii
+U console support.
+
+Fixes: 3683b761fe3a10ad ("nvmem: nintendo-otp: Add new driver for the Wii and Wii U OTP")
+Reviewed-by: Emmanuel Gil Peyrot <linkmauve@linkmauve.fr>
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Link: https://lore.kernel.org/r/01318920709dddc4d85fe895e2083ca0eee234d8.1631611652.git.geert+renesas@glider.be
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/nvmem/Kconfig
++++ b/drivers/nvmem/Kconfig
+@@ -109,6 +109,7 @@ config MTK_EFUSE
+ 
+ config NVMEM_NINTENDO_OTP
+ 	tristate "Nintendo Wii and Wii U OTP Support"
++	depends on WII || COMPILE_TEST
+ 	help
+ 	  This is a driver exposing the OTP of a Nintendo Wii or Wii U console.
+ 

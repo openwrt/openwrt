@@ -1,6 +1,6 @@
-From b152bbeb0282bfcf6f91d0d5befd7582c1c3fc23 Mon Sep 17 00:00:00 2001
+From 3fef9ed0627af30753a2404b8bd59d92cdb4c0ce Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Fri, 5 Mar 2021 19:32:36 +0100
+Date: Tue, 30 Mar 2021 12:12:36 +0100
 Subject: [PATCH] nvmem: brcm_nvram: new driver exposing Broadcom's NVRAM
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -10,6 +10,8 @@ This driver provides access to Broadcom's NVRAM.
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20210330111241.19401-6-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/nvmem/Kconfig      |  9 +++++
  drivers/nvmem/Makefile     |  2 +
@@ -19,10 +21,10 @@ Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
 
 --- a/drivers/nvmem/Kconfig
 +++ b/drivers/nvmem/Kconfig
-@@ -283,4 +283,13 @@ config NVMEM_U_BOOT_ENV
+@@ -278,4 +278,13 @@ config NVMEM_RMEM
  
- 	  If compiled as module it will be called nvmem_u-boot-env.
- 
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called nvmem-rmem.
 +
 +config NVMEM_BRCM_NVRAM
 +	tristate "Broadcom's NVRAM support"
@@ -37,8 +39,8 @@ Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
 +++ b/drivers/nvmem/Makefile
 @@ -57,3 +57,5 @@ obj-$(CONFIG_SPRD_EFUSE)	+= nvmem_sprd_e
  nvmem_sprd_efuse-y		:= sprd-efuse.o
- obj-$(CONFIG_NVMEM_U_BOOT_ENV)	+= nvmem_u-boot-env.o
- nvmem_u-boot-env-y		:= u-boot-env.o
+ obj-$(CONFIG_NVMEM_RMEM) 	+= nvmem-rmem.o
+ nvmem-rmem-y			:= rmem.o
 +obj-$(CONFIG_NVMEM_BRCM_NVRAM)	+= nvmem_brcm_nvram.o
 +nvmem_brcm_nvram-y		:= brcm_nvram.o
 --- /dev/null

@@ -29,9 +29,9 @@ Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
 
 --- a/drivers/nvmem/Kconfig
 +++ b/drivers/nvmem/Kconfig
-@@ -270,4 +270,17 @@ config SPRD_EFUSE
- 	  This driver can also be built as a module. If so, the module
- 	  will be called nvmem-sprd-efuse.
+@@ -300,4 +300,17 @@ config NVMEM_BRCM_NVRAM
+ 	  This driver provides support for Broadcom's NVRAM that can be accessed
+ 	  using I/O mapping.
  
 +config NVMEM_U_BOOT_ENV
 +	tristate "U-Boot environment variables support"
@@ -49,10 +49,10 @@ Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
  endif
 --- a/drivers/nvmem/Makefile
 +++ b/drivers/nvmem/Makefile
-@@ -55,3 +55,5 @@ obj-$(CONFIG_NVMEM_ZYNQMP)	+= nvmem_zynq
- nvmem_zynqmp_nvmem-y		:= zynqmp_nvmem.o
- obj-$(CONFIG_SPRD_EFUSE)	+= nvmem_sprd_efuse.o
- nvmem_sprd_efuse-y		:= sprd-efuse.o
+@@ -61,3 +61,5 @@ obj-$(CONFIG_NVMEM_RMEM) 	+= nvmem-rmem.
+ nvmem-rmem-y			:= rmem.o
+ obj-$(CONFIG_NVMEM_BRCM_NVRAM)	+= nvmem_brcm_nvram.o
+ nvmem_brcm_nvram-y		:= brcm_nvram.o
 +obj-$(CONFIG_NVMEM_U_BOOT_ENV)	+= nvmem_u-boot-env.o
 +nvmem_u-boot-env-y		:= u-boot-env.o
 --- /dev/null
