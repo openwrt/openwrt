@@ -521,7 +521,7 @@ endif
 define Device/Build/compile
   $$(_COMPILE_TARGET): $(KDIR)/$(1)
   $(eval $(call Device/Export,$(KDIR)/$(1)))
-  $(KDIR)/$(1): FORCE
+  $(KDIR)/$(1): $(if $(_PROFILE_SET),FORCE)
 	rm -f $(KDIR)/$(1)
 	$$(call concat_cmd,$(COMPILE/$(1)))
 
@@ -531,7 +531,7 @@ ifndef IB
 define Device/Build/dtb
   ifndef BUILD_DTS_$(1)
   BUILD_DTS_$(1) := 1
-  $(KDIR)/image-$(1).dtb: FORCE
+  $(KDIR)/image-$(1).dtb: $(if $(_PROFILE_SET),FORCE)
 	$(call Image/BuildDTB,$(strip $(2))/$(strip $(3)).dts,$$@)
 
   image_prepare: $(KDIR)/image-$(1).dtb
