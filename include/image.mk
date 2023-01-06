@@ -465,7 +465,7 @@ define Device/Check
   KDIR_KERNEL_IMAGE := $(KDIR)/$(1)$$(KERNEL_SUFFIX)
   _TARGET := $$(if $$(_PROFILE_SET),install-images,install-disabled)
   ifndef IB
-    _COMPILE_TARGET := $$(if $(CONFIG_IB)$$(_PROFILE_SET),compile,compile-disabled)
+    _COMPILE_TARGET := $$(if $(CONFIG_IB)$$(_PROFILE_SET),compile-target,compile-disabled)
   endif
 endef
 
@@ -749,6 +749,7 @@ define BuildImage
   download:
   prepare:
   compile:
+  compile-target:
   clean:
   image_prepare:
 
