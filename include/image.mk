@@ -521,6 +521,9 @@ endif
 define Device/Build/compile
   $$(_COMPILE_TARGET): $(KDIR)/$(1)
   $(eval $(call Device/Export,$(KDIR)/$(1)))
+
+  $(patsubst %$(1),%$(1):,$(call reverse,$(foreach compile,$(COMPILE),$(KDIR)/$(compile))))
+
   $(KDIR)/$(1): $(if $(_PROFILE_SET),FORCE)
 	rm -f $(KDIR)/$(1)
 	$$(call concat_cmd,$(COMPILE/$(1)))
@@ -631,6 +634,9 @@ define Device/Build/artifact
 	  $(BUILD_DIR)/json_info_files/$(DEVICE_IMG_PREFIX)-$(1).json, \
 	  $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1)))
+
+  $(patsubst %$(1),%$(1):,$(call reverse,$(foreach artifact,$(ARTIFACTS),$(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(artifact))))
+
   $(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1): $$(KDIR_KERNEL_IMAGE) $(2)-images
 	@rm -f $$@
 	$$(call concat_cmd,$(ARTIFACT/$(1)))
