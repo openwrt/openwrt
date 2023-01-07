@@ -1,0 +1,37 @@
+#!/bin/sh /etc/rc.common
+. /lib/functions.sh
+# Copyright (C) 2006 OpenWrt.org
+
+START=91
+
+log() {
+	logger -t "ZeroTier Init.d : " "$@"
+}
+
+check_config () {
+	WW=$(uci get firewall.zerozone)
+	if [ -z $WW ]; then
+		uci set firewall.zerozone=zone
+		uci set firewall.zerozone.name="zerotier"
+		uci set firewall.zerozone.forward="REJECT"
+		uci set firewall.zerozone.output="ACCEPT"
+		uci set firewall.zerozone.input="ACCEPT"
+		uci set firewall.zerozone.device="zt+"
+		uci set firewall.zerozone.masq="1"
+		uci set firewall.zerozone.mtu_fix="1"
+		
+		uci set firewall.zlzforward=forwarding
+		uci set firewall.zlzforward.dest="zerotier"
+		uci set firewall.zlzforward.src="lan"
+		
+		uci set firewall.zzlforward=forwarding
+		uci set firewall.zzlforward.dest="lan"
+		uci set firewall.zzlforward.src="zerotier"
+		uci commit firewall
+		/etc/init.d/firewall restart
+	fi
+}
+
+start() {
+	check_config
+}

@@ -1,0 +1,18 @@
+#!/bin/sh /etc/rc.common
+
+START=88
+
+log() {
+	logger -t "FULL MENU" "$@"
+}
+
+start()
+{
+	df=$(uci -q get custom.menu.default)
+	if [ -z $df ]; then
+		df=0
+	fi
+	uci set custom.menu.full=$df
+	uci set custom.menu.enabled='1'
+	uci commit custom
+}

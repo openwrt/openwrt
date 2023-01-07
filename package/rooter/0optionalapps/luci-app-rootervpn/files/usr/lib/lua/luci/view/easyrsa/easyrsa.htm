@@ -1,0 +1,172 @@
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	oldstatus = "-1";
+	var dots = ".";
+	var genrate = "0";
+	
+	XHR.poll(5, '<%=luci.dispatcher.build_url("admin", "vpn", "rsastatus")%>', null,
+		function(x, rv)
+		{
+			var status = rv.status;
+			var indx = 0;
+
+			if (status != oldstatus)
+			{
+				dots = ".";
+			}
+			clearListBox("status");
+			var select = document.getElementById("status");
+			if (parseInt(status) != 5)
+			{
+				if (parseInt(status) != 6)
+				{
+					document.getElementById("upload").style.display="none";
+					if (parseInt(status) != 0)
+					{
+						document.getElementById('generate').value='<%:Stop Process%>';
+						genrate = "1";
+					}
+				}
+			}
+			else
+			{
+				document.getElementById("upload").style.display="block";
+				document.getElementById('generate').value='<%:Generate Certs and Keys%>';
+				genrate = "0";
+			}
+			if (parseInt(status) == 6)
+			{
+				document.getElementById("upload").style.display="block";
+			}
+			if (parseInt(status) > 0)
+			{
+				select.options[select.options.length] = new Option("Generating RSA Private Certificate Authority key", indx);
+			}
+			if (parseInt(status) > 1)
+			{
+				indx = 1;
+				select.options[select.options.length] = new Option("<%:Generating RSA Private Server key%>", indx);
+			}
+			if (parseInt(status) > 2)
+			{
+				indx = 2;
+				select.options[select.options.length] = new Option("<%:Generating RSA Private Client key%>", indx);
+			}
+			if (parseInt(status) > 3)
+			{
+				indx = 3;
+				select.options[select.options.length] = new Option("<%:Create the Diffie-Hellman parameters%>", indx);
+			}
+			if (parseInt(status) > 4)
+			{
+				indx = 4;
+				select.options[select.options.length] = new Option("<%:Finished%>", indx);
+			}
+			if (parseInt(status) != 0)
+			{
+				if (parseInt(status) < 5)
+				{
+					select.options[select.options.length] = new Option(dots, indx+1);
+					dots = dots.concat(".");
+					if ( dots.length > 12 )
+					{
+						dots = ".";
+					}
+				}
+			}
+			oldstatus = status;
+		}
+	);
+	
+	function clearListBox(listboxID)
+ 	{
+  		var mylistbox = document.getElementById(listboxID);
+  		if(mylistbox == null)
+		{
+  			return 1;
+		}
+  		while(mylistbox.length > 0)
+  		{
+   			mylistbox.remove(0);
+  		}
+  		return 1;
+ 	}
+	
+	function generatecert()
+	{
+		if (genrate == "0")
+		{
+			document.getElementById('generate').value='<%:Stop Process%>';
+			document.getElementById("upload").style.display="none";
+			genrate = "1";
+			clearListBox("status");
+			select = document.getElementById("status");
+			select.options[select.options.length] = new Option("<%:Starting Key Generation Process%>", 0);
+			XHR.get('<%=luci.dispatcher.build_url("admin", "vpn", "rsagenerate")%>',
+				null,
+				function(x, rv)
+				{
+				}
+			);
+		}
+		else
+		{
+			clearListBox("status");
+			document.getElementById("upload").style.display="none";
+			XHR.get('<%=luci.dispatcher.build_url("admin", "vpn", "rsastop")%>',
+				null,
+				function(x, rv)
+				{
+				}
+			);
+			document.getElementById('generate').value='<%:Generate Certs and Keys%>';
+			genrate = "0";
+		}
+	}
+	
+	
+//]]></script>
+
+<fieldset class="cbi-section" id="cbi-family">
+	<table width="550"  border="0">
+	<tr>
+    	<td width="20%">&nbsp;</td>
+		<td width="17%"><input type="button" id="generate" class="cbi-button cbi-button-apply" value="<%:Generate Certs and Keys%>" onclick="return generatecert()" /></td>
+		<td width="17%">&nbsp;</td>
+    	<td width="46%">&nbsp;</td>
+  	</tr>
+	</table>
+	<p>&nbsp;</p>
+	<table width="550"  border="0">
+	<tr>
+    	<td width="15%">&nbsp;</td>
+		<td width="17%"><%:Key Generation will take 60 minutes or more so be patient.%></td>
+		<td width="17%">&nbsp;</td>
+    	<td width="51%">&nbsp;</td>
+  	</tr>
+	</table>
+	<p>&nbsp;</p>
+	<p><%:Status of Key Generation%></p>
+	<p>&nbsp;</p>
+	<table width="100%"  border="0">
+  	<tr>
+    	<td width="100%">
+			<select name="status" id="status" size="5" style="width: 700px; font-size:15px; font-family:monospace; line-height:27px; float:left; height:130px;">
+        	</select>
+		</td>
+	</tr>
+	</table>
+	
+	<p>&nbsp;</p>
+
+	<table width="550"  border="0">
+	<tr>
+    	<td width="25%">&nbsp;</td>
+    	<td width="17%"><input type="button" style="display: none" id="upload" class="cbi-button cbi-button-apply" value="<%:Download Certs and Keys%>" onclick="window.open('http://'+window.location.hostname+'/package/certificates.tar.gz', '_self')"/></td>
+		<td width="17%">&nbsp;</td>
+		<td width="41%">&nbsp;</td>
+		</tr>
+	</table>
+
+</fieldset>

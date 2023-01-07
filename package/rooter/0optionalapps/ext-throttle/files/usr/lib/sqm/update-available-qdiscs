@@ -1,0 +1,14 @@
+#!/bin/sh
+
+. /etc/sqm/sqm.conf
+. ${SQM_LIB_DIR}/functions.sh
+. ${SQM_LIB_DIR}/defaults.sh
+
+[ -d "${SQM_QDISC_STATE_DIR}" ] || mkdir -p "${SQM_QDISC_STATE_DIR}"
+
+SQM_VERBOSITY_MIN=5 # Silence errors while checking
+
+for qdisc in $SQM_CHECK_QDISCS; do
+    [ -f ${SQM_QDISC_STATE_DIR}/$qdisc ] && continue
+    verify_qdisc $qdisc && touch ${SQM_QDISC_STATE_DIR}/$qdisc
+done

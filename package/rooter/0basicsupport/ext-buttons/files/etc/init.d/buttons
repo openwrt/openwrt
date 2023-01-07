@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+log() {
+	logger -t "Buttons" "$@"
+}
+
+START=98
+
+start() {
+	local BTN=$(uci -q get system.@button[-1].button)
+}
+
+stop() {
+	log "Stopping Buttons"
+}

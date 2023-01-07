@@ -1,0 +1,61 @@
+<%
+
+%>
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	function uploadc(btn)
+	{
+		var conf = document.getElementById("conf").value;
+		if ( conf == "" )
+		{
+			alert("<%:You must enter a Conf file!!%>");
+			return false;
+		}
+		var iname = document.getElementById("iname").value;
+		if ( iname == "" )
+		{
+			alert("<%:You must enter an Instance name!!%>");
+			return false;
+		}
+		var boot = document.getElementById('boot').checked;
+		bootn = "0";
+		if ( boot == true )
+		{
+			bootn= "1";
+		}
+		confile = bootn + "?" + iname + "?" + conf +"\n?";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "vpn", "textconf")%>',
+			{ set: confile },
+			function(x, rv)
+			{
+				window.location.reload(false);
+			}
+		);
+	}
+	
+//]]></script>
+
+<fieldset class="cbi-section" id="cbi-family">
+	<legend><%:Paste Configuration File Here%></legend>
+	<table id="ctxt" width="700"  border="0" style="display:table;">
+  	<tr>
+    	<td width="50%">
+			<textarea name="conf" id="conf" rows="10" style="width: 600px;" maxlength="1000"></textarea>
+		</td>
+	</tr>
+	</table>
+	<table id="btxt" width="700"  border="0" style="display:table;">
+	<tr>
+		<td width="10%"><input type="button" id="apply1" class="cbi-button cbi-button-apply" value="<%:Upload Conf File%>" onclick="return uploadc(this)" /></td>
+		
+		<td width="10%"><div align="right"><strong><%:Instance Name : %></strong></div></td>
+		<td width="12%"><input type="text" name="iname" id="iname" class="cbi-input-text" style="width: 150px;" maxlength="100" value="SardisTel"></input></td>
+		<td width="10%"><div align="right"><strong><%:Start on Boot : %></strong></div></td>
+		<td width="8%">
+			<input type="checkbox" id="boot" checked />
+		</td>
+		<td width="50%">&nbsp;</td>
+	</tr>
+	</table>
+</fieldset>

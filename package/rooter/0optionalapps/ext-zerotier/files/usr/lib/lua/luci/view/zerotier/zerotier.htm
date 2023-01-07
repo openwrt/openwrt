@@ -1,0 +1,182 @@
+<%+header%>
+<%
+local sys = require "luci.sys"
+local utl = require "luci.util" 
+local fs = require "nixio.fs"
+
+function showicon(lck)
+	if lck == 0 then
+		return resource .. "/icons/unlock1.png"
+	else
+		return resource .. "/icons/lock1.png"
+	end
+end
+
+-%>
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	var lockb = 0;
+
+	XHR.get('<%=luci.dispatcher.build_url("admin", "services", "getid")%>',
+			null,
+			function(x, rv)
+			{
+				document.getElementById("password").value=rv.password;
+				document.getElementById("netids").innerHTML=rv.netid;
+				document.getElementById("netids").style.fontWeight = "bold" ;
+				document.getElementById("routids").innerHTML=rv.routerid;
+				document.getElementById("routids").style.fontWeight = "bold" ;
+				document.getElementById("netid").value=rv.netid;
+				document.getElementById("netid").style.fontWeight = "bold" ;
+				
+				document.getElementById("idh").style.visibility="visible";
+				document.getElementById("ids").style.visibility="visible";
+				//document.getElementById("netidt").style.visibility="hidden";
+			}
+				
+	);
+	
+	function done() { 
+		document.getElementById("popup").style.display = "none";
+		passw = document.getElementById("password").value;
+		var r = document.getElementById("pass").value;
+		if ( r == null )
+
+		{
+			document.getElementById("pass").value="";
+			return false;
+		}
+		if ( r == passw )
+		{
+			//document.getElementById("lockbtn").src="<%=showicon(0)%>";
+			document.getElementById("idh").style.visibility="visible";
+			document.getElementById("ids").style.visibility="visible";
+			//document.getElementById("netidt").style.visibility="hidden";
+			document.getElementById("pass").value="";
+			lockb = 1;
+		}
+		else
+		{
+			alert("<%:Incorrect Password!!!%>");
+			document.getElementById("pass").value="";
+		}
+		//document.getElementById("lockbtn").disabled=false;
+		return false;
+	};
+
+	function unlock(btn)
+	{
+		if ( lockb == 0 )
+		{
+			document.getElementById("popup").style.display = "block";
+			//document.getElementById("lockbtn").disabled=true;
+		}
+		else
+		{
+			//document.getElementById("lockbtn").src="<%=showicon(1)%>";
+			document.getElementById("netidt").style.visibility="visible";
+			document.getElementById("idh").style.visibility="hidden";
+			document.getElementById("ids").style.visibility="hidden";
+			lockb = 0;
+		}
+		return false;
+	}
+	
+	function changeid(btn)
+	{
+		var s = document.getElementById("netid").value;
+		if ( s.length !== 16 )
+		{
+			alert("<%:You must enter a correct Network ID!!%>");
+			return false;
+		}
+		document.getElementById("chngid").innerHTML="<%:Changing...%>";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "services", "sendid")%>',
+			{ set: s },
+			function(x, rv)
+			{
+				document.getElementById("netids").innerHTML=s;
+				document.getElementById("netids").style.fontWeight = "bold" ;
+				//document.getElementById("routids").innerHTML=s;
+				document.getElementById("routids").style.fontWeight = "bold" ;
+				document.getElementById("chngid").innerHTML="<%:Change Network ID%>";
+				alert("<%:Changed Network ID!!%>");
+			}
+				
+		);
+	}
+	
+//]]></script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<div class="cbi-map" id="cbi-modem">
+<h2><a id="content" name="content"><%:Router ID (Zerotier)%></a></h2>
+<div class="cbi-map-descr"> </div>
+<head>
+     <style>
+	  #popup {
+		width:560px;
+		height:190px;
+		padding:20px;
+		background-color:gainsboro;  
+		border-style : solid;	
+		position:fixed;
+		top : 40%;
+		margin-left: auto;
+		margin-right: auto;
+		left: 0;
+		right: 0;
+		text-align: center;
+		display:none;
+	}
+    </style>
+</head>
+
+<fieldset class="cbi-section" id="cbi-mod">
+		
+	<table style="visibility:hidden" width="700" border="0" id="atpass">
+	<tr>
+		<td width="10%"><div id="password" align="right"></div></td>
+	</tr>
+	</table>
+	
+	<div id="popup">
+		<table width="500" border="0">
+			<tr>
+				<td width="50px"><div><%:Enter Password to Unlock Change%></div></td>
+			</tr>
+			<tr>
+				<td width="200px"><input id="pass" type="password"/></td>
+			</tr>
+			<tr>
+				<td><input type="image" src="<%=showicon(0)%>" style="width:48px;height:48px;" onclick="return done()" /></td>
+			</tr>
+		</table>
+	</div>
+	
+	
+	<table width="465" border="0" id="ids" style="visibility:hidden" >
+		<tr>
+			<td width="20%"><div align="right" id="netidts"><strong><%:Current ZeroTier Network ID%></strong></div></td>
+			<td width="15%"><div align="left" id="netids"></div></td>
+			<td width="7%"><div align="right" id="routidts"><strong><%:Router ID%></strong></div></td>
+			<td width="15%"><div align="left" id="routids"></div></td>
+			<td width="43%"></td>
+		</tr>
+	</table>
+	
+	<table width="465" border="0" id="idh" style="visibility:hidden" >
+		<tr>
+			<td width="20%"><div align="right" id="netidt"><strong><%:Edit ID%></strong></div></td>
+			<td width="15%" ><input type="text" name="netid" id="netid" class="cbi-input-text" ></input>
+			<td width="10%"><input type="button" id="chngid" class="cbi-button cbi-button-apply" value="<%:Change Network ID%>" onclick="return changeid(this)" /></td>
+			<td width="55%"></td>
+		</tr>
+	</table>
+	
+</fieldset>		
+
+</div>
+</form>
+<%+footer%>

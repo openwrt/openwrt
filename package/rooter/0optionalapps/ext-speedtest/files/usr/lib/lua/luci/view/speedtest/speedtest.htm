@@ -1,0 +1,45 @@
+<%+header%>
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script>
+		
+	function applyc(btn)
+	{
+		//window.location.reload(true);
+		var iframe = document.getElementById('apply4');
+		iframe.src = iframe.src;
+	}
+	
+	function applys(btn)
+	{
+
+	}
+</script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<div class="cbi-map" id="cbi-misc">
+<h2><a id="content" name="content"><%:Browser Speed Test%></a></h2>
+<div class="cbi-map-descr"><%:A Speed Test using OpenSpeedTest that runs in the browser%></div>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" href="/luci-static/speed/css/iconmoon_splash.css">
+	<link rel="stylesheet" href="/luci-static/speed/css/splash.css">
+	<link rel="SHORTCUT ICON" href="/luci-static/speed/img/favicon.gif">
+	<link rel="icon" type="image/gif" href="/luci-static/speed/img/favicon.gif">
+</head>
+
+<body style="background-color: LightSteelBlue">
+	<div>
+    <a  id="apply2"><iframe id="apply4" src="https://openspeedtest.com/Get-widget.php?Auto=1" width="700" height="500" style="border:8px groove black;border-radius: 10px;" title="OpenSpeedTest"></iframe></a>
+	</div>
+    
+	<table id="apply1" border="0">
+		<tr>
+			<td><input type="button" id="apply1" class="cbi-button cbi-button-apply" value="<%:Click to Test Again%>" onclick="return applyc(this)" /></td>
+		</tr>
+ 	</table>
+	
+
+</body>
+</div>
+</form>
+<%+footer%>

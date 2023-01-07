@@ -1,0 +1,36 @@
+config wireguard_recipe b_client
+	option _description		"Wireguard Client"
+	option _role			"client"
+	option client			"1"
+	option port				"51280"
+	option auto 			'0'
+	option addresses 		''
+	option dns 				''
+	option privatekey		''
+	option name 			''
+	option keepalive 		'25'
+	option publickey		''
+	option presharedkey		''
+	option ips 				''
+	option ra_ips 			'1'
+	option endpoint_host 	''
+	option sport 			'51280'
+	option active			'0'
+	option udptunnel		'0'
+	option mtu				'1280'
+	
+config wireguard_recipe b_server
+	option _description		"Wireguard Server"
+	option _role			"server"
+	option client			"0"
+	option port				"51280"
+	option auto 			'0'
+	option addresses 		''
+	option publickey		''
+	option privatekey		''
+	option usepre			'0'
+	option presharedkey		''
+	option active			'0'
+	option udptunnel		'0'
+	option udpport			'54321'
+	option mtu				'1280'

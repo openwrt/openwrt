@@ -1,0 +1,104 @@
+<%#
+ Copyright 2008 Steven Barth <steven@midlink.org>
+ Copyright 2008 Jo-Philipp Wich <jow@openwrt.org>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+	var tries = 0,
+	    message = document.querySelector('p.reboot-message'),
+	    label = message.querySelector('span');
+
+	function ok() {
+		window.location = '<%=url("admin")%>';
+	}
+
+	function check() {
+		window.setTimeout(ping, 5000);
+	}
+
+	function ping() {
+		var img = document.createElement('img');
+
+		img.onload = ok;
+		img.onerror = check;
+		img.src = '<%=resource%>/icons/loading.gif?' + Math.random();
+
+		if (tries++ >= 30) {
+			message.classList.remove('notice');
+			message.classList.add('warning');
+			label.innerHTML = '<%:Device unreachable! Still waiting for device...%>';
+		}
+	}
+
+	function sendcmd(btn)
+	{
+		document.getElementById("fstxt").value="Waiting for a Response";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "system", "do_filecheck")%>',
+			null,
+			function(x, rv)
+			{
+				document.getElementById("fstxt").value=rv.result;
+				var fsro = rv.fsro;
+				if ( fsro == "1" )
+				{
+					document.getElementById("fsreboot").style.display="block";
+				}
+			}
+		);
+
+		return false;
+	}
+	
+	function reboot(button) {
+		button.style.display = 'none';
+		document.getElementById("remess").style.display="block";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "system", "do_reboot")%>',
+			null,
+			function(x, rv)
+			{
+			}
+		);
+		check();
+	}
+	
+	function refresh()
+	{
+		document.getElementById("fsreboot").style.display="none";
+		return false;
+	}
+
+//]]></script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<body onload="refresh();"></body>
+<h2><a id="content" name="content"><%:File System Check%></a></h2>
+
+<p><%:Check and Fix Read-only File System Problem.%></p>
+<hr />
+
+<p><input type="button" id="fscheck" class="cbi-button cbi-button-action important" value="<%:File System Check%>" onclick="return sendcmd(this)" /></p>
+<hr />
+
+<h3>Details of Check</h3>
+<table id="cmdtxt" width="700"  border="0" style="display:table;">
+  	<tr>
+    		<td width="100%">
+		<textarea readonly="readonly" name="fstxt" id="fstxt" rows="6" style="width: 600px;" maxlength="160"></textarea> 
+		</td>
+	</tr>
+</table>
+
+<hr />
+<input class="cbi-button cbi-button-action important" type="button" id="fsreboot" value="<%:Perform reboot to complete%>" onclick="reboot(this)" />
+
+<p class="alert-message notice reboot-message" style="display:none" id="remess">
+	<img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" style="vertical-align:middle" />
+	<span><%:Device is rebooting...%></span>
+</p>
+
+</form>
+<%+footer%>

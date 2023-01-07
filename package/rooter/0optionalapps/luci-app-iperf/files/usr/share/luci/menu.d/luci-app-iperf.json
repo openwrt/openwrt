@@ -1,0 +1,13 @@
+{
+	"admin/services/iperf": {
+		"title": "iPerf",
+		"order": 10,
+		"action": {
+			"type": "template",
+			"path": "iperf/test"
+		},
+		"depends": {
+			"acl": [ "luci-app-iperf" ]
+		}
+	}
+}

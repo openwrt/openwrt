@@ -1,0 +1,53 @@
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	XHR.poll(2, '<%=luci.dispatcher.build_url("admin", "modem", "get_log")%>', null,
+		function(x, rv)
+		{
+			document.getElementById('clog').value=rv.log;
+		}
+	);
+
+	function clear_log(btn)
+        {
+                btn.disabled = true;
+                btn.value = '<%:Clearing...%>';
+
+
+                XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "clear_log")%>', null,
+                        function()
+                        {
+                                btn.disabled = false;
+                                btn.value = '<%:Clear Log%>';
+                        }
+                );
+        }
+
+//]]></script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<div class="cbi-map" id="cbi-modem">
+<h2><a id="content" name="content"><%:Connection Log%></a></h2>
+<div class="cbi-map-descr"> </div>
+
+<fieldset class="cbi-section" id="cbi-mod">
+	<table id="cmdtxt" width="700"  border="0" style="display:table;">
+  	<tr>
+    		<td width="100%">
+		<textarea readonly="readonly" name="clog" id="clog" rows="20" style="width: 700px;"></textarea> 
+		</td>
+	</tr>
+	 <tr>
+                <td>
+                <input type="button" id="clearlog" class="cbi-button cbi-button-apply" value="<%:Clear Log%>" onclick="return clear_log(this)"/>
+                </td>
+        </tr>
+	</table>
+
+</fieldset>
+
+</div>
+</form>
+<%+footer%>

@@ -1,0 +1,60 @@
+
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+	function vpn_add()
+	{
+		var vpn_name = document.getElementById("instance_name1").value.replace(/[^\x00-\x7F]|[\s\.!@#$%^&*()\-+=\[\]{};':"\\|,<>\/?]/g,'');
+		
+		if (!vpn_name || !vpn_name.length)
+		{
+			return info_message(vpn_output, "<%=pcdata(translate("The 'Name' field must not be empty!"))%>", 2000);
+		}
+
+		document.getElementById("instance_name1").value = vpn_name;
+		if (document.getElementById("cbi-guestwifi-" + vpn_name) != null)
+		{
+			return info_message(vpn_output, "<%=pcdata(translate("Instance with that name already exists!"))%>", 2000);
+		}
+		XHR.get('<%=luci.dispatcher.build_url("admin", "network", "createwifi")%>',
+		{ set: vpn_name },
+			function(x, rv)
+			{
+				window.location.reload(false);
+			}
+		);
+	}
+
+	function info_message(output, msg, timeout)
+	{
+		timeout = timeout || 0;
+		output.style.color = "red";
+		output.innerHTML = '<em>' + msg + '</em>';
+		if (timeout > 0)
+		{
+			setTimeout(function(){ output.innerHTML=""}, timeout);
+		}
+	}
+//]]>
+</script>
+
+<%+guestwifi/ovpn_css%>
+
+<fieldset class="cbi-section" id="cbi-family">
+<div class="cbi-section-node">
+	<div class="table cbi-section-table">
+		<table width="700" border="0" id="tab12">
+			<tr>
+				<td>&nbsp;</td>
+			</tr>
+		</table>
+		<h4><%:New Guest Wifi%></h4>
+		<table width="700" border="0">
+			<tr>
+				<td width="10%"><input type="text" maxlength="20" placeholder="Instance name" id="instance_name1" /></td>
+				<td width="10%"><input class="cbi-button cbi-button-add" type="submit" onclick="vpn_add(); return false;" value="<%:Add%>" title="<%:Add new Guest Wifi%>" /></td>
+				<td width="80%"><span id="vpn_output"></span></td>
+			</tr>
+		</table>
+	</div>
+</div>
+</fieldset>

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+ROOTER=/usr/lib/rooter
+
+TEXT=$1
+DATE=$(date +%c)
+
+echo "  " >> /tmp/atlog
+echo "$DATE : $TEXT" >> /tmp/atlog
+lua $ROOTER/log/rotate.lua /tmp/atlog /tmp/attlog
+mv /tmp/attlog /tmp/atlog
+

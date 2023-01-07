@@ -1,0 +1,610 @@
+<%+header%>
+<%
+local sys = require "luci.sys"
+local utl = require "luci.util" 
+local fs = require "nixio.fs"
+
+function showicon(lck)
+	if lck == 0 then
+		return resource .. "/icons/unlock1.png"
+	else
+		return resource .. "/icons/lock1.png"
+	end
+end
+
+-%>
+
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+var maclist = new Array() ;
+var partsArray = new Array;
+var lockb = 0;
+var rollover = 1;
+var enabled = "0";
+var backflg = "0";
+
+	function display(rv)
+	{
+		days = rv.days;
+		bwlock = rv.lock;
+		rollover = rv.rollover;
+		enabled = rv.enabled;
+		bwenabled = rv.bwenabled;
+		if ( rv.bwwan == "0" )
+		{
+			document.getElementById('wwanf').checked=false;
+		}
+		else
+		{
+			document.getElementById('wwanf').checked=true;
+		}
+			if ( days !== "0" )
+			{
+				document.getElementById("totalb").style.visibility="visible";
+				document.getElementById("totalb").style.display="";
+				document.getElementById("nodatab").style.visibility="hidden";
+				document.getElementById("nodatab").style.display="none";
+				bwenabled = rv.bwenabled;
+				bwe = true;
+				if ( bwenabled == "0" )
+				{
+					bwe = false
+				}
+				document.getElementById('bwenb').checked=bwe;
+				if ( bwlock == 1 )
+				{
+					document.getElementById("allocate").style.visibility="visible";
+					document.getElementById("allocate").style.display="";
+					document.getElementById("allocatet").style.visibility="visible";
+					document.getElementById("allocatet").style.display="";
+					document.getElementById("bwenb").disabled=true;
+					document.getElementById("bwinter").disabled=true;
+					document.getElementById("apply2").disabled=true;
+					bwe = true;
+					if ( backflg == "0" )
+					{
+					if ( rv.external == "0" )
+					{
+						bwe = false
+						document.getElementById("exflag").innerHTML="<%:Internal%>";
+						document.getElementById("exflag").style.fontWeight = "bold" ;
+						document.getElementById("exflag").style.fontSize = "large" ;
+					}
+					else
+					{
+						document.getElementById("exflag").innerHTML=rv.external;
+						document.getElementById("exflag").style.fontWeight = "bold" ;
+						document.getElementById("exflag").style.fontSize = "small" ;
+					}
+					//if ( backflg == "0" )
+					//{
+						document.getElementById("bwinter").value = rv.backup;
+						backflg = "1";
+					}
+					document.getElementById("apply1").disabled=true;
+					
+					if ( enabled == "1" )
+					{
+						document.getElementById("allocate").innerHTML=rv.catotal;
+						ntotal = parseInt(rv.total);
+						nallocate = parseInt(rv.atotal);
+						if ( ntotal > nallocate )
+						{
+							document.getElementById("total").style.color = "red";
+						}
+						else
+						{
+							document.getElementById("total").style.color = "inherit";
+						}
+					}
+					else
+					{
+						document.getElementById("allocate").innerHTML="<%:Disabled%>";
+					}
+					document.getElementById("allocate").style.fontWeight = "bold" ;
+				}
+				else
+				{
+					
+					document.getElementById("allocate").style.visibility="hidden";
+					document.getElementById("allocate").style.display="none";
+					document.getElementById("allocatet").style.visibility="hidden";
+					document.getElementById("allocatet").style.display="none";
+					document.getElementById("bwenb").disabled=false;
+					document.getElementById("bwinter").disabled=false;
+					document.getElementById("apply2").disabled=false;
+					bwe = true;
+					if ( backflg == "0" )
+					{
+					if ( rv.external == "0" )
+					{
+						bwe = false
+						document.getElementById("exflag").innerHTML="<%:Internal%>";
+						document.getElementById("exflag").style.fontWeight = "bold" ;
+						document.getElementById("exflag").style.fontSize = "large" ;
+					}
+					else
+					{
+						document.getElementById("exflag").innerHTML=rv.external;
+						document.getElementById("exflag").style.fontWeight = "bold" ;
+						document.getElementById("exflag").style.fontSize = "small" ;
+					}
+					//if ( backflg == "0" )
+					//{
+						document.getElementById("bwinter").value = rv.backup;
+						backflg = "1";
+					}
+					document.getElementById("apply1").disabled=false;
+					
+					document.getElementById("rollover1").style.visibility="visible";
+					document.getElementById("rollday").style.visibility="visible";
+					document.getElementById("changeroll").style.visibility="visible";
+				} 
+				
+				document.getElementById("rollday").selectedIndex = rollover - 1;
+				en =  "th";
+				if ( rv.rollover == "1" )
+				{
+					en = "st";
+				}
+				if ( rv.rollover == "2" )
+				{
+					en = "nd";
+				}
+				if ( rv.rollover == "3" )
+				{
+					en = "rd";
+				}
+				document.getElementById("rolld").innerHTML=rv.rollover + en;
+				document.getElementById("rolld").style.fontWeight = "bold" ;
+
+				document.getElementById("total").innerHTML=rv.ctotal;
+				document.getElementById("total").style.fontWeight = "bold" ;
+				document.getElementById("ptotal").innerHTML=rv.cptotal;
+				document.getElementById("ptotal").style.fontWeight = "bold" ;
+				
+				document.getElementById("report").style.visibility="visible";
+				document.getElementById("report").style.display = "";
+				document.getElementById("nodatar").style.visibility="hidden";
+				document.getElementById("nodatar").style.display="none";
+				document.getElementById("days").innerHTML=rv.days;
+				document.getElementById("days").style.fontWeight = "bold" ;
+				document.getElementById("totaldown").innerHTML=rv.ctotaldown;
+				document.getElementById("totaldown").style.fontWeight = "bold" ;
+				document.getElementById("totalup").innerHTML=rv.ctotalup;
+				document.getElementById("totalup").style.fontWeight = "bold" ;
+				
+				document.getElementById("password").value=rv.password;
+				
+				var tbl = document.getElementById('datar');
+				while (tbl.rows.length > 1)
+					tbl.deleteRow(1);
+
+				msize = rv.macsize;
+				maclist = rv.maclist;
+				if ( msize !== "0" )
+				{
+					size = parseFloat(msize);
+					for (i = 0; i < size; i++) 
+					{
+						partsArray = maclist[i].split('|');
+						tr = tbl.insertRow(-1);
+						row3 = tr.insertCell(-1);
+						row3.innerHTML = '<div align="center"><strong>' + partsArray[0] + '</strong></div>'
+						row3.style.width = '160px' ;
+						row3 = tr.insertCell(-1);
+						row3.innerHTML = '<div align="center"><strong>' + partsArray[5] + '</strong></div>'
+						row3.style.width = '200px' ;
+						row3 = tr.insertCell(-1);
+						row3.innerHTML = '<div align="center"><strong>' + partsArray[1] + '</strong></div>'
+						row3.style.width = '160px' ;
+						row3 = tr.insertCell(-1);
+						row3.innerHTML = '<div align="center"><strong>' + partsArray[2] + '</strong></div>'
+						row3.style.width = '150px' ;
+						row3 = tr.insertCell(-1);
+						row3.innerHTML = '<div align="center"><strong>' + partsArray[3] + '</strong></div>'
+						row3.style.width = '150px' ;
+						row3 = tr.insertCell(-1);
+						row3.innerHTML = '<div align="center"><strong>' + partsArray[4] + '</strong></div>'
+						row3.style.width = '150px' ;
+					}
+				} 
+				
+				document.getElementById("datar").style.display = "";
+				
+			}
+			else
+			{
+				document.getElementById("nodatab").style.visibility="visible";
+				document.getElementById("nodatab").style.display="";
+				document.getElementById("totalb").style.display="none";
+				document.getElementById("totalb").style.visibility="hidden";
+				
+				document.getElementById("nodatar").style.visibility="visible";
+				document.getElementById("nodatar").style.display="";
+				document.getElementById("report").style.visibility="hidden";
+				document.getElementById("report").style.display="none";
+			}
+	}
+
+	XHR.get('<%=luci.dispatcher.build_url("admin", "nlbw", "check_bw")%>',
+			null,
+			function(x, rv)
+			{
+				display(rv);
+			}
+				
+	);
+	
+	XHR.poll(2, '<%=luci.dispatcher.build_url("admin", "nlbw", "check_bw")%>', null,
+		function(x, rv)
+		{
+			display(rv);
+		}
+				
+	);
+	
+	function done() { 
+		document.getElementById("popup").style.display = "none";
+		document.getElementById("apply2").disabled=true;
+		var r = document.getElementById("pass").value;
+		if ( r == "" )
+		{
+			document.getElementById("exflag").innerHTML="<%:Internal%>";
+			document.getElementById("exflag").style.fontWeight = "bold" ;
+			document.getElementById("exflag").style.fontSize = "large" ;
+			r = "0";
+		}
+		else
+		{
+			mnti = r.indexOf("/mnt/");
+			mntl = r.length;
+			if ( mnti == -1 || mntl < 6 )
+			{
+				alert("<%:Invalid External Path. Reverting to Internal.%>");
+				r = "0";
+				document.getElementById("exflag").innerHTML="<%:Internal%>";
+				document.getElementById("exflag").style.fontWeight = "bold" ;
+				document.getElementById("exflag").style.fontSize = "large" ;
+			}
+			else
+			{
+				document.getElementById("exflag").innerHTML=r;
+				document.getElementById("exflag").style.fontWeight = "bold" ;
+				document.getElementById("exflag").style.fontSize = "small" ;
+			}
+		}
+		XHR.get('<%=luci.dispatcher.build_url("admin", "nlbw", "change_external")%>',
+			{ set: r },
+			function()
+			{
+			}
+		);
+		document.getElementById("pass").value="";
+		document.getElementById("apply2").disabled=false;
+		return false;
+	};
+
+	function unlock(btn)
+	{
+		document.getElementById("popup").style.display = "block";
+		document.getElementById("apply2").disabled=true;
+
+		return false;
+	}
+	
+	function changealloc()
+	{
+		var s = document.getElementById("alloc").value;
+		if ( s.length == 0 || s == 0 )
+		{
+			alert("You must enter an Amount!!");
+			return false;
+		}
+		allo = s.toString();
+		XHR.get('<%=luci.dispatcher.build_url("admin", "nlbw", "change_bw")%>',
+			{ set: allo },
+			function(x, rv)
+			{
+				document.getElementById("allocate").innerHTML="<%:Changing...%>";
+				document.getElementById("allocate").style.fontWeight = "bold" ;
+			}
+		);
+		
+					
+		return false;
+	}
+	
+	function rollchange(rll)
+	{
+		var s = document.getElementById("rollday").value;
+		allo = s.toString();
+		XHR.get('<%=luci.dispatcher.build_url("admin", "nlbw", "change_roll")%>',
+			{ set: allo },
+			function(x, rv)
+			{
+				
+			}
+		);
+		
+					
+		return false;
+	}
+	
+	function enablealloc()
+	{
+		if (enabled == "0" )
+		{
+			enabled = "1";
+		}
+		else
+		{
+			enabled = "0";
+		}
+		XHR.get('<%=luci.dispatcher.build_url("admin", "nlbw", "change_enable")%>',
+			{ set: enabled },
+			function(x, rv)
+			{
+				
+			}
+		);
+		
+					
+		return false;
+	}
+	
+	function bwenable(btn)
+	{
+		dx = 0;
+		if ( btn.checked == true )
+		{
+			dx = 1;
+		}
+		XHR.get('<%=luci.dispatcher.build_url("admin", "nlbw", "change_bwenable")%>',
+			{ set: dx },
+			function()
+			{
+			}
+		);
+	}
+	
+	function applyb(btn)
+	{
+		bspd=document.getElementById("bwinter").value;
+		//document.getElementById("attxt").value=bspd;
+		XHR.get('<%=luci.dispatcher.build_url("admin", "nlbw", "change_backup")%>',
+			{ set: bspd },
+			function()
+			{
+				bwflg = "0";
+			}
+		);
+	}
+	
+	function wwanenable(btn) {
+		dx = 0;
+		if ( btn.checked == true )
+		{
+			dx = 1;
+		}
+		XHR.get('<%=luci.dispatcher.build_url("admin", "nlbw", "change_bwwan")%>',
+			{ set: dx },
+			function()
+			{
+			}
+		);
+	}
+
+//]]></script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<div class="cbi-map" id="cbi-modem">
+<h2><a id="content" name="content"><%:Bandwidth Monitor%></a></h2>
+<div class="cbi-map-descr"> </div>
+<h3><%:Note : Bandwidth Monitor will not turn on until there is Internet Available%></h3>
+<head>
+     <style>
+	  #popup {
+		width:560px;
+		height:190px;
+		padding:20px;
+		background-color:gainsboro;  
+		border-style : solid;	
+		position:fixed;
+		top : 40%;
+		margin-left: auto;
+		margin-right: auto;
+		left: 0;
+		right: 0;
+		text-align: center;
+		display:none;
+	}
+    </style>
+</head>
+<fieldset class="cbi-section" id="cbi-modw">
+	<legend><%:Extra Internet Sources%></legend>
+	<table border="0" id="totalw">
+		<tr>
+			<td width="20%"><div align="right" style="font-size : 17px" id="wwan"><strong><%:Include WAN and Hotspot%></strong></div></td>
+			<td width="15%"><div align="center" id="wwane"><input type="checkbox" id="wwanf" onclick="wwanenable(this)" /></div></td>
+			<td width="15%"></td>
+			<td width="15%"></td>
+			<td width="35%"></td>
+		</tr>
+	</table>
+</fieldset>
+
+<fieldset class="cbi-section" id="cbi-modx">
+	<legend><%:Data Backup Configuration%></legend>
+		
+	<table style="visibility:hidden" width="700" border="0" id="atpass">
+	<tr>
+		<td width="10%"><div id="password" align="right"></div></td>
+	</tr>
+	</table>
+	
+	<div id="popup">
+		<table width="500" border="0">
+			<tr>
+				<td width="50px"><div><%:Path to Backup Storage Location. Blank is Internal.%></div></td>
+			</tr>
+			<tr>
+				<td width="200px"><input id="pass" type="text"/></td>
+			</tr>
+			<tr>
+				<td><input type="button" id="apply3" class="cbi-button cbi-button-apply" value="<%:Change Location%>" onclick="return done()" /></td>
+			</tr>
+		</table>
+	</div>
+	
+	<table border="0" id="totalc">
+		<tr>
+			<td width="20%"><div align="right" style="font-size : 17px" id="enablebw"><strong><%:Enable Data Backup%></strong></div></td>
+			<td width="15%"><div align="center" id="bwflag"><input type="checkbox" id="bwenb" onclick="bwenable(this)" /></div></td>
+			<td width="15%"></td>
+			<td width="15%"></td>
+			<td width="35%"></td>
+		</tr>
+		<tr>
+			<td><div align="right" style="font-size : 17px" id="backbw"><strong><%:Backup Interval in Minutes%></strong></div></td>
+			<td align="center"><select name="bwinter" id="bwinter">
+			<option value="5" selected="selected"><%:5 Minutes%></option>
+			<option value="10"><%:10 Minutes%></option>
+			<option value="15"><%:15 Minutes%></option>
+			<option value="20"><%:20 Minutes%></option>
+			<option value="30"><%:30 Minutes%></option>
+			<option value="40"><%:40 Minutes%></option>
+			</select>
+			</td>
+
+			<td><input type="button" id="apply1" class="cbi-button cbi-button-apply" value="<%:Apply Interval Change%>" onclick="return applyb(this)" /></td>
+			<td></td>
+			<td></td>
+		</tr>
+		
+		<tr>
+			<td><div align="right" style="font-size : 17px" id="externalbw"><strong><%:Backup Storage Location%></strong></div></td>
+			<td><div align="center" id="exflag" ></div></td>
+			<td><input type="button" id="apply2" class="cbi-button cbi-button-apply" value="<%:Change Location%>" onclick="return unlock(this)" /></td>
+		</tr>
+	</table>
+
+</fieldset>
+
+<fieldset class="cbi-section" id="cbi-mod">	
+	<legend><%:Total Bandwidth%></legend>
+	<table border="0" id="totalb">
+		<tr>
+			<td width="343"><div align="right" style="visibility:hidden;" id="allocatet"><strong><%:Total Amount of Allocated Bandwidth per Month : %></strong></div></td>
+			<td width="112"><div align="center" id="allocate"></div></td>
+		</tr>
+		
+		<tr>
+			<td><div align="right"><strong><%:Total Amount of Bandwidth used this Month : %></strong></div></td>
+			<td><div align="center" id="total"></div></td>
+			</td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td><div align="right"><strong><%:Estimated Bandwidth to be used this Month : %></strong></div></td>
+			<td><div align="center" id="ptotal"></div></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td><div align="right"><strong><%:Rollover Day : %></strong></div></td>
+			<td><div align="center" id="rolld"></div></td>
+			<td></td>
+			<td width="273" ><div align="right" style="visibility:hidden;" id="rollover1"><strong><%:Rollover Day : %></strong></div></td>
+			<td width="144" ><select style="visibility:hidden;width:144px" name="rollday" id="rollday" >
+			<option value="1" selected="selected"><%:1st of month%></option>
+			<option value="2"><%:2nd of month%></option>
+			<option value="3"><%:3rd of month%></option>
+			<option value="4"><%:4th of month%></option>
+			<option value="5"><%:5th of month%></option>
+			<option value="6"><%:6th of month%></option>
+			<option value="7"><%:7th of month%></option>
+			<option value="8"><%:8th of month%></option>
+			<option value="9"><%:9th of month%></option>
+			<option value="10"><%:10th of month%></option>
+			<option value="11"><%:11th of month%></option>
+			<option value="12"><%:12th of month%></option>
+			<option value="13"><%:13th of month%></option>
+			<option value="14"><%:14th of month%></option>
+			<option value="15"><%:15th of month%></option>
+			<option value="16"><%:16th of month%></option>
+			<option value="17"><%:17th of month%></option>
+			<option value="18"><%:18th of month%></option>
+			<option value="19"><%:19th of month%></option>
+			<option value="20"><%:20th of month%></option>
+			<option value="21"><%:21th of month%></option>
+			<option value="22"><%:22th of month%></option>
+			<option value="23"><%:23th of month%></option>
+			<option value="24"><%:24th of month%></option>
+			<option value="25"><%:25th of month%></option>
+			<option value="26"><%:26th of month%></option>
+			<option value="27"><%:27th of month%></option>
+			<option value="28"><%:28th of month%></option>
+				</select></td>
+			<td width="161" ><input type="submit" style="visibility:hidden;" id="changeroll" class="cbi-button cbi-button-apply" value="<%:Change Rollover Day%>" onclick="return rollchange()"</td>
+		</tr>
+	</table>
+	<table border="0" id="nodatab" style="visibility:hidden;">
+		<tr>
+			<td width="343"><div align="left"><strong><%:No Data Yet%></strong></div></td>
+		</tr>
+	</table>
+</fieldset>	
+
+<fieldset class="cbi-section" id="cbi-mod">
+	<legend><%:Report%></legend>
+	<table border="0" id="report">
+		<tr>
+			<td width="343" ><div align="right"><strong><%:Number of Days in Reporting Period : %></strong></div></td>
+			<td width="112" ><div align="center" id="days"></div></td>
+			<td width="48" ></td>
+			<td width="283" ></td>
+			<td width="144" ></td>
+			<td width="161" ></td>
+		</tr>
+		<tr>
+			<td ><div align="right"><strong><%:Total Amount of Download Bandwidth : %></strong></div></td>
+			<td ><div align="center" id="totaldown"></div></td>
+		</tr>
+		<tr>
+			<td ><div align="right"><strong><%:Total Amount of Upload Bandwidth : %></strong></div></td>
+			<td ><div align="center" id="totalup"></div></td>
+		</tr>
+	</table>
+	<table border="0" id="nodatar" style="visibility:hidden;">
+		<tr>
+			<td width="343"><div align="left"><strong><%:No Data Yet%></strong></div></td>
+		</tr>
+	</table>
+
+</fieldset>
+
+<fieldset class="cbi-section" id="cbi-mod">
+	<table width="1400" border="1" id="datar1" >
+		<tr>
+			<td width="160px"><div align="center"><strong><%:IP Address%></strong></div></td>
+			<td width="200px"><div align="center"><strong><%:Name%></strong></div></td>
+			<td width="160px"><div align="center"><strong><%:MAC Address%></strong></div></td>
+			<td width="150px"><div align="center"><strong><%:Bandwidth Down%></strong></div></td>
+			<td width="150px"><div align="center"><strong><%:Bandwidth Up%></strong></div></td>
+			<td width="150px"><div align="center"><strong><%:Bandwidth Total%></strong></div></td>
+		</tr>
+	</table>
+	<table width="1400" border="0" id="datar" >
+		<tr>
+		</tr>
+	</table>
+</fieldset>
+
+</div>
+</form>
+<%+footer%>

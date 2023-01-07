@@ -1,0 +1,234 @@
+################################################################################
+# simple.qos (Cero3 Shaper)
+#
+# Abstract:
+# This is a three band fq_codel and ipv6 enabled shaping script for Ethernet
+# gateways. Compared to the complexity that debloat had become this cleanly
+# shows a means of going from diffserv marking to prioritization using the
+# current tools ip(6)tables and tc. We should note that the complexity of
+# debloat exists for a reason, and it is expected that script is run first to
+# setup various other parameters such as BQL and ethtool.
+#
+# (Assume the debloat script has setup the other interfaces.)
+#
+# Notes:
+# This does the right thing with ipv6 traffic. It also tries to leverage
+# diffserv to some sane extent. In particular, the 'priority' queue is limited
+# to 33% of the total, so EF, and IMM traffic cannot starve other types. The
+# rfc suggested 30%. 30% is probably a lot in today's world.
+#
+# References:
+# This alternate shaper attempts to go for 1/u performance in a clever way
+# http://git.coverfire.com/?p=linux-qos-scripts.git;a=blob;f=src-3tos.sh;hb=HEAD
+#
+################################################################################
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+#  Copyright (C) 2012-2016
+#    Michael D. Taht, Toke Høiland-Jørgensen, Sebastian Moeller
+#
+################################################################################
+
+. ${SQM_LIB_DIR}/defaults.sh
+
+################################################################################
+
+ipt_setup() {
+
+    ipt -t mangle -N QOS_MARK_${IFACE}
+
+    case $QDISC in
+        cake*)
+            sqm_debug "cake does all the diffserv work - no need for iptables rules"
+            ;;
+        *)
+            ipt -t mangle -A QOS_MARK_${IFACE} -j MARK --set-mark 0x2/${IPT_MASK}
+            # You can go further with classification but...
+            ipt -t mangle -A QOS_MARK_${IFACE} -m dscp --dscp-class CS1 -j MARK --set-mark 0x3/${IPT_MASK}
+            ipt -t mangle -A QOS_MARK_${IFACE} -m dscp --dscp-class CS6 -j MARK --set-mark 0x1/${IPT_MASK}
+            ipt -t mangle -A QOS_MARK_${IFACE} -m dscp --dscp-class EF -j MARK --set-mark 0x1/${IPT_MASK}
+            ipt -t mangle -A QOS_MARK_${IFACE} -m dscp --dscp-class AF42 -j MARK --set-mark 0x1/${IPT_MASK}
+            ipt -t mangle -A QOS_MARK_${IFACE} -m tos  --tos Minimize-Delay -j MARK --set-mark 0x1/${IPT_MASK}
+            ;;
+    esac
+
+    # Turn it on. Preserve classification if already performed
+    #
+    #sm: is it correct to do this in $IFACE? Should ingress not be on $DEV? since HTB acts on $DEV?
+    #
+    # ZERO also does not work on $DEV (that is the IFB will still see the
+    # incoming ToS bits whether we squash or not)
+    #
+    # ZERO is still useful to protect internal machines...
+    if [ "$ZERO_DSCP_INGRESS" = "1" ]; then
+        sqm_debug "Squashing differentiated services code points (DSCP) from ingress."
+        ipt -t mangle -I PREROUTING -i $IFACE -m dscp ! --dscp 0 -j DSCP --set-dscp-class be
+    else
+        sqm_debug "Keeping differentiated services code points (DSCP) from ingress."
+        ipt -t mangle -A PREROUTING -i $IFACE -m mark --mark 0x00/${IPT_MASK} -g QOS_MARK_${IFACE}
+    fi
+
+    ipt -t mangle -A POSTROUTING -o $IFACE -m mark --mark 0x00/${IPT_MASK} -g QOS_MARK_${IFACE}
+
+    # The Syn optimization was nice but fq_codel does it for us
+    # ipt -t mangle -A PREROUTING -i s+ -p tcp -m tcp --tcp-flags SYN,RST,ACK SYN -j MARK --set-mark 0x01
+    # Not sure if this will work. Encapsulation is a problem period
+
+    ipt -t mangle -I PREROUTING -i vtun+ -p tcp -j MARK --set-mark 0x2/${IPT_MASK} # tcp tunnels need ordering
+
+    # Emanating from router, do a little more optimization
+    # but don't bother with it too much.
+
+    ipt -t mangle -A OUTPUT -p udp -m multiport --ports 123,53 -j DSCP --set-dscp-class AF42
+
+    #Not clear if the second line is needed
+    #ipt -t mangle -A OUTPUT -o $IFACE -g QOS_MARK_${IFACE}
+
+}
+
+
+
+cake_egress()
+{
+    $TC qdisc add dev $IFACE root `get_stab_string` $QDISC bandwidth ${CEIL}kbit `get_cake_lla_string` ${EQDISC_OPTS}
+}
+
+egress() {
+
+    CEIL=${UPLINK}
+    PRIO_RATE=`expr $CEIL / 3` # Ceiling for prioirty
+    BE_RATE=`expr $CEIL / 6`   # Min for best effort
+    BK_RATE=`expr $CEIL / 6`   # Min for background
+    BE_CEIL=`expr $CEIL - 16`  # A little slop at the top
+
+    LQ="quantum `get_htb_quantum $IFACE $CEIL ${ESHAPER_QUANTUM_DUR_US}`"
+    BURST="`get_htb_burst $IFACE $CEIL ${ESHAPER_BURST_DUR_US}`"
+
+    SILENT=1 $TC qdisc del dev $IFACE root
+
+    case $QDISC in
+        cake*) cake_egress; return;;
+    esac
+
+    $TC qdisc add dev $IFACE root handle 1: `get_stab_string` htb default 12
+    $TC class add dev $IFACE parent 1: classid 1:1 htb $LQ rate ${CEIL}kbit ceil ${CEIL}kbit $BURST `get_htb_adsll_string`
+    $TC class add dev $IFACE parent 1:1 classid 1:11 htb $LQ rate 128kbit ceil ${PRIO_RATE}kbit prio 1 `get_htb_adsll_string`
+    $TC class add dev $IFACE parent 1:1 classid 1:12 htb $LQ rate ${BE_RATE}kbit ceil ${BE_CEIL}kbit $BURST prio 2 `get_htb_adsll_string`
+    $TC class add dev $IFACE parent 1:1 classid 1:13 htb $LQ rate ${BK_RATE}kbit ceil ${BE_CEIL}kbit $BURST prio 3 `get_htb_adsll_string`
+
+    $TC qdisc add dev $IFACE parent 1:11 handle 110: $QDISC \
+        `get_limit ${ELIMIT}` `get_target "${ETARGET}" ${UPLINK}` `get_ecn ${EECN}` `get_quantum 300` `get_flows ${PRIO_RATE}` ${EQDISC_OPTS}
+    $TC qdisc add dev $IFACE parent 1:12 handle 120: $QDISC \
+        `get_limit ${ELIMIT}` `get_target "${ETARGET}" ${UPLINK}` `get_ecn ${EECN}` `get_quantum 300` `get_flows ${BE_RATE}` ${EQDISC_OPTS}
+    $TC qdisc add dev $IFACE parent 1:13 handle 130: $QDISC \
+        `get_limit ${ELIMIT}` `get_target "${ETARGET}" ${UPLINK}` `get_ecn ${EECN}` `get_quantum 300` `get_flows ${BK_RATE}` ${EQDISC_OPTS}
+
+    # Need a catchall rule
+
+    $TC filter add dev $IFACE parent 1:0 protocol all prio 999 u32 \
+        match ip protocol 0 0x00 flowid 1:12
+
+    # FIXME should probably change the filter here to do pre-nat
+
+    $TC filter add dev $IFACE parent 1:0 protocol ip prio 1 handle 1/${IPT_MASK} fw classid 1:11
+    $TC filter add dev $IFACE parent 1:0 protocol ip prio 2 handle 2/${IPT_MASK} fw classid 1:12
+    $TC filter add dev $IFACE parent 1:0 protocol ip prio 3 handle 3/${IPT_MASK} fw classid 1:13
+
+    # ipv6 support. Note that the handle indicates the fw mark bucket that is looked for
+
+    $TC filter add dev $IFACE parent 1:0 protocol ipv6 prio 4 handle 1/${IPT_MASK} fw classid 1:11
+    $TC filter add dev $IFACE parent 1:0 protocol ipv6 prio 5 handle 2/${IPT_MASK} fw classid 1:12
+    $TC filter add dev $IFACE parent 1:0 protocol ipv6 prio 6 handle 3/${IPT_MASK} fw classid 1:13
+
+    # Arp traffic
+
+    $TC filter add dev $IFACE parent 1:0 protocol arp prio 7 handle 1/${IPT_MASK} fw classid 1:11
+
+    # ICMP traffic - Don't impress your friends. Deoptimize to manage ping floods
+    # better instead
+
+    $TC filter add dev $IFACE parent 1:0 protocol ip prio 8 \
+        u32 match ip protocol 1 0xff flowid 1:13
+
+    $TC filter add dev $IFACE parent 1:0 protocol ipv6 prio 9 \
+        u32 match ip protocol 1 0xff flowid 1:13
+}
+
+
+cake_ingress()
+{
+    CAKEARGS=
+    [ "$IGNORE_DSCP_INGRESS" = "1" ] && CAKEARGS="$CAKEARGS besteffort"
+    $TC qdisc add dev $DEV root `get_stab_string` $QDISC bandwidth ${DOWNLINK}kbit \
+        $CAKEARGS `get_cake_lla_string` ${IQDISC_OPTS}
+
+    $IP link set dev $DEV up
+
+    # redirect all IP packets arriving in $IFACE to $DEV
+
+    $TC filter add dev $IFACE parent ffff: protocol all prio 10 u32 \
+        match u32 0 0 flowid 1:1 action mirred egress redirect dev $DEV
+}
+
+ingress() {
+
+    CEIL=$DOWNLINK
+    PRIO_RATE=`expr $CEIL / 3` # Ceiling for prioirty
+    BE_RATE=`expr $CEIL / 6`   # Min for best effort
+    BK_RATE=`expr $CEIL / 6`   # Min for background
+    BE_CEIL=`expr $CEIL - 16`  # A little slop at the top
+
+    LQ="quantum `get_htb_quantum $IFACE $CEIL ${ISHAPER_QUANTUM_DUR_US}`"
+    BURST="`get_htb_burst $IFACE $CEIL ${ISHAPER_BURST_DUR_US}`"
+
+    SILENT=1 $TC qdisc del dev $IFACE handle ffff: ingress
+    $TC qdisc add dev $IFACE handle ffff: ingress
+
+    SILENT=1 $TC qdisc del dev $DEV root
+
+    case $QDISC in
+        cake*) cake_ingress; return ;;
+    esac
+
+    if [ "$IGNORE_DSCP_INGRESS" = "1" ]; then
+        sqm_debug "Do not perform DSCP based filtering on ingress. (1-tier classification)"
+        $TC qdisc add dev $DEV root handle 1: `get_stab_string` htb default 10
+        $TC class add dev $DEV parent 1: classid 1:1 htb $LQ rate ${DOWNLINK}kbit ceil ${DOWNLINK}kbit $BURST `get_htb_adsll_string`
+        $TC class add dev $DEV parent 1:1 classid 1:10 htb $LQ rate ${DOWNLINK}kbit ceil ${DOWNLINK}kbit $BURST prio 0 `get_htb_adsll_string`
+        $TC qdisc add dev $DEV parent 1:10 handle 110: $QDISC \
+            `get_limit ${ILIMIT}` `get_target "${ITARGET}" ${DOWNLINK}` `get_ecn ${IECN}` `get_flows ${DOWNLINK}` ${IQDISC_OPTS}
+    else
+        sqm_debug "Perform DSCP based filtering on ingress. (3-tier classification)"
+        $TC qdisc add dev $DEV root handle 1: `get_stab_string` htb default 12
+        $TC class add dev $DEV parent 1: classid 1:1 htb $LQ rate ${CEIL}kbit ceil ${CEIL}kbit $BURST `get_htb_adsll_string`
+        $TC class add dev $DEV parent 1:1 classid 1:11 htb $LQ rate 32kbit ceil ${PRIO_RATE}kbit prio 1 `get_htb_adsll_string`
+        $TC class add dev $DEV parent 1:1 classid 1:12 htb $LQ rate ${BE_RATE}kbit ceil ${BE_CEIL}kbit $BURST prio 2 `get_htb_adsll_string`
+        $TC class add dev $DEV parent 1:1 classid 1:13 htb $LQ rate ${BK_RATE}kbit ceil ${BE_CEIL}kbit $BURST prio 3 `get_htb_adsll_string`
+
+        $TC qdisc add dev $DEV parent 1:11 handle 110: $QDISC \
+            `get_limit ${ILIMIT}` `get_target "${ITARGET}" ${DOWNLINK}` `get_ecn ${IECN}` `get_quantum 500` `get_flows ${PRIO_RATE}` ${IQDISC_OPTS}
+        $TC qdisc add dev $DEV parent 1:12 handle 120: $QDISC \
+            `get_limit ${ILIMIT}` `get_target "${ITARGET}" ${DOWNLINK}` `get_ecn ${IECN}` `get_quantum 1500` `get_flows ${BE_RATE}` ${IQDISC_OPTS}
+        $TC qdisc add dev $DEV parent 1:13 handle 130: $QDISC \
+            `get_limit ${ILIMIT}` `get_target "${ITARGET}" ${DOWNLINK}` `get_ecn ${IECN}` `get_quantum 300` `get_flows ${BK_RATE}` ${IQDISC_OPTS}
+
+        diffserv $DEV
+    fi
+
+    $IP link set dev $DEV up
+
+    # redirect all IP packets arriving in $IFACE to $DEV
+
+    $TC filter add dev $IFACE parent ffff: protocol all prio 10 u32 \
+        match u32 0 0 flowid 1:1 action mirred egress redirect dev $DEV
+
+}
+
+sqm_prepare_script() {
+    do_modules
+    verify_qdisc "htb" || return 1
+    ipt_setup
+}

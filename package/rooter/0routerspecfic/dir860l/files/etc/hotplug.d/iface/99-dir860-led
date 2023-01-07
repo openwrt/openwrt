@@ -1,0 +1,13 @@
+#!/bin/sh  
+
+[ "$INTERFACE" != wan ] && exit 0 
+                                 
+if [ "$ACTION" = ifup ]; then    
+    set_gpio 14 1            
+    set_gpio 16 0            
+fi               
+                 
+if [ "$ACTION" = ifdown ]; then
+    set_gpio 14 0              
+    set_gpio 16 1              
+fi

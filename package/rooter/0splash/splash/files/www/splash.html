@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+	<title>Home - ROOter</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="stylesheet" href="luci-static/bootstrap/cascade.css">
+	<link rel="stylesheet" media="only screen and (max-device-width: 854px)" href="luci-static/bootstrap/mobile.css" type="text/css" />
+	<link rel="stylesheet" href="luci-static/rooter/css/iconmoon_splash.css">
+	<link rel="stylesheet" href="luci-static/rooter/css/splash.css">
+
+	<link rel="SHORTCUT ICON" href="luci-static/rooter/img/favicon.gif">
+	<link rel="icon" type="image/gif" href="luci-static/rooter/img/favicon.gif">
+ </head>
+
+
+ <body id='rooterSplashHome' class='rooterSplash'>
+
+<script src="luci-static/material/js/jquery.min.js"></script>
+<script language="javascript">
+$( document ).ready(function() {
+	var div=$('.rooterHeadBox');
+	div.hide();
+	div.css('opacity',1);
+	div.fadeIn(2000);
+	
+	function anim(item,time){
+		item.animate({
+    		marginLeft: "20px",
+    		marginRight: "20px",
+  		}, time );
+	}
+	anim($('#rooterItem1'),100);
+	anim($('#rooterItem2'),400);
+	anim($('#rooterItem3'),700);
+	anim($('#rooterItem4'),1000);
+
+});
+</script>
+
+	<div class='rooterPageHead'>
+
+		<div class='rooterHeadBox'>
+			<div class='rooterLogo'></div>
+			<div class='rooterTagline'>The ROOter Project</div>
+		</div>
+	</div>
+
+	<div class='rooterPageContent'>
+
+		<div class="" id="rooterItems">
+
+			<a href='cgi-bin/luci'>
+			<div class="rooterItem" id="rooterItem1">
+				<div class="rooterItemTitle"><i class='icon icon-cog'></i> Router Login</div>
+				<div class="rooterItemDesc">Continue to login the router Web GUI.</div>
+			</div>
+			</a>
+
+			<a href='status.html'>
+			<div class="rooterItem" id="rooterItem2">
+				<div class="rooterItemTitle"><i class='icon icon-signal'></i> Live Network Status</div>
+				<div class="rooterItemDesc">View real time status for network connections.</div>
+			</div>
+			</a>
+<!--
+			<a href='https://ltehacks.com'target="_blank">
+			<div class="rooterItem" id="rooterItem3">
+				<div class="rooterItemTitle"><i class='icon icon-comments'></i> Support Forum</div>
+				<div class="rooterItemDesc">Join the LTE Hacks forum for support and tutorials.</div>
+			</div>
+			</a>
+
+			<a href='https://ltefix.com/at-commands-and-carrier-apn/' target="_blank">
+			<div class="rooterItem" id="rooterItem4">
+				<div class="rooterItemTitle"><i class='icon icon-earth'></i> AT Commands and APN's</div>
+				<div class="rooterItemDesc">Commonly used modem AT commands and carrier's APN's.</div>
+			</div>
+			</a>
+-->
+		</div>
+	</div>
+
+	<div class='rooterPageFoot'>
+		<div class="rooterFootMenu">
+			<ul>
+				<li><a href="splash.html"><i class='icon icon-home'></i> Home</a> | </li>
+				<li><a href="status.html"><i class='icon icon-signal'></i> Status</a> | </li>
+				<li><a href="cgi-bin/luci/"><i class='icon icon-cog'></i> Router Login</a></li>
+			</ul>
+		</div>
+		<div class="rooterFootCredits">
+			<a href="http://www.ofmodemsandmen.com" target="_blank">ROOter</a> Splash Page by <a href="https://github.com/soif" target="_blank">Soif</a> and <a href="https://forums.whirlpool.net.au/user/483126" target="_blank">Dairyman</a>
+		</div>
+	</div>
+
+ </body>
+</html>
+

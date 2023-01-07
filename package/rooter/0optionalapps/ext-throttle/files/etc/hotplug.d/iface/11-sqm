@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [ "$ACTION" = ifdown ]; then
+	if [ $INTERFACE = "wan" -o $INTERFACE = "wan1" -o $INTERFACE = "wan2" ]; then
+		uci set sqm.$INTERFACE.interface='0'
+		uci commit sqm
+		logger -t THROTTLE-DEBUG "$ACTION $INTERFACE"
+	fi
+fi
+
+[ -n "$DEVICE" ] || exit 0
+
+restart_sqm() {
+    /usr/lib/sqm/run.sh stop ${DEVICE}
+    /usr/lib/sqm/run.sh start ${DEVICE}
+}
+
+if [ "$ACTION" = ifup ]; then
+	if [ $INTERFACE = "wan" -o $INTERFACE = "wan1" -o $INTERFACE = "wan2" ]; then
+		uci set sqm.$INTERFACE.interface=$DEVICE
+		uci commit sqm
+		/etc/init.d/sqm enabled
+		restart_sqm
+		logger -t THROTTLE-DEBUG "$DEVICE $ACTION $INTERFACE"
+	fi
+fi
+

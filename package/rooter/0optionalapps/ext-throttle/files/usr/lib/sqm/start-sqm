@@ -1,0 +1,66 @@
+#!/bin/sh
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+#       Copyright (C) 2012-4 Michael D. Taht, Toke Høiland-Jørgensen, Sebastian Moeller
+
+
+[ -n "$IFACE" ] || exit 1
+
+. /etc/sqm/sqm.conf
+. ${SQM_LIB_DIR}/functions.sh
+. ${SQM_LIB_DIR}/defaults.sh
+STATE_FILE="${SQM_STATE_DIR}/${IFACE}.state"
+
+check_state_dir
+
+# log file for the most recent sqm instance start
+if [ "$SQM_DEBUG" -eq "1" ] ; then
+    SQM_DEBUG_LOG="${SQM_START_LOG}"
+    OUTPUT_TARGET="${SQM_DEBUG_LOG}"
+    echo "start-sqm: Log for interface ${IFACE}: $(date)"  > "${OUTPUT_TARGET}"
+fi
+
+if [ -z "${SCRIPT}" ] ; then
+    sqm_error "SCRIPT value is not defined in /etc/sqm/${IFACE}.iface.conf"
+    sqm_error "Please check your configuration and try again."
+    exit 1
+fi
+
+if [ -f "${STATE_FILE}" ]; then
+    sqm_error "SQM already activated on ${IFACE}."
+    exit 1
+fi
+
+# in case of spurious hotplug events, try double check whether the interface is really up
+if [ ! -d /sys/class/net/${IFACE} ] ; then
+    sqm_error "${IFACE} does currently not exist, not even trying to start SQM on nothing."
+    exit 1
+fi
+
+if [ "${ENABLED:-1}" -ne "1" ]; then
+    sqm_log "SQM config disabled on ${IFACE}."
+    exit 0
+fi
+
+if [ ! -f "${SQM_LIB_DIR}/$SCRIPT" ]; then
+    sqm_error "SQM script ${SCRIPT} not found!"
+    exit 1
+fi
+
+. "${SQM_LIB_DIR}/$SCRIPT"
+
+sqm_trace; sqm_trace "$(date): Starting." # Add some space and a date stamp to verbose log output and log files to separate runs
+sqm_log "Starting SQM script: ${SCRIPT} on ${IFACE}, in: ${DOWNLINK} Kbps, out: ${UPLINK} Kbps"
+
+if fn_exists sqm_start ; then
+    sqm_debug "Using script specific sqm_start function overriding the generic sqm_start_default."
+    sqm_start && write_state_file ${STATE_FILE} && sqm_log "${SCRIPT} was started on ${IFACE} successfully"
+else
+    sqm_debug "Using generic sqm_start_default function."
+    sqm_start_default && write_state_file ${STATE_FILE} && sqm_log "${SCRIPT} was started on ${IFACE} successfully"
+fi
+
+exit 0

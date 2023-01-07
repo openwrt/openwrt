@@ -1,0 +1,111 @@
+
+<script type="text/javascript">
+//<![CDATA[
+	function vpn_add()
+	{
+		var vpn_name     = div_add.querySelector("#instance_name1").value.replace(/[^\x00-\x7F]|[\s\.!@#$%^&*()\-+=\[\]{};':"\\|,<>\/?]/g,'');
+		var vpn_template = div_add.querySelector("#instance_template").value;
+		var form         = document.getElementsByName('cbi')[0];
+
+		if (!vpn_name || !vpn_name.length)
+		{
+			return info_message(vpn_output, "<%=pcdata(translate("The 'Name' field must not be empty!"))%>", 2000);
+		}
+
+		document.getElementById("instance_name1").value = vpn_name;
+		if (document.getElementById("cbi-wireguard-" + vpn_name) != null)
+		{
+			return info_message(vpn_output, "<%=pcdata(translate("Instance with that name already exists!"))%>", 2000);
+		}
+
+		if (!vpn_template || !vpn_template.length)
+		{
+			return info_message(vpn_output, "<%=pcdata(translate("Please select a valid VPN template!"))%>", 2000);
+		}
+
+		if (form)
+		{
+			form.submit();
+		}
+	}
+
+	function vpn_upload()
+	{
+		var vpn_name = div_upload.querySelector("#instance_name2").value.replace(/[^\x00-\x7F]|[\s\.!@#$%^&*()\-+=\[\]{};':"\\|,<>\/?]/g,'');
+		var vpn_file = document.getElementById("ovpn_file").value;
+		var form     = document.getElementsByName('cbi')[0];
+
+		if (!vpn_name || !vpn_name.length)
+		{
+			return info_message(vpn_output, "<%=pcdata(translate("The 'Name' field must not be empty!"))%>", 2000);
+		}
+
+		document.getElementById("instance_name2").value = vpn_name;
+		if (document.getElementById("cbi-wireguard-" + vpn_name) != null)
+		{
+			return info_message(vpn_output, "<%=pcdata(translate("Instance with that name already exists!"))%>", 2000);
+		}
+
+		if (!vpn_file || !vpn_file.length)
+		{
+			return info_message(vpn_output, "<%=pcdata(translate("Please select a valid CONF config file to upload!"))%>", 2000);
+		}
+
+		if (form)
+		{
+			form.enctype = 'multipart/form-data';
+			form.action  = '<%=url('admin/vpn/wireguard/wupload')%>';
+			form.submit();
+		}
+	}
+
+	function info_message(output, msg, timeout)
+	{
+		timeout = timeout || 0;
+		output.innerHTML = '<em>' + msg + '</em>';
+		if (timeout > 0)
+		{
+			setTimeout(function(){ output.innerHTML=""}, timeout);
+		}
+	}
+//]]>
+</script>
+
+<%+wireguard/ovpn_css%>
+
+<div class="cbi-section-node">
+	<div class="table cbi-section-table">
+		<h4><%:Template based configuration%></h4>
+		<div class="tr cbi-section-table-row" id="div_add">
+			<div class="td left">
+				<input type="text" maxlength="20" placeholder="Instance name" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.text" id="instance_name1" />
+			</div>
+			<div class="td left">
+				<select id="instance_template" name="cbi.cts.<%=self.config%>.<%=self.sectiontype%>.select">
+					<option value="" selected="selected" disabled="disabled"><%:Select template ...%></option>
+					<%- for k, v in luci.util.kspairs(self.add_select_options) do %>
+						<option value="<%=k%>"><%=luci.util.pcdata(v)%></option>
+					<% end -%>
+				</select>
+			</div>
+			<div class="td left">
+				<input class="cbi-button cbi-button-add" type="submit" onclick="vpn_add(); return false;" value="<%:Add%>" title="<%:Add template based configuration%>" /><br />
+			</div>
+		</div>
+		<h4><%:Conf configuration file upload%></h4>
+		<div class="tr cbi-section-table-row" id="div_upload">
+			<div class="td left">
+				<input type="text" maxlength="20" placeholder="Instance name" name="instance_name2" id="instance_name2" />
+			</div>
+			<div class="td left">
+				<input type="file" name="ovpn_file" id="ovpn_file" accept="application/x-wireguard-profile,.conf" />
+			</div>
+			<div class="td left">
+				<input class="cbi-button cbi-button-add" type="submit" onclick="vpn_upload(); return false;" value="<%:Upload%>" title="<%:Upload conf file%>" />
+			</div>
+		</div>
+	</div>
+	<div class="vpn-output">
+		<span id="vpn_output"></span>
+	</div>
+</div>

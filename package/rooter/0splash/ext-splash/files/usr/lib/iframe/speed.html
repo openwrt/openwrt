@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"> 
+<script>
+		
+	function applyc(btn)
+	{
+		//window.location.reload(true);
+		var iframe = document.getElementById('apply4');
+		iframe.src = iframe.src;
+	}
+	
+	function applys(btn)
+	{
+		document.getElementById("rooterItemss").style.visibility="hidden";
+		document.getElementById("rooterItemss").style.display = "none";
+		document.getElementById("rooterItemss1").style.visibility="hidden";
+		document.getElementById("rooterItemss1").style.display = "none";
+		document.getElementById("rooterItemss2").style.visibility="hidden";
+		document.getElementById("rooterItemss2").style.display = "none";
+		document.getElementById("rooterItemss3").style.visibility="hidden";
+		document.getElementById("rooterItemss3").style.display = "none";
+		document.getElementById("rooterItems").style.visibility="visible";
+		document.getElementById("rooterItems").style.display = "block";
+		document.getElementById("rooterItems1").style.visibility="visible";
+		document.getElementById("rooterItems1").style.display = "block";
+		document.getElementById("msCell_speed").style.visibility="hidden";
+		document.getElementById("msCell_speed").style.display = "none";
+		//document.getElementById("apply2").style.visibility="visible";
+		//document.getElementById("apply2").style.display = "block";
+	}
+	// Selecting the iframe element
+	var frame = document.getElementById("Iframe");
+	  
+	// Adjusting the iframe height onload event
+	frame.onload = function()
+	// function execute while load the iframe
+	{
+	  // set the height of the iframe as 
+	  // the height of the iframe content
+	  frame.style.height = 
+	  frame.contentWindow.document.body.scrollHeight + 'px';
+	   
+
+	 // set the width of the iframe as the 
+	 // width of the iframe content
+	 frame.style.width  = 
+	  frame.contentWindow.document.body.scrollWidth+'px';
+		  
+	}
+
+</script>
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" href="rooter/css/iconmoon_splash.css">
+	<link rel="stylesheet" href="rooter/css/splash.css">
+	<link rel="SHORTCUT ICON" href="luci-static/rooter/img/favicon.gif">
+	<link rel="icon" type="image/gif" href="luci-static/rooter/img/favicon.gif">
+</head>
+
+<body style="background-color: rgba(224,224,224,0.95);" >
+
+	<table width="100%" height="100%" border="0" id="apply3" >
+		<tr id='msCell_speed'>
+			<td align="middle"><h2><i class="icon icon-signal" ></i> OpenSpeedTest <span class="msCell"><span></span></span></h2></td>
+		</tr>
+		<tr>
+			<td><div class="" id="rooterItemss1"></div></td>
+		</tr>
+		<tr>
+			<td><div class="" id="rooterItemss2"></div></td>
+		</tr>
+		<tr>
+			<td><div class="" id="rooterItemss3"></div></td>
+		</tr>
+		<tr>
+			<td align="middle">
+				<div class="" id="rooterItemss">
+				<a onclick="return applys(this)">
+					<div class="rooterItem" id="rooterItem1">
+						<div class="rooterItemTitle">
+							<i class='icon icon-cog'></i> Click to Start Speed Test
+						</div>
+					</div>
+				<a>
+				</div>
+			</td>
+		</tr>
+		
+		<tr>
+			<td align="middle">
+				<div id="rooterItems"  style="visibility:hidden;display:none;" >
+					<a><iframe id="apply4" src="https://openspeedtest.com/Get-widget.php?Auto=1" width="90%" height="320" style="border:2px solid black;" title="OpenSpeedTest"></iframe></a>
+				</div>
+			</td>
+		</tr>
+		<tr>	
+			<td align="middle">
+				<div id="rooterItems1"  style="visibility:hidden;display:none;" >
+					<a onclick="return applyc(this)">
+					<div class="rooterItemsp" id="rooterItem1">
+						<div class="rooterItemTitle">
+							<i class='icon icon-cog'></i> Click to Test Again
+						</div>
+					</div>
+				<a>
+				</div>
+			</td>
+		</tr>
+ 	</table>
+	
+
+</body>
+</html>

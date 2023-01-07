@@ -1,0 +1,186 @@
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	function savescript(btn)
+	{
+		var t = document.getElementById("script").value;
+		if ( t.length == 0 )
+		{
+			alert("No script name!!");
+			return false;
+		}
+		var tp = document.getElementById("path").value;
+		if ( t.length == 0 )
+		{
+			alert("No script path!!");
+			return false;
+		}
+		var txt = document.getElementById("txt").value;
+		if ( txt.length == 0 )
+		{
+			alert("Script is blank!!");
+			return false;
+		}
+		var length = tp.length;
+		if ( tp.substr(length-1) != "/" )
+		{
+			tp = tp.concat("/");
+		}
+		var s = tp.concat(t);
+		s = s.concat("|");
+		s = s.concat(txt);
+		XHR.get('<%=luci.dispatcher.build_url("admin", "system", "save_script")%>',
+			{ set: s },
+			function(x, rv)
+			{
+				name = rv.name;
+				text = name.concat(" has been saved.")
+				alert(text);
+			}
+		);
+
+		return false;
+	}
+
+	function delscript(btn)
+	{
+		var t = document.getElementById("script").value;
+		if ( t.length == 0 )
+		{
+			alert("No script name!!");
+			return false;
+		}
+		var tp = document.getElementById("path").value;
+		if ( t.length == 0 )
+		{
+			alert("No script path!!");
+			return false;
+		}
+		var length = tp.length;
+		if ( tp.substr(length-1) != "/" )
+		{
+			tp = tp.concat("/");
+		}
+		var s = tp.concat(t);
+		var del = "Delete ";
+		del = del.concat(s);
+		del = del.concat(" ?");
+		var r=confirm(del);
+		if (r==false)
+  		{
+  			return false;
+  		}
+
+		XHR.get('<%=luci.dispatcher.build_url("admin", "system", "del_script")%>',
+			{ set: s },
+			function(x, rv)
+			{
+				name = rv.name;
+				text = name.concat(" has been deleted.")
+				alert(text);
+				document.getElementById("path").value="/usr/lib/scripts";
+				document.getElementById("txt").value="";
+				document.getElementById("script").value="";
+			}
+		);
+
+		return false;
+	}
+
+	function newscript(btn)
+	{
+		document.getElementById("path").value="/usr/lib/scripts";
+		document.getElementById("txt").value="";
+		document.getElementById("script").value="";
+		return false;
+	}
+
+	function loadscript(btn)
+	{
+		var t = document.getElementById("script").value;
+		if ( t.length == 0 )
+		{
+			alert("No script name!!");
+			return false;
+		}
+		var tp = document.getElementById("path").value;
+		if ( t.length == 0 )
+		{
+			alert("No script path!!");
+			return false;
+		}
+		document.getElementById("txt").value="";
+		var length = tp.length;
+		if ( tp.substr(length-1) != "/" )
+		{
+			tp = tp.concat("/");
+		}
+		var s = tp.concat(t);
+		XHR.get('<%=luci.dispatcher.build_url("admin", "system", "load_script")%>',
+			{ set: s },
+			function(x, rv)
+			{
+				document.getElementById("txt").value=rv.text;
+			}
+		);
+		return false;
+	}
+
+	function initial(btn)
+	{
+		document.getElementById("path").value="/usr/lib/scripts";
+		document.getElementById("txt").value="";
+		document.getElementById("script").value="";
+
+		return false;
+	}
+
+	window.onload=initial;
+
+//]]></script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<div class="cbi-map" id="cbi-sms">
+<h2><a id="content" name="content"><%:Script Editing%></a></h2>
+<div class="cbi-map-descr"><%:Create, Edit and Save Scripts%></div>
+<fieldset class="cbi-section" id="cbi-read">
+	<table id="sendmsg" width="600"  border="0" style="display:table;">
+  	<tr>
+    		<td width="15%"><div align="left"><strong><%:Script Name :%></strong></div></td>
+    		<td width="70%"><input type="text" name="script" id="script" maxlength="50"></input></td>
+    		<td width="15%">&nbsp;</td>
+  	</tr>
+	</table>
+	<table id="sendmsg" width="600"  border="0" style="display:table;">
+  	<tr>
+    		<td width="15%"><div align="left"><strong><%:Path to Script :%></strong></div></td>
+    		<td width="70%"><input type="text" name="path" id="path" maxlength="100"></input></td>
+    		<td width="15%">&nbsp;</td>
+  	</tr>
+	</table>
+
+	<table id="sendtxt" width="700"  border="0" style="display:table;">
+  	<tr>
+    		<td width="100%">
+		<textarea name="txt" id="txt" rows="6" style="width: 600px;" maxlength="10000"></textarea> 
+		</td>
+	</tr>
+	</table>
+
+	<table id="sendbtn" width="550"  border="0" style="display:table;">
+	<tr>
+    		<td width="5%"><input type="button" id="newbtn" class="cbi-button cbi-button-apply" value="<%:New%>" onclick="return newscript()" /></td>
+		<td width="5%"><input type="button" id="loadbtn" class="cbi-button cbi-button-apply" value="<%:Load%>" onclick="return loadscript()" /></td>
+    		<td width="5%"><input type="button" id="savebtn" class="cbi-button cbi-button-apply" value="<%:Save%>" onclick="return savescript()" /></td>
+		<td width="5%"><input type="button" id="delbtn" class="cbi-button cbi-button-apply" value="<%:Delete%>" onclick="return delscript()" /></td>
+		<td width="80%">&nbsp;</td>
+  	</tr>
+	</table>
+
+</fieldset>
+
+</div>
+</form>
+<%+footer%>

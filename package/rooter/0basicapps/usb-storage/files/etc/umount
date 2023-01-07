@@ -1,0 +1,18 @@
+#!/bin/sh
+
+log() {
+	logger -t "Umount" "$@"
+}
+
+sleep 5
+DRV=$(uci get umount.umount.drive)
+if [ -z $DRV ]; then
+	exit 0
+fi
+
+umount -l /mnt/$DRV
+
+rm -rf /mnt/$DRV
+
+uci set umount.umount.drive=''
+uci commit umount

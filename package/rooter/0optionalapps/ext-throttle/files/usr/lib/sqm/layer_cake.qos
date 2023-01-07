@@ -1,0 +1,52 @@
+# Cero3 Shaper
+# A cake shaper and AQM solution that allows several diffserv marking schemes
+# for ethernet gateways
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+#       Copyright (C) 2012-5 Michael D. Taht, Toke Høiland-Jørgensen, Sebastian Moeller
+
+
+#sm: TODO pass in the cake diffserv keyword
+
+. ${SQM_LIB_DIR}/defaults.sh
+QDISC=cake
+
+# Default traffic classication is passed in INGRESS_CAKE_OPTS and EGRESS_CAKE_OPTS, defined in defaults.sh now
+
+
+egress() {
+    SILENT=1 $TC qdisc del dev $IFACE root
+    $TC qdisc add dev $IFACE root $( get_stab_string ) cake \
+        bandwidth ${UPLINK}kbit $( get_cake_lla_string ) ${EGRESS_CAKE_OPTS} ${EQDISC_OPTS}
+
+}
+
+
+ingress() {
+
+    SILENT=1 $TC qdisc del dev $IFACE handle ffff: ingress
+    $TC qdisc add dev $IFACE handle ffff: ingress
+
+    SILENT=1 $TC qdisc del dev $DEV root
+
+    [ "$IGNORE_DSCP_INGRESS" -eq "1" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS besteffort"
+    [ "$ZERO_DSCP_INGRESS" -eq "1" ] && INGRESS_CAKE_OPTS="$INGRESS_CAKE_OPTS wash"
+
+    $TC qdisc add dev $DEV root $( get_stab_string ) cake \
+        bandwidth ${DOWNLINK}kbit $( get_cake_lla_string ) ${INGRESS_CAKE_OPTS} ${IQDISC_OPTS}
+
+    $IP link set dev $DEV up
+
+    # redirect all IP packets arriving in $IFACE to ifb0
+
+    $TC filter add dev $IFACE parent ffff: protocol all prio 10 u32 \
+	match u32 0 0 flowid 1:1 action mirred egress redirect dev $DEV
+}
+
+sqm_prepare_script() {
+    do_modules
+    verify_qdisc $QDISC "cake" || return 1
+}

@@ -1,0 +1,27 @@
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	function generateconf()
+	{
+			XHR.get('<%=luci.dispatcher.build_url("admin", "vpn", "generateconf")%>',
+				null,
+				function(x, rv)
+				{
+					window.open('http://'+window.location.hostname+'/package/wgconf.tar.gz', '_self')
+				}
+			);
+	}
+	
+	
+//]]></script>
+
+<fieldset class="cbi-section" id="cbi-family">
+	<table width="550"  border="0">
+	<tr>
+    	<td width="20%">&nbsp;</td>
+		<td width="17%"><input type="button" type="submit" id="generate" class="cbi-button cbi-button-apply" value="<%:Generate Conf Files%>" onclick="return generateconf()" /></td>
+		<td width="17%">&nbsp;</td>
+    	<td width="46%">&nbsp;</td>
+  	</tr>
+	</table>
+</fieldset>

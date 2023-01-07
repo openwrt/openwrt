@@ -1,0 +1,49 @@
+#!/bin/sh /etc/rc.common
+# Author Qier LU <lvqier@gmail.com>
+
+START=55
+
+DNSMASQ="/etc/dnsmasq.conf"
+
+gen_config_file() {
+    local section="${1}"
+    config_get ipset_name "${section}" "ipset_name"
+    sname="#$ipset_name-1"
+    ename="#$ipset_name-2"
+    sed -i "/$sname/,/$ename/d" "$DNSMASQ" 
+    config_get enabled "${section}" "enabled"
+    if [ -z $enabled ]; then
+	enabled=0
+    fi
+    if [ ${enabled} -eq 0 ]
+    then
+        return
+    fi
+
+    handle_domain() {
+        local domain="${1}"
+        ipline=$ipline"${domain}/"
+    }
+	
+	ipline="ipset=/"
+	echo "#$ipset_name-1" >> "$DNSMASQ"
+    	config_list_foreach "${section}" "managed_domain" handle_domain
+	echo "$ipline${ipset_name}" >> "$DNSMASQ"
+	echo "#$ipset_name-2" >> "$DNSMASQ"
+	ipset -N -exist "$ipset_name" iphash
+	/etc/init.d/dnsmasq reload
+}
+
+gen_config_files() {
+    config_load 'dnsmasq-ipset'
+    config_foreach gen_config_file 'ipsets'
+}
+
+start() {
+    gen_config_files
+}
+
+reload() {
+    sleep 5
+    gen_config_files
+}

@@ -1,0 +1,181 @@
+<%+header%>
+<%
+local sys = require "luci.sys"
+local utl = require "luci.util" 
+local fs = require "nixio.fs"
+
+function showicon(lck)
+	if lck == 0 then
+		return resource .. "/icons/unlock1.png"
+	else
+		return resource .. "/icons/lock1.png"
+	end
+end
+
+-%>
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	var lockb = 0;
+	var full;
+	
+	XHR.get('<%=luci.dispatcher.build_url("admin", "menu", "getmenu")%>',
+			null,
+			function(x, rv)
+			{
+				document.getElementById("password").value=rv.password;
+				full = rv.full;
+				if ( full == "0" )
+				{
+					document.getElementById("idf").style.visibility="visible";
+					document.getElementById("idn").style.visibility="hidden";
+					document.getElementById("idn").style.display = "none";
+				}
+				else
+				{
+					document.getElementById("idf").style.visibility="hidden";
+					document.getElementById("idf").style.display = "none";
+					document.getElementById("idn").style.visibility="visible";
+				}
+			}
+				
+	);
+
+	function done() { 
+		document.getElementById("popup").style.display = "none";
+		passw = document.getElementById("password").value;
+		var r = document.getElementById("pass").value;
+		if ( r == null )
+
+		{
+			document.getElementById("pass").value="";
+			return false;
+		}
+		if ( r == passw )
+		{
+			// change menu type here
+			XHR.get('<%=luci.dispatcher.build_url("admin", "menu", "setmenu")%>',
+			{ set: full },
+				function()
+				{
+					document.getElementById("pass").value="";
+					window.location.reload(false);
+				}
+			);
+		}
+		else
+		{
+			alert("<%:Incorrect Password!!!%>");
+			document.getElementById("pass").value="";
+		}
+		document.getElementById("lockbtn").disabled=false;
+		document.getElementById("unlockbtn").disabled=false;
+		return false;
+	};
+
+	function unlock(btn)
+	{
+		document.getElementById("popup").style.display = "block";
+		document.getElementById("lockbtn").disabled=true;
+		document.getElementById("unlockbtn").disabled=true;
+		return false;
+	}
+	
+	function lock(btn)
+	{
+		XHR.get('<%=luci.dispatcher.build_url("admin", "menu", "setmenu")%>',
+		{ set: full },
+			function()
+			{
+				document.getElementById("pass").value="";
+				window.location.reload(false);
+			}
+		);
+		document.getElementById("lockbtn").disabled=false;
+		document.getElementById("unlockbtn").disabled=false;
+		return false;
+	}
+	
+//]]></script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<div class="cbi-map" id="cbi-modem">
+<h2><a id="content" name="content"><%:Unlock or Lock Administrative Menus%></a></h2>
+<div class="cbi-map-descr"> </div>
+<head>
+     <style>
+	  #popup {
+		width:560px;
+		height:190px;
+		padding:20px;
+		background-color:gainsboro;  
+		border-style : solid;	
+		position:fixed;
+		top : 40%;
+		margin-left: auto;
+		margin-right: auto;
+		left: 0;
+		right: 0;
+		text-align: center;
+		display:none;
+	}
+    </style>
+</head>
+
+<fieldset class="cbi-section" id="cbi-mod">
+		
+	<table style="visibility:hidden" width="700" border="0" id="atpass">
+	<tr>
+		<td width="10%"><div id="password" align="right"></div></td>
+	</tr>
+	</table>
+	
+	<div id="popup">
+		<table width="500" border="0">
+			<tr>
+				<td width="50px"><div><%:Enter Password to Unlock Extra Menus%></div></td>
+			</tr>
+			<tr>
+				<td width="200px"><input id="pass" type="password"/></td>
+			</tr>
+			<tr>
+				<td><input type="image" src="<%=showicon(0)%>" style="width:48px;height:48px;" onclick="return done()" /></td>
+			</tr>
+		</table>
+	</div>
+	
+	<table width="465" border="0" id="idf" style="visibility:hidden">
+		<tr>
+			<td width="15%"></td>
+			<td width="20%"><div align="center" style="font-size:1.5em" id="netidt"><strong><%:Admin Menus are Locked.%></strong></div></td>
+			<td width="5%"></td>
+			<td width="60%"></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><div align="center"><strong><%:You must enter a password to unlock the Admin menus.%></strong></div></td>
+			<td><input type="image" align="center" id="lockbtn" name="lockbtn" src="<%=showicon(1)%>" style="width:48px;height:48px;" onclick="return unlock(this)" /></td>
+			<td></td>
+		</tr>
+	</table>
+	
+	<table width="465" border="0" id="idn" style="visibility:hidden">
+		<tr>
+			<td width="15%"></td>
+			<td width="20%"><div align="center" style="font-size:1.5em" id="netidt"><strong><%:Admin Menus are Unlocked.%></strong></div></td>
+			<td width="5%"></td>
+			<td width="60%"></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><div align="center"><strong><%:Click button to lock the Admin menus.%></strong></div></td>
+			<td><input type="image" align="center" id="unlockbtn" name="unlockbtn" src="<%=showicon(0)%>" style="width:48px;height:48px;" onclick="return lock(this)" /></td>
+			<td></td>
+		</tr>
+	</table>
+	
+</fieldset>		
+
+</div>
+</form>
+<%+footer%>

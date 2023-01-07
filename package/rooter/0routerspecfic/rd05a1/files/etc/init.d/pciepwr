@@ -1,0 +1,18 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 OpenWrt.org
+
+START=87
+USE_PROCD=1
+
+log() {
+	logger -t "RD05A1 PCie Power" "$@"
+}
+
+start_service()
+{
+	gpio=13
+	echo $gpio > /sys/class/gpio/export
+	echo out > /sys/class/gpio/gpio${gpio}/direction
+	echo 1 > /sys/class/gpio/gpio${gpio}/value
+	log "Turn on PCie Power"
+}

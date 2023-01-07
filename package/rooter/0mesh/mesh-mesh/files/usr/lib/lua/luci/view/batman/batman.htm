@@ -1,0 +1,300 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2012 Jo-Philipp Wich <xm@subsignal.org>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id$
+
+-%>
+
+<% luci.http.prepare_content("text/html") %>
+
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/cbi.js"></script>
+<script type="text/javascript" src="<%=resource%>/dracula/raphael-min.js"></script>
+<script type="text/javascript" src="<%=resource%>/dracula/dracula_graffle.js"></script>
+<script type="text/javascript" src="<%=resource%>/dracula/dracula_graph.js"></script>
+<script type="text/javascript" src="<%=resource%>/jquery/jquery-1.4.js"></script>
+<script type="text/javascript">//<![CDATA[
+	function gw_apply(field)
+	{
+		var mode, val;
+
+		if (field.type == 'radio') {
+			val  = '';
+			mode = field.value;
+		}
+		else {
+			val  = field.value;
+			mode = document.getElementById('gw_gateway').checked ? 'server' : 'client';
+		}
+
+		document.getElementById('gw_apply').style.display = '';
+		document.getElementById('gw_form').style.display = 'none';
+		document.getElementById('gw_form_val').parentNode.style.display = (mode != 'off') ? '' : 'none';
+
+		XHR.get('<%=luci.dispatcher.build_url("batman/gw")%>/'+mode+'/'+encodeURIComponent(val), null,
+			function(x, info) {
+				document.getElementById('gw_form').style.display = '';
+				document.getElementById('gw_apply').style.display = 'none';
+				document.getElementById('gw_form_val').value = info;
+			});
+	}
+
+
+	XHR.poll(5, '<%=luci.dispatcher.build_url("batman/json")%>', null,
+		function(x, info)
+		{
+			var t;
+
+			var og = info.originators;
+			var gw = info.gateways;
+			var server = info.status;
+			
+			if ( server == 'Client' )
+			{
+				document.getElementById('status').innerHTML="No local Internet access, running as Client";
+			}
+			else
+			{
+				document.getElementById('status').innerHTML="Local Internet access, running as Gateway Server";
+			}
+
+			if (!!(t = document.getElementById('originator_table')))
+			{
+				/* clear all rows */
+				while (t.rows.length > 1)
+					t.rows[0].parentNode.deleteRow(1);
+
+				og.sort(function(a, b) { return parseInt(b[2]) - parseInt(a[2]) });
+
+				for (var i = 0; i < og.length; i++)
+				{
+					var tr = t.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + (1 + (i % 2));
+
+					var icon;
+					if (og[i][2] < 64)
+						icon = "<%=resource%>/icons/signal-0-25.png";
+					else if (og[i][2] < 128)
+						icon = "<%=resource%>/icons/signal-25-50.png";
+					else if (og[i][2] < 192)
+						icon = "<%=resource%>/icons/signal-50-75.png";
+					else
+						icon = "<%=resource%>/icons/signal-75-100.png";
+
+					tr.insertCell(-1).innerHTML = String.format(
+						'<img src="%s" title="<%:Quality%>: %d / 255" style="vertical-align:middle" /> %d/255',
+						icon, og[i][2], og[i][2]
+					);
+
+					if ( og[i][3] == "Here" )
+					{
+						tr.insertCell(-1).innerHTML = '<strong>' + og[i][0] + '</strong>' ;
+						og[i][3] = " ";
+					}
+					else
+					{
+						tr.insertCell(-1).innerHTML = og[i][0];
+					}
+					tr.insertCell(-1).innerHTML = String.format('%dms', og[i][1]);
+					tr.insertCell(-1).innerHTML = og[i][4];
+					tr.insertCell(-1).innerHTML = og[i][3];
+				}
+
+				if (t.rows.length == 1)
+				{
+					var tr = t.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row';
+
+					var td = tr.insertCell(-1);
+						td.colSpan = 3;
+						td.innerHTML = '<br /><em><%:There are no active neighbors%></em>';
+				}
+			}
+
+			if (!!(t = document.getElementById('gateway_table')))
+			{
+				/* clear all rows */
+				while (t.rows.length > 1)
+					t.rows[0].parentNode.deleteRow(1);
+
+				gw.sort(function(a, b) { return a[0] > b[0] });
+
+				for (var i = 0; i < gw.length; i++)
+				{
+					var tr = t.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row cbi-rowstyle-' + (1 + (i % 2));
+
+					tr.insertCell(-1).innerHTML = gw[i][0]
+						? String.format('<strong>%s (active)</strong>', gw[i][1])
+						: gw[i][1];
+
+					tr.insertCell(-1).innerHTML = gw[i][6];
+					tr.insertCell(-1).innerHTML = String.format('%d/255', gw[i][2]);
+					tr.insertCell(-1).innerHTML = gw[i][4];
+					tr.insertCell(-1).innerHTML = gw[i][3];
+				}
+
+				if (t.rows.length == 1)
+				{
+					var tr = t.rows[0].parentNode.insertRow(-1);
+						tr.className = 'cbi-section-table-row';
+
+					var td = tr.insertCell(-1);
+						td.colSpan = 3;
+						td.innerHTML = '<br /><em><%:There are no active mesh gateways%></em>';
+				}
+			}
+		}
+	);
+	
+	XHR.get('<%=luci.dispatcher.build_url("batman/topo/json")%>', null,
+		function(x, data)
+		{
+			var g = new Graph();
+
+
+			var render = function(r, node) {
+				var color = Raphael.getColor();
+				var rect = r.rect(node.point[0]-50, node.point[1]-10, 100, 20)
+					   .attr({"fill": color, "stroke": color, "stroke-width": 2, r : "9px"})
+				var set = r.set().
+					push(rect).
+					push(r.text(node.point[0], node.point[1], node.label || node.id)
+						.attr({"fill": "#000"}));
+				return set;
+			    };
+
+			for (var i = 0; i < (data.length-1); i++)
+			{
+				// node->node
+				if (data[i].router && data[i].neighbor) {
+					g.addNode(data[i].router, { render: render });
+					g.addNode(data[i].neighbor, { render: render });
+					g.addEdge(data[i].router, data[i].neighbor,
+						{ label: parseFloat(data[i].label).toFixed(1),
+						 directed: true, stroke: '#aaaaaa' });
+					}
+				else if (data[i].secondary) {
+					g.addNode(data[i].secondary, { render: render });
+					g.addNode(data[i].of, { render: render });
+					g.addEdge(data[i].secondary, data[i].of,
+						{ fill: "#000" } );
+					}
+			}
+
+			document.getElementById('canvas').innerHTML = "";
+			var canvas = document.getElementById('canvas');
+
+			var layouter = new Graph.Layout.Spring(g);
+			layouter.layout();
+
+			var renderer = new Graph.Renderer.Raphael(canvas.id, g, canvas.offsetWidth, canvas.offsetHeight);
+			renderer.draw();
+		}
+	);
+	
+	XHR.poll(25, '<%=luci.dispatcher.build_url("batman/topo/json")%>', null,
+		function(x, data)
+		{
+			var g = new Graph();
+
+
+			var render = function(r, node) {
+				var color = Raphael.getColor();
+				var rect = r.rect(node.point[0]-50, node.point[1]-10, 100, 20)
+					   .attr({"fill": color, "stroke": color, "stroke-width": 2, r : "9px"})
+				var set = r.set().
+					push(rect).
+					push(r.text(node.point[0], node.point[1], node.label || node.id)
+						.attr({"fill": "#000"}));
+				return set;
+			    };
+
+			for (var i = 0; i < (data.length-1); i++)
+			{
+				// node->node
+				if (data[i].router && data[i].neighbor) {
+					g.addNode(data[i].router, { render: render });
+					g.addNode(data[i].neighbor, { render: render });
+					g.addEdge(data[i].router, data[i].neighbor,
+						{ label: parseFloat(data[i].label).toFixed(1),
+						 directed: true, stroke: '#aaaaaa' });
+					}
+				else if (data[i].secondary) {
+					g.addNode(data[i].secondary, { render: render });
+					g.addNode(data[i].of, { render: render });
+					g.addEdge(data[i].secondary, data[i].of,
+						{ fill: "#000" } );
+					}
+			}
+
+			document.getElementById('canvas').innerHTML = "";
+			var canvas = document.getElementById('canvas');
+
+			var layouter = new Graph.Layout.Spring(g);
+			layouter.layout();
+
+			var renderer = new Graph.Renderer.Raphael(canvas.id, g, canvas.offsetWidth, canvas.offsetHeight);
+			renderer.draw();
+		}
+	);
+//]]></script>
+
+<h2><a id="content" name="content"><%:Mesh Status%></a></h2>
+
+<fieldset class="cbi-section">
+	<table width="550"  border="0">
+	<tr>
+		<td width="17%"><div align="right"><strong>Internet Status : </strong></div></td>
+    		<td width="19%"><ul id="status"></ul></td>
+    		<td width="65%"></td>
+  	</tr>
+	</table>
+</fieldset>
+
+<fieldset class="cbi-section">
+	<legend><%:Active Mesh Nodes%></legend>
+	<table class="cbi-section-table" id="originator_table">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell"><%:Link Quality%></th>
+			<th class="cbi-section-table-cell"><%:MAC-Address%></th>
+			<th class="cbi-section-table-cell"><%:Last Seen%></th>
+			<th class="cbi-section-table-cell"><%:Interface%></th>
+			<th class="cbi-section-table-cell"><%:Next Hop%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td colspan="3"><em><br /><%:Collecting data...%></em></td>
+		</tr>
+	</table>
+</fieldset>
+
+<fieldset class="cbi-section">
+	<legend><%:Other Mesh Nodes with Internet Access%></legend>
+	<table class="cbi-section-table" id="gateway_table">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell"><%:MAC-Address%></th>
+			<th class="cbi-section-table-cell"><%:Speed%></th>
+			<th class="cbi-section-table-cell"><%:Link Quality%></th>
+			<th class="cbi-section-table-cell"><%:Interface%></th>
+			<th class="cbi-section-table-cell"><%:Next Hop%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td colspan="3"><em><br /><%:Collecting data...%></em></td>
+		</tr>
+	</table>
+</fieldset>
+
+<fieldset class="cbi-section">
+	<legend><%:Visualization%></legend>
+	<div id="canvas" style="min-width:800px; min-height:600px"></div>
+</fieldset>
+
+<%+footer%>

@@ -1,0 +1,22 @@
+<script type="text/javascript">//<![CDATA[
+
+	XHR.get('<%=luci.dispatcher.build_url("admin", "services", "get_ids")%>', null,
+		function(x, rv)
+		{
+			e = document.getElementById('network_text');
+			e.innerHTML = rv.netid;
+			e1 = document.getElementById('routerid_text');
+			e1.innerHTML = rv.routerid;
+		}
+	);
+
+//]]></script>
+
+<fieldset id="interface_field" class="cbi-section">
+	<legend><%:Router Info%></legend>
+	<table width="100%" cellspacing="10">
+		<tr><td width="33%"><%:Network ID%></td><td id="network_text"><img src="<%=resource%>/icons/loading.gif" alt="<%:Loading%>" style="vertical-align:middle" /> Collecting data...</td></tr>
+		<tr><td width="33%"><%:Router ID%></td><td id="routerid_text"></td></tr>
+	</table>
+</fieldset>
+

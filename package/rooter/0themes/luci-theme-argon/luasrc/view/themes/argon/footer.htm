@@ -1,0 +1,44 @@
+<%#
+	Argon is a clean HTML5 theme for LuCI. It is based on luci-theme-material Argon Template
+
+	luci-theme-argon
+	Copyright 2020 Jerrykuku <jerrykuku@qq.com>
+
+	Have a bug? Please create an issue here on GitHub!
+	https://github.com/jerrykuku/luci-theme-argon/issues
+
+	luci-theme-material: 
+	Copyright 2015 Lutty Yang <lutty@wcan.in>
+	
+	Agron Theme
+	https://demos.creative-tim.com/argon-dashboard/index.html 
+
+	Licensed to the public under the Apache License 2.0 
+-%>
+
+<% local ver = require "luci.version" %>
+</div>
+<footer class="mobile-hide">
+	<div>
+		<a class="luci-link" href="https://github.com/openwrt/luci">Powered by <%= ver.distversion %>
+		<ul class="breadcrumb pull-right" id="modemenu" style="display:none"></ul>
+	</div>
+</footer>
+</div>
+</div>
+<script>
+	// thanks for Jo-Philipp Wich <jow@openwrt.org>
+	var luciLocation = <%= luci.http.write_json(luci.dispatcher.context.path) %>;
+	var winHeight = $(window).height();
+	$(window).resize(function () {
+		var winWidth = $(window).width()
+		if(winWidth < 600){
+			var newHeight = $(this).height();
+			var keyboradHeight = newHeight - winHeight;
+			$(".ftc").css("bottom", keyboradHeight + 30);
+		}
+	})
+</script>
+<script src="<%=media%>/js/script.js?v=2.2.5"></script>
+</body>
+</html>

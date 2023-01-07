@@ -1,0 +1,311 @@
+/* @override http://src.dev.lo.lo/ROOter/www/luci-static/rooter/css/splash.css */
+
+/*
+	CSS for ROOter splash pages
+	Copyright Francois Dechery
+	https://github.com/soif
+*/
+
+/* @group Splash Pages 
+--------------------------------------------------*/
+
+.rooterSplash{
+	padding: 0;
+	background: #F0F0F0;
+}
+.rooterPageHead{
+	background: #55F;
+	padding: 10px 5px;
+	background: rgb(140,140,255);
+	background: -moz-linear-gradient(top, rgba(140,140,255,1) 0%, rgba(85,85,255,1) 100%);
+	background: -webkit-linear-gradient(top, rgba(140,140,255,1) 0%,rgba(85,85,255,1) 100%);
+	background: linear-gradient(to bottom, rgba(140,140,255,1) 0%,rgba(85,85,255,1) 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#8c8cff', endColorstr='#5555ff',GradientType=0 );
+	border-bottom: 1px solid rgba(0,0,0,0.7);
+
+}
+.rooterPageContent{
+	border-top: 1px solid rgba(255,255,255,0.8);
+	border-bottom: 1px solid rgba(0,0,0, 0.1);
+	padding: 25px 10px;
+	max-width: 950px;
+	margin: auto;
+}
+.rooterHeadTitle{
+	color: #fff;
+	text-align: center;
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-size: 32px;
+	line-height: 120%;
+	text-shadow: -1px -1px 2px rgba(0,0,0,0.5);
+}
+.rooterPageFoot{
+	border-top: 1px solid rgba(255,255,255,0.8);
+	margin-top: 20px;
+	padding: 10px 10px;
+	max-width: 950px;
+	margin: auto;
+	font-size: 11px;
+}
+.rooterFootMenu{
+	float: left;
+	margin-bottom: 10px;
+}
+.rooterFootMenu A{
+	text-decoration: none;
+}
+.rooterFootMenu A:hover{
+	color: #000;
+}
+.rooterFootMenu UL{
+	padding: 0;
+	margin: 0;
+	overflow: hidden;
+	display: inline-block;
+}
+.rooterFootMenu LI{
+	float: left;
+	padding: 0;
+	margin: 0;
+	list-style: none;	
+}
+.rooterFootMenu LI A{
+	padding: 0 10px;
+	color: #555;	
+}
+.rooterFootMenu LI:first-child A{
+	padding-left: 0;
+}
+.rooterFootCredits{
+	float: right;
+	padding: 0;
+	margin: 0;
+	color: #999;
+	text-align: right;
+}
+.rooterFootCredits A{
+	color: #777;
+}
+/* @end */
+
+
+
+
+/* @group Page: Home
+--------------------------------------------------*/
+
+
+/* @group Logo
+++++++++++++++++++ */
+.rooterHeadBox{
+	font-size: 50px;
+	font-family: Georgia, "Times New Roman", Times, serif;
+	color: #fff;
+	line-height: 100%;
+	overflow: hidden;
+	width: 700px;
+	margin: auto;
+	padding-top: 10px;
+	opacity: 0;
+}
+.rooterLogo{
+	background: url("../img/kangaroo_800.png") no-repeat;
+	background-size: 100%;
+	float: left;
+	height: 110px;
+	width: 250px;
+	opacity: 0.4;
+}
+.rooterTagline{
+	margin-left: 100px;
+	padding-left: 10px;
+	text-shadow: 2px 2px 3px rgba(0,0,0,0.3);
+}
+
+/* @end */
+
+@media only screen and (max-width: 600px) {
+    .rooterHeadBox{
+		text-align: center;
+		width: auto;
+	}
+    .rooterLogo{
+		display: inline-block;
+		float: none;
+	}
+    .rooterTagline {
+        display: none;
+    }
+    .rooterFootCredits,
+    .rooterFootMenu{
+		float: none;
+		text-align: center;
+	}
+}
+
+#rooterItems{
+	clear: both;
+	max-width: 800px ;
+	margin: auto;
+}
+.rooterItem{
+	overflow: hidden;
+	border: 1px solid #EEE;
+	border-color: #EEE #DDD #DDD #EEE;
+	padding: 20px 15px;
+	margin-bottom: 20px;
+	border-radius: 8px;
+	background-color: #fff;
+}
+.rooterItem:hover{
+	background-color: #F3F3FF;
+	border-color: #AAA;
+}
+.rooterItemTitle{
+	float: left;
+	font-size: 18px;
+	font-weight: bold;
+	padding-right: 10px;
+	color: #000;
+	line-height: 2em;
+}
+.rooterItemTitle .icon{
+	color: #55F;
+	margin-right: 8px;
+	font-size: 2em;
+	vertical-align: middle;
+}
+#rooterItems A{
+	text-decoration: none;	
+}
+.rooterItemDesc{
+	font-size: 14px;
+	color: #777;
+	margin-left: 220px;
+	margin-top: 0.7em;
+}
+/* @end */
+
+
+
+/* @group Page: Status
+--------------------------------------------------*/
+
+.modemStatusBlock{
+	margin-bottom: 30px;	
+}
+#rooterSplashStatus h3{
+	clear:both;
+	font-size: 18px;
+	color: #55F;
+}
+#rooterSplashStatus h3 .icon{
+	margin-right: 3px;
+}
+#rooterSplashStatus h3 .msCell{
+	color: #666;
+}
+.modemStatusRow{
+	clear:both;
+	padding-bottom: 20px;
+	overflow: hidden;
+}
+.modemStatusRow .msTitle{
+	border-radius: 2px 2px 0 0;
+	padding: 5px 5px ;
+	background: #484848;
+	color: #fff;
+	background: rgb(99,99,99);
+	background: -moz-linear-gradient(top, rgba(99,99,99,1) 0%, rgba(72,72,72,1) 100%);
+	background: -webkit-linear-gradient(top, rgba(99,99,99,1) 0%,rgba(72,72,72,1) 100%);
+	background: linear-gradient(to bottom, rgba(99,99,99,1) 0%,rgba(72,72,72,1) 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#636363', endColorstr='#484848',GradientType=0 );
+}
+.modemStatusRow .msCell{
+	border-radius: 10px;
+	display: inline-block;
+	margin-top: 10px;
+	float:left;
+	border: 1px solid #ccc;
+	padding-bottom: 5px;
+	background: #fff;
+
+}
+.modemStatusRow1 .msCell{
+	width: 176px;
+	margin: 10px 5px 0 5px;	
+	text-align: center;
+}
+.modemStatusRow1 SPAN B{
+	font-weight: bold;
+	font-size: 70px;
+	line-height: 110%;
+	text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
+}
+.modemStatusRow1 .msDesc{
+	color: #000;
+	font-size: 12px;
+}
+.modemStatusRow2 .msCell{
+	margin: 10px 5px;
+	text-align: center;
+}
+.modemStatusRow2 SPAN{
+	display: inline-block;
+	padding: 5px 5px ;
+	font-size: 14px;
+}
+#counter_div{
+	color: #000;
+	font-weight: normal;
+	font-size: 14px;
+}
+#counter_val{
+	color: #F00;
+	font-size: 32px;
+	font-weight: bold;
+	text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+}
+#msCell_per{}
+#msCell_csq{}
+#msCell_rssi{}
+#msCell_rscp{}
+#msCell_ecio{}
+
+#rooterSplashStatus .level_0{
+	color: #0F0;	// green 
+}
+#rooterSplashStatus .level_1{
+	color: #0CB;	// green blue
+}
+#rooterSplashStatus .level_2{
+	color: #00F;	// blue
+}
+#rooterSplashStatus .level_3{
+	color: #F0F;	// violet 
+}
+#rooterSplashStatus .level_4{
+	color: #F80;	// orange
+}
+#rooterSplashStatus .level_5{
+	color: #F00; // red
+}
+#rooterSplashStatus .level_6{
+	color: #FF0; // yellow
+}
+
+/* @end */
+
+
+/* Easy Color changer ------------- */
+
+.rooterPageHead{
+	/*background: #55F;*/
+}
+.rooterItemTitle .icon,
+#rooterSplashStatus h3{
+	color: #55F;
+}
+
+
+

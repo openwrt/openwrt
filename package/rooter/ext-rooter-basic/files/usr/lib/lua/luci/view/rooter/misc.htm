@@ -1,0 +1,2389 @@
+<%+header%>
+<% 
+local sys = require "luci.sys" 
+local utl = require "luci.util" 
+local fs = require "nixio.fs"
+local uci = require "luci.model.uci".cursor()
+local s = uci:get("custom", "bandlock", "enabled")
+local a = uci:get("custom", "atcmd", "enabled")
+
+local multilock = uci:get("custom", "multiuser", "multi") or "0"
+local rootlock = uci:get("custom", "multiuser", "root") or "0"
+nomulti=1
+if (multilock == "0") or (multilock == "1" and rootlock == "1") then
+	nosms = 1
+	if a == "1" then
+		nosms = 0
+	end
+else
+	nosms = 1
+	nomulti = 0
+end
+block = 1
+if s == "1" then
+	block = 0
+end
+
+function showicon(lck)
+	if lck == 0 then
+		return resource .. "/icons/unlock1.png"
+	else
+		return resource .. "/icons/lock1.png"
+	end
+end
+
+-%>
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	bnds = "0" ;
+	loadpin = "0";
+	chnge = 0 ;
+	sca = 0;
+	selectall = 1 ;
+	selectall5g = 1 ;
+	selectall5gsa = 1 ;
+	var sierra = new Array();
+	var uVid ;
+	var chkbox = new Array() ;
+	var chkbox5g = new Array() ;
+	var chkbox5gsa = new Array() ;
+	var checkbox = new Array() ;
+	var checkbox5g = new Array() ;
+	var checkbox5gsa = new Array() ;
+	var bx ;
+	var bx5g ;
+	var blen ;
+	var blen5g ;
+	var bx5gsa ;
+	var blen5gsa ;
+	var inr ;
+	var bndid = new Array() ;
+	var bndb1 ;
+	var bndb2 ;
+	var bndid3 = new Array() ;
+	var bndb31 ;
+	var bndb32 ;
+	var bndb33 ;
+	var indx ;
+	var caindx ;
+	var indx3 ;
+	var caindx3 ;
+	var lockb = 0;
+	var cenable;
+	var modtype;
+	var locking = 0;
+	
+	function T77(uVid, uPid)
+	{
+		return 0
+		if ( uVid == "413c" && uPid == "81d7" )
+		{
+			return 1
+		}
+		if ( uVid == "413c" && uPid == "81d8" )
+		{
+			return 1
+		}
+		if ( uVid == "0489" && uPid == "e0b4" )
+		{
+			return 1
+		}
+		if ( uVid == "0489" && uPid == "e0b5" )
+		{
+			return 1
+		}
+		if ( uVid == "1bc7" && uPid == "1910" )
+		{
+			return 1
+		}
+		return 0
+	}
+	
+	function num2pro(pro, mod)
+	{
+		if ( mod == "1" )
+		{
+			elem = document.getElementById("qpro");
+		}
+		else
+		{
+			elem = document.getElementById("spro");
+		}
+		
+		elem.options['0'].disabled=true;
+		if ( pro == "3" || pro == "30" )
+		{
+			elem.options['2'].disabled=true;
+			if ( mod == "1" )
+			{
+				elem.options['3'].disabled=false;
+			}
+			elem.options['1'].disabled=false;
+			return "MBIM"
+		}
+		if ( pro == "2" )
+		{
+			elem.options['1'].disabled=true;
+			if ( mod == "1" )
+			{
+				elem.options['3'].disabled=false;
+			}
+			elem.options['2'].disabled=false;
+			return "QMI";
+		}
+		if ( pro == "5" )
+		{
+			elem.options['3'].disabled=true;
+			elem.options['2'].disabled=false;
+			elem.options['1'].disabled=false;
+			return "ECM";
+		}
+		return "Unknown";
+	}
+	
+	XHR.poll(2, '<%=luci.dispatcher.build_url("admin", "modem", "check_misc")%>', null,
+		function(x, rv)
+		{
+			document.getElementById("conntype").innerHTML=rv.conntype;
+			stat = rv.active;
+			gpio = rv.gpio;
+			usb = rv.usb;
+			if ( loadpin == "0" )
+			{
+				pinn = rv.pin;
+				if ( rv.pin == null )
+				{
+					pinn = "";
+				}
+				document.getElementById("modpin").value = pinn;
+				loadpin = "1";
+			} 
+
+			if ( stat == "0" )
+			{
+				bnds = "0" ;
+				document.getElementById("active").innerHTML="<%:No Modem Present%>";
+				document.getElementById("conn").disabled=true;
+				document.getElementById("disconn").disabled=true;
+				<% if nosms == 0 then %>
+				document.getElementById("sendcmdat").disabled=true;
+				document.getElementById("atcmd").value=" ";
+				document.getElementById("attxt").value=" ";
+				<% end %>
+				document.getElementById("apply1").disabled=true;
+				document.getElementById("net1").style.display="none";
+				document.getElementById("net2").style.display="none";
+				document.getElementById("net3").style.display="none";
+				document.getElementById("net4").style.display="none";
+				document.getElementById("apply1").style.display="none";
+			
+				if ( gpio == "0" )
+				{
+					document.getElementById("pwrtoggle").style.display="none";
+					document.getElementById("pwrtoggle1").style.display="none";
+				}
+				if ( gpio == "1" )
+				{
+					document.getElementById("pwrtoggle").style.display="block";
+					document.getElementById("pwrtoggle").disabled=true;
+					document.getElementById("pwrtoggle1").style.display="none";
+				}
+				if ( gpio == "2" )
+				{
+					document.getElementById("pwrtoggle").style.display="block";
+					document.getElementById("pwrtoggle1").style.display="block";
+					document.getElementById("pwrtoggle").disabled=true;
+					document.getElementById("pwrtoggle1").disabled=true;
+				}
+			<% if nosms == 0 then %>	
+				plock = rv.plock;
+				if ( plock == "0" )
+				{
+					document.getElementById("droptxt").style.display="none";
+					document.getElementById("droptxt").style.visibility="hidden";
+					document.getElementById("linetxt").style.display="block";
+					document.getElementById("atcmd").disabled=true;
+					document.getElementById("sendcmdat").disabled=true;
+				}
+				else
+				{
+					document.getElementById("droptxt").style.display="block";
+					document.getElementById("linetxt").style.display="none";
+					document.getElementById("drop1").disabled=true;
+					document.getElementById("atcmdlck").disabled=true;
+					document.getElementById("sendfullat").disabled=true;
+					
+					document.getElementById("drop1").options.length=0;
+					atlen = document.getElementById("drop1").length;
+					if ( atlen == 0 )
+					{
+						x = document.getElementById("drop1");
+						option = document.createElement("option");
+						option.text = "<%:Wait for Modem:%>";
+						x.add(option);
+					}
+					
+					atlock = rv["atlock"];
+					document.getElementById("password").value=atlock;
+					document.getElementById("attxt").value=atlock;
+					if ( atlock == "1" )
+					{
+						document.getElementById("atcmdlck").disabled=false;
+						document.getElementById("sendfullat").disabled=false;
+						document.getElementById("atcmdlck").style.visibility="visible";
+						document.getElementById("sendfullat").style.visibility="visible";
+					}
+					else
+					{
+						document.getElementById("atcmdlck").disabled=true;
+						document.getElementById("sendfullat").disabled=true;
+						document.getElementById("atcmdlck").style.visibility="hidden";
+						document.getElementById("sendfullat").style.visibility="hidden";
+					}
+				}
+			<% end %>
+			}
+			if ( stat == "1" )
+			{
+				document.getElementById("active").innerHTML="<%:Modem Present/Not Connected%>";
+				document.getElementById("conn").disabled=false;
+				document.getElementById("disconn").disabled=true;
+				document.getElementById("apply1").disabled=false;
+				<% if nosms == 0 then %>
+				document.getElementById("senddropat").disabled=false;
+				document.getElementById("atcmd").disabled=false;
+				document.getElementById("drop1").disabled=false;
+				document.getElementById("sendcmdat").disabled=false;
+				
+				plock = rv.plock;
+				if ( plock == "0" )
+				{
+					document.getElementById("droptxt").style.display="none";
+					document.getElementById("droptxt").style.visibility="hidden";
+					document.getElementById("linetxt").style.display="block";
+					document.getElementById("atcmd").disabled=false;
+					document.getElementById("sendcmdat").disabled=false;
+				}
+				else
+				{
+					document.getElementById("droptxt").style.display="block";
+					document.getElementById("linetxt").style.display="none";
+					document.getElementById("drop1").disabled=false;
+					document.getElementById("senddropat").disabled=false;
+					document.getElementById("atcmdlck").disabled=false;
+					document.getElementById("sendfullat").disabled=false;
+					atlen = document.getElementById("drop1").options.length;
+					if (atlen <= 1 )
+					{
+						document.getElementById("drop1").options.length=0;
+					}
+					atlen = document.getElementById("drop1").options.length;
+					if ( atlen == 0 )
+					{
+						at1 = rv.at1 ;
+						at2 = rv.at2 ;
+						aindx = rv.aindx ;
+						
+						if ( aindx != 0 )
+						{
+							x = document.getElementById("drop1");
+							for (i = 0; i < aindx; i++) {
+								option = document.createElement("option");
+								option.text = at2[i];
+								x.add(option);
+							}
+						}
+					}
+					atlock = rv["atlock"];
+					document.getElementById("password").value=atlock;
+					if ( atlock == "1" )
+					{
+						document.getElementById("atcmdlck").disabled=false;
+						document.getElementById("sendfullat").disabled=false;
+						document.getElementById("atcmdlck").style.visibility="visible";
+						document.getElementById("sendfullat").style.visibility="visible";
+					}
+					else
+					{
+						document.getElementById("atcmdlck").disabled=true;
+						document.getElementById("sendfullat").disabled=true;
+						document.getElementById("atcmdlck").style.visibility="hidden";
+						document.getElementById("sendfullat").style.visibility="hidden";
+					}
+				}
+			<% end %>
+				if ( gpio == "0" )
+				{
+					if ( usb == "0" )
+					{
+						document.getElementById("pwrtoggle").style.display="none";
+						document.getElementById("pwrtoggle1").style.display="none";
+					}
+					if ( usb == "1" )
+					{
+						document.getElementById("pwrtoggle").style.display="block";
+						document.getElementById("pwrtoggle").value="<%:Reset USB 1%>";
+						document.getElementById("pwrtoggle").disabled=false;
+						document.getElementById("pwrtoggle").style.visibility="visible";
+						document.getElementById("pwrtoggle1").style.display="none";
+					}
+					if ( usb == "2" )
+					{
+						document.getElementById("pwrtoggle").style.display="block";
+						document.getElementById("pwrtoggle").value="<%:Reset USB 1%>";
+						document.getElementById("pwrtoggle").disabled=false;
+						document.getElementById("pwrtoggle").style.visibility="visible";
+						document.getElementById("pwrtoggle1").style.display="block";
+						document.getElementById("pwrtoggle1").value="<%:Reset USB 2%>";
+						document.getElementById("pwrtoggle1").disabled=false;
+						document.getElementById("pwrtoggle1").style.visibility="visible";
+					}
+				}
+				if ( gpio == "1" )
+				{
+					document.getElementById("pwrtoggle").style.display="block";
+					document.getElementById("pwrtoggle").value="<%:Power Toggle USB 1%>";
+					document.getElementById("pwrtoggle").disabled=false;
+					document.getElementById("pwrtoggle").style.visibility="visible";
+					document.getElementById("pwrtoggle1").style.display="none";
+				}
+				if ( gpio == "2" )
+				{
+					document.getElementById("pwrtoggle").style.display="block";
+					document.getElementById("pwrtoggle").value="<%:Power Toggle USB 1%>";
+					document.getElementById("pwrtoggle").disabled=false;
+					document.getElementById("pwrtoggle").style.visibility="visible";
+					document.getElementById("pwrtoggle1").style.display="block";
+					document.getElementById("pwrtoggle1").value="<%:Power Toggle USB 2%>";
+					document.getElementById("pwrtoggle1").disabled=false;
+					document.getElementById("pwrtoggle1").style.visibility="visible";
+				}
+			}
+			if ( stat == "2" )
+			{
+				document.getElementById("active").innerHTML="<%:Modem Connected%>";
+				document.getElementById("conn").disabled=true;
+				document.getElementById("disconn").disabled=false;
+				document.getElementById("apply1").disabled=false;
+				<% if nosms == 0 then %>
+				plock = rv.plock;
+				if ( plock == "0" )
+				{
+					document.getElementById("droptxt").style.display="none";
+					document.getElementById("linetxt").style.display="block";
+					document.getElementById("atcmd").disabled=false;
+					document.getElementById("sendcmdat").disabled=false;
+				}
+				else
+				{
+					document.getElementById("droptxt").style.display="block";
+					document.getElementById("linetxt").style.display="none";
+					document.getElementById("drop1").disabled=false;
+					document.getElementById("senddropat").disabled=false;
+					document.getElementById("atcmdlck").disabled=false;
+					atlen = document.getElementById("drop1").options.length;
+					if (atlen <= 1 )
+					{
+						document.getElementById("drop1").options.length=0;
+					}
+					atlen = document.getElementById("drop1").options.length;
+					if ( atlen == 0 )
+					{
+						at1 = rv.at1 ;
+						at2 = rv.at2 ;
+						aindx = rv.aindx ;
+						
+						if ( aindx != 0 )
+						{
+							x = document.getElementById("drop1");
+							for (i = 0; i < aindx; i++) {
+								option = document.createElement("option");
+								option.text = at2[i];
+								x.add(option);
+							}
+						}
+					}
+					atlock = rv["atlock"];
+					document.getElementById("password").value=atlock;
+					if ( atlock == "1" )
+					{
+						document.getElementById("atcmdlck").disabled=false;
+						document.getElementById("sendfullat").disabled=false;
+						document.getElementById("atcmdlck").style.visibility="visible";
+						document.getElementById("sendfullat").style.visibility="visible";
+					}
+					else
+					{
+						document.getElementById("atcmdlck").disabled=true;
+						document.getElementById("sendfullat").disabled=true;
+						document.getElementById("atcmdlck").style.visibility="hidden";
+						document.getElementById("sendfullat").style.visibility="hidden";
+					}
+				} 
+				<% end %>
+				if ( gpio == "0" )
+				{
+					if ( usb == "0" )
+					{
+						document.getElementById("pwrtoggle").style.display="none";
+						document.getElementById("pwrtoggle1").style.display="none";
+					}
+					if ( usb == "1" )
+					{
+						document.getElementById("pwrtoggle").style.display="block";
+						document.getElementById("pwrtoggle").value="<%:Reset USB 1%>";
+						document.getElementById("pwrtoggle").disabled=false;
+						document.getElementById("pwrtoggle").style.visibility="visible";
+						document.getElementById("pwrtoggle1").style.display="none";
+					}
+					if ( usb == "2" )
+					{
+						document.getElementById("pwrtoggle").style.display="block";
+						document.getElementById("pwrtoggle").value="<%:Reset USB 1%>";
+						document.getElementById("pwrtoggle").disabled=false;
+						document.getElementById("pwrtoggle").style.visibility="visible";
+						document.getElementById("pwrtoggle1").style.display="block";
+						document.getElementById("pwrtoggle1").value="<%:Reset USB 2%>";
+						document.getElementById("pwrtoggle1").disabled=false;
+						document.getElementById("pwrtoggle1").style.visibility="visible";
+					}
+				}
+				if ( gpio == "1" )
+				{
+					document.getElementById("pwrtoggle").style.display="block";
+					document.getElementById("pwrtoggle").value="<%:Power Toggle USB 1%>";
+					document.getElementById("pwrtoggle").disabled=false;
+					document.getElementById("pwrtoggle").style.visibility="visible";
+					document.getElementById("pwrtoggle1").style.display="none";
+				}
+				if ( gpio == "2" )
+				{
+					document.getElementById("pwrtoggle").style.display="block";
+					document.getElementById("pwrtoggle").value="<%:Power Toggle USB 1%>";
+					document.getElementById("pwrtoggle").disabled=false;
+					document.getElementById("pwrtoggle").style.visibility="visible";
+					document.getElementById("pwrtoggle1").style.display="block";
+					document.getElementById("pwrtoggle1").value="<%:Power Toggle USB 2%>";
+					document.getElementById("pwrtoggle1").disabled=false;
+					document.getElementById("pwrtoggle1").style.visibility="visible";
+				}
+			}
+			proto = rv.proto
+			if ( proto == "3" )
+			{
+				<% if nosms == 0 then %>
+				document.getElementById("sendcmdat").disabled=true;
+				document.getElementById("atcmd").value=" ";
+				document.getElementById("attxt").value=" ";
+				<% end %>
+				document.getElementById("apply1").disabled=true;
+			}
+			var netm = rv.netmode;
+			var mode = "-";
+			switch(netm)
+			{
+				case "0":
+					mode = "<%:Unknown%>";
+				break;
+				case "1":
+					mode = "<%:Automatic%>";
+				break;
+				case "2":
+					mode = "<%:2G Preferred%>";
+				break;
+				case "3":
+					mode = "<%:2G Only%>";
+				break;
+				case "4":
+					mode = "<%:3G Preferred%>";
+				break;
+				case "5":
+					mode = "<%:3G Only%>";
+				break;
+				case "6":
+					mode = "<%:4G Preferred%>";
+				break;
+				case "7":
+					mode = "<%:4G Only%>";
+				break;
+				case "8":
+					mode = "<%:4G & 5G Dual Mode%>";
+				break;
+				case "9":
+					mode = "<%:5G Only%>";
+				break;
+				case "10":
+					mode = "<%:Changing Mode ...%>";
+					document.getElementById("apply1").value="<%:Applying Change%>";
+					document.getElementById("apply1").disabled=true;
+				break;
+
+			}
+			document.getElementById("netmode").innerHTML=mode;
+
+			cell = rv.celltype;
+			if ( cell == "-" )
+			{
+				document.getElementById("net1").style.display="none";
+				document.getElementById("net2").style.display="none";
+				document.getElementById("net3").style.display="none";
+				document.getElementById("net4").style.display="none";
+				document.getElementById("apply1").style.display="none";
+			}
+			if ( cell == "0" )
+			{
+				document.getElementById("net1").style.display="none";
+				document.getElementById("net2").style.display="none";
+				document.getElementById("net3").style.display="none";
+				document.getElementById("net4").style.display="none";
+				document.getElementById("apply1").style.display="none";
+			}
+			if ( cell == "1" )
+			{
+				document.getElementById("net1").style.display="block";
+				document.getElementById("net1").style.visibility="visible";
+				document.getElementById("net2").style.display="none";
+				document.getElementById("net3").style.display="none";
+				document.getElementById("net4").style.display="none";
+				document.getElementById("apply1").style.display="block";
+				document.getElementById("apply1").style.visibility="visible";
+			}
+			if ( cell == "2" )
+			{
+				document.getElementById("net1").style.display="none";
+				document.getElementById("net2").style.display="none";
+				document.getElementById("net3").style.display="block";
+				document.getElementById("net3").style.visibility="visible";
+				document.getElementById("net4").style.display="none";
+				document.getElementById("apply1").style.display="block";
+				document.getElementById("apply1").style.visibility="visible";
+			}
+			if ( cell == "3" )
+			{
+				document.getElementById("net1").style.display="none";
+				document.getElementById("net2").style.display="block";
+				document.getElementById("net2").style.visibility="visible";
+				document.getElementById("net3").style.display="none";
+				document.getElementById("net4").style.display="none";
+				document.getElementById("apply1").style.display="block";
+				document.getElementById("apply1").style.visibility="visible";
+			}
+			if ( cell == "4" )
+			{
+				document.getElementById("net1").style.display="none";
+				document.getElementById("net2").style.display="none";
+				document.getElementById("net3").style.display="none";
+				document.getElementById("net4").style.display="block";
+				document.getElementById("net4").style.visibility="visible";
+				document.getElementById("apply1").style.display="block";
+				document.getElementById("apply1").style.visibility="visible";
+			}
+	
+			uVid = rv.uVid ;
+			uPid = rv.uPid ;
+			if ( uVid == "2c7c" )
+			{
+				document.getElementById("prochnge").style.display = "block";
+				document.getElementById("modpro").style.display = "block";
+				document.getElementById("modpro").innerHTML = num2pro(rv.proto, "1");
+				document.getElementById("qpro").style.display="block";
+				document.getElementById("qpro").style.visibility="visible";
+				document.getElementById("spro").style.display="none";
+				modtype = "1";
+			}
+			else
+			{
+				if ( uVid == "1199" || T77(uVid, uPid) == 1 )
+				{
+					document.getElementById("modpro").style.display = "block";
+					document.getElementById("modpro").innerHTML = num2pro(rv.proto, "2");
+					document.getElementById("spro").style.display="block";
+					document.getElementById("spro").style.visibility="visible";
+					document.getElementById("prochnge").style.display = "block";
+					document.getElementById("qpro").style.display="none";
+					modtype = "2";
+				}
+				else
+				{
+					document.getElementById("modpro").style.display = "none";
+					document.getElementById("prochnge").style.display = "none";
+					modtype = "0";
+				}
+			}
+			
+			// Start of Band locking
+			
+			model = rv.model;
+			fake = rv.fake;
+			bxx = rv.bndstr ;
+			bxs = parseInt(bxx);
+			bxx5g = rv.bndstr5g ;
+			bxs5g = parseInt(bxx5g);
+			bxx5gsa = rv.bndstr5gsa ;
+			bxs5gsa = parseInt(bxx5gsa);
+			
+			if ( uVid == "2c7c" )
+			{
+				if ( uPid == "0800" || fake == "1" )
+				{
+					netm = rv.netmode;
+					nsa = "8";
+					nsan = "9";
+					if ( fake == "1" )
+					{
+						nsa = "7";
+						nsan = "1";
+					}
+					document.getElementById("mdl").style.color = "inherit";
+					if ( netm == nsa )
+					{
+						model = rv.model + "<%: NSA Mode%>";
+						modelx = model ;
+						if ( bxs == 0 )
+						{
+							model = modelx + "<%: ***No LTE Bands selected - will not connect***%>";
+							document.getElementById("mdl").style.color = "red";
+						}
+						if ( bxs5g == 0 )
+						{
+							model = modelx + "<%: ***No 5G Bands selected***%>";
+							document.getElementById("mdl").style.color = "red";
+						}
+						//document.getElementById("5gbnd").innerHTML="<%:5G NSA Bands%>";
+						//document.getElementById("5gbnd").style.fontWeight = "bold" ;
+					}
+					else
+					{
+						if ( netm == nsan )
+						{
+							model = rv.model + "<%: SA Mode%>";
+							if ( bxs5gsa == 0 )
+							{
+								model = model + "<%: ***No 5G Bands selected - will not connect***%>";
+								document.getElementById("mdl").style.color = "red";
+							}
+							//document.getElementById("5gbnd").innerHTML="<%:5G SA Bands%>";
+							//document.getElementById("5gbnd").style.fontWeight = "bold" ;
+						}
+					}
+				}
+			}
+			document.getElementById("mdl").innerHTML="<%:Modem : %>" + model;
+			document.getElementById("mdl").style.fontWeight = "bold" ;
+
+			//
+			// Supported LTE bands
+			//
+			bx = rv.bndsup ;
+			//document.getElementById("attxt").value=bx + " " + stat + " " + bnds;
+			if ( stat != "0" && bx != "0" )
+			{
+				//document.getElementById("tab5g").style.display = "none";
+				//document.getElementById("tab4g").style.display = "none";
+				blen = bx.length ;
+				if ( bnds != "1" )
+				{
+					
+					document.getElementById("tab5").style.display = "";
+					document.getElementById("tab6").style.display = "";
+					document.getElementById("tab7").style.display = "";
+					document.getElementById("tab8").style.display = "";
+					document.getElementById("tab9").style.display = "none";
+					document.getElementById("tab10").style.display = "";
+					document.getElementById("tab11").style.display = "";
+					document.getElementById("tab12").style.display = "";
+					document.getElementById("tab13").style.display = "none";
+					document.getElementById("tab14").style.display = "none";
+					document.getElementById("dym1").style.display = "none";
+					document.getElementById("dym5g1").style.display = "none";
+					document.getElementById("dym5gsa1").style.display = "none";
+					document.getElementById("tab5g").style.display = "none";
+					document.getElementById("tab5gsa").style.display = "none";
+					document.getElementById("tab4g").style.display = "none";
+					document.getElementById("dym2").style.display = "none";
+					document.getElementById("dym3").style.display = "none";
+					document.getElementById("bndtxt").value=" ";
+					uVid = rv.uVid ;
+					if ( uVid == "2c7c" )
+					{
+						document.getElementById("celllock1").style.display = "block";
+						document.getElementById("celllock2").style.display = "block";
+						document.getElementById("celllock3").style.display = "block";
+						document.getElementById("prochnge").style.display = "block";
+						cenable = rv.cenable;
+						document.getElementById("cellbtn").disabled=false;
+						if ( cenable == "0" )
+						{
+							document.getElementById('cellbtn').value="<%:Enable Cell Lock%>";
+							document.getElementById("cstatus").innerHTML="<%:Not Locked to Cell%>";
+							document.getElementById("earfcn").disabled=false;
+							document.getElementById("pci").disabled=false;
+							document.getElementById("earfcn1").disabled=false;
+							document.getElementById("pci1").disabled=false;
+							document.getElementById("earfcn2").disabled=false;
+							document.getElementById("pci2").disabled=false;
+							document.getElementById("earfcn3").disabled=false;
+							document.getElementById("pci3").disabled=false;
+						}
+						else
+						{
+							document.getElementById('cellbtn').value="<%:Disable Cell Lock%>";
+							document.getElementById("cstatus").innerHTML="<%:Locked to Cell%>";
+							document.getElementById("earfcn").disabled=true;
+							document.getElementById("pci").disabled=true;
+							document.getElementById("earfcn1").disabled=true;
+							document.getElementById("pci1").disabled=true;
+							document.getElementById("earfcn2").disabled=true;
+							document.getElementById("pci2").disabled=true;
+							document.getElementById("earfcn3").disabled=true;
+							document.getElementById("pci3").disabled=true;
+						}
+						earfcn = rv.earfcn;
+						if ( earfcn == "0" )
+						{
+							document.getElementById("earfcn").value="";
+						}
+						else
+						{
+							document.getElementById("earfcn").value=earfcn;
+						}
+						pci = rv.pci;
+						if ( pci == "0" )
+						{
+							document.getElementById("pci").value="";
+						}
+						else
+						{
+							document.getElementById("pci").value=pci;
+						}
+						
+						earfcn1 = rv.earfcn1;
+						if ( earfcn1 == "0" )
+						{
+							document.getElementById("earfcn1").value="";
+						}
+						else
+						{
+							document.getElementById("earfcn1").value=earfcn1;
+						}
+						pci1 = rv.pci1;
+						if ( pci1 == "0" )
+						{
+							document.getElementById("pci1").value="";
+						}
+						else
+						{
+							document.getElementById("pci1").value=pci1;
+						}
+						
+						earfcn2 = rv.earfcn2;
+						if ( earfcn2 == "0" )
+						{
+							document.getElementById("earfcn2").value="";
+						}
+						else
+						{
+							document.getElementById("earfcn2").value=earfcn2;
+						}
+						pci2 = rv.pci2;
+						if ( pci2 == "0" )
+						{
+							document.getElementById("pci2").value="";
+						}
+						else
+						{
+							document.getElementById("pci2").value=pci2;
+						}
+						
+						earfcn3 = rv.earfcn3;
+						if ( earfcn3 == "0" )
+						{
+							document.getElementById("earfcn3").value="";
+						}
+						else
+						{
+							document.getElementById("earfcn3").value=earfcn3;
+						}
+						pci3 = rv.pci3;
+						if ( pci3 == "0" )
+						{
+							document.getElementById("pci3").value="";
+						}
+						else
+						{
+							document.getElementById("pci3").value=pci3;
+						}
+					}
+					else
+					{
+						document.getElementById("celllock1").style.display = "none";
+						document.getElementById("celllock2").style.display = "none";
+						document.getElementById("celllock3").style.display = "none";
+					} 
+					
+				
+					var ix = -1;
+					var j = 1;
+					var tbl = document.getElementById('dym1');
+					while (tbl.rows.length > 1)
+						tbl.deleteRow(1);
+					
+					tr = tbl.insertRow(-1);
+					max = 0 ;
+					first = 0 ;
+					for (io = 0; io < blen; io++) {
+						bm = bx.substr(io, 1) ;
+						if ( bm == "1" )
+						{
+							if ( max >= 7 )
+							{
+								row2 = tr.insertCell(-1);
+								if ( first == 0 )
+								{
+									row2.innerHTML = '<input type="button" align="right" id="selectc" class="cbi-button cbi-button-apply" value="<%:Select All%>" onclick="return selectcell(this)" />'
+									first = 1 ;
+									row2.style.width = '10%' ;
+									row2 = tr.insertCell(-1);
+									wd = 100-(max*5) - 10 ;
+								}
+								else
+								{
+									wd = 100-(max*5) ;
+								}
+								row2.style.width = "'" + wd.toString() + "%'" ;
+								tr = tbl.insertRow(-1);
+								max = 0 ;
+							}
+							tr.className = 'cbi-section-table-row cbi-rowstyle-' + (((io + ix) % 2) + 1) ;
+							dex = io+1 ;
+							row = tr.insertCell(-1);
+							row.innerHTML = '<div align="right"><strong>B' + dex.toString() + '</strong></div>' ;
+							row.style.width = '3%' ;
+							row1 = tr.insertCell(-1);
+							row1.innerHTML = '<div align="bottom"><input type="checkbox" id="cb'+ dex.toString() +'" onclick="selectbnd(this)" /></div>'
+							row1.style.width = '2%' ;
+							max = max + 1 ;
+						}
+					}
+					row2 = tr.insertCell(-1);
+					if ( first == 0 )
+					{
+						row2.innerHTML = '<input type="button" align="right" id="selectc" class="cbi-button cbi-button-apply" value="<%:Select All%>" onclick="return selectcell(this)" />'
+						first = 1 ;
+						row2.style.width = '10%' ;
+						row2 = tr.insertCell(-1);
+						wd = 100-(max*5) - 10 ;
+					}
+					else
+					{
+						wd = 100-(max*5) ;
+					}
+					row2.style.width = "'" + wd.toString() + "%'" ;
+
+					//
+					// selected LTE bands
+					//
+					bndstr = rv.bndstr ;
+					blen = bndstr.length ;
+					
+					for (i = 0; i < blen; i++) {
+						bm = bndstr.substr(i, 1) ;
+						
+						checkbox[i+1] = 0;
+						if ( bm == "1" )
+						{
+							dex = i+1 ;
+							idc = 'cb' + dex.toString() ;
+							
+							myEle = document.getElementById(idc);
+							if(myEle){
+								document.getElementById(idc).checked = true ;
+								checkbox[i+1] = 1;
+							}
+						}
+						chkbox[i+1] = parseInt(bm) ; 
+					}	
+					blen = i-1;
+
+					document.getElementById("dym1").style.display = "";
+					document.getElementById("tab4g").style.display = "";
+
+					//
+					// Supported 5G bands
+					//
+					// 5G NSA
+					//
+					if ( rv.bndsup5g != 'x' )
+					{
+						bx5g = rv.bndsup5g ;
+						blen5g = bx5g.length ;
+						ix = -1;
+						j = 1;
+						tbl = document.getElementById('dym5g1');
+						while (tbl.rows.length > 1)
+							tbl.deleteRow(1);
+						
+						tr = tbl.insertRow(-1);
+						max = 0 ;
+						first = 0 ;
+						for (io = 0; io < blen5g; io++) {
+							bm = bx5g.substr(io, 1) ;
+							if ( bm == "1" )
+							{
+								if ( max >= 7 )
+								{
+									row2 = tr.insertCell(-1);
+									if ( first == 0 )
+									{
+										row2.innerHTML = '<input type="button" align="right" id="selectc" class="cbi-button cbi-button-apply" value="<%:Select All%>" onclick="return selectcell5g(this)" />'
+										first = 1 ;
+										row2.style.width = '10%' ;
+										row2 = tr.insertCell(-1);
+										wd = 100-(max*5) - 10 ;
+									}
+									else
+									{
+										wd = 100-(max*5) ;
+									}
+									row2.style.width = "'" + wd.toString() + "%'" ;
+									tr = tbl.insertRow(-1);
+									max = 0 ;
+								}
+								tr.className = 'cbi-section-table-row cbi-rowstyle-' + (((io + ix) % 2) + 1) ;
+								dex = io+1 ;
+								row = tr.insertCell(-1);
+								row.innerHTML = '<div align="right"><strong>n' + dex.toString() + '</strong></div>' ;
+								row.style.width = '3%' ;
+								row1 = tr.insertCell(-1);
+								row1.innerHTML = '<div align="bottom"><input type="checkbox" id="cn'+ dex.toString() +'" onclick="selectbnd5g(this)" /></div>'
+								row1.style.width = '2%' ;
+								max = max + 1 ;
+							}
+						}
+						row2 = tr.insertCell(-1);
+						if ( first == 0 )
+						{
+							row2.innerHTML = '<input type="button" align="right" id="selectc" class="cbi-button cbi-button-apply" value="<%:Select All%>" onclick="return selectcell5g(this)" />'
+							first = 1 ;
+							row2.style.width = '10%' ;
+							row2 = tr.insertCell(-1);
+							wd = 100-(max*5) - 10 ;
+						}
+						else
+						{
+							wd = 100-(max*5) ;
+						}
+						row2.style.width = "'" + wd.toString() + "%'" ;
+
+						//
+						// Selected 5G NSA bands
+						//
+						bndstr = rv.bndstr5g ;
+						blen5gx = bndstr.length ;
+						
+						for (i = 0; i < blen5gx; i++) {
+							bm = bndstr.substr(i, 1) ;
+							checkbox5g[i+1] = 0;
+							if ( bm == "1" )
+							{
+								dex = i+1 ;
+								idc = 'cn' + dex.toString() ;
+								
+								myEle = document.getElementById(idc);
+								if(myEle){
+									document.getElementById(idc).checked = true ;
+									checkbox5g[i+1] = 1;
+								}
+							}
+							chkbox5g[i+1] = parseInt(bm) ; 
+						}	
+						
+						document.getElementById("dym5g1").style.display = "";
+						document.getElementById("tab5g").style.display = "";
+					}	
+					
+					//
+					// 5G SA
+					//
+					if ( rv.bndsup5gsa != 'x' )
+					{
+						bx5gsa = rv.bndsup5gsa ;
+						blen5gsa = bx5gsa.length ;
+						ix = -1;
+						j = 1;
+						tbl = document.getElementById('dym5gsa1');
+						while (tbl.rows.length > 1)
+							tbl.deleteRow(1);
+						
+						tr = tbl.insertRow(-1);
+						max = 0 ;
+						first = 0 ;
+						for (io = 0; io < blen5gsa; io++) {
+							bm = bx5gsa.substr(io, 1) ;
+							if ( bm == "1" )
+							{
+								if ( max >= 7 )
+								{
+									row2 = tr.insertCell(-1);
+									if ( first == 0 )
+									{
+										row2.innerHTML = '<input type="button" align="right" id="selectc" class="cbi-button cbi-button-apply" value="<%:Select All%>" onclick="return selectcell5gsa(this)" />'
+										first = 1 ;
+										row2.style.width = '10%' ;
+										row2 = tr.insertCell(-1);
+										wd = 100-(max*5) - 10 ;
+									}
+									else
+									{
+										wd = 100-(max*5) ;
+									}
+									row2.style.width = "'" + wd.toString() + "%'" ;
+									tr = tbl.insertRow(-1);
+									max = 0 ;
+								}
+								tr.className = 'cbi-section-table-row cbi-rowstyle-' + (((io + ix) % 2) + 1) ;
+								dex = io+1 ;
+								row = tr.insertCell(-1);
+								row.innerHTML = '<div align="right"><strong>n' + dex.toString() + '</strong></div>' ;
+								row.style.width = '3%' ;
+								row1 = tr.insertCell(-1);
+								row1.innerHTML = '<div align="bottom"><input type="checkbox" id="cs'+ dex.toString() +'" onclick="selectbnd5gsa(this)" /></div>'
+								row1.style.width = '2%' ;
+								max = max + 1 ;
+							}
+						}
+						row2 = tr.insertCell(-1);
+						if ( first == 0 )
+						{
+							row2.innerHTML = '<input type="button" align="right" id="selectc" class="cbi-button cbi-button-apply" value="<%:Select All%>" onclick="return selectcell5gsa(this)" />'
+							first = 1 ;
+							row2.style.width = '10%' ;
+							row2 = tr.insertCell(-1);
+							wd = 100-(max*5) - 10 ;
+						}
+						else
+						{
+							wd = 100-(max*5) ;
+						}
+						row2.style.width = "'" + wd.toString() + "%'" ;
+
+						//
+						// Selected 5G SA bands
+						//
+						bndstrsa = rv.bndstr5gsa ;
+						blen5gx = bndstrsa.length ;
+						
+						for (i = 0; i < blen5gx; i++) {
+							bm = bndstrsa.substr(i, 1) ;
+							checkbox5gsa[i+1] = 0;
+							if ( bm == "1" )
+							{
+								dex = i+1 ;
+								idc = 'cs' + dex.toString() ;
+								
+								myEle = document.getElementById(idc);
+								if(myEle){
+									document.getElementById(idc).checked = true ;
+									checkbox5gsa[i+1] = 1;
+								}
+							}
+							chkbox5gsa[i+1] = parseInt(bm) ; 
+						}	
+						
+						document.getElementById("dym5gsa1").style.display = "";
+						document.getElementById("tab5gsa").style.display = "";
+					}	
+
+					//
+					// 2xCA
+					//
+					bndb1 = rv.b1 ;
+					bndb2 = rv.b2 ;
+					indx = rv.indx ;
+					caindx = rv.indx ;
+					
+					if ( indx != 0 )
+					{
+						ix = -1;
+						j = 1;
+						tbl = document.getElementById('dym2');
+						while (tbl.rows.length > 1)
+							tbl.deleteRow(1);
+							
+						cnt = 0 ;
+						tr = tbl.insertRow(-1);			
+						for (i = 0; i < indx; i++) {
+							bndid[i] = "b" + bndb1[i] + "b" + bndb2[i] ;
+							if ( cnt > 9 )
+							{
+								row = tr.insertCell(-1);
+								row.innerHTML = '&nbsp;'
+								row.style.width = '46%' ;
+								tr = tbl.insertRow(-1);
+								cnt = 0 ;
+							}
+							row = tr.insertCell(-1);
+							row.innerHTML = '<div align="left" id="' + bndid[i] + '">B' + bndb1[i] + '+B' + bndb2[i] + '</div>'
+							row.style.width = '6%' ;
+							cnt = cnt + 1 ;
+						}
+						
+						for ( jo = 0; jo < caindx; jo++ ) {
+							b1 = bndb1[jo] ;
+							b1x = b1.toString();
+							b2 = bndb2[jo] ;
+							b2x = b2.toString();
+							document.getElementById(bndid[jo]).style.fontWeight = "normal" ;
+							if ( checkbox[b1x] == 1 && checkbox[b2x] == 1 )
+							{
+								document.getElementById(bndid[jo]).style.fontWeight = "bold" ;
+							}
+						}
+						
+						document.getElementById("dym2").style.display = "";
+						
+						//
+						// 3xCA
+						//
+						bndb31 = rv.b31 ;
+						bndb32 = rv.b32 ;
+						bndb33 = rv.b33 ;
+						indx3 = rv.indx3 ;
+						caindx3 = rv.indx3 ;
+						if ( indx3 != 0 )
+						{
+							ix = -1;
+							j = 1;
+							tbl = document.getElementById('dym3');
+							while (tbl.rows.length > 1)
+								tbl.deleteRow(1);
+								
+							cnt = 0 ;
+							tr = tbl.insertRow(-1);			
+							for (i = 0; i < indx3; i++) {
+								bndid3[i] = "b" + bndb31[i] + "b" + bndb32[i] + "b" + bndb33[i] ;
+								if ( cnt > 7 )
+								{
+									row = tr.insertCell(-1);
+									row.innerHTML = '&nbsp;'
+									row.style.width = '28%' ;
+									tr = tbl.insertRow(-1);
+									cnt = 0 ;
+								}
+								row = tr.insertCell(-1);
+								row.innerHTML = '<div align="left" id="' + bndid3[i] + '">B' + bndb31[i] + '+B' + bndb32[i] + '+B' + bndb33[i] + '</div>'
+								row.style.width = '9%' ;
+								cnt = cnt + 1 ;
+							}
+							
+							for ( jo = 0; jo < caindx3; jo++ ) {
+								b1 = bndb31[jo] ;
+								b1x = b1.toString();
+								b2 = bndb32[jo] ;
+								b2x = b2.toString();
+								b3 = bndb33[jo] ;
+								b3x = b3.toString();
+								document.getElementById(bndid3[jo]).style.fontWeight = "normal" ;
+								if ( checkbox[b1x] == 1 && checkbox[b2x] == 1 && checkbox[b3x] == 1 )
+								{
+									document.getElementById(bndid3[jo]).style.fontWeight = "bold" ;
+								}
+							}
+							
+							document.getElementById("tab9").style.display = "none";
+							document.getElementById("tab14").style.display = "";
+						}
+					
+					}
+					else
+					{
+						document.getElementById("tab8").style.display = "none";
+						document.getElementById("tab9").style.display = "none";
+						document.getElementById("tab11").style.display = "none";
+						document.getElementById("tab14").style.display = "none";
+						//document.getElementById("tab5g").style.display = "none";
+						//document.getElementById("tab4g").style.display = "none";
+					}
+					
+					if ( chnge == 0 )
+					{
+						bnds = "1" ;
+					}
+					else
+					{
+						chnge = chnge - 1 ;
+					}
+				}
+			}
+			else
+			{
+				bnds = "0";
+				document.getElementById("tab5").style.display = "none";
+				document.getElementById("tab6").style.display = "none";
+				document.getElementById("tab7").style.display = "none";
+				document.getElementById("tab8").style.display = "none";
+				document.getElementById("tab9").style.display = "none";
+				document.getElementById("tab11").style.display = "none";
+				document.getElementById("tab12").style.display = "none";
+				document.getElementById("tab10").style.display = "none";
+				document.getElementById("tab14").style.display = "none";
+				document.getElementById("tab13").style.display = "";
+				document.getElementById("tab5g").style.display = "none";
+				document.getElementById("tab5gsa").style.display = "none";
+				document.getElementById("tab4g").style.display = "none";
+				document.getElementById("dym1").style.display = "none";
+				document.getElementById("dym2").style.display = "none";
+				document.getElementById("dym3").style.display = "none";
+				document.getElementById("dym5g1").style.display = "none";
+				document.getElementById("dym5gsa1").style.display = "none";
+				document.getElementById("celllock1").style.display = "none";
+				document.getElementById("celllock2").style.display = "none";
+				document.getElementById("celllock3").style.display = "none";
+				document.getElementById("prochnge").style.display = "none";
+			}
+		}
+	);
+
+	function modemtoggle(btn)
+	{
+		bnds = "0" ;
+		chnge = 1 ;
+		btn.disabled = true;
+		btn.value    = '<%:Changing...%>';
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "change_misc")%>',
+			null,
+			function(x, rv)
+			{
+				btn.disabled = false;
+				btn.value    = '<%:Next Modem%>';
+				bnds = "0" ;
+			}
+		);
+
+		return false;
+	}
+
+	function modemtoggledn(btn)
+	{
+		bnds = "0" ;
+		chnge = 1 ;
+		btn.disabled = true;
+		btn.value    = '<%:Changing...%>';
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "change_miscdn")%>',
+			null,
+			function(x, rv)
+			{
+				btn.disabled = false;
+				btn.value    = '<%:Prev Modem%>';
+				bnds = "0" ;
+			}
+		);
+
+		return false;
+	}
+
+	function modemconnect(btn)
+	{
+		btn.disabled = true;
+		btn.value    = '<%:Connecting...%>';
+
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "connect")%>',
+			{ set: 1 },
+			function()
+			{
+				btn.disabled = false;
+				btn.value = '<%:Connect Current Modem%>';
+			}
+		);
+		return false;
+	}
+
+	function modemdisconnect(btn)
+	{
+		btn.disabled = true;
+		btn.value    = '<%:Disconnecting...%>';
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "disconnect")%>',
+			{ set: 1 },
+			function()
+			{
+				btn.disabled = false;
+				btn.value = '<%:Disconnect Current Modem%>';
+			}
+		);
+		return false;
+	}
+
+	function powertoggle(btn)
+	{
+		btn.disabled = true;
+		btn.value    = '<%:Toggling...%>';
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "pwrtoggle")%>',
+			{ set: 1 },
+			function()
+			{
+				btn.disabled = false;
+				btn.value = '<%:Power Toggle USB 1%>';
+			}
+		);
+		return false;
+	}
+
+	function powertoggle1(btn)
+	{
+		btn.disabled = true;
+		btn.value    = '<%:Toggling...%>';
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "pwrtoggle")%>',
+			{ set: 2 },
+			function()
+			{
+				btn.disabled = false;
+				btn.value = '<%:Power Toggle USB 2%>';
+			}
+		);
+		return false;
+	}
+
+	function sndcmd(event)
+	{
+		var x = event.key;
+    		if (x == "Enter")
+		{
+			document.getElementById("sendcmdat").focus();
+			var s = document.getElementById("atcmd").value;
+			if ( s.length == 0 )
+			{
+				alert('<%:You must enter an AT-Command!!%>');
+				return false;
+			}
+			atsend=1;
+			document.getElementById("attxt").value='<%:Waiting for a Response%>';
+			XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "send_atcmd")%>',
+				{ set: s },
+				function(x, rv)
+				{
+					document.getElementById("atcmd").focus();
+					document.getElementById("attxt").value=rv.result;
+					atsend=0;
+				}
+			);
+		}
+		return false;
+	}
+
+	function sendcmd()
+	{
+		var s = document.getElementById("atcmd").value;
+		if ( s.length == 0 )
+		{
+			alert("<%:You must enter an AT-Command!!%>");
+			return false;
+		}
+		atsend=1;
+		document.getElementById("attxt").value="<%:Waiting for a Response%>";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "send_atcmd")%>',
+			{ set: s },
+			function(x, rv)
+			{
+				document.getElementById("attxt").value=rv.result;
+				atsend=0;
+			}
+		);
+
+		return false;
+	}
+	
+	function applyp(btn)
+	{
+		switch(modtype)
+		{
+			case "1":
+				nmode=document.getElementById("qpro").value;
+				break;
+			case "2":
+				nmode=document.getElementById("spro").value;
+				break;
+			case "0":
+				return false;
+		}
+		if ( nmode == "0" )
+		{
+			return false;
+		}
+		if ( confirm("<%:Modem will be restarted after Protocol change\nContinue?%>") )
+		{
+			document.getElementById("modpro").innerHTML = "<%:Changing Protocol ...%>";
+			document.getElementById("probutton").value="<%:Applying Change%>";
+			document.getElementById("probutton").disabled=true;
+			
+			XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "change_proto")%>',
+			{ set: nmode },
+			function()
+			{
+				switch(modtype)
+				{
+					case "1":
+						document.getElementById("qpro").value="0";
+						break;
+					case "2":
+						document.getElementById("spro").value="0";
+						break;
+				}
+				window.location.reload(false);
+			}
+		);
+
+			
+
+		}
+		return false;
+	}
+
+	function applyc(btn)
+	{
+		var nmode=0;
+		switch(cell)
+		{
+			case "1":
+				nmode=document.getElementById("net1").value;
+				break;
+			case "2":
+				nmode=document.getElementById("net3").value;
+				break;
+			case "3":
+				nmode=document.getElementById("net2").value;
+				break;
+			case "4":
+				nmode=document.getElementById("net4").value;
+				break;
+		}
+		document.getElementById("netmode").innerHTML = "<%:Changing Mode ...%>";
+		document.getElementById("apply1").value="<%:Applying Change%>";
+		document.getElementById("apply1").disabled=true;
+
+		var modemtype = 0;
+		var mt=(Number(modemtype)*16) + Number(nmode);
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "change_mode")%>',
+			{ set: mt },
+			function()
+			{
+				window.location.reload(false);
+			}
+		);
+
+		return false;
+	}
+	
+	function selectcell(btn)
+	{
+		if ( selectall == 1 )
+		{
+			btn.value    = '<%:Select None%>';
+			selectall = 0 ;
+			check = true ;
+			
+		}else
+		{
+			btn.value    = '<%:Select All%>';
+			selectall = 1 ;
+			check = false ;
+		}
+		for (io = 0; io < blen; io++) {
+			bm = bx.substr(io, 1) ;
+			if ( bm == "1" )
+			{
+				dex = io +1 ;
+				cellid = "cb" + dex.toString() ;
+				document.getElementById(cellid).checked = check ;
+				checkbox[dex] = 0 ;
+				if ( check == true )
+				{
+					checkbox[dex] = 1 ;
+				}
+			}
+		}
+		if ( caindx > 0 )
+		{
+			for ( jo = 0; jo < caindx; jo++ ) {
+				b1 = bndb1[jo] ;
+				b1x = b1.toString();
+				b2 = bndb2[jo] ;
+				b2x = b2.toString();
+				document.getElementById(bndid[jo]).style.fontWeight = "normal" ;
+				if ( checkbox[b1x] == 1 && checkbox[b2x] == 1 )
+				{
+					document.getElementById(bndid[jo]).style.fontWeight = "bold" ;
+				}
+			}
+		}
+		if ( caindx3 > 0 )
+		{
+			for ( jo = 0; jo < caindx3; jo++ ) {
+				b1 = bndb31[jo] ;
+				b1x = b1.toString();
+				b2 = bndb32[jo] ;
+				b2x = b2.toString();
+				b3 = bndb33[jo] ;
+				b3x = b3.toString();
+				document.getElementById(bndid3[jo]).style.fontWeight = "normal" ;
+				if ( checkbox[b1x] == 1 && checkbox[b2x] == 1 && checkbox[b3x] == 1 )
+				{
+					document.getElementById(bndid3[jo]).style.fontWeight = "bold" ;
+				}
+			}
+		}
+		return false;
+	}
+	
+	function selectcell5g(btn)
+	{
+		if ( selectall5g == 1 )
+		{
+			btn.value    = '<%:Select None%>';
+			selectall5g = 0 ;
+			check = true ;
+			
+		}else
+		{
+			btn.value    = '<%:Select All%>';
+			selectall5g = 1 ;
+			check = false ;
+		}
+		for (io = 0; io < blen5g; io++) {
+			bm = bx5g.substr(io, 1) ;
+			if ( bm == "1" )
+			{
+				dex = io +1 ;
+				cellid = "cn" + dex.toString() ;
+				document.getElementById(cellid).checked = check ;
+				checkbox5g[dex] = 0 ;
+				if ( check == true )
+				{
+					checkbox5g[dex] = 1 ;
+				}
+			}
+		}
+		return false;
+	}
+	
+	function selectcell5gsa(btn)
+	{
+		if ( selectall5gsa == 1 )
+		{
+			btn.value    = '<%:Select None%>';
+			selectall5gsa = 0 ;
+			check = true ;
+			
+		}else
+		{
+			btn.value    = '<%:Select All%>';
+			selectall5gsa = 1 ;
+			check = false ;
+		}
+		for (io = 0; io < blen5gsa; io++) {
+			bm = bx5gsa.substr(io, 1) ;
+			if ( bm == "1" )
+			{
+				dex = io +1 ;
+				cellid = "cs" + dex.toString() ;
+				document.getElementById(cellid).checked = check ;
+				checkbox5gsa[dex] = 0 ;
+				if ( check == true )
+				{
+					checkbox5gsa[dex] = 1 ;
+				}
+			}
+		}
+		return false;
+	}
+	
+	function scanbnd()
+	{
+		s = " " ;
+		document.getElementById("bndtxt").value="<%:Cell Scanner Start ...%>";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "send_scancmd")%>',
+			{ set: s },
+			function(x, rv)
+			{
+				document.getElementById("bndtxt").value=rv.result;
+			}
+		);
+
+		return false;
+	}
+	
+	function lockbnd()
+	{
+		rstr = "" ;
+		for ( jo = blen; jo > 0; jo-- ) {
+			rstr = checkbox[jo].toString() + rstr ;
+		}
+		if ( bx5g != 'x' )
+		{
+			rstr5g = "" ;
+			for ( jo = blen5g; jo > 0; jo-- ) {
+				rstr5g = checkbox5g[jo].toString() + rstr5g ;
+			}
+			rstr = rstr + ',' + rstr5g ;
+		}
+		if ( bx5gsa != 'x' )
+		{
+			rstr5gsa = "" ;
+			for ( jo = blen5gsa; jo > 0; jo-- ) {
+				rstr5gsa = checkbox5gsa[jo].toString() + rstr5gsa ;
+			}
+			rstr = rstr + ',' + rstr5gsa ;
+		}
+
+		if ( confirm("<%:Modem will be locked to selected bands.\nContinue?%>") )
+		{
+			locking = 1;
+			s = rstr ;
+			XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "send_lockcmd")%>',
+				{ set: s },
+				function(x, rv)
+				{
+				}
+			); 
+		}
+		
+		return false;
+	}
+	
+	function selectbnd(btn)
+	{
+		id = btn.id ;
+		band = id.substr(2) ;
+		
+		bindx = parseInt(band) ;
+		chk = document.getElementById(id).checked ;
+		checkbox[bindx] = 0 ;
+		if ( chk == true )
+		{
+			checkbox[bindx] = 1 ;
+		}
+		
+		if ( caindx > 0 )
+		{
+			for ( jo = 0; jo < caindx; jo++ ) {
+				b1 = bndb1[jo] ;
+				b1x = b1.toString();
+				b2 = bndb2[jo] ;
+				b2x = b2.toString();
+				document.getElementById(bndid[jo]).style.fontWeight = "normal" ;
+				if ( checkbox[b1x] == 1 && checkbox[b2x] == 1 )
+				{
+					document.getElementById(bndid[jo]).style.fontWeight = "bold" ;
+				}
+			}
+		}
+		if ( caindx3 > 0 )
+		{
+			for ( jo = 0; jo < caindx3; jo++ ) {
+				b1 = bndb31[jo] ;
+				b1x = b1.toString();
+				b2 = bndb32[jo] ;
+				b2x = b2.toString();
+				b3 = bndb33[jo] ;
+				b3x = b3.toString();
+				document.getElementById(bndid3[jo]).style.fontWeight = "normal" ;
+				if ( checkbox[b1x] == 1 && checkbox[b2x] == 1 && checkbox[b3x] == 1 )
+				{
+					document.getElementById(bndid3[jo]).style.fontWeight = "bold" ;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	function selectbnd5g(btn)
+	{
+		id = btn.id ;
+		band = id.substr(2) ;
+		
+		bindx = parseInt(band) ;
+		chk = document.getElementById(id).checked ;
+		checkbox5g[bindx] = 0 ;
+		if ( chk == true )
+		{
+			checkbox5g[bindx] = 1 ;
+		}
+		return false;
+	}
+	
+	function selectbnd5gsa(btn)
+	{
+		id = btn.id ;
+		band = id.substr(2) ;
+		
+		bindx = parseInt(band) ;
+		chk = document.getElementById(id).checked ;
+		checkbox5gsa[bindx] = 0 ;
+		if ( chk == true )
+		{
+			checkbox5gsa[bindx] = 1 ;
+		}
+		return false;
+	}
+	
+	function showca(btn)
+	{
+		if ( sca == 0 )
+		{
+			btn.value = "Show 2xCA"
+			document.getElementById("tab9").style.display = "";
+			document.getElementById("tab8").style.display = "none";
+			document.getElementById("dym3").style.display = "";
+			document.getElementById("dym2").style.display = "none";
+			sca = 1 ;
+		}
+		else
+		{
+			btn.value = "Show 3xCA"
+			document.getElementById("tab8").style.display = "";
+			document.getElementById("tab9").style.display = "none";
+			document.getElementById("dym2").style.display = "";
+			document.getElementById("dym3").style.display = "none";
+			sca = 0 ;
+		}
+		return false;
+	}
+	
+	function senddropcmd()
+	{
+		var s = document.getElementById("drop1").selectedIndex;
+		index = at1[s];
+		document.getElementById("attxt").value=index;
+		
+		atsend=1;
+		document.getElementById("attxt").value="<%:Waiting for a Response%>";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "send_atcmd")%>',
+			{ set: index },
+			function(x, rv)
+			{
+				atres=rv.result;
+				atres1 = atres.toLowerCase();
+				crin = atres1.indexOf("+crsm:");
+				if ( crin == -1 )
+				{
+					document.getElementById("attxt").value=rv.result;
+					
+				}
+				else
+				{
+					subs = atres1.substring(crin);
+					crin = subs.indexOf(",");
+					subs1 = subs.substring(crin+1);
+					crin = subs1.indexOf(",");
+					subs = "xxxxxxxxxxxxxx" + subs1.substring(crin+15);
+					subs1 = "ICCID = " + subs.replace(/['"]+/g, '');
+					document.getElementById("attxt").value=subs1; 
+				}
+				atsend=0;
+			}
+		);
+		return false; 
+	}
+	
+	function done() { 
+		document.getElementById("popup").style.display = "none";
+		passw = document.getElementById("password").value;
+		var r = document.getElementById("pass").value;
+		if ( r == null )
+
+		{
+			document.getElementById("pass").value="";
+			return false;
+		}
+		if ( r == passw )
+		{
+			//document.getElementById("lockbtn").src="<%=showicon(0)%>";
+			document.getElementById("atcmdlck").style.visibility="visible";
+			document.getElementById("sendfullat").style.visibility="visible";
+			document.getElementById("pass").value="";
+			lockb = 1;
+		}
+		else
+		{
+			alert("Incorrect Password!!!");
+			document.getElementById("pass").value="";
+		}
+		//document.getElementById("lockbtn").disabled=false;
+		return false;
+	};
+
+	function unlock(btn)
+	{
+		
+		if ( lockb == 0 )
+		{
+			document.getElementById("popup").style.display = "block";
+			//document.getElementById("lockbtn").disabled=true;
+		}
+		else
+		{
+			//document.getElementById("lockbtn").src="<%=showicon(1)%>";
+			document.getElementById("atcmdlck").style.visibility="hidden";
+			document.getElementById("sendfullat").style.visibility="hidden";
+			lockb = 0;
+		}
+		return false;
+	}
+	
+	function sndfullcmd(event)
+	{
+		var x = event.key;
+    		if (x == "Enter")
+		{
+			document.getElementById("sendfullat").focus();
+			var s = document.getElementById("atcmdlck").value;
+			if ( s.length == 0 )
+			{
+				alert("<%:You must enter an AT-Command!!%>");
+				return false;
+			}
+			atsend=1;
+			document.getElementById("attxt").value="<%:Waiting for a Response%>";
+			XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "send_atcmd")%>',
+				{ set: s },
+				function(x, rv)
+				{
+					document.getElementById("atcmd").focus();
+					document.getElementById("attxt").value=rv.result;
+					atsend=0;
+				}
+			);
+		}
+		return false;
+	}
+	
+	function sendfullcmd()
+	{
+		var s = document.getElementById("atcmdlck").value;
+		if ( s.length == 0 )
+		{
+			alert("<%:You must enter an AT-Command!!%>");
+			return false;
+		}
+		atsend=1;
+		document.getElementById("attxt").value="Waiting for a Response";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "send_atcmd")%>',
+			{ set: s },
+			function(x, rv)
+			{
+				document.getElementById("attxt").value=rv.result;
+				atsend=0;
+			}
+		);
+
+		return false;
+	}
+	
+	function cellenable()
+	{
+		var st;
+		state = cenable;
+		if ( state == "0" )
+		{
+			var ear = document.getElementById("earfcn").value;
+			var pc = document.getElementById("pci").value;
+			var ear1 = document.getElementById("earfcn1").value;
+			var pc1 = document.getElementById("pci1").value;
+			var ear2 = document.getElementById("earfcn2").value;
+			var pc2 = document.getElementById("pci2").value;
+			var ear3 = document.getElementById("earfcn3").value;
+			var pc3 = document.getElementById("pci3").value;
+			if ( ear.length == 0 )
+			{
+				alert("<%:You must enter an EARFCN Number!!%>");
+				return false;
+			}
+			if ( pc.length == 0 )
+			{
+				alert("<%:You must enter a PCI Number!!%>");
+				return false;
+			}
+			if ( ear1.length == 0 )
+			{
+				ear1 = "0";
+			}
+			if ( pc1.length == 0 )
+			{
+				pc1 = "0";
+			}
+			if ( ear2.length == 0 )
+			{
+				ear2 = "0";
+			}
+			if ( pc2.length == 0 )
+			{
+				pc2 = "0";
+			}
+			if ( ear3.length == 0 )
+			{
+				ear3 = "0";
+			}
+			if ( pc3.length == 0 )
+			{
+				pc3 = "0";
+			}
+			st = "1|" + ear + "|" + pc + "|" + ear1 + "|" + pc1 + "|" + ear2 + "|" + pc2 + "|" + ear3 + "|" + pc3;
+			cenable = "1";
+		} 
+		else
+		{
+			st = "0|0|0";
+			cenable = "0";
+		}
+		if ( confirm("<%:Modem will be restarted after change in cell lock status.\nContinue?%>") )
+		{
+			document.getElementById("earfcn").disabled=true;
+			document.getElementById("pci").disabled=true;
+			document.getElementById("earfcn1").disabled=true;
+			document.getElementById("pci1").disabled=true;
+			document.getElementById("earfcn2").disabled=true;
+			document.getElementById("pci2").disabled=true;
+			document.getElementById("earfcn3").disabled=true;
+			document.getElementById("pci3").disabled=true;
+			document.getElementById("cellbtn").disabled=true;
+			XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "change_cell")%>',
+				{ set: st },
+				function(x, rv)
+				{
+				}
+			);
+		}
+		return false;
+	}
+	
+	function sndpin(event)
+	{
+	
+	}
+	
+	function sendpin(btn)
+	{
+		var s = document.getElementById("modpin").value;
+		document.getElementById("attxt").value=s;
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "setpin")%>',
+			{ set: s },
+			function(x, rv)
+			{
+			}
+		); 
+
+		return true;
+	}
+	
+//]]></script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<div class="cbi-map" id="cbi-misc">
+<h2><a id="content" name="content"><%:Miscellaneous Modem Features%></a></h2>
+<div class="cbi-map-descr"><%:A Collection of Modem Features%></div>
+<head>
+     <style>
+      input {
+        vertical-align: bottom;
+      }
+	  
+	  #popup {
+		width:560px;
+		height:190px;
+		padding:20px;
+		background-color:gainsboro;  
+		border-style : solid;	
+		position:fixed;
+		top : 40%;
+		margin-left: auto;
+		margin-right: auto;
+		left: 0;
+		right: 0;
+		text-align: center;
+		display:none;
+	}
+    </style>
+</head>
+<fieldset class="cbi-section" id="cbi-modi">
+	<legend><%:Current Modem%></legend>
+	<table width="550"  border="0">
+  	<tr>
+    		<td width="40%"><ul id="active"></ul></td>
+    		<td width="17%"><strong id="conntype"></strong></td>
+		<td width="12%">
+			<input type="button" class="cbi-button cbi-button-apply" value="<%:Prev Modem%>" onclick="return modemtoggledn(this)" />
+		</td>
+		<td width="31%">
+			<input type="button" class="cbi-button cbi-button-apply" value="<%:Next Modem%>" onclick="return modemtoggle(this)" />
+		</td>
+  	</tr>
+	</table>
+</fieldset>
+<fieldset class="cbi-section" id="cbi-condis">
+	<legend><%:Connection/Disconnection%></legend>
+	<table width="550"  border="0">
+  	<tr>
+		<td width="25%">
+			<input type="button" id="conn" class="cbi-button cbi-button-apply" value="<%:Connect Current Modem%>" onclick="return modemconnect(this)" />
+		</td>
+		<td width="25%">
+			<input type="button" id="disconn" class="cbi-button cbi-button-apply" value="<%:Disconnect Current Modem%>" onclick="return modemdisconnect(this)" />
+		</td>
+		<td width="25%">
+			<input style="visibility:hidden;" type="button" id="pwrtoggle" class="cbi-button cbi-button-apply" value="<%:Power Toggle USB 1%>" onclick="return powertoggle(this)" />
+		</td>
+		<td width="25%">
+			<input style="visibility:hidden;" type="button" id="pwrtoggle1" class="cbi-button cbi-button-apply" value="<%:Power Toggle USB 2%>" onclick="return powertoggle1(this)" />
+		</td>
+  	</tr>
+	</table>
+</fieldset>
+
+<% if nosms == 0 then %>
+<fieldset class="cbi-section" id="cbi-term">
+	<legend><%:AT-Command Terminal%></legend>
+	
+	<div id="popup">
+		<table width="500" border="0">
+			<tr>
+				<td width="50px"><div><%:Enter Password to Unlock Full Terminal%></div></td>
+			</tr>
+			<tr>
+				<td width="200px"><input id="pass" type="password"/></td>
+			</tr>
+			<tr>
+				<td><input type="image" src="<%=showicon(0)%>" style="width:48px;height:48px;" onclick="return done()" /></td>
+			</tr>
+		</table>
+	</div>
+	
+	<table width="700" border="0" id="droptxt">
+	<tr>
+		<td width="10%"><div align="right"><%:AT-Command : %></div></td>
+		<td width="15%">
+			<select style="width:200px" name="atdrop" id="drop1">
+			</select>
+		</td>
+		
+		<td width="15%" ><input style="visibility:hidden;width: 500px;maxlength="200" type="text" name="atcmdlck" id="atcmdlck" class="cbi-input-text"  onkeydown="sndfullcmd(event)" ></input>
+		</td>
+		<td width="10%"><input style="visibility:hidden" type="submit" id="sendfullat" class="cbi-button cbi-button-apply" value="<%:Send Command%>" onclick="return sendfullcmd()" />
+		</td>
+		<td width="47%">&nbsp;</td>
+	</tr>
+	<tr>
+		<td><input type="submit" id="senddropat" class="cbi-button cbi-button-apply" value="<%:Send Command%>" onclick="return senddropcmd()" />
+		</td>
+	</tr>
+	</table>
+	
+	<table style="visibility:hidden" width="700" border="0" id="atpass">
+	<tr>
+		<td width="10%"><div id="password" align="right"></div></td>
+	</tr>
+	</table>
+	
+	<table width="700" border="0" id="linetxt">
+	<tr>
+		<td width="5%"><div align="right"><%:AT-Command : %></div></td>
+		<td width="20%"><input type="text" name="atcmd" id="atcmd" class="cbi-input-text" style="width: 350px;" maxlength="500"  onkeydown="sndcmd(event)" ></input></td>
+		<td width="75%">&nbsp;</td>
+	</tr>
+	<tr>
+		<td><input type="submit" id="sendcmdat" class="cbi-button cbi-button-apply" value="<%:Send Command%>" onclick="return sendcmd()" /></td>
+		<td> </td>
+	</tr>
+	</table>
+
+	<table id="cmdtxt" width="700"  border="0" style="display:table;">
+  	<tr>
+    		<td width="100%">
+		<textarea readonly="readonly" name="attxt" id="attxt" rows="6" style="width: 600px;" maxlength="160"></textarea>
+		</td>
+	</tr>
+	</table>
+
+</fieldset>
+<% end %>
+
+<% if nomulti == 1 then %>
+<% if block == 0 then %>
+<fieldset class="cbi-section" id="cbi-mode-cb">
+	<legend><%:Cellular Bands%></legend>
+	<table width="500" border="0" id ="tab10">
+		<tr>
+			<td width="50%"><div align="left" id="mdl" style="font-size : 15px; width: 100%; height: 25px;"></div></td>
+			<td width="50%">&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="500" border="0" id ="tab13">
+		<tr>
+			<td width="25%"><%:No Modem Present%></td>
+			<td width="75%">&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="500" border="0" id="tab4g">
+		<tr>
+			<td width="8%">&nbsp;</td>
+			<td width="25%"><div align="left" style="font-size : 15px; width: 100%; height: 25px;"><strong><%:LTE Bands%></strong></div></td>
+			<td width="20%">&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="800"  border="0" id="dym1">
+		<tr>
+		</tr>
+	</table>
+	
+	<table width="500" border="0" id="tab5g">
+		<tr>
+			<td width="8%">&nbsp;</td>
+			<td width="25%"><div align="left" id="5gbnd" style="font-size : 15px; width: 100%; height: 25px;"><strong><%:5G NSA Bands%></strong></div></td>
+			<td width="20%">&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="800"  border="0" id="dym5g1">
+		<tr>
+		</tr>
+	</table>
+	
+	<table width="500" border="0" id="tab5gsa">
+		<tr>
+			<td width="8%">&nbsp;</td>
+			<td width="25%"><div align="left" id="5gsabnd" style="font-size : 15px; width: 100%; height: 25px;"><strong><%:5G SA Bands%></strong></div></td>
+			<td width="20%">&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="800"  border="0" id="dym5gsa1">
+		<tr>
+		</tr>
+	</table>
+	
+	<table width="700" border="0" id="tab6">
+	<tr>
+		<td width="12%">&nbsp;</td>
+		<td width="20%"><input type="button" id="setbnd" class="cbi-button cbi-button-apply" value="<%:Lock Modem to Selected Bands%>" onclick="return lockbnd()" /></td>
+		<td width="68%">&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="700" border="0" id="tab12">
+	<tr>
+		<td>&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="700" border="0" id="tab14">
+	<tr>
+		<td width="10%"><input type="submit" id="shwca" class="cbi-button cbi-button-apply" value="<%:Show 3xCA%>" onclick="return showca(this)" /></td>
+		<td width="90%">&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="800"  border="0" id="tab8">
+  	<tr>
+    	<td width="20%"><div align="left"><strong><%:2 x Carrier Aggregation%></strong></div></td>
+	</tr>
+	</table>
+	
+	<table width="800"  border="0" id="dym2">
+  	<tr>
+	</tr>
+	</table>
+	
+	<table width="800"  border="0" id="tab9">
+  	<tr>
+    	<td width="20%"><div align="left"><strong><%:3 x Carrier Aggregation%></strong></div></td>
+	</tr>
+	</table>
+	
+	<table width="800"  border="0" id="dym3">
+  	<tr>
+	</tr>
+	</table>
+	
+	<table width="700" border="0" id="tab11">
+	<tr>
+		<td>&nbsp;</td>
+		</tr>
+	</table>
+
+	
+	<table width="700" border="0" id="tab7">
+	<tr>
+		<td width="8%"><input type="submit" id="sendbnd" class="cbi-button cbi-button-apply" value="<%:Scan%>" onclick="return scanbnd()" /></td>
+		<td width="4%">&nbsp;</td>
+		<td width="20%"><div align="left"><strong><%:Scan to Find Bands Available in Area%></strong></div></td>
+		<td width="68%">&nbsp;</td>
+		</tr>
+	</table>
+
+	<table id="tab5" width="700"  border="0" style="display:table;">
+  	<tr>
+    		<td width="100%">
+		<textarea readonly="readonly" name="bndtxt" id="bndtxt" rows="6" style="width: 600px;" maxlength="160"></textarea>
+		</td>
+	</tr>
+	</table>
+	
+	<table id="celllock1" width="550"  border="0">
+  	<tr>
+		<td width="350">&nbsp;</td>
+		<td width="200">&nbsp;</td>
+	</tr>
+	<tr>
+		<td><div align="right" style="font-size:1.6em"><%:Lock to a Single Cell%></div></td>
+		<td>&nbsp;</td>
+	</tr>
+	</table>
+	
+	
+	
+	<table id="celllock3" width="700" border="0">
+	<tr>
+		<td width="8"><div align="right" style="font-size:1.3em"><strong><%:Status : %></strong></div></td>
+		<td width="10"><ul><span id="cstatus" class="r"  style="font-size:1.3em"></span></ul></td>
+		<td width="5">&nbsp;</td>
+		<td width="10">&nbsp;</td>
+		<td width="67%">&nbsp;</td>
+	</tr>
+	<tr>
+		<td width="8%"><div align="right"><strong><%:EARFCN 1 : %></strong></div></td>
+		<td width="10%"><input type="text" name="earfcn" id="earfcn" class="cbi-input-text" style="width: 150px;" maxlength="20"></input></td>
+		<td width="5%"><div align="right"><strong><%:PCI 1 : %></strong></div></td>
+		<td width="10%"><input type="text" name="pci" id="pci" class="cbi-input-text" style="width: 150px;" maxlength="20"></input></td>
+		<td width="67%">&nbsp;</td>
+	</tr>
+	<tr>
+		<td width="8%"><div align="right"><strong><%:EARFCN 2 : %></strong></div></td>
+		<td width="10%"><input type="text" name="earfcn1" id="earfcn1" class="cbi-input-text" style="width: 150px;" maxlength="20"></input></td>
+		<td width="5%"><div align="right"><strong><%:PCI 2 : %></strong></div></td>
+		<td width="10%"><input type="text" name="pci1" id="pci1" class="cbi-input-text" style="width: 150px;" maxlength="20"></input></td>
+		<td width="67%">&nbsp;</td>
+	</tr>
+	<tr>
+		<td width="8%"><div align="right"><strong><%:EARFCN 3 : %></strong></div></td>
+		<td width="10%"><input type="text" name="earfcn2" id="earfcn2" class="cbi-input-text" style="width: 150px;" maxlength="20"></input></td>
+		<td width="5%"><div align="right"><strong><%:PCI 3 : %></strong></div></td>
+		<td width="10%"><input type="text" name="pci2" id="pci2" class="cbi-input-text" style="width: 150px;" maxlength="20"></input></td>
+		<td width="67%">&nbsp;</td>
+	</tr>
+	<tr>
+		<td width="8%"><div align="right"><strong><%:EARFCN 4 : %></strong></div></td>
+		<td width="10%"><input type="text" name="earfcn3" id="earfcn3" class="cbi-input-text" style="width: 150px;" maxlength="20"></input></td>
+		<td width="5%"><div align="right"><strong><%:PCI 4 : %></strong></div></td>
+		<td width="10%"><input type="text" name="pci3" id="pci3" class="cbi-input-text" style="width: 150px;" maxlength="20"></input></td>
+		<td width="67%">&nbsp;</td>
+	</tr>
+	</table>
+	
+	<table id="celllock2" width="550"  border="0">
+  	<tr>
+		<td width="10%"><input type="submit" id="cellbtn" class="cbi-button cbi-button-apply" value="<%:Enable Cell Lock%>" onclick="return cellenable()" /></td>
+		<td width="90%">&nbsp;</td>
+	</tr>
+	</table>
+	
+</fieldset>
+<% end %>
+
+<fieldset class="cbi-section" id="cbi-mode-pro">
+	<legend><%:Modem Protocol%></legend>
+	<table id="prochnge" border="0">
+		<tr>
+				<td width="20%">&nbsp;</td>
+				<td width="30%"><div align="right"><%:Current Modem Protocol :%></div></td>
+				<td width="20%"><ul><span id="modpro" class="r"></span></ul></td>
+				<td width="30%">&nbsp;</td>
+		</tr>
+		<tr>
+			<td width="10%">&nbsp;</td>
+    		<td><div align="right"><%:Change Cellular Mode :%></div></td>
+    		<td>
+				<select style="visibility:hidden;width:auto" name="qspro" id="qpro">
+					<option value="0" selected="selected"><%:Select Protocol%></option>
+					<option value="1"><%:Switch to QMI Protocol%></option>
+					<option value="2"><%:Switch to MBIM Protocol%></option>
+					<option value="3"><%:Switch to ECM Protocol%></option>
+				</select>
+				<select style="visibility:hidden;width:auto" name="qspro" id="spro">
+					<option value="0" selected="selected"><%:Select Protocol%></option>
+					<option value="1"><%:Switch to QMI Protocol%></option>
+					<option value="2"><%:Switch to MBIM Protocol%></option>
+				</select>
+			</td>
+			<td><input type="button" id="probutton" class="cbi-button cbi-button-apply" value="<%:Apply Protocol Change%>" onclick="return applyp(this)" /></td>
+		</tr>
+	</table>
+</fieldset>
+	
+<fieldset class="cbi-section" id="cbi-mode">
+	<legend><%:Cellular Mode%></legend>
+	<table width="550"  border="0">
+  	<tr>
+    		<td width="30%"><div align="right"><%:Current Cellular Mode :%></div></td>
+    		<td width="10%"><ul><span id="netmode" class="r"></span></ul></td>
+    		<td width="50%">&nbsp;</td>
+  	</tr>
+	<tr>
+    		<td><div align="right"><%:Change Cellular Mode :%></div></td>
+    		<td>
+		<select style="visibility:hidden;width:auto" name="net_mode" id="net1">
+			<option value="1" selected="selected"><%:Automatic%></option>
+			<option value="2"><%:2G Preferred%></option>
+			<option value="3"><%:2G Only%></option>
+			<option value="4"><%:3G Preferred%></option>
+			<option value="5"><%:3G Only%></option>
+		</select>
+		<select style="visibility:hidden;width:auto" name="net_mode" id="net2">
+			<option value="1" selected="selected"><%:Automatic%></option>
+			<option value="2"><%:2G Preferred%></option>
+			<option value="3"><%:2G Only%></option>
+			<option value="4"><%:3G Preferred%></option>
+			<option value="5"><%:3G Only%></option>
+			<option value="6"><%:4G Preferred%></option>
+			<option value="7"><%:4G Only%></option>
+		</select>
+		<select style="visibility:hidden;width:auto" name="net_mode" id="net3">
+			<option value="1" selected="selected"><%:Automatic%></option>
+			<option value="4"><%:3G Preferred%></option>
+			<option value="5"><%:3G Only%></option>
+			<option value="6"><%:4G Preferred%></option>
+			<option value="7"><%:4G Only%></option>
+		</select>
+		<select style="visibility:hidden;width:auto" name="net_mode" id="net4">
+			<option value="1" selected="selected"><%:Automatic%></option>
+			<option value="7"><%:4G Only%></option>
+			<option value="8"><%:4G & 5G : NSA Mode%></option>
+			<option value="9"><%:5G Only : SA Mode%></option>
+		</select>
+		</td>
+		<td><input style="visibility:hidden;" type="button" id="apply1" class="cbi-button cbi-button-apply" value="<%:Apply Mode Change%>" onclick="return applyc(this)" /></td>
+		<td>&nbsp;</td>
+  	</tr>
+
+ 	</table>
+</fieldset>
+<% end %>
+
+<fieldset class="cbi-section" id="cbi-mode-pin">
+	<legend><%:GPS Message Pin%></legend>
+	<table id="pinchnge" border="0">
+		<tr>
+				<td width="5%">&nbsp;</td>
+				<td width="10%"><div align="right"><%:Message Pin :%></div></td>
+				<td width="20%"><input type="text" name="modpin" id="modpin" class="cbi-input-text" style="width: 350px;" maxlength="500" ></input></td>
+				<td width="10%"><input type="button" id="submit" class="cbi-button cbi-button-apply" value="<%:Set Pin%>" onclick="return sendpin(this)" /></td>
+				<td width="55%">&nbsp;</td>
+		</tr>
+ 	</table>
+</fieldset>
+
+</div>
+</form>
+<%+footer%>

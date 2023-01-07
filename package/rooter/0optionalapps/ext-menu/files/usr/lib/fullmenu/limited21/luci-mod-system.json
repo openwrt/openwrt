@@ -1,0 +1,60 @@
+{
+	"admin/system/system": {
+		"title": "System",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "system/system"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-config" ]
+		}
+	},
+
+	"admin/system/admin": {
+		"title": "Administration",
+		"order": 2,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-config", "luci-mod-system-ssh" ]
+		}
+	},
+
+	"admin/system/admin/password": {
+		"title": "Router Password",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "system/password"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-config" ]
+		}
+	},
+
+	"admin/system/flash": {
+		"title": "Flash Firmware",
+		"order": 70,
+		"action": {
+			"type": "view",
+			"path": "system/flash"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-flash" ]
+		}
+	},
+
+	"admin/system/reboot": {
+		"title": "Reboot",
+		"order": 90,
+		"action": {
+			"type": "view",
+			"path": "system/reboot"
+		},
+		"depends": {
+			"acl": [ "luci-mod-system-reboot" ]
+		}
+	}
+}

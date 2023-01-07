@@ -1,0 +1,7 @@
+#!/bin/sh /etc/rc.common
+
+id=$(uci -q get custom.zerotier.networkid)
+uci delete zerotier.zerotier.join
+uci add_list zerotier.zerotier.join=$id
+uci commit zerotier
+/etc/init.d/zerotier restart

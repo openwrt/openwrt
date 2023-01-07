@@ -1,0 +1,88 @@
+#!/bin/sh  /etc/rc.common
+. /lib/functions.sh
+# Copyright (C) 2011 OpenWrt.org 
+
+log() {
+	logger -t "30-mount" "$@"
+}
+
+sanitize() {
+	sed -e 's/[[:space:]]\+$//; s/[[:space:]]\+/_/g' "$@"
+}
+
+blkdev=`dirname $DEVPATH` 
+if [ `basename $blkdev` != "block" ]; then 
+	device=`basename $DEVPATH` 
+	if echo $device | grep -q "mtdblock"; then
+		exit 0
+	fi
+	if [ ! -e /usr/lib/sdcard/sdcard.sh ]; then
+		/usr/lib/sdcard/sdcard.sh detect
+		source /tmp/detect.file
+		if [ $detect = "1" ]; then
+			if echo $device | grep -q "mmcblk"; then
+				exit 0
+			fi
+		fi
+	fi
+	if echo $device | grep -q "mmcblk"; then
+		device1="SDCard"${device:8:2}
+	else
+		device1=$device
+	fi
+	
+	if [ -e /etc/sda_drop ]; then
+		source /etc/sda_drop
+		if echo $device | grep -q "$SDA"; then
+			exit 0
+		fi
+	fi
+
+	case "$ACTION" in 
+		add)
+			MT=$(cat /proc/mounts | grep "$device")
+			if [ -z $MT ]; then
+				exit 0
+			fi
+			DEVN=${DEVNAME:0:3}
+			MODEL=$(sanitize "/sys/block/$DEVN/device/model")
+			if [ -d /etc/ksmbd ]; then
+				uci delete ksmbd.$device1
+				uci set ksmbd.$device1=share
+				uci set ksmbd.$device1.name=$device1
+				uci set ksmbd.$device1.path=/mnt/$device1
+				uci set ksmbd.$device1.read_only=no
+				uci set ksmbd.$device1.guest_ok=yes
+				uci set ksmbd.$device1.create_mask='0666'
+				uci set ksmbd.$device1.dir_mask='0777'
+				uci commit ksmbd
+				/etc/init.d/ksmbd restart
+				log "/mnt/$device1 shared as $device1"
+			else
+				if [ -d /etc/samba ]; then
+					uci delete samba.$device1
+					uci set samba.$device1=sambashare
+					uci set samba.$device1.name=$device1
+					uci set samba.$device1.path=/mnt/$device1
+					uci set samba.$device1.read_only=no
+					uci set samba.$device1.guest_ok=yes
+					uci commit samba
+					/etc/init.d/samba restart
+					log "/mnt/$device1 shared as $device1"
+				fi
+			fi
+		;; 
+		remove) 
+			log "remove /mnt/$device1"
+			if [ -d /etc/ksmbd ]; then
+				uci delete ksmbd.$device1
+				uci commit ksmbd
+			else
+				if [ -d /etc/samba ]; then
+					uci delete samba.$device1
+					uci commit samba
+				fi
+			fi
+		;; 
+	esac 
+fi

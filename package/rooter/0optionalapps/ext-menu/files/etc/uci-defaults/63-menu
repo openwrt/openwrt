@@ -1,0 +1,10 @@
+#!/bin/sh
+
+fv=$(uci -q get custom.menu.full)
+if [ $fv = "0" ]; then
+	fv="1"
+else
+	fv="0"
+fi
+
+/usr/lib/fullmenu/setmenu.sh $fv

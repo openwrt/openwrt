@@ -1,0 +1,18 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 OpenWrt.org
+
+START=99
+USE_PROCD=1
+
+start_service()
+{
+	source /etc/openwrt_release
+	echo "  _______              __           " > /etc/banner
+	echo " |  __   |.-----.-----|  |_ .-----..----." >> /etc/banner
+	echo " |  __  _||  _  |  _  |   _||  -__||   _|" >> /etc/banner
+	echo " |_|  \_\ |_____|_____|____||_____||__|  " >> /etc/banner
+	echo "      C E L L U L A R   F R E E D O M" >> /etc/banner
+	echo " -----------------------------------------------------" >> /etc/banner
+	echo " $DISTRIB_DESCRIPTION" >> /etc/banner
+	echo " -----------------------------------------------------" >> /etc/banner
+}

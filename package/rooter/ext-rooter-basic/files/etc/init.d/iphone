@@ -1,0 +1,22 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=95
+
+start() {
+	if [ ! -d "/var/lib/lockdown" ];then
+		mkdir -p /var/lib/lockdown
+	fi
+	bkp_files=`ls /etc/lockdown/locks`
+	for file in $bkp_files;
+	do
+		if [ ! -f "/var/lib/lockdown/$file" ];then
+			cp /etc/lockdown/locks/$file /var/lib/lockdown/
+		fi
+	done
+	proc_usbmuxd=`ps | grep usbmuxd`
+	nb_usbmuxd=`echo "$proc_usbmuxd" | grep /usr/sbin/usbmuxd | wc -l`
+	if [ ! "$nb_usbmuxd" -eq 1 ];then
+		[ -x /usr/sbin/usbmuxd ] && usbmuxd -v
+	fi
+}

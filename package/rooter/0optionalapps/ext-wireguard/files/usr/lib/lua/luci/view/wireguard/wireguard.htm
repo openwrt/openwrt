@@ -1,0 +1,228 @@
+<%#
+ Copyright 2016-2017 Dan Luedtke <mail@danrl.com>
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%
+  
+-%>
+
+<script type="text/javascript">//<![CDATA[
+
+  function bytes_to_str(bytes) {
+    bytes = parseFloat(bytes);
+    if (bytes < 1) { return "0 B"; }
+    var sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+    var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+  };
+
+  function timestamp_to_str(timestamp) {
+    if (timestamp < 1) {
+      return '<%:Never%>';
+    }
+    var now = new Date();
+    var seconds = (now.getTime() / 1000) - timestamp;
+    var ago = "";
+    if (seconds < 60) {
+      ago = parseInt(seconds) + '<%:s ago%>';
+    } else if (seconds < 3600) {
+      ago = parseInt(seconds / 60) + '<%:m ago%>';
+    } else if (seconds < 86401) {
+      ago = parseInt(seconds / 3600) + '<%:h ago%>';
+    } else {
+      ago = '<%:over a day ago%>';
+    }
+    var t = new Date(timestamp * 1000);
+    return t.toUTCString() + ' (' + ago + ')';
+  }
+
+
+  XHR.poll(5, '<%=luci.dispatcher.build_url("admin", "vpn", "wirestatus")%>', null,
+   function(x, data) {
+	both = {};
+	bothbp={};
+	iii = 1;
+    for (var key in data) {
+      if (!data.hasOwnProperty(key)) { continue; }
+      var ifname = key;
+      var iface = data[key];
+	  
+      var s = "";
+      if (iface.public_key == '(none)') {
+        s += '<em><%:Interface does not have a public key!%></em>';
+      } else {
+        s += String.format(
+          '<strong><%:Public Key%>: </strong>%s',
+          iface.public_key
+        );
+      }
+      if (iface.listen_port > 0) {
+        s += String.format(
+          '<br /><strong><%:Listen Port%>: </strong>%s',
+          iface.listen_port
+        );
+      }
+      if (iface.fwmark != 'off') {
+        s += String.format(
+          '<br /><strong><%:Firewall Mark%>: </strong>%s',
+          iface.fwmark
+        );
+      }
+	if ( iii == 1 )
+	{
+		document.getElementById("iinfo").innerHTML = s;
+		document.getElementById("leg").innerHTML = ifname;
+	}
+	else
+	{
+		document.getElementById("iinfo1").innerHTML = s;
+		document.getElementById("leg1").innerHTML = ifname;
+	}
+      for (var i = 0, ilen = iface.peers.length; i < ilen; i++) {
+        var peer = iface.peers[i];
+        var s = String.format(
+          '<strong><%:Public Key%>: </strong>%s',
+          peer.public_key
+        );
+        if (peer.endpoint != '(none)') {
+          s += String.format(
+            '<br /><strong><%:Endpoint%>: </strong>%s',
+            peer.endpoint
+          );
+        }
+        if (peer.allowed_ips.length > 0) {
+          s += '<br /><strong><%:Allowed IPs%>:</strong>';
+          for (var k = 0, klen = peer.allowed_ips.length; k < klen; k++) {
+            s += '<br />&nbsp;&nbsp;&bull;&nbsp;' + peer.allowed_ips[k];
+          }
+        }
+        if (peer.persistent_keepalive != 'off') {
+          s += String.format(
+            '<br /><strong><%:Persistent Keepalive%>: </strong>%ss',
+            peer.persistent_keepalive
+          );
+        }
+        var icon = '<img src="<%=resource%>/icons/wireguard_disabled.png" />';
+        var now = new Date();
+        if (((now.getTime() / 1000) - peer.latest_handshake) < 140) {
+          icon = '<img src="<%=resource%>/icons/wireguard.png" />';
+        }
+        s += String.format(
+          '<br /><strong><%:Latest Handshake%>: </strong>%s',
+          timestamp_to_str(peer.latest_handshake)
+        );
+        s += String.format(
+          '<br /><strong><%:Data Received%>: </strong>%s' +
+          '<br /><strong><%:Data Transmitted%>: </strong>%s',
+          bytes_to_str(peer.transfer_rx),
+          bytes_to_str(peer.transfer_tx)
+        );
+		if ( iii == 1 )
+		{
+			 document.getElementById("config").innerHTML = icon;
+			 document.getElementById("info").innerHTML = s;
+		}
+		else
+		{
+			 document.getElementById("config1").innerHTML = icon;
+			 document.getElementById("info1").innerHTML = s;
+		}
+      }
+	iii = iii + 1;
+    }
+  });
+//]]></script>
+
+<h2><%:WireGuard Status%></h2>
+
+<fieldset class="cbi-section">
+
+  	<div>
+		<table width="900" border="0">
+			<tr>
+				<td width="50px"  style="vertical-align:center;font-size : 25px">
+					<div><%:Interface %></div>
+				</td>
+				<td width="100px" id="leg" style="width:100px; text-align:left; padding:3px;font-size : 25px">&nbsp;</td>
+				<td width="650px">&nbsp;</td>
+			</tr>
+		</table>
+		<table width="900" border="0">
+			<tr>
+				<td width="20px">&nbsp;</td>
+				<td width="150px"  style="vertical-align:center;font-size : 20px">
+					<div><%:Configuration%></div>
+				</td>
+				<td width="100px" id="config" style="width:16px; text-align:center; padding:3px">&nbsp;</td>
+				<td width="50px">&nbsp;</td>
+				<td width="580px">
+					<div id="info" style="vertical-align:middle; padding: 3px">
+						<em><%:Collecting data...%></em>
+					</div>				
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td style="vertical-align:center;font-size : 20px">
+					<div><%:Peer%></div>
+				</td>
+				<td>&nbsp;</td>
+				<td>&nbsp;</td>
+				<td>
+					<div id="iinfo" style="vertical-align:middle; padding: 3px">
+						<em><%:Collecting data...%></em>
+					</div>				
+				</td>
+			</tr>
+		</table>
+		
+		<table width="900" border="0" id="second1">
+			<tr>
+				<td width="50px"  style="vertical-align:center;font-size : 25px">
+					<div><%:Interface %></div>
+				</td>
+				<td width="100px" id="leg1" style="width:100px; text-align:left; padding:3px;font-size : 25px">&nbsp;</td>
+				<td width="650px">&nbsp;</td>
+			</tr>
+		</table>
+		<table width="900" border="0" id="second">
+			<tr>
+				<td width="20px">&nbsp;</td>
+				<td width="150px"  style="vertical-align:center;font-size : 20px">
+					<div><%:Configuration%></div>
+				</td>
+				<td width="100px" id="config1" style="width:16px; text-align:center; padding:3px">&nbsp;</td>
+				<td width="50px">&nbsp;</td>
+				<td width="580px">
+					<div id="info1" style="vertical-align:middle; padding: 3px">
+						<em><%:Collecting data...%></em>
+					</div>				
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td style="vertical-align:center;font-size : 20px">
+					<div><%:Peer%></div>
+				</td>
+				<td>&nbsp;</td>
+				<td>&nbsp;</td>
+				<td>
+					<div id="iinfo1" style="vertical-align:middle; padding: 3px">
+						<em><%:Collecting data...%></em>
+					</div>				
+				</td>
+			</tr>
+		</table>
+<!--		
+		<table id="cmdtxt" width="700"  border="0" style="display:table;">
+		<tr>
+				<td width="100%">
+			<textarea readonly="readonly" name="attxt" id="attxt" rows="6" style="width: 600px;" maxlength="160"></textarea>
+			</td>
+		</tr>
+		</table> -->
+	</div>
+	
+</fieldset>
+

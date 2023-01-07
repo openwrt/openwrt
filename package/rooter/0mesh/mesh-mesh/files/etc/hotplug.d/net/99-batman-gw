@@ -1,0 +1,34 @@
+#!/bin/sh
+
+dhcp4_discover () {
+	ifup lan_dhcp
+}
+
+dhcp4_kill () {
+	ifdown lan_dhcp
+}
+
+dnsmasq_start () {
+	uci revert -P/var/state dhcp.@dnsmasq[0].domainneeded
+	uci revert -P/var/state dhcp.@dnsmasq[0].boguspriv
+	uci revert -P/var/state dhcp.@dnsmasq[0].rebind_protection
+	uci revert -P/var/state dhcp.lan.ignore
+	/etc/init.d/dnsmasq restart
+}
+
+dnsmasq_stop () {
+	uci set -P/var/state dhcp.@dnsmasq[0].domainneeded=
+	uci set -P/var/state dhcp.@dnsmasq[0].boguspriv=
+	uci set -P/var/state dhcp.@dnsmasq[0].rebind_protection=0
+	uci set -P/var/state dhcp.lan.ignore=1
+	echo no-dhcp-interface=br-lan >> /var/etc/dnsmasq.conf
+	/etc/init.d/dnsmasq restart
+}
+
+if [ "$BATTYPE" = "gw" ] ; then
+	case "$BATACTION" in
+		add) dnsmasq_stop ; dhcp4_discover ;;
+		del) dhcp4_kill ; dnsmasq_start ;;
+		change) dhcp4_kill ; sleep 5 ; dhcp4_discover ;;
+	esac
+fi

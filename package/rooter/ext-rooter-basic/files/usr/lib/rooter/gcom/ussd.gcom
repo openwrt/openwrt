@@ -1,0 +1,29 @@
+opengt
+ set com 115200n81
+ set comecho off
+ set senddelay 0.05
+ waitquiet 1 0.2
+:start
+let f=20
+let $x=$env("ATCMD")
+send $x+"^m"
+waitfor 2 "OK"
+let t=time()+f
+let $s=""
+gosub getresult
+let x=len($s)
+if x<2 let $s="^mUSSD TIMEOUT ERROR"
+print $s
+:continue
+exit 0
+:getresult
+get 1 "^m" $u
+let x=len($u)
+let $v=$s
+if x>0 let $s=$v+$u
+if $right("    "+$s,4) = '",15' return
+if $right("    "+$s,4) = '",72' return
+if $right("    "+$s,4) = '",68' return
+if $mid($s,0,30)="^j+CME ERROR:" return
+if time()>t return
+goto getresult

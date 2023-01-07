@@ -1,0 +1,46 @@
+opengt
+ set com 115200n81
+ set comecho off
+ set senddelay 0.05
+ waitquiet 1 0.2
+
+:start
+let $g=$env("TIMEOUT")
+if $g = "" let f=25
+else let f = val($g)
+
+send "AT+CGPADDR=1^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT\^SYSINFOEX^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT\^SYSINFO^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT\^NDISSTATQRY?^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+
+:continue
+ exit 0
+
+:getresult
+get 1 "^m" $s
+let x=len($s)
+if x=0 let $s="^mTIMEOUT ERROR"
+else print $s
+if $s="^jOK" return
+if $mid($s,0,6)="^jERROR" return
+if $mid($s,0,8)="^jCOMMAND" return
+if $mid($s,0,11)="^j+CME ERROR" return
+if time()>t return
+goto getresult

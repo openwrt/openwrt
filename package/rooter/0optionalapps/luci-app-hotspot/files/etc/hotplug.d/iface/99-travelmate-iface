@@ -1,0 +1,48 @@
+#!/bin/sh
+
+wif=$(uci -q get travelmate.global.freq)
+if [ "$ACTION" = ifup -a "$INTERFACE" = "wwan$wif" ]; then
+	exit 1
+fi
+
+if [ "$ACTION" = ifdown -a "$INTERFACE" = "wwan$wif" ]; then
+	wifilog "HOTSPOT" "hotplug (iface): action='$ACTION' interface='$INTERFACE'"
+	conn=$(uci -q get travelmate.global.connecting)
+	if [ "$conn" != "1" ]; then
+		uci -q set wireless.wwan$wif.ssid="Hotspot Manager Interface"
+		uci -q set wireless.wwan$wif.encryption="none"
+		uci -q set wireless.wwan$wif.key=
+		uci -q set wireless.wwan$wif.disabled=1
+		uci -q commit wireless
+		wifilog "HOTSPOT" "Lost Connection"
+		ubus call network reload
+		disa=$(uci -q get travelmate.global.ssid)
+		# check for disconnect or lost connection
+		if [ "$disa" != "7" ]; then
+			uci set travelmate.global.ssid="9" # lost connection
+			reconn=$(uci -q get travelmate.global.reconn)
+			if [ "$reconn" != "0" ]; then
+				lost=$(uci -q get travelmate.global.lost)
+				if [ $reconn -eq 99 ]; then
+					lost="1"
+				fi
+				if [ $lost -le $reconn ]; then
+					let lost=$lost+1
+					uci set travelmate.global.lost=$lost
+					uci set travelmate.global.delay="30"
+					uci commit travelmate
+					sleep 10
+					/usr/lib/hotspot/travelmate.sh &
+					exit 0
+				fi
+			fi
+		fi
+		uci set travelmate.global.trm_enabled="0"
+		uci commit travelmate
+	fi
+	
+	debug="$(uci -q get travelmate.global.trm_debug)"
+	if [ $debug = "1" ]; then
+		wifilog "HOTSPOT" "hotplug (iface): action='$ACTION' interface='$INTERFACE'"
+	fi
+fi

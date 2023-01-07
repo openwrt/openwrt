@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="refresh" content="300">
+<link rel="stylesheet" href="rooter/css/iconmoon_splash.css">
+	<link rel="stylesheet" href="rooter/css/splash.css">
+</head>
+<body style="background-color: lightgrey"  id='rooterSplashStatus' >
+	<h2> Current Month's Bandwidth Usage <span class="msCell"><span></span></span></h2>
+	<div class='rooterPageContentBW'>
+		<div class='modemStatusRow modemStatusRow1'>
+			<div class='msCell' id='msCell_days'>
+				<div class='msTitle'>Days</div>
+				<span>#CDAYS#</span>
+			</div>
+			<div class='msCell' id='msCell_totol'>
+				<div class='msTitle'>Total Amount Used</div>
+				<span>#CTOTAL#</span>
+			</div>
+		</div>
+		<div class='modemStatusRow modemStatusRow1'>
+			<div class='msCell' id='msCell_down'>
+				<div class='msTitle'>Downloaded</div>
+				<span>#CDOWN#</span>
+			</div>
+			<div class='msCell' id='msCell_up'>
+				<div class='msTitle'>Uploaded</div>
+				<span>#CUP#</span>
+			</div>
+			<div class='msCell' id='msCell_project'>
+				<div class='msTitle'>Projected Amount</div>
+				<span>#PROJECT#</span>
+			</div>
+		</div>
+	</div>
+	
+	<h2> Last 30 Day Bandwidth Usage <span class="msCell"><span></span></span></h2>
+	<style>
+		hr {
+		  border: 0;
+		  border-top: 2px solid brown;
+		}
+	</style>
+
+	<div class='rooterPageContentBW'>
+		<div class='modemStatusRow modemStatusRow1'>
+			<div class='msCell' id='msCell_per'>
+				<div class='msTitle'>Starting Date</div>
+				<span>#START#</span>
+			</div>
+			<div class='msCell' id='msCell_per'>
+				<div class='msTitle'>Ending Date</div>
+				<span>#END#</span>
+			</div>
+		</div>
+		<div class='modemStatusRow modemStatusRow1'>
+			<div class='msCell' id='msCell_per'>
+				<div class='msTitle'>Total</div>
+				<span>#TOTAL#</span>
+			</div>
+			<div class='msCell' id='msCell_per'>
+				<div class='msTitle'>Download</div>
+				<span>#DOWN#</span>
+			</div>
+			<div class='msCell' id='msCell_per'>
+				<div class='msTitle'>Upload</div>
+				<span>#UP#</span>
+			</div>
+		</div>
+	</div>
+
+	<div>
+		<table width="480" border="1" >
+			<tr>
+				<td width="120px"><div align="left"><strong> DATE</strong></div></td>
+				<td width="120px"><div align="left"><strong> DOWN</strong></div></td>
+				<td width="120px"><div align="left"><strong> UP</strong></div></td>
+				<td width="120px"><div align="left"><strong> TOTAL</strong></div></td>
+			</tr>
+			<tr><td></td><td></td><td></td><td></td></tr>
+		#MONLIST#
+	</div>
+</body>
+

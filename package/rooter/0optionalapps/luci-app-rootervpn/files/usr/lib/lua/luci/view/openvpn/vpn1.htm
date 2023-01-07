@@ -1,0 +1,120 @@
+<script type="text/javascript">//<![CDATA[
+
+	function __data2elements(x, rv) {
+		var tbl = document.getElementById('vpn_status_table');
+		// security check
+		if ( !(tbl) ) { return; }
+
+		// clear all rows
+		while (tbl.rows.length > 1)
+			tbl.deleteRow(1);
+			
+		var i = -1;
+		var j = 1;
+		
+		if (rv[0].enabled != "-1")
+		{
+			for( j = 1; j < rv.length+1; j++ )
+			{
+				var tr = tbl.insertRow(-1);
+				tr.className = 'cbi-section-table-row cbi-rowstyle-' + (((j + i) % 2) + 1) ;
+				if ( rv[j-1].enabled == "0" )
+				{
+					clr = '<font color="#b5b5b5">' ;
+					sclr = '</font>' ;
+				}
+				else
+				{
+					if ( rv[j-1].started == "0" )
+					{
+						clr = '<font color="#000000">' ;
+						sclr = '</font>' ;
+					}
+					else
+					{
+						clr = '<b><font color="#000000">' ;
+						sclr = '</font></b>' ;
+					}
+				}
+				tr.insertCell(-1).innerHTML = clr + rv[j-1].name + sclr ;
+				if ( rv[j-1].vpntype == "0" )
+				{
+					tr.insertCell(-1).innerHTML = clr + "<%:Server%>" + sclr ;
+				}
+				else
+				{
+					tr.insertCell(-1).innerHTML = clr + "<%:Client%>" + sclr ;
+				}
+				if ( rv[j-1].enabled == "0" )
+				{
+					tr.insertCell(-1).innerHTML = '<img src="<%=resource%>/icons/vpn-disabled.png" title="<%:Disabled%>" />' ;
+				}
+				else
+				{
+					if ( rv[j-1].started == "0" )
+					{
+						tr.insertCell(-1).innerHTML = '<img src="<%=resource%>/icons/vpn-stopped.png" title="<%:Enabled/Not Running%>" />' ;
+					}
+					else
+					{
+						tr.insertCell(-1).innerHTML = '<img src="<%=resource%>/icons/vpn-started.png" title="<%:Running%>" />' ;
+					}
+				}
+				tr.insertCell(-1).innerHTML = clr + rv[j-1].laststart + sclr ;
+				tr.insertCell(-1).innerHTML = clr + rv[j-1].remote + sclr ;
+				tooltip = rv[j-1].tooltip ;
+				tr.insertCell(-1).innerHTML = '<a title = "' + tooltip + '">' + clr + rv[j-1].clients + sclr + '</a>' ;
+				if ( rv[j-1].port == "---" )
+				{
+					tr.insertCell(-1).innerHTML = clr + rv[j-1].port + sclr ;
+				}
+				else
+				{
+					tr.insertCell(-1).innerHTML = clr + rv[j-1].port + "/" + rv[j-1].proto + sclr ;
+				}
+			}
+		}
+		else 
+		{
+			var br = '<br />';
+			var tr = tbl.insertRow(-1);
+			tr.className = "cbi-section-table-row";
+			var td = tr.insertCell(-1);
+			td.colSpan = 7;
+			td.innerHTML = '<em>' + br + '<%:There are no Instances configured.%></em>' ;
+		}
+	}
+	
+	XHR.get('<%=luci.dispatcher.build_url("admin", "vpn", "vpnstatus")%>', null,
+		function(x, rv)
+		{
+			__data2elements(x, rv); 
+		}
+	);
+
+	XHR.poll(20, '<%=luci.dispatcher.build_url("admin", "vpn", "vpnstatus")%>', null,
+		function(x, rv)
+		{
+			__data2elements(x, rv); 
+		}
+	); 
+//]]></script>
+
+<fieldset class="cbi-section" id="vpn_status_section">
+	<h3><%:OpenVPN Status%></h3>
+
+	<table class="cbi-section-table" id="vpn_status_table">
+		<tr class="cbi-section-table-titles">
+			<th class="cbi-section-table-cell"><%:Name%></th>
+			<th class="cbi-section-table-cell"><%:Type%></th>
+			<th class="cbi-section-table-cell"><%:Status%></th>
+			<th class="cbi-section-table-cell"><%:Uptime%></th>
+			<th class="cbi-section-table-cell"><%:Remote IP%></th>
+			<th class="cbi-section-table-cell"><%:Clients%></th>
+			<th class="cbi-section-table-cell"><%:Port%></th>
+		</tr>
+		<tr class="cbi-section-table-row">
+			<td colspan="7"><em><br /><%:Collecting data...%></em></td>
+		</tr>
+	</table>
+</fieldset>

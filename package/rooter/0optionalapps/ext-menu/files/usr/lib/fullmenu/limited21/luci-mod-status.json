@@ -1,0 +1,38 @@
+{
+	"admin/status/overview": {
+		"title": "Overview",
+		"order": 1,
+		"action": {
+			"type": "template",
+			"path": "admin_status/index"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-index" ]
+		}
+	},
+
+	"admin/status/syslog": {
+		"title": "System Log",
+		"order": 4,
+		"action": {
+			"type": "view",
+			"path": "status/syslog"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-logs" ]
+		}
+	},
+
+	"admin/status/channel_analysis": {
+		"title": "Wifi Channel Analysis",
+		"order": 7,
+		"action": {
+			"type": "view",
+			"path": "status/channel_analysis"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-channel_analysis" ],
+			"uci": { "wireless": { "@wifi-device": true } }
+		}
+	},
+}

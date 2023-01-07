@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 OpenWrt.org
+
+START=90
+USE_PROCD=1
+
+log() {
+	logger -t "mt1300" "$@"
+}
+
+start_service()
+{
+	if [ ! -e /etc/mt1300 ]; then
+		uci set wireless.radio0.disabled=0
+		uci set wireless.radio0.hwmode=11g
+		uci set wireless.radio0.htmode=HT20
+		uci set wireless.radio0.channel=3
+		uci set wireless.radio0.legacy_rates=0
+		uci commit wireless
+		wifi reload
+		echo "0" > /etc/mt1300
+	fi
+}

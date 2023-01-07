@@ -1,0 +1,912 @@
+<%+header%>
+<%
+local sys = require "luci.sys"
+local utl = require "luci.util" 
+local fs = require "nixio.fs"
+
+function showicon(lck)
+	if lck == 0 then
+		return resource .. "/icons/unlock1.png"
+	else
+		return resource .. "/icons/lock1.png"
+	end
+end
+
+-%>
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	var change=0;
+	var radnum = 1; // radio number					option radionumber '0'
+	var channelindex = 0 ; // index in to list		option channelindex '0'
+	var channellist = 0;  // list number 0-2		option channellist "0"
+	var channelwidth = 1; // index of bw 0-3		option channelwidth '0'
+	var usedfs = 0; // 1 is dfs channels			option usedfs "0"
+	var detecatedradio = 1; // 1 is dedicated radio	option dedicated "0"
+	
+	var networkid = "MeshCloud";
+	var netencrypted = 0;
+	var netpassword = "password";
+	
+	var signalenable = 1;
+	var signalid = "mesh";
+	
+	var radiolist = new Array() ;
+	var partsArray = new Array;
+	var channels = new Array;
+	var cwidth = ["20", "40", "80", "80"];
+	var channelnum = 0;
+	var chan2num = 14;
+	var chan5num = 10;
+	var chan5dfsnum = 23;
+	var channel2 = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14" ];
+	var channel5 = ["36", "40", "44", "48", "149", "153", "157", "161", "165", "169"];
+	var channel5dfs = ["36", "40", "44", "48", "52", "56", "60", "64", "100", "104", "104", "112", "116", "132", "136", "140", "144", "149", "153", "157", "161", "165", "169"];
+
+	function setwidth(width)
+	{
+		switch (width)
+		{
+			case "0":
+				num = 1;
+				dropname = "drop5";
+				break;
+			case "1":
+				num = 2;
+				dropname = "drop6";
+				break;
+			case "2":
+				num = 3;
+				dropname = "drop7";
+				break;
+			case "3":
+				num = 3;
+				dropname = "drop8";
+				break;
+		}
+		x = document.getElementById(dropname);
+		for (i = 0; i < num; i++) 
+		{
+			option = document.createElement("option");
+			option.text = cwidth[i] + "Mhz";
+			x.add(option);
+		} 
+	}
+	
+	function changebw(flg)
+	{
+		partsArray = radiolist[radnum].split('|');
+		channelw = partsArray[2];
+
+		switch (channelw)
+		{
+			case "0":
+				document.getElementById("radio46").style.visibility="visible";
+				if ( flg == 1 )
+				{
+					document.getElementById("radio46").style.display = "";
+				} 
+				document.getElementById("drop5").selectedIndex = channelwidth;
+				document.getElementById("radio47").style.display = "none";
+				document.getElementById("radio47").style.visibility="hidden";
+				document.getElementById("radio48").style.display = "none";
+				document.getElementById("radio48").style.visibility="hidden";
+				document.getElementById("radio49").style.display = "none";
+				document.getElementById("radio49").style.visibility="hidden";
+				break;
+			case "1":
+				document.getElementById("radio47").style.visibility="visible";
+				if ( flg == 1 )
+				{
+					document.getElementById("radio47").style.display = "";
+				} 
+				document.getElementById("drop6").selectedIndex = channelwidth;
+				document.getElementById("radio46").style.display = "none";
+				document.getElementById("radio46").style.visibility="hidden";
+				document.getElementById("radio48").style.display = "none";
+				document.getElementById("radio48").style.visibility="hidden";
+				document.getElementById("radio49").style.display = "none";
+				document.getElementById("radio49").style.visibility="hidden";
+				break;
+			case "2":
+				document.getElementById("radio48").style.visibility="visible";
+				if ( flg == 1 )
+				{
+					document.getElementById("radio48").style.display = "";
+				} 
+				document.getElementById("drop7").selectedIndex = channelwidth;
+				document.getElementById("radio46").style.display = "none";
+				document.getElementById("radio46").style.visibility="hidden";
+				document.getElementById("radio47").style.display = "none";
+				document.getElementById("radio47").style.visibility="hidden";
+				document.getElementById("radio49").style.display = "none";
+				document.getElementById("radio49").style.visibility="hidden";
+				break;
+			case "3":
+				document.getElementById("radio49").style.visibility="visible";
+				if ( flg == 1 )
+				{
+					document.getElementById("radio49").style.display = "";
+				} 
+				document.getElementById("drop8").selectedIndex = channelwidth;
+				document.getElementById("radio46").style.display = "none";
+				document.getElementById("radio46").style.visibility="hidden";
+				document.getElementById("radio47").style.display = "none";
+				document.getElementById("radio47").style.visibility="hidden";
+				document.getElementById("radio48").style.display = "none";
+				document.getElementById("radio48").style.visibility="hidden";
+				break;
+		}
+	}
+	
+	function vischannel(flg)
+	{
+		partsArray = radiolist[radnum].split('|');
+		if ( partsArray[0] == "1" )
+		{
+			document.getElementById("radio3").style.display = "none";
+			document.getElementById("radio3").style.visibility="hidden";
+			document.getElementById("radio33").style.display = "none";
+			document.getElementById("radio33").style.visibility="hidden";
+			document.getElementById("drop2").style.display = "none";
+			document.getElementById("drop2").style.visibility="hidden";
+			
+			if ( usedfs == 0 )
+			{
+				document.getElementById("radio4").style.display = "block";
+				document.getElementById("radio4").style.visibility="visible";
+				document.getElementById("drop3").style.display = "block";
+				document.getElementById("drop3").style.visibility="visible";
+				document.getElementById("radio44").style.visibility="visible";
+				if ( flg == 1 )
+				{
+					document.getElementById("radio44").style.display = "";
+				}
+				channellist = 1;
+				document.getElementById("drop3").selectedIndex = channelindex;
+				
+				document.getElementById("radio5").style.display = "none";
+				document.getElementById("radio5").style.visibility="hidden";
+				document.getElementById("drop4").style.display = "none";
+				document.getElementById("drop4").style.visibility="hidden";
+				document.getElementById("radio55").style.display = "none";
+				document.getElementById("radio55").style.visibility="hidden";
+			}
+			else
+			{
+				document.getElementById("radio5").style.display = "block";
+				document.getElementById("radio5").style.visibility="visible";
+				document.getElementById("drop4").style.display = "block";
+				document.getElementById("drop4").style.visibility="visible";
+				document.getElementById("radio55").style.visibility="visible";
+				if ( flg == 1 )
+				{
+					document.getElementById("radio55").style.display = "";
+				}
+				channellist = 2;
+				document.getElementById("drop4").selectedIndex = channelindex;
+				
+				document.getElementById("radio4").style.display = "none";
+				document.getElementById("radio4").style.visibility="hidden";
+				document.getElementById("drop3").style.display = "none";
+				document.getElementById("drop3").style.visibility="hidden";
+				document.getElementById("radio44").style.display = "none";
+				document.getElementById("radio44").style.visibility="hidden";
+			}
+		}
+		else
+		{
+			document.getElementById("radio3").style.display = "block";
+			document.getElementById("radio3").style.visibility="visible";
+			document.getElementById("radio33").style.visibility="visible";
+			if ( flg == 1 )
+			{
+				document.getElementById("radio33").style.display = "";
+			}
+			channellist = 0;
+			document.getElementById("drop2").style.display = "block";
+			document.getElementById("drop2").style.visibility="visible";
+			document.getElementById("drop2").selectedIndex = channelindex;
+			
+			document.getElementById("radio4").style.display = "none";
+			document.getElementById("radio4").style.visibility="hidden";
+			document.getElementById("drop3").style.display = "none";
+			document.getElementById("drop3").style.visibility="hidden";
+			document.getElementById("radio44").style.display = "none";
+			document.getElementById("radio44").style.visibility="hidden";
+			
+			document.getElementById("radio5").style.display = "none";
+			document.getElementById("radio5").style.visibility="hidden";
+			document.getElementById("drop4").style.display = "none";
+			document.getElementById("drop4").style.visibility="hidden";
+			document.getElementById("radio55").style.display = "none";
+			document.getElementById("radio55").style.visibility="hidden";
+		}
+	}
+
+	function setchannels(freq)
+	{
+		switch ( freq )
+		{
+			case "0" :
+				channels = channel2;
+				chansize = chan2num;
+				dropname = "drop2";
+				break;
+			case "1" :
+				channels = channel5;
+				chansize = chan5num;
+				dropname = "drop3";
+				break;
+			case "2" :
+				channels = channel5dfs;
+				chansize = chan5dfsnum;
+				dropname = "drop4";
+				break;
+			default :
+				break; 
+		} 
+
+		x = document.getElementById(dropname);
+		for (i = 0; i < chansize; i++) 
+		{
+			option = document.createElement("option");
+			option.text = "Channel " + channels[i];
+			x.add(option);
+		}
+		x.selectedIndex = channelnum; 
+	}
+	
+	XHR.get('<%=luci.dispatcher.build_url("admin", "mesh", "getstate")%>',
+			null,
+			function(x, rv)
+			{
+				document.getElementById("cbi-modw").style.display = "none";
+				document.getElementById("cbi-modw").style.visibility="hidden";
+				document.getElementById("cbi-mod1").style.display = "block";
+				document.getElementById("cbi-mod1").style.visibility="visible";
+				document.getElementById("cbi-mod2").style.display = "block";
+				document.getElementById("cbi-mod2").style.visibility="visible";
+				document.getElementById("cbi-mod3").style.display = "block";
+				document.getElementById("cbi-mod3").style.visibility="visible";
+					
+					radnum = parseInt(rv.radionumber);
+					channelindex = parseInt(rv.channelindex);
+					channellist = parseInt(rv.channellist);
+					channelwidth = parseInt(rv.channelwidth);
+					usedfs = parseInt(rv.usedfs);
+					detecatedradio = parseInt(rv.dedicated);
+					
+					networkid = rv.networkid;
+					netencrypted = parseInt(rv.netencrypted);
+					netpassword = rv.netpassword;
+					
+					signalenable =  parseInt(rv.signalenable);
+					signalid =  rv.signalid;
+					
+					document.getElementById("dedicated").checked = false;
+					if ( detecatedradio == 1 )
+					{
+						document.getElementById("dedicated").checked = true;
+					}
+					document.getElementById("dfs").checked = false;
+					document.getElementById("dfs3").checked = false;
+					if ( usedfs == 1)
+					{
+						document.getElementById("dfs").checked = true;
+						document.getElementById("dfs3").checked = true;
+					} 
+					
+					num_radio = parseInt(rv.radio);
+					if ( num_radio > 0 )
+					{
+						radiolist = rv.radiolist;
+						x = document.getElementById("drop1");
+						for (i = 0; i < num_radio; i++) 
+						{
+							partsArray = radiolist[i].split('|');
+							dropradio = "Radio" + partsArray[1];
+							if ( partsArray[0] == "1" )
+							{
+								dropradio = dropradio + " (5Ghz)";
+							}
+							else
+							{
+								dropradio = dropradio + " (2.4Ghz)";
+							}
+							option = document.createElement("option");
+							option.text = dropradio;
+							x.add(option);
+						}
+						x.selectedIndex = radnum;
+						setchannels("0");
+						setchannels("1");
+						setchannels("2");
+						setwidth("0");
+						setwidth("1");
+						setwidth("2");
+						setwidth("3");
+						vischannel(0);
+						changebw(0);
+						
+						document.getElementById("idnam").value = networkid;
+						document.getElementById("encr").checked = false;
+						document.getElementById("enc2").style.display = "none";
+						document.getElementById("enc2").style.visibility="hidden";
+						document.getElementById("netpass").style.display = "none";
+						document.getElementById("netpass").style.visibility="hidden";
+						if ( netencrypted == 1 )
+						{
+							document.getElementById("encr").checked = true;
+							document.getElementById("enc2").style.display = "block";
+							document.getElementById("enc2").style.visibility="visible";
+							document.getElementById("netpass").style.display = "block";
+							document.getElementById("netpass").style.visibility="visible";
+						}
+						document.getElementById("netpass").value = netpassword;
+						
+						document.getElementById("sigenb").checked = false;
+						document.getElementById("roam11").style.display = "none";
+						document.getElementById("roam11").style.visibility="hidden";
+						
+						document.getElementById("idsig").value = signalid;
+	
+						if ( signalenable == 1 )
+						{
+							document.getElementById("sigenb").checked = true;
+							document.getElementById("roam11").style.display = "";
+							document.getElementById("roam11").style.visibility="visible";
+						}
+					}
+
+			}
+				
+	);
+	function changes(value)
+	{
+		change = value;
+		if ( value == 0 )
+		{
+			document.getElementById("meshstat1").innerHTML = "No Changes";
+			document.getElementById("meshstat1").style.color = "inherit";
+			document.getElementById("meshstat1").style.fontWeight = "bold" ;
+		}
+		else
+		{
+			document.getElementById("meshstat1").innerHTML = "Unsaved Changes";
+			document.getElementById("meshstat1").style.color = "red";
+			document.getElementById("meshstat1").style.fontWeight = "bold" ;
+		}
+	}
+	
+	function radiochange(drop)
+	{
+		radnum = document.getElementById("drop1").selectedIndex;
+		channelindex = 0;
+		vischannel(1);
+		channelwidth = 0;
+		changebw(1);
+		changes(1);
+	}
+	
+	function dedicatedrad(check)
+	{
+		if ( check.checked == true )
+		{
+			detecatedradio = 1;
+		}
+		else
+		{
+			detecatedradio = 0;
+		}
+		changes(1);
+	}
+	
+	function setdfs(check)
+	{
+		if ( check.checked == true )
+		{
+			usedfs = 1;
+			radiochange();
+			document.getElementById("dfs").checked = true;
+			document.getElementById("dfs3").checked = true;
+		}
+		else
+		{
+			usedfs = 0;
+			radiochange();
+			document.getElementById("dfs").checked = false;
+			document.getElementById("dfs3").checked = false;
+		}
+		changes(1);
+	}
+	
+	function bwchange(bwbox)
+	{
+		bw = bwbox.selectedIndex;
+		channelwidth = bw;
+		changes(1);
+	}
+	
+	function channelchange(chn)
+	{
+		channelindex = chn.selectedIndex;
+		radnum = document.getElementById("drop1").selectedIndex;
+		partsArray = radiolist[radnum].split('|');
+		if ( partsArray[0] == "1" )
+		{ 
+			channellist = 1;
+			if ( usedfs == 1 )
+			{
+				channellist = 2;
+			}
+		}
+		else
+		{
+			channellist = 0;
+		}
+		changes(1);
+	}
+	
+	function setencr(check)
+	{
+		if ( check.checked == true )
+		{
+			document.getElementById("enc2").style.display = "block";
+			document.getElementById("enc2").style.visibility="visible";
+			document.getElementById("netpass").style.display = "block";
+			document.getElementById("netpass").style.visibility="visible";
+			netencrypted = 1;
+		}
+		else
+		{
+			document.getElementById("enc2").style.display = "none";
+			document.getElementById("enc2").style.visibility="hidden";
+			document.getElementById("netpass").style.display = "none";
+			document.getElementById("netpass").style.visibility="hidden";
+			netencrypted = 0;
+		}
+		changes(1);
+	}
+	
+	function setlow(check)
+	{
+		if ( check.checked == true )
+		{
+			document.getElementById("roam11").style.display = "";
+			document.getElementById("roam11").style.visibility="visible";
+			signalenable = 1;
+		}
+		else
+		{
+			document.getElementById("roam11").style.display = "none";
+			document.getElementById("roam11").style.visibility="hidden";
+			signalenable = 0;
+		}
+		changes(1);
+	}
+	
+	function changeid()
+	{
+		changes(1);
+	}
+	
+	function changesigid()
+	{
+		signalid = document.getElementById("idsig").value ;
+		if ( !signalid )
+		{
+			document.getElementById("idsig").value = 'abcd' ;
+			signalid = 'abcd';
+		}
+		changes(1);
+	}
+	
+	function configup(btn)
+	{
+		var filex = btn.files[0];
+		var reader = new FileReader();
+		reader.readAsText(filex);
+		 reader.onload = loaded;
+	}
+	
+	function loaded(evt) 
+	{
+		var fileString = evt.target.result;
+		partsArray = fileString.split('|');
+		if ( partsArray[0] == "meshcfg" )
+		{
+			radionumber = parseInt(partsArray[0]);
+			channelindex = parseInt(partsArray[1]);
+			channellist = parseInt(partsArray[2]);
+			usedfs = parseInt(partsArray[3]);
+			channelwidth = parseInt(partsArray[4]);
+			detecatedradio = parseInt(partsArray[5]);
+			networkid=partsArray[6];
+			netencrypted = parseInt(partsArray[7]);
+			netpassword=partsArray[8];
+			signalenable = parseInt(partsArray[9]);
+			signalmeasure = parseInt(partsArray[10]);
+			signalinterval = parseInt(partsArray[11]);
+			signalcount = parseInt(partsArray[12]);
+			snrconnect = parseInt(partsArray[13]);
+			snrchange = parseInt(partsArray[14]);
+			sigconnect = parseInt(partsArray[15]);
+			sigchange = parseInt(partsArray[16]);
+			window.location.reload(false);
+		}
+		changes(1);
+	}
+
+	function buildsave()
+	{
+		netpassword = document.getElementById("netpass").value;
+		if ( netencrypted == 1 )
+		{
+			if ( netpassword.length < 8 )
+			{
+				alert("You must enter a password at least 8 charactets long!!");
+				return "1";
+			}
+		}
+		if ( netpassword.length < 8 )
+		{
+			netpassword="password";
+		}
+		
+		var stat = radnum.toString() + "|" + channelindex.toString() + "|" + channellist.toString() + "|" + usedfs.toString() + "|" + channelwidth.toString() + "|" + detecatedradio.toString() + "|" + networkid + "|" + netencrypted.toString() + "|" + netpassword + "|" ;
+		
+		var rom = signalenable.toString() + "|" + signalid + "|" ;
+		
+		stat = stat + rom;
+		
+		return stat;
+	}
+	
+	function saveconf(btn)
+	{
+		statusm = buildsave();
+		if ( statusm == "1" )
+		{
+			return false;
+		}
+		statusm = "meshcfg|" + statusm;
+		
+		//document.getElementById("attxt").value=statusm;
+		
+		XHR.get('<%=luci.dispatcher.build_url("admin", "mesh", "meshcfg")%>',
+			{ set: statusm },
+			function()
+			{
+				window.open('http://'+window.location.hostname+'/package/meshcfg.meshcfg', '_self')
+			}
+		);
+	}
+	
+	function savemesh(btn)
+	{
+		statusm = buildsave();
+		if ( statusm == "1" )
+		{
+			return false;
+		}
+		
+		XHR.get('<%=luci.dispatcher.build_url("admin", "mesh", "sendmeshstate")%>',
+			{ set: statusm },
+			function()
+			{
+				window.location.reload(false);
+			}
+		);
+	}
+	
+	function reloadmesh()
+	{
+		changes(0);
+		window.location.reload(false);
+	}
+	
+	var tries = 0,
+	    message = document.querySelector('p.reboot-message'),
+	    label = message.querySelector('span');
+
+	function ok() {
+		window.location = '<%=url("admin")%>';
+	}
+
+	function check() {
+		window.setTimeout(ping, 5000);
+	}
+
+	function ping() {
+		var img = document.createElement('img');
+
+		img.onload = ok;
+		img.onerror = check;
+		img.src = '<%=resource%>/icons/loading.gif?' + Math.random();
+
+		if (tries++ >= 30) {
+			message.classList.remove('notice');
+			message.classList.add('warning');
+			label.innerHTML = '<%:Device unreachable! Still waiting for device...%>';
+		}
+	}
+	
+	function startstopmesh(btn)
+	{
+		if (change == 1 )
+		{
+			savech = confirm("Unsaved changes will be lost. Save first?");
+			if ( savech == true )
+			{
+				statusm = buildsave();
+				if ( statusm !== "1" )
+				{
+					XHR.get('<%=luci.dispatcher.build_url("admin", "mesh", "sendmeshstate")%>',
+						{ set: statusm },
+						function()
+						{
+						}
+					);
+					changes(0);
+				}
+			}
+		}
+		cont = confirm("Router will reboot after applying settings. Continue?");
+		if ( cont == false )
+		{
+			return false;
+		}
+		document.getElementById("cbi-modw").style.display = "block";
+		document.getElementById("cbi-modw").style.visibility="visible";
+		document.getElementById("cbi-mod1").style.display = "none";
+		document.getElementById("cbi-mod1").style.visibility="hidden";
+		document.getElementById("cbi-mod2").style.display = "none";
+		document.getElementById("cbi-mod2").style.visibility="hidden";
+		document.getElementById("cbi-mod3").style.display = "none";
+		document.getElementById("cbi-mod3").style.visibility="hidden";
+		document.getElementById("fileup").disabled=true;
+		document.getElementById("meshconf").disabled=true;
+		document.getElementById("meshsave").disabled=true;
+		document.getElementById("meshstart").disabled=true;
+		document.getElementById("meshstat1").style.display = "none";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "mesh", "meshstartstop")%>',
+			{ set: "1" },
+			function()
+			{
+			}
+		); 
+		check();
+	}
+	
+		//document.getElementById("attxt").value=partsArray[0].toString();	
+		
+//]]></script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<div class="cbi-map" id="cbi-modem">
+<h2><a id="content" name="content">Mesh Network Configuration</a></h2>
+<div class="cbi-map-descr"> </div>
+
+<fieldset class="cbi-section" id="cbi-mod">
+	
+	<table width="100%" border="0" id="meshstatus">
+		<tr>
+			<td width="20%"><div align="center" id="meshstat2" style="font-size:1.5em"><strong>Config Status</strong></div></td>
+			<td width="20%"><div align="center" id="upl2" ><strong>Import Configuration File</strong></div></td>
+			<td width="13%"><div align="center" id="upl3" ><strong>Export Configuration File</strong></div></td>
+			<td width="10%"><div align="center" id="up42" ><strong>Save Settings</strong></div></td>
+			<td width="10%"><div align="center" id="up52" ><strong>Apply Settings</strong></div></td>
+			<td width="10%"><div align="center" id="up52" ><strong>Reload Settings</strong></div></td>
+			<td width="17%"></td>
+		</tr>
+		
+		<tr>
+			<td width="20%"><div align="center" id="meshstat1" ><strong>No Changes</strong></div></td>
+			<td width="20%"><input type="file" accept=".meshcfg" align="center" name="fileup" id="fileup" class="cbi-button cbi-button-positive" onchange="return configup(this)" /></td>
+			<td width="13%"><input type="button" align="center" id="meshconf" class="cbi-button cbi-button-positive" value="<%:Save Configuration File%>" onclick="return saveconf(this)" /></td>
+			<td width="10%"><input type="button" align="center" id="meshsave" class="cbi-button cbi-button-positive" value="<%:Save Settings%>" onclick="return savemesh(this)" /></td>
+			<td width="10%"><input type="button" align="center" id="meshstart" class="cbi-button cbi-button-positive" value="<%:Apply Settings%>" onclick="return startstopmesh(this)" /></td>
+			<td width="10%"><input type="button" align="center" id="meshreload" class="cbi-button cbi-button-positive" value="<%:Reload Settings%>" onclick="return reloadmesh(this)" /></td>
+			<td width="17%"></td>
+		</tr>
+	</table>
+	
+	
+
+</fieldset>	
+
+<fieldset class="cbi-section" id="cbi-modw" style="visibility:hidden">
+	<table width="100%" cellspacing="10" id="waiting">
+		<tr>
+			<td width="40%"></td>
+			<td id="waiticon"><img src="<%=resource%>/icons/loading.gif"  style="vertical-align:middle" /> Waiting for Reboot...</td>
+		</tr>
+	</table>
+</fieldset>
+
+<fieldset class="cbi-section" id="cbi-mod1">	
+	<table width="100%" border="0" id="meshradio" >
+		<tr>
+			<td width="17%"><div align="left" id="radio1" style="font-size:1.5em"><strong>Mesh Radio Settings</strong></div></td>
+			<td width="15%"></td>
+			<td width="12%"></td>
+			<td width="5%"></td>
+			<td width="20%"></td>
+			<td width="31%"></td>
+		</tr>
+		<tr>
+			<td width="17%"><div align="right" id="radio2" ><strong>Select Backhaul Radio </strong></div></td>
+			<td width="15%">
+				<select style="width:200px" name="raddrop" id="drop1" onchange="return radiochange(this)">
+				</select>
+			</td>
+			<td width="12%"><div align="left" id="dedicated1" style="font-size:1em"><strong>Dedicated Backhaul Radio </strong></div></td>
+			<td width="5%"><input type="checkbox" id="dedicated" onclick="return dedicatedrad(this)" /></td>
+			<td width="20%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr id="radio33">
+			<td width="17%"><div align="right" id="radio3" ><strong>Select Backhaul Channel </strong></div></td>
+			<td width="15%">
+				<select style="width:200px" name="chandrop" id="drop2" onchange="return channelchange(this)">
+				</select>
+			</td>
+			<td width="12%"></td>
+			<td width="5%"></td>
+			<td width="20%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr id="radio44">
+			<td width="17%"><div align="right" id="radio4" ><strong>Select Backhaul Channel </strong></div></td>
+			<td width="15%">
+				<select style="width:200px" name="chandrop1" id="drop3" onchange="return channelchange(this)">
+				</select>
+			</td>
+			<td width="12%"><div align="left" id="dfs1" style="font-size:1em"><strong>Use DFS Channels </strong></div></td>
+			<td width="5%"><input type="checkbox" id="dfs" onclick="return setdfs(this)" /></td>
+			<td width="20%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr id="radio55">
+			<td width="17%"><div align="right" id="radio5" ><strong>Select Backhaul Channel </strong></div></td>
+			<td width="15%">
+				<select style="width:200px" name="chandrop2" id="drop4" onchange="return channelchange(this)">
+				</select>
+			</td>
+			<td width="12%"><div align="left" id="dfs2" style="font-size:1em"><strong>Use DFS Channels </strong></div></td>
+			<td width="5%"><input type="checkbox" id="dfs3" onclick="return setdfs(this)" /></td>
+			<td width="20%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr id="radio46">
+			<td width="17%"><div align="right" id="radio6" ><strong>Channel Bandwidth </strong></div></td>
+			<td width="15%">
+				<select style="width:200px" name="chandrop3" id="drop5" onchange="return bwchange(this)">
+				</select>
+			</td>
+			<td width="12%"></td>
+			<td width="5%"></td>
+			<td width="20%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr id="radio47">
+			<td width="17%"><div align="right" id="radio7" ><strong>Channel Bandwidth </strong></div></td>
+			<td width="15%">
+				<select style="width:200px" name="chandrop3" id="drop6" onchange="return bwchange(this)">
+				</select>
+			</td>
+			<td width="12%"></td>
+			<td width="5%"></td>
+			<td width="20%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr id="radio48">
+			<td width="17%"><div align="right" id="radio7" ><strong>Channel Bandwidth </strong></div></td>
+			<td width="15%">
+				<select style="width:200px" name="chandrop3" id="drop7" onchange="return bwchange(this)">
+				</select>
+			</td>
+			<td width="12%"></td>
+			<td width="5%"></td>
+			<td width="20%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr id="radio49">
+			<td width="17%"><div align="right" id="radio7" ><strong>Channel Bandwidth </strong></div></td>
+			<td width="15%">
+				<select style="width:200px" name="chandrop3" id="drop8" onchange="return bwchange(this)">
+				</select>
+			</td>
+			<td width="12%"></td>
+			<td width="5%"></td>
+			<td width="20%"></td>
+			<td width="31%"></td>
+		</tr>
+
+	</table>
+	
+</fieldset>
+
+<fieldset class="cbi-section" id="cbi-mod2" >	
+	<table width="100%" border="0" id="meshnet" >
+		<tr>
+			<td width="17%"><div align="left" id="net1" style="font-size:1.5em"><strong>Mesh Network Settings</strong></div></td>
+			<td width="10%"></td>
+			<td width="12%"></td>
+			<td width="15%"></td>
+			<td width="15%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr>
+			<td width="17%"><div align="right" id="net2" ><strong>Mesh Network ID </strong></div></td>
+			<td width="10%" ><input style="width: 200px;" type="text" name="idnam" id="idnam" class="cbi-input-text" value="MeshCloud" onchange="return changeid()" ></input></td>
+			<td width="12%"></td>
+			<td width="15%"></td>
+			<td width="15%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr>
+			<td width="17%"><div align="right" id="enc1" style="font-size:1em"><strong>Network Encrypted </strong></div></td>
+			<td width="10%"><input type="checkbox" id="encr" onclick="return setencr(this)" /></td>
+			<td width="12%"><div align="left" id="enc2" style="font-size:1em; visibility:hidden"><strong>Network Password </strong></div></td>
+			<td width="15%"><input style="width: 200px; visibility:hidden" type="text" name="netpass" id="netpass" class="cbi-input-text" placeholder="password" onchange="return changeid()" ></input></td>
+			<td width="15%"></td>
+			<td width="31%"></td>
+		</tr>
+	</table>
+</fieldset>
+
+<fieldset class="cbi-section" id="cbi-mod3" >	
+	<table width="100%" border="0" id="meshroam" >
+		<tr>
+			<td width="17%"><div align="left" id="roam1" style="font-size:1.5em"><strong>Access Point Roaming</strong></div></td>
+			<td width="10%"></td>
+			<td width="12%"></td>
+			<td width="15%"></td>
+			<td width="15%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr>
+			<td width="17%"><div align="right" id="enc1" style="font-size:1em"><strong>Enable Low Signal Roaming </strong></div></td>
+			<td width="10%"><input type="checkbox" id="sigenb" onclick="return setlow(this)" /></td>
+			<td width="12%"></td>
+			<td width="15%"></td>
+			<td width="15%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+		<tr id="roam11">
+			<td width="17%"><div align="right" id="roam1" ><strong>Roaming ID </strong></div></td>
+			<td width="10%" ><input style="width: 200px;" type="text" name="idsig" id="idsig" class="cbi-input-text" value="mesh" onchange="return changesigid()" ></input></td>
+			<td width="12%"></td>
+			<td width="15%"></td>
+			<td width="15%"></td>
+			<td width="31%"></td>
+		</tr>
+		
+	</table>
+
+	<table id="cmdtxt" width="700"  border="0" style="display:table;">
+  	<tr>
+    		<td width="100%">
+		<textarea readonly="readonly" name="attxt" id="attxt" rows="6" style="width: 600px;" maxlength="160"></textarea>
+		</td>
+	</tr>
+	</table>
+	
+</fieldset>
+
+</div>
+</form>
+<%+footer%>

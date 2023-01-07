@@ -1,0 +1,556 @@
+<%+header%>
+
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	reading = 0;
+	init = 0;
+	indx = -1;
+	index = [];
+	recread = [];
+	number = [];
+	tdate = [];
+	ttime = [];
+	ttext =[];
+	selectline = -1;
+
+	XHR.poll(20, '<%=luci.dispatcher.build_url("admin", "modem", "check_read")%>', null,
+		function(x, rv)
+		{
+			var ss = rv.ready;
+			document.getElementById('conntype').innerHTML=rv.conntype;
+			if ( ss == "0" )
+			{
+				clearListBox("smsList");
+				document.getElementById('message').value="";
+				document.getElementById('total').innerHTML="";
+				document.getElementById('used').innerHTML="";
+				document.getElementById('mslots').innerHTML="";
+				document.getElementById('menb').checked=false;
+				document.getElementById('supported').innerHTML="<%:SMS Not Supported/No Modem%>";
+			}
+			if ( ss == "1" )
+			{
+				clearListBox("smsList");
+				document.getElementById('message').value="";
+				document.getElementById('total').innerHTML="";
+				document.getElementById('used').innerHTML="";
+				document.getElementById('mslots').innerHTML="";
+				document.getElementById('menb').checked=false;
+				document.getElementById('supported').innerHTML="<%:Waiting to Read Messages%>";
+			}
+			if ( ss == "3" )
+			{
+				document.getElementById('supported').innerHTML="<%:Message Read Problem%>";
+			}
+			if ( ss == "2" )
+			{
+				document.getElementById('supported').innerHTML="<%:Messages Present%>";
+				clearListBox("smsList");
+				document.getElementById('total').innerHTML=rv.max;
+				document.getElementById('used').innerHTML=rv.used;
+				if ( parseInt(rv.used) == parseInt(rv.max) )
+				{
+					alternateColor('red','total');
+					alternateColor('red','used');
+				}
+				else
+				{
+					document.getElementById('total').style.color = "default";
+					document.getElementById('used').style.color = "default";
+				}
+				document.getElementById('mslots').innerHTML=rv.mslots;
+				if ( init == 0 )
+				{
+					var me = rv.menable;
+					if ( me == "0" )
+					{
+						document.getElementById('menb').checked=false;
+					}
+					else
+					{
+						document.getElementById('menb').checked=true;
+					}
+					init = 1;
+				}
+				if (rv.used == "0")
+				{
+					document.getElementById('supported').innerHTML="<%:No Messages Present on SIM%>";
+				}
+				else
+				{
+					var line=rv.line;
+   					var arr=(line.split("\x1D"));
+					var len = arr.length;
+					indx = 0;
+					var i;
+					for(i=0;i<len;i++)
+					{
+						index[indx] = arr[i];
+						number[indx] = arr[i+1];
+						ttext[indx] = arr[i+2];
+						var txtline = arr[i+3];
+						txtline = txtline.replace(/ /g,"\240");
+
+						var select = document.getElementById("smsList");
+                    				select.options[select.options.length] = new Option(txtline, indx);
+						i = i + 3;
+						indx = indx + 1;
+					}
+					if ( indx != -1 )
+					{
+						if ( selectline == -1 )
+						{
+							select.value = 0;
+							document.getElementById('message').value=ttext[0];
+							selectline = 0;
+						}
+						else
+						{
+							if ( selectline > indx-1 )
+							{
+								selectline = indx -1 ;
+							}
+							select.value = selectline;
+							document.getElementById('message').value=ttext[selectline];
+						}
+					}
+				}
+			}
+		}
+	);
+
+	document.getElementById('message').value=" ";
+	document.getElementById('total').innerHTML="0";
+	document.getElementById('used').innerHTML="0";
+	document.getElementById('mslots').innerHTML="0";
+
+	function alternateColor(color, textId, myInterval)
+	{
+		if(!myInterval)
+		{
+			myInterval = 500;
+		}
+		var colors = ['grey', color];
+		var currentColor = 1;
+		document.getElementById(textId).style.color = colors[0];
+		setInterval(function()
+		{
+			if ( document.getElementById(textId).style.color == 'default' )
+			{
+				return;
+			}
+			document.getElementById(textId).style.color = colors[currentColor];
+			if (currentColor < colors.length-1) {
+				++currentColor;
+			} else {
+				currentColor = 0;
+			}
+		}, myInterval);
+	}
+
+	function clearListBox(listboxID)
+ 	{
+  		var mylistbox = document.getElementById(listboxID);
+  		if(mylistbox == null)
+		{
+  			return 1;
+		}
+  		while(mylistbox.length > 0)
+  		{
+   			mylistbox.remove(0);
+  		}
+  		return 1;
+ 	}
+
+	function changetxt()
+	{
+		var s = document.getElementById("smsList").value;
+		selectline = s;
+		document.getElementById('message').value=ttext[s];
+	}
+
+	function sendsms()
+	{
+		if ( reading > 0 )
+		{
+			return false;
+		}
+		var s = document.getElementById("sendto").value;
+		//document.getElementById('rding').innerHTML=s.length;
+		if ( s.length == 0 )
+		{
+			alert("<%:You must enter a phone number!!%>");
+			return false;
+		}
+		s = s.trim();
+		if ( isNaN(s) == true )
+		{
+			alert("<%:Invalid phone number!!%>");
+			return false;
+		}
+		var num = s.concat("                    ");
+		num = num.substr(0, 20);
+		var t = document.getElementById("txtmessage").value;
+		if ( t.length == 0 )
+		{
+			alert("<%:Message is blank!!%>");
+			return false;
+		}
+		if ( t.length > 160 )
+		{
+			t = t.substr(0, 160);
+		}
+		num = num.concat(t);
+		alert("<%:SMS will be queued for processing.\nA status update will follow.%>");
+		document.getElementById("sstat").innerHTML="<%:Sending Message. Please Wait%>";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "send_sms")%>',
+			{ set: num },
+			function(x, rv)
+			{
+				var status = rv.status;
+				alert(status);
+				document.getElementById("sstat").innerHTML="";
+			}
+		);
+	}
+	
+	function readcheck()
+	{
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "check_read")%>', null,
+		function(x, rv)
+		{
+			var ss = rv.ready;
+			document.getElementById('message').style.color = "initial";
+			document.getElementById('conntype').innerHTML=rv.conntype;
+			if ( ss == "1" )
+			{
+				clearListBox("smsList");
+				document.getElementById('message').value="";
+				document.getElementById('total').innerHTML="";
+				document.getElementById('used').innerHTML="";
+				document.getElementById('supported').innerHTML="<%:Waiting to Read Messages%>";
+			}
+			if ( ss == "3" )
+			{
+				document.getElementById('supported').innerHTML="<%:Message Read Problem%>";
+			}
+			if ( ss == "2" )
+			{
+				document.getElementById('supported').innerHTML="<%:Messages Present%>";
+				clearListBox("smsList");
+				document.getElementById('total').innerHTML=rv.max;
+				document.getElementById('used').innerHTML=rv.used;
+				var line=rv.line;
+				var arr=(line.split("\x1D"));
+				var len = arr.length;
+				indx = 0;
+				var i;
+				for(i=0;i<len;i++)
+				{
+					index[indx] = parseInt(arr[i]);
+					number[indx] = arr[i+1];
+					ttext[indx] = arr[i+2];
+					var txtline = arr[i+3];
+					txtline = txtline.replace(/ /g,"\240");
+
+					var select = document.getElementById("smsList");
+								select.options[select.options.length] = new Option(txtline, indx);
+					i = i + 3;
+					indx = indx + 1;
+				}
+				if ( indx != -1 )
+				{
+					if ( selectline == -1 )
+					{
+						select.value = 0;
+						document.getElementById('message').value=ttext[0];
+						selectline = 0;
+					}
+					else
+					{
+						if ( selectline > indx-1 )
+						{
+							selectline = indx -1 ;
+						}
+						select.value = selectline;
+						document.getElementById('message').value=ttext[selectline];
+					}
+				}
+			}
+		}
+		);
+	}
+	
+	function delallsms()
+	{
+		var r=confirm("<%:Do you really want to delete all SMS?%>");
+		if (r==false)
+  		{
+  			return false;
+  		}
+		clearListBox("smsList");
+		document.getElementById('message').style.color = "red";
+		document.getElementById('message').value="<%:All Messages will be deleted. It may take some time before the list is updated.%>";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "delall_sms")%>',
+			null,
+			function()
+			{
+				readcheck();
+			}
+		);
+	}
+
+	function delsms()
+	{
+		if ( selectline == -1 )
+		{
+			return false;
+		}
+		var r=confirm("<%:Delete the selected message?%>");
+		if (r==false)
+  		{
+  			return false;
+  		}
+		var s = document.getElementById("smsList").value;
+		var dx = index[s];
+		clearListBox("smsList");
+		document.getElementById('message').style.color = "red";
+		document.getElementById('message').value="<%:Message will be deleted. It may take some time before the list is updated.%>";
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "del_sms")%>',
+			{ set: dx },
+			function()
+			{
+				readcheck();
+			}
+		);
+	}
+
+	function replysms()
+	{
+		if ( reading > 0 )
+		{
+			return false;
+		}
+		var s = document.getElementById("smsList").value;
+		if ( selectline == -1 )
+		{
+			return false;
+		}
+		else
+		{
+			document.getElementById('sendmsg').style.display="table";
+			document.getElementById('sendtxt').style.display="table";
+			document.getElementById('sendbtn').style.display="table";
+			document.getElementById('sendtitle').style.display="block";
+			document.getElementById("sendto").value=number[s];
+			document.getElementById("txtmessage").value="";
+		}
+		return false;
+	}
+
+	function newsms()
+	{
+		if ( reading > 0 )
+		{
+			return false;
+		}
+		document.getElementById('sendmsg').style.display="table";
+		document.getElementById('sendtxt').style.display="table";
+		document.getElementById('sendbtn').style.display="table";
+		document.getElementById('sendtitle').style.display="block";
+		document.getElementById("sendto").value="";
+		document.getElementById("txtmessage").value="";
+		return false;
+	}
+
+	function modemtoggle(btn)
+	{
+		btn.disabled = true;
+		btn.value    = '<%:Changing...%>';
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "change_sms")%>',
+			null,
+			function(x, rv)
+			{
+				btn.disabled = false;
+				btn.value    = '<%:Next Modem%>';
+			}
+		);
+
+		return false;
+	}
+
+	function modemtoggledn(btn)
+	{
+		btn.disabled = true;
+		btn.value    = '<%:Changing...%>';
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "change_smsdn")%>',
+			null,
+			function(x, rv)
+			{
+				btn.disabled = false;
+				btn.value    = '<%:Prev Modem%>';
+			}
+		);
+
+		return false;
+	}
+
+	function memenable(btn)
+	{
+		dx = 0;
+		if ( btn.checked == true )
+		{
+			dx = 1;
+		}
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "change_smsflag")%>',
+			{ set: dx },
+			function()
+			{
+			}
+		);
+		return false;
+	}
+
+//]]></script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<div class="cbi-map" id="cbi-sms">
+<h2><a id="content" name="content"><%:SMS Messaging%></a></h2>
+<div class="cbi-map-descr"><%:Send and Receive Text Messages Through Your Modem%></div>
+<fieldset class="cbi-section" id="cbi-read">
+	<legend><%:Modem Information%></legend>
+	<table width="550"  border="0">
+  	<tr>
+    		<td width="40%"><ul id="supported"></ul></td>
+    		<td width="17%"><strong id="conntype"></strong></td>
+		<td width="12%">
+			<input type="button" class="cbi-button cbi-button-apply" value="<%:Prev Modem%>" onclick="return modemtoggledn(this)" />
+		</td>
+		<td width="31%">
+			<input type="button" class="cbi-button cbi-button-apply" value="<%:Next Modem%>" onclick="return modemtoggle(this)" />
+		</td>
+  	</tr>
+	</table>
+	<legend><%:Received Messages%></legend>
+
+	<table width="550"  border="0">
+  	<tr>
+    		<td width="18%"><div align="center"><strong><u><%:Total SIM Message Slots%></u></strong></div></td>
+    		<td width="18%"><div align="center"><strong><u><%:Used SIM Message Slots%></u></strong></div></td>
+		<td width="34%">&nbsp;</td>
+  	</tr>
+  	<tr>
+    		<td><div align="center"><ul id="total"></ul></div></td>
+    		<td><div align="center"><ul id="used"></ul></div></td>
+		<td>&nbsp;</td>
+  	</tr>
+	</table>
+
+	<table width="550"  border="0">
+  	<tr>
+		<td width="3%">&nbsp;</td>
+		<td width="20%"><div align="left"><%:Enable SMS transfer from modem to SIM%></div></td>
+		<td width="8%">
+			<input type="checkbox" id="menb" onclick="memenable(this)" />
+		</td>
+		<td width="16%"><div align="left"><strong><u><%:Unread SMS count on modem%></u></strong></div></td>
+		<td width="34%">&nbsp;</td>
+	</tr>
+  	<tr>
+		<td>&nbsp;</td>
+		<td>&nbsp;</td>
+		<td>&nbsp;</td>
+		<td><div align="center"><ul id="mslots"></ul></div></td>
+		<td>&nbsp;</td>
+	</tr>
+	</table>
+	
+	<table width="700"  border="0">
+	<tr>
+		<td width="3%">&nbsp;</td>
+		<td width="17%"><input type="button" id="delallbtn" class="cbi-button cbi-button-remove" value="<%:Delete All Messages%>" onclick="return delallsms()" /></td>
+		<td width="80%">&nbsp;</td>
+	</tr>
+	</table>
+
+	<table width="700"  border="0">
+	<tr>
+		<td width="4%"><div align="center"><strong><u><%:Read%></u></strong></div></td>
+		<td width="18%"><div align="left"><strong><u><%:Sender%></u></strong></div></td>
+		<td width="8%"><div align="left"><strong><u><%:Date%></u></strong></div></td>
+		<td width="11%"><div align="left"><strong><u><%:Time%></u></strong></div></td>
+		<td width="35%"><div align="left"><strong><u><%:Message%></u></strong></div></td>
+		<td width="24%"><div align="left"> </div></td>
+
+	</tr>
+	</table>
+
+	<table width="700"  border="0">
+  	<tr>
+    		<td width="100%">
+		<select name="smslist" id="smsList" size="5" style="width: 700px; font-size:15px; font-family:monospace; line-height:27px; float:left; height:130px;" onchange="changetxt()">
+        	</select>
+		</td>
+	</tr>
+	</table>
+
+	<table width="550"  border="0">
+  	<tr>
+    		<td width="7%"><div align="left"><strong><%:Message :%></strong></div></td>
+    <!--		<td width="70%"><ul id="message"></ul></td> -->
+			<td width="80%">
+				<textarea readonly="readonly" name="message" id="message" rows="6" style="font-size : 20px;width: 600px;" maxlength="160"></textarea>
+			</td>
+    		<td width="13%">&nbsp;</td>
+  	</tr>
+	</table>
+
+	<table width="550"  border="0">
+	<tr>
+    		<td width="17%"><input type="button" id="delbtn" class="cbi-button cbi-button-remove" value="<%:Delete Message%>" onclick="return delsms()" /></td>
+		<td width="17%"><input type="button" id="replybtn" class="cbi-button cbi-button-apply" value="<%:Reply to Message%>" onclick="return replysms()" /></td>
+		<td width="17%"><input type="button" id="newbtn" class="cbi-button cbi-button-apply" value="<%:New Message%>" onclick="return newsms()" /></td>
+    		<td width="49%">&nbsp;</td>
+  	</tr>
+	</table>
+
+	<legend id="sendtitle" style="display:block;"><%:Send Messages%></legend>
+
+	<table id="sendmsg" width="600"  border="0" style="display:table;">
+  	<tr>
+    		<td width="15%"><div align="left"><strong><%:Send To :%></strong></div></td>
+    		<td width="70%"><input name="sendto" id="sendto" maxlength="20"></input></td>
+    		<td width="15%">&nbsp;</td>
+  	</tr>
+	</table>
+
+	<table id="sendtxt" width="700"  border="0" style="display:table;">
+  	<tr>
+    		<td width="100%">
+		<textarea name="txtmessage" id="txtmessage" rows="6" style="width: 600px;" maxlength="160"></textarea>
+		</td>
+	</tr>
+	</table>
+
+	<table id="sendbtn" width="550"  border="0" style="display:table;">
+	<tr>
+    		<td width="17%"><input type="button" id="sendbtn" class="cbi-button cbi-button-apply" value="<%:Send%>" onclick="return sendsms()" /></td>
+		<td width="13%">&nbsp;</td>
+    		<td width="70%">&nbsp;</td>
+  	</tr>
+	</table>
+
+	<table width="550"  border="0">
+  	<tr>
+    		<td width="15%"><div align="left"><strong><%:Sending Status :%></strong></div></td>
+    		<td width="70%"><ul style="color:red" id="sstat"></ul></td>
+    		<td width="15%">&nbsp;</td>
+  	</tr>
+	</table>
+
+</fieldset>
+
+</div>
+</form>
+<%+footer%>

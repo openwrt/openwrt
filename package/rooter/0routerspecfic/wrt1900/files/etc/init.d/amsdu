@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 OpenWrt.org
+
+START=70
+
+log() {
+	logger -t "AMSDU" "$@"
+}
+
+start_service()
+{
+	echo 0 > /sys/kernel/debug/ieee80211/phy0/mwlwifi/tx_amsdu
+	echo 0 > /sys/kernel/debug/ieee80211/phy1/mwlwifi/tx_amsdu
+}

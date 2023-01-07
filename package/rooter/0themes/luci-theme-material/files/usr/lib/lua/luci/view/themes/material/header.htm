@@ -1,0 +1,254 @@
+<%#
+	Material is a clean HTML5 theme for LuCI. It is based on luci-theme-bootstrap and MUI
+
+	luci-theme-material
+	Copyright 2015-2017 Lutty Yang <lutty@wcan.in>
+
+	Have a bug? Please create an issue here on GitHub!
+	https://github.com/LuttyYang/luci-theme-material/issues
+
+	luci-theme-bootstrap:
+	Copyright 2008 Steven Barth <steven@midlink.org>
+	Copyright 2008-2016 Jo-Philipp Wich <jow@openwrt.org>
+	Copyright 2012 David Menting <david@nut-bolt.nl>
+
+	MUI:
+	https://github.com/muicss/mui
+
+	Licensed to the public under the Apache License 2.0
+-%>
+
+<%
+	local sys  = require "luci.sys"
+	local util = require "luci.util"
+	local http = require "luci.http"
+	local disp = require "luci.dispatcher"
+
+	function file_exists(name)
+		local f=io.open(name,"r")
+		if f~=nil then io.close(f) return true else return false end
+	end
+
+	local boardinfo = util.ubus("system", "board")
+	if boardinfo.model == nil then
+		boardinfo.model = " "
+	end
+	if file_exists("/etc/custom") then
+		file = io.open("/etc/custom", "r")
+		board = file:read("*line")
+		model = file:read("*line")
+		hostname = file:read("*line")
+		file:close()
+	else
+		board = boardinfo.model
+		model = boardinfo.model
+	end
+	local headername = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+	local file = io.open("/etc/header_msg", "r")
+	if file ~= nil then
+		line = file:read("*line")
+		line = line:gsub("<model>", model)
+		line = line:gsub(" ", "&nbsp;")
+		headername = headername .. line
+		line = file:read("*line")
+		if line ~= nil then
+			img_name = resource .. line
+		else
+			img_name = resource .. "/img/header.png"
+		end
+		file:close()
+	end
+
+	local node = disp.context.dispatched
+
+	-- send as HTML5
+	http.prepare_content("text/html")
+-%>
+<!DOCTYPE html>
+<html lang="<%=luci.i18n.context.lang%>">
+<head>
+	<meta charset="utf-8">
+	<title><%=striptags( (boardinfo.hostname or "?") .. ( (node and node.title) and ' - ' .. translate(node.title) or '')) %> - LuCI</title>
+	<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"/>
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="theme-color" content="#09c">
+	<meta name="msapplication-tap-highlight" content="no">
+	<meta name="msapplication-TileColor" content="#09c">
+	<meta name="application-name" content="<%=striptags( (boardinfo.hostname or "?") ) %> - LuCI">
+	<meta name="apple-mobile-web-app-title" content="<%=striptags( (boardinfo.hostname or "?") ) %> - LuCI">
+	<link rel="stylesheet" href="<%=media%>/cascade.css">
+	<link rel="shortcut icon" href="<%=media%>/favicon.ico">
+	<% if node and node.css then %>
+		<link rel="stylesheet" href="<%=resource%>/<%=node.css%>">
+	<% end -%>
+	<% if css then %>
+		<style title="text/css"><%= css %></style>
+	<% end -%>
+	<script src="<%=url('admin/translations', luci.i18n.context.lang)%><%# ?v=PKG_VERSION %>"></script>
+	<script src="<%=resource%>/cbi.js"></script>
+	<script src="<%=resource%>/xhr.js"></script>
+	<script type="text/javascript">//<![CDATA[
+		(function() {
+			function get_children(node) {
+				var children = [];
+
+				for (var k in node.children) {
+					if (!node.children.hasOwnProperty(k))
+						continue;
+
+					if (!node.children[k].satisfied)
+						continue;
+
+					if (!node.children[k].hasOwnProperty('title'))
+						continue;
+
+					children.push(Object.assign(node.children[k], { name: k }));
+				}
+
+				return children.sort(function(a, b) {
+					return ((a.order || 1000) - (b.order || 1000));
+				});
+			}
+
+			function render_mainmenu(tree, url, level) {
+				var l = (level || 0) + 1,
+				    ul = E('ul', { 'class': level ? 'slide-menu' : 'nav' }),
+				    children = get_children(tree);
+
+				if (children.length == 0 || l > 2)
+					return E([]);
+
+				for (var i = 0; i < children.length; i++) {
+					var submenu = render_mainmenu(children[i], url + '/' + children[i].name, l),
+					    hasChildren = submenu.children.length;
+
+					ul.appendChild(E('li', { 'class': hasChildren ? 'slide' : null }, [
+						E('a', {
+							'href': hasChildren ? '#' : L.url(url, children[i].name),
+							'class': hasChildren ? 'menu' : null,
+							'data-title': hasChildren ? null : _(children[i].title),
+						}, [ _(children[i].title) ]),
+						submenu
+					]));
+				}
+
+				if (l == 1) {
+					var container = document.querySelector('#mainmenu');
+
+					container.appendChild(ul);
+					container.style.display = '';
+				}
+
+				return ul;
+			}
+
+			function render_modemenu(tree) {
+				var ul = document.querySelector('#modemenu'),
+				    children = get_children(tree);
+
+				for (var i = 0; i < children.length; i++) {
+					var isActive = (L.env.requestpath.length ? children[i].name == L.env.requestpath[0] : i == 0);
+
+					ul.appendChild(E('li', {}, [
+						E('a', {
+							'href': L.url(children[i].name),
+							'class': isActive ? 'active' : null
+						}, [ _(children[i].title) ])
+					]));
+
+					if (isActive)
+						render_mainmenu(children[i], children[i].name);
+				}
+
+				if (ul.children.length > 1)
+					ul.style.display = '';
+			}
+
+			function render_tabmenu(tree, url, level) {
+				var container = document.querySelector('#tabmenu'),
+				    l = (level || 0) + 1,
+				    ul = E('ul', { 'class': 'tabs' }),
+				    children = get_children(tree),
+				    activeNode = null;
+
+				if (children.length == 0)
+					return E([]);
+
+				for (var i = 0; i < children.length; i++) {
+					var isActive = (L.env.dispatchpath[l + 2] == children[i].name),
+					    activeClass = isActive ? ' active' : '',
+					    className = 'tabmenu-item-%s %s'.format(children[i].name, activeClass);
+
+					ul.appendChild(E('li', { 'class': className }, [
+						E('a', { 'href': L.url(url, children[i].name) }, [ _(children[i].title) ] )
+					]));
+
+					if (isActive)
+						activeNode = children[i];
+				}
+
+				container.appendChild(ul);
+				container.style.display = '';
+
+				if (activeNode)
+					container.appendChild(render_tabmenu(activeNode, url + '/' + activeNode.name, l));
+
+				return ul;
+			}
+
+			document.addEventListener('luci-loaded', function(ev) {
+				var tree = <%= luci.http.write_json(luci.dispatcher.context.authsession and luci.dispatcher.menu_json() or {}) %>,
+				    node = tree,
+				    url = '';
+
+				render_modemenu(tree);
+
+				if (L.env.dispatchpath.length >= 3) {
+					for (var i = 0; i < 3 && node; i++) {
+						node = node.children[L.env.dispatchpath[i]];
+						url = url + (url ? '/' : '') + L.env.dispatchpath[i];
+					}
+
+					if (node)
+						render_tabmenu(node, url);
+				}
+			});
+		})();
+	//]]></script>
+</head>
+<body class="lang_<%=luci.i18n.context.lang%> <% if node then %><%= striptags( node.title ) %><% end %> <% if luci.dispatcher.context.authsession then %>logged-in<% end %>" data-page="<%= pcdata(table.concat(disp.context.requestpath, "-")) %>">
+<header>
+	<div class="fill">
+		<div class="container">
+			<span class="showSide"></span>
+			
+			<a class="brand" href="#"> <img src="<%=img_name%>" align="top"><font size ="6"><%=headername or "?"%></font></a>
+		</div>
+	</div>
+</header>
+<div class="main">
+	<div style="" class="loading"><span><div class="loading-img"></div><%:Collecting data...%></span></div>
+	<div class="main-left" id="mainmenu" style="display:none"></div>
+	<div class="main-right">
+		<div class="darkMask"></div>
+		<div id="maincontent">
+			<div class="container">
+				<%- if luci.sys.process.info("uid") == 0 and luci.sys.user.getuser("root") and not luci.sys.user.getpasswd("root") then -%>
+					<div class="alert-message warning">
+						<h4><%:No password set!%></h4>
+						<p><%:There is no password set on this router. Go to System->Administration to create password.%></p>
+						<% if disp.lookup("admin/system/admin") then %>
+							<div class="right"><a class="btn" href="<%=url("admin/system/admin")%>"><%:Go to password configuration...%></a></div>
+						<% end %>
+					</div>
+				<%- end -%>
+
+				<noscript>
+					<div class="alert-message warning">
+						<h4><%:JavaScript required!%></h4>
+						<p><%:You must enable JavaScript in your browser or LuCI will not work properly.%></p>
+					</div>
+				</noscript>
+
+				<div id="tabmenu" style="display:none"></div>

@@ -1,0 +1,70 @@
+{
+	"admin/network/firewall": {
+		"title": "Firewall",
+		"order": 60,
+		"action": {
+			"type": "alias",
+			"path": "admin/network/firewall/zones"
+		},
+		"depends": {
+			"acl": [ "luci-app-firewall" ],
+			"fs": { "/sbin/fw3": "executable" },
+			"uci": { "firewall": true }
+		}
+	},
+
+	"admin/network/firewall/zones": {
+		"title": "General Settings",
+		"order": 10,
+		"action": {
+			"type": "view",
+			"path": "firewall/zones"
+		}
+	},
+
+	"admin/network/firewall/forwards": {
+		"title": "Port Forwards",
+		"order": 20,
+		"action": {
+			"type": "view",
+			"path": "firewall/forwards"
+		}
+	},
+
+	"admin/network/firewall/rules": {
+		"title": "Traffic Rules",
+		"order": 30,
+		"action": {
+			"type": "view",
+			"path": "firewall/rules"
+		}
+	},
+
+	"admin/network/firewall/snats": {
+		"title": "NAT Rules",
+		"order": 40,
+		"action": {
+			"type": "view",
+			"path": "firewall/snats"
+		}
+	},
+
+
+	"admin/network/firewall/custom": {
+		"title": "Custom Rules",
+		"order": 50,
+		"action": {
+			"type": "view",
+			"path": "firewall/custom"
+		}
+	},
+	
+	"admin/network/firewall/customttl": {
+		"title": "Custom TTL Settings",
+		"order": 55,
+		"action": {
+			"type": "cbi",
+			"path": "firewall/ttlx"
+		}
+	}
+}

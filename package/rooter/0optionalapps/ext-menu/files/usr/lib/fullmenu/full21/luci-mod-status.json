@@ -1,0 +1,137 @@
+{
+	"admin/status/overview": {
+		"title": "Overview",
+		"order": 1,
+		"action": {
+			"type": "template",
+			"path": "admin_status/index"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-index" ]
+		}
+	},
+
+	"admin/status/iptables": {
+		"title": "Firewall",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "status/iptables"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-firewall" ]
+		}
+	},
+
+	"admin/status/routes": {
+		"title": "Routes",
+		"order": 3,
+		"action": {
+			"type": "view",
+			"path": "status/routes"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-routes" ]
+		}
+	},
+
+	"admin/status/syslog": {
+		"title": "System Log",
+		"order": 4,
+		"action": {
+			"type": "view",
+			"path": "status/syslog"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-logs" ]
+		}
+	},
+
+	"admin/status/dmesg": {
+		"title": "Kernel Log",
+		"order": 5,
+		"action": {
+			"type": "view",
+			"path": "status/dmesg"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-logs" ]
+		}
+	},
+
+	"admin/status/processes": {
+		"title": "Processes",
+		"order": 6,
+		"action": {
+			"type": "view",
+			"path": "status/processes"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-processes" ]
+		}
+	},
+
+	"admin/status/channel_analysis": {
+		"title": "Channel Analysis",
+		"order": 7,
+		"action": {
+			"type": "view",
+			"path": "status/channel_analysis"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-channel_analysis" ],
+			"uci": { "wireless": { "@wifi-device": true } }
+		}
+	},
+
+	"admin/status/realtime": {
+		"title": "Realtime Graphs",
+		"order": 7,
+		"action": {
+			"type": "alias",
+			"path": "admin/status/realtime/load"
+		},
+		"depends": {
+			"acl": [ "luci-mod-status-realtime" ]
+		}
+	},
+
+	"admin/status/realtime/load": {
+		"title": "Load",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "status/load"
+		}
+	},
+
+	"admin/status/realtime/bandwidth": {
+		"title": "Traffic",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "status/bandwidth"
+		}
+	},
+
+	"admin/status/realtime/wireless": {
+		"title": "Wireless",
+		"order": 3,
+		"action": {
+			"type": "view",
+			"path": "status/wireless"
+		},
+		"depends": {
+			"uci": { "wireless": { "@wifi-device": true } }
+		}
+	},
+
+	"admin/status/realtime/connections": {
+		"title": "Connections",
+		"order": 4,
+		"action": {
+			"type": "view",
+			"path": "status/connections"
+		}
+	}
+}

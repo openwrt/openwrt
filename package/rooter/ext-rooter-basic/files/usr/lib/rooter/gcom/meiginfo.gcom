@@ -1,0 +1,69 @@
+opengt
+ set com 115200n81
+ set comecho off
+ set senddelay 0.02
+ waitquiet 0.2 0.2
+
+let $g=$env("TIMEOUT")
+if $g = "" let f=25
+else let f = val($g)
+
+send "AT+CSQ^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT+PSRAT^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+if $s="^jERROR" goto newmodel
+
+send "AT+MODODR?^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT+CELLINFO^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT+SGCELLINFO^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+exit 0
+
+:newmodel
+
+send "AT\^SYSCFGEX?^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT+SGCELLINFOEX^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT+CELLINFO=3^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+exit 0
+
+:getresult
+get 1 "^m" $s
+let x=len($s)
+if x=0 let $s="^mTIMEOUT ERROR"
+else print $s
+if $s="^jOK" return
+if $mid($s,0,6)="^jERROR" return
+if $mid($s,0,8)="^jCOMMAND" return
+if $mid($s,0,11)="^j+CME ERROR" return
+if time()>t return
+goto getresult

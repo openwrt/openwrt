@@ -1,0 +1,25 @@
+opengt
+ set com 115200n81
+ set comecho off
+ set senddelay 0.05
+ waitquiet 1 0.2
+
+//send "ate0^m"
+//waitquiet 1 0.2
+send "AT+COPS=2;+CFUN=4^m"
+waitfor 5 "OK"
+sleep 5
+send "AT+CFUN?^m"
+waitfor 5 "+CME ERROR:","+CFUN:"
+if % = 0 goto cme_err
+get 2 " " $s
+if $left($s,1) = "1" goto end
+sleep 5
+send "AT+CFUN=1^m"
+waitquiet 1 0.2
+exit 0
+
+:cme_err
+print "+CME ERROR"
+:end
+exit 0

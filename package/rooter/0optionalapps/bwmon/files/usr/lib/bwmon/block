@@ -1,0 +1,28 @@
+#!/bin/sh
+
+internet_block()
+{
+	enable=$1
+	iptables -w -S ACCOUNTING_BLOCK > /tmp/iptables.block.$$
+	if [ "$enable" = 1 ]
+	then
+		# insert the block rule
+		check=$(cat /tmp/iptables.block.$$ | grep -e "-m comment --comment internet_block -j DROP")
+		if [ -z "$check" ]
+		then
+			iptables -w -I ACCOUNTING_BLOCK -m comment --comment internet_block -j DROP 2>/dev/null
+		fi
+	else
+		# remove the block rule
+		count=$(cat /tmp/iptables.block.$$ | grep -e "-m comment --comment internet_block -j DROP" | wc -l)
+		for i in $(seq 1 $count)
+		do
+			iptables -w -D ACCOUNTING_BLOCK -m comment --comment internet_block -j DROP 2>/dev/null
+		done
+	fi
+
+	rm -rf  /tmp/iptables.block.$$
+}
+
+internet_block $1
+

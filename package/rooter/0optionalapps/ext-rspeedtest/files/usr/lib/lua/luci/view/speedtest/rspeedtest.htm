@@ -1,0 +1,259 @@
+<%+header%>
+<%
+	user_icon = resource .. "/img/user.png"
+	prov_icon = resource .. "/img/prov.png"
+	load_icon = resource .. "/icons/loading.gif"
+%>
+
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+var upspeed;
+
+ XHR.poll(1, '<%=luci.dispatcher.build_url("admin", "speed", "getspeeddata")%>', null,
+		function(x, rv)
+		{
+			latency = rv.dlsize ;
+			jitter = rv.dlelapse ;
+			dwnspeed = rv.ulsize;
+			upspeed = rv.ulelapse;
+			if ( upspeed == null)
+			{
+				upspeed = 0;
+			}
+
+			working = rv.working ;
+			if ( working == "0" )
+			{
+				document.getElementById("refe").disabled = false ;
+				document.getElementById("loading").style.visibility="hidden";	
+				document.getElementById("dwn").style.color = "inherit";
+				document.getElementById("up").style.color = "inherit";	
+			}
+			if ( working == "1" )
+			{
+				document.getElementById("loading").style.visibility="visible";
+				document.getElementById("ping").innerHTML = " ";
+				document.getElementById("jit").innerHTML = " ";
+			}
+			if ( working == "2" )
+			{
+				document.getElementById("ping").innerHTML = latency + " ms";
+				document.getElementById("jit").innerHTML = jitter + " ms";
+				document.getElementById("pingl").style.visibility="visible";
+				document.getElementById("updwn").style.visibility="visible";
+				document.getElementById("dwn").style.color = "red";
+				document.getElementById("up").style.color = "inherit";
+				document.getElementById("dwn").innerHTML = "<%:downloading%>" ;
+				document.getElementById("up").innerHTML = " "
+			}
+			if ( working == "3" )
+			{
+				document.getElementById("dwn").style.color = "inherit";
+				document.getElementById("up").style.color = "red";
+				document.getElementById("up").innerHTML = "<%:uploading%>" ;
+			}
+			if ( dwnspeed != "0" )
+			{
+				document.getElementById("dwn").innerHTML = dwnspeed + " Mbps" ;
+			} 
+			else
+			{
+				if ( working != "2" )
+				{
+					document.getElementById("dwn").innerHTML = " ";
+				}
+			}
+			if ( upspeed != "0" )
+			{
+				document.getElementById("up").innerHTML = upspeed + " Mbps" ;
+				document.getElementById("up").style.color = "inherit";
+			} 
+			else
+			{
+				if ( working != "3" )
+				{
+					document.getElementById("up").innerHTML = " ";
+				}
+			}
+		}
+); 
+
+ XHR.get('<%=luci.dispatcher.build_url("admin", "speed", "closeserver")%>', null,
+	function(x, rv)
+	{
+		status = rv.status;
+		if ( status == "0" )
+		{
+			document.getElementById("runtest").style.display="none";
+			document.getElementById("pingl").style.display="none";
+			document.getElementById("wait").style.display="";
+			document.getElementById("wait").innerHTML = "<%:Unable to contact SpeedTest.net%>" ;
+			document.getElementById("noint").style.visibility="visible";
+			document.getElementById("loading").style.display="none";
+		}
+		else
+		{
+			document.getElementById("runtest").style.display="";
+			document.getElementById("runtest").style.visibility="visible";
+			document.getElementById("pingl").style.display="";
+			document.getElementById("pingl").style.visibility="visible";
+			document.getElementById("updwn").style.display="";
+			document.getElementById("updwn").style.visibility="visible";
+			document.getElementById("refresh").style.visibility="visible";
+			document.getElementById("wait").style.display="";
+			document.getElementById("wait").innerHTML = " " ;
+			document.getElementById("uisp").innerHTML = rv.isp ;
+			document.getElementById("uip").innerHTML = rv.ip ;
+			document.getElementById("city").innerHTML = rv.city ;
+			document.getElementById("prov").innerHTML = rv.prov ;
+		}
+	}
+); 
+
+
+function dotest(btn)
+{
+	document.getElementById("ping").innerHTML = " " ;
+	document.getElementById("jit").innerHTML = " " ;
+	document.getElementById("up").innerHTML = " " ;
+	document.getElementById("dwn").innerHTML = " " ;
+	document.getElementById("refe").disabled = true ;
+	document.getElementById("runbtn").disabled = true ;
+	document.getElementById("stopbtn").style.visibility="visible";
+	document.getElementById("stopbtn").disabled = false ;
+	XHR.get('<%=luci.dispatcher.build_url("admin", "speed", "getspeed")%>', null,
+		function(x, rv)
+		{
+			document.getElementById("stopbtn").disabled = true ;
+			document.getElementById("runbtn").disabled = false ;
+		}
+	);
+	
+}
+
+function stoptest(btn)
+{
+	document.getElementById("stopbtn").disabled = true ;
+	XHR.get('<%=luci.dispatcher.build_url("admin", "speed", "stoptest")%>', null,
+		function(x, rv)
+		{
+			window.location.reload(false);
+		}
+	);
+	
+}
+
+//]]></script>
+
+<form method="post" action="<%=REQUEST_URI%>">
+<body onload="refresh();"></body>
+<div class="cbi-map" id="cbi-misc">
+<h2><a id="content" name="content"><%:Speed Test by Ookla%></a></h2>
+<div class="cbi-map-descr"><%:An Internet speed test that runs from the router%></div>
+<head>
+     <style>
+      input {
+        vertical-align: bottom;
+      }
+    </style>
+</head>
+<fieldset class="cbi-section" id="cbi-family">
+	
+	<table width="550"  border="0">
+		<tr>
+    		<td width="43%"><div align="right"  id="wait" style="font-size : 15px; width: 100%; height: 25px;"><%:***Finding Optimal Server***%></div></td>
+			<td width="57%">&nbsp;</td>
+		</tr>
+ 	</table>
+	
+	<table width="550"  border="0">
+		<tr>
+    		<td width="25%"><div align="right"  id="uisp" style="font-size : 18px; width: 100%; height: 25px;"><strong></strong></div></td>
+			<td width="5%"><div align="left"><img src="<%=user_icon%>" align="top"></img></div></td>
+			<td width="10%">&nbsp;</td>
+			<td width="5%"><div align="right"><img src="<%=prov_icon%>" align="top"></img></div></td>
+			<td width="25%"><div align="left"  id="prov" style="font-size : 18px; width: 100%; height: 25px;"><strong></strong></div></td>
+			<td width="30%">&nbsp;</td>
+		</tr>
+ 	</table>
+	
+	<table width="550"  border="0">
+		<tr>
+    		<td width="25%"><div align="right"  id="uip" style="font-size : 15px; width: 100%; height: 25px;"><strong></strong></div></td>
+			<td width="20%">&nbsp;</td>
+			<td width="25%"><div align="left"  id="city" style="font-size : 15px; width: 100%; height: 25px;"><strong></strong></div></td>
+			<td width="30%">&nbsp;</td>
+		</tr>
+ 	</table>
+	
+	<table width="550"  border="0" id="refresh" style="visibility:hidden">
+		<tr>
+			<td width="35%">&nbsp;</td>
+			<td width="20%"><div class="cbi-page-actions right">
+							<form class="inline" action="<%=REQUEST_URI%>" method="get">
+								<input class="cbi-button cbi-input-find" type="submit" id="refe" value="<%:Refresh Server%>" />
+								</form>
+							</div>
+			</td>
+			<td width="45%">&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="550"  border="0" id="loading" style="visibility:hidden">
+		<tr>
+    		<td width="33%">&nbsp;</td>
+			<td width="5%"><div align="left"><img src="<%=load_icon%>" align="top"></img></div></td>
+			<td width="62%">&nbsp;</td>
+		</tr>
+ 	</table>
+	
+	<table width="550"  border="0" id="pingl" style="visibility:hidden">
+		<tr>
+				<td width="30%"><div align="right" style="font-size : 15px; width: 100%; height: 25px;"><%:Latency : %></div></td>
+				<td width="5%"><div align="left" id="ping"></div></td>
+				<td width="5%"><div align="right" style="font-size : 15px; width: 100%; height: 25px;"><%:Jitter : %></div></td>
+				<td width="5%"><div align="left" id="jit"></div></td>
+				<td width="50%">&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="550"  border="0" id="updwn" style="visibility:hidden">
+		<tr>
+    		<td width="25%"><div align="right" style="font-size : 15px; width: 100%; height: 25px;"><strong><%:Download : %></strong></div></td>
+			<td width="10%"><div align="left"  id="dwn" style="font-size : 15px; width: 100%; height: 25px;"><strong></strong></div></td>
+			<td width="10%">&nbsp;</td>
+			<td width="8%"><div align="right"  style="font-size : 15px; width: 100%; height: 25px;"><strong><%:Upload : %></strong></div></td>
+			<td width="10%"><div align="left"  id="up" style="font-size : 15px; width: 100%; height: 25px;"><strong></strong></div></td>
+			<td width="38%">&nbsp;</td>
+		</tr>
+ 	</table>
+	
+	<table width="550"  border="0" >
+		<tr>
+			<td width="100%">&nbsp;</td>
+		</tr>
+	</table>
+	
+	<table width="550"  border="0" id="runtest" style="visibility:hidden">
+		<tr>
+			<td width="25%">&nbsp;</td>
+			<td width="17%" align="center"><input type="button" id="runbtn" class="cbi-button cbi-button-success" value="<%:Run Speed Test%>" onclick="return dotest(this)" /></td>
+			<td width="17%">&nbsp;</td>
+			<td width="41%">&nbsp;</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+			<td align="center" style="visibility:hidden"><input type="button" id="stopbtn" class="cbi-button cbi-button-remove" value="<%:Stop Speed Test%>" onclick="return stoptest(this)" /></td>
+			<td>&nbsp;</td>
+			<td>&nbsp;</td>
+		</tr>
+	</table>
+	
+	
+
+</fieldset>
+
+</div>
+</form>
+<%+footer%>

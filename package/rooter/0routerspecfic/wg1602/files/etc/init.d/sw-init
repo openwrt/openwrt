@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 OpenWrt.org
+
+START=50
+USE_PROCD=1
+
+log() {
+	logger -t "WatchDog" "$@"
+}
+
+start_service()
+{
+	log "WG1602 USB Hub switch to USB3.0 infterface"
+	echo 0 > /sys/class/gpio/ext-usb/value
+}

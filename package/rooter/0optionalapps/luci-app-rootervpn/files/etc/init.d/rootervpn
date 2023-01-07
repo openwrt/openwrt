@@ -1,0 +1,183 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=60
+
+log() {
+	logger -t "OpenVPN : " "$@"
+}
+
+check_config () {
+	log "Check Client Interfaces"
+	CHANGE="0"
+	WW=$(uci get network.VPN)
+	if [ -z $WW ]; then
+		uci set network.VPN=interface
+		uci set network.VPN.proto="none"
+		uci set network.VPN.ifname="tun0"
+		uci set network.VPN.auto="0"
+		CHANGE="1"
+	fi
+	WW=$(uci get network.VPNS)
+	if [ -z $WW ]; then
+		uci set network.VPNS=interface
+		uci set network.VPNS.proto="none"
+		uci set network.VPNS.ifname="tun-server"
+		uci set network.VPNS.auto="0"
+		CHANGE="1"
+	fi
+	WW=$(uci get network.TAP)
+	if [ -z $WW ]; then
+		uci set network.TAP=interface
+		uci set network.TAP.proto="none"
+		uci set network.TAP.ifname="tap0"
+		uci set network.TAP.auto="1"
+		LANIF=$(uci get network.lan.ifname)
+		TAP0=$(echo $LANIF | grep "tap0")
+		if [ -z "$TAP0" ]; then
+			uci set network.lan.ifname="$(uci get network.lan.ifname) tap0"
+		fi
+		CHANGE="1"
+	fi
+	WW=$(uci get network.TAPS)
+	if [ -z $WW ]; then
+		uci set network.TAPS=interface
+		uci set network.TAPS.proto="none"
+		uci set network.TAPS.ifname="tap-server"
+		uci set network.TAPS.auto="0"
+		LANIF=$(uci get network.lan.ifname)
+		TAP1=$(echo $LANIF | grep "tap-server")
+		if [ -z "$TAP1" ]; then
+			uci set network.lan.ifname="$(uci get network.lan.ifname) tap-server"
+		fi
+		CHANGE="1"
+	fi
+	if [ $CHANGE = "1" ]; then
+		uci commit network
+		/etc/init.d/network restart
+	fi
+	
+	CHANGE="0"
+	WW=$(uci get firewall.vpnzone)
+	if [ -z $WW ]; then
+		uci set firewall.vpnzone=zone
+		uci set firewall.vpnzone.name="VPN"
+		uci set firewall.vpnzone.forward="REJECT"
+		uci set firewall.vpnzone.output="ACCEPT"
+		uci set firewall.vpnzone.network="VPN"
+		uci set firewall.vpnzone.input="REJECT"
+		uci set firewall.vpnzone.masq="1"
+		uci set firewall.vpnzone.mtu_fix="1"
+		uci set firewall.vpnforward=forwarding
+		uci set firewall.vpnforward.dest="VPN"
+		uci set firewall.vpnforward.src="lan"
+		CHANGE="1"
+	fi	
+	WW=$(uci get firewall.vpnzones)
+	if [ -z $WW ]; then
+		uci set firewall.vpnzones=zone
+		uci set firewall.vpnzones.name="VPNS"
+		uci set firewall.vpnzones.forward="REJECT"
+		uci set firewall.vpnzones.output="ACCEPT"
+		uci set firewall.vpnzones.network="VPNS"
+		uci set firewall.vpnzones.input="ACCEPT"
+		uci set firewall.vpnzones.masq="1"
+		uci set firewall.vpnzones.mtu_fix="1"
+		uci set firewall.vpnforwards=forwarding
+		uci set firewall.vpnforwards.dest="VPNS"
+		uci set firewall.vpnforwards.src="lan"
+		CHANGE="1"
+	fi
+	if [ $CHANGE = "1" ]; then	
+		uci commit firewall
+		/etc/init.d/firewall restart
+	fi
+	WW=$(uci get openvpn.settings)
+	if [ -z $WW ]; then
+		uci set openvpn.settings=settings
+		uci set openvpn.settings.vpn2lan="0"
+		uci set openvpn.settings.vpns2lan="0"
+		uci set openvpn.settings.vpn2wan="0"
+		uci set openvpn.settings.country="CA"
+		uci set openvpn.settings.city="Abbotsford"
+		uci set openvpn.settings.organ="ROOter"
+		uci set openvpn.settings.days="3650"
+		uci set openvpn.settings.nclient='1'
+		uci commit openvpn
+	fi
+}
+
+checkserver() {
+	log "Check Server Interfaces"
+	local s=$1
+	if [ -z $s ]; then
+		return
+	fi
+	local SERVER="0"
+	local config=$(uci get openvpn.$s.config)
+	if [ ! -z $config ]; then
+		return
+	fi
+	local client=$(uci get openvpn.$s.client)
+	if [ -z $client ]; then
+		SERVER="1"
+	else
+		if [ $client = "0" ]; then
+			SERVER="1"
+		fi
+	fi
+	
+	if [ $SERVER = "1" ]; then
+		port=$(uci get openvpn.$s.port)
+		if [ -z $port ]; then
+			PORT="1194"
+		else
+			PORT=$port
+		fi
+		# look for rule for this port
+		INB="inbound"$PORT
+		RULE=$(uci get firewall.$INB)
+		if [ -z $RULE ]; then
+			uci set firewall.$INB=rule
+			uci set firewall.$INB.name=$INB
+			uci set firewall.$INB.target=ACCEPT
+			uci set firewall.$INB.src=*
+			uci set firewall.$INB.proto=udp
+			uci set firewall.$INB.dest_port=$PORT
+			uci commit firewall
+			/etc/init.d/firewall reload
+		fi
+		DEV=$(uci get openvpn.$s.dev)
+		if [ $DEV = "tun0" ]; then
+			uci set openvpn.$s.dev="tun1"
+			uci commit openvpn
+		else
+			
+			if [ $DEV = "tap0" ]; then
+				uci set openvpn.$s.dev="tap1"
+				uci commit openvpn
+			fi
+		fi
+	else
+		DEV=$(uci get openvpn.$s.dev)
+		if [ $DEV = "tun1" ]; then
+			uci set openvpn.$s.dev="tun0"
+			uci commit openvpn
+		else
+			if [ $DEV = "tap1" ]; then
+				uci set openvpn.$s.dev="tap0"
+				uci commit openvpn
+			fi
+		fi
+	fi
+}
+
+start() {
+	check_config
+	checkserver
+
+	if [ -d /etc/luci-uploads ]; then
+		rm -rfv /etc/luci-uploads
+	fi
+	ln -s /etc/openvpn /etc/luci-uploads 
+}

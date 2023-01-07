@@ -1,0 +1,15 @@
+
+config policy 'faillist'
+
+config tracker 'failover'
+	option reliability '1'
+	option count '1'
+	option pingtime '5'
+	option pingwait '7'
+	option down '2'
+	option up '2'
+	list trackip '8.8.8.8'
+
+config enabled 'enabled'
+	option enabled '0'
+
