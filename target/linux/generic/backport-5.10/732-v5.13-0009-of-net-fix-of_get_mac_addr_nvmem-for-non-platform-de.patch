@@ -1,7 +1,7 @@
 From f10843e04a075202dbb39dfcee047e3a2fdf5a8d Mon Sep 17 00:00:00 2001
 From: Michael Walle <michael@walle.cc>
 Date: Mon, 12 Apr 2021 19:47:18 +0200
-Subject: of: net: fix of_get_mac_addr_nvmem() for non-platform devices
+Subject: [PATCH] of: net: fix of_get_mac_addr_nvmem() for non-platform devices
 
 of_get_mac_address() already supports fetching the MAC address by an
 nvmem provider. But until now, it was just working for platform devices.
