@@ -56,6 +56,13 @@ jcg,y2|\
 xzwifi,creativebox-v1)
 	ucidef_set_led_netdev "internet" "internet" "blue:internet" "wan"
 	;;
+dlink,dap-x1860-a1)
+	ucidef_set_rssimon "wlan1" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "orange:rssilow" "wlan1" "1" "25"
+	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "green:rssilow" "wlan1" "26" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimedium" "wlan1" "51" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "76" "100"
+	;;
 dlink,dir-1960-a1|\
 dlink,dir-2640-a1|\
 dlink,dir-2660-a1)
