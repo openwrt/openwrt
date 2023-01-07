@@ -12,6 +12,9 @@
 
 	chosen {
 		bootargs = "console=ttyS0,115200 noinitrd";
+		// Override bootargs because u-boot passes wrong root parameter.
+		// Instead allow kernel determine root automatically by looking for rootfs volume
+		bootargs-override = "console=ttyS0,115200 noinitrd ubi.mtd=3,2048";
 	};
 
 	aliases {
