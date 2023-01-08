@@ -1,0 +1,399 @@
+From 0a199d39eed08d95832b622b4aad503431279795 Mon Sep 17 00:00:00 2001
+From: Yang Xiwen <forbidden405@foxmail.com>
+Date: Sat, 14 Jan 2023 14:38:46 +0800
+Subject: [PATCH 1/4] arm64: dts: qcom: msm8916-thwc: Add initial device trees
+
+This commit adds support for the ufi-001C and uf896 WiFi/LTE dongle made by
+Tong Heng Wei Chuang based on MSM8916.
+uf896 is another variant for the usb stick. The board design
+differs by using different gpios for the keys and leds.
+
+Note: The original firmware does not support 64-bit OS. It is necessary
+to flash 64-bit TZ firmware to boot arm64.
+
+Currently supported:
+- All CPU cores
+- Buttons
+- LEDs
+- Modem
+- SDHC
+- USB Device Mode
+- UART
+
+Co-developed-by: Jaime Breva <jbreva@nayarsystems.com>
+Signed-off-by: Jaime Breva <jbreva@nayarsystems.com>
+Co-developed-by: Nikita Travkin <nikita@trvn.ru>
+Signed-off-by: Nikita Travkin <nikita@trvn.ru>
+Signed-off-by: Yang Xiwen <forbidden405@foxmail.com>
+---
+ arch/arm64/boot/dts/qcom/Makefile             |   2 +
+ .../boot/dts/qcom/msm8916-thwc-uf896.dts      |  39 +++
+ .../boot/dts/qcom/msm8916-thwc-ufi001c.dts    |  39 +++
+ arch/arm64/boot/dts/qcom/msm8916-ufi.dtsi     | 250 ++++++++++++++++++
+ 4 files changed, 330 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/qcom/msm8916-thwc-uf896.dts
+ create mode 100644 arch/arm64/boot/dts/qcom/msm8916-thwc-ufi001c.dts
+ create mode 100644 arch/arm64/boot/dts/qcom/msm8916-ufi.dtsi
+
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index d7669a7cee9f..23394c7465d6 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -20,6 +20,8 @@ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-e7.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-grandmax.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-j5.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-samsung-serranove.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-thwc-uf896.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-thwc-ufi001c.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= msm8916-wingtech-wt88047.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= msm8992-lg-bullhead-rev-10.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= msm8992-lg-bullhead-rev-101.dtb
+diff --git a/arch/arm64/boot/dts/qcom/msm8916-thwc-uf896.dts b/arch/arm64/boot/dts/qcom/msm8916-thwc-uf896.dts
+new file mode 100644
+index 000000000000..c492db856190
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/msm8916-thwc-uf896.dts
+@@ -0,0 +1,39 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++/dts-v1/;
++
++#include "msm8916-ufi.dtsi"
++
++/ {
++	model = "uf896 4G Modem Stick";
++	compatible = "thwc,uf896", "qcom,msm8916";
++};
++
++&button_restart {
++	gpios = <&msmgpio 35 GPIO_ACTIVE_LOW>;
++};
++
++&led_r {
++	gpios = <&msmgpio 82 GPIO_ACTIVE_HIGH>;
++};
++
++&led_g {
++	gpios = <&msmgpio 83 GPIO_ACTIVE_HIGH>;
++};
++
++&led_b {
++	gpios = <&msmgpio 81 GPIO_ACTIVE_HIGH>;
++};
++
++&button_default {
++	pins = "gpio35";
++	bias-pull-up;
++};
++
++&gpio_leds_default {
++	pins = "gpio81", "gpio82", "gpio83";
++};
++
++&sim_ctrl_default {
++	pins = "gpio1", "gpio2";
++};
+diff --git a/arch/arm64/boot/dts/qcom/msm8916-thwc-ufi001c.dts b/arch/arm64/boot/dts/qcom/msm8916-thwc-ufi001c.dts
+new file mode 100644
+index 000000000000..700cf81cbf8c
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/msm8916-thwc-ufi001c.dts
+@@ -0,0 +1,39 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++/dts-v1/;
++
++#include "msm8916-ufi.dtsi"
++
++/ {
++	model = "ufi-001c/ufi-001b 4G Modem Stick";
++	compatible = "thwc,ufi001c", "qcom,msm8916";
++};
++
++&button_restart {
++	gpios = <&msmgpio 37 GPIO_ACTIVE_HIGH>;
++};
++
++&led_r {
++	gpios = <&msmgpio 22 GPIO_ACTIVE_HIGH>;
++};
++
++&led_g {
++	gpios = <&msmgpio 21 GPIO_ACTIVE_HIGH>;
++};
++
++&led_b {
++	gpios = <&msmgpio 20 GPIO_ACTIVE_HIGH>;
++};
++
++&button_default {
++	pins = "gpio37";
++	bias-pull-down;
++};
++
++&gpio_leds_default {
++	pins = "gpio20", "gpio21", "gpio22";
++};
++
++&sim_ctrl_default {
++	pins = "gpio1", "gpio2";
++};
+diff --git a/arch/arm64/boot/dts/qcom/msm8916-ufi.dtsi b/arch/arm64/boot/dts/qcom/msm8916-ufi.dtsi
+new file mode 100644
+index 000000000000..790a9696da9d
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/msm8916-ufi.dtsi
+@@ -0,0 +1,250 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#include "msm8916-pm8916.dtsi"
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/leds/common.h>
++
++/ {
++	chassis-type = "embedded";
++
++	aliases {
++		serial0 = &blsp1_uart2;
++	};
++
++	chosen {
++		stdout-path = "serial0";
++	};
++
++	reserved-memory {
++		mpss_mem: mpss@86800000 {
++			reg = <0x0 0x86800000 0x0 0x5500000>;
++			no-map;
++		};
++
++		gps_mem: gps@8bd00000 {
++			reg = <0x0 0x8bd00000 0x0 0x200000>;
++			no-map;
++		};
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		pinctrl-0 = <&button_default>;
++		pinctrl-names = "default";
++
++		label = "GPIO Buttons";
++
++		/* GPIO is board-specific */
++		button_restart: button-restart {
++			label = "Restart";
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		pinctrl-0 = <&gpio_leds_default>;
++		pinctrl-names = "default";
++
++		/*
++		 * GPIOs are board-specific.
++		 * Functions and default-states defined here are fallbacks.
++		 * Feel free to override them if your board is different.
++		 */
++		led_r: led-r {
++			color = <LED_COLOR_ID_RED>;
++			default-state = "on";
++			function = LED_FUNCTION_POWER;
++		};
++
++		led_g: led-g {
++			color = <LED_COLOR_ID_GREEN>;
++			default-state = "off";
++			function = LED_FUNCTION_WLAN;
++		};
++
++		led_b: led-b {
++			color = <LED_COLOR_ID_BLUE>;
++			default-state = "off";
++			function = LED_FUNCTION_WAN;
++		};
++	};
++};
++
++&bam_dmux {
++	status = "okay";
++};
++
++&bam_dmux_dma {
++	status = "okay";
++};
++
++&blsp1_uart2 {
++	status = "okay";
++};
++
++/* Remove &dsi_phy0 from clocks to make sure that gcc probes with display disabled */
++&gcc {
++	clocks = <&xo_board>, <&sleep_clk>, <0>, <0>, <0>, <0>, <0>;
++};
++
++&mpss {
++	pinctrl-0 = <&sim_ctrl_default>;
++	pinctrl-names = "default";
++
++	status = "okay";
++};
++
++&pm8916_usbin {
++	status = "okay";
++};
++
++&pronto {
++	status = "okay";
++};
++
++&sdhc_1 {
++	pinctrl-0 = <&sdc1_clk_on &sdc1_cmd_on &sdc1_data_on>;
++	pinctrl-1 = <&sdc1_clk_off &sdc1_cmd_off &sdc1_data_off>;
++	pinctrl-names = "default", "sleep";
++
++	status = "okay";
++};
++
++&usb {
++	extcon = <&pm8916_usbin>;
++	dr_mode = "peripheral";
++
++	status = "okay";
++};
++
++&usb_hs_phy {
++	extcon = <&pm8916_usbin>;
++};
++
++&smd_rpm_regulators {
++	vdd_l1_l2_l3-supply = <&pm8916_s3>;
++	vdd_l4_l5_l6-supply = <&pm8916_s4>;
++	vdd_l7-supply = <&pm8916_s4>;
++
++	s3 {
++		regulator-min-microvolt = <1200000>;
++		regulator-max-microvolt = <1300000>;
++	};
++
++	s4 {
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <2100000>;
++	};
++
++	l1 {
++		regulator-min-microvolt = <1225000>;
++		regulator-max-microvolt = <1225000>;
++	};
++
++	l2 {
++		regulator-min-microvolt = <1200000>;
++		regulator-max-microvolt = <1200000>;
++	};
++
++	l4 {
++		regulator-min-microvolt = <2050000>;
++		regulator-max-microvolt = <2050000>;
++	};
++
++	l5 {
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++	};
++
++	l6 {
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++	};
++
++	l7 {
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++	};
++
++	l8 {
++		regulator-min-microvolt = <2850000>;
++		regulator-max-microvolt = <2900000>;
++	};
++
++	l9 {
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++	};
++
++	l10 {
++		regulator-min-microvolt = <2700000>;
++		regulator-max-microvolt = <2800000>;
++	};
++
++	l11 {
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <2950000>;
++		regulator-system-load = <200000>;
++		regulator-allow-set-load;
++	};
++
++	l12 {
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <2950000>;
++	};
++
++	l13 {
++		regulator-min-microvolt = <3075000>;
++		regulator-max-microvolt = <3075000>;
++	};
++
++	l14 {
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++	};
++
++	l15 {
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++	};
++
++	l16 {
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++	};
++
++	l17 {
++		regulator-min-microvolt = <2850000>;
++		regulator-max-microvolt = <2850000>;
++	};
++
++	l18 {
++		regulator-min-microvolt = <2700000>;
++		regulator-max-microvolt = <2700000>;
++	};
++};
++
++&msmgpio {
++	/* pins are board-specific */
++	button_default: button-default-state {
++		function = "gpio";
++		drive-strength = <2>;
++	};
++
++	gpio_leds_default: gpio-leds-default-state {
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	sim_ctrl_default: sim-ctrl-default-state {
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++		output-low;
++	};
++};
+-- 
+2.38.1
+

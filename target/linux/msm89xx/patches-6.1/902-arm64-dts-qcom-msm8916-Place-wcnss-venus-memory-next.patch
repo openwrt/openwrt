@@ -1,0 +1,81 @@
+From 9338857a5e042ac51cb3f502e6ade0dff38c7197 Mon Sep 17 00:00:00 2001
+From: Stephan Gerhold <stephan@gerhold.net>
+Date: Thu, 14 Oct 2021 20:59:22 +0200
+Subject: [PATCH 3/4] arm64: dts: qcom: msm8916: Place wcnss/venus memory next
+ to mba
+
+The modem (mpss) firmware size varies a lot from device to device.
+It probably depends on the features that are enabled in the firmware,
+so there are often differences of several megabytes. Unfortunately,
+the current memory layout makes it really inconvenient to increase
+the memory region for the modem.
+
+mpss/wcnss/venus are placed contiguously in memory, which means that
+changing the mpss size requires moving the wcnss/venus memory as well.
+The size for wcnss/venus seems consistent on all devices though
+so this is normally not necessary.
+
+To avoid this, move wcnss/venus to the end of the space between
+mpss and mba. The reserved-memory is still largely contiguous
+but this allows growing mpss without moving wcnss/venus.
+
+The only device where this does not help is longcheer-l8150 because
+of its weird non-relocatable wcnss firmware. However, since it is
+the only device with this problem it does not seem worth optimizing
+for that case.
+
+Signed-off-by: Stephan Gerhold <stephan@gerhold.net>
+---
+ arch/arm64/boot/dts/qcom/msm8916-longcheer-l8150.dts | 6 +++---
+ arch/arm64/boot/dts/qcom/msm8916.dtsi                | 8 ++++----
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/msm8916-longcheer-l8150.dts b/arch/arm64/boot/dts/qcom/msm8916-longcheer-l8150.dts
+index d85e7f7c0835..9bdbdd506ed5 100644
+--- a/arch/arm64/boot/dts/qcom/msm8916-longcheer-l8150.dts
++++ b/arch/arm64/boot/dts/qcom/msm8916-longcheer-l8150.dts
+@@ -8,6 +8,8 @@
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/leds/common.h>
+ 
++/delete-node/ &wcnss_mem;
++
+ / {
+ 	model = "Longcheer L8150";
+ 	compatible = "longcheer,l8150", "qcom,msm8916-v1-qrd/9-v1", "qcom,msm8916";
+@@ -22,9 +24,7 @@ chosen {
+ 	};
+ 
+ 	reserved-memory {
+-		// wcnss.mdt is not relocatable, so it must be loaded at 0x8b600000
+-		/delete-node/ wcnss@89300000;
+-
++		/* wcnss.mdt is not relocatable, it must be loaded at 0x8b600000 */
+ 		wcnss_mem: wcnss@8b600000 {
+ 			reg = <0x0 0x8b600000 0x0 0x600000>;
+ 			no-map;
+diff --git a/arch/arm64/boot/dts/qcom/msm8916.dtsi b/arch/arm64/boot/dts/qcom/msm8916.dtsi
+index 445a1a819c0d..06196e5c737a 100644
+--- a/arch/arm64/boot/dts/qcom/msm8916.dtsi
++++ b/arch/arm64/boot/dts/qcom/msm8916.dtsi
+@@ -83,13 +83,13 @@ mpss_mem: mpss@86800000 {
+ 			no-map;
+ 		};
+ 
+-		wcnss_mem: wcnss@89300000 {
+-			reg = <0x0 0x89300000 0x0 0x600000>;
++		wcnss_mem: wcnss@8df00000 {
++			reg = <0x0 0x8df00000 0x0 0x600000>;
+ 			no-map;
+ 		};
+ 
+-		venus_mem: venus@89900000 {
+-			reg = <0x0 0x89900000 0x0 0x500000>;
++		venus_mem: venus@8e500000 {
++			reg = <0x0 0x8e500000 0x0 0x500000>;
+ 			no-map;
+ 		};
+ 
+-- 
+2.38.1
+
