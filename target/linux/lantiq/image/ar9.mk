@@ -119,6 +119,8 @@ define Device/netgear_dgn3500b
   DEVICE_MODEL := DGN3500B
   SOC := ar9
   IMAGE_SIZE := 16000k
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGES += factory.img
   IMAGE/sysupgrade.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "DE" | \
