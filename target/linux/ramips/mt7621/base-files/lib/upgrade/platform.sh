@@ -52,6 +52,7 @@ platform_do_upgrade() {
 	case "$board" in
 	ampedwireless,ally-00x19k|\
 	ampedwireless,ally-r1900k|\
+	arcadyan,we420223-99|\
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
 	asus,rt-ax53u|\

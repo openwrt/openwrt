@@ -8,6 +8,9 @@ ramips_setup_interfaces()
 	local board="$1"
 
 	case $board in
+	arcadyan,we420223-99)
+		ucidef_set_interface_lan "swp0 swp1"
+		;;
 	ampedwireless,ally-00x19k|\
 	asus,rp-ac56|\
 	asus,rp-ac87|\
@@ -150,6 +153,11 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii hwconfig HW.WAN.MAC.Address)
 		label_mac=$lan_mac
 		;;
+	arcadyan,we420223-99)
+		label_mac=$(mtd_get_mac_ascii board_data mac)
+		lan_mac=$label_mac
+		ucidef_set_network_device_mac eth0 $(macaddr_add "$label_mac" 3)
+	;;
 	asus,rt-ac65p|\
 	asus,rt-ac85p)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
