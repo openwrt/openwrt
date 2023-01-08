@@ -41,26 +41,16 @@ jobs:
         working-directory: ${{ env.WORKPATH }}/openwrt
         run: |
           brew install \
-            autoconf \
             automake \
             coreutils \
             diffutils \
             findutils \
             gawk \
-            gettext \
             git-extras \
-            gmp \
-            gnu-getopt \
             gnu-sed \
-            gnu-tar \
             grep \
-            m4 \
             make \
-            mpfr \
-            ncurses \
-            pcre \
-            pkg-config \
-            wget
+            pcre
 
             echo "/bin" >> "$GITHUB_PATH"
             echo "/sbin/Library/Apple/usr/bin" >> "$GITHUB_PATH"
