@@ -1,0 +1,41 @@
+From 579db09c6106977c0496f2cca48606b289df4bdf Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <festevam@gmail.com>
+Date: Fri, 29 Jan 2021 17:14:27 +0000
+Subject: [PATCH] nvmem: imx-iim: Use of_device_get_match_data()
+
+The retrieval of driver data via of_device_get_match_data() can make
+the code simpler.
+
+Use of_device_get_match_data() to simplify the code.
+
+Signed-off-by: Fabio Estevam <festevam@gmail.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20210129171430.11328-3-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/imx-iim.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+--- a/drivers/nvmem/imx-iim.c
++++ b/drivers/nvmem/imx-iim.c
+@@ -96,7 +96,6 @@ MODULE_DEVICE_TABLE(of, imx_iim_dt_ids);
+ 
+ static int imx_iim_probe(struct platform_device *pdev)
+ {
+-	const struct of_device_id *of_id;
+ 	struct device *dev = &pdev->dev;
+ 	struct iim_priv *iim;
+ 	struct nvmem_device *nvmem;
+@@ -111,11 +110,7 @@ static int imx_iim_probe(struct platform
+ 	if (IS_ERR(iim->base))
+ 		return PTR_ERR(iim->base);
+ 
+-	of_id = of_match_device(imx_iim_dt_ids, dev);
+-	if (!of_id)
+-		return -ENODEV;
+-
+-	drvdata = of_id->data;
++	drvdata = of_device_get_match_data(&pdev->dev);
+ 
+ 	iim->clk = devm_clk_get(dev, NULL);
+ 	if (IS_ERR(iim->clk))

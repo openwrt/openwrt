@@ -51,40 +51,6 @@
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
-
-		lan1 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <1>;
-			gpios = <&switch0 0 GPIO_ACTIVE_LOW>;
-		};
-
-		lan2 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <2>;
-			gpios = <&switch0 3 GPIO_ACTIVE_LOW>;
-		};
-
-		lan3 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <3>;
-			gpios = <&switch0 6 GPIO_ACTIVE_LOW>;
-		};
-
-		lan4 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <4>;
-			gpios = <&switch0 9 GPIO_ACTIVE_HIGH>;
-		};
-
-		wan {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WAN;
-			gpios = <&switch0 12 GPIO_ACTIVE_LOW>;
-		};
 	};
 };
 
@@ -186,9 +152,6 @@
 };
 
 &switch0 {
-	gpio-controller;
-	#gpio-cells = <2>;
-
 	ports {
 		port@0 {
 			status = "okay";

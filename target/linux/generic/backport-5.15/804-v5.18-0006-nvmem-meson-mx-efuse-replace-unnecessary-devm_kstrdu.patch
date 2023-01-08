@@ -1,0 +1,28 @@
+From 4dc8d89faed9bb05f116fa1794fc955b14910386 Mon Sep 17 00:00:00 2001
+From: Xiaoke Wang <xkernel.wang@foxmail.com>
+Date: Sun, 20 Feb 2022 15:15:21 +0000
+Subject: [PATCH] nvmem: meson-mx-efuse: replace unnecessary devm_kstrdup()
+
+Replace unnecessary devm_kstrdup() so to avoid redundant memory allocation.
+
+Suggested-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Signed-off-by: Xiaoke Wang <xkernel.wang@foxmail.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20220220151527.17216-8-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/meson-mx-efuse.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/nvmem/meson-mx-efuse.c
++++ b/drivers/nvmem/meson-mx-efuse.c
+@@ -209,8 +209,7 @@ static int meson_mx_efuse_probe(struct p
+ 	if (IS_ERR(efuse->base))
+ 		return PTR_ERR(efuse->base);
+ 
+-	efuse->config.name = devm_kstrdup(&pdev->dev, drvdata->name,
+-					  GFP_KERNEL);
++	efuse->config.name = drvdata->name;
+ 	efuse->config.owner = THIS_MODULE;
+ 	efuse->config.dev = &pdev->dev;
+ 	efuse->config.priv = efuse;

@@ -107,10 +107,34 @@
 				read-only;
 			};
 
-			art: partition@7f0000 {
+			partition@7f0000 {
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_art_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_art_120c: macaddr@120c {
+					reg = <0x120c 0x6>;
+				};
+
+				macaddr_art_520c: macaddr@520c {
+					reg = <0x520c 0x6>;
+				};
+
+				calibration_art_1000: calibration@1000 {
+					reg = <0x1000 0xeb8>;
+				};
+
+				calibration_art_5000: calibration@5000 {
+					reg = <0x5000 0xeb8>;
+				};
 			};
 		};
 	};
@@ -122,9 +146,8 @@
 	ath9k0: wifi@0,11 {
 		compatible = "pci168c,0029";
 		reg = <0x8800 0 0 0 0>;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_art_120c>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_art_120c>, <&calibration_art_1000>;
+		nvmem-cell-names = "mac-address", "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
@@ -132,30 +155,10 @@
 	ath9k1: wifi@0,12 {
 		compatible = "pci168c,0029";
 		reg = <0x9000 0 0 0 0>;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_art_520c>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_art_520c>, <&calibration_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
 		mac-address-increment = <1>;
 		#gpio-cells = <2>;
 		gpio-controller;
-	};
-};
-
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_art_120c: macaddr@120c {
-		reg = <0x120c 0x6>;
-	};
-
-	macaddr_art_520c: macaddr@520c {
-		reg = <0x520c 0x6>;
 	};
 };

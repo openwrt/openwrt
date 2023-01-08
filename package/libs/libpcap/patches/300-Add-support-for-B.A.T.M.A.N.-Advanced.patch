@@ -1,4 +1,4 @@
-From b86b960fbd5c215c9c0f43544935b9a25d9445c5 Mon Sep 17 00:00:00 2001
+From 3d8d268320d2381021a409ff8d03533698dd6242 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
 Date: Mon, 23 Nov 2020 00:38:22 +0100
 Subject: [PATCH] Add support for B.A.T.M.A.N. Advanced
@@ -220,16 +220,16 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  #endif
 --- a/gencode.c
 +++ b/gencode.c
-@@ -74,6 +74,8 @@
- #include "atmuni31.h"
+@@ -60,6 +60,8 @@
  #include "sunatmpos.h"
+ #include "pflog.h"
  #include "ppp.h"
 +#include "batadv_packet.h"
 +#include "batadv_legacy_packet.h"
  #include "pcap/sll.h"
  #include "pcap/ipnet.h"
  #include "arcnet.h"
-@@ -9501,6 +9503,168 @@ gen_geneve(compiler_state_t *cstate, bpf
+@@ -9436,6 +9438,168 @@ gen_geneve(compiler_state_t *cstate, bpf
  	return b1;
  }
  
@@ -400,7 +400,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  static struct block *
 --- a/gencode.h
 +++ b/gencode.h
-@@ -346,6 +346,9 @@ struct block *gen_pppoes(compiler_state_
+@@ -358,6 +358,9 @@ struct block *gen_pppoes(compiler_state_
  
  struct block *gen_geneve(compiler_state_t *, bpf_u_int32, int);
  
@@ -412,7 +412,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  struct block *gen_atmtype_abbrev(compiler_state_t *, int);
 --- a/grammar.y.in
 +++ b/grammar.y.in
-@@ -347,6 +347,7 @@ DIAG_OFF_BISON_BYACC
+@@ -375,6 +375,7 @@ DIAG_OFF_BISON_BYACC
  %type	<i>	mtp2type
  %type	<blk>	mtp3field
  %type	<blk>	mtp3fieldvalue mtp3value mtp3listvalue
@@ -420,7 +420,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  
  
  %token  DST SRC HOST GATEWAY
-@@ -365,7 +366,7 @@ DIAG_OFF_BISON_BYACC
+@@ -393,7 +394,7 @@ DIAG_OFF_BISON_BYACC
  %token  LEN
  %token  IPV6 ICMPV6 AH ESP
  %token	VLAN MPLS
@@ -429,7 +429,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  %token  ISO ESIS CLNP ISIS L1 L2 IIH LSP SNP CSNP PSNP
  %token  STP
  %token  IPX
-@@ -592,11 +593,40 @@ other:	  pqual TK_BROADCAST	{ CHECK_PTR_
+@@ -620,11 +621,40 @@ other:	  pqual TK_BROADCAST	{ CHECK_PTR_
  	| PPPOES		{ CHECK_PTR_VAL(($$ = gen_pppoes(cstate, 0, 0))); }
  	| GENEVE pnum		{ CHECK_PTR_VAL(($$ = gen_geneve(cstate, $2, 1))); }
  	| GENEVE		{ CHECK_PTR_VAL(($$ = gen_geneve(cstate, 0, 0))); }
@@ -556,15 +556,15 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  	}
 --- a/pcap-filter.manmisc.in
 +++ b/pcap-filter.manmisc.in
-@@ -98,6 +98,7 @@ protos are:
+@@ -98,6 +98,7 @@ protocols are:
  .BR arp ,
  .BR rarp ,
  .BR decnet ,
 +.BR batadv ,
+ .BR sctp ,
  .B tcp
  and
- .BR udp .
-@@ -361,7 +362,7 @@ True if the packet is an IPv6 multicast
+@@ -400,7 +401,7 @@ True if the packet is an IPv6 multicast
  .IP  "\fBether proto \fIprotocol\fR"
  True if the packet is of ether type \fIprotocol\fR.
  \fIProtocol\fP can be a number or one of the names
@@ -573,7 +573,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  \fBipx\fP, \fBiso\fP, \fBlat\fP, \fBloopback\fP, \fBmopdl\fP, \fBmoprc\fP, \fBnetbeui\fP,
  \fBrarp\fP, \fBsca\fP or \fBstp\fP.
  Note these identifiers (except \fBloopback\fP) are also keywords
-@@ -415,7 +416,7 @@ the filter checks for the IPX etype in a
+@@ -454,7 +455,7 @@ the filter checks for the IPX etype in a
  DSAP in the LLC header, the 802.3-with-no-LLC-header encapsulation of
  IPX, and the IPX etype in a SNAP frame.
  .RE
@@ -582,7 +582,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  Abbreviations for:
  .in +.5i
  .nf
-@@ -752,6 +753,36 @@ For example:
+@@ -792,6 +793,36 @@ For example:
  filters IPv4 protocol encapsulated in Geneve with VNI 0xb. This will
  match both IPv4 directly encapsulated in Geneve as well as IPv4 contained
  inside an Ethernet frame.
@@ -621,7 +621,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
  \fIProtocol\fP can be a number or one of the names
 --- a/pcap/namedb.h
 +++ b/pcap/namedb.h
-@@ -69,6 +69,8 @@ PCAP_API int	pcap_nametoportrange(const
+@@ -70,6 +70,8 @@ PCAP_API int	pcap_nametoportrange(const
  PCAP_API int	pcap_nametoproto(const char *);
  PCAP_API int	pcap_nametoeproto(const char *);
  PCAP_API int	pcap_nametollc(const char *);
@@ -632,7 +632,7 @@ Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
   * Also, pcap_nametoport() returns the protocol along with the port number.
 --- a/scanner.l
 +++ b/scanner.l
-@@ -344,6 +344,7 @@ mpls		return MPLS;
+@@ -347,6 +347,7 @@ mpls		return MPLS;
  pppoed		return PPPOED;
  pppoes		return PPPOES;
  geneve		return GENEVE;

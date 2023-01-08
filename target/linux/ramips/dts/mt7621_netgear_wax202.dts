@@ -53,29 +53,14 @@
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
-		led_lan1_green: lan1_green {
-			label = "green:lan1";
-			gpios = <&switch0 3 GPIO_ACTIVE_LOW>;
-		};
-
 		led_lan1_orange: lan1_orange {
 			label = "orange:lan1";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
-		led_lan2_green: lan2_green {
-			label = "green:lan2";
-			gpios = <&switch0 6 GPIO_ACTIVE_LOW>;
-		};
-
 		led_lan2_orange: lan2_orange {
 			label = "orange:lan2";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-		};
-
-		led_lan3_green: lan3_green {
-			label = "green:lan3";
-			gpios = <&switch0 12 GPIO_ACTIVE_LOW>;
 		};
 
 		led_lan3_orange: lan3_orange {
@@ -256,9 +241,6 @@
 };
 
 &switch0 {
-	gpio-controller;
-	#gpio-cells = <2>;
-
 	ports {
 		port@1 {
 			status = "okay";

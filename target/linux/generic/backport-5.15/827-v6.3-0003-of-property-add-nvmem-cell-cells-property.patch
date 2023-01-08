@@ -1,0 +1,28 @@
+From 9cf9486a6a7e8a3d76154d0c506051ba3740e8b6 Mon Sep 17 00:00:00 2001
+From: Michael Walle <michael@walle.cc>
+Date: Tue, 6 Dec 2022 21:07:23 +0100
+Subject: [PATCH] of: property: add #nvmem-cell-cells property
+
+Bindings describe the new '#nvmem-cell-cells' property. Now that the
+arguments count property is optional, we just add this property to the
+nvmem-cells.
+
+Signed-off-by: Michael Walle <michael@walle.cc>
+Tested-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Reviewed-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+---
+ drivers/of/property.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/of/property.c
++++ b/drivers/of/property.c
+@@ -1276,7 +1276,7 @@ DEFINE_SIMPLE_PROP(dmas, "dmas", "#dma-c
+ DEFINE_SIMPLE_PROP(power_domains, "power-domains", "#power-domain-cells")
+ DEFINE_SIMPLE_PROP(hwlocks, "hwlocks", "#hwlock-cells")
+ DEFINE_SIMPLE_PROP(extcon, "extcon", NULL)
+-DEFINE_SIMPLE_PROP(nvmem_cells, "nvmem-cells", NULL)
++DEFINE_SIMPLE_PROP(nvmem_cells, "nvmem-cells", "#nvmem-cell-cells")
+ DEFINE_SIMPLE_PROP(phys, "phys", "#phy-cells")
+ DEFINE_SIMPLE_PROP(wakeup_parent, "wakeup-parent", NULL)
+ DEFINE_SIMPLE_PROP(pinctrl0, "pinctrl-0", NULL)

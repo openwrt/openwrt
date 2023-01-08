@@ -59,6 +59,7 @@ platform_do_upgrade() {
 	beeline,smartbox-giga|\
 	beeline,smartbox-turbo|\
 	belkin,rt1800|\
+	dlink,dap-x1860-a1|\
 	dlink,dir-1960-a1|\
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
@@ -122,6 +123,12 @@ platform_do_upgrade() {
 		;;
 	iodata,wn-dx1200gr)
 		iodata_mstc_upgrade_prepare "0x1fe75"
+		nand_do_upgrade "$1"
+		;;
+	tplink,er605-v2)
+		echo "Upgrading tplink,er605-v2"
+		CI_UBIPART="firmware"
+		CI_KERNPART="kernel"
 		nand_do_upgrade "$1"
 		;;
 	ubnt,edgerouter-x|\

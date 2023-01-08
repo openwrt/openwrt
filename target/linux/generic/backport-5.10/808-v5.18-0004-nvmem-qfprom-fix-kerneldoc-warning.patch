@@ -1,0 +1,29 @@
+From 05196facc052385960028ac634447ecf6c764ec3 Mon Sep 17 00:00:00 2001
+From: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Date: Sun, 20 Feb 2022 15:15:18 +0000
+Subject: [PATCH] nvmem: qfprom: fix kerneldoc warning
+
+This patch fixes below kernel doc warning,
+warning: expecting prototype for qfprom_efuse_reg_write().
+Prototype was for qfprom_reg_write() instead
+
+No code changes.
+
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20220220151527.17216-5-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/qfprom.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/nvmem/qfprom.c
++++ b/drivers/nvmem/qfprom.c
+@@ -244,7 +244,7 @@ err_clk_prepared:
+ }
+ 
+ /**
+- * qfprom_efuse_reg_write() - Write to fuses.
++ * qfprom_reg_write() - Write to fuses.
+  * @context: Our driver data.
+  * @reg:     The offset to write at.
+  * @_val:    Pointer to data to write.

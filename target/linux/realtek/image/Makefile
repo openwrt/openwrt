@@ -3,8 +3,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-KERNEL_LOADADDR = 0x80000000
-KERNEL_ENTRY = 0x80000400
+KERNEL_LOADADDR = 0x80100000
+KERNEL_ENTRY = 0x80100400
 
 DEVICE_VARS += \
         CAMEO_BOARD_VERSION \
@@ -69,20 +69,6 @@ define Build/h3c-vfs
 		-o $(@).new \
 		-f openwrt-kernel.bin
 	mv $@.new $@
-endef
-
-define Build/relocate-kernel
-	rm -rf $@.relocate
-	$(CP) ../../generic/image/relocate $@.relocate
-	$(MAKE) -j1 -C $@.relocate KERNEL_ADDR=$(KERNEL_LOADADDR) LZMA_TEXT_START=0x82000000 \
-		CROSS_COMPILE=$(TARGET_CROSS)
-	( \
-		dd if=$@.relocate/loader.bin bs=32 conv=sync && \
-		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
-		cat "$@" \
-	) > "$@.new"
-	mv "$@.new" "$@"
-	rm -rf $@.relocate
 endef
 
 define Device/Default

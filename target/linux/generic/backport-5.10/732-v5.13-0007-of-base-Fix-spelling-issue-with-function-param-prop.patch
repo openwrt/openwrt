@@ -1,0 +1,54 @@
+From 31e46db02ac1351c84e56a18606d17fc1b8390dd Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Mon, 29 Mar 2021 16:24:35 +0100
+Subject: [PATCH] of: base: Fix spelling issue with function param 'prop'
+
+Fixes the following W=1 kernel build warning(s):
+
+ drivers/of/base.c:1781: warning: Function parameter or member 'prop' not described in '__of_add_property'
+ drivers/of/base.c:1781: warning: Excess function parameter 'prob' description in '__of_add_property'
+ drivers/of/base.c:1804: warning: Function parameter or member 'prop' not described in 'of_add_property'
+ drivers/of/base.c:1804: warning: Excess function parameter 'prob' description in 'of_add_property'
+ drivers/of/base.c:1855: warning: Function parameter or member 'prop' not described in 'of_remove_property'
+ drivers/of/base.c:1855: warning: Excess function parameter 'prob' description in 'of_remove_property'
+
+Cc: Rob Herring <robh+dt@kernel.org>
+Cc: Frank Rowand <frowand.list@gmail.com>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: devicetree@vger.kernel.org
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+Link: https://lore.kernel.org/r/20210329152435.900225-1-lee.jones@linaro.org
+Signed-off-by: Rob Herring <robh@kernel.org>
+---
+ drivers/of/base.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/of/base.c
++++ b/drivers/of/base.c
+@@ -1780,7 +1780,7 @@ EXPORT_SYMBOL(of_count_phandle_with_args
+ /**
+  * __of_add_property - Add a property to a node without lock operations
+  * @np:		Caller's Device Node
+- * @prob:	Property to add
++ * @prop:	Property to add
+  */
+ int __of_add_property(struct device_node *np, struct property *prop)
+ {
+@@ -1803,7 +1803,7 @@ int __of_add_property(struct device_node
+ /**
+  * of_add_property - Add a property to a node
+  * @np:		Caller's Device Node
+- * @prob:	Property to add
++ * @prop:	Property to add
+  */
+ int of_add_property(struct device_node *np, struct property *prop)
+ {
+@@ -1849,7 +1849,7 @@ int __of_remove_property(struct device_n
+ /**
+  * of_remove_property - Remove a property from a node.
+  * @np:		Caller's Device Node
+- * @prob:	Property to remove
++ * @prop:	Property to remove
+  *
+  * Note that we don't actually remove it, since we have given out
+  * who-knows-how-many pointers to the data using get-property.

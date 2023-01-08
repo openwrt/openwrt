@@ -169,7 +169,7 @@ jobs:
           fi
 
           if [ -n "$major_ver" ]; then
-            git fetch --tags
+            git fetch --tags -f
             latest_tag="$(git tag --sort=-creatordate -l $major_ver* | head -n1)"
             if [ -n "$latest_tag" ]; then
               TOOLCHAIN_PATH=releases/$(echo $latest_tag | sed 's/^v//')

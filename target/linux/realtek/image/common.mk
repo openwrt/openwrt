@@ -34,14 +34,12 @@ define Device/hpe_1920
   KERNEL := \
 	kernel-bin | \
 	append-dtb | \
-	relocate-kernel | \
 	7z | \
 	h3c-image | \
 	h3c-vfs
   KERNEL_INITRAMFS := \
 	kernel-bin | \
 	append-dtb | \
-	relocate-kernel | \
 	7z | \
 	h3c-image
   IMAGE/sysupgrade.bin := \

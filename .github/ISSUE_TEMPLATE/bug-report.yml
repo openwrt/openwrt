@@ -32,7 +32,9 @@ body:
     id: device
     attributes:
       label: Device
-      description: The device exhibiting this bug.
+      description: |
+        The device exhibiting this bug (if unsure, use command below).
+        ```cat /tmp/sysinfo/model```
     validations:
       required: true
   - type: dropdown

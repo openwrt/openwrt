@@ -37,6 +37,7 @@ endef
 define Device/senao_loader_okli
   $(Device/loader-okli-uimage)
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x73714f4b
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
   LOADER_KERNEL_MAGIC := 0x73714f4b
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
