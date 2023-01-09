@@ -1,0 +1,88 @@
+From 2f714642e574c64e1c0e093cad3de6f8accb6ec7 Mon Sep 17 00:00:00 2001
+From: Martin Sebor <msebor@redhat.com>
+Date: Tue, 18 Jan 2022 17:52:01 -0700
+Subject: [PATCH] Handle failure to determine pointer provenance conservatively
+ [PR104069].
+
+Partly resolves:
+PR middle-end/104069 - -Werror=use-after-free false positive on elfutils-0.186
+
+gcc/ChangeLog:
+	PR middle-end/104069
+	* gimple-ssa-warn-access.cc (pointers_related_p): Return false for
+	an unknown result as documented.
+
+gcc/testsuite/ChangeLog:
+	PR middle-end/104069
+	* gcc.dg/Wuse-after-free.c: New test.
+---
+ gcc/gimple-ssa-warn-access.cc          |  4 ++-
+ gcc/testsuite/gcc.dg/Wuse-after-free.c | 41 ++++++++++++++++++++++++++
+ 2 files changed, 44 insertions(+), 1 deletion(-)
+ create mode 100644 gcc/testsuite/gcc.dg/Wuse-after-free.c
+
+diff --git a/gcc/gimple-ssa-warn-access.cc b/gcc/gimple-ssa-warn-access.cc
+index f639807a78a..f9508a1d211 100644
+--- a/gcc/gimple-ssa-warn-access.cc
++++ b/gcc/gimple-ssa-warn-access.cc
+@@ -4082,7 +4082,9 @@ pointers_related_p (gimple *stmt, tree p, tree q, pointer_query &qry)
+   access_ref pref, qref;
+   if (!qry.get_ref (p, stmt, &pref, 0)
+       || !qry.get_ref (q, stmt, &qref, 0))
+-    return true;
++    /* GET_REF() only rarely fails.  When it does, it's likely because
++       it involves a self-referential PHI.  Return a conservative result.  */
++    return false;
+ 
+   return pref.ref == qref.ref;
+ }
+diff --git a/gcc/testsuite/gcc.dg/Wuse-after-free.c b/gcc/testsuite/gcc.dg/Wuse-after-free.c
+new file mode 100644
+index 00000000000..9862de5c0a9
+--- /dev/null
++++ b/gcc/testsuite/gcc.dg/Wuse-after-free.c
+@@ -0,0 +1,41 @@
++/* PR middle-end/104069 - -Werror=use-after-free false positive on
++   elfutils-0.186
++   { dg-do compile }
++   { dg-options "-Wall" } */
++
++typedef __SIZE_TYPE__ size_t;
++
++extern void* realloc (void *, size_t);
++
++void* __libdw_unzstd (size_t todo)
++{
++  void *sb = 0;
++
++  for ( ; ; )
++    {
++      // Ran only once.
++      if (!sb)
++	{
++	  char *b = realloc (sb, todo);
++	  if (!b)
++	    break;
++
++	  sb = b;
++	}
++
++      todo -= 1;
++      if (todo == 0)
++	break;
++    }
++
++  // Shrink buffer: leave only one byte for simplicity.
++  char *b = realloc (sb, 1);
++  if (b)
++    sb = b;
++  else
++    {
++      // Realloc failed mysteriously, leave 'sb' untouched.
++    }
++
++  return sb;        // { dg-bogus "-Wuse-after-free" }
++}
+-- 
+2.37.2
+
