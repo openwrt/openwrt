@@ -152,10 +152,13 @@ _proto_mbim_setup() {
 	[ "$pdptype" = "ipv4" -o "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] || pdptype="ipv4v6"
 
 	echo "mbim[$$]" "Connect to network"
-	while ! umbim $DBG -n -t $tid -d $device connect "$pdptype:$apn" "$auth" "$username" "$password"; do
+	umbim $DBG -n -t $tid -d $device connect "$pdptype:$apn" "$auth" "$username" "$password" || {
+		echo "mbim[$$]" "Failed to connect bearer"
 		tid=$((tid + 1))
-		sleep 1;
-	done
+		umbim $DBG -t $tid -d "$device" disconnect
+		proto_notify_error "$interface" CONNECT_FAILED
+		return 1
+	}
 	tid=$((tid + 1))
 
 	echo "mbim[$$]" "Connected"
