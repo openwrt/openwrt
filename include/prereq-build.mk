@@ -204,6 +204,18 @@ $(eval $(call SetupHostCommand,which,Please install 'which', \
 	/bin/which which, \
 	which which))
 
+$(eval $(call RequireCHeader,argp.h, \
+	Missing argp.h Please install the argp-standalone package if musl libc))
+
+$(eval $(call RequireCHeader,fts.h, \
+	Missing fts.h Please install the musl-fts-dev package if musl libc))
+
+$(eval $(call RequireCHeader,obstack.h, \
+	Missing obstack.h Please install the musl-obstack-dev package if musl libc))
+
+$(eval $(call RequireCHeader,libintl.h, \
+	Missing libintl.h Please install the musl-libintl package if musl libc))
+
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
 	$(CC) -O2 -I$(TOPDIR)/tools/include -o $@ $<
