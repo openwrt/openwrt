@@ -20,6 +20,7 @@ proto_mbim_init_config() {
 	proto_config_add_string username
 	proto_config_add_string password
 	proto_config_add_boolean dhcp
+	proto_config_add_boolean dhcpv6
 	proto_config_add_string pdptype
 	proto_config_add_defaults
 }
@@ -29,8 +30,8 @@ _proto_mbim_setup() {
 	local tid=2
 	local ret
 
-	local device apn pincode delay allow_roaming allow_partner dhcp pdptype $PROTO_DEFAULT_OPTIONS
-	json_get_vars device apn pincode delay auth username password allow_roaming allow_partner dhcp pdptype $PROTO_DEFAULT_OPTIONS
+	local device apn pincode delay allow_roaming allow_partner dhcp dhcpv6 pdptype $PROTO_DEFAULT_OPTIONS
+	json_get_vars device apn pincode delay auth username password allow_roaming allow_partner dhcp dhcpv6 pdptype $PROTO_DEFAULT_OPTIONS
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
@@ -209,7 +210,7 @@ _proto_mbim_setup() {
 	}
 
 	[ "$iptype" != "ipv4" ] && {
-		if [ -z "$dhcp" -o "$dhcp" = 0 ]; then
+		if [ -z "$dhcpv6" -o "$dhcpv6" = 0 ]; then
 			json_init
 			json_add_string name "${interface}_6"
 			json_add_string ifname "@$interface"
