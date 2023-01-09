@@ -967,6 +967,9 @@ dnsmasq_start()
 	append_bool "$cfg" filter_aaaa "--filter-AAAA"
 	append_bool "$cfg" filter_a "--filter-A"
 
+	append_parm "$cfg" fast_dns_retry "--fast-dns-retry"
+	append_parm "$cfg" use_stale_cache "--use-stale-cache"
+
 	append_parm "$cfg" logfacility "--log-facility"
 	config_get logfacility "$cfg" "logfacility"
 	append_parm "$cfg" cachesize "--cache-size"
