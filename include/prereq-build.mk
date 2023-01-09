@@ -49,10 +49,9 @@ $(eval $(call TestHostCommand,working-g++, \
 		g++ -x c++ -o $(TMP_DIR)/a.out - -lstdc++ && \
 		$(TMP_DIR)/a.out))
 
-$(eval $(call TestHostCommand,ncurses, \
+$(eval $(call RequireCHeader,ncurses.h, \
 	Please install ncurses. (Missing libncurses.so or ncurses.h), \
-	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
-		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses))
+	initscr(), -lncurses))
 
 $(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
 	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule, \
