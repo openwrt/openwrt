@@ -1,0 +1,33 @@
+From 1b758d623e30ec30450e554ae62493c687f7dd62 Mon Sep 17 00:00:00 2001
+From: Ludovic Desroches <ludovic.desroches@microchip.com>
+Date: Fri, 20 Oct 2017 15:12:52 +0200
+Subject: [PATCH 289/471] MAINTAINERS: add Atmel PTC entries
+
+Add entries for the Atmel PTC Subsystem.
+
+Signed-off-by: Ludovic Desroches <ludovic.desroches@microchip.com>
+---
+ MAINTAINERS | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 4ce28ebb0981..370e7e2a4833 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -3076,6 +3076,13 @@ T:	git git://github.com/ndyer/linux.git
+ F:	Documentation/devicetree/bindings/input/atmel,maxtouch.yaml
+ F:	drivers/input/touchscreen/atmel_mxt_ts.c
+ 
++ATMEL PTC SUBSYSTEM DRIVER
++M:	Ludovic Desroches <ludovic.desroches@microchip.com>
++L:	linux-input@vger.kernel.org
++S:	Supported
++F:	Documentation/devicetree/bindings/input/atmel,ptc.txt
++F:	drivers/input/misc/atmel_ptc.c
++
+ ATMEL WIRELESS DRIVER
+ M:	Simon Kelley <simon@thekelleys.org.uk>
+ L:	linux-wireless@vger.kernel.org
+-- 
+2.34.1
+

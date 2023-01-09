@@ -1,0 +1,47 @@
+From dde946049fe38f816fbbdb170e15f82f8dfc4581 Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Wed, 21 Sep 2022 10:54:59 +0530
+Subject: [PATCH 404/471] ARM: dts: at91: sam9x75eb: add i2s audio node with
+ codec
+
+Add i2s audio node for the onboard audio proto codec in the sam9x75eb
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ arch/arm/boot/dts/at91-sam9x75eb.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/boot/dts/at91-sam9x75eb.dts b/arch/arm/boot/dts/at91-sam9x75eb.dts
+index 18b3df80fbb3..10e4322ec6c3 100644
+--- a/arch/arm/boot/dts/at91-sam9x75eb.dts
++++ b/arch/arm/boot/dts/at91-sam9x75eb.dts
+@@ -74,6 +74,14 @@ memory@20000000 {
+ 		device_type = "memory";
+ 		reg = <0x20000000 0x10000000>;
+ 	};
++
++	sound {
++		compatible = "mikroe,mikroe-proto";
++		model = "wm8731 @ sam9x75eb";
++		i2s-controller = <&i2s>;
++		audio-codec = <&wm8731>;
++		dai-format = "i2s";
++	};
+ };
+ 
+ &can0 {
+@@ -249,6 +257,11 @@ regulator-state-standby {
+ 				};
+ 			};
+ 		};
++
++		wm8731: codec@1a {
++			compatible = "wlf,wm8731";
++			reg = <0x1a>;
++		};
+ 	};
+ };
+ 
+-- 
+2.34.1
+

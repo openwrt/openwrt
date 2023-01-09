@@ -1,0 +1,36 @@
+From 8aa797547c02525c63de038945aebc407ca6653a Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 10 Jun 2022 12:24:09 +0300
+Subject: [PATCH 291/471] dt-bindings: reset: add sama7g5 definitions
+
+Add reset bindings for SAMA7G5. At the moment only USB PHYs are
+included.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Acked-by: Philipp Zabel <p.zabel@pengutronix.de>
+Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+---
+ include/dt-bindings/reset/sama7g5-reset.h | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+ create mode 100644 include/dt-bindings/reset/sama7g5-reset.h
+
+diff --git a/include/dt-bindings/reset/sama7g5-reset.h b/include/dt-bindings/reset/sama7g5-reset.h
+new file mode 100644
+index 000000000000..2116f41d04e0
+--- /dev/null
++++ b/include/dt-bindings/reset/sama7g5-reset.h
+@@ -0,0 +1,10 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef __DT_BINDINGS_RESET_SAMA7G5_H
++#define __DT_BINDINGS_RESET_SAMA7G5_H
++
++#define SAMA7G5_RESET_USB_PHY1		4
++#define SAMA7G5_RESET_USB_PHY2		5
++#define SAMA7G5_RESET_USB_PHY3		6
++
++#endif /* __DT_BINDINGS_RESET_SAMA7G5_H */
+-- 
+2.34.1
+

@@ -1,0 +1,34 @@
+From 2e863086494f6af53686151c1f69323b5537bf5b Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Thu, 24 Feb 2022 12:46:44 +0200
+Subject: [PATCH 428/471] ARM: configs: at91: sama7: Disable
+ CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
+
+ubifs_mount requires LEBs of at least 15360 bytes. Increase the physical
+eraseblock size by disabling CONFIG_MTD_SPI_NOR_USE_4K_SECTORS. The next
+available erase size will be used (typically 64K). Needed to be able to
+put an ubifs on a NOR flash.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 886040055f66..1041884df4fb 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -92,8 +92,9 @@ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_RAW_NAND=y
+ CONFIG_MTD_NAND_ATMEL=y
+ # CONFIG_MTD_NAND_ECC_SW_HAMMING is not set
+-CONFIG_MTD_UBI=y
+ CONFIG_MTD_SPI_NOR=y
++# CONFIG_MTD_SPI_NOR_USE_4K_SECTORS is not set
++CONFIG_MTD_UBI=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=1
+-- 
+2.34.1
+

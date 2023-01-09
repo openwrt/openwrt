@@ -1,0 +1,30 @@
+From b83f7de42413fc972ca7c034ca264d313ba0e25a Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Tue, 8 Jun 2021 14:02:25 +0300
+Subject: [PATCH 452/471] ARM: at91: sama5_defconfig: enable RNDIS USB gadget
+
+RNDIS UBS gadget was requested so enable it.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/sama5_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/sama5_defconfig b/arch/arm/configs/sama5_defconfig
+index 31d79add632a..ec8dbe85bd05 100644
+--- a/arch/arm/configs/sama5_defconfig
++++ b/arch/arm/configs/sama5_defconfig
+@@ -235,8 +235,10 @@ CONFIG_USB_GADGET=y
+ CONFIG_USB_ATMEL_USBA=m
+ CONFIG_USB_CONFIGFS=m
+ CONFIG_USB_CONFIGFS_ACM=y
++CONFIG_USB_CONFIGFS_RNDIS=y
+ CONFIG_USB_CONFIGFS_MASS_STORAGE=y
+ CONFIG_USB_ZERO=m
++CONFIG_USB_ETH=m
+ CONFIG_USB_MASS_STORAGE=m
+ CONFIG_USB_G_SERIAL=m
+ CONFIG_MMC=y
+-- 
+2.34.1
+

@@ -1,0 +1,31 @@
+From 22173ac10940d8a94d64102ed25a023aa512b9e2 Mon Sep 17 00:00:00 2001
+From: Ludovic Desroches <ludovic.desroches@microchip.com>
+Date: Tue, 4 Feb 2020 08:27:57 +0100
+Subject: [PATCH 257/471] drm/atmel-hlcdc: gfx2d: flush must wait for end of
+ work
+
+When a flush is requested, it must returned only once work is done.
+Otherwise, it can cause weird behavior as the update of the rendering
+buffer is not totally done.
+
+Signed-off-by: Ludovic Desroches <ludovic.desroches@microchip.com>
+---
+ drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c
+index 20cc348e1b56..fc8fd1df2399 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c
++++ b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c
+@@ -192,7 +192,7 @@ int gfx2d_flush(struct gfx2d_gpu *gpu)
+ 	if (ring->cur != ring->tail)
+ 		gpu_write(gpu, REG_GFX2D_HEAD, ring->cur - ring->start);
+ 
+-	/* Do we need to wait for an end of work event? */
++	while (gpu_read(gpu, REG_GFX2D_GS) & REG_GFX2D_GS_BUSY);
+ 
+ 	return 0;
+ }
+-- 
+2.34.1
+

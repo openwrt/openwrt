@@ -1,0 +1,31 @@
+From 2d458ef22737c92726fce8694ee007f3b0acddcd Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 20 Dec 2021 15:59:34 +0200
+Subject: [PATCH 047/471] ASoC: atmel: spdifrx: remove interface name from
+ stream_name
+
+Remove the interface name from the stream_name. The interface name (and the
+index of the interface) can be set in DT using the sound-name-prefix string
+property.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/atmel/mchp-spdifrx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/atmel/mchp-spdifrx.c b/sound/soc/atmel/mchp-spdifrx.c
+index a7baa0385ec5..e6add74e8201 100644
+--- a/sound/soc/atmel/mchp-spdifrx.c
++++ b/sound/soc/atmel/mchp-spdifrx.c
+@@ -839,7 +839,7 @@ static struct snd_soc_dai_driver mchp_spdifrx_dai = {
+ 	.probe	= mchp_spdifrx_dai_probe,
+ 	.remove	= mchp_spdifrx_dai_remove,
+ 	.capture = {
+-		.stream_name = "S/PDIF Capture",
++		.stream_name = "Capture",
+ 		.channels_min = SPDIFRX_CHANNELS,
+ 		.channels_max = SPDIFRX_CHANNELS,
+ 		.rates = MCHP_SPDIF_RATES,
+-- 
+2.34.1
+

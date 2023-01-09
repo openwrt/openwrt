@@ -1,0 +1,40 @@
+From be8b0f6804ba30346adc4dccb8181f271ce462a8 Mon Sep 17 00:00:00 2001
+From: Hari Prasath <Hari.PrasathGE@microchip.com>
+Date: Thu, 28 Jul 2022 08:07:16 +0530
+Subject: [PATCH 396/471] ARM: dts: at91: sam9x60: Fix compilation warnings
+
+Add the address-cells and size-cells property in the flexcom0 node and the i2c0
+child node to suppress compilation warnings.
+
+Fixes: 3a263fab141b (" ARM: dts: at91: sam9x60: Add missing flexcom definitions")
+Fixes: c85a670bf4a4 (" ARM: dts: at91: sam9x60: Move flx0 definitions in the SoC dtsi")
+Signed-off-by: Hari Prasath <Hari.PrasathGE@microchip.com>
+---
+ arch/arm/boot/dts/sam9x60.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sam9x60.dtsi b/arch/arm/boot/dts/sam9x60.dtsi
+index 9ee3a540c21c..88698950ed91 100644
+--- a/arch/arm/boot/dts/sam9x60.dtsi
++++ b/arch/arm/boot/dts/sam9x60.dtsi
+@@ -727,6 +727,8 @@ flx0: flexcom@f801c000 {
+ 				compatible = "atmel,sama5d2-flexcom";
+ 				reg = <0xf801c000 0x200>;
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 5>;
++				#address-cells = <1>;
++				#size-cells = <1>;
+ 				ranges = <0x0 0xf801c000 0x800>;
+ 				status = "disabled";
+ 
+@@ -774,6 +776,8 @@ i2c0: i2c@600 {
+ 					compatible = "microchip,sam9x60-i2c";
+ 					reg = <0x600 0x200>;
+ 					interrupts = <5 IRQ_TYPE_LEVEL_HIGH 7>;
++					#address-cells = <1>;
++					#size-cells = <0>;
+ 					clocks = <&pmc PMC_TYPE_PERIPHERAL 5>;
+ 					dmas = <&dma0
+ 						(AT91_XDMAC_DT_MEM_IF(0) |
+-- 
+2.34.1
+

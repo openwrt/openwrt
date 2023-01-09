@@ -1,0 +1,43 @@
+From 0f7b2c2796816c7a1b9f88557181de4e48e8cd4b Mon Sep 17 00:00:00 2001
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Tue, 26 Oct 2021 10:39:50 -0700
+Subject: [PATCH 103/471] net: macb: Fix mdio child node detection
+
+Commit 4d98bb0d7ec2 ("net: macb: Use mdio child node for MDIO bus if it
+exists") added code to detect if a 'mdio' child node exists to the macb
+driver. Ths added code does, however, not actually check if the child node
+exists, but if the parent node exists. This results in errors such as
+
+macb 10090000.ethernet eth0: Could not attach PHY (-19)
+
+if there is no 'mdio' child node. Fix the code to actually check for
+the child node.
+
+Fixes: 4d98bb0d7ec2 ("net: macb: Use mdio child node for MDIO bus if it exists")
+Cc: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Reviewed-by: Sean Anderson <sean.anderson@seco.com>
+Tested-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20211026173950.353636-1-linux@roeck-us.net
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
+index c69a3746e604..4a66186cd3ca 100644
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -908,7 +908,7 @@ static int macb_mdiobus_register(struct macb *bp)
+ 	 * directly under the MAC node
+ 	 */
+ 	child = of_get_child_by_name(np, "mdio");
+-	if (np) {
++	if (child) {
+ 		int ret = of_mdiobus_register(bp->mii_bus, child);
+ 
+ 		of_node_put(child);
+-- 
+2.34.1
+

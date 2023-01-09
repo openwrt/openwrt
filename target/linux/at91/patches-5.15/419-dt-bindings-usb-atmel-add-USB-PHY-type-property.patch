@@ -1,0 +1,30 @@
+From f3a00e3391f42a41461bbba2f182c41acf89710b Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Thu, 25 Apr 2019 13:32:31 +0300
+Subject: [PATCH 310/471] dt-bindings: usb: atmel: add USB PHY type property
+
+Add USB PHY type property for controllers with HSIC support.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ Documentation/devicetree/bindings/usb/atmel-usb.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/usb/atmel-usb.txt b/Documentation/devicetree/bindings/usb/atmel-usb.txt
+index a4002624ba14..f512f0290728 100644
+--- a/Documentation/devicetree/bindings/usb/atmel-usb.txt
++++ b/Documentation/devicetree/bindings/usb/atmel-usb.txt
+@@ -39,6 +39,10 @@ Required properties:
+ 		"ehci_clk" for the peripheral clock
+ 		"usb_clk" for the UTMI clock
+ 
++Optional properties:
++ - phy_type : For multi port host USB controllers, should be one of
++   "utmi", or "hsic".
++
+ usb1: ehci@800000 {
+ 	compatible = "atmel,at91sam9g45-ehci", "usb-ehci";
+ 	reg = <0x00800000 0x100000>;
+-- 
+2.34.1
+

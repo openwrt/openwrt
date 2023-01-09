@@ -1,0 +1,29 @@
+From 53293c0c5c2f787caa0d683b777932d0c95f489e Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 20 Dec 2021 12:51:40 +0200
+Subject: [PATCH 418/471] ARM: configs: at91: sama7: enable DWC csi2host
+ drivers
+
+Enable DWC csi2host and D-PHY drivers.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 15978f2ab4ea..317611e80806 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -128,6 +128,8 @@ CONFIG_MEDIA_PLATFORM_SUPPORT=y
+ CONFIG_V4L_PLATFORM_DRIVERS=y
+ CONFIG_VIDEO_ATMEL_XISC=y
+ CONFIG_VIDEO_MICROCHIP_CSI2DC=y
++CONFIG_DWC_MIPI_CSI2_HOST=m
++CONFIG_DWC_MIPI_DPHY_GEN3=m
+ CONFIG_VIDEO_IMX219=m
+ CONFIG_VIDEO_IMX274=m
+ CONFIG_VIDEO_OV5647=m
+-- 
+2.34.1
+

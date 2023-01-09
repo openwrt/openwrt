@@ -1,0 +1,29 @@
+From 8e7172ba1ad449d82c4816ac60ccbcd687c783fb Mon Sep 17 00:00:00 2001
+From: Ludovic Desroches <ludovic.desroches@microchip.com>
+Date: Thu, 24 Aug 2017 10:21:56 +0200
+Subject: [PATCH 115/471] pinctrl: at91-pio4: use suspend_late and resume_early
+
+Prefer using suspend_late and resume_early to be sure that all devices
+have already updated the pin configuration if needed before suspending.
+
+Signed-off-by: Ludovic Desroches <ludovic.desroches@microchip.com>
+---
+ drivers/pinctrl/pinctrl-at91-pio4.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/pinctrl/pinctrl-at91-pio4.c b/drivers/pinctrl/pinctrl-at91-pio4.c
+index 517f2a6330ad..30a1ec96f872 100644
+--- a/drivers/pinctrl/pinctrl-at91-pio4.c
++++ b/drivers/pinctrl/pinctrl-at91-pio4.c
+@@ -1008,7 +1008,7 @@ static int __maybe_unused atmel_pctrl_resume(struct device *dev)
+ }
+ 
+ static const struct dev_pm_ops atmel_pctrl_pm_ops = {
+-	SET_SYSTEM_SLEEP_PM_OPS(atmel_pctrl_suspend, atmel_pctrl_resume)
++	SET_LATE_SYSTEM_SLEEP_PM_OPS(atmel_pctrl_suspend, atmel_pctrl_resume)
+ };
+ 
+ /*
+-- 
+2.34.1
+

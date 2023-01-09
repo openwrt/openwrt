@@ -1,0 +1,77 @@
+From 2bfa73e605efc25d577f4af97b270a2406e874f8 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 3 Aug 2022 13:28:43 +0300
+Subject: [PATCH 012/471] iio: adc: at91-sama5d2_adc: move the check of
+ oversampling in its function
+
+Oversampling values are checked anyway in at91_adc_emr_config(). Remove
+the checking of these from at91_adc_write_raw() and return -EINVAL
+instead in at91_adc_emr_config().
+
+Suggested-by: Jonathan Cameron <jic23@kernel.org>
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20220803102855.2191070-8-claudiu.beznea@microchip.com
+Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+---
+ drivers/iio/adc/at91-sama5d2_adc.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/iio/adc/at91-sama5d2_adc.c b/drivers/iio/adc/at91-sama5d2_adc.c
+index 6d1d6f64c7b2..c411aa664ebd 100644
+--- a/drivers/iio/adc/at91-sama5d2_adc.c
++++ b/drivers/iio/adc/at91-sama5d2_adc.c
+@@ -728,8 +728,8 @@ static void at91_adc_eoc_ena(struct at91_adc_state *st, unsigned int channel)
+ 		at91_adc_writel(st, EOC_IER, BIT(channel));
+ }
+ 
+-static void at91_adc_config_emr(struct at91_adc_state *st,
+-				u32 oversampling_ratio)
++static int at91_adc_config_emr(struct at91_adc_state *st,
++			       u32 oversampling_ratio)
+ {
+ 	/* configure the extended mode register */
+ 	unsigned int emr = at91_adc_readl(st, EMR);
+@@ -755,9 +755,13 @@ static void at91_adc_config_emr(struct at91_adc_state *st,
+ 		emr |= AT91_SAMA5D2_EMR_OSR(AT91_SAMA5D2_EMR_OSR_16SAMPLES,
+ 					    osr_mask);
+ 		break;
++	default:
++		return -EINVAL;
+ 	}
+ 
+ 	at91_adc_writel(st, EMR, emr);
++
++	return 0;
+ }
+ 
+ static int at91_adc_adjust_val_osr(struct at91_adc_state *st, int *val)
+@@ -1650,9 +1654,6 @@ static int at91_adc_write_raw(struct iio_dev *indio_dev,
+ 
+ 	switch (mask) {
+ 	case IIO_CHAN_INFO_OVERSAMPLING_RATIO:
+-		if ((val != AT91_OSR_1SAMPLES) && (val != AT91_OSR_4SAMPLES) &&
+-		    (val != AT91_OSR_16SAMPLES))
+-			return -EINVAL;
+ 		/* if no change, optimize out */
+ 		if (val == st->oversampling_ratio)
+ 			return 0;
+@@ -1661,12 +1662,13 @@ static int at91_adc_write_raw(struct iio_dev *indio_dev,
+ 		if (ret)
+ 			return ret;
+ 		mutex_lock(&st->lock);
+-		st->oversampling_ratio = val;
+ 		/* update ratio */
+-		at91_adc_config_emr(st, val);
++		ret = at91_adc_config_emr(st, val);
++		if (!ret)
++			st->oversampling_ratio = val;
+ 		mutex_unlock(&st->lock);
+ 		iio_device_release_direct_mode(indio_dev);
+-		return 0;
++		return ret;
+ 	case IIO_CHAN_INFO_SAMP_FREQ:
+ 		if (val < st->soc_info.min_sample_rate ||
+ 		    val > st->soc_info.max_sample_rate)
+-- 
+2.34.1
+

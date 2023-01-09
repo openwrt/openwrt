@@ -1,0 +1,53 @@
+From 41a140af5c6ff4b7ff35ed4705063565a8cd5a0e Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Fri, 28 Jul 2017 14:52:47 +0200
+Subject: [PATCH 433/471] ARM: at91/defconfig: sama5: add AWS Greengrass kernel
+ config
+
+This kernel config is required to be able to run AWS Greengrass on
+sama5 boards.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/sama5_defconfig | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/configs/sama5_defconfig b/arch/arm/configs/sama5_defconfig
+index d7c75cd0e721..62737dd35bcc 100644
+--- a/arch/arm/configs/sama5_defconfig
++++ b/arch/arm/configs/sama5_defconfig
+@@ -1,11 +1,23 @@
+ # CONFIG_SWAP is not set
+ CONFIG_SYSVIPC=y
++CONFIG_POSIX_MQUEUE=y
+ CONFIG_NO_HZ_IDLE=y
+ CONFIG_HIGH_RES_TIMERS=y
+ CONFIG_LOG_BUF_SHIFT=16
+ CONFIG_CGROUPS=y
++CONFIG_MEMCG=y
++CONFIG_CGROUP_SCHED=y
++CONFIG_CFS_BANDWIDTH=y
++CONFIG_RT_GROUP_SCHED=y
++CONFIG_CGROUP_FREEZER=y
++CONFIG_CGROUP_DEVICE=y
++CONFIG_CGROUP_CPUACCT=y
++CONFIG_CGROUP_PERF=y
++CONFIG_NAMESPACES=y
++CONFIG_USER_NS=y
+ CONFIG_BLK_DEV_INITRD=y
+ CONFIG_EMBEDDED=y
++CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ CONFIG_ARCH_AT91=y
+ CONFIG_SOC_SAMA5D2=y
+@@ -253,6 +265,7 @@ CONFIG_PWM_ATMEL_HLCDC_PWM=y
+ CONFIG_PWM_ATMEL_TCB=y
+ CONFIG_EXT4_FS=y
+ CONFIG_FANOTIFY=y
++CONFIG_OVERLAY_FS=y
+ CONFIG_VFAT_FS=y
+ CONFIG_TMPFS=y
+ CONFIG_CONFIGFS_FS=y
+-- 
+2.34.1
+

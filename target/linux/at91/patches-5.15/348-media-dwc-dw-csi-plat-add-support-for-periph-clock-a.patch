@@ -1,0 +1,138 @@
+From b588583c946b329079e474b2c6f030a30b8d3a4e Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 9 Mar 2020 10:31:05 +0200
+Subject: [PATCH 239/471] media: dwc: dw-csi-plat: add support for periph clock
+ and generated clock
+
+Request two clocks in the driver: peripheral clock for clocking the hw
+block, and generated clock for clocking the included PHY.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-csi-plat.c | 60 +++++++++++++++++++++---
+ drivers/media/platform/dwc/dw-mipi-csi.h |  1 +
+ 2 files changed, 54 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/media/platform/dwc/dw-csi-plat.c b/drivers/media/platform/dwc/dw-csi-plat.c
+index 0aa0b48933fc..1cddc5978fb9 100644
+--- a/drivers/media/platform/dwc/dw-csi-plat.c
++++ b/drivers/media/platform/dwc/dw-csi-plat.c
+@@ -12,6 +12,7 @@
+ #include <media/dwc/dw-dphy-data.h>
+ 
+ #include "dw-csi-plat.h"
++#include <linux/clk.h>
+ 
+ const struct mipi_dt csi_dt[] = {
+ 	{
+@@ -333,14 +334,50 @@ static int dw_csi_probe(struct platform_device *pdev)
+ 	spin_lock_init(&csi->slock);
+ 	csi->dev = dev;
+ 
++	csi->perclk = devm_clk_get(dev, "perclk");
++	if (IS_ERR(csi->perclk)) {
++		ret = PTR_ERR(csi->perclk);
++		dev_err(dev, "failed to get perclk: %d\n", ret);
++		return ret;
++	}
++
++	ret = clk_prepare_enable(csi->perclk);
++	if (ret) {
++		dev_err(dev, "failed to enable perclk: %d\n", ret);
++		return ret;
++	}
++
++	csi->phyclk = devm_clk_get(dev, "phyclk");
++	if (IS_ERR(csi->perclk)) {
++		ret = PTR_ERR(csi->phyclk);
++		dev_err(dev, "failed to get phyclk: %d\n", ret);
++		goto csi2host_phyclk_err;
++	}
++
++	ret = clk_prepare_enable(csi->phyclk);
++	if (ret) {
++		dev_err(dev, "failed to enable phyclk: %d\n", ret);
++		goto csi2host_phyclk_err;
++	}
++
++	ret = v4l2_device_register(&pdev->dev, &csi->v4l2_dev);
++	if (ret) {
++		dev_err(dev, "failed to register v4l2 device\n");
++		goto csi2host_reg_err;
++	}
++
++	dev_vdbg(dev, "v4l2.name: %s\n", csi->v4l2_dev.name);
++
+ 	if (dev->of_node) {
+ 		of_id = of_match_node(dw_mipi_csi_of_match, dev->of_node);
+-		if (!of_id)
+-			return -EINVAL;
++		if (!of_id) {
++			ret = -EINVAL;
++			goto csi2host_reg_err;
++		}
+ 
+ 		ret = dw_mipi_csi_parse_dt(pdev, csi);
+ 		if (ret < 0)
+-			return ret;
++			goto csi2host_reg_err;
+ 
+ 		csi->phy = devm_of_phy_get(dev, dev->of_node, NULL);
+ 		if (IS_ERR(csi->phy)) {
+@@ -359,13 +396,16 @@ static int dw_csi_probe(struct platform_device *pdev)
+ 	}
+ 	/* Registers mapping */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (!res)
+-		return -ENXIO;
++	if (!res) {
++		ret = -ENXIO;
++		goto csi2host_defer_err;
++	}
+ 
+ 	csi->base_address = devm_ioremap_resource(dev, res);
+ 	if (IS_ERR(csi->base_address)) {
+ 		dev_err(dev, "Base address not set.\n");
+-		return PTR_ERR(csi->base_address);
++		ret = PTR_ERR(csi->base_address);
++		goto csi2host_defer_err;
+ 	}
+ 
+ 	csi->ctrl_irq_number = platform_get_irq(pdev, 0);
+@@ -378,7 +418,8 @@ static int dw_csi_probe(struct platform_device *pdev)
+ 	csi->rst = devm_reset_control_get_optional_shared(dev, NULL);
+ 	if (IS_ERR(csi->rst)) {
+ 		dev_err(dev, "error getting reset control %d\n", ret);
+-		return PTR_ERR(csi->rst);
++		ret =  PTR_ERR(csi->rst);
++		goto end;
+ 	}
+ 
+ 	ret = devm_request_irq(dev, csi->ctrl_irq_number,
+@@ -462,6 +503,11 @@ static int dw_csi_probe(struct platform_device *pdev)
+ 	return ret;
+ #endif
+ 	v4l2_device_unregister(csi->vdev.v4l2_dev);
++
++csi2host_reg_err:
++	clk_disable_unprepare(csi->phyclk);
++csi2host_phyclk_err:
++	clk_disable_unprepare(csi->perclk);
+ 	return ret;
+ }
+ 
+diff --git a/drivers/media/platform/dwc/dw-mipi-csi.h b/drivers/media/platform/dwc/dw-mipi-csi.h
+index 6df368857a0d..bbc35490e2b6 100644
+--- a/drivers/media/platform/dwc/dw-mipi-csi.h
++++ b/drivers/media/platform/dwc/dw-mipi-csi.h
+@@ -232,6 +232,7 @@ struct dw_csi {
+ 	struct video_device vdev;
+ 	struct v4l2_device v4l2_dev;
+ 	struct device *dev;
++	struct clk *perclk, *phyclk;
+ 	struct media_pad pads[CSI_PADS_NUM];
+ 	struct mipi_fmt *fmt;
+ 	struct v4l2_mbus_framefmt format;
+-- 
+2.34.1
+

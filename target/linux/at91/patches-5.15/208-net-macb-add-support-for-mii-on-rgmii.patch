@@ -1,0 +1,56 @@
+From bd9c1311aece12bd29da4b8b3ee9b0a484855848 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 17 Sep 2021 16:26:14 +0300
+Subject: [PATCH 099/471] net: macb: add support for mii on rgmii
+
+Cadence IP has option to enable MII support on RGMII interface. This
+could be selected though bit 28 of network control register. This option
+is not enabled on all the IP versions thus add a software capability to
+be selected by the proper implementation of this IP.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/cadence/macb.h      | 3 +++
+ drivers/net/ethernet/cadence/macb_main.c | 3 +++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/drivers/net/ethernet/cadence/macb.h b/drivers/net/ethernet/cadence/macb.h
+index c33e98bfa5e8..5620b97b3482 100644
+--- a/drivers/net/ethernet/cadence/macb.h
++++ b/drivers/net/ethernet/cadence/macb.h
+@@ -246,6 +246,8 @@
+ #define MACB_SRTSM_OFFSET	15 /* Store Receive Timestamp to Memory */
+ #define MACB_OSSMODE_OFFSET	24 /* Enable One Step Synchro Mode */
+ #define MACB_OSSMODE_SIZE	1
++#define MACB_MIIONRGMII_OFFSET	28 /* MII Usage on RGMII Interface */
++#define MACB_MIIONRGMII_SIZE	1
+ 
+ /* Bitfields in NCFGR */
+ #define MACB_SPD_OFFSET		0 /* Speed */
+@@ -713,6 +715,7 @@
+ #define MACB_CAPS_GEM_HAS_PTP			0x00000040
+ #define MACB_CAPS_BD_RD_PREFETCH		0x00000080
+ #define MACB_CAPS_NEEDS_RSTONUBR		0x00000100
++#define MACB_CAPS_MIIONRGMII			0x00000200
+ #define MACB_CAPS_CLK_HW_CHG			0x04000000
+ #define MACB_CAPS_MACB_IS_EMAC			0x08000000
+ #define MACB_CAPS_FIFO_MODE			0x10000000
+diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
+index 8d2ce4e0c853..e377bb62067b 100644
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -684,6 +684,9 @@ static void macb_mac_config(struct phylink_config *config, unsigned int mode,
+ 		} else if (state->interface == PHY_INTERFACE_MODE_10GBASER) {
+ 			ctrl |= GEM_BIT(PCSSEL);
+ 			ncr |= GEM_BIT(ENABLE_HS_MAC);
++		} else if (bp->caps & MACB_CAPS_MIIONRGMII &&
++			   bp->phy_interface == PHY_INTERFACE_MODE_MII) {
++			ncr |= MACB_BIT(MIIONRGMII);
+ 		}
+ 	}
+ 
+-- 
+2.34.1
+

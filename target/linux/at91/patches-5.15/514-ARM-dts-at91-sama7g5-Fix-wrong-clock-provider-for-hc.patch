@@ -1,0 +1,32 @@
+From 22b83844c0c796fac299d5f741692d1cd9b8464c Mon Sep 17 00:00:00 2001
+From: Sergiu Moga <sergiu.moga@microchip.com>
+Date: Wed, 17 Aug 2022 11:10:55 +0300
+Subject: [PATCH 405/471] ARM: dts: at91: sama7g5: Fix wrong clock provider for
+ hclk
+
+Replace the PMC clock provider of the hclk clock for the
+OHCI DT node with the UTMI clock provider.
+
+Fixes: 8f9429acf3326 (ARM: dts: at91: sama7g5: add USB support for SAMA7G5)
+Signed-off-by: Sergiu Moga <sergiu.moga@microchip.com>
+Acked-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index bb5a12676f3a..4fe65e0304e5 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -242,7 +242,7 @@ usb2: ohci@400000 {
+ 			compatible = "microchip,sama7g5-ohci", "usb-ohci";
+ 			reg = <0x00400000 0x100000>;
+ 			interrupts = <GIC_SPI 106 IRQ_TYPE_LEVEL_HIGH>;
+-			clocks = <&pmc PMC_TYPE_PERIPHERAL 106>, <&pmc PMC_TYPE_CORE UTMI1>, <&usb_clk>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 106>, <&utmi_clk UTMI1>, <&usb_clk>;
+ 			clock-names = "ohci_clk", "hclk", "uhpck";
+ 			status = "disabled";
+ 		};
+-- 
+2.34.1
+

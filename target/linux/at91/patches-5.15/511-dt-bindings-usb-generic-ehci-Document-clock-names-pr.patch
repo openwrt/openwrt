@@ -1,0 +1,34 @@
+From b429f4508efebb26751a3079a14fca683caf6505 Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Mon, 25 Apr 2022 15:29:44 +0530
+Subject: [PATCH 402/471] dt-bindings: usb: generic-ehci: Document clock-names
+ property
+
+Document the property clock-names in the schema.
+
+It fixes the dtbs_warning,
+'clock-names' does not match any of the regexes: 'pinctrl-[0-9]+'
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ Documentation/devicetree/bindings/usb/generic-ehci.yaml | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/usb/generic-ehci.yaml b/Documentation/devicetree/bindings/usb/generic-ehci.yaml
+index 96c41cb97e35..53987c2f37fd 100644
+--- a/Documentation/devicetree/bindings/usb/generic-ehci.yaml
++++ b/Documentation/devicetree/bindings/usb/generic-ehci.yaml
+@@ -94,6 +94,10 @@ properties:
+         - if a USB DRD channel: first clock should be host and second
+           one should be peripheral
+ 
++  clock-names:
++    minItems: 1
++    maxItems: 4
++
+   power-domains:
+     maxItems: 1
+ 
+-- 
+2.34.1
+

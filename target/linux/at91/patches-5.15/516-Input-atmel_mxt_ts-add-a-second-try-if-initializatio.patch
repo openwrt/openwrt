@@ -1,0 +1,44 @@
+From bbbd04a6d71bd13848afc50250f797ffd0d2765a Mon Sep 17 00:00:00 2001
+From: Ludovic Desroches <ludovic.desroches@atmel.com>
+Date: Thu, 30 Apr 2015 14:27:50 +0200
+Subject: [PATCH 407/471] Input: atmel_mxt_ts: add a second try if
+ initialization fails
+
+For an unknown reason, the maxtouch can not ack the i2c request when we
+want to communicate. Trying to establish the communication finally works
+after about 200 ms. So when probing the driver if the first time
+initilization fails then wait and try a second time.
+
+Signed-off-by: Ludovic Desroches <ludovic.desroches@atmel.com>
+[eugen.hristev@microchip.com: adapted original patch to 4.14>
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+[claudiu.beznea: rebase on top of 5.15]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/input/touchscreen/atmel_mxt_ts.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/input/touchscreen/atmel_mxt_ts.c b/drivers/input/touchscreen/atmel_mxt_ts.c
+index eb66cd2689b7..ec555a9135e7 100644
+--- a/drivers/input/touchscreen/atmel_mxt_ts.c
++++ b/drivers/input/touchscreen/atmel_mxt_ts.c
+@@ -3263,8 +3263,14 @@ static int mxt_probe(struct i2c_client *client, const struct i2c_device_id *id)
+ 				 &data->wakeup_method);
+ 
+ 	error = mxt_initialize(data);
+-	if (error)
+-		goto err_disable_regulators;
++	if (error) {
++		/* Wait and try a second time */
++		msleep(MXT_RESET_TIME);
++		dev_warn(&client->dev, "Try a second time to init maxtouch\n");
++		error = mxt_initialize(data);
++		if (error)
++			goto err_disable_regulators;
++	}
+ 
+ 	error = sysfs_create_group(&client->dev.kobj, &mxt_attr_group);
+ 	if (error) {
+-- 
+2.34.1
+

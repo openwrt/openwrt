@@ -1,0 +1,71 @@
+From 47dca8eeb65cd05a05594cd8761df89e27097a59 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ma=C3=ADra=20Canal?= <maira.canal@usp.br>
+Date: Tue, 19 Oct 2021 15:05:24 -0300
+Subject: [PATCH 119/471] spi: at91-usart: replacing legacy gpio interface for
+ gpiod
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Removing dependency of linux/of_gpio.h and replacing it for
+linux/gpio/consumer.h
+
+Signed-off-by: Maíra Canal <maira.canal@usp.br>
+Link: https://lore.kernel.org/r/YW8I5Emdc3t0cqhz@fedora
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit 3340ec49ba2c294a163d05319054c8506a8f30d9)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/spi/spi-at91-usart.c | 27 +++++----------------------
+ 1 file changed, 5 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/spi/spi-at91-usart.c b/drivers/spi/spi-at91-usart.c
+index 8c8352625d23..9cd738682aab 100644
+--- a/drivers/spi/spi-at91-usart.c
++++ b/drivers/spi/spi-at91-usart.c
+@@ -14,7 +14,7 @@
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/of_platform.h>
+-#include <linux/of_gpio.h>
++#include <linux/gpio/consumer.h>
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+@@ -482,29 +482,12 @@ static void at91_usart_spi_init(struct at91_usart_spi *aus)
+ 
+ static int at91_usart_gpio_setup(struct platform_device *pdev)
+ {
+-	struct device_node *np = pdev->dev.parent->of_node;
+-	int i;
+-	int ret;
+-	int nb;
+-
+-	if (!np)
+-		return -EINVAL;
+-
+-	nb = of_gpio_named_count(np, "cs-gpios");
+-	for (i = 0; i < nb; i++) {
+-		int cs_gpio = of_get_named_gpio(np, "cs-gpios", i);
++	struct gpio_descs *cs_gpios;
+ 
+-		if (cs_gpio < 0)
+-			return cs_gpio;
++	cs_gpios = devm_gpiod_get_array_optional(&pdev->dev, "cs", GPIOD_OUT_LOW);
+ 
+-		if (gpio_is_valid(cs_gpio)) {
+-			ret = devm_gpio_request_one(&pdev->dev, cs_gpio,
+-						    GPIOF_DIR_OUT,
+-						    dev_name(&pdev->dev));
+-			if (ret)
+-				return ret;
+-		}
+-	}
++	if (IS_ERR(cs_gpios))
++		return PTR_ERR(cs_gpios);
+ 
+ 	return 0;
+ }
+-- 
+2.34.1
+

@@ -1,0 +1,36 @@
+From c5cbf821971fc61866d834953efc9dce748bbcf8 Mon Sep 17 00:00:00 2001
+From: Hari Prasath <Hari.PrasathGE@microchip.com>
+Date: Mon, 8 Aug 2022 14:57:51 +0530
+Subject: [PATCH 397/471] ARM: dts: at91: sam9x60_curiosity: swap the green and
+ red led gpios
+
+Swap the green and red led gpio's to match the Rev-4 hardware design.
+
+Fixes: 96ece493b999 (" ARM: dts: at91: sam9x60_curiosity: Add device tree for sam9x60_curiosity board ")
+Signed-off-by: Hari Prasath <Hari.PrasathGE@microchip.com>
+---
+ arch/arm/boot/dts/at91-sam9x60_curiosity.dts | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/at91-sam9x60_curiosity.dts b/arch/arm/boot/dts/at91-sam9x60_curiosity.dts
+index 1e5ffe17707d..60bce69d3855 100644
+--- a/arch/arm/boot/dts/at91-sam9x60_curiosity.dts
++++ b/arch/arm/boot/dts/at91-sam9x60_curiosity.dts
+@@ -59,12 +59,12 @@ leds {
+ 
+ 		red {
+ 			label = "red";
+-			gpios = <&pioD 19 GPIO_ACTIVE_HIGH>;
++			gpios = <&pioD 17 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+ 		green {
+ 			label = "green";
+-			gpios = <&pioD 17 GPIO_ACTIVE_HIGH>;
++			gpios = <&pioD 19 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+ 		blue {
+-- 
+2.34.1
+

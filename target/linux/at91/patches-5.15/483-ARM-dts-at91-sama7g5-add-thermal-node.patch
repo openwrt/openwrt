@@ -1,0 +1,87 @@
+From bbd573aca8f57d6e27f7046a1ca7f1d66588409e Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 24 Nov 2021 16:23:10 +0200
+Subject: [PATCH 374/471] ARM: dts: at91: sama7g5: add thermal node
+
+Add thermal management node with its associated trips and cooling-maps.
+It uses CPUFreq as cooling device for temperatures in the interval
+[50, 85) degrees Celsius and describe the temperature of 85 degrees
+Celsius as critical temperature. System will be is shuting down when
+reaching critical temperature.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 43 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index c0aeef617f79..bb5a12676f3a 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -17,6 +17,7 @@
+ #include <dt-bindings/dma/at91.h>
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/nvmem/microchip,sama7g5-otpc.h>
++#include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+ 	model = "Microchip SAMA7G5 family SoC";
+@@ -36,6 +37,7 @@ cpu0: cpu@0 {
+ 			clocks = <&pmc PMC_TYPE_CORE PMC_CPUPLL>;
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu_opp_table>;
++			#cooling-cells = <2>; /* min followed by max */
+ 		};
+ 	};
+ 
+@@ -74,6 +76,47 @@ opp-1000000002 {
+ 		};
+ 	};
+ 
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			polling-delay-passive = <1000>;
++			polling-delay = <5000>;
++			sustainable-power = <2500>;
++			thermal-sensors = <&thermal_sensor>;
++
++			trips {
++				cpu_normal: cpu-alert0 {
++					temperature = <50000>;
++					hysteresis = <0>;
++					type = "passive";
++				};
++
++				cpu_hot: cpu-alert1 {
++					temperature = <65000>;
++					hysteresis = <0>;
++					type = "passive";
++				};
++
++				cpu_critical: cpu-critical {
++					temperature = <85000>;
++					hysteresis = <0>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&cpu_normal>;
++					cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++
++				map1 {
++					trip = <&cpu_hot>;
++					cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++	};
++
+ 	clocks {
+ 		slow_xtal: slow_xtal {
+ 			compatible = "fixed-clock";
+-- 
+2.34.1
+

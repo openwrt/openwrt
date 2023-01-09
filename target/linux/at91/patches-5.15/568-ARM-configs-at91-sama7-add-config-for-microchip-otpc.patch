@@ -1,0 +1,28 @@
+From 08be8517eda9044a5bdf60a23be23ecc75385dbe Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 24 Nov 2021 16:27:18 +0200
+Subject: [PATCH 459/471] ARM: configs: at91: sama7: add config for microchip
+ otpc
+
+Add config flag for Microchip OTPC.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index db6d251b036a..8b073d6210b8 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -207,6 +207,7 @@ CONFIG_PWM_ATMEL=y
+ CONFIG_MCHP_EIC=y
+ CONFIG_RESET_CONTROLLER=y
+ CONFIG_PHY_MICROCHIP_SAMA7_USB=y
++CONFIG_MICROCHIP_OTPC=y
+ CONFIG_EXT2_FS=y
+ CONFIG_EXT3_FS=y
+ CONFIG_FANOTIFY=y
+-- 
+2.34.1
+

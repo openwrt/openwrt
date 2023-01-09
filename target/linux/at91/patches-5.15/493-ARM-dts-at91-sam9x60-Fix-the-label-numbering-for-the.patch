@@ -1,0 +1,83 @@
+From 3608f438468679ee172d9f4ada48941561e68cfc Mon Sep 17 00:00:00 2001
+From: Manikandan M <manikandan.m@microchip.com>
+Date: Mon, 21 Feb 2022 11:07:46 +0530
+Subject: [PATCH 384/471] ARM: dts: at91: sam9x60: Fix the label numbering for
+ the flexcom functions
+
+Fixed the label numbering of the flexcom functions so that all
+13 flexcom functions of sam9x60 are in the following order when the missing
+flexcom functions are added:
+
+flx0: uart0, spi0, i2c0
+flx1: uart1, spi1, i2c1
+flx2: uart2, spi2, i2c2
+flx3: uart3, spi3, i2c3
+flx4: uart4, spi4, i2c4
+flx5: uart5, spi5, i2c5
+flx6: uart6, i2c6
+flx7: uart7, i2c7
+flx8: uart8, i2c8
+flx9: uart9, i2c9
+flx10: uart10, i2c10
+flx11: uart11, i2c11
+flx12: uart12, i2c12
+
+Signed-off-by: Manikandan M <manikandan.m@microchip.com>
+---
+ arch/arm/boot/dts/at91-sam9x60ek.dts | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/boot/dts/at91-sam9x60ek.dts b/arch/arm/boot/dts/at91-sam9x60ek.dts
+index 81ccb0636a00..31416a6701b9 100644
+--- a/arch/arm/boot/dts/at91-sam9x60ek.dts
++++ b/arch/arm/boot/dts/at91-sam9x60ek.dts
+@@ -16,8 +16,8 @@ / {
+ 
+ 	aliases {
+ 		i2c0 = &i2c0;
+-		i2c1 = &i2c1;
+-		serial1 = &uart1;
++		i2c1 = &i2c6;
++		serial1 = &uart5;
+ 	};
+ 
+ 	chosen {
+@@ -245,7 +245,7 @@ &flx4 {
+ 	atmel,flexcom-mode = <ATMEL_FLEXCOM_MODE_SPI>;
+ 	status = "disabled";
+ 
+-	spi0: spi@400 {
++	spi4: spi@400 {
+ 		compatible = "microchip,sam9x60-spi", "atmel,at91rm9200-spi";
+ 		reg = <0x400 0x200>;
+ 		interrupts = <13 IRQ_TYPE_LEVEL_HIGH 7>;
+@@ -264,7 +264,7 @@ &flx5 {
+ 	atmel,flexcom-mode = <ATMEL_FLEXCOM_MODE_USART>;
+ 	status = "okay";
+ 
+-	uart1: serial@200 {
++	uart5: serial@200 {
+ 		compatible = "microchip,sam9x60-usart", "atmel,at91sam9260-usart";
+ 		reg = <0x200 0x200>;
+ 		interrupts = <14 IRQ_TYPE_LEVEL_HIGH 7>;
+@@ -289,7 +289,7 @@ &flx6 {
+ 	atmel,flexcom-mode = <ATMEL_FLEXCOM_MODE_TWI>;
+ 	status = "okay";
+ 
+-	i2c1: i2c@600 {
++	i2c6: i2c@600 {
+ 		compatible = "microchip,sam9x60-i2c";
+ 		reg = <0x600 0x200>;
+ 		interrupts = <9 IRQ_TYPE_LEVEL_HIGH 7>;
+@@ -449,7 +449,7 @@ AT91_PIOA 13 AT91_PERIPH_A AT91_PINCTRL_NONE
+ 				 AT91_PIOA 14 AT91_PERIPH_A AT91_PINCTRL_NONE>;
+ 		};
+ 
+-		pinctrl_flx5_default: flx_uart {
++		pinctrl_flx5_default: flx5_uart {
+ 			atmel,pins =
+ 				<AT91_PIOA 7 AT91_PERIPH_C AT91_PINCTRL_NONE
+ 				 AT91_PIOA 8 AT91_PERIPH_B AT91_PINCTRL_NONE
+-- 
+2.34.1
+

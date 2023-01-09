@@ -1,0 +1,33 @@
+From 27d0ff449425ae82dcd566b165cfd893fce269d1 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Wed, 6 Apr 2022 12:48:37 +0300
+Subject: [PATCH 129/471] spi: atmel-quadspi.c: Fix the buswidth adjustment
+ between spi-mem and controller
+
+Use the spi_mem_default_supports_op() core helper in order to take into
+account the buswidth specified by the user in device tree.
+
+Cc: <stable@vger.kernel.org>
+Fixes: 0e6aae08e9ae ("spi: Add QuadSPI driver for Atmel SAMA5D2")
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/spi/atmel-quadspi.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/spi/atmel-quadspi.c b/drivers/spi/atmel-quadspi.c
+index 32015db663ad..ccb06a52fcd2 100644
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -455,6 +455,9 @@ static bool atmel_qspi_supports_op(struct spi_mem *mem,
+ {
+ 	struct atmel_qspi *aq = spi_controller_get_devdata(mem->spi->master);
+ 
++	if (!spi_mem_default_supports_op(mem, op))
++		return false;
++
+ 	if (aq->caps->octal) {
+ 		if (atmel_qspi_sama7g5_find_mode(op) < 0)
+ 			return false;
+-- 
+2.34.1
+

@@ -1,0 +1,31 @@
+From afa85e4e89781196c3c4d9cc272f3e5352d3f10c Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 12 Jul 2021 18:34:09 +0300
+Subject: [PATCH 379/471] ARM: dts: at91: sama5d4_xplained: enable I2C advanced
+ digital filter
+
+Enable advanced digital filter on I2C. Set it to 70 ns, which is the
+value recommended by the designer of the IP, when its peripheral clock is
+100 MHz.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ arch/arm/boot/dts/at91-sama5d4_xplained.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/at91-sama5d4_xplained.dts b/arch/arm/boot/dts/at91-sama5d4_xplained.dts
+index e519d2747936..1d983f28bc5e 100644
+--- a/arch/arm/boot/dts/at91-sama5d4_xplained.dts
++++ b/arch/arm/boot/dts/at91-sama5d4_xplained.dts
+@@ -41,6 +41,7 @@ uart0: serial@f8004000 {
+ 
+ 			i2c0: i2c@f8014000 {
+ 				i2c-digital-filter;
++				i2c-digital-filter-width-ns = <70>;
+ 				status = "okay";
+ 			};
+ 
+-- 
+2.34.1
+

@@ -1,0 +1,28 @@
+From 3613a0d0f2f4097a8103e0d361e7003e3d65c3e1 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Wed, 20 Apr 2022 16:55:51 +0300
+Subject: [PATCH 466/471] ARM: configs: at91: sama7: Enable MTD_UBI_BLOCK
+
+Address read only block filesystems like SquashFS, and use MTD_UBI_BLOCK
+to benefit of UBI's bit-flip handling and wear-levelling.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index fc65b29b5c2b..c366008b9efa 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -96,6 +96,7 @@ CONFIG_MTD_SPI_NOR=y
+ # CONFIG_MTD_SPI_NOR_USE_4K_SECTORS is not set
+ CONFIG_MTD_UBI=y
+ CONFIG_MTD_UBI_FASTMAP=y
++CONFIG_MTD_UBI_BLOCK=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=1
+-- 
+2.34.1
+

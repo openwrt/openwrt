@@ -1,0 +1,141 @@
+From 369fff83d38331721a545f843adf25a65663ded0 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 7 Feb 2022 13:15:23 +0200
+Subject: [PATCH 358/471] ARM: dts: at91: remove status = "okay" from soc
+ specific dtsi
+
+Remove status = "okay" from SoC specific dtsi as this is the default
+state.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Reviewed-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20220207111523.575474-1-claudiu.beznea@microchip.com
+---
+ arch/arm/boot/dts/sam9x60.dtsi | 4 ----
+ arch/arm/boot/dts/sama5d2.dtsi | 3 ---
+ arch/arm/boot/dts/sama5d4.dtsi | 3 ---
+ arch/arm/boot/dts/sama7g5.dtsi | 3 ---
+ 4 files changed, 13 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sam9x60.dtsi b/arch/arm/boot/dts/sam9x60.dtsi
+index ec686f617ec7..998629a3c34f 100644
+--- a/arch/arm/boot/dts/sam9x60.dtsi
++++ b/arch/arm/boot/dts/sam9x60.dtsi
+@@ -280,7 +280,6 @@ sha: crypto@f002c000 {
+ 				dma-names = "tx";
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
+ 				clock-names = "sha_clk";
+-				status = "okay";
+ 			};
+ 
+ 			trng: trng@f0030000 {
+@@ -288,7 +287,6 @@ trng: trng@f0030000 {
+ 				reg = <0xf0030000 0x100>;
+ 				interrupts = <38 IRQ_TYPE_LEVEL_HIGH 0>;
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 38>;
+-				status = "okay";
+ 			};
+ 
+ 			aes: crypto@f0034000 {
+@@ -304,7 +302,6 @@ AT91_XDMAC_DT_PERID(32))>,
+ 				dma-names = "tx", "rx";
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
+ 				clock-names = "aes_clk";
+-				status = "okay";
+ 			};
+ 
+ 			tdes: crypto@f0038000 {
+@@ -320,7 +317,6 @@ AT91_XDMAC_DT_PERID(31))>,
+ 				dma-names = "tx", "rx";
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 40>;
+ 				clock-names = "tdes_clk";
+-				status = "okay";
+ 			};
+ 
+ 			classd: classd@f003c000 {
+diff --git a/arch/arm/boot/dts/sama5d2.dtsi b/arch/arm/boot/dts/sama5d2.dtsi
+index ca326c8e2caf..659a17fc755c 100644
+--- a/arch/arm/boot/dts/sama5d2.dtsi
++++ b/arch/arm/boot/dts/sama5d2.dtsi
+@@ -316,7 +316,6 @@ sha: crypto@f0028000 {
+ 				dma-names = "tx";
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 12>;
+ 				clock-names = "sha_clk";
+-				status = "okay";
+ 			};
+ 
+ 			aes: crypto@f002c000 {
+@@ -332,7 +331,6 @@ AT91_XDMAC_DT_PERID(26))>,
+ 				dma-names = "tx", "rx";
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 9>;
+ 				clock-names = "aes_clk";
+-				status = "okay";
+ 			};
+ 
+ 			spi0: spi@f8000000 {
+@@ -1097,7 +1095,6 @@ AT91_XDMAC_DT_PERID(28))>,
+ 				dma-names = "tx", "rx";
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+ 				clock-names = "tdes_clk";
+-				status = "okay";
+ 			};
+ 
+ 			classd: classd@fc048000 {
+diff --git a/arch/arm/boot/dts/sama5d4.dtsi b/arch/arm/boot/dts/sama5d4.dtsi
+index 1dff79a29012..e1b89147a935 100644
+--- a/arch/arm/boot/dts/sama5d4.dtsi
++++ b/arch/arm/boot/dts/sama5d4.dtsi
+@@ -684,7 +684,6 @@ aes: crypto@fc044000 {
+ 				dma-names = "tx", "rx";
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 12>;
+ 				clock-names = "aes_clk";
+-				status = "okay";
+ 			};
+ 
+ 			tdes: crypto@fc04c000 {
+@@ -698,7 +697,6 @@ tdes: crypto@fc04c000 {
+ 				dma-names = "tx", "rx";
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 14>;
+ 				clock-names = "tdes_clk";
+-				status = "okay";
+ 			};
+ 
+ 			sha: crypto@fc050000 {
+@@ -710,7 +708,6 @@ sha: crypto@fc050000 {
+ 				dma-names = "tx";
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 15>;
+ 				clock-names = "sha_clk";
+-				status = "okay";
+ 			};
+ 
+ 			hsmc: smc@fc05c000 {
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 426a01b9ab45..3d2a6e2ef1da 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -251,7 +251,6 @@ securam: securam@e0000000 {
+ 			#size-cells = <1>;
+ 			ranges = <0 0xe0000000 0x4000>;
+ 			no-memory-wc;
+-			status = "okay";
+ 		};
+ 
+ 		secumod: secumod@e0004000 {
+@@ -1060,13 +1059,11 @@ spi11: spi@400 {
+ 		uddrc: uddrc@e3800000 {
+ 			compatible = "microchip,sama7g5-uddrc";
+ 			reg = <0xe3800000 0x4000>;
+-			status = "okay";
+ 		};
+ 
+ 		ddr3phy: ddr3phy@e3804000 {
+ 			compatible = "microchip,sama7g5-ddr3phy";
+ 			reg = <0xe3804000 0x1000>;
+-			status = "okay";
+ 		};
+ 
+ 		gic: interrupt-controller@e8c11000 {
+-- 
+2.34.1
+

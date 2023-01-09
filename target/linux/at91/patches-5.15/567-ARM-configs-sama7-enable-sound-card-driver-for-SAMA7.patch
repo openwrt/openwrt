@@ -1,0 +1,28 @@
+From bae306fd7e1ca3833ecf50b795e3d7b3a6a60e41 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 21 Mar 2022 18:42:21 +0200
+Subject: [PATCH 458/471] ARM: configs: sama7: enable sound card driver for
+ SAMA7G5's ASRC
+
+This sound card driver is needed to exercise SAMA7G5's ASRC.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 6a75c59cd93d..db6d251b036a 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -160,6 +160,7 @@ CONFIG_SND_MCHP_SOC_SPDIFTX=y
+ CONFIG_SND_MCHP_SOC_SPDIFRX=y
+ CONFIG_SND_MCHP_SOC_PDMC=y
+ CONFIG_SND_MCHP_SOC_ASRC=y
++CONFIG_SND_MCHP_SOC_ASRC_CARD=y
+ CONFIG_SND_SOC_DMIC=y
+ CONFIG_SND_SOC_PCM5102A=y
+ CONFIG_SND_SOC_SPDIF=y
+-- 
+2.34.1
+

@@ -1,0 +1,55 @@
+From 229aa7dfdc300ec0e375e1708a4288df639341a5 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 20 Oct 2021 12:46:55 +0300
+Subject: [PATCH 331/471] ARM: dts: at91: sama7g5: add tcb nodes
+
+Add TCB nodes.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20211020094656.3343242-3-claudiu.beznea@microchip.com
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 199717fe77dd..723ada762fa5 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -208,6 +208,16 @@ chipid@e0020000 {
+ 			reg = <0xe0020000 0x8>;
+ 		};
+ 
++		tcb1: timer@e0800000 {
++			compatible = "atmel,sama5d2-tcb", "simple-mfd", "syscon";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0xe0800000 0x100>;
++			interrupts = <GIC_SPI 91 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI 92 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI 93 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 91>, <&pmc PMC_TYPE_PERIPHERAL 92>, <&pmc PMC_TYPE_PERIPHERAL 93>, <&clk32k 1>;
++			clock-names = "t0_clk", "t1_clk", "t2_clk", "slow_clk";
++		};
++
+ 		adc: adc@e1000000 {
+ 			compatible = "microchip,sama7g5-adc";
+ 			reg = <0xe1000000 0x200>;
+@@ -610,6 +620,16 @@ dma2: dma-controller@e1200000 {
+ 			status = "disabled";
+ 		};
+ 
++		tcb0: timer@e2814000 {
++			compatible = "atmel,sama5d2-tcb", "simple-mfd", "syscon";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0xe2814000 0x100>;
++			interrupts = <GIC_SPI 88 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI 89 IRQ_TYPE_LEVEL_HIGH>, <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 88>, <&pmc PMC_TYPE_PERIPHERAL 89>, <&pmc PMC_TYPE_PERIPHERAL 90>, <&clk32k 1>;
++			clock-names = "t0_clk", "t1_clk", "t2_clk", "slow_clk";
++		};
++
+ 		flx8: flexcom@e2818000 {
+ 			compatible = "atmel,sama5d2-flexcom";
+ 			reg = <0xe2818000 0x200>;
+-- 
+2.34.1
+

@@ -1,0 +1,40 @@
+From 49f73598ebd56828c4fce3b364bb938f4a8396d1 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 13 Dec 2021 14:49:36 +0100
+Subject: [PATCH 215/471] media: atmel: atmel-isc-base: clamp wb gain
+ coefficients
+
+White balance computed gains can overflow above the 13 bits hardware
+coefficient that can be used, in some specific scenarios like a subexposure
+from the sensor when the image is mostly black.
+In this case the computed gain has to be clamped to the maximum value
+allowed by the hardware.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>
+(cherry picked from commit 3f050110617de71c6bc65867fc56bdb30ee07f38)
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/atmel/atmel-isc-base.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
+index aca1d1ef5acf..c99fbf5192e7 100644
+--- a/drivers/media/platform/atmel/atmel-isc-base.c
++++ b/drivers/media/platform/atmel/atmel-isc-base.c
+@@ -1375,6 +1375,10 @@ static void isc_wb_update(struct isc_ctrls *ctrls)
+ 		/* multiply both gains and adjust for decimals */
+ 		ctrls->gain[c] = s_gain[c] * gw_gain[c];
+ 		ctrls->gain[c] >>= 9;
++
++		/* make sure we are not out of range */
++		ctrls->gain[c] = clamp_val(ctrls->gain[c], 0, GENMASK(12, 0));
++
+ 		v4l2_dbg(1, debug, &isc->v4l2_dev,
+ 			 "isc wb: component %d, final gain %u\n",
+ 			 c, ctrls->gain[c]);
+-- 
+2.34.1
+

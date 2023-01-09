@@ -1,0 +1,60 @@
+From 7ee82df34b620704156b95e0fec0fe428930f8ff Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Tue, 18 May 2021 18:44:33 +0300
+Subject: [PATCH 365/471] ARM: dts: at91: sama7g5: add SSC nodes
+
+SAMA7G5 supports 2 SSC controllers. Add their nodes in the corresponding
+dtsi.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 36655c8cd9e0..a06e10b36b24 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -753,6 +753,19 @@ pit64b1: timer@e1804000 {
+ 			clock-names = "pclk", "gclk";
+ 		};
+ 
++		ssc0: sound@e180c000 {
++			compatible = "atmel,at91sam9g45-ssc";
++			reg = <0xe180c000 0x1000>;
++			#sound-dai-cells = <0>;
++			interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL_HIGH>;
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(44)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(45)>;
++			dma-names = "rx", "tx";
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 86>;
++			clock-names = "pclk";
++			status = "disabled";
++		};
++
+ 		aes: crypto@e1810000 {
+ 			compatible = "atmel,at91sam9g46-aes";
+ 			reg = <0xe1810000 0x100>;
+@@ -846,6 +859,19 @@ uart3: serial@200 {
+ 			};
+ 		};
+ 
++		ssc1: sound@e200c000 {
++			compatible = "atmel,at91sam9g45-ssc";
++			reg = <0xe200c000 0x1000>;
++			#sound-dai-cells = <0>;
++			interrupts = <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH>;
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(46)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(47)>;
++			dma-names = "rx", "tx";
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 87>;
++			clock-names = "pclk";
++			status = "disabled";
++		};
++
+ 		trng: rng@e2010000 {
+ 			compatible = "microchip,sama7g5-trng", "atmel,at91sam9g45-trng";
+ 			reg = <0xe2010000 0x100>;
+-- 
+2.34.1
+

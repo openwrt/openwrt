@@ -1,0 +1,35 @@
+From c75cab52a8b6832e56885fd73501fffa95abb6e6 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 21 Mar 2022 12:13:00 +0200
+Subject: [PATCH 045/471] ASoC: atmel: ssc: add stream names
+
+Stream names are used by DPCM and are required when used with ASRC.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/atmel/atmel_ssc_dai.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sound/soc/atmel/atmel_ssc_dai.c b/sound/soc/atmel/atmel_ssc_dai.c
+index 932d073b560f..6e0043584fb0 100644
+--- a/sound/soc/atmel/atmel_ssc_dai.c
++++ b/sound/soc/atmel/atmel_ssc_dai.c
+@@ -841,6 +841,7 @@ static const struct snd_soc_dai_ops atmel_ssc_dai_ops = {
+ 
+ static struct snd_soc_dai_driver atmel_ssc_dai = {
+ 		.playback = {
++			.stream_name = "Playback",
+ 			.channels_min = 1,
+ 			.channels_max = 2,
+ 			.rates = SNDRV_PCM_RATE_CONTINUOUS,
+@@ -848,6 +849,7 @@ static struct snd_soc_dai_driver atmel_ssc_dai = {
+ 			.rate_max = 384000,
+ 			.formats = ATMEL_SSC_FORMATS,},
+ 		.capture = {
++			.stream_name = "Capture",
+ 			.channels_min = 1,
+ 			.channels_max = 2,
+ 			.rates = SNDRV_PCM_RATE_CONTINUOUS,
+-- 
+2.34.1
+

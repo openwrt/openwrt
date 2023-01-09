@@ -1,0 +1,41 @@
+From be0237e31d5258cf10170a445f387c7aaa9261d7 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 1 Sep 2021 15:30:11 +0300
+Subject: [PATCH 007/471] iio: adc: at91-sama5d2_adc: update copyright and
+ authors information
+
+Update copyright and authors information (corrected e-mail address), and
+add myself as one of the authors.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Link: https://lore.kernel.org/r/20210901123013.329792-9-eugen.hristev@microchip.com
+Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+---
+ drivers/iio/adc/at91-sama5d2_adc.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/iio/adc/at91-sama5d2_adc.c b/drivers/iio/adc/at91-sama5d2_adc.c
+index 6a2ab87f64f6..47e05d53680a 100644
+--- a/drivers/iio/adc/at91-sama5d2_adc.c
++++ b/drivers/iio/adc/at91-sama5d2_adc.c
+@@ -4,6 +4,8 @@
+  *
+  * Copyright (C) 2015 Atmel,
+  *               2015 Ludovic Desroches <ludovic.desroches@atmel.com>
++ *		 2021 Microchip Technology, Inc. and its subsidiaries
++ *		 2021 Eugen Hristev <eugen.hristev@microchip.com>
+  */
+ 
+ #include <linux/bitops.h>
+@@ -2203,6 +2205,7 @@ static struct platform_driver at91_adc_driver = {
+ };
+ module_platform_driver(at91_adc_driver)
+ 
+-MODULE_AUTHOR("Ludovic Desroches <ludovic.desroches@atmel.com>");
++MODULE_AUTHOR("Ludovic Desroches <ludovic.desroches@microchip.com>");
++MODULE_AUTHOR("Eugen Hristev <eugen.hristev@microchip.com");
+ MODULE_DESCRIPTION("Atmel AT91 SAMA5D2 ADC");
+ MODULE_LICENSE("GPL v2");
+-- 
+2.34.1
+

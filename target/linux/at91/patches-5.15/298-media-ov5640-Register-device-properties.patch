@@ -1,0 +1,83 @@
+From 08e6d512d108bf06e04f57d1061166413a0e60d5 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo@jmondi.org>
+Date: Thu, 24 Feb 2022 10:43:07 +0100
+Subject: [PATCH 189/471] media: ov5640: Register device properties
+
+Parse the device properties and register the rotation and orientation
+V4L2 controls using v4l2_ctrl_new_fwnode_properties().
+
+Remove the open-coded parsing of the rotation property and assume the
+DTS is correct is providing either <0> or <180> as possible rotations.
+
+Signed-off-by: Jacopo Mondi <jacopo@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+(cherry picked from commit db75eb403b1bbb0d36330f8f0dc8f49aae26292d)
+---
+ drivers/media/i2c/ov5640.c | 29 ++++++++++++-----------------
+ 1 file changed, 12 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/media/i2c/ov5640.c b/drivers/media/i2c/ov5640.c
+index 6b955163eb4d..840ff2e05678 100644
+--- a/drivers/media/i2c/ov5640.c
++++ b/drivers/media/i2c/ov5640.c
+@@ -3321,6 +3321,7 @@ static int ov5640_init_controls(struct ov5640_dev *sensor)
+ 	const struct v4l2_ctrl_ops *ops = &ov5640_ctrl_ops;
+ 	struct ov5640_ctrls *ctrls = &sensor->ctrls;
+ 	struct v4l2_ctrl_handler *hdl = &ctrls->handler;
++	struct v4l2_fwnode_device_properties props;
+ 	const struct ov5640_timings *timings;
+ 	unsigned int max_vblank;
+ 	unsigned int hblank;
+@@ -3400,6 +3401,17 @@ static int ov5640_init_controls(struct ov5640_dev *sensor)
+ 		goto free_ctrls;
+ 	}
+ 
++	ret = v4l2_fwnode_device_parse(&sensor->i2c_client->dev, &props);
++	if (ret)
++		goto free_ctrls;
++
++	if (props.rotation == 180)
++		sensor->upside_down = true;
++
++	ret = v4l2_ctrl_new_fwnode_properties(hdl, ops, &props);
++	if (ret)
++		goto free_ctrls;
++
+ 	ctrls->pixel_rate->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+ 	ctrls->link_freq->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+ 	ctrls->hblank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+@@ -3670,7 +3682,6 @@ static int ov5640_probe(struct i2c_client *client)
+ 	struct device *dev = &client->dev;
+ 	struct fwnode_handle *endpoint;
+ 	struct ov5640_dev *sensor;
+-	u32 rotation;
+ 	int ret;
+ 
+ 	sensor = devm_kzalloc(dev, sizeof(*sensor), GFP_KERNEL);
+@@ -3693,22 +3704,6 @@ static int ov5640_probe(struct i2c_client *client)
+ 
+ 	sensor->ae_target = 52;
+ 
+-	/* optional indication of physical rotation of sensor */
+-	ret = fwnode_property_read_u32(dev_fwnode(&client->dev), "rotation",
+-				       &rotation);
+-	if (!ret) {
+-		switch (rotation) {
+-		case 180:
+-			sensor->upside_down = true;
+-			fallthrough;
+-		case 0:
+-			break;
+-		default:
+-			dev_warn(dev, "%u degrees rotation is not supported, ignoring...\n",
+-				 rotation);
+-		}
+-	}
+-
+ 	endpoint = fwnode_graph_get_next_endpoint(dev_fwnode(&client->dev),
+ 						  NULL);
+ 	if (!endpoint) {
+-- 
+2.34.1
+

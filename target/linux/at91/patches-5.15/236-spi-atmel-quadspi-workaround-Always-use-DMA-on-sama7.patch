@@ -1,0 +1,30 @@
+From 397e8db29d8476c7f1d28f4c10fb34e43c1ceac8 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Thu, 24 Feb 2022 12:53:52 +0200
+Subject: [PATCH 127/471] spi: atmel-quadspi: (workaround) Always use DMA on
+ sama7g5
+
+Bus errors were seen when using mmiocpy with a flavor of mx66lm1g45g.
+Set the DMA treshold to zero so that we always use DMA for data transfers.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/spi/atmel-quadspi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/atmel-quadspi.c b/drivers/spi/atmel-quadspi.c
+index c4a3963f7c84..3b2c3d9126bd 100644
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -230,7 +230,7 @@
+ #define QSPI_CALIB_TIME			2000	/* 2 us */
+ 
+ /* Use PIO for small transfers. */
+-#define ATMEL_QSPI_DMA_MIN_BYTES	16
++#define ATMEL_QSPI_DMA_MIN_BYTES	0
+ /**
+  * struct atmel_qspi_pcal - Pad Calibration Clock Division
+  * @pclk_rate: peripheral clock rate.
+-- 
+2.34.1
+

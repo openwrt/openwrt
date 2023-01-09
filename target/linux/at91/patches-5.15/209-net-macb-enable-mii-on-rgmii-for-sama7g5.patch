@@ -1,0 +1,44 @@
+From 7b4ef825c24b04d6858a2932a4ab277529e7f133 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 17 Sep 2021 16:26:15 +0300
+Subject: [PATCH 100/471] net: macb: enable mii on rgmii for sama7g5
+
+Both MAC IPs available on SAMA7G5 support MII on RGMII feature.
+Enable these by adding proper capability to proper macb_config
+objects.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
+index e377bb62067b..35cf9f9b8ca5 100644
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -4660,7 +4660,8 @@ static const struct macb_config zynq_config = {
+ };
+ 
+ static const struct macb_config sama7g5_gem_config = {
+-	.caps = MACB_CAPS_GIGABIT_MODE_AVAILABLE | MACB_CAPS_CLK_HW_CHG,
++	.caps = MACB_CAPS_GIGABIT_MODE_AVAILABLE | MACB_CAPS_CLK_HW_CHG |
++		MACB_CAPS_MIIONRGMII,
+ 	.dma_burst_length = 16,
+ 	.clk_init = macb_clk_init,
+ 	.init = macb_init,
+@@ -4668,7 +4669,8 @@ static const struct macb_config sama7g5_gem_config = {
+ };
+ 
+ static const struct macb_config sama7g5_emac_config = {
+-	.caps = MACB_CAPS_USRIO_DEFAULT_IS_MII_GMII | MACB_CAPS_USRIO_HAS_CLKEN,
++	.caps = MACB_CAPS_USRIO_DEFAULT_IS_MII_GMII |
++		MACB_CAPS_USRIO_HAS_CLKEN | MACB_CAPS_MIIONRGMII,
+ 	.dma_burst_length = 16,
+ 	.clk_init = macb_clk_init,
+ 	.init = macb_init,
+-- 
+2.34.1
+

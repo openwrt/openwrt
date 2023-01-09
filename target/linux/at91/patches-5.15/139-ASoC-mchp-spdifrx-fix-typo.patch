@@ -1,0 +1,31 @@
+From 1b6d98cd83f1aef64263d39977e6a31228039685 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 11 Mar 2022 13:28:18 +0200
+Subject: [PATCH 030/471] ASoC: mchp-spdifrx: fix typo
+
+Fix typo in log describing failure of devm_snd_dmaengine_pcm_register().
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Reviewed-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Link: https://lore.kernel.org/r/20220311112818.1482372-1-claudiu.beznea@microchip.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/atmel/mchp-spdifrx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/atmel/mchp-spdifrx.c b/sound/soc/atmel/mchp-spdifrx.c
+index 2a62d9a2fa0d..a7baa0385ec5 100644
+--- a/sound/soc/atmel/mchp-spdifrx.c
++++ b/sound/soc/atmel/mchp-spdifrx.c
+@@ -923,7 +923,7 @@ static int mchp_spdifrx_probe(struct platform_device *pdev)
+ 
+ 	err = devm_snd_dmaengine_pcm_register(&pdev->dev, NULL, 0);
+ 	if (err) {
+-		dev_err(&pdev->dev, "failed to register PMC: %d\n", err);
++		dev_err(&pdev->dev, "failed to register PCM: %d\n", err);
+ 		return err;
+ 	}
+ 
+-- 
+2.34.1
+

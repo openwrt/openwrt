@@ -1,0 +1,84 @@
+From a795ba0db4e069ee1a394ce5ff3851a8b94ae60f Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Tue, 11 Jan 2022 14:53:10 +0200
+Subject: [PATCH 068/471] clk: at91: sama7g5: Allow MCK1 to be exported and
+ referenced in DT
+
+MCK1 feeds the External Bus Interface (EBI). EBI's clock rate is used
+to translate EBI's timmings to SMC timings, thus we need to handle MCK1
+in the EBI driver. Allow MCK1 to be referenced as a PMC_TYPE_CORE clock
+from phandle in DT.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Link: https://lore.kernel.org/r/20220111125310.902856-1-tudor.ambarus@microchip.com
+Reviewed-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+(cherry picked from commit a5ab04af49434aef532bf6cd4baa08a13665d608)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/clk/at91/sama7g5.c       | 8 +++++++-
+ include/dt-bindings/clock/at91.h | 1 +
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
+index 060e908086a1..9a213ba9e58b 100644
+--- a/drivers/clk/at91/sama7g5.c
++++ b/drivers/clk/at91/sama7g5.c
+@@ -302,6 +302,7 @@ static const struct {
+  * @ep_count:		extra parents count
+  * @ep_mux_table:	mux table for extra parents
+  * @id:			clock id
++ * @eid:		export index in sama7g5->chws[] array
+  * @c:			true if clock is critical and cannot be disabled
+  */
+ static const struct {
+@@ -311,6 +312,7 @@ static const struct {
+ 	u8 ep_count;
+ 	u8 ep_mux_table[4];
+ 	u8 id;
++	u8 eid;
+ 	u8 c;
+ } sama7g5_mckx[] = {
+ 	{ .n = "mck1",
+@@ -319,6 +321,7 @@ static const struct {
+ 	  .ep_mux_table = { 5, },
+ 	  .ep_count = 1,
+ 	  .ep_chg_id = INT_MIN,
++	  .eid = PMC_MCK1,
+ 	  .c = 1, },
+ 
+ 	{ .n = "mck2",
+@@ -913,7 +916,7 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+ 	if (IS_ERR(regmap))
+ 		return;
+ 
+-	sama7g5_pmc = pmc_data_allocate(PMC_CPU + 1,
++	sama7g5_pmc = pmc_data_allocate(PMC_MCK1 + 1,
+ 					nck(sama7g5_systemck),
+ 					nck(sama7g5_periphck),
+ 					nck(sama7g5_gck), 8);
+@@ -1027,6 +1030,9 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+ 			goto err_free;
+ 
+ 		alloc_mem[alloc_mem_size++] = mux_table;
++
++		if (sama7g5_mckx[i].eid)
++			sama7g5_pmc->chws[sama7g5_mckx[i].eid] = hw;
+ 	}
+ 
+ 	hw = at91_clk_sama7g5_register_utmi(regmap, "utmick", "main_xtal");
+diff --git a/include/dt-bindings/clock/at91.h b/include/dt-bindings/clock/at91.h
+index 98e1b2ab6403..8498c0cd95fe 100644
+--- a/include/dt-bindings/clock/at91.h
++++ b/include/dt-bindings/clock/at91.h
+@@ -35,6 +35,7 @@
+ #define PMC_AUDIOIOPLL		(PMC_MAIN + 7)
+ #define PMC_ETHPLL		(PMC_MAIN + 8)
+ #define PMC_CPU			(PMC_MAIN + 9)
++#define PMC_MCK1		(PMC_MAIN + 10)
+ 
+ #ifndef AT91_PMC_MOSCS
+ #define AT91_PMC_MOSCS		0		/* MOSCS Flag */
+-- 
+2.34.1
+

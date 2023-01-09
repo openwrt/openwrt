@@ -1,0 +1,30 @@
+From 7232edb3b9e154050c8d72961a856ef4f7de9793 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 1 Sep 2021 15:30:06 +0300
+Subject: [PATCH 002/471] iio: adc: at91-sama5d2_adc: remove unused definition
+
+Remove unused register definition
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Link: https://lore.kernel.org/r/20210901123013.329792-4-eugen.hristev@microchip.com
+Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+---
+ drivers/iio/adc/at91-sama5d2_adc.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/drivers/iio/adc/at91-sama5d2_adc.c b/drivers/iio/adc/at91-sama5d2_adc.c
+index 33ca6df0de1c..3cc2b60cd510 100644
+--- a/drivers/iio/adc/at91-sama5d2_adc.c
++++ b/drivers/iio/adc/at91-sama5d2_adc.c
+@@ -143,8 +143,6 @@
+ #define AT91_SAMA5D2_COR	0x4c
+ #define AT91_SAMA5D2_COR_DIFF_OFFSET	16
+ 
+-/* Channel Data Register 0 */
+-#define AT91_SAMA5D2_CDR0	0x50
+ /* Analog Control Register */
+ #define AT91_SAMA5D2_ACR	0x94
+ /* Analog Control Register - Pen detect sensitivity mask */
+-- 
+2.34.1
+

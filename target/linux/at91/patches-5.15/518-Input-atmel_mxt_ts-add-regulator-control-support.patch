@@ -1,0 +1,142 @@
+From 3421fb27cd9dbb8062cb4b9abd4df3c656b0112f Mon Sep 17 00:00:00 2001
+From: Nick Dyer <nick.dyer@itdev.co.uk>
+Date: Wed, 16 Jan 2013 17:25:05 +0000
+Subject: [PATCH 409/471] Input: atmel_mxt_ts - add regulator control support
+
+Allow the driver to optionally manage enabling/disable power to the touch
+controller itself. If the regulators are not present then use the deep sleep
+power mode instead.
+
+For a correct power on sequence, it is required that we have control over the
+RESET line.
+
+Signed-off-by: Nick Dyer <nick.dyer@itdev.co.uk>
+Acked-by: Benson Leung <bleung@chromium.org>
+Acked-by: Yufeng Shen <miletus@chromium.org>
+[cyrille.pitchen@atmel.com: adapt original patch to mainline]
+Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
+[eugen.hristev@microchip.com: adapt original patch to 4.14]
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+[claudiu.beznea@microchip.com: remove regulator handling since it is not
+ used by any of our boards; remove suspend-state DT initialization since
+ it is not used by any of our boards; adapt to 5.15]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/input/touchscreen/atmel_mxt_ts.c   | 26 +++++++++++---------
+ include/linux/platform_data/atmel_mxt_ts.h | 28 ++++++++++++++++++++++
+ 2 files changed, 43 insertions(+), 11 deletions(-)
+ create mode 100644 include/linux/platform_data/atmel_mxt_ts.h
+
+diff --git a/drivers/input/touchscreen/atmel_mxt_ts.c b/drivers/input/touchscreen/atmel_mxt_ts.c
+index 2e621581227b..c31e0cfe89cd 100644
+--- a/drivers/input/touchscreen/atmel_mxt_ts.c
++++ b/drivers/input/touchscreen/atmel_mxt_ts.c
+@@ -2883,7 +2883,9 @@ static int mxt_load_fw(struct device *dev, const char *fn)
+ 		goto release_firmware;
+ 
+ 	if (data->suspended) {
+-		enable_irq(data->irq);
++		if (data->suspend_mode == MXT_SUSPEND_DEEP_SLEEP)
++			enable_irq(data->irq);
++
+ 		data->suspended = false;
+ 	}
+ 
+@@ -3051,12 +3053,6 @@ static void mxt_start(struct mxt_data *data)
+ 
+ 	mxt_wakeup_toggle(data->client, true, false);
+ 	
+-	/*
+-	 * Discard any touch messages still in message buffer
+-	 * from before chip went to sleep
+-	 */
+-	mxt_process_messages_until_invalid(data);
+-
+ 	switch (data->suspend_mode) {
+ 	case MXT_SUSPEND_T9_CTRL:
+ 		mxt_soft_reset(data);
+@@ -3069,14 +3065,21 @@ static void mxt_start(struct mxt_data *data)
+ 
+ 	case MXT_SUSPEND_DEEP_SLEEP:
+ 	default:
++		/*
++		 * Discard any touch messages still in message buffer
++		 * from before chip went to sleep
++		 */
++		mxt_process_messages_until_invalid(data);
++
+ 		mxt_set_t7_power_cfg(data, MXT_POWER_CFG_RUN);
+ 
+ 		/* Recalibrate since chip has been in deep sleep */
+ 		mxt_t6_command(data, MXT_COMMAND_CALIBRATE, 1, false);
++
++		mxt_acquire_irq(data);
+ 		break;
+ 	}
+ 
+-	mxt_acquire_irq(data);
+ 	data->suspended = false;
+ }
+ 
+@@ -3085,8 +3088,6 @@ static void mxt_stop(struct mxt_data *data)
+ 	if (data->suspended || data->in_bootloader)
+ 		return;
+ 
+-	disable_irq(data->irq);
+-
+ 	switch (data->suspend_mode) {
+ 	case MXT_SUSPEND_T9_CTRL:
+ 		/* Touch disable */
+@@ -3096,11 +3097,14 @@ static void mxt_stop(struct mxt_data *data)
+ 
+ 	case MXT_SUSPEND_DEEP_SLEEP:
+ 	default:
++		disable_irq(data->irq);
++
+ 		mxt_set_t7_power_cfg(data, MXT_POWER_CFG_DEEPSLEEP);
++
++		mxt_reset_slots(data);
+ 		break;
+ 	}
+ 
+-	mxt_reset_slots(data);
+ 	data->suspended = true;
+ 
+ 	mxt_wakeup_toggle(data->client, false, false);
+diff --git a/include/linux/platform_data/atmel_mxt_ts.h b/include/linux/platform_data/atmel_mxt_ts.h
+new file mode 100644
+index 000000000000..9d4ddbf4ee31
+--- /dev/null
++++ b/include/linux/platform_data/atmel_mxt_ts.h
+@@ -0,0 +1,28 @@
++/*
++ * Atmel maXTouch Touchscreen driver
++ *
++ * Copyright (C) 2010 Samsung Electronics Co.Ltd
++ * Author: Joonyoung Shim <jy0922.shim@samsung.com>
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ */
++
++#ifndef __LINUX_PLATFORM_DATA_ATMEL_MXT_TS_H
++#define __LINUX_PLATFORM_DATA_ATMEL_MXT_TS_H
++
++#include <linux/types.h>
++#include <dt-bindings/input/atmel_mxt_ts.h>
++
++/* The platform data for the Atmel maXTouch touchscreen driver */
++struct mxt_platform_data {
++	unsigned long irqflags;
++	u8 t19_num_keys;
++	const unsigned int *t19_keymap;
++	enum mxt_suspend_mode suspend_mode;
++	unsigned long gpio_reset;
++};
++
++#endif /* __LINUX_PLATFORM_DATA_ATMEL_MXT_TS_H */
+-- 
+2.34.1
+

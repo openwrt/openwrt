@@ -1,0 +1,31 @@
+From 7cb71ba427c3ced5359c95334ff691a43076d13e Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Wed, 23 Feb 2022 23:04:52 +0200
+Subject: [PATCH 354/471] ARM: dts: at91: sama7g5: add sfr node
+
+Add SFR node.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 421215fb8bc7..be6ffb6f0ea9 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -630,6 +630,11 @@ i2s1: i2s@e1620000 {
+ 			status = "disabled";
+ 		};
+ 
++		sfr: sfr@e1624000 {
++			compatible = "microchip,sama7g5-sfr", "syscon";
++			reg = <0xe1624000 0x4000>;
++		};
++
+ 		eic: interrupt-controller@e1628000 {
+ 			compatible = "microchip,sama7g5-eic";
+ 			reg = <0xe1628000 0xec>;
+-- 
+2.34.1
+

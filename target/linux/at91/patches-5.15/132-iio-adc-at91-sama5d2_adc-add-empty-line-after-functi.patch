@@ -1,0 +1,30 @@
+From a8611e5e29ae397090c8090dc9fae5833c5b4901 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 3 Aug 2022 13:28:54 +0300
+Subject: [PATCH 023/471] iio: adc: at91-sama5d2_adc: add empty line after
+ functions
+
+Add empty line after function.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20220803102855.2191070-19-claudiu.beznea@microchip.com
+Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+---
+ drivers/iio/adc/at91-sama5d2_adc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/iio/adc/at91-sama5d2_adc.c b/drivers/iio/adc/at91-sama5d2_adc.c
+index bda3e148c211..0caec9d56d2e 100644
+--- a/drivers/iio/adc/at91-sama5d2_adc.c
++++ b/drivers/iio/adc/at91-sama5d2_adc.c
+@@ -1371,6 +1371,7 @@ static struct iio_trigger *at91_adc_allocate_trigger(struct iio_dev *indio,
+ 
+ 	return trig;
+ }
++
+ static void at91_adc_trigger_handler_nodma(struct iio_dev *indio_dev,
+ 					   struct iio_poll_func *pf)
+ {
+-- 
+2.34.1
+

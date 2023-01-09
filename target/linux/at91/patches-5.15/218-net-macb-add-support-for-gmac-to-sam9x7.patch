@@ -1,0 +1,28 @@
+From f67a57d017435271b15fa9892b95239697f253e3 Mon Sep 17 00:00:00 2001
+From: Nicolas Ferre <nicolas.ferre@microchip.com>
+Date: Mon, 7 Feb 2022 18:02:04 +0530
+Subject: [PATCH 109/471] net: macb: add support for gmac to sam9x7
+
+Add support for GMAC in sam9x7 SoC family
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
+index 81f82ce67ce5..5f154203b5da 100644
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -4761,6 +4761,7 @@ static const struct of_device_id macb_dt_ids[] = {
+ 	{ .compatible = "sifive,fu540-c000-gem", .data = &fu540_c000_config },
+ 	{ .compatible = "microchip,sama7g5-gem", .data = &sama7g5_gem_config },
+ 	{ .compatible = "microchip,sama7g5-emac", .data = &sama7g5_emac_config },
++	{ .compatible = "microchip,sam9x7-gem", .data = &sama7g5_gem_config },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, macb_dt_ids);
+-- 
+2.34.1
+

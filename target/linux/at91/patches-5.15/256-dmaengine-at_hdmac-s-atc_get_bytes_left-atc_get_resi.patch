@@ -1,0 +1,57 @@
+From 6a9f0e0d92fae35048e95e065142991b3717e34e Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Tue, 25 Oct 2022 12:02:54 +0300
+Subject: [PATCH 147/471] dmaengine: at_hdmac:
+ s/atc_get_bytes_left/atc_get_residue
+
+Use dmaengine terminology and rename the method to better indicate what it
+does: it gets the residue value which will be later on set with
+dma_set_residue().
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20221025090306.297886-1-tudor.ambarus@microchip.com
+Link: https://lore.kernel.org/r/20221025090306.297886-21-tudor.ambarus@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/at_hdmac.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/dma/at_hdmac.c b/drivers/dma/at_hdmac.c
+index e2c46f32b284..6c328cd16983 100644
+--- a/drivers/dma/at_hdmac.c
++++ b/drivers/dma/at_hdmac.c
+@@ -308,15 +308,15 @@ static inline u32 atc_calc_bytes_left(u32 current_len, u32 ctrla)
+ }
+ 
+ /**
+- * atc_get_bytes_left - get the number of bytes residue for a cookie.
++ * atc_get_residue - get the number of bytes residue for a cookie.
+  * The residue is passed by address and updated on success.
+  * @chan: DMA channel
+  * @cookie: transaction identifier to check status of
+  * @residue: residue to be updated.
+  * Return 0 on success, -errono otherwise.
+  */
+-static int atc_get_bytes_left(struct dma_chan *chan, dma_cookie_t cookie,
+-			      u32 *residue)
++static int atc_get_residue(struct dma_chan *chan, dma_cookie_t cookie,
++			   u32 *residue)
+ {
+ 	struct at_dma_chan      *atchan = to_at_dma_chan(chan);
+ 	struct at_desc *desc_first = atc_first_active(atchan);
+@@ -1471,10 +1471,7 @@ atc_tx_status(struct dma_chan *chan,
+ 		return dma_status;
+ 
+ 	spin_lock_irqsave(&atchan->lock, flags);
+-
+-	/*  Get number of bytes left in the active transactions */
+-	ret = atc_get_bytes_left(chan, cookie, &residue);
+-
++	ret = atc_get_residue(chan, cookie, &residue);
+ 	spin_unlock_irqrestore(&atchan->lock, flags);
+ 
+ 	if (unlikely(ret < 0)) {
+-- 
+2.34.1
+

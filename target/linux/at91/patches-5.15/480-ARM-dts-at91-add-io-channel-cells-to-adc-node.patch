@@ -1,0 +1,27 @@
+From 9c89dcafdc5ca3381dc2d5f999bb83f6726bb631 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 24 Nov 2021 16:07:20 +0200
+Subject: [PATCH 371/471] ARM: dts: at91: add io-channel-cells to adc node
+
+Add io-channel-cell to ADC node. It is necessary for DT users of ADC.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 2faf11de828b..f43b989ff5ea 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -511,6 +511,7 @@ adc: adc@e1000000 {
+ 			atmel,min-sample-rate-hz = <200000>;
+ 			atmel,max-sample-rate-hz = <20000000>;
+ 			atmel,startup-time-ms = <4>;
++			#io-channel-cells = <1>;
+ 			status = "disabled";
+ 		};
+ 
+-- 
+2.34.1
+

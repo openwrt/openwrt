@@ -1,0 +1,28 @@
+From 67206776a437387ace93595cfe0610b01101dff6 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Thu, 17 Feb 2022 15:34:34 +0200
+Subject: [PATCH 222/471] media: atmel: atmel-sama7g5-isc: remove stray line
+
+Remove stray line from formats struct.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo@jmondi.org>
+---
+ drivers/media/platform/atmel/atmel-sama7g5-isc.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-sama7g5-isc.c b/drivers/media/platform/atmel/atmel-sama7g5-isc.c
+index 75777f19db88..b786d3c1edd0 100644
+--- a/drivers/media/platform/atmel/atmel-sama7g5-isc.c
++++ b/drivers/media/platform/atmel/atmel-sama7g5-isc.c
+@@ -225,7 +225,6 @@ static struct isc_format sama7g5_formats_list[] = {
+ 		.mbus_code	= MEDIA_BUS_FMT_Y10_1X10,
+ 		.pfe_cfg0_bps	= ISC_PFG_CFG0_BPS_TEN,
+ 	},
+-
+ };
+ 
+ static void isc_sama7g5_config_csc(struct isc_device *isc)
+-- 
+2.34.1
+

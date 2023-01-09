@@ -1,0 +1,27 @@
+From 312056026157eec36fbc78f4620eb0291cd0af41 Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Tue, 8 Jun 2021 12:24:23 +0300
+Subject: [PATCH 449/471] ARM: at91: at91_dt_defconfig: enable INPUT_POLLDEV
+
+Enable INPUT_POLLDEV as it is still available in usptream kernel.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index cabc249a5c30..529cf4ffd53d 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -91,6 +91,7 @@ CONFIG_RT2800USB_RT53XX=y
+ CONFIG_RT2800USB_RT55XX=y
+ CONFIG_RT2800USB_UNKNOWN=y
+ CONFIG_RTL8187=m
++CONFIG_INPUT_POLLDEV=y
+ CONFIG_INPUT_JOYDEV=y
+ CONFIG_INPUT_EVDEV=y
+ # CONFIG_KEYBOARD_ATKBD is not set
+-- 
+2.34.1
+

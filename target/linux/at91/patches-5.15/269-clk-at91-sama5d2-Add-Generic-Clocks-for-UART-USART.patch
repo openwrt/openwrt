@@ -1,0 +1,38 @@
+From f61d0f08850da5bdac3cc21a919eb9dfd9fca52a Mon Sep 17 00:00:00 2001
+From: Sergiu Moga <sergiu.moga@microchip.com>
+Date: Tue, 12 Jul 2022 14:48:26 +0300
+Subject: [PATCH 160/471] clk: at91: sama5d2: Add Generic Clocks for UART/USART
+
+Add the generic clocks for UART/USART in the sama5d2 driver to allow them
+to be registered in the Common Clock Framework.
+
+Signed-off-by: Sergiu Moga <sergiu.moga@microchip.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/clk/at91/sama5d2.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/clk/at91/sama5d2.c b/drivers/clk/at91/sama5d2.c
+index 0d0f5343eaad..da09eeeaeacc 100644
+--- a/drivers/clk/at91/sama5d2.c
++++ b/drivers/clk/at91/sama5d2.c
+@@ -120,6 +120,16 @@ static const struct {
+ 	struct clk_range r;
+ 	int chg_pid;
+ } sama5d2_gck[] = {
++	{ .n = "flx0_gclk",   .id = 19, .chg_pid = INT_MIN, .r = { .min = 0, .max = 27666666 }, },
++	{ .n = "flx1_gclk",   .id = 20, .chg_pid = INT_MIN, .r = { .min = 0, .max = 27666666 }, },
++	{ .n = "flx2_gclk",   .id = 21, .chg_pid = INT_MIN, .r = { .min = 0, .max = 27666666 }, },
++	{ .n = "flx3_gclk",   .id = 22, .chg_pid = INT_MIN, .r = { .min = 0, .max = 27666666 }, },
++	{ .n = "flx4_gclk",   .id = 23, .chg_pid = INT_MIN, .r = { .min = 0, .max = 27666666 }, },
++	{ .n = "uart0_gclk",  .id = 24, .chg_pid = INT_MIN, .r = { .min = 0, .max = 27666666 }, },
++	{ .n = "uart1_gclk",  .id = 25, .chg_pid = INT_MIN, .r = { .min = 0, .max = 27666666 }, },
++	{ .n = "uart2_gclk",  .id = 26, .chg_pid = INT_MIN, .r = { .min = 0, .max = 27666666 }, },
++	{ .n = "uart3_gclk",  .id = 27, .chg_pid = INT_MIN, .r = { .min = 0, .max = 27666666 }, },
++	{ .n = "uart4_gclk",  .id = 28, .chg_pid = INT_MIN, .r = { .min = 0, .max = 27666666 }, },
+ 	{ .n = "sdmmc0_gclk", .id = 31, .chg_pid = INT_MIN, },
+ 	{ .n = "sdmmc1_gclk", .id = 32, .chg_pid = INT_MIN, },
+ 	{ .n = "tcb0_gclk",   .id = 35, .chg_pid = INT_MIN, .r = { .min = 0, .max = 83000000 }, },
+-- 
+2.34.1
+

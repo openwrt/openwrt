@@ -1,0 +1,49 @@
+From 46be93c121680b71f97d9e7149e2f1434dfe16a3 Mon Sep 17 00:00:00 2001
+From: Ben Walker <benjamin.walker@intel.com>
+Date: Tue, 1 Mar 2022 11:25:49 -0700
+Subject: [PATCH 142/471] dmaengine: at_hdmac: In atc_prep_dma_memset, treat
+ value as a single byte
+
+The value passed in to .prep_dma_memset is to be treated as a single
+byte repeating pattern.
+
+Signed-off-by: Ben Walker <benjamin.walker@intel.com>
+Cc: Ludovic Desroches <ludovic.desroches@microchip.com>
+Cc: Tudor Ambarus <tudor.ambarus@microchip.com>
+Link: https://lore.kernel.org/r/20220301182551.883474-3-benjamin.walker@intel.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/at_hdmac.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/dma/at_hdmac.c b/drivers/dma/at_hdmac.c
+index 4583a8b5e5bd..858bd64f1313 100644
+--- a/drivers/dma/at_hdmac.c
++++ b/drivers/dma/at_hdmac.c
+@@ -905,6 +905,7 @@ atc_prep_dma_memset(struct dma_chan *chan, dma_addr_t dest, int value,
+ 	struct at_desc		*desc;
+ 	void __iomem		*vaddr;
+ 	dma_addr_t		paddr;
++	char			fill_pattern;
+ 
+ 	dev_vdbg(chan2dev(chan), "%s: d%pad v0x%x l0x%zx f0x%lx\n", __func__,
+ 		&dest, value, len, flags);
+@@ -926,7 +927,14 @@ atc_prep_dma_memset(struct dma_chan *chan, dma_addr_t dest, int value,
+ 			__func__);
+ 		return NULL;
+ 	}
+-	*(u32*)vaddr = value;
++
++	/* Only the first byte of value is to be used according to dmaengine */
++	fill_pattern = (char)value;
++
++	*(u32*)vaddr = (fill_pattern << 24) |
++		       (fill_pattern << 16) |
++		       (fill_pattern << 8) |
++		       fill_pattern;
+ 
+ 	desc = atc_create_memset_desc(chan, paddr, dest, len);
+ 	if (!desc) {
+-- 
+2.34.1
+

@@ -1,0 +1,36 @@
+From 5203fb91ded4b6058951f3247f3588501970fb5c Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Thu, 17 Feb 2022 17:11:00 +0200
+Subject: [PATCH 422/471] ARM: configs: at91: sama7: Fix warning - reassigning
+ to symbol CPU_IDLE
+
+Following warning was seen:
+arch/arm/configs/sama7_defconfig:36:warning: override: reassigning to symbol CPU_IDLE
+
+CPU_IDLE is assigned in a dedicated path in
+commit 176bd688da6b ("ARM: configs: at91: sama7: enable cpu idle")
+and also together when enabling the CPU frequency scaling.
+Remove the setting of CPU_IDLE at the CPU frequency scaling topic.
+
+Fixes: ad108ccad459 ("ARM: configs: at91: sama7: add config for cpufreq")
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 8ffff4fa4062..5add1a0df4a6 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -33,7 +33,6 @@ CONFIG_CPU_FREQ_GOV_USERSPACE=y
+ CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+ CONFIG_CPUFREQ_DT=y
+ CONFIG_CPU_IDLE=y
+-CONFIG_CPU_IDLE=y
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+ CONFIG_KERNEL_MODE_NEON=y
+-- 
+2.34.1
+

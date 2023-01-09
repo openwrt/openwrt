@@ -1,0 +1,44 @@
+From 529eacbc1c6f32ce11528a193a1f57cc600337e1 Mon Sep 17 00:00:00 2001
+From: Mihai Sain <mihai.sain@microchip.com>
+Date: Wed, 2 Mar 2022 16:53:29 +0100
+Subject: [PATCH 301/471] ARM: at91: add support in soc driver for new SAMA5D29
+
+Add detection of new SAMA5D29 by the SoC driver.
+
+Signed-off-by: Mihai Sain <mihai.sain@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/soc/atmel/soc.c | 3 +++
+ drivers/soc/atmel/soc.h | 1 +
+ 2 files changed, 4 insertions(+)
+
+diff --git a/drivers/soc/atmel/soc.c b/drivers/soc/atmel/soc.c
+index 9e3d37011447..dae8a2e0f745 100644
+--- a/drivers/soc/atmel/soc.c
++++ b/drivers/soc/atmel/soc.c
+@@ -156,6 +156,9 @@ static const struct at91_soc socs[] __initconst = {
+ 	AT91_SOC(SAMA5D2_CIDR_MATCH, AT91_CIDR_MATCH_MASK,
+ 		 AT91_CIDR_VERSION_MASK, SAMA5D28C_LD2G_EXID_MATCH,
+ 		 "sama5d28c 256MiB LPDDR2 SiP", "sama5d2"),
++	AT91_SOC(SAMA5D2_CIDR_MATCH, AT91_CIDR_MATCH_MASK,
++		 AT91_CIDR_VERSION_MASK, SAMA5D29CN_EXID_MATCH,
++		 "sama5d29", "sama5d2"),
+ 	AT91_SOC(SAMA5D3_CIDR_MATCH, AT91_CIDR_MATCH_MASK,
+ 		 AT91_CIDR_VERSION_MASK, SAMA5D31_EXID_MATCH,
+ 		 "sama5d31", "sama5d3"),
+diff --git a/drivers/soc/atmel/soc.h b/drivers/soc/atmel/soc.h
+index c3eb3c8f0834..2ecaa75b00f0 100644
+--- a/drivers/soc/atmel/soc.h
++++ b/drivers/soc/atmel/soc.h
+@@ -95,6 +95,7 @@ at91_soc_init(const struct at91_soc *socs);
+ #define SAMA5D28C_LD2G_EXID_MATCH	0x00000072
+ #define SAMA5D28CU_EXID_MATCH		0x00000010
+ #define SAMA5D28CN_EXID_MATCH		0x00000020
++#define SAMA5D29CN_EXID_MATCH		0x00000023
+ 
+ #define SAMA5D3_CIDR_MATCH		0x0a5c07c0
+ #define SAMA5D31_EXID_MATCH		0x00444300
+-- 
+2.34.1
+

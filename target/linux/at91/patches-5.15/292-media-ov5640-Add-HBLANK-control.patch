@@ -1,0 +1,83 @@
+From c44c0ffeca93890c2a64be3186d8a7c00f90c5ce Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo@jmondi.org>
+Date: Thu, 24 Feb 2022 10:43:01 +0100
+Subject: [PATCH 183/471] media: ov5640: Add HBLANK control
+
+Add the HBLANK control as read-only.
+
+The hblank value is fixed in the mode definition and is updated
+everytime a new format is applied.
+
+Signed-off-by: Jacopo Mondi <jacopo@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+(cherry picked from commit 7ee9d9d4f2f4be5475e8c33e3b0aea0c6724a42e)
+---
+ drivers/media/i2c/ov5640.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/drivers/media/i2c/ov5640.c b/drivers/media/i2c/ov5640.c
+index d395ee9cee9b..5419c7236348 100644
+--- a/drivers/media/i2c/ov5640.c
++++ b/drivers/media/i2c/ov5640.c
+@@ -320,6 +320,7 @@ struct ov5640_ctrls {
+ 	struct v4l2_ctrl_handler handler;
+ 	struct v4l2_ctrl *pixel_rate;
+ 	struct v4l2_ctrl *link_freq;
++	struct v4l2_ctrl *hblank;
+ 	struct {
+ 		struct v4l2_ctrl *auto_exp;
+ 		struct v4l2_ctrl *exposure;
+@@ -2695,6 +2696,8 @@ static int ov5640_update_pixel_rate(struct ov5640_dev *sensor)
+ 	const struct ov5640_mode_info *mode = sensor->current_mode;
+ 	struct v4l2_mbus_framefmt *fmt = &sensor->fmt;
+ 	enum ov5640_pixel_rate_id pixel_rate_id = mode->pixel_rate;
++	const struct ov5640_timings *timings;
++	unsigned int hblank;
+ 	unsigned int i = 0;
+ 	u32 pixel_rate;
+ 	s64 link_freq;
+@@ -2747,6 +2750,11 @@ static int ov5640_update_pixel_rate(struct ov5640_dev *sensor)
+ 	__v4l2_ctrl_s_ctrl_int64(sensor->ctrls.pixel_rate, pixel_rate);
+ 	__v4l2_ctrl_s_ctrl(sensor->ctrls.link_freq, i);
+ 
++	timings = ov5640_timings(sensor, mode);
++	hblank = timings->htot - mode->width;
++	__v4l2_ctrl_modify_range(sensor->ctrls.hblank,
++				 hblank, hblank, 1, hblank);
++
+ 	return 0;
+ }
+ 
+@@ -3211,6 +3219,8 @@ static int ov5640_init_controls(struct ov5640_dev *sensor)
+ 	const struct v4l2_ctrl_ops *ops = &ov5640_ctrl_ops;
+ 	struct ov5640_ctrls *ctrls = &sensor->ctrls;
+ 	struct v4l2_ctrl_handler *hdl = &ctrls->handler;
++	const struct ov5640_timings *timings;
++	unsigned int hblank;
+ 	int ret;
+ 
+ 	v4l2_ctrl_handler_init(hdl, 32);
+@@ -3230,6 +3240,11 @@ static int ov5640_init_controls(struct ov5640_dev *sensor)
+ 					OV5640_DEFAULT_LINK_FREQ,
+ 					ov5640_csi2_link_freqs);
+ 
++	timings = ov5640_timings(sensor, mode);
++	hblank = timings->htot - mode->width;
++	ctrls->hblank = v4l2_ctrl_new_std(hdl, ops, V4L2_CID_HBLANK, hblank,
++					  hblank, 1, hblank);
++
+ 	/* Auto/manual white balance */
+ 	ctrls->auto_wb = v4l2_ctrl_new_std(hdl, ops,
+ 					   V4L2_CID_AUTO_WHITE_BALANCE,
+@@ -3279,6 +3294,7 @@ static int ov5640_init_controls(struct ov5640_dev *sensor)
+ 
+ 	ctrls->pixel_rate->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+ 	ctrls->link_freq->flags |= V4L2_CTRL_FLAG_READ_ONLY;
++	ctrls->hblank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+ 	ctrls->gain->flags |= V4L2_CTRL_FLAG_VOLATILE;
+ 	ctrls->exposure->flags |= V4L2_CTRL_FLAG_VOLATILE;
+ 
+-- 
+2.34.1
+

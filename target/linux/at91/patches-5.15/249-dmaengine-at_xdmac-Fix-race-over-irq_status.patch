@@ -1,0 +1,91 @@
+From 286ef6461c59085974f989a8e165d4aaf1ba3ba3 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Wed, 15 Dec 2021 13:01:15 +0200
+Subject: [PATCH 140/471] dmaengine: at_xdmac: Fix race over irq_status
+
+Tasklets run with interrupts enabled, so we need to protect
+atchan->irq_status with spin_lock_irq() otherwise the tasklet can be
+interrupted by the IRQ that modifies irq_status. Move the dev_dbg that
+prints the irq_status in at_xdmac_handle_cyclic() and lower in
+at_xdmac_tasklet() where the IRQ is disabled.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Link: https://lore.kernel.org/r/20211215110115.191749-13-tudor.ambarus@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+(cherry picked from commit e77e561925df2faf77a41896df24a59141a445c9)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/dma/at_xdmac.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/dma/at_xdmac.c b/drivers/dma/at_xdmac.c
+index 9badf536edf2..dffcd1c95c32 100644
+--- a/drivers/dma/at_xdmac.c
++++ b/drivers/dma/at_xdmac.c
+@@ -1613,6 +1613,8 @@ static void at_xdmac_handle_cyclic(struct at_xdmac_chan *atchan)
+ 	struct dma_async_tx_descriptor	*txd;
+ 
+ 	spin_lock_irq(&atchan->lock);
++	dev_dbg(chan2dev(&atchan->chan), "%s: status=0x%08x\n",
++		__func__, atchan->irq_status);
+ 	if (list_empty(&atchan->xfers_list)) {
+ 		spin_unlock_irq(&atchan->lock);
+ 		return;
+@@ -1625,6 +1627,7 @@ static void at_xdmac_handle_cyclic(struct at_xdmac_chan *atchan)
+ 		dmaengine_desc_get_callback_invoke(txd, NULL);
+ }
+ 
++/* Called with atchan->lock held. */
+ static void at_xdmac_handle_error(struct at_xdmac_chan *atchan)
+ {
+ 	struct at_xdmac		*atxdmac = to_at_xdmac(atchan->chan.device);
+@@ -1643,8 +1646,6 @@ static void at_xdmac_handle_error(struct at_xdmac_chan *atchan)
+ 	if (atchan->irq_status & AT_XDMAC_CIS_ROIS)
+ 		dev_err(chan2dev(&atchan->chan), "request overflow error!!!");
+ 
+-	spin_lock_irq(&atchan->lock);
+-
+ 	/* Channel must be disabled first as it's not done automatically */
+ 	at_xdmac_write(atxdmac, AT_XDMAC_GD, atchan->mask);
+ 	while (at_xdmac_read(atxdmac, AT_XDMAC_GS) & atchan->mask)
+@@ -1654,8 +1655,6 @@ static void at_xdmac_handle_error(struct at_xdmac_chan *atchan)
+ 				    struct at_xdmac_desc,
+ 				    xfer_node);
+ 
+-	spin_unlock_irq(&atchan->lock);
+-
+ 	/* Print bad descriptor's details if needed */
+ 	dev_dbg(chan2dev(&atchan->chan),
+ 		"%s: lld: mbr_sa=%pad, mbr_da=%pad, mbr_ubc=0x%08x\n",
+@@ -1672,15 +1671,17 @@ static void at_xdmac_tasklet(struct tasklet_struct *t)
+ 	struct dma_async_tx_descriptor *txd;
+ 	u32			error_mask;
+ 
+-	dev_dbg(chan2dev(&atchan->chan), "%s: status=0x%08x\n",
+-		__func__, atchan->irq_status);
+-
+ 	if (at_xdmac_chan_is_cyclic(atchan))
+ 		return at_xdmac_handle_cyclic(atchan);
+ 
+ 	error_mask = AT_XDMAC_CIS_RBEIS | AT_XDMAC_CIS_WBEIS |
+ 		AT_XDMAC_CIS_ROIS;
+ 
++	spin_lock_irq(&atchan->lock);
++
++	dev_dbg(chan2dev(&atchan->chan), "%s: status=0x%08x\n",
++		__func__, atchan->irq_status);
++
+ 	if (!(atchan->irq_status & AT_XDMAC_CIS_LIS) &&
+ 	    !(atchan->irq_status & error_mask))
+ 		return;
+@@ -1688,7 +1689,6 @@ static void at_xdmac_tasklet(struct tasklet_struct *t)
+ 	if (atchan->irq_status & error_mask)
+ 		at_xdmac_handle_error(atchan);
+ 
+-	spin_lock_irq(&atchan->lock);
+ 	desc = list_first_entry(&atchan->xfers_list, struct at_xdmac_desc,
+ 				xfer_node);
+ 	dev_vdbg(chan2dev(&atchan->chan), "%s: desc 0x%p\n", __func__, desc);
+-- 
+2.34.1
+

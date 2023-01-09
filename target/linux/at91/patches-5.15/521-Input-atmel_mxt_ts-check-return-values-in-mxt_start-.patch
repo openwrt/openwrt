@@ -1,0 +1,133 @@
+From a4716067c108c584165eb6ce0f16dcf18f302642 Mon Sep 17 00:00:00 2001
+From: Nick Dyer <nick.dyer@itdev.co.uk>
+Date: Tue, 15 Sep 2015 15:19:22 +0100
+Subject: [PATCH 412/471] Input: atmel_mxt_ts - check return values in
+ mxt_start and mxt_stop
+
+Signed-off-by: Nick Dyer <nick.dyer@itdev.co.uk>
+[cyrille.pitchen@atmel.com: adapt original patch to mainline]
+Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
+[claudiu.beznea: adapt to 5.15]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/input/touchscreen/atmel_mxt_ts.c | 53 ++++++++++++++++++------
+ 1 file changed, 40 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/input/touchscreen/atmel_mxt_ts.c b/drivers/input/touchscreen/atmel_mxt_ts.c
+index a23a78c57ebf..7cbc56f224b3 100644
+--- a/drivers/input/touchscreen/atmel_mxt_ts.c
++++ b/drivers/input/touchscreen/atmel_mxt_ts.c
+@@ -3059,10 +3059,12 @@ static void mxt_reset_slots(struct mxt_data *data)
+ 	mxt_input_sync(data);
+ }
+ 
+-static void mxt_start(struct mxt_data *data)
++static int mxt_start(struct mxt_data *data)
+ {
++	int ret;
++
+ 	if (!data->suspended || data->in_bootloader)
+-		return;
++		return 0;
+ 
+ 	mxt_wakeup_toggle(data->client, true, false);
+ 	
+@@ -3084,59 +3086,84 @@ static void mxt_start(struct mxt_data *data)
+ 		 */
+ 		mxt_process_messages_until_invalid(data);
+ 
+-		mxt_set_t7_power_cfg(data, MXT_POWER_CFG_RUN);
++		ret = mxt_set_t7_power_cfg(data, MXT_POWER_CFG_RUN);
++		if (ret)
++			return ret;
+ 
+ 		/* Recalibrate since chip has been in deep sleep */
+-		mxt_t6_command(data, MXT_COMMAND_CALIBRATE, 1, false);
++		ret = mxt_t6_command(data, MXT_COMMAND_CALIBRATE, 1, false);
++		if (ret)
++			return ret;
++
++		ret = mxt_acquire_irq(data);
++		if (ret)
++			return ret;
+ 
+-		mxt_acquire_irq(data);
+ 		break;
+ 	}
+ 
+ 	data->suspended = false;
++
++	return 0;
+ }
+ 
+-static void mxt_stop(struct mxt_data *data)
++static int mxt_stop(struct mxt_data *data)
+ {
++	int ret;
++
+ 	if (data->suspended || data->in_bootloader)
+-		return;
++		return 0;
+ 
+ 	switch (data->suspend_mode) {
+ 	case MXT_SUSPEND_T9_CTRL:
+ 		/* Touch disable */
+-		mxt_write_object(data,
++		ret = mxt_write_object(data,
+ 				MXT_TOUCH_MULTI_T9, MXT_T9_CTRL, 0);
++		if (ret)
++			return ret;
++
+ 		break;
+ 
+ 	case MXT_SUSPEND_DEEP_SLEEP:
+ 	default:
+ 		disable_irq(data->irq);
+ 
+-		mxt_set_t7_power_cfg(data, MXT_POWER_CFG_DEEPSLEEP);
++		ret = mxt_set_t7_power_cfg(data, MXT_POWER_CFG_DEEPSLEEP);
++		if (ret)
++			return ret;
+ 
+ 		mxt_reset_slots(data);
+ 		break;
+ 	}
+ 
+ 	data->suspended = true;
+-
+ 	mxt_wakeup_toggle(data->client, false, false);
++	
++	return 0;
+ }
+ 
+ static int mxt_input_open(struct input_dev *dev)
+ {
+ 	struct mxt_data *data = input_get_drvdata(dev);
++	int ret;
+ 
+-	mxt_start(data);
++	ret = mxt_start(data);
+ 
+-	return 0;
++	if (ret)
++		dev_err(&data->client->dev, "%s failed rc=%d\n", __func__, ret);
++
++	return ret;
+ }
+ 
+ static void mxt_input_close(struct input_dev *dev)
+ {
+ 	struct mxt_data *data = input_get_drvdata(dev);
++	int ret;
+ 
+-	mxt_stop(data);
++	ret = mxt_stop(data);
++
++	if (ret)
++		dev_err(&data->client->dev, "%s failed rc=%d\n", __func__, ret);
+ }
+ 
+ static int mxt_parse_device_properties(struct mxt_data *data)
+-- 
+2.34.1
+

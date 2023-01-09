@@ -1,0 +1,44 @@
+From 6b4a54db333d68a5692682cc61e38f2c09f9fbe9 Mon Sep 17 00:00:00 2001
+From: Sergiu Moga <sergiu.moga@microchip.com>
+Date: Tue, 23 Aug 2022 18:23:52 +0300
+Subject: [PATCH 163/471] dt-bindings: serial: atmel,at91-usart: Add gclk as a
+ possible USART clock
+
+The Devicetree nodes for FLEXCOM's USART can also have an alternative
+clock source for the baudrate generator (other than the peripheral
+clock), namely the Generick Clock. Thus make the binding aware of
+this clock that someone may place in the clock related
+properties of the USART node.
+
+Signed-off-by: Sergiu Moga <sergiu.moga@microchip.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+---
+ .../devicetree/bindings/serial/atmel,at91-usart.yaml   | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/serial/atmel,at91-usart.yaml b/Documentation/devicetree/bindings/serial/atmel,at91-usart.yaml
+index 4da642763bef..30b2131b5860 100644
+--- a/Documentation/devicetree/bindings/serial/atmel,at91-usart.yaml
++++ b/Documentation/devicetree/bindings/serial/atmel,at91-usart.yaml
+@@ -36,10 +36,16 @@ properties:
+     maxItems: 1
+ 
+   clock-names:
+-    const: usart
++    minItems: 1
++    items:
++      - const: usart
++      - const: gclk
+ 
+   clocks:
+-    maxItems: 1
++    minItems: 1
++    items:
++      - description: USART Peripheral Clock
++      - description: USART Generic Clock
+ 
+   dmas:
+     items:
+-- 
+2.34.1
+

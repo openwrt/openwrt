@@ -1,0 +1,405 @@
+From a91f3cbdcc44dc071034a253ffc5daa962678dd4 Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Date: Tue, 14 Dec 2021 14:58:54 +0200
+Subject: [PATCH 112/471] pinctrl: Get rid of duplicate of_node assignment in
+ the drivers
+
+GPIO library does copy the of_node from the parent device of
+the GPIO chip, there is no need to repeat this in the individual
+drivers. Remove these assignment all at once.
+
+For the details one may look into the of_gpio_dev_init() implementation.
+
+Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Link: https://lore.kernel.org/r/20211214125855.33207-1-andriy.shevchenko@linux.intel.com
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/actions/pinctrl-owl.c      | 1 -
+ drivers/pinctrl/bcm/pinctrl-bcm2835.c      | 1 -
+ drivers/pinctrl/bcm/pinctrl-iproc-gpio.c   | 1 -
+ drivers/pinctrl/bcm/pinctrl-nsp-gpio.c     | 1 -
+ drivers/pinctrl/cirrus/pinctrl-lochnagar.c | 3 ---
+ drivers/pinctrl/mediatek/pinctrl-moore.c   | 7 +++----
+ drivers/pinctrl/mediatek/pinctrl-paris.c   | 5 ++---
+ drivers/pinctrl/pinctrl-amd.c              | 3 ---
+ drivers/pinctrl/pinctrl-at91-pio4.c        | 1 -
+ drivers/pinctrl/pinctrl-at91.c             | 1 -
+ drivers/pinctrl/pinctrl-digicolor.c        | 5 ++---
+ drivers/pinctrl/pinctrl-mcp23s08.c         | 1 -
+ drivers/pinctrl/pinctrl-ocelot.c           | 3 +--
+ drivers/pinctrl/pinctrl-oxnas.c            | 1 -
+ drivers/pinctrl/pinctrl-pic32.c            | 2 +-
+ drivers/pinctrl/pinctrl-stmfx.c            | 1 -
+ drivers/pinctrl/pinctrl-sx150x.c           | 3 ---
+ drivers/pinctrl/pinctrl-xway.c             | 1 -
+ drivers/pinctrl/qcom/pinctrl-msm.c         | 1 -
+ drivers/pinctrl/qcom/pinctrl-ssbi-gpio.c   | 1 -
+ drivers/pinctrl/qcom/pinctrl-ssbi-mpp.c    | 1 -
+ drivers/pinctrl/renesas/pinctrl-rza2.c     | 1 -
+ drivers/pinctrl/spear/pinctrl-plgpio.c     | 1 -
+ drivers/pinctrl/vt8500/pinctrl-wmt.c       | 1 -
+ 24 files changed, 9 insertions(+), 38 deletions(-)
+
+diff --git a/drivers/pinctrl/actions/pinctrl-owl.c b/drivers/pinctrl/actions/pinctrl-owl.c
+index 781f2200ed58..ed46abc15d72 100644
+--- a/drivers/pinctrl/actions/pinctrl-owl.c
++++ b/drivers/pinctrl/actions/pinctrl-owl.c
+@@ -874,7 +874,6 @@ static int owl_gpio_init(struct owl_pinctrl *pctrl)
+ 	chip->label = dev_name(pctrl->dev);
+ 	chip->parent = pctrl->dev;
+ 	chip->owner = THIS_MODULE;
+-	chip->of_node = pctrl->dev->of_node;
+ 
+ 	pctrl->irq_chip.name = chip->of_node->name;
+ 	pctrl->irq_chip.irq_ack = owl_gpio_irq_ack;
+diff --git a/drivers/pinctrl/bcm/pinctrl-bcm2835.c b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
+index a2938995c7c1..46de2c15533b 100644
+--- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
++++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
+@@ -1239,7 +1239,6 @@ static int bcm2835_pinctrl_probe(struct platform_device *pdev)
+ 
+ 	pc->gpio_chip = *pdata->gpio_chip;
+ 	pc->gpio_chip.parent = dev;
+-	pc->gpio_chip.of_node = np;
+ 
+ 	for (i = 0; i < BCM2835_NUM_BANKS; i++) {
+ 		unsigned long events;
+diff --git a/drivers/pinctrl/bcm/pinctrl-iproc-gpio.c b/drivers/pinctrl/bcm/pinctrl-iproc-gpio.c
+index a7a0dd638a26..52fa2f4cd618 100644
+--- a/drivers/pinctrl/bcm/pinctrl-iproc-gpio.c
++++ b/drivers/pinctrl/bcm/pinctrl-iproc-gpio.c
+@@ -836,7 +836,6 @@ static int iproc_gpio_probe(struct platform_device *pdev)
+ 	chip->num_banks = (ngpios + NGPIOS_PER_BANK - 1) / NGPIOS_PER_BANK;
+ 	gc->label = dev_name(dev);
+ 	gc->parent = dev;
+-	gc->of_node = dev->of_node;
+ 	gc->request = iproc_gpio_request;
+ 	gc->free = iproc_gpio_free;
+ 	gc->direction_input = iproc_gpio_direction_input;
+diff --git a/drivers/pinctrl/bcm/pinctrl-nsp-gpio.c b/drivers/pinctrl/bcm/pinctrl-nsp-gpio.c
+index e03142895f61..643dbd315033 100644
+--- a/drivers/pinctrl/bcm/pinctrl-nsp-gpio.c
++++ b/drivers/pinctrl/bcm/pinctrl-nsp-gpio.c
+@@ -648,7 +648,6 @@ static int nsp_gpio_probe(struct platform_device *pdev)
+ 	gc->ngpio = val;
+ 	gc->label = dev_name(dev);
+ 	gc->parent = dev;
+-	gc->of_node = dev->of_node;
+ 	gc->request = gpiochip_generic_request;
+ 	gc->free = gpiochip_generic_free;
+ 	gc->direction_input = nsp_gpio_direction_input;
+diff --git a/drivers/pinctrl/cirrus/pinctrl-lochnagar.c b/drivers/pinctrl/cirrus/pinctrl-lochnagar.c
+index 670ac53a3141..3fda4446d70b 100644
+--- a/drivers/pinctrl/cirrus/pinctrl-lochnagar.c
++++ b/drivers/pinctrl/cirrus/pinctrl-lochnagar.c
+@@ -1161,9 +1161,6 @@ static int lochnagar_pin_probe(struct platform_device *pdev)
+ 	priv->gpio_chip.can_sleep = true;
+ 	priv->gpio_chip.parent = dev;
+ 	priv->gpio_chip.base = -1;
+-#ifdef CONFIG_OF_GPIO
+-	priv->gpio_chip.of_node = dev->of_node;
+-#endif
+ 
+ 	switch (lochnagar->type) {
+ 	case LOCHNAGAR1:
+diff --git a/drivers/pinctrl/mediatek/pinctrl-moore.c b/drivers/pinctrl/mediatek/pinctrl-moore.c
+index 3a4a23c40a71..b28c4c65432b 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-moore.c
++++ b/drivers/pinctrl/mediatek/pinctrl-moore.c
+@@ -501,7 +501,7 @@ static int mtk_gpio_set_config(struct gpio_chip *chip, unsigned int offset,
+ 	return mtk_eint_set_debounce(hw->eint, desc->eint.eint_n, debounce);
+ }
+ 
+-static int mtk_build_gpiochip(struct mtk_pinctrl *hw, struct device_node *np)
++static int mtk_build_gpiochip(struct mtk_pinctrl *hw)
+ {
+ 	struct gpio_chip *chip = &hw->chip;
+ 	int ret;
+@@ -518,7 +518,6 @@ static int mtk_build_gpiochip(struct mtk_pinctrl *hw, struct device_node *np)
+ 	chip->set_config	= mtk_gpio_set_config;
+ 	chip->base		= -1;
+ 	chip->ngpio		= hw->soc->npins;
+-	chip->of_node		= np;
+ 	chip->of_gpio_n_cells	= 2;
+ 
+ 	ret = gpiochip_add_data(chip, hw);
+@@ -532,7 +531,7 @@ static int mtk_build_gpiochip(struct mtk_pinctrl *hw, struct device_node *np)
+ 	 * Documentation/devicetree/bindings/gpio/gpio.txt on how to
+ 	 * bind pinctrl and gpio drivers via the "gpio-ranges" property.
+ 	 */
+-	if (!of_find_property(np, "gpio-ranges", NULL)) {
++	if (!of_find_property(hw->dev->of_node, "gpio-ranges", NULL)) {
+ 		ret = gpiochip_add_pin_range(chip, dev_name(hw->dev), 0, 0,
+ 					     chip->ngpio);
+ 		if (ret < 0) {
+@@ -673,7 +672,7 @@ int mtk_moore_pinctrl_probe(struct platform_device *pdev,
+ 			 "Failed to add EINT, but pinctrl still can work\n");
+ 
+ 	/* Build gpiochip should be after pinctrl_enable is done */
+-	err = mtk_build_gpiochip(hw, pdev->dev.of_node);
++	err = mtk_build_gpiochip(hw);
+ 	if (err) {
+ 		dev_err(&pdev->dev, "Failed to add gpio_chip\n");
+ 		return err;
+diff --git a/drivers/pinctrl/mediatek/pinctrl-paris.c b/drivers/pinctrl/mediatek/pinctrl-paris.c
+index 02e2a259edd3..8fc7d27c879b 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-paris.c
++++ b/drivers/pinctrl/mediatek/pinctrl-paris.c
+@@ -873,7 +873,7 @@ static int mtk_gpio_set_config(struct gpio_chip *chip, unsigned int offset,
+ 	return mtk_eint_set_debounce(hw->eint, desc->eint.eint_n, debounce);
+ }
+ 
+-static int mtk_build_gpiochip(struct mtk_pinctrl *hw, struct device_node *np)
++static int mtk_build_gpiochip(struct mtk_pinctrl *hw)
+ {
+ 	struct gpio_chip *chip = &hw->chip;
+ 	int ret;
+@@ -891,7 +891,6 @@ static int mtk_build_gpiochip(struct mtk_pinctrl *hw, struct device_node *np)
+ 	chip->set_config	= mtk_gpio_set_config;
+ 	chip->base		= -1;
+ 	chip->ngpio		= hw->soc->npins;
+-	chip->of_node		= np;
+ 	chip->of_gpio_n_cells	= 2;
+ 
+ 	ret = gpiochip_add_data(chip, hw);
+@@ -1009,7 +1008,7 @@ int mtk_paris_pinctrl_probe(struct platform_device *pdev,
+ 			 "Failed to add EINT, but pinctrl still can work\n");
+ 
+ 	/* Build gpiochip should be after pinctrl_enable is done */
+-	err = mtk_build_gpiochip(hw, pdev->dev.of_node);
++	err = mtk_build_gpiochip(hw);
+ 	if (err) {
+ 		dev_err(&pdev->dev, "Failed to add gpio_chip\n");
+ 		return err;
+diff --git a/drivers/pinctrl/pinctrl-amd.c b/drivers/pinctrl/pinctrl-amd.c
+index 5c4acf2308d4..4ea49c922e12 100644
+--- a/drivers/pinctrl/pinctrl-amd.c
++++ b/drivers/pinctrl/pinctrl-amd.c
+@@ -1016,9 +1016,6 @@ static int amd_gpio_probe(struct platform_device *pdev)
+ 	gpio_dev->gc.owner			= THIS_MODULE;
+ 	gpio_dev->gc.parent			= &pdev->dev;
+ 	gpio_dev->gc.ngpio			= resource_size(res) / 4;
+-#if defined(CONFIG_OF_GPIO)
+-	gpio_dev->gc.of_node			= pdev->dev.of_node;
+-#endif
+ 
+ 	gpio_dev->hwbank_num = gpio_dev->gc.ngpio / 64;
+ 	gpio_dev->groups = kerncz_groups;
+diff --git a/drivers/pinctrl/pinctrl-at91-pio4.c b/drivers/pinctrl/pinctrl-at91-pio4.c
+index 03c32b2c5d30..fafd1f55cba7 100644
+--- a/drivers/pinctrl/pinctrl-at91-pio4.c
++++ b/drivers/pinctrl/pinctrl-at91-pio4.c
+@@ -1136,7 +1136,6 @@ static int atmel_pinctrl_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	atmel_pioctrl->gpio_chip = &atmel_gpio_chip;
+-	atmel_pioctrl->gpio_chip->of_node = dev->of_node;
+ 	atmel_pioctrl->gpio_chip->ngpio = atmel_pioctrl->npins;
+ 	atmel_pioctrl->gpio_chip->label = dev_name(dev);
+ 	atmel_pioctrl->gpio_chip->parent = dev;
+diff --git a/drivers/pinctrl/pinctrl-at91.c b/drivers/pinctrl/pinctrl-at91.c
+index 6022496bb6a9..d91a010e65f5 100644
+--- a/drivers/pinctrl/pinctrl-at91.c
++++ b/drivers/pinctrl/pinctrl-at91.c
+@@ -1868,7 +1868,6 @@ static int at91_gpio_probe(struct platform_device *pdev)
+ 	at91_chip->chip = at91_gpio_template;
+ 
+ 	chip = &at91_chip->chip;
+-	chip->of_node = np;
+ 	chip->label = dev_name(&pdev->dev);
+ 	chip->parent = &pdev->dev;
+ 	chip->owner = THIS_MODULE;
+diff --git a/drivers/pinctrl/pinctrl-digicolor.c b/drivers/pinctrl/pinctrl-digicolor.c
+index ff702cfbaa28..cc3546fc4610 100644
+--- a/drivers/pinctrl/pinctrl-digicolor.c
++++ b/drivers/pinctrl/pinctrl-digicolor.c
+@@ -233,7 +233,7 @@ static void dc_gpio_set(struct gpio_chip *chip, unsigned gpio, int value)
+ 	spin_unlock_irqrestore(&pmap->lock, flags);
+ }
+ 
+-static int dc_gpiochip_add(struct dc_pinmap *pmap, struct device_node *np)
++static int dc_gpiochip_add(struct dc_pinmap *pmap)
+ {
+ 	struct gpio_chip *chip = &pmap->chip;
+ 	int ret;
+@@ -248,7 +248,6 @@ static int dc_gpiochip_add(struct dc_pinmap *pmap, struct device_node *np)
+ 	chip->set		= dc_gpio_set;
+ 	chip->base		= -1;
+ 	chip->ngpio		= PINS_COUNT;
+-	chip->of_node		= np;
+ 	chip->of_gpio_n_cells	= 2;
+ 
+ 	spin_lock_init(&pmap->lock);
+@@ -326,7 +325,7 @@ static int dc_pinctrl_probe(struct platform_device *pdev)
+ 		return PTR_ERR(pmap->pctl);
+ 	}
+ 
+-	return dc_gpiochip_add(pmap, pdev->dev.of_node);
++	return dc_gpiochip_add(pmap);
+ }
+ 
+ static const struct of_device_id dc_pinctrl_ids[] = {
+diff --git a/drivers/pinctrl/pinctrl-mcp23s08.c b/drivers/pinctrl/pinctrl-mcp23s08.c
+index bccebe43dd6a..695236636d05 100644
+--- a/drivers/pinctrl/pinctrl-mcp23s08.c
++++ b/drivers/pinctrl/pinctrl-mcp23s08.c
+@@ -551,7 +551,6 @@ int mcp23s08_probe_one(struct mcp23s08 *mcp, struct device *dev,
+ 	mcp->chip.set = mcp23s08_set;
+ #ifdef CONFIG_OF_GPIO
+ 	mcp->chip.of_gpio_n_cells = 2;
+-	mcp->chip.of_node = dev->of_node;
+ #endif
+ 
+ 	mcp->chip.base = base;
+diff --git a/drivers/pinctrl/pinctrl-ocelot.c b/drivers/pinctrl/pinctrl-ocelot.c
+index 0a36ec8775a3..430df0fe5efb 100644
+--- a/drivers/pinctrl/pinctrl-ocelot.c
++++ b/drivers/pinctrl/pinctrl-ocelot.c
+@@ -1308,8 +1308,7 @@ static int ocelot_gpiochip_register(struct platform_device *pdev,
+ 	gc = &info->gpio_chip;
+ 	gc->ngpio = info->desc->npins;
+ 	gc->parent = &pdev->dev;
+-	gc->base = 0;
+-	gc->of_node = info->dev->of_node;
++	gc->base = -1;
+ 	gc->label = "ocelot-gpio";
+ 
+ 	irq = irq_of_parse_and_map(gc->of_node, 0);
+diff --git a/drivers/pinctrl/pinctrl-oxnas.c b/drivers/pinctrl/pinctrl-oxnas.c
+index cebd810bd6d1..fb10a8473ebe 100644
+--- a/drivers/pinctrl/pinctrl-oxnas.c
++++ b/drivers/pinctrl/pinctrl-oxnas.c
+@@ -1232,7 +1232,6 @@ static int oxnas_gpio_probe(struct platform_device *pdev)
+ 
+ 	bank->id = id;
+ 	bank->gpio_chip.parent = &pdev->dev;
+-	bank->gpio_chip.of_node = np;
+ 	bank->gpio_chip.ngpio = ngpios;
+ 	girq = &bank->gpio_chip.irq;
+ 	girq->chip = &bank->irq_chip;
+diff --git a/drivers/pinctrl/pinctrl-pic32.c b/drivers/pinctrl/pinctrl-pic32.c
+index 748dabd8db6e..37acfdfc2cae 100644
+--- a/drivers/pinctrl/pinctrl-pic32.c
++++ b/drivers/pinctrl/pinctrl-pic32.c
+@@ -2241,7 +2241,7 @@ static int pic32_gpio_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	bank->gpio_chip.parent = &pdev->dev;
+-	bank->gpio_chip.of_node = np;
++
+ 	girq = &bank->gpio_chip.irq;
+ 	girq->chip = &bank->irq_chip;
+ 	girq->parent_handler = pic32_gpio_irq_handler;
+diff --git a/drivers/pinctrl/pinctrl-stmfx.c b/drivers/pinctrl/pinctrl-stmfx.c
+index 5fa2488fae87..ab4dde40d3ed 100644
+--- a/drivers/pinctrl/pinctrl-stmfx.c
++++ b/drivers/pinctrl/pinctrl-stmfx.c
+@@ -675,7 +675,6 @@ static int stmfx_pinctrl_probe(struct platform_device *pdev)
+ 	pctl->gpio_chip.base = -1;
+ 	pctl->gpio_chip.ngpio = pctl->pctl_desc.npins;
+ 	pctl->gpio_chip.can_sleep = true;
+-	pctl->gpio_chip.of_node = np;
+ 
+ 	pctl->irq_chip.name = dev_name(pctl->dev);
+ 	pctl->irq_chip.irq_mask = stmfx_pinctrl_irq_mask;
+diff --git a/drivers/pinctrl/pinctrl-sx150x.c b/drivers/pinctrl/pinctrl-sx150x.c
+index 484a3b9e875c..a87ea3b95cf4 100644
+--- a/drivers/pinctrl/pinctrl-sx150x.c
++++ b/drivers/pinctrl/pinctrl-sx150x.c
+@@ -1163,9 +1163,6 @@ static int sx150x_probe(struct i2c_client *client,
+ 	pctl->gpio.set = sx150x_gpio_set;
+ 	pctl->gpio.set_config = gpiochip_generic_config;
+ 	pctl->gpio.parent = dev;
+-#ifdef CONFIG_OF_GPIO
+-	pctl->gpio.of_node = dev->of_node;
+-#endif
+ 	pctl->gpio.can_sleep = true;
+ 	pctl->gpio.label = devm_kstrdup(dev, client->name, GFP_KERNEL);
+ 	if (!pctl->gpio.label)
+diff --git a/drivers/pinctrl/pinctrl-xway.c b/drivers/pinctrl/pinctrl-xway.c
+index 5e3f31b55eb7..3a03beb8a755 100644
+--- a/drivers/pinctrl/pinctrl-xway.c
++++ b/drivers/pinctrl/pinctrl-xway.c
+@@ -1763,7 +1763,6 @@ static int pinmux_xway_probe(struct platform_device *pdev)
+ 	/* register the gpio chip */
+ 	xway_chip.parent = &pdev->dev;
+ 	xway_chip.owner = THIS_MODULE;
+-	xway_chip.of_node = pdev->dev.of_node;
+ 	ret = devm_gpiochip_add_data(&pdev->dev, &xway_chip, NULL);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "Failed to register gpio chip\n");
+diff --git a/drivers/pinctrl/qcom/pinctrl-msm.c b/drivers/pinctrl/qcom/pinctrl-msm.c
+index a42ff4b22a04..ed422b6e13b8 100644
+--- a/drivers/pinctrl/qcom/pinctrl-msm.c
++++ b/drivers/pinctrl/qcom/pinctrl-msm.c
+@@ -1253,7 +1253,6 @@ static int msm_gpio_init(struct msm_pinctrl *pctrl)
+ 	chip->label = dev_name(pctrl->dev);
+ 	chip->parent = pctrl->dev;
+ 	chip->owner = THIS_MODULE;
+-	chip->of_node = pctrl->dev->of_node;
+ 	if (msm_gpio_needs_valid_mask(pctrl))
+ 		chip->init_valid_mask = msm_gpio_init_valid_mask;
+ 
+diff --git a/drivers/pinctrl/qcom/pinctrl-ssbi-gpio.c b/drivers/pinctrl/qcom/pinctrl-ssbi-gpio.c
+index b5949f766a7a..1b41adda8129 100644
+--- a/drivers/pinctrl/qcom/pinctrl-ssbi-gpio.c
++++ b/drivers/pinctrl/qcom/pinctrl-ssbi-gpio.c
+@@ -773,7 +773,6 @@ static int pm8xxx_gpio_probe(struct platform_device *pdev)
+ 	pctrl->chip = pm8xxx_gpio_template;
+ 	pctrl->chip.base = -1;
+ 	pctrl->chip.parent = &pdev->dev;
+-	pctrl->chip.of_node = pdev->dev.of_node;
+ 	pctrl->chip.of_gpio_n_cells = 2;
+ 	pctrl->chip.label = dev_name(pctrl->dev);
+ 	pctrl->chip.ngpio = pctrl->npins;
+diff --git a/drivers/pinctrl/qcom/pinctrl-ssbi-mpp.c b/drivers/pinctrl/qcom/pinctrl-ssbi-mpp.c
+index 92e7f2602847..8d86aeaf3d67 100644
+--- a/drivers/pinctrl/qcom/pinctrl-ssbi-mpp.c
++++ b/drivers/pinctrl/qcom/pinctrl-ssbi-mpp.c
+@@ -818,7 +818,6 @@ static int pm8xxx_mpp_probe(struct platform_device *pdev)
+ 	pctrl->chip = pm8xxx_mpp_template;
+ 	pctrl->chip.base = -1;
+ 	pctrl->chip.parent = &pdev->dev;
+-	pctrl->chip.of_node = pdev->dev.of_node;
+ 	pctrl->chip.of_gpio_n_cells = 2;
+ 	pctrl->chip.label = dev_name(pctrl->dev);
+ 	pctrl->chip.ngpio = pctrl->npins;
+diff --git a/drivers/pinctrl/renesas/pinctrl-rza2.c b/drivers/pinctrl/renesas/pinctrl-rza2.c
+index 32829eb9656c..c0a04f1ee994 100644
+--- a/drivers/pinctrl/renesas/pinctrl-rza2.c
++++ b/drivers/pinctrl/renesas/pinctrl-rza2.c
+@@ -240,7 +240,6 @@ static int rza2_gpio_register(struct rza2_pinctrl_priv *priv)
+ 	int ret;
+ 
+ 	chip.label = devm_kasprintf(priv->dev, GFP_KERNEL, "%pOFn", np);
+-	chip.of_node = np;
+ 	chip.parent = priv->dev;
+ 	chip.ngpio = priv->npins;
+ 
+diff --git a/drivers/pinctrl/spear/pinctrl-plgpio.c b/drivers/pinctrl/spear/pinctrl-plgpio.c
+index 43bb334af1e1..212f0970acbc 100644
+--- a/drivers/pinctrl/spear/pinctrl-plgpio.c
++++ b/drivers/pinctrl/spear/pinctrl-plgpio.c
+@@ -556,7 +556,6 @@ static int plgpio_probe(struct platform_device *pdev)
+ 	plgpio->chip.label = dev_name(&pdev->dev);
+ 	plgpio->chip.parent = &pdev->dev;
+ 	plgpio->chip.owner = THIS_MODULE;
+-	plgpio->chip.of_node = pdev->dev.of_node;
+ 
+ 	if (!IS_ERR(plgpio->clk)) {
+ 		ret = clk_prepare(plgpio->clk);
+diff --git a/drivers/pinctrl/vt8500/pinctrl-wmt.c b/drivers/pinctrl/vt8500/pinctrl-wmt.c
+index 65b97e240196..6fac30de1c6a 100644
+--- a/drivers/pinctrl/vt8500/pinctrl-wmt.c
++++ b/drivers/pinctrl/vt8500/pinctrl-wmt.c
+@@ -565,7 +565,6 @@ int wmt_pinctrl_probe(struct platform_device *pdev,
+ 
+ 	data->gpio_chip = wmt_gpio_chip;
+ 	data->gpio_chip.parent = &pdev->dev;
+-	data->gpio_chip.of_node = pdev->dev.of_node;
+ 	data->gpio_chip.ngpio = data->nbanks * 32;
+ 
+ 	platform_set_drvdata(pdev, data);
+-- 
+2.34.1
+

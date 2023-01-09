@@ -1,0 +1,64 @@
+From 18835a83ebfc84a6c2f42db7e77192440971c595 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 17 May 2021 12:11:16 +0300
+Subject: [PATCH 034/471] ALSA: pcm: Export constraints initialization
+ functions
+
+Export the functions needed to initialize the constraints. These functions
+will be used in soc-pcm to initialize the BE constraints.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ include/sound/pcm.h     | 3 +++
+ sound/core/pcm_native.c | 6 ++++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/include/sound/pcm.h b/include/sound/pcm.h
+index dbfa2f8e5fd9..d16a29a47914 100644
+--- a/include/sound/pcm.h
++++ b/include/sound/pcm.h
+@@ -1023,6 +1023,9 @@ int snd_pcm_hw_rule_add(struct snd_pcm_runtime *runtime,
+ 			snd_pcm_hw_rule_func_t func, void *private,
+ 			int dep, ...);
+ 
++int snd_pcm_hw_constraints_init(struct snd_pcm_substream *substream);
++int snd_pcm_hw_constraints_complete(struct snd_pcm_substream *substream);
++
+ /**
+  * snd_pcm_hw_constraint_single() - Constrain parameter to a single value
+  * @runtime: PCM runtime instance
+diff --git a/sound/core/pcm_native.c b/sound/core/pcm_native.c
+index 44e06ef4ff0b..af926edc09e4 100644
+--- a/sound/core/pcm_native.c
++++ b/sound/core/pcm_native.c
+@@ -2467,7 +2467,7 @@ static int snd_pcm_hw_rule_buffer_bytes_max(struct snd_pcm_hw_params *params,
+ 	return snd_interval_refine(hw_param_interval(params, rule->var), &t);
+ }		
+ 
+-static int snd_pcm_hw_constraints_init(struct snd_pcm_substream *substream)
++int snd_pcm_hw_constraints_init(struct snd_pcm_substream *substream)
+ {
+ 	struct snd_pcm_runtime *runtime = substream->runtime;
+ 	struct snd_pcm_hw_constraints *constrs = &runtime->hw_constraints;
+@@ -2590,8 +2590,9 @@ static int snd_pcm_hw_constraints_init(struct snd_pcm_substream *substream)
+ 		return err;
+ 	return 0;
+ }
++EXPORT_SYMBOL(snd_pcm_hw_constraints_init);
+ 
+-static int snd_pcm_hw_constraints_complete(struct snd_pcm_substream *substream)
++int snd_pcm_hw_constraints_complete(struct snd_pcm_substream *substream)
+ {
+ 	struct snd_pcm_runtime *runtime = substream->runtime;
+ 	struct snd_pcm_hardware *hw = &runtime->hw;
+@@ -2674,6 +2675,7 @@ static int snd_pcm_hw_constraints_complete(struct snd_pcm_substream *substream)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(snd_pcm_hw_constraints_complete);
+ 
+ static void pcm_release_private(struct snd_pcm_substream *substream)
+ {
+-- 
+2.34.1
+

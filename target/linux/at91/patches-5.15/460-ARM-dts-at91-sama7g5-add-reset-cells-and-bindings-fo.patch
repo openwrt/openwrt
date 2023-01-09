@@ -1,0 +1,37 @@
+From 479bf3fbb7fed328f6301a4f2b2b60d640793bd2 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Tue, 22 Feb 2022 11:52:46 +0200
+Subject: [PATCH 351/471] ARM: dts: at91: sama7g5: add #reset-cells and
+ bindings for reset controller
+
+Add #reset-cells and bindings for reset controller. This allows
+referencing reset_controller with resets phandle.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 4166e79cfad2..d90049987526 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -11,6 +11,7 @@
+ 
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/reset/sama7g5-reset.h>
+ #include <dt-bindings/clock/at91.h>
+ #include <dt-bindings/dma/at91.h>
+ #include <dt-bindings/gpio/gpio.h>
+@@ -202,6 +203,7 @@ pmc: pmc@e0018000 {
+ 		reset_controller: rstc@e001d000 {
+ 			compatible = "microchip,sama7g5-rstc", "microchip,sam9x60-rstc", "syscon";
+ 			reg = <0xe001d000 0xc>, <0xe001d0e4 0x4>;
++			#reset-cells = <1>;
+ 			clocks = <&clk32k 0>;
+ 		};
+ 
+-- 
+2.34.1
+

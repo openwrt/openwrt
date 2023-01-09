@@ -1,0 +1,88 @@
+From 7d6ef5add5d761029b5d53fb2f9b25d00325f377 Mon Sep 17 00:00:00 2001
+From: Nick Dyer <nick.dyer@itdev.co.uk>
+Date: Thu, 30 Apr 2015 16:08:03 +0100
+Subject: [PATCH 411/471] Input: atmel_mxt_ts - delay enabling IRQ when not
+ using regulators
+
+The path of enabling the IRQ in the probe function is not safe in level
+triggered operation, if it was already powered up and there is a message
+waiting on the device (eg finger down) because the object table has not yet
+been read. This forces the ISR into a hard loop.
+
+Delay enabling the interrupt until it is first needed.
+
+Signed-off-by: Nick Dyer <nick.dyer@itdev.co.uk>
+[cyrille.pitchen@atmel.com: adapt original patch to mainline]
+Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
+[eugen.hristev@microchip.com: adapt original patch to 4.14]
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+[claudiu.beznea@microchip.com: adapt to 4.19; remove IRQ request from
+ mxt_probe(); adapt to 5.10, 5.15]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/input/touchscreen/atmel_mxt_ts.c | 28 ++++++++++++++----------
+ 1 file changed, 16 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/input/touchscreen/atmel_mxt_ts.c b/drivers/input/touchscreen/atmel_mxt_ts.c
+index 235c1ead933c..a23a78c57ebf 100644
+--- a/drivers/input/touchscreen/atmel_mxt_ts.c
++++ b/drivers/input/touchscreen/atmel_mxt_ts.c
+@@ -1236,7 +1236,21 @@ static int mxt_acquire_irq(struct mxt_data *data)
+ {
+ 	int error;
+ 
+-	enable_irq(data->irq);
++	if (!data->irq) {
++		error = devm_request_threaded_irq(&data->client->dev,
++						  data->client->irq, NULL,
++						  mxt_interrupt, IRQF_ONESHOT,
++						  data->client->name, data);
++		if (error) {
++			dev_err(&data->client->dev, "Error requesting irq\n");
++			return error;
++		}
++
++		/* Presence of data->irq means IRQ initialised */
++		data->irq = data->client->irq;
++	} else {
++		enable_irq(data->irq);
++	}
+ 
+ 	if (data->use_retrigen_workaround) {
+ 		error = mxt_process_messages_until_invalid(data);
+@@ -2907,7 +2921,7 @@ static int mxt_load_fw(struct device *dev, const char *fn)
+ 		mxt_free_input_device(data);
+ 		mxt_free_object_table(data);
+ 	} else {
+-		enable_irq(data->irq);
++		mxt_acquire_irq(data);
+ 	}
+ 
+ 	reinit_completion(&data->chg_completion);
+@@ -3215,7 +3229,6 @@ static int mxt_probe(struct i2c_client *client, const struct i2c_device_id *id)
+ 		 client->adapter->nr, client->addr);
+ 
+ 	data->client = client;
+-	data->irq = client->irq;
+ 	i2c_set_clientdata(client, data);
+ 
+ 	init_completion(&data->chg_completion);
+@@ -3262,15 +3275,6 @@ static int mxt_probe(struct i2c_client *client, const struct i2c_device_id *id)
+ 		return error;
+ 	}
+ 
+-	error = devm_request_threaded_irq(&client->dev, client->irq,
+-					  NULL, mxt_interrupt,
+-					  IRQF_ONESHOT | IRQF_NO_AUTOEN,
+-					  client->name, data);
+-	if (error) {
+-		dev_err(&client->dev, "Failed to register interrupt\n");
+-		return error;
+-	}
+-
+ 	error = regulator_bulk_enable(ARRAY_SIZE(data->regulators),
+ 				      data->regulators);
+ 	if (error) {
+-- 
+2.34.1
+

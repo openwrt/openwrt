@@ -1,0 +1,47 @@
+From bb18864cccb9572fb52665fa0b6f657cfcd80ea1 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 10 Jan 2022 17:11:29 +0200
+Subject: [PATCH 345/471] ARM: dts: at91: sama7g5ek: set regulator voltages for
+ standby state
+
+Set regulator voltages for standby state to avoid wrong behavior of
+system while in standby. The CPU voltage has been chosen as being the
+one correspoding to OPP=600MHz. Next commit will set the 600MHz OPP
+as the suspend OPP.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/at91-sama7g5ek.dts | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
+index bf2d5bcb7678..816402253581 100644
+--- a/arch/arm/boot/dts/at91-sama7g5ek.dts
++++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
+@@ -239,6 +239,7 @@ vdd_3v3: VDD_IO {
+ 
+ 					regulator-state-standby {
+ 						regulator-on-in-suspend;
++						regulator-suspend-microvolt = <3300000>;
+ 						regulator-mode = <4>;
+ 					};
+ 
+@@ -279,6 +280,7 @@ vddcore: VDD_CORE {
+ 
+ 					regulator-state-standby {
+ 						regulator-on-in-suspend;
++						regulator-suspend-voltage = <1150000>;
+ 						regulator-mode = <4>;
+ 					};
+ 
+@@ -299,6 +301,7 @@ vddcpu: VDD_OTHER {
+ 
+ 					regulator-state-standby {
+ 						regulator-on-in-suspend;
++						regulator-suspend-voltage = <1050000>;
+ 						regulator-mode = <4>;
+ 					};
+ 
+-- 
+2.34.1
+

@@ -1,0 +1,66 @@
+From f292ffc69599a39c83f11a16258ccbc96746a507 Mon Sep 17 00:00:00 2001
+From: Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
+Date: Tue, 4 Jan 2022 14:09:13 +0000
+Subject: [PATCH 113/471] pinctrl: at91-pio4: Use platform_get_irq() to get the
+ interrupt
+
+platform_get_resource(pdev, IORESOURCE_IRQ, ..) relies on static
+allocation of IRQ resources in DT core code, this causes an issue
+when using hierarchical interrupt domains using "interrupts" property
+in the node as this bypasses the hierarchical setup and messes up the
+irq chaining.
+
+In preparation for removal of static setup of IRQ resource from DT core
+code use platform_get_irq().
+
+While at it, replace the dev_err() with dev_dbg() as platform_get_irq()
+prints an error message upon error.
+
+Signed-off-by: Lad Prabhakar <prabhakar.mahadev-lad.rj@bp.renesas.com>
+Reviewed-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Tested-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Link: https://lore.kernel.org/r/20220104140913.29699-1-prabhakar.mahadev-lad.rj@bp.renesas.com
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-at91-pio4.c | 16 +++++++---------
+ 1 file changed, 7 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/pinctrl/pinctrl-at91-pio4.c b/drivers/pinctrl/pinctrl-at91-pio4.c
+index fafd1f55cba7..517f2a6330ad 100644
+--- a/drivers/pinctrl/pinctrl-at91-pio4.c
++++ b/drivers/pinctrl/pinctrl-at91-pio4.c
+@@ -1045,7 +1045,6 @@ static int atmel_pinctrl_probe(struct platform_device *pdev)
+ 	const char **group_names;
+ 	const struct of_device_id *match;
+ 	int i, ret;
+-	struct resource	*res;
+ 	struct atmel_pioctrl *atmel_pioctrl;
+ 	const struct atmel_pioctrl_data *atmel_pioctrl_data;
+ 
+@@ -1164,16 +1163,15 @@ static int atmel_pinctrl_probe(struct platform_device *pdev)
+ 
+ 	/* There is one controller but each bank has its own irq line. */
+ 	for (i = 0; i < atmel_pioctrl->nbanks; i++) {
+-		res = platform_get_resource(pdev, IORESOURCE_IRQ, i);
+-		if (!res) {
+-			dev_err(dev, "missing irq resource for group %c\n",
++		ret = platform_get_irq(pdev, i);
++		if (ret < 0) {
++			dev_dbg(dev, "missing irq resource for group %c\n",
+ 				'A' + i);
+-			return -EINVAL;
++			return ret;
+ 		}
+-		atmel_pioctrl->irqs[i] = res->start;
+-		irq_set_chained_handler_and_data(res->start,
+-			atmel_gpio_irq_handler, atmel_pioctrl);
+-		dev_dbg(dev, "bank %i: irq=%pr\n", i, res);
++		atmel_pioctrl->irqs[i] = ret;
++		irq_set_chained_handler_and_data(ret, atmel_gpio_irq_handler, atmel_pioctrl);
++		dev_dbg(dev, "bank %i: irq=%d\n", i, ret);
+ 	}
+ 
+ 	atmel_pioctrl->irq_domain = irq_domain_add_linear(dev->of_node,
+-- 
+2.34.1
+

@@ -1,0 +1,62 @@
+From 343266d1eda04072b1d2520f8fa25a6173a30eb9 Mon Sep 17 00:00:00 2001
+From: Durai Manickam KR <durai.manickamkr@microchip.com>
+Date: Thu, 11 Aug 2022 11:29:57 +0530
+Subject: [PATCH 398/471] ARM: dts: at91: sam9x60_curiosity: Enable mikrobus
+ uart
+
+Enable mikrobus uart on flexcomm 7 which is used for bluetooth module
+in wilc3000 SD board.
+
+Signed-off-by: Durai Manickam KR <durai.manickamkr@microchip.com>
+---
+ arch/arm/boot/dts/at91-sam9x60_curiosity.dts | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/arch/arm/boot/dts/at91-sam9x60_curiosity.dts b/arch/arm/boot/dts/at91-sam9x60_curiosity.dts
+index 60bce69d3855..75e6727b5e3a 100644
+--- a/arch/arm/boot/dts/at91-sam9x60_curiosity.dts
++++ b/arch/arm/boot/dts/at91-sam9x60_curiosity.dts
+@@ -17,6 +17,7 @@ / {
+ 	aliases {
+ 		i2c0 = &i2c0;
+ 		i2c1 = &i2c6;
++		serial2 = &uart7;
+ 	};
+ 
+ 	chosen {
+@@ -236,6 +237,19 @@ i2c6: i2c@600 {
+ 	};
+ };
+ 
++&flx7 {
++	atmel,flexcom-mode = <ATMEL_FLEXCOM_MODE_USART>;
++	status = "okay";
++
++	uart7: serial@200 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_flx7_default>;
++		status = "okay";
++	};
++};
++
+ &macb0 {
+ 	phy-mode = "rmii";
+ 	#address-cells = <1>;
+@@ -337,6 +351,12 @@ pinctrl_flx6_default: flx6_twi {
+ 				<AT91_PIOA 30 AT91_PERIPH_A AT91_PINCTRL_PULL_UP
+ 				 AT91_PIOA 31 AT91_PERIPH_A AT91_PINCTRL_PULL_UP>;
+ 		};
++
++		pinctrl_flx7_default: flx7_usart {
++			atmel,pins =
++				<AT91_PIOC 0 AT91_PERIPH_C AT91_PINCTRL_NONE
++				 AT91_PIOC 1 AT91_PERIPH_C AT91_PINCTRL_NONE>;
++		};
+ 	};
+ 
+ 	gpio_keys {
+-- 
+2.34.1
+

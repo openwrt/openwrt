@@ -1,0 +1,37 @@
+From 0a5c1f8af8b9328fbcfd49ace00f94d68b80edeb Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Thu, 24 Mar 2022 17:32:48 +0200
+Subject: [PATCH 052/471] ASoC: dt-bindings: microchip,pdmc: add
+ 'sound-name-prefix' property
+
+Add 'sound-name-prefix' property to differentiante between interfaces in
+DPCM (ASRC) use-cases. Property is optional.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ .../devicetree/bindings/sound/microchip,pdmc.yaml        | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/sound/microchip,pdmc.yaml b/Documentation/devicetree/bindings/sound/microchip,pdmc.yaml
+index 04414eb4ada9..7996c5fe5312 100644
+--- a/Documentation/devicetree/bindings/sound/microchip,pdmc.yaml
++++ b/Documentation/devicetree/bindings/sound/microchip,pdmc.yaml
+@@ -64,6 +64,15 @@ properties:
+     maxItems: 4
+     uniqueItems: true
+ 
++  sound-name-prefix:
++    pattern: "^PDMC[0-9]$"
++    $ref: /schemas/types.yaml#/definitions/string
++    description:
++      used as prefix for sink/source names of the component. Must be a
++      unique string among multiple instances of the same component.
++      The name can be "PDMC0" or "PDMC1" ... "PDMCx", where x depends
++      on the maximum available instances on a Microchip SoC.
++
+ required:
+   - compatible
+   - reg
+-- 
+2.34.1
+

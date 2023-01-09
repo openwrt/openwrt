@@ -1,0 +1,64 @@
+From 6f9d14cd0ad3223360684649185007f0f21480a6 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo@jmondi.org>
+Date: Thu, 24 Feb 2022 10:43:10 +0100
+Subject: [PATCH 192/471] media: ov5640: Restrict sizes to mbus code
+
+The ov5640 driver supports different sizes for different mbus_codes.
+In particular:
+
+- 8bpp modes: high resolution sizes (>= 1280x720)
+- 16bpp modes: all sizes
+- 24bpp modes: low resolutions sizes (< 1280x720)
+
+Restrict the frame sizes enumerations to the above constraints.
+
+While at it, make sure the fse->mbus_code parameter is valid, and return
+-EINVAL if it's not.
+
+Signed-off-by: Jacopo Mondi <jacopo@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+(cherry picked from commit 93d8aefbac0af2f02d59314164e26d31972172e6)
+---
+ drivers/media/i2c/ov5640.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/media/i2c/ov5640.c b/drivers/media/i2c/ov5640.c
+index 5e87c5e5a75c..1510b9e8322d 100644
+--- a/drivers/media/i2c/ov5640.c
++++ b/drivers/media/i2c/ov5640.c
+@@ -3448,14 +3448,28 @@ static int ov5640_enum_frame_size(struct v4l2_subdev *sd,
+ 				  struct v4l2_subdev_state *sd_state,
+ 				  struct v4l2_subdev_frame_size_enum *fse)
+ {
++	u32 bpp = ov5640_code_to_bpp(fse->code);
++	unsigned int index = fse->index;
++
+ 	if (fse->pad != 0)
+ 		return -EINVAL;
+-	if (fse->index >= OV5640_NUM_MODES)
++	if (!bpp)
++		return -EINVAL;
++
++	/* Only low-resolution modes are supported for 24bpp formats. */
++	if (bpp == 24 && index >= OV5640_MODE_720P_1280_720)
++		return -EINVAL;
++
++	/* FIXME: Low resolution modes don't work in 8bpp formats. */
++	if (bpp == 8)
++		index += OV5640_MODE_720P_1280_720;
++
++	if (index >= OV5640_NUM_MODES)
+ 		return -EINVAL;
+ 
+-	fse->min_width = ov5640_mode_data[fse->index].width;
++	fse->min_width = ov5640_mode_data[index].width;
+ 	fse->max_width = fse->min_width;
+-	fse->min_height = ov5640_mode_data[fse->index].height;
++	fse->min_height = ov5640_mode_data[index].height;
+ 	fse->max_height = fse->min_height;
+ 
+ 	return 0;
+-- 
+2.34.1
+

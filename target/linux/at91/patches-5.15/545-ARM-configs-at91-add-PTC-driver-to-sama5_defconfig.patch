@@ -1,0 +1,28 @@
+From 2fe71459384c4231ffd3f64d26b7140f6cc580c0 Mon Sep 17 00:00:00 2001
+From: Ludovic Desroches <ludovic.desroches@microchip.com>
+Date: Mon, 10 Apr 2017 11:32:16 +0200
+Subject: [PATCH 436/471] ARM: configs: at91: add PTC driver to sama5_defconfig
+
+Add Peripheral Touch Controller driver to sama5_defconfig.
+
+Signed-off-by: Ludovic Desroches <ludovic.desroches@microchip.com>
+---
+ arch/arm/configs/sama5_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/sama5_defconfig b/arch/arm/configs/sama5_defconfig
+index 62bc4fbe482e..341cb80dec9b 100644
+--- a/arch/arm/configs/sama5_defconfig
++++ b/arch/arm/configs/sama5_defconfig
+@@ -153,6 +153,8 @@ CONFIG_KEYBOARD_GPIO=y
+ CONFIG_INPUT_TOUCHSCREEN=y
+ CONFIG_TOUCHSCREEN_ADC=y
+ CONFIG_TOUCHSCREEN_ATMEL_MXT=y
++CONFIG_INPUT_MISC=y
++CONFIG_INPUT_ATMEL_PTC=m
+ # CONFIG_SERIO is not set
+ CONFIG_LEGACY_PTY_COUNT=4
+ CONFIG_SERIAL_ATMEL=y
+-- 
+2.34.1
+

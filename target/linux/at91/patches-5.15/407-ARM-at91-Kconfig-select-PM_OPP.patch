@@ -1,0 +1,27 @@
+From 2b1643036bb57442816283e1a3301c3b50e66b6f Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 21 Sep 2020 14:09:39 +0300
+Subject: [PATCH 298/471] ARM: at91: Kconfig: select PM_OPP
+
+Select PM_OPP. This is requested for CPUFreq driver.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/mach-at91/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-at91/Kconfig b/arch/arm/mach-at91/Kconfig
+index b09bb2279f7f..69bd33069f67 100644
+--- a/arch/arm/mach-at91/Kconfig
++++ b/arch/arm/mach-at91/Kconfig
+@@ -63,6 +63,7 @@ config SOC_SAMA7G5
+ 	select HAVE_AT91_GENERATED_CLK
+ 	select HAVE_AT91_SAM9X60_PLL
+ 	select HAVE_AT91_UTMI
++	select PM_OPP
+ 	select SOC_SAMA7
+ 	help
+ 	  Select this if you are using one of Microchip's SAMA7G5 family SoC.
+-- 
+2.34.1
+

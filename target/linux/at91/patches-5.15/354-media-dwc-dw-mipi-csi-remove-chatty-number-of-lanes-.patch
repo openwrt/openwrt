@@ -1,0 +1,32 @@
+From d504548671993baa4c54bf25a40db9d0ed9fcc46 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 20 Dec 2021 12:36:53 +0200
+Subject: [PATCH 245/471] media: dwc: dw-mipi-csi: remove chatty 'number of
+ lanes' message
+
+The message
+dw-csi e1400000.csi2host: number of lanes: 2
+is printed every time streaming starts.
+Change it to a dev_dbg message.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-mipi-csi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/dwc/dw-mipi-csi.c b/drivers/media/platform/dwc/dw-mipi-csi.c
+index aba203a01fd5..50e3b4a58fdf 100644
+--- a/drivers/media/platform/dwc/dw-mipi-csi.c
++++ b/drivers/media/platform/dwc/dw-mipi-csi.c
+@@ -278,7 +278,7 @@ void dw_mipi_csi_start(struct dw_csi *csi_dev)
+ 	struct device *dev = csi_dev->dev;
+ 
+ 	dw_mipi_csi_write(csi_dev, reg.N_LANES, (csi_dev->hw.num_lanes - 1));
+-	dev_info(dev, "number of lanes: %d\n", csi_dev->hw.num_lanes);
++	dev_dbg(dev, "number of lanes: %d\n", csi_dev->hw.num_lanes);
+ 
+ 	/* IPI Related Configuration */
+ 	if (csi_dev->hw.output == IPI_OUT || csi_dev->hw.output == BOTH_OUT) {
+-- 
+2.34.1
+

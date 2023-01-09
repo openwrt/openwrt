@@ -1,0 +1,86 @@
+From b3a7df3118a198ec0172cc778182abf4fadc935e Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 20 Dec 2021 16:12:54 +0200
+Subject: [PATCH 367/471] ARM: dts: at91: sama7g5: add sound-name-prefix for
+ all audio BEs
+
+sound-name-prefix can be used to differentiate in the audio routing to
+differentiate between two interfaces that use the same driver. This allows
+the usage of all the audio IPs with ASRC in the machine driver.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 2955dd49c9f1..af7b855a8d59 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -657,6 +657,7 @@ pdmc0: sound@e1608000 {
+ 			dma-names = "rx";
+ 			clocks = <&pmc PMC_TYPE_PERIPHERAL 68>, <&pmc PMC_TYPE_GCK 68>;
+ 			clock-names = "pclk", "gclk";
++			sound-name-prefix = "PDMC0";
+ 			status = "disabled";
+ 		};
+ 
+@@ -669,6 +670,7 @@ pdmc1: sound@e160c000 {
+ 			dma-names = "rx";
+ 			clocks = <&pmc PMC_TYPE_PERIPHERAL 69>, <&pmc PMC_TYPE_GCK 69>;
+ 			clock-names = "pclk", "gclk";
++			sound-name-prefix = "PDMC1";
+ 			status = "disabled";
+ 		};
+ 
+@@ -707,6 +709,7 @@ spdifrx: spdifrx@e1614000 {
+ 			clocks = <&pmc PMC_TYPE_PERIPHERAL 84>, <&pmc PMC_TYPE_GCK 84>;
+ 			clock-names = "pclk", "gclk";
+ 			status = "disabled";
++			sound-name-prefix = "SPDIFRX0";
+ 		};
+ 
+ 		spdiftx: spdiftx@e1618000 {
+@@ -718,6 +721,7 @@ spdiftx: spdiftx@e1618000 {
+ 			dma-names = "tx";
+ 			clocks = <&pmc PMC_TYPE_PERIPHERAL 85>, <&pmc PMC_TYPE_GCK 85>;
+ 			clock-names = "pclk", "gclk";
++			sound-name-prefix = "SPDIFTX0";
+ 		};
+ 
+ 		i2s0: i2s@e161c000 {
+@@ -729,6 +733,7 @@ i2s0: i2s@e161c000 {
+ 			dma-names = "tx", "rx";
+ 			clocks = <&pmc PMC_TYPE_PERIPHERAL 57>, <&pmc PMC_TYPE_GCK 57>;
+ 			clock-names = "pclk", "gclk";
++			sound-name-prefix = "I2SMCC0";
+ 			status = "disabled";
+ 		};
+ 
+@@ -741,6 +746,7 @@ i2s1: i2s@e1620000 {
+ 			dma-names = "tx", "rx";
+ 			clocks = <&pmc PMC_TYPE_PERIPHERAL 58>, <&pmc PMC_TYPE_GCK 58>;
+ 			clock-names = "pclk", "gclk";
++			sound-name-prefix = "I2SMCC1";
+ 			status = "disabled";
+ 		};
+ 
+@@ -788,6 +794,7 @@ ssc0: sound@e180c000 {
+ 			dma-names = "rx", "tx";
+ 			clocks = <&pmc PMC_TYPE_PERIPHERAL 86>;
+ 			clock-names = "pclk";
++			sound-name-prefix = "SSC0";
+ 			status = "disabled";
+ 		};
+ 
+@@ -894,6 +901,7 @@ ssc1: sound@e200c000 {
+ 			dma-names = "rx", "tx";
+ 			clocks = <&pmc PMC_TYPE_PERIPHERAL 87>;
+ 			clock-names = "pclk";
++			sound-name-prefix = "SSC1";
+ 			status = "disabled";
+ 		};
+ 
+-- 
+2.34.1
+

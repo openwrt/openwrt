@@ -1,0 +1,50 @@
+From d2aecdfe7c1bb5ea2bcd19f41a02d225d3d76e90 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 4 Nov 2022 11:52:50 +0200
+Subject: [PATCH 110/471] net: phylink: add helper to initialize phylink's
+ phydev
+
+Add helper to initalize phydev embedded in a phylink object.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/net/phy/phylink.c | 10 ++++++++++
+ include/linux/phylink.h   |  1 +
+ 2 files changed, 11 insertions(+)
+
+diff --git a/drivers/net/phy/phylink.c b/drivers/net/phy/phylink.c
+index ba0eaf9aa023..8af01ca80748 100644
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -2272,6 +2272,16 @@ int phylink_ethtool_set_eee(struct phylink *pl, struct ethtool_eee *eee)
+ }
+ EXPORT_SYMBOL_GPL(phylink_ethtool_set_eee);
+ 
++/**
++ * phylink_init_phydev() - initialize phydev associated to phylink
++ * @pl: a pointer to a &struct phylink returned from phylink_create()
++ */
++int phylink_init_phydev(struct phylink *pl)
++{
++	return phy_init_hw(pl->phydev);
++}
++EXPORT_SYMBOL_GPL(phylink_init_phydev);
++
+ /* This emulates MII registers for a fixed-mode phy operating as per the
+  * passed in state. "aneg" defines if we report negotiation is possible.
+  *
+diff --git a/include/linux/phylink.h b/include/linux/phylink.h
+index 65d119ee6673..3ac67363be6e 100644
+--- a/include/linux/phylink.h
++++ b/include/linux/phylink.h
+@@ -573,6 +573,7 @@ int phylink_ethtool_set_eee(struct phylink *, struct ethtool_eee *);
+ int phylink_mii_ioctl(struct phylink *, struct ifreq *, int);
+ int phylink_speed_down(struct phylink *pl, bool sync);
+ int phylink_speed_up(struct phylink *pl);
++int phylink_init_phydev(struct phylink *pl);
+ 
+ #define phylink_zero(bm) \
+ 	bitmap_zero(bm, __ETHTOOL_LINK_MODE_MASK_NBITS)
+-- 
+2.34.1
+

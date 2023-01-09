@@ -1,0 +1,29 @@
+From de8b244e9ba54a28a45acd0044061308035eee7f Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Wed, 23 Feb 2022 15:13:12 +0200
+Subject: [PATCH 429/471] ARM: configs: at91: sama7_defconfig: add MCHP PDMC
+ and DMIC drivers
+
+Enable drivers needed for Microchip's PDMC and PDM microphones.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 1041884df4fb..ecfd71900a39 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -154,6 +154,8 @@ CONFIG_SND_SOC_MIKROE_PROTO=m
+ CONFIG_SND_MCHP_SOC_I2S_MCC=y
+ CONFIG_SND_MCHP_SOC_SPDIFTX=y
+ CONFIG_SND_MCHP_SOC_SPDIFRX=y
++CONFIG_SND_MCHP_SOC_PDMC=y
++CONFIG_SND_SOC_DMIC=y
+ CONFIG_SND_SOC_PCM5102A=y
+ CONFIG_SND_SOC_SPDIF=y
+ CONFIG_SND_SIMPLE_CARD=y
+-- 
+2.34.1
+

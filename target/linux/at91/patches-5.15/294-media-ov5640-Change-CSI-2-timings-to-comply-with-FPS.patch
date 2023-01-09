@@ -1,0 +1,123 @@
+From 517edf040e837faa37a2a1cba46a95866a3f0191 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo@jmondi.org>
+Date: Thu, 24 Feb 2022 10:43:03 +0100
+Subject: [PATCH 185/471] media: ov5640: Change CSI-2 timings to comply with
+ FPS
+
+Now that the frame duration can be controlled by tuning the VBLANK
+duration in CSI-2 mode, fix all modes definitions to comply with the
+reported FPS.
+
+All modes run at 30 FPS except for full-resolution mode 2592x1944
+which runs at 15FPS.
+
+Tested on a 2 data lanes setup in UYVY and RGB565 modes in CSI-2 mode.
+
+Signed-off-by: Jacopo Mondi <jacopo@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+(cherry picked from commit 4c71781bceff6f18f494dadc775438c9dce7c3d7)
+---
+ drivers/media/i2c/ov5640.c | 30 +++++++++++++++---------------
+ 1 file changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/media/i2c/ov5640.c b/drivers/media/i2c/ov5640.c
+index 665a8bcebf09..6f10514e3c11 100644
+--- a/drivers/media/i2c/ov5640.c
++++ b/drivers/media/i2c/ov5640.c
+@@ -596,8 +596,8 @@ static const struct ov5640_mode_info ov5640_mode_data[OV5640_NUM_MODES] = {
+ 				.width	= 160,
+ 				.height	= 120,
+ 			},
+-			.htot		= 1896,
+-			.vblank_def	= 864,
++			.htot		= 1600,
++			.vblank_def	= 878,
+ 		},
+ 		.reg_data	= ov5640_setting_low_res,
+ 		.reg_data_size	= ARRAY_SIZE(ov5640_setting_low_res),
+@@ -640,8 +640,8 @@ static const struct ov5640_mode_info ov5640_mode_data[OV5640_NUM_MODES] = {
+ 				.width	= 176,
+ 				.height	= 144,
+ 			},
+-			.htot		= 1896,
+-			.vblank_def	= 840,
++			.htot		= 1600,
++			.vblank_def	= 854,
+ 		},
+ 		.reg_data	= ov5640_setting_low_res,
+ 		.reg_data_size	= ARRAY_SIZE(ov5640_setting_low_res),
+@@ -684,8 +684,8 @@ static const struct ov5640_mode_info ov5640_mode_data[OV5640_NUM_MODES] = {
+ 				.width	= 320,
+ 				.height	= 240,
+ 			},
+-			.htot		= 1896,
+-			.vblank_def	= 744,
++			.htot		= 1600,
++			.vblank_def	= 760,
+ 		},
+ 		.reg_data	= ov5640_setting_low_res,
+ 		.reg_data_size	= ARRAY_SIZE(ov5640_setting_low_res),
+@@ -728,8 +728,8 @@ static const struct ov5640_mode_info ov5640_mode_data[OV5640_NUM_MODES] = {
+ 				.width	= 640,
+ 				.height	= 480,
+ 			},
+-			.htot		= 1896,
+-			.vblank_def	= 600,
++			.htot		= 1600,
++			.vblank_def	= 520,
+ 		},
+ 		.reg_data	= ov5640_setting_low_res,
+ 		.reg_data_size	= ARRAY_SIZE(ov5640_setting_low_res),
+@@ -772,7 +772,7 @@ static const struct ov5640_mode_info ov5640_mode_data[OV5640_NUM_MODES] = {
+ 				.height	= 480,
+ 			},
+ 			.htot		= 1896,
+-			.vblank_def	= 504,
++			.vblank_def	= 1206,
+ 		},
+ 		.reg_data	= ov5640_setting_low_res,
+ 		.reg_data_size	= ARRAY_SIZE(ov5640_setting_low_res),
+@@ -815,7 +815,7 @@ static const struct ov5640_mode_info ov5640_mode_data[OV5640_NUM_MODES] = {
+ 				.height	= 576,
+ 			},
+ 			.htot		= 1896,
+-			.vblank_def	= 408,
++			.vblank_def	= 1110,
+ 		},
+ 		.reg_data	= ov5640_setting_low_res,
+ 		.reg_data_size	= ARRAY_SIZE(ov5640_setting_low_res),
+@@ -857,7 +857,7 @@ static const struct ov5640_mode_info ov5640_mode_data[OV5640_NUM_MODES] = {
+ 				.height	= 768,
+ 			},
+ 			.htot		= 1896,
+-			.vblank_def	= 312,
++			.vblank_def	= 918,
+ 		},
+ 		.reg_data	= ov5640_setting_low_res,
+ 		.reg_data_size	= ARRAY_SIZE(ov5640_setting_low_res),
+@@ -898,8 +898,8 @@ static const struct ov5640_mode_info ov5640_mode_data[OV5640_NUM_MODES] = {
+ 				.width	= 1280,
+ 				.height	= 720,
+ 			},
+-			.htot		= 1892,
+-			.vblank_def	= 20,
++			.htot		= 1600,
++			.vblank_def	= 560,
+ 		},
+ 		.reg_data	= ov5640_setting_720P_1280_720,
+ 		.reg_data_size	= ARRAY_SIZE(ov5640_setting_720P_1280_720),
+@@ -942,8 +942,8 @@ static const struct ov5640_mode_info ov5640_mode_data[OV5640_NUM_MODES] = {
+ 				.width	= 1920,
+ 				.height	= 1080,
+ 			},
+-			.htot		= 2500,
+-			.vblank_def	= 40,
++			.htot		= 2234,
++			.vblank_def	= 24,
+ 		},
+ 		.reg_data	= ov5640_setting_1080P_1920_1080,
+ 		.reg_data_size	= ARRAY_SIZE(ov5640_setting_1080P_1920_1080),
+-- 
+2.34.1
+

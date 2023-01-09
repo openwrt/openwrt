@@ -1,0 +1,43 @@
+From 1a4a5ff8dcfc59e362f66bf1b48aa91d0befdeda Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Tue, 25 Oct 2022 12:02:59 +0300
+Subject: [PATCH 152/471] dmaengine: at_hdmac: Use pm_ptr()
+
+Use pm_ptr() macro to fill at_dma_driver.driver.pm. In case CONFIG_PM is
+not enabled, the macro will return NULL. When NULL, at_dma_dev_pm_ops will
+end up being unused, so prepend it with the __maybe_unused attribute.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20221025090306.297886-1-tudor.ambarus@microchip.com
+Link: https://lore.kernel.org/r/20221025090306.297886-26-tudor.ambarus@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/at_hdmac.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/dma/at_hdmac.c b/drivers/dma/at_hdmac.c
+index 444aa7d75ff5..4e3c519e6079 100644
+--- a/drivers/dma/at_hdmac.c
++++ b/drivers/dma/at_hdmac.c
+@@ -2084,7 +2084,7 @@ static int at_dma_resume_noirq(struct device *dev)
+ 	return 0;
+ }
+ 
+-static const struct dev_pm_ops at_dma_dev_pm_ops = {
++static const struct dev_pm_ops __maybe_unused at_dma_dev_pm_ops = {
+ 	.prepare = at_dma_prepare,
+ 	.suspend_noirq = at_dma_suspend_noirq,
+ 	.resume_noirq = at_dma_resume_noirq,
+@@ -2096,7 +2096,7 @@ static struct platform_driver at_dma_driver = {
+ 	.id_table	= atdma_devtypes,
+ 	.driver = {
+ 		.name	= "at_hdmac",
+-		.pm	= &at_dma_dev_pm_ops,
++		.pm	= pm_ptr(&at_dma_dev_pm_ops),
+ 		.of_match_table	= of_match_ptr(atmel_dma_dt_ids),
+ 	},
+ };
+-- 
+2.34.1
+

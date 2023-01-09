@@ -1,0 +1,29 @@
+From ba6655234428531f2b3c2e6cd7260cdc34bcf668 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Tue, 11 Jun 2019 16:35:51 +0300
+Subject: [PATCH 249/471] drm/atomic: fix plane iterator
+
+The old framebuffer_changed function used old API. Changed to new one.
+
+Fixes: 6597d05d9e8d ("Revert "drm/atomic: Remove drm_atomic_helper_framebuffer_changed."")
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/gpu/drm/drm_atomic_helper.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/drm_atomic_helper.c b/drivers/gpu/drm/drm_atomic_helper.c
+index 4a823ba05182..5fbb8d6f9a2b 100644
+--- a/drivers/gpu/drm/drm_atomic_helper.c
++++ b/drivers/gpu/drm/drm_atomic_helper.c
+@@ -1491,7 +1491,7 @@ bool drm_atomic_helper_framebuffer_changed(struct drm_device *dev,
+ 	struct drm_plane_state *old_plane_state;
+ 	int i;
+ 
+-	for_each_plane_in_state(old_state, plane, old_plane_state, i) {
++	for_each_old_plane_in_state(old_state, plane, old_plane_state, i) {
+ 		if (plane->state->crtc != crtc &&
+ 		    old_plane_state->crtc != crtc)
+ 			continue;
+-- 
+2.34.1
+

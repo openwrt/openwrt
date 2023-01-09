@@ -1,0 +1,28 @@
+From 357b8ed1427553859606f3cab2a9283f9f7b5236 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Fri, 25 Mar 2022 15:02:31 +0200
+Subject: [PATCH 369/471] ARM: dts: at91: sama7g5ek: remove HS200 for SDMMC0
+
+According to sama7g5 errata sheet, HS200 can end in tuning error.
+Remove the capability to address this mode.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ arch/arm/boot/dts/at91-sama7g5ek.dts | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
+index 13a212961e6a..6399facfda06 100644
+--- a/arch/arm/boot/dts/at91-sama7g5ek.dts
++++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
+@@ -832,7 +832,6 @@ &sdmmc0 {
+ 	mmc-ddr-1_8v;
+ 	cap-mmc-highspeed;
+ 	cap-mmc-hw-reset;
+-	mmc-hs200-1_8v;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_sdmmc0_default>;
+ 	status = "okay";
+-- 
+2.34.1
+

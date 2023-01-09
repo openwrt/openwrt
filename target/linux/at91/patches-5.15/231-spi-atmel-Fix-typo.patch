@@ -1,0 +1,32 @@
+From b5acf17cedd6ccf3b5595085d7ef32632aa1e525 Mon Sep 17 00:00:00 2001
+From: Qinghua Jin <qhjin.dev@gmail.com>
+Date: Fri, 7 Jan 2022 10:46:31 +0800
+Subject: [PATCH 122/471] spi: atmel: Fix typo
+
+Change 'actualy' to 'actually'
+
+Signed-off-by: Qinghua Jin <qhjin.dev@gmail.com>
+Link: https://lore.kernel.org/r/20220107024631.396862-1-qhjin.dev@gmail.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit c8c9cb6d9fbeace1c5509f4bb2f3c32095cda0d0)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/spi/spi-atmel.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi-atmel.c b/drivers/spi/spi-atmel.c
+index f6626be4d4f7..9e300a932699 100644
+--- a/drivers/spi/spi-atmel.c
++++ b/drivers/spi/spi-atmel.c
+@@ -463,7 +463,7 @@ static int atmel_spi_dma_slave_config(struct atmel_spi *as, u8 bits_per_word)
+ 	 * However, the first data has to be written into the lowest 16 bits and
+ 	 * the second data into the highest 16 bits of the Transmit
+ 	 * Data Register. For 8bit data (the most frequent case), it would
+-	 * require to rework tx_buf so each data would actualy fit 16 bits.
++	 * require to rework tx_buf so each data would actually fit 16 bits.
+ 	 * So we'd rather write only one data at the time. Hence the transmit
+ 	 * path works the same whether FIFOs are available (and enabled) or not.
+ 	 */
+-- 
+2.34.1
+

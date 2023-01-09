@@ -1,0 +1,323 @@
+From 80a382f3b1a0c134940dc11e9a78f97878ceba39 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Tue, 11 Jan 2022 13:59:11 +0200
+Subject: [PATCH 277/471] ARM: at91: PM: implement selection of LPM
+
+The LPM shutdown controller output could signal the transition to PM
+state for different devices connected on board. On different boards
+LPM could be connected to different devices (e.g. on SAMA7G5-EK REV4
+the LPM is connected to on main crystal oscillator, KSZ8081 PHY and
+to MCP16502 PMIC). Toggling LPM on BSR PM mode is done unconditionally
+and it helps PMIC to transition to a power saving mode. Toggling LPM
+on ULP0 and ULP1 should be done conditionally based on user defined
+wakeup sources, available wakeup source for PM mode and connections to
+SHDWC's LPM pin. On ULP0 any device could act as wakeup sources. On ULP1
+only some of the on SoC controllers could act as wakeup sources. For this
+the architecture specific PM code parses board specific LPM devices,
+check them against possible wakeup source (in case of ULP1) and tells
+assembly code to act properly on SHDWC's LPM pin.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/mach-at91/pm.c              | 98 +++++++++++++++++++++++++++-
+ arch/arm/mach-at91/pm.h              |  1 +
+ arch/arm/mach-at91/pm_data-offsets.c |  1 +
+ arch/arm/mach-at91/pm_suspend.S      | 54 +++++++++++++--
+ 4 files changed, 145 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
+index c8cc993ca8ca..7172526dc0b0 100644
+--- a/arch/arm/mach-at91/pm.c
++++ b/arch/arm/mach-at91/pm.c
+@@ -65,6 +65,7 @@ struct at91_pm_sfrbu_regs {
+  * @config_shdwc_ws: wakeup sources configuration function for SHDWC
+  * @config_pmc_ws: wakeup srouces configuration function for PMC
+  * @ws_ids: wakup sources of_device_id array
++ * @shdwc_np: pointer to shdwc node
+  * @data: PM data to be used on last phase of suspend
+  * @sfrbu_regs: SFRBU registers mapping
+  * @bu: backup unit mapped data (for backup mode)
+@@ -74,6 +75,7 @@ struct at91_soc_pm {
+ 	int (*config_shdwc_ws)(void __iomem *shdwc, u32 *mode, u32 *polarity);
+ 	int (*config_pmc_ws)(void __iomem *pmc, u32 mode, u32 polarity);
+ 	const struct of_device_id *ws_ids;
++	struct device_node *shdwc_np;
+ 	struct at91_pm_bu *bu;
+ 	struct at91_pm_data data;
+ 	struct at91_pm_sfrbu_regs sfrbu_regs;
+@@ -178,6 +180,84 @@ static const struct of_device_id sama7g5_ws_ids[] = {
+ 	{ /* sentinel */ }
+ };
+ 
++static int at91_pm_device_in_list(const struct platform_device *pdev,
++				  const struct of_device_id *ids)
++{
++	struct platform_device *local_pdev;
++	const struct of_device_id *match;
++	struct device_node *np;
++	int in_list = 0;
++
++	for_each_matching_node_and_match(np, ids, &match) {
++		local_pdev = of_find_device_by_node(np);
++		if (!local_pdev)
++			continue;
++
++		if (pdev == local_pdev)
++			in_list = 1;
++
++		put_device(&local_pdev->dev);
++		if (in_list)
++			return in_list;
++	}
++
++	return in_list;
++}
++
++static int at91_pm_prepare_lpm(unsigned int pm_mode)
++{
++	struct platform_device *pdev;
++	int ndevices, i, ret;
++	struct of_phandle_args lpmspec;
++
++	if ((pm_mode != AT91_PM_ULP0 && pm_mode != AT91_PM_ULP1) ||
++	    !soc_pm.shdwc_np)
++		return 0;
++
++	ndevices = of_count_phandle_with_args(soc_pm.shdwc_np,
++					      "microchip,lpm-connection", 0);
++	if (ndevices < 0)
++		return 0;
++
++	soc_pm.data.lpm = 1;
++	for (i = 0; i < ndevices; i++) {
++		ret = of_parse_phandle_with_args(soc_pm.shdwc_np,
++						 "microchip,lpm-connection",
++						 NULL, i, &lpmspec);
++		if (ret < 0) {
++			if (ret == -ENOENT) {
++				continue;
++			} else {
++				soc_pm.data.lpm = 0;
++				return ret;
++			}
++		}
++
++		pdev = of_find_device_by_node(lpmspec.np);
++		if (!pdev)
++			continue;
++
++		if (device_may_wakeup(&pdev->dev)) {
++			if (pm_mode == AT91_PM_ULP1) {
++				/*
++				 * ULP1 wake-up sources are limited. Ignore it if not
++				 * in soc_pm.ws_ids.
++				 */
++				if (at91_pm_device_in_list(pdev, soc_pm.ws_ids))
++					soc_pm.data.lpm = 0;
++			} else {
++				soc_pm.data.lpm = 0;
++			}
++		}
++
++		put_device(&pdev->dev);
++		if (!soc_pm.data.lpm)
++			break;
++	}
++
++	return 0;
++}
++
+ static int at91_pm_config_ws(unsigned int pm_mode, bool set)
+ {
+ 	const struct wakeup_source_info *wsi;
+@@ -283,10 +363,17 @@ static int at91_pm_begin(suspend_state_t state)
+ 		soc_pm.data.mode = -1;
+ 	}
+ 
+-	ret = at91_pm_config_ws(soc_pm.data.mode, true);
++	ret = at91_pm_prepare_lpm(soc_pm.data.mode);
+ 	if (ret)
+ 		return ret;
+ 
++	ret = at91_pm_config_ws(soc_pm.data.mode, true);
++	if (ret) {
++		/* Revert LPM if any. */
++		soc_pm.data.lpm = 0;
++		return ret;
++	}
++
+ 	if (soc_pm.data.mode == AT91_PM_BACKUP)
+ 		soc_pm.bu->suspended = 1;
+ 	else if (soc_pm.bu)
+@@ -920,7 +1007,11 @@ static void __init at91_pm_modes_init(const u32 *maps, int len)
+ 				soc_pm.data.suspend_mode = mode;
+ 		} else {
+ 			soc_pm.data.shdwc = of_iomap(np, 0);
+-			of_node_put(np);
++			/*
++			 * np is used further on suspend/resume path so we skip the
++			 * of_node_put(np) here.
++			 */
++			soc_pm.shdwc_np = np;
+ 		}
+ 	}
+ 
+@@ -1238,7 +1329,8 @@ void __init sama7_pm_init(void)
+ 		AT91_PM_STANDBY, AT91_PM_ULP0, AT91_PM_ULP1, AT91_PM_BACKUP,
+ 	};
+ 	static const u32 iomaps[] __initconst = {
+-		[AT91_PM_ULP0]		= AT91_PM_IOMAP(SFRBU),
++		[AT91_PM_ULP0]		= AT91_PM_IOMAP(SFRBU) |
++					  AT91_PM_IOMAP(SHDWC),
+ 		[AT91_PM_ULP1]		= AT91_PM_IOMAP(SFRBU) |
+ 					  AT91_PM_IOMAP(SHDWC),
+ 		[AT91_PM_BACKUP]	= AT91_PM_IOMAP(SFRBU) |
+diff --git a/arch/arm/mach-at91/pm.h b/arch/arm/mach-at91/pm.h
+index 53bdc9000e44..811e85eceaf1 100644
+--- a/arch/arm/mach-at91/pm.h
++++ b/arch/arm/mach-at91/pm.h
+@@ -39,6 +39,7 @@ struct at91_pm_data {
+ 	unsigned int suspend_mode;
+ 	unsigned int pmc_mckr_offset;
+ 	unsigned int pmc_version;
++	unsigned int lpm;
+ };
+ #endif
+ 
+diff --git a/arch/arm/mach-at91/pm_data-offsets.c b/arch/arm/mach-at91/pm_data-offsets.c
+index 40bd4e8fe40a..747c3f54e401 100644
+--- a/arch/arm/mach-at91/pm_data-offsets.c
++++ b/arch/arm/mach-at91/pm_data-offsets.c
+@@ -18,6 +18,7 @@ int main(void)
+ 						 pmc_mckr_offset));
+ 	DEFINE(PM_DATA_PMC_VERSION,	offsetof(struct at91_pm_data,
+ 						 pmc_version));
++	DEFINE(PM_DATA_LPM,		offsetof(struct at91_pm_data, lpm));
+ 
+ 	return 0;
+ }
+diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
+index 2f0a370a1309..646c1640f29d 100644
+--- a/arch/arm/mach-at91/pm_suspend.S
++++ b/arch/arm/mach-at91/pm_suspend.S
+@@ -106,9 +106,30 @@ lp_done_\ena:
+ #endif
+ 	.endm
+ 
+-	.macro at91_backup_set_lpm reg
++/*
++ * Set LPM
++ * @ena: 0 - disable LPM
++ *	 1 - enable LPM
++ *
++ * Side effects: overwrites r7, r8, r9
++ */
++	.macro at91_set_lpm ena
+ #ifdef CONFIG_SOC_SAMA7
+-	orr	\reg, \reg, #0x200000
++	ldr	r7, .lpm
++	cmp	r7, #1
++	bne	21f
++	ldr	r7, .shdwc
++	cmp	r7, #0
++	beq	21f
++	mov	r8, #0xA5000000
++	add	r8, #0x200000
++	mov	r9, #\ena
++	cmp	r9, #1
++	beq	20f
++	add	r8, #0x200000
++20:
++	str	r8, [r7]
++21:
+ #endif
+ 	.endm
+ 
+@@ -498,7 +519,7 @@ sr_dis_exit:
+ 	ldr	tmp1, [pmc, #AT91_PMC_SR]
+ 	str	tmp1, .saved_osc_status
+ 	tst	tmp1, #AT91_PMC_MOSCRCS
+-	bne	1f
++	bne	7f
+ 
+ 	/* Turn off RC oscillator */
+ 	ldr	tmp1, [pmc, #AT91_CKGR_MOR]
+@@ -512,6 +533,9 @@ sr_dis_exit:
+ 	tst	tmp1, #AT91_PMC_MOSCRCS
+ 	bne	2b
+ 
++	/* Enable LPM. */
++7:	at91_set_lpm 1
++
+ 	/* Wait for interrupt */
+ 1:	at91_cpu_idle
+ 
+@@ -529,8 +553,10 @@ sr_dis_exit:
+ 	wait_mckrdy tmp3
+ 	b	6f
+ 
+-5:	/* Restore RC oscillator state */
+-	ldr	tmp1, .saved_osc_status
++5:	at91_set_lpm 0
++
++	/* Restore RC oscillator state */
++8:	ldr	tmp1, .saved_osc_status
+ 	tst	tmp1, #AT91_PMC_MOSCRCS
+ 	beq	4f
+ 
+@@ -607,6 +633,9 @@ sr_dis_exit:
+ 
+ 	wait_mckrdy tmp3
+ 
++	/* Enable LPM */
++	at91_set_lpm 1
++
+ 	/* Enter the ULP1 mode by set WAITMODE bit in CKGR_MOR */
+ 	ldr	tmp1, [pmc, #AT91_CKGR_MOR]
+ 	orr	tmp1, tmp1, #AT91_PMC_WAITMODE
+@@ -620,6 +649,9 @@ sr_dis_exit:
+ 
+ 	wait_mckrdy tmp3
+ 
++	/* Disable LPM. */
++	at91_set_lpm 0
++
+ 	/* Enable the crystal oscillator */
+ 	ldr	tmp1, [pmc, #AT91_CKGR_MOR]
+ 	orr	tmp1, tmp1, #AT91_PMC_MOSCEN
+@@ -1010,7 +1042,9 @@ ulp_exit:
+ 	ldr	r0, .shdwc
+ 	mov	tmp1, #0xA5000000
+ 	add	tmp1, tmp1, #0x1
+-	at91_backup_set_lpm tmp1
++#ifdef CONFIG_SOC_SAMA7
++	orr	tmp1, tmp1, #0x200000
++#endif
+ 	str	tmp1, [r0, #0]
+ .endm
+ 
+@@ -1041,6 +1075,10 @@ ENTRY(at91_pm_suspend_in_sram)
+ 	str	tmp1, .memtype
+ 	ldr	tmp1, [r0, #PM_DATA_MODE]
+ 	str	tmp1, .pm_mode
++#ifdef CONFIG_SOC_SAMA7
++	ldr	tmp1, [r0, #PM_DATA_LPM]
++	str	tmp1, .lpm
++#endif
+ 
+ 	/*
+ 	 * ldrne below are here to preload their address in the TLB as access
+@@ -1128,6 +1166,10 @@ ENDPROC(at91_pm_suspend_in_sram)
+ 	.word 0
+ .pmc_version:
+ 	.word 0
++#ifdef CONFIG_SOC_SAMA7
++.lpm:
++	.word 0
++#endif
+ .saved_mckr:
+ 	.word 0
+ .saved_pllar:
+-- 
+2.34.1
+

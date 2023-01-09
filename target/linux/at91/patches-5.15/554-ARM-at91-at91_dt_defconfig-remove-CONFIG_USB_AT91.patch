@@ -1,0 +1,27 @@
+From 9bd563f462af1232bb4b29c10026225e4362f1e9 Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Mon, 7 Jun 2021 17:14:24 +0300
+Subject: [PATCH 445/471] ARM: at91: at91_dt_defconfig: remove CONFIG_USB_AT91
+
+Remove CONFIG_USB_AT91 at is not used on 9x5 or 9x60 boards.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index b53f916e8cff..6fbdd980cc45 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -168,7 +168,6 @@ CONFIG_USB_SERIAL_GENERIC=y
+ CONFIG_USB_SERIAL_FTDI_SIO=y
+ CONFIG_USB_SERIAL_PL2303=y
+ CONFIG_USB_GADGET=y
+-CONFIG_USB_AT91=m
+ CONFIG_USB_ATMEL_USBA=m
+ CONFIG_USB_CONFIGFS=m
+ CONFIG_USB_CONFIGFS_ACM=y
+-- 
+2.34.1
+

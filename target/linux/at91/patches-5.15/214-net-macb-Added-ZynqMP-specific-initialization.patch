@@ -1,0 +1,186 @@
+From bb7d79af4f8c8db15b1f564a1b3cf2c24cce7bd1 Mon Sep 17 00:00:00 2001
+From: Robert Hancock <robert.hancock@calian.com>
+Date: Thu, 27 Jan 2022 10:37:35 -0600
+Subject: [PATCH 105/471] net: macb: Added ZynqMP-specific initialization
+
+The GEM controllers on ZynqMP were missing some initialization steps which
+are required in some cases when using SGMII mode, which uses the PS-GTR
+transceivers managed by the phy-zynqmp driver.
+
+The GEM core appears to need a hardware-level reset in order to work
+properly in SGMII mode in cases where the GT reference clock was not
+present at initial power-on. This can be done using a reset mapped to
+the zynqmp-reset driver in the device tree.
+
+Also, when in SGMII mode, the GEM driver needs to ensure the PHY is
+initialized and powered on.
+
+Signed-off-by: Robert Hancock <robert.hancock@calian.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+[claudiu.beznea: adapt to v5.15.82]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/net/ethernet/cadence/macb.h      |  4 ++
+ drivers/net/ethernet/cadence/macb_main.c | 63 ++++++++++++++++++++++--
+ 2 files changed, 64 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/cadence/macb.h b/drivers/net/ethernet/cadence/macb.h
+index 5620b97b3482..10d5fb1d27a7 100644
+--- a/drivers/net/ethernet/cadence/macb.h
++++ b/drivers/net/ethernet/cadence/macb.h
+@@ -12,6 +12,7 @@
+ #include <linux/ptp_clock_kernel.h>
+ #include <linux/net_tstamp.h>
+ #include <linux/interrupt.h>
++#include <linux/phy/phy.h>
+ 
+ #if defined(CONFIG_ARCH_DMA_ADDR_T_64BIT) || defined(CONFIG_MACB_USE_HWSTAMP)
+ #define MACB_EXT_DESC
+@@ -1290,6 +1291,9 @@ struct macb {
+ 	u32			wol;
+ 
+ 	struct macb_ptp_info	*ptp_info;	/* macb-ptp interface */
++
++	struct phy		*sgmii_phy;	/* for ZynqMP SGMII mode */
++
+ #ifdef MACB_EXT_DESC
+ 	uint8_t hw_dma_cap;
+ #endif
+diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
+index 9a88bef6863e..81f82ce67ce5 100644
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -34,8 +34,10 @@
+ #include <linux/udp.h>
+ #include <linux/tcp.h>
+ #include <linux/iopoll.h>
++#include <linux/phy/phy.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/ptp_classify.h>
++#include <linux/reset.h>
+ #include "macb.h"
+ 
+ /* This structure is only used for MACB on SiFive FU540 devices */
+@@ -2849,10 +2851,14 @@ static int macb_open(struct net_device *dev)
+ 
+ 	macb_init_hw(bp);
+ 
+-	err = macb_phylink_connect(bp);
++	err = phy_power_on(bp->sgmii_phy);
+ 	if (err)
+ 		goto reset_hw;
+ 
++	err = macb_phylink_connect(bp);
++	if (err)
++		goto phy_off;
++
+ 	netif_tx_start_all_queues(dev);
+ 
+ 	if (bp->ptp_info)
+@@ -2860,6 +2866,9 @@ static int macb_open(struct net_device *dev)
+ 
+ 	return 0;
+ 
++phy_off:
++	phy_power_off(bp->sgmii_phy);
++
+ reset_hw:
+ 	macb_reset_hw(bp);
+ 	for (q = 0, queue = bp->queues; q < bp->num_queues; ++q, ++queue)
+@@ -2885,6 +2894,8 @@ static int macb_close(struct net_device *dev)
+ 	phylink_stop(bp->phylink);
+ 	phylink_disconnect_phy(bp->phylink);
+ 
++	phy_power_off(bp->sgmii_phy);
++
+ 	spin_lock_irqsave(&bp->lock, flags);
+ 	macb_reset_hw(bp);
+ 	netif_carrier_off(dev);
+@@ -4650,13 +4661,55 @@ static const struct macb_config np4_config = {
+ 	.usrio = &macb_default_usrio,
+ };
+ 
++static int zynqmp_init(struct platform_device *pdev)
++{
++	struct net_device *dev = platform_get_drvdata(pdev);
++	struct macb *bp = netdev_priv(dev);
++	int ret;
++
++	if (bp->phy_interface == PHY_INTERFACE_MODE_SGMII) {
++		/* Ensure PS-GTR PHY device used in SGMII mode is ready */
++		bp->sgmii_phy = devm_phy_get(&pdev->dev, "sgmii-phy");
++
++		if (IS_ERR(bp->sgmii_phy)) {
++			ret = PTR_ERR(bp->sgmii_phy);
++			dev_err_probe(&pdev->dev, ret,
++				      "failed to get PS-GTR PHY\n");
++			return ret;
++		}
++
++		ret = phy_init(bp->sgmii_phy);
++		if (ret) {
++			dev_err(&pdev->dev, "failed to init PS-GTR PHY: %d\n",
++				ret);
++			return ret;
++		}
++	}
++
++	/* Fully reset GEM controller at hardware level using zynqmp-reset driver,
++	 * if mapped in device tree.
++	 */
++	ret = device_reset_optional(&pdev->dev);
++	if (ret) {
++		dev_err_probe(&pdev->dev, ret, "failed to reset controller");
++		phy_exit(bp->sgmii_phy);
++		return ret;
++	}
++
++	ret = macb_init(pdev);
++	if (ret)
++		phy_exit(bp->sgmii_phy);
++
++	return ret;
++}
++
+ static const struct macb_config zynqmp_config = {
+ 	.caps = MACB_CAPS_GIGABIT_MODE_AVAILABLE |
+ 			MACB_CAPS_JUMBO |
+ 			MACB_CAPS_GEM_HAS_PTP | MACB_CAPS_BD_RD_PREFETCH,
+ 	.dma_burst_length = 16,
+ 	.clk_init = macb_clk_init,
+-	.init = macb_init,
++	.init = zynqmp_init,
+ 	.jumbo_max_len = 10240,
+ 	.usrio = &macb_default_usrio,
+ };
+@@ -4873,7 +4926,7 @@ static int macb_probe(struct platform_device *pdev)
+ 
+ 	err = macb_mii_init(bp);
+ 	if (err)
+-		goto err_out_free_netdev;
++		goto err_out_phy_exit;
+ 
+ 	netif_carrier_off(dev);
+ 
+@@ -4898,6 +4951,9 @@ static int macb_probe(struct platform_device *pdev)
+ 	mdiobus_unregister(bp->mii_bus);
+ 	mdiobus_free(bp->mii_bus);
+ 
++err_out_phy_exit:
++	phy_exit(bp->sgmii_phy);
++
+ err_out_free_netdev:
+ 	free_netdev(dev);
+ 
+@@ -4919,6 +4975,7 @@ static int macb_remove(struct platform_device *pdev)
+ 
+ 	if (dev) {
+ 		bp = netdev_priv(dev);
++		phy_exit(bp->sgmii_phy);
+ 		mdiobus_unregister(bp->mii_bus);
+ 		mdiobus_free(bp->mii_bus);
+ 
+-- 
+2.34.1
+

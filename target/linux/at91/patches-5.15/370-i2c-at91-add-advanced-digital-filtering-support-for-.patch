@@ -1,0 +1,30 @@
+From 73a6a44185eafd3038eda4820de31016f7d5c842 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 12 Jul 2021 17:54:11 +0300
+Subject: [PATCH 261/471] i2c: at91: add advanced digital filtering support for
+ SAMA5D4
+
+I2C/TWI IP variant found in SAMA5D4 supports advanced digital filtering,
+even though, at the time of this patch, it is not present in Datasheet.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ drivers/i2c/busses/i2c-at91-core.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/i2c/busses/i2c-at91-core.c b/drivers/i2c/busses/i2c-at91-core.c
+index 2df9df585131..7549a75a98ef 100644
+--- a/drivers/i2c/busses/i2c-at91-core.c
++++ b/drivers/i2c/busses/i2c-at91-core.c
+@@ -120,6 +120,7 @@ static struct at91_twi_pdata sama5d4_config = {
+ 	.clk_offset = 4,
+ 	.has_hold_field = true,
+ 	.has_dig_filtr = true,
++	.has_adv_dig_filtr = true,
+ };
+ 
+ static struct at91_twi_pdata sama5d2_config = {
+-- 
+2.34.1
+

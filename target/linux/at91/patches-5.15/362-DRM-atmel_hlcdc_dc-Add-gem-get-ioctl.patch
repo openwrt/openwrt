@@ -1,0 +1,116 @@
+From 53f90edabc0c79b84c1f54e7116b1daec644b76d Mon Sep 17 00:00:00 2001
+From: Sandeep Sheriker Mallikarjun <sandeepsheriker.mallikarjun@microchip.com>
+Date: Thu, 5 Apr 2018 14:57:14 -0700
+Subject: [PATCH 253/471] DRM: atmel_hlcdc_dc: Add gem get ioctl
+
+Add ioctl to export GEM physical address to user space for
+video decoder.
+
+Signed-off-by: Sandeep Sheriker Mallikarjun <sandeepsheriker.mallikarjun@microchip.com>
+---
+ drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c | 41 +++++++++++++++++++-
+ include/uapi/drm/atmel_drm.h                 | 29 ++++++++++++++
+ 2 files changed, 69 insertions(+), 1 deletion(-)
+ create mode 100644 include/uapi/drm/atmel_drm.h
+
+diff --git a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
+index 1656d27b78b6..60b164203138 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
++++ b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
+@@ -26,6 +26,7 @@
+ #include <drm/drm_vblank.h>
+ 
+ #include "atmel_hlcdc_dc.h"
++#include <drm/atmel_drm.h>
+ 
+ #define ATMEL_HLCDC_LAYER_IRQS_OFFSET		8
+ 
+@@ -729,11 +730,49 @@ static void atmel_hlcdc_dc_unload(struct drm_device *dev)
+ 	clk_disable_unprepare(dc->hlcdc->periph_clk);
+ }
+ 
++
++
+ DEFINE_DRM_GEM_CMA_FOPS(fops);
+ 
+-static const struct drm_driver atmel_hlcdc_dc_driver = {
++/*
++ioctl to export the physical address of GEM to user space for
++video decoder
++*/
++int atmel_drm_gem_get_ioctl(struct drm_device *drm, void *data,
++				      struct drm_file *file_priv)
++{
++	struct drm_gem_object *gem_obj;
++	struct drm_gem_cma_object *cma_obj;
++	struct drm_mode_map_dumb *args = data;
++
++	mutex_lock(&drm->struct_mutex);
++
++	gem_obj = drm_gem_object_lookup(file_priv, args->handle);
++	if (!gem_obj) {
++		dev_err(drm->dev, "failed to lookup gem object\n");
++		mutex_unlock(&drm->struct_mutex);
++		return -EINVAL;
++	}
++
++	cma_obj = to_drm_gem_cma_obj(gem_obj);
++	args->offset = (__u64)cma_obj->paddr;
++
++	drm_gem_object_put(gem_obj);
++
++	mutex_unlock(&drm->struct_mutex);
++
++	return 0;
++}
++static const struct drm_ioctl_desc atmel_ioctls[] = {
++	DRM_IOCTL_DEF_DRV(ATMEL_GEM_GET, atmel_drm_gem_get_ioctl, DRM_UNLOCKED),
++};
++
++
++static struct drm_driver atmel_hlcdc_dc_driver = {
+ 	.driver_features = DRIVER_GEM | DRIVER_MODESET | DRIVER_ATOMIC,
+ 	DRM_GEM_CMA_DRIVER_OPS,
++	.ioctls	= atmel_ioctls,
++	.num_ioctls= ARRAY_SIZE(atmel_ioctls),
+ 	.fops = &fops,
+ 	.name = "atmel-hlcdc",
+ 	.desc = "Atmel HLCD Controller DRM",
+diff --git a/include/uapi/drm/atmel_drm.h b/include/uapi/drm/atmel_drm.h
+new file mode 100644
+index 000000000000..0b45504c55d4
+--- /dev/null
++++ b/include/uapi/drm/atmel_drm.h
+@@ -0,0 +1,29 @@
++/*
++ * Copyright (C) 2014 Atmel
++ *
++ * Author: Mohamed Jamsheeth <mohamedjamsheeth.hajanajubudeen@atmel.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published by
++ * the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License along with
++ * this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef _UAPI_ATMEL_DRM_H_
++#define _UAPI_ATMEL_DRM_H_
++
++#include <drm/drm.h>
++
++#define DRM_ATMEL_GEM_GET		0x00
++
++#define DRM_IOCTL_ATMEL_GEM_GET		DRM_IOWR(DRM_COMMAND_BASE + \
++					DRM_ATMEL_GEM_GET, struct drm_mode_map_dumb)
++
++#endif /* _UAPI_ATMEL_DRM_H_ */
+-- 
+2.34.1
+

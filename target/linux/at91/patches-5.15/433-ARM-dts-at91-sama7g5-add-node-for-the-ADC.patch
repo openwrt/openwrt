@@ -1,0 +1,44 @@
+From 0b5645fb041b215144a84878fab2389e275f2616 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 1 Sep 2021 15:30:12 +0300
+Subject: [PATCH 324/471] ARM: dts: at91: sama7g5: add node for the ADC
+
+Add node for the ADC controller in sama7g5 SoC.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20210901123013.329792-10-eugen.hristev@microchip.com
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index a63a8e768654..6a7ff082cfb2 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -164,6 +164,22 @@ chipid@e0020000 {
+ 			reg = <0xe0020000 0x8>;
+ 		};
+ 
++		adc: adc@e1000000 {
++			compatible = "microchip,sama7g5-adc";
++			reg = <0xe1000000 0x200>;
++			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_GCK 26>;
++			assigned-clocks = <&pmc PMC_TYPE_GCK 26>;
++			assigned-clock-rates = <100000000>;
++			clock-names = "adc_clk";
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(0)>;
++			dma-names = "rx";
++			atmel,min-sample-rate-hz = <200000>;
++			atmel,max-sample-rate-hz = <20000000>;
++			atmel,startup-time-ms = <4>;
++			status = "disabled";
++		};
++
+ 		sdmmc0: mmc@e1204000 {
+ 			compatible = "microchip,sama7g5-sdhci", "microchip,sam9x60-sdhci";
+ 			reg = <0xe1204000 0x4000>;
+-- 
+2.34.1
+

@@ -1,0 +1,41 @@
+From c9b9374f71e686e5214eb1e338bae3e821b2507f Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 3 Aug 2022 13:28:48 +0300
+Subject: [PATCH 017/471] iio: adc: at91-sama5d2_adc: move oversampling storage
+ in its function
+
+Move the storage of oversampling_ratio in at91_adc_config_emr().
+This prepares for the next commits.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20220803102855.2191070-13-claudiu.beznea@microchip.com
+Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+---
+ drivers/iio/adc/at91-sama5d2_adc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/iio/adc/at91-sama5d2_adc.c b/drivers/iio/adc/at91-sama5d2_adc.c
+index a8b5a5edbced..394db63a85df 100644
+--- a/drivers/iio/adc/at91-sama5d2_adc.c
++++ b/drivers/iio/adc/at91-sama5d2_adc.c
+@@ -793,6 +793,8 @@ static int at91_adc_config_emr(struct at91_adc_state *st,
+ 
+ 	at91_adc_writel(st, EMR, emr);
+ 
++	st->oversampling_ratio = oversampling_ratio;
++
+ 	return 0;
+ }
+ 
+@@ -1705,8 +1707,6 @@ static int at91_adc_write_raw(struct iio_dev *indio_dev,
+ 		mutex_lock(&st->lock);
+ 		/* update ratio */
+ 		ret = at91_adc_config_emr(st, val);
+-		if (!ret)
+-			st->oversampling_ratio = val;
+ 		mutex_unlock(&st->lock);
+ 		iio_device_release_direct_mode(indio_dev);
+ 		return ret;
+-- 
+2.34.1
+

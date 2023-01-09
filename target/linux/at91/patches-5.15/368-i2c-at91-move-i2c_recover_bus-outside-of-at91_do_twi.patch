@@ -1,0 +1,56 @@
+From 478c5f77495492c3bdbca6dc70158bf840f33afa Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 12 Jul 2021 15:29:08 +0300
+Subject: [PATCH 259/471] i2c: at91: move i2c_recover_bus() outside of
+ at91_do_twi_transfer()
+
+This patch doesn't add a functional change, it just separates the recovery
+from the transfer itself.
+
+Fixes: d3d3fdcc4c90 ("i2c: at91: implement i2c bus recovery")
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ drivers/i2c/busses/i2c-at91-master.c | 19 +++++++++++--------
+ 1 file changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-at91-master.c b/drivers/i2c/busses/i2c-at91-master.c
+index c0c35785a0dc..34df1614bc37 100644
+--- a/drivers/i2c/busses/i2c-at91-master.c
++++ b/drivers/i2c/busses/i2c-at91-master.c
+@@ -639,13 +639,6 @@ static int at91_do_twi_transfer(struct at91_twi_dev *dev)
+ 			       AT91_TWI_THRCLR | AT91_TWI_LOCKCLR);
+ 	}
+ 
+-	/*
+-	 * some faulty I2C slave devices might hold SDA down;
+-	 * we can send a bus clear command, hoping that the pins will be
+-	 * released
+-	 */
+-	i2c_recover_bus(&dev->adapter);
+-
+ 	return ret;
+ }
+ 
+@@ -716,7 +709,17 @@ static int at91_twi_xfer(struct i2c_adapter *adap, struct i2c_msg *msg, int num)
+ 	ret = at91_do_twi_transfer(dev);
+ 	i2c_put_dma_safe_msg_buf(dma_buf, m_start, !ret);
+ 
+-	ret = (ret < 0) ? ret : num;
++	if (ret < 0) {
++		/*
++		 * some faulty I2C slave devices might hold SDA down;
++		 * we can send a bus clear command, hoping that the pins will be
++		 * released
++		 */
++		i2c_recover_bus(&dev->adapter);
++	} else {
++		ret = num;
++	}
++
+ out:
+ 	pm_runtime_mark_last_busy(dev->dev);
+ 	pm_runtime_put_autosuspend(dev->dev);
+-- 
+2.34.1
+

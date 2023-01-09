@@ -1,0 +1,29 @@
+From a2e5bd8300266fbce4352844ce96f202e2a0ffdf Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 24 Nov 2021 16:15:20 +0200
+Subject: [PATCH 372/471] ARM: dts: at91: sama7g5: add cells for temperature
+ calibration
+
+Add NVMEM cell to ADC for temperature calibration data.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index f43b989ff5ea..0ba841c48c2f 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -512,6 +512,8 @@ adc: adc@e1000000 {
+ 			atmel,max-sample-rate-hz = <20000000>;
+ 			atmel,startup-time-ms = <4>;
+ 			#io-channel-cells = <1>;
++			nvmem-cells = <&temperature_calib>;
++			nvmem-cell-names = "temperature_calib";
+ 			status = "disabled";
+ 		};
+ 
+-- 
+2.34.1
+

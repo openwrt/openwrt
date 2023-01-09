@@ -1,0 +1,206 @@
+From e937fc5af9e9c9a3bec0bcdb2ba16ce4881245cd Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Wed, 23 Feb 2022 23:22:55 +0200
+Subject: [PATCH 355/471] ARM: dts: at91: sama7g5: add USB support for SAMA7G5
+
+Add USB Host and Device support for SAMA7G5.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+[claudiu.beznea: adapt to v5.15.82]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/at91-sama7g5ek.dts | 62 +++++++++++++++++++
+ arch/arm/boot/dts/sama7g5.dtsi       | 90 ++++++++++++++++++++++++++++
+ 2 files changed, 152 insertions(+)
+
+diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
+index d8ef4612bc04..992c2820d28d 100644
+--- a/arch/arm/boot/dts/at91-sama7g5ek.dts
++++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
+@@ -781,6 +781,21 @@ pinctrl_spdiftx_default: spdiftx_default {
+ 		pinmux = <PIN_PB1__SPDIF_TX>;
+ 		bias-disable;
+ 	};
++
++	pinctrl_usb_default: usb_default {
++		pinmux = <PIN_PC6__GPIO>;
++		bias-disable;
++	};
++
++	pinctrl_usba_vbus: usba_vbus {
++		pinmux = <PIN_PD11__GPIO>;
++		bias-disable;
++	};
++
++	pinctrl_usbb_vbus: usbb_vbus {
++		pinmux = <PIN_PC12__GPIO>;
++		bias-disable;
++	};
+ };
+ 
+ &pwm {
+@@ -857,6 +872,53 @@ &trng {
+ 	status = "okay";
+ };
+ 
++&usb0 {
++	atmel,vbus-gpio = <&pioA PIN_PD11 GPIO_ACTIVE_HIGH>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usba_vbus>;
++	phys = <&usb_phy0>;
++	phy-names = "usb";
++	status = "okay";
++};
++
++&usb1 {
++	atmel,vbus-gpio = <&pioA PIN_PC12 GPIO_ACTIVE_HIGH>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usbb_vbus>;
++	phys = <&usb_phy1>;
++	phy-names = "usb";
++	status = "okay";
++};
++
++&usb2 {
++	num-ports = <3>;
++	atmel,vbus-gpio = <0
++			   0
++			   &pioA PIN_PC6 GPIO_ACTIVE_HIGH
++			  >;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usb_default>;
++	phys = <&usb_phy2>;
++	phy-names = "usb";
++	status = "okay";
++};
++
++&usb3 {
++	status = "okay";
++};
++
++&usb_phy0 {
++	status = "okay";
++};
++
++&usb_phy1 {
++	status = "okay";
++};
++
++&usb_phy2 {
++	status = "okay";
++};
++
+ &vddout25 {
+ 	vin-supply = <&vdd_3v3>;
+ 	status = "okay";
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index be6ffb6f0ea9..c2482f6ac17b 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -90,6 +90,54 @@ usb_clk: usb_clk {
+ 		};
+ 	};
+ 
++	utmi_clk: utmi-clk {
++		compatible = "microchip,sama7g5-utmi-clk";
++		sfr-phandle = <&sfr>;
++		#clock-cells = <1>;
++		clocks = <&pmc PMC_TYPE_CORE PMC_UTMI>;
++		clock-names = "utmi_clk";
++		resets = <&reset_controller SAMA7G5_RESET_USB_PHY1>,
++			 <&reset_controller SAMA7G5_RESET_USB_PHY2>,
++			 <&reset_controller SAMA7G5_RESET_USB_PHY3>;
++		reset-names = "usb0_reset", "usb1_reset", "usb2_reset";
++	};
++
++	utmi {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		usb_phy0: phy@0 {
++			compatible = "microchip,sama7g5-usb-phy";
++			sfr-phandle = <&sfr>;
++			reg = <0>;
++			clocks = <&utmi_clk UTMI1>;
++			clock-names = "utmi_clk";
++			status = "disabled";
++			#phy-cells = <0>;
++		};
++
++		usb_phy1: phy@1 {
++			compatible = "microchip,sama7g5-usb-phy";
++			sfr-phandle = <&sfr>;
++			reg = <1>;
++			clocks = <&utmi_clk UTMI2>;
++			clock-names = "utmi_clk";
++			status = "disabled";
++			#phy-cells = <0>;
++		};
++
++		usb_phy2: phy@2 {
++			compatible = "microchip,sama7g5-usb-phy";
++			sfr-phandle = <&sfr>;
++			reg = <2>;
++			clocks = <&utmi_clk UTMI3>;
++			clock-names = "utmi_clk";
++			status = "disabled";
++			#phy-cells = <0>;
++		};
++	};
++
+ 	vddout25: fixed-regulator-vddout25 {
+ 		compatible = "regulator-fixed";
+ 
+@@ -114,6 +162,48 @@ soc {
+ 		#size-cells = <1>;
+ 		ranges;
+ 
++		usb0: gadget@200000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "microchip,sama7g5-udc";
++			reg = <0x00200000 0x100000
++			       0xe0814000 0x400>;
++			interrupts = <GIC_SPI 104 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 104>, <&usb_clk>;
++			clock-names = "pclk", "hclk";
++			status = "disabled";
++		};
++
++		usb1: gadget@300000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "microchip,sama7g5-udc";
++			reg = <0x00300000 0x100000
++			       0xe0818000 0x400>;
++			interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 105>, <&usb_clk>;
++			clock-names = "pclk", "hclk";
++			status = "disabled";
++		};
++
++		usb2: ohci@400000 {
++			compatible = "microchip,sama7g5-ohci", "usb-ohci";
++			reg = <0x00400000 0x100000>;
++			interrupts = <GIC_SPI 106 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 106>, <&pmc PMC_TYPE_CORE UTMI1>, <&usb_clk>;
++			clock-names = "ohci_clk", "hclk", "uhpck";
++			status = "disabled";
++		};
++
++		usb3: ehci@500000 {
++			compatible = "atmel,at91sam9g45-ehci", "usb-ehci";
++			reg = <0x00500000 0x100000>;
++			interrupts = <GIC_SPI 106 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&usb_clk>, <&pmc PMC_TYPE_PERIPHERAL 106>;
++			clock-names = "usb_clk", "ehci_clk";
++			status = "disabled";
++		};
++
+ 		nfc_sram: sram@600000 {
+ 			compatible = "mmio-sram";
+ 			no-memory-wc;
+-- 
+2.34.1
+

@@ -1,0 +1,137 @@
+From fd51eb7db93f98c7a1467ecbd44c498e6e0eb3e4 Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Mon, 7 Feb 2022 16:31:40 +0530
+Subject: [PATCH 070/471] clk: at91: clk-sam9x60-pll: re-factor to support
+ individual core freq outputs
+
+-Support SoCs with different core frequency outputs for different PLL IDs
+by adding a separate parameter for handling the same in the PLL driver
+-Align sam9x60 and sama7g5 Soc PMC driver to PLL driver by adding core
+output freq range in the PLL characteristics configurations
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ drivers/clk/at91/clk-sam9x60-pll.c | 12 ++++++------
+ drivers/clk/at91/pmc.h             |  1 +
+ drivers/clk/at91/sam9x60.c         |  7 +++++++
+ drivers/clk/at91/sama7g5.c         |  7 +++++++
+ 4 files changed, 21 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/clk/at91/clk-sam9x60-pll.c b/drivers/clk/at91/clk-sam9x60-pll.c
+index d757003004cb..8a5cc95c3796 100644
+--- a/drivers/clk/at91/clk-sam9x60-pll.c
++++ b/drivers/clk/at91/clk-sam9x60-pll.c
+@@ -23,9 +23,6 @@
+ #define UPLL_DIV		2
+ #define PLL_MUL_MAX		(FIELD_GET(PMC_PLL_CTRL1_MUL_MSK, UINT_MAX) + 1)
+ 
+-#define FCORE_MIN		(600000000)
+-#define FCORE_MAX		(1200000000)
+-
+ #define PLL_MAX_ID		7
+ 
+ struct sam9x60_pll_core {
+@@ -194,7 +191,8 @@ static long sam9x60_frac_pll_compute_mul_frac(struct sam9x60_pll_core *core,
+ 	unsigned long nmul = 0;
+ 	unsigned long nfrac = 0;
+ 
+-	if (rate < FCORE_MIN || rate > FCORE_MAX)
++	if (rate < core->characteristics->core_output[0].min ||
++	    rate > core->characteristics->core_output[0].max)
+ 		return -ERANGE;
+ 
+ 	/*
+@@ -214,7 +212,8 @@ static long sam9x60_frac_pll_compute_mul_frac(struct sam9x60_pll_core *core,
+ 	}
+ 
+ 	/* Check if resulted rate is a valid.  */
+-	if (tmprate < FCORE_MIN || tmprate > FCORE_MAX)
++	if (tmprate < core->characteristics->core_output[0].min ||
++	    tmprate > core->characteristics->core_output[0].max)
+ 		return -ERANGE;
+ 
+ 	if (update) {
+@@ -666,7 +665,8 @@ sam9x60_clk_register_frac_pll(struct regmap *regmap, spinlock_t *lock,
+ 			goto free;
+ 		}
+ 
+-		ret = sam9x60_frac_pll_compute_mul_frac(&frac->core, FCORE_MIN,
++		ret = sam9x60_frac_pll_compute_mul_frac(&frac->core,
++							characteristics->core_output[0].min,
+ 							parent_rate, true);
+ 		if (ret <= 0) {
+ 			hw = ERR_PTR(ret);
+diff --git a/drivers/clk/at91/pmc.h b/drivers/clk/at91/pmc.h
+index 3a1bf6194c28..5d4f99ecd142 100644
+--- a/drivers/clk/at91/pmc.h
++++ b/drivers/clk/at91/pmc.h
+@@ -75,6 +75,7 @@ struct clk_pll_characteristics {
+ 	struct clk_range input;
+ 	int num_output;
+ 	const struct clk_range *output;
++	const struct clk_range *core_output;
+ 	u16 *icpll;
+ 	u8 *out;
+ 	u8 upll : 1;
+diff --git a/drivers/clk/at91/sam9x60.c b/drivers/clk/at91/sam9x60.c
+index 5c264185f261..b4671fdebddf 100644
+--- a/drivers/clk/at91/sam9x60.c
++++ b/drivers/clk/at91/sam9x60.c
+@@ -26,10 +26,16 @@ static const struct clk_range plla_outputs[] = {
+ 	{ .min = 2343750, .max = 1200000000 },
+ };
+ 
++/* Fractional PLL core output range. */
++static const struct clk_range core_outputs[] = {
++	{ .min = 600000000, .max = 1200000000 },
++};
++
+ static const struct clk_pll_characteristics plla_characteristics = {
+ 	.input = { .min = 12000000, .max = 48000000 },
+ 	.num_output = ARRAY_SIZE(plla_outputs),
+ 	.output = plla_outputs,
++	.core_output = core_outputs,
+ };
+ 
+ static const struct clk_range upll_outputs[] = {
+@@ -40,6 +46,7 @@ static const struct clk_pll_characteristics upll_characteristics = {
+ 	.input = { .min = 12000000, .max = 48000000 },
+ 	.num_output = ARRAY_SIZE(upll_outputs),
+ 	.output = upll_outputs,
++	.core_output = core_outputs,
+ 	.upll = true,
+ };
+ 
+diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
+index 4cd98bdd8b56..7010de018a0e 100644
+--- a/drivers/clk/at91/sama7g5.c
++++ b/drivers/clk/at91/sama7g5.c
+@@ -104,11 +104,17 @@ static const struct clk_range pll_outputs[] = {
+ 	{ .min = 2343750, .max = 1200000000 },
+ };
+ 
++/* Fractional PLL core output range. */
++static const struct clk_range core_outputs[] = {
++	{ .min = 600000000, .max = 1200000000 },
++};
++
+ /* CPU PLL characteristics. */
+ static const struct clk_pll_characteristics cpu_pll_characteristics = {
+ 	.input = { .min = 12000000, .max = 50000000 },
+ 	.num_output = ARRAY_SIZE(cpu_pll_outputs),
+ 	.output = cpu_pll_outputs,
++	.core_output = core_outputs,
+ };
+ 
+ /* PLL characteristics. */
+@@ -116,6 +122,7 @@ static const struct clk_pll_characteristics pll_characteristics = {
+ 	.input = { .min = 12000000, .max = 50000000 },
+ 	.num_output = ARRAY_SIZE(pll_outputs),
+ 	.output = pll_outputs,
++	.core_output = core_outputs,
+ };
+ 
+ /*
+-- 
+2.34.1
+

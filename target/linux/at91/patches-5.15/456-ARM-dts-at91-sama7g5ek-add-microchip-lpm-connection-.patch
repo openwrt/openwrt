@@ -1,0 +1,31 @@
+From b97cac2bd4305e53899fe552005989159410da3b Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Tue, 18 Jan 2022 15:33:16 +0200
+Subject: [PATCH 347/471] ARM: dts: at91: sama7g5ek: add
+ microchip,lpm-connection on shdwc node
+
+Add microchip,lpm-connection binding to shdwc node. On SAMA7G5-EK REV4
+LPM is connected to GMAC1's PHY, 24MHz oscillator and PMIC. On board
+PMIC is not listed here as it is only treated on BSR mode
+uncoditionally.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/at91-sama7g5ek.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
+index 816402253581..b242250bb092 100644
+--- a/arch/arm/boot/dts/at91-sama7g5ek.dts
++++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
+@@ -777,6 +777,7 @@ &sdmmc2 {
+ 
+ &shdwc {
+ 	atmel,shdwc-debouncer = <976>;
++	microchip,lpm-connection = <&gmac1 &main_xtal>;
+ 	status = "okay";
+ 
+ 	input@0 {
+-- 
+2.34.1
+

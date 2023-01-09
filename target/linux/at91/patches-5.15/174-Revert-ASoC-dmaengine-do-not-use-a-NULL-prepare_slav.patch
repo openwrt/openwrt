@@ -1,0 +1,50 @@
+From e09dbdf34a47d3b7eaa4fa08987b3c9225e8d145 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Thu, 21 Apr 2022 16:18:57 +0300
+Subject: [PATCH 065/471] Revert "ASoC: dmaengine: do not use a NULL
+ prepare_slave_config() callback"
+
+This reverts commit 9a1e13440a4f2e7566fd4c5eae6a53e6400e08a4.
+
+As pointed out by Sascha Hauer, this patch changes:
+if (pmc->config && !pcm->config->prepare_slave_config)
+        <do nothing>
+to:
+if (pmc->config && !pcm->config->prepare_slave_config)
+        snd_dmaengine_pcm_prepare_slave_config()
+
+This breaks the drivers that do not need a call to
+dmaengine_slave_config(). Drivers that still need to call
+snd_dmaengine_pcm_prepare_slave_config(), but have a NULL
+pcm->config->prepare_slave_config should use
+snd_dmaengine_pcm_prepare_slave_config() as their prepare_slave_config
+callback.
+
+Fixes: 9a1e13440a4f ("ASoC: dmaengine: do not use a NULL prepare_slave_config() callback")
+Reported-by: Sascha Hauer <sha@pengutronix.de>
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/soc-generic-dmaengine-pcm.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/sound/soc/soc-generic-dmaengine-pcm.c b/sound/soc/soc-generic-dmaengine-pcm.c
+index e5d79d03c3db..f99bd1f29acd 100644
+--- a/sound/soc/soc-generic-dmaengine-pcm.c
++++ b/sound/soc/soc-generic-dmaengine-pcm.c
+@@ -82,10 +82,10 @@ static int dmaengine_pcm_hw_params(struct snd_soc_component *component,
+ 
+ 	memset(&slave_config, 0, sizeof(slave_config));
+ 
+-	if (pcm->config && pcm->config->prepare_slave_config)
+-		prepare_slave_config = pcm->config->prepare_slave_config;
+-	else
++	if (!pcm->config)
+ 		prepare_slave_config = snd_dmaengine_pcm_prepare_slave_config;
++	else
++		prepare_slave_config = pcm->config->prepare_slave_config;
+ 
+ 	if (prepare_slave_config) {
+ 		int ret = prepare_slave_config(substream, params, &slave_config);
+-- 
+2.34.1
+

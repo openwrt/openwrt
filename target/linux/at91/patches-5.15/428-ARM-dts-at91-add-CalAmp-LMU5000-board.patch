@@ -1,0 +1,195 @@
+From 8114feca9b200ca5d7093623bb824fa219de81d5 Mon Sep 17 00:00:00 2001
+From: Adam Porter <porter.adam@gmail.com>
+Date: Mon, 16 Aug 2021 09:44:13 +0300
+Subject: [PATCH 319/471] ARM: dts: at91: add CalAmp LMU5000 board
+
+Add CalAmp LMU5000 board. The base device tree is from OpenWrt tree and
+with the addition of this patch there will be no need to maintain it
+separatelly in OpenWrt.
+
+[porter.adam: original author of patch in OpenWrt]
+[claudiu.beznea: fixed compilation warnings, use &<lable> syntax,
+ sorted nodes in alphabetical order, adapted flash to new support
+ in kernel 5.14, use proper compatibles according to kernel 5.14,
+ use macros instead of hard coded numbers for pinctrl phandles and
+ for all pinctrl references, add pinctrl-names, pinctrl-X where
+ necessary]
+
+Signed-off-by: Adam Porter <porter.adam@gmail.com>
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20210816064416.1630674-5-claudiu.beznea@microchip.com
+---
+ arch/arm/boot/dts/Makefile         |   1 +
+ arch/arm/boot/dts/at91-lmu5000.dts | 147 +++++++++++++++++++++++++++++
+ 2 files changed, 148 insertions(+)
+ create mode 100644 arch/arm/boot/dts/at91-lmu5000.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 7a72fc636a7a..fc048709a881 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -25,6 +25,7 @@ dtb-$(CONFIG_SOC_AT91SAM9) += \
+ 	usb_a9263.dtb \
+ 	at91-foxg20.dtb \
+ 	at91-kizbox.dtb \
++	at91-lmu5000.dtb \
+ 	at91sam9g20ek.dtb \
+ 	at91sam9g20ek_2mmc.dtb \
+ 	tny_a9g20.dtb \
+diff --git a/arch/arm/boot/dts/at91-lmu5000.dts b/arch/arm/boot/dts/at91-lmu5000.dts
+new file mode 100644
+index 000000000000..f8863d7c0798
+--- /dev/null
++++ b/arch/arm/boot/dts/at91-lmu5000.dts
+@@ -0,0 +1,147 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Device Tree file for CalAmp LMU5000 board
++ *
++ * Copyright (C) 2013 Adam Porter <porter.adam@gmail.com>
++ */
++
++/dts-v1/;
++#include "at91sam9g20.dtsi"
++
++/ {
++	model = "CalAmp LMU5000";
++	compatible = "calamp,lmu5000", "atmel,at91sam9g20", "atmel,at91sam9";
++
++	chosen {
++		bootargs = "mem=64M console=ttyS0,115200 rootfstype=jffs2";
++	};
++
++	memory {
++		reg = <0x20000000 0x4000000>;
++	};
++
++	clocks {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		main_clock: clock@0 {
++			compatible = "atmel,osc", "fixed-clock";
++			clock-frequency = <18432000>;
++		};
++	};
++};
++
++&dbgu {
++	status = "okay";
++};
++
++&ebi {
++	status = "okay";
++
++	nand_controller: nand-controller {
++		pinctrl-0 = <&pinctrl_nand_cs &pinctrl_nand_rb>;
++		pinctrl-names = "default";
++		status = "okay";
++
++		nand@3 {
++			reg = <0x3 0x0 0x800000>;
++			rb-gpios = <&pioC 13 GPIO_ACTIVE_HIGH>;
++			cs-gpios = <&pioC 14 GPIO_ACTIVE_HIGH>;
++			nand-bus-width = <8>;
++			nand-ecc-mode = "soft";
++			nand-on-flash-bbt;
++			label = "atmel_nand";
++			status = "okay";
++
++			partitions {
++				compatible = "fixed-partitions";
++				#address-cells = <1>;
++				#size-cells = <1>;
++
++				kernel@0 {
++					label = "kernel";
++					reg = <0x0 0x400000>;
++				};
++
++				rootfs@400000 {
++					label = "rootfs";
++					reg = <0x400000 0x3C00000>;
++				};
++
++				user1@4000000 {
++					label = "user1";
++					reg = <0x4000000 0x2000000>;
++				};
++
++				user2@6000000 {
++					label = "user2";
++					reg = <0x6000000 0x2000000>;
++				};
++			};
++		};
++	};
++};
++
++&macb0 {
++	phy-mode = "mii";
++	status = "okay";
++};
++
++&pinctrl {
++	board {
++		pinctrl_pck0_as_mck: pck0_as_mck {
++			atmel,pins = <AT91_PIOC 1 AT91_PERIPH_B AT91_PINCTRL_NONE>;
++		};
++	};
++
++	usb0 {
++		pinctrl_usb1_vbus_gpio: usb0_vbus_gpio {
++			atmel,pins = <AT91_PIOC 5 AT91_PERIPH_GPIO AT91_PINCTRL_NONE>;
++		};
++	};
++};
++
++&ssc0 {
++	status = "okay";
++	pinctrl-0 = <&pinctrl_ssc0_tx>;
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&uart1 {
++	status = "okay";
++};
++
++&usart0 {
++	pinctrl-0 =
++		<&pinctrl_usart0
++		 &pinctrl_usart0_rts
++		 &pinctrl_usart0_cts
++		 &pinctrl_usart0_dtr_dsr
++		 &pinctrl_usart0_dcd
++		 &pinctrl_usart0_ri>;
++	status = "okay";
++};
++
++&usart2 {
++	status = "okay";
++};
++
++&usb0 {
++	num-ports = <2>;
++	status = "okay";
++};
++
++&usb1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usb1_vbus_gpio>;
++	atmel,vbus-gpio = <&pioC 5 GPIO_ACTIVE_HIGH>;
++	status = "okay";
++};
++
++&watchdog {
++	status = "okay";
++};
+-- 
+2.34.1
+

@@ -1,0 +1,29 @@
+From a4a5077cc1bb9d76faa66bfcde30601318e5547f Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Tue, 8 Jun 2021 10:20:24 +0300
+Subject: [PATCH 447/471] ARM: at91: at91_dt_defconfig: remove
+ CC_OPTIMIZE_FOR_SIZE
+
+Use the default optimization level for the kernel, build with
+the "-O2" which corresponds to CC_OPTIMIZE_FOR_PERFORMANCE.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index 6fbdd980cc45..6c31c119b747 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -6,7 +6,6 @@ CONFIG_LOG_BUF_SHIFT=16
+ CONFIG_CGROUPS=y
+ CONFIG_CGROUP_CPUACCT=y
+ CONFIG_BLK_DEV_INITRD=y
+-CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+ CONFIG_EMBEDDED=y
+ CONFIG_SLAB=y
+ CONFIG_ARCH_MULTI_V4T=y
+-- 
+2.34.1
+

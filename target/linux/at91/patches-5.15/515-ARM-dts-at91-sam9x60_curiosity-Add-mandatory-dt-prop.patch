@@ -1,0 +1,34 @@
+From 7c338731519fdf93491a287dd2c24cc740b1d02c Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Mon, 7 Nov 2022 11:47:16 +0200
+Subject: [PATCH 406/471] ARM: dts: at91: sam9x60_curiosity: Add mandatory dt
+ property for RTT
+
+atmel,rtt-rtc-time-reg is a mandatory property and encodes the GPBR
+register used to store the time base when the RTT is used as an RTC.
+Align the RTT with what's currently done for sam9x60ek and sama7g5ek,
+and enable it by default even if RTC is also enabled.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ arch/arm/boot/dts/at91-sam9x60_curiosity.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/boot/dts/at91-sam9x60_curiosity.dts b/arch/arm/boot/dts/at91-sam9x60_curiosity.dts
+index 75e6727b5e3a..08f174bb7976 100644
+--- a/arch/arm/boot/dts/at91-sam9x60_curiosity.dts
++++ b/arch/arm/boot/dts/at91-sam9x60_curiosity.dts
+@@ -485,6 +485,10 @@ &sdmmc1 {
+ 	status = "disabled";
+ };
+ 
++&rtt {
++	atmel,rtt-rtc-time-reg = <&gpbr 0x0>;
++};
++
+ &shutdown_controller {
+ 	debounce-delay-us = <976>;
+ 	status = "okay";
+-- 
+2.34.1
+

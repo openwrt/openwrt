@@ -1,0 +1,28 @@
+From e9af2fc6b7890061e0918b0ea8844bdc3994774d Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Wed, 23 Mar 2022 13:35:51 +0200
+Subject: [PATCH 058/471] ASoC: atmel: mchp-pdmc: add snd_soc_dai_driver name
+
+Set snd_soc_dai_driver name to improve controller's display of the DAI
+name.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/atmel/mchp-pdmc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/atmel/mchp-pdmc.c b/sound/soc/atmel/mchp-pdmc.c
+index b72c854bbeff..dc678c74bf5b 100644
+--- a/sound/soc/atmel/mchp-pdmc.c
++++ b/sound/soc/atmel/mchp-pdmc.c
+@@ -754,6 +754,7 @@ static int mchp_pdmc_pcm_new(struct snd_soc_pcm_runtime *rtd,
+ }
+ 
+ static struct snd_soc_dai_driver mchp_pdmc_dai = {
++	.name	= "mchp-pdmc",
+ 	.probe	= mchp_pdmc_dai_probe,
+ 	.capture = {
+ 		.stream_name	= "Capture",
+-- 
+2.34.1
+

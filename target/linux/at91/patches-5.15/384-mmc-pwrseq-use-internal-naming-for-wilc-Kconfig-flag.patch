@@ -1,0 +1,32 @@
+From a208fcd12bb4efbec6aeb8903fa562c2d8363c82 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 11 Apr 2022 18:24:03 +0300
+Subject: [PATCH 275/471] mmc: pwrseq: use internal naming for wilc Kconfig
+ flags
+
+Mainline kernel version uses CONFIG_WILC1000_* flag naming policy for
+WILC. Vendor kernel version uses CONFIG_WILC_* flag naming policy. Adapt
+pwrseq_sd8787 to this naming.
+
+Fixes: 7fbb8edea794 ("wilc1000: compile single driver for each bus type")
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/mmc/core/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/core/Kconfig b/drivers/mmc/core/Kconfig
+index 6f25c34e4fec..cb7f037cb960 100644
+--- a/drivers/mmc/core/Kconfig
++++ b/drivers/mmc/core/Kconfig
+@@ -15,7 +15,7 @@ config PWRSEQ_EMMC
+ 
+ config PWRSEQ_SD8787
+ 	tristate "HW reset support for SD8787 BT + Wifi module"
+-	depends on OF && (MWIFIEX || BT_MRVL_SDIO || LIBERTAS_SDIO || WILC1000_SDIO)
++	depends on OF && (MWIFIEX || BT_MRVL_SDIO || LIBERTAS_SDIO || WILC_SDIO)
+ 	help
+ 	  This selects hardware reset support for the SD8787 BT + Wifi
+ 	  module. By default this option is set to n.
+-- 
+2.34.1
+

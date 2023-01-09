@@ -1,0 +1,31 @@
+From 75e8cb6397aaf96833b5f82c4467177d5f5f904f Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 16 Aug 2021 09:44:11 +0300
+Subject: [PATCH 316/471] dt-bindings: add vendor prefix for calamp
+
+Add vendor prefix for CalAmp Corp.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Acked-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20210816064416.1630674-3-claudiu.beznea@microchip.com
+---
+ Documentation/devicetree/bindings/vendor-prefixes.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+index a867f7102c35..67d5cdd96cfa 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
++++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+@@ -191,6 +191,8 @@ patternProperties:
+     description: B&R Industrial Automation GmbH
+   "^bticino,.*":
+     description: Bticino International
++  "^calamp,.*":
++    description: CalAmp Corp.
+   "^calaosystems,.*":
+     description: CALAO Systems SAS
+   "^calxeda,.*":
+-- 
+2.34.1
+

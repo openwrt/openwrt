@@ -1,0 +1,37 @@
+From de9f78583cb8005a28e758fcd621f741a1f910be Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.i.king@gmail.com>
+Date: Fri, 10 Dec 2021 00:22:50 +0000
+Subject: [PATCH 118/471] pwm: atmel: Remove redundant initialization of
+ variable timeout
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The variable timeout is being initialized with a value that is never
+read, it is being re-assigned the same value later on. Remove the
+redundant initialization and keep the latter assignment because it's
+closer to the use of the variable.
+
+Signed-off-by: Colin Ian King <colin.i.king@gmail.com>
+Reviewed-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
+Signed-off-by: Thierry Reding <thierry.reding@gmail.com>
+---
+ drivers/pwm/pwm-atmel.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/pwm/pwm-atmel.c b/drivers/pwm/pwm-atmel.c
+index 98b34ea9f38e..8e00a4286145 100644
+--- a/drivers/pwm/pwm-atmel.c
++++ b/drivers/pwm/pwm-atmel.c
+@@ -271,7 +271,7 @@ static void atmel_pwm_disable(struct pwm_chip *chip, struct pwm_device *pwm,
+ 			      bool disable_clk)
+ {
+ 	struct atmel_pwm_chip *atmel_pwm = to_atmel_pwm_chip(chip);
+-	unsigned long timeout = jiffies + 2 * HZ;
++	unsigned long timeout;
+ 
+ 	atmel_pwm_wait_nonpending(atmel_pwm, pwm->hwpwm);
+ 
+-- 
+2.34.1
+

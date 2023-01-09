@@ -1,0 +1,144 @@
+From e9f4dfc583d38200d075a611affea03a4ac197cf Mon Sep 17 00:00:00 2001
+From: Nick Dyer <nick.dyer@itdev.co.uk>
+Date: Mon, 10 Dec 2012 17:06:42 +0000
+Subject: [PATCH 408/471] Input: atmel_mxt_ts - release touch state during
+ suspend
+
+If fingers are down as the MXT chip goes into suspend it does not send a lift
+message. In addition, it may not complete its final measurement cycle
+immediately, which means touch messages may be received by the interrupt
+handler after mxt_stop() has completed.
+
+So:
+- disable irq during suspend
+- flush any messages created after suspend
+- tell app layer that slots were released at suspend
+
+Signed-off-by: Nick Dyer <nick.dyer@itdev.co.uk>
+Acked-by: Benson Leung <bleung@chromium.org>
+Acked-by: Yufeng Shen <miletus@chromium.org>
+[cyrille.pitchen@atmel.com: adapt original patch to mainline]
+Signed-off-by: Cyrille Pitchen <cyrille.pitchen@atmel.com>
+[claudiu.beznea@microchip.com: adapt to 4.19, 5.15]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/input/touchscreen/atmel_mxt_ts.c | 53 ++++++++++++++++++++++--
+ 1 file changed, 49 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/input/touchscreen/atmel_mxt_ts.c b/drivers/input/touchscreen/atmel_mxt_ts.c
+index ec555a9135e7..2e621581227b 100644
+--- a/drivers/input/touchscreen/atmel_mxt_ts.c
++++ b/drivers/input/touchscreen/atmel_mxt_ts.c
+@@ -345,7 +345,9 @@ struct mxt_data {
+ 	unsigned int t19_num_keys;
+ 
+ 	enum mxt_suspend_mode suspend_mode;
+-
++	/* Indicates whether device is in suspend */
++	bool suspended;
++	
+ 	u32 wakeup_method;
+ };
+ 
+@@ -1008,10 +1010,10 @@ static int mxt_proc_message(struct mxt_data *data, u8 *message)
+ 
+ 	if (report_id == data->T6_reportid) {
+ 		mxt_proc_t6_messages(data, message);
+-	} else if (!data->input_dev) {
++	} else if (!data->input_dev || data->suspended) {
+ 		/*
+-		 * Do not report events if input device
+-		 * is not yet registered.
++		 * Do not report events if input device is not
++		 * yet registered or returning from suspend.
+ 		 */
+ 		mxt_dump_message(data, message);
+ 	} else if (report_id >= data->T9_reportid_min &&
+@@ -2880,6 +2882,11 @@ static int mxt_load_fw(struct device *dev, const char *fn)
+ 	if (ret)
+ 		goto release_firmware;
+ 
++	if (data->suspended) {
++		enable_irq(data->irq);
++		data->suspended = false;
++	}
++
+ 	if (!data->in_bootloader) {
+ 		/* Change to the bootloader mode */
+ 		data->in_bootloader = true;
+@@ -2994,6 +3001,8 @@ static ssize_t mxt_update_fw_store(struct device *dev,
+ 	} else {
+ 		dev_info(dev, "The firmware update succeeded\n");
+ 
++		data->suspended = false;
++
+ 		error = mxt_initialize(data);
+ 		if (error)
+ 			return error;
+@@ -3019,9 +3028,34 @@ static const struct attribute_group mxt_attr_group = {
+ 	.attrs = mxt_attrs,
+ };
+ 
++static void mxt_reset_slots(struct mxt_data *data)
++{
++	struct input_dev *input_dev = data->input_dev;
++	int id;
++
++	if (!input_dev)
++		return;
++
++	for (id = 0; id < data->num_touchids; id++) {
++		input_mt_slot(input_dev, id);
++		input_mt_report_slot_state(input_dev, MT_TOOL_FINGER, 0);
++	}
++
++	mxt_input_sync(data);
++}
++
+ static void mxt_start(struct mxt_data *data)
+ {
++	if (!data->suspended || data->in_bootloader)
++		return;
++
+ 	mxt_wakeup_toggle(data->client, true, false);
++	
++	/*
++	 * Discard any touch messages still in message buffer
++	 * from before chip went to sleep
++	 */
++	mxt_process_messages_until_invalid(data);
+ 
+ 	switch (data->suspend_mode) {
+ 	case MXT_SUSPEND_T9_CTRL:
+@@ -3041,10 +3075,18 @@ static void mxt_start(struct mxt_data *data)
+ 		mxt_t6_command(data, MXT_COMMAND_CALIBRATE, 1, false);
+ 		break;
+ 	}
++
++	mxt_acquire_irq(data);
++	data->suspended = false;
+ }
+ 
+ static void mxt_stop(struct mxt_data *data)
+ {
++	if (data->suspended || data->in_bootloader)
++		return;
++
++	disable_irq(data->irq);
++
+ 	switch (data->suspend_mode) {
+ 	case MXT_SUSPEND_T9_CTRL:
+ 		/* Touch disable */
+@@ -3058,6 +3100,9 @@ static void mxt_stop(struct mxt_data *data)
+ 		break;
+ 	}
+ 
++	mxt_reset_slots(data);
++	data->suspended = true;
++
+ 	mxt_wakeup_toggle(data->client, false, false);
+ }
+ 
+-- 
+2.34.1
+

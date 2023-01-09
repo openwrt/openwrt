@@ -1,0 +1,29 @@
+From f70de87b1fc82b71098bd82c51becff8477442c9 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 18 Mar 2022 12:52:30 +0200
+Subject: [PATCH 453/471] ARM: at91: configs: at91_dt_defconfig: enable
+ CONFIG_BACKLIGHT_CLASS_DEVICE
+
+Enable CONFIG_BACKLIGHT_CLASS_DEVICE. It is needed in setups with
+LCD screen.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index cccc09941ee4..7a19b379657c 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -145,6 +145,7 @@ CONFIG_DRM_ATMEL_HLCDC=y
+ CONFIG_DRM_PANEL_SIMPLE=y
+ CONFIG_FB_ATMEL=y
+ CONFIG_BACKLIGHT_ATMEL_LCDC=y
++CONFIG_BACKLIGHT_CLASS_DEVICE=y
+ CONFIG_BACKLIGHT_PWM=y
+ CONFIG_SOUND=y
+ CONFIG_SND=y
+-- 
+2.34.1
+

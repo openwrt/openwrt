@@ -1,0 +1,33 @@
+From 364159fba88066d895147cb37b2b0f87ccf54816 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Tue, 7 Dec 2021 13:15:15 +0200
+Subject: [PATCH 094/471] mfd: atmel-flexcom: fix compilation warning
+
+Fix "unused variable 'atmel_flexcom_pm_ops' [-Wunused-const-variable]"
+compilation warning by using __maybe_unused on PM ops.
+
+Reported-by: kernel test robot <lkp@intel.com>
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+Link: https://lore.kernel.org/r/20211207111515.814653-1-claudiu.beznea@microchip.com
+---
+ drivers/mfd/atmel-flexcom.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mfd/atmel-flexcom.c b/drivers/mfd/atmel-flexcom.c
+index 559eb4d352b6..33caa4fba6af 100644
+--- a/drivers/mfd/atmel-flexcom.c
++++ b/drivers/mfd/atmel-flexcom.c
+@@ -105,7 +105,7 @@ static int __maybe_unused atmel_flexcom_resume_noirq(struct device *dev)
+ 	return 0;
+ }
+ 
+-static const struct dev_pm_ops atmel_flexcom_pm_ops = {
++static const struct dev_pm_ops __maybe_unused atmel_flexcom_pm_ops = {
+ 	.resume_noirq = atmel_flexcom_resume_noirq,
+ };
+ 
+-- 
+2.34.1
+

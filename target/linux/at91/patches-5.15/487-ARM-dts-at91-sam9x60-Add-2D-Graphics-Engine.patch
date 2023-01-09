@@ -1,0 +1,42 @@
+From fcc6e23290e4098ad3208c3bccfbe1d954c9bb37 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Thu, 2 Apr 2020 12:30:02 +0300
+Subject: [PATCH 378/471] ARM: dts: at91: sam9x60: Add 2D Graphics Engine
+
+The 2D Graphics Engine (GFX2D) is an AHB-protocol drawing engine.
+It performs memory data move operation over one master bus port.
+Keep the node disabled, as it will be enabled in overlay together
+with the LCD.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+[ta: cherry-pick to v5.10]
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ arch/arm/boot/dts/sam9x60.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sam9x60.dtsi b/arch/arm/boot/dts/sam9x60.dtsi
+index 998629a3c34f..1bf152241b45 100644
+--- a/arch/arm/boot/dts/sam9x60.dtsi
++++ b/arch/arm/boot/dts/sam9x60.dtsi
+@@ -226,6 +226,17 @@ AT91_XDMAC_DT_PERID(26))>,
+ 				status = "disabled";
+ 			};
+ 
++			gpu: gfx2d@f0018000 {
++				compatible = "microchip,sam9x60-gfx2d";
++				reg = <0xf0018000 0x4000>;
++				interrupts = <36 IRQ_TYPE_LEVEL_HIGH 0>;
++				clocks = <&pmc PMC_TYPE_PERIPHERAL 36>;
++				clock-names = "periph_clk";
++				#address-cells = <1>;
++				#size-cells = <0>;
++				status = "disabled";
++			};
++
+ 			i2s: i2s@f001c000 {
+ 				compatible = "microchip,sam9x60-i2smcc";
+ 				reg = <0xf001c000 0x100>;
+-- 
+2.34.1
+

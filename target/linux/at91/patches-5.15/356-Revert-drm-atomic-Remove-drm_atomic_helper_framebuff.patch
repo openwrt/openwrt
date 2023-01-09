@@ -1,0 +1,77 @@
+From 9f7dfce4c68f122a083ba05b565bd6ff5f122b2f Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Thu, 4 Oct 2018 11:16:58 +0300
+Subject: [PATCH 247/471] Revert "drm/atomic: Remove
+ drm_atomic_helper_framebuffer_changed."
+
+This reverts commit f2b0feeb2e1f33fa6f050935e84d99c714bdb73d.
+---
+ drivers/gpu/drm/drm_atomic_helper.c | 37 ++++++++++++++++++++++++++++-
+ include/drm/drm_atomic_helper.h     |  3 +++
+ 2 files changed, 39 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/drm_atomic_helper.c b/drivers/gpu/drm/drm_atomic_helper.c
+index aa09a19fae37..112178fb0bb5 100644
+--- a/drivers/gpu/drm/drm_atomic_helper.c
++++ b/drivers/gpu/drm/drm_atomic_helper.c
+@@ -1470,7 +1470,42 @@ int drm_atomic_helper_wait_for_fences(struct drm_device *dev,
+ EXPORT_SYMBOL(drm_atomic_helper_wait_for_fences);
+ 
+ /**
+- * drm_atomic_helper_wait_for_vblanks - wait for vblank on CRTCs
++ * drm_atomic_helper_framebuffer_changed - check if framebuffer has changed
++ * @dev: DRM device
++ * @old_state: atomic state object with old state structures
++ * @crtc: DRM crtc
++ *
++ * Checks whether the framebuffer used for this CRTC changes as a result of
++ * the atomic update.  This is useful for drivers which cannot use
++ * drm_atomic_helper_wait_for_vblanks() and need to reimplement its
++ * functionality.
++ *
++ * Returns:
++ * true if the framebuffer changed.
++ */
++bool drm_atomic_helper_framebuffer_changed(struct drm_device *dev,
++					   struct drm_atomic_state *old_state,
++					   struct drm_crtc *crtc)
++{
++	struct drm_plane *plane;
++	struct drm_plane_state *old_plane_state;
++	int i;
++
++	for_each_plane_in_state(old_state, plane, old_plane_state, i) {
++		if (plane->state->crtc != crtc &&
++		    old_plane_state->crtc != crtc)
++			continue;
++
++		if (plane->state->fb != old_plane_state->fb)
++			return true;
++	}
++
++	return false;
++}
++EXPORT_SYMBOL(drm_atomic_helper_framebuffer_changed);
++
++/**
++ * drm_atomic_helper_wait_for_vblanks - wait for vblank on crtcs
+  * @dev: DRM device
+  * @old_state: atomic state object with old state structures
+  *
+diff --git a/include/drm/drm_atomic_helper.h b/include/drm/drm_atomic_helper.h
+index 4045e2507e11..43a73ff7117d 100644
+--- a/include/drm/drm_atomic_helper.h
++++ b/include/drm/drm_atomic_helper.h
+@@ -63,6 +63,9 @@ void drm_atomic_helper_async_commit(struct drm_device *dev,
+ int drm_atomic_helper_wait_for_fences(struct drm_device *dev,
+ 					struct drm_atomic_state *state,
+ 					bool pre_swap);
++bool drm_atomic_helper_framebuffer_changed(struct drm_device *dev,
++					   struct drm_atomic_state *old_state,
++					   struct drm_crtc *crtc);
+ 
+ void drm_atomic_helper_wait_for_vblanks(struct drm_device *dev,
+ 					struct drm_atomic_state *old_state);
+-- 
+2.34.1
+

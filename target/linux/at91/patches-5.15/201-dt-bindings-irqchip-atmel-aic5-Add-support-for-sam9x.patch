@@ -1,0 +1,30 @@
+From 2864c20de756c7dd23c55d0b4fb0df9f7e3315d9 Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Thu, 31 Mar 2022 23:15:08 +0530
+Subject: [PATCH 092/471] dt-bindings: irqchip/atmel-aic5: Add support for
+ sam9x7 aic
+
+Document the support added for the Advanced interrupt controller(AIC)
+chip in the sam9x7 soc family
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ .../devicetree/bindings/interrupt-controller/atmel,aic.txt      | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/interrupt-controller/atmel,aic.txt b/Documentation/devicetree/bindings/interrupt-controller/atmel,aic.txt
+index 7079d44bf3ba..2c267a66a3ea 100644
+--- a/Documentation/devicetree/bindings/interrupt-controller/atmel,aic.txt
++++ b/Documentation/devicetree/bindings/interrupt-controller/atmel,aic.txt
+@@ -4,7 +4,7 @@ Required properties:
+ - compatible: Should be:
+     - "atmel,<chip>-aic" where  <chip> can be "at91rm9200", "sama5d2",
+       "sama5d3" or "sama5d4"
+-    - "microchip,<chip>-aic" where <chip> can be "sam9x60"
++    - "microchip,<chip>-aic" where <chip> can be "sam9x60", "sam9x7"
+ 
+ - interrupt-controller: Identifies the node as an interrupt controller.
+ - #interrupt-cells: The number of cells to define the interrupts. It should be 3.
+-- 
+2.34.1
+

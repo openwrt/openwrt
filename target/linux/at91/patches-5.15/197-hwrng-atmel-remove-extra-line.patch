@@ -1,0 +1,28 @@
+From c483471bae9d60b244dbed04e01417bbcb034176 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 21 Feb 2022 09:59:28 +0200
+Subject: [PATCH 088/471] hwrng: atmel - remove extra line
+
+Remove extra line.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/char/hw_random/atmel-rng.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/char/hw_random/atmel-rng.c b/drivers/char/hw_random/atmel-rng.c
+index b662d44a09a6..b8effe77d80f 100644
+--- a/drivers/char/hw_random/atmel-rng.c
++++ b/drivers/char/hw_random/atmel-rng.c
+@@ -165,7 +165,6 @@ static int atmel_trng_remove(struct platform_device *pdev)
+ {
+ 	struct atmel_trng *trng = platform_get_drvdata(pdev);
+ 
+-
+ 	atmel_trng_cleanup(trng);
+ 	pm_runtime_disable(&pdev->dev);
+ 	pm_runtime_set_suspended(&pdev->dev);
+-- 
+2.34.1
+

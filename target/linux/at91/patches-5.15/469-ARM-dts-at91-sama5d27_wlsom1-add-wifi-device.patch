@@ -1,0 +1,111 @@
+From ee29271a935cdf7fb4f958d8ee48c2b9c3ef13c8 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 25 Aug 2021 12:40:55 +0300
+Subject: [PATCH 360/471] ARM: dts: at91: sama5d27_wlsom1: add wifi device
+
+SAMA5D27 WLSOM1 boards has a WILC3000 device soldered. Add proper
+device tree nodes for this.
+
+[eugen.hristev: original author of this code]
+[claudiu.beznea: adapt such that make dtbs_check is happy, remove status
+ for wifi_pwrseq and wifi nodes]
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+[nicolas.ferre: original author of this code]
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20210825094055.642941-1-claudiu.beznea@microchip.com
+---
+ arch/arm/boot/dts/at91-sama5d27_wlsom1.dtsi | 70 +++++++++++++++++++++
+ 1 file changed, 70 insertions(+)
+
+diff --git a/arch/arm/boot/dts/at91-sama5d27_wlsom1.dtsi b/arch/arm/boot/dts/at91-sama5d27_wlsom1.dtsi
+index a818e8ebd638..5b37e62612e7 100644
+--- a/arch/arm/boot/dts/at91-sama5d27_wlsom1.dtsi
++++ b/arch/arm/boot/dts/at91-sama5d27_wlsom1.dtsi
+@@ -30,6 +30,14 @@ main_xtal {
+ 			clock-frequency = <24000000>;
+ 		};
+ 	};
++
++	wifi_pwrseq: wifi_pwrseq {
++		compatible = "mmc-pwrseq-wilc1000";
++		reset-gpios = <&pioA PIN_PA27 GPIO_ACTIVE_HIGH>;
++		powerdown-gpios = <&pioA PIN_PA29 GPIO_ACTIVE_HIGH>;
++		pinctrl-0 = <&pinctrl_wilc_pwrseq>;
++		pinctrl-names = "default";
++	};
+ };
+ 
+ &flx1 {
+@@ -309,5 +317,67 @@ pinctrl_qspi1_default: qspi1_default {
+ 			 <PIN_PB10__QSPI1_IO3>;
+ 		bias-pull-up;
+ 	};
++
++	pinctrl_sdmmc1_default: sdmmc1_default {
++		cmd-data {
++			pinmux = <PIN_PA28__SDMMC1_CMD>,
++				 <PIN_PA18__SDMMC1_DAT0>,
++				 <PIN_PA19__SDMMC1_DAT1>,
++				 <PIN_PA20__SDMMC1_DAT2>,
++				 <PIN_PA21__SDMMC1_DAT3>;
++			bias-disable;
++		};
++
++		conf-ck {
++			pinmux = <PIN_PA22__SDMMC1_CK>;
++			bias-disable;
++		};
++	};
++
++	pinctrl_wilc_default: wilc_default {
++		conf-irq {
++			pinmux = <PIN_PB25__GPIO>;
++			bias-disable;
++		};
++	};
++
++	pinctrl_wilc_pwrseq: wilc_pwrseq {
++		conf-ce-nrst {
++			pinmux = <PIN_PA27__GPIO>,
++				 <PIN_PA29__GPIO>;
++			bias-disable;
++		};
++
++		conf-rtcclk {
++			pinmux = <PIN_PB13__PCK1>;
++			bias-disable;
++		};
++	};
++};
++
++&sdmmc1 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	bus-width = <4>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sdmmc1_default>;
++	mmc-pwrseq = <&wifi_pwrseq>;
++	no-1-8-v;
++	non-removable;
++	bus-width = <4>;
++	status = "okay";
++
++	wilc: wifi@0 {
++		reg = <0>;
++		compatible = "microchip,wilc1000";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_wilc_default>;
++		clocks = <&pmc PMC_TYPE_SYSTEM 9>;
++		clock-names = "rtc";
++		interrupts = <PIN_PB25 IRQ_TYPE_NONE>;
++		interrupt-parent = <&pioA>;
++		assigned-clocks = <&pmc PMC_TYPE_SYSTEM 9>;
++		assigned-clock-rates = <32768>;
++	};
+ };
+ 
+-- 
+2.34.1
+

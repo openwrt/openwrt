@@ -1,0 +1,45 @@
+From 6bb444f25600dd23ddaba0421df19c8bae489daa Mon Sep 17 00:00:00 2001
+From: Ludovic Desroches <ludovic.desroches@microchip.com>
+Date: Fri, 31 Mar 2017 16:43:02 +0200
+Subject: [PATCH 287/471] dt-bindings: input: Add Atmel PTC subsystem bindings
+
+Add description of the Atmel PTC subsystem bindings.
+
+Signed-off-by: Ludovic Desroches <ludovic.desroches@microchip.com>
+Acked-by: Rob Herring <robh@kernel.org>
+---
+ .../devicetree/bindings/input/atmel,ptc.txt   | 22 +++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/input/atmel,ptc.txt
+
+diff --git a/Documentation/devicetree/bindings/input/atmel,ptc.txt b/Documentation/devicetree/bindings/input/atmel,ptc.txt
+new file mode 100644
+index 000000000000..102f60ef54b6
+--- /dev/null
++++ b/Documentation/devicetree/bindings/input/atmel,ptc.txt
+@@ -0,0 +1,22 @@
++Atmel PTC Subsystem
++
++The Atmel Peripheral Touch Controller subsystem offers built-in hardware
++for capacitive touch measurement on sensors that function as buttons, sliders
++and wheels.
++
++Required properties:
++- compatible: 		Must be "atmel,sama5d2-ptc"
++- reg: 			Address, length of the shared memory and ppp registers location
++			and length.
++- clocks: 		Phandlers to the clocks.
++- clock-names: 		Must be "ptc_clk", "ptc_int_osc", "slow_clk".
++
++Example:
++	ptc@fc060000 {
++		compatible = "atmel,sama5d2-ptc";
++		reg = <0x00800000 0x10000
++		       0xfc060000 0xcf>;
++		interrupts = <58 IRQ_TYPE_LEVEL_HIGH 7>;
++		clocks = <&ptc_clk>, <&main>, <&clk32k>;
++		clock-names = "ptc_clk", "ptc_int_osc", "slow_clk";
++	};
+-- 
+2.34.1
+

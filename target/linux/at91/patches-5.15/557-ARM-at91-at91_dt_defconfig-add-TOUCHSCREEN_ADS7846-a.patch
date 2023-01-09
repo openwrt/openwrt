@@ -1,0 +1,29 @@
+From 93299cf1e8cfb8378b6ff71b854147f961bdccca Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Tue, 8 Jun 2021 10:59:42 +0300
+Subject: [PATCH 448/471] ARM: at91: at91_dt_defconfig: add TOUCHSCREEN_ADS7846
+ as a module
+
+Add TOUCHSCREEN_ADS7846 as a module as it is not used on modern boards.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index 6c31c119b747..cabc249a5c30 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -98,7 +98,7 @@ CONFIG_KEYBOARD_QT1070=y
+ CONFIG_KEYBOARD_GPIO=y
+ # CONFIG_INPUT_MOUSE is not set
+ CONFIG_INPUT_TOUCHSCREEN=y
+-CONFIG_TOUCHSCREEN_ADS7846=y
++CONFIG_TOUCHSCREEN_ADS7846=m
+ CONFIG_TOUCHSCREEN_ATMEL_MXT=y
+ # CONFIG_SERIO is not set
+ CONFIG_LEGACY_PTY_COUNT=4
+-- 
+2.34.1
+

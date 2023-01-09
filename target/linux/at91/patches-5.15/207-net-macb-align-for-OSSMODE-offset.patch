@@ -1,0 +1,30 @@
+From 2d175c53a4a998a76bdc7dd7ec6381deb26ec6fd Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 17 Sep 2021 16:26:13 +0300
+Subject: [PATCH 098/471] net: macb: align for OSSMODE offset
+
+Align for OSSMODE offset.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/cadence/macb.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/cadence/macb.h b/drivers/net/ethernet/cadence/macb.h
+index d1e0e116b976..c33e98bfa5e8 100644
+--- a/drivers/net/ethernet/cadence/macb.h
++++ b/drivers/net/ethernet/cadence/macb.h
+@@ -244,7 +244,7 @@
+ #define MACB_TZQ_OFFSET		12 /* Transmit zero quantum pause frame */
+ #define MACB_TZQ_SIZE		1
+ #define MACB_SRTSM_OFFSET	15 /* Store Receive Timestamp to Memory */
+-#define MACB_OSSMODE_OFFSET 24 /* Enable One Step Synchro Mode */
++#define MACB_OSSMODE_OFFSET	24 /* Enable One Step Synchro Mode */
+ #define MACB_OSSMODE_SIZE	1
+ 
+ /* Bitfields in NCFGR */
+-- 
+2.34.1
+

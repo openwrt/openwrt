@@ -1,0 +1,37 @@
+From 8808c29f7acec93f6ab88b483061756dc8a1a35c Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Thu, 24 Mar 2022 17:36:29 +0200
+Subject: [PATCH 054/471] ASoC: dt-bindings: mchp,spdiftx: add
+ 'sound-name-prefix' property
+
+Add 'sound-name-prefix' property to differentiante between interfaces in
+DPCM (ASRC) use-cases. Property is optional.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ .../devicetree/bindings/sound/mchp,spdiftx.yaml          | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/sound/mchp,spdiftx.yaml b/Documentation/devicetree/bindings/sound/mchp,spdiftx.yaml
+index bdfb63387c53..0a47a5de67d3 100644
+--- a/Documentation/devicetree/bindings/sound/mchp,spdiftx.yaml
++++ b/Documentation/devicetree/bindings/sound/mchp,spdiftx.yaml
+@@ -43,6 +43,15 @@ properties:
+   dma-names:
+     const: tx
+ 
++  sound-name-prefix:
++    pattern: "^SPDIFTX[0-9]$"
++    $ref: /schemas/types.yaml#/definitions/string
++    description:
++      used as prefix for sink/source names of the component. Must be a
++      unique string among multiple instances of the same component.
++      The name can be "SPDIFTX0" or "SPDIFTX1" ... "SPDIFTXx", where x depends
++      on the maximum available instances on a Microchip SoC.
++
+ required:
+   - "#sound-dai-cells"
+   - compatible
+-- 
+2.34.1
+

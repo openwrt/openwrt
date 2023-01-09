@@ -1,0 +1,27 @@
+From c0c7a80fc5ab084b288581780fc8c296707d718f Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Tue, 4 Jan 2022 08:44:23 +0200
+Subject: [PATCH 420/471] ARM: configs: at91: add eic
+
+Add eic.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 772bb6c220a7..6a5220e2e686 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -190,6 +190,7 @@ CONFIG_IIO_SW_TRIGGER=y
+ CONFIG_AT91_SAMA5D2_ADC=y
+ CONFIG_PWM=y
+ CONFIG_PWM_ATMEL=y
++CONFIG_MCHP_EIC=y
+ CONFIG_EXT2_FS=y
+ CONFIG_EXT3_FS=y
+ CONFIG_FANOTIFY=y
+-- 
+2.34.1
+

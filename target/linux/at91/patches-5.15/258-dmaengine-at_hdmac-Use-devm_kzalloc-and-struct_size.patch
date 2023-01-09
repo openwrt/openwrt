@@ -1,0 +1,93 @@
+From 79ab8eda2c8cf01804f66bd137fba046a8ed86fb Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Tue, 25 Oct 2022 12:02:56 +0300
+Subject: [PATCH 149/471] dmaengine: at_hdmac: Use devm_kzalloc() and
+ struct_size()
+
+Use the resource-managed kzalloc to simplify error logic. Memory allocated
+with this function is automatically freed on driver detach. Use
+struct_size() helper to calculate the size of the atdma structure with its
+trailing flexible array. While here, move the mem allocation higher in the
+probe method, as failing to allocate memory indicates a serious system
+issue, and everything else does not matter anyway. All these help the code
+look a bit cleaner.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20221025090306.297886-1-tudor.ambarus@microchip.com
+Link: https://lore.kernel.org/r/20221025090306.297886-23-tudor.ambarus@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/at_hdmac.c | 23 +++++++++--------------
+ 1 file changed, 9 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/dma/at_hdmac.c b/drivers/dma/at_hdmac.c
+index 6bd9e35db8f9..f3fbb0aa8b24 100644
+--- a/drivers/dma/at_hdmac.c
++++ b/drivers/dma/at_hdmac.c
+@@ -19,6 +19,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
+ #include <linux/of.h>
++#include <linux/overflow.h>
+ #include <linux/of_device.h>
+ #include <linux/of_dma.h>
+ 
+@@ -1786,6 +1787,12 @@ static int __init at_dma_probe(struct platform_device *pdev)
+ 	if (!plat_dat)
+ 		return -ENODEV;
+ 
++	atdma = devm_kzalloc(&pdev->dev,
++			     struct_size(atdma, chan, plat_dat->nr_channels),
++			     GFP_KERNEL);
++	if (!atdma)
++		return -ENOMEM;
++
+ 	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!io)
+ 		return -EINVAL;
+@@ -1794,21 +1801,13 @@ static int __init at_dma_probe(struct platform_device *pdev)
+ 	if (irq < 0)
+ 		return irq;
+ 
+-	size = sizeof(struct at_dma);
+-	size += plat_dat->nr_channels * sizeof(struct at_dma_chan);
+-	atdma = kzalloc(size, GFP_KERNEL);
+-	if (!atdma)
+-		return -ENOMEM;
+-
+ 	/* discover transaction capabilities */
+ 	atdma->dma_common.cap_mask = plat_dat->cap_mask;
+ 	atdma->all_chan_mask = (1 << plat_dat->nr_channels) - 1;
+ 
+ 	size = resource_size(io);
+-	if (!request_mem_region(io->start, size, pdev->dev.driver->name)) {
+-		err = -EBUSY;
+-		goto err_kfree;
+-	}
++	if (!request_mem_region(io->start, size, pdev->dev.driver->name))
++		return -EBUSY;
+ 
+ 	atdma->regs = ioremap(io->start, size);
+ 	if (!atdma->regs) {
+@@ -1963,8 +1962,6 @@ static int __init at_dma_probe(struct platform_device *pdev)
+ 	atdma->regs = NULL;
+ err_release_r:
+ 	release_mem_region(io->start, size);
+-err_kfree:
+-	kfree(atdma);
+ 	return err;
+ }
+ 
+@@ -2003,8 +2000,6 @@ static int at_dma_remove(struct platform_device *pdev)
+ 	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	release_mem_region(io->start, resource_size(io));
+ 
+-	kfree(atdma);
+-
+ 	return 0;
+ }
+ 
+-- 
+2.34.1
+

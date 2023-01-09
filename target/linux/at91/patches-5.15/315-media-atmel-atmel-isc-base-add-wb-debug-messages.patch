@@ -1,0 +1,77 @@
+From 5d4ec9f192039af673e1e57b2ebd250cdf324884 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 13 Dec 2021 14:49:35 +0100
+Subject: [PATCH 206/471] media: atmel: atmel-isc-base: add wb debug messages
+
+Add debug messages that make it easier to debug white balance algorithm.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>
+(cherry picked from commit 76c97b0bb842ae6a6dcb87785518ddf0dec89381)
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/atmel/atmel-isc-base.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
+index ab01e3c972f8..73f4146ce4e6 100644
+--- a/drivers/media/platform/atmel/atmel-isc-base.c
++++ b/drivers/media/platform/atmel/atmel-isc-base.c
+@@ -1584,10 +1584,15 @@ static void isc_hist_count(struct isc_device *isc, u32 *min, u32 *max)
+ 
+ 	if (!*min)
+ 		*min = 1;
++
++	v4l2_dbg(1, debug, &isc->v4l2_dev,
++		 "isc wb: hist_id %u, hist_count %u",
++		 ctrls->hist_id, *hist_count);
+ }
+ 
+ static void isc_wb_update(struct isc_ctrls *ctrls)
+ {
++	struct isc_device *isc = container_of(ctrls, struct isc_device, ctrls);
+ 	u32 *hist_count = &ctrls->hist_count[0];
+ 	u32 c, offset[4];
+ 	u64 avg = 0;
+@@ -1604,6 +1609,9 @@ static void isc_wb_update(struct isc_ctrls *ctrls)
+ 		(u64)hist_count[ISC_HIS_CFG_MODE_GB];
+ 	avg >>= 1;
+ 
++	v4l2_dbg(1, debug, &isc->v4l2_dev,
++		 "isc wb: green components average %llu\n", avg);
++
+ 	/* Green histogram is null, nothing to do */
+ 	if (!avg)
+ 		return;
+@@ -1656,9 +1664,15 @@ static void isc_wb_update(struct isc_ctrls *ctrls)
+ 		else
+ 			gw_gain[c] = 1 << 9;
+ 
++		v4l2_dbg(1, debug, &isc->v4l2_dev,
++			 "isc wb: component %d, s_gain %u, gw_gain %u\n",
++			 c, s_gain[c], gw_gain[c]);
+ 		/* multiply both gains and adjust for decimals */
+ 		ctrls->gain[c] = s_gain[c] * gw_gain[c];
+ 		ctrls->gain[c] >>= 9;
++		v4l2_dbg(1, debug, &isc->v4l2_dev,
++			 "isc wb: component %d, final gain %u\n",
++			 c, ctrls->gain[c]);
+ 	}
+ }
+ 
+@@ -1682,6 +1696,10 @@ static void isc_awb_work(struct work_struct *w)
+ 		return;
+ 
+ 	isc_hist_count(isc, &min, &max);
++
++	v4l2_dbg(1, debug, &isc->v4l2_dev,
++		 "isc wb mode %d: hist min %u , max %u\n", hist_id, min, max);
++
+ 	ctrls->hist_minmax[hist_id][HIST_MIN_INDEX] = min;
+ 	ctrls->hist_minmax[hist_id][HIST_MAX_INDEX] = max;
+ 
+-- 
+2.34.1
+

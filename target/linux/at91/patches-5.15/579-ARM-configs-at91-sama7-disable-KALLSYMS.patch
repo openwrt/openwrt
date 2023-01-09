@@ -1,0 +1,31 @@
+From a85b0c534aa527e5c7e9cc422d0b1853f0c729ff Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Tue, 18 Oct 2022 18:07:22 +0300
+Subject: [PATCH 470/471] ARM: configs: at91: sama7: disable KALLSYMS
+
+Disable KALLSYMS from the defconfig used for the release. Although
+KALLSYMS is useful for debugging purposes, it will increase the size
+of the kernel in production so we disable it for now.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+Reviewed-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index c366008b9efa..775d06b43694 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -12,7 +12,7 @@ CONFIG_SYSFS_DEPRECATED_V2=y
+ CONFIG_BLK_DEV_INITRD=y
+ # CONFIG_FHANDLE is not set
+ # CONFIG_IO_URING is not set
+-CONFIG_KALLSYMS_ALL=y
++# CONFIG_KALLSYMS is not set
+ CONFIG_EMBEDDED=y
+ # CONFIG_VM_EVENT_COUNTERS is not set
+ CONFIG_SLAB=y
+-- 
+2.34.1
+

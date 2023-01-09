@@ -1,0 +1,65 @@
+From 40f66c1b6f925d033d79ad9d7292eca27956a727 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Thu, 14 Apr 2022 14:45:52 +0300
+Subject: [PATCH 282/471] ATM: at91: pm: add ulp0-fast to the list of wol
+ affected pm modes
+
+SoCs are affected also if suspended to ULP0 fast, WoL configured on
+ethernet interfaces and WoL packet received while in ULP0 fast.
+Thus add ULP0 fast to the list of affected PM modes.
+
+Fixes: 1e29fb28e1ab ("ARM: at91: pm: add quirks for pm")
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/mach-at91/pm.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
+index c7346e436e63..518aecb3a6d3 100644
+--- a/arch/arm/mach-at91/pm.c
++++ b/arch/arm/mach-at91/pm.c
+@@ -1545,6 +1545,7 @@ void __init sama5_pm_init(void)
+ 	};
+ 	static const u32 iomaps[] __initconst = {
+ 		[AT91_PM_ULP0]		= AT91_PM_IOMAP(ETHC),
++		[AT91_PM_ULP0_FAST]	= AT91_PM_IOMAP(ETHC),
+ 	};
+ 	int ret;
+ 
+@@ -1561,9 +1562,11 @@ void __init sama5_pm_init(void)
+ 
+ 	/* Quirks applies to ULP0 and ULP1 modes. */
+ 	soc_pm.quirks.eth[AT91_PM_G_ETH].modes = BIT(AT91_PM_ULP0) |
++						 BIT(AT91_PM_ULP0_FAST) |
+ 						 BIT(AT91_PM_ULP1);
+ 	/* Do not suspend in ULP0 if GETH is the only wakeup source. */
+-	soc_pm.quirks.eth[AT91_PM_G_ETH].dns_modes = BIT(AT91_PM_ULP0);
++	soc_pm.quirks.eth[AT91_PM_G_ETH].dns_modes = BIT(AT91_PM_ULP0) |
++						     BIT(AT91_PM_ULP0_FAST);
+ }
+ 
+ void __init sama5d2_pm_init(void)
+@@ -1574,6 +1577,7 @@ void __init sama5d2_pm_init(void)
+ 	};
+ 	static const u32 iomaps[] __initconst = {
+ 		[AT91_PM_ULP0]		= AT91_PM_IOMAP(ETHC),
++		[AT91_PM_ULP0_FAST]	= AT91_PM_IOMAP(ETHC),
+ 		[AT91_PM_ULP1]		= AT91_PM_IOMAP(SHDWC) |
+ 					  AT91_PM_IOMAP(ETHC),
+ 		[AT91_PM_BACKUP]	= AT91_PM_IOMAP(SHDWC) |
+@@ -1603,9 +1607,11 @@ void __init sama5d2_pm_init(void)
+ 
+ 	/* Quirk applies to ULP0 and ULP1 modes. */
+ 	soc_pm.quirks.eth[AT91_PM_G_ETH].modes = BIT(AT91_PM_ULP0) |
++						 BIT(AT91_PM_ULP0_FAST) |
+ 						 BIT(AT91_PM_ULP1);
+ 	/* Do not suspend in ULP0 if GETH is the only wakeup source. */
+-	soc_pm.quirks.eth[AT91_PM_G_ETH].dns_modes = BIT(AT91_PM_ULP0);
++	soc_pm.quirks.eth[AT91_PM_G_ETH].dns_modes = BIT(AT91_PM_ULP0) |
++						     BIT(AT91_PM_ULP0_FAST);
+ }
+ 
+ void __init sama7_pm_init(void)
+-- 
+2.34.1
+

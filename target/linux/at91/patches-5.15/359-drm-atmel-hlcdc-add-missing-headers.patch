@@ -1,0 +1,27 @@
+From c10d5c2096d99c75da163a655b015cf4ab49fa22 Mon Sep 17 00:00:00 2001
+From: Ludovic Desroches <ludovic.desroches@microchip.com>
+Date: Tue, 31 Mar 2020 13:50:55 +0200
+Subject: [PATCH 250/471] drm/atmel-hlcdc: add missing headers
+
+Signed-off-by: Ludovic Desroches <ludovic.desroches@microchip.com>
+---
+ drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.h b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.h
+index 5b5c774e0edf..645c8c6169e4 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.h
++++ b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.h
+@@ -13,6 +13,9 @@
+ 
+ #include <linux/regmap.h>
+ 
++#include <drm/drm_crtc.h>
++#include <drm/drm_encoder.h>
++#include <drm/drm_modes.h>
+ #include <drm/drm_plane.h>
+ 
+ #define ATMEL_HLCDC_LAYER_CHER			0x0
+-- 
+2.34.1
+

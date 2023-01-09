@@ -1,0 +1,82 @@
+From 58c41da1492a125bee4551737a76b8c5c59fb8eb Mon Sep 17 00:00:00 2001
+From: Sergiu Moga <sergiu.moga@microchip.com>
+Date: Fri, 2 Sep 2022 14:46:04 +0300
+Subject: [PATCH 165/471] tty: serial: atmel: Only divide Clock Divisor if the
+ IP is USART
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Make sure that the driver only divides the clock divisor if the
+IP handled at that point is USART, since UART IP's do not support
+implicit peripheral clock division. Instead, in the case of UART,
+go with the highest possible clock divisor.
+
+Signed-off-by: Sergiu Moga <sergiu.moga@microchip.com>
+Reviewed-by: Ilpo Järvinen <ilpo.jarvinen@linux.intel.com>
+---
+ drivers/tty/serial/atmel_serial.c | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/atmel_serial.c b/drivers/tty/serial/atmel_serial.c
+index 2c8b121217d2..c9a0b847afde 100644
+--- a/drivers/tty/serial/atmel_serial.c
++++ b/drivers/tty/serial/atmel_serial.c
+@@ -149,6 +149,7 @@ struct atmel_uart_port {
+ 	u32			rts_low;
+ 	bool			ms_irq_enabled;
+ 	u32			rtor;	/* address of receiver timeout register if it exists */
++	bool			is_usart;
+ 	bool			has_frac_baudrate;
+ 	bool			has_hw_timer;
+ 	struct timer_list	uart_timer;
+@@ -1826,6 +1827,7 @@ static void atmel_get_ip_name(struct uart_port *port)
+ 	 */
+ 	atmel_port->has_frac_baudrate = false;
+ 	atmel_port->has_hw_timer = false;
++	atmel_port->is_usart = false;
+ 
+ 	if (name == new_uart) {
+ 		dev_dbg(port->dev, "Uart with hw timer");
+@@ -1835,6 +1837,7 @@ static void atmel_get_ip_name(struct uart_port *port)
+ 		dev_dbg(port->dev, "Usart\n");
+ 		atmel_port->has_frac_baudrate = true;
+ 		atmel_port->has_hw_timer = true;
++		atmel_port->is_usart = true;
+ 		atmel_port->rtor = ATMEL_US_RTOR;
+ 		version = atmel_uart_readl(port, ATMEL_US_VERSION);
+ 		switch (version) {
+@@ -1864,6 +1867,7 @@ static void atmel_get_ip_name(struct uart_port *port)
+ 			dev_dbg(port->dev, "This version is usart\n");
+ 			atmel_port->has_frac_baudrate = true;
+ 			atmel_port->has_hw_timer = true;
++			atmel_port->is_usart = true;
+ 			atmel_port->rtor = ATMEL_US_RTOR;
+ 			break;
+ 		case 0x203:
+@@ -2286,10 +2290,21 @@ static void atmel_set_termios(struct uart_port *port, struct ktermios *termios,
+ 		cd = uart_get_divisor(port, baud);
+ 	}
+ 
+-	if (cd > 65535) {	/* BRGR is 16-bit, so switch to slower clock */
++	/*
++	 * If the current value of the Clock Divisor surpasses the 16 bit
++	 * ATMEL_US_CD mask and the IP is USART, switch to the Peripheral
++	 * Clock implicitly divided by 8.
++	 * If the IP is UART however, keep the highest possible value for
++	 * the CD and avoid needless division of CD, since UART IP's do not
++	 * support implicit division of the Peripheral Clock.
++	 */
++	if (atmel_port->is_usart && cd > ATMEL_US_CD) {
+ 		cd /= 8;
+ 		mode |= ATMEL_US_USCLKS_MCK_DIV8;
++	} else {
++		cd = min_t(unsigned int, cd, ATMEL_US_CD);
+ 	}
++
+ 	quot = cd | fp << ATMEL_US_FP_OFFSET;
+ 
+ 	if (!(port->iso7816.flags & SER_ISO7816_ENABLED))
+-- 
+2.34.1
+

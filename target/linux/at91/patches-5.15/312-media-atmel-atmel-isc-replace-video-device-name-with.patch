@@ -1,0 +1,34 @@
+From 5fe9c501fe76ec86042249b7f569172ffb2ef058 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 13 Dec 2021 14:49:22 +0100
+Subject: [PATCH 203/471] media: atmel: atmel-isc: replace video device name
+ with module name
+
+To have consistency with future media controller development,
+replace the video device name with KBUILD_MODNAME.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>
+(cherry picked from commit ae9a7d57f66a81deeaea15f4bfd4dd6ff547c530)
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/atmel/atmel-isc-base.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
+index f768be3c4059..5b0175f87bbd 100644
+--- a/drivers/media/platform/atmel/atmel-isc-base.c
++++ b/drivers/media/platform/atmel/atmel-isc-base.c
+@@ -2179,7 +2179,7 @@ static int isc_async_complete(struct v4l2_async_notifier *notifier)
+ 	}
+ 
+ 	/* Register video device */
+-	strscpy(vdev->name, "microchip-isc", sizeof(vdev->name));
++	strscpy(vdev->name, KBUILD_MODNAME, sizeof(vdev->name));
+ 	vdev->release		= video_device_release_empty;
+ 	vdev->fops		= &isc_fops;
+ 	vdev->ioctl_ops		= &isc_ioctl_ops;
+-- 
+2.34.1
+

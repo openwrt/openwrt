@@ -1,0 +1,60 @@
+From 0127e738b1aba25713e3e1a37652b3a77ed41cc9 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Wed, 15 Dec 2021 15:43:11 +0200
+Subject: [PATCH 416/471] ARM: configs: at91: Enable crypto software
+ implementations
+
+Enable at least the same amount of algs as the hardware IPs are
+supporting so that they are able to fallback to the software
+implementations in case they need it.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20211215134311.304427-1-tudor.ambarus@microchip.com
+---
+ arch/arm/configs/at91_dt_defconfig | 9 ++++++++-
+ arch/arm/configs/sama5_defconfig   | 8 ++++++++
+ 2 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index b1564e0aa000..3e61911b537f 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -215,7 +215,14 @@ CONFIG_NLS_CODEPAGE_437=y
+ CONFIG_NLS_CODEPAGE_850=y
+ CONFIG_NLS_ISO8859_1=y
+ CONFIG_NLS_UTF8=y
+-CONFIG_CRYPTO_ECB=y
++CONFIG_CRYPTO_CBC=y
++CONFIG_CRYPTO_CFB=y
++CONFIG_CRYPTO_OFB=y
++CONFIG_CRYPTO_XTS=y
++CONFIG_CRYPTO_HMAC=y
++CONFIG_CRYPTO_SHA1=y
++CONFIG_CRYPTO_SHA512=y
++CONFIG_CRYPTO_DES=y
+ CONFIG_CRYPTO_USER_API_HASH=m
+ CONFIG_CRYPTO_USER_API_SKCIPHER=m
+ CONFIG_CRYPTO_DEV_ATMEL_AES=y
+diff --git a/arch/arm/configs/sama5_defconfig b/arch/arm/configs/sama5_defconfig
+index 17db3b3e2dd3..72531b1c013c 100644
+--- a/arch/arm/configs/sama5_defconfig
++++ b/arch/arm/configs/sama5_defconfig
+@@ -231,6 +231,14 @@ CONFIG_NLS_CODEPAGE_437=y
+ CONFIG_NLS_CODEPAGE_850=y
+ CONFIG_NLS_ISO8859_1=y
+ CONFIG_NLS_UTF8=y
++CONFIG_CRYPTO_CBC=y
++CONFIG_CRYPTO_CFB=y
++CONFIG_CRYPTO_OFB=y
++CONFIG_CRYPTO_XTS=y
++CONFIG_CRYPTO_HMAC=y
++CONFIG_CRYPTO_SHA1=y
++CONFIG_CRYPTO_SHA512=y
++CONFIG_CRYPTO_DES=y
+ CONFIG_CRYPTO_USER_API_HASH=m
+ CONFIG_CRYPTO_USER_API_SKCIPHER=m
+ CONFIG_CRYPTO_DEV_ATMEL_AES=y
+-- 
+2.34.1
+

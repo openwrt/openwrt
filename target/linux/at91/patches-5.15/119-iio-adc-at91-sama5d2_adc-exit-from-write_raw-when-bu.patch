@@ -1,0 +1,63 @@
+From 8abf654f950728408531b8aaa3e8858966f57922 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 3 Aug 2022 13:28:41 +0300
+Subject: [PATCH 010/471] iio: adc: at91-sama5d2_adc: exit from write_raw()
+ when buffers are enabled
+
+When buffers are enabled conversion may start asynchronously thus
+allowing changes on actual hardware could lead to bad behavior. Thus
+do not allow changing oversampling ratio and sample frequency when
+if iio_device_claim_direct_mode() returns with error.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20220803102855.2191070-6-claudiu.beznea@microchip.com
+Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+---
+ drivers/iio/adc/at91-sama5d2_adc.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/iio/adc/at91-sama5d2_adc.c b/drivers/iio/adc/at91-sama5d2_adc.c
+index f227ad0c9fea..b3835efedb09 100644
+--- a/drivers/iio/adc/at91-sama5d2_adc.c
++++ b/drivers/iio/adc/at91-sama5d2_adc.c
+@@ -1641,6 +1641,7 @@ static int at91_adc_write_raw(struct iio_dev *indio_dev,
+ 			      int val, int val2, long mask)
+ {
+ 	struct at91_adc_state *st = iio_priv(indio_dev);
++	int ret;
+ 
+ 	switch (mask) {
+ 	case IIO_CHAN_INFO_OVERSAMPLING_RATIO:
+@@ -1650,20 +1651,29 @@ static int at91_adc_write_raw(struct iio_dev *indio_dev,
+ 		/* if no change, optimize out */
+ 		if (val == st->oversampling_ratio)
+ 			return 0;
++
++		ret = iio_device_claim_direct_mode(indio_dev);
++		if (ret)
++			return ret;
+ 		mutex_lock(&st->lock);
+ 		st->oversampling_ratio = val;
+ 		/* update ratio */
+ 		at91_adc_config_emr(st);
+ 		mutex_unlock(&st->lock);
++		iio_device_release_direct_mode(indio_dev);
+ 		return 0;
+ 	case IIO_CHAN_INFO_SAMP_FREQ:
+ 		if (val < st->soc_info.min_sample_rate ||
+ 		    val > st->soc_info.max_sample_rate)
+ 			return -EINVAL;
+ 
++		ret = iio_device_claim_direct_mode(indio_dev);
++		if (ret)
++			return ret;
+ 		mutex_lock(&st->lock);
+ 		at91_adc_setup_samp_freq(indio_dev, val);
+ 		mutex_unlock(&st->lock);
++		iio_device_release_direct_mode(indio_dev);
+ 		return 0;
+ 	default:
+ 		return -EINVAL;
+-- 
+2.34.1
+

@@ -1,0 +1,38 @@
+From 463eb03f5c6da8a8c8e93bddbb6a1935be36958b Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 20 Oct 2021 12:46:54 +0300
+Subject: [PATCH 330/471] ARM: dts: at91: sama7g5: add rtc node
+
+Add RTC node.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+[claudiu.beznea: add sama7g5 compatible as the IP has 2 extra registers
+ compared with sam9x60]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20211020094656.3343242-2-claudiu.beznea@microchip.com
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index e534f0bc21d5..199717fe77dd 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -189,6 +189,13 @@ gpbr: gpbr@e001d060 {
+ 			reg = <0xe001d060 0x48>;
+ 		};
+ 
++		rtc: rtc@e001d0a8 {
++			compatible = "microchip,sama7g5-rtc", "microchip,sam9x60-rtc";
++			reg = <0xe001d0a8 0x30>;
++			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&clk32k 1>;
++		};
++
+ 		ps_wdt: watchdog@e001d180 {
+ 			compatible = "microchip,sama7g5-wdt";
+ 			reg = <0xe001d180 0x24>;
+-- 
+2.34.1
+

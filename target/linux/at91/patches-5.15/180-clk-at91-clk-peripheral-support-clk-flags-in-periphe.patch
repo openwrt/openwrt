@@ -1,0 +1,199 @@
+From 916d793ca5a89b81c3cd2155c9e3fc3de12f0c19 Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Mon, 21 Mar 2022 22:58:09 +0530
+Subject: [PATCH 071/471] clk: at91: clk-peripheral: support clk flags in
+ peripheral clk driver
+
+Add support to peripheral clock driver for setting clock flags from
+board specific drivers to prevent disabling peripheral clocks that are
+critical for the system.
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ drivers/clk/at91/at91sam9n12.c    | 2 +-
+ drivers/clk/at91/at91sam9x5.c     | 4 ++--
+ drivers/clk/at91/clk-peripheral.c | 9 ++++++++-
+ drivers/clk/at91/dt-compat.c      | 3 ++-
+ drivers/clk/at91/pmc.h            | 2 +-
+ drivers/clk/at91/sam9x60.c        | 2 +-
+ drivers/clk/at91/sama5d2.c        | 4 ++--
+ drivers/clk/at91/sama5d3.c        | 2 +-
+ drivers/clk/at91/sama5d4.c        | 4 ++--
+ drivers/clk/at91/sama7g5.c        | 2 +-
+ 10 files changed, 21 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/clk/at91/at91sam9n12.c b/drivers/clk/at91/at91sam9n12.c
+index 63cc58944b00..c53961163fad 100644
+--- a/drivers/clk/at91/at91sam9n12.c
++++ b/drivers/clk/at91/at91sam9n12.c
+@@ -237,7 +237,7 @@ static void __init at91sam9n12_pmc_setup(struct device_node *np)
+ 							 at91sam9n12_periphck[i].n,
+ 							 "masterck_div",
+ 							 at91sam9n12_periphck[i].id,
+-							 &range, INT_MIN);
++							 &range, INT_MIN, false);
+ 		if (IS_ERR(hw))
+ 			goto err_free;
+ 
+diff --git a/drivers/clk/at91/at91sam9x5.c b/drivers/clk/at91/at91sam9x5.c
+index bd8007b4f3e0..27fe1aaabf39 100644
+--- a/drivers/clk/at91/at91sam9x5.c
++++ b/drivers/clk/at91/at91sam9x5.c
+@@ -270,7 +270,7 @@ static void __init at91sam9x5_pmc_setup(struct device_node *np,
+ 							 at91sam9x5_periphck[i].n,
+ 							 "masterck_div",
+ 							 at91sam9x5_periphck[i].id,
+-							 &range, INT_MIN);
++							 &range, INT_MIN, false);
+ 		if (IS_ERR(hw))
+ 			goto err_free;
+ 
+@@ -283,7 +283,7 @@ static void __init at91sam9x5_pmc_setup(struct device_node *np,
+ 							 extra_pcks[i].n,
+ 							 "masterck_div",
+ 							 extra_pcks[i].id,
+-							 &range, INT_MIN);
++							 &range, INT_MIN, false);
+ 		if (IS_ERR(hw))
+ 			goto err_free;
+ 
+diff --git a/drivers/clk/at91/clk-peripheral.c b/drivers/clk/at91/clk-peripheral.c
+index e14fa5ac734c..7696eac99838 100644
+--- a/drivers/clk/at91/clk-peripheral.c
++++ b/drivers/clk/at91/clk-peripheral.c
+@@ -445,7 +445,7 @@ at91_clk_register_sam9x5_peripheral(struct regmap *regmap, spinlock_t *lock,
+ 				    const struct clk_pcr_layout *layout,
+ 				    const char *name, const char *parent_name,
+ 				    u32 id, const struct clk_range *range,
+-				    int chg_pid)
++				    int chg_pid, bool critical)
+ {
+ 	struct clk_sam9x5_peripheral *periph;
+ 	struct clk_init_data init;
+@@ -471,6 +471,13 @@ at91_clk_register_sam9x5_peripheral(struct regmap *regmap, spinlock_t *lock,
+ 		init.ops = &sam9x5_peripheral_chg_ops;
+ 	}
+ 
++	/*
++	 * If this critical flag is set, the peripheral clock feeds a
++	 * peripheral that should not be disabled like DDR
++	 */
++	if (critical)
++		init.flags |= CLK_IS_CRITICAL;
++
+ 	periph->id = id;
+ 	periph->hw.init = &init;
+ 	periph->div = 0;
+diff --git a/drivers/clk/at91/dt-compat.c b/drivers/clk/at91/dt-compat.c
+index ca2dbb65b9df..8be4198ab4ec 100644
+--- a/drivers/clk/at91/dt-compat.c
++++ b/drivers/clk/at91/dt-compat.c
+@@ -473,7 +473,8 @@ of_at91_clk_periph_setup(struct device_node *np, u8 type)
+ 								 name,
+ 								 parent_name,
+ 								 id, &range,
+-								 INT_MIN);
++								 INT_MIN,
++								 false);
+ 		}
+ 
+ 		if (IS_ERR(hw))
+diff --git a/drivers/clk/at91/pmc.h b/drivers/clk/at91/pmc.h
+index 5d4f99ecd142..26d47b8201e6 100644
+--- a/drivers/clk/at91/pmc.h
++++ b/drivers/clk/at91/pmc.h
+@@ -200,7 +200,7 @@ at91_clk_register_sam9x5_peripheral(struct regmap *regmap, spinlock_t *lock,
+ 				    const struct clk_pcr_layout *layout,
+ 				    const char *name, const char *parent_name,
+ 				    u32 id, const struct clk_range *range,
+-				    int chg_pid);
++				    int chg_pid, bool critical);
+ 
+ struct clk_hw * __init
+ at91_clk_register_pll(struct regmap *regmap, const char *name,
+diff --git a/drivers/clk/at91/sam9x60.c b/drivers/clk/at91/sam9x60.c
+index b4671fdebddf..3e0878aa9e95 100644
+--- a/drivers/clk/at91/sam9x60.c
++++ b/drivers/clk/at91/sam9x60.c
+@@ -336,7 +336,7 @@ static void __init sam9x60_pmc_setup(struct device_node *np)
+ 							 sam9x60_periphck[i].n,
+ 							 "masterck_div",
+ 							 sam9x60_periphck[i].id,
+-							 &range, INT_MIN);
++							 &range, INT_MIN, false);
+ 		if (IS_ERR(hw))
+ 			goto err_free;
+ 
+diff --git a/drivers/clk/at91/sama5d2.c b/drivers/clk/at91/sama5d2.c
+index d027294a0089..0d0f5343eaad 100644
+--- a/drivers/clk/at91/sama5d2.c
++++ b/drivers/clk/at91/sama5d2.c
+@@ -304,7 +304,7 @@ static void __init sama5d2_pmc_setup(struct device_node *np)
+ 							 sama5d2_periphck[i].n,
+ 							 "masterck_div",
+ 							 sama5d2_periphck[i].id,
+-							 &range, INT_MIN);
++							 &range, INT_MIN, false);
+ 		if (IS_ERR(hw))
+ 			goto err_free;
+ 
+@@ -318,7 +318,7 @@ static void __init sama5d2_pmc_setup(struct device_node *np)
+ 							 "h32mxck",
+ 							 sama5d2_periph32ck[i].id,
+ 							 &sama5d2_periph32ck[i].r,
+-							 INT_MIN);
++							 INT_MIN, false);
+ 		if (IS_ERR(hw))
+ 			goto err_free;
+ 
+diff --git a/drivers/clk/at91/sama5d3.c b/drivers/clk/at91/sama5d3.c
+index 339d0f382ff0..6fabefbbbe1f 100644
+--- a/drivers/clk/at91/sama5d3.c
++++ b/drivers/clk/at91/sama5d3.c
+@@ -237,7 +237,7 @@ static void __init sama5d3_pmc_setup(struct device_node *np)
+ 							 "masterck_div",
+ 							 sama5d3_periphck[i].id,
+ 							 &sama5d3_periphck[i].r,
+-							 INT_MIN);
++							 INT_MIN, false);
+ 		if (IS_ERR(hw))
+ 			goto err_free;
+ 
+diff --git a/drivers/clk/at91/sama5d4.c b/drivers/clk/at91/sama5d4.c
+index 4af75b1e39e9..69dba2b22d6f 100644
+--- a/drivers/clk/at91/sama5d4.c
++++ b/drivers/clk/at91/sama5d4.c
+@@ -259,7 +259,7 @@ static void __init sama5d4_pmc_setup(struct device_node *np)
+ 							 sama5d4_periphck[i].n,
+ 							 "masterck_div",
+ 							 sama5d4_periphck[i].id,
+-							 &range, INT_MIN);
++							 &range, INT_MIN, false);
+ 		if (IS_ERR(hw))
+ 			goto err_free;
+ 
+@@ -272,7 +272,7 @@ static void __init sama5d4_pmc_setup(struct device_node *np)
+ 							 sama5d4_periph32ck[i].n,
+ 							 "h32mxck",
+ 							 sama5d4_periph32ck[i].id,
+-							 &range, INT_MIN);
++							 &range, INT_MIN, false);
+ 		if (IS_ERR(hw))
+ 			goto err_free;
+ 
+diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
+index 7010de018a0e..b05ecf79873d 100644
+--- a/drivers/clk/at91/sama7g5.c
++++ b/drivers/clk/at91/sama7g5.c
+@@ -1090,7 +1090,7 @@ static void __init sama7g5_pmc_setup(struct device_node *np)
+ 						sama7g5_periphck[i].id,
+ 						&sama7g5_periphck[i].r,
+ 						sama7g5_periphck[i].chgp ? 0 :
+-						INT_MIN);
++						INT_MIN, false);
+ 		if (IS_ERR(hw))
+ 			goto err_free;
+ 
+-- 
+2.34.1
+

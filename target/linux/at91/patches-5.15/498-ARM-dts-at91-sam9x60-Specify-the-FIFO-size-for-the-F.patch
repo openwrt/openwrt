@@ -1,0 +1,28 @@
+From b2e9efe988ed81822c4148940e4439008e06d1f0 Mon Sep 17 00:00:00 2001
+From: Manikandan M <manikandan.m@microchip.com>
+Date: Mon, 21 Feb 2022 11:07:51 +0530
+Subject: [PATCH 389/471] ARM: dts: at91: sam9x60: Specify the FIFO size for
+ the Flexcom UART
+
+The UART submodule in Flexcom has 16-byte Transmit and Receive FIFOs.
+
+Signed-off-by: Manikandan M <manikandan.m@microchip.com>
+---
+ arch/arm/boot/dts/sam9x60.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/sam9x60.dtsi b/arch/arm/boot/dts/sam9x60.dtsi
+index cf28579bcd06..72b09c5a1b20 100644
+--- a/arch/arm/boot/dts/sam9x60.dtsi
++++ b/arch/arm/boot/dts/sam9x60.dtsi
+@@ -207,6 +207,7 @@ AT91_XDMAC_DT_PER_IF(1) |
+ 					clock-names = "usart";
+ 					atmel,use-dma-rx;
+ 					atmel,use-dma-tx;
++					atmel,fifo-size = <16>;
+ 					status = "disabled";
+ 				};
+ 			};
+-- 
+2.34.1
+

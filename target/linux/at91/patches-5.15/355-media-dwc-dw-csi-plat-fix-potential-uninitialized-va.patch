@@ -1,0 +1,51 @@
+From 261011482614b101e0c5c5439d8e3dc748d62021 Mon Sep 17 00:00:00 2001
+From: Conor Dooley <conor.dooley@microchip.com>
+Date: Wed, 7 Sep 2022 12:16:39 +0100
+Subject: [PATCH 246/471] media: dwc: dw-csi-plat: fix potential uninitialized
+ variable use
+
+In probe, if CONFIG_OF is enable but device struct of_node has not been
+set, pdata will be used uninitialised:
+
+../drivers/media/platform/dwc/dw-csi-plat.c:497:37: error: variable 'pdata' is uninitialized when used here [-Werror,-Wuninitialized]
+                 csi->phy = devm_phy_get(dev, phys[pdata->id].name);
+                                                   ^~~~~
+../drivers/media/platform/dwc/dw-csi-plat.c:432:29: note: initialize the variable 'pdata' to silence this warning
+         struct dw_csih_pdata *pdata;
+                                    ^
+                                     = NULL
+Check if pdata is NULL & if so abort.
+
+CC: Eugen Hristev <eugen.hristev@microchip.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-csi-plat.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/dwc/dw-csi-plat.c b/drivers/media/platform/dwc/dw-csi-plat.c
+index e29aff1dbe38..6ae7ed0d0940 100644
+--- a/drivers/media/platform/dwc/dw-csi-plat.c
++++ b/drivers/media/platform/dwc/dw-csi-plat.c
+@@ -429,7 +429,7 @@ static const struct of_device_id dw_mipi_csi_of_match[];
+ static int dw_csi_probe(struct platform_device *pdev)
+ {
+ 	const struct of_device_id *of_id = NULL;
+-	struct dw_csih_pdata *pdata;
++	struct dw_csih_pdata *pdata = NULL;
+ 	struct device *dev = &pdev->dev;
+ 	struct resource *res = NULL;
+ 	struct dw_csi *csi;
+@@ -494,6 +494,9 @@ static int dw_csi_probe(struct platform_device *pdev)
+ 			goto csi2host_defer_err;
+ 		}
+ 	} else {
++		if (!pdata)
++			goto csi2host_reg_err;
++
+ 		csi->phy = devm_phy_get(dev, phys[pdata->id].name);
+ 		if (IS_ERR(csi->phy)) {
+ 			dev_err(dev, "No '%s' DPHY available\n",
+-- 
+2.34.1
+

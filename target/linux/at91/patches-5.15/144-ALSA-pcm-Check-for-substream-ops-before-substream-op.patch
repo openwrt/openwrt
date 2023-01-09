@@ -1,0 +1,30 @@
+From 8a0306b33493c871b361e6bae9a7ab8bccb2a41e Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 17 May 2021 12:17:51 +0300
+Subject: [PATCH 035/471] ALSA: pcm: Check for substream->ops before
+ substream->ops->mmap
+
+substreams, like the internal ones, might not have ops set. Check it,
+before looking at substream->ops->mmap.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/core/pcm_native.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/core/pcm_native.c b/sound/core/pcm_native.c
+index af926edc09e4..a1d928f7f370 100644
+--- a/sound/core/pcm_native.c
++++ b/sound/core/pcm_native.c
+@@ -248,7 +248,7 @@ static bool hw_support_mmap(struct snd_pcm_substream *substream)
+ 	if (!(substream->runtime->hw.info & SNDRV_PCM_INFO_MMAP))
+ 		return false;
+ 
+-	if (substream->ops->mmap || substream->ops->page)
++	if (substream->ops && (substream->ops->mmap || substream->ops->page))
+ 		return true;
+ 
+ 	dmabuf = snd_pcm_get_dma_buf(substream);
+-- 
+2.34.1
+

@@ -1,0 +1,31 @@
+From 5d121c8884fdc0c76e158913f2d2df95c30ac56c Mon Sep 17 00:00:00 2001
+From: Nicolas Ferre <nicolas.ferre@microchip.com>
+Date: Mon, 2 Oct 2017 16:13:32 +0200
+Subject: [PATCH 435/471] ARM: at91: sama5_defconfig: add back
+ CONFIG_JUMP_LABEL
+
+Add back this configuration option as it increases a lot the performance
+of the network subsystem.
+Beware: this option changes the binary of the kernel at runtime: pay attention
+if you use the Integrity Check Monitor (ICM) with the kernel image!
+
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ arch/arm/configs/sama5_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/sama5_defconfig b/arch/arm/configs/sama5_defconfig
+index 3cedde459fd1..62bc4fbe482e 100644
+--- a/arch/arm/configs/sama5_defconfig
++++ b/arch/arm/configs/sama5_defconfig
+@@ -32,6 +32,7 @@ CONFIG_NEON=y
+ CONFIG_KERNEL_MODE_NEON=y
+ CONFIG_PM_DEBUG=y
+ CONFIG_PM_ADVANCED_DEBUG=y
++CONFIG_JUMP_LABEL=y
+ CONFIG_MODULES=y
+ CONFIG_MODULE_FORCE_LOAD=y
+ CONFIG_MODULE_UNLOAD=y
+-- 
+2.34.1
+

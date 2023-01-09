@@ -1,0 +1,61 @@
+From 433506b740d9e7eb095db72cc9cbd8f2a4cc8088 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Tue, 19 Apr 2022 15:41:13 +0300
+Subject: [PATCH 063/471] ASoC: atmel: mchp-pdmc: use sample size when
+ calculating maxburst
+
+The period size must be divided by sample size * maxburst, not just by
+maxburst. This assures that all the DMA descriptors start from a well
+aligned address.
+
+Fixes: 62ba70025492 ("ASoC: atmel: mchp-pdmc: add PDMC driver")
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/atmel/mchp-pdmc.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/sound/soc/atmel/mchp-pdmc.c b/sound/soc/atmel/mchp-pdmc.c
+index dc678c74bf5b..9c6f6570b358 100644
+--- a/sound/soc/atmel/mchp-pdmc.c
++++ b/sound/soc/atmel/mchp-pdmc.c
+@@ -506,13 +506,13 @@ static u32 mchp_pdmc_mr_set_osr(int audio_filter_en, unsigned int osr)
+ 	return 0;
+ }
+ 
+-static inline int mchp_pdmc_period_to_maxburst(int period_size)
++static inline int mchp_pdmc_period_to_maxburst(int period_size, int sample_size)
+ {
+-	if (!(period_size % 8))
++	if (!(period_size % (sample_size * 8)))
+ 		return 8;
+-	if (!(period_size % 4))
++	if (!(period_size % (sample_size * 4)))
+ 		return 4;
+-	if (!(period_size % 2))
++	if (!(period_size % (sample_size * 2)))
+ 		return 2;
+ 	return 1;
+ }
+@@ -542,6 +542,8 @@ static int mchp_pdmc_hw_params(struct snd_pcm_substream *substream,
+ 	unsigned int channels = params_channels(params);
+ 	unsigned int osr = 0, osr_start;
+ 	unsigned int fs = params_rate(params);
++	int sample_bytes = params_physical_width(params) / 8;
++	int maxburst;
+ 	u32 mr_val = 0;
+ 	u32 cfgr_val = 0;
+ 	int i;
+@@ -611,7 +613,9 @@ static int mchp_pdmc_hw_params(struct snd_pcm_substream *substream,
+ 
+ 	mr_val |= MCHP_PDMC_MR_SINCORDER(dd->sinc_order);
+ 
+-	dd->addr.maxburst = mchp_pdmc_period_to_maxburst(snd_pcm_lib_period_bytes(substream));
++	maxburst = mchp_pdmc_period_to_maxburst(snd_pcm_lib_period_bytes(substream),
++						sample_bytes);
++	dd->addr.maxburst = maxburst;
+ 	mr_val |= MCHP_PDMC_MR_CHUNK(dd->addr.maxburst);
+ 	dev_dbg(comp->dev, "maxburst set to %d\n", dd->addr.maxburst);
+ 
+-- 
+2.34.1
+

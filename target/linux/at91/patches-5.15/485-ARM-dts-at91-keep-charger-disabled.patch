@@ -1,0 +1,33 @@
+From 95c6cd687890a09637d05baaccc4daef7a6032b9 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Tue, 21 Aug 2018 12:50:00 +0300
+Subject: [PATCH 376/471] ARM: dts: at91: keep charger disabled
+
+Keep charger disabled for now as is in 4.9. Having it enabled will broke
+BSR functionality.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+(cherry picked from commit c5040a9f3645d9e0f559371c92f61b533bf4108f)
+Signed-off-by: Razvan Stefanescu <razvan.stefanescu@microchip.com>
+[codrin.ciubotariu@microchip.com: movde to 5.4]
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/boot/dts/at91-sama5d2_xplained.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/at91-sama5d2_xplained.dts b/arch/arm/boot/dts/at91-sama5d2_xplained.dts
+index b1e854f658de..58102b3296cd 100644
+--- a/arch/arm/boot/dts/at91-sama5d2_xplained.dts
++++ b/arch/arm/boot/dts/at91-sama5d2_xplained.dts
+@@ -309,7 +309,7 @@ charger {
+ 						active-semi,input-voltage-threshold-microvolt = <6600>;
+ 						active-semi,precondition-timeout = <40>;
+ 						active-semi,total-timeout = <3>;
+-						status = "okay";
++						status = "disabled";
+ 					};
+ 				};
+ 			};
+-- 
+2.34.1
+

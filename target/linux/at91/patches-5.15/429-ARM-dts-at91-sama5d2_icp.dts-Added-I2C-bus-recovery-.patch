@@ -1,0 +1,75 @@
+From 76d9c5b9026ff96a137be4bfb6a45df6a89e5908 Mon Sep 17 00:00:00 2001
+From: Durai Manickam KR <durai.manickamkr@microchip.com>
+Date: Tue, 21 Sep 2021 12:13:44 +0530
+Subject: [PATCH 320/471] ARM: dts: at91-sama5d2_icp.dts: Added I2C bus
+ recovery support
+
+SDA and SCL is configured as GPIO for I2C bus to recover during
+I2C bus malfunction.
+
+Signed-off-by: Durai Manickam KR <durai.manickamkr@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20210921064344.889304-1-durai.manickamkr@microchip.com
+---
+ arch/arm/boot/dts/at91-sama5d2_icp.dts | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/at91-sama5d2_icp.dts b/arch/arm/boot/dts/at91-sama5d2_icp.dts
+index 4ebbbe65c0ce..492456e195a3 100644
+--- a/arch/arm/boot/dts/at91-sama5d2_icp.dts
++++ b/arch/arm/boot/dts/at91-sama5d2_icp.dts
+@@ -306,8 +306,11 @@ regulator-state-mem {
+ };
+ 
+ &i2c0 { /* mikrobus i2c */
+-	pinctrl-names = "default";
++	pinctrl-names = "default", "gpio";
+ 	pinctrl-0 = <&pinctrl_mikrobus_i2c>;
++	pinctrl-1 = <&pinctrl_i2c0_gpio>;
++	sda-gpios = <&pioA PIN_PD21 GPIO_ACTIVE_HIGH>;
++	scl-gpios = <&pioA PIN_PD22 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+ 	i2c-digital-filter;
+ 	i2c-digital-filter-width-ns = <35>;
+ 	status = "okay";
+@@ -315,8 +318,11 @@ &i2c0 { /* mikrobus i2c */
+ 
+ &i2c1 {
+ 	dmas = <0>, <0>;
+-	pinctrl-names = "default";
++	pinctrl-names = "default", "gpio";
+ 	pinctrl-0 = <&pinctrl_i2c1_default>;
++	pinctrl-1 = <&pinctrl_i2c1_gpio>;
++	sda-gpios = <&pioA PIN_PD19 GPIO_ACTIVE_HIGH>;
++	scl-gpios = <&pioA PIN_PD20 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+ 	i2c-digital-filter;
+ 	i2c-digital-filter-width-ns = <35>;
+ 	status = "okay";
+@@ -401,6 +407,12 @@ pinctrl_i2c1_default: i2c1_default {
+ 		bias-disable;
+ 	};
+ 
++	pinctrl_i2c1_gpio: i2c1_gpio {
++                pinmux = <PIN_PD19__GPIO>,
++                         <PIN_PD20__GPIO>;
++                bias-disable;
++        };
++
+ 	pinctrl_key_gpio_default: key_gpio_default {
+ 		pinmux = <PIN_PD0__GPIO>;
+ 		bias-pull-up;
+@@ -462,6 +474,12 @@ pinctrl_mikrobus_i2c: mikrobus_i2c {
+ 		bias-disable;
+ 	};
+ 
++	pinctrl_i2c0_gpio: i2c0_gpio {
++		pinmux = <PIN_PD21__GPIO>,
++			 <PIN_PD22__GPIO>;
++		bias-disable;
++	};
++
+ 	pinctrl_mikrobus1_an: mikrobus1_an {
+ 		pinmux = <PIN_PD26__GPIO>;
+ 		bias-disable;
+-- 
+2.34.1
+

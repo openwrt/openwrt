@@ -1,0 +1,51 @@
+From 4559063b56ba56ba88f94987c89f1f83aa322a18 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Wed, 23 Feb 2022 14:54:54 +0200
+Subject: [PATCH 352/471] ARM: dts: at91: sama7g5: add nodes for PDMC
+
+Microchip's SAMA7G5 embeds two PDMCs. The PDMCs can be used to connect 2x4
+PDM microphones.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index d90049987526..421215fb8bc7 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -559,6 +559,30 @@ pwm: pwm@e1604000 {
+ 			status = "disabled";
+ 		};
+ 
++		pdmc0: pdmc@e1608000 {
++			compatible = "microchip,sama7g5-pdmc";
++			reg = <0xe1608000 0x4000>;
++			interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
++			#sound-dai-cells = <0>;
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(37)>;
++			dma-names = "rx";
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 68>, <&pmc PMC_TYPE_GCK 68>;
++			clock-names = "pclk", "gclk";
++			status = "disabled";
++		};
++
++		pdmc1: pdmc@e160c000 {
++			compatible = "microchip,sama7g5-pdmc";
++			reg = <0xe160c000 0x4000>;
++			interrupts = <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>;
++			#sound-dai-cells = <0>;
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(38)>;
++			dma-names = "rx";
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 69>, <&pmc PMC_TYPE_GCK 69>;
++			clock-names = "pclk", "gclk";
++			status = "disabled";
++		};
++
+ 		spdifrx: spdifrx@e1614000 {
+ 			#sound-dai-cells = <0>;
+ 			compatible = "microchip,sama7g5-spdifrx";
+-- 
+2.34.1
+

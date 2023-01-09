@@ -1,0 +1,27 @@
+From 3145b9517832252a5176887b325e84279a4e17a1 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 21 Mar 2022 18:25:03 +0200
+Subject: [PATCH 455/471] ARM: configs: sama7: enable ASRC driver
+
+ASRC is present in SAMA7G5. Enable the driver to use it.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 50e863412c84..bc5fd118f43e 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -157,6 +157,7 @@ CONFIG_SND_MCHP_SOC_I2S_MCC=y
+ CONFIG_SND_MCHP_SOC_SPDIFTX=y
+ CONFIG_SND_MCHP_SOC_SPDIFRX=y
+ CONFIG_SND_MCHP_SOC_PDMC=y
++CONFIG_SND_MCHP_SOC_ASRC=y
+ CONFIG_SND_SOC_DMIC=y
+ CONFIG_SND_SOC_PCM5102A=y
+ CONFIG_SND_SOC_SPDIF=y
+-- 
+2.34.1
+

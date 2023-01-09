@@ -1,0 +1,41 @@
+From 9102a7baeaf1ada1a557bec278c7a4b91583c1a0 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 24 Nov 2021 16:18:49 +0200
+Subject: [PATCH 373/471] ARM: dts: at91: sama7g5: add temperature sensor
+
+Add temperature sensor node.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 0ba841c48c2f..c0aeef617f79 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -9,6 +9,7 @@
+  *
+  */
+ 
++#include <dt-bindings/iio/adc/at91-sama5d2_adc.h>
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/reset/sama7g5-reset.h>
+@@ -149,6 +150,13 @@ vddout25: fixed-regulator-vddout25 {
+ 		status = "disabled";
+ 	};
+ 
++	thermal_sensor: thermal-sensor {
++		compatible = "generic-adc-thermal";
++		#thermal-sensor-cells = <0>;
++		io-channels = <&adc AT91_SAMA7G5_ADC_TEMP_CHANNEL>;
++		io-channel-names = "sensor-channel";
++	};
++
+ 	ns_sram: sram@100000 {
+ 		compatible = "mmio-sram";
+ 		#address-cells = <1>;
+-- 
+2.34.1
+

@@ -1,0 +1,55 @@
+From 0145fe67d2ab9c910492905d5c59f099a4305aea Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 10 Jun 2022 12:24:10 +0300
+Subject: [PATCH 292/471] power: reset: at91-reset: document structures and
+ enums
+
+Document structures and enums.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+---
+ drivers/power/reset/at91-reset.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/drivers/power/reset/at91-reset.c b/drivers/power/reset/at91-reset.c
+index 64def79d557a..e62798750b6b 100644
+--- a/drivers/power/reset/at91-reset.c
++++ b/drivers/power/reset/at91-reset.c
+@@ -39,6 +39,17 @@
+ #define AT91_RSTC_URSTIEN	BIT(4)		/* User Reset Interrupt Enable */
+ #define AT91_RSTC_ERSTL		GENMASK(11, 8)	/* External Reset Length */
+ 
++/**
++ * enum reset_type - reset types
++ * @RESET_TYPE_GENERAL:		first power-up reset
++ * @RESET_TYPE_WAKEUP:		return from backup mode
++ * @RESET_TYPE_WATCHDOG:	watchdog fault
++ * @RESET_TYPE_SOFTWARE:	processor reset required by software
++ * @RESET_TYPE_USER:		NRST pin detected low
++ * @RESET_TYPE_CPU_FAIL:	CPU clock failure detection
++ * @RESET_TYPE_XTAL_FAIL:	32KHz crystal failure dectection fault
++ * @RESET_TYPE_ULP2:		ULP2 reset
++ */
+ enum reset_type {
+ 	RESET_TYPE_GENERAL	= 0,
+ 	RESET_TYPE_WAKEUP	= 1,
+@@ -50,6 +61,15 @@ enum reset_type {
+ 	RESET_TYPE_ULP2		= 8,
+ };
+ 
++/**
++ * struct at91_reset - AT91 reset specific data structure
++ * @rstc_base:		base address for system reset
++ * @ramc_base:		array with base addresses of RAM controllers
++ * @sclk:		slow clock
++ * @nb:			reset notifier block
++ * @args:		SoC specific system reset arguments
++ * @ramc_lpr:		SDRAM Controller Low Power Register
++ */
+ struct at91_reset {
+ 	void __iomem *rstc_base;
+ 	void __iomem *ramc_base[2];
+-- 
+2.34.1
+

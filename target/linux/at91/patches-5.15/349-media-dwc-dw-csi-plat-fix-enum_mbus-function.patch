@@ -1,0 +1,29 @@
+From f57180ef5367cc2c035b2177b5d0d9486cce8626 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 7 Dec 2020 14:48:08 +0200
+Subject: [PATCH 240/471] media: dwc: dw-csi-plat: fix enum_mbus function
+
+Removed code that was allowing just one format to be reported to the caller.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-csi-plat.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/drivers/media/platform/dwc/dw-csi-plat.c b/drivers/media/platform/dwc/dw-csi-plat.c
+index 1cddc5978fb9..0af343a3aa66 100644
+--- a/drivers/media/platform/dwc/dw-csi-plat.c
++++ b/drivers/media/platform/dwc/dw-csi-plat.c
+@@ -94,9 +94,6 @@ static int dw_mipi_csi_enum_mbus_code(struct v4l2_subdev *sd,
+ 	if (code->index >= ARRAY_SIZE(dw_mipi_csi_formats))
+ 		return -EINVAL;
+ 
+-	if (code->index != 0)
+-		return -EINVAL;
+-
+ 	code->code = dw_mipi_csi_formats[code->index].mbus_code;
+ 	return 0;
+ }
+-- 
+2.34.1
+

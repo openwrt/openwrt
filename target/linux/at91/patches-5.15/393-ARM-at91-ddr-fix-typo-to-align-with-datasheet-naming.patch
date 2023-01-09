@@ -1,0 +1,55 @@
+From 197bcb1df649f602f266a942cef12093f81c775c Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Thu, 13 Jan 2022 16:48:53 +0200
+Subject: [PATCH 284/471] ARM: at91: ddr: fix typo to align with datasheet
+ naming
+
+Fix typo on UDDRC_PWRCTL.SELFREF_SW bitmask to align with datasheet
+naming.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20220113144900.906370-4-claudiu.beznea@microchip.com
+---
+ arch/arm/mach-at91/pm_suspend.S | 4 ++--
+ include/soc/at91/sama7-ddr.h    | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
+index 646c1640f29d..074df6f93fc8 100644
+--- a/arch/arm/mach-at91/pm_suspend.S
++++ b/arch/arm/mach-at91/pm_suspend.S
+@@ -180,7 +180,7 @@ sr_ena_1:
+ 
+ 	/* Switch to self-refresh. */
+ 	ldr	tmp1, [r2, #UDDRC_PWRCTL]
+-	orr	tmp1, tmp1, #UDDRC_PWRCTRL_SELFREF_SW
++	orr	tmp1, tmp1, #UDDRC_PWRCTL_SELFREF_SW
+ 	str	tmp1, [r2, #UDDRC_PWRCTL]
+ 
+ sr_ena_2:
+@@ -312,7 +312,7 @@ sr_dis_5:
+ 
+ 	/* Trigger self-refresh exit. */
+ 	ldr	tmp1, [r2, #UDDRC_PWRCTL]
+-	bic	tmp1, tmp1, #UDDRC_PWRCTRL_SELFREF_SW
++	bic	tmp1, tmp1, #UDDRC_PWRCTL_SELFREF_SW
+ 	str	tmp1, [r2, #UDDRC_PWRCTL]
+ 
+ sr_dis_6:
+diff --git a/include/soc/at91/sama7-ddr.h b/include/soc/at91/sama7-ddr.h
+index cac3f9cd25f9..6f0aa04755cf 100644
+--- a/include/soc/at91/sama7-ddr.h
++++ b/include/soc/at91/sama7-ddr.h
+@@ -64,7 +64,7 @@
+ #define		UDDRC_STAT_OPMODE_MSK		(0x7 << 0)	/* Operating mode mask */
+ 
+ #define UDDRC_PWRCTL				(0x30)		/* UDDRC Low Power Control Register */
+-#define		UDDRC_PWRCTRL_SELFREF_SW	(1 << 5)	/* Software self-refresh */
++#define		UDDRC_PWRCTL_SELFREF_SW		(1 << 5)	/* Software self-refresh */
+ 
+ #define UDDRC_DFIMISC				(0x1B0)		/* UDDRC DFI Miscellaneous Control Register */
+ #define		UDDRC_DFIMISC_DFI_INIT_COMPLETE_EN (1 << 0)	/* PHY initialization complete enable signal */
+-- 
+2.34.1
+

@@ -1,0 +1,30 @@
+From 4485fbd6526106f68bd4a14988c309f691b3e777 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 10 Jan 2022 17:36:40 +0200
+Subject: [PATCH 346/471] ARM: dts: at91: sama7g5: use 600MHz OPP as suspend
+ OPP
+
+Use 600MHz OPP as suspend OPP. Although 90MHz OPP (which is available)
+might sound like a better choice in term of power consumption the
+600MHz will allow a faster suspend time.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 20208afdfc47..e04a98eadf44 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -55,6 +55,7 @@ opp-600000000 {
+ 			opp-hz = /bits/ 64 <600000000>;
+ 			opp-microvolt = <1050000 1050000 1225000>;
+ 			clock-latency-ns = <320000>;
++			opp-suspend;
+ 		};
+ 
+ 		opp-800000000 {
+-- 
+2.34.1
+

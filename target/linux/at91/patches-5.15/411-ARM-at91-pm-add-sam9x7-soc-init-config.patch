@@ -1,0 +1,69 @@
+From 5272de0eb75452ae12238420cee06f314af6c896 Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Fri, 31 Dec 2021 10:07:50 +0530
+Subject: [PATCH 302/471] ARM: at91: pm: add sam9x7 soc init config
+
+Add SoC init config for sam9x7 family
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ arch/arm/mach-at91/Makefile |  1 +
+ arch/arm/mach-at91/sam9x7.c | 34 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 35 insertions(+)
+ create mode 100644 arch/arm/mach-at91/sam9x7.c
+
+diff --git a/arch/arm/mach-at91/Makefile b/arch/arm/mach-at91/Makefile
+index 522b680b6446..a1ac71626972 100644
+--- a/arch/arm/mach-at91/Makefile
++++ b/arch/arm/mach-at91/Makefile
+@@ -7,6 +7,7 @@
+ obj-$(CONFIG_SOC_AT91RM9200)	+= at91rm9200.o
+ obj-$(CONFIG_SOC_AT91SAM9)	+= at91sam9.o
+ obj-$(CONFIG_SOC_SAM9X60)	+= sam9x60.o
++obj-$(CONFIG_SOC_SAM9X7)	+= sam9x7.o
+ obj-$(CONFIG_SOC_SAMA5)		+= sama5.o
+ obj-$(CONFIG_SOC_SAMA7)		+= sama7.o
+ obj-$(CONFIG_SOC_SAMV7)		+= samv7.o
+diff --git a/arch/arm/mach-at91/sam9x7.c b/arch/arm/mach-at91/sam9x7.c
+new file mode 100644
+index 000000000000..e322c5a3cdb6
+--- /dev/null
++++ b/arch/arm/mach-at91/sam9x7.c
+@@ -0,0 +1,34 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Setup code for SAM9X7.
++ *
++ * Copyright (C) 2022 Microchip Technology Inc. and its subsidiaries
++ *
++ * Author: Varshini Rajendran <varshini.rajendran@microchip.com>
++ */
++
++#include <linux/of.h>
++#include <linux/of_platform.h>
++
++#include <asm/mach/arch.h>
++#include <asm/system_misc.h>
++
++#include "generic.h"
++
++static void __init sam9x7_init(void)
++{
++	of_platform_default_populate(NULL, NULL, NULL);
++
++	sam9x7_pm_init();
++}
++
++static const char *const sam9x7_dt_board_compat[] __initconst = {
++	"microchip,sam9x7",
++	NULL
++};
++
++DT_MACHINE_START(sam9x7_dt, "Microchip SAM9X7")
++	/* Maintainer: Microchip */
++	.init_machine	= sam9x7_init,
++	.dt_compat	= sam9x7_dt_board_compat,
++MACHINE_END
+-- 
+2.34.1
+

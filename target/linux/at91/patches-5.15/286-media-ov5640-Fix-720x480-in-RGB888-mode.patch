@@ -1,0 +1,34 @@
+From 1db8448dbf0b91df108b288e8f4389e695a56e0f Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo@jmondi.org>
+Date: Thu, 24 Feb 2022 10:42:55 +0100
+Subject: [PATCH 177/471] media: ov5640: Fix 720x480 in RGB888 mode
+
+Adjust the left crop of 720x480 to enable capture in RGB888 format,
+which is otherwise broken.
+
+The 56 pixels alignment has been copied from the 720x576 mode.
+
+Signed-off-by: Jacopo Mondi <jacopo@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+(cherry picked from commit 446985ac31aebe6d4b219fee589c9a9c947a37d1)
+---
+ drivers/media/i2c/ov5640.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/i2c/ov5640.c b/drivers/media/i2c/ov5640.c
+index a3d15e5bcb7d..9e8fcdf4d072 100644
+--- a/drivers/media/i2c/ov5640.c
++++ b/drivers/media/i2c/ov5640.c
+@@ -749,7 +749,7 @@ ov5640_mode_data[OV5640_NUM_MODES] = {
+ 			.height	= 1944,
+ 		},
+ 		.crop = {
+-			.left	= 16,
++			.left	= 56,
+ 			.top	= 60,
+ 			.width	= 720,
+ 			.height	= 480,
+-- 
+2.34.1
+

@@ -1,0 +1,34 @@
+From c3a7bf112922b6197db5f301819bc32129877b15 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 13 Dec 2021 14:49:37 +0100
+Subject: [PATCH 208/471] media: atmel: atmel-sama7g5-isc: fix UYVY input
+ format mbus_code typo
+
+Fix the mbus code for UYVY input format type to the right color rotation.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>
+(cherry picked from commit e8b13dc37b27af41d35e40cc3a3d5e535dcc3ac7)
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/atmel/atmel-sama7g5-isc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-sama7g5-isc.c b/drivers/media/platform/atmel/atmel-sama7g5-isc.c
+index a4defc30cf41..cc825413d95f 100644
+--- a/drivers/media/platform/atmel/atmel-sama7g5-isc.c
++++ b/drivers/media/platform/atmel/atmel-sama7g5-isc.c
+@@ -188,7 +188,7 @@ static struct isc_format sama7g5_formats_list[] = {
+ 	},
+ 	{
+ 		.fourcc		= V4L2_PIX_FMT_UYVY,
+-		.mbus_code	= MEDIA_BUS_FMT_YUYV8_2X8,
++		.mbus_code	= MEDIA_BUS_FMT_UYVY8_2X8,
+ 		.pfe_cfg0_bps	= ISC_PFE_CFG0_BPS_EIGHT,
+ 	},
+ 	{
+-- 
+2.34.1
+

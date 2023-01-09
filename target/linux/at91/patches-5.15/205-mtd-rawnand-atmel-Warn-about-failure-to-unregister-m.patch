@@ -1,0 +1,43 @@
+From a037602ba855a6b78cad0aa003e6fe037f607ede Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
+Date: Tue, 7 Jun 2022 08:25:03 +0200
+Subject: [PATCH 096/471] mtd: rawnand: atmel: Warn about failure to unregister
+ mtd device
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The Linux device core doesn't intend remove callbacks to fail. If an
+error code is returned the device is removed anyhow. So wail loudly if
+the atmel specific remove callback fails and return 0 anyhow to suppress
+the generic (and little helpful) error message by the device core.
+
+This is a preparation for making platform remove callbacks return void.
+
+Signed-off-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://lore.kernel.org/linux-mtd/20220607062503.211345-1-u.kleine-koenig@pengutronix.de
+(cherry picked from commit 1cc82e09fc20dbb1f3aa41e9924c48e8194da754)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/mtd/nand/raw/atmel/nand-controller.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/nand/raw/atmel/nand-controller.c b/drivers/mtd/nand/raw/atmel/nand-controller.c
+index 73956a9f5449..8e3dfded1cfe 100644
+--- a/drivers/mtd/nand/raw/atmel/nand-controller.c
++++ b/drivers/mtd/nand/raw/atmel/nand-controller.c
+@@ -2630,7 +2630,9 @@ static int atmel_nand_controller_remove(struct platform_device *pdev)
+ {
+ 	struct atmel_nand_controller *nc = platform_get_drvdata(pdev);
+ 
+-	return nc->caps->ops->remove(nc);
++	WARN_ON(nc->caps->ops->remove(nc));
++
++	return 0;
+ }
+ 
+ static __maybe_unused int atmel_nand_controller_resume(struct device *dev)
+-- 
+2.34.1
+

@@ -1,0 +1,34 @@
+From 7bbe683d1b122f01e5df960d7375942a2f8b9a00 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Thu, 2 Jul 2020 14:55:23 +0300
+Subject: [PATCH 227/471] MAINTAINERS: add microchip csi2dc
+
+Add Microchip CSI2DC driver in the list.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ MAINTAINERS | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 74fa7386e1e6..74cf1ace89ec 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -12268,6 +12268,13 @@ L:	alsa-devel@alsa-project.org (moderated for non-subscribers)
+ S:	Supported
+ F:	sound/soc/atmel
+ 
++MICROCHIP CSI2DC DRIVER
++M:	Eugen Hristev <eugen.hristev@microchip.com>
++L:	linux-media@vger.kernel.org
++S:	Supported
++F:	Documentation/devicetree/bindings/media/microchip,csi2dc.yaml
++F:	drivers/media/platform/atmel/microchip-csi2dc.c
++
+ MICROCHIP ECC DRIVER
+ M:	Tudor Ambarus <tudor.ambarus@microchip.com>
+ L:	linux-crypto@vger.kernel.org
+-- 
+2.34.1
+

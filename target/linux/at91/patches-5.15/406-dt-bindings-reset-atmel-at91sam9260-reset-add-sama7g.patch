@@ -1,0 +1,75 @@
+From fba5ee6a4c8f55345b2238722283dcdb4cfebdc6 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 10 Jun 2022 12:24:08 +0300
+Subject: [PATCH 297/471] dt-bindings: reset: atmel,at91sam9260-reset: add
+ sama7g5 bindings
+
+Add documentation for SAMA7G5 reset controller. Compared with previous
+versions of reset controllers this one contains support for resetting
+in SoC devices (e.g. USB PHYs).
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Reviewed-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+---
+ .../reset/atmel,at91sam9260-reset.yaml        | 23 +++++++++++++++++--
+ 1 file changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/reset/atmel,at91sam9260-reset.yaml b/Documentation/devicetree/bindings/reset/atmel,at91sam9260-reset.yaml
+index 34c40b875e20..98465d26949e 100644
+--- a/Documentation/devicetree/bindings/reset/atmel,at91sam9260-reset.yaml
++++ b/Documentation/devicetree/bindings/reset/atmel,at91sam9260-reset.yaml
+@@ -10,7 +10,8 @@ maintainers:
+   - Claudiu Beznea <claudiu.beznea@microchip.com>
+ 
+ description: |
+-  The system reset controller can be used to reset the CPU.
++  The system reset controller can be used to reset the CPU. In case of
++  SAMA7G5 it can also reset some devices (e.g. USB PHYs).
+ 
+ properties:
+   compatible:
+@@ -21,21 +22,39 @@ properties:
+               - atmel,at91sam9g45-rstc
+               - atmel,sama5d3-rstc
+               - microchip,sam9x60-rstc
++              - microchip,sama7g5-rstc
+       - items:
+           - const: atmel,sama5d3-rstc
+           - const: atmel,at91sam9g45-rstc
+ 
+   reg:
+-    maxItems: 1
++    minItems: 1
++    items:
++      - description: base registers for system reset control
++      - description: registers for device specific reset control
+ 
+   clocks:
+     maxItems: 1
+ 
++  "#reset-cells":
++    const: 1
++
+ required:
+   - compatible
+   - reg
+   - clocks
+ 
++allOf:
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - microchip,sama7g5-rstc
++    then:
++      required:
++        - "#reset-cells"
++
+ additionalProperties: false
+ 
+ examples:
+-- 
+2.34.1
+

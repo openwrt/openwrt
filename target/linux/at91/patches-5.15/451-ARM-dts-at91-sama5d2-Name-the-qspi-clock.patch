@@ -1,0 +1,43 @@
+From a1af1bf0914c6181982dfccf60be09bf8f3798f0 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Thu, 9 Dec 2021 12:25:42 +0200
+Subject: [PATCH 342/471] ARM: dts: at91: sama5d2: Name the qspi clock
+
+Naming clocks is a good practice. The atmel-quadspi driver supports
+an unnamed clock for the peripheral clock in order to be backward
+compatible with old DTs, but it is recommended to name the clocks
+on new DTs. The driver's bindings file requires the clock-names
+property, so name the clock.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20211209102542.254153-1-tudor.ambarus@microchip.com
+(cherry picked from commit cf4060f1bb643495742f3630ab98a7b44fc5c0fd)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ arch/arm/boot/dts/sama5d2.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama5d2.dtsi b/arch/arm/boot/dts/sama5d2.dtsi
+index eca8d7088960..ca326c8e2caf 100644
+--- a/arch/arm/boot/dts/sama5d2.dtsi
++++ b/arch/arm/boot/dts/sama5d2.dtsi
+@@ -288,6 +288,7 @@ qspi0: spi@f0020000 {
+ 				reg-names = "qspi_base", "qspi_mmap";
+ 				interrupts = <52 IRQ_TYPE_LEVEL_HIGH 7>;
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 52>;
++				clock-names = "pclk";
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				status = "disabled";
+@@ -299,6 +300,7 @@ qspi1: spi@f0024000 {
+ 				reg-names = "qspi_base", "qspi_mmap";
+ 				interrupts = <53 IRQ_TYPE_LEVEL_HIGH 7>;
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 53>;
++				clock-names = "pclk";
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				status = "disabled";
+-- 
+2.34.1
+

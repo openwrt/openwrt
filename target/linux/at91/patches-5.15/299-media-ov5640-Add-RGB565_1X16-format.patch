@@ -1,0 +1,46 @@
+From 719d9b82ecd8ff974389410031eabea15f634103 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo@jmondi.org>
+Date: Thu, 24 Feb 2022 10:43:08 +0100
+Subject: [PATCH 190/471] media: ov5640: Add RGB565_1X16 format
+
+The driver already supports the 2X8_[LE|BE] variants of RGB565
+formats.
+
+As for CSI-2 the 2X8 variants do not apply, add RGB565_1X16 variant
+with little-endian ordering of components as required by the CSI-2
+specifications.
+
+Signed-off-by: Jacopo Mondi <jacopo@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+(cherry picked from commit 1b802f017c6c500245587efcd97e3a8fcd6491ce)
+---
+ drivers/media/i2c/ov5640.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/media/i2c/ov5640.c b/drivers/media/i2c/ov5640.c
+index 840ff2e05678..8dff41a1966e 100644
+--- a/drivers/media/i2c/ov5640.c
++++ b/drivers/media/i2c/ov5640.c
+@@ -221,6 +221,10 @@ static const struct ov5640_pixfmt {
+ 		.code = MEDIA_BUS_FMT_RGB565_2X8_BE,
+ 		.colorspace = V4L2_COLORSPACE_SRGB,
+ 		.bpp = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_RGB565_1X16,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 16,
+ 	}, {
+ 		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
+ 		.colorspace = V4L2_COLORSPACE_SRGB,
+@@ -2900,6 +2904,7 @@ static int ov5640_set_framefmt(struct ov5640_dev *sensor,
+ 		mux = OV5640_FMT_MUX_YUV422;
+ 		break;
+ 	case MEDIA_BUS_FMT_RGB565_2X8_LE:
++	case MEDIA_BUS_FMT_RGB565_1X16:
+ 		/* RGB565 {g[2:0],b[4:0]},{r[4:0],g[5:3]} */
+ 		fmt = 0x6F;
+ 		mux = OV5640_FMT_MUX_RGB;
+-- 
+2.34.1
+

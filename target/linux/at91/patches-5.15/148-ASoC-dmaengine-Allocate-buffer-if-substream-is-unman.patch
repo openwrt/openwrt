@@ -1,0 +1,85 @@
+From 7fcf03f4027fd7debc88fee283b3994aefb7a689 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Tue, 18 May 2021 18:30:48 +0300
+Subject: [PATCH 039/471] ASoC: dmaengine: Allocate buffer if substream is
+ unmanaged
+
+pcm_construct/pcm_destruct callbacks are not called for BE DAIs. This means
+that, if the generic dmaengine driver is used, there is no managed buffer
+allocation (or pre-allocation). To be able to use the generic dmaengine
+driver for BE DAI links, allocate the buffer in the hw_params callback if
+there is no managed buffer.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/soc-generic-dmaengine-pcm.c | 18 ++++++++++++++++++
+ sound/soc/soc-pcm.c                   | 10 ----------
+ 2 files changed, 18 insertions(+), 10 deletions(-)
+
+diff --git a/sound/soc/soc-generic-dmaengine-pcm.c b/sound/soc/soc-generic-dmaengine-pcm.c
+index 38f3f36c1d72..e5d79d03c3db 100644
+--- a/sound/soc/soc-generic-dmaengine-pcm.c
++++ b/sound/soc/soc-generic-dmaengine-pcm.c
+@@ -97,6 +97,22 @@ static int dmaengine_pcm_hw_params(struct snd_soc_component *component,
+ 			return ret;
+ 	}
+ 
++	if (!substream->managed_buffer_alloc) {
++		substream->dma_buffer.dev.type = SNDRV_DMA_TYPE_DEV_IRAM;
++		substream->dma_buffer.dev.dev = chan->device->dev;
++		return snd_pcm_lib_malloc_pages(substream,
++						params_buffer_bytes(params));
++	}
++
++	return 0;
++}
++
++static int dmaengine_pcm_hw_free(struct snd_soc_component *component,
++				 struct snd_pcm_substream *substream)
++{
++	if (!substream->managed_buffer_alloc)
++		return snd_pcm_lib_free_pages(substream);
++
+ 	return 0;
+ }
+ 
+@@ -329,6 +345,7 @@ static const struct snd_soc_component_driver dmaengine_pcm_component = {
+ 	.open		= dmaengine_pcm_open,
+ 	.close		= dmaengine_pcm_close,
+ 	.hw_params	= dmaengine_pcm_hw_params,
++	.hw_free	= dmaengine_pcm_hw_free,
+ 	.trigger	= dmaengine_pcm_trigger,
+ 	.pointer	= dmaengine_pcm_pointer,
+ 	.pcm_construct	= dmaengine_pcm_new,
+@@ -340,6 +357,7 @@ static const struct snd_soc_component_driver dmaengine_pcm_component_process = {
+ 	.open		= dmaengine_pcm_open,
+ 	.close		= dmaengine_pcm_close,
+ 	.hw_params	= dmaengine_pcm_hw_params,
++	.hw_free	= dmaengine_pcm_hw_free,
+ 	.trigger	= dmaengine_pcm_trigger,
+ 	.pointer	= dmaengine_pcm_pointer,
+ 	.copy_user	= dmaengine_copy_user,
+diff --git a/sound/soc/soc-pcm.c b/sound/soc/soc-pcm.c
+index b6831ca58077..648fd9d6d7b8 100644
+--- a/sound/soc/soc-pcm.c
++++ b/sound/soc/soc-pcm.c
+@@ -2000,16 +2000,6 @@ static int dpcm_fe_dai_hw_params(struct snd_pcm_substream *substream,
+ 	/* initialize the BE HW params */
+ 	dpcm_be_dai_hw_params_init(fe, stream);
+ 
+-	/* FIXME: a very low period time will make the CPU take too many
+-	 * interrupts, which might end up not having enough time to actually
+-	 * fill the buffer(s); for now, the BE min period time will be half of
+-	 * the FE min period time
+-	 */
+-	t = hw_param_interval(params, SNDRV_PCM_HW_PARAM_PERIOD_TIME);
+-	dpcm_t = hw_param_interval(&fe->dpcm[stream].hw_params,
+-				   SNDRV_PCM_HW_PARAM_PERIOD_TIME);
+-	dpcm_t->min = t->min / 2;
+-
+ 	if (fe->dai_link->dpcm_merged_format) {
+ 		memcpy(hw_param_interval(&fe->dpcm[stream].hw_params,
+ 					 SNDRV_PCM_HW_PARAM_FORMAT),
+-- 
+2.34.1
+

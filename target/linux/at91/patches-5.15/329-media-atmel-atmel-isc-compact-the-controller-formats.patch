@@ -1,0 +1,187 @@
+From 7bb28ee2c4a82f81a7a91f3f492dbfe4c4c35057 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Thu, 11 Nov 2021 12:19:51 +0200
+Subject: [PATCH 220/471] media: atmel: atmel-isc: compact the controller
+ formats list
+
+Compact the list array to be more readable.
+No other changes, only cosmetic.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+---
+ .../media/platform/atmel/atmel-sama5d2-isc.c  | 51 ++++++----------
+ .../media/platform/atmel/atmel-sama7g5-isc.c  | 60 +++++++------------
+ 2 files changed, 37 insertions(+), 74 deletions(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
+index 9a4ca6096a2c..87391a73be16 100644
+--- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
++++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
+@@ -60,56 +60,39 @@
+ static const struct isc_format sama5d2_controller_formats[] = {
+ 	{
+ 		.fourcc		= V4L2_PIX_FMT_ARGB444,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_ARGB555,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_RGB565,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_ABGR32,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_XBGR32,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_YUV420,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_YUYV,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_YUV422P,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_GREY,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_Y10,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SBGGR8,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGBRG8,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGRBG8,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SRGGB8,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SBGGR10,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGBRG10,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGRBG10,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SRGGB10,
+ 	},
+ };
+diff --git a/drivers/media/platform/atmel/atmel-sama7g5-isc.c b/drivers/media/platform/atmel/atmel-sama7g5-isc.c
+index 1387d06b7798..b6dbc39dcd74 100644
+--- a/drivers/media/platform/atmel/atmel-sama7g5-isc.c
++++ b/drivers/media/platform/atmel/atmel-sama7g5-isc.c
+@@ -63,65 +63,45 @@
+ static const struct isc_format sama7g5_controller_formats[] = {
+ 	{
+ 		.fourcc		= V4L2_PIX_FMT_ARGB444,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_ARGB555,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_RGB565,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_ABGR32,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_XBGR32,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_YUV420,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_UYVY,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_VYUY,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_YUYV,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_YUV422P,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_GREY,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_Y10,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_Y16,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SBGGR8,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGBRG8,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGRBG8,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SRGGB8,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SBGGR10,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGBRG10,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SGRBG10,
+-	},
+-	{
++	}, {
+ 		.fourcc		= V4L2_PIX_FMT_SRGGB10,
+ 	},
+ };
+-- 
+2.34.1
+

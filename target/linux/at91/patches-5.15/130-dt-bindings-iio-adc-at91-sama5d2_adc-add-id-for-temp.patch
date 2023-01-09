@@ -1,0 +1,31 @@
+From 710f5f35e3c1f9314dae66a4b707111621e2dae1 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 3 Aug 2022 13:28:52 +0300
+Subject: [PATCH 021/471] dt-bindings: iio: adc: at91-sama5d2_adc: add id for
+ temperature channel
+
+Add ID for temperature channel of AT91 SAMA5D2 ADC.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Acked-by: Rob Herring <robh@kernel.org>
+Link: https://lore.kernel.org/r/20220803102855.2191070-17-claudiu.beznea@microchip.com
+Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+---
+ include/dt-bindings/iio/adc/at91-sama5d2_adc.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/include/dt-bindings/iio/adc/at91-sama5d2_adc.h b/include/dt-bindings/iio/adc/at91-sama5d2_adc.h
+index 70f99dbdbb42..866d36530583 100644
+--- a/include/dt-bindings/iio/adc/at91-sama5d2_adc.h
++++ b/include/dt-bindings/iio/adc/at91-sama5d2_adc.h
+@@ -13,4 +13,7 @@
+ /* pressure channel index */
+ #define AT91_SAMA5D2_ADC_P_CHANNEL		26
+ 
++/* SAMA7G5 Temperature sensor channel index. */
++#define AT91_SAMA7G5_ADC_TEMP_CHANNEL		31
++
+ #endif
+-- 
+2.34.1
+

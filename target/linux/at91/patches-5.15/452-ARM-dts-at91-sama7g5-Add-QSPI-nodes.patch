@@ -1,0 +1,63 @@
+From 794a70ced509bd3e59cfa5d3c66ff1b0add9b666 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Thu, 9 Dec 2021 14:36:42 +0200
+Subject: [PATCH 343/471] ARM: dts: at91: sama7g5: Add QSPI nodes
+
+sama7g5 embedds 2 instances of QSPI controller:
+1/ OSPI0 Supporting Up to 200 MHz DDR. Octal, TwinQuad, Hyperflash
+   and OctaFlash Protocols Supported.
+2/ QSPI1 Supporting Up to 90 MHz DDR/133 MHz SDR.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20211209123643.341892-1-tudor.ambarus@microchip.com
+(cherry picked from commit 0081a525ceef14e950172def4af14c3f652fb4a2)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index d9b139afcecf..20208afdfc47 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -279,6 +279,36 @@ pmecc: ecc-engine@e0808070 {
+ 			};
+ 		};
+ 
++		qspi0: spi@e080c000 {
++			compatible = "microchip,sama7g5-ospi";
++			reg = <0xe080c000 0x400>, <0x20000000 0x10000000>;
++			reg-names = "qspi_base", "qspi_mmap";
++			interrupts = <GIC_SPI 78 IRQ_TYPE_LEVEL_HIGH>;
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(41)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(40)>;
++			dma-names = "tx", "rx";
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 78>, <&pmc PMC_TYPE_GCK 78>;
++			clock-names = "pclk", "gclk";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		qspi1: spi@e0810000 {
++			compatible = "microchip,sama7g5-qspi";
++			reg = <0xe0810000 0x400>, <0x30000000 0x10000000>;
++			reg-names = "qspi_base", "qspi_mmap";
++			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>;
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(43)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(42)>;
++			dma-names = "tx", "rx";
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 79>, <&pmc PMC_TYPE_GCK 79>;
++			clock-names = "pclk", "gclk";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
+ 		adc: adc@e1000000 {
+ 			compatible = "microchip,sama7g5-adc";
+ 			reg = <0xe1000000 0x200>;
+-- 
+2.34.1
+

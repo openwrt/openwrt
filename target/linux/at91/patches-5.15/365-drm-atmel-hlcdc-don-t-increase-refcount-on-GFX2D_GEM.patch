@@ -1,0 +1,33 @@
+From 26ca372972cbecf9a3ad729e71357eb387f02816 Mon Sep 17 00:00:00 2001
+From: Ludovic Desroches <ludovic.desroches@microchip.com>
+Date: Thu, 16 Jan 2020 08:11:28 +0100
+Subject: [PATCH 256/471] drm/atmel-hlcdc: don't increase refcount on
+ GFX2D_GEM_ADDR ioctl
+
+Increasing the refcount on the GEM object when requesting it's physical
+address prevents to free it. Moreover it seems useless, the refcount is
+already increased with other ioctls.
+
+Signed-off-by: Ludovic Desroches <ludovic.desroches@microchip.com>
+---
+ drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
+index 2e602a674b96..21221e408aca 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
++++ b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
+@@ -804,9 +804,7 @@ static int gfx2d_ioctl_gem_addr(struct drm_device *dev, void *data,
+ 
+ 	mutex_lock(&dev->object_name_lock);
+ 	obj = idr_find(&dev->object_name_idr, (int) args->name);
+-	if (obj) {
+-		drm_gem_object_get(obj);
+-	} else {
++	if (!obj) {
+ 		mutex_unlock(&dev->object_name_lock);
+ 		return -ENOENT;
+ 	}
+-- 
+2.34.1
+

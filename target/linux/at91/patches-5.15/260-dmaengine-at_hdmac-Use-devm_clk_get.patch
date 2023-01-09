@@ -1,0 +1,57 @@
+From f68428c55c5f5fe4170ce87b2fd7861f0b8158a5 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Tue, 25 Oct 2022 12:02:58 +0300
+Subject: [PATCH 151/471] dmaengine: at_hdmac: Use devm_clk_get()
+
+Clocks that are get with this method will be automatically put on driver
+detach. Use devm_clk_get() and simplify the error handling.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20221025090306.297886-1-tudor.ambarus@microchip.com
+Link: https://lore.kernel.org/r/20221025090306.297886-25-tudor.ambarus@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/at_hdmac.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/dma/at_hdmac.c b/drivers/dma/at_hdmac.c
+index 10c250618a33..444aa7d75ff5 100644
+--- a/drivers/dma/at_hdmac.c
++++ b/drivers/dma/at_hdmac.c
+@@ -1803,13 +1803,13 @@ static int __init at_dma_probe(struct platform_device *pdev)
+ 	atdma->dma_common.cap_mask = plat_dat->cap_mask;
+ 	atdma->all_chan_mask = (1 << plat_dat->nr_channels) - 1;
+ 
+-	atdma->clk = clk_get(&pdev->dev, "dma_clk");
++	atdma->clk = devm_clk_get(&pdev->dev, "dma_clk");
+ 	if (IS_ERR(atdma->clk))
+ 		return PTR_ERR(atdma->clk);
+ 
+ 	err = clk_prepare_enable(atdma->clk);
+ 	if (err)
+-		goto err_clk_prepare;
++		return err;
+ 
+ 	/* force dma off, just in case */
+ 	at_dma_off(atdma);
+@@ -1942,8 +1942,6 @@ static int __init at_dma_probe(struct platform_device *pdev)
+ 	free_irq(platform_get_irq(pdev, 0), atdma);
+ err_irq:
+ 	clk_disable_unprepare(atdma->clk);
+-err_clk_prepare:
+-	clk_put(atdma->clk);
+ 	return err;
+ }
+ 
+@@ -1973,7 +1971,6 @@ static int at_dma_remove(struct platform_device *pdev)
+ 	}
+ 
+ 	clk_disable_unprepare(atdma->clk);
+-	clk_put(atdma->clk);
+ 
+ 	return 0;
+ }
+-- 
+2.34.1
+

@@ -1,0 +1,33 @@
+From 17818c8c28864f692b8fc285916dec8415bfbae1 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Tue, 13 Jul 2021 18:04:19 +0300
+Subject: [PATCH 036/471] ASoC: soc: pcm: skip substreams with the wrong stream
+ type
+
+The BE that do not have a substream registered for the needed stream
+type should be ignored in favor of the correct ones.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/soc-pcm.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/sound/soc/soc-pcm.c b/sound/soc/soc-pcm.c
+index 3b673477f621..89391945b159 100644
+--- a/sound/soc/soc-pcm.c
++++ b/sound/soc/soc-pcm.c
+@@ -1893,6 +1893,11 @@ int dpcm_be_dai_hw_params(struct snd_soc_pcm_runtime *fe, int stream)
+ 		if (!snd_soc_dpcm_be_can_update(fe, be, stream))
+ 			continue;
+ 
++		if (!be_substream) {
++			dev_err(be->dev, "ASoC: no backend %s stream\n",
++				stream ? "capture" : "playback");
++			continue;
++		}
+ 		/* copy params for each dpcm */
+ 		memcpy(&dpcm->hw_params, &fe->dpcm[stream].hw_params,
+ 				sizeof(struct snd_pcm_hw_params));
+-- 
+2.34.1
+

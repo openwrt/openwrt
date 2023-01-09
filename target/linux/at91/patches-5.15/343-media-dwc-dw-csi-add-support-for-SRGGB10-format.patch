@@ -1,0 +1,44 @@
+From 6cc6462ef1f3a1142cec6f681ee763934d172005 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 26 Feb 2020 09:50:39 +0200
+Subject: [PATCH 234/471] media: dwc: dw-csi: add support for SRGGB10 format
+
+Add format SRGGB10 to supported format list.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-csi-plat.h | 5 +++++
+ drivers/media/platform/dwc/dw-mipi-csi.c | 1 +
+ 2 files changed, 6 insertions(+)
+
+diff --git a/drivers/media/platform/dwc/dw-csi-plat.h b/drivers/media/platform/dwc/dw-csi-plat.h
+index e322592190ac..3a349230c8eb 100644
+--- a/drivers/media/platform/dwc/dw-csi-plat.h
++++ b/drivers/media/platform/dwc/dw-csi-plat.h
+@@ -23,6 +23,11 @@ struct mipi_fmt dw_mipi_csi_formats[] = {
+ 		/* RAW 10 */
+ 		.mbus_code = MEDIA_BUS_FMT_SBGGR10_1X10,
+ 		.depth = 10,
++	}, {
++		/* RAW 10 */
++		.mbus_code = MEDIA_BUS_FMT_SRGGB10_1X10,
++		.depth = 10,
++
+ 	}, {
+ 		/* RAW 12 */
+ 		.mbus_code = MEDIA_BUS_FMT_SBGGR12_1X12,
+diff --git a/drivers/media/platform/dwc/dw-mipi-csi.c b/drivers/media/platform/dwc/dw-mipi-csi.c
+index d01418dcae81..5fe8dbe5011d 100644
+--- a/drivers/media/platform/dwc/dw-mipi-csi.c
++++ b/drivers/media/platform/dwc/dw-mipi-csi.c
+@@ -201,6 +201,7 @@ void dw_mipi_csi_set_ipi_fmt(struct dw_csi *csi_dev)
+ 		break;
+ 		/* RAW 10 */
+ 		case MEDIA_BUS_FMT_SBGGR10_1X10:
++		case MEDIA_BUS_FMT_SRGGB10_1X10:
+ 		case MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_BE:
+ 		csi_dev->ipi_dt = CSI_2_RAW10;
+ 		break;
+-- 
+2.34.1
+

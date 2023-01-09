@@ -1,0 +1,67 @@
+From 881c69e72dc592b6bde3ae15c54faedfb1f4c4b4 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Tue, 8 Feb 2022 12:56:46 +0200
+Subject: [PATCH 340/471] ARM: dts: at91: sama7g5: Add crypto nodes
+
+Describe and enable the AES, SHA and TDES crypto IPs. Tested with the
+extra run-time self tests of the registered crypto algorithms.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index b96d7e81fcee..2d8629be0a27 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -450,6 +450,27 @@ pit64b1: timer@e1804000 {
+ 			clock-names = "pclk", "gclk";
+ 		};
+ 
++		aes: crypto@e1810000 {
++			compatible = "atmel,at91sam9g46-aes";
++			reg = <0xe1810000 0x100>;
++			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 27>;
++			clock-names = "aes_clk";
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(1)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(2)>;
++			dma-names = "tx", "rx";
++		};
++
++		sha: crypto@e1814000 {
++			compatible = "atmel,at91sam9g46-sha";
++			reg = <0xe1814000 0x100>;
++			interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 83>;
++			clock-names = "sha_clk";
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(48)>;
++			dma-names = "tx";
++		};
++
+ 		flx0: flexcom@e1818000 {
+ 			compatible = "atmel,sama5d2-flexcom";
+ 			reg = <0xe1818000 0x200>;
+@@ -530,6 +551,17 @@ trng: rng@e2010000 {
+ 			status = "disabled";
+ 		};
+ 
++		tdes: crypto@e2014000 {
++			compatible = "atmel,at91sam9g46-tdes";
++			reg = <0xe2014000 0x100>;
++			interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 96>;
++			clock-names = "tdes_clk";
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(54)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(53)>;
++			dma-names = "tx", "rx";
++		};
++
+ 		flx4: flexcom@e2018000 {
+ 			compatible = "atmel,sama5d2-flexcom";
+ 			reg = <0xe2018000 0x200>;
+-- 
+2.34.1
+

@@ -1,0 +1,77 @@
+From 79be3e3900e2d5f6ed41abcbabffa1bea6c80afc Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Fri, 31 Dec 2021 10:36:16 +0530
+Subject: [PATCH 304/471] ARM: at91: add support in soc driver for new sam9x7
+
+Add support for SAM9X7 SoC in the soc driver
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ drivers/soc/atmel/soc.c | 23 +++++++++++++++++++++++
+ drivers/soc/atmel/soc.h |  9 +++++++++
+ 2 files changed, 32 insertions(+)
+
+diff --git a/drivers/soc/atmel/soc.c b/drivers/soc/atmel/soc.c
+index dae8a2e0f745..f977a3d7f6d4 100644
+--- a/drivers/soc/atmel/soc.c
++++ b/drivers/soc/atmel/soc.c
+@@ -101,6 +101,29 @@ static const struct at91_soc socs[] __initconst = {
+ 		 AT91_CIDR_VERSION_MASK, SAM9X60_D6K_EXID_MATCH,
+ 		 "sam9x60 8MiB SDRAM SiP", "sam9x60"),
+ #endif
++#ifdef CONFIG_SOC_SAM9X7
++	AT91_SOC(SAM9X7_CIDR_MATCH, AT91_CIDR_MATCH_MASK,
++		 AT91_CIDR_VERSION_MASK, SAM9X75_EXID_MATCH,
++		 "sam9x75", "sam9x7"),
++	AT91_SOC(SAM9X7_CIDR_MATCH, AT91_CIDR_MATCH_MASK,
++		 AT91_CIDR_VERSION_MASK, SAM9X72_EXID_MATCH,
++		 "sam9x72", "sam9x7"),
++	AT91_SOC(SAM9X7_CIDR_MATCH, AT91_CIDR_MATCH_MASK,
++		 AT91_CIDR_VERSION_MASK, SAM9X70_EXID_MATCH,
++		 "sam9x70", "sam9x7"),
++	AT91_SOC(SAM9X7_CIDR_MATCH, SAM9X75_D1G_EXID_MATCH,
++		 AT91_CIDR_VERSION_MASK, SAM9X75_EXID_MATCH,
++		 "sam9x75 1Gb DDR3L SiP ", "sam9x7"),
++	AT91_SOC(SAM9X7_CIDR_MATCH, SAM9X75_D5M_EXID_MATCH,
++		 AT91_CIDR_VERSION_MASK, SAM9X75_EXID_MATCH,
++		 "sam9x75 512Mb DDR2 SiP", "sam9x7"),
++	AT91_SOC(SAM9X7_CIDR_MATCH, SAM9X75_D1M_EXID_MATCH,
++		 AT91_CIDR_VERSION_MASK, SAM9X75_EXID_MATCH,
++		 "sam9x75 128Mb DDR2 SiP", "sam9x7"),
++	AT91_SOC(SAM9X7_CIDR_MATCH, SAM9X75_D2G_EXID_MATCH,
++		 AT91_CIDR_VERSION_MASK, SAM9X75_EXID_MATCH,
++		 "sam9x75 2Gb DDR3L SiP", "sam9x7"),
++#endif
+ #ifdef CONFIG_SOC_SAMA5
+ 	AT91_SOC(SAMA5D2_CIDR_MATCH, AT91_CIDR_MATCH_MASK,
+ 		 AT91_CIDR_VERSION_MASK, SAMA5D21CU_EXID_MATCH,
+diff --git a/drivers/soc/atmel/soc.h b/drivers/soc/atmel/soc.h
+index 2ecaa75b00f0..951b81a1d1e0 100644
+--- a/drivers/soc/atmel/soc.h
++++ b/drivers/soc/atmel/soc.h
+@@ -45,6 +45,7 @@ at91_soc_init(const struct at91_soc *socs);
+ #define AT91SAM9N12_CIDR_MATCH		0x019a07a0
+ #define SAM9X60_CIDR_MATCH		0x019b35a0
+ #define SAMA7G5_CIDR_MATCH		0x00162100
++#define SAM9X7_CIDR_MATCH		0x09750020
+ 
+ #define AT91SAM9M11_EXID_MATCH		0x00000001
+ #define AT91SAM9M10_EXID_MATCH		0x00000002
+@@ -71,6 +72,14 @@ at91_soc_init(const struct at91_soc *socs);
+ #define SAMA7G53_EXID_MATCH		0x1
+ #define SAMA7G54_EXID_MATCH		0x0
+ 
++#define SAM9X75_EXID_MATCH		0x00000000
++#define SAM9X72_EXID_MATCH		0x00000004
++#define SAM9X70_EXID_MATCH		0x00000005
++#define SAM9X75_D1G_EXID_MATCH		0x00000001
++#define SAM9X75_D5M_EXID_MATCH		0x00000002
++#define SAM9X75_D1M_EXID_MATCH		0x00000003
++#define SAM9X75_D2G_EXID_MATCH		0x00000006
++
+ #define AT91SAM9XE128_CIDR_MATCH	0x329973a0
+ #define AT91SAM9XE256_CIDR_MATCH	0x329a93a0
+ #define AT91SAM9XE512_CIDR_MATCH	0x329aa3a0
+-- 
+2.34.1
+

@@ -1,0 +1,28 @@
+From e152e0f6dc143f14c0ea509de3011e474e7557e0 Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Tue, 24 May 2022 14:23:12 +0530
+Subject: [PATCH 401/471] dt-bindings: usb: ehci: Add atmel at91sam9g45-ehci
+ compatible
+
+Document at91sam9g45-ehci compatible for usb-ehci
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ Documentation/devicetree/bindings/usb/generic-ehci.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/usb/generic-ehci.yaml b/Documentation/devicetree/bindings/usb/generic-ehci.yaml
+index cb5da1df8d40..96c41cb97e35 100644
+--- a/Documentation/devicetree/bindings/usb/generic-ehci.yaml
++++ b/Documentation/devicetree/bindings/usb/generic-ehci.yaml
+@@ -63,6 +63,7 @@ properties:
+           - const: generic-ehci
+       - items:
+           - enum:
++              - atmel,at91sam9g45-ehci
+               - cavium,octeon-6335-ehci
+               - ibm,usb-ehci-440epx
+               - ibm,usb-ehci-460ex
+-- 
+2.34.1
+

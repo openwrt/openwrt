@@ -1,0 +1,94 @@
+From c1196db42321d30033a399c11b58e2a143ca461f Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 13 Dec 2021 14:49:38 +0100
+Subject: [PATCH 209/471] media: atmel: atmel-isc: add raw Bayer 8bit 10bit
+ output formats
+
+The ISC can dump the 8 bit and 10 bit raw bayer formats directly to
+the memory.
+Thus, add them to the supported output format list.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>
+(cherry picked from commit da13c943da7214a0a557d96c6583cc7634c1ca56)
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ .../media/platform/atmel/atmel-sama5d2-isc.c  | 24 +++++++++++++++++++
+ .../media/platform/atmel/atmel-sama7g5-isc.c  | 24 +++++++++++++++++++
+ 2 files changed, 48 insertions(+)
+
+diff --git a/drivers/media/platform/atmel/atmel-sama5d2-isc.c b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
+index 7421bc51709c..fe3ecf9f1e68 100644
+--- a/drivers/media/platform/atmel/atmel-sama5d2-isc.c
++++ b/drivers/media/platform/atmel/atmel-sama5d2-isc.c
+@@ -88,6 +88,30 @@ static const struct isc_format sama5d2_controller_formats[] = {
+ 	{
+ 		.fourcc		= V4L2_PIX_FMT_Y10,
+ 	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SBGGR8,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SGBRG8,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SGRBG8,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SRGGB8,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SBGGR10,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SGBRG10,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SGRBG10,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SRGGB10,
++	},
+ };
+ 
+ /* This is a list of formats that the ISC can receive as *input* */
+diff --git a/drivers/media/platform/atmel/atmel-sama7g5-isc.c b/drivers/media/platform/atmel/atmel-sama7g5-isc.c
+index cc825413d95f..f54629fe5c76 100644
+--- a/drivers/media/platform/atmel/atmel-sama7g5-isc.c
++++ b/drivers/media/platform/atmel/atmel-sama7g5-isc.c
+@@ -100,6 +100,30 @@ static const struct isc_format sama7g5_controller_formats[] = {
+ 	{
+ 		.fourcc		= V4L2_PIX_FMT_Y16,
+ 	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SBGGR8,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SGBRG8,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SGRBG8,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SRGGB8,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SBGGR10,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SGBRG10,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SGRBG10,
++	},
++	{
++		.fourcc		= V4L2_PIX_FMT_SRGGB10,
++	},
+ };
+ 
+ /* This is a list of formats that the ISC can receive as *input* */
+-- 
+2.34.1
+

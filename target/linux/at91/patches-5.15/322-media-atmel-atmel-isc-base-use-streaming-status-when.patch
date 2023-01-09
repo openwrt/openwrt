@@ -1,0 +1,41 @@
+From cac1ce8e7d8bb44b62fcfe42388da8a1db692bce Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 19 Jan 2022 15:42:53 +0200
+Subject: [PATCH 213/471] media: atmel: atmel-isc-base: use streaming status
+ when queueing buffers
+
+During experiments with libcamera, it looks like vb2_is_streaming returns
+true before our start streaming is called.
+Order of operations is streamon -> queue -> start_streaming
+ISC would have started the DMA immediately when a buffer is being added
+to the vbqueue if the queue is streaming.
+It is more safe to start the DMA after the start streaming of the driver is
+called.
+Thus, even if vb2queue is streaming, add the buffer to the dma queue of the
+driver instead of actually starting the DMA process, if the start streaming
+has not been called yet.
+Tho achieve this, we have to use vb2_start_streaming_called instead of
+vb2_is_streaming.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo@jmondi.org>
+---
+ drivers/media/platform/atmel/atmel-isc-base.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
+index c086d424759c..c99fbf5192e7 100644
+--- a/drivers/media/platform/atmel/atmel-isc-base.c
++++ b/drivers/media/platform/atmel/atmel-isc-base.c
+@@ -442,7 +442,7 @@ static void isc_buffer_queue(struct vb2_buffer *vb)
+ 
+ 	spin_lock_irqsave(&isc->dma_queue_lock, flags);
+ 	if (!isc->cur_frm && list_empty(&isc->dma_queue) &&
+-		vb2_is_streaming(vb->vb2_queue)) {
++		vb2_start_streaming_called(vb->vb2_queue)) {
+ 		isc->cur_frm = buf;
+ 		isc_start_dma(isc);
+ 	} else
+-- 
+2.34.1
+

@@ -1,0 +1,26 @@
+From e1422615f42dfaf39bd156bf72e88a71ca5a3daf Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Mon, 7 Jun 2021 17:04:18 +0300
+Subject: [PATCH 443/471] ARM: at91: sama5_defconfig: enable USB audio device
+ support
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/sama5_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/sama5_defconfig b/arch/arm/configs/sama5_defconfig
+index f8f17891f54b..11dc10b9106d 100644
+--- a/arch/arm/configs/sama5_defconfig
++++ b/arch/arm/configs/sama5_defconfig
+@@ -212,6 +212,7 @@ CONFIG_BACKLIGHT_CLASS_DEVICE=y
+ CONFIG_BACKLIGHT_PWM=y
+ CONFIG_SOUND=y
+ CONFIG_SND=y
++CONFIG_SND_USB_AUDIO=y
+ CONFIG_SND_SOC=y
+ CONFIG_SND_ATMEL_SOC=y
+ CONFIG_SND_ATMEL_SOC_WM8904=y
+-- 
+2.34.1
+

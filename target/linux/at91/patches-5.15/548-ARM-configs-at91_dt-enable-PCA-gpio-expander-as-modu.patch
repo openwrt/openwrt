@@ -1,0 +1,29 @@
+From d17107892bd2086f9d3b667dd5cc68d4830b12ab Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 25 Mar 2020 12:08:39 +0200
+Subject: [PATCH 439/471] ARM: configs: at91_dt: enable PCA gpio expander as
+ module
+
+Build NXP PCA953X gpio expander as a module. These are present on some
+sensor extension boards.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index 36d4b2b32dcc..0b7282cfecfb 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -116,6 +116,7 @@ CONFIG_SPI_GPIO=y
+ CONFIG_SPI_SPIDEV=m
+ CONFIG_PINCTRL_MCP23S08=m
+ CONFIG_GPIO_SYSFS=y
++CONFIG_GPIO_PCA953X=m
+ CONFIG_POWER_RESET=y
+ CONFIG_POWER_SUPPLY=y
+ # CONFIG_HWMON is not set
+-- 
+2.34.1
+

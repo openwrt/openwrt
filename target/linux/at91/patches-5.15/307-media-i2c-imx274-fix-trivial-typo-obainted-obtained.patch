@@ -1,0 +1,32 @@
+From afdc515de745e39488c2bd311d845e25286d1b95 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Thu, 18 Nov 2021 13:51:51 +0100
+Subject: [PATCH 198/471] media: i2c: imx274: fix trivial typo
+ obainted/obtained
+
+Fix typo obainted/obtained.
+
+Fixes: 0985dd306f72 ("media: imx274: V4l2 driver for Sony imx274 CMOS sensor")
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+---
+ drivers/media/i2c/imx274.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/i2c/imx274.c b/drivers/media/i2c/imx274.c
+index 5312cf3e855d..2e804e3b70c4 100644
+--- a/drivers/media/i2c/imx274.c
++++ b/drivers/media/i2c/imx274.c
+@@ -1499,7 +1499,7 @@ static int imx274_s_stream(struct v4l2_subdev *sd, int on)
+ /*
+  * imx274_get_frame_length - Function for obtaining current frame length
+  * @priv: Pointer to device structure
+- * @val: Pointer to obainted value
++ * @val: Pointer to obtained value
+  *
+  * frame_length = vmax x (svr + 1), in unit of hmax.
+  *
+-- 
+2.34.1
+

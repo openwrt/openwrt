@@ -1,0 +1,34 @@
+From 983c46eeb15ef7af544748fd87ebda1699f5689f Mon Sep 17 00:00:00 2001
+From: Boris Brezillon <boris.brezillon@free-electrons.com>
+Date: Thu, 30 Apr 2015 15:03:01 +0200
+Subject: [PATCH 314/471] drm: atmel-hlcdc: add info messages
+
+Add dev_info messages to inform the user when the display controller is
+up and running.
+
+Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+[nicolas.ferre@atmel.com: adapt to newer driver]
+Signed-off-by: Nicolas Ferre <nicolas.ferre@atmel.com>
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+[codrin.ciubotariu@microchip.com: rebase on v5.10]
+---
+ drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
+index e5a4dc1553d3..58ad866b21bf 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
++++ b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
+@@ -988,6 +988,8 @@ static int atmel_hlcdc_dc_drm_probe(struct platform_device *pdev)
+ 
+ 	drm_fbdev_generic_setup(ddev, 24);
+ 
++	dev_info(ddev->dev, "DRM device successfully registered\n");
++
+ 	return 0;
+ 
+ err_unload:
+-- 
+2.34.1
+

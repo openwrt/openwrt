@@ -1,0 +1,90 @@
+From e4aade7eb55035cfde8c6179329761d754bec6e6 Mon Sep 17 00:00:00 2001
+From: Jakub Kicinski <kuba@kernel.org>
+Date: Wed, 13 Oct 2021 13:44:32 -0700
+Subject: [PATCH 104/471] ethernet: manually convert memcpy(dev_addr,...,
+ sizeof(addr))
+
+A handful of drivers use sizeof(addr) for the size of
+the address, after manually confirming the size is
+indeed 6 convert them to eth_hw_addr_set().
+
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Acked-by: Petko Manolov <petkan@nucleusys.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 2 +-
+ drivers/net/ethernet/dnet.c              | 2 +-
+ drivers/net/ethernet/pasemi/pasemi_mac.c | 2 +-
+ drivers/net/ethernet/ti/cpmac.c          | 2 +-
+ drivers/net/usb/pegasus.c                | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
+index 4a66186cd3ca..9a88bef6863e 100644
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -314,7 +314,7 @@ static void macb_get_hwaddr(struct macb *bp)
+ 		addr[5] = (top >> 8) & 0xff;
+ 
+ 		if (is_valid_ether_addr(addr)) {
+-			memcpy(bp->dev->dev_addr, addr, sizeof(addr));
++			eth_hw_addr_set(bp->dev, addr);
+ 			return;
+ 		}
+ 	}
+diff --git a/drivers/net/ethernet/dnet.c b/drivers/net/ethernet/dnet.c
+index 14dc2e13bf03..51eef6036f20 100644
+--- a/drivers/net/ethernet/dnet.c
++++ b/drivers/net/ethernet/dnet.c
+@@ -93,7 +93,7 @@ static void dnet_get_hwaddr(struct dnet *bp)
+ 	*((__be16 *)(addr + 4)) = cpu_to_be16(tmp);
+ 
+ 	if (is_valid_ether_addr(addr))
+-		memcpy(bp->dev->dev_addr, addr, sizeof(addr));
++		eth_hw_addr_set(bp->dev, addr);
+ }
+ 
+ static int dnet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
+diff --git a/drivers/net/ethernet/pasemi/pasemi_mac.c b/drivers/net/ethernet/pasemi/pasemi_mac.c
+index 7e096b2888b9..7ff0b79c8231 100644
+--- a/drivers/net/ethernet/pasemi/pasemi_mac.c
++++ b/drivers/net/ethernet/pasemi/pasemi_mac.c
+@@ -1722,7 +1722,7 @@ pasemi_mac_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 		err = -ENODEV;
+ 		goto out;
+ 	}
+-	memcpy(dev->dev_addr, mac->mac_addr, sizeof(mac->mac_addr));
++	eth_hw_addr_set(dev, mac->mac_addr);
+ 
+ 	ret = mac_to_intf(mac);
+ 	if (ret < 0) {
+diff --git a/drivers/net/ethernet/ti/cpmac.c b/drivers/net/ethernet/ti/cpmac.c
+index 02d4e51f7306..7449436fc87c 100644
+--- a/drivers/net/ethernet/ti/cpmac.c
++++ b/drivers/net/ethernet/ti/cpmac.c
+@@ -1112,7 +1112,7 @@ static int cpmac_probe(struct platform_device *pdev)
+ 	priv->dev = dev;
+ 	priv->ring_size = 64;
+ 	priv->msg_enable = netif_msg_init(debug_level, 0xff);
+-	memcpy(dev->dev_addr, pdata->dev_addr, sizeof(pdata->dev_addr));
++	eth_hw_addr_set(dev, pdata->dev_addr);
+ 
+ 	snprintf(priv->phy_name, MII_BUS_ID_SIZE, PHY_ID_FMT,
+ 						mdio_bus_id, phy_id);
+diff --git a/drivers/net/usb/pegasus.c b/drivers/net/usb/pegasus.c
+index cd063f45785b..feb247e355f7 100644
+--- a/drivers/net/usb/pegasus.c
++++ b/drivers/net/usb/pegasus.c
+@@ -357,7 +357,7 @@ static void set_ethernet_addr(pegasus_t *pegasus)
+ 			goto err;
+ 	}
+ 
+-	memcpy(pegasus->net->dev_addr, node_id, sizeof(node_id));
++	eth_hw_addr_set(pegasus->net, node_id);
+ 
+ 	return;
+ err:
+-- 
+2.34.1
+

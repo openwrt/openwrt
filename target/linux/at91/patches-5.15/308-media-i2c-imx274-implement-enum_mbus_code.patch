@@ -1,0 +1,49 @@
+From c255c9df49fcf01291d968b6ab2c30677bac24e8 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Thu, 18 Nov 2021 16:40:09 +0100
+Subject: [PATCH 199/471] media: i2c: imx274: implement enum_mbus_code
+
+Current driver supports only SRGGB 10 bit RAW bayer format.
+Add the enum_mbus_code implementation to report this format supported.
+
+ # v4l2-ctl -d /dev/v4l-subdev3 --list-subdev-mbus-codes
+ioctl: VIDIOC_SUBDEV_ENUM_MBUS_CODE (pad=0)
+        0x300f: MEDIA_BUS_FMT_SRGGB10_1X10
+ #
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+---
+ drivers/media/i2c/imx274.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/drivers/media/i2c/imx274.c b/drivers/media/i2c/imx274.c
+index 2e804e3b70c4..25a4ef8f6187 100644
+--- a/drivers/media/i2c/imx274.c
++++ b/drivers/media/i2c/imx274.c
+@@ -1909,7 +1909,21 @@ static int imx274_set_frame_interval(struct stimx274 *priv,
+ 	return err;
+ }
+ 
++static int imx274_enum_mbus_code(struct v4l2_subdev *sd,
++				 struct v4l2_subdev_state *sd_state,
++				 struct v4l2_subdev_mbus_code_enum *code)
++{
++	if (code->index > 0)
++		return -EINVAL;
++
++	/* only supported format in the driver is Raw 10 bits SRGGB */
++	code->code = MEDIA_BUS_FMT_SRGGB10_1X10;
++
++	return 0;
++}
++
+ static const struct v4l2_subdev_pad_ops imx274_pad_ops = {
++	.enum_mbus_code = imx274_enum_mbus_code,
+ 	.get_fmt = imx274_get_fmt,
+ 	.set_fmt = imx274_set_fmt,
+ 	.get_selection = imx274_get_selection,
+-- 
+2.34.1
+

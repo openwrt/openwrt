@@ -1,0 +1,42 @@
+From 003b8944343c5677244f8691a939ece8cce417c0 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Thu, 31 Mar 2022 15:00:49 +0300
+Subject: [PATCH 251/471] Revert "drm: Avoid circular dependencies for
+ CONFIG_FB"
+
+This reverts commit f611b1e7624ccdbd495c19e9805629e22265aa16.
+
+1/ When initially starting planes loop, everything looks fine. After a
+few minutes/few iterations, things begin to go very bad. The chicken and
+the martian look good, but after a few minutes, they turn upside down.
+
+2/ More than this, after a few minutes, the image begins to crumble, it
+goes bad, flickering appears as in very bad pixels, It looks like big
+de-synchronization of the pixels with the clock... I have no idea.
+
+3/ I have replaced linux-5.15-mchp with current linux-5.10-at91 , same
+rootfs, same egt, no other change. Everything looks perfect, no flipped
+overlays, no crumbling of the image, nothing. Hence I assume kernel is
+the culprit here, and there is no problem with the screen, the ribbon or
+anything hardware related.
+---
+ drivers/gpu/drm/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/Kconfig b/drivers/gpu/drm/Kconfig
+index cea777ae7fb9..8f17ad28340c 100644
+--- a/drivers/gpu/drm/Kconfig
++++ b/drivers/gpu/drm/Kconfig
+@@ -103,8 +103,8 @@ config DRM_DEBUG_DP_MST_TOPOLOGY_REFS
+ config DRM_FBDEV_EMULATION
+ 	bool "Enable legacy fbdev support for your modesetting driver"
+ 	depends on DRM
+-	depends on FB
+ 	select DRM_KMS_HELPER
++	select FB
+ 	select FB_CFB_FILLRECT
+ 	select FB_CFB_COPYAREA
+ 	select FB_CFB_IMAGEBLIT
+-- 
+2.34.1
+

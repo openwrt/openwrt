@@ -1,0 +1,69 @@
+From 8132694f6267044b36703b330ef48664092715fb Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Thu, 17 Mar 2022 20:32:44 +0200
+Subject: [PATCH 362/471] Revert "ARM: dts: at91: sama7g5ek: add node for
+ PDMC0"
+
+To be replaced with an updated version.
+
+This reverts commit db5e78b319bf3f5c008b7888c737c4c3bb47591f.
+---
+ arch/arm/boot/dts/at91-sama7g5ek.dts | 21 +--------------------
+ 1 file changed, 1 insertion(+), 20 deletions(-)
+
+diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
+index 992c2820d28d..8fc67de27048 100644
+--- a/arch/arm/boot/dts/at91-sama7g5ek.dts
++++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
+@@ -14,7 +14,6 @@
+ #include <dt-bindings/mfd/atmel-flexcom.h>
+ #include <dt-bindings/input/input.h>
+ #include <dt-bindings/pinctrl/at91.h>
+-#include <dt-bindings/sound/mchp,pdmc.h>
+ 
+ / {
+ 	model = "Microchip SAMA7G5-EK";
+@@ -486,7 +485,7 @@ &gmac1 {
+ 		     &pinctrl_gmac1_mdio_default
+ 		     &pinctrl_gmac1_phy_irq>;
+ 	phy-mode = "rmii";
+-	status = "okay"; /* Conflict with pdmc0. */
++	status = "okay";
+ 
+ 	nvmem-cells = <&eeprom1_eui48>;
+ 	nvmem-cell-names = "mac-address";
+@@ -503,17 +502,6 @@ &i2s0 {
+ 	pinctrl-0 = <&pinctrl_i2s0_default>;
+ };
+ 
+-&pdmc0 {
+-	#sound-dai-cells = <0>;
+-	microchip,mic-pos = <MCHP_PDMC_DS0 MCHP_PDMC_CLK_POSITIVE>,
+-			    <MCHP_PDMC_DS0 MCHP_PDMC_CLK_NEGATIVE>,
+-			    <MCHP_PDMC_DS1 MCHP_PDMC_CLK_POSITIVE>,
+-			    <MCHP_PDMC_DS1 MCHP_PDMC_CLK_NEGATIVE>;
+-	status = "disabled"; /* Conflict with gmac1. */
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_pdmc0_default>;
+-};
+-
+ &pioA {
+ 
+ 	pinctrl_can0_default: can0_default {
+@@ -683,13 +671,6 @@ pinctrl_mikrobus1_spi: mikrobus1_spi {
+ 		bias-disable;
+ 	};
+ 
+-	pinctrl_pdmc0_default: pdmc0_default {
+-		pinmux = <PIN_PD23__PDMC0_DS0>,
+-			 <PIN_PD24__PDMC0_DS1>,
+-			 <PIN_PD22__PDMC0_CLK>;
+-		bias_disable;
+-	};
+-
+ 	pinctrl_qspi: qspi {
+ 		pinmux = <PIN_PB12__QSPI0_IO0>,
+ 			 <PIN_PB11__QSPI0_IO1>,
+-- 
+2.34.1
+

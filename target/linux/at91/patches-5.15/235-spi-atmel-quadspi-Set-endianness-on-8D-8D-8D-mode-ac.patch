@@ -1,0 +1,32 @@
+From 6aeb476924bce929b8c124cca3dd7dd260069d4c Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Thu, 17 Feb 2022 10:48:10 +0200
+Subject: [PATCH 126/471] spi: atmel-quadspi: Set endianness on 8D-8D-8D mode
+ according to the flash requirements
+
+Macronix swaps bytes on a 16-bit boundary when configured in Octal DTR.
+The byte order of 16-bit words is swapped when read or write written in
+8D-8D-8D mode compared to STR modes. Set the endianness flash requirements
+to avoid endianness problems during.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/spi/atmel-quadspi.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/spi/atmel-quadspi.c b/drivers/spi/atmel-quadspi.c
+index a4ba94ce84f1..c4a3963f7c84 100644
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -697,6 +697,8 @@ static int atmel_qspi_sama7g5_set_cfg(struct atmel_qspi *aq,
+ 		ifr |= QSPI_IFR_DDREN;
+ 		if (op->cmd.dtr)
+ 			ifr |= QSPI_IFR_DDRCMDEN;
++		if (op->data.dtr_bswap16)
++			ifr |= QSPI_IFR_END;
+ 
+ 		ifr |= QSPI_IFR_DQSEN;
+ 	}
+-- 
+2.34.1
+

@@ -1,0 +1,45 @@
+From 7bd085de2b34f2d2fbfa9840cb352e4cb70034f5 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 7 Dec 2020 14:55:37 +0200
+Subject: [PATCH 241/471] media: dwc: dw-csi-plat: implement get_mbus_config
+
+This function will associate bus information to the mbus struct,
+and the caller can find out bus information, like virtual channel
+and clock properties.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-csi-plat.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/media/platform/dwc/dw-csi-plat.c b/drivers/media/platform/dwc/dw-csi-plat.c
+index 0af343a3aa66..d8934145f716 100644
+--- a/drivers/media/platform/dwc/dw-csi-plat.c
++++ b/drivers/media/platform/dwc/dw-csi-plat.c
+@@ -251,11 +251,23 @@ static struct v4l2_subdev_core_ops dw_mipi_csi_core_ops = {
+ #endif
+ };
+ 
++static int dw_get_mbus_config(struct v4l2_subdev *sd, unsigned int pad,
++			       struct v4l2_mbus_config *cfg)
++{
++	cfg->flags = V4L2_MBUS_CSI2_2_LANE | V4L2_MBUS_CSI2_CHANNEL_0 |
++			V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
++
++	cfg->type = V4L2_MBUS_CSI2_DPHY;
++
++	return 0;
++}
++
+ static struct v4l2_subdev_pad_ops dw_mipi_csi_pad_ops = {
+ 	.init_cfg = dw_mipi_csi_init_cfg,
+ 	.enum_mbus_code = dw_mipi_csi_enum_mbus_code,
+ 	.get_fmt = dw_mipi_csi_get_fmt,
+ 	.set_fmt = dw_mipi_csi_set_fmt,
++	.get_mbus_config = dw_get_mbus_config,
+ };
+ 
+ static struct v4l2_subdev_ops dw_mipi_csi_subdev_ops = {
+-- 
+2.34.1
+

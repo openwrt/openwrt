@@ -1,0 +1,31 @@
+From c212f129d216cea19d073afe2b54bb65c88acb53 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Fri, 4 Feb 2022 15:35:22 +0200
+Subject: [PATCH 080/471] crypto: atmel-tdes - Add support for the TDES IP
+ available on sama7g5 SoC
+
+Add support for the TDES IP found on sama7g5.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+(cherry picked from commit e8bf24bd439da1ee7f37c2b03f44c6ad37c0c8c0)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/crypto/atmel-tdes.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/crypto/atmel-tdes.c b/drivers/crypto/atmel-tdes.c
+index e30786ec9f2d..9fd7b8e439d2 100644
+--- a/drivers/crypto/atmel-tdes.c
++++ b/drivers/crypto/atmel-tdes.c
+@@ -1130,6 +1130,7 @@ static void atmel_tdes_get_cap(struct atmel_tdes_dev *dd)
+ 
+ 	/* keep only major version number */
+ 	switch (dd->hw_version & 0xf00) {
++	case 0x800:
+ 	case 0x700:
+ 		dd->caps.has_dma = 1;
+ 		dd->caps.has_cfb_3keys = 1;
+-- 
+2.34.1
+

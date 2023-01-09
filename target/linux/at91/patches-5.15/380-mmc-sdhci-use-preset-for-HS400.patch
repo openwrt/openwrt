@@ -1,0 +1,37 @@
+From e3609c11262965c998b39588e42d2ee5a3b74dba Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 3 Aug 2020 15:37:47 +0300
+Subject: [PATCH 271/471] mmc: sdhci: use preset for HS400
+
+Use preset for HS400 mode as well.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+[claudiu.beznea: adapt to v5.15.82]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/mmc/host/sdhci.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
+index cda145c2ebb6..bbe30cadcd40 100644
+--- a/drivers/mmc/host/sdhci.c
++++ b/drivers/mmc/host/sdhci.c
+@@ -2433,7 +2433,14 @@ void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		host->ops->set_uhs_signaling(host, ios->timing);
+ 		host->timing = ios->timing;
+ 
+-		if (sdhci_preset_needed(host, ios->timing)) {
++		if (!(host->quirks2 & SDHCI_QUIRK2_PRESET_VALUE_BROKEN) &&
++				((ios->timing == MMC_TIMING_UHS_SDR12) ||
++				 (ios->timing == MMC_TIMING_UHS_SDR25) ||
++				 (ios->timing == MMC_TIMING_UHS_SDR50) ||
++				 (ios->timing == MMC_TIMING_UHS_SDR104) ||
++				 (ios->timing == MMC_TIMING_UHS_DDR50) ||
++				 (ios->timing == MMC_TIMING_MMC_DDR52) ||
++				 (ios->timing == MMC_TIMING_MMC_HS400))) {
+ 			u16 preset;
+ 
+ 			sdhci_enable_preset_value(host, true);
+-- 
+2.34.1
+

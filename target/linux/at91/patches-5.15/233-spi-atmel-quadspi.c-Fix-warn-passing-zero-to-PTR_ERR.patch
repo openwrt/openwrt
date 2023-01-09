@@ -1,0 +1,31 @@
+From 704c2a63cd0c5d24e9d207961f7ccf8725e89f94 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Fri, 11 Feb 2022 10:33:47 +0200
+Subject: [PATCH 124/471] spi: atmel-quadspi.c: Fix warn: passing zero to
+ 'PTR_ERR'
+
+Fix warn: passing zero to 'PTR_ERR' in atmel_qspi_dma_init().
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/spi/atmel-quadspi.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/spi/atmel-quadspi.c b/drivers/spi/atmel-quadspi.c
+index 8980a729dd53..a4ba94ce84f1 100644
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -1198,8 +1198,9 @@ static int atmel_qspi_dma_init(struct spi_controller *ctrl)
+ 
+ 	aq->rx_chan = dma_request_chan(&aq->pdev->dev, "rx");
+ 	if (IS_ERR(aq->rx_chan)) {
++		ret = PTR_ERR(aq->rx_chan);
+ 		aq->rx_chan = NULL;
+-		return dev_err_probe(&aq->pdev->dev, PTR_ERR(aq->rx_chan),
++		return dev_err_probe(&aq->pdev->dev, ret,
+ 				     "RX DMA channel is not available\n");
+ 	}
+ 
+-- 
+2.34.1
+

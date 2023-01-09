@@ -1,0 +1,78 @@
+From 2b731b7b2aaa41b6117d899a5c1efe81bf19c765 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 3 Aug 2022 13:28:49 +0300
+Subject: [PATCH 018/471] iio: adc: at91-sama5d2_adc: update trackx on emr
+
+Add support for updating trackx bits of EMR register. Having different
+values of EMR.TRACKX when measuring temperature give a better accuracy.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20220803102855.2191070-14-claudiu.beznea@microchip.com
+Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+---
+ drivers/iio/adc/at91-sama5d2_adc.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/iio/adc/at91-sama5d2_adc.c b/drivers/iio/adc/at91-sama5d2_adc.c
+index 394db63a85df..febc94f25348 100644
+--- a/drivers/iio/adc/at91-sama5d2_adc.c
++++ b/drivers/iio/adc/at91-sama5d2_adc.c
+@@ -145,6 +145,10 @@ struct at91_adc_reg_layout {
+ #define AT91_SAMA5D2_EMR_OSR_64SAMPLES		3
+ #define AT91_SAMA5D2_EMR_OSR_256SAMPLES		4
+ 
++/* Extended Mode Register - TRACKX */
++#define AT91_SAMA5D2_TRACKX_MASK		GENMASK(23, 22)
++#define AT91_SAMA5D2_TRACKX(x)			(((x) << 22) & \
++						 AT91_SAMA5D2_TRACKX_MASK)
+ /* Extended Mode Register - Averaging on single trigger event */
+ #define AT91_SAMA5D2_EMR_ASTE(V)		((V) << 20)
+ 
+@@ -746,7 +750,7 @@ static void at91_adc_eoc_ena(struct at91_adc_state *st, unsigned int channel)
+ }
+ 
+ static int at91_adc_config_emr(struct at91_adc_state *st,
+-			       u32 oversampling_ratio)
++			       u32 oversampling_ratio, u32 trackx)
+ {
+ 	/* configure the extended mode register */
+ 	unsigned int emr = at91_adc_readl(st, EMR);
+@@ -765,7 +769,7 @@ static int at91_adc_config_emr(struct at91_adc_state *st,
+ 	emr |= AT91_SAMA5D2_EMR_ASTE(1);
+ 
+ 	/* delete leftover content if it's the case */
+-	emr &= ~osr_mask;
++	emr &= ~(osr_mask | AT91_SAMA5D2_TRACKX_MASK);
+ 
+ 	/* select oversampling ratio from configuration */
+ 	switch (oversampling_ratio) {
+@@ -791,6 +795,8 @@ static int at91_adc_config_emr(struct at91_adc_state *st,
+ 		break;
+ 	}
+ 
++	/* Update trackx. */
++	emr |= AT91_SAMA5D2_TRACKX(trackx);
+ 	at91_adc_writel(st, EMR, emr);
+ 
+ 	st->oversampling_ratio = oversampling_ratio;
+@@ -1706,7 +1712,7 @@ static int at91_adc_write_raw(struct iio_dev *indio_dev,
+ 			return ret;
+ 		mutex_lock(&st->lock);
+ 		/* update ratio */
+-		ret = at91_adc_config_emr(st, val);
++		ret = at91_adc_config_emr(st, val, 0);
+ 		mutex_unlock(&st->lock);
+ 		iio_device_release_direct_mode(indio_dev);
+ 		return ret;
+@@ -1904,7 +1910,7 @@ static void at91_adc_hw_init(struct iio_dev *indio_dev)
+ 	at91_adc_setup_samp_freq(indio_dev, st->soc_info.min_sample_rate);
+ 
+ 	/* configure extended mode register */
+-	at91_adc_config_emr(st, st->oversampling_ratio);
++	at91_adc_config_emr(st, st->oversampling_ratio, 0);
+ }
+ 
+ static ssize_t at91_adc_get_fifo_state(struct device *dev,
+-- 
+2.34.1
+

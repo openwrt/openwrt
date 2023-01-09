@@ -1,0 +1,47 @@
+From 6cd77e754bc8bfae1ac6575c6c1e3b18683db2a0 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Mon, 14 Feb 2022 17:05:11 +0200
+Subject: [PATCH 125/471] spi: spi-mem: Allow specifying the byte order in DTR
+ mode
+
+There are NOR flashes (Macronix) that swap the bytes on a 16-bit boundary
+when configured in DTR mode. The byte order of 16-bit words is swapped
+when read or written in Double Transfer Rate (DTR) mode compared to
+Single Transfer Rate (STR) mode. If one writes D0 D1 D2 D3 bytes using
+1-1-1 mode, and uses 8D-8D-8D SPI mode for reading, it will read back
+D1 D0 D3 D2. Swapping the bytes is a bad design decision because this may
+introduce some endianness problems. It can affect the boot sequence if the
+entire boot sequence is not handled in either 8D-8D-8D mode or 1-1-1 mode.
+Fortunately there are controllers that can swap back the bytes at runtime,
+fixing the endiannesses. Provide a way for the upper layers to specify the
+byte order in DTR mode.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ include/linux/spi/spi-mem.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/include/linux/spi/spi-mem.h b/include/linux/spi/spi-mem.h
+index 85e2ff7b840d..e1878417420c 100644
+--- a/include/linux/spi/spi-mem.h
++++ b/include/linux/spi/spi-mem.h
+@@ -89,6 +89,8 @@ enum spi_mem_data_dir {
+  * @dummy.dtr: whether the dummy bytes should be sent in DTR mode or not
+  * @data.buswidth: number of IO lanes used to send/receive the data
+  * @data.dtr: whether the data should be sent in DTR mode or not
++ * @data.dtr_bswap16: whether the byte order of 16-bit words is swapped when
++ *		      read or written in DTR mode compared to STR mode.
+  * @data.dir: direction of the transfer
+  * @data.nbytes: number of data bytes to send/receive. Can be zero if the
+  *		 operation does not involve transferring data
+@@ -119,6 +121,7 @@ struct spi_mem_op {
+ 	struct {
+ 		u8 buswidth;
+ 		u8 dtr : 1;
++		u8 dtr_bswap16 : 1;
+ 		enum spi_mem_data_dir dir;
+ 		unsigned int nbytes;
+ 		union {
+-- 
+2.34.1
+

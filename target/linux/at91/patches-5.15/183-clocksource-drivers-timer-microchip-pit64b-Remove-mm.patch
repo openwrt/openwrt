@@ -1,0 +1,32 @@
+From fad26970fe16811c98cf70197b16429c82e01823 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 4 Mar 2022 15:35:56 +0200
+Subject: [PATCH 074/471] clocksource/drivers/timer-microchip-pit64b: Remove
+ mmio selection
+
+PIT64B timer driver doesn't depend on CLKSRC_MMIO since
+commit e85c1d21b16b ("clocksource/drivers/timer-microchip-pit64b:
+Add clocksource suspend/resume"). Remove the selection.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20220304133601.2404086-2-claudiu.beznea@microchip.com
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ drivers/clocksource/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
+index 08f8cb944a2a..c5d3d2a214a0 100644
+--- a/drivers/clocksource/Kconfig
++++ b/drivers/clocksource/Kconfig
+@@ -701,7 +701,6 @@ config INGENIC_OST
+ config MICROCHIP_PIT64B
+ 	bool "Microchip PIT64B support"
+ 	depends on OF || COMPILE_TEST
+-	select CLKSRC_MMIO
+ 	select TIMER_OF
+ 	help
+ 	  This option enables Microchip PIT64B timer for Atmel
+-- 
+2.34.1
+

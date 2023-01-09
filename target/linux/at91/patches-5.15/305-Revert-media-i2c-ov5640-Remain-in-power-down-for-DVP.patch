@@ -1,0 +1,54 @@
+From 3a70a6eb9cb73299db9de3f86e19bbcce358d48f Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Fri, 4 Mar 2022 10:21:23 +0200
+Subject: [PATCH 196/471] Revert "media: i2c: ov5640: Remain in power down for
+ DVP mode unless streaming"
+
+ov5640 refuses to power up after it has been powered down by the code in the
+patch that I am reverting.
+
+This reverts commit 3b987d70e903962eb8c5961ba166c345a49d1a0b.
+---
+ drivers/media/i2c/ov5640.c | 12 +-----------
+ 1 file changed, 1 insertion(+), 11 deletions(-)
+
+diff --git a/drivers/media/i2c/ov5640.c b/drivers/media/i2c/ov5640.c
+index 4de83d0ef85d..e4a06d7ed076 100644
+--- a/drivers/media/i2c/ov5640.c
++++ b/drivers/media/i2c/ov5640.c
+@@ -47,8 +47,6 @@
+ #define OV5640_REG_SYS_RESET02		0x3002
+ #define OV5640_REG_SYS_CLOCK_ENABLE02	0x3006
+ #define OV5640_REG_SYS_CTRL0		0x3008
+-#define OV5640_REG_SYS_CTRL0_SW_PWDN	0x42
+-#define OV5640_REG_SYS_CTRL0_SW_PWUP	0x02
+ #define OV5640_REG_CHIP_ID		0x300a
+ #define OV5640_REG_IO_MIPI_CTRL00	0x300e
+ #define OV5640_REG_PAD_OUTPUT_ENABLE01	0x3017
+@@ -1699,12 +1697,6 @@ static void ov5640_load_regs(struct ov5640_dev *sensor,
+ 		val = regs->val;
+ 		mask = regs->mask;
+ 
+-		/* remain in power down mode for DVP */
+-		if (regs->reg_addr == OV5640_REG_SYS_CTRL0 &&
+-		    val == OV5640_REG_SYS_CTRL0_SW_PWUP &&
+-		    !ov5640_is_csi2(sensor))
+-			continue;
+-
+ 		if (mask)
+ 			ret = ov5640_mod_reg(sensor, reg_addr, mask, val);
+ 		else
+@@ -1793,9 +1785,7 @@ static int ov5640_set_autogain(struct ov5640_dev *sensor, bool on)
+ 
+ static int ov5640_set_stream_dvp(struct ov5640_dev *sensor, bool on)
+ {
+-	return ov5640_write_reg(sensor, OV5640_REG_SYS_CTRL0, on ?
+-				OV5640_REG_SYS_CTRL0_SW_PWUP :
+-				OV5640_REG_SYS_CTRL0_SW_PWDN);
++	return 0;
+ }
+ 
+ static int ov5640_set_stream_mipi(struct ov5640_dev *sensor, bool on)
+-- 
+2.34.1
+

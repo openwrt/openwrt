@@ -1,0 +1,74 @@
+From b49baba0c86007d072673e70ca14ad027497a5d3 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 22 Mar 2021 18:12:41 +0200
+Subject: [PATCH 335/471] ARM: dts: at91: at91-sama7g5ek: add EEPROMs
+
+Add EEPROMs.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/at91-sama7g5ek.dts | 34 ++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
+
+diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
+index 3d57cc377932..0322b2a84fd2 100644
+--- a/arch/arm/boot/dts/at91-sama7g5ek.dts
++++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
+@@ -331,6 +331,34 @@ i2c8: i2c@600 {
+ 		i2c-digital-filter;
+ 		i2c-digital-filter-width-ns = <35>;
+ 		status = "okay";
++
++		eeprom0: eeprom0@52 {
++			compatible = "atmel,24mac02e4";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0x52>;
++			pagesize = <16>;
++			size = <256>;
++			status = "okay";
++
++			eeprom0_eui48: eui48@fa {
++				reg = <0xfa 0x6>;
++			};
++		};
++
++		eeprom1: eeprom1@53 {
++			compatible = "atmel,24mac02e4";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0x53>;
++			pagesize = <16>;
++			size = <256>;
++			status = "okay";
++
++			eeprom1_eui48: eui48@fa {
++				reg = <0xfa 0x6>;
++			};
++		};
+ 	};
+ };
+ 
+@@ -370,6 +398,9 @@ &pinctrl_gmac0_txck_default
+ 	phy-mode = "rgmii-id";
+ 	status = "okay";
+ 
++	nvmem-cells = <&eeprom0_eui48>;
++	nvmem-cell-names = "mac-address";
++
+ 	ethernet-phy@7 {
+ 		reg = <0x7>;
+ 		interrupt-parent = <&pioA>;
+@@ -387,6 +418,9 @@ &pinctrl_gmac1_mdio_default
+ 	phy-mode = "rmii";
+ 	status = "okay";
+ 
++	nvmem-cells = <&eeprom1_eui48>;
++	nvmem-cell-names = "mac-address";
++
+ 	ethernet-phy@0 {
+ 		reg = <0x0>;
+ 		interrupt-parent = <&pioA>;
+-- 
+2.34.1
+

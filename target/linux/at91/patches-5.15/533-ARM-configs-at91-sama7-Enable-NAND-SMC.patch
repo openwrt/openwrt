@@ -1,0 +1,40 @@
+From 08b11b1b8ff009a6a0637c5f7ce51603993506c6 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Tue, 11 Jan 2022 14:56:41 +0200
+Subject: [PATCH 424/471] ARM: configs: at91: sama7: Enable NAND / SMC
+
+Enable the Static Memory Controller. Tested with Micron MT29F4G08ABAEAWP
+NAND flash. Software error correction is not needed, as the SMC includes
+a PMECC error correction hardware module.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Link: https://lore.kernel.org/r/20220111125641.903624-1-tudor.ambarus@microchip.com
+---
+ arch/arm/configs/sama7_defconfig | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 9c115d23f75b..40c16984003f 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -89,6 +89,9 @@ CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_MTD=y
+ CONFIG_MTD_TESTS=m
+ CONFIG_MTD_CMDLINE_PARTS=y
++CONFIG_MTD_RAW_NAND=y
++CONFIG_MTD_NAND_ATMEL=y
++# CONFIG_MTD_NAND_ECC_SW_HAMMING is not set
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=1
+@@ -184,7 +187,6 @@ CONFIG_DMATEST=y
+ CONFIG_STAGING=y
+ CONFIG_MICROCHIP_PIT64B=y
+ # CONFIG_IOMMU_SUPPORT is not set
+-# CONFIG_ATMEL_EBI is not set
+ CONFIG_IIO=y
+ CONFIG_IIO_SW_TRIGGER=y
+ CONFIG_AT91_SAMA5D2_ADC=y
+-- 
+2.34.1
+

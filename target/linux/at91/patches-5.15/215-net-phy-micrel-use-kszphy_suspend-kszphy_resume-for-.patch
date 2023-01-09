@@ -1,0 +1,46 @@
+From 4d6c2667eec33f27507f9c12a3d59370ddb33f77 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Tue, 18 Jan 2022 13:08:12 +0200
+Subject: [PATCH 106/471] net: phy: micrel: use kszphy_suspend()/kszphy_resume
+ for irq aware devices
+
+On a setup with KSZ9131 and MACB drivers it happens on suspend path, from
+time to time, that the PHY interrupt arrives after PHY and MACB were
+suspended (PHY via genphy_suspend(), MACB via macb_suspend()). In this
+case the phy_read() at the beginning of kszphy_handle_interrupt() will
+fail (as MACB driver is suspended at this time) leading to phy_error()
+being called and a stack trace being displayed on console. To solve this
+.suspend/.resume functions for all KSZ devices implementing
+.handle_interrupt were replaced with kszphy_suspend()/kszphy_resume()
+which disable/enable interrupt before/after calling
+genphy_suspend()/genphy_resume().
+
+The fix has been adapted for all KSZ devices which implements
+.handle_interrupt but it has been tested only on KSZ9131.
+
+Fixes: 59ca4e58b917 ("net: phy: micrel: implement generic .handle_interrupt() callback")
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/phy/micrel.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/phy/micrel.c b/drivers/net/phy/micrel.c
+index 05a8985d7107..a65445a6d846 100644
+--- a/drivers/net/phy/micrel.c
++++ b/drivers/net/phy/micrel.c
+@@ -1671,8 +1671,8 @@ static struct phy_driver ksphy_driver[] = {
+ 	.config_init	= ksz8061_config_init,
+ 	.config_intr	= kszphy_config_intr,
+ 	.handle_interrupt = kszphy_handle_interrupt,
+-	.suspend	= genphy_suspend,
+-	.resume		= genphy_resume,
++	.suspend	= kszphy_suspend,
++	.resume		= kszphy_resume,
+ }, {
+ 	.phy_id		= PHY_ID_KSZ9021,
+ 	.phy_id_mask	= 0x000ffffe,
+-- 
+2.34.1
+

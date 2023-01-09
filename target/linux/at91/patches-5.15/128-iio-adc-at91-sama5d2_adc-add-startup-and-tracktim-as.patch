@@ -1,0 +1,78 @@
+From f95733035e4769221b0faa7ff6603cf4897c948b Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 3 Aug 2022 13:28:50 +0300
+Subject: [PATCH 019/471] iio: adc: at91-sama5d2_adc: add startup and tracktim
+ as parameter for at91_adc_setup_samp_freq()
+
+Add startup and tracktim as parameter for at91_adc_setup_samp_freq()
+function. In case of temperature sensor being enabled these parameters
+will be configured on temperature read request to improve the accuracy
+of the read temperature.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20220803102855.2191070-15-claudiu.beznea@microchip.com
+Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+---
+ drivers/iio/adc/at91-sama5d2_adc.c | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/iio/adc/at91-sama5d2_adc.c b/drivers/iio/adc/at91-sama5d2_adc.c
+index febc94f25348..51797b922c99 100644
+--- a/drivers/iio/adc/at91-sama5d2_adc.c
++++ b/drivers/iio/adc/at91-sama5d2_adc.c
+@@ -1435,7 +1435,9 @@ static unsigned at91_adc_startup_time(unsigned startup_time_min,
+ 	return i;
+ }
+ 
+-static void at91_adc_setup_samp_freq(struct iio_dev *indio_dev, unsigned freq)
++static void at91_adc_setup_samp_freq(struct iio_dev *indio_dev, unsigned freq,
++				     unsigned int startup_time,
++				     unsigned int tracktim)
+ {
+ 	struct at91_adc_state *st = iio_priv(indio_dev);
+ 	unsigned f_per, prescal, startup, mr;
+@@ -1443,17 +1445,17 @@ static void at91_adc_setup_samp_freq(struct iio_dev *indio_dev, unsigned freq)
+ 	f_per = clk_get_rate(st->per_clk);
+ 	prescal = (f_per / (2 * freq)) - 1;
+ 
+-	startup = at91_adc_startup_time(st->soc_info.startup_time,
+-					freq / 1000);
++	startup = at91_adc_startup_time(startup_time, freq / 1000);
+ 
+ 	mr = at91_adc_readl(st, MR);
+ 	mr &= ~(AT91_SAMA5D2_MR_STARTUP_MASK | AT91_SAMA5D2_MR_PRESCAL_MASK);
+ 	mr |= AT91_SAMA5D2_MR_STARTUP(startup);
+ 	mr |= AT91_SAMA5D2_MR_PRESCAL(prescal);
++	mr |= AT91_SAMA5D2_MR_TRACKTIM(tracktim);
+ 	at91_adc_writel(st, MR, mr);
+ 
+-	dev_dbg(&indio_dev->dev, "freq: %u, startup: %u, prescal: %u\n",
+-		freq, startup, prescal);
++	dev_dbg(&indio_dev->dev, "freq: %u, startup: %u, prescal: %u, tracktim=%u\n",
++		freq, startup, prescal, tracktim);
+ 	st->current_sample_rate = freq;
+ }
+ 
+@@ -1725,7 +1727,8 @@ static int at91_adc_write_raw(struct iio_dev *indio_dev,
+ 		if (ret)
+ 			return ret;
+ 		mutex_lock(&st->lock);
+-		at91_adc_setup_samp_freq(indio_dev, val);
++		at91_adc_setup_samp_freq(indio_dev, val,
++					 st->soc_info.startup_time, 0);
+ 		mutex_unlock(&st->lock);
+ 		iio_device_release_direct_mode(indio_dev);
+ 		return 0;
+@@ -1907,7 +1910,8 @@ static void at91_adc_hw_init(struct iio_dev *indio_dev)
+ 	at91_adc_writel(st, MR,
+ 			AT91_SAMA5D2_MR_TRANSFER(2) | AT91_SAMA5D2_MR_ANACH);
+ 
+-	at91_adc_setup_samp_freq(indio_dev, st->soc_info.min_sample_rate);
++	at91_adc_setup_samp_freq(indio_dev, st->soc_info.min_sample_rate,
++				 st->soc_info.startup_time, 0);
+ 
+ 	/* configure extended mode register */
+ 	at91_adc_config_emr(st, st->oversampling_ratio, 0);
+-- 
+2.34.1
+

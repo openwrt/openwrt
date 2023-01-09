@@ -1,0 +1,158 @@
+From db2428a3cb4b22910a405b84b0e437f3cfb424a2 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 22 Mar 2021 18:08:18 +0200
+Subject: [PATCH 252/471] eeprom: at24: avoid adjusting offset for 24AA025E{48,
+ 64}
+
+The EEPROMs could be used only for MAC storage. In this case the
+EEPROM areas where MACs resides could be modeled as NVMEM cells
+(directly via DT bindings) such that the already available networking
+infrastructure to read properly the MAC addresses (via
+of_get_mac_address()). The previously available compatibles needs the
+offset adjustment probably for compatibility w/ old DT bindings.
+Added "atmel,24mac02e4", "atmel,24mac02e4" compatible for the usage w/
+24AA025E{48, 64} type of EEPROMs.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/misc/eeprom/at24.c | 69 ++++++++++++++++++++++----------------
+ 1 file changed, 40 insertions(+), 29 deletions(-)
+
+diff --git a/drivers/misc/eeprom/at24.c b/drivers/misc/eeprom/at24.c
+index 305ffad131a2..c88bc87b78bb 100644
+--- a/drivers/misc/eeprom/at24.c
++++ b/drivers/misc/eeprom/at24.c
+@@ -123,17 +123,19 @@ MODULE_PARM_DESC(at24_write_timeout, "Time (in ms) to try writes (default 25)");
+ struct at24_chip_data {
+ 	u32 byte_len;
+ 	u8 flags;
++	u8 adjoff;
+ 	void (*read_post)(unsigned int off, char *buf, size_t count);
+ };
+ 
+-#define AT24_CHIP_DATA(_name, _len, _flags)				\
++#define AT24_CHIP_DATA(_name, _len, _flags, _adjoff)			\
+ 	static const struct at24_chip_data _name = {			\
+-		.byte_len = _len, .flags = _flags,			\
++		.byte_len = _len, .flags = _flags, .adjoff = _adjoff, \
+ 	}
+ 
+-#define AT24_CHIP_DATA_CB(_name, _len, _flags, _read_post)		\
++#define AT24_CHIP_DATA_CB(_name, _len, _flags, _adjoff, _read_post)	\
+ 	static const struct at24_chip_data _name = {			\
+ 		.byte_len = _len, .flags = _flags,			\
++		.adjoff = _adjoff,					\
+ 		.read_post = _read_post,				\
+ 	}
+ 
+@@ -158,48 +160,52 @@ static void at24_read_post_vaio(unsigned int off, char *buf, size_t count)
+ }
+ 
+ /* needs 8 addresses as A0-A2 are ignored */
+-AT24_CHIP_DATA(at24_data_24c00, 128 / 8, AT24_FLAG_TAKE8ADDR);
++AT24_CHIP_DATA(at24_data_24c00, 128 / 8, AT24_FLAG_TAKE8ADDR, 0);
+ /* old variants can't be handled with this generic entry! */
+-AT24_CHIP_DATA(at24_data_24c01, 1024 / 8, 0);
++AT24_CHIP_DATA(at24_data_24c01, 1024 / 8, 0, 0);
+ AT24_CHIP_DATA(at24_data_24cs01, 16,
+-	AT24_FLAG_SERIAL | AT24_FLAG_READONLY);
+-AT24_CHIP_DATA(at24_data_24c02, 2048 / 8, 0);
++	AT24_FLAG_SERIAL | AT24_FLAG_READONLY, 0);
++AT24_CHIP_DATA(at24_data_24c02, 2048 / 8, 0, 0);
+ AT24_CHIP_DATA(at24_data_24cs02, 16,
+-	AT24_FLAG_SERIAL | AT24_FLAG_READONLY);
++	AT24_FLAG_SERIAL | AT24_FLAG_READONLY, 0);
+ AT24_CHIP_DATA(at24_data_24mac402, 48 / 8,
+-	AT24_FLAG_MAC | AT24_FLAG_READONLY);
++	AT24_FLAG_MAC | AT24_FLAG_READONLY, 1);
+ AT24_CHIP_DATA(at24_data_24mac602, 64 / 8,
+-	AT24_FLAG_MAC | AT24_FLAG_READONLY);
++	AT24_FLAG_MAC | AT24_FLAG_READONLY, 1);
++AT24_CHIP_DATA(at24_data_24mac02e4, 48 / 8,
++	AT24_FLAG_MAC | AT24_FLAG_READONLY, 0);
++AT24_CHIP_DATA(at24_data_24mac02e6, 64 / 8,
++	AT24_FLAG_MAC | AT24_FLAG_READONLY, 0);
+ /* spd is a 24c02 in memory DIMMs */
+ AT24_CHIP_DATA(at24_data_spd, 2048 / 8,
+-	AT24_FLAG_READONLY | AT24_FLAG_IRUGO);
++	AT24_FLAG_READONLY | AT24_FLAG_IRUGO, 0);
+ /* 24c02_vaio is a 24c02 on some Sony laptops */
+ AT24_CHIP_DATA_CB(at24_data_24c02_vaio, 2048 / 8,
+-	AT24_FLAG_READONLY | AT24_FLAG_IRUGO,
++	AT24_FLAG_READONLY | AT24_FLAG_IRUGO, 0,
+ 	at24_read_post_vaio);
+-AT24_CHIP_DATA(at24_data_24c04, 4096 / 8, 0);
++AT24_CHIP_DATA(at24_data_24c04, 4096 / 8, 0, 0);
+ AT24_CHIP_DATA(at24_data_24cs04, 16,
+-	AT24_FLAG_SERIAL | AT24_FLAG_READONLY);
++	AT24_FLAG_SERIAL | AT24_FLAG_READONLY, 0);
+ /* 24rf08 quirk is handled at i2c-core */
+-AT24_CHIP_DATA(at24_data_24c08, 8192 / 8, 0);
++AT24_CHIP_DATA(at24_data_24c08, 8192 / 8, 0, 0);
+ AT24_CHIP_DATA(at24_data_24cs08, 16,
+-	AT24_FLAG_SERIAL | AT24_FLAG_READONLY);
+-AT24_CHIP_DATA(at24_data_24c16, 16384 / 8, 0);
++	AT24_FLAG_SERIAL | AT24_FLAG_READONLY, 0);
++AT24_CHIP_DATA(at24_data_24c16, 16384 / 8, 0, 0);
+ AT24_CHIP_DATA(at24_data_24cs16, 16,
+-	AT24_FLAG_SERIAL | AT24_FLAG_READONLY);
+-AT24_CHIP_DATA(at24_data_24c32, 32768 / 8, AT24_FLAG_ADDR16);
++	AT24_FLAG_SERIAL | AT24_FLAG_READONLY, 0);
++AT24_CHIP_DATA(at24_data_24c32, 32768 / 8, AT24_FLAG_ADDR16, 0);
+ AT24_CHIP_DATA(at24_data_24cs32, 16,
+-	AT24_FLAG_ADDR16 | AT24_FLAG_SERIAL | AT24_FLAG_READONLY);
+-AT24_CHIP_DATA(at24_data_24c64, 65536 / 8, AT24_FLAG_ADDR16);
++	AT24_FLAG_ADDR16 | AT24_FLAG_SERIAL | AT24_FLAG_READONLY, 0);
++AT24_CHIP_DATA(at24_data_24c64, 65536 / 8, AT24_FLAG_ADDR16, 0);
+ AT24_CHIP_DATA(at24_data_24cs64, 16,
+-	AT24_FLAG_ADDR16 | AT24_FLAG_SERIAL | AT24_FLAG_READONLY);
+-AT24_CHIP_DATA(at24_data_24c128, 131072 / 8, AT24_FLAG_ADDR16);
+-AT24_CHIP_DATA(at24_data_24c256, 262144 / 8, AT24_FLAG_ADDR16);
+-AT24_CHIP_DATA(at24_data_24c512, 524288 / 8, AT24_FLAG_ADDR16);
+-AT24_CHIP_DATA(at24_data_24c1024, 1048576 / 8, AT24_FLAG_ADDR16);
+-AT24_CHIP_DATA(at24_data_24c2048, 2097152 / 8, AT24_FLAG_ADDR16);
++	AT24_FLAG_ADDR16 | AT24_FLAG_SERIAL | AT24_FLAG_READONLY, 0);
++AT24_CHIP_DATA(at24_data_24c128, 131072 / 8, AT24_FLAG_ADDR16, 0);
++AT24_CHIP_DATA(at24_data_24c256, 262144 / 8, AT24_FLAG_ADDR16, 0);
++AT24_CHIP_DATA(at24_data_24c512, 524288 / 8, AT24_FLAG_ADDR16, 0);
++AT24_CHIP_DATA(at24_data_24c1024, 1048576 / 8, AT24_FLAG_ADDR16, 0);
++AT24_CHIP_DATA(at24_data_24c2048, 2097152 / 8, AT24_FLAG_ADDR16, 0);
+ /* identical to 24c08 ? */
+-AT24_CHIP_DATA(at24_data_INT3499, 8192 / 8, 0);
++AT24_CHIP_DATA(at24_data_INT3499, 8192 / 8, 0, 0);
+ 
+ static const struct i2c_device_id at24_ids[] = {
+ 	{ "24c00",	(kernel_ulong_t)&at24_data_24c00 },
+@@ -208,7 +214,9 @@ static const struct i2c_device_id at24_ids[] = {
+ 	{ "24c02",	(kernel_ulong_t)&at24_data_24c02 },
+ 	{ "24cs02",	(kernel_ulong_t)&at24_data_24cs02 },
+ 	{ "24mac402",	(kernel_ulong_t)&at24_data_24mac402 },
++	{ "24mac02e4",	(kernel_ulong_t)&at24_data_24mac02e4 },
+ 	{ "24mac602",	(kernel_ulong_t)&at24_data_24mac602 },
++	{ "24mac02e6",	(kernel_ulong_t)&at24_data_24mac02e6 },
+ 	{ "spd",	(kernel_ulong_t)&at24_data_spd },
+ 	{ "24c02-vaio",	(kernel_ulong_t)&at24_data_24c02_vaio },
+ 	{ "24c04",	(kernel_ulong_t)&at24_data_24c04 },
+@@ -238,7 +246,9 @@ static const struct of_device_id at24_of_match[] = {
+ 	{ .compatible = "atmel,24c02",		.data = &at24_data_24c02 },
+ 	{ .compatible = "atmel,24cs02",		.data = &at24_data_24cs02 },
+ 	{ .compatible = "atmel,24mac402",	.data = &at24_data_24mac402 },
++	{ .compatible = "atmel,24mac02e4",	.data = &at24_data_24mac02e4 },
+ 	{ .compatible = "atmel,24mac602",	.data = &at24_data_24mac602 },
++	{ .compatible = "atmel,24mac02e6",	.data = &at24_data_24mac02e6 },
+ 	{ .compatible = "atmel,spd",		.data = &at24_data_spd },
+ 	{ .compatible = "atmel,24c04",		.data = &at24_data_24c04 },
+ 	{ .compatible = "atmel,24cs04",		.data = &at24_data_24cs04 },
+@@ -690,7 +700,8 @@ static int at24_probe(struct i2c_client *client)
+ 	at24->flags = flags;
+ 	at24->read_post = cdata->read_post;
+ 	at24->num_addresses = num_addresses;
+-	at24->offset_adj = at24_get_offset_adj(flags, byte_len);
++	at24->offset_adj = cdata->adjoff ?
++				at24_get_offset_adj(flags, byte_len) : 0;
+ 	at24->client[0].client = client;
+ 	at24->client[0].regmap = regmap;
+ 
+-- 
+2.34.1
+

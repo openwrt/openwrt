@@ -1,0 +1,60 @@
+From b914aae70bbbede3fa9443f3b504b761ac6b19d0 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 26 Aug 2022 11:39:20 +0300
+Subject: [PATCH 285/471] ARM: at91: pm: fix self-refresh for sama7g5
+
+It has been discovered that on some parts, from time to time, self-refresh
+procedure doesn't work as expected. Debugging and investigating it proved
+that disabling AC DLL introduce glitches in RAM controllers which
+leads to unexpected behavior. This is confirmed as a hardware bug. DLL
+bypass disables 3 DLLs: 2 DX DLLs and AC DLL. Thus, keep only DX DLLs
+disabled. This introduce 6mA extra current consumption on VDDCORE when
+switching to any ULP mode or standby mode but the self-refresh procedure
+still works.
+
+Fixes: f0bbf17958e8 ("ARM: at91: pm: add self-refresh support for sama7g5")
+Suggested-by: Frederic Schumacher <frederic.schumacher@microchip.com>
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Tested-by: Cristian Birsan <cristian.birsan@microchip.com>
+Link: https://lore.kernel.org/r/20220826083927.3107272-3-claudiu.beznea@microchip.com
+[claudiu.beznea: adapt to v5.15.82]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/mach-at91/pm_suspend.S | 5 -----
+ include/soc/at91/sama7-ddr.h    | 4 ++++
+ 2 files changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
+index 074df6f93fc8..aa0bfa770d2d 100644
+--- a/arch/arm/mach-at91/pm_suspend.S
++++ b/arch/arm/mach-at91/pm_suspend.S
+@@ -194,11 +194,6 @@ sr_ena_2:
+ 	cmp	r7, #AT91_PM_BACKUP
+ 	beq	sr_ena_3
+ 
+-	/* Do not soft reset the AC DLL. */
+-	ldr	tmp1, [r3, DDR3PHY_ACDLLCR]
+-	bic	tmp1, tmp1, DDR3PHY_ACDLLCR_DLLSRST
+-	str	tmp1, [r3, DDR3PHY_ACDLLCR]
+-
+ 	/* Disable DX DLLs. */
+ 	ldr	tmp1, [r3, #DDR3PHY_DX0DLLCR]
+ 	orr	tmp1, tmp1, #DDR3PHY_DXDLLCR_DLLDIS
+diff --git a/include/soc/at91/sama7-ddr.h b/include/soc/at91/sama7-ddr.h
+index 6f0aa04755cf..84e42ceebfd0 100644
+--- a/include/soc/at91/sama7-ddr.h
++++ b/include/soc/at91/sama7-ddr.h
+@@ -50,6 +50,10 @@
+ #define	DDR3PHY_DX1DLLCR			(0x20C)		/* DDR3PHY DATX8 DLL Control Register */
+ #define		DDR3PHY_DXDLLCR_DLLDIS		(1 << 31)	/* DLL Disable */
+ 
++#define	DDR3PHY_DX0DLLCR			(0x1CC)		/* DDR3PHY DATX8 DLL Control Register */
++#define	DDR3PHY_DX1DLLCR			(0x20C)		/* DDR3PHY DATX8 DLL Control Register */
++#define		DDR3PHY_DXDLLCR_DLLDIS		(1 << 31)	/* DLL Disable */
++
+ /* UDDRC */
+ #define UDDRC_STAT				(0x04)		/* UDDRC Operating Mode Status Register */
+ #define		UDDRC_STAT_SELFREF_TYPE_DIS	(0x0 << 4)	/* SDRAM is not in Self-refresh */
+-- 
+2.34.1
+

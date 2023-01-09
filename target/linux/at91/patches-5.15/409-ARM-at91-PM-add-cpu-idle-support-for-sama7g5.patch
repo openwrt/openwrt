@@ -1,0 +1,98 @@
+From 7a88f51df871259d7691c6272c62f8c87405fab0 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 15 Dec 2021 14:52:42 +0200
+Subject: [PATCH 300/471] ARM: at91: PM: add cpu idle support for sama7g5
+
+Add CPU idle support for SAMA7G5. Support will make use of PMC_CPU_RATIO
+register to divide the CPU clock by 16 before switching it to idle and
+use automatic self-refresh option of DDR controller.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/mach-at91/pm.c      | 27 ++++++++++++++++++++++++++-
+ include/linux/clk/at91_pmc.h |  4 ++++
+ include/soc/at91/sama7-ddr.h |  1 +
+ 3 files changed, 31 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
+index 7d734995b63a..c16ad7d36437 100644
+--- a/arch/arm/mach-at91/pm.c
++++ b/arch/arm/mach-at91/pm.c
+@@ -903,6 +903,30 @@ static void at91sam9_sdram_standby(void)
+ 		at91_ramc_write(1, AT91_SDRAMC_LPR, saved_lpr1);
+ }
+ 
++static void sama7g5_standby(void)
++{
++	int pwrtmg, ratio;
++
++	pwrtmg = readl(soc_pm.data.ramc[0] + UDDRC_PWRCTL);
++	ratio = readl(soc_pm.data.pmc + AT91_PMC_RATIO);
++
++	/*
++	 * Place RAM into self-refresh after a maximum idle clocks. The maximum
++	 * idle clocks is configured by bootloader in
++	 * UDDRC_PWRMGT.SELFREF_TO_X32.
++	 */
++	writel(pwrtmg | UDDRC_PWRCTL_SELFREF_EN,
++	       soc_pm.data.ramc[0] + UDDRC_PWRCTL);
++	/* Divide CPU clock by 16. */
++	writel(ratio & ~AT91_PMC_RATIO_RATIO, soc_pm.data.pmc + AT91_PMC_RATIO);
++
++	cpu_do_idle();
++
++	/* Restore previous configuration. */
++	writel(ratio, soc_pm.data.pmc + AT91_PMC_RATIO);
++	writel(pwrtmg, soc_pm.data.ramc[0] + UDDRC_PWRCTL);
++}
++
+ struct ramc_info {
+ 	void (*idle)(void);
+ 	unsigned int memctrl;
+@@ -913,6 +937,7 @@ static const struct ramc_info ramc_infos[] __initconst = {
+ 	{ .idle = at91sam9_sdram_standby, .memctrl = AT91_MEMCTRL_SDRAMC},
+ 	{ .idle = at91_ddr_standby, .memctrl = AT91_MEMCTRL_DDRSDR},
+ 	{ .idle = sama5d3_ddr_standby, .memctrl = AT91_MEMCTRL_DDRSDR},
++	{ .idle = sama7g5_standby, },
+ };
+ 
+ static const struct of_device_id ramc_ids[] __initconst = {
+@@ -920,7 +945,7 @@ static const struct of_device_id ramc_ids[] __initconst = {
+ 	{ .compatible = "atmel,at91sam9260-sdramc", .data = &ramc_infos[1] },
+ 	{ .compatible = "atmel,at91sam9g45-ddramc", .data = &ramc_infos[2] },
+ 	{ .compatible = "atmel,sama5d3-ddramc", .data = &ramc_infos[3] },
+-	{ .compatible = "microchip,sama7g5-uddrc", },
++	{ .compatible = "microchip,sama7g5-uddrc", .data = &ramc_infos[4], },
+ 	{ /*sentinel*/ }
+ };
+ 
+diff --git a/include/linux/clk/at91_pmc.h b/include/linux/clk/at91_pmc.h
+index ccb3f034bfa9..3484309b59bf 100644
+--- a/include/linux/clk/at91_pmc.h
++++ b/include/linux/clk/at91_pmc.h
+@@ -78,6 +78,10 @@
+ #define		AT91_PMC_MAINRDY	(1	<< 16)		/* Main Clock Ready */
+ 
+ #define	AT91_CKGR_PLLAR		0x28			/* PLL A Register */
++
++#define	AT91_PMC_RATIO		0x2c			/* Processor clock ratio register [SAMA7G5 only] */
++#define		AT91_PMC_RATIO_RATIO	(0xf)		/* CPU clock ratio. */
++
+ #define	AT91_CKGR_PLLBR		0x2c			/* PLL B Register */
+ #define		AT91_PMC_DIV		(0xff  <<  0)		/* Divider */
+ #define		AT91_PMC_PLLCOUNT	(0x3f  <<  8)		/* PLL Counter */
+diff --git a/include/soc/at91/sama7-ddr.h b/include/soc/at91/sama7-ddr.h
+index c7a298be37ee..92cc62f78a71 100644
+--- a/include/soc/at91/sama7-ddr.h
++++ b/include/soc/at91/sama7-ddr.h
+@@ -68,6 +68,7 @@
+ #define		UDDRC_STAT_OPMODE_MSK		(0x7 << 0)	/* Operating mode mask */
+ 
+ #define UDDRC_PWRCTL				(0x30)		/* UDDRC Low Power Control Register */
++#define		UDDRC_PWRCTL_SELFREF_EN		(1 << 0)	/* Automatic self-refresh */
+ #define		UDDRC_PWRCTL_SELFREF_SW		(1 << 5)	/* Software self-refresh */
+ 
+ #define UDDRC_DFIMISC				(0x1B0)		/* UDDRC DFI Miscellaneous Control Register */
+-- 
+2.34.1
+

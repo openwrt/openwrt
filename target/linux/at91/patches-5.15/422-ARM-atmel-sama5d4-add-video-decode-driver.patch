@@ -1,0 +1,1040 @@
+From 301c0a486f9ef6b84c6db139be72ee5366d31b79 Mon Sep 17 00:00:00 2001
+From: Sandeep Sheriker Mallikarjun <sandeepsheriker.mallikarjun@microchip.com>
+Date: Thu, 5 Apr 2018 14:47:54 -0700
+Subject: [PATCH 313/471] ARM: atmel: sama5d4: add video decode driver
+
+add video decode driver
+
+Signed-off-by: Sandeep Sheriker Mallikarjun <sandeepsheriker.mallikarjun@microchip.com>
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+[ta: port to 5.4, s/drm_gem_object_unreference/drm_gem_object_put_unlocked]
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+[codrin.ciubotariu@microchip.com: rebase on v5.10, v5.15]
+---
+ arch/arm/mach-at91/Kconfig     |   7 +
+ arch/arm/mach-at91/Makefile    |   1 +
+ arch/arm/mach-at91/at91_vdec.h |  43 +++
+ arch/arm/mach-at91/hx170dec.h  |  76 ++++++
+ arch/arm/mach-at91/memalloc.c  | 316 ++++++++++++++++++++++
+ arch/arm/mach-at91/memalloc.h  |  54 ++++
+ arch/arm/mach-at91/vdec_g1.c   | 460 +++++++++++++++++++++++++++++++++
+ 7 files changed, 957 insertions(+)
+ create mode 100644 arch/arm/mach-at91/at91_vdec.h
+ create mode 100644 arch/arm/mach-at91/hx170dec.h
+ create mode 100644 arch/arm/mach-at91/memalloc.c
+ create mode 100644 arch/arm/mach-at91/memalloc.h
+ create mode 100644 arch/arm/mach-at91/vdec_g1.c
+
+diff --git a/arch/arm/mach-at91/Kconfig b/arch/arm/mach-at91/Kconfig
+index 62af65d7313d..6fed5e048eba 100644
+--- a/arch/arm/mach-at91/Kconfig
++++ b/arch/arm/mach-at91/Kconfig
+@@ -68,6 +68,13 @@ config SOC_SAMA7G5
+ 	help
+ 	  Select this if you are using one of Microchip's SAMA7G5 family SoC.
+ 
++config AT91_VDEC_G1
++	bool "Video Decoder for SAMA5D4"
++	depends on SOC_SAMA5D4
++	help
++	  Select this if you are using the G1 video decoder embedded in SAMA5D4
++	  SoC family.
++
+ config SOC_AT91RM9200
+ 	bool "AT91RM9200"
+ 	depends on ARCH_MULTI_V4T
+diff --git a/arch/arm/mach-at91/Makefile b/arch/arm/mach-at91/Makefile
+index a1ac71626972..e970a15f2ed8 100644
+--- a/arch/arm/mach-at91/Makefile
++++ b/arch/arm/mach-at91/Makefile
+@@ -11,6 +11,7 @@ obj-$(CONFIG_SOC_SAM9X7)	+= sam9x7.o
+ obj-$(CONFIG_SOC_SAMA5)		+= sama5.o
+ obj-$(CONFIG_SOC_SAMA7)		+= sama7.o
+ obj-$(CONFIG_SOC_SAMV7)		+= samv7.o
++obj-$(CONFIG_AT91_VDEC_G1)	+= memalloc.o vdec_g1.o
+ 
+ # Power Management
+ obj-$(CONFIG_ATMEL_PM)		+= pm.o pm_suspend.o
+diff --git a/arch/arm/mach-at91/at91_vdec.h b/arch/arm/mach-at91/at91_vdec.h
+new file mode 100644
+index 000000000000..d0940f0987d0
+--- /dev/null
++++ b/arch/arm/mach-at91/at91_vdec.h
+@@ -0,0 +1,43 @@
++/*
++ * Video Decoder (VDEC) - System peripherals registers.
++ *
++ * Copyright (C) 2009  Hantro Products Oy.
++ *
++ * Based on SAMA5D4 datasheet.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
++#ifndef AT91_VDEC_H
++#define AT91_VDEC_H
++
++#define VDEC_IDR      0x00       /* ID Register (read-only) */
++#define   VDEC_IDR_BUILD_VER              0xf /* Build Version is 0x02. */
++#define   VDEC_IDR_MINOR_VER      (0xff << 4) /* Minor Version is 0x88. */
++#define   VDEC_IDR_MAJOR_VER      (0xf << 12) /* Major Version is 0x08. */
++#define   VDEC_IDR_PROD_ID     (0xffff << 16) /* Product ID is 0x6731. */
++
++#define VDEC_DIR      0x04       /* Decoder Interrupt Register */
++#define   VDEC_DIR_DE                       1 /* 1: Enable decoder; 0: Disable decoder. */
++#define   VDEC_DIR_ID                    0x10 /* 1: Disable interrupts for decoder; 0: Enable interrupts. */
++#define   VDEC_DIR_ABORT                 0x20
++#define   VDEC_DIR_ISET                 0x100 /* Decoder Interrupt Set. 0: Clears the Decoder Interrupt. */
++
++#define VDEC_PPIR     0xF0       /* Post Processor Interrupt Register */
++#define   VDEC_PPIR_PPE                     1 /* 1: Enable post-processor; 0: Disable post-processor */
++#define   VDEC_PPIR_ID                   0x10 /* 1: Disable interrupts for post-processor; 0: Enable interrupts. */
++#define   VDEC_PPIR_ISET                0x100 /* Post-processor Interrupt Set. 0: Clears the post-processor Interrupt. */
++
++#endif
+diff --git a/arch/arm/mach-at91/hx170dec.h b/arch/arm/mach-at91/hx170dec.h
+new file mode 100644
+index 000000000000..83a5ee3e0f92
+--- /dev/null
++++ b/arch/arm/mach-at91/hx170dec.h
+@@ -0,0 +1,76 @@
++/*
++ * Decoder device driver (kernel module headers)
++ *
++ * Copyright (C) 2009  Hantro Products Oy.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
++#ifndef _HX170DEC_H_
++#define _HX170DEC_H_
++
++#include <linux/ioctl.h>
++#include <linux/types.h>
++
++struct core_desc
++{
++	__u32 id;    /* id of the core */
++	__u32 *regs; /* pointer to user registers */
++	__u32 size;  /* size of register space */
++};
++
++/* Use 'k' as magic number */
++#define HX170DEC_IOC_MAGIC  'k'
++/*
++ * S means "Set" through a ptr,
++ * T means "Tell" directly with the argument value
++ * G means "Get": reply by setting through a pointer
++ * Q means "Query": response is on the return value
++ * X means "eXchange": G and S atomically
++ * H means "sHift": T and Q atomically
++ */
++
++#define HX170DEC_IOCGHWOFFSET		_IOR(HX170DEC_IOC_MAGIC, 3, unsigned long *)
++#define HX170DEC_IOCGHWIOSIZE		_IOR(HX170DEC_IOC_MAGIC, 4, unsigned int *)
++
++#define HX170DEC_IOC_MC_OFFSETS		_IOR(HX170DEC_IOC_MAGIC, 7, unsigned long *)
++#define HX170DEC_IOC_MC_CORES		_IOR(HX170DEC_IOC_MAGIC, 8, unsigned int *)
++#define HX170DEC_IOCS_DEC_PUSH_REG	_IOW(HX170DEC_IOC_MAGIC, 9, struct core_desc *)
++#define HX170DEC_IOCS_PP_PUSH_REG	_IOW(HX170DEC_IOC_MAGIC, 10, struct core_desc *)
++#define HX170DEC_IOCH_DEC_RESERVE	_IO(HX170DEC_IOC_MAGIC, 11)
++#define HX170DEC_IOCT_DEC_RELEASE	_IO(HX170DEC_IOC_MAGIC, 12)
++#define HX170DEC_IOCQ_PP_RESERVE	_IO(HX170DEC_IOC_MAGIC, 13)
++#define HX170DEC_IOCT_PP_RELEASE	_IO(HX170DEC_IOC_MAGIC, 14)
++#define HX170DEC_IOCX_DEC_WAIT		_IOWR(HX170DEC_IOC_MAGIC, 15, struct core_desc *)
++#define HX170DEC_IOCX_PP_WAIT		_IOWR(HX170DEC_IOC_MAGIC, 16, struct core_desc *)
++#define HX170DEC_IOCS_DEC_PULL_REG	_IOWR(HX170DEC_IOC_MAGIC, 17, struct core_desc *)
++#define HX170DEC_IOCS_PP_PULL_REG	_IOWR(HX170DEC_IOC_MAGIC, 18, struct core_desc *)
++
++#define HX170DEC_IOX_ASIC_ID		_IOWR(HX170DEC_IOC_MAGIC, 20, __u32 *)
++
++/*
++ * Following are not used yet:
++ *
++ * #define HX170DEC_PP_INSTANCE		_IO(HX170DEC_IOC_MAGIC, 1)
++ * #define HX170DEC_HW_PERFORMANCE	_IO(HX170DEC_IOC_MAGIC, 2)
++ * #define HX170DEC_IOC_CLI		_IO(HX170DEC_IOC_MAGIC, 5)
++ * #define HX170DEC_IOC_STI		_IO(HX170DEC_IOC_MAGIC, 6)
++ * #define HX170DEC_IOCG_CORE_WAIT	_IOR(HX170DEC_IOC_MAGIC, 19, int *)
++ * #define HX170DEC_DEBUG_STATUS	_IO(HX170DEC_IOC_MAGIC, 29)
++ */
++
++#define HX170DEC_IOC_MAXNR 29
++
++#endif /* !_HX170DEC_H_ */
+diff --git a/arch/arm/mach-at91/memalloc.c b/arch/arm/mach-at91/memalloc.c
+new file mode 100644
+index 000000000000..c4508c479575
+--- /dev/null
++++ b/arch/arm/mach-at91/memalloc.c
+@@ -0,0 +1,316 @@
++/*
++ * Physically contiguous memory allocator
++ *
++ * Copyright (C) 2009  Hantro Products Oy.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
++#include <linux/module.h>
++#include <linux/dma-mapping.h> /* dma_zalloc_coherent, dma_free_coherent */
++#include <linux/fs.h>
++#include <linux/list.h>
++#include <linux/slab.h>
++#include <linux/uaccess.h>
++
++#include "memalloc.h"
++
++struct memalloc_drv {
++	struct class *class;
++	struct device *dev;
++	int major;
++	struct list_head opened; /* list of opened files (memalloc_file_context) */
++	spinlock_t lock;
++};
++
++struct memalloc_file_context {
++	struct list_head n;
++	struct memalloc_drv *parent;
++	struct list_head blocks; /* list of allocated blocks (mem_block) */
++	spinlock_t lock;
++	//unsigned int num_blocks;
++};
++
++struct memalloc_block {
++	struct list_head n;
++	dma_addr_t dma_handle;
++	void *virt_addr;
++	size_t size; /* page aligned */
++	int method;
++};
++
++static struct memalloc_drv memalloc_ing = {
++	.opened = LIST_HEAD_INIT(memalloc_ing.opened),
++	.lock = __SPIN_LOCK_UNLOCKED(memalloc_ing.lock),
++};
++
++/**
++ * allocate_large_block - Allocate a physically contiguous memory area
++ *
++ * @param dev driver device node
++ * @param pp_block Result block struct address
++ * @param p_size Wished size. Output is rounded up to page size (often something like 4k)
++ *
++ * @return 0 on success, negative value on error
++ */
++static int allocate_large_block(struct device *dev, struct memalloc_block **pp_block, size_t *p_size)
++{
++	struct memalloc_block *p;
++
++	p = kmalloc(sizeof(struct memalloc_block), GFP_KERNEL);
++	if (p == NULL) {
++		dev_info(dev, "unable to alloc block struct.\n");
++		return -ENOMEM;
++	}
++
++	p->size = PAGE_ALIGN(*p_size);
++
++	/* Multiple of PAGE_SIZE */
++	p->virt_addr = dma_alloc_coherent(dev, p->size, &p->dma_handle, GFP_KERNEL);
++	if (!p->virt_addr) {
++		dev_err(dev, "large alloc failed (%d)\n", p->size);
++		kfree(p);
++		return -ENOMEM;
++	}
++
++	dev_dbg(dev, "large alloc ok: VA=%p PA=0x%llx SZ=%d (requested %d)\n",
++			p->virt_addr, (unsigned long long)p->dma_handle, p->size, *p_size);
++
++	*p_size = p->size;
++	*pp_block = p;
++	return 0;
++}
++
++static int free_large_block(struct device *dev, struct memalloc_block *p)
++{
++	dev_dbg(dev, "large free: VA=%p\n", p->virt_addr);
++	dma_free_coherent(dev, p->size, p->virt_addr, p->dma_handle);
++	kfree(p);
++	return 0;
++}
++
++static long memalloc_ioctl(struct file *filp, unsigned int cmd,
++	unsigned long arg)
++{
++	struct memalloc_file_context *fc = filp->private_data;
++	struct memalloc_drv *m = fc->parent;
++
++	int ret = -EFAULT;
++	MemallocParams mem_params;
++	struct memalloc_block *p;
++	size_t sz;
++
++	if (!filp || arg == 0)
++		return ret;
++
++	switch (cmd) {
++		case MEMALLOC_IOCXGETBUFFER:
++			spin_lock(&fc->lock);
++			if (copy_from_user(&mem_params, (MemallocParams *)arg, sizeof(mem_params)))
++				dev_dbg(m->dev, "copy_from_user failed\n");
++
++			sz = mem_params.size;
++			ret = allocate_large_block(m->dev, &p, &sz);
++
++			if (!ret) {
++				mem_params.busAddress = (unsigned long)p->dma_handle; /* should be 64-bit! */
++				mem_params.size = sz;
++				if (copy_to_user((MemallocParams *)arg, &mem_params, sizeof(mem_params)))
++					dev_dbg(m->dev, "copy_to_user failed\n");
++
++				list_add(&p->n, &fc->blocks);
++			}
++			spin_unlock(&fc->lock);
++			break;
++
++		case MEMALLOC_IOCSFREEBUFFER:
++			ret = -EINVAL;
++			spin_lock(&fc->lock);
++			__get_user(mem_params.busAddress, (unsigned long *)arg);
++
++			/* find memalloc_block */
++			list_for_each_entry(p, &fc->blocks, n) {
++				if ((unsigned long)p->dma_handle == mem_params.busAddress) {
++					list_del(&p->n);
++					free_large_block(m->dev, p);
++					ret = 0;
++					break;
++				}
++			}
++			spin_unlock(&fc->lock);
++			break;
++
++		default:
++			ret = -ENOIOCTLCMD;
++	}
++	return ret;
++}
++
++static int memalloc_open(struct inode *inode, struct file *filp)
++{
++	struct memalloc_file_context *fc;
++	struct memalloc_drv *m = &memalloc_ing;
++	int dev = iminor(inode);
++
++	if (dev != 0) {
++		dev_warn(m->dev, "unsupported minor (%d).\n", dev);
++		return -EINVAL;
++	}
++
++	fc = kmalloc(sizeof(struct memalloc_file_context), GFP_KERNEL);
++	if (fc == NULL) {
++		dev_err(m->dev, "unable to alloc struct.\n");
++		return -ENOMEM;
++	}
++
++	INIT_LIST_HEAD(&fc->blocks);
++	spin_lock_init(&fc->lock);
++	fc->parent = m;
++
++	filp->private_data = fc;
++
++	spin_lock(&m->lock);
++	list_add_tail(&fc->n, &m->opened);
++	spin_unlock(&m->lock);
++
++	dev_dbg(m->dev, "file open (%p)\n", fc);
++	return 0;
++}
++
++static int memalloc_release(struct inode *inode, struct file *filp)
++{
++	struct memalloc_file_context *fc = filp->private_data;
++	struct memalloc_drv *m = fc->parent;
++	struct memalloc_block *p, *tmp;
++
++	list_for_each_entry_safe(p, tmp, &fc->blocks, n) {
++		list_del(&p->n);
++		free_large_block(m->dev, p);
++	}
++
++	spin_lock(&m->lock);
++	list_del(&fc->n);
++	spin_unlock(&m->lock);
++
++	kfree(fc);
++
++	dev_dbg(m->dev, "file release (%p)\n", fc);
++	return 0;
++}
++
++static const struct vm_operations_struct mmap_mem_ops = {
++#ifdef CONFIG_HAVE_IOREMAP_PROT
++	.access = generic_access_phys
++#endif
++};
++
++/* This function is based on mmap_mem (drivers/char/mem.c) */
++static int memalloc_mmap (struct file *filp, struct vm_area_struct *vma)
++{
++	struct memalloc_file_context *fc = filp->private_data;
++	struct memalloc_block *p;
++
++	int found = 0;
++	size_t size = vma->vm_end - vma->vm_start;
++
++	/* Is this a memory chunk provided by our driver ? */
++	spin_lock(&fc->lock);
++	list_for_each_entry(p, &fc->blocks, n) {
++		if (((u64)p->dma_handle == ((u64)vma->vm_pgoff << PAGE_SHIFT)) &&
++				(size <= p->size)) {
++			found = 1;
++			break;
++		}
++	}
++	spin_unlock(&fc->lock);
++
++	if (!found)
++		return -EPERM;
++
++	vma->vm_page_prot = phys_mem_access_prot(filp, vma->vm_pgoff,
++						 size,
++						 vma->vm_page_prot);
++
++	vma->vm_ops = &mmap_mem_ops;
++
++	/* Remap-pfn-range will mark the range VM_IO */
++	if (remap_pfn_range(vma,
++			    vma->vm_start,
++			    vma->vm_pgoff,
++			    size,
++			    vma->vm_page_prot)) {
++		return -EAGAIN;
++	}
++	return 0;
++}
++
++static struct file_operations memalloc_fops = {
++	.owner          =	THIS_MODULE,
++	.open           =	memalloc_open,
++	.release        =	memalloc_release,
++	.unlocked_ioctl =	memalloc_ioctl,
++	.llseek         =	noop_llseek,
++	.mmap           =	memalloc_mmap,
++};
++
++static int memalloc_init(void)
++{
++	struct memalloc_drv *m = &memalloc_ing;
++	int ret;
++
++	m->major = register_chrdev(0, "memalloc", &memalloc_fops);
++	if (m->major < 0) {
++		pr_err("failed to register character device\n");
++		return m->major;
++	}
++
++	/* create /dev/memalloc */
++	m->class = class_create(THIS_MODULE, "memalloc-cls");
++	if (IS_ERR(m->class)) {
++		ret = PTR_ERR(m->class);
++		goto err;
++	}
++	m->dev = device_create(m->class, NULL, MKDEV(m->major, 0), NULL, "memalloc");
++	if (IS_ERR(m->dev)) {
++		ret = PTR_ERR(m->dev);
++		class_destroy(m->class);
++		goto err;
++	}
++
++	m->dev->coherent_dma_mask = DMA_BIT_MASK(32);
++	dev_dbg(m->dev, "allocator with major = %d\n", m->major);
++
++	return 0;
++err:
++	unregister_chrdev(m->major, "memalloc");
++	return ret;
++
++}
++module_init(memalloc_init);
++
++static void memalloc_exit(void)
++{
++	struct memalloc_drv *m = &memalloc_ing;
++
++	device_destroy(m->class, MKDEV(m->major, 0));
++	class_destroy(m->class);
++	unregister_chrdev(m->major, "memalloc");
++}
++module_exit(memalloc_exit);
++
++MODULE_AUTHOR("Hantro Products Oy");
++MODULE_DESCRIPTION("Memory allocator for VDEC");
++MODULE_LICENSE("GPL");
++MODULE_VERSION("0.5");
+diff --git a/arch/arm/mach-at91/memalloc.h b/arch/arm/mach-at91/memalloc.h
+new file mode 100644
+index 000000000000..1eb0651bf078
+--- /dev/null
++++ b/arch/arm/mach-at91/memalloc.h
+@@ -0,0 +1,54 @@
++/*
++ * Memalloc, encoder memory allocation driver (kernel module headers)
++ *
++ * Copyright (C) 2009  Hantro Products Oy.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
++
++#ifndef MEMALLOC_H
++#define MEMALLOC_H
++
++#include <linux/ioctl.h>
++
++/* Use 'k' as magic number */
++#define MEMALLOC_IOC_MAGIC  'k'
++/*
++ * S means "Set" through a ptr,
++ * T means "Tell" directly with the argument value
++ * G means "Get": reply by setting through a pointer
++ * Q means "Query": response is on the return value
++ * X means "eXchange": G and S atomically
++ * H means "sHift": T and Q atomically
++ */
++#define MEMALLOC_IOCXGETBUFFER         _IOWR(MEMALLOC_IOC_MAGIC, 1, MemallocParams*)
++#define MEMALLOC_IOCSFREEBUFFER        _IOW(MEMALLOC_IOC_MAGIC,  2, unsigned long)
++
++/*
++ * ... more to come
++ *
++ * debugging tool
++ * #define MEMALLOC_IOCHARDRESET       _IO(MEMALLOC_IOC_MAGIC, 15)
++ * #define MEMALLOC_IOC_MAXNR 15
++ *
++ */
++
++typedef struct {
++    unsigned busAddress;
++    unsigned size;
++} MemallocParams;
++
++#endif /* MEMALLOC_H */
+diff --git a/arch/arm/mach-at91/vdec_g1.c b/arch/arm/mach-at91/vdec_g1.c
+new file mode 100644
+index 000000000000..f589e506475a
+--- /dev/null
++++ b/arch/arm/mach-at91/vdec_g1.c
+@@ -0,0 +1,460 @@
++/*
++ * On2/Hantro G1 decoder/pp driver. Single core version.
++ *
++ * Copyright (C) 2009  Hantro Products Oy.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/of.h>
++#include <linux/clk.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/err.h>
++#include <linux/miscdevice.h>
++#include <linux/fs.h>
++#include <linux/uaccess.h>
++#include <linux/sched.h>
++
++#include "hx170dec.h"
++#include "at91_vdec.h"
++
++#define VDEC_MAX_CORES                 1 /* number of cores of the hardware IP */
++#define VDEC_NUM_REGS_DEC             60 /* number of registers of the Decoder part */
++#define VDEC_NUM_REGS_PP              41 /* number of registers of the Post Processor part */
++#define VDEC_DEC_FIRST_REG             0 /* first register (0-based) index */
++#define VDEC_DEC_LAST_REG             59 /* last register (0-based) index */
++#define VDEC_PP_FIRST_REG             60
++#define VDEC_PP_LAST_REG             100
++
++struct vdec_device {
++	void __iomem *mmio_base;
++	struct clk *clk;
++	struct device *dev;
++	int irq;
++	int num_cores;
++	unsigned long iobaseaddr;
++	unsigned long iosize;
++	wait_queue_head_t dec_wq;
++	wait_queue_head_t pp_wq;
++	bool dec_irq_done;
++	bool pp_irq_done;
++	struct semaphore dec_sem;
++	struct semaphore pp_sem;
++	struct file *dec_owner;
++	struct file *pp_owner;
++	u32 regs[VDEC_NUM_REGS_DEC + VDEC_NUM_REGS_PP];
++};
++static struct vdec_device *vdec6731_global;
++
++static inline void vdec_writel(const struct vdec_device *p, unsigned offset, u32 val)
++{
++	writel(val, p->mmio_base + offset);
++}
++
++static inline u32 vdec_readl(const struct vdec_device *p, unsigned offset)
++{
++	return readl(p->mmio_base + offset);
++}
++
++/**
++ * Write a range of registers. First register is assumed to be
++ * "Interrupt Register" and will be written last.
++ */
++static int vdec_regs_write(struct vdec_device *p, int begin, int end,
++		const struct core_desc *core)
++{
++	int i;
++
++	if (copy_from_user(&p->regs[begin], core->regs, (end - begin + 1) * 4))
++	{
++		dev_err(p->dev, "%s: copy_from_user failed\n", __func__);
++		return -EFAULT;
++	}
++
++	for (i = end; i >= begin; i--)
++		vdec_writel(p, 4 * i, p->regs[i]);
++
++	return 0;
++}
++
++/**
++ * Read a range of registers [begin..end]
++ */
++static int vdec_regs_read(struct vdec_device *p, int begin, int end,
++		const struct core_desc *core)
++{
++	int i;
++
++	for (i = end; i >= begin; i--)
++		p->regs[i] = vdec_readl(p, 4 * i);
++
++	if (copy_to_user(core->regs, &p->regs[begin], (end - begin + 1) * 4))
++	{
++		dev_err(p->dev, "%s: copy_to_user failed\n", __func__);
++		return -EFAULT;
++	}
++
++	return 0;
++}
++
++/**
++ * Misc driver related
++ */
++
++static int vdec_misc_open(struct inode *inode, struct file *filp)
++{
++	struct vdec_device *p = vdec6731_global;
++	filp->private_data = p;
++
++	dev_dbg(p->dev, "open\n");
++	clk_prepare_enable(p->clk);
++	return 0;
++}
++
++static int vdec_misc_release(struct inode *inode, struct file *filp)
++{
++	struct vdec_device *p = filp->private_data;
++
++	if (p->dec_owner == filp) {
++		p->dec_irq_done = false;
++		init_waitqueue_head(&p->dec_wq);
++		sema_init(&p->dec_sem, VDEC_MAX_CORES);
++		p->dec_owner = NULL;
++	}
++
++	if (p->pp_owner == filp) {
++		p->pp_irq_done = false;
++		init_waitqueue_head(&p->pp_wq);
++		sema_init(&p->pp_sem, 1);
++		p->pp_owner = NULL;
++	}
++
++	clk_disable_unprepare(p->clk);
++	dev_dbg(p->dev, "release\n");
++	return 0;
++}
++
++static long vdec_misc_ioctl(struct file *filp, unsigned int cmd,
++    unsigned long arg)
++{
++	int ret = 0;
++	void __user *argp = (void __user *)arg;
++	struct vdec_device *p = vdec6731_global;
++	struct core_desc core;
++	u32 reg;
++
++	switch (cmd) {
++		case HX170DEC_IOX_ASIC_ID:
++			reg = vdec_readl(p, VDEC_IDR);
++			if (copy_to_user(argp, &reg, sizeof(u32)))
++				ret = -EFAULT;
++			break;
++
++		case HX170DEC_IOC_MC_OFFSETS:
++		case HX170DEC_IOCGHWOFFSET:
++			if (copy_to_user(argp, &p->iobaseaddr, sizeof(p->iobaseaddr)))
++				ret = -EFAULT;
++			break;
++		case HX170DEC_IOCGHWIOSIZE: /* in bytes */
++			if (copy_to_user(argp, &p->iosize, sizeof(p->iosize)))
++				ret = -EFAULT;
++			break;
++		case HX170DEC_IOC_MC_CORES:
++			if (copy_to_user(argp, &p->num_cores, sizeof(p->num_cores)))
++				ret = -EFAULT;
++			break;
++
++		case HX170DEC_IOCS_DEC_PUSH_REG:
++			if (copy_from_user(&core, (void *)arg, sizeof(struct core_desc))) {
++				dev_err(p->dev, "copy_from_user (dec push reg) failed\n");
++				ret = -EFAULT;
++			} else {
++				/* Skip VDEC_IDR (ID Register, ro) */
++				core.regs++; // core.size -= 4;
++				ret = vdec_regs_write(p, VDEC_DEC_FIRST_REG + 1, VDEC_DEC_LAST_REG, &core);
++			}
++			break;
++		case HX170DEC_IOCS_PP_PUSH_REG:
++			if (copy_from_user(&core, (void *)arg, sizeof(struct core_desc))) {
++				dev_err(p->dev, "copy_from_user (pp push reg) failed\n");
++				ret = -EFAULT;
++			} else {
++				/* Don't consider the 5 lastest registers (ro or unused) */
++				ret = vdec_regs_write(p, VDEC_PP_FIRST_REG, VDEC_PP_LAST_REG - 5, &core);
++			}
++			break;
++
++		case HX170DEC_IOCS_DEC_PULL_REG:
++			if (copy_from_user(&core, (void *)arg, sizeof(struct core_desc))) {
++				dev_err(p->dev, "copy_from_user (dec pull reg) failed\n");
++				ret = -EFAULT;
++			} else {
++				ret = vdec_regs_read(p, VDEC_DEC_FIRST_REG, VDEC_DEC_LAST_REG, &core);
++			}
++			break;
++
++		case HX170DEC_IOCS_PP_PULL_REG:
++			if (copy_from_user(&core, (void*)arg, sizeof(struct core_desc))) {
++				dev_err(p->dev, "copy_from_user (pp pull reg) failed\n");
++				ret = -EFAULT;
++			} else {
++				ret = vdec_regs_read(p, VDEC_PP_FIRST_REG, VDEC_PP_LAST_REG, &core);
++			}
++			break;
++
++		case HX170DEC_IOCX_DEC_WAIT:
++			if (copy_from_user(&core, (void *)arg, sizeof(struct core_desc))) {
++				dev_err(p->dev, "copy_from_user (dec wait) failed\n");
++				ret = -EFAULT;
++			} else {
++				ret = wait_event_interruptible(p->dec_wq, p->dec_irq_done);
++				p->dec_irq_done = false;
++				if (unlikely(ret != 0)) {
++					dev_err(p->dev, "wait_event_interruptible dec error %d\n", ret);
++				} else {
++					/* Update dec registers */
++					ret = vdec_regs_read(p, VDEC_DEC_FIRST_REG, VDEC_DEC_LAST_REG, &core);
++				}
++			}
++			break;
++		case HX170DEC_IOCX_PP_WAIT:
++			if (copy_from_user(&core, (void *)arg, sizeof(struct core_desc))) {
++				dev_err(p->dev, "copy_from_user (pp wait) failed\n");
++				ret = -EFAULT;
++			} else {
++				ret = wait_event_interruptible(p->pp_wq, p->pp_irq_done);
++				p->pp_irq_done = false;
++				if (unlikely(ret != 0)) {
++					dev_err(p->dev, "wait_event_interruptible pp error %d\n", ret);
++				} else {
++					/* Update pp registers */
++					ret = vdec_regs_read(p, VDEC_PP_FIRST_REG, VDEC_PP_LAST_REG, &core);
++				}
++			}
++			break;
++
++		case HX170DEC_IOCH_DEC_RESERVE:
++			if (likely(down_interruptible(&p->dec_sem) == 0)) {
++				p->dec_owner = filp;
++				ret = 0; /* core id */
++				dev_dbg(p->dev, "down dec_sem (core id %d)\n", ret);
++			} else {
++				dev_err(p->dev, "down_interruptible dec error\n");
++				ret = -ERESTARTSYS;
++			}
++			break;
++		case HX170DEC_IOCT_DEC_RELEASE:
++			dev_dbg(p->dev, "up dec_sem\n");
++			p->dec_owner = NULL;
++			up(&p->dec_sem);
++			break;
++
++		case HX170DEC_IOCQ_PP_RESERVE:
++			if (likely(down_interruptible(&p->pp_sem) == 0)) {
++				p->pp_owner = filp;
++				ret = 0; /* core id */
++				dev_dbg(p->dev, "down pp_sem (core id %d)\n", ret);
++			} else {
++				dev_err(p->dev, "down_interruptible pp error\n");
++				ret = -ERESTARTSYS;
++			}
++			break;
++		case HX170DEC_IOCT_PP_RELEASE:
++			dev_dbg(p->dev, "up pp_sem\n");
++			p->pp_owner = NULL;
++			up(&p->pp_sem);
++			break;
++
++		default:
++			dev_warn(p->dev, "unknown ioctl %x\n", cmd);
++			ret = -EINVAL;
++	}
++	return ret;
++}
++
++const struct file_operations vdec_misc_fops = {
++	.owner          =	THIS_MODULE,
++	.llseek         =	no_llseek,
++	.open           =	vdec_misc_open,
++	.release        =	vdec_misc_release,
++	.unlocked_ioctl =	vdec_misc_ioctl,
++};
++
++static struct miscdevice vdec_misc_device = {
++	MISC_DYNAMIC_MINOR,
++	"vdec",
++	&vdec_misc_fops
++};
++
++/*
++ * Platform driver related
++ */
++
++/* Should we use spin_lock_irqsave here? */
++static irqreturn_t vdec_isr(int irq, void *dev_id)
++{
++	struct vdec_device *p = dev_id;
++	u32 irq_status_dec, irq_status_pp;
++	int handled = 0;
++
++	/* interrupt status register read */
++	irq_status_dec = vdec_readl(p, VDEC_DIR);
++	if (irq_status_dec & VDEC_DIR_ISET) {
++		/* Clear IRQ */
++		vdec_writel(p, VDEC_DIR, irq_status_dec & ~VDEC_DIR_ISET);
++
++		p->dec_irq_done = true;
++		wake_up_interruptible(&p->dec_wq);
++		handled++;
++	}
++
++	irq_status_pp = vdec_readl(p, VDEC_PPIR);
++	if (irq_status_pp & VDEC_PPIR_ISET) {
++		/* Clear IRQ */
++		vdec_writel(p, VDEC_PPIR, irq_status_pp & ~VDEC_PPIR_ISET);
++
++		p->pp_irq_done = true;
++		wake_up_interruptible(&p->pp_wq);
++		handled++;
++	}
++
++	if (handled == 0) {
++		dev_warn(p->dev, "Spurious IRQ (DIR=%08x PPIR=%08x)\n", \
++				irq_status_dec, irq_status_pp);
++		return IRQ_NONE;
++	}
++
++	return IRQ_HANDLED;
++}
++
++static int __init vdec_probe(struct platform_device *pdev)
++{
++	struct vdec_device *p;
++	struct resource *res;
++	int ret;
++	u32 hwid;
++
++	/* Allocate private data */
++	p = devm_kzalloc(&pdev->dev, sizeof(struct vdec_device), GFP_KERNEL);
++	if (!p) {
++		dev_dbg(&pdev->dev, "out of memory\n");
++		return -ENOMEM;
++	}
++
++	p->dev = &pdev->dev;
++	platform_set_drvdata(pdev, p);
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	p->mmio_base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(p->mmio_base))
++		return PTR_ERR(p->mmio_base);
++
++	p->clk = devm_clk_get(&pdev->dev, "vdec_clk");
++	if (IS_ERR(p->clk)) {
++		dev_err(&pdev->dev, "no vdec_clk clock defined\n");
++		return -ENXIO;
++	}
++
++	p->irq = platform_get_irq(pdev, 0);
++	if (!p->irq) {
++		dev_err(&pdev->dev, "could not get irq\n");
++		return -ENXIO;
++	}
++
++	ret = devm_request_irq(&pdev->dev, p->irq, vdec_isr,
++			0, pdev->name, p);
++	if (ret) {
++		dev_err(&pdev->dev, "unable to request VDEC irq\n");
++		return ret;
++	}
++
++	/* Register the miscdevice */
++	ret = misc_register(&vdec_misc_device);
++	if (ret) {
++		dev_err(&pdev->dev, "unable to register miscdevice\n");
++		return ret;
++	}
++
++	p->num_cores = VDEC_MAX_CORES;
++	p->iosize = resource_size(res);
++	p->iobaseaddr = res->start;
++	vdec6731_global = p;
++
++	p->dec_irq_done = false;
++	p->pp_irq_done = false;
++	p->dec_owner = NULL;
++	p->pp_owner = NULL;
++	init_waitqueue_head(&p->dec_wq);
++	init_waitqueue_head(&p->pp_wq);
++	sema_init(&p->dec_sem, VDEC_MAX_CORES);
++	sema_init(&p->pp_sem, 1);
++
++	ret = clk_prepare_enable(p->clk);
++	if (ret) {
++		dev_err(&pdev->dev, "unable to prepare and enable clock\n");
++		misc_deregister(&vdec_misc_device);
++		return ret;
++	}
++
++	dev_info(&pdev->dev, "VDEC controller at 0x%p, irq = %d, misc_minor = %d\n",
++			p->mmio_base, p->irq, vdec_misc_device.minor);
++
++	/* Reset Asic (just in case..) */
++	vdec_writel(p, VDEC_DIR, VDEC_DIR_ID | VDEC_DIR_ABORT);
++	vdec_writel(p, VDEC_PPIR, VDEC_PPIR_ID);
++
++	hwid = vdec_readl(p, VDEC_IDR);
++	clk_disable_unprepare(p->clk);
++
++	dev_warn(&pdev->dev, "Product ID: %#x (revision %d.%d.%d)\n", \
++			(hwid & VDEC_IDR_PROD_ID) >> 16,
++			(hwid & VDEC_IDR_MAJOR_VER) >> 12,
++			(hwid & VDEC_IDR_MINOR_VER) >> 4,
++			(hwid & VDEC_IDR_BUILD_VER));
++	return 0;
++}
++
++static int __exit vdec_remove(struct platform_device *pdev)
++{
++	platform_set_drvdata(pdev, NULL);
++	misc_deregister(&vdec_misc_device);
++	return 0;
++}
++
++static const struct of_device_id vdec_of_match[] = {
++	{ .compatible = "on2,sama5d4-g1", .data = NULL },
++	{},
++};
++MODULE_DEVICE_TABLE(of, vdec_of_match);
++
++static struct platform_driver vdec_of_driver = {
++	.driver		= {
++		.name	= "atmel-vdec",
++		.owner	= THIS_MODULE,
++		.of_match_table	= vdec_of_match,
++	},
++	.remove		= vdec_remove,
++};
++
++module_platform_driver_probe(vdec_of_driver, vdec_probe);
++
++MODULE_AUTHOR("Hantro Products Oy");
++MODULE_DESCRIPTION("G1 decoder/pp driver");
++MODULE_LICENSE("GPL");
++MODULE_VERSION("0.4");
++MODULE_ALIAS("platform:vdec");
+-- 
+2.34.1
+

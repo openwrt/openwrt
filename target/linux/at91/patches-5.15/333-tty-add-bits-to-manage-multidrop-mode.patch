@@ -1,0 +1,53 @@
+From aaba11ba4cabcc462f54d9e36270230d88abe2ee Mon Sep 17 00:00:00 2001
+From: Rodolfo Giometti <giometti@linux.it>
+Date: Thu, 12 Apr 2018 16:29:31 -0700
+Subject: [PATCH 224/471] tty: add bits to manage multidrop mode
+
+Multidrop mode differentiates the data characters and the address
+characters. Data is transmitted with the parity bit to 0 and addresses
+are transmitted with the parity bit to 1. However this usually slow
+down communication by adding a delay between the first byte and the
+others.
+
+This patch defines two non-stadard bits PARMD (that enables multidrop)
+and SENDA (that marks the next transmitted byte as address) that can
+be used to completely remove the delay during transmission by
+correctly managing the parity bit generation in hardware.
+
+Signed-off-by: Rodolfo Giometti <giometti@linux.it>
+Signed-off-by: Joshua Henderson <joshua.henderson@microchip.com>
+[change SENDA/PARMD to use bits 23 and 24]
+---
+ include/linux/tty.h                 | 2 ++
+ include/uapi/asm-generic/termbits.h | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/include/linux/tty.h b/include/linux/tty.h
+index 168e57e40bbb..73e29750a0b5 100644
+--- a/include/linux/tty.h
++++ b/include/linux/tty.h
+@@ -97,6 +97,8 @@
+ #define C_CIBAUD(tty)	_C_FLAG((tty), CIBAUD)
+ #define C_CRTSCTS(tty)	_C_FLAG((tty), CRTSCTS)
+ #define C_CMSPAR(tty)	_C_FLAG((tty), CMSPAR)
++#define C_PARMD(tty)	_C_FLAG((tty), PARMD)
++#define C_SENDA(tty)	_C_FLAG((tty), SENDA)
+ 
+ #define L_ISIG(tty)	_L_FLAG((tty), ISIG)
+ #define L_ICANON(tty)	_L_FLAG((tty), ICANON)
+diff --git a/include/uapi/asm-generic/termbits.h b/include/uapi/asm-generic/termbits.h
+index 2fbaf9ae89dd..ead5eaebdd3b 100644
+--- a/include/uapi/asm-generic/termbits.h
++++ b/include/uapi/asm-generic/termbits.h
+@@ -141,6 +141,8 @@ struct ktermios {
+ #define HUPCL	0002000
+ #define CLOCAL	0004000
+ #define CBAUDEX 0010000
++#define PARMD   040000000
++#define SENDA   0100000000
+ #define    BOTHER 0010000
+ #define    B57600 0010001
+ #define   B115200 0010002
+-- 
+2.34.1
+

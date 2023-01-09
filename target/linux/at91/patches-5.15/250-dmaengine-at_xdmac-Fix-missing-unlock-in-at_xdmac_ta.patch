@@ -1,0 +1,39 @@
+From 8785d55d4b5765cd9b695db22da368544b1ba62a Mon Sep 17 00:00:00 2001
+From: Yang Yingliang <yangyingliang@huawei.com>
+Date: Fri, 7 Jan 2022 10:40:47 +0800
+Subject: [PATCH 141/471] dmaengine: at_xdmac: Fix missing unlock in
+ at_xdmac_tasklet()
+
+Add the missing unlock before return from at_xdmac_tasklet().
+
+Fixes: e77e561925df ("dmaengine: at_xdmac: Fix race over irq_status")
+Reported-by: Hulk Robot <hulkci@huawei.com>
+Signed-off-by: Yang Yingliang <yangyingliang@huawei.com>
+Reviewed-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Link: https://lore.kernel.org/r/20220107024047.1051915-1-yangyingliang@huawei.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+(cherry picked from commit aa7accb7f91c4c2c98bfdde62446d96ecc1ef2c6)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/dma/at_xdmac.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/dma/at_xdmac.c b/drivers/dma/at_xdmac.c
+index dffcd1c95c32..678a3d4c6ec6 100644
+--- a/drivers/dma/at_xdmac.c
++++ b/drivers/dma/at_xdmac.c
+@@ -1683,8 +1683,10 @@ static void at_xdmac_tasklet(struct tasklet_struct *t)
+ 		__func__, atchan->irq_status);
+ 
+ 	if (!(atchan->irq_status & AT_XDMAC_CIS_LIS) &&
+-	    !(atchan->irq_status & error_mask))
++	    !(atchan->irq_status & error_mask)) {
++		spin_unlock_irq(&atchan->lock);
+ 		return;
++	}
+ 
+ 	if (atchan->irq_status & error_mask)
+ 		at_xdmac_handle_error(atchan);
+-- 
+2.34.1
+

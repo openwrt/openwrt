@@ -1,0 +1,35 @@
+From 5c32158261c4759769c4b1768a0b1defab5cb553 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Uwe=20Kleine-K=C3=B6nig?= <u.kleine-koenig@pengutronix.de>
+Date: Thu, 9 Sep 2021 10:09:03 +0200
+Subject: [PATCH 117/471] pwm: atmel: Drop unused header
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Since commit 52eaba4cedbd ("pwm: atmel: Rework tracking updates pending
+in hardware") the driver doesn't make use of mutexes any more, so the
+header defining these doesn't need to be included.
+
+Signed-off-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
+Acked-by: Alexandre Belloni <alexandre.belloni@bootlin.com>
+Acked-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Thierry Reding <thierry.reding@gmail.com>
+---
+ drivers/pwm/pwm-atmel.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/pwm/pwm-atmel.c b/drivers/pwm/pwm-atmel.c
+index e748604403cc..98b34ea9f38e 100644
+--- a/drivers/pwm/pwm-atmel.c
++++ b/drivers/pwm/pwm-atmel.c
+@@ -24,7 +24,6 @@
+ #include <linux/err.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
+-#include <linux/mutex.h>
+ #include <linux/of.h>
+ #include <linux/of_device.h>
+ #include <linux/platform_device.h>
+-- 
+2.34.1
+

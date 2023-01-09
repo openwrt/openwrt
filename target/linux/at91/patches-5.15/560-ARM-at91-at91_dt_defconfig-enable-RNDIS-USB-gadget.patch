@@ -1,0 +1,30 @@
+From 5badfebb0a09c48b6190c7eddd4d999aff861523 Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Tue, 8 Jun 2021 14:00:27 +0300
+Subject: [PATCH 451/471] ARM: at91: at91_dt_defconfig: enable RNDIS USB gadget
+
+RNDIS UBS gadget was requested so enable it.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index d5fe014c129f..cccc09941ee4 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -171,8 +171,10 @@ CONFIG_USB_GADGET=y
+ CONFIG_USB_ATMEL_USBA=m
+ CONFIG_USB_CONFIGFS=m
+ CONFIG_USB_CONFIGFS_ACM=y
++CONFIG_USB_CONFIGFS_RNDIS=y
+ CONFIG_USB_CONFIGFS_MASS_STORAGE=y
+ CONFIG_USB_ZERO=m
++CONFIG_USB_ETH=m
+ CONFIG_USB_MASS_STORAGE=m
+ CONFIG_USB_G_SERIAL=m
+ CONFIG_MMC=y
+-- 
+2.34.1
+

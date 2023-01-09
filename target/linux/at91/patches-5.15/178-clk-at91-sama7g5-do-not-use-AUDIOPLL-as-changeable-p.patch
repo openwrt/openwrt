@@ -1,0 +1,73 @@
+From 856e228d7ba4d50a4c62313cba1afd1e74f01fe0 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Tue, 27 Jul 2021 13:56:32 +0300
+Subject: [PATCH 069/471] clk: at91: sama7g5: do not use AUDIOPLL as changeable
+ parent
+
+AUDIOPLL can be a parrent to many GCLKs. This causes a race on AUDIOPLL,
+since the first audio IP that uses it will set the AUDIOPLL to the lowest
+rate that can be served and would be acceptable by the requesting audio
+IP. This rate might not be good for another audio IP that wants to use the
+AUDIOPLL as its parent, so its clk_set_rate() will return an error.
+Because of this, we remove the ability to change the rate of the AUDIOPLL.
+AUDIOPLL can be set using assigned-clocks to a value that is big enough to
+cover all the audio IPs needs and enable the use of GCLKs divisors.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/clk/at91/sama7g5.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/clk/at91/sama7g5.c b/drivers/clk/at91/sama7g5.c
+index 9a213ba9e58b..4cd98bdd8b56 100644
+--- a/drivers/clk/at91/sama7g5.c
++++ b/drivers/clk/at91/sama7g5.c
+@@ -494,7 +494,7 @@ static const struct {
+ 	  .pp = { "audiopll_divpmcck", },
+ 	  .pp_mux_table = { 9, },
+ 	  .pp_count = 1,
+-	  .pp_chg_id = 3, },
++	  .pp_chg_id = INT_MIN, },
+ 
+ 	{ .n  = "csi_gclk",
+ 	  .id = 33,
+@@ -638,7 +638,7 @@ static const struct {
+ 	  .pp = { "syspll_divpmcck", "audiopll_divpmcck", },
+ 	  .pp_mux_table = { 5, 9, },
+ 	  .pp_count = 2,
+-	  .pp_chg_id = 4, },
++	  .pp_chg_id = INT_MIN, },
+ 
+ 	{ .n  = "i2smcc1_gclk",
+ 	  .id = 58,
+@@ -646,7 +646,7 @@ static const struct {
+ 	  .pp = { "syspll_divpmcck", "audiopll_divpmcck", },
+ 	  .pp_mux_table = { 5, 9, },
+ 	  .pp_count = 2,
+-	  .pp_chg_id = 4, },
++	  .pp_chg_id = INT_MIN, },
+ 
+ 	{ .n  = "mcan0_gclk",
+ 	  .id = 61,
+@@ -812,7 +812,7 @@ static const struct {
+ 	  .pp = { "syspll_divpmcck", "audiopll_divpmcck", },
+ 	  .pp_mux_table = { 5, 9, },
+ 	  .pp_count = 2,
+-	  .pp_chg_id = 4, },
++	  .pp_chg_id = INT_MIN, },
+ 
+ 	{ .n = "spdiftx_gclk",
+ 	  .id = 85,
+@@ -820,7 +820,7 @@ static const struct {
+ 	  .pp = { "syspll_divpmcck", "audiopll_divpmcck", },
+ 	  .pp_mux_table = { 5, 9, },
+ 	  .pp_count = 2,
+-	  .pp_chg_id = 4, },
++	  .pp_chg_id = INT_MIN, },
+ 
+ 	{ .n  = "tcb0_ch0_gclk",
+ 	  .id = 88,
+-- 
+2.34.1
+

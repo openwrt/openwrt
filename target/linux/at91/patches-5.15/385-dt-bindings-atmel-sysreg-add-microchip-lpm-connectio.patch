@@ -1,0 +1,32 @@
+From 7384fc5d7c47138f72c535228e3daf413470d8dc Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Tue, 18 Jan 2022 15:26:39 +0200
+Subject: [PATCH 276/471] dt-bindings: atmel-sysreg: add
+ microchip,lpm-connection binding
+
+Add microchip,lpm-connection binding which allows to specify the devices
+the SHDWC's LPM pin is connected.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ Documentation/devicetree/bindings/arm/atmel-sysregs.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/atmel-sysregs.txt b/Documentation/devicetree/bindings/arm/atmel-sysregs.txt
+index 16eef600d599..d19cbe957367 100644
+--- a/Documentation/devicetree/bindings/arm/atmel-sysregs.txt
++++ b/Documentation/devicetree/bindings/arm/atmel-sysregs.txt
+@@ -119,6 +119,10 @@ optional properties:
+ optional microchip,sam9x60-shdwc or microchip,sama7g5-shdwc properties:
+ - atmel,wakeup-rtt-timer: boolean to enable Real-time Timer Wake-up.
+ 
++optional microchip,sama7g5-shdwc properties:
++- microchip,lpm-connection: list of phandles to devices which are connected
++  to SHDWC's LPM pin
++
+ The node contains child nodes for each wake-up input that the platform uses.
+ 
+ 2) input nodes
+-- 
+2.34.1
+

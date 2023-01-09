@@ -1,0 +1,40 @@
+From 8dcbd53eb1349f6e95570c6992faa5df756cbddf Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Wed, 15 Dec 2021 13:01:07 +0200
+Subject: [PATCH 135/471] dmaengine: at_xdmac: Fix concurrency over chan's
+ completed_cookie
+
+Caller of dma_cookie_complete is expected to hold a lock to prevent
+concurrency over the channel's completed cookie marker. Call
+dma_cookie_complete() with the lock held.
+
+Fixes: e1f7c9eee707 ("dmaengine: at_xdmac: creation of the atmel eXtended DMA Controller driver")
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Link: https://lore.kernel.org/r/20211215110115.191749-5-tudor.ambarus@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+(cherry picked from commit 506875c30fc5bf92246060bc3b4c38799646266b)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/dma/at_xdmac.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/dma/at_xdmac.c b/drivers/dma/at_xdmac.c
+index 3aebc87cbcb1..4671e0b0776f 100644
+--- a/drivers/dma/at_xdmac.c
++++ b/drivers/dma/at_xdmac.c
+@@ -1710,11 +1710,10 @@ static void at_xdmac_tasklet(struct tasklet_struct *t)
+ 		}
+ 
+ 		txd = &desc->tx_dma_desc;
+-
++		dma_cookie_complete(txd);
+ 		at_xdmac_remove_xfer(atchan, desc);
+ 		spin_unlock_irq(&atchan->lock);
+ 
+-		dma_cookie_complete(txd);
+ 		if (txd->flags & DMA_PREP_INTERRUPT)
+ 			dmaengine_desc_get_callback_invoke(txd, NULL);
+ 
+-- 
+2.34.1
+

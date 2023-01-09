@@ -1,0 +1,28 @@
+From dd259475b2ec2db60fca9b44f44aa0f4929fe3ca Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Mon, 25 Apr 2022 15:29:11 +0530
+Subject: [PATCH 400/471] dt-bindings: microchip: atmel,at91rm9200-tcb: add
+ sam9x60 compatible
+
+Add sam9x60 compatible string support in the schema file
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ .../devicetree/bindings/soc/microchip/atmel,at91rm9200-tcb.yaml  | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/soc/microchip/atmel,at91rm9200-tcb.yaml b/Documentation/devicetree/bindings/soc/microchip/atmel,at91rm9200-tcb.yaml
+index 597d67fba92f..477d7da405ba 100644
+--- a/Documentation/devicetree/bindings/soc/microchip/atmel,at91rm9200-tcb.yaml
++++ b/Documentation/devicetree/bindings/soc/microchip/atmel,at91rm9200-tcb.yaml
+@@ -20,6 +20,7 @@ properties:
+           - atmel,at91rm9200-tcb
+           - atmel,at91sam9x5-tcb
+           - atmel,sama5d2-tcb
++          - microchip,sam9x60-tcb
+       - const: simple-mfd
+       - const: syscon
+ 
+-- 
+2.34.1
+

@@ -1,0 +1,95 @@
+From a4bc34f8f3616864fdcf3a26aac57664fc0c0f15 Mon Sep 17 00:00:00 2001
+From: Lars-Peter Clausen <lars@metafoo.de>
+Date: Wed, 29 Sep 2021 14:07:39 +0200
+Subject: [PATCH 101/471] net: macb: ptp: Switch to gettimex64() interface
+
+The macb PTP support currently implements the `gettime64` callback to allow
+to retrieve the hardware clock time. Update the implementation to provide
+the `gettimex64` callback instead.
+
+The difference between the two is that with `gettime64` a snapshot of the
+system clock is taken before and after invoking the callback. Whereas
+`gettimex64` expects the callback itself to take the snapshots.
+
+To get the time from the macb Ethernet core multiple register accesses have
+to be done. Only one of which will happen at the time reported by the
+function. This leads to a non-symmetric delay and adds a slight offset
+between the hardware and system clock time when using the `gettime64`
+method. This offset can be a few 100 nanoseconds. Switching to the
+`gettimex64` method allows for a more precise correlation of the hardware
+and system clocks and results in a lower offset between the two.
+
+On a Xilinx ZynqMP system `phc2sys` reports a delay of 1120 ns before and
+300 ns after the patch. With the latter being mostly symmetric.
+
+Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
+Acked-by: Richard Cochran <richardcochran@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/cadence/macb_ptp.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/cadence/macb_ptp.c b/drivers/net/ethernet/cadence/macb_ptp.c
+index c52ec1cc8a08..422cb2c15c4a 100644
+--- a/drivers/net/ethernet/cadence/macb_ptp.c
++++ b/drivers/net/ethernet/cadence/macb_ptp.c
+@@ -38,7 +38,8 @@ static struct macb_dma_desc_ptp *macb_ptp_desc(struct macb *bp,
+ 	return NULL;
+ }
+ 
+-static int gem_tsu_get_time(struct ptp_clock_info *ptp, struct timespec64 *ts)
++static int gem_tsu_get_time(struct ptp_clock_info *ptp, struct timespec64 *ts,
++			    struct ptp_system_timestamp *sts)
+ {
+ 	struct macb *bp = container_of(ptp, struct macb, ptp_clock_info);
+ 	unsigned long flags;
+@@ -46,7 +47,9 @@ static int gem_tsu_get_time(struct ptp_clock_info *ptp, struct timespec64 *ts)
+ 	u32 secl, sech;
+ 
+ 	spin_lock_irqsave(&bp->tsu_clk_lock, flags);
++	ptp_read_system_prets(sts);
+ 	first = gem_readl(bp, TN);
++	ptp_read_system_postts(sts);
+ 	secl = gem_readl(bp, TSL);
+ 	sech = gem_readl(bp, TSH);
+ 	second = gem_readl(bp, TN);
+@@ -56,7 +59,9 @@ static int gem_tsu_get_time(struct ptp_clock_info *ptp, struct timespec64 *ts)
+ 		/* if so, use later read & re-read seconds
+ 		 * (assume all done within 1s)
+ 		 */
++		ptp_read_system_prets(sts);
+ 		ts->tv_nsec = gem_readl(bp, TN);
++		ptp_read_system_postts(sts);
+ 		secl = gem_readl(bp, TSL);
+ 		sech = gem_readl(bp, TSH);
+ 	} else {
+@@ -161,7 +166,7 @@ static int gem_ptp_adjtime(struct ptp_clock_info *ptp, s64 delta)
+ 	}
+ 
+ 	if (delta > TSU_NSEC_MAX_VAL) {
+-		gem_tsu_get_time(&bp->ptp_clock_info, &now);
++		gem_tsu_get_time(&bp->ptp_clock_info, &now, NULL);
+ 		now = timespec64_add(now, then);
+ 
+ 		gem_tsu_set_time(&bp->ptp_clock_info,
+@@ -192,7 +197,7 @@ static const struct ptp_clock_info gem_ptp_caps_template = {
+ 	.pps		= 1,
+ 	.adjfine	= gem_ptp_adjfine,
+ 	.adjtime	= gem_ptp_adjtime,
+-	.gettime64	= gem_tsu_get_time,
++	.gettimex64	= gem_tsu_get_time,
+ 	.settime64	= gem_tsu_set_time,
+ 	.enable		= gem_ptp_enable,
+ };
+@@ -251,7 +256,7 @@ static int gem_hw_timestamp(struct macb *bp, u32 dma_desc_ts_1,
+ 	 * The timestamp only contains lower few bits of seconds,
+ 	 * so add value from 1588 timer
+ 	 */
+-	gem_tsu_get_time(&bp->ptp_clock_info, &tsu);
++	gem_tsu_get_time(&bp->ptp_clock_info, &tsu, NULL);
+ 
+ 	/* If the top bit is set in the timestamp,
+ 	 * but not in 1588 timer, it has rolled over,
+-- 
+2.34.1
+

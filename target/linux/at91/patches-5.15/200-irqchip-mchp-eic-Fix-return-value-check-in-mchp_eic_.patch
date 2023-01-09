@@ -1,0 +1,35 @@
+From 36a77cdd93e95e2ca46c4244b8c88adf1aa9a8f0 Mon Sep 17 00:00:00 2001
+From: Yang Yingliang <yangyingliang@huawei.com>
+Date: Mon, 25 Oct 2021 13:00:55 +0800
+Subject: [PATCH 091/471] irqchip/mchp-eic: Fix return value check in
+ mchp_eic_init()
+
+In case of error, the function of_iomap() returns NULL pointer
+not ERR_PTR(). The IS_ERR() test in the return value check
+should be replaced with NULL test.
+
+Reported-by: Hulk Robot <hulkci@huawei.com>
+Signed-off-by: Yang Yingliang <yangyingliang@huawei.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Marc Zyngier <maz@kernel.org>
+Link: https://lore.kernel.org/r/20211025050055.1129845-1-yangyingliang@huawei.com
+---
+ drivers/irqchip/irq-mchp-eic.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/irqchip/irq-mchp-eic.c b/drivers/irqchip/irq-mchp-eic.c
+index 09b7a8cdb611..c726a19837d2 100644
+--- a/drivers/irqchip/irq-mchp-eic.c
++++ b/drivers/irqchip/irq-mchp-eic.c
+@@ -209,7 +209,7 @@ static int mchp_eic_init(struct device_node *node, struct device_node *parent)
+ 		return -ENOMEM;
+ 
+ 	eic->base = of_iomap(node, 0);
+-	if (IS_ERR(eic->base)) {
++	if (!eic->base) {
+ 		ret = -ENOMEM;
+ 		goto free;
+ 	}
+-- 
+2.34.1
+

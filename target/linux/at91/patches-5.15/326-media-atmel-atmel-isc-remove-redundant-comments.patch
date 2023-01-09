@@ -1,0 +1,41 @@
+From ca3f0106520b697890baed6f681407841ea4ad61 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Tue, 15 Feb 2022 15:09:56 +0200
+Subject: [PATCH 217/471] media: atmel: atmel-isc: remove redundant comments
+
+Remove duplicate comments which are already in place before the struct
+definition.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo@jmondi.org>
+---
+ drivers/media/platform/atmel/atmel-isc.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
+index 07fa6dbf8460..f9ad7ec6bd13 100644
+--- a/drivers/media/platform/atmel/atmel-isc.h
++++ b/drivers/media/platform/atmel/atmel-isc.h
+@@ -272,7 +272,7 @@ struct isc_device {
+ 	struct video_device	video_dev;
+ 
+ 	struct vb2_queue	vb2_vidq;
+-	spinlock_t		dma_queue_lock; /* serialize access to dma queue */
++	spinlock_t		dma_queue_lock;
+ 	struct list_head	dma_queue;
+ 	struct isc_buffer	*cur_frm;
+ 	unsigned int		sequence;
+@@ -289,8 +289,8 @@ struct isc_device {
+ 	struct isc_ctrls	ctrls;
+ 	struct work_struct	awb_work;
+ 
+-	struct mutex		lock; /* serialize access to file operations */
+-	spinlock_t		awb_lock; /* serialize access to DMA buffers from awb work queue */
++	struct mutex		lock;
++	spinlock_t		awb_lock;
+ 
+ 	struct regmap_field	*pipeline[ISC_PIPE_LINE_NODE_NUM];
+ 
+-- 
+2.34.1
+

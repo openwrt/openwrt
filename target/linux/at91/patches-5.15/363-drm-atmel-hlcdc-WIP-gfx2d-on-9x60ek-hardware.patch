@@ -1,0 +1,1032 @@
+From 321e367bfbb368d91acdd9dafd34ac6bf8237068 Mon Sep 17 00:00:00 2001
+From: Joshua Henderson <joshua.henderson@microchip.com>
+Date: Thu, 9 Aug 2018 13:11:23 -0700
+Subject: [PATCH 254/471] drm/atmel-hlcdc: WIP: gfx2d on 9x60ek hardware
+
+Signed-off-by: Joshua Henderson <joshua.henderson@microchip.com>
+---
+ drivers/gpu/drm/atmel-hlcdc/Makefile          |   5 +-
+ drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c  | 198 +++++++++++-
+ drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.h  |   8 +
+ .../gpu/drm/atmel-hlcdc/gfx2d/gfx2d_device.c  | 112 +++++++
+ drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c | 306 ++++++++++++++++++
+ drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.h |  68 ++++
+ .../drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.c  |  86 +++++
+ .../drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.h  |  48 +++
+ include/uapi/drm/atmel_drm.h                  |  32 +-
+ 9 files changed, 855 insertions(+), 8 deletions(-)
+ create mode 100644 drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_device.c
+ create mode 100644 drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c
+ create mode 100644 drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.h
+ create mode 100644 drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.c
+ create mode 100644 drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.h
+
+diff --git a/drivers/gpu/drm/atmel-hlcdc/Makefile b/drivers/gpu/drm/atmel-hlcdc/Makefile
+index 49dc89f36b73..9334d9fe6245 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/Makefile
++++ b/drivers/gpu/drm/atmel-hlcdc/Makefile
+@@ -2,6 +2,9 @@
+ atmel-hlcdc-dc-y := atmel_hlcdc_crtc.o \
+ 		atmel_hlcdc_dc.o \
+ 		atmel_hlcdc_output.o \
+-		atmel_hlcdc_plane.o
++		atmel_hlcdc_plane.o \
++		gfx2d/gfx2d_device.o \
++		gfx2d/gfx2d_gpu.o \
++		gfx2d/gfx2d_ringbuffer.o
+ 
+ obj-$(CONFIG_DRM_ATMEL_HLCDC)	+= atmel-hlcdc-dc.o
+diff --git a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
+index 60b164203138..e72bf15a7654 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
++++ b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
+@@ -18,6 +18,7 @@
+ 
+ #include <drm/drm_atomic.h>
+ #include <drm/drm_atomic_helper.h>
++#include <drm/drm_debugfs.h>
+ #include <drm/drm_drv.h>
+ #include <drm/drm_fb_helper.h>
+ #include <drm/drm_gem_cma_helper.h>
+@@ -26,7 +27,14 @@
+ #include <drm/drm_vblank.h>
+ 
+ #include "atmel_hlcdc_dc.h"
++#include "gfx2d/gfx2d_gpu.h"
+ #include <drm/atmel_drm.h>
++#include <drm/drm_of.h>
++#include <linux/component.h>
++
++struct gfx2d_gpu *gfx2d_load_gpu(struct drm_device *dev);
++void __init gfx2d_register(void);
++void __exit gfx2d_unregister(void);
+ 
+ #define ATMEL_HLCDC_LAYER_IRQS_OFFSET		8
+ 
+@@ -763,14 +771,136 @@ int atmel_drm_gem_get_ioctl(struct drm_device *drm, void *data,
+ 
+ 	return 0;
+ }
++
++static int gfx2d_ioctl_submit(struct drm_device *dev, void *data,
++			      struct drm_file *file)
++{
++	struct atmel_hlcdc_dc *priv = dev->dev_private;
++	struct gfx2d_gpu *gpu = priv->gpu;
++	struct drm_gfx2d_submit *args = data;
++	uint32_t buf[128];
++	int ret = 0;
++
++	if (!gpu)
++		return -ENXIO;
++
++	if (args->size * sizeof(__u32) > sizeof(buf))
++		return -EIO;
++
++	ret = copy_from_user(buf, (const void __user *)args->buf,
++			     args->size * sizeof(__u32));
++	if (ret) {
++		ret = -EFAULT;
++		return ret;
++	}
++
++	return gfx2d_submit(gpu, buf, args->size);
++}
++
++static int gfx2d_ioctl_flush(struct drm_device *dev, void *data,
++			     struct drm_file *file)
++{
++	struct atmel_hlcdc_dc *priv = dev->dev_private;
++	struct gfx2d_gpu *gpu = priv->gpu;
++	return gfx2d_flush(gpu);
++}
++
++static int gfx2d_ioctl_gem_addr(struct drm_device *dev, void *data,
++				struct drm_file *file_priv)
++{
++	struct drm_gfx2d_gem_addr *args = data;
++	struct drm_gem_object *obj;
++
++	if (!drm_core_check_feature(dev, DRIVER_GEM))
++		return -ENODEV;
++
++	mutex_lock(&dev->object_name_lock);
++	obj = idr_find(&dev->object_name_idr, (int) args->name);
++	if (obj) {
++		drm_gem_object_get(obj);
++	} else {
++		mutex_unlock(&dev->object_name_lock);
++		return -ENOENT;
++	}
++
++	args->paddr = to_drm_gem_cma_obj(obj)->paddr;
++	args->size = obj->size;
++
++	mutex_unlock(&dev->object_name_lock);
++
++	return 0;
++}
++
+ static const struct drm_ioctl_desc atmel_ioctls[] = {
+ 	DRM_IOCTL_DEF_DRV(ATMEL_GEM_GET, atmel_drm_gem_get_ioctl, DRM_UNLOCKED),
++	DRM_IOCTL_DEF_DRV(GFX2D_SUBMIT, gfx2d_ioctl_submit, DRM_AUTH|DRM_RENDER_ALLOW),
++	DRM_IOCTL_DEF_DRV(GFX2D_FLUSH, gfx2d_ioctl_flush, DRM_AUTH|DRM_RENDER_ALLOW),
++	DRM_IOCTL_DEF_DRV(GFX2D_GEM_ADDR, gfx2d_ioctl_gem_addr, DRM_AUTH|DRM_RENDER_ALLOW),
++};
++
++#ifdef CONFIG_DEBUG_FS
++static int atmel_hlcdc_dc_gpu_show(struct drm_device *dev, struct seq_file *m)
++{
++	struct atmel_hlcdc_dc *priv = dev->dev_private;
++	struct gfx2d_gpu *gpu = priv->gpu;
++
++	if (gpu) {
++		gfx2d_show(gpu, m);
++	}
++
++	return 0;
++}
++
++static int show_locked(struct seq_file *m, void *arg)
++{
++	struct drm_info_node *node = (struct drm_info_node *) m->private;
++	struct drm_device *dev = node->minor->dev;
++	int (*show)(struct drm_device *dev, struct seq_file *m) =
++		node->info_ent->data;
++	int ret;
++
++	ret = mutex_lock_interruptible(&dev->struct_mutex);
++	if (ret)
++		return ret;
++
++	ret = show(dev, m);
++
++	mutex_unlock(&dev->struct_mutex);
++
++	return ret;
++}
++
++static struct drm_info_list atmel_hlcdc_dc_debugfs_list[] = {
++	{"gpu", show_locked, 0, atmel_hlcdc_dc_gpu_show},
+ };
+ 
++void atmel_hlcdc_dc_debugfs_init(struct drm_minor *minor)
++{
++	drm_debugfs_create_files(atmel_hlcdc_dc_debugfs_list,
++				       ARRAY_SIZE(atmel_hlcdc_dc_debugfs_list),
++				       minor->debugfs_root, minor);
++}
++#endif
++
++static void load_gpu(struct drm_device *dev)
++{
++	static DEFINE_MUTEX(init_lock);
++	struct atmel_hlcdc_dc *priv = dev->dev_private;
++
++	mutex_lock(&init_lock);
++
++	if (!priv->gpu)
++		priv->gpu = gfx2d_load_gpu(dev);
++
++	mutex_unlock(&init_lock);
++}
+ 
+ static struct drm_driver atmel_hlcdc_dc_driver = {
+ 	.driver_features = DRIVER_GEM | DRIVER_MODESET | DRIVER_ATOMIC,
+ 	DRM_GEM_CMA_DRIVER_OPS,
++#ifdef CONFIG_DEBUG_FS
++	.debugfs_init       = atmel_hlcdc_dc_debugfs_init,
++#endif
+ 	.ioctls	= atmel_ioctls,
+ 	.num_ioctls= ARRAY_SIZE(atmel_ioctls),
+ 	.fops = &fops,
+@@ -781,12 +911,17 @@ static struct drm_driver atmel_hlcdc_dc_driver = {
+ 	.minor = 0,
+ };
+ 
+-static int atmel_hlcdc_dc_drm_probe(struct platform_device *pdev)
++static int compare_of(struct device *dev, void *data)
++{
++	return dev->of_node == data;
++}
++
++static int atmel_hlcdc_dc_bind(struct device *dev)
+ {
+ 	struct drm_device *ddev;
+ 	int ret;
+ 
+-	ddev = drm_dev_alloc(&atmel_hlcdc_dc_driver, &pdev->dev);
++	ddev = drm_dev_alloc(&atmel_hlcdc_dc_driver, dev);
+ 	if (IS_ERR(ddev))
+ 		return PTR_ERR(ddev);
+ 
+@@ -794,15 +929,25 @@ static int atmel_hlcdc_dc_drm_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		goto err_put;
+ 
++	dev_set_drvdata(dev, ddev);
++
++	ret = component_bind_all(dev, ddev);
++	if (ret < 0)
++		goto out_bind;
++
++	load_gpu(ddev);
++
+ 	ret = drm_dev_register(ddev, 0);
+ 	if (ret)
+-		goto err_unload;
++		goto out_register;
+ 
+ 	drm_fbdev_generic_setup(ddev, 24);
+ 
+ 	return 0;
+ 
+-err_unload:
++out_register:
++	component_unbind_all(dev, ddev);
++out_bind:
+ 	atmel_hlcdc_dc_unload(ddev);
+ 
+ err_put:
+@@ -811,6 +956,36 @@ static int atmel_hlcdc_dc_drm_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
++static void atmel_hlcdc_dc_unbind(struct device *dev)
++{
++	/* TODO */
++}
++
++static const struct component_master_ops atmel_hlcdc_dc_master_ops = {
++	.bind = atmel_hlcdc_dc_bind,
++	.unbind = atmel_hlcdc_dc_unbind,
++};
++
++static int atmel_hlcdc_dc_drm_probe(struct platform_device *pdev)
++{
++	struct component_match *match = NULL;
++	struct device_node *core_node;
++
++	for_each_compatible_node(core_node, NULL, "microchip,sam9x60-gfx2d") {
++		if (!of_device_is_available(core_node))
++				continue;
++
++		component_match_add(&pdev->dev, &match,
++				    compare_of, core_node);
++	}
++
++	if (!match)
++		return -ENODEV;
++
++	return component_master_add_with_match(&pdev->dev,
++					       &atmel_hlcdc_dc_master_ops, match);
++}
++
+ static int atmel_hlcdc_dc_drm_remove(struct platform_device *pdev)
+ {
+ 	struct drm_device *ddev = platform_get_drvdata(pdev);
+@@ -872,7 +1047,20 @@ static struct platform_driver atmel_hlcdc_dc_platform_driver = {
+ 		.of_match_table = atmel_hlcdc_dc_of_match,
+ 	},
+ };
+-module_platform_driver(atmel_hlcdc_dc_platform_driver);
++
++static int __init atmel_hlcdc_dc_drm_init(void)
++{
++	gfx2d_register();
++	return platform_driver_register(&atmel_hlcdc_dc_platform_driver);
++}
++module_init(atmel_hlcdc_dc_drm_init);
++
++static void __exit atmel_hlcdc_dc_drm_exit(void)
++{
++	gfx2d_unregister();
++	platform_driver_unregister(&atmel_hlcdc_dc_platform_driver);
++}
++module_exit(atmel_hlcdc_dc_drm_exit);
+ 
+ MODULE_AUTHOR("Jean-Jacques Hiblot <jjhiblot@traphandler.com>");
+ MODULE_AUTHOR("Boris Brezillon <boris.brezillon@free-electrons.com>");
+diff --git a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.h b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.h
+index 645c8c6169e4..06779af7c35e 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.h
++++ b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.h
+@@ -17,6 +17,8 @@
+ #include <drm/drm_encoder.h>
+ #include <drm/drm_modes.h>
+ #include <drm/drm_plane.h>
++#include <drm/drm_modes.h>
++#include <drm/drm_crtc.h>
+ 
+ #define ATMEL_HLCDC_LAYER_CHER			0x0
+ #define ATMEL_HLCDC_LAYER_CHDR			0x4
+@@ -346,6 +348,12 @@ struct atmel_hlcdc_dc {
+ 		u32 imr;
+ 		struct drm_atomic_state *state;
+ 	} suspend;
++	struct {
++		wait_queue_head_t wait;
++		bool pending;
++	} commit;
++	struct gfx2d_gpu *gpu;
++	struct platform_device *gpu_pdev;
+ };
+ 
+ extern struct atmel_hlcdc_formats atmel_hlcdc_plane_rgb_formats;
+diff --git a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_device.c b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_device.c
+new file mode 100644
+index 000000000000..58113b3a0db2
+--- /dev/null
++++ b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_device.c
+@@ -0,0 +1,112 @@
++/*
++ * Copyright (C) 2018 Microchip
++ * Joshua Henderson <joshua.henderson@microchip.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published by
++ * the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License along with
++ * this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include "../atmel_hlcdc_dc.h"
++#include "gfx2d_gpu.h"
++#include <drm/atmel_drm.h>
++#include <drm/drm_device.h>
++#include <linux/component.h>
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <linux/mod_devicetable.h>
++
++struct gfx2d_gpu *gfx2d_load_gpu(struct drm_device *dev)
++{
++	struct atmel_hlcdc_dc *priv = dev->dev_private;
++	struct platform_device *pdev = priv->gpu_pdev;
++	struct gfx2d_gpu *gpu = NULL;
++
++	if (pdev)
++		gpu = platform_get_drvdata(pdev);
++
++	if (!gpu) {
++		dev_err_once(dev->dev, "no GPU device was found\n");
++		return NULL;
++	}
++
++	return gpu;
++}
++
++static void set_gpu_pdev(struct drm_device *dev,
++			 struct platform_device *pdev)
++{
++	struct atmel_hlcdc_dc *priv = dev->dev_private;
++	priv->gpu_pdev = pdev;
++}
++
++static int gfx2d_bind(struct device *dev, struct device *master, void *data)
++{
++	struct drm_device *drm = data;
++	struct gfx2d_gpu *gpu;
++
++	set_gpu_pdev(drm, to_platform_device(dev));
++
++	gpu = gfx2d_gpu_init(dev);
++	if (IS_ERR(gpu)) {
++		dev_warn(dev, "failed to init gfx2d gpu\n");
++		return PTR_ERR(gpu);
++	}
++	dev_set_drvdata(dev, gpu);
++
++	return 0;
++}
++
++static void gfx2d_unbind(struct device *dev, struct device *master,
++			 void *data)
++{
++	set_gpu_pdev(dev_get_drvdata(master), NULL);
++}
++
++static const struct component_ops gfx2d_ops = {
++	.bind   = gfx2d_bind,
++	.unbind = gfx2d_unbind,
++};
++
++static int gfx2d_probe(struct platform_device *pdev)
++{
++	return component_add(&pdev->dev, &gfx2d_ops);
++}
++
++static int gfx2d_remove(struct platform_device *pdev)
++{
++	component_del(&pdev->dev, &gfx2d_ops);
++	return 0;
++}
++
++static const struct of_device_id dt_match[] = {
++	{ .compatible = "microchip,sam9x60-gfx2d" },
++	{}
++};
++
++static struct platform_driver gfx2d_driver = {
++	.probe = gfx2d_probe,
++	.remove = gfx2d_remove,
++	.driver = {
++		.name = "gfx2d",
++		.of_match_table = dt_match,
++	},
++};
++
++void __init gfx2d_register(void)
++{
++	platform_driver_register(&gfx2d_driver);
++}
++
++void __exit gfx2d_unregister(void)
++{
++	platform_driver_unregister(&gfx2d_driver);
++}
+diff --git a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c
+new file mode 100644
+index 000000000000..777e3f0e473e
+--- /dev/null
++++ b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c
+@@ -0,0 +1,306 @@
++/*
++ * Copyright (C) 2018 Microchip
++ * Joshua Henderson <joshua.henderson@microchip.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published by
++ * the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License along with
++ * this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include "gfx2d_gpu.h"
++#include <drm/drm_gem.h>
++#include <linux/interrupt.h>
++#include <linux/irqreturn.h>
++#include <linux/platform_device.h>
++#include <linux/spinlock.h>
++
++#define REG_GFX2D_GC 0x00
++#define REG_GFX2D_GE 0x04
++#define REG_GFX2D_GE_ENABLE (1<<0)
++#define REG_GFX2D_GD 0x08
++#define REG_GFX2D_GD_DISABLE (1<<0)
++#define REG_GFX2D_GD_WFERES (1<<8)
++#define REG_GFX2D_GS 0x0C
++#define REG_GFX2D_GS_STATUS (1<<0)
++#define REG_GFX2D_GS_BUSY (1<<4)
++#define REG_GFX2D_GS_WFEIP (1<<8)
++#define REG_GFX2D_IE 0x10
++#define REG_GFX2D_IE_RBEMPTY (1<<0)
++#define REG_GFX2D_IE_EXEND (1<<1)
++#define REG_GFX2D_IE_RERR (1<<2)
++#define REG_GFX2D_IE_BERR (1<<3)
++#define REG_GFX2D_IE_IERR (1<<4)
++#define REG_GFX2D_ID 0x14
++#define REG_GFX2D_IM 0x18
++#define REG_GFX2D_IS 0x1C
++#define REG_GFX2D_IS_RBEMPTY (1<<0)
++#define REG_GFX2D_IS_EXEND (1<<1)
++#define REG_GFX2D_IS_RERR (1<<2)
++#define REG_GFX2D_IS_BERR (1<<3)
++#define REG_GFX2D_IS_IERR (1<<4)
++#define REG_GFX2D_PC0 0x20
++#define REG_GFX2D_MC0 0x24
++#define REG_GFX2D_PC1 0x28
++#define REG_GFX2D_MC1 0x2C
++#define REG_GFX2D_BASE 0x30
++#define REG_GFX2D_LEN 0x34
++#define REG_GFX2D_HEAD 0x38
++#define REG_GFX2D_TAIL 0x3C
++#define REG_GFX2D_VERSION 0xFC
++
++static inline void gpu_write(struct gfx2d_gpu *gpu, u32 reg, u32 data)
++{
++	writel(data, gpu->mmio + reg);
++}
++
++static inline u32 gpu_read(struct gfx2d_gpu *gpu, u32 reg)
++{
++	return readl(gpu->mmio + reg);
++}
++
++static inline uint32_t get_wptr(struct gfx2d_ringbuffer *ring)
++{
++	return ring->cur - ring->start;
++}
++
++static inline uint32_t get_rptr(struct gfx2d_gpu *gpu)
++{
++	return gpu_read(gpu, REG_GFX2D_TAIL);
++}
++
++static int gfx2d_hw_init(struct gfx2d_gpu *gpu)
++{
++	gpu->version = gpu_read(gpu, REG_GFX2D_VERSION) & 0x7ff;
++	gpu->mfn = (gpu_read(gpu, REG_GFX2D_VERSION) >> 16) & 0x7;
++
++	DBG("GPU version %d (%d)", gpu->version, gpu->mfn);
++
++	/* disable rb */
++	gpu_write(gpu, REG_GFX2D_GD, REG_GFX2D_GD_DISABLE);
++
++	/* initialize head/tail pointers */
++	gpu_write(gpu, REG_GFX2D_HEAD, 0);
++	gpu_write(gpu, REG_GFX2D_TAIL, 0);
++
++	/* configure */
++	gpu_write(gpu, REG_GFX2D_BASE, gpu->rb->paddr);
++	gpu_write(gpu, REG_GFX2D_LEN, (gpu->rb->size / 256) - 1);
++
++	/* enable rb */
++	gpu_write(gpu, REG_GFX2D_GE, REG_GFX2D_GE_ENABLE);
++
++	/* enable interrupt */
++	gpu_write(gpu, REG_GFX2D_IE, REG_GFX2D_IE_EXEND | REG_GFX2D_IE_RBEMPTY);
++
++	return 0;
++}
++
++static uint32_t ring_freewords(struct gfx2d_gpu *gpu)
++{
++	uint32_t size = gpu->rb->size / 4;
++	uint32_t wptr = get_wptr(gpu->rb);
++	uint32_t rptr = get_rptr(gpu);
++	return (rptr + (size - 1) - wptr) % size;
++}
++
++static int gfx2d_wait_ring(struct gfx2d_gpu *gpu, uint32_t nwords)
++{
++	if (spin_until(ring_freewords(gpu) >= nwords)) {
++		DRM_ERROR("timeout waiting for ringbuffer space\n");
++		return -ETIMEDOUT;
++	}
++
++	return 0;
++}
++
++int gfx2d_submit(struct gfx2d_gpu *gpu, uint32_t* buf, uint32_t nwords)
++{
++	struct gfx2d_ringbuffer *ring = gpu->rb;
++	unsigned i;
++	int ret;
++
++	ret = gfx2d_wait_ring(gpu, nwords);
++	if (ret)
++		return ret;
++
++	for (i = 0; i < nwords; i++) {
++		DBG("rb out: %08x", buf[i]);
++		OUT_RING(ring, buf[i]);
++	}
++
++	DBG("added %d words to ringbuffer, %d free", nwords, ring_freewords(gpu));
++	DBG("wptr: %x", get_wptr(gpu->rb));
++	DBG("rptr: %x", get_rptr(gpu));
++
++	return 0;
++}
++
++int gfx2d_flush(struct gfx2d_gpu *gpu)
++{
++	struct gfx2d_ringbuffer *ring = gpu->rb;
++	uint32_t wptr;
++
++	DBG("flushing rb ...");
++
++	ring->cur = ring->next;
++	if (ring->cur == ring->end)
++		ring->cur = ring->start;
++
++	wptr = get_wptr(gpu->rb);
++
++	/* ensure writes to ringbuffer have hit system memory: */
++	mb();
++
++	gpu_write(gpu, REG_GFX2D_HEAD, wptr);
++
++	return 0;
++}
++
++void gfx2d_idle(struct gfx2d_gpu *gpu)
++{
++	uint32_t wptr = get_wptr(gpu->rb);
++	int ret;
++
++	DBG("wait for idle wptr: %x",wptr);
++
++	/* wait for CP to drain ringbuffer: */
++	ret = spin_until(get_rptr(gpu) == wptr);
++
++	if (ret)
++		DRM_ERROR("timeout waiting to drain ringbuffer\n");
++}
++
++#ifdef CONFIG_DEBUG_FS
++void gfx2d_show(struct gfx2d_gpu *gpu, struct seq_file *m)
++{
++	int i;
++
++	seq_printf(m, "revision:      %d (%d)\n", gpu->version, gpu->mfn);
++	seq_printf(m, "rptr:          %d\n", get_rptr(gpu));
++	seq_printf(m, "wptr:          %d\n", get_wptr(gpu->rb));
++	seq_printf(m, "rb freewords:  %d\n", ring_freewords(gpu));
++
++	seq_printf(m, "mmio:\n");
++	for (i = 0; i != REG_GFX2D_VERSION; i+=4) {
++		uint32_t val = gpu_read(gpu, i);
++		seq_printf(m, "IO:R %08x %08x\n", i, val);
++	}
++}
++#endif
++
++static irqreturn_t gfx2d_irq(int irq, void *data)
++{
++	struct gfx2d_gpu *gpu = data;
++	uint32_t status;
++
++	status = gpu_read(gpu, REG_GFX2D_IS);
++	if (!status)
++		return IRQ_NONE;
++
++	DBG("status: %08x", status);
++
++	if (status & REG_GFX2D_IS_EXEND) {
++	}
++
++	if (status & REG_GFX2D_IS_RBEMPTY) {
++	}
++
++	return IRQ_HANDLED;
++}
++
++static void gfx2d_destroy(struct gfx2d_gpu *gpu)
++{
++	gfx2d_idle(gpu);
++	gpu_write(gpu, REG_GFX2D_GD, REG_GFX2D_GD_DISABLE);
++	gfx2d_gpu_cleanup(gpu);
++	kfree(gpu);
++}
++
++struct gfx2d_gpu *gfx2d_gpu_init(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct gfx2d_gpu *gpu = NULL;
++	struct resource *res;
++	int ret;
++
++	if (!pdev) {
++		dev_err(dev, "no gfx2d device\n");
++		ret = -ENXIO;
++		goto fail;
++	}
++
++	gpu = kzalloc(sizeof(*gpu), GFP_KERNEL);
++	if (!gpu) {
++		ret = -ENOMEM;
++		goto fail;
++	}
++
++	gpu->pdev = pdev;
++
++	gpu->rb = gfx2d_ringbuffer_new(gpu);
++	if (IS_ERR(gpu->rb)) {
++		ret = PTR_ERR(gpu->rb);
++		dev_err(dev, "failed to allocate ringbuffer: %d\n", ret);
++		goto fail;
++	}
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	gpu->mmio = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(gpu->mmio)) {
++		ret = PTR_ERR(gpu->mmio);
++		goto fail;
++	}
++
++	gpu->irq = platform_get_irq(pdev, 0);
++	if (gpu->irq < 0) {
++		ret = gpu->irq;
++		dev_err(dev, "failed to get irq: %d\n", ret);
++		goto fail;
++	}
++
++	ret = devm_request_irq(&pdev->dev, gpu->irq, gfx2d_irq,
++			       IRQF_TRIGGER_HIGH, "gfx2d", gpu);
++	if (ret) {
++		dev_err(dev, "failed to request IRQ%u: %d\n", gpu->irq, ret);
++		goto fail;
++	}
++
++	gpu->periph_clk = devm_clk_get(dev, "periph_clk");
++	DBG("periph_clk: %p", gpu->periph_clk);
++	if (IS_ERR(gpu->periph_clk))
++		gpu->periph_clk = NULL;
++	else {
++		ret = clk_prepare_enable(gpu->periph_clk);
++		if (ret) {
++			dev_err(dev, "failed to enable periph_clk\n");
++			goto fail;
++		}
++	}
++
++	disable_irq(gpu->irq);
++	ret = gfx2d_hw_init(gpu);
++	if (ret)
++		goto fail;
++	enable_irq(gpu->irq);
++
++	return gpu;
++
++fail:
++	if (gpu)
++		gfx2d_destroy(gpu);
++
++	return ERR_PTR(ret);
++}
++
++void gfx2d_gpu_cleanup(struct gfx2d_gpu *gpu)
++{
++	gfx2d_ringbuffer_destroy(gpu->rb);
++}
+diff --git a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.h b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.h
+new file mode 100644
+index 000000000000..509e832e173d
+--- /dev/null
++++ b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.h
+@@ -0,0 +1,68 @@
++/*
++ * Copyright (C) 2018 Microchip
++ * Joshua Henderson <joshua.henderson@microchip.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published by
++ * the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License along with
++ * this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++#ifndef __GFX2D_GPU_H__
++#define __GFX2D_GPU_H__
++
++#include "gfx2d_ringbuffer.h"
++#include <drm/atmel_drm.h>
++#include <linux/clk.h>
++#include <linux/io.h>
++#include <linux/seq_file.h>
++
++struct gfx2d_file_private {
++	rwlock_t queuelock;
++};
++
++struct gfx2d_gpu {
++	struct drm_device *dev;
++	struct platform_device *pdev;
++	void* mmio;
++	int irq;
++	uint32_t version;
++	uint32_t mfn;
++	struct gfx2d_ringbuffer *rb;
++	struct clk *periph_clk;
++};
++
++#define GFX2D_IDLE_TIMEOUT msecs_to_jiffies(1000)
++
++#define spin_until(X) ({                                   \
++	int __ret = -ETIMEDOUT;                            \
++	unsigned long __t = jiffies + GFX2D_IDLE_TIMEOUT;  \
++	do {                                               \
++		if (X) {                                   \
++			__ret = 0;                         \
++			break;                             \
++		}                                          \
++	} while (time_before(jiffies, __t));               \
++	__ret;                                             \
++})
++
++struct gfx2d_gpu *gfx2d_gpu_init(struct device *dev);
++uint32_t gfx2d_last_fence(struct gfx2d_gpu *gpu);
++int gfx2d_submit(struct gfx2d_gpu *gpu, uint32_t* buf, uint32_t size);
++int gfx2d_flush(struct gfx2d_gpu *gpu);
++void gfx2d_idle(struct gfx2d_gpu *gpu);
++#ifdef CONFIG_DEBUG_FS
++void gfx2d_show(struct gfx2d_gpu *gpu, struct seq_file *m);
++#endif
++void gfx2d_dump_info(struct gfx2d_gpu *gpu);
++void gfx2d_gpu_cleanup(struct gfx2d_gpu *gpu);
++
++#define DBG(fmt, ...) DRM_DEBUG_DRIVER(fmt"\n", ##__VA_ARGS__)
++
++#endif /* __GFX2D_GPU_H__ */
+diff --git a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.c b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.c
+new file mode 100644
+index 000000000000..e7fcb4439855
+--- /dev/null
++++ b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.c
+@@ -0,0 +1,86 @@
++/*
++ * Copyright (C) 2018 Microchip
++ * Joshua Henderson <joshua.henderson@microchip.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published by
++ * the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License along with
++ * this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++#include "gfx2d_gpu.h"
++#include "gfx2d_ringbuffer.h"
++#include <linux/dma-mapping.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++
++#define RB_ALLOC_UNIT 256
++#define RB_LEN 16
++#define GFX2D_GPU_RINGBUFFER_SZ (RB_LEN * RB_ALLOC_UNIT)
++
++struct gfx2d_ringbuffer *gfx2d_ringbuffer_new(struct gfx2d_gpu *gpu)
++{
++	struct gfx2d_ringbuffer *ring = NULL;
++	int ret;
++
++	if (!gpu->pdev) {
++		ret = -ENODEV;
++		goto fail;
++	}
++
++	/* We assume everwhere that GFX2D_GPU_RINGBUFFER_SZ is a power of 2 */
++	BUILD_BUG_ON(!is_power_of_2(GFX2D_GPU_RINGBUFFER_SZ));
++
++	ring = kzalloc(sizeof(*ring), GFP_KERNEL);
++	if (!ring) {
++		ret = -ENOMEM;
++		goto fail;
++	}
++
++	ring->gpu = gpu;
++	ring->size = GFX2D_GPU_RINGBUFFER_SZ;
++
++	dma_set_coherent_mask(&gpu->pdev->dev, DMA_BIT_MASK(32));
++
++	ring->start = dma_alloc_coherent(&gpu->pdev->dev, GFX2D_GPU_RINGBUFFER_SZ,
++					 &ring->paddr, GFP_KERNEL);
++
++	if (IS_ERR(ring->start)) {
++		ret = PTR_ERR(ring->start);
++		ring->start = 0;
++		goto fail;
++	}
++	ring->end   = ring->start + (GFX2D_GPU_RINGBUFFER_SZ >> 2);
++	ring->next  = ring->start;
++	ring->cur   = ring->start;
++
++	spin_lock_init(&ring->lock);
++
++	return ring;
++
++fail:
++	if (ring && ring->start)
++		dma_free_wc(&gpu->pdev->dev, GFX2D_GPU_RINGBUFFER_SZ,
++			    ring->start, ring->paddr);
++
++	gfx2d_ringbuffer_destroy(ring);
++	return ERR_PTR(ret);
++}
++
++void gfx2d_ringbuffer_destroy(struct gfx2d_ringbuffer *ring)
++{
++	if (IS_ERR_OR_NULL(ring))
++		return;
++
++	if (ring->start)
++		dma_free_wc(&ring->gpu->pdev->dev, GFX2D_GPU_RINGBUFFER_SZ,
++			    ring->start, ring->paddr);
++
++	kfree(ring);
++}
+diff --git a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.h b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.h
+new file mode 100644
+index 000000000000..b8ac820ff398
+--- /dev/null
++++ b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.h
+@@ -0,0 +1,48 @@
++/*
++ * Copyright (C) 2018 Microchip
++ * Joshua Henderson <joshua.henderson@microchip.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published by
++ * the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License along with
++ * this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++#ifndef __GFX2D_RINGBUFFER_H__
++#define __GFX2D_RINGBUFFER_H__
++
++#include <linux/types.h>
++#include <linux/list.h>
++#include <linux/spinlock.h>
++
++struct gfx2d_gpu;
++
++struct gfx2d_ringbuffer {
++	struct gfx2d_gpu *gpu;
++	uint32_t size;
++	uint32_t *start, *end, *cur, *next;
++	dma_addr_t paddr;
++	spinlock_t lock;
++};
++
++struct gfx2d_ringbuffer *gfx2d_ringbuffer_new(struct gfx2d_gpu *gpu);
++void gfx2d_ringbuffer_destroy(struct gfx2d_ringbuffer *ring);
++
++static inline void OUT_RING(struct gfx2d_ringbuffer *ring, uint32_t data)
++{
++	/*
++	 * ring->next points to the current command being written - it won't be
++	 * committed as ring->cur until the flush
++	 */
++	if (ring->next == ring->end)
++		ring->next = ring->start;
++	*(ring->next++) = data;
++}
++
++#endif /* __GFX2D_RINGBUFFER_H__ */
+diff --git a/include/uapi/drm/atmel_drm.h b/include/uapi/drm/atmel_drm.h
+index 0b45504c55d4..e121eba81afc 100644
+--- a/include/uapi/drm/atmel_drm.h
++++ b/include/uapi/drm/atmel_drm.h
+@@ -21,9 +21,37 @@
+ 
+ #include <drm/drm.h>
+ 
++#if defined(__cplusplus)
++extern "C" {
++#endif
++
++struct drm_gfx2d_submit {
++	__u32 flags;
++	__u32 size;
++	__u32 buf;
++};
++
++struct drm_gfx2d_gem_addr {
++	__u32 name;
++	__u32 paddr;
++	__u32 size;
++};
++
+ #define DRM_ATMEL_GEM_GET		0x00
++#define DRM_GFX2D_SUBMIT		0x01
++#define DRM_GFX2D_FLUSH			0x02
++#define DRM_GFX2D_GEM_ADDR		0x03
++
++#define DRM_IOCTL_ATMEL_GEM_GET		DRM_IOWR(DRM_COMMAND_BASE +	\
++						 DRM_ATMEL_GEM_GET, struct drm_mode_map_dumb)
++#define DRM_IOCTL_GFX2D_SUBMIT		DRM_IOWR(DRM_COMMAND_BASE +	\
++						 DRM_GFX2D_SUBMIT, struct drm_gfx2d_submit)
++#define DRM_IOCTL_GFX2D_FLUSH		DRM_IO(DRM_COMMAND_BASE + DRM_GFX2D_FLUSH)
++#define DRM_IOCTL_GFX2D_GEM_ADDR	DRM_IOWR(DRM_COMMAND_BASE +	\
++						 DRM_GFX2D_GEM_ADDR, struct drm_gfx2d_gem_addr)
+ 
+-#define DRM_IOCTL_ATMEL_GEM_GET		DRM_IOWR(DRM_COMMAND_BASE + \
+-					DRM_ATMEL_GEM_GET, struct drm_mode_map_dumb)
++#if defined(__cplusplus)
++}
++#endif
+ 
+ #endif /* _UAPI_ATMEL_DRM_H_ */
+-- 
+2.34.1
+

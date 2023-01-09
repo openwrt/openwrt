@@ -1,0 +1,32 @@
+From 259087afea9345903d97448405472a79cfa9f4ce Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 26 Jan 2022 15:53:18 +0200
+Subject: [PATCH 279/471] ARM: at91: pm: keep documentation inline with
+ structure members
+
+Move documentation of bu to keep the same order as in the structure
+itself.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/mach-at91/pm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
+index 6cae7ba478cb..b0e76977dcf2 100644
+--- a/arch/arm/mach-at91/pm.c
++++ b/arch/arm/mach-at91/pm.c
+@@ -66,9 +66,9 @@ struct at91_pm_sfrbu_regs {
+  * @config_pmc_ws: wakeup srouces configuration function for PMC
+  * @ws_ids: wakup sources of_device_id array
+  * @shdwc_np: pointer to shdwc node
++ * @bu: backup unit mapped data (for backup mode)
+  * @data: PM data to be used on last phase of suspend
+  * @sfrbu_regs: SFRBU registers mapping
+- * @bu: backup unit mapped data (for backup mode)
+  * @memcs: memory chip select
+  */
+ struct at91_soc_pm {
+-- 
+2.34.1
+

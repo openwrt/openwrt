@@ -1,0 +1,53 @@
+From 88de0c6af3bc288a558bb31055941381ac98f258 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Tue, 19 Apr 2022 15:47:50 +0300
+Subject: [PATCH 064/471] ASoC: atmel: mchp-pdmc: fix period size calculation
+
+The size of the period is used to compute the maxburst. However,
+snd_pcm_lib_period_bytes() is 0 because the runtime HW parameters are
+computed after the hw_params() callbacks are used. Because of this, to
+compute the period size we use params_*() functions.
+
+Fixes: 62ba70025492 ("ASoC: atmel: mchp-pdmc: add PDMC driver")
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/atmel/mchp-pdmc.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/sound/soc/atmel/mchp-pdmc.c b/sound/soc/atmel/mchp-pdmc.c
+index 9c6f6570b358..755f5fb18430 100644
+--- a/sound/soc/atmel/mchp-pdmc.c
++++ b/sound/soc/atmel/mchp-pdmc.c
+@@ -543,15 +543,17 @@ static int mchp_pdmc_hw_params(struct snd_pcm_substream *substream,
+ 	unsigned int osr = 0, osr_start;
+ 	unsigned int fs = params_rate(params);
+ 	int sample_bytes = params_physical_width(params) / 8;
++	int period_bytes = params_period_size(params) *
++		params_channels(params) * sample_bytes;
+ 	int maxburst;
+ 	u32 mr_val = 0;
+ 	u32 cfgr_val = 0;
+ 	int i;
+ 	int ret;
+ 
+-	dev_dbg(comp->dev, "%s() rate=%u format=%#x width=%u channels=%u\n",
++	dev_dbg(comp->dev, "%s() rate=%u format=%#x width=%u channels=%u period_bytes=%d\n",
+ 		__func__, params_rate(params), params_format(params),
+-		params_width(params), params_channels(params));
++		params_width(params), params_channels(params), period_bytes);
+ 
+ 	if (channels > dd->mic_no) {
+ 		dev_err(comp->dev, "more channels %u than microphones %d\n",
+@@ -613,8 +615,7 @@ static int mchp_pdmc_hw_params(struct snd_pcm_substream *substream,
+ 
+ 	mr_val |= MCHP_PDMC_MR_SINCORDER(dd->sinc_order);
+ 
+-	maxburst = mchp_pdmc_period_to_maxburst(snd_pcm_lib_period_bytes(substream),
+-						sample_bytes);
++	maxburst = mchp_pdmc_period_to_maxburst(period_bytes, sample_bytes);
+ 	dd->addr.maxburst = maxburst;
+ 	mr_val |= MCHP_PDMC_MR_CHUNK(dd->addr.maxburst);
+ 	dev_dbg(comp->dev, "maxburst set to %d\n", dd->addr.maxburst);
+-- 
+2.34.1
+

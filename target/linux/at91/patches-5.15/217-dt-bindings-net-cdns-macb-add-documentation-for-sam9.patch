@@ -1,0 +1,28 @@
+From 419ab24e7471ce79798c7db13f672a47ce3ccf2e Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Mon, 5 Sep 2022 10:30:50 +0530
+Subject: [PATCH 108/471] dt-bindings: net: cdns,macb: add documentation for
+ sam9x7 ethernet interface
+
+Add documentation for sam9x7 ethernet interface
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ Documentation/devicetree/bindings/net/cdns,macb.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/net/cdns,macb.yaml b/Documentation/devicetree/bindings/net/cdns,macb.yaml
+index c7d00350430a..c3b914d6d1bf 100644
+--- a/Documentation/devicetree/bindings/net/cdns,macb.yaml
++++ b/Documentation/devicetree/bindings/net/cdns,macb.yaml
+@@ -46,6 +46,7 @@ properties:
+           - cdns,np4-macb             # NP4 SoC devices
+           - microchip,sama7g5-emac    # Microchip SAMA7G5 ethernet interface
+           - microchip,sama7g5-gem     # Microchip SAMA7G5 gigabit ethernet interface
++          - microchip,sam9x7-gem      # Microchip SAM9X7 gigabit ethernet interface
+           - sifive,fu540-c000-gem     # SiFive FU540-C000 SoC
+           - cdns,emac                 # Generic
+           - cdns,gem                  # Generic
+-- 
+2.34.1
+

@@ -1,0 +1,47 @@
+From a1eee79f2ffa057ef0629d5170c26b1da310aeff Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Thu, 17 Feb 2022 17:19:38 +0200
+Subject: [PATCH 423/471] ARM: configs: at91: sama7: Enable crypto IPs and
+ software algs
+
+Similar to sama5_defconfig, enable hardware acceleration for the
+sama7 crypto IPs, enable crypto software implementations in case
+the crypto IPs need a fallback to them, and enable the hash and
+skcipher user interfaces in case one wants to offload the crypto
+algs to the sama7 crypto IPs.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 5add1a0df4a6..9c115d23f75b 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -203,9 +203,21 @@ CONFIG_NLS_CODEPAGE_850=y
+ CONFIG_NLS_ISO8859_1=y
+ CONFIG_NLS_UTF8=y
+ CONFIG_LSM="N"
++CONFIG_CRYPTO_AUTHENC=y
++CONFIG_CRYPTO_GCM=y
++CONFIG_CRYPTO_CBC=y
++CONFIG_CRYPTO_CFB=y
++CONFIG_CRYPTO_OFB=y
++CONFIG_CRYPTO_XTS=y
++CONFIG_CRYPTO_SHA1=y
++CONFIG_CRYPTO_DES=y
+ CONFIG_CRYPTO_DEFLATE=y
+ CONFIG_CRYPTO_LZO=y
+-# CONFIG_CRYPTO_HW is not set
++CONFIG_CRYPTO_USER_API_HASH=m
++CONFIG_CRYPTO_USER_API_SKCIPHER=m
++CONFIG_CRYPTO_DEV_ATMEL_AES=y
++CONFIG_CRYPTO_DEV_ATMEL_TDES=y
++CONFIG_CRYPTO_DEV_ATMEL_SHA=y
+ CONFIG_CRC_CCITT=y
+ CONFIG_CRC_ITU_T=y
+ CONFIG_DMA_CMA=y
+-- 
+2.34.1
+

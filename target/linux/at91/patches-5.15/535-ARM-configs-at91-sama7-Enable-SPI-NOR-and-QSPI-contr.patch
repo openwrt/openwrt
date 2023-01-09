@@ -1,0 +1,43 @@
+From efbae128011c1811913bb4f15dd9e9f91d94037a Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Thu, 9 Dec 2021 17:37:44 +0200
+Subject: [PATCH 426/471] ARM: configs: at91: sama7: Enable SPI NOR and QSPI
+ controller
+
+sama7g5ek comes with a SPI NOR flash connected to the QSPI
+controller. Enable the SPI NOR subsystem and the QSPI controller.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20211209153744.357465-2-tudor.ambarus@microchip.com
+(cherry picked from commit 3b2e5d74e25fe6aae6e9427cdbdc2d82586ddc16)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 96715e13a9f8..e63ab67b44ea 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -93,6 +93,7 @@ CONFIG_MTD_RAW_NAND=y
+ CONFIG_MTD_NAND_ATMEL=y
+ # CONFIG_MTD_NAND_ECC_SW_HAMMING is not set
+ CONFIG_MTD_UBI=y
++CONFIG_MTD_SPI_NOR=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=1
+@@ -115,8 +116,8 @@ CONFIG_I2C=y
+ CONFIG_I2C_CHARDEV=y
+ CONFIG_I2C_AT91=y
+ CONFIG_SPI=y
+-CONFIG_SPI_MEM=y
+ CONFIG_SPI_ATMEL=y
++CONFIG_SPI_ATMEL_QUADSPI=y
+ CONFIG_SPI_GPIO=y
+ CONFIG_PINCTRL_AT91=y
+ CONFIG_PINCTRL_AT91PIO4=y
+-- 
+2.34.1
+

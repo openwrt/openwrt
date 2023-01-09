@@ -1,0 +1,151 @@
+From 9aaf0f827bc0937d3b9be8ee84b31815ac87f1ce Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Tue, 8 Feb 2022 13:12:25 +0200
+Subject: [PATCH 339/471] ARM: dts: at91: Use the generic "crypto" node name
+ for the crypto IPs
+
+The DT specification recommeds that:
+"The name of a node should be somewhat generic, reflecting the function of
+the device and not its precise programming model. If appropriate, the name
+should be one of the following choices:"
+"crypto" being the recommendation for the crypto nodes. Follow the DT
+recommendation and use the generic "crypto" node name for the at91 crypto
+IPs. While at this, add labels to the crypto nodes where they missed, for
+easier reference purposes.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>
+---
+ arch/arm/boot/dts/sam9x60.dtsi | 6 +++---
+ arch/arm/boot/dts/sama5d2.dtsi | 6 +++---
+ arch/arm/boot/dts/sama5d3.dtsi | 6 +++---
+ arch/arm/boot/dts/sama5d4.dtsi | 6 +++---
+ 4 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sam9x60.dtsi b/arch/arm/boot/dts/sam9x60.dtsi
+index ec45ced3cde6..ec686f617ec7 100644
+--- a/arch/arm/boot/dts/sam9x60.dtsi
++++ b/arch/arm/boot/dts/sam9x60.dtsi
+@@ -270,7 +270,7 @@ pit64b: timer@f0028000 {
+ 				clock-names = "pclk", "gclk";
+ 			};
+ 
+-			sha: sha@f002c000 {
++			sha: crypto@f002c000 {
+ 				compatible = "atmel,at91sam9g46-sha";
+ 				reg = <0xf002c000 0x100>;
+ 				interrupts = <41 IRQ_TYPE_LEVEL_HIGH 0>;
+@@ -291,7 +291,7 @@ trng: trng@f0030000 {
+ 				status = "okay";
+ 			};
+ 
+-			aes: aes@f0034000 {
++			aes: crypto@f0034000 {
+ 				compatible = "atmel,at91sam9g46-aes";
+ 				reg = <0xf0034000 0x100>;
+ 				interrupts = <39 IRQ_TYPE_LEVEL_HIGH 0>;
+@@ -307,7 +307,7 @@ AT91_XDMAC_DT_PERID(32))>,
+ 				status = "okay";
+ 			};
+ 
+-			tdes: tdes@f0038000 {
++			tdes: crypto@f0038000 {
+ 				compatible = "atmel,at91sam9g46-tdes";
+ 				reg = <0xf0038000 0x100>;
+ 				interrupts = <40 IRQ_TYPE_LEVEL_HIGH 0>;
+diff --git a/arch/arm/boot/dts/sama5d2.dtsi b/arch/arm/boot/dts/sama5d2.dtsi
+index 4c87c2aa8fc8..eca8d7088960 100644
+--- a/arch/arm/boot/dts/sama5d2.dtsi
++++ b/arch/arm/boot/dts/sama5d2.dtsi
+@@ -304,7 +304,7 @@ qspi1: spi@f0024000 {
+ 				status = "disabled";
+ 			};
+ 
+-			sha@f0028000 {
++			sha: crypto@f0028000 {
+ 				compatible = "atmel,at91sam9g46-sha";
+ 				reg = <0xf0028000 0x100>;
+ 				interrupts = <12 IRQ_TYPE_LEVEL_HIGH 0>;
+@@ -317,7 +317,7 @@ sha@f0028000 {
+ 				status = "okay";
+ 			};
+ 
+-			aes@f002c000 {
++			aes: crypto@f002c000 {
+ 				compatible = "atmel,at91sam9g46-aes";
+ 				reg = <0xf002c000 0x100>;
+ 				interrupts = <9 IRQ_TYPE_LEVEL_HIGH 0>;
+@@ -1082,7 +1082,7 @@ pioBU: secumod@fc040000 {
+ 				#gpio-cells = <2>;
+ 			};
+ 
+-			tdes@fc044000 {
++			tdes: crypto@fc044000 {
+ 				compatible = "atmel,at91sam9g46-tdes";
+ 				reg = <0xfc044000 0x100>;
+ 				interrupts = <11 IRQ_TYPE_LEVEL_HIGH 0>;
+diff --git a/arch/arm/boot/dts/sama5d3.dtsi b/arch/arm/boot/dts/sama5d3.dtsi
+index d1841bffe3c5..8fa423c52592 100644
+--- a/arch/arm/boot/dts/sama5d3.dtsi
++++ b/arch/arm/boot/dts/sama5d3.dtsi
+@@ -381,7 +381,7 @@ usart3: serial@f8024000 {
+ 				status = "disabled";
+ 			};
+ 
+-			sha@f8034000 {
++			sha: crypto@f8034000 {
+ 				compatible = "atmel,at91sam9g46-sha";
+ 				reg = <0xf8034000 0x100>;
+ 				interrupts = <42 IRQ_TYPE_LEVEL_HIGH 0>;
+@@ -391,7 +391,7 @@ sha@f8034000 {
+ 				clock-names = "sha_clk";
+ 			};
+ 
+-			aes@f8038000 {
++			aes: crypto@f8038000 {
+ 				compatible = "atmel,at91sam9g46-aes";
+ 				reg = <0xf8038000 0x100>;
+ 				interrupts = <43 IRQ_TYPE_LEVEL_HIGH 0>;
+@@ -402,7 +402,7 @@ aes@f8038000 {
+ 				clock-names = "aes_clk";
+ 			};
+ 
+-			tdes@f803c000 {
++			tdes: crypto@f803c000 {
+ 				compatible = "atmel,at91sam9g46-tdes";
+ 				reg = <0xf803c000 0x100>;
+ 				interrupts = <44 IRQ_TYPE_LEVEL_HIGH 0>;
+diff --git a/arch/arm/boot/dts/sama5d4.dtsi b/arch/arm/boot/dts/sama5d4.dtsi
+index f6e3e6f57252..1dff79a29012 100644
+--- a/arch/arm/boot/dts/sama5d4.dtsi
++++ b/arch/arm/boot/dts/sama5d4.dtsi
+@@ -673,7 +673,7 @@ adc0: adc@fc034000 {
+ 				status = "disabled";
+ 			};
+ 
+-			aes@fc044000 {
++			aes: crypto@fc044000 {
+ 				compatible = "atmel,at91sam9g46-aes";
+ 				reg = <0xfc044000 0x100>;
+ 				interrupts = <12 IRQ_TYPE_LEVEL_HIGH 0>;
+@@ -687,7 +687,7 @@ aes@fc044000 {
+ 				status = "okay";
+ 			};
+ 
+-			tdes@fc04c000 {
++			tdes: crypto@fc04c000 {
+ 				compatible = "atmel,at91sam9g46-tdes";
+ 				reg = <0xfc04c000 0x100>;
+ 				interrupts = <14 IRQ_TYPE_LEVEL_HIGH 0>;
+@@ -701,7 +701,7 @@ tdes@fc04c000 {
+ 				status = "okay";
+ 			};
+ 
+-			sha@fc050000 {
++			sha: crypto@fc050000 {
+ 				compatible = "atmel,at91sam9g46-sha";
+ 				reg = <0xfc050000 0x100>;
+ 				interrupts = <15 IRQ_TYPE_LEVEL_HIGH 0>;
+-- 
+2.34.1
+

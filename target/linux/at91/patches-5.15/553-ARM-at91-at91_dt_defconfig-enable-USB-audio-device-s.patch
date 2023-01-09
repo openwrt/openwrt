@@ -1,0 +1,26 @@
+From 54c8c1fbdcf07a32ad8dc0f181565d5d84ce0dc2 Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Mon, 7 Jun 2021 17:08:05 +0300
+Subject: [PATCH 444/471] ARM: at91: at91_dt_defconfig: enable USB audio device
+ support
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index bb18bbe712ae..b53f916e8cff 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -148,6 +148,7 @@ CONFIG_BACKLIGHT_ATMEL_LCDC=y
+ CONFIG_BACKLIGHT_PWM=y
+ CONFIG_SOUND=y
+ CONFIG_SND=y
++CONFIG_SND_USB_AUDIO=y
+ CONFIG_SND_SOC=y
+ CONFIG_SND_ATMEL_SOC=y
+ CONFIG_SND_AT91_SOC_SAM9G20_WM8731=y
+-- 
+2.34.1
+

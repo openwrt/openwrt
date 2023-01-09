@@ -1,0 +1,30 @@
+From 0b511c897fd1e1e47a43e3552894113f62cc885e Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Tue, 5 Apr 2022 13:32:54 +0300
+Subject: [PATCH 375/471] ARM: dts: at91: sama7g5ek: fix sound card model
+
+The card model is 'sama7g5 EK', not 'sama5g7 EK'.
+
+Fixes: 9315a2802ce6 ("ARM: dts: at91: sama7g5ek: add node for Microchip's ASRC card")
+Reported-by: Eugen Hristev <eugen.hristev@microchip.com>
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/boot/dts/at91-sama7g5ek.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
+index 6399facfda06..fb101e3e370a 100644
+--- a/arch/arm/boot/dts/at91-sama7g5ek.dts
++++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
+@@ -95,7 +95,7 @@ sound: sound {
+ 		assigned-clocks = <&pmc PMC_TYPE_CORE PMC_AUDIOPMCPLL>;
+ 		assigned-clock-rates = <196608000>;
+ 		compatible = "microchip,asrc-card";
+-		microchip,model = "mchp-asrc-card @ sama5g7 EK";
++		microchip,model = "mchp-asrc-card @ sama7g5 EK";
+ 		status = "okay";
+ 
+ 		microchip,audio-asrc = <&asrc 0>, <&asrc 1>, <&asrc 2>, <&asrc 3>;
+-- 
+2.34.1
+

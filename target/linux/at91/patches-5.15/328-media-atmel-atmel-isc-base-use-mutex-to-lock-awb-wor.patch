@@ -1,0 +1,142 @@
+From 4d5eb0efbc5761a9e9000a6f0c261d104e3f6f0f Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Tue, 19 Oct 2021 17:03:30 +0300
+Subject: [PATCH 219/471] media: atmel: atmel-isc-base: use mutex to lock awb
+ workqueue from streaming
+
+The AWB workqueue runs in a kernel thread and needs to be synchronized
+w.r.t. the streaming status.
+It is possible that streaming is stopped while the AWB workq is running.
+In this case it is likely that the check for vb2_start_streaming_called is done
+at one point in time, but the AWB computations are done later, including a call
+to isc_update_profile, which requires streaming to be started.
+Thus , isc_update_profile will fail if during this operation sequence the
+streaming was stopped.
+To solve this issue, a mutex is added, that will serialize the awb work and
+streaming stopping, with the mention that either streaming is stopped
+completely including termination of the last frame is done, and after that
+the AWB work can check stream status and stop; either first AWB work is
+completed and after that the streaming can stop correctly.
+The awb spin lock cannot be used since this spinlock is taken in the same
+context and using it in the stop streaming will result in a recursion BUG.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo@jmondi.org>
+---
+ drivers/media/platform/atmel/atmel-isc-base.c | 29 ++++++++++++++++---
+ drivers/media/platform/atmel/atmel-isc.h      |  2 ++
+ 2 files changed, 27 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
+index b16b807c6cea..9bf818935aaf 100644
+--- a/drivers/media/platform/atmel/atmel-isc-base.c
++++ b/drivers/media/platform/atmel/atmel-isc-base.c
+@@ -401,6 +401,7 @@ static void isc_stop_streaming(struct vb2_queue *vq)
+ 	struct isc_buffer *buf;
+ 	int ret;
+ 
++	mutex_lock(&isc->awb_mutex);
+ 	v4l2_ctrl_activate(isc->do_wb_ctrl, false);
+ 
+ 	isc->stop = true;
+@@ -410,6 +411,8 @@ static void isc_stop_streaming(struct vb2_queue *vq)
+ 		v4l2_err(&isc->v4l2_dev,
+ 			 "Timeout waiting for end of the capture\n");
+ 
++	mutex_unlock(&isc->awb_mutex);
++
+ 	/* Disable DMA interrupt */
+ 	regmap_write(isc->regmap, ISC_INTDIS, ISC_INT_DDONE);
+ 
+@@ -1397,10 +1400,6 @@ static void isc_awb_work(struct work_struct *w)
+ 	u32 min, max;
+ 	int ret;
+ 
+-	/* streaming is not active anymore */
+-	if (isc->stop)
+-		return;
+-
+ 	if (ctrls->hist_stat != HIST_ENABLED)
+ 		return;
+ 
+@@ -1455,7 +1454,24 @@ static void isc_awb_work(struct work_struct *w)
+ 	}
+ 	regmap_write(regmap, ISC_HIS_CFG + isc->offsets.his,
+ 		     hist_id | baysel | ISC_HIS_CFG_RAR);
++
++	/*
++	 * We have to make sure the streaming has not stopped meanwhile.
++	 * ISC requires a frame to clock the internal profile update.
++	 * To avoid issues, lock the sequence with a mutex
++	 */
++	mutex_lock(&isc->awb_mutex);
++
++	/* streaming is not active anymore */
++	if (isc->stop) {
++		mutex_unlock(&isc->awb_mutex);
++		return;
++	};
++
+ 	isc_update_profile(isc);
++
++	mutex_unlock(&isc->awb_mutex);
++
+ 	/* if awb has been disabled, we don't need to start another histogram */
+ 	if (ctrls->awb)
+ 		regmap_write(regmap, ISC_CTRLEN, ISC_CTRL_HISREQ);
+@@ -1548,6 +1564,7 @@ static int isc_s_awb_ctrl(struct v4l2_ctrl *ctrl)
+ 			 */
+ 			v4l2_ctrl_activate(isc->do_wb_ctrl, false);
+ 		}
++		mutex_unlock(&isc->awb_mutex);
+ 
+ 		/* if we have autowhitebalance on, start histogram procedure */
+ 		if (ctrls->awb == ISC_WB_AUTO &&
+@@ -1740,6 +1757,7 @@ static void isc_async_unbind(struct v4l2_async_notifier *notifier,
+ {
+ 	struct isc_device *isc = container_of(notifier->v4l2_dev,
+ 					      struct isc_device, v4l2_dev);
++	mutex_destroy(&isc->awb_mutex);
+ 	cancel_work_sync(&isc->awb_work);
+ 	video_unregister_device(&isc->video_dev);
+ 	v4l2_ctrl_handler_free(&isc->ctrls.handler);
+@@ -1850,6 +1868,8 @@ static int isc_async_complete(struct v4l2_async_notifier *notifier)
+ 	isc->current_subdev = container_of(notifier,
+ 					   struct isc_subdev_entity, notifier);
+ 	mutex_init(&isc->lock);
++	mutex_init(&isc->awb_mutex);
++
+ 	init_completion(&isc->comp);
+ 
+ 	/* Initialize videobuf2 queue */
+@@ -1930,6 +1950,7 @@ static int isc_async_complete(struct v4l2_async_notifier *notifier)
+ 	video_unregister_device(vdev);
+ 
+ isc_async_complete_err:
++	mutex_destroy(&isc->awb_mutex);
+ 	mutex_destroy(&isc->lock);
+ 	return ret;
+ }
+diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
+index 9cc69c3ae26d..f98f25a55e73 100644
+--- a/drivers/media/platform/atmel/atmel-isc.h
++++ b/drivers/media/platform/atmel/atmel-isc.h
+@@ -229,6 +229,7 @@ enum isc_scaler_pads {
+  *
+  * @lock:		lock for serializing userspace file operations
+  *			with ISC operations
++ * @awb_mutex:		serialize access to streaming status from awb work queue
+  * @awb_lock:		lock for serializing awb work queue operations
+  *			with DMA/buffer operations
+  *
+@@ -307,6 +308,7 @@ struct isc_device {
+ 	struct work_struct	awb_work;
+ 
+ 	struct mutex		lock;
++	struct mutex		awb_mutex;
+ 	spinlock_t		awb_lock;
+ 
+ 	struct regmap_field	*pipeline[ISC_PIPE_LINE_NODE_NUM];
+-- 
+2.34.1
+

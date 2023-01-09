@@ -1,0 +1,28 @@
+From f7f7a5e544dc2d16534408894270efba80324d7e Mon Sep 17 00:00:00 2001
+From: Nicolas Ferre <nicolas.ferre@microchip.com>
+Date: Thu, 27 Apr 2017 15:26:51 +0200
+Subject: [PATCH 438/471] ARM: at91/defconfig: remove at91 cpuidle
+
+Remove the use of AT91 CPUIDLE as it behaves badly with Ethernet benchmarks and
+can lock the network interface.
+
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index 7d92b11d867a..36d4b2b32dcc 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -23,6 +23,7 @@ CONFIG_UACCESS_WITH_MEMCPY=y
+ CONFIG_CMDLINE="console=ttyS0,115200 initrd=0x21100000,25165824 root=/dev/ram0 rw"
+ CONFIG_KEXEC=y
+ CONFIG_CPU_IDLE=y
++# CONFIG_ARM_AT91_CPUIDLE is not set
+ CONFIG_PM_DEBUG=y
+ CONFIG_PM_ADVANCED_DEBUG=y
+ CONFIG_MODULES=y
+-- 
+2.34.1
+

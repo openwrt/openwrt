@@ -1,0 +1,33 @@
+From de5a15965f90376760dc1ae6c3b0962a54bb2f4d Mon Sep 17 00:00:00 2001
+From: Balamanikandan Gunasundar <balamanikandan.gunasundar@microchip.com>
+Date: Tue, 6 Sep 2022 14:16:19 +0530
+Subject: [PATCH 469/471] ARM: configs: at91: Enable csi and isc support
+
+Enable CSI, ISC and IMX219 camera sensor support for image capture
+pipeline.
+
+Signed-off-by: Balamanikandan Gunasundar <balamanikandan.gunasundar@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index 0c5d3fe62f08..630695befc95 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -139,7 +139,12 @@ CONFIG_MEDIA_PLATFORM_SUPPORT=y
+ CONFIG_MEDIA_USB_SUPPORT=y
+ CONFIG_USB_VIDEO_CLASS=m
+ CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_VIDEO_ATMEL_XISC=y
+ CONFIG_VIDEO_ATMEL_ISI=y
++CONFIG_VIDEO_MICROCHIP_CSI2DC=y
++CONFIG_DWC_MIPI_CSI2_HOST=m
++CONFIG_DWC_MIPI_DPHY_GEN3=m
++CONFIG_VIDEO_IMX219=m
+ CONFIG_VIDEO_OV2640=m
+ CONFIG_VIDEO_OV7740=m
+ CONFIG_VIDEO_MT9V032=m
+-- 
+2.34.1
+

@@ -1,0 +1,103 @@
+From 597bc26e58d915966823f9026d48079a2e32d371 Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Mon, 21 Mar 2022 21:15:35 +0530
+Subject: [PATCH 283/471] ARM: at91: pm: add support for sam9x7 soc family
+
+Add support and pm init config for sam9x7 soc
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ arch/arm/mach-at91/generic.h |  2 ++
+ arch/arm/mach-at91/pm.c      | 35 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 37 insertions(+)
+
+diff --git a/arch/arm/mach-at91/generic.h b/arch/arm/mach-at91/generic.h
+index 0c3960a8b3eb..acf0b3c82a30 100644
+--- a/arch/arm/mach-at91/generic.h
++++ b/arch/arm/mach-at91/generic.h
+@@ -12,6 +12,7 @@
+ extern void __init at91rm9200_pm_init(void);
+ extern void __init at91sam9_pm_init(void);
+ extern void __init sam9x60_pm_init(void);
++extern void __init sam9x7_pm_init(void);
+ extern void __init sama5_pm_init(void);
+ extern void __init sama5d2_pm_init(void);
+ extern void __init sama7_pm_init(void);
+@@ -19,6 +20,7 @@ extern void __init sama7_pm_init(void);
+ static inline void __init at91rm9200_pm_init(void) { }
+ static inline void __init at91sam9_pm_init(void) { }
+ static inline void __init sam9x60_pm_init(void) { }
++static inline void __init sam9x7_pm_init(void) { }
+ static inline void __init sama5_pm_init(void) { }
+ static inline void __init sama5d2_pm_init(void) { }
+ static inline void __init sama7_pm_init(void) { }
+diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
+index 518aecb3a6d3..7d734995b63a 100644
+--- a/arch/arm/mach-at91/pm.c
++++ b/arch/arm/mach-at91/pm.c
+@@ -232,6 +232,17 @@ static const struct of_device_id sama7g5_ws_ids[] = {
+ 	{ /* sentinel */ }
+ };
+ 
++static const struct of_device_id sam9x7_ws_ids[] = {
++	{ .compatible = "microchip,sam9x60-rtc",	.data = &ws_info[1] },
++	{ .compatible = "atmel,at91rm9200-ohci",	.data = &ws_info[2] },
++	{ .compatible = "usb-ohci",			.data = &ws_info[2] },
++	{ .compatible = "atmel,at91sam9g45-ehci",	.data = &ws_info[2] },
++	{ .compatible = "usb-ehci",			.data = &ws_info[2] },
++	{ .compatible = "microchip,sam9x60-rtt",	.data = &ws_info[4] },
++	{ .compatible = "microchip,sam9x7-gem",		.data = &ws_info[5] },
++	{ /* sentinel */ }
++};
++
+ static int at91_pm_device_in_list(const struct platform_device *pdev,
+ 				  const struct of_device_id *ids)
+ {
+@@ -1149,6 +1160,7 @@ static const struct of_device_id gmac_ids[] __initconst = {
+ 	{ .compatible = "atmel,sama5d2-gem" },
+ 	{ .compatible = "atmel,sama5d29-gem" },
+ 	{ .compatible = "microchip,sama7g5-gem" },
++	{ .compatible = "microchip,sam9x7-gem" },
+ 	{ },
+ };
+ 
+@@ -1379,6 +1391,7 @@ static const struct of_device_id atmel_pmc_ids[] __initconst = {
+ 	{ .compatible = "atmel,sama5d2-pmc", .data = &pmc_infos[1] },
+ 	{ .compatible = "microchip,sam9x60-pmc", .data = &pmc_infos[4] },
+ 	{ .compatible = "microchip,sama7g5-pmc", .data = &pmc_infos[5] },
++	{ .compatible = "microchip,sam9x7-pmc", .data = &pmc_infos[4] },
+ 	{ /* sentinel */ },
+ };
+ 
+@@ -1516,6 +1529,28 @@ void __init sam9x60_pm_init(void)
+ 	soc_pm.config_pmc_ws = at91_sam9x60_config_pmc_ws;
+ }
+ 
++void __init sam9x7_pm_init(void)
++{
++	static const int modes[] __initconst = {
++		AT91_PM_STANDBY, AT91_PM_ULP0,
++	};
++
++	int ret;
++
++	if (!IS_ENABLED(CONFIG_SOC_SAM9X7))
++		return;
++
++	at91_pm_modes_validate(modes, ARRAY_SIZE(modes));
++	ret = at91_dt_ramc(false);
++	if (ret)
++		return;
++
++	at91_pm_init(NULL);
++
++	soc_pm.ws_ids = sam9x7_ws_ids;
++	soc_pm.config_pmc_ws = at91_sam9x60_config_pmc_ws;
++}
++
+ void __init at91sam9_pm_init(void)
+ {
+ 	int ret;
+-- 
+2.34.1
+

@@ -1,0 +1,53 @@
+From e645869b6a67f4a561ad58ef2d227f52dabd4d67 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo@jmondi.org>
+Date: Thu, 24 Feb 2022 10:42:57 +0100
+Subject: [PATCH 179/471] media: ov5640: Provide timings accessor
+
+Provide a function to shortcut access to the correct timings definition
+to avoid repeating the same pattern when accessing the sensor timings.
+
+Signed-off-by: Jacopo Mondi <jacopo@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+(cherry picked from commit 07e399112864d771a353605403d537f3bb2c6f45)
+---
+ drivers/media/i2c/ov5640.c | 16 +++++++++++-----
+ 1 file changed, 11 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/media/i2c/ov5640.c b/drivers/media/i2c/ov5640.c
+index d781fe9a66ca..afad6fac5c40 100644
+--- a/drivers/media/i2c/ov5640.c
++++ b/drivers/media/i2c/ov5640.c
+@@ -1121,6 +1121,16 @@ static const struct ov5640_mode_info ov5640_mode_data[OV5640_NUM_MODES] = {
+ 	},
+ };
+ 
++static const struct ov5640_timings *
++ov5640_timings(const struct ov5640_dev *sensor,
++	       const struct ov5640_mode_info *mode)
++{
++	if (ov5640_is_csi2(sensor))
++		return &mode->csi2_timings;
++
++	return &mode->dvp_timings;
++}
++
+ static int ov5640_init_slave_id(struct ov5640_dev *sensor)
+ {
+ 	struct i2c_client *client = sensor->i2c_client;
+@@ -1629,11 +1639,7 @@ static int ov5640_set_timings(struct ov5640_dev *sensor,
+ 			return ret;
+ 	}
+ 
+-	if (ov5640_is_csi2(sensor))
+-		timings = &mode->csi2_timings;
+-	else
+-		timings = &mode->dvp_timings;
+-
++	timings = ov5640_timings(sensor, mode);
+ 	analog_crop = &timings->analog_crop;
+ 	crop = &timings->crop;
+ 
+-- 
+2.34.1
+

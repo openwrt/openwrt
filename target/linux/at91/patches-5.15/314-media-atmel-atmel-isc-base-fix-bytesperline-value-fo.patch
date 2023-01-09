@@ -1,0 +1,172 @@
+From 63a2d4a57fb065fc2e775af5af2f254ac90bc866 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 13 Dec 2021 14:49:28 +0100
+Subject: [PATCH 205/471] media: atmel: atmel-isc-base: fix bytesperline value
+ for planar formats
+
+The bytesperline field of the pixfmt should be only for the first plane
+in case of planar formats like YUV420 or YUV422.
+The bytesperline is used by the driver to compute the framesize.
+We have to report a different bpp (bytes per pixel) to v4l2 in bytesperline
+than the actual bpp.
+For example for YUV420, the real bpp is 12, but the first plane has only
+8 bpp. Thus we report a bytesperline 8*width instead of 12*width.
+However, for real framezise we have to compute 12*width*height.
+Hence added a new variable to hold this information and to correctly
+compute the frame size.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo@jmondi.org>
+Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>
+(cherry picked from commit 9780baa06992f59636b6a9d36025269eef4e0c18)
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/atmel/atmel-isc-base.c | 19 +++++++++++++++++--
+ drivers/media/platform/atmel/atmel-isc.h      |  4 ++++
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
+index 9dd207f9476c..ab01e3c972f8 100644
+--- a/drivers/media/platform/atmel/atmel-isc-base.c
++++ b/drivers/media/platform/atmel/atmel-isc-base.c
+@@ -912,6 +912,7 @@ static int isc_try_configure_rlp_dma(struct isc_device *isc, bool direct_dump)
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED8;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 8;
++		isc->try_config.bpp_v4l2 = 8;
+ 		break;
+ 	case V4L2_PIX_FMT_SBGGR10:
+ 	case V4L2_PIX_FMT_SGBRG10:
+@@ -921,6 +922,7 @@ static int isc_try_configure_rlp_dma(struct isc_device *isc, bool direct_dump)
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED16;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 16;
++		isc->try_config.bpp_v4l2 = 16;
+ 		break;
+ 	case V4L2_PIX_FMT_SBGGR12:
+ 	case V4L2_PIX_FMT_SGBRG12:
+@@ -930,24 +932,28 @@ static int isc_try_configure_rlp_dma(struct isc_device *isc, bool direct_dump)
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED16;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 16;
++		isc->try_config.bpp_v4l2 = 16;
+ 		break;
+ 	case V4L2_PIX_FMT_RGB565:
+ 		isc->try_config.rlp_cfg_mode = ISC_RLP_CFG_MODE_RGB565;
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED16;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 16;
++		isc->try_config.bpp_v4l2 = 16;
+ 		break;
+ 	case V4L2_PIX_FMT_ARGB444:
+ 		isc->try_config.rlp_cfg_mode = ISC_RLP_CFG_MODE_ARGB444;
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED16;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 16;
++		isc->try_config.bpp_v4l2 = 16;
+ 		break;
+ 	case V4L2_PIX_FMT_ARGB555:
+ 		isc->try_config.rlp_cfg_mode = ISC_RLP_CFG_MODE_ARGB555;
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED16;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 16;
++		isc->try_config.bpp_v4l2 = 16;
+ 		break;
+ 	case V4L2_PIX_FMT_ABGR32:
+ 	case V4L2_PIX_FMT_XBGR32:
+@@ -955,42 +961,49 @@ static int isc_try_configure_rlp_dma(struct isc_device *isc, bool direct_dump)
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED32;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 32;
++		isc->try_config.bpp_v4l2 = 32;
+ 		break;
+ 	case V4L2_PIX_FMT_YUV420:
+ 		isc->try_config.rlp_cfg_mode = ISC_RLP_CFG_MODE_YYCC;
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_YC420P;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PLANAR;
+ 		isc->try_config.bpp = 12;
++		isc->try_config.bpp_v4l2 = 8; /* only first plane */
+ 		break;
+ 	case V4L2_PIX_FMT_YUV422P:
+ 		isc->try_config.rlp_cfg_mode = ISC_RLP_CFG_MODE_YYCC;
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_YC422P;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PLANAR;
+ 		isc->try_config.bpp = 16;
++		isc->try_config.bpp_v4l2 = 8; /* only first plane */
+ 		break;
+ 	case V4L2_PIX_FMT_YUYV:
+ 		isc->try_config.rlp_cfg_mode = ISC_RLP_CFG_MODE_YCYC | ISC_RLP_CFG_YMODE_YUYV;
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED32;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 16;
++		isc->try_config.bpp_v4l2 = 16;
+ 		break;
+ 	case V4L2_PIX_FMT_UYVY:
+ 		isc->try_config.rlp_cfg_mode = ISC_RLP_CFG_MODE_YCYC | ISC_RLP_CFG_YMODE_UYVY;
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED32;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 16;
++		isc->try_config.bpp_v4l2 = 16;
+ 		break;
+ 	case V4L2_PIX_FMT_VYUY:
+ 		isc->try_config.rlp_cfg_mode = ISC_RLP_CFG_MODE_YCYC | ISC_RLP_CFG_YMODE_VYUY;
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED32;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 16;
++		isc->try_config.bpp_v4l2 = 16;
+ 		break;
+ 	case V4L2_PIX_FMT_GREY:
+ 		isc->try_config.rlp_cfg_mode = ISC_RLP_CFG_MODE_DATY8;
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED8;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 8;
++		isc->try_config.bpp_v4l2 = 8;
+ 		break;
+ 	case V4L2_PIX_FMT_Y16:
+ 		isc->try_config.rlp_cfg_mode = ISC_RLP_CFG_MODE_DATY10 | ISC_RLP_CFG_LSH;
+@@ -1000,6 +1013,7 @@ static int isc_try_configure_rlp_dma(struct isc_device *isc, bool direct_dump)
+ 		isc->try_config.dcfg_imode = ISC_DCFG_IMODE_PACKED16;
+ 		isc->try_config.dctrl_dview = ISC_DCTRL_DVIEW_PACKED;
+ 		isc->try_config.bpp = 16;
++		isc->try_config.bpp_v4l2 = 16;
+ 		break;
+ 	default:
+ 		return -EINVAL;
+@@ -1248,8 +1262,9 @@ static int isc_try_fmt(struct isc_device *isc, struct v4l2_format *f,
+ 		pixfmt->height = isc->max_height;
+ 
+ 	pixfmt->field = V4L2_FIELD_NONE;
+-	pixfmt->bytesperline = (pixfmt->width * isc->try_config.bpp) >> 3;
+-	pixfmt->sizeimage = pixfmt->bytesperline * pixfmt->height;
++	pixfmt->bytesperline = (pixfmt->width * isc->try_config.bpp_v4l2) >> 3;
++	pixfmt->sizeimage = ((pixfmt->width * isc->try_config.bpp) >> 3) *
++			     pixfmt->height;
+ 
+ 	if (code)
+ 		*code = mbus_code;
+diff --git a/drivers/media/platform/atmel/atmel-isc.h b/drivers/media/platform/atmel/atmel-isc.h
+index 2bfcb135ef13..dd45e9ca22a9 100644
+--- a/drivers/media/platform/atmel/atmel-isc.h
++++ b/drivers/media/platform/atmel/atmel-isc.h
+@@ -95,6 +95,9 @@ struct isc_format {
+ 			configuration.
+  * @fourcc:		Fourcc code for this format.
+  * @bpp:		Bytes per pixel in the current format.
++ * @bpp_v4l2:		Bytes per pixel in the current format, for v4l2.
++			This differs from 'bpp' in the sense that in planar
++			formats, it refers only to the first plane.
+  * @rlp_cfg_mode:	Configuration of the RLP (rounding, limiting packaging)
+  * @dcfg_imode:		Configuration of the input of the DMA module
+  * @dctrl_dview:	Configuration of the output of the DMA module
+@@ -105,6 +108,7 @@ struct fmt_config {
+ 
+ 	u32			fourcc;
+ 	u8			bpp;
++	u8			bpp_v4l2;
+ 
+ 	u32			rlp_cfg_mode;
+ 	u32			dcfg_imode;
+-- 
+2.34.1
+

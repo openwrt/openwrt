@@ -1,0 +1,55 @@
+From 87c3a80beb72fe767a1d1b1c7a900717a1d94e10 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 10 Jun 2022 12:24:13 +0300
+Subject: [PATCH 295/471] power: reset: at91-reset: add support for SAMA7G5
+
+Add support for SAMA7G5 including reset_controller_dev support for 3 lines
+(which are USB PHYs).
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+---
+ drivers/power/reset/at91-reset.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/drivers/power/reset/at91-reset.c b/drivers/power/reset/at91-reset.c
+index bc9f1d9e7867..741e44a017c3 100644
+--- a/drivers/power/reset/at91-reset.c
++++ b/drivers/power/reset/at91-reset.c
+@@ -22,6 +22,8 @@
+ #include <soc/at91/at91sam9_ddrsdr.h>
+ #include <soc/at91/at91sam9_sdramc.h>
+ 
++#include <dt-bindings/reset/sama7g5-reset.h>
++
+ #define AT91_RSTC_CR	0x00		/* Reset Controller Control Register */
+ #define AT91_RSTC_PROCRST	BIT(0)		/* Processor Reset */
+ #define AT91_RSTC_PERRST	BIT(2)		/* Peripheral Reset */
+@@ -206,6 +208,13 @@ static const struct at91_reset_data samx7 = {
+ 	.reset_args = AT91_RSTC_KEY | AT91_RSTC_PROCRST,
+ };
+ 
++static const struct at91_reset_data sama7g5 = {
++	.reset_args = AT91_RSTC_KEY | AT91_RSTC_PROCRST,
++	.n_device_reset = 3,
++	.device_reset_min_id = SAMA7G5_RESET_USB_PHY1,
++	.device_reset_max_id = SAMA7G5_RESET_USB_PHY3,
++};
++
+ static const struct of_device_id at91_reset_of_match[] = {
+ 	{
+ 		.compatible = "atmel,at91sam9260-rstc",
+@@ -227,6 +236,10 @@ static const struct of_device_id at91_reset_of_match[] = {
+ 		.compatible = "microchip,sam9x60-rstc",
+ 		.data = &samx7,
+ 	},
++	{
++		.compatible = "microchip,sama7g5-rstc",
++		.data = &sama7g5,
++	},
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, at91_reset_of_match);
+-- 
+2.34.1
+

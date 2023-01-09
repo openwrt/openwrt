@@ -1,0 +1,184 @@
+From 05eda397407fb7c72cdad136126af061f5b7047f Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Fri, 19 Nov 2021 13:04:31 +0200
+Subject: [PATCH 202/471] media: i2c: imx274: implement 2 lanes support
+
+Implement 2 lanes support for imx274.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/i2c/imx274.c | 80 ++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 76 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/media/i2c/imx274.c b/drivers/media/i2c/imx274.c
+index 2aa15b9c23cc..f5c4876723a4 100644
+--- a/drivers/media/i2c/imx274.c
++++ b/drivers/media/i2c/imx274.c
+@@ -175,6 +175,8 @@ static const struct regmap_config imx274_regmap_config = {
+  */
+ struct imx274_mode {
+ 	const struct reg_8 *init_regs;
++	const struct reg_8 *pre_init_regs;
++	const struct reg_8 *post_init_regs;
+ 	u8 wbin_ratio;
+ 	u8 hbin_ratio;
+ 	int min_frame_len;
+@@ -218,6 +220,49 @@ static const char * const tp_qmenu[] = {
+ 	"Horizontal Color Bars",
+ };
+ 
++static const struct reg_8 imx274_pre_init[] = {
++	{0x3134,0x77},  /* tclk_post      */
++	{0x3135,0x00},  /* tclk_post      */
++	{0x3136,0x67},  /* ths_zero_min   */
++	{0x3137,0x00},  /* ths_zero_min   */
++	{0x3138,0x37},  /* ths_prepare    */
++	{0x3139,0x00},  /* ths_prepare    */
++	{0x313a,0x37},  /* tck_trail_min  */
++	{0x313b,0x00},  /* tck_trail_min  */
++	{0x313c,0x37},  /* ths_trail      */
++	{0x313d,0x00},  /* ths_trail      */
++	{0x313e,0xDF},  /* tclk_zero      */
++	{0x313f,0x00},  /* tclk_zero      */
++	{0x3140,0x37},  /* tclk_prepare   */
++	{0x3141,0x00},  /* tclk_prepare   */
++	{0x3142,0x2F},  /* tlpx           */
++	{0x3143,0x00},  /* tlpx           */
++	{0x3144,0x0F},  /* tclk_pre       */
++	{0x3145,0x00},  /* tclk_pre       */
++	{0x3A86,0x47},  /* ths_exit       */
++	{0x3A87,0x00},  /* ths_exit       */
++	{0x3a54,0x18},  /* for CUE        */
++	{0x3a55,0x0f},  /* for CUE        */
++
++
++	{0x3000,0x00},  /* StandBy        */
++	{IMX274_TABLE_WAIT_MS, 100},
++	{0x30E2, 0x04}, /* mode setting */
++	{0x3123, 0x01}, /* unknown, but a must ! */
++	{0x3AC4, 0x01}, /* MIPI_HALF_EN */
++
++	{IMX274_TABLE_END, 0x00},
++};
++
++static const struct reg_8 imx274_post_init[] = {
++	{0x312E,0x01},  /* CSI_LANE_MODE       */
++	{0x3AA2,0x01},  /* PHYSICAL_LANE_NUM   */
++
++	{0x300E,0x01}, /* SVR			*/
++	{0x3A43,0x00}, /* LP Disable		*/
++	{IMX274_TABLE_END, 0x00},
++};
++
+ /*
+  * All-pixel scan mode (10-bit)
+  * imx274 mode1(refer to datasheet) register configuration with
+@@ -495,6 +540,8 @@ static const struct imx274_mode imx274_modes[] = {
+ 		.wbin_ratio = 1, /* 3840 */
+ 		.hbin_ratio = 1, /* 2160 */
+ 		.init_regs = imx274_mode1_3840x2160_raw10,
++		.pre_init_regs = imx274_pre_init,
++		.post_init_regs = imx274_post_init,
+ 		.min_frame_len = 4550,
+ 		.min_SHR = 12,
+ 		.max_fps = 60,
+@@ -505,6 +552,8 @@ static const struct imx274_mode imx274_modes[] = {
+ 		.wbin_ratio = 2, /* 1920 */
+ 		.hbin_ratio = 2, /* 1080 */
+ 		.init_regs = imx274_mode3_1920x1080_raw10,
++		.pre_init_regs = imx274_pre_init,
++		.post_init_regs = imx274_post_init,
+ 		.min_frame_len = 2310,
+ 		.min_SHR = 8,
+ 		.max_fps = 120,
+@@ -515,6 +564,8 @@ static const struct imx274_mode imx274_modes[] = {
+ 		.wbin_ratio = 3, /* 1280 */
+ 		.hbin_ratio = 3, /* 720 */
+ 		.init_regs = imx274_mode5_1280x720_raw10,
++		.pre_init_regs = imx274_pre_init,
++		.post_init_regs = imx274_post_init,
+ 		.min_frame_len = 2310,
+ 		.min_SHR = 8,
+ 		.max_fps = 120,
+@@ -525,6 +576,8 @@ static const struct imx274_mode imx274_modes[] = {
+ 		.wbin_ratio = 3, /* 1280 */
+ 		.hbin_ratio = 4, /* 540 */
+ 		.init_regs = imx274_mode6_1280x540_raw10,
++		.pre_init_regs = imx274_pre_init,
++		.post_init_regs = imx274_post_init,
+ 		.min_frame_len = 2310,
+ 		.min_SHR = 4,
+ 		.max_fps = 120,
+@@ -580,6 +633,7 @@ struct stimx274 {
+ 	struct clk *inck;
+ 	struct mutex lock; /* mutex lock for operations */
+ 	const struct imx274_mode *mode;
++	u8 nlanes;
+ };
+ 
+ #define IMX274_ROUND(dim, step, flags)			\
+@@ -775,7 +829,19 @@ static int imx274_mode_regs(struct stimx274 *priv)
+ 	if (err)
+ 		return err;
+ 
++	if (priv->nlanes == 2) {
++		err = imx274_write_table(priv, priv->mode->pre_init_regs);
++		if (err)
++			return err;
++	}
++
+ 	err = imx274_write_table(priv, priv->mode->init_regs);
++	if (err)
++		return err;
++
++	if (priv->nlanes == 2) {
++		err = imx274_write_table(priv, priv->mode->post_init_regs);
++	}
+ 
+ 	return err;
+ }
+@@ -1295,6 +1361,10 @@ static int imx274_apply_trimming(struct stimx274 *imx274)
+ 	/* Note: 260 is the minimum HMAX in all implemented modes */
+ 	hmax = max_t(u32, 260, (imx274->crop.width) / 16 + 23);
+ 
++	/* In MIPI Half mode, another hmax must be used */
++	if (imx274->nlanes == 2)
++		hmax = 0x6a8;
++
+ 	/* invert v_pos if VFLIP */
+ 	v_pos = imx274->ctrls.vflip->cur.val ?
+ 		(-imx274->crop.top / 2) : (imx274->crop.top / 2);
+@@ -1958,7 +2028,7 @@ static const struct i2c_device_id imx274_id[] = {
+ };
+ MODULE_DEVICE_TABLE(i2c, imx274_id);
+ 
+-static int imx274_fwnode_parse(struct device *dev)
++static int imx274_fwnode_parse(struct stimx274 *imx274, struct device *dev)
+ {
+ 	struct fwnode_handle *endpoint;
+ 	/* Only CSI2 is supported */
+@@ -1983,8 +2053,10 @@ static int imx274_fwnode_parse(struct device *dev)
+ 		return ret;
+ 	}
+ 
+-	/* Check number of data lanes, only 4 lanes supported */
+-	if (ep.bus.mipi_csi2.num_data_lanes != 4) {
++	imx274->nlanes = ep.bus.mipi_csi2.num_data_lanes;
++
++	/* Check number of data lanes, only 4/2 lanes supported */
++	if (imx274->nlanes != 4 && imx274->nlanes != 2) {
+ 		dev_err(dev, "Invalid data lanes: %d\n",
+ 			ep.bus.mipi_csi2.num_data_lanes);
+ 		return -EINVAL;
+@@ -2007,7 +2079,7 @@ static int imx274_probe(struct i2c_client *client)
+ 
+ 	mutex_init(&imx274->lock);
+ 
+-	ret = imx274_fwnode_parse(dev);
++	ret = imx274_fwnode_parse(imx274, dev);
+ 	if (ret)
+ 		return ret;
+ 
+-- 
+2.34.1
+

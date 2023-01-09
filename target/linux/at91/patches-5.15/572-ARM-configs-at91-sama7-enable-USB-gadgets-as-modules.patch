@@ -1,0 +1,37 @@
+From 59a42a20cb86a18f90b60426e296468381a18a80 Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Wed, 20 Apr 2022 20:11:23 +0300
+Subject: [PATCH 463/471] ARM: configs: at91: sama7: enable USB gadgets as
+ modules
+
+Enable USB kernel gadgets as modules and synchronize them with other
+boards.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index ee00726a97b0..37d354e58c3c 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -185,10 +185,14 @@ CONFIG_USB_UAS=y
+ CONFIG_USB_GADGET=y
+ CONFIG_U_SERIAL_CONSOLE=y
+ CONFIG_USB_ATMEL_USBA=m
+-CONFIG_USB_CONFIGFS=y
++CONFIG_USB_CONFIGFS=m
+ CONFIG_USB_CONFIGFS_ACM=y
++CONFIG_USB_CONFIGFS_RNDIS=y
+ CONFIG_USB_CONFIGFS_MASS_STORAGE=y
+ CONFIG_USB_CONFIGFS_F_UVC=y
++CONFIG_USB_ZERO=m
++CONFIG_USB_ETH=m
++CONFIG_USB_MASS_STORAGE=m
+ CONFIG_USB_G_SERIAL=m
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHCI=y
+-- 
+2.34.1
+

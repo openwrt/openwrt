@@ -1,0 +1,29 @@
+From cc01193ea39eb98a5b53c9ac012c36bbfe0cb614 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 25 Mar 2020 12:10:16 +0200
+Subject: [PATCH 440/471] ARM: configs: at91: sama5: enable PCA gpio expander
+ as module
+
+Build NXP PCA953X gpio expander as a module. These are present on some
+sensor extension boards.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ arch/arm/configs/sama5_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/sama5_defconfig b/arch/arm/configs/sama5_defconfig
+index 341cb80dec9b..7d1ea16142d1 100644
+--- a/arch/arm/configs/sama5_defconfig
++++ b/arch/arm/configs/sama5_defconfig
+@@ -170,6 +170,7 @@ CONFIG_SPI_GPIO=y
+ CONFIG_SPI_SPIDEV=m
+ CONFIG_GPIO_SYSFS=y
+ CONFIG_GPIO_SAMA5D2_PIOBU=y
++CONFIG_GPIO_PCA953X=m
+ CONFIG_POWER_RESET=y
+ CONFIG_POWER_SUPPLY=y
+ CONFIG_BATTERY_ACT8945A=y
+-- 
+2.34.1
+

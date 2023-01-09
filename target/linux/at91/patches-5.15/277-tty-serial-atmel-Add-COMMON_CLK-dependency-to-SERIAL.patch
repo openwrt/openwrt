@@ -1,0 +1,38 @@
+From 5813bc8d3ab281440679a295f7df29914cca37d2 Mon Sep 17 00:00:00 2001
+From: Sergiu Moga <sergiu.moga@microchip.com>
+Date: Mon, 26 Sep 2022 16:38:00 +0300
+Subject: [PATCH 168/471] tty: serial: atmel: Add COMMON_CLK dependency to
+ SERIAL_ATMEL
+
+Now that the driver makes use of `__clk_is_enabled()` in order to
+know whether a `clk_disable_unprepare()` is needed or not on the
+GCLK, a new dependency has been introduced: COMMON_CLK. If this
+`CONFIG_COMMON_CLK` is not enabled, whatever config may have this
+driver enabled without COMMON_CLK then an undefined reference to
+`__clk_is_enabled()` will be issued by the linker.
+
+Thus, make sure that, unless `CONFIG_COMMON_CLK` is enabled, this
+driver is not compiled.
+
+Fixes: 5e3ce1f26129 ("tty: serial: atmel: Make the driver aware of the existence of GCLK")
+Reported-by: kernel test robot <lkp@intel.com>
+Signed-off-by: Sergiu Moga <sergiu.moga@microchip.com>
+---
+ drivers/tty/serial/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/tty/serial/Kconfig b/drivers/tty/serial/Kconfig
+index 088f0741f74d..ba568393b727 100644
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -127,6 +127,7 @@ config SERIAL_SB1250_DUART_CONSOLE
+ 
+ config SERIAL_ATMEL
+ 	bool "AT91 on-chip serial port support"
++	depends on COMMON_CLK
+ 	depends on ARCH_AT91 || COMPILE_TEST
+ 	select SERIAL_CORE
+ 	select SERIAL_MCTRL_GPIO if GPIOLIB
+-- 
+2.34.1
+

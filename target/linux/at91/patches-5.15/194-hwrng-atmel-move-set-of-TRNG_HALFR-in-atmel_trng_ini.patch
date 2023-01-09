@@ -1,0 +1,135 @@
+From 24285535d724da0c5a5deac9fba030e3760643c0 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 21 Feb 2022 09:59:25 +0200
+Subject: [PATCH 085/471] hwrng: atmel - move set of TRNG_HALFR in
+ atmel_trng_init()
+
+Move set of TRNG_HALFR in atmel_trng_init() as this function is
+also called on resume path. In case of SAMA7G5 where backup and
+self-refresh PM mode is available most of the SoC parts are
+powered of (including TRNG) when entering suspend. In that case
+on resuming path TRNG_HALFR should also be re-configured.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/char/hw_random/atmel-rng.c | 49 +++++++++++++++---------------
+ 1 file changed, 25 insertions(+), 24 deletions(-)
+
+diff --git a/drivers/char/hw_random/atmel-rng.c b/drivers/char/hw_random/atmel-rng.c
+index 17f02049c112..ef49dbe681cf 100644
+--- a/drivers/char/hw_random/atmel-rng.c
++++ b/drivers/char/hw_random/atmel-rng.c
+@@ -36,6 +36,7 @@ struct atmel_trng {
+ 	struct clk *clk;
+ 	void __iomem *base;
+ 	struct hwrng rng;
++	bool has_half_rate;
+ };
+ 
+ static bool atmel_trng_wait_ready(struct atmel_trng *trng, bool wait)
+@@ -74,14 +75,32 @@ static int atmel_trng_read(struct hwrng *rng, void *buf, size_t max,
+ 	return ret;
+ }
+ 
+-static void atmel_trng_init(struct atmel_trng *trng)
++static int atmel_trng_init(struct atmel_trng *trng)
+ {
++	unsigned long rate;
++	int ret;
++
++	ret = clk_prepare_enable(trng->clk);
++	if (ret)
++		return ret;
++
++	if (trng->has_half_rate) {
++		rate = clk_get_rate(trng->clk);
++
++		/* if peripheral clk is above 100MHz, set HALFR */
++		if (rate > 100000000)
++			writel(TRNG_HALFR, trng->base + TRNG_MR);
++	}
++
+ 	writel(TRNG_KEY | 1, trng->base + TRNG_CR);
++
++	return 0;
+ }
+ 
+ static void atmel_trng_cleanup(struct atmel_trng *trng)
+ {
+ 	writel(TRNG_KEY, trng->base + TRNG_CR);
++	clk_disable_unprepare(trng->clk);
+ }
+ 
+ static int atmel_trng_probe(struct platform_device *pdev)
+@@ -105,22 +124,14 @@ static int atmel_trng_probe(struct platform_device *pdev)
+ 	if (!data)
+ 		return -ENODEV;
+ 
+-	if (data->has_half_rate) {
+-		unsigned long rate = clk_get_rate(trng->clk);
+-
+-		/* if peripheral clk is above 100MHz, set HALFR */
+-		if (rate > 100000000)
+-			writel(TRNG_HALFR, trng->base + TRNG_MR);
+-	}
++	trng->has_half_rate = data->has_half_rate;
++	trng->rng.name = pdev->name;
++	trng->rng.read = atmel_trng_read;
+ 
+-	ret = clk_prepare_enable(trng->clk);
++	ret = atmel_trng_init(trng);
+ 	if (ret)
+ 		return ret;
+ 
+-	atmel_trng_init(trng);
+-	trng->rng.name = pdev->name;
+-	trng->rng.read = atmel_trng_read;
+-
+ 	ret = devm_hwrng_register(&pdev->dev, &trng->rng);
+ 	if (ret)
+ 		goto err_register;
+@@ -130,7 +141,6 @@ static int atmel_trng_probe(struct platform_device *pdev)
+ 	return 0;
+ 
+ err_register:
+-	clk_disable_unprepare(trng->clk);
+ 	atmel_trng_cleanup(trng);
+ 	return ret;
+ }
+@@ -141,7 +151,6 @@ static int atmel_trng_remove(struct platform_device *pdev)
+ 
+ 
+ 	atmel_trng_cleanup(trng);
+-	clk_disable_unprepare(trng->clk);
+ 
+ 	return 0;
+ }
+@@ -152,7 +161,6 @@ static int atmel_trng_suspend(struct device *dev)
+ 	struct atmel_trng *trng = dev_get_drvdata(dev);
+ 
+ 	atmel_trng_cleanup(trng);
+-	clk_disable_unprepare(trng->clk);
+ 
+ 	return 0;
+ }
+@@ -160,15 +168,8 @@ static int atmel_trng_suspend(struct device *dev)
+ static int atmel_trng_resume(struct device *dev)
+ {
+ 	struct atmel_trng *trng = dev_get_drvdata(dev);
+-	int ret;
+ 
+-	ret = clk_prepare_enable(trng->clk);
+-	if (ret)
+-		return ret;
+-
+-	atmel_trng_init(trng);
+-
+-	return 0;
++	return atmel_trng_init(trng);
+ }
+ 
+ static const struct dev_pm_ops atmel_trng_pm_ops = {
+-- 
+2.34.1
+

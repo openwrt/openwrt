@@ -1,0 +1,31 @@
+From 575851910e2954c24ec5b5c4ba6b2f8535ee07b5 Mon Sep 17 00:00:00 2001
+From: Sergiu Moga <sergiu.moga@microchip.com>
+Date: Fri, 2 Sep 2022 10:47:46 +0300
+Subject: [PATCH 162/471] dt-bindings: serial: atmel,at91-usart: Add SAM9260
+ compatibles to SAM9X60
+
+Require SAM9260 fallback compatible for SAM9X60, because SAM9X60 is
+fully compatible with SAM9260 and Linux driver requires the latter.
+
+Signed-off-by: Sergiu Moga <sergiu.moga@microchip.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+---
+ Documentation/devicetree/bindings/serial/atmel,at91-usart.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/serial/atmel,at91-usart.yaml b/Documentation/devicetree/bindings/serial/atmel,at91-usart.yaml
+index bb1b5ed431f7..4da642763bef 100644
+--- a/Documentation/devicetree/bindings/serial/atmel,at91-usart.yaml
++++ b/Documentation/devicetree/bindings/serial/atmel,at91-usart.yaml
+@@ -26,6 +26,8 @@ properties:
+       - items:
+           - const: microchip,sam9x60-dbgu
+           - const: microchip,sam9x60-usart
++          - const: atmel,at91sam9260-dbgu
++          - const: atmel,at91sam9260-usart
+ 
+   reg:
+     maxItems: 1
+-- 
+2.34.1
+

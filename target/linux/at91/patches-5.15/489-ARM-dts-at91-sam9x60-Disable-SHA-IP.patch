@@ -1,0 +1,35 @@
+From 6a195a55236895c3b8c798e047b9a514d9513ec4 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Fri, 16 Jul 2021 18:54:25 +0300
+Subject: [PATCH 380/471] ARM: dts: at91: sam9x60: Disable SHA IP
+
+There are some bugs on the SHA IP on sam9x60 which are not yet
+handled. On linux4sam-2020.10 CONFIG_CRYPTO_DEV_ATMEL_SHA was
+disabled, and the driver never probed. Recently it was enabled.
+Since the hw implementation has a higher priority than the software
+SHA implementation, the enablement of the SHA driver can introduce
+regressions. Disable the SHA IP until we'll fix all the reported bugs.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Acked-by: Cristian Birsan <cristian.birsan@microchip.com>
+[claudiu.beznea: adapt to 5.15]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sam9x60.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/sam9x60.dtsi b/arch/arm/boot/dts/sam9x60.dtsi
+index 1bf152241b45..2f93fc8d5d4e 100644
+--- a/arch/arm/boot/dts/sam9x60.dtsi
++++ b/arch/arm/boot/dts/sam9x60.dtsi
+@@ -291,6 +291,7 @@ sha: crypto@f002c000 {
+ 				dma-names = "tx";
+ 				clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
+ 				clock-names = "sha_clk";
++				status = "disabled";
+ 			};
+ 
+ 			trng: trng@f0030000 {
+-- 
+2.34.1
+

@@ -1,0 +1,41 @@
+From ac4e6b39642edf85301ae3052dbfcf12bae8e2a8 Mon Sep 17 00:00:00 2001
+From: Hari Prasath <Hari.PrasathGE@microchip.com>
+Date: Fri, 31 Dec 2021 12:10:33 +0530
+Subject: [PATCH 093/471] irqchip/atmel-aic5: Add support for sam9x7 aic
+
+Add support for the Advanced interrupt controller(AIC) chip in the sam9x7.
+
+Signed-off-by: Hari Prasath <Hari.PrasathGE@microchip.com>
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ drivers/irqchip/irq-atmel-aic5.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/irqchip/irq-atmel-aic5.c b/drivers/irqchip/irq-atmel-aic5.c
+index fb4ad2aaa727..58f7622bd6bc 100644
+--- a/drivers/irqchip/irq-atmel-aic5.c
++++ b/drivers/irqchip/irq-atmel-aic5.c
+@@ -320,6 +320,7 @@ static const struct of_device_id aic5_irq_fixups[] __initconst = {
+ 	{ .compatible = "atmel,sama5d3", .data = sama5d3_aic_irq_fixup },
+ 	{ .compatible = "atmel,sama5d4", .data = sama5d3_aic_irq_fixup },
+ 	{ .compatible = "microchip,sam9x60", .data = sam9x60_aic_irq_fixup },
++	{ .compatible = "microchip,sam9x7", .data = sam9x60_aic_irq_fixup },
+ 	{ /* sentinel */ },
+ };
+ 
+@@ -406,3 +407,12 @@ static int __init sam9x60_aic5_of_init(struct device_node *node,
+ 	return aic5_of_init(node, parent, NR_SAM9X60_IRQS);
+ }
+ IRQCHIP_DECLARE(sam9x60_aic5, "microchip,sam9x60-aic", sam9x60_aic5_of_init);
++
++#define NR_SAM9X7_IRQS		70
++
++static int __init sam9x7_aic5_of_init(struct device_node *node,
++				      struct device_node *parent)
++{
++	return aic5_of_init(node, parent, NR_SAM9X7_IRQS);
++}
++IRQCHIP_DECLARE(sam9x7_aic5, "microchip,sam9x7-aic", sam9x7_aic5_of_init);
+-- 
+2.34.1
+

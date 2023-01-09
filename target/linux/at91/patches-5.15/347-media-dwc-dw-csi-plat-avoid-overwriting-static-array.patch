@@ -1,0 +1,30 @@
+From 7a75f14c801c878e06783c33bcbdaa3ad5db5d00 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Thu, 28 Oct 2021 17:11:57 +0300
+Subject: [PATCH 238/471] media: dwc: dw-csi-plat: avoid overwriting static
+ array of formats
+
+When setting format, the current format is being overwritten by the requested
+format. This leads to the corruption of the static formats array.
+Avoid it by removing the overwriting culprit.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-csi-plat.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/media/platform/dwc/dw-csi-plat.c b/drivers/media/platform/dwc/dw-csi-plat.c
+index c7117c6a402d..0aa0b48933fc 100644
+--- a/drivers/media/platform/dwc/dw-csi-plat.c
++++ b/drivers/media/platform/dwc/dw-csi-plat.c
+@@ -151,7 +151,6 @@ dw_mipi_csi_set_fmt(struct v4l2_subdev *sd,
+ 		*mf = fmt->format;
+ 		if (fmt->which == V4L2_SUBDEV_FORMAT_ACTIVE)
+ 			dev->fmt = dev_fmt;
+-		dev->fmt->mbus_code = mf->code;
+ 		dw_mipi_csi_set_ipi_fmt(dev);
+ 	}
+ 
+-- 
+2.34.1
+

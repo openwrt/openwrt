@@ -1,0 +1,41 @@
+From d68d9259e3ba2803a61b0a8e8383cd6568c6d057 Mon Sep 17 00:00:00 2001
+From: Hari Prasath <Hari.PrasathGE@microchip.com>
+Date: Thu, 12 Aug 2021 19:37:57 +0530
+Subject: [PATCH 321/471] ARM: at91: dts: sama5d29: Add dtsi file for sama5d29
+
+A new dtsi file for sama5d29 SoC is added which basically inherits the sama5d2
+dtsi with the mac controller compatible property updated.
+
+Signed-off-by: Hari Prasath <Hari.PrasathGE@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20210812140758.28273-1-Hari.PrasathGE@microchip.com
+---
+ arch/arm/boot/dts/sama5d29.dtsi | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+ create mode 100644 arch/arm/boot/dts/sama5d29.dtsi
+
+diff --git a/arch/arm/boot/dts/sama5d29.dtsi b/arch/arm/boot/dts/sama5d29.dtsi
+new file mode 100644
+index 000000000000..17991c28a256
+--- /dev/null
++++ b/arch/arm/boot/dts/sama5d29.dtsi
+@@ -0,0 +1,16 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * sama5d29.dtsi - Device Tree Include file for SAMA5D29 SoC of the SAMA5D2
++ * family.
++ *
++ *  Copyright (C) 2021 Microchip Technology, Inc. and its subsidiaries
++ *
++ *  Author: Hari Prasath <Hari.PrasathGE@microchip.com>
++ *
++ */
++
++#include "sama5d2.dtsi"
++
++&macb0 {
++	compatible = "atmel,sama5d29-gem";
++};
+-- 
+2.34.1
+

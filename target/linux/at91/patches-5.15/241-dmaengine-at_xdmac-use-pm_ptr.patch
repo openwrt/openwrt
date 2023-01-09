@@ -1,0 +1,33 @@
+From 74902291887c867eea3a3cb7af5fefc20ac9f65c Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Thu, 7 Oct 2021 14:12:30 +0300
+Subject: [PATCH 132/471] dmaengine: at_xdmac: use pm_ptr()
+
+Use pm_ptr() macro to fill at_xdmac_driver.driver.pm.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Reviewed-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Link: https://lore.kernel.org/r/20211007111230.2331837-5-claudiu.beznea@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+(cherry picked from commit 8e0c7e486014f8e924f5dc8f7a8719adb48f9d92)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/dma/at_xdmac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/dma/at_xdmac.c b/drivers/dma/at_xdmac.c
+index d71fe82c35be..e5e9fd213581 100644
+--- a/drivers/dma/at_xdmac.c
++++ b/drivers/dma/at_xdmac.c
+@@ -2237,7 +2237,7 @@ static struct platform_driver at_xdmac_driver = {
+ 	.driver = {
+ 		.name		= "at_xdmac",
+ 		.of_match_table	= of_match_ptr(atmel_xdmac_dt_ids),
+-		.pm		= &atmel_xdmac_dev_pm_ops,
++		.pm		= pm_ptr(&atmel_xdmac_dev_pm_ops),
+ 	}
+ };
+ 
+-- 
+2.34.1
+

@@ -1,0 +1,32 @@
+From 90c4e411affebbaf643851830d7f7aabb40f54ff Mon Sep 17 00:00:00 2001
+From: Manikandan M <manikandan.m@microchip.com>
+Date: Fri, 11 Mar 2022 09:43:33 +0530
+Subject: [PATCH 394/471] dt-bindings: arm: add sam9x60-curiosity board
+
+Add documentation for sam9x60 curiosity board
+
+Signed-off-by: Manikandan M <manikandan.m@microchip.com>
+---
+ Documentation/devicetree/bindings/arm/atmel-at91.yaml | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/atmel-at91.yaml b/Documentation/devicetree/bindings/arm/atmel-at91.yaml
+index bc4f2b91d611..bd724f8fa8e3 100644
+--- a/Documentation/devicetree/bindings/arm/atmel-at91.yaml
++++ b/Documentation/devicetree/bindings/arm/atmel-at91.yaml
+@@ -96,6 +96,12 @@ properties:
+           - const: microchip,sam9x60
+           - const: atmel,at91sam9
+ 
++      - description: SAM9X60 Curiosity board
++        items:
++          - const: microchip,sam9x60-curiosity
++          - const: microchip,sam9x60
++          - const: atmel,at91sam9
++
+       - description: Nattis v2 board with Natte v2 power board
+         items:
+           - const: axentia,nattis-2
+-- 
+2.34.1
+

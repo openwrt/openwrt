@@ -1,0 +1,108 @@
+From f7f2d1fb9b3252d5906f6940846a21988f8e8a75 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo@jmondi.org>
+Date: Thu, 24 Feb 2022 10:42:50 +0100
+Subject: [PATCH 172/471] media: ov5640: Associate bpp with formats
+
+Associate the bit depth to each format supported by the sensor.
+
+The bpp will be used to calculate the line length.
+
+Signed-off-by: Jacopo Mondi <jacopo@jmondi.org>
+Reviewed-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+(cherry picked from commit 9e44b9445a4b24e51b8fa6d3d4a58bfd616cc2d1)
+---
+ drivers/media/i2c/ov5640.c | 73 ++++++++++++++++++++++++++++++--------
+ 1 file changed, 59 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/media/i2c/ov5640.c b/drivers/media/i2c/ov5640.c
+index 0697c9bf03ed..1b2c7623fb14 100644
+--- a/drivers/media/i2c/ov5640.c
++++ b/drivers/media/i2c/ov5640.c
+@@ -150,24 +150,69 @@ enum ov5640_format_mux {
+ 	OV5640_FMT_MUX_RAW_CIP,
+ };
+ 
+-struct ov5640_pixfmt {
++static const struct ov5640_pixfmt {
+ 	u32 code;
+ 	u32 colorspace;
++	u8 bpp;
++} ov5640_formats[] = {
++	{
++		.code = MEDIA_BUS_FMT_JPEG_1X8,
++		.colorspace = V4L2_COLORSPACE_JPEG,
++		.bpp = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_UYVY8_2X8,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_UYVY8_1X16,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_YUYV8_2X8,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_YUYV8_1X16,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_RGB565_2X8_BE,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 16,
++	}, {
++		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 8,
++	}, {
++		.code = MEDIA_BUS_FMT_SGBRG8_1X8,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 8
++	}, {
++		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 8,
++	}, {
++		.code = MEDIA_BUS_FMT_SRGGB8_1X8,
++		.colorspace = V4L2_COLORSPACE_SRGB,
++		.bpp = 8,
++	},
+ };
+ 
+-static const struct ov5640_pixfmt ov5640_formats[] = {
+-	{ MEDIA_BUS_FMT_JPEG_1X8, V4L2_COLORSPACE_JPEG, },
+-	{ MEDIA_BUS_FMT_UYVY8_2X8, V4L2_COLORSPACE_SRGB, },
+-	{ MEDIA_BUS_FMT_UYVY8_1X16, V4L2_COLORSPACE_SRGB, },
+-	{ MEDIA_BUS_FMT_YUYV8_2X8, V4L2_COLORSPACE_SRGB, },
+-	{ MEDIA_BUS_FMT_YUYV8_1X16, V4L2_COLORSPACE_SRGB, },
+-	{ MEDIA_BUS_FMT_RGB565_2X8_LE, V4L2_COLORSPACE_SRGB, },
+-	{ MEDIA_BUS_FMT_RGB565_2X8_BE, V4L2_COLORSPACE_SRGB, },
+-	{ MEDIA_BUS_FMT_SBGGR8_1X8, V4L2_COLORSPACE_SRGB, },
+-	{ MEDIA_BUS_FMT_SGBRG8_1X8, V4L2_COLORSPACE_SRGB, },
+-	{ MEDIA_BUS_FMT_SGRBG8_1X8, V4L2_COLORSPACE_SRGB, },
+-	{ MEDIA_BUS_FMT_SRGGB8_1X8, V4L2_COLORSPACE_SRGB, },
+-};
++static u32 ov5640_code_to_bpp(u32 code)
++{
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(ov5640_formats); ++i) {
++		if (ov5640_formats[i].code == code)
++			return ov5640_formats[i].bpp;
++	}
++
++	return 0;
++}
+ 
+ /*
+  * FIXME: remove this when a subdev API becomes available
+-- 
+2.34.1
+

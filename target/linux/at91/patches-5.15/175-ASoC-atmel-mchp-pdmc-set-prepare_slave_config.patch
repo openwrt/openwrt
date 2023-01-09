@@ -1,0 +1,31 @@
+From e854a6d49d5f488348cceef5de3f660d74eb5bf6 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Thu, 21 Apr 2022 16:18:58 +0300
+Subject: [PATCH 066/471] ASoC: atmel: mchp-pdmc: set prepare_slave_config
+
+Since a pointer to struct snd_dmaengine_pcm_config is passed,
+snd_dmaengine_pcm_prepare_slave_config() is no longer called unless it's
+explicitly set in prepare_slave_config.
+
+Fixes: 50291652af52 ("ASoC: atmel: mchp-pdmc: add PDMC driver")
+Suggested-by: Sascha Hauer <sha@pengutronix.de>
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/atmel/mchp-pdmc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/atmel/mchp-pdmc.c b/sound/soc/atmel/mchp-pdmc.c
+index 755f5fb18430..bc06c07c36b3 100644
+--- a/sound/soc/atmel/mchp-pdmc.c
++++ b/sound/soc/atmel/mchp-pdmc.c
+@@ -955,6 +955,7 @@ static int mchp_pdmc_process(struct snd_pcm_substream *substream,
+ 
+ static struct snd_dmaengine_pcm_config mchp_pdmc_config = {
+ 	.process = mchp_pdmc_process,
++	.prepare_slave_config = snd_dmaengine_pcm_prepare_slave_config,
+ };
+ 
+ static int mchp_pdmc_probe(struct platform_device *pdev)
+-- 
+2.34.1
+

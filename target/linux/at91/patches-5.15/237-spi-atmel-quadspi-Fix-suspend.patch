@@ -1,0 +1,44 @@
+From 2e66aad585716724a8dc3ac872785271ca63bbed Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Fri, 25 Feb 2022 12:06:33 +0200
+Subject: [PATCH 128/471] spi: atmel-quadspi: Fix suspend
+
+At suspend the mx flash tries to disable the octal DTR mode, thus it
+issues a ReadID which does not contain any address bytes. mmiocpy is used
+and the same bus error is hit.
+Unhandled fault: external abort on non-linefetch (0x1008) at 0xe1000000
+
+Use DMA also for ReadID opcode, and avoid mmiocpy.
+
+Fixes: 1fdaf87235c8 ("spi: atmel-quadspi: (workaround) Always use DMA on sama7g5")
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Tested-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/spi/atmel-quadspi.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/spi/atmel-quadspi.c b/drivers/spi/atmel-quadspi.c
+index 3b2c3d9126bd..32015db663ad 100644
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -888,7 +888,7 @@ static int atmel_qspi_sama7g5_transfer(struct spi_mem *mem,
+ 
+ 	/* Send/Receive data. */
+ 	if (op->data.dir == SPI_MEM_DATA_IN) {
+-		if (aq->rx_chan && op->addr.nbytes &&
++		if (aq->rx_chan &&
+ 		    op->data.nbytes > ATMEL_QSPI_DMA_MIN_BYTES) {
+ 			ret = atmel_qspi_dma_transfer(mem, op, offset);
+ 			if (ret)
+@@ -906,7 +906,7 @@ static int atmel_qspi_sama7g5_transfer(struct spi_mem *mem,
+ 				return ret;
+ 		}
+ 	} else {
+-		if (aq->tx_chan && op->addr.nbytes &&
++		if (aq->tx_chan &&
+ 		    op->data.nbytes > ATMEL_QSPI_DMA_MIN_BYTES) {
+ 			ret = atmel_qspi_dma_transfer(mem, op, offset);
+ 			if (ret)
+-- 
+2.34.1
+

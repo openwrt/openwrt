@@ -1,0 +1,47 @@
+From 27f291e75ab5dc1db212a30777fca97735af3ccc Mon Sep 17 00:00:00 2001
+From: Kavyasree Kotagiri <kavyasree.kotagiri@microchip.com>
+Date: Fri, 28 Jan 2022 12:47:55 +0530
+Subject: [PATCH 079/471] crypto: atmel - add support for AES and SHA IPs
+ available on lan966x SoC
+
+This patch adds support for hardware version of AES and SHA IPs
+available on lan966x SoC.
+
+Signed-off-by: Kavyasree Kotagiri <kavyasree.kotagiri@microchip.com>
+Reviewed-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Tested-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+(cherry picked from commit 16d20a08f15ee6ad9a4c1e17ede613927d1c553e)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/crypto/atmel-aes.c | 1 +
+ drivers/crypto/atmel-sha.c | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/drivers/crypto/atmel-aes.c b/drivers/crypto/atmel-aes.c
+index fe0558403191..f72c6b3e4ad8 100644
+--- a/drivers/crypto/atmel-aes.c
++++ b/drivers/crypto/atmel-aes.c
+@@ -2509,6 +2509,7 @@ static void atmel_aes_get_cap(struct atmel_aes_dev *dd)
+ 
+ 	/* keep only major version number */
+ 	switch (dd->hw_version & 0xff0) {
++	case 0x700:
+ 	case 0x500:
+ 		dd->caps.has_dualbuff = 1;
+ 		dd->caps.has_cfb64 = 1;
+diff --git a/drivers/crypto/atmel-sha.c b/drivers/crypto/atmel-sha.c
+index 1b13f601fd95..d1628112dacc 100644
+--- a/drivers/crypto/atmel-sha.c
++++ b/drivers/crypto/atmel-sha.c
+@@ -2508,6 +2508,7 @@ static void atmel_sha_get_cap(struct atmel_sha_dev *dd)
+ 
+ 	/* keep only major version number */
+ 	switch (dd->hw_version & 0xff0) {
++	case 0x700:
+ 	case 0x510:
+ 		dd->caps.has_dma = 1;
+ 		dd->caps.has_dualbuff = 1;
+-- 
+2.34.1
+

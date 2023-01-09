@@ -1,0 +1,57 @@
+From 2d124d92470c3c7d5981a78c7d38f6ef21639616 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Thu, 9 Jun 2022 12:40:41 +0300
+Subject: [PATCH 078/471] clocksource/drivers/timer-microchip-pit64b: Fix
+ compilation warnings
+
+Fix the following compilation warnings:
+timer-microchip-pit64b.c:68: warning: cannot understand function prototype: 'struct mchp_pit64b_clkevt '
+timer-microchip-pit64b.c:82: warning: cannot understand function prototype: 'struct mchp_pit64b_clksrc '
+timer-microchip-pit64b.c:283: warning: Function parameter or member 'timer' not described in 'mchp_pit64b_init_mode'
+timer-microchip-pit64b.c:283: warning: Function parameter or member 'max_rate' not described in 'mchp_pit64b_init_mode'
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20220609094041.1796372-4-claudiu.beznea@microchip.com
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ drivers/clocksource/timer-microchip-pit64b.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/clocksource/timer-microchip-pit64b.c b/drivers/clocksource/timer-microchip-pit64b.c
+index f50705698283..d5f1436f33d9 100644
+--- a/drivers/clocksource/timer-microchip-pit64b.c
++++ b/drivers/clocksource/timer-microchip-pit64b.c
+@@ -61,7 +61,7 @@ struct mchp_pit64b_timer {
+ };
+ 
+ /**
+- * mchp_pit64b_clkevt - PIT64B clockevent data structure
++ * struct mchp_pit64b_clkevt - PIT64B clockevent data structure
+  * @timer: PIT64B timer
+  * @clkevt: clockevent
+  */
+@@ -75,7 +75,7 @@ struct mchp_pit64b_clkevt {
+ 		struct mchp_pit64b_clkevt, clkevt))
+ 
+ /**
+- * mchp_pit64b_clksrc - PIT64B clocksource data structure
++ * struct mchp_pit64b_clksrc - PIT64B clocksource data structure
+  * @timer: PIT64B timer
+  * @clksrc: clocksource
+  */
+@@ -245,8 +245,10 @@ static void __init mchp_pit64b_pres_compute(u32 *pres, u32 clk_rate,
+ }
+ 
+ /**
+- * mchp_pit64b_init_mode - prepare PIT64B mode register value to be used at
+- *			   runtime; this includes prescaler and SGCLK bit
++ * mchp_pit64b_init_mode() - prepare PIT64B mode register value to be used at
++ *			     runtime; this includes prescaler and SGCLK bit
++ * @timer: pointer to pit64b timer to init
++ * @max_rate: maximum rate that timer's clock could use
+  *
+  * PIT64B timer may be fed by gclk or pclk. When gclk is used its rate has to
+  * be at least 3 times lower that pclk's rate. pclk rate is fixed, gclk rate
+-- 
+2.34.1
+

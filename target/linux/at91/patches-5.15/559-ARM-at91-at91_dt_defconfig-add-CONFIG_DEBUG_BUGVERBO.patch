@@ -1,0 +1,29 @@
+From 413987e15176681f9ee900bd2dc2d04aef306b36 Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Tue, 8 Jun 2021 12:51:37 +0300
+Subject: [PATCH 450/471] ARM: at91: at91_dt_defconfig: add
+ CONFIG_DEBUG_BUGVERBOSE
+
+This config is enabled by default by kernel. It is also enabled on
+sama5_defconfig so enable it here to kepp defconfigs in sync.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index 529cf4ffd53d..d5fe014c129f 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -232,7 +232,6 @@ CONFIG_CRYPTO_DEV_ATMEL_AES=y
+ CONFIG_CRYPTO_DEV_ATMEL_TDES=y
+ CONFIG_CRYPTO_DEV_ATMEL_SHA=y
+ CONFIG_CRC_CCITT=y
+-# CONFIG_DEBUG_BUGVERBOSE is not set
+ CONFIG_STRIP_ASM_SYMS=y
+ CONFIG_DEBUG_FS=y
+ # CONFIG_SCHED_DEBUG is not set
+-- 
+2.34.1
+

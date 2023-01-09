@@ -1,0 +1,35 @@
+From 504da345c93df336c5da5950d5cd001ad3163d00 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Thu, 16 Dec 2021 10:19:10 +0200
+Subject: [PATCH 419/471] ARM: configs: at91: sama7: add config for cpufreq
+
+Add config flags for CPUFreq. This includes enabling CPUFreq support,
+CPUFreq DT driver and governors, default one being the conservative
+governor.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 317611e80806..772bb6c220a7 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -26,6 +26,13 @@ CONFIG_FORCE_MAX_ZONEORDER=15
+ CONFIG_UACCESS_WITH_MEMCPY=y
+ # CONFIG_ATAGS is not set
+ CONFIG_CMDLINE="console=ttyS0,115200 earlyprintk ignore_loglevel"
++CONFIG_CPU_FREQ=y
++CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE=y
++CONFIG_CPU_FREQ_GOV_POWERSAVE=y
++CONFIG_CPU_FREQ_GOV_USERSPACE=y
++CONFIG_CPU_FREQ_GOV_ONDEMAND=y
++CONFIG_CPUFREQ_DT=y
++CONFIG_CPU_IDLE=y
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+ CONFIG_KERNEL_MODE_NEON=y
+-- 
+2.34.1
+

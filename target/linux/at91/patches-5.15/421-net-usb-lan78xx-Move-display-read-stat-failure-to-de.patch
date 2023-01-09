@@ -1,0 +1,31 @@
+From 86efb82baa809bb8ffe94a7b1106dede779d92a6 Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Wed, 15 Apr 2020 13:57:40 +0300
+Subject: [PATCH 312/471] net: usb: lan78xx: Move display read stat failure to
+ debug mode
+
+If LAN7850 is used in HSIC mode, sometimes, read stats fail without any
+impact on data transferred. In this case, the console is filled with error
+messages. The patch displays this message for debug purposes only.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ drivers/net/usb/lan78xx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/usb/lan78xx.c b/drivers/net/usb/lan78xx.c
+index 3e1a83a22fdd..d469f112427a 100644
+--- a/drivers/net/usb/lan78xx.c
++++ b/drivers/net/usb/lan78xx.c
+@@ -556,7 +556,7 @@ static int lan78xx_read_stats(struct lan78xx_net *dev,
+ 			dst[i] = src[i];
+ 		}
+ 	} else {
+-		netdev_warn(dev->net,
++		netdev_dbg(dev->net,
+ 			    "Failed to read stat ret = %d", ret);
+ 	}
+ 
+-- 
+2.34.1
+

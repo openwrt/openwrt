@@ -1,0 +1,30 @@
+From 6c0061c1103cdfd5ccf48e487d572e771bdd2048 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Tue, 18 May 2021 19:01:31 +0300
+Subject: [PATCH 044/471] ASoC: atmel: atmel_ssc_dai: S24_LE is supported for 1
+ channel only
+
+S24_LE format is not supported if more than 2 channels (of TDM slots) are
+used.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/atmel/atmel_ssc_dai.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/atmel/atmel_ssc_dai.c b/sound/soc/atmel/atmel_ssc_dai.c
+index 97533412ce11..932d073b560f 100644
+--- a/sound/soc/atmel/atmel_ssc_dai.c
++++ b/sound/soc/atmel/atmel_ssc_dai.c
+@@ -827,7 +827,7 @@ static int atmel_ssc_resume(struct snd_soc_component *component)
+ #endif /* CONFIG_PM */
+ 
+ #define ATMEL_SSC_FORMATS (SNDRV_PCM_FMTBIT_S8     | SNDRV_PCM_FMTBIT_S16_LE |\
+-			  SNDRV_PCM_FMTBIT_S24_LE | SNDRV_PCM_FMTBIT_S32_LE)
++			   SNDRV_PCM_FMTBIT_S32_LE)
+ 
+ static const struct snd_soc_dai_ops atmel_ssc_dai_ops = {
+ 	.startup	= atmel_ssc_startup,
+-- 
+2.34.1
+

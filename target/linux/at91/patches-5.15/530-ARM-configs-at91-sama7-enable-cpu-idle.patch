@@ -1,0 +1,43 @@
+From 689a899e85a589e7537f835698d10c4a6ec604a3 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 15 Dec 2021 15:07:59 +0200
+Subject: [PATCH 421/471] ARM: configs: at91: sama7: enable cpu idle
+
+Enable CPU idle support for SAMA7 config.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 6a5220e2e686..8ffff4fa4062 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -33,6 +33,7 @@ CONFIG_CPU_FREQ_GOV_USERSPACE=y
+ CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+ CONFIG_CPUFREQ_DT=y
+ CONFIG_CPU_IDLE=y
++CONFIG_CPU_IDLE=y
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+ CONFIG_KERNEL_MODE_NEON=y
+@@ -40,7 +41,6 @@ CONFIG_MODULES=y
+ CONFIG_MODULE_FORCE_LOAD=y
+ CONFIG_MODULE_UNLOAD=y
+ CONFIG_MODULE_FORCE_UNLOAD=y
+-# CONFIG_BLK_DEV_BSG is not set
+ CONFIG_PARTITION_ADVANCED=y
+ # CONFIG_EFI_PARTITION is not set
+ # CONFIG_COREDUMP is not set
+@@ -97,6 +97,7 @@ CONFIG_BLK_DEV_RAM_SIZE=8192
+ CONFIG_EEPROM_AT24=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
++# CONFIG_BLK_DEV_BSG is not set
+ CONFIG_NETDEVICES=y
+ CONFIG_MACB=y
+ CONFIG_MICREL_PHY=y
+-- 
+2.34.1
+

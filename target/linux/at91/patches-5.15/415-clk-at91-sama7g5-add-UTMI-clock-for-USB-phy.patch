@@ -1,0 +1,30 @@
+From a7d47e00ac3b37e3d5fa44e4734d27b3861e9ea3 Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Thu, 24 Feb 2022 00:24:38 +0200
+Subject: [PATCH 306/471] clk: at91: sama7g5: add UTMI clock for USB phy
+
+Add UTMI clock defines for USB PHY
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ include/dt-bindings/clock/at91.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/include/dt-bindings/clock/at91.h b/include/dt-bindings/clock/at91.h
+index 8498c0cd95fe..1ef5aa0af122 100644
+--- a/include/dt-bindings/clock/at91.h
++++ b/include/dt-bindings/clock/at91.h
+@@ -37,6 +37,10 @@
+ #define PMC_CPU			(PMC_MAIN + 9)
+ #define PMC_MCK1		(PMC_MAIN + 10)
+ 
++#define UTMI1			0
++#define UTMI2			1
++#define UTMI3			2
++
+ #ifndef AT91_PMC_MOSCS
+ #define AT91_PMC_MOSCS		0		/* MOSCS Flag */
+ #define AT91_PMC_LOCKA		1		/* PLLA Lock */
+-- 
+2.34.1
+

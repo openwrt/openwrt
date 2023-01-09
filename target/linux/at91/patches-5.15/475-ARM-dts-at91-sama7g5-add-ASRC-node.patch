@@ -1,0 +1,51 @@
+From 00ba6842fc0e11d4181b7baff3f85862f432fb87 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Tue, 18 May 2021 18:51:43 +0300
+Subject: [PATCH 366/471] ARM: dts: at91: sama7g5: add ASRC node
+
+SAMA7G5 embeds an ASRC. Add its node to represent and probe it.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index a06e10b36b24..2955dd49c9f1 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -672,6 +672,31 @@ pdmc1: sound@e160c000 {
+ 			status = "disabled";
+ 		};
+ 
++		asrc: sound@e1610000 {
++			compatible = "microchip,sama7g5-asrc";
++			reg = <0xe1610000 0x1000>;
++			interrupts = <GIC_SPI 30 IRQ_TYPE_LEVEL_HIGH>;
++			#sound-dai-cells = <1>;
++			dmas = <&dma0 AT91_XDMAC_DT_PERID(55)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(56)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(57)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(58)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(59)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(60)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(61)>,
++			       <&dma0 AT91_XDMAC_DT_PERID(62)>;
++			dma-names = "rx0", "tx0", "rx1", "tx1",
++				    "rx2", "tx2", "rx3", "tx3";
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 30>, <&pmc PMC_TYPE_GCK 30>;
++			clock-names = "pclk", "gclk";
++			microchip,triggers = <&i2s0>, <&i2s1>, <&pdmc0>, <&pdmc1>,
++					     <&ssc0>, <&ssc1>, <&spdiftx>, <&spdifrx>;
++			microchip,trigger-indexes = <1>, <2>, <3>, <4>, <5>, <8>, <9>, <10>;
++			assigned-clocks = <&pmc PMC_TYPE_GCK 30>;
++			assigned-clock-parents = <&pmc PMC_TYPE_CORE PMC_AUDIOPMCPLL>;
++			status = "disabled";
++		};
++
+ 		spdifrx: spdifrx@e1614000 {
+ 			#sound-dai-cells = <0>;
+ 			compatible = "microchip,sama7g5-spdifrx";
+-- 
+2.34.1
+

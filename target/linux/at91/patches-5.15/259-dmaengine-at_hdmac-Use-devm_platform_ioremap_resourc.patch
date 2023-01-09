@@ -1,0 +1,106 @@
+From 17aed48ef1820d2e077e11cd998dfbf77f1de986 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Tue, 25 Oct 2022 12:02:57 +0300
+Subject: [PATCH 150/471] dmaengine: at_hdmac: Use
+ devm_platform_ioremap_resource
+
+Use devm_platform_ioremap_resource() helper for cleanner code and easier
+resource management.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20221025090306.297886-1-tudor.ambarus@microchip.com
+Link: https://lore.kernel.org/r/20221025090306.297886-24-tudor.ambarus@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/at_hdmac.c | 37 ++++++-------------------------------
+ 1 file changed, 6 insertions(+), 31 deletions(-)
+
+diff --git a/drivers/dma/at_hdmac.c b/drivers/dma/at_hdmac.c
+index f3fbb0aa8b24..10c250618a33 100644
+--- a/drivers/dma/at_hdmac.c
++++ b/drivers/dma/at_hdmac.c
+@@ -1765,9 +1765,7 @@ static void at_dma_off(struct at_dma *atdma)
+ 
+ static int __init at_dma_probe(struct platform_device *pdev)
+ {
+-	struct resource		*io;
+ 	struct at_dma		*atdma;
+-	size_t			size;
+ 	int			irq;
+ 	int			err;
+ 	int			i;
+@@ -1793,9 +1791,9 @@ static int __init at_dma_probe(struct platform_device *pdev)
+ 	if (!atdma)
+ 		return -ENOMEM;
+ 
+-	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	if (!io)
+-		return -EINVAL;
++	atdma->regs = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(atdma->regs))
++		return PTR_ERR(atdma->regs);
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0)
+@@ -1805,21 +1803,10 @@ static int __init at_dma_probe(struct platform_device *pdev)
+ 	atdma->dma_common.cap_mask = plat_dat->cap_mask;
+ 	atdma->all_chan_mask = (1 << plat_dat->nr_channels) - 1;
+ 
+-	size = resource_size(io);
+-	if (!request_mem_region(io->start, size, pdev->dev.driver->name))
+-		return -EBUSY;
+-
+-	atdma->regs = ioremap(io->start, size);
+-	if (!atdma->regs) {
+-		err = -ENOMEM;
+-		goto err_release_r;
+-	}
+-
+ 	atdma->clk = clk_get(&pdev->dev, "dma_clk");
+-	if (IS_ERR(atdma->clk)) {
+-		err = PTR_ERR(atdma->clk);
+-		goto err_clk;
+-	}
++	if (IS_ERR(atdma->clk))
++		return PTR_ERR(atdma->clk);
++
+ 	err = clk_prepare_enable(atdma->clk);
+ 	if (err)
+ 		goto err_clk_prepare;
+@@ -1957,11 +1944,6 @@ static int __init at_dma_probe(struct platform_device *pdev)
+ 	clk_disable_unprepare(atdma->clk);
+ err_clk_prepare:
+ 	clk_put(atdma->clk);
+-err_clk:
+-	iounmap(atdma->regs);
+-	atdma->regs = NULL;
+-err_release_r:
+-	release_mem_region(io->start, size);
+ 	return err;
+ }
+ 
+@@ -1969,7 +1951,6 @@ static int at_dma_remove(struct platform_device *pdev)
+ {
+ 	struct at_dma		*atdma = platform_get_drvdata(pdev);
+ 	struct dma_chan		*chan, *_chan;
+-	struct resource		*io;
+ 
+ 	at_dma_off(atdma);
+ 	if (pdev->dev.of_node)
+@@ -1994,12 +1975,6 @@ static int at_dma_remove(struct platform_device *pdev)
+ 	clk_disable_unprepare(atdma->clk);
+ 	clk_put(atdma->clk);
+ 
+-	iounmap(atdma->regs);
+-	atdma->regs = NULL;
+-
+-	io = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-	release_mem_region(io->start, resource_size(io));
+-
+ 	return 0;
+ }
+ 
+-- 
+2.34.1
+

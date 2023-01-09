@@ -1,0 +1,28 @@
+From af1d083fcce19e2271b28d37538ce11f19ed767b Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Thu, 10 Mar 2022 14:35:45 +0200
+Subject: [PATCH 357/471] ARM: dts: at91: sama7g5: keep eic disabled
+
+Keep eic disabled. There are no users of it. Upstream commit 003e17e75a3c
+("ARM: dts: at91: sama7g5: add eic node") introduce the same status.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index c2482f6ac17b..426a01b9ab45 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -735,6 +735,7 @@ eic: interrupt-controller@e1628000 {
+ 				     <GIC_SPI 154 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;
+ 			clock-names = "pclk";
++			status = "disabled";
+ 		};
+ 
+ 		pit64b0: timer@e1800000 {
+-- 
+2.34.1
+

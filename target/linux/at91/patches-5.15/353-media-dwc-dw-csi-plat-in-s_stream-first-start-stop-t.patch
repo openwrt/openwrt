@@ -1,0 +1,43 @@
+From bcf7f289162b61d67dc2d29199af082595f4c2cf Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 20 Dec 2021 12:34:19 +0200
+Subject: [PATCH 244/471] media: dwc: dw-csi-plat: in s_stream, first
+ start/stop the sensor
+
+The PHY must reach a stop state before capture can begin.
+The sensor must be started/stopped first, such that the PHY can enter the
+proper state.
+
+This change avoids the problem:
+phy phy-e1400040.dphy.0: PHY Stop state not reached 0
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-csi-plat.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/media/platform/dwc/dw-csi-plat.c b/drivers/media/platform/dwc/dw-csi-plat.c
+index 5fbcde614a2b..e29aff1dbe38 100644
+--- a/drivers/media/platform/dwc/dw-csi-plat.c
++++ b/drivers/media/platform/dwc/dw-csi-plat.c
+@@ -227,6 +227,7 @@ static int dw_mipi_csi_init_cfg(struct v4l2_subdev *sd,
+ static int dw_mipi_csi_s_stream(struct v4l2_subdev *sd, int enable)
+ {
+ 	struct dw_csi *dev = sd_to_mipi_csi_dev(sd);
++	int ret = v4l2_subdev_call(dev->input_sd, video, s_stream, enable);
+ 
+ 	if (enable) {
+ 		dw_mipi_csi_hw_stdby(dev);
+@@ -237,8 +238,7 @@ static int dw_mipi_csi_s_stream(struct v4l2_subdev *sd, int enable)
+ 		/* reset data type */
+ 		dev->ipi_dt = 0x0;
+ 	}
+-
+-	return v4l2_subdev_call(dev->input_sd, video, s_stream, enable);
++	return ret;
+ }
+ 
+ static struct v4l2_subdev_core_ops dw_mipi_csi_core_ops = {
+-- 
+2.34.1
+

@@ -1,0 +1,39 @@
+From afa060cb4790b4a6f8619ad3b72f3aea4e13d5a6 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 4 Nov 2022 11:58:27 +0200
+Subject: [PATCH 111/471] net: macb: fix ethernet after resume
+
+Commit bf0ad1893442 ("net: macb: Specify PHY PM management done by MAC")
+signals to PHY layer that the PHY PM management is done by the MAC driver
+itself. In case this is done the mdio_bus_phy_suspend()/mdio_bus_phy_resume()
+will return just at its beginning letting the MAC driver to handle the
+PHY power management. Thus the macb driver needs to re-initialize the
+PHY device itself when resuming. Otherwise there is poor or missing
+ping connectivity and performance tests fails at all.
+
+This has been tested on my side on SAMA7G5-EK (both interfaces) and
+SAMA5D27 WLSOM1 EK.
+
+Fixes: bf0ad1893442 ("net: macb: Specify PHY PM management done by MAC")
+Depends-on: ed0165335709 ("net: phylink: add helper to initialize phylink's phydev")
+Tested-by: Cristian Birsan <cristian.birsan@microchip.com>
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/net/ethernet/cadence/macb_main.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/ethernet/cadence/macb_main.c b/drivers/net/ethernet/cadence/macb_main.c
+index 5f154203b5da..9a8cd9718736 100644
+--- a/drivers/net/ethernet/cadence/macb_main.c
++++ b/drivers/net/ethernet/cadence/macb_main.c
+@@ -5150,6 +5150,7 @@ static int __maybe_unused macb_resume(struct device *dev)
+ 	macb_set_rx_mode(netdev);
+ 	macb_restore_features(bp);
+ 	rtnl_lock();
++	phylink_init_phydev(bp->phylink);
+ 	phylink_start(bp->phylink);
+ 	rtnl_unlock();
+ 
+-- 
+2.34.1
+

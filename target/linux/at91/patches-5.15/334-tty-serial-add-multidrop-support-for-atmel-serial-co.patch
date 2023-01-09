@@ -1,0 +1,68 @@
+From 00485173b214179b2a9ceb1e6f098087391fcba6 Mon Sep 17 00:00:00 2001
+From: Rodolfo Giometti <giometti@linux.it>
+Date: Thu, 12 Apr 2018 16:31:10 -0700
+Subject: [PATCH 225/471] tty serial: add multidrop support for atmel serial
+ controllers
+
+This patch adds multidrop support for atmel serial controllers and it
+has been tested by using a SAMA5D3 CPU.
+
+Signed-off-by: Rodolfo Giometti <giometti@linux.it>
+Signed-off-by: Joshua Henderson <joshua.henderson@microchip.com>
+[codrin.ciubotariu@microchip.com: removed unneeded newline]
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+[claudiu.beznea: adapt to v5.15.82]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/tty/serial/atmel_serial.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/tty/serial/atmel_serial.c b/drivers/tty/serial/atmel_serial.c
+index 975a1cd96da4..68940ac28c8c 100644
+--- a/drivers/tty/serial/atmel_serial.c
++++ b/drivers/tty/serial/atmel_serial.c
+@@ -2142,7 +2142,7 @@ static void atmel_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	struct atmel_uart_port *atmel_port = to_atmel_uart_port(port);
+ 	unsigned long flags;
+ 	unsigned int old_mode, mode, imr, quot, div, cd, fp = 0;
+-	unsigned int baud, actual_baud, gclk_rate;
++	unsigned int baud, actual_baud, gclk_rate, mdrop;
+ 	int ret;
+ 
+ 	/* save the current mode register */
+@@ -2179,9 +2179,11 @@ static void atmel_set_termios(struct uart_port *port, struct ktermios *termios,
+ 
+ 	/* parity */
+ 	if (termios->c_cflag & PARENB) {
+-		/* Mark or Space parity */
++		/* Mark, Space or Multidrop parity */
+ 		if (termios->c_cflag & CMSPAR) {
+-			if (termios->c_cflag & PARODD)
++			if (termios->c_cflag & PARMD)
++				mode |= ATMEL_US_PAR_MULTI_DROP;
++			else if (termios->c_cflag & PARODD)
+ 				mode |= ATMEL_US_PAR_MARK;
+ 			else
+ 				mode |= ATMEL_US_PAR_SPACE;
+@@ -2191,6 +2193,8 @@ static void atmel_set_termios(struct uart_port *port, struct ktermios *termios,
+ 			mode |= ATMEL_US_PAR_EVEN;
+ 	} else
+ 		mode |= ATMEL_US_PAR_NONE;
++	mdrop = termios->c_cflag & SENDA ? ATMEL_US_SENDA : 0;
++	termios->c_cflag &= ~SENDA; /* SENDA bit must be cleared once used */
+ 
+ 	spin_lock_irqsave(&port->lock, flags);
+ 
+@@ -2382,7 +2386,8 @@ static void atmel_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	}
+ 
+ 	atmel_uart_writel(port, ATMEL_US_CR, ATMEL_US_RSTSTA | ATMEL_US_RSTRX);
+-	atmel_uart_writel(port, ATMEL_US_CR, ATMEL_US_TXEN | ATMEL_US_RXEN);
++	atmel_uart_writel(port, ATMEL_US_CR,
++			  mdrop | ATMEL_US_TXEN | ATMEL_US_RXEN);
+ 	atmel_port->tx_stopped = false;
+ 
+ 	/* restore interrupts */
+-- 
+2.34.1
+

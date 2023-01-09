@@ -1,0 +1,29 @@
+From 94361b4673141505531e5704d42eacd09be78eb7 Mon Sep 17 00:00:00 2001
+From: Mihai Sain <mihai.sain@microchip.com>
+Date: Tue, 12 Apr 2022 12:55:08 +0300
+Subject: [PATCH 461/471] ARM: configs: sama7: enable Marvell WiFi-Ex driver
+
+Add config flags to enable Marvell WiFi-Ex Driver in SDIO and USB modes.
+
+Signed-off-by: Mihai Sain <mihai.sain@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index e87757e533e3..9c395ffbf085 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -107,6 +107,9 @@ CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+ CONFIG_MACB=y
+ CONFIG_MICREL_PHY=y
++CONFIG_MWIFIEX=m
++CONFIG_MWIFIEX_SDIO=m
++CONFIG_MWIFIEX_USB=m
+ CONFIG_INPUT_EVDEV=y
+ CONFIG_KEYBOARD_GPIO=y
+ # CONFIG_INPUT_MOUSE is not set
+-- 
+2.34.1
+

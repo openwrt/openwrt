@@ -1,0 +1,29 @@
+From fbe322f5239b79f3f5039e4c5f79354b5b893769 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 26 Feb 2020 16:11:40 +0200
+Subject: [PATCH 237/471] media: dwc: dw-mipi-csi: change chatty messages to
+ dev_dbg
+
+Changed dev_info to dev_dbg to remove extra chatty messages
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-mipi-csi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/dwc/dw-mipi-csi.c b/drivers/media/platform/dwc/dw-mipi-csi.c
+index c71491bfbea2..aba203a01fd5 100644
+--- a/drivers/media/platform/dwc/dw-mipi-csi.c
++++ b/drivers/media/platform/dwc/dw-mipi-csi.c
+@@ -242,7 +242,7 @@ void dw_mipi_csi_set_ipi_fmt(struct dw_csi *csi_dev)
+ 		}
+ 		dw_mipi_csi_write(csi_dev, reg.DATA_IDS_1, csi_dev->ipi_dt);
+ 	}
+-	dev_info(dev, "Selected IPI Data Type 0x%X\n", csi_dev->ipi_dt);
++	dev_dbg(dev, "Selected IPI Data Type 0x%X\n", csi_dev->ipi_dt);
+ }
+ 
+ void dw_mipi_csi_fill_timings(struct dw_csi *dev,
+-- 
+2.34.1
+

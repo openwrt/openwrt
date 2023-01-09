@@ -1,0 +1,237 @@
+From 8544ee24cafb3fc7a36f00e0c6a144e40e2508d6 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Tue, 19 Apr 2022 12:00:07 +0300
+Subject: [PATCH 060/471] ASoC: atmel: mchp-asrc: rework maxburst calculation
+
+Rework the maxburst calculations so that all HW limitations are taken into
+account. Also, snd_pcm_lib_period_bytes() can't be used at this time since
+substream->runtime members are not initialized.
+
+Fixes: 264353f11b3a ("ASoC: atmel: Add ASRC driver")
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/atmel/mchp-asrc.c | 69 ++++++++++++++++++++++---------------
+ 1 file changed, 41 insertions(+), 28 deletions(-)
+
+diff --git a/sound/soc/atmel/mchp-asrc.c b/sound/soc/atmel/mchp-asrc.c
+index df05c622ec43..61cf0d491281 100644
+--- a/sound/soc/atmel/mchp-asrc.c
++++ b/sound/soc/atmel/mchp-asrc.c
+@@ -13,6 +13,7 @@
+ #include <linux/io.h>
+ #include <linux/lcm.h>
+ #include <linux/list.h>
++#include <linux/minmax.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
+ 
+@@ -365,7 +366,6 @@ struct mchp_asrc_be_rtm {
+ 	struct mchp_asrc_be_trigger	*trig;	/* backpointer */
+ 	struct snd_pcm_hw_params	*hw_params;	// used by the links that are not BE
+ 	struct mchp_asrc_slot const	*slot;
+-	int				maxburst;
+ 	struct list_head		list;
+ };
+ 
+@@ -388,6 +388,7 @@ struct mchp_asrc_pcm_priv {
+ 	struct xmit_ch				*tc;
+ 	struct mchp_asrc_be_rtm			rtm_fe;		/* used for FE --- BEs links */
+ 	int					refcount;
++	int					maxburst;
+ 	bool					is_hostless;
+ };
+ 
+@@ -405,18 +406,18 @@ struct mchp_asrc_dev {
+ 	int					rhr_opmode;
+ };
+ 
+-static inline int mchp_asrc_period_to_burst(int period_size)
++static inline int mchp_asrc_period_to_burst(int period_size, int sample_size)
+ {
+-	if (!(period_size % 16))
++	if (!(period_size % (sample_size * 16)))
+ 		return 16;
+ 
+-	if (!(period_size % 8))
++	if (!(period_size % (sample_size * 8)))
+ 		return 8;
+ 
+-	if (!(period_size % 4))
++	if (!(period_size % (sample_size * 4)))
+ 		return 4;
+ 
+-	if (!(period_size % 2))
++	if (!(period_size % (sample_size * 2)))
+ 		return 2;
+ 
+ 	return 1;
+@@ -700,7 +701,6 @@ static int mchp_asrc_bes_get(struct mchp_asrc_dev *priv, struct snd_pcm_substrea
+ 		struct snd_soc_pcm_runtime *be = dpcm->be;
+ 		struct snd_soc_dai *dai = asoc_rtd_to_cpu(be, 0);
+ 		struct snd_pcm_substream *substream_be;
+-		int period_bytes;
+ 
+ 		if (dpcm->fe != rtd)
+ 			continue;
+@@ -715,7 +715,6 @@ static int mchp_asrc_bes_get(struct mchp_asrc_dev *priv, struct snd_pcm_substrea
+ 			params_format(&dpcm->hw_params), params_width(&dpcm->hw_params),
+ 			params_channels(&dpcm->hw_params));
+ 
+-		period_bytes = snd_pcm_lib_period_bytes(substream_be);
+ 		for (i = 0; i < priv->trig_count; i++) {
+ 			struct mchp_asrc_be_trigger *trig_be = &priv->trig[i];
+ 			struct mchp_asrc_be_rtm *rtm_be;
+@@ -730,7 +729,6 @@ static int mchp_asrc_bes_get(struct mchp_asrc_dev *priv, struct snd_pcm_substrea
+ 			if (set_trig)
+ 				rtm_be->trig = trig_be;
+ 			rtm_be->hw_params = &dpcm->hw_params;
+-			rtm_be->maxburst = mchp_asrc_period_to_burst(period_bytes);
+ 
+ 			/* keep the order */
+ 			list_add_tail(&rtm_be->list, head);
+@@ -987,11 +985,11 @@ static void mchp_asrc_tc_free(struct mchp_asrc_dev *priv, struct mchp_asrc_pcm_p
+ 			   MCHP_ASRC_CH_CONF_THROPMODE_MASK | MCHP_ASRC_CH_CONF_RHROPMODE_MASK, 0);
+ }
+ 
+-static void mchp_asrc_maxburst_limit(int thr_opmode, int rhr_opmode,
+-				     int dsps_used, bool is_mono,
++/* apply HW DMA Chunk Size limitations */
++static void mchp_asrc_maxburst_limit(int thr_opmode, int rhr_opmode, bool is_mono,
+ 				     int *maxburst)
+ {
+-	if ((thr_opmode == 0 || rhr_opmode == 0 || dsps_used == 1) &&
++	if ((thr_opmode == 0 || rhr_opmode == 0) &&
+ 	    *maxburst > 4) {
+ 		if (is_mono)
+ 			*maxburst = 4;
+@@ -1031,9 +1029,9 @@ static int mchp_asrc_hw_params(struct snd_pcm_substream *substream,
+ 	int ratio_min;
+ 	struct list_head *list_head_bes;
+ 	int i;
+-	int maxburst[MCHP_ASRC_NB_STEREO_CH]  = {0};
+ 	struct opmode_to_slot const *be_opm;
+ 	struct xmit_ch *tc;
++	bool is_mono = false;
+ 
+ 	dev_dbg(priv->dev, "%s() DAI %s id %d rate=%u format=%#x width=%u channels=%u\n",
+ 		__func__, dai->name, dai->id, fs, params ? params_format(params) : 0,
+@@ -1093,11 +1091,8 @@ static int mchp_asrc_hw_params(struct snd_pcm_substream *substream,
+ 	dsps_req = (ret + 1) / 2;
+ 
+ 	if (!pcm->is_hostless) {
+-		int period_size = snd_pcm_lib_period_bytes(substream);
+-
+ 		pcm->rtm_fe.hw_params = params;
+ 		pcm->rtm_fe.trig = NULL;
+-		pcm->rtm_fe.maxburst = mchp_asrc_period_to_burst(period_size);
+ 
+ 		/* keep the order */
+ 		if (is_playback)
+@@ -1167,12 +1162,17 @@ static int mchp_asrc_hw_params(struct snd_pcm_substream *substream,
+ 		struct mchp_asrc_slot const *slot_be = rtm_be->slot;
+ 		int chan_be = params_channels(rtm_be->hw_params);
+ 		u32 idx = trig_be ? trig_be->idx : 0;
++		int physical_width = params_physical_width(rtm_be->hw_params) / 8;
++		int period_bytes = params_period_size(rtm_be->hw_params) *
++			params_channels(rtm_be->hw_params) * physical_width;
++		int maxburst = mchp_asrc_period_to_burst(period_bytes, physical_width);
+ 
+ 		/* treat odd streams, set only last DSP as mono */
+ 		if (chan_be % 2) {
+ 			dsp = slot_be->first_dsp + slot_be->dsp_count - 1;
+ 			ch_conf |= MCHP_ASRC_CH_CONF_MONO(dsp);
+ 			ch_conf_mask |= MCHP_ASRC_CH_CONF_MONO(dsp);
++			is_mono = true;
+ 		}
+ 
+ 		for (dsp = slot_be->first_dsp;
+@@ -1191,16 +1191,24 @@ static int mchp_asrc_hw_params(struct snd_pcm_substream *substream,
+ 		if (max_sr < params_rate(rtm_be->hw_params))
+ 			max_sr = params_rate(rtm_be->hw_params);
+ 
+-		maxburst[slot_be->slot_id] = rtm_be->maxburst;
++		if (pcm->maxburst)
++			pcm->maxburst = min(pcm->maxburst, maxburst);
++		else
++			pcm->maxburst = maxburst;
+ 
+-		mchp_asrc_maxburst_limit(priv->thr_opmode, priv->rhr_opmode, slot_be->dsp_count,
+-					 chan_be % 2, &maxburst[slot_be->slot_id]);
++		dev_dbg(priv->dev, "%s: period bytes %d, width %d -> maxburst %d\n",
++			trig_be ? trig_be->phandle->np->full_name : dai->name,
++			period_bytes, physical_width, maxburst);
+ 	}
+ 
+ 	list_for_each_entry(rtm_be, &pcm->list_head_out, list) {
+ 		struct mchp_asrc_be_trigger *trig_be = rtm_be->trig;
+ 		struct mchp_asrc_slot const *slot_be = rtm_be->slot;
+ 		int chan_be = params_channels(rtm_be->hw_params);
++		int physical_width = params_physical_width(rtm_be->hw_params) / 8;
++		int period_bytes = params_period_size(rtm_be->hw_params) *
++			params_channels(rtm_be->hw_params) * physical_width;
++		int maxburst = mchp_asrc_period_to_burst(period_bytes, physical_width);
+ 		u32 idx = trig_be ? trig_be->idx : 0;
+ 
+ 		/* treat odd streams, set only last DSP as mono */
+@@ -1208,6 +1216,7 @@ static int mchp_asrc_hw_params(struct snd_pcm_substream *substream,
+ 			dsp = slot_be->first_dsp + slot_be->dsp_count - 1;
+ 			ch_conf |= MCHP_ASRC_CH_CONF_MONO(dsp);
+ 			ch_conf_mask |= MCHP_ASRC_CH_CONF_MONO(dsp);
++			is_mono = true;
+ 		}
+ 
+ 		for (dsp = slot_be->first_dsp;
+@@ -1226,15 +1235,19 @@ static int mchp_asrc_hw_params(struct snd_pcm_substream *substream,
+ 		if (max_sr < params_rate(rtm_be->hw_params))
+ 			max_sr = params_rate(rtm_be->hw_params);
+ 
+-		if (!maxburst[slot_be->slot_id] ||
+-		    maxburst[slot_be->slot_id] > rtm_be->maxburst)
+-			maxburst[slot_be->slot_id] = rtm_be->maxburst;
++		if (pcm->maxburst)
++			pcm->maxburst = min(pcm->maxburst, maxburst);
++		else
++			pcm->maxburst = maxburst;
+ 
+-		mchp_asrc_maxburst_limit(priv->thr_opmode, priv->rhr_opmode,
+-					 slot_be->dsp_count, chan_be % 2,
+-					 &maxburst[slot_be->slot_id]);
++		dev_dbg(priv->dev, "%s: period bytes %d, width %d -> maxburst %d\n",
++			trig_be ? trig_be->phandle->np->full_name : dai->name,
++			period_bytes, physical_width, maxburst);
+ 	}
+ 
++	mchp_asrc_maxburst_limit(priv->thr_opmode, priv->rhr_opmode, is_mono, &pcm->maxburst);
++	dev_dbg(priv->dev, "maxburst value to be used by all DSPs: %d\n", pcm->maxburst);
++
+ 	/* set DMAengine data for each IN/OUT AIF */
+ 	INIT_LIST_HEAD(&dma->dma_in_list);
+ 	list_for_each_entry(rtm_be, &pcm->list_head_in, list) {
+@@ -1256,7 +1269,7 @@ static int mchp_asrc_hw_params(struct snd_pcm_substream *substream,
+ 			ret = -ENOMEM;
+ 			goto __cleanup_dma_bes;
+ 		}
+-		dma_data_be->maxburst = maxburst[slot_be->slot_id];
++		dma_data_be->maxburst = pcm->maxburst;
+ 
+ 		/* keep the order of the BEs */
+ 		list_add_tail(&dma_be->list, &dma->dma_in_list);
+@@ -1288,13 +1301,13 @@ static int mchp_asrc_hw_params(struct snd_pcm_substream *substream,
+ 			ret = -ENOMEM;
+ 			goto __cleanup_dma_bes;
+ 		}
+-		dma_data_be->maxburst = maxburst[slot_be->slot_id];
++		dma_data_be->maxburst = pcm->maxburst;
+ 
+ 		 /* needed only once, since the same DPSs are used for IN and OUT AIFs */
+ 		for (dsp = slot_be->first_dsp; dsp < slot_be->first_dsp + slot_be->dsp_count;
+ 		     dsp++) {
+ 			ch_conf |= mchp_asrc_burst_to_chunk(dsp,
+-							    maxburst[slot_be->slot_id]);
++							    pcm->maxburst);
+ 			ch_conf_mask |= MCHP_ASRC_CH_CONF_CHUNK_MASK(dsp);
+ 		}
+ 
+-- 
+2.34.1
+

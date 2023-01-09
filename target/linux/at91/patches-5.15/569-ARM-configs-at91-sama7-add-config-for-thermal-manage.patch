@@ -1,0 +1,43 @@
+From be7f8b230ef3055598e6fac52f7e3a58e138bc36 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 30 Mar 2022 09:42:21 +0300
+Subject: [PATCH 460/471] ARM: configs: at91: sama7: add config for thermal
+ management
+
+Add config flags for thermal management.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 8b073d6210b8..e87757e533e3 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -127,7 +127,11 @@ CONFIG_GPIO_SYSFS=y
+ CONFIG_POWER_RESET=y
+ CONFIG_POWER_RESET_AT91_RESET=y
+ CONFIG_POWER_RESET_AT91_SAMA5D2_SHDWC=y
+-# CONFIG_HWMON is not set
++CONFIG_THERMAL=y
++CONFIG_THERMAL_STATISTICS=y
++CONFIG_CPU_THERMAL=y
++CONFIG_CPU_IDLE_THERMAL=y
++CONFIG_GENERIC_ADC_THERMAL=y
+ CONFIG_WATCHDOG=y
+ CONFIG_SAMA5D4_WATCHDOG=y
+ CONFIG_MFD_ATMEL_FLEXCOM=y
+@@ -207,6 +211,9 @@ CONFIG_PWM_ATMEL=y
+ CONFIG_MCHP_EIC=y
+ CONFIG_RESET_CONTROLLER=y
+ CONFIG_PHY_MICROCHIP_SAMA7_USB=y
++CONFIG_POWERCAP=y
++CONFIG_IDLE_INJECT=y
++CONFIG_DTPM=y
+ CONFIG_MICROCHIP_OTPC=y
+ CONFIG_EXT2_FS=y
+ CONFIG_EXT3_FS=y
+-- 
+2.34.1
+

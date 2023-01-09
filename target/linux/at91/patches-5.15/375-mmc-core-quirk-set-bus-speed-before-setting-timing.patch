@@ -1,0 +1,29 @@
+From 66ea6d827c3aa5c6da233aba38f16b5bdfbdfe09 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 1 Jul 2020 16:33:37 +0300
+Subject: [PATCH 266/471] mmc: core: quirk: set bus speed before setting timing
+
+Our DLL does not lock if we do not set the clock before setting the timing.
+Thus we attempt to set clock, and then select higher speed mode.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/mmc/core/mmc.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/mmc/core/mmc.c b/drivers/mmc/core/mmc.c
+index d805f8450719..f0c104ffe9e6 100644
+--- a/drivers/mmc/core/mmc.c
++++ b/drivers/mmc/core/mmc.c
+@@ -1530,6 +1530,8 @@ static int mmc_select_timing(struct mmc_card *card)
+ 	if (!mmc_can_ext_csd(card))
+ 		goto bus_speed;
+ 
++	mmc_set_bus_speed(card);
++
+ 	if (card->mmc_avail_type & EXT_CSD_CARD_TYPE_HS400ES)
+ 		err = mmc_select_hs400es(card);
+ 	else if (card->mmc_avail_type & EXT_CSD_CARD_TYPE_HS200)
+-- 
+2.34.1
+

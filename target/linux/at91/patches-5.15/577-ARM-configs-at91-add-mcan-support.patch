@@ -1,0 +1,28 @@
+From 7e855f497d7f7dafe7031fc5cc034aff522aabeb Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Tue, 22 Mar 2022 14:53:51 +0530
+Subject: [PATCH 468/471] ARM: configs: at91: add mcan support
+
+Enable MCAN configs to support sam9x7 soc family
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index 4b9bed756ef2..0c5d3fe62f08 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -43,6 +43,8 @@ CONFIG_CAN=y
+ CONFIG_CAN_AT91=y
+ CONFIG_CFG80211=y
+ CONFIG_MAC80211=y
++CONFIG_CAN_M_CAN=y
++CONFIG_CAN_M_CAN_PLATFORM=y
+ CONFIG_DEVTMPFS=y
+ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+-- 
+2.34.1
+

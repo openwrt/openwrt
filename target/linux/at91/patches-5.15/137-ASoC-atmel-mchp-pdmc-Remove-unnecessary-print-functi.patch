@@ -1,0 +1,42 @@
+From 2d47f8b973e634aceb6faf1535cb9c9c2f671b3f Mon Sep 17 00:00:00 2001
+From: Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
+Date: Thu, 10 Mar 2022 16:27:56 +0800
+Subject: [PATCH 028/471] ASoC: atmel: mchp-pdmc: Remove unnecessary print
+ function dev_err()
+
+The print function dev_err() is redundant because
+platform_get_irq() already prints an error.
+
+Eliminate the follow coccicheck warning:
+
+./sound/soc/atmel/mchp-pdmc.c:991:2-9: line 991 is redundant because
+platform_get_irq() already prints an error.
+
+Reported-by: Abaci Robot <abaci@linux.alibaba.com>
+Signed-off-by: Jiapeng Chong <jiapeng.chong@linux.alibaba.com>
+Reviewed-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Link: https://lore.kernel.org/r/20220310082756.1183-1-jiapeng.chong@linux.alibaba.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ sound/soc/atmel/mchp-pdmc.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/sound/soc/atmel/mchp-pdmc.c b/sound/soc/atmel/mchp-pdmc.c
+index c44636f6207d..7b737e3f67b7 100644
+--- a/sound/soc/atmel/mchp-pdmc.c
++++ b/sound/soc/atmel/mchp-pdmc.c
+@@ -987,10 +987,8 @@ static int mchp_pdmc_probe(struct platform_device *pdev)
+ 		return ret;
+ 
+ 	irq = platform_get_irq(pdev, 0);
+-	if (irq < 0) {
+-		dev_err(dev, "failed to get irq: %d\n", irq);
++	if (irq < 0)
+ 		return irq;
+-	}
+ 
+ 	dd->pclk = devm_clk_get(dev, "pclk");
+ 	if (IS_ERR(dd->pclk)) {
+-- 
+2.34.1
+

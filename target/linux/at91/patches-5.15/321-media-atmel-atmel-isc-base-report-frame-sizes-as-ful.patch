@@ -1,0 +1,51 @@
+From 6994c18fec51f677d0732b9b2bb4b26e5cf786d8 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 13 Dec 2021 14:49:26 +0100
+Subject: [PATCH 212/471] media: atmel: atmel-isc-base: report frame sizes as
+ full supported range
+
+The ISC supports a full broad range of frame sizes.
+Until now, the subdevice was queried for possible frame sizes and these
+were reported to the user space.
+However, the ISC should not care about which frame sizes the subdev
+supports, as long as this frame size is supported.
+Thus, report a continuous range from smallest frame size up to the max
+resolution.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo@jmondi.org>
+Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>
+(cherry picked from commit 72802a86e11c34e819fbfb38f58c5aef668f833d)
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+[claudiu.beznea: adapt to v5.15.82]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/media/platform/atmel/atmel-isc-base.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
+index 879afbe0e489..c086d424759c 100644
+--- a/drivers/media/platform/atmel/atmel-isc-base.c
++++ b/drivers/media/platform/atmel/atmel-isc-base.c
+@@ -1106,9 +1106,14 @@ static int isc_enum_framesizes(struct file *file, void *fh,
+ 	if (ret)
+ 		return ret;
+ 
+-	fsize->type = V4L2_FRMSIZE_TYPE_DISCRETE;
+-	fsize->discrete.width = fse.max_width;
+-	fsize->discrete.height = fse.max_height;
++	fsize->type = V4L2_FRMSIZE_TYPE_CONTINUOUS;
++
++	fsize->stepwise.min_width = 16;
++	fsize->stepwise.max_width = isc->max_width;
++	fsize->stepwise.min_height = 16;
++	fsize->stepwise.max_height = isc->max_height;
++	fsize->stepwise.step_width = 1;
++	fsize->stepwise.step_height = 1;
+ 
+ 	return 0;
+ }
+-- 
+2.34.1
+

@@ -1,0 +1,83 @@
+From 9d877d5d057f8d7f62ce4b906d9c2a102a4e8a70 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Tue, 23 Nov 2021 13:04:21 +0100
+Subject: [PATCH 201/471] media: i2c: imx274: implement fwnode parsing
+
+Implement fwnode parsing at probe time.
+Check if the bus and number of lanes are supported.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+---
+ drivers/media/i2c/imx274.c | 40 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/drivers/media/i2c/imx274.c b/drivers/media/i2c/imx274.c
+index e31f006b10d9..2aa15b9c23cc 100644
+--- a/drivers/media/i2c/imx274.c
++++ b/drivers/media/i2c/imx274.c
+@@ -27,6 +27,7 @@
+ 
+ #include <media/v4l2-ctrls.h>
+ #include <media/v4l2-device.h>
++#include <media/v4l2-fwnode.h>
+ #include <media/v4l2-subdev.h>
+ 
+ /*
+@@ -1957,6 +1958,41 @@ static const struct i2c_device_id imx274_id[] = {
+ };
+ MODULE_DEVICE_TABLE(i2c, imx274_id);
+ 
++static int imx274_fwnode_parse(struct device *dev)
++{
++	struct fwnode_handle *endpoint;
++	/* Only CSI2 is supported */
++	struct v4l2_fwnode_endpoint ep = {
++		.bus_type = V4L2_MBUS_CSI2_DPHY
++	};
++	int ret;
++
++	endpoint = fwnode_graph_get_next_endpoint(dev_fwnode(dev), NULL);
++	if (!endpoint) {
++		dev_err(dev, "Endpoint node not found\n");
++		return -EINVAL;
++	}
++
++	ret = v4l2_fwnode_endpoint_parse(endpoint, &ep);
++	fwnode_handle_put(endpoint);
++	if (ret == -ENXIO) {
++		dev_err(dev, "Unsupported bus type, should be CSI2\n");
++		return ret;
++	} else if (ret) {
++		dev_err(dev, "Parsing endpoint node failed %d\n", ret);
++		return ret;
++	}
++
++	/* Check number of data lanes, only 4 lanes supported */
++	if (ep.bus.mipi_csi2.num_data_lanes != 4) {
++		dev_err(dev, "Invalid data lanes: %d\n",
++			ep.bus.mipi_csi2.num_data_lanes);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
+ static int imx274_probe(struct i2c_client *client)
+ {
+ 	struct v4l2_subdev *sd;
+@@ -1971,6 +2007,10 @@ static int imx274_probe(struct i2c_client *client)
+ 
+ 	mutex_init(&imx274->lock);
+ 
++	ret = imx274_fwnode_parse(dev);
++	if (ret)
++		return ret;
++
+ 	imx274->inck = devm_clk_get_optional(dev, "inck");
+ 	if (IS_ERR(imx274->inck))
+ 		return PTR_ERR(imx274->inck);
+-- 
+2.34.1
+

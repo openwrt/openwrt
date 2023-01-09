@@ -1,0 +1,47 @@
+From 025746eb034e12ae3496621d8a4fcd4c3d4e906b Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 13 Dec 2021 14:49:25 +0100
+Subject: [PATCH 211/471] media: atmel: atmel-isc-base: remove frameintervals
+ VIDIOC
+
+VIDIOC_ENUM_FRAMEINTERVALS is not recommended for a top video driver.
+The frame rate is defined by the sensor subdevice, thus it can be queried
+directly by anyone interested in the frame intervals.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo@jmondi.org>
+Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>
+(cherry picked from commit 6b66e047f5b0b4712f3f2dcf40145736819bfa08)
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+[claudiu.beznea: adapt to v5.15.82]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/media/platform/atmel/atmel-isc-base.c | 11 +++--------
+ 1 file changed, 3 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
+index c086d424759c..879afbe0e489 100644
+--- a/drivers/media/platform/atmel/atmel-isc-base.c
++++ b/drivers/media/platform/atmel/atmel-isc-base.c
+@@ -1106,14 +1106,9 @@ static int isc_enum_framesizes(struct file *file, void *fh,
+ 	if (ret)
+ 		return ret;
+ 
+-	fsize->type = V4L2_FRMSIZE_TYPE_CONTINUOUS;
+-
+-	fsize->stepwise.min_width = 16;
+-	fsize->stepwise.max_width = isc->max_width;
+-	fsize->stepwise.min_height = 16;
+-	fsize->stepwise.max_height = isc->max_height;
+-	fsize->stepwise.step_width = 1;
+-	fsize->stepwise.step_height = 1;
++	fsize->type = V4L2_FRMSIZE_TYPE_DISCRETE;
++	fsize->discrete.width = fse.max_width;
++	fsize->discrete.height = fse.max_height;
+ 
+ 	return 0;
+ }
+-- 
+2.34.1
+

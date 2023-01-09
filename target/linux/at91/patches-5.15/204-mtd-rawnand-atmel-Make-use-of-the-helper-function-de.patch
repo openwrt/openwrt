@@ -1,0 +1,51 @@
+From 75a3125c8585b9cc184dd95f1846fc3e5c48a6a4 Mon Sep 17 00:00:00 2001
+From: Cai Huoqing <caihuoqing@baidu.com>
+Date: Wed, 1 Sep 2021 15:40:30 +0800
+Subject: [PATCH 095/471] mtd: rawnand: atmel: Make use of the helper function
+ devm_platform_ioremap_resource()
+
+Use the devm_platform_ioremap_resource() helper instead of
+calling platform_get_resource() and devm_ioremap_resource()
+separately
+
+Signed-off-by: Cai Huoqing <caihuoqing@baidu.com>
+Reviewed-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://lore.kernel.org/linux-mtd/20210901074031.8883-1-caihuoqing@baidu.com
+(cherry picked from commit c606d4f77c8a637c0563a206b080c5663f72b61a)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/mtd/nand/raw/atmel/pmecc.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/mtd/nand/raw/atmel/pmecc.c b/drivers/mtd/nand/raw/atmel/pmecc.c
+index cbb023bf00f7..498e41ccabbd 100644
+--- a/drivers/mtd/nand/raw/atmel/pmecc.c
++++ b/drivers/mtd/nand/raw/atmel/pmecc.c
+@@ -834,7 +834,6 @@ static struct atmel_pmecc *atmel_pmecc_create(struct platform_device *pdev,
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct atmel_pmecc *pmecc;
+-	struct resource *res;
+ 
+ 	pmecc = devm_kzalloc(dev, sizeof(*pmecc), GFP_KERNEL);
+ 	if (!pmecc)
+@@ -844,13 +843,11 @@ static struct atmel_pmecc *atmel_pmecc_create(struct platform_device *pdev,
+ 	pmecc->dev = dev;
+ 	mutex_init(&pmecc->lock);
+ 
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, pmecc_res_idx);
+-	pmecc->regs.base = devm_ioremap_resource(dev, res);
++	pmecc->regs.base = devm_platform_ioremap_resource(pdev, pmecc_res_idx);
+ 	if (IS_ERR(pmecc->regs.base))
+ 		return ERR_CAST(pmecc->regs.base);
+ 
+-	res = platform_get_resource(pdev, IORESOURCE_MEM, errloc_res_idx);
+-	pmecc->regs.errloc = devm_ioremap_resource(dev, res);
++	pmecc->regs.errloc = devm_platform_ioremap_resource(pdev, errloc_res_idx);
+ 	if (IS_ERR(pmecc->regs.errloc))
+ 		return ERR_CAST(pmecc->regs.errloc);
+ 
+-- 
+2.34.1
+

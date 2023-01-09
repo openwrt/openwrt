@@ -1,0 +1,35 @@
+From 0f85f4993aeab9d7253785c9f6801734b4c0335a Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 26 Oct 2022 15:41:04 +0300
+Subject: [PATCH 286/471] ARM: at91: pm: avoid soft resetting AC DLL
+
+Do not soft reset AC DLL as controller is buggy and this operation my
+introduce glitches in the controller leading to undefined behavior.
+
+Fixes: f0bbf17958e8 ("ARM: at91: pm: add self-refresh support for sama7g5")
+Depends-on: a02875c4cbd6 ("ARM: at91: pm: fix self-refresh for sama7g5")
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20221026124114.985876-2-claudiu.beznea@microchip.com
+---
+ arch/arm/mach-at91/pm_suspend.S | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/mach-at91/pm_suspend.S b/arch/arm/mach-at91/pm_suspend.S
+index aa0bfa770d2d..074df6f93fc8 100644
+--- a/arch/arm/mach-at91/pm_suspend.S
++++ b/arch/arm/mach-at91/pm_suspend.S
+@@ -194,6 +194,11 @@ sr_ena_2:
+ 	cmp	r7, #AT91_PM_BACKUP
+ 	beq	sr_ena_3
+ 
++	/* Do not soft reset the AC DLL. */
++	ldr	tmp1, [r3, DDR3PHY_ACDLLCR]
++	bic	tmp1, tmp1, DDR3PHY_ACDLLCR_DLLSRST
++	str	tmp1, [r3, DDR3PHY_ACDLLCR]
++
+ 	/* Disable DX DLLs. */
+ 	ldr	tmp1, [r3, #DDR3PHY_DX0DLLCR]
+ 	orr	tmp1, tmp1, #DDR3PHY_DXDLLCR_DLLDIS
+-- 
+2.34.1
+

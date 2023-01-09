@@ -1,0 +1,45 @@
+From aadf9c3746dd77852d46e119c4dfdd4ba0073baa Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 24 Nov 2021 16:02:38 +0200
+Subject: [PATCH 370/471] ARM: dts: at91: sama7g5: add otpc node
+
+Add OTPC node along with temperature calibration cell.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index af7b855a8d59..2faf11de828b 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -15,6 +15,7 @@
+ #include <dt-bindings/clock/at91.h>
+ #include <dt-bindings/dma/at91.h>
+ #include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/nvmem/microchip,sama7g5-otpc.h>
+ 
+ / {
+ 	model = "Microchip SAMA7G5 family SoC";
+@@ -1125,6 +1126,17 @@ ddr3phy: ddr3phy@e3804000 {
+ 			reg = <0xe3804000 0x1000>;
+ 		};
+ 
++		otpc: otpc@e8c00000 {
++			compatible = "microchip,sama7g5-otpc", "syscon";
++			reg = <0xe8c00000 0x100>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			temperature_calib: calib@1 {
++				reg = <OTP_PKT(1) 76>;
++			};
++		};
++
+ 		gic: interrupt-controller@e8c11000 {
+ 			compatible = "arm,cortex-a7-gic";
+ 			#interrupt-cells = <3>;
+-- 
+2.34.1
+

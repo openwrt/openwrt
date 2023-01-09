@@ -1,0 +1,30 @@
+From 2a4ec90aba73adf43f6fc63a7d79064b08691184 Mon Sep 17 00:00:00 2001
+From: Hari Prasath <Hari.PrasathGE@microchip.com>
+Date: Fri, 18 Feb 2022 17:07:55 +0530
+Subject: [PATCH 348/471] ARM: dts: at91: sama7g5: Restrict ns_sram
+
+Limit the size of SRAM available for the rest of kernel via genalloc API's to
+13k. The rest of the SRAM is used by CAN controllers and hence this restriction.
+
+Signed-off-by: Hari Prasath <Hari.PrasathGE@microchip.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index e04a98eadf44..63315f6010fe 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -103,7 +103,7 @@ ns_sram: sram@100000 {
+ 		compatible = "mmio-sram";
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-		reg = <0x100000 0x20000>;
++		reg = <0x100000 0x3400>;
+ 		ranges;
+ 	};
+ 
+-- 
+2.34.1
+

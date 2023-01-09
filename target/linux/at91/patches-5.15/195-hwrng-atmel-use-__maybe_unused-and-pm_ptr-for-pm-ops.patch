@@ -1,0 +1,63 @@
+From 08051a366c539c9c35a92bfbb96481849ef8674f Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 21 Feb 2022 09:59:26 +0200
+Subject: [PATCH 086/471] hwrng: atmel - use __maybe_unused and pm_ptr() for pm
+ ops
+
+Use __maybe_unused and pm_ptr() for pm ops.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/char/hw_random/atmel-rng.c | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/char/hw_random/atmel-rng.c b/drivers/char/hw_random/atmel-rng.c
+index ef49dbe681cf..0fff74808472 100644
+--- a/drivers/char/hw_random/atmel-rng.c
++++ b/drivers/char/hw_random/atmel-rng.c
+@@ -155,8 +155,7 @@ static int atmel_trng_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-#ifdef CONFIG_PM
+-static int atmel_trng_suspend(struct device *dev)
++static int __maybe_unused atmel_trng_suspend(struct device *dev)
+ {
+ 	struct atmel_trng *trng = dev_get_drvdata(dev);
+ 
+@@ -165,18 +164,17 @@ static int atmel_trng_suspend(struct device *dev)
+ 	return 0;
+ }
+ 
+-static int atmel_trng_resume(struct device *dev)
++static int __maybe_unused atmel_trng_resume(struct device *dev)
+ {
+ 	struct atmel_trng *trng = dev_get_drvdata(dev);
+ 
+ 	return atmel_trng_init(trng);
+ }
+ 
+-static const struct dev_pm_ops atmel_trng_pm_ops = {
++static const struct dev_pm_ops __maybe_unused atmel_trng_pm_ops = {
+ 	.suspend	= atmel_trng_suspend,
+ 	.resume		= atmel_trng_resume,
+ };
+-#endif /* CONFIG_PM */
+ 
+ static const struct atmel_trng_data at91sam9g45_config = {
+ 	.has_half_rate = false,
+@@ -204,9 +202,7 @@ static struct platform_driver atmel_trng_driver = {
+ 	.remove		= atmel_trng_remove,
+ 	.driver		= {
+ 		.name	= "atmel-trng",
+-#ifdef CONFIG_PM
+-		.pm	= &atmel_trng_pm_ops,
+-#endif /* CONFIG_PM */
++		.pm	= pm_ptr(&atmel_trng_pm_ops),
+ 		.of_match_table = atmel_trng_dt_ids,
+ 	},
+ };
+-- 
+2.34.1
+

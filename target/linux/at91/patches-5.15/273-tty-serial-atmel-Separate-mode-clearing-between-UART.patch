@@ -1,0 +1,63 @@
+From 861bd87b65d9f976b82ce6a8c7f878ca29eae28f Mon Sep 17 00:00:00 2001
+From: Sergiu Moga <sergiu.moga@microchip.com>
+Date: Fri, 2 Sep 2022 15:06:49 +0300
+Subject: [PATCH 164/471] tty: serial: atmel: Separate mode clearing between
+ UART and USART
+
+When clearing the mode of the serial IP inside the atmel_set_termios()
+method, make sure that the difference between the bitfields placement
+of the UART IP's and USART IP's is taken into account, as some of
+them overlap with each other. For example, ATMEL_UA_BRSRCCK overlaps
+with ATMEL_US_NBSTOP and ATMEL_US_USCLKS overlaps with ATMEL_UA_FILTER.
+
+Furthermore, add definitions for the Baud Rate Source Clock and the
+Filter bitfields of the Mode Register of UART IP's, since they were
+missing.
+
+Signed-off-by: Sergiu Moga <sergiu.moga@microchip.com>
+---
+ drivers/tty/serial/atmel_serial.c | 7 +++++--
+ drivers/tty/serial/atmel_serial.h | 2 ++
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/tty/serial/atmel_serial.c b/drivers/tty/serial/atmel_serial.c
+index c0a86558ceaa..2c8b121217d2 100644
+--- a/drivers/tty/serial/atmel_serial.c
++++ b/drivers/tty/serial/atmel_serial.c
+@@ -2134,8 +2134,11 @@ static void atmel_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	mode = old_mode = atmel_uart_readl(port, ATMEL_US_MR);
+ 
+ 	/* reset the mode, clock divisor, parity, stop bits and data size */
+-	mode &= ~(ATMEL_US_USCLKS | ATMEL_US_CHRL | ATMEL_US_NBSTOP |
+-		  ATMEL_US_PAR | ATMEL_US_USMODE);
++	if (atmel_port->is_usart)
++		mode &= ~(ATMEL_US_NBSTOP | ATMEL_US_PAR | ATMEL_US_CHRL |
++			  ATMEL_US_USCLKS | ATMEL_US_USMODE);
++	else
++		mode &= ~(ATMEL_UA_BRSRCCK | ATMEL_US_PAR | ATMEL_UA_FILTER);
+ 
+ 	baud = uart_get_baud_rate(port, termios, old, 0, port->uartclk / 16);
+ 
+diff --git a/drivers/tty/serial/atmel_serial.h b/drivers/tty/serial/atmel_serial.h
+index 0d8a0f9cc5c3..2a525b58e11a 100644
+--- a/drivers/tty/serial/atmel_serial.h
++++ b/drivers/tty/serial/atmel_serial.h
+@@ -50,6 +50,7 @@
+ #define		ATMEL_US_USCLKS_MCK		(0 <<  4)
+ #define		ATMEL_US_USCLKS_MCK_DIV8	(1 <<  4)
+ #define		ATMEL_US_USCLKS_SCK		(3 <<  4)
++#define	ATMEL_UA_FILTER		BIT(4)
+ #define	ATMEL_US_CHRL		GENMASK(7, 6)	/* Character Length */
+ #define		ATMEL_US_CHRL_5			(0 <<  6)
+ #define		ATMEL_US_CHRL_6			(1 <<  6)
+@@ -67,6 +68,7 @@
+ #define		ATMEL_US_NBSTOP_1		(0 << 12)
+ #define		ATMEL_US_NBSTOP_1_5		(1 << 12)
+ #define		ATMEL_US_NBSTOP_2		(2 << 12)
++#define	ATMEL_UA_BRSRCCK	BIT(12)	/* Clock Selection for UART */
+ #define	ATMEL_US_CHMODE		GENMASK(15, 14)	/* Channel Mode */
+ #define		ATMEL_US_CHMODE_NORMAL		(0 << 14)
+ #define		ATMEL_US_CHMODE_ECHO		(1 << 14)
+-- 
+2.34.1
+

@@ -1,0 +1,62 @@
+From 9eeeef49dd7765210532384805933ad891d551a2 Mon Sep 17 00:00:00 2001
+From: Durai Manickam KR <durai.manickamkr@microchip.com>
+Date: Fri, 8 Jul 2022 11:55:45 +0530
+Subject: [PATCH 387/471] ARM: dts: at91: sam9x60: Move flx6 definitions in the
+ SoC dtsi
+
+Move the flx6 nodes functional definitions to sam9x60.dtsi and
+enable its pinmux and desired function in the board specific
+DTS file.
+
+Signed-off-by: Manikandan M <manikandan.m@microchip.com>
+[durai.manickamkr@microchip.com: Moved the #address-cells and #size-cells
+properties from dtsi to dts file]
+Signed-off-by: Durai Manickam KR <durai.manickamkr@microchip.com>
+---
+ arch/arm/boot/dts/at91-sam9x60ek.dts | 5 -----
+ arch/arm/boot/dts/sam9x60.dtsi       | 9 +++++++++
+ 2 files changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/at91-sam9x60ek.dts b/arch/arm/boot/dts/at91-sam9x60ek.dts
+index b453573b4e7b..2d2d5ac006b1 100644
+--- a/arch/arm/boot/dts/at91-sam9x60ek.dts
++++ b/arch/arm/boot/dts/at91-sam9x60ek.dts
+@@ -268,15 +268,10 @@ &flx6 {
+ 	status = "okay";
+ 
+ 	i2c6: i2c@600 {
+-		compatible = "microchip,sam9x60-i2c";
+-		reg = <0x600 0x200>;
+-		interrupts = <9 IRQ_TYPE_LEVEL_HIGH 7>;
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+-		clocks = <&pmc PMC_TYPE_PERIPHERAL 9>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_flx6_default>;
+-		atmel,fifo-size = <16>;
+ 		i2c-analog-filter;
+ 		i2c-digital-filter;
+ 		i2c-digital-filter-width-ns = <35>;
+diff --git a/arch/arm/boot/dts/sam9x60.dtsi b/arch/arm/boot/dts/sam9x60.dtsi
+index c1c19687fc4d..67397f2cc787 100644
+--- a/arch/arm/boot/dts/sam9x60.dtsi
++++ b/arch/arm/boot/dts/sam9x60.dtsi
+@@ -420,6 +420,15 @@ flx6: flexcom@f8010000 {
+ 				#size-cells = <1>;
+ 				ranges = <0x0 0xf8010000 0x800>;
+ 				status = "disabled";
++
++				i2c6: i2c@600 {
++					compatible = "microchip,sam9x60-i2c";
++					reg = <0x600 0x200>;
++					interrupts = <9 IRQ_TYPE_LEVEL_HIGH 7>;
++					clocks = <&pmc PMC_TYPE_PERIPHERAL 9>;
++					atmel,fifo-size = <16>;
++					status = "disabled";
++				};
+ 			};
+ 
+ 			flx7: flexcom@f8014000 {
+-- 
+2.34.1
+

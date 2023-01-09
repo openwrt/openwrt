@@ -1,0 +1,37 @@
+From 27ff1114c75a96a382bec7ffea9334bd1057c6ea Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 13 Dec 2021 14:49:35 +0100
+Subject: [PATCH 214/471] media: atmel: atmel-isc-base: add wb debug messages
+
+Add debug messages that make it easier to debug white balance algorithm.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Reviewed-by: Jacopo Mondi <jacopo+renesas@jmondi.org>
+Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@kernel.org>
+(cherry picked from commit 76c97b0bb842ae6a6dcb87785518ddf0dec89381)
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+[claudiu.beznea: adapt to v5.15.82]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/media/platform/atmel/atmel-isc-base.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/drivers/media/platform/atmel/atmel-isc-base.c b/drivers/media/platform/atmel/atmel-isc-base.c
+index c99fbf5192e7..aca1d1ef5acf 100644
+--- a/drivers/media/platform/atmel/atmel-isc-base.c
++++ b/drivers/media/platform/atmel/atmel-isc-base.c
+@@ -1375,10 +1375,6 @@ static void isc_wb_update(struct isc_ctrls *ctrls)
+ 		/* multiply both gains and adjust for decimals */
+ 		ctrls->gain[c] = s_gain[c] * gw_gain[c];
+ 		ctrls->gain[c] >>= 9;
+-
+-		/* make sure we are not out of range */
+-		ctrls->gain[c] = clamp_val(ctrls->gain[c], 0, GENMASK(12, 0));
+-
+ 		v4l2_dbg(1, debug, &isc->v4l2_dev,
+ 			 "isc wb: component %d, final gain %u\n",
+ 			 c, ctrls->gain[c]);
+-- 
+2.34.1
+

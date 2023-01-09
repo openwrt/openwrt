@@ -1,0 +1,39 @@
+From 14e2da2a9b013bed7a3af0a26b1a635ae62ef260 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 20 Dec 2021 15:58:11 +0200
+Subject: [PATCH 046/471] ASoC: atmel: i2s-mcc: remove interface name from
+ stream_name
+
+Remove the interface name from the stream_name. The interface name (and the
+index of the interface) can be set in DT using the sound-name-prefix string
+property.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ sound/soc/atmel/mchp-i2s-mcc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/atmel/mchp-i2s-mcc.c b/sound/soc/atmel/mchp-i2s-mcc.c
+index 8988f024a732..17fe1112f3f4 100644
+--- a/sound/soc/atmel/mchp-i2s-mcc.c
++++ b/sound/soc/atmel/mchp-i2s-mcc.c
+@@ -908,14 +908,14 @@ static int mchp_i2s_mcc_dai_probe(struct snd_soc_dai *dai)
+ static struct snd_soc_dai_driver mchp_i2s_mcc_dai = {
+ 	.probe	= mchp_i2s_mcc_dai_probe,
+ 	.playback = {
+-		.stream_name = "I2SMCC-Playback",
++		.stream_name = "Playback",
+ 		.channels_min = 1,
+ 		.channels_max = 8,
+ 		.rates = MCHP_I2SMCC_RATES,
+ 		.formats = MCHP_I2SMCC_FORMATS,
+ 	},
+ 	.capture = {
+-		.stream_name = "I2SMCC-Capture",
++		.stream_name = "Capture",
+ 		.channels_min = 1,
+ 		.channels_max = 8,
+ 		.rates = MCHP_I2SMCC_RATES,
+-- 
+2.34.1
+

@@ -1,0 +1,43 @@
+From 4b6e24fd8036bedd4bb53edee233660fd33032cc Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 20 Oct 2021 12:46:56 +0300
+Subject: [PATCH 332/471] ARM: dts: at91: sama7g5-ek: use blocks 0 and 1 of
+ TCB0 as cs and ce
+
+Use blocks 0 and 1 of TCB0 for clocksource and clockevent functionality.
+PIT64B is already enabled on SAMA7G5 targets for this but TCB0 will be
+used as a fallback only in case PIT64B will fail to probe.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20211020094656.3343242-4-claudiu.beznea@microchip.com
+---
+ arch/arm/boot/dts/at91-sama7g5ek.dts | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
+index 2601d1aba8da..3d57cc377932 100644
+--- a/arch/arm/boot/dts/at91-sama7g5ek.dts
++++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
+@@ -686,6 +686,18 @@ &spdiftx {
+ 	status = "okay";
+ };
+ 
++&tcb0 {
++	timer0: timer@0 {
++		compatible = "atmel,tcb-timer";
++		reg = <0>;
++	};
++
++	timer1: timer@1 {
++		compatible = "atmel,tcb-timer";
++		reg = <1>;
++	};
++};
++
+ &trng {
+ 	status = "okay";
+ };
+-- 
+2.34.1
+

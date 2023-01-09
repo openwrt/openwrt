@@ -1,0 +1,36 @@
+From bc691a28bfaa587276cd95faf10f7cc4e7a60a84 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Thu, 4 Oct 2018 11:22:02 +0300
+Subject: [PATCH 248/471] drm/kms: use drm_atomic_helper_framebuffer_changed
+ when waiting for vblanks
+
+Waiting for vblanks takes too long on our boards. Reverting to the old API
+which was calling drm_atomic_helper_framebuffer_changed.
+
+With this, we can achieve the framerate in kernel 4.9.
+
+Tested-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Tested-by: Razvan Stefanescu <razvan.stefanescu@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/gpu/drm/drm_atomic_helper.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/gpu/drm/drm_atomic_helper.c b/drivers/gpu/drm/drm_atomic_helper.c
+index 112178fb0bb5..4a823ba05182 100644
+--- a/drivers/gpu/drm/drm_atomic_helper.c
++++ b/drivers/gpu/drm/drm_atomic_helper.c
+@@ -1539,6 +1539,9 @@ drm_atomic_helper_wait_for_vblanks(struct drm_device *dev,
+ 		if (!new_crtc_state->active)
+ 			continue;
+ 
++		if (!drm_atomic_helper_framebuffer_changed(dev,
++                                old_state, crtc))
++			continue;
+ 		ret = drm_crtc_vblank_get(crtc);
+ 		if (ret != 0)
+ 			continue;
+-- 
+2.34.1
+

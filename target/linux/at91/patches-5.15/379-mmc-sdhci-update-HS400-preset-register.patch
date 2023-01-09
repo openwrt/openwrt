@@ -1,0 +1,32 @@
+From 7668e116735be22ddf68726f8170d3f846b95ce4 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 3 Aug 2020 15:30:49 +0300
+Subject: [PATCH 270/471] mmc: sdhci: update HS400 preset register
+
+Update to at91 register offset.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/mmc/host/sdhci.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/sdhci.h b/drivers/mmc/host/sdhci.h
+index 6a5cc05576cd..23750ecea278 100644
+--- a/drivers/mmc/host/sdhci.h
++++ b/drivers/mmc/host/sdhci.h
+@@ -261,11 +261,10 @@
+ #define SDHCI_PRESET_FOR_SDR50 0x6A
+ #define SDHCI_PRESET_FOR_SDR104        0x6C
+ #define SDHCI_PRESET_FOR_DDR50 0x6E
+-#define SDHCI_PRESET_FOR_HS400 0x74 /* Non-standard */
++#define SDHCI_PRESET_FOR_HS400 0x244 /* Non-standard */
+ #define SDHCI_PRESET_DRV_MASK		GENMASK(15, 14)
+ #define SDHCI_PRESET_CLKGEN_SEL		BIT(10)
+ #define SDHCI_PRESET_SDCLK_FREQ_MASK	GENMASK(9, 0)
+-
+ #define SDHCI_SLOT_INT_STATUS	0xFC
+ 
+ #define SDHCI_HOST_VERSION	0xFE
+-- 
+2.34.1
+

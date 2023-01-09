@@ -1,0 +1,115 @@
+From 1974e0097cf412d7991b62f4f21076def9eb88c1 Mon Sep 17 00:00:00 2001
+From: Durai Manickam KR <durai.manickamkr@microchip.com>
+Date: Tue, 14 Sep 2021 10:51:13 +0530
+Subject: [PATCH 315/471] ARM: dts: at91-sama5d27_som1_ek: Added I2C bus
+ recovery support
+
+SDA and SCL is configured as GPIO for I2C bus to recover during
+I2C bus malfunction.
+
+Signed-off-by: Durai Manickam KR <durai.manickamkr@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20210914052113.85695-1-durai.manickamkr@microchip.com
+---
+ arch/arm/boot/dts/at91-sama5d27_som1.dtsi   | 12 ++++++++++-
+ arch/arm/boot/dts/at91-sama5d27_som1_ek.dts | 23 +++++++++++++++++++--
+ 2 files changed, 32 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/at91-sama5d27_som1.dtsi b/arch/arm/boot/dts/at91-sama5d27_som1.dtsi
+index b48ac3b62a31..a4623cc67cc1 100644
+--- a/arch/arm/boot/dts/at91-sama5d27_som1.dtsi
++++ b/arch/arm/boot/dts/at91-sama5d27_som1.dtsi
+@@ -8,6 +8,7 @@
+  */
+ #include "sama5d2.dtsi"
+ #include "sama5d2-pinfunc.h"
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "Atmel SAMA5D27 SoM1";
+@@ -95,8 +96,11 @@ ethernet-phy@7 {
+ 
+ 			i2c0: i2c@f8028000 {
+ 				dmas = <0>, <0>;
+-				pinctrl-names = "default";
++				pinctrl-names = "default", "gpio";
+ 				pinctrl-0 = <&pinctrl_i2c0_default>;
++				pinctrl-1 = <&pinctrl_i2c0_gpio>;
++				sda-gpios = <&pioA PIN_PD21 GPIO_ACTIVE_HIGH>;
++				scl-gpios = <&pioA PIN_PD22 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+ 				status = "okay";
+ 
+ 				at24@50 {
+@@ -113,6 +117,12 @@ pinctrl_i2c0_default: i2c0_default {
+ 					bias-disable;
+ 				};
+ 
++				pinctrl_i2c0_gpio: i2c0_gpio {
++					pinmux = <PIN_PD21__GPIO>,
++						 <PIN_PD22__GPIO>;
++					bias-disable;
++				};
++
+ 				pinctrl_qspi1_default: qspi1_default {
+ 					sck_cs {
+ 						pinmux = <PIN_PB5__QSPI1_SCK>,
+diff --git a/arch/arm/boot/dts/at91-sama5d27_som1_ek.dts b/arch/arm/boot/dts/at91-sama5d27_som1_ek.dts
+index cd4672501add..08f0d4b995ff 100644
+--- a/arch/arm/boot/dts/at91-sama5d27_som1_ek.dts
++++ b/arch/arm/boot/dts/at91-sama5d27_som1_ek.dts
+@@ -130,8 +130,11 @@ i2c3: i2c@600 {
+ 					i2c-analog-filter;
+ 					i2c-digital-filter;
+ 					i2c-digital-filter-width-ns = <35>;
+-					pinctrl-names = "default";
++					pinctrl-names = "default", "gpio";
+ 					pinctrl-0 = <&pinctrl_mikrobus_i2c>;
++					pinctrl-1 = <&pinctrl_i2c3_gpio>;
++					sda-gpios = <&pioA PIN_PA24 GPIO_ACTIVE_HIGH>;
++					scl-gpios = <&pioA PIN_PA23 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+ 					status = "okay";
+ 				};
+ 			};
+@@ -215,8 +218,11 @@ i2c1: i2c@fc028000 {
+ 				i2c-analog-filter;
+ 				i2c-digital-filter;
+ 				i2c-digital-filter-width-ns = <35>;
+-				pinctrl-names = "default";
++				pinctrl-names = "default", "gpio";
+ 				pinctrl-0 = <&pinctrl_i2c1_default>;
++				pinctrl-1 = <&pinctrl_i2c1_gpio>;
++				sda-gpios = <&pioA PIN_PD4 GPIO_ACTIVE_HIGH>;
++				scl-gpios = <&pioA PIN_PD5 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+ 				status = "okay";
+ 			};
+ 
+@@ -252,6 +258,13 @@ pinctrl_i2c1_default: i2c1_default {
+ 					bias-disable;
+ 				};
+ 
++				pinctrl_i2c1_gpio: i2c1_gpio {
++                                        pinmux = <PIN_PD4__GPIO>,
++                                                 <PIN_PD5__GPIO>;
++                                        bias-disable;
++                                };
++
++
+ 				pinctrl_isc_base: isc_base {
+ 					pinmux = <PIN_PC21__ISC_PCK>,
+ 						 <PIN_PC22__ISC_VSYNC>,
+@@ -441,6 +454,12 @@ pinctrl_mikrobus_i2c: mikrobus1_i2c {
+ 					bias-disable;
+ 				};
+ 
++				pinctrl_i2c3_gpio: i2c3_gpio {
++					pinmux = <PIN_PA24__GPIO>,
++						 <PIN_PA23__GPIO>;
++					bias-disable;
++				};
++
+ 				pinctrl_flx4_default: flx4_uart_default {
+ 					pinmux = <PIN_PC28__FLEXCOM4_IO0>,
+ 						 <PIN_PC29__FLEXCOM4_IO1>,
+-- 
+2.34.1
+

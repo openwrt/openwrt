@@ -1,0 +1,28 @@
+From 62bb0b3a4661dce29d2c094424ba9eb9c5507b1a Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 11 Oct 2021 16:12:22 +0300
+Subject: [PATCH 417/471] ARM: configs: at91: sama7: add xisc and csi2dc
+
+Enable XISC and CSI2DC drivers.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 938aae4bd80b..15978f2ab4ea 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -126,6 +126,8 @@ CONFIG_MEDIA_SUPPORT_FILTER=y
+ CONFIG_MEDIA_CAMERA_SUPPORT=y
+ CONFIG_MEDIA_PLATFORM_SUPPORT=y
+ CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_VIDEO_ATMEL_XISC=y
++CONFIG_VIDEO_MICROCHIP_CSI2DC=y
+ CONFIG_VIDEO_IMX219=m
+ CONFIG_VIDEO_IMX274=m
+ CONFIG_VIDEO_OV5647=m
+-- 
+2.34.1
+

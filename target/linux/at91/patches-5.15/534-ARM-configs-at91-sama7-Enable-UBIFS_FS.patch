@@ -1,0 +1,49 @@
+From e6dc5d2070070b8ff2d659944632179fc96eb4b8 Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Wed, 2 Feb 2022 09:02:44 +0200
+Subject: [PATCH 425/471] ARM: configs: at91: sama7: Enable UBIFS_FS
+
+sama7g5 contains a Static Memory Controller that can communicate with
+NAND flashes. Enable UBIFS_FS in case one wants to put an ubifs rootfs
+on a NAND flash. CONFIG_CRYPTO_LZO and CONFIG_CRYPTO_DEFLATE appear as
+removed because they are selected by CONFIG_UBIFS_FS.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20220202070244.150022-1-tudor.ambarus@microchip.com
+---
+ arch/arm/configs/sama7_defconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 40c16984003f..96715e13a9f8 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -92,6 +92,7 @@ CONFIG_MTD_CMDLINE_PARTS=y
+ CONFIG_MTD_RAW_NAND=y
+ CONFIG_MTD_NAND_ATMEL=y
+ # CONFIG_MTD_NAND_ECC_SW_HAMMING is not set
++CONFIG_MTD_UBI=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=1
+@@ -198,6 +199,7 @@ CONFIG_EXT3_FS=y
+ CONFIG_FANOTIFY=y
+ CONFIG_VFAT_FS=y
+ CONFIG_TMPFS=y
++CONFIG_UBIFS_FS=y
+ CONFIG_NFS_FS=y
+ CONFIG_ROOT_NFS=y
+ CONFIG_NLS_CODEPAGE_437=y
+@@ -213,8 +215,6 @@ CONFIG_CRYPTO_OFB=y
+ CONFIG_CRYPTO_XTS=y
+ CONFIG_CRYPTO_SHA1=y
+ CONFIG_CRYPTO_DES=y
+-CONFIG_CRYPTO_DEFLATE=y
+-CONFIG_CRYPTO_LZO=y
+ CONFIG_CRYPTO_USER_API_HASH=m
+ CONFIG_CRYPTO_USER_API_SKCIPHER=m
+ CONFIG_CRYPTO_DEV_ATMEL_AES=y
+-- 
+2.34.1
+

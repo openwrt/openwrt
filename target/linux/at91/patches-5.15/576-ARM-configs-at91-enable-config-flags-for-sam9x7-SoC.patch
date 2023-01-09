@@ -1,0 +1,28 @@
+From fe3f3c93b5d8b56b9ae828b226f4474be51bbabc Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Mon, 7 Feb 2022 16:08:47 +0530
+Subject: [PATCH 467/471] ARM: configs: at91: enable config flags for sam9x7
+ SoC
+
+Enable config flags for SAM9X7 SoC
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ arch/arm/configs/at91_dt_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index ea68aae12986..4b9bed756ef2 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -15,6 +15,7 @@ CONFIG_ARCH_AT91=y
+ CONFIG_SOC_AT91RM9200=y
+ CONFIG_SOC_AT91SAM9=y
+ CONFIG_SOC_SAM9X60=y
++CONFIG_SOC_SAM9X7=y
+ # CONFIG_ATMEL_CLOCKSOURCE_PIT is not set
+ CONFIG_AEABI=y
+ CONFIG_UACCESS_WITH_MEMCPY=y
+-- 
+2.34.1
+

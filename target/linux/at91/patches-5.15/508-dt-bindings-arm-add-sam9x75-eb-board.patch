@@ -1,0 +1,32 @@
+From cd5437d8851ef26c7ba74323f93e3c76b49004e5 Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Wed, 16 Mar 2022 16:17:54 +0530
+Subject: [PATCH 399/471] dt-bindings: arm: add sam9x75-eb board
+
+Add documentation for SAM9X75-EB board
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ Documentation/devicetree/bindings/arm/atmel-at91.yaml | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/atmel-at91.yaml b/Documentation/devicetree/bindings/arm/atmel-at91.yaml
+index bd724f8fa8e3..8199b742862a 100644
+--- a/Documentation/devicetree/bindings/arm/atmel-at91.yaml
++++ b/Documentation/devicetree/bindings/arm/atmel-at91.yaml
+@@ -102,6 +102,12 @@ properties:
+           - const: microchip,sam9x60
+           - const: atmel,at91sam9
+ 
++      - description: SAM9X75-EB board
++        items:
++          - const: microchip,sam9x75eb
++          - const: microchip,sam9x7
++          - const: atmel,at91sam9
++
+       - description: Nattis v2 board with Natte v2 power board
+         items:
+           - const: axentia,nattis-2
+-- 
+2.34.1
+

@@ -1,0 +1,64 @@
+From abd5906a738ffb64584c371b1f57f5b5cdccef22 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 20 Dec 2021 13:05:42 +0200
+Subject: [PATCH 327/471] ARM: dts: at91: sama7g5: add nodes for csi2host
+
+Add nodes for csi2host and the d-phy.
+These nodes are used in the MIPI image capture pipeline.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 37 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 169352ad11f6..efb93bf50535 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -219,6 +219,43 @@ sdmmc2: mmc@e120c000 {
+ 			status = "disabled";
+ 		};
+ 
++		csi2host: csi2host@e1400000 {
++			compatible = "snps,dw-csi";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0xe1400000 0x7FF>;
++			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 33>, <&pmc PMC_TYPE_GCK 33>;
++			clock-names = "perclk", "phyclk";
++			assigned-clocks = <&pmc PMC_TYPE_GCK 33>;
++			assigned-clock-rates = <26600000>;
++			snps,output-type = <1>;
++			phys = <&csi_dphy>;
++			status = "disabled";
++
++			port@1 {
++				reg = <1>;
++				csi2host_in: endpoint {
++				};
++			};
++
++			port@2 {
++				reg = <2>;
++				csi2host_out: endpoint {
++				};
++			};
++		};
++
++		csi_dphy: dphy@e1400040 {
++			compatible = "snps,dw-dphy-rx";
++			#phy-cells = <0>;
++			bus-width = <8>;
++			snps,dphy-frequency = <900000>;
++			snps,phy_type = <0>;
++			reg = <0xe1400040 0x20>;
++			status = "disabled";
++		};
++
+ 		csi2dc: csi2dc@e1404000 {
+ 			compatible = "microchip,sama7g5-csi2dc";
+ 			reg = <0xe1404000 0x500>;
+-- 
+2.34.1
+

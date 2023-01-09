@@ -1,0 +1,47 @@
+From 68c1d5b95f0bf65696640cee809e347b2385bcf7 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Wed, 26 Jan 2022 15:51:15 +0200
+Subject: [PATCH 278/471] ARM: at91: pm: replace /** with /*
+
+Replace /** with /* as the structures referenced are valid only to
+file pm.c.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/mach-at91/pm.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-at91/pm.c b/arch/arm/mach-at91/pm.c
+index 7172526dc0b0..6cae7ba478cb 100644
+--- a/arch/arm/mach-at91/pm.c
++++ b/arch/arm/mach-at91/pm.c
+@@ -30,7 +30,7 @@
+ 
+ #define BACKUP_DDR_PHY_CALIBRATION	(9)
+ 
+-/**
++/*
+  * struct at91_pm_bu - AT91 power management backup unit data structure
+  * @suspended: true if suspended to backup mode
+  * @reserved: reserved
+@@ -60,7 +60,7 @@ struct at91_pm_sfrbu_regs {
+ 	} pswbu;
+ };
+ 
+-/**
++/*
+  * struct at91_soc_pm - AT91 SoC power management data structure
+  * @config_shdwc_ws: wakeup sources configuration function for SHDWC
+  * @config_pmc_ws: wakeup srouces configuration function for PMC
+@@ -82,7 +82,7 @@ struct at91_soc_pm {
+ 	void *memcs;
+ };
+ 
+-/**
++/*
+  * enum at91_pm_iomaps:	IOs that needs to be mapped for different PM modes
+  * @AT91_PM_IOMAP_SHDWC:	SHDWC controller
+  * @AT91_PM_IOMAP_SFRBU:	SFRBU controller
+-- 
+2.34.1
+

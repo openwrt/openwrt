@@ -1,0 +1,31 @@
+From 10af20ba19e61e9b4f046c9735f0d9992ae4a275 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Fri, 21 Jan 2022 14:40:44 +0200
+Subject: [PATCH 223/471] dt-bindings: media: microchip,xisc: add bus-width of
+ 14
+
+The Microchip XISC supports a bus width of 14 bits.
+Add it to the supported bus widths.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Acked-by: Rob Herring <robh@kernel.org>
+---
+ Documentation/devicetree/bindings/media/microchip,xisc.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/media/microchip,xisc.yaml b/Documentation/devicetree/bindings/media/microchip,xisc.yaml
+index 086e1430af4f..3be8f64c3e21 100644
+--- a/Documentation/devicetree/bindings/media/microchip,xisc.yaml
++++ b/Documentation/devicetree/bindings/media/microchip,xisc.yaml
+@@ -67,7 +67,7 @@ properties:
+           remote-endpoint: true
+ 
+           bus-width:
+-            enum: [8, 9, 10, 11, 12]
++            enum: [8, 9, 10, 11, 12, 14]
+             default: 12
+ 
+           hsync-active:
+-- 
+2.34.1
+

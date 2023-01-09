@@ -1,0 +1,30 @@
+From 5f85cdde40dbe26fad219adce271400463a0cb70 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 16 Aug 2021 09:44:10 +0300
+Subject: [PATCH 359/471] ARM: dts: at91: at91sam9260: add pinctrl label
+
+Add label for pinctrl node.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20210816064416.1630674-2-claudiu.beznea@microchip.com
+---
+ arch/arm/boot/dts/at91sam9260.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/at91sam9260.dtsi b/arch/arm/boot/dts/at91sam9260.dtsi
+index 019f1c3d4d30..7368347c9357 100644
+--- a/arch/arm/boot/dts/at91sam9260.dtsi
++++ b/arch/arm/boot/dts/at91sam9260.dtsi
+@@ -166,7 +166,7 @@ tcb1: timer@fffdc000 {
+ 				clock-names = "t0_clk", "t1_clk", "t2_clk", "slow_clk";
+ 			};
+ 
+-			pinctrl@fffff400 {
++			pinctrl: pinctrl@fffff400 {
+ 				#address-cells = <1>;
+ 				#size-cells = <1>;
+ 				compatible = "atmel,at91rm9200-pinctrl", "simple-bus";
+-- 
+2.34.1
+

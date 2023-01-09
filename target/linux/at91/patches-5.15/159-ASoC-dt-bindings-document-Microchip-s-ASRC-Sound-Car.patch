@@ -1,0 +1,206 @@
+From 01a350318eb1ac5e9279f5b0a3743e1438cb7cc4 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Thu, 24 Mar 2022 17:38:16 +0200
+Subject: [PATCH 050/471] ASoC: dt-bindings: document Microchip's ASRC Sound
+ Card
+
+Add DT bindings for the new Sound Card that can be used to enable ASRC
+present in sama7g5 SoCs.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ .../bindings/sound/microchip,asrc-card.yaml   | 162 ++++++++++++++++++
+ .../dt-bindings/sound/microchip,asrc-card.h   |  12 ++
+ 2 files changed, 174 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/sound/microchip,asrc-card.yaml
+ create mode 100644 include/dt-bindings/sound/microchip,asrc-card.h
+
+diff --git a/Documentation/devicetree/bindings/sound/microchip,asrc-card.yaml b/Documentation/devicetree/bindings/sound/microchip,asrc-card.yaml
+new file mode 100644
+index 000000000000..3f7f2bc12ac7
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sound/microchip,asrc-card.yaml
+@@ -0,0 +1,162 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/sound/microchip,asrc-card.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Sound Card driver for Microchip's Asynchronous Sample Rate Converter
++
++maintainers:
++  - Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
++
++description:
++  Sound Card driver to be used with Microchip's ASRC. It is able to register
++  the ASRC as Front-End and makes the rest of the audio IPs behave as
++  Back-ends and as normal PCMs as well. The ASRC use is optional though.
++
++definitions:
++  model:
++    description: User specified audio sound card name.
++    $ref: /schemas/types.yaml#/definitions/string
++
++  audio-routing:
++    description: |
++      A list of the connections between audio components.
++      Each entry is a pair of strings, the first being the
++      connection's sink, the second being the connection's source.
++    $ref: /schemas/types.yaml#/definitions/non-unique-string-array
++
++  dai-tdm-slot-num:
++    description: see tdm-slot.txt.
++    $ref: /schemas/types.yaml#/definitions/uint32
++
++  dai-tdm-slot-width:
++    description: see tdm-slot.txt.
++    $ref: /schemas/types.yaml#/definitions/uint32
++
++  frame-master:
++    description: Indicates dai-link frame master.
++    $ref: /schemas/types.yaml#/definitions/phandle
++
++  bitclock-master:
++    description: Indicates dai-link bit clock master
++    $ref: /schemas/types.yaml#/definitions/phandle
++
++  label:
++    maxItems: 1
++
++  format:
++    description: audio format.
++    items:
++      enum:
++        - i2s
++        - right_j
++        - left_j
++        - dsp_a
++        - dsp_b
++        - pdm
++
++  convert-rate:
++    description: Front-End to Back-End rate convert.
++    $ref: /schemas/types.yaml#/definitions/uint32
++
++  convert-channels:
++    description: Front-end to Back-end channels convert.
++    $ref: /schemas/types.yaml#/definitions/uint32
++
++  convert-sample-format:
++    description: Front-end to Back-end sample format convert.
++    $ref: /schemas/types.yaml#/definitions/uint32
++
++  dai:
++    type: object
++    properties:
++      sound-dai:
++        maxItems: 1
++
++      # common properties
++      frame-master:
++        $ref: /schemas/types.yaml#/definitions/flag
++      bitclock-master:
++        $ref: /schemas/types.yaml#/definitions/flag
++      dai-tdm-slot-num:
++        $ref: "#/definitions/dai-tdm-slot-num"
++      dai-tdm-slot-width:
++        $ref: "#/definitions/dai-tdm-slot-width"
++    required:
++      - sound-dai
++properties:
++  compatible:
++    const: microchip,sama7g5-asrc-card
++
++  "#address-cells":
++    const: 1
++  "#size-cells":
++    const: 0
++
++  label:
++    $ref: "#/definitions/label"
++
++patternProperties:
++  "^microchip,dai-link(@[0-9a-f]+)?$":
++    description: |
++      Container for dai-link level properties and the CPU and CODEC sub-nodes.
++      This container may be omitted when the card has only one DAI link.
++    type: object
++    properties:
++
++      # common properties
++      microchip,frame-master:
++        $ref: "#/definitions/frame-master"
++      microchip,bitclock-master:
++        $ref: "#/definitions/bitclock-master"
++      microchip,format:
++        $ref: "#/definitions/format"
++      microchip,convert-rate:
++        $ref: "#/definitions/convert-rate"
++      microchip,convert-channels:
++        $ref: "#/definitions/convert-channels"
++      microchip,convert-sample-format:
++        $ref: "#/definitions/convert-sample-format"
++
++    patternProperties:
++      "^cpu(@[0-9a-f]+)?":
++        $ref: "#/definitions/dai"
++      "^codec(@[0-9a-f]+)?":
++        $ref: "#/definitions/dai"
++    additionalProperties: false
++
++required:
++  - compatible
++  - microchip,model
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/sound/microchip,asrc-card.h>
++
++    sound: sound {
++        #address-cells = <1>;
++        #size-cells = <0>;
++        compatible = "microchip,asrc-card";
++        microchip,model = "mchp-asrc-card @ sama5g7 EK";
++
++        microchip,audio-asrc = <&asrc 0>, <&asrc 1>, <&asrc 2>, <&asrc 3>;
++
++        microchip,dai-link@0 {
++            reg = <0>;
++            microchip,format = "i2s";
++            microchip,frame-master = <&dailink_master>;
++            microchip,bitclock-master = <&dailink_master>;
++            microchip,convert-channels = <2>;
++            microchip,convert-rate = <48000>;
++            microchip,convert-sample-format = <MCHP_ASRC_PCM_FORMAT_S24_LE>;
++            dailink_master: cpu {
++                sound-dai = <&i2s0>;
++            };
++            codec {
++                sound-dai = <&wm8731>;
++            };
++        };
++    };
+diff --git a/include/dt-bindings/sound/microchip,asrc-card.h b/include/dt-bindings/sound/microchip,asrc-card.h
+new file mode 100644
+index 000000000000..10e44f3b6b8d
+--- /dev/null
++++ b/include/dt-bindings/sound/microchip,asrc-card.h
+@@ -0,0 +1,12 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef __DT_BINDINGS_MICROCHIP_ASRC_CARD_H__
++#define __DT_BINDINGS_MICROCHIP_ASRC_CARD_H__
++
++/* formats to be used for Back-ends of Microhip's ASRC */
++/* must be kept in-sync with include/uapi/sound/asound.h */
++#define MCHP_ASRC_PCM_FORMAT_S8		0
++#define MCHP_ASRC_PCM_FORMAT_S16_LE	2
++#define MCHP_ASRC_PCM_FORMAT_S24_LE	6
++#define MCHP_ASRC_PCM_FORMAT_S32_LE	10
++
++#endif /* __DT_BINDINGS_MICROCHIP_ASRC_CARD_H__ */
+-- 
+2.34.1
+

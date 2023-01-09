@@ -1,0 +1,50 @@
+From 35505f0142d8670577083dbc7df9cfcc84a5698a Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 4 Mar 2022 15:35:58 +0200
+Subject: [PATCH 075/471] clocksource/drivers/timer-microchip-pit64b: Use 5MHz
+ for clockevent
+
+Use 5MHz clock for clockevent timers. This increases timer's
+resolution.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20220304133601.2404086-4-claudiu.beznea@microchip.com
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ drivers/clocksource/timer-microchip-pit64b.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/clocksource/timer-microchip-pit64b.c b/drivers/clocksource/timer-microchip-pit64b.c
+index 790d2c9b42a7..abce83d2f00b 100644
+--- a/drivers/clocksource/timer-microchip-pit64b.c
++++ b/drivers/clocksource/timer-microchip-pit64b.c
+@@ -42,8 +42,7 @@
+ #define MCHP_PIT64B_LSBMASK		GENMASK_ULL(31, 0)
+ #define MCHP_PIT64B_PRES_TO_MODE(p)	(MCHP_PIT64B_MR_PRES & ((p) << 8))
+ #define MCHP_PIT64B_MODE_TO_PRES(m)	((MCHP_PIT64B_MR_PRES & (m)) >> 8)
+-#define MCHP_PIT64B_DEF_CS_FREQ		5000000UL	/* 5 MHz */
+-#define MCHP_PIT64B_DEF_CE_FREQ		32768		/* 32 KHz */
++#define MCHP_PIT64B_DEF_FREQ		5000000UL	/* 5 MHz */
+ 
+ #define MCHP_PIT64B_NAME		"pit64b"
+ 
+@@ -418,7 +417,6 @@ static int __init mchp_pit64b_init_clkevt(struct mchp_pit64b_timer *timer,
+ static int __init mchp_pit64b_dt_init_timer(struct device_node *node,
+ 					    bool clkevt)
+ {
+-	u32 freq = clkevt ? MCHP_PIT64B_DEF_CE_FREQ : MCHP_PIT64B_DEF_CS_FREQ;
+ 	struct mchp_pit64b_timer timer;
+ 	unsigned long clk_rate;
+ 	u32 irq = 0;
+@@ -446,7 +444,7 @@ static int __init mchp_pit64b_dt_init_timer(struct device_node *node,
+ 	}
+ 
+ 	/* Initialize mode (prescaler + SGCK bit). To be used at runtime. */
+-	ret = mchp_pit64b_init_mode(&timer, freq);
++	ret = mchp_pit64b_init_mode(&timer, MCHP_PIT64B_DEF_FREQ);
+ 	if (ret)
+ 		goto irq_unmap;
+ 
+-- 
+2.34.1
+

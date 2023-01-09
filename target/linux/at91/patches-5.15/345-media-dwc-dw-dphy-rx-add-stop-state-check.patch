@@ -1,0 +1,48 @@
+From 7d4363aab6dbee598c37ab33b40005f350a5415f Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 26 Feb 2020 11:01:35 +0200
+Subject: [PATCH 236/471] media: dwc: dw-dphy-rx: add stop state check
+
+After coming out of reset, the PHY must have the lanes in stop state.
+Wait for stop state to be active, and if it's not, print out a message.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-dphy-rx.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/drivers/media/platform/dwc/dw-dphy-rx.c b/drivers/media/platform/dwc/dw-dphy-rx.c
+index a69cb3e78c9f..1dd0d81feb61 100644
+--- a/drivers/media/platform/dwc/dw-dphy-rx.c
++++ b/drivers/media/platform/dwc/dw-dphy-rx.c
+@@ -381,13 +381,27 @@ static void dw_dphy_pwr_down(struct dw_dphy_rx *dphy)
+ 
+ static void dw_dphy_pwr_up(struct dw_dphy_rx *dphy)
+ {
++	u32 state = 0, wait = 0;
++
+ 	dw_dphy_write_msk(dphy, R_CSI2_DPHY_TST_CTRL0, 1, PHY_TESTCLK, 1);
+ 	if (dphy->lanes_config == CTRL_8_LANES)
+ 		dw_dphy_write_msk(dphy, R_CSI2_DPHY2_TST_CTRL0, 1, PHY_TESTCLK,
+ 				  1);
+ 	dev_vdbg(&dphy->phy->dev, "DPHY power up.\n");
+ 	dw_dphy_write(dphy, R_CSI2_DPHY_SHUTDOWNZ, 1);
++	usleep_range(100, 500);
+ 	dw_dphy_write(dphy, R_CSI2_DPHY_RSTZ, 1);
++
++	while (state != 0x10003) {
++		state = dw_dphy_read(dphy, R_CSI2_DPHY_STOPSTATE);
++		usleep_range(100, 500);
++		wait++;
++		if (wait > 10)
++			break;
++	}
++	if (state != 0x10003)
++		dev_warn(&dphy->phy->dev, "PHY Stop state not reached %x\n",
++			 state);
+ }
+ 
+ static int dw_dphy_gen3_12bit_configure(struct dw_dphy_rx *dphy)
+-- 
+2.34.1
+

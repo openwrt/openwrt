@@ -1,0 +1,324 @@
+From 4fc727a257370552a658aa78c9c5222294d7d53c Mon Sep 17 00:00:00 2001
+From: Ludovic Desroches <ludovic.desroches@microchip.com>
+Date: Wed, 8 Jan 2020 15:44:10 +0100
+Subject: [PATCH 255/471] drm/atmel-hlcdc: gfx2d rework
+
+Signed-off-by: Ludovic Desroches <ludovic.desroches@microchip.com>
+---
+ drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c  |  14 +-
+ drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c | 137 ++++++++++++------
+ .../drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.c  |   7 +-
+ .../drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.h  |  18 +--
+ 4 files changed, 96 insertions(+), 80 deletions(-)
+
+diff --git a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
+index e72bf15a7654..2e602a674b96 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
++++ b/drivers/gpu/drm/atmel-hlcdc/atmel_hlcdc_dc.c
+@@ -778,23 +778,11 @@ static int gfx2d_ioctl_submit(struct drm_device *dev, void *data,
+ 	struct atmel_hlcdc_dc *priv = dev->dev_private;
+ 	struct gfx2d_gpu *gpu = priv->gpu;
+ 	struct drm_gfx2d_submit *args = data;
+-	uint32_t buf[128];
+-	int ret = 0;
+ 
+ 	if (!gpu)
+ 		return -ENXIO;
+ 
+-	if (args->size * sizeof(__u32) > sizeof(buf))
+-		return -EIO;
+-
+-	ret = copy_from_user(buf, (const void __user *)args->buf,
+-			     args->size * sizeof(__u32));
+-	if (ret) {
+-		ret = -EFAULT;
+-		return ret;
+-	}
+-
+-	return gfx2d_submit(gpu, buf, args->size);
++	return gfx2d_submit(gpu, (uint32_t *)args->buf, args->size);
+ }
+ 
+ static int gfx2d_ioctl_flush(struct drm_device *dev, void *data,
+diff --git a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c
+index 777e3f0e473e..20cc348e1b56 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c
++++ b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_gpu.c
+@@ -66,9 +66,9 @@ static inline u32 gpu_read(struct gfx2d_gpu *gpu, u32 reg)
+ 	return readl(gpu->mmio + reg);
+ }
+ 
+-static inline uint32_t get_wptr(struct gfx2d_ringbuffer *ring)
++static inline uint32_t get_wptr(struct gfx2d_gpu *gpu)
+ {
+-	return ring->cur - ring->start;
++	return gpu_read(gpu, REG_GFX2D_HEAD);
+ }
+ 
+ static inline uint32_t get_rptr(struct gfx2d_gpu *gpu)
+@@ -81,7 +81,7 @@ static int gfx2d_hw_init(struct gfx2d_gpu *gpu)
+ 	gpu->version = gpu_read(gpu, REG_GFX2D_VERSION) & 0x7ff;
+ 	gpu->mfn = (gpu_read(gpu, REG_GFX2D_VERSION) >> 16) & 0x7;
+ 
+-	DBG("GPU version %d (%d)", gpu->version, gpu->mfn);
++	dev_dbg(&gpu->pdev->dev, "GPU version %d (%d)", gpu->version, gpu->mfn);
+ 
+ 	/* disable rb */
+ 	gpu_write(gpu, REG_GFX2D_GD, REG_GFX2D_GD_DISABLE);
+@@ -98,47 +98,86 @@ static int gfx2d_hw_init(struct gfx2d_gpu *gpu)
+ 	gpu_write(gpu, REG_GFX2D_GE, REG_GFX2D_GE_ENABLE);
+ 
+ 	/* enable interrupt */
+-	gpu_write(gpu, REG_GFX2D_IE, REG_GFX2D_IE_EXEND | REG_GFX2D_IE_RBEMPTY);
++	gpu_write(gpu, REG_GFX2D_IE, REG_GFX2D_IE_EXEND | REG_GFX2D_IE_RBEMPTY | REG_GFX2D_IE_IERR);
+ 
+ 	return 0;
+ }
+ 
+-static uint32_t ring_freewords(struct gfx2d_gpu *gpu)
++static inline unsigned ring_freewords(struct gfx2d_ringbuffer *ring)
+ {
+-	uint32_t size = gpu->rb->size / 4;
+-	uint32_t wptr = get_wptr(gpu->rb);
+-	uint32_t rptr = get_rptr(gpu);
+-	return (rptr + (size - 1) - wptr) % size;
++    if (ring->cur >= ring->tail) {
++        return ring->end - ring->cur + ring->tail - ring->start;
++    } else {
++        return ring->tail - ring->cur;
++    }
+ }
+ 
+-static int gfx2d_wait_ring(struct gfx2d_gpu *gpu, uint32_t nwords)
++int gfx2d_submit(struct gfx2d_gpu *gpu, uint32_t* buf, uint32_t nwords)
+ {
+-	if (spin_until(ring_freewords(gpu) >= nwords)) {
+-		DRM_ERROR("timeout waiting for ringbuffer space\n");
+-		return -ETIMEDOUT;
++	struct gfx2d_ringbuffer *ring = gpu->rb;
++	int ret, size, nremainingwords, freewords;
++
++	if (!nwords)
++		return 0;
++
++	/*
++	 * This case should not happend, libm2d should submit as soon as
++	 * there are more than 512 words.
++	 */
++	if (nwords > ring->wsize)
++		return -EINVAL;
++
++	freewords = ring_freewords(ring);
++	/*
++	 * One extra free word needed because is head and tail are at the same
++	 * position, the hardware assumes the buffer is empty and not full.
++	 */
++	if (freewords < nwords + 1) {
++		/* Check the hardware tail position. */
++		ring->tail = ring->start + gpu_read(gpu, REG_GFX2D_TAIL);
++		freewords = ring_freewords(ring);
++		/*
++		 * If we still have not enough place, let the hardware drain the
++		 * command buffer.
++		 */
++		if (freewords < nwords + 1) {
++			while (gpu_read(gpu, REG_GFX2D_GS) & REG_GFX2D_GS_BUSY);
++			ring->tail = ring->start + gpu_read(gpu, REG_GFX2D_TAIL);
++		}
+ 	}
+ 
+-	return 0;
+-}
++	/* Copy the commands to the ring buffer. */
++	size = ring->end - ring->cur;
++	if ((nwords > size)) {
++		ret = copy_from_user(ring->cur, (const void __user *)buf, size * 4);
++		if (ret) {
++			ret = -EFAULT;
++			return ret;
++		}
+ 
+-int gfx2d_submit(struct gfx2d_gpu *gpu, uint32_t* buf, uint32_t nwords)
+-{
+-	struct gfx2d_ringbuffer *ring = gpu->rb;
+-	unsigned i;
+-	int ret;
++		nremainingwords = nwords - size;
++		ret = copy_from_user(ring->start, (const void __user *)(buf + size), nremainingwords * 4);
++		if (ret) {
++			ret = -EFAULT;
++			return ret;
++		}
+ 
+-	ret = gfx2d_wait_ring(gpu, nwords);
+-	if (ret)
+-		return ret;
++		ring->cur = ring->start + nwords - size;
++	} else {
++		ret = copy_from_user(ring->cur, (const void __user *)buf, nwords * 4);
++		if (ret) {
++			ret = -EFAULT;
++			return ret;
++		}
+ 
+-	for (i = 0; i < nwords; i++) {
+-		DBG("rb out: %08x", buf[i]);
+-		OUT_RING(ring, buf[i]);
++		ring->cur += nwords;
+ 	}
+ 
+-	DBG("added %d words to ringbuffer, %d free", nwords, ring_freewords(gpu));
+-	DBG("wptr: %x", get_wptr(gpu->rb));
+-	DBG("rptr: %x", get_rptr(gpu));
++	/* Ensure writes to ringbuffer have hit system memory. */
++	mb();
++
++	/* Start to execute the commands. */
++	gpu_write(gpu, REG_GFX2D_HEAD, ring->cur - ring->start);
+ 
+ 	return 0;
+ }
+@@ -146,31 +185,23 @@ int gfx2d_submit(struct gfx2d_gpu *gpu, uint32_t* buf, uint32_t nwords)
+ int gfx2d_flush(struct gfx2d_gpu *gpu)
+ {
+ 	struct gfx2d_ringbuffer *ring = gpu->rb;
+-	uint32_t wptr;
+-
+-	DBG("flushing rb ...");
+ 
+-	ring->cur = ring->next;
+-	if (ring->cur == ring->end)
+-		ring->cur = ring->start;
+-
+-	wptr = get_wptr(gpu->rb);
+-
+-	/* ensure writes to ringbuffer have hit system memory: */
++	/* Ensure writes to ringbuffer have hit system memory. */
+ 	mb();
+ 
+-	gpu_write(gpu, REG_GFX2D_HEAD, wptr);
++	if (ring->cur != ring->tail)
++		gpu_write(gpu, REG_GFX2D_HEAD, ring->cur - ring->start);
++
++	/* Do we need to wait for an end of work event? */
+ 
+ 	return 0;
+ }
+ 
+ void gfx2d_idle(struct gfx2d_gpu *gpu)
+ {
+-	uint32_t wptr = get_wptr(gpu->rb);
++	uint32_t wptr = get_wptr(gpu);
+ 	int ret;
+ 
+-	DBG("wait for idle wptr: %x",wptr);
+-
+ 	/* wait for CP to drain ringbuffer: */
+ 	ret = spin_until(get_rptr(gpu) == wptr);
+ 
+@@ -185,8 +216,8 @@ void gfx2d_show(struct gfx2d_gpu *gpu, struct seq_file *m)
+ 
+ 	seq_printf(m, "revision:      %d (%d)\n", gpu->version, gpu->mfn);
+ 	seq_printf(m, "rptr:          %d\n", get_rptr(gpu));
+-	seq_printf(m, "wptr:          %d\n", get_wptr(gpu->rb));
+-	seq_printf(m, "rb freewords:  %d\n", ring_freewords(gpu));
++	seq_printf(m, "wptr:          %d\n", get_wptr(gpu));
++	//seq_printf(m, "rb freewords:  %d\n", ring_freewords(gpu));
+ 
+ 	seq_printf(m, "mmio:\n");
+ 	for (i = 0; i != REG_GFX2D_VERSION; i+=4) {
+@@ -200,12 +231,22 @@ static irqreturn_t gfx2d_irq(int irq, void *data)
+ {
+ 	struct gfx2d_gpu *gpu = data;
+ 	uint32_t status;
++	int ret;
+ 
+ 	status = gpu_read(gpu, REG_GFX2D_IS);
+-	if (!status)
+-		return IRQ_NONE;
+ 
+-	DBG("status: %08x", status);
++	if (status & REG_GFX2D_IS_IERR) {
++		/*
++		 * When an illegal instruction IRQ is rised, the GPU is
++		 * automatically disabled.
++		 */
++		dev_err(&gpu->pdev->dev,"illegal instruction, reinitialize the command buffer\n");
++		ret = gfx2d_hw_init(gpu);
++		if (ret)
++			dev_err(&gpu->pdev->dev,"can't reinitialize the command buffer\n");
++
++		return IRQ_HANDLED;
++	}
+ 
+ 	if (status & REG_GFX2D_IS_EXEND) {
+ 	}
+diff --git a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.c b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.c
+index e7fcb4439855..64560a875f23 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.c
++++ b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.c
+@@ -45,6 +45,7 @@ struct gfx2d_ringbuffer *gfx2d_ringbuffer_new(struct gfx2d_gpu *gpu)
+ 
+ 	ring->gpu = gpu;
+ 	ring->size = GFX2D_GPU_RINGBUFFER_SZ;
++	ring->wsize = GFX2D_GPU_RINGBUFFER_SZ / sizeof(uint32_t);
+ 
+ 	dma_set_coherent_mask(&gpu->pdev->dev, DMA_BIT_MASK(32));
+ 
+@@ -56,11 +57,9 @@ struct gfx2d_ringbuffer *gfx2d_ringbuffer_new(struct gfx2d_gpu *gpu)
+ 		ring->start = 0;
+ 		goto fail;
+ 	}
+-	ring->end   = ring->start + (GFX2D_GPU_RINGBUFFER_SZ >> 2);
+-	ring->next  = ring->start;
++	ring->end   = ring->start + ring->wsize;
+ 	ring->cur   = ring->start;
+-
+-	spin_lock_init(&ring->lock);
++	ring->tail  = ring->start;
+ 
+ 	return ring;
+ 
+diff --git a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.h b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.h
+index b8ac820ff398..ac23dd02a9fe 100644
+--- a/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.h
++++ b/drivers/gpu/drm/atmel-hlcdc/gfx2d/gfx2d_ringbuffer.h
+@@ -17,32 +17,20 @@
+ #ifndef __GFX2D_RINGBUFFER_H__
+ #define __GFX2D_RINGBUFFER_H__
+ 
+-#include <linux/types.h>
+ #include <linux/list.h>
+-#include <linux/spinlock.h>
++#include <linux/types.h>
+ 
+ struct gfx2d_gpu;
+ 
+ struct gfx2d_ringbuffer {
+ 	struct gfx2d_gpu *gpu;
+ 	uint32_t size;
+-	uint32_t *start, *end, *cur, *next;
++	uint32_t wsize;
++	uint32_t *start, *end, *cur, *tail;
+ 	dma_addr_t paddr;
+-	spinlock_t lock;
+ };
+ 
+ struct gfx2d_ringbuffer *gfx2d_ringbuffer_new(struct gfx2d_gpu *gpu);
+ void gfx2d_ringbuffer_destroy(struct gfx2d_ringbuffer *ring);
+ 
+-static inline void OUT_RING(struct gfx2d_ringbuffer *ring, uint32_t data)
+-{
+-	/*
+-	 * ring->next points to the current command being written - it won't be
+-	 * committed as ring->cur until the flush
+-	 */
+-	if (ring->next == ring->end)
+-		ring->next = ring->start;
+-	*(ring->next++) = data;
+-}
+-
+ #endif /* __GFX2D_RINGBUFFER_H__ */
+-- 
+2.34.1
+

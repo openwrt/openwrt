@@ -1,0 +1,30 @@
+From 6e29ad2e8ef719b78f0cd5fef03fb9ffd65eb43c Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 17 Sep 2021 16:26:12 +0300
+Subject: [PATCH 097/471] net: macb: add description for SRTSM
+
+Add description for SRTSM bit.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/cadence/macb.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/cadence/macb.h b/drivers/net/ethernet/cadence/macb.h
+index d8d87213697c..d1e0e116b976 100644
+--- a/drivers/net/ethernet/cadence/macb.h
++++ b/drivers/net/ethernet/cadence/macb.h
+@@ -243,7 +243,7 @@
+ #define MACB_NCR_TPF_SIZE	1
+ #define MACB_TZQ_OFFSET		12 /* Transmit zero quantum pause frame */
+ #define MACB_TZQ_SIZE		1
+-#define MACB_SRTSM_OFFSET	15
++#define MACB_SRTSM_OFFSET	15 /* Store Receive Timestamp to Memory */
+ #define MACB_OSSMODE_OFFSET 24 /* Enable One Step Synchro Mode */
+ #define MACB_OSSMODE_SIZE	1
+ 
+-- 
+2.34.1
+

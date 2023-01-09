@@ -1,0 +1,43 @@
+From 041eaef0e84022a1519280a4e460618b3d24edf3 Mon Sep 17 00:00:00 2001
+From: Nicolas Ferre <nicolas.ferre@microchip.com>
+Date: Wed, 13 Jul 2022 19:13:45 +0300
+Subject: [PATCH 383/471] ARM: dts: at91: move to updated VDec compatibility
+ string
+
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+(cherry picked from commit 223064d5b9bdaff158d0aed2f2fcbfa121b4c1f0)
+Signed-off-by: Razvan Stefanescu <razvan.stefanescu@microchip.com>
+[codrin.ciubotariu@microchip.com: moved to 5.4, used new clk bindings]
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+[ta: Cherry picked to 5.10]
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Signed-off-by: Sergiu Moga <sergiu.moga@microchip.com>
+[sergiu.moga@microchip.com: Cherry picked to 5.15]
+---
+ arch/arm/boot/dts/sama5d4.dtsi | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sama5d4.dtsi b/arch/arm/boot/dts/sama5d4.dtsi
+index e1b89147a935..215bff0db28f 100644
+--- a/arch/arm/boot/dts/sama5d4.dtsi
++++ b/arch/arm/boot/dts/sama5d4.dtsi
+@@ -101,11 +101,13 @@ nfc_sram: sram@100000 {
+ 			ranges = <0 0x100000 0x2400>;
+ 		};
+ 
+-		vdec0: vdec@300000 {
+-			compatible = "microchip,sama5d4-vdec";
+-			reg = <0x00300000 0x100000>;
++		vdec0: vdec@00300000 {
++			compatible = "on2,sama5d4-g1";
++			reg = <0x00300000 0x1000>;
+ 			interrupts = <19 IRQ_TYPE_LEVEL_HIGH 4>;
+ 			clocks = <&pmc PMC_TYPE_PERIPHERAL 19>;
++			clock-names = "vdec_clk";
++			status = "disabled";
+ 		};
+ 
+ 		usb0: gadget@400000 {
+-- 
+2.34.1
+

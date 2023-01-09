@@ -1,0 +1,95 @@
+From 003b369776c272145a52e82165b7afc6005a357f Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Tue, 11 Jan 2022 15:05:56 +0200
+Subject: [PATCH 341/471] ARM: dts: at91: sama7g5: Add NAND support
+
+Add NAND support. The sama7g5's SMC IP is the same as sama5d2's with
+a slightly change: it provides a synchronous clock output (SMC clock)
+that is dedicated to FPGA usage. Since this doesn't interfere with the SMC
+NAND configuration, thus code will not be added in the current nand driver
+to address the FPGA usage, use the sama5d2's compatible and choose not to
+introduce dedicated compatibles for sama7g5.
+Tested with Micron MT29F4G08ABAEAWP NAND flash.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Link: https://lore.kernel.org/r/20220111130556.905978-1-tudor.ambarus@microchip.com
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 55 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 2d8629be0a27..d9b139afcecf 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -112,6 +112,45 @@ soc {
+ 		#size-cells = <1>;
+ 		ranges;
+ 
++		nfc_sram: sram@600000 {
++			compatible = "mmio-sram";
++			no-memory-wc;
++			reg = <0x00600000 0x2400>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges = <0 0x00600000 0x2400>;
++		};
++
++		nfc_io: nfc-io@10000000 {
++			compatible = "atmel,sama5d3-nfc-io", "syscon";
++			reg = <0x10000000 0x8000000>;
++		};
++
++		ebi: ebi@40000000 {
++			compatible = "atmel,sama5d3-ebi";
++			#address-cells = <2>;
++			#size-cells = <1>;
++			atmel,smc = <&hsmc>;
++			reg = <0x40000000 0x20000000>;
++			ranges = <0x0 0x0 0x40000000 0x8000000
++				  0x1 0x0 0x48000000 0x8000000
++				  0x2 0x0 0x50000000 0x8000000
++				  0x3 0x0 0x58000000 0x8000000>;
++			clocks = <&pmc PMC_TYPE_CORE PMC_MCK1>;
++			status = "disabled";
++
++			nand_controller: nand-controller {
++				compatible = "atmel,sama5d3-nand-controller";
++				atmel,nfc-sram = <&nfc_sram>;
++				atmel,nfc-io = <&nfc_io>;
++				ecc-engine = <&pmecc>;
++				#address-cells = <2>;
++				#size-cells = <1>;
++				ranges;
++				status = "disabled";
++			};
++		};
++
+ 		securam: securam@e0000000 {
+ 			compatible = "microchip,sama7g5-securam", "atmel,sama5d2-securam", "mmio-sram";
+ 			reg = <0xe0000000 0x4000>;
+@@ -224,6 +263,22 @@ tcb1: timer@e0800000 {
+ 			clock-names = "t0_clk", "t1_clk", "t2_clk", "slow_clk";
+ 		};
+ 
++		hsmc: hsmc@e0808000 {
++			compatible = "atmel,sama5d2-smc", "syscon", "simple-mfd";
++			reg = <0xe0808000 0x1000>;
++			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 21>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++
++			pmecc: ecc-engine@e0808070 {
++				compatible = "atmel,sama5d2-pmecc";
++				reg = <0xe0808070 0x490>,
++				      <0xe0808500 0x200>;
++			};
++		};
++
+ 		adc: adc@e1000000 {
+ 			compatible = "microchip,sama7g5-adc";
+ 			reg = <0xe1000000 0x200>;
+-- 
+2.34.1
+

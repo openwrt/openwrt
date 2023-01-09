@@ -1,0 +1,29 @@
+From 94e8f5432fd85af87d2825aa09df788d225347c0 Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Thu, 7 May 2020 20:16:44 +0300
+Subject: [PATCH 441/471] ARM: at91: sama5_defconfig: enable LM75 sensors
+
+Enable LM75 sensors as a module.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ arch/arm/configs/sama5_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/sama5_defconfig b/arch/arm/configs/sama5_defconfig
+index 7d1ea16142d1..f8f17891f54b 100644
+--- a/arch/arm/configs/sama5_defconfig
++++ b/arch/arm/configs/sama5_defconfig
+@@ -174,7 +174,8 @@ CONFIG_GPIO_PCA953X=m
+ CONFIG_POWER_RESET=y
+ CONFIG_POWER_SUPPLY=y
+ CONFIG_BATTERY_ACT8945A=y
+-# CONFIG_HWMON is not set
++CONFIG_HWMON=m
++CONFIG_SENSORS_LM75=m
+ CONFIG_WATCHDOG=y
+ CONFIG_AT91SAM9X_WATCHDOG=y
+ CONFIG_SAMA5D4_WATCHDOG=y
+-- 
+2.34.1
+

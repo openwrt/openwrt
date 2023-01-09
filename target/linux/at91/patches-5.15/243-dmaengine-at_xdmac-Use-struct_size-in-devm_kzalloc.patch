@@ -1,0 +1,50 @@
+From bc6ac034e400ab64a4f19ffe9c330eaf9952b23a Mon Sep 17 00:00:00 2001
+From: "Gustavo A. R. Silva" <gustavoars@kernel.org>
+Date: Tue, 7 Dec 2021 18:10:13 -0600
+Subject: [PATCH 134/471] dmaengine: at_xdmac: Use struct_size() in
+ devm_kzalloc()
+
+Make use of the struct_size() helper instead of an open-coded version, in
+order to avoid any potential type mistakes or integer overflows that, in
+the worst scenario, could lead to heap overflows.
+
+Link: https://github.com/KSPP/linux/issues/160
+Signed-off-by: Gustavo A. R. Silva <gustavoars@kernel.org>
+Reviewed-by: Kees Cook <keescook@chromium.org>
+Link: https://lore.kernel.org/r/20211208001013.GA62330@embeddedor
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+(cherry picked from commit aa8ff35e10030c12df9f1b4a364f540f973c620f)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/dma/at_xdmac.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/dma/at_xdmac.c b/drivers/dma/at_xdmac.c
+index 9ddda152c4e8..3aebc87cbcb1 100644
+--- a/drivers/dma/at_xdmac.c
++++ b/drivers/dma/at_xdmac.c
+@@ -2037,7 +2037,7 @@ static int __maybe_unused atmel_xdmac_resume(struct device *dev)
+ static int at_xdmac_probe(struct platform_device *pdev)
+ {
+ 	struct at_xdmac	*atxdmac;
+-	int		irq, size, nr_channels, i, ret;
++	int		irq, nr_channels, i, ret;
+ 	void __iomem	*base;
+ 	u32		reg;
+ 
+@@ -2062,9 +2062,9 @@ static int at_xdmac_probe(struct platform_device *pdev)
+ 		return -EINVAL;
+ 	}
+ 
+-	size = sizeof(*atxdmac);
+-	size += nr_channels * sizeof(struct at_xdmac_chan);
+-	atxdmac = devm_kzalloc(&pdev->dev, size, GFP_KERNEL);
++	atxdmac = devm_kzalloc(&pdev->dev,
++			       struct_size(atxdmac, chan, nr_channels),
++			       GFP_KERNEL);
+ 	if (!atxdmac) {
+ 		dev_err(&pdev->dev, "can't allocate at_xdmac structure\n");
+ 		return -ENOMEM;
+-- 
+2.34.1
+

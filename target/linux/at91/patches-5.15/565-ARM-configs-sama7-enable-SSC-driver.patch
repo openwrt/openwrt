@@ -1,0 +1,35 @@
+From ea4b0b74e708db0b6450a985a963bd080f747ea6 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 21 Mar 2022 18:37:33 +0200
+Subject: [PATCH 456/471] ARM: configs: sama7: enable SSC driver
+
+SSC in present in SAMA7G5, so we enable its driver to exercise it.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index bc5fd118f43e..386efc705193 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -99,6 +99,7 @@ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=1
+ CONFIG_BLK_DEV_RAM_SIZE=8192
++CONFIG_ATMEL_SSC=y
+ CONFIG_EEPROM_AT24=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+@@ -153,6 +154,7 @@ CONFIG_SND_MAX_CARDS=32
+ CONFIG_SND_SOC=y
+ CONFIG_SND_ATMEL_SOC=y
+ CONFIG_SND_SOC_MIKROE_PROTO=m
++CONFIG_SND_ATMEL_SOC_SSC_DMA=y
+ CONFIG_SND_MCHP_SOC_I2S_MCC=y
+ CONFIG_SND_MCHP_SOC_SPDIFTX=y
+ CONFIG_SND_MCHP_SOC_SPDIFRX=y
+-- 
+2.34.1
+

@@ -1,0 +1,37 @@
+From e45b578a650b29dd95b9bd137fbd4fed41f5d55e Mon Sep 17 00:00:00 2001
+From: Thomas Kopp <thomas.kopp@microchip.com>
+Date: Thu, 8 Sep 2022 09:07:57 +0200
+Subject: [PATCH 415/471] Input: atmel_mxt_ts: remove unnecessary nullpointer
+ check
+
+The intention seems to have been to check if work is ongoing. This is not necessary when calling cancel_delayed_work().
+
+Building with allmodconfig complains:
+
+ ../drivers/input/touchscreen/atmel_mxt_ts.c:1545:36: error: address of 'data->flash->work' will always evaluate to 'true' [-Werror,-Wpointer-bool-conversion]
+                 if (data->flash && &data->flash->work)
+                                 ~~  ~~~~~~~~~~~~~^~~~
+ 1 error generated.
+
+Signed-off-by: Thomas Kopp <thomas.kopp@microchip.com>
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/input/touchscreen/atmel_mxt_ts.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/input/touchscreen/atmel_mxt_ts.c b/drivers/input/touchscreen/atmel_mxt_ts.c
+index ccfb83a85906..6fda6df06f5b 100644
+--- a/drivers/input/touchscreen/atmel_mxt_ts.c
++++ b/drivers/input/touchscreen/atmel_mxt_ts.c
+@@ -1542,7 +1542,7 @@ static irqreturn_t mxt_interrupt(int irq, void *dev_id)
+ 	complete(&data->chg_completion);
+ 
+ 	if (data->in_bootloader) {
+-		if (data->flash && &data->flash->work)
++		if (data->flash)
+ 			cancel_delayed_work_sync(&data->flash->work);
+ 
+ 		return IRQ_RETVAL(mxt_check_bootloader(data));
+-- 
+2.34.1
+

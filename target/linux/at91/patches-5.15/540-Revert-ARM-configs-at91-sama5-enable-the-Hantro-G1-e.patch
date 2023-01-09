@@ -1,0 +1,30 @@
+From 00dd9c0aefeecfef4d2487630dccd184f2cbf8ab Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Tue, 18 May 2021 19:29:52 +0300
+Subject: [PATCH 431/471] Revert "ARM: configs: at91: sama5: enable the Hantro
+ G1 engine"
+
+This reverts commit 4743a1b9ef1c0d6a397f56d9e0d4c715866fa57d.
+
+This kernel version will not use the upstream Hantro G1 engine driver.
+---
+ arch/arm/configs/sama5_defconfig | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/arch/arm/configs/sama5_defconfig b/arch/arm/configs/sama5_defconfig
+index 72531b1c013c..a86de8d761b9 100644
+--- a/arch/arm/configs/sama5_defconfig
++++ b/arch/arm/configs/sama5_defconfig
+@@ -205,9 +205,6 @@ CONFIG_RTC_DRV_AT91RM9200=y
+ CONFIG_DMADEVICES=y
+ CONFIG_AT_HDMAC=y
+ CONFIG_AT_XDMAC=y
+-CONFIG_STAGING=y
+-CONFIG_STAGING_MEDIA=y
+-CONFIG_VIDEO_HANTRO=m
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_IIO=y
+ CONFIG_AT91_ADC=y
+-- 
+2.34.1
+

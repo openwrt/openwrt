@@ -1,0 +1,566 @@
+From 4d85aadb3799a6b15abd7541484feb730d356f0f Mon Sep 17 00:00:00 2001
+From: Cristian Birsan <cristian.birsan@microchip.com>
+Date: Wed, 23 Feb 2022 22:06:22 +0200
+Subject: [PATCH 307/471] phy: microchip: add driver for sama7 USB 2.0 PHY
+
+USB 2.0 PHY transceiver driver for Microchip sama7 SoC.
+
+Signed-off-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ .../bindings/phy/microchip,sama7-usb-phy.yaml |  57 +++++
+ .../phy/microchip,sama7-utmi-clk.yaml         |  64 ++++++
+ drivers/phy/microchip/Kconfig                 |   8 +
+ drivers/phy/microchip/Makefile                |   1 +
+ drivers/phy/microchip/phy-sama7-usb.c         | 160 ++++++++++++++
+ drivers/phy/microchip/phy-sama7-utmi-clk.c    | 208 ++++++++++++++++++
+ 6 files changed, 498 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/phy/microchip,sama7-usb-phy.yaml
+ create mode 100644 Documentation/devicetree/bindings/phy/microchip,sama7-utmi-clk.yaml
+ create mode 100644 drivers/phy/microchip/phy-sama7-usb.c
+ create mode 100644 drivers/phy/microchip/phy-sama7-utmi-clk.c
+
+diff --git a/Documentation/devicetree/bindings/phy/microchip,sama7-usb-phy.yaml b/Documentation/devicetree/bindings/phy/microchip,sama7-usb-phy.yaml
+new file mode 100644
+index 000000000000..ebcb9965eca4
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/microchip,sama7-usb-phy.yaml
+@@ -0,0 +1,57 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/microchip,sama7-usb-phy.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Microchip SAMA7 USB PHY Device Tree Bindings
++
++maintainers:
++  - Cristian Birsan <cristian.birsan@microchip.com>
++
++properties:
++  "#phy-cells":
++    const: 0
++
++  compatible:
++    enum:
++      - microchip,sama7g5-usb-phy
++
++  reg:
++    items:
++      - description: PHY id
++
++  clocks:
++    maxItems: 1
++    description: USB PHY bus clock
++
++  clock-names:
++    const: utmi_clk
++
++  sfr-phandle:
++    maxItems: 1
++    description: phandle to Special Function Registers (SFR) node
++
++required:
++  - "#phy-cells"
++  - compatible
++  - clocks
++  - clock-names
++  - reg
++  - sfr-phandle
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/clock/at91.h>
++
++    usb_phy0: phy@0 {
++      compatible = "microchip,sama7g5-usb-phy";
++      sfr-phandle = <&sfr>;
++      reg = <0>;
++      clocks = <&utmi_clk UTMI1>;
++      clock-names = "utmi_clk";
++      status = "disabled";
++      #phy-cells = <0>;
++    };
+diff --git a/Documentation/devicetree/bindings/phy/microchip,sama7-utmi-clk.yaml b/Documentation/devicetree/bindings/phy/microchip,sama7-utmi-clk.yaml
+new file mode 100644
+index 000000000000..79249a1af50a
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/microchip,sama7-utmi-clk.yaml
+@@ -0,0 +1,64 @@
++# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/microchip,sama7-utmi-clk.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Microchip SAMA7 UTMI Clock Device Tree Bindings
++
++maintainers:
++  - Cristian Birsan <cristian.birsan@microchip.com>
++
++properties:
++  "#clock-cells":
++    const: 1
++
++  compatible:
++    enum:
++      - microchip,sama7g5-utmi-clk
++
++  clocks:
++    maxItems: 1
++
++  clock-names:
++    maxItems: 1
++
++  sfr-phandle:
++    maxItems: 1
++    description: phandle to Special Function Registers (SFR) node
++
++  resets:
++    maxItems: 3
++    minItems: 3
++
++  reset-names:
++    maxItems: 3
++    minItems: 3
++
++required:
++  - "#clock-cells"
++  - compatible
++  - sfr-phandle
++  - clocks
++  - clock-names
++  - resets
++  - reset-names
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/clock/at91.h>
++    #include <dt-bindings/reset/sama7g5-reset.h>
++
++    utmi_clk: utmi-clk {
++      compatible = "microchip,sama7g5-utmi-clk";
++      sfr-phandle = <&sfr>;
++      #clock-cells = <1>;
++      clocks = <&pmc PMC_TYPE_CORE PMC_UTMI>;
++      clock-names = "utmi_clk";
++      resets = <&reset_controller RESET_USB_PHY1>,
++        <&reset_controller RESET_USB_PHY2>,
++        <&reset_controller RESET_USB_PHY3>;
++      reset-names = "usb0_reset", "usb1_reset", "usb2_reset";
++    };
+diff --git a/drivers/phy/microchip/Kconfig b/drivers/phy/microchip/Kconfig
+index 3728a284bf64..bc9a9ea7a62c 100644
+--- a/drivers/phy/microchip/Kconfig
++++ b/drivers/phy/microchip/Kconfig
+@@ -3,6 +3,14 @@
+ # Phy drivers for Microchip devices
+ #
+ 
++config PHY_MICROCHIP_SAMA7_USB
++	tristate "Microchip SAMA7 USB 2.0 PHY"
++	depends on ARCH_AT91 || COMPILE_TEST
++	depends on OF
++	select GENERIC_PHY
++	help
++		Enable this to support SAMA7 USB 2.0 PHY
++
+ config PHY_SPARX5_SERDES
+ 	tristate "Microchip Sparx5 SerDes PHY driver"
+ 	select GENERIC_PHY
+diff --git a/drivers/phy/microchip/Makefile b/drivers/phy/microchip/Makefile
+index 7b98345712aa..ec5a72c65bb0 100644
+--- a/drivers/phy/microchip/Makefile
++++ b/drivers/phy/microchip/Makefile
+@@ -3,4 +3,5 @@
+ # Makefile for the Microchip phy drivers.
+ #
+ 
++obj-$(CONFIG_PHY_MICROCHIP_SAMA7_USB)	+= phy-sama7-utmi-clk.o phy-sama7-usb.o
+ obj-$(CONFIG_PHY_SPARX5_SERDES) := sparx5_serdes.o
+diff --git a/drivers/phy/microchip/phy-sama7-usb.c b/drivers/phy/microchip/phy-sama7-usb.c
+new file mode 100644
+index 000000000000..ff8ad8e01f4d
+--- /dev/null
++++ b/drivers/phy/microchip/phy-sama7-usb.c
+@@ -0,0 +1,160 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Driver for the Microchip SAMA7 USB 2.0 PHY
++ *
++ * Copyright (C) 2022 Microchip Technology, Inc. and its subsidiaries
++ *
++ * Author: Cristian Birsan <cristian.birsan@microchip.com>
++ *
++ */
++
++#include <linux/clk.h>
++#include <linux/delay.h>
++#include <linux/io.h>
++#include <linux/mfd/syscon.h>
++#include <linux/module.h>
++#include <linux/phy/phy.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++#include <soc/at91/sama7-sfr.h>
++
++struct sama7_usb_phy {
++	struct phy *phy;
++	struct clk *clk;
++	struct regmap *sfr;
++	enum phy_mode mode;
++	int port;
++};
++
++int sama7_usb_phy_set_mode(struct phy *phy, enum phy_mode mode, int submode)
++{
++	struct sama7_usb_phy *sama7_phy = phy_get_drvdata(phy);
++	int port = sama7_phy->port;
++
++	sama7_phy->mode = PHY_MODE_INVALID;
++
++	if (mode > 0)
++		sama7_phy->mode = mode;
++
++	/* Notify the controller when VBUS is present for device mode */
++	if (mode == PHY_MODE_USB_DEVICE) {
++		regmap_update_bits(sama7_phy->sfr, SAMA7_SFR_UTMI0R(port),
++				   SAMA7_SFR_UTMI_RX_VBUS,
++				   (submode ? SAMA7_SFR_UTMI_RX_VBUS : 0));
++	}
++
++	dev_dbg(&sama7_phy->phy->dev, "USB PHY Set Mode port=%d, mode=%d\n",
++		sama7_phy->port, sama7_phy->mode);
++
++	return 0;
++}
++
++int sama7_usb_phy_init(struct phy *phy)
++{
++	struct sama7_usb_phy *sama7_phy = phy_get_drvdata(phy);
++	int port = sama7_phy->port;
++
++	/* Set Transmitter Pre-Emphasis AMP Tune to 1X */
++	regmap_update_bits(sama7_phy->sfr, SAMA7_SFR_UTMI0R(port),
++			   SAMA7_SFR_UTMI_RX_TX_PREEM_AMP_TUNE_1X,
++			   SAMA7_SFR_UTMI_RX_TX_PREEM_AMP_TUNE_1X);
++
++	dev_dbg(&sama7_phy->phy->dev, "USB PHY Init , port=%d\n",
++		sama7_phy->port);
++
++	return 0;
++}
++
++int sama7_phy_power_on(struct phy *phy)
++{
++	struct sama7_usb_phy *sama7_phy = phy_get_drvdata(phy);
++
++	clk_prepare_enable(sama7_phy->clk);
++
++	dev_dbg(&sama7_phy->phy->dev, "USB PHY Power On port=%d\n",
++		sama7_phy->port);
++
++	return 0;
++}
++
++int sama7_phy_power_off(struct phy *phy)
++{
++	struct sama7_usb_phy *sama7_phy = phy_get_drvdata(phy);
++
++	clk_disable_unprepare(sama7_phy->clk);
++
++	dev_dbg(&sama7_phy->phy->dev, "USB PHY Power Off port=%d\n",
++		sama7_phy->port);
++
++	return 0;
++}
++
++static const struct phy_ops sama7_usb_phy_ops = {
++	.init = sama7_usb_phy_init,
++	.power_on = sama7_phy_power_on,
++	.power_off = sama7_phy_power_off,
++	.set_mode = sama7_usb_phy_set_mode,
++	.owner = THIS_MODULE,
++};
++
++int sama7_usb_phy_probe(struct platform_device *pdev)
++{
++	struct phy_provider *phy_provider;
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct sama7_usb_phy *sama7_phy;
++
++	sama7_phy = devm_kzalloc(dev, sizeof(*sama7_phy), GFP_KERNEL);
++	if (!sama7_phy)
++		return -ENOMEM;
++
++	sama7_phy->clk = devm_clk_get(dev, "utmi_clk");
++	if (IS_ERR(sama7_phy->clk)) {
++		dev_err(dev, "failed to get sama7 usb utmi phy clock\n");
++		return PTR_ERR(sama7_phy->clk);
++	}
++
++	sama7_phy->sfr =  syscon_regmap_lookup_by_phandle(np, "sfr-phandle");
++	if (IS_ERR(sama7_phy->sfr)) {
++		sama7_phy->sfr = NULL;
++		dev_err(dev, "failed to get sfr\n");
++		return -ENODEV;
++	}
++
++	if (of_property_read_u32(np, "reg", &sama7_phy->port)) {
++		dev_err(dev, "failed to get reg\n");
++		return -ENODEV;
++	}
++
++	sama7_phy->phy = devm_phy_create(dev, NULL, &sama7_usb_phy_ops);
++	if (IS_ERR(sama7_phy->phy))
++		return PTR_ERR(sama7_phy->phy);
++
++	phy_set_drvdata(sama7_phy->phy, sama7_phy);
++
++	phy_provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
++
++	dev_info(dev, "probed\n");
++
++	return PTR_ERR_OR_ZERO(phy_provider);
++}
++
++static const struct of_device_id sama7_usb_phy_of_match[] = {
++	{ .compatible = "microchip,sama7g5-usb-phy", },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, sama7_usb_phy_of_match);
++
++static struct platform_driver sama7_usb_phy_driver = {
++	.probe = sama7_usb_phy_probe,
++	.driver = {
++		.name = "sama7-usb-phy",
++		.of_match_table =
++			sama7_usb_phy_of_match,
++	}
++};
++module_platform_driver(sama7_usb_phy_driver);
++
++MODULE_AUTHOR("Cristian Birsan <cristian.birsan@microchip.com>");
++MODULE_DESCRIPTION("Microchip SAMA7X USB PHY driver");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/phy/microchip/phy-sama7-utmi-clk.c b/drivers/phy/microchip/phy-sama7-utmi-clk.c
+new file mode 100644
+index 000000000000..1f59d555c3aa
+--- /dev/null
++++ b/drivers/phy/microchip/phy-sama7-utmi-clk.c
+@@ -0,0 +1,208 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Driver for the Microchip SAMA7 USB 2.0 PHY Clock
++ *
++ * Copyright (C) 2022 Microchip Technology, Inc. and its subsidiaries
++ *
++ * Author: Cristian Birsan <cristian.birsan@microchip.com>
++ *
++ */
++
++#include <linux/bitfield.h>
++#include <linux/clk.h>
++#include <linux/clk-provider.h>
++#include <linux/clk/at91_pmc.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/mfd/syscon.h>
++#include <linux/module.h>
++#include <linux/regmap.h>
++#include <linux/reset.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++
++#include <soc/at91/sama7-sfr.h>
++
++struct sama7_utmi_clk {
++	struct clk_hw		hw;
++	struct regmap		*regmap_sfr;
++	struct reset_control	*reset;
++	u8 id;
++};
++#define to_sama7_utmi_clk(hw) container_of(hw, struct sama7_utmi_clk, hw)
++
++/*
++ * UTMI clock description
++ * @n:	clock name
++ * @p:	clock parent name
++ * @id: clock id
++ */
++static struct {
++	const char *n;
++	const char *p;
++	u8 id;
++} sama7_utmick[] = {
++	{ .n = "utmi1",		.p = "utmick",		.id = 0, },
++	{ .n = "utmi2",		.p = "utmi1",		.id = 1, },
++	{ .n = "utmi3",		.p = "utmi1",		.id = 2, },
++};
++
++static int sama7_utmi_clk_enable(struct clk_hw *hw)
++{
++	int ret;
++
++	struct sama7_utmi_clk *utmi = to_sama7_utmi_clk(hw);
++	u8 id = utmi->id;
++
++	ret = reset_control_assert(utmi->reset);
++	if (ret)
++		return ret;
++
++	ret = regmap_update_bits(utmi->regmap_sfr, SAMA7_SFR_UTMI0R(id),
++				SAMA7_SFR_UTMI_COMMONON, 0);
++	if (ret < 0)
++		return ret;
++
++	ret = reset_control_deassert(utmi->reset);
++	if (ret)
++		return ret;
++
++	/* Datasheet states a minimum of 45 us before any USB operation */
++	udelay(50);
++
++	return 0;
++}
++
++static void sama7_utmi_clk_disable(struct clk_hw *hw)
++{
++	int ret;
++	struct sama7_utmi_clk *utmi = to_sama7_utmi_clk(hw);
++	u8 id = utmi->id;
++
++	ret = reset_control_assert(utmi->reset);
++	if (ret)
++		return;
++
++	regmap_update_bits(utmi->regmap_sfr, SAMA7_SFR_UTMI0R(id),
++			   SAMA7_SFR_UTMI_COMMONON, SAMA7_SFR_UTMI_COMMONON);
++}
++
++static int sama7_utmi_clk_is_enabled(struct clk_hw *hw)
++{
++	struct sama7_utmi_clk *utmi = to_sama7_utmi_clk(hw);
++
++	return reset_control_status(utmi->reset);
++}
++
++static const struct clk_ops sama7_utmi_ops = {
++	.enable = sama7_utmi_clk_enable,
++	.disable = sama7_utmi_clk_disable,
++	.is_enabled = sama7_utmi_clk_is_enabled,
++};
++
++static struct clk_hw *
++sama7_utmi_clk_register(struct device *dev,
++			 struct regmap *regmap_sfr, struct reset_control *reset,
++			 const char *name, const char *parent_name,
++			 const struct clk_ops *ops, u8 id)
++{
++	struct clk_init_data init = {};
++	struct clk_hw *hw;
++	struct sama7_utmi_clk *utmi_clk;
++	int ret;
++
++	utmi_clk = devm_kzalloc(dev, sizeof(*utmi_clk), GFP_KERNEL);
++	if (!utmi_clk)
++		return ERR_PTR(-ENOMEM);
++
++	init.name = name;
++	init.ops = ops;
++	init.parent_names = parent_name ? &parent_name : NULL;
++	init.num_parents = parent_name ? 1 : 0;
++
++	utmi_clk->hw.init = &init;
++	utmi_clk->reset = reset;
++	utmi_clk->regmap_sfr = regmap_sfr;
++	utmi_clk->id = id;
++
++	hw = &utmi_clk->hw;
++	ret = devm_clk_hw_register(dev, &utmi_clk->hw);
++	if (ret) {
++		devm_kfree(dev, utmi_clk);
++		hw = ERR_PTR(ret);
++	}
++
++	return hw;
++}
++
++int sama7_utmi_clk_probe(struct platform_device *pdev)
++{
++	struct clk *utmi_parent_clk;
++	struct clk_hw *hw;
++	struct clk_hw_onecell_data *hw_data;
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct regmap *regmap_sfr;
++	struct reset_control	*phy_reset;
++	int i;
++
++	char name[16];
++
++	hw_data = devm_kzalloc(dev, struct_size(hw_data, hws,
++			       ARRAY_SIZE(sama7_utmick)), GFP_KERNEL);
++	if (!hw_data)
++		return -ENOMEM;
++
++	utmi_parent_clk = devm_clk_get(dev, "utmi_clk");
++	if (IS_ERR(utmi_parent_clk))
++		return PTR_ERR(utmi_parent_clk);
++
++	sama7_utmick[0].p = __clk_get_name(utmi_parent_clk);
++
++	regmap_sfr = syscon_regmap_lookup_by_phandle(np, "sfr-phandle");
++	if (IS_ERR(regmap_sfr))
++		return PTR_ERR(regmap_sfr);
++
++	for (i = 0; i < ARRAY_SIZE(sama7_utmick); i++) {
++
++		snprintf(name, sizeof(name), "usb%d_reset", i);
++		phy_reset = devm_reset_control_get(dev, name);
++		if (IS_ERR(phy_reset)) {
++			dev_err(dev, "failed to get reset %s\n", name);
++			return PTR_ERR(phy_reset);
++		}
++
++		hw = sama7_utmi_clk_register(dev, regmap_sfr, phy_reset,
++					      sama7_utmick[i].n,
++					      sama7_utmick[i].p,
++					      &sama7_utmi_ops,
++					      sama7_utmick[i].id);
++		if (IS_ERR(hw))
++			return PTR_ERR(hw);
++
++		hw_data->hws[i] = hw;
++	}
++	hw_data->num = ARRAY_SIZE(sama7_utmick);
++
++	return devm_of_clk_add_hw_provider(dev, of_clk_hw_onecell_get, hw_data);
++};
++
++static const struct of_device_id sama7_utmi_clk_dt_ids[] = {
++	{ .compatible = "microchip,sama7g5-utmi-clk", },
++	{ /* santinel */},
++};
++MODULE_DEVICE_TABLE(of, sama7_utmi_clk_dt_ids);
++
++static struct platform_driver sama7_utmi_clk_driver = {
++	.probe  = sama7_utmi_clk_probe,
++	.driver = {
++		.name = "sama7-utmi-clk",
++		.of_match_table = sama7_utmi_clk_dt_ids,
++	},
++};
++builtin_platform_driver(sama7_utmi_clk_driver);
++
++MODULE_AUTHOR("Cristian Birsan <cristian.birsan@microchip.com>");
++MODULE_DESCRIPTION("Microchip SAMA7X UTMI clock driver");
++MODULE_LICENSE("GPL v2");
+-- 
+2.34.1
+

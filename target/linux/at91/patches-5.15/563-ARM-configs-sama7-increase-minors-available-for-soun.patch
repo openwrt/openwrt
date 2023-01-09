@@ -1,0 +1,32 @@
+From 4ef5a05f50b865d9f91f82d75ae6a457038c1c78 Mon Sep 17 00:00:00 2001
+From: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+Date: Mon, 21 Mar 2022 18:18:19 +0200
+Subject: [PATCH 454/471] ARM: configs: sama7: increase minors available for
+ sound devices
+
+For SAMA7G5, we need 4 ASRC (* 2) + 2 I2SMCC (* 2) + 2 SSC (* 2) +
+SPDIFRX + SPDIFTX + 2 PDMC = 20 minors. For this reason, we have to
+enable support to set the number of minors dynamically, with a maximum
+of 32.
+
+Signed-off-by: Codrin Ciubotariu <codrin.ciubotariu@microchip.com>
+---
+ arch/arm/configs/sama7_defconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/configs/sama7_defconfig b/arch/arm/configs/sama7_defconfig
+index 928c03fc8916..50e863412c84 100644
+--- a/arch/arm/configs/sama7_defconfig
++++ b/arch/arm/configs/sama7_defconfig
+@@ -148,6 +148,8 @@ CONFIG_VIDEO_IMX274=m
+ CONFIG_VIDEO_OV5647=m
+ CONFIG_SOUND=y
+ CONFIG_SND=y
++CONFIG_SND_DYNAMIC_MINORS=y
++CONFIG_SND_MAX_CARDS=32
+ CONFIG_SND_SOC=y
+ CONFIG_SND_ATMEL_SOC=y
+ CONFIG_SND_SOC_MIKROE_PROTO=m
+-- 
+2.34.1
+

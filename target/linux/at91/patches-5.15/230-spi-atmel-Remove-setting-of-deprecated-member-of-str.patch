@@ -1,0 +1,48 @@
+From 3ba226ca58a3d2a37b2834c65794687df1bc7cea Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Thu, 25 Nov 2021 14:41:10 +0200
+Subject: [PATCH 121/471] spi: atmel: Remove setting of deprecated member of
+ struct dma_slave_config
+
+The 'direction' member of 'struct dma_slave_config' is deprecated.
+Instead, drivers should use the direction argument to the
+device_prep_slave_sg and device_prep_dma_cyclic functions or the
+dir field in the dma_interleaved_template structure.
+spi-atmel uses the direction argument to dmaengine_prep_slave_sg.
+slave_config.direction is not used in neither of the DMA controller
+drivers (at_h/xdmac) that spi-atmel is using, we can just remove the
+setting of slave_config.direction and live with whatever stack value
+is there.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+Link: https://lore.kernel.org/r/20211125124110.838037-3-tudor.ambarus@microchip.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit f44a29ceb99fc99832ee1d55d7fe9c4dbf594660)
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/spi/spi-atmel.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/drivers/spi/spi-atmel.c b/drivers/spi/spi-atmel.c
+index 22c7239aff75..f6626be4d4f7 100644
+--- a/drivers/spi/spi-atmel.c
++++ b/drivers/spi/spi-atmel.c
+@@ -467,7 +467,6 @@ static int atmel_spi_dma_slave_config(struct atmel_spi *as, u8 bits_per_word)
+ 	 * So we'd rather write only one data at the time. Hence the transmit
+ 	 * path works the same whether FIFOs are available (and enabled) or not.
+ 	 */
+-	slave_config.direction = DMA_MEM_TO_DEV;
+ 	if (dmaengine_slave_config(master->dma_tx, &slave_config)) {
+ 		dev_err(&as->pdev->dev,
+ 			"failed to configure tx dma channel\n");
+@@ -482,7 +481,6 @@ static int atmel_spi_dma_slave_config(struct atmel_spi *as, u8 bits_per_word)
+ 	 * So the receive path works the same whether FIFOs are available (and
+ 	 * enabled) or not.
+ 	 */
+-	slave_config.direction = DMA_DEV_TO_MEM;
+ 	if (dmaengine_slave_config(master->dma_rx, &slave_config)) {
+ 		dev_err(&as->pdev->dev,
+ 			"failed to configure rx dma channel\n");
+-- 
+2.34.1
+

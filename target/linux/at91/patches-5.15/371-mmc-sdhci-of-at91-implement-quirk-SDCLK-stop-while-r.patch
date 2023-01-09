@@ -1,0 +1,74 @@
+From 588ce7e71aee3b86c1e91c4247110393b9c787f9 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 30 Mar 2020 13:32:37 +0300
+Subject: [PATCH 262/471] mmc: sdhci-of-at91: implement quirk: SDCLK stop while
+ reset and switch
+
+SAMA7G5 SDMMC HW block needs to have SDCLK stopped while resetting the
+IP and changing UHS mode.
+Implement this quirk.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+[claudiu.beznea: adapt to v5.15.82]
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 31 +++++++++++++++++++++++++------
+ 1 file changed, 25 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/mmc/host/sdhci-of-at91.c b/drivers/mmc/host/sdhci-of-at91.c
+index 0452c312b65e..8a68fed024be 100644
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -100,14 +100,21 @@ static void sdhci_at91_set_clock(struct sdhci_host *host, unsigned int clock)
+ static void sdhci_at91_set_uhs_signaling(struct sdhci_host *host,
+ 					 unsigned int timing)
+ {
+-	u8 mc1r;
++	u16 clk = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
++	/* SDCLK must be disabled while changing the mode */
++	if (clk & SDHCI_CLOCK_CARD_EN)
++		sdhci_writew(host, clk & ~SDHCI_CLOCK_CARD_EN,
++			     SDHCI_CLOCK_CONTROL);
++
++	if (timing == MMC_TIMING_MMC_DDR52)
++		sdhci_writeb(host, SDMMC_MC1R_DDR, SDMMC_MC1R);
++	sdhci_set_uhs_signaling(host, timing);
+ 
+-	if (timing == MMC_TIMING_MMC_DDR52) {
+-		mc1r = sdhci_readb(host, SDMMC_MC1R);
+-		mc1r |= SDMMC_MC1R_DDR;
+-		sdhci_writeb(host, mc1r, SDMMC_MC1R);
++	/* reenable SDCLK */
++	if (clk & SDHCI_CLOCK_CARD_EN) {
++		clk = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
++		sdhci_writew(host, clk | SDHCI_CLOCK_CARD_EN, SDHCI_CLOCK_CONTROL);
+ 	}
+-	sdhci_set_uhs_signaling(host, timing);
+ }
+ 
+ static void sdhci_at91_reset(struct sdhci_host *host, u8 mask)
+@@ -115,9 +122,21 @@ static void sdhci_at91_reset(struct sdhci_host *host, u8 mask)
+ 	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
+ 	struct sdhci_at91_priv *priv = sdhci_pltfm_priv(pltfm_host);
+ 	unsigned int tmp;
++	u16 clk = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
++
++	/* SDCLK must be disabled while resetting the HW block */
++	if (clk & SDHCI_CLOCK_CARD_EN)
++		sdhci_writew(host, clk & ~SDHCI_CLOCK_CARD_EN,
++			     SDHCI_CLOCK_CONTROL);
+ 
+ 	sdhci_reset(host, mask);
+ 
++	/* reenable SDCLK */
++	if (clk & SDHCI_CLOCK_CARD_EN) {
++		clk = sdhci_readw(host, SDHCI_CLOCK_CONTROL);
++		sdhci_writew(host, clk | SDHCI_CLOCK_CARD_EN, SDHCI_CLOCK_CONTROL);
++	}
++
+ 	if ((host->mmc->caps & MMC_CAP_NONREMOVABLE)
+ 	    || mmc_gpio_get_cd(host->mmc) >= 0)
+ 		sdhci_at91_set_force_card_detect(host);
+-- 
+2.34.1
+

@@ -1,0 +1,32 @@
+From 9c62740c06410baa25e334ebc0238572ada86bd3 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 3 Jan 2022 18:13:47 +0200
+Subject: [PATCH 333/471] ARM: dts: at91: sama7g5: add reset controller
+
+Add reset controller node.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 723ada762fa5..d8ccec06393e 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -159,6 +159,12 @@ pmc: pmc@e0018000 {
+ 			clock-names = "td_slck", "md_slck", "main_xtal";
+ 		};
+ 
++		reset_controller: rstc@e001d000 {
++			compatible = "microchip,sama7g5-rstc", "microchip,sam9x60-rstc", "syscon";
++			reg = <0xe001d000 0xc>, <0xe001d0e4 0x4>;
++			clocks = <&clk32k 0>;
++		};
++
+ 		shdwc: shdwc@e001d010 {
+ 			compatible = "microchip,sama7g5-shdwc", "syscon";
+ 			reg = <0xe001d010 0x10>;
+-- 
+2.34.1
+

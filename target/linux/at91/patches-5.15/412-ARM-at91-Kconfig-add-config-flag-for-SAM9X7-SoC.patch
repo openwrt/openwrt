@@ -1,0 +1,58 @@
+From 5db4c38e881dcc1710744726b4236a20f5c6fffe Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Mon, 7 Feb 2022 16:11:48 +0530
+Subject: [PATCH 303/471] ARM: at91: Kconfig: add config flag for SAM9X7 SoC
+
+Add config flag for sam9x7 SoC
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+---
+ arch/arm/mach-at91/Kconfig | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-at91/Kconfig b/arch/arm/mach-at91/Kconfig
+index 69bd33069f67..62af65d7313d 100644
+--- a/arch/arm/mach-at91/Kconfig
++++ b/arch/arm/mach-at91/Kconfig
+@@ -133,11 +133,28 @@ config SOC_SAM9X60
+ 	help
+ 	  Select this if you are using Microchip's SAM9X60 SoC
+ 
++config SOC_SAM9X7
++	bool "SAM9X7"
++	depends on ARCH_MULTI_V5
++	select ATMEL_AIC5_IRQ
++	select ATMEL_PM if PM
++	select ATMEL_SDRAMC
++	select CPU_ARM926T
++	select HAVE_AT91_USB_CLK
++	select HAVE_AT91_GENERATED_CLK
++	select HAVE_AT91_SAM9X60_PLL
++	select MEMORY
++	select PINCTRL_AT91
++	select SOC_SAM_V4_V5
++	select SRAM if PM
++	help
++	  Select this if you are using Microchip's SAM9X7 SoC
++
+ comment "Clocksource driver selection"
+ 
+ config ATMEL_CLOCKSOURCE_PIT
+ 	bool "Periodic Interval Timer (PIT) support"
+-	depends on SOC_AT91SAM9 || SOC_SAM9X60 || SOC_SAMA5
++	depends on SOC_AT91SAM9 || SOC_SAM9X60 || SOC_SAM9X7 || SOC_SAMA5
+ 	default SOC_AT91SAM9 || SOC_SAMA5
+ 	select ATMEL_PIT
+ 	help
+@@ -147,7 +164,7 @@ config ATMEL_CLOCKSOURCE_PIT
+ 
+ config ATMEL_CLOCKSOURCE_TCB
+ 	bool "Timer Counter Blocks (TCB) support"
+-	default SOC_AT91RM9200 || SOC_AT91SAM9 || SOC_SAM9X60 || SOC_SAMA5
++	default SOC_AT91RM9200 || SOC_AT91SAM9 || SOC_SAM9X60 || SOC_SAM9X7 || SOC_SAMA5
+ 	select ATMEL_TCB_CLKSRC
+ 	help
+ 	  Select this to get a high precision clocksource based on a
+-- 
+2.34.1
+

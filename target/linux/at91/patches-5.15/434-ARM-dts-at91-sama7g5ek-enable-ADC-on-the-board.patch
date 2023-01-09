@@ -1,0 +1,38 @@
+From f082094340535a9e4ee6c324c5ba7bdf209a81a8 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 1 Sep 2021 15:30:13 +0300
+Subject: [PATCH 325/471] ARM: dts: at91: sama7g5ek: enable ADC on the board
+
+The ADC controller on the board is fed by a 2.5V reference voltage.
+By default the channels #14 and #15 are dedicated to analog input
+(marked AN on the board), on the connectors mikrobus1 and mikrobus2.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20210901123013.329792-11-eugen.hristev@microchip.com
+---
+ arch/arm/boot/dts/at91-sama7g5ek.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/at91-sama7g5ek.dts b/arch/arm/boot/dts/at91-sama7g5ek.dts
+index 2038e387be28..a64afaee0baa 100644
+--- a/arch/arm/boot/dts/at91-sama7g5ek.dts
++++ b/arch/arm/boot/dts/at91-sama7g5ek.dts
+@@ -122,6 +122,14 @@ spdif_out: spdif-out {
+ 	};
+ };
+ 
++&adc {
++	vddana-supply = <&vddout25>;
++	vref-supply = <&vddout25>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_mikrobus1_an_default &pinctrl_mikrobus2_an_default>;
++	status = "okay";
++};
++
+ &cpu0 {
+ 	cpu-supply = <&vddcpu>;
+ };
+-- 
+2.34.1
+

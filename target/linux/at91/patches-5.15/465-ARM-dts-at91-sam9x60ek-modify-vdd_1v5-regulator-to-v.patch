@@ -1,0 +1,39 @@
+From f673ca7b18f567bb26451e098f6de9e52dff1e24 Mon Sep 17 00:00:00 2001
+From: Mihai Sain <mihai.sain@microchip.com>
+Date: Wed, 2 Mar 2022 17:02:35 +0100
+Subject: [PATCH 356/471] ARM: dts: at91: sam9x60ek: modify vdd_1v5 regulator
+ to vdd_1v15
+
+This regulator is powering the vddcore pins from MPU.
+Its real value on the board and in the MPU datasheet is 1.15V.
+
+Signed-off-by: Mihai Sain <mihai.sain@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Reviewed-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ arch/arm/boot/dts/at91-sam9x60ek.dts | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/at91-sam9x60ek.dts b/arch/arm/boot/dts/at91-sam9x60ek.dts
+index fd8dc1183b3e..81ccb0636a00 100644
+--- a/arch/arm/boot/dts/at91-sam9x60ek.dts
++++ b/arch/arm/boot/dts/at91-sam9x60ek.dts
+@@ -48,11 +48,11 @@ vdd_1v8: fixed-regulator-vdd_1v8@0 {
+ 			status = "okay";
+ 		};
+ 
+-		vdd_1v5: fixed-regulator-vdd_1v5@1 {
++		vdd_1v15: fixed-regulator-vdd_1v15@1 {
+ 			compatible = "regulator-fixed";
+-			regulator-name = "VDD_1V5";
+-			regulator-min-microvolt = <1500000>;
+-			regulator-max-microvolt = <1500000>;
++			regulator-name = "VDD_1V15";
++			regulator-min-microvolt = <1150000>;
++			regulator-max-microvolt = <1150000>;
+ 			regulator-always-on;
+ 			status = "okay";
+ 		};
+-- 
+2.34.1
+

@@ -1,0 +1,79 @@
+From d74590d35abe2492f05e82806d7a29eae08cfe74 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 11 Oct 2021 15:03:28 +0300
+Subject: [PATCH 326/471] ARM: dts: at91: sama7g5: add nodes for video capture
+
+Add node for the XISC (eXtended Image Sensor Controller) and CSI2DC
+(csi2 demux controller).
+These nodes represent the top level of the video capture hardware pipeline
+and are directly connected in hardware.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ arch/arm/boot/dts/sama7g5.dtsi | 50 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sama7g5.dtsi b/arch/arm/boot/dts/sama7g5.dtsi
+index 6a7ff082cfb2..169352ad11f6 100644
+--- a/arch/arm/boot/dts/sama7g5.dtsi
++++ b/arch/arm/boot/dts/sama7g5.dtsi
+@@ -219,6 +219,56 @@ sdmmc2: mmc@e120c000 {
+ 			status = "disabled";
+ 		};
+ 
++		csi2dc: csi2dc@e1404000 {
++			compatible = "microchip,sama7g5-csi2dc";
++			reg = <0xe1404000 0x500>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 34>, <&xisc>;
++			clock-names = "pclk", "scck";
++			assigned-clocks = <&xisc>;
++			assigned-clock-rates = <266000000>;
++			status = "disabled";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				port@0 {
++					reg = <0>;
++					csi2dc_in: endpoint {
++					};
++				};
++
++				port@1 {
++					reg = <1>;
++					csi2dc_out: endpoint {
++						bus-width = <14>;
++						hsync-active = <1>;
++						vsync-active = <1>;
++						remote-endpoint = <&xisc_in>;
++					};
++				};
++			};
++		};
++
++		xisc: xisc@e1408000 {
++			compatible = "microchip,sama7g5-isc";
++			reg = <0xe1408000 0x2000>;
++			interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&pmc PMC_TYPE_PERIPHERAL 56>;
++			clock-names = "hclock";
++			#clock-cells = <0>;
++			clock-output-names = "isc-mck";
++			status = "disabled";
++
++			port {
++				xisc_in: endpoint {
++					bus-width = <14>;
++					hsync-active = <1>;
++					vsync-active = <1>;
++					remote-endpoint = <&csi2dc_out>;
++				};
++			};
++		};
++
+ 		pwm: pwm@e1604000 {
+ 			compatible = "microchip,sama7g5-pwm", "atmel,sama5d2-pwm";
+ 			reg = <0xe1604000 0x4000>;
+-- 
+2.34.1
+

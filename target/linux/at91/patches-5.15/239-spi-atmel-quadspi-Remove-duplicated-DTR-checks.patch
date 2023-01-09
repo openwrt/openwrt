@@ -1,0 +1,37 @@
+From 0259b9d660a56005ed4b69a70848c977e515157e Mon Sep 17 00:00:00 2001
+From: Tudor Ambarus <tudor.ambarus@microchip.com>
+Date: Wed, 6 Apr 2022 12:50:35 +0300
+Subject: [PATCH 130/471] spi: atmel-quadspi: Remove duplicated DTR checks
+
+Remove the DTR checks as they are already handled in
+spi_mem_default_supports_op(). This code removal was intentionally not done
+in the previous patch that introduced the use of the
+spi_mem_default_supports_op() core helper and fixed the buswidth adjustment
+between SPIMEM and the SPI controller, so that the fix can be easily
+backported to stable kernels.
+
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+---
+ drivers/spi/atmel-quadspi.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/drivers/spi/atmel-quadspi.c b/drivers/spi/atmel-quadspi.c
+index ccb06a52fcd2..5ee3084f821e 100644
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -473,12 +473,6 @@ static bool atmel_qspi_supports_op(struct spi_mem *mem,
+ 		op->dummy.nbytes == 0)
+ 		return false;
+ 
+-	/* DTR ops not supported. */
+-	if (op->cmd.dtr || op->addr.dtr || op->dummy.dtr || op->data.dtr)
+-		return false;
+-	if (op->cmd.nbytes != 1)
+-		return false;
+-
+ 	return true;
+ }
+ 
+-- 
+2.34.1
+

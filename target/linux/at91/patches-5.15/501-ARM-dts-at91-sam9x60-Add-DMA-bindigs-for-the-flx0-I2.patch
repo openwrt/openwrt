@@ -1,0 +1,51 @@
+From 7525f7cfaefced6078edaf9357036a6aaf591c27 Mon Sep 17 00:00:00 2001
+From: Manikandan M <manikandan.m@microchip.com>
+Date: Mon, 21 Feb 2022 11:07:54 +0530
+Subject: [PATCH 392/471] ARM: dts: at91: sam9x60: Add DMA bindigs for the flx0
+ I2C node
+
+Added the DMA bindings for the FLEXCOM0 I2C node in the SOC dtsi.
+Users that don't want to use DMA for their flexcom functions have
+to overwrite the flexcom DMA bindings in their board device tree.
+
+Signed-off-by: Manikandan M <manikandan.m@microchip.com>
+---
+ arch/arm/boot/dts/at91-sam9x60ek.dts | 1 +
+ arch/arm/boot/dts/sam9x60.dtsi       | 9 +++++++++
+ 2 files changed, 10 insertions(+)
+
+diff --git a/arch/arm/boot/dts/at91-sam9x60ek.dts b/arch/arm/boot/dts/at91-sam9x60ek.dts
+index 448bd8dad75f..9fe51f368627 100644
+--- a/arch/arm/boot/dts/at91-sam9x60ek.dts
++++ b/arch/arm/boot/dts/at91-sam9x60ek.dts
+@@ -220,6 +220,7 @@ &flx0 {
+ 	i2c0: i2c@600 {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		dmas = <0>, <0>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_flx0_default>;
+ 		i2c-analog-filter;
+diff --git a/arch/arm/boot/dts/sam9x60.dtsi b/arch/arm/boot/dts/sam9x60.dtsi
+index 46b688bd91b7..96dd2a713707 100644
+--- a/arch/arm/boot/dts/sam9x60.dtsi
++++ b/arch/arm/boot/dts/sam9x60.dtsi
+@@ -484,6 +484,15 @@ i2c0: i2c@600 {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+ 					clocks = <&pmc PMC_TYPE_PERIPHERAL 5>;
++					dmas = <&dma0
++						(AT91_XDMAC_DT_MEM_IF(0) |
++						 AT91_XDMAC_DT_PER_IF(1) |
++						 AT91_XDMAC_DT_PERID(0))>,
++						<&dma0
++						(AT91_XDMAC_DT_MEM_IF(0) |
++						 AT91_XDMAC_DT_PER_IF(1) |
++						 AT91_XDMAC_DT_PERID(1))>;
++					dma-names = "tx", "rx";
+ 					atmel,fifo-size = <16>;
+ 					status = "disabled";
+ 				};
+-- 
+2.34.1
+

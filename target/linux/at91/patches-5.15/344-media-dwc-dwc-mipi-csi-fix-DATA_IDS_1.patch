@@ -1,0 +1,28 @@
+From 5a4d677e463c402ff5f522f902a053e373fe1279 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 26 Feb 2020 09:51:02 +0200
+Subject: [PATCH 235/471] media: dwc: dwc-mipi-csi: fix DATA_IDS_1
+
+Write the data type to the correct register.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+---
+ drivers/media/platform/dwc/dw-mipi-csi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/platform/dwc/dw-mipi-csi.c b/drivers/media/platform/dwc/dw-mipi-csi.c
+index 5fe8dbe5011d..c71491bfbea2 100644
+--- a/drivers/media/platform/dwc/dw-mipi-csi.c
++++ b/drivers/media/platform/dwc/dw-mipi-csi.c
+@@ -240,7 +240,7 @@ void dw_mipi_csi_set_ipi_fmt(struct dw_csi *csi_dev)
+ 		default:
+ 		break;
+ 		}
+-		dw_mipi_csi_write(csi_dev, reg.IPI_DATA_TYPE, csi_dev->ipi_dt);
++		dw_mipi_csi_write(csi_dev, reg.DATA_IDS_1, csi_dev->ipi_dt);
+ 	}
+ 	dev_info(dev, "Selected IPI Data Type 0x%X\n", csi_dev->ipi_dt);
+ }
+-- 
+2.34.1
+

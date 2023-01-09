@@ -1,0 +1,32 @@
+From 2cda572f98849802df751d281f919e3d2ec4931b Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Thu, 18 Nov 2021 08:17:15 +0100
+Subject: [PATCH 197/471] media: i2c: imx274: fix trivial typo
+ expsoure/exposure
+
+Fix typo expsoure/exposure
+
+Fixes: 0985dd306f72 ("media: imx274: V4l2 driver for Sony imx274 CMOS sensor")
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Signed-off-by: Sakari Ailus <sakari.ailus@linux.intel.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab+huawei@kernel.org>
+---
+ drivers/media/i2c/imx274.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/media/i2c/imx274.c b/drivers/media/i2c/imx274.c
+index 4d9b64c61f60..5312cf3e855d 100644
+--- a/drivers/media/i2c/imx274.c
++++ b/drivers/media/i2c/imx274.c
+@@ -1462,7 +1462,7 @@ static int imx274_s_stream(struct v4l2_subdev *sd, int on)
+ 			goto fail;
+ 
+ 		/*
+-		 * update frame rate & expsoure. if the last mode is different,
++		 * update frame rate & exposure. if the last mode is different,
+ 		 * HMAX could be changed. As the result, frame rate & exposure
+ 		 * are changed.
+ 		 * gain is not affected.
+-- 
+2.34.1
+
