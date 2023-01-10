@@ -1,7 +1,7 @@
-From 3d8c0e94a792ae62fa0495ac940c9850a059afc2 Mon Sep 17 00:00:00 2001
+From 129d9cd9c25041f8b8681fd6e8584fa47c385f3b Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Tue, 5 Jul 2022 21:39:18 +0200
-Subject: [PATCH v2 3/4] clk: qcom: clk-rpm: convert to parent_data API
+Date: Thu, 7 Jul 2022 00:53:20 +0200
+Subject: [PATCH] clk: qcom: clk-rpm: convert to parent_data API
 
 Convert clk-rpm driver to parent_data API.
 We keep the old pxo/cxo_board parent naming to keep compatibility with
@@ -9,6 +9,8 @@ old DT and we use the new pxo/cxo for new implementation where these
 clock are defined in DTS.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Link: https://lore.kernel.org/r/20220706225321.26215-4-ansuelsmth@gmail.com
 ---
  drivers/clk/qcom/clk-rpm.c | 24 ++++++++++++++++--------
  1 file changed, 16 insertions(+), 8 deletions(-)

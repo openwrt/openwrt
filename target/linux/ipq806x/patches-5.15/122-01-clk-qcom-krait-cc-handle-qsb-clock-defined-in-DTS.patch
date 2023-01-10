@@ -14,16 +14,16 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -305,7 +305,7 @@ static int krait_cc_probe(struct platfor
+@@ -348,7 +348,7 @@ static int krait_cc_probe(struct platfor
  {
  	struct device *dev = &pdev->dev;
  	const struct of_device_id *id;
 -	unsigned long cur_rate, aux_rate;
 +	unsigned long cur_rate, aux_rate, qsb_rate;
  	int cpu;
- 	struct clk *clk;
- 	struct clk **clks;
-@@ -315,11 +315,19 @@ static int krait_cc_probe(struct platfor
+ 	struct clk_hw *mux, *l2_pri_mux;
+ 	struct clk *clk, **clks;
+@@ -357,11 +357,19 @@ static int krait_cc_probe(struct platfor
  	if (!id)
  		return -ENODEV;
  

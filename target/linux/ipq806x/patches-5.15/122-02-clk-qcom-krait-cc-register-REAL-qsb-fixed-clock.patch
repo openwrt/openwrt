@@ -16,16 +16,16 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -15,6 +15,8 @@
- 
- #include "clk-krait.h"
+@@ -25,6 +25,8 @@ enum {
+ 	clks_max,
+ };
  
 +#define QSB_RATE	2250000000
 +
  static unsigned int sec_mux_map[] = {
  	2,
  	0,
-@@ -322,7 +324,7 @@ static int krait_cc_probe(struct platfor
+@@ -364,7 +366,7 @@ static int krait_cc_probe(struct platfor
  	 */
  	clk = clk_get(dev, "qsb");
  	if (IS_ERR(clk))
@@ -34,21 +34,3 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	if (IS_ERR(clk))
  		return PTR_ERR(clk);
  
-@@ -378,7 +380,7 @@ static int krait_cc_probe(struct platfor
- 	 */
- 	cur_rate = clk_get_rate(l2_pri_mux_clk);
- 	aux_rate = 384000000;
--	if (cur_rate == 1) {
-+	if (cur_rate == qsb_rate) {
- 		pr_info("L2 @ QSB rate. Forcing new rate.\n");
- 		cur_rate = aux_rate;
- 	}
-@@ -389,7 +391,7 @@ static int krait_cc_probe(struct platfor
- 	for_each_possible_cpu(cpu) {
- 		clk = clks[cpu];
- 		cur_rate = clk_get_rate(clk);
--		if (cur_rate == 1) {
-+		if (cur_rate == qsb_rate) {
- 			pr_info("CPU%d @ QSB rate. Forcing new rate.\n", cpu);
- 			cur_rate = aux_rate;
- 		}

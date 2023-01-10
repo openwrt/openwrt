@@ -12,25 +12,25 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -391,25 +391,25 @@ static int krait_cc_probe(struct platfor
- 	cur_rate = clk_get_rate(l2_pri_mux_clk);
+@@ -423,25 +423,25 @@ static int krait_cc_probe(struct platfor
+ 	cur_rate = clk_get_rate(clks[l2_mux]);
  	aux_rate = 384000000;
- 	if (cur_rate == qsb_rate) {
--		pr_info("L2 @ QSB rate. Forcing new rate.\n");
-+		dev_info(dev, "L2 @ QSB rate. Forcing new rate.\n");
+ 	if (cur_rate < aux_rate) {
+-		pr_info("L2 @ Undefined rate. Forcing new rate.\n");
++		dev_info(dev, "L2 @ Undefined rate. Forcing new rate.\n");
  		cur_rate = aux_rate;
  	}
- 	clk_set_rate(l2_pri_mux_clk, aux_rate);
- 	clk_set_rate(l2_pri_mux_clk, 2);
- 	clk_set_rate(l2_pri_mux_clk, cur_rate);
--	pr_info("L2 @ %lu KHz\n", clk_get_rate(l2_pri_mux_clk) / 1000);
-+	dev_info(dev, "L2 @ %lu KHz\n", clk_get_rate(l2_pri_mux_clk) / 1000);
+ 	clk_set_rate(clks[l2_mux], aux_rate);
+ 	clk_set_rate(clks[l2_mux], 2);
+ 	clk_set_rate(clks[l2_mux], cur_rate);
+-	pr_info("L2 @ %lu KHz\n", clk_get_rate(clks[l2_mux]) / 1000);
++	dev_info(dev, "L2 @ %lu KHz\n", clk_get_rate(clks[l2_mux]) / 1000);
  	for_each_possible_cpu(cpu) {
  		clk = clks[cpu];
  		cur_rate = clk_get_rate(clk);
- 		if (cur_rate == qsb_rate) {
--			pr_info("CPU%d @ QSB rate. Forcing new rate.\n", cpu);
-+			dev_info(dev, "CPU%d @ QSB rate. Forcing new rate.\n", cpu);
+ 		if (cur_rate < aux_rate) {
+-			pr_info("CPU%d @ Undefined rate. Forcing new rate.\n", cpu);
++			dev_info(dev, "CPU%d @ Undefined rate. Forcing new rate.\n", cpu);
  			cur_rate = aux_rate;
  		}
  

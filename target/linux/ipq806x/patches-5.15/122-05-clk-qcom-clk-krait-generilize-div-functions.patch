@@ -130,8 +130,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #endif
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
-@@ -76,11 +76,11 @@ static int krait_notifier_register(struc
- static struct clk *
+@@ -86,11 +86,11 @@ static int krait_notifier_register(struc
+ static struct clk_hw *
  krait_add_div(struct device *dev, int id, const char *s, unsigned int offset)
  {
 -	struct krait_div2_clk *div;
@@ -143,8 +143,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		.ops = &krait_div_clk_ops,
  		.flags = CLK_SET_RATE_PARENT,
  	};
- 	struct clk *clk;
-@@ -90,7 +90,8 @@ krait_add_div(struct device *dev, int id
+ 	struct clk_hw *clk;
+@@ -101,7 +101,8 @@ krait_add_div(struct device *dev, int id
  	if (!div)
  		return ERR_PTR(-ENOMEM);
  
