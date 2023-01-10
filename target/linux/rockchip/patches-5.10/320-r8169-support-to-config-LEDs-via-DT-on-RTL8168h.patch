@@ -1,0 +1,57 @@
+From 902d23b20f9ecedf22deab65b4227ed1f494d2f4 Mon Sep 17 00:00:00 2001
+From: Jensen Huang <jensenhuang@friendlyarm.com>
+Date: Wed, 24 Aug 2022 19:48:35 +0800
+Subject: [PATCH 3/4] r8169: support to config LEDs via DT on RTL8168h
+
+Signed-off-by: Jensen Huang <jensenhuang@friendlyarm.com>
+---
+ drivers/net/ethernet/realtek/r8169_main.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/net/ethernet/realtek/r8169_main.c b/drivers/net/ethernet/realtek/r8169_main.c
+index c025dadcce28..ea0baec9179e 100644
+--- a/drivers/net/ethernet/realtek/r8169_main.c
++++ b/drivers/net/ethernet/realtek/r8169_main.c
+@@ -21,6 +21,7 @@
+ #include <linux/in.h>
+ #include <linux/io.h>
+ #include <linux/ip.h>
++#include <linux/of.h>
+ #include <linux/tcp.h>
+ #include <linux/interrupt.h>
+ #include <linux/dma-mapping.h>
+@@ -294,6 +295,7 @@ enum rtl8168_8101_registers {
+ };
+ 
+ enum rtl8168_registers {
++	LED_SEL			= 0x18,
+ 	LED_FREQ		= 0x1a,
+ 	EEE_LED			= 0x1b,
+ 	ERIDR			= 0x70,
+@@ -2092,6 +2094,15 @@ void r8169_apply_firmware(struct rtl8169_private *tp)
+ 	}
+ }
+ 
++static void rtl8168_led_of_init(struct rtl8169_private *tp)
++{
++	struct device *d = tp_to_dev(tp);
++	u32 val;
++
++	if (!of_property_read_u32(d->of_node, "realtek,ledsel", &val))
++		RTL_W16(tp, LED_SEL, val);
++}
++
+ static void rtl8168_config_eee_mac(struct rtl8169_private *tp)
+ {
+ 	/* Adjust EEE LED frequency */
+@@ -3223,6 +3234,7 @@ static void rtl_hw_start_8168h_1(struct rtl8169_private *tp)
+ 	rtl_eri_write(tp, 0xb8, ERIAR_MASK_0011, 0x0000);
+ 
+ 	rtl8168_config_eee_mac(tp);
++	rtl8168_led_of_init(tp);
+ 
+ 	RTL_W8(tp, DLLPR, RTL_R8(tp, DLLPR) & ~PFM_EN);
+ 	RTL_W8(tp, MISC_1, RTL_R8(tp, MISC_1) & ~PFM_D3COLD_EN);
+-- 
+2.38.1
+
