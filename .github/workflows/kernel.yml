@@ -16,7 +16,7 @@ on:
       - '.github/workflows/kernel.yml'
       - 'include/kernel*'
       - 'package/kernel/**'
-      - 'target/linux/generic/**'
+      - 'target/linux/**'
 
 permissions:
   contents: read
@@ -26,33 +26,66 @@ jobs:
     name: Set targets
     runs-on: ubuntu-latest
     outputs:
-      target: ${{ steps.find_targets.outputs.target }}
+      targets_subtargets: ${{ steps.find_targets.outputs.targets_subtargets }}
+      targets: ${{ steps.find_targets.outputs.targets }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+        with:
+          since_last_remote_commit: true
 
       - name: Set targets
         id: find_targets
         run: |
+          export TARGETS_SUBTARGETS="$(perl ./scripts/dump-target-info.pl targets 2>/dev/null \
+            | sort -u -t '/' -k1 \
+            | awk '{ print $1 }')"
+
           export TARGETS="$(perl ./scripts/dump-target-info.pl targets 2>/dev/null \
             | sort -u -t '/' -k1,1 \
             | awk '{ print $1 }')"
 
-          JSON='['
+          JSON_TARGETS_SUBTARGETS='['
+          FIRST=1
+          for TARGET in $TARGETS_SUBTARGETS; do
+            if echo ${{ steps.changed-files.outputs.all_changed_files }} | grep -q target/linux/generic ||
+              echo ${{ steps.changed-files.outputs.all_changed_files }} | grep -q $(echo $TARGET | cut -d "/" -f 1); then
+              [[ $FIRST -ne 1 ]] && JSON_TARGETS_SUBTARGETS="$JSON_TARGETS_SUBTARGETS"','
+              JSON_TARGETS_SUBTARGETS="$JSON_TARGETS_SUBTARGETS"'"'"${TARGET}"'"'
+              FIRST=0
+            fi
+          done
+          JSON_TARGETS_SUBTARGETS="$JSON_TARGETS_SUBTARGETS"']'
+
+          JSON_TARGETS='['
           FIRST=1
           for TARGET in $TARGETS; do
-            [[ $FIRST -ne 1 ]] && JSON="$JSON"','
-            JSON="$JSON"'"'"${TARGET}"'"'
-            FIRST=0
+            if echo ${{ steps.changed-files.outputs.all_changed_files }} | grep -q target/linux/generic ||
+              echo ${{ steps.changed-files.outputs.all_changed_files }} | grep -q $(echo $TARGET | cut -d "/" -f 1); then
+              [[ $FIRST -ne 1 ]] && JSON_TARGETS="$JSON_TARGETS"','
+              JSON_TARGETS="$JSON_TARGETS"'"'"${TARGET}"'"'
+              FIRST=0
+            fi
           done
-          JSON="$JSON"']'
+          JSON_TARGETS="$JSON_TARGETS"']'
 
-           echo -e "\n---- targets ----\n"
-           echo "$JSON"
-           echo -e "\n---- targets ----\n"
+          echo -e "\n---- targets to build ----\n"
+          echo "$JSON_TARGETS_SUBTARGETS"
+          echo -e "\n---- targets to build ----\n"
 
-           echo "target=$JSON" >> $GITHUB_OUTPUT
+          echo -e "\n---- targets to check patch ----\n"
+          echo "$JSON_TARGETS"
+          echo -e "\n---- targets to check patch ----\n"
+
+          echo "targets_subtargets=$JSON_TARGETS_SUBTARGETS" >> $GITHUB_OUTPUT
+          echo "targets=$JSON_TARGETS" >> $GITHUB_OUTPUT
 
   build:
     name: Build Kernel with external toolchain
@@ -63,7 +96,7 @@ jobs:
     strategy:
        fail-fast: False
        matrix:
-         target: ${{fromJson(needs.determine_targets.outputs.target)}}
+         target: ${{fromJson(needs.determine_targets.outputs.targets_subtargets)}}
     uses: ./.github/workflows/build.yml
     with:
       target: ${{ matrix.target }}
@@ -79,7 +112,7 @@ jobs:
     strategy:
        fail-fast: False
        matrix:
-         target: ${{fromJson(needs.determine_targets.outputs.target)}}
+         target: ${{fromJson(needs.determine_targets.outputs.targets)}}
     uses: ./.github/workflows/check-kernel-patches.yml
     with:
       target: ${{ matrix.target }}
