@@ -1,0 +1,37 @@
+From 3b697688e7f232bc7b4f28b35afb05c30b6ad52c Mon Sep 17 00:00:00 2001
+From: Jensen Huang <jensenhuang@friendlyarm.com>
+Date: Tue, 10 Jan 2023 11:02:18 +0800
+Subject: [PATCH 1/4] PCI: rockchip: Add delay after PERST# was asserted
+
+Delay is needed for some device before `rockchip_pcie_rd_conf()'
+to avoid potential SError interrupt.
+
+Signed-off-by: Jensen Huang <jensenhuang@friendlyarm.com>
+---
+ drivers/pci/controller/pcie-rockchip-host.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/pci/controller/pcie-rockchip-host.c b/drivers/pci/controller/pcie-rockchip-host.c
+index 0d6df73bb918..e1b72d4d552a 100644
+--- a/drivers/pci/controller/pcie-rockchip-host.c
++++ b/drivers/pci/controller/pcie-rockchip-host.c
+@@ -301,6 +301,7 @@ static int rockchip_pcie_host_init_port(struct rockchip_pcie *rockchip)
+ 	u32 status;
+ 
+ 	gpiod_set_value_cansleep(rockchip->ep_gpio, 0);
++	usleep_range(5000, 6000);
+ 
+ 	err = rockchip_pcie_init_port(rockchip);
+ 	if (err)
+@@ -328,6 +329,8 @@ static int rockchip_pcie_host_init_port(struct rockchip_pcie *rockchip)
+ 	rockchip_pcie_write(rockchip, PCIE_CLIENT_LINK_TRAIN_ENABLE,
+ 			    PCIE_CLIENT_CONFIG);
+ 
++	/* Ensure that PERST has been asserted for at least 100 ms */
++	msleep(100);
+ 	gpiod_set_value_cansleep(rockchip->ep_gpio, 1);
+ 
+ 	/* 500ms timeout value should be enough for Gen1/2 training */
+-- 
+2.38.1
+

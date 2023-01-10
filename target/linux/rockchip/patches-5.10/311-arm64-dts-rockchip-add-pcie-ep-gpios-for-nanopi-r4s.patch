@@ -1,0 +1,25 @@
+From e43f45160864fd18051bc734c488514165e08ff6 Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Tue, 2 Aug 2022 16:04:36 +0800
+Subject: [PATCH 2/4] arm64: dts: rockchip: add pcie/ep-gpios for nanopi-r4s
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3399-nanopi-r4s.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3399-nanopi-r4s.dts b/arch/arm64/boot/dts/rockchip/rk3399-nanopi-r4s.dts
+index 56a541d7bdbe..6eca30b4e58c 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3399-nanopi-r4s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3399-nanopi-r4s.dts
+@@ -89,6 +89,7 @@ &i2c4 {
+ };
+ 
+ &pcie0 {
++	ep-gpios = <&gpio2 RK_PB1 GPIO_ACTIVE_HIGH>;
+ 	max-link-speed = <1>;
+ 	num-lanes = <1>;
+ 	vpcie3v3-supply = <&vcc3v3_sys>;
+-- 
+2.38.1
+
