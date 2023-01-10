@@ -80,6 +80,7 @@
 		wifi: wifi {
 			label = "green:wlan";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		power_red: power2 {
