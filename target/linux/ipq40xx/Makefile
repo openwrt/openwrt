@@ -6,7 +6,7 @@ BOARDNAME:=Qualcomm Atheros IPQ40XX
 FEATURES:=squashfs fpu ramdisk nand
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
-SUBTARGETS:=generic chromium mikrotik 
+SUBTARGETS:=generic chromium mikrotik
 
 KERNEL_PATCHVER:=5.15
 
