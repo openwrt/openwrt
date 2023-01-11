@@ -1,0 +1,37 @@
+# ci:target:x86:64 is going to trigger CI target check jobs for x86/64 target
+
+name: Build check target specified in labels
+on:
+  pull_request:
+    types:
+      - labeled
+
+jobs:
+  set_target:
+    if: startsWith(github.event.label.name, 'ci:target:')
+    name: Set target
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.set_target.outputs.target }}
+
+    steps:
+      - name: Set target
+        id: set_target
+        env:
+          CI_EVENT_LABEL_NAME: ${{ github.event.label.name }}
+        run: |
+          echo "$CI_EVENT_LABEL_NAME" | sed -n 's/.*:\(.*\):\(.*\)$/target="\1\/\2"/p' | tee --append $GITHUB_OUTPUT
+
+  build_target:
+    name: Build target
+    needs: set_target
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/build.yml
+    with:
+      target: ${{ needs.set_target.outputs.target }}
+      build_full: true
+      build_all_kmods: true
+      build_all_boards: true
+      build_all_modules: true
