@@ -12,8 +12,8 @@ PKG_VERSION:=1.0.16
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/lldpd/lldpd/tar.gz/$(PKG_VERSION)?
-PKG_HASH:=9bc6154377b97187d96d5e22aa5c4946c6cbc85f1416149853cc0940639a77e5
+PKG_SOURCE_URL:=https://github.com/lldpd/lldpd/releases/download/$(PKG_VERSION)/
+PKG_HASH:=7753c6e31e938923185f4e10c4ab328929729e22ee4a9687d08881fb82c092ee
 
 PKG_MAINTAINER:=Stijn Tintel <stijn@linux-ipv6.be>
 PKG_LICENSE:=ISC
