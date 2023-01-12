@@ -14,7 +14,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/devfreq/devfreq.c
 +++ b/drivers/devfreq/devfreq.c
-@@ -931,8 +931,9 @@ struct devfreq *devfreq_add_device(struc
+@@ -930,8 +930,9 @@ struct devfreq *devfreq_add_device(struc
  	err = devfreq->governor->event_handler(devfreq, DEVFREQ_GOV_START,
  						NULL);
  	if (err) {

@@ -38,7 +38,7 @@ Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
 
 --- a/drivers/net/usb/rndis_host.c
 +++ b/drivers/net/usb/rndis_host.c
-@@ -485,10 +485,14 @@ EXPORT_SYMBOL_GPL(rndis_unbind);
+@@ -486,10 +486,14 @@ EXPORT_SYMBOL_GPL(rndis_unbind);
   */
  int rndis_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
  {
@@ -53,7 +53,7 @@ Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
  	/* peripheral may have batched packets to us... */
  	while (likely(skb->len)) {
  		struct rndis_data_hdr	*hdr = (void *)skb->data;
-@@ -523,10 +527,17 @@ int rndis_rx_fixup(struct usbnet *dev, s
+@@ -524,10 +528,17 @@ int rndis_rx_fixup(struct usbnet *dev, s
  			break;
  		skb_pull(skb, msg_len - sizeof *hdr);
  		skb_trim(skb2, data_len);
@@ -71,7 +71,7 @@ Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
  	return 1;
  }
  EXPORT_SYMBOL_GPL(rndis_rx_fixup);
-@@ -600,6 +611,17 @@ static const struct driver_info	rndis_po
+@@ -601,6 +612,17 @@ static const struct driver_info	rndis_po
  	.tx_fixup =	rndis_tx_fixup,
  };
  
@@ -89,7 +89,7 @@ Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
  /*-------------------------------------------------------------------------*/
  
  static const struct usb_device_id	products [] = {
-@@ -614,6 +636,16 @@ static const struct usb_device_id	produc
+@@ -615,6 +637,16 @@ static const struct usb_device_id	produc
  				      USB_CLASS_COMM, 2 /* ACM */, 0x0ff),
  	.driver_info = (unsigned long)&rndis_info,
  }, {

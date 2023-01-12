@@ -212,7 +212,7 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
  
 --- a/include/linux/devfreq.h
 +++ b/include/linux/devfreq.h
-@@ -309,7 +309,7 @@ enum devfreq_parent_dev_type {
+@@ -310,7 +310,7 @@ enum devfreq_parent_dev_type {
   * @this:		the devfreq instance of own device.
   * @nb:			the notifier block for DEVFREQ_TRANSITION_NOTIFIER or
   *			CPUFREQ_TRANSITION_NOTIFIER list.
@@ -221,7 +221,7 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
   *
   * The devfreq_passive_data have to set the devfreq instance of parent
   * device with governors except for the passive governor. But, don't need to
-@@ -329,7 +329,7 @@ struct devfreq_passive_data {
+@@ -330,7 +330,7 @@ struct devfreq_passive_data {
  	/* For passive governor's internal use. Don't need to set them */
  	struct devfreq *this;
  	struct notifier_block nb;
