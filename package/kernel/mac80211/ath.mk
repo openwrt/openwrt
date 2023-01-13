@@ -1,6 +1,6 @@
 PKG_DRIVERS += \
 	ath ath5k ath6kl ath6kl-sdio ath6kl-usb ath9k ath9k-common ath9k-htc ath10k ath10k-smallbuffers \
-	ath11k ath11k-ahb ath11k-pci carl9170 owl-loader ar5523 wil6210
+	ath11k ath11k-ahb ath11k-pci carl9170 owl-loader ar5523 wil6210 wcn36xx
 
 PKG_CONFIG_DEPENDS += \
 	CONFIG_PACKAGE_ATH_DEBUG \
@@ -24,7 +24,8 @@ ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
 	CARL9170_DEBUGFS \
 	ATH5K_DEBUG \
 	ATH6KL_DEBUG \
-	WIL6210_DEBUGFS
+	WIL6210_DEBUGFS \
+	WCN36XX_DEBUGFS
 endif
 
 ifdef CONFIG_PACKAGE_MAC80211_TRACING
@@ -47,6 +48,7 @@ config-$(call config_package,ath9k-common) += ATH9K_COMMON
 config-$(call config_package,owl-loader) += ATH9K_PCI_NO_EEPROM
 config-$(CONFIG_TARGET_ath79) += ATH9K_AHB
 config-$(CONFIG_TARGET_ipq40xx) += ATH10K_AHB
+config-$(CONFIG_TARGET_msm89xx) += WCN36XX
 config-$(CONFIG_PCI) += ATH9K_PCI
 config-$(CONFIG_ATH_USER_REGD) += ATH_USER_REGD ATH_REG_DYNAMIC_USER_REG_HINTS
 config-$(CONFIG_ATH9K_HWRNG) += ATH9K_HWRNG
@@ -133,7 +135,7 @@ endef
 define KernelPackage/ath
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros common driver part
-  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT||TARGET_ath79||TARGET_ath25 +kmod-mac80211
+  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT||TARGET_ath79||TARGET_ath25||TARGET_msm89xx +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath.ko
   MENU:=1
 endef
@@ -347,6 +349,20 @@ endef
 define KernelPackage/ath11k-pci/description
 This module adds support for Qualcomm Technologies 802.11ax family of
 chipsets with PCI bus.
+endef
+
+define KernelPackage/wcn36xx
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Qualcomm Atheros WCN3660/3680 support
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/wcn36xx
+  DEPENDS+= @TARGET_msm89xx +kmod-ath +kmod-qcom-rproc-wcnss
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/wcn36xx/wcn36xx.ko
+  AUTOLOAD:=$(call AutoProbe,wcn36xx)
+endef
+
+define KernelPackage/wcn36xx/description
+This module adds support for Qualcomm Atheros WCN3660/3680 Wireless
+blocks in some Qualcomm SoCs
 endef
 
 define KernelPackage/carl9170
