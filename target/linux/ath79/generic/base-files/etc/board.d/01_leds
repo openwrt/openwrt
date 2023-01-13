@@ -310,6 +310,9 @@ qca,ap143-16m)
 qihoo,c301)
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	;;
+ruckus,zf7372)
+	ucidef_set_led_switch "lan" "LAN" "green:eth1" "switch0" "0x02"
+	;;
 samsung,wam250)
 	ucidef_set_led_netdev "lan" "LAN" "white:lan" "eth0"
 	;;

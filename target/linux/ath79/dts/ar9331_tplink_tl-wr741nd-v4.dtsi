@@ -118,7 +118,7 @@
 	};
 };
 
-&eth0 {
+&eth0 {		/* WAN interface, initialized last as eth1 */
 	status = "okay";
 
 	nvmem-cells = <&macaddr_uboot_1fc00>;
@@ -133,12 +133,11 @@
 	};
 };
 
-&eth1 {
+&eth1 {		/* LAN interface, initialized first as eth0 */
 	status = "okay";
 
 	nvmem-cells = <&macaddr_uboot_1fc00>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-1)>;
 };
 
 &wmac {

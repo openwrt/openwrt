@@ -994,18 +994,30 @@ define Device/unielec_u4019-32m
 endef
 TARGET_DEVICES += unielec_u4019-32m
 
-define Device/zte_mf286d
+define Device/zte_mf28x_common
 	$(call Device/FitzImage)
 	DEVICE_VENDOR := ZTE
-	DEVICE_MODEL := MF286D
 	SOC := qcom-ipq4019
 	DEVICE_DTS_CONFIG := config@ap.dk04.1-c1
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	KERNEL_IN_UBI := 1
-	DEVICE_PACKAGES := ipq-wifi-zte_mf286d kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+endef
+
+define Device/zte_mf286d
+	$(call Device/zte_mf28x_common)
+	DEVICE_MODEL := MF286D
+	DEVICE_PACKAGES += ipq-wifi-zte_mf286d
 endef
 TARGET_DEVICES += zte_mf286d
+
+define Device/zte_mf289f
+	$(call Device/zte_mf28x_common)
+	DEVICE_MODEL := MF289F
+	DEVICE_PACKAGES += ipq-wifi-zte_mf289f ath10k-firmware-qca9984-ct
+endef
+TARGET_DEVICES += zte_mf289f
 
 define Device/zyxel_nbg6617
 	$(call Device/FitImageLzma)

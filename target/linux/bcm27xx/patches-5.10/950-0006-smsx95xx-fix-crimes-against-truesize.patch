@@ -14,7 +14,7 @@ Signed-off-by: Steve Glendinning <steve.glendinning@smsc.com>
 
 --- a/drivers/net/usb/smsc95xx.c
 +++ b/drivers/net/usb/smsc95xx.c
-@@ -67,6 +67,10 @@ static bool turbo_mode = true;
+@@ -68,6 +68,10 @@ static bool turbo_mode = true;
  module_param(turbo_mode, bool, 0644);
  MODULE_PARM_DESC(turbo_mode, "Enable multiple frames per Rx transaction");
  
@@ -25,7 +25,7 @@ Signed-off-by: Steve Glendinning <steve.glendinning@smsc.com>
  static int __must_check __smsc95xx_read_reg(struct usbnet *dev, u32 index,
  					    u32 *data, int in_pm)
  {
-@@ -1838,7 +1842,8 @@ static int smsc95xx_rx_fixup(struct usbn
+@@ -1853,7 +1857,8 @@ static int smsc95xx_rx_fixup(struct usbn
  				if (dev->net->features & NETIF_F_RXCSUM)
  					smsc95xx_rx_csum_offload(skb);
  				skb_trim(skb, skb->len - 4); /* remove fcs */
@@ -35,7 +35,7 @@ Signed-off-by: Steve Glendinning <steve.glendinning@smsc.com>
  
  				return 1;
  			}
-@@ -1856,7 +1861,8 @@ static int smsc95xx_rx_fixup(struct usbn
+@@ -1871,7 +1876,8 @@ static int smsc95xx_rx_fixup(struct usbn
  			if (dev->net->features & NETIF_F_RXCSUM)
  				smsc95xx_rx_csum_offload(ax_skb);
  			skb_trim(ax_skb, ax_skb->len - 4); /* remove fcs */

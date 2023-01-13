@@ -24,7 +24,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/Makefile
 +++ b/Makefile
-@@ -1364,6 +1364,9 @@ ifneq ($(dtstree),)
+@@ -1369,6 +1369,9 @@ ifneq ($(dtstree),)
  %.dtb: include/config/kernel.release scripts_dtc
  	$(Q)$(MAKE) $(build)=$(dtstree) $(dtstree)/$@
  

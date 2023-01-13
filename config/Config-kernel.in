@@ -81,6 +81,11 @@ config KERNEL_PROFILING
 	  Enable the extended profiling support mechanisms used by profilers such
 	  as OProfile.
 
+config KERNEL_RPI_AXIPERF
+	bool "Compile the kernel with RaspberryPi AXI Performance monitors"
+	default y
+	depends on KERNEL_PERF_EVENTS && TARGET_bcm27xx
+
 config KERNEL_UBSAN
 	bool "Compile the kernel with undefined behaviour sanity checker"
 	help

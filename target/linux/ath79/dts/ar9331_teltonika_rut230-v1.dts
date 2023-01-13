@@ -10,7 +10,7 @@
 	compatible = "teltonika,rut230-v1", "qca,ar9331";
 
 	aliases {
-		label-mac-device = &wmac;
+		label-mac-device = &eth1;
 		led-boot = &led_ss0;
 		led-failsafe = &led_ss0;
 		led-upgrade = &led_ss0;
@@ -111,6 +111,7 @@
 
 	nvmem-cells = <&macaddr_config_0>;
 	nvmem-cell-names = "mac-address";
+	mac-address-increment = <1>;
 };
 
 &eth1 {
@@ -118,7 +119,6 @@
 
 	nvmem-cells = <&macaddr_config_0>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &spi {

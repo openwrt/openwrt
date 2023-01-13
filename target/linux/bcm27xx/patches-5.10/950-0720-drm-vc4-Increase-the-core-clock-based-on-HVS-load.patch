@@ -19,7 +19,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_crtc.c
 +++ b/drivers/gpu/drm/vc4/vc4_crtc.c
-@@ -660,12 +660,27 @@ static int vc4_crtc_atomic_check(struct
+@@ -644,12 +644,27 @@ static int vc4_crtc_atomic_check(struct
  	struct vc4_crtc_state *vc4_state = to_vc4_crtc_state(crtc_state);
  	struct drm_connector *conn;
  	struct drm_connector_state *conn_state;

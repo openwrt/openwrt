@@ -64,6 +64,7 @@ ath79_setup_interfaces()
 	pisen,ts-d084|\
 	pisen,wmb001n|\
 	pisen,wmm003n|\
+	ruckus,zf7321|\
 	siemens,ws-ap3610|\
 	sophos,ap55|\
 	sophos,ap55c|\
@@ -123,6 +124,7 @@ ath79_setup_interfaces()
 	engenius,enstationac-v1|\
 	engenius,ews511ap|\
 	ocedo,ursus|\
+	ruckus,zf7372|\
 	ubnt,unifi-ap-outdoor-plus)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
@@ -177,7 +179,8 @@ ath79_setup_interfaces()
 		;;
 	buffalo,wzr-hp-g300nh-rb|\
 	buffalo,wzr-hp-g300nh-s|\
-	dlink,dir-825-b1)
+	dlink,dir-825-b1|\
+	trendnet,tew-673gru)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "5@eth0"
@@ -585,7 +588,8 @@ ath79_setup_macs()
 	dlink,dap-3662-a1)
 		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
 		;;
-	dlink,dir-825-b1)
+	dlink,dir-825-b1|\
+	trendnet,tew-673gru)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
 		wan_mac=$(mtd_get_mac_text "caldata" 0xffb4)
 		label_mac=$wan_mac
@@ -683,6 +687,11 @@ ath79_setup_macs()
 	rosinson,wr818)
 		wan_mac=$(mtd_get_mac_binary factory 0x0)
 		lan_mac=$(macaddr_setbit_la "$wan_mac")
+		;;
+	ruckus,zf7321|\
+	ruckus,zf7372)
+		lan_mac=$(mtd_get_mac_binary board-data 0x807E)
+		label_mac=$lan_mac
 		;;
 	sitecom,wlr-7100|\
 	sitecom,wlr-8100)

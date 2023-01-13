@@ -19,7 +19,7 @@ Link: https://lore.kernel.org/linux-mtd/20210104041137.113075-3-manivannan.sadha
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -196,6 +196,14 @@ config MTD_REDBOOT_PARTS_READONLY
+@@ -211,6 +211,14 @@ config MTD_REDBOOT_PARTS_READONLY
  
  endif # MTD_REDBOOT_PARTS
  
@@ -36,7 +36,7 @@ Link: https://lore.kernel.org/linux-mtd/20210104041137.113075-3-manivannan.sadha
  	depends on MTD && OF
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -13,4 +13,5 @@ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
+@@ -14,4 +14,5 @@ obj-$(CONFIG_MTD_PARSER_TPLINK_SAFELOADE
  obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
  obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o

@@ -66,6 +66,7 @@ define Device/cznic_turris-omnia
   DEVICE_IMG_NAME = $$(2)
   SUPPORTED_DEVICES += armada-385-turris-omnia
   BOOT_SCRIPT := turris-omnia
+  DEFAULT := n
 endef
 TARGET_DEVICES += cznic_turris-omnia
 
@@ -114,6 +115,7 @@ define Device/linksys
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 	append-ubi | pad-to $$$$(PAGESIZE)
   KERNEL_SIZE := 6144k
+  DEFAULT := n
 endef
 
 define Device/linksys_wrt1200ac
@@ -299,5 +301,6 @@ define Device/solidrun_clearfog-pro-a1
   UBOOT := clearfog-u-boot-spl.kwb
   BOOT_SCRIPT := clearfog
   SUPPORTED_DEVICES += armada-388-clearfog armada-388-clearfog-pro
+  DEFAULT := n
 endef
 TARGET_DEVICES += solidrun_clearfog-pro-a1

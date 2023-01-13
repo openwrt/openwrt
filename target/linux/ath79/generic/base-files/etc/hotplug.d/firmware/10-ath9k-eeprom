@@ -151,7 +151,8 @@ case "$FIRMWARE" in
 	netgear,wndap360)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
-	dlink,dir-825-b1)
+	dlink,dir-825-b1|\
+	trendnet,tew-673gru)
 		caldata_extract "caldata" 0x1000 0xeb8
 		ath9k_patch_mac_crc $(mtd_get_mac_text "caldata" 0xffa0) 0x20c
 		;;
@@ -170,7 +171,8 @@ case "$FIRMWARE" in
 	netgear,wndap360)
 		caldata_extract "art" 0x5000 0xeb8
 		;;
-	dlink,dir-825-b1)
+	dlink,dir-825-b1|\
+	trendnet,tew-673gru)
 		caldata_extract "caldata" 0x5000 0xeb8
 		ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_text "caldata" 0xffb4) 1) 0x20c
 		;;

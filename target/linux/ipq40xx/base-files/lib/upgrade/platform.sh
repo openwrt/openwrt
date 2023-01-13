@@ -25,7 +25,8 @@ Once this is done. Retry.
 EOF
 		return 1
 		;;
-	zte,mf286d)
+	zte,mf286d |\
+	zte,mf289f)
 		CI_UBIPART="rootfs"
 		local mtdnum="$( find_mtd_index $CI_UBIPART )"
 		[ ! "$mtdnum" ] && return 1
@@ -185,7 +186,8 @@ platform_do_upgrade() {
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;
 	teltonika,rutx10 |\
-	zte,mf286d)
+	zte,mf286d |\
+	zte,mf289f)
 		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;

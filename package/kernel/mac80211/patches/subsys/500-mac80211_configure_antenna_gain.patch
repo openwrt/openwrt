@@ -77,7 +77,7 @@
  static void ieee80211_rfkill_poll(struct wiphy *wiphy)
  {
  	struct ieee80211_local *local = wiphy_priv(wiphy);
-@@ -4516,6 +4529,7 @@ const struct cfg80211_ops mac80211_confi
+@@ -4513,6 +4526,7 @@ const struct cfg80211_ops mac80211_confi
  	.set_wiphy_params = ieee80211_set_wiphy_params,
  	.set_tx_power = ieee80211_set_tx_power,
  	.get_tx_power = ieee80211_get_tx_power,
@@ -87,7 +87,7 @@
  	CFG80211_TESTMODE_DUMP(ieee80211_testmode_dump)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1448,6 +1448,7 @@ struct ieee80211_local {
+@@ -1447,6 +1447,7 @@ struct ieee80211_local {
  	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */

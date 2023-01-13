@@ -1,0 +1,43 @@
+name: Build all core packages
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/build.yml'
+      - '.github/workflows/packages.yml'
+      - 'config/**'
+      - 'include/**'
+      - 'package/**'
+      - 'target/linux/generic/**'
+      - 'toolchain/**'
+  push:
+    paths:
+      - '.github/workflows/build.yml'
+      - '.github/workflows/packages.yml'
+      - 'config/**'
+      - 'include/**'
+      - 'package/**'
+      - 'target/linux/generic/**'
+      - 'toolchain/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: False
+      matrix:
+        include:
+          - target: malta/be
+          - target: x86/64
+    uses: ./.github/workflows/build.yml
+    with:
+      target: ${{ matrix.target }}
+      build_all_kmods: true
+      build_all_modules: true
+      build_full: true
+

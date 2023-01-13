@@ -18,6 +18,7 @@ endef
 TARGET_DEVICES += asus_rt-n56u
 
 define Device/belkin_f9k1109v1
+  $(Device/uimage-lzma-loader)
   SOC := rt3883
   BLOCKSIZE := 64k
   DEVICE_VENDOR := Belkin
@@ -25,19 +26,16 @@ define Device/belkin_f9k1109v1
   DEVICE_VARIANT := Version 1.0
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport
   IMAGE_SIZE := 7808k
-  KERNEL := kernel-bin | append-dtb | lzma -d16 | uImage lzma
   # Stock firmware checks for this uImage image name during upload.
   UIMAGE_NAME := N750F9K1103VB
 endef
 TARGET_DEVICES += belkin_f9k1109v1
 
 define Device/dlink_dir-645
-  $(Device/seama)
-  $(Device/uimage-lzma-loader)
+  $(Device/seama-lzma-loader)
   SOC := rt3662
   BLOCKSIZE := 4k
   IMAGE_SIZE := 7872k
-  KERNEL := kernel-bin | append-dtb | lzma -d10
   SEAMA_SIGNATURE := wrgn39_dlob.hans_dir645
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-645

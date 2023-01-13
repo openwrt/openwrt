@@ -118,9 +118,9 @@
  
 --- a/include/uapi/linux/ip.h
 +++ b/include/uapi/linux/ip.h
-@@ -103,7 +103,7 @@ struct iphdr {
- 	__be32	saddr;
- 	__be32	daddr;
+@@ -105,7 +105,7 @@ struct iphdr {
+ 		__be32	daddr;
+ 	);
  	/*The options start here. */
 -};
 +} __attribute__((packed, aligned(2)));
@@ -129,10 +129,10 @@
  struct ip_auth_hdr {
 --- a/include/uapi/linux/ipv6.h
 +++ b/include/uapi/linux/ipv6.h
-@@ -132,7 +132,7 @@ struct ipv6hdr {
- 
- 	struct	in6_addr	saddr;
- 	struct	in6_addr	daddr;
+@@ -134,7 +134,7 @@ struct ipv6hdr {
+ 		struct	in6_addr	saddr;
+ 		struct	in6_addr	daddr;
+ 	);
 -};
 +} __attribute__((packed, aligned(2)));
  
@@ -214,7 +214,7 @@
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -924,10 +925,10 @@ static void tcp_v6_send_response(const s
+@@ -926,10 +927,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -706,7 +706,7 @@
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -4127,14 +4127,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -4128,14 +4128,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  

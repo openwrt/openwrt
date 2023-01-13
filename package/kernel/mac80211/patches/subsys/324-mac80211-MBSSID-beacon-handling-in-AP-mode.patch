@@ -195,7 +195,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			return err;
  		}
  		*changed |= err;
-@@ -3463,8 +3528,11 @@ static int ieee80211_set_csa_beacon(stru
+@@ -3460,8 +3525,11 @@ static int ieee80211_set_csa_beacon(stru
  static void ieee80211_color_change_abort(struct ieee80211_sub_if_data  *sdata)
  {
  	sdata->vif.color_change_active = false;
@@ -209,7 +209,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	cfg80211_color_change_aborted_notify(sdata->dev);
  }
-@@ -4202,8 +4270,11 @@ ieee80211_set_after_color_change_beacon(
+@@ -4199,8 +4267,11 @@ ieee80211_set_after_color_change_beacon(
  
  		ret = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon,
  					      NULL, NULL);
@@ -223,7 +223,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  		if (ret < 0)
  			return ret;
-@@ -4246,7 +4317,11 @@ ieee80211_set_color_change_beacon(struct
+@@ -4243,7 +4314,11 @@ ieee80211_set_color_change_beacon(struct
  		err = ieee80211_assign_beacon(sdata, &params->beacon_color_change,
  					      NULL, &color_change);
  		if (err < 0) {
@@ -246,7 +246,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct rcu_head rcu_head;
  };
  
-@@ -1083,6 +1084,20 @@ ieee80211_vif_get_shift(struct ieee80211
+@@ -1082,6 +1083,20 @@ ieee80211_vif_get_shift(struct ieee80211
  	return shift;
  }
  

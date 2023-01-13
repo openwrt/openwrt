@@ -35,7 +35,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	.driver_info = (unsigned long) &(const struct snd_usb_audio_quirk) {
 --- a/sound/usb/quirks.c
 +++ b/sound/usb/quirks.c
-@@ -1530,6 +1530,7 @@ bool snd_usb_get_sample_rate_quirk(struc
+@@ -1531,6 +1531,7 @@ bool snd_usb_get_sample_rate_quirk(struc
  	case USB_ID(0x2912, 0x30c8): /* Audioengine D1 */
  	case USB_ID(0x413c, 0xa506): /* Dell AE515 sound bar */
  	case USB_ID(0x046d, 0x084c): /* Logitech ConferenceCam Connect */

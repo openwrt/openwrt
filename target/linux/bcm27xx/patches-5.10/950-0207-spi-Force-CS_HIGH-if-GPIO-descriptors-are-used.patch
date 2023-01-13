@@ -32,7 +32,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/spi/spi.c
 +++ b/drivers/spi/spi.c
-@@ -3338,6 +3338,7 @@ static int __spi_validate_bits_per_word(
+@@ -3340,6 +3340,7 @@ static int __spi_validate_bits_per_word(
   */
  int spi_setup(struct spi_device *spi)
  {
@@ -40,7 +40,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	unsigned	bad_bits, ugly_bits;
  	int		status;
  
-@@ -3355,6 +3356,14 @@ int spi_setup(struct spi_device *spi)
+@@ -3357,6 +3358,14 @@ int spi_setup(struct spi_device *spi)
  		(SPI_TX_DUAL | SPI_TX_QUAD | SPI_TX_OCTAL |
  		 SPI_RX_DUAL | SPI_RX_QUAD | SPI_RX_OCTAL)))
  		return -EINVAL;

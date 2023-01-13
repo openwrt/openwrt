@@ -4,33 +4,36 @@ on:
   pull_request:
     paths:
       - 'tools/**'
+      - '.github/workflows/tools.yml'
+  push:
+    paths:
+      - 'tools/**'
+      - '.github/workflows/tools.yml'
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    name: Build tools on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: False
-      matrix:
-        os: 
-          - ubuntu-latest
-          - macos-latest
+  build-macos-latest:
+    if: github.event_name != 'push'
+    runs-on: macos-latest
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0
           path: openwrt
 
       - name: Setup MacOS
-        if: ${{ matrix.os == 'macos-latest' }}
         run: |
-          echo "WORKPATH=/Volumes/OpenWrt/openwrt/" >> "$GITHUB_ENV"
+          echo "WORKPATH=/Volumes/OpenWrt" >> "$GITHUB_ENV"
           hdiutil create -size 20g -type SPARSE -fs "Case-sensitive HFS+" -volname OpenWrt OpenWrt.sparseimage
           hdiutil attach OpenWrt.sparseimage
           mv "$GITHUB_WORKSPACE/openwrt" /Volumes/OpenWrt/
-          cd "$WORKPATH"
 
+      - name: Install required prereq on MacOS
+        working-directory: ${{ env.WORKPATH }}/openwrt
+        run: |
           brew install \
             autoconf \
             automake \
@@ -70,65 +73,154 @@ jobs:
             echo "/usr/local/opt/make/libexec/gnubin" >> "$GITHUB_PATH"
             echo "/usr/local/opt/make/libexec/gnubin" >> "$GITHUB_PATH"
             echo "/usr/sbin" >> "$GITHUB_PATH"
-            pwd
-
-      - name: Setup Ubuntu
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install \
-            build-essential \
-            ccache \
-            clang-12 \
-            ecj \
-            fastjar \
-            file \
-            g++ \
-            gawk \
-            gettext \
-            git \
-            java-propose-classpath \
-            libelf-dev \
-            libncurses-dev \
-            libssl-dev \
-            mkisofs \
-            python3 \
-            python3-dev \
-            python3-distutils \
-            python3-setuptools \
-            qemu-utils \
-            rsync \
-            subversion \
-            swig \
-            unzip \
-            wget \
-            xsltproc \
-            zlib1g-dev
-          echo "WORKPATH=$GITHUB_WORKSPACE/openwrt/" >> "$GITHUB_ENV"
-          cd "$WORKPATH"
-          pwd
 
       - name: Make prereq
-        run: |
-          cd "$WORKPATH"
-          pwd
-          make defconfig
+        working-directory: ${{ env.WORKPATH }}/openwrt
+        run: make defconfig
 
-      - name: Build tools
-        run: |
-          cd "$WORKPATH"
-          make tools/install -j$(nproc) BUILD_LOG=1
-
-      - name: Move logs to GITHUB_WORKSPACE
-        if: failure()
-        run: |
-          cp -r "$WORKPATH/logs" "$GITHUB_WORKSPACE"
+      - name: Build tools MacOS
+        working-directory: ${{ env.WORKPATH }}/openwrt
+        run: make tools/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Upload logs
-        if: failure()
-        uses: actions/upload-artifact@v2
+        if: always()
+        uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.os }}-logs
-          path: "logs"
+          name: macos-latest-logs
+          path: ${{ env.WORKPATH }}/openwrt/logs
+
+      - name: Upload config
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-latest-config
+          path: ${{ env.WORKPATH }}/openwrt/.config
+
+  build-linux-buildbot:
+    runs-on: ubuntu-latest
+    container: registry.gitlab.com/openwrt/buildbot/buildworker-3.4.1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: 'openwrt'
+
+      - name: Fix permission
+        run: |
+          chown -R buildbot:buildbot openwrt
+
+      - name: Set configs for tools container
+        if: github.event_name == 'push'
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          touch .config
+          echo CONFIG_DEVEL=y >> .config
+          echo CONFIG_AUTOREMOVE=y >> .config
+          echo CONFIG_CCACHE=y >> .config
+
+      - name: Make prereq
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: make defconfig
+
+      - name: Build tools BuildBot Container
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: make tools/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-buildbot-logs
+          path: openwrt/logs
+
+      - name: Upload config
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-buildbot-config
+          path: openwrt/.config
+
+      - name: Archive prebuilt tools
+        if: github.event_name == 'push'
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: tar --mtime=now -cf tools.tar staging_dir/host build_dir/host dl
+
+      - name: Upload prebuilt tools
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-buildbot-prebuilt-tools
+          path: openwrt/tools.tar
+          retention-days: 1
+
+  push-tools-container:
+    needs: build-linux-buildbot
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Set lower case owner name
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >> "$GITHUB_ENV"
+
+      # Per branch tools container tag
+      # By default stick to latest
+      # For official test targetting openwrt stable branch
+      # Get the branch or parse the tag and push dedicated tools containers
+      # Any branch that will match this pattern openwrt-[0-9][0-9].[0-9][0-9]
+      # will refresh the tools container with the matching tag.
+      # (example branch openwrt-22.03 -> tools:openwrt-22.03)
+      # (example branch openwrt-22.03-test -> tools:openwrt-22.03)
+      - name: Determine tools container tag
+        run: |
+          CONTAINER_TAG=latest
+
+          if [ ${{ github.ref_type }} == "branch" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]'; then
+              CONTAINER_TAG="$(echo ${{ github.ref_name }} | sed 's/^\(openwrt-[0-9][0-9]\.[0-9][0-9]\).*/\1/')"
+            fi
+          elif [ ${{ github.ref_type }} == "tag" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E 'v[0-9][0-9]\.[0-9][0-9]\..+'; then
+              CONTAINER_TAG=openwrt-"$(echo ${{ github.ref_name }} | sed 's/v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
+            fi
+          fi
+
+          echo "Tools container to push tools:$CONTAINER_TAG"
+          echo "CONTAINER_TAG=$CONTAINER_TAG" >> "$GITHUB_ENV"
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: 'openwrt'
+
+      - name: Download prebuilt tools from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: linux-buildbot-prebuilt-tools
+          path: openwrt
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: openwrt
+          push: true
+          tags: ghcr.io/${{ env.OWNER_LC }}/tools:${{ env.CONTAINER_TAG }}
+          file: openwrt/.github/workflows/Dockerfile.tools
