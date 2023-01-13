@@ -184,7 +184,7 @@ define KernelPackage/w83627hf-wdt
   DEPENDS:=@TARGET_x86
   KCONFIG:=\
 	CONFIG_W83627HF_WDT \
-	ONFIG_WATCHDOG_CORE=y
+	CONFIG_WATCHDOG_CORE=y
   FILES:=$(LINUX_DIR)/drivers/watchdog/w83627hf_wdt.ko
   AUTOLOAD:=$(call AutoLoad,50,w83627hf-wdt,1)
 endef
