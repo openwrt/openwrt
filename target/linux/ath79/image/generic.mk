@@ -1308,6 +1308,18 @@ define Device/engenius_ews511ap
 endef
 TARGET_DEVICES += engenius_ews511ap
 
+define Device/engenius_ews660ap
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := EWS660AP
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := ar71xx-generic-ews660ap
+endef
+TARGET_DEVICES += engenius_ews660ap
+
 define Device/enterasys_ws-ap3705i
   SOC := ar9344
   DEVICE_VENDOR := Enterasys
