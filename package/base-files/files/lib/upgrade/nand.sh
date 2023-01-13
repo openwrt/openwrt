@@ -65,40 +65,12 @@ get_magic_long_tar() {
 	(tar xO${3}f "$1" "$2" | dd bs=4 count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2> /dev/null
 }
 
-identify_magic() {
-	local magic=$1
-	case "$magic" in
-		"55424923")
-			echo "ubi"
-			;;
-		"31181006")
-			echo "ubifs"
-			;;
-		"68737173")
-			echo "squashfs"
-			;;
-		"d00dfeed")
-			echo "fit"
-			;;
-		"4349"*)
-			echo "combined"
-			;;
-		"1f8b"*)
-			echo "gzip"
-			;;
-		*)
-			echo "unknown $magic"
-			;;
-	esac
-}
-
-
 identify() {
-	identify_magic $(nand_get_magic_long "$@")
+	identify_magic_long $(nand_get_magic_long "$@")
 }
 
 identify_tar() {
-	identify_magic $(get_magic_long_tar "$@")
+	identify_magic_long $(get_magic_long_tar "$@")
 }
 
 identify_if_gzip() {
