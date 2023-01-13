@@ -21,6 +21,30 @@ function custom_menu() {
     done
 }
 
+function init_firewall_ipv6() {
+	local rule_en='1'
+	local wan6=$(uci -q get network.wan.ipv6)
+
+	if [ -z "$wan6" -o "$wan6" = "0" ]; then
+		rule_en='0'
+	fi
+
+	uci -q show firewall | \
+		grep 'Reject-IPv6' >/dev/null && return 0
+
+	uci batch > /dev/null <<-EOF
+		add firewall rule
+		set firewall.@rule[-1]=rule
+		set firewall.@rule[-1].name='Reject-IPv6'
+		set firewall.@rule[-1].family='ipv6'
+		set firewall.@rule[-1].src='wan'
+		set firewall.@rule[-1].dest='*'
+		set firewall.@rule[-1].target='REJECT'
+		set firewall.@rule[-1].enabled=${rule_en}
+		commit firewall
+	EOF
+}
+
 function init_firewall() {
 	uci set firewall.@defaults[0].input='ACCEPT'
 	uci set firewall.@defaults[0].output='ACCEPT'
@@ -201,6 +225,7 @@ if [ "${1,,}" = "all" ]; then
 	custom_menu
 	init_network
 	init_nft-qos
+	init_firewall_ipv6
 	init_firewall
 	init_system
 	init_samba4
