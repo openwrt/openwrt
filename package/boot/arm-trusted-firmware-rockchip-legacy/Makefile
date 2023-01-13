@@ -33,8 +33,16 @@ define Package/arm-trusted-firmware-rockchip-legacy
     DEPENDS:=@TARGET_rockchip_armv8
 endef
 
+define Package/arm-trusted-firmware-rk3568
+    $(Package/arm-trusted-firmware-rockchip-legacy)
+     DEPENDS:=@TARGET_rockchip_armv8
+ endef
+
 define Build/Prepare
-  $(TAR) -C $(PKG_BUILD_DIR) -xf $(DL_DIR)/$(PKG_SOURCE) ${PKG_NAME}-${PKG_VERSION}/bin
+  $(TAR) -C $(PKG_BUILD_DIR) -xf $(DL_DIR)/$(PKG_SOURCE)
+
+  $(INSTALL_DIR) -p $(STAGING_DIR_IMAGE)/tools
+	$(CP) $(PKG_BUILD_DIR)/${PKG_NAME}-${PKG_VERSION}/tools/* $(STAGING_DIR_IMAGE)/tools/
 endef
 
 define Build/Compile
@@ -45,7 +53,7 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/${PKG_NAME}-${PKG_VERSION}/bin/* $(STAGING_DIR_IMAGE)/
 endef
 
-define Package/arm-trusted-firmware-rockchip-legacy/install
+define Package/arm-trusted-firmware-rk3568/install
 endef
 
-$(eval $(call BuildPackage,arm-trusted-firmware-rockchip-legacy))
+$(eval $(call BuildPackage,arm-trusted-firmware-rk3568))
