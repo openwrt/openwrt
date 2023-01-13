@@ -611,13 +611,14 @@ endef
 define Device/buffalo_wzr-hp-g300nh-rb
   $(Device/buffalo_wzr-hp-g300nh)
   DEVICE_MODEL := WZR-HP-G300NH (RTL8366RB switch)
+  DEVICE_PACKAGES += kmod-switch-rtl8366rb
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g300nh-rb
 
 define Device/buffalo_wzr-hp-g300nh-s
   $(Device/buffalo_wzr-hp-g300nh)
   DEVICE_MODEL := WZR-HP-G300NH (RTL8366S switch)
-  DEVICE_PACKAGES += kmod-switch-rtl8366rb
+  DEVICE_PACKAGES += kmod-switch-rtl8366s
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g300nh-s
 
