@@ -21,7 +21,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
 
 --- a/drivers/regulator/core.c
 +++ b/drivers/regulator/core.c
-@@ -2992,9 +2992,10 @@ static int _regulator_list_voltage(struc
+@@ -3000,9 +3000,10 @@ static int _regulator_list_voltage(struc
  		return rdev->desc->fixed_uV;
  
  	if (ops->list_voltage) {
@@ -34,7 +34,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  		if (lock)
  			regulator_lock(rdev);
  		ret = ops->list_voltage(rdev, selector);
-@@ -3144,9 +3145,10 @@ int regulator_list_hardware_vsel(struct
+@@ -3152,9 +3153,10 @@ int regulator_list_hardware_vsel(struct
  	struct regulator_dev *rdev = regulator->rdev;
  	const struct regulator_ops *ops = rdev->desc->ops;
  

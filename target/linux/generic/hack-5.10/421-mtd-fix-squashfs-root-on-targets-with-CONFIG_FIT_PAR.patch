@@ -7,7 +7,7 @@ Fix assumption about the block device index
 
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -758,12 +758,18 @@ int add_mtd_device(struct mtd_info *mtd)
+@@ -760,12 +760,18 @@ int add_mtd_device(struct mtd_info *mtd)
  
  	if (of_find_property(mtd_get_of_node(mtd), "linux,rootfs", NULL) ||
  	    (IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) && !strcmp(mtd->name, "rootfs") && ROOT_DEV == 0)) {

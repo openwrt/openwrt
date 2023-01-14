@@ -14,7 +14,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
 
 --- a/drivers/regulator/core.c
 +++ b/drivers/regulator/core.c
-@@ -4071,6 +4071,9 @@ int regulator_set_voltage_time(struct re
+@@ -4079,6 +4079,9 @@ int regulator_set_voltage_time(struct re
  		if (i < rdev->desc->linear_min_sel)
  			continue;
  
