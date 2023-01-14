@@ -1510,6 +1510,37 @@ endef
 
 $(eval $(call KernelPackage,mhi-wwan-mbim))
 
+define KernelPackage/rpmsg-wwan-ctrl
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=RPMSG WWAN Control
+  DEPENDS:=@LINUX_6_1 +kmod-wwan
+  KCONFIG:=CONFIG_RPMSG_WWAN_CTRL
+  FILES:=$(LINUX_DIR)/drivers/net/wwan/rpmsg_wwan_ctrl.ko
+  AUTOLOAD:=$(call AutoProbe,rpmsg_wwan_ctrl)
+endef
+
+define KernelPackage/rpmsg-wwan-ctrl/description
+ Driver for RPMSG WWAN Control
+ This exposes all modem control ports like AT, QMI that use RPMSG
+endef
+
+$(eval $(call KernelPackage,rpmsg-wwan-ctrl))
+
+define KernelPackage/bam-dmux
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Qualcomm BAM-DMUX WWAN network driver
+  DEPENDS:=@TARGET_msm89xx +kmod-wwan
+  KCONFIG:=CONFIG_QCOM_BAM_DMUX
+  FILES:=$(LINUX_DIR)/drivers/net/wwan/qcom_bam_dmux.ko
+  AUTOLOAD:=$(call AutoProbe,qcom_bam_dmux)
+endef
+
+define KernelPackage/bam-dmux/description
+  Kernel modules for Qualcomm BAM-DMUX WWAN interface
+endef
+
+$(eval $(call KernelPackage,bam-dmux))
+
 define KernelPackage/atlantic
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Aquantia AQtion 10Gbps Ethernet NIC
