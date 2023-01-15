@@ -35,7 +35,8 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii bdcfg "wlanmac" > /sys${DEVPATH}/macaddress
 		;;
-	fortinet,fap-221-b)
+	fortinet,fap-221-b|\
+	fortinet,fap-221-c)
 		macaddr_add "$(mtd_get_mac_text u-boot 0x3ff80 12)" $((PHYNBR*7+1)) > /sys${DEVPATH}/macaddress
 		;;
 	iodata,wn-ac1600dgr)
