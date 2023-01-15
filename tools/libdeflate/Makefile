@@ -7,13 +7,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libdeflate
-PKG_VERSION:=1.15
+PKG_VERSION:=1.17
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/ebiggers/libdeflate.git
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
-PKG_MIRROR_HASH:=122feff4543541b547dc89e832adf262c81911ae1acbccdc591f0353a85b600a
+PKG_MIRROR_HASH:=ee5790cf3140aa6a2e0f0c400d4b32539f13cb270e9357135c51927ba3784dc7
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -23,7 +23,7 @@ define Host/Install
 	$(LN) libdeflate-gzip $(STAGING_DIR_HOST)/bin/libdeflate-gunzip
 endef
 
-define Host/Clean
+define Host/Uninstall
 	rm -f $(STAGING_DIR_HOST)/bin/libdeflate-gzip
 	rm -f $(STAGING_DIR_HOST)/bin/libdeflate-gunzip
 endef
