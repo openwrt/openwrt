@@ -2427,6 +2427,17 @@ define Device/xiaomi_mi-router-4a-gigabit
 endef
 TARGET_DEVICES += xiaomi_mi-router-4a-gigabit
 
+define Device/xiaomi_mi-router-4a-gigabit-v2
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 14784k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 4A
+  DEVICE_VARIANT := Gigabit Edition v2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += xiaomi_mi-router-4a-gigabit-v2
+
 define Device/xiaomi_mi-router-ac2100
   $(Device/xiaomi_nand_separate)
   DEVICE_MODEL := Mi Router AC2100
