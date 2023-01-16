@@ -969,6 +969,7 @@ dnsmasq_start()
 
 	append_parm "$cfg" fast_dns_retry "--fast-dns-retry"
 	append_parm "$cfg" use_stale_cache "--use-stale-cache"
+	append_parm "$cfg" neg_ttl "--neg-ttl"
 
 	append_parm "$cfg" logfacility "--log-facility"
 	config_get logfacility "$cfg" "logfacility"
