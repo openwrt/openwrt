@@ -44,65 +44,40 @@
 };
 
 &spi0 {
-	status = "okay";
+状态 =“正常”;
 
-	flash@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
-		spi-max-frequency = <50000000>;
-		m25p,fast-read;
+flash@0 {
+兼容 = “jedec，spi-nor”;
+注册 = <0>;
+SPI最大频率 = <10000000>;
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+分区 {
+兼容 =“固定分区”;
+#address 细胞 = <1>;
+#size 细胞 = <1>;
 
-			partition@0 {
-				label = "u-boot";
-				reg = <0x0 0x30000>;
-				read-only;
+partition@0 {
+标签 =“U 引导”;
+注册 = <0x0 0x30000>;
+只读;
 			};
 
-			partition@30000 {
-				label = "u-boot-env";
-				reg = <0x30000 0x10000>;
-				read-only;
+partition@30000 {
+标签 = “u-boot-env”;
+注册 = <0x30000 0x10000>;
+只读;
 			};
 
-			partition@40000 {
-				label = "Bdata";
-				reg = <0x40000 0x10000>;
-				read-only;
+工厂： partition@40000 {
+标签 = “工厂”;
+注册 = <0x40000 0x10000>;
+只读;
 			};
 
-			factory: partition@50000 {
-				label = "factory";
-				reg = <0x50000 0x10000>;
-				read-only;
-			};
-
-			partition@60000 {
-				label = "crash";
-				reg = <0x60000 0x10000>;
-				read-only;
-			};
-
-			partition@70000 {
-				label = "cfg_bak";
-				reg = <0x70000 0x10000>;
-				read-only;
-			};
-
-			partition@80000 {
-				label = "overlay";
-				reg = <0x80000 0x100000>;
-				read-only;
-			};
-
-			firmware: partition@180000 {
-				compatible = "denx,uimage";
-				label = "firmware";
-				reg = <0x180000 0xe80000>;
+partition@50000 {
+兼容 = “denx，uimage”;
+标签 = “固件”;
+注册 = <0x50000 0xfb0000>;
 			};
 		};
 	};
