@@ -1,0 +1,30 @@
+From 7ed95633bff19950069c348b94c9c13164a57a2a Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 18 Jan 2023 20:20:39 +0100
+Subject: [PATCH] linux/netlink: drop NL_SET_ERR_MSG for kernel modules
+
+We don't need NL_SET_ERR_MSG_MOD for bpf modules and we can drop it to
+solve missing KBUILD_MODNAME define.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ include/linux/netlink.h | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/include/linux/netlink.h b/include/linux/netlink.h
+index 61b1c7f..93561fb 100644
+--- a/include/linux/netlink.h
++++ b/include/linux/netlink.h
+@@ -98,9 +98,6 @@ struct netlink_ext_ack {
+ 		__extack->_msg = __msg;			\
+ } while (0)
+ 
+-#define NL_SET_ERR_MSG_MOD(extack, msg)			\
+-	NL_SET_ERR_MSG((extack), KBUILD_MODNAME ": " msg)
+-
+ #define NL_SET_BAD_ATTR_POLICY(extack, attr, pol) do {	\
+ 	if ((extack)) {					\
+ 		(extack)->bad_attr = (attr);		\
+-- 
+2.38.1
+
