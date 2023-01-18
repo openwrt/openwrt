@@ -80,17 +80,23 @@ find_library_dependencies = \
 
 PKG_DIR_NAME:=$(lastword $(subst /,$(space),$(CURDIR)))
 STAMP_NO_AUTOREBUILD=$(wildcard $(PKG_BUILD_DIR)/.no_autorebuild)
+HASH_PREPARED=$(if $(QUILT)$(DUMP),,_$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPENDS),)))
 PREV_STAMP_PREPARED:=$(if $(STAMP_NO_AUTOREBUILD),$(wildcard $(PKG_BUILD_DIR)/.prepared*))
 ifneq ($(PREV_STAMP_PREPARED),)
   STAMP_PREPARED:=$(PREV_STAMP_PREPARED)
   CONFIG_AUTOREBUILD:=
 else
-  STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,_$(shell $(call $(if $(CONFIG_AUTOREMOVE),find_md5_reproducible,find_md5),${CURDIR} $(PKG_FILE_DEPENDS),))_$(call confvar,CONFIG_AUTOREMOVE $(PKG_PREPARED_DEPENDS)))
+  STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,_$(call confvar,CONFIG_AUTOREMOVE $(PKG_PREPARED_DEPENDS)))
 endif
 STAMP_CONFIGURED=$(PKG_BUILD_DIR)/.configured$(if $(DUMP),,_$(call confvar,$(PKG_CONFIG_DEPENDS)))
 STAMP_CONFIGURED_WILDCARD=$(PKG_BUILD_DIR)/.configured_*
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
+STAMP_REMOVED:=$(PKG_BUILD_DIR)/.autoremove
 STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),)_installed
+
+ifeq ($(PKG_SKIP_DOWNLOAD),)
+  DOWNLOAD_RDEP += $(STAMP_PREPARED) $(STAMP_PREPARED)$(HASH_PREPARED)
+endif
 
 STAGING_FILES_LIST:=$(PKG_DIR_NAME)$(if $(BUILD_VARIANT),.$(BUILD_VARIANT),).list
 
@@ -126,9 +132,9 @@ unexport QUIET CONFIG_SITE
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
     define Build/Autoclean
-      $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)
-      $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(STAMP_PREPARED),$(PKG_BUILD_DIR)/.dep_files,-x "*/.dep_*")
-      $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(STAMP_BUILT),,-x "*/.dep_*" -x "*/ipkg*"))
+      $(PKG_BUILD_DIR)/.dep_files: $(STAMP_PREPARED)$(HASH_PREPARED)
+      $(call rdep,${CURDIR} $(PKG_FILE_DEPENDS),$(STAMP_PREPARED)$(HASH_PREPARED),$(PKG_BUILD_DIR)/.dep_files,-x "*/.dep_*")
+      $(if $(filter prepare,$(MAKECMDGOALS)),,$(call rdep,$(PKG_BUILD_DIR),$(if $(CONFIG_AUTOREMOVE),$(STAMP_REMOVED),$(STAMP_BUILT)),,-x "*/.dep_*" -x "*/ipkg*"))
     endef
   endif
 endif
@@ -177,6 +183,7 @@ endef
 Build/Exports=$(Build/Exports/Default)
 
 define Build/CoreTargets
+  HASH_PREPARED:=$$(HASH_PREPARED)
   STAMP_PREPARED:=$$(STAMP_PREPARED)
   STAMP_CONFIGURED:=$$(STAMP_CONFIGURED)
 
@@ -191,18 +198,18 @@ define Build/CoreTargets
 		$(call $(hook))$(sep)
 	)
 
-  $(STAMP_PREPARED) : export PATH=$$(TARGET_PATH_PKG)
-  $(STAMP_PREPARED): $(STAMP_PREPARED_DEPENDS)
+  $(STAMP_PREPARED) $(STAMP_PREPARED)$(HASH_PREPARED): export PATH=$$(TARGET_PATH_PKG)
+  $(STAMP_PREPARED) $(STAMP_PREPARED)$(HASH_PREPARED): $(STAMP_PREPARED_DEPENDS)
 	@-rm -rf $(PKG_BUILD_DIR)
 	@mkdir -p $(PKG_BUILD_DIR)
-	touch $$@_check
+	touch $(STAMP_PREPARED)_check $(STAMP_PREPARED)$(HASH_PREPARED)_check
 	$(foreach hook,$(Hooks/Prepare/Pre),$(call $(hook))$(sep))
 	$(Build/Prepare)
 	$(foreach hook,$(Hooks/Prepare/Post),$(call $(hook))$(sep))
-	touch $$@
+	touch $(STAMP_PREPARED) $(STAMP_PREPARED)$(HASH_PREPARED)
 
   $(call Build/Exports,$(STAMP_CONFIGURED))
-  $(STAMP_CONFIGURED): $(STAMP_PREPARED) $(STAMP_CONFIGURED_DEPENDS)
+  $(STAMP_CONFIGURED): $(STAMP_PREPARED)$(if $(CONFIG_AUTOREBUILD),$(HASH_PREPARED)) $(STAMP_CONFIGURED_DEPENDS)
 	rm -f $(STAMP_CONFIGURED_WILDCARD)
 	$(CleanStaging)
 	$(foreach hook,$(Hooks/Configure/Pre),$(call $(hook))$(sep))
@@ -251,16 +258,16 @@ define Build/CoreTargets
     $(_pkg_target)compile: $(STAMP_INSTALLED)
   endif
 
-  $(_pkg_target)prepare: $(STAMP_PREPARED)
+  $(_pkg_target)prepare: $(STAMP_PREPARED)$(if $(CONFIG_AUTOREBUILD),$(HASH_PREPARED))
   $(_pkg_target)configure: $(STAMP_CONFIGURED)
   $(_pkg_target)dist: $(STAMP_CONFIGURED)
   $(_pkg_target)distcheck: $(STAMP_CONFIGURED)
 
   ifneq ($(CONFIG_AUTOREMOVE),)
     compile:
-		-touch -r $(PKG_BUILD_DIR)/.built $(PKG_BUILD_DIR)/.autoremove 2>/dev/null >/dev/null
-		$(FIND) $(PKG_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -and -not -name '.pkgdir'  -print0 | \
+		-$(FIND) $(PKG_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -and -not -name '.pkgdir'  -print0 | \
 			$(XARGS) -0 rm -rf
+		touch $(STAMP_REMOVED)
   endif
 endef
 
@@ -339,7 +346,7 @@ install: compile
 force-clean-build: FORCE
 	rm -rf $(PKG_BUILD_DIR)
 
-clean-build: $(if $(wildcard $(PKG_BUILD_DIR)/.autoremove),force-clean-build)
+clean-build: $(if $(wildcard $(STAMP_REMOVED)),force-clean-build)
 
 clean: force-clean-build
 	$(CleanStaging)

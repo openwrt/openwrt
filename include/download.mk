@@ -16,7 +16,7 @@ ifdef PKG_SOURCE_VERSION
   PKG_SOURCE ?= $(PKG_SOURCE_SUBDIR).tar.xz
 endif
 
-DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
+DOWNLOAD_RDEP = download
 
 # Export options for download.pl
 export DOWNLOAD_CHECK_CERTIFICATE:=$(CONFIG_DOWNLOAD_CHECK_CERTIFICATE)
@@ -329,7 +329,6 @@ define Download
   $(foreach dep,$(DOWNLOAD_RDEP),
     $(dep): $(DL_DIR)/$(FILE)
   )
-  download: $(DL_DIR)/$(FILE)
 
   $(DL_DIR)/$(FILE):
 	mkdir -p $(DL_DIR)

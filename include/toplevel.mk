@@ -106,8 +106,6 @@ scripts/config/%onf: FORCE
 	@$(_SINGLE)$(SUBMAKE) $(if $(findstring s,$(OPENWRT_VERBOSE)),,-s) \
 		-C scripts/config $(notdir $@)
 
-$(eval $(call rdep,scripts/config,scripts/config/mconf))
-
 config: scripts/config/conf prepare-tmpinfo FORCE
 	[ -L .config ] && export KCONFIG_OVERWRITECONFIG=1; \
 		$< $(KCONF_FLAGS) Config.in
