@@ -21,6 +21,9 @@ qnap,301w)
 	ucidef_set_led_netdev "10G_1" "10G_1" "green:10g_1" "10g-1"
 	ucidef_set_led_netdev "10G_2" "10G_2" "green:10g_2" "10g-2"
 	;;
+netgear,rax120v2)
+	ucidef_set_led_netdev "aqn" "AQN" "white:aqn" "lan5"
+	;;
 esac
 
 board_config_flush

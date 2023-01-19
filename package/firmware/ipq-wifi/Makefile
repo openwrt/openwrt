@@ -49,7 +49,8 @@ ALLWIFIBOARDS:= \
 	xiaomi_ax3600 \
 	xiaomi_ax9000 \
 	zte_mf18a \
-	zte_mf289f
+	zte_mf289f \
+	netgear_rax120v2
 
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
@@ -148,5 +149,6 @@ $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
 $(eval $(call generate-ipq-wifi-package,zte_mf18a,ZTE MF18A))
 $(eval $(call generate-ipq-wifi-package,zte_mf289f,ZTE MF289F))
+$(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
 
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))

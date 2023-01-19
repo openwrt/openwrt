@@ -85,6 +85,11 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
+	netgear,rax120v2)
+		CI_KERN_UBIPART="kernel"
+		CI_ROOT_UBIPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
