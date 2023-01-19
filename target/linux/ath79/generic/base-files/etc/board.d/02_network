@@ -278,6 +278,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:2" "2:lan:1"
 		;;
+	dlink,dir-629-a1|\
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1|\
 	dlink,dir-842-c1|\
@@ -622,6 +623,9 @@ ath79_setup_macs()
 	dlink,dap-2695-a1|\
 	dlink,dap-3662-a1)
 		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
+		;;
+	dlink,dir-629-a1)
+		wan_mac=$(mtd_get_mac_text "mfcdata" 0x6a)
 		;;
 	dlink,dir-825-b1|\
 	trendnet,tew-673gru)

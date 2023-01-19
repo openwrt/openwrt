@@ -1010,6 +1010,19 @@ define Device/dlink_dir-505
 endef
 TARGET_DEVICES += dlink_dir-505
 
+define Device/dlink_dir-629-a1
+  $(Device/seama)
+  SOC := qca9558
+  IMAGE_SIZE := 7616k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-629
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := -uboot-envtools
+  SEAMA_MTDBLOCK := 6
+  SEAMA_SIGNATURE := wrgn83_dlob.hans_dir629
+endef
+TARGET_DEVICES += dlink_dir-629-a1
+
 define Device/dlink_dir-825-b1
   SOC := ar7161
   DEVICE_VENDOR := D-Link
