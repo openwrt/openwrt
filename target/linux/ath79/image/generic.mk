@@ -1645,13 +1645,15 @@ define Device/letv_lba-047-ch
   SOC := qca9531
   DEVICE_VENDOR := Letv
   DEVICE_MODEL := LBA-047-CH
+  DEVICE_PACKAGES := -uboot-envtools
+  FACTORY_SIZE := 14528k
   IMAGE_SIZE := 15936k
   LOADER_FLASH_OFFS := 0x50000
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | check-size | pad-to 14528k | \
-	append-loader-okli-uimage $(1) | pad-to 64k
+  IMAGES += kernel.bin rootfs.bin
+  IMAGE/kernel.bin := append-loader-okli-uimage $(1) | pad-to 64k
+  IMAGE/rootfs.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size $$$$(FACTORY_SIZE)
 endef
 TARGET_DEVICES += letv_lba-047-ch
 
