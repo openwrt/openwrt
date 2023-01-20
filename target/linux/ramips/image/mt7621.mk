@@ -1304,7 +1304,7 @@ define Device/keenetic_kn-3010
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
-	check-size | zyimage -d 8400912 -v "KN-3010"
+	check-size | zyimage -d 0x803010 -v "KN-3010"
 endef
 TARGET_DEVICES += keenetic_kn-3010
 
