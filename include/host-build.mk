@@ -27,6 +27,7 @@ HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
 HOST_BUILD_PREFIX?=$(if $(IS_PACKAGE_BUILD),$(STAGING_DIR_HOSTPKG),$(STAGING_DIR_HOST))
 HOST_STAMP_INSTALLED:=$(HOST_BUILD_PREFIX)/stamp/.$(PKG_NAME)_installed
 
+
 override MAKEFLAGS=
 
 include $(INCLUDE_DIR)/autotools.mk
@@ -76,6 +77,65 @@ HOST_MAKE_VARS = \
 HOST_MAKE_FLAGS =
 
 HOST_CONFIGURE_CMD = $(BASH) ./configure
+
+ifneq ($(wildcard $(TOPDIR)/git-src/$(PKG_NAME)/.git),)
+  ifndef STAMP_PREPARED
+    STAMP_PREPARED:=$(HOST_STAMP_PREPARED)
+  endif
+  USE_GIT_SRC_CHECKOUT:=1
+  QUILT:=1
+endif
+ifneq ($(if $(CONFIG_SRC_TREE_OVERRIDE),$(wildcard ./git-src)),)
+  ifndef STAMP_PREPARED
+    STAMP_PREPARED:=$(HOST_STAMP_PREPARED)
+  endif
+  USE_GIT_TREE:=1
+  QUILT:=1
+endif
+ifdef USE_SOURCE_DIR
+  ifndef STAMP_PREPARED
+    STAMP_PREPARED:=$(HOST_STAMP_PREPARED)
+  endif
+  QUILT:=1
+endif
+ifneq ($(wildcard $(PKG_BUILD_DIR)/.source_dir),)
+  QUILT:=1
+endif
+
+PKG_SKIP_DOWNLOAD=$(USE_SOURCE_DIR)$(USE_GIT_TREE)$(USE_GIT_SRC_CHECKOUT)
+
+ifdef USE_GIT_SRC_CHECKOUT
+  define Host/Prepare/Default
+	mkdir -p $(HOST_BUILD_DIR)
+	ln -s $(TOPDIR)/git-src/$(PKG_NAME)/.git $(HOST_BUILD_DIR)/.git
+	( cd $(HOST_BUILD_DIR); \
+		git checkout .; \
+		git submodule update --recursive; \
+		git submodule foreach git config --unset core.worktree; \
+		git submodule foreach git checkout .; \
+	)
+  endef
+endif
+ifdef USE_GIT_TREE
+  define Host/Prepare/Default
+	mkdir -p $(HOST_BUILD_DIR)
+	ln -s $(CURDIR)/git-src $(HOST_BUILD_DIR)/.git
+	( cd $(HOST_BUILD_DIR); \
+		git checkout .; \
+		git submodule update --recursive; \
+		git submodule foreach git config --unset core.worktree; \
+		git submodule foreach git checkout .; \
+	)
+  endef
+endif
+ifdef USE_SOURCE_DIR
+  define Host/Prepare/Default
+	rm -rf $(HOST_BUILD_DIR)
+	$(if $(wildcard $(USE_SOURCE_DIR)/*),,@echo "Error: USE_SOURCE_DIR=$(USE_SOURCE_DIR) path not found"; false)
+	ln -snf $(USE_SOURCE_DIR) $(HOST_BUILD_DIR)
+	touch $(HOST_BUILD_DIR)/.source_dir
+  endef
+endif
 
 ifeq ($(HOST_OS),Darwin)
   HOST_CONFIG_SITE:=$(INCLUDE_DIR)/site/darwin
@@ -206,5 +266,6 @@ endif
 
 define HostBuild
   $(HostBuild/Core)
+
   $(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
 endef
