@@ -38,12 +38,14 @@ ath79_setup_interfaces()
 	dlink,dap-3320-a1|\
 	dlink,dir-505|\
 	engenius,eap1200h|\
+	engenius,eap1750h|\
 	engenius,eap600|\
 	engenius,ecb1200|\
 	engenius,ecb1750|\
 	engenius,ecb600|\
 	enterasys,ws-ap3705i|\
 	extreme-networks,ws-ap3805i|\
+	fortinet,fap-221-b|\
 	glinet,gl-ar300m-lite|\
 	glinet,gl-usb150|\
 	hak5,wifi-pineapple-nano|\
@@ -76,6 +78,7 @@ ath79_setup_interfaces()
 	tplink,cpe210-v3|\
 	tplink,cpe510-v2|\
 	tplink,cpe510-v3|\
+	tplink,cpe605-v1|\
 	tplink,cpe610-v1|\
 	tplink,cpe610-v2|\
 	tplink,cpe710-v1|\
@@ -344,6 +347,11 @@ ath79_setup_interfaces()
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
+	kuwfi,c910)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:2" "4:lan:1"
 		;;
 	letv,lba-047-ch)
 		ucidef_set_interface_wan "eth0"
@@ -666,6 +674,10 @@ ath79_setup_macs()
 		;;
 	enterasys,ws-ap3705i)
 		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
+		;;
+	fortinet,fap-221-b)
+		lan_mac=$(mtd_get_mac_text u-boot 0x3ff80 12)
+		label_mac=$lan_mac
 		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)

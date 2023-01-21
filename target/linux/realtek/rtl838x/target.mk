@@ -12,4 +12,3 @@ define Target/Description
 endef
 
 FEATURES := $(filter-out mips16,$(FEATURES))
-

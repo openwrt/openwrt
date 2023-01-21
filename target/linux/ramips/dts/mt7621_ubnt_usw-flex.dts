@@ -164,14 +164,10 @@
 			};
 
 			partition@1a0000 {
+				/* Combine kernel0 / kernel1 */
 				compatible = "denx,fit";
 				label = "firmware";
-				reg = <0x1a0000 0x730000>;
-			};
-
-			partition@8d0000 {
-				label = "kernel1";
-				reg = <0x8d0000 0x730000>;
+				reg = <0x1a0000 0xe60000>;
 			};
 		};
 	};

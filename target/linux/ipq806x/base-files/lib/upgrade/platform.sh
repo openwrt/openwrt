@@ -57,6 +57,15 @@ platform_do_upgrade() {
 		MTD_CONFIG_ARGS="-s 0x200000"
 		default_do_upgrade "$1"
 		;;
+	asus,onhub |\
+	tplink,onhub)
+		export_bootdevice
+		export_partdevice CI_ROOTDEV 0
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		CI_DATAPART="rootfs_data"
+		emmc_do_upgrade "$1"
+		;;
 	tplink,vr2600v)
 		MTD_CONFIG_ARGS="-s 0x200000"
 		default_do_upgrade "$1"
@@ -68,4 +77,14 @@ platform_do_upgrade() {
 		default_do_upgrade "$1"
 		;;
 	esac
+}
+
+platform_copy_config() {
+	case "${board_name}" in
+	asus,onhub |\
+	tplink,onhub)
+		emmc_copy_config
+		;;
+	esac
+	return 0
 }

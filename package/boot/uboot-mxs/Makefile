@@ -19,6 +19,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define U-Boot/Default
   BUILD_TARGET:=mxs
+  BUILD_SUBTARGET:=generic
   UBOOT_IMAGE:=u-boot.sb
   DEFAULT:=y
   HIDDEN:=1

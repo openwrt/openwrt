@@ -119,140 +119,140 @@
 		nand-ecc-step-size = <512>;
 
 		nand-is-boot-medium;
-		qcom,boot-partitions = <0x0 0x1180000 0x5340000 0x6400000>;
+		qcom,boot-partitions = <0x0 0x1180000 0x5340000 0x10c0000>;
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			SBL1@0 {
-				label = "SBL1";
+			partition@0 {
+				label = "0:SBL1";
 				reg = <0x0000000 0x0040000>;
 				read-only;
 			};
 
-			MIBIB@40000 {
-				label = "MIBIB";
+			partition@40000 {
+				label = "0:MIBIB";
 				reg = <0x0040000 0x0140000>;
 				read-only;
 			};
 
-			SBL2@180000 {
-				label = "SBL2";
+			partition@180000 {
+				label = "0:SBL2";
 				reg = <0x0180000 0x0140000>;
 				read-only;
 			};
 
-			SBL3@2c0000 {
-				label = "SBL3";
+			partition@2c0000 {
+				label = "0:SBL3";
 				reg = <0x02c0000 0x0280000>;
 				read-only;
 			};
 
-			DDRCONFIG@540000 {
-				label = "DDRCONFIG";
+			partition@540000 {
+				label = "0:DDRCONFIG";
 				reg = <0x0540000 0x0120000>;
 				read-only;
 			};
 
-			SSD@660000 {
-				label = "SSD";
+			partition@660000 {
+				label = "0:SSD";
 				reg = <0x0660000 0x0120000>;
 				read-only;
 			};
 
-			TZ@780000 {
-				label = "TZ";
+			partition@780000 {
+				label = "0:TZ";
 				reg = <0x0780000 0x0280000>;
 				read-only;
 			};
 
-			RPM@a00000 {
-				label = "RPM";
+			partition@a00000 {
+				label = "0:RPM";
 				reg = <0x0a00000 0x0280000>;
 				read-only;
 			};
 
-			APPSBL@c80000 {
-				label = "APPSBL";
+			partition@c80000 {
+				label = "0:APPSBL";
 				reg = <0x0c80000 0x0500000>;
 				read-only;
 			};
 
-			APPSBLENV@1180000 {
-				label = "APPSBLENV";
+			partition@1180000 {
+				label = "0:APPSBLENV";
 				reg = <0x1180000 0x0080000>;
 			};
 
-			ART@1200000 {
-				label = "ART";
+			partition@1200000 {
+				label = "0:ART";
 				reg = <0x1200000 0x0140000>;
 			};
 
-			ubi@1340000 {
+			partition@1340000 {
 				label = "ubi";
 				reg = <0x1340000 0x4000000>;
 			};
 
-			BOOTCONFIG@5340000 {
-				label = "BOOTCONFIG";
+			partition@5340000 {
+				label = "0:BOOTCONFIG";
 				reg = <0x5340000 0x0060000>;
 			};
 
-			SBL2-1@53a0000- {
-				label = "SBL2_1";
+			partition@53a0000 {
+				label = "0:SBL2_1";
 				reg = <0x53a0000 0x0140000>;
 				read-only;
 			};
 
-			SBL3-1@54e0000 {
-				label = "SBL3_1";
+			partition@54e0000 {
+				label = "0:SBL3_1";
 				reg = <0x54e0000 0x0280000>;
 				read-only;
 			};
 
-			DDRCONFIG-1@5760000 {
-				label = "DDRCONFIG_1";
+			partition@5760000 {
+				label = "0:DDRCONFIG_1";
 				reg = <0x5760000 0x0120000>;
 				read-only;
 			};
 
-			SSD-1@5880000 {
-				label = "SSD_1";
+			partition@5880000 {
+				label = "0:SSD_1";
 				reg = <0x5880000 0x0120000>;
 				read-only;
 			};
 
-			TZ-1@59a0000 {
-				label = "TZ_1";
+			partition@59a0000 {
+				label = "0:TZ_1";
 				reg = <0x59a0000 0x0280000>;
 				read-only;
 			};
 
-			RPM-1@5c20000 {
-				label = "RPM_1";
+			partition@5c20000 {
+				label = "0:RPM_1";
 				reg = <0x5c20000 0x0280000>;
 				read-only;
 			};
 
-			BOOTCONFIG1@5ea0000 {
-				label = "BOOTCONFIG1";
+			partition@5ea0000 {
+				label = "0:BOOTCONFIG1";
 				reg = <0x5ea0000 0x0060000>;
 			};
 
-			APPSBL-1@5f00000 {
-				label = "APPSBL_1";
+			partition@5f00000 {
+				label = "0:APPSBL_1";
 				reg = <0x5f00000 0x0500000>;
 				read-only;
 			};
 
-			ubi-1@6400000 {
+			partition@6400000 {
 				label = "ubi_1";
 				reg = <0x6400000 0x4000000>;
 			};
 
-			unused@a400000 {
+			partition@a400000 {
 				label = "unused";
 				reg = <0xa400000 0x5c00000>;
 			};

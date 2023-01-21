@@ -1,0 +1,84 @@
+name: Bug report
+description: Create a bug report to help us improve
+labels:
+  - bug
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of the bug.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OpenWrt version
+      description: |
+        The OpenWrt release or commit hash where this bug occurs (use command below).
+        ```. /etc/openwrt_release && echo $DISTRIB_REVISION```
+    validations:
+      required: true
+  - type: input
+    id: target
+    attributes:
+      label: OpenWrt target/subtarget
+      description: |
+        The OpenWrt target and subtarget where this bug is observed (use command below).
+        ```. /etc/openwrt_release && echo $DISTRIB_TARGET```
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: |
+        The device exhibiting this bug (if unsure, use command below).
+        ```cat /tmp/sysinfo/model```
+    validations:
+      required: true
+  - type: dropdown
+    id: image_kind
+    attributes:
+      label: Image kind
+      options:
+        - Official downloaded image
+        - Self-built image
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Steps to reproduce the reported behaviour.
+  - type: textarea
+    id: behaviour
+    attributes:
+      label: Actual behaviour
+      description: A clear and concise description of what actually happens.
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: A clear and concise description of what you expected to happen.
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional info
+      description: Add any additional info you think might be helfpul.
+  - type: textarea
+    id: diffconfig
+    attributes:
+      label: Diffconfig
+      description: |
+        In case of a self-built image, please attach diffconfig.
+        ```./scripts/diffconfig.sh```
+      render: text
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Terms
+      description: By submitting this issue, you agree to the terms below.
+      options:
+        - label: I am reporting an issue for OpenWrt, not an unsupported fork.
+          required: true

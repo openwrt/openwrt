@@ -1,0 +1,58 @@
+From 5825b2c6762611e67ccaf3ccf64485365a120f0b Mon Sep 17 00:00:00 2001
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Date: Sun, 20 Feb 2022 15:15:16 +0000
+Subject: [PATCH] nvmem: core: Use devm_add_action_or_reset()
+
+Slightly simplify the devm_nvmem_register() by using the
+devm_add_action_or_reset().
+
+Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20220220151527.17216-3-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c | 22 +++++++++-------------
+ 1 file changed, 9 insertions(+), 13 deletions(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -904,9 +904,9 @@ void nvmem_unregister(struct nvmem_devic
+ }
+ EXPORT_SYMBOL_GPL(nvmem_unregister);
+ 
+-static void devm_nvmem_release(struct device *dev, void *res)
++static void devm_nvmem_unregister(void *nvmem)
+ {
+-	nvmem_unregister(*(struct nvmem_device **)res);
++	nvmem_unregister(nvmem);
+ }
+ 
+ /**
+@@ -923,20 +923,16 @@ static void devm_nvmem_release(struct de
+ struct nvmem_device *devm_nvmem_register(struct device *dev,
+ 					 const struct nvmem_config *config)
+ {
+-	struct nvmem_device **ptr, *nvmem;
+-
+-	ptr = devres_alloc(devm_nvmem_release, sizeof(*ptr), GFP_KERNEL);
+-	if (!ptr)
+-		return ERR_PTR(-ENOMEM);
++	struct nvmem_device *nvmem;
++	int ret;
+ 
+ 	nvmem = nvmem_register(config);
++	if (IS_ERR(nvmem))
++		return nvmem;
+ 
+-	if (!IS_ERR(nvmem)) {
+-		*ptr = nvmem;
+-		devres_add(dev, ptr);
+-	} else {
+-		devres_free(ptr);
+-	}
++	ret = devm_add_action_or_reset(dev, devm_nvmem_unregister, nvmem);
++	if (ret)
++		return ERR_PTR(ret);
+ 
+ 	return nvmem;
+ }

@@ -19,6 +19,7 @@ platform_do_upgrade() {
 	engenius,eap350-v1|\
 	engenius,ecb350-v1|\
 	engenius,enh202-v1)
+		ENV_SCRIPT="/tmp/fw_env"
 		IMAGE_LIST="tar tzf $1"
 		IMAGE_CMD="tar xzOf $1"
 		KERNEL_PART="loader"

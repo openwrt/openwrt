@@ -26,10 +26,20 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_power: led-0 {
+		led_power: power {
+			label = "blue:power";
 			color = <LED_COLOR_ID_BLUE>;
-                        function = LED_FUNCTION_POWER;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_usb {
+			label = "blue:usb";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_USB;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&ehci_port2>;
+			linux,default-trigger = "usbport";
 		};
 	};
 
@@ -60,12 +70,21 @@
 
 		partition@0 {
 			label = "u-boot";
-			reg = <0x0 0xe0000>;
+			reg = <0x0 0x80000>;
 			read-only;
 		};
 
-		partition@e0000 {
+		/*
+		 * u-boot gets split here while keeping u-boot read-only,
+		 * which allows safe usage of fw_setenv
+		 */
+		partition@80000 {
 			label = "u-boot-env";
+			reg = <0x80000 0x60000>;
+		};
+
+		partition@e0000 {
+			label = "nvram";
 			reg = <0xe0000 0x100000>;
 			read-only;
 		};

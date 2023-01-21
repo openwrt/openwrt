@@ -69,15 +69,10 @@
 			};
 
 			partition@70000 {
+				/* Combine kernel0 & kernel1 */
 				label = "firmware";
-				reg = <0x070000 0x790000>;
+				reg = <0x070000 0xf20000>;
 				compatible = "denx,uimage";
-			};
-
-			partition@800000 {
-				label = "kernel1";
-				reg = <0x800000 0x790000>;
-				read-only;
 			};
 
 			partition@f90000 {

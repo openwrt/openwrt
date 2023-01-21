@@ -1,0 +1,89 @@
+From 7b808449f572d07bee840cd9da7e2fe6a1b8f4b5 Mon Sep 17 00:00:00 2001
+From: Rajendra Nayak <rnayak@codeaurora.org>
+Date: Fri, 6 Aug 2021 09:59:46 +0100
+Subject: [PATCH] nvmem: qfprom: sc7280: Handle the additional power-domains
+ vote
+
+On sc7280, to reliably blow fuses, we need an additional vote
+on max performance state of 'MX' power-domain.
+Add support for power-domain performance state voting in the
+driver.
+
+Reviewed-by: Douglas Anderson <dianders@chromium.org>
+Signed-off-by: Rajendra Nayak <rnayak@codeaurora.org>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20210806085947.22682-4-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/qfprom.c | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--- a/drivers/nvmem/qfprom.c
++++ b/drivers/nvmem/qfprom.c
+@@ -12,6 +12,8 @@
+ #include <linux/mod_devicetable.h>
+ #include <linux/nvmem-provider.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_domain.h>
++#include <linux/pm_runtime.h>
+ #include <linux/property.h>
+ #include <linux/regulator/consumer.h>
+ 
+@@ -142,6 +144,9 @@ static void qfprom_disable_fuse_blowing(
+ 	writel(old->timer_val, priv->qfpconf + QFPROM_BLOW_TIMER_OFFSET);
+ 	writel(old->accel_val, priv->qfpconf + QFPROM_ACCEL_OFFSET);
+ 
++	dev_pm_genpd_set_performance_state(priv->dev, 0);
++	pm_runtime_put(priv->dev);
++
+ 	/*
+ 	 * This may be a shared rail and may be able to run at a lower rate
+ 	 * when we're not blowing fuses.  At the moment, the regulator framework
+@@ -212,6 +217,14 @@ static int qfprom_enable_fuse_blowing(co
+ 		goto err_clk_rate_set;
+ 	}
+ 
++	ret = pm_runtime_get_sync(priv->dev);
++	if (ret < 0) {
++		pm_runtime_put_noidle(priv->dev);
++		dev_err(priv->dev, "Failed to enable power-domain\n");
++		goto err_reg_enable;
++	}
++	dev_pm_genpd_set_performance_state(priv->dev, INT_MAX);
++
+ 	old->timer_val = readl(priv->qfpconf + QFPROM_BLOW_TIMER_OFFSET);
+ 	old->accel_val = readl(priv->qfpconf + QFPROM_ACCEL_OFFSET);
+ 	writel(priv->soc_data->qfprom_blow_timer_value,
+@@ -221,6 +234,8 @@ static int qfprom_enable_fuse_blowing(co
+ 
+ 	return 0;
+ 
++err_reg_enable:
++	regulator_disable(priv->vcc);
+ err_clk_rate_set:
+ 	clk_set_rate(priv->secclk, old->clk_rate);
+ err_clk_prepared:
+@@ -320,6 +335,11 @@ static int qfprom_reg_read(void *context
+ 	return 0;
+ }
+ 
++static void qfprom_runtime_disable(void *data)
++{
++	pm_runtime_disable(data);
++}
++
+ static const struct qfprom_soc_data qfprom_7_8_data = {
+ 	.accel_value = 0xD10,
+ 	.qfprom_blow_timer_value = 25,
+@@ -420,6 +440,11 @@ static int qfprom_probe(struct platform_
+ 			econfig.reg_write = qfprom_reg_write;
+ 	}
+ 
++	pm_runtime_enable(dev);
++	ret = devm_add_action_or_reset(dev, qfprom_runtime_disable, dev);
++	if (ret)
++		return ret;
++
+ 	nvmem = devm_nvmem_register(dev, &econfig);
+ 
+ 	return PTR_ERR_OR_ZERO(nvmem);

@@ -63,8 +63,11 @@ linksys,ea8300|\
 linksys,mr8300)
 	ubootenv_add_uci_config "/dev/mtd7" "0x0" "0x40000" "0x20000"
 	;;
-linksys,whw01-v1)
+linksys,whw01)
 	ubootenv_add_uci_config "/dev/mtd6" "0x0" "0x40000" "0x10000"
+	;;
+linksys,whw03v2)
+	ubootenv_add_uci_config "/dev/mtd6" "0x0" "0x80000" "0x20000"
 	;;
 zyxel,nbg6617)
 	ubootenv_add_uci_config "/dev/mtd6" "0x0" "0x10000" "0x10000"

@@ -96,7 +96,7 @@ struct notify_b {
 static void rtl838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	// cpu_tag[0] is reserved on the RTL83XX SoCs
-	h->cpu_tag[1] = 0x0401;  // BIT 10: RTL8380_CPU_TAG, BIT0: L2LEARNING on
+	h->cpu_tag[1] = 0x0400;  // BIT 10: RTL8380_CPU_TAG
 	h->cpu_tag[2] = 0x0200;  // Set only AS_DPM, to enable DPM settings below
 	h->cpu_tag[3] = 0x0000;
 	h->cpu_tag[4] = BIT(dest_port) >> 16;
@@ -111,7 +111,7 @@ static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 {
 	// cpu_tag[0] is reserved on the RTL83XX SoCs
 	h->cpu_tag[1] = 0x0100; // RTL8390_CPU_TAG marker
-	h->cpu_tag[2] = BIT(4) | BIT(7); /* AS_DPM (4) and L2LEARNING (7) flags */
+	h->cpu_tag[2] = BIT(4); /* AS_DPM flag */
 	h->cpu_tag[3] = h->cpu_tag[4] = h->cpu_tag[5] = 0;
 	// h->cpu_tag[1] |= BIT(1) | BIT(0); // Bypass filter 1/2
 	if (dest_port >= 32) {
@@ -682,7 +682,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 	else
 		reset_mask = 0xc;
 
-	sw_w32(reset_mask, priv->r->rst_glb_ctrl);
+	sw_w32_mask(0, reset_mask, priv->r->rst_glb_ctrl);
 
 	do { /* Wait for reset of NIC and Queues done */
 		udelay(20);

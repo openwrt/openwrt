@@ -101,7 +101,7 @@ Submitted-by: Daniel Golle <daniel@makrotopia.org>
  #ifdef CONFIG_SGI_PARTITION
  	sgi_partition,
  #endif
-@@ -694,6 +701,14 @@ static bool blk_add_partition(struct gen
+@@ -701,6 +708,14 @@ static bool blk_add_partition(struct gen
  	    (state->parts[p].flags & ADDPART_FLAG_RAID))
  		md_autodetect_dev(part_to_dev(part)->devt);
  

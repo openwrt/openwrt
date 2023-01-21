@@ -8,9 +8,13 @@ ramips_setup_interfaces()
 	local board="$1"
 
 	case $board in
+	arcadyan,we420223-99)
+		ucidef_set_interface_lan "swp0 swp1"
+		;;
 	ampedwireless,ally-00x19k|\
 	asus,rp-ac56|\
 	asus,rp-ac87|\
+	dlink,dap-x1860-a1|\
 	edimax,re23s|\
 	mikrotik,ltap-2hnd|\
 	mikrotik,routerboard-m11g|\
@@ -50,6 +54,7 @@ ramips_setup_interfaces()
 		;;
 	asiarf,ap7621-001|\
 	humax,e10|\
+	wavlink,ws-wn572hp3-4g|\
 	winstars,ws-wn583a6)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
@@ -77,6 +82,11 @@ ramips_setup_interfaces()
 		uci add_list firewall.@zone[1].network='eth_data'
 		uci add_list firewall.@zone[1].network='eth_om'
 		;;
+	cudy,m1800|\
+	yuncore,ax820|\
+	zyxel,nt7101)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	gnubee,gb-pc1)
 		ucidef_set_interface_lan "ethblack ethblue"
 		;;
@@ -98,6 +108,9 @@ ramips_setup_interfaces()
 	tplink,eap615-wall-v1)
 		ucidef_set_interface_lan "lan0 lan1 lan2 lan3"
 		;;
+	tplink,er605-v2)
+		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"
+		;;
 	tplink,tl-wpa8631p-v3)
 		ucidef_set_interface_lan "lan1 lan2 lan3 plc0"
 		;;
@@ -112,10 +125,6 @@ ramips_setup_interfaces()
 		;;
 	ubnt,usw-flex)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
-		;;
-	yuncore,ax820|\
-	zyxel,nr7101)
-		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	zyxel,wap6805)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
@@ -144,6 +153,11 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii hwconfig HW.WAN.MAC.Address)
 		label_mac=$lan_mac
 		;;
+	arcadyan,we420223-99)
+		label_mac=$(mtd_get_mac_ascii board_data mac)
+		lan_mac=$label_mac
+		ucidef_set_network_device_mac eth0 $(macaddr_add "$label_mac" 3)
+	;;
 	asus,rt-ac65p|\
 	asus,rt-ac85p)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env et1macaddr)
@@ -168,6 +182,7 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;
+	elecom,wrc-2533ghbk2-t|\
 	elecom,wrc-2533ghbk-i)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
@@ -223,6 +238,17 @@ ramips_setup_macs()
 	mikrotik,ltap-2hnd)
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		lan_mac=$label_mac
+		;;
+	tplink,ec330-g5u-v1)
+		label_mac="$(mtd_get_mac_text factory 0x165)"
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add $label_mac 1)
+		;;
+	tplink,er605-v2)
+		CI_UBIPART="firmware"
+		label_mac=$(mtd_get_mac_uci_config_ubi "tddp")
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add "$label_mac" 1)
 		;;
 	tplink,mr600-v2-eu)
 		label_mac=$(cat "/sys/class/net/eth0/address")

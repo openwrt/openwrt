@@ -1,0 +1,27 @@
+From 3198106a99e73dbc4c02bd5128cec0997c73af82 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 8 Nov 2022 22:58:27 +0100
+Subject: [PATCH 1/6] clk: qcom: krait-cc: use devm variant for clk notifier
+ register
+
+Use devm variant for clk notifier register and correctly handle free
+resource on driver remove.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20221108215827.30475-1-ansuelsmth@gmail.com
+---
+ drivers/clk/qcom/krait-cc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/qcom/krait-cc.c
++++ b/drivers/clk/qcom/krait-cc.c
+@@ -62,7 +62,7 @@ static int krait_notifier_register(struc
+ 	int ret = 0;
+ 
+ 	mux->clk_nb.notifier_call = krait_notifier_cb;
+-	ret = clk_notifier_register(clk, &mux->clk_nb);
++	ret = devm_clk_notifier_register(dev, clk, &mux->clk_nb);
+ 	if (ret)
+ 		dev_err(dev, "failed to register clock notifier: %d\n", ret);
+ 

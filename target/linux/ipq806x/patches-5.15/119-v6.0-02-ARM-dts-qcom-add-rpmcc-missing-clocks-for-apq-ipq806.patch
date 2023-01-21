@@ -1,0 +1,61 @@
+From aa7fd3bb6017b343585e97a909f9b7d2fe174018 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 7 Jul 2022 00:53:19 +0200
+Subject: [PATCH] ARM: dts: qcom: add rpmcc missing clocks for apq/ipq8064 and
+ msm8660
+
+Add missing rpmcc pxo and cxo clock for apq8064, ipq8064 and
+msm8660 dtsi.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Link: https://lore.kernel.org/r/20220706225321.26215-3-ansuelsmth@gmail.com
+---
+ arch/arm/boot/dts/qcom-apq8064.dtsi | 2 ++
+ arch/arm/boot/dts/qcom-ipq8064.dtsi | 2 ++
+ arch/arm/boot/dts/qcom-msm8660.dtsi | 4 +++-
+ 3 files changed, 7 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/qcom-apq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-apq8064.dtsi
+@@ -862,6 +862,8 @@
+ 			rpmcc: clock-controller {
+ 				compatible	= "qcom,rpmcc-apq8064", "qcom,rpmcc";
+ 				#clock-cells = <1>;
++				clocks = <&pxo_board>, <&cxo_board>;
++				clock-names = "pxo", "cxo";
+ 			};
+ 
+ 			regulators {
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -1074,6 +1074,8 @@
+ 			rpmcc: clock-controller {
+ 				compatible = "qcom,rpmcc-ipq806x", "qcom,rpmcc";
+ 				#clock-cells = <1>;
++				clocks = <&pxo_board>;
++				clock-names = "pxo";
+ 			};
+ 		};
+ 
+--- a/arch/arm/boot/dts/qcom-msm8660.dtsi
++++ b/arch/arm/boot/dts/qcom-msm8660.dtsi
+@@ -56,7 +56,7 @@
+ 			clock-frequency = <19200000>;
+ 		};
+ 
+-		pxo_board {
++		pxo_board: pxo_board {
+ 			compatible = "fixed-clock";
+ 			#clock-cells = <0>;
+ 			clock-frequency = <27000000>;
+@@ -420,6 +420,8 @@
+ 			rpmcc: clock-controller {
+ 				compatible	= "qcom,rpmcc-msm8660", "qcom,rpmcc";
+ 				#clock-cells = <1>;
++				clocks = <&pxo_board>;
++				clock-names = "pxo";
+ 			};
+ 
+ 			pm8901-regulators {

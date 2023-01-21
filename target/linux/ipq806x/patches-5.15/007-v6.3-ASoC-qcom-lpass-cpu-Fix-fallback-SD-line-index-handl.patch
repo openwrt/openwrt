@@ -1,0 +1,42 @@
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Thu, 15 Dec 2022 01:33:45 -0800
+Subject: [PATCH] ASoC: qcom: lpass-cpu: Fix fallback SD line index handling
+
+[[ Submitted upstream as:
+   https://lore.kernel.org/all/20221231061545.2110253-1-computersforpeace@gmail.com/
+   Currently queued for -next (v6.3?) as:
+   000bca8d706d ASoC: qcom: lpass-cpu: Fix fallback SD line index handling
+]]
+
+These indices should reference the ID placed within the dai_driver
+array, not the indices of the array itself.
+
+This fixes commit 4ff028f6c108 ("ASoC: qcom: lpass-cpu: Make I2S SD
+lines configurable"), which among others, broke IPQ8064 audio
+(sound/soc/qcom/lpass-ipq806x.c) because it uses ID 4 but we'd stop
+initializing the mi2s_playback_sd_mode and mi2s_capture_sd_mode arrays
+at ID 0.
+
+Fixes: 4ff028f6c108 ("ASoC: qcom: lpass-cpu: Make I2S SD lines configurable")
+Cc: <stable@vger.kernel.org>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ sound/soc/qcom/lpass-cpu.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/sound/soc/qcom/lpass-cpu.c
++++ b/sound/soc/qcom/lpass-cpu.c
+@@ -851,10 +851,11 @@ static void of_lpass_cpu_parse_dai_data(
+ 					struct lpass_data *data)
+ {
+ 	struct device_node *node;
+-	int ret, id;
++	int ret, i, id;
+ 
+ 	/* Allow all channels by default for backwards compatibility */
+-	for (id = 0; id < data->variant->num_dai; id++) {
++	for (i = 0; i < data->variant->num_dai; i++) {
++		id = data->variant->dai_driver[i].id;
+ 		data->mi2s_playback_sd_mode[id] = LPAIF_I2SCTL_MODE_8CH;
+ 		data->mi2s_capture_sd_mode[id] = LPAIF_I2SCTL_MODE_8CH;
+ 	}

@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mbedtls
-PKG_VERSION:=2.28.1
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_VERSION:=2.28.2
+PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/ARMmbed/mbedtls/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=6797a7b6483ef589deeab8d33d401ed235d7be25eeecda1be8ddfed406d40ff4
+PKG_HASH:=bc55232bf71fd66045122ba9050a29ea7cb2e8f99b064a9e6334a82f715881a0
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=gpl-2.0.txt
@@ -129,13 +129,6 @@ CMAKE_OPTIONS += \
 	-DUSE_SHARED_MBEDTLS_LIBRARY:Bool=ON \
 	-DENABLE_TESTING:Bool=OFF \
 	-DENABLE_PROGRAMS:Bool=ON
-
-define Build/Configure
-	$(call Build/Configure/Default)
-
-	sed -i '/fuzz/d' $(PKG_BUILD_DIR)/programs/CMakeLists.txt
-	sed -i '/test/d' $(PKG_BUILD_DIR)/programs/CMakeLists.txt
-endef
 
 define Build/Prepare
        $(call Build/Prepare/Default)

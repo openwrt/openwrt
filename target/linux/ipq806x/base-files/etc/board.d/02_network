@@ -79,6 +79,12 @@ tplink,ad7200)
 	ucidef_add_switch "switch0" \
 		"2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "6@eth1" "1:wan" "0@eth0"
 	;;
+asus,onhub |\
+tplink,onhub)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_add_switch "switch0" \
+		"1:lan" "6@eth1" "2:wan" "0@eth0"
+	;;
 ubnt,unifi-ac-hd)
 	ucidef_set_interface_lan "eth0 eth1"
 	;;

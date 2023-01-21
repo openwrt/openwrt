@@ -122,10 +122,26 @@
 				reg = <0x8c0000 0x700000>;
 			};
 
-			art: partition@fc0000 {
+			partition@fc0000 {
 				label = "ART";
 				reg = <0xfc0000 0x040000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_art_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_art_6: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
+
+				calibration_art_1000: calibration@1000 {
+					reg = <0x1000 0x440>;
+				};
 			};
 		};
 	};
@@ -149,22 +165,9 @@
 	wifi@0,0 {
 		compatible = "pci168c,002a";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
+		nvmem-cells = <&calibration_art_1000>;
+		nvmem-cell-names = "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
-	};
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_art_6: macaddr@6 {
-		reg = <0x6 0x6>;
 	};
 };

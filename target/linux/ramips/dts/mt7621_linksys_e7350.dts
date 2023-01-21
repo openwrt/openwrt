@@ -57,40 +57,6 @@
 			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
-
-		led-wan2 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_WAN;
-			gpios = <&switch0 0 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan4 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <4>;
-			gpios = <&switch0 3 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan3 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <3>;
-			gpios = <&switch0 6 GPIO_ACTIVE_LOW>;
-		};
-
-		led-lan2 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <2>;
-			gpios = <&switch0 9 GPIO_ACTIVE_HIGH>;
-		};
-
-		led-lan1 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <1>;
-			gpios = <&switch0 12 GPIO_ACTIVE_LOW>;
-		};
 	};
 };
 
@@ -185,9 +151,6 @@
 };
 
 &switch0 {
-	gpio-controller;
-	#gpio-cells = <2>;
-
 	ports {
 		port@1 {
 			status = "okay";

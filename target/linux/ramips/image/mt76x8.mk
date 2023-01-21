@@ -243,6 +243,14 @@ define Device/hilink_hlk-7688a
 endef
 TARGET_DEVICES += hilink_hlk-7688a
 
+define Device/hiwifi_hc5611
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := HiWiFi
+  DEVICE_MODEL := HC5611
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += hiwifi_hc5611
+
 define Device/hiwifi_hc5661a
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := HiWiFi
@@ -312,6 +320,18 @@ define Device/jotale_js76x8-32m
 endef
 TARGET_DEVICES += jotale_js76x8-32m
 
+define Device/keenetic_kn-1613
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 31488k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1613
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 0x801613 -v "KN-1613"
+endef
+TARGET_DEVICES += keenetic_kn-1613
+
 define Device/kroks_kndrt31r16
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Kroks
@@ -333,6 +353,21 @@ define Device/kroks_kndrt31r19
   SUPPORTED_DEVICES += kndrt31r19
 endef
 TARGET_DEVICES += kroks_kndrt31r19
+
+define Device/linksys_e5400
+  IMAGE_SIZE := 16000k
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := E5400
+  DEVICE_ALT0_VENDOR := Linksys
+  DEVICE_ALT0_MODEL := E2500
+  DEVICE_ALT0_VARIANT := v4
+  DEVICE_ALT1_VENDOR := Linksys
+  DEVICE_ALT1_MODEL := E5300
+  DEVICE_ALT2_VENDOR := Linksys
+  DEVICE_ALT2_MODEL := E5350
+  DEVICE_PACKAGES := kmod-mt76x2
+endef
+TARGET_DEVICES += linksys_e5400
 
 define Device/mediatek_linkit-smart-7688
   IMAGE_SIZE := 32448k
@@ -975,6 +1010,16 @@ define Device/xiaomi_miwifi-nano
   SUPPORTED_DEVICES += miwifi-nano
 endef
 TARGET_DEVICES += xiaomi_miwifi-nano
+
+define Device/xiaomi_mi-ra75
+  IMAGE_SIZE := 14976k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := MiWiFi Range Extender AC1200 
+  DEVICE_VARIANT := RA75
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += xiaomi,mira75
+endef
+TARGET_DEVICES += xiaomi_mi-ra75
 
 define Device/zbtlink_zbt-we1226
   IMAGE_SIZE := 7872k

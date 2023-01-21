@@ -101,7 +101,7 @@ define Device/kobol_helios4
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   SOC := armada-388
-  UBOOT := helios4-u-boot-spl.kwb
+  UBOOT := helios4-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
 endef
 TARGET_DEVICES += kobol_helios4
@@ -278,7 +278,7 @@ define Device/solidrun_clearfog-base-a1
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-base armada-388-clearfog-pro
-  UBOOT := clearfog-u-boot-spl.kwb
+  UBOOT := clearfog-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
   SUPPORTED_DEVICES += armada-388-clearfog-base
   DEVICE_COMPAT_VERSION := 1.1
@@ -296,7 +296,7 @@ define Device/solidrun_clearfog-pro-a1
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
-  UBOOT := clearfog-u-boot-spl.kwb
+  UBOOT := clearfog-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
   SUPPORTED_DEVICES += armada-388-clearfog armada-388-clearfog-pro
 endef

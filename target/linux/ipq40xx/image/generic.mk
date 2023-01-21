@@ -181,8 +181,7 @@ define Device/aruba_ap-303h
 	$(call Device/aruba_glenmorangie)
 	DEVICE_MODEL := AP-303H
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += aruba_ap-303h
+TARGET_DEVICES += aruba_ap-303h
 
 define Device/aruba_ap-365
 	$(call Device/aruba_glenmorangie)
@@ -275,7 +274,7 @@ define Device/avm_fritzbox-7530
 	DEVICE_ALT0_VENDOR := AVM
 	DEVICE_ALT0_MODEL := FRITZ!Box 7520
 	SOC := qcom-ipq4019
-	DEVICE_PACKAGES := fritz-caldata fritz-tffs-nand
+	DEVICE_PACKAGES := fritz-caldata fritz-tffs-nand ltq-vdsl-vr11-app
 endef
 TARGET_DEVICES += avm_fritzbox-7530
 
@@ -543,8 +542,7 @@ define Device/extreme-networks_ws-ap3915i
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
 	DEVICE_PACKAGES := ipq-wifi-extreme-networks_ws-ap3915i
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += extreme-networks_ws-ap3915i
+TARGET_DEVICES += extreme-networks_ws-ap3915i
 
 define Device/ezviz_cs-w3-wd1200g-eup
 	$(call Device/FitImage)
@@ -638,96 +636,121 @@ endef
 # Missing DSA Setup
 #TARGET_DEVICES += glinet_gl-s1300
 
+define Device/kernel-size-6350-8300
+	DEVICE_COMPAT_VERSION := 2.0
+	DEVICE_COMPAT_MESSAGE := Kernel partition size must be increased for \
+	this OpenWrt version. Before continuing, you MUST issue either the \
+	command "fw_setenv kernsize 500000" from the OpenWrt command line, \
+	or "setenv kernsize 500000 ; saveenv" from the U-Boot serial console. \
+	Instead of the sysupgrade image, you must then install the OpenWrt \
+	factory image, setting the force flag and wiping the configuration. \
+	(e.g. "sysupgrade -n -F openwrt-squashfs-factory.bin" on command line)
+endef
+
 define Device/linksys_ea6350v3
 	# The Linksys EA6350v3 has a uboot bootloader that does not
 	# support either booting lzma kernel images nor booting UBI
 	# partitions. This uboot, however, supports raw kernel images and
 	# gzipped images.
 	#
-	# As for the time of writing this, the device will boot the kernel
-	# from a fixed address with a fixed length of 3MiB. Also, the
-	# device has a hard-coded kernel command line that requieres the
+	# As configured by the OEM factory, the device will boot the kernel
+	# from a fixed address with a fixed length of 3 MiB. Also, the
+	# device has a hard-coded kernel command line that requires the
 	# rootfs and alt_rootfs to be in mtd11 and mtd13 respectively.
 	# Oh... and the kernel partition overlaps with the rootfs
 	# partition (the same for alt_kernel and alt_rootfs).
 	#
 	# If you are planing re-partitioning the device, you may want to
-	# keep those details in mind:
-	# 1. The kernel adresses you should honor are 0x00000000 and
+	# keep these details in mind:
+	# 1. The kernel addresses you should honor are 0x00000000 and
 	#    0x02800000 respectively.
-	# 2. The kernel size (plus the dtb) cannot exceed 3.00MiB in size.
+	# 2. The kernel size (plus the dtb) cannot exceed 3 MiB in size
+	#    unless the uboot environment variable "kernsize" is increased.
 	# 3. You can use 'zImage', but not a raw 'Image' packed with lzma.
 	# 4. The kernel command line from uboot is harcoded to boot with
 	#    rootfs either in mtd11 or mtd13.
 	$(call Device/FitzImage)
+	$(call Device/kernel-size-6350-8300)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := EA6350
 	DEVICE_VARIANT := v3
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	KERNEL_SIZE := 3072k
-	IMAGE_SIZE := 37888k
+	KERNEL_SIZE := 5120k
+	IMAGE_SIZE := 35840k
 	UBINIZE_OPTS := -E 5
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA6350v3
-	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea6350v3
 
 define Device/linksys_ea8300
 	$(call Device/FitzImage)
+	$(call Device/kernel-size-6350-8300)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := EA8300
 	SOC := qcom-ipq4019
-	KERNEL_SIZE := 3072k
-	IMAGE_SIZE := 87040k
+	KERNEL_SIZE := 5120k
+	IMAGE_SIZE := 84992k
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA8300
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-linksys_ea8300 kmod-usb-ledtrig-usbport
-	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_ea8300
 
 define Device/linksys_mr8300
 	$(call Device/FitzImage)
+	$(call Device/kernel-size-6350-8300)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := MR8300
 	SOC := qcom-ipq4019
-	KERNEL_SIZE := 3072k
-	IMAGE_SIZE := 87040k
+	KERNEL_SIZE := 5120k
+	IMAGE_SIZE := 84992k
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR8300
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-usb-ledtrig-usbport
-	DEFAULT := n
 endef
 TARGET_DEVICES += linksys_mr8300
 
-define Device/linksys_whw01-v1
+define Device/linksys_whw03v2
+	$(call Device/FitzImage)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := WHW03
+	DEVICE_VARIANT := V2
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 6144k
+	IMAGE_SIZE := 158720k
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
+	IMAGES += factory.bin
+	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=WHW03v2
+	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct ipq-wifi-linksys_whw03v2 kmod-leds-pca963x kmod-spi-dev kmod-bluetooth
+endef
+TARGET_DEVICES += linksys_whw03v2
+
+define Device/linksys_whw01
 	$(call Device/FitzImage)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := WHW01
-	DEVICE_VARIANT := v1
 	KERNEL_SIZE := 6144k
-	IMAGE_SIZE := 28704512  # 28032k minus linksys signature (256-bytes).
+	IMAGE_SIZE := 75776K
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
-	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
-		append-ubi | linksys-image type=WHW01 | pad-to $$$$(PAGESIZE) | \
-		check-size
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=WHW01
 	DEVICE_PACKAGES := uboot-envtools kmod-leds-pca963x
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += linksys_whw01-v1
+TARGET_DEVICES += linksys_whw01
 
 define Device/luma_wrtq-329acn
 	$(call Device/FitImage)
@@ -1098,6 +1121,19 @@ define Device/unielec_u4019-32m
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += unielec_u4019-32m
+
+define Device/zte_mf18a
+	$(call Device/FitImage)
+	DEVICE_VENDOR := ZTE
+	DEVICE_MODEL := MF18A
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_IN_UBI := 1
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct ipq-wifi-zte_mf18a
+endef
+TARGET_DEVICES += zte_mf18a
 
 define Device/zte_mf28x_common
 	$(call Device/FitzImage)

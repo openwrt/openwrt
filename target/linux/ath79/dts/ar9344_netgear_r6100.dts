@@ -181,8 +181,8 @@
 		compatible = "qcom,ath10k";
 		reg = <0x0000 0 0 0 0>;
 
-		nvmem-cells = <&macaddr_caldata_c>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&cal_ath10k>, <&macaddr_caldata_c>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };
 
@@ -201,13 +201,22 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&caldata 0x1000>;
+	nvmem-cells = <&cal_ath9k>;
+	nvmem-cell-names = "calibration";
 };
 
 &caldata {
 	compatible = "nvmem-cells";
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	cal_ath9k: calibration@1000 {
+		reg = <0x1000 0x440>;
+	};
+
+	cal_ath10k: calibration@5000 {
+		reg = <0x5000 0x844>;
+	};
 
 	macaddr_caldata_0: macaddr@0 {
 		reg = <0x0 0x6>;

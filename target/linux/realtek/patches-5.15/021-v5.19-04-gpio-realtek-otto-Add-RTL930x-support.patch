@@ -1,0 +1,29 @@
+From deaf1cecdeb052cdb5e92fd642016198724b44a4 Mon Sep 17 00:00:00 2001
+From: Sander Vanheule <sander@svanheule.net>
+Date: Sat, 9 Apr 2022 21:55:49 +0200
+Subject: [PATCH 4/6] gpio: realtek-otto: Add RTL930x support
+
+The RTL930x SoC series has support for 24 GPIOs, with the port order
+reversed compared to RTL838x and RTL839x. The RTL930x series also has
+two CPUs (VPEs) and can distribute individual GPIO interrupts between
+them.
+
+Signed-off-by: Sander Vanheule <sander@svanheule.net>
+Signed-off-by: Bartosz Golaszewski <brgl@bgdev.pl>
+---
+ drivers/gpio/gpio-realtek-otto.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -335,6 +335,10 @@ static const struct of_device_id realtek
+ 	{
+ 		.compatible = "realtek,rtl8390-gpio",
+ 	},
++	{
++		.compatible = "realtek,rtl9300-gpio",
++		.data = (void *)(GPIO_PORTS_REVERSED | GPIO_INTERRUPTS_PER_CPU)
++	},
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, realtek_gpio_of_match);

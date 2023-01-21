@@ -27,7 +27,7 @@ Link: https://lore.kernel.org/linux-mtd/20221022211318.32009-2-zajec5@gmail.com
  
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
-@@ -746,6 +747,17 @@ int add_mtd_device(struct mtd_info *mtd)
+@@ -748,6 +749,17 @@ int add_mtd_device(struct mtd_info *mtd)
  		not->add(mtd);
  
  	mutex_unlock(&mtd_table_mutex);

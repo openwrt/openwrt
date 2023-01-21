@@ -1,0 +1,29 @@
+From eb9e93937756a05787977875830c0dc482cb57e0 Mon Sep 17 00:00:00 2001
+From: Ansuel Smith <ansuelsmth@gmail.com>
+Date: Sat, 30 Apr 2022 07:51:17 +0200
+Subject: [PATCH] ARM: dts: qcom: replace gcc PXO with pxo_board fixed clock
+
+Replace gcc PXO phandle to pxo_board fixed clock declared in the dts.
+gcc driver doesn't provide PXO_SRC as it's a fixed-clock. This cause a
+kernel panic if any driver actually try to use it.
+
+Fixes: 40cf5c884a96 ("ARM: dts: qcom: add L2CC and RPM for IPQ8064")
+Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Link: https://lore.kernel.org/r/20220430055118.1947-2-ansuelsmth@gmail.com
+---
+ arch/arm/boot/dts/qcom-ipq8064.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -784,7 +784,7 @@
+ 		l2cc: clock-controller@2011000 {
+ 			compatible = "qcom,kpss-gcc", "syscon";
+ 			reg = <0x2011000 0x1000>;
+-			clocks = <&gcc PLL8_VOTE>, <&gcc PXO_SRC>;
++			clocks = <&gcc PLL8_VOTE>, <&pxo_board>;
+ 			clock-names = "pll8_vote", "pxo";
+ 			clock-output-names = "acpu_l2_aux";
+ 		};

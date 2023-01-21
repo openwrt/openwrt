@@ -348,11 +348,11 @@ inline u32 rtl839x_get_mac_link_spd_sts(int port)
 
 inline u32 rtl930x_get_mac_link_spd_sts(int port)
 {
-	int r = RTL930X_MAC_LINK_SPD_STS + ((port / 10) << 2);
+	int r = RTL930X_MAC_LINK_SPD_STS + ((port >> 3) << 2);
 	u32 speed = sw_r32(r);
 
-	speed >>= (port % 10) * 3;
-	return (speed & 0x7);
+	speed >>= (port % 8) << 2;
+	return (speed & 0xf);
 }
 
 inline u32 rtl931x_get_mac_link_spd_sts(int port)

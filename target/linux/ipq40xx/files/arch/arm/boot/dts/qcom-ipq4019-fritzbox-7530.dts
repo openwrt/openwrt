@@ -9,11 +9,15 @@
 	model = "AVM FRITZ!Box 7530";
 	compatible = "avm,fritzbox-7530";
 
+	chosen {
+		bootargs-append = " coherent_pool=4M";
+	};
+
 	aliases {
 		led-boot = &power_green;
 		led-failsafe = &info_red;
 		led-running = &power_green;
-		led-upgrade = &info_green;
+		led-upgrade = &info_red;
 	};
 
 	soc {
@@ -92,7 +96,7 @@
 			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
 		};
 
-		info_green: info {
+		info {
 			label = "green:info";
 			gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
 		};

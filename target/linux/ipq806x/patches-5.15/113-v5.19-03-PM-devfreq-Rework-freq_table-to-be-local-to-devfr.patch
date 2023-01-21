@@ -126,7 +126,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  		devfreq->stats.total_trans++;
  	}
  
-@@ -835,6 +831,9 @@ struct devfreq *devfreq_add_device(struc
+@@ -834,6 +830,9 @@ struct devfreq *devfreq_add_device(struc
  		if (err < 0)
  			goto err_dev;
  		mutex_lock(&devfreq->lock);
@@ -136,7 +136,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  	}
  
  	devfreq->scaling_min_freq = find_available_min_freq(devfreq);
-@@ -870,8 +869,8 @@ struct devfreq *devfreq_add_device(struc
+@@ -869,8 +868,8 @@ struct devfreq *devfreq_add_device(struc
  
  	devfreq->stats.trans_table = devm_kzalloc(&devfreq->dev,
  			array3_size(sizeof(unsigned int),
@@ -147,7 +147,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  			GFP_KERNEL);
  	if (!devfreq->stats.trans_table) {
  		mutex_unlock(&devfreq->lock);
-@@ -880,7 +879,7 @@ struct devfreq *devfreq_add_device(struc
+@@ -879,7 +878,7 @@ struct devfreq *devfreq_add_device(struc
  	}
  
  	devfreq->stats.time_in_state = devm_kcalloc(&devfreq->dev,
@@ -156,7 +156,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  			sizeof(*devfreq->stats.time_in_state),
  			GFP_KERNEL);
  	if (!devfreq->stats.time_in_state) {
-@@ -1639,9 +1638,9 @@ static ssize_t available_frequencies_sho
+@@ -1637,9 +1636,9 @@ static ssize_t available_frequencies_sho
  
  	mutex_lock(&df->lock);
  
@@ -168,7 +168,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  
  	mutex_unlock(&df->lock);
  	/* Truncate the trailing space */
-@@ -1664,7 +1663,7 @@ static ssize_t trans_stat_show(struct de
+@@ -1662,7 +1661,7 @@ static ssize_t trans_stat_show(struct de
  
  	if (!df->profile)
  		return -EINVAL;
@@ -177,7 +177,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  
  	if (max_state == 0)
  		return sprintf(buf, "Not Supported.\n");
-@@ -1681,19 +1680,17 @@ static ssize_t trans_stat_show(struct de
+@@ -1679,19 +1678,17 @@ static ssize_t trans_stat_show(struct de
  	len += sprintf(buf + len, "           :");
  	for (i = 0; i < max_state; i++)
  		len += sprintf(buf + len, "%10lu",
@@ -202,7 +202,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  		for (j = 0; j < max_state; j++)
  			len += sprintf(buf + len, "%10u",
  				df->stats.trans_table[(i * max_state) + j]);
-@@ -1717,7 +1714,7 @@ static ssize_t trans_stat_store(struct d
+@@ -1715,7 +1712,7 @@ static ssize_t trans_stat_store(struct d
  	if (!df->profile)
  		return -EINVAL;
  
@@ -211,7 +211,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  		return count;
  
  	err = kstrtoint(buf, 10, &value);
-@@ -1725,11 +1722,11 @@ static ssize_t trans_stat_store(struct d
+@@ -1723,11 +1720,11 @@ static ssize_t trans_stat_store(struct d
  		return -EINVAL;
  
  	mutex_lock(&df->lock);

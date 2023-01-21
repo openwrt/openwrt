@@ -1015,12 +1015,14 @@ define Device/dlink_dir-825-b1
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-825
   DEVICE_VARIANT := B1
-  IMAGE_SIZE := 6208k
-  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
-	check-size | append-metadata
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
 	kmod-leds-reset kmod-owl-loader kmod-switch-rtl8366s
-  SUPPORTED_DEVICES += dir-825-b1
+  IMAGE_SIZE := 7808k
+  FACTORY_SIZE := 6144k
+  IMAGES += factory.bin
+  IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs | check-size $$$$(FACTORY_SIZE) | pad-to $$$$(FACTORY_SIZE) | \
+	append-string 01AP94-AR7161-RT-080619-00
 endef
 TARGET_DEVICES += dlink_dir-825-b1
 
@@ -1172,6 +1174,18 @@ define Device/engenius_eap1200h
 endef
 TARGET_DEVICES += engenius_eap1200h
 
+define Device/engenius_eap1750h
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := EAP1750H
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := ar71xx-generic-eap1750h
+endef
+TARGET_DEVICES += engenius_eap1750h
+
 define Device/engenius_eap300-v2
   $(Device/senao_loader_okli)
   SOC := ar9341
@@ -1309,6 +1323,22 @@ define Device/extreme-networks_ws-ap3805i
   IMAGE_SIZE := 29440k
 endef
 TARGET_DEVICES += extreme-networks_ws-ap3805i
+
+define Device/fortinet_fap-221-b
+  $(Device/senao_loader_okli)
+  SOC := ar9344
+  DEVICE_VENDOR := Fortinet
+  DEVICE_MODEL := FAP-221-B
+  FACTORY_IMG_NAME := FP221B-9.99-AP-build999-999999-patch99
+  IMAGE_SIZE := 9216k
+  LOADER_FLASH_OFFS := 0x040000
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | \
+	check-size | pad-to $$$$(IMAGE_SIZE) | \
+	append-loader-okli-uimage $(1) | pad-to 10944k | \
+	gzip-filename $$$$(FACTORY_IMG_NAME)
+endef
+TARGET_DEVICES += fortinet_fap-221-b
 
 define Device/glinet_6408
   $(Device/tplink-8mlzma)
@@ -1569,6 +1599,22 @@ define Device/joyit_jt-or750i
 endef
 TARGET_DEVICES += joyit_jt-or750i
 
+define Device/kuwfi_c910
+  $(Device/loader-okli-uimage)
+  SOC := qca9533
+  DEVICE_VENDOR := KuWFi
+  DEVICE_MODEL := C910
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-net-cdc-ether comgt-ncm
+  LOADER_FLASH_OFFS := 0x50000
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGE_SIZE := 15936k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | pad-to 14528k | \
+	append-loader-okli-uimage $(1) | pad-to 64k
+endef
+TARGET_DEVICES += kuwfi_c910
+
 define Device/letv_lba-047-ch
   $(Device/loader-okli-uimage)
   SOC := qca9531
@@ -1733,7 +1779,7 @@ define Device/netgear_wndap360
   $(Device/netgear_generic)
   SOC := ar7161
   DEVICE_MODEL := WNDAP360
-  DEVICE_PACKAGES := kmod-leds-reset kmod-owl-loader
+  DEVICE_PACKAGES := kmod-leds-reset
   IMAGE_SIZE := 7744k
   BLOCKSIZE := 256k
   KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
@@ -1861,7 +1907,7 @@ define Device/ocedo_koala
   DEVICE_MODEL := Koala
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   SUPPORTED_DEVICES += koala
-  IMAGE_SIZE := 7424k
+  IMAGE_SIZE := 14848k
 endef
 TARGET_DEVICES += ocedo_koala
 
@@ -1869,7 +1915,7 @@ define Device/ocedo_raccoon
   SOC := ar9344
   DEVICE_VENDOR := Ocedo
   DEVICE_MODEL := Raccoon
-  IMAGE_SIZE := 7424k
+  IMAGE_SIZE := 14848k
 endef
 TARGET_DEVICES += ocedo_raccoon
 
@@ -1878,7 +1924,7 @@ define Device/ocedo_ursus
   DEVICE_VENDOR := Ocedo
   DEVICE_MODEL := Ursus
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 7424k
+  IMAGE_SIZE := 14848k
 endef
 TARGET_DEVICES += ocedo_ursus
 

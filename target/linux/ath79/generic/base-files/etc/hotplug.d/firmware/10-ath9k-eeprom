@@ -83,27 +83,11 @@ case "$FIRMWARE" in
 	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
-	araknis,an-300-ap-i-n|\
-	atheros,db120|\
-	engenius,eap600|\
-	engenius,ecb600|\
-	mercury,mw4530r-v1|\
-	ocedo,raccoon|\
-	ubnt,unifi-ap-pro|\
-	watchguard,ap100|\
-	watchguard,ap200|\
-	winchannel,wb2000)
-		caldata_extract "art" 0x5000 0x440
-		;;
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
-	buffalo,wzr-hp-g302h-a1a0|\
-	ubnt,unifi-ap-outdoor-plus)
-		caldata_extract "art" 0x1000 0xeb8
-		;;
 	buffalo,wzr-hp-g450h|\
-	ubnt,unifi)
+	pcs,cap324)
 		caldata_extract "art" 0x1000 0x440
 		;;
 	dlink,dir-825-c1|\
@@ -120,18 +104,8 @@ case "$FIRMWARE" in
 		;;
 	netgear,wnr2200-8m|\
 	netgear,wnr2200-16m|\
-	pcs,cap324|\
-	tplink,tl-wr2543-v1|\
 	tplink,tl-wr842n-v1)
-		caldata_extract "art" 0x1000 0x1000
-		;;
-	openmesh,mr600-v1|\
-	openmesh,mr600-v2|\
-	openmesh,om5p-an)
-		caldata_extract "ART" 0x5000 0x440
-		;;
-	openmesh,om2p-v1)
-		caldata_extract "ART" 0x1000 0x440
+		caldata_extract "art" 0x1000 0x3e0
 		;;
 	wd,mynet-n600|\
 	wd,mynet-n750)
@@ -139,7 +113,7 @@ case "$FIRMWARE" in
 		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
 		;;
 	wd,mynet-wifi-rangeextender)
-		caldata_extract "art" 0x1000 0x1000
+		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(nvram get wl0_hwaddr)
 		;;
 	*)
@@ -150,8 +124,7 @@ case "$FIRMWARE" in
 "ath9k-eeprom-pci-0000:00:11.0.bin")
 	case $board in
 	buffalo,wzr-600dhp|\
-	buffalo,wzr-hp-ag300h|\
-	netgear,wndap360)
+	buffalo,wzr-hp-ag300h)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
 	dlink,dir-825-b1|\
@@ -170,8 +143,7 @@ case "$FIRMWARE" in
 "ath9k-eeprom-pci-0000:00:12.0.bin")
 	case $board in
 	buffalo,wzr-600dhp|\
-	buffalo,wzr-hp-ag300h|\
-	netgear,wndap360)
+	buffalo,wzr-hp-ag300h)
 		caldata_extract "art" 0x5000 0xeb8
 		;;
 	dlink,dir-825-b1|\
