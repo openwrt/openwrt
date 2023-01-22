@@ -557,6 +557,11 @@ define Build/gl-qsdk-factory
 		$(KDIR_TMP)/$(notdir $(BOOT_SCRIPT))
 endef
 
+define Build/kernel-pack-npk
+	$(STAGING_DIR_HOST)/bin/npk_pack_kernel $@ $@.npk
+	mv $@.npk $@
+endef
+
 define Build/linksys-image
 	let \
 		size="$$(stat -c%s $@)" \
