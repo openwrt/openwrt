@@ -1188,7 +1188,6 @@ dnsmasq_start()
 		[ -n "$BOOT" ] || config_foreach filter_dnsmasq dhcp dhcp_add "$cfg"
 	fi
 
-
 	echo >> $CONFIGFILE_TMP
 	config_foreach filter_dnsmasq cname dhcp_cname_add "$cfg"
 	echo >> $CONFIGFILE_TMP
