@@ -963,10 +963,10 @@ dnsmasq_start()
 	append_bool "$cfg" noping "--no-ping"
 	append_bool "$cfg" rapidcommit "--dhcp-rapid-commit"
 	append_bool "$cfg" scriptarp "--script-arp"
+	append_bool "$cfg" no_round_robin "--no-round-robin"
 
 	append_bool "$cfg" filter_aaaa "--filter-AAAA"
 	append_bool "$cfg" filter_a "--filter-A"
-	append_bool "$cfg" no_round_robin "--no-round-robin"
 	
 	append_parm "$cfg" logfacility "--log-facility"
 	config_get logfacility "$cfg" "logfacility"
