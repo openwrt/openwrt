@@ -6,6 +6,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/leds/leds-realtek.h>
 
 / {
 	compatible = "zyxel,xgs1250-12", "realtek,rtl838x-soc";
@@ -65,10 +66,75 @@
 	led_set: led_set@0 {
 		compatible = "realtek,rtl9302-leds", "realtek,rtl930x-leds";
 
-		led_set0 = <0x0000 0x0000 0x0a20 0x0b80>; // LED set 0: 1000Mbps,  10/100Mbps
-		led_set1 = <0x0a0b 0x0a28 0x0a82 0x0a0b>; // LED set 1: (10G, 5G, 2.5G) (2.5G, 1G)
-							  // (5G, 10/100) (10G, 5G, 2.5G)
-		led_set2 = <0x0000 0x0000 0x0a20 0x0a01>; // LED set 2: 1000MBit, 10GBit
+		led_set0 = /bits/ 16 <
+			/* LED0 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_100M_LINK |
+				RTL93XX_LED_SET_10M_LINK
+			)
+			/* LED1 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_1000M_LINK
+			)
+			/* LED2 */
+			RTL93XX_LED_SET_NONE
+			/* LED3 */
+			RTL93XX_LED_SET_NONE
+		>;
+		led_set1 = /bits/ 16 <
+			/* LED0 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_10G_LINK |
+				RTL93XX_LED_SET_5G_LINK |
+				RTL93XX_LED_SET_2G5_LINK
+			)
+			/* LED1 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_5G_LINK |
+				RTL93XX_LED_SET_100M_LINK
+			)
+			/* LED2 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_2G5_LINK |
+				RTL93XX_LED_SET_1000M_LINK
+			)
+			/* LED3 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_10G_LINK |
+				RTL93XX_LED_SET_5G_LINK |
+				RTL93XX_LED_SET_2G5_LINK
+			)
+		>;
+		led_set2 = /bits/ 16 <
+			/* LED0 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_10G_LINK
+			)
+			/* LED1 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_1000M_LINK
+			)
+			/* LED2 */
+			RTL93XX_LED_SET_NONE
+			/* LED3 */
+			RTL93XX_LED_SET_NONE
+		>;
 	};
 };
 
