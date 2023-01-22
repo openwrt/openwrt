@@ -1,6 +1,6 @@
 --- a/arch/mips/include/asm/r4kcache.h
 +++ b/arch/mips/include/asm/r4kcache.h
-@@ -28,6 +28,38 @@
+@@ -27,6 +27,38 @@
  extern void (*r4k_blast_dcache)(void);
  extern void (*r4k_blast_icache)(void);
  
@@ -39,7 +39,7 @@
  /*
   * This macro return a properly sign-extended address suitable as base address
   * for indexed cache operations.  Two issues here:
-@@ -61,6 +93,7 @@ static inline void flush_icache_line_ind
+@@ -60,6 +92,7 @@ static inline void flush_icache_line_ind
  
  static inline void flush_dcache_line_indexed(unsigned long addr)
  {
@@ -47,7 +47,7 @@
  	cache_op(Index_Writeback_Inv_D, addr);
  }
  
-@@ -84,11 +117,13 @@ static inline void flush_icache_line(uns
+@@ -83,11 +116,13 @@ static inline void flush_icache_line(uns
  
  static inline void flush_dcache_line(unsigned long addr)
  {
@@ -61,23 +61,23 @@
  	cache_op(Hit_Invalidate_D, addr);
  }
  
-@@ -161,6 +196,7 @@ static inline int protected_flush_icache
- #ifdef CONFIG_EVA
- 		return protected_cachee_op(Hit_Invalidate_I, addr);
- #else
+@@ -160,6 +195,7 @@ static inline int protected_flush_icache
+ 		return protected_cache_op(Hit_Invalidate_I_Loongson2, addr);
+ 
+ 	default:
 +		BCM4710_DUMMY_RREG();
  		return protected_cache_op(Hit_Invalidate_I, addr);
- #endif
  	}
-@@ -174,6 +210,7 @@ static inline int protected_flush_icache
+ }
+@@ -172,6 +208,7 @@ static inline int protected_flush_icache
   */
  static inline int protected_writeback_dcache_line(unsigned long addr)
  {
 +	BCM4710_DUMMY_RREG();
- #ifdef CONFIG_EVA
- 	return protected_cachee_op(Hit_Writeback_Inv_D, addr);
- #else
-@@ -203,8 +240,51 @@ static inline void invalidate_tcache_pag
+ 	return protected_cache_op(Hit_Writeback_Inv_D, addr);
+ }
+ 
+@@ -193,8 +230,51 @@ static inline void invalidate_tcache_pag
  	unroll(times, _cache_op, insn, op, (addr) + (i++ * (lsize)));	\
  } while (0)
  
@@ -130,7 +130,7 @@
  static inline void extra##blast_##pfx##cache##lsize(void)		\
  {									\
  	unsigned long start = INDEX_BASE;				\
-@@ -214,6 +294,7 @@ static inline void extra##blast_##pfx##c
+@@ -204,6 +284,7 @@ static inline void extra##blast_##pfx##c
  			       current_cpu_data.desc.waybit;		\
  	unsigned long ws, addr;						\
  									\
@@ -138,7 +138,7 @@
  	for (ws = 0; ws < ws_end; ws += ws_inc)				\
  		for (addr = start; addr < end; addr += lsize * 32)	\
  			cache_unroll(32, kernel_cache, indexop,		\
-@@ -225,6 +306,7 @@ static inline void extra##blast_##pfx##c
+@@ -215,6 +296,7 @@ static inline void extra##blast_##pfx##c
  	unsigned long start = page;					\
  	unsigned long end = page + PAGE_SIZE;				\
  									\
@@ -146,7 +146,7 @@
  	do {								\
  		cache_unroll(32, kernel_cache, hitop, start, lsize);	\
  		start += lsize * 32;					\
-@@ -241,32 +323,33 @@ static inline void extra##blast_##pfx##c
+@@ -231,32 +313,33 @@ static inline void extra##blast_##pfx##c
  			       current_cpu_data.desc.waybit;		\
  	unsigned long ws, addr;						\
  									\
@@ -200,7 +200,7 @@
  
  #define __BUILD_BLAST_USER_CACHE(pfx, desc, indexop, hitop, lsize) \
  static inline void blast_##pfx##cache##lsize##_user_page(unsigned long page) \
-@@ -291,58 +374,29 @@ __BUILD_BLAST_USER_CACHE(d, dcache, Inde
+@@ -281,65 +364,36 @@ __BUILD_BLAST_USER_CACHE(d, dcache, Inde
  __BUILD_BLAST_USER_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 64)
  
  /* build blast_xxx_range, protected_blast_xxx_range */
@@ -233,7 +233,8 @@
 -		addr += lsize_8;					\
 -		lines -= 8;						\
 -	}								\
--									\
++	unsigned long aend = (end - 1) & ~(lsize - 1);			\
+ 									\
 -	if (lines & 0x4) {						\
 -		prot##cache_op(hitop, addr);				\
 -		prot##cache_op(hitop, addr + lsize);			\
@@ -241,8 +242,7 @@
 -		prot##cache_op(hitop, addr + lsize_3);			\
 -		addr += lsize_4;					\
 -	}								\
-+	unsigned long aend = (end - 1) & ~(lsize - 1);			\
- 									\
+-									\
 -	if (lines & 0x2) {						\
 -		prot##cache_op(hitop, addr);				\
 -		prot##cache_op(hitop, addr + lsize);			\
@@ -260,20 +260,11 @@
  	}								\
  }
  
- #ifndef CONFIG_EVA
- 
 -__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, protected_, )
 -__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I, protected_, )
+-__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, protected_, )
 +__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, protected_, , BCM4710_PROTECTED_FILL_TLB(addr); BCM4710_PROTECTED_FILL_TLB(aend);, BCM4710_DUMMY_RREG();)
 +__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I, protected_, , , )
- 
- #else
- 
-@@ -376,15 +430,15 @@ __BUILD_PROT_BLAST_CACHE_RANGE(d, dcache
- __BUILD_PROT_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I)
- 
- #endif
--__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, protected_, )
 +__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, protected_, , , )
  __BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I_Loongson2, \
 -	protected_, loongson2_)
@@ -350,7 +341,7 @@
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
 @@ -38,6 +38,9 @@
- #include <asm/dma-coherence.h>
+ #include <asm/traps.h>
  #include <asm/mips-cps.h>
  
 +/* For enabling BCM4710 cache workarounds */
@@ -389,7 +380,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -1818,6 +1830,17 @@ static void coherency_setup(void)
+@@ -1817,6 +1829,17 @@ static void coherency_setup(void)
  	 * silly idea of putting something else there ...
  	 */
  	switch (current_cpu_type()) {
@@ -407,7 +398,7 @@
  	case CPU_R4000PC:
  	case CPU_R4000SC:
  	case CPU_R4000MC:
-@@ -1864,6 +1887,15 @@ void r4k_cache_init(void)
+@@ -1863,6 +1886,15 @@ void r4k_cache_init(void)
  	extern void build_copy_page(void);
  	struct cpuinfo_mips *c = &current_cpu_data;
  
@@ -423,7 +414,7 @@
  	probe_pcache();
  	probe_vcache();
  	setup_scache();
-@@ -1940,7 +1972,15 @@ void r4k_cache_init(void)
+@@ -1935,7 +1967,15 @@ void r4k_cache_init(void)
  	 */
  	local_r4k___flush_cache_all(NULL);
  
@@ -441,7 +432,7 @@
  	/*
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -984,6 +984,9 @@ void build_get_pgde32(u32 **p, unsigned
+@@ -985,6 +985,9 @@ void build_get_pgde32(u32 **p, unsigned
  		uasm_i_srl(p, ptr, ptr, SMP_CPUID_PTRSHIFT);
  		uasm_i_addu(p, ptr, tmp, ptr);
  #else
@@ -451,7 +442,7 @@
  		UASM_i_LA_mostly(p, ptr, pgdc);
  #endif
  		uasm_i_mfc0(p, tmp, C0_BADVADDR); /* get faulting address */
-@@ -1345,6 +1348,9 @@ static void build_r4000_tlb_refill_handl
+@@ -1347,6 +1350,9 @@ static void build_r4000_tlb_refill_handl
  #ifdef CONFIG_64BIT
  		build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
  #else
@@ -461,7 +452,7 @@
  		build_get_pgde32(&p, K0, K1); /* get pgd in K1 */
  #endif
  
-@@ -1356,6 +1362,9 @@ static void build_r4000_tlb_refill_handl
+@@ -1358,6 +1364,9 @@ static void build_r4000_tlb_refill_handl
  		build_update_entries(&p, K0, K1);
  		build_tlb_write_entry(&p, &l, &r, tlb_random);
  		uasm_l_leave(&l, p);
@@ -471,7 +462,7 @@
  		uasm_i_eret(&p); /* return from trap */
  	}
  #ifdef CONFIG_MIPS_HUGE_TLB_SUPPORT
-@@ -2056,6 +2065,9 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -2059,6 +2068,9 @@ build_r4000_tlbchange_handler_head(u32 *
  #ifdef CONFIG_64BIT
  	build_get_pmde64(p, l, r, wr.r1, wr.r2); /* get pmd in ptr */
  #else
@@ -481,7 +472,7 @@
  	build_get_pgde32(p, wr.r1, wr.r2); /* get pgd in ptr */
  #endif
  
-@@ -2102,6 +2114,9 @@ build_r4000_tlbchange_handler_tail(u32 *
+@@ -2105,6 +2117,9 @@ build_r4000_tlbchange_handler_tail(u32 *
  	build_tlb_write_entry(p, l, r, tlb_indexed);
  	uasm_l_leave(l, *p);
  	build_restore_work_registers(p);

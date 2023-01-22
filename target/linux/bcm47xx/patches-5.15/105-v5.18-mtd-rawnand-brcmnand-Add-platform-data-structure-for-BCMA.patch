@@ -20,14 +20,14 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -3712,6 +3712,7 @@ L:	linux-mtd@lists.infradead.org
+@@ -3900,6 +3900,7 @@ L:	linux-mtd@lists.infradead.org
  L:	bcm-kernel-feedback-list@broadcom.com
  S:	Maintained
  F:	drivers/mtd/nand/raw/brcmnand/
 +F:	include/linux/platform_data/brcmnand.h
  
- BROADCOM SYSTEMPORT ETHERNET DRIVER
- M:	Florian Fainelli <f.fainelli@gmail.com>
+ BROADCOM STB PCIE DRIVER
+ M:	Jim Quinlan <jim2101024@gmail.com>
 --- a/drivers/bcma/driver_chipcommon_nflash.c
 +++ b/drivers/bcma/driver_chipcommon_nflash.c
 @@ -7,18 +7,28 @@

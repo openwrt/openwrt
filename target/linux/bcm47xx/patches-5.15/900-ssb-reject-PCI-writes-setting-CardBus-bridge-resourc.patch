@@ -17,7 +17,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/ssb/driver_pcicore.c
 +++ b/drivers/ssb/driver_pcicore.c
-@@ -164,6 +164,10 @@ static int ssb_extpci_write_config(struc
+@@ -165,6 +165,10 @@ static int ssb_extpci_write_config(struc
  	WARN_ON(!pc->hostmode);
  	if (unlikely(len != 1 && len != 2 && len != 4))
  		goto out;

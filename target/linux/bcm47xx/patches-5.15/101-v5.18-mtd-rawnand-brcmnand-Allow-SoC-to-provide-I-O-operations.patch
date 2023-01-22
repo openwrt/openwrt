@@ -37,7 +37,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  struct brcmnand_controller {
  	struct device		*dev;
  	struct nand_controller	controller;
-@@ -589,15 +592,25 @@ enum {
+@@ -592,15 +595,25 @@ enum {
  	INTFC_CTLR_READY		= BIT(31),
  };
  
@@ -64,7 +64,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  }
  
  static int brcmnand_revision_init(struct brcmnand_controller *ctrl)
-@@ -763,13 +776,18 @@ static inline void brcmnand_rmw_reg(stru
+@@ -766,13 +779,18 @@ static inline void brcmnand_rmw_reg(stru
  
  static inline u32 brcmnand_read_fc(struct brcmnand_controller *ctrl, int word)
  {
@@ -84,7 +84,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  }
  
  static inline void edu_writel(struct brcmnand_controller *ctrl,
-@@ -2951,6 +2969,12 @@ int brcmnand_probe(struct platform_devic
+@@ -3000,6 +3018,12 @@ int brcmnand_probe(struct platform_devic
  	ctrl->dev = dev;
  	ctrl->soc = soc;
  

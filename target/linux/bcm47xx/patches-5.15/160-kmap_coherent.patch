@@ -8,7 +8,7 @@ This fixes OpenWrt ticket #1485: https://dev.openwrt.org/ticket/1485
 ---
 --- a/arch/mips/include/asm/cpu-features.h
 +++ b/arch/mips/include/asm/cpu-features.h
-@@ -242,6 +242,9 @@
+@@ -240,6 +240,9 @@
  #ifndef cpu_has_pindexed_dcache
  #define cpu_has_pindexed_dcache	(cpu_data[0].dcache.flags & MIPS_CACHE_PINDEX)
  #endif
@@ -49,7 +49,7 @@ This fixes OpenWrt ticket #1485: https://dev.openwrt.org/ticket/1485
  			kunmap_atomic(vaddr);
 --- a/arch/mips/mm/init.c
 +++ b/arch/mips/mm/init.c
-@@ -173,7 +173,7 @@ void copy_user_highpage(struct page *to,
+@@ -172,7 +172,7 @@ void copy_user_highpage(struct page *to,
  	void *vfrom, *vto;
  
  	vto = kmap_atomic(to);
@@ -58,7 +58,7 @@ This fixes OpenWrt ticket #1485: https://dev.openwrt.org/ticket/1485
  	    page_mapcount(from) && !Page_dcache_dirty(from)) {
  		vfrom = kmap_coherent(from, vaddr);
  		copy_page(vto, vfrom);
-@@ -195,7 +195,7 @@ void copy_to_user_page(struct vm_area_st
+@@ -194,7 +194,7 @@ void copy_to_user_page(struct vm_area_st
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
  {
@@ -67,7 +67,7 @@ This fixes OpenWrt ticket #1485: https://dev.openwrt.org/ticket/1485
  	    page_mapcount(page) && !Page_dcache_dirty(page)) {
  		void *vto = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
  		memcpy(vto, src, len);
-@@ -213,7 +213,7 @@ void copy_from_user_page(struct vm_area_
+@@ -212,7 +212,7 @@ void copy_from_user_page(struct vm_area_
  	struct page *page, unsigned long vaddr, void *dst, const void *src,
  	unsigned long len)
  {

@@ -22,7 +22,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 
 --- a/drivers/mtd/nand/raw/Kconfig
 +++ b/drivers/mtd/nand/raw/Kconfig
-@@ -236,6 +236,19 @@ config MTD_NAND_BRCMNAND
+@@ -208,6 +208,19 @@ config MTD_NAND_BRCMNAND
  	  originally designed for Set-Top Box but is used on various BCM7xxx,
  	  BCM3xxx, BCM63xxx, iProc/Cygnus and more.
  
@@ -187,7 +187,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 +MODULE_DESCRIPTION("NAND controller driver glue for BCMA chips");
 --- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
-@@ -595,7 +595,11 @@ enum {
+@@ -598,7 +598,11 @@ enum {
  
  static inline bool brcmnand_non_mmio_ops(struct brcmnand_controller *ctrl)
  {

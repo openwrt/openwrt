@@ -4,7 +4,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -1698,6 +1698,15 @@ config WDT_MTX1
+@@ -1664,6 +1664,15 @@ config WDT_MTX1
  	  Hardware driver for the MTX-1 boards. This is a watchdog timer that
  	  will reboot the machine after a 100 seconds timer expired.
  
@@ -17,19 +17,19 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 +	  100 second timer expired and no process has written to
 +	  /dev/watchdog during that time.
 +
- config PNX833X_WDT
- 	tristate "PNX833x Hardware Watchdog"
- 	depends on SOC_PNX8335
+ config SIBYTE_WDOG
+ 	tristate "Sibyte SoC hardware watchdog"
+ 	depends on CPU_SB1
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -161,6 +161,7 @@ obj-$(CONFIG_RC32434_WDT) += rc32434_wdt
+@@ -159,6 +159,7 @@ obj-$(CONFIG_RC32434_WDT) += rc32434_wdt
  obj-$(CONFIG_INDYDOG) += indydog.o
  obj-$(CONFIG_JZ4740_WDT) += jz4740_wdt.o
  obj-$(CONFIG_WDT_MTX1) += mtx-1_wdt.o
 +obj-$(CONFIG_GPIO_WDT) += old_gpio_wdt.o
- obj-$(CONFIG_PNX833X_WDT) += pnx833x_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
+ obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
 --- /dev/null
 +++ b/drivers/watchdog/old_gpio_wdt.c
 @@ -0,0 +1,301 @@
