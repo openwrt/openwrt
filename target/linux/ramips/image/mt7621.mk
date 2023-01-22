@@ -2105,6 +2105,10 @@ define Device/MikroTik
   IMAGE/sysupgrade.bin := append-kernel | yaffs-filesystem -L | \
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | \
 	append-metadata
+  IMAGES += sysupgrade-v7.bin
+  IMAGE/sysupgrade-v7.bin := append-kernel | kernel-pack-npk | \
+	  yaffs-filesystem -L | pad-to $$$$(BLOCKSIZE) | \
+	  append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 
 define Device/mikrotik_ltap-2hnd
