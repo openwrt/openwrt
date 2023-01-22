@@ -1,0 +1,44 @@
+From ef26c0349eb5a615dab2272d08d1d5de4ac9cd4c Mon Sep 17 00:00:00 2001
+From: Michael Walle <michael@walle.cc>
+Date: Wed, 11 Jan 2023 00:30:56 +0100
+Subject: [PATCH] of: property: fix #nvmem-cell-cells parsing
+
+Commit 67b8497f005f ("of: property: make #.*-cells optional for simple
+props") claims to make the cells-name property optional for simple
+properties, but changed the code for the wrong property, i.e. for
+DEFINE_SUFFIX_PROP(). Fix that.
+
+Fixes: 67b8497f005f ("of: property: make #.*-cells optional for simple props")
+Reported-by: Peng Fan <peng.fan@nxp.com>
+Signed-off-by: Michael Walle <michael@walle.cc>
+Acked-by: Rob Herring <robh@kernel.org>
+Tested-by: Robert Marko <robimarko@gmail.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+---
+ drivers/of/property.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/of/property.c
++++ b/drivers/of/property.c
+@@ -1173,8 +1173,8 @@ static struct device_node *parse_prop_ce
+ 	if (strcmp(prop_name, list_name))
+ 		return NULL;
+ 
+-	if (of_parse_phandle_with_args(np, list_name, cells_name, index,
+-				       &sup_args))
++	if (__of_parse_phandle_with_args(np, list_name, cells_name, 0, index,
++					 &sup_args))
+ 		return NULL;
+ 
+ 	return sup_args.np;
+@@ -1227,8 +1227,8 @@ static struct device_node *parse_suffix_
+ 	if (strcmp_suffix(prop_name, suffix))
+ 		return NULL;
+ 
+-	if (__of_parse_phandle_with_args(np, prop_name, cells_name, 0, index,
+-					 &sup_args))
++	if (of_parse_phandle_with_args(np, prop_name, cells_name, index,
++				       &sup_args))
+ 		return NULL;
+ 
+ 	return sup_args.np;
