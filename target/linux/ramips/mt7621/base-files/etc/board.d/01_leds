@@ -78,6 +78,7 @@ dlink,dir-853-a3)
 dlink,dir-853-r1)
 	ucidef_set_led_netdev "internet" "internet" "blue:net" "wan"
 	;;
+dlink,dir-1935-a1|\
 dlink,dir-860l-b1|\
 dlink,dir-867-a1|\
 dlink,dir-878-a1|\
@@ -152,6 +153,11 @@ tplink,archer-c6-v3|\
 tplink,archer-c6u-v1)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	;;
+tplink,ec330-g5u-v1)
+	ucidef_set_led_netdev "lan" "Ethernet" "blue:ethernet" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "Internet" "blue:internet" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "Internet-off" "amber:internet" "wan" "link"
 	;;
 tplink,re350-v1)
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "blue:wifi2G" "wlan0"

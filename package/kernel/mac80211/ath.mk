@@ -1,6 +1,6 @@
 PKG_DRIVERS += \
 	ath ath5k ath6kl ath6kl-sdio ath6kl-usb ath9k ath9k-common ath9k-htc ath10k ath10k-smallbuffers \
-	ath11k ath11k-pci carl9170 owl-loader ar5523 wil6210
+	ath11k ath11k-ahb ath11k-pci carl9170 owl-loader ar5523 wil6210
 
 PKG_CONFIG_DEPENDS += \
 	CONFIG_PACKAGE_ATH_DEBUG \
@@ -61,6 +61,7 @@ config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k) += ATH10K ATH10K_PCI
 config-$(call config_package,ath10k-smallbuffers) += ATH10K ATH10K_PCI ATH10K_SMALLBUFFERS
 config-$(call config_package,ath11k) += ATH11K
+config-$(call config_package,ath11k-ahb) += ATH11K_AHB
 config-$(call config_package,ath11k-pci) += ATH11K_PCI
 
 config-$(call config_package,ath5k) += ATH5K
@@ -316,7 +317,22 @@ define KernelPackage/ath11k/config
        config ATH11K_THERMAL
                bool "Enable thermal sensors and throttling support"
                depends on PACKAGE_kmod-ath11k
+               default y if TARGET_ipq807x
 
+endef
+
+define KernelPackage/ath11k-ahb
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Qualcomm 802.11ax AHB wireless chipset support
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath11k
+  DEPENDS+= @TARGET_ipq807x +kmod-ath11k +kmod-qrtr-smd
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k_ahb.ko
+  AUTOLOAD:=$(call AutoProbe,ath11k_ahb)
+endef
+
+define KernelPackage/ath11k-ahb/description
+This module adds support for Qualcomm Technologies 802.11ax family of
+chipsets with AHB bus.
 endef
 
 define KernelPackage/ath11k-pci

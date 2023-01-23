@@ -23,7 +23,7 @@ Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
 
 --- a/drivers/net/usb/rndis_host.c
 +++ b/drivers/net/usb/rndis_host.c
-@@ -418,10 +418,7 @@ generic_rndis_bind(struct usbnet *dev, s
+@@ -419,10 +419,7 @@ generic_rndis_bind(struct usbnet *dev, s
  		goto halt_fail_and_release;
  	}
  
@@ -35,7 +35,7 @@ Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
  
  	/* set a nonzero filter to enable data transfers */
  	memset(u.set, 0, sizeof *u.set);
-@@ -463,6 +460,16 @@ static int rndis_bind(struct usbnet *dev
+@@ -464,6 +461,16 @@ static int rndis_bind(struct usbnet *dev
  	return generic_rndis_bind(dev, intf, FLAG_RNDIS_PHYM_NOT_WIRELESS);
  }
  
@@ -52,7 +52,7 @@ Signed-off-by: Lech Perczak <lech.perczak@gmail.com>
  void rndis_unbind(struct usbnet *dev, struct usb_interface *intf)
  {
  	struct rndis_halt	*halt;
-@@ -615,7 +622,7 @@ static const struct driver_info	zte_rndi
+@@ -616,7 +623,7 @@ static const struct driver_info	zte_rndi
  	.description =	"ZTE RNDIS device",
  	.flags =	FLAG_ETHER | FLAG_POINTTOPOINT | FLAG_FRAMING_RN | FLAG_NO_SETINT,
  	.data =		RNDIS_DRIVER_DATA_DST_MAC_FIXUP,

@@ -419,7 +419,7 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
  struct thermal_cooling_device;
  
  /**
-@@ -288,6 +289,11 @@ struct devfreq_simple_ondemand_data {
+@@ -289,6 +290,11 @@ struct devfreq_simple_ondemand_data {
  #endif
  
  #if IS_ENABLED(CONFIG_DEVFREQ_GOV_PASSIVE)
@@ -431,7 +431,7 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
  /**
   * struct devfreq_passive_data - ``void *data`` fed to struct devfreq
   *	and devfreq_add_device
-@@ -299,8 +305,11 @@ struct devfreq_simple_ondemand_data {
+@@ -300,8 +306,11 @@ struct devfreq_simple_ondemand_data {
   *			using governors except for passive governor.
   *			If the devfreq device has the specific method to decide
   *			the next frequency, should use this callback.
@@ -445,7 +445,7 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
   *
   * The devfreq_passive_data have to set the devfreq instance of parent
   * device with governors except for the passive governor. But, don't need to
-@@ -314,9 +323,13 @@ struct devfreq_passive_data {
+@@ -315,9 +324,13 @@ struct devfreq_passive_data {
  	/* Optional callback to decide the next frequency of passvice device */
  	int (*get_target_freq)(struct devfreq *this, unsigned long *freq);
  

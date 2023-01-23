@@ -244,7 +244,7 @@ static int rttm_cpu_starting(unsigned int cpu)
 
 	RTTM_DEBUG(to->of_base.base);
 	to->clkevt.cpumask = cpumask_of(cpu);
-	irq_set_affinity(to->of_irq.irq, to->clkevt.cpumask);
+	irq_force_affinity(to->of_irq.irq, to->clkevt.cpumask);
 	clockevents_config_and_register(&to->clkevt, RTTM_TICKS_PER_SEC,
 					RTTM_MIN_DELTA, RTTM_MAX_DELTA);
 	rttm_enable_irq(to->of_base.base);

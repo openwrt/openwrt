@@ -10,6 +10,15 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
+	arcadyan,we420223-99)
+		if [ "$PHYNBR" = "0" ]; then
+			mac24=$(macaddr_add "$(get_mac_label)" "0xf00001")
+			echo -n "$mac24" > /sys${DEVPATH}/macaddress
+		elif [ "$PHYNBR" = "1" ]; then
+			mac5=$(macaddr_add "$(get_mac_label)" 1)
+			echo -n "$mac5" > /sys${DEVPATH}/macaddress
+		fi
+		;;
 	beeline,smartbox-flash)
 		hw_mac_addr=$(macaddr_add $(mtd_get_mac_encrypted_arcadyan "board_data") 1)
 		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
@@ -130,6 +139,11 @@ case "$board" in
 	tplink,eap615-wall-v1)
 		hw_mac_addr="$(mtd_get_mac_binary product-info 0x8)"
 		macaddr_add "$hw_mac_addr" "$PHYNBR" > "/sys${DEVPATH}/macaddress"
+		;;
+	tplink,ec330-g5u-v1)
+		hw_mac_addr="$(mtd_get_mac_text factory 0x165)"
+		[ "$PHYNBR" = "0" ] && echo -n $hw_mac_addr > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
 	yuncore,ax820)
 		[ "$PHYNBR" = "1" ] && \

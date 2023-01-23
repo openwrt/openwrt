@@ -21,6 +21,9 @@ engenius,esr600h|\
 sitecom,wlr-4100-v1-002)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x1000"
 	;;
+arcadyan,we420223-99)
+	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x1000" "0x1000"
+	;;
 allnet,all0256n-4m|\
 allnet,all0256n-8m|\
 allnet,all5002|\
@@ -84,6 +87,11 @@ snr,cpe-w4n-mt)
 	idx="$(find_mtd_index uboot-env)"
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x1000"
+	;;
+tplink,ec330-g5u-v1)
+	idx="$(find_mtd_index u-boot-env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x20000"
 	;;
 xiaomi,mi-router-3g-v2|\
 xiaomi,mi-router-4a-gigabit|\

@@ -1,0 +1,122 @@
+From 180ce25d5c3ccff206f084b7ab350778641d1b1c Mon Sep 17 00:00:00 2001
+From: Prasad Malisetty <pmaliset@codeaurora.org>
+Date: Thu, 7 Oct 2021 23:18:42 +0530
+Subject: [PATCH] PCI: qcom: Replace ops with struct pcie_cfg in pcie match
+ data
+
+Add struct qcom_pcie_cfg as match data for all platforms.  Assign
+appropriate platform ops into struct qcom_pcie_cfg and read using
+of_device_get_match_data() in qcom_pcie_probe().
+
+Link: https://lore.kernel.org/r/1633628923-25047-5-git-send-email-pmaliset@codeaurora.org
+Signed-off-by: Prasad Malisetty <pmaliset@codeaurora.org>
+Signed-off-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Reviewed-by: Stephen Boyd <swboyd@chromium.org>
+---
+ drivers/pci/controller/dwc/pcie-qcom.c | 66 +++++++++++++++++++++-----
+ 1 file changed, 55 insertions(+), 11 deletions(-)
+
+--- a/drivers/pci/controller/dwc/pcie-qcom.c
++++ b/drivers/pci/controller/dwc/pcie-qcom.c
+@@ -202,6 +202,10 @@ struct qcom_pcie_ops {
+ 	int (*config_sid)(struct qcom_pcie *pcie);
+ };
+ 
++struct qcom_pcie_cfg {
++	const struct qcom_pcie_ops *ops;
++};
++
+ struct qcom_pcie {
+ 	struct dw_pcie *pci;
+ 	void __iomem *parf;			/* DT parf */
+@@ -1469,6 +1473,38 @@ static const struct qcom_pcie_ops ops_1_
+ 	.config_sid = qcom_pcie_config_sid_sm8250,
+ };
+ 
++static const struct qcom_pcie_cfg apq8084_cfg = {
++	.ops = &ops_1_0_0,
++};
++
++static const struct qcom_pcie_cfg ipq8064_cfg = {
++	.ops = &ops_2_1_0,
++};
++
++static const struct qcom_pcie_cfg msm8996_cfg = {
++	.ops = &ops_2_3_2,
++};
++
++static const struct qcom_pcie_cfg ipq8074_cfg = {
++	.ops = &ops_2_3_3,
++};
++
++static const struct qcom_pcie_cfg ipq4019_cfg = {
++	.ops = &ops_2_4_0,
++};
++
++static const struct qcom_pcie_cfg sdm845_cfg = {
++	.ops = &ops_2_7_0,
++};
++
++static const struct qcom_pcie_cfg sm8250_cfg = {
++	.ops = &ops_1_9_0,
++};
++
++static const struct qcom_pcie_cfg sc7280_cfg = {
++	.ops = &ops_1_9_0,
++};
++
+ static const struct dw_pcie_ops dw_pcie_ops = {
+ 	.link_up = qcom_pcie_link_up,
+ 	.start_link = qcom_pcie_start_link,
+@@ -1480,6 +1516,7 @@ static int qcom_pcie_probe(struct platfo
+ 	struct pcie_port *pp;
+ 	struct dw_pcie *pci;
+ 	struct qcom_pcie *pcie;
++	const struct qcom_pcie_cfg *pcie_cfg;
+ 	int ret;
+ 
+ 	pcie = devm_kzalloc(dev, sizeof(*pcie), GFP_KERNEL);
+@@ -1501,7 +1538,13 @@ static int qcom_pcie_probe(struct platfo
+ 
+ 	pcie->pci = pci;
+ 
+-	pcie->ops = of_device_get_match_data(dev);
++	pcie_cfg = of_device_get_match_data(dev);
++	if (!pcie_cfg || !pcie_cfg->ops) {
++		dev_err(dev, "Invalid platform data\n");
++		return -EINVAL;
++	}
++
++	pcie->ops = pcie_cfg->ops;
+ 
+ 	pcie->reset = devm_gpiod_get_optional(dev, "perst", GPIOD_OUT_HIGH);
+ 	if (IS_ERR(pcie->reset)) {
+@@ -1557,16 +1600,17 @@ err_pm_runtime_put:
+ }
+ 
+ static const struct of_device_id qcom_pcie_match[] = {
+-	{ .compatible = "qcom,pcie-apq8084", .data = &ops_1_0_0 },
+-	{ .compatible = "qcom,pcie-ipq8064", .data = &ops_2_1_0 },
+-	{ .compatible = "qcom,pcie-ipq8064-v2", .data = &ops_2_1_0 },
+-	{ .compatible = "qcom,pcie-apq8064", .data = &ops_2_1_0 },
+-	{ .compatible = "qcom,pcie-msm8996", .data = &ops_2_3_2 },
+-	{ .compatible = "qcom,pcie-ipq8074", .data = &ops_2_3_3 },
+-	{ .compatible = "qcom,pcie-ipq4019", .data = &ops_2_4_0 },
+-	{ .compatible = "qcom,pcie-qcs404", .data = &ops_2_4_0 },
+-	{ .compatible = "qcom,pcie-sdm845", .data = &ops_2_7_0 },
+-	{ .compatible = "qcom,pcie-sm8250", .data = &ops_1_9_0 },
++	{ .compatible = "qcom,pcie-apq8084", .data = &apq8084_cfg },
++	{ .compatible = "qcom,pcie-ipq8064", .data = &ipq8064_cfg },
++	{ .compatible = "qcom,pcie-ipq8064-v2", .data = &ipq8064_cfg },
++	{ .compatible = "qcom,pcie-apq8064", .data = &ipq8064_cfg },
++	{ .compatible = "qcom,pcie-msm8996", .data = &msm8996_cfg },
++	{ .compatible = "qcom,pcie-ipq8074", .data = &ipq8074_cfg },
++	{ .compatible = "qcom,pcie-ipq4019", .data = &ipq4019_cfg },
++	{ .compatible = "qcom,pcie-qcs404", .data = &ipq4019_cfg },
++	{ .compatible = "qcom,pcie-sdm845", .data = &sdm845_cfg },
++	{ .compatible = "qcom,pcie-sm8250", .data = &sm8250_cfg },
++	{ .compatible = "qcom,pcie-sc7280", .data = &sc7280_cfg },
+ 	{ }
+ };
+ 

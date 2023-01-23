@@ -1,0 +1,37 @@
+From 8f63346a74c8b3e37ffab2c7a2ddb3c08793dcc2 Mon Sep 17 00:00:00 2001
+From: Johan Hovold <johan+linaro@kernel.org>
+Date: Thu, 15 Sep 2022 16:34:30 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq8074: fix PCIe PHY serdes size
+
+The size of the PCIe PHY serdes register region is 0x1c4 and the
+corresponding 'reg' property should specifically not include the
+adjacent regions that are defined in the child node (e.g. tx and rx).
+
+Fixes: 33057e1672fe ("ARM: dts: ipq8074: Add pcie nodes")
+Signed-off-by: Johan Hovold <johan+linaro@kernel.org>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20220915143431.19842-1-johan+linaro@kernel.org
+---
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -199,7 +199,7 @@
+ 
+ 		pcie_qmp0: phy@86000 {
+ 			compatible = "qcom,ipq8074-qmp-pcie-phy";
+-			reg = <0x00086000 0x1000>;
++			reg = <0x00086000 0x1c4>;
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
+ 			ranges;
+@@ -227,7 +227,7 @@
+ 
+ 		pcie_qmp1: phy@8e000 {
+ 			compatible = "qcom,ipq8074-qmp-pcie-phy";
+-			reg = <0x0008e000 0x1000>;
++			reg = <0x0008e000 0x1c4>;
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
+ 			ranges;

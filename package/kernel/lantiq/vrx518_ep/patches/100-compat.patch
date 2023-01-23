@@ -1,0 +1,73 @@
+--- a/ep.c
++++ b/ep.c
+@@ -373,23 +373,23 @@ int dc_ep_dev_info_req(int dev_idx, enum
+ 
+ 	switch (module) {
+ 	case DC_EP_INT_PPE:
+-		dev->irq = priv->irq_base;
++		dev->irq = pci_irq_vector(priv->pdev, 0);
+ 		if (priv->msi_mode == DC_EP_8_MSI_MODE) {
+-			dev->aca_tx_irq = priv->irq_base + 7;
+-			dev->aca_rx_irq = priv->irq_base + 6;
++			dev->aca_tx_irq = pci_irq_vector(priv->pdev, 7);
++			dev->aca_rx_irq = pci_irq_vector(priv->pdev, 6);
+ 		} else if (priv->msi_mode == DC_EP_4_MSI_MODE) {
+-			dev->aca_tx_irq = priv->irq_base + 2;
+-			dev->aca_rx_irq = priv->irq_base + 3;
++			dev->aca_tx_irq = pci_irq_vector(priv->pdev, 2);
++			dev->aca_rx_irq = pci_irq_vector(priv->pdev, 3);
+ 		} else {
+ 			dev_err(dev->dev, "%s ACA should never occur\n",
+ 				__func__);
+ 		}
+ 		break;
+ 	case DC_EP_INT_MEI:
+-		dev->irq = priv->irq_base + 1;
++		dev->irq = pci_irq_vector(priv->pdev, 1);
+ 		break;
+ 	default:
+-		dev->irq = priv->irq_base;
++		dev->irq = pci_irq_vector(priv->pdev, 0);
+ 		break;
+ 	}
+ 
+@@ -466,8 +466,8 @@ static int dc_ep_msi_enable(struct pci_d
+ 		return -EIO;
+ 	}
+ 
+-	err = pci_enable_msi_exact(pdev, nvec);
+-	if (err) {
++	err = pci_alloc_irq_vectors(pdev, nvec, nvec, PCI_IRQ_MSI | PCI_IRQ_LEGACY);
++	if (err < 0) {
+ 		dev_err(&pdev->dev,
+ 			"%s: Failed to enable MSI interrupts error code: %d\n",
+ 			__func__, err);
+@@ -654,7 +654,7 @@ static int dc_ep_probe(struct pci_dev *p
+ 		goto err_iomap;
+ 
+ 	spin_lock(&dc_ep_lock);
+-	priv->irq_base = pdev->irq;
++	priv->irq_base = pci_irq_vector(pdev, 0);
+ 	spin_unlock(&dc_ep_lock);
+ 
+ #ifndef CONFIG_OF
+@@ -715,7 +715,7 @@ static void dc_ep_remove(struct pci_dev
+ 	dc_ep_icu_disable(priv);
+ 	pci_iounmap(pdev, priv->mem);
+ 	pci_release_region(pdev, DC_EP_BAR_NUM);
+-	pci_disable_msi(pdev);
++	pci_free_irq_vectors(pdev);
+ 	wmb();
+ 	pci_clear_master(pdev);
+ 	pci_disable_device(pdev);
+--- a/aca.c
++++ b/aca.c
+@@ -756,7 +756,7 @@ static void aca_hif_param_init_done(stru
+ 	addr = fw_param->init_addr;
+ 	dev_dbg(priv->dev, "init_addr: %x\n", addr);
+ 	memcpy_toio(priv->mem + addr, hif_params, sizeof(*hif_params));
+-	kzfree(hif_params);
++	kfree(hif_params);
+ 	dev_dbg(priv->dev, "%s\n", __func__);
+ }
+ 

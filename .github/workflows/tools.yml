@@ -15,6 +15,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build-macos-latest:
     name: Build tools with macos latest
@@ -37,32 +41,15 @@ jobs:
         working-directory: ${{ env.WORKPATH }}/openwrt
         run: |
           brew install \
-            autoconf \
             automake \
             coreutils \
             diffutils \
             findutils \
             gawk \
-            gettext \
             git-extras \
-            gmp \
-            gnu-getopt \
             gnu-sed \
-            gnu-tar \
             grep \
-            libidn2 \
-            libunistring \
-            m4 \
-            make \
-            mpfr \
-            ncurses \
-            openssl@1.1 \
-            pcre \
-            pkg-config \
-            quilt \
-            readline \
-            wget \
-            zstd
+            make
 
             echo "/bin" >> "$GITHUB_PATH"
             echo "/sbin/Library/Apple/usr/bin" >> "$GITHUB_PATH"

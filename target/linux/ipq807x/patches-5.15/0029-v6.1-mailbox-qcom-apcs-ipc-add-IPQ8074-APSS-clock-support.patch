@@ -1,0 +1,30 @@
+From 28e239ecd69a99748181bfdf5d2238ff1a8d0646 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Fri, 19 Aug 2022 00:08:48 +0200
+Subject: [PATCH] mailbox: qcom-apcs-ipc: add IPQ8074 APSS clock support
+
+IPQ8074 has the APSS clock controller utilizing the same register space as
+the APCS, so provide access to the APSS utilizing a child device like
+IPQ6018.
+
+IPQ6018 and IPQ8074 use the same controller and driver, so just utilize
+IPQ6018 match data for IPQ8074.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Signed-off-by: Jassi Brar <jaswinder.singh@linaro.org>
+---
+ drivers/mailbox/qcom-apcs-ipc-mailbox.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mailbox/qcom-apcs-ipc-mailbox.c
++++ b/drivers/mailbox/qcom-apcs-ipc-mailbox.c
+@@ -144,7 +144,7 @@ static int qcom_apcs_ipc_remove(struct p
+ /* .data is the offset of the ipc register within the global block */
+ static const struct of_device_id qcom_apcs_ipc_of_match[] = {
+ 	{ .compatible = "qcom,ipq6018-apcs-apps-global", .data = &ipq6018_apcs_data },
+-	{ .compatible = "qcom,ipq8074-apcs-apps-global", .data = &msm8994_apcs_data },
++	{ .compatible = "qcom,ipq8074-apcs-apps-global", .data = &ipq6018_apcs_data },
+ 	{ .compatible = "qcom,msm8916-apcs-kpss-global", .data = &msm8916_apcs_data },
+ 	{ .compatible = "qcom,msm8939-apcs-kpss-global", .data = &msm8916_apcs_data },
+ 	{ .compatible = "qcom,msm8953-apcs-kpss-global", .data = &msm8994_apcs_data },

@@ -187,6 +187,31 @@ define Device/ampedwireless_ally-00x19k
 endef
 TARGET_DEVICES += ampedwireless_ally-00x19k
 
+define Device/arcadyan_we420223-99
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Arcadyan
+  DEVICE_MODEL := WE420223-99
+  DEVICE_ALT0_VENDOR := KPN
+  DEVICE_ALT0_MODEL := Experia WiFi
+  IMAGE_SIZE := 32128k
+  KERNEL_SIZE := 4352k
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 64k
+  PAGESIZE := 1
+  SUBPAGESIZE := 1
+  VID_HDR_OFFSET := 64
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none | arcadyan-trx 0x746f435d
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none
+  IMAGES += factory.trx
+  IMAGE/factory.trx := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7615-firmware
+endef
+TARGET_DEVICES += arcadyan_we420223-99
+
 define Device/asiarf_ap7621-001
   $(Device/dsa-migration)
   IMAGE_SIZE := 16000k
@@ -297,6 +322,8 @@ define Device/asus_rt-ax53u
   $(Device/dsa-migration)
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AX53U
+  DEVICE_ALT0_VENDOR := ASUS
+  DEVICE_ALT0_MODEL := RT-AX1800U
   IMAGE_SIZE := 51200k
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
@@ -537,6 +564,14 @@ define Device/dlink_dir-xx60-a1
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
 endef
+
+define Device/dlink_dir-1935-a1
+  $(Device/dlink_dir-8xx-a1)
+  DEVICE_MODEL := DIR-1935
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES += kmod-usb3
+endef
+TARGET_DEVICES += dlink_dir-1935-a1
 
 define Device/dlink_dir-1960-a1
   $(Device/dlink_dir-xx60-a1)
@@ -788,6 +823,20 @@ define Device/elecom_wrc-1900gst
   ELECOM_HWNAME := WRC-1900GST
 endef
 TARGET_DEVICES += elecom_wrc-1900gst
+
+define Device/elecom_wrc-2533ghbk2-t
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-2533GHBK2-T
+  IMAGE_SIZE := 7808k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
+	elx-header 0107003b 8844A2D168B45A2D | \
+	elecom-product-header WRC-2533GHBK2-T
+  DEVICE_PACKAGES := kmod-mt7615-firmware
+endef
+TARGET_DEVICES += elecom_wrc-2533ghbk2-t
 
 define Device/elecom_wrc-2533ghbk-i
   $(Device/dsa-migration)
@@ -2000,6 +2049,31 @@ define Device/tplink_eap615-wall-v1
   IMAGE_SIZE := 13248k
 endef
 TARGET_DEVICES += tplink_eap615-wall-v1
+
+define Device/tplink_ec330-g5u-v1
+  $(Device/dsa-migration)
+  LOADER := bin
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := EC330-G5u
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := Archer C9ERT
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb-ledtrig-usbport \
+	kmod-usb3 uboot-envtools
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage-tplink-c9 standalone '$(call toupper,$(LINUX_KARCH)) \
+		$(VERSION_DIST) Linux-$(LINUX_VERSION)' | \
+	uImage-tplink-c9 firmware 'OS IMAGE ($(VERSION_DIST))'
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+endef
+TARGET_DEVICES += tplink_ec330-g5u-v1
 
 define Device/tplink_er605-v2
   $(Device/dsa-migration)

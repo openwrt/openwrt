@@ -34,16 +34,19 @@ ipq40xx_setup_interfaces()
 	edgecore,ecw5211|\
 	glinet,gl-b2200|\
 	google,wifi|\
+	linksys,whw03v2|\
 	luma,wrtq-329acn|\
 	mikrotik,cap-ac|\
 	netgear,wac510|\
 	sony,ncp-hg100-cellular|\
+	zte,mf18a|\
 	zte,mf289f)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	aruba,ap-303|\
 	avm,fritzrepeater-1200|\
 	dlink,dap-2610|\
+	extreme-networks,ws-ap3915i|\
 	meraki,mr33|\
 	meraki,mr74|\
 	mikrotik,lhgg-60ad|\
@@ -96,6 +99,26 @@ ipq40xx_setup_interfaces()
 	esac
 }
 
+ipq40xx_setup_dsl()
+{
+	local board="$1"
+	local annex="j"
+	local tone="b"
+	local xfer_mode=""
+
+	case "$board" in
+	avm,fritzbox-7530)
+		;;
+	*)
+		return 0
+		;;
+	esac
+
+	ucidef_add_atm_bridge "1" "32" "llc" "bridged" "dsl"
+	ucidef_add_vdsl_modem "$annex" "$tone" "$xfer_mode"
+	ucidef_set_interface_wan "dsl0" "pppoe"
+}
+
 ipq40xx_setup_macs()
 {
 	local board="$1"
@@ -114,6 +137,10 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
 		lan_mac=$(mtd_get_mac_binary_ubi Factory 0x5006)
 		label_mac=$wan_mac
+		;;
+	avm,fritzbox-7530)
+		local tffsdev=$(find_mtd_chardev "nand-tffs")
+		wan_mac=$(/usr/bin/fritz_tffs_nand -b -d $tffsdev -n macdsl)
 		;;
 	cilab,meshpoint-one)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
@@ -183,6 +210,7 @@ ipq40xx_setup_macs()
 board_config_update
 board=$(board_name)
 ipq40xx_setup_interfaces $board
+ipq40xx_setup_dsl $board
 ipq40xx_setup_macs $board
 board_config_flush
 

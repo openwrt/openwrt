@@ -56,7 +56,7 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
  
  	if (freq < min_freq) {
  		freq = min_freq;
-@@ -785,6 +786,7 @@ struct devfreq *devfreq_add_device(struc
+@@ -784,6 +785,7 @@ struct devfreq *devfreq_add_device(struc
  {
  	struct devfreq *devfreq;
  	struct devfreq_governor *governor;
@@ -64,7 +64,7 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
  	int err = 0;
  
  	if (!dev || !profile || !governor_name) {
-@@ -849,6 +851,8 @@ struct devfreq *devfreq_add_device(struc
+@@ -848,6 +850,8 @@ struct devfreq *devfreq_add_device(struc
  		goto err_dev;
  	}
  
@@ -73,7 +73,7 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
  	devfreq->suspend_freq = dev_pm_opp_get_suspend_opp_freq(dev);
  	devfreq->opp_table = dev_pm_opp_get_opp_table(dev);
  	if (IS_ERR(devfreq->opp_table))
-@@ -1561,7 +1565,7 @@ static ssize_t min_freq_show(struct devi
+@@ -1559,7 +1563,7 @@ static ssize_t min_freq_show(struct devi
  	unsigned long min_freq, max_freq;
  
  	mutex_lock(&df->lock);
@@ -82,7 +82,7 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
  	mutex_unlock(&df->lock);
  
  	return sprintf(buf, "%lu\n", min_freq);
-@@ -1615,7 +1619,7 @@ static ssize_t max_freq_show(struct devi
+@@ -1613,7 +1617,7 @@ static ssize_t max_freq_show(struct devi
  	unsigned long min_freq, max_freq;
  
  	mutex_lock(&df->lock);
@@ -91,7 +91,7 @@ Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
  	mutex_unlock(&df->lock);
  
  	return sprintf(buf, "%lu\n", max_freq);
-@@ -1929,7 +1933,7 @@ static int devfreq_summary_show(struct s
+@@ -1927,7 +1931,7 @@ static int devfreq_summary_show(struct s
  
  		mutex_lock(&devfreq->lock);
  		cur_freq = devfreq->previous_freq;

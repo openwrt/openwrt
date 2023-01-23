@@ -9,6 +9,26 @@ define Device/d-link_dgs-1210-52
 endef
 TARGET_DEVICES += d-link_dgs-1210-52
 
+# When the factory image won't fit anymore, it can be removed.
+# New installation will be performed booting the initramfs image from
+# ram and then flashing the sysupgrade image from OpenWrt
+define Device/netgear_gs750e
+  SOC := rtl8393
+  IMAGE_SIZE := 7552k
+  FACTORY_SIZE := 6528k
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := GS750E
+  UIMAGE_MAGIC := 0x174e4741
+  IMAGES += factory.bix
+  IMAGE/factory.bix := \
+    append-kernel | \
+    pad-to 64k | \
+    append-rootfs | \
+    pad-rootfs | \
+    check-size $$$$(FACTORY_SIZE)
+endef
+TARGET_DEVICES += netgear_gs750e
+
 define Device/panasonic_m48eg-pn28480k
   SOC := rtl8393
   IMAGE_SIZE := 16384k
