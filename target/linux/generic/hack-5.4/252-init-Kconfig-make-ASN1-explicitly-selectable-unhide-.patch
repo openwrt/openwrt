@@ -1,0 +1,30 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Mon, 23 Jan 2023 12:24:12 +0100
+Subject: [PATCH] init/Kconfig: make ASN1 explicitly selectable (unhide it)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Kernel developers assumed ASN1 symbol may be needed only by in-kernel
+code and they made it hidden. It is actually used by ksmbd version being
+developed in GitHub (there is also upstream one since Linux 5.15).
+
+To allow building ksmbd from GitHub cleanly allow selecting its
+dependency (CONFIG_ASN1) explicitly by unhiding it.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ init/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -2249,7 +2249,7 @@ config PADATA
+ 	bool
+ 
+ config ASN1
+-	tristate
++	tristate "ASN.1 grammar compiler"
+ 	help
+ 	  Build a simple ASN.1 grammar compiler that produces a bytecode output
+ 	  that can be interpreted by the ASN.1 stream decoder and used to
