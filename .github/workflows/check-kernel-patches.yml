@@ -8,6 +8,9 @@ on:
         type: string
       testing:
         type: boolean
+      use_openwrt_container:
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -26,6 +29,11 @@ jobs:
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" \
             | tr '[:upper:]' '[:lower:]')
+
+          if [ ${{ inputs.use_openwrt_container }} == "true" ]; then
+            OWNER_LC=openwrt
+          fi
+
           echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
 
       # Per branch tools container tag

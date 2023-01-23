@@ -18,6 +18,7 @@ concurrency:
 jobs:
   build-linux-buildbot:
     name: Build tools with buildbot container
+    if: ${{ github.repository_owner  == 'openwrt' }}
     uses: ./.github/workflows/build-tools.yml
     with:
       generate_prebuilt_artifacts: true
@@ -25,6 +26,7 @@ jobs:
   push-tools-container:
     needs: build-linux-buildbot
     name: Push prebuilt tools container
+    if: ${{ github.repository_owner  == 'openwrt' }}
     runs-on: ubuntu-latest
 
     permissions:
