@@ -7,6 +7,7 @@
 #define _MACH_RTL838X_H_
 
 #include <asm/types.h>
+
 /*
  * Register access macros
  */
