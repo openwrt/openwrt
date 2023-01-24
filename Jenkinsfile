@@ -11,7 +11,7 @@ def credentialsId = 'buildbot'
 void buildMFW(String device, String libc, String region, String startClean, String makeOptions, String buildBranch, String toolsDir, String credentialsId) {
   sshagent (credentials:[credentialsId]) {
     sh "docker-compose -f ${toolsDir}/docker-compose.build.yml -p mfw_${device}_${region} pull"
-    sh "docker-compose -f ${toolsDir}/docker-compose.build.yml -p mfw_${device}_${region} run build -d ${device} -l ${libc} -r ${region} -c ${startClean} -m '${makeOptions}' -v ${buildBranch}"
+    sh "docker-compose -f ${toolsDir}/docker-compose.build.yml -p mfw_${device}_${region} run build-local-container -d ${device} -l ${libc} -r ${region} -c ${startClean} -m '${makeOptions}' -v ${buildBranch}"
   }
 }
 
