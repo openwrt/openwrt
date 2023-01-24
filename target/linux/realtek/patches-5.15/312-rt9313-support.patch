@@ -43,23 +43,6 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  ifdef CONFIG_32BIT
  bootvars-y	+= ADDR_BITS=32
  endif
---- a/arch/mips/kernel/head.S
-+++ b/arch/mips/kernel/head.S
-@@ -60,12 +60,14 @@
- 	.endm
- 
- #ifndef CONFIG_NO_EXCEPT_FILL
-+#ifndef CONFIG_RTL931X
- 	/*
- 	 * Reserved space for exception handlers.
- 	 * Necessary for machines which link their kernels at KSEG0.
- 	 */
- 	.fill	0x400
- #endif
-+#endif
- 
- EXPORT(_stext)
- 
 --- a/arch/mips/kernel/vmlinux.lds.S
 +++ b/arch/mips/kernel/vmlinux.lds.S
 @@ -55,7 +55,11 @@ SECTIONS
