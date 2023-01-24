@@ -223,6 +223,10 @@
 			phy-handle = <&phy0>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@1 {
 			reg = <1>;
@@ -230,6 +234,10 @@
 			phy-handle = <&phy1>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@2 {
 			reg = <2>;
@@ -237,6 +245,10 @@
 			phy-handle = <&phy2>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@3 {
 			reg = <3>;
@@ -244,6 +256,10 @@
 			phy-handle = <&phy3>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@4 {
 			reg = <4>;
@@ -251,6 +267,10 @@
 			phy-handle = <&phy4>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@5 {
 			reg = <5>;
@@ -258,6 +278,10 @@
 			phy-handle = <&phy5>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@6 {
 			reg = <6>;
@@ -265,6 +289,10 @@
 			phy-handle = <&phy6>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@7 {
 			reg = <7>;
@@ -272,6 +300,10 @@
 			phy-handle = <&phy7>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 
 		port@24 {
@@ -280,6 +312,12 @@
 			phy-mode = "usxgmii";
 			phy-handle = <&phy24>;
 			led-set = <1>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber/Lime | RGB */
+				RTL93XX_LED_NUM1 | /* Amber      | Red */
+				RTL93XX_LED_NUM2 | /* Lime       | Green */
+				RTL93XX_LED_NUM3   /* off        | Blue */
+			)>;
 		};
 		port@25 {
 			reg = <25>;
@@ -287,6 +325,12 @@
 			phy-mode = "usxgmii";
 			phy-handle = <&phy25>;
 			led-set = <1>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber/Lime | RGB */
+				RTL93XX_LED_NUM1 | /* Amber      | Red */
+				RTL93XX_LED_NUM2 | /* Lime       | Green */
+				RTL93XX_LED_NUM3   /* off        | Blue */
+			)>;
 		};
 		port@26 {
 			reg = <26>;
@@ -294,6 +338,12 @@
 			phy-mode = "usxgmii";
 			phy-handle = <&phy26>;
 			led-set = <1>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber/Lime | RGB */
+				RTL93XX_LED_NUM1 | /* Amber      | Red */
+				RTL93XX_LED_NUM2 | /* Lime       | Green */
+				RTL93XX_LED_NUM3   /* off        | Blue */
+			)>;
 		};
 
 		port@27 {
@@ -303,6 +353,10 @@
 			phy-handle = <&phy27>;
 			sfp = <&sfp0>;
 			led-set = <2>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Blue */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 
 			fixed-link {
 				speed = <10000>;
