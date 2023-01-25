@@ -42,7 +42,7 @@
 		ess_tcsr@1953000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1953000 0x1000>;
-			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII_RGMII4>;
 		};
 
 		tcsr@1957000 {
@@ -310,6 +310,23 @@
 
 &cryptobam {
 	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	/delete-property/ psgmii-ethphy;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+	phy-mode = "rgmii";
 };
 
 &wifi0 {
