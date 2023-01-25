@@ -1,0 +1,75 @@
+# Copyright (c) 2022 Arista Networks, Inc.  All rights reserved.
+# Arista Networks, Inc. Confidential and Proprietary.
+
+images:
+  # we won't reuse mfw/build%build-floor to avoid a circular dependency,
+  # and also because the build deps here are a bit more minimal since
+  # we don't handle anything mfw-related
+  build-floor:
+    units:
+    - image: barney.ci/debian%minbase
+    - image: barney.ci/debian%network
+    finalizers:
+    - - apt
+      - install
+      - -y
+      - build-essential
+      - file
+      - gawk
+      - gettext
+      - git
+      - libncurses-dev
+      - libssl-dev
+      - python3
+      - python3-distutils
+      - rsync
+      - unzip
+      - wget
+      - zlib1g-dev
+    entry:
+      mutables:
+        - /root
+      env:
+        FORCE_UNSAFE_CONFIGURE: 1
+        HOME: /root
+
+  test/build-floor:
+    description: |
+      Check that we can run a couple of utilities
+    units:
+    - floor: .%build-floor
+      build: |
+        make --version
+        python3 --version
+
+  world:
+    units:
+    - floor: .%build-floor
+      build: |
+        set -e
+        # barney sets DESTDIR to /dest, but this really confuses openwrt
+        unset DESTDIR
+        # build
+        cat >> .config <<EOF
+        CONFIG_TARGET_x86=y
+        CONFIG_TARGET_x86_64=y
+        CONFIG_TARGET_x86_64_DEVICE_generic=y
+        CONFIG_TARGET_SUFFIX="musl"
+        CONFIG_LIBC="musl"
+        # CONFIG_USE_LIBSTDCXX is not set
+        CONFIG_USE_MUSL=y
+        CONFIG_LIBC_USE_MUSL=y
+        # CONFIG_VDI_IMAGES is not set
+        # CONFIG_VMDK_IMAGES is not set
+        # CONFIG_ESXI_VMDK_IMAGES is not set
+        EOF
+        make -j $(nproc) defconfig download world
+        # extract FS content into destination image
+        tar -C /dest -xavf bin/targets/x86/64/*-generic-rootfs.tar.gz 
+
+  test/world:
+    units:
+      - floor: .%world
+        build: |
+          set -e
+          date
