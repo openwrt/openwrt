@@ -524,7 +524,7 @@ _procd_send_signal() {
 _procd_status() {
 	local service="$1"
 	local instance="$2"
-	local data
+	local data running
 
 	json_init
 	[ -n "$service" ] && json_add_string name "$service"
@@ -542,6 +542,8 @@ _procd_status() {
 	if [ -z "$(echo "$data" | jsonfilter -e '$['"$instance"']')" ]; then
 		echo "unknown instance $instance"; return 4
 	else
+		running=$(echo "$data" | jsonfilter -e '@[*].running')
+		echo "$running" | grep -q true || { echo "inactive"; return 3; }
 		echo "running"; return 0
 	fi
 }
