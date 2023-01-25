@@ -1299,6 +1299,20 @@ define Device/engenius_epg5000
 endef
 TARGET_DEVICES += engenius_epg5000
 
+define Device/engenius_esr1200
+  SOC := qca9557
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ESR1200
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2
+  IMAGE_SIZE := 14656k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | \
+	senao-header -r 0x101 -p 0x61 -t 2
+  SUPPORTED_DEVICES += esr1200 esr1750 engenius,esr1750
+endef
+TARGET_DEVICES += engenius_esr1200
+
 define Device/engenius_esr1750
   SOC := qca9558
   DEVICE_VENDOR := EnGenius
