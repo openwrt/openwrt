@@ -5,6 +5,8 @@
 
 #include "rtl83xx.h"
 
+#define RTL930X_LED_GLB_CTRL_LED_ACTIVE                         BIT(22)
+
 #define RTL930X_VLAN_PORT_TAG_STS_INTERNAL			0x0
 #define RTL930X_VLAN_PORT_TAG_STS_UNTAG				0x1
 #define RTL930X_VLAN_PORT_TAG_STS_TAGGED			0x2
@@ -20,8 +22,6 @@
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(2,2)
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1,1)
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0,0)
-
-#define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
 
 extern struct mutex smi_lock;
 extern struct rtl83xx_soc_info soc_info;
@@ -2431,13 +2431,11 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	}
 
 	/* Set LED mode to serial (0x1) */
-	sw_w32_mask(0x3, 0x1, RTL930X_LED_GLB_CTRL);
-
-	/* Set LED active state */
-	if (of_property_read_bool(node, "active-low"))
-		sw_w32_mask(RTL930X_LED_GLB_ACTIVE_LOW, 0, RTL930X_LED_GLB_CTRL);
-	else
-		sw_w32_mask(0, RTL930X_LED_GLB_ACTIVE_LOW, RTL930X_LED_GLB_CTRL);
+	sw_w32_mask(RTL930X_LED_GLB_CTRL_LED_ACTIVE |
+	            0x3,
+	            (of_property_read_bool(node, "active-high") ? RTL930X_LED_GLB_CTRL_LED_ACTIVE : 0) |
+	            0x1,
+	            RTL930X_LED_GLB_CTRL);
 
 	/* Set port type masks */
 	sw_w32(pm, RTL930X_LED_PORT_COPR_MASK_CTRL);
