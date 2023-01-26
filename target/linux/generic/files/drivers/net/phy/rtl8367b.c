@@ -266,6 +266,8 @@ struct rtl8367b_initval {
 #define RTL8367B_MIB_RXB_ID		0	/* IfInOctets */
 #define RTL8367B_MIB_TXB_ID		28	/* IfOutOctets */
 
+u32 rtl_device_id;
+
 static struct rtl8366_mib_counter
 rtl8367b_mib_counters[RTL8367B_NUM_MIB_COUNTERS] = {
 	{0,   0, 4, "ifInOctets"			},
@@ -612,8 +614,14 @@ static int rtl8367b_write_initvals(struct rtl8366_smi *smi,
 	int err;
 	int i;
 
+	if (rtl_device_id == 0x0020) {
+		return 0;
+	}
+
 	for (i = 0; i < count; i++)
+	{
 		REG_WR(smi, initvals[i].reg, initvals[i].val);
+	}
 
 	return 0;
 }
@@ -1540,7 +1548,10 @@ static int rtl8367b_detect(struct rtl8366_smi *smi)
 		return ret;
 	}
 
+	rtl_device_id = chip_ver;
+
 	switch (chip_ver) {
+	case 0x0020:
 	case 0x1000:
 		chip_name = "8367RB";
 		break;

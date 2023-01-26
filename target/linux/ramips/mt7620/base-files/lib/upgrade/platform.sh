@@ -30,6 +30,9 @@ platform_do_upgrade() {
 		}
 		default_do_upgrade "$1"
 		;;
+	hiwifi,r33)
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
