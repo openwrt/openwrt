@@ -1,0 +1,47 @@
+From d4b56356d05e73ea5a6f713087da5c9784b93f44 Mon Sep 17 00:00:00 2001
+From: Sasha Andonov <s.andonnov@gmail.com>
+Date: Tue, 24 Jan 2023 08:20:04 -0500
+Subject: [PATCH] mimetypes: add audio/video support for apple airplay
+
+Airplay of a statically hosted video file from one Apple device
+to another fails due to unrecognized content-type.
+
+Let's assume we have url1: http://openwrt.local/luci-static/video.mp4.
+If url1 is passed to a HTML5 browser, it will download the file instead
+of playing it back as it thinks it is a binary (no entry for mp4
+extension atm). Let's also assume we worked this around by wrapping url1
+in HTML5 video tag, inside of an html file which we will put at
+url2: http://openwrt.local/luci-static/video.html. The playback starts
+as the browser now knows it is a video. However, if we now wanted to send
+the video over Airplay to a second device, it's not gonna share the html
+file found at url2, but rather the video file found at url1, and the
+playback on second device will fail as it thinks it is a binary.
+
+Adding Airplay supported extensions/mime types fixes the issue.
+
+Signed-off-by: Sasha Andonov <s.andonnov@gmail.com>
+---
+ mimetypes.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/mimetypes.h b/mimetypes.h
+index 1f5b92f..b01888f 100644
+--- a/mimetypes.h
++++ b/mimetypes.h
+@@ -74,10 +74,13 @@ static const struct mimetype uh_mime_types[] = {
+ 	{ "mp3",     "audio/mpeg" },
+ 	{ "ogg",     "audio/x-vorbis+ogg" },
+ 	{ "wav",     "audio/x-wav" },
++	{ "aac",     "audio/aac" },
+ 
+ 	{ "mpg",     "video/mpeg" },
+ 	{ "mpeg",    "video/mpeg" },
+ 	{ "avi",     "video/x-msvideo" },
++	{ "mov",     "video/quicktime" },
++	{ "mp4",     "video/mp4" },
+ 
+ 	{ "README",  "text/plain" },
+ 	{ "log",     "text/plain" },
+-- 
+2.11.0
+
