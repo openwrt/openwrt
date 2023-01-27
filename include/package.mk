@@ -55,6 +55,11 @@ ifeq ($(call pkg_build_flag,lto,$(if $(CONFIG_USE_LTO),1,0)),1)
   TARGET_CXXFLAGS+= -flto=auto -fno-fat-lto-objects
   TARGET_LDFLAGS+= -flto=auto -fuse-linker-plugin
 endif
+ifdef CONFIG_USE_MOLD
+  ifeq ($(call pkg_build_flag,mold,1),1)
+    TARGET_LINKER:=mold
+  endif
+endif
 
 include $(INCLUDE_DIR)/hardening.mk
 include $(INCLUDE_DIR)/prereq.mk
