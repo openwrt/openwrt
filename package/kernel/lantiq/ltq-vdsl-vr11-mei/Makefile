@@ -25,6 +25,7 @@ PKG_EXTMOD_SUBDIRS:=src
 
 PKG_FIXUP:=autoreconf
 PKG_FLAGS:=nonshared
+PKG_BUILD_FLAGS:=no-mold
 
 include $(INCLUDE_DIR)/package.mk
 

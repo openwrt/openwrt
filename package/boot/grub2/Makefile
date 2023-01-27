@@ -25,7 +25,7 @@ ifneq ($(BUILD_VARIANT),none)
 endif
 
 PKG_FLAGS:=nonshared
-PKG_BUILD_FLAGS:=no-lto
+PKG_BUILD_FLAGS:=no-lto no-mold
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
