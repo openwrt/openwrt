@@ -1123,6 +1123,13 @@ config KERNEL_WEXT_PROC
 config KERNEL_WEXT_SPY
 	def_bool KERNEL_WIRELESS_EXT
 
+config KERNEL_PAGE_POOL
+	def_bool n
+
+config KERNEL_PAGE_POOL_STATS
+	bool "Page pool stats support"
+	depends on KERNEL_PAGE_POOL
+	depends on !LINUX_5_10
 
 #
 # NFS related symbols
