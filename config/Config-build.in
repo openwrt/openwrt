@@ -152,6 +152,13 @@ menu "Global build settings"
 		  garbage collection capabilites.
 		  Packages can choose to opt-out via setting PKG_BUILD_FLAGS:=no-gc-sections
 
+	config USE_LTO
+		bool
+		prompt "Use the link-time optimizer for all packages (EXPERIMENTAL)"
+		help
+		  Adds LTO flags to the CFLAGS and LDFLAGS.
+		  Packages can choose to opt-out via setting PKG_BUILD_FLAGS:=no-lto
+
 	config IPV6
 		def_bool y
 

@@ -56,7 +56,7 @@ ifeq ($(call pkg_build_flag,gc-sections,$(if $(CONFIG_USE_GC_SECTIONS),1,0)),1)
   TARGET_CXXFLAGS+= -ffunction-sections -fdata-sections
   TARGET_LDFLAGS+= -Wl,--gc-sections
 endif
-ifeq ($(call pkg_build_flag,lto,0),1)
+ifeq ($(call pkg_build_flag,lto,$(if $(CONFIG_USE_LTO),1,0)),1)
   TARGET_CFLAGS+= -flto=auto -fno-fat-lto-objects
   TARGET_CXXFLAGS+= -flto=auto -fno-fat-lto-objects
   TARGET_LDFLAGS+= -flto=auto -fuse-linker-plugin
