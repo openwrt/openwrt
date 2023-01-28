@@ -182,7 +182,6 @@ menu "Global build settings"
 			help
 			  This will install binaries stripped using strip from binutils.
 
-
 		config USE_SSTRIP
 			bool "sstrip"
 			depends on !USE_GLIBC
@@ -199,13 +198,12 @@ menu "Global build settings"
 		help
 		  Specifies arguments passed to the strip command when stripping binaries.
 
-	config SSTRIP_ARGS
-		string
-		prompt "Sstrip arguments"
+	config SSTRIP_DISCARD_TRAILING_ZEROES
+		bool "Strip trailing zero bytes"
 		depends on USE_SSTRIP
-		default "-z"
+		default y
 		help
-		  Specifies arguments passed to the sstrip command when stripping binaries.
+		  Use sstrip's -z option to discard trailing zero bytes
 
 	config STRIP_KERNEL_EXPORTS
 		bool "Strip unnecessary exports from the kernel image"
