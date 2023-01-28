@@ -30,7 +30,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -340,6 +340,7 @@ struct napi_struct {
+@@ -347,6 +347,7 @@ struct napi_struct {
  	struct list_head	dev_list;
  	struct hlist_node	napi_hash_node;
  	unsigned int		napi_id;
@@ -38,7 +38,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  enum {
-@@ -350,6 +351,7 @@ enum {
+@@ -357,6 +358,7 @@ enum {
  	NAPI_STATE_HASHED,	/* In NAPI hash (busy polling possible) */
  	NAPI_STATE_NO_BUSY_POLL,/* Do not add in napi_hash, no busy polling */
  	NAPI_STATE_IN_BUSY_POLL,/* sk_busy_loop() owns this NAPI */
@@ -46,7 +46,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  enum {
-@@ -360,6 +362,7 @@ enum {
+@@ -367,6 +369,7 @@ enum {
  	NAPIF_STATE_HASHED	 = BIT(NAPI_STATE_HASHED),
  	NAPIF_STATE_NO_BUSY_POLL = BIT(NAPI_STATE_NO_BUSY_POLL),
  	NAPIF_STATE_IN_BUSY_POLL = BIT(NAPI_STATE_IN_BUSY_POLL),
@@ -54,7 +54,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  enum gro_result {
-@@ -504,20 +507,7 @@ bool napi_hash_del(struct napi_struct *n
+@@ -511,20 +514,7 @@ bool napi_hash_del(struct napi_struct *n
   */
  void napi_disable(struct napi_struct *n);
  
@@ -76,7 +76,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  /**
   *	napi_synchronize - wait until NAPI is not running
-@@ -1783,6 +1773,8 @@ enum netdev_ml_priv_type {
+@@ -1790,6 +1780,8 @@ enum netdev_ml_priv_type {
   *
   *	@wol_enabled:	Wake-on-LAN is enabled
   *
@@ -85,7 +85,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
   *	FIXME: cleanup struct net_device such that network protocol info
   *	moves out.
   */
-@@ -2075,6 +2067,7 @@ struct net_device {
+@@ -2082,6 +2074,7 @@ struct net_device {
  	struct lock_class_key	addr_list_lock_key;
  	bool			proto_down;
  	unsigned		wol_enabled:1;

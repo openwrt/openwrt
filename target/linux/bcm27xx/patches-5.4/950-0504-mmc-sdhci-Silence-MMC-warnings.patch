@@ -13,7 +13,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -39,7 +39,7 @@
+@@ -40,7 +40,7 @@
  	pr_debug("%s: " DRIVER_NAME ": " f, mmc_hostname(host->mmc), ## x)
  
  #define SDHCI_DUMP(f, x...) \
@@ -22,7 +22,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  #define MAX_TUNING_LOOP 40
  
-@@ -2780,7 +2780,7 @@ static void sdhci_timeout_timer(struct t
+@@ -2825,7 +2825,7 @@ static void sdhci_timeout_timer(struct t
  	spin_lock_irqsave(&host->lock, flags);
  
  	if (host->cmd && !sdhci_data_line_cmd(host->cmd)) {
@@ -31,7 +31,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		       mmc_hostname(host->mmc));
  		sdhci_dumpregs(host);
  
-@@ -2802,7 +2802,7 @@ static void sdhci_timeout_data_timer(str
+@@ -2847,7 +2847,7 @@ static void sdhci_timeout_data_timer(str
  
  	if (host->data || host->data_cmd ||
  	    (host->cmd && sdhci_data_line_cmd(host->cmd))) {

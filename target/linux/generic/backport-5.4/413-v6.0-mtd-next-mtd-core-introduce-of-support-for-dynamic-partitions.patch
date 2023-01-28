@@ -103,4 +103,4 @@ Link: https://lore.kernel.org/linux-mtd/20220622010628.30414-4-ansuelsmth@gmail.
 +	mtd_check_of_node(mtd);
  	of_node_get(mtd_get_of_node(mtd));
  	error = device_register(&mtd->dev);
- 	if (error)
+ 	if (error) {
