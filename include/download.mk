@@ -16,6 +16,10 @@ ifdef PKG_SOURCE_VERSION
   PKG_SOURCE ?= $(PKG_SOURCE_SUBDIR).tar.xz
 endif
 
+ifdef CONFIG_ENABLE_GIT_SOURCES
+	PKG_MIRROR_HASH:=
+endif
+
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
 # Export options for download.pl
@@ -194,9 +198,19 @@ define DownloadMethod/svn
 	)
 endef
 
+define DownloadMethod/srcgit
+       echo "Checking out files from the git repository..."; \
+       mkdir -p $(DL_DIR) && \
+       cd $(DL_DIR) && \
+       [ \! -d $(SUBDIR) ] && \
+       (git clone $(OPTS) $(URL) $(SUBDIR) 2> /dev/null || true && \
+			 (cd $(SUBDIR) && git checkout $(VERSION) && \
+			 git submodule update --init --recursive)) || true;
+endef
+
 define DownloadMethod/git
 	$(call wrap_mirror,$(1),$(2), \
-		$(call DownloadMethod/rawgit) \
+		$(if $(CONFIG_ENABLE_GIT_SOURCES),$(call DownloadMethod/srcgit),$(call DownloadMethod/rawgit)) \
 	)
 endef
 
@@ -209,7 +223,7 @@ define DownloadMethod/github_archive
 			--subdir="$(SUBDIR)" \
 			--source="$(FILE)" \
 			--hash="$(MIRROR_HASH)" \
-		|| ( $(call DownloadMethod/rawgit) ); \
+		|| ( $(if $(CONFIG_ENABLE_GIT_SOURCES),$(call DownloadMethod/srcgit),$(call DownloadMethod/rawgit)) ); \
 	)
 endef
 
