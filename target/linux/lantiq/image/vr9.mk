@@ -152,7 +152,8 @@ define Device/avm_fritz7360sl
   $(Device/AVM)
   DEVICE_MODEL := FRITZ!Box 7360 SL
   IMAGE_SIZE := 15744k
-  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls kmod-usb-dwc2
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls \
+	kmod-usb-dwc2 fritz-tffs
   SUPPORTED_DEVICES += FRITZ7360SL
 endef
 TARGET_DEVICES += avm_fritz7360sl
@@ -163,7 +164,8 @@ define Device/avm_fritz7360-v2
   DEVICE_MODEL := FRITZ!Box 7360
   DEVICE_VARIANT := v2
   IMAGE_SIZE := 32128k
-  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls kmod-usb-dwc2
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls \
+	kmod-usb-dwc2 fritz-tffs
 endef
 TARGET_DEVICES += avm_fritz7360-v2
 
@@ -174,7 +176,8 @@ define Device/avm_fritz7362sl
   DEVICE_MODEL := FRITZ!Box 7362 SL
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
-  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls kmod-usb-dwc2 fritz-tffs
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls \
+	kmod-usb-dwc2 fritz-tffs
 endef
 TARGET_DEVICES += avm_fritz7362sl
 
@@ -186,7 +189,8 @@ define Device/avm_fritz7412
   BOARD_NAME := FRITZ7412
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
-  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls fritz-tffs-nand fritz-caldata
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls \
+	fritz-tffs-nand fritz-caldata
 endef
 TARGET_DEVICES += avm_fritz7412
 
@@ -197,8 +201,8 @@ define Device/avm_fritz7430
   DEVICE_MODEL := FRITZ!Box 7430
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 49152k
-  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader kmod-usb-dwc2 wpad-basic-mbedtls \
-	fritz-tffs-nand fritz-caldata
+  DEVICE_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls \
+	kmod-usb-dwc2 fritz-tffs-nand fritz-caldata
 endef
 TARGET_DEVICES += avm_fritz7430
 
