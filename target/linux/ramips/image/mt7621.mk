@@ -338,6 +338,31 @@ define Device/asus_rt-ax53u
 endef
 TARGET_DEVICES += asus_rt-ax53u
 
+define Device/asus_rt-ax54
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-AX54
+  DEVICE_ALT0_VENDOR := ASUS
+  DEVICE_ALT0_MODEL := RT-AX54
+  DEVICE_ALT1_VENDOR := ASUS
+  DEVICE_ALT1_MODEL := RT-AX54HP
+  DEVICE_ALT2_VENDOR := ASUS
+  DEVICE_ALT2_MODEL := RT-AX1800HP
+  DEVICE_ALT3_VENDOR := ASUS
+  DEVICE_ALT3_MODEL := RT-AX1800S
+  IMAGE_SIZE := 51200k
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 4096k
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_PACKAGES := kmod-mt7915-firmware uboot-envtools 
+endef
+TARGET_DEVICES += asus_rt-ax54
+
 define Device/beeline_smartbox-flash
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
