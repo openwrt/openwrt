@@ -2014,6 +2014,18 @@ define Device/tplink_archer-c6u-v1
 endef
 TARGET_DEVICES += tplink_archer-c6u-v1
 
+define Device/tplink_deco-m4r-v4
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := Deco M4R
+  DEVICE_VARIANT := v4
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  TPLINK_BOARD_ID := DECO-M4R-V4
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_deco-m4r-v4
+
 define Device/tplink_eap235-wall-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
