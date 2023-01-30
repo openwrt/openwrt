@@ -1304,7 +1304,7 @@ define Device/keenetic_kn-3010
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
-	check-size | zyimage -d 8400912 -v "KN-3010"
+	check-size | zyimage -d 0x803010 -v "KN-3010"
 endef
 TARGET_DEVICES += keenetic_kn-3010
 
@@ -2426,6 +2426,17 @@ define Device/xiaomi_mi-router-4a-gigabit
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += xiaomi_mi-router-4a-gigabit
+
+define Device/xiaomi_mi-router-4a-gigabit-v2
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 14784k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 4A
+  DEVICE_VARIANT := Gigabit Edition v2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += xiaomi_mi-router-4a-gigabit-v2
 
 define Device/xiaomi_mi-router-ac2100
   $(Device/xiaomi_nand_separate)

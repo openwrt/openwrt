@@ -29,6 +29,9 @@
 	/* default for ar934x, except for 1000M */
 	pll-data = <0x06000000 0x00000101 0x00001616>;
 
+	nvmem-cells = <&macaddr_lan>;
+	nvmem-cell-names = "mac-address-ascii";
+
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
 };
@@ -55,7 +58,13 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
+		/* "mac-address-ascii" currently does not work for
+		   ath9k pci devices. these below are retained for future
+		   improvements. */
+		/* nvmem-cells = <&macaddr_wan>, <&cal_art_5000>;
+		   nvmem-cell-names = "mac-address-ascii", "calibration";
+		   mac-address-increment = <1>; */
+		qca,no-eeprom; /* remove this when "mac-address-ascii" works  */
 		gpio-controller;
 		#gpio-cells = <2>;
 	};
@@ -102,16 +111,40 @@
 				read-only;
 			};
 
-			partition@fe0000 {
+			mac: partition@fe0000 {
 				label = "mac";
 				reg = <0xfe0000 0x010000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_lan: macaddr@4 {
+					reg = <0x4 0x11>;
+				};
+
+				macaddr_wan: macaddr@18 {
+					reg = <0x18 0x11>;
+				};
 			};
 
-			partition@ff0000 {
+			art: partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_art_1000: cal@1000 {
+					reg = <0x1000 0x440>;
+				};
+
+				cal_art_5000: cal@5000 {
+					reg = <0x5000 0x440>;
+				};
 			};
 		};
 	};
@@ -127,5 +160,6 @@
 
 &wmac {
 	status = "okay";
-	qca,no-eeprom;
+	nvmem-cells = <&macaddr_lan>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address-ascii", "calibration";
 };

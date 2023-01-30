@@ -136,6 +136,7 @@ ath79_setup_interfaces()
 	devolo,dvl1750e|\
 	engenius,enstationac-v1|\
 	engenius,ews511ap|\
+	engenius,ews660ap|\
 	ocedo,ursus|\
 	ruckus,zf7372|\
 	ubnt,unifi-ap-outdoor-plus)
@@ -638,7 +639,6 @@ ath79_setup_macs()
 		;;
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
-		lan_mac=$(mtd_get_mac_text "mac" 0x4)
 		wan_mac=$(mtd_get_mac_text "mac" 0x18)
 		;;
 	dlink,dir-842-c1|\

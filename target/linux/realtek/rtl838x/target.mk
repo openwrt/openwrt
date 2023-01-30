@@ -5,8 +5,6 @@ CPU_TYPE:=4kec
 BOARD:=realtek
 BOARDNAME:=Realtek MIPS RTL838X
 
-KERNEL_PATCHVER:=5.10
-
 define Target/Description
 	Build firmware images for Realtek RTL838x based boards.
 endef

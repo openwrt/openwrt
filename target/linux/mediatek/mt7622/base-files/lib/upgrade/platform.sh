@@ -74,6 +74,7 @@ platform_check_image() {
 	totolink,a8000ru|\
 	xiaomi,redmi-router-ax6s)
 		nand_do_platform_check "$board" "$1"
+		return $?
 		;;
 	*)
 		[ "$magic" != "d00dfeed" ] && {

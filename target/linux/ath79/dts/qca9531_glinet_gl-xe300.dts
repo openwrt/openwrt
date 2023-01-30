@@ -9,6 +9,10 @@
 	compatible = "glinet,gl-xe300", "qca,qca9531";
 	model = "GL.iNet GL-XE300";
 
+	aliases {
+		label-mac-device = &eth0;
+	};
+
 	gpio-export {
 		compatible = "gpio-export";
 
