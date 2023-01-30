@@ -1299,6 +1299,20 @@ define Device/engenius_epg5000
 endef
 TARGET_DEVICES += engenius_epg5000
 
+define Device/engenius_esr900
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ESR900
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 14656k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | \
+	senao-header -r 0x101 -p 0x4e -t 2
+  SUPPORTED_DEVICES += esr900
+endef
+TARGET_DEVICES += engenius_esr900
+
 define Device/engenius_ews511ap
   SOC := qca9531
   DEVICE_VENDOR := EnGenius

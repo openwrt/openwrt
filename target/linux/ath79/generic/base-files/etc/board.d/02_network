@@ -287,6 +287,7 @@ ath79_setup_interfaces()
 	dlink,dir-842-c3|\
 	dlink,dir-859-a1|\
 	engenius,epg5000|\
+	engenius,esr900|\
 	sitecom,wlr-7100|\
 	tplink,archer-c2-v3|\
 	tplink,tl-wr1043nd-v4|\
@@ -665,7 +666,8 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		label_mac=$lan_mac
 		;;
-	engenius,epg5000)
+	engenius,epg5000|\
+	engenius,esr900)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;

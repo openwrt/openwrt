@@ -35,6 +35,9 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii bdcfg "wlanmac" > /sys${DEVPATH}/macaddress
 		;;
+	engenius,esr900)
+		macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" "$PHYNBR" > /sys${DEVPATH}/macaddress
+		;;
 	fortinet,fap-221-b)
 		macaddr_add "$(mtd_get_mac_text u-boot 0x3ff80 12)" $((PHYNBR*7+1)) > /sys${DEVPATH}/macaddress
 		;;
