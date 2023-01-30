@@ -1,0 +1,153 @@
+From e545f86573937142b8a90bd65d476b9f001088cf Mon Sep 17 00:00:00 2001
+From: Tobias Waldekranz <tobias@waldekranz.com>
+Date: Tue, 10 Nov 2020 19:57:20 +0100
+Subject: [PATCH] net: dsa: mv88e6xxx: Add helper to get a chip's max_vid
+
+Most of the other chip info constants have helpers to get at them; add
+one for max_vid to keep things consistent.
+
+Suggested-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Tobias Waldekranz <tobias@waldekranz.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://lore.kernel.org/r/20201110185720.18228-1-tobias@waldekranz.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/mv88e6xxx/chip.c    | 18 +++++++++---------
+ drivers/net/dsa/mv88e6xxx/chip.h    |  5 +++++
+ drivers/net/dsa/mv88e6xxx/devlink.c |  8 ++++----
+ 3 files changed, 18 insertions(+), 13 deletions(-)
+
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -1455,7 +1455,7 @@ static void mv88e6xxx_port_fast_age(stru
+ 
+ static int mv88e6xxx_vtu_setup(struct mv88e6xxx_chip *chip)
+ {
+-	if (!chip->info->max_vid)
++	if (!mv88e6xxx_max_vid(chip))
+ 		return 0;
+ 
+ 	return mv88e6xxx_g1_vtu_flush(chip);
+@@ -1497,7 +1497,7 @@ int mv88e6xxx_fid_map(struct mv88e6xxx_c
+ 	}
+ 
+ 	/* Set every FID bit used by the VLAN entries */
+-	vlan.vid = chip->info->max_vid;
++	vlan.vid = mv88e6xxx_max_vid(chip);
+ 	vlan.valid = false;
+ 
+ 	do {
+@@ -1509,7 +1509,7 @@ int mv88e6xxx_fid_map(struct mv88e6xxx_c
+ 			break;
+ 
+ 		set_bit(vlan.fid, fid_bitmap);
+-	} while (vlan.vid < chip->info->max_vid);
++	} while (vlan.vid < mv88e6xxx_max_vid(chip));
+ 
+ 	return 0;
+ }
+@@ -1600,7 +1600,7 @@ static int mv88e6xxx_port_vlan_filtering
+ 	int err;
+ 
+ 	if (switchdev_trans_ph_prepare(trans))
+-		return chip->info->max_vid ? 0 : -EOPNOTSUPP;
++		return mv88e6xxx_max_vid(chip) ? 0 : -EOPNOTSUPP;
+ 
+ 	mv88e6xxx_reg_lock(chip);
+ 	err = mv88e6xxx_port_set_8021q_mode(chip, port, mode);
+@@ -1616,7 +1616,7 @@ mv88e6xxx_port_vlan_prepare(struct dsa_s
+ 	struct mv88e6xxx_chip *chip = ds->priv;
+ 	int err;
+ 
+-	if (!chip->info->max_vid)
++	if (!mv88e6xxx_max_vid(chip))
+ 		return -EOPNOTSUPP;
+ 
+ 	/* If the requested port doesn't belong to the same bridge as the VLAN
+@@ -1990,7 +1990,7 @@ static void mv88e6xxx_port_vlan_add(stru
+ 	u8 member;
+ 	u16 vid;
+ 
+-	if (!chip->info->max_vid)
++	if (!mv88e6xxx_max_vid(chip))
+ 		return;
+ 
+ 	if (dsa_is_dsa_port(ds, port) || dsa_is_cpu_port(ds, port))
+@@ -2068,7 +2068,7 @@ static int mv88e6xxx_port_vlan_del(struc
+ 	u16 pvid, vid;
+ 	int err = 0;
+ 
+-	if (!chip->info->max_vid)
++	if (!mv88e6xxx_max_vid(chip))
+ 		return -EOPNOTSUPP;
+ 
+ 	mv88e6xxx_reg_lock(chip);
+@@ -2174,7 +2174,7 @@ static int mv88e6xxx_port_db_dump(struct
+ 		return err;
+ 
+ 	/* Dump VLANs' Filtering Information Databases */
+-	vlan.vid = chip->info->max_vid;
++	vlan.vid = mv88e6xxx_max_vid(chip);
+ 	vlan.valid = false;
+ 
+ 	do {
+@@ -2189,7 +2189,7 @@ static int mv88e6xxx_port_db_dump(struct
+ 						 cb, data);
+ 		if (err)
+ 			return err;
+-	} while (vlan.vid < chip->info->max_vid);
++	} while (vlan.vid < mv88e6xxx_max_vid(chip));
+ 
+ 	return err;
+ }
+--- a/drivers/net/dsa/mv88e6xxx/chip.h
++++ b/drivers/net/dsa/mv88e6xxx/chip.h
+@@ -674,6 +674,11 @@ static inline unsigned int mv88e6xxx_num
+ 	return chip->info->num_ports;
+ }
+ 
++static inline unsigned int mv88e6xxx_max_vid(struct mv88e6xxx_chip *chip)
++{
++	return chip->info->max_vid;
++}
++
+ static inline u16 mv88e6xxx_port_mask(struct mv88e6xxx_chip *chip)
+ {
+ 	return GENMASK((s32)mv88e6xxx_num_ports(chip) - 1, 0);
+--- a/drivers/net/dsa/mv88e6xxx/devlink.c
++++ b/drivers/net/dsa/mv88e6xxx/devlink.c
+@@ -452,14 +452,14 @@ static int mv88e6xxx_region_vtu_snapshot
+ 	struct mv88e6xxx_vtu_entry vlan;
+ 	int err;
+ 
+-	table = kcalloc(chip->info->max_vid + 1,
++	table = kcalloc(mv88e6xxx_max_vid(chip) + 1,
+ 			sizeof(struct mv88e6xxx_devlink_vtu_entry),
+ 			GFP_KERNEL);
+ 	if (!table)
+ 		return -ENOMEM;
+ 
+ 	entry = table;
+-	vlan.vid = chip->info->max_vid;
++	vlan.vid = mv88e6xxx_max_vid(chip);
+ 	vlan.valid = false;
+ 
+ 	mv88e6xxx_reg_lock(chip);
+@@ -490,7 +490,7 @@ static int mv88e6xxx_region_vtu_snapshot
+ 			break;
+ 
+ 		entry++;
+-	} while (vlan.vid < chip->info->max_vid);
++	} while (vlan.vid < mv88e6xxx_max_vid(chip));
+ 
+ 	mv88e6xxx_reg_unlock(chip);
+ 
+@@ -678,7 +678,7 @@ static int mv88e6xxx_setup_devlink_regio
+ 				sizeof(struct mv88e6xxx_devlink_atu_entry);
+ 			break;
+ 		case MV88E6XXX_REGION_VTU:
+-			size = chip->info->max_vid *
++			size = mv88e6xxx_max_vid(chip) *
+ 				sizeof(struct mv88e6xxx_devlink_vtu_entry);
+ 			break;
+ 		}

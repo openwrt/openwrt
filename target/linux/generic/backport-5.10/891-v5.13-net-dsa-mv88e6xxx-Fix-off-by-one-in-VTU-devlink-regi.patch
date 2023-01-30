@@ -1,0 +1,30 @@
+From 281140a0a2ce4febf2c0ce5d29d0e7d961a826b1 Mon Sep 17 00:00:00 2001
+From: Tobias Waldekranz <tobias@waldekranz.com>
+Date: Wed, 21 Apr 2021 14:04:53 +0200
+Subject: [PATCH] net: dsa: mv88e6xxx: Fix off-by-one in VTU devlink region
+ size
+
+In the unlikely event of the VTU being loaded to the brim with 4k
+entries, the last one was placed in the buffer, but the size reported
+to devlink was off-by-one. Make sure that the final entry is available
+to the caller.
+
+Fixes: ca4d632aef03 ("net: dsa: mv88e6xxx: Export VTU as devlink region")
+Signed-off-by: Tobias Waldekranz <tobias@waldekranz.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/mv88e6xxx/devlink.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/mv88e6xxx/devlink.c
++++ b/drivers/net/dsa/mv88e6xxx/devlink.c
+@@ -678,7 +678,7 @@ static int mv88e6xxx_setup_devlink_regio
+ 				sizeof(struct mv88e6xxx_devlink_atu_entry);
+ 			break;
+ 		case MV88E6XXX_REGION_VTU:
+-			size = mv88e6xxx_max_vid(chip) *
++			size = (mv88e6xxx_max_vid(chip) + 1) *
+ 				sizeof(struct mv88e6xxx_devlink_vtu_entry);
+ 			break;
+ 		}
