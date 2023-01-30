@@ -1,0 +1,64 @@
+name: Coverity scan build
+
+on:
+  schedule:
+    - cron: '30 2 * * 6'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  coverity_build:
+    name: Coverity x86/64 build
+    secrets:
+      coverity_api_token: ${{ secrets.COVERITY_API_TOKEN }}
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/build.yml
+    with:
+      target: x86/64
+      build_full: true
+      include_feeds: true
+      coverity_compiler_template_list: >-
+        x86_64-openwrt-linux-gcc
+        x86_64-openwrt-linux-musl-gcc
+      #  qosify fails to build with cov-build
+      coverity_check_packages: >-
+        cgi-io
+        dnsmasq
+        dropbear
+        firewall
+        fstools
+        fwtool
+        iwinfo
+        jsonfilter
+        libnl-tiny
+        libubox
+        mtd
+        netifd
+        odhcp6c
+        odhcpd
+        opkg
+        procd
+        relayd
+        rpcd
+        swconfig
+        ubox
+        ubus
+        ucert
+        uci
+        uclient
+        ucode
+        ugps
+        uhttpd
+        umbim
+        umdns
+        unetd
+        uqmi
+        urngd
+        usbmode
+        usign
+        usteer
+        ustp
+        ustream-ssl
