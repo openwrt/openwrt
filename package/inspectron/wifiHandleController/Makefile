@@ -5,6 +5,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=wifiHandleController
 PKG_VERSION:=1.0
 PKG_RELEASE:=1
+PKG_PRO_FILE:=wifiHandleController.pro
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:= git@github.com:Inspectron/wifiHandleController.git
@@ -23,6 +24,16 @@ endef
 # Package description; a more verbose description on what our package does
 define Package/wifiHandleController/description
 	wifiHandleController application.
+endef
+
+define Build/Prepare
+	#TODO add commands to configure wifiHandleController
+	$(warning add commands to configure wifiHandleController)
+endef
+
+define Build/Compile
+	#TODO add commands to make wifiHandleController
+	$(warning add commands to make wifiHandleController)
 endef
 
 
