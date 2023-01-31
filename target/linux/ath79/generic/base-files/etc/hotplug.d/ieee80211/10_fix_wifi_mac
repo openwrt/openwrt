@@ -35,6 +35,7 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii bdcfg "wlanmac" > /sys${DEVPATH}/macaddress
 		;;
+	engenius,epg5000|\
 	engenius,esr1200|\
 	engenius,esr1750|\
 	engenius,esr900)
