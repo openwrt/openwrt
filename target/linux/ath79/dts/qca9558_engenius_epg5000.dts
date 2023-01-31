@@ -47,8 +47,15 @@
 };
 
 &phy0 {
+	qca,mib-poll-interval = <500>;
+
 	qca,ar8327-initvals = <
-		0x04 0x87600000 /* PORT0 PAD MODE CTRL */
+		0x04 0x87680000 /* PORT0 PAD MODE CTRL */
+		0x10 0x40000000 /* POWER_ON_STRAP */
+		0x50 0xcf35cf35 /* LED_CTRL0 */
+		0x54 0xcf35cf35 /* LED_CTRL1 */
+		0x58 0xcf35cf35 /* LED_CTRL2 */
+		0x5c 0x03ffff00 /* LED_CTRL3 */
 		0x7c 0x0000007e /* PORT0_STATUS */
 	>;
 };
