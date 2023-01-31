@@ -106,6 +106,8 @@ GCC_CONFIGURE:= \
 			--with-abi=$(call qstrip,$(CONFIG_MIPS64_ABI))) \
 		$(if $(CONFIG_arc),--with-cpu=$(CONFIG_CPU_TYPE)) \
 		$(if $(CONFIG_powerpc64), $(if $(CONFIG_USE_MUSL),--with-abi=elfv2)) \
+		--with-system-zlib=$(STAGING_DIR_HOST) \
+		--without-zstd \
 		--with-gmp=$(STAGING_DIR_HOST) \
 		--with-mpfr=$(STAGING_DIR_HOST) \
 		--with-mpc=$(STAGING_DIR_HOST) \
