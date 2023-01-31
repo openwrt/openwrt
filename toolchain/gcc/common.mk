@@ -79,10 +79,6 @@ endif
 
 GCC_CONFIGURE:= \
 	SHELL="$(BASH)" \
-	$(if $(shell gcc --version 2>&1 | grep -E "Apple.(LLVM|clang)"), \
-		CFLAGS="-O2 -fbracket-depth=512 -pipe" \
-		CXXFLAGS="-O2 -fbracket-depth=512 -pipe" \
-	) \
 	$(HOST_SOURCE_DIR)/configure \
 		--with-bugurl=$(BUGURL) \
 		--with-pkgversion="$(PKGVERSION)" \
@@ -166,13 +162,21 @@ ifeq ($(CONFIG_TARGET_x86)$(CONFIG_USE_GLIBC)$(CONFIG_INSTALL_GCCGO),yyy)
   TARGET_CFLAGS+=-fno-split-stack
 endif
 
+CFLAGS:=$(HOST_CFLAGS) -pipe
+ifneq ($(shell gcc --version 2>&1 | grep -E "Apple.(LLVM|clang)"),)
+  CFLAGS+= -fbracket-depth=512
+endif
+
+GCC_CONFIGURE+= \
+	CFLAGS="$(CFLAGS)" \
+	CXXFLAGS="$(CFLAGS)" \
+	CFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
+	CXXFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
+	GOCFLAGS_FOR_TARGET="$(TARGET_CFLAGS)"
+
 GCC_MAKE:= \
 	export SHELL="$(BASH)"; \
-	$(MAKE) \
-		CFLAGS="$(HOST_CFLAGS)" \
-		CFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
-		CXXFLAGS_FOR_TARGET="$(TARGET_CFLAGS)" \
-		GOCFLAGS_FOR_TARGET="$(TARGET_CFLAGS)"
+	$(MAKE)
 
 define Host/SetToolchainInfo
 	$(SED) 's,TARGET_CROSS=.*,TARGET_CROSS=$(REAL_GNU_TARGET_NAME)-,' $(TOOLCHAIN_DIR)/info.mk
