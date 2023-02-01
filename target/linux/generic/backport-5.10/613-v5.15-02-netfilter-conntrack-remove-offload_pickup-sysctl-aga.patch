@@ -73,7 +73,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 --- a/net/netfilter/nf_conntrack_proto_tcp.c
 +++ b/net/netfilter/nf_conntrack_proto_tcp.c
-@@ -1450,7 +1450,6 @@ void nf_conntrack_tcp_init_net(struct ne
+@@ -1460,7 +1460,6 @@ void nf_conntrack_tcp_init_net(struct ne
  
  #if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
  	tn->offload_timeout = 30 * HZ;
@@ -109,7 +109,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #endif
  	NF_SYSCTL_CT_PROTO_TIMEOUT_ICMP,
  	NF_SYSCTL_CT_PROTO_TIMEOUT_ICMPV6,
-@@ -773,12 +771,6 @@ static struct ctl_table nf_ct_sysctl_tab
+@@ -772,12 +770,6 @@ static struct ctl_table nf_ct_sysctl_tab
  		.mode		= 0644,
  		.proc_handler	= proc_dointvec_jiffies,
  	},
@@ -122,7 +122,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #endif
  	[NF_SYSCTL_CT_PROTO_TCP_LOOSE] = {
  		.procname	= "nf_conntrack_tcp_loose",
-@@ -821,12 +813,6 @@ static struct ctl_table nf_ct_sysctl_tab
+@@ -820,12 +812,6 @@ static struct ctl_table nf_ct_sysctl_tab
  		.mode		= 0644,
  		.proc_handler	= proc_dointvec_jiffies,
  	},
@@ -135,7 +135,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #endif
  	[NF_SYSCTL_CT_PROTO_TIMEOUT_ICMP] = {
  		.procname	= "nf_conntrack_icmp_timeout",
-@@ -1006,7 +992,6 @@ static void nf_conntrack_standalone_init
+@@ -999,7 +985,6 @@ static void nf_conntrack_standalone_init
  
  #if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
  	table[NF_SYSCTL_CT_PROTO_TIMEOUT_TCP_OFFLOAD].data = &tn->offload_timeout;
@@ -143,7 +143,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  #endif
  
  }
-@@ -1098,7 +1083,6 @@ static int nf_conntrack_standalone_init_
+@@ -1090,7 +1075,6 @@ static int nf_conntrack_standalone_init_
  	table[NF_SYSCTL_CT_PROTO_TIMEOUT_UDP_STREAM].data = &un->timeouts[UDP_CT_REPLIED];
  #if IS_ENABLED(CONFIG_NF_FLOW_TABLE)
  	table[NF_SYSCTL_CT_PROTO_TIMEOUT_UDP_OFFLOAD].data = &un->offload_timeout;
