@@ -11,7 +11,6 @@ include $(INCLUDE_DIR)/download.mk
 PKG_BUILD_DIR ?= $(BUILD_DIR)/$(if $(BUILD_VARIANT),$(PKG_NAME)-$(BUILD_VARIANT)/)$(PKG_NAME)$(if $(PKG_VERSION),-$(PKG_VERSION))
 PKG_INSTALL_DIR ?= $(PKG_BUILD_DIR)/ipkg-install
 PKG_BUILD_PARALLEL ?=
-PKG_USE_MIPS16 ?= 1
 PKG_SKIP_DOWNLOAD=$(USE_SOURCE_DIR)$(USE_GIT_TREE)$(USE_GIT_SRC_CHECKOUT)
 
 MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) $(if $(filter 3.% 4.0 4.1,$(MAKE_VERSION)),-j))
@@ -23,16 +22,15 @@ PKG_JOBS?=-j1
 else
 PKG_JOBS?=$(if $(PKG_BUILD_PARALLEL),$(MAKE_J),-j1)
 endif
-ifdef CONFIG_USE_MIPS16
-  ifeq ($(strip $(PKG_USE_MIPS16)),1)
-    TARGET_ASFLAGS_DEFAULT = $(filter-out -mips16 -minterlink-mips16,$(TARGET_CFLAGS))
-    TARGET_CFLAGS += -mips16 -minterlink-mips16
-  endif
-endif
 
 PKG_BUILD_FLAGS?=
+# TODO remove this when all packages moved to PKG_BUILD_FLAGS=no-mips16
+PKG_USE_MIPS16?=1
+ifneq ($(strip $(PKG_USE_MIPS16)),1)
+  PKG_BUILD_FLAGS+=no-mips16
+endif
 
-__unknown_flags=$(filter-out no-iremap,$(PKG_BUILD_FLAGS))
+__unknown_flags=$(filter-out no-iremap no-mips16,$(PKG_BUILD_FLAGS))
 ifneq ($(__unknown_flags),)
   $(error unknown PKG_BUILD_FLAGS: $(__unknown_flags))
 endif
@@ -45,6 +43,13 @@ endef
 ifeq ($(call pkg_build_flag,iremap,1),1)
   IREMAP_CFLAGS = $(call iremap,$(PKG_BUILD_DIR),$(notdir $(PKG_BUILD_DIR)))
   TARGET_CFLAGS += $(IREMAP_CFLAGS)
+endif
+ifdef CONFIG_USE_MIPS16
+  ifeq ($(call pkg_build_flag,mips16,1),1)
+    TARGET_ASFLAGS_DEFAULT = $(filter-out -mips16 -minterlink-mips16,$(TARGET_CFLAGS))
+    TARGET_CFLAGS += -mips16 -minterlink-mips16
+    TARGET_CXXFLAGS += -mips16 -minterlink-mips16
+  endif
 endif
 
 include $(INCLUDE_DIR)/hardening.mk

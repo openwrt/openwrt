@@ -19,7 +19,7 @@ PKG_ABI_VERSION:=$(call abi_version_str,$(PKG_SOURCE_DATE))
 
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
 
-PKG_USE_MIPS16:=0
+PKG_BUILD_FLAGS:=no-mips16
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 

@@ -8,7 +8,7 @@ PKG_NAME:=px5g-wolfssl
 PKG_RELEASE:=$(COMMITCOUNT).2
 PKG_LICENSE:=GPL-2.0-or-later
 
-PKG_USE_MIPS16:=0
+PKG_BUILD_FLAGS:=no-mips16
 
 PKG_MAINTAINER:=Paul Spooren <mail@aparcar.org>
 
