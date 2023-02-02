@@ -20,6 +20,7 @@ PKG_LICENSE:=BSD-3-Clause
 PKG_CPE_ID:=cpe:/a:tcpdump:tcpdump
 
 PKG_INSTALL:=1
+PKG_BUILD_FLAGS:=gc-sections
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -47,9 +48,6 @@ CONFIGURE_ARGS += \
 	--without-cap-ng \
 	--without-crypto \
 	$(call autoconf_bool,CONFIG_IPV6,ipv6)
-
-TARGET_CFLAGS += -ffunction-sections -fdata-sections
-TARGET_LDFLAGS += -Wl,--gc-sections
 
 ifeq ($(BUILD_VARIANT),mini)
   TARGET_CFLAGS += -DTCPDUMP_MINI

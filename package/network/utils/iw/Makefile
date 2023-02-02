@@ -18,6 +18,8 @@ PKG_HASH:=f167bbe947dd53bb9ebc0c1dcef5db6ad73ac1d6084f2c6f9376c5c360cc4d4e
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-2.0
 
+PKG_BUILD_FLAGS:=gc-sections
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/iw
@@ -55,8 +57,8 @@ ifeq ($(BUILD_VARIANT),full)
 endif
 
 MAKE_FLAGS += \
-	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS) -ffunction-sections -fdata-sections" \
-	LDFLAGS="$(TARGET_LDFLAGS) -Wl,--gc-sections -flto" \
+	CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
+	LDFLAGS="$(TARGET_LDFLAGS) -flto" \
 	NL1FOUND="" NL2FOUND=Y \
 	NLLIBNAME="libnl-tiny" \
 	LIBS="-lm -lnl-tiny" \

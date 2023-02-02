@@ -28,6 +28,8 @@ PKG_CONFIG_DEPENDS += \
 
 HOST_BUILD_DEPENDS:=libubox/host
 
+PKG_BUILD_FLAGS:=gc-sections
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -57,7 +59,6 @@ define Package/opkg/conffiles
 /etc/opkg/customfeeds.conf
 endef
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections
 EXTRA_CFLAGS += $(TARGET_CPPFLAGS)
 
 CMAKE_OPTIONS += \

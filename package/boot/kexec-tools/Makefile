@@ -17,6 +17,8 @@ PKG_HASH:=7fe36a064101cd5c515e41b2be393dce3ca88adce59d6ee668e0af7c0c4570cd
 
 PKG_CONFIG_DEPENDS := CONFIG_KEXEC_ZLIB CONFIG_KEXEC_LZMA
 
+PKG_BUILD_FLAGS:=gc-sections
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/kexec-tools/Default
@@ -81,9 +83,6 @@ CONFIGURE_ARGS = \
 		$(if $(CONFIG_KEXEC_ZLIB),--with,--without)-zlib \
 		$(if $(CONFIG_KEXEC_LZMA),--with,--without)-lzma \
 		TARGET_LD="$(TARGET_CROSS)ld"
-
-TARGET_CFLAGS += -ffunction-sections -fdata-sections
-TARGET_LDFLAGS += -Wl,--gc-sections
 
 CONFIGURE_VARS += \
 	BUILD_CC="$(HOSTCC)" \

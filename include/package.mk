@@ -30,7 +30,7 @@ ifneq ($(strip $(PKG_USE_MIPS16)),1)
   PKG_BUILD_FLAGS+=no-mips16
 endif
 
-__unknown_flags=$(filter-out no-iremap no-mips16,$(PKG_BUILD_FLAGS))
+__unknown_flags=$(filter-out no-iremap no-mips16 gc-sections no-gc-sections,$(PKG_BUILD_FLAGS))
 ifneq ($(__unknown_flags),)
   $(error unknown PKG_BUILD_FLAGS: $(__unknown_flags))
 endif
@@ -50,6 +50,11 @@ ifdef CONFIG_USE_MIPS16
     TARGET_CFLAGS += -mips16 -minterlink-mips16
     TARGET_CXXFLAGS += -mips16 -minterlink-mips16
   endif
+endif
+ifeq ($(call pkg_build_flag,gc-sections,0),1)
+  TARGET_CFLAGS+= -ffunction-sections -fdata-sections
+  TARGET_CXXFLAGS+= -ffunction-sections -fdata-sections
+  TARGET_LDFLAGS+= -Wl,--gc-sections
 endif
 
 include $(INCLUDE_DIR)/hardening.mk
