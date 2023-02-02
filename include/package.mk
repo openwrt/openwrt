@@ -12,7 +12,6 @@ PKG_BUILD_DIR ?= $(BUILD_DIR)/$(if $(BUILD_VARIANT),$(PKG_NAME)-$(BUILD_VARIANT)
 PKG_INSTALL_DIR ?= $(PKG_BUILD_DIR)/ipkg-install
 PKG_BUILD_PARALLEL ?=
 PKG_USE_MIPS16 ?= 1
-PKG_IREMAP ?= 1
 PKG_SKIP_DOWNLOAD=$(USE_SOURCE_DIR)$(USE_GIT_TREE)$(USE_GIT_SRC_CHECKOUT)
 
 MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) $(if $(filter 3.% 4.0 4.1,$(MAKE_VERSION)),-j))
@@ -30,7 +29,20 @@ ifdef CONFIG_USE_MIPS16
     TARGET_CFLAGS += -mips16 -minterlink-mips16
   endif
 endif
-ifeq ($(strip $(PKG_IREMAP)),1)
+
+PKG_BUILD_FLAGS?=
+
+__unknown_flags=$(filter-out no-iremap,$(PKG_BUILD_FLAGS))
+ifneq ($(__unknown_flags),)
+  $(error unknown PKG_BUILD_FLAGS: $(__unknown_flags))
+endif
+
+# $1=flagname, $2=default (0/1)
+define pkg_build_flag
+$(if $(filter no-$(1),$(PKG_BUILD_FLAGS)),0,$(if $(filter $(1),$(PKG_BUILD_FLAGS)),1,$(2)))
+endef
+
+ifeq ($(call pkg_build_flag,iremap,1),1)
   IREMAP_CFLAGS = $(call iremap,$(PKG_BUILD_DIR),$(notdir $(PKG_BUILD_DIR)))
   TARGET_CFLAGS += $(IREMAP_CFLAGS)
 endif
