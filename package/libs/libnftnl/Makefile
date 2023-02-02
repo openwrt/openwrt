@@ -22,6 +22,7 @@ PKG_LICENSE_FILES:=COPYING
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
+PKG_BUILD_FLAGS:=lto
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -41,8 +42,7 @@ define Package/libnftnl/description
  programming interface (API) to the in-kernel nf_tables subsystem.
 endef
 
-TARGET_CFLAGS += $(FPIC) -flto
-TARGET_LDFLAGS += -flto
+TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
 	--enable-static \

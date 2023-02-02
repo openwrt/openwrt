@@ -16,6 +16,7 @@ PKG_HASH:=542750c8af7cb2630e201780b4f99f3dcceeb06f505b479ec68241c1e6af61a5
 
 PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam
 PKG_BUILD_PARALLEL:=1
+PKG_BUILD_FLAGS:=lto
 PKG_CHECK_FORMAT_SECURITY:=0
 
 PKG_LICENSE:=GPL-2.0
@@ -102,9 +103,6 @@ endif
 ifeq ($(BUILD_VARIANT),selinux)
   LDLIBS += selinux sepol
 endif
-
-TARGET_CFLAGS += -flto
-TARGET_LDFLAGS += -flto=jobserver -fuse-linker-plugin
 
 MAKE_VARS :=
 MAKE_FLAGS += \

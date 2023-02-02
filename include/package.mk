@@ -30,7 +30,7 @@ ifneq ($(strip $(PKG_USE_MIPS16)),1)
   PKG_BUILD_FLAGS+=no-mips16
 endif
 
-__unknown_flags=$(filter-out no-iremap no-mips16 gc-sections no-gc-sections,$(PKG_BUILD_FLAGS))
+__unknown_flags=$(filter-out no-iremap no-mips16 gc-sections no-gc-sections lto no-lto,$(PKG_BUILD_FLAGS))
 ifneq ($(__unknown_flags),)
   $(error unknown PKG_BUILD_FLAGS: $(__unknown_flags))
 endif
@@ -55,6 +55,11 @@ ifeq ($(call pkg_build_flag,gc-sections,0),1)
   TARGET_CFLAGS+= -ffunction-sections -fdata-sections
   TARGET_CXXFLAGS+= -ffunction-sections -fdata-sections
   TARGET_LDFLAGS+= -Wl,--gc-sections
+endif
+ifeq ($(call pkg_build_flag,lto,0),1)
+  TARGET_CFLAGS+= -flto=auto -fno-fat-lto-objects
+  TARGET_CXXFLAGS+= -flto=auto -fno-fat-lto-objects
+  TARGET_LDFLAGS+= -flto=auto -fuse-linker-plugin
 endif
 
 include $(INCLUDE_DIR)/hardening.mk

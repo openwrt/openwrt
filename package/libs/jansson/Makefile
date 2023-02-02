@@ -19,6 +19,8 @@ PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE
 PKG_CPE_ID:=cpe:/a:jansson_project:jansson
 
+PKG_BUILD_FLAGS:=lto
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
@@ -40,9 +42,6 @@ endef
 define Package/jansson/description
   Jansson is a C library for encoding, decoding and manipulating JSON data
 endef
-
-TARGET_CFLAGS += -flto
-TARGET_LDFLAGS += -flto
 
 define Package/jansson/install
 	$(INSTALL_DIR) $(1)/usr/lib

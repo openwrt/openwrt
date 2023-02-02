@@ -23,7 +23,7 @@ PKG_BUILD_DEPENDS:=util-linux e2fsprogs/host
 PKG_INSTALL:=1
 
 PKG_BUILD_PARALLEL:=1
-PKG_BUILD_FLAGS:=gc-sections
+PKG_BUILD_FLAGS:=gc-sections lto
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
@@ -143,9 +143,7 @@ $(call Package/e2fsprogs)
   DEPENDS:= +e2fsprogs
 endef
 
-TARGET_CFLAGS += $(FPIC) -flto
-
-TARGET_LDFLAGS += -flto
+TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
 	--disable-testio-debug \

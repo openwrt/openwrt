@@ -21,7 +21,7 @@ PKG_LICENSE:=ISC
 
 PKG_CONFIG_DEPENDS := CONFIG_IPV6
 
-PKG_BUILD_FLAGS:=gc-sections
+PKG_BUILD_FLAGS:=gc-sections lto
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -44,8 +44,6 @@ define Package/firewall/conffiles
 /etc/firewall.user
 endef
 
-TARGET_CFLAGS += -flto
-TARGET_LDFLAGS += -flto
 CMAKE_OPTIONS += $(if $(CONFIG_IPV6),,-DDISABLE_IPV6=1)
 
 define Package/firewall/install

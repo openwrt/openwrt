@@ -20,6 +20,8 @@ PKG_LICENSE_FILES:=COPYING
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
+PKG_BUILD_FLAGS:=lto
+
 include $(INCLUDE_DIR)/package.mk
 
 DISABLE_NLS:=
@@ -59,9 +61,6 @@ endef
 ifeq ($(BUILD_VARIANT),json)
   CONFIGURE_ARGS += --with-json
 endif
-
-TARGET_CFLAGS += -flto
-TARGET_LDFLAGS += -flto
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/usr/include

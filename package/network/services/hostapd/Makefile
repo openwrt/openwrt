@@ -32,7 +32,7 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_DRIVER_11AX_SUPPORT \
 	CONFIG_WPA_ENABLE_WEP
 
-PKG_BUILD_FLAGS:=gc-sections
+PKG_BUILD_FLAGS:=gc-sections lto
 
 EAPOL_TEST_PROVIDERS:=eapol-test eapol-test-openssl eapol-test-wolfssl
 
@@ -587,8 +587,7 @@ TARGET_CPPFLAGS := \
 	-D_GNU_SOURCE \
 	$(if $(CONFIG_WPA_MSG_MIN_PRIORITY),-DCONFIG_MSG_MIN_PRIORITY=$(CONFIG_WPA_MSG_MIN_PRIORITY))
 
-TARGET_CFLAGS += -flto
-TARGET_LDFLAGS += -flto=jobserver -fuse-linker-plugin -lubox -lubus
+TARGET_LDFLAGS += -lubox -lubus
 
 ifdef CONFIG_PACKAGE_kmod-cfg80211
   TARGET_LDFLAGS += -lm -lnl-tiny
