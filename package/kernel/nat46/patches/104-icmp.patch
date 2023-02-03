@@ -1,0 +1,439 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Mon Aug 3 17:03:37 2020 +0530
+
+nat46: Fix for icmp translation issues.
+
+This patch is propagated from kernel 4.4 commit
+45fce10ba0105515289930b3e3f9df57bf3c22b6.
+
+Fixed icmpv4 to icmpv6 and vice-versa translation issues, in accordance with RFC6145.
+
+The change covers:
+1. Translation of ICMP errors from IPv4 to IPv6 and vice-versa.
+2. Translation of inner L3 packet header {Eth:IPv4:ICMP:IPv4:ICMP} in ICMP error messages.
+3. Address translation for packets not having port numbers, hence CE/BR needs to fetch this
+   information from inner header (atleast 28 bytes (IP hdr + 8 bytes) of orignal packet received
+   that is transmitted back will be there in response).
+
+Change-Id: I677474728aeaee656376fdb1edcb9476783d5b40
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -29,6 +29,9 @@
+ #include "nat46-core.h"
+ #include "nat46-module.h"
+ 
++static uint16_t xlate_pkt_in_err_v4_to_v6(nat46_instance_t *nat46, struct iphdr *iph,
++			struct sk_buff *old_skb, uint16_t *sport, uint16_t *dport);
++
+ void
+ nat46debug_dump(nat46_instance_t *nat46, int level, void *addr, int len)
+ {
+@@ -885,6 +888,14 @@ void *get_next_header_ptr6(void *pv6, in
+   return ret;
+ }
+ 
++void fill_v6hdr_from_v4hdr(struct iphdr *iph, struct ipv6hdr *ip6h) {
++  *((__be16 *)ip6h) = htons((6 << 12) | (iph->tos << 4));	/* Version, Traffic Class */
++  memset(&(ip6h->flow_lbl), 0, sizeof(ip6h->flow_lbl));		/* Flowlabel */
++  ip6h->payload_len = htons(ntohs(iph->tot_len) - IPV4HDRSIZE);
++  ip6h->nexthdr = iph->protocol;
++  ip6h->hop_limit = iph->ttl;
++}
++
+ void fill_v4hdr_from_v6hdr(struct iphdr * iph, struct ipv6hdr *ip6h, __u32 v4saddr, __u32 v4daddr, __u16 id, __u16 frag_off, __u16 proto, int l3_payload_len) {
+   uint32_t ver_class_flow = ntohl(*(__be32 *)ip6h);
+   iph->ttl = ip6h->hop_limit;
+@@ -1212,10 +1223,14 @@ static void nat46_fixup_icmp6_paramprob(
+                           16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, -1 };
+   u32 *pptr6 = icmp6_parameter_ptr(icmp6h);
+   u8 *pptr4 = icmp_parameter_ptr((struct icmphdr *)icmp6h);
+-  int new_pptr = -1;
++  u8 new_pptr = -1;
+   int len = ntohs(ip6h->payload_len)-sizeof(*icmp6h);
+ 
+   switch(icmp6h->icmp6_code) {
++    case 1:
++      update_icmp6_type_code(nat46, icmp6h, 3, 2);
++      break;
++
+     case 0:
+       if(*pptr6 < sizeof(ptr6_4)/sizeof(ptr6_4[0])) {
+         new_pptr = ptr6_4[*pptr6];
+@@ -1224,27 +1239,21 @@ static void nat46_fixup_icmp6_paramprob(
+           *pptr4 = 0xff & new_pptr;
+           update_icmp6_type_code(nat46, icmp6h, 12, 0);
+           len = xlate_payload6_to4(nat46, (icmp6h + 1), get_next_header_ptr6((icmp6h + 1), len), len, &icmp6h->icmp6_cksum, ptailTruncSize);
+-        } else {
+-          ip6h->nexthdr = NEXTHDR_NONE;
++          update_icmp6_type_code(nat46, icmp6h, 12, 0);
++	  break;
+         }
+-      } else {
+-        ip6h->nexthdr = NEXTHDR_NONE;
+       }
+-      break;
+-    case 1:
+-      icmp6h->icmp6_cksum = csum16_upd(icmp6h->icmp6_cksum, ((*pptr6 >> 16) & 0xffff), 0);
+-      icmp6h->icmp6_cksum = csum16_upd(icmp6h->icmp6_cksum, (*pptr6 & 0xffff), 0);
+-      *pptr6 = 0;
+-      update_icmp6_type_code(nat46, icmp6h, 3, 2);
+-      len = xlate_payload6_to4(nat46, (icmp6h + 1), get_next_header_ptr6((icmp6h + 1), len), len, &icmp6h->icmp6_cksum, ptailTruncSize);
+-      break;
++#if __has_attribute(__fallthrough__)
++      __attribute__((__fallthrough__));
++#endif
+     case 2: /* fallthrough to default */
+     default:
+       ip6h->nexthdr = NEXTHDR_NONE;
++      return;
+   }
++  len = xlate_payload6_to4(nat46, (icmp6h + 1), get_next_header_ptr6((icmp6h + 1), len), len, &icmp6h->icmp6_cksum, ptailTruncSize);
+ }
+ 
+-
+ /* Fixup ICMP6->ICMP before IP header translation, according to http://tools.ietf.org/html/rfc6145 */
+ 
+ static void nat46_fixup_icmp6(nat46_instance_t *nat46, struct ipv6hdr *ip6h, struct icmp6hdr *icmp6h, struct sk_buff *old_skb, int *ptailTruncSize) {
+@@ -1299,17 +1308,19 @@ int ip6_input_not_interested(nat46_insta
+   return 0;
+ }
+ 
+-static uint16_t nat46_fixup_icmp_time_exceeded(nat46_instance_t *nat46, struct iphdr *iph, struct icmphdr *icmph, struct sk_buff *old_skb) {
++static uint16_t nat46_fixup_icmp_time_exceeded(nat46_instance_t *nat46, struct iphdr *iph,
++			struct icmphdr *icmph, struct sk_buff *old_skb, uint16_t *sport, uint16_t *dport) {
+   /*
+    * Set the Type to 3, and adjust the
+    * ICMP checksum both to take the type change into account and
+    * to include the ICMPv6 pseudo-header.  The Code is unchanged.
+    */
+   icmph->type = 3;
+-  return 0;
++  return xlate_pkt_in_err_v4_to_v6(nat46, iph, old_skb, sport, dport);
+ }
+ 
+-static uint16_t nat46_fixup_icmp_parameterprob(nat46_instance_t *nat46, struct iphdr *iph, struct icmphdr *icmph, struct sk_buff *old_skb) {
++static uint16_t nat46_fixup_icmp_parameterprob(nat46_instance_t *nat46, struct iphdr *iph,
++			struct icmphdr *icmph, struct sk_buff *old_skb, uint16_t *sport, uint16_t *dport) {
+   /*
+    * Set the Type to 4, and adjust the
+    * ICMP checksum both to take the type/code change into account
+@@ -1352,27 +1363,33 @@ static uint16_t nat46_fixup_icmp_paramet
+    */
+   static int ptr4_6[] = { 0, 1, 4, 4, -1, -1, -1, -1, 7, 6, -1, -1, 8, 8, 8, 8, 24, 24, 24, 24, -1 };
+   u8 *icmp_pptr = icmp_parameter_ptr(icmph);
+-  int new_pptr = -1;
++  u32 *icmp6_pptr = icmp6_parameter_ptr((struct icmp6hdr *)icmph);
++  int8_t new_pptr = -1;
++
++  icmph->type = 4;
++
+   switch (icmph->code) {
+     case 0:
+     case 2:
+       if (*icmp_pptr < (sizeof(ptr4_6)/sizeof(ptr4_6[0]))) {
+         icmph->code = 0;
+         new_pptr = ptr4_6[*icmp_pptr];
+-        if(new_pptr >= 0) {
+-          /* FIXME: update the parameter pointer in ICMPv6 with new_pptr value */
++        if (new_pptr >= 0) {
++          *icmp6_pptr = new_pptr;
++          return xlate_pkt_in_err_v4_to_v6(nat46, iph, old_skb, sport, dport);
+         }
+-      } else {
+-        iph->protocol = NEXTHDR_NONE;
+       }
+-      break;
++#if __has_attribute(__fallthrough__)
++      __attribute__((__fallthrough__));
++#endif
+     default:
+       iph->protocol = NEXTHDR_NONE;
+   }
+   return 0;
+ }
+ 
+-static uint16_t nat46_fixup_icmp_dest_unreach(nat46_instance_t *nat46, struct iphdr *iph, struct icmphdr *icmph, struct sk_buff *old_skb) {
++static uint16_t nat46_fixup_icmp_dest_unreach(nat46_instance_t *nat46, struct iphdr *iph,
++			struct icmphdr *icmph, struct sk_buff *old_skb, uint16_t *sport, uint16_t *dport) {
+   /*
+    *    Translate the Code as
+    *    described below, set the Type to 1, and adjust the ICMP
+@@ -1435,16 +1452,21 @@ static uint16_t nat46_fixup_icmp_dest_un
+ 
+   u16 *pmtu = ((u16 *)icmph) + 3; /* IPv4-compatible MTU value is 16 bit */
+ 
++  icmph->type = 1;
++
+   switch (icmph->code) {
+     case 0:
+     case 1:
+       icmph->code = 0;
+       break;
+-    case 2:
+-      /* FIXME: set ICMPv6 parameter pointer to 6 */
++    case 2: {
++      u32 *icmp6_pptr = icmp6_parameter_ptr((struct icmp6hdr *)icmph);
++      *icmp6_pptr = 6; /* Offset to Next Proto field in IPv6 header. */
+       icmph->type = 4;
+       icmph->code = 1;
++      nat46debug(3, "ICMP Proto Unreachable translated into IPv6 Param Prob.\n");
+       break;
++    }
+     case 3:
+       icmph->code = 4;
+       break;
+@@ -1494,13 +1516,15 @@ static uint16_t nat46_fixup_icmp_dest_un
+       break;
+     default:
+       iph->protocol = NEXTHDR_NONE;
++      return 0;
+   }
+-  return 0;
++  return xlate_pkt_in_err_v4_to_v6(nat46, iph, old_skb, sport, dport);
+ }
+ 
+ /* Fixup ICMP->ICMP6 before IP header translation, according to http://tools.ietf.org/html/rfc6145 */
+-
+-static uint16_t nat46_fixup_icmp(nat46_instance_t *nat46, struct iphdr *iph, struct sk_buff *old_skb) {
++static uint16_t nat46_fixup_icmp(nat46_instance_t *nat46, struct iphdr *iph,
++			struct sk_buff *old_skb, uint16_t *sport, uint16_t *dport)
++{
+   struct icmphdr *icmph = (struct icmphdr *)(iph+1);
+   uint16_t ret = 0;
+ 
+@@ -1509,22 +1533,22 @@ static uint16_t nat46_fixup_icmp(nat46_i
+   switch(icmph->type) {
+     case ICMP_ECHO:
+       icmph->type = ICMPV6_ECHO_REQUEST;
+-      ret = icmph->un.echo.id;
++      *sport = *dport = icmph->un.echo.id;
+       nat46debug(3, "ICMP echo request translated into IPv6, id: %d", ntohs(ret));
+       break;
+     case ICMP_ECHOREPLY:
+       icmph->type = ICMPV6_ECHO_REPLY;
+-      ret = icmph->un.echo.id;
++      *sport = *dport = icmph->un.echo.id;
+       nat46debug(3, "ICMP echo reply translated into IPv6, id: %d", ntohs(ret));
+       break;
+     case ICMP_TIME_EXCEEDED:
+-      ret = nat46_fixup_icmp_time_exceeded(nat46, iph, icmph, old_skb);
++      ret = nat46_fixup_icmp_time_exceeded(nat46, iph, icmph, old_skb, sport, dport);
+       break;
+     case ICMP_PARAMETERPROB:
+-      ret = nat46_fixup_icmp_parameterprob(nat46, iph, icmph, old_skb);
++      ret = nat46_fixup_icmp_parameterprob(nat46, iph, icmph, old_skb, sport, dport);
+       break;
+     case ICMP_DEST_UNREACH:
+-      ret = nat46_fixup_icmp_dest_unreach(nat46, iph, icmph, old_skb);
++      ret = nat46_fixup_icmp_dest_unreach(nat46, iph, icmph, old_skb, sport, dport);
+       break;
+     default:
+       /* Silently drop. */
+@@ -1544,11 +1568,13 @@ int pairs_xlate_v6_to_v4_outer(nat46_ins
+ 
+     if(-1 == xlate_dst) {
+       if (xlate_v6_to_v4(nat46, &apair->local, &ip6h->daddr, pv4daddr)) {
++        nat46debug(5, "Dst addr %pI6 to %pI4 \n", &ip6h->daddr, pv4daddr);
+         xlate_dst = ipair;
+       }
+     }
+     if(-1 == xlate_src) {
+       if (xlate_v6_to_v4(nat46, &apair->remote, &ip6h->saddr, pv4saddr)) {
++        nat46debug(5, "Src addr %pI6 to %pI4 \n", &ip6h->saddr, pv4saddr);
+         xlate_src = ipair;
+       }
+     }
+@@ -1659,6 +1685,7 @@ int nat46_ipv6_input(struct sk_buff *old
+   }
+ 
+   if(!pairs_xlate_v6_to_v4_outer(nat46, ip6h, proto, &v4saddr, &v4daddr)) {
++    nat46debug(0, "[nat46] Could not translate v6->v4");
+     goto done;
+   }
+ 
+@@ -1821,11 +1848,13 @@ int pairs_xlate_v4_to_v6_outer(nat46_ins
+ 
+     if(-1 == xlate_src) {
+       if(xlate_v4_to_v6(nat46, &apair->local, &hdr4->saddr, v6saddr, sport)) {
++        nat46debug(5, "Src addr %pI4 to %pI6 \n", &hdr4->saddr, v6saddr);
+         xlate_src = ipair;
+       }
+     }
+     if(-1 == xlate_dst) {
+       if(xlate_v4_to_v6(nat46, &apair->remote, &hdr4->daddr, v6daddr, dport)) {
++        nat46debug(5, "Dst addr %pI4 to %pI6 \n", &hdr4->daddr, v6daddr);
+         xlate_dst = ipair;
+       }
+     }
+@@ -1854,10 +1883,145 @@ int xlate_4_to_6(struct net_device *dev,
+ }
+ EXPORT_SYMBOL(xlate_4_to_6);
+ 
++/* FIXME: This is a workaround, till the LPM is not added. The sport & dport in inner header will be dport & sport of the outer
++ * header, respectively. Hence, dest. and source ips of inner header will be found in local & remote rules, respectively.
++ * Will work only for a pair of local & remote rules. Once LPM is brought in, this method can be removed and
++ * pairs_xlate_v4_to_v6_outer be used instead.
++ */
++int pairs_xlate_v4_to_v6_inner(nat46_instance_t *nat46, struct iphdr *iph,
++		uint16_t sport, uint16_t dport, void *v6saddr, void *v6daddr) {
++	int ipair = 0;
++	nat46_xlate_rulepair_t *apair = NULL;
++	int xlate_src = -1;
++	int xlate_dst = -1;
++
++	for (ipair = 0; ipair < nat46->npairs; ipair++) {
++		apair = &nat46->pairs[ipair];
++
++		if (-1 == xlate_dst) {
++			if (xlate_v4_to_v6(nat46, &apair->local, &iph->daddr, v6daddr, &dport)) {
++				nat46debug(3, "Dst addr %pI4 to %pI6 \n", &iph->daddr, v6daddr);
++				xlate_dst = ipair;
++			}
++		}
++		if (-1 == xlate_src) {
++			if(xlate_v4_to_v6(nat46, &apair->remote, &iph->saddr, v6saddr, &sport)) {
++				nat46debug(3, "Src addr %pI4 to %pI6 \n", &iph->saddr, v6saddr);
++				xlate_src = ipair;
++			}
++		}
++		if ((xlate_src >= 0) && (xlate_dst >= 0)) {
++			/* we did manage to translate it */
++			nat46debug(5, "[nat46] Inner header xlate results: src %d dst %d", xlate_src, xlate_dst);
++			return 1;
++		} else {
++			/* We did not match fully and there are more rules */
++			if((ipair+1 < nat46->npairs) && is_last_pair_in_group(apair)) {
++				xlate_src = -1;
++				xlate_dst = -1;
++			}
++		}
++}
++
++	nat46debug(1, "[nat46] Could not find a translation pair v4->v6");
++	return 0;
++}
++
++static uint16_t xlate_pkt_in_err_v4_to_v6(nat46_instance_t *nat46, struct iphdr *iph,
++					struct sk_buff *old_skb, uint16_t *sport, uint16_t *dport) {
++	struct ipv6hdr ip6h;
++	char v6saddr[16], v6daddr[16];
++	uint16_t temp_port = 0;
++	int ret = 0;
++	struct icmphdr *icmph = (struct icmphdr *)(iph + 1);
++	struct iphdr *iiph = (struct iphdr *)(icmph + 1);
++
++	switch (iiph->protocol) {
++	case IPPROTO_TCP: {
++		struct tcphdr *th = (struct tcphdr *)(iiph + 1);
++		*sport = th->source;
++		*dport = th->dest;
++		iiph->protocol = NEXTHDR_TCP;
++		break;
++	}
++	case IPPROTO_UDP: {
++		struct udphdr *udp = (struct udphdr *)(iiph + 1);
++		*sport = udp->source;
++		*dport = udp->dest;
++		iiph->protocol = NEXTHDR_UDP;
++		break;
++	}
++	case IPPROTO_ICMP: {
++		struct icmphdr *icmph = (struct icmphdr *)(iiph + 1);
++		iiph->protocol = NEXTHDR_ICMP;
++		switch (icmph->type) {
++		case ICMP_ECHO:
++			icmph->type = ICMPV6_ECHO_REQUEST;
++			*sport = *dport = icmph->un.echo.id;
++			break;
++		case ICMP_ECHOREPLY:
++			icmph->type = ICMPV6_ECHO_REPLY;
++			*sport = *dport = icmph->un.echo.id;
++			break;
++		default:
++			nat46debug(3, "ICMP Error message can't be inside another ICMP Error messgae.");
++			*sport = *dport = 0;
++			return 0;
++		}
++		break;
++	}
++	default:
++		nat46debug(3, "[ICMPv4] Next header: %u. Only TCP, UDP, and ICMP are supported.", iiph->protocol);
++		*sport = *dport = 0;
++		return 0;
++	}
++
++	nat46debug(3, "Retrieved from pkt in error: dest port %d, and src port %d.", ntohs(*dport), ntohs(*sport));
++
++	if (!pairs_xlate_v4_to_v6_inner(nat46, iiph, *sport, *dport, v6saddr, v6daddr)) {
++		nat46debug(0, "[nat46] Could not translate inner header v4->v6");
++		*sport = *dport = 0;
++		return 0;
++	}
++
++	fill_v6hdr_from_v4hdr (iiph, &ip6h);
++	memcpy(&ip6h.saddr, v6saddr, sizeof(ip6h.saddr));
++	memcpy(&ip6h.daddr, v6daddr, sizeof(ip6h.daddr));
++
++	if (skb_tailroom(old_skb) >= IPV6V4HDRDELTA){
++		skb_put(old_skb, IPV6V4HDRDELTA);
++		memmove(((char *)iiph + IPV6HDRSIZE), (iiph + 1), ntohs(iiph->tot_len) - IPV4HDRSIZE);
++		memcpy(iiph, &ip6h, IPV6HDRSIZE);
++	}
++	else {
++		ret = pskb_expand_head(old_skb, 0, IPV6V4HDRDELTA, GFP_ATOMIC);
++		if (unlikely(ret)) {
++			nat46debug(0, "[nat46] Could not copy v4 skb");
++			*sport = *dport = 0;
++			return 0;
++		}
++
++		skb_put(old_skb, IPV6V4HDRDELTA);
++		iiph = (struct iphdr *)(icmp_hdr(old_skb) + 1);
++		memmove(((char *)iiph + IPV6HDRSIZE), (iiph + 1), ntohs(iiph->tot_len) - IPV4HDRSIZE);
++		memcpy(iiph, &ip6h, IPV6HDRSIZE);
++		nat46 = get_nat46_instance(old_skb);
++		iph = ip_hdr(old_skb);
++	}
++
++	/* Swapping Ports for outer header */
++	/* Another work-around till LPM is not present. */
++	temp_port = *sport;
++	*sport = *dport;
++	*dport = temp_port;
++
++	return 1;
++}
++
+ int nat46_ipv4_input(struct sk_buff *old_skb) {
+   nat46_instance_t *nat46 = get_nat46_instance(old_skb);
+   struct sk_buff *new_skb;
+-  uint16_t sport = 0, dport = 0;
++  uint16_t sport = 0, dport = 0, ret = 0;
+ 
+   int err = 0;
+   uint8_t tclass = 0;
+@@ -1879,7 +2043,7 @@ int nat46_ipv4_input(struct sk_buff *old
+   }
+   nat46debug(1, "nat46_ipv4_input packet");
+   nat46debug(5, "nat46_ipv4_input protocol: %d, len: %d, flags: %02x", hdr4->protocol, old_skb->len, IPCB(old_skb)->flags);
+-  if(0 == (ntohs(hdr4->frag_off) & 0x3FFF) ) {
++  if (0 == (ntohs(hdr4->frag_off) & 0x3FFF)) {
+     check_for_l4 = 1;
+   } else if (IPPROTO_ICMP == hdr4->protocol) {
+     /*
+@@ -1916,9 +2080,10 @@ int nat46_ipv4_input(struct sk_buff *old
+ 	break;
+ 	}
+       case IPPROTO_ICMP:
+-	sport = dport = nat46_fixup_icmp(nat46, hdr4, old_skb);
+-	having_l4 = 1;
+-	break;
++        ret = nat46_fixup_icmp(nat46, hdr4, old_skb, &sport, &dport);
++        nat46debug(3, "ICMP translated to dest port %d, and src port %d.", ntohs(dport), ntohs(sport));
++        having_l4 = 1;
++        break;
+       default:
+ 	break;
+     }
