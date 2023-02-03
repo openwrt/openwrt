@@ -1,0 +1,30 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Wed Aug 5 19:26:48 2020 +0530
+
+nat46:  Fix the issue of packets not fragmented
+
+This patch is propagated from the kernel 4.4 commit
+e598f9c249092abd7c7978fe99b6690884f225c9
+
+when packets size is larger than the MTU of dst, if DF flag is not set,
+fragment it instead of dropping it with PktTooBig ICMPv6 message.
+
+Change-Id: I380d42f59bb4f46a45e542f251f5710f2cca8b62
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -2343,10 +2343,11 @@ int nat46_ipv4_input(struct sk_buff *old
+     }
+     hdr4 = ip_hdr(old_skb);
+     check_for_l4 = 1;
+-    if (add_dummy_header) {
+-      if (0 == (ntohs(hdr4->frag_off) & IP_DF)) {
++    if (0 == (ntohs(hdr4->frag_off) & IP_DF)) {
++      if (add_dummy_header) {
+         add_frag_header = 1;
+       }
++      old_skb->ignore_df = 1;
+     }
+   } else {
+     add_frag_header = 1;

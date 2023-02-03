@@ -1,0 +1,57 @@
+commit 9457a8be6e700f39e6b545f8db0edd30c0693700
+Author: Ken Zhu <quic_guigenz@quicinc.com>
+Date:   Tue Sep 6 11:11:20 2022 -0700
+
+    nat46: fix sleeping warning back trace
+
+    use spin_lock instead of mutex_lock since
+    mutex_lock could sleep in the kernel packet process.
+
+    Change-Id: I65c15a9f618ef296159884a0d6d742e66aaf6623
+    Signed-off-by: Ken Zhu <quic_guigenz@quicinc.com>
+
+--- a/nat46/modules/nat46-glue.c
++++ b/nat46/modules/nat46-glue.c
+@@ -18,7 +18,7 @@
+ #include "nat46-glue.h"
+ #include "nat46-core.h"
+ 
+-static DEFINE_MUTEX(ref_lock);
++static DEFINE_SPINLOCK(ref_lock);
+ int is_valid_nat46(nat46_instance_t *nat46) {
+   return (nat46 && (nat46->sig == NAT46_SIGNATURE));
+ }
+@@ -47,28 +47,27 @@ nat46_instance_t *alloc_nat46_instance(i
+   return nat46;
+ }
+ 
+-
+ nat46_instance_t *get_nat46_instance(struct sk_buff *sk) {
+   nat46_instance_t *nat46 = netdev_nat46_instance(sk->dev);
+-  mutex_lock(&ref_lock);
++  spin_lock_bh(&ref_lock);
+   if (is_valid_nat46(nat46)) {
+     nat46->refcount++;
+-    mutex_unlock(&ref_lock);
++    spin_unlock_bh(&ref_lock);
+     return nat46;
+   } else {
+     printk("[nat46] get_nat46_instance: Could not find a valid NAT46 instance!");
+-    mutex_unlock(&ref_lock);
++    spin_unlock_bh(&ref_lock);
+     return NULL;
+   }
+ }
+ 
+ void release_nat46_instance(nat46_instance_t *nat46) {
+-  mutex_lock(&ref_lock);
++  spin_lock_bh(&ref_lock);
+   nat46->refcount--;
+   if(0 == nat46->refcount) {
+     printk("[nat46] release_nat46_instance: freeing nat46 instance with %d pairs\n", nat46->npairs);
+     nat46->sig = FREED_NAT46_SIGNATURE;
+     kfree(nat46);
+   }
+-  mutex_unlock(&ref_lock);
++  spin_unlock_bh(&ref_lock);
+ }
