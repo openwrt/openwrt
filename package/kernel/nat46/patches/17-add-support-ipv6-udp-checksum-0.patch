@@ -1,0 +1,32 @@
+Author: Ken Zhu <guigenz@codeaurora.org>
+Date:   Wed Feb 17 13:37:15 2021 -0800
+
+    nat46: keep ipv4 checksum zero when incoming ipv6 UDP checksum is zero
+
+    When an incoming ipv6 UDP packet has 0 checksum, the ipv4 checksum is
+    kept zero after translation.
+
+    Change-Id: I8ddd0c586e5cfbd5a57dc5632e93543d6db5c312
+    Signed-off-by: Ken Zhu <guigenz@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -1903,10 +1903,14 @@ void nat46_ipv6_input(struct sk_buff *ol
+       case NEXTHDR_UDP: {
+         struct udphdr *udp = add_offset(ip6h, v6packet_l3size);
+ 
+-	/* UDP payload length won't change, needn't unmagic its value. */
+-        u16 sum1 = csum_ipv6_unmagic(nat46, &ip6h->saddr, &ip6h->daddr, 0, NEXTHDR_UDP, udp->check);
+-        u16 sum2 = csum_tcpudp_remagic(v4saddr, v4daddr, 0, NEXTHDR_UDP, sum1);
+-        udp->check = sum2;
++	/* UDP payload length won't change, needn't unmagic its value.
++	 * UDP checksum zero then skip the calculation of the checksum.
++	 */
++	if (udp->check) {
++          u16 sum1 = csum_ipv6_unmagic(nat46, &ip6h->saddr, &ip6h->daddr, 0, NEXTHDR_UDP, udp->check);
++          u16 sum2 = csum_tcpudp_remagic(v4saddr, v4daddr, 0, NEXTHDR_UDP, sum1);
++          udp->check = sum2;
++	}
+         break;
+         }
+       case NEXTHDR_ICMP: {
