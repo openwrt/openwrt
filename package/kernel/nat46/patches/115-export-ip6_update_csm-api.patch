@@ -1,0 +1,33 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Tue Sep 22 10:49:35 2020 +0530
+
+This patch is propogated from the kernel 4.4 commit
+0907c30387c89bbec23f426891a756ca17e421ed
+
+nat46: export ip6_update_csum api
+
+export ip6_update_csum for other modules.
+
+Change-Id: I08de067f7a2d54d687c352154f1a1ab441652445
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -1972,6 +1972,7 @@ void ip6_update_csum(struct sk_buff * sk
+       }
+     }
+ }
++EXPORT_SYMBOL(ip6_update_csum);
+ 
+ int ip4_input_not_interested(nat46_instance_t *nat46, struct iphdr *iph, struct sk_buff *old_skb) {
+   if (old_skb->protocol != htons(ETH_P_IP)) {
+--- a/nat46/modules/nat46-core.h
++++ b/nat46/modules/nat46-core.h
+@@ -111,6 +111,7 @@ void release_nat46_instance(nat46_instan
+ 
+ int xlate_6_to_4(struct net_device *dev, struct ipv6hdr *ip6h, uint16_t proto, __u32 *pv4saddr, __u32 *pv4daddr);
+ int xlate_4_to_6(struct net_device *dev, struct iphdr *hdr4, uint16_t sport, uint16_t dport, void *v6saddr, void *v6daddr);
++void ip6_update_csum(struct sk_buff * skb, struct ipv6hdr * ip6hdr, int do_atomic_frag);
+ bool nat46_get_rule_config(struct net_device *dev, nat46_xlate_rulepair_t **nat46_rule_pair, int *count);
+ int nat46_get_npairs(struct net_device *dev);
+ bool nat46_get_info(struct net_device *dev, nat46_xlate_rulepair_t **nat46_rule_pair,
