@@ -1,0 +1,30 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Sun Sep 20 13:33:42 2020 +0530
+
+nat46: Add skb_ext_reset to reset skb extensions
+
+This patch adds support to reset the skb extensions before
+resetting the netfilter. Without the change, conntrack
+is in invalid state and traffic gets dropped.
+
+Change-Id: I24ee6fe8a9a9dec09d61d8e716fff587f65e4e4f
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -1710,6 +1710,7 @@ int nat46_ipv6_input(struct sk_buff *old
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0)
+   nf_reset(new_skb);
+ #else
++  skb_ext_reset(new_skb);
+   nf_reset_ct(new_skb);
+ #endif
+ 
+@@ -1936,6 +1937,7 @@ int nat46_ipv4_input(struct sk_buff *old
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(5,4,0)
+   nf_reset(new_skb);
+ #else
++  skb_ext_reset(new_skb);
+   nf_reset_ct(new_skb);
+ #endif
+ 

@@ -1,0 +1,134 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Wed Aug 5 18:59:20 2020 +0530
+
+nat46: Copy CE's port number to IPv6 fragment header.
+
+This patch is propagated from kernel 4.4 commit
+7886fd3eb081c7767b02685593bc1d19deaecba8
+
+Copy CE's port number to the lower 16-bits of IPv6 identification
+number.
+
+Change-Id: I6946e93bf8bed4c1378d19e75db0729097e0d9eb
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -31,6 +31,7 @@
+ 
+ static uint16_t xlate_pkt_in_err_v4_to_v6(nat46_instance_t *nat46, struct iphdr *iph,
+ 			struct sk_buff *old_skb, uint16_t *sport, uint16_t *dport);
++static DEFINE_SPINLOCK(port_id_lock);
+ 
+ void
+ nat46debug_dump(nat46_instance_t *nat46, int level, void *addr, int len)
+@@ -2236,6 +2237,73 @@ static uint16_t xlate_pkt_in_err_v4_to_v
+ 	return 1;
+ }
+ 
++/* Return the port number from CE's port set */
++static uint16_t nat46_get_ce_port(nat46_xlate_rulepair_t *pair, uint16_t sport)
++{
++	/*
++	 * 'psid_bits_len' represents number of bits in PSID.
++	 * 'offset' represents offset of PSID in a port number.
++	 */
++	uint8_t psid_bits_len, offset, port_set_bitmask;
++
++	/*
++	 * 'psid16' represent PSID value.
++	 * 'm' represents number of bits in excluded port set.
++	 * 'a' represents number of bits in a 16-bit port number after PSID.
++	 *     It is used to control number of port in one contiguous port set.
++	 *
++	 * Name of a variable 'a' and 'm' is as per Appendix B of [RFC7597].
++	 */
++	uint16_t psid16, value, m, a;
++	nat46_xlate_rule_t *rule;
++
++	/* stores to last port number from CE's port set */
++	static uint16_t port_num;
++
++	rule = &pair->local;
++	offset = rule->psid_offset;
++
++	if (rule->ea_len + rule->v4_pref_len > IPV4_BITS_MAX) {
++		psid_bits_len = rule->ea_len - (IPV4_BITS_MAX - rule->v4_pref_len);
++	} else {
++		return 0;
++	}
++	a = PSID_LEN_MAX - offset - psid_bits_len;
++	psid16 = (ntohs(sport) >> a) & (0xffff >> (PSID_LEN_MAX - psid_bits_len));
++
++	spin_lock(&port_id_lock);
++
++	/* Start case */
++	if (0 == port_num) {
++		m = (offset) ? 1 : 0;
++		port_num = (m << (PSID_LEN_MAX - offset)) | (psid16 << a);
++		value = port_num;
++		spin_unlock(&port_id_lock);
++		return value;
++	}
++
++	/* End of one port set */
++	port_set_bitmask = (1 << a) - 1;
++	value = port_num & port_set_bitmask;
++	if (0 == (value ^ port_set_bitmask)) {
++		m = port_num >> (PSID_LEN_MAX - offset);
++		m++;
++		/* End case */
++		if (m >= (1 << offset)) {
++			m = (offset) ? 1 : 0;
++		}
++		port_num = (m << (PSID_LEN_MAX - offset)) | (psid16 << a);
++		value = port_num;
++		spin_unlock(&port_id_lock);
++		return value;
++	}
++
++	port_num++;
++	value = port_num;
++	spin_unlock(&port_id_lock);
++	return value;
++}
++
+ int nat46_ipv4_input(struct sk_buff *old_skb) {
+   nat46_instance_t *nat46 = get_nat46_instance(old_skb);
+   nat46_xlate_rulepair_t apair;
+@@ -2368,9 +2436,34 @@ int nat46_ipv4_input(struct sk_buff *old
+ 
+   if (add_frag_header) {
+     struct frag_hdr *fh = (struct frag_hdr*)(hdr6 + 1);
++    uint16_t ce_port_num = 0;
++
++    /* Flag to represent whether PSID is assigned to MAP-T node or not */
++    bool is_psid = false;
++
+     fh->frag_off = htons(((ntohs(hdr4->frag_off) >> 13) & 7) + ((ntohs(hdr4->frag_off) & 0x1FFF) << 3));
+     fh->nexthdr = hdr4->protocol;
+-    fh->identification = htonl(ntohs(hdr4->id));
++
++    /*
++     * PSID assigned MAP-T node will have non-zero ea_len and we are currently
++     * only supporting NAT46_XLATE_MAP as the CE's rule style.
++     */
++    is_psid = (apair.local.style == NAT46_XLATE_MAP) && apair.local.ea_len;
++    if (is_psid) {
++      ce_port_num = nat46_get_ce_port(nat46->pairs, sport);
++      nat46debug(10, "\n ce port number is %02x\n", ce_port_num);
++
++      /* Assign CE's port number as the fragment identifier */
++      if (ce_port_num) {
++        fh->identification = htonl(ce_port_num);
++      } else {
++        fh->identification = htonl(ntohs(hdr4->id));
++      }
++    } else {
++      fh->identification = htonl(ntohs(hdr4->id));
++    }
++
++
+   }
+   ip6_update_csum(new_skb, hdr6, add_frag_header);
+ 

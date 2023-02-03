@@ -1,0 +1,136 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Wed Aug 5 10:57:25 2020 +0530
+
+nat46: Add support for 64-bits stats.
+
+This patch is propagated from 4.4 kernel commit
+4a2d1dd9bc9331392c7a4947126c361217c82e0c
+
+Add 64-bits stats functionality for MAP-T interface.
+
+Change-Id: I4a6f9c7ed3554ac0ec672aa5fa283be2e95cfdc0
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-netdev.c
++++ b/nat46/modules/nat46-netdev.c
+@@ -24,6 +24,7 @@
+ #include <net/ip6_route.h>
+ #include <net/ipv6.h>
+ #include <linux/version.h>
++#include <net/ip_tunnels.h>
+ #include <linux/radix-tree.h>
+ #include "nat46-core.h"
+ #include "nat46-module.h"
+@@ -40,16 +41,40 @@ static u8 netdev_count = 0;
+ 
+ static int nat46_netdev_up(struct net_device *dev);
+ static int nat46_netdev_down(struct net_device *dev);
+-
++static int nat46_netdev_init(struct net_device *dev);
++static void nat46_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *tot);
+ static netdev_tx_t nat46_netdev_xmit(struct sk_buff *skb, struct net_device *dev);
+ 
+ 
+ static const struct net_device_ops nat46_netdev_ops = {
++	.ndo_init       = nat46_netdev_init,	/* device specific initialization */
+ 	.ndo_open       = nat46_netdev_up,      /* Called at ifconfig nat46 up */
+ 	.ndo_stop       = nat46_netdev_down,    /* Called at ifconfig nat46 down */
+ 	.ndo_start_xmit = nat46_netdev_xmit,    /* REQUIRED, must return NETDEV_TX_OK */
++	.ndo_get_stats64 = nat46_get_stats64,	/* 64 bit device stats */
+ };
+ 
++static int nat46_netdev_init(struct net_device *dev)
++{
++	int i;
++	dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
++	if (!dev->tstats) {
++		return -ENOMEM;
++	}
++
++	for_each_possible_cpu(i) {
++		struct pcpu_sw_netstats *ipt_stats;
++		ipt_stats = per_cpu_ptr(dev->tstats, i);
++		u64_stats_init(&ipt_stats->syncp);
++	}
++	return 0;
++}
++
++static void nat46_netdev_resource_free(struct net_device *dev)
++{
++	free_percpu(dev->tstats);
++}
++
+ static int nat46_netdev_up(struct net_device *dev)
+ {
+ 	netif_start_queue(dev);
+@@ -65,9 +90,14 @@ static int nat46_netdev_down(struct net_
+ static netdev_tx_t nat46_netdev_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	int ret = 0;
++	struct pcpu_sw_netstats *tstats = get_cpu_ptr(dev->tstats);
++
++	u64_stats_update_begin(&tstats->syncp);
++	u64_stats_inc(&tstats->rx_packets);
++	u64_stats_add(&tstats->rx_bytes, skb->len);
++	u64_stats_update_end(&tstats->syncp);
++	put_cpu_ptr(tstats);
+ 
+-	dev->stats.rx_packets++;
+-	dev->stats.rx_bytes += skb->len;
+ 	if(ETH_P_IP == ntohs(skb->protocol)) {
+ 		ret = nat46_ipv4_input(skb);
+ 	}
+@@ -81,22 +111,39 @@ static netdev_tx_t nat46_netdev_xmit(str
+ }
+ 
+ void nat46_netdev_count_xmit(struct sk_buff *skb, struct net_device *dev) {
+-	dev->stats.tx_packets++;
+-	dev->stats.tx_bytes += skb->len;
++	struct pcpu_sw_netstats *tstats = get_cpu_ptr(dev->tstats);
++
++	u64_stats_update_begin(&tstats->syncp);
++	u64_stats_inc(&tstats->tx_packets);
++	u64_stats_add(&tstats->tx_bytes, skb->len);
++	u64_stats_update_end(&tstats->syncp);
++	put_cpu_ptr(tstats);
+ }
+ 
+ void nat46_update_stats(struct net_device *dev, uint32_t rx_packets, uint32_t rx_bytes,
+ 			uint32_t tx_packets, uint32_t tx_bytes, uint32_t rx_dropped, uint32_t tx_dropped)
+ {
+-	dev->stats.rx_packets += rx_packets;
+-	dev->stats.rx_bytes += rx_bytes;
+-	dev->stats.tx_packets += tx_packets;
+-	dev->stats.tx_bytes += tx_bytes;
++	struct pcpu_sw_netstats *tstats = get_cpu_ptr(dev->tstats);
++
++	u64_stats_update_begin(&tstats->syncp);
++	u64_stats_add(&tstats->rx_packets, rx_packets);
++	u64_stats_add(&tstats->rx_bytes, rx_bytes);
++	u64_stats_add(&tstats->tx_packets, tx_packets);
++	u64_stats_add(&tstats->tx_bytes, tx_bytes);
+ 	dev->stats.rx_dropped += rx_dropped;
+ 	dev->stats.tx_dropped += tx_dropped;
++	u64_stats_update_end(&tstats->syncp);
++	put_cpu_ptr(tstats);
+ }
+ EXPORT_SYMBOL(nat46_update_stats);
+ 
++static void nat46_get_stats64(struct net_device *dev,
++		struct rtnl_link_stats64 *tot)
++{
++	netdev_stats_to_stats64(tot, &dev->stats);
++	dev_fetch_sw_netstats(tot, dev->tstats);
++}
++
+ void *netdev_nat46_instance(struct net_device *dev) {
+ 	nat46_netdev_priv_t *priv = netdev_priv(dev);
+ 	return priv->nat46;
+@@ -120,6 +167,7 @@ static void nat46_netdev_setup(struct ne
+ 	priv->nat46 = nat46;
+ 
+ 	dev->netdev_ops = &nat46_netdev_ops;
++	dev->priv_destructor = nat46_netdev_resource_free;
+ 	dev->type = ARPHRD_NONE;
+ 	dev->hard_header_len = 0;
+ 	dev->addr_len = 0;
