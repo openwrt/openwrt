@@ -51,7 +51,7 @@ ifdef CONFIG_USE_MIPS16
     TARGET_CXXFLAGS += -mips16 -minterlink-mips16
   endif
 endif
-ifeq ($(call pkg_build_flag,gc-sections,0),1)
+ifeq ($(call pkg_build_flag,gc-sections,$(if $(CONFIG_USE_GC_SECTIONS),1,0)),1)
   TARGET_CFLAGS+= -ffunction-sections -fdata-sections
   TARGET_CXXFLAGS+= -ffunction-sections -fdata-sections
   TARGET_LDFLAGS+= -Wl,--gc-sections
