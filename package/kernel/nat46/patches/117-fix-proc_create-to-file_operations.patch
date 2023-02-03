@@ -1,0 +1,43 @@
+--- a/nat46/modules/nat46-module.c
++++ b/nat46/modules/nat46-module.c
+@@ -15,6 +15,7 @@
+  *
+  */
+ 
++#include <linux/version.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+@@ -82,7 +83,7 @@ static char *get_devname(char **ptail)
+ {
+ 	const int maxlen = IFNAMSIZ-1;
+ 	char *devname = get_next_arg(ptail);
+-	if(strlen(devname) > maxlen) {
++	if(devname && (strlen(devname) > maxlen)) {
+ 		printk(KERN_INFO "nat46: '%s' is "
+ 			"longer than %d chars, truncating\n", devname, maxlen);
+ 		devname[maxlen] = 0;
+@@ -144,6 +145,7 @@ static ssize_t nat46_proc_write(struct f
+ 	return count;
+ }
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5,6,0)
+ static const struct file_operations nat46_proc_fops = {
+ 	.owner		= THIS_MODULE,
+ 	.open		= nat46_proc_open,
+@@ -152,6 +154,15 @@ static const struct file_operations nat4
+ 	.release	= single_release,
+ 	.write		= nat46_proc_write,
+ };
++#else
++static const struct proc_ops nat46_proc_fops = {
++	.proc_open	= nat46_proc_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
++	.proc_write	= nat46_proc_write,
++};
++#endif
+ 
+ 
+ int create_nat46_proc_entry(void) {

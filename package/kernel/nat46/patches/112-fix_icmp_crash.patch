@@ -1,0 +1,40 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Wed Aug 5 20:57:33 2020 +0530
+
+Fix crash of free skb
+
+This patch is propagated from the 4.4 kernel commit
+b959b0d45c66ae004a5bfc1687980093fa5b8cc3.
+
+This is caused by the translation of the inner ipv6 header, it
+move memory by the inner head's tot_len which is not exact that
+inner packet will be trimmed for icmp error packets size no more
+than 576.
+
+Change-Id: Id5d41fa0721acdf6ea76721c45415fe3be432207
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -2115,7 +2115,9 @@ static uint16_t xlate_pkt_in_err_v4_to_v
+ 
+ 	if (skb_tailroom(old_skb) >= IPV6V4HDRDELTA){
+ 		skb_put(old_skb, IPV6V4HDRDELTA);
+-		memmove(((char *)iiph + IPV6HDRSIZE), (iiph + 1), ntohs(iiph->tot_len) - IPV4HDRSIZE);
++		/* ErrorICMP size is less than 576, the inner ipv4 packet will be trimmed */
++		memmove(((char *)iiph + IPV6HDRSIZE), (iiph + 1),
++		ntohs(iph->tot_len) - 2 * IPV4HDRSIZE - sizeof(struct icmphdr));
+ 		memcpy(iiph, &ip6h, IPV6HDRSIZE);
+ 	}
+ 	else {
+@@ -2128,7 +2130,9 @@ static uint16_t xlate_pkt_in_err_v4_to_v
+ 
+ 		skb_put(old_skb, IPV6V4HDRDELTA);
+ 		iiph = (struct iphdr *)(icmp_hdr(old_skb) + 1);
+-		memmove(((char *)iiph + IPV6HDRSIZE), (iiph + 1), ntohs(iiph->tot_len) - IPV4HDRSIZE);
++		/* ErrorICMP size is less than 576, the inner ipv4 packet will be trimmed */
++		memmove(((char *)iiph + IPV6HDRSIZE), (iiph + 1),
++		ntohs(iph->tot_len) - 2 * IPV4HDRSIZE - sizeof(struct icmphdr));
+ 		memcpy(iiph, &ip6h, IPV6HDRSIZE);
+ 		nat46 = get_nat46_instance(old_skb);
+ 		iph = ip_hdr(old_skb);

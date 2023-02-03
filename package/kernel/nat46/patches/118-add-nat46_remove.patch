@@ -1,0 +1,80 @@
+--- a/nat46/modules/nat46-module.c
++++ b/nat46/modules/nat46-module.c
+@@ -138,6 +138,12 @@ static ssize_t nat46_proc_write(struct f
+ 			mutex_lock(&add_del_lock);
+ 			nat46_insert(devname, tail);
+ 			mutex_unlock(&add_del_lock);
++		} else if (0 == strcmp(arg_name, "remove")) {
++			devname = get_devname(&tail);
++			printk(KERN_INFO "nat46: remove a rule from the device (%s) with '%s'\n", devname, tail);
++			mutex_lock(&add_del_lock);
++			nat46_remove(devname, tail);
++			mutex_unlock(&add_del_lock);
+ 		}
+ 	}
+ 
+--- a/nat46/modules/nat46-netdev.c
++++ b/nat46/modules/nat46-netdev.c
+@@ -337,6 +337,46 @@ int nat46_configure(char *devname, char
+ 	}
+ }
+ 
++int nat46_remove(char *devname, char *buf) {
++	int ret = -1;
++	char config_remove[NAT46_CFG_BUFLEN];
++	struct net_device *dev;
++	nat46_instance_t *nat46;
++	nat46_instance_t *nat46_remove;
++	int result_rem;
++	int i;
++
++	if((dev = find_dev(devname)) == NULL ||
++	   (nat46 = netdev_nat46_instance(dev)) == NULL ||
++	   (nat46_remove = alloc_nat46_instance(1, NULL, -1, -1, -1)) == NULL) {
++		return ret;
++	}
++
++	if(nat46_set_ipair_config(nat46_remove, 0, buf, NAT46_CFG_BUFLEN) < 0) {
++		release_nat46_instance(nat46_remove);
++		return ret;
++	}
++
++	result_rem = nat46_get_ipair_config(nat46_remove, 0, config_remove, NAT46_CFG_BUFLEN);
++	for(i = 0; i < nat46->npairs; i++) {
++		char config[NAT46_CFG_BUFLEN];
++		int result = nat46_get_ipair_config(nat46, i, config, NAT46_CFG_BUFLEN);
++
++		if (result_rem == result && strncmp(config_remove, config, result_rem) == 0) {
++			nat46_instance_t *nat46_new = alloc_nat46_instance(nat46->npairs-1, nat46, 0, 0, i);
++			if(nat46_new) {
++				netdev_nat46_set_instance(dev, nat46_new);
++				ret = 0;
++			} else {
++				printk("Could not remove the rule from device %s\n", devname);
++			}
++			break;
++		}
++	}
++	release_nat46_instance(nat46_remove);
++	return ret;
++}
++
+ void nat64_show_all_configs(struct seq_file *m) {
+         struct net_device *dev;
+ 	read_lock(&dev_base_lock);
+--- a/nat46/modules/nat46-netdev.h
++++ b/nat46/modules/nat46-netdev.h
+@@ -14,11 +14,13 @@
+  */
+ 
+ #define NAT46_DEVICE_SIGNATURE 0x544e36dd
++#define NAT46_CFG_BUFLEN 200
+ 
+ int nat46_create(char *devname);
+ int nat46_destroy(char *devname);
+ int nat46_insert(char *devname, char *buf);
+ int nat46_configure(char *devname, char *buf);
++int nat46_remove(char *devname, char *buf);
+ void nat46_destroy_all(void);
+ void nat64_show_all_configs(struct seq_file *m);
+ void nat46_netdev_count_xmit(struct sk_buff *skb, struct net_device *dev);
