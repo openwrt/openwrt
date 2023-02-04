@@ -535,7 +535,7 @@ define KernelPackage/fs-ntfs3
   AUTOLOAD:=$(call AutoLoad,80,ntfs3)
 endef
 
-define KernelPackage/fuse/description
+define KernelPackage/fs-ntfs3/description
  Kernel module for fully functional NTFS filesystem support. It allows
  reading as well as writing.
 
