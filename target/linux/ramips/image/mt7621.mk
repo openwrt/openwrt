@@ -1068,6 +1068,18 @@ define Device/humax_e10
 endef
 TARGET_DEVICES += humax_e10
 
+define Device/huasifei_ws1208v2
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Huasifei
+  DEVICE_MODEL := WS1208V2
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
+	kmod-usb3 kmod-usb-net-cdc-mbim kmod-usb-net-qmi-wwan \
+	kmod-usb-serial-option
+endef
+TARGET_DEVICES += huasifei_ws1208v2
+
 define Device/iodata_wn-ax1167gr
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
