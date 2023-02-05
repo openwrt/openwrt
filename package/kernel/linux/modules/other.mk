@@ -834,7 +834,8 @@ define KernelPackage/ramoops
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Ramoops (pstore-ram)
   DEFAULT:=m if ALL_KMODS
-  KCONFIG:=CONFIG_PSTORE_RAM
+  KCONFIG:=CONFIG_PSTORE_RAM \
+	CONFIG_PSTORE_CONSOLE=y
   DEPENDS:=+kmod-pstore +kmod-reed-solomon
   FILES:= $(LINUX_DIR)/fs/pstore/ramoops.ko
   AUTOLOAD:=$(call AutoLoad,30,ramoops,1)
