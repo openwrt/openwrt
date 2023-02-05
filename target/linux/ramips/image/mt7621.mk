@@ -107,7 +107,7 @@ define Device/adslr_g7
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ADSLR
   DEVICE_MODEL := G7
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += adslr_g7
 
@@ -117,7 +117,7 @@ define Device/afoundry_ew1200
   DEVICE_VENDOR := AFOUNDRY
   DEVICE_MODEL := EW1200
   DEVICE_PACKAGES := kmod-ata-ahci kmod-mt76x2 kmod-mt7603 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += ew1200
 endef
 TARGET_DEVICES += afoundry_ew1200
@@ -127,7 +127,7 @@ define Device/alfa-network_quad-e4g
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ALFA Network
   DEVICE_MODEL := Quad-E4G
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 uboot-envtools \
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 \
 	-wpad-basic-wolfssl
   SUPPORTED_DEVICES += quad-e4g
 endef
@@ -136,7 +136,7 @@ TARGET_DEVICES += alfa-network_quad-e4g
 define Device/ampedwireless_ally_common
   $(Device/dsa-migration)
   DEVICE_VENDOR := Amped Wireless
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
   IMAGE_SIZE := 32768k
   KERNEL_SIZE := 4096k
   BLOCKSIZE := 128k
@@ -165,7 +165,7 @@ define Device/asiarf_ap7621-001
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-001
-  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 -wpad-basic-wolfssl -uboot-envtools
 endef
 TARGET_DEVICES += asiarf_ap7621-001
 
@@ -174,7 +174,7 @@ define Device/asiarf_ap7621-nv1
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-NV1
-  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 -wpad-basic-wolfssl -uboot-envtools
 endef
 TARGET_DEVICES += asiarf_ap7621-nv1
 
@@ -186,7 +186,7 @@ define Device/asus_rt-ac57u
   DEVICE_ALT0_MODEL := RT-AC1200GU
   IMAGE_SIZE := 16064k
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += asus_rt-ac57u
 
@@ -203,7 +203,7 @@ define Device/asus_rt-ac65p
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware uboot-envtools
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += asus_rt-ac65p
 
@@ -220,7 +220,7 @@ define Device/asus_rt-ac85p
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware uboot-envtools
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware
 endef
 TARGET_DEVICES += asus_rt-ac85p
 
@@ -232,7 +232,7 @@ define Device/asus_rt-n56u-b1
   DEVICE_VARIANT := B1
   IMAGE_SIZE := 16064k
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += asus_rt-n56u-b1
 
@@ -271,7 +271,7 @@ define Device/beeline_smartbox-flash
   IMAGE/factory.trx := append-kernel | append-ubi | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware \
-	uboot-envtools uencrypt
+	-uboot-envtools uencrypt
 endef
 TARGET_DEVICES += beeline_smartbox-flash
 
@@ -282,7 +282,7 @@ define Device/buffalo_wsr-1166dhp
   IMAGE_SIZE := 15936k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WSR-1166DHP
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
   SUPPORTED_DEVICES += wsr-1166
 endef
 TARGET_DEVICES += buffalo_wsr-1166dhp
@@ -296,7 +296,7 @@ define Device/buffalo_wsr-2533dhpl
   DEVICE_ALT0_VENDOR := Buffalo
   DEVICE_ALT0_MODEL := WSR-2533DHP
   IMAGE/sysupgrade.bin := trx | pad-rootfs | append-metadata
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += buffalo_wsr-2533dhpl
 
@@ -305,7 +305,7 @@ define Device/buffalo_wsr-600dhp
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WSR-600DHP
-  DEVICE_PACKAGES := kmod-mt7603 kmod-rt2800-pci
+  DEVICE_PACKAGES := kmod-mt7603 kmod-rt2800-pci -uboot-envtools
   SUPPORTED_DEVICES += wsr-600
 endef
 TARGET_DEVICES += buffalo_wsr-600dhp
@@ -316,7 +316,7 @@ define Device/bolt_arion
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := BOLT
   DEVICE_MODEL := Arion
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += bolt_arion
 
@@ -326,7 +326,7 @@ define Device/cudy_wr1300
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := WR1300
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += cudy_wr1300
 
@@ -336,7 +336,8 @@ define Device/cudy_wr2100
   DEVICE_MODEL := WR2100
   IMAGE_SIZE := 15872k
   UIMAGE_NAME := R11
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	-uboot-envtools
 endef
 TARGET_DEVICES += cudy_wr2100
 
@@ -346,7 +347,7 @@ define Device/cudy_x6
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := X6
   UIMAGE_NAME := R13
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915e -uboot-envtools
 endef
 TARGET_DEVICES += cudy_x6
 
@@ -354,7 +355,7 @@ define Device/dlink_dir-8xx-a1
   $(Device/dsa-migration)
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := D-Link
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
   KERNEL := $$(KERNEL) | uimage-sgehdr
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
@@ -366,7 +367,7 @@ define Device/dlink_dir-8xx-r1
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := D-Link
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
   KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
 	check-size | append-metadata
@@ -381,7 +382,7 @@ define Device/dlink_dir-xx60-a1
   UBINIZE_OPTS := -E 5
   DEVICE_VENDOR := D-Link
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
   KERNEL := $$(KERNEL) | uimage-sgehdr
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
@@ -393,6 +394,7 @@ define Device/dlink_dir-1960-a1
   $(Device/dlink_dir-xx60-a1)
   DEVICE_MODEL := DIR-1960
   DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := -uboot-envtools
 endef
 TARGET_DEVICES += dlink_dir-1960-a1
 
@@ -400,6 +402,7 @@ define Device/dlink_dir-2640-a1
   $(Device/dlink_dir-xx60-a1)
   DEVICE_MODEL := DIR-2640
   DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := -uboot-envtools
 endef
 TARGET_DEVICES += dlink_dir-2640-a1
 
@@ -407,6 +410,7 @@ define Device/dlink_dir-2660-a1
   $(Device/dlink_dir-xx60-a1)
   DEVICE_MODEL := DIR-2660
   DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := -uboot-envtools
 endef
 TARGET_DEVICES += dlink_dir-2660-a1
 
@@ -414,6 +418,7 @@ define Device/dlink_dir-853-a3
   $(Device/dlink_dir-xx60-a1)
   DEVICE_MODEL := DIR-853
   DEVICE_VARIANT := A3
+  DEVICE_PACKAGES := -uboot-envtools
 endef
 TARGET_DEVICES += dlink_dir-853-a3
 
@@ -421,7 +426,7 @@ define Device/dlink_dir-853-r1
   $(Device/dlink_dir-8xx-r1)
   DEVICE_MODEL := DIR-853
   DEVICE_VARIANT := R1
-  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += dlink_dir-853-r1
 
@@ -433,7 +438,8 @@ define Device/dlink_dir-860l-b1
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-860L
   DEVICE_VARIANT := B1
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport \
+	-uboot-envtools
   SUPPORTED_DEVICES += dir-860l-b1
 endef
 TARGET_DEVICES += dlink_dir-860l-b1
@@ -442,6 +448,7 @@ define Device/dlink_dir-867-a1
   $(Device/dlink_dir-8xx-a1)
   DEVICE_MODEL := DIR-867
   DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := -uboot-envtools
 endef
 TARGET_DEVICES += dlink_dir-867-a1
 
@@ -449,6 +456,7 @@ define Device/dlink_dir-878-a1
   $(Device/dlink_dir-8xx-a1)
   DEVICE_MODEL := DIR-878
   DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := -uboot-envtools
 endef
 TARGET_DEVICES += dlink_dir-878-a1
 
@@ -460,6 +468,7 @@ define Device/dlink_dir-878-r1
   IMAGE/factory.bin := append-kernel | append-rootfs | check-size | \
 	sign-dlink-ru 57c5375741c30ca9ebcb36713db4ba51 \
 	ab0dff19af8842cdb70a86b4b68d23f7
+  DEVICE_PACKAGES := -uboot-envtools
 endef
 TARGET_DEVICES += dlink_dir-878-r1
 
@@ -467,7 +476,7 @@ define Device/dlink_dir-882-a1
   $(Device/dlink_dir-8xx-a1)
   DEVICE_MODEL := DIR-882
   DEVICE_VARIANT := A1
-  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += dlink_dir-882-a1
 
@@ -480,6 +489,7 @@ define Device/dlink_dir-882-r1
   IMAGE/factory.bin := append-kernel | append-rootfs | check-size | \
 	sign-dlink-ru 57c5375741c30ca9ebcb36713db4ba51 \
 	ab0dff19af8842cdb70a86b4b68d23f7
+  DEVICE_PACKAGES := -uboot-envtools
 endef
 TARGET_DEVICES += dlink_dir-882-r1
 
@@ -489,7 +499,8 @@ define Device/dual-q_h721
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Dual-Q
   DEVICE_MODEL := H721
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 \
+  -wpad-basic-wolfssl -uboot-envtools
 endef
 TARGET_DEVICES += dual-q_h721
 
@@ -500,7 +511,7 @@ define Device/d-team_newifi-d2
   DEVICE_VENDOR := Newifi
   DEVICE_MODEL := D2
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += d-team_newifi-d2
 
@@ -510,7 +521,7 @@ define Device/d-team_pbr-m1
   DEVICE_VENDOR := PandoraBox
   DEVICE_MODEL := PBR-M1
   DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
-	kmod-usb3 kmod-usb-ledtrig-usbport
+	kmod-usb3 kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += pbr-m1
 endef
 TARGET_DEVICES += d-team_pbr-m1
@@ -526,7 +537,7 @@ define Device/edimax_ra21s
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 02020040 8844A2D168B45A2D
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += edimax_ra21s
 
@@ -545,7 +556,7 @@ define Device/edimax_re23s
   IMAGE/factory.bin := append-kernel | append-rootfs | \
 	edimax-header -s CSYS -m RN76 -f 0x70000 -S 0x01100000 | pad-rootfs | \
 	check-size
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += edimax_re23s
 
@@ -558,7 +569,7 @@ define Device/edimax_rg21s
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 02020038 8844A2D168B45A2D
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += edimax_rg21s
 
@@ -570,7 +581,7 @@ define Device/elecom_wrc-1167ghbk2-s
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elecom-wrc-gs-factory WRC-1167GHBK2-S 0.00
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += elecom_wrc-1167ghbk2-s
 
@@ -582,7 +593,7 @@ define Device/elecom_wrc-gs
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elecom-wrc-gs-factory $$$$(ELECOM_HWNAME) 0.00 -N | \
 	append-string MT7621_ELECOM_$$$$(ELECOM_HWNAME)
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 
 define Device/elecom_wrc-1167gs2-b
@@ -643,7 +654,7 @@ define Device/elecom_wrc-2533ghbk-i
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 0107002d 8844A2D168B45A2D | \
 	elecom-product-header WRC-2533GHBK-I
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += elecom_wrc-2533ghbk-i
 
@@ -676,7 +687,8 @@ define Device/firefly_firewrt
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Firefly
   DEVICE_MODEL := FireWRT
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport \
+	-uboot-envtools
   SUPPORTED_DEVICES += firewrt
 endef
 TARGET_DEVICES += firefly_firewrt
@@ -687,7 +699,7 @@ define Device/gehua_ghl-r-001
   DEVICE_VENDOR := GeHua
   DEVICE_MODEL := GHL-R-001
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += gehua_ghl-r-001
 
@@ -696,7 +708,8 @@ define Device/glinet_gl-mt1300
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT1300
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
+	-uboot-envtools
 endef
 TARGET_DEVICES += glinet_gl-mt1300
 
@@ -705,7 +718,8 @@ define Device/gnubee_gb-pc1
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := GnuBee
   DEVICE_MODEL := Personal Cloud One
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 \
+	-wpad-basic-wolfssl -uboot-envtools
   IMAGE_SIZE := 32448k
 endef
 TARGET_DEVICES += gnubee_gb-pc1
@@ -715,7 +729,8 @@ define Device/gnubee_gb-pc2
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := GnuBee
   DEVICE_MODEL := Personal Cloud Two
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 \
+	-wpad-basic-wolfssl -uboot-envtools
   IMAGE_SIZE := 32448k
 endef
 TARGET_DEVICES += gnubee_gb-pc2
@@ -725,7 +740,7 @@ define Device/hilink_hlk-7621a-evb
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := HiLink
   DEVICE_MODEL := HLK-7621A evaluation board
-  DEVICE_PACKAGES += kmod-mt76x2 kmod-usb3
+  DEVICE_PACKAGES += kmod-mt76x2 kmod-usb3 -uboot-envtools
   IMAGE_SIZE := 32448k
 endef
 TARGET_DEVICES += hilink_hlk-7621a-evb
@@ -744,7 +759,7 @@ define Device/hiwifi_hc5962
 	check-size
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5962
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 -uboot-envtools
 endef
 TARGET_DEVICES += hiwifi_hc5962
 
@@ -763,7 +778,8 @@ define Device/humax_e10
   IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | \
 	edimax-header -s CSYS -m EA03 -f 0x70000 -S 0x01100000 | \
 	check-size | zip upg -P f013c26cf0a320fb71d03356dcb6bb63
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
+	-uboot-envtools
 endef
 TARGET_DEVICES += humax_e10
 
@@ -775,7 +791,7 @@ define Device/iodata_wn-ax1167gr
 	iodata-factory 7864320 4 0x1055 $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.bin
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-AX1167GR
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr
 
@@ -803,7 +819,7 @@ define Device/iodata_wn-ax1167gr2
   DEVICE_MODEL := WN-AX1167GR2
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
 	uImage lzma -M 0x434f4d42 -n '3.10(XBC.1)b10' | iodata-mstc-header
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr2
 
@@ -812,7 +828,8 @@ define Device/iodata_wn-ax2033gr
   DEVICE_MODEL := WN-AX2033GR
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
 	uImage lzma -M 0x434f4d42 -n '3.10(VST.1)C10' | iodata-mstc-header
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	-uboot-envtools
 endef
 TARGET_DEVICES += iodata_wn-ax2033gr
 
@@ -821,7 +838,7 @@ define Device/iodata_wn-dx1167r
   DEVICE_MODEL := WN-DX1167R
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
 	uImage lzma -M 0x434f4d43 -n '3.10(XIK.1)b10' | iodata-mstc-header
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += iodata_wn-dx1167r
 
@@ -830,7 +847,8 @@ define Device/iodata_wn-dx1200gr
   DEVICE_MODEL := WN-DX1200GR
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
 	uImage lzma -M 0x434f4d43 -n '3.10(XIQ.0)b20' | iodata-mstc-header
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	-uboot-envtools
 endef
 TARGET_DEVICES += iodata_wn-dx1200gr
 
@@ -839,7 +857,8 @@ define Device/iodata_wn-dx2033gr
   DEVICE_MODEL := WN-DX2033GR
   KERNEL_INITRAMFS := $(KERNEL_DTB) | loader-kernel | lzma | \
 	uImage lzma -M 0x434f4d42 -n '3.10(XID.0)b30' | iodata-mstc-header
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	-uboot-envtools
 endef
 TARGET_DEVICES += iodata_wn-dx2033gr
 
@@ -849,7 +868,7 @@ define Device/iodata_wn-gx300gr
   IMAGE_SIZE := 7616k
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-GX300GR
-  DEVICE_PACKAGES := kmod-mt7603
+  DEVICE_PACKAGES := kmod-mt7603 -uboot-envtools
 endef
 TARGET_DEVICES += iodata_wn-gx300gr
 
@@ -862,7 +881,7 @@ define Device/iodata_wnpr2600g
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	elx-header 0104003a 8844A2D168B45A2D
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += iodata_wnpr2600g
 
@@ -872,7 +891,7 @@ define Device/iptime_a3002mesh
   UIMAGE_NAME := a3002me
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A3002MESH
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += iptime_a3002mesh
 
@@ -883,7 +902,8 @@ define Device/iptime_a3004ns-dual
   UIMAGE_NAME := a3004nd
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A3004NS-dual
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt76x2 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt76x2 kmod-usb-ledtrig-usbport \
+	-uboot-envtools
 endef
 TARGET_DEVICES += iptime_a3004ns-dual
 
@@ -900,7 +920,8 @@ define Device/iptime_a3004t
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A3004T
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
+	-uboot-envtools
 endef
 TARGET_DEVICES += iptime_a3004t
 
@@ -911,7 +932,7 @@ define Device/iptime_a6004ns-m
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A6004NS-M
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += iptime_a6004ns-m
 
@@ -922,7 +943,7 @@ define Device/iptime_a6ns-m
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A6ns-M
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += iptime_a6ns-m
 
@@ -932,7 +953,8 @@ define Device/iptime_a8004t
   UIMAGE_NAME := a8004t
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := A8004T
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
+	-uboot-envtools
 endef
 TARGET_DEVICES += iptime_a8004t
 
@@ -952,7 +974,7 @@ define Device/iptime_ax2004m
 	check-size | iptime-crc32 ax2004m
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := AX2004M
-  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3 -uboot-envtools
 endef
 TARGET_DEVICES += iptime_ax2004m
 
@@ -967,7 +989,7 @@ define Device/iptime_t5004
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := T5004
-  DEVICE_PACKAGES := -wpad-basic-wolfssl
+  DEVICE_PACKAGES := -wpad-basic-wolfssl -uboot-envtools
 endef
 TARGET_DEVICES += iptime_t5004
 
@@ -980,7 +1002,7 @@ define Device/jcg_jhr-ac876m
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := JHR-AC876M
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += jcg_jhr-ac876m
 
@@ -997,7 +1019,7 @@ define Device/jcg_q20
 	check-size
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := Q20
-  DEVICE_PACKAGES := kmod-mt7915e uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7915e
 endef
 TARGET_DEVICES += jcg_q20
 
@@ -1010,7 +1032,8 @@ define Device/jcg_y2
   JCG_MAXSIZE := 16064k
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := Y2
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
+	-uboot-envtools
 endef
 TARGET_DEVICES += jcg_y2
 
@@ -1021,7 +1044,7 @@ define Device/lenovo_newifi-d1
   DEVICE_VENDOR := Newifi
   DEVICE_MODEL := D1
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-sdhci-mt7620 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += newifi-d1
 endef
 TARGET_DEVICES += lenovo_newifi-d1
@@ -1035,8 +1058,7 @@ define Device/linksys_e5600
   IMAGE_SIZE := 26624k
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := E5600
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
-	uboot-envtools
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
   UBINIZE_OPTS := -E 5
   IMAGES += factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
@@ -1053,8 +1075,7 @@ define Device/linksys_ea7xxx
   KERNEL_SIZE := 4096k
   IMAGE_SIZE := 36864k
   DEVICE_VENDOR := Linksys
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware \
-	uboot-envtools
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware
   UBINIZE_OPTS := -E 5
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | check-size | append-metadata
@@ -1067,7 +1088,7 @@ define Device/linksys_ea6350-v4
   DEVICE_MODEL := EA6350
   DEVICE_VARIANT := v4
   LINKSYS_HWNAME := EA6350
-  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7663-firmware-ap
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7663-firmware-ap -uboot-envtools
 endef
 TARGET_DEVICES += linksys_ea6350-v4
 
@@ -1084,7 +1105,7 @@ define Device/linksys_ea7300-v2
   DEVICE_MODEL := EA7300
   DEVICE_VARIANT := v2
   LINKSYS_HWNAME := EA7300v2
-  DEVICE_PACKAGES += kmod-mt7603
+  DEVICE_PACKAGES += kmod-mt7603 -uboot-envtools
 endef
 TARGET_DEVICES += linksys_ea7300-v2
 
@@ -1118,7 +1139,7 @@ define Device/linksys_re6500
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := RE6500
-  DEVICE_PACKAGES := kmod-mt76x2
+  DEVICE_PACKAGES := kmod-mt76x2 -uboot-envtools
   SUPPORTED_DEVICES += re6500
 endef
 TARGET_DEVICES += linksys_re6500
@@ -1128,7 +1149,8 @@ define Device/mediatek_ap-mt7621a-v60
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Mediatek
   DEVICE_MODEL := AP-MT7621A-V60 EVB
-  DEVICE_PACKAGES := kmod-usb3 kmod-sdhci-mt7620 kmod-sound-mt7620 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-usb3 kmod-sdhci-mt7620 kmod-sound-mt7620 \
+	-wpad-basic-wolfssl -uboot-envtools
 endef
 TARGET_DEVICES += mediatek_ap-mt7621a-v60
 
@@ -1138,7 +1160,7 @@ define Device/mediatek_mt7621-eval-board
   IMAGE_SIZE := 15104k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7621 EVB
-  DEVICE_PACKAGES := -wpad-basic-wolfssl
+  DEVICE_PACKAGES := -wpad-basic-wolfssl -uboot-envtools
   SUPPORTED_DEVICES += mt7621
 endef
 TARGET_DEVICES += mediatek_mt7621-eval-board
@@ -1148,7 +1170,7 @@ define Device/MikroTik
   DEVICE_VENDOR := MikroTik
   BLOCKSIZE := 64k
   IMAGE_SIZE := 16128k
-  DEVICE_PACKAGES := kmod-usb3
+  DEVICE_PACKAGES := kmod-usb3 -uboot-envtools
   KERNEL_NAME := vmlinuz
   KERNEL := kernel-bin | append-dtb-elf
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 | \
@@ -1159,7 +1181,7 @@ endef
 define Device/mikrotik_routerboard-750gr3
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD 750Gr3
-  DEVICE_PACKAGES += -wpad-basic-wolfssl
+  DEVICE_PACKAGES += -wpad-basic-wolfssl -uboot-envtools
   SUPPORTED_DEVICES += mikrotik,rb750gr3
 endef
 TARGET_DEVICES += mikrotik_routerboard-750gr3
@@ -1167,14 +1189,14 @@ TARGET_DEVICES += mikrotik_routerboard-750gr3
 define Device/mikrotik_routerboard-760igs
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD 760iGS
-  DEVICE_PACKAGES += kmod-sfp -wpad-basic-wolfssl
+  DEVICE_PACKAGES += kmod-sfp -wpad-basic-wolfssl -uboot-envtools
 endef
 TARGET_DEVICES += mikrotik_routerboard-760igs
 
 define Device/mikrotik_routerboard-m11g
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD M11G
-  DEVICE_PACKAGES := -wpad-basic-wolfssl
+  DEVICE_PACKAGES := -wpad-basic-wolfssl -uboot-envtools
   SUPPORTED_DEVICES += mikrotik,rbm11g
 endef
 TARGET_DEVICES += mikrotik_routerboard-m11g
@@ -1182,7 +1204,7 @@ TARGET_DEVICES += mikrotik_routerboard-m11g
 define Device/mikrotik_routerboard-m33g
   $(Device/MikroTik)
   DEVICE_MODEL := RouterBOARD M33G
-  DEVICE_PACKAGES := -wpad-basic-wolfssl
+  DEVICE_PACKAGES := -wpad-basic-wolfssl -uboot-envtools
   SUPPORTED_DEVICES += mikrotik,rbm33g
 endef
 TARGET_DEVICES += mikrotik_routerboard-m33g
@@ -1194,7 +1216,7 @@ define Device/mqmaker_witi
   DEVICE_VENDOR := MQmaker
   DEVICE_MODEL := WiTi
   DEVICE_PACKAGES := kmod-ata-ahci kmod-mt76x2 kmod-sdhci-mt7620 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += witi mqmaker,witi-256m mqmaker,witi-512m
 endef
 TARGET_DEVICES += mqmaker_witi
@@ -1207,7 +1229,7 @@ define Device/mtc_wr1201
   DEVICE_MODEL := Wireless Router WR1201
   KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma -n 'WR1201_8_128'
   DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += mtc_wr1201
 
@@ -1260,7 +1282,8 @@ define Device/netgear_sercomm_nand
   IMAGE/kernel.bin := append-kernel
   IMAGE/rootfs.bin := append-ubi | check-size
   DEVICE_VENDOR := NETGEAR
-  DEVICE_PACKAGES := kmod-mt7603 kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt7603 kmod-usb3 kmod-usb-ledtrig-usbport \
+	-uboot-envtools
 endef
 
 define Device/netgear_r6220
@@ -1271,7 +1294,7 @@ define Device/netgear_r6220
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0086
   IMAGE_SIZE := 28672k
-  DEVICE_PACKAGES += kmod-mt76x2
+  DEVICE_PACKAGES += kmod-mt76x2 -uboot-envtools
   SUPPORTED_DEVICES += r6220
 endef
 TARGET_DEVICES += netgear_r6220
@@ -1285,7 +1308,7 @@ define Device/netgear_r6260
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0052
   IMAGE_SIZE := 40960k
-  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += netgear_r6260
 
@@ -1297,7 +1320,7 @@ define Device/netgear_r6350
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0052
   IMAGE_SIZE := 40960k
-  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += netgear_r6350
 
@@ -1316,7 +1339,7 @@ define Device/netgear_r6700-v2
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x1032
   IMAGE_SIZE := 40960k
-  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += netgear_r6700-v2
 
@@ -1328,7 +1351,7 @@ define Device/netgear_r6800
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0062
   IMAGE_SIZE := 40960k
-  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += netgear_r6800
 
@@ -1340,7 +1363,7 @@ define Device/netgear_r6850
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0052
   IMAGE_SIZE := 40960k
-  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += netgear_r6850
 
@@ -1353,7 +1376,7 @@ define Device/netgear_r6900-v2
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x1032
   IMAGE_SIZE := 40960k
-  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += netgear_r6900-v2
 
@@ -1365,7 +1388,7 @@ define Device/netgear_r7200
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x1032
   IMAGE_SIZE := 40960k
-  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += netgear_r7200
 
@@ -1377,7 +1400,7 @@ define Device/netgear_r7450
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x1032
   IMAGE_SIZE := 40960k
-  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += netgear_r7450
 
@@ -1389,7 +1412,7 @@ define Device/netgear_wac104
   SERCOMM_HWVER := A001
   SERCOMM_SWVER := 0x0006
   IMAGE_SIZE := 28672k
-  DEVICE_PACKAGES += kmod-mt76x2
+  DEVICE_PACKAGES += kmod-mt76x2 -uboot-envtools
 endef
 TARGET_DEVICES += netgear_wac104
 
@@ -1401,7 +1424,7 @@ define Device/netgear_wac124
   SERCOMM_HWVER := A003
   SERCOMM_SWVER := 0x0402
   IMAGE_SIZE := 40960k
-  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += netgear_wac124
 
@@ -1409,7 +1432,7 @@ define Device/netgear_wax202
   $(Device/dsa-migration)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := WAX202
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915e -uboot-envtools
   NETGEAR_ENC_MODEL := WAX202
   NETGEAR_ENC_REGION := US
   BLOCKSIZE := 128k
@@ -1441,7 +1464,7 @@ define Device/netgear_wndr3700-v5
   SERCOMM_SWVER := 0x1054
   SERCOMM_PAD := 320k
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += wndr3700v5
 endef
 TARGET_DEVICES += netgear_wndr3700-v5
@@ -1463,7 +1486,8 @@ define Device/netis_wf2881
 	check-size
   DEVICE_VENDOR := NETIS
   DEVICE_MODEL := WF2881
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport \
+	-uboot-envtools
 endef
 TARGET_DEVICES += netis_wf2881
 
@@ -1473,7 +1497,7 @@ define Device/oraybox_x3a
   IMAGE_SIZE := 15360k
   DEVICE_VENDOR := OrayBox
   DEVICE_MODEL := X3A
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += oraybox_x3a
 
@@ -1485,7 +1509,7 @@ define Device/phicomm_k2p
   DEVICE_ALT0_VENDOR := Phicomm
   DEVICE_ALT0_MODEL := KE 2P
   SUPPORTED_DEVICES += k2p
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += phicomm_k2p
 
@@ -1495,7 +1519,7 @@ define Device/planex_vr500
   IMAGE_SIZE := 65216k
   DEVICE_VENDOR := Planex
   DEVICE_MODEL := VR500
-  DEVICE_PACKAGES := kmod-usb3 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-usb3 -wpad-basic-wolfssl -uboot-envtools
   SUPPORTED_DEVICES += vr500
 endef
 TARGET_DEVICES += planex_vr500
@@ -1513,7 +1537,7 @@ define Device/raisecom_msg1500-x-00
   DEVICE_MODEL := MSG1500
   DEVICE_VARIANT := X.00
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
-	kmod-usb-ledtrig-usbport uboot-envtools
+	kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += raisecom_msg1500-x-00
 
@@ -1521,7 +1545,8 @@ define Device/renkforce_ws-wn530hp3-a
   $(Device/dsa-migration)
   DEVICE_VENDOR := Renkforce
   DEVICE_MODEL := WS-WN530HP3-A
-  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	-uboot-envtools
   IMAGE/sysupgrade.bin := append-kernel | pad-to 65536 | append-rootfs | \
 	check-size | append-metadata
   IMAGE_SIZE := 15040k
@@ -1535,7 +1560,7 @@ define Device/samknows_whitebox-v8
   DEVICE_VENDOR := SamKnows
   DEVICE_MODEL := Whitebox 8
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport uboot-envtools
+	kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += sk-wb8
 endef
 TARGET_DEVICES += samknows_whitebox-v8
@@ -1550,7 +1575,7 @@ define Device/sercomm_na502
   KERNEL_SIZE := 4096k
   DEVICE_VENDOR := SERCOMM
   DEVICE_MODEL := NA502
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-mt7603 kmod-usb3
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-mt7603 kmod-usb3 -uboot-envtools
 endef
 TARGET_DEVICES += sercomm_na502
 
@@ -1565,7 +1590,7 @@ define Device/sercomm_na502s
   DEVICE_VENDOR := SERCOMM
   DEVICE_MODEL := NA502S
   DEVICE_PACKAGES := kmod-mt76x2 kmod-mt7603 kmod-usb3 kmod-usb-serial \
-  		kmod-usb-serial-xr_usb_serial_common
+	kmod-usb-serial-xr_usb_serial_common -uboot-envtools
 endef
 TARGET_DEVICES += sercomm_na502s
 
@@ -1574,7 +1599,8 @@ define Device/storylink_sap-g3200u3
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := STORYLiNK
   DEVICE_MODEL := SAP-G3200U3
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport \
+	-uboot-envtools
   SUPPORTED_DEVICES += sap-g3200u3
 endef
 TARGET_DEVICES += storylink_sap-g3200u3
@@ -1584,7 +1610,7 @@ define Device/telco-electronics_x1
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Telco Electronics
   DEVICE_MODEL := X1
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt76
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt76 -uboot-envtools
 endef
 TARGET_DEVICES += telco-electronics_x1
 
@@ -1593,7 +1619,7 @@ define Device/tenbay_t-mb5eu-v01
   DEVICE_VENDOR := Tenbay
   DEVICE_MODEL := T-MB5EU-V01
   DEVICE_DTS_CONFIG := config@1
-  DEVICE_PACKAGES += kmod-mt7915e kmod-usb3
+  DEVICE_PACKAGES += kmod-mt7915e kmod-usb3 -uboot-envtools
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 15808k
   SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
@@ -1606,7 +1632,7 @@ define Device/thunder_timecloud
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Thunder
   DEVICE_MODEL := Timecloud
-  DEVICE_PACKAGES := kmod-usb3 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-usb3 -wpad-basic-wolfssl -uboot-envtools
   SUPPORTED_DEVICES += timecloud
 endef
 TARGET_DEVICES += thunder_timecloud
@@ -1617,7 +1643,7 @@ define Device/totolink_a7000r
   UIMAGE_NAME := C8340R1C-9999
   DEVICE_VENDOR := TOTOLINK
   DEVICE_MODEL := A7000R
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += totolink_a7000r
 
@@ -1627,7 +1653,7 @@ define Device/totolink_x5000r
   UIMAGE_NAME := C8343R-9999
   DEVICE_VENDOR := TOTOLINK
   DEVICE_MODEL := X5000R
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915e -uboot-envtools
 endef
 TARGET_DEVICES += totolink_x5000r
 
@@ -1637,7 +1663,7 @@ define Device/tplink_archer-a6-v3
   DEVICE_MODEL := Archer A6
   DEVICE_VARIANT := V3
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e \
-	kmod-mt7663-firmware-ap
+	kmod-mt7663-firmware-ap -uboot-envtools
   TPLINK_BOARD_ID := ARCHER-A6-V3
   KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGE_SIZE := 15744k
@@ -1650,7 +1676,7 @@ define Device/tplink_archer-c6-v3
   DEVICE_MODEL := Archer C6
   DEVICE_VARIANT := V3
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e \
-	kmod-mt7663-firmware-ap
+	kmod-mt7663-firmware-ap -uboot-envtools
   TPLINK_BOARD_ID := ARCHER-C6-V3
   KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGE_SIZE := 15744k
@@ -1664,7 +1690,8 @@ define Device/tplink_archer-c6u-v1
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt7603 \
 	kmod-mt7615e kmod-mt7663-firmware-ap \
-	kmod-usb3 kmod-usb-ledtrig-usbport
+	kmod-usb3 kmod-usb-ledtrig-usbport \
+	-uboot-envtools
   KERNEL := $(KERNEL_DTB) | uImage lzma
   TPLINK_BOARD_ID := ARCHER-C6U-V1
   IMAGE_SIZE := 15744k
@@ -1676,7 +1703,8 @@ define Device/tplink_eap235-wall-v1
   $(Device/tplink-safeloader)
   DEVICE_MODEL := EAP235-Wall
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	-uboot-envtools
   TPLINK_BOARD_ID := EAP235-WALL-V1
   IMAGE_SIZE := 13440k
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory | \
@@ -1689,7 +1717,7 @@ define Device/tplink_eap615-wall-v1
   $(Device/tplink-safeloader)
   DEVICE_MODEL := EAP615-Wall
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915e -uboot-envtools
   TPLINK_BOARD_ID := EAP615-WALL-V1
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-to 64k
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
@@ -1702,7 +1730,7 @@ define Device/tplink_re350-v1
   $(Device/tplink-safeloader)
   DEVICE_MODEL := RE350
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
   TPLINK_BOARD_ID := RE350-V1
   IMAGE_SIZE := 6016k
   SUPPORTED_DEVICES += re350-v1
@@ -1714,7 +1742,7 @@ define Device/tplink_re500-v1
   $(Device/tplink-safeloader)
   DEVICE_MODEL := RE500
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
   TPLINK_BOARD_ID := RE500-V1
   IMAGE_SIZE := 14208k
 endef
@@ -1725,7 +1753,7 @@ define Device/tplink_re650-v1
   $(Device/tplink-safeloader)
   DEVICE_MODEL := RE650
   DEVICE_VARIANT := v1
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
   TPLINK_BOARD_ID := RE650-V1
   IMAGE_SIZE := 14208k
 endef
@@ -1736,7 +1764,7 @@ define Device/tplink_re650-v2
   $(Device/tplink-safeloader)
   DEVICE_MODEL := RE650
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware -uboot-envtools
   TPLINK_BOARD_ID := RE650-V2
   IMAGE_SIZE := 7994k
 endef
@@ -1747,7 +1775,8 @@ define Device/tplink_tl-wpa8631p-v3
   $(Device/tplink-safeloader)
   DEVICE_MODEL := TL-WPA8631P
   DEVICE_VARIANT := v3
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	-uboot-envtools
   TPLINK_BOARD_ID := TL-WPA8631P-V3
   IMAGE_SIZE := 7232k
 endef
@@ -1763,7 +1792,7 @@ define Device/ubnt_edgerouter_common
   KERNEL_INITRAMFS := $$(KERNEL) | \
 	ubnt-erx-factory-image $(KDIR)/tmp/$$(KERNEL_INITRAMFS_PREFIX)-factory.tar
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES += -wpad-basic-wolfssl
+  DEVICE_PACKAGES += -wpad-basic-wolfssl -uboot-envtools
 endef
 
 define Device/ubnt_edgerouter-x
@@ -1778,7 +1807,8 @@ define Device/ubnt_edgerouter-x-sfp
   DEVICE_MODEL := EdgeRouter X SFP
   DEVICE_ALT0_VENDOR := Ubiquiti
   DEVICE_ALT0_MODEL := EdgePoint R6
-  DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-sfp
+  DEVICE_PACKAGES += kmod-i2c-algo-pca kmod-gpio-pca953x kmod-sfp \
+	-uboot-envtools
   SUPPORTED_DEVICES += ubnt-erx-sfp ubiquiti,edgerouterx-sfp
 endef
 TARGET_DEVICES += ubnt_edgerouter-x-sfp
@@ -1788,7 +1818,7 @@ define Device/ubnt_unifi-6-lite
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi 6 Lite
   DEVICE_DTS_CONFIG := config@1
-  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7915e
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7915e -uboot-envtools
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 15424k
 endef
@@ -1809,7 +1839,8 @@ define Device/ubnt_unifi-nanohd
   $(Device/dsa-migration)
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi nanoHD
-  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	-uboot-envtools
   IMAGE_SIZE := 15552k
 endef
 TARGET_DEVICES += ubnt_unifi-nanohd
@@ -1819,6 +1850,7 @@ define Device/ubnt_usw-flex
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi Switch Flex
   DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES := -uboot-envtools
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 7360k
 endef
@@ -1831,7 +1863,7 @@ define Device/unielec_u7621-01-16m
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-01
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 -uboot-envtools
 endef
 TARGET_DEVICES += unielec_u7621-01-16m
 
@@ -1842,7 +1874,8 @@ define Device/unielec_u7621-06-16m
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 \
+	-wpad-basic-wolfssl -uboot-envtools
   SUPPORTED_DEVICES += u7621-06-256M-16M unielec,u7621-06-256m-16m
 endef
 TARGET_DEVICES += unielec_u7621-06-16m
@@ -1854,7 +1887,8 @@ define Device/unielec_u7621-06-64m
   DEVICE_VENDOR := UniElec
   DEVICE_MODEL := U7621-06
   DEVICE_VARIANT := 64M
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-usb3 \
+	-wpad-basic-wolfssl -uboot-envtools
   SUPPORTED_DEVICES += unielec,u7621-06-512m-64m
 endef
 TARGET_DEVICES += unielec_u7621-06-64m
@@ -1863,7 +1897,8 @@ define Device/wavlink_wl-wn531a6
   $(Device/dsa-migration)
   DEVICE_VENDOR := Wavlink
   DEVICE_MODEL := WL-WN531A6
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	kmod-usb3 -uboot-envtools
   IMAGE_SIZE := 15040k
 endef
 TARGET_DEVICES += wavlink_wl-wn531a6
@@ -1873,7 +1908,8 @@ define Device/wavlink_wl-wn533a8
   DEVICE_VENDOR := Wavlink
   DEVICE_MODEL := WL-WN533A8
   KERNEL_INITRAMFS_SUFFIX := -WN533A8$$(KERNEL_SUFFIX)
-  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
+	-uboot-envtools
   IMAGE_SIZE := 15040k
 endef
 TARGET_DEVICES += wavlink_wl-wn533a8
@@ -1903,7 +1939,7 @@ define Device/wevo_11acnas
   DEVICE_VENDOR := WeVO
   DEVICE_MODEL := 11AC NAS Router
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += 11acnas
 endef
 TARGET_DEVICES += wevo_11acnas
@@ -1917,7 +1953,7 @@ define Device/wevo_w2914ns-v2
   DEVICE_MODEL := W2914NS
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += w2914nsv2
 endef
 TARGET_DEVICES += wevo_w2914ns-v2
@@ -1931,7 +1967,8 @@ define Device/winstars_ws-wn583a6
   DEVICE_ALT0_VENDOR := Gemeita
   DEVICE_ALT0_MODEL := AC2100
   KERNEL_INITRAMFS_SUFFIX := -WN583A6$$(KERNEL_SUFFIX)
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	-uboot-envtools
 endef
 TARGET_DEVICES += winstars_ws-wn583a6
 
@@ -1939,7 +1976,6 @@ define Device/xiaomi_nand_separate
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := Xiaomi
-  DEVICE_PACKAGES := uboot-envtools
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
@@ -1955,7 +1991,7 @@ define Device/xiaomi_mi-router-3g
   DEVICE_MODEL := Mi Router 3G
   IMAGE_SIZE := 124416k
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += R3G mir3g xiaomi,mir3g
 endef
 TARGET_DEVICES += xiaomi_mi-router-3g
@@ -1967,7 +2003,7 @@ define Device/xiaomi_mi-router-3g-v2
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 3G
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
   SUPPORTED_DEVICES += xiaomi,mir3g-v2
 endef
 TARGET_DEVICES += xiaomi_mi-router-3g-v2
@@ -1987,7 +2023,7 @@ define Device/xiaomi_mi-router-3-pro
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
   DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware kmod-usb3 \
-	kmod-usb-ledtrig-usbport uboot-envtools
+	kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += xiaomi,mir3p
 endef
 TARGET_DEVICES += xiaomi_mi-router-3-pro
@@ -1996,7 +2032,7 @@ define Device/xiaomi_mi-router-4
   $(Device/xiaomi_nand_separate)
   DEVICE_MODEL := Mi Router 4
   IMAGE_SIZE := 124416k
-  DEVICE_PACKAGES += kmod-mt7603 kmod-mt76x2
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt76x2 -uboot-envtools
 endef
 TARGET_DEVICES += xiaomi_mi-router-4
 
@@ -2007,7 +2043,7 @@ define Device/xiaomi_mi-router-4a-gigabit
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router 4A
   DEVICE_VARIANT := Gigabit Edition
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
 endef
 TARGET_DEVICES += xiaomi_mi-router-4a-gigabit
 
@@ -2015,7 +2051,8 @@ define Device/xiaomi_mi-router-ac2100
   $(Device/xiaomi_nand_separate)
   DEVICE_MODEL := Mi Router AC2100
   IMAGE_SIZE := 120320k
-  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	-uboot-envtools
 endef
 TARGET_DEVICES += xiaomi_mi-router-ac2100
 
@@ -2032,7 +2069,7 @@ define Device/xiaomi_mi-router-cr660x
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/firmware.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
-  DEVICE_PACKAGES += kmod-mt7915e uboot-envtools
+  DEVICE_PACKAGES += kmod-mt7915e
 endef
 
 define Device/xiaomi_mi-router-cr6606
@@ -2057,7 +2094,8 @@ define Device/xiaomi_redmi-router-ac2100
   $(Device/xiaomi_nand_separate)
   DEVICE_MODEL := Redmi Router AC2100
   IMAGE_SIZE := 120320k
-  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware
+  DEVICE_PACKAGES += kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware \
+	-uboot-envtools
 endef
 TARGET_DEVICES += xiaomi_redmi-router-ac2100
 
@@ -2066,7 +2104,8 @@ define Device/xiaoyu_xy-c5
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := XiaoYu
   DEVICE_MODEL := XY-C5
-  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 -wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 -wpad-basic-wolfssl \
+	-uboot-envtools
 endef
 TARGET_DEVICES += xiaoyu_xy-c5
 
@@ -2076,7 +2115,7 @@ define Device/xzwifi_creativebox-v1
   DEVICE_VENDOR := CreativeBox
   DEVICE_MODEL := v1
   DEVICE_PACKAGES := kmod-ata-ahci kmod-mt7603 kmod-mt76x2 kmod-sdhci-mt7620 \
-	kmod-usb3 -wpad-basic-wolfssl
+	kmod-usb3 -wpad-basic-wolfssl -uboot-envtools
 endef
 TARGET_DEVICES += xzwifi_creativebox-v1
 
@@ -2086,7 +2125,7 @@ define Device/youhua_wr1200js
   DEVICE_VENDOR := YouHua
   DEVICE_MODEL := WR1200JS
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += youhua_wr1200js
 
@@ -2096,7 +2135,7 @@ define Device/youku_yk-l2
   DEVICE_VENDOR := Youku
   DEVICE_MODEL := YK-L2
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
   UIMAGE_MAGIC := 0x12291000
   UIMAGE_NAME := 400000000000000000003000
 endef
@@ -2107,7 +2146,7 @@ define Device/yuncore_ax820
   IMAGE_SIZE := 15808k
   DEVICE_VENDOR := YunCore
   DEVICE_MODEL := AX820
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915e -uboot-envtools
 endef
 TARGET_DEVICES += yuncore_ax820
 
@@ -2117,7 +2156,8 @@ define Device/zbtlink_zbt-we1326
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE1326
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-sdhci-mt7620
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-sdhci-mt7620 \
+	-uboot-envtools
   SUPPORTED_DEVICES += zbt-we1326
 endef
 TARGET_DEVICES += zbtlink_zbt-we1326
@@ -2129,7 +2169,7 @@ define Device/zbtlink_zbt-we3526
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE3526
   DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += zbtlink_zbt-we3526
 
@@ -2141,7 +2181,7 @@ define Device/zbtlink_zbt-wg1602-16m
   DEVICE_MODEL := ZBT-WG1602
   DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += zbtlink_zbt-wg1602-16m
 
@@ -2152,8 +2192,8 @@ define Device/zbtlink_zbt-wg1608-16m
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG1608
   DEVICE_VARIANT := 16M
-  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt7615e \
-	kmod-mt7663-firmware-ap kmod-usb3 kmod-usb-ledtrig-usbport
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt7615e kmod-usb3 \
+	kmod-mt7663-firmware-ap kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += zbtlink_zbt-wg1608-16m
 
@@ -2164,7 +2204,7 @@ define Device/zbtlink_zbt-wg2626
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WG2626
   DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += zbt-wg2626
 endef
 TARGET_DEVICES += zbtlink_zbt-wg2626
@@ -2177,7 +2217,7 @@ define Device/zbtlink_zbt-wg3526-16m
   DEVICE_MODEL := ZBT-WG3526
   DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
-	kmod-usb3 kmod-usb-ledtrig-usbport
+	kmod-usb3 kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += zbt-wg3526 zbt-wg3526-16M
 endef
 TARGET_DEVICES += zbtlink_zbt-wg3526-16m
@@ -2190,7 +2230,7 @@ define Device/zbtlink_zbt-wg3526-32m
   DEVICE_MODEL := ZBT-WG3526
   DEVICE_VARIANT := 32M
   DEVICE_PACKAGES := kmod-ata-ahci kmod-sdhci-mt7620 kmod-mt7603 kmod-mt76x2 \
-	kmod-usb3 kmod-usb-ledtrig-usbport
+	kmod-usb3 kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += ac1200pro zbt-wg3526-32M
 endef
 TARGET_DEVICES += zbtlink_zbt-wg3526-32m
@@ -2201,7 +2241,7 @@ define Device/zio_freezio
   DEVICE_VENDOR := ZIO
   DEVICE_MODEL := FREEZIO
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
-	kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
 TARGET_DEVICES += zio_freezio
 
@@ -2212,7 +2252,7 @@ define Device/zyxel_nr7101
   UBINIZE_OPTS := -E 5
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NR7101
-  DEVICE_PACKAGES := kmod-mt7603 kmod-usb3 uboot-envtools kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+  DEVICE_PACKAGES := kmod-mt7603 kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
   KERNEL := $(KERNEL_DTB) | uImage lzma | zytrx-header $$(DEVICE_MODEL) $$(VERSION_DIST)-$$(REVISION)
   KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma | zytrx-header $$(DEVICE_MODEL) 9.99(ABUV.9)$$(VERSION_DIST)-recovery
   KERNEL_INITRAMFS_SUFFIX := -recovery.bin
@@ -2257,7 +2297,7 @@ define Device/zyxel_wap6805
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := WAP6805
-  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7621-qtn-rgmii
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7621-qtn-rgmii -uboot-envtools
   KERNEL := $$(KERNEL/lzma-loader) | uImage none | uimage-padhdr 160
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
