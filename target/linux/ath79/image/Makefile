@@ -60,6 +60,9 @@ define Build/relocate-kernel
 	rm -rf $@.relocate
 endef
 
+define Build/append-squashfs-fakeroot-be
+	cat ./empty-squashfs-lzma >> $@
+endef
 
 define Device/Default
   DEVICE_DTS_DIR := ../dts
