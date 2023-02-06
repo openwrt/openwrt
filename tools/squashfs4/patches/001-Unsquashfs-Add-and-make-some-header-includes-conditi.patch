@@ -1,0 +1,39 @@
+From a9119c969af0a5aa961d56978d5dd4f3eb952667 Mon Sep 17 00:00:00 2001
+From: Phillip Lougher <phillip@squashfs.org.uk>
+Date: Mon, 15 Aug 2022 17:04:43 +0100
+Subject: [PATCH 1/1] Unsquashfs: Add and make some header includes conditional
+
+Fixes https://github.com/plougher/squashfs-tools/issues/122
+
+Signed-off-by: Phillip Lougher <phillip@squashfs.org.uk>
+---
+ squashfs-tools/reader.c     | 1 +
+ squashfs-tools/unsquashfs.c | 5 +++++
+ 2 files changed, 6 insertions(+)
+
+--- a/squashfs-tools/reader.c
++++ b/squashfs-tools/reader.c
+@@ -38,6 +38,7 @@
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <signal.h>
+ #include "squashfs_fs.h"
+ #include "mksquashfs.h"
+ #include "caches-queues-lists.h"
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -32,8 +32,13 @@
+ #include "stdarg.h"
+ #include "fnmatch_compat.h"
+ 
++#ifdef __linux__
+ #include <sys/sysinfo.h>
+ #include <sys/sysmacros.h>
++#elif defined __FreeBSD__
++#include <sys/sysctl.h>
++#endif
++
+ #include <sys/types.h>
+ #include <sys/time.h>
+ #include <sys/resource.h>

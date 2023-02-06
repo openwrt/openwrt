@@ -1,0 +1,192 @@
+From dbe9747b4f09bd2f4d63af06e55c2c3ed35bfca1 Mon Sep 17 00:00:00 2001
+From: Phillip Lougher <phillip@squashfs.org.uk>
+Date: Tue, 7 Feb 2023 23:09:30 +0000
+Subject: [PATCH] Don't use sigwaitinfo()/sigtimedwait() if not supported
+
+If sigwaitinfo() and sigtimedwait() are not supported,
+use sigwait() instead.
+
+This will disable the queue/caches dump if ^\ (SIGQUIT)
+is hit twice within a second.
+
+But the queue/caches dump is still available if SIGHUP
+is sent to the program.
+
+Currently this check is applied to MAC OS X.  FreeBSD and
+NetBSD appear to have these functions.
+
+Signed-off-by: Phillip Lougher <phillip@squashfs.org.uk>
+---
+ squashfs-tools/info.c            | 25 ++-------------
+ squashfs-tools/signals.h         | 54 ++++++++++++++++++++++++++++++++
+ squashfs-tools/unsquashfs_info.c | 25 ++-------------
+ 3 files changed, 60 insertions(+), 44 deletions(-)
+ create mode 100644 squashfs-tools/signals.h
+
+--- a/squashfs-tools/info.c
++++ b/squashfs-tools/info.c
+@@ -2,7 +2,7 @@
+  * Create a squashfs filesystem.  This is a highly compressed read only
+  * filesystem.
+  *
+- * Copyright (c) 2013, 2014, 2019, 2021
++ * Copyright (c) 2013, 2014, 2019, 2021, 2022, 2023
+  * Phillip Lougher <phillip@squashfs.org.uk>
+  *
+  * This program is free software; you can redistribute it and/or
+@@ -42,6 +42,7 @@
+ #include "mksquashfs_error.h"
+ #include "progressbar.h"
+ #include "caches-queues-lists.h"
++#include "signals.h"
+ 
+ static int silent = 0;
+ static struct dir_ent *ent = NULL;
+@@ -144,7 +145,6 @@ void dump_state()
+ void *info_thrd(void *arg)
+ {
+ 	sigset_t sigmask;
+-	struct timespec timespec = { .tv_sec = 1, .tv_nsec = 0 };
+ 	int sig, waiting = 0;
+ 
+ 	sigemptyset(&sigmask);
+@@ -152,26 +152,7 @@ void *info_thrd(void *arg)
+ 	sigaddset(&sigmask, SIGHUP);
+ 
+ 	while(1) {
+-		if(waiting)
+-			sig = sigtimedwait(&sigmask, NULL, &timespec);
+-		else
+-			sig = sigwaitinfo(&sigmask, NULL);
+-
+-		if(sig == -1) {
+-			switch(errno) {
+-			case EAGAIN:
+-				/* interval timed out */
+-				waiting = 0;
+-				/* FALLTHROUGH */
+-			case EINTR:
+-				/* if waiting, the wait will be longer, but
+-				   that's OK */
+-				continue;
+-			default:
+-				BAD_ERROR("sigtimedwait/sigwaitinfo failed "
+-					"because %s\n", strerror(errno));
+-			}
+-		}
++		sig = wait_for_signal(&sigmask, &waiting);
+ 
+ 		if(sig == SIGQUIT && !waiting) {
+ 			print_filename();
+--- /dev/null
++++ b/squashfs-tools/signals.h
+@@ -0,0 +1,54 @@
++#ifndef SIGNALS_H
++#define SIGNALS_H
++/*
++ * Create a squashfs filesystem.  This is a highly compressed read only
++ * filesystem.
++ *
++ * Copyright (c) 2023
++ * Phillip Lougher <phillip@squashfs.org.uk>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2,
++ * or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++ *
++ * signals.h
++ */
++
++static inline int wait_for_signal(sigset_t *sigmask, int *waiting)
++{
++	int sig;
++
++#if defined(__APPLE__) && defined(__MACH__)
++	sigwait(sigmask, &sig);
++	*waiting = 0;
++#else
++	struct timespec timespec = { .tv_sec = 1, .tv_nsec = 0 };
++
++	while(1) {
++		if(*waiting)
++			sig = sigtimedwait(sigmask, NULL, &timespec);
++		else
++			sig = sigwaitinfo(sigmask, NULL);
++
++		if(sig != -1)
++			break;
++
++		if(errno == EAGAIN)
++			*waiting = 0;
++		else if(errno != EINTR)
++			BAD_ERROR("sigtimedwait/sigwaitinfo failed because %s\n", strerror(errno));
++	}
++#endif
++	return sig;
++}
++#endif
+--- a/squashfs-tools/unsquashfs_info.c
++++ b/squashfs-tools/unsquashfs_info.c
+@@ -2,7 +2,7 @@
+  * Create a squashfs filesystem.  This is a highly compressed read only
+  * filesystem.
+  *
+- * Copyright (c) 2013, 2021
++ * Copyright (c) 2013, 2021, 2023
+  * Phillip Lougher <phillip@squashfs.org.uk>
+  *
+  * This program is free software; you can redistribute it and/or
+@@ -40,6 +40,7 @@
+ #include "squashfs_fs.h"
+ #include "unsquashfs.h"
+ #include "unsquashfs_error.h"
++#include "signals.h"
+ 
+ char *pathname = NULL;
+ 
+@@ -96,7 +97,6 @@ void dump_state()
+ void *info_thrd(void *arg)
+ {
+ 	sigset_t sigmask;
+-	struct timespec timespec = { .tv_sec = 1, .tv_nsec = 0 };
+ 	int sig, waiting = 0;
+ 
+ 	sigemptyset(&sigmask);
+@@ -104,26 +104,7 @@ void *info_thrd(void *arg)
+ 	sigaddset(&sigmask, SIGHUP);
+ 
+ 	while(1) {
+-		if(waiting)
+-			sig = sigtimedwait(&sigmask, NULL, &timespec);
+-		else
+-			sig = sigwaitinfo(&sigmask, NULL);
+-
+-		if(sig == -1) {
+-			switch(errno) {
+-			case EAGAIN:
+-				/* interval timed out */
+-				waiting = 0;
+-				/* FALLTHROUGH */
+-			case EINTR:
+-				/* if waiting, the wait will be longer, but
+-				   that's OK */
+-				continue;
+-			default:
+-				BAD_ERROR("sigtimedwait/sigwaitinfo failed "
+-					"because %s\n", strerror(errno));
+-			}
+-		}
++		sig = wait_for_signal(&sigmask, &waiting);
+ 
+ 		if(sig == SIGQUIT && !waiting) {
+ 			if(pathname)
