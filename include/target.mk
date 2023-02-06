@@ -12,7 +12,6 @@ DEVICE_TYPE?=router
 # Default packages - the really basic set
 DEFAULT_PACKAGES:=\
 	base-files \
-	apk \
 	ca-bundle \
 	dropbear \
 	fstools \
@@ -26,6 +25,12 @@ DEFAULT_PACKAGES:=\
 	uclient-fetch \
 	urandom-seed \
 	urngd
+
+ifdef CONFIG_USE_APK
+DEFAULT_PACKAGES+=apk
+else
+DEFAULT_PACKAGES+=opkg
+endif
 
 ifneq ($(CONFIG_SELINUX),)
 DEFAULT_PACKAGES+=busybox-selinux procd-selinux

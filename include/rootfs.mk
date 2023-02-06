@@ -31,6 +31,18 @@ ifdef CONFIG_USE_MKLIBS
   endef
 endif
 
+# where to build (and put) .ipk packages
+opkg = \
+  IPKG_NO_SCRIPT=1 \
+  IPKG_INSTROOT=$(1) \
+  TMPDIR=$(1)/tmp \
+  $(STAGING_DIR_HOST)/bin/opkg \
+	--offline-root $(1) \
+	--force-postinstall \
+	--add-dest root:/ \
+	--add-arch all:100 \
+	--add-arch $(if $(ARCH_PACKAGES),$(ARCH_PACKAGES),$(BOARD)):200
+
 apk = \
   IPKG_INSTROOT=$(1) \
   $(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk \
@@ -67,9 +79,20 @@ define prepare_rootfs
 	@mkdir -p $(1)/var/lock
 	@( \
 		cd $(1); \
+		if [ -n $(CONFIG_USE_APK) ]; then \
 		$(STAGING_DIR_HOST)/bin/tar -xf ./lib/apk/db/scripts.tar --wildcards "*.post-install" -O > script.sh; \
 		chmod +x script.sh; \
 		IPKG_INSTROOT=$(1) $$(command -v bash) script.sh; \
+		else \
+		for script in ./usr/lib/opkg/info/*.postinst; do \
+			IPKG_INSTROOT=$(1) $$(command -v bash) $$script; \
+			ret=$$?; \
+			if [ $$ret -ne 0 ]; then \
+				echo "postinst script $$script has failed with exit code $$ret" >&2; \
+				exit 1; \
+			fi; \
+		done; \
+		fi; \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
 			if ! echo " $(3) " | grep -q " $$(basename $$script) "; then \
@@ -80,20 +103,20 @@ define prepare_rootfs
 				echo "Disabling" $$(basename $$script); \
 			fi; \
 		done || true \
+		awk -i inplace \
+			'/^Status:/ { \
+				if ($$3 == "user") { $$3 = "ok" } \
+				else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
+			}1' $(1)/usr/lib/opkg/status
+		$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
 	)
-ifneq ($(CONFIG_USE_APK),)
-	awk -i inplace \
-		'/^Status:/ { \
-			if ($$3 == "user") { $$3 = "ok" } \
-			else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
-		}1' $(1)/usr/lib/opkg/status
-	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
-endif
 	@-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
 	@-find $(1)/usr/cache/apk/ -name '*.apk' -delete
 	rm -rf \
 		$(1)/boot \
 		$(1)/tmp/* \
+		$(1)/usr/lib/opkg/info/*.postinst* \
+		$(1)/usr/lib/opkg/lists/* \
 		$(1)/var/lock/*.lock
 	$(call clean_ipkg,$(1))
 	$(call mklibs,$(1))

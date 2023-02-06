@@ -6,6 +6,11 @@ ifndef DUMP
   include $(INCLUDE_DIR)/feeds.mk
 endif
 
+IPKG_REMOVE:= \
+  $(SCRIPT_DIR)/ipkg-remove
+
+IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
+
 # Generates a make statement to return a wildcard for candidate ipkg files
 # 1: package name
 define gen_ipkg_wildcard
@@ -15,9 +20,12 @@ endef
 # 1: package name
 # 2: candidate ipk files
 define remove_ipkg_files
+ifdef CONFIG_USE_APK
 for pkg in $(2); do \
   $(STAGING_DIR_HOST)/bin/apk adbdump "$$pkg" | grep "^  name: $(1)" && rm "$$pkg" || true; \
 done
+else
+endif
 endef
 
 # 1: package name

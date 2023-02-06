@@ -244,9 +244,18 @@ endif
 	$(if $(CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE), \
 		rm -f $(1)/etc/banner.failsafe,)
 
+ifdef CONFIG_USE_APK
 	mkdir -p $(1)/etc/apk/
-	$(call FeedSourcesAppend,$(1)/etc/apk/repositories)
+	$(call FeedSourcesAppendAPK,$(1)/etc/apk/repositories)
 	$(VERSION_SED_SCRIPT) $(1)/etc/apk/repositories
+else
+	$(if $(CONFIG_CLEAN_IPKG),, \
+		mkdir -p $(1)/etc/opkg; \
+		$(call FeedSourcesAppendOPKG,$(1)/etc/opkg/distfeeds.conf); \
+		$(VERSION_SED_SCRIPT) $(1)/etc/opkg/distfeeds.conf)
+	$(if $(CONFIG_IPK_FILES_CHECKSUMS),, \
+		rm -f $(1)/sbin/pkg_check)
+endif
 endef
 
 ifneq ($(DUMP),1)
