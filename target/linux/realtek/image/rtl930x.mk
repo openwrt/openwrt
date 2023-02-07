@@ -15,3 +15,13 @@ define Device/zyxel_xgs1250-12
 	uImage gzip
 endef
 TARGET_DEVICES += zyxel_xgs1250-12
+
+define Device/hasivo_f1100w-8splus
+  SOC := rtl9303
+  DEVICE_VENDOR := hasivo
+  DEVICE_MODEL := F1100W-8S+
+    IMAGE_SIZE := 29696k
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | uImage gzip
+endef
+
+TARGET_DEVICES += hasivo_f1100w-8splus
