@@ -29,7 +29,6 @@ EXCLUDE_DIRS:= \
 	*/man \
 	*/info \
 	*/root-* \
-	initial \
 	*.install.clean \
 	*.install.flags \
 	*.install \
