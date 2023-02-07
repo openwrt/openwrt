@@ -346,7 +346,7 @@ ifneq ($(CONFIG_CCACHE),)
   export CCACHE_NOCOMPRESS:=true
   export CCACHE_BASEDIR:=$(TOPDIR)
   export CCACHE_DIR:=$(if $(call qstrip,$(CONFIG_CCACHE_DIR)),$(call qstrip,$(CONFIG_CCACHE_DIR)),$(TOPDIR)/.ccache)
-  export CCACHE_COMPILERCHECK:=%compiler% -dumpmachine; %compiler% -dumpversion
+  export CCACHE_COMPILERCHECK:=%compiler% -v -c
 endif
 
 TARGET_CONFIGURE_OPTS = \
