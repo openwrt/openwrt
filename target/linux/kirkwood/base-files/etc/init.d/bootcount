@@ -4,6 +4,13 @@ START=99
 
 boot() {
 	case $(board_name) in
+	cisco,cvr328w)
+		local i=$(fw_printenv cur_booted_runtime_image -n)
+		[ -n "$i" ] && fw_setenv -s - << EOF
+runtime_image${i}_stable
+runtime_image${i}_try_num
+EOF
+		;;
 	linksys,e4200-v2|\
 	linksys,ea3500|\
 	linksys,ea4500)

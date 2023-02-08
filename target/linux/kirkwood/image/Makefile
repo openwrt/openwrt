@@ -98,6 +98,19 @@ define Device/checkpoint_l-50
 endef
 TARGET_DEVICES += checkpoint_l-50
 
+define Device/cisco_cvr328w
+  DEVICE_VENDOR := Cisco Systems
+  DEVICE_MODEL := CVR328W
+  UIMAGE_NAME := CVR9cybertan_rom_bin
+  UIMAGE_TIME := -1
+  KERNEL_IN_UBI :=
+  UBINIZE_OPTS := -E 5
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-ubi
+  DEVICE_PACKAGES := kmod-ath9k kmod-usb2 wpad-basic-wolfssl
+  SUPPORTED_DEVICES += cvr328w
+endef
+TARGET_DEVICES += cisco_cvr328w
+
 define Device/cisco_on100
   DEVICE_VENDOR := Cisco Systems
   DEVICE_MODEL := ON100

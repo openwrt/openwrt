@@ -13,6 +13,9 @@ kirkwood_setup_interfaces()
 	checkpoint,l-50)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 dmz" "eth0"
 		;;
+	cisco,cvr328w)
+		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8" "wan0"
+		;;
 	cisco,on100)
 		ucidef_set_interface_lan "eth0 eth1"
 		;;
@@ -56,6 +59,11 @@ kirkwood_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+	cisco,cvr328w)
+		wan_mac=$(mtd_get_mac_ascii nvram wan_hwaddr)
+		lan_mac=$(mtd_get_mac_ascii nvram lan_hwaddr)
+		label_mac=$wan_mac
+		;;
 	iptime,nas1)
 		lan_mac=$(mtd_get_mac_binary u-boot 0x3ffa8)
 		label_mac=$lan_mac
