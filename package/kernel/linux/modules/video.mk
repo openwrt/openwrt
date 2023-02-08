@@ -1067,3 +1067,41 @@ endef
 
 $(eval $(call KernelPackage,video-mem2mem))
 
+define KernelPackage/video-dma
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Video DMA support
+  HIDDEN:=1
+  DEPENDS:=+kmod-video-videobuf2
+  KCONFIG:= \
+	CONFIG_VIDEOBUF2_DMA_CONTIG \
+	CONFIG_VIDEOBUF2_DMA_SG
+  FILES:= $(LINUX_DIR)/drivers/media/common/videobuf2/videobuf2-dma-*.ko
+  AUTOLOAD:=$(call AutoLoad,66,videobuf2-dma-contig videobuf2-dma-sg)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-dma/description
+  Video DMA support
+endef
+
+$(eval $(call KernelPackage,video-dma))
+
+define KernelPackage/video-coda
+  TITLE:=i.MX VPU support
+  DEPENDS:=@(TARGET_imx&&!TARGET_imx_cortexa7) +kmod-video-mem2mem +kmod-video-dma
+  KCONFIG:= \
+	CONFIG_VIDEO_CODA \
+	CONFIG_VIDEO_IMX_VDOA
+  FILES:= \
+	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/coda/coda-vpu.ko \
+	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/coda/imx-vdoa.ko \
+	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-jpeg.ko
+  AUTOLOAD:=$(call AutoProbe,coda-vpu imx-vdoa v4l2-jpeg)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-coda/description
+ The i.MX Video Processing Unit (VPU) kernel module
+endef
+
+$(eval $(call KernelPackage,video-coda))
