@@ -102,12 +102,6 @@ define Host/Install
 	$(call FixupLibdir,$(TOOLCHAIN_DIR)/initial)
 	$(RM) $(TOOLCHAIN_DIR)/initial/lib/libiberty.a
 	$(CP) $(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-readelf $(HOST_BUILD_PREFIX)/bin/readelf
-	# ARC gcc requires extlib.
-	# If extlib is not available in "initial" folder
-	# initial gcc will fail to build libc.
-	if [ -d $(TOOLCHAIN_DIR)/extlib ]; then \
-		$(CP) -r $(TOOLCHAIN_DIR)/extlib $(TOOLCHAIN_DIR)/initial/; \
-	fi
 endef
 
 define Host/Clean
