@@ -196,9 +196,9 @@
 			};
 
 			partition@180000 {
-                                label = "log";
-                                reg = <0x00180000 0x00020000>;
-                        };
+				label = "log";
+				reg = <0x00180000 0x00020000>;
+			};
 		};
 	};
 
@@ -262,9 +262,9 @@
 };
 
 &blsp1_i2c3 {
-        status = "okay";
-        pinctrl-0 = <&i2c_0_pins>;
-        pinctrl-names = "default";
+	status = "okay";
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
 };
 
 &usb2 {
