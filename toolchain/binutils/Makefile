@@ -100,7 +100,6 @@ define Host/Install
 		prefix=$(TOOLCHAIN_DIR) \
 		install
 	$(call FixupLibdir,$(TOOLCHAIN_DIR)/initial)
-	$(RM) $(TOOLCHAIN_DIR)/initial/lib/libiberty.a
 	$(CP) $(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-readelf $(HOST_BUILD_PREFIX)/bin/readelf
 endef
 
