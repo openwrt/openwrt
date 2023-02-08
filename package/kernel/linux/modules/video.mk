@@ -10,6 +10,7 @@ VIDEO_MENU:=Video Support
 
 V4L2_DIR=v4l2-core
 V4L2_USB_DIR=usb
+V4L2_MEM2MEM_DIR=platform
 
 #
 # Video Display
@@ -1044,3 +1045,25 @@ define KernelPackage/video-gspca-konica/description
 endef
 
 $(eval $(call KernelPackage,video-gspca-konica))
+
+#
+# Video Processing
+#
+
+define KernelPackage/video-mem2mem
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Memory 2 Memory device support
+  HIDDEN:=1
+  DEPENDS:=+kmod-video-videobuf2
+  KCONFIG:= CONFIG_V4L_MEM2MEM_DRIVERS=y
+  FILES:= $(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-mem2mem.ko
+  AUTOLOAD:=$(call AutoLoad,66,v4l2-mem2mem)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-mem2mem/description
+  Memory 2 memory device support
+endef
+
+$(eval $(call KernelPackage,video-mem2mem))
+
