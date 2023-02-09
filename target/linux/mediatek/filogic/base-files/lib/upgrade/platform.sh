@@ -67,6 +67,8 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART=ubi
 		nand_do_upgrade "$1"
 		;;
+	tplink,tl-xdr6086|\
+	tplink,tl-xdr6088|\
 	xiaomi,redmi-router-ax6000-ubootmod)
 		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
