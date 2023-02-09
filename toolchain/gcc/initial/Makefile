@@ -23,10 +23,6 @@ define Host/Install
 		install-gcc \
 		install-target-libgcc
 
-	( cd $(TOOLCHAIN_DIR)/initial/lib/gcc/$(REAL_GNU_TARGET_NAME)/$(PKG_VERSION) ; \
-		cp libgcc.a libgcc_initial.a; \
-	)
-
 	$(call FixupLibdir,$(TOOLCHAIN_DIR)/initial)
 	$$(call file_copy,$(TOOLCHAIN_DIR)/initial/.,$(TOOLCHAIN_DIR)/)
 endef
