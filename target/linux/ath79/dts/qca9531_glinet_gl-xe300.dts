@@ -10,6 +10,9 @@
 	model = "GL.iNet GL-XE300";
 
 	aliases {
+		led-boot = &led_wlan;
+		led-failsafe = &led_wlan;
+		led-upgrade = &led_wlan;
 		label-mac-device = &eth0;
 	};
 
@@ -55,7 +58,7 @@
 			label = "green:wan";
 		};
 
-		wlan {
+		led_wlan: wlan {
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			label = "green:wlan";
 			linux,default-trigger = "phy0tpt";
