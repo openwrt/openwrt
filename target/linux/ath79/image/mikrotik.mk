@@ -37,6 +37,16 @@ define Device/mikrotik_routerboard-922uags-5hpacd
 endef
 TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
 
+define Device/mikrotik_routerboard-952ui-5ac2nd
+  $(Device/mikrotik_nor)
+  SOC := qca9533
+  DEVICE_MODEL := RouterBOARD 952Ui-5ac2nD (hAP ac lite)
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct
+  IMAGE_SIZE := 16256k
+  SUPPORTED_DEVICES += rb-952ui-5ac2nd
+endef
+TARGET_DEVICES += mikrotik_routerboard-952ui-5ac2nd
+
 define Device/mikrotik_routerboard-lhg-2nd
   $(Device/mikrotik_nor)
   SOC := qca9533
@@ -44,6 +54,15 @@ define Device/mikrotik_routerboard-lhg-2nd
   IMAGE_SIZE := 16256k
 endef
 TARGET_DEVICES += mikrotik_routerboard-lhg-2nd
+
+define Device/mikrotik_routerboard-map-2nd
+  $(Device/mikrotik_nor)
+  SOC := qca9533
+  DEVICE_MODEL := RouterBOARD mAP-2nD (mAP)
+  DEVICE_PACKAGES += kmod-usb2 kmod-ledtrig-gpio
+  IMAGE_SIZE := 16256k
+endef
+TARGET_DEVICES += mikrotik_routerboard-map-2nd
 
 define Device/mikrotik_routerboard-mapl-2nd
   $(Device/mikrotik_nor)

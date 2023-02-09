@@ -7,9 +7,9 @@ PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://git.openwrt.org/project/bcm63xx/u-boot.git
-PKG_SOURCE_DATE:=2022-03-03
-PKG_SOURCE_VERSION:=92e9eca819c9c898d9d2010e1a217726c42c8c47
-PKG_MIRROR_HASH:=11c37fe4c18d55e799153600d1cfd8ee9ca7da8326d0024c1d825f4a327c5f0d
+PKG_SOURCE_DATE:=2022-03-15
+PKG_SOURCE_VERSION:=0625aad74d1f5b6f9c068955ad3fd7f6df635e50
+PKG_MIRROR_HASH:=0602e0e4f101ead206940eccca832b75191905c1e81290340a89b07dbee7a6ce
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -23,10 +23,18 @@ endef
 define U-Boot/bcm4908
   NAME:=Broadcom's BCM4908
   UBOOT_CONFIG:=bcm94908
+  SOC:=bcm4908
+endef
+
+define U-Boot/bcm4912
+  NAME:=Broadcom's BCM4912
+  UBOOT_CONFIG:=bcm94912
+  SOC:=bcm4912
 endef
 
 UBOOT_TARGETS := \
-	bcm4908
+	bcm4908 \
+	bcm4912
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
@@ -40,8 +48,8 @@ endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/u-boot
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/u-boot/
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/u-boot.dtb $(STAGING_DIR_IMAGE)/u-boot/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/u-boot/u-boot-$(SOC).bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/u-boot.dtb $(STAGING_DIR_IMAGE)/u-boot/u-boot-$(SOC).dtb
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/arch/arm/dts/*.dtb $(STAGING_DIR_IMAGE)/u-boot/
 endef
 

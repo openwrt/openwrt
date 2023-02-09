@@ -15,7 +15,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -755,8 +755,11 @@ static int b53_switch_reset(struct b53_d
+@@ -783,8 +783,11 @@ static int b53_switch_reset(struct b53_d
  			usleep_range(1000, 2000);
  		} while (timeout-- > 0);
  

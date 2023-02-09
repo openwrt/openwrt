@@ -18,7 +18,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/bcm_sf2.c
 +++ b/drivers/net/dsa/bcm_sf2.c
-@@ -380,8 +380,9 @@ static void bcm_sf2_intr_disable(struct
+@@ -400,8 +400,9 @@ static void bcm_sf2_intr_disable(struct
  static void bcm_sf2_identify_ports(struct bcm_sf2_priv *priv,
  				   struct device_node *dn)
  {
@@ -29,7 +29,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	unsigned int port_num;
  
  	priv->moca_port = -1;
-@@ -390,19 +391,26 @@ static void bcm_sf2_identify_ports(struc
+@@ -410,19 +411,26 @@ static void bcm_sf2_identify_ports(struc
  		if (of_property_read_u32(port, "reg", &port_num))
  			continue;
  
@@ -62,7 +62,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (of_property_read_bool(port, "brcm,use-bcm-hdr"))
 --- a/drivers/net/dsa/bcm_sf2.h
 +++ b/drivers/net/dsa/bcm_sf2.h
-@@ -43,6 +43,7 @@ struct bcm_sf2_hw_params {
+@@ -44,6 +44,7 @@ struct bcm_sf2_hw_params {
  #define BCM_SF2_REGS_NUM	6
  
  struct bcm_sf2_port_status {

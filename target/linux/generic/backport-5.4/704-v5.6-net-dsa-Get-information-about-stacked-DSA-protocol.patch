@@ -1,0 +1,363 @@
+From 4d776482ecc689bdd68627985ac4cb5a6f325953 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Tue, 7 Jan 2020 21:06:05 -0800
+Subject: [PATCH] net: dsa: Get information about stacked DSA protocol
+
+It is possible to stack multiple DSA switches in a way that they are not
+part of the tree (disjoint) but the DSA master of a switch is a DSA
+slave of another. When that happens switch drivers may have to know this
+is the case so as to determine whether their tagging protocol has a
+remove chance of working.
+
+This is useful for specific switch drivers such as b53 where devices
+have been known to be stacked in the wild without the Broadcom tag
+protocol supporting that feature. This allows b53 to continue supporting
+those devices by forcing the disabling of Broadcom tags on the outermost
+switches if necessary.
+
+The get_tag_protocol() function is therefore updated to gain an
+additional enum dsa_tag_protocol argument which denotes the current
+tagging protocol used by the DSA master we are attached to, else
+DSA_TAG_PROTO_NONE for the top of the dsa_switch_tree.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_common.c       | 22 +++++++++++-------
+ drivers/net/dsa/b53/b53_priv.h         |  4 +++-
+ drivers/net/dsa/dsa_loop.c             |  3 ++-
+ drivers/net/dsa/lan9303-core.c         |  3 ++-
+ drivers/net/dsa/lantiq_gswip.c         |  3 ++-
+ drivers/net/dsa/microchip/ksz8795.c    |  3 ++-
+ drivers/net/dsa/microchip/ksz9477.c    |  3 ++-
+ drivers/net/dsa/mt7530.c               |  3 ++-
+ drivers/net/dsa/mv88e6060.c            |  3 ++-
+ drivers/net/dsa/mv88e6xxx/chip.c       |  3 ++-
+ drivers/net/dsa/ocelot/felix.c         |  3 ++-
+ drivers/net/dsa/qca/ar9331.c           |  3 ++-
+ drivers/net/dsa/qca8k.c                |  3 ++-
+ drivers/net/dsa/rtl8366rb.c            |  3 ++-
+ drivers/net/dsa/sja1105/sja1105_main.c |  3 ++-
+ drivers/net/dsa/vitesse-vsc73xx-core.c |  3 ++-
+ include/net/dsa.h                      |  3 ++-
+ net/dsa/dsa2.c                         | 31 ++++++++++++++++++++++++--
+ net/dsa/dsa_priv.h                     |  1 +
+ net/dsa/slave.c                        |  4 +---
+ 20 files changed, 78 insertions(+), 29 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -587,9 +587,8 @@ EXPORT_SYMBOL(b53_disable_port);
+ 
+ void b53_brcm_hdr_setup(struct dsa_switch *ds, int port)
+ {
+-	bool tag_en = !(ds->ops->get_tag_protocol(ds, port) ==
+-			 DSA_TAG_PROTO_NONE);
+ 	struct b53_device *dev = ds->priv;
++	bool tag_en = !(dev->tag_protocol == DSA_TAG_PROTO_NONE);
+ 	u8 hdr_ctl, val;
+ 	u16 reg;
+ 
+@@ -1921,7 +1920,8 @@ static bool b53_can_enable_brcm_tags(str
+ 	return ret;
+ }
+ 
+-enum dsa_tag_protocol b53_get_tag_protocol(struct dsa_switch *ds, int port)
++enum dsa_tag_protocol b53_get_tag_protocol(struct dsa_switch *ds, int port,
++					   enum dsa_tag_protocol mprot)
+ {
+ 	struct b53_device *dev = ds->priv;
+ 
+@@ -1931,16 +1931,22 @@ enum dsa_tag_protocol b53_get_tag_protoc
+ 	 * misses on multicast addresses (TBD).
+ 	 */
+ 	if (is5325(dev) || is5365(dev) || is539x(dev) || is531x5(dev) ||
+-	    !b53_can_enable_brcm_tags(ds, port))
+-		return DSA_TAG_PROTO_NONE;
++	    !b53_can_enable_brcm_tags(ds, port)) {
++		dev->tag_protocol = DSA_TAG_PROTO_NONE;
++		goto out;
++	}
+ 
+ 	/* Broadcom BCM58xx chips have a flow accelerator on Port 8
+ 	 * which requires us to use the prepended Broadcom tag type
+ 	 */
+-	if (dev->chip_id == BCM58XX_DEVICE_ID && port == B53_CPU_PORT)
+-		return DSA_TAG_PROTO_BRCM_PREPEND;
++	if (dev->chip_id == BCM58XX_DEVICE_ID && port == B53_CPU_PORT) {
++		dev->tag_protocol = DSA_TAG_PROTO_BRCM_PREPEND;
++		goto out;
++	}
+ 
+-	return DSA_TAG_PROTO_BRCM;
++	dev->tag_protocol = DSA_TAG_PROTO_BRCM;
++out:
++	return dev->tag_protocol;
+ }
+ EXPORT_SYMBOL(b53_get_tag_protocol);
+ 
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -118,6 +118,7 @@ struct b53_device {
+ 	u8 jumbo_size_reg;
+ 	int reset_gpio;
+ 	u8 num_arl_entries;
++	enum dsa_tag_protocol tag_protocol;
+ 
+ 	/* used ports mask */
+ 	u16 enabled_ports;
+@@ -359,7 +360,8 @@ int b53_mdb_del(struct dsa_switch *ds, i
+ 		const struct switchdev_obj_port_mdb *mdb);
+ int b53_mirror_add(struct dsa_switch *ds, int port,
+ 		   struct dsa_mall_mirror_tc_entry *mirror, bool ingress);
+-enum dsa_tag_protocol b53_get_tag_protocol(struct dsa_switch *ds, int port);
++enum dsa_tag_protocol b53_get_tag_protocol(struct dsa_switch *ds, int port,
++					   enum dsa_tag_protocol mprot);
+ void b53_mirror_del(struct dsa_switch *ds, int port,
+ 		    struct dsa_mall_mirror_tc_entry *mirror);
+ int b53_enable_port(struct dsa_switch *ds, int port, struct phy_device *phy);
+--- a/drivers/net/dsa/dsa_loop.c
++++ b/drivers/net/dsa/dsa_loop.c
+@@ -61,7 +61,8 @@ struct dsa_loop_priv {
+ static struct phy_device *phydevs[PHY_MAX_ADDR];
+ 
+ static enum dsa_tag_protocol dsa_loop_get_protocol(struct dsa_switch *ds,
+-						   int port)
++						   int port,
++						   enum dsa_tag_protocol mp)
+ {
+ 	dev_dbg(ds->dev, "%s: port: %d\n", __func__, port);
+ 
+--- a/drivers/net/dsa/lan9303-core.c
++++ b/drivers/net/dsa/lan9303-core.c
+@@ -889,7 +889,8 @@ static int lan9303_check_device(struct l
+ /* ---------------------------- DSA -----------------------------------*/
+ 
+ static enum dsa_tag_protocol lan9303_get_tag_protocol(struct dsa_switch *ds,
+-						      int port)
++						      int port,
++						      enum dsa_tag_protocol mp)
+ {
+ 	return DSA_TAG_PROTO_LAN9303;
+ }
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -860,7 +860,8 @@ static int gswip_setup(struct dsa_switch
+ }
+ 
+ static enum dsa_tag_protocol gswip_get_tag_protocol(struct dsa_switch *ds,
+-						    int port)
++						    int port,
++						    enum dsa_tag_protocol mp)
+ {
+ 	return DSA_TAG_PROTO_GSWIP;
+ }
+--- a/drivers/net/dsa/microchip/ksz8795.c
++++ b/drivers/net/dsa/microchip/ksz8795.c
+@@ -645,7 +645,8 @@ static void ksz8795_w_phy(struct ksz_dev
+ }
+ 
+ static enum dsa_tag_protocol ksz8795_get_tag_protocol(struct dsa_switch *ds,
+-						      int port)
++						      int port,
++						      enum dsa_tag_protocol mp)
+ {
+ 	return DSA_TAG_PROTO_KSZ8795;
+ }
+--- a/drivers/net/dsa/microchip/ksz9477.c
++++ b/drivers/net/dsa/microchip/ksz9477.c
+@@ -295,7 +295,8 @@ static void ksz9477_port_init_cnt(struct
+ }
+ 
+ static enum dsa_tag_protocol ksz9477_get_tag_protocol(struct dsa_switch *ds,
+-						      int port)
++						      int port,
++						      enum dsa_tag_protocol mp)
+ {
+ 	enum dsa_tag_protocol proto = DSA_TAG_PROTO_KSZ9477;
+ 	struct ksz_device *dev = ds->priv;
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -1144,7 +1144,8 @@ mt7530_port_vlan_del(struct dsa_switch *
+ }
+ 
+ static enum dsa_tag_protocol
+-mtk_get_tag_protocol(struct dsa_switch *ds, int port)
++mtk_get_tag_protocol(struct dsa_switch *ds, int port,
++		     enum dsa_tag_protocol mp)
+ {
+ 	struct mt7530_priv *priv = ds->priv;
+ 
+--- a/drivers/net/dsa/mv88e6060.c
++++ b/drivers/net/dsa/mv88e6060.c
+@@ -43,7 +43,8 @@ static const char *mv88e6060_get_name(st
+ }
+ 
+ static enum dsa_tag_protocol mv88e6060_get_tag_protocol(struct dsa_switch *ds,
+-							int port)
++							int port,
++							enum dsa_tag_protocol m)
+ {
+ 	return DSA_TAG_PROTO_TRAILER;
+ }
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -4878,7 +4878,8 @@ static struct mv88e6xxx_chip *mv88e6xxx_
+ }
+ 
+ static enum dsa_tag_protocol mv88e6xxx_get_tag_protocol(struct dsa_switch *ds,
+-							int port)
++							int port,
++							enum dsa_tag_protocol m)
+ {
+ 	struct mv88e6xxx_chip *chip = ds->priv;
+ 
+--- a/drivers/net/dsa/qca8k.c
++++ b/drivers/net/dsa/qca8k.c
+@@ -1016,7 +1016,8 @@ qca8k_port_fdb_dump(struct dsa_switch *d
+ }
+ 
+ static enum dsa_tag_protocol
+-qca8k_get_tag_protocol(struct dsa_switch *ds, int port)
++qca8k_get_tag_protocol(struct dsa_switch *ds, int port,
++		       enum dsa_tag_protocol mp)
+ {
+ 	return DSA_TAG_PROTO_QCA;
+ }
+--- a/drivers/net/dsa/rtl8366rb.c
++++ b/drivers/net/dsa/rtl8366rb.c
+@@ -964,7 +964,8 @@ static int rtl8366rb_setup(struct dsa_sw
+ }
+ 
+ static enum dsa_tag_protocol rtl8366_get_tag_protocol(struct dsa_switch *ds,
+-						      int port)
++						      int port,
++						      enum dsa_tag_protocol mp)
+ {
+ 	/* For now, the RTL switches are handled without any custom tags.
+ 	 *
+--- a/drivers/net/dsa/sja1105/sja1105_main.c
++++ b/drivers/net/dsa/sja1105/sja1105_main.c
+@@ -1591,7 +1591,8 @@ static int sja1105_setup_8021q_tagging(s
+ }
+ 
+ static enum dsa_tag_protocol
+-sja1105_get_tag_protocol(struct dsa_switch *ds, int port)
++sja1105_get_tag_protocol(struct dsa_switch *ds, int port,
++			 enum dsa_tag_protocol mp)
+ {
+ 	return DSA_TAG_PROTO_SJA1105;
+ }
+--- a/drivers/net/dsa/vitesse-vsc73xx-core.c
++++ b/drivers/net/dsa/vitesse-vsc73xx-core.c
+@@ -542,7 +542,8 @@ static int vsc73xx_phy_write(struct dsa_
+ }
+ 
+ static enum dsa_tag_protocol vsc73xx_get_tag_protocol(struct dsa_switch *ds,
+-						      int port)
++						      int port,
++						      enum dsa_tag_protocol mp)
+ {
+ 	/* The switch internally uses a 8 byte header with length,
+ 	 * source port, tag, LPA and priority. This is supposedly
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -353,7 +353,8 @@ typedef int dsa_fdb_dump_cb_t(const unsi
+ 			      bool is_static, void *data);
+ struct dsa_switch_ops {
+ 	enum dsa_tag_protocol (*get_tag_protocol)(struct dsa_switch *ds,
+-						  int port);
++						  int port,
++						  enum dsa_tag_protocol mprot);
+ 
+ 	int	(*setup)(struct dsa_switch *ds);
+ 	void	(*teardown)(struct dsa_switch *ds);
+--- a/net/dsa/dsa2.c
++++ b/net/dsa/dsa2.c
+@@ -631,6 +631,32 @@ static int dsa_port_parse_dsa(struct dsa
+ 	return 0;
+ }
+ 
++static enum dsa_tag_protocol dsa_get_tag_protocol(struct dsa_port *dp,
++						  struct net_device *master)
++{
++	enum dsa_tag_protocol tag_protocol = DSA_TAG_PROTO_NONE;
++	struct dsa_switch *mds, *ds = dp->ds;
++	unsigned int mdp_upstream;
++	struct dsa_port *mdp;
++
++	/* It is possible to stack DSA switches onto one another when that
++	 * happens the switch driver may want to know if its tagging protocol
++	 * is going to work in such a configuration.
++	 */
++	if (dsa_slave_dev_check(master)) {
++		mdp = dsa_slave_to_port(master);
++		mds = mdp->ds;
++		mdp_upstream = dsa_upstream_port(mds, mdp->index);
++		tag_protocol = mds->ops->get_tag_protocol(mds, mdp_upstream,
++							  DSA_TAG_PROTO_NONE);
++	}
++
++	/* If the master device is not itself a DSA slave in a disjoint DSA
++	 * tree, then return immediately.
++	 */
++	return ds->ops->get_tag_protocol(ds, dp->index, tag_protocol);
++}
++
+ static int dsa_port_parse_cpu(struct dsa_port *dp, struct net_device *master)
+ {
+ 	struct dsa_switch *ds = dp->ds;
+@@ -638,20 +664,21 @@ static int dsa_port_parse_cpu(struct dsa
+ 	const struct dsa_device_ops *tag_ops;
+ 	enum dsa_tag_protocol tag_protocol;
+ 
+-	tag_protocol = ds->ops->get_tag_protocol(ds, dp->index);
++	tag_protocol = dsa_get_tag_protocol(dp, master);
+ 	tag_ops = dsa_tag_driver_get(tag_protocol);
+ 	if (IS_ERR(tag_ops)) {
+ 		if (PTR_ERR(tag_ops) == -ENOPROTOOPT)
+ 			return -EPROBE_DEFER;
+ 		dev_warn(ds->dev, "No tagger for this switch\n");
++		dp->master = NULL;
+ 		return PTR_ERR(tag_ops);
+ 	}
+ 
++	dp->master = master;
+ 	dp->type = DSA_PORT_TYPE_CPU;
+ 	dp->filter = tag_ops->filter;
+ 	dp->rcv = tag_ops->rcv;
+ 	dp->tag_ops = tag_ops;
+-	dp->master = master;
+ 	dp->dst = dst;
+ 
+ 	return 0;
+--- a/net/dsa/dsa_priv.h
++++ b/net/dsa/dsa_priv.h
+@@ -189,6 +189,7 @@ extern const struct dsa_device_ops notag
+ void dsa_slave_mii_bus_init(struct dsa_switch *ds);
+ int dsa_slave_create(struct dsa_port *dp);
+ void dsa_slave_destroy(struct net_device *slave_dev);
++bool dsa_slave_dev_check(const struct net_device *dev);
+ int dsa_slave_suspend(struct net_device *slave_dev);
+ int dsa_slave_resume(struct net_device *slave_dev);
+ int dsa_slave_register_notifier(void);
+--- a/net/dsa/slave.c
++++ b/net/dsa/slave.c
+@@ -22,8 +22,6 @@
+ 
+ #include "dsa_priv.h"
+ 
+-static bool dsa_slave_dev_check(const struct net_device *dev);
+-
+ /* slave mii_bus handling ***************************************************/
+ static int dsa_slave_phy_read(struct mii_bus *bus, int addr, int reg)
+ {
+@@ -1494,7 +1492,7 @@ void dsa_slave_destroy(struct net_device
+ 	free_netdev(slave_dev);
+ }
+ 
+-static bool dsa_slave_dev_check(const struct net_device *dev)
++bool dsa_slave_dev_check(const struct net_device *dev)
+ {
+ 	return dev->netdev_ops == &dsa_slave_netdev_ops;
+ }

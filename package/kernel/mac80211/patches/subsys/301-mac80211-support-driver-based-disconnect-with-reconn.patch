@@ -136,7 +136,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  static void ieee80211_destroy_auth_data(struct ieee80211_sub_if_data *sdata,
  					bool assoc)
-@@ -3141,7 +3170,7 @@ static void ieee80211_rx_mgmt_deauth(str
+@@ -3142,7 +3171,7 @@ static void ieee80211_rx_mgmt_deauth(str
  		ieee80211_set_disassoc(sdata, 0, 0, false, NULL);
  
  		ieee80211_report_disconnect(sdata, (u8 *)mgmt, len, false,
@@ -145,7 +145,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		return;
  	}
  
-@@ -3190,7 +3219,8 @@ static void ieee80211_rx_mgmt_disassoc(s
+@@ -3191,7 +3220,8 @@ static void ieee80211_rx_mgmt_disassoc(s
  
  	ieee80211_set_disassoc(sdata, 0, 0, false, NULL);
  
@@ -155,17 +155,17 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
  
  static void ieee80211_get_rates(struct ieee80211_supported_band *sband,
-@@ -4214,7 +4244,8 @@ static void ieee80211_rx_mgmt_beacon(str
+@@ -4223,7 +4253,8 @@ static void ieee80211_rx_mgmt_beacon(str
  				       true, deauth_buf);
  		ieee80211_report_disconnect(sdata, deauth_buf,
  					    sizeof(deauth_buf), true,
 -					    WLAN_REASON_DEAUTH_LEAVING);
 +					    WLAN_REASON_DEAUTH_LEAVING,
 +					    false);
- 		return;
+ 		goto free;
  	}
  
-@@ -4359,7 +4390,7 @@ static void ieee80211_sta_connection_los
+@@ -4370,7 +4401,7 @@ static void ieee80211_sta_connection_los
  			       tx, frame_buf);
  
  	ieee80211_report_disconnect(sdata, frame_buf, sizeof(frame_buf), true,
@@ -174,7 +174,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
  
  static int ieee80211_auth(struct ieee80211_sub_if_data *sdata)
-@@ -5449,7 +5480,8 @@ int ieee80211_mgd_auth(struct ieee80211_
+@@ -5460,7 +5491,8 @@ int ieee80211_mgd_auth(struct ieee80211_
  
  		ieee80211_report_disconnect(sdata, frame_buf,
  					    sizeof(frame_buf), true,
@@ -184,7 +184,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	sdata_info(sdata, "authenticate with %pM\n", req->bss->bssid);
-@@ -5521,7 +5553,8 @@ int ieee80211_mgd_assoc(struct ieee80211
+@@ -5532,7 +5564,8 @@ int ieee80211_mgd_assoc(struct ieee80211
  
  		ieee80211_report_disconnect(sdata, frame_buf,
  					    sizeof(frame_buf), true,
@@ -194,7 +194,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	if (ifmgd->auth_data && !ifmgd->auth_data->done) {
-@@ -5824,7 +5857,7 @@ int ieee80211_mgd_deauth(struct ieee8021
+@@ -5835,7 +5868,7 @@ int ieee80211_mgd_deauth(struct ieee8021
  		ieee80211_destroy_auth_data(sdata, false);
  		ieee80211_report_disconnect(sdata, frame_buf,
  					    sizeof(frame_buf), true,
@@ -203,7 +203,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  		return 0;
  	}
-@@ -5844,7 +5877,7 @@ int ieee80211_mgd_deauth(struct ieee8021
+@@ -5855,7 +5888,7 @@ int ieee80211_mgd_deauth(struct ieee8021
  		ieee80211_destroy_assoc_data(sdata, false, true);
  		ieee80211_report_disconnect(sdata, frame_buf,
  					    sizeof(frame_buf), true,
@@ -212,7 +212,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		return 0;
  	}
  
-@@ -5859,7 +5892,7 @@ int ieee80211_mgd_deauth(struct ieee8021
+@@ -5870,7 +5903,7 @@ int ieee80211_mgd_deauth(struct ieee8021
  				       req->reason_code, tx, frame_buf);
  		ieee80211_report_disconnect(sdata, frame_buf,
  					    sizeof(frame_buf), true,
@@ -221,7 +221,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		return 0;
  	}
  
-@@ -5892,7 +5925,7 @@ int ieee80211_mgd_disassoc(struct ieee80
+@@ -5903,7 +5936,7 @@ int ieee80211_mgd_disassoc(struct ieee80
  			       frame_buf);
  
  	ieee80211_report_disconnect(sdata, frame_buf, sizeof(frame_buf), true,

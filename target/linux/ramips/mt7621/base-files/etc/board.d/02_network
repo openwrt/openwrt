@@ -45,9 +45,11 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-4a-gigabit)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
-	gnubee,gb-pc1|\
+	gnubee,gb-pc1)
+		ucidef_set_interface_lan "ethblack ethblue"
+		;;
 	gnubee,gb-pc2)
-		ucidef_set_interface_lan "lan1 lan2"
+		ucidef_set_interface_lan "ethblack ethblue ethyellow"
 		;;
 	linksys,re6500|\
 	netgear,wac104)
@@ -68,6 +70,7 @@ ramips_setup_interfaces()
 	ubnt,edgerouter-x-sfp)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4 eth5" "eth0"
 		;;
+	yuncore,ax820|\
 	zyxel,nr7101)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
@@ -156,6 +159,9 @@ ramips_setup_macs()
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add $label_mac 1)
+		;;
+	yuncore,ax820)
+		label_mac=$(mtd_get_mac_binary Factory 0x4)
 		;;
 	esac
 

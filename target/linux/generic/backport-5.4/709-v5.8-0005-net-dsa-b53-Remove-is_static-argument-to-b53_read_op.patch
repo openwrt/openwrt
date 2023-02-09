@@ -1,0 +1,36 @@
+From ef2a0bd99b1549a3a4253355be247d5dff25d720 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Thu, 30 Apr 2020 11:49:11 -0700
+Subject: [PATCH] net: dsa: b53: Remove is_static argument to b53_read_op()
+
+This argument is not used.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_common.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1495,8 +1495,7 @@ static int b53_arl_rw_op(struct b53_devi
+ }
+ 
+ static int b53_arl_read(struct b53_device *dev, u64 mac,
+-			u16 vid, struct b53_arl_entry *ent, u8 *idx,
+-			bool is_valid)
++			u16 vid, struct b53_arl_entry *ent, u8 *idx)
+ {
+ 	DECLARE_BITMAP(free_bins, B53_ARLTBL_MAX_BIN_ENTRIES);
+ 	unsigned int i;
+@@ -1561,7 +1560,8 @@ static int b53_arl_op(struct b53_device
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = b53_arl_read(dev, mac, vid, &ent, &idx, is_valid);
++	ret = b53_arl_read(dev, mac, vid, &ent, &idx);
++
+ 	/* If this is a read, just finish now */
+ 	if (op)
+ 		return ret;

@@ -145,7 +145,9 @@ const struct rtl83xx_mib_desc rtl83xx_mib[] = {
 /* DSA callbacks */
 
 
-static enum dsa_tag_protocol rtl83xx_get_tag_protocol(struct dsa_switch *ds, int port)
+static enum dsa_tag_protocol rtl83xx_get_tag_protocol(struct dsa_switch *ds,
+						      int port,
+						      enum dsa_tag_protocol mprot)
 {
 	/* The switch does not tag the frames, instead internally the header
 	 * structure for each packet is tagged accordingly.

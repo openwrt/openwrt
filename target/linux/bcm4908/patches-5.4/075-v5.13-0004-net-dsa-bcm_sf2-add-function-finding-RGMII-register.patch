@@ -57,7 +57,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static void bcm_sf2_imp_setup(struct dsa_switch *ds, int port)
  {
  	struct bcm_sf2_priv *priv = bcm_sf2_to_priv(ds);
-@@ -588,6 +613,7 @@ static void bcm_sf2_sw_mac_config(struct
+@@ -608,6 +633,7 @@ static void bcm_sf2_sw_mac_config(struct
  {
  	struct bcm_sf2_priv *priv = bcm_sf2_to_priv(ds);
  	u32 id_mode_dis = 0, port_mode;
@@ -65,7 +65,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	u32 reg, offset;
  
  	if (port == core_readl(priv, CORE_IMP0_PRT_ID))
-@@ -617,10 +643,12 @@ static void bcm_sf2_sw_mac_config(struct
+@@ -637,10 +663,12 @@ static void bcm_sf2_sw_mac_config(struct
  		goto force_link;
  	}
  
@@ -79,7 +79,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	reg &= ~ID_MODE_DIS;
  	reg &= ~(PORT_MODE_MASK << PORT_MODE_SHIFT);
  	reg &= ~(RX_PAUSE_EN | TX_PAUSE_EN);
-@@ -635,7 +663,7 @@ static void bcm_sf2_sw_mac_config(struct
+@@ -655,7 +683,7 @@ static void bcm_sf2_sw_mac_config(struct
  		reg |= RX_PAUSE_EN;
  	}
  
@@ -88,7 +88,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  force_link:
  	/* Force link settings detected from the PHY */
-@@ -661,6 +689,7 @@ static void bcm_sf2_sw_mac_link_set(stru
+@@ -686,6 +714,7 @@ static void bcm_sf2_sw_mac_link_set(stru
  				    phy_interface_t interface, bool link)
  {
  	struct bcm_sf2_priv *priv = bcm_sf2_to_priv(ds);
@@ -96,7 +96,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	u32 reg;
  
  	if (!phy_interface_mode_is_rgmii(interface) &&
-@@ -668,13 +697,15 @@ static void bcm_sf2_sw_mac_link_set(stru
+@@ -693,13 +722,15 @@ static void bcm_sf2_sw_mac_link_set(stru
  	    interface != PHY_INTERFACE_MODE_REVMII)
  		return;
  

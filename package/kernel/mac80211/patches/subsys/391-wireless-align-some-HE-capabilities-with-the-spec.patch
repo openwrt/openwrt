@@ -12,7 +12,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -3633,7 +3633,7 @@ ath11k_mac_filter_he_cap_mesh(struct iee
+@@ -3648,7 +3648,7 @@ ath11k_mac_filter_he_cap_mesh(struct iee
  	    IEEE80211_HE_MAC_CAP4_BQR;
  	he_cap_elem->mac_cap_info[4] &= ~m;
  
@@ -21,7 +21,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	    IEEE80211_HE_MAC_CAP5_UL_2x996_TONE_RU |
  	    IEEE80211_HE_MAC_CAP5_PUNCTURED_SOUNDING |
  	    IEEE80211_HE_MAC_CAP5_HT_VHT_TRIG_FRAME_RX;
-@@ -3643,7 +3643,7 @@ ath11k_mac_filter_he_cap_mesh(struct iee
+@@ -3658,7 +3658,7 @@ ath11k_mac_filter_he_cap_mesh(struct iee
  	    IEEE80211_HE_PHY_CAP2_UL_MU_PARTIAL_MU_MIMO;
  	he_cap_elem->phy_cap_info[2] &= ~m;
  
@@ -30,7 +30,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	    IEEE80211_HE_PHY_CAP3_DCM_MAX_CONST_TX_MASK |
  	    IEEE80211_HE_PHY_CAP3_DCM_MAX_CONST_RX_MASK;
  	he_cap_elem->phy_cap_info[3] &= ~m;
-@@ -3655,13 +3655,13 @@ ath11k_mac_filter_he_cap_mesh(struct iee
+@@ -3670,13 +3670,13 @@ ath11k_mac_filter_he_cap_mesh(struct iee
  	he_cap_elem->phy_cap_info[5] &= ~m;
  
  	m = IEEE80211_HE_PHY_CAP6_CODEBOOK_SIZE_75_MU |

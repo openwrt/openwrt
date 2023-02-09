@@ -83,7 +83,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  {
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
-@@ -319,7 +319,7 @@ static int dsa_slave_vlan_add(struct net
+@@ -317,7 +317,7 @@ static int dsa_slave_vlan_add(struct net
  	if (obj->orig_dev != dev)
  		return -EOPNOTSUPP;
  
@@ -92,7 +92,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return 0;
  
  	vlan = *SWITCHDEV_OBJ_PORT_VLAN(obj);
-@@ -386,7 +386,7 @@ static int dsa_slave_vlan_del(struct net
+@@ -384,7 +384,7 @@ static int dsa_slave_vlan_del(struct net
  	if (obj->orig_dev != dev)
  		return -EOPNOTSUPP;
  
@@ -101,7 +101,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return 0;
  
  	/* Do not deprogram the CPU port as it may be shared with other user
-@@ -1120,7 +1120,7 @@ static int dsa_slave_vlan_rx_add_vid(str
+@@ -1118,7 +1118,7 @@ static int dsa_slave_vlan_rx_add_vid(str
  	 * need to emulate the switchdev prepare + commit phase.
  	 */
  	if (dp->bridge_dev) {
@@ -110,7 +110,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			return 0;
  
  		/* br_vlan_get_info() returns -EINVAL or -ENOENT if the
-@@ -1154,7 +1154,7 @@ static int dsa_slave_vlan_rx_kill_vid(st
+@@ -1152,7 +1152,7 @@ static int dsa_slave_vlan_rx_kill_vid(st
  	 * need to emulate the switchdev prepare + commit phase.
  	 */
  	if (dp->bridge_dev) {

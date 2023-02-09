@@ -100,7 +100,7 @@
  	.add_key = brcmf_cfg80211_add_key,
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
-@@ -1356,6 +1356,8 @@ int brcmf_attach(struct device *dev)
+@@ -1357,6 +1357,8 @@ int brcmf_attach(struct device *dev)
  
  	/* Link to bus module */
  	drvr->hdrlen = 0;
@@ -109,7 +109,7 @@
  
  	/* Attach and link in the protocol */
  	ret = brcmf_proto_attach(drvr);
-@@ -1438,6 +1440,12 @@ void brcmf_detach(struct device *dev)
+@@ -1439,6 +1441,12 @@ void brcmf_detach(struct device *dev)
  	if (drvr == NULL)
  		return;
  

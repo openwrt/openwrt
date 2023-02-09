@@ -1,0 +1,27 @@
+From 29bb5e8337caf2e3d9802ee6a6804561f125bfcf Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Thu, 24 Oct 2019 12:45:08 -0700
+Subject: [PATCH] net: dsa: bcm_sf2: Wire up MDB operations
+
+Leverage the recently add b53_mdb_{add,del,prepare} functions since they
+work as-is for bcm_sf2.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Reviewed-by: Vivien Didelot <vivien.didelot@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/bcm_sf2.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/net/dsa/bcm_sf2.c
++++ b/drivers/net/dsa/bcm_sf2.c
+@@ -981,6 +981,9 @@ static const struct dsa_switch_ops bcm_s
+ 	.set_rxnfc		= bcm_sf2_set_rxnfc,
+ 	.port_mirror_add	= b53_mirror_add,
+ 	.port_mirror_del	= b53_mirror_del,
++	.port_mdb_prepare	= b53_mdb_prepare,
++	.port_mdb_add		= b53_mdb_add,
++	.port_mdb_del		= b53_mdb_del,
+ };
+ 
+ struct bcm_sf2_of_data {

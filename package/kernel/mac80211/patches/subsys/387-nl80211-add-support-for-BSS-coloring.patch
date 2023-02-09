@@ -223,7 +223,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	NUM_NL80211_EXT_FEATURES,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -753,6 +753,10 @@ static const struct nla_policy nl80211_p
+@@ -758,6 +758,10 @@ static const struct nla_policy nl80211_p
  				 NL80211_SAE_PWE_BOTH),
  	[NL80211_ATTR_SAR_SPEC] = NLA_POLICY_NESTED(sar_policy),
  	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
@@ -234,7 +234,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -14689,6 +14693,106 @@ bad_tid_conf:
+@@ -14709,6 +14713,106 @@ bad_tid_conf:
  	return ret;
  }
  
@@ -341,7 +341,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #define NL80211_FLAG_NEED_WIPHY		0x01
  #define NL80211_FLAG_NEED_NETDEV	0x02
  #define NL80211_FLAG_NEED_RTNL		0x04
-@@ -15770,6 +15874,14 @@ static const struct genl_small_ops nl802
+@@ -15790,6 +15894,14 @@ static const struct genl_small_ops nl802
  		.internal_flags = NL80211_FLAG_NEED_WIPHY |
  				  NL80211_FLAG_NEED_RTNL,
  	},
@@ -356,7 +356,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  static struct genl_family nl80211_fam __genl_ro_after_init = {
-@@ -17397,6 +17509,51 @@ void cfg80211_ch_switch_started_notify(s
+@@ -17417,6 +17529,51 @@ void cfg80211_ch_switch_started_notify(s
  }
  EXPORT_SYMBOL(cfg80211_ch_switch_started_notify);
  

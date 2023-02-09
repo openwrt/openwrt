@@ -22,7 +22,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
-@@ -275,6 +275,7 @@ static void xhci_pci_quirks(struct devic
+@@ -278,6 +278,7 @@ static void xhci_pci_quirks(struct devic
  			pdev->device == 0x3483) {
  		xhci->quirks |= XHCI_LPM_SUPPORT;
  		xhci->quirks |= XHCI_EP_CTX_BROKEN_DCS;
@@ -51,7 +51,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1883,6 +1883,7 @@ struct xhci_hcd {
+@@ -1884,6 +1884,7 @@ struct xhci_hcd {
  #define XHCI_EP_CTX_BROKEN_DCS	BIT_ULL(36)
  #define XHCI_SKIP_PHY_INIT	BIT_ULL(37)
  #define XHCI_DISABLE_SPARSE	BIT_ULL(38)

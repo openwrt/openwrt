@@ -82,7 +82,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  }
  
-@@ -1085,9 +1122,14 @@ static const u16 bcm_sf2_4908_reg_offset
+@@ -1113,9 +1150,14 @@ static const u16 bcm_sf2_4908_reg_offset
  	[REG_SPHY_CNTRL]	= 0x24,
  	[REG_CROSSBAR]		= 0xc8,
  	[REG_RGMII_11_CNTRL]	= 0x014c,
@@ -102,7 +102,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static const struct bcm_sf2_of_data bcm_sf2_4908_data = {
 --- a/drivers/net/dsa/bcm_sf2.h
 +++ b/drivers/net/dsa/bcm_sf2.h
-@@ -203,6 +203,16 @@ SF2_IO_MACRO(acb);
+@@ -206,6 +206,16 @@ SF2_IO_MACRO(acb);
  SWITCH_INTR_L2(0);
  SWITCH_INTR_L2(1);
  

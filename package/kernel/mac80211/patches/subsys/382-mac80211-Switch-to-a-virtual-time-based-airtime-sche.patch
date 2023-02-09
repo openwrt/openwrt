@@ -387,7 +387,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	struct work_struct csa_finalize_work;
  	bool csa_block_tx; /* write-protected by sdata_lock and local->mtx */
  	struct cfg80211_chan_def csa_chandef;
-@@ -1143,6 +1141,44 @@ enum mac80211_scan_state {
+@@ -1148,6 +1146,44 @@ enum mac80211_scan_state {
  	SCAN_ABORT,
  };
  
@@ -432,7 +432,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  DECLARE_STATIC_KEY_FALSE(aql_disable);
  
  struct ieee80211_local {
-@@ -1156,13 +1192,8 @@ struct ieee80211_local {
+@@ -1161,13 +1197,8 @@ struct ieee80211_local {
  	struct codel_params cparams;
  
  	/* protects active_txqs and txqi->schedule_order */
@@ -447,7 +447,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	u32 aql_threshold;
  	atomic_t aql_total_pending_airtime;
  
-@@ -1581,6 +1612,125 @@ static inline bool txq_has_queue(struct
+@@ -1586,6 +1617,125 @@ static inline bool txq_has_queue(struct
  	return !(skb_queue_empty(&txqi->frags) && !txqi->tin.backlog_packets);
  }
  
@@ -573,7 +573,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static inline int ieee80211_bssid_match(const u8 *raddr, const u8 *addr)
  {
  	return ether_addr_equal(raddr, addr) ||
-@@ -1821,6 +1971,14 @@ int ieee80211_tx_control_port(struct wip
+@@ -1826,6 +1976,14 @@ int ieee80211_tx_control_port(struct wip
  			      u64 *cookie);
  int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
  			      const u8 *buf, size_t len);
@@ -622,7 +622,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -1573,12 +1573,8 @@ static void sta_ps_start(struct sta_info
+@@ -1572,12 +1572,8 @@ static void sta_ps_start(struct sta_info
  
  	for (tid = 0; tid < IEEE80211_NUM_TIDS; tid++) {
  		struct ieee80211_txq *txq = sta->sta.txq[tid];

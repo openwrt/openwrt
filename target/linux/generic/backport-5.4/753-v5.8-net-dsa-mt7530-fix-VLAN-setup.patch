@@ -41,7 +41,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	mutex_lock(&priv->reg_mutex);
  
  	pvid = priv->ports[port].pvid;
-@@ -1232,6 +1220,7 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -1233,6 +1221,7 @@ mt7530_setup(struct dsa_switch *ds)
  	 * as two netdev instances.
  	 */
  	dn = ds->ports[MT7530_CPU_PORT].master->dev.of_node->parent;

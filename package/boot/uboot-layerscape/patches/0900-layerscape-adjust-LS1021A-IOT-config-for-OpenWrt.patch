@@ -1,0 +1,45 @@
+From b382eeafe01df21da3518b2f1dd7d22ee114efb0 Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Mon, 24 Oct 2022 14:19:38 +0200
+Subject: [PATCH] layerscape: adjust LS1021A-IOT config for OpenWrt
+
+Two configs are required:
+  - FIT
+  - Ext4load
+
+Let's enable it. U-boot is now bigger than 512K. Let's enlarge it to
+768K. Envs start at 1M, so it will fit.
+
+Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
+---
+ configs/ls1021aiot_sdcard_defconfig | 3 +++
+ include/configs/ls1021aiot.h        | 4 ++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+--- a/configs/ls1021aiot_sdcard_defconfig
++++ b/configs/ls1021aiot_sdcard_defconfig
+@@ -27,8 +27,11 @@ CONFIG_CMD_MII=y
+ # CONFIG_CMD_MDIO is not set
+ CONFIG_CMD_PING=y
+ CONFIG_CMD_EXT2=y
++CONFIG_CMD_EXT4=y
+ CONFIG_CMD_FAT=y
+ # CONFIG_SPL_EFI_PARTITION is not set
++CONFIG_FIT=y
++CONFIG_FIT_VERBOSE=y
+ CONFIG_OF_CONTROL=y
+ CONFIG_ENV_OVERWRITE=y
+ CONFIG_ENV_IS_IN_MMC=y
+--- a/include/configs/ls1021aiot.h
++++ b/include/configs/ls1021aiot.h
+@@ -78,8 +78,8 @@
+ 		CONFIG_SYS_MONITOR_LEN)
+ #define CONFIG_SYS_SPL_MALLOC_SIZE	0x100000
+ #define CONFIG_SPL_BSS_START_ADDR	0x80100000
+-#define CONFIG_SPL_BSS_MAX_SIZE		0x80000
+-#define CONFIG_SYS_MONITOR_LEN		0x80000
++#define CONFIG_SPL_BSS_MAX_SIZE		0xc0000
++#define CONFIG_SYS_MONITOR_LEN		0xc0000
+ #endif
+ 
+ #define CONFIG_SYS_DDR_SDRAM_BASE	0x80000000UL

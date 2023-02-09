@@ -136,7 +136,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
  	[0] = { .strict_start_type = NL80211_ATTR_HE_OBSS_PD },
  	[NL80211_ATTR_WIPHY] = { .type = NLA_U32 },
-@@ -739,6 +751,7 @@ static const struct nla_policy nl80211_p
+@@ -744,6 +756,7 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_SAE_PWE] =
  		NLA_POLICY_RANGE(NLA_U8, NL80211_SAE_PWE_HUNT_AND_PECK,
  				 NL80211_SAE_PWE_BOTH),
@@ -144,7 +144,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	[NL80211_ATTR_RECONNECT_REQUESTED] = { .type = NLA_REJECT },
  };
  
-@@ -2117,6 +2130,56 @@ fail:
+@@ -2122,6 +2135,56 @@ fail:
  	return -ENOBUFS;
  }
  
@@ -201,7 +201,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  struct nl80211_dump_wiphy_state {
  	s64 filter_wiphy;
  	long start;
-@@ -2366,6 +2429,8 @@ static int nl80211_send_wiphy(struct cfg
+@@ -2371,6 +2434,8 @@ static int nl80211_send_wiphy(struct cfg
  			CMD(set_multicast_to_unicast, SET_MULTICAST_TO_UNICAST);
  			CMD(update_connect_params, UPDATE_CONNECT_PARAMS);
  			CMD(update_ft_ies, UPDATE_FT_IES);
@@ -210,7 +210,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		}
  #undef CMD
  
-@@ -2691,6 +2756,11 @@ static int nl80211_send_wiphy(struct cfg
+@@ -2696,6 +2761,11 @@ static int nl80211_send_wiphy(struct cfg
  
  		if (nl80211_put_tid_config_support(rdev, msg))
  			goto nla_put_failure;
@@ -222,7 +222,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  		/* done */
  		state->split_start = 0;
-@@ -14724,6 +14794,111 @@ static void nl80211_post_doit(__genl_con
+@@ -14744,6 +14814,111 @@ static void nl80211_post_doit(__genl_con
  	}
  }
  
@@ -334,7 +334,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static __genl_const struct genl_ops nl80211_ops[] = {
  	{
  		.cmd = NL80211_CMD_GET_WIPHY,
-@@ -15587,6 +15762,14 @@ static const struct genl_small_ops nl802
+@@ -15607,6 +15782,14 @@ static const struct genl_small_ops nl802
  		.internal_flags = NL80211_FLAG_NEED_NETDEV |
  				  NL80211_FLAG_NEED_RTNL,
  	},

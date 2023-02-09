@@ -15,7 +15,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1587,13 +1587,8 @@ ieee80211_have_rx_timestamp(struct ieee8
+@@ -1592,13 +1592,8 @@ ieee80211_have_rx_timestamp(struct ieee8
  {
  	WARN_ON_ONCE(status->flag & RX_FLAG_MACTIME_START &&
  		     status->flag & RX_FLAG_MACTIME_END);
@@ -33,7 +33,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  void ieee80211_vif_inc_num_mcast(struct ieee80211_sub_if_data *sdata);
 --- a/net/mac80211/util.c
 +++ b/net/mac80211/util.c
-@@ -3670,6 +3670,7 @@ u64 ieee80211_calculate_rx_timestamp(str
+@@ -3673,6 +3673,7 @@ u64 ieee80211_calculate_rx_timestamp(str
  	u64 ts = status->mactime;
  	struct rate_info ri;
  	u16 rate;
@@ -41,7 +41,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	if (WARN_ON(!ieee80211_have_rx_timestamp(status)))
  		return 0;
-@@ -3680,11 +3681,58 @@ u64 ieee80211_calculate_rx_timestamp(str
+@@ -3683,11 +3684,58 @@ u64 ieee80211_calculate_rx_timestamp(str
  
  	/* Fill cfg80211 rate info */
  	switch (status->encoding) {
@@ -100,7 +100,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		break;
  	case RX_ENC_VHT:
  		ri.flags |= RATE_INFO_FLAGS_VHT_MCS;
-@@ -3692,6 +3740,23 @@ u64 ieee80211_calculate_rx_timestamp(str
+@@ -3695,6 +3743,23 @@ u64 ieee80211_calculate_rx_timestamp(str
  		ri.nss = status->nss;
  		if (status->enc_flags & RX_ENC_FLAG_SHORT_GI)
  			ri.flags |= RATE_INFO_FLAGS_SHORT_GI;
@@ -124,7 +124,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		break;
  	default:
  		WARN_ON(1);
-@@ -3715,7 +3780,6 @@ u64 ieee80211_calculate_rx_timestamp(str
+@@ -3718,7 +3783,6 @@ u64 ieee80211_calculate_rx_timestamp(str
  		ri.legacy = DIV_ROUND_UP(bitrate, (1 << shift));
  
  		if (status->flag & RX_FLAG_MACTIME_PLCP_START) {
