@@ -30,6 +30,11 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "4:lan"
 		;;
+	glinet,gl-x1200-nor|\
+	glinet,gl-x1200-nor-nand)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
+		;;
 	linksys,ea4500-v3)
 		ucidef_add_switch "switch0" \
 			"6@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
@@ -87,6 +92,11 @@ ath79_setup_macs()
 	dongwon,dw02-412h-128m)
 		wan_mac=$(mtd_get_mac_binary art 0x0)
 		label_mac=$wan_mac
+		;;
+	glinet,gl-x1200-nor|\
+	glinet,gl-x1200-nor-nand)
+		wan_mac=$(mtd_get_mac_binary art 0x0)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
 	netgear,wndr3700-v4|\
 	netgear,wndr4300|\

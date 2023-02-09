@@ -212,6 +212,35 @@ define Device/glinet_gl-xe300
 endef
 TARGET_DEVICES += glinet_gl-xe300
 
+define Device/glinet_gl-x1200-common
+  SOC := qca9563
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-X1200
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct-htt kmod-usb2 \
+	kmod-usb-storage block-mount kmod-usb-net-qmi-wwan uqmi
+  IMAGE_SIZE := 16000k
+endef
+
+define Device/glinet_gl-x1200-nor-nand
+  $(Device/glinet_gl-x1200-common)
+  DEVICE_VARIANT := NOR/NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 131072k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  BLOCKSIZE := 128k
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += glinet_gl-x1200-nor-nand
+
+define Device/glinet_gl-x1200-nor
+  $(Device/glinet_gl-x1200-common)
+  DEVICE_VARIANT := NOR
+endef
+TARGET_DEVICES += glinet_gl-x1200-nor
+
 define Device/linksys_ea4500-v3
   SOC := qca9558
   DEVICE_VENDOR := Linksys

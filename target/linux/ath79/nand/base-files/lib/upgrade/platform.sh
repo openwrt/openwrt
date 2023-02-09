@@ -19,7 +19,9 @@ platform_do_upgrade() {
 		glinet_nand_nor_do_upgrade "$1"
 		;;
 	glinet,gl-ar750s-nor|\
-	glinet,gl-ar750s-nor-nand)
+	glinet,gl-ar750s-nor-nand|\
+	glinet,gl-x1200-nor|\
+	glinet,gl-x1200-nor-nand)
 		nand_nor_do_upgrade "$1"
 		;;
 	*)
