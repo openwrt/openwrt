@@ -141,6 +141,50 @@ define Device/mediatek_mt7986b-rfb
 endef
 TARGET_DEVICES += mediatek_mt7986b-rfb
 
+define Device/tplink_tl-xdr-common
+  DEVICE_VENDOR := TP-Link
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+        fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7986-firmware mt7986-wo-firmware
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := bl2 spim-nand-ddr3
+endef
+
+define Device/tplink_tl-xdr4288
+  DEVICE_MODEL := TL-XDR4288
+  DEVICE_DTS := mt7986a-tplink-tl-xdr4288
+  ARTIFACT/bl31-uboot.fip := bl31-uboot tplink_tl-xdr4288
+  $(call Device/tplink_tl-xdr-common)
+endef
+TARGET_DEVICES += tplink_tl-xdr4288
+
+define Device/tplink_tl-xdr6086
+  DEVICE_MODEL := TL-XDR6086
+  DEVICE_DTS := mt7986a-tplink-tl-xdr6086
+  ARTIFACT/bl31-uboot.fip := bl31-uboot tplink_tl-xdr6086
+  $(call Device/tplink_tl-xdr-common)
+endef
+TARGET_DEVICES += tplink_tl-xdr6086
+
+define Device/tplink_tl-xdr6088
+  DEVICE_MODEL := TL-XDR6088
+  DEVICE_DTS := mt7986a-tplink-tl-xdr6088
+  ARTIFACT/bl31-uboot.fip := bl31-uboot tplink_tl-xdr6088
+  $(call Device/tplink_tl-xdr-common)
+endef
+TARGET_DEVICES += tplink_tl-xdr6088
+
 define Device/xiaomi_redmi-router-ax6000-stock
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Redmi Router AX6000 (stock layout)

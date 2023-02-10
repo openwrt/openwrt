@@ -20,6 +20,13 @@ mediatek_setup_interfaces()
 	mediatek,mt7986b-rfb)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" eth1
 		;;
+	tplink,tl-xdr4288|\
+	tplink,tl-xdr6088)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
+		;;
+	tplink,tl-xdr6086)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
+		;;
 	xiaomi,redmi-router-ax6000-stock|\
 	xiaomi,redmi-router-ax6000-ubootmod)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" wan
