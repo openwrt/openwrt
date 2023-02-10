@@ -1,0 +1,212 @@
+From 45a85274b28c1d5db73296179ada352f42f74d76 Mon Sep 17 00:00:00 2001
+From: Linhui Liu <liulinhui36@gmail.com>
+Date: Sun, 12 Feb 2023 09:14:54 +0800
+Subject: [PATCH] Revert "Wrap time64 functions"
+
+This reverts commit 3ff3bab429efbfc0e5b4a7941ae6beb8e17684b7.
+
+Fixes 32-bit compilation.
+---
+ configure.ac  | 80 +--------------------------------------------------
+ libfakeroot.c | 74 -----------------------------------------------
+ wrapfunc.inp  |  7 -----
+ 3 files changed, 1 insertion(+), 160 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -361,27 +361,9 @@ dnl  Solaris <=9 : _stat
+ dnl  Solaris 10  : _xstat
+ dnl  Digital Unix: stat
+ 
+-time64_hack=no
+-AH_TEMPLATE([TIME64_HACK], [time64 shuffle])
+-AC_MSG_CHECKING([if we need to cope with time64])
+-AC_EGREP_CPP([time64],[
+-#include <bits/wordsize.h>
+-#if __WORDSIZE == 32
+-#define __USE_TIME_BITS64 1
+-#include <sys/stat.h>
+-stat
+-#else
+-NO
+-#endif
+-],
+-       [AC_MSG_RESULT([yes]); AC_DEFINE(TIME64_HACK)
+-time64_hack=yes
+-],
+-       [AC_MSG_RESULT([no]);])
+-
+ :>fakerootconfig.h.tmp
+ 
+-for SEARCH in %stat f%stat l%stat f%statat %stat64 f%stat64 l%stat64 f%statat64 %mknod %mknodat; do
++for SEARCH in %stat f%stat l%stat f%statat %stat64 f%stat64 l%stat64 f%statat64 %mknod %mknodat %stat64_time64 f%stat64_time64 l%stat64_time64; do
+   FUNC=`echo $SEARCH|sed -e 's/.*%//'`
+   PRE=`echo $SEARCH|sed -e 's/%.*//'`
+   FOUND=
+@@ -442,41 +424,6 @@ dnl    FOUND=$WRAPPED
+   done
+ done
+ 
+-if test "x$time64_hack" = "xyes"; then
+-for SEARCH in stat64_time64 fstat64_time64 lstat64_time64 fstatat64_time64; do
+-  FOUND=
+-  for WRAPPED in __${SEARCH} ${SEARCH}; do
+-    AC_CHECK_FUNCS($WRAPPED,FOUND=$WRAPPED)
+-    if test -n "$FOUND"; then
+-      PF=[`echo ${SEARCH}| tr '[a-z]' '[A-Z]'`]
+-      DEFINE_WRAP=[`echo wrap_${SEARCH}| tr '[a-z]' '[A-Z]'`]
+-      DEFINE_NEXT=[`echo wrap_${FOUND}| tr '[a-z]' '[A-Z]'`]
+-      DEFINE_ARG=[`echo wrap_${FOUND}| tr '[a-z]' '[A-Z]'`]
+-      AC_DEFINE_UNQUOTED(WRAP_${PF}, $FOUND)
+-      AC_DEFINE_UNQUOTED(WRAP_${PF}_RAW, $FOUND)
+-      AC_DEFINE_UNQUOTED(WRAP_${PF}_QUOTE, "$FOUND")
+-      AC_DEFINE_UNQUOTED(TMP_${PF}, tmp_$FOUND)
+-      AC_DEFINE_UNQUOTED(NEXT_${PF}_NOARG, next_$FOUND)
+-      DEF_BEGIN=""
+-      case "$SEARCH" in
+-	     (*statat64_time64)
+-	     DEF_END=",d,e"
+-	     ;;
+-	     (*)
+-	     DEF_END=""
+-	     ;;
+-      esac
+-      {
+-       echo "#define NEXT_${PF}(a,b,c${DEF_END}) next_$FOUND(${DEF_BEGIN}b,c${DEF_END})"
+-       echo "#define ${PF}_ARG(a,b,c${DEF_END}) (${DEF_BEGIN}b,c${DEF_END})"
+-      } >>fakerootconfig.h.tmp
+-
+-      break
+-    fi
+-  done
+-done
+-fi
+-
+ if test -r fakerootconfig.h
+ then
+        if test "`diff fakerootconfig.h fakerootconfig.h.tmp`" = ""
+@@ -625,31 +572,6 @@ AH_VERBATIM([WRAP_STAT],
+ #define WRAP_MKNODAT_RAW  __amknodat
+ #define TMP_MKNODAT  __amknodat
+ #define NEXT_MKNODAT_NOARG  next___amknodat
+-
+-#define WRAP_STAT64_TIME64_QUOTE  __astat64_time64
+-#define WRAP_STAT64_TIME64  __astat64_time64
+-#define WRAP_STAT64_TIME64_RAW  __astat64_time64
+-#define TMP_STAT64_TIME64  __astat64_time64
+-#define NEXT_STAT64_TIME64_NOARG  next___astat64_time64
+-
+-#define WRAP_LSTAT64_TIME64_QUOTE  __astat64_time64
+-#define WRAP_LSTAT64_TIME64  __astat64_time64
+-#define WRAP_LSTAT64_TIME64_RAW  __astat64_time64
+-#define TMP_LSTAT64_TIME64  __astat64_time64
+-#define NEXT_LSTAT64_TIME64_NOARG  next___astat64_time64
+-
+-#define WRAP_FSTAT64_TIME64_QUOTE  __astat64_time64
+-#define WRAP_FSTAT64_TIME64  __astat64_time64
+-#define WRAP_FSTAT64_TIME64_RAW  __astat64_time64
+-#define TMP_FSTAT64_TIME64  __astat64_time64
+-#define NEXT_FSTAT64_TIME64_NOARG  next___astat64_time64
+-
+-#define WRAP_FSTATAT64_TIME64_QUOTE  __astatat64_time64
+-#define WRAP_FSTATAT64_TIME64  __astat64_time64
+-#define WRAP_FSTATAT64_TIME64_RAW  __astat64_time64
+-#define TMP_FSTATAT64_TIME64  __astat64_time64
+-#define NEXT_FSTATAT64_TIME64_NOARG  next___astat64_time64
+-
+ ])
+ dnl kludge end
+ 
+--- a/libfakeroot.c
++++ b/libfakeroot.c
+@@ -2634,77 +2634,3 @@ int sysinfo(int command, char *buf, long
+     }
+ }
+ #endif
+-
+-#ifdef TIME64_HACK
+-int WRAP_LSTAT64_TIME64 LSTAT64_TIME64_ARG(int ver,
+-		       const char *file_name,
+-		       struct stat64 *statbuf){
+-
+-  int r;
+-
+-#ifdef LIBFAKEROOT_DEBUGGING
+-  if (fakeroot_debug) {
+-    fprintf(stderr, "lstat[time64] file_name %s\n", file_name);
+-  }
+-#endif /* LIBFAKEROOT_DEBUGGING */
+-  r=NEXT_LSTAT64_TIME64(ver, file_name, statbuf);
+-  if(r)
+-    return -1;
+-  SEND_GET_STAT64(statbuf, ver);
+-  return 0;
+-}
+-
+-
+-int WRAP_STAT64_TIME64 STAT64_TIME64_ARG(int ver,
+-		       const char *file_name,
+-		       struct stat64 *st){
+-  int r;
+-
+-#ifdef LIBFAKEROOT_DEBUGGING
+-  if (fakeroot_debug) {
+-    fprintf(stderr, "stat64[time64] file_name %s\n", file_name);
+-  }
+-#endif /* LIBFAKEROOT_DEBUGGING */
+-  r=NEXT_STAT64_TIME64(ver, file_name, st);
+-  if(r)
+-    return -1;
+-  SEND_GET_STAT64(st,ver);
+-  return 0;
+-}
+-
+-
+-int WRAP_FSTAT64_TIME64 FSTAT64_TIME64_ARG(int ver,
+-			int fd,
+-			struct stat64 *st){
+-
+-  int r;
+-
+-#ifdef LIBFAKEROOT_DEBUGGING
+-  if (fakeroot_debug) {
+-    fprintf(stderr, "fstat64[time64] fd %d\n", fd);
+-  }
+-#endif /* LIBFAKEROOT_DEBUGGING */
+-  r=NEXT_FSTAT64_TIME64(ver, fd, st);
+-  if(r)
+-    return -1;
+-  SEND_GET_STAT64(st,ver);
+-  return 0;
+-}
+-
+-int WRAP_FSTATAT64_TIME64 FSTATAT64_TIME64_ARG(int ver,
+-			     int dir_fd,
+-			     const char *path,
+-			     struct stat64 *st,
+-			     int flags){
+-
+-
+-  int r;
+-
+-  r=NEXT_FSTATAT64_TIME64(ver, dir_fd, path, st, flags);
+-  if(r)
+-    return -1;
+-  SEND_GET_STAT64(st,ver);
+-  return 0;
+-}
+-
+-#endif /* TIME64_HACK */
+--- a/wrapfunc.inp
++++ b/wrapfunc.inp
+@@ -257,10 +257,3 @@ statx;int;(int dir_fd, const char *pathn
+ #ifdef __sun
+ sysinfo;int;(int command, char *buf, long count);(command, buf, count)
+ #endif
+-
+-#ifdef TIME64_HACK
+-WRAP_LSTAT64_TIME64;int;LSTAT64_TIME64_ARG(int ver, const char *file_name, struct stat64 *buf);LSTAT64_TIME64_ARG(ver, file_name, buf);LSTAT64_TIME64
+-WRAP_STAT64_TIME64;int;STAT64_TIME64_ARG(int ver, const char *file_name, struct stat64 *buf);STAT64_TIME64_ARG(ver, file_name, buf);STAT64_TIME64
+-WRAP_FSTAT64_TIME64;int;FSTAT64_TIME64_ARG(int ver, int fd, struct stat64 *buf);FSTAT64_TIME64_ARG(ver, fd, buf);FSTAT64_TIME64
+-WRAP_FSTATAT64_TIME64;int;FSTATAT64_TIME64_ARG(int ver, int dir_fd, const char *path, struct stat64 *buf, int flags);FSTATAT64_TIME64_ARG(ver, dir_fd, path, buf, flags);FSTATAT64_TIME64
+-#endif /* TIME64_HACK */
