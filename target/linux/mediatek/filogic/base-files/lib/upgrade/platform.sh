@@ -67,13 +67,16 @@ platform_do_upgrade() {
 			;;
 		esac
 		;;
+	tplink,tl-xdr4288|\
+	tplink,tl-xdr6086|\
+	tplink,tl-xdr6088|\
+	xiaomi,redmi-router-ax6000-ubootmod)
+		CI_KERNPART="fit"
+		nand_do_upgrade "$1"
+		;;
 	xiaomi,redmi-router-ax6000-stock)
 		CI_KERN_UBIPART=ubi_kernel
 		CI_ROOT_UBIPART=ubi
-		nand_do_upgrade "$1"
-		;;
-	xiaomi,redmi-router-ax6000-ubootmod)
-		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
 		;;
 	*)
