@@ -22,6 +22,7 @@ lantiq_setup_interfaces()
 	arcadyan,vgv7510kw22-nor|\
 	arcadyan,vgv7519-brn|\
 	arcadyan,vgv7519-nor|\
+	arcadyan,vrv9510kwac23|\
 	bt,homehub-v5a|\
 	lantiq,easy80920-nand|\
 	lantiq,easy80920-nor|\
@@ -90,6 +91,7 @@ lantiq_setup_macs()
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0x16)" 1)
 		;;
 	arcadyan,vg3503j|\
+	arcadyan,vrv9510kwac23|\
 	lantiq,easy80920-nand|\
 	lantiq,easy80920-nor|\
 	zyxel,p-2812hnu-f1|\

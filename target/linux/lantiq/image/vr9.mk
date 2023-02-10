@@ -105,6 +105,18 @@ define Device/arcadyan_vgv7519-nor
 endef
 TARGET_DEVICES += arcadyan_vgv7519-nor
 
+define Device/arcadyan_vrv9510kwac23
+  $(Device/dsa-migration)
+  $(Device/NAND)
+  DEVICE_VENDOR := Arcadyan
+  DEVICE_MODEL := VRV9510KWAC23
+  BOARD_NAME := VRV9510KWAC23
+  DEVICE_PACKAGES := kmod-b43 wpad-basic-wolfssl kmod-usb-dwc2 kmod-usb-ledtrig-usbport
+  KERNEL_SIZE := 3072k
+  SUPPORTED_DEVICES += arcadyan_vrv9510kwac23
+endef
+TARGET_DEVICES += arcadyan_vrv9510kwac23
+
 define Device/avm_fritz3370
   $(Device/dsa-migration)
   $(Device/AVM)

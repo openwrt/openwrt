@@ -39,6 +39,10 @@ arcadyan,vgv7519-nor|\
 arcadyan,vgv7519-brn)
 	ucidef_set_led_wlan "wifi" "wifi" "green:wireless" "phy0radio"
 	;;
+arcadyan,vrv9510kwac23)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
+	ucidef_set_led_wlan "wifi" "wifi" "green:wlan" "phy1radio"
+	;;
 avm,fritz3370-rev2-hynix|\
 avm,fritz3370-rev2-micron|\
 avm,fritz3390)

@@ -1,0 +1,11 @@
+--- a/arch/mips/lantiq/Makefile	2022-11-29 10:51:13.841222000 -0500
++++ b/arch/mips/lantiq/Makefile	2022-11-29 10:51:40.437297210 -0500
+@@ -2,7 +2,7 @@
+ # Copyright (C) 2010 John Crispin <john@phrozen.org>
+ #
+ 
+-obj-y := irq.o clk.o prom.o
++obj-y := irq.o clk.o prom.o b43-sprom.o
+ 
+ obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
+ 
