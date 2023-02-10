@@ -1,0 +1,75 @@
+<%
+
+%>
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	function saveconf(btn)
+	{
+		XHR.get('<%=luci.dispatcher.build_url("admin", "profile", "savecfg")%>',
+			null,
+			function()
+			{
+				window.open('http://'+window.location.hostname+'/package/profilecfg.profile', '_self')
+			}
+		);
+	}
+	
+	function configup(btn)
+	{
+		var filex = btn.files[0];
+		var reader = new FileReader();
+		reader.readAsText(filex);
+		 reader.onload = loaded;
+	}
+	
+	function loaded(evt) 
+	{
+		var fileString = evt.target.result;
+		part1 = fileString;
+		part2 = "~~";
+		if ( fileString.length > 2000 )
+		{
+			part1 = fileString.substring(0,2000);
+			part2 = fileString.substring(2000);
+		}
+		
+		XHR.get('<%=luci.dispatcher.build_url("admin", "profile", "loadcfg1")%>',
+			{ set: part1 },
+			function()
+			{
+				XHR.get('<%=luci.dispatcher.build_url("admin", "profile", "loadcfg2")%>',
+					{ set1: part2 },
+					function()
+					{
+						window.location.reload(false);
+					}
+				);
+			}
+		);
+		
+	}
+
+//]]></script>
+
+<fieldset class="cbi-section" id="cbi-family">
+	<legend><%:Import/Export the Profile Data%></legend>
+	<table id="prochnge" border="0">
+		<tr>
+			<td width="10%">&nbsp;</td>
+    		<td width="20%"><div align="left"><%:Export Profile Data to Computer%></div></td>
+			<td><input type="button" id="ebutton" class="cbi-button cbi-button-apply" value="<%:Export Profiles%>" onclick="return saveconf(this)" /></td>
+		</tr>
+		<tr>
+			<td width="10%">&nbsp;</td>
+    		<td width="20%"><div align="left"><%:Import Profile Data from Computer%></div></td>
+			<td><input type="file" accept=".profile" id="ibutton" class="cbi-button  cbi-button-positive" value="<%:Import Profiles%>" onchange="return configup(this)" /></td>
+		</tr>
+		<tr>
+			<td width="10%">&nbsp;</td>
+    		<td width="20%">&nbsp;</td>
+			<td><div align="left"><%:Page will automatically refresh after file is loaded%></div></td>
+		</tr>
+	</table>
+
+</fieldset>

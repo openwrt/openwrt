@@ -1,0 +1,39 @@
+opengt
+ set com 115200n81
+ set comecho off
+ set senddelay 0.05
+ waitquiet 1 0.2
+
+:start
+
+let $x=$env("ATCMD")
+let $j=$left($x,1)
+if $j = "0" let $j=$mid($x,1,2)
+else let $j=$left($x,3)
+let $d=$mid($x,4,2)
+let $t=$mid($x,7,1)
+let k=len($x)-9
+let $p=$right($x,k)
+send "AT+CMGF=0^m"
+waitfor 2 "OK"
+send 'AT+CPMS="SM"'
+send ',"'
+send $d
+send '"^m'
+waitfor 2 "OK"
+send "AT+CMGW="
+send $j
+send ","
+send $t
+send "^m"
+waitfor 3 ">"
+send $p
+send "^z"
+waitfor 25 "+CMGW:"
+if % = 0 print "+CMGW:"
+else print "AT+CMGW - TIMEOUT"
+get 1 "" $s
+print $s
+
+:continue
+ exit 0

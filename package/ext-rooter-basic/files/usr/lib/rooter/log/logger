@@ -1,0 +1,17 @@
+#!/bin/sh
+
+ROOTER=/usr/lib/rooter
+
+TEXT=$1
+DATE=$(date +%c)
+
+wc -l $ROOTER/log/connect.log > /tmp/linecnt
+read lcnt fle < /tmp/linecnt
+rm -f /tmp/linecnt
+if [ $lcnt -ge 20 ]; then
+	start=$((lcnt-1))
+	tail +$start $ROOTER/log/connect.log > /tmp/connect.log
+	mv /tmp/connect.log $ROOTER/log/connect.log
+fi
+
+echo "$DATE : $TEXT" >> $ROOTER/log/connect.log

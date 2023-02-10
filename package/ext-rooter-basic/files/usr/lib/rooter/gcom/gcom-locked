@@ -1,0 +1,41 @@
+#!/bin/sh
+
+log() {
+	logger -t "gcom-locked " "$@"
+}
+
+ROOTER_GCOM="/usr/lib/rooter/gcom/"
+
+
+PORT=$1
+GCOM=$2
+CURRMODEM=$3
+ATC=$4
+
+LOCKDIR="/tmp/lockgcom$CURRMODEM"
+PIDFILE="${LOCKDIR}/PID"
+
+while [ 1 -lt 6 ]; do
+	if mkdir "${LOCKDIR}" &>/dev/null; then
+		echo "$$" > "${PIDFILE}"
+		if [ ! -z "$ATC" ]; then
+			export ATCMD="$ATC"
+		fi
+		OX=$(gcom -d $PORT -s $ROOTER_GCOM$GCOM 2>/dev/null)
+		if [ ! -e /tmp/block ]; then
+			/usr/lib/rooter/log/at-logger "$PORT $OX"
+		fi
+		break
+	else
+		OTHERPID="$(cat "${PIDFILE}" 2>/dev/null)"
+		if [ $? = 0 ]; then
+			if ! kill -0 $OTHERPID &>/dev/null; then
+ 				rm -rf "${LOCKDIR}"
+			fi
+		fi
+		sleep 1
+	fi
+done
+
+rm -rf "${LOCKDIR}"
+echo "$OX"

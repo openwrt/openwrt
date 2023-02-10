@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2013 OpenWrt.org
+
+START=88
+USE_PROCD=1
+
+log() {
+	logger -t "usb-modeswitch" "$@"
+}
+
+start_service()
+{
+	log "Remove early Modeswitch"
+}

@@ -1,0 +1,702 @@
+/* Buttons CSS */
+
+:root {
+	--green-color: rgb(44,187,99);
+	--red-color: rgb(218,42,42);
+}
+
+/*
+	<div style="width: 200px;color:white;" id="exitbtn" class="button-73" role="button" onclick="return done()"><%:Exit%></div>
+*/
+
+.button-73 {
+  appearance: none;
+  background-color: #FFFFFF;
+  border-radius: 40em;
+  border-style: none;
+  box-shadow: #ADCFFF 0 -12px 6px inset;
+  box-sizing: border-box;
+  color: #000000;
+  cursor: pointer;
+  display: inline-block;
+  font-family: -apple-system,sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -.24px;
+  margin: 0;
+  outline: none;
+  padding: 1rem 1.3rem;
+  quotes: auto;
+  text-align: center;
+  text-decoration: none;
+  transition: all .15s;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button-73:hover {
+  background-color: #FFC229;
+  box-shadow: #FF6314 0 -6px 8px inset;
+  transform: scale(1.125);
+}
+
+.button-73:active {
+  transform: scale(1.025);
+}
+
+@media (min-width: 768px) {
+  .button-73 {
+	font-size: 1.5rem;
+	padding: .75rem 2rem;
+  }
+}
+
+/*
+	<div style="width: 200px;color:white;" id="exitbtn" class="button-71" role="button" onclick="return done()"><%:Exit%></div>
+*/
+.button-71 {
+  background-color: #0078d0;
+  border: 0;
+  border-radius: 56px;
+  color: #fff;
+  cursor: pointer;
+  display: inline-block;
+  font-family: system-ui,-apple-system,system-ui,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  outline: 0;
+  padding: 16px 21px;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  transition: all .3s;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button-71:before {
+  background-color: initial;
+  background-image: linear-gradient(#fff 0, rgba(255, 255, 255, 0) 100%);
+  border-radius: 125px;
+  content: "";
+  height: 50%;
+  left: 4%;
+  opacity: .5;
+  position: absolute;
+  top: 0;
+  transition: all .3s;
+  width: 92%;
+}
+
+.button-71:hover {
+  box-shadow: rgba(255, 255, 255, .2) 0 3px 15px inset, rgba(0, 0, 0, .1) 0 3px 5px, rgba(0, 0, 0, .1) 0 10px 13px;
+  transform: scale(1.05);
+}
+
+@media (min-width: 768px) {
+  .button-71 {
+	padding: 16px 48px;
+  }
+}
+
+/*
+	<div style="width: 200px;color:white;" id="exitbtn" class="button-62" role="button" onclick="return done()"><%:Exit%></div>
+*/
+.button-62 {
+  background: linear-gradient(to bottom right, #EF4765, #FF9A5A);
+  border: 0;
+  border-radius: 12px;
+  color: #FFFFFF;
+  cursor: pointer;
+  display: inline-block;
+  font-family: -apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 2.5;
+  outline: transparent;
+  padding: 0 1rem;
+  text-align: center;
+  text-decoration: none;
+  transition: box-shadow .2s ease-in-out;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  white-space: nowrap;
+}
+
+.button-62:not([disabled]):focus {
+  box-shadow: 0 0 .25rem rgba(0, 0, 0, 0.5), -.125rem -.125rem 1rem rgba(239, 71, 101, 0.5), .125rem .125rem 1rem rgba(255, 154, 90, 0.5);
+}
+
+.button-62:not([disabled]):hover {
+  box-shadow: 0 0 .25rem rgba(0, 0, 0, 0.5), -.125rem -.125rem 1rem rgba(239, 71, 101, 0.5), .125rem .125rem 1rem rgba(255, 154, 90, 0.5);
+}
+
+/*
+	<div class="button-82-pushable" role="button">
+	  <span class="button-82-shadow"></span>
+	  <span class="button-82-edge"></span>
+	  <span class="button-82-front text">
+		Button 82
+	  </span>
+	</div>
+	
+	Red button
+*/
+
+.button-82-pushable {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  outline-offset: 4px;
+  transition: filter 250ms;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button-82-shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: hsl(0deg 0% 0% / 0.25);
+  will-change: transform;
+  transform: translateY(2px);
+  transition:
+    transform
+    600ms
+    cubic-bezier(.3, .7, .4, 1);
+}
+
+.button-82-edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: linear-gradient(
+    to left,
+    hsl(340deg 100% 16%) 0%,
+    hsl(340deg 100% 32%) 8%,
+    hsl(340deg 100% 32%) 92%,
+    hsl(340deg 100% 16%) 100%
+  );
+}
+
+.button-82-front {
+  display: block;
+  position: relative;
+  padding: 12px 27px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  color: white;
+  background: hsl(345deg 100% 47%);
+  will-change: transform;
+  transform: translateY(-4px);
+  transition:
+    transform
+    600ms
+    cubic-bezier(.3, .7, .4, 1);
+}
+
+@media (min-width: 768px) {
+  .button-82-front {
+    font-size: 1.25rem;
+    padding: 12px 42px;
+  }
+}
+
+.button-82-pushable:hover {
+  filter: brightness(110%);
+  -webkit-filter: brightness(110%);
+}
+
+.button-82-pushable:hover .button-82-front {
+  transform: translateY(-6px);
+  transition:
+    transform
+    250ms
+    cubic-bezier(.3, .7, .4, 1.5);
+}
+
+.button-82-pushable:active .button-82-front {
+  transform: translateY(-2px);
+  transition: transform 34ms;
+}
+
+.button-82-pushable:hover .button-82-shadow {
+  transform: translateY(4px);
+  transition:
+    transform
+    250ms
+    cubic-bezier(.3, .7, .4, 1.5);
+}
+
+.button-82-pushable:active .button-82-shadow {
+  transform: translateY(1px);
+  transition: transform 34ms;
+}
+
+.button-82-pushable:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/*
+	<div style="width: 200px;color:white;" id="exitbtn" class="button-33" role="button" onclick="return done()"><%:Exit%></div>
+	 Green button
+*/
+
+.button-33 {
+  background-color: #c2fbd7;
+  border-radius: 100px;
+  box-shadow: rgba(44,187,99, .2) 0 -25px 18px -14px inset,rgba(44,187,99, .15) 0 1px 2px,rgba(44,187,99, .15) 0 2px 4px,rgba(44,187,99, .15) 0 4px 8px,rgba(44,187,99, .15) 0 8px 16px,rgba(44,187,99, .15) 0 16px 32px;
+  color: green;
+  cursor: pointer;
+  display: inline-block;
+  font-family: CerebriSans-Regular,-apple-system,system-ui,Roboto,sans-serif;
+  padding: 7px 20px;
+  text-align: center;
+  text-decoration: none;
+  transition: all 250ms;
+  border: 0;
+  font-size: 20px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button-33:hover {
+  box-shadow: rgba(44,187,99,.35) 0 -25px 18px -14px inset,rgba(44,187,99,.25) 0 1px 2px,rgba(44,187,99,.25) 0 2px 4px,rgba(44,187,99,.25) 0 4px 8px,rgba(44,187,99,.25) 0 8px 16px,rgba(44,187,99,.25) 0 16px 32px;
+  transform: scale(1.05) rotate(-1deg);
+}
+
+/* Red button */
+
+.button-34 {
+  background-color: var(--red-color);
+  border-radius: 100px;
+  box-shadow: rgba(218,42,42, .2) 0 -25px 18px -14px inset,rgba(218,42,42, .15) 0 1px 2px,rgba(218,42,42, .15) 0 2px 4px,rgba(218,42,42, .15) 0 4px 8px,rgba(218,42,42, .15) 0 8px 16px,rgba(218,42,42, .15) 0 16px 32px;
+  color: green;
+  cursor: pointer;
+  display: inline-block;
+  font-family: CerebriSans-Regular,-apple-system,system-ui,Roboto,sans-serif;
+  padding: 7px 20px;
+  text-align: center;
+  text-decoration: none;
+  transition: all 250ms;
+  border: 0;
+  font-size: 20px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button-34:hover {
+  box-shadow: rgba(218,42,42,.35) 0 -25px 18px -14px inset,rgba(218,42,42,.25) 0 1px 2px,rgba(218,42,42,.25) 0 2px 4px,rgba(218,42,42,.25) 0 4px 8px,rgba(218,42,42,.25) 0 8px 16px,rgba(218,42,42,.25) 0 16px 32px;
+  transform: scale(1.05) rotate(-1deg);
+}
+
+
+.button-40 {
+  background-color: #0078d0;
+  border: 1px solid transparent;
+  border-radius: .75rem;
+  box-sizing: border-box;
+  color: #ffffff;
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-family: "Inter var",ui-sans-serif,system-ui,-apple-system,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+  font-size: 1.80rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+  padding: .75rem 1.2rem;
+  text-align: center;
+  text-decoration: none #6B7280 solid;
+  text-decoration-thickness: auto;
+  transition-duration: .2s;
+  transition-property: background-color,border-color,color,fill,stroke;
+  transition-timing-function: cubic-bezier(.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  width: auto;
+}
+
+.button-40:hover {
+
+}
+
+.button-40:focus {
+  box-shadow: none;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+  .button-40 {
+    padding: .75rem 1.5rem;
+  }
+}
+
+/*
+	<div>
+		<label class="toggle">
+		  <input class="toggle-checkbox" type="checkbox">
+		  <div class="toggle-switch"></div>
+		  <span class="toggle-label">Bluetooth</span>
+		</label>
+	</div>
+*/
+
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+
+.toggle {
+  cursor: pointer;
+  display: inline-block;
+}
+
+.toggle-switch {
+  display: inline-block;
+  background: #ccc;
+  border-radius: 16px;
+  width: 58px;
+  height: 32px;
+  position: relative;
+  vertical-align: middle;
+  transition: background 0.25s;
+}
+.toggle-switch:before, .toggle-switch:after {
+  content: "";
+}
+.toggle-switch:before {
+  display: block;
+  background: linear-gradient(to bottom, #fff 0%, #eee 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  width: 24px;
+  height: 24px;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  transition: left 0.25s;
+}
+.toggle:hover .toggle-switch:before {
+  background: linear-gradient(to bottom, #fff 0%, #fff 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.toggle-checkbox:checked + .toggle-switch {
+  background: #56c080;
+}
+.toggle-checkbox:checked + .toggle-switch:before {
+  left: 30px;
+}
+
+.toggle-checkbox {
+  position: absolute;
+  visibility: hidden;
+}
+
+.toggle-label {
+  margin-left: 5px;
+  position: relative;
+  top: 2px;
+}
+
+/*
+	<div class="blankItem" id="modemt" style="visibility:hidden;display:none">
+		<label class="switch">
+		<input type="checkbox" id="modem" onclick="clkenable(this)">
+		<span class="slider round"></span>
+		</label>
+	</div>
+*/
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/*
+<div>
+	<p>
+	  <label class="toggleSwitch nolabel" onclick="">
+			<input type="checkbox" checked />
+			<span>
+				<span>OFF</span>
+				<span>ON</span>
+			</span>
+			<a></a>
+		</label>
+	</p>
+	<p>
+	  <label class="toggleSwitch" onclick="">
+			<input type="checkbox" />
+			<span>
+				<span>OFF</span>
+				<span>ON</span>
+				Label
+			</span>
+			<a></a>
+		</label>
+	</p>
+	<p>
+	  <label class="toggleSwitch large" onclick="">
+			<input type="checkbox" checked />
+			<span>
+				<span>OFF</span>
+				<span>ON</span>
+				Big
+			</span>
+			<a></a>
+		</label>
+	</p>
+	<p>
+	  <label class="toggleSwitch xlarge" onclick="">
+			<input type="checkbox" />
+			<span>
+				<span>OFF</span>
+				<span>ON</span>
+				Bigger
+			</span>
+			<a></a>
+		</label>
+	</p>
+</div>
+*/
+
+
+/*  Toggle Switch  */
+
+.toggleSwitch span span {
+  display: none;
+}
+
+@media only screen {
+  .toggleSwitch {
+    display: inline-block;
+    height: 18px;
+    position: relative;
+    overflow: visible;
+    padding: 0;
+    margin-left: 50px;
+    cursor: pointer;
+    width: 40px;
+      user-select: none;
+  }
+  .toggleSwitch * {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+  }
+  .toggleSwitch label,
+  .toggleSwitch > span {
+    line-height: 20px;
+    height: 20px;
+    vertical-align: middle;
+  }
+  .toggleSwitch input:focus ~ a,
+  .toggleSwitch input:focus + label {
+    outline: none;
+  }
+  .toggleSwitch label {
+    position: relative;
+    z-index: 3;
+    display: block;
+    width: 100%;
+  }
+  .toggleSwitch input {
+    position: absolute;
+    opacity: 0;
+    z-index: 5;
+  }
+  .toggleSwitch > span {
+    position: absolute;
+    left: -50px;
+    width: 100%;
+    margin: 0;
+    padding-right: 50px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .toggleSwitch > span span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+    display: block;
+    width: 50%;
+    margin-left: 50px;
+    text-align: left;
+    font-size: 0.9em;
+    width: 100%;
+    left: 15%;
+    top: -1px;
+    opacity: 0;
+  }
+  .toggleSwitch a {
+    position: absolute;
+    right: 50%;
+    z-index: 4;
+    display: block;
+    height: 100%;
+    padding: 0;
+    left: 2px;
+    width: 18px;
+    background-color: #fff;
+    border: 1px solid #CCC;
+    border-radius: 100%;
+    -webkit-transition: all 0.2s ease-out;
+    -moz-transition: all 0.2s ease-out;
+    transition: all 0.2s ease-out;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+  .toggleSwitch > span span:first-of-type {
+    color: #ccc;
+    opacity: 1;
+    left: 45%;
+  }
+  .toggleSwitch > span:before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 50px;
+    top: -2px;
+    background-color: #fafafa;
+    border: 1px solid #ccc;
+    border-radius: 30px;
+    -webkit-transition: all 0.2s ease-out;
+    -moz-transition: all 0.2s ease-out;
+    transition: all 0.2s ease-out;
+  }
+  .toggleSwitch input:checked ~ a {
+    border-color: #fff;
+    left: 100%;
+    margin-left: -8px;
+  }
+  .toggleSwitch input:checked ~ span:before {
+    border-color: #0097D1;
+    box-shadow: inset 0 0 0 30px #0097D1;
+  }
+  .toggleSwitch input:checked ~ span span:first-of-type {
+    opacity: 0;
+  }
+  .toggleSwitch input:checked ~ span span:last-of-type {
+    opacity: 1;
+    color: #fff;
+  }
+  /* Switch Sizes */
+  .toggleSwitch.large {
+    width: 60px;
+    height: 27px;
+  }
+  .toggleSwitch.large a {
+    width: 27px;
+  }
+  .toggleSwitch.large > span {
+    height: 29px;
+    line-height: 28px;
+  }
+  .toggleSwitch.large input:checked ~ a {
+    left: 41px;
+  }
+  .toggleSwitch.large > span span {
+    font-size: 1.1em;
+  }
+  .toggleSwitch.large > span span:first-of-type {
+    left: 50%;
+  }
+  .toggleSwitch.xlarge {
+    width: 80px;
+    height: 36px;
+  }
+  .toggleSwitch.xlarge a {
+    width: 36px;
+  }
+  .toggleSwitch.xlarge > span {
+    height: 38px;
+    line-height: 37px;
+  }
+  .toggleSwitch.xlarge input:checked ~ a {
+    left: 52px;
+  }
+  .toggleSwitch.xlarge > span span {
+    font-size: 1.4em;
+  }
+  .toggleSwitch.xlarge > span span:first-of-type {
+    left: 50%;
+  }
+}
+
+
+/*  End Toggle Switch  */

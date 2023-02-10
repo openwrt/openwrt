@@ -1,0 +1,125 @@
+<%
+local modemfile = "/etc/config/modem.data"
+local modemdata = {}
+local count
+
+function process_line(xline, cnt)
+	local data = {}
+	local pline = xline
+	local start = 1
+	for i=1,3 do
+		s, e = string.find(pline, " ")
+		data[i] = string.sub(pline, start, s-1)
+		pline = string.sub(pline, e+1)
+	end
+	data[4] = pline
+	modemdata[cnt] = data
+end
+
+function read_modem()
+	count = 0
+	local file = io.open(modemfile, "r")
+	if file == nil then
+		return
+	end
+	repeat
+		local line = file:read("*line")
+		if line == nil then
+			break
+		end
+		if string.len(line) < 5 then
+			break
+		end
+		count = count + 1
+		process_line(line, count)
+	until 1==0
+	file:close()
+end
+
+function process_family(index)
+	local t = { }
+	if count == 0 then
+		return t
+	end
+	local mdata = modemdata[index]
+	if mdata[1] ~= "nil" and mdata[2] ~= "nil" then
+		t[1] = mdata[1] .. ":" .. mdata[2]
+		if mdata[3] == "tty" then
+			t[2] = "default"
+		end
+		if mdata[3] == "tty0" then
+			t[2] = "ttyUSB0"
+		end
+		if mdata[3] == "tty1" then
+			t[2] = "ttyUSB1"
+		end
+		if mdata[3] == "tty2" then
+			t[2] = "ttyUSB2"
+		end
+		if mdata[3] == "tty3" then
+			t[2] = "ttyUSB3"
+		end
+		if mdata[3] == "tty4" then
+			t[2] = "ttyUSB4"
+		end
+		if mdata[3] == "tty5" then
+			t[2] = "ttyUSB5"
+		end
+
+		if mdata[4] == "tty" then
+			t[3] = "default"
+		end
+		if mdata[4] == "tty0" then
+			t[3] = "ttyUSB0"
+		end
+		if mdata[4] == "tty1" then
+			t[3] = "ttyUSB1"
+		end
+		if mdata[4] == "tty2" then
+			t[3] = "ttyUSB2"
+		end
+		if mdata[4] == "tty3" then
+			t[3] = "ttyUSB3"
+		end
+		if mdata[4] == "tty4" then
+			t[3] = "ttyUSB4"
+		end
+		if mdata[4] == "tty5" then
+			t[3] = "ttyUSB5"
+		end
+
+	end
+	return t
+end
+
+read_modem()
+
+%>
+
+<fieldset class="cbi-section" id="cbi-family">
+	<legend><%:Custom Modem Port Database%></legend>
+	<table width="100%"  border="0">
+  	<tr>
+    		<td width="15%"><strong><%:Modem%></strong></td>
+    		<td width="10%"><strong><%:Data Port%></strong></td>
+    		<td width="75%"><strong><%:Communication Port%></strong></td>
+  	</tr>
+	<% 
+	if count > 0 then
+		for i=1,count do
+			t = process_family(i) %>
+  	<tr>
+    		<td><%=t[1]%></td>
+    		<td><%=t[2]%></td>
+    		<td><%=t[3]%></td>
+  	</tr>
+	<% 
+		end
+	else %>
+    		<td><%:No Entries%></td>
+    		<td>&nbsp;</td>
+    		<td>&nbsp;</td>
+	<%
+	end %>
+	</table>
+</fieldset>

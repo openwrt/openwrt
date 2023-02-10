@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=19
+
+start() {
+	COUNTER=1
+	while [ $COUNTER -le 5 ]; do
+		INEX=$(uci -q get network.wan$COUNTER)
+		if [ -z $INEX ]; then
+			break
+		else
+			uci delete network.wan$COUNTER
+			uci commit network
+		fi
+		let COUNTER=COUNTER+1 
+	done
+	uci delete network.wg0
+	uci delete network.wg1
+	uci commit network
+}

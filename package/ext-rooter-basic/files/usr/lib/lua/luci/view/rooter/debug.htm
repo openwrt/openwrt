@@ -1,0 +1,86 @@
+<%+header%>
+
+<%
+local cnt = 0
+local tt = {}
+
+os.execute("cat /sys/kernel/debug/usb/devices > /tmp/modstat 2>&1")
+local file = io.open("/tmp/modstat", "r")
+repeat
+	local line = file:read("*line")
+	if line == nil then
+		break
+	end
+	if string.len(line) < 3 then
+		line = "********************************************************************************************************"
+	end
+	tt[cnt] = line
+	cnt = cnt + 1
+until 1 == 0
+cnt = cnt - 1
+file:close()
+os.execute("/usr/lib/rooter/luci/luaops.sh delete /tmp/modstat")
+%>
+
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+
+	XHR.poll(2, '<%=luci.dispatcher.build_url("admin", "modem", "get_atlog")%>', null,
+		function(x, rv)
+		{
+			document.getElementById('clog').value=rv.log;
+		}
+	);
+
+//]]></script>
+
+<div class="cbi-map" id="cbi-modem">
+<h2><a id="content" name="content"><%:Modem Debug Information%></a></h2>
+<div class="cbi-map-descr"> </div>
+<fieldset class="cbi-section" id="cbi-mod">
+	<legend><%:AT-Command Execution%></legend>
+	<table id="cmdtxt" width="700"  border="0" style="display:table;">
+  	<tr>
+    		<td width="100%">
+		<textarea readonly="readonly" name="clog" id="clog" rows="20" style="width: 700px;"></textarea> 
+		</td>
+	</tr>
+	</table>
+
+</fieldset>
+
+<fieldset class="cbi-section" id="cbi-debug">
+	<legend><%:Device Information%></legend>
+	<table width="550"  border="0" style="color :black;" >
+  	<tr>
+    		<td width="5%"> </td>
+    		<td width="90%"> </td>
+    		<td width="5%"> </td>
+  	</tr>
+	<% 
+		for i=1,cnt do 
+			s, e = string.find(tt[i], "Vendor")
+			s1, e = string.find(tt[i], "Manufacturer")
+			s2, e = string.find(tt[i], "Product")
+			if s ~= nil or s1 ~= nil or s2 ~= nil then
+	%>
+  	<tr>
+    		<td> </td>
+    		<td><em><strong><%=tt[i]%></strong></em></td>
+    		<td> </td>
+  	</tr>
+	<%		else
+	%>
+  	<tr>
+    		<td> </td>
+    		<td><%=tt[i]%></td>
+    		<td> </td>
+  	</tr>
+	<% 		end
+	end %>
+	</table>
+</fieldset>
+<br></br>
+</div>
+
+<%+footer%>

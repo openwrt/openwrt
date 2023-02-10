@@ -1,0 +1,27 @@
+#!/bin/sh
+
+logger -t URL-DEBUG "hotplug (iface): action='$ACTION' interface='$INTERFACE'"
+
+if [ "$ACTION" = ifup -a "$INTERFACE" = "lan" ]; then
+	IP=$(uci get network.lan.ipaddr)
+	ipaddr=$(cat /etc/dnsmasq.conf | grep "address=/rooter.local/")
+	if [ ! -z $ipaddr ]; then
+		ipaddr=$(echo "$ipaddr" | sed -e "s!address=/rooter.local/!!g")
+		if [ $ipaddr != $IP ]; then
+			cp -f /etc/dnsmasq.conf /etc/dnsmasq.conf.bk
+			sed /"#StartURL"/,/"#EndURL"/d /etc/dnsmasq.conf.bk > /etc/dnsmasq.conf
+			rm -f /etc/dnsmasq.conf.bk
+			echo "#StartURL" >> /etc/dnsmasq.conf
+			echo "address=/rooter.local/$IP" >> /etc/dnsmasq.conf
+			echo "address=/www.rooter.local/$IP" >> /etc/dnsmasq.conf
+			echo "#EndURL" >> /etc/dnsmasq.conf
+			/etc/init.d/dnsmasq restart
+		fi
+	else
+		echo "#StartURL" >> /etc/dnsmasq.conf
+		echo "address=/rooter.local/$IP" >> /etc/dnsmasq.conf
+		echo "address=/www.rooter.local/$IP" >> /etc/dnsmasq.conf
+		echo "#EndURL" >> /etc/dnsmasq.conf
+		/etc/init.d/dnsmasq restart
+	fi
+fi

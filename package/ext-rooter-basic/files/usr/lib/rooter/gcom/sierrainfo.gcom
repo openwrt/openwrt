@@ -1,0 +1,68 @@
+opengt
+ set com 115200n81
+ set comecho off
+ set senddelay 0.02
+ waitquiet 0.2 0.2
+
+let $g=$env("TIMEOUT")
+if $g = "" let f=25
+else let f = val($g)
+
+send "AT+CSQ;+CESQ^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT*CNTI=0^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT!SELRAT?^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT+ECIO?^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT+RSCP?^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT!UMTSCHAN?^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT!LTEINFO?^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT!GSTATUS?^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+send "AT!PCTEMP?^m"
+let t=time()+f
+gosub getresult
+if $s="^mTIMEOUT ERROR" print $s
+
+ exit 0
+
+:getresult
+get 1 "^m" $s
+let x=len($s)
+if x=0 let $s="^mTIMEOUT ERROR"
+else print $s
+if $s="^jOK" return
+if $mid($s,0,6)="^jERROR" return
+if $mid($s,0,8)="^jCOMMAND" return
+if $mid($s,0,11)="^j+CME ERROR" return
+if time()>t return
+goto getresult
