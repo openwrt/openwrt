@@ -46,7 +46,7 @@ TOOLCHAIN_BIN_DIR="$REALNAME_DIR/"
 export PATH="$TOOLCHAIN_BIN_DIR":$PATH
 export GCC_HONOUR_COPTS
 
-TOOLCHAIN_SYSROOT="$TOOLCHAIN_BIN_DIR/../.."
+TOOLCHAIN_SYSROOT="$TOOLCHAIN_BIN_DIR/.."
 if [ ! -d "$TOOLCHAIN_SYSROOT" ]; then
 	echo "Error: Unable to determine sysroot (looking for $TOOLCHAIN_SYSROOT)!" >&2
 	exit 1
