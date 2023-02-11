@@ -105,3 +105,8 @@ config MTD_SPLIT_H3C_VFS
 	bool "Parser finding rootfs appended to H3C VFS"
 	depends on MTD_SPLIT_SUPPORT
 	select MTD_SPLIT
+
+config MTD_SPLIT_SEIL_FW
+	bool "IIJ SEIL firmware parser"
+	depends on MTD_SPLIT_SUPPORT
+	select MTD_SPLIT
