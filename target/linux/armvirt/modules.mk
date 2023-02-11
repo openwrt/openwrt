@@ -233,6 +233,24 @@ endef
 
 $(eval $(call KernelPackage,dwmac-imx))
 
+define KernelPackage/thunderx-net
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Marvell (Cavium) ThunderX/2 network drivers
+  DEPENDS:=@(TARGET_armvirt_64) +kmod-phylink
+  KCONFIG:=CONFIG_NET_VENDOR_CAVIUM \
+    CONFIG_THUNDER_NIC_PF \
+    CONFIG_THUNDER_NIC_VF \
+    CONFIG_THUNDER_NIC_BGX \
+    CONFIG_THUNDER_NIC_RGX
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/cavium/thunder/nicvf.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/cavium/thunder/nicpf.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/cavium/thunder/thunder_xcv.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/cavium/thunder/thunder_bgx.ko
+  AUTOLOAD=$(call AutoLoad,40,nicpf nicvf thunder_xcv thunder_bgx)
+endef
+
+$(eval $(call KernelPackage,thunderx-net))
+
 define KernelPackage/wdt-sp805
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ARM SP805 Watchdog
