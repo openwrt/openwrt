@@ -24,7 +24,7 @@ Signed-off-by: Peter Chen <peter.chen@nxp.com>
 
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -5452,6 +5452,8 @@ void xhci_init_driver(struct hc_driver *
+@@ -5453,6 +5453,8 @@ void xhci_init_driver(struct hc_driver *
  			drv->reset_bandwidth = over->reset_bandwidth;
  		if (over->update_hub_device)
  			drv->update_hub_device = over->update_hub_device;
