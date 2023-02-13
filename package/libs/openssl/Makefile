@@ -321,7 +321,11 @@ ifdef CONFIG_i386
   endif
 endif
 
-OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))-openwrt
+ifeq ($(call qstrip,$(CONFIG_ARCH)),riscv64)
+    OPENSSL_TARGET:=linux-generic64
+else
+    OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))-openwrt
+endif 
 
 STAMP_CONFIGURED := $(STAMP_CONFIGURED)_$(shell echo $(OPENSSL_OPTIONS) | $(MKHASH) md5)
 

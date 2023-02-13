@@ -97,6 +97,7 @@ define KernelPackage/nf-conntrack
         CONFIG_NF_CONNTRACK_MARK=y \
         CONFIG_NF_CONNTRACK_ZONES=y \
 	$(KCONFIG_NF_CONNTRACK)
+  DEPENDS:=+kmod-lib-crc32c
   FILES:=$(foreach mod,$(NF_CONNTRACK-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_CONNTRACK-m)))
 endef

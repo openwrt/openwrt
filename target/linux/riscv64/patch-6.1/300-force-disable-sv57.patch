@@ -1,0 +1,38 @@
+From f38611903ae7808ab1b7427809f478fbe0d20917 Mon Sep 17 00:00:00 2001
+From: Alexandre Ghiti <alexandre.ghiti@canonical.com>
+Date: Mon, 10 Oct 2022 13:27:29 +0200
+Subject: UBUNTU: SAUCE: riscv: mm: Force disable sv57
+
+BugLink: https://launchpad.net/bugs/1991790
+
+The Kinetic userspace is not yet ready for 5-level page tables. Eg. Go
+programs use too many of the higher bits for pointer tagging.
+So force disable sv57 even on Qemu which advertices support for it.
+
+Signed-off-by: Alexandre Ghiti <alexandre.ghiti@canonical.com>
+Signed-off-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Acked-by: Tim Gardner <tim.gardner@canonical.com>
+Acked-by: Dimitri John Ledkov <dimitri.ledkov@canonical.com>
+Signed-off-by: Dimitri John Ledkov <dimitri.ledkov@canonical.com>
+---
+ arch/riscv/mm/init.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/riscv/mm/init.c b/arch/riscv/mm/init.c
+index 2c4a64e..18a0c70 100644
+--- a/arch/riscv/mm/init.c
++++ b/arch/riscv/mm/init.c
+@@ -775,6 +775,10 @@ retry:
+ 		disable_pgtable_l4();
+ 	}
+ 
++	/* UBUNTU: Force disable sv57 and fallback to sv48 */
++	if (pgtable_l5_enabled)
++		disable_pgtable_l5();
++
+ 	memset(early_pg_dir, 0, PAGE_SIZE);
+ 	memset(early_p4d, 0, PAGE_SIZE);
+ 	memset(early_pud, 0, PAGE_SIZE);
+-- 
+cgit v1.1
+

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+riscv64_setup_interfaces()
+{
+	ucidef_set_interface_wan "eth0"
+}
+
+board_config_update
+board=$(board_name)
+riscv64_setup_interfaces $board
+board_config_flush
+
+exit 0
