@@ -23,6 +23,13 @@ packages into package/feeds/
 3. Run "make menuconfig" to select your preferred configuration for the
 toolchain, target system & firmware packages.
 
+! If some of the packages are missing in the menuconfig, you might need to obtain all packages from the feed using the following commands:
+"./scripts/feeds update packages"
+"./scripts/feeds install -a -p packages"
+
+For the Inspectron vocore2 board, you can just use the existing config file:
+"cp insp_config .config"
+
 4. Run "make" to build your firmware. This will download all sources, build
 the cross-compile toolchain and then cross-compile the Linux kernel & all
 chosen applications for your target system.
