@@ -7,28 +7,32 @@ STOP=90
 RTC_DEV=/dev/rtc0
 HWCLOCK=/sbin/hwclock
 
-boot() {
-	start && exit 0
+newest() {
+	#find newest file in /etc
+	ls -t /etc | head -n 1
+}
 
-	local maxtime="$(maxtime)"
-	local curtime="$(date +%s)"
-	[ $curtime -lt $maxtime ] && date -s @$maxtime
+boot() {
+	#set system to rtc time
+	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -s -u -f $RTC_DEV
+	#get timestamp of file
+	local time="$(date -r "/etc/$(newest)" +%s)"
+	#check system time against file and update system and rtc time if file is newer
+	[ $(date +%s) -lt $time ] && date -s @$time && $HWCLOCK -w -u -f $RTC_DEV
 }
 
 start() {
-	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -s -u -f $RTC_DEV
+	exit 0
 }
 
 stop() {
-	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -w -u -f $RTC_DEV && \
-		logger -t sysfixtime "saved '$(date)' to $RTC_DEV"
-}
-
-maxtime() {
-	local file newest
-
-	for file in $( find /etc -type f ) ; do
-		[ -z "$newest" -o "$newest" -ot "$file" ] && newest=$file
+	#fix any file with a timestamp in the future
+	for item in $(find /etc) ; do
+		[ $(date +%s) -lt $(date -r $item +%s) ] && touch -mc $item && logger -t sysfixtime "Updated timestamp on $item"
 	done
-	[ "$newest" ] && date -r "$newest" +%s
+	#set rtc to system time
+	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -w -u -f $RTC_DEV && logger -t sysfixtime "saved '$(date)' to $RTC_DEV"
+	#touch latest file
+	local file="/etc/$(newest)"
+	touch -mc $file && logger -t sysfixtime "Updated timestamp on $file"
 }
