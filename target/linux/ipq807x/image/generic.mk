@@ -141,6 +141,7 @@ define Device/zyxel_nbg7815
 	IMAGES += factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci e2fsprogs kmod-fs-ext4 losetup kmod-hwmon-tmp103
+	DEVICE_PACKAGES := ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci e2fsprogs kmod-fs-ext4 losetup \
+	kmod-hwmon-tmp103 kmod-bluetooth
 endef
 TARGET_DEVICES += zyxel_nbg7815
