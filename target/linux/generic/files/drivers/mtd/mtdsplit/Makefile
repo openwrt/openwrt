@@ -16,3 +16,4 @@ obj-$(CONFIG_MTD_SPLIT_MINOR_FW) += mtdsplit_minor.o
 obj-$(CONFIG_MTD_SPLIT_JIMAGE_FW) += mtdsplit_jimage.o
 obj-$(CONFIG_MTD_SPLIT_ELF_FW) += mtdsplit_elf.o
 obj-$(CONFIG_MTD_SPLIT_H3C_VFS) += mtdsplit_h3c_vfs.o
+obj-$(CONFIG_MTD_SPLIT_SIMPLE_FW) += mtdsplit_simple.o
