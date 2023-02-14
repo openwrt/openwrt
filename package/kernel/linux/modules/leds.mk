@@ -149,7 +149,7 @@ $(eval $(call KernelPackage,leds-pca963x))
 define KernelPackage/leds-ktd202x
   SUBMENU:=$(LEDS_MENU)
   TITLE:=KTD202X LED support
-  DEPENDS:=+kmod-i2c-core
+  DEPENDS:=+kmod-regmap-core +kmod-regmap-i2c
   KCONFIG:=CONFIG_LEDS_KTD2026B
   FILES:=$(LINUX_DIR)/drivers/leds/leds-ktd202x.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-ktd202x,1)
