@@ -49,7 +49,7 @@ Link: https://lore.kernel.org/linux-mtd/20210424110608.15748-2-michael@walle.cc
 
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -794,7 +794,9 @@ struct nvmem_device *nvmem_register(cons
+@@ -795,7 +795,9 @@ struct nvmem_device *nvmem_register(cons
  	nvmem->reg_write = config->reg_write;
  	nvmem->keepout = config->keepout;
  	nvmem->nkeepout = config->nkeepout;
@@ -70,11 +70,11 @@ Link: https://lore.kernel.org/linux-mtd/20210424110608.15748-2-michael@walle.cc
   * @no_of_node:	Device should not use the parent's of_node even if it's !NULL.
   * @reg_read:	Callback to read data.
   * @reg_write:	Callback to write data.
-@@ -86,6 +87,7 @@ struct nvmem_config {
+@@ -87,6 +88,7 @@ struct nvmem_config {
  	enum nvmem_type		type;
  	bool			read_only;
  	bool			root_only;
 +	struct device_node	*of_node;
+ 	bool			ignore_wp;
  	bool			no_of_node;
  	nvmem_reg_read_t	reg_read;
- 	nvmem_reg_write_t	reg_write;
