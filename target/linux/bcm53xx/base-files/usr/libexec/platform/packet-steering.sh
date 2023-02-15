@@ -1,4 +1,4 @@
-#!/bin/sh /etc/rc.common
+#!/bin/sh
 
 packet_steering="$(uci -q get network.@globals[0].packet_steering)"
 flow_offloading="$(uci -q get firewall.@defaults[0].flow_offloading)"
