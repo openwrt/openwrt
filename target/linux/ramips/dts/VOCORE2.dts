@@ -75,11 +75,18 @@
        status = "okay";
        clock_frequency = <400000>;
 
-       ktd2606b@31 {
-           label = "INSP_POWERBTN_LED";
+       ktd2026b@31 {
+           label = "INSP_POWER_LED";
            status = "okay";
            compatible = "kinetic,ktd2026";
            reg = <0x31>;
        }; // ~ktd2606b
+
+       ktd2026c@32 {
+           label = "INSP_STATUS_LED";
+           status = "okay";
+           compatible = "kinetic,ktd2026";
+           reg = <0x32>;
+       }; // ~ktd2606c
 };
 
