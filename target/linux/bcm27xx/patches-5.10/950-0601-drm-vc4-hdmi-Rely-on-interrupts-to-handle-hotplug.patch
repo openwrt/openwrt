@@ -65,7 +65,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  #ifdef CONFIG_DRM_VC4_HDMI_CEC
  static irqreturn_t vc4_cec_irq_handler_rx_thread(int irq, void *priv)
  {
-@@ -2317,6 +2357,10 @@ static int vc4_hdmi_bind(struct device *
+@@ -2318,6 +2358,10 @@ static int vc4_hdmi_bind(struct device *
  	if (ret)
  		goto err_destroy_encoder;
  
