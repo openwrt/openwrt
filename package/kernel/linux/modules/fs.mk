@@ -616,7 +616,9 @@ $(eval $(call KernelPackage,fs-vfat))
 define KernelPackage/fs-xfs
   SUBMENU:=$(FS_MENU)
   TITLE:=XFS filesystem support
-  KCONFIG:=CONFIG_XFS_FS
+  KCONFIG:= \
+	CONFIG_XFS_FS \
+	CONFIG_XFS_SUPPORT_V4=y
   DEPENDS:= +kmod-fs-exportfs +kmod-lib-crc32c
   FILES:=$(LINUX_DIR)/fs/xfs/xfs.ko
   AUTOLOAD:=$(call AutoLoad,30,xfs,1)
