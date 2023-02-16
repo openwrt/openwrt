@@ -1,17 +1,19 @@
-def devices = ['x86_64',
-               'espressobin']
-
-def regions = ['us',
-               'eu']
+def builds = [
+              x86_64_us: ['device': 'x86_64', 'libc': 'musl', 'region': 'us', 'dpdk': 'false'],
+              x86_64_eu: ['device': 'x86_64', 'libc': 'musl', 'region': 'eu', 'dpdk': 'false'],
+              x86_64_us_dpdk: ['device': 'x86_64', 'libc': 'glibc', 'region': 'us', 'dpdk': 'true'],
+              espressobin_us: ['device': 'espressobin', 'libc': 'musl', 'region': 'us', 'dpdk': 'false'],
+              espressobin_eu: ['device': 'espressobin', 'libc': 'musl', 'region': 'eu', 'dpdk': 'false'],
+] 
 
 def jobs = [:] // dynamically populated later on
 
 def credentialsId = 'buildbot'
 
-void buildMFW(String device, String libc, String region, String startClean, String makeOptions, String buildBranch, String toolsDir, String credentialsId) {
+void buildMFW(String device, String libc, String region, String startClean, String makeOptions, String dpdkFlag, String buildBranch, String toolsDir, String credentialsId) {
   sshagent (credentials:[credentialsId]) {
     sh "docker-compose -f ${toolsDir}/docker-compose.build.yml -p mfw_${device}_${region} build build-local-container"
-    sh "docker-compose -f ${toolsDir}/docker-compose.build.yml -p mfw_${device}_${region} run build-local-container -d ${device} -l ${libc} -r ${region} -c ${startClean} -m '${makeOptions}' -v ${buildBranch}"
+    sh "docker-compose -f ${toolsDir}/docker-compose.build.yml -p mfw_${device}_${region} run build-local-container ${dpdkFlag} -d ${device} -l ${libc} -r ${region} -c ${startClean} -m '${makeOptions}' -v ${buildBranch}"
   }
 }
 
@@ -34,7 +36,6 @@ pipeline {
   }
 
   parameters {
-    choice(name:'libc', choices:['musl', 'glibc'], description:'libc to link against')
     string(name:'buildBranch', defaultValue:env.BRANCH_NAME, description:'branch to use for feeds.git and mfw_build.git')
     choice(name:'startClean', choices:['false', 'true'], description:'start clean')
     string(name:'makeOptions', defaultValue:'-j32', description:'options passed directly to make')
@@ -44,100 +45,109 @@ pipeline {
     stage('Build') {
       steps {
         script {
-	  for (device in devices) {
-	    def myDevice = "${device}" // FIXME: cmon now
-            for (region in regions) {
-              def myRegion = "${region}" // FIXME: cmon now
-	      def jobName = "${myDevice}_${myRegion}"
-	      jobs[jobName] = {
-		node('mfw') {
-		  stage(jobName) {
-		    def artifactsDir = "tmp/artifacts"
+          builds.each { build ->
+            def myDevice = build.value.device
+            def myRegion = build.value.region
+            def libc = build.value.libc
+            def jobName = build.key
+            def option = ""
+            def dpdkFlag = ""
 
-		    // default values for US build
-		    def buildDir = "${env.HOME}/build-mfw-${env.BRANCH_NAME}-${myDevice}"
-		    def toolsDir = "${env.HOME}/tools-mfw-${buildBranch}-${myDevice}"
+            echo "Adding job ${build.key}"
+            jobs[build.key] = {
+              node('mfw') {
+                stage(jobName) {
+                  def artifactsDir = "tmp/artifacts"
 
-                    if (myRegion != 'us') {
-		      buildDir = buildDir + "-" + myRegion
-		      toolsDir = toolsDir + "-" + myRegion
-		    }
+                  // default values for US build
+                  def buildDir = "${env.HOME}/build-mfw-${buildBranch}-${myDevice}"
+                  def toolsDir = "${env.HOME}/tools-mfw-${buildBranch}-${myDevice}"
 
-		    if (buildBranch =~ /^mfw\+owrt/) {
-		       // force master
-		       branch = 'master'
-		    } else {
-		       branch = buildBranch
-		    }
+                  if (myRegion != 'us') {
+                    buildDir = buildDir + "-" + myRegion
+                    toolsDir = toolsDir + "-" + myRegion
+                  }
+                  
+                  if (build.value.dpdk == 'true') {
+                    dpdkFlag = "--with-dpdk"
+                    option = "dpdk"
+                    buildDir = buildDir + "-dpdk"
+                    toolsDir = toolsDir + "-dpdk"
+                    // startClean = "true" // always start clean for dpdk, otherwise we tend to fail.
+                  }
 
-		    dir(toolsDir) {
-		      git url:"git@github.com:untangle/mfw_build", branch:branch, credentialsId:credentialsId
-		    }
-		    dir(buildDir) {
-		      checkout scm
+                  if (buildBranch =~ /^mfw\+owrt/) {
+                    // force master
+                    branch = 'master'
+                  } else {
+                    branch = buildBranch
+                  }
+                  echo "Building ${build.key} with branch ${branch}"
+                  dir(toolsDir) {
+                    git url:"git@github.com:untangle/mfw_build", branch:branch, credentialsId:credentialsId
+                  }
+                  dir(buildDir) {
+                    checkout scm
 
-		      buildMFW(myDevice, libc, myRegion, startClean, makeOptions, branch, toolsDir, credentialsId)
+                    buildMFW(myDevice, libc, myRegion, startClean, makeOptions, dpdkFlag, branch, toolsDir, credentialsId)
 
-		      if (myDevice == 'x86_64' && myRegion == 'us') {
-			stash(name:"rootfs-${myDevice}", includes:"bin/targets/**/*generic-rootfs.tar.gz")
-		      }
+                    if (myDevice == 'x86_64' && myRegion == 'us' && build.value.dpdk == 'false') {
+                      stash(name:"rootfs-${myDevice}", includes:"bin/targets/**/*generic-rootfs.tar.gz")
+                    }
 
-		      archiveMFW(myDevice, myRegion, toolsDir, "${env.WORKSPACE}/${artifactsDir}")
-		    }
-		    archiveArtifacts artifacts:"${artifactsDir}/*", fingerprint:true
-		  }
-		}
-	      }
-            }
-	  }
-
-          parallel jobs
-        }
-      }
-
+                    archiveMFW(myDevice, myRegion, toolsDir, "${env.WORKSPACE}/${artifactsDir}/${option}")
+                  }
+                  archiveArtifacts artifacts:"${artifactsDir}/**/*", fingerprint:true
+                }
+              }
+            } // jobs
+          } // for loop
+        parallel jobs
+        } // script
+      } // steps
       post {
-	changed {
-	  script {
-	    // set result before pipeline ends, so emailer sees it
-	    currentBuild.result = currentBuild.currentResult
+        changed {
+          script {
+            // set result before pipeline ends, so emailer sees it
+            currentBuild.result = currentBuild.currentResult
           }
           emailext(to:'nfgw-engineering@untangle.com', subject:"${env.JOB_NAME} #${env.BUILD_NUMBER}: ${currentBuild.result}", body:"${env.BUILD_URL}")
           slackSend(channel:"#team_engineering", message:"${env.JOB_NAME} #${env.BUILD_NUMBER}: ${currentBuild.result} at ${env.BUILD_URL}")
-	}
+        }
       }
-    }
+  	} // stage
 
     stage('Test') {
       parallel {
         stage('Test x86_64') {
-	  agent { label 'mfw' }
+          agent { label 'mfw' }
 
           environment {
             device = 'x86_64'
             toolsDir = "${env.HOME}/tools-mfw-${buildBranch}-${device}"
-	    rootfsTarballName = 'mfw-x86-64-generic-rootfs.tar.gz'
-	    rootfsTarballPath = "bin/targets/x86/64/${rootfsTarballName}"
-	    dockerfile = "${toolsDir}/docker-compose.test.yml"
+            rootfsTarballName = 'mfw-x86-64-generic-rootfs.tar.gz'
+            rootfsTarballPath = "bin/targets/x86/64/${rootfsTarballName}"
+            dockerfile = "${toolsDir}/docker-compose.test.yml"
           }
 
           stages {
             stage('Prep x86_64') {
               steps {
                 script {
-		  if (buildBranch =~ /^mfw\+owrt/) {
-		     // force master
-		     branch = 'master'
-		  } else {
-		     branch = buildBranch
-		  }
+                  if (buildBranch =~ /^mfw\+owrt/) {
+                    // force master
+                    branch = 'master'
+                  } else {
+                    branch = buildBranch
+                  }
 
-		  dir(toolsDir) {
-		    git url:"git@github.com:untangle/mfw_build", branch:branch, credentialsId:credentialsId
-		  }
+                  dir(toolsDir) {
+                    git url:"git@github.com:untangle/mfw_build", branch:branch, credentialsId:credentialsId
+                  }
 
-		  unstash(name:"rootfs-${device}")
-		  sh("test -f ${rootfsTarballPath}")
-		  sh("mv -f ${rootfsTarballPath} ${toolsDir}")
+                  unstash(name:"rootfs-${device}")
+                  sh("test -f ${rootfsTarballPath}")
+                  sh("mv -f ${rootfsTarballPath} ${toolsDir}")
                 }
               }
             }
@@ -157,21 +167,21 @@ pipeline {
                 }
               }
             }
-          }
-        }
-      }
+          } // stages
+        } // stage
+      } // parallel
 
       post {
-	changed {
-	  script {
-	    // set result before pipeline ends, so emailer sees it
-	    currentBuild.result = currentBuild.currentResult
+        changed {
+          script {
+            // set result before pipeline ends, so emailer sees it
+            currentBuild.result = currentBuild.currentResult
           }
           emailext(to:'nfgw-engineering@untangle.com', subject:"${env.JOB_NAME} #${env.BUILD_NUMBER}: ${currentBuild.result}", body:"${env.BUILD_URL}")
           slackSend(channel:"#team_engineering", message:"${env.JOB_NAME} #${env.BUILD_NUMBER}: ${currentBuild.result} at ${env.BUILD_URL}")
-	}
+        }
       }
-    }
+    } // stage Test
+  } // stages
+} // pipeline
 
-  }
-}
