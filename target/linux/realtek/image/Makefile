@@ -6,11 +6,12 @@ include $(INCLUDE_DIR)/image.mk
 KERNEL_LOADADDR = 0x80100000
 
 DEVICE_VARS += \
+        CAMEO_BOARD_MODEL \
         CAMEO_BOARD_VERSION \
         CAMEO_CUSTOMER_SIGNATURE \
         CAMEO_KERNEL_PART \
+        CAMEO_KERNEL_PART_SIZE \
         CAMEO_ROOTFS_PART \
-        DLINK_KERNEL_PART_SIZE \
         H3C_DEVICE_ID \
         H3C_PRODUCT_ID \
         ZYXEL_VERS
@@ -23,25 +24,25 @@ define Build/zyxel-vers
        done ) >> $@
 endef
 
-define Build/dlink-cameo
-	$(SCRIPT_DIR)/cameo-tag.py $@ $(DLINK_KERNEL_PART_SIZE)
+define Build/cameo-tag
+	$(SCRIPT_DIR)/cameo-tag.py $@ $(CAMEO_KERNEL_PART_SIZE)
 endef
 
-define Build/dlink-version
+define Build/cameo-version
 	echo -n "OpenWrt" >> $@
 	dd if=/dev/zero bs=25 count=1 >> $@
 endef
 
-define Build/dlink-headers
-        dd if=$@ bs=$(DLINK_KERNEL_PART_SIZE) count=1 of=$@.kernel_part; \
-        dd if=$@ bs=$(DLINK_KERNEL_PART_SIZE) skip=1 of=$@.rootfs_part; \
+define Build/cameo-headers
+        dd if=$@ bs=$(CAMEO_KERNEL_PART_SIZE) count=1 of=$@.kernel_part; \
+        dd if=$@ bs=$(CAMEO_KERNEL_PART_SIZE) skip=1 of=$@.rootfs_part; \
         $(SCRIPT_DIR)/cameo-imghdr.py $@.kernel_part $@.kernel_part.hex \
-                "$(DEVICE_MODEL)" os $(CAMEO_KERNEL_PART) \
+                "$(CAMEO_BOARD_MODEL)" os $(CAMEO_KERNEL_PART) \
                 $(CAMEO_CUSTOMER_SIGNATURE) \
                 $(CAMEO_BOARD_VERSION) \
                 $(KERNEL_LOADADDR); \
         $(SCRIPT_DIR)/cameo-imghdr.py $@.rootfs_part $@.rootfs_part.hex \
-                "$(DEVICE_MODEL)" squashfs $(CAMEO_ROOTFS_PART) \
+                "$(CAMEO_BOARD_MODEL)" squashfs $(CAMEO_ROOTFS_PART) \
                 $(CAMEO_CUSTOMER_SIGNATURE) \
                 $(CAMEO_BOARD_VERSION); \
         cat $@.kernel_part.hex $@.rootfs_part.hex > $@

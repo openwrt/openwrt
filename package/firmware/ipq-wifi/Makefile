@@ -26,6 +26,7 @@ endef
 
 ALLWIFIBOARDS:= \
 	aruba_ap-365 \
+	buffalo_wxr-5950ax12 \
 	devolo_magic-2-wifi-next \
 	dynalink_dl-wrx36 \
 	edgecore_eap102 \
@@ -125,6 +126,7 @@ endef
 # Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
 
 $(eval $(call generate-ipq-wifi-package,aruba_ap-365,Aruba AP-365))
+$(eval $(call generate-ipq-wifi-package,buffalo_wxr-5950ax12,Buffalo WXR-5950AX12))
 $(eval $(call generate-ipq-wifi-package,devolo_magic-2-wifi-next,devolo Magic 2 WiFi next))
 $(eval $(call generate-ipq-wifi-package,dynalink_dl-wrx36,Dynalink DL-WRX36))
 $(eval $(call generate-ipq-wifi-package,edgecore_eap102,Edgecore EAP102))
