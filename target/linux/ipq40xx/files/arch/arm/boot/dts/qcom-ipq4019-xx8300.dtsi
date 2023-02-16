@@ -100,16 +100,6 @@
 			status = "okay";
 		};
 	};
-
-	gpio_export {
-		compatible = "gpio-export";
-
-		usb {
-			gpio-export,name = "usb_power";
-			gpio-export,output = <0>;
-			gpios = <&tlmm 68 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };
 
 
@@ -278,7 +268,7 @@
 			pins =  "gpio55", "gpio56", "gpio57",
 				"gpio60", "gpio62", "gpio63",
 				"gpio64", "gpio65", "gpio66",
-				"gpio67", "gpio69";
+				"gpio67", "gpio68", "gpio69";
 			function = "qpic";
 			bias-pull-down;
 		};
