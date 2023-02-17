@@ -9,7 +9,7 @@ PKG_PRO_FILE:=wifiHandleController.pro
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:= git@github.com:Inspectron/wifiHandleController.git
-PKG_SOURCE_VERSION:=86759fc968359e86154ad98067d106569b58438f
+PKG_SOURCE_VERSION:=bc16c0d3813a9e62a37bba81b1705ebffe0bac10
 
 
 include $(INCLUDE_DIR)/package.mk
@@ -26,20 +26,14 @@ define Package/wifiHandleController/description
 	wifiHandleController application.
 endef
 
-define Build/Prepare
-	#TODO add commands to configure wifiHandleController
-	$(warning add commands to configure wifiHandleController)
-endef
-
 define Build/Compile
-	#TODO add commands to make wifiHandleController
-	$(warning add commands to make wifiHandleController)
+        $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE)
 endef
 
 
 define Package/wifiHandleController/install
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wifiHandleController $(1)/usr/bin
+	$(INSTALL_DIR) $(1)/root
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/build*/wifiHandleController $(1)/root
 endef
 
 $(eval $(call BuildPackage,wifiHandleController))
