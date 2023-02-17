@@ -27,13 +27,13 @@ define Package/wifiHandleController/description
 endef
 
 define Build/Compile
-        $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE)
+        cd $(PKG_BUILD_DIR); $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE)
 endef
 
 
 define Package/wifiHandleController/install
-	$(INSTALL_DIR) $(1)/root
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/build*/wifiHandleController $(1)/root
+	$(INSTALL_DIR) $(STAGING_DIR)/root-ramips/root
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/.pkgdir/wifiHandleController $(STAGING_DIR)/root-ramips/root
 endef
 
 $(eval $(call BuildPackage,wifiHandleController))
