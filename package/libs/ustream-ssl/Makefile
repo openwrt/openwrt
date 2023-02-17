@@ -23,6 +23,7 @@ define Package/libustream/default
   CATEGORY:=Libraries
   TITLE:=ustream SSL Library
   DEPENDS:=+libubox
+  PROVIDES:=libustream-ssl
   ABI_VERSION:=20201210
 endef
 
