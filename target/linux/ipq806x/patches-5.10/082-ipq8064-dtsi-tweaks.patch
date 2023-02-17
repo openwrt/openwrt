@@ -35,14 +35,6 @@
  			#interrupt-cells = <2>;
  			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
  
-@@ -155,6 +156,7 @@
- 					function = "pcie3_rst";
- 					drive-strength = <12>;
- 					bias-disable;
-+					output-low;
- 				};
- 			};
- 
 @@ -190,6 +192,7 @@
  		intc: interrupt-controller@2000000 {
  			compatible = "qcom,msm-qgic2";

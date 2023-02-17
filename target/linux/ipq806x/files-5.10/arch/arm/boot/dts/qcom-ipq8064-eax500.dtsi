@@ -12,6 +12,18 @@
 	};
 };
 
+&qcom_pinmux {
+	/* eax500 routers reuse the pcie2 reset pin for switch reset pin */
+	switch_reset: switch_reset_pins {
+		mux {
+			pins = "gpio63";
+			function = "gpio";
+			drive-strength = <12>;
+			bias-pull-up;
+		};
+	};
+};
+
 &usb3_0 {
 	status = "okay";
 };
@@ -27,10 +39,6 @@
 };
 
 &pcie1 {
-	status = "okay";
-};
-
-&pcie2 {
 	status = "okay";
 };
 
@@ -159,6 +167,10 @@
 
 	pinctrl-0 = <&mdio0_pins>;
 	pinctrl-names = "default";
+
+	/* Switch from documentation require at least 10ms for reset */
+	reset-gpios = <&qcom_pinmux 63 GPIO_ACTIVE_HIGH>;
+	reset-post-delay-us = <12000>;
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;
