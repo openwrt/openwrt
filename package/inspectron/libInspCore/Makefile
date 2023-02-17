@@ -2,28 +2,29 @@ include $(TOPDIR)/rules.mk
 
 # Name, version and release number
 # The name and version of your package are used to define the variable to point to the build directory of your package: $(PKG_BUILD_DIR)
-PKG_NAME:=wifiHandleController
+PKG_NAME:=libinspCore
 PKG_VERSION:=1.0
 PKG_RELEASE:=1
-PKG_PRO_FILE:=wifiHandleController.pro
+PKG_PRO_FILE:=libinspCore.pro
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:= git@github.com:Inspectron/wifiHandleController.git
-PKG_SOURCE_VERSION:=bc16c0d3813a9e62a37bba81b1705ebffe0bac10
+PKG_SOURCE_URL:= git@github.com:Inspectron/libinspCore.git
+PKG_SOURCE_VERSION:=33d0afe936fd726ca23a67f018189c180d114c26
 
 
 include $(INCLUDE_DIR)/package.mk
 
 # Package definition; instructs on how and where our package will appear in the overall configuration menu ('make menuconfig')
-define Package/wifiHandleController
+define Package/libinspCore
 	SECTION:=inspectron
 	CATEGORY:=inspectron
-	TITLE:=wifiHandleController
+	TITLE:=libinspCore
+	DEPENDS:=+qt5-core
 endef
 
 # Package description; a more verbose description on what our package does
-define Package/wifiHandleController/description
-	wifiHandleController application.
+define Package/libinspCore/description
+	libinspCore library
 endef
 
 define Build/Compile
@@ -31,9 +32,9 @@ define Build/Compile
 endef
 
 
-define Package/wifiHandleController/install
-	$(INSTALL_DIR) $(STAGING_DIR)/root-ramips/root
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/.pkgdir/wifiHandleController $(STAGING_DIR)/root-ramips/root
+define Package/libinspCore/install
+	$(INSTALL_DIR) $(STAGING_DIR)/root-ramips/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/.pkgdir/libinspCore $(STAGING_DIR)/root-ramips/usr/lib
 endef
 
-$(eval $(call BuildPackage,wifiHandleController))
+$(eval $(call BuildPackage,libinspCore))
