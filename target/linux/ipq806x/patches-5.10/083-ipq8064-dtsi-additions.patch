@@ -475,7 +475,7 @@
  		qcom_pinmux: pinmux@800000 {
  			compatible = "qcom,ipq8064-pinctrl";
  			reg = <0x800000 0x4000>;
-@@ -160,6 +589,15 @@
+@@ -159,6 +588,15 @@
  				};
  			};
  
@@ -491,7 +491,7 @@
  			spi_pins: spi_pins {
  				mux {
  					pins = "gpio18", "gpio19", "gpio21";
-@@ -169,6 +607,53 @@
+@@ -168,6 +606,53 @@
  				};
  			};
  
@@ -545,7 +545,7 @@
  			leds_pins: leds_pins {
  				mux {
  					pins = "gpio7", "gpio8", "gpio9",
-@@ -231,6 +716,17 @@
+@@ -230,6 +715,17 @@
  			clock-output-names = "acpu1_aux";
  		};
  
@@ -563,7 +563,7 @@
  		saw0: regulator@2089000 {
  			compatible = "qcom,saw2", "qcom,apq8064-saw2-v1.1-cpu", "syscon";
  			reg = <0x02089000 0x1000>, <0x02009000 0x1000>;
-@@ -243,6 +739,52 @@
+@@ -242,6 +738,52 @@
  			regulator;
  		};
  
@@ -616,7 +616,7 @@
  		gsbi2: gsbi@12480000 {
  			compatible = "qcom,gsbi-v1.0.0";
  			cell-index = <2>;
-@@ -368,6 +910,33 @@
+@@ -367,6 +909,33 @@
  			};
  		};
  
@@ -650,7 +650,7 @@
  		gsbi7: gsbi@16600000 {
  			status = "disabled";
  			compatible = "qcom,gsbi-v1.0.0";
-@@ -389,6 +958,19 @@
+@@ -388,6 +957,19 @@
  				clock-names = "core", "iface";
  				status = "disabled";
  			};
@@ -670,7 +670,7 @@
  		};
  
  		sata_phy: sata-phy@1b400000 {
-@@ -478,6 +1060,95 @@
+@@ -477,6 +1059,95 @@
  			#reset-cells = <1>;
  		};
  
@@ -766,7 +766,7 @@
  		pcie0: pci@1b500000 {
  			compatible = "qcom,pcie-ipq8064";
  			reg = <0x1b500000 0x1000
-@@ -739,6 +1410,59 @@
+@@ -738,6 +1409,59 @@
  			status = "disabled";
  		};
  
@@ -826,7 +826,7 @@
  		vsdcc_fixed: vsdcc-regulator {
  			compatible = "regulator-fixed";
  			regulator-name = "SDCC Power";
-@@ -814,4 +1538,17 @@
+@@ -813,4 +1537,17 @@
  			};
  		};
  	};
