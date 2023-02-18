@@ -20,4 +20,8 @@ include $(INCLUDE_DIR)/target.mk
 
 KERNELNAME:=Image
 
+DEFAULT_PACKAGES += kmod-hwmon-gsc kmod-leds-gpio kmod-pps-gpio \
+		    kmod-gpio-button-hotplug kmod-input-evdev kmod-rtc-ds1672 \
+		    kmod-can kmod-can-mcp251x
+
 $(eval $(call BuildTarget))
