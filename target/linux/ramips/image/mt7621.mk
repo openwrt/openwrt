@@ -2611,6 +2611,8 @@ define Device/zbtlink_zbt-we1326
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-WE1326
+  DEVICE_ALT0_VENDOR := Wiflyer
+  DEVICE_ALT0_MODEL := WF3526-P
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-sdhci-mt7620
   SUPPORTED_DEVICES += zbt-we1326
 endef
