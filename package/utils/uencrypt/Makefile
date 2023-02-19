@@ -4,7 +4,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uencrypt
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_MAINTAINER:=Eneas U de Queiroz <cotequeiroz@gmail.com>
@@ -18,6 +18,8 @@ ifeq ($(BUILD_VARIANT),mbedtls)
 else ifeq ($(BUILD_VARIANT),wolfssl)
   CMAKE_OPTIONS+=-DUSE_WOLFSSL=1
 endif
+
+TARGET_CFLAGS+=-Wall
 
 define Package/uencrypt/default
   SECTION:=utils

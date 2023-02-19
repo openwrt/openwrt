@@ -2,56 +2,15 @@
  * Copyright (C) 2022-2023 Eneas Ulir de Queiroz
  */
 
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "uencrypt.h"
 
-#ifdef USE_WOLFSSL
-# include <wolfssl/options.h>
-# include <wolfssl/openssl/evp.h>
-#else
-# include <openssl/evp.h>
-#endif
-
-int do_crypt(FILE *infile, FILE *outfile, const EVP_CIPHER *cipher, const unsigned char *key,
-	     const unsigned char *iv, int enc, int padding)
+const cipher_t *get_default_cipher(void)
 {
-    EVP_CIPHER_CTX *ctx;
-    unsigned char inbuf[1024], outbuf[1024 + EVP_MAX_BLOCK_LENGTH];
-    int inlen, outlen;
-
-    ctx = EVP_CIPHER_CTX_new();
-    EVP_CipherInit_ex(ctx, cipher, NULL, key, iv, enc);
-    EVP_CIPHER_CTX_set_padding(ctx, padding);
-
-    for (;;) {
-	inlen = fread(inbuf, 1, 1024, infile);
-	if (inlen <= 0)
-	    break;
-	if (!EVP_CipherUpdate(ctx, outbuf, &outlen, inbuf, inlen)) {
-	    EVP_CIPHER_CTX_free(ctx);
-	    return -1;
-	}
-	fwrite(outbuf, 1, outlen, outfile);
-    }
-    if (!EVP_CipherFinal_ex(ctx, outbuf, &outlen)) {
-	EVP_CIPHER_CTX_free(ctx);
-	return -1;
-    }
-    fwrite(outbuf, 1, outlen, outfile);
-
-    EVP_CIPHER_CTX_free(ctx);
-    return 0;
-}
-
-static void check_enc_dec(const int enc)
-{
-    if (enc == -1)
-	return;
-    fprintf(stderr, "Error: both -d and -e were specified.\n");
-    exit(EXIT_FAILURE);
+    return EVP_aes_128_cbc();
 }
 
 #ifndef USE_WOLFSSL
@@ -60,100 +19,98 @@ static void print_ciphers(const OBJ_NAME *name,void *arg) {
 }
 #endif
 
-static void check_cipher(const EVP_CIPHER *cipher)
+const cipher_t *get_cipher_or_print_error(char *name)
 {
-    if (cipher == NULL) {
-	fprintf(stderr, "Error: invalid cipher: %s.\n", optarg);
+    const EVP_CIPHER *cipher;
+
+    if ((cipher = EVP_get_cipherbyname(name)))
+	return cipher;
+
+    fprintf(stderr, "Error: invalid cipher: %s.\n", name);
 #ifndef USE_WOLFSSL
-	fprintf(stderr, "Supported ciphers: \n");
-	OBJ_NAME_do_all_sorted(OBJ_NAME_TYPE_CIPHER_METH, print_ciphers, stderr);
+    fprintf(stderr, "Supported ciphers: \n");
+    OBJ_NAME_do_all_sorted(OBJ_NAME_TYPE_CIPHER_METH, print_ciphers, stderr);
 #endif
-	exit(EXIT_FAILURE);
-    }
+    return NULL;
 }
 
-static void show_usage(const char* name)
+int get_cipher_ivsize(const cipher_t *cipher)
 {
-    fprintf(stderr, "Usage: %s: [-d | -e] [-n] -k key [-i iv] [-c cipher]\n"
-		    "-d = decrypt; -e = encrypt; -n = no padding\n", name);
+    return EVP_CIPHER_iv_length(cipher);
 }
 
-int main(int argc, char *argv[])
+int get_cipher_keysize(const cipher_t *cipher)
 {
-    int enc = -1;
-    unsigned char *iv = NULL;
-    unsigned char *key = NULL;
-    long ivlen = 0, keylen = 0;
-    int cipher_ivlen, cipher_keylen;
-    int opt;
-    int padding = 1;
-    const EVP_CIPHER *cipher = EVP_aes_128_cbc();
+    return EVP_CIPHER_key_length(cipher);
+}
+
+ctx_t *create_ctx(const cipher_t *cipher, const unsigned char *key,
+		  const unsigned char *iv, int enc, int padding)
+{
+    EVP_CIPHER_CTX *ctx;
     int ret;
 
-    while ((opt = getopt(argc, argv, "c:dei:k:n")) != -1) {
-	switch (opt) {
-	case 'c':
-	    cipher = EVP_get_cipherbyname(optarg);
-	    check_cipher(cipher);
+    ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+	fprintf (stderr, "Error: create_ctx: out of memory.\n");
+	return NULL;
+    }
+    ret = EVP_CipherInit_ex(ctx, cipher, NULL, key, iv, enc);
+    if (!ret) {
+	fprintf(stderr, "Error:EVP_CipherInit_ex: %d\n", ret);
+	goto abort;
+    }
+    ret = EVP_CIPHER_CTX_set_padding(ctx, padding);
+    if (!ret) {
+	fprintf(stderr, "Error:EVP_CIPHER_CTX_set_padding: %d\n", ret);
+	goto abort;
+    }
+
+    return ctx;
+
+abort:
+    free_ctx(ctx);
+    return NULL;
+}
+
+
+int do_crypt(FILE *infile, FILE *outfile, ctx_t *ctx)
+{
+    unsigned char inbuf[CRYPT_BUF_SIZE];
+    unsigned char outbuf[CRYPT_BUF_SIZE + EVP_MAX_BLOCK_LENGTH];
+    int inlen, outlen;
+    int ret;
+
+    for (;;) {
+	inlen = fread(inbuf, 1, CRYPT_BUF_SIZE, infile);
+	if (inlen <= 0)
 	    break;
-	case 'd':
-	    check_enc_dec(enc);
-	    enc = 0;
-	    break;
-	case 'e':
-	    check_enc_dec(enc);
-	    enc = 1;
-	    break;
-	case 'i':
-	    iv = OPENSSL_hexstr2buf((const char *)optarg, &ivlen);
-	    if (iv == NULL) {
-		fprintf(stderr, "Error setting IV to %s. The IV should be encoded in hex.\n",
-			optarg);
-		exit(EINVAL);
-	    }
-	    break;
-	case 'k':
-	    key = OPENSSL_hexstr2buf((const char *)optarg, &keylen);
-	    if (key == NULL) {
-		fprintf(stderr, "Error setting key to %s. The key should be encoded in hex.\n",
-			optarg);
-		exit(EINVAL);
-	    }
-	    break;
-	case 'n':
-	    padding = 0;
-	    break;
-	default:
-	    show_usage(argv[0]);
-	    exit(EINVAL);
+	ret = EVP_CipherUpdate(ctx, outbuf, &outlen, inbuf, inlen);
+	if (!ret) {
+	    fprintf(stderr, "Error: EVP_CipherUpdate: %d\n", ret);
+	    return ret;
+	}
+	ret = fwrite(outbuf, 1, outlen, outfile);
+	if (ret != outlen) {
+	    fprintf(stderr, "Error: CipherUpdate short write.\n");
+	    return ret - outlen;
 	}
     }
-    if (key == NULL) {
-	fprintf(stderr, "Error: key not set.\n");
-	show_usage(argv[0]);
-	exit(EXIT_FAILURE);
+    ret = EVP_CipherFinal_ex(ctx, outbuf, &outlen);
+    if (!ret) {
+	fprintf(stderr, "Error: EVP_CipherFinal: %d\n", ret);
+	return ret;
     }
-    if ((cipher_keylen = EVP_CIPHER_key_length(cipher)) != keylen) {
-	fprintf(stderr, "Error: key must be %d bytes; given key is %ld bytes.\n",
-		cipher_keylen, keylen);
-	exit(EXIT_FAILURE);
+    ret = fwrite(outbuf, 1, outlen, outfile);
+    if (ret != outlen) {
+	fprintf(stderr, "Error: CipherFinal short write.\n");
+	return ret - outlen;
     }
-    if ((cipher_ivlen = EVP_CIPHER_iv_length(cipher))) {
-	if (iv == NULL) {
-	    fprintf(stderr, "Error: IV not set.\n");
-	    show_usage(argv[0]);
-	    exit(EXIT_FAILURE);
-	}
-	if (cipher_ivlen != ivlen) {
-	    fprintf(stderr, "Error: IV must be %d bytes; given IV is %ld bytes.\n",
-		    cipher_ivlen, ivlen);
-	    exit(EXIT_FAILURE);
-	}
-    }
-    ret = do_crypt(stdin, stdout, cipher, key, iv, !!enc, padding);
-    if (ret)
-	fprintf(stderr, "Error during crypt operation.\n");
-    OPENSSL_free(iv);
-    OPENSSL_free(key);
-    return ret;
+
+    return 0;
+}
+
+void free_ctx(ctx_t *ctx)
+{
+    EVP_CIPHER_CTX_free(ctx);
 }
