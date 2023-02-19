@@ -52,6 +52,12 @@ jobs:
           TARGETS_SUBTARGETS="$(echo "$ALL_TARGETS" | sort -u -t '/' -k1 | awk '{ print $1 }')"
           TARGETS="$(echo "$ALL_TARGETS" | sort -u -t '/' -k1,1 | awk '{ print $1 }')"
 
+          # On testing non-specific target, skip testing each subtarget
+          if echo "$CHANGED_FILES" | grep -v -q target/linux ||
+            echo "$CHANGED_FILES" | grep -q target/linux/generic; then
+            TARGETS_SUBTARGETS=$TARGETS
+          fi
+
           JSON_TARGETS_SUBTARGETS='['
           FIRST=1
           for TARGET in $TARGETS_SUBTARGETS; do
