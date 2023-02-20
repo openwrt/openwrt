@@ -27,9 +27,11 @@ define Package/wifiHandleController/description
 	wifiHandleController application.
 endef
 
+define Build/Configure
+	cd $(PKG_BUILD_DIR); $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE)
+endef
 
 define Build/Compile
-	cd $(PKG_BUILD_DIR); $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE) 
 	cd $(PKG_BUILD_DIR); $(MAKE) CXXFLAGS="-I$(STAGING_DIR)/usr/include/gstreamer-1.0 -I$(STAGING_DIR)/usr/include/glib-2.0"
 endef
 
