@@ -19,7 +19,7 @@ define Package/wifiHandleController
 	SECTION:=inspectron
 	CATEGORY:=inspectron
 	TITLE:=wifiHandleController
-	DEPENDS:=+glib2 +gstreamer1
+	DEPENDS:=+qt5-core +qt5-network +atomic +glib2 +gstreamer1 +stdc++ +libqmqtt
 endef
 
 # Package description; a more verbose description on what our package does
@@ -37,8 +37,8 @@ endef
 
 
 define Package/wifiHandleController/install
-	$(INSTALL_DIR) $(STAGING_DIR)/root-ramips/root
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wifiHandleController $(STAGING_DIR)/root-ramips/root
+	$(INSTALL_DIR) $(1)/root
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wifiHandleController $(1)/root
 endef
 
 $(eval $(call BuildPackage,wifiHandleController))

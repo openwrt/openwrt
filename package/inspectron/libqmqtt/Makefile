@@ -19,7 +19,7 @@ define Package/libqmqtt
 	SECTION:=inspectron
 	CATEGORY:=inspectron
 	TITLE:=libqmqtt
-	DEPENDS:=+qt5-core
+	DEPENDS:=+qt5-core +qt5-network
 endef
 
 # Package description; a more verbose description on what our package does
@@ -37,8 +37,8 @@ endef
 
 
 define Package/libqmqtt/install
-	$(INSTALL_DIR) $(STAGING_DIR)/root-ramips/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libqmqtt.so* $(STAGING_DIR)/root-ramips/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libqmqtt.so* $(1)/usr/lib
 endef
 
 $(eval $(call BuildPackage,libqmqtt))

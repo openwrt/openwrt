@@ -19,7 +19,7 @@ define Package/libinspCore
 	SECTION:=inspectron
 	CATEGORY:=inspectron
 	TITLE:=libinspCore
-	DEPENDS:=+qt5-core
+	DEPENDS:=+qt5-core +qt5-network
 endef
 
 # Package description; a more verbose description on what our package does
@@ -32,13 +32,13 @@ define Build/Configure
 endef
 
 define Build/Compile
-        cd $(PKG_BUILD_DIR); $(MAKE)
+        cd $(PKG_BUILD_DIR); $(MAKE) 
 endef
 
 
 define Package/libinspCore/install
-	$(INSTALL_DIR) $(STAGING_DIR)/root-ramips/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libinspCore.so* $(STAGING_DIR)/root-ramips/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libinspCore.so* $(1)/usr/lib
 endef
 
 $(eval $(call BuildPackage,libinspCore))

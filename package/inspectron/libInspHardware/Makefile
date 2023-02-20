@@ -37,8 +37,8 @@ endef
 
 
 define Package/libInspHardware/install
-	$(INSTALL_DIR) $(STAGING_DIR)/root-ramips/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libInspHardware.so* $(STAGING_DIR)/root-ramips/usr/lib
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libInspHardware.so* $(1)/usr/lib
 endef
 
 # This command is always the last, it uses the definitions and variables we give above in order to get the job done
