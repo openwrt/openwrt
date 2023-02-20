@@ -9,7 +9,7 @@ PKG_PRO_FILE:=wifiHandleController.pro
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:= git@github.com:Inspectron/wifiHandleController.git
-PKG_SOURCE_VERSION:=bc16c0d3813a9e62a37bba81b1705ebffe0bac10
+PKG_SOURCE_VERSION:=9c7b018046fb6414db7d47905be81622c638a27e
 
 
 include $(INCLUDE_DIR)/package.mk
@@ -19,6 +19,7 @@ define Package/wifiHandleController
 	SECTION:=inspectron
 	CATEGORY:=inspectron
 	TITLE:=wifiHandleController
+	DEPENDS:=+glib2 +gstreamer1
 endef
 
 # Package description; a more verbose description on what our package does
@@ -26,8 +27,10 @@ define Package/wifiHandleController/description
 	wifiHandleController application.
 endef
 
+
 define Build/Compile
-        cd $(PKG_BUILD_DIR); $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE); $(MAKE)
+	cd $(PKG_BUILD_DIR); $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE) 
+	cd $(PKG_BUILD_DIR); $(MAKE) CXXFLAGS="-I$(STAGING_DIR)/usr/include/gstreamer-1.0 -I$(STAGING_DIR)/usr/include/glib-2.0"
 endef
 
 
