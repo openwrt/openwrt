@@ -53,6 +53,16 @@ define Build/buffalo-kernel-jffs2
 	rm -rf $(KDIR)/kernel_jffs2 $@.fakerd
 endef
 
+define Build/buffalo-kernel-ubifs
+	rm -rf $@-ubidir
+	mkdir -p $@-ubidir
+	mv $@ $@-ubidir/uImage.buffalo
+	touch $@
+	$(call Build/append-uImage-fakehdr, ramdisk)
+	mv $@ $@-ubidir/initrd.buffalo
+	$(STAGING_DIR_HOST)/bin/mkfs.ubifs $(KERNEL_UBIFS_OPTS) -r $@-ubidir $@
+endef
+
 # Some info about Ctera firmware:
 # 1. It's simple tar file (GNU standard), but it must have ".firm" suffix.
 # 2. It contains two images: kernel and romdisk. Both are required.

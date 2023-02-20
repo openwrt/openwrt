@@ -14,6 +14,21 @@ define Device/kernel-size-migration
 	Upgrade via sysupgrade mechanism is not possible, so new installation via factory style image is required.
 endef
 
+define Device/buffalo_ls220de
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := LinkStation LS220DE
+  KERNEL_UBIFS_OPTS = -m $$(PAGESIZE) -e 124KiB -c 172 -x none
+  KERNEL := kernel-bin | append-dtb | uImage none | buffalo-kernel-ubifs
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  DEVICE_DTS := armada-370-buffalo-ls220de
+  DEVICE_PACKAGES :=  \
+    kmod-hwmon-gpiofan kmod-hwmon-drivetemp kmod-linkstation-poweroff \
+    kmod-md-mod kmod-md-raid0 kmod-md-raid1 kmod-md-raid10 kmod-fs-xfs \
+    mdadm mkf2fs e2fsprogs partx-utils
+endef
+TARGET_DEVICES += buffalo_ls220de
+
 define Device/buffalo_ls421de
   $(Device/NAND-128K)
   DEVICE_VENDOR := Buffalo

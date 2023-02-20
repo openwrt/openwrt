@@ -13,6 +13,7 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+buffalo,ls220de|\
 buffalo,ls421de)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000"
 	;;

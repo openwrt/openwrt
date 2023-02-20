@@ -61,6 +61,7 @@ mvebu_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+	buffalo,ls220de|\
 	buffalo,ls421de)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env eth1addr)
 		;;
