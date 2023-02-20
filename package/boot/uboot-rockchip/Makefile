@@ -38,6 +38,19 @@ endef
 
 # RK3399 boards
 
+define U-Boot/nanopi-r4s-1g-rk3399
+  BUILD_SUBTARGET:=armv8
+  NAME:=NanoPi R4S 1G
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-r4s-1g
+  DEPENDS:=+PACKAGE_u-boot-nanopi-r4s-1g-rk3399:arm-trusted-firmware-rockchip
+  DEVICE_DTS := rk3399-nanopi-r4s
+  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
+  UBOOT_CONFIG:= nanopi-r4s-rk3399
+  ATF:=rk3399_bl31.elf
+  DDR_1G:=$(1)
+endef
+
 define U-Boot/nanopi-r4s-rk3399
   BUILD_SUBTARGET:=armv8
   NAME:=NanoPi R4S
@@ -69,6 +82,7 @@ define U-Boot/rockpro64-rk3399
 endef
 
 UBOOT_TARGETS := \
+  nanopi-r4s-1g-rk3399 \
   nanopi-r4s-rk3399 \
   rock-pi-4-rk3399 \
   rockpro64-rk3399 \
@@ -78,6 +92,15 @@ UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
 UBOOT_MAKE_FLAGS += \
   BL31=$(STAGING_DIR_IMAGE)/$(ATF)
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+
+ifneq ($(DDR_1G),)
+	sed -i "16s/"rk3399-sdram-lpddr4-100.dtsi"/"rk3399-sdram-ddr3-1866.dtsi"/" $(PKG_BUILD_DIR)/arch/arm/dts/rk3399-nanopi-r4s-u-boot.dtsi
+	sed -i '/CONFIG_RAM_RK3399_LPDDR4=y/d' $(PKG_BUILD_DIR)/configs/nanopi-r4s-rk3399_defconfig
+endif
+endef
 
 define Build/Configure
 	$(call Build/Configure/U-Boot)

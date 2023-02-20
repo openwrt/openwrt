@@ -15,6 +15,19 @@ define Device/friendlyarm_nanopi-r2s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r2s
 
+define Device/friendlyarm_nanopi-r4s-1g
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi R4S 1GB
+  DEVICE_VARIANT := 1GB DDR3
+  DEVICE_DTS := rockchip/rk3399-nanopi-r4s
+  SOC := rk3399
+  SUPPORTED_DEVICES += friendlyarm,nanopi-r4s
+  UBOOT_DEVICE_NAME := nanopi-r4s-1g-rk3399
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r4s | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-r8169
+endef
+TARGET_DEVICES += friendlyarm_nanopi-r4s-1g
+
 define Device/friendlyarm_nanopi-r4s
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R4S
