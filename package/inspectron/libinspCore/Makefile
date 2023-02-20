@@ -27,14 +27,18 @@ define Package/libinspCore/description
 	libinspCore library
 endef
 
+define Build/Configure
+        cd $(PKG_BUILD_DIR); $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/$(PKG_PRO_FILE)
+endef
+
 define Build/Compile
-        cd $(PKG_BUILD_DIR); $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE)
+        cd $(PKG_BUILD_DIR); $(MAKE)
 endef
 
 
 define Package/libinspCore/install
 	$(INSTALL_DIR) $(STAGING_DIR)/root-ramips/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/.pkgdir/libinspCore $(STAGING_DIR)/root-ramips/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libinspCore.so* $(STAGING_DIR)/root-ramips/usr/lib
 endef
 
 $(eval $(call BuildPackage,libinspCore))
