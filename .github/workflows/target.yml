@@ -31,6 +31,7 @@ jobs:
         id: find_targets
         run: |
           BRANCH="${GITHUB_BASE_REF#refs/heads/}"
+          BRANCH=master
           git fetch origin "$BRANCH"
           JSON='['
           FIRST=1
