@@ -19,30 +19,32 @@ define Package/libInspHardware
 	SECTION:=inspectron
 	CATEGORY:=inspectron
 	TITLE:=libInspHardware
+	DEPENDS:=+qt5-core
 endef
 
 # Package description; a more verbose description on what our package does
-define Package/helloworld/description
+define Package/libInspHardware/description
 	Inspectron Hardware Interface Library.
 endef
 
-# Package preparation instructions; create the build directory and copy the source code.Inspectron Hardware Interface Library. 
-# The last command is necessary to ensure our preparation instructions remain compatible with the patching system.
-define Build/Prepare
-	#TODO add commands to configure libInspHardware
-	$(warning add commands to configure libInspHardware)
+define Build/Configure
+        cd $(PKG_BUILD_DIR); $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE)
 endef
 
-# Package build instructions; invoke the target-specific compiler to first compile the source file, and then to link the file into the final executable
 define Build/Compile
-	#TODO add commands to make libInspHardware
-	$(warning add commands to make libInspHardware)
+        cd $(PKG_BUILD_DIR); $(MAKE)
 endef
 
-# Package install instructions; create a directory inside the package to hold our executable, and then copy the executable we built previously into the folder
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/trunk/*.hpp $(1)/usr/include/
+	$(INSTALL_DIR) $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/libInspHardware.so* $(1)/usr/lib/
+endef
+
 define Package/libInspHardware/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libInspHardware $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libInspHardware.so* $(1)/usr/lib
 endef
 
 # This command is always the last, it uses the definitions and variables we give above in order to get the job done
