@@ -28,17 +28,23 @@ define Package/libqmqtt/description
 endef
 
 define Build/Configure
-        cd $(PKG_BUILD_DIR); $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE)
+	cd $(PKG_BUILD_DIR); $(TOOLCHAIN_DIR)/bin/qmake $(PKG_BUILD_DIR)/trunk/$(PKG_PRO_FILE)
 endef
 
 define Build/Compile
-        cd $(PKG_BUILD_DIR); $(MAKE)
+	cd $(PKG_BUILD_DIR); $(MAKE)
 endef
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/trunk/*.h $(1)/usr/include/
+	$(INSTALL_DIR) $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/libqmqtt.so* $(1)/usr/lib/
+endef
 
 define Package/libqmqtt/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libqmqtt.so* $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libqmqtt.so* $(1)/usr/lib
 endef
 
 $(eval $(call BuildPackage,libqmqtt))

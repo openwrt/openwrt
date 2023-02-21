@@ -32,13 +32,19 @@ define Build/Configure
 endef
 
 define Build/Compile
-        cd $(PKG_BUILD_DIR); $(MAKE) 
+        cd $(PKG_BUILD_DIR); $(MAKE)
 endef
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/*.hpp $(1)/usr/include/
+	$(INSTALL_DIR) $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/libinspCore.so* $(1)/usr/lib/
+endef
 
 define Package/libinspCore/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libinspCore.so* $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libinspCore.so* $(1)/usr/lib
 endef
 
 $(eval $(call BuildPackage,libinspCore))

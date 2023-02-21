@@ -19,7 +19,7 @@ define Package/wifiHandleController
 	SECTION:=inspectron
 	CATEGORY:=inspectron
 	TITLE:=wifiHandleController
-	DEPENDS:=+qt5-core +qt5-network +atomic +glib2 +gstreamer1 +stdc++ +libqmqtt
+	DEPENDS:=+qt5-core +qt5-network +glib2 +gstreamer1 +libqmqtt
 endef
 
 # Package description; a more verbose description on what our package does
@@ -35,6 +35,10 @@ define Build/Compile
 	cd $(PKG_BUILD_DIR); $(MAKE) CXXFLAGS="-I$(STAGING_DIR)/usr/include/gstreamer-1.0 -I$(STAGING_DIR)/usr/include/glib-2.0"
 endef
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/root
+	$(CP) $(PKG_BUILD_DIR)/wifiHandleController $(1)/root
+endef
 
 define Package/wifiHandleController/install
 	$(INSTALL_DIR) $(1)/root

@@ -35,10 +35,16 @@ define Build/Compile
         cd $(PKG_BUILD_DIR); $(MAKE)
 endef
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/trunk/*.hpp $(1)/usr/include/
+	$(INSTALL_DIR) $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/libInspHardware.so* $(1)/usr/lib/
+endef
 
 define Package/libInspHardware/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libInspHardware.so* $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libInspHardware.so* $(1)/usr/lib
 endef
 
 # This command is always the last, it uses the definitions and variables we give above in order to get the job done
