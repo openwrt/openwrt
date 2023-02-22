@@ -1033,8 +1033,7 @@ define Device/qxwlan_e2600ac-c1
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEFAULT := n
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += qxwlan_e2600ac-c1
+TARGET_DEVICES += qxwlan_e2600ac-c1
 
 define Device/qxwlan_e2600ac-c2
 	$(call Device/FitImage)
