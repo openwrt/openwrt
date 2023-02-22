@@ -1045,7 +1045,6 @@ define Device/qxwlan_e2600ac-c1
 	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac-c1
 	DEFAULT := n
 endef
-# Missing DSA Setup
 TARGET_DEVICES += qxwlan_e2600ac-c1
 
 define Device/qxwlan_e2600ac-c2
@@ -1060,8 +1059,7 @@ define Device/qxwlan_e2600ac-c2
 	PAGESIZE := 2048
 	DEVICE_PACKAGES := ipq-wifi-qxwlan_e2600ac-c2
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += qxwlan_e2600ac-c2
+TARGET_DEVICES += qxwlan_e2600ac-c2
 
 define Device/sony_ncp-hg100-cellular
 	$(call Device/FitImage)
