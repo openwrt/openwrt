@@ -1,0 +1,28 @@
+From ed3f83b3459a67a3ab9d806490ac304b567b1c2d Mon Sep 17 00:00:00 2001
+From: Miaoqian Lin <linmq006@gmail.com>
+Date: Mon, 2 Jan 2023 12:11:42 +0400
+Subject: [PATCH] wifi: ath11k: Fix memory leak in ath11k_peer_rx_frag_setup
+
+crypto_alloc_shash() allocates resources, which should be released by
+crypto_free_shash(). When ath11k_peer_find() fails, there has memory
+leak. Add missing crypto_free_shash() to fix this.
+
+Fixes: 243874c64c81 ("ath11k: handle RX fragments")
+Signed-off-by: Miaoqian Lin <linmq006@gmail.com>
+Reviewed-by: Leon Romanovsky <leonro@nvidia.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20230102081142.3937570-1-linmq006@gmail.com
+---
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -3126,6 +3126,7 @@ int ath11k_peer_rx_frag_setup(struct ath
+ 	if (!peer) {
+ 		ath11k_warn(ab, "failed to find the peer to set up fragment info\n");
+ 		spin_unlock_bh(&ab->base_lock);
++		crypto_free_shash(tfm);
+ 		return -ENOENT;
+ 	}
+ 
