@@ -1046,8 +1046,7 @@ define Device/qxwlan_e2600ac-c2
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += qxwlan_e2600ac-c2
+TARGET_DEVICES += qxwlan_e2600ac-c2
 
 define Device/sony_ncp-hg100-cellular
 	$(call Device/FitImage)

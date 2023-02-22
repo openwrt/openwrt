@@ -100,6 +100,9 @@ ipq40xx_setup_interfaces()
 	qxwlan,e2600ac-c1)
 		ucidef_set_interfaces_lan_wan "sw-eth1" "sw-eth2"
 		;;
+	qxwlan,e2600ac-c2)
+		ucidef_set_interfaces_lan_wan "sw-eth1 sw-eth2" "sw-eth3"
+		;;
 	zte,mf286d)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
 		;;
