@@ -103,9 +103,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 +	if (cell_spec.args_count)
 +		cell_index = cell_spec.args[0];
  
- 	nvmem_np = of_get_next_parent(cell_np);
- 	if (!nvmem_np)
-@@ -1255,7 +1270,7 @@ struct nvmem_cell *of_nvmem_cell_get(str
+ 	nvmem_np = of_get_parent(cell_np);
+ 	if (!nvmem_np) {
+@@ -1260,7 +1275,7 @@ struct nvmem_cell *of_nvmem_cell_get(str
  		return ERR_PTR(-ENOENT);
  	}
  
@@ -114,7 +114,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	if (IS_ERR(cell))
  		__nvmem_device_put(nvmem);
  
-@@ -1408,8 +1423,8 @@ static void nvmem_shift_read_buffer_in_p
+@@ -1413,8 +1428,8 @@ static void nvmem_shift_read_buffer_in_p
  }
  
  static int __nvmem_cell_read(struct nvmem_device *nvmem,
@@ -125,7 +125,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  {
  	int rc;
  
-@@ -1423,7 +1438,7 @@ static int __nvmem_cell_read(struct nvme
+@@ -1428,7 +1443,7 @@ static int __nvmem_cell_read(struct nvme
  		nvmem_shift_read_buffer_in_place(cell, buf);
  
  	if (nvmem->cell_post_process) {
@@ -134,7 +134,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  					      cell->offset, buf, cell->bytes);
  		if (rc)
  			return rc;
-@@ -1458,7 +1473,7 @@ void *nvmem_cell_read(struct nvmem_cell
+@@ -1463,7 +1478,7 @@ void *nvmem_cell_read(struct nvmem_cell
  	if (!buf)
  		return ERR_PTR(-ENOMEM);
  
@@ -143,7 +143,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	if (rc) {
  		kfree(buf);
  		return ERR_PTR(rc);
-@@ -1771,7 +1786,7 @@ ssize_t nvmem_device_cell_read(struct nv
+@@ -1776,7 +1791,7 @@ ssize_t nvmem_device_cell_read(struct nv
  	if (rc)
  		return rc;
  
