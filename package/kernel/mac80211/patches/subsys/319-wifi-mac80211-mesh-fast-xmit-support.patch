@@ -132,7 +132,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	u16 hdrlen;
 +	u8 pn_offs;
 +	u8 band;
-+	struct ieee80211_key __rcu *key;
++	struct ieee80211_key *key;
 +	struct hlist_node walk_list;
 +	struct rhash_head rhash;
 +	struct mesh_path *mpath, *mppath;
@@ -143,7 +143,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Recent multicast cache */
  /* RMC_BUCKETS must be a power of 2, maximum 256 */
  #define RMC_BUCKETS		256
-@@ -298,6 +336,15 @@ void mesh_path_discard_frame(struct ieee
+@@ -298,6 +336,18 @@ void mesh_path_discard_frame(struct ieee
  void mesh_path_tx_root_frame(struct ieee80211_sub_if_data *sdata);
  
  bool mesh_action_is_path_sel(struct ieee80211_mgmt *mgmt);
@@ -152,8 +152,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +void mesh_cache_hdr(struct ieee80211_sub_if_data *sdata,
 +		    struct sk_buff *skb, struct mesh_path *mpath);
 +void mesh_hdr_cache_gc(struct ieee80211_sub_if_data *sdata);
-+void mesh_hdr_cache_flush(struct ieee80211_sub_if_data *sdata, const u8 *addr,
-+			  bool is_mpp);
++void mesh_hdr_cache_flush_mpp(struct ieee80211_sub_if_data *sdata,
++			      const u8 *addr);
++void mesh_hdr_cache_flush_mpath(struct mesh_path *mpath);
++void mesh_hdr_cache_flush_sta(struct ieee80211_sub_if_data *sdata,
++			      struct sta_info *sta);
 +void mesh_refresh_path(struct ieee80211_sub_if_data *sdata,
 +		       struct mesh_path *mpath, const u8 *addr);
  
@@ -161,33 +164,57 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static inline
 --- a/net/mac80211/mesh_hwmp.c
 +++ b/net/mac80211/mesh_hwmp.c
-@@ -491,8 +491,11 @@ static u32 hwmp_route_info_get(struct ie
+@@ -394,6 +394,7 @@ static u32 hwmp_route_info_get(struct ie
+ 	u32 orig_sn, orig_metric;
+ 	unsigned long orig_lifetime, exp_time;
+ 	u32 last_hop_metric, new_metric;
++	bool flush_mpath = false;
+ 	bool process = true;
+ 	u8 hopcount;
+ 
+@@ -491,8 +492,10 @@ static u32 hwmp_route_info_get(struct ie
  		}
  
  		if (fresh_info) {
 -			if (rcu_access_pointer(mpath->next_hop) != sta)
 +			if (rcu_access_pointer(mpath->next_hop) != sta) {
  				mpath->path_change_count++;
-+				mesh_hdr_cache_flush(mpath->sdata, mpath->dst,
-+						     false);
++				flush_mpath = true;
 +			}
  			mesh_path_assign_nexthop(mpath, sta);
  			mpath->flags |= MESH_PATH_SN_VALID;
  			mpath->metric = new_metric;
-@@ -539,8 +542,11 @@ static u32 hwmp_route_info_get(struct ie
+@@ -502,6 +505,8 @@ static u32 hwmp_route_info_get(struct ie
+ 			mpath->hop_count = hopcount;
+ 			mesh_path_activate(mpath);
+ 			spin_unlock_bh(&mpath->state_lock);
++			if (flush_mpath)
++				mesh_hdr_cache_flush_mpath(mpath);
+ 			ewma_mesh_fail_avg_init(&sta->mesh->fail_avg);
+ 			/* init it at a low value - 0 start is tricky */
+ 			ewma_mesh_fail_avg_add(&sta->mesh->fail_avg, 1);
+@@ -539,8 +544,10 @@ static u32 hwmp_route_info_get(struct ie
  		}
  
  		if (fresh_info) {
 -			if (rcu_access_pointer(mpath->next_hop) != sta)
 +			if (rcu_access_pointer(mpath->next_hop) != sta) {
  				mpath->path_change_count++;
-+				mesh_hdr_cache_flush(mpath->sdata, mpath->dst,
-+						     false);
++				flush_mpath = true;
 +			}
  			mesh_path_assign_nexthop(mpath, sta);
  			mpath->metric = last_hop_metric;
  			mpath->exp_time = time_after(mpath->exp_time, exp_time)
-@@ -977,7 +983,7 @@ free:
+@@ -548,6 +555,8 @@ static u32 hwmp_route_info_get(struct ie
+ 			mpath->hop_count = 1;
+ 			mesh_path_activate(mpath);
+ 			spin_unlock_bh(&mpath->state_lock);
++			if (flush_mpath)
++				mesh_hdr_cache_flush_mpath(mpath);
+ 			ewma_mesh_fail_avg_init(&sta->mesh->fail_avg);
+ 			/* init it at a low value - 0 start is tricky */
+ 			ewma_mesh_fail_avg_add(&sta->mesh->fail_avg, 1);
+@@ -977,7 +986,7 @@ free:
   * Locking: the function must be called from within a rcu read lock block.
   *
   */
@@ -196,7 +223,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct ieee80211_sub_if_data *sdata = mpath->sdata;
  	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
-@@ -1215,6 +1221,20 @@ static int mesh_nexthop_lookup_nolearn(s
+@@ -1215,6 +1224,20 @@ static int mesh_nexthop_lookup_nolearn(s
  	return 0;
  }
  
@@ -217,7 +244,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
   * mesh_nexthop_lookup - put the appropriate next hop on a mesh frame. Calling
   * this function is considered "using" the associated mpath, so preempt a path
-@@ -1242,19 +1262,18 @@ int mesh_nexthop_lookup(struct ieee80211
+@@ -1242,19 +1265,18 @@ int mesh_nexthop_lookup(struct ieee80211
  	if (!mpath || !(mpath->flags & MESH_PATH_ACTIVE))
  		return -ENOENT;
  
@@ -295,14 +322,21 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static inline bool mpath_expired(struct mesh_path *mpath)
  {
  	return (mpath->flags & MESH_PATH_ACTIVE) &&
-@@ -381,6 +417,211 @@ struct mesh_path *mesh_path_new(struct i
+@@ -381,6 +417,254 @@ struct mesh_path *mesh_path_new(struct i
  	return new_mpath;
  }
  
++static void mesh_hdr_cache_entry_free(struct mesh_hdr_cache *cache,
++				      struct mhdr_cache_entry *entry)
++{
++	hlist_del_rcu(&entry->walk_list);
++	rhashtable_remove_fast(&cache->rhead, &entry->rhash, mesh_hdr_rht_params);
++	kfree_rcu(entry, rcu);
++}
++
 +struct mhdr_cache_entry *
 +mesh_get_cached_hdr(struct ieee80211_sub_if_data *sdata, const u8 *addr)
 +{
-+	struct mesh_path *mpath, *mppath;
 +	struct mhdr_cache_entry *entry;
 +	struct mesh_hdr_cache *cache;
 +
@@ -311,14 +345,19 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!entry)
 +		return NULL;
 +
-+	mpath = rcu_dereference(entry->mpath);
-+	mppath = rcu_dereference(entry->mppath);
-+	if (!(mpath->flags & MESH_PATH_ACTIVE) || mpath_expired(mpath))
++	if (!(entry->mpath->flags & MESH_PATH_ACTIVE) ||
++	    mpath_expired(entry->mpath)) {
++		spin_lock_bh(&cache->walk_lock);
++		entry = rhashtable_lookup(&cache->rhead, addr, mesh_hdr_rht_params);
++		if (entry)
++		    mesh_hdr_cache_entry_free(cache, entry);
++		spin_unlock_bh(&cache->walk_lock);
 +		return NULL;
++	}
 +
-+	mesh_refresh_path(sdata, mpath, NULL);
-+	if (mppath)
-+		mppath->exp_time = jiffies;
++	mesh_refresh_path(sdata, entry->mpath, NULL);
++	if (entry->mppath)
++		entry->mppath->exp_time = jiffies;
 +	entry->timestamp = jiffies;
 +
 +	return entry;
@@ -332,7 +371,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	struct mesh_hdr_cache *cache;
 +	struct mhdr_cache_entry *mhdr, *old_mhdr;
 +	struct ieee80211s_hdr *meshhdr;
-+	struct sta_info *next_hop;
++	struct sta_info *sta;
 +	struct ieee80211_key *key;
 +	struct mesh_path *mppath;
 +	u16 meshhdr_len;
@@ -353,8 +392,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (atomic_read(&cache->rhead.nelems) >= MESH_HEADER_CACHE_MAX_SIZE)
 +		return;
 +
-+	next_hop = rcu_dereference(mpath->next_hop);
-+	if (!next_hop)
++	sta = rcu_dereference(mpath->next_hop);
++	if (!sta)
 +		return;
 +
 +	if ((meshhdr->flags & MESH_FLAGS_AE) == MESH_FLAGS_AE_A5_A6) {
@@ -374,7 +413,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	mppath->fast_xmit_check = jiffies;
 +
-+	key = rcu_access_pointer(next_hop->ptk[next_hop->ptk_idx]);
++	/*
++	 * Same use of the sta lock as in ieee80211_check_fast_xmit, in order
++	 * to protect against concurrent sta key updates.
++	 */
++	spin_lock_bh(&sta->lock);
++	key = rcu_access_pointer(sta->ptk[sta->ptk_idx]);
 +	if (!key)
 +		key = rcu_access_pointer(sdata->default_unicast_key);
 +
@@ -386,7 +430,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +		if (!(key->flags & KEY_FLAG_UPLOADED_TO_HARDWARE) ||
 +		    (key->flags & KEY_FLAG_TAINTED))
-+			return;
++			goto unlock_sta;
 +
 +		switch (key->conf.cipher) {
 +		case WLAN_CIPHER_SUITE_CCMP:
@@ -404,25 +448,25 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +				hdrlen += IEEE80211_GCMP_HDR_LEN;
 +			break;
 +		default:
-+			return;
++			goto unlock_sta;
 +		}
 +	}
 +
 +	if (WARN_ON_ONCE(hdrlen + meshhdr_len + sizeof(rfc1042_header) >
 +			 MESH_HEADER_MAX_LEN))
-+		return;
++		goto unlock_sta;
 +
 +	mhdr = kzalloc(sizeof(*mhdr), GFP_ATOMIC);
 +	if (!mhdr)
-+		return;
++		goto unlock_sta;
 +
 +	memcpy(mhdr->addr_key, mppath->dst, ETH_ALEN);
 +	mhdr->machdr_len = hdrlen;
 +	mhdr->hdrlen = mhdr->machdr_len + meshhdr_len + sizeof(rfc1042_header);
-+	rcu_assign_pointer(mhdr->mpath, mpath);
++	mhdr->mpath = mpath;
 +	if (meshhdr->flags & MESH_FLAGS_AE)
-+		rcu_assign_pointer(mhdr->mppath, mppath);
-+	rcu_assign_pointer(mhdr->key, key);
++		mhdr->mppath = mppath;
++	mhdr->key = key;
 +	mhdr->timestamp = jiffies;
 +	mhdr->band = info->band;
 +	mhdr->pn_offs = pn_offs;
@@ -444,19 +488,28 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	old_mhdr = rhashtable_lookup_get_insert_fast(&cache->rhead,
 +						     &mhdr->rhash,
 +						     mesh_hdr_rht_params);
-+	if (likely(!old_mhdr))
-+		hlist_add_head(&mhdr->walk_list, &cache->walk_head);
-+	else
++	if (unlikely(IS_ERR(old_mhdr))) {
 +		kfree(mhdr);
-+	spin_unlock_bh(&cache->walk_lock);
-+}
++		goto unlock_cache;
++	}
 +
-+static void mesh_hdr_cache_entry_free(struct mesh_hdr_cache *cache,
-+				      struct mhdr_cache_entry *entry)
-+{
-+	hlist_del_rcu(&entry->walk_list);
-+	rhashtable_remove_fast(&cache->rhead, &entry->rhash, mesh_hdr_rht_params);
-+	kfree_rcu(entry, rcu);
++	/*
++	 * replace any previous entry in the hash table, in case we're
++	 * replacing it with a different type (e.g. mpath -> mpp)
++	 */
++	if (unlikely(old_mhdr)) {
++		rhashtable_replace_fast(&cache->rhead, &old_mhdr->rhash,
++					&mhdr->rhash, mesh_hdr_rht_params);
++		hlist_del_rcu(&old_mhdr->walk_list);
++		kfree_rcu(old_mhdr, rcu);
++	}
++
++	hlist_add_head(&mhdr->walk_list, &cache->walk_head);
++
++unlock_cache:
++	spin_unlock_bh(&cache->walk_lock);
++unlock_sta:
++	spin_unlock_bh(&sta->lock);
 +}
 +
 +void mesh_hdr_cache_gc(struct ieee80211_sub_if_data *sdata)
@@ -477,8 +530,23 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	spin_unlock_bh(&cache->walk_lock);
 +}
 +
-+void mesh_hdr_cache_flush(struct ieee80211_sub_if_data *sdata, const u8 *addr,
-+			  bool is_mpp)
++void mesh_hdr_cache_flush_mpath(struct mesh_path *mpath)
++{
++	struct ieee80211_sub_if_data *sdata = mpath->sdata;
++	struct mesh_hdr_cache *cache = &sdata->u.mesh.hdr_cache;
++	struct mhdr_cache_entry *entry;
++	struct hlist_node *n;
++
++	cache = &sdata->u.mesh.hdr_cache;
++	spin_lock_bh(&cache->walk_lock);
++	hlist_for_each_entry_safe(entry, n, &cache->walk_head, walk_list)
++		if (entry->mpath == mpath)
++			mesh_hdr_cache_entry_free(cache, entry);
++	spin_unlock_bh(&cache->walk_lock);
++}
++
++void mesh_hdr_cache_flush_sta(struct ieee80211_sub_if_data *sdata,
++			      struct sta_info *sta)
 +{
 +	struct mesh_hdr_cache *cache = &sdata->u.mesh.hdr_cache;
 +	struct mhdr_cache_entry *entry;
@@ -486,45 +554,58 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	cache = &sdata->u.mesh.hdr_cache;
 +	spin_lock_bh(&cache->walk_lock);
-+
-+	/* Only one header per mpp address is expected in the header cache */
-+	if (is_mpp) {
-+		entry = rhashtable_lookup(&cache->rhead, addr,
-+					  mesh_hdr_rht_params);
-+		if (entry)
-+			mesh_hdr_cache_entry_free(cache, entry);
-+		goto out;
-+	}
-+
 +	hlist_for_each_entry_safe(entry, n, &cache->walk_head, walk_list)
-+		if (ether_addr_equal(entry->mpath->dst, addr))
++		if (rcu_access_pointer(entry->mpath->next_hop) == sta)
 +			mesh_hdr_cache_entry_free(cache, entry);
++	spin_unlock_bh(&cache->walk_lock);
++}
 +
-+out:
++void mesh_hdr_cache_flush_mpp(struct ieee80211_sub_if_data *sdata,
++			      const u8 *addr)
++{
++	struct mesh_hdr_cache *cache = &sdata->u.mesh.hdr_cache;
++	struct mhdr_cache_entry *entry;
++
++	cache = &sdata->u.mesh.hdr_cache;
++	spin_lock_bh(&cache->walk_lock);
++	entry = rhashtable_lookup(&cache->rhead, addr, mesh_hdr_rht_params);
++	if (entry)
++		mesh_hdr_cache_entry_free(cache, entry);
 +	spin_unlock_bh(&cache->walk_lock);
 +}
 +
  /**
   * mesh_path_add - allocate and add a new path to the mesh path table
   * @dst: destination address of the path (ETH_ALEN length)
-@@ -521,6 +762,8 @@ static void mesh_path_free_rcu(struct me
+@@ -464,6 +748,8 @@ int mpp_path_add(struct ieee80211_sub_if
  
- static void __mesh_path_del(struct mesh_table *tbl, struct mesh_path *mpath)
+ 	if (ret)
+ 		kfree(new_mpath);
++	else
++		mesh_hdr_cache_flush_mpp(sdata, dst);
+ 
+ 	sdata->u.mesh.mpp_paths_generation++;
+ 	return ret;
+@@ -523,6 +809,10 @@ static void __mesh_path_del(struct mesh_
  {
-+	mesh_hdr_cache_flush(mpath->sdata, mpath->dst,
-+			     tbl == &mpath->sdata->u.mesh.mpp_paths);
  	hlist_del_rcu(&mpath->walk_list);
  	rhashtable_remove_fast(&tbl->rhead, &mpath->rhash, mesh_rht_params);
++	if (tbl == &mpath->sdata->u.mesh.mpp_paths)
++		mesh_hdr_cache_flush_mpp(mpath->sdata, mpath->dst);
++	else
++		mesh_hdr_cache_flush_mpath(mpath);
  	mesh_path_free_rcu(tbl, mpath);
-@@ -747,6 +990,7 @@ void mesh_path_fix_nexthop(struct mesh_p
+ }
+ 
+@@ -747,6 +1037,7 @@ void mesh_path_fix_nexthop(struct mesh_p
  	mpath->exp_time = 0;
  	mpath->flags = MESH_PATH_FIXED | MESH_PATH_SN_VALID;
  	mesh_path_activate(mpath);
-+	mesh_hdr_cache_flush(mpath->sdata, mpath->dst, false);
++	mesh_hdr_cache_flush_mpath(mpath);
  	spin_unlock_bh(&mpath->state_lock);
  	ewma_mesh_fail_avg_init(&next_hop->mesh->fail_avg);
  	/* init it at a low value - 0 start is tricky */
-@@ -758,6 +1002,7 @@ void mesh_pathtbl_init(struct ieee80211_
+@@ -758,6 +1049,7 @@ void mesh_pathtbl_init(struct ieee80211_
  {
  	mesh_table_init(&sdata->u.mesh.mesh_paths);
  	mesh_table_init(&sdata->u.mesh.mpp_paths);
@@ -532,7 +613,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static
-@@ -785,6 +1030,7 @@ void mesh_path_expire(struct ieee80211_s
+@@ -785,6 +1077,7 @@ void mesh_path_expire(struct ieee80211_s
  
  void mesh_pathtbl_unregister(struct ieee80211_sub_if_data *sdata)
  {
@@ -565,7 +646,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +		/* flush fast xmit cache if the address path changed */
 +		if (update)
-+			mesh_hdr_cache_flush(sdata, proxied_addr, true);
++			mesh_hdr_cache_flush_mpp(sdata, proxied_addr);
 +
  		rcu_read_unlock();
  	}
@@ -577,12 +658,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return;
  
 +	if (ieee80211_vif_is_mesh(&sdata->vif))
-+		mesh_hdr_cache_flush(sdata, sta->addr, false);
++		mesh_hdr_cache_flush_sta(sdata, sta);
 +
  	/* Locking here protects both the pointer itself, and against concurrent
  	 * invocations winning data access races to, e.g., the key pointer that
  	 * is used.
-@@ -3723,6 +3726,155 @@ free:
+@@ -3723,6 +3726,162 @@ free:
  	kfree_skb(skb);
  }
  
@@ -593,6 +674,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	struct ieee80211_local *local = sdata->local;
 +	struct ieee80211_tx_data tx = {};
 +	struct ieee80211_tx_info *info;
++	struct tid_ampdu_tx *tid_tx;
 +	struct ieee80211_key *key;
 +	struct ieee80211_hdr *hdr;
 +	struct mesh_path *mpath;
@@ -633,6 +715,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	hdr = (struct ieee80211_hdr *)skb->data;
 +	tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
 +	*ieee80211_get_qos_ctl(hdr) = tid;
++	tid_tx = rcu_dereference(sta->ampdu_mlme.tid_tx[tid]);
++	if (tid_tx) {
++		if (tid_tx->timeout)
++			tid_tx->last_tx = jiffies;
++		info->flags |= IEEE80211_TX_CTL_AMPDU;
++	}
 +
 +	ieee80211_aggr_check(sdata, sta, skb);
 +
@@ -662,13 +750,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	bool copy_sa = false;
 +	u16 ethertype;
 +
++	if (!ieee80211_hw_check(&local->hw, SUPPORT_FAST_XMIT))
++		return false;
++
 +	if (ctrl_flags & IEEE80211_TX_CTRL_SKIP_MPATH_LOOKUP)
 +		return false;
 +
 +	if (ifmsh->mshcfg.dot11MeshNolearn)
-+		return false;
-+
-+	if (!ieee80211_hw_check(&local->hw, SUPPORT_FAST_XMIT))
 +		return false;
 +
 +	/* Add support for these cases later */
@@ -738,7 +826,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static bool ieee80211_xmit_fast(struct ieee80211_sub_if_data *sdata,
  				struct sta_info *sta,
  				struct ieee80211_fast_tx *fast_tx,
-@@ -4244,8 +4396,14 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4244,8 +4403,14 @@ void __ieee80211_subif_start_xmit(struct
  		return;
  	}
  
@@ -753,7 +841,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (ieee80211_lookup_ra_sta(sdata, skb, &sta))
  		goto out_free;
  
-@@ -4255,8 +4413,6 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4255,8 +4420,6 @@ void __ieee80211_subif_start_xmit(struct
  	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
  	ieee80211_aggr_check(sdata, sta, skb);
  
