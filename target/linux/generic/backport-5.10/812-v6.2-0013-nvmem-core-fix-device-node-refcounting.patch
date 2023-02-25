@@ -21,7 +21,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -1242,16 +1242,21 @@ struct nvmem_cell *of_nvmem_cell_get(str
+@@ -1237,16 +1237,21 @@ struct nvmem_cell *of_nvmem_cell_get(str
  	if (!cell_np)
  		return ERR_PTR(-ENOENT);
  

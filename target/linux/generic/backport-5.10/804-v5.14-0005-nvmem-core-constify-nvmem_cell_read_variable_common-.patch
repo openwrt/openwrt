@@ -19,7 +19,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -1614,9 +1614,9 @@ int nvmem_cell_read_u64(struct device *d
+@@ -1615,9 +1615,9 @@ int nvmem_cell_read_u64(struct device *d
  }
  EXPORT_SYMBOL_GPL(nvmem_cell_read_u64);
  
@@ -32,7 +32,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  {
  	struct nvmem_cell *cell;
  	int nbits;
-@@ -1660,7 +1660,7 @@ int nvmem_cell_read_variable_le_u32(stru
+@@ -1661,7 +1661,7 @@ int nvmem_cell_read_variable_le_u32(stru
  				    u32 *val)
  {
  	size_t len;
@@ -41,7 +41,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	int i;
  
  	buf = nvmem_cell_read_variable_common(dev, cell_id, sizeof(*val), &len);
-@@ -1691,7 +1691,7 @@ int nvmem_cell_read_variable_le_u64(stru
+@@ -1692,7 +1692,7 @@ int nvmem_cell_read_variable_le_u64(stru
  				    u64 *val)
  {
  	size_t len;
