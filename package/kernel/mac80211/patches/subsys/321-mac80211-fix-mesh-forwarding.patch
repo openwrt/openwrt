@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2847,6 +2847,9 @@ ieee80211_rx_mesh_data(struct ieee80211_
+@@ -2904,6 +2904,9 @@ ieee80211_rx_mesh_data(struct ieee80211_
  
  		if (skb_cow_head(fwd_skb, hdrlen - sizeof(struct ethhdr)))
  			return RX_DROP_UNUSABLE;
@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	fwd_hdr = skb_push(fwd_skb, hdrlen - sizeof(struct ethhdr));
-@@ -2861,7 +2864,7 @@ ieee80211_rx_mesh_data(struct ieee80211_
+@@ -2918,7 +2921,7 @@ ieee80211_rx_mesh_data(struct ieee80211_
  		hdrlen += ETH_ALEN;
  	else
  		fwd_skb->protocol = htons(fwd_skb->len - hdrlen);
