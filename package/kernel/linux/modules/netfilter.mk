@@ -39,6 +39,17 @@ endef
 
 $(eval $(call KernelPackage,nf-reject6))
 
+define KernelPackage/nf-conncount
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter conncount support
+  KCONFIG:=$(KCONFIG_NF_CONNCOUNT)
+  HIDDEN:=1
+  DEPENDS:=+kmod-nf-conntrack
+  FILES:=$(foreach mod,$(NF_CONNCOUNT-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_CONNCOUNT-m)))
+endef
+
+$(eval $(call KernelPackage,nf-conncount))
 
 define KernelPackage/nf-ipt
   SUBMENU:=$(NF_MENU)
@@ -234,6 +245,7 @@ $(eval $(call KernelPackage,ipt-conntrack))
 
 define KernelPackage/ipt-conntrack-extra
   TITLE:=Extra connection tracking modules
+  DEPENDS:=+kmod-nf-conncount
   KCONFIG:=$(KCONFIG_IPT_CONNTRACK_EXTRA)
   FILES:=$(foreach mod,$(IPT_CONNTRACK_EXTRA-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_CONNTRACK_EXTRA-m)))
@@ -1254,3 +1266,14 @@ define KernelPackage/nft-xfrm
 endef
 
 $(eval $(call KernelPackage,nft-xfrm))
+
+define KernelPackage/nft-connlimit
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter nf_tables connlimit support
+  DEPENDS:=+kmod-nft-core +kmod-nf-conncount
+  FILES:=$(foreach mod,$(NFT_CONNLIMIT-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_CONNLIMIT-m)))
+  KCONFIG:=$(KCONFIG_NFT_CONNLIMIT)
+endef
+
+$(eval $(call KernelPackage,nft-connlimit))

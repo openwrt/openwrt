@@ -10,13 +10,15 @@
 		device_type = "memory";
 	};
 
-	ramoops@42100000 {
-		compatible = "ramoops";
-		reg = <0x42100000 0x40000>;
-		record-size = <0x4000>;
-		console-size = <0x4000>;
-		ftrace-size = <0x4000>;
-		pmsg-size = <0x4000>;
+	reserved-memory {
+		ramoops@42100000 {
+			compatible = "ramoops";
+			reg = <0x42100000 0x40000>;
+			record-size = <0x4000>;
+			console-size = <0x4000>;
+			ftrace-size = <0x4000>;
+			pmsg-size = <0x4000>;
+		};
 	};
 
 	aliases {

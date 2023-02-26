@@ -1010,6 +1010,19 @@ define Device/dlink_dir-505
 endef
 TARGET_DEVICES += dlink_dir-505
 
+define Device/dlink_dir-629-a1
+  $(Device/seama)
+  SOC := qca9558
+  IMAGE_SIZE := 7616k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-629
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := -uboot-envtools
+  SEAMA_MTDBLOCK := 6
+  SEAMA_SIGNATURE := wrgn83_dlob.hans_dir629
+endef
+TARGET_DEVICES += dlink_dir-629-a1
+
 define Device/dlink_dir-825-b1
   SOC := ar7161
   DEVICE_VENDOR := D-Link
@@ -1286,6 +1299,48 @@ define Device/engenius_epg5000
 endef
 TARGET_DEVICES += engenius_epg5000
 
+define Device/engenius_esr1200
+  SOC := qca9557
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ESR1200
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2
+  IMAGE_SIZE := 14656k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | \
+	senao-header -r 0x101 -p 0x61 -t 2
+  SUPPORTED_DEVICES += esr1200 esr1750 engenius,esr1750
+endef
+TARGET_DEVICES += engenius_esr1200
+
+define Device/engenius_esr1750
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ESR1750
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct kmod-usb2
+  IMAGE_SIZE := 14656k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | \
+	senao-header -r 0x101 -p 0x62 -t 2
+  SUPPORTED_DEVICES += esr1750 esr1200 engenius,esr1200
+endef
+TARGET_DEVICES += engenius_esr1750
+
+define Device/engenius_esr900
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := ESR900
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGE_SIZE := 14656k
+  IMAGES += factory.dlf
+  IMAGE/factory.dlf := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | \
+	senao-header -r 0x101 -p 0x4e -t 2
+  SUPPORTED_DEVICES += esr900
+endef
+TARGET_DEVICES += engenius_esr900
+
 define Device/engenius_ews511ap
   SOC := qca9531
   DEVICE_VENDOR := EnGenius
@@ -1294,6 +1349,18 @@ define Device/engenius_ews511ap
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += engenius_ews511ap
+
+define Device/engenius_ews660ap
+  $(Device/senao_loader_okli)
+  SOC := qca9558
+  DEVICE_VENDOR := EnGenius
+  DEVICE_MODEL := EWS660AP
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
+  IMAGE_SIZE := 11584k
+  LOADER_FLASH_OFFS := 0x220000
+  SENAO_IMGNAME := ar71xx-generic-ews660ap
+endef
+TARGET_DEVICES += engenius_ews660ap
 
 define Device/enterasys_ws-ap3705i
   SOC := ar9344
@@ -1452,7 +1519,7 @@ define Device/hak5_lan-turtle
   TPLINK_HWID := 0x5348334c
   IMAGES := sysupgrade.bin
   DEVICE_PACKAGES := kmod-usb-chipidea2 -iwinfo -kmod-ath9k -swconfig \
-	-uboot-envtools -wpad-basic-wolfssl
+	-uboot-envtools -wpad-basic-mbedtls
   SUPPORTED_DEVICES += lan-turtle
 endef
 TARGET_DEVICES += hak5_lan-turtle
@@ -1465,7 +1532,7 @@ define Device/hak5_packet-squirrel
   TPLINK_HWID := 0x5351524c
   IMAGES := sysupgrade.bin
   DEVICE_PACKAGES := kmod-usb-chipidea2 -iwinfo -kmod-ath9k -swconfig \
-	-uboot-envtools -wpad-basic-wolfssl
+	-uboot-envtools -wpad-basic-mbedtls
   SUPPORTED_DEVICES += packet-squirrel
 endef
 TARGET_DEVICES += hak5_packet-squirrel
@@ -1500,7 +1567,7 @@ define Device/iodata_etg3-r
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := ETG3-R
   IMAGE_SIZE := 7680k
-  DEVICE_PACKAGES := -iwinfo -kmod-ath9k -wpad-basic-wolfssl
+  DEVICE_PACKAGES := -iwinfo -kmod-ath9k -wpad-basic-mbedtls
 endef
 TARGET_DEVICES += iodata_etg3-r
 
@@ -1560,7 +1627,7 @@ define Device/jjplus_ja76pf2
   SOC := ar7161
   DEVICE_VENDOR := jjPlus
   DEVICE_MODEL := JA76PF2
-  DEVICE_PACKAGES += -kmod-ath9k -swconfig -wpad-basic-wolfssl -uboot-envtools fconfig kmod-hwmon-lm75
+  DEVICE_PACKAGES += -kmod-ath9k -swconfig -wpad-basic-mbedtls -uboot-envtools fconfig kmod-hwmon-lm75
   LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x60000
   COMPILE := loader-$(1).bin
@@ -1620,13 +1687,15 @@ define Device/letv_lba-047-ch
   SOC := qca9531
   DEVICE_VENDOR := Letv
   DEVICE_MODEL := LBA-047-CH
+  DEVICE_PACKAGES := -uboot-envtools
+  FACTORY_SIZE := 14528k
   IMAGE_SIZE := 15936k
   LOADER_FLASH_OFFS := 0x50000
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | check-size | pad-to 14528k | \
-	append-loader-okli-uimage $(1) | pad-to 64k
+  IMAGES += kernel.bin rootfs.bin
+  IMAGE/kernel.bin := append-loader-okli-uimage $(1) | pad-to 64k
+  IMAGE/rootfs.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size $$$$(FACTORY_SIZE)
 endef
 TARGET_DEVICES += letv_lba-047-ch
 
@@ -1732,41 +1801,45 @@ define Device/nec_wg800hp
 endef
 TARGET_DEVICES += nec_wg800hp
 
-define Device/netgear_ex6400_ex7300
-  $(Device/netgear_generic)
+define Device/netgear_ex7300
   SOC := qca9558
-  UIMAGE_MAGIC := 0x27051956
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := EX7300
+  DEVICE_ALT0_VENDOR := NETGEAR
+  DEVICE_ALT0_MODEL := EX6400
   NETGEAR_BOARD_ID := EX7300series
   NETGEAR_HW_ID := 29765104+16+0+128
   IMAGE_SIZE := 15552k
+  IMAGES += factory.img
   IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 	netgear-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | check-size | append-metadata
   IMAGE/factory.img := $$(IMAGE/default) | netgear-dni | check-size
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca99x0-ct
-endef
-
-define Device/netgear_ex6400
-  $(Device/netgear_ex6400_ex7300)
-  DEVICE_MODEL := EX6400
-endef
-TARGET_DEVICES += netgear_ex6400
-
-define Device/netgear_ex7300
-  $(Device/netgear_ex6400_ex7300)
-  DEVICE_MODEL := EX7300
+  SUPPORTED_DEVICES += netgear,ex6400
 endef
 TARGET_DEVICES += netgear_ex7300
 
 define Device/netgear_ex7300-v2
-  $(Device/netgear_generic)
   SOC := qcn5502
+  DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := EX7300
   DEVICE_VARIANT := v2
-  UIMAGE_MAGIC := 0x27051956
+  DEVICE_ALT0_VENDOR := NETGEAR
+  DEVICE_ALT0_MODEL := EX6250
+  DEVICE_ALT1_VENDOR := NETGEAR
+  DEVICE_ALT1_MODEL := EX6400
+  DEVICE_ALT1_VARIANT := v2
+  DEVICE_ALT2_VENDOR := NETGEAR
+  DEVICE_ALT2_MODEL := EX6410
+  DEVICE_ALT3_VENDOR := NETGEAR
+  DEVICE_ALT3_MODEL := EX6420
+  DEVICE_ALT4_VENDOR := NETGEAR
+  DEVICE_ALT4_MODEL := EX7320
   NETGEAR_BOARD_ID := EX7300v2series
   NETGEAR_HW_ID := 29765907+16+0+128
   IMAGE_SIZE := 14528k
+  IMAGES += factory.img
   IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 	netgear-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin := $$(IMAGE/default) | check-size | append-metadata
@@ -2621,7 +2694,7 @@ define Device/teltonika_rut300
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT300
   SUPPORTED_TELTONIKA_DEVICES := teltonika,rut30x
-  DEVICE_PACKAGES := -kmod-ath9k -uboot-envtools -wpad-basic-wolfssl kmod-usb2
+  DEVICE_PACKAGES := -kmod-ath9k -uboot-envtools -wpad-basic-mbedtls kmod-usb2
   IMAGE_SIZE := 15552k
   IMAGES += factory.bin
   IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \

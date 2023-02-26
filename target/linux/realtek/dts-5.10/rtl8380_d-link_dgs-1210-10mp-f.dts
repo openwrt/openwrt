@@ -112,7 +112,7 @@
 		port@24 {
 			reg = <24>;
 			label = "lan9";
-			phy-handle = <14>;
+			phy-handle = <&phy24>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp0>;
@@ -121,7 +121,7 @@
 		port@26 {
 			reg = <26>;
 			label = "lan10";
-			phy-handle = <15>;
+			phy-handle = <&phy26>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp1>;

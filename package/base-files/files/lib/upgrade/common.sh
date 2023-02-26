@@ -232,7 +232,7 @@ export_partdevice() {
 		while read line; do
 			export -n "$line"
 		done < "$uevent"
-		if [ $BOOTDEV_MAJOR = $MAJOR -a $(($BOOTDEV_MINOR + $offset)) = $MINOR -a -b "/dev/$DEVNAME" ]; then
+		if [ "$BOOTDEV_MAJOR" = "$MAJOR" -a $(($BOOTDEV_MINOR + $offset)) = "$MINOR" -a -b "/dev/$DEVNAME" ]; then
 			export "$var=$DEVNAME"
 			return 0
 		fi

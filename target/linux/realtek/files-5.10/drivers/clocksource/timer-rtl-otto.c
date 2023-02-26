@@ -229,7 +229,6 @@ struct rttm_cs rttm_cs = {
 		.mask	= CLOCKSOURCE_MASK(RTTM_BIT_COUNT),
 		.flags	= CLOCK_SOURCE_IS_CONTINUOUS,
 		.read	= rttm_read_clocksource,
-		.enable	= rttm_enable_clocksource
 	}
 };
 
@@ -244,7 +243,7 @@ static int rttm_cpu_starting(unsigned int cpu)
 
 	RTTM_DEBUG(to->of_base.base);
 	to->clkevt.cpumask = cpumask_of(cpu);
-	irq_set_affinity(to->of_irq.irq, to->clkevt.cpumask);
+	irq_force_affinity(to->of_irq.irq, to->clkevt.cpumask);
 	clockevents_config_and_register(&to->clkevt, RTTM_TICKS_PER_SEC,
 					RTTM_MIN_DELTA, RTTM_MAX_DELTA);
 	rttm_enable_irq(to->of_base.base);
@@ -276,6 +275,7 @@ static int __init rttm_probe(struct device_node *np)
 	to->of_base.index = clkidx;
 	timer_of_init(np, to);
 	if (rttm_cs.to.of_base.base && rttm_cs.to.of_clk.rate) {
+		rttm_enable_clocksource(&rttm_cs.cs);
 		clocksource_register_hz(&rttm_cs.cs, RTTM_TICKS_PER_SEC);
 		sched_clock_register(rttm_read_clock, RTTM_BIT_COUNT, RTTM_TICKS_PER_SEC);
 	} else

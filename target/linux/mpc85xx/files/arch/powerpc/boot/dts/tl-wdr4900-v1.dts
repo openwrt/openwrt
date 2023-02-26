@@ -102,20 +102,78 @@
 		};
 
 		mdio@24000 {
-			phy0: ethernet-phy@0 {
-				reg = <0x0>;
-				qca,ar8327-initvals = <
-					0x00004 0x07600000 /* PAD0_MODE */
-					0x00008 0x00000000 /* PAD5_MODE */
-					0x0000c 0x01000000 /* PAD6_MODE */
-					0x00010 0x40000000 /* POWER_ON_STRAP */
-					0x00050 0xcf35cf35 /* LED_CTRL0 */
-					0x00054 0xcf35cf35 /* LED_CTRL1 */
-					0x00058 0xcf35cf35 /* LED_CTRL2 */
-					0x0005c 0x03ffff00 /* LED_CTRL3 */
-					0x0007c 0x0000007e /* PORT0_STATUS */
-					0x00094 0x00000200 /* PORT6_STATUS */
-				>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+
+			switch@0 {
+				compatible = "qca,qca8327";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x10>;
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					port@0 {
+						reg = <0>;
+						ethernet = <&enet0>;
+						phy-mode = "rgmii-id";
+
+						fixed-link {
+							speed = <1000>;
+							full-duplex;
+						};
+					};
+
+					port@1 {
+						reg = <1>;
+						label = "wan";
+						phy-handle = <&phy_port1>;
+					};
+
+					port@2 {
+						reg = <2>;
+						label = "lan1";
+						phy-handle = <&phy_port2>;
+					};
+
+					port@3 {
+						reg = <3>;
+						label = "lan2";
+						phy-handle = <&phy_port3>;
+					};
+
+					port@4 {
+						reg = <4>;
+						label = "lan3";
+						phy-handle = <&phy_port4>;
+					};
+
+					port@5 {
+						reg = <5>;
+						label = "lan4";
+						phy-handle = <&phy_port5>;
+					};
+				};
 			};
 		};
 
@@ -128,10 +186,14 @@
 		};
 
 		enet0: ethernet@b0000 {
-			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
 			nvmem-cells = <&macaddr_uboot_4fc00>;
 			nvmem-cell-names = "mac-address";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
 
 		enet1: ethernet@b1000 {

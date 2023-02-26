@@ -50,7 +50,6 @@ ath79_setup_interfaces()
 	glinet,gl-usb150|\
 	hak5,wifi-pineapple-nano|\
 	meraki,mr16|\
-	netgear,ex6400|\
 	netgear,ex7300|\
 	netgear,ex7300-v2|\
 	netgear,wndap360|\
@@ -137,6 +136,7 @@ ath79_setup_interfaces()
 	devolo,dvl1750e|\
 	engenius,enstationac-v1|\
 	engenius,ews511ap|\
+	engenius,ews660ap|\
 	ocedo,ursus|\
 	ruckus,zf7372|\
 	ubnt,unifi-ap-outdoor-plus)
@@ -279,6 +279,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:2" "2:lan:1"
 		;;
+	dlink,dir-629-a1|\
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1|\
 	dlink,dir-842-c1|\
@@ -286,6 +287,9 @@ ath79_setup_interfaces()
 	dlink,dir-842-c3|\
 	dlink,dir-859-a1|\
 	engenius,epg5000|\
+	engenius,esr1200|\
+	engenius,esr1750|\
+	engenius,esr900|\
 	sitecom,wlr-7100|\
 	tplink,archer-c2-v3|\
 	tplink,tl-wr1043nd-v4|\
@@ -624,6 +628,9 @@ ath79_setup_macs()
 	dlink,dap-3662-a1)
 		label_mac=$(mtd_get_mac_ascii bdcfg "wlanmac")
 		;;
+	dlink,dir-629-a1)
+		wan_mac=$(mtd_get_mac_text "mfcdata" 0x6a)
+		;;
 	dlink,dir-825-b1|\
 	trendnet,tew-673gru)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
@@ -635,7 +642,6 @@ ath79_setup_macs()
 		;;
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
-		lan_mac=$(mtd_get_mac_text "mac" 0x4)
 		wan_mac=$(mtd_get_mac_text "mac" 0x18)
 		;;
 	dlink,dir-842-c1|\
@@ -662,7 +668,10 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		label_mac=$lan_mac
 		;;
-	engenius,epg5000)
+	engenius,epg5000|\
+	engenius,esr1200|\
+	engenius,esr1750|\
+	engenius,esr900)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;

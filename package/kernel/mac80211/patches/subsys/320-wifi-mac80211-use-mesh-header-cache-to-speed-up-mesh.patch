@@ -1,0 +1,70 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 16 Feb 2023 11:07:30 +0100
+Subject: [PATCH] wifi: mac80211: use mesh header cache to speed up mesh
+ forwarding
+
+Use it to look up the next hop address + sta pointer + key and call
+__ieee80211_mesh_xmit_fast to queue the tx frame.
+
+Significantly reduces mesh forwarding path CPU usage and enables the
+use of iTXQ.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -2731,6 +2731,7 @@ ieee80211_rx_mesh_data(struct ieee80211_
+ 	struct ieee80211_hdr hdr = {
+ 		.frame_control = cpu_to_le16(fc)
+ 	};
++	struct mhdr_cache_entry *entry = NULL;
+ 	struct ieee80211_hdr *fwd_hdr;
+ 	struct ieee80211s_hdr *mesh_hdr;
+ 	struct ieee80211_tx_info *info;
+@@ -2788,7 +2789,12 @@ ieee80211_rx_mesh_data(struct ieee80211_
+ 		return RX_DROP_MONITOR;
+ 	}
+ 
+-	if (mesh_hdr->flags & MESH_FLAGS_AE) {
++	if ((mesh_hdr->flags & MESH_FLAGS_AE) == MESH_FLAGS_AE_A5_A6)
++		entry = mesh_get_cached_hdr(sdata, mesh_hdr->eaddr1);
++	else if (!(mesh_hdr->flags & MESH_FLAGS_AE))
++		entry = mesh_get_cached_hdr(sdata, eth->h_dest);
++
++	if (!entry && (mesh_hdr->flags & MESH_FLAGS_AE)) {
+ 		struct mesh_path *mppath;
+ 		char *proxied_addr;
+ 		bool update = false;
+@@ -2862,11 +2868,23 @@ ieee80211_rx_mesh_data(struct ieee80211_
+ 	info->control.flags |= IEEE80211_TX_INTCFL_NEED_TXPROCESSING;
+ 	info->control.vif = &sdata->vif;
+ 	info->control.jiffies = jiffies;
++	fwd_skb->dev = sdata->dev;
+ 	if (multicast) {
+ 		IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_mcast);
+ 		memcpy(fwd_hdr->addr2, sdata->vif.addr, ETH_ALEN);
+ 		/* update power mode indication when forwarding */
+ 		ieee80211_mps_set_frame_flags(sdata, NULL, fwd_hdr);
++	} else if (entry) {
++		struct ieee80211_hdr *ehdr = (struct ieee80211_hdr *)entry->hdr;
++
++		ether_addr_copy(fwd_hdr->addr1, ehdr->addr1);
++		ether_addr_copy(fwd_hdr->addr2, sdata->vif.addr);
++		IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_unicast);
++		IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_frames);
++		qos[0] = fwd_skb->priority;
++		qos[1] = ieee80211_get_qos_ctl(ehdr)[1];
++		__ieee80211_mesh_xmit_fast(sdata, entry, fwd_skb);
++		return RX_QUEUED;
+ 	} else if (!mesh_nexthop_lookup(sdata, fwd_skb)) {
+ 		/* mesh power mode flags updated in mesh_nexthop_lookup */
+ 		IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_unicast);
+@@ -2883,7 +2901,6 @@ ieee80211_rx_mesh_data(struct ieee80211_
+ 	}
+ 
+ 	IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_frames);
+-	fwd_skb->dev = sdata->dev;
+ 	ieee80211_add_pending_skb(local, fwd_skb);
+ 
+ rx_accept:

@@ -228,8 +228,7 @@ ramips_setup_macs()
 	netgear,r6080|\
 	netgear,r6120|\
 	wrtnode,wrtnode2p|\
-	wrtnode,wrtnode2r|\
-	zyxel,keenetic-extra-ii)
+	wrtnode,wrtnode2r)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
 		;;
 	hiwifi,hc5611|\
@@ -253,7 +252,8 @@ ramips_setup_macs()
 	totolink,lr1200)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
 		;;
-	keenetic,kn-1613)
+	keenetic,kn-1613|\
+	zyxel,keenetic-extra-ii)
 		wan_mac=$(mtd_get_mac_binary rf-eeprom 0x28)
 		;;
 	linksys,e5400)

@@ -1282,6 +1282,8 @@ static void rtl83xx_net_event_work_do(struct work_struct *work)
 	struct rtl838x_switch_priv *priv = net_work->priv;
 
 	rtl83xx_l3_nexthop_update(priv, net_work->gw_addr, net_work->mac);
+
+	kfree(net_work);
 }
 
 static int rtl83xx_netevent_event(struct notifier_block *this,
@@ -1295,13 +1297,6 @@ static int rtl83xx_netevent_event(struct notifier_block *this,
 
 	priv = container_of(this, struct rtl838x_switch_priv, ne_nb);
 
-	net_work = kzalloc(sizeof(*net_work), GFP_ATOMIC);
-	if (!net_work)
-		return NOTIFY_BAD;
-
-	INIT_WORK(&net_work->work, rtl83xx_net_event_work_do);
-	net_work->priv = priv;
-
 	switch (event) {
 	case NETEVENT_NEIGH_UPDATE:
 		if (n->tbl != &arp_tbl)
@@ -1310,9 +1305,15 @@ static int rtl83xx_netevent_event(struct notifier_block *this,
 		port = rtl83xx_port_dev_lower_find(dev, priv);
 		if (port < 0 || !(n->nud_state & NUD_VALID)) {
 			pr_debug("%s: Neigbour invalid, not updating\n", __func__);
-			kfree(net_work);
 			return NOTIFY_DONE;
 		}
+
+		net_work = kzalloc(sizeof(*net_work), GFP_ATOMIC);
+		if (!net_work)
+			return NOTIFY_BAD;
+
+		INIT_WORK(&net_work->work, rtl83xx_net_event_work_do);
+		net_work->priv = priv;
 
 		net_work->mac = ether_addr_to_u64(n->ha);
 		net_work->gw_addr = *(__be32 *) n->primary_key;

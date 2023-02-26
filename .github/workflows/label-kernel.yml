@@ -1,0 +1,45 @@
+# ci:kernel:x86:64 is going to trigger CI kernel check jobs for x86/64 target
+
+name: Build kernel and check patches for target specified in labels
+on:
+  pull_request:
+    types:
+      - labeled
+
+jobs:
+  set_target:
+    if: startsWith(github.event.label.name, 'ci:kernel:')
+    name: Set target
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.set_target.outputs.target }}
+
+    steps:
+      - name: Set target
+        id: set_target
+        env:
+          CI_EVENT_LABEL_NAME: ${{ github.event.label.name }}
+        run: |
+          echo "$CI_EVENT_LABEL_NAME" | sed -n 's/.*:\(.*\):\(.*\)$/target="\1\/\2"/p' | tee --append $GITHUB_OUTPUT
+
+  build_kernel:
+    name: Build Kernel with external toolchain
+    needs: set_target
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/build.yml
+    with:
+      target: ${{ needs.set_target.outputs.target }}
+      build_kernel: true
+      build_all_kmods: true
+
+  check-kernel-patches:
+    name: Check Kernel patches
+    needs: set_target
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/check-kernel-patches.yml
+    with:
+      target: ${{ needs.set_target.outputs.target }}

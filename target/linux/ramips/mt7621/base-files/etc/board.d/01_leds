@@ -24,6 +24,10 @@ asus,rt-ax53u)
 	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "mt76-phy0" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "mt76-phy1" "phy1tpt"
 	;;
+asus,rt-ax54)
+	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "mt76-phy0" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "mt76-phy1" "phy1tpt"
+	;;
 asus,rt-n56u-b1)
 	ucidef_set_led_netdev "lan" "LAN link" "blue:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN link" "blue:wan" "wan"
@@ -88,6 +92,9 @@ dlink,dir-882-r1)
 	;;
 gnubee,gb-pc2)
 	ucidef_set_led_netdev "ethyellow" "ethyellow" "orange:ethyellow" "ethyellow" "link tx rx"
+	;;
+huasifei,ws1208v2)
+	ucidef_set_led_netdev "wwan0" "wwan0" "green:cellular" "wwan0" "link tx rx"
 	;;
 keenetic,kn-3010)
 	ucidef_set_led_netdev "internet" "internet" "green:internet" "wan"
@@ -154,6 +161,9 @@ tplink,archer-c6u-v1)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
+tplink,deco-m4r-v4)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
+	;;
 tplink,ec330-g5u-v1)
 	ucidef_set_led_netdev "lan" "Ethernet" "blue:ethernet" "br-lan" "link tx rx"
 	ucidef_set_led_netdev "wan" "Internet" "blue:internet" "wan" "link tx rx"
@@ -178,6 +188,9 @@ tplink,re650-v2)
 	;;
 tplink,tl-wpa8631p-v3)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
+	;;
+xiaomi,mi-router-4a-gigabit-v2)
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link"
 	;;
 xiaomi,mi-router-ac2100)
 	ucidef_set_led_netdev "wan-blue" "WAN (blue)" "blue:wan" "wan"

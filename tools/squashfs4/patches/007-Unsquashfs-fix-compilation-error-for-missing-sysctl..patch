@@ -1,0 +1,26 @@
+From dcf492077ef10ed7550b6e2b38b81318645bbdd5 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 19 Feb 2023 04:36:01 +0100
+Subject: [PATCH] Unsquashfs: fix compilation error for missing sysctl.h on
+ macos
+
+Currently the include of sys/sysctl.h is guarded and done only for
+FreeBSD system. Remove this to fix compilation error on macos following
+the same pattern done in mksquashfs.c
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ squashfs-tools/unsquashfs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -36,7 +36,7 @@
+ #include <sched.h>
+ #include <sys/sysinfo.h>
+ #include <sys/sysmacros.h>
+-#elif defined __FreeBSD__
++#else
+ #include <sys/sysctl.h>
+ #endif
+ 

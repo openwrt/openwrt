@@ -1,0 +1,201 @@
+From: Florian Fainelli <f.fainelli@gmail.com>
+Subject: [PATCH v3 9/9] mtd: rawnand: brcmnand: Add BCMA shim
+Date: Fri, 07 Jan 2022 10:46:14 -0800
+Content-Type: text/plain; charset="utf-8"
+
+Add a BCMA shim to allow us to register the brcmnand driver using the
+BCMA bus which provides indirect memory mapped access to SoC registers.
+
+There are a number of registers that need to be byte swapped because
+they are natively big endian, coming directly from the NAND chip, and
+there is no bus interface unlike the iProc or STB platforms that
+performs the byte swapping for us.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/mtd/nand/raw/Kconfig              |  13 +++
+ drivers/mtd/nand/raw/brcmnand/Makefile    |   2 +
+ drivers/mtd/nand/raw/brcmnand/bcma_nand.c | 132 ++++++++++++++++++++++
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c  |   4 +
+ 4 files changed, 151 insertions(+)
+ create mode 100644 drivers/mtd/nand/raw/brcmnand/bcma_nand.c
+
+--- a/drivers/mtd/nand/raw/Kconfig
++++ b/drivers/mtd/nand/raw/Kconfig
+@@ -208,6 +208,19 @@ config MTD_NAND_BRCMNAND
+ 	  originally designed for Set-Top Box but is used on various BCM7xxx,
+ 	  BCM3xxx, BCM63xxx, iProc/Cygnus and more.
+ 
++if MTD_NAND_BRCMNAND
++
++config MTD_NAND_BRCMNAND_BCMA
++	tristate "Broadcom BCMA NAND controller"
++	depends on BCMA_NFLASH
++	depends on BCMA
++	help
++	  Enables the BRCMNAND controller over BCMA on BCM47186/BCM5358 SoCs.
++	  The glue driver will take care of performing the low-level I/O
++	  operations to interface the BRCMNAND controller over the BCMA bus.
++
++endif # MTD_NAND_BRCMNAND
++
+ config MTD_NAND_BCM47XXNFLASH
+ 	tristate "BCM4706 BCMA NAND controller"
+ 	depends on BCMA_NFLASH
+--- a/drivers/mtd/nand/raw/brcmnand/Makefile
++++ b/drivers/mtd/nand/raw/brcmnand/Makefile
+@@ -6,3 +6,5 @@ obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= bcm6
+ obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= bcm6368_nand.o
+ obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmstb_nand.o
+ obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmnand.o
++
++obj-$(CONFIG_MTD_NAND_BRCMNAND_BCMA)	+= bcma_nand.o
+--- /dev/null
++++ b/drivers/mtd/nand/raw/brcmnand/bcma_nand.c
+@@ -0,0 +1,132 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright © 2021 Broadcom
++ */
++#include <linux/bcma/bcma.h>
++#include <linux/bcma/bcma_driver_chipcommon.h>
++#include <linux/device.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++
++#include "brcmnand.h"
++
++struct brcmnand_bcma_soc {
++	struct brcmnand_soc soc;
++	struct bcma_drv_cc *cc;
++};
++
++static inline bool brcmnand_bcma_needs_swapping(u32 offset)
++{
++	switch (offset) {
++	case BCMA_CC_NAND_SPARE_RD0:
++	case BCMA_CC_NAND_SPARE_RD4:
++	case BCMA_CC_NAND_SPARE_RD8:
++	case BCMA_CC_NAND_SPARE_RD12:
++	case BCMA_CC_NAND_SPARE_WR0:
++	case BCMA_CC_NAND_SPARE_WR4:
++	case BCMA_CC_NAND_SPARE_WR8:
++	case BCMA_CC_NAND_SPARE_WR12:
++	case BCMA_CC_NAND_DEVID:
++	case BCMA_CC_NAND_DEVID_X:
++	case BCMA_CC_NAND_SPARE_RD16:
++	case BCMA_CC_NAND_SPARE_RD20:
++	case BCMA_CC_NAND_SPARE_RD24:
++	case BCMA_CC_NAND_SPARE_RD28:
++		return true;
++	}
++
++	return false;
++}
++
++static inline struct brcmnand_bcma_soc *to_bcma_soc(struct brcmnand_soc *soc)
++{
++	return container_of(soc, struct brcmnand_bcma_soc, soc);
++}
++
++static u32 brcmnand_bcma_read_reg(struct brcmnand_soc *soc, u32 offset)
++{
++	struct brcmnand_bcma_soc *sc = to_bcma_soc(soc);
++	u32 val;
++
++	/* Offset into the NAND block and deal with the flash cache separately */
++	if (offset == BRCMNAND_NON_MMIO_FC_ADDR)
++		offset = BCMA_CC_NAND_CACHE_DATA;
++	else
++		offset += BCMA_CC_NAND_REVISION;
++
++	val = bcma_cc_read32(sc->cc, offset);
++
++	/* Swap if necessary */
++	if (brcmnand_bcma_needs_swapping(offset))
++		val = be32_to_cpu(val);
++	return val;
++}
++
++static void brcmnand_bcma_write_reg(struct brcmnand_soc *soc, u32 val,
++				    u32 offset)
++{
++	struct brcmnand_bcma_soc *sc = to_bcma_soc(soc);
++
++	/* Offset into the NAND block */
++	if (offset == BRCMNAND_NON_MMIO_FC_ADDR)
++		offset = BCMA_CC_NAND_CACHE_DATA;
++	else
++		offset += BCMA_CC_NAND_REVISION;
++
++	/* Swap if necessary */
++	if (brcmnand_bcma_needs_swapping(offset))
++		val = cpu_to_be32(val);
++
++	bcma_cc_write32(sc->cc, offset, val);
++}
++
++static struct brcmnand_io_ops brcmnand_bcma_io_ops = {
++	.read_reg	= brcmnand_bcma_read_reg,
++	.write_reg	= brcmnand_bcma_write_reg,
++};
++
++static void brcmnand_bcma_prepare_data_bus(struct brcmnand_soc *soc, bool prepare,
++					   bool is_param)
++{
++	struct brcmnand_bcma_soc *sc = to_bcma_soc(soc);
++
++	/* Reset the cache address to ensure we are already accessing the
++	 * beginning of a sub-page.
++	 */
++	bcma_cc_write32(sc->cc, BCMA_CC_NAND_CACHE_ADDR, 0);
++}
++
++static int brcmnand_bcma_nand_probe(struct platform_device *pdev)
++{
++	struct bcma_nflash *nflash = dev_get_platdata(&pdev->dev);
++	struct brcmnand_bcma_soc *soc;
++
++	soc = devm_kzalloc(&pdev->dev, sizeof(*soc), GFP_KERNEL);
++	if (!soc)
++		return -ENOMEM;
++
++	soc->cc = container_of(nflash, struct bcma_drv_cc, nflash);
++	soc->soc.prepare_data_bus = brcmnand_bcma_prepare_data_bus;
++	soc->soc.ops = &brcmnand_bcma_io_ops;
++
++	if (soc->cc->core->bus->chipinfo.id == BCMA_CHIP_ID_BCM4706) {
++		dev_err(&pdev->dev, "Use bcm47xxnflash for 4706!\n");
++		return -ENODEV;
++	}
++
++	return brcmnand_probe(pdev, &soc->soc);
++}
++
++static struct platform_driver brcmnand_bcma_nand_driver = {
++	.probe			= brcmnand_bcma_nand_probe,
++	.remove			= brcmnand_remove,
++	.driver = {
++		.name		= "bcma_brcmnand",
++		.pm		= &brcmnand_pm_ops,
++	}
++};
++module_platform_driver(brcmnand_bcma_nand_driver);
++
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Broadcom");
++MODULE_DESCRIPTION("NAND controller driver glue for BCMA chips");
+--- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
++++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+@@ -598,7 +598,11 @@ enum {
+ 
+ static inline bool brcmnand_non_mmio_ops(struct brcmnand_controller *ctrl)
+ {
++#if IS_ENABLED(CONFIG_MTD_NAND_BRCMNAND_BCMA)
+ 	return static_branch_unlikely(&brcmnand_soc_has_ops_key);
++#else
++	return false;
++#endif
+ }
+ 
+ static inline u32 nand_readreg(struct brcmnand_controller *ctrl, u32 offs)

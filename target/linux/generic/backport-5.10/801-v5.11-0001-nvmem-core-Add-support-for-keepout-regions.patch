@@ -203,7 +203,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  static int nvmem_add_cells_from_of(struct nvmem_device *nvmem)
  {
  	struct device_node *parent, *child;
-@@ -655,6 +792,8 @@ struct nvmem_device *nvmem_register(cons
+@@ -656,6 +793,8 @@ struct nvmem_device *nvmem_register(cons
  	nvmem->type = config->type;
  	nvmem->reg_read = config->reg_read;
  	nvmem->reg_write = config->reg_write;
@@ -212,7 +212,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	if (!config->no_of_node)
  		nvmem->dev.of_node = config->dev->of_node;
  
-@@ -679,6 +818,12 @@ struct nvmem_device *nvmem_register(cons
+@@ -680,6 +819,12 @@ struct nvmem_device *nvmem_register(cons
  	nvmem->dev.groups = nvmem_dev_groups;
  #endif
  
@@ -256,7 +256,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
   * @type:	Type of the nvmem storage
   * @read_only:	Device is read-only.
   * @root_only:	Device is accessibly to root only.
-@@ -66,6 +81,8 @@ struct nvmem_config {
+@@ -67,6 +82,8 @@ struct nvmem_config {
  	struct gpio_desc	*wp_gpio;
  	const struct nvmem_cell_info	*cells;
  	int			ncells;

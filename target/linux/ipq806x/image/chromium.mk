@@ -20,7 +20,9 @@ endef
 # (PARTNROFF=1) partition as their rootfs.
 define Build/cros-vboot
 	$(STAGING_DIR_HOST)/bin/cros-vbutil \
-		-k $@ -c "root=PARTUUID=%U/PARTNROFF=1" -o $@.new
+		-k $@ \
+		-c "root=PARTUUID=%U/PARTNROFF=1 rootwait fstools_partname_fallback_scan=1" \
+		-o $@.new
 	@mv $@.new $@
 endef
 
@@ -33,10 +35,14 @@ define Device/OnhubImage
 	IMAGES := factory.bin sysupgrade.bin
 	IMAGE/factory.bin := cros-gpt | append-kernel-part | append-rootfs
 	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+	# Note: Chromium/Depthcharge-based bootloaders insert a reserved-memory
+	# ramoops node into the Device Tree automatically, so we can use
+	# kmod-ramoops.
 	DEVICE_PACKAGES := ath10k-firmware-qca988x-ct e2fsprogs kmod-fs-ext4 losetup \
 			   partx-utils mkf2fs kmod-fs-f2fs \
 			   ucode kmod-google-firmware kmod-tpm-i2c-infineon \
-			   kmod-sound-soc-ipq8064-storm kmod-usb-storage
+			   kmod-sound-soc-ipq8064-storm kmod-usb-storage \
+			   kmod-ramoops
 endef
 
 define Device/asus_onhub

@@ -27,21 +27,18 @@ config EXTRA_GCC_CONFIG_OPTIONS
 config GCC_DEFAULT_PIE
 	bool
 	prompt "Build executable with PIE enabled by default" if TOOLCHAINOPTS
-	default n
 	help
 	    Use gcc configure option --enable-default-pie to turn on -fPIE and -pie by default.
 
 config GCC_DEFAULT_SSP
 	bool
 	prompt "Build executable with Stack-Smashing Protection enabled by default" if TOOLCHAINOPTS
-	default n
 	help
 	    Use gcc configure option --enable-default-ssp to turn on -fstack-protector-strong by default.
 
 config SJLJ_EXCEPTIONS
 	bool
 	prompt "Use setjump()/longjump() exceptions" if TOOLCHAINOPTS
-	default n
 	help
 	    Use old setjump()/longjump() exceptions instead of the newer
 	    frame unwinding exceptions handling routines.  Warning: increases
@@ -50,7 +47,6 @@ config SJLJ_EXCEPTIONS
 config INSTALL_GFORTRAN
 	bool
 	prompt "Build/install fortran compiler?" if TOOLCHAINOPTS
-	default n
 	help
 	    Build/install GNU fortran compiler ?
 
@@ -58,6 +54,5 @@ config INSTALL_GCCGO
 	bool
 	prompt "Build/install Go compiler?" if TOOLCHAINOPTS
 	depends on USE_GLIBC || BROKEN
-	default n
 	help
 	    Build/install GNU gccgo compiler ?

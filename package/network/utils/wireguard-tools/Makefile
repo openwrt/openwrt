@@ -7,7 +7,6 @@
 # See /LICENSE for more information.
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=wireguard-tools
 
@@ -24,7 +23,6 @@ PKG_LICENSE_FILES:=COPYING
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
-include $(INCLUDE_DIR)/package-defaults.mk
 
 MAKE_PATH:=src
 MAKE_VARS += PLATFORM=linux

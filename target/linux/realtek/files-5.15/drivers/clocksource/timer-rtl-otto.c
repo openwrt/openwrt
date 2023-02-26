@@ -27,7 +27,6 @@
  * the timer is in operating mode COUNTER it stops. In mode TIMER it will
  * continue to count up.
  */
-
 #define RTTM_CTRL_COUNTER	0
 #define RTTM_CTRL_TIMER		BIT(24)
 
@@ -43,7 +42,6 @@
  * MHz and 153.125 MHz. The greatest common divisor of all explained possible
  * speeds is 3125000. Pin the timers to this 3.125 MHz reference frequency.
  */
-
 #define RTTM_TICKS_PER_SEC	3125000
 
 struct rttm_cs {
@@ -51,10 +49,7 @@ struct rttm_cs {
 	struct clocksource	cs;
 };
 
-/*
- * Simple internal register functions
- */
-
+/* Simple internal register functions */
 static inline void rttm_set_counter(void __iomem *base, unsigned int counter)
 {
 	iowrite32(counter, base + RTTM_CNT);
@@ -95,10 +90,7 @@ static inline void rttm_disable_irq(void __iomem *base)
 	iowrite32(0, base + RTTM_INT);
 }
 
-/*
- * Aggregated control functions for kernel clock framework
- */
-
+/* Aggregated control functions for kernel clock framework */
 #define RTTM_DEBUG(base)					\
 	pr_debug("------------- %s %d %08x\n", __func__,	\
 	smp_processor_id(), (u32)base)
@@ -187,10 +179,7 @@ static u64 rttm_read_clocksource(struct clocksource *cs)
 	return (u64)rttm_get_counter(rcs->to.of_base.base);
 }
 
-/*
- * Module initialization part.
- */
-
+/* Module initialization part. */
 static DEFINE_PER_CPU(struct timer_of, rttm_to) = {
 	.flags				= TIMER_OF_BASE | TIMER_OF_CLOCK | TIMER_OF_IRQ,
 	.of_irq = {
@@ -229,7 +218,6 @@ struct rttm_cs rttm_cs = {
 		.mask	= CLOCKSOURCE_MASK(RTTM_BIT_COUNT),
 		.flags	= CLOCK_SOURCE_IS_CONTINUOUS,
 		.read	= rttm_read_clocksource,
-		.enable	= rttm_enable_clocksource
 	}
 };
 
@@ -244,7 +232,7 @@ static int rttm_cpu_starting(unsigned int cpu)
 
 	RTTM_DEBUG(to->of_base.base);
 	to->clkevt.cpumask = cpumask_of(cpu);
-	irq_set_affinity(to->of_irq.irq, to->clkevt.cpumask);
+	irq_force_affinity(to->of_irq.irq, to->clkevt.cpumask);
 	clockevents_config_and_register(&to->clkevt, RTTM_TICKS_PER_SEC,
 					RTTM_MIN_DELTA, RTTM_MAX_DELTA);
 	rttm_enable_irq(to->of_base.base);
@@ -257,9 +245,8 @@ static int __init rttm_probe(struct device_node *np)
 	int cpu, cpu_rollback;
 	struct timer_of *to;
 	int clkidx = num_possible_cpus();
-/*
- * Use the first n timers as per CPU clock event generators
- */
+
+	/* Use the first n timers as per CPU clock event generators */
 	for_each_possible_cpu(cpu) {
 		to = per_cpu_ptr(&rttm_to, cpu);
 		to->of_irq.index = to->of_base.index = cpu;
@@ -269,13 +256,13 @@ static int __init rttm_probe(struct device_node *np)
 		}
 		rttm_setup_timer(to->of_base.base);
 	}
-/*
- * Activate the n'th+1 timer as a stable CPU clocksource.
- */
+
+	/* Activate the n'th + 1 timer as a stable CPU clocksource. */
 	to = &rttm_cs.to;
 	to->of_base.index = clkidx;
 	timer_of_init(np, to);
 	if (rttm_cs.to.of_base.base && rttm_cs.to.of_clk.rate) {
+		rttm_enable_clocksource(&rttm_cs.cs);
 		clocksource_register_hz(&rttm_cs.cs, RTTM_TICKS_PER_SEC);
 		sched_clock_register(rttm_read_clock, RTTM_BIT_COUNT, RTTM_TICKS_PER_SEC);
 	} else

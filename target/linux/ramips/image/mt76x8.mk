@@ -1029,7 +1029,7 @@ endef
 TARGET_DEVICES += zbtlink_zbt-we1226
 
 define Device/zyxel_keenetic-extra-ii
-  IMAGE_SIZE := 14912k
+  IMAGE_SIZE := 29824k
   BLOCKSIZE := 64k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Extra II

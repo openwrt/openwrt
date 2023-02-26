@@ -24,7 +24,7 @@
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
-		
+
 		led_power: power {
 			label = "green:power";
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
@@ -41,7 +41,7 @@
 
 	keys {
 		compatible = "gpio-keys";
-		
+
 		reset {
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
@@ -83,19 +83,19 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			
+
 			uboot: partition@0 {
 				label = "u-boot";
 				reg = <0x000000 0x080000>;
 				read-only;
 			};
-			
+
 			partition@80000 {
 				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x080000 0xe00000>;
 			};
-			
+
 			partition@e80000 {
 				label = "product-info";
 				reg = <0xe80000 0x05000>;
@@ -107,7 +107,7 @@
 				reg = <0xe85000 0x16b000>;
 				read-only;
 			};
-			
+
 			art: partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
@@ -122,7 +122,7 @@
 
 	phy-mode = "sgmii";
 	phy-handle = <&phy0>;
-	
+
 	nvmem-cells = <&macaddr_config_8>;
 	nvmem-cell-names = "mac-address";
 };

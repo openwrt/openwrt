@@ -17,13 +17,16 @@ linksys,e8450-ubi)
 	ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x1f000" "0x1f000" "1"
 	;;
 bananapi,bpi-r64)
-	case "$(cmdline_get_var root)" in
-	/dev/mmc*)
+	rootdev="$(cmdline_get_var root)"
+	rootdev="${rootdev##*/}"
+	rootdev="${rootdev%%p[0-9]*}"
+	case "$rootdev" in
+	mmc*)
 		local envdev=$(find_mmc_part "ubootenv" $rootdev)
 		ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
 		ubootenv_add_uci_config "$envdev" "0x80000" "0x80000" "0x80000" "1"
 		;;
-	/dev/ubi*)
+	ubi*)
 		ubootenv_add_uci_config "/dev/ubi0_0" "0x0" "0x1f000" "0x1f000" "1"
 		ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x1f000" "0x1f000" "1"
 		;;

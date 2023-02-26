@@ -33,6 +33,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	bool "Realtek based platforms"
 +	select DMA_NONCOHERENT
 +	select IRQ_MIPS_CPU
++	select NO_EXCEPT_FILL
 +	select SYS_HAS_CPU_MIPS32_R1
 +	select SYS_HAS_CPU_MIPS32_R2
 +	select SYS_SUPPORTS_BIG_ENDIAN
@@ -67,8 +68,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	bool "Realtek RTL930X based platforms"
 +	depends on RTL83XX
 +	select MIPS_CPU_SCACHE
-+	select CSRC_R4K
-+	select CEVT_RTL9300
++	select MIPS_EXTERNAL_TIMER
 +	select SYS_SUPPORTS_MULTITHREADING
 +
 +config RTL931X
@@ -84,13 +84,3 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  source "arch/mips/alchemy/Kconfig"
  source "arch/mips/ath25/Kconfig"
  source "arch/mips/ath79/Kconfig"
-@@ -1112,6 +1162,9 @@ config CEVT_GT641XX
- config CEVT_R4K
- 	bool
- 
-+config CEVT_RTL9300
-+	bool
-+
- config CEVT_SB1250
- 	bool
- 

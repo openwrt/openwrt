@@ -30,7 +30,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	struct gpio_desc	*wp_gpio;
  	void *priv;
  };
-@@ -798,6 +799,7 @@ struct nvmem_device *nvmem_register(cons
+@@ -799,6 +800,7 @@ struct nvmem_device *nvmem_register(cons
  	nvmem->type = config->type;
  	nvmem->reg_read = config->reg_read;
  	nvmem->reg_write = config->reg_write;
@@ -72,7 +72,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
   * @size:	Device size.
   * @word_size:	Minimum read/write access granularity.
   * @stride:	Minimum read/write access stride.
-@@ -92,6 +96,7 @@ struct nvmem_config {
+@@ -94,6 +98,7 @@ struct nvmem_config {
  	bool			no_of_node;
  	nvmem_reg_read_t	reg_read;
  	nvmem_reg_write_t	reg_write;

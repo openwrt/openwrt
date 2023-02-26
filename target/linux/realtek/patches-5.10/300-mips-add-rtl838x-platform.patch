@@ -25,7 +25,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  platform-$(CONFIG_SGI_IP28)		+= sgi-ip22/
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1037,8 +1037,58 @@ config NLM_XLP_BOARD
+@@ -1037,8 +1037,59 @@ config NLM_XLP_BOARD
  	  This board is based on Netlogic XLP Processor.
  	  Say Y here if you have a XLP based board.
  
@@ -33,6 +33,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +	bool "Realtek based platforms"
 +	select DMA_NONCOHERENT
 +	select IRQ_MIPS_CPU
++	select NO_EXCEPT_FILL
 +	select SYS_HAS_CPU_MIPS32_R1
 +	select SYS_HAS_CPU_MIPS32_R2
 +	select SYS_SUPPORTS_BIG_ENDIAN
@@ -84,7 +85,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  source "arch/mips/alchemy/Kconfig"
  source "arch/mips/ath25/Kconfig"
  source "arch/mips/ath79/Kconfig"
-@@ -1097,6 +1147,9 @@ config CEVT_GT641XX
+@@ -1097,6 +1148,9 @@ config CEVT_GT641XX
  config CEVT_R4K
  	bool
  

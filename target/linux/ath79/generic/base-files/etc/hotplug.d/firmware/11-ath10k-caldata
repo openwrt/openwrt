@@ -77,14 +77,6 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(mtd_get_mac_ascii u-boot-env athaddr)
 		;;
-	engenius,epg5000|\
-	iodata,wn-ac1167dgr|\
-	iodata,wn-ac1600dgr2|\
-	sitecom,wlr-7100|\
-	zyxel,nbg6616)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 1)
-		;;
 	engenius,ews511ap)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) 1)
@@ -96,6 +88,13 @@ case "$FIRMWARE" in
 	glinet,gl-ar750)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) 1)
+		;;
+	iodata,wn-ac1167dgr|\
+	iodata,wn-ac1600dgr2|\
+	sitecom,wlr-7100|\
+	zyxel,nbg6616)
+		caldata_extract "art" 0x5000 0x844
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 1)
 		;;
 	nec,wg800hp)
 		caldata_extract "art" 0x5000 0x844
@@ -215,11 +214,6 @@ case "$FIRMWARE" in
 		ath10k_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		;;
-	netgear,ex6400|\
-	netgear,ex7300)
-		caldata_extract "caldata" 0x5000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_binary caldata 0xc)
 		;;
 	phicomm,k2t)
 		caldata_extract "art" 0x5000 0x2f20

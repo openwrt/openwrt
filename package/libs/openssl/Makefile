@@ -8,14 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_BASE:=1.1.1
-PKG_BUGFIX:=s
-PKG_VERSION:=$(PKG_BASE)$(PKG_BUGFIX)
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_VERSION:=3.0.8
+PKG_RELEASE:=2
 PKG_USE_MIPS16:=0
 
 PKG_BUILD_PARALLEL:=1
 
+PKG_BASE:=$(subst $(space),.,$(wordlist 1,2,$(subst .,$(space),$(PKG_VERSION))))
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:= \
 	http://www.openssl.org/source/ \
@@ -25,9 +24,9 @@ PKG_SOURCE_URL:= \
 	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/ \
 	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/old/$(PKG_BASE)/
 
-PKG_HASH:=c5ac01e760ee6ff0dab61d6b2bbd30146724d063eb322180c6f18a6f74e4b6aa
+PKG_HASH:=6c13d2bf38fdf31eac3ce2a347073673f5d63263398f1f69d0df4a41253e4b3e
 
-PKG_LICENSE:=OpenSSL
+PKG_LICENSE:=Apache-2.0
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=Eneas U de Queiroz <cotequeiroz@gmail.com>
 PKG_CPE_ID:=cpe:/a:openssl:openssl
@@ -95,9 +94,10 @@ $(call Package/openssl/Default)
   DEPENDS:=+OPENSSL_WITH_COMPRESSION:zlib \
 	   +OPENSSL_ENGINE_BUILTIN_AFALG:kmod-crypto-user \
 	   +OPENSSL_ENGINE_BUILTIN_DEVCRYPTO:kmod-cryptodev \
-	   +OPENSSL_ENGINE_BUILTIN_PADLOCK:kmod-crypto-hw-padlock
+	   +OPENSSL_ENGINE_BUILTIN_PADLOCK:kmod-crypto-hw-padlock \
+	   +(arm||armeb||mips||mipsel||powerpc||arc):libatomic
   TITLE+= (libraries)
-  ABI_VERSION:=1.1
+  ABI_VERSION:=$(firstword $(subst .,$(space),$(PKG_VERSION)))
   MENU:=1
 endef
 
@@ -186,7 +186,7 @@ and https://openwrt.org/docs/techref/hardware/cryptographic.hardware.accelerator
 The engine_id is "padlock"
 endef
 
-OPENSSL_OPTIONS:= shared
+OPENSSL_OPTIONS:= shared no-tests
 
 ifndef CONFIG_OPENSSL_WITH_BLAKE2
   OPENSSL_OPTIONS += no-blake2
@@ -272,7 +272,7 @@ ifdef CONFIG_OPENSSL_ENGINE
       OPENSSL_OPTIONS += enable-devcryptoeng
     endif
     ifndef CONFIG_OPENSSL_ENGINE_BUILTIN_PADLOCK
-      OPENSSL_OPTIONS += no-hw-padlock
+      OPENSSL_OPTIONS += no-padlockeng
     endif
   else
     ifdef CONFIG_PACKAGE_libopenssl-devcrypto
@@ -282,7 +282,7 @@ ifdef CONFIG_OPENSSL_ENGINE
       OPENSSL_OPTIONS += no-afalgeng
     endif
     ifndef CONFIG_PACKAGE_libopenssl-padlock
-      OPENSSL_OPTIONS += no-hw-padlock
+      OPENSSL_OPTIONS += no-padlockeng
     endif
   endif
 else

@@ -197,7 +197,6 @@ menuconfig EXTRA_TARGET_ARCH
 	bool
 	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS
 	depends on !sparc
-	default n
 	help
 	  Some builds may require a 'biarch' toolchain. This option
 	  allows you to specify an additional target arch.
@@ -252,7 +251,6 @@ config DWARVES
 	bool
 	prompt "Build pahole" if TOOLCHAINOPTS
 	depends on !HOST_OS_MACOS
-	default n
 	help
 	  Enable if you want to build pahole and the dwarves tools.
 

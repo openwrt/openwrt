@@ -11,9 +11,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   build-linux-buildbot:
     name: Build tools with buildbot container
+    if: ${{ github.repository_owner  == 'openwrt' }}
     uses: ./.github/workflows/build-tools.yml
     with:
       generate_prebuilt_artifacts: true
@@ -21,6 +26,7 @@ jobs:
   push-tools-container:
     needs: build-linux-buildbot
     name: Push prebuilt tools container
+    if: ${{ github.repository_owner  == 'openwrt' }}
     runs-on: ubuntu-latest
 
     permissions:
@@ -69,6 +75,10 @@ jobs:
         with:
           name: linux-buildbot-prebuilt-tools
           path: openwrt
+
+      - name: Extract prebuild tools
+        working-directory: openwrt
+        run: tar -xf tools.tar
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2

@@ -1,0 +1,92 @@
+From bc8e655a420d2f62bb0597947e96dce7b4d3fb36 Mon Sep 17 00:00:00 2001
+From: Wessel Dankers <wsl@fruit.je>
+Date: Sun, 30 Oct 2022 19:29:28 +0100
+Subject: [PATCH] Only use available CPUs
+
+Not all online CPUs may be available for the current process,
+especially when CPU affinity is involved. In such cases too many
+threads will be created, which will then compete unnecessarily
+for CPU time.
+
+Use sched_getaffinity() to determine the correct number of threads
+to create.
+---
+ squashfs-tools/mksquashfs.c | 16 ++++++++++++----
+ squashfs-tools/unsquashfs.c | 13 ++++++++++---
+ 2 files changed, 22 insertions(+), 7 deletions(-)
+
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -52,7 +52,9 @@
+ #include <ctype.h>
+ #include <sys/sysinfo.h>
+ 
+-#ifndef linux
++#ifdef linux
++#include <sched.h>
++#else
+ #include <sys/sysctl.h>
+ #endif
+ 
+@@ -5079,7 +5081,15 @@ static void initialise_threads(int readq
+ 		BAD_ERROR("Failed to set signal mask in intialise_threads\n");
+ 
+ 	if(processors == -1) {
+-#ifndef linux
++#ifdef linux
++		cpu_set_t cpu_set;
++		CPU_ZERO(&cpu_set);
++
++		if(sched_getaffinity(0, sizeof cpu_set, &cpu_set) == -1)
++			processors = sysconf(_SC_NPROCESSORS_ONLN);
++		else
++			processors = CPU_COUNT(&cpu_set);
++#else
+ 		int mib[2];
+ 		size_t len = sizeof(processors);
+ 
+@@ -5096,8 +5106,6 @@ static void initialise_threads(int readq
+ 			ERROR_EXIT("  Defaulting to 1\n");
+ 			processors = 1;
+ 		}
+-#else
+-		processors = sysconf(_SC_NPROCESSORS_ONLN);
+ #endif
+ 	}
+ 
+--- a/squashfs-tools/unsquashfs.c
++++ b/squashfs-tools/unsquashfs.c
+@@ -33,6 +33,7 @@
+ #include "fnmatch_compat.h"
+ 
+ #ifdef __linux__
++#include <sched.h>
+ #include <sys/sysinfo.h>
+ #include <sys/sysmacros.h>
+ #elif defined __FreeBSD__
+@@ -2719,7 +2720,15 @@ void initialise_threads(int fragment_buf
+ 	}
+ 
+ 	if(processors == -1) {
+-#ifndef linux
++#ifdef linux
++		cpu_set_t cpu_set;
++		CPU_ZERO(&cpu_set);
++
++		if(sched_getaffinity(0, sizeof cpu_set, &cpu_set) == -1)
++			processors = sysconf(_SC_NPROCESSORS_ONLN);
++		else
++			processors = CPU_COUNT(&cpu_set);
++#else
+ 		int mib[2];
+ 		size_t len = sizeof(processors);
+ 
+@@ -2735,8 +2744,6 @@ void initialise_threads(int fragment_buf
+ 				"Defaulting to 1\n");
+ 			processors = 1;
+ 		}
+-#else
+-		processors = sysconf(_SC_NPROCESSORS_ONLN);
+ #endif
+ 	}
+ 

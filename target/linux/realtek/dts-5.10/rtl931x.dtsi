@@ -5,7 +5,7 @@
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
-	
+
 	compatible = "realtek,rtl838x-soc";
 
 	cpus {
@@ -28,7 +28,7 @@
 		device_type = "memory";
 		reg = <0x0 0x10000000>;
 	};
-	
+
 	chosen {
 		bootargs = "console=ttyS0,115200";
 	};
@@ -75,7 +75,7 @@
 			clocks = <&cpuclock>;
 		};
 	};
-	
+
 	soc: soc {
 		compatible = "simple-bus";
 		#address-cells = <1>;

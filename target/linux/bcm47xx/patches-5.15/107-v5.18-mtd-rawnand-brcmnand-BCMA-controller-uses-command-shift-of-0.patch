@@ -1,0 +1,29 @@
+From: Florian Fainelli <f.fainelli@gmail.com>
+Subject: [PATCH v3 8/9] mtd: rawnand: brcmnand: BCMA controller uses command shift of 0
+Date: Fri, 07 Jan 2022 10:46:13 -0800
+Content-Type: text/plain; charset="utf-8"
+
+For some odd and unexplained reason the BCMA NAND controller, albeit
+revision 3.4 uses a command shift of 0 instead of 24 as it should be,
+quirk that.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
++++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+@@ -916,6 +916,12 @@ static void brcmnand_wr_corr_thresh(stru
+ 
+ static inline int brcmnand_cmd_shift(struct brcmnand_controller *ctrl)
+ {
++	/* Kludge for the BCMA-based NAND controller which does not actually
++	 * shift the command
++	 */
++	if (ctrl->nand_version == 0x0304 && brcmnand_non_mmio_ops(ctrl))
++		return 0;
++
+ 	if (ctrl->nand_version < 0x0602)
+ 		return 24;
+ 	return 0;

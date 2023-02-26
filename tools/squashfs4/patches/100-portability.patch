@@ -1,0 +1,37 @@
+--- a/squashfs-tools/xattr.c
++++ b/squashfs-tools/xattr.c
+@@ -115,6 +115,7 @@ int xattr_get_prefix(struct xattr_list *
+ 	
+ static int read_xattrs_from_system(char *filename, struct xattr_list **xattrs)
+ {
++#if defined(linux)
+ 	ssize_t size, vsize;
+ 	char *xattr_names, *p;
+ 	int i;
+@@ -227,6 +228,10 @@ failed:
+ 	free(xattr_list);
+ 	free(xattr_names);
+ 	return 0;
++#else
++	*xattrs = NULL;
++	return 0;
++#endif
+ }
+ 
+ 
+--- a/squashfs-tools/unsquashfs_xattr.c
++++ b/squashfs-tools/unsquashfs_xattr.c
+@@ -36,6 +36,7 @@ extern int strict_errors;
+ 
+ int write_xattr(char *pathname, unsigned int xattr)
+ {
++#if defined(linux)
+ 	unsigned int count;
+ 	struct xattr_list *xattr_list;
+ 	int i;
+@@ -147,4 +148,5 @@ int write_xattr(char *pathname, unsigned
+ 	free_xattr(xattr_list, count);
+ 
+ 	return !failed;
++#endif
+ }

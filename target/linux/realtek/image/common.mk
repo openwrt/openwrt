@@ -1,19 +1,13 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-define Device/d-link_dgs-1210
-  IMAGE_SIZE := 13824k
-  DEVICE_VENDOR := D-Link
-  DLINK_KERNEL_PART_SIZE := 1572864
+define Device/cameo-fw
+  CAMEO_BOARD_MODEL = $$(DEVICE_MODEL)
   KERNEL := \
 	kernel-bin | \
 	append-dtb | \
 	libdeflate-gzip | \
 	uImage gzip | \
-	dlink-cameo
-  CAMEO_KERNEL_PART := 2
-  CAMEO_ROOTFS_PART := 3
-  CAMEO_CUSTOMER_SIGNATURE := 2
-  CAMEO_BOARD_VERSION := 32
+	cameo-tag
   IMAGES += factory_image1.bin
   IMAGE/factory_image1.bin := \
 	append-kernel | \
@@ -22,8 +16,19 @@ define Device/d-link_dgs-1210
 	pad-rootfs | \
 	pad-to 16 | \
 	check-size | \
-	dlink-version | \
-	dlink-headers
+	cameo-version | \
+	cameo-headers
+endef
+
+define Device/d-link_dgs-1210
+  $(Device/cameo-fw)
+  IMAGE_SIZE := 13824k
+  DEVICE_VENDOR := D-Link
+  CAMEO_KERNEL_PART_SIZE := 1572864
+  CAMEO_KERNEL_PART := 2
+  CAMEO_ROOTFS_PART := 3
+  CAMEO_CUSTOMER_SIGNATURE := 2
+  CAMEO_BOARD_VERSION := 32
 endef
 
 define Device/hpe_1920
