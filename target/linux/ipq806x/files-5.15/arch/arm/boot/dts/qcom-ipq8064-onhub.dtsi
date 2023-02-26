@@ -5,6 +5,7 @@
 
 #include "qcom-ipq8064-smb208.dtsi"
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
@@ -27,6 +28,28 @@
 		rsvd@41200000 {
 			reg = <0x41200000 0x300000>;
 			no-map;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+
+		dev {
+			label = "dev";
+			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_CONFIG>;
+			debounce-interval = <60>;
+			wakeup-source;
 		};
 	};
 
@@ -227,12 +250,17 @@
 			pins = "gpio17";
 			output-low;
 		};
+	};
+
+	button_pins: button_pins {
 		recovery {
 			pins = "gpio16";
+			function = "gpio";
 			bias-none;
 		};
 		developer {
 			pins = "gpio15";
+			function = "gpio";
 			bias-none;
 		};
 	};
