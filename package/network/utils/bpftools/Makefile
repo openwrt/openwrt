@@ -106,7 +106,7 @@ MAKE_FLAGS += \
 	feature-llvm=0 \
 	feature-libcap=0 \
 	feature-disassembler-four-args=1 \
-	feature-disassembler-init-styled=0
+	feature-disassembler-init-styled=1
 
 ifeq ($(BUILD_VARIANT),lib)
   MAKE_PATH = libbpf/src
