@@ -85,7 +85,7 @@
 			/* LED3 */
 			RTL93XX_LED_SET_NONE
 		>;
-		led_set1 = /bits/ 16 <
+		led_set2 = /bits/ 16 <
 			/* LED0 */
 			(
 				RTL93XX_LED_SET_LINK_ACTIVITY |
@@ -117,7 +117,7 @@
 				RTL93XX_LED_SET_2G5_LINK
 			)
 		>;
-		led_set2 = /bits/ 16 <
+		led_set3 = /bits/ 16 <
 			/* LED0 */
 			(
 				RTL93XX_LED_SET_LINK_ACTIVITY |
@@ -377,7 +377,7 @@
 			label = "lan9";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy24>;
-			led-set = <1>;
+			led-set = <2>;
 			led-num = <(
 				RTL93XX_LED_NUM0 | /* Amber/Lime | RGB */
 				RTL93XX_LED_NUM1 | /* Amber      | Red */
@@ -390,7 +390,7 @@
 			label = "lan10";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy25>;
-			led-set = <1>;
+			led-set = <2>;
 			led-num = <(
 				RTL93XX_LED_NUM0 | /* Amber/Lime | RGB */
 				RTL93XX_LED_NUM1 | /* Amber      | Red */
@@ -403,7 +403,7 @@
 			label = "lan11";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy26>;
-			led-set = <1>;
+			led-set = <2>;
 			led-num = <(
 				RTL93XX_LED_NUM0 | /* Amber/Lime | RGB */
 				RTL93XX_LED_NUM1 | /* Amber      | Red */
@@ -418,7 +418,7 @@
 			phy-mode = "10gbase-r";
 			phy-handle = <&phy27>;
 			sfp = <&sfp0>;
-			led-set = <2>;
+			led-set = <3>;
 			led-num = <(
 				RTL93XX_LED_NUM0 | /* Blue */
 				RTL93XX_LED_NUM1   /* Lime */
