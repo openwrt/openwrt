@@ -38,6 +38,13 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_add $hw_mac_addr 4 > /sys${DEVPATH}/macaddress
 		;;
+	dlink,dir-853-a1)
+		lan_mac_addr="$(mtd_get_mac_binary factory 0xe000)"
+		[ "$PHYNBR" = "0" ] && \
+			macaddr_add $lan_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_add $lan_mac_addr 2 > /sys${DEVPATH}/macaddress
+		;;
 	dlink,dir-853-a3)
 		[ "$PHYNBR" = "0" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0xe000)" \

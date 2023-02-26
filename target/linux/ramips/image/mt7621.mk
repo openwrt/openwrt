@@ -624,6 +624,14 @@ define Device/dlink_dir-3060-a1
 endef
 TARGET_DEVICES += dlink_dir-3060-a1
 
+define Device/dlink_dir-853-a1
+  $(Device/dlink_dir-8xx-a1)
+  DEVICE_MODEL := DIR-853
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES += kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += dlink_dir-853-a1
+
 define Device/dlink_dir-853-a3
   $(Device/dlink_dir-xx60-a1)
   DEVICE_MODEL := DIR-853
