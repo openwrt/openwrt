@@ -28,7 +28,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  bcm47xx_buttons_asus_rtn12[] __initconst = {
  	BCM47XX_GPIO_KEY(0, KEY_WPS_BUTTON),
  	BCM47XX_GPIO_KEY(1, KEY_RESTART),
-@@ -502,6 +508,9 @@ int __init bcm47xx_buttons_register(void
+@@ -490,6 +496,9 @@ int __init bcm47xx_buttons_register(void
  	int err;
  
  	switch (board) {
@@ -55,7 +55,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  bcm47xx_leds_asus_rtn12[] __initconst = {
  	BCM47XX_GPIO_LED(2, "unk", "power", 1, LEDS_GPIO_DEFSTATE_ON),
  	BCM47XX_GPIO_LED(7, "unk", "wlan", 0, LEDS_GPIO_DEFSTATE_OFF),
-@@ -571,6 +579,9 @@ void __init bcm47xx_leds_register(void)
+@@ -563,6 +571,9 @@ void __init bcm47xx_leds_register(void)
  	enum bcm47xx_board board = bcm47xx_board_get();
  
  	switch (board) {

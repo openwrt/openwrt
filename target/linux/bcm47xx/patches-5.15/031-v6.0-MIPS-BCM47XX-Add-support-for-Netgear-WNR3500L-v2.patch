@@ -36,7 +36,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  	{{BCM47XX_BOARD_LINKSYS_WRT54G_TYPE_0708, "Linksys WRT54G/GS/GL"}, "0x0708", "42", "0x10"},
 --- a/arch/mips/bcm47xx/buttons.c
 +++ b/arch/mips/bcm47xx/buttons.c
-@@ -448,6 +448,13 @@ bcm47xx_buttons_netgear_wnr3500lv1[] __i
+@@ -460,6 +460,13 @@ bcm47xx_buttons_netgear_wnr3500lv1[] __i
  };
  
  static const struct gpio_keys_button
@@ -50,7 +50,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  bcm47xx_buttons_netgear_wnr834bv2[] __initconst = {
  	BCM47XX_GPIO_KEY(6, KEY_RESTART),
  };
-@@ -718,6 +725,9 @@ int __init bcm47xx_buttons_register(void
+@@ -736,6 +743,9 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_NETGEAR_WNR3500L:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wnr3500lv1);
  		break;
@@ -62,7 +62,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  		break;
 --- a/arch/mips/bcm47xx/leds.c
 +++ b/arch/mips/bcm47xx/leds.c
-@@ -520,6 +520,14 @@ bcm47xx_leds_netgear_wnr3500lv1[] __init
+@@ -528,6 +528,14 @@ bcm47xx_leds_netgear_wnr3500lv1[] __init
  };
  
  static const struct gpio_led
@@ -77,7 +77,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  bcm47xx_leds_netgear_wnr834bv2[] __initconst = {
  	BCM47XX_GPIO_LED(2, "green", "power", 0, LEDS_GPIO_DEFSTATE_ON),
  	BCM47XX_GPIO_LED(3, "amber", "power", 0, LEDS_GPIO_DEFSTATE_OFF),
-@@ -780,6 +788,9 @@ void __init bcm47xx_leds_register(void)
+@@ -791,6 +799,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_NETGEAR_WNR3500L:
  		bcm47xx_set_pdata(bcm47xx_leds_netgear_wnr3500lv1);
  		break;
