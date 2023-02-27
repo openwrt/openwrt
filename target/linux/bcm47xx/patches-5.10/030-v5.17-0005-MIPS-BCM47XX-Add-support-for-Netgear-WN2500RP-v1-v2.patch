@@ -27,7 +27,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  	{{BCM47XX_BOARD_NETGEAR_WNDR3400V2, "Netgear WNDR3400 V2"}, "U12H187T00_NETGEAR"},
 --- a/arch/mips/bcm47xx/buttons.c
 +++ b/arch/mips/bcm47xx/buttons.c
-@@ -403,6 +403,12 @@ bcm47xx_buttons_netgear_r6300_v1[] __ini
+@@ -415,6 +415,12 @@ bcm47xx_buttons_netgear_r6300_v1[] __ini
  };
  
  static const struct gpio_keys_button
@@ -40,7 +40,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  bcm47xx_buttons_netgear_wndr3400v1[] __initconst = {
  	BCM47XX_GPIO_KEY(4, KEY_RESTART),
  	BCM47XX_GPIO_KEY(6, KEY_WPS_BUTTON),
-@@ -691,6 +697,9 @@ int __init bcm47xx_buttons_register(void
+@@ -709,6 +715,9 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_NETGEAR_R6300_V1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_r6300_v1);
  		break;
