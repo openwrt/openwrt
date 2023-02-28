@@ -506,6 +506,13 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 			goto out;
 		}
 
+		if (button->irq) {
+			dev_err(dev, "skipping button %s (only gpio buttons supported)\n",
+				button->desc);
+			bdata->b = &pdata->buttons[i];
+			continue;
+		}
+
 		if (gpio_is_valid(button->gpio)) {
 			/* legacy platform data... but is it the lookup table? */
 			bdata->gpiod = devm_gpiod_get_index(dev, desc, i,
