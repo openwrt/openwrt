@@ -187,7 +187,7 @@ else ifdef CONFIG_aarch64
     CONFIGURE_ARGS += --enable-armasm
     TARGET_CFLAGS:=$(TARGET_CFLAGS:-mcpu%=-mcpu%+crypto)
     Package/libwolfsslcpu-crypto/preinst=$(Package/libwolfsslcpu-crypto/preinst-aarch64)
-else ifdef CONFIG_TARGET_x86_64
+else ifdef CONFIG_x86_64
 	CONFIGURE_ARGS += --enable-intelasm
 endif
 
