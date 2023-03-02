@@ -366,6 +366,22 @@ define Device/dovado_tiny-ac
 endef
 TARGET_DEVICES += dovado_tiny-ac
 
+define Device/edimax_br-6208ac-v2
+  SOC := mt7620a
+  DEVICE_VENDOR := Edimax
+  DEVICE_MODEL := BR-6208AC
+  DEVICE_VARIANT := V2
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 7744k
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	edimax-header -s CSYS -m RN71 -f 0x70000 -S 0x01100000 | pad-rootfs | \
+	check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-mt76x0e kmod-phy-realtek \
+	kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
+	uboot-envtools
+endef
+TARGET_DEVICES += edimax_br-6208ac-v2
+
 define Device/edimax_br-6478ac-v2
   SOC := mt7620a
   DEVICE_VENDOR := Edimax

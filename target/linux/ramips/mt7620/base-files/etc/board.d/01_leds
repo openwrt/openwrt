@@ -98,6 +98,13 @@ domywifi,dw22d)
 dovado,tiny-ac)
 	ucidef_set_led_netdev "wifi_led" "wifi" "orange:wifi" "wlan0"
 	;;
+edimax,br-6208ac-v2)
+	ucidef_set_led_netdev "wan" "Internet" "green:internet" "eth0.2" "tx rx"
+	ucidef_set_led_netdev "wifi_led" "WLAN 2.4 GHz" "green:wlan2g" "wlan1"
+	ucidef_set_led_netdev "wifi_led" "WLAN 5 GHz" "green:wlan5g" "wlan1"
+	ucidef_set_led_netdev "wifi_led" "Firmware" "green:firmware" "wlan1"
+	ucidef_set_led_netdev "lan" "VPN" "green:vpn" "switch0" "0x20"
+	;;
 edimax,br-6478ac-v2|\
 edimax,ew-7478apc)
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wlan" "wlan0"
