@@ -9,9 +9,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/dsa/tag_mtk.c
 +++ b/net/dsa/tag_mtk.c
-@@ -33,6 +33,8 @@ static struct sk_buff *mtk_tag_xmit(stru
- 	if (__skb_put_padto(skb, ETH_ZLEN + MTK_HDR_LEN, false))
- 		return NULL;
+@@ -32,6 +32,8 @@ static struct sk_buff *mtk_tag_xmit(stru
+ 	 */
+ 	eth_skb_pad(skb);
  
 +	skb_set_queue_mapping(skb, dp->index);
 +
