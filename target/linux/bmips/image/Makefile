@@ -5,8 +5,7 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR := 0x80010000		# RAM start + 64K
 LOADER_ENTRY := 0x80a00000		# RAM start + 10M, for relocate
-RAMSIZE := 0x02000000			# 32MB
-LZMA_TEXT_START := 0x81800000		# 32MB - 8MB
+LZMA_TEXT_START := 0x81800000		# RAM start + 24M
 
 DEVICE_VARS += CHIP_ID DEVICE_LOADADDR
 
@@ -32,7 +31,6 @@ define Build/loader-lzma
 		LOADER_NAME="$(notdir $@)" \
 		LZMA_TEXT_START=$(LZMA_TEXT_START) \
 		PKG_BUILD_DIR="$@.src" \
-		RAMSIZE=$(RAMSIZE) \
 		TARGET_DIR="$(dir $@)" \
 		compile loader.$(1)
 	@mv "$@.$(1)" "$@"
