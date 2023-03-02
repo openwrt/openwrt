@@ -2,6 +2,8 @@
 
 #include "mt7621_xiaomi_mi-router-4a-common.dtsi"
 
+#include <dt-bindings/leds/common.h>
+
 / {
 	aliases {
 		label-mac-device = &gmac1;
@@ -12,12 +14,23 @@
 
 		led_status_blue: status_blue {
 			label = "blue:status";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_yellow: status_yellow {
 			label = "yellow:status";
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_blue {
+			label = "blue:wan";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&switch0 12 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
@@ -48,6 +61,9 @@
 };
 
 &switch0 {
+	gpio-controller;
+	#gpio-cells = <2>;
+
 	ports {
 		port@2 {
 			status = "okay";
