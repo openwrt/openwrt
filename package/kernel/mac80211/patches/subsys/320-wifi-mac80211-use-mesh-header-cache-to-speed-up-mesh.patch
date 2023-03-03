@@ -64,7 +64,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	skb->dev = sdata->dev;
 +	memcpy(&eth, skb->data, ETH_HLEN - 2);
-+	skb_pull(skb, sizeof(eth));
++	skb_pull(skb, 2);
 +	__ieee80211_xmit_fast(sdata, sta, &entry->fast_tx, skb, tid_tx,
 +			      eth.h_dest, eth.h_source);
 +	IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_unicast);

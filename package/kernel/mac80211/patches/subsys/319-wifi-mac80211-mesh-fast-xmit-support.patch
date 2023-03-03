@@ -137,8 +137,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!entry)
 +		return false;
 +
-+	if (skb_headroom(skb) + 2 * ETH_ALEN < entry->hdrlen +
-+					       entry->fast_tx.hdr_len)
++	if (skb_headroom(skb) < entry->hdrlen + entry->fast_tx.hdr_len)
 +		return false;
 +
 +	sta = rcu_dereference(entry->mpath->next_hop);
@@ -177,6 +176,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (copy_sa)
 +	    ether_addr_copy(meshhdr->eaddr2, sa);
 +
++	skb_push(skb, 2 * ETH_ALEN);
 +	__ieee80211_xmit_fast(sdata, sta, &entry->fast_tx, skb, tid_tx,
 +			      entry->mpath->dst, sdata->vif.addr);
 +
@@ -764,28 +764,20 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
-@@ -3645,8 +3652,6 @@ static void __ieee80211_xmit_fast(struct
- 	struct ieee80211_tx_data tx;
+@@ -3646,7 +3653,6 @@ static void __ieee80211_xmit_fast(struct
  	ieee80211_tx_result r;
  	int hw_headroom = sdata->local->hw.extra_tx_headroom;
--	int extra_head = fast_tx->hdr_len - (ETH_HLEN - 2);
+ 	int extra_head = fast_tx->hdr_len - (ETH_HLEN - 2);
 -	struct ethhdr eth;
  
  	skb = skb_share_check(skb, GFP_ATOMIC);
  	if (unlikely(!skb))
-@@ -3661,16 +3666,15 @@ static void __ieee80211_xmit_fast(struct
- 	 * more room than we already have in 'extra_head'
- 	 */
- 	if (unlikely(ieee80211_skb_resize(sdata, skb,
--					  max_t(int, extra_head + hw_headroom -
-+					  max_t(int, fast_tx->hdr_len + hw_headroom -
- 						     skb_headroom(skb), 0),
+@@ -3666,11 +3672,10 @@ static void __ieee80211_xmit_fast(struct
  					  ENCRYPT_NO)))
  		goto free;
  
 -	memcpy(&eth, skb->data, ETH_HLEN - 2);
--	hdr = skb_push(skb, extra_head);
-+	hdr = skb_push(skb, fast_tx->hdr_len);
+ 	hdr = skb_push(skb, extra_head);
  	memcpy(skb->data, fast_tx->hdr, fast_tx->hdr_len);
 -	memcpy(skb->data + fast_tx->da_offs, eth.h_dest, ETH_ALEN);
 -	memcpy(skb->data + fast_tx->sa_offs, eth.h_source, ETH_ALEN);
@@ -794,7 +786,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	info = IEEE80211_SKB_CB(skb);
  	memset(info, 0, sizeof(*info));
-@@ -3689,7 +3693,8 @@ static void __ieee80211_xmit_fast(struct
+@@ -3689,7 +3694,8 @@ static void __ieee80211_xmit_fast(struct
  #endif
  
  	if (hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_QOS_DATA)) {
@@ -804,7 +796,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		*ieee80211_get_qos_ctl(hdr) = tid;
  	}
  
-@@ -3732,6 +3737,7 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3732,6 +3738,7 @@ static bool ieee80211_xmit_fast(struct i
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
  	struct tid_ampdu_tx *tid_tx = NULL;
  	struct sk_buff *next;
@@ -812,17 +804,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u8 tid = IEEE80211_NUM_TIDS;
  
  	/* control port protocol needs a lot of special handling */
-@@ -3757,14 +3763,18 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3757,6 +3764,8 @@ static bool ieee80211_xmit_fast(struct i
  		}
  	}
  
 +	memcpy(&eth, skb->data, ETH_HLEN - 2);
 +
  	/* after this point (skb is modified) we cannot return false */
-+	skb_pull(skb, ETH_HLEN - 2);
  	skb = ieee80211_tx_skb_fixup(skb, ieee80211_sdata_netdev_features(sdata));
  	if (!skb)
- 		return true;
+@@ -3764,7 +3773,8 @@ static bool ieee80211_xmit_fast(struct i
  
  	skb_list_walk_safe(skb, skb, next) {
  		skb_mark_not_on_list(skb);
