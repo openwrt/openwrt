@@ -34,6 +34,7 @@ endif
 define U-Boot/Default
   BUILD_TARGET:=mediatek
   UBOOT_IMAGE:=u-boot-mtk.bin
+  HIDDEN:=1
 endef
 
 define U-Boot/mt7620_rfb
