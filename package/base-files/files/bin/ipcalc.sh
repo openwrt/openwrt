@@ -1,4 +1,4 @@
-#!/usr/bin/awk -f
+#!/usr/bin/env awk -f
 
 function bitcount(c) {
 	c=and(rshift(c, 1),0x55555555)+and(c,0x55555555)
