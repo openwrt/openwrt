@@ -3,13 +3,16 @@ include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=ipq-wifi
 PKG_RELEASE:=1
+
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
+PKG_SOURCE_DATE:=2023-02-12
+PKG_SOURCE_VERSION:=c3ece63d6879e14c8d65a8dc3e32f47e0f891f27
+PKG_MIRROR_HASH:=7637fb1df3ad577650284b526ffaa4c038e1ba6b196a88724d63e4d1c1ab3c53
+
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
-
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-endef
 
 define Build/Compile
 endef
@@ -114,7 +117,7 @@ Do not install it for any other device!
   endef
 
   define Package/ipq-wifi-$(1)/install-overlay
-    $$$$(foreach IPQ_WIFI_BOARD_FILE,$$$$(wildcard board-$(1).*),\
+    $$$$(foreach IPQ_WIFI_BOARD_FILE,$$$$(wildcard $(PKG_BUILD_DIR)/board-$(1).*),\
       $$$$(call ipq-wifi-install-one,$$$$(IPQ_WIFI_BOARD_FILE),$$(1)))
   endef
 
