@@ -814,16 +814,14 @@ define Device/netgear_ex6100v2
 	DEVICE_MODEL := EX6100
 	DEVICE_VARIANT := v2
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += netgear_ex6100v2
+TARGET_DEVICES += netgear_ex6100v2
 
 define Device/netgear_ex6150v2
 	$(call Device/netgear_ex61x0v2)
 	DEVICE_MODEL := EX6150
 	DEVICE_VARIANT := v2
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += netgear_ex6150v2
+TARGET_DEVICES += netgear_ex6150v2
 
 define Device/netgear_orbi
 	$(call Device/DniImage)
