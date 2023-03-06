@@ -139,6 +139,10 @@ case "$board" in
 			macaddr_setbit_la "$(mtd_get_mac_ascii Config protest_lan_mac)" \
 				> /sys${DEVPATH}/macaddress
 		;;
+	snr,snr-cpe-me2-sfp)
+		hw_mac_addr="$(mtd_get_mac_binary factory 0x8004)"
+		[ "$PHYNBR" = "1" ] &&  echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
+		;;
 	tenbay,t-mb5eu-v01)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr "0x100000" > /sys${DEVPATH}/macaddress
