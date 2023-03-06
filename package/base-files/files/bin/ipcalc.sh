@@ -1,5 +1,6 @@
-#!/usr/bin/awk -f
+#!/bin/sh
 
+awk -f - $* <<EOF
 function bitcount(c) {
 	c=and(rshift(c, 1),0x55555555)+and(c,0x55555555)
 	c=and(rshift(c, 2),0x33333333)+and(c,0x33333333)
@@ -87,3 +88,4 @@ BEGIN {
 	print "START="int2ip(start)
 	print "END="int2ip(end)
 }
+EOF
