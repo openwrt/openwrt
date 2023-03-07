@@ -1084,6 +1084,8 @@ hostapd_bss_mgmt_enable(struct ubus_context *ctx, struct ubus_object *obj,
 	}
 
 	__hostapd_bss_mgmt_enable(hapd, flags);
+
+	return 0;
 }
 
 
