@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar7161_ruckus_zf734x.dtsi"
+
+/ {
+	model = "Ruckus ZoneFlex 7343/7363[-U]";
+	compatible = "ruckus,zf7363", "qca,ar7161";
+};
+
+&mdio0 {
+	ethernet-phy@0 {
+		reg = <0x0>;
+		max-speed = <100>;
+	};
+
+	ethernet-phy@1 {
+		reg = <0x1>;
+		max-speed = <100>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+	pll-data = <0x00110000 0x00001099 0x00991099>;
+	nvmem-cells = <&macaddr_bdata_6c>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "rgmii-id";
+
+	fixed-link {
+		speed = <100>;
+		full-duplex;
+	};
+};
+
+&board_data {
+	macaddr_bdata_6c: macaddr@6c {
+		reg = <0x6c 0x6>;
+	};
+};
