@@ -52,6 +52,9 @@ platform_do_upgrade() {
 	solidrun,clearfog-pro-a1)
 		legacy_sdcard_do_upgrade "$1"
 		;;
+	fortinet,fg-50e)
+		fortinet_do_upgrade "$1"
+		;;
 	linksys,wrt1200ac|\
 	linksys,wrt1900ac-v1|\
 	linksys,wrt1900ac-v2|\
