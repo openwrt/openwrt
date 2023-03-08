@@ -541,6 +541,18 @@ config KERNEL_SOFTLOCKUP_DETECTOR
 	  chance to run.  The current stack trace is displayed upon
 	  detection and the system will stay locked up.
 
+config KERNEL_HARDLOCKUP_DETECTOR
+	bool "Compile the kernel with detect Hard Lockups"
+	depends on KERNEL_DEBUG_KERNEL
+	help
+	  Say Y here to enable the kernel to act as a watchdog to detect
+	  hard lockups.
+
+	  Hardlockups are bugs that cause the CPU to loop in kernel mode
+	  for more than 10 seconds, without letting other interrupts have a
+	  chance to run.  The current stack trace is displayed upon detection
+	  and the system will stay locked up.
+
 config KERNEL_DETECT_HUNG_TASK
 	bool "Compile the kernel with detect Hung Tasks"
 	depends on KERNEL_DEBUG_KERNEL
