@@ -56,7 +56,8 @@ platform_do_upgrade() {
 	fortinet,fg-50e|\
 	fortinet,fg-51e|\
 	fortinet,fg-52e|\
-	fortinet,fwf-30e)
+	fortinet,fwf-30e|\
+	fortinet,fwf-50e-2r)
 		fortinet_do_upgrade "$1"
 		;;
 	iij,sa-w2)
