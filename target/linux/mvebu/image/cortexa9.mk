@@ -171,6 +171,16 @@ define Device/fortinet_fwf-50e-2r
 endef
 TARGET_DEVICES += fortinet_fwf-50e-2r
 
+define Device/fortinet_fwf-51e
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiWiFi 51E
+  DEVICE_DTS := armada-385-fortinet-fwf-51e
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FWF51E
+  DEVICE_PACKAGES += kmod-ath9k wpad-basic-mbedtls
+endef
+TARGET_DEVICES += fortinet_fwf-51e
+
 define Device/globalscale_mirabox
   $(Device/NAND-512K)
   DEVICE_VENDOR := Globalscale
