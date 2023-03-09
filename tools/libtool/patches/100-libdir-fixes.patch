@@ -1,3 +1,22 @@
+From 67ffe8e8582a7ba1f1d1307a419098e6dd88bdaf Mon Sep 17 00:00:00 2001
+From: Eneas U de Queiroz <cotequeiroz@gmail.com>
+Date: Tue, 20 Jul 2021 16:41:11 -0300
+Subject: openwrt: cross-compilation path adjustments
+
+Comments from the patch:
+
+Adding 'libdir' from the .la file to our library search paths
+breaks crosscompilation horribly.  We cheat here and don't add
+it, instead adding the path where we found the .la.  -CL
+
+OE sets installed=no in staging. We need to look in $objdir and $absdir,
+preferring $objdir. RP 31/04/2008
+
+This was originally commited to openwrt by Jo-Philipp Wich
+<jow@openwrt.org>.
+
+Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
+
 --- a/libltdl/config/ltmain.m4sh
 +++ b/libltdl/config/ltmain.m4sh
 @@ -5731,8 +5731,14 @@ func_mode_link ()

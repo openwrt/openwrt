@@ -1,3 +1,16 @@
+From 7f2b8a1ab4fa1475eeeddfb84eb5b92594bfce43 Mon Sep 17 00:00:00 2001
+From: Eneas U de Queiroz <cotequeiroz@gmail.com>
+Date: Tue, 20 Jul 2021 16:54:12 -0300
+Subject: openwrt: strip unsave directories from relink command
+
+strip unsave directories from relink command, nuke every -L that looks
+like /usr/lib or /lib
+
+This was originally commited to openwrt by Jo-Philipp Wich
+<jow@openwrt.org>.
+
+Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
+
 --- a/libltdl/config/ltmain.m4sh
 +++ b/libltdl/config/ltmain.m4sh
 @@ -2186,6 +2186,9 @@ func_mode_install ()
