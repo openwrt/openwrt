@@ -104,18 +104,16 @@
    configure_ac=configure.in
 --- a/libltdl/m4/libtool.m4
 +++ b/libltdl/m4/libtool.m4
-@@ -907,9 +907,8 @@ dnl AC_DEFUN([AC_LIBTOOL_RC], [])
- # ----------------
- m4_defun([_LT_TAG_COMPILER],
+@@ -909,7 +909,7 @@ m4_defun([_LT_TAG_COMPILER],
  [AC_REQUIRE([AC_PROG_CC])dnl
--
+ 
  _LT_DECL([LTCC], [CC], [1], [A C compiler])dnl
 -_LT_DECL([LTCFLAGS], [CFLAGS], [1], [LTCC compiler flags])dnl
 +_LT_DECL([LTCFLAGS], [CFLAGS], ["-O2 -I\${STAGING_DIR_HOST:-$STAGING_DIR_HOST}/include"], [LTCC compiler flags])dnl
  _LT_TAGDECL([CC], [compiler], [1], [A language specific compiler])dnl
  _LT_TAGDECL([with_gcc], [GCC], [0], [Is the compiler the GNU compiler?])dnl
  
-@@ -7660,9 +7659,9 @@ m4_defun([_LT_DECL_EGREP],
+@@ -7660,9 +7660,9 @@ m4_defun([_LT_DECL_EGREP],
  [AC_REQUIRE([AC_PROG_EGREP])dnl
  AC_REQUIRE([AC_PROG_FGREP])dnl
  test -z "$GREP" && GREP=grep
@@ -128,7 +126,7 @@
  dnl Non-bleeding-edge autoconf doesn't subst GREP, so do it here too
  AC_SUBST([GREP])
  ])
-@@ -7695,9 +7694,8 @@ AC_SUBST([DLLTOOL])
+@@ -7695,9 +7695,8 @@ AC_SUBST([DLLTOOL])
  # as few characters as possible.  Prefer GNU sed if found.
  m4_defun([_LT_DECL_SED],
  [AC_PROG_SED
