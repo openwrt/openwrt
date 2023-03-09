@@ -98,7 +98,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  /**
 --- a/include/linux/nvmem-provider.h
 +++ b/include/linux/nvmem-provider.h
-@@ -155,6 +155,9 @@ struct nvmem_device *devm_nvmem_register
+@@ -153,6 +153,9 @@ struct nvmem_device *devm_nvmem_register
  void nvmem_add_cell_table(struct nvmem_cell_table *table);
  void nvmem_del_cell_table(struct nvmem_cell_table *table);
  
@@ -108,7 +108,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  #else
  
  static inline struct nvmem_device *nvmem_register(const struct nvmem_config *c)
-@@ -172,6 +175,11 @@ devm_nvmem_register(struct device *dev,
+@@ -170,6 +173,11 @@ devm_nvmem_register(struct device *dev,
  
  static inline void nvmem_add_cell_table(struct nvmem_cell_table *table) {}
  static inline void nvmem_del_cell_table(struct nvmem_cell_table *table) {}

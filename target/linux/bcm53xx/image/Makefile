@@ -105,6 +105,22 @@ define Build/seama-nand
 		-i $@.entity
 endef
 
+define Build/dwl8610ap-image
+	mkdir -p $@.tmptar
+	# The DWL8610AP pretends to be a Broadcom reference design
+	echo "bcm953012er" > $@.tmptar/board
+	echo "LVL7" > $@.tmptar/model
+	# Something high beyond what D-Link has put out
+	echo "5.0.0.0" > $@.tmptar/version
+	# Create rootfs.bin, this is just a NAND image including everything
+	cp $@ $@.tmptar/rootfs.bin
+	# Hash the rootfs.bin
+	cat $@.tmptar/rootfs.bin | md5sum > $@.tmptar/rootfs.md5
+	cd $@.tmptar && tar -c -f $@.new *
+	rm -rf $@.tmptar
+	mv $@.new $@
+endef
+
 DEVICE_VARS += ASUS_PRODUCTID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 DEVICE_VARS += SIGNATURE
@@ -249,6 +265,15 @@ define Device/dlink_dir-885l
   SIGNATURE := wrgac42_dlink.2015_dir885l
 endef
 TARGET_DEVICES += dlink_dir-885l
+
+define Device/dlink_dwl-8610ap
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DWL-8610AP
+  DEVICE_PACKAGES := $(B43)
+  IMAGES := factory.tar
+  IMAGE/factory.tar := append-ubi | trx-nand | dwl8610ap-image
+endef
+TARGET_DEVICES += dlink_dwl-8610ap
 
 define Device/linksys_ea6300-v1
   DEVICE_VENDOR := Linksys

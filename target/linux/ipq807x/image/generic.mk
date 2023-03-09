@@ -19,13 +19,14 @@ endef
 
 define Device/buffalo_wxr-5950ax12
 	$(call Device/FitImage)
-	$(call Device/UbiFit)
 	DEVICE_VENDOR := Buffalo
 	DEVICE_MODEL := WXR-5950AX12
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@hk01
 	SOC := ipq8074
+	IMAGES := sysupgrade.bin
+	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 	DEVICE_PACKAGES := ipq-wifi-buffalo_wxr-5950ax12
 endef
 TARGET_DEVICES += buffalo_wxr-5950ax12

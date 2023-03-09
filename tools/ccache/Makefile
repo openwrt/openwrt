@@ -28,14 +28,4 @@ ifneq (docs-$(CONFIG_BUILD_DOCUMENTATION),docs-y)
 CMAKE_HOST_OPTIONS += -DENABLE_DOCUMENTATION=OFF
 endif
 
-define Host/Install/ccache
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin/
-	$(CP) ./files/* $(STAGING_DIR_HOST)/bin/
-endef
-
-define Host/Install
-	$(call Host/Install/Default)
-	$(call Host/Install/ccache)
-endef
-
 $(eval $(call HostBuild))

@@ -12,6 +12,10 @@ mikrotik,routerboard-760igs)
 telco-electronics,x1)
 	ucidef_add_gpio_switch "modem_reset" "Modem Reset" "496"
 	;;
+tplink,eap235-wall-v1|\
+tplink,eap615-wall-v1)
+	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "poe-passthrough"
+	;;
 ubnt,edgerouter-x)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "480"
 	;;

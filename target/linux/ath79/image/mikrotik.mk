@@ -9,6 +9,16 @@ define Device/mikrotik_routerboard-493g
 endef
 TARGET_DEVICES += mikrotik_routerboard-493g
 
+define Device/mikrotik_routerboard-911-lite
+  $(Device/mikrotik_nor)
+  SOC := ar9344
+  DEVICE_MODEL := RouterBOARD 911 Lite2/Lite5 (2Hn/5Hn)
+  DEVICE_PACKAGES += rssileds
+  IMAGE_SIZE := 16256k
+  SUPPORTED_DEVICES += rb-911-2hn rb-911-5hn
+endef
+TARGET_DEVICES += mikrotik_routerboard-911-lite
+
 define Device/mikrotik_routerboard-912uag-2hpnd
   $(Device/mikrotik_nand)
   SOC := ar9342

@@ -212,9 +212,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	if (!config->no_of_node)
  		nvmem->dev.of_node = config->dev->of_node;
  
-@@ -680,6 +819,12 @@ struct nvmem_device *nvmem_register(cons
- 	nvmem->dev.groups = nvmem_dev_groups;
- #endif
+@@ -703,6 +842,12 @@ struct nvmem_device *nvmem_register(cons
+ 	if (rval)
+ 		goto err_remove_cells;
  
 +	if (nvmem->nkeepout) {
 +		rval = nvmem_validate_keepouts(nvmem);
@@ -224,7 +224,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 +
  	dev_dbg(&nvmem->dev, "Registering nvmem device %s\n", config->name);
  
- 	rval = device_register(&nvmem->dev);
+ 	rval = device_add(&nvmem->dev);
 --- a/include/linux/nvmem-provider.h
 +++ b/include/linux/nvmem-provider.h
 @@ -31,6 +31,19 @@ enum nvmem_type {
@@ -256,8 +256,8 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
   * @type:	Type of the nvmem storage
   * @read_only:	Device is read-only.
   * @root_only:	Device is accessibly to root only.
-@@ -67,6 +82,8 @@ struct nvmem_config {
- 	struct gpio_desc	*wp_gpio;
+@@ -65,6 +80,8 @@ struct nvmem_config {
+ 	struct module		*owner;
  	const struct nvmem_cell_info	*cells;
  	int			ncells;
 +	const struct nvmem_keepout *keepout;

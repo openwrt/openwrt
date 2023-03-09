@@ -1,0 +1,268 @@
+// SPDX-License-Identifier: GPL-2.0-or-later or MIT
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/include/ "fsl/p1010si-pre.dtsi"
+
+/ {
+	model = "Watchguard Firebox T10";
+	compatible = "watchguard,firebox-t10";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+		bootargs-override = "console=ttyS0,115200";
+	};
+
+	aliases {
+		spi0 = &spi0;
+		led-boot = &led_mode;
+		led-failsafe = &led_failover;
+		led-running = &led_mode;
+		led-upgrade = &led_attention;
+	};
+
+	memory {
+		device_type = "memory";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_attention: attention_orange {
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "orange:attention";
+		};
+
+		status_red {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			label = "red:status";
+		};
+
+		led_mode: mode_green {
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			label = "green:mode";
+		};
+
+		led_failover: failover_green {
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			label = "green:failover";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+
+	soc: soc@ffe00000 {
+		ranges = <0x0 0x0 0xffe00000 0x100000>;
+
+		i2c@3000 {
+			rtc@30 {
+				compatible = "sii,s35390a";
+				reg = <0x30>;
+			};
+		};
+
+		spi0: spi@7000 {
+			flash@0 {
+				compatible = "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <25000000>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					uboot: partition@0 {
+						reg = <0x0 0x90000>;
+						label = "u-boot";
+						read-only;
+					};
+
+					partition@90000 {
+						reg = <0x90000 0x10000>;
+						label = "u-boot-env";
+					};
+
+					partition@a0000 {
+						reg = <0xa0000 0x20000>;
+						label = "cfgxxx";
+						read-only;
+					};
+
+					partition@c0000 {
+						reg = <0xc0000 0x40000>;
+						label = "device_id";
+						read-only;
+					};
+				};
+			};
+		};
+
+		gpio0: gpio-controller@fc00 {
+		};
+
+		usb@22000 {
+			phy_type = "utmi";
+			dr_mode = "host";
+		};
+
+		mdio@24000 {
+			phy1: ethernet-phy@1 {
+				reg = <0x1>;
+			};
+
+			phy2: ethernet-phy@2 {
+				reg = <0x2>;
+			};
+
+			phy3: ethernet-phy@3 {
+				reg = <0x3>;
+			};
+		};
+
+		mdio@25000 {
+			tbi_phy1: tbi-phy@11 {
+				reg = <0x11>;
+				device_type = "tbi-phy";
+			};
+		};
+
+		mdio@26000 {
+			tbi_phy2: tbi-phy@11 {
+				reg = <0x11>;
+				device_type = "tbi-phy";
+			};
+		};
+
+		enet0: ethernet@b0000 {
+			phy-handle = <&phy1>;
+			phy-connection-type = "rgmii-id";
+		};
+
+		enet1: ethernet@b1000 {
+			tbi-handle = <&tbi_phy1>;
+			phy-handle = <&phy2>;
+			phy-connection-type = "sgmii";
+		};
+
+		enet2: ethernet@b2000 {
+			tbi-handle = <&tbi_phy2>;
+			phy-handle = <&phy3>;
+			phy-connection-type = "sgmii";
+		};
+
+		sdhc@2e000 {
+			status = "disabled";
+		};
+
+		serial1: serial@4600 {
+			status = "disabled";
+		};
+
+		can0: can@1c000 {
+			status = "disabled";
+		};
+
+		can1: can@1d000 {
+			status = "disabled";
+		};
+	};
+
+	pci0: pcie@ffe09000 {
+		status = "disabled";
+	};
+
+	pci1: pcie@ffe0a000 {
+		status = "disabled";
+	};
+
+	ifc: ifc@ffe1e000 {
+		reg = <0x0 0xffe1e000 0 0x2000>;
+
+		/* NOR, NAND Flashes and CPLD on board */
+		ranges = <0x0 0x0 0x0 0xee000000 0x02000000
+			0x1 0x0 0x0 0xff800000 0x00010000
+			0x3 0x0 0x0 0xffb00000 0x00000020>;
+
+		nand@1,0 {
+			compatible = "fsl,ifc-nand";
+			reg = <0x1 0x0 0x10000>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/*
+				 * Original partition layout:
+				 * 0x000000000000-0x000000020000 : "NAND (RW) WG DTB Image"
+				 * 0x000000020000-0x000000520000 : "NAND (RW) WG SYSA Kernel"
+				 * 0x000000520000-0x000007f00000 : "NAND (RW) WG SYSA_CODE"
+				 * 0x000007f00000-0x000008400000 : "NAND (RW) WG SYSB Kernel"
+				 * 0x000008400000-0x000009c00000 : "NAND (RW) WG SYSB_CODE"
+				 * 0x000009c00000-0x00000a100000 : "NAND (RW) WG SYSA2 Kernel"
+				 * 0x00000a100000-0x000011ae0000 : "NAND (RW) WG SYSA_CODE2"
+				 * 0x000011ae0000-0x000020000000 : "NAND (RW) WG SYSA_DATA"
+				 */
+
+				partition@0 {
+					reg = <0x0 0x20000>;
+					label = "wg-dtb";
+					read-only;
+				};
+
+				partition@20000 {
+					reg = <0x20000 0x500000>;
+					label = "kernel";
+				};
+
+				partition@520000 {
+					reg = <0x520000 0x79e0000>;
+					label = "wg-sysa-rootfs";
+					read-only;
+				};
+
+				partition@7f00000 {
+					reg = <0x7f00000 0x500000>;
+					label = "wg-sysb-kernel";
+					read-only;
+				};
+
+				partition@8400000 {
+					reg = <0x8400000 0x1800000>;
+					label = "wg-sysb-rootfs";
+					read-only;
+				};
+
+				partition@9c00000 {
+					reg = <0x9c00000 0x500000>;
+					label = "wg-sysa2-kernel";
+					read-only;
+				};
+
+				partition@a100000 {
+					reg = <0xa100000 0x79e0000>;
+					label = "wg-sysa2-rootfs";
+					read-only;
+				};
+
+				partition@11ae0000 {
+					reg = <0x11ae0000 0xe520000>;
+					label = "ubi";
+				};
+			};
+		};
+	};
+};
+
+/include/ "fsl/p1010si-post.dtsi"
