@@ -1,3 +1,13 @@
+From ca10caa502f971f90d8c041aa2476de54ef0ce2b Mon Sep 17 00:00:00 2001
+From: Eneas U de Queiroz <cotequeiroz@gmail.com>
+Date: Tue, 20 Jul 2021 16:41:11 -0300
+Subject: openwrt: make relocatable, search resources relative to STAGING_DIR
+
+This was originally commited to openwrt by Jo-Philipp Wich
+<jow@openwrt.org>.
+
+Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
+
 --- a/libltdl/config/general.m4sh
 +++ b/libltdl/config/general.m4sh
 @@ -45,15 +45,22 @@ progpath="$0"
