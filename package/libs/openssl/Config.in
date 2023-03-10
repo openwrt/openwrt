@@ -167,16 +167,24 @@ config OPENSSL_WITH_CAMELLIA
 
 config OPENSSL_WITH_IDEA
 	bool
-	prompt "Enable IDEA cipher support"
+	default y if !SMALL_FLASH
+	prompt "Enable IDEA cipher support (needs legacy provider)"
 	help
 		IDEA is a block cipher with 128-bit keys.
+		To use the cipher, one must install the libopenssl-legacy
+		package, using a main libopenssl package compiled with this
+		option enabled as well.
 
 config OPENSSL_WITH_SEED
 	bool
-	prompt "Enable SEED cipher support"
+	default y if !SMALL_FLASH
+	prompt "Enable SEED cipher support (needs legacy provider)"
 	help
 		SEED is a block cipher with 128-bit keys broadly used in
 		South Korea, but seldom found elsewhere.
+		To use the cipher, one must install the libopenssl-legacy
+		package, using a main libopenssl package compiled with this
+		option enabled as well.
 
 config OPENSSL_WITH_SM234
 	bool
@@ -197,11 +205,21 @@ config OPENSSL_WITH_BLAKE2
 
 config OPENSSL_WITH_MDC2
 	bool
-	prompt "Enable MDC2 digest support"
+	default y if !SMALL_FLASH
+	prompt "Enable MDC2 digest support (needs legacy provider)"
+	help
+		To use the digest, one must install the libopenssl-legacy
+		package, using a main libopenssl package compiled with this
+		option enabled as well.
 
 config OPENSSL_WITH_WHIRLPOOL
 	bool
-	prompt "Enable Whirlpool digest support"
+	default y if !SMALL_FLASH
+	prompt "Enable Whirlpool digest support (needs legacy provider)"
+	help
+		To use the digest, one must install the libopenssl-legacy
+		package, using a main libopenssl package compiled with this
+		option enabled as well.
 
 config OPENSSL_WITH_COMPRESSION
 	bool
