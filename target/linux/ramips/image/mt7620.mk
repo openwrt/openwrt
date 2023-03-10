@@ -1471,6 +1471,18 @@ define Device/zte_q7
 endef
 TARGET_DEVICES += zte_q7
 
+define Device/zyxel_keenetic-lite-iii-a
+  SOC := mt7620n
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := Keenetic Lite III
+  DEVICE_VARIANT := A
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to 64k | check-size | \
+		zyimage -d 2102018 -v "ZyXEL Keenetic Lite III"
+endef
+TARGET_DEVICES += zyxel_keenetic-lite-iii-a
+
 define Device/zyxel_keenetic-omni
   SOC := mt7620n
   IMAGE_SIZE := 7872k
