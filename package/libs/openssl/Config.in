@@ -12,9 +12,23 @@ config OPENSSL_OPTIMIZE_SPEED
 		The increase in performance and size depends on the
 		target CPU. EC and AES seem to benefit the most.
 
+config OPENSSL_SMALL_FOOTPRINT
+	bool
+	depends on !OPENSSL_OPTIMIZE_SPEED
+	default y if SMALL_FLASH || LOW_MEMORY_FOOTPRINT
+	prompt "Build with OPENSSL_SMALL_FOOTPRINT (read help)"
+	help
+		This turns on -DOPENSSL_SMALL_FOOTPRINT.  This will save only
+		1-3% of of the ipk size.  The performance drop depends on
+		architecture and algorithm.  MIPS drops 13% of performance for
+		a 3% decrease in ipk size.  On Aarch64, for a 1% reduction in
+		size, ghash and GCM performance decreases 90%, while
+		Chacha20-Poly1305 is 15% slower.  X86_64 drops 1% of its size
+		for 3% of performance.  Other arches have not been tested.
+
 config OPENSSL_WITH_ASM
 	bool
-	default y if !SMALL_FLASH || !arm
+	default y
 	prompt "Compile with optimized assembly code"
 	depends on !arc
 	help
@@ -46,7 +60,7 @@ config OPENSSL_NO_DEPRECATED
 
 config OPENSSL_WITH_ERROR_MESSAGES
 	bool
-	default y if !SMALL_FLASH && !LOW_MEMORY_FOOTPRINT
+	default y if !OPENSSL_SMALL_FOOTPRINT || (!SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
 	prompt "Include error messages"
 	help
 		This option aids debugging, but increases package size and
