@@ -17,6 +17,9 @@ mediatek_setup_interfaces()
 	cudy,wr3000-v1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
+	glinet,gl-mt3000)
+		ucidef_set_interfaces_lan_wan eth1 eth0
+		;;
 	mediatek,mt7986a-rfb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan6" "eth1 wan"
 		;;
