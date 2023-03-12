@@ -18,7 +18,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
 
 --- a/drivers/gpu/drm/vc4/vc4_plane.c
 +++ b/drivers/gpu/drm/vc4/vc4_plane.c
-@@ -624,6 +624,53 @@ static int vc4_plane_allocate_lbm(struct
+@@ -626,6 +626,53 @@ static int vc4_plane_allocate_lbm(struct
  	return 0;
  }
  
@@ -72,7 +72,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  /* Writes out a full display list for an active plane to the plane's
   * private dlist state.
   */
-@@ -988,9 +1035,20 @@ static int vc4_plane_mode_set(struct drm
+@@ -990,9 +1037,20 @@ static int vc4_plane_mode_set(struct drm
  
  	/* Colorspace conversion words */
  	if (vc4_state->is_yuv) {
@@ -96,7 +96,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  	}
  
  	vc4_state->lbm_offset = 0;
-@@ -1419,6 +1477,14 @@ struct drm_plane *vc4_plane_init(struct
+@@ -1421,6 +1479,14 @@ struct drm_plane *vc4_plane_init(struct
  					   DRM_MODE_REFLECT_X |
  					   DRM_MODE_REFLECT_Y);
  
@@ -113,7 +113,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  
 --- a/drivers/gpu/drm/vc4/vc4_regs.h
 +++ b/drivers/gpu/drm/vc4/vc4_regs.h
-@@ -976,6 +976,7 @@ enum hvs_pixel_format {
+@@ -982,6 +982,7 @@ enum hvs_pixel_format {
  #define SCALER_CSC0_ITR_R_601_5			0x00f00000
  #define SCALER_CSC0_ITR_R_709_3			0x00f00000
  #define SCALER_CSC0_JPEG_JFIF			0x00000000
@@ -121,7 +121,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  
  /* S2.8 contribution of Cb to Green */
  #define SCALER_CSC1_COEF_CB_GRN_MASK		VC4_MASK(31, 22)
-@@ -992,6 +993,7 @@ enum hvs_pixel_format {
+@@ -998,6 +999,7 @@ enum hvs_pixel_format {
  #define SCALER_CSC1_ITR_R_601_5			0xe73304a8
  #define SCALER_CSC1_ITR_R_709_3			0xf2b784a8
  #define SCALER_CSC1_JPEG_JFIF			0xea34a400
@@ -129,7 +129,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  
  /* S2.8 contribution of Cb to Red */
  #define SCALER_CSC2_COEF_CB_RED_MASK		VC4_MASK(29, 20)
-@@ -1005,6 +1007,7 @@ enum hvs_pixel_format {
+@@ -1011,6 +1013,7 @@ enum hvs_pixel_format {
  #define SCALER_CSC2_ITR_R_601_5			0x00066204
  #define SCALER_CSC2_ITR_R_709_3			0x00072a1c
  #define SCALER_CSC2_JPEG_JFIF			0x000599c5

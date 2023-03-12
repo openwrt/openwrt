@@ -201,7 +201,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
 
 --- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 +++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
-@@ -5638,17 +5638,19 @@ static void dm_update_crtc_active_planes
+@@ -5640,17 +5640,19 @@ static void dm_update_crtc_active_planes
  }
  
  static int dm_crtc_helper_atomic_check(struct drm_crtc *crtc,
@@ -225,7 +225,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  		WARN_ON(1);
  		return ret;
  	}
-@@ -5659,8 +5661,8 @@ static int dm_crtc_helper_atomic_check(s
+@@ -5661,8 +5663,8 @@ static int dm_crtc_helper_atomic_check(s
  	 * planes are disabled, which is not supported by the hardware. And there is legacy
  	 * userspace which stops using the HW cursor altogether in response to the resulting EINVAL.
  	 */
@@ -503,7 +503,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  
 --- a/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
 +++ b/drivers/gpu/drm/msm/disp/dpu1/dpu_crtc.c
-@@ -815,10 +815,12 @@ struct plane_state {
+@@ -818,10 +818,12 @@ struct plane_state {
  };
  
  static int dpu_crtc_atomic_check(struct drm_crtc *crtc,
@@ -518,9 +518,9 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  	struct plane_state *pstates;
  
  	const struct drm_plane_state *pstate;
-@@ -835,32 +837,33 @@ static int dpu_crtc_atomic_check(struct
- 
- 	pstates = kzalloc(sizeof(*pstates) * DPU_STAGE_MAX * 4, GFP_KERNEL);
+@@ -840,32 +842,33 @@ static int dpu_crtc_atomic_check(struct
+ 	if (!pstates)
+ 		return -ENOMEM;
  
 -	if (!state->enable || !state->active) {
 +	if (!crtc_state->enable || !crtc_state->active) {
@@ -559,7 +559,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  		struct drm_rect dst, clip = crtc_rect;
  
  		if (IS_ERR_OR_NULL(pstate)) {
-@@ -966,7 +969,7 @@ static int dpu_crtc_atomic_check(struct
+@@ -971,7 +974,7 @@ static int dpu_crtc_atomic_check(struct
  
  	atomic_inc(&_dpu_crtc_get_kms(crtc)->bandwidth_ref);
  

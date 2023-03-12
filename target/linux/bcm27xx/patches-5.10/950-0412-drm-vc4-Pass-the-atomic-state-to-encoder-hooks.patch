@@ -129,7 +129,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  {
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  	int ret;
-@@ -642,7 +644,8 @@ static void vc4_hdmi_recenter_fifo(struc
+@@ -643,7 +645,8 @@ static void vc4_hdmi_recenter_fifo(struc
  		  "VC4_HDMI_FIFO_CTL_RECENTER_DONE");
  }
  
@@ -139,7 +139,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  {
  	struct drm_display_mode *mode = &encoder->crtc->state->adjusted_mode;
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
-@@ -724,7 +727,8 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -725,7 +728,8 @@ static void vc4_hdmi_encoder_pre_crtc_co
  		vc4_hdmi->variant->set_timings(vc4_hdmi, mode);
  }
  
@@ -149,7 +149,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  {
  	struct drm_display_mode *mode = &encoder->crtc->state->adjusted_mode;
  	struct vc4_hdmi_encoder *vc4_encoder = to_vc4_hdmi_encoder(encoder);
-@@ -746,7 +750,8 @@ static void vc4_hdmi_encoder_pre_crtc_en
+@@ -747,7 +751,8 @@ static void vc4_hdmi_encoder_pre_crtc_en
  	HDMI_WRITE(HDMI_FIFO_CTL, VC4_HDMI_FIFO_CTL_MASTER_SLAVE_N);
  }
  

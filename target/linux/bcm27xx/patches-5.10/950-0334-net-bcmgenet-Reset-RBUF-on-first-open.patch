@@ -24,7 +24,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/net/ethernet/broadcom/genet/bcmgenet.c
 +++ b/drivers/net/ethernet/broadcom/genet/bcmgenet.c
-@@ -3253,7 +3253,7 @@ static void bcmgenet_get_hw_addr(struct
+@@ -3261,7 +3261,7 @@ static void bcmgenet_get_hw_addr(struct
  }
  
  /* Returns a reusable dma control register value */
@@ -33,7 +33,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  {
  	unsigned int i;
  	u32 reg;
-@@ -3278,6 +3278,14 @@ static u32 bcmgenet_dma_disable(struct b
+@@ -3286,6 +3286,14 @@ static u32 bcmgenet_dma_disable(struct b
  	udelay(10);
  	bcmgenet_umac_writel(priv, 0, UMAC_TX_FLUSH);
  
@@ -48,7 +48,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	return dma_ctrl;
  }
  
-@@ -3341,8 +3349,8 @@ static int bcmgenet_open(struct net_devi
+@@ -3349,8 +3357,8 @@ static int bcmgenet_open(struct net_devi
  
  	bcmgenet_set_hw_addr(priv, dev->dev_addr);
  
@@ -59,7 +59,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	/* Reinitialize TDMA and RDMA and SW housekeeping */
  	ret = bcmgenet_init_dma(priv);
-@@ -4202,7 +4210,7 @@ static int bcmgenet_resume(struct device
+@@ -4210,7 +4218,7 @@ static int bcmgenet_resume(struct device
  			bcmgenet_hfb_create_rxnfc_filter(priv, rule);
  
  	/* Disable RX/TX DMA and flush TX queues */
