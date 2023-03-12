@@ -1541,6 +1541,15 @@ define Device/linksys_re6500
 endef
 TARGET_DEVICES += linksys_re6500
 
+define Device/linksys_re7000
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := RE7000
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware
+endef
+TARGET_DEVICES += linksys_re7000
+
 define Device/mediatek_ap-mt7621a-v60
   $(Device/dsa-migration)
   IMAGE_SIZE := 7872k
