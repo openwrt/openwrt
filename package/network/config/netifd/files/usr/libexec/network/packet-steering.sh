@@ -56,7 +56,7 @@ for dev in /sys/class/net/*; do
 	irq_cpu_mask="$((1 << $irq_cpu))"
 
 	for q in ${dev}/queues/tx-*; do
-		set_hex_val "$q/xps_cpus" "$PROC_MASK"
+		set_hex_val "$q/xps_cpus" "$PROC_MASK" 2>/dev/null
 	done
 
 	# ignore dsa slave ports for RPS
@@ -65,6 +65,6 @@ for dev in /sys/class/net/*; do
 	[ "$subsys" = "mdio_bus" ] && continue
 
 	for q in ${dev}/queues/rx-*; do
-		set_hex_val "$q/rps_cpus" "$PROC_MASK"
+		set_hex_val "$q/rps_cpus" "$PROC_MASK" 2>/dev/null
 	done
 done
