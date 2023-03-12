@@ -1420,7 +1420,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/ethernet/ti/am65-cpsw-nuss.c
 +++ b/drivers/net/ethernet/ti/am65-cpsw-nuss.c
-@@ -1742,7 +1742,6 @@ static int am65_cpsw_nuss_init_slave_por
+@@ -1713,7 +1713,6 @@ static int am65_cpsw_nuss_init_slave_por
  
  	for_each_child_of_node(node, port_np) {
  		struct am65_cpsw_port *port;
@@ -1428,8 +1428,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		u32 port_id;
  
  		/* it is not a slave port node, continue */
-@@ -1821,15 +1820,15 @@ static int am65_cpsw_nuss_init_slave_por
- 			return ret;
+@@ -1796,15 +1795,15 @@ static int am65_cpsw_nuss_init_slave_por
+ 			goto of_node_put;
  		}
  
 -		mac_addr = of_get_mac_address(port_np);
