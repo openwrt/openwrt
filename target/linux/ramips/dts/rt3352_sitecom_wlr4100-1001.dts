@@ -1,0 +1,130 @@
+/dts-v1/;
+
+#include "rt3352.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+        compatible = "sitecom,wlr-4100-1001", "ralink,rt3352-soc";
+        model = "Sitecom WLR-4100 v1 001";
+
+        aliases {
+                led-boot = &led_power;
+                led-failsafe = &led_power;
+                led-running = &led_power;
+                led-upgrade = &led_power;
+                mdio-gpio0 = &mdio0;
+        };
+
+        mdio0: mdio {
+                compatible = "virtual,mdio-gpio";
+                #address-cells = <1>;
+                #size-cells = <0>;
+                gpios = <&gpio0 23 GPIO_ACTIVE_HIGH &gpio0 22 GPIO_ACTIVE_HIGH>;
+        };
+
+        leds {
+                compatible = "gpio-leds";
+
+                led_power: power {
+                        label = "wl-4100:amber:power";
+                        gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+                };
+
+                led_wps: wps {
+                        label = "wl-4100:white:wps";
+                        gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+                };
+        };
+
+        keys {
+                compatible = "gpio-keys-polled";
+                poll-interval = <20>;
+
+                wps {
+                        label = "wps";
+                        gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+                        linux,code = <KEY_WPS_BUTTON>;
+                };
+
+        };
+
+        rtl8367rb {
+                compatible = "realtek,rtl8367b", "rtl8367b";
+                mii-bus = <&mdio0>;
+                realtek,extif1 = <0 0 1 1 1 1 1 1 2>;
+                cpu_port = <6>;
+        };
+};
+
+&spi0 {
+        status = "okay";
+
+        m25p90@0 {
+                compatible = "jedec,spi-nor";
+                reg = <0>;
+                spi-max-frequency = <10000000>;
+
+                partitions {
+                        compatible = "fixed-partitions";
+                        #address-cells = <1>;
+                        #size-cells = <1>;
+
+                        partition@0 {
+                                label = "u-boot";
+                                reg = <0x0 0x30000>;
+                                read-only;
+                        };
+
+                        partition@30000 {
+                                label = "u-boot-env";
+                                reg = <0x30000 0x10000>;
+                        };
+
+                        factory: partition@40000 {
+                                label = "rf-data";
+                                reg = <0x40000 0x10000>;
+                                read-only;
+                        };
+
+                        partition@50000 {
+                                compatible = "denx,uimage";
+                                label = "kernel";
+                                reg = <0x50000 0x7b0000>;
+                        };
+
+                };
+        };
+};
+
+&pinctrl {
+        state_default: pinctrl0 {
+                gpio {
+                        ralink,group = "i2c", "jtag", "uartf", "mdio";
+                        ralink,function = "gpio";
+                };
+        };
+};
+
+&ethernet {
+        mtd-mac-address = <&factory 0x4>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&rgmii_pins>;
+
+        port@5 {
+                phy-mode = "rgmii";
+        };
+
+};
+
+&esw {
+        ralink,rgmii = <1>;
+        mediatek,portmap = <0x3f>;
+        ralink,fct2 = <0x0002500c>;
+        ralink,fpa2 = <0x1f103ffa>;
+};
+
+&wmac {
+        ralink,mtd-eeprom = <&factory 0>;
+};
