@@ -3,6 +3,31 @@
 # Copyright (C) 2012-2016 OpenWrt.org
 # Copyright (C) 2016 LEDE-project.org
 
+define Build/append-file
+  cat "$(1)" >> "$@"
+endef
+
+define Build/boot-img-ext3
+  $(eval kern_name=$(word 1,$(1)))
+  $(eval initrd_name=$(word 2,$(1)))
+
+  rm -rf $@.bootdir
+  mkdir $@.bootdir
+  $(CP) $(IMAGE_KERNEL) $@.bootdir/$(kern_name)
+  $(if $(initrd_name),\
+      $(CP) $(KDIR)/$(DEVICE_NAME).initrd $@.bootdir/$(initrd_name))
+  genext2fs --block-size $(BLOCKSIZE:%k=%Ki) \
+    --size-in-blocks $$((1024 * $(CONFIG_TARGET_KERNEL_PARTSIZE) )) \
+    --root $@.bootdir $@.boot
+  # convert it to revision 1 - needed for u-boot ext2load
+  $(STAGING_DIR_HOST)/bin/tune2fs -O filetype $@.boot
+  $(STAGING_DIR_HOST)/bin/e2fsck -pDf $@.boot > /dev/null
+endef
+
+define Build/cleanup-files
+  rm -f $(1)
+endef
+
 define Build/fortigate-header
   ( \
     dd if=/dev/zero bs=384 count=1 2>/dev/null; \
@@ -13,6 +38,28 @@ define Build/fortigate-header
     dd if=/dev/zero bs=112 count=1 2>/dev/null; \
     cat $@; \
   ) > $@.new
+  mv $@.new $@
+endef
+
+define Build/hdd-img-gptlabel
+  ptgen -o $@ -l 1024 -g -S 0x$(IMG_PART_SIGNATURE) \
+    -t 83 -N kernel -p $(CONFIG_TARGET_KERNEL_PARTSIZE)m \
+    -t 83 -N rootfs -p $(CONFIG_TARGET_ROOTFS_PARTSIZE)m
+endef
+
+define Build/pad-with-basesizes
+  $(eval padlen=$(word 1,$(1)))
+  $(eval base_sizes=$(wordlist 2,$(words $(1)),$(1)))
+
+  ( \
+    for bsize in $(base_sizes); do \
+      bsize=$${bsize//m/k*1024}; \
+      bsize=$${bsize//k/*1024}; \
+      PADLEN=$$(( PADLEN + $$bsize)); \
+    done; \
+    PADLEN=$$(( PADLEN + $(patsubst %k,1024*%,$(padlen:%m=1024*%k)) )); \
+    dd if=$@ of=$@.new bs=$$PADLEN conv=sync; \
+  )
   mv $@.new $@
 endef
 
@@ -58,6 +105,51 @@ define Device/buffalo_ls421de
     kmod-fs-xfs mkf2fs e2fsprogs partx-utils
 endef
 TARGET_DEVICES += buffalo_ls421de
+
+define Device/buffalo_ts3400d-hdd
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := TeraStation TS3400D
+  DEVICE_VARIANT := (HDD)
+  DEVICE_DTS := armada-xp-buffalo-ts3400d-hdd
+  BLOCKSIZE := 1k
+  FILESYSTEMS := ext4
+  COMPILE := $(1).initrd
+  COMPILE/$(1).initrd := cleanup-files $$$$@ | pad-extra 4 | \
+    uImage none -T ramdisk -a 0 -e 0
+  IMAGES := sysupgrade.tgz hdd.img.gz
+  IMAGE/sysupgrade.tgz := sysupgrade-tar | gzip | append-metadata
+  IMAGE/hdd.img.gz := boot-img-ext3 uImage.buffalo initrd.buffalo | \
+    hdd-img-gptlabel | pad-to 1024k | \
+    append-file $$$$@.boot | \
+    pad-with-basesizes $(CONFIG_TARGET_KERNEL_PARTSIZE)m 1024k | \
+    append-rootfs | \
+    pad-with-basesizes $(CONFIG_TARGET_ROOTFS_PARTSIZE)m 1024k \
+      $(CONFIG_TARGET_KERNEL_PARTSIZE)m | \
+    gzip
+  ARTIFACTS := fake-initrd.buffalo
+  ARTIFACT/fake-initrd.buffalo := copy-file $(KDIR)/$(1).initrd
+  DEVICE_PACKAGES := kmod-hwmon-lm75 kmod-rtc-rs5c372a kmod-usb3
+endef
+TARGET_DEVICES += buffalo_ts3400d-hdd
+
+define Device/buffalo_ts3400d-usb
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := TeraStation TS3400D
+  DEVICE_VARIANT := (USB)
+  DEVICE_DTS := armada-xp-buffalo-ts3400d-usb
+  FILESYSTEMS := ext4
+  COMPILE := $(1).initrd
+  COMPILE/$(1).initrd := cleanup-files $$$$@ | pad-extra 4 | \
+    uImage none -T ramdisk -a 0 -e 0
+  IMAGES := usb.img.gz
+  IMAGE/usb.img.gz := boot-img-nodtb uImage.buffalo initrd.buffalo | \
+    sdcard-img 5452574F | gzip | append-metadata
+  ARTIFACTS := fake-initrd.buffalo
+  ARTIFACT/fake-initrd.buffalo := copy-file $(KDIR)/$(1).initrd
+  DEVICE_PACKAGES := kmod-fs-vfat kmod-hwmon-lm75 kmod-rtc-rs5c372a kmod-usb3 \
+    partx-utils
+endef
+TARGET_DEVICES += buffalo_ts3400d-usb
 
 define Device/ctera_c200-v2
   PAGESIZE := 2048

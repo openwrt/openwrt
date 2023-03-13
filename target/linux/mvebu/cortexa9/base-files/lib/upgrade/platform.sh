@@ -3,7 +3,7 @@
 # Copyright (C) 2016 LEDE-Project.org
 #
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv strings'
+RAMFS_COPY_BIN='fw_printenv fw_setenv readlink strings'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 PART_NAME=firmware
@@ -11,6 +11,10 @@ REQUIRE_IMAGE_METADATA=1
 
 platform_check_image() {
 	case "$(board_name)" in
+	buffalo,ts3400d-hdd)
+		buffalo_terastation_check_image "$1"
+		;;
+	buffalo,ts3400d-usb|\
 	cznic,turris-omnia|\
 	kobol,helios4|\
 	solidrun,clearfog-base-a1|\
@@ -35,6 +39,16 @@ platform_do_upgrade() {
 	buffalo,ls421de)
 		nand_do_upgrade "$1"
 		;;
+	buffalo,ts3400d-hdd)
+		buffalo_terastation_do_upgrade "$1"
+		;;
+	buffalo,ts3400d-usb|\
+	cznic,turris-omnia|\
+	kobol,helios4|\
+	solidrun,clearfog-base-a1|\
+	solidrun,clearfog-pro-a1)
+		legacy_sdcard_do_upgrade "$1"
+		;;
 	ctera,c200-v2)
 	part=$(find_mtd_part "active_bank")
 
@@ -46,12 +60,6 @@ platform_do_upgrade() {
 		return 1
 	fi
 	;;
-	cznic,turris-omnia|\
-	kobol,helios4|\
-	solidrun,clearfog-base-a1|\
-	solidrun,clearfog-pro-a1)
-		legacy_sdcard_do_upgrade "$1"
-		;;
 	fortinet,fg-50e)
 		fortinet_do_upgrade "$1"
 		;;
@@ -70,6 +78,12 @@ platform_do_upgrade() {
 }
 platform_copy_config() {
 	case "$(board_name)" in
+	buffalo,ts3400d-hdd)
+		buffalo_terastation_copy_config
+		;;
+	buffalo,ts3400d-usb)
+		legacy_sdcard_copy_config "2"
+		;;
 	cznic,turris-omnia|\
 	kobol,helios4|\
 	solidrun,clearfog-base-a1|\

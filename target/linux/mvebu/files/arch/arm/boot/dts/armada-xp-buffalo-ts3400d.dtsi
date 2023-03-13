@@ -1,0 +1,308 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/thermal/thermal.h>
+#include "armada-xp-mv78230.dtsi"
+
+/ {
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0 0x00000000 0 0x40000000>; /* 1 GB */
+	};
+
+	soc {
+		ranges = <MBUS_ID(0xf0, 0x01) 0 0 0xd0000000 0x100000
+			  MBUS_ID(0x01, 0x1d) 0 0 0xfff00000 0x100000
+			  MBUS_ID(0x09, 0x09) 0 0 0xf1100000 0x10000
+			  MBUS_ID(0x09, 0x05) 0 0 0xf1110000 0x10000
+			  MBUS_ID(0x0c, 0x04) 0 0 0xd1200000 0x100000>;
+	};
+
+	keys {
+		pinctrl-0 = <&pmx_hdd_detect_pins>;
+		pinctrl-names = "default";
+		compatible = "gpio-keys";
+
+		key-hdd1 {
+			label = "hdd1-detect";
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
+		};
+
+		key-hdd2 {
+			label = "hdd2-detect";
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_2>;
+		};
+
+		key-hdd3 {
+			label = "hdd3-detect";
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_3>;
+		};
+
+		key-hdd4 {
+			label = "hdd4-detect";
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_4>;
+		};
+	};
+
+	regulators {
+		pinctrl-0 = <&pmx_hdd_power_pins>;
+		pinctrl-names = "default";
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		hdd1-regulator@1 {
+			compatible = "regulator-fixed";
+			reg = <1>;
+			regulator-name = "HDD1 Power";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			enable-active-high;
+			regulator-always-on;
+			regulator-boot-on;
+			gpio = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+		};
+
+		hdd2-regulator@2 {
+			compatible = "regulator-fixed";
+			reg = <2>;
+			regulator-name = "HDD2 Power";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			enable-active-high;
+			regulator-always-on;
+			regulator-boot-on;
+			gpio = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+		};
+
+		hdd3-regulator@3 {
+			compatible = "regulator-fixed";
+			reg = <3>;
+			regulator-name = "HDD3 Power";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			enable-active-high;
+			regulator-always-on;
+			regulator-boot-on;
+			gpio = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		hdd4-regulator@4 {
+			compatible = "regulator-fixed";
+			reg = <4>;
+			regulator-name = "HDD4 Power";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			enable-active-high;
+			regulator-always-on;
+			regulator-boot-on;
+			gpio = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&rtc {
+	status = "disabled";
+};
+
+&i2c0 {
+	status = "okay";
+
+	rtc@32 {
+		compatible = "ricoh,rs5c372a";
+		reg = <0x32>;
+	};
+
+	thermal-sensor@48 {
+		compatible = "g751";
+		reg = <0x48>;
+		#thermal-sensor-cells = <0>;
+	};
+};
+
+/* Front D-Sub 9pin */
+&uart0 {
+	status = "okay";
+};
+
+/* Rear D-Sub 9pin */
+&uart1 {
+	status = "okay";
+};
+
+/* Micro Controller ("MICON") */
+&uart3 {
+	status = "okay";
+};
+
+&pinctrl {
+	pinctrl-0 = <&pmx_mcu_irq_pin>;
+	pinctrl-names = "default";
+
+	pmx_hdd_power_pins: hdd-power-pins {
+		marvell,pins = "mpp26",	/* hdd1 */
+			       "mpp27",	/* hdd2 */
+			       "mpp24",	/* hdd3 */
+			       "mpp29";	/* hdd4 */
+		marvell,function = "gpio";
+	};
+
+	pmx_hdd_detect_pins: hdd-detect-pins {
+		marvell,pins = "mpp32",	/* hdd1 */
+			       "mpp33",	/* hdd2 */
+			       "mpp34",	/* hdd3 */
+			       "mpp35";	/* hdd4 */
+		marvell,function = "gpio";
+	};
+
+	pmx_mcu_irq_pin: mcu_irq_pin {
+		marvell,pins = "mpp40";
+		marvell,function = "gpio";
+	};
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&bm {
+	status = "okay";
+};
+
+&bm_bppi {
+	status = "okay";
+};
+
+&eth0 {
+	pinctrl-0 = <&ge0_rgmii_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy-handle = <&ethphy0>;
+	phy-connection-type = "rgmii-id";
+	buffer-manager = <&bm>;
+	bm,pool-long = <0>;
+	bm,pool-short = <1>;
+};
+
+&eth1 {
+	pinctrl-0 = <&ge1_rgmii_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy-handle = <&ethphy1>;
+	phy-connection-type = "rgmii-id";
+	buffer-manager = <&bm>;
+	bm,pool-long = <2>;
+	bm,pool-short = <3>;
+};
+
+&mdio {
+	ethphy0: ethernet-phy@0 {
+		compatible = "ethernet-phy-id0141,0dd1",
+			     "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+		/*
+		 * SPEED 1000M (Green): LED[0]
+		 * LINK/ACT    (Amber): LED[1]
+		 */
+		marvell,reg-init = <3 16 0 0x17>;
+	};
+
+	ethphy1: ethernet-phy@1 {
+		compatible = "ethernet-phy-id0141,0dd1",
+			     "ethernet-phy-ieee802.3-c22";
+		reg = <1>;
+		/*
+		 * SPEED 1000M (Green): LED[0]
+		 * LINK/ACT    (Amber): LED[1]
+		 */
+		marvell,reg-init = <3 16 0 0x17>;
+	};
+};
+
+&nand_controller {
+	status = "okay";
+
+	flash@0 {
+		reg = <0>;
+		nand-rb = <0>;
+		marvell,nand-keep-config;
+		nand-on-flash-bbt;
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "nandubifs";
+				reg = <0x0 0x20000000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	spi-flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x00000 0xf0000>;
+				label = "u-boot";
+				read-only;
+			};
+
+			partition@f0000 {
+				reg = <0xf0000 0x10000>;
+				label = "u-boot-env";
+				read-only;
+
+				/* 0xfc00 - 0xffff: board info */
+			};
+		};
+	};
+};
+
+&pciec {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+
+	/* SATA Controller (88SX7042) */
+};
+
+&pcie5 {
+	status = "okay";
+
+	/* USB 3.0 Controller (uPD720202) */
+};

@@ -173,6 +173,7 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | append-dtb | uImage none
   FILESYSTEMS := squashfs
+  COMPILE :=
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5

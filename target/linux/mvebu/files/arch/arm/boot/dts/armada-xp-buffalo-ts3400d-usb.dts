@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "armada-xp-buffalo-ts3400d.dtsi"
+
+/ {
+	model = "Buffalo TeraStation TS3400D (USB)";
+	compatible = "buffalo,ts3400d-usb", "marvell,armadaxp-mv78230", "marvell,armadaxp", "marvell,armada-370-xp";
+
+	chosen {
+		/* use 2nd partition on USB storage with MBR partition as rootfs */
+		bootargs-append = " 8250.nr_uarts=3 root=PARTUUID=5452574f-02 rootwait";
+	};
+};
