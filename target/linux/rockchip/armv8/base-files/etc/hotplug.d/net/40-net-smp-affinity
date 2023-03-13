@@ -79,5 +79,13 @@ friendlyelec,nanopi-r6s)
 	set_interface_core 80 "eth2-18"
 	echo fe > /sys/class/net/eth2/queues/rx-0/rps_cpus
 	;;
+friendlyelec,nanopi-r6c)
+	set_interface_core 40 "eth0"
+	echo fe > /sys/class/net/eth0/queues/rx-0/rps_cpus
+	set_interface_core 10 "eth1-0"
+	set_interface_core 20 "eth1-16"
+	set_interface_core 20 "eth1-18"
+	echo fe > /sys/class/net/eth1/queues/rx-0/rps_cpus
+	;;
 esac
 

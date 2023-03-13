@@ -13,6 +13,7 @@ rockchip_setup_interfaces()
 	nanopi-r4s | \
 	nanopi-r2 | \
 	nanopi-r5c | \
+	nanopi-r6c | \
 	nanopi-r4s)
 		ucidef_set_interface_wan 'eth0'
 		ucidef_set_interface "lan" device  "eth1" protocol "static" ipaddr "192.168.2.1"
@@ -84,7 +85,7 @@ rockchip_setup_macs()
 		wan_mac=$(nanopi_get_mac wan 2-0051)
 		lan_mac=$(nanopi_get_mac lan 2-0051)
 		;;
-	nanopi-r6s)
+	nanopi-r6s|nanopi-r6c)
 		wan_mac=$(nanopi_get_mac wan 6-0053)
 		lan_mac=$(nanopi_get_mac lan 6-0053)
 		;;
