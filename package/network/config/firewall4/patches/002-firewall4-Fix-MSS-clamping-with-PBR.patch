@@ -1,0 +1,46 @@
+diff --git a/root/usr/share/firewall4/templates/ruleset.uc b/root/usr/share/firewall4/templates/ruleset.uc
+index 7bd9309..a05f820 100644
+--- a/root/usr/share/firewall4/templates/ruleset.uc
++++ b/root/usr/share/firewall4/templates/ruleset.uc
+@@ -417,6 +417,13 @@ table inet fw4 {
+ {% for (let rule in fw4.rules("mangle_postrouting")): %}
+ 		{%+ include("rule.uc", { fw4, rule }) %}
+ {% endfor %}
++{% for (let zone in fw4.zones()): %}
++{%  if (zone.mtu_fix): %}
++{%   for (let rule in zone.match_rules): %}
++                {%+ include("zone-mssfix.uc", { fw4, zone, rule, egress: true }) %}
++{%   endfor %}
++{%  endif %}
++{% endfor %}
+ {% fw4.includes('chain-append', 'mangle_postrouting') %}
+ 	}
+
+@@ -444,14 +451,6 @@ table inet fw4 {
+ {% for (let rule in fw4.rules("mangle_forward")): %}
+ 		{%+ include("rule.uc", { fw4, rule }) %}
+ {% endfor %}
+-{% for (let zone in fw4.zones()): %}
+-{%  if (zone.mtu_fix): %}
+-{%   for (let rule in zone.match_rules): %}
+-		{%+ include("zone-mssfix.uc", { fw4, zone, rule, egress: false }) %}
+-		{%+ include("zone-mssfix.uc", { fw4, zone, rule, egress: true }) %}
+-{%   endfor %}
+-{%  endif %}
+-{% endfor %}
+ {% fw4.includes('chain-append', 'mangle_forward') %}
+ 	}
+ {% fw4.includes('table-append') %}
+diff --git a/root/usr/share/firewall4/templates/zone-mssfix.uc b/root/usr/share/firewall4/templates/zone-mssfix.uc
+index b76cfb6..17b6e92 100644
+--- a/root/usr/share/firewall4/templates/zone-mssfix.uc
++++ b/root/usr/share/firewall4/templates/zone-mssfix.uc
+@@ -1,7 +1,7 @@
+ {%+ if (rule.family): -%}
+ 	meta nfproto {{ fw4.nfproto(rule.family) }} {%+ endif -%}
+ {%+ include("zone-match.uc", { egress, rule }) -%}
+-tcp flags syn tcp option maxseg size set rt mtu {%+ if (zone.log & 2): -%}
++tcp flags syn / syn,fin,rst tcp option maxseg size set rt mtu {%+ if (zone.log & 2): -%}
+ 	log prefix "MSSFIX {{ zone.name }} out: " {%+ endif -%}
+ comment "!fw4: Zone {{ zone.name }} {{
+ 	fw4.nfproto(rule.family, true)
