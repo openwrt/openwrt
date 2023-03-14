@@ -6,15 +6,26 @@ ENGINES_CNF="/var/etc/ssl/engines.cnf"
 ENGINES_DIR="%ENGINES_DIR%"
 
 config_engine() {
-	local enabled force
+	local builtin enabled force
+
+	config_get_bool builtin "$1" builtin 0
 	config_get_bool enabled "$1" enabled 1
 	config_get_bool force "$1" force 0
-	[ "$enabled" = 0 ] && return
-	if [ "$force" = 0 ] && \
-	   [ ! -f "${ENGINES_CNF_D}/$1.cnf" ] && \
-	   [ ! -f "${ENGINES_DIR}/$1.so" ]; then
-	    echo Skipping engine "$1": not installed
-	    return
+
+	if [ "$enabled" = 0 ]; then
+		[ "$builtin" != 1 ] && return 1
+		echo "Engine $1 is built into the libcrypto library and can't be disabled through UCI." && \
+		echo "If the engine was not built-in, remove 'config builtin' from /etc/config/openssl."
+	elif [ "$force" = 1 ]; then
+		printf "[Forced] "
+	elif ! grep -q "\\[ *$1 *]" "${ENGINES_CNF_D}"/*; then
+		echo "$1: Could not find section [$1] in config files."
+		return 1
+	elif [ "$builtin" = 1 ]; then
+		printf "[Builtin] "
+	elif [ ! -f "${ENGINES_DIR}/$1.so" ];then
+		echo "$1: ${ENGINES_DIR}/$1.so not found."
+		return 1
 	fi
 	echo Enabling engine "$1"
 	echo "$1=$1" >> "${ENGINES_CNF}"
