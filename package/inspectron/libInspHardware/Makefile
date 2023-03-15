@@ -9,7 +9,7 @@ PKG_RELEASE:=1
 # Source settings (i.e. where to find the source codes)
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:= git@github.com:Inspectron/libInspHardware.git
-PKG_SOURCE_VERSION:=2de7d2070264488582c30b5f0a47122898d89f4c
+PKG_SOURCE_VERSION:=44c17712d2d368b4c075aa392622adbbbd828ecd
 PKG_BUILD_DEPENDS:=qt5
 
 include $(INCLUDE_DIR)/package.mk
