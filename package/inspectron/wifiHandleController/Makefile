@@ -18,7 +18,7 @@ define Package/wifiHandleController
 	SECTION:=inspectron
 	CATEGORY:=inspectron
 	TITLE:=wifiHandleController
-	DEPENDS:=+qt5-core +qt5-network +glib2 +gstreamer1 +libqmqtt
+	DEPENDS:=+qt5-core +qt5-network +glib2 +gstreamer1 +libqmqtt +libInspHardware
 endef
 
 # Package description; a more verbose description on what our package does
