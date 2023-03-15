@@ -338,7 +338,7 @@ define Device/cilab_meshpoint-one
 	$(call Device/8dev_jalapeno-common)
 	DEVICE_VENDOR := Crisis Innovation Lab
 	DEVICE_MODEL := MeshPoint.One
-	DEVICE_PACKAGES := kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
+	DEVICE_PACKAGES += kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += cilab_meshpoint-one
