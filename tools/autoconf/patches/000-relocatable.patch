@@ -177,16 +177,19 @@
    # Override SHELL.  On DJGPP SHELL may not be set to a shell
 --- a/bin/autoconf.as
 +++ b/bin/autoconf.as
-@@ -89,7 +89,11 @@ exit_missing_arg='
+@@ -89,8 +89,13 @@ exit_missing_arg='
  # restore font-lock: '
  
  # Variables.
 -: ${AUTOM4TE='@bindir@/@autom4te-name@'}
+-: ${trailer_m4='@pkgdatadir@/autoconf/trailer.m4'}
 +if test -n "$STAGING_DIR_HOST"; then
 +	: ${AUTOM4TE="$STAGING_DIR_HOST/bin/@autom4te-name@"}
++	: ${trailer_m4="$STAGING_DIR_HOST/share/autoconf/autoconf/trailer.m4"}
 +else
 +	: ${AUTOM4TE='@bindir@/@autom4te-name@'}
++	: ${trailer_m4='@pkgdatadir@/autoconf/trailer.m4'}
 +fi
- : ${trailer_m4='@pkgdatadir@/autoconf/trailer.m4'}
  autom4te_options=
  outfile=
+ verbose=false
