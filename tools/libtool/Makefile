@@ -23,7 +23,7 @@ HOST_CONFIGURE_VARS += \
 
 define Host/Prepare
 	$(call Host/Prepare/Default)
-	(cd $(STAGING_DIR_HOST)/share/aclocal/ && rm -f libtool.m4 ltdl.m4 lt~obsolete.m4 ltoptions.m4 ltsugar.m4 ltversion.m4)
+	$(call Host/Uninstall)
 	$(if $(QUILT),,(cd $(HOST_BUILD_DIR); touch README-release; $(AM_TOOL_PATHS) ./bootstrap --skip-git --skip-po --force))
 endef
 
@@ -33,16 +33,13 @@ define Host/Configure
 endef
 
 define Host/Install
-	$(MAKE) -C $(HOST_BUILD_DIR) install
+	$(call Host/Compile/Default,install)
 	$(SED) 's,\(hardcode_into_libs\)=yes,\1=no,g' $(STAGING_DIR_HOST)/bin/libtool
 endef
 
 define Host/Uninstall
 	-$(call Host/Compile/Default,uninstall)
-endef
-
-define Host/Clean
-	$(call Host/Clean/Default)
+	(cd $(STAGING_DIR_HOST)/share/aclocal/ && rm -f libtool.m4 ltdl.m4 lt~obsolete.m4 ltoptions.m4 ltsugar.m4 ltversion.m4)
 endef
 
 $(eval $(call HostBuild))
