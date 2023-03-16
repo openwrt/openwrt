@@ -1,12 +1,13 @@
-From 84c06b4a1dfa3e021fdbcafaff8cebfdec462402 Mon Sep 17 00:00:00 2001
+From f48c93e4c4b5dbad1c0fbd623fd68f55f1667527 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
-Date: Tue, 23 Feb 2021 10:39:48 +0100
-Subject: [PATCH] mips: bmips: BCM6358: disable ARCH_HAS_SYNC_DMA_FOR_CPU_ALL
+Date: Fri, 10 Mar 2023 13:05:10 +0100
+Subject: [PATCH] mips: bmips: BCM6358: disable arch_sync_dma_for_cpu_all() for
+ TP1
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-Enabling this option causes kernel panics on BCM6358 with EHCI/OHCI:
+arch_sync_dma_for_cpu_all() causes kernel panics on BCM6358 with EHCI/OHCI:
 [    3.881739] usb 1-1: new high-speed USB device number 2 using ehci-platform
 [    3.895011] Reserved instruction in kernel code[#1]:
 [    3.900113] CPU: 0 PID: 1 Comm: init Not tainted 5.10.16 #0
@@ -45,27 +46,28 @@ Enabling this option causes kernel panics on BCM6358 with EHCI/OHCI:
 [    4.087374] Kernel panic - not syncing: Fatal exception
 [    4.092753] Rebooting in 1 seconds..
 
+This only happens when booting from TP1 instead of TP0.
+
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 ---
- arch/mips/bmips/dma.c
- arch/mips/bmips/setup.c
+ arch/mips/bmips/dma.c   | 5 +++++
+ arch/mips/bmips/setup.c | 9 +++++++++
+ 2 files changed, 14 insertions(+)
 
 --- a/arch/mips/bmips/dma.c
 +++ b/arch/mips/bmips/dma.c
-@@ -19,6 +19,8 @@
- #include <linux/types.h>
- #include <asm/bmips.h>
+@@ -64,11 +64,16 @@ phys_addr_t dma_to_phys(struct device *d
+ 	return dma_addr;
+ }
  
-+int bmips_dma_sync_enabled = 1;
++int bmips_dma_sync_disable = 0;
 +
- /*
-  * BCM338x has configurable address translation windows which allow the
-  * peripherals' DMA addresses to be different from the Zephyr-visible
-@@ -69,6 +71,9 @@ void arch_sync_dma_for_cpu_all(void)
+ void arch_sync_dma_for_cpu_all(void)
+ {
  	void __iomem *cbr = BMIPS_GET_CBR();
  	u32 cfg;
  
-+	if (!bmips_dma_sync_enabled)
++	if (bmips_dma_sync_disable)
 +		return;
 +
  	if (boot_cpu_type() != CPU_BMIPS3300 &&
@@ -77,18 +79,22 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  
  #define DDR_CSEND_REG		0x8
  
-+extern int bmips_dma_sync_enabled;
++extern int bmips_dma_sync_disable;
 +
  static const unsigned long kbase = VMLINUX_LOAD_ADDRESS & 0xfff00000;
  
  struct bmips_cpufreq {
-@@ -168,6 +170,9 @@ static void bcm6358_quirks(void)
+@@ -168,6 +170,13 @@ static void bcm6358_quirks(void)
  	 * disable SMP for now
  	 */
  	bmips_smp_enabled = 0;
 +
-+	/* ARCH_HAS_SYNC_DMA_FOR_CPU_ALL causes kernel panics on BCM6358 */
-+	bmips_dma_sync_enabled = 0;
++	/*
++	 * ARCH_HAS_SYNC_DMA_FOR_CPU_ALL causes kernel panics on BCM6358 when
++	 * booting from TP1
++	 */
++	if (read_c0_brcm_cmt_local() & (1 << 31))
++		bmips_dma_sync_disable = 1;
  }
  
  static void bcm6368_quirks(void)
