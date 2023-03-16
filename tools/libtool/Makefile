@@ -35,8 +35,6 @@ endef
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) install
 	$(SED) 's,\(hardcode_into_libs\)=yes,\1=no,g' $(STAGING_DIR_HOST)/bin/libtool
-	$(CP) $(STAGING_DIR_HOST)/bin/libtool $(STAGING_DIR_HOST)/bin/libtool-ucxx
-	$(SED) 's,-lstdc++,-luClibc++,g' $(STAGING_DIR_HOST)/bin/libtool-ucxx
 endef
 
 define Host/Uninstall
