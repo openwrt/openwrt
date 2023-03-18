@@ -29,7 +29,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	} else if (phylink_autoneg_inband(mode)) {
  		dev_err(eth->dev,
  			"In-band mode not supported in non SGMII mode!\n");
-@@ -472,8 +472,15 @@ static int mtk_mac_finish(struct phylink
+@@ -483,8 +483,15 @@ static int mtk_mac_finish(struct phylink
  {
  	struct mtk_mac *mac = container_of(config, struct mtk_mac,
  					   phylink_config);
@@ -38,16 +38,16 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
 +	/* Enable SGMII */
 +	if (interface == PHY_INTERFACE_MODE_SGMII ||
-+	    phy_interface_mode_is_8023z(interface))
-+		regmap_update_bits(eth->ethsys, ETHSYS_SYSCFG0,
-+				   SYSCFG0_SGMII_MASK, mac->syscfg0);
++		phy_interface_mode_is_8023z(interface))
++			regmap_update_bits(eth->ethsys, ETHSYS_SYSCFG0,
++					SYSCFG0_SGMII_MASK, mac->syscfg0);
 +
- 	/* Setup gmac */
- 	mcr_cur = mtk_r32(mac->hw, MTK_MAC_MCR(mac->id));
- 	mcr_new = mcr_cur;
+ 	return 0;
+ }
+ 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1087,6 +1087,7 @@ struct mtk_mac {
+@@ -1088,6 +1088,7 @@ struct mtk_mac {
  	struct mtk_hw_stats		*hw_stats;
  	__be32				hwlro_ip[MTK_MAX_LRO_IP_CNT];
  	int				hwlro_ip_cnt;
