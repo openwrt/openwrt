@@ -9,7 +9,8 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
-aerohive,hiveap-330)
+aerohive,hiveap-330|\
+enterasys,ws-ap3715i)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	;;
 ocedo,panda)

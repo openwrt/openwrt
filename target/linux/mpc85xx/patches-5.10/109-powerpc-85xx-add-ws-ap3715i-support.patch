@@ -1,0 +1,50 @@
+--- a/arch/powerpc/platforms/85xx/Kconfig
++++ b/arch/powerpc/platforms/85xx/Kconfig
+@@ -82,6 +82,17 @@ config WS_AP3710I
+ 	  This board is a Concurrent Dual-Band wireless access point with a
+ 	  Freescale P1020 SoC.
+ 
++config WS_AP3715I
++	bool "Enterasys WS-AP3715i"
++	select DEFAULT_UIMAGE
++	select ARCH_REQUIRE_GPIOLIB
++	select GPIO_MPC8XXX
++	help
++	  This option enables support for the Enterasys WS-AP3715i board.
++
++	  This board is a Concurrent Dual-Band wireless access point with a
++	  Freescale P1010 SoC.
++
+ config WS_AP3825I
+ 	bool "Extreme Networks WS-AP3825i"
+ 	select DEFAULT_UIMAGE
+--- a/arch/powerpc/platforms/85xx/Makefile
++++ b/arch/powerpc/platforms/85xx/Makefile
+@@ -27,6 +27,7 @@ obj-$(CONFIG_P1023_RDB)   += p1023_rdb.o
+ obj-$(CONFIG_PANDA)       += panda.o
+ obj-$(CONFIG_TWR_P102x)   += twr_p102x.o
+ obj-$(CONFIG_WS_AP3710I)  += ws-ap3710i.o
++obj-$(CONFIG_WS_AP3715I)  += ws-ap3715i.o
+ obj-$(CONFIG_WS_AP3825I)  += ws-ap3825i.o
+ obj-$(CONFIG_FIREBOX_T10) += firebox_t10.o
+ obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -340,6 +340,7 @@ image-$(CONFIG_TQM8560)			+= cuImage.tqm
+ image-$(CONFIG_SBC8548)			+= cuImage.sbc8548
+ image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
+ image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
++image-$(CONFIG_WS_AP3715I)		+= simpleImage.ws-ap3715i
+ image-$(CONFIG_WS_AP3825I)		+= simpleImage.ws-ap3825i
+ # Board ports in arch/powerpc/platform/86xx/Kconfig
+ image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -324,6 +324,7 @@ adder875-redboot)
+     platformo="$object/fixed-head.o $object/redboot-8xx.o"
+     binary=y
+     ;;
++simpleboot-ws-ap3715i|\
+ simpleboot-ws-ap3825i|\
+ simpleboot-tl-wdr4900-v1)
+     platformo="$object/fixed-head.o $object/simpleboot.o"
