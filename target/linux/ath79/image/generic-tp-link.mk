@@ -509,7 +509,7 @@ define Device/tplink_deco-s4-v2
   IMAGE_SIZE := 13824k
   DEVICE_MODEL := Deco S4
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct uencrypt
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct uencrypt-mbedtls
   SUPPORTED_DEVICES += deco-s4-v2
   TPLINK_BOARD_ID := DECO-S4-V2
 endef

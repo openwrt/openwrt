@@ -1,0 +1,33 @@
+From 5cca02449490e767289bda38db1577e2c375c084 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 28 Feb 2023 15:43:58 +0100
+Subject: [PATCH] arm64: dts: broadcom: bcmbca: bcm4908: fix NAND interrupt
+ name
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This fixes:
+arch/arm64/boot/dts/broadcom/bcmbca/bcm94908.dtb: nand-controller@1800: interrupt-names:0: 'nand_ctlrdy' was expected
+        From schema: Documentation/devicetree/bindings/mtd/brcm,brcmnand.yaml
+arch/arm64/boot/dts/broadcom/bcmbca/bcm94908.dtb: nand-controller@1800: Unevaluated properties are not allowed ('interrupt-names' was unexpected)
+        From schema: Documentation/devicetree/bindings/mtd/brcm,brcmnand.yaml
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Link: https://lore.kernel.org/all/20230228144400.21689-1-zajec5@gmail.com/
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
+@@ -556,7 +556,7 @@
+ 			reg = <0x1800 0x600>, <0x2000 0x10>;
+ 			reg-names = "nand", "nand-int-base";
+ 			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>;
+-			interrupt-names = "nand";
++			interrupt-names = "nand_ctlrdy";
+ 			status = "okay";
+ 
+ 			nandcs: nand@0 {

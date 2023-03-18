@@ -124,6 +124,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
+			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6358_IRQ_EXT0>,
 				     <BCM6358_IRQ_EXT1>,
 				     <BCM6358_IRQ_EXT2>,
@@ -138,6 +139,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
+			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6358_IRQ_EXT4>,
 				     <BCM6358_IRQ_EXT5>;
 		};
@@ -158,6 +160,8 @@
 		};
 
 		gpio_cntl: syscon@fffe0080 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "brcm,bcm6358-gpio-sysctl",
 				     "syscon", "simple-mfd";
 			reg = <0xfffe0080 0x50>;

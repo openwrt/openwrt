@@ -814,48 +814,41 @@ define Device/devolo_dlan-pro-1200plus-ac
 endef
 TARGET_DEVICES += devolo_dlan-pro-1200plus-ac
 
-define Device/devolo_dvl1200e
+define Device/devolo_wifi-pro
   SOC := qca9558
   DEVICE_VENDOR := devolo
-  DEVICE_MODEL := WiFi pro 1200e
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   IMAGE_SIZE := 15936k
+endef
+
+define Device/devolo_dvl1200e
+  $(Device/devolo_wifi-pro)
+  DEVICE_MODEL := WiFi pro 1200e
 endef
 TARGET_DEVICES += devolo_dvl1200e
 
 define Device/devolo_dvl1200i
-  SOC := qca9558
-  DEVICE_VENDOR := devolo
+  $(Device/devolo_wifi-pro)
   DEVICE_MODEL := WiFi pro 1200i
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 15936k
 endef
 TARGET_DEVICES += devolo_dvl1200i
 
 define Device/devolo_dvl1750c
-  SOC := qca9558
-  DEVICE_VENDOR := devolo
+  $(Device/devolo_wifi-pro)
   DEVICE_MODEL := WiFi pro 1750c
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 15936k
 endef
 TARGET_DEVICES += devolo_dvl1750c
 
 define Device/devolo_dvl1750e
-  SOC := qca9558
-  DEVICE_VENDOR := devolo
+  $(Device/devolo_wifi-pro)
   DEVICE_MODEL := WiFi pro 1750e
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 15936k
+  DEVICE_PACKAGES += kmod-usb2
 endef
 TARGET_DEVICES += devolo_dvl1750e
 
 define Device/devolo_dvl1750i
-  SOC := qca9558
-  DEVICE_VENDOR := devolo
+  $(Device/devolo_wifi-pro)
   DEVICE_MODEL := WiFi pro 1750i
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-  IMAGE_SIZE := 15936k
 endef
 TARGET_DEVICES += devolo_dvl1750i
 

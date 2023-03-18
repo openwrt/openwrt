@@ -379,7 +379,7 @@ define Device/beeline_smartbox-flash
   IMAGES += factory.trx
   IMAGE/factory.trx := append-kernel | append-ubi | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615-firmware uencrypt
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615-firmware uencrypt-mbedtls
 endef
 TARGET_DEVICES += beeline_smartbox-flash
 
@@ -1587,7 +1587,7 @@ define Device/mts_wg430223
   IMAGES += factory.trx
   IMAGE/factory.trx := append-kernel | append-ubi | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := kmod-mt7615-firmware uencrypt
+  DEVICE_PACKAGES := kmod-mt7615-firmware uencrypt-mbedtls
 endef
 TARGET_DEVICES += mts_wg430223
 
@@ -2037,6 +2037,18 @@ define Device/totolink_x5000r
   DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
 endef
 TARGET_DEVICES += totolink_x5000r
+
+define Device/tplink_archer-ax23-v1
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := Archer AX23
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  TPLINK_BOARD_ID := ARCHER-AX23-V1
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_archer-ax23-v1
 
 define Device/tplink_archer-a6-v3
   $(Device/dsa-migration)

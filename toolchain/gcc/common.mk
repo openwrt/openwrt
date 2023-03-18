@@ -66,6 +66,9 @@ TAR_OPTIONS += \
 	--exclude-from='$(CURDIR)/../exclude-testsuite' --exclude=gcc/ada/*.ad* \
 	--exclude=libjava
 
+# this needs to be without -L/-lzstd flags or other parts fail to build
+# use an absolute path to ensure it really picks up our version
+export ac_cv_search_ZSTD_compress=$(STAGING_DIR_HOST)/lib/libzstd.a -pthread
 export libgcc_cv_fixed_point=no
 ifdef CONFIG_INSTALL_GCCGO
   export libgo_cv_c_split_stack_supported=no
@@ -103,7 +106,7 @@ GCC_CONFIGURE:= \
 		$(if $(CONFIG_arc),--with-cpu=$(CONFIG_CPU_TYPE)) \
 		$(if $(CONFIG_powerpc64), $(if $(CONFIG_USE_MUSL),--with-abi=elfv2)) \
 		--with-system-zlib=$(STAGING_DIR_HOST) \
-		--without-zstd \
+		--with-zstd=$(STAGING_DIR_HOST) \
 		--with-gmp=$(STAGING_DIR_HOST) \
 		--with-mpfr=$(STAGING_DIR_HOST) \
 		--with-mpc=$(STAGING_DIR_HOST) \

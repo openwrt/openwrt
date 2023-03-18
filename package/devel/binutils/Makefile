@@ -90,6 +90,7 @@ CONFIGURE_ARGS += \
 	--enable-install-libctf \
 	--with-system-zlib \
 	--without-zstd \
+	--without-msgpack \
 	--disable-gprofng
 
 define Build/Install

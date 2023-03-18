@@ -118,6 +118,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
+			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6362_IRQ_EXT0>,
 				     <BCM6362_IRQ_EXT1>,
 				     <BCM6362_IRQ_EXT2>,
@@ -147,6 +148,8 @@
 		};
 
 		gpio_cntl: syscon@10000080 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "brcm,bcm6362-gpio-sysctl",
 				     "syscon", "simple-mfd";
 			reg = <0x10000080 0x80>;

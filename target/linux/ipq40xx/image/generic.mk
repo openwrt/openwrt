@@ -132,6 +132,7 @@ define Device/8dev_habanero-dvk
 	IMAGE_SIZE := 30976k
 	SOC := qcom-ipq4019
 	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-8dev_habanero
 endef
 TARGET_DEVICES += 8dev_habanero-dvk
 
@@ -141,6 +142,7 @@ define Device/8dev_jalapeno-common
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := ipq-wifi-8dev_jalapeno
 endef
 
 define Device/8dev_jalapeno
@@ -336,7 +338,7 @@ define Device/cilab_meshpoint-one
 	$(call Device/8dev_jalapeno-common)
 	DEVICE_VENDOR := Crisis Innovation Lab
 	DEVICE_MODEL := MeshPoint.One
-	DEVICE_PACKAGES := kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
+	DEVICE_PACKAGES += kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += cilab_meshpoint-one
