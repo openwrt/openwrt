@@ -3,13 +3,16 @@ include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=ipq-wifi
 PKG_RELEASE:=1
+
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
+PKG_SOURCE_DATE:=2023-03-16
+PKG_SOURCE_VERSION:=2dae61830c42ebdcc29a13048b81a0485d7b5b95
+PKG_MIRROR_HASH:=1c9b3fa2044de952e336a49b2864784b6e9cf3729fb05198f47ac4a71df13320
+
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
-
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-endef
 
 define Build/Compile
 endef
@@ -25,6 +28,8 @@ endef
 # <https://wireless.wiki.kernel.org/en/users/drivers/ath10k/boardfiles>
 
 ALLWIFIBOARDS:= \
+	8dev_habanero \
+	8dev_jalapeno \
 	aruba_ap-365 \
 	buffalo_wxr-5950ax12 \
 	devolo_magic-2-wifi-next \
@@ -114,7 +119,7 @@ Do not install it for any other device!
   endef
 
   define Package/ipq-wifi-$(1)/install-overlay
-    $$$$(foreach IPQ_WIFI_BOARD_FILE,$$$$(wildcard board-$(1).*),\
+    $$$$(foreach IPQ_WIFI_BOARD_FILE,$$$$(wildcard $(PKG_BUILD_DIR)/board-$(1).*),\
       $$$$(call ipq-wifi-install-one,$$$$(IPQ_WIFI_BOARD_FILE),$$(1)))
   endef
 
@@ -125,6 +130,8 @@ endef
 # Place files in this directory as board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq8074>
 # Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
 
+$(eval $(call generate-ipq-wifi-package,8dev_habanero,8devices Habanero))
+$(eval $(call generate-ipq-wifi-package,8dev_jalapeno,8devices Jalapeno))
 $(eval $(call generate-ipq-wifi-package,aruba_ap-365,Aruba AP-365))
 $(eval $(call generate-ipq-wifi-package,buffalo_wxr-5950ax12,Buffalo WXR-5950AX12))
 $(eval $(call generate-ipq-wifi-package,devolo_magic-2-wifi-next,devolo Magic 2 WiFi next))

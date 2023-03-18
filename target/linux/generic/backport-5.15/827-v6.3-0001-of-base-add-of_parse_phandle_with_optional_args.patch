@@ -1,6 +1,6 @@
-From 8eddceb280f5deb8046fcb660de9f9f683b408b9 Mon Sep 17 00:00:00 2001
+From c5d264d4b527c96ae8903376a4b195df47b05203 Mon Sep 17 00:00:00 2001
 From: Michael Walle <michael@walle.cc>
-Date: Tue, 6 Dec 2022 21:07:21 +0100
+Date: Mon, 6 Feb 2023 13:43:43 +0000
 Subject: [PATCH] of: base: add of_parse_phandle_with_optional_args()
 
 Add a new variant of the of_parse_phandle_with_args() which treats the
@@ -16,6 +16,8 @@ this property.
 Signed-off-by: Michael Walle <michael@walle.cc>
 Reviewed-by: Rob Herring <robh@kernel.org>
 Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20230206134356.839737-10-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  include/linux/of.h | 25 +++++++++++++++++++++++++
  1 file changed, 25 insertions(+)
