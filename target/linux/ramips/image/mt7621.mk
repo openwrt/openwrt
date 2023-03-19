@@ -140,6 +140,7 @@ TARGET_DEVICES += adslr_g7
 
 define Device/afoundry_ew1200
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := AFOUNDRY
   DEVICE_MODEL := EW1200
