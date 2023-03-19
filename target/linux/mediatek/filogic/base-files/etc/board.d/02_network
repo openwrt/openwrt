@@ -12,7 +12,9 @@ mediatek_setup_interfaces()
 		CI_UBIPART="UBI_DEV"
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
 		;;
-	mediatek,mt7986a-rfb|\
+	mediatek,mt7986a-rfb)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan6" "eth1 wan"
+		;;
 	mediatek,mt7986b-rfb)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" eth1
 		;;
