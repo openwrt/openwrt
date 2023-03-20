@@ -233,6 +233,17 @@ endef
 
 $(eval $(call KernelPackage,dwmac-imx))
 
+define KernelPackage/dwmac-sun8i
+  SUBMENU=$(NETWORK_DEVICES_MENU)
+  TITLE:=Allwinner H3/A83T/A64 (sun8i) Ethernet
+  DEPENDS:=+kmod-stmmac-core +kmod-mdio-bus-mux
+  KCONFIG:=CONFIG_DWMAC_SUN8I
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.ko
+  AUTOLOAD=$(call AutoLoad,45,dwmac-sun8i)
+endef
+
+$(eval $(call KernelPackage,dwmac-sun8i))
+
 define KernelPackage/thunderx-net
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Marvell (Cavium) ThunderX/2 network drivers

@@ -109,7 +109,7 @@ define Device/generic
 	kmod-i2c-mux-pca954x kmod-gpio-pca953x partx-utils kmod-wdt-sp805 \
 	kmod-mvneta kmod-mvpp2 kmod-fsl-dpaa1-net kmod-fsl-dpaa2-net \
 	kmod-fsl-enetc-net kmod-dwmac-imx kmod-fsl-fec kmod-thunderx-net \
-	kmod-phy-aquantia kmod-phy-broadcom kmod-phy-marvell
+	kmod-dwmac-sun8i kmod-phy-aquantia kmod-phy-broadcom kmod-phy-marvell \
 	kmod-phy-marvell-10g kmod-atlantic
 endef
 TARGET_DEVICES += generic
