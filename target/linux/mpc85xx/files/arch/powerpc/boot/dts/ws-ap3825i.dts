@@ -252,6 +252,54 @@
 
 /include/ "fsl/p1020si-post.dtsi"
 
+/ {
+	cpus {
+		PowerPC,P1010@0 {
+			bus-frequency = <399999996>;
+			timebase-frequency = <50000000>;
+			clock-frequency = <799999992>;
+			d-cache-block-size = <0x20>;
+			d-cache-size = <0x8000>;
+			d-cache-sets = <0x80>;
+			i-cache-block-size = <0x20>;
+			i-cache-size = <0x8000>;
+			i-cache-sets = <0x80>;
+		};
+
+		PowerPC,P1010@1 {
+			bus-frequency = <399999996>;
+			timebase-frequency = <50000000>;
+			clock-frequency = <799999992>;
+			d-cache-block-size = <0x20>;
+			d-cache-size = <0x8000>;
+			d-cache-sets = <0x80>;
+			i-cache-block-size = <0x20>;
+			i-cache-size = <0x8000>;
+			i-cache-sets = <0x80>;
+		};
+	};
+
+	memory {
+		reg = <0x0 0x0 0x0 0x10000000>;
+	};
+
+	soc@ffe00000 {
+		bus-frequency = <399999996>;
+
+		serial@4600 {
+			clock-frequency = <399999996>;
+		};
+
+		serial@4500 {
+			clock-frequency = <399999996>;
+		};
+
+		pic@40000 {
+			clock-frequency = <399999996>;
+		};
+	};
+};
+
 /*
  * For the OpenWrt 22.03 release, since Linux 5.10.138 now uses
  * aliases to determine PCI domain numbers, drop aliases so as not to
