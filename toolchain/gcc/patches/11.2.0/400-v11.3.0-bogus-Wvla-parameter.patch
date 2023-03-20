@@ -1,0 +1,192 @@
+From 7d3f53c595e1766ca0494e5f56f33b0ce49b3bb4 Mon Sep 17 00:00:00 2001
+From: Martin Sebor <msebor@redhat.com>
+Date: Thu, 15 Jul 2021 10:11:23 -0600
+Subject: [PATCH] Avoid -Wvla-parameter for nontrivial bounds [PR97548].
+
+Resolves:
+PR c/101289 - bogus -Wvla-paramater warning when using const for vla param
+PR c/97548 -  bogus -Wvla-parameter on a bound expression involving a parameter
+
+gcc/c-family/ChangeLog:
+
+	PR c/101289
+	PR c/97548
+	* c-warn.c (warn_parm_array_mismatch): Use OEP_DECL_NAME.
+
+gcc/c/ChangeLog:
+
+	PR c/101289
+	PR c/97548
+	* c-decl.c (get_parm_array_spec): Strip nops.
+
+gcc/ChangeLog:
+
+	PR c/101289
+	PR c/97548
+	* fold-const.c (operand_compare::operand_equal_p): Handle OEP_DECL_NAME.
+	(operand_compare::verify_hash_value): Same.
+	* tree-core.h (OEP_DECL_NAME): New.
+
+gcc/testsuite/ChangeLog:
+
+	* gcc.dg/Wvla-parameter-12.c: New test.
+---
+ gcc/c-family/c-warn.c                    |  3 +-
+ gcc/c/c-decl.c                           |  1 +
+ gcc/fold-const.c                         | 33 ++++++++++++++++------
+ gcc/testsuite/gcc.dg/Wvla-parameter-12.c | 36 ++++++++++++++++++++++++
+ gcc/tree-core.h                          |  7 ++++-
+ 5 files changed, 69 insertions(+), 11 deletions(-)
+ create mode 100644 gcc/testsuite/gcc.dg/Wvla-parameter-12.c
+
+diff --git a/gcc/c-family/c-warn.c b/gcc/c-family/c-warn.c
+index 7414063aa11..250da89a829 100644
+--- a/gcc/c-family/c-warn.c
++++ b/gcc/c-family/c-warn.c
+@@ -3646,7 +3646,8 @@ warn_parm_array_mismatch (location_t origloc, tree fndecl, tree newparms)
+ 	      /* The VLA bounds don't refer to other function parameters.
+ 		 Compare them lexicographically to detect gross mismatches
+ 		 such as between T[foo()] and T[bar()].  */
+-	      if (operand_equal_p (newbnd, curbnd, OEP_LEXICOGRAPHIC))
++	      if (operand_equal_p (newbnd, curbnd,
++				   OEP_DECL_NAME | OEP_LEXICOGRAPHIC))
+ 		continue;
+ 
+ 	      if (warning_at (newloc, OPT_Wvla_parameter,
+diff --git a/gcc/c/c-decl.c b/gcc/c/c-decl.c
+index 53b2b5b637d..ddef9c68fb7 100644
+--- a/gcc/c/c-decl.c
++++ b/gcc/c/c-decl.c
+@@ -5862,6 +5862,7 @@ get_parm_array_spec (const struct c_parm *parm, tree attrs)
+ 
+       /* Each variable VLA bound is represented by a dollar sign.  */
+       spec += "$";
++      STRIP_NOPS (nelts);
+       vbchain = tree_cons (NULL_TREE, nelts, vbchain);
+     }
+ 
+diff --git a/gcc/fold-const.c b/gcc/fold-const.c
+index a1d08c74025..f5c19a0cfd4 100644
+--- a/gcc/fold-const.c
++++ b/gcc/fold-const.c
+@@ -3506,11 +3506,26 @@ operand_compare::operand_equal_p (const_tree arg0, const_tree arg1,
+ 
+     case tcc_declaration:
+       /* Consider __builtin_sqrt equal to sqrt.  */
+-      return (TREE_CODE (arg0) == FUNCTION_DECL
+-	      && fndecl_built_in_p (arg0) && fndecl_built_in_p (arg1)
+-	      && DECL_BUILT_IN_CLASS (arg0) == DECL_BUILT_IN_CLASS (arg1)
+-	      && (DECL_UNCHECKED_FUNCTION_CODE (arg0)
+-		  == DECL_UNCHECKED_FUNCTION_CODE (arg1)));
++      if (TREE_CODE (arg0) == FUNCTION_DECL)
++	return (fndecl_built_in_p (arg0) && fndecl_built_in_p (arg1)
++		&& DECL_BUILT_IN_CLASS (arg0) == DECL_BUILT_IN_CLASS (arg1)
++		&& (DECL_UNCHECKED_FUNCTION_CODE (arg0)
++		    == DECL_UNCHECKED_FUNCTION_CODE (arg1)));
++
++      if (DECL_P (arg0)
++	  && (flags & OEP_DECL_NAME)
++	  && (flags & OEP_LEXICOGRAPHIC))
++	{
++	  /* Consider decls with the same name equal.  The caller needs
++	     to make sure they refer to the same entity (such as a function
++	     formal parameter).  */
++	  tree a0name = DECL_NAME (arg0);
++	  tree a1name = DECL_NAME (arg1);
++	  const char *a0ns = a0name ? IDENTIFIER_POINTER (a0name) : NULL;
++	  const char *a1ns = a1name ? IDENTIFIER_POINTER (a1name) : NULL;
++	  return a0ns && a1ns && strcmp (a0ns, a1ns) == 0;
++	}
++      return false;
+ 
+     case tcc_exceptional:
+       if (TREE_CODE (arg0) == CONSTRUCTOR)
+@@ -3921,14 +3936,14 @@ bool
+ operand_compare::verify_hash_value (const_tree arg0, const_tree arg1,
+ 				    unsigned int flags, bool *ret)
+ {
+-  /* When checking, verify at the outermost operand_equal_p call that
+-     if operand_equal_p returns non-zero then ARG0 and ARG1 has the same
+-     hash value.  */
++  /* When checking and unless comparing DECL names, verify that if
++     the outermost operand_equal_p call returns non-zero then ARG0
++     and ARG1 have the same hash value.  */
+   if (flag_checking && !(flags & OEP_NO_HASH_CHECK))
+     {
+       if (operand_equal_p (arg0, arg1, flags | OEP_NO_HASH_CHECK))
+ 	{
+-	  if (arg0 != arg1)
++	  if (arg0 != arg1 && !(flags & OEP_DECL_NAME))
+ 	    {
+ 	      inchash::hash hstate0 (0), hstate1 (0);
+ 	      hash_operand (arg0, hstate0, flags | OEP_HASH_CHECK);
+diff --git a/gcc/testsuite/gcc.dg/Wvla-parameter-12.c b/gcc/testsuite/gcc.dg/Wvla-parameter-12.c
+new file mode 100644
+index 00000000000..1be5e48203b
+--- /dev/null
++++ b/gcc/testsuite/gcc.dg/Wvla-parameter-12.c
+@@ -0,0 +1,36 @@
++/* PR c/101289 - bogus -Wvla-parameter warning when using const bound
++   { dg-do compile }
++   { dg-options "-Wall" } */
++
++void f1ci_can (const int n, char a[n]);
++void f1ci_can (const int n, char a[n]); // { dg-bogus "-Wvla-parameter" }
++
++void f2ci_can (const int m, char a[m]);
++void f2ci_can (int n,       char a[n]); // { dg-bogus "-Wvla-parameter" }
++
++void f3i_can (int n,       char a[n]);
++void f3i_can (const int n, char a[n]);  // { dg-bogus "-Wvla-parameter" }
++
++void f4i_can (int n,       char a[n]);
++void f4i_can (const int n, char a[(int)n]);   // { dg-bogus "-Wvla-parameter" }
++
++void f5i_can (int n,       char a[(char)n]);
++void f5i_can (const int n, char a[(char)n]);  // { dg-bogus "-Wvla-parameter" }
++
++void f6i_can (int m,       char a[(char)m]);
++void f6i_can (const int n, char a[(char)n]);  // { dg-bogus "-Wvla-parameter" "" { xfail *-*-* } }
++
++
++/* PR c/97548 - bogus -Wvla-parameter on a bound expression involving
++   a parameter */
++
++int n;
++
++void f7ianp1 (int, int[n + 1]);
++void f7ianp1 (int, int[n + 1]);
++void f7ianp1 (int, int[n + 2]);         // { dg-warning "-Wvla-parameter" }
++
++void f8iakp1 (int k, int [k + 1]);
++void f8iakp1 (int k, int [k + 1]);      // { dg-bogus "-Wvla-parameter" }
++void f8iakp1 (int k, int [1 + k]);      // { dg-bogus "-Wvla-parameter" }
++void f8iakp1 (int k, int [k + 2]);      // { dg-warning "-Wvla-parameter" }
+diff --git a/gcc/tree-core.h b/gcc/tree-core.h
+index 07ddf91a230..c31b8ebf249 100644
+--- a/gcc/tree-core.h
++++ b/gcc/tree-core.h
+@@ -885,6 +885,7 @@ enum size_type_kind {
+   stk_type_kind_last
+ };
+ 
++/* Flags controlling operand_equal_p() behavior.  */
+ enum operand_equal_flag {
+   OEP_ONLY_CONST = 1,
+   OEP_PURE_SAME = 2,
+@@ -899,7 +900,11 @@ enum operand_equal_flag {
+   OEP_BITWISE = 128,
+   /* For OEP_ADDRESS_OF of COMPONENT_REFs, only consider same fields as
+      equivalent rather than also different fields with the same offset.  */
+-  OEP_ADDRESS_OF_SAME_FIELD = 256
++  OEP_ADDRESS_OF_SAME_FIELD = 256,
++  /* In conjunction with OEP_LEXICOGRAPHIC considers names of declarations
++     of the same kind.  Used to compare VLA bounds involving parameters
++     across redeclarations of the same function.  */
++  OEP_DECL_NAME = 512
+ };
+ 
+ /* Enum and arrays used for tree allocation stats.
+-- 
+2.31.1
+
