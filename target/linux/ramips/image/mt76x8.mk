@@ -69,6 +69,7 @@ define Device/asus_rt-n10p-v3
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N10P
   DEVICE_VARIANT := V3
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_rt-n10p-v3
 
@@ -83,6 +84,7 @@ define Device/asus_rt-n11p-b1
   DEVICE_ALT1_VENDOR := ASUS
   DEVICE_ALT1_MODEL := RT-N300
   DEVICE_ALT1_VARIANT := B1
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_rt-n11p-b1
 
@@ -91,6 +93,7 @@ define Device/asus_rt-n12-vp-b1
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N12 VP
   DEVICE_VARIANT := B1
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_rt-n12-vp-b1
 

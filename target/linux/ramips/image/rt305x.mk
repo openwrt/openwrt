@@ -43,6 +43,7 @@ define Device/7links_px-4885-8m
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
 	kmod-usb-ledtrig-usbport kmod-leds-gpio
   SUPPORTED_DEVICES += px-4885-8M
+  DEFAULT := n
 endef
 TARGET_DEVICES += 7links_px-4885-8m
 
@@ -53,6 +54,7 @@ define Device/8devices_carambola
   DEVICE_MODEL := Carambola
   DEVICE_PACKAGES :=
   SUPPORTED_DEVICES += carambola
+  DEFAULT := n
 endef
 TARGET_DEVICES += 8devices_carambola
 
@@ -62,6 +64,7 @@ define Device/accton_wr6202
   DEVICE_VENDOR := Accton
   DEVICE_MODEL := WR6202
   SUPPORTED_DEVICES += wr6202
+  DEFAULT := n
 endef
 TARGET_DEVICES += accton_wr6202
 
@@ -82,6 +85,7 @@ define Device/alfa-network_w502u
   DEVICE_VENDOR := ALFA
   DEVICE_MODEL := Networks W502U
   SUPPORTED_DEVICES += w502u
+  DEFAULT := n
 endef
 TARGET_DEVICES += alfa-network_w502u
 
@@ -105,6 +109,7 @@ define Device/allnet_all0256n-8m
   DEVICE_VARIANT := 8M
   DEVICE_PACKAGES := rssileds
   SUPPORTED_DEVICES += all0256n-8M
+  DEFAULT := n
 endef
 TARGET_DEVICES += allnet_all0256n-8m
 
@@ -128,6 +133,7 @@ define Device/allnet_all5003
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
 	kmod-i2c-gpio kmod-hwmon-lm92 kmod-gpio-pcf857x
   SUPPORTED_DEVICES += all5003
+  DEFAULT := n
 endef
 TARGET_DEVICES += allnet_all5003
 
@@ -139,6 +145,7 @@ define Device/alphanetworks_asl26555-16m
   DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += asl26555 asl26555-16M
+  DEFAULT := n
 endef
 TARGET_DEVICES += alphanetworks_asl26555-16m
 
@@ -149,6 +156,7 @@ define Device/alphanetworks_asl26555-8m
   DEVICE_MODEL := ASL26555
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += asl26555 asl26555-8M
+  DEFAULT := n
 endef
 TARGET_DEVICES += alphanetworks_asl26555-8m
 
@@ -160,6 +168,7 @@ define Device/arcwireless_freestation5
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-rt2500-usb kmod-rt2800-usb \
 	kmod-rt2x00-usb
   SUPPORTED_DEVICES += freestation5
+  DEFAULT := n
 endef
 TARGET_DEVICES += arcwireless_freestation5
 
@@ -203,6 +212,7 @@ define Device/asiarf_awm002-evb-8m
   DEVICE_VARIANT := 8M
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-gpio
   SUPPORTED_DEVICES += awm002-evb-8M
+  DEFAULT := n
 endef
 TARGET_DEVICES += asiarf_awm002-evb-8m
 
@@ -268,6 +278,7 @@ define Device/aximcom_mr-102n
   DEVICE_VENDOR := AXIMCom
   DEVICE_MODEL := MR-102N
   SUPPORTED_DEVICES += mr-102n
+  DEFAULT := n
 endef
 TARGET_DEVICES += aximcom_mr-102n
 
@@ -280,6 +291,7 @@ define Device/aztech_hw550-3g
   DEVICE_ALT0_MODEL := ALL0239-3G
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += hw550-3g
+  DEFAULT := n
 endef
 TARGET_DEVICES += aztech_hw550-3g
 
@@ -291,6 +303,7 @@ define Device/belkin_f5d8235-v2
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := kmod-switch-rtl8366rb
   SUPPORTED_DEVICES += f5d8235-v2
+  DEFAULT := n
 endef
 TARGET_DEVICES += belkin_f5d8235-v2
 
@@ -327,6 +340,7 @@ define Device/dlink_dap-1350
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DAP-1350
   SUPPORTED_DEVICES += dap-1350
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dap-1350
 
@@ -387,6 +401,7 @@ define Device/dlink_dir-320-b1
   DEVICE_MODEL := DIR-320
   DEVICE_VARIANT := B1
   SUPPORTED_DEVICES += dir-320-b1
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dir-320-b1
 
@@ -455,6 +470,7 @@ define Device/dlink_dir-620-a1
   DEVICE_MODEL := DIR-620
   DEVICE_VARIANT := A1
   SUPPORTED_DEVICES += dir-620-a1
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dir-620-a1
 
@@ -465,6 +481,7 @@ define Device/dlink_dir-620-d1
   DEVICE_MODEL := DIR-620
   DEVICE_VARIANT := D1
   SUPPORTED_DEVICES += dir-620-d1
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dir-620-d1
 
@@ -484,6 +501,7 @@ define Device/dlink_dwr-512-b
   IMAGE/sysupgrade.bin := mkdlinkfw | pad-rootfs | append-metadata
   IMAGE/factory.bin := mkdlinkfw | pad-rootfs | mkdlinkfw-factory
   SUPPORTED_DEVICES += dwr-512-b
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dwr-512-b
 
@@ -570,6 +588,7 @@ define Device/hame_mpr-a2
   DEVICE_VARIANT := A2
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
   SUPPORTED_DEVICES += mpr-a2
+  DEFAULT := n
 endef
 TARGET_DEVICES += hame_mpr-a2
 
@@ -636,6 +655,7 @@ define Device/intenso_memory2move
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-storage kmod-scsi-core kmod-fs-ext4 \
 	kmod-fs-vfat block-mount
   SUPPORTED_DEVICES += m2m
+  DEFAULT := n
 endef
 TARGET_DEVICES += intenso_memory2move
 
@@ -743,6 +763,7 @@ define Device/nexx_wt1520-8m
   DEVICE_MODEL := WT1520
   DEVICE_VARIANT := 8M
   SUPPORTED_DEVICES += wt1520-8M
+  DEFAULT := n
 endef
 TARGET_DEVICES += nexx_wt1520-8m
 
@@ -754,6 +775,7 @@ define Device/nixcore_x1-16m
   DEVICE_VARIANT := 16M
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += nixcore-x1 nixcore-x1-16M
+  DEFAULT := n
 endef
 TARGET_DEVICES += nixcore_x1-16m
 
@@ -765,6 +787,7 @@ define Device/nixcore_x1-8m
   DEVICE_VARIANT := 8M
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += nixcore-x1 nixcore-x1-8M
+  DEFAULT := n
 endef
 TARGET_DEVICES += nixcore_x1-8m
 
@@ -776,6 +799,7 @@ define Device/olimex_rt5350f-olinuxino
   DEVICE_MODEL := RT5350F-OLinuXino
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += rt5350f-olinuxino
+  DEFAULT := n
 endef
 TARGET_DEVICES += olimex_rt5350f-olinuxino
 
@@ -787,6 +811,7 @@ define Device/olimex_rt5350f-olinuxino-evb
   DEVICE_MODEL := RT5350F-OLinuXino-EVB
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-i2c-ralink kmod-spi-dev
   SUPPORTED_DEVICES += rt5350f-olinuxino-evb
+  DEFAULT := n
 endef
 TARGET_DEVICES += olimex_rt5350f-olinuxino-evb
 
@@ -796,6 +821,7 @@ define Device/omnima_miniembplug
   DEVICE_VENDOR := Omnima
   DEVICE_MODEL := MiniEMBPlug
   SUPPORTED_DEVICES += miniembplug
+  DEFAULT := n
 endef
 TARGET_DEVICES += omnima_miniembplug
 
@@ -805,6 +831,7 @@ define Device/omnima_miniembwifi
   DEVICE_VENDOR := Omnima
   DEVICE_MODEL := MiniEMBWiFi
   SUPPORTED_DEVICES += miniembwifi
+  DEFAULT := n
 endef
 TARGET_DEVICES += omnima_miniembwifi
 
@@ -902,6 +929,7 @@ define Device/poray_m4-8m
   DEVICE_VARIANT := 8M
   DEVICE_PACKAGES := kmod-usb2
   SUPPORTED_DEVICES += m4-8M
+  DEFAULT := n
 endef
 TARGET_DEVICES += poray_m4-8m
 
@@ -915,6 +943,7 @@ define Device/poray_x5
   DEVICE_MODEL := X5/X6
   DEVICE_PACKAGES := kmod-usb2
   SUPPORTED_DEVICES += x5
+  DEFAULT := n
 endef
 TARGET_DEVICES += poray_x5
 
@@ -928,6 +957,7 @@ define Device/poray_x8
   DEVICE_MODEL := X8
   DEVICE_PACKAGES := kmod-usb2
   SUPPORTED_DEVICES += x8
+  DEFAULT := n
 endef
 TARGET_DEVICES += poray_x8
 
@@ -938,6 +968,7 @@ define Device/prolink_pwh2004
   DEVICE_MODEL := PWH2004
   DEVICE_PACKAGES :=
   SUPPORTED_DEVICES += pwh2004
+  DEFAULT := n
 endef
 TARGET_DEVICES += prolink_pwh2004
 
@@ -992,6 +1023,7 @@ define Device/teltonika_rut5xx
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT5XX
   SUPPORTED_DEVICES += rut5xx
+  DEFAULT := n
 endef
 TARGET_DEVICES += teltonika_rut5xx
 
@@ -1063,6 +1095,7 @@ define Device/trendnet_tew-714tru
   DEVICE_VENDOR := TRENDnet
   DEVICE_MODEL := TEW-714TRU
   SUPPORTED_DEVICES += tew-714tru
+  DEFAULT := n
 endef
 TARGET_DEVICES += trendnet_tew-714tru
 
@@ -1098,6 +1131,7 @@ define Device/unbranded_wr512-3gn-8m
   DEVICE_MODEL := WR512-3GN
   DEVICE_VARIANT := 8M
   SUPPORTED_DEVICES += wr512-3gn-8M
+  DEFAULT := n
 endef
 TARGET_DEVICES += unbranded_wr512-3gn-8m
 
@@ -1131,6 +1165,7 @@ define Device/upvel_ur-336un
   DEVICE_MODEL := UR-336UN
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += ur-336un
+  DEFAULT := n
 endef
 TARGET_DEVICES += upvel_ur-336un
 
@@ -1181,6 +1216,7 @@ define Device/zorlik_zl5900v2
   DEVICE_VENDOR := Zorlik
   DEVICE_MODEL := ZL5900V2
   DEVICE_PACKAGES := kmod-usb-ohci kmod-usb2
+  DEFAULT := n
 endef
 TARGET_DEVICES += zorlik_zl5900v2
 
@@ -1204,6 +1240,7 @@ define Device/zyxel_keenetic
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ehci kmod-usb-ledtrig-usbport \
 	kmod-usb-dwc2
   SUPPORTED_DEVICES += kn
+  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_keenetic
 
@@ -1214,6 +1251,7 @@ define Device/zyxel_keenetic-4g-b
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic 4G
   DEVICE_VARIANT := B
+  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_keenetic-4g-b
 
@@ -1224,6 +1262,7 @@ define Device/zyxel_keenetic-lite-b
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Lite
   DEVICE_VARIANT := B
+  DEFAULT := n
 endef
 TARGET_DEVICES += zyxel_keenetic-lite-b
 
