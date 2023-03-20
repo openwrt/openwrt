@@ -2847,6 +2847,7 @@ define Device/wd_mynet-wifi-rangeextender
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | cybertan-trx | \
 	addpattern | append-metadata
   SUPPORTED_DEVICES += mynet-rext
+  DEFAULT := n
 endef
 TARGET_DEVICES += wd_mynet-wifi-rangeextender
 
@@ -2937,6 +2938,7 @@ define Device/ziking_cpe46b
   DEVICE_MODEL := CPE46B
   IMAGE_SIZE := 8000k
   DEVICE_PACKAGES := kmod-i2c-gpio
+  DEFAULT := n
 endef
 TARGET_DEVICES += ziking_cpe46b
 

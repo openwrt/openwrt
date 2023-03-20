@@ -40,6 +40,7 @@ define Device/engenius_eap350-v1
   IMAGE_SIZE := 4928k
   LOADER_FLASH_OFFS := 0x1a0000
   SENAO_IMGNAME := senao-eap350
+  DEFAULT := n
 endef
 TARGET_DEVICES += engenius_eap350-v1
 
@@ -53,6 +54,7 @@ define Device/engenius_ecb350-v1
   IMAGE_SIZE := 4928k
   LOADER_FLASH_OFFS := 0x1a0000
   SENAO_IMGNAME := senao-ecb350
+  DEFAULT := n
 endef
 TARGET_DEVICES += engenius_ecb350-v1
 
@@ -66,6 +68,7 @@ define Device/engenius_enh202-v1
   IMAGE_SIZE := 4928k
   LOADER_FLASH_OFFS := 0x1a0000
   SENAO_IMGNAME := senao-enh202
+  DEFAULT := n
 endef
 TARGET_DEVICES += engenius_enh202-v1
 
@@ -76,5 +79,6 @@ define Device/pqi_air-pen
   DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 7680k
   SUPPORTED_DEVICES += pqi-air-pen
+  DEFAULT := n
 endef
 TARGET_DEVICES += pqi_air-pen
