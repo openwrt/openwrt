@@ -1,0 +1,104 @@
+From patchwork Thu Mar 16 17:28:07 2023
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Patchwork-Submitter: =?utf-8?q?=C3=81lvaro_Fern=C3=A1ndez_Rojas?=
+ <noltari@gmail.com>
+X-Patchwork-Id: 13178135
+X-Patchwork-Delegate: kuba@kernel.org
+Return-Path: <netdev-owner@vger.kernel.org>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	aws-us-west-2-korg-lkml-1.web.codeaurora.org
+Received: from vger.kernel.org (vger.kernel.org [23.128.96.18])
+	by smtp.lore.kernel.org (Postfix) with ESMTP id 9F385C6FD19
+	for <netdev@archiver.kernel.org>; Thu, 16 Mar 2023 17:29:18 +0000 (UTC)
+Received: (majordomo@vger.kernel.org) by vger.kernel.org via listexpand
+        id S229918AbjCPR3Q (ORCPT <rfc822;netdev@archiver.kernel.org>);
+        Thu, 16 Mar 2023 13:29:16 -0400
+Received: from lindbergh.monkeyblade.net ([23.128.96.19]:44474 "EHLO
+        lindbergh.monkeyblade.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+        with ESMTP id S229902AbjCPR3G (ORCPT
+        <rfc822;netdev@vger.kernel.org>); Thu, 16 Mar 2023 13:29:06 -0400
+Received: from mail-wr1-x433.google.com (mail-wr1-x433.google.com
+ [IPv6:2a00:1450:4864:20::433])
+        by lindbergh.monkeyblade.net (Postfix) with ESMTPS id DB3CC1D929;
+        Thu, 16 Mar 2023 10:29:03 -0700 (PDT)
+Received: by mail-wr1-x433.google.com with SMTP id y14so2246984wrq.4;
+        Thu, 16 Mar 2023 10:29:03 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20210112; t=1678987742;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=n/Cr1XNCJNfBa+dPDtalOZXIIV6S3ucGcQ6qFqXXuSc=;
+        b=Ka0GgVg9azCPEBkuB0FcSt9tMYqZVblZJl1uT4KWVRAEgVcgqi44vSYpvlzc3TfFMI
+         Ulqrk15TYN022WhQxI63v/NQum/s+yKg2G7wZYj2wHxsGAaoaLtFw8lsjoqTx8NZjsXO
+         OIlTQqkyvDBE4t4FkO9w47A9Q2ruNzohH7Mng3Kraup/9Wyb3PGdybj/sC9/Pvnw6aPz
+         4Ep0ufMhgNjCk8X2buy346Tcow1zyQVQeGAZrxQzPbWcwa5rFbWGv6iD4wYbHKYm/DZV
+         ah4lc+p0anRvAsNDlqj9fa+VY96nD4X/R7q5M3u7jTEL5YPvrOH5a8y5P5c92mWXiI7i
+         RABA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20210112; t=1678987742;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=n/Cr1XNCJNfBa+dPDtalOZXIIV6S3ucGcQ6qFqXXuSc=;
+        b=RnTP/w7AloNUBWmU5C26i+lQQMLIbND8o8gY/M87Dw22DuDdCIQQxRQypN9pzW4fmS
+         VfNg/kh5Hydzm2bSw7AXMtT0hrbTfBZr2sB6BEKlojw3txmRVCoDGvlZLhTCRtPYGECX
+         WqK1d37sgZ+bBEtjsPfCoVxdLpMCAjxlzLTCnwIclXsHLJg6Tsup33wu6kCFaQz1GYi1
+         hDlc0KC9TZBXr0+3kzzXVyp0X3P30TlAamlojgoi44oa8246DcMBMtsbhiRPLUsdcIfs
+         k+UDK2IemrCvgh5hfN3tX/DtwzoOxPjmB2FZjdxi7+6+c/abS5IYjQ8I1b30JOzDZeMs
+         E6nA==
+X-Gm-Message-State: AO0yUKXFx+XUMUlLCdoCi82z77K5Ax1VNa78esJmOz5Jv6sQIYmKTgvD
+        VrU+Kl3YdJgxxLbxpm1e8RI=
+X-Google-Smtp-Source: 
+ AK7set8fFjLrpZ1Ll4TW9iTex7qD+OJccAtDrfibvtBWYkVr0jRxWbwBsrVExeDl051bEIdDmJrszQ==
+X-Received: by 2002:a5d:61c7:0:b0:2ce:a697:75c7 with SMTP id
+ q7-20020a5d61c7000000b002cea69775c7mr4660631wrv.33.1678987742168;
+        Thu, 16 Mar 2023 10:29:02 -0700 (PDT)
+Received: from atlantis.lan (255.red-79-146-124.dynamicip.rima-tde.net.
+ [79.146.124.255])
+        by smtp.gmail.com with ESMTPSA id
+ n7-20020a5d4847000000b002c5d3f0f737sm7719124wrs.30.2023.03.16.10.29.01
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 16 Mar 2023 10:29:01 -0700 (PDT)
+From: =?utf-8?q?=C3=81lvaro_Fern=C3=A1ndez_Rojas?=  <noltari@gmail.com>
+To: f.fainelli@gmail.com, jonas.gorski@gmail.com, andrew@lunn.ch,
+        olteanv@gmail.com, davem@davemloft.net, edumazet@google.com,
+        kuba@kernel.org, pabeni@redhat.com, netdev@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Cc: =?utf-8?q?=C3=81lvaro_Fern=C3=A1ndez_Rojas?=  <noltari@gmail.com>
+Subject: [PATCH v2] net: dsa: b53: mmap: fix device tree support
+Date: Thu, 16 Mar 2023 18:28:07 +0100
+Message-Id: <20230316172807.460146-1-noltari@gmail.com>
+X-Mailer: git-send-email 2.30.2
+In-Reply-To: <20230310121059.4498-1-noltari@gmail.com>
+References: <20230310121059.4498-1-noltari@gmail.com>
+MIME-Version: 1.0
+Precedence: bulk
+List-ID: <netdev.vger.kernel.org>
+X-Mailing-List: netdev@vger.kernel.org
+X-Patchwork-Delegate: kuba@kernel.org
+
+CPU port should also be enabled in order to get a working switch.
+
+Fixes: a5538a777b73 ("net: dsa: b53: mmap: Add device tree support")
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ v2: switch to B53_N_PORTS
+
+ drivers/net/dsa/b53/b53_mmap.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/b53/b53_mmap.c
++++ b/drivers/net/dsa/b53/b53_mmap.c
+@@ -263,7 +263,7 @@ static int b53_mmap_probe_of(struct plat
+ 		if (of_property_read_u32(of_port, "reg", &reg))
+ 			continue;
+ 
+-		if (reg < B53_CPU_PORT)
++		if (reg < B53_N_PORTS)
+ 			pdata->enabled_ports |= BIT(reg);
+ 	}
+ 
