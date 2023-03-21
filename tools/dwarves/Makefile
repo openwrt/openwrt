@@ -4,7 +4,6 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dwarves
 PKG_VERSION:=1.24
-PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://fedorapeople.org/~acme/dwarves/

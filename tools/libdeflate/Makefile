@@ -8,7 +8,6 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libdeflate
 PKG_VERSION:=1.17
-PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=https://github.com/ebiggers/libdeflate.git
 PKG_SOURCE_PROTO:=git

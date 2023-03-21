@@ -8,7 +8,6 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mtd-utils
 PKG_VERSION:=2.1.5
-PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://infraroot.at/pub/mtd/

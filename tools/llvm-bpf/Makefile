@@ -8,7 +8,6 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=llvm-project
 PKG_VERSION:=15.0.7
-PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).src.tar.xz
 PKG_SOURCE_URL:=https://github.com/llvm/llvm-project/releases/download/llvmorg-$(PKG_VERSION)

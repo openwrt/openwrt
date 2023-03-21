@@ -14,8 +14,6 @@ PKG_SOURCE_URL:=https://www.muppetlabs.com/~breadbox/pub/software
 PKG_SOURCE:=ELFkickers-$(PKG_VERSION).tar.gz
 PKG_HASH:=9b81e6c53e0c94fc198d9882eb737156f36d565152dc32118897c77b06a2687c
 
-PKG_RELEASE:=1
-
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Install
