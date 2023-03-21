@@ -8,14 +8,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=coreutils
 PKG_CPE_ID:=cpe:/a:gnu:coreutils
-PKG_VERSION:=9.1
+PKG_VERSION:=9.2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/coreutils
-PKG_HASH:=61a1f410d78ba7e7f37a5a4f50e6d1320aca33375484a3255eddf17a38580423
+PKG_HASH:=6885ff47b9cdb211de47d368c17853f406daaf98b148aaecdf10de29cc04b0b3
 
 HOST_BUILD_PARALLEL := 1
-PKG_FIXUP:=autoreconf
 
 BUILD_PROGRAMS = date readlink touch ln chown ginstall
 

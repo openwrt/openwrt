@@ -1,0 +1,20 @@
+From 9c5e542fd190a14431092e3b6cb45d18fe95f26f Mon Sep 17 00:00:00 2001
+From: Paul Eggert <eggert@cs.ucla.edu>
+Date: Tue, 28 Mar 2023 01:52:43 -0700
+Subject: [PATCH] date: diagnose -f read errors
+
+* src/date.c (batch_convert): Diagnose read errors, fixing Bug#62497.
+---
+--- a/src/date.c
++++ b/src/date.c
+@@ -368,7 +368,9 @@ batch_convert (char const *input_filenam
+       ssize_t line_length = getline (&line, &buflen, in_stream);
+       if (line_length < 0)
+         {
+-          /* FIXME: detect/handle error here.  */
++          if (ferror (in_stream))
++            die (EXIT_FAILURE, errno, _("%s: read error"),
++                 quotef (input_filename));
+           break;
+         }
+ 
