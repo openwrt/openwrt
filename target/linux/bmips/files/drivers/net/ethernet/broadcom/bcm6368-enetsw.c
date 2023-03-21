@@ -22,7 +22,7 @@
 #include <linux/reset.h>
 
 /* MTU */
-#define ENETSW_TAG_SIZE			6
+#define ENETSW_TAG_SIZE			(6 + VLAN_HLEN)
 #define ENETSW_MTU_OVERHEAD		(VLAN_ETH_HLEN + VLAN_HLEN + \
 					 ENETSW_TAG_SIZE)
 #define ENETSW_FRAG_SIZE(x)		(SKB_DATA_ALIGN(NET_SKB_PAD + x + \
