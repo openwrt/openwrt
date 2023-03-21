@@ -18,12 +18,7 @@ mvebu_setup_interfaces()
 	cznic,turris-omnia)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 lan4" "eth2"
 		;;
-	fortinet,fg-50e)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "eth1 eth2"
-		;;
-	iptime,nas1dual)
-		ucidef_set_interface_lan "eth0 eth1" "dhcp"
-		;;
+	fortinet,fg-30e|\
 	linksys,wrt1200ac|\
 	linksys,wrt1900ac-v1|\
 	linksys,wrt1900ac-v2|\
@@ -31,6 +26,12 @@ mvebu_setup_interfaces()
 	linksys,wrt3200acm|\
 	linksys,wrt32x)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
+	fortinet,fg-50e)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "eth1 eth2"
+		;;
+	iptime,nas1dual)
+		ucidef_set_interface_lan "eth0 eth1" "dhcp"
 		;;
 	marvell,a385-db-ap)
 		ucidef_set_interfaces_lan_wan "eth0 eth1" "eth2"

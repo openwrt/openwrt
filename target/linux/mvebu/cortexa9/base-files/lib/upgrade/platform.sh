@@ -52,6 +52,7 @@ platform_do_upgrade() {
 	solidrun,clearfog-pro-a1)
 		legacy_sdcard_do_upgrade "$1"
 		;;
+	fortinet,fg-30e|\
 	fortinet,fg-50e)
 		fortinet_do_upgrade "$1"
 		;;
