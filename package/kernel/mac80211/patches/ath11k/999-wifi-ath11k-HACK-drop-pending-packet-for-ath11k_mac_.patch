@@ -1,0 +1,87 @@
+From 97a3daa845cfe96d07fb270df72bf7c3e05dd866 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 10 Oct 2022 17:04:36 +0200
+Subject: [PATCH] wifi: ath11k: HACK drop pending packet for
+ ath11k_mac_flush_tx_complete
+
+Some packets may be lost and stay in the tx_pending counter. Drop them
+when an interface is torn down.
+
+THIS IS NOT A FIX AS AFTER A LONG TIME WE WILL END UP WITH FILLED RING
+AND NOTHING WILL WORK
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 53 +++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
+
+diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
+index 110a38cce0a7..101b54a6749e 100644
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -7387,8 +7387,62 @@ static int ath11k_mac_op_set_frag_threshold(struct ieee80211_hw *hw, u32 value)
+ 
+ static int ath11k_mac_flush_tx_complete(struct ath11k *ar)
+ {
++	struct ath11k_base *ab = ar->ab;
+ 	long time_left;
+ 	int ret = 0;
++	int i;
++
++	time_left = wait_event_timeout(ar->dp.tx_empty_waitq,
++				       (atomic_read(&ar->dp.num_tx_pending) == 0),
++				       ATH11K_FLUSH_TIMEOUT);
++	/* XXX: hack some packets are lost for some reason. Drop pending idr.
++	 * THIS IS NOT A FIX AS AFTER A LONG TIME WE WILL END UP WITH FILLED RING
++	 * AND NOTHING WILL WORK
++	 */
++	if (time_left == 0) {
++		int msdu_id, num_tx_pending_dropped;
++		struct ath11k_dp *dp = &ab->dp;
++		struct ath11k_skb_cb *skb_cb;
++		struct dp_tx_ring *tx_ring;
++		struct sk_buff *msdu;
++
++		ath11k_warn(ar->ab, "failed to flush transmit queue, data pkts pending %d\n",
++			    atomic_read(&ar->dp.num_tx_pending));
++
++		for (i = 0; i < ab->hw_params.max_tx_ring; i++) {
++			tx_ring = &dp->tx_ring[i];
++
++			spin_lock(&tx_ring->tx_idr_lock);
++		}
++
++		for (i = 0; i < ab->hw_params.max_tx_ring; i++) {
++			num_tx_pending_dropped = 0;
++			tx_ring = &dp->tx_ring[i];
++
++			idr_for_each_entry(&tx_ring->txbuf_idr, msdu, msdu_id) {
++				idr_remove(&tx_ring->txbuf_idr, msdu_id);
++
++				skb_cb = ATH11K_SKB_CB(msdu);
++
++				dma_unmap_single(ab->dev, skb_cb->paddr, msdu->len,
++						 DMA_TO_DEVICE);
++				dev_kfree_skb_any(msdu);
++
++				atomic_dec(&ar->dp.num_tx_pending);
++				num_tx_pending_dropped++;
++			}
++
++			if (num_tx_pending_dropped > 0)
++				ath11k_err(ar->ab, "pkts stuck in tx_ring %d, DROPPED %d pkts\n",
++			    		   i, num_tx_pending_dropped);
++		}
++
++		for (i = 0; i < ab->hw_params.max_tx_ring; i++) {
++			tx_ring = &dp->tx_ring[i];
++
++			spin_unlock(&tx_ring->tx_idr_lock);
++		}
++	}
+ 
+ 	time_left = wait_event_timeout(ar->dp.tx_empty_waitq,
+ 				       (atomic_read(&ar->dp.num_tx_pending) == 0),
+-- 
+2.39.2
+
