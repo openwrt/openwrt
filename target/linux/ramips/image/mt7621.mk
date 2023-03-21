@@ -974,6 +974,16 @@ define Device/gnubee_gb-pc2
 endef
 TARGET_DEVICES += gnubee_gb-pc2
 
+define Device/hanyang_hyc-g920
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Hanyang
+  DEVICE_MODEL := CJ-Hello HYC-G920
+  IMAGE_SIZE := 15744k
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt76x2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += hanyang_hyc-g920
+
 define Device/h3c_tx180x
   $(Device/dsa-migration)
   BLOCKSIZE := 128k
