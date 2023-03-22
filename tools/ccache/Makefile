@@ -5,7 +5,6 @@
 # See /LICENSE for more information.
 #
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=ccache
 PKG_VERSION:=4.7.4
@@ -22,10 +21,7 @@ CMAKE_HOST_OPTIONS += \
 	-DCMAKE_CXX_COMPILER_LAUNCHER="" \
 	-DCMAKE_SKIP_RPATH=FALSE \
 	-DCMAKE_INSTALL_RPATH="${STAGING_DIR_HOST}/lib" \
+	-DENABLE_DOCUMENTATION=OFF
 	-DREDIS_STORAGE_BACKEND=OFF
-
-ifneq (docs-$(CONFIG_BUILD_DOCUMENTATION),docs-y)
-CMAKE_HOST_OPTIONS += -DENABLE_DOCUMENTATION=OFF
-endif
 
 $(eval $(call HostBuild))
