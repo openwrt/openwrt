@@ -14,6 +14,8 @@ define Host/Configure
 endef
 
 define Host/Install
+	$(INSTALL_DIR) $(1)/share/aclocal
+	$(INSTALL_DATA) $(HOST_BUILD_DIR)/m4/*.m4 $(1)/share/aclocal/
 	$(INSTALL_DIR) $(1)/share/gnulib
 	$(CP) $(HOST_BUILD_DIR)/* $(1)/share/gnulib/
 endef
