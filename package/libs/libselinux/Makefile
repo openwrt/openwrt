@@ -19,6 +19,8 @@ PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=Thomas Petazzoni <thomas.petazzoni@bootlin.com>
 PKG_CPE_ID:=cpe:/a:selinuxproject:libselinux
 
+PKG_BUILD_FLAGS:=no-lto
+
 HOST_BUILD_DEPENDS:=libsepol/host musl-fts/host pcre/host
 
 include $(INCLUDE_DIR)/package.mk
