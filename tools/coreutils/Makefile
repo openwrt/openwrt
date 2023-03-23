@@ -20,14 +20,41 @@ BUILD_PROGRAMS = date readlink touch ln chown ginstall
 
 include $(INCLUDE_DIR)/host-build.mk
 
+export GNULIB_SRCDIR:=$(HOST_GNULIB_SRCDIR)
+
 BUILD_BINS = $(patsubst %,src/%,$(BUILD_PROGRAMS))
 
 HOST_CONFIGURE_ARGS += \
 	 --enable-install-program=$(subst $(space),$(comma),$(strip $(BUILD_PROGRAMS)))
 
 HOST_MAKE_FLAGS += \
+	$(AM_TOOL_PATHS_FAKE) \
 	PROGRAMS="$(BUILD_BINS)" \
 	LIBRARIES= MANS= SUBDIRS=.
+
+define Host/Bootstrap
+	( \
+		cd $(HOST_BUILD_DIR); \
+		$(AM_TOOL_PATHS_FAKE) \
+		./bootstrap \
+			--bootstrap-sync \
+			--force \
+			--no-git \
+			--skip-po \
+			--gnulib-srcdir=$(GNULIB_SRCDIR) \
+	)
+endef
+
+define Host/Prepare
+	$(call Host/Prepare/Default)
+	$(if $(QUILT),,$(call Host/Bootstrap))
+endef
+
+define Host/Configure
+	$(if $(QUILT),$(call Host/Bootstrap))
+	-$(CP) $(HOST_BUILD_DIR)/lib/time.in.h~ $(HOST_BUILD_DIR)/lib/time.in.h # @GNULIB_TIME@ not defined
+	$(call Host/Configure/Default)
+endef
 
 define Host/Install
 	$(INSTALL_DIR) $(1)/bin
