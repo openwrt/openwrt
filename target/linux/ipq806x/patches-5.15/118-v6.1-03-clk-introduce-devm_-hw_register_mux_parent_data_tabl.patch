@@ -17,7 +17,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/include/linux/clk-provider.h
 +++ b/include/linux/clk-provider.h
-@@ -932,12 +932,26 @@ struct clk *clk_register_mux_table(struc
+@@ -955,12 +955,26 @@ struct clk *clk_register_mux_table(struc
  	__clk_hw_register_mux((dev), NULL, (name), (num_parents), NULL, NULL, \
  			      (parent_data), (flags), (reg), (shift),	      \
  			      BIT((width)) - 1, (clk_mux_flags), NULL, (lock))
