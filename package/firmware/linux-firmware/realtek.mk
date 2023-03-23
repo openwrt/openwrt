@@ -69,13 +69,6 @@ define Package/rtl8192se-firmware/install
 endef
 $(eval $(call BuildPackage,rtl8192se-firmware))
 
-Package/rtl8192su-firmware = $(call Package/firmware-default,RealTek RTL8192SU firmware)
-define Package/rtl8192su-firmware/install
-	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtlwifi/rtl8712u.bin $(1)/lib/firmware/rtlwifi
-endef
-$(eval $(call BuildPackage,rtl8192su-firmware))
-
 Package/rtl8723au-firmware = $(call Package/firmware-default,RealTek RTL8723AU firmware)
 define Package/rtl8723au-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
@@ -92,6 +85,29 @@ define Package/rtl8723bu-firmware/install
 	ln -s rtl8723bu_nic.bin $(1)/lib/firmware/rtlwifi/rtl8723bs_nic.bin
 endef
 $(eval $(call BuildPackage,rtl8723bu-firmware))
+
+Package/rtl8761a-firmware = $(call Package/firmware-default,RealTek RTL8761A firmware)
+define Package/rtl8761a-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtl_bt
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtl_bt/rtl8761a_fw.bin $(1)/lib/firmware/rtl_bt
+endef
+$(eval $(call BuildPackage,rtl8761a-firmware))
+
+Package/rtl8761b-firmware = $(call Package/firmware-default,RealTek RTL8761B firmware)
+define Package/rtl8761b-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtl_bt
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtl_bt/rtl8761b_config.bin $(1)/lib/firmware/rtl_bt
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtl_bt/rtl8761b_fw.bin $(1)/lib/firmware/rtl_bt
+endef
+$(eval $(call BuildPackage,rtl8761b-firmware))
+
+Package/rtl8761bu-firmware = $(call Package/firmware-default,RealTek RTL8761BU firmware)
+define Package/rtl8761bu-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtl_bt
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtl_bt/rtl8761bu_config.bin $(1)/lib/firmware/rtl_bt
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtl_bt/rtl8761bu_fw.bin $(1)/lib/firmware/rtl_bt
+endef
+$(eval $(call BuildPackage,rtl8761bu-firmware))
 
 Package/rtl8821ae-firmware = $(call Package/firmware-default,RealTek RTL8821AE firmware)
 define Package/rtl8821ae-firmware/install

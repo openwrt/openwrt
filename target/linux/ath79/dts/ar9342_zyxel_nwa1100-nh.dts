@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9342_zyxel_nwa11xx.dtsi"
+
+/ {
+	compatible = "zyxel,nwa1100-nh", "qca,ar9342";
+	model = "Zyxel NWA1100-NH";
+
+	aliases {
+		label-mac-device = &eth0;
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_red;
+	};
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: status_green {
+			label = "green:status";
+			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_status_red: status_red {
+			label = "red:status";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan_green: wlan_green {
+			label = "green:wlan";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_lan_green: lan_green {
+			label = "green:lan";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan_amber: lan_amber {
+			label = "amber:lan";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+};

@@ -30,10 +30,6 @@
 			status = "okay";
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -73,16 +69,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-			switch_lan_bmp = <0x18>;
-			switch_wan_bmp = <0x20>;
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -235,7 +221,7 @@
 	status = "okay";
 
 	spidev1: spi@0 {
-		compatible = "siliconlabs,si3210";
+		compatible = "silabs,si3210";
 		reg = <0>;
 		spi-max-frequency = <24000000>;
 	};

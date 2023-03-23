@@ -1,0 +1,85 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x_senao_router-dual.dtsi"
+
+/ {
+	compatible = "engenius,esr900", "qca,qca9558";
+	model = "EnGenius ESR900";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "amber:power";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		wlan2g {
+			label = "blue:wlan2g";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wlan5g {
+			label = "blue:wlan5g";
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wps_amber {
+			label = "amber:wps";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		wps_blue {
+			label = "blue:wps";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&phy0 {
+	qca,mib-poll-interval = <500>;
+
+	qca,ar8327-initvals = <
+		0x04 0x07680000 /* PORT0 PAD MODE CTRL */
+		0x10 0x40000000 /* POWER_ON_STRAP */
+		0x50 0xcf35cf35 /* LED_CTRL0 */
+		0x54 0xcf35cf35 /* LED_CTRL1 */
+		0x58 0xcf35cf35 /* LED_CTRL2 */
+		0x5c 0x03ffff00 /* LED_CTRL3 */
+		0x7c 0x0000007e /* PORT0_STATUS */
+	>;
+};
+
+&usb_phy1 {
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&wmac {
+	nvmem-cells = <&calibration_art_1000>;
+	nvmem-cell-names = "calibration";
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0,0 {
+		compatible = "pci168c,0033";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&calibration_art_5000>;
+		nvmem-cell-names = "calibration";
+	};
+};

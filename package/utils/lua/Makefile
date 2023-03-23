@@ -12,8 +12,8 @@ PKG_VERSION:=5.1.5
 PKG_RELEASE:=10
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www.lua.org/ftp/ \
-	http://www.tecgraf.puc-rio.br/lua/ftp/
+PKG_SOURCE_URL:=https://www.lua.org/ftp/ \
+	https://www.tecgraf.puc-rio.br/lua/ftp/
 PKG_HASH:=2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333
 PKG_BUILD_PARALLEL:=1
 
@@ -30,7 +30,7 @@ define Package/lua/Default
   SECTION:=lang
   CATEGORY:=Languages
   TITLE:=Lua programming language
-  URL:=http://www.lua.org/
+  URL:=https://www.lua.org/
   MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 endef
 
@@ -99,7 +99,7 @@ define Build/Compile
 		RANLIB="$(TARGET_CROSS)ranlib" \
 		INSTALL_ROOT=/usr \
 		CFLAGS="$(TARGET_CPPFLAGS) $(TARGET_CFLAGS)" \
-		MYLDFLAGS="$(TARGET_LDFLAGS) $(if $(CONFIG_USE_GLIBC),-lm -ldl)" \
+		MYLDFLAGS="$(TARGET_LDFLAGS)" \
 		PKG_VERSION=$(PKG_VERSION) \
 		linux
 	rm -rf $(PKG_INSTALL_DIR)

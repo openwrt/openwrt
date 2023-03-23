@@ -40,7 +40,7 @@ it on BCM4708 family.
  /* called during probe() after chip reset completes */
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -155,6 +155,49 @@ int xhci_start(struct xhci_hcd *xhci)
+@@ -157,6 +157,49 @@ int xhci_start(struct xhci_hcd *xhci)
  	return ret;
  }
  
@@ -127,11 +127,11 @@ it on BCM4708 family.
  /*
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1900,6 +1900,7 @@ struct xhci_hcd {
- #define XHCI_NO_SOFT_RETRY	BIT_ULL(40)
- #define XHCI_BROKEN_D3COLD	BIT_ULL(41)
+@@ -1906,6 +1906,7 @@ struct xhci_hcd {
  #define XHCI_EP_CTX_BROKEN_DCS	BIT_ULL(42)
-+#define XHCI_FAKE_DOORBELL	BIT_ULL(44)
+ #define XHCI_SUSPEND_RESUME_CLKS	BIT_ULL(43)
+ #define XHCI_RESET_TO_DEFAULT	BIT_ULL(44)
++#define XHCI_FAKE_DOORBELL	BIT_ULL(45)
  
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;

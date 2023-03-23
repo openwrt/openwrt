@@ -1,0 +1,27 @@
+From a065d5615fc83908ef21ed8159ffb63d816ff5de Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>
+Date: Wed, 28 Jul 2021 16:42:27 +0200
+Subject: [PATCH] of: unify of_count_phandle_with_args() arguments with
+ !CONFIG_OF
+
+Unify the declaration of of_count_phandle_with_args() between enabled
+and disabled OF by making constifying pointed device_node.
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@canonical.com>
+Reviewed-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Bartosz Golaszewski <bgolaszewski@baylibre.com>
+---
+ include/linux/of.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/include/linux/of.h
++++ b/include/linux/of.h
+@@ -889,7 +889,7 @@ static inline int of_parse_phandle_with_
+ 	return -ENOSYS;
+ }
+ 
+-static inline int of_count_phandle_with_args(struct device_node *np,
++static inline int of_count_phandle_with_args(const struct device_node *np,
+ 					     const char *list_name,
+ 					     const char *cells_name)
+ {

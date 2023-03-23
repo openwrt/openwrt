@@ -1,3 +1,20 @@
+From 63a0a4d85bc900464c5b046b13808a582345f8c8 Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Sat, 11 Dec 2021 20:14:47 +0100
+Subject: [PATCH] realtek: Add support for RTL9300/RTL9310 I2C controller
+
+This adds support for the RTL9300 and RTL9310 I2C controller.
+The controller implements the SMBus protocol for SMBus transfers
+over an I2C bus. The driver supports selecting one of the 2 possible
+SCL pins and any of the 8 possible SDA pins. Bus speeds of
+100kHz (standard speed) and 400kHz (high speed I2C) are supported.
+
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+---
+ drivers/i2c/busses/Kconfig                    | 10 +++++++++
+ drivers/i2c/busses/Makefile                   |  1 +
+ 2 files changed, 11 insertions(+)
+
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -954,6 +954,16 @@ config I2C_RK3X

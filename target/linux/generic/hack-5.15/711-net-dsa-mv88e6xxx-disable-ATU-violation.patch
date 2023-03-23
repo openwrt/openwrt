@@ -1,6 +1,15 @@
+From ebd924d773223593142d417c41d4ee6fa16f1805 Mon Sep 17 00:00:00 2001
+From: OpenWrt community <openwrt-devel@lists.openwrt.org>
+Date: Wed, 13 Jul 2022 13:45:56 +0200
+Subject: [PATCH] net/dsa/mv88e6xxx: disable ATU violation
+
+---
+ drivers/net/dsa/mv88e6xxx/chip.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
 --- a/drivers/net/dsa/mv88e6xxx/chip.c
 +++ b/drivers/net/dsa/mv88e6xxx/chip.c
-@@ -2983,6 +2983,9 @@ static int mv88e6xxx_setup_port(struct m
+@@ -2980,6 +2980,9 @@ static int mv88e6xxx_setup_port(struct m
  	else
  		reg = 1 << port;
  

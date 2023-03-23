@@ -1,0 +1,127 @@
+name: Build Kernel
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/check-kernel-patches.yml'
+      - '.github/workflows/build.yml'
+      - '.github/workflows/kernel.yml'
+      - 'include/kernel*'
+      - 'package/kernel/**'
+      - 'target/linux/**'
+  push:
+    paths:
+      - '.github/workflows/check-kernel-patches.yml'
+      - '.github/workflows/build.yml'
+      - '.github/workflows/kernel.yml'
+      - 'include/kernel*'
+      - 'package/kernel/**'
+      - 'target/linux/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  determine_targets:
+    name: Set targets
+    runs-on: ubuntu-latest
+    outputs:
+      targets_subtargets: ${{ steps.find_targets.outputs.targets_subtargets }}
+      targets: ${{ steps.find_targets.outputs.targets }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+
+      - name: Set targets
+        id: find_targets
+        run: |
+          ALL_TARGETS="$(perl ./scripts/dump-target-info.pl targets 2>/dev/null)"
+          CHANGED_FILES="$(echo ${{ steps.changed-files.outputs.all_changed_files }} | tr ' ' '\n')"
+
+          TARGETS_SUBTARGETS="$(echo "$ALL_TARGETS" | sort -u -t '/' -k1 | awk '{ print $1 }')"
+          TARGETS="$(echo "$ALL_TARGETS" | sort -u -t '/' -k1,1 | awk '{ print $1 }')"
+
+          # On testing non-specific target, skip testing each subtarget
+          if echo "$CHANGED_FILES" | grep -v -q target/linux ||
+            echo "$CHANGED_FILES" | grep -q target/linux/generic; then
+            TARGETS_SUBTARGETS=$TARGETS
+          fi
+
+          JSON_TARGETS_SUBTARGETS='['
+          FIRST=1
+          for TARGET in $TARGETS_SUBTARGETS; do
+            if echo "$CHANGED_FILES" | grep -v -q target/linux ||
+              echo "$CHANGED_FILES" | grep -q target/linux/generic ||
+              echo "$CHANGED_FILES" | grep -q $(echo $TARGET | cut -d "/" -f 1); then
+              [[ $FIRST -ne 1 ]] && JSON_TARGETS_SUBTARGETS="$JSON_TARGETS_SUBTARGETS"','
+              JSON_TARGETS_SUBTARGETS="$JSON_TARGETS_SUBTARGETS"'"'"${TARGET}"'"'
+              FIRST=0
+            fi
+          done
+          JSON_TARGETS_SUBTARGETS="$JSON_TARGETS_SUBTARGETS"']'
+
+          JSON_TARGETS='['
+          FIRST=1
+          for TARGET in $TARGETS; do
+            if echo "$CHANGED_FILES" | grep -v -q target/linux ||
+              echo "$CHANGED_FILES" | grep -q target/linux/generic ||
+              echo "$CHANGED_FILES" | grep -q $(echo $TARGET | cut -d "/" -f 1); then
+              [[ $FIRST -ne 1 ]] && JSON_TARGETS="$JSON_TARGETS"','
+              JSON_TARGETS="$JSON_TARGETS"'"'"${TARGET}"'"'
+              FIRST=0
+            fi
+          done
+          JSON_TARGETS="$JSON_TARGETS"']'
+
+          echo -e "\n---- targets to build ----\n"
+          echo "$JSON_TARGETS_SUBTARGETS"
+          echo -e "\n---- targets to build ----\n"
+
+          echo -e "\n---- targets to check patch ----\n"
+          echo "$JSON_TARGETS"
+          echo -e "\n---- targets to check patch ----\n"
+
+          echo "targets_subtargets=$JSON_TARGETS_SUBTARGETS" >> $GITHUB_OUTPUT
+          echo "targets=$JSON_TARGETS" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build Kernel with external toolchain
+    needs: determine_targets
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+       fail-fast: False
+       matrix:
+         target: ${{fromJson(needs.determine_targets.outputs.targets_subtargets)}}
+    uses: ./.github/workflows/build.yml
+    with:
+      target: ${{ matrix.target }}
+      build_kernel: true
+      build_all_kmods: true
+
+  check-kernel-patches:
+    name: Check Kernel patches
+    needs: determine_targets
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+       fail-fast: False
+       matrix:
+         target: ${{fromJson(needs.determine_targets.outputs.targets)}}
+    uses: ./.github/workflows/check-kernel-patches.yml
+    with:
+      target: ${{ matrix.target }}
+

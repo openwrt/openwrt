@@ -108,6 +108,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
+			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6368_IRQ_EXT0>,
 				     <BCM6368_IRQ_EXT1>,
 				     <BCM6368_IRQ_EXT2>,
@@ -122,6 +123,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
+			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6368_IRQ_EXT4>,
 				     <BCM6368_IRQ_EXT5>;
 		};
@@ -149,6 +151,8 @@
 		};
 
 		gpio_cntl: syscon@10000080 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "brcm,bcm6368-gpio-sysctl",
 				     "syscon", "simple-mfd";
 			reg = <0x10000080 0x80>;
@@ -519,7 +523,7 @@
 		switch0: switch@10f00000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "brcm,bcm6328-switch";
+			compatible = "brcm,bcm6368-switch";
 			reg = <0x10f00000 0x8000>;
 			big-endian;
 
@@ -529,7 +533,6 @@
 
 				port@8 {
 					reg = <8>;
-					label = "cpu";
 
 					phy-mode = "internal";
 					ethernet = <&ethernet>;

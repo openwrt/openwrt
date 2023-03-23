@@ -1,0 +1,68 @@
+name: Build Toolchains
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/build.yml'
+      - '.github/workflows/toolchain.yml'
+      - 'toolchain/**'
+  push:
+    paths:
+      - '.github/workflows/build.yml'
+      - '.github/workflows/toolchain.yml'
+      - 'toolchain/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  determine_targets:
+    name: Set targets
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.find_targets.outputs.target }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set targets
+        id: find_targets
+        run: |
+          export TARGETS="$(perl ./scripts/dump-target-info.pl targets 2>/dev/null \
+            | sort -u -t '/' -k1,1 \
+            | awk '{ print $1 }')"
+
+          JSON='['
+          FIRST=1
+          for TARGET in $TARGETS; do
+            [[ $FIRST -ne 1 ]] && JSON="$JSON"','
+            JSON="$JSON"'"'"${TARGET}"'"'
+            FIRST=0
+          done
+          JSON="$JSON"']'
+
+           echo -e "\n---- targets ----\n"
+           echo "$JSON"
+           echo -e "\n---- targets ----\n"
+
+           echo "target=$JSON" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build Target Toolchain
+    needs: determine_targets
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+       fail-fast: False
+       matrix:
+         target: ${{fromJson(needs.determine_targets.outputs.target)}}
+    uses: ./.github/workflows/build.yml
+    with:
+      target: ${{ matrix.target }}
+      build_toolchain: true

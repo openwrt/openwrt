@@ -3,6 +3,9 @@
 board=$(board_name)
 
 case "$board" in
+asus,map-ac2200)
+	migrate_leds ':chan=-'
+	;;
 engenius,emr3500)
 	migrate_leds "emr3500:="
 	;;

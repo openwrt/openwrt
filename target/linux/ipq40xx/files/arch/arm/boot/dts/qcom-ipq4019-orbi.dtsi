@@ -11,6 +11,7 @@
 		led-failsafe = &led_status_red;
 		led-running = &led_status_green;
 		led-upgrade = &led_status_blue;
+		label-mac-device = &gmac;
 	};
 
 	soc {
@@ -23,10 +24,6 @@
 
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
 		};
 
 		counter@4a1000 {
@@ -65,17 +62,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-
-			switch_lan_bmp = <0x1c>;
-			switch_wan_bmp = <0x02>;
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -281,13 +267,40 @@
 	status = "okay";
 };
 
-&gmac0 {
-	vlan_tag = <1 0x1c>;
+&gmac {
+	status = "okay";
 };
 
-&gmac1 {
-	qcom,phy_mdio_addr = <0>;
-	vlan_tag = <2 0x02>;
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+
+	label = "wan";
+};
+
+&swport2 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan3";
+};
+
+&ethphy4 {
+	status = "disabled";
 };
 
 &pcie0 {

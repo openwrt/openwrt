@@ -121,28 +121,45 @@ void rtl_table_release(struct table_reg *r)
 //	pr_info("Unlock done\n");
 }
 
+static int rtl_table_exec(struct table_reg *r, bool is_write, int idx)
+{
+	int ret = 0;
+	u32 cmd, val;
+
+	/* Read/write bit has inverted meaning on RTL838x */
+	if (r->rmode)
+		cmd = is_write ? 0 : BIT(r->c_bit);
+	else
+		cmd = is_write ? BIT(r->c_bit) : 0;
+
+	cmd |= BIT(r->c_bit + 1); /* Execute bit */
+	cmd |= r->tbl << r->t_bit; /* Table type */
+	cmd |= idx & (BIT(r->t_bit) - 1); /* Index */
+
+	sw_w32(cmd, r->addr);
+
+	ret = readx_poll_timeout(sw_r32, r->addr, val,
+				 !(val & BIT(r->c_bit + 1)), 20, 10000);
+	if (ret)
+		pr_err("%s: timeout\n", __func__);
+
+	return ret;
+}
+
 /*
  * Reads table index idx into the data registers of the table
  */
-void rtl_table_read(struct table_reg *r, int idx)
+int rtl_table_read(struct table_reg *r, int idx)
 {
-	u32 cmd = r->rmode ? BIT(r->c_bit) : 0;
-
-	cmd |= BIT(r->c_bit + 1) | (r->tbl << r->t_bit) | (idx & (BIT(r->t_bit) - 1));
-	sw_w32(cmd, r->addr);
-	do { } while (sw_r32(r->addr) & BIT(r->c_bit + 1));
+	return rtl_table_exec(r, false, idx);
 }
 
 /*
  * Writes the content of the table data registers into the table at index idx
  */
-void rtl_table_write(struct table_reg *r, int idx)
+int rtl_table_write(struct table_reg *r, int idx)
 {
-	u32 cmd = r->rmode ? 0 : BIT(r->c_bit);
-
-	cmd |= BIT(r->c_bit + 1) | (r->tbl << r->t_bit) | (idx & (BIT(r->t_bit) - 1));
-	sw_w32(cmd, r->addr);
-	do { } while (sw_r32(r->addr) & BIT(r->c_bit + 1));
+	return rtl_table_exec(r, true, idx);
 }
 
 /*
@@ -317,10 +334,12 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		phy_interface_t interface;
 		u32 led_set;
 
+		if (!of_device_is_available(dn))
+			continue;
+
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
-		pr_info("%s found port %d\n", __func__, pn);
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
 		if (!phy_node) {
 			if (pn != priv->cpu_port)
@@ -328,14 +347,9 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			continue;
 		}
 
-		pr_info("%s port %d has phandle\n", __func__, pn);
 		if (of_property_read_u32(phy_node, "sds", &priv->ports[pn].sds_num))
 			priv->ports[pn].sds_num = -1;
-		else {
-			pr_info("%s sds port %d is %d\n", __func__, pn,
-				priv->ports[pn].sds_num);
-		}
-		pr_info("%s port %d has SDS\n", __func__, priv->ports[pn].sds_num);
+		pr_debug("%s port %d has SDS %d\n", __func__, pn, priv->ports[pn].sds_num);
 
 		if (of_get_phy_mode(dn, &interface))
 			interface = PHY_INTERFACE_MODE_NA;
@@ -431,17 +445,19 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 	int i;
 	u32 algomsk = 0;
 	u32 algoidx = 0;
+
 	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH) {
+		pr_err("%s: Only mode LACP 802.3ad (4) allowed.\n", __func__);
 		return -EINVAL;
 	}
-	pr_info("%s: Adding port %d to LA-group %d\n", __func__, port, group);
+
 	if (group >= priv->n_lags) {
-		pr_err("Link Agrregation group too large.\n");
+		pr_err("%s: LAG %d invalid.\n", __func__, group);
 		return -EINVAL;
 	}
 
 	if (port >= priv->cpu_port) {
-		pr_err("Invalid port number.\n");
+		pr_err("%s: Port %d invalid.\n", __func__, port);
 		return -EINVAL;
 	}
 
@@ -450,7 +466,7 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 			break;
 	}
 	if (i != priv->n_lags) {
-		pr_err("%s: Port already member of LAG: %d\n", __func__, i);
+		pr_err("%s: Port %d already member of LAG %d.\n", __func__, port, i);
 		return -ENOSPC;
 	}
 	switch(info->hash_type) {
@@ -479,7 +495,8 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 	priv->r->mask_port_reg_be(0, BIT_ULL(port), priv->r->trk_mbr_ctr(group));
 	priv->lags_port_members[group] |= BIT_ULL(port);
 
-	pr_debug("lags_port_members %d now %016llx\n", group, priv->lags_port_members[group]);
+	pr_info("%s: Added port %d to LAG %d. Members now %016llx.\n",
+		 __func__, port, group, priv->lags_port_members[group]);
 	return 0;
 }
 
@@ -488,28 +505,27 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	pr_info("%s: Removing port %d from LA-group %d\n", __func__, port, group);
-
 	if (group >= priv->n_lags) {
-		pr_err("Link Agrregation group too large.\n");
+		pr_err("%s: LAG %d invalid.\n", __func__, group);
 		return -EINVAL;
 	}
 
 	if (port >= priv->cpu_port) {
-		pr_err("Invalid port number.\n");
+		pr_err("%s: Port %d invalid.\n", __func__, port);
 		return -EINVAL;
 	}
 
-
 	if (!(priv->lags_port_members[group] & BIT_ULL(port))) {
-		pr_err("%s: Port not member of LAG: %d\n", __func__, group);
+		pr_err("%s: Port %d not member of LAG %d.\n", __func__, port, group);
 		return -ENOSPC;
 	}
+
 	// 0x7f algo mask all
 	priv->r->mask_port_reg_be(BIT_ULL(port), 0, priv->r->trk_mbr_ctr(group));
 	priv->lags_port_members[group] &= ~BIT_ULL(port);
 
-	pr_info("lags_port_members %d now %016llx\n", group, priv->lags_port_members[group]);
+	pr_info("%s: Removed port %d from LAG %d. Members now %016llx.\n",
+		 __func__, port, group, priv->lags_port_members[group]);
 	return 0;
 }
 
@@ -1270,6 +1286,8 @@ static void rtl83xx_net_event_work_do(struct work_struct *work)
 	struct rtl838x_switch_priv *priv = net_work->priv;
 
 	rtl83xx_l3_nexthop_update(priv, net_work->gw_addr, net_work->mac);
+
+	kfree(net_work);
 }
 
 static int rtl83xx_netevent_event(struct notifier_block *this,
@@ -1283,13 +1301,6 @@ static int rtl83xx_netevent_event(struct notifier_block *this,
 
 	priv = container_of(this, struct rtl838x_switch_priv, ne_nb);
 
-	net_work = kzalloc(sizeof(*net_work), GFP_ATOMIC);
-	if (!net_work)
-		return NOTIFY_BAD;
-
-	INIT_WORK(&net_work->work, rtl83xx_net_event_work_do);
-	net_work->priv = priv;
-
 	switch (event) {
 	case NETEVENT_NEIGH_UPDATE:
 		if (n->tbl != &arp_tbl)
@@ -1298,9 +1309,15 @@ static int rtl83xx_netevent_event(struct notifier_block *this,
 		port = rtl83xx_port_dev_lower_find(dev, priv);
 		if (port < 0 || !(n->nud_state & NUD_VALID)) {
 			pr_debug("%s: Neigbour invalid, not updating\n", __func__);
-			kfree(net_work);
 			return NOTIFY_DONE;
 		}
+
+		net_work = kzalloc(sizeof(*net_work), GFP_ATOMIC);
+		if (!net_work)
+			return NOTIFY_BAD;
+
+		INIT_WORK(&net_work->work, rtl83xx_net_event_work_do);
+		net_work->priv = priv;
 
 		net_work->mac = ether_addr_to_u64(n->ha);
 		net_work->gw_addr = *(__be32 *) n->primary_key;
@@ -1396,7 +1413,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
 	case FIB_EVENT_ENTRY_DEL:
-		pr_debug("%s: FIB_ENTRY ADD/DELL, event %ld\n", __func__, event);
+		pr_debug("%s: FIB_ENTRY ADD/DEL, event %ld\n", __func__, event);
 		if (info->family == AF_INET) {
 			struct fib_entry_notifier_info *fen_info = ptr;
 
@@ -1415,7 +1432,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 
 		} else if (info->family == AF_INET6) {
 			struct fib6_entry_notifier_info *fen6_info = ptr;
-			pr_warn("%s: FIB_RULE ADD/DELL for IPv6 not supported\n", __func__);
+			pr_warn("%s: FIB_RULE ADD/DEL for IPv6 not supported\n", __func__);
 			kfree(fib_work);
 			return NOTIFY_DONE;
 		}
@@ -1423,7 +1440,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 
 	case FIB_EVENT_RULE_ADD:
 	case FIB_EVENT_RULE_DEL:
-		pr_debug("%s: FIB_RULE ADD/DELL, event: %ld\n", __func__, event);
+		pr_debug("%s: FIB_RULE ADD/DEL, event: %ld\n", __func__, event);
 		memcpy(&fib_work->fr_info, ptr, sizeof(fib_work->fr_info));
 		fib_rule_get(fib_work->fr_info.rule);
 		break;

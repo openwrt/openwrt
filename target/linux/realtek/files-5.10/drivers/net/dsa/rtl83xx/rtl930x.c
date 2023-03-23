@@ -5,6 +5,22 @@
 
 #include "rtl83xx.h"
 
+#define RTL930X_VLAN_PORT_TAG_STS_INTERNAL			0x0
+#define RTL930X_VLAN_PORT_TAG_STS_UNTAG				0x1
+#define RTL930X_VLAN_PORT_TAG_STS_TAGGED			0x2
+#define RTL930X_VLAN_PORT_TAG_STS_PRIORITY_TAGGED		0x3
+
+#define RTL930X_VLAN_PORT_TAG_STS_CTRL_BASE			0xCE24
+/* port 0-28 */
+#define RTL930X_VLAN_PORT_TAG_STS_CTRL(port) \
+		RTL930X_VLAN_PORT_TAG_STS_CTRL_BASE + (port << 2)
+#define RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_OTAG_STS_MASK	GENMASK(7,6)
+#define RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_ITAG_STS_MASK	GENMASK(5,4)
+#define RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_P_OTAG_KEEP_MASK	GENMASK(3,3)
+#define RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(2,2)
+#define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1,1)
+#define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0,0)
+
 extern struct mutex smi_lock;
 extern struct rtl83xx_soc_info soc_info;
 
@@ -577,22 +593,6 @@ static void rtl930x_write_cam(int idx, struct rtl838x_l2_entry *e)
 
 	rtl_table_write(q, idx);
 	rtl_table_release(q);
-}
-
-static void dump_l2_entry(struct rtl838x_l2_entry *e)
-{
-	pr_info("MAC: %02x:%02x:%02x:%02x:%02x:%02x vid: %d, rvid: %d, port: %d, valid: %d\n",
-		e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5],
-		e->vid, e->rvid, e->port, e->valid);
-	pr_info("Type: %d, is_static: %d, is_ip_mc: %d, is_ipv6_mc: %d, block_da: %d\n",
-		e->type, e->is_static, e->is_ip_mc, e->is_ipv6_mc, e->block_da);
-	pr_info("  block_sa: %d, suspended: %d, next_hop: %d, age: %d, is_trunk: %d, trunk: %d\n",
-		e->block_sa, e->suspended, e->next_hop, e->age, e->is_trunk, e->trunk);
-	if (e->is_ip_mc || e->is_ipv6_mc)
-		pr_info("  mc_portmask_index: %d, mc_gip: %d, mc_sip: %d\n",
-			e->mc_portmask_index, e->mc_gip, e->mc_sip);
-	pr_info("  stac_dev: %d, nh_route_id: %d, port: %d, dev_id\n",
-		e->stack_dev, e->nh_route_id, e->port);
 }
 
 static u64 rtl930x_read_mcast_pmask(int idx)
@@ -2316,6 +2316,15 @@ static void rtl930x_packet_cntr_clear(int counter)
 	rtl_table_release(r);
 }
 
+void rtl930x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
+{
+	sw_w32(FIELD_PREP(RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_OTAG_STS_MASK,
+			  keep_outer ? RTL930X_VLAN_PORT_TAG_STS_TAGGED : RTL930X_VLAN_PORT_TAG_STS_UNTAG) |
+	       FIELD_PREP(RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_ITAG_STS_MASK,
+			  keep_inner ? RTL930X_VLAN_PORT_TAG_STS_TAGGED : RTL930X_VLAN_PORT_TAG_STS_UNTAG),
+	       RTL930X_VLAN_PORT_TAG_STS_CTRL(port));
+}
+
 void rtl930x_vlan_port_pvidmode_set(int port, enum pbvlan_type type, enum pbvlan_mode mode)
 {
 	if (type == PBVLAN_TYPE_INNER)
@@ -2514,7 +2523,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.write_l2_entry_using_hash = rtl930x_write_l2_entry_using_hash,
 	.read_cam = rtl930x_read_cam,
 	.write_cam = rtl930x_write_cam,
-	.vlan_port_tag_sts_ctrl = RTL930X_VLAN_PORT_TAG_STS_CTRL,
+	.vlan_port_keep_tag_set = rtl930x_vlan_port_keep_tag_set,
 	.vlan_port_pvidmode_set = rtl930x_vlan_port_pvidmode_set,
 	.vlan_port_pvid_set = rtl930x_vlan_port_pvid_set,
 	.trk_mbr_ctr = rtl930x_trk_mbr_ctr,

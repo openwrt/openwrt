@@ -25,6 +25,13 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	buffalo,ls220de)
+		# Kernel UBI volume name must be "boot"
+		CI_KERNPART=boot
+		CI_KERN_UBIPART=ubi_kernel
+		CI_ROOT_UBIPART=ubi
+		nand_do_upgrade "$1"
+		;;
 	buffalo,ls421de)
 		nand_do_upgrade "$1"
 		;;
@@ -44,6 +51,9 @@ platform_do_upgrade() {
 	solidrun,clearfog-base-a1|\
 	solidrun,clearfog-pro-a1)
 		legacy_sdcard_do_upgrade "$1"
+		;;
+	fortinet,fg-50e)
+		fortinet_do_upgrade "$1"
 		;;
 	linksys,wrt1200ac|\
 	linksys,wrt1900ac-v1|\

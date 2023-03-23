@@ -1,6 +1,19 @@
+From: Koen Vandeputte <koen.vandeputte@ncentric.com>
+Subject: crypto: arc4 unhide
+
 This makes it possible to select CONFIG_CRYPTO_LIB_ARC4 directly. We 
 need this to be able to compile this into the kernel and make use of it 
 from backports.
+
+Submitted-by: Koen Vandeputte <koen.vandeputte@ncentric.com>
+Submitted-by: David Bauer <mail@david-bauer.net>
+Submitted-by: Christian Lamparter <chunkeey@gmail.com>
+Submitted-by: Ansuel Smith <ansuelsmth@gmail.com>
+Submitted-by: Robert Marko <robimarko@gmail.com>
+Submitted-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ lib/crypto/Kconfig                            |   2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 --- a/lib/crypto/Kconfig
 +++ b/lib/crypto/Kconfig
@@ -12,4 +25,4 @@ from backports.
 +	tristate "ARC4 cipher library"
  
  config CRYPTO_ARCH_HAVE_LIB_BLAKE2S
- 	tristate
+ 	bool

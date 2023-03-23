@@ -63,6 +63,27 @@ define Device/comtrend_vr-3032u
 endef
 TARGET_DEVICES += comtrend_vr-3032u
 
+define Device/huawei_hg253s-v2
+  $(Device/bcm63xx-nand)
+  IMAGES := flash.bin sysupgrade.bin
+  IMAGE/flash.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | cfe-jffs2-cferam | append-ubi
+  DEVICE_VENDOR := Huawei
+  DEVICE_MODEL := HG253s
+  DEVICE_VARIANT := v2
+  CHIP_ID := 6362
+  CFE_PART_FLAGS := 1
+  CFE_PART_ID := 0x0001EFEE
+  CFE_RAM_FILE := huawei,hg253s-v2/cferam.000
+  CFE_RAM_JFFS2_NAME := cferam.000
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES)
+  CFE_WFI_FLASH_TYPE := 3
+endef
+TARGET_DEVICES += huawei_hg253s-v2
+
 define Device/netgear_dgnd3700-v2
   $(Device/bcm63xx-nand)
   DEVICE_VENDOR := NETGEAR
@@ -79,3 +100,57 @@ define Device/netgear_dgnd3700-v2
   CFE_WFI_VERSION := 0x5731
 endef
 TARGET_DEVICES += netgear_dgnd3700-v2
+
+define Device/sercomm_h500-s-lowi
+  $(Device/sercomm-nand)
+  DEVICE_VENDOR := Sercomm
+  DEVICE_MODEL := H500-s
+  DEVICE_VARIANT := lowi
+  DEVICE_LOADADDR := $(KERNEL_LOADADDR)
+  KERNEL := kernel-bin | append-dtb | lzma | cfe-jffs2-kernel
+  CHIP_ID := 63268
+  SOC := bcm63167
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES)
+  SERCOMM_PID := \
+    30 30 30 30 30 30 30 31 34 33 34 62 33 31 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 33 33 30 35 30 30 30 30 30 30 30 30 \
+    0D 0A 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  SERCOMM_VERSION := 1001
+endef
+TARGET_DEVICES += sercomm_h500-s-lowi
+
+define Device/sercomm_h500-s-vfes
+  $(Device/sercomm-nand)
+  DEVICE_VENDOR := Sercomm
+  DEVICE_MODEL := H500-s
+  DEVICE_VARIANT := vfes
+  DEVICE_LOADADDR := $(KERNEL_LOADADDR)
+  KERNEL := kernel-bin | append-dtb | lzma | cfe-jffs2-kernel
+  CHIP_ID := 63268
+  SOC := bcm63167
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES)
+  SERCOMM_PID := \
+    30 30 30 30 30 30 30 31 34 32 35 38 34 62 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
+    30 30 30 30 33 34 31 37 30 30 30 30 30 30 30 30 \
+    0D 0A 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  SERCOMM_VERSION := 1001
+endef
+TARGET_DEVICES += sercomm_h500-s-vfes

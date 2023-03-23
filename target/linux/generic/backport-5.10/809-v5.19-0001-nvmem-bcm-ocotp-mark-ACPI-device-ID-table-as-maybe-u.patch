@@ -1,0 +1,32 @@
+From 6bd0ffeaa389866089e9573b2298ae58d6359b75 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Mon, 21 Mar 2022 12:03:24 +0100
+Subject: [PATCH] nvmem: bcm-ocotp: mark ACPI device ID table as maybe unused
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+"bcm_otpc_acpi_ids" is used with ACPI_PTR, so a build with !CONFIG_ACPI
+has a warning:
+
+  drivers/nvmem/bcm-ocotp.c:247:36: error:
+    ‘bcm_otpc_acpi_ids’ defined but not used [-Werror=unused-const-variable=]
+
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Link: https://lore.kernel.org/r/20220321110326.44652-1-krzk@kernel.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/bcm-ocotp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/nvmem/bcm-ocotp.c
++++ b/drivers/nvmem/bcm-ocotp.c
+@@ -244,7 +244,7 @@ static const struct of_device_id bcm_otp
+ };
+ MODULE_DEVICE_TABLE(of, bcm_otpc_dt_ids);
+ 
+-static const struct acpi_device_id bcm_otpc_acpi_ids[] = {
++static const struct acpi_device_id bcm_otpc_acpi_ids[] __maybe_unused = {
+ 	{ .id = "BRCM0700", .driver_data = (kernel_ulong_t)&otp_map },
+ 	{ .id = "BRCM0701", .driver_data = (kernel_ulong_t)&otp_map_v2 },
+ 	{ /* sentinel */ }

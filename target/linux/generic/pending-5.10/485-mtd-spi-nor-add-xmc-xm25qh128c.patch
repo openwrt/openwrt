@@ -1,3 +1,14 @@
+From: Langhua Ye <y1248289414@outlook.com>
+Subject: mtd/spi-nor/xmc: add support for XMC XM25QH128C
+
+The XMC XM25QH128C is a 16MB SPI NOR chip. The patch is verified on Ruijie RG-EW3200GX PRO.
+Datasheet available at https://www.xmcwh.com/uploads/435/XM25QH128C.pdf
+
+Submitted-by: Langhua Ye <y1248289414@outlook.com>
+---
+ drivers/mtd/spi-nor/xmc.c                             | 2 ++
+ 1 file changed, 2 insertions(+)
+
 --- a/drivers/mtd/spi-nor/xmc.c
 +++ b/drivers/mtd/spi-nor/xmc.c
 @@ -14,6 +14,8 @@ static const struct flash_info xmc_parts

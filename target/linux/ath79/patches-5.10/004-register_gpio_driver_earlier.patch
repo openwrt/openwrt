@@ -1,5 +1,13 @@
+From: John Crispin <john@phrozen.org>
+Subject: ath79: Register GPIO driver earlier
+
 HACK: register the GPIO driver earlier to ensure that gpio_request calls
 from mach files succeed.
+
+Submitted-by: John Crispin <john@phrozen.org>
+---
+ drivers/gpio/gpio-ath79.c                     | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
 --- a/drivers/gpio/gpio-ath79.c
 +++ b/drivers/gpio/gpio-ath79.c

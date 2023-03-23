@@ -5,7 +5,11 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-KERNEL_LOADADDR := 0x80400000
+ifdef CONFIG_LINUX_5_10
+  KERNEL_LOADADDR := 0x80400000
+else
+  KERNEL_LOADADDR := 0x80100000
+endif
 
 define Device/Default
   PROFILES := Default

@@ -135,6 +135,21 @@
 
 	};
 
+	pinmux_led: pinmux@1b00cc00 {
+		compatible = "pinctrl-single";
+		reg = <0x1b00cc00 0x4>;
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		/* enable GPIO 0 */
+		pinmux_disable_sys_led: disable_sys_led {
+			pinctrl-single,bits = <0x0 0x0 0x1000>;
+		};
+	};
+
 	ethernet0: ethernet@1b00a300 {
 		compatible = "realtek,rtl838x-eth";
 		reg = <0x1b00a300 0x100>;

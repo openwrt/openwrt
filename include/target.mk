@@ -17,7 +17,7 @@ DEFAULT_PACKAGES:=\
 	fstools \
 	libc \
 	libgcc \
-	libustream-wolfssl \
+	libustream-mbedtls \
 	logd \
 	mtd \
 	netifd \
@@ -68,7 +68,7 @@ endif
 
 target_conf=$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
 ifeq ($(DUMP),)
-  PLATFORM_DIR:=$(TOPDIR)/target/linux/$(BOARD)
+  PLATFORM_DIR:=$(firstword $(wildcard $(TOPDIR)/target/linux/feeds/$(BOARD) $(TOPDIR)/target/linux/$(BOARD)))
   SUBTARGET:=$(strip $(foreach subdir,$(patsubst $(PLATFORM_DIR)/%/target.mk,%,$(wildcard $(PLATFORM_DIR)/*/target.mk)),$(if $(CONFIG_TARGET_$(call target_conf,$(BOARD)_$(subdir))),$(subdir))))
 else
   PLATFORM_DIR:=${CURDIR}
@@ -173,22 +173,30 @@ USE_SUBTARGET_CONFIG = $(if $(wildcard $(LINUX_TARGET_CONFIG)),,$(if $(LINUX_SUB
 LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(if $(USE_SUBTARGET_CONFIG),$(LINUX_SUBTARGET_CONFIG)))
 LINUX_RECONFIG_TARGET = $(if $(USE_SUBTARGET_CONFIG),$(LINUX_SUBTARGET_CONFIG),$(LINUX_TARGET_CONFIG))
 
+CFG_TARGET = $(CONFIG_TARGET)
+ifeq ($(CFG_TARGET),platform)
+  CFG_TARGET = target
+  $(warning Deprecation warning: use CONFIG_TARGET=target instead.)
+else ifeq ($(CFG_TARGET),subtarget_platform)
+  CFG_TARGET = subtarget_target
+  $(warning Deprecation warning: use CONFIG_TARGET=subtarget_target instead.)
+endif
+
 # select the config file to be changed by kernel_menuconfig/kernel_oldconfig
-ifeq ($(CONFIG_TARGET),platform)
+ifeq ($(CFG_TARGET),target)
   LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG))
   LINUX_RECONFIG_TARGET = $(LINUX_TARGET_CONFIG)
-endif
-ifeq ($(CONFIG_TARGET),subtarget)
+else ifeq ($(CFG_TARGET),subtarget)
   LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_TARGET_CONFIG) $(LINUX_SUBTARGET_CONFIG))
   LINUX_RECONFIG_TARGET = $(LINUX_SUBTARGET_CONFIG)
-endif
-ifeq ($(CONFIG_TARGET),subtarget_platform)
+else ifeq ($(CFG_TARGET),subtarget_target)
   LINUX_RECONFIG_LIST = $(wildcard $(GENERIC_LINUX_CONFIG) $(LINUX_SUBTARGET_CONFIG) $(LINUX_TARGET_CONFIG))
   LINUX_RECONFIG_TARGET = $(LINUX_TARGET_CONFIG)
-endif
-ifeq ($(CONFIG_TARGET),env)
+else ifeq ($(CFG_TARGET),env)
   LINUX_RECONFIG_LIST = $(LINUX_KCONFIG_LIST)
   LINUX_RECONFIG_TARGET = $(TOPDIR)/env/kernel-config
+else ifneq ($(strip $(CFG_TARGET)),)
+  $(error CONFIG_TARGET=$(CFG_TARGET) is invalid. Valid: target|subtarget|subtarget_target|env)
 endif
 
 __linux_confcmd = $(2) $(patsubst %,+,$(wordlist 2,9999,$(1))) $(1)
@@ -227,6 +235,7 @@ ifeq ($(DUMP),1)
   ifeq ($(ARCH),powerpc)
     CPU_CFLAGS_603e:=-mcpu=603e
     CPU_CFLAGS_8540:=-mcpu=8540
+    CPU_CFLAGS_8548:=-mcpu=8548
     CPU_CFLAGS_405:=-mcpu=405
     CPU_CFLAGS_440:=-mcpu=440
     CPU_CFLAGS_464fp:=-mcpu=464fp

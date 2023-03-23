@@ -33,7 +33,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -321,7 +321,7 @@ config ARCH_MULTIPLATFORM
+@@ -317,7 +317,7 @@ config ARCH_MULTIPLATFORM
  	select ARCH_SELECT_MEMORY_MODEL
  	select ARM_HAS_SG_CHAIN
  	select ARM_PATCH_PHYS_VIRT
@@ -41,10 +41,10 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +	select AUTO_ZRELADDR if !ARCH_QCOM
  	select TIMER_OF
  	select COMMON_CLK
- 	select GENERIC_CLOCKEVENTS
+ 	select GENERIC_IRQ_MULTI_HANDLER
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -251,9 +251,11 @@ MACHINE  := arch/arm/mach-$(word 1,$(mac
+@@ -237,9 +237,11 @@ MACHINE  := arch/arm/mach-$(word 1,$(mac
  else
  MACHINE  :=
  endif

@@ -1,3 +1,24 @@
+From 775d903216a08c2a8009863d2f9c33f62657ba94 Mon Sep 17 00:00:00 2001
+From: Birger Koblitz <git@birger-koblitz.de>
+Date: Thu, 6 Jan 2022 20:27:01 +0100
+Subject: [PATCH] realtek: Replace the RTL9300 generic timer with a CEVT timer
+
+The RTL9300 has a broken R4K MIPS timer interrupt, however, the
+R4K clocksource works. We replace the RTL9300 timer with a
+Clock Event Timer (CEVT), which is VSMP aware and can be instantiated
+as part of brining a VSMTP cpu up instead of the R4K CEVT source.
+For this we place the RTL9300 CEVT timer in arch/mips/kernel
+together with other MIPS CEVT timers, initialize the SoC IRQs
+from a modified smp-mt.c and instantiate each timer as part
+of the MIPS time setup in arch/mips/include/asm/time.h instead
+of the R4K CEVT, similarly as is done by other MIPS CEVT timers.
+
+Submitted-by: Birger Koblitz <git@birger-koblitz.de>
+---
+ arch/mips/kernel/Makefile                     | 1 +
+ arch/mips/include/asm/time.h                  | 7 +++++++
+ 2 files changed, 8 insertions(+)
+
 --- a/arch/mips/kernel/Makefile
 +++ b/arch/mips/kernel/Makefile
 @@ -27,6 +27,7 @@ obj-$(CONFIG_CEVT_BCM1480)	+= cevt-bcm14
@@ -31,24 +52,3 @@
  #ifdef CONFIG_CEVT_R4K
  	return r4k_clockevent_init();
  #else
---- a/arch/mips/kernel/smp-mt.c
-+++ b/arch/mips/kernel/smp-mt.c
-@@ -108,12 +108,18 @@ static void __init smvp_tc_init(unsigned
- static void vsmp_init_secondary(void)
- {
- 	/* This is Malta specific: IPI,performance and timer interrupts */
-+
-+	/* RTL9300 Clear internal timer interrupt */
-+	write_c0_compare(0);
-+
- 	if (mips_gic_present())
- 		change_c0_status(ST0_IM, STATUSF_IP2 | STATUSF_IP3 |
- 					 STATUSF_IP4 | STATUSF_IP5 |
- 					 STATUSF_IP6 | STATUSF_IP7);
- 	else
- 		change_c0_status(ST0_IM, STATUSF_IP0 | STATUSF_IP1 |
-+					 STATUSF_IP2 | STATUSF_IP3 |
-+					 STATUSF_IP4 | STATUSF_IP5 |
- 					 STATUSF_IP6 | STATUSF_IP7);
- }
- 

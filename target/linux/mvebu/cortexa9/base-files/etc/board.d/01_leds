@@ -15,6 +15,15 @@ ctera,c200-v2)
 	ucidef_set_led_usbport "usb2" "USB2" "green:usb-2" "usb1-port1" "usb2-port1"
 	ucidef_set_led_usbport "usb3" "USB3" "green:usb-1" "usb1-port2" "usb2-port2"
 	;;
+fortinet,fg-50e)
+	ucidef_set_led_netdev "wan1_link" "WAN1 Link" "green:speed_wan1" "eth1" "link"
+	ucidef_set_led_netdev "wan2_link" "WAN2 Link" "green:speed_wan2" "eth2" "link"
+	ucidef_set_led_netdev "lan1_link" "LAN1 Link" "green:speed_lan1" "lan1" "link"
+	ucidef_set_led_netdev "lan2_link" "LAN2 Link" "green:speed_lan2" "lan2" "link"
+	ucidef_set_led_netdev "lan3_link" "LAN3 Link" "green:speed_lan3" "lan3" "link"
+	ucidef_set_led_netdev "lan4_link" "LAN4 Link" "green:speed_lan4" "lan4" "link"
+	ucidef_set_led_netdev "lan5_link" "LAN5 Link" "green:speed_lan5" "lan5" "link"
+	;;
 kobol,helios4)
 	ucidef_set_led_usbport "USB" "USB" "helios4:green:usb" "usb1-port1" "usb2-port1" "usb3-port1" "usb4-port1" "usb5-port1"
 	;;

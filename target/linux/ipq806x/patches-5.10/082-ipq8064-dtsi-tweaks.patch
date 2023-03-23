@@ -35,15 +35,7 @@
  			#interrupt-cells = <2>;
  			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
  
-@@ -155,6 +156,7 @@
- 					function = "pcie3_rst";
- 					drive-strength = <12>;
- 					bias-disable;
-+					output-low;
- 				};
- 			};
- 
-@@ -190,6 +192,7 @@
+@@ -190,6 +191,7 @@
  		intc: interrupt-controller@2000000 {
  			compatible = "qcom,msm-qgic2";
  			interrupt-controller;
@@ -51,7 +43,7 @@
  			#interrupt-cells = <3>;
  			reg = <0x02000000 0x1000>,
  			      <0x02002000 0x1000>;
-@@ -219,21 +222,23 @@
+@@ -219,21 +221,23 @@
  		acc0: clock-controller@2088000 {
  			compatible = "qcom,kpss-acc-v1";
  			reg = <0x02088000 0x1000>, <0x02008000 0x1000>;
@@ -77,7 +69,7 @@
  			reg = <0x02099000 0x1000>, <0x02009000 0x1000>;
  			regulator;
  		};
-@@ -251,7 +256,7 @@
+@@ -251,7 +255,7 @@
  
  			syscon-tcsr = <&tcsr>;
  
@@ -86,7 +78,7 @@
  				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
  				reg = <0x12490000 0x1000>,
  				      <0x12480000 0x1000>;
-@@ -261,7 +266,7 @@
+@@ -261,7 +265,7 @@
  				status = "disabled";
  			};
  
@@ -95,7 +87,7 @@
  				compatible = "qcom,i2c-qup-v1.1.1";
  				reg = <0x124a0000 0x1000>;
  				interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>;
-@@ -326,7 +331,7 @@
+@@ -326,7 +330,7 @@
  
  			syscon-tcsr = <&tcsr>;
  
@@ -104,7 +96,7 @@
  				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
  				reg = <0x1a240000 0x1000>,
  				      <0x1a200000 0x1000>;
-@@ -397,7 +402,7 @@
+@@ -397,7 +401,7 @@
  			status = "disabled";
  		};
  
@@ -113,7 +105,7 @@
  			compatible = "qcom,ipq806x-ahci", "generic-ahci";
  			reg = <0x29000000 0x180>;
  
-@@ -430,13 +435,35 @@
+@@ -430,13 +434,35 @@
  			reg = <0x00700000 0x1000>;
  			#address-cells = <1>;
  			#size-cells = <1>;
@@ -150,7 +142,7 @@
  		};
  
  		tcsr: syscon@1a400000 {
-@@ -622,7 +649,7 @@
+@@ -622,7 +648,7 @@
  
  		gmac0: ethernet@37000000 {
  			device_type = "network";
@@ -159,7 +151,7 @@
  			reg = <0x37000000 0x200000>;
  			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL_HIGH>;
  			interrupt-names = "macirq";
-@@ -645,7 +672,7 @@
+@@ -645,7 +671,7 @@
  
  		gmac1: ethernet@37200000 {
  			device_type = "network";
@@ -168,7 +160,7 @@
  			reg = <0x37200000 0x200000>;
  			interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL_HIGH>;
  			interrupt-names = "macirq";
-@@ -668,7 +695,7 @@
+@@ -668,7 +694,7 @@
  
  		gmac2: ethernet@37400000 {
  			device_type = "network";
@@ -177,7 +169,7 @@
  			reg = <0x37400000 0x200000>;
  			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL_HIGH>;
  			interrupt-names = "macirq";
-@@ -691,7 +718,7 @@
+@@ -691,7 +717,7 @@
  
  		gmac3: ethernet@37600000 {
  			device_type = "network";
@@ -186,7 +178,7 @@
  			reg = <0x37600000 0x200000>;
  			interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH>;
  			interrupt-names = "macirq";
-@@ -740,13 +767,13 @@
+@@ -740,13 +766,13 @@
  			qcom,ee = <0>;
  		};
  
@@ -203,7 +195,7 @@
  				status          = "disabled";
  				compatible      = "arm,pl18x", "arm,primecell";
  				arm,primecell-periphid = <0x00051180>;
-@@ -760,13 +787,12 @@
+@@ -760,13 +786,12 @@
  				non-removable;
  				cap-sd-highspeed;
  				cap-mmc-highspeed;

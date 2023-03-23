@@ -1,0 +1,30 @@
+From 13b64a0c19059b38150c79d65d350ae44034c5df Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Sun, 17 Jul 2022 14:42:46 +0200
+Subject: [PATCH] dt-bindings: leds: leds-bcm63138: unify full stops in
+ descriptions
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Description of "reg" doesn't have full stop at the end. It makes sense
+as it's a one-sentence only. Use the same style for "active-low".
+
+Reported-by: Pavel Machek <pavel@ucw.cz>
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Pavel Machek <pavel@ucw.cz>
+---
+ Documentation/devicetree/bindings/leds/leds-bcm63138.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/leds/leds-bcm63138.yaml
++++ b/Documentation/devicetree/bindings/leds/leds-bcm63138.yaml
+@@ -54,7 +54,7 @@ patternProperties:
+ 
+       active-low:
+         type: boolean
+-        description: Makes LED active low.
++        description: Makes LED active low
+ 
+     required:
+       - reg

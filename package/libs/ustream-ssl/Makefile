@@ -5,9 +5,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/ustream-ssl.git
-PKG_SOURCE_DATE:=2022-01-16
-PKG_SOURCE_VERSION:=868fd8812f477c110f9c6c5252c0bd172167b94c
-PKG_MIRROR_HASH:=dd28d5e846b391917cf83d66176653bdfa4e8a0d5b11144b65a012fe7693ddeb
+PKG_SOURCE_DATE:=2023-02-25
+PKG_SOURCE_VERSION:=498f6e268d4d2b0ad33b430f4ba1abe397d31496
+PKG_MIRROR_HASH:=a201d065dd613e30886c9f13a0851cec79538192cfe591b6f8ecd88724d55fb1
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=ISC
@@ -44,7 +44,7 @@ endef
 define Package/libustream-mbedtls
   $(Package/libustream/default)
   TITLE += (mbedtls)
-  DEPENDS += +libmbedtls
+  DEPENDS += +PACKAGE_libustream-mbedtls:libmbedtls
   CONFLICTS := libustream-openssl libustream-wolfssl
   VARIANT:=mbedtls
   DEFAULT_VARIANT:=1

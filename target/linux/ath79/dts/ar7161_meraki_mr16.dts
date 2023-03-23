@@ -16,13 +16,6 @@
 		led-upgrade = &led_power_orange;
 	};
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-output-names = "ref";
-		clock-frequency = <40000000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -100,14 +93,8 @@
 	};
 };
 
-&pll {
-	clocks = <&extosc>;
-};
-
 &mdio0 {
 	status = "okay";
-
-	phy-mask = <0x1>;
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;

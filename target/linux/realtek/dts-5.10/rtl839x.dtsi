@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/clock/rtl83xx-clk.h>
+
 /dts-v1/;
 
 #define STRINGIZE(s) #s
@@ -24,6 +26,13 @@
 		compatible = "ethernet-phy-ieee802.3-c22"; \
 		sfp; \
 		media = "fibre"; \
+		reg = <##n>; \
+	};
+
+#define EXTERNAL_SFP_PHY_FULL(n, s) \
+	phy##n: ethernet-phy@##n { \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+		sfp = <&sfp##s>; \
 		reg = <##n>; \
 	};
 
@@ -53,25 +62,88 @@
 
 	compatible = "realtek,rtl839x-soc";
 
+	osc: oscillator {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <25000000>;
+	};
+
+	ccu: clock-controller {
+		compatible = "realtek,rtl8390-clock";
+		#clock-cells = <1>;
+		clocks = <&osc>;
+		clock-names = "ref_clk";
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		frequency = <700000000>;
 
 		cpu@0 {
 			compatible = "mips,mips34Kc";
 			reg = <0>;
+			clocks = <&ccu CLK_CPU>;
+			operating-points-v2 = <&cpu_opp_table>;
+		};
+
+		cpu@1 {
+			compatible = "mips,mips34Kc";
+			reg = <1>;
+			clocks = <&ccu CLK_CPU>;
+			operating-points-v2 = <&cpu_opp_table>;
+		};
+	};
+
+	cpu_opp_table: opp-table-0 {
+		compatible = "operating-points-v2";
+		opp-shared;
+
+		opp00 {
+			opp-hz = /bits/ 64 <425000000>;
+		};
+		opp01 {
+			opp-hz = /bits/ 64 <450000000>;
+		};
+		opp02 {
+			opp-hz = /bits/ 64 <475000000>;
+		};
+		opp03 {
+			opp-hz = /bits/ 64 <500000000>;
+		};
+		opp04 {
+			opp-hz = /bits/ 64 <525000000>;
+		};
+		opp05 {
+			opp-hz = /bits/ 64 <550000000>;
+		};
+		opp06 {
+			opp-hz = /bits/ 64 <575000000>;
+		};
+		opp07 {
+			opp-hz = /bits/ 64 <600000000>;
+		};
+		opp08 {
+			opp-hz = /bits/ 64 <625000000>;
+		};
+		opp09 {
+			opp-hz = /bits/ 64 <650000000>;
+		};
+		opp10 {
+			opp-hz = /bits/ 64 <675000000>;
+		};
+		opp11 {
+			opp-hz = /bits/ 64 <700000000>;
+		};
+		opp12 {
+			opp-hz = /bits/ 64 <725000000>;
+		};
+		opp13 {
+			opp-hz = /bits/ 64 <750000000>;
 		};
 	};
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
-	};
-
-	lx_clk: lx_clk {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <200000000>;
 	};
 
 	cpuintc: cpuintc {
@@ -105,11 +177,21 @@
 			#size-cells = <0>;
 		};
 
+		timer0: timer@3100 {
+			compatible = "realtek,rtl8390-timer", "realtek,otto-timer";
+			reg = <0x3100 0x10>, <0x3110 0x10>, <0x3120 0x10>,
+			      <0x3130 0x10>, <0x3140 0x10>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <29 4>, <28 4>, <17 4>, <16 4>, <15 4>;
+			clocks = <&ccu CLK_LXB>;
+		};
+
 		uart0: uart@2000 {
 			compatible = "ns16550a";
 			reg = <0x2000 0x100>;
 
-			clocks = <&lx_clk>;
+			clocks = <&ccu CLK_LXB>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <31 1>;
@@ -127,7 +209,7 @@
 			compatible = "ns16550a";
 			reg = <0x2100 0x100>;
 
-			clocks = <&lx_clk>;
+			clocks = <&ccu CLK_LXB>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <30 2>;
@@ -160,7 +242,7 @@
 
 			realtek,reset-mode = "soc";
 
-			clocks = <&lx_clk>;
+			clocks = <&ccu CLK_LXB>;
 			timeout-sec = <30>;
 
 			interrupt-parent = <&intc>;
@@ -181,6 +263,10 @@
 
 		enable_uart1: pinmux_enable_uart1 {
 			pinctrl-single,bits = <0x0 0x1 0x3>;
+		};
+
+		disable_jtag: pinmux_disable_jtag {
+			pinctrl-single,bits = <0x0 0x2 0x3>;
 		};
 	};
 
@@ -213,6 +299,14 @@
 			speed = <1000>;
 			full-duplex;
 		};
+	};
+
+	sram0: sram@9f000000 {
+		compatible = "mmio-sram";
+		reg = <0x9f000000 0x18000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0 0x9f000000 0x18000>;
 	};
 
 	switch0: switch@1b000000 {

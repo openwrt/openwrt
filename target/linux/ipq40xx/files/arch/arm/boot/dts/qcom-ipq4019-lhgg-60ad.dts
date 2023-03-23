@@ -47,12 +47,6 @@
 
 		mdio@90000 {
 			status = "okay";
-
-			/delete-node/ ethernet-phy@1;
-			/delete-node/ ethernet-phy@2;
-			/delete-node/ ethernet-phy@3;
-			/delete-node/ ethernet-phy@4;
-			/delete-node/ psgmii-phy@5;
 		};
 
 		counter@4a1000 {
@@ -84,19 +78,6 @@
 
 		watchdog@b017000 {
 			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			switch_mac_mode = <0x3>; /* mac mode for RGMII RMII */
-			switch_lan_bmp = <0x0>; /* lan port bitmap */
-			switch_wan_bmp = <0x10>; /* wan port bitmap */
-		};
-
-		edma@c080000 {
-			status = "okay";
-			phy-mode = "rgmii-id";
-			qcom,num_gmac = <1>;
-			qcom,single-phy;
 		};
 	};
 
@@ -209,7 +190,6 @@
 				#size-cells = <1>;
 				label = "RouterBoot";
 				reg = <0x80000 0x80000>;
-				read-only;
 
 				hard_config {
 					read-only;
@@ -262,8 +242,40 @@
 	};
 };
 
-&gmac0 {
-	qcom,phy_mdio_addr = <0>;
-	qcom,poll_required = <1>;
-	vlan_tag = <0 0x20>;
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy2 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
+};
+
+&ethphy4 {
+	status = "disabled";
+};
+
+&psgmiiphy {
+	status = "disabled";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	/delete-property/ psgmii-ethphy;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&ethphy0>;
+	phy-mode = "rgmii-id";
 };

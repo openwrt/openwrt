@@ -486,10 +486,8 @@
 
 		mediatek,ethsys = <&sysc>;
 
-#ifdef DTS_LEGACY
 		pinctrl-names = "default";
 		pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>, <&rgmii2_pins>;
-#endif
 
 		gmac0: mac@0 {
 			compatible = "mediatek,eth-mac";
@@ -507,7 +505,7 @@
 			compatible = "mediatek,eth-mac";
 			reg = <1>;
 			status = "disabled";
-			phy-mode = "rgmii-rxid";
+			phy-mode = "rgmii";
 		};
 
 		mdio: mdio-bus {
@@ -560,7 +558,6 @@
 
 					port@6 {
 						reg = <6>;
-						label = "cpu";
 						ethernet = <&gmac0>;
 						phy-mode = "rgmii";
 

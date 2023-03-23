@@ -78,14 +78,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -187,7 +179,6 @@
 				#size-cells = <1>;
 				label = "RouterBoot";
 				reg = <0x80000 0x80000>;
-				read-only;
 
 				hard_config {
 					read-only;
@@ -258,6 +249,38 @@
 	qcom,single-led-1000;
 	qcom,single-led-100;
 	qcom,single-led-10;
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+	label = "lan4";
+};
+
+&swport2 {
+	status = "okay";
+	label = "lan3";
+};
+
+&swport3 {
+	status = "okay";
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan1";
+};
+
+&swport5 {
+	status = "okay";
 };
 
 &wifi0 {

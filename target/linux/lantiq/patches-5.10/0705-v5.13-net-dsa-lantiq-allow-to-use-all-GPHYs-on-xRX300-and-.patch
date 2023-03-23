@@ -192,7 +192,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static void gswip_port_set_link(struct gswip_priv *priv, int port, bool link)
-@@ -1639,6 +1687,9 @@ static void gswip_phylink_mac_config(str
+@@ -1636,6 +1684,9 @@ static void gswip_phylink_mac_config(str
  	case PHY_INTERFACE_MODE_RGMII_TXID:
  		miicfg |= GSWIP_MII_CFG_MODE_RGMII;
  		break;
@@ -202,7 +202,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	default:
  		dev_err(ds->dev,
  			"Unsupported interface: %d\n", state->interface);
-@@ -1765,7 +1816,7 @@ static int gswip_get_sset_count(struct d
+@@ -1762,7 +1813,7 @@ static int gswip_get_sset_count(struct d
  	return ARRAY_SIZE(gswip_rmon_cnt);
  }
  
@@ -211,7 +211,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.get_tag_protocol	= gswip_get_tag_protocol,
  	.setup			= gswip_setup,
  	.port_enable		= gswip_port_enable,
-@@ -1781,7 +1832,31 @@ static const struct dsa_switch_ops gswip
+@@ -1778,7 +1829,31 @@ static const struct dsa_switch_ops gswip
  	.port_fdb_add		= gswip_port_fdb_add,
  	.port_fdb_del		= gswip_port_fdb_del,
  	.port_fdb_dump		= gswip_port_fdb_dump,
@@ -244,7 +244,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.phylink_mac_config	= gswip_phylink_mac_config,
  	.phylink_mac_link_down	= gswip_phylink_mac_link_down,
  	.phylink_mac_link_up	= gswip_phylink_mac_link_up,
-@@ -2043,7 +2118,7 @@ static int gswip_probe(struct platform_d
+@@ -2042,7 +2117,7 @@ static int gswip_probe(struct platform_d
  	priv->ds->dev = dev;
  	priv->ds->num_ports = priv->hw_info->max_ports;
  	priv->ds->priv = priv;
@@ -253,7 +253,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	priv->dev = dev;
  	version = gswip_switch_r(priv, GSWIP_VERSION);
  
-@@ -2127,10 +2202,19 @@ static int gswip_remove(struct platform_
+@@ -2126,10 +2201,19 @@ static int gswip_remove(struct platform_
  static const struct gswip_hw_info gswip_xrx200 = {
  	.max_ports = 7,
  	.cpu_port = 6,

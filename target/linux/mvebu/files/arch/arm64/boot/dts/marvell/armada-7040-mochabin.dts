@@ -339,7 +339,6 @@
 
 			port@5 {
 				reg = <5>;
-				label = "cpu";
 				ethernet = <&cp0_eth1>;
 				phy-mode = "2500base-x";
 				managed = "in-band-status";
@@ -445,4 +444,5 @@
 	phys = <&cp0_comphy5 2>;
 	phy-names = "cp0-pcie2-x1-phy";
 	reset-gpio = <&cp0_gpio1 9 GPIO_ACTIVE_LOW>;
+	ranges = <0x82000000 0x0 0xc0000000 0x0 0xc0000000 0x0 0x8000000>;
 };

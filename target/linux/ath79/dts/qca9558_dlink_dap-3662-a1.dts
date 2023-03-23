@@ -51,12 +51,6 @@
 		reg = <0xf60000 0x90000>;
 		read-only;
 	};
-
-	art: partition@ff0000 {
-		label = "art";
-		reg = <0xff0000 0x10000>;
-		read-only;
-	};
 };
 
 &mdio0 {
@@ -99,4 +93,18 @@
 
 &pcie0 {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+
+		nvmem-cells = <&cal_ath10k>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
+&art {
+	cal_ath10k: calibration@5000 {
+		reg = <0x5000 0x844>;
+	};
 };

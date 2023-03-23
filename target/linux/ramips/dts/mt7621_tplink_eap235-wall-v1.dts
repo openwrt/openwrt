@@ -158,13 +158,23 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&gmac1 {
+	status = "okay";
+	label = "lan0";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
 &switch0 {
 	ports {
-		port@0 {
-			status = "okay";
-			label = "lan0";
-		};
-
 		port@1 {
 			status = "okay";
 			label = "lan3";

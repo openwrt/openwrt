@@ -127,6 +127,33 @@ get_magic_fat32() {
 	(get_image "$@" | dd bs=1 count=5 skip=82) 2>/dev/null
 }
 
+identify_magic_long() {
+	local magic=$1
+	case "$magic" in
+		"55424923")
+			echo "ubi"
+			;;
+		"31181006")
+			echo "ubifs"
+			;;
+		"68737173")
+			echo "squashfs"
+			;;
+		"d00dfeed")
+			echo "fit"
+			;;
+		"4349"*)
+			echo "combined"
+			;;
+		"1f8b"*)
+			echo "gzip"
+			;;
+		*)
+			echo "unknown $magic"
+			;;
+	esac
+}
+
 part_magic_efi() {
 	local magic=$(get_magic_gpt "$@")
 	[ "$magic" = "EFI PART" ]
@@ -205,7 +232,7 @@ export_partdevice() {
 		while read line; do
 			export -n "$line"
 		done < "$uevent"
-		if [ $BOOTDEV_MAJOR = $MAJOR -a $(($BOOTDEV_MINOR + $offset)) = $MINOR -a -b "/dev/$DEVNAME" ]; then
+		if [ "$BOOTDEV_MAJOR" = "$MAJOR" -a $(($BOOTDEV_MINOR + $offset)) = "$MINOR" -a -b "/dev/$DEVNAME" ]; then
 			export "$var=$DEVNAME"
 			return 0
 		fi

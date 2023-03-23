@@ -1,0 +1,18 @@
+--- a/src/common/drv_dsl_cpe_os_linux.c
++++ b/src/common/drv_dsl_cpe_os_linux.c
+@@ -1051,12 +1051,11 @@ DSL_int32_t DSL_DRV_ThreadShutdown(
+ 
+ DSL_uint32_t DSL_DRV_SysTimeGet(DSL_uint32_t nOffset)
+ {
+-   struct timeval tv;
++   struct timespec64 now;
+    DSL_uint32_t nTime = 0;
+ 
+-   memset(&tv, 0, sizeof(tv));
+-   do_gettimeofday(&tv);
+-   nTime = (DSL_uint32_t)tv.tv_sec;
++   ktime_get_real_ts64(&now);
++   nTime = (DSL_uint32_t)now.tv_sec;
+ 
+    if ( (nOffset == 0) || (nOffset > nTime) )
+    {

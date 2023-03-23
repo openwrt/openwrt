@@ -149,7 +149,7 @@
 
 &state_default {
 	gpio {
-		groups = "i2c", "uart2", "uart3", "rgmii2", "sdhci";
+		groups = "i2c", "uart2", "uart3", "sdhci";
 		function = "gpio";
 	};
 };
@@ -172,13 +172,24 @@
 	};
 };
 
-&ethernet {
-	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
-};
-
 &gmac0 {
 	nvmem-cells = <&macaddr_factory_4>;
 	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy4: ethernet-phy@4 {
+		reg = <4>;
+	};
 };
 
 &switch0 {
@@ -201,11 +212,6 @@
 		port@3 {
 			status = "okay";
 			label = "lan4";
-		};
-
-		port@4 {
-			status = "okay";
-			label = "wan";
 		};
 	};
 };

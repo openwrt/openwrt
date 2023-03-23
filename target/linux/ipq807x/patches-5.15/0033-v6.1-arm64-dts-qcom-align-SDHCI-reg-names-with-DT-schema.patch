@@ -1,0 +1,28 @@
+From a19df563230af392f2e84e57d69367f96b4a8c56 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Tue, 12 Jul 2022 16:42:43 +0200
+Subject: [PATCH] arm64: dts: qcom: align SDHCI reg-names with DT schema
+
+DT schema requires SDHCI reg names to be hc/core without "_mem" suffix,
+just like TXT bindings were expecting before the conversion.
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Douglas Anderson <dianders@chromium.org>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@somainline.org>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20220712144245.17417-4-krzysztof.kozlowski@linaro.org
+---
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -384,7 +384,7 @@
+ 		sdhc_1: mmc@7824900 {
+ 			compatible = "qcom,sdhci-msm-v4";
+ 			reg = <0x7824900 0x500>, <0x7824000 0x800>;
+-			reg-names = "hc_mem", "core_mem";
++			reg-names = "hc", "core";
+ 
+ 			interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;

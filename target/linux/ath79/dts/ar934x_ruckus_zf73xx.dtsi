@@ -1,0 +1,198 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	aliases {
+		led-boot = &power_green;
+		led-failsafe = &power_red;
+		led-running = &power_green;
+		led-upgrade = &power_red;
+	};
+
+	firmware-concat {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x1f00000>;
+				label = "firmware";
+				compatible = "openwrt,uimage", "denx,uimage";
+			};
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			linux,code = <KEY_RESTART>;
+			label = "Reset button";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			debounce-interval = <50>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&enable_gpio_11>,
+			    <&enable_gpio_16>,
+			    <&enable_gpio_4>,
+			    <&clks_disable_pins>;
+
+		power_green: power-green {
+			label = "green:power";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ruckus-himem@7ff0000 {
+			/* Ruckus Himem area used to control
+			 * redundant boot image selection
+			 */
+			compatible = "nvmem-rmem";
+			reg = <0x7ff0000 0x10000>;
+			no-map;
+		};
+	};
+};
+
+&ref {
+	clock-frequency = <40000000>;
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			fwconcat0: partition@40000 {
+				label = "fwconcat0";
+				reg = <0x040000 0xf00000>;
+			};
+
+			partition@f40000 {
+				compatible = "u-boot,env";
+				label = "u-boot-env";
+				reg = <0xf40000 0x040000>;
+			};
+
+			board_data: partition@f80000 {
+				label = "board-data";
+				reg = <0xf80000 0x080000>;
+				read-only;
+			};
+
+			fwconcat1: partition@1000000 {
+				label = "fwconcat1";
+				reg = <0x1000000 0x1000000>;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy: ethernet-phy@6 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <6>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+	pll-data = <0x02000000 0x00000101 0x00001313>;
+	phy-mode = "rgmii-id";
+	phy-handle = <&phy>;
+
+	nvmem-cell-names = "mac-address";
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-gmac0 = <1>;
+		rxdv-delay = <3>;
+		rxd-delay = <3>;
+	};
+};
+
+&pinmux {
+	clks_disable_pins: pinmux_clks_disable_pins {
+		pinctrl-single,bits = <0x40 0x0 0x20>;
+	};
+
+	enable_gpio_4: pinctrl_enable_gpio_4 {
+		pinctrl-single,bits = <0x4 0x0 0xff>;
+	};
+
+	enable_gpio_11: pinctrl_enable_gpio_11 {
+		pinctrl-single,bits = <0x8 0x0 0xff000000>;
+	};
+
+	enable_gpio_16: pinctrl_enable_gpio_16 {
+		pinctrl-single,bits = <0x10 0x0 0xff>;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_board_data_60>, <&cal_board_data_41000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&board_data {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_board_data_60: macaddr@60 {
+		reg = <0x60 0x6>;
+	};
+
+	macaddr_board_data_66: macaddr@66 {
+		reg = <0x66 0x6>;
+	};
+
+	cal_board_data_41000: cal@41000 {
+		reg = <0x41000 0x440>;
+	};
+};

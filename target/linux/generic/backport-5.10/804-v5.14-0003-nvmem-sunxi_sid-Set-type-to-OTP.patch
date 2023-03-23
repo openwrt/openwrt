@@ -1,0 +1,27 @@
+From 78a005a22d5608b266eafa011b093a33284c52ce Mon Sep 17 00:00:00 2001
+From: Samuel Holland <samuel@sholland.org>
+Date: Fri, 11 Jun 2021 09:33:45 +0100
+Subject: [PATCH] nvmem: sunxi_sid: Set type to OTP
+
+This device currently reports an "Unknown" type in sysfs.
+Since it is an eFuse hardware device, set its type to OTP.
+
+Signed-off-by: Samuel Holland <samuel@sholland.org>
+Acked-by: Chen-Yu Tsai <wens@csie.org>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20210611083348.20170-7-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/sunxi_sid.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/nvmem/sunxi_sid.c
++++ b/drivers/nvmem/sunxi_sid.c
+@@ -142,6 +142,7 @@ static int sunxi_sid_probe(struct platfo
+ 
+ 	nvmem_cfg->dev = dev;
+ 	nvmem_cfg->name = "sunxi-sid";
++	nvmem_cfg->type = NVMEM_TYPE_OTP;
+ 	nvmem_cfg->read_only = true;
+ 	nvmem_cfg->size = cfg->size;
+ 	nvmem_cfg->word_size = 1;

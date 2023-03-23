@@ -1,14 +1,3 @@
-QCA99X0_BOARD_REV:=e404444dfc0baf7d0fcde21ab8ec333608c9960c
-QCA99X0_BOARD_FILE:=board-2.bin.$(QCA99X0_BOARD_REV)
-
-define Download/qca99x0-board
-  URL:=https://github.com/kvalo/ath10k-firmware/raw/master/QCA99X0/hw2.0/
-  URL_FILE:=board-2.bin
-  FILE:=$(QCA99X0_BOARD_FILE)
-  HASH:=f91975dca2435fa6f8570146e6b255c2a70b9ffbdf5ef16a29d67bec7374c11a
-endef
-$(eval $(call Download,qca99x0-board))
-
 Package/ath10k-board-qca4019 = $(call Package/firmware-default,ath10k qca4019 board firmware)
 define Package/ath10k-board-qca4019/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA4019/hw1.0
@@ -117,7 +106,7 @@ Package/ath10k-board-qca99x0 = $(call Package/firmware-default,ath10k qca99x0 bo
 define Package/ath10k-board-qca99x0/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA99X0/hw2.0
 	$(INSTALL_DATA) \
-		$(DL_DIR)/$(QCA99X0_BOARD_FILE) \
+		$(PKG_BUILD_DIR)/ath10k/QCA99X0/hw2.0/board-2.bin \
 		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board-2.bin
 endef
 $(eval $(call BuildPackage,ath10k-board-qca99x0))

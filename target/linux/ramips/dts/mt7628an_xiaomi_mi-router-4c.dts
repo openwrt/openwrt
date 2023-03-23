@@ -7,8 +7,33 @@
 	model = "Xiaomi Mi Router 4C";
 
 	aliases {
+		led-boot = &led_power_yellow;
+		led-failsafe = &led_power_yellow;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_yellow;
 		label-mac-device = &ethernet;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_blue: power_blue {
+			label = "blue:power";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_yellow: power_yellow {
+			label = "yellow:power";
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			label = "blue:wan";
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+		};
+
+	};
+
 };
 
 &flash0 {

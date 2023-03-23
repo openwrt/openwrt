@@ -26,11 +26,16 @@
 };
 
 &pcie0 {
-	status = "okay";
-
-	wifi@0,0,0 {
+	ath10k_0: wifi@0,0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0 0 0 0 0>;
+	};
+};
+
+&pcie1 {
+	ath10k_1: wifi@0,1,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0 1 0 0 0>;
 	};
 };
 

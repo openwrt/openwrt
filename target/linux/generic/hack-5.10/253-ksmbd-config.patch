@@ -1,6 +1,18 @@
+From: Rosen Penev <rosenp@gmail.com>
+Subject: Kconfig: add help text to kernel config
+
+These options will be used for ksmbd. Once kernel 5.15
+makes it in, this patch can go away.
+
+Submitted-by: Rosen Penev <rosenp@gmail.com>
+---
+ init/Kconfig | 2 +-
+ lib/Kconfig  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -2379,7 +2379,7 @@ config PADATA
+@@ -2384,7 +2384,7 @@ config PADATA
  	bool
  
  config ASN1
@@ -11,7 +23,7 @@
  	  that can be interpreted by the ASN.1 stream decoder and used to
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -589,7 +589,7 @@ config LIBFDT
+@@ -594,7 +594,7 @@ config LIBFDT
  	bool
  
  config OID_REGISTRY

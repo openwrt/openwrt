@@ -103,6 +103,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
+			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6318_IRQ_EXT0>,
 				     <BCM6318_IRQ_EXT1>,
 				     <BCM6318_IRQ_EXT2>,
@@ -143,6 +144,8 @@
 		};
 
 		gpio_cntl: syscon@10000080 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "brcm,bcm6318-gpio-sysctl",
 				     "syscon", "simple-mfd";
 			reg = <0x10000080 0x80>;
@@ -390,7 +393,7 @@
 		switch0: switch@10080000 {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "brcm,bcm6328-switch";
+			compatible = "brcm,bcm6318-switch";
 			reg = <0x10080000 0x8000>;
 			big-endian;
 
@@ -400,7 +403,6 @@
 
 				port@8 {
 					reg = <8>;
-					label = "cpu";
 
 					phy-mode = "internal";
 					ethernet = <&ethernet>;

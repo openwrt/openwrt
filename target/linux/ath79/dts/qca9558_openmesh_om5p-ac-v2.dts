@@ -168,8 +168,6 @@
 &mdio0 {
 	status = "okay";
 
-	phy-mask = <0x10>;
-
 	phy4: ethernet-phy@4 {
 		reg = <4>;
 		eee-broken-100tx;
@@ -179,8 +177,6 @@
 
 &mdio1 {
 	status = "okay";
-
-	phy-mask = <0x2>;
 
 	phy1: ethernet-phy@1 {
 		reg = <1>;

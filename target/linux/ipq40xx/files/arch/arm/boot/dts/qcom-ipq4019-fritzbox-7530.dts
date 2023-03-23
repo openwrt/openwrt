@@ -9,11 +9,15 @@
 	model = "AVM FRITZ!Box 7530";
 	compatible = "avm,fritzbox-7530";
 
+	chosen {
+		bootargs-append = " coherent_pool=4M";
+	};
+
 	aliases {
 		led-boot = &power_green;
 		led-failsafe = &info_red;
 		led-running = &power_green;
-		led-upgrade = &info_green;
+		led-upgrade = &info_red;
 	};
 
 	soc {
@@ -22,10 +26,6 @@
 		};
 
 		mdio@90000 {
-			status = "okay";
-		};
-
-		ess-psgmii@98000 {
 			status = "okay";
 		};
 
@@ -64,15 +64,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-			qcom,num_gmac = <1>;
-		};
 	};
 
 	keys {
@@ -105,7 +96,7 @@
 			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
 		};
 
-		info_green: info {
+		info {
 			label = "green:info";
 			gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
 		};
@@ -173,6 +164,9 @@
 	status = "okay";
 
 	nand@0 {
+		/delete-property/ nand-ecc-strength;
+		/delete-property/ nand-ecc-step-size;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -269,6 +263,30 @@
 };
 
 &qpic_bam {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+};
+
+&swport3 {
+	status = "okay";
+};
+
+&swport4 {
 	status = "okay";
 };
 

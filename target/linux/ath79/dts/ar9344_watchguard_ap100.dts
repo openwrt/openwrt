@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344_senao_ap-dual.dtsi"
+
+/ {
+	compatible = "watchguard,ap100", "qca,ar9344";
+	model = "WatchGuard AP100";
+
+	aliases {
+		led-boot = &led_power_amber;
+		led-failsafe = &led_power_amber;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_amber;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_amber: power_amber {
+			label = "amber:power";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: power_green {
+			label = "green:power";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		lan_data {
+			label = "orange:lan_data";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		lan_link {
+			label = "green:lan_link";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi_amber {
+			label = "amber:wifi";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wifi_green {
+			label = "green:wifi";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};
+
+&ref {
+	clock-frequency = <25000000>;
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <(-2)>;
+};
+
+&pcie {
+	status = "disabled";
+
+	wifi@0,0,0 {
+		nvmem-cells = <&calibration_art_5000>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
+&wmac {
+	/delete-property/ ieee80211-freq-limit;
+
+	nvmem-cells = <&macaddr_art_0>, <&calibration_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+	mac-address-increment = <(-2)>;
+};
+
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_art_0: macaddr@0 {
+		reg = <0x0 0x6>;
+	};
+
+	calibration_art_1000: calibration@1000 {
+		reg = <0x1000 0x440>;
+	};
+
+	calibration_art_5000: calibration@5000 {
+		reg = <0x5000 0x440>;
+	};
+};

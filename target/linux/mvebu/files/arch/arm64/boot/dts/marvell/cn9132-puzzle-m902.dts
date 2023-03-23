@@ -6,6 +6,7 @@
  */
 
 #include "cn9130.dtsi"
+#include "puzzle-thermal.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -154,27 +155,20 @@
 			chassis_fan_group0: fan-group@0 {
 				#cooling-cells = <2>;
 				reg = <0x00>;
-				cooling-levels = <64 102 170 230 250>;
+				cooling-levels = <80 102 170 230 255>;
 			};
 		};
 	};
 };
 
-&ap_thermal_cpu1 {
-	trips {
-		cpu_active: cpu-active {
-			temperature = <44000>;
-			hysteresis = <2000>;
-			type = "active";
-		};
-	};
-	cooling-maps {
-		fan-map {
-			trip = <&cpu_active>;
-			cooling-device = <&chassis_fan_group0 64 THERMAL_NO_LIMIT>;
-		};
-	};
+&ap_thermal_ic {
+	PUZZLE_FAN_THERMAL(ic, &chassis_fan_group0);
 };
+
+&cp0_thermal_ic {
+	PUZZLE_FAN_THERMAL(cp0, &chassis_fan_group0);
+};
+
 
 /* on-board eMMC - U9 */
 &ap_sdhci0 {
@@ -447,6 +441,10 @@
 	};
 };
 
+&cp1_thermal_ic {
+	PUZZLE_FAN_THERMAL(cp1, &chassis_fan_group0);
+};
+
 /*
  * Instantiate the second connected CP115
  */
@@ -561,4 +559,8 @@
 			marvell,function = "i2c0";
 		};
 	};
+};
+
+&cp2_thermal_ic {
+	PUZZLE_FAN_THERMAL(cp2, &chassis_fan_group0);
 };

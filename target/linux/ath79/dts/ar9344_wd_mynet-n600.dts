@@ -18,27 +18,27 @@
 		compatible = "gpio-leds";
 
 		led-0 {
-                        color = <LED_COLOR_ID_BLUE>;
-                        function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power: led-1 {
 			label = "blue:power";
-                        color = <LED_COLOR_ID_BLUE>;
-                        function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-2 {
-                        color = <LED_COLOR_ID_BLUE>;
-                        function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-3 {
-                        color = <LED_COLOR_ID_BLUE>;
-                        function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WPS;
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 	};

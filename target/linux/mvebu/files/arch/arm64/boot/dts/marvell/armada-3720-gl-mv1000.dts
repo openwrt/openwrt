@@ -96,13 +96,31 @@
 
 			partition@f0000 {
 				label = "u-boot-env";
-				reg = <0Xf0000 0x8000>;
+				reg = <0xf0000 0x8000>;
 				read-only;
 			};
 
 			factory: partition@f8000 {
 				label = "factory";
 				reg = <0xf8000 0x8000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "gl-firmware-dtb";
+				reg = <0x100000 0x10000>;
+				read-only;
+			};
+
+			partition@110000 {
+				label = "gl-firmware";
+				reg = <0x110000 0xef0000>;
+				read-only;
+			};
+
+			partition@ef0000 {
+				label = "gl-firmware-jffs2";
+				reg = <0xef0000 0x110000>;
 				read-only;
 			};
 		};
@@ -157,7 +175,6 @@
 
 			port@0 {
 				reg = <0>;
-				label = "cpu";
 				ethernet = <&eth0>;
 			};
 

@@ -1,0 +1,56 @@
+From 0ce34e0c13e99c239cce6099f64b0e95697f36b1 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 7 Jul 2022 03:09:38 +0200
+Subject: [PATCH 4/8] ARM: dts: qcom: ipq8064: add missing snps,dwmac
+ compatible for gmac
+
+Add missing snps,dwmac compatible for gmac ipq8064 dtsi.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Tested-by: Jonathan McDowell <noodles@earth.li>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@somainline.org>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Link: https://lore.kernel.org/r/20220707010943.20857-5-ansuelsmth@gmail.com
+---
+ arch/arm/boot/dts/qcom-ipq8064.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -1042,7 +1042,7 @@
+ 
+ 		gmac0: ethernet@37000000 {
+ 			device_type = "network";
+-			compatible = "qcom,ipq806x-gmac";
++			compatible = "qcom,ipq806x-gmac", "snps,dwmac";
+ 			reg = <0x37000000 0x200000>;
+ 			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "macirq";
+@@ -1066,7 +1066,7 @@
+ 
+ 		gmac1: ethernet@37200000 {
+ 			device_type = "network";
+-			compatible = "qcom,ipq806x-gmac";
++			compatible = "qcom,ipq806x-gmac", "snps,dwmac";
+ 			reg = <0x37200000 0x200000>;
+ 			interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "macirq";
+@@ -1090,7 +1090,7 @@
+ 
+ 		gmac2: ethernet@37400000 {
+ 			device_type = "network";
+-			compatible = "qcom,ipq806x-gmac";
++			compatible = "qcom,ipq806x-gmac", "snps,dwmac";
+ 			reg = <0x37400000 0x200000>;
+ 			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "macirq";
+@@ -1114,7 +1114,7 @@
+ 
+ 		gmac3: ethernet@37600000 {
+ 			device_type = "network";
+-			compatible = "qcom,ipq806x-gmac";
++			compatible = "qcom,ipq806x-gmac", "snps,dwmac";
+ 			reg = <0x37600000 0x200000>;
+ 			interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "macirq";

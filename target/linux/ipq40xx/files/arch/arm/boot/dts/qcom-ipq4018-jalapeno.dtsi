@@ -7,6 +7,10 @@
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
+	aliases {
+		ethernet1 = &swport5;
+	};
+
 	soc {
 		rng@22000 {
 			status = "okay";
@@ -17,10 +21,6 @@
 
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
 		};
 
 		counter@4a1000 {
@@ -67,16 +67,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-
-			switch_lan_bmp = <0x10>; /* lan port bitmap */
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -241,18 +231,22 @@
 	status = "okay";
 };
 
-&gmac0 {
-	qcom,poll_required = <1>;
-	qcom,poll_required_dynamic = <1>;
-	qcom,phy_mdio_addr = <3>;
-	vlan_tag = <1 0x10>;
+&gmac {
+	status = "okay";
 };
 
-&gmac1 {
-	qcom,poll_required = <1>;
-	qcom,poll_required_dynamic = <1>;
-	qcom,phy_mdio_addr = <4>;
-	vlan_tag = <2 0x20>;
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&swport5 {
+	status = "okay";
 };
 
 &wifi0 {

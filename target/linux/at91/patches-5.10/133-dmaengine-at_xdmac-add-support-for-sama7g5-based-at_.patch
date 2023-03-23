@@ -238,7 +238,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  		while (!(at_xdmac_chan_read(atchan, AT_XDMAC_CIS) & AT_XDMAC_CIS_FIS))
  			cpu_relax();
  	}
-@@ -1760,7 +1810,7 @@ static int at_xdmac_device_pause(struct
+@@ -1762,7 +1812,7 @@ static int at_xdmac_device_pause(struct
  		return 0;
  
  	spin_lock_irqsave(&atchan->lock, flags);
@@ -247,7 +247,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  	while (at_xdmac_chan_read(atchan, AT_XDMAC_CC)
  	       & (AT_XDMAC_CC_WRIP | AT_XDMAC_CC_RDIP))
  		cpu_relax();
-@@ -1783,7 +1833,7 @@ static int at_xdmac_device_resume(struct
+@@ -1785,7 +1835,7 @@ static int at_xdmac_device_resume(struct
  		return 0;
  	}
  
@@ -256,7 +256,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  	clear_bit(AT_XDMAC_CHAN_IS_PAUSED, &atchan->status);
  	spin_unlock_irqrestore(&atchan->lock, flags);
  
-@@ -1985,6 +2035,10 @@ static int at_xdmac_probe(struct platfor
+@@ -1992,6 +2042,10 @@ static int at_xdmac_probe(struct platfor
  	atxdmac->regs = base;
  	atxdmac->irq = irq;
  
@@ -267,7 +267,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  	atxdmac->clk = devm_clk_get(&pdev->dev, "dma_clk");
  	if (IS_ERR(atxdmac->clk)) {
  		dev_err(&pdev->dev, "can't get dma_clk\n");
-@@ -2127,6 +2181,10 @@ static const struct dev_pm_ops atmel_xdm
+@@ -2134,6 +2188,10 @@ static const struct dev_pm_ops atmel_xdm
  static const struct of_device_id atmel_xdmac_dt_ids[] = {
  	{
  		.compatible = "atmel,sama5d4-dma",

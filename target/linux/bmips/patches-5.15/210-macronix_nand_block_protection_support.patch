@@ -1,0 +1,29 @@
+From 5a37811de679bff03e9c5a746f75574910ede964 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Wed, 22 Mar 2023 20:52:13 +0100
+Subject: [PATCH] Revert "mtd: rawnand: Macronix: Add support for block
+ protection"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reverts commit 03a539c7a118427a6609a26461358c56ac8f3a06.
+
+Macronix block protection doesn't seem to be supported on Sercomm H-500s
+devices since it hangs the device.
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ drivers/mtd/nand/raw/nand_macronix.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+--- a/drivers/mtd/nand/raw/nand_macronix.c
++++ b/drivers/mtd/nand/raw/nand_macronix.c
+@@ -323,7 +323,6 @@ static int macronix_nand_init(struct nan
+ 
+ 	macronix_nand_fix_broken_get_timings(chip);
+ 	macronix_nand_onfi_init(chip);
+-	macronix_nand_block_protection_support(chip);
+ 	macronix_nand_deep_power_down_support(chip);
+ 
+ 	return 0;

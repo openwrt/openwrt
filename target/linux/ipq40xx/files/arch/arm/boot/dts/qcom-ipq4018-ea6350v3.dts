@@ -25,10 +25,6 @@
 			status = "okay";
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -68,14 +64,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -111,6 +99,34 @@
 };
 
 &cryptobam {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+};
+
+&swport3 {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+};
+
+&swport5 {
 	status = "okay";
 };
 
@@ -253,17 +269,17 @@
 				label = "kernel";
 				reg = <0x00000000 0x02800000>;
 			};
-			rootfs@300000 {
+			rootfs@500000 {
 				label = "rootfs";
-				reg = <0x00300000 0x02500000>;
+				reg = <0x00500000 0x02300000>;
 			};
 			alt_kernel@2800000 {
 				label = "alt_kernel";
 				reg = <0x02800000 0x02800000>;
 			};
-			alt_rootfs@2b00000 {
+			alt_rootfs@2d00000 {
 				label = "alt_rootfs";
-				reg = <0x02b00000 0x02500000>;
+				reg = <0x02d00000 0x02300000>;
 			};
 			sysdiag@5000000 {
 				label = "sysdiag";

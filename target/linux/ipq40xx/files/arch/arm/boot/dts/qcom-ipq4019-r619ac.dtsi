@@ -16,7 +16,6 @@
 		led-failsafe = &led_sys;
 		led-running = &led_sys;
 		led-upgrade = &led_sys;
-		label-mac-device = &gmac0;
 	};
 
 	soc {
@@ -28,10 +27,6 @@
 			status = "okay";
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
 		};
 
 		tcsr@1949000 {
@@ -71,14 +66,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -333,6 +320,42 @@
 	qcom,single-led-10;
 };
 
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+
+	label = "lan4";
+};
+
+&swport2 {
+	status = "okay";
+
+	label = "lan3";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&swport5 {
+	status = "okay";
+};
+
 &usb3_ss_phy {
 	status = "okay";
 };
@@ -353,12 +376,12 @@
 	status = "okay";
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_1000>;
-	qcom,ath10k-calibration-variant = "P&W R619AC";
+	qcom,ath10k-calibration-variant = "P&W-R619AC";
 };
 
 &wifi1 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_5000>;
-	qcom,ath10k-calibration-variant = "P&W R619AC";
+	qcom,ath10k-calibration-variant = "P&W-R619AC";
 };

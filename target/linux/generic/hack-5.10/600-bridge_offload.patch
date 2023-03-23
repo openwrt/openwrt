@@ -1,3 +1,31 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: bridge: Add a fast path for the bridge code
+
+This caches flows between MAC addresses on separate ports, including their VLAN
+in order to bypass the normal bridge forwarding code.
+In my test on MT7622, this reduces LAN->WLAN bridging CPU usage by 6-10%,
+potentially even more on weaker platforms
+
+Submitted-by: Felix Fietkau <nbd@nbd.name>
+---
+ include/linux/if_bridge.h                     |   1 +
+ net/bridge/Makefile                           |   2 +-
+ net/bridge/br.c                               |   8 +++
+ net/bridge/br_device.c                        |   7 +++
+ net/bridge/br_forward.c                       |   3 ++
+ net/bridge/br_if.c                            |   7 ++-
+ net/bridge/br_input.c                         |   5 ++
+ net/bridge/br_offload.c                       | 436 +++++++++++++++
+ net/bridge/br_private.h                       |  22 ++++-
+ net/bridge/br_private_offload.h               |  21 +++++
+ net/bridge/br_stp.c                           |   3 +
+ net/bridge/br_sysfs_br.c                      |  35 ++++++
+ net/bridge/br_sysfs_if.c                      |   2 +
+ net/bridge/br_vlan_tunnel.c                   |   3 ++
+ 14 files changed, 552 insertions(+), 3 deletions(-)
+ create mode 100644 net/bridge/br_offload.c
+ create mode 100644 net/bridge/br_private_offload.h
+
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
 @@ -57,6 +57,7 @@ struct br_ip_list {
@@ -154,7 +182,7 @@
  
  static int
  br_netif_receive_skb(struct net *net, struct sock *sk, struct sk_buff *skb)
-@@ -162,6 +163,7 @@ int br_handle_frame_finish(struct net *n
+@@ -169,6 +170,7 @@ int br_handle_frame_finish(struct net *n
  			dst->used = now;
  		br_forward(dst->dst, skb, local_rcv, false);
  	} else {
@@ -162,7 +190,7 @@
  		if (!mcast_hit)
  			br_flood(br, skb, pkt_type, local_rcv, false);
  		else
-@@ -280,6 +282,9 @@ static rx_handler_result_t br_handle_fra
+@@ -287,6 +289,9 @@ static rx_handler_result_t br_handle_fra
  	memset(skb->cb, 0, sizeof(struct br_input_skb_cb));
  
  	p = br_port_get_rcu(skb->dev);
@@ -434,13 +462,13 @@
 +	vg = nbp_vlan_group_rcu(inp);
 +	vlan = cb->input_vlan_present ? cb->input_vlan_tag : br_get_pvid(vg);
 +	fdb_in = br_fdb_find_rcu(p->br, eth_hdr(skb)->h_source, vlan);
-+	if (!fdb_in)
++	if (!fdb_in || !fdb_in->dst)
 +		goto out;
 +
 +	vg = nbp_vlan_group_rcu(p);
 +	vlan = skb_vlan_tag_present(skb) ? skb_vlan_tag_get_id(skb) : br_get_pvid(vg);
 +	fdb_out = br_fdb_find_rcu(p->br, eth_hdr(skb)->h_dest, vlan);
-+	if (!fdb_out)
++	if (!fdb_out || !fdb_out->dst)
 +		goto out;
 +
 +	br_offload_prepare_key(p, &key, skb);
@@ -450,7 +478,7 @@
 +#endif
 +
 +	flow = kmem_cache_alloc(offload_cache, GFP_ATOMIC);
-+	flow->port = fdb_in->dst;
++	flow->port = inp;
 +	memcpy(&flow->key, &key, sizeof(key));
 +
 +#ifdef CONFIG_BRIDGE_VLAN_FILTERING
@@ -465,7 +493,7 @@
 +	spin_lock_bh(&offload_lock);
 +	if (!o->enabled ||
 +	    atomic_read(&p->offload.rht.nelems) >= p->br->offload_cache_size ||
-+	    rhashtable_insert_fast(&flow->port->offload.rht, &flow->node, flow_params)) {
++	    rhashtable_insert_fast(&inp->offload.rht, &flow->node, flow_params)) {
 +		kmem_cache_free(offload_cache, flow);
 +		goto out_unlock;
 +	}
@@ -511,8 +539,8 @@
 +#ifdef CONFIG_BRIDGE_VLAN_FILTERING
 +		cb->input_vlan_present = key.vlan_present != 0;
 +		cb->input_vlan_tag = key.vlan_tag;
-+		cb->input_ifindex = p->dev->ifindex;
 +#endif
++		cb->input_ifindex = p->dev->ifindex;
 +		goto out;
 +	}
 +

@@ -1,0 +1,37 @@
+From 92e628ec0e26cf091d82356e3b74f73bedf4cfc8 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sat, 15 Oct 2022 00:11:20 +0200
+Subject: [PATCH] action: rework strdupa with POSIX strdup and free
+
+strdupa is not POSIX and cause compilation error on macos.
+Fix this by using strdup and free.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Phillip Lougher <phillip@squashfs.org.uk>
+---
+ squashfs-tools/action.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+--- a/squashfs-tools/action.c
++++ b/squashfs-tools/action.c
+@@ -2415,9 +2415,17 @@ static char *get_start(char *s, int n)
+ 
+ static int subpathname_fn(struct atom *atom, struct action_data *action_data)
+ {
+-	return fnmatch(atom->argv[0], get_start(strdupa(action_data->subpath),
+-		count_components(atom->argv[0])),
+-		FNM_PATHNAME|FNM_EXTMATCH) == 0;
++	char *s, *tmp;
++	int ret;
++
++	s = tmp = strdup(action_data->subpath);
++	tmp = get_start(tmp, count_components(atom->argv[0]));
++
++	ret = fnmatch(atom->argv[0], tmp, FNM_PATHNAME|FNM_EXTMATCH);
++
++	free(s);
++
++	return ret == 0;
+ }
+ 
+ /*

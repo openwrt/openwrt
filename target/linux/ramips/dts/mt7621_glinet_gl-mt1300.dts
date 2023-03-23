@@ -14,7 +14,7 @@
 		led-failsafe = &led_run;
 		led-running = &led_run;
 		led-upgrade = &led_run;
-		label-mac-device = &wan;
+		label-mac-device = &gmac1;
 	};
 
 	chosen {
@@ -67,8 +67,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
-		m25p,fast-read;
+		spi-max-frequency = <50000000>;
 		broken-flash-reset;
 
 		partitions {
@@ -121,6 +120,21 @@
 	mac-address-increment = <1>;
 };
 
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_factory_4000>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
 &switch0 {
 	ports {
 		port@2 {
@@ -131,13 +145,6 @@
 		port@3 {
 			status = "okay";
 			label = "lan2";
-		};
-
-		wan: port@4 {
-			status = "okay";
-			label = "wan";
-			nvmem-cells = <&macaddr_factory_4000>;
-			nvmem-cell-names = "mac-address";
 		};
 	};
 };

@@ -46,7 +46,10 @@ cfe_jffs2_nand_upgrade() {
 platform_do_upgrade() {
 	case "$(board_name)" in
 		comtrend,vr-3032u|\
-		netgear,dgnd3700-v2)
+		huawei,hg253s-v2|\
+		netgear,dgnd3700-v2|\
+		sercomm,h500-s-lowi|\
+		sercomm,h500-s-vfes)
 			cfe_jffs2_nand_upgrade "$1"
 			;;
 		*)

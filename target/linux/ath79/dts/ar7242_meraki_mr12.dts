@@ -16,13 +16,6 @@
 		led-upgrade = &led_power_orange;
 	};
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-output-names = "ref";
-		clock-frequency = <40000000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -85,10 +78,6 @@
 		nvmem-cell-names = "mac-address";
 		mac-address-increment = <1>;
 	};
-};
-
-&pll {
-	clocks = <&extosc>;
 };
 
 &mdio0 {

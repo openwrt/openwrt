@@ -12,6 +12,8 @@ case "$FIRMWARE" in
 	8dev,lima)
 		caldata_extract "art" 0x1000 0x800
 		;;
+	asus,pl-ac56|\
+	asus,rp-ac51|\
 	asus,rp-ac66)
 		caldata_extract "art" 0x1000 0x440
 		;;
@@ -21,9 +23,7 @@ case "$FIRMWARE" in
 	avm,fritzdvbc)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
-	dlink,dir-505|\
-	dlink,dir-825-c1|\
-	dlink,dir-835-a1)
+	dlink,dir-505)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_text "mac" 0x4)
 		;;
@@ -43,7 +43,14 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env athaddr) 1)
 		;;
-	engenius,epg5000|\
+	enterasys,ws-ap3705i)
+		caldata_extract "calibrate" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env0 RADIOADDR1)
+		;;
+	extreme-networks,ws-ap3805i)
+		caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_ascii cfg1 RADIOADDR1)
+		;;
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
 	iodata,wn-ac1600dgr2|\
@@ -53,10 +60,6 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
-	enterasys,ws-ap3705i)
-		caldata_extract "calibrate" 0x1000 0x440
-		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env0 RADIOADDR1)
-		;;
 	nec,wg800hp)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_text board_data 0x680)
@@ -65,6 +68,11 @@ case "$FIRMWARE" in
 		caldata_extract "radiocfg" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan24mac")
 		;;
+	tplink,deco-s4-v2)
+		caldata_extract "art" 0x1000 0x440
+		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
+		ath9k_patch_mac $(macaddr_add $base_mac 1)
+		;;
 	*)
 		caldata_die "board $board is not supported yet"
 		;;
@@ -72,31 +80,11 @@ case "$FIRMWARE" in
 	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
-	araknis,an-300-ap-i-n|\
-	atheros,db120|\
-	engenius,eap600|\
-	engenius,ecb600|\
-	mercury,mw4530r-v1|\
-	ocedo,raccoon|\
-	tplink,tl-wdr3500-v1|\
-	tplink,tl-wdr3600-v1|\
-	tplink,tl-wdr4300-v1|\
-	tplink,tl-wdr4300-v1-il|\
-	tplink,tl-wdr4310-v1|\
-	tplink,tl-wdr4900-v2|\
-	ubnt,unifi-ap-pro|\
-	winchannel,wb2000)
-		caldata_extract "art" 0x5000 0x440
-		;;
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
-	buffalo,wzr-hp-g302h-a1a0|\
-	ubnt,unifi-ap-outdoor-plus)
-		caldata_extract "art" 0x1000 0xeb8
-		;;
 	buffalo,wzr-hp-g450h|\
-	ubnt,unifi)
+	pcs,cap324)
 		caldata_extract "art" 0x1000 0x440
 		;;
 	dlink,dir-825-c1|\
@@ -113,27 +101,8 @@ case "$FIRMWARE" in
 		;;
 	netgear,wnr2200-8m|\
 	netgear,wnr2200-16m|\
-	pcs,cap324|\
-	tplink,tl-wr2543-v1|\
-	tplink,tl-wr842n-v1|\
-	ubnt,airrouter|\
-	ubnt,bullet-m-ar7240|\
-	ubnt,bullet-m-ar7241|\
-	ubnt,nanobridge-m|\
-	ubnt,nanostation-loco-m|\
-	ubnt,nanostation-m|\
-	ubnt,picostation-m|\
-	ubnt,powerbridge-m|\
-	ubnt,rocket-m)
-		caldata_extract "art" 0x1000 0x1000
-		;;
-	openmesh,mr600-v1|\
-	openmesh,mr600-v2|\
-	openmesh,om5p-an)
-		caldata_extract "ART" 0x5000 0x440
-		;;
-	openmesh,om2p-v1)
-		caldata_extract "ART" 0x1000 0x440
+	tplink,tl-wr842n-v1)
+		caldata_extract "art" 0x1000 0x3e0
 		;;
 	wd,mynet-n600|\
 	wd,mynet-n750)
@@ -141,7 +110,7 @@ case "$FIRMWARE" in
 		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
 		;;
 	wd,mynet-wifi-rangeextender)
-		caldata_extract "art" 0x1000 0x1000
+		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(nvram get wl0_hwaddr)
 		;;
 	*)
@@ -155,7 +124,8 @@ case "$FIRMWARE" in
 	buffalo,wzr-hp-ag300h)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
-	dlink,dir-825-b1)
+	dlink,dir-825-b1|\
+	trendnet,tew-673gru)
 		caldata_extract "caldata" 0x1000 0xeb8
 		ath9k_patch_mac_crc $(mtd_get_mac_text "caldata" 0xffa0) 0x20c
 		;;
@@ -173,7 +143,8 @@ case "$FIRMWARE" in
 	buffalo,wzr-hp-ag300h)
 		caldata_extract "art" 0x5000 0xeb8
 		;;
-	dlink,dir-825-b1)
+	dlink,dir-825-b1|\
+	trendnet,tew-673gru)
 		caldata_extract "caldata" 0x5000 0xeb8
 		ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_text "caldata" 0xffb4) 1) 0x20c
 		;;

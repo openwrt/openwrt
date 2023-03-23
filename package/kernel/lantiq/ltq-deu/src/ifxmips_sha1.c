@@ -43,7 +43,12 @@
 #include <linux/module.h>
 #include <linux/mm.h>
 #include <linux/crypto.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,11,0)
 #include <crypto/sha.h>
+#else
+#include <crypto/sha1.h>
+#endif
 #include <crypto/hash.h>
 #include <crypto/internal/hash.h>
 #include <linux/types.h>

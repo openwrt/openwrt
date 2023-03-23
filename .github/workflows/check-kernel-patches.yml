@@ -1,0 +1,144 @@
+name: Refresh kernel for target
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        required: true
+        type: string
+      testing:
+        type: boolean
+      use_openwrt_container:
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  setup_build:
+    name: Setup build
+    runs-on: ubuntu-latest
+    outputs:
+      owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
+      container_tag: ${{ steps.determine_tools_container.outputs.container_tag }}
+
+    steps:
+      - name: Set lower case owner name
+        id: lower_owner
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" \
+            | tr '[:upper:]' '[:lower:]')
+
+          if [ ${{ inputs.use_openwrt_container }} == "true" ]; then
+            OWNER_LC=openwrt
+          fi
+
+          echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
+
+      # Per branch tools container tag
+      # By default stick to latest
+      # For official test targetting openwrt stable branch
+      # Get the branch or parse the tag and push dedicated tools containers
+      # For local test to use the correct container for stable release testing
+      # you need to use for the branch name a prefix of openwrt-[0-9][0-9].[0-9][0-9]-
+      - name: Determine tools container tag
+        id: determine_tools_container
+        run: |
+          CONTAINER_TAG=latest
+          if [ -n "${{ github.base_ref }}" ]; then
+            if echo "${{ github.base_ref }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]$'; then
+              CONTAINER_TAG="${{ github.base_ref }}"
+            fi
+          elif [ ${{ github.ref_type }} == "branch" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]$'; then
+              CONTAINER_TAG=${{ github.ref_name }}
+            elif echo "${{ github.ref_name }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]-'; then
+              CONTAINER_TAG="$(echo ${{ github.ref_name }} | sed 's/^\(openwrt-[0-9][0-9]\.[0-9][0-9]\)-.*/\1/')"
+            fi
+          elif [ ${{ github.ref_type }} == "tag" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E '^v[0-9][0-9]\.[0-9][0-9]\..+'; then
+              CONTAINER_TAG=openwrt-"$(echo ${{ github.ref_name }} | sed 's/^v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
+            fi
+          fi
+          echo "Tools container to use tools:$CONTAINER_TAG"
+          echo "container_tag=$CONTAINER_TAG" >> $GITHUB_OUTPUT
+
+  check-patch:
+    name: Check Kernel patches
+    needs: setup_build
+    runs-on: ubuntu-latest
+
+    container: ghcr.io/${{ needs.setup_build.outputs.owner_lc }}/tools:${{ needs.setup_build.outputs.container_tag }}
+
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout master directory
+        uses: actions/checkout@v3
+        with:
+          path: openwrt
+
+      - name: Fix permission
+        run: |
+          chown -R buildbot:buildbot openwrt
+
+      - name: Initialization environment
+        run: |
+          TARGET=$(echo ${{ inputs.target }} | cut -d "/" -f 1)
+          SUBTARGET=$(echo ${{ inputs.target }} | cut -d "/" -f 2)
+          echo "TARGET=$TARGET" >> "$GITHUB_ENV"
+          echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
+
+      - name: Prepare prebuilt tools
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          mkdir -p staging_dir build_dir
+          ln -sf /prebuilt_tools/staging_dir/host staging_dir/host
+          ln -sf /prebuilt_tools/build_dir/host build_dir/host
+
+          ./scripts/ext-tools.sh --refresh
+
+      - name: Configure testing kernel
+        if: inputs.testing == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          echo CONFIG_TESTING_KERNEL=y >> .config
+
+      - name: Configure system
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          echo CONFIG_ALL_KMODS=y >> .config
+          echo CONFIG_DEVEL=y >> .config
+          echo CONFIG_AUTOREMOVE=y >> .config
+          echo CONFIG_CCACHE=y >> .config
+
+          echo "CONFIG_TARGET_${{ env.TARGET }}=y" >> .config
+          echo "CONFIG_TARGET_${{ env.TARGET }}_${{ env.SUBTARGET }}=y" >> .config
+
+          make defconfig
+
+      - name: Build tools
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: make tools/quilt/compile -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
+
+      - name: Refresh Kernel patches
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          make target/linux/refresh V=s
+
+          . .github/workflows/scripts/ci_helpers.sh
+
+          if git diff --name-only --exit-code; then
+            success "Kernel patches for ${{ env.TARGET }}/${{ env.SUBTARGET }} seems ok"
+          else
+            err "Kernel patches for ${{ env.TARGET }}/${{ env.SUBTARGET }} require refresh. (run 'make target/linux/refresh' and force push this pr)"
+            exit 1
+          fi

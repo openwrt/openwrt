@@ -4,11 +4,11 @@
 
 define Profile/Default
   NAME:=Default Profile
-  PACKAGES:=kmod-b43 wpad-basic-wolfssl
+  PACKAGES:=kmod-b43 wpad-basic-mbedtls
   PRIORITY:=1
 endef
 
-define Profile/Default/description
+define Profile/Default/Description
   Package set compatible with most boards.
 endef
 

@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=2020.81
-PKG_RELEASE:=2
+PKG_VERSION:=2022.82
+PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
-	http://matt.ucc.asn.au/dropbear/releases/ \
+	https://matt.ucc.asn.au/dropbear/releases/ \
 	https://dropbear.nl/mirror/releases/
-PKG_HASH:=48235d10b37775dbda59341ac0c4b239b82ad6318c31568b985730c788aac53b
+PKG_HASH:=3a038d2bbc02bf28bbdd20c012091f741a3ec5cbe460691811d714876aad75d1
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
@@ -23,7 +23,7 @@ PKG_CPE_ID:=cpe:/a:matt_johnston:dropbear_ssh_server
 
 PKG_BUILD_PARALLEL:=1
 PKG_ASLR_PIE_REGULAR:=1
-PKG_USE_MIPS16:=0
+PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
 PKG_FIXUP:=autoreconf
 PKG_FLAGS:=nonshared
 
@@ -42,7 +42,7 @@ ifneq ($(DUMP),1)
 endif
 
 define Package/dropbear/Default
-  URL:=http://matt.ucc.asn.au/dropbear/
+  URL:=https://matt.ucc.asn.au/dropbear/
 endef
 
 define Package/dropbear/config
@@ -130,8 +130,10 @@ DB_OPT_COMMON = \
 DB_OPT_CONFIG = \
 	DROPBEAR_CURVE25519|CONFIG_DROPBEAR_CURVE25519|1|0 \
 	DROPBEAR_ED25519|CONFIG_DROPBEAR_ED25519|1|0 \
+	DROPBEAR_SK_ED25519|CONFIG_DROPBEAR_ED25519|1|0 \
 	DROPBEAR_CHACHA20POLY1305|CONFIG_DROPBEAR_CHACHA20POLY1305|1|0 \
 	DROPBEAR_ECDSA|CONFIG_DROPBEAR_ECC|1|0 \
+	DROPBEAR_SK_ECDSA|CONFIG_DROPBEAR_ECC|1|0 \
 	DROPBEAR_ECDH|CONFIG_DROPBEAR_ECC|1|0 \
 	!!DROPBEAR_ECC_384|CONFIG_DROPBEAR_ECC_FULL|1|0 \
 	!!DROPBEAR_ECC_521|CONFIG_DROPBEAR_ECC_FULL|1|0 \
@@ -140,8 +142,7 @@ DB_OPT_CONFIG = \
 	DROPBEAR_SVR_AGENTFWD|CONFIG_DROPBEAR_AGENTFORWARD|1|0 \
 
 
-TARGET_CFLAGS += -DARGTYPE=3 -ffunction-sections -fdata-sections -flto
-TARGET_LDFLAGS += -Wl,--gc-sections -flto=jobserver
+TARGET_CFLAGS += -DARGTYPE=3
 
 db_opt_add     =echo '\#define $(1) $(2)' >> $(PKG_BUILD_DIR)/localoptions.h
 db_opt_replace =$(ESED) 's,^(\#define $(1)) .*$$$$,\1 $(2),g' $(PKG_BUILD_DIR)/sysoptions.h

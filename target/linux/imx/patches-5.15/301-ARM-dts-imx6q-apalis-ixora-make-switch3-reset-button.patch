@@ -14,7 +14,7 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
 
 --- a/arch/arm/boot/dts/imx6q-apalis-ixora-v1.1.dts
 +++ b/arch/arm/boot/dts/imx6q-apalis-ixora-v1.1.dts
-@@ -74,7 +74,7 @@
+@@ -38,7 +38,7 @@
  	gpio-keys {
  		compatible = "gpio-keys";
  		pinctrl-names = "default";
@@ -23,7 +23,7 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  
  		wakeup {
  			label = "Wake-Up";
-@@ -83,6 +83,13 @@
+@@ -47,6 +47,13 @@
  			debounce-interval = <10>;
  			wakeup-source;
  		};
@@ -37,7 +37,7 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  	};
  
  	lcd_display: disp0 {
-@@ -298,4 +305,10 @@
+@@ -275,4 +282,10 @@
  			MX6QDL_PAD_NANDF_D2__GPIO2_IO02 0x1b0b0
  		>;
  	};
@@ -50,7 +50,7 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  };
 --- a/arch/arm/boot/dts/imx6q-apalis-ixora.dts
 +++ b/arch/arm/boot/dts/imx6q-apalis-ixora.dts
-@@ -73,7 +73,7 @@
+@@ -37,7 +37,7 @@
  	gpio-keys {
  		compatible = "gpio-keys";
  		pinctrl-names = "default";
@@ -59,7 +59,7 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  
  		wakeup {
  			label = "Wake-Up";
-@@ -82,6 +82,13 @@
+@@ -46,6 +46,13 @@
  			debounce-interval = <10>;
  			wakeup-source;
  		};
@@ -73,7 +73,7 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  	};
  
  	lcd_display: disp0 {
-@@ -299,4 +306,10 @@
+@@ -276,4 +283,10 @@
  			MX6QDL_PAD_NANDF_D2__GPIO2_IO02 0x1b0b0
  		>;
  	};

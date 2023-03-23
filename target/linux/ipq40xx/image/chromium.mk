@@ -26,11 +26,15 @@ define Device/google_wifi
 	DEVICE_MODEL := WiFi (Gale)
 	SOC := qcom-ipq4019
 	KERNEL_SUFFIX := -fit-zImage.itb.vboot
-	KERNEL = kernel-bin | fit none $$(DTS_DIR)/$$(DEVICE_DTS).dtb | cros-vboot
+	KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb | cros-vboot
 	KERNEL_NAME := zImage
 	IMAGES += factory.bin
 	IMAGE/factory.bin := cros-gpt | append-kernel-part | append-rootfs
-	DEVICE_PACKAGES := ipq-wifi-google_wifi partx-utils mkf2fs e2fsprogs \
-			   kmod-fs-ext4 kmod-fs-f2fs kmod-google-firmware
+	# Note: Chromium/Depthcharge-based bootloaders insert a reserved-memory
+	# ramoops node into the Device Tree automatically, so we can use
+	# kmod-ramoops.
+	DEVICE_PACKAGES := partx-utils mkf2fs e2fsprogs \
+			   kmod-fs-ext4 kmod-fs-f2fs kmod-google-firmware \
+			   kmod-ramoops
 endef
 TARGET_DEVICES += google_wifi

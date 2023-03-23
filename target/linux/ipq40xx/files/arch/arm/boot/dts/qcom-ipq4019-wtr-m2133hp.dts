@@ -32,7 +32,6 @@
 		led-failsafe = &led_power_orange;
 		led-running = &led_power_white;
 		led-upgrade = &led_power_blue;
-		label-mac-device = &gmac0;
 	};
 
 	soc {
@@ -70,19 +69,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-			switch_lan_bmp = <0x1c>;
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 
@@ -436,16 +422,6 @@
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
-};
-
-&gmac0 {
-	nvmem-cells = <&macaddr_orgdata_20>;
-	nvmem-cell-names = "mac-address";
-};
-
-&gmac1 {
-	nvmem-cells = <&macaddr_orgdata_20>;
-	nvmem-cell-names = "mac-address";
 };
 
 &usb3_ss_phy {

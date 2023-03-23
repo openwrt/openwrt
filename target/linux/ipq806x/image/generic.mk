@@ -65,6 +65,19 @@ define Device/ZyXELImage
 		append-metadata
 endef
 
+define Device/arris_tr4400-v2
+	$(call Device/LegacyImage)
+	DEVICE_VENDOR := Arris
+	DEVICE_MODEL := TR4400
+	DEVICE_VARIANT := v2
+	SOC := qcom-ipq8065
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ath10k-firmware-qca99x0-ct
+	KERNEL_IN_UBI := 1
+endef
+TARGET_DEVICES += arris_tr4400-v2
+
 define Device/askey_rt4230w-rev6
 	$(call Device/LegacyImage)
 	DEVICE_VENDOR := Askey
@@ -234,7 +247,7 @@ define Device/nec_wg2600hp3
 	DEVICE_PACKAGES := -kmod-ata-ahci -kmod-ata-ahci-platform \
 		-kmod-usb-ohci -kmod-usb2 -kmod-usb-ledtrig-usbport \
 		-kmod-usb-phy-qcom-dwc3 -kmod-usb3 -kmod-usb-dwc3-qcom \
-		ath10k-firmware-qca9984-ct ipq-wifi-nec_wg2600hp3
+		ath10k-firmware-qca9984-ct
 endef
 TARGET_DEVICES += nec_wg2600hp3
 
@@ -322,6 +335,20 @@ define Device/netgear_xr500
 endef
 TARGET_DEVICES += netgear_xr500
 
+define Device/nokia_ac400i
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Nokia
+	DEVICE_MODEL := AC400i
+	SOC := qcom-ipq8065
+	DEVICE_DTS := qcom-ipq8065-ac400i
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := ac400i
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-nokia-ac400i
+endef
+TARGET_DEVICES += nokia_ac400i
+
 define Device/qcom_ipq8064-ap148
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -394,7 +421,7 @@ define Device/tplink_ad7200
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	TPLINK_BOARD_ID := AD7200
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-wil6210
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-ramoops kmod-wil6210
 endef
 TARGET_DEVICES += tplink_ad7200
 
@@ -409,7 +436,7 @@ define Device/tplink_c2600
 	BOARD_NAME := c2600
 	SUPPORTED_DEVICES += c2600
 	TPLINK_BOARD_ID := C2600
-	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-ramoops
 endef
 TARGET_DEVICES += tplink_c2600
 

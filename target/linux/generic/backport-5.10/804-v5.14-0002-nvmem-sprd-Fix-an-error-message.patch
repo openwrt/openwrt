@@ -1,0 +1,30 @@
+From 20be064ec864086bca7a4eb62c772a397b44afb7 Mon Sep 17 00:00:00 2001
+From: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+Date: Fri, 7 May 2021 19:02:48 +0200
+Subject: [PATCH] nvmem: sprd: Fix an error message
+
+'ret' is known to be 0 here.
+The expected error status is stored in 'status', so use it instead.
+
+Also change %d in %u, because status is an u32, not a int.
+
+Fixes: 096030e7f449 ("nvmem: sprd: Add Spreadtrum SoCs eFuse support")
+Acked-by: Chunyan Zhang <zhang.lyra@gmail.com>
+Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+Link: https://lore.kernel.org/r/5bc44aace2fe7e1c91d8b35c8fe31e7134ceab2c.1620406852.git.christophe.jaillet@wanadoo.fr
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/sprd-efuse.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/nvmem/sprd-efuse.c
++++ b/drivers/nvmem/sprd-efuse.c
+@@ -234,7 +234,7 @@ static int sprd_efuse_raw_prog(struct sp
+ 	status = readl(efuse->base + SPRD_EFUSE_ERR_FLAG);
+ 	if (status) {
+ 		dev_err(efuse->dev,
+-			"write error status %d of block %d\n", ret, blk);
++			"write error status %u of block %d\n", status, blk);
+ 
+ 		writel(SPRD_EFUSE_ERR_CLR_MASK,
+ 		       efuse->base + SPRD_EFUSE_ERR_CLR);

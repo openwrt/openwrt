@@ -61,16 +61,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-			qcom,poll_required = <0>;
-			qcom,num_gmac = <1>;
-		};
 	};
 
 	keys {
@@ -185,7 +175,6 @@
 				#size-cells = <1>;
 				label = "RouterBoot";
 				reg = <0x80000 0x80000>;
-				read-only;
 
 				hard_config {
 					read-only;
@@ -223,10 +212,6 @@
 	status = "okay";
 };
 
-&gmac0 {
-	vlan_tag = <0 0x3f>;
-};
-
 &ethphy3 {
 	gpio-controller;
 	#gpio-cells = <2>;
@@ -235,6 +220,24 @@
 &ethphy4 {
 	gpio-controller;
 	#gpio-cells = <2>;
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&swport5 {
+	status = "okay";
 };
 
 &wifi0 {

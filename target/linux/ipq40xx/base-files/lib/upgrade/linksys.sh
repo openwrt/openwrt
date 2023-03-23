@@ -3,7 +3,7 @@ linksys_get_target_firmware() {
 
 	cur_boot_part="$(/usr/sbin/fw_printenv -n boot_part)"
 	if [ -z "${cur_boot_part}" ]; then
-		mtd_ubi0=$(cat /sys/devices/virtual/ubi/ubi0/mtd_num)
+		mtd_ubi0=$(cat /sys/class/ubi/ubi0/mtd_num)
 		case "$(grep -E "^mtd${mtd_ubi0}:" /proc/mtd | cut -d '"' -f 2)" in
 		kernel|rootfs)
 			cur_boot_part=1
@@ -45,6 +45,14 @@ linksys_get_target_firmware() {
 		return
 		;;
 	esac
+}
+
+linksys_is_factory_image() {
+	local board=$(board_name)
+	board=${board##*,}
+
+	# check matching footer signature
+	tail -c 256 $1 | grep -q -i "\.LINKSYS\.........${board}"
 }
 
 platform_do_upgrade_linksys() {
@@ -98,5 +106,15 @@ platform_do_upgrade_linksys() {
 	[ "$magic_long" = "27051956" ] && {
 		echo "writing \"$1\" image to \"$part_label\""
 		get_image "$1" | mtd write - "$part_label"
+	}
+
+	[ "$magic_long" = "d00dfeed" ] && {
+		if ! linksys_is_factory_image "$1"; then
+			echo "factory image doesn't match device"
+			return 1
+		fi
+
+		echo "writing \"$1\" factory image to \"$part_label\""
+		get_image "$1" | mtd -e "$part_label" write - "$part_label"
 	}
 }

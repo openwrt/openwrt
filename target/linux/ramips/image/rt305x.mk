@@ -120,6 +120,7 @@ endef
 TARGET_DEVICES += allnet_all5002
 
 define Device/allnet_all5003
+  $(Device/uimage-lzma-loader)
   SOC := rt5350
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Allnet
@@ -209,7 +210,7 @@ define Device/asus_rt-g32-b1
   SOC := rt3050
   BLOCKSIZE := 4k
   IMAGE_SIZE := 3776k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-G32
   DEVICE_VARIANT := B1
   SUPPORTED_DEVICES += rt-g32-b1
@@ -221,7 +222,7 @@ define Device/asus_rt-n10-plus
   SOC := rt3050
   BLOCKSIZE := 64k
   IMAGE_SIZE := 3776k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N10+
   SUPPORTED_DEVICES += rt-n10-plus
   DEFAULT := n
@@ -231,7 +232,7 @@ TARGET_DEVICES += asus_rt-n10-plus
 define Device/asus_rt-n13u
   SOC := rt3052
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N13U
   DEVICE_PACKAGES := kmod-leds-gpio kmod-rt2800-pci kmod-usb-dwc2
   SUPPORTED_DEVICES += rt-n13u
@@ -242,7 +243,7 @@ define Device/asus_wl-330n
   SOC := rt3050
   BLOCKSIZE := 4k
   IMAGE_SIZE := 3776k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := WL-330N
   SUPPORTED_DEVICES += wl-330n
   DEFAULT := n
@@ -253,7 +254,7 @@ define Device/asus_wl-330n3g
   SOC := rt3050
   BLOCKSIZE := 4k
   IMAGE_SIZE := 3776k
-  DEVICE_VENDOR := Asus
+  DEVICE_VENDOR := ASUS
   DEVICE_MODEL := WL-330N3G
   DEVICE_PACKAGES :=
   SUPPORTED_DEVICES += wl-330n3g
@@ -1206,6 +1207,16 @@ define Device/zyxel_keenetic
 endef
 TARGET_DEVICES += zyxel_keenetic
 
+define Device/zyxel_keenetic-4g-b
+  $(Device/uimage-lzma-loader)
+  SOC := rt5350
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := Keenetic 4G
+  DEVICE_VARIANT := B
+endef
+TARGET_DEVICES += zyxel_keenetic-4g-b
+
 define Device/zyxel_keenetic-lite-b
   $(Device/uimage-lzma-loader)
   SOC := rt5350
@@ -1237,6 +1248,7 @@ endef
 TARGET_DEVICES += zyxel_nbg-419n
 
 define Device/zyxel_nbg-419n-v2
+  $(Device/uimage-lzma-loader)
   SOC := rt3352
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := ZyXEL

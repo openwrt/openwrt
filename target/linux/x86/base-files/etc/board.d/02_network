@@ -8,11 +8,37 @@
 board_config_update
 
 case "$(board_name)" in
+barracuda-networks-inc-barracuda-ng-firewall-f12)
+	ucidef_set_network_device_path "eth1" "pci0000:00/0000:00:14.0/0000:01:00.0"
+	ucidef_set_network_device_path "eth2" "pci0000:00/0000:00:14.1/0000:02:00.0"
+	ucidef_set_network_device_path "eth3" "pci0000:00/0000:00:13.0/0000:03:00.0"
+	ucidef_set_network_device_path "eth4" "pci0000:00/0000:00:13.1/0000:04:00.0"
+	ucidef_set_network_device_path "eth5" "pci0000:00/0000:00:13.2/0000:05:00.0"
+	ucidef_set_interfaces_lan_wan "eth2 eth3 eth4 eth5" "eth1"
+	;;
 cisco-mx100-hw)
-	ucidef_set_interfaces_lan_wan "eth0 eth1 eth2 eth3 eth4 eth5 eth7 eth8 eth9 eth10 eth11" "eth6"
+	ucidef_set_network_device_path "mgmt" "pci0000:00/0000:00:01.2/0000:03:00.3"
+	ucidef_set_network_device_path "wan" "pci0000:00/0000:00:01.2/0000:03:00.2"
+	ucidef_set_network_device_path "eth2" "pci0000:00/0000:00:01.2/0000:03:00.1"
+	ucidef_set_network_device_path "eth3" "pci0000:00/0000:00:01.2/0000:03:00.0"
+	ucidef_set_network_device_path "eth4" "pci0000:00/0000:00:01.0/0000:01:00.2"
+	ucidef_set_network_device_path "eth5" "pci0000:00/0000:00:01.0/0000:01:00.1"
+	ucidef_set_network_device_path "eth6" "pci0000:00/0000:00:01.0/0000:01:00.4"
+	ucidef_set_network_device_path "eth7" "pci0000:00/0000:00:01.0/0000:01:00.3"
+	ucidef_set_network_device_path "eth8" "pci0000:00/0000:00:01.1/0000:02:00.1"
+	ucidef_set_network_device_path "eth9" "pci0000:00/0000:00:01.1/0000:02:00.0"
+	ucidef_set_network_device_path "eth10" "pci0000:00/0000:00:01.1/0000:02:00.3"
+	ucidef_set_network_device_path "eth11" "pci0000:00/0000:00:01.1/0000:02:00.2"
+	ucidef_set_interfaces_lan_wan "mgmt eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 eth11" "wan"
 	;;
 pc-engines-apu1|pc-engines-apu2|pc-engines-apu3)
 	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
+	;;
+pc-engines-apu5)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	;;
+pc-engines-apu4|pc-engines-apu6)
+	ucidef_set_interfaces_lan_wan "eth1 eth2 eth3" "eth0"
 	;;
 roqos-roqos-core-rc10)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"

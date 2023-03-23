@@ -13,6 +13,7 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+buffalo,ls220de|\
 buffalo,ls421de)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000"
 	;;
@@ -58,8 +59,14 @@ linksys,wrt3200acm|\
 linksys,wrt32x)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
-methode,udpu)
+methode,udpu|\
+methode,edpu)
+	idx="$(find_mtd_index u-boot-env)"
+	if [ -n "$idx" ]; then
+	ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x10000" "0x10000" "1"
+	else
 	ubootenv_add_uci_config "/dev/mtd0" "0x180000" "0x10000" "0x10000"
+	fi
 	;;
 esac
 
