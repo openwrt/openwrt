@@ -152,7 +152,7 @@ Reviewed-by: Andrew Lunn <andrew@lunn.ch>
  	if (is531x5(dev) && phy_interface_is_rgmii(phydev)) {
  		if (port == dev->imp_port)
  			off = B53_RGMII_CTRL_IMP;
-@@ -1396,6 +1439,9 @@ void b53_phylink_mac_link_down(struct ds
+@@ -1419,6 +1462,9 @@ void b53_phylink_mac_link_up(struct dsa_
  {
  	struct b53_device *dev = ds->priv;
  
