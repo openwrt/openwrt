@@ -1178,6 +1178,7 @@ dnsmasq_start()
 		[ ! -e "$logfacility" ] && touch "$logfacility"
 		procd_add_jail_mount_rw "$logfacility"
 	esac
+	[ -e "$hostsfile" ] && procd_add_jail_mount $hostsfile
 
 	procd_close_instance
 }
