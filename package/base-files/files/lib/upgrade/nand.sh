@@ -264,7 +264,12 @@ nand_upgrade_ubinized() {
 	nand_detach_ubi "$CI_UBIPART" || return 1
 
 	local mtdnum="$( find_mtd_index "$CI_UBIPART" )"
-	${gz}cat "$ubi_file" | ubiformat "/dev/mtd$mtdnum" -y -f - && ubiattach -m "$mtdnum"
+	if [ -n "$gz" ]; then
+		${gz}cat "$ubi_file" | ubiformat "/dev/mtd$mtdnum" -y -f - && ubiattach -m "$mtdnum"
+	else
+		# On some bcm53xx devices, the cat command leads to unintended results
+		ubiformat "/dev/mtd$mtdnum" -y -f "$ubi_file" && ubiattach -m "$mtdnum"
+	fi
 }
 
 # Write the UBIFS image to UBI rootfs volume
