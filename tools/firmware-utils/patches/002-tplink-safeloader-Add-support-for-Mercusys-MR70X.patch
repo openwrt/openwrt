@@ -1,0 +1,95 @@
+From affc38e89b3544edc97d05367f8aeafa4c4e73bd Mon Sep 17 00:00:00 2001
+From: Yoonji Park <koreapyj@dcmys.kr>
+Date: Sat, 4 Jun 2022 10:50:57 +0000
+Subject: [PATCH] tplink-safeloader: Add support for Mercusys MR70X
+
+Add support for Mercusys MR70X image creation.
+
+Software version:
+soft_ver:1.0.3 Build 20201222 Rel. 50381
+
+Partition table:
+00000000 00040000 fs-uboot
+00040000 00400000 os-image
+00440000 00b60000 file-system
+00fa0000 00000200 default-mac
+00fa0200 00000100 pin
+00fa0300 00000100 device-id
+00fa0400 0000fc00 product-info
+00fb0000 00008000 default-config
+00fb8000 00008000 ap-def-config
+00fc0000 0000c000 user-config
+00fcc000 00004000 certificate
+00fd0000 00008000 ap-config
+00fd8000 00008000 router-config
+00fe0000 00000800 partition-table
+00fe0800 00000100 soft-version
+00fe0900 00000200 support-list
+00fe0b00 00003000 profile
+00fe3b00 00000100 extra-para
+00ff0000 00010000 radio
+
+os-image and file-system is merged for dynamic split.
+
+Signed-off-by: Yoonji Park <koreapyj@dcmys.kr>
+---
+ src/tplink-safeloader.c | 41 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 41 insertions(+)
+
+--- a/src/tplink-safeloader.c
++++ b/src/tplink-safeloader.c
+@@ -2937,6 +2937,46 @@ static struct device_info boards[] = {
+ 		.last_sysupgrade_partition = "file-system"
+ 	},
+ 
++	/** Firmware layout for the Mercusys MR70X */
++	{
++		.id     = "MR70X",
++		.vendor = "",
++		.support_list =
++			"SupportList:\n"
++			"{product_name:MR70X,product_ver:1.0.0,special_id:45550000}\n"
++			"{product_name:MR70X,product_ver:1.0.0,special_id:4A500000}\n"
++			"{product_name:MR70X,product_ver:1.0.0,special_id:55530000}\n",
++		.part_trail = 0x00,
++		.soft_ver = SOFT_VER_DEFAULT,
++
++		.partitions = {
++			{"fs-uboot", 0x00000, 0x40000},
++			{"firmware", 0x40000, 0xf60000},
++			{"default-mac", 0xfa0000, 0x00200},
++			{"pin", 0xfa0200, 0x00100},
++			{"device-id", 0xfa0300, 0x00100},
++			{"product-info", 0xfa0400, 0x0fc00},
++			{"default-config", 0xfb0000, 0x08000},
++			{"ap-def-config", 0xfb8000, 0x08000},
++			{"user-config", 0xfc0000, 0x0a000},
++			{"ag-config", 0xfca000, 0x04000},
++			{"certificate", 0xfce000, 0x02000},
++			{"ap-config", 0xfd0000, 0x06000},
++			{"router-config", 0xfd6000, 0x06000},
++			{"favicon", 0xfdc000, 0x02000},
++			{"logo", 0xfde000, 0x02000},
++			{"partition-table", 0xfe0000, 0x00800},
++			{"soft-version", 0xfe0800, 0x00100},
++			{"support-list", 0xfe0900, 0x00200},
++			{"profile", 0xfe0b00, 0x03000},
++			{"extra-para", 0xfe3b00, 0x00100},
++			{"radio", 0xff0000, 0x10000},
++			{NULL, 0, 0}
++		},
++
++		.first_sysupgrade_partition = "os-image",
++		.last_sysupgrade_partition = "file-system"
++	},
+ 
+ 	{}
+ };
+@@ -3406,6 +3446,7 @@ static void build_image(const char *outp
+ 	    strcasecmp(info->id, "ARCHER-C60-V3") == 0 ||
+ 	    strcasecmp(info->id, "ARCHER-C6U-V1") == 0 ||
+ 	    strcasecmp(info->id, "ARCHER-C6-V3") == 0 ||
++	    strcasecmp(info->id, "MR70X") == 0 ||
+ 	    strcasecmp(info->id, "TLWR1043NV5") == 0) {
+ 		const uint8_t extra_para[2] = {0x01, 0x00};
+ 		parts[5] = make_extra_para(info, extra_para,
