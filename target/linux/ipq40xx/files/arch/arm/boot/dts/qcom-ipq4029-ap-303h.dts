@@ -76,14 +76,6 @@
 			status = "okay";
 		};
 
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
-
 		i2c_0: i2c@78b7000 {
 			pinctrl-0 = <&i2c_0_pins>;
 			pinctrl-names = "default";
@@ -100,7 +92,7 @@
 				/* No driver */
 				compatible = "isl,isl28022";
 				reg = <0x40>;
-		    };
+			};
 		};
 	};
 
@@ -367,6 +359,10 @@
 				macaddr_mfginfo_1d: macaddr@1d {
 					reg = <0x1d 0x6>;
 				};
+
+				macaddr_mfginfo_45: macaddr@45 {
+					reg = <0x45 0x6>;
+				};
 			};
 
 			partition@3a0000 {
@@ -428,19 +424,49 @@
 	status = "okay";
 };
 
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan3";
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "wan";
+};
+
 &wifi0 {
 	status = "okay";
-	qcom,ath10k-calibration-variant = "Aruba-AP-303";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_mfginfo_1d>;
+	nvmem-cells = <&precal_art_1000>, <&macaddr_mfginfo_45>;
 	qcom,ath10k-calibration-variant = "Aruba-AP-303";
 };
 
 &wifi1 {
 	status = "okay";
-	qcom,ath10k-calibration-variant = "Aruba-AP-303";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_5000>, <&macaddr_mfginfo_1d>;
+	nvmem-cells = <&precal_art_5000>, <&macaddr_mfginfo_45>;
 	mac-address-increment = <1>;
 	qcom,ath10k-calibration-variant = "Aruba-AP-303";
 };

@@ -5,10 +5,18 @@
 
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "zyxel,xgs1250-12", "realtek,rtl838x-soc";
 	model = "Zyxel XGS1250-12 Switch";
+
+	aliases {
+		led-boot = &led_pwr_sys;
+		led-failsafe = &led_pwr_sys;
+		led-running = &led_pwr_sys;
+		led-upgrade = &led_pwr_sys;
+	};
 
 	keys {
 		compatible = "gpio-keys";
@@ -31,6 +39,19 @@
 		clock-frequency = <100000>;
 	};
 
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_disable_sys_led>;
+
+		led_pwr_sys: led-0 {
+			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
 
 	sfp0: sfp-p12 {
 		compatible = "sff,sfp";

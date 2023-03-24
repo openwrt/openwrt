@@ -14,6 +14,7 @@ ramips_setup_interfaces()
 	glinet,microuter-n300|\
 	glinet,vixmini|\
 	hak5,wifi-pineapple-mk7|\
+	hiwifi,hc5611|\
 	mediatek,linkit-smart-7688|\
 	minew,g1-c|\
 	onion,omega2p|\
@@ -39,6 +40,7 @@ ramips_setup_interfaces()
 	hilink,hlk-7628n|\
 	hilink,hlk-7688a|\
 	hiwifi,hc5861b|\
+	kroks,kndrt31r16|\
 	skylab,skw92a|\
 	tplink,archer-c20-v4|\
 	tplink,archer-c20-v5|\
@@ -77,6 +79,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"3:lan" "4:wan" "6@eth0"
 		;;
+	comfast,cf-wr617ac)
+		ucidef_add_switch "switch0" \
+			"1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
+		;;
 	comfast,cf-wr758ac-v1|\
 	comfast,cf-wr758ac-v2|\
 	tplink,tl-wr902ac-v3|\
@@ -112,9 +118,21 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "6@eth0"
 		;;
+	keenetic,kn-1613|\
 	motorola,mwr03)
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "0:wan" "6@eth0"
+		;;
+	kroks,kndrt31r19)
+		ucidef_add_switch "switch0" \
+			"0:lan" "6@eth0"
+		ucidef_add_switch_attr "switch0" "enable" "false"
+		ucidef_set_interface_lan "eth0"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
+		;;
+	linksys,e5400)
+		ucidef_add_switch "switch0" \
+			"0:lan:1" "1:lan:2" "2:lan:3" "3:lan:4" "4:wan" "6@eth0"
 		;;
 	netgear,r6020|\
 	netgear,r6080|\
@@ -148,7 +166,8 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:wan" "3:lan" "4:lan" "6@eth0"
 		;;
-	xiaomi,mi-router-4a-100m)
+	xiaomi,mi-router-4a-100m|\
+	xiaomi,mi-router-4a-100m-intl)
 		ucidef_add_switch "switch0" \
 			"4:lan:1" "2:lan:2" "0:wan" "6@eth0"
 		;;
@@ -191,6 +210,10 @@ ramips_setup_macs()
 		lan_mac=$wan_mac
 		label_mac=$wan_mac
 		;;
+	comfast,cf-wr617ac)
+		lan_mac=$(mtd_get_mac_binary factory 0xe000)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+                ;;
 	cudy,wr1000|\
 	hilink,hlk-7628n|\
 	hilink,hlk-7688a|\
@@ -205,10 +228,10 @@ ramips_setup_macs()
 	netgear,r6080|\
 	netgear,r6120|\
 	wrtnode,wrtnode2p|\
-	wrtnode,wrtnode2r|\
-	zyxel,keenetic-extra-ii)
+	wrtnode,wrtnode2r)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1)
 		;;
+	hiwifi,hc5611|\
 	hiwifi,hc5661a|\
 	hiwifi,hc5761a|\
 	hiwifi,hc5861b)
@@ -228,6 +251,13 @@ ramips_setup_macs()
 	skylab,skw92a|\
 	totolink,lr1200)
 		wan_mac=$(mtd_get_mac_binary factory 0x2e)
+		;;
+	keenetic,kn-1613|\
+	zyxel,keenetic-extra-ii)
+		wan_mac=$(mtd_get_mac_binary rf-eeprom 0x28)
+		;;
+	linksys,e5400)
+		wan_mac=$(mtd_get_mac_binary factory 0x22)
 		;;
 	mercury,mac1200r-v2)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory_info 0xd)" 1)
@@ -272,6 +302,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 0x28)
 		;;
 	xiaomi,mi-router-4a-100m|\
+	xiaomi,mi-router-4a-100m-intl|\
 	xiaomi,mi-router-4c)
 		wan_mac=$(mtd_get_mac_binary factory 0x4)
 		;;

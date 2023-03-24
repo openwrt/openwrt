@@ -447,8 +447,13 @@
 
 				port@6 {
 					reg = <0x6>;
-					label = "cpu";
+					phy-mode = "internal";
 					ethernet = <&eth0>;
+
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
 				};
 			};
 
@@ -555,6 +560,8 @@
 			req-mask = <0x1>; /* GNT1 */
 
 			device_type = "pci";
+
+			resets = <&reset0 13 13>;
 		};
 	};
 

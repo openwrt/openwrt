@@ -49,7 +49,7 @@
 		ess_tcsr@1953000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1953000 0x1000>;
-			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII_RGMII4>;
 		};
 
 		tcsr@1957000 {
@@ -64,17 +64,6 @@
 
 		watchdog@b017000 {
 			status = "okay";
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-			phy-mode = "rgmii";
-			qcom,num_gmac = <1>;
-			qcom,single-phy;
 		};
 	};
 
@@ -189,7 +178,6 @@
 				#size-cells = <1>;
 				label = "RouterBoot";
 				reg = <0x80000 0x80000>;
-				read-only;
 
 				hard_config {
 					read-only;
@@ -229,14 +217,23 @@
 	qcom,ath10k-calibration-variant = "MikroTik-SXTsq-5-ac";
 };
 
-&gmac0 {
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <1 0x20>;
-};
-
 &mdio {
 	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	/delete-property/ psgmii-ethphy;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+	phy-mode = "rgmii";
 };

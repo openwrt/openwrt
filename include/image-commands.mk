@@ -4,7 +4,7 @@ IMAGE_KERNEL = $(word 1,$^)
 IMAGE_ROOTFS = $(word 2,$^)
 
 define ModelNameLimit16
-$(shell expr substr "$(word 2, $(subst _, ,$(1)))" 1 16)
+$(shell printf %.16s "$(word 2, $(subst _, ,$(1)))")
 endef
 
 define rootfs_align
@@ -53,6 +53,7 @@ define Build/append-image-stage
 	cp "$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1)" "$@.stripmeta"
 	fwtool -s /dev/null -t "$@.stripmeta" || :
 	fwtool -i /dev/null -t "$@.stripmeta" || :
+	mkdir -p "$(STAGING_DIR_IMAGE)"
 	dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1)"
 	dd if="$@.stripmeta" >> "$@"
 	rm "$@.stripmeta"
@@ -105,10 +106,19 @@ endef
 define Build/append-squashfs-fakeroot-be
 	rm -rf $@.fakefs $@.fakesquashfs
 	mkdir $@.fakefs
-	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
+	$(STAGING_DIR_HOST)/bin/mksquashfs3-lzma \
 		$@.fakefs $@.fakesquashfs \
 		-noappend -root-owned -be -nopad -b 65536 \
 		$(if $(SOURCE_DATE_EPOCH),-fixed-time $(SOURCE_DATE_EPOCH))
+	cat $@.fakesquashfs >> $@
+endef
+
+define Build/append-squashfs4-fakeroot
+	rm -rf $@.fakefs $@.fakesquashfs
+	mkdir $@.fakefs
+	$(STAGING_DIR_HOST)/bin/mksquashfs4 \
+		$@.fakefs $@.fakesquashfs \
+		-nopad -noappend -root-owned
 	cat $@.fakesquashfs >> $@
 endef
 
@@ -209,6 +219,11 @@ define Build/copy-file
 	cat "$(1)" > "$@"
 endef
 
+define Build/edimax-header
+	$(STAGING_DIR_HOST)/bin/mkedimaximg -i $@ -o $@.new $(1)
+	@mv $@.new $@
+endef
+
 define Build/elecom-product-header
 	$(eval product=$(word 1,$(1)))
 	$(eval fw=$(if $(word 2,$(1)),$(word 2,$(1)),$@))
@@ -262,7 +277,9 @@ endef
 define Build/initrd_compression
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2),.bzip2) \
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_GZIP),.gzip) \
+	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZ4),.lz4) \
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZMA),.lzma) \
+	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO),.lzo) \
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ),.xz) \
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD),.zstd)
 endef
@@ -270,9 +287,11 @@ endef
 define Build/fit
 	$(TOPDIR)/scripts/mkits.sh \
 		-D $(DEVICE_NAME) -o $@.its -k $@ \
-		-C $(word 1,$(1)) $(if $(word 2,$(1)),\
-		$(if $(DEVICE_DTS_OVERLAY),-d $(KERNEL_BUILD_DIR)/image-$$(basename $(word 2,$(1))),\
-			-d $(word 2,$(1)))) \
+		-C $(word 1,$(1)) \
+		$(if $(word 2,$(1)),\
+			$(if $(findstring 11,$(if $(DEVICE_DTS_OVERLAY),1)$(if $(findstring $(KERNEL_BUILD_DIR)/image-,$(word 2,$(1))),,1)), \
+				-d $(KERNEL_BUILD_DIR)/image-$$(basename $(word 2,$(1))), \
+				-d $(word 2,$(1)))) \
 		$(if $(findstring with-rootfs,$(word 3,$(1))),-r $(IMAGE_ROOTFS)) \
 		$(if $(findstring with-initrd,$(word 3,$(1))), \
 			$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE), \
@@ -280,6 +299,7 @@ define Build/fit
 		-a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
 		$(if $(DEVICE_FDT_NUM),-n $(DEVICE_FDT_NUM)) \
 		$(if $(DEVICE_DTS_DELIMITER),-l $(DEVICE_DTS_DELIMITER)) \
+		$(if $(DEVICE_DTS_LOADADDR),-s $(DEVICE_DTS_LOADADDR)) \
 		$(if $(DEVICE_DTS_OVERLAY),$(foreach dtso,$(DEVICE_DTS_OVERLAY), -O $(dtso):$(KERNEL_BUILD_DIR)/image-$(dtso).dtb)) \
 		-c $(if $(DEVICE_DTS_CONFIG),$(DEVICE_DTS_CONFIG),"config-1") \
 		-A $(LINUX_KARCH) -v $(LINUX_VERSION)
@@ -288,9 +308,23 @@ define Build/fit
 	@mv $@.new $@
 endef
 
-define Build/gzip
-	gzip -f -9n -c $@ $(1) > $@.new
+define Build/libdeflate-gzip
+	$(STAGING_DIR_HOST)/bin/libdeflate-gzip -f -12 -c $@ $(1) > $@.new
 	@mv $@.new $@
+endef
+
+define Build/gzip
+	$(STAGING_DIR_HOST)/bin/gzip -f -9n -c $@ $(1) > $@.new
+	@mv $@.new $@
+endef
+
+define Build/gzip-filename
+	@mkdir -p $@.tmp
+	@cp $@ $@.tmp/$(word 1,$(1))
+	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $@.tmp/$(word 1,$(1)) $(word 2,$(1)))
+	$(STAGING_DIR_HOST)/bin/gzip -f -9 -N -c $@.tmp/$(word 1,$(1)) $(word 2,$(1)) > $@.new
+	@mv $@.new $@
+	@rm -rf $@.tmp
 endef
 
 define Build/install-dtb
@@ -374,6 +408,19 @@ define Build/netgear-dni
 		-r "$(1)" \
 		-i $@ -o $@.new
 	mv $@.new $@
+endef
+
+define Build/netgear-encrypted-factory
+	$(TOPDIR)/scripts/netgear-encrypted-factory.py \
+		--input-file $@ \
+		--output-file $@ \
+		--model $(NETGEAR_ENC_MODEL) \
+		--region $(NETGEAR_ENC_REGION) \
+		--version V1.0.0.0.$(VERSION_DIST).$(firstword $(subst -, ,$(REVISION))) \
+		--encryption-block-size 0x20000 \
+		--openssl-bin "$(STAGING_DIR_HOST)/bin/openssl" \
+		--key 6865392d342b4d212964363d6d7e7765312c7132613364316e26322a5a5e2538 \
+		--iv 4a253169516c38243d6c6d2d3b384145
 endef
 
 define Build/openmesh-image

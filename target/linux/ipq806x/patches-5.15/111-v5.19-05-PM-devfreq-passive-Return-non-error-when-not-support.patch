@@ -1,0 +1,31 @@
+From 42d2607d91c4ec37ea1970899c2d614824f3014b Mon Sep 17 00:00:00 2001
+From: Chanwoo Choi <cw00.choi@samsung.com>
+Date: Thu, 19 May 2022 10:07:53 +0900
+Subject: [PATCH 5/5] PM / devfreq: passive: Return non-error when
+ not-supported event is required
+
+Each devfreq governor specifies the supported governor event
+such as GOV_START and GOV_STOP. When not-supported event is required,
+just return non-error. But, commit ce9a0d88d97a ("PM / devfreq: Add
+cpu based scaling support to passive governor") returned the error
+value. So that return non-error value when not-supported event is required.
+
+Fixes: ce9a0d88d97a ("PM / devfreq: Add cpu based scaling support to passive governor")
+Reported-by: Marek Szyprowski <m.szyprowski@samsung.com>
+Signed-off-by: Chanwoo Choi <cw00.choi@samsung.com>
+Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+---
+ drivers/devfreq/governor_passive.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/devfreq/governor_passive.c
++++ b/drivers/devfreq/governor_passive.c
+@@ -402,7 +402,7 @@ static int devfreq_passive_event_handler
+ {
+ 	struct devfreq_passive_data *p_data
+ 			= (struct devfreq_passive_data *)devfreq->data;
+-	int ret = -EINVAL;
++	int ret = 0;
+ 
+ 	if (!p_data)
+ 		return -EINVAL;

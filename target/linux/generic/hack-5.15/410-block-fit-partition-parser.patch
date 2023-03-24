@@ -1,3 +1,22 @@
+From 69357074558daf6ff24c9f58714935e9e095a865 Mon Sep 17 00:00:00 2001
+From: OpenWrt community <openwrt-devel@lists.openwrt.org>
+Date: Wed, 13 Jul 2022 13:37:33 +0200
+Subject: [PATCH] kernel: add block fit partition parser
+
+---
+ block/blk.h                     |  2 ++
+ block/partitions/Kconfig        |  7 +++++++
+ block/partitions/Makefile       |  1 +
+ block/partitions/check.h        |  3 +++
+ block/partitions/core.c         | 17 +++++++++++++++++
+ block/partitions/efi.c          |  8 ++++++++
+ block/partitions/efi.h          |  3 +++
+ block/partitions/msdos.c        | 10 ++++++++++
+ drivers/mtd/mtd_blkdevs.c       |  2 ++
+ drivers/mtd/ubi/block.c         |  3 +++
+ include/linux/msdos_partition.h |  1 +
+ 11 files changed, 57 insertions(+)
+
 --- a/block/blk.h
 +++ b/block/blk.h
 @@ -354,6 +354,8 @@ void blk_free_ext_minor(unsigned int min
@@ -98,29 +117,6 @@
  	return true;
  }
  
---- a/drivers/mtd/ubi/block.c
-+++ b/drivers/mtd/ubi/block.c
-@@ -428,6 +428,9 @@ int ubiblock_create(struct ubi_volume_in
- 		goto out_cleanup_disk;
- 	}
- 	gd->private_data = dev;
-+#ifdef CONFIG_FIT_PARTITION
-+	gd->flags |= GENHD_FL_EXT_DEVT;
-+#endif
- 	sprintf(gd->disk_name, "ubiblock%d_%d", dev->ubi_num, dev->vol_id);
- 	set_capacity(gd, disk_capacity);
- 	dev->gd = gd;
---- a/drivers/mtd/mtd_blkdevs.c
-+++ b/drivers/mtd/mtd_blkdevs.c
-@@ -345,6 +345,8 @@ int add_mtd_blktrans_dev(struct mtd_blkt
- 	gd->first_minor = (new->devnum) << tr->part_bits;
- 	gd->minors = 1 << tr->part_bits;
- 	gd->fops = &mtd_block_ops;
-+	if (IS_ENABLED(CONFIG_FIT_PARTITION) && !mtd_type_is_nand(new->mtd))
-+		gd->flags |= GENHD_FL_EXT_DEVT;
- 
- 	if (tr->part_bits)
- 		if (new->devnum < 26)
 --- a/block/partitions/efi.c
 +++ b/block/partitions/efi.c
 @@ -716,6 +716,9 @@ int efi_partition(struct parsed_partitio
@@ -183,6 +179,29 @@
  	{0, NULL},
  };
  
+--- a/drivers/mtd/mtd_blkdevs.c
++++ b/drivers/mtd/mtd_blkdevs.c
+@@ -345,6 +345,8 @@ int add_mtd_blktrans_dev(struct mtd_blkt
+ 	gd->first_minor = (new->devnum) << tr->part_bits;
+ 	gd->minors = 1 << tr->part_bits;
+ 	gd->fops = &mtd_block_ops;
++	if (IS_ENABLED(CONFIG_FIT_PARTITION) && !mtd_type_is_nand(new->mtd))
++		gd->flags |= GENHD_FL_EXT_DEVT;
+ 
+ 	if (tr->part_bits)
+ 		if (new->devnum < 26)
+--- a/drivers/mtd/ubi/block.c
++++ b/drivers/mtd/ubi/block.c
+@@ -428,6 +428,9 @@ int ubiblock_create(struct ubi_volume_in
+ 		goto out_cleanup_disk;
+ 	}
+ 	gd->private_data = dev;
++#ifdef CONFIG_FIT_PARTITION
++	gd->flags |= GENHD_FL_EXT_DEVT;
++#endif
+ 	sprintf(gd->disk_name, "ubiblock%d_%d", dev->ubi_num, dev->vol_id);
+ 	set_capacity(gd, disk_capacity);
+ 	dev->gd = gd;
 --- a/include/linux/msdos_partition.h
 +++ b/include/linux/msdos_partition.h
 @@ -31,6 +31,7 @@ enum msdos_sys_ind {

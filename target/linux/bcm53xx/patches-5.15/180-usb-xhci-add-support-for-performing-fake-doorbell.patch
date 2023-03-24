@@ -40,7 +40,7 @@ it on BCM4708 family.
  /* called during probe() after chip reset completes */
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -155,6 +155,49 @@ int xhci_start(struct xhci_hcd *xhci)
+@@ -157,6 +157,49 @@ int xhci_start(struct xhci_hcd *xhci)
  	return ret;
  }
  
@@ -90,7 +90,7 @@ it on BCM4708 family.
  /*
   * Reset a halted HC.
   *
-@@ -605,10 +648,20 @@ static int xhci_init(struct usb_hcd *hcd
+@@ -607,10 +650,20 @@ static int xhci_init(struct usb_hcd *hcd
  
  static int xhci_run_finished(struct xhci_hcd *xhci)
  {
@@ -114,7 +114,7 @@ it on BCM4708 family.
  	xhci->shared_hcd->state = HC_STATE_RUNNING;
  	xhci->cmd_ring_state = CMD_RING_STATE_RUNNING;
  
-@@ -618,6 +671,10 @@ static int xhci_run_finished(struct xhci
+@@ -620,6 +673,10 @@ static int xhci_run_finished(struct xhci
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  			"Finished xhci_run for USB3 roothub");
  	return 0;
@@ -127,11 +127,11 @@ it on BCM4708 family.
  /*
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1903,6 +1903,7 @@ struct xhci_hcd {
- #define XHCI_NO_SOFT_RETRY	BIT_ULL(40)
- #define XHCI_BROKEN_D3COLD	BIT_ULL(41)
+@@ -1906,6 +1906,7 @@ struct xhci_hcd {
  #define XHCI_EP_CTX_BROKEN_DCS	BIT_ULL(42)
-+#define XHCI_FAKE_DOORBELL	BIT_ULL(44)
+ #define XHCI_SUSPEND_RESUME_CLKS	BIT_ULL(43)
+ #define XHCI_RESET_TO_DEFAULT	BIT_ULL(44)
++#define XHCI_FAKE_DOORBELL	BIT_ULL(45)
  
  	unsigned int		num_active_eps;
  	unsigned int		limit_active_eps;

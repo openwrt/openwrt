@@ -16,10 +16,10 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -202,3 +202,12 @@ config MTD_QCOMSMEM_PARTS
- 	help
- 	  This provides support for parsing partitions from Shared Memory (SMEM)
- 	  for NAND and SPI flash on Qualcomm platforms.
+@@ -226,3 +226,12 @@ config MTD_SERCOMM_PARTS
+ 	  partition map. This partition table contains real partition
+ 	  offsets, which may differ from device to device depending on the
+ 	  number and location of bad blocks on NAND.
 +
 +config MTD_ROUTERBOOT_PARTS
 +	tristate "RouterBoot flash partition parser"
@@ -31,7 +31,7 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 +	 formatted DTS.
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -14,3 +14,4 @@ obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_
+@@ -16,3 +16,4 @@ obj-$(CONFIG_MTD_SERCOMM_PARTS)		+= scpa
  obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o
  obj-$(CONFIG_MTD_QCOMSMEM_PARTS)	+= qcomsmempart.o

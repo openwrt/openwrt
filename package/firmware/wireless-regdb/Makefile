@@ -1,12 +1,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wireless-regdb
-PKG_VERSION:=2022.02.18
+PKG_VERSION:=2023.02.13
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/software/network/wireless-regdb/
-PKG_HASH:=8828c25a4ee25020044004f57374bb9deac852809fad70f8d3d01770bf9ac97f
+PKG_HASH:=fe81e8a8694dc4753a45087a1c4c7e1b48dee5a59f5f796ce374ea550f0b2e73
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 

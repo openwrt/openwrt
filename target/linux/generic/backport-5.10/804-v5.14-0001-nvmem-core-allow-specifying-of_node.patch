@@ -1,0 +1,80 @@
+From 1333a6779501f4cc662ff5c8b36b0a22f3a7ddc6 Mon Sep 17 00:00:00 2001
+From: Michael Walle <michael@walle.cc>
+Date: Sat, 24 Apr 2021 13:06:04 +0200
+Subject: [PATCH] nvmem: core: allow specifying of_node
+
+Until now, the of_node of the parent device is used. Some devices
+provide more than just the nvmem provider. To avoid name space clashes,
+add a way to allow specifying the nvmem cells in subnodes. Consider the
+following example:
+
+    flash@0 {
+        compatible = "jedec,spi-nor";
+
+        partitions {
+            compatible = "fixed-partitions";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            partition@0 {
+                reg = <0x000000 0x010000>;
+            };
+        };
+
+        otp {
+            compatible = "user-otp";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            serial-number@0 {
+                reg = <0x0 0x8>;
+            };
+        };
+    };
+
+There the nvmem provider might be the MTD partition or the OTP region of
+the flash.
+
+Add a new config->of_node parameter, which if set, will be used instead
+of the parent's of_node.
+
+Signed-off-by: Michael Walle <michael@walle.cc>
+Acked-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://lore.kernel.org/linux-mtd/20210424110608.15748-2-michael@walle.cc
+---
+ drivers/nvmem/core.c           | 4 +++-
+ include/linux/nvmem-provider.h | 2 ++
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -795,7 +795,9 @@ struct nvmem_device *nvmem_register(cons
+ 	nvmem->reg_write = config->reg_write;
+ 	nvmem->keepout = config->keepout;
+ 	nvmem->nkeepout = config->nkeepout;
+-	if (!config->no_of_node)
++	if (config->of_node)
++		nvmem->dev.of_node = config->of_node;
++	else if (!config->no_of_node)
+ 		nvmem->dev.of_node = config->dev->of_node;
+ 
+ 	switch (config->id) {
+--- a/include/linux/nvmem-provider.h
++++ b/include/linux/nvmem-provider.h
+@@ -57,6 +57,7 @@ struct nvmem_keepout {
+  * @type:	Type of the nvmem storage
+  * @read_only:	Device is read-only.
+  * @root_only:	Device is accessibly to root only.
++ * @of_node:	If given, this will be used instead of the parent's of_node.
+  * @no_of_node:	Device should not use the parent's of_node even if it's !NULL.
+  * @reg_read:	Callback to read data.
+  * @reg_write:	Callback to write data.
+@@ -85,6 +86,7 @@ struct nvmem_config {
+ 	enum nvmem_type		type;
+ 	bool			read_only;
+ 	bool			root_only;
++	struct device_node	*of_node;
+ 	bool			ignore_wp;
+ 	bool			no_of_node;
+ 	nvmem_reg_read_t	reg_read;

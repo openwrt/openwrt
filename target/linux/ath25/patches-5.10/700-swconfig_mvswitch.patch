@@ -13,8 +13,8 @@
  	select SWCONFIG
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -29,6 +29,7 @@ obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
- obj-$(CONFIG_AR8216_PHY)	+= ar8216.o ar8327.o
+@@ -31,6 +31,7 @@ ar8xxx-y			+= ar8216.o
+ ar8xxx-y			+= ar8327.o
  obj-$(CONFIG_SWCONFIG_B53)	+= b53/
  obj-$(CONFIG_IP17XX_PHY)	+= ip17xx.o
 +obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o

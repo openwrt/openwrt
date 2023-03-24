@@ -121,8 +121,6 @@
 &mdio0 {
 	status = "okay";
 
-	phy-mask = <0x10>;
-
 	phy4: ethernet-phy@4 {
 		reg = <4>;
 		eee-broken-100tx;
@@ -171,9 +169,4 @@
 
 &usb0 {
 	vbus-supply = <&reg_usb_vbus>;
-
-	hub_port0: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };

@@ -52,23 +52,27 @@
 				read-only;
 			};
 
-			partition@110000,0 {
+			partition@110000 {
 				label = "firmware";
 				reg = <0x00110000 0x01ac0000>;
-			};
 
-			partition@110000,1 {
-				/*
-				 * The u-boot bootloader will look at this
-				 * offset (0x110000) for an uImage binary.
-				 */
-				label = "kernel";
-				reg = <0x00110000 0x005f0000>;
-			};
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			partition@700000 {
-				label = "ubi";
-				reg = <0x00700000 0x014d0000>;
+				partition@0 {
+					/*
+					 * The u-boot bootloader will look at this
+					 * offset (0x110000) for an uImage binary.
+					 */
+					label = "kernel";
+					reg = <0x00000000 0x005f0000>;
+				};
+
+				partition@5f0000 {
+					label = "ubi";
+					reg = <0x005f0000 0x014d0000>;
+				};
 			};
 
 			partition@1bd0000 {
@@ -126,7 +130,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
+		button-restart {
 			label = "Reset Button";
 			gpios = <&GPIO0 16 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;

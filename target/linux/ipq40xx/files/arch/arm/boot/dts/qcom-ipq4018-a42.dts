@@ -17,14 +17,6 @@
 			status = "okay";
 		};
 
-		mdio@90000 {
-			status = "okay";
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@194b000 {
 			/* select hostmode */
 			compatible = "qcom,tcsr";
@@ -62,14 +54,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -87,6 +71,7 @@
 		led-failsafe = &led_status_green;
 		led-running = &led_status_green;
 		led-upgrade = &led_status_green;
+		label-mac-device = &swport5;
 	};
 
 	leds {
@@ -160,7 +145,32 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <24000000>;
+
 		/* partitions are passed via bootloader */
+		partitions {
+			partition-art {
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				label = "0:ART";
+
+				precal_art_1000: precal@1000 {
+					reg = <0x1000 0x2f20>;
+				};
+
+				precal_art_5000: precal@5000 {
+					reg = <0x5000 0x2f20>;
+				};
+
+				macaddr_gmac0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_gmac1: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
+			};
+		};
 	};
 };
 
@@ -174,32 +184,50 @@
 	status = "okay";
 };
 
-&gmac0 {
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <2 0x20>;
-};
-
-&gmac1 {
-	qcom,phy_mdio_addr = <3>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <1 0x10>;
-};
-
 &usb2_hs_phy {
 	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "ethernet2";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac1>;
+};
+
+&swport5 {
+	status = "okay";
+	label = "ethernet1";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0>;
 };
 
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "OM-A42";
+
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_1000>;
 };
 
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "OM-A42";
+
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_5000>;
 };

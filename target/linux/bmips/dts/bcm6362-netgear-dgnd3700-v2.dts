@@ -148,6 +148,57 @@
 	};
 };
 
+&mdio_ext {
+	switch@1e {
+		compatible = "brcm,bcm53125";
+		reg = <30>;
+
+		dsa,member = <1 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "wan";
+			};
+
+			port@8 {
+				reg = <8>;
+
+				phy-mode = "rgmii";
+				ethernet = <&switch0port4>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
 &nflash {
 	status = "okay";
 
@@ -157,6 +208,9 @@
 		nand-ecc-step-size = <512>;
 		nand-ecc-strength = <15>;
 		nand-on-flash-bbt;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -224,8 +278,10 @@
 };
 
 &switch0 {
+	dsa,member = <0 0>;
+
 	ports {
-		port@4 {
+		switch0port4: port@4 {
 			reg = <4>;
 			label = "extsw";
 

@@ -215,8 +215,8 @@ TARGET_DEVICES += storlink_sl93512r
 
 # The wiliboard images need some changes to be functional and buildable.
 #
-# The dts would need to use the ecoscentric,redboot-fis-partitions partition
-# parser to get the correct partition offsets and size.
+# The dts would need to use the redboot-fis partition parser to get
+# the correct partition offsets and size.
 #
 # The mkfwimage2 call need to be adjusted to reflect the real size of kernel
 # and rootfs. It is expected that the OEM firmware adjusts the on flash

@@ -86,6 +86,8 @@
 };
 
 &wlan_5g {
+	compatible = "mediatek,mt76";
+
 	mediatek,mtd-eeprom = <&factory 0x20000>;
 
 	nvmem-cells = <&macaddr_eeprom_6>;
@@ -106,6 +108,8 @@
 	mac-address-increment = <1>;
 
 	ieee80211-freq-limit = <5000000 6000000>;
+
+	mediatek,disable-radar-background;
 };
 
 &eeprom {

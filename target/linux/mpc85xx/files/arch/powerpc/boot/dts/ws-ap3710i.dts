@@ -173,3 +173,16 @@
 
 };
 /include/ "fsl/p1020si-post.dtsi"
+
+/*
+ * For the OpenWrt 22.03 release, since Linux 5.10.138 now uses
+ * aliases to determine PCI domain numbers, drop aliases so as not to
+ * change the sysfs path of our wireless netdevs.
+ */
+
+/ {
+	aliases {
+		/delete-property/ pci0;
+		/delete-property/ pci1;
+	};
+};

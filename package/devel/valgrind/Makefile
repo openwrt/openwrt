@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=valgrind
-PKG_VERSION:=3.18.1
+PKG_VERSION:=3.20.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=http://sourceware.org/pub/valgrind/
-PKG_HASH:=00859aa13a772eddf7822225f4b46ee0d39afbe071d32778da4d99984081f7f5
+PKG_SOURCE_URL:=https://sourceware.org/pub/valgrind/
+PKG_HASH:=8536c031dbe078d342f121fa881a9ecd205cb5a78e639005ad570011bdb9f3c6
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-2.0+
@@ -22,7 +22,7 @@ PKG_CPE_ID:=cpe:/a:valgrind:valgrind
 PKG_FIXUP = autoreconf
 PKG_INSTALL := 1
 PKG_BUILD_PARALLEL := 1
-PKG_USE_MIPS16:=0
+PKG_BUILD_FLAGS:=no-mips16
 PKG_SSP:=0
 
 STRIP:=:

@@ -23,7 +23,7 @@ PKG_CPE_ID:=cpe:/a:matt_johnston:dropbear_ssh_server
 
 PKG_BUILD_PARALLEL:=1
 PKG_ASLR_PIE_REGULAR:=1
-PKG_USE_MIPS16:=0
+PKG_BUILD_FLAGS:=no-mips16 gc-sections lto
 PKG_FIXUP:=autoreconf
 PKG_FLAGS:=nonshared
 
@@ -142,8 +142,7 @@ DB_OPT_CONFIG = \
 	DROPBEAR_SVR_AGENTFWD|CONFIG_DROPBEAR_AGENTFORWARD|1|0 \
 
 
-TARGET_CFLAGS += -DARGTYPE=3 -ffunction-sections -fdata-sections -flto
-TARGET_LDFLAGS += -Wl,--gc-sections -flto=jobserver
+TARGET_CFLAGS += -DARGTYPE=3
 
 db_opt_add     =echo '\#define $(1) $(2)' >> $(PKG_BUILD_DIR)/localoptions.h
 db_opt_replace =$(ESED) 's,^(\#define $(1)) .*$$$$,\1 $(2),g' $(PKG_BUILD_DIR)/sysoptions.h

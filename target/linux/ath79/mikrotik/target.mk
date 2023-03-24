@@ -3,9 +3,7 @@ FEATURES += minor nand
 KERNELNAME := vmlinux vmlinuz
 IMAGES_DIR := ../../..
 
-DEFAULT_PACKAGES += wpad-basic-wolfssl
-
-KERNEL_TESTING_PATCHVER:=5.15
+DEFAULT_PACKAGES += wpad-basic-mbedtls
 
 define Target/Description
 	Build firmware images for MikroTik devices based on Qualcomm Atheros

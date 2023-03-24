@@ -1,0 +1,89 @@
+From 63a0c32028148e91ea91cfbf95841c4ecd69d21b Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 11 Oct 2021 14:27:06 +0300
+Subject: [PATCH 235/247] clk: at91: pmc: execute suspend/resume only for
+ backup mode
+
+Before going to backup mode architecture specific PM code sets the first
+word in securam (file arch/arm/mach-at91/pm.c, function at91_pm_begin()).
+Thus take this into account when suspending/resuming clocks. This will
+avoid executing unnecessary instructions when suspending to non backup
+modes.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20211011112719.3951784-3-claudiu.beznea@microchip.com
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+---
+ drivers/clk/at91/pmc.c | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+--- a/drivers/clk/at91/pmc.c
++++ b/drivers/clk/at91/pmc.c
+@@ -8,6 +8,7 @@
+ #include <linux/clkdev.h>
+ #include <linux/clk/at91_pmc.h>
+ #include <linux/of.h>
++#include <linux/of_address.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/platform_device.h>
+ #include <linux/regmap.h>
+@@ -110,13 +111,35 @@ struct pmc_data *pmc_data_allocate(unsig
+ }
+ 
+ #ifdef CONFIG_PM
++
++/* Address in SECURAM that say if we suspend to backup mode. */
++static void __iomem *at91_pmc_backup_suspend;
++
+ static int at91_pmc_suspend(void)
+ {
++	unsigned int backup;
++
++	if (!at91_pmc_backup_suspend)
++		return 0;
++
++	backup = readl_relaxed(at91_pmc_backup_suspend);
++	if (!backup)
++		return 0;
++
+ 	return clk_save_context();
+ }
+ 
+ static void at91_pmc_resume(void)
+ {
++	unsigned int backup;
++
++	if (!at91_pmc_backup_suspend)
++		return;
++
++	backup = readl_relaxed(at91_pmc_backup_suspend);
++	if (!backup)
++		return;
++
+ 	clk_restore_context();
+ }
+ 
+@@ -144,6 +167,22 @@ static int __init pmc_register_ops(void)
+ 	}
+ 	of_node_put(np);
+ 
++	np = of_find_compatible_node(NULL, NULL, "atmel,sama5d2-securam");
++	if (!np)
++		return -ENODEV;
++
++	if (!of_device_is_available(np)) {
++		of_node_put(np);
++		return -ENODEV;
++	}
++	of_node_put(np);
++
++	at91_pmc_backup_suspend = of_iomap(np, 0);
++	if (!at91_pmc_backup_suspend) {
++		pr_warn("%s(): unable to map securam\n", __func__);
++		return -ENOMEM;
++	}
++
+ 	register_syscore_ops(&pmc_syscore_ops);
+ 
+ 	return 0;

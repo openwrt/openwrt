@@ -8,8 +8,7 @@ include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR = 0x80010000		# RAM start + 64K
 LOADER_ENTRY = 0x80a00000		# RAM start + 10M, for relocate
-RAMSIZE = 0x02000000			# 32MB
-LZMA_TEXT_START = 0x81800000		# 32MB - 8MB
+LZMA_TEXT_START = 0x81800000		# RAM start + 24M
 
 RELOCATE_MAKEOPTS= \
 		CACHELINE_SIZE=16 \
@@ -37,7 +36,6 @@ define Build/loader-lzma
 		KDIR=$(KDIR) \
 		LOADER_ADDR=$(if $(DEVICE_LOADADDR),$(DEVICE_LOADADDR),$(LOADER_ENTRY)) \
 		KERNEL_ADDR=$(KERNEL_LOADADDR) \
-		RAMSIZE=$(RAMSIZE) \
 		LZMA_TEXT_START=$(LZMA_TEXT_START) \
 		CHIP_ID=$(CHIP_ID) \
 		PKG_BUILD_DIR="$@.src" \
@@ -305,12 +303,12 @@ define Device/Default
 endef
 DEVICE_VARS += CHIP_ID DEVICE_LOADADDR
 
-ATH5K_PACKAGES := kmod-ath5k wpad-basic-wolfssl
-ATH9K_PACKAGES := kmod-ath9k wpad-basic-wolfssl
-B43_PACKAGES := kmod-b43 wpad-basic-wolfssl
+ATH5K_PACKAGES := kmod-ath5k wpad-basic-mbedtls
+ATH9K_PACKAGES := kmod-ath9k wpad-basic-mbedtls
+B43_PACKAGES := kmod-b43 wpad-basic-mbedtls
 BRCMWL_PACKAGES := kmod-brcm-wl nas wlc
-RT28_PACKAGES := kmod-rt2800-pci wpad-basic-wolfssl
-RT61_PACKAGES := kmod-rt61-pci wpad-basic-wolfssl
+RT28_PACKAGES := kmod-rt2800-pci wpad-basic-mbedtls
+RT61_PACKAGES := kmod-rt61-pci wpad-basic-mbedtls
 USB1_PACKAGES := kmod-usb-ohci kmod-usb-ledtrig-usbport
 USB2_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 

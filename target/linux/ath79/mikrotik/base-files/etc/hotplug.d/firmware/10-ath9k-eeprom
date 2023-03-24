@@ -23,6 +23,7 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
+	mikrotik,routerboard-911-lite|\
 	mikrotik,routerboard-912uag-2hpnd|\
 	mikrotik,routerboard-lhg-2nd|\
 	mikrotik,routerboard-lhg-5nd|\
@@ -31,9 +32,16 @@ case "$FIRMWARE" in
 	mikrotik,routerboard-wapr-2nd)
 		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 1)
 		;;
+	mikrotik,routerboard-map-2nd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 3)
+		;;
 	mikrotik,routerboard-mapl-2nd|\
 	mikrotik,routerboard-wap-g-5hact2hnd)
 		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 2)
+		;;
+	mikrotik,routerboard-951ui-2nd|\
+	mikrotik,routerboard-952ui-5ac2nd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 6)
 		;;
 	mikrotik,routerboard-962uigs-5hact2hnt)
 		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 7)

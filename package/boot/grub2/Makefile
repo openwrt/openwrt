@@ -25,6 +25,7 @@ ifneq ($(BUILD_VARIANT),none)
 endif
 
 PKG_FLAGS:=nonshared
+PKG_BUILD_FLAGS:=no-lto
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
@@ -122,14 +123,14 @@ define Package/grub2/install
 		-O i386-pc \
 		-c $(PKG_BUILD_DIR)/grub-early.cfg \
 		-o $(STAGING_DIR_IMAGE)/grub2/gpt-core.img \
-		at_keyboard biosdisk boot chain configfile fat linux ls part_gpt reboot search serial vga
+		at_keyboard biosdisk boot chain configfile fat linux ls part_gpt reboot search serial test vga
 	$(STAGING_DIR_HOST)/bin/grub-mkimage \
 		-d $(PKG_BUILD_DIR)/grub-core \
 		-p /boot/grub \
 		-O i386-pc \
 		-c ./files/grub-early.cfg \
 		-o $(STAGING_DIR_IMAGE)/grub2/generic-core.img \
-		at_keyboard biosdisk boot chain configfile ext2 linux ls part_msdos reboot search serial vga
+		at_keyboard biosdisk boot chain configfile ext2 linux ls part_msdos reboot search serial test vga
 	$(STAGING_DIR_HOST)/bin/grub-mkimage \
 		-d $(PKG_BUILD_DIR)/grub-core \
 		-p /boot/grub \
@@ -154,7 +155,7 @@ define Package/grub2-efi/install
 		-O $(CONFIG_ARCH)-efi \
 		-c $(PKG_BUILD_DIR)/grub-early.cfg \
 		-o $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi \
-		at_keyboard boot chain configfile fat linux ls part_gpt reboot serial efi_gop efi_uga
+		at_keyboard boot chain configfile fat linux ls part_gpt reboot serial test efi_gop efi_uga
 	$(STAGING_DIR_HOST)/bin/grub-mkimage \
 		-d $(PKG_BUILD_DIR)/grub-core \
 		-p /boot/grub \

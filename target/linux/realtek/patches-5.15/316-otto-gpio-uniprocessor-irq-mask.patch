@@ -1,0 +1,51 @@
+From bde6311569ef25a00c3beaeabfd6b78b19651872 Mon Sep 17 00:00:00 2001
+From: Sander Vanheule <sander@svanheule.net>
+Date: Sun, 29 May 2022 19:38:09 +0200
+Subject: [PATCH] realtek: don't unmask non-maskable GPIO IRQs
+
+On uniprocessor builds, for_each_cpu(cpu, mask) will assume 'mask'
+always contains exactly one CPU, and ignore the actual mask contents.
+This causes the loop to run, even when it shouldn't on an empty mask,
+and tries to access an uninitialised pointer.
+
+Fix this by wrapping the loop in a cpumask_empty() check, to ensure it
+will not run on uniprocessor builds if the CPU mask is empty.
+
+Fixes: af6cd37f42f3 ("realtek: replace RTL93xx GPIO patches")
+Reported-by: INAGAKI Hiroshi <musashino.open@gmail.com>
+Reported-by: Robert Marko <robimarko@gmail.com>
+Tested-by: Robert Marko <robimarko@gmail.com>
+Submitted-by: Sander Vanheule <sander@svanheule.net>
+---
+ drivers/gpio/gpio-realtek-otto.c              | 9 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+--- a/drivers/gpio/gpio-realtek-otto.c
++++ b/drivers/gpio/gpio-realtek-otto.c
+@@ -301,6 +301,7 @@ static int realtek_gpio_irq_set_affinity
+ static int realtek_gpio_irq_init(struct gpio_chip *gc)
+ {
+ 	struct realtek_gpio_ctrl *ctrl = gpiochip_get_data(gc);
++	void __iomem *irq_cpu_mask;
+ 	unsigned int port;
+ 	int cpu;
+ 
+@@ -308,8 +309,16 @@ static int realtek_gpio_irq_init(struct
+ 		realtek_gpio_write_imr(ctrl, port, 0, 0);
+ 		realtek_gpio_clear_isr(ctrl, port, GENMASK(7, 0));
+ 
+-		for_each_cpu(cpu, &ctrl->cpu_irq_maskable)
+-			iowrite8(GENMASK(7, 0), realtek_gpio_irq_cpu_mask(ctrl, port, cpu));
++		/*
++		 * Uniprocessor builds assume a mask always contains one CPU,
++		 * so only start the loop if we have at least one maskable CPU.
++		 */
++		if(!cpumask_empty(&ctrl->cpu_irq_maskable)) {
++			for_each_cpu(cpu, &ctrl->cpu_irq_maskable) {
++				irq_cpu_mask = realtek_gpio_irq_cpu_mask(ctrl, port, cpu);
++				iowrite8(GENMASK(7, 0), irq_cpu_mask);
++			}
++		}
+ 	}
+ 
+ 	return 0;

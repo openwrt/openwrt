@@ -14,7 +14,7 @@ PKG_RELEASE:=$(AUTORELEASE)
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/u-boot
 PKG_SOURCE_VERSION:=LSDK-21.08
-PKG_MIRROR_HASH:=874e871755ef84ebbf35cc247f0979ec18ed1946e4dca71006a83463b2899db1
+PKG_MIRROR_HASH:=54909a98bdcc26c7f9b35b35fcae09b977ecbf044be7bffa6dad9306c47cccf6
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk

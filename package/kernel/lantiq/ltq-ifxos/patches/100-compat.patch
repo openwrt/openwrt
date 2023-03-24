@@ -22,3 +22,71 @@
     if (pVirtAddr == IFX_NULL)
     {
        IFXOS_PRN_USR_ERR_NL( IFXOS, IFXOS_PRN_LEVEL_ERR,
+--- a/src/linux/ifxos_linux_socket_drv.c
++++ b/src/linux/ifxos_linux_socket_drv.c
+@@ -165,8 +165,12 @@ IFX_int_t IFXOS_SocketRecvFrom(
+    IFXOS_sockAddr_t *pSocAddr)
+ {
+    struct msghdr msg;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5,13,0)
+    struct iovec iov;
+    mm_segment_t old_fs;
++#else
++   struct kvec iov;
++#endif
+    int ret;
+ 
+    IFXOS_RETURN_IF_POINTER_NULL(pBuffer, IFX_ERROR);
+@@ -181,6 +185,8 @@ IFX_int_t IFXOS_SocketRecvFrom(
+    msg.msg_controllen = 0;
+    msg.msg_flags = 0;
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5,13,0)
++
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0))
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+@@ -200,6 +206,10 @@ IFX_int_t IFXOS_SocketRecvFrom(
+ #endif
+    set_fs(old_fs);
+ 
++#else
++   ret = kernel_recvmsg (socFd, &msg, &iov, 1, bufSize_byte, 0);
++#endif
++
+    return ret;
+ }
+ 
+@@ -229,8 +239,12 @@ IFX_int_t IFXOS_SocketSendTo(
+                   IFXOS_sockAddr_t  *pSocAddr)
+ {
+    struct msghdr msg;
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5,13,0)
+    struct iovec iov;
+    mm_segment_t old_fs;
++#else
++   struct kvec iov;
++#endif
+    int ret;
+ 
+    IFXOS_RETURN_IF_POINTER_NULL(pBuffer, IFX_ERROR);
+@@ -245,6 +259,8 @@ IFX_int_t IFXOS_SocketSendTo(
+    msg.msg_controllen = 0;
+    msg.msg_flags = MSG_DONTWAIT;
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5,13,0)
++
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0))
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+@@ -264,6 +280,10 @@ IFX_int_t IFXOS_SocketSendTo(
+ #endif
+    set_fs(old_fs);
+ 
++#else
++   ret = kernel_sendmsg(socFd, &msg, &iov, 1, bufSize_byte);
++#endif
++
+    return ret;
+ }
+ 

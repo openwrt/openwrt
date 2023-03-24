@@ -18,6 +18,9 @@ mvebu_setup_interfaces()
 	cznic,turris-omnia)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 lan4" "eth2"
 		;;
+	fortinet,fg-50e)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "eth1 eth2"
+		;;
 	iptime,nas1dual)
 		ucidef_set_interface_lan "eth0 eth1" "dhcp"
 		;;
@@ -61,6 +64,7 @@ mvebu_setup_macs()
 	local label_mac=""
 
 	case "$board" in
+	buffalo,ls220de|\
 	buffalo,ls421de)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env eth1addr)
 		;;

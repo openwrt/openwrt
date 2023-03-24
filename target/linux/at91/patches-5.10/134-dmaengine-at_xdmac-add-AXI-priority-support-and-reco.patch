@@ -71,7 +71,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  };
  
  static inline void __iomem *at_xdmac_chan_reg_base(struct at_xdmac *atxdmac, unsigned int chan_nb)
-@@ -1998,6 +2019,30 @@ static int atmel_xdmac_resume(struct dev
+@@ -2003,6 +2024,30 @@ static int atmel_xdmac_resume(struct dev
  }
  #endif /* CONFIG_PM_SLEEP */
  
@@ -102,7 +102,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  static int at_xdmac_probe(struct platform_device *pdev)
  {
  	struct at_xdmac	*atxdmac;
-@@ -2142,6 +2187,8 @@ static int at_xdmac_probe(struct platfor
+@@ -2147,6 +2192,8 @@ static int at_xdmac_probe(struct platfor
  	dev_info(&pdev->dev, "%d channels, mapped at 0x%p\n",
  		 nr_channels, atxdmac->regs);
  

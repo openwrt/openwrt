@@ -1,0 +1,96 @@
+name: Build and Push prebuilt tools container
+
+on:
+  push:
+    paths:
+      - 'tools/**'
+      - '.github/workflows/build-tools.yml'
+      - '.github/workflows/push-containers.yml'
+      - '.github/workflows/Dockerfile.tools'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  build-linux-buildbot:
+    name: Build tools with buildbot container
+    if: ${{ github.repository_owner  == 'openwrt' }}
+    uses: ./.github/workflows/build-tools.yml
+    with:
+      generate_prebuilt_artifacts: true
+
+  push-tools-container:
+    needs: build-linux-buildbot
+    name: Push prebuilt tools container
+    if: ${{ github.repository_owner  == 'openwrt' }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Set lower case owner name
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >> "$GITHUB_ENV"
+
+      # Per branch tools container tag
+      # By default stick to latest
+      # For official test targetting openwrt stable branch
+      # Get the branch or parse the tag and push dedicated tools containers
+      # Any branch that will match this pattern openwrt-[0-9][0-9].[0-9][0-9]
+      # will refresh the tools container with the matching tag.
+      # (example branch openwrt-22.03 -> tools:openwrt-22.03)
+      # (example branch openwrt-22.03-test -> tools:openwrt-22.03)
+      - name: Determine tools container tag
+        run: |
+          CONTAINER_TAG=latest
+
+          if [ ${{ github.ref_type }} == "branch" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E 'openwrt-[0-9][0-9]\.[0-9][0-9]'; then
+              CONTAINER_TAG="$(echo ${{ github.ref_name }} | sed 's/^\(openwrt-[0-9][0-9]\.[0-9][0-9]\).*/\1/')"
+            fi
+          elif [ ${{ github.ref_type }} == "tag" ]; then
+            if echo "${{ github.ref_name }}" | grep -q -E 'v[0-9][0-9]\.[0-9][0-9]\..+'; then
+              CONTAINER_TAG=openwrt-"$(echo ${{ github.ref_name }} | sed 's/v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
+            fi
+          fi
+
+          echo "Tools container to push tools:$CONTAINER_TAG"
+          echo "CONTAINER_TAG=$CONTAINER_TAG" >> "$GITHUB_ENV"
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: 'openwrt'
+
+      - name: Download prebuilt tools from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: linux-buildbot-prebuilt-tools
+          path: openwrt
+
+      - name: Extract prebuild tools
+        working-directory: openwrt
+        run: tar -xf tools.tar
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: openwrt
+          push: true
+          tags: ghcr.io/${{ env.OWNER_LC }}/tools:${{ env.CONTAINER_TAG }}
+          file: openwrt/.github/workflows/Dockerfile.tools

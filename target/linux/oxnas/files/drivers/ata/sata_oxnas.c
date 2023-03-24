@@ -31,6 +31,7 @@
 
 #include <linux/io.h>
 #include <linux/sizes.h>
+#include <linux/version.h>
 
 static inline void oxnas_register_clear_mask(void __iomem *p, unsigned mask)
 {
@@ -2038,7 +2039,7 @@ static int sata_oxnas_softreset(struct ata_link *link, unsigned int *class,
 
 	/* if link is occupied, -ENODEV too is an error */
 	if (rc && (rc != -ENODEV || sata_scr_valid(link))) {
-		ata_link_printk(link, KERN_ERR, "SRST failed (errno=%d)\n", rc);
+		ata_link_err(link, "SRST failed (errno=%d)\n", rc);
 		return rc;
 	}
 
@@ -2231,7 +2232,6 @@ static struct scsi_host_template sata_oxnas_sht = {
 	.can_queue = SATA_OXNAS_QUEUE_DEPTH,
 	.sg_tablesize = SATA_OXNAS_MAX_PRD,
 	.dma_boundary = ATA_DMA_BOUNDARY,
-	.unchecked_isa_dma  = 0,
 };
 
 

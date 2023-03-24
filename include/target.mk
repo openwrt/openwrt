@@ -17,7 +17,7 @@ DEFAULT_PACKAGES:=\
 	fstools \
 	libc \
 	libgcc \
-	libustream-wolfssl \
+	libustream-mbedtls \
 	logd \
 	mtd \
 	netifd \
@@ -68,7 +68,7 @@ endif
 
 target_conf=$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
 ifeq ($(DUMP),)
-  PLATFORM_DIR:=$(TOPDIR)/target/linux/$(BOARD)
+  PLATFORM_DIR:=$(firstword $(wildcard $(TOPDIR)/target/linux/feeds/$(BOARD) $(TOPDIR)/target/linux/$(BOARD)))
   SUBTARGET:=$(strip $(foreach subdir,$(patsubst $(PLATFORM_DIR)/%/target.mk,%,$(wildcard $(PLATFORM_DIR)/*/target.mk)),$(if $(CONFIG_TARGET_$(call target_conf,$(BOARD)_$(subdir))),$(subdir))))
 else
   PLATFORM_DIR:=${CURDIR}
@@ -235,6 +235,7 @@ ifeq ($(DUMP),1)
   ifeq ($(ARCH),powerpc)
     CPU_CFLAGS_603e:=-mcpu=603e
     CPU_CFLAGS_8540:=-mcpu=8540
+    CPU_CFLAGS_8548:=-mcpu=8548
     CPU_CFLAGS_405:=-mcpu=405
     CPU_CFLAGS_440:=-mcpu=440
     CPU_CFLAGS_464fp:=-mcpu=464fp

@@ -10,11 +10,11 @@
 	model = "MikroTik RouterBOARD 912UAG-2HPnD";
 
 	aliases {
-                led-boot = &led_power;
-                led-failsafe = &led_power;
-                led-running = &led_power;
-                led-upgrade = &led_power;
-        };
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
 
 	gpio_key: gpio_key {
 		compatible = "mikrotik,gpio-rb91x-key";
@@ -147,7 +147,7 @@
 };
 
 &ref {
-	clock-frequency = <25000000>;
+	clock-frequency = <40000000>;
 };
 
 &spi {
@@ -199,8 +199,6 @@
 
 &mdio0 {
 	status = "okay";
-
-	phy-mask = <0>;
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;

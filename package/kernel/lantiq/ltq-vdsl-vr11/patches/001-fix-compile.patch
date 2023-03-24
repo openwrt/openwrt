@@ -1,0 +1,84 @@
+--- a/src/include/drv_dsl_cpe_os_linux.h
++++ b/src/include/drv_dsl_cpe_os_linux.h
+@@ -36,6 +36,7 @@
+ #endif
+ 
+ #include <linux/sched.h>
++#include <linux/sched/signal.h>
+ 
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
+    #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
+--- a/configure.in
++++ b/configure.in
+@@ -422,7 +422,7 @@ AC_ARG_ENABLE(debug-prints,
+             AC_SUBST([DSL_DBG_MAX_LEVEL_SET],[no])
+ 
+             AC_SUBST([DSL_DBG_MAX_LEVEL_PRE],[n/a])
+-            AC_SUBST([INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT],[no])
++            AC_SUBST([INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT],[yes])
+             ;;
+         no | none )
+             AC_DEFINE(DSL_DEBUG_DISABLE,,[Disabled debug prints])
+@@ -433,7 +433,7 @@ AC_ARG_ENABLE(debug-prints,
+             AC_SUBST([DSL_DBG_MAX_LEVEL_SET],[no])
+ 
+             AC_SUBST([DSL_DBG_MAX_LEVEL_PRE],[n/a])
+-            AC_SUBST([INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT],[yes])
++            AC_SUBST([INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT],[no])
+             ;;
+         prn | 0x1 )
+             AC_SUBST([DSL_DEBUG_DISABLE],[no])
+--- a/src/common/drv_dsl_cpe_api.c
++++ b/src/common/drv_dsl_cpe_api.c
+@@ -88,8 +88,12 @@ static DSL_uint32_t g_VRxPD_IOctlWhiteli
+    DSL_FIO_BAND_PLAN_STATUS_GET,
+    DSL_FIO_DBG_MODULE_LEVEL_GET,
+    DSL_FIO_DBG_MODULE_LEVEL_SET,
++#ifdef INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT
++#ifndef DSL_DEBUG_DISABLE
+    DSL_FIO_DBG_MODULE_DESTINATION_GET,
+    DSL_FIO_DBG_MODULE_DESTINATION_SET,
++#endif /* DSL_DEBUG_DISABLE*/
++#endif /* INCLUDE_DSL_CPE_DEBUG_LOGGER_SUPPORT */
+    DSL_FIO_OPERATOR_CONFIG_GET,
+    DSL_FIO_OPERATOR_CONFIG_SET,
+    /* Delimeter only. Keep it! */
+--- a/src/common/drv_dsl_cpe_os_linux.c
++++ b/src/common/drv_dsl_cpe_os_linux.c
+@@ -625,7 +625,7 @@ DSL_void_t* DSL_DRV_VMalloc(
+    DSL_DRV_size_t    nSize)
+ {
+    /* VRX500-BU: Better to use vmalloc or vzmalloc here?! */
+-   return __vmalloc((unsigned long)nSize, GFP_KERNEL, PAGE_KERNEL);
++   return __vmalloc((unsigned long)nSize, GFP_KERNEL);
+    /*   return vmalloc(nSize);*/
+ }
+ 
+--- a/src/include/drv_dsl_cpe_debug.h
++++ b/src/include/drv_dsl_cpe_debug.h
+@@ -99,6 +99,7 @@ DSL_void_t DSL_DRV_ErrorSet(DSL_void_t *
+    /** Terminate execution if assertion fails */
+    #define DSL_ASSERT(exp)                 ((void)0)
+ 
++   #define DSL_DEBUG_LIMIT(level, body)    ((void)0)
+ #else
+ 
+    #define DSL_DEBUG_SET_ERROR(code) DSL_DRV_ErrorSet(pContext, code);
+--- a/src/pm/drv_dsl_cpe_pm_core.c
++++ b/src/pm/drv_dsl_cpe_pm_core.c
+@@ -26,6 +26,7 @@
+ #define DSL_DBG_BLOCK DSL_DBG_PM
+ 
+ #ifdef __LINUX__
++#ifndef DSL_DEBUG_DISABLE
+ #define DSL_PM_CORE_RATELIMIT_INTERVAL     20 * HZ /* for each 20 seconds */
+ #define DSL_PM_CORE_RATELIMIT_BURST        1       /* 1 occurrence */
+ /* struct ratelimit_state to be used in DSL_DEBUG_LIMIT */
+@@ -33,6 +34,7 @@ static DEFINE_RATELIMIT_STATE(
+    DSL_DBG_RATELIMIT_STRUCT_NAME(DSL_DBG_BLOCK),
+    DSL_PM_CORE_RATELIMIT_INTERVAL,
+    DSL_PM_CORE_RATELIMIT_BURST);
++#endif
+ #endif/* __LINUX__ */
+ 
+ DSL_boolean_t DSL_DRV_PM_IsPmReady(

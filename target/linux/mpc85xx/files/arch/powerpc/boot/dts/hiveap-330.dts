@@ -207,12 +207,12 @@
 
 		mdio@24000 {
 			phy0: ethernet-phy@0 {
-				interrupts = <3 1 0 0>;
+				/* interrupts = <3 1 0 0>; */
 				reg = <0x1>;
 			};
 
 			phy1: ethernet-phy@1 {
-				interrupts = <2 1 0 0>;
+				/* interrupts = <2 1 0 0>; */
 				reg = <0x2>;
 			};
 		};
@@ -300,3 +300,16 @@
 	};
 };
 /include/ "fsl/p1020si-post.dtsi"
+
+/*
+ * For the OpenWrt 22.03 release, since Linux 5.10.138 now uses
+ * aliases to determine PCI domain numbers, drop aliases so as not to
+ * change the sysfs path of our wireless netdevs.
+ */
+
+/ {
+	aliases {
+		/delete-property/ pci0;
+		/delete-property/ pci1;
+	};
+};

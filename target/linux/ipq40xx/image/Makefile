@@ -10,6 +10,8 @@ define Device/Default
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata
 	IMAGE/sysupgrade.bin/squashfs :=
+	DEVICE_COMPAT_VERSION := 1.1
+	DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 
 include $(SUBTARGET).mk

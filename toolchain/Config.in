@@ -169,6 +169,7 @@ menuconfig EXTERNAL_TOOLCHAIN
 		string
 		prompt "Toolchain include path"  if DEVEL
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "./usr/include ./include/fortify ./include" if EXTERNAL_TOOLCHAIN_LIBC_USE_MUSL
 		default "./usr/include ./include"
 		help
 		  Specify additional directories searched for header files (override
@@ -196,7 +197,6 @@ menuconfig EXTRA_TARGET_ARCH
 	bool
 	prompt "Enable an extra toolchain target architecture" if TOOLCHAINOPTS
 	depends on !sparc
-	default n
 	help
 	  Some builds may require a 'biarch' toolchain. This option
 	  allows you to specify an additional target arch.
@@ -246,6 +246,13 @@ comment "Binary tools"
 	depends on TOOLCHAINOPTS
 
 source "toolchain/binutils/Config.in"
+
+config DWARVES
+	bool
+	prompt "Build pahole" if TOOLCHAINOPTS
+	depends on !HOST_OS_MACOS
+	help
+	  Enable if you want to build pahole and the dwarves tools.
 
 comment "Compiler"
 	depends on TOOLCHAINOPTS

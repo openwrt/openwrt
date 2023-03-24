@@ -61,6 +61,21 @@
 	label = "dsa";
 };
 
+&gmac1 {
+	status = "okay";
+	label = "lan1";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_eeprom>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
 &switch0 {
 	ports {
 		port@0 {
@@ -81,11 +96,6 @@
 		port@3 {
 			status = "okay";
 			label = "lan2";
-		};
-
-		port@4 {
-			status = "okay";
-			label = "lan1";
 		};
 	};
 };
@@ -154,14 +164,10 @@
 			};
 
 			partition@1a0000 {
+				/* Combine kernel0 / kernel1 */
 				compatible = "denx,fit";
 				label = "firmware";
-				reg = <0x1a0000 0x730000>;
-			};
-
-			partition@8d0000 {
-				label = "kernel1";
-				reg = <0x8d0000 0x730000>;
+				reg = <0x1a0000 0xe60000>;
 			};
 		};
 	};

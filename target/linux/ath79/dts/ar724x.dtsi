@@ -24,6 +24,13 @@
 		};
 	};
 
+	extosc: ref {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-output-names = "ref";
+		clock-frequency = <40000000>;
+	};
+
 	ahb: ahb {
 		apb {
 			ddr_ctrl: memory-controller@18000000 {
@@ -89,8 +96,8 @@
 				compatible = "qca,ar7240-pll", "syscon";
 				reg = <0x18050000 0x3c>;
 
+				clocks = <&extosc>;
 				clock-names = "ref";
-				/* The board must provides the ref clock */
 
 				#clock-cells = <1>;
 				clock-output-names = "cpu", "ddr", "ahb";

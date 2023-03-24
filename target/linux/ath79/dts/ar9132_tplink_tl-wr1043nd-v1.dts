@@ -17,12 +17,6 @@
 		label-mac-device = &eth0;
 	};
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <40000000>;
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -79,19 +73,8 @@
 	};
 };
 
-&pll {
-	clocks = <&extosc>;
-};
-
 &usb {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
-
-	hub_port: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &usb_phy {

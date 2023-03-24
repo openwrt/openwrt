@@ -19,6 +19,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_CPE_ID:=cpe:/a:mdadm_project:mdadm
 
 PKG_BUILD_PARALLEL:=1
+PKG_BUILD_FLAGS:=gc-sections
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -43,7 +44,6 @@ define Package/mdadm/conffiles
 endef
 
 TARGET_CFLAGS += \
-	-ffunction-sections -fdata-sections \
 	-DHAVE_STDINT_H -DNO_COROSYNC -DNO_DLM -DUSE_PTHREADS \
 	-DCONFFILE='\"/var/etc/mdadm.conf\"' \
 	-DMAP_DIR='\"/var/run/mdadm\"' \
@@ -52,8 +52,6 @@ TARGET_CFLAGS += \
 	-DNO_LIBUDEV
 
 TARGET_CXFLAGS = -DNO_LIBUDEV
-
-TARGET_LDFLAGS += -Wl,--gc-sections
 
 MAKE_FLAGS += \
 		CHECK_RUN_DIR=0 \

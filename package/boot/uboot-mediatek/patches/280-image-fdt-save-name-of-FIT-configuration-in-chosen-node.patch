@@ -14,13 +14,11 @@ Reviewed-by: Tom Rini <trini@konsulko.com>
  boot/image-fdt.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/boot/image-fdt.c b/boot/image-fdt.c
-index 692a9ad3e4..fdb69926a2 100644
 --- a/boot/image-fdt.c
 +++ b/boot/image-fdt.c
-@@ -601,6 +601,12 @@ int image_setup_libfdt(bootm_headers_t *images, void *blob,
- 		goto err;
- 	}
+@@ -636,6 +636,12 @@ int image_setup_libfdt(struct bootm_head
+ 					images->fit_uname_cfg,
+ 					strlen(images->fit_uname_cfg) + 1, 1);
  
 +	/* Store name of configuration node as u-boot,bootconf in /chosen node */
 +	if (images->fit_uname_cfg)
@@ -31,6 +29,3 @@ index 692a9ad3e4..fdb69926a2 100644
  	/* Update ethernet nodes */
  	fdt_fixup_ethernet(blob);
  #if CONFIG_IS_ENABLED(CMD_PSTORE)
--- 
-2.35.3
-

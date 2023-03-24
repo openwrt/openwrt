@@ -105,6 +105,7 @@
 			interrupt-controller;
 			#interrupt-cells = <2>;
 
+			interrupt-parent = <&periph_intc>;
 			interrupts = <BCM6328_IRQ_EXTO>,
 				     <BCM6328_IRQ_EXT1>,
 				     <BCM6328_IRQ_EXT2>,
@@ -146,6 +147,8 @@
 		};
 
 		gpio_cntl: syscon@10000080 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "brcm,bcm6328-gpio-sysctl",
 				     "syscon", "simple-mfd";
 			reg = <0x10000080 0x80>;
@@ -418,7 +421,6 @@
 
 				port@8 {
 					reg = <8>;
-					label = "cpu";
 
 					phy-mode = "internal";
 					ethernet = <&ethernet>;

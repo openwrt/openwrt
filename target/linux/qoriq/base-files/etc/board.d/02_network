@@ -21,7 +21,7 @@ watchguard,firebox-m300)
 
 	sweth_mac_offset=0x186d
 
-	for sweth in /sys/class/net/sweth*; do
+	for sweth in $(find /sys/class/net/ -name 'sweth*' -print); do
 		device="$(basename "$sweth")"
 		mac="$(mtd_get_mac_text wg_cfg0 "$sweth_mac_offset")"
 		switchports="$switchports $device"

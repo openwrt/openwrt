@@ -75,6 +75,22 @@
 		"finalize": "AT+CGDATA=\\\"M-MBIM\\\",${profile},1",
 		"disconnect": "AT+CGACT=0,${profile}"
 	},
+	"quectel": {
+		"initialize": [
+			"AT+CFUN=1"
+		],
+		"configure": [
+			"at+qicsgp=${profile},${context_type},\\\"${apn}\\\",\\\"${username}\\\",\\\"${password}\\\",0"
+		],
+		"modes": {
+			"lte": "AT+QCFG=\\\"nwscanmode\\\",3",
+			"umts": "AT+QCFG=\\\"nwscanmode\\\",2",
+			"gsm": "AT+QCFG=\\\"nwscanmode\\\",1",
+			"auto": "AT+QCFG=\\\"nwscanmode\\\",0"
+		},
+		"connect": "AT+qnetdevctl=1,${profile},1",
+		"disconnect": "AT+qnetdevctl=0,${profile},0"
+	},
 	"\"zte": {
 		"initialize": [
 			"AT+CFUN=1"

@@ -3,7 +3,7 @@
 /*
  * Device Tree Source for Linksys xx8300 (Dallas)
  *
- * Copyright (C) 2019 Jeff Kletsky
+ * Copyright (C) 2019, 2022 Jeff Kletsky
  * Updated 2020 Hans Geiblinger
  *
  */
@@ -32,10 +32,6 @@
 		};
 
 		mdio@90000 {
-			status = "okay";
-		};
-
-		ess-psgmii@98000 {
 			status = "okay";
 		};
 
@@ -103,14 +99,16 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
+	};
 
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
+	regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "USB_VBUS";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-always-on;
+		regulator-boot-on;
+		gpio = <&tlmm 68 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -207,9 +205,9 @@
 				reg = <0x780000 0x5800000>;
 			};
 
-			partition@a80000 {
+			partition@c80000 {
 				label = "rootfs";
-				reg = <0xa80000 0x5500000>;
+				reg = <0xc80000 0x5300000>;
 			};
 
 			partition@5f80000 {
@@ -217,9 +215,9 @@
 				reg = <0x5f80000 0x5800000>;
 			};
 
-			partition@6280000 {
+			partition@6480000 {
 				label = "alt_rootfs";
-				reg = <0x6280000 0x5500000>;
+				reg = <0x6480000 0x5300000>;
 			};
 
 			partition@b780000 {
@@ -280,7 +278,7 @@
 			pins =  "gpio55", "gpio56", "gpio57",
 				"gpio60", "gpio62", "gpio63",
 				"gpio64", "gpio65", "gpio66",
-				"gpio67", "gpio68", "gpio69";
+				"gpio67", "gpio69";
 			function = "qpic";
 			bias-pull-down;
 		};
@@ -296,5 +294,33 @@
 };
 
 &usb3_ss_phy {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+};
+
+&swport3 {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+};
+
+&swport5 {
 	status = "okay";
 };

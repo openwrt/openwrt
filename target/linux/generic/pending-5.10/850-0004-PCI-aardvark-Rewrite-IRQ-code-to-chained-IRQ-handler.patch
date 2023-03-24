@@ -31,7 +31,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  	struct irq_domain *irq_domain;
  	struct irq_chip irq_chip;
  	raw_spinlock_t irq_lock;
-@@ -1444,21 +1445,26 @@ static void advk_pcie_handle_int(struct
+@@ -1441,21 +1442,26 @@ static void advk_pcie_handle_int(struct
  	}
  }
  
@@ -68,7 +68,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  }
  
  static void __maybe_unused advk_pcie_disable_phy(struct advk_pcie *pcie)
-@@ -1525,7 +1531,7 @@ static int advk_pcie_probe(struct platfo
+@@ -1522,7 +1528,7 @@ static int advk_pcie_probe(struct platfo
  	struct advk_pcie *pcie;
  	struct pci_host_bridge *bridge;
  	struct resource_entry *entry;
@@ -77,7 +77,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  
  	bridge = devm_pci_alloc_host_bridge(dev, sizeof(struct advk_pcie));
  	if (!bridge)
-@@ -1613,17 +1619,9 @@ static int advk_pcie_probe(struct platfo
+@@ -1610,17 +1616,9 @@ static int advk_pcie_probe(struct platfo
  	if (IS_ERR(pcie->base))
  		return PTR_ERR(pcie->base);
  
@@ -98,7 +98,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  
  	pcie->reset_gpio = devm_gpiod_get_from_of_node(dev, dev->of_node,
  						       "reset-gpios", 0,
-@@ -1672,11 +1670,14 @@ static int advk_pcie_probe(struct platfo
+@@ -1669,11 +1667,14 @@ static int advk_pcie_probe(struct platfo
  		return ret;
  	}
  
@@ -113,7 +113,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  		advk_pcie_remove_msi_irq_domain(pcie);
  		advk_pcie_remove_irq_domain(pcie);
  		return ret;
-@@ -1724,6 +1725,9 @@ static int advk_pcie_remove(struct platf
+@@ -1721,6 +1722,9 @@ static int advk_pcie_remove(struct platf
  	advk_writel(pcie, PCIE_ISR1_ALL_MASK, PCIE_ISR1_REG);
  	advk_writel(pcie, PCIE_IRQ_ALL_MASK, HOST_CTRL_INT_STATUS_REG);
  

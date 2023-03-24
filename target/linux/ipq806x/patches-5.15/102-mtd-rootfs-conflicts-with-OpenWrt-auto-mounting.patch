@@ -10,7 +10,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -50,7 +50,11 @@ static struct mtd_info *allocate_partiti
+@@ -51,7 +51,11 @@ static struct mtd_info *allocate_partiti
  
  	/* allocate the partition structure */
  	child = kzalloc(sizeof(*child), GFP_KERNEL);

@@ -13,7 +13,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 
 --- a/drivers/clk/qcom/clk-krait.c
 +++ b/drivers/clk/qcom/clk-krait.c
-@@ -68,7 +68,25 @@ static u8 krait_mux_get_parent(struct cl
+@@ -73,7 +73,25 @@ static u8 krait_mux_get_parent(struct cl
  	return clk_mux_val_to_index(hw, mux->parent_map, 0, sel);
  }
  
@@ -39,7 +39,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  	.set_parent = krait_mux_set_parent,
  	.get_parent = krait_mux_get_parent,
  	.determine_rate = __clk_mux_determine_rate_closest,
-@@ -79,8 +97,13 @@ EXPORT_SYMBOL_GPL(krait_mux_clk_ops);
+@@ -84,8 +102,13 @@ EXPORT_SYMBOL_GPL(krait_mux_clk_ops);
  static long krait_div2_round_rate(struct clk_hw *hw, unsigned long rate,
  				  unsigned long *parent_rate)
  {

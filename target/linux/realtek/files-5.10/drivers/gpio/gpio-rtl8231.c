@@ -29,8 +29,9 @@ struct rtl8231_gpios {
 	int ext_gpio_indrt_access;
 };
 
-extern struct mutex smi_lock;
 extern struct rtl83xx_soc_info soc_info;
+
+DEFINE_MUTEX(miim_lock);
 
 static u32 rtl8231_read(struct rtl8231_gpios *gpios, u32 reg)
 {
@@ -187,9 +188,9 @@ static int rtl8231_direction_input(struct gpio_chip *gc, unsigned int offset)
 	struct rtl8231_gpios *gpios = gpiochip_get_data(gc);
 
 	pr_debug("%s: %d\n", __func__, offset);
-	mutex_lock(&smi_lock);
+	mutex_lock(&miim_lock);
 	err = rtl8231_pin_dir(gpios, offset, 1);
-	mutex_unlock(&smi_lock);
+	mutex_unlock(&miim_lock);
 	return err;
 }
 
@@ -199,9 +200,9 @@ static int rtl8231_direction_output(struct gpio_chip *gc, unsigned int offset, i
 	struct rtl8231_gpios *gpios = gpiochip_get_data(gc);
 
 	pr_debug("%s: %d\n", __func__, offset);
-	mutex_lock(&smi_lock);
+	mutex_lock(&miim_lock);
 	err = rtl8231_pin_dir(gpios, offset, 0);
-	mutex_unlock(&smi_lock);
+	mutex_unlock(&miim_lock);
 	if (!err)
 		err = rtl8231_pin_set(gpios, offset, value);
 	return err;
@@ -213,9 +214,9 @@ static int rtl8231_get_direction(struct gpio_chip *gc, unsigned int offset)
 	struct rtl8231_gpios *gpios = gpiochip_get_data(gc);
 
 	pr_debug("%s: %d\n", __func__, offset);
-	mutex_lock(&smi_lock);
+	mutex_lock(&miim_lock);
 	rtl8231_pin_dir_get(gpios, offset, &v);
-	mutex_unlock(&smi_lock);
+	mutex_unlock(&miim_lock);
 	return v;
 }
 
@@ -224,9 +225,9 @@ static int rtl8231_gpio_get(struct gpio_chip *gc, unsigned int offset)
 	u16 state = 0;
 	struct rtl8231_gpios *gpios = gpiochip_get_data(gc);
 
-	mutex_lock(&smi_lock);
+	mutex_lock(&miim_lock);
 	rtl8231_pin_get(gpios, offset, &state);
-	mutex_unlock(&smi_lock);
+	mutex_unlock(&miim_lock);
 	if (state & (1 << (offset % 16)))
 		return 1;
 	return 0;

@@ -16,7 +16,7 @@
 		led-upgrade = &led_system;
 		label-mac-device = &wmac;
 	};
-	
+
 	keys {
 		compatible = "gpio-keys";
 
@@ -26,7 +26,7 @@
 			debounce-interval = <60>;
 		};
 	};
-	
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -54,12 +54,12 @@
 			label = "green:lan4";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
-		
+
 		wps {
 			label = "green:wps";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
-		
+
 		wlan {
 			label = "green:wlan";
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
@@ -130,16 +130,16 @@
 
 &wmac {
 	status = "okay";
-	
+
 	mtd-cal-data = <&art 0x1000>;
-	
+
 	nvmem-cells = <&macaddr_uboot_1fc00>;
 	nvmem-cell-names = "mac-address";
 };
 
 &eth0 {
 	status = "okay";
-	
+
 	phy-handle = <&swphy0>;
 
 	nvmem-cells = <&macaddr_uboot_1fc00>;
@@ -152,7 +152,7 @@
 
 	nvmem-cells = <&macaddr_uboot_1fc00>;
 	nvmem-cell-names = "mac-address";
-	
+
 	gmac-config {
 		device = <&gmac>;
 		switch-phy-swap = <1>;

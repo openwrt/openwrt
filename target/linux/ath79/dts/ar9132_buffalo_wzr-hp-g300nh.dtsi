@@ -11,12 +11,6 @@
 		led-upgrade = &led_diag;
 	};
 
-	clock40mhz: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <40000000>;
-	};
-
 	/* There is a GPIO driven NXP 74HC153 dual 4-way multiplexer on board
 	 * used for buttons that are on top of the the device.
          */
@@ -191,7 +185,6 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
-			phy-mask = <0x10>;
 
 			phy4: ethernet-phy@4 {
 				reg = <4>;
@@ -251,20 +244,8 @@
 	status = "okay";
 };
 
-&pll {
-	clocks = <&clock40mhz>;
-};
-
 &usb {
 	status = "okay";
-
-	#address-cells = <1>;
-	#size-cells = <0>;
-
-	hub_port: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &usb_phy {

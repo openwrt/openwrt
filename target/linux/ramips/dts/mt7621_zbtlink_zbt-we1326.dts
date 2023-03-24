@@ -78,6 +78,21 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_factory_e006>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
 &switch0 {
 	ports {
 		port@0 {
@@ -99,13 +114,6 @@
 			status = "okay";
 			label = "lan4";
 		};
-
-		port@4 {
-			status = "okay";
-			label = "wan";
-			nvmem-cells = <&macaddr_factory_e006>;
-			nvmem-cell-names = "mac-address";
-		};
 	};
 };
 
@@ -113,19 +121,31 @@
 	status = "okay";
 };
 
-&pcie0 {
-	wifi0: mt76@0,0 {
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <5000000 6000000>;
+
+		led {
+			led-sources = <2>;
+			led-active-low;
+		};
 	};
 };
 
-&pcie1 {
-	wifi1: mt76@0,0 {
+&pcie2 {
+	wifi1: wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x0000>;
 		ieee80211-freq-limit = <2400000 2500000>;
+
+		led {
+			led-sources = <0>;
+			led-active-low;
+		};
 	};
 };
 

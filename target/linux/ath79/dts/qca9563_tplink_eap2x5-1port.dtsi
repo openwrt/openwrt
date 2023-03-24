@@ -81,6 +81,14 @@
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				calibration_ath9k: calibration@1000 {
+					reg = <0x1000 0x440>;
+				};
 			};
 		};
 	};
@@ -98,20 +106,11 @@
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
-
-	phy-mask = <0x10>;
-
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
-	};
 };
 
 &eth0 {
 	status = "okay";
 
-	phy-handle = <&phy4>;
-	phy-mode = "sgmii";
 	pll-data = <0x03000000 0x00000101 0x00001313>;
 
 	nvmem-cells = <&macaddr_info_8>;
@@ -127,9 +126,8 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_info_8>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_info_8>, <&calibration_ath9k>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
 
 &info {

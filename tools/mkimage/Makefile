@@ -7,18 +7,29 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mkimage
-PKG_VERSION:=2022.01
+PKG_VERSION:=2023.01
 
 PKG_SOURCE:=u-boot-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	https://mirror.cyberbits.eu/u-boot \
 	https://ftp.denx.de/pub/u-boot \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_HASH:=81b4543227db228c03f8a1bf5ddbc813b0bb8f6555ce46064ef721a6fc680413
+PKG_HASH:=69423bad380f89a0916636e89e6dcbd2e4512d584308d922d1039d1e4331950f
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/u-boot-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
+
+define Host/Configure
+	$(MAKE) -C $(HOST_BUILD_DIR) \
+		HOSTCFLAGS="$(HOST_CFLAGS)" \
+		HOSTLDFLAGS="$(HOST_LDFLAGS)" \
+		PKG_CONFIG_EXTRAARGS="--static" \
+		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1) \
+		tools-only_config
+
+	sed -i 's/CONFIG_TOOLS_MKEFICAPSULE=y/# CONFIG_TOOLS_MKEFICAPSULE is not set/' $(HOST_BUILD_DIR)/.config
+endef
 
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) \
@@ -26,7 +37,6 @@ define Host/Compile
 		HOSTLDFLAGS="$(HOST_LDFLAGS)" \
 		PKG_CONFIG_EXTRAARGS="--static" \
 		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1) \
-		tools-only_config \
 		tools-only
 endef
 

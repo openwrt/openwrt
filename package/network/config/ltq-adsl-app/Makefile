@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=dsl_cpe_control_danube
 PKG_VERSION:=3.24.4.4
-PKG_RELEASE:=10
+PKG_RELEASE:=11
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(BUILD_DIR)/dsl_cpe_control-$(PKG_VERSION)
 PKG_SOURCE_URL:=@OPENWRT
@@ -36,6 +36,7 @@ define Package/ltq-adsl-app
   TITLE:=Lantiq DSL userland tool
   URL:=http://www.lantiq.com/
   DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_xway_legacy||TARGET_lantiq_ase) +libpthread +ltq-dsl-base +libubox +libubus
+  PROVIDES:=ltq-dsl-app
   MENU:=1
 endef
 
@@ -77,7 +78,7 @@ TARGET_CFLAGS += -I$(LINUX_DIR)/include
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
-	$(CP) ../ltq-vdsl-app/src/src/dsl_cpe_ubus.c $(PKG_BUILD_DIR)/src/
+	$(CP) ../ltq-vdsl-vr9-app/src/src/dsl_cpe_ubus.c $(PKG_BUILD_DIR)/src/
 endef
 
 define Package/ltq-adsl-app/install

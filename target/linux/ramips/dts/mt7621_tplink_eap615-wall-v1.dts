@@ -144,8 +144,7 @@
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&radio 0x0>;
-		nvmem-cells = <&macaddr_info_8>;
-		nvmem-cell-names = "mac-address";
+		mediatek,disable-radar-background;
 	};
 };
 
@@ -158,14 +157,23 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&switch0 {
-	compatible = "mediatek,mt7530";
-	ports {
-		port@0 {
-			status = "okay";
-			label = "lan0";
-		};
+&gmac1 {
+	status = "okay";
+	label = "lan0";
+	phy-handle = <&ethphy0>;
 
+	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
+&switch0 {
+	ports {
 		port@1 {
 			status = "okay";
 			label = "lan3";

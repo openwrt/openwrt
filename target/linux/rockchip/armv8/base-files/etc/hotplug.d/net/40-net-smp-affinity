@@ -4,8 +4,15 @@
 
 get_device_irq() {
 	local device="$1"
+	local line
+	local seconds="0"
 
-	local line=$(grep -m 1 "${device}\$" /proc/interrupts)
+	# wait up to 10 seconds for the irq/device to appear
+	while [ "${seconds}" -le 10 ]; do
+		line=$(grep -m 1 "${device}\$" /proc/interrupts) && break
+		seconds="$(( seconds + 2 ))"
+		sleep 2
+	done
 	echo ${line} | sed 's/:.*//'
 }
 

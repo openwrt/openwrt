@@ -4,61 +4,53 @@ on:
   pull_request:
     paths:
       - 'tools/**'
+      - '.github/workflows/build-tools.yml'
+      - '.github/workflows/tools.yml'
+  push:
+    paths:
+      - 'tools/**'
+      - '.github/workflows/build-tools.yml'
       - '.github/workflows/tools.yml'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  build:
-    name: tools-${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: False
-      matrix:
-        os: 
-          - ubuntu-latest
-          - macos-latest
+  build-macos-latest:
+    name: Build tools with macos latest
+    runs-on: macos-latest
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0
           path: openwrt
 
       - name: Setup MacOS
-        if: ${{ matrix.os == 'macos-latest' }}
         run: |
-          echo "WORKPATH=/Volumes/OpenWrt/openwrt/" >> "$GITHUB_ENV"
+          echo "WORKPATH=/Volumes/OpenWrt" >> "$GITHUB_ENV"
           hdiutil create -size 20g -type SPARSE -fs "Case-sensitive HFS+" -volname OpenWrt OpenWrt.sparseimage
           hdiutil attach OpenWrt.sparseimage
           mv "$GITHUB_WORKSPACE/openwrt" /Volumes/OpenWrt/
-          cd "$WORKPATH"
 
+      - name: Install required prereq on MacOS
+        working-directory: ${{ env.WORKPATH }}/openwrt
+        run: |
           brew install \
-            autoconf \
             automake \
             coreutils \
             diffutils \
             findutils \
             gawk \
-            gettext \
             git-extras \
-            gmp \
             gnu-getopt \
             gnu-sed \
-            gnu-tar \
             grep \
-            libidn2 \
-            libunistring \
-            m4 \
-            make \
-            mpfr \
-            ncurses \
-            openssl@1.1 \
-            pcre \
-            pkg-config \
-            quilt \
-            readline \
-            wget \
-            zstd
+            make
 
             echo "/bin" >> "$GITHUB_PATH"
             echo "/sbin/Library/Apple/usr/bin" >> "$GITHUB_PATH"
@@ -71,74 +63,29 @@ jobs:
             echo "/usr/local/opt/make/libexec/gnubin" >> "$GITHUB_PATH"
             echo "/usr/local/opt/make/libexec/gnubin" >> "$GITHUB_PATH"
             echo "/usr/sbin" >> "$GITHUB_PATH"
-            pwd
-
-      - name: Setup Ubuntu
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        env:
-          DEBIAN_FRONTEND: noninteractive
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install \
-            build-essential \
-            ccache \
-            clang-12 \
-            ecj \
-            fastjar \
-            file \
-            g++ \
-            gawk \
-            gettext \
-            git \
-            java-propose-classpath \
-            libelf-dev \
-            libncurses-dev \
-            libssl-dev \
-            mkisofs \
-            python3 \
-            python3-dev \
-            python3-distutils \
-            python3-setuptools \
-            qemu-utils \
-            rsync \
-            subversion \
-            swig \
-            unzip \
-            wget \
-            xsltproc \
-            zlib1g-dev
-          echo "WORKPATH=$GITHUB_WORKSPACE/openwrt/" >> "$GITHUB_ENV"
-          cd "$WORKPATH"
-          pwd
 
       - name: Make prereq
-        run: |
-          cd "$WORKPATH"
-          pwd
-          make defconfig
+        working-directory: ${{ env.WORKPATH }}/openwrt
+        run: make defconfig
 
-      - name: Build tools
-        run: |
-          cd "$WORKPATH"
-          make tools/install -j$(nproc) BUILD_LOG=1
-
-      - name: Move logs to GITHUB_WORKSPACE
-        if: always()
-        run: |
-          cp -r "$WORKPATH/logs" "$GITHUB_WORKSPACE"
-          cp -r "$WORKPATH/.config" "$GITHUB_WORKSPACE/config"
-
+      - name: Build tools MacOS
+        working-directory: ${{ env.WORKPATH }}/openwrt
+        run: make tools/install -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.os }}-logs
-          path: "logs"
+          name: macos-latest-logs
+          path: ${{ env.WORKPATH }}/openwrt/logs
 
       - name: Upload config
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.os }}-config
-          path: "config"
+          name: macos-latest-config
+          path: ${{ env.WORKPATH }}/openwrt/.config
+
+  build-linux-buildbot:
+    name: Build tools with buildbot container
+    uses: ./.github/workflows/build-tools.yml

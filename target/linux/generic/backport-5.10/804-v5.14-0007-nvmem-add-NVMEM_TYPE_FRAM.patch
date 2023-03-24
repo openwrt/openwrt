@@ -1,0 +1,36 @@
+From: Rafał Miłecki <rafal@milecki.pl>
+Subject: [PATCH] nvmem: add NVMEM_TYPE_FRAM
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -180,6 +180,7 @@ static const char * const nvmem_type_str
+ 	[NVMEM_TYPE_EEPROM] = "EEPROM",
+ 	[NVMEM_TYPE_OTP] = "OTP",
+ 	[NVMEM_TYPE_BATTERY_BACKED] = "Battery backed",
++	[NVMEM_TYPE_FRAM] = "FRAM",
+ };
+ 
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
+@@ -361,6 +362,9 @@ static int nvmem_sysfs_setup_compat(stru
+ 	if (!config->base_dev)
+ 		return -EINVAL;
+ 
++	if (config->type == NVMEM_TYPE_FRAM)
++		bin_attr_nvmem_eeprom_compat.attr.name = "fram";
++
+ 	nvmem->eeprom = bin_attr_nvmem_eeprom_compat;
+ 	nvmem->eeprom.attr.mode = nvmem_bin_attr_get_umode(nvmem);
+ 	nvmem->eeprom.size = nvmem->size;
+--- a/include/linux/nvmem-provider.h
++++ b/include/linux/nvmem-provider.h
+@@ -25,6 +25,7 @@ enum nvmem_type {
+ 	NVMEM_TYPE_EEPROM,
+ 	NVMEM_TYPE_OTP,
+ 	NVMEM_TYPE_BATTERY_BACKED,
++	NVMEM_TYPE_FRAM,
+ };
+ 
+ #define NVMEM_DEVID_NONE	(-1)

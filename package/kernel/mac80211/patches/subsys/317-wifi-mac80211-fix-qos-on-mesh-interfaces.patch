@@ -1,0 +1,35 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 15 Feb 2023 15:11:54 +0100
+Subject: [PATCH] wifi: mac80211: fix qos on mesh interfaces
+
+When ieee80211_select_queue is called for mesh, the sta pointer is usually
+NULL, since the nexthop is looked up much later in the tx path.
+Explicitly check for unicast address in that case in order to make qos work
+again.
+
+Fixes: 50e2ab392919 ("wifi: mac80211: fix queue selection for mesh/OCB interfaces")
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/mac80211/wme.c
++++ b/net/mac80211/wme.c
+@@ -147,6 +147,7 @@ u16 ieee80211_select_queue_80211(struct
+ u16 ieee80211_select_queue(struct ieee80211_sub_if_data *sdata,
+ 			   struct sta_info *sta, struct sk_buff *skb)
+ {
++	const struct ethhdr *eth = (void *)skb->data;
+ 	struct mac80211_qos_map *qos_map;
+ 	bool qos;
+ 
+@@ -154,8 +155,9 @@ u16 ieee80211_select_queue(struct ieee80
+ 	skb_get_hash(skb);
+ 
+ 	/* all mesh/ocb stations are required to support WME */
+-	if (sta && (sdata->vif.type == NL80211_IFTYPE_MESH_POINT ||
+-		    sdata->vif.type == NL80211_IFTYPE_OCB))
++	if ((sdata->vif.type == NL80211_IFTYPE_MESH_POINT &&
++	    !is_multicast_ether_addr(eth->h_dest)) ||
++	    (sdata->vif.type == NL80211_IFTYPE_OCB && sta))
+ 		qos = true;
+ 	else if (sta)
+ 		qos = sta->sta.wme;

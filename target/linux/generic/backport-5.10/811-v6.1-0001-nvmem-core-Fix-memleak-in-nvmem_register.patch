@@ -1,0 +1,53 @@
+From bd1244561fa2a4531ded40dbf09c9599084f8b29 Mon Sep 17 00:00:00 2001
+From: Gaosheng Cui <cuigaosheng1@huawei.com>
+Date: Fri, 16 Sep 2022 13:04:02 +0100
+Subject: [PATCH] nvmem: core: Fix memleak in nvmem_register()
+
+dev_set_name will alloc memory for nvmem->dev.kobj.name in
+nvmem_register, when nvmem_validate_keepouts failed, nvmem's
+memory will be freed and return, but nobody will free memory
+for nvmem->dev.kobj.name, there will be memleak, so moving
+nvmem_validate_keepouts() after device_register() and let
+the device core deal with cleaning name in error cases.
+
+Fixes: de0534df9347 ("nvmem: core: fix error handling while validating keepout regions")
+Cc: stable@vger.kernel.org
+Signed-off-by: Gaosheng Cui <cuigaosheng1@huawei.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20220916120402.38753-1-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -833,6 +833,12 @@ struct nvmem_device *nvmem_register(cons
+ 	nvmem->dev.groups = nvmem_dev_groups;
+ #endif
+ 
++	if (nvmem->nkeepout) {
++		rval = nvmem_validate_keepouts(nvmem);
++		if (rval)
++			goto err_put_device;
++	}
++
+ 	if (config->compat) {
+ 		rval = nvmem_sysfs_setup_compat(nvmem, config);
+ 		if (rval)
+@@ -853,15 +859,6 @@ struct nvmem_device *nvmem_register(cons
+ 	if (rval)
+ 		goto err_remove_cells;
+ 
+-	if (nvmem->nkeepout) {
+-		rval = nvmem_validate_keepouts(nvmem);
+-		if (rval) {
+-			ida_free(&nvmem_ida, nvmem->id);
+-			kfree(nvmem);
+-			return ERR_PTR(rval);
+-		}
+-	}
+-
+ 	dev_dbg(&nvmem->dev, "Registering nvmem device %s\n", config->name);
+ 
+ 	rval = device_add(&nvmem->dev);

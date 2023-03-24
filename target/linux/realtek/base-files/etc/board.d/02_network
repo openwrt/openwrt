@@ -8,6 +8,9 @@ ucidef_set_poe() {
 		json_add_string "budget" "$1"
 		json_select_array ports
 			for port in $2; do
+				if [ -n "$3" -a -n "$(expr "$3" : "\(.\+[[:space:]]\)\{0,1\}$port\([[:space:]].*\|\$\)")" ]; then
+					continue # skip ports passed via $3
+				fi
 				json_add_string "" "$port"
 			done
 		json_select ..
@@ -22,9 +25,26 @@ ucidef_set_bridge_device switch
 ucidef_set_interface_lan "$lan_list"
 
 lan_mac=""
+lan_mac_start=""
 lan_mac_end=""
 label_mac=""
 case $board in
+hpe,1920-8g|\
+hpe,1920-16g|\
+hpe,1920-24g)
+	label_mac=$(mtd_get_mac_binary factory 0x68)
+	lan_mac=$label_mac
+	mac_count1=$(hexdump -v -n 4 -s 0x110 -e '4 "%d"' $(find_mtd_part factory) 2>/dev/null)
+	mac_count2=$(hexdump -v -n 4 -s 0x114 -e '4 "%d"' $(find_mtd_part factory) 2>/dev/null)
+	lan_mac_start=$(macaddr_add $lan_mac 2)
+	lan_mac_end=$(macaddr_add $lan_mac $((mac_count2-mac_count1)))
+	;;
+tplink,sg2008p-v1|\
+tplink,sg2210p-v3|\
+tplink,sg2452p-v4)
+	label_mac=$(get_mac_label)
+	lan_mac="$label_mac"
+	;;
 *)
 	lan_mac=$(mtd_get_mac_ascii u-boot-env2 mac_start)
 	lan_mac_end=$(mtd_get_mac_ascii u-boot-env2 mac_end)
@@ -36,22 +56,23 @@ esac
 ucidef_set_interface_macaddr "lan" $lan_mac
 ucidef_set_bridge_mac "$lan_mac"
 ucidef_set_network_device_mac eth0 $lan_mac
+[ -z "$lan_mac_start" ] && lan_mac_start=$lan_mac
 for lan in $lan_list; do
-	ucidef_set_network_device_mac $lan $lan_mac
-	[ -z "$lan_mac_end" ] || [ "$lan_mac" == "$lan_mac_end" ] && lan_mac=$(macaddr_setbit_la $lan_mac)
-	lan_mac=$(macaddr_add $lan_mac 1)
+	ucidef_set_network_device_mac $lan $lan_mac_start
+	[ -z "$lan_mac_end" ] || [ "$lan_mac_start" == "$lan_mac_end" ] && lan_mac_start=$(macaddr_setbit_la $lan_mac_start)
+	lan_mac_start=$(macaddr_add $lan_mac_start 1)
 done
 [ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 
 case $board in
 netgear,gs110tpp-v1)
-	ucidef_set_poe 130 "$lan_list"
+	ucidef_set_poe 130 "$lan_list" "lan9 lan10"
 	;;
 netgear,gs310tp-v1)
-	ucidef_set_poe 55 "$lan_list"
+	ucidef_set_poe 55 "$lan_list" "lan9 lan10"
 	;;
 zyxel,gs1900-10hp)
-	ucidef_set_poe 77 "$lan_list"
+	ucidef_set_poe 77 "$lan_list" "lan9 lan10"
 	;;
 zyxel,gs1900-8hp-v1|\
 zyxel,gs1900-8hp-v2)
@@ -59,7 +80,7 @@ zyxel,gs1900-8hp-v2)
 	;;
 zyxel,gs1900-24hp-v1|\
 zyxel,gs1900-24hp-v2)
-	ucidef_set_poe 170 "$lan_list"
+	ucidef_set_poe 170 "$lan_list" "lan25 lan26"
 	;;
 esac
 

@@ -1,5 +1,5 @@
 BOARDNAME:=P1020
-FEATURES+=nand
+KERNEL_IMAGES:=simpleImage.ws-ap3825i
 
 define Target/Description
 	Build firmware images for Freescale P1020 based boards.

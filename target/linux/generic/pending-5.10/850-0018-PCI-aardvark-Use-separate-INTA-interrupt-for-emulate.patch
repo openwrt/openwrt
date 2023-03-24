@@ -95,7 +95,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  		if (generic_handle_irq(virq) == -EINVAL)
  			dev_err_ratelimited(&pcie->pdev->dev, "unhandled PME IRQ\n");
  	}
-@@ -1522,7 +1561,7 @@ static void advk_pcie_handle_int(struct
+@@ -1519,7 +1558,7 @@ static void advk_pcie_handle_int(struct
  		 * Aardvark HW returns zero for PCI_ERR_ROOT_AER_IRQ, so use
  		 * PCIe interrupt 0
  		 */
@@ -104,7 +104,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  		if (generic_handle_irq(virq) == -EINVAL)
  			dev_err_ratelimited(&pcie->pdev->dev, "unhandled ERR IRQ\n");
  	}
-@@ -1568,6 +1607,21 @@ static void advk_pcie_irq_handler(struct
+@@ -1565,6 +1604,21 @@ static void advk_pcie_irq_handler(struct
  	chained_irq_exit(chip, desc);
  }
  
@@ -126,7 +126,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  static void __maybe_unused advk_pcie_disable_phy(struct advk_pcie *pcie)
  {
  	phy_power_off(pcie->phy);
-@@ -1771,14 +1825,24 @@ static int advk_pcie_probe(struct platfo
+@@ -1768,14 +1822,24 @@ static int advk_pcie_probe(struct platfo
  		return ret;
  	}
  
@@ -151,7 +151,7 @@ Signed-off-by: Marek Behún <kabel@kernel.org>
  		advk_pcie_remove_msi_irq_domain(pcie);
  		advk_pcie_remove_irq_domain(pcie);
  		return ret;
-@@ -1830,6 +1894,7 @@ static int advk_pcie_remove(struct platf
+@@ -1827,6 +1891,7 @@ static int advk_pcie_remove(struct platf
  	irq_set_chained_handler_and_data(pcie->irq, NULL, NULL);
  
  	/* Remove IRQ domains */

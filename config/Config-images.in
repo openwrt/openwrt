@@ -17,6 +17,7 @@ menu "Target Images"
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_lantiq
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_mpc85xx
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ramips
+			default TARGET_INITRAMFS_COMPRESSION_ZSTD if TARGET_ipq807x
 			default TARGET_INITRAMFS_COMPRESSION_XZ if USES_SEPARATE_INITRAMFS
 			default TARGET_INITRAMFS_COMPRESSION_NONE
 			depends on TARGET_ROOTFS_INITRAMFS
@@ -36,18 +37,15 @@ menu "Target Images"
 				bool "lzma"
 
 			config TARGET_INITRAMFS_COMPRESSION_LZO
-				depends on !TARGET_ROOTFS_INITRAMFS_SEPARATE
 				bool "lzo"
 
 			config TARGET_INITRAMFS_COMPRESSION_LZ4
-				depends on !TARGET_ROOTFS_INITRAMFS_SEPARATE
 				bool "lz4"
 
 			config TARGET_INITRAMFS_COMPRESSION_XZ
 				bool "xz"
 
 			config TARGET_INITRAMFS_COMPRESSION_ZSTD
-				depends on !LINUX_5_4 && !LINUX_4_19
 				bool "zstd"
 		endchoice
 
@@ -61,7 +59,6 @@ menu "Target Images"
 		config TARGET_INITRAMFS_FORCE
 			bool "Force"
 			depends on TARGET_ROOTFS_INITRAMFS
-			default n
 			help
 			  Ignore the initramfs passed by the bootloader.
 
@@ -130,7 +127,6 @@ menu "Target Images"
 		config TARGET_EXT4_JOURNAL
 			bool "Create a journaling filesystem"
 			depends on TARGET_ROOTFS_EXT4FS
-			default n
 			help
 			  Create an ext4 filesystem with a journal.
 
@@ -151,7 +147,7 @@ menu "Target Images"
 		bool "squashfs"
 		default y if USES_SQUASHFS
 		help
-		  Build a squashfs-lzma root filesystem.
+		  Build a squashfs root filesystem.
 
 		config TARGET_SQUASHFS_BLOCK_SIZE
 			int "Block size (in KiB)"
@@ -159,6 +155,9 @@ menu "Target Images"
 			default 64 if LOW_MEMORY_FOOTPRINT
 			default 1024 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
 			default 256
+			help
+			  Select squashfs block size, must be one of:
+			    4, 8, 16, 32, 64, 128, 256, 512, 1024
 
 	menuconfig TARGET_ROOTFS_UBIFS
 		bool "ubifs"
@@ -232,7 +231,6 @@ menu "Target Images"
 	config GRUB_FLOWCONTROL
 		bool "Use RTE/CTS on serial console"
 		depends on GRUB_SERIAL != ""
-		default n
 
 	config GRUB_BOOTOPTS
 		string "Extra kernel boot options"
@@ -286,6 +284,7 @@ menu "Target Images"
 	comment "Image Options"
 
 	source "target/linux/*/image/Config.in"
+	source "target/linux/*/*/image/Config.in"
 
 	config TARGET_KERNEL_PARTSIZE
 		int "Kernel partition size (in MiB)"
@@ -311,7 +310,6 @@ menu "Target Images"
 
 	config TARGET_ROOTFS_PERSIST_VAR
 		bool "Make /var persistent"
-		default n
 		help
 		  Do not symlink /var to /tmp, so that its content will persist
 		  across reboots. When enabled, /var/run will still be linked

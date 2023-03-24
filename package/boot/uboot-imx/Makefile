@@ -23,7 +23,7 @@ endef
 define U-Boot/apalis_imx6
   NAME:=Toradex Apalis
   UBOOT_IMAGE:=SPL u-boot.img u-boot-with-spl.imx
-  UBOOT_MAKE_FLAGS:=SPL u-boot.img u-boot-with-spl.imx
+  UBOOT_MAKE_FLAGS+=SPL u-boot.img u-boot-with-spl.imx
   BUILD_SUBTARGET:=cortexa9
   BUILD_DEVICES:=toradex_apalis
 endef
@@ -31,9 +31,17 @@ endef
 define U-Boot/mx6cuboxi
   NAME:=SolidRun Cubox-i boards
   UBOOT_IMAGE:=SPL u-boot-dtb.img
-  UBOOT_MAKE_FLAGS:=SPL u-boot-dtb.img
+  UBOOT_MAKE_FLAGS+=SPL u-boot-dtb.img
   BUILD_SUBTARGET:=cortexa9
   BUILD_DEVICES:=solidrun_cubox-i
+endef
+
+define U-Boot/pico-pi-imx7d
+  NAME:=TechNexion PICO-PI-IMX7D
+  UBOOT_IMAGE:=SPL u-boot-dtb.img
+  UBOOT_MAKE_FLAGS+=SPL u-boot-dtb.img
+  BUILD_SUBTARGET:=cortexa7
+  BUILD_DEVICES:=technexion_imx7d-pico-pi
 endef
 
 define U-Boot/wandboard
@@ -45,6 +53,7 @@ endef
 UBOOT_TARGETS := \
 	apalis_imx6 \
 	mx6cuboxi \
+	pico-pi-imx7d \
 	wandboard
 
 UBOOT_MAKE_FLAGS += u-boot.imx

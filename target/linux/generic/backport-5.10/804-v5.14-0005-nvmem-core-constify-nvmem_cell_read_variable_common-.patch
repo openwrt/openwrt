@@ -1,0 +1,52 @@
+From 1f7b4d87874624f4beb25253900a25306a193b8b Mon Sep 17 00:00:00 2001
+From: Douglas Anderson <dianders@chromium.org>
+Date: Fri, 11 Jun 2021 09:33:47 +0100
+Subject: [PATCH] nvmem: core: constify nvmem_cell_read_variable_common()
+ return value
+
+The caller doesn't modify the memory pointed to by the pointer so it
+can be const.
+
+Suggested-by: Stephen Boyd <swboyd@chromium.org>
+Signed-off-by: Douglas Anderson <dianders@chromium.org>
+Reviewed-by: Stephen Boyd <swboyd@chromium.org>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20210611083348.20170-9-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -1615,9 +1615,9 @@ int nvmem_cell_read_u64(struct device *d
+ }
+ EXPORT_SYMBOL_GPL(nvmem_cell_read_u64);
+ 
+-static void *nvmem_cell_read_variable_common(struct device *dev,
+-					     const char *cell_id,
+-					     size_t max_len, size_t *len)
++static const void *nvmem_cell_read_variable_common(struct device *dev,
++						   const char *cell_id,
++						   size_t max_len, size_t *len)
+ {
+ 	struct nvmem_cell *cell;
+ 	int nbits;
+@@ -1661,7 +1661,7 @@ int nvmem_cell_read_variable_le_u32(stru
+ 				    u32 *val)
+ {
+ 	size_t len;
+-	u8 *buf;
++	const u8 *buf;
+ 	int i;
+ 
+ 	buf = nvmem_cell_read_variable_common(dev, cell_id, sizeof(*val), &len);
+@@ -1692,7 +1692,7 @@ int nvmem_cell_read_variable_le_u64(stru
+ 				    u64 *val)
+ {
+ 	size_t len;
+-	u8 *buf;
++	const u8 *buf;
+ 	int i;
+ 
+ 	buf = nvmem_cell_read_variable_common(dev, cell_id, sizeof(*val), &len);

@@ -18,6 +18,8 @@
 
 	leds {
 		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&enable_wlan_led_gpio>;
 
 		/* Hidden SMD LED below signal strength LEDs.
 		 * Visible through slits underside of the case,
@@ -27,6 +29,13 @@
 			function = LED_FUNCTION_DEBUG;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			default-state = "on";
+		};
+
+		led-1 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 
@@ -64,20 +73,6 @@
 	};
 };
 
-&gpio {
-	/* GPIO19 is used as a mask to enable WLAN LED
-	 * in stock firmware, which is controlled directly
-	 * by 5GHz Wi-Fi chip, which currently is inactive
-	 * in OpenWrt
-	 */
-	led-wlan {
-		gpio-hog;
-		gpios = <19 GPIO_ACTIVE_LOW>;
-		output-high;
-		line-name = "led:wlan";
-	};
-};
-
 &spi {
 	status = "okay";
 
@@ -109,7 +104,6 @@
 &mdio0 {
 	status = "okay";
 
-	phy-mask = <0>;
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 		phy-mode = "sgmii";
@@ -134,6 +128,12 @@
 	wifi_ath10k: wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0 0 0 0 0>;
+	};
+};
+
+&pinmux {
+	enable_wlan_led_gpio: pinmux_wlan_led_gpio {
+		pinctrl-single,bits = <0x10 0x0 0xff000000>;
 	};
 };
 

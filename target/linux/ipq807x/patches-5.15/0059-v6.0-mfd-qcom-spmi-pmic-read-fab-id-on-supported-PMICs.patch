@@ -1,0 +1,52 @@
+From 0c309f4e86c827cd5fd2eb0e36d5d1f19927380d Mon Sep 17 00:00:00 2001
+From: Caleb Connolly <caleb.connolly@linaro.org>
+Date: Fri, 29 Apr 2022 23:08:58 +0100
+Subject: [PATCH] mfd: qcom-spmi-pmic: read fab id on supported PMICs
+
+The PMI8998 and PM660 expose the fab_id, this is needed by drivers like
+the RRADC to calibrate ADC values.
+
+Signed-off-by: Caleb Connolly <caleb.connolly@linaro.org>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Tested-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Acked-by: Lee Jones <lee.jones@linaro.org>
+Link: https://lore.kernel.org/r/20220429220904.137297-4-caleb.connolly@linaro.org
+Signed-off-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+---
+ drivers/mfd/qcom-spmi-pmic.c      | 7 +++++++
+ include/soc/qcom/qcom-spmi-pmic.h | 1 +
+ 2 files changed, 8 insertions(+)
+
+--- a/drivers/mfd/qcom-spmi-pmic.c
++++ b/drivers/mfd/qcom-spmi-pmic.c
+@@ -19,6 +19,7 @@
+ #define PMIC_REV4		0x103
+ #define PMIC_TYPE		0x104
+ #define PMIC_SUBTYPE		0x105
++#define PMIC_FAB_ID		0x1f2
+ 
+ #define PMIC_TYPE_VALUE		0x51
+ 
+@@ -157,6 +158,12 @@ static int pmic_spmi_load_revid(struct r
+ 	if (ret < 0)
+ 		return ret;
+ 
++	if (pmic->subtype == PMI8998_SUBTYPE || pmic->subtype == PM660_SUBTYPE) {
++		ret = regmap_read(map, PMIC_FAB_ID, &pmic->fab_id);
++		if (ret < 0)
++			return ret;
++	}
++
+ 	/*
+ 	 * In early versions of PM8941 and PM8226, the major revision number
+ 	 * started incrementing from 0 (eg 0 = v1.0, 1 = v2.0).
+--- a/include/soc/qcom/qcom-spmi-pmic.h
++++ b/include/soc/qcom/qcom-spmi-pmic.h
+@@ -52,6 +52,7 @@ struct qcom_spmi_pmic {
+ 	unsigned int major;
+ 	unsigned int minor;
+ 	unsigned int rev2;
++	unsigned int fab_id;
+ 	const char *name;
+ };
+ 

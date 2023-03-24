@@ -3,6 +3,9 @@ name: Test Formalities
 on:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Test Formalities
@@ -11,7 +14,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -24,7 +27,7 @@ jobs:
 
       - name: Test formalities
         run: |
-          source .github/workflows/ci_helpers.sh
+          source .github/workflows/scripts/ci_helpers.sh
 
           RET=0
           for commit in $(git rev-list HEAD ^origin/$BRANCH); do

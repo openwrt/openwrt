@@ -22,7 +22,7 @@
 	ebc {
 		nor_flash@0,0 {
 			status = "okay";
-			compatible = "amd,s29gl512n", "jedec-probe", "cfi-flash", "mtd-rom";
+			compatible = "microchip,sst39vf040", "jedec-flash";
 			bank-width = <1>;
 			reg = <0x00000000 0x00000000 0x00080000>;
 			#address-cells = <1>;
@@ -32,16 +32,19 @@
 				/* Part of bootrom - Don't use it without a jump */
 				label = "free";
 				reg = <0x00000000 0x0001e000>;
+				read-only;
 			};
 
 			partition@1e000 {
 				label = "env";
 				reg = <0x0001e000 0x00002000>;
+				read-only;
 			};
 
 			partition@20000 {
 				label = "uboot";
 				reg = <0x00020000 0x00050000>;
+				read-only;
 			};
 		};
 	};
@@ -113,7 +116,7 @@
 		poll-interval = <60>;	/* 3 * 20 = 60ms */
 		autorepeat;
 
-		reset-button {
+		button-restart {
 			label = "Reset button";
 			linux,code = <KEY_RESTART>;
 			gpios = <&GPIO2 2 GPIO_ACTIVE_LOW>;

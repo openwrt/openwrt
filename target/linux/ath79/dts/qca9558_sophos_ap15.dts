@@ -1,0 +1,138 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "sophos,ap15", "qca,qca9558";
+	model = "Sophos AP15";
+
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_yellow;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_yellow;
+		label-mac-device = &eth0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: status_green {
+			label = "green:status";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_status_yellow: status_yellow {
+			label = "yellow:status";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x040000 0x010000>;
+			};
+
+			art: partition@50000 {
+				label = "art";
+				reg = <0x050000 0x010000>;
+				read-only;
+			};
+
+			config: partition@60000 {
+				label = "config";
+				reg = <0x060000 0x010000>;
+				read-only;
+			};
+
+			partition@70000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x070000 0xf90000>;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy-mask = <0x10>;
+
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+		eee-broken-100tx;
+		eee-broken-1000t;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	pll-data = <0xa6000000 0xa0000101 0xa0001313>;
+
+	nvmem-cells = <&macaddr_config_201a>;
+	nvmem-cell-names = "mac-address";
+
+	phy-mode = "rgmii-id";
+	phy-handle = <&phy4>;
+
+	gmac_config: gmac-config {
+		device = <&gmac>;
+
+		rgmii-enabled = <1>;
+
+		rxdv-delay = <3>;
+		rxd-delay = <3>;
+		txen-delay = <3>;
+		txd-delay = <3>;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	mtd-cal-data = <&art 0x1000>;
+};
+
+&config {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_config_201a: macaddr@201a {
+		reg = <0x201a 0x6>;
+	};
+};

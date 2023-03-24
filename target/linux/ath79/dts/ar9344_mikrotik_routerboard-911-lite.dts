@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344_mikrotik_routerboard.dtsi"
+#include "ar9344_mikrotik_routerboard-16m-nor.dtsi"
+
+/ {
+	model = "MikroTik RouterBOARD 911-2Hn/5Hn (Lite2/Lite5)";
+	compatible = "mikrotik,routerboard-911-lite", "qca,ar9344";
+};
+
+&leds {
+	pinctrl-names = "default";
+	pinctrl-0 = <&enable_gpio_20>;
+
+	lan {
+		label = "green:lan";
+		gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+	};
+
+	power {
+		label = "green:power";
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		default-state = "on";
+	};
+
+	led_user: user {
+		label = "green:user";
+		gpios = <&gpio 3 (GPIO_ACTIVE_LOW|GPIO_OPEN_DRAIN)>;
+	};
+};
+
+&pinmux {
+	enable_gpio_20: pinmux_gpio_out_function5 {
+		pinctrl-single,bits = <0x14 0x0 0xff>;
+	};
+};

@@ -58,6 +58,7 @@ struct p_hdr {
 	uint16_t	size;		/* buffer size */
 	uint16_t	offset;
 	uint16_t	len;		/* pkt len */
+	/* cpu_tag[0] is a reserved uint16_t on RTL83xx */
 	uint16_t	cpu_tag[10];
 } __packed __aligned(1);
 
@@ -92,67 +93,60 @@ struct notify_b {
 	u32			reserved2[8];
 };
 
-static void rtl838x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
+static void rtl838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
-	prio &= 0x7;
+	// cpu_tag[0] is reserved on the RTL83XX SoCs
+	h->cpu_tag[1] = 0x0400;  // BIT 10: RTL8380_CPU_TAG
+	h->cpu_tag[2] = 0x0200;  // Set only AS_DPM, to enable DPM settings below
+	h->cpu_tag[3] = 0x0000;
+	h->cpu_tag[4] = BIT(dest_port) >> 16;
+	h->cpu_tag[5] = BIT(dest_port) & 0xffff;
 
-	if (dest_port > 0) {
-		// cpu_tag[0] is reserved on the RTL83XX SoCs
-		h->cpu_tag[1] = 0x0401;  // BIT 10: RTL8380_CPU_TAG, BIT0: L2LEARNING on
-		h->cpu_tag[2] = 0x0200;  // Set only AS_DPM, to enable DPM settings below
-		h->cpu_tag[3] = 0x0000;
+	/* Set internal priority (PRI) and enable (AS_PRI) */
+	if (prio >= 0)
+		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 12;
+}
+
+static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+{
+	// cpu_tag[0] is reserved on the RTL83XX SoCs
+	h->cpu_tag[1] = 0x0100; // RTL8390_CPU_TAG marker
+	h->cpu_tag[2] = BIT(4); /* AS_DPM flag */
+	h->cpu_tag[3] = h->cpu_tag[4] = h->cpu_tag[5] = 0;
+	// h->cpu_tag[1] |= BIT(1) | BIT(0); // Bypass filter 1/2
+	if (dest_port >= 32) {
+		dest_port -= 32;
+		h->cpu_tag[2] |= (BIT(dest_port) >> 16) & 0xf;
+		h->cpu_tag[3] = BIT(dest_port) & 0xffff;
+	} else {
 		h->cpu_tag[4] = BIT(dest_port) >> 16;
 		h->cpu_tag[5] = BIT(dest_port) & 0xffff;
-		// Set internal priority and AS_PRIO
-		if (prio >= 0)
-			h->cpu_tag[2] |= (prio | 0x8) << 12;
 	}
+
+	/* Set internal priority (PRI) and enable (AS_PRI) */
+	if (prio >= 0)
+		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 8;
 }
 
-static void rtl839x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
-{
-	prio &= 0x7;
-
-	if (dest_port > 0) {
-		// cpu_tag[0] is reserved on the RTL83XX SoCs
-		h->cpu_tag[1] = 0x0100; // RTL8390_CPU_TAG marker
-		h->cpu_tag[2] = h->cpu_tag[3] = h->cpu_tag[4] = h->cpu_tag[5] = 0;
-		// h->cpu_tag[1] |= BIT(1) | BIT(0); // Bypass filter 1/2
-		if (dest_port >= 32) {
-			dest_port -= 32;
-			h->cpu_tag[2] = BIT(dest_port) >> 16;
-			h->cpu_tag[3] = BIT(dest_port) & 0xffff;
-		} else {
-			h->cpu_tag[4] = BIT(dest_port) >> 16;
-			h->cpu_tag[5] = BIT(dest_port) & 0xffff;
-		}
-		h->cpu_tag[2] |= BIT(5); // Enable destination port mask use
-		h->cpu_tag[2] |= BIT(8); // Enable L2 Learning
-		// Set internal priority and AS_PRIO
-		if (prio >= 0)
-			h->cpu_tag[1] |= prio | BIT(3);
-	}
-}
-
-static void rtl930x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
+static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  // CPU tag marker
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
-	if (prio >= 0)
-		h->cpu_tag[2] = BIT(13) | prio << 8; // Enable and set Priority Queue
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = 0;
 	h->cpu_tag[5] = 0;
 	h->cpu_tag[6] = BIT(dest_port) >> 16;
 	h->cpu_tag[7] = BIT(dest_port) & 0xffff;
+
+	/* Enable (AS_QID) and set priority queue (QID) */
+	if (prio >= 0)
+		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
-static void rtl931x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
+static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  // CPU tag marker
 	h->cpu_tag[1] = h->cpu_tag[2] = 0;
-	if (prio >= 0)
-		h->cpu_tag[2] = BIT(13) | prio << 8; // Enable and set Priority Queue
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = h->cpu_tag[5] = h->cpu_tag[6] = h->cpu_tag[7] = 0;
 	if (dest_port >= 32) {
@@ -163,6 +157,10 @@ static void rtl931x_create_tx_header(struct p_hdr *h, int dest_port, int prio)
 		h->cpu_tag[6] = BIT(dest_port) >> 16;
 		h->cpu_tag[7] = BIT(dest_port) & 0xffff;
 	}
+
+	/* Enable (AS_QID) and set priority queue (QID) */
+	if (prio >= 0)
+		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
 static void rtl93xx_header_vlan_set(struct p_hdr *h, int vlan)
@@ -265,13 +263,14 @@ struct dsa_tag {
 
 bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
-	t->reason = h->cpu_tag[3] & 0xf;
-	t->queue = (h->cpu_tag[0] & 0xe0) >> 5;
+	/* cpu_tag[0] is reserved. Fields are off-by-one */
+	t->reason = h->cpu_tag[4] & 0xf;
+	t->queue = (h->cpu_tag[1] & 0xe0) >> 5;
 	t->port = h->cpu_tag[1] & 0x1f;
 	t->crc_error = t->reason == 13;
 
 	pr_debug("Reason: %d\n", t->reason);
-	if (t->reason != 4) // NIC_RX_REASON_SPECIAL_TRAP
+	if (t->reason != 6) // NIC_RX_REASON_SPECIAL_TRAP
 		t->l2_offloaded = 1;
 	else
 		t->l2_offloaded = 0;
@@ -281,10 +280,11 @@ bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 
 bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
+	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[5] & 0x1f;
-	t->queue = (h->cpu_tag[3] & 0xe000) >> 13;
+	t->queue = (h->cpu_tag[4] & 0xe000) >> 13;
 	t->port = h->cpu_tag[1] & 0x3f;
-	t->crc_error = h->cpu_tag[3] & BIT(2);
+	t->crc_error = h->cpu_tag[4] & BIT(6);
 
 	pr_debug("Reason: %d\n", t->reason);
 	if ((t->reason >= 7 && t->reason <= 13) || // NIC_RX_REASON_RMA
@@ -682,7 +682,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 	else
 		reset_mask = 0xc;
 
-	sw_w32(reset_mask, priv->r->rst_glb_ctrl);
+	sw_w32_mask(0, reset_mask, priv->r->rst_glb_ctrl);
 
 	do { /* Wait for reset of NIC and Queues done */
 		udelay(20);
@@ -1030,8 +1030,32 @@ static int rtl838x_eth_stop(struct net_device *ndev)
 	return 0;
 }
 
+static void rtl838x_eth_set_multicast_list(struct net_device *ndev)
+{
+	/*
+	 * Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	 * CTRL_0_FULL = GENMASK(21, 0) = 0x3FFFFF
+	 */
+	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
+		sw_w32(0x0, RTL838X_RMA_CTRL_0);
+		sw_w32(0x0, RTL838X_RMA_CTRL_1);
+	}
+	if (ndev->flags & IFF_ALLMULTI)
+		sw_w32(GENMASK(21, 0), RTL838X_RMA_CTRL_0);
+	if (ndev->flags & IFF_PROMISC) {
+		sw_w32(GENMASK(21, 0), RTL838X_RMA_CTRL_0);
+		sw_w32(0x7fff, RTL838X_RMA_CTRL_1);
+	}
+}
+
 static void rtl839x_eth_set_multicast_list(struct net_device *ndev)
 {
+	/*
+	 * Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
+	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
+	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
+	 */
 	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
 		sw_w32(0x0, RTL839X_RMA_CTRL_0);
 		sw_w32(0x0, RTL839X_RMA_CTRL_1);
@@ -1039,72 +1063,53 @@ static void rtl839x_eth_set_multicast_list(struct net_device *ndev)
 		sw_w32(0x0, RTL839X_RMA_CTRL_3);
 	}
 	if (ndev->flags & IFF_ALLMULTI) {
-		sw_w32(0x7fffffff, RTL839X_RMA_CTRL_0);
-		sw_w32(0x7fffffff, RTL839X_RMA_CTRL_1);
-		sw_w32(0x7fffffff, RTL839X_RMA_CTRL_2);
+		sw_w32(GENMASK(31, 2), RTL839X_RMA_CTRL_0);
+		sw_w32(GENMASK(31, 0), RTL839X_RMA_CTRL_1);
+		sw_w32(GENMASK(31, 0), RTL839X_RMA_CTRL_2);
 	}
 	if (ndev->flags & IFF_PROMISC) {
-		sw_w32(0x7fffffff, RTL839X_RMA_CTRL_0);
-		sw_w32(0x7fffffff, RTL839X_RMA_CTRL_1);
-		sw_w32(0x7fffffff, RTL839X_RMA_CTRL_2);
+		sw_w32(GENMASK(31, 2), RTL839X_RMA_CTRL_0);
+		sw_w32(GENMASK(31, 0), RTL839X_RMA_CTRL_1);
+		sw_w32(GENMASK(31, 0), RTL839X_RMA_CTRL_2);
 		sw_w32(0x3ff, RTL839X_RMA_CTRL_3);
-	}
-}
-
-static void rtl838x_eth_set_multicast_list(struct net_device *ndev)
-{
-	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
-
-	if (priv->family_id == RTL8390_FAMILY_ID)
-		return rtl839x_eth_set_multicast_list(ndev);
-
-	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
-		sw_w32(0x0, RTL838X_RMA_CTRL_0);
-		sw_w32(0x0, RTL838X_RMA_CTRL_1);
-	}
-	if (ndev->flags & IFF_ALLMULTI)
-		sw_w32(0x1fffff, RTL838X_RMA_CTRL_0);
-	if (ndev->flags & IFF_PROMISC) {
-		sw_w32(0x1fffff, RTL838X_RMA_CTRL_0);
-		sw_w32(0x7fff, RTL838X_RMA_CTRL_1);
 	}
 }
 
 static void rtl930x_eth_set_multicast_list(struct net_device *ndev)
 {
-	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
+	/*
+	 * Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
+	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00
+	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
+	 */
+	if (ndev->flags & (IFF_ALLMULTI | IFF_PROMISC)) {
+		sw_w32(GENMASK(31, 2), RTL930X_RMA_CTRL_0);
+		sw_w32(GENMASK(31, 0), RTL930X_RMA_CTRL_1);
+		sw_w32(GENMASK(31, 0), RTL930X_RMA_CTRL_2);
+	} else {
 		sw_w32(0x0, RTL930X_RMA_CTRL_0);
 		sw_w32(0x0, RTL930X_RMA_CTRL_1);
 		sw_w32(0x0, RTL930X_RMA_CTRL_2);
-	}
-	if (ndev->flags & IFF_ALLMULTI) {
-		sw_w32(0x7fffffff, RTL930X_RMA_CTRL_0);
-		sw_w32(0x7fffffff, RTL930X_RMA_CTRL_1);
-		sw_w32(0x7fffffff, RTL930X_RMA_CTRL_2);
-	}
-	if (ndev->flags & IFF_PROMISC) {
-		sw_w32(0x7fffffff, RTL930X_RMA_CTRL_0);
-		sw_w32(0x7fffffff, RTL930X_RMA_CTRL_1);
-		sw_w32(0x7fffffff, RTL930X_RMA_CTRL_2);
 	}
 }
 
 static void rtl931x_eth_set_multicast_list(struct net_device *ndev)
 {
-	if (!(ndev->flags & (IFF_PROMISC | IFF_ALLMULTI))) {
+	/*
+	 * Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
+	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
+	 * Lower two bits are reserved, corresponding to RMA 01-80-C2-00-00-00.
+	 * CTRL_1_FULL = CTRL_2_FULL = GENMASK(31, 0)
+	 */
+	if (ndev->flags & (IFF_ALLMULTI | IFF_PROMISC)) {
+		sw_w32(GENMASK(31, 2), RTL931X_RMA_CTRL_0);
+		sw_w32(GENMASK(31, 0), RTL931X_RMA_CTRL_1);
+		sw_w32(GENMASK(31, 0), RTL931X_RMA_CTRL_2);
+	} else {
 		sw_w32(0x0, RTL931X_RMA_CTRL_0);
 		sw_w32(0x0, RTL931X_RMA_CTRL_1);
 		sw_w32(0x0, RTL931X_RMA_CTRL_2);
-	}
-	if (ndev->flags & IFF_ALLMULTI) {
-		sw_w32(0x7fffffff, RTL931X_RMA_CTRL_0);
-		sw_w32(0x7fffffff, RTL931X_RMA_CTRL_1);
-		sw_w32(0x7fffffff, RTL931X_RMA_CTRL_2);
-	}
-	if (ndev->flags & IFF_PROMISC) {
-		sw_w32(0x7fffffff, RTL931X_RMA_CTRL_0);
-		sw_w32(0x7fffffff, RTL931X_RMA_CTRL_1);
-		sw_w32(0x7fffffff, RTL931X_RMA_CTRL_2);
 	}
 }
 
@@ -1142,9 +1147,10 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 	len = skb->len;
 
 	/* Check for DSA tagging at the end of the buffer */
-	if (netdev_uses_dsa(dev) && skb->data[len-4] == 0x80 && skb->data[len-3] > 0
-			&& skb->data[len-3] < priv->cpu_port &&  skb->data[len-2] == 0x10
-			&&  skb->data[len-1] == 0x00) {
+	if (netdev_uses_dsa(dev) && skb->data[len-4] == 0x80
+			&& skb->data[len-3] < priv->cpu_port
+			&& skb->data[len-2] == 0x10
+			&& skb->data[len-1] == 0x00) {
 		/* Reuse tag space for CRC if possible */
 		dest_port = skb->data[len-3];
 		skb->data[len-4] = skb->data[len-3] = skb->data[len-2] = skb->data[len-1] = 0x00;
@@ -1171,7 +1177,8 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 				h->len -= 4;
 		}
 
-		priv->r->create_tx_header(h, dest_port, skb->priority >> 1);
+		if (dest_port >= 0)
+			priv->r->create_tx_header(h, dest_port, skb->priority >> 1);
 
 		/* Copy packet data to tx buffer */
 		memcpy((void *)KSEG1ADDR(h->buf), skb->data, len);
@@ -1245,6 +1252,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->membase;
 	struct sk_buff *skb;
+	LIST_HEAD(rx_list);
 	unsigned long flags;
 	int i, len, work_done = 0;
 	u8 *data, *skb_data;
@@ -1322,7 +1330,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 			dev->stats.rx_packets++;
 			dev->stats.rx_bytes += len;
 
-			netif_receive_skb(skb);
+			list_add_tail(&skb->list, &rx_list);
 		} else {
 			if (net_ratelimit())
 				dev_warn(&dev->dev, "low on memory - packet dropped\n");
@@ -1339,6 +1347,8 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
+
+	netif_receive_skb_list(&rx_list);
 
 	// Update counters
 	priv->r->update_cntr(r, 0);
@@ -2240,7 +2250,7 @@ static int rtl83xx_set_features(struct net_device *dev, netdev_features_t featur
 		if (!(features & NETIF_F_RXCSUM))
 			sw_w32_mask(BIT(3), 0, priv->r->mac_port_ctrl(priv->cpu_port));
 		else
-			sw_w32_mask(0, BIT(4), priv->r->mac_port_ctrl(priv->cpu_port));
+			sw_w32_mask(0, BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
 	}
 
 	return 0;

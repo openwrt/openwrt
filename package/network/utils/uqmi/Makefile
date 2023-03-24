@@ -5,15 +5,16 @@ PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/uqmi.git
-PKG_SOURCE_DATE:=2022-03-12
-PKG_SOURCE_VERSION:=44dd095794a5327611d0ee1a58b0a6333d397b64
-PKG_MIRROR_HASH:=1f7890c659981e1da5c6d73911c30e24722818ff52d58f41d80cc96b62d53311
+PKG_SOURCE_DATE:=2022-05-04
+PKG_SOURCE_VERSION:=56cb2d4056fef132ccf78dfb6f3074ae5d109992
+PKG_MIRROR_HASH:=cc832b5318805df8c8387a3650f250dee72d5f1dbda4e4866b5503e186b2210c
 PKG_MAINTAINER:=Matti Laakso <malaakso@elisanet.fi>
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=
 
 PKG_FLAGS:=nonshared
+PKG_BUILD_FLAGS:=gc-sections
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -32,9 +33,9 @@ define Package/uqmi/description
 endef
 
 TARGET_CFLAGS += \
-	-I$(STAGING_DIR)/usr/include -ffunction-sections -fdata-sections
-
-TARGET_LDFLAGS += -Wl,--gc-sections
+	-I$(STAGING_DIR)/usr/include \
+	-Wno-error=dangling-pointer \
+	-Wno-error=maybe-uninitialized
 
 CMAKE_OPTIONS += \
 	-DDEBUG=1
