@@ -19,7 +19,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-5-ansuelsmth@gmail.com
 
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
-@@ -291,13 +291,13 @@ static const char * const gcc_pxo_pll3[]
+@@ -292,13 +292,13 @@ static const char * const gcc_pxo_pll3[]
  	"pll3",
  };
  
@@ -35,7 +35,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-5-ansuelsmth@gmail.com
  	"pxo",
  	"pll8_vote",
  	"pll0_vote",
-@@ -1993,7 +1993,7 @@ static struct clk_rcg usb30_master_clk_s
+@@ -1996,7 +1996,7 @@ static struct clk_rcg usb30_master_clk_s
  	},
  	.s = {
  		.src_sel_shift = 0,
@@ -44,7 +44,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-5-ansuelsmth@gmail.com
  	},
  	.freq_tbl = clk_tbl_usb30_master,
  	.clkr = {
-@@ -2001,7 +2001,7 @@ static struct clk_rcg usb30_master_clk_s
+@@ -2004,7 +2004,7 @@ static struct clk_rcg usb30_master_clk_s
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb30_master_ref_src",
@@ -53,7 +53,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-5-ansuelsmth@gmail.com
  			.num_parents = 3,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -2063,7 +2063,7 @@ static struct clk_rcg usb30_utmi_clk = {
+@@ -2066,7 +2066,7 @@ static struct clk_rcg usb30_utmi_clk = {
  	},
  	.s = {
  		.src_sel_shift = 0,
@@ -62,7 +62,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-5-ansuelsmth@gmail.com
  	},
  	.freq_tbl = clk_tbl_usb30_utmi,
  	.clkr = {
-@@ -2071,7 +2071,7 @@ static struct clk_rcg usb30_utmi_clk = {
+@@ -2074,7 +2074,7 @@ static struct clk_rcg usb30_utmi_clk = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb30_utmi_clk",
@@ -71,7 +71,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-5-ansuelsmth@gmail.com
  			.num_parents = 3,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -2133,7 +2133,7 @@ static struct clk_rcg usb_hs1_xcvr_clk_s
+@@ -2136,7 +2136,7 @@ static struct clk_rcg usb_hs1_xcvr_clk_s
  	},
  	.s = {
  		.src_sel_shift = 0,
@@ -80,7 +80,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-5-ansuelsmth@gmail.com
  	},
  	.freq_tbl = clk_tbl_usb,
  	.clkr = {
-@@ -2141,7 +2141,7 @@ static struct clk_rcg usb_hs1_xcvr_clk_s
+@@ -2144,7 +2144,7 @@ static struct clk_rcg usb_hs1_xcvr_clk_s
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb_hs1_xcvr_src",
@@ -89,7 +89,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-5-ansuelsmth@gmail.com
  			.num_parents = 3,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -2197,7 +2197,7 @@ static struct clk_rcg usb_fs1_xcvr_clk_s
+@@ -2200,7 +2200,7 @@ static struct clk_rcg usb_fs1_xcvr_clk_s
  	},
  	.s = {
  		.src_sel_shift = 0,
@@ -98,7 +98,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-5-ansuelsmth@gmail.com
  	},
  	.freq_tbl = clk_tbl_usb,
  	.clkr = {
-@@ -2205,7 +2205,7 @@ static struct clk_rcg usb_fs1_xcvr_clk_s
+@@ -2208,7 +2208,7 @@ static struct clk_rcg usb_fs1_xcvr_clk_s
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb_fs1_xcvr_src",

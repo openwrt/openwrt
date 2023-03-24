@@ -16,7 +16,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-13-ansuelsmth@gmail.com
 
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
-@@ -256,6 +256,24 @@ static struct clk_pll pll18 = {
+@@ -257,6 +257,24 @@ static struct clk_pll pll18 = {
  	},
  };
  
@@ -41,7 +41,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-13-ansuelsmth@gmail.com
  enum {
  	P_PXO,
  	P_PLL8,
-@@ -264,6 +282,7 @@ enum {
+@@ -265,6 +283,7 @@ enum {
  	P_CXO,
  	P_PLL14,
  	P_PLL18,
@@ -49,7 +49,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-13-ansuelsmth@gmail.com
  };
  
  static const struct parent_map gcc_pxo_pll8_map[] = {
-@@ -331,6 +350,44 @@ static const struct clk_parent_data gcc_
+@@ -332,6 +351,44 @@ static const struct clk_parent_data gcc_
  	{ .hw = &pll18.clkr.hw },
  };
  
@@ -94,7 +94,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-13-ansuelsmth@gmail.com
  static struct freq_tbl clk_tbl_gsbi_uart[] = {
  	{  1843200, P_PLL8, 2,  6, 625 },
  	{  3686400, P_PLL8, 2, 12, 625 },
-@@ -2824,6 +2881,186 @@ static struct clk_dyn_rcg ubi32_core2_sr
+@@ -2829,6 +2886,186 @@ static struct clk_dyn_rcg ubi32_core2_sr
  	},
  };
  
@@ -281,7 +281,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-13-ansuelsmth@gmail.com
  static struct clk_regmap *gcc_ipq806x_clks[] = {
  	[PLL0] = &pll0.clkr,
  	[PLL0_VOTE] = &pll0_vote,
-@@ -2831,6 +3068,7 @@ static struct clk_regmap *gcc_ipq806x_cl
+@@ -2836,6 +3073,7 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[PLL4_VOTE] = &pll4_vote,
  	[PLL8] = &pll8.clkr,
  	[PLL8_VOTE] = &pll8_vote,
@@ -289,7 +289,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-13-ansuelsmth@gmail.com
  	[PLL14] = &pll14.clkr,
  	[PLL14_VOTE] = &pll14_vote,
  	[PLL18] = &pll18.clkr,
-@@ -2945,6 +3183,12 @@ static struct clk_regmap *gcc_ipq806x_cl
+@@ -2950,6 +3188,12 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[PLL9] = &hfpll0.clkr,
  	[PLL10] = &hfpll1.clkr,
  	[PLL12] = &hfpll_l2.clkr,

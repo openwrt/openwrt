@@ -56,8 +56,8 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
 +		.parent_data = gcc_pxo,
  		.num_parents = 1,
  		.ops = &clk_pll_ops,
- 	},
-@@ -89,7 +95,7 @@ static struct clk_pll pll8 = {
+ 		.flags = CLK_IS_CRITICAL,
+@@ -90,7 +96,7 @@ static struct clk_pll pll8 = {
  	.status_bit = 16,
  	.clkr.hw.init = &(struct clk_init_data){
  		.name = "pll8",
@@ -66,7 +66,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  		.num_parents = 1,
  		.ops = &clk_pll_ops,
  	},
-@@ -100,7 +106,9 @@ static struct clk_regmap pll8_vote = {
+@@ -101,7 +107,9 @@ static struct clk_regmap pll8_vote = {
  	.enable_mask = BIT(8),
  	.hw.init = &(struct clk_init_data){
  		.name = "pll8_vote",
@@ -77,7 +77,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  		.num_parents = 1,
  		.ops = &clk_pll_vote_ops,
  	},
-@@ -123,7 +131,7 @@ static struct hfpll_data hfpll0_data = {
+@@ -124,7 +132,7 @@ static struct hfpll_data hfpll0_data = {
  static struct clk_hfpll hfpll0 = {
  	.d = &hfpll0_data,
  	.clkr.hw.init = &(struct clk_init_data){
@@ -86,7 +86,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  		.num_parents = 1,
  		.name = "hfpll0",
  		.ops = &clk_ops_hfpll,
-@@ -149,7 +157,7 @@ static struct hfpll_data hfpll1_data = {
+@@ -150,7 +158,7 @@ static struct hfpll_data hfpll1_data = {
  static struct clk_hfpll hfpll1 = {
  	.d = &hfpll1_data,
  	.clkr.hw.init = &(struct clk_init_data){
@@ -95,7 +95,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  		.num_parents = 1,
  		.name = "hfpll1",
  		.ops = &clk_ops_hfpll,
-@@ -175,7 +183,7 @@ static struct hfpll_data hfpll_l2_data =
+@@ -176,7 +184,7 @@ static struct hfpll_data hfpll_l2_data =
  static struct clk_hfpll hfpll_l2 = {
  	.d = &hfpll_l2_data,
  	.clkr.hw.init = &(struct clk_init_data){
@@ -104,7 +104,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  		.num_parents = 1,
  		.name = "hfpll_l2",
  		.ops = &clk_ops_hfpll,
-@@ -194,7 +202,7 @@ static struct clk_pll pll14 = {
+@@ -195,7 +203,7 @@ static struct clk_pll pll14 = {
  	.status_bit = 16,
  	.clkr.hw.init = &(struct clk_init_data){
  		.name = "pll14",
@@ -113,7 +113,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  		.num_parents = 1,
  		.ops = &clk_pll_ops,
  	},
-@@ -205,7 +213,9 @@ static struct clk_regmap pll14_vote = {
+@@ -206,7 +214,9 @@ static struct clk_regmap pll14_vote = {
  	.enable_mask = BIT(14),
  	.hw.init = &(struct clk_init_data){
  		.name = "pll14_vote",
@@ -124,7 +124,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  		.num_parents = 1,
  		.ops = &clk_pll_vote_ops,
  	},
-@@ -238,7 +248,7 @@ static struct clk_pll pll18 = {
+@@ -239,7 +249,7 @@ static struct clk_pll pll18 = {
  	.freq_tbl = pll18_freq_tbl,
  	.clkr.hw.init = &(struct clk_init_data){
  		.name = "pll18",
@@ -133,7 +133,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  		.num_parents = 1,
  		.ops = &clk_pll_ops,
  	},
-@@ -259,9 +269,9 @@ static const struct parent_map gcc_pxo_p
+@@ -260,9 +270,9 @@ static const struct parent_map gcc_pxo_p
  	{ P_PLL8, 3 }
  };
  
@@ -146,7 +146,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  };
  
  static const struct parent_map gcc_pxo_pll8_cxo_map[] = {
-@@ -270,10 +280,10 @@ static const struct parent_map gcc_pxo_p
+@@ -271,10 +281,10 @@ static const struct parent_map gcc_pxo_p
  	{ P_CXO, 5 }
  };
  
@@ -161,7 +161,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  };
  
  static const struct parent_map gcc_pxo_pll3_map[] = {
-@@ -286,9 +296,9 @@ static const struct parent_map gcc_pxo_p
+@@ -287,9 +297,9 @@ static const struct parent_map gcc_pxo_p
  	{ P_PLL3, 6 }
  };
  
@@ -174,7 +174,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  };
  
  static const struct parent_map gcc_pxo_pll8_pll0_map[] = {
-@@ -297,10 +307,10 @@ static const struct parent_map gcc_pxo_p
+@@ -298,10 +308,10 @@ static const struct parent_map gcc_pxo_p
  	{ P_PLL0, 2 }
  };
  
@@ -189,7 +189,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  };
  
  static const struct parent_map gcc_pxo_pll8_pll14_pll18_pll0_map[] = {
-@@ -311,12 +321,12 @@ static const struct parent_map gcc_pxo_p
+@@ -312,12 +322,12 @@ static const struct parent_map gcc_pxo_p
  	{ P_PLL18, 1 }
  };
  
@@ -208,7 +208,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  };
  
  static struct freq_tbl clk_tbl_gsbi_uart[] = {
-@@ -362,7 +372,7 @@ static struct clk_rcg gsbi1_uart_src = {
+@@ -363,7 +373,7 @@ static struct clk_rcg gsbi1_uart_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi1_uart_src",
@@ -217,7 +217,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -378,8 +388,8 @@ static struct clk_branch gsbi1_uart_clk
+@@ -379,8 +389,8 @@ static struct clk_branch gsbi1_uart_clk
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi1_uart_clk",
@@ -228,7 +228,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -413,7 +423,7 @@ static struct clk_rcg gsbi2_uart_src = {
+@@ -414,7 +424,7 @@ static struct clk_rcg gsbi2_uart_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi2_uart_src",
@@ -237,7 +237,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -429,8 +439,8 @@ static struct clk_branch gsbi2_uart_clk
+@@ -430,8 +440,8 @@ static struct clk_branch gsbi2_uart_clk
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi2_uart_clk",
@@ -248,7 +248,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -464,7 +474,7 @@ static struct clk_rcg gsbi4_uart_src = {
+@@ -465,7 +475,7 @@ static struct clk_rcg gsbi4_uart_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi4_uart_src",
@@ -257,7 +257,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -480,8 +490,8 @@ static struct clk_branch gsbi4_uart_clk
+@@ -481,8 +491,8 @@ static struct clk_branch gsbi4_uart_clk
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi4_uart_clk",
@@ -268,7 +268,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -515,7 +525,7 @@ static struct clk_rcg gsbi5_uart_src = {
+@@ -516,7 +526,7 @@ static struct clk_rcg gsbi5_uart_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi5_uart_src",
@@ -277,7 +277,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -531,8 +541,8 @@ static struct clk_branch gsbi5_uart_clk
+@@ -532,8 +542,8 @@ static struct clk_branch gsbi5_uart_clk
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi5_uart_clk",
@@ -288,7 +288,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -566,7 +576,7 @@ static struct clk_rcg gsbi6_uart_src = {
+@@ -567,7 +577,7 @@ static struct clk_rcg gsbi6_uart_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi6_uart_src",
@@ -297,7 +297,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -582,8 +592,8 @@ static struct clk_branch gsbi6_uart_clk
+@@ -583,8 +593,8 @@ static struct clk_branch gsbi6_uart_clk
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi6_uart_clk",
@@ -308,7 +308,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -617,7 +627,7 @@ static struct clk_rcg gsbi7_uart_src = {
+@@ -618,7 +628,7 @@ static struct clk_rcg gsbi7_uart_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi7_uart_src",
@@ -317,7 +317,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -633,8 +643,8 @@ static struct clk_branch gsbi7_uart_clk
+@@ -634,8 +644,8 @@ static struct clk_branch gsbi7_uart_clk
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi7_uart_clk",
@@ -328,7 +328,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -681,7 +691,7 @@ static struct clk_rcg gsbi1_qup_src = {
+@@ -682,7 +692,7 @@ static struct clk_rcg gsbi1_qup_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi1_qup_src",
@@ -337,7 +337,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -697,7 +707,9 @@ static struct clk_branch gsbi1_qup_clk =
+@@ -698,7 +708,9 @@ static struct clk_branch gsbi1_qup_clk =
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi1_qup_clk",
@@ -348,7 +348,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -730,7 +742,7 @@ static struct clk_rcg gsbi2_qup_src = {
+@@ -731,7 +743,7 @@ static struct clk_rcg gsbi2_qup_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi2_qup_src",
@@ -357,7 +357,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -746,7 +758,9 @@ static struct clk_branch gsbi2_qup_clk =
+@@ -747,7 +759,9 @@ static struct clk_branch gsbi2_qup_clk =
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi2_qup_clk",
@@ -368,7 +368,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -779,7 +793,7 @@ static struct clk_rcg gsbi4_qup_src = {
+@@ -780,7 +794,7 @@ static struct clk_rcg gsbi4_qup_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi4_qup_src",
@@ -376,8 +376,8 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
 +			.parent_data = gcc_pxo_pll8,
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
- 			.flags = CLK_SET_PARENT_GATE,
-@@ -795,7 +809,9 @@ static struct clk_branch gsbi4_qup_clk =
+ 			.flags = CLK_SET_PARENT_GATE | CLK_IGNORE_UNUSED,
+@@ -796,7 +810,9 @@ static struct clk_branch gsbi4_qup_clk =
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi4_qup_clk",
@@ -387,8 +387,8 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
 +			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
- 			.flags = CLK_SET_RATE_PARENT,
-@@ -828,7 +844,7 @@ static struct clk_rcg gsbi5_qup_src = {
+ 			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
+@@ -829,7 +845,7 @@ static struct clk_rcg gsbi5_qup_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi5_qup_src",
@@ -397,7 +397,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -844,7 +860,9 @@ static struct clk_branch gsbi5_qup_clk =
+@@ -845,7 +861,9 @@ static struct clk_branch gsbi5_qup_clk =
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi5_qup_clk",
@@ -408,7 +408,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -877,7 +895,7 @@ static struct clk_rcg gsbi6_qup_src = {
+@@ -878,7 +896,7 @@ static struct clk_rcg gsbi6_qup_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi6_qup_src",
@@ -416,8 +416,8 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
 +			.parent_data = gcc_pxo_pll8,
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
- 			.flags = CLK_SET_PARENT_GATE,
-@@ -893,7 +911,9 @@ static struct clk_branch gsbi6_qup_clk =
+ 			.flags = CLK_SET_PARENT_GATE | CLK_IGNORE_UNUSED,
+@@ -894,7 +912,9 @@ static struct clk_branch gsbi6_qup_clk =
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi6_qup_clk",
@@ -428,7 +428,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -926,7 +946,7 @@ static struct clk_rcg gsbi7_qup_src = {
+@@ -927,7 +947,7 @@ static struct clk_rcg gsbi7_qup_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi7_qup_src",
@@ -437,7 +437,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -942,7 +962,9 @@ static struct clk_branch gsbi7_qup_clk =
+@@ -943,7 +963,9 @@ static struct clk_branch gsbi7_qup_clk =
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi7_qup_clk",
@@ -447,8 +447,8 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
 +			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
- 			.flags = CLK_SET_RATE_PARENT,
-@@ -1076,7 +1098,7 @@ static struct clk_rcg gp0_src = {
+ 			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
+@@ -1078,7 +1100,7 @@ static struct clk_rcg gp0_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gp0_src",
@@ -457,7 +457,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 3,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
-@@ -1092,7 +1114,9 @@ static struct clk_branch gp0_clk = {
+@@ -1094,7 +1116,9 @@ static struct clk_branch gp0_clk = {
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gp0_clk",
@@ -468,7 +468,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1125,7 +1149,7 @@ static struct clk_rcg gp1_src = {
+@@ -1127,7 +1151,7 @@ static struct clk_rcg gp1_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gp1_src",
@@ -477,7 +477,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 3,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -1141,7 +1165,9 @@ static struct clk_branch gp1_clk = {
+@@ -1143,7 +1167,9 @@ static struct clk_branch gp1_clk = {
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gp1_clk",
@@ -488,7 +488,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1174,7 +1200,7 @@ static struct clk_rcg gp2_src = {
+@@ -1176,7 +1202,7 @@ static struct clk_rcg gp2_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "gp2_src",
@@ -497,7 +497,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 3,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -1190,7 +1216,9 @@ static struct clk_branch gp2_clk = {
+@@ -1192,7 +1218,9 @@ static struct clk_branch gp2_clk = {
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "gp2_clk",
@@ -508,7 +508,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1228,7 +1256,7 @@ static struct clk_rcg prng_src = {
+@@ -1230,7 +1258,7 @@ static struct clk_rcg prng_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "prng_src",
@@ -517,7 +517,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  		},
-@@ -1244,7 +1272,9 @@ static struct clk_branch prng_clk = {
+@@ -1246,7 +1274,9 @@ static struct clk_branch prng_clk = {
  		.enable_mask = BIT(10),
  		.hw.init = &(struct clk_init_data){
  			.name = "prng_clk",
@@ -528,7 +528,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  		},
-@@ -1290,7 +1320,7 @@ static struct clk_rcg sdc1_src = {
+@@ -1292,7 +1322,7 @@ static struct clk_rcg sdc1_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "sdc1_src",
@@ -537,7 +537,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  		},
-@@ -1305,7 +1335,9 @@ static struct clk_branch sdc1_clk = {
+@@ -1307,7 +1337,9 @@ static struct clk_branch sdc1_clk = {
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "sdc1_clk",
@@ -548,7 +548,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1338,7 +1370,7 @@ static struct clk_rcg sdc3_src = {
+@@ -1340,7 +1372,7 @@ static struct clk_rcg sdc3_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "sdc3_src",
@@ -557,7 +557,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  		},
-@@ -1353,7 +1385,9 @@ static struct clk_branch sdc3_clk = {
+@@ -1355,7 +1387,9 @@ static struct clk_branch sdc3_clk = {
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "sdc3_clk",
@@ -568,7 +568,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1421,7 +1455,7 @@ static struct clk_rcg tsif_ref_src = {
+@@ -1423,7 +1457,7 @@ static struct clk_rcg tsif_ref_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "tsif_ref_src",
@@ -576,8 +576,8 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
 +			.parent_data = gcc_pxo_pll8,
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
- 		},
-@@ -1436,7 +1470,9 @@ static struct clk_branch tsif_ref_clk =
+ 			.flags = CLK_SET_RATE_GATE,
+@@ -1439,7 +1473,9 @@ static struct clk_branch tsif_ref_clk =
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "tsif_ref_clk",
@@ -588,7 +588,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1583,7 +1619,7 @@ static struct clk_rcg pcie_ref_src = {
+@@ -1586,7 +1622,7 @@ static struct clk_rcg pcie_ref_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "pcie_ref_src",
@@ -597,7 +597,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -1599,7 +1635,9 @@ static struct clk_branch pcie_ref_src_cl
+@@ -1602,7 +1638,9 @@ static struct clk_branch pcie_ref_src_cl
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "pcie_ref_src_clk",
@@ -608,7 +608,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1675,7 +1713,7 @@ static struct clk_rcg pcie1_ref_src = {
+@@ -1678,7 +1716,7 @@ static struct clk_rcg pcie1_ref_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "pcie1_ref_src",
@@ -617,7 +617,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -1691,7 +1729,9 @@ static struct clk_branch pcie1_ref_src_c
+@@ -1694,7 +1732,9 @@ static struct clk_branch pcie1_ref_src_c
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "pcie1_ref_src_clk",
@@ -628,7 +628,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1767,7 +1807,7 @@ static struct clk_rcg pcie2_ref_src = {
+@@ -1770,7 +1810,7 @@ static struct clk_rcg pcie2_ref_src = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "pcie2_ref_src",
@@ -637,7 +637,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -1783,7 +1823,9 @@ static struct clk_branch pcie2_ref_src_c
+@@ -1786,7 +1826,9 @@ static struct clk_branch pcie2_ref_src_c
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "pcie2_ref_src_clk",
@@ -648,7 +648,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1864,7 +1906,7 @@ static struct clk_rcg sata_ref_src = {
+@@ -1867,7 +1909,7 @@ static struct clk_rcg sata_ref_src = {
  		.enable_mask = BIT(7),
  		.hw.init = &(struct clk_init_data){
  			.name = "sata_ref_src",
@@ -657,7 +657,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -1880,7 +1922,9 @@ static struct clk_branch sata_rxoob_clk
+@@ -1883,7 +1925,9 @@ static struct clk_branch sata_rxoob_clk
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "sata_rxoob_clk",
@@ -668,7 +668,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1896,7 +1940,9 @@ static struct clk_branch sata_pmalive_cl
+@@ -1899,7 +1943,9 @@ static struct clk_branch sata_pmalive_cl
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "sata_pmalive_clk",
@@ -679,7 +679,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -1912,7 +1958,7 @@ static struct clk_branch sata_phy_ref_cl
+@@ -1915,7 +1961,7 @@ static struct clk_branch sata_phy_ref_cl
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "sata_phy_ref_clk",
@@ -688,7 +688,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  		},
-@@ -2001,7 +2047,7 @@ static struct clk_rcg usb30_master_clk_s
+@@ -2004,7 +2050,7 @@ static struct clk_rcg usb30_master_clk_s
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb30_master_ref_src",
@@ -697,7 +697,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 3,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -2017,7 +2063,9 @@ static struct clk_branch usb30_0_branch_
+@@ -2020,7 +2066,9 @@ static struct clk_branch usb30_0_branch_
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb30_0_branch_clk",
@@ -708,7 +708,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -2033,7 +2081,9 @@ static struct clk_branch usb30_1_branch_
+@@ -2036,7 +2084,9 @@ static struct clk_branch usb30_1_branch_
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb30_1_branch_clk",
@@ -719,7 +719,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -2071,7 +2121,7 @@ static struct clk_rcg usb30_utmi_clk = {
+@@ -2074,7 +2124,7 @@ static struct clk_rcg usb30_utmi_clk = {
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb30_utmi_clk",
@@ -728,7 +728,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 3,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -2087,7 +2137,9 @@ static struct clk_branch usb30_0_utmi_cl
+@@ -2090,7 +2140,9 @@ static struct clk_branch usb30_0_utmi_cl
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb30_0_utmi_clk_ctl",
@@ -739,7 +739,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -2103,7 +2155,9 @@ static struct clk_branch usb30_1_utmi_cl
+@@ -2106,7 +2158,9 @@ static struct clk_branch usb30_1_utmi_cl
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb30_1_utmi_clk_ctl",
@@ -750,7 +750,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -2141,7 +2195,7 @@ static struct clk_rcg usb_hs1_xcvr_clk_s
+@@ -2144,7 +2198,7 @@ static struct clk_rcg usb_hs1_xcvr_clk_s
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb_hs1_xcvr_src",
@@ -759,7 +759,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 3,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -2157,7 +2211,9 @@ static struct clk_branch usb_hs1_xcvr_cl
+@@ -2160,7 +2214,9 @@ static struct clk_branch usb_hs1_xcvr_cl
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb_hs1_xcvr_clk",
@@ -770,7 +770,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -2205,7 +2261,7 @@ static struct clk_rcg usb_fs1_xcvr_clk_s
+@@ -2208,7 +2264,7 @@ static struct clk_rcg usb_fs1_xcvr_clk_s
  		.enable_mask = BIT(11),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb_fs1_xcvr_src",
@@ -779,7 +779,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 3,
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
-@@ -2221,7 +2277,9 @@ static struct clk_branch usb_fs1_xcvr_cl
+@@ -2224,7 +2280,9 @@ static struct clk_branch usb_fs1_xcvr_cl
  		.enable_mask = BIT(9),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb_fs1_xcvr_clk",
@@ -790,7 +790,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -2237,7 +2295,9 @@ static struct clk_branch usb_fs1_sys_clk
+@@ -2240,7 +2298,9 @@ static struct clk_branch usb_fs1_sys_clk
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "usb_fs1_sys_clk",
@@ -801,7 +801,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
  			.flags = CLK_SET_RATE_PARENT,
-@@ -2337,7 +2397,7 @@ static struct clk_dyn_rcg gmac_core1_src
+@@ -2340,7 +2400,7 @@ static struct clk_dyn_rcg gmac_core1_src
  		.enable_mask = BIT(1),
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core1_src",
@@ -810,7 +810,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 5,
  			.ops = &clk_dyn_rcg_ops,
  		},
-@@ -2354,8 +2414,8 @@ static struct clk_branch gmac_core1_clk
+@@ -2357,8 +2417,8 @@ static struct clk_branch gmac_core1_clk
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core1_clk",
@@ -821,7 +821,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -2409,7 +2469,7 @@ static struct clk_dyn_rcg gmac_core2_src
+@@ -2412,7 +2472,7 @@ static struct clk_dyn_rcg gmac_core2_src
  		.enable_mask = BIT(1),
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core2_src",
@@ -830,7 +830,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 5,
  			.ops = &clk_dyn_rcg_ops,
  		},
-@@ -2426,8 +2486,8 @@ static struct clk_branch gmac_core2_clk
+@@ -2429,8 +2489,8 @@ static struct clk_branch gmac_core2_clk
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core2_clk",
@@ -841,7 +841,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -2481,7 +2541,7 @@ static struct clk_dyn_rcg gmac_core3_src
+@@ -2484,7 +2544,7 @@ static struct clk_dyn_rcg gmac_core3_src
  		.enable_mask = BIT(1),
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core3_src",
@@ -850,7 +850,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 5,
  			.ops = &clk_dyn_rcg_ops,
  		},
-@@ -2498,8 +2558,8 @@ static struct clk_branch gmac_core3_clk
+@@ -2501,8 +2561,8 @@ static struct clk_branch gmac_core3_clk
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core3_clk",
@@ -861,7 +861,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -2553,7 +2613,7 @@ static struct clk_dyn_rcg gmac_core4_src
+@@ -2556,7 +2616,7 @@ static struct clk_dyn_rcg gmac_core4_src
  		.enable_mask = BIT(1),
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core4_src",
@@ -870,7 +870,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 5,
  			.ops = &clk_dyn_rcg_ops,
  		},
-@@ -2570,8 +2630,8 @@ static struct clk_branch gmac_core4_clk
+@@ -2573,8 +2633,8 @@ static struct clk_branch gmac_core4_clk
  		.enable_mask = BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core4_clk",
@@ -881,7 +881,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -2613,7 +2673,7 @@ static struct clk_dyn_rcg nss_tcm_src =
+@@ -2616,7 +2676,7 @@ static struct clk_dyn_rcg nss_tcm_src =
  		.enable_mask = BIT(1),
  		.hw.init = &(struct clk_init_data){
  			.name = "nss_tcm_src",
@@ -890,7 +890,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			.num_parents = 5,
  			.ops = &clk_dyn_rcg_ops,
  		},
-@@ -2628,8 +2688,8 @@ static struct clk_branch nss_tcm_clk = {
+@@ -2631,8 +2691,8 @@ static struct clk_branch nss_tcm_clk = {
  		.enable_mask = BIT(6) | BIT(4),
  		.hw.init = &(struct clk_init_data){
  			.name = "nss_tcm_clk",
@@ -901,7 +901,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
  			},
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
-@@ -2691,7 +2751,7 @@ static struct clk_dyn_rcg ubi32_core1_sr
+@@ -2694,7 +2754,7 @@ static struct clk_dyn_rcg ubi32_core1_sr
  		.enable_mask = BIT(1),
  		.hw.init = &(struct clk_init_data){
  			.name = "ubi32_core1_src_clk",
@@ -909,8 +909,8 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
 +			.parent_data = gcc_pxo_pll8_pll14_pll18_pll0,
  			.num_parents = 5,
  			.ops = &clk_dyn_rcg_ops,
- 			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE,
-@@ -2744,7 +2804,7 @@ static struct clk_dyn_rcg ubi32_core2_sr
+ 			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE |
+@@ -2748,7 +2808,7 @@ static struct clk_dyn_rcg ubi32_core2_sr
  		.enable_mask = BIT(1),
  		.hw.init = &(struct clk_init_data){
  			.name = "ubi32_core2_src_clk",
@@ -918,4 +918,4 @@ Link: https://lore.kernel.org/r/20220226135235.10051-6-ansuelsmth@gmail.com
 +			.parent_data = gcc_pxo_pll8_pll14_pll18_pll0,
  			.num_parents = 5,
  			.ops = &clk_dyn_rcg_ops,
- 			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE,
+ 			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE |

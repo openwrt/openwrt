@@ -13,7 +13,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 
 --- a/drivers/clk/qcom/clk-krait.c
 +++ b/drivers/clk/qcom/clk-krait.c
-@@ -68,7 +68,25 @@ static u8 krait_mux_get_parent(struct cl
+@@ -73,7 +73,25 @@ static u8 krait_mux_get_parent(struct cl
  	return clk_mux_val_to_index(hw, mux->parent_map, 0, sel);
  }
  
