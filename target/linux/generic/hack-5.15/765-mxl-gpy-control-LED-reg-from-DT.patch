@@ -21,8 +21,6 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  drivers/net/phy/mxl-gpy.c | 37 ++++++++++++++++++++++++++++++++++++-
  1 file changed, 36 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/net/phy/mxl-gpy.c b/drivers/net/phy/mxl-gpy.c
-index 5ce1bf03bbd7..ec10ad5ccad6 100644
 --- a/drivers/net/phy/mxl-gpy.c
 +++ b/drivers/net/phy/mxl-gpy.c
 @@ -8,6 +8,7 @@
@@ -89,7 +87,7 @@ index 5ce1bf03bbd7..ec10ad5ccad6 100644
  static int gpy_config_init(struct phy_device *phydev)
  {
  	int ret;
-@@ -91,7 +123,10 @@ static int gpy_config_init(struct phy_device *phydev)
+@@ -91,7 +123,10 @@ static int gpy_config_init(struct phy_de
  
  	/* Clear all pending interrupts */
  	ret = phy_read(phydev, PHY_ISTAT);
@@ -101,6 +99,3 @@ index 5ce1bf03bbd7..ec10ad5ccad6 100644
  }
  
  static int gpy_probe(struct phy_device *phydev)
--- 
-2.39.2
-
