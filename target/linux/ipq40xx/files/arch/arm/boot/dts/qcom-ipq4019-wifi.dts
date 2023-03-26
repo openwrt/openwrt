@@ -49,16 +49,29 @@
 			};
 		};
 	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&fw_pinmux>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 57 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
 };
 
 &tlmm {
-	fw_pinmux {
+	fw_pinmux: fw_pinmux {
 		wp {
 			pins = "gpio53";
 			output-low;
 		};
 		recovery {
 			pins = "gpio57";
+			function = "gpio";
 			bias-none;
 		};
 		developer {
