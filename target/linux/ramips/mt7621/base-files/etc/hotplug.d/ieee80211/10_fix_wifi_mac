@@ -152,6 +152,10 @@ case "$board" in
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr "0x100000" > /sys${DEVPATH}/macaddress
 		;;
+	totolink,x5000r)
+		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
+		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr 4 > /sys${DEVPATH}/macaddress
+		;;
 	tplink,eap615-wall-v1)
 		hw_mac_addr="$(mtd_get_mac_binary product-info 0x8)"
 		macaddr_add "$hw_mac_addr" "$PHYNBR" > "/sys${DEVPATH}/macaddress"
