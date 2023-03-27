@@ -32,7 +32,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	.flags = 0,
  	.reg_offset = 0,
  	.constrain_period_size = true,
-@@ -759,10 +759,12 @@ static int fsl_sai_dai_probe(struct snd_
+@@ -760,10 +760,12 @@ static int fsl_sai_dai_probe(struct snd_
  	regmap_write(sai->regmap, FSL_SAI_TCSR(offset), 0);
  	regmap_write(sai->regmap, FSL_SAI_RCSR(offset), 0);
  

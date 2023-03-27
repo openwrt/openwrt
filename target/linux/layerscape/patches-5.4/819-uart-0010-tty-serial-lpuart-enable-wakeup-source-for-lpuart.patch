@@ -28,7 +28,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  #include <linux/pm_domain.h>
  #include <linux/pm_runtime.h>
  #include <linux/reset.h>
-@@ -1719,10 +1720,23 @@ static void lpuart_rx_dma_startup(struct
+@@ -1739,10 +1740,23 @@ static void lpuart_rx_dma_startup(struct
  	}
  }
  
@@ -53,7 +53,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  	unsigned char temp;
  
  	/* determine FIFO size and enable FIFO mode */
-@@ -1735,14 +1749,7 @@ static int lpuart_startup(struct uart_po
+@@ -1755,14 +1769,7 @@ static int lpuart_startup(struct uart_po
  	sport->rxfifo_size = UARTFIFO_DEPTH((temp >> UARTPFIFO_RXSIZE_OFF) &
  					    UARTPFIFO_FIFOSIZE_MASK);
  
@@ -69,7 +69,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  
  	return 0;
  }
-@@ -1769,11 +1776,27 @@ static void lpuart32_configure(struct lp
+@@ -1789,11 +1796,27 @@ static void lpuart32_configure(struct lp
  	lpuart32_write(&sport->port, temp, UARTCTRL);
  }
  
@@ -98,7 +98,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  	unsigned long temp;
  	int ret;
  
-@@ -1805,17 +1828,8 @@ static int lpuart32_startup(struct uart_
+@@ -1825,17 +1848,8 @@ static int lpuart32_startup(struct uart_
  		sport->port.fifosize = sport->txfifo_size;
  	}
  
@@ -108,16 +108,16 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
 -
 -	lpuart_rx_dma_startup(sport);
 -	lpuart_tx_dma_startup(sport);
--
--	lpuart32_setup_watermark_enable(sport);
--	lpuart32_configure(sport);
 +	lpuart32_hw_setup(sport);
  
+-	lpuart32_setup_watermark_enable(sport);
+-	lpuart32_configure(sport);
+-
 -	spin_unlock_irqrestore(&sport->port.lock, flags);
  	return 0;
  }
  
-@@ -2867,108 +2881,205 @@ static int lpuart_runtime_resume(struct
+@@ -2893,108 +2907,205 @@ static int lpuart_runtime_resume(struct
  	return lpuart_enable_clks(sport);
  };
  
@@ -197,8 +197,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
 -		}
 +	return false;
 +}
- 
--		/* Disable Rx DMA to use UART port as wakeup source */
++
 +static int lpuart_suspend_noirq(struct device *dev)
 +{
 +	struct lpuart_port *sport = dev_get_drvdata(dev);
@@ -208,7 +207,8 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
 +		serial_lpuart_enable_wakeup(sport, !!irq_wake);
 +
 +	pinctrl_pm_select_sleep_state(dev);
-+
+ 
+-		/* Disable Rx DMA to use UART port as wakeup source */
 +	return 0;
 +}
 +
@@ -302,7 +302,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
 +				       ~UARTCR5_RDMAS, sport->port.membase + UARTCR5);
 +			}
 +			spin_unlock_irqrestore(&sport->port.lock, flags);
-+		}
+ 		}
 +
 +		if (sport->lpuart_dma_tx_use) {
 +			spin_lock_irqsave(&sport->port.lock, flags);
@@ -318,7 +318,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
 +			spin_unlock_irqrestore(&sport->port.lock, flags);
 +			sport->dma_tx_in_progress = false;
 +			dmaengine_terminate_all(sport->dma_tx_chan);
- 		}
++		}
 +	} else if (pm_runtime_active(sport->port.dev)) {
 +		lpuart_disable_clks(sport);
 +		pm_runtime_disable(sport->port.dev);

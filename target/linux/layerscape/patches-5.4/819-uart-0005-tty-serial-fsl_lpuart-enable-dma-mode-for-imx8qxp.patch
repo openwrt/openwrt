@@ -351,7 +351,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  }
  
  static void lpuart_dma_rx_free(struct uart_port *port)
-@@ -1413,8 +1525,10 @@ static void lpuart_setup_watermark(struc
+@@ -1433,8 +1545,10 @@ static void lpuart_setup_watermark(struc
  		writeb(UARTSFIFO_RXUF, sport->port.membase + UARTSFIFO);
  	}
  
@@ -363,7 +363,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  
  	/* Restore cr2 */
  	writeb(cr2_saved, sport->port.membase + UARTCR2);
-@@ -1435,6 +1549,7 @@ static void lpuart32_setup_watermark(str
+@@ -1455,6 +1569,7 @@ static void lpuart32_setup_watermark(str
  {
  	unsigned long val, ctrl;
  	unsigned long ctrl_saved;
@@ -371,7 +371,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  
  	ctrl = lpuart32_read(&sport->port, UARTCTRL);
  	ctrl_saved = ctrl;
-@@ -1446,12 +1561,26 @@ static void lpuart32_setup_watermark(str
+@@ -1466,12 +1581,26 @@ static void lpuart32_setup_watermark(str
  	val = lpuart32_read(&sport->port, UARTFIFO);
  	val |= UARTFIFO_TXFE | UARTFIFO_RXFE;
  	val |= UARTFIFO_TXFLUSH | UARTFIFO_RXFLUSH;
@@ -399,7 +399,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  	/* Restore cr2 */
  	lpuart32_write(&sport->port, ctrl_saved, UARTCTRL);
  }
-@@ -1463,17 +1592,29 @@ static void lpuart32_setup_watermark_ena
+@@ -1483,17 +1612,29 @@ static void lpuart32_setup_watermark_ena
  	lpuart32_setup_watermark(sport);
  
  	temp = lpuart32_read(&sport->port, UARTCTRL);
@@ -430,7 +430,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  static void lpuart_tx_dma_startup(struct lpuart_port *sport)
  {
  	u32 uartbaud;
-@@ -1537,19 +1678,23 @@ static int lpuart_startup(struct uart_po
+@@ -1557,19 +1698,23 @@ static int lpuart_startup(struct uart_po
  	return 0;
  }
  
@@ -461,7 +461,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  	if (!sport->lpuart_dma_tx_use)
  		temp |= UARTCTRL_TIE;
  	lpuart32_write(&sport->port, temp, UARTCTRL);
-@@ -1593,12 +1738,12 @@ static int lpuart32_startup(struct uart_
+@@ -1613,12 +1758,12 @@ static int lpuart32_startup(struct uart_
  
  	spin_lock_irqsave(&sport->port.lock, flags);
  
@@ -476,7 +476,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  	lpuart32_configure(sport);
  
  	spin_unlock_irqrestore(&sport->port.lock, flags);
-@@ -1608,7 +1753,7 @@ static int lpuart32_startup(struct uart_
+@@ -1628,7 +1773,7 @@ static int lpuart32_startup(struct uart_
  static void lpuart_dma_shutdown(struct lpuart_port *sport)
  {
  	if (sport->lpuart_dma_rx_use) {
@@ -485,7 +485,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  		lpuart_dma_rx_free(&sport->port);
  		sport->lpuart_dma_rx_use = false;
  	}
-@@ -1651,11 +1796,22 @@ static void lpuart32_shutdown(struct uar
+@@ -1671,11 +1816,22 @@ static void lpuart32_shutdown(struct uar
  
  	spin_lock_irqsave(&port->lock, flags);
  
@@ -510,7 +510,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  
  	spin_unlock_irqrestore(&port->lock, flags);
  
-@@ -1752,10 +1908,10 @@ lpuart_set_termios(struct uart_port *por
+@@ -1772,10 +1928,10 @@ lpuart_set_termios(struct uart_port *por
  	 * baud rate and restart Rx DMA path.
  	 *
  	 * Since timer function acqures sport->port.lock, need to stop before
@@ -523,7 +523,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  		lpuart_dma_rx_free(&sport->port);
  	}
  
-@@ -1967,10 +2123,10 @@ lpuart32_set_termios(struct uart_port *p
+@@ -1987,10 +2143,10 @@ lpuart32_set_termios(struct uart_port *p
  	 * baud rate and restart Rx DMA path.
  	 *
  	 * Since timer function acqures sport->port.lock, need to stop before
@@ -536,7 +536,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  		lpuart_dma_rx_free(&sport->port);
  	}
  
-@@ -2483,6 +2639,10 @@ static int lpuart_probe(struct platform_
+@@ -2509,6 +2665,10 @@ static int lpuart_probe(struct platform_
  	sport->port.dev = &pdev->dev;
  	sport->port.type = PORT_LPUART;
  	sport->devtype = sdata->devtype;
@@ -547,7 +547,7 @@ Signed-off-by: Fugang Duan <fugang.duan@nxp.com>
  	ret = platform_get_irq(pdev, 0);
  	if (ret < 0)
  		return ret;
-@@ -2633,7 +2793,7 @@ static int lpuart_suspend(struct device
+@@ -2659,7 +2819,7 @@ static int lpuart_suspend(struct device
  		 * Rx DMA path before suspend and start Rx DMA path on resume.
  		 */
  		if (irq_wake) {

@@ -15,7 +15,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -335,14 +335,23 @@ static int fsl_sai_set_dai_fmt_tr(struct
+@@ -336,14 +336,23 @@ static int fsl_sai_set_dai_fmt_tr(struct
  
  static int fsl_sai_set_dai_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
  {
@@ -39,7 +39,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  	ret = fsl_sai_set_dai_fmt_tr(cpu_dai, fmt, FSL_FMT_RECEIVER);
  	if (ret)
  		dev_err(cpu_dai->dev, "Cannot set rx format: %d\n", ret);
-@@ -974,6 +983,9 @@ static int fsl_sai_probe(struct platform
+@@ -975,6 +984,9 @@ static int fsl_sai_probe(struct platform
  		return -EINVAL;
  	}
  

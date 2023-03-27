@@ -15,7 +15,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -506,7 +506,9 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -507,7 +507,9 @@ static int fsl_sai_trigger(struct snd_pc
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
@@ -25,7 +25,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  
  	/*
  	 * Asynchronous mode: Clear SYNC for both Tx and Rx.
-@@ -529,6 +531,11 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -530,6 +532,11 @@ static int fsl_sai_trigger(struct snd_pc
  		regmap_update_bits(sai->regmap, FSL_SAI_xCSR(tx),
  				   FSL_SAI_CSR_FRDE, FSL_SAI_CSR_FRDE);
  

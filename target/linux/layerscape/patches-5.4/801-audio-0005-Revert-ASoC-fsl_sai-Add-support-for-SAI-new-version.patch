@@ -76,7 +76,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	bool tx = fsl_dir == FSL_FMT_TRANSMITTER;
  	u32 val_cr2 = 0, val_cr4 = 0;
  
-@@ -290,9 +287,9 @@ static int fsl_sai_set_dai_fmt_tr(struct
+@@ -291,9 +288,9 @@ static int fsl_sai_set_dai_fmt_tr(struct
  		return -EINVAL;
  	}
  
@@ -88,7 +88,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  			   FSL_SAI_CR4_MF | FSL_SAI_CR4_FSE |
  			   FSL_SAI_CR4_FSP | FSL_SAI_CR4_FSD_MSTR, val_cr4);
  
-@@ -319,7 +316,6 @@ static int fsl_sai_set_dai_fmt(struct sn
+@@ -320,7 +317,6 @@ static int fsl_sai_set_dai_fmt(struct sn
  static int fsl_sai_set_bclk(struct snd_soc_dai *dai, bool tx, u32 freq)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(dai);
@@ -96,7 +96,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	unsigned long clk_rate;
  	u32 savediv = 0, ratio, savesub = freq;
  	u32 id;
-@@ -382,17 +378,17 @@ static int fsl_sai_set_bclk(struct snd_s
+@@ -383,17 +379,17 @@ static int fsl_sai_set_bclk(struct snd_s
  	 */
  	if ((sai->synchronous[TX] && !sai->synchronous[RX]) ||
  	    (!tx && !sai->synchronous[RX])) {
@@ -118,7 +118,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  				   FSL_SAI_CR2_DIV_MASK, savediv - 1);
  	}
  
-@@ -407,7 +403,6 @@ static int fsl_sai_hw_params(struct snd_
+@@ -408,7 +404,6 @@ static int fsl_sai_hw_params(struct snd_
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
@@ -126,7 +126,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  	unsigned int channels = params_channels(params);
  	u32 word_width = params_width(params);
-@@ -460,19 +455,19 @@ static int fsl_sai_hw_params(struct snd_
+@@ -461,19 +456,19 @@ static int fsl_sai_hw_params(struct snd_
  
  	if (!sai->is_slave_mode) {
  		if (!sai->synchronous[TX] && sai->synchronous[RX] && !tx) {
@@ -150,7 +150,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  				FSL_SAI_CR5_WNW_MASK | FSL_SAI_CR5_W0W_MASK |
  				FSL_SAI_CR5_FBT_MASK, val_cr5);
  			regmap_write(sai->regmap, FSL_SAI_RMR,
-@@ -480,10 +475,10 @@ static int fsl_sai_hw_params(struct snd_
+@@ -481,10 +476,10 @@ static int fsl_sai_hw_params(struct snd_
  		}
  	}
  
@@ -163,7 +163,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  			   FSL_SAI_CR5_WNW_MASK | FSL_SAI_CR5_W0W_MASK |
  			   FSL_SAI_CR5_FBT_MASK, val_cr5);
  	regmap_write(sai->regmap, FSL_SAI_xMR(tx), ~0UL - ((1 << channels) - 1));
-@@ -511,8 +506,6 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -512,8 +507,6 @@ static int fsl_sai_trigger(struct snd_pc
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
@@ -172,7 +172,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  	u32 xcsr, count = 100;
  
-@@ -521,9 +514,9 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -522,9 +515,9 @@ static int fsl_sai_trigger(struct snd_pc
  	 * Rx sync with Tx clocks: Clear SYNC for Tx, set it for Rx.
  	 * Tx sync with Rx clocks: Clear SYNC for Rx, set it for Tx.
  	 */
@@ -185,7 +185,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  			   sai->synchronous[RX] ? FSL_SAI_CR2_SYNC : 0);
  
  	/*
-@@ -534,44 +527,43 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -535,44 +528,43 @@ static int fsl_sai_trigger(struct snd_pc
  	case SNDRV_PCM_TRIGGER_START:
  	case SNDRV_PCM_TRIGGER_RESUME:
  	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
@@ -242,7 +242,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  					   FSL_SAI_CSR_FR, FSL_SAI_CSR_FR);
  
  			/*
-@@ -583,13 +575,13 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -584,13 +576,13 @@ static int fsl_sai_trigger(struct snd_pc
  			 */
  			if (!sai->is_slave_mode) {
  				/* Software Reset for both Tx and Rx */
@@ -262,7 +262,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  			}
  		}
  		break;
-@@ -604,11 +596,10 @@ static int fsl_sai_startup(struct snd_pc
+@@ -605,11 +597,10 @@ static int fsl_sai_startup(struct snd_pc
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
@@ -275,7 +275,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  			   FSL_SAI_CR3_TRCE_MASK,
  			   FSL_SAI_CR3_TRCE);
  
-@@ -622,10 +613,9 @@ static void fsl_sai_shutdown(struct snd_
+@@ -623,10 +614,9 @@ static void fsl_sai_shutdown(struct snd_
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
@@ -287,7 +287,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  			   FSL_SAI_CR3_TRCE_MASK, 0);
  }
  
-@@ -643,20 +633,17 @@ static const struct snd_soc_dai_ops fsl_
+@@ -644,20 +634,17 @@ static const struct snd_soc_dai_ops fsl_
  static int fsl_sai_dai_probe(struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = dev_get_drvdata(cpu_dai->dev);
@@ -314,7 +314,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  			   FSL_SAI_MAXBURST_RX - 1);
  
  	snd_soc_dai_init_dma_data(cpu_dai, &sai->dma_params_tx,
-@@ -694,12 +681,12 @@ static const struct snd_soc_component_dr
+@@ -695,12 +682,12 @@ static const struct snd_soc_component_dr
  	.name           = "fsl-sai",
  };
  
@@ -333,7 +333,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	{FSL_SAI_TDR0, 0},
  	{FSL_SAI_TDR1, 0},
  	{FSL_SAI_TDR2, 0},
-@@ -708,50 +695,24 @@ static struct reg_default fsl_sai_reg_de
+@@ -709,50 +696,24 @@ static struct reg_default fsl_sai_reg_de
  	{FSL_SAI_TDR5, 0},
  	{FSL_SAI_TDR6, 0},
  	{FSL_SAI_TDR7, 0},
@@ -397,7 +397,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	case FSL_SAI_TFR0:
  	case FSL_SAI_TFR1:
  	case FSL_SAI_TFR2:
-@@ -761,6 +722,12 @@ static bool fsl_sai_readable_reg(struct
+@@ -762,6 +723,12 @@ static bool fsl_sai_readable_reg(struct
  	case FSL_SAI_TFR6:
  	case FSL_SAI_TFR7:
  	case FSL_SAI_TMR:
@@ -410,7 +410,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	case FSL_SAI_RDR0:
  	case FSL_SAI_RDR1:
  	case FSL_SAI_RDR2:
-@@ -786,13 +753,9 @@ static bool fsl_sai_readable_reg(struct
+@@ -787,13 +754,9 @@ static bool fsl_sai_readable_reg(struct
  
  static bool fsl_sai_volatile_reg(struct device *dev, unsigned int reg)
  {
@@ -426,7 +426,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	case FSL_SAI_TFR0:
  	case FSL_SAI_TFR1:
  	case FSL_SAI_TFR2:
-@@ -825,16 +788,13 @@ static bool fsl_sai_volatile_reg(struct
+@@ -826,16 +789,13 @@ static bool fsl_sai_volatile_reg(struct
  
  static bool fsl_sai_writeable_reg(struct device *dev, unsigned int reg)
  {
@@ -449,7 +449,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	case FSL_SAI_TDR0:
  	case FSL_SAI_TDR1:
  	case FSL_SAI_TDR2:
-@@ -844,6 +804,12 @@ static bool fsl_sai_writeable_reg(struct
+@@ -845,6 +805,12 @@ static bool fsl_sai_writeable_reg(struct
  	case FSL_SAI_TDR6:
  	case FSL_SAI_TDR7:
  	case FSL_SAI_TMR:
@@ -462,7 +462,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	case FSL_SAI_RMR:
  		return true;
  	default:
-@@ -851,15 +817,15 @@ static bool fsl_sai_writeable_reg(struct
+@@ -852,15 +818,15 @@ static bool fsl_sai_writeable_reg(struct
  	}
  }
  
@@ -481,7 +481,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	.readable_reg = fsl_sai_readable_reg,
  	.volatile_reg = fsl_sai_volatile_reg,
  	.writeable_reg = fsl_sai_writeable_reg,
-@@ -891,12 +857,6 @@ static int fsl_sai_probe(struct platform
+@@ -892,12 +858,6 @@ static int fsl_sai_probe(struct platform
  	if (IS_ERR(base))
  		return PTR_ERR(base);
  
@@ -494,7 +494,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	sai->regmap = devm_regmap_init_mmio_clk(&pdev->dev,
  			"bus", base, &fsl_sai_regmap_config);
  
-@@ -1026,13 +986,11 @@ static int fsl_sai_remove(struct platfor
+@@ -1027,13 +987,11 @@ static int fsl_sai_remove(struct platfor
  static const struct fsl_sai_soc_data fsl_sai_vf610_data = {
  	.use_imx_pcm = false,
  	.fifo_depth = 32,
@@ -508,7 +508,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  };
  
  static const struct of_device_id fsl_sai_ids[] = {
-@@ -1065,7 +1023,6 @@ static int fsl_sai_runtime_suspend(struc
+@@ -1066,7 +1024,6 @@ static int fsl_sai_runtime_suspend(struc
  static int fsl_sai_runtime_resume(struct device *dev)
  {
  	struct fsl_sai *sai = dev_get_drvdata(dev);
@@ -516,7 +516,7 @@ This reverts commit 4f7a0728b5305e2d865f543fbcffd617e03c7674.
  	int ret;
  
  	ret = clk_prepare_enable(sai->bus_clk);
-@@ -1087,11 +1044,11 @@ static int fsl_sai_runtime_resume(struct
+@@ -1088,11 +1045,11 @@ static int fsl_sai_runtime_resume(struct
  	}
  
  	regcache_cache_only(sai->regmap, false);

@@ -22,7 +22,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  #include <linux/pm_runtime.h>
  #include <linux/regmap.h>
  #include <linux/slab.h>
-@@ -789,7 +788,10 @@ static int fsl_sai_probe(struct platform
+@@ -790,7 +789,10 @@ static int fsl_sai_probe(struct platform
  		return -ENOMEM;
  
  	sai->pdev = pdev;
@@ -34,7 +34,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  
  	sai->is_lsb_first = of_property_read_bool(np, "lsb-first");
  
-@@ -901,7 +903,7 @@ static int fsl_sai_probe(struct platform
+@@ -902,7 +904,7 @@ static int fsl_sai_probe(struct platform
  	if (ret)
  		goto err_pm_disable;
  
@@ -43,7 +43,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		ret = imx_pcm_dma_init(pdev, IMX_SAI_DMABUF_SIZE);
  		if (ret)
  			goto err_pm_disable;
-@@ -926,18 +928,10 @@ static int fsl_sai_remove(struct platfor
+@@ -927,18 +929,10 @@ static int fsl_sai_remove(struct platfor
  	return 0;
  }
  

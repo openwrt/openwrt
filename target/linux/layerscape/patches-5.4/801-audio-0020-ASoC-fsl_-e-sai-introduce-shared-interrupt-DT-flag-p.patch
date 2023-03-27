@@ -18,7 +18,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -910,6 +910,7 @@ static int fsl_sai_probe(struct platform
+@@ -911,6 +911,7 @@ static int fsl_sai_probe(struct platform
  	char tmp[8];
  	int irq, ret, i;
  	int index;
@@ -26,7 +26,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
  
  	sai = devm_kzalloc(&pdev->dev, sizeof(*sai), GFP_KERNEL);
  	if (!sai)
-@@ -979,7 +980,12 @@ static int fsl_sai_probe(struct platform
+@@ -980,7 +981,12 @@ static int fsl_sai_probe(struct platform
  		return irq;
  	}
  

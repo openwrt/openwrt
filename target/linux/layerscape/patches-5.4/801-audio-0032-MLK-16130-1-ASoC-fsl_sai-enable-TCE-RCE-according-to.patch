@@ -15,7 +15,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -487,11 +487,14 @@ static int fsl_sai_hw_params(struct snd_
+@@ -488,11 +488,14 @@ static int fsl_sai_hw_params(struct snd_
  	u32 val_cr4 = 0, val_cr5 = 0;
  	u32 slots = (channels == 1) ? 2 : channels;
  	u32 slot_width = word_width;
@@ -30,7 +30,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	if (sai->slot_width)
  		slot_width = sai->slot_width;
  
-@@ -558,6 +561,10 @@ static int fsl_sai_hw_params(struct snd_
+@@ -559,6 +562,10 @@ static int fsl_sai_hw_params(struct snd_
  				FSL_SAI_CR4_FCOMB_MASK, FSL_SAI_CR4_FCOMB_SOFT);
  	}
  
@@ -41,7 +41,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	regmap_update_bits(sai->regmap, FSL_SAI_xCR4(tx, offset),
  			   FSL_SAI_CR4_SYWD_MASK | FSL_SAI_CR4_FRSZ_MASK,
  			   val_cr4);
-@@ -573,8 +580,12 @@ static int fsl_sai_hw_free(struct snd_pc
+@@ -574,8 +581,12 @@ static int fsl_sai_hw_free(struct snd_pc
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
@@ -54,7 +54,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	if (!sai->slave_mode[tx] &&
  			sai->mclk_streams & BIT(substream->stream)) {
  		clk_disable_unprepare(sai->mclk_clk[sai->mclk_id[tx]]);
-@@ -694,7 +705,6 @@ static int fsl_sai_startup(struct snd_pc
+@@ -695,7 +706,6 @@ static int fsl_sai_startup(struct snd_pc
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
@@ -62,7 +62,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  	int ret;
  
-@@ -724,7 +734,6 @@ static void fsl_sai_shutdown(struct snd_
+@@ -725,7 +735,6 @@ static void fsl_sai_shutdown(struct snd_
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);

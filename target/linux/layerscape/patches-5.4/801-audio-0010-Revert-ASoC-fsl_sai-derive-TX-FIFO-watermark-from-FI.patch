@@ -12,7 +12,7 @@ This reverts commit bd517707d85f19a7339ea8b882fcbf0fd9976bd6.
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -640,7 +640,7 @@ static int fsl_sai_dai_probe(struct snd_
+@@ -641,7 +641,7 @@ static int fsl_sai_dai_probe(struct snd_
  	regmap_write(sai->regmap, FSL_SAI_RCSR, 0);
  
  	regmap_update_bits(sai->regmap, FSL_SAI_TCR1, FSL_SAI_CR1_RFW_MASK,
@@ -21,7 +21,7 @@ This reverts commit bd517707d85f19a7339ea8b882fcbf0fd9976bd6.
  	regmap_update_bits(sai->regmap, FSL_SAI_RCR1, FSL_SAI_CR1_RFW_MASK,
  			   FSL_SAI_MAXBURST_RX - 1);
  
-@@ -928,12 +928,10 @@ static int fsl_sai_remove(struct platfor
+@@ -929,12 +929,10 @@ static int fsl_sai_remove(struct platfor
  
  static const struct fsl_sai_soc_data fsl_sai_vf610_data = {
  	.use_imx_pcm = false,

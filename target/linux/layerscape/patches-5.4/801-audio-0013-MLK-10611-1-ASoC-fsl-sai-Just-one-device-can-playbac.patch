@@ -15,7 +15,7 @@ Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -605,6 +605,11 @@ static int fsl_sai_startup(struct snd_pc
+@@ -606,6 +606,11 @@ static int fsl_sai_startup(struct snd_pc
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  	int ret;
  
@@ -27,7 +27,7 @@ Signed-off-by: Zidan Wang <zidan.wang@freescale.com>
  	regmap_update_bits(sai->regmap, FSL_SAI_xCR3(tx), FSL_SAI_CR3_TRCE,
  			   FSL_SAI_CR3_TRCE);
  
-@@ -621,6 +626,11 @@ static void fsl_sai_shutdown(struct snd_
+@@ -622,6 +627,11 @@ static void fsl_sai_shutdown(struct snd_
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  
  	regmap_update_bits(sai->regmap, FSL_SAI_xCR3(tx), FSL_SAI_CR3_TRCE, 0);

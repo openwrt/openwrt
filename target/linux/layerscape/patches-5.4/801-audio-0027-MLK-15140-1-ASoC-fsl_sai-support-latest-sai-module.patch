@@ -114,7 +114,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	bool tx = fsl_dir == FSL_FMT_TRANSMITTER;
  	u32 val_cr2 = 0, val_cr4 = 0;
  
-@@ -324,9 +339,9 @@ static int fsl_sai_set_dai_fmt_tr(struct
+@@ -325,9 +340,9 @@ static int fsl_sai_set_dai_fmt_tr(struct
  		return -EINVAL;
  	}
  
@@ -126,7 +126,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  			   FSL_SAI_CR4_MF | FSL_SAI_CR4_FSE |
  			   FSL_SAI_CR4_FSP | FSL_SAI_CR4_FSD_MSTR, val_cr4);
  
-@@ -362,6 +377,7 @@ static int fsl_sai_set_dai_fmt(struct sn
+@@ -363,6 +378,7 @@ static int fsl_sai_set_dai_fmt(struct sn
  static int fsl_sai_set_bclk(struct snd_soc_dai *dai, bool tx, u32 freq)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(dai);
@@ -134,7 +134,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	unsigned long clk_rate;
  	u32 savediv = 0, ratio, savesub = freq;
  	u32 id;
-@@ -424,17 +440,17 @@ static int fsl_sai_set_bclk(struct snd_s
+@@ -425,17 +441,17 @@ static int fsl_sai_set_bclk(struct snd_s
  	 */
  	if ((sai->synchronous[TX] && !sai->synchronous[RX]) ||
  	    (!tx && !sai->synchronous[RX])) {
@@ -156,7 +156,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  				   FSL_SAI_CR2_DIV_MASK, savediv - 1);
  	}
  
-@@ -449,6 +465,7 @@ static int fsl_sai_hw_params(struct snd_
+@@ -450,6 +466,7 @@ static int fsl_sai_hw_params(struct snd_
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
@@ -164,7 +164,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  	unsigned int channels = params_channels(params);
  	u32 word_width = params_width(params);
-@@ -501,49 +518,35 @@ static int fsl_sai_hw_params(struct snd_
+@@ -502,49 +519,35 @@ static int fsl_sai_hw_params(struct snd_
  
  	if (!sai->slave_mode[tx]) {
  		if (!sai->synchronous[TX] && sai->synchronous[RX] && !tx) {
@@ -226,7 +226,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  			   FSL_SAI_CR5_WNW_MASK | FSL_SAI_CR5_W0W_MASK |
  			   FSL_SAI_CR5_FBT_MASK, val_cr5);
  	regmap_write(sai->regmap, FSL_SAI_xMR(tx), ~0UL - ((1 << channels) - 1));
-@@ -571,6 +574,7 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -572,6 +575,7 @@ static int fsl_sai_trigger(struct snd_pc
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
@@ -234,7 +234,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  	u8 channels = substream->runtime->channels;
  	u32 xcsr, count = 100;
-@@ -581,9 +585,9 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -582,9 +586,9 @@ static int fsl_sai_trigger(struct snd_pc
  	 * Rx sync with Tx clocks: Clear SYNC for Tx, set it for Rx.
  	 * Tx sync with Rx clocks: Clear SYNC for Rx, set it for Tx.
  	 */
@@ -246,7 +246,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  			   sai->synchronous[RX] ? FSL_SAI_CR2_SYNC : 0);
  
  	/*
-@@ -599,49 +603,50 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -600,49 +604,50 @@ static int fsl_sai_trigger(struct snd_pc
  		if (tx)
  			udelay(10);
  
@@ -311,7 +311,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  					   FSL_SAI_CSR_FR, FSL_SAI_CSR_FR);
  
  			/*
-@@ -654,12 +659,12 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -655,12 +660,12 @@ static int fsl_sai_trigger(struct snd_pc
  			if (!sai->slave_mode[tx]) {
  				/* Software Reset for both Tx and Rx */
  				regmap_write(sai->regmap,
@@ -328,7 +328,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  			}
  		}
  		break;
-@@ -674,6 +679,7 @@ static int fsl_sai_startup(struct snd_pc
+@@ -675,6 +680,7 @@ static int fsl_sai_startup(struct snd_pc
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
@@ -336,7 +336,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  	int ret;
  
-@@ -682,7 +688,8 @@ static int fsl_sai_startup(struct snd_pc
+@@ -683,7 +689,8 @@ static int fsl_sai_startup(struct snd_pc
  	else
  		sai->is_stream_opened[tx] = true;
  
@@ -346,7 +346,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  			   FSL_SAI_CR3_TRCE(sai->dataline[tx]));
  
  	ret = snd_pcm_hw_constraint_list(substream->runtime, 0,
-@@ -695,12 +702,14 @@ static void fsl_sai_shutdown(struct snd_
+@@ -696,12 +703,14 @@ static void fsl_sai_shutdown(struct snd_
  		struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
@@ -362,7 +362,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  		sai->is_stream_opened[tx] = false;
  	}
  }
-@@ -719,17 +728,18 @@ static const struct snd_soc_dai_ops fsl_
+@@ -720,17 +729,18 @@ static const struct snd_soc_dai_ops fsl_
  static int fsl_sai_dai_probe(struct snd_soc_dai *cpu_dai)
  {
  	struct fsl_sai *sai = dev_get_drvdata(cpu_dai->dev);
@@ -387,7 +387,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  			   FSL_SAI_MAXBURST_RX - 1);
  
  	snd_soc_dai_init_dma_data(cpu_dai, &sai->dma_params_tx,
-@@ -767,41 +777,55 @@ static const struct snd_soc_component_dr
+@@ -768,41 +778,55 @@ static const struct snd_soc_component_dr
  	.name           = "fsl-sai",
  };
  
@@ -466,7 +466,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	case FSL_SAI_RDR0:
  	case FSL_SAI_RDR1:
  	case FSL_SAI_RFR0:
-@@ -815,9 +839,13 @@ static bool fsl_sai_readable_reg(struct
+@@ -816,9 +840,13 @@ static bool fsl_sai_readable_reg(struct
  
  static bool fsl_sai_volatile_reg(struct device *dev, unsigned int reg)
  {
@@ -482,7 +482,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	case FSL_SAI_TFR0:
  	case FSL_SAI_TFR1:
  	case FSL_SAI_RFR0:
-@@ -832,22 +860,19 @@ static bool fsl_sai_volatile_reg(struct
+@@ -833,22 +861,19 @@ static bool fsl_sai_volatile_reg(struct
  
  static bool fsl_sai_writeable_reg(struct device *dev, unsigned int reg)
  {
@@ -514,7 +514,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	case FSL_SAI_RMR:
  		return true;
  	default:
-@@ -855,14 +880,28 @@ static bool fsl_sai_writeable_reg(struct
+@@ -856,14 +881,28 @@ static bool fsl_sai_writeable_reg(struct
  	}
  }
  
@@ -546,7 +546,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	.readable_reg = fsl_sai_readable_reg,
  	.volatile_reg = fsl_sai_volatile_reg,
  	.writeable_reg = fsl_sai_writeable_reg,
-@@ -874,6 +913,7 @@ static const struct of_device_id fsl_sai
+@@ -875,6 +914,7 @@ static const struct of_device_id fsl_sai
  	{ .compatible = "fsl,imx6sx-sai", .data = &fsl_sai_imx6sx },
  	{ .compatible = "fsl,imx6ul-sai", .data = &fsl_sai_imx6ul },
  	{ .compatible = "fsl,imx7ulp-sai", .data = &fsl_sai_imx7ulp },
@@ -554,7 +554,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	{ /* sentinel */ }
  };
  MODULE_DEVICE_TABLE(of, fsl_sai_ids);
-@@ -889,7 +929,8 @@ static int fsl_sai_probe(struct platform
+@@ -890,7 +930,8 @@ static int fsl_sai_probe(struct platform
  	char tmp[8];
  	int irq, ret, i;
  	int index;
@@ -564,7 +564,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  
  	sai = devm_kzalloc(&pdev->dev, sizeof(*sai), GFP_KERNEL);
  	if (!sai)
-@@ -909,6 +950,9 @@ static int fsl_sai_probe(struct platform
+@@ -910,6 +951,9 @@ static int fsl_sai_probe(struct platform
  	if (IS_ERR(base))
  		return PTR_ERR(base);
  
@@ -574,7 +574,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	sai->regmap = devm_regmap_init_mmio_clk(&pdev->dev,
  			"bus", base, &fsl_sai_regmap_config);
  
-@@ -963,11 +1007,11 @@ static int fsl_sai_probe(struct platform
+@@ -964,11 +1008,11 @@ static int fsl_sai_probe(struct platform
  	}
  
  	/* SAI shared interrupt */
@@ -590,7 +590,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	if (ret) {
  		dev_err(&pdev->dev, "failed to claim irq %u\n", irq);
  		return ret;
-@@ -1091,6 +1135,7 @@ static int fsl_sai_runtime_suspend(struc
+@@ -1092,6 +1136,7 @@ static int fsl_sai_runtime_suspend(struc
  static int fsl_sai_runtime_resume(struct device *dev)
  {
  	struct fsl_sai *sai = dev_get_drvdata(dev);
@@ -598,7 +598,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  	int ret;
  
  	ret = clk_prepare_enable(sai->bus_clk);
-@@ -1116,11 +1161,11 @@ static int fsl_sai_runtime_resume(struct
+@@ -1117,11 +1162,11 @@ static int fsl_sai_runtime_resume(struct
  				PM_QOS_CPU_DMA_LATENCY, 0);
  
  	regcache_cache_only(sai->regmap, false);
