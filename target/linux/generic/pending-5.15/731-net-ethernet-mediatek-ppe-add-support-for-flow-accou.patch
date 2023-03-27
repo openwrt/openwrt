@@ -90,7 +90,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  		.rxd_size = sizeof(struct mtk_rx_dma_v2),
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1026,6 +1026,8 @@ struct mtk_reg_map {
+@@ -1037,6 +1037,8 @@ struct mtk_reg_map {
   *				the extra setup for those pins used by GMAC.
   * @hash_offset			Flow table hash offset.
   * @foe_entry_size		Foe table entry size.
@@ -99,7 +99,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
   * @txd_size			Tx DMA descriptor size.
   * @rxd_size			Rx DMA descriptor size.
   * @rx_irq_done_mask		Rx irq done register mask.
-@@ -1043,6 +1045,7 @@ struct mtk_soc_data {
+@@ -1054,6 +1056,7 @@ struct mtk_soc_data {
  	u8		hash_offset;
  	u16		foe_entry_size;
  	netdev_features_t hw_features;
