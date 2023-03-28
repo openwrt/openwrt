@@ -13,6 +13,7 @@
 #include <linux/of.h>
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
+#include <linux/limits.h>
 #include <linux/module.h>
 #include <linux/phylink.h>
 #include <linux/pkt_sched.h>
@@ -2182,7 +2183,7 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		}
 
 		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
-			priv->sds_id[pn] = -1;
+			priv->sds_id[pn] = U32_MAX;
 		else {
 			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
 		}
