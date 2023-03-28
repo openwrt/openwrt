@@ -903,19 +903,25 @@ static const struct net_device_ops bcm6368_enetsw_ops = {
 
 static int bcm6368_enetsw_probe(struct platform_device *pdev)
 {
-	struct bcm6368_enetsw *priv;
 	struct device *dev = &pdev->dev;
 	struct device_node *node = dev->of_node;
+	struct bcm6368_enetsw *priv;
 	struct net_device *ndev;
 	struct resource *res;
 	unsigned i;
+	int num_resets;
 	int ret;
 
-	ndev = alloc_etherdev(sizeof(*priv));
+	ndev = devm_alloc_etherdev(dev, sizeof(*priv));
 	if (!ndev)
 		return -ENOMEM;
 
+	platform_set_drvdata(pdev, ndev);
+	SET_NETDEV_DEV(ndev, dev);
+
 	priv = netdev_priv(ndev);
+	priv->pdev = pdev;
+	priv->net_dev = ndev;
 
 	priv->num_pms = of_count_phandle_with_args(node, "power-domains",
 						   "#power-domain-cells");
@@ -955,18 +961,18 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "dma");
 	priv->dma_base = devm_ioremap_resource(dev, res);
-	if (IS_ERR(priv->dma_base))
+	if (IS_ERR_OR_NULL(priv->dma_base))
 		return PTR_ERR(priv->dma_base);
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
 					   "dma-channels");
 	priv->dma_chan = devm_ioremap_resource(dev, res);
-	if (IS_ERR(priv->dma_chan))
+	if (IS_ERR_OR_NULL(priv->dma_chan))
 		return PTR_ERR(priv->dma_chan);
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "dma-sram");
 	priv->dma_sram = devm_ioremap_resource(dev, res);
-	if (IS_ERR(priv->dma_sram))
+	if (IS_ERR_OR_NULL(priv->dma_sram))
 		return PTR_ERR(priv->dma_sram);
 
 	priv->irq_rx = platform_get_irq_byname(pdev, "rx");
@@ -1006,14 +1012,14 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	if (priv->num_clocks) {
 		priv->clock = devm_kcalloc(dev, priv->num_clocks,
 					   sizeof(struct clk *), GFP_KERNEL);
-		if (!priv->clock)
-			return -ENOMEM;
+		if (IS_ERR_OR_NULL(priv->clock))
+			return PTR_ERR(priv->clock);
 	}
 	for (i = 0; i < priv->num_clocks; i++) {
 		priv->clock[i] = of_clk_get(node, i);
 		if (IS_ERR(priv->clock[i])) {
 			dev_err(dev, "error getting clock %d\n", i);
-			return -EINVAL;
+			return PTR_ERR(priv->clock[i]);
 		}
 
 		ret = clk_prepare_enable(priv->clock[i]);
@@ -1023,20 +1029,24 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 		}
 	}
 
-	priv->num_resets = of_count_phandle_with_args(node, "resets",
-						      "#reset-cells");
+	num_resets = of_count_phandle_with_args(node, "resets",
+						"#reset-cells");
+	if (num_resets > 0)
+		priv->num_resets = num_resets;
+	else
+		priv->num_resets = 0;
 	if (priv->num_resets) {
 		priv->reset = devm_kcalloc(dev, priv->num_resets,
 					   sizeof(struct reset_control *),
 					   GFP_KERNEL);
-		if (!priv->reset)
-			return -ENOMEM;
+		if (IS_ERR_OR_NULL(priv->reset))
+			return PTR_ERR(priv->reset);
 	}
 	for (i = 0; i < priv->num_resets; i++) {
 		priv->reset[i] = devm_reset_control_get_by_index(dev, i);
 		if (IS_ERR(priv->reset[i])) {
 			dev_err(dev, "error getting reset %d\n", i);
-			return -EINVAL;
+			return PTR_ERR(priv->reset[i]);
 		}
 
 		ret = reset_control_reset(priv->reset[i]);
@@ -1056,16 +1066,16 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	ndev->mtu = ETH_DATA_LEN + ENETSW_TAG_SIZE;
 	ndev->max_mtu = ETH_DATA_LEN + ENETSW_TAG_SIZE;
 	netif_napi_add(ndev, &priv->napi, bcm6368_enetsw_poll, 16);
-	SET_NETDEV_DEV(ndev, dev);
 
-	ret = register_netdev(ndev);
-	if (ret)
+	ret = devm_register_netdev(dev, ndev);
+	if (ret) {
+		netif_napi_del(&priv->napi);
 		goto out_disable_clk;
+	}
 
 	netif_carrier_off(ndev);
-	platform_set_drvdata(pdev, ndev);
-	priv->pdev = pdev;
-	priv->net_dev = ndev;
+
+	dev_info(dev, "%s at 0x%px, IRQ %d\n", ndev->name, priv->dma_base, ndev->irq);
 
 	return 0;
 
@@ -1086,8 +1096,6 @@ static int bcm6368_enetsw_remove(struct platform_device *pdev)
 	struct bcm6368_enetsw *priv = netdev_priv(ndev);
 	unsigned int i;
 
-	unregister_netdev(ndev);
-
 	pm_runtime_put_sync(dev);
 	for (i = 0; priv->pm && i < priv->num_pms; i++) {
 		dev_pm_domain_detach(priv->pm[i], true);
@@ -1099,8 +1107,6 @@ static int bcm6368_enetsw_remove(struct platform_device *pdev)
 
 	for (i = 0; i < priv->num_clocks; i++)
 		clk_disable_unprepare(priv->clock[i]);
-
-	free_netdev(ndev);
 
 	return 0;
 }
