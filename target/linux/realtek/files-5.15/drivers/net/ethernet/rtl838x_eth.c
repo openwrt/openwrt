@@ -1923,7 +1923,7 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 	for (int i = 0; i < RTL930X_CPU_PORT; i++) {
 		int pos;
 
-		if (priv->smi_bus[i] > 3)
+		if (priv->smi_bus[i] >= MAX_SMI_BUSSES)
 			continue;
 		pos = (i % 6) * 5;
 		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos,
@@ -1942,7 +1942,7 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 	sw_w32_mask(poll_ctrl, 0, RTL930X_SMI_GLB_CTRL);
 
 	/* Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus */
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < MAX_SMI_BUSSES; i++)
 		if (priv->smi_bus_isc45[i])
 			c45_mask |= BIT(i + 16);
 
