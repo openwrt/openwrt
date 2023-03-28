@@ -194,9 +194,6 @@ struct bcm6368_enetsw {
 	/* number of dma desc in tx ring */
 	int tx_ring_size;
 
-	/* maximum dma burst size */
-	int dma_maxburst;
-
 	/* cpu view of rx dma ring */
 	struct bcm6368_enetsw_desc *tx_desc_cpu;
 
@@ -220,15 +217,6 @@ struct bcm6368_enetsw {
 
 	/* platform device reference */
 	struct platform_device *pdev;
-
-	/* dma channel enable mask */
-	u32 dma_chan_en_mask;
-
-	/* dma channel interrupt mask */
-	u32 dma_chan_int_mask;
-
-	/* dma channel width */
-	unsigned int dma_chan_width;
 };
 
 static inline void dma_writel(struct bcm6368_enetsw *priv, u32 val, u32 off)
@@ -238,19 +226,19 @@ static inline void dma_writel(struct bcm6368_enetsw *priv, u32 val, u32 off)
 
 static inline u32 dma_readl(struct bcm6368_enetsw *priv, u32 off, int chan)
 {
-	return __raw_readl(priv->dma_chan + off + chan * priv->dma_chan_width);
+	return __raw_readl(priv->dma_chan + off + chan * DMA_CHAN_WIDTH);
 }
 
-static inline void dmac_writel(struct bcm6368_enetsw *priv, u32 val,
-				    u32 off, int chan)
+static inline void dmac_writel(struct bcm6368_enetsw *priv, u32 val, u32 off,
+			       int chan)
 {
-	__raw_writel(val, priv->dma_chan + off + chan * priv->dma_chan_width);
+	__raw_writel(val, priv->dma_chan + off + chan * DMA_CHAN_WIDTH);
 }
 
 static inline void dmas_writel(struct bcm6368_enetsw *priv, u32 val,
 				    u32 off, int chan)
 {
-	__raw_writel(val, priv->dma_sram + off + chan * priv->dma_chan_width);
+	__raw_writel(val, priv->dma_sram + off + chan * DMA_CHAN_WIDTH);
 }
 
 /*
@@ -440,7 +428,7 @@ static int bcm6368_enetsw_receive_queue(struct net_device *ndev, int budget)
 		bcm6368_enetsw_refill_rx(ndev, true);
 
 		/* kick rx dma */
-		dmac_writel(priv, priv->dma_chan_en_mask,
+		dmac_writel(priv, DMAC_CHANCFG_EN_MASK,
 			    DMAC_CHANCFG_REG, priv->rx_chan);
 	}
 
@@ -516,9 +504,9 @@ static int bcm6368_enetsw_poll(struct napi_struct *napi, int budget)
 	int rx_work_done;
 
 	/* ack interrupts */
-	dmac_writel(priv, priv->dma_chan_int_mask,
+	dmac_writel(priv, DMAC_IR_PKTDONE_MASK,
 			 DMAC_IR_REG, priv->rx_chan);
-	dmac_writel(priv, priv->dma_chan_int_mask,
+	dmac_writel(priv, DMAC_IR_PKTDONE_MASK,
 			 DMAC_IR_REG, priv->tx_chan);
 
 	/* reclaim sent skb */
@@ -538,10 +526,10 @@ static int bcm6368_enetsw_poll(struct napi_struct *napi, int budget)
 	napi_complete_done(napi, rx_work_done);
 
 	/* restore rx/tx interrupt */
-	dmac_writel(priv, priv->dma_chan_int_mask,
-			 DMAC_IRMASK_REG, priv->rx_chan);
-	dmac_writel(priv, priv->dma_chan_int_mask,
-			 DMAC_IRMASK_REG, priv->tx_chan);
+	dmac_writel(priv, DMAC_IR_PKTDONE_MASK,
+		    DMAC_IRMASK_REG, priv->rx_chan);
+	dmac_writel(priv, DMAC_IR_PKTDONE_MASK,
+		    DMAC_IRMASK_REG, priv->tx_chan);
 
 	return rx_work_done;
 }
@@ -642,7 +630,7 @@ bcm6368_enetsw_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 	netdev_sent_queue(ndev, skb->len);
 
 	/* kick tx dma */
-	dmac_writel(priv, priv->dma_chan_en_mask, DMAC_CHANCFG_REG,
+	dmac_writel(priv, DMAC_CHANCFG_EN_MASK, DMAC_CHANCFG_REG,
 		    priv->tx_chan);
 
 	/* stop queue if no more desc available */
@@ -781,9 +769,9 @@ static int bcm6368_enetsw_open(struct net_device *ndev)
 	dmas_writel(priv, 0, DMAS_SRAM4_REG, priv->tx_chan);
 
 	/* set dma maximum burst len */
-	dmac_writel(priv, priv->dma_maxburst,
+	dmac_writel(priv, ENETSW_DMA_MAXBURST,
 		    DMAC_MAXBURST_REG, priv->rx_chan);
-	dmac_writel(priv, priv->dma_maxburst,
+	dmac_writel(priv, ENETSW_DMA_MAXBURST,
 		    DMAC_MAXBURST_REG, priv->tx_chan);
 
 	/* set flow control low/high threshold to 1/3 / 2/3 */
@@ -999,14 +987,7 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 
 	priv->rx_ring_size = ENETSW_DEF_RX_DESC;
 	priv->tx_ring_size = ENETSW_DEF_TX_DESC;
-
-	priv->dma_maxburst = ENETSW_DMA_MAXBURST;
-
 	priv->copybreak = ENETSW_DEF_CPY_BREAK;
-
-	priv->dma_chan_en_mask = DMAC_CHANCFG_EN_MASK;
-	priv->dma_chan_int_mask = DMAC_IR_PKTDONE_MASK;
-	priv->dma_chan_width = DMA_CHAN_WIDTH;
 
 	of_get_mac_address(node, ndev->dev_addr);
 	if (is_valid_ether_addr(ndev->dev_addr)) {
@@ -1017,7 +998,7 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	}
 
 	priv->rx_buf_size = ALIGN(ndev->mtu + ENETSW_MTU_OVERHEAD,
-				  priv->dma_maxburst * 4);
+				  ENETSW_DMA_MAXBURST * 4);
 
 	priv->rx_frag_size = ENETSW_FRAG_SIZE(priv->rx_buf_size);
 
