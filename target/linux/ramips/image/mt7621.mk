@@ -2135,6 +2135,16 @@ define Device/totolink_x5000r
 endef
 TARGET_DEVICES += totolink_x5000r
 
+define Device/tozed_zlt-s12-pro
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := TOZED
+  DEVICE_MODEL := ZLT S12 PRO
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 comgt-ncm -uboot-envtools
+endef
+TARGET_DEVICES += tozed_zlt-s12-pro
+
 define Device/tplink_archer-ax23-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
