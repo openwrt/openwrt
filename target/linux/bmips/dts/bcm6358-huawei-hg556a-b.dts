@@ -140,6 +140,17 @@
 	status = "okay";
 };
 
+&ethernet1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&iudma {
+	status = "okay";
+};
+
 &ohci {
 	status = "okay";
 };

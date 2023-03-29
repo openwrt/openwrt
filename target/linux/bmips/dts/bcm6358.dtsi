@@ -346,5 +346,84 @@
 
 			status = "disabled";
 		};
+
+		ethernet0: ethernet@fffe4000 {
+			compatible = "brcm,bcm6358-emac";
+			reg = <0xfffe4000 0x2dc>;
+
+			clocks = <&periph_clk BCM6358_CLK_ENET0>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM6358_IRQ_EMAC0>,
+					<BCM6358_IRQ_EMAC0_RX_DMA>,
+					<BCM6358_IRQ_EMAC0_TX_DMA>;
+			interrupt-names = "emac",
+					  "rx",
+					  "tx";
+
+			brcm,iudma = <&iudma>;
+
+			dma-rx = <0>;
+			dma-tx = <1>;
+
+			status = "disabled";
+
+			mdio0: mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
+
+		ethernet1: ethernet@fffe4800 {
+			compatible = "brcm,bcm6358-emac";
+			reg = <0xfffe4800 0x2dc>;
+
+			clocks = <&periph_clk BCM6358_CLK_ENET1>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM6358_IRQ_EMAC1>,
+				     <BCM6358_IRQ_EMAC1_RX_DMA>,
+				     <BCM6358_IRQ_EMAC1_TX_DMA>;
+			interrupt-names = "emac",
+					  "rx",
+					  "tx";
+
+			brcm,iudma = <&iudma>;
+			brcm,external-mii;
+
+			dma-rx = <2>;
+			dma-tx = <3>;
+
+			status = "disabled";
+
+			mdio1: mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
+
+		iudma: dma@fffe5000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "brcm,bcm6358-iudma";
+			reg = <0xfffe5000 0x24>,
+			      <0xfffe5100 0x80>,
+			      <0xfffe5200 0x80>;
+			reg-names = "dma",
+				    "dma-channels",
+				    "dma-sram";
+
+			dma-channels = <8>;
+
+			clocks = <&periph_clk BCM6358_CLK_EMUSB>,
+				 <&periph_clk BCM6358_CLK_USBSU>,
+				 <&periph_clk BCM6358_CLK_EPHY>,
+				 <&periph_clk BCM6358_CLK_ENET>;
+
+			resets = <&periph_rst BCM6358_RST_ENET>,
+				 <&periph_rst BCM6358_RST_EPHY>;
+
+			status = "disabled";
+		};
 	};
 };
