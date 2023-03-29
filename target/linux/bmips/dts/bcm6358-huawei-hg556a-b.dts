@@ -145,6 +145,13 @@
 
 	nvmem-cells = <&macaddr_cfe_6a0>;
 	nvmem-cell-names = "mac-address";
+
+	phy-mode = "mii";
+
+	fixed-link {
+		speed = <100>;
+		full-duplex;
+	};
 };
 
 &iudma {
