@@ -128,6 +128,8 @@ struct bcm6348_iudma {
 	unsigned int dma_channels;
 };
 
+int bcm6348_iudma_drivers_register(struct platform_device *pdev);
+
 static inline u32 dma_readl(struct bcm6348_iudma *iudma, u32 off)
 {
 	u32 val;
@@ -269,7 +271,7 @@ static int bcm6348_iudma_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, iudma);
 
-	return 0;
+	return bcm6348_iudma_drivers_register(pdev);
 }
 
 static const struct of_device_id bcm6348_iudma_of_match[] = {
@@ -1703,4 +1705,15 @@ static struct platform_driver bcm6348_emac_driver = {
 	.probe	= bcm6348_emac_probe,
 	.remove	= bcm6348_emac_remove,
 };
-module_platform_driver(bcm6348_emac_driver);
+
+int bcm6348_iudma_drivers_register(struct platform_device *pdev)
+{
+	struct device *dev = &pdev->dev;
+	int ret;
+
+	ret = platform_driver_register(&bcm6348_emac_driver);
+	if (ret)
+		dev_err(dev, "error registering emac driver!\n");
+
+	return ret;
+}
