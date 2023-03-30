@@ -157,6 +157,10 @@ mikrotik,routerboard-m11g)
 mtc,wr1201)
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "br-lan"
 	;;
+netgear,eax12)
+	ucidef_set_led_netdev "eth_act" "LAN act" "yellow:eth" "lan" "tx rx"
+	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth" "lan" "link"
+	;;
 netgear,r6220|\
 netgear,r6260|\
 netgear,r6350|\
