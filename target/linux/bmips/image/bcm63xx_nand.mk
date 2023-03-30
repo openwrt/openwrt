@@ -141,3 +141,23 @@ define Device/sercomm_h500-s-vfes
   SERCOMM_SWVER := 3417
 endef
 TARGET_DEVICES += sercomm_h500-s-vfes
+
+define Device/sercomm_shg2500
+  $(Device/sercomm-nand)
+  DEVICE_VENDOR := Sercomm
+  DEVICE_MODEL := SHG2500
+  DEVICE_LOADADDR := $(KERNEL_LOADADDR)
+  KERNEL := kernel-bin | append-dtb | lzma | cfe-jffs2-kernel
+  CHIP_ID := 63268
+  SOC := bcm63168
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES) kmod-i2c-gpio \
+    kmod-leds-sercomm-msp430
+  SERCOMM_FSVER := 1001
+  SERCOMM_HWVER := 1424e4a
+  SERCOMM_SWVER := 3207
+endef
+TARGET_DEVICES += sercomm_shg2500
