@@ -433,4 +433,9 @@ cmdline_get_var() {
 	done
 }
 
+# generate a random number between 0 and 32767, alternative to $RANDOM
+random_numgen() {
+	echo $(( $(hexdump -n 2 -e '"%u"' /dev/urandom) >> 1 ))
+}
+
 [ -z "$IPKG_INSTROOT" ] && [ -f /lib/config/uci.sh ] && . /lib/config/uci.sh
