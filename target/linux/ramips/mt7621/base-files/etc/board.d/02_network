@@ -12,6 +12,7 @@ ramips_setup_interfaces()
 	dlink,dap-x1860-a1|\
 	edimax,re23s|\
 	mikrotik,routerboard-m11g|\
+	netgear,eax12|\
 	netgear,ex6150|\
 	sercomm,na502|\
 	sercomm,na502s|\
@@ -217,6 +218,10 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_encrypted_arcadyan "board_data")
 		label_mac=$wan_mac
 		lan_mac=$(macaddr_add "$wan_mac" 2)
+		;;
+	netgear,eax12)
+		lan_mac=$(mtd_get_mac_ascii Config mac)
+		label_mac=$lan_mac
 		;;
 	netgear,wax202)
 		lan_mac=$(mtd_get_mac_ascii Config mac)
