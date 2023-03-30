@@ -12,7 +12,8 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
-iptime,a6004mx)
+iptime,a6004mx|\
+netgear,ex6250-v2)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000"
 	;;
 esac
