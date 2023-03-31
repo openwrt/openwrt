@@ -476,6 +476,18 @@
 			status = "disabled";
 		};
 
+		random: rng@10002880 {
+			compatible = "brcm,bcm6368-rng";
+			reg = <0x10002880 0x14>;
+
+			clocks = <&periph_clk BCM6362_CLK_IPSEC>;
+			clock-names = "ipsec";
+
+			resets = <&periph_rst BCM6362_RST_IPSEC>;
+
+			power-domains = <&periph_pwr BCM6362_POWER_DOMAIN_IPSEC>;
+		};
+
 		ethernet: ethernet@1000d800 {
 			compatible = "brcm,bcm6362-enetsw";
 			reg = <0x1000d800 0x80>,
