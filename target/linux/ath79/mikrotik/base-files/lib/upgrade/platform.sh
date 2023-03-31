@@ -7,8 +7,7 @@ platform_check_image() {
 	return 0
 }
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv nandwrite'
-RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
+RAMFS_COPY_BIN='nandwrite'
 
 platform_do_upgrade_mikrotik_nand() {
 	CI_KERNPART=none
