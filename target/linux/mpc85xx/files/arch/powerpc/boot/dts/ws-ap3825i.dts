@@ -255,7 +255,7 @@
 
 / {
 	cpus {
-		PowerPC,P1010@0 {
+		PowerPC,P1020@0 {
 			bus-frequency = <399999996>;
 			timebase-frequency = <50000000>;
 			clock-frequency = <799999992>;
@@ -265,9 +265,12 @@
 			i-cache-block-size = <0x20>;
 			i-cache-size = <0x8000>;
 			i-cache-sets = <0x80>;
+			cpu-release-addr = <0x0 0x0ffff280>;
+			status = "okay";
+			enable-method = "spin-table";
 		};
 
-		PowerPC,P1010@1 {
+		PowerPC,P1020@1 {
 			bus-frequency = <399999996>;
 			timebase-frequency = <50000000>;
 			clock-frequency = <799999992>;
@@ -277,6 +280,9 @@
 			i-cache-block-size = <0x20>;
 			i-cache-size = <0x8000>;
 			i-cache-sets = <0x80>;
+			cpu-release-addr = <0x0 0x0ffff2a0>;
+			status = "disabled";
+			enable-method = "spin-table";
 		};
 	};
 
