@@ -9,6 +9,7 @@ endef
 
 define Device/mikrotik_nor
   $(Device/mikrotik)
+  DEVICE_PACKAGES := -yafut
   IMAGE/sysupgrade.bin := append-kernel | kernel2minor -s 1024 -e | \
 	pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | \
 	check-size | append-metadata
@@ -16,8 +17,5 @@ endef
 
 define Device/mikrotik_nand
   $(Device/mikrotik)
-  IMAGE/sysupgrade.bin = append-kernel | kernel2minor -s 2048 -e -c | \
-	sysupgrade-tar kernel=$$$$@ | append-metadata
-  DEVICE_PACKAGES := nand-utils
-  DEFAULT := n
+  IMAGE/sysupgrade.bin = append-kernel | sysupgrade-tar | append-metadata
 endef
