@@ -246,6 +246,18 @@ define Device/adtran_bsap1840
 endef
 TARGET_DEVICES += adtran_bsap1840
 
+define Device/alcatel_hh40v
+  SOC := qca9531
+  DEVICE_VENDOR := Alcatel
+  DEVICE_MODEL := HH40V
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-serial-option kmod-usb-net-rndis
+  IMAGE_SIZE := 14976k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs
+endef
+TARGET_DEVICES += alcatel_hh40v
+
 define Device/airtight_c-75
   SOC := qca9550
   DEVICE_VENDOR := AirTight Networks
