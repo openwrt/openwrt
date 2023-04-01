@@ -122,7 +122,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  		.vlans = 4096,
 --- a/drivers/net/dsa/b53/b53_mmap.c
 +++ b/drivers/net/dsa/b53/b53_mmap.c
-@@ -248,7 +248,7 @@ static int b53_mmap_probe_of(struct plat
+@@ -262,7 +262,7 @@ static int b53_mmap_probe_of(struct plat
  		return -ENOMEM;
  
  	pdata->regs = mem;
@@ -131,7 +131,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	pdata->big_endian = of_property_read_bool(np, "big-endian");
  
  	of_ports = of_get_child_by_name(np, "ports");
-@@ -332,14 +332,28 @@ static void b53_mmap_shutdown(struct pla
+@@ -346,14 +346,28 @@ static void b53_mmap_shutdown(struct pla
  }
  
  static const struct of_device_id b53_mmap_of_table[] = {
