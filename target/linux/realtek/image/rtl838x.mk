@@ -81,7 +81,7 @@ define Device/engenius_ews2910p
   SOC := rtl8380
   IMAGE_SIZE := 8192k
   DEVICE_VENDOR := EnGenius
-  DEVICE_MODEL := EWP2910P
+  DEVICE_MODEL := EWS2910P
   UIMAGE_MAGIC := 0x03802910
   KERNEL_INITRAMFS := \
 	kernel-bin | \
