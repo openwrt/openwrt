@@ -100,6 +100,18 @@ define Device/bananapi_bpi-r3
 endef
 TARGET_DEVICES += bananapi_bpi-r3
 
+define Device/cudy_wr3000
+  DEVICE_VENDOR := CUDY
+  DEVICE_MODEL := WR3000
+  BOARD_NAME := R31
+  SUPPORTED_DEVICES += R31
+  DEVICE_DTS := mt7981b-cudy-wr3000
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7981-firmware
+  IMAGE_SIZE := 15424k
+endef
+TARGET_DEVICES += cudy_wr3000
+
 define Device/mediatek_mt7986a-rfb-nand
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7986 rfba AP (NAND)

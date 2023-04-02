@@ -67,6 +67,9 @@ platform_do_upgrade() {
 			;;
 		esac
 		;;
+	cudy,wr3000)
+		default_do_upgrade "$1"
+		;;
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\

@@ -1,0 +1,217 @@
+/dts-v1/;
+
+#include "mt7981.dtsi"
+
+/ {
+	model = "CUDY WR3000";
+	compatible = "cudy,wr3000", "mediatek,mt7981";
+
+	aliases {
+		ethernet0 = &gmac0;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		};
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: led@0 {
+			label = "blue:power";
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led@1 {
+			label = "blue:internet";
+			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+		};
+		
+		led@2 {
+			label = "blue:wifi";
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led@3 {
+			label = "blue:wifi5";
+			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+		
+		led@4 {
+			label = "blue:wan";
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+		};
+		
+		led@5 {
+			label = "blue:lan";
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		nvmem-cells = <&macaddr_de00>;
+		nvmem-cell-names = "mac-address";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&mdio {
+	switch: switch@0 {
+		compatible = "mediatek,mt7531";
+		reg = <31>;
+		reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi2 {
+	status = "okay";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		spi-tx-buswidth = <4>;
+		spi-rx-buswidth = <4>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+		partition@00000 {
+			label = "BL2";
+			reg = <0x000000 0x040000>;
+			read-only;
+		};
+		partition@40000 {
+			label = "u-boot-env";
+			reg = <0x040000 0x010000>;
+		};
+		factory: partition@50000 {
+			label = "Factory";
+			reg = <0x050000 0x010000>;
+			read-only;
+
+		};
+		partition@60000 {
+			label = "bdinfo";
+			reg = <0x060000 0x010000>;
+			read-only;
+			
+			compatible = "nvmem-cells";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			macaddr_de00: macaddr@de00 {
+				reg = <0xDE00 0x6>;
+			};
+		};
+		partition@70000 {
+			label = "FIP";
+			reg = <0x070000 0x080000>;
+			read-only;
+		};
+		partition@f0000 {
+			compatible = "denx,fit";
+			label = "firmware";
+			reg = <0x0f0000 0xF10000>;
+			};
+		};
+	};
+};
+
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <0>;
+			label = "wan";
+			nvmem-cells = <&macaddr_de00>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <(1)>;
+		};
+
+		port@2 {
+			reg = <1>;
+			label = "lan1";
+		};
+
+		port@3 {
+			reg = <2>;
+			label = "lan2";
+		};
+
+		port@4 {
+			reg = <3>;
+			label = "lan3";
+		};
+
+		port@6 {
+			reg = <6>;
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+	mediatek,mtd-eeprom = <&factory 0x0>;
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};

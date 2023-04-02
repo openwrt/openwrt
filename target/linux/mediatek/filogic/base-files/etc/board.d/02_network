@@ -14,6 +14,9 @@ mediatek_setup_interfaces()
 	bananapi,bpi-r3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "eth1 wan"
 		;;
+	cudy,wr3000)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
+		;;
 	mediatek,mt7986a-rfb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan6" "eth1 wan"
 		;;
@@ -53,6 +56,10 @@ mediatek_setup_macs()
 		;;
 	bananapi,bpi-r3)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		;;
+	cudy,wr3000)
+		lan_mac=$(mtd_get_mac_binary "bdinfo" 0xde00)
+		label_mac="$lan_mac"
 		;;
 	xiaomi,redmi-router-ax6000-stock|\
 	xiaomi,redmi-router-ax6000-ubootmod)
