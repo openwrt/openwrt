@@ -76,7 +76,7 @@ define Device/extreme-networks_ws-ap3825i
   KERNEL_NAME := simpleImage.ws-ap3825i
   KERNEL_ENTRY := 0x1000000
   KERNEL_LOADADDR := 0x1000000
-  KERNEL = kernel-bin | lzma | fit lzma $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 endef
