@@ -1,0 +1,13 @@
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -366,6 +366,10 @@ static const struct sfp_quirk sfp_quirks
+ 		.part = "HL-GSFP",
+ 		.fixup = sfp_fixup_halny_gsfp,
+ 	}, {
++		.vendor = "HG GENUINE",
++		.part = "MXPD-483II",
++		.modes = sfp_quirk_2500basex,
++	}, {
+ 		// Huawei MA5671A can operate at 2500base-X, but report 1.2GBd
+ 		// NRZ in their EEPROM
+ 		.vendor = "HUAWEI",
