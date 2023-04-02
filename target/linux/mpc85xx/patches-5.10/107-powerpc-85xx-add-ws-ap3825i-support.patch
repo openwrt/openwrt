@@ -35,3 +35,31 @@ WS-AP3825i AP.
  obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
  obj-$(CONFIG_FB_FSL_DIU)	+= t1042rdb_diu.o
  obj-$(CONFIG_RED_15W_REV1)	+= red15w_rev1.o
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -159,6 +159,7 @@ src-plat-$(CONFIG_PPC_POWERNV) += pserie
+ src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) += pseries-head.S
+ src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
+ src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
++src-plat-$(CONFIG_WS_AP3825I) += simpleboot.c fixed-head.S
+ 
+ src-wlib := $(sort $(src-wlib-y))
+ src-plat := $(sort $(src-plat-y))
+@@ -339,6 +340,7 @@ image-$(CONFIG_TQM8560)			+= cuImage.tqm
+ image-$(CONFIG_SBC8548)			+= cuImage.sbc8548
+ image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
+ image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
++image-$(CONFIG_WS_AP3825I)		+= simpleImage.ws-ap3825i
+ # Board ports in arch/powerpc/platform/86xx/Kconfig
+ image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
+ 
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -324,6 +324,7 @@ adder875-redboot)
+     platformo="$object/fixed-head.o $object/redboot-8xx.o"
+     binary=y
+     ;;
++simpleboot-ws-ap3825i|\
+ simpleboot-tl-wdr4900-v1)
+     platformo="$object/fixed-head.o $object/simpleboot.o"
+     link_address='0x1000000'
