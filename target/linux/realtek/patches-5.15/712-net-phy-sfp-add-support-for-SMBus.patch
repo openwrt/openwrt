@@ -10,7 +10,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -539,32 +539,72 @@ static int sfp_i2c_write(struct sfp *sfp
+@@ -543,32 +543,72 @@ static int sfp_i2c_write(struct sfp *sfp
  	return ret == ARRAY_SIZE(msgs) ? len : 0;
  }
  
