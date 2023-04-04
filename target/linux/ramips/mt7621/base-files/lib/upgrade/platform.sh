@@ -132,6 +132,10 @@ platform_do_upgrade() {
 		CI_KERNPART="Kernel"
 		nand_do_upgrade "$1"
 		;;
+	zyxel,wsm20)
+		zyxel_mstc_upgrade_prepare
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
