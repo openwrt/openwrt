@@ -9,8 +9,7 @@ mediatek_setup_interfaces()
 
 	case $board in
 	asus,tuf-ax4200)
-		CI_UBIPART="UBI_DEV"
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
 		;;
 	bananapi,bpi-r3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "eth1 wan"
