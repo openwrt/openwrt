@@ -1,7 +1,5 @@
 DTS_DIR := $(DTS_DIR)/mediatek
 
-KERNEL_LOADADDR := 0x44000000
-
 define Image/Prepare
 	# For UBI we want only one extra block
 	rm -f $(KDIR)/ubi_mark
@@ -46,7 +44,6 @@ define Device/asus_tuf-ax4200
   DEVICE_DTS_LOADADDR := 0x47000000
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7986-firmware mt7986-wo-firmware
   IMAGES := sysupgrade.bin
-  KERNEL_LOADADDR := 0x48000000
   KERNEL := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_INITRAMFS := kernel-bin | lzma | \
@@ -65,6 +62,7 @@ define Device/bananapi_bpi-r3
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-gpio kmod-mt7986-firmware kmod-sfp kmod-usb3 e2fsprogs f2fsck mkf2fs mt7986-wo-firmware
   IMAGES := sysupgrade.itb
+  KERNEL_LOADADDR := 0x44000000
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   ARTIFACTS := \
 	       emmc-preloader.bin emmc-bl31-uboot.fip \
@@ -108,7 +106,6 @@ define Device/mediatek_mt7986a-rfb-nand
   DEVICE_DTS := mt7986a-rfb-spim-nand
   DEVICE_DTS_DIR := $(DTS_DIR)/
   DEVICE_PACKAGES := kmod-mt7986-firmware mt7986-wo-firmware
-  KERNEL_LOADADDR := 0x48000000
   SUPPORTED_DEVICES := mediatek,mt7986a-rfb-snand
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
@@ -132,7 +129,6 @@ define Device/mediatek_mt7986b-rfb
   DEVICE_DTS := mt7986b-rfb
   DEVICE_DTS_DIR := $(DTS_DIR)/
   DEVICE_PACKAGES := kmod-mt7986-firmware mt7986-wo-firmware
-  KERNEL_LOADADDR := 0x48000000
   SUPPORTED_DEVICES := mediatek,mt7986b-rfb
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
@@ -151,7 +147,6 @@ define Device/xiaomi_redmi-router-ax6000-stock
   DEVICE_DTS := mt7986a-xiaomi-redmi-router-ax6000-stock
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-leds-ws2812b kmod-mt7986-firmware mt7986-wo-firmware
-  KERNEL_LOADADDR := 0x48000000
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -171,7 +166,6 @@ define Device/xiaomi_redmi-router-ax6000-ubootmod
   DEVICE_PACKAGES := kmod-leds-ws2812b kmod-mt7986-firmware mt7986-wo-firmware
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   IMAGES := sysupgrade.itb
-  KERNEL_LOADADDR := 0x48000000
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
