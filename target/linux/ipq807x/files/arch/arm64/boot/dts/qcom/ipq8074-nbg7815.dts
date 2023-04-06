@@ -220,6 +220,7 @@
 				reg = <0x600000 0x10000>;
 
 				macaddr_lan: ethaddr {
+					#nvmem-cell-cells = <1>;
 				};
 			};
 
@@ -349,49 +350,48 @@
 	status = "okay";
 	phy-handle = <&qca8075_1>;
 	label = "lan1";
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address-ascii";
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp2 {
 	status = "okay";
 	phy-handle = <&qca8075_2>;
 	label = "lan2";
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address-ascii";
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp3 {
 	status = "okay";
 	phy-handle = <&qca8075_3>;
 	label = "lan3";
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address-ascii";
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp4 {
 	status = "okay";
 	phy-handle = <&qca8075_4>;
 	label = "lan4";
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address-ascii";
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp5 {
 	status = "okay";
 	phy-handle = <&qca8081>;
 	label = "wan";
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address-ascii";
-	mac-address-increment = <1>;
+	nvmem-cells = <&macaddr_lan 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp6_syn {
 	status = "okay";
 	phy-handle = <&aqr113c>;
 	label = "10g";
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address-ascii";
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &blsp1_i2c2 {
