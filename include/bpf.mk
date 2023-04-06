@@ -65,7 +65,7 @@ BPF_CFLAGS := \
 
 ifneq ($(CONFIG_HAS_BPF_TOOLCHAIN),)
 ifeq ($(DUMP)$(filter download refresh,$(MAKECMDGOALS)),)
-  CLANG_VER:=$(shell $(CLANG) -dM -E - < /dev/null | grep __clang_major__ | cut -d' ' -f3)
+  CLANG_VER:=$(shell $(CLANG) --version - < /dev/null | grep -oE '[0-9]+' | head -n 1)
   CLANG_VER_VALID:=$(shell [ "$(CLANG_VER)" -ge "$(CLANG_MIN_VER)" ] && echo 1 )
   ifeq ($(CLANG_VER_VALID),)
     $(error ERROR: LLVM/clang version too old. Minimum required: $(CLANG_MIN_VER), found: $(CLANG_VER))
