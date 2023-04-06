@@ -1,0 +1,47 @@
+From 8bd1d24e6ca3c599dd455b0e1b22f77bab8290eb Mon Sep 17 00:00:00 2001
+From: Michael Walle <michael@walle.cc>
+Date: Wed, 8 Mar 2023 09:20:19 +0100
+Subject: [PATCH] mtd: core: fix nvmem error reporting
+
+The master MTD will only have an associated device if
+CONFIG_MTD_PARTITIONED_MASTER is set, thus we cannot use dev_err() on
+mtd->dev. Instead use the parent device which is the physical flash
+memory.
+
+Fixes: 4b361cfa8624 ("mtd: core: add OTP nvmem provider support")
+Cc: stable@vger.kernel.org
+Signed-off-by: Michael Walle <michael@walle.cc>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://lore.kernel.org/linux-mtd/20230308082021.870459-2-michael@walle.cc
+---
+ drivers/mtd/mtdcore.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/mtd/mtdcore.c
++++ b/drivers/mtd/mtdcore.c
+@@ -946,6 +946,7 @@ static int mtd_nvmem_fact_otp_reg_read(v
+ 
+ static int mtd_otp_nvmem_add(struct mtd_info *mtd)
+ {
++	struct device *dev = mtd->dev.parent;
+ 	struct nvmem_device *nvmem;
+ 	ssize_t size;
+ 	int err;
+@@ -959,7 +960,7 @@ static int mtd_otp_nvmem_add(struct mtd_
+ 			nvmem = mtd_otp_nvmem_register(mtd, "user-otp", size,
+ 						       mtd_nvmem_user_otp_reg_read);
+ 			if (IS_ERR(nvmem)) {
+-				dev_err(&mtd->dev, "Failed to register OTP NVMEM device\n");
++				dev_err(dev, "Failed to register OTP NVMEM device\n");
+ 				return PTR_ERR(nvmem);
+ 			}
+ 			mtd->otp_user_nvmem = nvmem;
+@@ -977,7 +978,7 @@ static int mtd_otp_nvmem_add(struct mtd_
+ 			nvmem = mtd_otp_nvmem_register(mtd, "factory-otp", size,
+ 						       mtd_nvmem_fact_otp_reg_read);
+ 			if (IS_ERR(nvmem)) {
+-				dev_err(&mtd->dev, "Failed to register OTP NVMEM device\n");
++				dev_err(dev, "Failed to register OTP NVMEM device\n");
+ 				err = PTR_ERR(nvmem);
+ 				goto err;
+ 			}

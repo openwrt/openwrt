@@ -1,0 +1,55 @@
+From e0489f6e221f5ddee6cb3bd51b992b790c5fa4b9 Mon Sep 17 00:00:00 2001
+From: Michael Walle <michael@walle.cc>
+Date: Wed, 8 Mar 2023 09:20:20 +0100
+Subject: [PATCH] mtd: core: fix error path for nvmem provider
+
+If mtd_otp_nvmem_add() fails, the partitions won't be removed
+because there is simply no call to del_mtd_partitions().
+Unfortunately, add_mtd_partitions() will print all partitions to
+the kernel console. If mtd_otp_nvmem_add() returns -EPROBE_DEFER
+this would print the partitions multiple times to the kernel
+console. Instead move mtd_otp_nvmem_add() to the beginning of the
+function.
+
+Fixes: 4b361cfa8624 ("mtd: core: add OTP nvmem provider support")
+Cc: stable@vger.kernel.org
+Signed-off-by: Michael Walle <michael@walle.cc>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://lore.kernel.org/linux-mtd/20230308082021.870459-3-michael@walle.cc
+---
+ drivers/mtd/mtdcore.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+--- a/drivers/mtd/mtdcore.c
++++ b/drivers/mtd/mtdcore.c
+@@ -1031,10 +1031,14 @@ int mtd_device_parse_register(struct mtd
+ 
+ 	mtd_set_dev_defaults(mtd);
+ 
++	ret = mtd_otp_nvmem_add(mtd);
++	if (ret)
++		goto out;
++
+ 	if (IS_ENABLED(CONFIG_MTD_PARTITIONED_MASTER)) {
+ 		ret = add_mtd_device(mtd);
+ 		if (ret)
+-			return ret;
++			goto out;
+ 	}
+ 
+ 	/* Prefer parsed partitions over driver-provided fallback */
+@@ -1069,9 +1073,12 @@ int mtd_device_parse_register(struct mtd
+ 		register_reboot_notifier(&mtd->reboot_notifier);
+ 	}
+ 
+-	ret = mtd_otp_nvmem_add(mtd);
+-
+ out:
++	if (ret) {
++		nvmem_unregister(mtd->otp_user_nvmem);
++		nvmem_unregister(mtd->otp_factory_nvmem);
++	}
++
+ 	if (ret && device_is_registered(&mtd->dev))
+ 		del_mtd_device(mtd);
+ 
