@@ -68,7 +68,12 @@ platform_do_upgrade_linksys() {
 			CI_UBIPART="rootfs2"
 		fi
 
-		nand_upgrade_tar "$1"
+		if nand_upgrade_tar "$1" ; then
+			nand_do_upgrade_success
+		else
+			nand_do_upgrade_failed
+		fi
+
 	}
 	[ "$magic_long" = "27051956" -o "$magic_long" = "0000a0e1" ] && {
 		get_image "$1" | mtd write - $part_label
