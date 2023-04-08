@@ -79,6 +79,11 @@ proto_qmi_setup() {
 		/sbin/ip link set dev $ifname mtu $mtu
 	}
 
+        # The very first QMI request may fail as it is not answered by some
+        # modems. This may result in indefinite block.
+	# Issue a dummy access with a short timeout to "unlock" the modem
+        uqmi -d "$device" --get-pin-status -t 1000 >/dev/null 2>&1
+
 	echo "Waiting for SIM initialization"
 	local uninitialized_timeout=0
 	while uqmi -s -d "$device" --get-pin-status | grep '"UIM uninitialized"' > /dev/null; do
