@@ -5,7 +5,7 @@ DEVICE_VARS += CFE_RAM_FILE
 DEVICE_VARS += CFE_RAM_JFFS2_NAME CFE_RAM_JFFS2_PAD
 DEVICE_VARS += CFE_WFI_CHIP_ID CFE_WFI_FLASH_TYPE
 DEVICE_VARS += CFE_WFI_FLAGS CFE_WFI_VERSION
-DEVICE_VARS += SERCOMM_PID SERCOMM_FSVER
+DEVICE_VARS += SERCOMM_FSVER SERCOMM_HWVER SERCOMM_SWVER
 
 # CFE expects a single JFFS2 partition with cferam and kernel. However,
 # it's possible to fool CFE into properly loading both cferam and kernel
@@ -41,8 +41,9 @@ define Device/sercomm-nand
   IMAGES := factory.img sysupgrade.bin
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi |\
     cfe-sercomm-part | gzip | cfe-sercomm-load | cfe-sercomm-crypto
-  SERCOM_PID :=
   SERCOMM_FSVER :=
+  SERCOMM_HWVER :=
+  SERCOMM_SWVER :=
 endef
 
 define Device/comtrend_vr-3032u
@@ -115,16 +116,9 @@ define Device/sercomm_h500-s-lowi
   SUBPAGESIZE := 512
   VID_HDR_OFFSET := 2048
   DEVICE_PACKAGES += $(USB2_PACKAGES)
-  SERCOMM_PID := \
-    30 30 30 30 30 30 30 31 34 33 34 62 33 31 30 30 \
-    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
-    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
-    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
-    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
-    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
-    30 30 30 30 33 33 30 35 30 30 30 30 30 30 30 30 \
-    0D 0A 00 00 00 00 00 00 00 00 00 00 00 00 00 00
   SERCOMM_FSVER := 1001
+  SERCOMM_HWVER := 1434b31
+  SERCOMM_SWVER := 3305
 endef
 TARGET_DEVICES += sercomm_h500-s-lowi
 
@@ -142,15 +136,8 @@ define Device/sercomm_h500-s-vfes
   SUBPAGESIZE := 512
   VID_HDR_OFFSET := 2048
   DEVICE_PACKAGES += $(USB2_PACKAGES)
-  SERCOMM_PID := \
-    30 30 30 30 30 30 30 31 34 32 35 38 34 62 30 30 \
-    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
-    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
-    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
-    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
-    30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 \
-    30 30 30 30 33 34 31 37 30 30 30 30 30 30 30 30 \
-    0D 0A 00 00 00 00 00 00 00 00 00 00 00 00 00 00
   SERCOMM_FSVER := 1001
+  SERCOMM_HWVER := 142584b
+  SERCOMM_SWVER := 3417
 endef
 TARGET_DEVICES += sercomm_h500-s-vfes

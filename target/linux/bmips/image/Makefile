@@ -194,12 +194,18 @@ define Build/cfe-sercomm-crypto
 endef
 
 define Build/cfe-sercomm-load
+	$(TOPDIR)/scripts/sercomm-pid.py \
+		--hw-version $(SERCOMM_HWVER) \
+		--sw-version $(SERCOMM_SWVER) \
+		--extra-padding-size 0x10 \
+		--pid-file $@.pid
 	$(TOPDIR)/scripts/sercomm-payload.py \
 		--input-file $@ \
 		--output-file $@.new \
-		--pid "$(SERCOMM_PID)"
+		--pid-file $@.pid
 
 	mv $@.new $@
+	rm -f $@.pid
 endef
 
 define Build/cfe-sercomm-part
