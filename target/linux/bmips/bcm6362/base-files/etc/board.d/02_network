@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+huawei,hg253s-v2 |\
+netgear,dgnd3700-v2)
+	ucidef_set_bridge_device switch
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+	;;
+esac
+
+board_config_flush
+
+exit 0
