@@ -33,7 +33,8 @@ define Device/comtrend_ar-5315u
   CHIP_ID := 6318
   CFE_BOARD_ID := 96318A-1441N1
   FLASH_MB := 16
-  DEVICE_PACKAGES += $(USB2_PACKAGES) $(B43_PACKAGES)
+  DEVICE_PACKAGES += $(USB2_PACKAGES) $(B43_PACKAGES) \
+    kmod-leds-bcm6328
 endef
 TARGET_DEVICES += comtrend_ar-5315u
 
@@ -44,7 +45,8 @@ define Device/comtrend_ar-5387un
   CHIP_ID := 6328
   CFE_BOARD_ID := 96328A-1441N1
   FLASH_MB := 16
-  DEVICE_PACKAGES += $(USB2_PACKAGES) $(B43_PACKAGES)
+  DEVICE_PACKAGES += $(USB2_PACKAGES) $(B43_PACKAGES) \
+    kmod-leds-bcm6328
 endef
 TARGET_DEVICES += comtrend_ar-5387un
 
@@ -56,7 +58,8 @@ define Device/comtrend_vr-3025u
   CFE_BOARD_ID := 96368M-1541N
   BLOCKSIZE := 0x20000
   FLASH_MB := 32
-  DEVICE_PACKAGES += $(USB2_PACKAGES) $(B43_PACKAGES)
+  DEVICE_PACKAGES += $(USB2_PACKAGES) $(B43_PACKAGES) \
+    kmod-leds-gpio
 endef
 TARGET_DEVICES += comtrend_vr-3025u
 
@@ -69,6 +72,7 @@ define Device/huawei_hg556a-b
   CFE_BOARD_ID := HW556
   CFE_EXTRAS += --rsa-signature "EchoLife_HG556a" --tag-version 8
   BLOCKSIZE := 0x20000
-  DEVICE_PACKAGES += $(USB2_PACKAGES) $(ATH9K_PACKAGES)
+  DEVICE_PACKAGES += $(USB2_PACKAGES) $(ATH9K_PACKAGES) \
+    kmod-leds-gpio
 endef
 TARGET_DEVICES += huawei_hg556a-b
