@@ -52,6 +52,7 @@ $(eval $(call KernelPackage,crypto-aead))
 
 define KernelPackage/crypto-arc4
   TITLE:=ARC4 cipher CryptoAPI module
+  DEPENDS:=+kmod-crypto-user
   KCONFIG:= \
 	  CONFIG_CRYPTO_ARC4 \
 	  CONFIG_CRYPTO_USER_API_ENABLE_OBSOLETE=y
@@ -678,7 +679,7 @@ $(eval $(call KernelPackage,crypto-michael-mic))
 
 define KernelPackage/crypto-misc
   TITLE:=Other CryptoAPI modules
-  DEPENDS:=+kmod-crypto-xts
+  DEPENDS:=+kmod-crypto-xts +kmod-crypto-user
   KCONFIG:= \
 	CONFIG_CRYPTO_USER_API_ENABLE_OBSOLETE=y \
 	CONFIG_CRYPTO_CAMELLIA_X86_64 \
