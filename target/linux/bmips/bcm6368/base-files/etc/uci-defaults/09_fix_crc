@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions.sh
+
+case "$(board_name)" in
+comtrend,vr-3025u)
+	mtd fixtrx firmware
+	;;
+esac
+
+exit 0
