@@ -126,6 +126,13 @@ define Build/append-string
 	echo -n $(1) >> $@
 endef
 
+define Build/append-md5sum-ascii-salted
+	cp $@ $@.salted
+	echo -ne $(1) >> $@.salted
+	$(STAGING_DIR_HOST)/bin/mkhash md5 $@.salted | head -c32 >> $@
+	rm $@.salted
+endef
+
 define Build/append-ubi
 	sh $(TOPDIR)/scripts/ubinize-image.sh \
 		$(if $(UBOOTENV_IN_UBI),--uboot-env) \
