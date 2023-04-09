@@ -1,0 +1,10 @@
+--- a/drivers/net/mdio/Kconfig
++++ b/drivers/net/mdio/Kconfig
+@@ -219,7 +219,6 @@ config MDIO_BUS_MUX_BCM6368
+ 	tristate "Broadcom BCM6368 MDIO bus multiplexers"
+ 	depends on OF && OF_MDIO && (BMIPS_GENERIC || COMPILE_TEST)
+ 	select MDIO_BUS_MUX
+-	default BMIPS_GENERIC
+ 	help
+ 	  This module provides a driver for MDIO bus multiplexers found in
+ 	  BCM6368 based Broadcom SoCs. This multiplexer connects one of several
