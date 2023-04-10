@@ -70,7 +70,7 @@ case "$FIRMWARE" in
 		;;
 	tplink,deco-s4-v2)
 		caldata_extract "art" 0x1000 0x440
-		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
+		base_mac=$(mtd_get_mac_encrypted_deco config)
 		ath9k_patch_mac $(macaddr_add $base_mac 1)
 		;;
 	*)

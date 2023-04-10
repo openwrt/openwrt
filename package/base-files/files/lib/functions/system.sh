@@ -115,22 +115,23 @@ mtd_get_mac_encrypted_arcadyan() {
 }
 
 mtd_get_mac_encrypted_deco() {
+	local tplink_key="3336303032384339"
 	local mtdname="$1"
+	local part key mac
 
-	if ! [ -e "$mtdname" ]; then
-		echo "mtd_get_mac_encrypted_deco: file $mtdname not found!" >&2
+	part=$(find_mtd_part "$mtdname")
+	if [ -z "$part" ]; then
+		echo "mtd_get_mac_encrypted_deco: partition $mtdname not found!" >&2
 		return
 	fi
 
-	tplink_key="3336303032384339"
+	key=$(dd if="$part" bs=1 skip=16 count=8 2>/dev/null | \
+		uencrypt -n -d -k "$tplink_key" -c des-ecb | hexdump -n 8 -e '8/1 "%02x"')
 
-	key=$(dd if=$mtdname bs=1 skip=16 count=8 2>/dev/null | \
-		uencrypt -n -d -k $tplink_key -c des-ecb | hexdump -v -n 8 -e '1/1 "%02x"')
+	mac=$(dd if="$part" bs=1 skip=32 count=8 2>/dev/null | \
+		uencrypt -n -d -k "$key" -c des-ecb | hexdump -n 6 -e '6/1 "%02x"')
 
-	macaddr=$(dd if=$mtdname bs=1 skip=32 count=8 2>/dev/null | \
-		uencrypt -n -d -k $key -c des-ecb | hexdump -v -n 6 -e '5/1 "%02x:" 1/1 "%02x"')
-
-	echo $macaddr
+	macaddr_canonicalize "$mac"
 }
 
 mtd_get_mac_uci_config_ubi() {
