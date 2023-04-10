@@ -94,10 +94,8 @@ mtd_get_mac_ascii() {
 mtd_get_mac_encrypted_arcadyan() {
 	local iv="00000000000000000000000000000000"
 	local key="2A4B303D7644395C3B2B7053553C5200"
-	local mac_dirty
 	local mtdname="$1"
-	local part
-	local size
+	local part size mac
 
 	part=$(find_mtd_part "$mtdname")
 	if [ -z "$part" ]; then
@@ -105,21 +103,15 @@ mtd_get_mac_encrypted_arcadyan() {
 		return
 	fi
 
-	# Config decryption and getting mac. Trying uencrypt and openssl utils.
-	size=$((0x$(dd if=$part skip=9 bs=1 count=4 2>/dev/null | hexdump -v -e '1/4 "%08x"')))
-	if [[ -f  "/usr/bin/uencrypt" ]]; then
-		mac_dirty=$(dd if=$part bs=1 count=$size skip=$((0x100)) 2>/dev/null | \
-			uencrypt -d -n -k $key -i $iv | grep mac | cut -c 5-)
-	elif [[ -f  "/usr/bin/openssl" ]]; then
-		mac_dirty=$(dd if=$part bs=1 count=$size skip=$((0x100)) 2>/dev/null | \
-			openssl aes-128-cbc -d -nopad -K $key -iv $iv | grep mac | cut -c 5-)
-	else
-		echo "mtd_get_mac_encrypted_arcadyan: Neither uencrypt nor openssl was found!" >&2
-		return
-	fi
+	size=$(($(hexdump -s 9 -n 4 -e '1/4 "0x%x"' "$part")))
 
-	# "canonicalize" mac
-	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
+	[ -n "$mac" ] || mac=$(dd if="$part" bs=1 count="$size" skip=$((0x100)) 2>/dev/null | \
+		uencrypt -d -n -k "$key" -i "$iv" | grep mac)
+
+	[ -n "$mac" ] || mac=$(dd if="$part" bs=1 count="$size" skip=$((0x100)) 2>/dev/null | \
+		openssl aes-128-cbc -d -nopad -K "$key" -iv "$iv" | grep mac)
+
+	macaddr_canonicalize "${mac//mac/}"
 }
 
 mtd_get_mac_encrypted_deco() {
