@@ -1,0 +1,288 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+#include "mt7986b.dtsi"
+
+/ {
+	#address-cells = <0x2>;
+	#size-cells = <0x2>;
+	model = "Netgear WAX220";
+	compatible = "netgear,wax220", "mediatek,mt7986b-spim-snand-rfb";
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_power_blue;
+		led-failsafe = &led_power_amber;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_amber;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			label = "reset";
+		};
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan5g_green {
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+			label = "green:wlan5g";
+		};
+
+		led_power_amber: power_amber {
+			gpios = <&pio 15 GPIO_ACTIVE_LOW>;
+			label = "amber:power";
+		};
+
+		wlan2g_green {
+			gpios = <&pio 19 GPIO_ACTIVE_HIGH>;
+			label = "green:wlan2g";
+		};
+
+		led_power_blue: power_blue {
+			gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
+			label = "blue:power";
+		};
+
+		led_power_green: power_green {
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+			label = "green:power";
+		};
+
+		wlan2g_blue {
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			label = "blue:wlan2g";
+		};
+
+		lan_green {
+			gpios = <&pio 22 GPIO_ACTIVE_HIGH>;
+			label = "green:lan";
+		};
+
+		lan_amber {
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+			label = "amber:lan";
+		};
+
+		wlan5g_blue {
+			gpios = <&pio 2 GPIO_ACTIVE_LOW>;
+			label = "blue:wlan5g";
+		};
+	};
+};
+
+&crypto {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-handle = <&phy6>;
+		phy-mode = "2500base-x";
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&mdio {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	phy6: ethernet-phy@6 {
+		reg = <6>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&pio>;
+		interrupts = <46 IRQ_TYPE_LEVEL_HIGH>;
+	};
+};
+
+
+&pio {
+	spi_flash_pins: spi-flash-pins-33-to-38 {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+		conf-pu {
+			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
+			drive-strength = <8>;
+			mediatek,pull-up-adv = <0>; /* bias-disable */
+		};
+		conf-pd {
+			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
+			drive-strength = <8>;
+			mediatek,pull-down-adv = <0>; /* bias-disable */
+		};
+	};
+
+	wf_2g_5g_pins: wf_2g_5g-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_2g", "wf_5g";
+		};
+		conf {
+			pins =  "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+				"WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+				"WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+				"WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+				"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+				"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+				"WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <4>;
+		};
+	};
+
+	wf_dbdc_pins: wf-dbdc-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_dbdc";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+			 "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			 "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			 "WF0_TOP_CLK", "WF0_TOP_DATA";
+			drive-strength = <4>;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_flash_pins>;
+	status = "okay";
+
+	spi_nand_flash: flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <0>;
+
+		spi-max-frequency = <20000000>;
+		spi-tx-buswidth = <4>;
+		spi-rx-buswidth = <4>;
+
+		partitions: partitions {
+			#address-cells = <0x1>;
+			#size-cells = <0x1>;
+			compatible = "fixed-partitions";
+
+			partition@5fc0000 {
+				label = "Traffic";
+				reg = <0x5fc0000 0x200000>;
+			};
+
+			partition@63c0000 {
+				label = "NTGRcryptD";
+				reg = <0x63c0000 0x500000>;
+			};
+
+			partition@580000 {
+				label = "ubi";
+				reg = <0x580000 0x5140000>;
+			};
+
+			factory: partition@180000 {
+				label = "Factory";
+				reg = <0x180000 0x200000>;
+			};
+
+			partition@69c0000 {
+				label = "User_data";
+				reg = <0x69c0000 0x640000>;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x100000 0x80000>;
+			};
+
+			partition@68c0000 {
+				label = "LOG";
+				reg = <0x68c0000 0x100000>;
+			};
+
+			partition@5ac0000 {
+				label = "POT";
+				reg = <0x5ac0000 0x100000>;
+			};
+
+			partition@0 {
+				label = "BL2";
+				read-only;
+				reg = <0x0 0x100000>;
+			};
+
+			partition@5bc0000 {
+				label = "Language";
+				reg = <0x5bc0000 0x400000>;
+			};
+
+			partition@61c0000 {
+				label = "Cert";
+				reg = <0x61c0000 0x100000>;
+			};
+
+			partition@380000 {
+				label = "FIP";
+				reg = <0x380000 0x200000>;
+			};
+
+			partition@56c0000 {
+				label = "RAE";
+				reg = <0x56c0000 0x400000>;
+			};
+
+			partition@62c0000 {
+				label = "NTGRcryptK";
+				reg = <0x62c0000 0x100000>;
+			};
+		};
+	};
+
+};
+
+&trng {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+	pinctrl-names = "default", "dbdc";
+	pinctrl-0 = <&wf_2g_5g_pins>;
+	pinctrl-1 = <&wf_dbdc_pins>;
+
+	mediatek,mtd-eeprom = <&factory 0x0>;
+};

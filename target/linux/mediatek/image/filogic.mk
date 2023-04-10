@@ -176,6 +176,22 @@ define Device/glinet_gl-mt3000
 endef
 TARGET_DEVICES += glinet_gl-mt3000
 
+define Device/netgear_wax220
+  DEVICE_VENDOR := Netgear
+  DEVICE_MODEL := WAX220
+  DEVICE_DTS := mt7986b-netgear-wax220
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7986-firmware mt7986-wo-firmware
+  IMAGES := sysupgrade.bin
+  KERNEL_IN_UBI := 1
+  KERNEL := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += netgear_wax220
+
 define Device/mediatek_mt7986a-rfb-nand
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7986 rfba AP (NAND)
