@@ -507,6 +507,7 @@ define KernelPackage/mt7986-firmware/install
 		$(PKG_BUILD_DIR)/firmware/mt7986_rom_patch.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7986_eeprom_mt7975_dual.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7986_eeprom_mt7976_dual.bin \
+                $(PKG_BUILD_DIR)/firmware/mt7986_eeprom_mt7976_dbdc.bin \
 		$(1)/lib/firmware/mediatek
 endef
 
