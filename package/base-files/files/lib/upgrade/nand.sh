@@ -261,10 +261,12 @@ nand_upgrade_ubinized() {
 	local ubi_file="$1"
 	local gz="$2"
 
+	local ubi_length=$( (${gz}cat "$ubi_file" | wc -c) 2> /dev/null)
+
 	nand_detach_ubi "$CI_UBIPART" || return 1
 
 	local mtdnum="$( find_mtd_index "$CI_UBIPART" )"
-	${gz}cat "$ubi_file" | ubiformat "/dev/mtd$mtdnum" -y -f - && ubiattach -m "$mtdnum"
+	${gz}cat "$ubi_file" | ubiformat "/dev/mtd$mtdnum" -S "$ubi_length" -y -f - && ubiattach -m "$mtdnum"
 }
 
 # Write the UBIFS image to UBI rootfs volume
