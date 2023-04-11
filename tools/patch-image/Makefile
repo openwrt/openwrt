@@ -7,7 +7,6 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=patch-image
-PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 

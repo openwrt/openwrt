@@ -8,7 +8,6 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kernel2minor
 PKG_VERSION:=0.25
-PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/adron-s/kernel2minor.git
 PKG_MIRROR_HASH:=6083c46c2fe0da37bacd04d5d5439c0e2a9d00e58ff47a63acfd5057d2aa2145

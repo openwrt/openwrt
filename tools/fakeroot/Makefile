@@ -6,7 +6,6 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fakeroot
 PKG_VERSION:=1.29
-PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
 PKG_SOURCE_URL:=@DEBIAN/pool/main/f/fakeroot

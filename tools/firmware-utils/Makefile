@@ -7,7 +7,6 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=firmware-utils
-PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware-utils.git
