@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_linksys_e8450_defconfig
-@@ -0,0 +1,137 @@
+@@ -0,0 +1,141 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -133,6 +133,10 @@
 +CONFIG_HEXDUMP=y
 +CONFIG_RANDOM_UUID=y
 +CONFIG_REGEX=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
 +CONFIG_USB=y
 +CONFIG_USB_HOST=y
 +CONFIG_USB_XHCI_HCD=y
@@ -140,7 +144,7 @@
 +CONFIG_USB_STORAGE=y
 --- /dev/null
 +++ b/arch/arm/dts/mt7622-linksys-e8450-ubi.dts
-@@ -0,0 +1,193 @@
+@@ -0,0 +1,194 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 MediaTek Inc.
@@ -303,6 +307,7 @@
 +};
 +
 +&uart0 {
++	mediatek,force-highspeed;
 +	status = "okay";
 +};
 +
@@ -336,7 +341,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1263,6 +1263,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1285,6 +1285,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7622-rfb.dtb \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \

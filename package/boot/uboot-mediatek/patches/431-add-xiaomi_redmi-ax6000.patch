@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7986_xiaomi_redmi-ax6000_defconfig
-@@ -0,0 +1,176 @@
+@@ -0,0 +1,180 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -177,9 +177,13 @@
 +CONFIG_CMD_NAND=y
 +CONFIG_CMD_NAND_TRIMFFS=y
 +CONFIG_LMB_MAX_REGIONS=64
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/arch/arm/dts/mt7986a-xiaomi_redmi-ax6000.dts
-@@ -0,0 +1,152 @@
+@@ -0,0 +1,153 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2021 MediaTek Inc.
@@ -215,6 +219,7 @@
 +};
 +
 +&uart0 {
++	mediatek,force-highspeed;
 +	status = "okay";
 +};
 +

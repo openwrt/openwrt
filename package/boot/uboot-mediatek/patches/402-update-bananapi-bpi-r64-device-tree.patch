@@ -51,7 +51,15 @@
  	reg_1p8v: regulator-1p8v {
  		compatible = "regulator-fixed";
  		regulator-name = "fixed-1.8V";
-@@ -197,7 +234,7 @@
+@@ -182,6 +219,7 @@
+ };
+ 
+ &uart0 {
++	mediatek,force-highspeed;
+ 	status = "okay";
+ };
+ 
+@@ -197,7 +235,7 @@
  	status = "okay";
  	bus-width = <8>;
  	max-frequency = <50000000>;
@@ -60,7 +68,7 @@
  	vmmc-supply = <&reg_3p3v>;
  	vqmmc-supply = <&reg_3p3v>;
  	non-removable;
-@@ -208,7 +245,7 @@
+@@ -208,7 +246,7 @@
  	pinctrl-0 = <&mmc1_pins_default>;
  	status = "okay";
  	bus-width = <4>;

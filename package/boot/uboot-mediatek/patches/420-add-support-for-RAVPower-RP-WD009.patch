@@ -125,7 +125,7 @@ Subject: [PATCH] add support for RAVPower RP-WD009
 +}
 --- /dev/null
 +++ b/configs/ravpower-rp-wd009-ram_defconfig
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,68 @@
 +CONFIG_MIPS=y
 +CONFIG_SYS_LOAD_ADDR=0x80010000
 +CONFIG_NR_DRAM_BANKS=1
@@ -190,6 +190,10 @@ Subject: [PATCH] add support for RAVPower RP-WD009
 +CONFIG_BAUDRATE=57600
 +CONFIG_SYS_MAXARGS=64
 +CONFIG_SYS_CBSIZE=512
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/include/configs/ravpower-rp-wd009.h
 @@ -0,0 +1,40 @@
