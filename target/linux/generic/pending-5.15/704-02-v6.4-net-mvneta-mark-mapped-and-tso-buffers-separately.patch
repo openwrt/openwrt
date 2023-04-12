@@ -11,8 +11,6 @@ Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
  drivers/net/ethernet/marvell/mvneta.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index b8eda8969cb6..0441cc036f65 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
 @@ -607,6 +607,7 @@ struct mvneta_rx_desc {
@@ -23,7 +21,7 @@ index b8eda8969cb6..0441cc036f65 100644
  	MVNETA_TYPE_SKB,
  	MVNETA_TYPE_XDP_TX,
  	MVNETA_TYPE_XDP_NDO,
-@@ -1852,7 +1853,8 @@ static void mvneta_txq_bufs_free(struct mvneta_port *pp,
+@@ -1852,7 +1853,8 @@ static void mvneta_txq_bufs_free(struct
  			dma_unmap_single(pp->dev->dev.parent,
  					 tx_desc->buf_phys_addr,
  					 tx_desc->data_size, DMA_TO_DEVICE);
@@ -33,7 +31,7 @@ index b8eda8969cb6..0441cc036f65 100644
  			bytes_compl += buf->skb->len;
  			pkts_compl++;
  			dev_kfree_skb_any(buf->skb);
-@@ -2607,7 +2609,7 @@ mvneta_tso_put_hdr(struct sk_buff *skb, struct mvneta_tx_queue *txq)
+@@ -2607,7 +2609,7 @@ mvneta_tso_put_hdr(struct sk_buff *skb,
  	tx_desc->command |= MVNETA_TXD_F_DESC;
  	tx_desc->buf_phys_addr = txq->tso_hdrs_phys +
  				 txq->txq_put_index * TSO_HEADER_SIZE;
@@ -42,6 +40,3 @@ index b8eda8969cb6..0441cc036f65 100644
  	buf->skb = NULL;
  
  	mvneta_txq_inc_put(txq);
--- 
-2.39.2
-

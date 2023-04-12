@@ -16,8 +16,6 @@ Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
  drivers/net/ethernet/marvell/mvneta.c | 88 +++++++++++++++++++++------
  1 file changed, 70 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index a480ff999763..faf81ca347e7 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
 @@ -314,6 +314,15 @@
@@ -49,7 +47,7 @@ index a480ff999763..faf81ca347e7 100644
  
  	/* Affinity mask for CPUs*/
  	cpumask_t affinity_mask;
-@@ -2592,24 +2601,71 @@ static int mvneta_rx_hwbm(struct napi_struct *napi,
+@@ -2592,24 +2601,71 @@ err_drop_frame:
  	return rx_done;
  }
  
@@ -126,7 +124,7 @@ index a480ff999763..faf81ca347e7 100644
  	buf->type = MVNETA_TYPE_TSO;
  	buf->skb = NULL;
  
-@@ -3401,7 +3457,7 @@ static void mvneta_rxq_deinit(struct mvneta_port *pp,
+@@ -3401,7 +3457,7 @@ static void mvneta_rxq_deinit(struct mvn
  static int mvneta_txq_sw_init(struct mvneta_port *pp,
  			      struct mvneta_tx_queue *txq)
  {
@@ -135,7 +133,7 @@ index a480ff999763..faf81ca347e7 100644
  
  	txq->size = pp->tx_ring_size;
  
-@@ -3426,11 +3482,9 @@ static int mvneta_txq_sw_init(struct mvneta_port *pp,
+@@ -3426,11 +3482,9 @@ static int mvneta_txq_sw_init(struct mvn
  		return -ENOMEM;
  
  	/* Allocate DMA buffers for TSO MAC/IP/TCP headers */
@@ -150,7 +148,7 @@ index a480ff999763..faf81ca347e7 100644
  
  	/* Setup XPS mapping */
  	if (pp->neta_armada3700)
-@@ -3482,10 +3536,7 @@ static void mvneta_txq_sw_deinit(struct mvneta_port *pp,
+@@ -3482,10 +3536,7 @@ static void mvneta_txq_sw_deinit(struct
  
  	kfree(txq->buf);
  
@@ -162,7 +160,7 @@ index a480ff999763..faf81ca347e7 100644
  	if (txq->descs)
  		dma_free_coherent(pp->dev->dev.parent,
  				  txq->size * MVNETA_DESC_ALIGNED_SIZE,
-@@ -3494,7 +3545,6 @@ static void mvneta_txq_sw_deinit(struct mvneta_port *pp,
+@@ -3494,7 +3545,6 @@ static void mvneta_txq_sw_deinit(struct
  	netdev_tx_reset_queue(nq);
  
  	txq->buf               = NULL;
@@ -170,7 +168,7 @@ index a480ff999763..faf81ca347e7 100644
  	txq->descs             = NULL;
  	txq->last_desc         = 0;
  	txq->next_desc_to_proc = 0;
-@@ -5547,6 +5597,8 @@ static int __init mvneta_driver_init(void)
+@@ -5543,6 +5593,8 @@ static int __init mvneta_driver_init(voi
  {
  	int ret;
  
@@ -179,6 +177,3 @@ index a480ff999763..faf81ca347e7 100644
  	ret = cpuhp_setup_state_multi(CPUHP_AP_ONLINE_DYN, "net/mvneta:online",
  				      mvneta_cpu_online,
  				      mvneta_cpu_down_prepare);
--- 
-2.39.2
-

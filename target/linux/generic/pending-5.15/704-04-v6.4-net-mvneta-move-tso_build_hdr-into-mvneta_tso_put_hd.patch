@@ -12,11 +12,9 @@ Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
  drivers/net/ethernet/marvell/mvneta.c | 22 +++++++++++-----------
  1 file changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index b637f094061b..a480ff999763 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -2592,19 +2592,24 @@ static int mvneta_rx_hwbm(struct napi_struct *napi,
+@@ -2592,19 +2592,24 @@ err_drop_frame:
  	return rx_done;
  }
  
@@ -46,7 +44,7 @@ index b637f094061b..a480ff999763 100644
  	buf->type = MVNETA_TYPE_TSO;
  	buf->skb = NULL;
  
-@@ -2697,17 +2702,12 @@ static int mvneta_tx_tso(struct sk_buff *skb, struct net_device *dev,
+@@ -2697,17 +2702,12 @@ static int mvneta_tx_tso(struct sk_buff
  
  	total_len = skb->len - hdr_len;
  	while (total_len > 0) {
@@ -65,6 +63,3 @@ index b637f094061b..a480ff999763 100644
  
  		while (data_left > 0) {
  			int size;
--- 
-2.39.2
-

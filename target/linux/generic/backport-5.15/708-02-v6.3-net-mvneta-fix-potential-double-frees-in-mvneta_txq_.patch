@@ -24,11 +24,9 @@ Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
  drivers/net/ethernet/marvell/mvneta.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index 0c30896c1351..ed0743271977 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -3481,6 +3481,8 @@ static void mvneta_txq_sw_deinit(struct mvneta_port *pp,
+@@ -3481,6 +3481,8 @@ static void mvneta_txq_sw_deinit(struct
  
  	netdev_tx_reset_queue(nq);
  
@@ -37,6 +35,3 @@ index 0c30896c1351..ed0743271977 100644
  	txq->descs             = NULL;
  	txq->last_desc         = 0;
  	txq->next_desc_to_proc = 0;
--- 
-2.39.2
-

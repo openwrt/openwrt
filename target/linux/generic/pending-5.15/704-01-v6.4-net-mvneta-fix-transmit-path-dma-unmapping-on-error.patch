@@ -13,11 +13,9 @@ Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
  drivers/net/ethernet/marvell/mvneta.c | 53 +++++++++++++++++----------
  1 file changed, 33 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/net/ethernet/marvell/mvneta.c b/drivers/net/ethernet/marvell/mvneta.c
-index ed0743271977..b8eda8969cb6 100644
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -2647,14 +2647,40 @@ mvneta_tso_put_data(struct net_device *dev, struct mvneta_tx_queue *txq,
+@@ -2647,14 +2647,40 @@ mvneta_tso_put_data(struct net_device *d
  	return 0;
  }
  
@@ -60,7 +58,7 @@ index ed0743271977..b8eda8969cb6 100644
  
  	/* Count needed descriptors */
  	if ((txq->count + tso_count_descs(skb)) >= txq->size)
-@@ -2665,6 +2691,8 @@ static int mvneta_tx_tso(struct sk_buff *skb, struct net_device *dev,
+@@ -2665,6 +2691,8 @@ static int mvneta_tx_tso(struct sk_buff
  		return 0;
  	}
  
@@ -69,7 +67,7 @@ index ed0743271977..b8eda8969cb6 100644
  	/* Initialize the TSO handler, and prepare the first payload */
  	hdr_len = tso_start(skb, &tso);
  
-@@ -2705,15 +2733,7 @@ static int mvneta_tx_tso(struct sk_buff *skb, struct net_device *dev,
+@@ -2705,15 +2733,7 @@ err_release:
  	/* Release all used data descriptors; header descriptors must not
  	 * be DMA-unmapped.
  	 */
@@ -86,7 +84,7 @@ index ed0743271977..b8eda8969cb6 100644
  	return 0;
  }
  
-@@ -2723,6 +2743,7 @@ static int mvneta_tx_frag_process(struct mvneta_port *pp, struct sk_buff *skb,
+@@ -2723,6 +2743,7 @@ static int mvneta_tx_frag_process(struct
  {
  	struct mvneta_tx_desc *tx_desc;
  	int i, nr_frags = skb_shinfo(skb)->nr_frags;
@@ -94,7 +92,7 @@ index ed0743271977..b8eda8969cb6 100644
  
  	for (i = 0; i < nr_frags; i++) {
  		struct mvneta_tx_buf *buf = &txq->buf[txq->txq_put_index];
-@@ -2761,15 +2782,7 @@ static int mvneta_tx_frag_process(struct mvneta_port *pp, struct sk_buff *skb,
+@@ -2761,15 +2782,7 @@ error:
  	/* Release all descriptors that were used to map fragments of
  	 * this packet, as well as the corresponding DMA mappings
  	 */
@@ -111,6 +109,3 @@ index ed0743271977..b8eda8969cb6 100644
  	return -ENOMEM;
  }
  
--- 
-2.39.2
-
