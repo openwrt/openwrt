@@ -3,17 +3,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dwarves
-PKG_VERSION:=1.24
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_VERSION:=1.25
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://fedorapeople.org/~acme/dwarves/
-PKG_HASH:=576bc112b95937dfbcd347c423696ee9e1992a338fdca1acacca736fd95f69c2
+PKG_HASH:=e7d45955f6f4eca25a4c8c3bd6611059b35dc217e45976681d7db170fccdec4a
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
-
-HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk
