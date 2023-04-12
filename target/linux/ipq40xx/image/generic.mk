@@ -190,8 +190,7 @@ define Device/aruba_ap-365
 	DEVICE_MODEL := AP-365
 	DEVICE_PACKAGES := kmod-hwmon-ad7418 ipq-wifi-aruba_ap-365
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += aruba_ap-365
+TARGET_DEVICES += aruba_ap-365
 
 define Device/asus_map-ac2200
 	$(call Device/FitImageLzma)
