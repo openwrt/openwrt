@@ -1,0 +1,59 @@
+From fe2abc1abc0dfc6c13fe8f189216f00dbbb33044 Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Mon, 3 Apr 2023 19:30:30 +0100
+Subject: [PATCH 3/5] net: mvneta: use buf->type to determine whether to
+ dma-unmap
+
+Now that we use a different buffer type for TSO headers, we can use
+buf->type to determine whether the original buffer was DMA-mapped or
+not. The rules are:
+
+	MVNETA_TYPE_XDP_TX - from a DMA pool, no unmap is required
+	MVNETA_TYPE_XDP_NDO - dma_map_single()'d
+	MVNETA_TYPE_SKB - normal skbuff, dma_map_single()'d
+	MVNETA_TYPE_TSO - from the TSO buffer area
+
+This means we only need to call dma_unmap_single() on the XDP_NDO and
+SKB types of buffer, and we no longer need the private IS_TSO_HEADER()
+which relies on the TSO region being contiguously allocated.
+
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+---
+ drivers/net/ethernet/marvell/mvneta.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -334,10 +334,6 @@
+ 			 MVNETA_SKB_HEADROOM))
+ #define MVNETA_MAX_RX_BUF_SIZE	(PAGE_SIZE - MVNETA_SKB_PAD)
+ 
+-#define IS_TSO_HEADER(txq, addr) \
+-	((addr >= txq->tso_hdrs_phys) && \
+-	 (addr < txq->tso_hdrs_phys + txq->size * TSO_HEADER_SIZE))
+-
+ #define MVNETA_RX_GET_BM_POOL_ID(rxd) \
+ 	(((rxd)->status & MVNETA_RXD_BM_POOL_MASK) >> MVNETA_RXD_BM_POOL_SHIFT)
+ 
+@@ -1848,8 +1844,8 @@ static void mvneta_txq_bufs_free(struct
+ 
+ 		mvneta_txq_inc_get(txq);
+ 
+-		if (!IS_TSO_HEADER(txq, tx_desc->buf_phys_addr) &&
+-		    buf->type != MVNETA_TYPE_XDP_TX)
++		if (buf->type == MVNETA_TYPE_XDP_NDO ||
++		    buf->type == MVNETA_TYPE_SKB)
+ 			dma_unmap_single(pp->dev->dev.parent,
+ 					 tx_desc->buf_phys_addr,
+ 					 tx_desc->data_size, DMA_TO_DEVICE);
+@@ -2661,8 +2657,9 @@ static void mvneta_release_descs(struct
+ 
+ 	for (i = num; i >= 0; i--) {
+ 		struct mvneta_tx_desc *tx_desc = txq->descs + desc_idx;
++		struct mvneta_tx_buf *buf = &txq->buf[desc_idx];
+ 
+-		if (!IS_TSO_HEADER(txq, tx_desc->buf_phys_addr))
++		if (buf->type == MVNETA_TYPE_SKB)
+ 			dma_unmap_single(pp->dev->dev.parent,
+ 					 tx_desc->buf_phys_addr,
+ 					 tx_desc->data_size,

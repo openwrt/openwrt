@@ -1,0 +1,37 @@
+From 0cf39c6543469aae4a30cba354243125514ed568 Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Wed, 29 Mar 2023 13:11:17 +0100
+Subject: [PATCH] net: mvneta: fix potential double-frees in
+ mvneta_txq_sw_deinit()
+
+Reported on the Turris forum, mvneta provokes kernel warnings in the
+architecture DMA mapping code when mvneta_setup_txqs() fails to
+allocate memory. This happens because when mvneta_cleanup_txqs() is
+called in the mvneta_stop() path, we leave pointers in the structure
+that have been freed.
+
+Then on mvneta_open(), we call mvneta_setup_txqs(), which starts
+allocating memory. On memory allocation failure, mvneta_cleanup_txqs()
+will walk all the queues freeing any non-NULL pointers - which includes
+pointers that were previously freed in mvneta_stop().
+
+Fix this by setting these pointers to NULL to prevent double-freeing
+of the same memory.
+
+Link: https://forum.turris.cz/t/random-kernel-exceptions-on-hbl-tos-7-0/18865/8
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+---
+ drivers/net/ethernet/marvell/mvneta.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/ethernet/marvell/mvneta.c
++++ b/drivers/net/ethernet/marvell/mvneta.c
+@@ -3481,6 +3481,8 @@ static void mvneta_txq_sw_deinit(struct
+ 
+ 	netdev_tx_reset_queue(nq);
+ 
++	txq->buf               = NULL;
++	txq->tso_hdrs          = NULL;
+ 	txq->descs             = NULL;
+ 	txq->last_desc         = 0;
+ 	txq->next_desc_to_proc = 0;
