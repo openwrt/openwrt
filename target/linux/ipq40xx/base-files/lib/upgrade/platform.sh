@@ -111,6 +111,7 @@ platform_do_upgrade() {
 	cilab,meshpoint-one |\
 	edgecore,ecw5211 |\
 	edgecore,oap100 |\
+	engenius,eap1300 |\
 	engenius,eap2200 |\
 	glinet,gl-a1300 |\
 	glinet,gl-ap1300 |\
