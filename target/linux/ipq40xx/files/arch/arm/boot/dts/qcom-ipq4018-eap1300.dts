@@ -163,9 +163,13 @@
 				read-only;
 			};
 			partition5@e0000 {
+				compatible = "u-boot,env";
 				label = "0:APPSBLENV";
 				reg = <0x000e0000 0x00010000>;
 				read-only;
+
+				macaddr_lan: ethaddr {
+				};
 			};
 			partition6@f0000 {
 				label = "0:APPSBL";
@@ -217,14 +221,16 @@
 
 &wifi0 {
 	status = "okay";
-	nvmem-cell-names = "pre-calibration";
-	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration", "mac-address-ascii";
+	nvmem-cells = <&precal_art_1000>, <&macaddr_lan>;
+	mac-address-increment = <1>;
 	qcom,ath10k-calibration-variant = "EnGenius-EAP1300";
 };
 
 &wifi1 {
 	status = "okay";
-	nvmem-cell-names = "pre-calibration";
-	nvmem-cells = <&precal_art_5000>;
+	nvmem-cell-names = "pre-calibration", "mac-address-ascii";
+	nvmem-cells = <&precal_art_5000>, <&macaddr_lan>;
+	mac-address-increment = <2>;
 	qcom,ath10k-calibration-variant = "EnGenius-EAP1300";
 };
