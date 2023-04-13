@@ -1,3 +1,16 @@
+From 880d1311335120f64447ca9d11933872d734e19a Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 27 Mar 2023 18:41:54 +0100
+Subject: [PATCH] generic: pcs-mtk-lynxi: add hack to use 2500Base-X without AN
+
+Using 2500Base-T SFP modules e.g. on the BananaPi R3 requires manually
+disabling auto-negotiation, e.g. using ethtool. While a proper fix
+using SFP quirks is being discussed upstream, bring a work-around to
+restore user experience to what it was before the switch to the
+dedicated SGMII PCS driver.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+
 --- a/drivers/net/pcs/pcs-mtk-lynxi.c
 +++ b/drivers/net/pcs/pcs-mtk-lynxi.c
 @@ -92,14 +92,23 @@ static void mtk_pcs_lynxi_get_state(stru
