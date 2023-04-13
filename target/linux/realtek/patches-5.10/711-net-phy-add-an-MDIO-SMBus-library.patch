@@ -108,16 +108,6 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 +MODULE_AUTHOR("Antoine Tenart");
 +MODULE_DESCRIPTION("MDIO SMBus bridge library");
 +MODULE_LICENSE("GPL");
---- a/drivers/net/phy/Kconfig
-+++ b/drivers/net/phy/Kconfig
-@@ -60,6 +60,7 @@ config SFP
- 	depends on I2C && PHYLINK
- 	depends on HWMON || HWMON=n
- 	select MDIO_I2C
-+	select MDIO_SMBUS
- 
- comment "Switch configuration API + drivers"
- 
 --- a/include/linux/mdio/mdio-i2c.h
 +++ b/include/linux/mdio/mdio-i2c.h
 @@ -12,5 +12,21 @@ struct i2c_adapter;
