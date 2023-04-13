@@ -1199,7 +1199,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	ch = &priv->channel[queue];
  
  	if (!rx_q->xsk_pool && !tx_q->xsk_pool)
-@@ -6914,8 +6918,8 @@ int stmmac_reinit_ringparam(struct net_d
+@@ -6918,8 +6922,8 @@ int stmmac_reinit_ringparam(struct net_d
  	if (netif_running(dev))
  		stmmac_release(dev);
  
@@ -1210,7 +1210,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (netif_running(dev))
  		ret = stmmac_open(dev);
-@@ -7353,7 +7357,7 @@ int stmmac_suspend(struct device *dev)
+@@ -7357,7 +7361,7 @@ int stmmac_suspend(struct device *dev)
  	stmmac_disable_all_queues(priv);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -1219,7 +1219,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (priv->eee_enabled) {
  		priv->tx_path_in_lpi_mode = false;
-@@ -7404,7 +7408,7 @@ EXPORT_SYMBOL_GPL(stmmac_suspend);
+@@ -7408,7 +7412,7 @@ EXPORT_SYMBOL_GPL(stmmac_suspend);
  
  static void stmmac_reset_rx_queue(struct stmmac_priv *priv, u32 queue)
  {
@@ -1228,7 +1228,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	rx_q->cur_rx = 0;
  	rx_q->dirty_rx = 0;
-@@ -7412,7 +7416,7 @@ static void stmmac_reset_rx_queue(struct
+@@ -7416,7 +7420,7 @@ static void stmmac_reset_rx_queue(struct
  
  static void stmmac_reset_tx_queue(struct stmmac_priv *priv, u32 queue)
  {
