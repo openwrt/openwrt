@@ -1,0 +1,47 @@
+From c0e6e4393b4284d7287c3edbedbbd23da51b8da5 Mon Sep 17 00:00:00 2001
+From: Liangbin Lian <jjm2473@gmail.com>
+Date: Fri, 14 Apr 2023 02:19:38 +0800
+Subject: [PATCH] file: fix string out of buffer range on uh_defer_script
+
+if a url path length is multiple of 8, tailing zero will be trimed out on uh_defer_script, cause a strangle error.
+it's simple to reproduce.
+
+1. create a luci controller, register a entry with path length multiple of 8 (including '/cgi-bin/'), for example, '/cgi-bin/luci/admin/system/admin'.
+2. set uhttpd max_requests to 1, and restart uhttpd
+3. request '/cgi-bin/luci/admin/system/admin' with at least 2 processes
+4. some responses will produce a error:
+```
+Unable to launch the requested CGI program:
+  /www/cgi-bin/luci: No such file or directory
+```
+
+Signed-off-by: Liangbin Lian <jjm2473@gmail.com>
+---
+ file.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/file.c b/file.c
+index ac781c1..d117387 100644
+--- a/file.c
++++ b/file.c
+@@ -797,7 +797,7 @@ uh_defer_script(struct client *cl, struct dispatch_handler *d, char *url, struct
+ 		/* allocate enough memory to duplicate all path_info strings in one block */
+ #undef _field
+ #define _field(_name) &_##_name, field_len(pi->_name),
+-		dr = calloc_a(sizeof(*dr), &_url, strlen(url), path_info_fields NULL);
++		dr = calloc_a(sizeof(*dr), &_url, strlen(url) + 1, path_info_fields NULL);
+ 
+ 		memcpy(&dr->pi, pi, sizeof(*pi));
+ 		dr->path = true;
+@@ -807,7 +807,7 @@ uh_defer_script(struct client *cl, struct dispatch_handler *d, char *url, struct
+ #define _field(_name) if (pi->_name) dr->pi._name = strcpy(_##_name, pi->_name);
+ 		path_info_fields
+ 	} else {
+-		dr = calloc_a(sizeof(*dr), &_url, strlen(url), NULL);
++		dr = calloc_a(sizeof(*dr), &_url, strlen(url) + 1, NULL);
+ 	}
+ 
+ 	cl->dispatch.req_data = dr;
+-- 
+2.31.0
+
