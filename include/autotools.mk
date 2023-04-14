@@ -26,6 +26,8 @@ AM_TOOL_PATHS:= \
 	AUTOPOINT=true \
 	GTKDOCIZE=true
 
+AM_TOOL_PATHS_FAKE:=$(subst = ,=,$(patsubst "%,"$(TRUE)",$(subst =,= ",$(AM_TOOL_PATHS))))
+
 # 1: build dir
 # 2: remove files
 # 3: automake paths
