@@ -32,6 +32,10 @@
 			label = "amber:signal";
 			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
+		led_signal_red: signal_red {
+			label = "red:signal";
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+		};
 	};
 
 	keys {
@@ -49,6 +53,13 @@
 		};
 	};
 
+};
+
+&state_default {
+	gpio {
+		groups = "gpio", "refclk", "wdt", "wled_an", "uart1";
+		function = "gpio";
+	};
 };
 
 &partitions {
