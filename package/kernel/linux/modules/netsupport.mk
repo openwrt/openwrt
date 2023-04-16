@@ -1446,8 +1446,7 @@ define KernelPackage/qrtr
   DEPENDS:=@!LINUX_5_10
   KCONFIG:=CONFIG_QRTR
   FILES:= \
-  $(LINUX_DIR)/net/qrtr/qrtr.ko \
-  $(LINUX_DIR)/net/qrtr/ns.ko
+  $(LINUX_DIR)/net/qrtr/qrtr.ko
   AUTOLOAD:=$(call AutoProbe,qrtr)
 endef
 
