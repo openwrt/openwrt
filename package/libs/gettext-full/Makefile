@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gettext-full
 PKG_VERSION:=0.21.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=gettext-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gettext
@@ -21,7 +21,6 @@ PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_CPE_ID:=cpe:/a:gnu:gettext
 
-PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 PKG_BUILD_DEPENDS:=gettext-full/host libxml2
 PKG_BUILD_PARALLEL:=0
@@ -69,6 +68,8 @@ define Package/libintl-full
   ABI_VERSION:=8
 endef
 
+export GNULIB_SRCDIR:=$(HOST_GNULIB_SRCDIR)
+
 TARGET_CFLAGS += $(FPIC)
 ifneq ($(HOST_OS),Linux)
   TARGET_CFLAGS += -I$(STAGING_DIR_HOSTPKG)/include
@@ -107,9 +108,45 @@ HOST_CONFIGURE_VARS += \
 
 HOST_CFLAGS += $(HOST_FPIC)
 
+define Host/Bootstrap
+	( \
+		cd $(HOST_BUILD_DIR); \
+		$(AM_TOOL_PATHS) \
+		./autogen.sh \
+	)
+endef
+
+define Host/Prepare
+	$(call Host/Prepare/Default)
+	$(if $(QUILT),,$(call Host/Bootstrap))
+endef
+
+define Host/Configure
+	$(if $(QUILT),$(call Host/Bootstrap))
+	$(call Host/Configure/Default)
+endef
+
 define Host/Compile
 	$(foreach makefile,$(PKG_MAKEFILES_FAKE),printf '%s\n%s\n' 'all:' 'install:' > $(HOST_BUILD_DIR)/$(makefile); )
 	$(call Host/Compile/Default,SUBDIRS='$(PKG_SUBDIRS)')
+endef
+
+define Build/Bootstrap
+	( \
+		cd $(PKG_BUILD_DIR); \
+		$(AM_TOOL_PATHS) \
+		./autogen.sh \
+	)
+endef
+
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	$(if $(QUILT),,$(call Build/Bootstrap))
+endef
+
+define Build/Configure
+	$(if $(QUILT),$(call Build/Bootstrap))
+	$(call Build/Configure/Default)
 endef
 
 define Build/Compile
