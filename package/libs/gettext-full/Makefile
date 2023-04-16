@@ -23,10 +23,10 @@ PKG_CPE_ID:=cpe:/a:gnu:gettext
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
-PKG_BUILD_DEPENDS:=gettext-full/host
+PKG_BUILD_DEPENDS:=gettext-full/host libxml2
 PKG_BUILD_PARALLEL:=0
 
-HOST_BUILD_DEPENDS:=gperf/host
+HOST_BUILD_DEPENDS:=gperf/host libxml2/host
 HOST_BUILD_PARALLEL:=0
 
 PKG_SUBDIRS:= \
@@ -86,6 +86,7 @@ CONFIGURE_ARGS += \
 	--with-included-gettext \
 	--without-libintl-prefix \
 	--without-libexpat-prefix \
+	--with-libxml2-prefix=$(STAGING_DIR) \
 	--without-emacs
 
 HOST_CONFIGURE_ARGS += \
@@ -96,7 +97,7 @@ HOST_CONFIGURE_ARGS += \
 	--disable-java \
 	--disable-openmp \
 	--without-emacs \
-	--without-libxml2-prefix
+	--with-libxml2-prefix=$(STAGING_DIR_HOSTPKG)
 
 HOST_CONFIGURE_VARS += \
 	EMACS="no" \
