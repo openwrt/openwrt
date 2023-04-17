@@ -26,7 +26,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	.add_interface		= adm8211_add_interface,
 --- a/drivers/net/wireless/ath/ar5523/ar5523.c
 +++ b/drivers/net/wireless/ath/ar5523/ar5523.c
-@@ -1355,6 +1355,7 @@ static const struct ieee80211_ops ar5523
+@@ -1361,6 +1361,7 @@ static const struct ieee80211_ops ar5523
  	.start			= ar5523_start,
  	.stop			= ar5523_stop,
  	.tx			= ar5523_tx,
@@ -36,7 +36,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	.remove_interface	= ar5523_remove_interface,
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -8539,6 +8539,7 @@ err_fallback:
+@@ -8587,6 +8587,7 @@ err_fallback:
  
  static const struct ieee80211_ops ath11k_ops = {
  	.tx				= ath11k_mac_op_tx,
@@ -126,7 +126,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	.add_interface = brcms_ops_add_interface,
 --- a/drivers/net/wireless/intel/iwlegacy/3945-mac.c
 +++ b/drivers/net/wireless/intel/iwlegacy/3945-mac.c
-@@ -3435,6 +3435,7 @@ static const struct attribute_group il39
+@@ -3439,6 +3439,7 @@ static const struct attribute_group il39
  
  static struct ieee80211_ops il3945_mac_ops __ro_after_init = {
  	.tx = il3945_mac_tx,
@@ -136,7 +136,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	.add_interface = il_mac_add_interface,
 --- a/drivers/net/wireless/intel/iwlegacy/4965-mac.c
 +++ b/drivers/net/wireless/intel/iwlegacy/4965-mac.c
-@@ -6304,6 +6304,7 @@ il4965_tx_queue_set_status(struct il_pri
+@@ -6308,6 +6308,7 @@ il4965_tx_queue_set_status(struct il_pri
  
  static const struct ieee80211_ops il4965_mac_ops = {
  	.tx = il4965_mac_tx,
@@ -306,7 +306,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	.add_interface		= rtl8187_add_interface,
 --- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
 +++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
-@@ -6561,6 +6561,7 @@ static void rtl8xxxu_stop(struct ieee802
+@@ -6548,6 +6548,7 @@ static void rtl8xxxu_stop(struct ieee802
  
  static const struct ieee80211_ops rtl8xxxu_ops = {
  	.tx = rtl8xxxu_tx,

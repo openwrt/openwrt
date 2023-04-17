@@ -21,13 +21,13 @@ Link: https://lore.kernel.org/r/20221021090126.28626-1-quic_rbhattac@quicinc.com
 
 --- a/drivers/net/wireless/ath/ath11k/qmi.c
 +++ b/drivers/net/wireless/ath/ath11k/qmi.c
-@@ -3090,6 +3090,9 @@ static const struct qmi_msg_handler ath1
- 			sizeof(struct qmi_wlfw_fw_init_done_ind_msg_v01),
- 		.fn = ath11k_qmi_msg_fw_init_done_cb,
+@@ -1702,6 +1702,9 @@ static struct qmi_elem_info qmi_wlfw_fw_
+ 		.data_type = QMI_EOTI,
+ 		.array_type = NO_ARRAY,
  	},
 +
 +	/* end of list */
 +	{},
  };
  
- static int ath11k_qmi_ops_new_server(struct qmi_handle *qmi_hdl,
+ static int ath11k_qmi_host_cap_send(struct ath11k_base *ab)

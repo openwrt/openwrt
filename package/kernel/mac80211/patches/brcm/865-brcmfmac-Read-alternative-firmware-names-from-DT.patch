@@ -24,7 +24,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  #include "of.h"
  
  static int brcmf_of_get_country_codes(struct device *dev,
-@@ -167,3 +168,38 @@ void brcmf_of_probe(struct device *dev,
+@@ -168,3 +169,38 @@ void brcmf_of_probe(struct device *dev,
  	sdio->oob_irq_nr = irq;
  	sdio->oob_irq_flags = irqf;
  }
@@ -111,7 +111,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  #define TXCTL_CREDITS	2
  
  static void pkt_align(struct sk_buff *p, int len, int align)
-@@ -4192,6 +4196,9 @@ static const struct brcmf_bus_ops brcmf_
+@@ -4193,6 +4197,9 @@ static const struct brcmf_bus_ops brcmf_
  #define BRCMF_SDIO_FW_NVRAM	1
  #define BRCMF_SDIO_FW_CLM	2
  
@@ -121,7 +121,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  static void brcmf_sdio_firmware_callback(struct device *dev, int err,
  					 struct brcmf_fw_request *fwreq)
  {
-@@ -4207,6 +4214,22 @@ static void brcmf_sdio_firmware_callback
+@@ -4208,6 +4215,22 @@ static void brcmf_sdio_firmware_callback
  
  	brcmf_dbg(TRACE, "Enter: dev=%s, err=%d\n", dev_name(dev), err);
  
@@ -144,7 +144,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	if (err)
  		goto fail;
  
-@@ -4417,7 +4440,7 @@ brcmf_sdio_prepare_fw_request(struct brc
+@@ -4418,7 +4441,7 @@ brcmf_sdio_prepare_fw_request(struct brc
  
  	fwreq = brcmf_fw_alloc_request(bus->ci->chip, bus->ci->chiprev,
  				       brcmf_sdio_fwnames,
@@ -153,7 +153,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  				       fwnames, ARRAY_SIZE(fwnames));
  	if (!fwreq)
  		return NULL;
-@@ -4437,6 +4460,9 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
+@@ -4438,6 +4461,9 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
  	struct brcmf_sdio *bus;
  	struct workqueue_struct *wq;
  	struct brcmf_fw_request *fwreq;
@@ -163,7 +163,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	brcmf_dbg(TRACE, "Enter\n");
  
-@@ -4519,6 +4545,21 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
+@@ -4520,6 +4546,21 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
  
  	brcmf_dbg(INFO, "completed!!\n");
  

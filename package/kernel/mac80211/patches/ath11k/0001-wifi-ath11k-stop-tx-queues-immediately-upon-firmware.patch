@@ -56,7 +56,7 @@ Link: https://lore.kernel.org/r/20220923170235.18873-1-quic_adisi@quicinc.com
  		ath11k_err(ab, "failed to reconfigure driver on crash recovery\n");
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -1157,6 +1157,7 @@ int ath11k_core_check_smbios(struct ath1
+@@ -1158,6 +1158,7 @@ int ath11k_core_check_smbios(struct ath1
  void ath11k_core_halt(struct ath11k *ar);
  int ath11k_core_resume(struct ath11k_base *ab);
  int ath11k_core_suspend(struct ath11k_base *ab);
@@ -66,7 +66,7 @@ Link: https://lore.kernel.org/r/20220923170235.18873-1-quic_adisi@quicinc.com
  						    const char *filename);
 --- a/drivers/net/wireless/ath/ath11k/qmi.c
 +++ b/drivers/net/wireless/ath/ath11k/qmi.c
-@@ -3158,6 +3158,9 @@ static void ath11k_qmi_driver_event_work
+@@ -3164,6 +3164,9 @@ static void ath11k_qmi_driver_event_work
  		case ATH11K_QMI_EVENT_SERVER_EXIT:
  			set_bit(ATH11K_FLAG_CRASH_FLUSH, &ab->dev_flags);
  			set_bit(ATH11K_FLAG_RECOVERY, &ab->dev_flags);
