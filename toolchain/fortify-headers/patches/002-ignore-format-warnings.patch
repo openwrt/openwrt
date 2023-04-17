@@ -1,0 +1,23 @@
+diff --git a/include/stdio.h b/include/stdio.h
+index a965184..57526b8 100644
+--- a/include/stdio.h
++++ b/include/stdio.h
+@@ -24,6 +24,9 @@ __extension__
+ #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0 && defined(__OPTIMIZE__) && __OPTIMIZE__ > 0
+ #include "fortify-headers.h"
+ 
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wformat-nonliteral"
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -120,6 +123,8 @@ _FORTIFY_FN(sprintf) int sprintf(char *__s, const char *__f, ...)
+ }
+ #endif
+ 
++#pragma GCC diagnostic pop
++
+ #endif
+ 
+ #endif
