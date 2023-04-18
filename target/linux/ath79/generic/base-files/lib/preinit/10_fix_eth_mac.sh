@@ -29,7 +29,7 @@ preinit_set_mac_address() {
 		ip link set dev eth0 address $(mtd_get_mac_text u-boot 0x3ff80 12)
 		;;
 	tplink,deco-s4-v2)
-		base_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
+		base_mac=$(mtd_get_mac_encrypted_deco config)
 		ip link set dev eth0 address $base_mac
 		;;
 	zyxel,nbg6616)

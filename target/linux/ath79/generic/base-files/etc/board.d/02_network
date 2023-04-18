@@ -716,7 +716,7 @@ ath79_setup_macs()
 		wan_mac=$(macaddr_add "$base_mac" 1)
 		;;
 	tplink,deco-s4-v2)
-		lan_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
+		lan_mac=$(mtd_get_mac_encrypted_deco config)
 		label_mac=$lan_mac
 		;;
 	nec,wf1200cr|\
