@@ -244,6 +244,17 @@ endef
 
 $(eval $(call KernelPackage,dwmac-sun8i))
 
+define KernelPackage/dwmac-rockchip
+  SUBMENU=$(NETWORK_DEVICES_MENU)
+  TITLE:=Rockchip RK3328/RK3399/RK3568 Ethernet
+  DEPENDS:=+kmod-stmmac-core +kmod-mdio-bus-mux
+  KCONFIG:=CONFIG_DWMAC_ROCKCHIP
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.ko
+  AUTOLOAD=$(call AutoLoad,45,dwmac-rk)
+endef
+
+$(eval $(call KernelPackage,dwmac-rockchip))
+
 define KernelPackage/thunderx-net
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Marvell (Cavium) ThunderX/2 network drivers
