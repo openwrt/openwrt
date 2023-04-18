@@ -1,5 +1,5 @@
 fdtaddr=0x8f000000
-loadaddr=0x81000000
+loadaddr=0x88000000
 bootm_size=0x10000000
 hwconfig=fsl_ddr:bank_intlv=auto
 qspi_boot=sf probe 0:0;sf read $fdtaddr f00000 100000;sf read $loadaddr 1000000 1000000;bootm $loadaddr - $fdtaddr
