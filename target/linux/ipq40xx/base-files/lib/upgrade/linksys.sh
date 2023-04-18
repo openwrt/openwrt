@@ -103,7 +103,7 @@ platform_do_upgrade_linksys() {
 		if nand_upgrade_tar "$1" ; then
 			nand_do_upgrade_success
 		else
-			nand_do_upgrade_failure
+			nand_do_upgrade_failed
 		fi
 
 	}

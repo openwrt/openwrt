@@ -27,11 +27,15 @@ def create_pid_file(args):
 def get_pid(args):
 	buf = bytearray([PADDING] * PID_SIZE)
 
-	enc = args.hw_version.rjust(8, '0').encode('ascii')
-	struct.pack_into('>8s', buf, 0x0, enc)
+	if not args.hw_id:
+		enc = args.hw_version.rjust(14, '0').encode('ascii')
+		struct.pack_into('>14s', buf, 0x0, enc)
+	else:
+		enc = args.hw_version.rjust(8, '0').encode('ascii')
+		struct.pack_into('>8s', buf, 0x0, enc)
 
-	enc = binascii.hexlify(args.hw_id.encode())
-	struct.pack_into('>6s', buf, 0x8, enc)
+		enc = binascii.hexlify(args.hw_id.encode())
+		struct.pack_into('>6s', buf, 0x8, enc)
 
 	enc = args.sw_version.rjust(4, '0').encode('ascii')
 	struct.pack_into('>4s', buf, 0x64, enc)
@@ -41,6 +45,9 @@ def get_pid(args):
 		if (args.extra_padd_byte):
 			struct.pack_into ('<i', tail, 0x0,
 					  args.extra_padd_byte)
+		elif not args.hw_id:
+			tail[0] = 0x0D
+			tail[1] = 0x0A
 		buf += tail
 
 	return buf
@@ -91,7 +98,6 @@ def main():
 	args = parser.parse_args()
 
 	if ((not args.hw_version) or
-	    (not args.hw_id) or
 	    (not args.sw_version) or 
 	    (not args.pid_file)):
 		parser.print_help()

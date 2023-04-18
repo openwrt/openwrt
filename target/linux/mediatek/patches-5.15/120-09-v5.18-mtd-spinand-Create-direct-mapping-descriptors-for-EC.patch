@@ -53,7 +53,7 @@ Link: https://lore.kernel.org/linux-mtd/20220127091808.1043392-9-miquel.raynal@b
  
  	while (nbytes) {
  		ret = spi_mem_dirmap_write(wdesc, column, nbytes, buf);
-@@ -865,6 +871,31 @@ static int spinand_create_dirmap(struct
+@@ -875,6 +881,31 @@ static int spinand_create_dirmap(struct
  
  	spinand->dirmaps[plane].rdesc = desc;
  

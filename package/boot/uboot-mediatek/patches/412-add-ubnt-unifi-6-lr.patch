@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr_defconfig
-@@ -0,0 +1,143 @@
+@@ -0,0 +1,147 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -144,9 +144,13 @@
 +CONFIG_SPI_FLASH_XMC=y
 +CONFIG_SPI_FLASH_USE_4K_SECTORS=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/arch/arm/dts/mt7622-ubnt-unifi-6-lr.dts
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,188 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 MediaTek Inc.
@@ -300,6 +304,7 @@
 +};
 +
 +&uart0 {
++	mediatek,force-highspeed;
 +	status = "okay";
 +};
 +
@@ -336,7 +341,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1264,6 +1264,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1286,6 +1286,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \

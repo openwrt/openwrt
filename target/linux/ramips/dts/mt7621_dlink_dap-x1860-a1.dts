@@ -94,6 +94,13 @@
 	status = "okay";
 
 	mediatek,nmbm;
+	/* rsvd = Remapping Range / NAND Erase-Size */
+	/* rsvd = 0x800000 / 0x20000 */
+	mediatek,bmt-max-reserved-blocks = <64>;
+	/* Remapping should include raw-nand we operate upon without UBI layer. */
+	/* This includes (at least) the kernel which has to be loaded by U-Boot.*/
+	mediatek,bmt-remap-range =
+		<0x0 0x980000>;
 
 	partitions {
 		compatible = "fixed-partitions";

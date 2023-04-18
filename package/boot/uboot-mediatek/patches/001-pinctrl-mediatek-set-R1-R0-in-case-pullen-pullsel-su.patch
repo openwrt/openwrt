@@ -1,0 +1,88 @@
+From patchwork Wed Apr 12 20:36:43 2023
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Daniel Golle <daniel@makrotopia.org>
+X-Patchwork-Id: 1768270
+Return-Path: <u-boot-bounces@lists.denx.de>
+X-Original-To: incoming@patchwork.ozlabs.org
+Delivered-To: patchwork-incoming@legolas.ozlabs.org
+Date: Wed, 12 Apr 2023 21:36:43 +0100
+From: Daniel Golle <daniel@makrotopia.org>
+To: u-boot@lists.denx.de, Sam Shih <sam.shih@mediatek.com>,
+ GSS_MTK_Uboot_upstream <GSS_MTK_Uboot_upstream@mediatek.com>,
+ Chunfeng Yun <chunfeng.yun@mediatek.com>,
+ Weijie Gao <weijie.gao@mediatek.com>, Ryder Lee <ryder.lee@mediatek.com>,
+ Frank Wunderlich <frank-w@public-files.de>
+Cc: Steven Liu =?utf-8?b?KOWKieS6uuixqik=?= <steven.liu@mediatek.com>,
+ John Crispin <john@phrozen.org>
+Subject: [PATCH] pinctrl: mediatek: set R1/R0 in case pullen/pullsel succeeded
+Message-ID: <ZDcWW7kLSLn1GMZ1@makrotopia.org>
+MIME-Version: 1.0
+Content-Disposition: inline
+X-BeenThere: u-boot@lists.denx.de
+X-Mailman-Version: 2.1.39
+Precedence: list
+List-Id: U-Boot discussion <u-boot.lists.denx.de>
+Sender: "U-Boot" <u-boot-bounces@lists.denx.de>
+
+Commit dafe0fbfb0f3 ("pinctrl: mediatek: rewrite mtk_pinconf_set and
+related functions") changed the logic deciding to set R0 and R1
+registers for V1 devices.
+
+Before:
+	/* Also set PUPD/R0/R1 if the pin has them */
+	err = mtk_hw_set_value(dev, pin, PINCTRL_PIN_REG_PUPD, !pullup);
+	if (err != -EINVAL) {
+		mtk_hw_set_value(dev, pin, PINCTRL_PIN_REG_R0, r0);
+		mtk_hw_set_value(dev, pin, PINCTRL_PIN_REG_R1, r1);
+	}
+
+After:
+	/* try pupd_r1_r0 if pullen_pullsel return error */
+	err = mtk_pinconf_bias_set_pullen_pullsel(dev, pin, disable, pullup,
+						  val);
+	if (err)
+		return mtk_pinconf_bias_set_pupd_r1_r0(dev, pin, disable,
+						       pullup, val);
+
+Tracing mtk_pinconf_bias_set_pullen_pullsel shows that the function
+always either returns 0 in case of success or -EINVAL in case any error
+has occurred. Hence the logic responsible of the decision to program R0
+and R1 has been inverted.
+
+This leads to problems on BananaPi R2 (MT7623N) when booting from
+SDMMC, it turns out accessing eMMC no longer works since
+U-Boot 2022.07:
+
+MT7623> mmc dev 0
+Card did not respond to voltage select! : -110
+
+The problem wasn't detected for a long time as both eMMC and SDMMC work
+fine if they are used to boot from, and hence R0 and R1 were already
+setup by the bootrom and/or preloader.
+
+Fix the logic to restore the originally intended and correct behavior
+and also change the descriptive comment accordingly.
+
+Fixes: dafe0fbfb0f3 ("pinctrl: mediatek: rewrite mtk_pinconf_set and related functions")
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/pinctrl/mediatek/pinctrl-mtk-common.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
+@@ -349,10 +349,10 @@ int mtk_pinconf_bias_set_v1(struct udevi
+ {
+ 	int err;
+ 
+-	/* try pupd_r1_r0 if pullen_pullsel return error */
++	/* set pupd_r1_r0 if pullen_pullsel succeeded */
+ 	err = mtk_pinconf_bias_set_pullen_pullsel(dev, pin, disable, pullup,
+ 						  val);
+-	if (err)
++	if (!err)
+ 		return mtk_pinconf_bias_set_pupd_r1_r0(dev, pin, disable,
+ 						       pullup, val);
+ 

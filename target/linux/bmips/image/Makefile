@@ -7,7 +7,15 @@ KERNEL_LOADADDR := 0x80010000		# RAM start + 64K
 LOADER_ENTRY := 0x80a00000		# RAM start + 10M, for relocate
 LZMA_TEXT_START := 0x81800000		# RAM start + 24M
 
+DEVICE_VARS += CFE_BOARD_ID CFE_EXTRAS
+DEVICE_VARS += CFE_PART_FLAGS CFE_PART_ID
+DEVICE_VARS += CFE_RAM_FILE
+DEVICE_VARS += CFE_RAM_JFFS2_NAME CFE_RAM_JFFS2_PAD
+DEVICE_VARS += CFE_WFI_CHIP_ID CFE_WFI_FLASH_TYPE
+DEVICE_VARS += CFE_WFI_FLAGS CFE_WFI_VERSION
 DEVICE_VARS += CHIP_ID DEVICE_LOADADDR
+DEVICE_VARS += FLASH_MB IMAGE_OFFSET
+DEVICE_VARS += SERCOMM_FSVER SERCOMM_HWVER SERCOMM_SWVER
 
 define Build/Compile
 	rm -rf $(KDIR)/relocate
@@ -194,12 +202,18 @@ define Build/cfe-sercomm-crypto
 endef
 
 define Build/cfe-sercomm-load
+	$(TOPDIR)/scripts/sercomm-pid.py \
+		--hw-version $(SERCOMM_HWVER) \
+		--sw-version $(SERCOMM_SWVER) \
+		--extra-padding-size 0x10 \
+		--pid-file $@.pid
 	$(TOPDIR)/scripts/sercomm-payload.py \
 		--input-file $@ \
 		--output-file $@.new \
-		--pid "$(SERCOMM_PID)"
+		--pid-file $@.pid
 
 	mv $@.new $@
+	rm -f $@.pid
 endef
 
 define Build/cfe-sercomm-part
@@ -208,18 +222,18 @@ define Build/cfe-sercomm-part
 		--output-file $@.kernel_rootfs \
 		--part-name kernel_rootfs \
 		--part-version OpenWrt \
-		--rootfs-version $(SERCOMM_VERSION)
+		--rootfs-version $(SERCOMM_FSVER)
 
 	rm -rf $@-rootfs_lib
 	mkdir -p $@-rootfs_lib
-	echo $(SERCOMM_VERSION) > $@-rootfs_lib/lib_ver
+	echo $(SERCOMM_FSVER) > $@-rootfs_lib/lib_ver
 	$(call Build/cfe-jffs2,$@-rootfs_lib)
 	$(call Build/pad-to,$(BLOCKSIZE))
 	$(TOPDIR)/scripts/sercomm-partition-tag.py \
 		--input-file $@ \
 		--output-file $@.rootfs_lib \
 		--part-name rootfs_lib \
-		--part-version $(SERCOMM_VERSION)
+		--part-version $(SERCOMM_FSVER)
 
 	mv $@.kernel_rootfs $@
 	dd if=$@.rootfs_lib >> $@
@@ -247,11 +261,74 @@ define Device/Default
   DEVICE_LOADADDR :=
 endef
 
-ATH9K_PACKAGES := kmod-ath9k wpad-basic-mbedtls
+define Device/bcm63xx-cfe
+  FILESYSTEMS := squashfs jffs2-64k jffs2-128k
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-lzma elf
+  KERNEL_INITRAMFS_SUFFIX := .elf
+  IMAGES := cfe.bin sysupgrade.bin
+  IMAGE/cfe.bin := \
+    cfe-bin $$$$(if $$$$(FLASH_MB),--pad $$$$(shell expr $$$$(FLASH_MB) / 2))
+  IMAGE/sysupgrade.bin := cfe-bin | append-metadata
+  BLOCKSIZE := 0x10000
+  IMAGE_OFFSET :=
+  FLASH_MB :=
+  CFE_BOARD_ID :=
+  CFE_EXTRAS = --block-size $$(BLOCKSIZE) \
+    --image-offset $$(if $$(IMAGE_OFFSET),$$(IMAGE_OFFSET),$$(BLOCKSIZE))
+endef
+
+# Legacy CFEs with specific LZMA parameters and no length
+define Device/bcm63xx-cfe-legacy
+  $(Device/bcm63xx-cfe)
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma-cfe
+endef
+
+# CFE expects a single JFFS2 partition with cferam and kernel. However,
+# it's possible to fool CFE into properly loading both cferam and kernel
+# from two different JFFS2 partitions by adding dummy files (see
+# cfe-jffs2-cferam and cfe-jffs2-kernel).
+# Separate JFFS2 partitions allow upgrading openwrt without reflashing cferam
+# JFFS2 partition, which is much safer in case anything goes wrong.
+define Device/bcm63xx-nand
+  FILESYSTEMS := squashfs ubifs
+  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma | cfe-jffs2-kernel
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-lzma elf
+  KERNEL_INITRAMFS_SUFFIX := .elf
+  IMAGES := cfe.bin sysupgrade.bin
+  IMAGE/cfe.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) |\
+    cfe-jffs2-cferam | append-ubi | cfe-wfi-tag
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  KERNEL_SIZE := 5120k
+  CFE_PART_FLAGS :=
+  CFE_PART_ID :=
+  CFE_RAM_FILE :=
+  CFE_RAM_JFFS2_NAME :=
+  CFE_RAM_JFFS2_PAD :=
+  CFE_WFI_VERSION :=
+  CFE_WFI_CHIP_ID = 0x$$(CHIP_ID)
+  CFE_WFI_FLASH_TYPE :=
+  CFE_WFI_FLAGS :=
+  UBINIZE_OPTS := -E 5
+  DEVICE_PACKAGES += nand-utils
+endef
+
+define Device/sercomm-nand
+  $(Device/bcm63xx-nand)
+  IMAGES := factory.img sysupgrade.bin
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi |\
+    cfe-sercomm-part | gzip | cfe-sercomm-load | cfe-sercomm-crypto
+  SERCOMM_FSVER :=
+  SERCOMM_HWVER :=
+  SERCOMM_SWVER :=
+endef
+
+### Package helpers ###
+ATH9K_PACKAGES := kmod-ath9k kmod-owl-loader wpad-basic-mbedtls
 B43_PACKAGES := kmod-b43 wpad-basic-mbedtls
-USB1_PACKAGES := kmod-usb-ohci kmod-ledtrig-usbdev
+USB1_PACKAGES := kmod-usb-ohci kmod-usb-ledtrig-usbport
 USB2_PACKAGES := $(USB1_PACKAGES) kmod-usb2
 
-include bcm63xx_$(SUBTARGET).mk
+include $(SUBTARGET).mk
 
 $(eval $(call BuildImage))

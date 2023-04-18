@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tcpdump
-PKG_VERSION:=4.99.3
+PKG_VERSION:=4.99.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://www.tcpdump.org/release/
-PKG_HASH:=ad75a6ed3dc0d9732945b2e5483cb41dc8b4b528a169315e499c6861952e73b3
+PKG_HASH:=0232231bb2f29d6bf2426e70a08a7e0c63a0d59a9b44863b7f5e2357a6e49fea
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause

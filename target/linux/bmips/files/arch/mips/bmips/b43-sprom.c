@@ -40,7 +40,7 @@ struct b43_sprom {
 
 static struct b43_sprom b43_sprom;
 
-#if defined (CONFIG_SSB_PCIHOST)
+#if IS_BUILTIN(CONFIG_SSB) && IS_ENABLED(CONFIG_SSB_SPROM)
 static u16 bcm4306_sprom_map[] = {
 	0x4001, 0x0000, 0x0453, 0x14e4, 0x4320, 0x8000, 0x0002, 0x0002,
 	0x1000, 0x1800, 0x0000, 0x0000, 0xffff, 0xffff, 0xffff, 0xffff,
@@ -185,9 +185,9 @@ struct b43_sprom_raw bcm43222_sprom = {
 	.size = ARRAY_SIZE(bcm43222_sprom_map),
 	.type = B43_SPROM_SSB,
 };
-#endif /* CONFIG_SSB_PCIHOST */
+#endif /* CONFIG_SSB && CONFIG_SSB_SPROM */
 
-#if defined(CONFIG_BCMA_HOST_PCI)
+#if IS_BUILTIN(CONFIG_BCMA)
 static u16 bcm4313_sprom_map[] = {
 	0x2801, 0x0000, 0x0510, 0x14e4, 0x0078, 0xedbe, 0x0000, 0x2bc4,
 	0x2a64, 0x2964, 0x2c64, 0x3ce7, 0x46ff, 0x47ff, 0x0c00, 0x0820,
@@ -446,7 +446,7 @@ struct b43_sprom_raw bcm43228_sprom = {
 	.size = ARRAY_SIZE(bcm43228_sprom_map),
 	.type = B43_SPROM_BCMA,
 };
-#endif /* CONFIG_BCMA_HOST_PCI */
+#endif /* CONFIG_BCMA */
 
 /* Get the word-offset for a SSB_SPROM_XXX define. */
 #define SPOFF(offset)	((offset) / sizeof(u16))
@@ -1064,7 +1064,7 @@ static void b43_sprom_set(struct b43_sprom *priv)
 	}
 }
 
-#if defined(CONFIG_SSB_PCIHOST)
+#if IS_BUILTIN(CONFIG_SSB) && IS_ENABLED(CONFIG_SSB_SPROM)
 int b43_get_fallback_ssb_sprom(struct ssb_bus *bus, struct ssb_sprom *out)
 {
 	struct b43_sprom *priv = &b43_sprom;
@@ -1087,9 +1087,9 @@ int b43_get_fallback_ssb_sprom(struct ssb_bus *bus, struct ssb_sprom *out)
 		return -EINVAL;
 	}
 }
-#endif /* CONFIG_SSB_PCIHOST */
+#endif /* CONFIG_SSB && CONFIG_SSB_SPROM */
 
-#if defined(CONFIG_BCMA_HOST_PCI)
+#if IS_BUILTIN(CONFIG_BCMA)
 int b43_get_fallback_bcma_sprom(struct bcma_bus *bus, struct ssb_sprom *out)
 {
 	struct b43_sprom *priv = &b43_sprom;
@@ -1112,7 +1112,7 @@ int b43_get_fallback_bcma_sprom(struct bcma_bus *bus, struct ssb_sprom *out)
 		return -EINVAL;
 	}
 }
-#endif /* CONFIG_BCMA_HOST_PCI */
+#endif /* CONFIG_BCMA */
 
 static int b43_sprom_probe(struct platform_device *pdev)
 {
@@ -1140,30 +1140,30 @@ static int b43_sprom_probe(struct platform_device *pdev)
  	memcpy(priv->sprom.et0mac, priv->mac, ETH_ALEN);
  	memcpy(priv->sprom.et1mac, priv->mac, ETH_ALEN);
 
-#if defined(CONFIG_SSB_PCIHOST)
+#if IS_BUILTIN(CONFIG_SSB) && IS_ENABLED(CONFIG_SSB_SPROM)
 	ret = ssb_arch_register_fallback_sprom(&b43_get_fallback_ssb_sprom);
 	if (ret)
 		return ret;
-#endif /* CONFIG_SSB_PCIHOST */
+#endif /* CONFIG_SSB && CONFIG_SSB_SPROM */
 
-#if defined(CONFIG_BCMA_HOST_PCI)
+#if IS_BUILTIN(CONFIG_BCMA)
 	ret = bcma_arch_register_fallback_sprom(b43_get_fallback_bcma_sprom);
 	if (ret)
 		return ret;
-#endif /* CONFIG_BCMA_HOST_PCI */
+#endif /* CONFIG_BCMA */
 
 	return 0;
 }
 
 static const struct of_device_id b43_sprom_of_match[] = {
 	{ .compatible = "brcm,bcm43xx-sprom", .data = NULL },
-#if defined (CONFIG_SSB_PCIHOST)
+#if IS_BUILTIN(CONFIG_SSB) && IS_ENABLED(CONFIG_SSB_SPROM)
 	{ .compatible = "brcm,bcm4306-sprom", .data = &bcm4306_sprom, },
 	{ .compatible = "brcm,bcm4321-sprom", .data = &bcm4321_sprom, },
 	{ .compatible = "brcm,bcm4322-sprom", .data = &bcm4322_sprom, },
 	{ .compatible = "brcm,bcm43222-sprom", .data = &bcm43222_sprom, },
-#endif /* CONFIG_BCMA_HOST_PCI */
-#if defined(CONFIG_BCMA_HOST_PCI)
+#endif /* CONFIG_SSB && CONFIG_SSB_SPROM */
+#if IS_BUILTIN(CONFIG_BCMA)
 	{ .compatible = "brcm,bcm4313-sprom", .data = &bcm4313_sprom, },
 	{ .compatible = "brcm,bcm4331-sprom", .data = &bcm4331_sprom, },
 	{ .compatible = "brcm,bcm43131-sprom", .data = &bcm43131_sprom, },
@@ -1171,7 +1171,7 @@ static const struct of_device_id b43_sprom_of_match[] = {
 	{ .compatible = "brcm,bcm43225-sprom", .data = &bcm43225_sprom, },
 	{ .compatible = "brcm,bcm43227-sprom", .data = &bcm43227_sprom, },
 	{ .compatible = "brcm,bcm43228-sprom", .data = &bcm43228_sprom, },
-#endif /* CONFIG_BCMA_HOST_PCI */
+#endif /* CONFIG_BCMA */
 	{ /* sentinel */ }
 };
 

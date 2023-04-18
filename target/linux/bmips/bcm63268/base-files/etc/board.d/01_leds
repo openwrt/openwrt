@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+comtrend,vr-3032u)
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
+	;;
+sercomm,h500-s-lowi |\
+sercomm,h500-s-vfes)
+	ucidef_set_led_netdev "wan" "WAN" "green:internet" "wan"
+	ucidef_set_led_netdev "wifi" "WiFi" "green:wifi" "wifi"
+	ucidef_set_led_usbport "usb" "USB" "green:mobile" "usb1-port1" "usb2-port1"
+	;;
+sercomm,shg2500)
+	ucidef_set_led_netdev "wan" "WAN" "green:internet" "wan"
+	ucidef_set_led_usbport "usb1" "USB1" "blue:modem" "usb1-port1" "usb2-port1"
+	ucidef_set_led_usbport "usb2" "USB2" "green:modem" "usb1-port2" "usb2-port2"
+	;;
+esac
+
+board_config_flush
+
+exit 0

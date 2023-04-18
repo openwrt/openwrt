@@ -10,11 +10,11 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=6.1-rc8
-PKG_RELEASE:=3
+PKG_VERSION:=6.1.24
+PKG_RELEASE:=1
 # PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v5.15.58/
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
-PKG_HASH:=7f3d96c2573183cd79d6a3ebe5e1b7b73c19d1326d443c85b69c4181f14e6e2b
+PKG_HASH:=5d39aca7e34c33cb9b3e366117b2e86841b7bdd37933679d6b1e61be6b150648
 
 PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/backports-$(PKG_VERSION)

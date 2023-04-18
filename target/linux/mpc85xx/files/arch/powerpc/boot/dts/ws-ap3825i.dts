@@ -20,6 +20,7 @@
 
 	chosen {
 		bootargs-override = "console=ttyS0,115200";
+		linux,stdout-path = &serial0;
 	};
 
 	memory {
@@ -198,6 +199,13 @@
 		ranges = <0x2000000 0x0 0xa0000000 0 0xa0000000 0x0 0x20000000
 			  0x1000000 0x0 0x00000000 0 0xffc10000 0x0 0x10000>;
 		reg = <0 0xffe09000 0 0x1000>;
+
+		/* Filled by U-Boot */
+		bus-range = <0x00 0x01>;
+		dma-ranges = <0x2000000 0x00 0xfff00000 0x00 0xffe00000
+			      0x00 0x100000 0x42000000 0x00 0x00 0x00
+			      0x00 0x00 0x10000000>;
+
 		pcie@0 {
 			ranges = <0x2000000 0x0 0xa0000000
 				  0x2000000 0x0 0xa0000000
@@ -213,6 +221,13 @@
 		reg = <0 0xffe0a000 0 0x1000>;
 		ranges = <0x2000000 0x0 0x80000000 0 0x80000000 0x0 0x20000000
 			  0x1000000 0x0 0x00000000 0 0xffc00000 0x0 0x10000>;
+
+		/* Filled by U-Boot */
+		bus-range = <0x00 0x01>;
+		dma-ranges = <0x2000000 0x00 0xfff00000 0x00
+			      0xffe00000 0x00 0x100000 0x42000000
+			      0x00 0x00 0x00 0x00 0x00 0x10000000>;
+
 		pcie@0 {
 			ranges = <0x2000000 0x0 0x80000000
 				  0x2000000 0x0 0x80000000
@@ -254,7 +269,7 @@
 
 / {
 	cpus {
-		PowerPC,P1010@0 {
+		PowerPC,P1020@0 {
 			bus-frequency = <399999996>;
 			timebase-frequency = <50000000>;
 			clock-frequency = <799999992>;
@@ -264,9 +279,12 @@
 			i-cache-block-size = <0x20>;
 			i-cache-size = <0x8000>;
 			i-cache-sets = <0x80>;
+			cpu-release-addr = <0x0 0x0ffff280>;
+			status = "okay";
+			enable-method = "spin-table";
 		};
 
-		PowerPC,P1010@1 {
+		PowerPC,P1020@1 {
 			bus-frequency = <399999996>;
 			timebase-frequency = <50000000>;
 			clock-frequency = <799999992>;
@@ -276,11 +294,15 @@
 			i-cache-block-size = <0x20>;
 			i-cache-size = <0x8000>;
 			i-cache-sets = <0x80>;
+			cpu-release-addr = <0x0 0x0ffff2a0>;
+			status = "disabled";
+			enable-method = "spin-table";
 		};
 	};
 
 	memory {
-		reg = <0x0 0x0 0x0 0x10000000>;
+		/* Reserve upper MB for second-core-bootpage */
+		reg = <0x0 0x0 0x0 0xff00000>;
 	};
 
 	soc@ffe00000 {
@@ -298,6 +320,22 @@
 			clock-frequency = <399999996>;
 		};
 	};
+
+	localbus@ffe05000 {
+		bus-frequency = <24999999>;
+	};
+};
+
+&enet0 {
+	rx-stash-idx = <0x00>;
+	rx-stash-len = <0x60>;
+	bd-stash;
+};
+
+&enet2 {
+	rx-stash-idx = <0x00>;
+	rx-stash-len = <0x60>;
+	bd-stash;
 };
 
 /*

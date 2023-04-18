@@ -123,7 +123,7 @@ Reviewed-by: Peer, Ilan <ilan.peer@intel.com>
  			info->flags |= IEEE80211_TX_CTL_NO_PS_BUFFER;
  			return TX_CONTINUE;
  		}
-@@ -1325,7 +1325,7 @@ static struct txq_info *ieee80211_get_tx
+@@ -1326,7 +1326,7 @@ static struct txq_info *ieee80211_get_tx
  	if (!(info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) &&
  	    unlikely(!ieee80211_is_data_present(hdr->frame_control))) {
  		if ((!ieee80211_is_mgmt(hdr->frame_control) ||
