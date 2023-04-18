@@ -774,8 +774,8 @@ define Device/d-team_newifi-d2
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 32448k
-  DEVICE_VENDOR := Newifi
-  DEVICE_MODEL := D2
+  DEVICE_VENDOR := D-Team
+  DEVICE_MODEL := Newifi D2
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport -uboot-envtools
 endef
@@ -1425,8 +1425,8 @@ define Device/lenovo_newifi-d1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 32448k
-  DEVICE_VENDOR := Newifi
-  DEVICE_MODEL := D1
+  DEVICE_VENDOR := Lenovo
+  DEVICE_MODEL := Newifi D1
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 kmod-sdhci-mt7620 \
 	kmod-usb-ledtrig-usbport -uboot-envtools
   SUPPORTED_DEVICES += newifi-d1
