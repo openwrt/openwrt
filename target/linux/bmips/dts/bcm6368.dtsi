@@ -412,16 +412,14 @@
 
 		pci: pci@10001000 {
 			compatible = "brcm,bcm6348-pci";
-			reg = <0x10001000 0x200>,
-			      <0x08000000 0x10000>;
-			reg-names = "pci",
-				    "pci-io";
+			reg = <0x10001000 0x200>;
 			#address-cells = <3>;
 			#size-cells = <2>;
 
 			device_type = "pci";
 			bus-range = <0x00 0x01>;
-			ranges = <0x2000000 0 0x30000000 0x30000000 0 0x8000000>;
+			ranges = <0x2000000 0 0x30000000 0x30000000 0 0x8000000>,
+				 <0x1000000 0 0x08000000 0x08000000 0 0x0010000>;
 			linux,pci-probe-only = <1>;
 
 			interrupt-parent = <&periph_intc>;
