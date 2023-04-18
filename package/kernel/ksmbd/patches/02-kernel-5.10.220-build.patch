@@ -3,7 +3,7 @@ https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux
 
 --- a/vfs.c
 +++ b/vfs.c
-@@ -1074,12 +1074,18 @@ static int __ksmbd_vfs_rename(struct ksm
+@@ -1081,12 +1081,18 @@ static int __ksmbd_vfs_rename(struct ksm
  
  	err = -ENOTEMPTY;
  	if (dst_dent != trap_dent && !d_really_is_positive(dst_dent)) {
