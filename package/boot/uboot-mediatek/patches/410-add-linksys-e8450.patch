@@ -144,7 +144,7 @@
 +CONFIG_USB_STORAGE=y
 --- /dev/null
 +++ b/arch/arm/dts/mt7622-linksys-e8450-ubi.dts
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,197 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 MediaTek Inc.
@@ -152,6 +152,7 @@
 + */
 +
 +/dts-v1/;
++#include <dt-bindings/input/linux-event-codes.h>
 +#include "mt7622.dtsi"
 +#include "mt7622-u-boot.dtsi"
 +
@@ -175,11 +176,13 @@
 +		factory {
 +			label = "reset";
 +			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
 +		};
 +
 +		wps {
 +			label = "wps";
 +			gpios = <&gpio 102 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_WPS_BUTTON>;
 +		};
 +	};
 +

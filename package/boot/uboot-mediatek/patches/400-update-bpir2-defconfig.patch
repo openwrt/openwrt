@@ -213,7 +213,15 @@
 +_set_bmf=setenv _set_bmf ; setenv bootmenu_${_menu_next} "Reset all settings to factory defaults.=run reset_factory ; reset" ; setenv _menu_next
 --- a/arch/arm/dts/mt7623n-bananapi-bpi-r2.dts
 +++ b/arch/arm/dts/mt7623n-bananapi-bpi-r2.dts
-@@ -66,6 +66,15 @@
+@@ -6,6 +6,7 @@
+  */
+ 
+ /dts-v1/;
++#include <dt-bindings/input/linux-event-codes.h>
+ #include "mt7623.dtsi"
+ #include "mt7623-u-boot.dtsi"
+ 
+@@ -66,6 +67,16 @@
  			default-state = "off";
  		};
  	};
@@ -224,6 +232,7 @@
 +		factory {
 +			label = "factory";
 +			gpios = <&gpio 256 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
 +		};
 +	};
  };
