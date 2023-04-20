@@ -14,7 +14,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -4383,6 +4383,14 @@ static const struct macb_usrio_config ma
+@@ -4387,6 +4387,14 @@ static const struct macb_usrio_config ma
  	.refclk = MACB_BIT(CLKEN),
  };
  
@@ -29,7 +29,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static const struct macb_config fu540_c000_config = {
  	.caps = MACB_CAPS_GIGABIT_MODE_AVAILABLE | MACB_CAPS_JUMBO |
  		MACB_CAPS_GEM_HAS_PTP,
-@@ -4476,6 +4484,14 @@ static const struct macb_config zynq_con
+@@ -4480,6 +4488,14 @@ static const struct macb_config zynq_con
  	.usrio = &macb_default_usrio,
  };
  
@@ -44,7 +44,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static const struct of_device_id macb_dt_ids[] = {
  	{ .compatible = "cdns,at32ap7000-macb" },
  	{ .compatible = "cdns,at91sam9260-macb", .data = &at91sam9260_config },
-@@ -4493,6 +4509,7 @@ static const struct of_device_id macb_dt
+@@ -4497,6 +4513,7 @@ static const struct of_device_id macb_dt
  	{ .compatible = "cdns,zynqmp-gem", .data = &zynqmp_config},
  	{ .compatible = "cdns,zynq-gem", .data = &zynq_config },
  	{ .compatible = "sifive,fu540-c000-gem", .data = &fu540_c000_config },
