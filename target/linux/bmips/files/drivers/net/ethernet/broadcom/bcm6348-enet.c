@@ -278,8 +278,9 @@ static const struct of_device_id bcm6348_iudma_of_match[] = {
 	{ .compatible = "brcm,bcm6338-iudma", },
 	{ .compatible = "brcm,bcm6348-iudma", },
 	{ .compatible = "brcm,bcm6358-iudma", },
-	{ /* sentinel */ },
+	{ /* sentinel */ }
 };
+MODULE_DEVICE_TABLE(of, bcm6348_emac_of_match);
 
 static struct platform_driver bcm6348_iudma_driver = {
 	.driver = {
@@ -288,7 +289,7 @@ static struct platform_driver bcm6348_iudma_driver = {
 	},
 	.probe	= bcm6348_iudma_probe,
 };
-builtin_platform_driver(bcm6348_iudma_driver);
+module_platform_driver(bcm6348_iudma_driver);
 
 /*
  * BCM6348 Eternet MACs
@@ -1693,7 +1694,7 @@ static const struct of_device_id bcm6348_emac_of_match[] = {
 	{ .compatible = "brcm,bcm6338-emac", },
 	{ .compatible = "brcm,bcm6348-emac", },
 	{ .compatible = "brcm,bcm6358-emac", },
-	{ /* sentinel */ },
+	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, bcm6348_emac_of_match);
 
@@ -1717,3 +1718,8 @@ int bcm6348_iudma_drivers_register(struct platform_device *pdev)
 
 	return ret;
 }
+
+MODULE_AUTHOR("Álvaro Fernández Rojas <noltari@gmail.com>");
+MODULE_DESCRIPTION("BCM6348 Ethernet Controller Driver");
+MODULE_LICENSE("GPL v2");
+MODULE_ALIAS("platform:bcm6348-enet");
