@@ -49,7 +49,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #ifdef CONFIG_MACB_USE_HWSTAMP
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -3824,15 +3824,15 @@ static int macb_init(struct platform_dev
+@@ -3828,15 +3828,15 @@ static int macb_init(struct platform_dev
  	if (!(bp->caps & MACB_CAPS_USRIO_DISABLED)) {
  		val = 0;
  		if (phy_interface_mode_is_rgmii(bp->phy_interface))
@@ -69,7 +69,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  		macb_or_gem_writel(bp, USRIO, val);
  	}
-@@ -4350,6 +4350,13 @@ static int fu540_c000_init(struct platfo
+@@ -4354,6 +4354,13 @@ static int fu540_c000_init(struct platfo
  	return macb_init(pdev);
  }
  
@@ -83,7 +83,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static const struct macb_config fu540_c000_config = {
  	.caps = MACB_CAPS_GIGABIT_MODE_AVAILABLE | MACB_CAPS_JUMBO |
  		MACB_CAPS_GEM_HAS_PTP,
-@@ -4357,12 +4364,14 @@ static const struct macb_config fu540_c0
+@@ -4361,12 +4368,14 @@ static const struct macb_config fu540_c0
  	.clk_init = fu540_c000_clk_init,
  	.init = fu540_c000_init,
  	.jumbo_max_len = 10240,
@@ -98,7 +98,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct macb_config sama5d3macb_config = {
-@@ -4370,6 +4379,7 @@ static const struct macb_config sama5d3m
+@@ -4374,6 +4383,7 @@ static const struct macb_config sama5d3m
  	      | MACB_CAPS_USRIO_HAS_CLKEN | MACB_CAPS_USRIO_DEFAULT_IS_MII_GMII,
  	.clk_init = macb_clk_init,
  	.init = macb_init,
@@ -106,7 +106,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct macb_config pc302gem_config = {
-@@ -4377,6 +4387,7 @@ static const struct macb_config pc302gem
+@@ -4381,6 +4391,7 @@ static const struct macb_config pc302gem
  	.dma_burst_length = 16,
  	.clk_init = macb_clk_init,
  	.init = macb_init,
@@ -114,7 +114,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct macb_config sama5d2_config = {
-@@ -4384,6 +4395,7 @@ static const struct macb_config sama5d2_
+@@ -4388,6 +4399,7 @@ static const struct macb_config sama5d2_
  	.dma_burst_length = 16,
  	.clk_init = macb_clk_init,
  	.init = macb_init,
@@ -122,7 +122,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct macb_config sama5d3_config = {
-@@ -4393,6 +4405,7 @@ static const struct macb_config sama5d3_
+@@ -4397,6 +4409,7 @@ static const struct macb_config sama5d3_
  	.clk_init = macb_clk_init,
  	.init = macb_init,
  	.jumbo_max_len = 10240,
@@ -130,7 +130,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct macb_config sama5d4_config = {
-@@ -4400,18 +4413,21 @@ static const struct macb_config sama5d4_
+@@ -4404,18 +4417,21 @@ static const struct macb_config sama5d4_
  	.dma_burst_length = 4,
  	.clk_init = macb_clk_init,
  	.init = macb_init,
@@ -152,7 +152,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct macb_config zynqmp_config = {
-@@ -4422,6 +4438,7 @@ static const struct macb_config zynqmp_c
+@@ -4426,6 +4442,7 @@ static const struct macb_config zynqmp_c
  	.clk_init = macb_clk_init,
  	.init = macb_init,
  	.jumbo_max_len = 10240,
@@ -160,7 +160,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct macb_config zynq_config = {
-@@ -4430,6 +4447,7 @@ static const struct macb_config zynq_con
+@@ -4434,6 +4451,7 @@ static const struct macb_config zynq_con
  	.dma_burst_length = 16,
  	.clk_init = macb_clk_init,
  	.init = macb_init,
@@ -168,7 +168,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct of_device_id macb_dt_ids[] = {
-@@ -4550,6 +4568,8 @@ static int macb_probe(struct platform_de
+@@ -4554,6 +4572,8 @@ static int macb_probe(struct platform_de
  		bp->wol |= MACB_WOL_HAS_MAGIC_PACKET;
  	device_set_wakeup_capable(&pdev->dev, bp->wol & MACB_WOL_HAS_MAGIC_PACKET);
  

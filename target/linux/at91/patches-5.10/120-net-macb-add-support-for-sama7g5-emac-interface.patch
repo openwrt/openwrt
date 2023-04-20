@@ -14,7 +14,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/cadence/macb_main.c
 +++ b/drivers/net/ethernet/cadence/macb_main.c
-@@ -4492,6 +4492,14 @@ static const struct macb_config sama7g5_
+@@ -4496,6 +4496,14 @@ static const struct macb_config sama7g5_
  	.usrio = &sama7g5_usrio,
  };
  
@@ -29,7 +29,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static const struct of_device_id macb_dt_ids[] = {
  	{ .compatible = "cdns,at32ap7000-macb" },
  	{ .compatible = "cdns,at91sam9260-macb", .data = &at91sam9260_config },
-@@ -4510,6 +4518,7 @@ static const struct of_device_id macb_dt
+@@ -4514,6 +4522,7 @@ static const struct of_device_id macb_dt
  	{ .compatible = "cdns,zynq-gem", .data = &zynq_config },
  	{ .compatible = "sifive,fu540-c000-gem", .data = &fu540_c000_config },
  	{ .compatible = "microchip,sama7g5-gem", .data = &sama7g5_gem_config },
