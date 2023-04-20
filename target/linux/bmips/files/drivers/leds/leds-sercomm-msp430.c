@@ -212,6 +212,10 @@ static int msp430_pattern_set(struct led_classdev *led_cdev,
 	delay0 = msp430_blink_delay(pattern[0].delta_t);
 	delay1 = msp430_blink_delay(pattern[1].delta_t);
 
+	/* Infinite pattern */
+	if (repeat < 0)
+		repeat = 0;
+
 	/* Pulse: <off> <delay> <max> <delay> */
 	if (delay0 == delay1 &&
 	    pattern[0].brightness == LED_OFF &&
@@ -354,14 +358,15 @@ static int msp430_leds_probe(struct spi_device *spi)
 
 static const struct of_device_id msp430_leds_of_match[] = {
 	{ .compatible = "sercomm,msp430-leds", },
-	{ },
+	{ /* sentinel */ },
 };
 MODULE_DEVICE_TABLE(of, msp430_leds_of_match);
 
 static const struct spi_device_id msp430_leds_id_table[] = {
 	{ "msp430-leds", 0 },
-	{ }
+	{ /* sentinel */ }
 };
+MODULE_DEVICE_TABLE(spi, msp430_leds_id_table);
 
 static struct spi_driver msp430_leds_driver = {
 	.driver = {
@@ -371,7 +376,6 @@ static struct spi_driver msp430_leds_driver = {
 	.id_table = msp430_leds_id_table,
 	.probe = msp430_leds_probe,
 };
-
 module_spi_driver(msp430_leds_driver);
 
 MODULE_AUTHOR("Álvaro Fernández Rojas <noltari@gmail.com>");
