@@ -13,6 +13,7 @@
 #include <linux/kernel.h>
 #include <linux/memblock.h>
 #include <linux/mm.h>
+#include <linux/module.h>
 #include <linux/of_address.h>
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
@@ -797,6 +798,7 @@ static const struct of_device_id bcm6348_pci_of_match[] = {
 	{ .compatible = "brcm,bcm6348-pci", },
 	{ /* sentinel */ }
 };
+MODULE_DEVICE_TABLE(of, bcm6348_pci_of_match);
 
 static struct platform_driver bcm6348_pci_driver = {
 	.probe = bcm6348_pci_probe,
@@ -805,12 +807,9 @@ static struct platform_driver bcm6348_pci_driver = {
 		.of_match_table = bcm6348_pci_of_match,
 	},
 };
+module_platform_driver(bcm6348_pci_driver);
 
-int __init bcm6348_pci_init(void)
-{
-	int ret = platform_driver_register(&bcm6348_pci_driver);
-	if (ret)
-		pr_err("pci-bcm6348: Error registering platform driver!\n");
-	return ret;
-}
-late_initcall_sync(bcm6348_pci_init);
+MODULE_AUTHOR("Álvaro Fernández Rojas <noltari@gmail.com>");
+MODULE_DESCRIPTION("BCM6348 PCI Controller Driver");
+MODULE_LICENSE("GPL v2");
+MODULE_ALIAS("platform:bcm6348-pci");
