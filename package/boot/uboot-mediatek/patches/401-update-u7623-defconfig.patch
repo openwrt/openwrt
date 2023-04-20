@@ -191,3 +191,52 @@
 +_update_bootdev=setenv _update_bootdev ; setenv bootargs "$console root=/dev/mmcblk0p65"
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title                [33m$ver[0m"
+--- a/arch/arm/dts/mt7623a-unielec-u7623-02-emmc.dts
++++ b/arch/arm/dts/mt7623a-unielec-u7623-02-emmc.dts
+@@ -6,6 +6,7 @@
+  */
+ 
+ /dts-v1/;
++#include <dt-bindings/input/linux-event-codes.h>
+ #include "mt7623.dtsi"
+ #include "mt7623-u-boot.dtsi"
+ 
+@@ -50,6 +51,18 @@
+ 		regulator-always-on;
+ 	};
+ 
++	gpio-keys {
++		compatible = "gpio-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&key_pins_a>;
++
++		factory {
++			label = "factory";
++			gpios = <&gpio 256 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -109,6 +122,19 @@
+ 		};
+ 	};
+ 
++	key_pins_a: keys-alt {
++		mux {
++			function = "gpio";
++			groups = "msdc3";
++		};
++
++		conf {
++			pins = "MSDC0E_DAT0", "MSDC0E_DAT1";
++			input-enable;
++			bias-pull-up;
++		};
++	};
++
+ 	mmc0_pins_default: mmc0default {
+ 		mux {
+ 			function = "msdc";

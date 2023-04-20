@@ -851,7 +851,7 @@
 +
 --- /dev/null
 +++ b/arch/arm/dts/mt7986a-bpi-r3-sd.dts
-@@ -0,0 +1,270 @@
+@@ -0,0 +1,272 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2021 MediaTek Inc.
@@ -859,6 +859,7 @@
 + */
 +
 +/dts-v1/;
++#include <dt-bindings/input/linux-event-codes.h>
 +#include "mt7986.dtsi"
 +#include <dt-bindings/gpio/gpio.h>
 +
@@ -893,6 +894,7 @@
 +		wps {
 +			label = "reset";
 +			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
 +		};
 +	};
 +

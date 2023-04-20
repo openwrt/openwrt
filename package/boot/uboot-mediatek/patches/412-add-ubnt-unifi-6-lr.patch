@@ -158,6 +158,7 @@
 + */
 +
 +/dts-v1/;
++#include <dt-bindings/input/linux-event-codes.h>
 +#include "mt7622.dtsi"
 +#include "mt7622-u-boot.dtsi"
 +
@@ -178,12 +179,11 @@
 +
 +	gpio-keys {
 +		compatible = "gpio-keys";
-+		u-boot,dm-pre-reloc;
 +
 +		reset {
 +			label = "reset";
 +			gpios = <&gpio 62 GPIO_ACTIVE_LOW>;
-+			u-boot,dm-pre-reloc;
++			linux,code = <KEY_RESTART>;
 +		};
 +	};
 +
