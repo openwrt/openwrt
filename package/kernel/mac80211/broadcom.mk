@@ -245,11 +245,11 @@ config PACKAGE_B43_USE_BCMA
 		  This allows choosing buses that b43 should support.
 
 	config PACKAGE_B43_BUSES_BCMA_AND_SSB
-		depends on !TARGET_bcm47xx_legacy && !TARGET_bcm47xx_mips74k && !TARGET_bcm53xx
+		depends on !TARGET_bcm47xx_legacy && !TARGET_bcm47xx_mips74k && !TARGET_bcm53xx && !TARGET_bmips
 		bool "BCMA and SSB"
 
 	config PACKAGE_B43_BUSES_BCMA
-		depends on !TARGET_bcm47xx_legacy
+		depends on !TARGET_bcm47xx_legacy && !TARGET_bmips_bcm6358 && !TARGET_bmips_bcm6368
 		bool "BCMA only"
 
 	config PACKAGE_B43_BUSES_SSB
