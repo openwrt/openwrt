@@ -9,8 +9,10 @@ fi
 OUTPUT="$1"
 KERNELSIZE="$2"
 KERNELDIR="$3"
+KERNELPARTTYPE=${KERNELPARTTYPE:-83}
 ROOTFSSIZE="$4"
 ROOTFSIMAGE="$5"
+ROOTFSPARTTYPE=${ROOTFSPARTTYPE:-83}
 ALIGN="$6"
 
 rm -f "$OUTPUT"
@@ -19,7 +21,7 @@ head=16
 sect=63
 
 # create partition table
-set $(ptgen -o "$OUTPUT" -h $head -s $sect ${GUID:+-g} -p "${KERNELSIZE}m${PARTOFFSET:+@$PARTOFFSET}" -p "${ROOTFSSIZE}m" ${ALIGN:+-l $ALIGN} ${SIGNATURE:+-S 0x$SIGNATURE} ${GUID:+-G $GUID})
+set $(ptgen -o "$OUTPUT" -h $head -s $sect ${GUID:+-g} -t "${KERNELPARTTYPE}" -p "${KERNELSIZE}m${PARTOFFSET:+@$PARTOFFSET}" -t "${ROOTFSPARTTYPE}" -p "${ROOTFSSIZE}m" ${ALIGN:+-l $ALIGN} ${SIGNATURE:+-S 0x$SIGNATURE} ${GUID:+-G $GUID})
 
 KERNELOFFSET="$(($1 / 512))"
 KERNELSIZE="$2"
