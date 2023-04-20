@@ -134,6 +134,9 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "qtn" ifname "eth1" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.0"
 		;;
+	comfast,cf-e390ax)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
@@ -285,11 +288,47 @@ ramips_setup_macs()
 	yuncore,ax820)
 		label_mac=$(mtd_get_mac_binary Factory 0x4)
 		;;
+	comfast,cf-e390ax)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		sta_mac=$(macaddr_add "$lan_mac" 4)
+		wlan0_mac=$(macaddr_add "$lan_mac" 2)
+		wlan1_mac=$(macaddr_add "$lan_mac" 0x8000007)
+		wlan2_mac=$(macaddr_add "$lan_mac" 0x9000008)
+		wlan3_mac=$(macaddr_add "$lan_mac" 0xa000009)
+		wlan4_mac=$(macaddr_add "$lan_mac" 0xb00000a)
+		wlan5_mac=$(macaddr_add "$lan_mac" 0xc00000b)
+		wlan6_mac=$(macaddr_add "$lan_mac" 0xd00000c)
+		wlan7_mac=$(macaddr_add "$lan_mac" 0xe00000d)
+
+		wlan8_mac=$(macaddr_add "$lan_mac" 3)
+		wlan9_mac=$(macaddr_add "$lan_mac" 0x1000000)
+		wlan10_mac=$(macaddr_add "$lan_mac" 0x2000001)
+		wlan11_mac=$(macaddr_add "$lan_mac" 0x3000002)
+		wlan12_mac=$(macaddr_add "$lan_mac" 0x4000003)
+		wlan13_mac=$(macaddr_add "$lan_mac" 0x5000004)
+		wlan14_mac=$(macaddr_add "$lan_mac" 0x6000005)
+		wlan15_mac=$(macaddr_add "$lan_mac" 0x7000006)
+		;;
+
+
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
 	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
 	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
+	[ -n "$wlan_mac" ] && ucidef_set_wireless_macaddr radio0 $wlan_mac
+	[ -n "$lan_mac" ] && [ -n "$wan_mac" ] && [ -n "$wlan_mac" ] && [ -n "$sta_mac" ] && \
+	ucidef_set_interface_def_macaddr $lan_mac $wan_mac $wlan_mac $sta_mac
+	[ -n "$lan_mac" ] && [ -n "$wan_mac" ] && [ -n "$wlan0_mac" ] && [ -n "$sta_mac" ] && \
+	ucidef_set_interface_def_macaddr $lan_mac $wan_mac $wlan0_mac $sta_mac \
+	$wlan1_mac $wlan2_mac $wlan3_mac $wlan4_mac $wlan5_mac $wlan6_mac $wlan7_mac \
+	$wlan8_mac $wlan9_mac $wlan10_mac $wlan11_mac $wlan12_mac $wlan13_mac $wlan14_mac $wlan15_mac
+
+	[ -n "$wlan0_mac" ] && ucidef_set_wireless_macaddr radio0 $wlan0_mac $wlan1_mac $wlan2_mac $wlan3_mac $wlan4_mac $wlan5_mac $wlan6_mac $wlan7_mac
+	[ -n "$wlan8_mac" ] && ucidef_set_wireless_macaddr radio1 $wlan8_mac $wlan9_mac $wlan10_mac $wlan11_mac $wlan12_mac $wlan13_mac $wlan14_mac $wlan15_mac
+	[ -n "$lan_mac" ] && [ -n "$wan_mac" ] && [ -n "$wlan0_mac" ] && ucidef_set_interface_def_macaddr $lan_mac $wan_mac $wlan0_mac $sta_mac $wlan1_mac $wlan2_mac $wlan3_mac $wlan4_mac $wlan5_mac $wlan6_mac $wlan7_mac
+
 }
 
 board_config_update
