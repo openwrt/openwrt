@@ -8,7 +8,8 @@ define Device/comtrend_vr-3025u
   CFE_BOARD_ID := 96368M-1541N
   BLOCKSIZE := 0x20000
   FLASH_MB := 32
-  DEVICE_PACKAGES += $(USB2_PACKAGES) $(B43_PACKAGES) \
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES) broadcom-43222-sprom \
     kmod-leds-gpio
 endef
 TARGET_DEVICES += comtrend_vr-3025u
