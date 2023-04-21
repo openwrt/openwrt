@@ -6,9 +6,6 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	compatible = "cudy,x6", "mediatek,mt7621-soc";
-	model = "CUDY X6";
-
 	aliases {
 		led-boot = &led_internet_blue;
 		led-failsafe = &led_internet_red;
@@ -61,7 +58,7 @@
 		reg = <0>;
 		spi-max-frequency = <50000000>;
 
-		partitions {
+		partitions: partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -84,37 +81,7 @@
 				read-only;
 			};
 
-			partition@50000 {
-				compatible = "denx,uimage";
-				label = "firmware";
-				reg = <0x50000 0x1f80000>;
-			};
-
-			partition@1fd0000 {
-				label = "debug";
-				reg = <0x1fd0000 0x10000>;
-				read-only;
-			};
-
-			partition@1fe0000 {
-				label = "backup";
-				reg = <0x1fe0000 0x10000>;
-				read-only;
-			};
-
-			partition@1ff0000 {
-				label = "bdinfo";
-				reg = <0x1ff0000 0x10000>;
-				read-only;
-
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				macaddr_bdinfo_de00: macaddr@de00 {
-					reg = <0xde00 0x6>;
-				};
-			};
+			/* additional partitions in DTS */
 		};
 	};
 };
@@ -124,30 +91,18 @@
 };
 
 &pcie1 {
-	wifi@0,0 {
+	wifi:wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x0000>;
 		mediatek,disable-radar-background;
-
-		nvmem-cells = <&macaddr_bdinfo_de00>;
-		nvmem-cell-names = "mac-address";
 	};
-};
-
-&gmac0 {
-	nvmem-cells = <&macaddr_bdinfo_de00>;
-	nvmem-cell-names = "mac-address";
 };
 
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy4>;
-
-	nvmem-cells = <&macaddr_bdinfo_de00>;
-	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &mdio {

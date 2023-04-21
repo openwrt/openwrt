@@ -543,16 +543,29 @@ define Device/cudy_wr2100
 endef
 TARGET_DEVICES += cudy_wr2100
 
-define Device/cudy_x6
+define Device/cudy_x6-v1
   $(Device/dsa-migration)
   IMAGE_SIZE := 32256k
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := X6
+  DEVICE_VARIANT := v1
   UIMAGE_NAME := R13
   DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
-  SUPPORTED_DEVICES += R13
+  SUPPORTED_DEVICES += cudy,x6 R13
 endef
-TARGET_DEVICES += cudy_x6
+TARGET_DEVICES += cudy_x6-v1
+
+define Device/cudy_x6-v2
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := X6
+  DEVICE_VARIANT := v2
+  UIMAGE_NAME := R30
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  SUPPORTED_DEVICES += cudy,x6 R30
+endef
+TARGET_DEVICES += cudy_x6-v2
 
 define Device/dlink_dap-1620-b1
   DEVICE_VENDOR := D-Link
