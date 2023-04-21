@@ -1,7 +1,7 @@
-From 97ca310aa18a93329ef5cd68c20de89761962f45 Mon Sep 17 00:00:00 2001
+From b856150c8098f12996ee81c3ab2a65adbaeeb3ec Mon Sep 17 00:00:00 2001
 From: David Bauer <mail@david-bauer.net>
-Date: Sun, 13 Jun 2021 12:19:36 +0200
-Subject: [PATCH] net: phy: at803x: fix feature detection
+Date: Sun, 27 Jun 2021 12:16:07 +0200
+Subject: [PATCH] net: phy: at803x: mask 1000 Base-X link mode
 
 AR8031/AR8033 have different status registers for copper
 and fiber operation. However, the extended status register
@@ -14,14 +14,16 @@ Remove this mode from the supported link modes, as this driver
 currently only supports copper operation.
 
 Signed-off-by: David Bauer <mail@david-bauer.net>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/phy/at803x.c | 30 +++++++++++++++++++++++++++++-
  1 file changed, 29 insertions(+), 1 deletion(-)
 
 --- a/drivers/net/phy/at803x.c
 +++ b/drivers/net/phy/at803x.c
-@@ -1032,6 +1032,34 @@ static int at803x_set_tunable(struct phy
- 	}
+@@ -583,6 +583,34 @@ static void at803x_remove(struct phy_dev
+ 		regulator_disable(priv->vddio);
  }
  
 +static int at803x_get_features(struct phy_device *phydev)
@@ -52,10 +54,10 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +	return 0;
 +}
 +
- static int at803x_cable_test_result_trans(u16 status)
+ static int at803x_clk_out_config(struct phy_device *phydev)
  {
- 	switch (FIELD_GET(AT803X_CDT_STATUS_STAT_MASK, status)) {
-@@ -1364,7 +1392,7 @@ static struct phy_driver at803x_driver[]
+ 	struct at803x_priv *priv = phydev->priv;
+@@ -1156,7 +1184,7 @@ static struct phy_driver at803x_driver[]
  	.resume			= at803x_resume,
  	.read_page		= at803x_read_page,
  	.write_page		= at803x_write_page,
