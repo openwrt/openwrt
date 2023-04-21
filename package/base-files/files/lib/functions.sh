@@ -433,4 +433,14 @@ cmdline_get_var() {
 	done
 }
 
+# for $RANDOM  $ random_numgen
+# for $SRANDOM $ random_numgen 4 0 0 /dev/random
+random_numgen() {
+	local bytes="${1:-2}"
+	local signed="${2:-1}"
+	local offset="${3:-0}"
+	local dev="${4:-/dev/urandom}"
+	echo $(($(hexdump -n "$bytes" -s "$offset" -e "1/$bytes"' ''"0x%x"' "$dev") >> $signed))
+}
+
 [ -z "$IPKG_INSTROOT" ] && [ -f /lib/config/uci.sh ] && . /lib/config/uci.sh
