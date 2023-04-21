@@ -28,8 +28,9 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
 		;;
 	cudy,x6)
-		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
-		macaddr_add $hw_mac_addr "$PHYNBR" > /sys${DEVPATH}/macaddress
+		hw_mac_addr="$(mtd_get_mac_binary bdinfo 0xde00)"
+		[ "$PHYNBR" = "1" ] && \
+		macaddr_setbit_la "$(macaddr_add $hw_mac_addr 0x100000)" > /sys${DEVPATH}/macaddress
 		;;
 	dlink,dap-x1860-a1)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
