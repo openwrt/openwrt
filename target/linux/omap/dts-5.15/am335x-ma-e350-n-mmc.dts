@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+/dts-v1/;
+
+#include "am335x-ma-e350-n.dtsi"
+
+/ {
+	model = "Century Systems FutureNet MA-E350/N (MMC)";
+	compatible = "centurysystems,ma-e350-n-mmc", "ti,am33xx";
+
+	chosen {
+		bootargs-append = " root=/dev/mmcblk0p2 rootwait mtdoops.mtddev=OOPS mtdoops.record_size=8192";
+	};
+};

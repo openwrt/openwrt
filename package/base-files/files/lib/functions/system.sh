@@ -199,6 +199,20 @@ mmc_get_mac_binary() {
 	get_mac_binary "$part" "$offset"
 }
 
+nvmem_get_mac_binary() {
+	local nvmem_dev="$1" _nvmem_dev
+	local offset="$2"
+	local autoid="$3"
+
+	[ "$autoid" = "1" ] && nvmem_dev="${nvmem_dev}[0-9]\\+"
+	_nvmem_dev=$(find /sys/bus/nvmem/devices/ -regex ".*/${nvmem_dev}$" | head -n1)
+	[ -z "$_nvmem_dev" ] && \
+		echo "no NVMEM device \"$nvmem_dev\"!" >&2 && \
+		return
+
+	get_mac_binary "$_nvmem_dev/nvmem" "$offset"
+}
+
 macaddr_add() {
 	local mac=$1
 	local val=$2
