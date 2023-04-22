@@ -2214,6 +2214,9 @@ define Device/tplink_ec330-g5u-v1
 	uImage-tplink-c9 firmware 'OS IMAGE ($(VERSION_DIST))'
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | \
 	uImage none
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
 endef
 TARGET_DEVICES += tplink_ec330-g5u-v1
