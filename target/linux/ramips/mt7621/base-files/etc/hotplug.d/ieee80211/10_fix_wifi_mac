@@ -161,11 +161,6 @@ case "$board" in
 		hw_mac_addr="$(mtd_get_mac_binary product-info 0x8)"
 		macaddr_add "$hw_mac_addr" "$PHYNBR" > "/sys${DEVPATH}/macaddress"
 		;;
-	tplink,ec330-g5u-v1)
-		hw_mac_addr="$(mtd_get_mac_text factory 0x165)"
-		[ "$PHYNBR" = "0" ] && echo -n $hw_mac_addr > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
-		;;
 	yuncore,ax820)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0xe000)" > /sys${DEVPATH}/macaddress

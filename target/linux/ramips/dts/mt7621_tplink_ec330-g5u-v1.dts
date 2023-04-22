@@ -11,6 +11,8 @@
 	model = "TP-Link EC330-G5u v1";
 
 	aliases {
+		label-mac-device = &gmac0;
+
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -226,6 +228,14 @@
 			label = "factory";
 			reg = <0x7800000 0x400000>;
 			read-only;
+
+			compatible = "nvmem-cells";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			macaddr_factory_165: macaddr@165 {
+				reg = <0x165 0x11>;
+			};
 		};
 
 		partition@0_wholeflash {
@@ -246,6 +256,9 @@
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <2400000 2500000>;
+
+		nvmem-cells = <&macaddr_factory_165>;
+		nvmem-cell-names = "mac-address-ascii";
 	};
 };
 
@@ -255,13 +268,26 @@
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x14000>;
 		ieee80211-freq-limit = <5000000 6000000>;
+
+		nvmem-cells = <&macaddr_factory_165>;
+		nvmem-cell-names = "mac-address-ascii";
+		mac-address-increment = <(2)>;
 	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_165>;
+	nvmem-cell-names = "mac-address-ascii";
 };
 
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_factory_165>;
+	nvmem-cell-names = "mac-address-ascii";
+	mac-address-increment = <(1)>;
 };
 
 &mdio {
