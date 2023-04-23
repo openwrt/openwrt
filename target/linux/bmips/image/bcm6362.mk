@@ -34,6 +34,7 @@ define Device/netgear_dgnd3700-v2
   BLOCKSIZE := 16k
   PAGESIZE := 512
   DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES) \
     kmod-leds-bcm6328 kmod-leds-gpio
   CFE_WFI_FLASH_TYPE := 2
   CFE_WFI_VERSION := 0x5731
