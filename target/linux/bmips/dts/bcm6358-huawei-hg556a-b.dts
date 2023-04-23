@@ -119,20 +119,14 @@
 		};
 	};
 
-	ath9k-fixup {
-		compatible = "brcm,ath9k-fixup";
-		reg = <0x30000000 0x8000000>;
+	ath9k-leds {
+		compatible = "gpio-leds";
 
-		pci-dev = <1>;
-
-		nvmem-cells = <&macaddr_cfe_6a0>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
-
-		ath,eeprom = <&cal_data 0x1e000>;
-		ath,endian-check;
-		ath,led-pin = <2>;
-		ath,led-active-high;
+		wlan {
+			label = "red:wlan";
+			gpios = <&ath9k 2 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
 	};
 };
 
@@ -164,6 +158,20 @@
 
 &pci {
 	status = "okay";
+
+	ath9k: wifi@1,0 {
+		compatible = "pci168c,0029";
+		reg = <0x0800 0 0 0 0>;
+
+		qca,no-eeprom;
+
+		nvmem-cells = <&macaddr_cfe_6a0>;
+		nvmem-cell-names = "mac-address";
+		mac-address-increment = <1>;
+
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
 };
 
 &pflash {
@@ -205,6 +213,16 @@
 
 &usbh {
 	status = "okay";
+};
+
+&cal_data {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cal_data_1e000: cal@1e000 {
+		reg = <0x1e000 0xeb8>;
+	};
 };
 
 &cfe {

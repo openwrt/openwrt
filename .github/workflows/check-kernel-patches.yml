@@ -131,14 +131,28 @@ jobs:
       - name: Refresh Kernel patches
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
-        run: |
-          make target/linux/refresh V=s
+        run: make target/linux/refresh V=s
 
+      - name: Validate Refreshed Kernel Patches
+        working-directory: openwrt
+        run: |
           . .github/workflows/scripts/ci_helpers.sh
 
           if git diff --name-only --exit-code; then
             success "Kernel patches for ${{ env.TARGET }}/${{ env.SUBTARGET }} seems ok"
           else
             err "Kernel patches for ${{ env.TARGET }}/${{ env.SUBTARGET }} require refresh. (run 'make target/linux/refresh' and force push this pr)"
+            err "You can also check the provided artifacts with the refreshed patch from this CI run."
+            mkdir ${{ env.TARGET }}-${{ env.SUBTARGET }}-refreshed
+            for f in $(git diff --name-only); do
+              cp --parents $f ${{ env.TARGET }}-${{ env.SUBTARGET }}-refreshed/
+            done
             exit 1
           fi
+
+      - name: Upload Refreshed Patches
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.TARGET }}-${{ env.SUBTARGET }}-refreshed
+          path: openwrt/${{ env.TARGET }}-${{ env.SUBTARGET }}-refreshed

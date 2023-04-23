@@ -277,11 +277,6 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$lan_mac
 		;;
-	raisecom,msg1500-x-00)
-		lan_mac=$(mtd_get_mac_ascii Config protest_lan_mac)
-		wan_mac=$(mtd_get_mac_ascii Config protest_wan_mac)
-		label_mac=$lan_mac
-		;;
 	yuncore,ax820)
 		label_mac=$(mtd_get_mac_binary Factory 0x4)
 		;;

@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=squashfs4
 PKG_CPE_ID:=cpe:/a:phillip_lougher:squashfs
 PKG_VERSION:=4.6.1
-PKG_RELEASE=2
+PKG_RELEASE=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/plougher/squashfs-tools
@@ -26,6 +26,7 @@ define Host/Compile
 	$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/squashfs-tools \
 		XZ_SUPPORT=1 \
 		LZMA_XZ_SUPPORT=1 \
+		XZ_EXTENDED_OPTIONS=1 \
 		EXTRA_CFLAGS="-I$(STAGING_DIR_HOST)/include" \
 		mksquashfs unsquashfs
 endef

@@ -335,10 +335,7 @@ static struct pci_ops bcm6348_pci_ops = {
 	.write = bcm6348_pci_write,
 };
 
-static struct resource bcm6348_pci_io_resource = {
-	.name = "BCM6348 PCI IO space",
-	.flags = IORESOURCE_IO,
-};
+static struct resource bcm6348_pci_io_resource;
 static struct resource bcm6348_pci_mem_resource;
 static struct resource bcm6348_pci_busn_resource;
 
@@ -732,25 +729,12 @@ static int bcm6348_pci_probe(struct platform_device *pdev)
 
 	of_pci_check_probe_only();
 
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "pci");
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	priv->pci = devm_ioremap_resource(dev, res);
 	if (IS_ERR(priv->pci))
 		return PTR_ERR(priv->pci);
 
 	priv->pcmcia = priv->pci + PCMCIA_OFFSET;
-
-	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "pci-io");
-	if (!res)
-		return -EINVAL;
-#ifdef CONFIG_CARDBUS
-	bcm6348_pci_io_resource.start = res->start;
-	bcm6348_pci_io_resource.end = res->end - (resource_size(res) >> 1);
-	bcm6348_cb_io_resource.start = res->start + (resource_size(res) >> 1);
-	bcm6348_cb_io_resource.end = res->end;
-#else
-	bcm6348_pci_io_resource.start = res->start;
-	bcm6348_pci_io_resource.end = res->end;
-#endif
 
 	priv->irq = platform_get_irq(pdev, 0);
 	if (!priv->irq)
@@ -772,6 +756,12 @@ static int bcm6348_pci_probe(struct platform_device *pdev)
 
 	of_pci_parse_bus_range(np, &bcm6348_pci_busn_resource);
 	pci_add_resource(&resources, &bcm6348_pci_busn_resource);
+
+#ifdef CONFIG_CARDBUS
+	bcm6348_cb_io_resource.start = bcm6348_pci_io_resource.start + (resource_size(&bcm6348_pci_io_resource) >> 1);
+	bcm6348_cb_io_resource.end = bcm6348_pci_io_resource.end;
+	bcm6348_pci_io_resource.end = bcm6348_pci_io_resource.end - (resource_size(&bcm6348_pci_io_resource) >> 1);
+#endif
 
 	/*
 	 * Configuration accesses are done through IO space, remap 4

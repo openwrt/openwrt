@@ -24,4 +24,9 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_unsetbit $addr 6 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_setbit $addr 6 > /sys${DEVPATH}/macaddress
 		;;
+	tplink,tl-xdr4288|\
+	tplink,tl-xdr6086|\
+	tplink,tl-xdr6088)
+		[ "$PHYNBR" = "0" ] && get_mac_label > /sys${DEVPATH}/macaddress
+		;;
 esac
