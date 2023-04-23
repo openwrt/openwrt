@@ -73,8 +73,9 @@ define Device/sercomm_shg2500
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   VID_HDR_OFFSET := 2048
-  DEVICE_PACKAGES += $(USB2_PACKAGES) kmod-i2c-gpio \
-    kmod-leds-sercomm-msp430
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    broadcom-4360-sprom \
+    kmod-i2c-gpio kmod-leds-sercomm-msp430
   SERCOMM_FSVER := 1001
   SERCOMM_HWVER := 1424e4a
   SERCOMM_SWVER := 3207
