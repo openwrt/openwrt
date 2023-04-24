@@ -1,0 +1,124 @@
+From 9fc01431a7f54401b246c198ebdfab6ee9e4ea42 Mon Sep 17 00:00:00 2001
+From: Phinex Hung <phinex@realtek.com>
+Date: Fri, 14 Apr 2023 18:47:58 +0800
+Subject: [PATCH] arm64: dts: realtek: rtd129x: align reserved memory and enable SMP
+ kernel 4.x
+
+Change-Id: I1c8ff6cb994806a34d9eb605f307cd751ac89794
+---
+ arch/arm64/boot/dts/realtek/rtd129x.dtsi | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/realtek/rtd129x.dtsi
++++ b/arch/arm64/boot/dts/realtek/rtd129x.dtsi
+@@ -6,8 +6,8 @@
+  */
+ 
+ /memreserve/	0x0000000000000000 0x000000000001f000;
+-/memreserve/	0x000000000001f000 0x00000000000e1000;
+-/memreserve/	0x0000000001b00000 0x00000000004be000;
++/memreserve/	0x0000000001b00000 0x0000000000400000;
++/memreserve/	0x0000000010000000 0x0000000000014000;
+ 
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/reset/realtek,rtd1295.h>
+@@ -30,6 +30,11 @@
+ 			reg = <0x1ffe000 0x4000>;
+ 		};
+ 
++		cpu_spin_addr: cpu_spin_addr@2002000 {
++			reg = <0x2002000 0x1000>;
++			no-map;
++		};
++
+ 		tee: tee@10100000 {
+ 			reg = <0x10100000 0xf00000>;
+ 			no-map;
+@@ -120,6 +125,11 @@
+ 			#interrupt-cells = <3>;
+ 		};
+ 	};
++
++	rbus_uio: rbus_uio@1 {
++		reg = <0x98000000 0x200000>;
++		compatible = "generic-uio";
++	};
+ };
+ 
+ &crt {
+--- a/arch/arm64/boot/dts/realtek/rtd1295.dtsi
++++ b/arch/arm64/boot/dts/realtek/rtd1295.dtsi
+@@ -18,6 +18,8 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a53";
+ 			reg = <0x0 0x0>;
++			enable-method = "spin-table";
++			cpu-release-addr = <0 0x02002800>;
+ 			next-level-cache = <&l2>;
+ 		};
+ 
+@@ -25,6 +27,8 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a53";
+ 			reg = <0x0 0x1>;
++			enable-method = "spin-table";
++			cpu-release-addr = <0 0x02002800>;
+ 			next-level-cache = <&l2>;
+ 		};
+ 
+@@ -32,6 +36,8 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a53";
+ 			reg = <0x0 0x2>;
++			enable-method = "spin-table";
++			cpu-release-addr = <0 0x02002800>;
+ 			next-level-cache = <&l2>;
+ 		};
+ 
+@@ -39,6 +45,8 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a53";
+ 			reg = <0x0 0x3>;
++			enable-method = "spin-table";
++			cpu-release-addr = <0 0x02002800>;
+ 			next-level-cache = <&l2>;
+ 		};
+ 
+--- a/arch/arm64/boot/dts/realtek/rtd1296.dtsi
++++ b/arch/arm64/boot/dts/realtek/rtd1296.dtsi
+@@ -18,6 +18,8 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a53";
+ 			reg = <0x0 0x0>;
++			enable-method = "spin-table";
++			cpu-release-addr = <0 0x02002800>;
+ 			next-level-cache = <&l2>;
+ 		};
+ 
+@@ -25,6 +27,8 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a53";
+ 			reg = <0x0 0x1>;
++			enable-method = "spin-table";
++			cpu-release-addr = <0 0x02002800>;
+ 			next-level-cache = <&l2>;
+ 		};
+ 
+@@ -32,6 +36,8 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a53";
+ 			reg = <0x0 0x2>;
++			enable-method = "spin-table";
++			cpu-release-addr = <0 0x02002800>;
+ 			next-level-cache = <&l2>;
+ 		};
+ 
+@@ -39,6 +45,8 @@
+ 			device_type = "cpu";
+ 			compatible = "arm,cortex-a53";
+ 			reg = <0x0 0x3>;
++			enable-method = "spin-table";
++			cpu-release-addr = <0 0x02002800>;
+ 			next-level-cache = <&l2>;
+ 		};
+ 
