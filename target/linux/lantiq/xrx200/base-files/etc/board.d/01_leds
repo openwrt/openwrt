@@ -28,7 +28,9 @@ arcadyan,arv7519rw22)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0.1"
 	;;
 arcadyan,vgv7510kw22-nor|\
-arcadyan,vgv7510kw22-brn|\
+arcadyan,vgv7510kw22-brn)
+	ucidef_set_led_netdev "internet" "internet" "$led_internet" "wan"
+	;;
 zyxel,p-2812hnu-f1|\
 zyxel,p-2812hnu-f3)
 	ucidef_set_led_wlan "wifi" "wifi" "green:wlan" "phy0radio"

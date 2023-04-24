@@ -52,7 +52,7 @@ Signed-off-by: Tim Gover <tim.gover@raspberrypi.com>
  	clk_disable_unprepare(vc4_hdmi->pixel_bvb_clock);
  	if (vc4_hdmi->bvb_req)
  		clk_request_done(vc4_hdmi->bvb_req);
-@@ -1013,6 +1013,7 @@ static void vc4_hdmi_encoder_post_crtc_e
+@@ -1014,6 +1014,7 @@ static void vc4_hdmi_encoder_post_crtc_e
  
  	HDMI_WRITE(HDMI_VID_CTL,
  		   VC4_HD_VID_CTL_ENABLE |

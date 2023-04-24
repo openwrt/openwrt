@@ -120,6 +120,7 @@ endef
 TARGET_DEVICES += allnet_all5002
 
 define Device/allnet_all5003
+  $(Device/uimage-lzma-loader)
   SOC := rt5350
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := Allnet

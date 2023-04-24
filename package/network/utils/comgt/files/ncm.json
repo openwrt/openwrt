@@ -112,5 +112,17 @@
 		],
 		"connect": "AT+ZGACT=1,${profile}",
 		"disconnect": "AT+ZGACT=0,${profile}"
+	},
+	"\"mikrotik\"": {
+		"configure": [
+			"AT+CFUN=4",
+			"AT+ZGDCONT=${profile},\\\"${pdptype}\\\",\\\"${apn}\\\",0",
+			"AT+ZDHCPLEASE=10",
+			"AT+CFUN=1"
+		],
+		"waitforconnect": "\\\"+ZCONSTAT: 1,${context_type}\\\",\\\"+ZGIPDNS: ${context_type}\\\"",
+		"connect": "AT+ZGACT=1,${context_type}",
+		"finalize": "AT+ZDHCPLEASE=0",
+		"disconnect": "AT+ZGACT=0,1"
 	}
 }

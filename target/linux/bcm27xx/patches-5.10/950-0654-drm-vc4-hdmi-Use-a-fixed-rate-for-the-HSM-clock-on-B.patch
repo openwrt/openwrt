@@ -37,7 +37,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -911,23 +911,7 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -912,23 +912,7 @@ static void vc4_hdmi_encoder_pre_crtc_co
  		return;
  	}
  
@@ -62,7 +62,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	vc4_hdmi->hsm_req = clk_request_start(vc4_hdmi->hsm_clock, hsm_rate);
  	if (IS_ERR(vc4_hdmi->hsm_req)) {
  		DRM_ERROR("Failed to set HSM clock rate: %ld\n", PTR_ERR(vc4_hdmi->hsm_req));
-@@ -1143,6 +1127,39 @@ static const struct drm_encoder_helper_f
+@@ -1144,6 +1128,39 @@ static const struct drm_encoder_helper_f
  	.enable = vc4_hdmi_encoder_enable,
  };
  
@@ -102,7 +102,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static u32 vc4_hdmi_channel_map(struct vc4_hdmi *vc4_hdmi, u32 channel_mask)
  {
  	int i;
-@@ -2336,6 +2353,7 @@ static const struct vc4_hdmi_variant bcm
+@@ -2338,6 +2355,7 @@ static const struct vc4_hdmi_variant bcm
  	.phy_disable		= vc4_hdmi_phy_disable,
  	.phy_rng_enable		= vc4_hdmi_phy_rng_enable,
  	.phy_rng_disable	= vc4_hdmi_phy_rng_disable,
@@ -110,7 +110,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	.channel_map		= vc4_hdmi_channel_map,
  	.supports_hdr		= false,
  };
-@@ -2364,6 +2382,7 @@ static const struct vc4_hdmi_variant bcm
+@@ -2366,6 +2384,7 @@ static const struct vc4_hdmi_variant bcm
  	.phy_disable		= vc5_hdmi_phy_disable,
  	.phy_rng_enable		= vc5_hdmi_phy_rng_enable,
  	.phy_rng_disable	= vc5_hdmi_phy_rng_disable,
@@ -118,7 +118,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	.channel_map		= vc5_hdmi_channel_map,
  	.supports_hdr		= true,
  };
-@@ -2392,6 +2411,7 @@ static const struct vc4_hdmi_variant bcm
+@@ -2394,6 +2413,7 @@ static const struct vc4_hdmi_variant bcm
  	.phy_disable		= vc5_hdmi_phy_disable,
  	.phy_rng_enable		= vc5_hdmi_phy_rng_enable,
  	.phy_rng_disable	= vc5_hdmi_phy_rng_disable,

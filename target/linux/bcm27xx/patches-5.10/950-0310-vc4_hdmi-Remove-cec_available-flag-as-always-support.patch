@@ -12,7 +12,7 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_hdmi.c
 +++ b/drivers/gpu/drm/vc4/vc4_hdmi.c
-@@ -1487,9 +1487,6 @@ static int vc4_hdmi_cec_init(struct vc4_
+@@ -1488,9 +1488,6 @@ static int vc4_hdmi_cec_init(struct vc4_
  	u32 value;
  	int ret;
  
@@ -20,9 +20,9 @@ Signed-off-by: Dom Cobley <popcornmix@gmail.com>
 -		return 0;
 -
  	vc4_hdmi->cec_adap = cec_allocate_adapter(&vc4_hdmi_cec_adap_ops,
- 						  vc4_hdmi, "vc4",
- 						  CEC_CAP_DEFAULTS |
-@@ -1922,7 +1919,6 @@ static const struct vc4_hdmi_variant bcm
+ 						  vc4_hdmi,
+ 						  vc4_hdmi->variant->card_name,
+@@ -1924,7 +1921,6 @@ static const struct vc4_hdmi_variant bcm
  	.debugfs_name		= "hdmi_regs",
  	.card_name		= "vc4-hdmi",
  	.max_pixel_clock	= 162000000,

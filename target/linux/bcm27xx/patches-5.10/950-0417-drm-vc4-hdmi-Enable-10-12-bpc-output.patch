@@ -82,9 +82,9 @@ Reviewed-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  				 struct drm_display_mode *mode)
  {
  	bool hsync_pos = mode->flags & DRM_MODE_FLAG_PHSYNC;
-@@ -620,6 +644,9 @@ static void vc5_hdmi_set_timings(struct
+@@ -621,6 +645,9 @@ static void vc5_hdmi_set_timings(struct
  			  VC4_SET_FIELD(mode->crtc_vtotal -
- 					mode->crtc_vsync_end - interlaced,
+ 					mode->crtc_vsync_end,
  					VC4_HDMI_VERTB_VBP));
 +	unsigned char gcp;
 +	bool gcp_en;
@@ -92,7 +92,7 @@ Reviewed-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	HDMI_WRITE(HDMI_VEC_INTERFACE_XBAR, 0x354021);
  	HDMI_WRITE(HDMI_HORZA,
-@@ -645,6 +672,39 @@ static void vc5_hdmi_set_timings(struct
+@@ -646,6 +673,39 @@ static void vc5_hdmi_set_timings(struct
  	HDMI_WRITE(HDMI_VERTB0, vertb_even);
  	HDMI_WRITE(HDMI_VERTB1, vertb);
  
@@ -132,7 +132,7 @@ Reviewed-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	HDMI_WRITE(HDMI_CLOCK_STOP, 0);
  }
  
-@@ -772,7 +832,7 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -773,7 +833,7 @@ static void vc4_hdmi_encoder_pre_crtc_co
  		   VC4_HDMI_SCHEDULER_CONTROL_IGNORE_VSYNC_PREDICTS);
  
  	if (vc4_hdmi->variant->set_timings)
@@ -141,7 +141,7 @@ Reviewed-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  }
  
  static void vc4_hdmi_encoder_pre_crtc_enable(struct drm_encoder *encoder,
-@@ -894,6 +954,14 @@ static int vc4_hdmi_encoder_atomic_check
+@@ -895,6 +955,14 @@ static int vc4_hdmi_encoder_atomic_check
  		pixel_rate = mode->clock * 1000;
  	}
  

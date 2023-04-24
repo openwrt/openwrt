@@ -21,7 +21,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 +++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
-@@ -5509,25 +5509,6 @@ static int fill_hdr_info_packet(const st
+@@ -5511,25 +5511,6 @@ static int fill_hdr_info_packet(const st
  	return 0;
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static int
  amdgpu_dm_connector_atomic_check(struct drm_connector *conn,
  				 struct drm_atomic_state *state)
-@@ -5543,7 +5524,7 @@ amdgpu_dm_connector_atomic_check(struct
+@@ -5545,7 +5526,7 @@ amdgpu_dm_connector_atomic_check(struct
  	if (!crtc)
  		return 0;
  
@@ -91,7 +91,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  			return PTR_ERR(crtc_state);
 --- a/drivers/gpu/drm/drm_connector.c
 +++ b/drivers/gpu/drm/drm_connector.c
-@@ -2165,6 +2165,34 @@ int drm_connector_attach_hdr_output_meta
+@@ -2168,6 +2168,34 @@ int drm_connector_attach_hdr_output_meta
  EXPORT_SYMBOL(drm_connector_attach_hdr_output_metadata_property);
  
  /**

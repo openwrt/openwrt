@@ -7,6 +7,11 @@ board=$(board_name)
 board_config_update
 
 case $board in
+asus,rt-ax53u)
+	ucidef_set_led_usbport "usb" "USB" "blue:usb" "usb1-port2"
+	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "mt76-phy0" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "mt76-phy1" "phy1tpt"
+	;;
 asus,rt-n56u-b1)
 	ucidef_set_led_netdev "lan" "LAN link" "blue:lan" "br-lan"
 	ucidef_set_led_netdev "wan" "WAN link" "blue:wan" "wan"
@@ -31,6 +36,13 @@ gehua,ghl-r-001|\
 jcg,y2|\
 xzwifi,creativebox-v1)
 	ucidef_set_led_netdev "internet" "internet" "blue:internet" "wan"
+	;;
+dlink,dap-x1860-a1)
+	ucidef_set_rssimon "wlan1" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "orange:rssilow" "wlan1" "1" "25"
+	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "green:rssilow" "wlan1" "26" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimedium" "wlan1" "51" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "76" "100"
 	;;
 dlink,dir-1960-a1|\
 dlink,dir-2640-a1|\
@@ -112,6 +124,7 @@ oraybox,x3a)
 	ucidef_set_led_netdev "lan" "lan link" "green:status" "br-lan"
 	;;
 tplink,archer-a6-v3|\
+tplink,archer-ax23-v1|\
 tplink,archer-c6-v3|\
 tplink,archer-c6u-v1)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"

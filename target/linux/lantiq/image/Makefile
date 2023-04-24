@@ -49,20 +49,29 @@ define Build/fullimage
 	rm $@.tmp
 endef
 
-define Build/loader-okli-compile
+define Build/loader-common
 	rm -rf $@.src
 	$(MAKE) -C lzma-loader \
 		PKG_BUILD_DIR="$@.src" \
 		TARGET_DIR="$(dir $@)" LOADER_NAME="$(notdir $@)" \
-		PLATFORM="lantiq" \
+		BOARD="$(BOARDNAME)" PLATFORM="lantiq" \
 		LZMA_TEXT_START=0x82000000 \
 		LOADADDR=0x80002000 \
-		FLASH_START=0x10000000 \
-		FLASH_OFFS=$(LOADER_FLASH_OFFS) \
-		FLASH_MAX=0x0 \
 		$(1) compile loader.bin
 	mv "$@.bin" "$@"
 	rm -rf $@.src
+endef
+
+define Build/loader-kernel
+	$(call Build/loader-common,LOADER_DATA="$@")
+endef
+
+define Build/loader-okli-compile
+	$(call Build/loader-common, \
+		FLASH_START=0x10000000 \
+		FLASH_OFFS=$(LOADER_FLASH_OFFS) \
+		FLASH_MAX=0x0 \
+	)
 endef
 
 define Build/prepend-loader-okli

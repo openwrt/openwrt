@@ -29,7 +29,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	__drm_atomic_helper_connector_duplicate_state(connector, &new_state->base);
  
  	return &new_state->base;
-@@ -671,9 +672,29 @@ static void vc4_hdmi_recenter_fifo(struc
+@@ -672,9 +673,29 @@ static void vc4_hdmi_recenter_fifo(struc
  		  "VC4_HDMI_FIFO_CTL_RECENTER_DONE");
  }
  
@@ -59,7 +59,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct drm_display_mode *mode = &encoder->crtc->state->adjusted_mode;
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  	unsigned long pixel_rate, hsm_rate;
-@@ -685,7 +706,7 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -686,7 +707,7 @@ static void vc4_hdmi_encoder_pre_crtc_co
  		return;
  	}
  
@@ -68,7 +68,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	ret = clk_set_rate(vc4_hdmi->pixel_clock, pixel_rate);
  	if (ret) {
  		DRM_ERROR("Failed to set pixel clock rate: %d\n", ret);
-@@ -847,6 +868,7 @@ static int vc4_hdmi_encoder_atomic_check
+@@ -848,6 +869,7 @@ static int vc4_hdmi_encoder_atomic_check
  					 struct drm_crtc_state *crtc_state,
  					 struct drm_connector_state *conn_state)
  {
@@ -76,7 +76,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	struct drm_display_mode *mode = &crtc_state->adjusted_mode;
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
  	unsigned long long pixel_rate = mode->clock * 1000;
-@@ -878,6 +900,8 @@ static int vc4_hdmi_encoder_atomic_check
+@@ -879,6 +901,8 @@ static int vc4_hdmi_encoder_atomic_check
  	if (pixel_rate > vc4_hdmi->variant->max_pixel_clock)
  		return -EINVAL;
  

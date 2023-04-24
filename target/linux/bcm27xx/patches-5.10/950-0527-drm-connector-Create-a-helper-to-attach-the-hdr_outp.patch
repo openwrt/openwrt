@@ -22,7 +22,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 +++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
-@@ -6564,9 +6564,7 @@ void amdgpu_dm_connector_init_helper(str
+@@ -6566,9 +6566,7 @@ void amdgpu_dm_connector_init_helper(str
  	if (connector_type == DRM_MODE_CONNECTOR_HDMIA ||
  	    connector_type == DRM_MODE_CONNECTOR_DisplayPort ||
  	    connector_type == DRM_MODE_CONNECTOR_eDP) {
@@ -47,7 +47,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
 --- a/drivers/gpu/drm/drm_connector.c
 +++ b/drivers/gpu/drm/drm_connector.c
-@@ -2144,6 +2144,27 @@ int drm_connector_attach_max_bpc_propert
+@@ -2147,6 +2147,27 @@ int drm_connector_attach_max_bpc_propert
  EXPORT_SYMBOL(drm_connector_attach_max_bpc_property);
  
  /**

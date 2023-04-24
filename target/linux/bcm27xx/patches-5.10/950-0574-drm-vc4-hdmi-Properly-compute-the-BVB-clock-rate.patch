@@ -23,7 +23,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  #define HDMI_14_MAX_TMDS_CLK   (340 * 1000 * 1000)
  
-@@ -816,7 +815,7 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -817,7 +816,7 @@ static void vc4_hdmi_encoder_pre_crtc_co
  		conn_state_to_vc4_hdmi_conn_state(conn_state);
  	struct drm_display_mode *mode = &encoder->crtc->state->adjusted_mode;
  	struct vc4_hdmi *vc4_hdmi = encoder_to_vc4_hdmi(encoder);
@@ -32,7 +32,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	int ret;
  
  	ret = pm_runtime_resume_and_get(&vc4_hdmi->pdev->dev);
-@@ -865,12 +864,14 @@ static void vc4_hdmi_encoder_pre_crtc_co
+@@ -866,12 +865,14 @@ static void vc4_hdmi_encoder_pre_crtc_co
  
  	vc4_hdmi_cec_update_clk_div(vc4_hdmi);
  

@@ -20,7 +20,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
 
 --- a/drivers/regulator/core.c
 +++ b/drivers/regulator/core.c
-@@ -2992,7 +2992,8 @@ static int _regulator_list_voltage(struc
+@@ -3000,7 +3000,8 @@ static int _regulator_list_voltage(struc
  		return rdev->desc->fixed_uV;
  
  	if (ops->list_voltage) {
@@ -30,7 +30,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  			return -EINVAL;
  		if (lock)
  			regulator_lock(rdev);
-@@ -3143,7 +3144,8 @@ int regulator_list_hardware_vsel(struct
+@@ -3151,7 +3152,8 @@ int regulator_list_hardware_vsel(struct
  	struct regulator_dev *rdev = regulator->rdev;
  	const struct regulator_ops *ops = rdev->desc->ops;
  
@@ -40,7 +40,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  		return -EINVAL;
  	if (ops->set_voltage_sel != regulator_set_voltage_sel_regmap)
  		return -EOPNOTSUPP;
-@@ -4066,6 +4068,9 @@ int regulator_set_voltage_time(struct re
+@@ -4074,6 +4076,9 @@ int regulator_set_voltage_time(struct re
  
  	for (i = 0; i < rdev->desc->n_voltages; i++) {
  		/* We only look for exact voltage matches here */

@@ -20,7 +20,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
 
 --- a/drivers/media/i2c/imx219.c
 +++ b/drivers/media/i2c/imx219.c
-@@ -118,6 +118,16 @@
+@@ -124,6 +124,16 @@
  #define IMX219_PIXEL_ARRAY_WIDTH	3280U
  #define IMX219_PIXEL_ARRAY_HEIGHT	2464U
  
@@ -37,7 +37,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  struct imx219_reg {
  	u16 address;
  	u8 val;
-@@ -536,7 +546,7 @@ static const struct imx219_mode supporte
+@@ -444,7 +454,7 @@ static const struct imx219_mode supporte
  
  struct imx219 {
  	struct v4l2_subdev sd;
@@ -46,7 +46,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
  	struct v4l2_mbus_framefmt fmt;
  
-@@ -685,18 +695,26 @@ static void imx219_set_default_format(st
+@@ -593,18 +603,26 @@ static void imx219_set_default_format(st
  static int imx219_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
  {
  	struct imx219 *imx219 = to_imx219(sd);
@@ -81,7 +81,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
  	/* Initialize try_crop rectangle. */
  	try_crop = v4l2_subdev_get_try_crop(sd, fh->pad, 0);
-@@ -805,10 +823,21 @@ static int imx219_enum_mbus_code(struct
+@@ -713,10 +731,21 @@ static int imx219_enum_mbus_code(struct
  {
  	struct imx219 *imx219 = to_imx219(sd);
  
@@ -105,7 +105,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
  	return 0;
  }
-@@ -819,16 +848,29 @@ static int imx219_enum_frame_size(struct
+@@ -727,16 +756,29 @@ static int imx219_enum_frame_size(struct
  {
  	struct imx219 *imx219 = to_imx219(sd);
  
@@ -142,7 +142,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
  	return 0;
  }
-@@ -843,9 +885,9 @@ static void imx219_reset_colorspace(stru
+@@ -751,9 +793,9 @@ static void imx219_reset_colorspace(stru
  	fmt->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(fmt->colorspace);
  }
  
@@ -155,7 +155,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  {
  	fmt->format.width = mode->width;
  	fmt->format.height = mode->height;
-@@ -853,20 +895,38 @@ static void imx219_update_pad_format(str
+@@ -761,20 +803,38 @@ static void imx219_update_pad_format(str
  	imx219_reset_colorspace(&fmt->format);
  }
  
@@ -198,7 +198,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  	}
  
  	return 0;
-@@ -896,51 +956,74 @@ static int imx219_set_pad_format(struct
+@@ -804,51 +864,74 @@ static int imx219_set_pad_format(struct
  	int exposure_max, exposure_def, hblank;
  	unsigned int i;
  
@@ -316,7 +316,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  	}
  
  	mutex_unlock(&imx219->mutex);
-@@ -1511,13 +1594,14 @@ static int imx219_probe(struct i2c_clien
+@@ -1462,13 +1545,14 @@ static int imx219_probe(struct i2c_clien
  	imx219->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
  	imx219->sd.entity.function = MEDIA_ENT_F_CAM_SENSOR;
  

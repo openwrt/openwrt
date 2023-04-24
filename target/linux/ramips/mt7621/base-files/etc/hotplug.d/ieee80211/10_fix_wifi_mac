@@ -22,6 +22,13 @@ case "$board" in
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		macaddr_add $hw_mac_addr "$PHYNBR" > /sys${DEVPATH}/macaddress
 		;;
+	dlink,dap-x1860-a1)
+		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
+		[ "$PHYNBR" = "0" ] && \
+			macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_add $hw_mac_addr 4 > /sys${DEVPATH}/macaddress
+		;;
 	dlink,dir-853-a3)
 		[ "$PHYNBR" = "0" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0xe000)" \
@@ -75,6 +82,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
 		;;
+	mercusys,mr70x-v1|\
+	tplink,archer-ax23-v1)
+		hw_mac_addr="$(mtd_get_mac_binary config 0x8)"
+		[ "$PHYNBR" = "1" ] &&  macaddr_add "$hw_mac_addr" -1 > "/sys${DEVPATH}/macaddress"
+		;;
 	mts,wg430223)
 		hw_mac_addr=$(macaddr_add $(mtd_get_mac_encrypted_arcadyan "board_data") 1)
 		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
@@ -97,6 +109,10 @@ case "$board" in
 	tenbay,t-mb5eu-v01)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr "0x100000" > /sys${DEVPATH}/macaddress
+		;;
+	totolink,x5000r)
+		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
+		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr 4 > /sys${DEVPATH}/macaddress
 		;;
 	tplink,eap615-wall-v1)
 		hw_mac_addr="$(mtd_get_mac_binary product-info 0x8)"
