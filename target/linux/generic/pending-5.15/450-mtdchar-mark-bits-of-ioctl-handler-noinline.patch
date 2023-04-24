@@ -1,0 +1,47 @@
+From 31e7ce9a06e3624dddaaebec68ab0f1494620834 Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 17 Apr 2023 22:56:50 +0200
+Subject: [PATCH] mtdchar: mark bits of ioctl handler noinline
+
+The addition of the mtdchar_read_ioctl() function caused the stack usage
+of mtdchar_ioctl() to grow beyond the warning limit on 32-bit architectures
+with gcc-13:
+
+drivers/mtd/mtdchar.c: In function 'mtdchar_ioctl':
+drivers/mtd/mtdchar.c:1229:1: error: the frame size of 1488 bytes is larger than 1024 bytes [-Werror=frame-larger-than=]
+
+Mark both the read and write portions as noinline_for_stack to ensure
+they don't get inlined and use separate stack slots to reduce the
+maximum usage, both in the mtdchar_ioctl() and combined with any
+of its callees.
+
+Fixes: 095bb6e44eb1 ("mtdchar: add MEMREAD ioctl")
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ drivers/mtd/mtdchar.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/mtd/mtdchar.c
++++ b/drivers/mtd/mtdchar.c
+@@ -573,8 +573,8 @@ static int mtdchar_blkpg_ioctl(struct mt
+ 	}
+ }
+ 
+-static int mtdchar_write_ioctl(struct mtd_info *mtd,
+-		struct mtd_write_req __user *argp)
++static noinline_for_stack int
++mtdchar_write_ioctl(struct mtd_info *mtd, struct mtd_write_req __user *argp)
+ {
+ 	struct mtd_info *master = mtd_get_master(mtd);
+ 	struct mtd_write_req req;
+@@ -621,8 +621,8 @@ static int mtdchar_write_ioctl(struct mt
+ 	return ret;
+ }
+ 
+-static int mtdchar_read_ioctl(struct mtd_info *mtd,
+-		struct mtd_read_req __user *argp)
++static noinline_for_stack int
++mtdchar_read_ioctl(struct mtd_info *mtd, struct mtd_read_req __user *argp)
+ {
+ 	struct mtd_info *master = mtd_get_master(mtd);
+ 	struct mtd_read_req req;
