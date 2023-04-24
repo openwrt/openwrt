@@ -1,0 +1,78 @@
+From 4f3235fd14a81abdba2bafd4d5014678ccdfe081 Mon Sep 17 00:00:00 2001
+From: Phinex Hung <phinex@realtek.com>
+Date: Fri, 21 Apr 2023 16:04:37 +0800
+Subject: [PATCH 3/3] arm64: dts: realtek: rtd129x: add basic bootargs for
+ board dts files
+
+-uboot will check if bootargs exists
+
+Change-Id: I7c6bd1b551eab0bccf4006464422a1a570294807
+---
+ arch/arm64/boot/dts/realtek/rtd1293-ds418j.dts      | 1 +
+ arch/arm64/boot/dts/realtek/rtd1295-mele-v9.dts     | 1 +
+ arch/arm64/boot/dts/realtek/rtd1295-probox2-ava.dts | 1 +
+ arch/arm64/boot/dts/realtek/rtd1295-xnano-x5.dts    | 1 +
+ arch/arm64/boot/dts/realtek/rtd1295-zidoo-x9s.dts   | 1 +
+ arch/arm64/boot/dts/realtek/rtd1296-ds418.dts       | 1 +
+ 6 files changed, 6 insertions(+)
+
+--- a/arch/arm64/boot/dts/realtek/rtd1293-ds418j.dts
++++ b/arch/arm64/boot/dts/realtek/rtd1293-ds418j.dts
+@@ -22,6 +22,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
++		bootargs = "uart8250,mmio32,0x98007800 console=ttyS0,115200 uio_pdrv_genirq.of_id=generic-uio";
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/realtek/rtd1295-mele-v9.dts
++++ b/arch/arm64/boot/dts/realtek/rtd1295-mele-v9.dts
+@@ -23,6 +23,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
++		bootargs = "uart8250,mmio32,0x98007800 console=ttyS0,115200 uio_pdrv_genirq.of_id=generic-uio";
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/realtek/rtd1295-probox2-ava.dts
++++ b/arch/arm64/boot/dts/realtek/rtd1295-probox2-ava.dts
+@@ -23,6 +23,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
++		bootargs = "uart8250,mmio32,0x98007800 console=ttyS0,115200 uio_pdrv_genirq.of_id=generic-uio";
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/realtek/rtd1295-xnano-x5.dts
++++ b/arch/arm64/boot/dts/realtek/rtd1295-xnano-x5.dts
+@@ -22,6 +22,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
++		bootargs = "uart8250,mmio32,0x98007800 console=ttyS0,115200 uio_pdrv_genirq.of_id=generic-uio";
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/realtek/rtd1295-zidoo-x9s.dts
++++ b/arch/arm64/boot/dts/realtek/rtd1295-zidoo-x9s.dts
+@@ -23,6 +23,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
++		bootargs = "uart8250,mmio32,0x98007800 console=ttyS0,115200 uio_pdrv_genirq.of_id=generic-uio";
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/realtek/rtd1296-ds418.dts
++++ b/arch/arm64/boot/dts/realtek/rtd1296-ds418.dts
+@@ -22,6 +22,7 @@
+ 
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
++		bootargs = "uart8250,mmio32,0x98007800 console=ttyS0,115200 uio_pdrv_genirq.of_id=generic-uio";
+ 	};
+ };
+ 
