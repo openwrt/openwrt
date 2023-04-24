@@ -48,8 +48,7 @@ struct bcma_fbs {
 	struct ssb_sprom sprom;
 	u32 pci_bus;
 	u32 pci_dev;
-	u8 mac[ETH_ALEN];
-	int devid_override;
+	bool devid_override;
 };
 
 static DEFINE_SPINLOCK(bcma_fbs_lock);
@@ -624,8 +623,8 @@ static void bcma_fbs_fixup(struct bcma_fbs *priv, u16 *sprom)
 	}
 }
 
-static int sprom_override_devid(struct bcma_fbs *priv, struct ssb_sprom *out,
-				const u16 *in)
+static bool sprom_override_devid(struct bcma_fbs *priv, struct ssb_sprom *out,
+				 const u16 *in)
 {
 	SPEX(dev_id, 0x0060, 0xFFFF, 0);
 	return !!out->dev_id;
@@ -668,7 +667,7 @@ static void bcma_fbs_set(struct bcma_fbs *priv, struct device_node *node)
 		sprom->itssi_bg = 0x00;
 		sprom->boardflags_lo = 0x2848;
 		sprom->boardflags_hi = 0x0000;
-		priv->devid_override = 0;
+		priv->devid_override = false;
 
 		dev_warn(priv->dev, "using basic SPROM\n");
 	} else {
@@ -694,6 +693,7 @@ static int bcma_fbs_probe(struct platform_device *pdev)
 	struct device_node *node = dev->of_node;
 	struct bcma_fbs *priv;
 	unsigned long flags;
+	u8 mac[ETH_ALEN];
 
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
@@ -706,18 +706,18 @@ static int bcma_fbs_probe(struct platform_device *pdev)
 	of_property_read_u32(node, "pci-bus", &priv->pci_bus);
 	of_property_read_u32(node, "pci-dev", &priv->pci_dev);
 
-	of_get_mac_address(node, priv->mac);
-	if (is_valid_ether_addr(priv->mac)) {
-		dev_info(dev, "mtd mac %pM\n", priv->mac);
+	of_get_mac_address(node, mac);
+	if (is_valid_ether_addr(mac)) {
+		dev_info(dev, "mtd mac %pM\n", mac);
 	} else {
-		random_ether_addr(priv->mac);
-		dev_info(dev, "random mac %pM\n", priv->mac);
+		random_ether_addr(mac);
+		dev_info(dev, "random mac %pM\n", mac);
 	}
 
-	memcpy(priv->sprom.il0mac, priv->mac, ETH_ALEN);
- 	memcpy(priv->sprom.et0mac, priv->mac, ETH_ALEN);
- 	memcpy(priv->sprom.et1mac, priv->mac, ETH_ALEN);
-	memcpy(priv->sprom.et2mac, priv->mac, ETH_ALEN);
+	memcpy(priv->sprom.il0mac, mac, ETH_ALEN);
+ 	memcpy(priv->sprom.et0mac, mac, ETH_ALEN);
+ 	memcpy(priv->sprom.et1mac, mac, ETH_ALEN);
+	memcpy(priv->sprom.et2mac, mac, ETH_ALEN);
 
 	spin_lock_irqsave(&bcma_fbs_lock, flags);
 	list_add(&priv->list, &bcma_fbs_list);
