@@ -55,9 +55,14 @@ static struct list_head bcma_fbs_list = LIST_HEAD_INIT(bcma_fbs_list);
 
 int bcma_get_fallback_sprom(struct bcma_bus *bus, struct ssb_sprom *out)
 {
-	const u32 pci_bus = bus->host_pci->bus->number;
-	const u32 pci_dev = PCI_SLOT(bus->host_pci->devfn);
 	struct bcma_fbs *pos;
+	u32 pci_bus, pci_dev;
+
+	if (bus->hosttype != BCMA_HOSTTYPE_PCI)
+		return -ENOENT;
+
+	pci_bus = bus->host_pci->bus->number;
+	pci_dev = PCI_SLOT(bus->host_pci->devfn);
 
 	list_for_each_entry(pos, &bcma_fbs_list, list) {
 		if (pos->pci_bus != pci_bus ||
