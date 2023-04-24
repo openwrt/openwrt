@@ -614,12 +614,9 @@ define Device/cudy_x6-v2
 endef
 TARGET_DEVICES += cudy_x6-v2
 
-define Device/dlink_dap-1620-b1
+define Device/dlink_dxx-1xx0-x1
   DEVICE_VENDOR := D-Link
-  DEVICE_MODEL := DAP-1620
-  DEVICE_VARIANT := B1
   DEVICE_PACKAGES := kmod-mt7615-firmware rssileds
-  DLINK_HWID := MT76XMT7621-RP-PR2475-NA
   IMAGE_SIZE := 16064k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | \
@@ -627,6 +624,13 @@ define Device/dlink_dap-1620-b1
     append-md5sum-ascii-salted ffff | \
     append-string $$(DLINK_HWID) | \
     check-size
+endef
+
+define Device/dlink_dap-1620-b1
+  $(Device/dlink_dxx-1xx0-x1)
+  DEVICE_MODEL := DAP-1620
+  DEVICE_VARIANT := B1
+  DLINK_HWID := MT76XMT7621-RP-PR2475-NA
 endef
 TARGET_DEVICES += dlink_dap-1620-b1
 
@@ -798,6 +802,14 @@ define Device/dlink_dir-882-r1
 	ab0dff19af8842cdb70a86b4b68d23f7
 endef
 TARGET_DEVICES += dlink_dir-882-r1
+
+define Device/dlink_dra-1360-a1
+  $(Device/dlink_dxx-1xx0-x1)
+  DEVICE_MODEL := DRA-1360
+  DEVICE_VARIANT := A1
+  DLINK_HWID := MT76XMT7621-RP-RA1360-NA
+endef
+TARGET_DEVICES += dlink_dra-1360-a1
 
 define Device/dual-q_h721
   $(Device/dsa-migration)
