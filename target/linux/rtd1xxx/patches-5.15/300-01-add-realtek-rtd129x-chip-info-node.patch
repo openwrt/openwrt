@@ -1,0 +1,26 @@
+From e043c871958cf42407fb5eefd10865dfa9f81382 Mon Sep 17 00:00:00 2001
+From: Phinex Hung <phinex@realtek.com>
+Date: Mon, 17 Apr 2023 19:15:05 +0800
+Subject: [PATCH] arm64: dts: realtek: rtd129x: Add chip info node
+
+Add a DT node for chip identification.
+
+Change-Id: I1aec30d386e863e0b3218363a9051ee7186e3c9f
+---
+ arch/arm64/boot/dts/realtek/rtd129x.dtsi | 7 +++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm64/boot/dts/realtek/rtd129x.dtsi
++++ b/arch/arm64/boot/dts/realtek/rtd129x.dtsi
+@@ -193,3 +193,11 @@
+ 		status = "disabled";
+ 	};
+ };
++
++&sb2 {
++	chip-info@200 {
++		compatible = "realtek,soc-chip";
++		reg = <0x200 0x8>;
++		iso-syscon = <&iso>;
++	};
++};
