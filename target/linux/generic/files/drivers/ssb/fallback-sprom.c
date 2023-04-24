@@ -118,16 +118,6 @@ static void sprom_extract_r23(struct ssb_sprom *out, const u16 *in)
 
 static void sprom_extract_r123(struct ssb_sprom *out, const u16 *in)
 {
-	u16 loc[3];
-
-	if (out->revision == 3)			/* rev 3 moved MAC */
-		loc[0] = SSB_SPROM3_IL0MAC;
-	else {
-		loc[0] = SSB_SPROM1_IL0MAC;
-		loc[1] = SSB_SPROM1_ET0MAC;
-		loc[2] = SSB_SPROM1_ET1MAC;
-	}
-
 	SPEX(et0phyaddr, SSB_SPROM1_ETHPHY, SSB_SPROM1_ETHPHY_ET0A, 0);
 	SPEX(et1phyaddr, SSB_SPROM1_ETHPHY, SSB_SPROM1_ETHPHY_ET1A,
 	     SSB_SPROM1_ETHPHY_ET1A_SHIFT);
@@ -556,8 +546,6 @@ static int sprom_extract(struct ssb_fbs *priv, const u16 *in, u16 size)
 	memset(out, 0, sizeof(*out));
 
 	out->revision = in[size - 1] & 0x00FF;
-	memset(out->et0mac, 0xFF, 6);
-	memset(out->et1mac, 0xFF, 6);
 
 	switch (out->revision) {
 	case 1:
