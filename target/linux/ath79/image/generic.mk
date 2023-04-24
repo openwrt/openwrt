@@ -1688,7 +1688,7 @@ endef
 TARGET_DEVICES += joyit_jt-or750i
 
 define Device/kuwfi_cpe206
-  ATH_SOC := qca9531
+  SOC := qca9531
   DEVICE_VENDOR := KuWfi
   DEVICE_MODEL := CPE206
   DEVICE_ALT0_VENDOR = KuWfi
