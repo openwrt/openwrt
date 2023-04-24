@@ -8,8 +8,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:= git@github.com:Inspectron/inspscript.git
-PKG_SOURCE_VERSION:=2cef599e3b3c06310b63539c88667a4c34c426a7
-
+PKG_SOURCE_VERSION:=535a583d12a140b2bfb14a8f30c274978b59e3e7
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -31,23 +30,33 @@ endef
 
 # Install boot and wireless config
 define Build/InstallDev
-	#Install boot
+	# Install boot
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(CP) $(PKG_BUILD_DIR)/snaponBoot $(1)/etc/init.d
 
-	#Install wireless config
+	# Install wireless config
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) $(PKG_BUILD_DIR)/snapon_wireless_config $(1)/etc/config/wireless
+
+	# Install boot check and hard reset scripts
+	$(CP) $(PKG_BUILD_DIR)/1_check_boot_ok.sh $(1)/etc/init.d
+	$(CP) $(PKG_BUILD_DIR)/99_create_bootok.sh $(1)/etc/init.d
+	$(CP) $(PKG_BUILD_DIR)/bootok $(1)/etc
 endef
 
 define Package/inspscript/install
-	#Install boot
+	# Install boot
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/snaponBoot $(1)/etc/init.d
 
-	#Install wireless config
+	# Install wireless config
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/snapon_wireless_config $(1)/etc/config/wireless
+
+	# Install boot check and hard reset scripts
+	$(CP) $(PKG_BUILD_DIR)/1_check_boot_ok.sh $(1)/etc/init.d
+	$(CP) $(PKG_BUILD_DIR)/99_create_bootok.sh $(1)/etc/init.d
+	$(CP) $(PKG_BUILD_DIR)/bootok $(1)/etc
 endef
 
 $(eval $(call BuildPackage,inspscript))
