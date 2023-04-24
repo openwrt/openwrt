@@ -1,0 +1,76 @@
+From 6e55d8a5ccdd7436efc90c38757a4eba67ee884c Mon Sep 17 00:00:00 2001
+From: Phinex Hung <phinex@realtek.com>
+Date: Fri, 14 Apr 2023 18:48:32 +0800
+Subject: [PATCH] arm64: dts: realtek: rtd129x: Add irq muxes and UART
+ interrupts
+
+Add iso and misc IRQ mux DT nodes to RTD129x SoC family.
+
+Update the UART DT nodes with interrupts from these muxes,
+so that UART0 can be used without earlycon.
+
+Change-Id: If1e52d464a38e1781255fdc6da27feed7645f154
+---
+ arch/arm64/boot/dts/realtek/rtd129x.dtsi | 25 ++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+
+--- a/arch/arm64/boot/dts/realtek/rtd129x.dtsi
++++ b/arch/arm64/boot/dts/realtek/rtd129x.dtsi
+@@ -149,6 +149,16 @@
+ };
+ 
+ &iso {
++	iso_irq_mux: interrupt-controller@0 {
++		compatible = "realtek,rtd129x-iso-irq-mux";
++		syscon = <&iso>;
++		interrupts-extended = <&gic GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>,
++				      <&gic GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-controller;
++		#address-cells = <0>;
++		#interrupt-cells = <1>;
++	};
++
+ 	iso_reset: reset-controller@88 {
+ 		compatible = "snps,dw-low-reset";
+ 		reg = <0x88 0x4>;
+@@ -168,11 +178,22 @@
+ 		reg-io-width = <4>;
+ 		clock-frequency = <27000000>;
+ 		resets = <&iso_reset RTD1295_ISO_RSTN_UR0>;
++		interrupt-parent = <&iso_irq_mux>;
++		interrupts = <2>;
+ 		status = "disabled";
+ 	};
+ };
+ 
+ &misc {
++	misc_irq_mux: interrupt-controller@0 {
++		compatible = "realtek,rtd129x-misc-irq-mux";
++		syscon = <&misc>;
++		interrupts-extended = <&gic GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>,
++				      <&gic GIC_SPI 0 IRQ_TYPE_LEVEL_HIGH>;
++		interrupt-controller;
++		#interrupt-cells = <1>;
++	};
++
+ 	uart1: serial@200 {
+ 		compatible = "snps,dw-apb-uart";
+ 		reg = <0x200 0x100>;
+@@ -180,6 +201,8 @@
+ 		reg-io-width = <4>;
+ 		clock-frequency = <432000000>;
+ 		resets = <&reset2 RTD1295_RSTN_UR1>;
++		interrupt-parent = <&misc_irq_mux>;
++		interrupts = <3>;
+ 		status = "disabled";
+ 	};
+ 
+@@ -190,6 +213,8 @@
+ 		reg-io-width = <4>;
+ 		clock-frequency = <432000000>;
+ 		resets = <&reset2 RTD1295_RSTN_UR2>;
++		interrupt-parent = <&misc_irq_mux>;
++		interrupts = <8>;
+ 		status = "disabled";
+ 	};
+ };
