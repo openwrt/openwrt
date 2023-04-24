@@ -11,3 +11,24 @@ define Device/rtd129x
   BOARD_NAME :=
   FLASH_SIZE :=
 endef
+
+
+define Device/rtd1296-saola-emmc-2gb
+  $(Device/rtd129x)
+  DEVICE_MODEL := Saola eMMC board
+  DEVICE_VARIANT := 2GB
+  BOARD_NAME := emmc
+  FLASH_SIZE := 8gb
+endef
+
+TARGET_DEVICES += rtd1296-saola-emmc-2gb
+
+define Device/rtd1295-giraffe-emmc-2gb
+  $(Device/rtd129x)
+  DEVICE_MODEL := Giraffe eMMC board
+  DEVICE_VARIANT := 2GB
+  BOARD_NAME := emmc
+  FLASH_SIZE := 8gb
+endef
+
+TARGET_DEVICES += rtd1295-giraffe-emmc-2gb
