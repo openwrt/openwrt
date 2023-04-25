@@ -469,7 +469,8 @@ config KERNEL_AIO
 
 config KERNEL_IO_URING
 	bool "Compile the kernel with io_uring support"
-	default y if !SMALL_FLASH
+	depends on !SMALL_FLASH
+	default y if (x86_64 || aarch64)
 
 config KERNEL_FHANDLE
 	bool "Compile the kernel with support for fhandle syscalls"
