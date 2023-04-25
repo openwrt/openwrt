@@ -9,6 +9,23 @@ define Device/d-link_dgs-1210-52
 endef
 TARGET_DEVICES += d-link_dgs-1210-52
 
+define Device/hpe_1920-48g
+  $(Device/hpe_1920)
+  SOC := rtl8393
+  DEVICE_MODEL := 1920-48G (JG927A)
+  H3C_DEVICE_ID := 0x0001002a
+endef
+TARGET_DEVICES += hpe_1920-48g
+
+define Device/hpe_1920-48g-poe
+  $(Device/hpe_1920)
+  SOC := rtl8393
+  DEVICE_MODEL := 1920-48G-PoE (JG928A)
+  DEVICE_PACKAGES += realtek-poe
+  H3C_DEVICE_ID := 0x0001002b
+endef
+TARGET_DEVICES += hpe_1920-48g-poe
+
 # When the factory image won't fit anymore, it can be removed.
 # New installation will be performed booting the initramfs image from
 # ram and then flashing the sysupgrade image from OpenWrt
