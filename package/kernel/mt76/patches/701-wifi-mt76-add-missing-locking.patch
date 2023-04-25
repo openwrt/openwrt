@@ -1,0 +1,100 @@
+From d63cb85c12fe0de6958143167e03c664fbdeeefd Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 14 Apr 2023 14:10:54 +0200
+Subject: [PATCH] wifi: mt76: add missing locking to protect against concurrent
+ rx/status calls
+
+According to the documentation, ieee80211_rx_list must not run concurrently
+with ieee80211_tx_status (or its variants).
+
+Cc: stable@vger.kernel.org
+Fixes: 88046b2c9f6d ("mt76: add support for reporting tx status with skb")
+Reported-by: Brian Coverstone <brian@mainsequence.net>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ dma.c         | 2 ++
+ mt7603/mac.c  | 5 ++++-
+ mt7615/mac.c  | 5 ++++-
+ mt76x02_mac.c | 5 ++++-
+ tx.c          | 4 ++++
+ 5 files changed, 18 insertions(+), 3 deletions(-)
+
+--- a/dma.c
++++ b/dma.c
+@@ -436,7 +436,9 @@ free:
+ free_skb:
+ 	status.skb = tx_info.skb;
+ 	hw = mt76_tx_status_get_hw(dev, tx_info.skb);
++	spin_lock_bh(&dev->rx_lock);
+ 	ieee80211_tx_status_ext(hw, &status);
++	spin_unlock_bh(&dev->rx_lock);
+ 
+ 	return ret;
+ }
+--- a/mt7603/mac.c
++++ b/mt7603/mac.c
+@@ -1277,8 +1277,11 @@ void mt7603_mac_add_txs(struct mt7603_de
+ 	if (wcidx >= MT7603_WTBL_STA || !sta)
+ 		goto out;
+ 
+-	if (mt7603_fill_txs(dev, msta, &info, txs_data))
++	if (mt7603_fill_txs(dev, msta, &info, txs_data)) {
++		spin_lock_bh(&dev->mt76.rx_lock);
+ 		ieee80211_tx_status_noskb(mt76_hw(dev), sta, &info);
++		spin_unlock_bh(&dev->mt76.rx_lock);
++	}
+ 
+ out:
+ 	rcu_read_unlock();
+--- a/mt7615/mac.c
++++ b/mt7615/mac.c
+@@ -1515,8 +1515,11 @@ static void mt7615_mac_add_txs(struct mt
+ 	if (wcid->phy_idx && dev->mt76.phys[MT_BAND1])
+ 		mphy = dev->mt76.phys[MT_BAND1];
+ 
+-	if (mt7615_fill_txs(dev, msta, &info, txs_data))
++	if (mt7615_fill_txs(dev, msta, &info, txs_data)) {
++		spin_lock_bh(&dev->mt76.rx_lock);
+ 		ieee80211_tx_status_noskb(mphy->hw, sta, &info);
++		spin_unlock_bh(&dev->mt76.rx_lock);
++	}
+ 
+ out:
+ 	rcu_read_unlock();
+--- a/mt76x02_mac.c
++++ b/mt76x02_mac.c
+@@ -631,8 +631,11 @@ void mt76x02_send_tx_status(struct mt76x
+ 
+ 	mt76_tx_status_unlock(mdev, &list);
+ 
+-	if (!status.skb)
++	if (!status.skb) {
++		spin_lock_bh(&dev->mt76.rx_lock);
+ 		ieee80211_tx_status_ext(mt76_hw(dev), &status);
++		spin_unlock_bh(&dev->mt76.rx_lock);
++	}
+ 
+ 	if (!len)
+ 		goto out;
+--- a/tx.c
++++ b/tx.c
+@@ -72,7 +72,9 @@ mt76_tx_status_unlock(struct mt76_dev *d
+ 		}
+ 
+ 		hw = mt76_tx_status_get_hw(dev, skb);
++		spin_lock_bh(&dev->rx_lock);
+ 		ieee80211_tx_status_ext(hw, &status);
++		spin_unlock_bh(&dev->rx_lock);
+ 	}
+ 	rcu_read_unlock();
+ }
+@@ -258,7 +260,9 @@ void __mt76_tx_complete_skb(struct mt76_
+ 	if (cb->pktid < MT_PACKET_ID_FIRST) {
+ 		hw = mt76_tx_status_get_hw(dev, skb);
+ 		status.sta = wcid_to_sta(wcid);
++		spin_lock_bh(&dev->rx_lock);
+ 		ieee80211_tx_status_ext(hw, &status);
++		spin_unlock_bh(&dev->rx_lock);
+ 		goto out;
+ 	}
+ 
