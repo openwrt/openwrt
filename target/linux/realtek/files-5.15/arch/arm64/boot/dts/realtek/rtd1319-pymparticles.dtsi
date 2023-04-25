@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR BSD-2-Clause)
+/*
+ * Copyright (c) 2019-2020 Realtek Semiconductor Corp.
+ */
+
+/dts-v1/;
+
+#include "rtd13xx.dtsi"
+
+/ {
+	compatible = "realtek,pym-particles", "realtek,rtd1319";
+	model = "Realtek Pym Particles EVB";
+
+	memory@40000 {
+		device_type = "memory";
+		reg = <0x00040000 0x7ffc0000>; /* boot ROM to 1 GiB or 2 GiB */
+	};
+
+	chosen {
+		stdout-path = "serial0:460800n8";
+	};
+};
+
+/* debug console (J1) */
+&uart0 {
+	status = "okay";
+};
+
+/* M.2 slot (CON8) */
+&uart1 {
+	status = "disabled";
+};
+
+/* GPIO connector (T1) */
+&uart2 {
+	status = "disabled";
+};
