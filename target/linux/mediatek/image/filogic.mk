@@ -6,11 +6,19 @@ define Image/Prepare
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
 endef
 
-define Build/bl2
+define Build/mt7981-bl2
+	cat $(STAGING_DIR_IMAGE)/mt7981-$1-bl2.img >> $@
+endef
+
+define Build/mt7981-bl31-uboot
+	cat $(STAGING_DIR_IMAGE)/mt7981_$1-u-boot.fip >> $@
+endef
+
+define Build/mt7986-bl2
 	cat $(STAGING_DIR_IMAGE)/mt7986-$1-bl2.img >> $@
 endef
 
-define Build/bl31-uboot
+define Build/mt7986-bl31-uboot
 	cat $(STAGING_DIR_IMAGE)/mt7986_$1-u-boot.fip >> $@
 endef
 
@@ -99,24 +107,24 @@ define Device/bananapi_bpi-r3
 	       nor-preloader.bin nor-bl31-uboot.fip \
 	       sdcard.img.gz \
 	       snand-preloader.bin snand-bl31-uboot.fip
-  ARTIFACT/emmc-preloader.bin	:= bl2 emmc-ddr4
-  ARTIFACT/emmc-bl31-uboot.fip	:= bl31-uboot bananapi_bpi-r3-emmc
-  ARTIFACT/nor-preloader.bin	:= bl2 nor-ddr4
-  ARTIFACT/nor-bl31-uboot.fip	:= bl31-uboot bananapi_bpi-r3-nor
-  ARTIFACT/snand-preloader.bin	:= bl2 spim-nand-ddr4
-  ARTIFACT/snand-bl31-uboot.fip	:= bl31-uboot bananapi_bpi-r3-snand
+  ARTIFACT/emmc-preloader.bin	:= mt7986-bl2 emmc-ddr4
+  ARTIFACT/emmc-bl31-uboot.fip	:= mt7986-bl31-uboot bananapi_bpi-r3-emmc
+  ARTIFACT/nor-preloader.bin	:= mt7986-bl2 nor-ddr4
+  ARTIFACT/nor-bl31-uboot.fip	:= mt7986-bl31-uboot bananapi_bpi-r3-nor
+  ARTIFACT/snand-preloader.bin	:= mt7986-bl2 spim-nand-ddr4
+  ARTIFACT/snand-bl31-uboot.fip	:= mt7986-bl31-uboot bananapi_bpi-r3-snand
   ARTIFACT/sdcard.img.gz	:= mt7986-gpt sdmmc |\
-				   pad-to 17k | bl2 sdmmc-ddr4 |\
-				   pad-to 6656k | bl31-uboot bananapi_bpi-r3-sdmmc |\
+				   pad-to 17k | mt7986-bl2 sdmmc-ddr4 |\
+				   pad-to 6656k | mt7986-bl31-uboot bananapi_bpi-r3-sdmmc |\
 				$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
 				   pad-to 12M | append-image-stage initramfs-recovery.itb | check-size 44m |\
 				) \
-				   pad-to 44M | bl2 spim-nand-ddr4 |\
-				   pad-to 45M | bl31-uboot bananapi_bpi-r3-snand |\
-				   pad-to 49M | bl2 nor-ddr4 |\
-				   pad-to 50M | bl31-uboot bananapi_bpi-r3-nor |\
-				   pad-to 51M | bl2 emmc-ddr4 |\
-				   pad-to 52M | bl31-uboot bananapi_bpi-r3-emmc |\
+				   pad-to 44M | mt7986-bl2 spim-nand-ddr4 |\
+				   pad-to 45M | mt7986-bl31-uboot bananapi_bpi-r3-snand |\
+				   pad-to 49M | mt7986-bl2 nor-ddr4 |\
+				   pad-to 50M | mt7986-bl31-uboot bananapi_bpi-r3-nor |\
+				   pad-to 51M | mt7986-bl2 emmc-ddr4 |\
+				   pad-to 52M | mt7986-bl31-uboot bananapi_bpi-r3-emmc |\
 				   pad-to 56M | mt7986-gpt emmc |\
 				$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS),\
 				   pad-to 64M | append-image squashfs-sysupgrade.itb | check-size |\
