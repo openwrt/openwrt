@@ -1,0 +1,76 @@
+From 8c63ab370e33ec72b18550c0a8d9c5ce48a0263b Mon Sep 17 00:00:00 2001
+From: Phinex Hung <phinex@realtek.com>
+Date: Wed, 26 Apr 2023 18:46:53 +0800
+Subject: [PATCH] arm64: dts: realtek: rtd129x: add hwspinlock node
+
+Change-Id: If09333e8c3166e7a077c66c105570dab814492a6
+---
+ arch/arm64/boot/dts/realtek/rtd129x.dtsi | 54 ++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
+
+--- a/arch/arm64/boot/dts/realtek/rtd129x.dtsi
++++ b/arch/arm64/boot/dts/realtek/rtd129x.dtsi
+@@ -230,9 +230,63 @@
+ };
+ 
+ &sb2 {
++	sb2_lock0: hwlock@0 {
++		compatible = "realtek,sb2-hwlock";
++		#hwlock-cells = <1>;
++		reg = <0x0 0x4>;
++	};
++
+ 	chip-info@200 {
+ 		compatible = "realtek,soc-chip";
+ 		reg = <0x200 0x8>;
+ 		iso-syscon = <&iso>;
+ 	};
++
++	sb2_lock1: hwlock@620 {
++		compatible = "realtek,sb2-hwlock";
++		#hwlock-cells = <1>;
++		reg = <0x620 0x4>;
++	};
++
++	sb2_lock2: hwlock@624 {
++		compatible = "realtek,sb2-hwlock";
++		#hwlock-cells = <1>;
++		reg = <0x624 0x4>;
++	};
++
++	sb2_lock3: hwlock@628 {
++		compatible = "realtek,sb2-hwlock";
++		#hwlock-cells = <1>;
++		reg = <0x628 0x4>;
++	};
++
++	sb2_lock4: hwlock@62c {
++		compatible = "realtek,sb2-hwlock";
++		#hwlock-cells = <1>;
++		reg = <0x62c 0x4>;
++	};
++
++	sb2_lock5: hwlock@630 {
++		compatible = "realtek,sb2-hwlock";
++		#hwlock-cells = <1>;
++		reg = <0x630 0x4>;
++	};
++
++	sb2_lock6: hwlock@634 {
++		compatible = "realtek,sb2-hwlock";
++		#hwlock-cells = <1>;
++		reg = <0x634 0x4>;
++	};
++
++	sb2_lock7: hwlock@638 {
++		compatible = "realtek,sb2-hwlock";
++		#hwlock-cells = <1>;
++		reg = <0x638 0x4>;
++	};
++
++	sb2_lock8: hwlock@63c {
++		compatible = "realtek,sb2-hwlock";
++		#hwlock-cells = <1>;
++		reg = <0x63c 0x4>;
++	};
+ };
