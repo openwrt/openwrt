@@ -30,6 +30,7 @@ define Trusted-Firmware-A/Default
   DDR3_FLYBY:=
   DDR_TYPE:=
   NAND_TYPE:=
+  BOARD_QFN:=
 endef
 
 define Trusted-Firmware-A/mt7622-nor-1ddr
@@ -90,6 +91,46 @@ define Trusted-Firmware-A/mt7622-sdmmc-2ddr
   PLAT:=mt7622
   BOOT_DEVICE:=sdmmc
   DDR3_FLYBY:=1
+endef
+
+define Trusted-Firmware-A/mt7981-nor-ddr3
+  NAME:=MediaTek MT7981 (SPI-NOR, DDR3)
+  BOOT_DEVICE:=nor
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
+endef
+
+define Trusted-Firmware-A/mt7981-emmc-ddr3
+  NAME:=MediaTek MT7981 (eMMC, DDR3)
+  BOOT_DEVICE:=emmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
+endef
+
+define Trusted-Firmware-A/mt7981-sdmmc-ddr3
+  NAME:=MediaTek MT7981 (SD card, DDR3)
+  BOOT_DEVICE:=sdmmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
+endef
+
+define Trusted-Firmware-A/mt7986-snand-ddr3
+  NAME:=MediaTek MT7981 (SPI-NAND via SNFI, DDR3)
+  BOOT_DEVICE:=snand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
+endef
+
+define Trusted-Firmware-A/mt7981-spim-nand-ddr3
+  NAME:=MediaTek MT7981 (SPI-NAND via SPIM, DDR3)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
 endef
 
 define Trusted-Firmware-A/mt7986-nor-ddr4
@@ -182,6 +223,11 @@ TFA_TARGETS:= \
 	mt7622-emmc-2ddr \
 	mt7622-sdmmc-1ddr \
 	mt7622-sdmmc-2ddr \
+	mt7981-emmc-ddr3 \
+	mt7981-nor-ddr3 \
+	mt7981-sdmmc-ddr3 \
+	mt7986-snand-ddr3 \
+	mt7981-spim-nand-ddr3 \
 	mt7986-emmc-ddr3 \
 	mt7986-nor-ddr3 \
 	mt7986-sdmmc-ddr3 \
@@ -197,6 +243,7 @@ TFA_MAKE_FLAGS += \
 	BOOT_DEVICE=$(BOOT_DEVICE) \
 	USE_MKIMAGE=1 MKIMAGE=$(STAGING_DIR_HOST)/bin/mkimage \
 	$(if $(findstring ddr4,$(DDR_TYPE)),DRAM_USE_DDR4=1) \
+	$(if $(BOARD_QFN),BOARD_QFN=1,BOARD_BGA=1) \
 	$(if $(NAND_TYPE),NAND_TYPE=$(NAND_TYPE)) \
 	HAVE_DRAM_OBJ_FILE=yes \
 	$(if $(DDR3_FLYBY),DDR3_FLYBY=1) \
