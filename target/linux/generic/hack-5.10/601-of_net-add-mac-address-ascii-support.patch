@@ -1,19 +1,19 @@
 From: Yousong Zhou <yszhou4tech@gmail.com>
-Subject: [PATCH] ath79: add nvmem cell mac-address-ascii support
+Subject: [PATCH] of: net: add nvmem cell mac-address-ascii support
 
-This is needed for devices with mac address stored in ascii format, e.g.
-HiWiFi HC6361 to be ported in the following patch.
+This is needed for devices with mac address stored in ascii format,
+e.g. HiWiFi HC6361 to be ported in the following patch.
 
 Submitted-by: Yousong Zhou <yszhou4tech@gmail.com>
 ---
- net/ethernet/eth.c                            | 83 ++++++++++++------
+ net/core/of_net.c | 83 ++++++++++++------
  1 files changed, 72 insertions(+), 11 deletions(-)
 
---- a/net/ethernet/eth.c
-+++ b/net/ethernet/eth.c
-@@ -539,6 +539,63 @@ int eth_platform_get_mac_address(struct
+--- a/drivers/of/of_net.c
++++ b/drivers/of/of_net.c
+@@ -57,13 +57,70 @@ static int of_get_mac_addr(struct device
+ 	return -ENODEV;
  }
- EXPORT_SYMBOL(eth_platform_get_mac_address);
  
 +static void *nvmem_cell_get_mac_address(struct nvmem_cell *cell)
 +{
@@ -72,35 +72,40 @@ Submitted-by: Yousong Zhou <yszhou4tech@gmail.com>
 +	},
 +};
 +
- /**
-  * Obtain the MAC address from an nvmem cell named 'mac-address' associated
-  * with given device.
-@@ -550,21 +607,28 @@ EXPORT_SYMBOL(eth_platform_get_mac_addre
-  */
- int nvmem_get_mac_address(struct device *dev, void *addrbuf)
+ static int of_get_mac_addr_nvmem(struct device_node *np, u8 *addr)
  {
+ 	struct platform_device *pdev = of_find_device_by_node(np);
 +	struct nvmem_cell_mac_address_property *property;
  	struct nvmem_cell *cell;
  	const void *mac;
 -	size_t len;
-+	int i;
-+
+-	int ret;
++	int ret, i;
+ 
+ 	/* Try lookup by device first, there might be a nvmem_cell_lookup
+ 	 * associated with a given device.
+@@ -74,17 +131,26 @@ static int of_get_mac_addr_nvmem(struct
+ 		return ret;
+ 	}
+ 
+-	cell = of_nvmem_cell_get(np, "mac-address");
 +	for (i = 0; i < ARRAY_SIZE(nvmem_cell_mac_address_properties); i++) {
 +		property = &nvmem_cell_mac_address_properties[i];
-+		cell = nvmem_cell_get(dev, property->name);
-+		/* For -EPROBE_DEFER don't try other properties. We'll get back to this one. */
++		cell = of_nvmem_cell_get(np, property->name);
++		/* For -EPROBE_DEFER don't try other properties.
++		 * We'll get back to this one.
++		 */
 +		if (!IS_ERR(cell) || PTR_ERR(cell) == -EPROBE_DEFER)
 +			break;
 +	}
- 
--	cell = nvmem_cell_get(dev, "mac-address");
++
  	if (IS_ERR(cell))
  		return PTR_ERR(cell);
  
 -	mac = nvmem_cell_read(cell, &len);
 +	mac = property->read(cell);
  	nvmem_cell_put(cell);
--
+ 
  	if (IS_ERR(mac))
  		return PTR_ERR(mac);
  

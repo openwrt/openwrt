@@ -7,7 +7,8 @@ define Device/comtrend_ar-5387un
   CHIP_ID := 6328
   CFE_BOARD_ID := 96328A-1441N1
   FLASH_MB := 16
-  DEVICE_PACKAGES += $(USB2_PACKAGES) $(B43_PACKAGES) \
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES) broadcom-43225-sprom \
     kmod-leds-bcm6328
 endef
 TARGET_DEVICES += comtrend_ar-5387un

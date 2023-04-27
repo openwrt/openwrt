@@ -246,6 +246,18 @@ define Device/adtran_bsap1840
 endef
 TARGET_DEVICES += adtran_bsap1840
 
+define Device/alcatel_hh40v
+  SOC := qca9531
+  DEVICE_VENDOR := Alcatel
+  DEVICE_MODEL := HH40V
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-serial-option kmod-usb-net-rndis
+  IMAGE_SIZE := 14976k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs
+endef
+TARGET_DEVICES += alcatel_hh40v
+
 define Device/airtight_c-75
   SOC := qca9550
   DEVICE_VENDOR := AirTight Networks
@@ -407,6 +419,12 @@ define Device/aruba_ap-175
   DEVICE_MODEL := AP-175
   IMAGE_SIZE := 16000k
   DEVICE_PACKAGES := kmod-gpio-pca953x kmod-hwmon-lm75 kmod-i2c-gpio kmod-rtc-ds1374
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x42000
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 8128 | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
 endef
 TARGET_DEVICES += aruba_ap-175
 
@@ -611,13 +629,14 @@ endef
 define Device/buffalo_wzr-hp-g300nh-rb
   $(Device/buffalo_wzr-hp-g300nh)
   DEVICE_MODEL := WZR-HP-G300NH (RTL8366RB switch)
+  DEVICE_PACKAGES += kmod-switch-rtl8366rb
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g300nh-rb
 
 define Device/buffalo_wzr-hp-g300nh-s
   $(Device/buffalo_wzr-hp-g300nh)
   DEVICE_MODEL := WZR-HP-G300NH (RTL8366S switch)
-  DEVICE_PACKAGES += kmod-switch-rtl8366rb
+  DEVICE_PACKAGES += kmod-switch-rtl8366s
 endef
 TARGET_DEVICES += buffalo_wzr-hp-g300nh-s
 

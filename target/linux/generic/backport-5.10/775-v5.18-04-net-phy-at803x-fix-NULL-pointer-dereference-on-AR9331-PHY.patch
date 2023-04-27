@@ -1,0 +1,56 @@
+From 9926de7315be3d606cc011a305ad9adb9e8e14c9 Mon Sep 17 00:00:00 2001
+From: Oleksij Rempel <o.rempel@pengutronix.de>
+Date: Sat, 18 Jun 2022 14:23:33 +0200
+Subject: [PATCH] net: phy: at803x: fix NULL pointer dereference on AR9331 PHY
+
+Latest kernel will explode on the PHY interrupt config, since it depends
+now on allocated priv. So, run probe to allocate priv to fix it.
+
+ ar9331_switch ethernet.1:10 lan0 (uninitialized): PHY [!ahb!ethernet@1a000000!mdio!switch@10:00] driver [Qualcomm Atheros AR9331 built-in PHY] (irq=13)
+ CPU 0 Unable to handle kernel paging request at virtual address 0000000a, epc == 8050e8a8, ra == 80504b34
+         ...
+ Call Trace:
+ [<8050e8a8>] at803x_config_intr+0x5c/0xd0
+ [<80504b34>] phy_request_interrupt+0xa8/0xd0
+ [<8050289c>] phylink_bringup_phy+0x2d8/0x3ac
+ [<80502b68>] phylink_fwnode_phy_connect+0x118/0x130
+ [<8074d8ec>] dsa_slave_create+0x270/0x420
+ [<80743b04>] dsa_port_setup+0x12c/0x148
+ [<8074580c>] dsa_register_switch+0xaf0/0xcc0
+ [<80511344>] ar9331_sw_probe+0x370/0x388
+ [<8050cb78>] mdio_probe+0x44/0x70
+ [<804df300>] really_probe+0x200/0x424
+ [<804df7b4>] __driver_probe_device+0x290/0x298
+ [<804df810>] driver_probe_device+0x54/0xe4
+ [<804dfd50>] __device_attach_driver+0xe4/0x130
+ [<804dcb00>] bus_for_each_drv+0xb4/0xd8
+ [<804dfac4>] __device_attach+0x104/0x1a4
+ [<804ddd24>] bus_probe_device+0x48/0xc4
+ [<804deb44>] deferred_probe_work_func+0xf0/0x10c
+ [<800a0ffc>] process_one_work+0x314/0x4d4
+ [<800a17fc>] worker_thread+0x2a4/0x354
+ [<800a9a54>] kthread+0x134/0x13c
+ [<8006306c>] ret_from_kernel_thread+0x14/0x1c
+
+Same Issue would affect some other PHYs (QCA8081, QCA9561), so fix it
+too.
+
+Fixes: 3265f4218878 ("net: phy: at803x: add fiber support")
+Signed-off-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/phy/at803x.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/net/phy/at803x.c
++++ b/drivers/net/phy/at803x.c
+@@ -1530,6 +1530,8 @@ static struct phy_driver at803x_driver[]
+ 	/* ATHEROS AR9331 */
+ 	PHY_ID_MATCH_EXACT(ATH9331_PHY_ID),
+ 	.name			= "Qualcomm Atheros AR9331 built-in PHY",
++	.probe			= at803x_probe,
++	.remove			= at803x_remove,
+ 	.suspend		= at803x_suspend,
+ 	.resume			= at803x_resume,
+ 	.flags			= PHY_POLL_CABLE_TEST,

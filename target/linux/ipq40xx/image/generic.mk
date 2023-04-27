@@ -590,8 +590,7 @@ define Device/glinet_gl-ap1300
 	KERNEL_INSTALL := 1
 	DEVICE_PACKAGES := ipq-wifi-glinet_gl-ap1300 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += glinet_gl-ap1300
+TARGET_DEVICES += glinet_gl-ap1300
 
 define Device/glinet_gl-b1300
 	$(call Device/FitzImage)

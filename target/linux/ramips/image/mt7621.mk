@@ -457,6 +457,7 @@ TARGET_DEVICES += buffalo_wsr-2533dhpl
 
 define Device/buffalo_wsr-600dhp
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WSR-600DHP
@@ -526,6 +527,7 @@ define Device/cudy_x6
   DEVICE_MODEL := X6
   UIMAGE_NAME := R13
   DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  SUPPORTED_DEVICES += R13
 endef
 TARGET_DEVICES += cudy_x6
 

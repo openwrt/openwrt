@@ -18,7 +18,7 @@
 
 	keys {
 		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		poll-interval = <100>;
 
 		reset {
 			label = "reset";
@@ -58,7 +58,7 @@
 	};
 
 	bcm43222-sprom {
-		compatible = "brcm,bcm43222-sprom";
+		compatible = "brcm,ssb-sprom";
 
 		pci-bus = <0>;
 		pci-dev = <1>;
@@ -67,6 +67,7 @@
 		nvmem-cell-names = "mac-address";
 		mac-address-increment = <1>;
 
+		brcm,sprom = "brcm/bcm43222-sprom.bin";
 		brcm,sprom-fixups = <97 0xfeb3>,
 				    <98 0x1618>,
 				    <99 0xfab0>,

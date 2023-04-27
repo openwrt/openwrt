@@ -10,7 +10,7 @@
  	unsigned int time_window;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1367,6 +1367,7 @@ static int hostapd_setup_bss(struct host
+@@ -1442,6 +1442,7 @@ static int hostapd_setup_bss(struct host
  		struct radius_das_conf das_conf;
  		os_memset(&das_conf, 0, sizeof(das_conf));
  		das_conf.port = conf->radius_das_port;

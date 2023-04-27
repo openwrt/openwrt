@@ -1,3 +1,20 @@
+From f5d43ddd334b7c32fcaed9ba46afbd85cb467f1f Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 19 Mar 2023 12:56:28 +0000
+Subject: [PATCH] net: ethernet: mtk_eth_soc: add support for MT7981 SoC
+
+The MediaTek MT7981 SoC comes with two 1G/2.5G SGMII ports, just like
+MT7986.
+
+In addition MT7981 is equipped with a built-in 1000Base-T PHY which can
+be used with GMAC1.
+
+As many MT7981 boards make use of inverting SGMII signal polarity, add
+new device-tree attribute 'mediatek,pn_swap' to support them.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
 --- a/drivers/net/ethernet/mediatek/mtk_eth_path.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_path.c
 @@ -96,12 +96,20 @@ static int set_mux_gmac2_gmac0_to_gephy(

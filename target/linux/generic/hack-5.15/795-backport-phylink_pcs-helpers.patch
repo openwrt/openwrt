@@ -1,3 +1,20 @@
+From 027586ae8ecacff49757ed854c020f35d24a599c Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 11 Mar 2023 03:44:41 +0000
+Subject: [PATCH] generic: backport some phylink helper functions
+
+It isn't feasible to literally backport all upstream phylink_pcs changes
+down to Linux 5.15: It's just too many patches, and many downstream
+drivers and hacks are likely to break. We are too close to branching off
+to risk this, and it's also just too much work.
+Instead just add helper functions used by modern PCS drivers while keeping
+the original functions instact as well. While this may add a kilobyte or
+two of extra kernel size, it has the advantage that we get the best of both
+worlds: None of the existing codepaths are touched, but yet we have the
+option to backport singular improvements to Ethernet drivers where needed.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+
 --- a/include/linux/phylink.h
 +++ b/include/linux/phylink.h
 @@ -584,10 +584,37 @@ int phylink_speed_up(struct phylink *pl)

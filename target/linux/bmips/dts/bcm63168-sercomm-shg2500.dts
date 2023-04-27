@@ -27,7 +27,7 @@
 
 	keys {
 		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		poll-interval = <100>;
 
 		wps {
 			label = "wps";
@@ -42,6 +42,19 @@
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
 		};
+	};
+
+	bcm4360-sprom {
+		compatible = "brcm,bcma-sprom";
+
+		pci-bus = <1>;
+		pci-dev = <0>;
+
+		nvmem-cells = <&macaddr_cferom_6a0>;
+		nvmem-cell-names = "mac-address";
+		mac-address-increment = <1>;
+
+		brcm,sprom = "brcm/bcm4360-sprom.bin";
 	};
 };
 

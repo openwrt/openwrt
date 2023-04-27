@@ -1130,3 +1130,8 @@ static struct platform_driver bcm6368_enetsw_driver = {
 	.remove	= bcm6368_enetsw_remove,
 };
 module_platform_driver(bcm6368_enetsw_driver);
+
+MODULE_AUTHOR("Álvaro Fernández Rojas <noltari@gmail.com>");
+MODULE_DESCRIPTION("BCM6368 Ethernet Switch Controller Driver");
+MODULE_LICENSE("GPL v2");
+MODULE_ALIAS("platform:bcm6368-enetsw");

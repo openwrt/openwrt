@@ -11,9 +11,9 @@
 
 	aliases {
 		led-boot = &led_internet_blue;
-		led-failsafe = &led_internet_blue;
+		led-failsafe = &led_internet_red;
 		led-running = &led_internet_blue;
-		led-upgrade = &led_internet_blue;
+		led-upgrade = &led_internet_red;
 		label-mac-device = &gmac0;
 	};
 
@@ -45,7 +45,7 @@
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
-		internet_red {
+		led_internet_red: internet_red {
 			label = "red:internet";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
@@ -102,10 +102,18 @@
 				read-only;
 			};
 
-			bdinfo: partition@1ff0000 {
+			partition@1ff0000 {
 				label = "bdinfo";
 				reg = <0x1ff0000 0x10000>;
 				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_bdinfo_de00: macaddr@de00 {
+					reg = <0xde00 0x6>;
+				};
 			};
 		};
 	};
@@ -121,6 +129,9 @@
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x0000>;
 		mediatek,disable-radar-background;
+
+		nvmem-cells = <&macaddr_bdinfo_de00>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
@@ -173,15 +184,5 @@
 	gpio {
 		groups = "uart3", "jtag";
 		function = "gpio";
-	};
-};
-
-&bdinfo {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_bdinfo_de00: macaddr@de00 {
-		reg = <0xde00 0x6>;
 	};
 };
