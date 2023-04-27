@@ -1,0 +1,146 @@
+From 64774bdd8bdf378a168c50092d94515ac288edd0 Mon Sep 17 00:00:00 2001
+From: Phinex Hung <phinex@realtek.com>
+Date: Thu, 27 Apr 2023 10:19:09 +0800
+Subject: [PATCH] arm64: dts: realtek: rtd129x: add clock nodes for rtd129x
+
+remove simple reset and rely on our reset driver
+change uart node to rely on realtek's clock and reset
+
+Change-Id: I85a1207cdd0277196b68459c8e05483904e34a8a
+---
+ arch/arm64/boot/dts/realtek/rtd129x.dtsi | 75 +++++++++++-------------
+ 1 file changed, 35 insertions(+), 40 deletions(-)
+
+--- a/arch/arm64/boot/dts/realtek/rtd129x.dtsi
++++ b/arch/arm64/boot/dts/realtek/rtd129x.dtsi
+@@ -10,7 +10,8 @@
+ /memreserve/	0x0000000010000000 0x0000000000014000;
+ 
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+-#include <dt-bindings/reset/realtek,rtd1295.h>
++#include <dt-bindings/reset/rtd1295-reset.h>
++#include <dt-bindings/clock/rtd1295-clk.h>
+ 
+ / {
+ 	interrupt-parent = <&gic>;
+@@ -46,11 +47,22 @@
+ 		interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+ 	};
+ 
+-	osc27M: osc {
+-		compatible = "fixed-clock";
+-		clock-frequency = <27000000>;
+-		#clock-cells = <0>;
+-		clock-output-names = "osc27M";
++	clocks {
++		osc27m: osc {
++			compatible = "fixed-clock";
++			clock-frequency = <27000000>;
++			clock-output-names = "osc27m";
++			#clock-cells = <0>;
++		};
++
++		clk432m: clk {
++			compatible = "fixed-factor-clock";
++			#clock-cells = <0>;
++			clocks = <&osc27m>;
++			clock-div = <1>;
++			clock-mult = <16>;
++			clock-output-names = "clk432m";
++		};
+ 	};
+ 
+ 	soc {
+@@ -133,32 +145,21 @@
+ };
+ 
+ &crt {
+-	reset1: reset-controller@0 {
+-		compatible = "snps,dw-low-reset";
+-		reg = <0x0 0x4>;
+-		#reset-cells = <1>;
+-	};
+-
+-	reset2: reset-controller@4 {
+-		compatible = "snps,dw-low-reset";
+-		reg = <0x4 0x4>;
+-		#reset-cells = <1>;
+-	};
+-
+-	reset3: reset-controller@8 {
+-		compatible = "snps,dw-low-reset";
+-		reg = <0x8 0x4>;
++	clkc: clock-controller {
++		compatible = "realtek,rtd1295-crt-clk";
++		#clock-cells = <1>;
+ 		#reset-cells = <1>;
++		hwlocks = <&sb2_lock0 0>;
+ 	};
++};
+ 
+-	reset4: reset-controller@50 {
+-		compatible = "snps,dw-low-reset";
+-		reg = <0x50 0x4>;
++&iso {
++	iso_clkc: clock-controller {
++		compatible = "realtek,rtd1295-iso-clk";
++		#clock-cells = <1>;
+ 		#reset-cells = <1>;
+ 	};
+-};
+ 
+-&iso {
+ 	iso_irq_mux: interrupt-controller@0 {
+ 		compatible = "realtek,rtd129x-iso-irq-mux";
+ 		syscon = <&iso>;
+@@ -169,16 +170,10 @@
+ 		#interrupt-cells = <1>;
+ 	};
+ 
+-	iso_reset: reset-controller@88 {
+-		compatible = "snps,dw-low-reset";
+-		reg = <0x88 0x4>;
+-		#reset-cells = <1>;
+-	};
+-
+ 	wdt: watchdog@680 {
+ 		compatible = "realtek,rtd1295-watchdog";
+ 		reg = <0x680 0x100>;
+-		clocks = <&osc27M>;
++		clocks = <&osc27m>;
+ 	};
+ 
+ 	uart0: serial@800 {
+@@ -186,8 +181,8 @@
+ 		reg = <0x800 0x400>;
+ 		reg-shift = <2>;
+ 		reg-io-width = <4>;
+-		clock-frequency = <27000000>;
+-		resets = <&iso_reset RTD1295_ISO_RSTN_UR0>;
++		clocks = <&iso_clkc RTD1295_ISO_CLK_EN_UR0>;
++		resets = <&iso_clkc RTD1295_ISO_RSTN_UR0>;
+ 		interrupt-parent = <&iso_irq_mux>;
+ 		interrupts = <2>;
+ 		status = "disabled";
+@@ -209,8 +204,8 @@
+ 		reg = <0x200 0x100>;
+ 		reg-shift = <2>;
+ 		reg-io-width = <4>;
+-		clock-frequency = <432000000>;
+-		resets = <&reset2 RTD1295_RSTN_UR1>;
++		clocks = <&clkc RTD1295_CRT_CLK_EN_UR1>;
++		resets = <&clkc RTD1295_CRT_RSTN_UR1>;
+ 		interrupt-parent = <&misc_irq_mux>;
+ 		interrupts = <3>;
+ 		status = "disabled";
+@@ -221,8 +216,8 @@
+ 		reg = <0x400 0x100>;
+ 		reg-shift = <2>;
+ 		reg-io-width = <4>;
+-		clock-frequency = <432000000>;
+-		resets = <&reset2 RTD1295_RSTN_UR2>;
++		clocks = <&clkc RTD1295_CRT_CLK_EN_UR2>;
++		resets = <&clkc RTD1295_CRT_RSTN_UR2>;
+ 		interrupt-parent = <&misc_irq_mux>;
+ 		interrupts = <8>;
+ 		status = "disabled";
