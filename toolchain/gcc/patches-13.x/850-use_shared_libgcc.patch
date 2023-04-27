@@ -7,8 +7,8 @@ Date:   Sun Feb 12 20:25:47 2012 +0000
     SVN-Revision: 30486
 --- a/gcc/config/arm/linux-eabi.h
 +++ b/gcc/config/arm/linux-eabi.h
-@@ -132,10 +132,6 @@
-   "%{Ofast|ffast-math|funsafe-math-optimizations:crtfastmath.o%s} "	\
+@@ -129,10 +129,6 @@
+   "%{Ofast|ffast-math|funsafe-math-optimizations:%{!shared:crtfastmath.o%s}} "	\
    LINUX_OR_ANDROID_LD (GNU_USER_TARGET_ENDFILE_SPEC, ANDROID_ENDFILE_SPEC)
  
 -/* Use the default LIBGCC_SPEC, not the version in linux-elf.h, as we
@@ -20,8 +20,8 @@ Date:   Sun Feb 12 20:25:47 2012 +0000
     is used.  */
 --- a/gcc/config/linux.h
 +++ b/gcc/config/linux.h
-@@ -71,6 +71,10 @@ see the files COPYING3 and COPYING.RUNTI
- 	  builtin_version ("CRuntime_Musl");			\
+@@ -58,6 +58,10 @@ see the files COPYING3 and COPYING.RUNTI
+ 	builtin_assert ("system=posix");			\
      } while (0)
  
 +#ifndef LIBGCC_SPEC

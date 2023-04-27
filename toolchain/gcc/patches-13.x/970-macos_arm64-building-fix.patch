@@ -17,15 +17,15 @@ Date:   Mon Aug 16 13:16:21 2021 +0100
 
 --- a/gcc/config/aarch64/aarch64.h
 +++ b/gcc/config/aarch64/aarch64.h
-@@ -1290,7 +1290,7 @@ extern const char *aarch64_rewrite_mcpu
- #define MCPU_TO_MARCH_SPEC_FUNCTIONS \
-   { "rewrite_mcpu", aarch64_rewrite_mcpu },
+@@ -1185,7 +1185,7 @@ extern enum aarch64_code_model aarch64_c
  
+ /* Extra specs when building a native AArch64-hosted compiler.
+    Option rewriting rules based on host system.  */
 -#if defined(__aarch64__)
 +#if defined(__aarch64__) && ! defined(__APPLE__)
  extern const char *host_detect_local_cpu (int argc, const char **argv);
  #define HAVE_LOCAL_CPU_DETECT
- # define EXTRA_SPEC_FUNCTIONS						\
+ # define EXTRA_SPEC_FUNCTIONS                                           \
 --- a/gcc/config/host-darwin.cc
 +++ b/gcc/config/host-darwin.cc
 @@ -23,6 +23,8 @@
