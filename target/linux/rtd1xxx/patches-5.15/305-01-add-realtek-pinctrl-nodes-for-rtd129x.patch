@@ -1,0 +1,107 @@
+From 15ca1a2555e58fd7af08a484c2552a4be268c5df Mon Sep 17 00:00:00 2001
+From: Phinex Hung <phinex@realtek.com>
+Date: Thu, 27 Apr 2023 19:20:53 +0800
+Subject: [PATCH] arm64: dts: realtek: rtd129x: add pinctrl nodes
+
+add rtd129x-pinctrl.dtsi for the detail setting for each pin
+
+Change-Id: I10bacc498a1985333858c26259a219b8daaa803e
+---
+ arch/arm64/boot/dts/realtek/rtd129x.dtsi      |  49 +++
+ 1 files changed, 45 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/realtek/rtd129x-pinctrl.dtsi
+
+--- a/arch/arm64/boot/dts/realtek/rtd129x.dtsi
++++ b/arch/arm64/boot/dts/realtek/rtd129x.dtsi
+@@ -98,6 +98,16 @@
+ 				ranges = <0x0 0x7000 0x1000>;
+ 			};
+ 
++			cr_pinctrl: pinctrl@12600 {
++				compatible = "realtek,rtd1295-cr-pinctrl", "syscon";
++				reg = <0x12600 0x100>;
++				reg-io-width = <4>;
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges = <0x0 0x12600 0x100>;
++
++			};
++
+ 			sb2: syscon@1a000 {
+ 				compatible = "syscon", "simple-mfd";
+ 				reg = <0x1a000 0x1000>;
+@@ -124,6 +134,15 @@
+ 				#size-cells = <1>;
+ 				ranges = <0x0 0x1d000 0x2000>;
+ 			};
++
++			disp_pinctrl: pinctrl@4d000 {
++				compatible = "realtek,rtd1295-disp-pinctrl", "syscon";
++				reg = <0x4d000 0x100>;
++				reg-io-width = <4>;
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges = <0x0 0x4d000 0x100>;
++			};
+ 		};
+ 
+ 		gic: interrupt-controller@ff011000 {
+@@ -170,6 +189,15 @@
+ 		#interrupt-cells = <1>;
+ 	};
+ 
++	iso_pinctrl: pinctrl@300 {
++		compatible = "realtek,rtd1295-iso-pinctrl", "syscon";
++		reg = <0x300 0x24>;
++		reg-io-width = <4>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0x0 0x300 0x24>;
++	};
++
+ 	wdt: watchdog@680 {
+ 		compatible = "realtek,rtd1295-watchdog";
+ 		reg = <0x680 0x100>;
+@@ -181,6 +209,8 @@
+ 		reg = <0x800 0x400>;
+ 		reg-shift = <2>;
+ 		reg-io-width = <4>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&uart0_pins>;
+ 		clocks = <&iso_clkc RTD1295_ISO_CLK_EN_UR0>;
+ 		resets = <&iso_clkc RTD1295_ISO_RSTN_UR0>;
+ 		interrupt-parent = <&iso_irq_mux>;
+@@ -204,6 +234,8 @@
+ 		reg = <0x200 0x100>;
+ 		reg-shift = <2>;
+ 		reg-io-width = <4>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&uart1_pins>;
+ 		clocks = <&clkc RTD1295_CRT_CLK_EN_UR1>;
+ 		resets = <&clkc RTD1295_CRT_RSTN_UR1>;
+ 		interrupt-parent = <&misc_irq_mux>;
+@@ -216,6 +248,8 @@
+ 		reg = <0x400 0x100>;
+ 		reg-shift = <2>;
+ 		reg-io-width = <4>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&uart2_0_pins>;
+ 		clocks = <&clkc RTD1295_CRT_CLK_EN_UR2>;
+ 		resets = <&clkc RTD1295_CRT_RSTN_UR2>;
+ 		interrupt-parent = <&misc_irq_mux>;
+@@ -284,4 +318,15 @@
+ 		#hwlock-cells = <1>;
+ 		reg = <0x63c 0x4>;
+ 	};
++
++	sb2_pinctrl: pinctrl@900 {
++		compatible = "realtek,rtd1295-sb2-pinctrl", "syscon";
++		reg = <0x900 0x100>;
++		reg-io-width = <4>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0x0 0x900 0x100>;
++	};
+ };
++
++#include "rtd129x-pinctrl.dtsi"

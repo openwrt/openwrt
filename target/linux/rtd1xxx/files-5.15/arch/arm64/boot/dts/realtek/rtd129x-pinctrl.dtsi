@@ -1,0 +1,311 @@
+&cr_pinctrl {
+	pcie1_clk_pins: pcie1_clk_pins {
+		pins = "pcie_clkreq_0";
+		function = "pcie";
+	};
+
+	pcie2_clk_pins: pcie2_clk_pins {
+		pins = "pcie_clkreq_1";
+		function = "pcie";
+	};
+
+	emmc_pins: emmc_pins {
+		pins = "nf_rdy",
+			"nf_cle",
+			"nf_rd_n",
+			"nf_dd_0",
+			"nf_dd_1",
+			"nf_dd_2",
+			"nf_dd_3",
+			"nf_dd_4",
+			"nf_dd_5",
+			"nf_dd_6",
+			"nf_dd_7";
+		function = "emmc";
+	};
+
+	emmc_pins_sdr50: emmc_pins_sdr50 {
+		grp1 {
+			pins = "nf_rdy",
+				"nf_cle",
+				"nf_rd_n",
+				"nf_dd_0",
+				"nf_dd_1",
+				"nf_dd_2",
+				"nf_dd_3",
+				"nf_dd_4",
+				"nf_dd_5",
+				"nf_dd_6",
+				"nf_dd_7";
+			function = "emmc";
+			realtek,ndrive = <0x7>;
+			realtek,pdrive = <0x7>;
+		};
+
+		grp2 {
+			pins = "emmc_dd_sb";
+			function = "emmc";
+			realtek,ndrive = <0x3>;
+			realtek,pdrive = <0x3>;
+		};
+	};
+
+	emmc_pins_ddr50: emmc_pins_ddr50 {
+		grp1 {
+			pins = "nf_rdy",
+				"nf_cle",
+				"nf_rd_n",
+				"nf_dd_0",
+				"nf_dd_1",
+				"nf_dd_2",
+				"nf_dd_3",
+				"nf_dd_4",
+				"nf_dd_5",
+				"nf_dd_6",
+				"nf_dd_7";
+			function = "emmc";
+			realtek,ndrive = <0x3>;
+			realtek,pdrive = <0x3>;
+		};
+		grp2 {
+			pins = "emmc_dd_sb";
+			function = "emmc";
+			realtek,ndrive = <0x3>;
+			reattek,pdrive = <0x3>;
+		};
+	};
+
+	emmc_pins_hs200: emmc_pins_hs200 {
+		grp1 {
+			pins = "nf_rdy",
+				"nf_cle",
+				"nf_rd_n",
+				"nf_dd_0",
+				"nf_dd_1",
+				"nf_dd_2",
+				"nf_dd_3",
+				"nf_dd_4",
+				"nf_dd_5",
+				"nf_dd_6",
+				"nf_dd_7";
+			function = "emmc";
+			realtek,ndrive = <0xb>;
+			realtek,pdrive = <0xb>;
+		};
+		grp2 {
+			pins = "emmc_dd_sb";
+			function = "emmc";
+			realtek,ndrive = <0x3>;
+			realtek,pdrive = <0x3>;
+		};
+	};
+
+	emmc_pins_tune0: emmc_pins_tune0 {
+		grp1 {
+			pins = "nf_rdy",
+				"nf_cle",
+				"nf_rd_n",
+				"nf_dd_0",
+				"nf_dd_1",
+				"nf_dd_2",
+				"nf_dd_3",
+				"nf_dd_4",
+				"nf_dd_5",
+				"nf_dd_6",
+				"nf_dd_7";
+			function = "emmc";
+			realtek,ndrive = <0x0>;
+			realtek,pdrive = <0x0>;
+		};
+		grp2 {
+			pins = "emmc_dd_sb";
+			function = "emmc";
+			realtek,ndrive = <0x0>;
+			realtek,pdrive = <0x0>;
+		};
+	};
+
+	emmc_pins_tune1: emmc_pins_tune1 {
+		grp1 {
+			pins = "nf_rdy",
+				"nf_cle",
+				"nf_rd_n",
+				"nf_dd_0",
+				"nf_dd_1",
+				"nf_dd_2",
+				"nf_dd_3",
+				"nf_dd_4",
+				"nf_dd_5",
+				"nf_dd_6",
+				"nf_dd_7";
+			function = "emmc";
+			realtek,ndrive = <0x1>;
+			realtek,pdrive = <0x1>;
+		};
+		grp2 {
+			pins = "emmc_dd_sb";
+			function = "emmc";
+			realtek,ndrive = <0x0>;
+			realtek,pdrive = <0x0>;
+		};
+	};
+
+	emmc_pins_tune2: emmc_pins_tune2 {
+		grp1 {
+			pins = "nf_rdy",
+				"nf_cle",
+				"nf_rd_n",
+				"nf_dd_0",
+				"nf_dd_1",
+				"nf_dd_2",
+				"nf_dd_3",
+				"nf_dd_4",
+				"nf_dd_5",
+				"nf_dd_6",
+				"nf_dd_7";
+			function = "emmc";
+			realtek,ndrive = <0x2>;
+			realtek,pdrive = <0x2>;
+		};
+		grp2 {
+			pins = "emmc_dd_sb";
+			function = "emmc";
+			realtek,ndrive = <0x0>;
+			realtek,pdrive = <0x0>;
+		};
+	};
+
+	emmc_pins_tune3: emmc_pins_tune3 {
+		grp1 {
+			pins = "nf_rdy",
+				"nf_cle",
+				"nf_rd_n",
+				"nf_dd_0",
+				"nf_dd_1",
+				"nf_dd_2",
+				"nf_dd_3",
+				"nf_dd_4",
+				"nf_dd_5",
+				"nf_dd_6",
+				"nf_dd_7";
+			function = "emmc";
+			realtek,ndrive = <0x3>;
+			realtek,pdrive = <0x3>;
+		};
+		grp2 {
+			pins = "emmc_dd_sb";
+			function = "emmc";
+			realtek,ndrive = <0x0>;
+			realtek,pdrive = <0x0>;
+		};
+	};
+};
+
+&iso_pinctrl {
+	i2c0_pins: i2c0-pins {
+		function = "i2c0";
+		groups = "i2c0";
+	};
+
+	i2c1_pins: i2c1-pins {
+		function = "i2c1";
+		groups = "i2c1";
+	};
+
+	i2c6_pins: i2c6-pins {
+		function = "i2c6";
+		groups = "i2c6";
+	};
+
+	uart0_pins: uart0-pins {
+		function = "uart0";
+		groups = "uart0";
+	};
+
+	uart1_pins: uart1-pins {
+		function = "uart1";
+		groups = "uart1";
+	};
+
+	uart2_0_pins: uart2-0-pins {
+		function = "uart2_0";
+		groups = "uart2_0";
+	};
+
+	uart2_1_pins: uart2-1-pins {
+		function = "uart2_1";
+		groups = "uart2_1";
+	};
+
+	etn_led_pins: etn_led_pins {
+		pins = "etn_led_link", "etn_led_rxtx";
+		function = "etn_led";
+	};
+
+	pwm0_0_pins: pwm0_0_pins {
+		pins = "iso_gpio_21";
+		function = "pwm_0";
+	};
+
+	pwm0_1_pins: pwm0_1_pins {
+		pins = "etn_led_link";
+		function = "pwm_1";
+	};
+
+	pwm1_0_pins: pwm1_0_pins {
+		pins = "iso_gpio_22";
+		function = "pwm_0";
+	};
+
+	pwm1_1_pins: pwm1_1_pins {
+		pins = "etn_led_rxtx";
+		function = "pwm_1";
+	};
+
+	pwm2_0_pins: pwm2_0_pins {
+		pins = "iso_gpio_23";
+		function = "pwm_0";
+	};
+
+	pwm2_1_pins: pwm2_1_pins {
+		pins = "nat_led_0";
+		function = "pwm_1";
+	};
+
+	pwm3_0_pins: pwm3_0_pins {
+                pins = "iso_gpio_24";
+                function = "pwm_0";
+        };
+
+	pwm3_1_pins: pwm3_1_pins {
+		pins = "nat_led_1";
+		function = "pwm_1";
+	};
+};
+
+&sb2_pinctrl {
+	i2c2_pins: i2c2-pins {
+		function = "i2c2";
+		groups = "tp1_sync", "tp1_clk";
+	};
+
+	i2c3_pins: i2c3-pins {
+		function = "i2c3";
+		groups = "tp1_data", "tp1_valid";
+	};
+
+	i2c4_pins: i2c4-pins {
+		function = "i2c4";
+		groups = "i2c_scl_4", "i2c_sda_4";
+	};
+
+	i2c5_pins: i2c5-pins {
+		function = "i2c5";
+		groups = "i2c_scl_5", "i2c_sda_5";
+	};
+
+	dc_fan_sensor_pins: dc_fan_sensor_pins {
+		pins = "gpio_9";
+		function = "dc_fan_sensor";
+	};
+};
