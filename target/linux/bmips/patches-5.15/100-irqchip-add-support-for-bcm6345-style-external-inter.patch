@@ -73,7 +73,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  obj-$(CONFIG_BCM7120_L2_IRQ)		+= irq-bcm7120-l2.o
 --- /dev/null
 +++ b/drivers/irqchip/irq-bcm6345-ext.c
-@@ -0,0 +1,299 @@
+@@ -0,0 +1,280 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -93,14 +93,6 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +#include <linux/of_address.h>
 +#include <linux/slab.h>
 +#include <linux/spinlock.h>
-+
-+#ifdef CONFIG_BCM63XX
-+#include <asm/mach-bcm63xx/bcm63xx_irq.h>
-+
-+#define VIRQ_BASE		IRQ_EXTERNAL_BASE
-+#else
-+#define VIRQ_BASE		0
-+#endif
 +
 +#define MAX_IRQS		4
 +
@@ -271,7 +263,6 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +{
 +	struct intc_data *data;
 +	unsigned int i;
-+	int start = VIRQ_BASE;
 +
 +	data = kzalloc(sizeof(*data), GFP_KERNEL);
 +	if (!data)
@@ -296,17 +287,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	data->chip.irq_unmask = bcm6345_ext_intc_irq_unmask;
 +	data->chip.irq_set_type = bcm6345_ext_intc_set_type;
 +
-+	/*
-+	 * If we have less than 4 irqs, this is the second controller on
-+	 * bcm63xx. So increase the VIRQ start to not overlap with the first
-+	 * one, but only do so if we actually use a non-zero start.
-+	 *
-+	 * This can be removed when bcm63xx has no legacy users anymore.
-+	 */
-+	if (start && num_irqs < 4)
-+		start += 4;
-+
-+	data->domain = irq_domain_add_simple(node, num_irqs, start,
++	data->domain = irq_domain_add_linear(node, num_irqs,
 +					     &bcm6345_ext_domain_ops, data);
 +	if (!data->domain) {
 +		kfree(data);
