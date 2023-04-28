@@ -40,8 +40,16 @@ setup_interface () {
 	[ -n "$msstaticroutes" ] && set_classless_routes $msstaticroutes
 
 	# Do not add DNS for interfaces which are down.
-	for i in $dns; do 
-        isoffline=`timeout 10 wget -qq -O- stdout http://localhost/api/status/interfaces/$interface | jsonfilter -e '@[0]["offline"]'`
+	for i in $dns; do
+        isoffline="true";
+        x=1;
+        # try offline check multiple times. On first try it may not be up
+        while  [ $x -le 5 ] && [ "$isoffline" == "true" ];
+        do
+          isoffline=`timeout 10 wget -qq -O- stdout http://localhost/api/status/interfaces/$interface | jsonfilter -e '@[0]["offline"]'`
+          x=$(($x+1))
+        done
+
         if [ $? -eq 0 ]  && [ "$isoffline" = "true" ]; then
                 continue                                                                                                              
         fi
