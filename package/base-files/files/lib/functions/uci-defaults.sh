@@ -353,6 +353,102 @@ ucidef_set_label_macaddr() {
 	json_select ..
 }
 
+ucidef_set_interface_def_macaddr() {
+	local lan_mac=$1
+	local wan_mac=$2
+	local wlan0_mac=$3
+	local sta_mac=$4
+	
+	json_select_object network
+	json_select lan
+	[ $? -eq 0 ] || {
+		json_select ..
+		return
+	}
+
+	json_add_string def_lan_macaddr $1
+	json_add_string def_wan_macaddr $2
+	json_add_string def_wlan0_macaddr $3
+	json_add_string def_wlan1_macaddr $4
+	json_add_string def_wlan2_macaddr $5
+	json_add_string def_wlan3_macaddr $6
+	json_add_string def_wlan4_macaddr $7
+	json_add_string def_wlan5_macaddr $8
+	json_add_string def_wlan6_macaddr $9
+	json_add_string def_wlan7_macaddr $10
+	json_add_string def_sta_macaddr $9
+	json_add_string def_wlan8_macaddr $11
+	json_add_string def_wlan9_macaddr $12
+	json_add_string def_wlan10_macaddr $13
+	json_add_string def_wlan11_macaddr $14
+	json_add_string def_wlan12_macaddr $15
+	json_add_string def_wlan13_macaddr $16
+	json_add_string def_wlan14_macaddr $17
+	json_add_string def_wlan15_macaddr $18
+	
+	json_select ..
+	
+	json_select ..
+
+		uci -q batch <<EOF
+set network.def_lan_macaddr='$1'
+set network.def_wan_macaddr='$2'
+set network.def_wlan0_macaddr='$3'
+set network.def_sta_macaddr='$4'
+set network.def_wlan1_macaddr='$5'
+set network.def_wlan2_macaddr='$6'
+set network.def_wlan3_macaddr='$7'
+set network.def_wlan4_macaddr='$8'
+set network.def_wlan5_macaddr='$9'
+set network.def_wlan6_macaddr='$10'
+set network.def_wlan7_macaddr='$11'
+set network.def_wlan8_macaddr='$12'
+set network.def_wlan9_macaddr='$13'
+set network.def_wlan10_macaddr='$14'
+set network.def_wlan11_macaddr='$15'
+set network.def_wlan12_macaddr='$16'
+set network.def_wlan13_macaddr='$17'
+set network.def_wlan14_macaddr='$18'
+set network.def_wlan15_macaddr='$19'
+EOF
+}
+
+ucidef_set_wireless_macaddr() {
+	local ifname=$1
+	local mac=$2
+
+	uci -q batch <<EOF
+set wireless.$ifname.macaddr='$mac'
+EOF
+
+	case $ifname in
+	radio0)
+		uci -q batch <<EOF
+set wireless.@wifi-iface[0].macaddr='$mac'
+set wireless.@wifi-iface[1].macaddr='$3'
+set wireless.@wifi-iface[2].macaddr='$4'
+set wireless.@wifi-iface[3].macaddr='$5'
+set wireless.@wifi-iface[4].macaddr='$6'
+set wireless.@wifi-iface[5].macaddr='$7'
+set wireless.@wifi-iface[6].macaddr='$8'
+set wireless.@wifi-iface[7].macaddr='$9'
+EOF
+		;;
+	radio1)
+		uci -q batch <<EOF
+set wireless.@wifi-iface[8].macaddr='$mac'
+set wireless.@wifi-iface[9].macaddr='$3'
+set wireless.@wifi-iface[10].macaddr='$4'
+set wireless.@wifi-iface[11].macaddr='$5'
+set wireless.@wifi-iface[12].macaddr='$6'
+set wireless.@wifi-iface[13].macaddr='$7'
+set wireless.@wifi-iface[14].macaddr='$8'
+set wireless.@wifi-iface[15].macaddr='$9'
+EOF
+		;;
+	esac
+}
+
 ucidef_add_atm_bridge() {
 	local vpi="$1"
 	local vci="$2"
