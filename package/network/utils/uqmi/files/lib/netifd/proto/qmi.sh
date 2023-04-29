@@ -6,10 +6,19 @@
 	init_proto "$@"
 }
 
+proto_qmi_inject_uqmi() {
+	uqmi() {
+		local t="${TIMEOUT-10}"
+
+		timeout -k "$(( t + 2 ))" "$(( t + 1 ))" /sbin/uqmi -t "$(( t * 1000 ))" "$@"
+	}
+}
+
 proto_qmi_init_config() {
 	available=1
 	no_device=1
 	proto_config_add_string "device:device"
+	proto_config_add_boolean no_if_rename
 	proto_config_add_string apn
 	proto_config_add_string auth
 	proto_config_add_string username
@@ -31,13 +40,13 @@ proto_qmi_init_config() {
 proto_qmi_setup() {
 	local interface="$1"
 	local dataformat connstat plmn_mode mcc mnc
-	local device apn auth username password pincode delay modes pdptype
+	local device ifname want_ifname apn auth username password pincode delay modes pdptype
 	local profile dhcp dhcpv6 autoconnect plmn timeout mtu $PROTO_DEFAULT_OPTIONS
 	local ip4table ip6table
 	local cid_4 pdh_4 cid_6 pdh_6
 	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
 
-	json_get_vars device apn auth username password pincode delay modes
+	json_get_vars device ifname apn auth username password pincode delay modes
 	json_get_vars pdptype profile dhcp dhcpv6 autoconnect plmn ip4table
 	json_get_vars ip6table timeout mtu $PROTO_DEFAULT_OPTIONS
 
@@ -45,7 +54,7 @@ proto_qmi_setup() {
 
 	[ "$metric" = "" ] && metric="0"
 
-	[ -n "$ctl_device" ] && device=$ctl_device
+	[ -n "$ctl_device" ] && device="$ctl_device"
 
 	[ -n "$device" ] || {
 		echo "No control device specified"
@@ -56,7 +65,7 @@ proto_qmi_setup() {
 
 	[ -n "$delay" ] && sleep "$delay"
 
-	device="$(readlink -f $device)"
+	device="$(readlink -f "$device")"
 	[ -c "$device" ] || {
 		echo "The specified control device does not exist"
 		proto_notify_error "$interface" NO_DEVICE
@@ -64,9 +73,11 @@ proto_qmi_setup() {
 		return 1
 	}
 
+	want_ifname="$ifname"
+
 	devname="$(basename "$device")"
 	devpath="$(readlink -f /sys/class/usbmisc/$devname/device/)"
-	ifname="$( ls "$devpath"/net )"
+	ifname="$(ls "$devpath"/net)"
 	[ -n "$ifname" ] || {
 		echo "The interface could not be found."
 		proto_notify_error "$interface" NO_IFACE
@@ -74,10 +85,17 @@ proto_qmi_setup() {
 		return 1
 	}
 
+	[ -n "$want_ifname" -a "$ifname" != "$want_ifname" ] && {
+		ip l set "$ifname" down
+		ip l set "$ifname" name "$want_ifname" && ifname="$want_ifname"
+	}
+
 	[ -n "$mtu" ] && {
 		echo "Setting MTU to $mtu"
-		/sbin/ip link set dev $ifname mtu $mtu
+		/sbin/ip link set dev "$ifname" mtu "$mtu"
 	}
+
+	proto_qmi_inject_uqmi
 
 	echo "Waiting for SIM initialization"
 	local uninitialized_timeout=0
@@ -172,8 +190,8 @@ proto_qmi_setup() {
 				echo "Setting PLMN to auto"
 			fi
 		elif [ "$mcc" -ne "${plmn:0:3}" -o "$mnc" -ne "${plmn:3}" ]; then
-			mcc=${plmn:0:3}
-			mnc=${plmn:3}
+			mcc="${plmn:0:3}"
+			mnc="${plmn:3}"
 			echo "Setting PLMN to $plmn"
 		else
 			mcc=""
@@ -202,18 +220,22 @@ proto_qmi_setup() {
 	uqmi -s -d "$device" --wda-set-data-format 802.3 > /dev/null 2>&1
 	dataformat="$(uqmi -s -d "$device" --wda-get-data-format)"
 
+	ip l set "$ifname" down
+
 	if [ "$dataformat" = '"raw-ip"' ]; then
 
-		[ -f /sys/class/net/$ifname/qmi/raw_ip ] || {
+		[ -f "/sys/class/net/$ifname/qmi/raw_ip" ] || {
 			echo "Device only supports raw-ip mode but is missing this required driver attribute: /sys/class/net/$ifname/qmi/raw_ip"
 			return 1
 		}
 
 		echo "Device does not support 802.3 mode. Informing driver of raw-ip only for $ifname .."
-		echo "Y" > /sys/class/net/$ifname/qmi/raw_ip
+		echo "Y" > "/sys/class/net/$ifname/qmi/raw_ip"
 	fi
 
 	uqmi -s -d "$device" --sync > /dev/null 2>&1
+
+	ip l set "$ifname" up
 
 	uqmi -s -d "$device" --network-register > /dev/null 2>&1
 
@@ -222,7 +244,7 @@ proto_qmi_setup() {
 	local registration_timeout=0
 	local registration_state=""
 	while true; do
-		registration_state=$(uqmi -s -d "$device" --get-serving-system 2>/dev/null | jsonfilter -e "@.registration" 2>/dev/null)
+		registration_state="$(uqmi -s -d "$device" --get-serving-system 2>/dev/null | jsonfilter -e "@.registration" 2>/dev/null)"
 
 		[ "$registration_state" = "registered" ] && break
 
@@ -240,10 +262,10 @@ proto_qmi_setup() {
 		else
 			# registration_state is 'registration_denied' or 'unknown' or ''
 			echo "Network registration failed (reason: '$registration_state')"
+			proto_block_restart "$interface"
 		fi
 
 		proto_notify_error "$interface" NETWORK_REGISTRATION_FAILED
-		proto_block_restart "$interface"
 		return 1
 	done
 
@@ -458,13 +480,15 @@ proto_qmi_teardown() {
 	local device cid_4 pdh_4 cid_6 pdh_6
 	json_get_vars device
 
-	[ -n "$ctl_device" ] && device=$ctl_device
+	[ -n "$ctl_device" ] && device="$ctl_device"
 
 	echo "Stopping network $interface"
 
 	json_load "$(ubus call network.interface.$interface status)"
 	json_select data
 	json_get_vars cid_4 pdh_4 cid_6 pdh_6
+
+	proto_qmi_inject_uqmi
 
 	qmi_wds_stop "$cid_4" "$pdh_4"
 	qmi_wds_stop "$cid_6" "$pdh_6"

@@ -6,23 +6,53 @@
 . /lib/functions.sh
 . /lib/netifd/netifd-proto.sh
 
-find_wwan_iface() {
+handle() {
 	local cfg="$1"
 
-	local proto device
-	config_get proto "$cfg" proto
-	config_get device "$cfg" device
-
-	[ "$proto" = wwan ] || [ "$proto" = mbim ] || [ "$proto" = qmi ] || [ "$proto" = ncm ] || return 0
-	[ -z "$device" -a "$proto" = wwan ] || [ "$device" = "/dev/$DEVNAME" ] || return 0
 	if [ "$ACTION" = add ]; then
 		proto_set_available "$cfg" 1
 	fi
 	if [ "$ACTION" = remove ]; then
 		proto_set_available "$cfg" 0
 	fi
+}
+
+first_unbound_wwan=
+
+find_wwan_iface() {
+	local cfg="$1"
+
+	local bus proto device
+	config_get proto "$cfg" proto
+	config_get device "$cfg" device
+	config_get bus "$cfg" bus
+
+	case "$proto" in
+	mbim|\
+	ncm|\
+	qmi)
+		[ "$device" = "/dev/$DEVNAME" ] || return 0
+		;;
+	wwan)
+		if [ -n "$bus" ]; then
+			[ -n "$first_unbound_wwan" ] || first_unbound_wwan="$cfg"
+			return 0
+		fi
+
+		device="$(readlink -f "/sys$DEVPATH/device")"
+		dev_bus="$(readlink -f "$device/..")"
+		find "/sys/bus/usb/devices/$bus/" -maxdepth 1 | xargs -n 1 readlink -f | grep -q "$dev_bus" || return 0
+		;;
+	*)
+		return 0
+	esac
+
+	handle "$cfg"
 	exit 0
 }
 
 config_load network
 config_foreach find_wwan_iface interface
+
+[ -n "$first_unbound_wwan" ] && handle "$first_unbound_wwan"
+exit 0
