@@ -14,6 +14,7 @@ ramips_setup_interfaces()
 	ampedwireless,ally-00x19k|\
 	asus,rp-ac56|\
 	asus,rp-ac87|\
+	dlink,dap-1620-b1|\
 	dlink,dap-x1860-a1|\
 	edimax,re23s|\
 	mikrotik,ltap-2hnd|\
@@ -49,7 +50,8 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-cr6606|\
 	xiaomi,mi-router-cr6608|\
 	xiaomi,mi-router-cr6609|\
-	xiaomi,redmi-router-ac2100)
+	xiaomi,redmi-router-ac2100|\
+	zyxel,wsm20)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	asiarf,ap7621-001|\
@@ -245,11 +247,6 @@ ramips_setup_macs()
 	mikrotik,ltap-2hnd)
 		label_mac=$(cat "/sys/firmware/mikrotik/hard_config/mac_base")
 		lan_mac=$label_mac
-		;;
-	tplink,ec330-g5u-v1)
-		label_mac="$(mtd_get_mac_text factory 0x165)"
-		lan_mac=$label_mac
-		wan_mac=$(macaddr_add $label_mac 1)
 		;;
 	tplink,er605-v2)
 		CI_UBIPART="firmware"

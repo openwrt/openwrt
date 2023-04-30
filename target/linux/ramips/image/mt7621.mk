@@ -7,7 +7,7 @@ include ./common-tp-link.mk
 
 DEFAULT_SOC := mt7621
 
-DEVICE_VARS += ELECOM_HWNAME LINKSYS_HWNAME
+DEVICE_VARS += ELECOM_HWNAME LINKSYS_HWNAME DLINK_HWID
 
 ifdef CONFIG_LINUX_5_10
   DTS_CPPFLAGS += -DDTS_LEGACY
@@ -60,6 +60,29 @@ define Build/iodata-mstc-header
 		echo -ne "$$(echo $$header_crc | sed 's/../\\x&/g')" | \
 			dd of=$@ bs=4 count=1 seek=1 conv=notrunc 2>/dev/null; \
 	)
+endef
+
+define Build/znet-header
+	$(eval version=$(word 1,$(1)))
+	( \
+		data_size_crc="$$(dd if=$@ 2>/dev/null | gzip -c | \
+			tail -c 8 | od -An -N4 -tx4 --endian big | tr -d ' \n')"; \
+		payload_len="$$(dd if=$@ bs=4 count=1 skip=1 2>/dev/null | od -An -tdI --endian big | tr -d ' \n')"; \
+		payload_size_crc="$$(dd if=$@ ibs=1 count=$$payload_len 2>/dev/null | gzip -c | \
+			tail -c 8 | od -An -N4 -tx4 --endian big | tr -d ' \n')"; \
+		echo -ne "\x5A\x4E\x45\x54" | dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tac | tr -d '\n')" | \
+			dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "$$(echo $$data_size_crc | sed 's/../\\x&/g')" | \
+			dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "$$(echo $$payload_size_crc | sed 's/../\\x&/g')" | \
+			dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "\x12\x34\x56\x78" | dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "$(version)" | dd bs=28 count=1 conv=sync 2>/dev/null; \
+		dd if=/dev/zero bs=262096 count=1 conv=sync 2>/dev/null | tr "\000" "\377"; \
+		cat $@; \
+	) > $@.new
+	mv $@.new $@
 endef
 
 define Build/belkin-header
@@ -530,6 +553,22 @@ define Device/cudy_x6
   SUPPORTED_DEVICES += R13
 endef
 TARGET_DEVICES += cudy_x6
+
+define Device/dlink_dap-1620-b1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-1620
+  DEVICE_VARIANT := B1
+  DEVICE_PACKAGES := kmod-mt7615-firmware rssileds
+  DLINK_HWID := MT76XMT7621-RP-PR2475-NA
+  IMAGE_SIZE := 16064k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | \
+    check-size 11009992 | pad-to 11009992 | \
+    append-md5sum-ascii-salted ffff | \
+    append-string $$(DLINK_HWID) | \
+    check-size
+endef
+TARGET_DEVICES += dlink_dap-1620-b1
 
 define Device/dlink_dap-x1860-a1
   $(Device/dsa-migration)
@@ -2175,6 +2214,9 @@ define Device/tplink_ec330-g5u-v1
 	uImage-tplink-c9 firmware 'OS IMAGE ($(VERSION_DIST))'
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | \
 	uImage none
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
 endef
 TARGET_DEVICES += tplink_ec330-g5u-v1
@@ -2889,3 +2931,20 @@ define Device/comfast_cf-e390ax
   IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size 
 endef
 TARGET_DEVICES += comfast_cf-e390ax
+
+define Device/zyxel_wsm20
+  $(Device/dsa-migration)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 8192k
+  IMAGE_SIZE := 41943040
+  UBINIZE_OPTS := -E 5
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := WSM20
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | znet-header V1.00(ABZF.0)C0
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | znet-header V1.00(ABZF.0)C0
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zyxel_wsm20
+

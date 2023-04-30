@@ -32,19 +32,20 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 		macaddr_setbit_la "$(macaddr_add $hw_mac_addr 0x100000)" > /sys${DEVPATH}/macaddress
 		;;
-	dlink,dap-x1860-a1)
-		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
-		[ "$PHYNBR" = "0" ] && \
-			macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && \
-			macaddr_add $hw_mac_addr 4 > /sys${DEVPATH}/macaddress
-		;;
+	dlink,dap-1620-b1|\
 	dlink,dir-853-a1)
 		lan_mac_addr="$(mtd_get_mac_binary factory 0xe000)"
 		[ "$PHYNBR" = "0" ] && \
 			macaddr_add $lan_mac_addr 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_add $lan_mac_addr 2 > /sys${DEVPATH}/macaddress
+		;;
+	dlink,dap-x1860-a1)
+		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
+		[ "$PHYNBR" = "0" ] && \
+			macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_add $hw_mac_addr 4 > /sys${DEVPATH}/macaddress
 		;;
 	dlink,dir-853-a3)
 		[ "$PHYNBR" = "0" ] && \
@@ -160,11 +161,6 @@ case "$board" in
 		hw_mac_addr="$(mtd_get_mac_binary product-info 0x8)"
 		macaddr_add "$hw_mac_addr" "$PHYNBR" > "/sys${DEVPATH}/macaddress"
 		;;
-	tplink,ec330-g5u-v1)
-		hw_mac_addr="$(mtd_get_mac_text factory 0x165)"
-		[ "$PHYNBR" = "0" ] && echo -n $hw_mac_addr > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
-		;;
 	yuncore,ax820)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0xe000)" > /sys${DEVPATH}/macaddress
@@ -181,8 +177,15 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
+
 	comfast,cf-e390ax)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0x8004)" > /sys${DEVPATH}/macaddress
+    ;;
+
+	zyxel,wsm20)
+		hw_mac_addr="$(mtd_get_mac_binary Factory 0x1fdfa)"
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
 esac
