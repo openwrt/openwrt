@@ -1122,6 +1122,20 @@ define Device/wallys_dr40x9
 endef
 TARGET_DEVICES += wallys_dr40x9
 
+define Device/yyets_le1
+	$(call Device/FitzImage)
+	DEVICE_VENDOR := YYeTs
+	DEVICE_MODEL := LE1
+	SOC := qcom-ipq4019
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 31232k
+	IMAGES += factory.bin
+	IMAGE/factory.bin := qsdk-ipq-factory-nor | check-size
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-yyets_le1 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += yyets_le1
+
 define Device/zte_mf18a
 	$(call Device/FitImage)
 	DEVICE_VENDOR := ZTE
