@@ -149,6 +149,30 @@ define Device/avm_fritz3390
 endef
 TARGET_DEVICES += avm_fritz3390
 
+define Device/avm_fritz3490
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 3490
+  DEVICE_VARIANT := Other NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs -kmod-owl-loader
+endef
+TARGET_DEVICES += avm_fritz3490
+
+define Device/avm_fritz3490-micron
+  $(Device/dsa-migration)
+  $(Device/AVM)
+  $(Device/NAND)
+  DEVICE_MODEL := FRITZ!Box 3490
+  DEVICE_VARIANT := Micron NAND
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 49152k
+  DEVICE_PACKAGES := kmod-usb3 fritz-tffs -kmod-owl-loader
+endef
+TARGET_DEVICES += avm_fritz3490-micron
+
 define Device/avm_fritz5490
   $(Device/dsa-migration)
   $(Device/AVM)
