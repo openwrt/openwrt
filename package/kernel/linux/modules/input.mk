@@ -179,10 +179,8 @@ define KernelPackage/input-touchscreen-ads7846
   DEPENDS:=+kmod-hwmon-core +kmod-input-core +kmod-spi-bitbang
   KCONFIG:= \
 	CONFIG_INPUT_TOUCHSCREEN=y \
-	CONFIG_TOUCHSCREEN_PROPERTIES=y@lt5.13 \
 	CONFIG_TOUCHSCREEN_ADS7846
-  FILES:=$(LINUX_DIR)/drivers/input/touchscreen/ads7846.ko \
-	$(LINUX_DIR)/drivers/input/touchscreen/of_touchscreen.ko@lt5.13
+  FILES:=$(LINUX_DIR)/drivers/input/touchscreen/ads7846.ko
   AUTOLOAD:=$(call AutoProbe,ads7846)
 endef
 
@@ -199,10 +197,8 @@ define KernelPackage/input-touchscreen-edt-ft5x06
   DEPENDS:=+kmod-i2c-core +kmod-input-core
   KCONFIG:= \
 	CONFIG_INPUT_TOUCHSCREEN=y \
-	CONFIG_TOUCHSCREEN_PROPERTIES=y@lt5.13 \
 	CONFIG_TOUCHSCREEN_EDT_FT5X06
-  FILES:=$(LINUX_DIR)/drivers/input/touchscreen/edt-ft5x06.ko \
-	$(LINUX_DIR)/drivers/input/touchscreen/of_touchscreen.ko@lt5.13
+  FILES:=$(LINUX_DIR)/drivers/input/touchscreen/edt-ft5x06.ko
   AUTOLOAD:=$(call AutoProbe,edt-ft5x06)
 endef
 
