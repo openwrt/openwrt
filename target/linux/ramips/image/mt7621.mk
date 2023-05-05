@@ -9,10 +9,6 @@ DEFAULT_SOC := mt7621
 
 DEVICE_VARS += ELECOM_HWNAME LINKSYS_HWNAME DLINK_HWID
 
-ifdef CONFIG_LINUX_5_10
-  DTS_CPPFLAGS += -DDTS_LEGACY
-endif
-
 define Build/arcadyan-trx
 	echo -ne "hsqs" > $@.hsqs
 	$(eval trx_magic=$(word 1,$(1)))
