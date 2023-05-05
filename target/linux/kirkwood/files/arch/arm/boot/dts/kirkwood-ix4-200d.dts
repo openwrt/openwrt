@@ -1,0 +1,204 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "kirkwood.dtsi"
+#include "kirkwood-6281.dtsi"
+
+/ {
+	model = "Iomega ix4-200d";
+	compatible = "iom,ix4-200d", "marvell,rd88f6281-a", "marvell,rd88f6281", "marvell,kirkwood-88f6281", "marvell,kirkwood";
+
+memory {
+	device_type = "memory";
+	reg = <0x00000000 0x20000000>;
+};
+
+chosen {
+	bootargs = "console=ttyS0,115200n8 earlyprintk";
+	stdout-path = &uart0;
+};
+
+mbus {
+	pcie-controller {
+		status = "okay";
+
+			pcie@1,0 {
+			status = "okay";
+			};
+		};
+};
+
+ocp@f1000000 {
+	pinctrl: pin-controller@10000 {
+		spi_pin1: spi-pin1 {
+			marvell,pins = "mpp12";
+			marvell,function = "gpio";
+		};
+
+		spi_pin2: spi-pin2 {
+			marvell,pins = "mpp13";
+			marvell,function = "gpio";
+		};
+
+		next_button_pin: next-button-pin {
+			marvell,pins = "mpp16";
+			marvell,function = "gpio";
+		};
+
+		reset_button_pin: reset-button-pin {
+			marvell,pins = "mpp29";
+			marvell,function = "gpio";
+		};
+
+		cancel_button_pin: cancel-button-pin {
+			marvell,pins = "mpp47";
+			marvell,function = "gpio";
+		};
+
+		power_button_pin: power-button-pin {
+			marvell,pins = "mpp49";
+			marvell,function = "gpio";
+		};
+	};
+
+	i2c@11000 {
+		status = "okay";
+
+		adt7473@2e {
+			compatible = "adi,adt7473";
+			reg = <0x2e>;
+			};
+	};
+
+	serial@12000 {
+		status = "ok";
+	};
+
+	sata@80000 {
+		status = "okay";
+		nr-ports = <2>;
+	};
+
+	spi3 {
+		compatible = "spi-gpio";
+		#address-cells = <0x1>;
+		ranges;
+		status = "okay";
+		sck-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		mosi-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		num-chipselects = <1>;
+		#size-cells = <0>;
+
+		gpio_spi: gpio_spi@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <1>;
+			spi-max-frequency = <100000>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_status_white {
+			label = "status:white";
+			gpios = <&gpio_spi 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red {
+			label = "status:red";
+			gpios = <&gpio_spi 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_white {
+			label = "power:white";
+			gpios = <&gpio_spi 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&next_button_pin &reset_button_pin &cancel_button_pin &power_button_pin>;
+		pinctrl-names = "default";
+
+		next-button {
+			label = "Next Button";
+			linux,code = <BTN_0>;
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		};
+
+		reset-button {
+			label = "Reset Button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		};
+
+		cancel-button {
+			label = "Cancel Button";
+			linux,code = <BTN_1>;
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+		};
+
+		power-button {
+			label = "Power Button";
+			linux,code = <KEY_POWER2>;
+			gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+};
+
+&nand {
+	status = "okay";
+
+	partition@0 {
+		label = "u-boot";
+		reg = <0x0000000 0x100000>;
+		read-only;
+	};
+
+	partition@a0000 {
+		label = "u-boot environment";
+		reg = <0xa0000 0x20000>;
+		read-only;
+	};
+ 
+	partition@100000 {
+		label = "kernel";
+		reg = <0x100000 0x300000>;
+	};
+ 
+	partition@400000 {
+		label = "ubi";
+		reg = <0x400000 0x1C00000>;
+	};
+};
+
+&mdio {
+	status = "okay";
+
+	ethphy0: ethernet-phy@8 {
+		reg = <8>;
+	};
+
+	ethphy1: ethernet-phy@9 {
+		reg = <9>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+	ethernet0-port@0 {
+		phy-handle = <&ethphy0>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+	ethernet1-port@0 {
+		phy-handle = <&ethphy1>;
+	};
+};
