@@ -2,7 +2,12 @@ config GCC_VERSION_11
 	default y if GCC_USE_VERSION_11
 	bool
 
+config GCC_VERSION_13
+	default y if GCC_USE_VERSION_13
+	bool
+
 config GCC_VERSION
 	string
 	default "11.3.0"	if GCC_VERSION_11
+	default "13.1.0"	if GCC_VERSION_13
 	default "12.2.0"

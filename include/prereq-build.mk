@@ -8,6 +8,13 @@ include $(INCLUDE_DIR)/prereq.mk
 SHELL:=sh
 PKG_NAME:=Build dependency
 
+$(eval $(call TestHostCommand,true, \
+	Please install GNU 'coreutils', \
+	$(TRUE)))
+
+$(eval $(call TestHostCommand,false, \
+	Please install GNU 'coreutils', \
+	$(FALSE); [ $$$$$$$$? = 1 ] && $(TRUE)))
 
 # Required for the toolchain
 $(eval $(call TestHostCommand,working-make, \

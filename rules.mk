@@ -268,6 +268,14 @@ FIND:=find
 PATCH:=patch
 PYTHON:=python3
 
+ifeq ($(HOST_OS),Darwin)
+  TRUE:=/usr/bin/env gtrue
+  FALSE:=/usr/bin/env gfalse
+else
+  TRUE:=/usr/bin/env true
+  FALSE:=/usr/bin/env false
+endif
+
 INSTALL_BIN:=install -m0755
 INSTALL_SUID:=install -m4755
 INSTALL_DIR:=install -d -m0755
@@ -350,6 +358,7 @@ ifeq ($(CONFIG_BUILD_LOG),y)
 endif
 
 export BISON_PKGDATADIR:=$(STAGING_DIR_HOST)/share/bison
+export HOST_GNULIB_SRCDIR:=$(STAGING_DIR_HOST)/share/gnulib
 export M4:=$(STAGING_DIR_HOST)/bin/m4
 
 define shvar

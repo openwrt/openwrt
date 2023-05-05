@@ -295,8 +295,7 @@ define Device/avm_fritzrepeater-3000
 	SOC := qcom-ipq4019
 	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct fritz-caldata fritz-tffs-nand
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += avm_fritzrepeater-3000
+TARGET_DEVICES += avm_fritzrepeater-3000
 
 define Device/buffalo_wtr-m2133hp
 	$(call Device/FitImage)

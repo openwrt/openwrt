@@ -18,17 +18,31 @@ HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
+export GNULIB_SRCDIR:=$(HOST_GNULIB_SRCDIR)
+
 HOST_CONFIGURE_VARS += \
 	lt_cv_sys_dlsearch_path=""
+
+define Host/Bootstrap
+	( \
+		cd $(HOST_BUILD_DIR); \
+		$(AM_TOOL_PATHS) \
+		./bootstrap \
+			--force \
+			--skip-git \
+			--skip-po \
+			--gnulib-srcdir=$(GNULIB_SRCDIR) \
+	)
+endef
 
 define Host/Prepare
 	$(call Host/Prepare/Default)
 	$(call Host/Uninstall)
-	$(if $(QUILT),,(cd $(HOST_BUILD_DIR); touch README-release; $(AM_TOOL_PATHS) ./bootstrap --skip-git --skip-po --force))
+	$(if $(QUILT),,$(call Host/Bootstrap))
 endef
 
 define Host/Configure
-	$(if $(QUILT),(cd $(HOST_BUILD_DIR); touch README-release; $(AM_TOOL_PATHS) ./bootstrap --skip-git --skip-po --force))
+	$(if $(QUILT),$(call Host/Bootstrap))
 	$(call Host/Configure/Default)
 endef
 

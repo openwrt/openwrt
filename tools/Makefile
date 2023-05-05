@@ -45,6 +45,7 @@ tools-y += findutils
 tools-y += firmware-utils
 tools-y += flex
 tools-y += gengetopt
+tools-y += gnulib
 tools-y += libressl
 tools-y += libtool
 tools-y += lzma
@@ -103,7 +104,7 @@ $(curdir)/gmp/compile := $(curdir)/libtool/compile
 $(curdir)/isl/compile := $(curdir)/gmp/compile
 $(curdir)/liblzo/compile := $(curdir)/cmake/compile
 $(curdir)/libressl/compile := $(curdir)/pkgconf/compile
-$(curdir)/libtool/compile := $(curdir)/automake/compile $(curdir)/missing-macros/compile
+$(curdir)/libtool/compile := $(curdir)/automake/compile $(curdir)/gnulib/compile $(curdir)/missing-macros/compile
 $(curdir)/lz4/compile := $(curdir)/meson/compile
 $(curdir)/lzma-old/compile := $(curdir)/zlib/compile
 $(curdir)/lzop/compile := $(curdir)/cmake/compile $(curdir)/liblzo/compile
@@ -126,6 +127,7 @@ $(curdir)/squashfs4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
 $(curdir)/zstd/compile := $(curdir)/meson/compile
 
 ifneq ($(HOST_OS),Linux)
+  $(curdir)/coreutils/compile += $(curdir)/automake/compile $(curdir)/bison/compile $(curdir)/gnulib/compile
   $(curdir)/squashfs4/compile += $(curdir)/coreutils/compile
   tools-y += coreutils
 endif
