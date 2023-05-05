@@ -2,12 +2,12 @@
 ARCH:=mips
 SUBTARGET:=rtl838x
 CPU_TYPE:=4kec
-BOARD:=realtek
 BOARDNAME:=Realtek MIPS RTL838X
-DEVICE_TYPE:=switch
 
 define Target/Description
 	Build firmware images for Realtek RTL838x based boards.
 endef
 
 FEATURES := $(filter-out mips16,$(FEATURES))
+
+include $(TOPDIR)/target/linux/realtek/switch.mk

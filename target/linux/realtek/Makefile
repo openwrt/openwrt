@@ -16,13 +16,6 @@ endef
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += \
-	ethtool \
-	ip-bridge \
-	ip-full \
-	kmod-gpio-button-hotplug \
-	tc-bpf \
-	uboot-envtools \
-
+DEFAULT_PACKAGES += ethtool
 
 $(eval $(call BuildTarget))
