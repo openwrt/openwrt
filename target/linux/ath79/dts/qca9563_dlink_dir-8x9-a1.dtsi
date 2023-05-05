@@ -28,7 +28,7 @@
 &pcie {
 	status = "okay";
 
-	wifi@0,0 {
+	ath10k: wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0000 0 0 0 0>;
 
@@ -56,7 +56,7 @@
 				read-only;
 			};
 
-			partition@40000 {
+			bdcfg: partition@40000 {
 				compatible = "u-boot,env";
 				label = "bdcfg";
 				reg = <0x040000 0x010000>;
