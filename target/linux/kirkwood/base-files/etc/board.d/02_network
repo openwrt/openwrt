@@ -22,9 +22,6 @@ kirkwood_setup_interfaces()
 	globalscale,sheevaplug|\
 	iom,iconnect-1.1|\
 	iom,ix2-200|\
-	iom,ix4-200d)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
-		;;
 	iptime,nas1|\
 	netgear,readynas-duo-v2|\
 	raidsonic,ib-nas62x0|\
@@ -36,6 +33,9 @@ kirkwood_setup_interfaces()
 	zyxel,nsa310s|\
 	zyxel,nsa325)
 		ucidef_set_interface_lan "eth0" "dhcp"
+		;;
+	iom,ix4-200d)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 	endian,4i-edge-200)
 		ucidef_set_interface_lan "port1 port2 port3 port4 eth1"
