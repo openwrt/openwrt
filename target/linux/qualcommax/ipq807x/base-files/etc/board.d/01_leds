@@ -9,6 +9,9 @@ case "$board" in
 edgecore,eap102)
 	ucidef_set_led_netdev "wan" "WAN" "green:wanpoe" "wan"
 	;;
+netgear,rax120v2)
+	ucidef_set_led_netdev "aqr" "AQR" "white:aqr" "lan5"
+	;;
 netgear,wax218)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "lan"
 	ucidef_set_led_wlan "wlan5g" "WIFI 5GHz" "blue:wlan5g" "phy0radio"

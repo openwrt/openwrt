@@ -9,6 +9,7 @@ board=$(board_name)
 
 case "$board" in
 dynalink,dl-wrx36|\
+netgear,rax120v2|\
 netgear,wax218)
 	idx="$(find_mtd_index 0:appsblenv)"
 	[ -n "$idx" ] && \
