@@ -307,7 +307,6 @@ static const struct switch_dev_ops psb6970_ops = {
 static int psb6970_config_init(struct phy_device *pdev)
 {
 	struct psb6970_priv *priv;
-	struct net_device *dev = pdev->attached_dev;
 	struct switch_dev *swdev;
 	int ret;
 
