@@ -559,6 +559,15 @@ static void rtl838x_enable_bcast_flood(int port, bool enable)
 
 }
 
+static void rtl838x_set_static_move_action(int port, bool forward)
+{
+	int shift = MV_ACT_PORT_SHIFT(port);
+	u32 val = forward ? MV_ACT_FORWARD : MV_ACT_DROP;
+
+	sw_w32_mask(MV_ACT_MASK << shift, val << shift,
+		    RTL838X_L2_PORT_STATIC_MV_ACT(port));
+}
+
 static void rtl838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	int i;
@@ -1750,6 +1759,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.enable_flood = rtl838x_enable_flood,
 	.enable_mcast_flood = rtl838x_enable_mcast_flood,
 	.enable_bcast_flood = rtl838x_enable_bcast_flood,
+	.set_static_move_action = rtl838x_set_static_move_action,
 	.stp_get = rtl838x_stp_get,
 	.stp_set = rtl838x_stp_set,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,

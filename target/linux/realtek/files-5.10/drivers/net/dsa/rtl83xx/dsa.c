@@ -197,6 +197,14 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 	}
 	priv->r->traffic_set(priv->cpu_port, BIT_ULL(priv->cpu_port));
 
+	/* For standalone ports, forward packets even if a static fdb
+	 * entry for the source address exists on another port.
+	 */
+	if (priv->r->set_static_move_action) {
+		for (i = 0; i <= priv->cpu_port; i++)
+			priv->r->set_static_move_action(i, true);
+	}
+
 	if (priv->family_id == RTL8380_FAMILY_ID)
 		rtl838x_print_matrix();
 	else
@@ -1217,6 +1225,10 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 		priv->r->traffic_set(port, v);
 	}
 	priv->ports[port].pm |= port_bitmap;
+
+	if (priv->r->set_static_move_action)
+		priv->r->set_static_move_action(port, false);
+
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -1257,6 +1269,9 @@ static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
 		priv->r->traffic_set(port, v);
 	}
 	priv->ports[port].pm &= ~port_bitmap;
+
+	if (priv->r->set_static_move_action)
+		priv->r->set_static_move_action(port, true);
 
 	mutex_unlock(&priv->reg_mutex);
 }
