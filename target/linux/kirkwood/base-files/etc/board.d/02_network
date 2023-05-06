@@ -34,11 +34,11 @@ kirkwood_setup_interfaces()
 	zyxel,nsa325)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
-	iom,ix4-200d)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
-		;;
 	endian,4i-edge-200)
 		ucidef_set_interface_lan "port1 port2 port3 port4 eth1"
+		;;
+	iom,ix4-200d)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
 	linksys,e4200-v2|\
 	linksys,ea3500|\
