@@ -69,7 +69,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-ralink.c
-@@ -0,0 +1,435 @@
+@@ -0,0 +1,440 @@
 +/*
 + * drivers/i2c/busses/i2c-ralink.c
 + *
@@ -245,7 +245,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static void rt_i2c_reset(struct rt_i2c *i2c)
 +{
-+	device_reset(i2c->adap.dev.parent);
++	int ret;
++
++	ret = device_reset(i2c->adap.dev.parent);
++	if (ret)
++		dev_err(i2c->dev, "Failed to reset device");
++
 +	barrier();
 +	rt_i2c_w32(i2c, i2c->clk_div, REG_CLKDIV_REG);
 +}
