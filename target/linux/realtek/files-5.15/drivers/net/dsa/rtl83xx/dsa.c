@@ -1019,27 +1019,6 @@ static u64 rtl83xx_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_gr
 	return portmask;
 }
 
-static void store_mcgroups(struct rtl838x_switch_priv *priv, int port)
-{
-	for (int mc_group = 0; mc_group < MAX_MC_GROUPS; mc_group++) {
-		u64 portmask = priv->r->read_mcast_pmask(mc_group);
-		if (portmask & BIT_ULL(port)) {
-			priv->mc_group_saves[mc_group] = port;
-			rtl83xx_mc_group_del_port(priv, mc_group, port);
-		}
-	}
-}
-
-static void load_mcgroups(struct rtl838x_switch_priv *priv, int port)
-{
-	for (int mc_group = 0; mc_group < MAX_MC_GROUPS; mc_group++) {
-		if (priv->mc_group_saves[mc_group] == port) {
-			rtl83xx_mc_group_add_port(priv, mc_group, port);
-			priv->mc_group_saves[mc_group] = -1;
-		}
-	}
-}
-
 static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 				struct phy_device *phydev)
 {
@@ -1057,8 +1036,6 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 
 	/* add port to switch mask of CPU_PORT */
 	priv->r->traffic_enable(priv->cpu_port, port);
-
-	load_mcgroups(priv, port);
 
 	if (priv->is_lagmember[port]) {
 		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
@@ -1095,7 +1072,6 @@ static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
 	/* BUG: This does not work on RTL931X */
 	/* remove port from switch mask of CPU_PORT */
 	priv->r->traffic_disable(priv->cpu_port, port);
-	store_mcgroups(priv, port);
 
 	/* remove all other ports in the same bridge from switch mask of port */
 	v = priv->r->traffic_get(port);
@@ -1197,7 +1173,6 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 			port_bitmap |= BIT_ULL(i);
 		}
 	}
-	load_mcgroups(priv, port);
 
 	/* Add all other ports to this port matrix. */
 	if (priv->ports[port].enable) {
@@ -1241,7 +1216,6 @@ static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
 			port_bitmap |= BIT_ULL(i);
 		}
 	}
-	store_mcgroups(priv, port);
 
 	/* Remove all other ports from this port matrix. */
 	if (priv->ports[port].enable) {
