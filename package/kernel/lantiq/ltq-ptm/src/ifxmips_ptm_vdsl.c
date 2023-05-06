@@ -146,6 +146,8 @@ unsigned int ifx_ptm_dbg_enable = DBG_ENABLE_MASK_ERR;
 
 static void ptm_setup(struct net_device *dev, int ndev)
 {
+    u8 addr[ETH_ALEN];
+
     netif_carrier_off(dev);
 
     dev->netdev_ops      = &g_ptm_netdev_ops;
@@ -154,12 +156,13 @@ static void ptm_setup(struct net_device *dev, int ndev)
     netif_napi_add(dev, &g_ptm_priv_data.itf[ndev].napi, ptm_napi_poll, 16);
     dev->watchdog_timeo  = ETH_WATCHDOG_TIMEOUT;
 
-    dev->dev_addr[0] = 0x00;
-    dev->dev_addr[1] = 0x20;
-	dev->dev_addr[2] = 0xda;
-	dev->dev_addr[3] = 0x86;
-	dev->dev_addr[4] = 0x23;
-	dev->dev_addr[5] = 0x75 + ndev;
+    addr[0] = 0x00;
+    addr[1] = 0x20;
+    addr[2] = 0xda;
+    addr[3] = 0x86;
+    addr[4] = 0x23;
+    addr[5] = 0x75 + ndev;
+    eth_hw_addr_set(dev, addr);
 }
 
 static struct net_device_stats *ptm_get_stats(struct net_device *dev)
