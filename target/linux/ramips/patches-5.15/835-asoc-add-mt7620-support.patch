@@ -60,7 +60,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SND_RALINK_SOC_I2S) += snd-soc-ralink-i2s.o
 --- /dev/null
 +++ b/sound/soc/ralink/ralink-i2s.c
-@@ -0,0 +1,966 @@
+@@ -0,0 +1,970 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  Copyright (C) 2016 Michael Lee <igvtee@gmail.com>
@@ -945,7 +945,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	ralink_i2s_init_dma_data(i2s, res);
 +
-+	device_reset(&pdev->dev);
++	ret = device_reset(&pdev->dev);
++	if (ret) {
++		dev_err(&pdev->dev, "failed to reset device\n");
++		goto err_clk_disable;
++	}
 +
 +	ret = ralink_i2s_debugfs_create(i2s);
 +	if (ret) {
