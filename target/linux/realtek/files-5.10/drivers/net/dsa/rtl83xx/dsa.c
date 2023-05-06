@@ -1678,7 +1678,7 @@ static int rtl83xx_port_fdb_add(struct dsa_switch *ds, int port,
 	}
 
 	// Hash buckets full, try CAM
-	rtl83xx_find_l2_cam_entry(priv, seed, false, &e);
+	idx = rtl83xx_find_l2_cam_entry(priv, seed, false, &e);
 
 	if (idx >= 0) {
 		rtl83xx_setup_l2_uc_entry(&e, port, vid, mac);
@@ -1714,7 +1714,7 @@ static int rtl83xx_port_fdb_del(struct dsa_switch *ds, int port,
 	}
 
 	/* Check CAM for spillover from hash buckets */
-	rtl83xx_find_l2_cam_entry(priv, seed, true, &e);
+	idx = rtl83xx_find_l2_cam_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		e.valid = false;
@@ -1816,7 +1816,7 @@ static void rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 	}
 
 	// Hash buckets full, try CAM
-	rtl83xx_find_l2_cam_entry(priv, seed, false, &e);
+	idx = rtl83xx_find_l2_cam_entry(priv, seed, false, &e);
 
 	if (idx >= 0) {
 		if (e.valid) {
@@ -1876,7 +1876,7 @@ int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
 	}
 
 	/* Check CAM for spillover from hash buckets */
-	rtl83xx_find_l2_cam_entry(priv, seed, true, &e);
+	idx = rtl83xx_find_l2_cam_entry(priv, seed, true, &e);
 
 	if (idx >= 0) {
 		portmask = rtl83xx_mc_group_del_port(priv, e.mc_portmask_index, port);
