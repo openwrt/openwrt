@@ -41,7 +41,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SPI_S3C64XX)		+= spi-s3c64xx.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
-@@ -0,0 +1,530 @@
+@@ -0,0 +1,535 @@
 +/*
 + * spi-rt2880.c -- Ralink RT288x/RT305x SPI controller driver
 + *
@@ -514,8 +514,13 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	rs->base = base;
 +	rs->clk = clk;
 +
-+	if (atomic_inc_return(&hw_reset_count) == 1)
-+		device_reset(&pdev->dev);
++	if (atomic_inc_return(&hw_reset_count) == 1) {
++		ret = device_reset(&pdev->dev);
++		if (ret) {
++			dev_err(&pdev->dev, "device_reset error.\n");
++			goto err_master;
++		}
++	}
 +
 +	ret = devm_spi_register_master(&pdev->dev, master);
 +	if (ret < 0) {
