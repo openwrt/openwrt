@@ -176,7 +176,6 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 {
 	int i;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 port_bitmap = BIT_ULL(priv->cpu_port);
 
 	pr_debug("%s called\n", __func__);
 
@@ -187,18 +186,16 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 		priv->ports[i].enable = false;
 	priv->ports[priv->cpu_port].enable = true;
 
-	/* Isolate ports from each other: traffic only CPU <-> port */
-	/* Setting bit j in register RTL838X_PORT_ISO_CTRL(i) allows
-	 * traffic from source port i to destination port j
+	/* Configure ports so they are disabled by default, but once enabled
+	 * they will work in isolated mode (only traffic between port and CPU).
 	 */
 	for (i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy) {
-			priv->r->set_port_reg_be(BIT_ULL(priv->cpu_port) | BIT_ULL(i),
-					      priv->r->port_iso_ctrl(i));
-			port_bitmap |= BIT_ULL(i);
+			priv->ports[i].pm = BIT_ULL(priv->cpu_port);
+			priv->r->traffic_set(i, BIT_ULL(i));
 		}
 	}
-	priv->r->set_port_reg_be(port_bitmap, priv->r->port_iso_ctrl(priv->cpu_port));
+	priv->r->traffic_set(priv->cpu_port, BIT_ULL(priv->cpu_port));
 
 	if (priv->family_id == RTL8380_FAMILY_ID)
 		rtl838x_print_matrix();
@@ -240,7 +237,6 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 {
 	int i;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u32 port_bitmap = BIT(priv->cpu_port);
 
 	pr_info("%s called\n", __func__);
 
@@ -258,13 +254,16 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 		priv->ports[i].enable = false;
 	priv->ports[priv->cpu_port].enable = true;
 
+	/* Configure ports so they are disabled by default, but once enabled
+	 * they will work in isolated mode (only traffic between port and CPU).
+	 */
 	for (i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy) {
-			priv->r->traffic_set(i, BIT_ULL(priv->cpu_port) | BIT_ULL(i));
-			port_bitmap |= BIT_ULL(i);
+			priv->ports[i].pm = BIT_ULL(priv->cpu_port);
+			priv->r->traffic_set(i, BIT_ULL(i));
 		}
 	}
-	priv->r->traffic_set(priv->cpu_port, port_bitmap);
+	priv->r->traffic_set(priv->cpu_port, BIT_ULL(priv->cpu_port));
 
 	rtl930x_print_matrix();
 
