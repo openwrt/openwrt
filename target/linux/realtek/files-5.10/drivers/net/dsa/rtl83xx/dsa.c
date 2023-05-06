@@ -1227,7 +1227,7 @@ static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
 					struct net_device *bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 port_bitmap = BIT_ULL(priv->cpu_port), v;
+	u64 port_bitmap = 0, v;
 	int i;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
@@ -1245,16 +1245,16 @@ static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
 			if (priv->ports[i].enable)
 				priv->r->traffic_disable(i, port);
 
-			priv->ports[i].pm |= BIT_ULL(port);
-			port_bitmap &= ~BIT_ULL(i);
+			priv->ports[i].pm &= ~BIT_ULL(port);
+			port_bitmap |= BIT_ULL(i);
 		}
 	}
 	store_mcgroups(priv, port);
 
-	/* Add all other ports to this port matrix. */
+	/* Remove all other ports from this port matrix. */
 	if (priv->ports[port].enable) {
 		v = priv->r->traffic_get(port);
-		v |= port_bitmap;
+		v &= ~port_bitmap;
 		priv->r->traffic_set(port, v);
 	}
 	priv->ports[port].pm &= ~port_bitmap;
