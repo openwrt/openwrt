@@ -994,7 +994,7 @@ static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
 	}
 
 	set_bit(mc_group, priv->mc_group_bm);
-	portmask = BIT_ULL(port) | BIT_ULL(priv->cpu_port); 
+	portmask = BIT_ULL(port);
 	priv->r->write_mcast_pmask(mc_group, portmask);
 
 	return mc_group;
@@ -1026,11 +1026,8 @@ static u64 rtl83xx_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_gr
 	}
 	portmask &= ~BIT_ULL(port);
 	priv->r->write_mcast_pmask(mc_group, portmask);
-	if (portmask == BIT_ULL(priv->cpu_port)) {
-		portmask &= ~BIT_ULL(priv->cpu_port);
-		priv->r->write_mcast_pmask(mc_group, portmask);
+	if (!portmask)
 		clear_bit(mc_group, priv->mc_group_bm);
-	}
 
 	return portmask;
 }
