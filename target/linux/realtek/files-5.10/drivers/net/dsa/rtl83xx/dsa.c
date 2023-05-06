@@ -988,11 +988,6 @@ static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
 	if (mc_group >= MAX_MC_GROUPS - 1)
 		return -1;
 
-	if (priv->is_lagmember[port]) {
-		pr_info("%s: %d is lag slave. ignore\n", __func__, port);
-		return 0;
-	}
-
 	set_bit(mc_group, priv->mc_group_bm);
 	portmask = BIT_ULL(port);
 	priv->r->write_mcast_pmask(mc_group, portmask);
@@ -1005,10 +1000,7 @@ static u64 rtl83xx_mc_group_add_port(struct rtl838x_switch_priv *priv, int mc_gr
 	u64 portmask = priv->r->read_mcast_pmask(mc_group);
 
 	pr_debug("%s: %d\n", __func__, port);
-	if (priv->is_lagmember[port]) {
-		pr_info("%s: %d is lag slave. ignore\n", __func__, port);
-		return portmask;
-	}
+
 	portmask |= BIT_ULL(port);
 	priv->r->write_mcast_pmask(mc_group, portmask);
 
@@ -1020,10 +1012,7 @@ static u64 rtl83xx_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_gr
 	u64 portmask = priv->r->read_mcast_pmask(mc_group);
 
 	pr_debug("%s: %d\n", __func__, port);
-	if (priv->is_lagmember[port]) {
-		pr_info("%s: %d is lag slave. ignore\n", __func__, port);
-		return portmask;
-	}
+
 	portmask &= ~BIT_ULL(port);
 	priv->r->write_mcast_pmask(mc_group, portmask);
 	if (!portmask)
