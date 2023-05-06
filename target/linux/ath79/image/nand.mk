@@ -390,6 +390,14 @@ define Device/zte_mf281
 endef
 TARGET_DEVICES += zte_mf281
 
+define Device/zte_mf282
+  $(Device/zte_mf28x_common)
+  DEVICE_MODEL := MF282
+  DEVICE_PACKAGES += ath10k-firmware-qca988x-ct kmod-usb-net-qmi-wwan \
+	kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += zte_mf282
+
 define Device/zte_mf286
   $(Device/zte_mf28x_common)
   DEVICE_MODEL := MF286
