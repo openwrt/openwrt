@@ -1076,6 +1076,22 @@ endef
 # Missing DSA Setup
 #TARGET_DEVICES += teltonika_rutx10
 
+define Device/teltonika_rutx50
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Teltonika
+	DEVICE_MODEL := RUTX50
+	SOC := qcom-ipq4018
+	DEVICE_DTS_CONFIG := config@5
+	KERNEL_INSTALL := 1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	FILESYSTEMS := squashfs
+	IMAGE/factory.ubi := append-ubi
+	DEVICE_PACKAGES := ipq-wifi-teltonika_rutx kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += teltonika_rutx50
+
 define Device/tel_x1pro
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Telco
