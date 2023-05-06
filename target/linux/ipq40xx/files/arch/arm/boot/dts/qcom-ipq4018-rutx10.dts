@@ -22,6 +22,43 @@
 				linux,default-trigger = "phy1tpt";
 			};
 		};
+
+		gpio_export {
+			compatible = "gpio-export";
+			#size-cells = <0>;
+
+			gpio_out {
+				gpio-export,name = "gpio_out";
+				gpio-export,output = <0>;
+				gpio-export,direction_may_change = <0>;
+				gpios = <&stm32_io 23 GPIO_ACTIVE_HIGH>;
+			};
+
+			gpio_in {
+				gpio-export,name = "gpio_in";
+				gpio-export,input = <0>;
+				gpio-export,direction_may_change = <0>;
+				gpios = <&stm32_io 24 GPIO_ACTIVE_LOW>;
+			};
+		};
+	};
+};
+
+&blsp1_i2c3 {
+	status = "okay";
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+	clock-frequency = <400000>;
+
+	stm32_io: stm32@74 {
+		compatible = "tlt,stm32v1";
+		#gpio-cells = <2>;
+		#interrupt-cells = <2>;
+		gpio-controller;
+		interrupt-controller;
+		interrupt-parent = <&tlmm>;
+		interrupts = <5 2>;
+		reg = <0x74>;
 	};
 };
 
