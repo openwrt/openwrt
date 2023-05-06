@@ -1434,6 +1434,20 @@ static int rtl83xx_vlan_prepare(struct dsa_switch *ds, int port,
 	return 0;
 }
 
+static void rtl83xx_vlan_set_pvid(struct rtl838x_switch_priv *priv,
+				  int port, int pvid)
+{
+	/* Set both inner and outer PVID of the port */
+	priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, pvid);
+	priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, pvid);
+	priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
+					PBVLAN_MODE_UNTAG_AND_PRITAG);
+	priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
+					PBVLAN_MODE_UNTAG_AND_PRITAG);
+
+	priv->ports[port].pvid = pvid;
+}
+
 static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 			    const struct switchdev_obj_port_vlan *vlan,
 			    struct netlink_ext_ack *extack)
@@ -1456,17 +1470,10 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 
 	mutex_lock(&priv->reg_mutex);
 
-	if (vlan->flags & BRIDGE_VLAN_INFO_PVID && vlan->vid) {
-		/* Set both inner and outer PVID of the port */
-		priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, vlan->vid);
-		priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, vlan->vid);
-		priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
-		                                PBVLAN_MODE_UNTAG_AND_PRITAG);
-		priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
-		                                PBVLAN_MODE_UNTAG_AND_PRITAG);
-
-		priv->ports[port].pvid = vlan->vid;
-	}
+	if (vlan->flags & BRIDGE_VLAN_INFO_PVID)
+		rtl83xx_vlan_set_pvid(priv, port, vlan->vid);
+	else if (priv->ports[port].pvid == vlan->vid)
+		rtl83xx_vlan_set_pvid(priv, port, 0);
 
 	/* Get port memberships of this vlan */
 	priv->r->vlan_tables_read(vlan->vid, &info);
@@ -1486,6 +1493,8 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	info.tagged_ports |= BIT_ULL(port);
 	if (vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED)
 		info.untagged_ports |= BIT_ULL(port);
+	else
+		info.untagged_ports &= ~BIT_ULL(port);
 
 	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
 	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
@@ -1518,12 +1527,7 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 
 	/* Reset to default if removing the current PVID */
 	if (vlan->vid == pvid) {
-		priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_INNER, 0);
-		priv->r->vlan_port_pvid_set(port, PBVLAN_TYPE_OUTER, 0);
-		priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_INNER,
-		                                PBVLAN_MODE_UNTAG_AND_PRITAG);
-		priv->r->vlan_port_pvidmode_set(port, PBVLAN_TYPE_OUTER,
-		                                PBVLAN_MODE_UNTAG_AND_PRITAG);
+		rtl83xx_vlan_set_pvid(priv, port, 0);
 	}
 	/* Get port memberships of this vlan */
 	priv->r->vlan_tables_read(vlan->vid, &info);
