@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1413,6 +1413,53 @@ void ath9k_deinit_debug(struct ath_softc
+@@ -1413,6 +1413,54 @@ void ath9k_deinit_debug(struct ath_softc
  	ath9k_cmn_spectral_deinit_debug(&sc->spec_priv);
  }
  
@@ -39,7 +39,8 @@
 +		} else {
 +			bytes = 2;
 +		}
-+		copy_to_user(user_buf, from, bytes);
++		if (copy_to_user(user_buf, from, bytes))
++			return -EFAULT;
 +		user_buf += bytes;
 +	}
 +	return *ppos - pos;
