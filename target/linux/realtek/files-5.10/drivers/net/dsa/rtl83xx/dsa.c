@@ -1024,6 +1024,7 @@ static u64 rtl83xx_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_gr
 		pr_info("%s: %d is lag slave. ignore\n", __func__, port);
 		return portmask;
 	}
+	portmask &= ~BIT_ULL(port);
 	priv->r->write_mcast_pmask(mc_group, portmask);
 	if (portmask == BIT_ULL(priv->cpu_port)) {
 		portmask &= ~BIT_ULL(priv->cpu_port);
