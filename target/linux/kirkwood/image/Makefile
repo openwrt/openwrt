@@ -188,8 +188,8 @@ define Device/iom_ix4-200d
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := StorCenter ix4-200d
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
-	kmod-gpio-button-hotplug kmod-mvsdio kmod-hwmon-adt7475 \
-	kmod-spi-gpio kmod-gpio-nxp-74hc164
+	kmod-gpio-button-hotplug kmod-gpio-nxp-74hc164 \
+	kmod-hwmon-adt7475 kmod-mvsdio kmod-spi-gpio
   SUPPORTED_DEVICES += marvell,rd88f6281-a
   PAGESIZE := 512
   SUBPAGESIZE := 256
