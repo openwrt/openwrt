@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=f2fs-tools
-PKG_VERSION:=1.15.0
-PKG_RELEASE:=2
+PKG_VERSION:=1.16.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/snapshot/
-PKG_HASH:=147d471040b44900283ce2c935f1d35d13d7f40008e7cb8fab2b69f54da01a4f
+PKG_HASH:=208c7a07e95383fbd7b466b5681590789dcb41f41bf197369c41a95383b57c5e
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-2.0-only
@@ -143,7 +143,6 @@ Package/f2fsck-selinux/install = $(Package/f2fsck/install)
 
 define Package/f2fs-tools/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/f2fstat $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/fibmap.f2fs $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/parse.f2fs $(1)/usr/sbin
 endef
