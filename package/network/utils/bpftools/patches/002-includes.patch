@@ -14,7 +14,7 @@
 @@ -73,10 +73,10 @@ CFLAGS += -W -Wall -Wextra -Wno-unused-p
  CFLAGS += $(filter-out -Wswitch-enum -Wnested-externs,$(EXTRA_WARNINGS))
  CFLAGS += -DPACKAGE='"bpftool"' -D__EXPORTED_HEADERS__ \
- 	-I$(if $(OUTPUT),$(OUTPUT),.) \
+ 	-I$(or $(OUTPUT),.) \
 -	-I$(LIBBPF_INCLUDE) \
  	-I$(srctree)/src/kernel/bpf/ \
  	-I$(srctree)/include \

@@ -19,6 +19,7 @@ ath79_setup_interfaces()
 	araknis,an-700-ap-i-ac|\
 	arduino,yun|\
 	aruba,ap-105|\
+	aruba,ap-175|\
 	asus,rp-ac51|\
 	asus,rp-ac66|\
 	avm,fritz1750e|\
@@ -67,6 +68,8 @@ ath79_setup_interfaces()
 	pisen,wmb001n|\
 	pisen,wmm003n|\
 	ruckus,zf7321|\
+	ruckus,zf7341|\
+	ruckus,zf7351|\
 	siemens,ws-ap3610|\
 	sophos,ap15|\
 	sophos,ap55|\
@@ -138,6 +141,7 @@ ath79_setup_interfaces()
 	engenius,ews511ap|\
 	engenius,ews660ap|\
 	ocedo,ursus|\
+	ruckus,zf7363|\
 	ruckus,zf7372|\
 	ubnt,unifi-ap-outdoor-plus)
 		ucidef_set_interface_lan "eth0 eth1"
@@ -213,6 +217,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "3:lan:4" "4:lan:3" "5:lan:2" "2:wan"
 		;;
+	alcatel,hh40v|\
 	comfast,cf-e110n-v2|\
 	comfast,cf-e120a-v3|\
 	comfast,cf-e314n-v2|\
@@ -631,7 +636,6 @@ ath79_setup_macs()
 	dlink,dir-629-a1)
 		wan_mac=$(mtd_get_mac_text "mfcdata" 0x6a)
 		;;
-	dlink,dir-825-b1|\
 	trendnet,tew-673gru)
 		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
 		wan_mac=$(mtd_get_mac_text "caldata" 0xffb4)
@@ -744,6 +748,9 @@ ath79_setup_macs()
 		;;
 	ruckus,zf7025|\
 	ruckus,zf7321|\
+	ruckus,zf7341|\
+	ruckus,zf7351|\
+	ruckus,zf7363|\
 	ruckus,zf7372)
 		lan_mac=$(mtd_get_mac_binary board-data 0x807E)
 		label_mac=$lan_mac

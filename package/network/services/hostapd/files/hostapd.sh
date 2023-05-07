@@ -265,11 +265,11 @@ hostapd_common_add_bss_config() {
 	config_add_int ieee80211w
 	config_add_int eapol_version
 
-	config_add_string 'auth_server:host' 'server:host'
+	config_add_array auth_server acct_server
+	config_add_string 'server:host'
 	config_add_string auth_secret key
 	config_add_int 'auth_port:port' 'port:port'
 
-	config_add_string acct_server
 	config_add_string acct_secret
 	config_add_int acct_port
 	config_add_int acct_interval
@@ -524,6 +524,20 @@ append_airtime_sta_weight() {
 	[ -n "$1" ] && append bss_conf "airtime_sta_weight=$1" "$N"
 }
 
+append_auth_server() {
+	[ -n "$1" ] || return
+	append bss_conf "auth_server_addr=$1" "$N"
+	append bss_conf "auth_server_port=$auth_port" "$N"
+	[ -n "$auth_secret" ] && append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+}
+
+append_acct_server() {
+	[ -n "$1" ] || return
+	append bss_conf "acct_server_addr=$1" "$N"
+	append bss_conf "acct_server_port=$acct_port" "$N"
+	[ -n "$acct_secret" ] && append bss_conf "acct_server_shared_secret=$acct_secret" "$N"
+}
+
 hostapd_set_bss_options() {
 	local var="$1"
 	local phy="$2"
@@ -542,7 +556,7 @@ hostapd_set_bss_options() {
 		wps_independent wps_device_type wps_device_name wps_manufacturer wps_pin \
 		macfilter ssid utf8_ssid wmm uapsd hidden short_preamble rsn_preauth \
 		iapp_interface eapol_version dynamic_vlan ieee80211w nasid \
-		acct_server acct_secret acct_port acct_interval \
+		acct_secret acct_port acct_interval \
 		bss_load_update_period chan_util_avg_period sae_require_mfp sae_pwe \
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key skip_inactivity_poll \
 		ppsk airtime_bss_weight airtime_bss_limit airtime_sta_weight \
@@ -614,15 +628,10 @@ hostapd_set_bss_options() {
 	set_default nasid "${macaddr//\:}"
 	append bss_conf "nas_identifier=$nasid" "$N"
 
-	[ -n "$acct_server" ] && {
-		append bss_conf "acct_server_addr=$acct_server" "$N"
-		append bss_conf "acct_server_port=$acct_port" "$N"
-		[ -n "$acct_secret" ] && \
-			append bss_conf "acct_server_shared_secret=$acct_secret" "$N"
-		[ -n "$acct_interval" ] && \
-			append bss_conf "radius_acct_interim_interval=$acct_interval" "$N"
-		json_for_each_item append_radius_acct_req_attr radius_acct_req_attr
-	}
+	[ -n "$acct_interval" ] && \
+		append bss_conf "radius_acct_interim_interval=$acct_interval" "$N"
+	json_for_each_item append_acct_server acct_server
+	json_for_each_item append_radius_acct_req_attr radius_acct_req_attr
 
 	[ -n "$ocv" ] && append bss_conf "ocv=$ocv" "$N"
 
@@ -659,11 +668,9 @@ hostapd_set_bss_options() {
 		psk|sae|psk-sae)
 			json_get_vars key wpa_psk_file
 			if [ "$auth_type" = "psk" ] && [ "$ppsk" -ne 0 ] ; then
-				json_get_vars auth_server auth_secret auth_port
+				json_get_vars auth_secret auth_port
 				set_default auth_port 1812
-				append bss_conf "auth_server_addr=$auth_server" "$N"
-				append bss_conf "auth_server_port=$auth_port" "$N"
-				append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+				json_for_each_item append_auth_server auth_server
 				append bss_conf "macaddr_acl=2" "$N"
 				append bss_conf "wpa_psk_radius=2" "$N"
 			elif [ ${#key} -eq 64 ]; then
@@ -732,12 +739,7 @@ hostapd_set_bss_options() {
 			set_default dae_port 3799
 			set_default request_cui 0
 
-			[ "$eap_server" -eq 0 ] && {
-				append bss_conf "auth_server_addr=$auth_server" "$N"
-				append bss_conf "auth_server_port=$auth_port" "$N"
-				append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
-			}
-
+			[ "$eap_server" -eq 0 ] && json_for_each_item append_auth_server auth_server
 			[ "$request_cui" -gt 0 ] && append bss_conf "radius_request_cui=$request_cui" "$N"
 			[ -n "$eap_reauth_period" ] && append bss_conf "eap_reauth_period=$eap_reauth_period" "$N"
 
@@ -777,9 +779,7 @@ hostapd_set_bss_options() {
 			[ -n "$auth_server" ] &&  {
 				set_default auth_port 1812
 
-				append bss_conf "auth_server_addr=$auth_server" "$N"
-				append bss_conf "auth_server_port=$auth_port" "$N"
-				[ -n "$auth_secret" ] && append bss_conf "auth_server_shared_secret=$auth_secret" "$N"
+				json_for_each_item append_auth_server auth_server
 				[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
 				[ -n "$radius_client_addr" ] && append bss_conf "radius_client_addr=$radius_client_addr" "$N"
 				append bss_conf "macaddr_acl=2" "$N"

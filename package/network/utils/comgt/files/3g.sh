@@ -72,6 +72,8 @@ proto_3g_setup() {
 					*) CODE="2,2";;
 				esac
 				export MODE="AT^SYSCFG=${CODE},3FFFFFFF,2,4"
+			elif echo "$cardinfo" | grep -q "MikroTik"; then
+				COMMAND="AT+CFUN=1" gcom -d "$device" -s /etc/gcom/runcommand.gcom || return 1
 			fi
 
 			if [ -n "$pincode" ]; then

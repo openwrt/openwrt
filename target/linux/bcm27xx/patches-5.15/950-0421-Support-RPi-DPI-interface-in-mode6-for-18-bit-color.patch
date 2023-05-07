@@ -169,27 +169,27 @@ Signed-off-by: Joerg Quinten <aBUGSworstnightmare@gmail.com>
  	}, {
 --- a/drivers/gpu/drm/vc4/vc4_dpi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dpi.c
-@@ -165,10 +165,20 @@ static void vc4_dpi_encoder_enable(struc
- 			dpi_c |= VC4_SET_FIELD(DPI_FORMAT_18BIT_666_RGB_2,
- 					       DPI_FORMAT);
- 			break;
-+		case MEDIA_BUS_FMT_BGR666_1X24_CPADHI:
-+			dpi_c |= VC4_SET_FIELD(DPI_FORMAT_18BIT_666_RGB_2,
-+					       DPI_FORMAT);
-+			dpi_c |= VC4_SET_FIELD(DPI_ORDER_BGR, DPI_ORDER);
-+			break;
- 		case MEDIA_BUS_FMT_RGB666_1X18:
- 			dpi_c |= VC4_SET_FIELD(DPI_FORMAT_18BIT_666_RGB_1,
- 					       DPI_FORMAT);
- 			break;
-+		case MEDIA_BUS_FMT_BGR666_1X18:
-+			dpi_c |= VC4_SET_FIELD(DPI_FORMAT_18BIT_666_RGB_1,
-+					       DPI_FORMAT);
-+			dpi_c |= VC4_SET_FIELD(DPI_ORDER_BGR, DPI_ORDER);
-+			break;
- 		case MEDIA_BUS_FMT_RGB565_1X16:
- 			dpi_c |= VC4_SET_FIELD(DPI_FORMAT_16BIT_565_RGB_3,
- 					       DPI_FORMAT);
+@@ -167,10 +167,20 @@ static void vc4_dpi_encoder_enable(struc
+ 				dpi_c |= VC4_SET_FIELD(DPI_FORMAT_18BIT_666_RGB_2,
+ 						       DPI_FORMAT);
+ 				break;
++			case MEDIA_BUS_FMT_BGR666_1X24_CPADHI:
++				dpi_c |= VC4_SET_FIELD(DPI_FORMAT_18BIT_666_RGB_2,
++						DPI_FORMAT);
++				dpi_c |= VC4_SET_FIELD(DPI_ORDER_BGR, DPI_ORDER);
++				break;
+ 			case MEDIA_BUS_FMT_RGB666_1X18:
+ 				dpi_c |= VC4_SET_FIELD(DPI_FORMAT_18BIT_666_RGB_1,
+ 						       DPI_FORMAT);
+ 				break;
++			case MEDIA_BUS_FMT_BGR666_1X18:
++				dpi_c |= VC4_SET_FIELD(DPI_FORMAT_18BIT_666_RGB_1,
++						DPI_FORMAT);
++				dpi_c |= VC4_SET_FIELD(DPI_ORDER_BGR, DPI_ORDER);
++				break;
+ 			case MEDIA_BUS_FMT_RGB565_1X16:
+ 				dpi_c |= VC4_SET_FIELD(DPI_FORMAT_16BIT_565_RGB_1,
+ 						       DPI_FORMAT);
 --- a/include/uapi/linux/media-bus-format.h
 +++ b/include/uapi/linux/media-bus-format.h
 @@ -34,7 +34,7 @@

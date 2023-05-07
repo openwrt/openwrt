@@ -25,7 +25,7 @@
 
 	led_user: user {
 		label = "green:user";
-		gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		gpios = <&gpio 3 (GPIO_ACTIVE_LOW|GPIO_OPEN_DRAIN)>;
 	};
 };
 

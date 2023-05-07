@@ -461,6 +461,7 @@ config KERNEL_BPF_EVENTS
 config KERNEL_BPF_KPROBE_OVERRIDE
 	bool
 	depends on KERNEL_KPROBES
+	default n
 
 config KERNEL_AIO
 	bool "Compile the kernel with asynchronous IO support"
@@ -468,7 +469,8 @@ config KERNEL_AIO
 
 config KERNEL_IO_URING
 	bool "Compile the kernel with io_uring support"
-	default y if !SMALL_FLASH
+	depends on !SMALL_FLASH
+	default y if (x86_64 || aarch64)
 
 config KERNEL_FHANDLE
 	bool "Compile the kernel with support for fhandle syscalls"
@@ -539,6 +541,18 @@ config KERNEL_SOFTLOCKUP_DETECTOR
 	  mode for more than 20 seconds, without giving other tasks a
 	  chance to run.  The current stack trace is displayed upon
 	  detection and the system will stay locked up.
+
+config KERNEL_HARDLOCKUP_DETECTOR
+	bool "Compile the kernel with detect Hard Lockups"
+	depends on KERNEL_DEBUG_KERNEL
+	help
+	  Say Y here to enable the kernel to act as a watchdog to detect
+	  hard lockups.
+
+	  Hardlockups are bugs that cause the CPU to loop in kernel mode
+	  for more than 10 seconds, without letting other interrupts have a
+	  chance to run.  The current stack trace is displayed upon detection
+	  and the system will stay locked up.
 
 config KERNEL_DETECT_HUNG_TASK
 	bool "Compile the kernel with detect Hung Tasks"

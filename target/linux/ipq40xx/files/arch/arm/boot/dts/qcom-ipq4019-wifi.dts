@@ -15,6 +15,10 @@
 
 	aliases {
 		label-mac-device = &gmac0;
+		led-boot = &led0_blue;
+		led-failsafe = &led0_red;
+		led-running = &led0_blue;
+		led-upgrade = &led0_red;
 	};
 
 	chosen {
@@ -49,16 +53,29 @@
 			};
 		};
 	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&fw_pinmux>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 57 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
 };
 
 &tlmm {
-	fw_pinmux {
+	fw_pinmux: fw_pinmux {
 		wp {
 			pins = "gpio53";
 			output-low;
 		};
 		recovery {
 			pins = "gpio57";
+			function = "gpio";
 			bias-none;
 		};
 		developer {
@@ -242,12 +259,13 @@
 		clock-mode = /bits/ 8 <1>;
 
 #if 1
-		led@0 {
+		led0_red: led@0 {
 			reg = <0>;
 			chan-name = "LED0_Red";
 			led-cur = /bits/ 8 <0x64>;
 			max-cur = /bits/ 8 <0x78>;
 			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_FAULT;
 		};
 
 		led@1 {
@@ -258,12 +276,13 @@
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
-		led@2 {
+		led0_blue: led@2 {
 			reg = <2>;
 			chan-name = "LED0_Blue";
 			led-cur = /bits/ 8 <0x64>;
 			max-cur = /bits/ 8 <0x78>;
 			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 		};
 #else
 		/*
@@ -272,6 +291,7 @@
 		 * # echo 255 > /sys/class/leds/tricolor/brightness
 		 */
 		multi-led@2 {
+			function = LED_FUNCTION_POWER;
 			reg = <2>;
 			color = <LED_COLOR_ID_RGB>;
 			#address-cells = <1>;

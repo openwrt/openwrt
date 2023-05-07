@@ -19,7 +19,8 @@ alfa-network,r36m-e4g|\
 alfa-network,tube-e4g|\
 engenius,epg600|\
 engenius,esr600h|\
-sitecom,wlr-4100-v1-002)
+sitecom,wlr-4100-v1-002|\
+zyxel,keenetic-lite-iii-a)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x1000"
 	;;
 arcadyan,we420223-99)
@@ -61,7 +62,8 @@ h3c,tx1801-plus|\
 h3c,tx1806|\
 jcg,q20|\
 linksys,e7350|\
-netgear,wax202)
+netgear,wax202|\
+zyxel,wsm20)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 haier,har-20s2u1|\
@@ -85,6 +87,7 @@ linksys,ea8100-v2|\
 mts,wg430223)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
 	;;
+snr,snr-cpe-me2-sfp|\
 snr,cpe-w4n-mt)
 	idx="$(find_mtd_index uboot-env)"
 	[ -n "$idx" ] && \

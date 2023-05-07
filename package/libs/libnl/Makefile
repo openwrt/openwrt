@@ -20,6 +20,8 @@ PKG_CPE_ID:=cpe:/a:libnl_project:libnl
 PKG_INSTALL:=1
 PKG_FIXUP:=autoreconf
 
+PKG_BUILD_FLAGS:=gc-sections
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libnl/default
@@ -80,7 +82,7 @@ define Package/libnl/description
  message construction and parsing, object caching system, etc.
 endef
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections $(FPIC)
+TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
 	--disable-debug

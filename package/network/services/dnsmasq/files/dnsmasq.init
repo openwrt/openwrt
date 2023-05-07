@@ -557,6 +557,8 @@ dhcp_add() {
 	config_get leasetime "$cfg" leasetime 12h
 	config_get options "$cfg" options
 	config_get_bool dynamicdhcp "$cfg" dynamicdhcp 1
+	config_get_bool dynamicdhcpv4 "$cfg" dynamicdhcpv4 $dynamicdhcp
+	config_get_bool dynamicdhcpv6 "$cfg" dynamicdhcpv6 $dynamicdhcp
 
 	config_get dhcpv4 "$cfg" dhcpv4
 	config_get dhcpv6 "$cfg" dhcpv6
@@ -586,12 +588,12 @@ dhcp_add() {
 
 	# make sure the DHCP range is not empty
 	if [ "$dhcpv4" != "disabled" ] && eval "$(ipcalc.sh "${subnet%%/*}" "$netmask" "$start" "$limit")" ; then
-		[ "$dynamicdhcp" = "0" ] && END="static"
+		[ "$dynamicdhcpv4" = "0" ] && END="static"
 
 		xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
 	fi
 
-	if [ "$dynamicdhcp" = "0" ] ; then
+	if [ "$dynamicdhcpv6" = "0" ] ; then
 		dhcp6range="::,static"
 	else
 		dhcp6range="::1000,::ffff"
@@ -1212,6 +1214,7 @@ dnsmasq_start()
 		[ ! -e "$logfacility" ] && touch "$logfacility"
 		procd_add_jail_mount_rw "$logfacility"
 	esac
+	[ -e "$hostsfile" ] && procd_add_jail_mount $hostsfile
 
 	procd_close_instance
 }

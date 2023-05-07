@@ -132,6 +132,7 @@ define Device/8dev_habanero-dvk
 	IMAGE_SIZE := 30976k
 	SOC := qcom-ipq4019
 	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
+	DEVICE_PACKAGES := ipq-wifi-8dev_habanero
 endef
 TARGET_DEVICES += 8dev_habanero-dvk
 
@@ -141,6 +142,7 @@ define Device/8dev_jalapeno-common
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := ipq-wifi-8dev_jalapeno
 endef
 
 define Device/8dev_jalapeno
@@ -188,8 +190,7 @@ define Device/aruba_ap-365
 	DEVICE_MODEL := AP-365
 	DEVICE_PACKAGES := kmod-hwmon-ad7418 ipq-wifi-aruba_ap-365
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += aruba_ap-365
+TARGET_DEVICES += aruba_ap-365
 
 define Device/asus_map-ac2200
 	$(call Device/FitImageLzma)
@@ -294,8 +295,7 @@ define Device/avm_fritzrepeater-3000
 	SOC := qcom-ipq4019
 	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct fritz-caldata fritz-tffs-nand
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += avm_fritzrepeater-3000
+TARGET_DEVICES += avm_fritzrepeater-3000
 
 define Device/buffalo_wtr-m2133hp
 	$(call Device/FitImage)
@@ -336,7 +336,7 @@ define Device/cilab_meshpoint-one
 	$(call Device/8dev_jalapeno-common)
 	DEVICE_VENDOR := Crisis Innovation Lab
 	DEVICE_MODEL := MeshPoint.One
-	DEVICE_PACKAGES := kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
+	DEVICE_PACKAGES += kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += cilab_meshpoint-one
@@ -589,8 +589,7 @@ define Device/glinet_gl-ap1300
 	KERNEL_INSTALL := 1
 	DEVICE_PACKAGES := ipq-wifi-glinet_gl-ap1300 kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += glinet_gl-ap1300
+TARGET_DEVICES += glinet_gl-ap1300
 
 define Device/glinet_gl-b1300
 	$(call Device/FitzImage)
@@ -814,16 +813,14 @@ define Device/netgear_ex6100v2
 	DEVICE_MODEL := EX6100
 	DEVICE_VARIANT := v2
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += netgear_ex6100v2
+TARGET_DEVICES += netgear_ex6100v2
 
 define Device/netgear_ex6150v2
 	$(call Device/netgear_ex61x0v2)
 	DEVICE_MODEL := EX6150
 	DEVICE_VARIANT := v2
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += netgear_ex6150v2
+TARGET_DEVICES += netgear_ex6150v2
 
 define Device/netgear_orbi
 	$(call Device/DniImage)
@@ -1121,6 +1118,19 @@ define Device/unielec_u4019-32m
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += unielec_u4019-32m
+
+define Device/wallys_dr40x9
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Wallys
+	DEVICE_MODEL := DR40X9
+	SOC := qcom-ipq40x9
+	DEVICE_DTS_CONFIG := config@ap.dk07.1-c1
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-wallys_dr40x9
+endef
+TARGET_DEVICES += wallys_dr40x9
 
 define Device/zte_mf18a
 	$(call Device/FitImage)

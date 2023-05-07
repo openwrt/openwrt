@@ -100,7 +100,12 @@ platform_do_upgrade_linksys() {
 		fi
 
 		# complete std upgrade
-		nand_upgrade_tar "$1"
+		if nand_upgrade_tar "$1" ; then
+			nand_do_upgrade_success
+		else
+			nand_do_upgrade_failed
+		fi
+
 	}
 
 	[ "$magic_long" = "27051956" ] && {

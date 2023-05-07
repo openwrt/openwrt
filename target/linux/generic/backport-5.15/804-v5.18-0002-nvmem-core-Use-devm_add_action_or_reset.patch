@@ -16,7 +16,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -902,9 +902,9 @@ void nvmem_unregister(struct nvmem_devic
+@@ -905,9 +905,9 @@ void nvmem_unregister(struct nvmem_devic
  }
  EXPORT_SYMBOL_GPL(nvmem_unregister);
  
@@ -28,7 +28,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  }
  
  /**
-@@ -921,20 +921,16 @@ static void devm_nvmem_release(struct de
+@@ -924,20 +924,16 @@ static void devm_nvmem_release(struct de
  struct nvmem_device *devm_nvmem_register(struct device *dev,
  					 const struct nvmem_config *config)
  {

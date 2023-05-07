@@ -10,6 +10,12 @@ case "$board" in
 	ucidef_set_led_netdev "lan" "LAN" "orange:eth0" "eth0"
 	ucidef_set_led_switch "wan" "WAN" "orange:eth1" "switch0" "0x04"
 	;;
+alcatel,hh40v)
+	ucidef_set_led_netdev "lan_data" "LAN Data" "green:lan" "eth1" "tx rx"
+	ucidef_set_led_netdev "lan_link" "LAN Link" "orange:lan" "eth1" "link"
+	ucidef_set_led_netdev "wan_data" "WAN Data" "green:wan" "eth0" "tx rx"
+	ucidef_set_led_netdev "wan_link" "WAN Link" "orange:wan" "eth0" "link"
+	;;
 alfa-network,ap121f|\
 alfa-network,ap121fe|\
 avm,fritz450e|\

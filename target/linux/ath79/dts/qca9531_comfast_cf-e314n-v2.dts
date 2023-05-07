@@ -33,23 +33,23 @@
 		};
 
 		rssilow {
-			label = "red:signal1";
+			label = "red:rssilow";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimediumlow {
-			label = "red:signal2";
+			label = "red:rssimediumlow";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimediumhigh {
-			label = "green:signal3";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			label = "green:rssimediumhigh";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		led_rssihigh: rssihigh {
-			label = "green:signal4";
-			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			label = "green:rssihigh";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {

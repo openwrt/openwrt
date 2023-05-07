@@ -115,6 +115,23 @@ endef
 $(eval $(call KernelPackage,ledtrig-pattern))
 
 
+define KernelPackage/ledtrig-tty
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED Trigger for TTY devices
+  DEPENDS:=@LINUX_5_15
+  KCONFIG:=CONFIG_LEDS_TRIGGER_TTY
+  FILES:=$(LED_TRIGGER_DIR)/ledtrig-tty.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-tty)
+endef
+
+define KernelPackage/ledtrig-tty/description
+  This allows LEDs to be controlled by activity on ttys which includes
+  serial devices like '/dev/ttyS0'.
+endef
+
+$(eval $(call KernelPackage,ledtrig-tty))
+
+
 define KernelPackage/leds-apu
   SUBMENU:=$(LEDS_MENU)
   TITLE:=PC Engines APU1 LED support

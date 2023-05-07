@@ -32,6 +32,9 @@ mikrotik,hap-ac3-lte6-kit)
 sony,ncp-hg100-cellular)
 	ucidef_add_gpio_switch "uart_dbgcon_en" "debug console enable" "427" "1"
 	;;
+wallys,dr40x9)
+	ucidef_add_gpio_switch "sim_card_select" "SIM card select" "423" "0"
+	;;
 zte,mf286d|\
 zte,mf289f)
 	ucidef_add_gpio_switch "power_btn_block" "Power button blocker" "421" "0"

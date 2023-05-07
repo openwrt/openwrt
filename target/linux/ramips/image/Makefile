@@ -43,6 +43,7 @@ define Build/loader-common
 		BOARD="$(BOARDNAME)" PLATFORM="$(LOADER_PLATFORM)" \
 		LZMA_TEXT_START=$(LZMA_TEXT_START) \
 		LOADADDR=$(LOADADDR) \
+		SUBTARGET=$(SUBTARGET) \
 		$(1) compile loader.$(LOADER_TYPE)
 	mv "$@.$(LOADER_TYPE)" "$@"
 	rm -rf $@.src

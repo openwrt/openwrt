@@ -453,7 +453,7 @@
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_1000>, <&macaddr_config_0>;
 	mac-address-increment = <2>;
-	qcom,ath10k-calibration-variant = "zte,mf18a";
+	qcom,ath10k-calibration-variant = "ZTE-MF18A";
 };
 
 //* This node is used for 5Ghz on QCA9982 */
@@ -474,6 +474,7 @@
 			nvmem-cell-names = "pre-calibration", "mac-address";
 			nvmem-cells = <&precal_art_9000>, <&macaddr_config_0>;
 			mac-address-increment = <3>;
+			qcom,ath10k-calibration-variant = "ZTE-MF18A";
 			reg = <0x00010000 0 0 0 0>;
 		};
 	};

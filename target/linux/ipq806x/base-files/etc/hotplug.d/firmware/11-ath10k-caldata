@@ -52,6 +52,10 @@ case "$FIRMWARE" in
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x1000 0x2f20
 		;;
+	nokia,ac400i)
+		caldata_extract "0:art" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) +2)
+		;;
 	zyxel,nbg6817)
 		caldata_extract "0:art" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 1)
@@ -83,6 +87,10 @@ case "$FIRMWARE" in
 	meraki,mr52)
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x5000 0x2f20
+		;;
+	nokia,ac400i)
+		caldata_extract "0:art" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) +3)
 		;;
 	zyxel,nbg6817)
 		caldata_extract "0:art" 0x5000 0x2f20

@@ -21,6 +21,7 @@ PKG_CPE_ID:=cpe:/a:lldpd_project:lldpd
 
 PKG_FIXUP:=autoreconf
 PKG_BUILD_PARALLEL:=1
+PKG_BUILD_FLAGS:=lto
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -111,7 +112,6 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_SNMP),--with-snmp,) \
 	$(if $(CONFIG_USE_GLIBC),,--without-libbsd)
 
-TARGET_CFLAGS += -flto
-TARGET_LDFLAGS += -flto -Wl,--gc-sections,--as-needed
+TARGET_LDFLAGS += -Wl,--gc-sections,--as-needed
 
 $(eval $(call BuildPackage,lldpd))

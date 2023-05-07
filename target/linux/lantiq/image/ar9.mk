@@ -17,6 +17,8 @@ define Device/avm_fritz7320
   DEVICE_MODEL := FRITZ!Box 7320
   DEVICE_ALT0_VENDOR := 1&1
   DEVICE_ALT0_MODEL := HomeServer
+  DEVICE_ALT1_VENDOR := AVM
+  DEVICE_ALT1_MODEL := Fritz!Box 7330
   SOC := ar9
   IMAGE_SIZE := 15744k
   LOADER_FLASH_OFFS := 0x31000
@@ -88,6 +90,8 @@ define Device/netgear_dgn3500
   DEVICE_MODEL := DGN3500
   SOC := ar9
   IMAGE_SIZE := 16000k
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGES := \
 	sysupgrade-na.bin sysupgrade.bin \
 	factory-na.img factory.img
@@ -119,6 +123,8 @@ define Device/netgear_dgn3500b
   DEVICE_MODEL := DGN3500B
   SOC := ar9
   IMAGE_SIZE := 16000k
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGES += factory.img
   IMAGE/sysupgrade.bin := \
 	append-kernel | append-rootfs | dgn3500-sercom-footer 0x0 "DE" | \

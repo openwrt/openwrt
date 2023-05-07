@@ -20,7 +20,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -827,8 +827,11 @@ struct nvmem_device *nvmem_register(cons
+@@ -850,8 +850,11 @@ struct nvmem_device *nvmem_register(cons
  
  	if (nvmem->nkeepout) {
  		rval = nvmem_validate_keepouts(nvmem);

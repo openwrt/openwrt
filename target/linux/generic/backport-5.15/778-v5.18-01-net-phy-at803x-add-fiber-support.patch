@@ -1,0 +1,193 @@
+From 3265f421887847db9ae2c01a00645e33608556d8 Mon Sep 17 00:00:00 2001
+From: Robert Hancock <robert.hancock@calian.com>
+Date: Tue, 25 Jan 2022 10:54:09 -0600
+Subject: [PATCH] net: phy: at803x: add fiber support
+
+Previously this driver always forced the copper page to be selected,
+however for AR8031 in 100Base-FX or 1000Base-X modes, the fiber page
+needs to be selected. Set the appropriate mode based on the hardware
+mode_cfg strap selection.
+
+Enable the appropriate interrupt bits to detect fiber-side link up
+or down events.
+
+Update config_aneg and read_status methods to use the appropriate
+Clause 37 calls when fiber mode is in use.
+
+Signed-off-by: Robert Hancock <robert.hancock@calian.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/phy/at803x.c | 76 +++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 67 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/phy/at803x.c
++++ b/drivers/net/phy/at803x.c
+@@ -48,6 +48,8 @@
+ #define AT803X_INTR_ENABLE_PAGE_RECEIVED	BIT(12)
+ #define AT803X_INTR_ENABLE_LINK_FAIL		BIT(11)
+ #define AT803X_INTR_ENABLE_LINK_SUCCESS		BIT(10)
++#define AT803X_INTR_ENABLE_LINK_FAIL_BX		BIT(8)
++#define AT803X_INTR_ENABLE_LINK_SUCCESS_BX	BIT(7)
+ #define AT803X_INTR_ENABLE_WIRESPEED_DOWNGRADE	BIT(5)
+ #define AT803X_INTR_ENABLE_POLARITY_CHANGED	BIT(1)
+ #define AT803X_INTR_ENABLE_WOL			BIT(0)
+@@ -82,6 +84,17 @@
+ 
+ #define AT803X_MODE_CFG_MASK			0x0F
+ #define AT803X_MODE_CFG_SGMII			0x01
++#define AT803X_MODE_CFG_BASET_RGMII		0x00
++#define AT803X_MODE_CFG_BASET_SGMII		0x01
++#define AT803X_MODE_CFG_BX1000_RGMII_50OHM	0x02
++#define AT803X_MODE_CFG_BX1000_RGMII_75OHM	0x03
++#define AT803X_MODE_CFG_BX1000_CONV_50OHM	0x04
++#define AT803X_MODE_CFG_BX1000_CONV_75OHM	0x05
++#define AT803X_MODE_CFG_FX100_RGMII_50OHM	0x06
++#define AT803X_MODE_CFG_FX100_CONV_50OHM	0x07
++#define AT803X_MODE_CFG_RGMII_AUTO_MDET		0x0B
++#define AT803X_MODE_CFG_FX100_RGMII_75OHM	0x0E
++#define AT803X_MODE_CFG_FX100_CONV_75OHM	0x0F
+ 
+ #define AT803X_PSSR				0x11	/*PHY-Specific Status Register*/
+ #define AT803X_PSSR_MR_AN_COMPLETE		0x0200
+@@ -199,6 +212,8 @@ struct at803x_priv {
+ 	u16 clk_25m_mask;
+ 	u8 smarteee_lpi_tw_1g;
+ 	u8 smarteee_lpi_tw_100m;
++	bool is_fiber;
++	bool is_1000basex;
+ 	struct regulator_dev *vddio_rdev;
+ 	struct regulator_dev *vddh_rdev;
+ 	struct regulator *vddio;
+@@ -674,7 +689,33 @@ static int at803x_probe(struct phy_devic
+ 			return ret;
+ 	}
+ 
++	if (phydev->drv->phy_id == ATH8031_PHY_ID) {
++		int ccr = phy_read(phydev, AT803X_REG_CHIP_CONFIG);
++		int mode_cfg;
++
++		if (ccr < 0)
++			goto err;
++		mode_cfg = ccr & AT803X_MODE_CFG_MASK;
++
++		switch (mode_cfg) {
++		case AT803X_MODE_CFG_BX1000_RGMII_50OHM:
++		case AT803X_MODE_CFG_BX1000_RGMII_75OHM:
++			priv->is_1000basex = true;
++			fallthrough;
++		case AT803X_MODE_CFG_FX100_RGMII_50OHM:
++		case AT803X_MODE_CFG_FX100_RGMII_75OHM:
++			priv->is_fiber = true;
++			break;
++		}
++	}
++
+ 	return 0;
++
++err:
++	if (priv->vddio)
++		regulator_disable(priv->vddio);
++
++	return ret;
+ }
+ 
+ static void at803x_remove(struct phy_device *phydev)
+@@ -687,6 +728,7 @@ static void at803x_remove(struct phy_dev
+ 
+ static int at803x_get_features(struct phy_device *phydev)
+ {
++	struct at803x_priv *priv = phydev->priv;
+ 	int err;
+ 
+ 	err = genphy_read_abilities(phydev);
+@@ -704,12 +746,13 @@ static int at803x_get_features(struct ph
+ 	 * As a result of that, ESTATUS_1000_XFULL is set
+ 	 * to 1 even when operating in copper TP mode.
+ 	 *
+-	 * Remove this mode from the supported link modes,
+-	 * as this driver currently only supports copper
+-	 * operation.
++	 * Remove this mode from the supported link modes
++	 * when not operating in 1000BaseX mode.
+ 	 */
+-	linkmode_clear_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT,
+-			   phydev->supported);
++	if (!priv->is_1000basex)
++		linkmode_clear_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT,
++				   phydev->supported);
++
+ 	return 0;
+ }
+ 
+@@ -773,15 +816,18 @@ static int at8031_pll_config(struct phy_
+ 
+ static int at803x_config_init(struct phy_device *phydev)
+ {
++	struct at803x_priv *priv = phydev->priv;
+ 	int ret;
+ 
+ 	if (phydev->drv->phy_id == ATH8031_PHY_ID) {
+ 		/* Some bootloaders leave the fiber page selected.
+-		 * Switch to the copper page, as otherwise we read
+-		 * the PHY capabilities from the fiber side.
++		 * Switch to the appropriate page (fiber or copper), as otherwise we
++		 * read the PHY capabilities from the wrong page.
+ 		 */
+ 		phy_lock_mdio_bus(phydev);
+-		ret = at803x_write_page(phydev, AT803X_PAGE_COPPER);
++		ret = at803x_write_page(phydev,
++					priv->is_fiber ? AT803X_PAGE_FIBER :
++							 AT803X_PAGE_COPPER);
+ 		phy_unlock_mdio_bus(phydev);
+ 		if (ret)
+ 			return ret;
+@@ -840,6 +886,7 @@ static int at803x_ack_interrupt(struct p
+ 
+ static int at803x_config_intr(struct phy_device *phydev)
+ {
++	struct at803x_priv *priv = phydev->priv;
+ 	int err;
+ 	int value;
+ 
+@@ -856,6 +903,10 @@ static int at803x_config_intr(struct phy
+ 		value |= AT803X_INTR_ENABLE_DUPLEX_CHANGED;
+ 		value |= AT803X_INTR_ENABLE_LINK_FAIL;
+ 		value |= AT803X_INTR_ENABLE_LINK_SUCCESS;
++		if (priv->is_fiber) {
++			value |= AT803X_INTR_ENABLE_LINK_FAIL_BX;
++			value |= AT803X_INTR_ENABLE_LINK_SUCCESS_BX;
++		}
+ 
+ 		err = phy_write(phydev, AT803X_INTR_ENABLE, value);
+ 	} else {
+@@ -923,8 +974,12 @@ static void at803x_link_change_notify(st
+ 
+ static int at803x_read_status(struct phy_device *phydev)
+ {
++	struct at803x_priv *priv = phydev->priv;
+ 	int ss, err, old_link = phydev->link;
+ 
++	if (priv->is_1000basex)
++		return genphy_c37_read_status(phydev);
++
+ 	/* Update the link, but return if there was an error */
+ 	err = genphy_update_link(phydev);
+ 	if (err)
+@@ -1023,6 +1078,7 @@ static int at803x_config_mdix(struct phy
+ 
+ static int at803x_config_aneg(struct phy_device *phydev)
+ {
++	struct at803x_priv *priv = phydev->priv;
+ 	int ret;
+ 
+ 	ret = at803x_config_mdix(phydev, phydev->mdix_ctrl);
+@@ -1039,6 +1095,9 @@ static int at803x_config_aneg(struct phy
+ 			return ret;
+ 	}
+ 
++	if (priv->is_1000basex)
++		return genphy_c37_config_aneg(phydev);
++
+ 	return genphy_config_aneg(phydev);
+ }
+ 

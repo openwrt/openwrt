@@ -51,7 +51,7 @@ define Build/sercomm-payload
 	$(TOPDIR)/scripts/sercomm-payload.py \
 		--input-file $@ \
 		--output-file $@.tmp \
-		--pid "$$(cat $@.pid | od -t x1 -An -v | tr -d '\n')"
+		--pid-file $@.pid
 	mv $@.tmp $@
 	rm $@.pid
 endef

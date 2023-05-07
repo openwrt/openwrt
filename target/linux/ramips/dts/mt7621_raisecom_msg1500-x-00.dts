@@ -13,6 +13,7 @@
 		led-boot = &led_usb;
 		led-failsafe = &led_usb;
 		led-upgrade = &led_usb;
+		label-mac-device = &gmac0;
 	};
 
 	leds {
@@ -79,12 +80,32 @@
 			label = "Config";
 			reg = <0x80000 0x80000>;
 			read-only;
+
+			compatible = "nvmem-cells";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			macaddr_config_8014: macaddr@8014 {
+				reg = <0x8014 0x11>;
+			};
+
+			macaddr_config_8036: macaddr@8036 {
+				reg = <0x8036 0x11>;
+			};
 		};
 
 		factory: partition@100000 {
 			label = "Factory";
 			reg = <0x100000 0x40000>;
 			read-only;
+
+			compatible = "nvmem-cells";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			macaddr_factory_4: macaddr@4 {
+				reg = <0x4 0x6>;
+			};
 		};
 
 		partition@140000 {
@@ -115,10 +136,18 @@
 	};
 };
 
+&gmac0 {
+	nvmem-cells = <&macaddr_config_8014>;
+	nvmem-cell-names = "mac-address-ascii";
+};
+
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_config_8036>;
+	nvmem-cell-names = "mac-address-ascii";
 };
 
 &mdio {
@@ -155,15 +184,5 @@
 	gpio {
 		groups = "i2c", "jtag", "uart3", "wdt";
 		function = "gpio";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
 	};
 };

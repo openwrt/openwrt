@@ -80,6 +80,7 @@ CONFIGURE_ARGS = \
 		--target=$(GNU_TARGET_NAME) \
 		--host=$(GNU_TARGET_NAME) \
 		--build=$(GNU_HOST_NAME) \
+		--disable-dependency-tracking \
 		--program-prefix="" \
 		--program-suffix="" \
 		--prefix=$(CONFIGURE_PREFIX) \

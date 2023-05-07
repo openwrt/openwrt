@@ -27,9 +27,19 @@ case "$board" in
 		hw_mac_addr=$(macaddr_unsetbit $hw_mac_addr 28)
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
 		;;
-	cudy,x6)
-		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
-		macaddr_add $hw_mac_addr "$PHYNBR" > /sys${DEVPATH}/macaddress
+	cudy,x6-v1|\
+	cudy,x6-v2)
+		hw_mac_addr="$(mtd_get_mac_binary bdinfo 0xde00)"
+		[ "$PHYNBR" = "1" ] && \
+		macaddr_setbit_la "$(macaddr_add $hw_mac_addr 0x100000)" > /sys${DEVPATH}/macaddress
+		;;
+	dlink,dap-1620-b1|\
+	dlink,dir-853-a1)
+		lan_mac_addr="$(mtd_get_mac_binary factory 0xe000)"
+		[ "$PHYNBR" = "0" ] && \
+			macaddr_add $lan_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_add $lan_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
 	dlink,dap-x1860-a1)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
@@ -113,6 +123,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
 		;;
+	mercusys,mr70x-v1|\
+	tplink,archer-ax23-v1)
+		hw_mac_addr="$(mtd_get_mac_binary config 0x8)"
+		[ "$PHYNBR" = "1" ] &&  macaddr_add "$hw_mac_addr" -1 > "/sys${DEVPATH}/macaddress"
+		;;
 	mts,wg430223)
 		hw_mac_addr=$(macaddr_add $(mtd_get_mac_encrypted_arcadyan "board_data") 1)
 		[ "$PHYNBR" = "0" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
@@ -129,21 +144,23 @@ case "$board" in
 		;;
 	raisecom,msg1500-x-00)
 		[ "$PHYNBR" = "0" ] && \
-			macaddr_setbit_la "$(mtd_get_mac_ascii Config protest_lan_mac)" \
-				> /sys${DEVPATH}/macaddress
+			macaddr_setbit_la "$(get_mac_label)" > /sys${DEVPATH}/macaddress
+		;;
+	snr,snr-cpe-me2-sfp)
+		hw_mac_addr="$(mtd_get_mac_binary factory 0x8004)"
+		[ "$PHYNBR" = "1" ] &&  echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
 		;;
 	tenbay,t-mb5eu-v01)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr "0x100000" > /sys${DEVPATH}/macaddress
 		;;
+	totolink,x5000r)
+		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
+		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr 4 > /sys${DEVPATH}/macaddress
+		;;
 	tplink,eap615-wall-v1)
 		hw_mac_addr="$(mtd_get_mac_binary product-info 0x8)"
 		macaddr_add "$hw_mac_addr" "$PHYNBR" > "/sys${DEVPATH}/macaddress"
-		;;
-	tplink,ec330-g5u-v1)
-		hw_mac_addr="$(mtd_get_mac_text factory 0x165)"
-		[ "$PHYNBR" = "0" ] && echo -n $hw_mac_addr > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
 	yuncore,ax820)
 		[ "$PHYNBR" = "1" ] && \
@@ -158,6 +175,11 @@ case "$board" in
 	zyxel,nwa50ax|\
 	zyxel,nwa55axe)
 		hw_mac_addr="$(mtd_get_mac_binary mrd 0x1fff8)"
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
+		;;
+	zyxel,wsm20)
+		hw_mac_addr="$(mtd_get_mac_binary Factory 0x1fdfa)"
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;

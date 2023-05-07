@@ -64,7 +64,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	skb->dev = sdata->dev;
 +	memcpy(&eth, skb->data, ETH_HLEN - 2);
-+	skb_pull(skb, sizeof(eth));
++	skb_pull(skb, 2);
 +	__ieee80211_xmit_fast(sdata, sta, &entry->fast_tx, skb, tid_tx,
 +			      eth.h_dest, eth.h_source);
 +	IEEE80211_IFSTA_MESH_CTR_INC(ifmsh, fwded_unicast);
@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  rx_accept:
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -2018,6 +2018,8 @@ void __ieee80211_xmit_fast(struct ieee80
+@@ -2022,6 +2022,8 @@ void __ieee80211_xmit_fast(struct ieee80
  			   struct ieee80211_fast_tx *fast_tx,
  			   struct sk_buff *skb, bool ampdu,
  			   const u8 *da, const u8 *sa);

@@ -18,6 +18,23 @@ menu "Global build settings"
 		bool "Cryptographically sign package lists"
 		default y
 
+	comment "General build options"
+
+	config BUILD_PATENTED
+		default n
+		bool "Compile with support for patented functionality"
+		help
+		  When this option is disabled, software which provides patented functionality
+		  will not be built.  In case software provides optional support for patented
+		  functionality, this optional support will get disabled for this package.
+
+	config BUILD_NLS
+		default n
+		bool "Compile with full language support"
+		help
+		  When this option is enabled, packages are built with the full versions of
+		  iconv and GNU gettext instead of the default OpenWrt stubs.
+
 	comment "Package build options"
 
 	config DEBUG

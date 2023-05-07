@@ -335,6 +335,20 @@ define Device/netgear_xr500
 endef
 TARGET_DEVICES += netgear_xr500
 
+define Device/nokia_ac400i
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Nokia
+	DEVICE_MODEL := AC400i
+	SOC := qcom-ipq8065
+	DEVICE_DTS := qcom-ipq8065-ac400i
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := ac400i
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-nokia-ac400i
+endef
+TARGET_DEVICES += nokia_ac400i
+
 define Device/qcom_ipq8064-ap148
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

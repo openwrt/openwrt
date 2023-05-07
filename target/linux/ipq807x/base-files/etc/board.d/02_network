@@ -22,6 +22,9 @@ ipq807x_setup_interfaces()
 	edimax,cax1800)
 		ucidef_set_interfaces_lan_wan "lan"
 		;;
+	netgear,wax218)
+		ucidef_set_interface_lan "lan" "dhcp"
+		;;
 	qnap,301w)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g-2" "10g-1"
 		;;

@@ -474,6 +474,14 @@ define Device/onion_omega2p
 endef
 TARGET_DEVICES += onion_omega2p
 
+define Device/oraybox_x1
+  IMAGE_SIZE := 15360k
+  DEVICE_VENDOR := OrayBox
+  DEVICE_MODEL := X1
+  DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += oraybox_x1
+
 define Device/rakwireless_rak633
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Rakwireless

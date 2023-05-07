@@ -1,0 +1,43 @@
+From 1cd9ceaa5282ff10ea20a7fbadde5a476a1cc99e Mon Sep 17 00:00:00 2001
+From: Michael Walle <michael@walle.cc>
+Date: Wed, 8 Mar 2023 09:20:18 +0100
+Subject: [PATCH] mtd: core: provide unique name for nvmem device, take two
+
+Commit c048b60d39e1 ("mtd: core: provide unique name for nvmem device")
+tries to give the nvmem device a unique name, but fails badly if the mtd
+device doesn't have a "struct device" associated with it, i.e. if
+CONFIG_MTD_PARTITIONED_MASTER is not set. This will result in the name
+"(null)-user-otp", which is not unique. It seems the best we can do is
+to use the compatible name together with a unique identifier added by
+the nvmem subsystem by using NVMEM_DEVID_AUTO.
+
+Fixes: c048b60d39e1 ("mtd: core: provide unique name for nvmem device")
+Cc: stable@vger.kernel.org
+Signed-off-by: Michael Walle <michael@walle.cc>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://lore.kernel.org/linux-mtd/20230308082021.870459-1-michael@walle.cc
+---
+ drivers/mtd/mtdcore.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+--- a/drivers/mtd/mtdcore.c
++++ b/drivers/mtd/mtdcore.c
+@@ -895,8 +895,8 @@ static struct nvmem_device *mtd_otp_nvme
+ 
+ 	/* OTP nvmem will be registered on the physical device */
+ 	config.dev = mtd->dev.parent;
+-	config.name = kasprintf(GFP_KERNEL, "%s-%s", dev_name(&mtd->dev), compatible);
+-	config.id = NVMEM_DEVID_NONE;
++	config.name = compatible;
++	config.id = NVMEM_DEVID_AUTO;
+ 	config.owner = THIS_MODULE;
+ 	config.type = NVMEM_TYPE_OTP;
+ 	config.root_only = true;
+@@ -912,7 +912,6 @@ static struct nvmem_device *mtd_otp_nvme
+ 		nvmem = NULL;
+ 
+ 	of_node_put(np);
+-	kfree(config.name);
+ 
+ 	return nvmem;
+ }

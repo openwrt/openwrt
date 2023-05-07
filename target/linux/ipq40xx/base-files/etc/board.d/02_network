@@ -32,6 +32,7 @@ ipq40xx_setup_interfaces()
 	asus,map-ac2200|\
 	cilab,meshpoint-one|\
 	edgecore,ecw5211|\
+	glinet,gl-ap1300|\
 	glinet,gl-b2200|\
 	google,wifi|\
 	linksys,whw03v2|\
@@ -39,23 +40,28 @@ ipq40xx_setup_interfaces()
 	mikrotik,cap-ac|\
 	netgear,wac510|\
 	sony,ncp-hg100-cellular|\
+	wallys,dr40x9|\
 	zte,mf18a|\
 	zte,mf289f)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	aruba,ap-303|\
+	aruba,ap-365|\
 	avm,fritzrepeater-1200|\
 	dlink,dap-2610|\
 	extreme-networks,ws-ap3915i|\
 	meraki,mr33|\
 	meraki,mr74|\
 	mikrotik,lhgg-60ad|\
-	mikrotik,sxtsq-5-ac)
+	mikrotik,sxtsq-5-ac|\
+	netgear,ex6100v2|\
+	netgear,ex6150v2)
 		ucidef_set_interface_lan "lan"
 		;;
 	avm,fritzbox-7530)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
+	avm,fritzrepeater-3000|\
 	cellc,rtl30vw)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;

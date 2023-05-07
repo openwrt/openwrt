@@ -25,11 +25,9 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
  create mode 100644 arch/arm/dts/sun50i-h5-nanopi-r1s-h5.dts
  create mode 100644 configs/nanopi_r1s_h5_defconfig
 
-diff --git a/arch/arm/dts/Makefile b/arch/arm/dts/Makefile
-index b8a382d1539..ed3d360bb10 100644
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -555,6 +555,7 @@ dtb-$(CONFIG_MACH_SUN50I_H5) += \
+@@ -575,6 +575,7 @@ dtb-$(CONFIG_MACH_SUN50I_H5) += \
  	sun50i-h5-libretech-all-h5-cc.dtb \
  	sun50i-h5-nanopi-neo2.dtb \
  	sun50i-h5-nanopi-neo-plus2.dtb \
@@ -37,9 +35,6 @@ index b8a382d1539..ed3d360bb10 100644
  	sun50i-h5-orangepi-zero-plus.dtb \
  	sun50i-h5-orangepi-pc2.dtb \
  	sun50i-h5-orangepi-prime.dtb \
-diff --git a/arch/arm/dts/sun50i-h5-nanopi-r1s-h5.dts b/arch/arm/dts/sun50i-h5-nanopi-r1s-h5.dts
-new file mode 100644
-index 00000000000..55bcdf8d1a0
 --- /dev/null
 +++ b/arch/arm/dts/sun50i-h5-nanopi-r1s-h5.dts
 @@ -0,0 +1,190 @@
@@ -233,8 +228,6 @@ index 00000000000..55bcdf8d1a0
 +	usb0_vbus-supply = <&reg_usb0_vbus>;
 +	status = "okay";
 +};
-diff --git a/board/sunxi/MAINTAINERS b/board/sunxi/MAINTAINERS
-index 2543c94de79..56a0ee3689b 100644
 --- a/board/sunxi/MAINTAINERS
 +++ b/board/sunxi/MAINTAINERS
 @@ -358,6 +358,11 @@ M:	Jelle van der Waa <jelle@vdwaa.nl>
@@ -249,9 +242,6 @@ index 2543c94de79..56a0ee3689b 100644
  NANOPI-A64 BOARD
  M:	Jagan Teki <jagan@amarulasolutions.com>
  S:	Maintained
-diff --git a/configs/nanopi_r1s_h5_defconfig b/configs/nanopi_r1s_h5_defconfig
-new file mode 100644
-index 00000000000..27cf172d72a
 --- /dev/null
 +++ b/configs/nanopi_r1s_h5_defconfig
 @@ -0,0 +1,14 @@

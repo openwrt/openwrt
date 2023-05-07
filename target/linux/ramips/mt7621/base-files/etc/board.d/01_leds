@@ -60,6 +60,13 @@ jcg,y2|\
 xzwifi,creativebox-v1)
 	ucidef_set_led_netdev "internet" "internet" "blue:internet" "wan"
 	;;
+dlink,dap-1620-b1)
+	ucidef_set_rssimon "wlan1" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "red:rssilow" "wlan1" "1" "40"
+	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "green:rssilow" "wlan1" "21" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimed" "wlan1" "61" "100"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "81" "100"
+	;;
 dlink,dap-x1860-a1)
 	ucidef_set_rssimon "wlan1" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "RSSILOW" "orange:rssilow" "wlan1" "1" "25"
@@ -76,6 +83,7 @@ dlink,dir-3060-a1)
 	ucidef_set_led_netdev "net_white" "WAN Link" "white:net" "wan" "link"
 	ucidef_set_led_netdev "net_orange" "WAN Activity" "orange:net" "wan" "tx rx"
 	;;
+dlink,dir-853-a1|\
 dlink,dir-853-a3)
 	ucidef_set_led_netdev "wan" "wan" "blue:net" "wan"
 	;;
@@ -156,6 +164,7 @@ oraybox,x3a)
 	ucidef_set_led_netdev "lan" "lan link" "green:status" "br-lan"
 	;;
 tplink,archer-a6-v3|\
+tplink,archer-ax23-v1|\
 tplink,archer-c6-v3|\
 tplink,archer-c6u-v1)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"

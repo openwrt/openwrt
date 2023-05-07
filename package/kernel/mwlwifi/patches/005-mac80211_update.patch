@@ -1,6 +1,6 @@
 --- a/core.c
 +++ b/core.c
-@@ -692,7 +692,7 @@ static void mwl_chnl_switch_event(struct
+@@ -706,7 +706,7 @@ static void mwl_chnl_switch_event(struct
  		vif = container_of((void *)mwl_vif, struct ieee80211_vif,
  				   drv_priv);
  
@@ -11,7 +11,7 @@
  	spin_unlock_bh(&priv->vif_lock);
 --- a/debugfs.c
 +++ b/debugfs.c
-@@ -462,9 +462,9 @@ static ssize_t mwl_debugfs_vif_read(stru
+@@ -455,9 +455,9 @@ static ssize_t mwl_debugfs_vif_read(stru
  		switch (vif->type) {
  		case NL80211_IFTYPE_AP:
  			len += scnprintf(p + len, size - len, "type: ap\n");
@@ -24,7 +24,7 @@
  			len += scnprintf(p + len, size - len,
  					 "ssid: %s\n", ssid);
  			len += scnprintf(p + len, size - len,
-@@ -486,8 +486,8 @@ static ssize_t mwl_debugfs_vif_read(stru
+@@ -479,8 +479,8 @@ static ssize_t mwl_debugfs_vif_read(stru
  					 "type: unknown\n");
  			break;
  		}
@@ -35,7 +35,7 @@
  			len += scnprintf(p + len, size - len,
  					 "channel: %d: width: %d\n",
  					 chan_def->chan->hw_value,
-@@ -573,28 +573,28 @@ static ssize_t mwl_debugfs_sta_read(stru
+@@ -564,28 +564,28 @@ static ssize_t mwl_debugfs_sta_read(stru
  					 "amsdu cap: 0x%02x\n",
  					 sta_info->amsdu_ctrl.cap);
  		}
@@ -99,7 +99,7 @@
  	if (priv->chip_type == MWL8997)
  		ether_addr_copy(pcmd->start_cmd.bssid, mwl_vif->bssid);
  	pcmd->start_cmd.bss_type = 1;
-@@ -2085,7 +2086,7 @@ int mwl_fwcmd_set_beacon(struct ieee8021
+@@ -2091,7 +2092,7 @@ int mwl_fwcmd_set_beacon(struct ieee8021
  	if (mwl_fwcmd_set_wsc_ie(hw, b_inf->ie_wsc_len, b_inf->ie_wsc_ptr))
  		goto err;
  
@@ -108,7 +108,7 @@
  		goto err;
  
  	if (b_inf->cap_info & WLAN_CAPABILITY_SPECTRUM_MGMT)
-@@ -2147,38 +2148,38 @@ int mwl_fwcmd_set_new_stn_add(struct iee
+@@ -2153,38 +2154,38 @@ int mwl_fwcmd_set_new_stn_add(struct iee
  	ether_addr_copy(pcmd->mac_addr, sta->addr);
  
  	if (hw->conf.chandef.chan->band == NL80211_BAND_2GHZ)
@@ -161,7 +161,7 @@
  	}
  
  	pcmd->is_qos_sta = sta->wme;
-@@ -2234,38 +2235,38 @@ int mwl_fwcmd_set_new_stn_add_sc4(struct
+@@ -2240,38 +2241,38 @@ int mwl_fwcmd_set_new_stn_add_sc4(struct
  	ether_addr_copy(pcmd->mac_addr, sta->addr);
  
  	if (hw->conf.chandef.chan->band == NL80211_BAND_2GHZ)
@@ -214,7 +214,7 @@
  	}
  
  	pcmd->is_qos_sta = sta->wme;
-@@ -2782,9 +2783,9 @@ int mwl_fwcmd_create_ba(struct ieee80211
+@@ -2788,9 +2789,9 @@ int mwl_fwcmd_create_ba(struct ieee80211
  	pcmd->ba_info.create_params.flags = cpu_to_le32(ba_flags);
  	pcmd->ba_info.create_params.queue_id = stream->idx;
  	pcmd->ba_info.create_params.param_info =
@@ -226,7 +226,7 @@
  		 IEEE80211_HT_AMPDU_PARM_DENSITY);
  	if (direction == BA_FLAG_DIRECTION_UP) {
  		pcmd->ba_info.create_params.reset_seq_no = 0;
-@@ -2794,9 +2795,9 @@ int mwl_fwcmd_create_ba(struct ieee80211
+@@ -2800,9 +2801,9 @@ int mwl_fwcmd_create_ba(struct ieee80211
  		pcmd->ba_info.create_params.current_seq = cpu_to_le16(0);
  	}
  	if (priv->chip_type == MWL8964 &&
@@ -288,7 +288,7 @@
  {
  	switch (vif->type) {
  	case NL80211_IFTYPE_AP:
-@@ -583,10 +583,10 @@ static int mwl_mac80211_sta_add(struct i
+@@ -584,10 +584,10 @@ static int mwl_mac80211_sta_add(struct i
  	if (vif->type == NL80211_IFTYPE_MESH_POINT)
  		sta_info->is_mesh_node = true;
  
@@ -301,7 +301,7 @@
  			sta_info->amsdu_ctrl.cap = MWL_AMSDU_SIZE_8K;
  		else
  			sta_info->amsdu_ctrl.cap = MWL_AMSDU_SIZE_4K;
-@@ -668,7 +668,7 @@ static int mwl_mac80211_sta_remove(struc
+@@ -669,7 +669,7 @@ static int mwl_mac80211_sta_remove(struc
  
  static int mwl_mac80211_conf_tx(struct ieee80211_hw *hw,
  				struct ieee80211_vif *vif,
@@ -310,15 +310,7 @@
  				const struct ieee80211_tx_queue_params *params)
  {
  	struct mwl_priv *priv = hw->priv;
-@@ -768,6 +768,7 @@ static int mwl_mac80211_ampdu_action(str
- 			spin_lock_bh(&priv->stream_lock);
- 			break;
- 		}
-+		break;
- 	case IEEE80211_AMPDU_RX_STOP:
- 		if (priv->chip_type == MWL8964) {
- 			struct mwl_ampdu_stream tmp;
-@@ -930,4 +931,5 @@ const struct ieee80211_ops mwl_mac80211_
+@@ -928,4 +928,5 @@ const struct ieee80211_ops mwl_mac80211_
  	.pre_channel_switch = mwl_mac80211_chnl_switch,
  	.sw_scan_start      = mwl_mac80211_sw_scan_start,
  	.sw_scan_complete   = mwl_mac80211_sw_scan_complete,
@@ -370,7 +362,7 @@
  	case TX_RATE_FORMAT_LEGACY:
 --- a/hif/pcie/tx.c
 +++ b/hif/pcie/tx.c
-@@ -157,7 +157,7 @@ static int pcie_txbd_ring_create(struct
+@@ -153,7 +153,7 @@ static int pcie_txbd_ring_create(struct
  	wiphy_info(priv->hw->wiphy,
  		   "TX ring: - base: %p, pbase: 0x%x, len: %d\n",
  		   pcie_priv->txbd_ring_vbase,
@@ -379,7 +371,7 @@
  		   pcie_priv->txbd_ring_size);
  
  	for (num = 0; num < PCIE_MAX_TXRX_BD; num++) {
-@@ -1153,7 +1153,7 @@ void pcie_tx_xmit(struct ieee80211_hw *h
+@@ -1091,7 +1091,7 @@ void pcie_tx_xmit(struct ieee80211_hw *h
  	index = SYSADPT_TX_WMM_QUEUES - index - 1;
  	txpriority = index;
  

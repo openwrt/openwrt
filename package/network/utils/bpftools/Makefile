@@ -12,14 +12,14 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/libbpf/bpftool
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2022-03-08
-PKG_SOURCE_VERSION:=04c465fd1f561f67796dc68bbfe1aa7cfa956c3c
-PKG_MIRROR_HASH:=e22a954cd186f43228a96586bbdc120b11e6c87360ab88ae96ba37afb9c7cb58
+PKG_SOURCE_DATE:=7.1.0
+PKG_SOURCE_VERSION:=b01941c8f7890489f09713348a7d89567538504b
+PKG_MIRROR_HASH:=641fb337342e25ae784a3efe72c71d8c88600a326300d8d5834e26be21547015
 PKG_ABI_VERSION:=$(call abi_version_str,$(PKG_SOURCE_DATE))
 
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
 
-PKG_USE_MIPS16:=0
+PKG_BUILD_FLAGS:=no-mips16
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 
@@ -82,7 +82,7 @@ endef
 # LTO not compatible with DSO using PIC
 ifneq ($(BUILD_VARIANT),lib)
   TARGET_CFLAGS += -ffunction-sections -fdata-sections -flto
-  TARGET_LDFLAGS += -Wl,--gc-sections
+  TARGET_LDFLAGS += -Wl,--gc-sections -flto
 endif
 
 ifeq ($(BUILD_VARIANT),full)
@@ -102,11 +102,11 @@ MAKE_FLAGS += \
 	LIBSUBDIR=lib \
 	check_feat=0 \
 	feature-clang-bpf-co-re=0 \
-	feature-reallocarray=1 \
-	feature-zlib=1 \
 	feature-libbfd=$(full) \
+	feature-llvm=0 \
 	feature-libcap=0 \
-	feature-disassembler-four-args=$(full)
+	feature-disassembler-four-args=1 \
+	feature-disassembler-init-styled=1
 
 ifeq ($(BUILD_VARIANT),lib)
   MAKE_PATH = libbpf/src

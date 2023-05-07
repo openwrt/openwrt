@@ -20,6 +20,7 @@
 
 	chosen {
 		bootargs-override = "console=ttyS0,115200";
+		linux,stdout-path = &serial0;
 	};
 
 	memory {
@@ -144,7 +145,7 @@
 
 		mdio@24000 {
 			phy0: ethernet-phy@0 {
-				interrupts = <3 1 0 0>;
+				/* interrupts = <3 1 0 0>; */
 				reg = <0x5>;
 				reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 				reset-assert-us = <10000>;
@@ -152,7 +153,7 @@
 			};
 
 			phy2: ethernet-phy@2 {
-				interrupts = <1 1 0 0>;
+				/* interrupts = <1 1 0 0>; */
 				reg = <0x6>;
 				reset-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 				reset-assert-us = <10000>;
@@ -198,6 +199,13 @@
 		ranges = <0x2000000 0x0 0xa0000000 0 0xa0000000 0x0 0x20000000
 			  0x1000000 0x0 0x00000000 0 0xffc10000 0x0 0x10000>;
 		reg = <0 0xffe09000 0 0x1000>;
+
+		/* Filled by U-Boot */
+		bus-range = <0x00 0x01>;
+		dma-ranges = <0x2000000 0x00 0xfff00000 0x00 0xffe00000
+			      0x00 0x100000 0x42000000 0x00 0x00 0x00
+			      0x00 0x00 0x10000000>;
+
 		pcie@0 {
 			ranges = <0x2000000 0x0 0xa0000000
 				  0x2000000 0x0 0xa0000000
@@ -213,6 +221,13 @@
 		reg = <0 0xffe0a000 0 0x1000>;
 		ranges = <0x2000000 0x0 0x80000000 0 0x80000000 0x0 0x20000000
 			  0x1000000 0x0 0x00000000 0 0xffc00000 0x0 0x10000>;
+
+		/* Filled by U-Boot */
+		bus-range = <0x00 0x01>;
+		dma-ranges = <0x2000000 0x00 0xfff00000 0x00
+			      0xffe00000 0x00 0x100000 0x42000000
+			      0x00 0x00 0x00 0x00 0x00 0x10000000>;
+
 		pcie@0 {
 			ranges = <0x2000000 0x0 0x80000000
 				  0x2000000 0x0 0x80000000
@@ -251,6 +266,77 @@
 };
 
 /include/ "fsl/p1020si-post.dtsi"
+
+/ {
+	cpus {
+		PowerPC,P1020@0 {
+			bus-frequency = <399999996>;
+			timebase-frequency = <50000000>;
+			clock-frequency = <799999992>;
+			d-cache-block-size = <0x20>;
+			d-cache-size = <0x8000>;
+			d-cache-sets = <0x80>;
+			i-cache-block-size = <0x20>;
+			i-cache-size = <0x8000>;
+			i-cache-sets = <0x80>;
+			cpu-release-addr = <0x0 0x0ffff280>;
+			status = "okay";
+			enable-method = "spin-table";
+		};
+
+		PowerPC,P1020@1 {
+			bus-frequency = <399999996>;
+			timebase-frequency = <50000000>;
+			clock-frequency = <799999992>;
+			d-cache-block-size = <0x20>;
+			d-cache-size = <0x8000>;
+			d-cache-sets = <0x80>;
+			i-cache-block-size = <0x20>;
+			i-cache-size = <0x8000>;
+			i-cache-sets = <0x80>;
+			cpu-release-addr = <0x0 0x0ffff2a0>;
+			status = "disabled";
+			enable-method = "spin-table";
+		};
+	};
+
+	memory {
+		/* Reserve upper MB for second-core-bootpage */
+		reg = <0x0 0x0 0x0 0xff00000>;
+	};
+
+	soc@ffe00000 {
+		bus-frequency = <399999996>;
+
+		serial@4600 {
+			clock-frequency = <399999996>;
+		};
+
+		serial@4500 {
+			clock-frequency = <399999996>;
+		};
+
+		pic@40000 {
+			clock-frequency = <399999996>;
+		};
+	};
+
+	localbus@ffe05000 {
+		bus-frequency = <24999999>;
+	};
+};
+
+&enet0 {
+	rx-stash-idx = <0x00>;
+	rx-stash-len = <0x60>;
+	bd-stash;
+};
+
+&enet2 {
+	rx-stash-idx = <0x00>;
+	rx-stash-len = <0x60>;
+	bd-stash;
+};
 
 /*
  * For the OpenWrt 22.03 release, since Linux 5.10.138 now uses

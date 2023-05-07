@@ -3,6 +3,19 @@
 # Copyright (C) 2012-2016 OpenWrt.org
 # Copyright (C) 2016 LEDE-project.org
 
+define Build/fortigate-header
+  ( \
+    dd if=/dev/zero bs=384 count=1 2>/dev/null; \
+    datalen=$$(wc -c $@ | cut -d' ' -f1); \
+    datalen=$$(printf "%08x" $$datalen); \
+    datalen="$${datalen:6:2}$${datalen:4:2}$${datalen:2:2}$${datalen:0:2}"; \
+    printf $$(echo "00020000$${datalen}ffff0000ffff0000" | sed 's/../\\x&/g'); \
+    dd if=/dev/zero bs=112 count=1 2>/dev/null; \
+    cat $@; \
+  ) > $@.new
+  mv $@.new $@
+endef
+
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
@@ -83,6 +96,21 @@ define Device/cznic_turris-omnia
   BOOT_SCRIPT := turris-omnia
 endef
 TARGET_DEVICES += cznic_turris-omnia
+
+define Device/fortinet_fg-50e
+  DEVICE_VENDOR := Fortinet
+  DEVICE_MODEL := FortiGate 50E
+  SOC := armada-385
+  KERNEL := kernel-bin | append-dtb
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FGT50E
+  KERNEL_SIZE := 6144k
+  DEVICE_DTS := armada-385-fortinet-fg-50e
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
+    sysupgrade-tar rootfs=$$$$@ | append-metadata
+  DEVICE_PACKAGES := kmod-hwmon-nct7802
+endef
+TARGET_DEVICES += fortinet_fg-50e
 
 define Device/globalscale_mirabox
   $(Device/NAND-512K)

@@ -22,7 +22,7 @@ PKG_CPE_ID:=cpe:/a:linux_audit_project:linux_audit
 
 PKG_FIXUP:=autoreconf
 
-PKG_USE_MIPS16:=0
+PKG_BUILD_FLAGS:=no-mips16
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk

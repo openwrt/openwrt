@@ -1,0 +1,243 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar7100.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "ruckus,gd11", "qca,ar7161";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+		label-mac-device = &eth0;
+	};
+
+	keys: keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		dir-green {
+			label = "green:dir";
+			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		opt-green {
+			label = "green:opt";
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_green: power-green {
+			label = "green:power";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_power_red: power-red {
+			label = "red:power";
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+
+		wlan2g-green {
+			label = "green:wlan2g";
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0assoc";
+		};
+
+		wlan2g-yellow {
+			label = "yellow:wlan2g";
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan5g-green {
+			label = "green:wlan5g";
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1assoc";
+		};
+
+		wlan5g-yellow {
+			label = "yellow:wlan5g";
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ruckus-himem@3ff0000 {
+			/* Ruckus Himem area used to control
+			 * redundant boot image selection
+			 */
+			compatible = "nvmem-rmem";
+			reg = <0x3ff0000 0x10000>;
+			no-map;
+		};
+	};
+
+	beamforming-2g-spi {
+		compatible = "spi-gpio";
+		mosi-gpios = <&ath9k0 5 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&ath9k0 6 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		beamforming_2g_gpio: beamforming-2g-gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <24000000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	beamforming-5g-spi {
+		compatible = "spi-gpio";
+		mosi-gpios = <&ath9k1 5 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&ath9k1 6 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		beamforming_5g_gpio: beamforming-5g-gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <24000000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	ath9k0: wifi@0,11 { /* 2.4 GHz */
+		compatible = "pci168c,0029";
+		reg = <0x8800 0 0 0 0>;
+		nvmem-cells = <&macaddr_bdata_60>;
+		nvmem-cell-names = "mac-address";
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+
+	ath9k1: wifi@0,12 { /* 5 GHz */
+		compatible = "pci168c,0029";
+		reg = <0x9000 0 0 0 0>;
+		nvmem-cells = <&macaddr_bdata_76>;
+		nvmem-cell-names = "mac-address";
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@1e {
+		reg = <0x1e>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+	nvmem-cells = <&macaddr_bdata_66>;
+	nvmem-cell-names = "mac-address";
+
+	pll-data = <0x00110000 0x00001099 0x00991099>;
+	phy-handle = <&phy0>;
+	phy-mode = "rgmii-id";
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <104000000>;
+		m25p,fast-read;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x40000>;
+				label = "u-boot";
+				read-only;
+			};
+
+			/* On stock FW this encompasses rcks_wlan.main,
+			 * rcks_wlan.bkup and datafs partitions
+			 */
+			partition@40000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				reg = <0x40000 0xf40000>;
+				label = "firmware";
+			};
+
+			partition@f80000 {
+				compatible = "u-boot,env";
+				reg = <0xf80000 0x40000>;
+				label = "u-boot-env";
+			};
+
+			board_data: partition@fc0000 {
+				reg = <0xfc0000 0x40000>;
+				label = "board-data";
+				read-only;
+			};
+		};
+	};
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&board_data {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_bdata_60: macaddr@60 {
+		reg = <0x60 0x6>;
+	};
+
+	macaddr_bdata_66: macaddr@66 {
+		reg = <0x66 0x6>;
+	};
+
+	macaddr_bdata_76: macaddr@76 {
+		reg = <0x76 0x6>;
+	};
+};

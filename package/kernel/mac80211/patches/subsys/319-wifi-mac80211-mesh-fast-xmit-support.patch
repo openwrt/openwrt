@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* Maximum number of broadcast/multicast frames to buffer when some of the
   * associated stations are using power saving. */
-@@ -655,6 +656,19 @@ struct mesh_table {
+@@ -656,6 +657,19 @@ struct mesh_table {
  	atomic_t entries;		/* Up to MAX_MESH_NEIGHBOURS */
  };
  
@@ -60,7 +60,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  struct ieee80211_if_mesh {
  	struct timer_list housekeeping_timer;
  	struct timer_list mesh_path_timer;
-@@ -733,6 +747,7 @@ struct ieee80211_if_mesh {
+@@ -734,6 +748,7 @@ struct ieee80211_if_mesh {
  	struct mesh_table mpp_paths; /* Store paths for MPP&MAP */
  	int mesh_paths_generation;
  	int mpp_paths_generation;
@@ -68,7 +68,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  #ifdef CPTCFG_MAC80211_MESH
-@@ -1998,6 +2013,11 @@ int ieee80211_tx_control_port(struct wip
+@@ -2002,6 +2017,11 @@ int ieee80211_tx_control_port(struct wip
  			      int link_id, u64 *cookie);
  int ieee80211_probe_mesh_link(struct wiphy *wiphy, struct net_device *dev,
  			      const u8 *buf, size_t len);
@@ -90,7 +90,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include "driver-ops.h"
  
  static int mesh_allocated;
-@@ -698,6 +699,102 @@ ieee80211_mesh_update_bss_params(struct
+@@ -698,6 +699,95 @@ ieee80211_mesh_update_bss_params(struct
  			__le32_to_cpu(he_oper->he_oper_params);
  }
  
@@ -137,8 +137,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!entry)
 +		return false;
 +
-+	if (skb_headroom(skb) + 2 * ETH_ALEN < entry->hdrlen +
-+					       entry->fast_tx.hdr_len)
++	if (skb_headroom(skb) < entry->hdrlen + entry->fast_tx.hdr_len)
 +		return false;
 +
 +	sta = rcu_dereference(entry->mpath->next_hop);
@@ -154,16 +153,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			tid_tx->last_tx = jiffies;
 +	}
 +
-+	/* If the skb is shared we need to obtain our own copy */
-+	if (skb_shared(skb)) {
-+		struct sk_buff *oskb = skb;
-+
-+		skb = skb_clone(skb, GFP_ATOMIC);
-+		if (!skb)
-+			return false;
-+
-+		kfree_skb(oskb);
-+	}
++	skb = skb_share_check(skb, GFP_ATOMIC);
++	if (!skb)
++		return true;
 +
 +	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
 +
@@ -184,6 +176,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (copy_sa)
 +	    ether_addr_copy(meshhdr->eaddr2, sa);
 +
++	skb_push(skb, 2 * ETH_ALEN);
 +	__ieee80211_xmit_fast(sdata, sta, &entry->fast_tx, skb, tid_tx,
 +			      entry->mpath->dst, sdata->vif.addr);
 +
@@ -193,7 +186,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
   * ieee80211_fill_mesh_addresses - fill addresses of a locally originated mesh frame
   * @hdr:	802.11 frame header
-@@ -780,6 +877,8 @@ static void ieee80211_mesh_housekeeping(
+@@ -780,6 +870,8 @@ static void ieee80211_mesh_housekeeping(
  	changed = mesh_accept_plinks_update(sdata);
  	ieee80211_mbss_info_change_notify(sdata, changed);
  
@@ -566,7 +559,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!entry)
 +		goto unlock_sta;
 +
-+	spin_lock_bh(&cache->walk_lock);
++	spin_lock(&cache->walk_lock);
 +	prev = rhashtable_lookup_get_insert_fast(&cache->rht,
 +						 &entry->rhash,
 +						 fast_tx_rht_params);
@@ -589,7 +582,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	hlist_add_head(&entry->walk_list, &cache->walk_head);
 +
 +unlock_cache:
-+	spin_unlock_bh(&cache->walk_lock);
++	spin_unlock(&cache->walk_lock);
 +unlock_sta:
 +	spin_unlock_bh(&sta->lock);
 +}
@@ -735,7 +728,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3021,6 +3021,9 @@ void ieee80211_check_fast_xmit(struct st
+@@ -3022,6 +3022,9 @@ void ieee80211_check_fast_xmit(struct st
  	if (!ieee80211_hw_check(&local->hw, SUPPORT_FAST_XMIT))
  		return;
  
@@ -745,7 +738,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* Locking here protects both the pointer itself, and against concurrent
  	 * invocations winning data access races to, e.g., the key pointer that
  	 * is used.
-@@ -3402,6 +3405,9 @@ static bool ieee80211_amsdu_aggregate(st
+@@ -3403,6 +3406,9 @@ static bool ieee80211_amsdu_aggregate(st
  	if (sdata->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED)
  		return false;
  
@@ -755,7 +748,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (skb_is_gso(skb))
  		return false;
  
-@@ -3634,10 +3640,11 @@ free:
+@@ -3635,10 +3641,11 @@ free:
  	return NULL;
  }
  
@@ -771,28 +764,20 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
-@@ -3645,8 +3652,6 @@ static void __ieee80211_xmit_fast(struct
- 	struct ieee80211_tx_data tx;
+@@ -3647,7 +3654,6 @@ static void __ieee80211_xmit_fast(struct
  	ieee80211_tx_result r;
  	int hw_headroom = sdata->local->hw.extra_tx_headroom;
--	int extra_head = fast_tx->hdr_len - (ETH_HLEN - 2);
+ 	int extra_head = fast_tx->hdr_len - (ETH_HLEN - 2);
 -	struct ethhdr eth;
  
  	skb = skb_share_check(skb, GFP_ATOMIC);
  	if (unlikely(!skb))
-@@ -3661,16 +3666,15 @@ static void __ieee80211_xmit_fast(struct
- 	 * more room than we already have in 'extra_head'
- 	 */
- 	if (unlikely(ieee80211_skb_resize(sdata, skb,
--					  max_t(int, extra_head + hw_headroom -
-+					  max_t(int, fast_tx->hdr_len + hw_headroom -
- 						     skb_headroom(skb), 0),
+@@ -3667,11 +3673,10 @@ static void __ieee80211_xmit_fast(struct
  					  ENCRYPT_NO)))
  		goto free;
  
 -	memcpy(&eth, skb->data, ETH_HLEN - 2);
--	hdr = skb_push(skb, extra_head);
-+	hdr = skb_push(skb, fast_tx->hdr_len);
+ 	hdr = skb_push(skb, extra_head);
  	memcpy(skb->data, fast_tx->hdr, fast_tx->hdr_len);
 -	memcpy(skb->data + fast_tx->da_offs, eth.h_dest, ETH_ALEN);
 -	memcpy(skb->data + fast_tx->sa_offs, eth.h_source, ETH_ALEN);
@@ -801,16 +786,17 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	info = IEEE80211_SKB_CB(skb);
  	memset(info, 0, sizeof(*info));
-@@ -3689,7 +3693,7 @@ static void __ieee80211_xmit_fast(struct
+@@ -3690,7 +3695,8 @@ static void __ieee80211_xmit_fast(struct
  #endif
  
  	if (hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_QOS_DATA)) {
 -		tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
 +		u8 tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
++
  		*ieee80211_get_qos_ctl(hdr) = tid;
  	}
  
-@@ -3732,6 +3736,7 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3733,6 +3739,7 @@ static bool ieee80211_xmit_fast(struct i
  	struct ieee80211_hdr *hdr = (void *)fast_tx->hdr;
  	struct tid_ampdu_tx *tid_tx = NULL;
  	struct sk_buff *next;
@@ -818,17 +804,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u8 tid = IEEE80211_NUM_TIDS;
  
  	/* control port protocol needs a lot of special handling */
-@@ -3757,14 +3762,18 @@ static bool ieee80211_xmit_fast(struct i
+@@ -3758,6 +3765,8 @@ static bool ieee80211_xmit_fast(struct i
  		}
  	}
  
 +	memcpy(&eth, skb->data, ETH_HLEN - 2);
 +
  	/* after this point (skb is modified) we cannot return false */
-+	skb_pull(skb, ETH_HLEN - 2);
  	skb = ieee80211_tx_skb_fixup(skb, ieee80211_sdata_netdev_features(sdata));
  	if (!skb)
- 		return true;
+@@ -3765,7 +3774,8 @@ static bool ieee80211_xmit_fast(struct i
  
  	skb_list_walk_safe(skb, skb, next) {
  		skb_mark_not_on_list(skb);
@@ -838,7 +823,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	return true;
-@@ -4244,8 +4253,15 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4252,8 +4262,15 @@ void __ieee80211_subif_start_xmit(struct
  		return;
  	}
  
@@ -854,7 +839,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (ieee80211_lookup_ra_sta(sdata, skb, &sta))
  		goto out_free;
  
-@@ -4255,8 +4271,6 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4263,8 +4280,6 @@ void __ieee80211_subif_start_xmit(struct
  	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
  	ieee80211_aggr_check(sdata, sta, skb);
  

@@ -24,7 +24,7 @@ endif
 
 PKG_EXTMOD_SUBDIRS:=driver driver-mini glue
 
-PKG_USE_MIPS16:=0
+PKG_BUILD_FLAGS:=no-mips16
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
