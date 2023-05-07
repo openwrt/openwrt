@@ -1300,15 +1300,16 @@ static void rtl838x_pie_rule_dump_raw(u32 r[])
 	pr_info("Sel    : %08x\n", r[17]);
 }
 
-static void rtl838x_pie_rule_dump(struct  pie_rule *pr)
-{
-	pr_info("Drop: %d, fwd: %d, ovid: %d, ivid: %d, flt: %d, log: %d, rmk: %d, meter: %d tagst: %d, mir: %d, nopri: %d, cpupri: %d, otpid: %d, itpid: %d, shape: %d\n",
-		pr->drop, pr->fwd_sel, pr->ovid_sel, pr->ivid_sel, pr->flt_sel, pr->log_sel, pr->rmk_sel, pr->log_sel, pr->tagst_sel, pr->mir_sel, pr->nopri_sel,
-		pr->cpupri_sel, pr->otpid_sel, pr->itpid_sel, pr->shaper_sel);
-	if (pr->fwd_sel)
-		pr_info("FWD: %08x\n", pr->fwd_data);
-	pr_info("TID: %x, %x\n", pr->tid, pr->tid_m);
-}
+// Currently not used
+// static void rtl838x_pie_rule_dump(struct  pie_rule *pr)
+// {
+// 	pr_info("Drop: %d, fwd: %d, ovid: %d, ivid: %d, flt: %d, log: %d, rmk: %d, meter: %d tagst: %d, mir: %d, nopri: %d, cpupri: %d, otpid: %d, itpid: %d, shape: %d\n",
+// 		pr->drop, pr->fwd_sel, pr->ovid_sel, pr->ivid_sel, pr->flt_sel, pr->log_sel, pr->rmk_sel, pr->log_sel, pr->tagst_sel, pr->mir_sel, pr->nopri_sel,
+// 		pr->cpupri_sel, pr->otpid_sel, pr->itpid_sel, pr->shaper_sel);
+// 	if (pr->fwd_sel)
+// 		pr_info("FWD: %08x\n", pr->fwd_data);
+// 	pr_info("TID: %x, %x\n", pr->tid, pr->tid_m);
+// }
 
 static int rtl838x_pie_rule_read(struct rtl838x_switch_priv *priv, int idx, struct  pie_rule *pr)
 {

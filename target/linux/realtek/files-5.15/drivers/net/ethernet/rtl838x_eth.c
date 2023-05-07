@@ -161,12 +161,13 @@ static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
-static void rtl93xx_header_vlan_set(struct p_hdr *h, int vlan)
-{
-	h->cpu_tag[2] |= BIT(4); /* Enable VLAN forwarding offload */
-	h->cpu_tag[2] |= (vlan >> 8) & 0xf;
-	h->cpu_tag[3] |= (vlan & 0xff) << 8;
-}
+// Currently unused
+// static void rtl93xx_header_vlan_set(struct p_hdr *h, int vlan)
+// {
+// 	h->cpu_tag[2] |= BIT(4); /* Enable VLAN forwarding offload */
+// 	h->cpu_tag[2] |= (vlan >> 8) & 0xf;
+// 	h->cpu_tag[3] |= (vlan & 0xff) << 8;
+// }
 
 struct rtl838x_rx_q {
 	int id;

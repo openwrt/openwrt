@@ -1991,8 +1991,6 @@ static bool rtl83xx_lag_can_offload(struct dsa_switch *ds,
 
 static int rtl83xx_port_lag_change(struct dsa_switch *ds, int port)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
-
 	pr_debug("%s: %d\n", __func__, port);
 	/* Nothing to be done... */
 

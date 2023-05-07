@@ -527,24 +527,25 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 	return 0;
 }
 
-/* Allocate a 64 bit octet counter located in the LOG HW table */
-static int rtl83xx_octet_cntr_alloc(struct rtl838x_switch_priv *priv)
-{
-	int idx;
+// Currently Unused
+// /* Allocate a 64 bit octet counter located in the LOG HW table */
+// static int rtl83xx_octet_cntr_alloc(struct rtl838x_switch_priv *priv)
+// {
+// 	int idx;
 
-	mutex_lock(&priv->reg_mutex);
+// 	mutex_lock(&priv->reg_mutex);
 
-	idx = find_first_zero_bit(priv->octet_cntr_use_bm, MAX_COUNTERS);
-	if (idx >= priv->n_counters) {
-		mutex_unlock(&priv->reg_mutex);
-		return -1;
-	}
+// 	idx = find_first_zero_bit(priv->octet_cntr_use_bm, MAX_COUNTERS);
+// 	if (idx >= priv->n_counters) {
+// 		mutex_unlock(&priv->reg_mutex);
+// 		return -1;
+// 	}
 
-	set_bit(idx, priv->octet_cntr_use_bm);
-	mutex_unlock(&priv->reg_mutex);
+// 	set_bit(idx, priv->octet_cntr_use_bm);
+// 	mutex_unlock(&priv->reg_mutex);
 
-	return idx;
-}
+// 	return idx;
+// }
 
 /* Allocate a 32-bit packet counter
  * 2 32-bit packet counters share the location of a 64-bit octet counter
@@ -1427,7 +1428,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 			fib_info_hold(fib_work->fen_info.fi);
 
 		} else if (info->family == AF_INET6) {
-			struct fib6_entry_notifier_info *fen6_info = ptr;
+			//struct fib6_entry_notifier_info *fen6_info = ptr;
 			pr_warn("%s: FIB_RULE ADD/DEL for IPv6 not supported\n", __func__);
 			kfree(fib_work);
 			return NOTIFY_DONE;
