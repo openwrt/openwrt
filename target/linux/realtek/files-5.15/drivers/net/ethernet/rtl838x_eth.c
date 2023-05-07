@@ -1958,7 +1958,7 @@ static int rtl930x_mdio_reset(struct mii_bus *bus)
 			break;			/* Serdes: Value = 0 */
 		case PHY_INTERFACE_MODE_HSGMII:
 			private_poll_mask |= BIT(i);
-			/* fallthrough */
+			fallthrough;
 		case PHY_INTERFACE_MODE_USXGMII:
 			v |= BIT(mac_type_bit[i]);
 			uses_usxgmii = true;
