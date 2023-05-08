@@ -6,7 +6,7 @@
 
 / {
 	model = "Iomega ix4-200d";
-	compatible = "iom,ix4-200d", "marvell,rd88f6281-a", "marvell,rd88f6281", "marvell,kirkwood-88f6281", "marvell,kirkwood";
+	compatible = "iom,ix4-200d", "marvell,kirkwood-88f6281", "marvell,kirkwood";
 
 memory {
 	device_type = "memory";
@@ -16,16 +16,6 @@ memory {
 chosen {
 	bootargs = "console=ttyS0,115200n8 earlyprintk";
 	stdout-path = &uart0;
-};
-
-mbus {
-	pcie-controller {
-		status = "okay";
-
-			pcie@1,0 {
-			status = "okay";
-			};
-		};
 };
 
 ocp@f1000000 {
@@ -71,7 +61,7 @@ ocp@f1000000 {
 	};
 
 	serial@12000 {
-		status = "ok";
+		status = "okay";
 	};
 
 	sata@80000 {
@@ -151,6 +141,32 @@ ocp@f1000000 {
 };
 };
 
+&eth0 {
+	status = "okay";
+	ethernet0-port@0 {
+		phy-handle = <&ethphy0>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+	ethernet1-port@0 {
+		phy-handle = <&ethphy1>;
+	};
+};
+
+&mdio {
+	status = "okay";
+
+	ethphy0: ethernet-phy@8 {
+		reg = <8>;
+	};
+
+	ethphy1: ethernet-phy@9 {
+		reg = <9>;
+	};
+};
+
 &nand {
 	status = "okay";
 
@@ -183,28 +199,14 @@ ocp@f1000000 {
 	};
 };
 
-&mdio {
+&pciec {
 	status = "okay";
-
-	ethphy0: ethernet-phy@8 {
-		reg = <8>;
-	};
-
-	ethphy1: ethernet-phy@9 {
-		reg = <9>;
-	};
 };
 
-&eth0 {
+&pcie0 {
 	status = "okay";
-	ethernet0-port@0 {
-		phy-handle = <&ethphy0>;
-	};
 };
 
-&eth1 {
+&pcie1 {
 	status = "okay";
-	ethernet1-port@0 {
-		phy-handle = <&ethphy1>;
-	};
 };
