@@ -8,14 +8,21 @@
 	model = "Iomega ix4-200d";
 	compatible = "iom,ix4-200d", "marvell,kirkwood-88f6281", "marvell,kirkwood";
 
-memory {
-	device_type = "memory";
-	reg = <0x00000000 0x20000000>;
+aliases {
+	led-boot = &led_status_white;
+	led-failsafe = &led_status_red;
+	led-running = &led_power_white;
+	led-upgrade = &led_status_red;
 };
 
 chosen {
 	bootargs = "console=ttyS0,115200n8 earlyprintk";
 	stdout-path = &uart0;
+};
+
+memory {
+	device_type = "memory";
+	reg = <0x00000000 0x20000000>;
 };
 
 ocp@f1000000 {
