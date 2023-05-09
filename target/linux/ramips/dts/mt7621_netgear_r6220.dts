@@ -42,9 +42,17 @@
 		};
 
 		factory: partition@2e00000 {
+			compatible = "nvmem-cells";
 			label = "factory";
 			reg = <0x2e00000 0x100000>;
 			read-only;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			macaddr_factory_4: macaddr@4 {
+				reg = <0x4 0x6>;
+			};
 		};
 
 		partition@4200000 {
@@ -64,14 +72,4 @@
 	nvmem-cells = <&macaddr_factory_4>;
 	nvmem-cell-names = "mac-address";
 	mac-address-increment = <1>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
 };
