@@ -50,3 +50,20 @@ define KernelPackage/i2c-bcm-iproc/description
 endef
 
 $(eval $(call KernelPackage,i2c-bcm-iproc))
+
+define KernelPackage/switch-qca8k
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Qualcomm QCA8337 DSA switch driver
+  FILES:=$(LINUX_DIR)/drivers/net/dsa/qca8k.ko
+  KCONFIG:=CONFIG_NET_DSA_QCA8K \
+	CONFIG_NET_DSA_TAG_QCA=y \
+	CONFIG_REGMAP=y
+  DEPENDS:=@TARGET_bcm53xx
+  AUTOLOAD:=$(call AutoLoad,50,qca8k)
+endef
+
+define KernelPackage/qca8k/description
+  Kernel module for Qualcomm QCA8337 DSA driver
+endef
+
+$(eval $(call KernelPackage,switch-qca8k))
