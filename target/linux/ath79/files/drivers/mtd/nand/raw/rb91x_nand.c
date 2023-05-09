@@ -286,7 +286,7 @@ static int rb91x_nand_probe(struct platform_device *pdev)
 	gpios = gpiod_get_array(dev, NULL, GPIOD_OUT_LOW);
 	if (IS_ERR(gpios)) {
 		if (PTR_ERR(gpios) != -EPROBE_DEFER) {
-			dev_err(dev, "failed to get gpios: %d\n",
+			dev_err(dev, "failed to get gpios: %ld\n",
 				PTR_ERR(gpios));
 		}
 		return PTR_ERR(gpios);
