@@ -99,6 +99,8 @@ ocp@f1000000 {
 
 	gpio-leds {
 		compatible = "gpio-leds";
+		pinctrl-0 = <&led_status_white &led_status_red &led_power_white>;
+		pinctrl-names = "default";
 
 		led_status_white {
 			label = "status:white";
