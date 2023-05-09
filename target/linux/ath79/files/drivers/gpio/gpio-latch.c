@@ -134,7 +134,7 @@ static int gpio_latch_probe(struct platform_device *pdev)
 			GPIOD_OUT_LOW);
 		if (IS_ERR(glc->gpios[i])) {
 			if (PTR_ERR(glc->gpios[i]) != -EPROBE_DEFER) {
-				dev_err(dev, "failed to get gpio %d: %d\n", i,
+				dev_err(dev, "failed to get gpio %d: %ld\n", i,
 					PTR_ERR(glc->gpios[i]));
 			}
 			return PTR_ERR(glc->gpios[i]);
