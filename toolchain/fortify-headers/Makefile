@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/target.mk
 
 PKG_NAME:=fortify-headers
 PKG_VERSION:=1.1
-PKG_RELEASE=1
+PKG_RELEASE=2
 
 PKG_SOURCE_URL:=https://dl.2f30.org/releases
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
