@@ -36,12 +36,12 @@ ocp@f1000000 {
 	};
 
 	pinctrl: pin-controller@10000 {
-		pmx_spi {
+		pmx_spi: pmx-spi {
 			marvell,pins = "mpp12", "mpp13";
 			marvell,function = "gpio";
 		};
 
-		pmx_keys {
+		pmx_keys: pmx-keys {
 			marvell,pins = "mpp16", "mpp29", "mpp47", "mpp49";
 			marvell,function = "gpio";
 		};
@@ -108,17 +108,17 @@ ocp@f1000000 {
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		led_status_white {
+		led_status_white: led-status-white {
 			label = "status:white";
 			gpios = <&gpio_spi 4 GPIO_ACTIVE_LOW>;
 		};
 
-		led_status_red {
+		led_status_red: led-status-red {
 			label = "status:red";
 			gpios = <&gpio_spi 5 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_white {
+		led_power_white: led-power-white {
 			label = "power:white";
 			gpios = <&gpio_spi 7 GPIO_ACTIVE_HIGH>;
 		};
