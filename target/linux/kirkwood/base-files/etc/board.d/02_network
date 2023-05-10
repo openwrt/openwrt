@@ -38,7 +38,7 @@ kirkwood_setup_interfaces()
 		ucidef_set_interface_lan "port1 port2 port3 port4 eth1"
 		;;
 	iom,ix4-200d)
-		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		ucidef_set_interface_lan "eth0 eth1" "dhcp"
 		;;
 	linksys,e4200-v2|\
 	linksys,ea3500|\
