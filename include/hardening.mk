@@ -9,6 +9,7 @@ PKG_SSP ?= 1
 PKG_FORTIFY_SOURCE ?= 1
 PKG_RELRO ?= 1
 PKG_DT_RELR ?= 1
+PKG_FANALYZER ?= 0
 
 ifdef CONFIG_PKG_CHECK_FORMAT_SECURITY
   ifeq ($(strip $(PKG_CHECK_FORMAT_SECURITY)),1)
@@ -77,3 +78,8 @@ ifdef CONFIG_PKG_DT_RELR
   endif
 endif
 
+ifdef CONFIG_PKG_FANALYZER
+  ifeq ($(strip $(PKG_FANALYZER)),1)
+    TARGET_CFLAGS +=  -fanalyzer
+  endif
+endif
