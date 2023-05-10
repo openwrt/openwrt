@@ -26,38 +26,6 @@ memory {
 };
 
 ocp@f1000000 {
-	pinctrl: pin-controller@10000 {
-		spi_pin1: spi-pin1 {
-			marvell,pins = "mpp12";
-			marvell,function = "gpio";
-		};
-
-		spi_pin2: spi-pin2 {
-			marvell,pins = "mpp13";
-			marvell,function = "gpio";
-		};
-
-		next_button_pin: next-button-pin {
-			marvell,pins = "mpp16";
-			marvell,function = "gpio";
-		};
-
-		reset_button_pin: reset-button-pin {
-			marvell,pins = "mpp29";
-			marvell,function = "gpio";
-		};
-
-		cancel_button_pin: cancel-button-pin {
-			marvell,pins = "mpp47";
-			marvell,function = "gpio";
-		};
-
-		power_button_pin: power-button-pin {
-			marvell,pins = "mpp49";
-			marvell,function = "gpio";
-		};
-	};
-
 	i2c@11000 {
 		status = "okay";
 
@@ -67,13 +35,25 @@ ocp@f1000000 {
 			};
 	};
 
-	serial@12000 {
-		status = "okay";
+	pinctrl: pin-controller@10000 {
+		pmx_spi {
+			marvell,pins = "mpp12", "mpp13";
+			marvell,function = "gpio";
+		};
+
+		pmx_keys {
+			marvell,pins = "mpp16", "mpp29", "mpp47", "mpp49";
+			marvell,function = "gpio";
+		};
 	};
 
 	sata@80000 {
 		status = "okay";
 		nr-ports = <2>;
+	};
+
+	serial@12000 {
+		status = "okay";
 	};
 
 	spi3 {
@@ -83,7 +63,6 @@ ocp@f1000000 {
 		status = "okay";
 		sck-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		mosi-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-		cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		num-chipselects = <1>;
 		#size-cells = <0>;
 
@@ -95,32 +74,10 @@ ocp@f1000000 {
 			registers-number = <1>;
 			spi-max-frequency = <100000>;
 		};
-	};
-
-	gpio-leds {
-		compatible = "gpio-leds";
-		pinctrl-0 = <&led_status_white &led_status_red &led_power_white>;
-		pinctrl-names = "default";
-
-		led_status_white {
-			label = "status:white";
-			gpios = <&gpio_spi 4 GPIO_ACTIVE_LOW>;
-		};
-
-		led_status_red {
-			label = "status:red";
-			gpios = <&gpio_spi 5 GPIO_ACTIVE_LOW>;
-		};
-
-		led_power_white {
-			label = "power:white";
-			gpios = <&gpio_spi 7 GPIO_ACTIVE_HIGH>;
-		};
-	};
 
 	gpio-keys {
 		compatible = "gpio-keys";
-		pinctrl-0 = <&next_button_pin &reset_button_pin &cancel_button_pin &power_button_pin>;
+		pinctrl-0 = <&pmx_keys>;
 		pinctrl-names = "default";
 
 		next-button {
@@ -146,6 +103,26 @@ ocp@f1000000 {
 			linux,code = <KEY_POWER2>;
 			gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
 		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_status_white {
+			label = "status:white";
+			gpios = <&gpio_spi 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red {
+			label = "status:red";
+			gpios = <&gpio_spi 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_white {
+			label = "power:white";
+			gpios = <&gpio_spi 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
 	};
 };
 };
