@@ -37,7 +37,7 @@ ocp@f1000000 {
 
 	pinctrl: pin-controller@10000 {
 		pmx_spi: pmx-spi {
-			marvell,pins = "mpp12", "mpp13";
+			marvell,pins = "mpp12", "mpp13", "mpp14";
 			marvell,function = "gpio";
 		};
 
@@ -63,6 +63,7 @@ ocp@f1000000 {
 		status = "okay";
 		sck-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		mosi-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		num-chipselects = <1>;
 		#size-cells = <0>;
 
