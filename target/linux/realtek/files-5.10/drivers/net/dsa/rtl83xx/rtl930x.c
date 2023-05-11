@@ -2433,11 +2433,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		if (!priv->ports[i].phy)
 			continue;
 
-		v = 0x1;
-		if (priv->ports[i].is10G)
-			v = 0x3;
-		if (priv->ports[i].phy_is_integrated)
-			v = 0x1;
+		v = (priv->ports[i].led_num - 1) & 0x3;
 		sw_w32_mask(0x3 << pos, v << pos, RTL930X_LED_PORT_NUM_CTRL(i));
 
 		pm |= BIT(i);

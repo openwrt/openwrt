@@ -1,0 +1,429 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "hasivo,f1100w-8splus", "realtek,rtl838x-soc";
+	model = "hasivo F1100W-8S+ Switch";
+
+	aliases {
+		led-boot = &led_cpu;
+		led-failsafe = &led_cpu;
+		led-running = &led_cpu;
+		led-upgrade = &led_cpu;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_cpu: led {
+			label = "yellow:cpu";
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		};
+    };
+
+	led_set: led_set@0 {
+		compatible = "realtek,rtl9300-leds";
+		led_set0 = <0xffff 0x0a01 0x0a01 0x0ba0>;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	i2c0: i2c-rtl9300 {
+		compatible = "realtek,rtl9300-i2c";
+		reg = <0x1b00036c 0x3c>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sda-pin = <9>;
+		scl-pin = <8>;
+		clock-frequency = <100000>;
+	};
+
+	i2cmux {
+		compatible = "realtek,i2c-mux-rtl9300";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c-parent = <&i2c0>;
+
+		i2c01: i2c-rtl9300-1 {
+			reg = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <9>;
+			scl-pin = <8>;
+		};
+
+		i2c02: i2c-rtl9300-2 {
+			reg = <2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <10>;
+			scl-pin = <8>;
+		};
+
+		i2c03: i2c-rtl9300-3 {
+			reg = <3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <11>;
+			scl-pin = <8>;
+		};
+		
+		i2c04: i2c-rtl9300-4 {
+			reg = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <12>;
+			scl-pin = <8>;
+		};
+
+		i2c05: i2c-rtl9300-5 {
+			reg = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <13>;
+			scl-pin = <8>;
+		};
+
+		i2c06: i2c-rtl9300-6 {
+			reg = <6>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <14>;
+			scl-pin = <8>;
+		};
+
+		i2c07: i2c-rtl9300-7 {
+			reg = <7>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <15>;
+			scl-pin = <8>;
+		};
+	
+		i2c08: i2c-rtl9300-8 {
+			reg = <8>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sda-pin = <16>;
+			scl-pin = <8>;
+		};
+	};
+
+	sfp0: sfp-p1 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c01>;
+		los-gpio = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 0 GPIO_ACTIVE_LOW>;
+	};
+	sfp1: sfp-p2 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c02>;
+		los-gpio = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 1 GPIO_ACTIVE_LOW>;
+	};
+	sfp2: sfp-p3 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c03>;
+		los-gpio = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 2 GPIO_ACTIVE_LOW>;
+	};
+	sfp3: sfp-p4 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c04>;
+		los-gpio = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 3 GPIO_ACTIVE_LOW>;
+	};
+	sfp4: sfp-p5 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c05>;
+		los-gpio = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 4 GPIO_ACTIVE_LOW>;
+	};
+	sfp5: sfp-p6 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c06>;
+		los-gpio = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 5 GPIO_ACTIVE_LOW>;
+	};
+	sfp6: sfp-p7 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c07>;
+		los-gpio = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 6 GPIO_ACTIVE_LOW>;
+	};
+	sfp7: sfp-p8 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c08>;
+		los-gpio = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 7 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xe0000>;
+				read-only;
+			};
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0xe0000 0x10000>;
+			};
+			partition@f0000 {
+				label = "u-boot-env2";
+				reg = <0xf0000 0x10000>;
+				read-only;
+			};
+			partition@100000 {
+				label = "jffs";
+				reg = <0x100000 0x100000>;
+			};
+			partition@200000 {
+				label = "jffs2";
+				reg = <0x200000 0x100000>;
+			};
+			partition@300000 {
+				label = "firmware";
+				reg = <0x300000 0x1d00000>;
+				compatible = "denx,uimage";
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	mdio: mdio-bus {
+		compatible = "realtek,rtl838x-mdio";
+		regmap = <&ethernet0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* Internal phy for SFP+ ports */
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			rtl9300,smi-address = <3 0>;
+			sds = < 2 >;
+		};
+		phy8: ethernet-phy@8 {
+			reg = <8>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			rtl9300,smi-address = <3 8>;
+			sds = < 3 >;
+		};
+		phy16: ethernet-phy@16 {
+			reg = <16>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			rtl9300,smi-address = <3 16>;
+			sds = < 4 >;
+		};
+		phy20: ethernet-phy@20 {
+			reg = <20>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			rtl9300,smi-address = <3 20>;
+			sds = < 5 >;
+		};
+		phy24: ethernet-phy@24 {
+			reg = <24>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			rtl9300,smi-address = <3 24>;
+			sds = < 6 >;
+		};
+		phy25: ethernet-phy@25 {
+			reg = <25>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			rtl9300,smi-address = <3 25>;
+			sds = < 7 >;
+		};
+		phy26: ethernet-phy@26 {
+			reg = <26>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			rtl9300,smi-address = <3 26>;
+			sds = < 8 >;
+		};
+		phy27: ethernet-phy@27 {
+			reg = <27>;
+			compatible = "ethernet-phy-ieee802.3-c45";
+			phy-is-integrated;
+			rtl9300,smi-address = <3 27>;
+			sds = < 9 >;
+		};
+	};
+};
+
+&switch0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "lan1";
+			phy-mode = "10gbase-r";
+			phy-handle = <&phy0>;
+			sfp = <&sfp0>;
+			led-num = <3>;
+			led-set = <0>;
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		port@8 {
+			reg = <8>;
+			label = "lan2";
+			phy-mode = "10gbase-r";
+			phy-handle = <&phy8>;
+			sfp = <&sfp1>;
+			led-num = <3>;
+			led-set = <0>;
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		port@16 {
+			reg = <16>;
+			label = "lan3";
+			phy-mode = "10gbase-r";
+			phy-handle = <&phy16>;
+			sfp = <&sfp2>;
+			led-num = <3>;
+			led-set = <0>;
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		port@20 {
+			reg = <20>;
+			label = "lan4";
+			phy-mode = "10gbase-r";
+			phy-handle = <&phy20>;
+			sfp = <&sfp3>;
+			led-num = <3>;
+			led-set = <0>;
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		port@24 {
+			reg = <24>;
+			label = "lan5";
+			phy-mode = "10gbase-r";
+			phy-handle = <&phy24>;
+			sfp = <&sfp4>;
+			led-num = <3>;
+			led-set = <0>;
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		port@25 {
+			reg = <25>;
+			label = "lan6";
+			phy-mode = "10gbase-r";
+			phy-handle = <&phy25>;
+			sfp = <&sfp5>;
+			led-num = <3>;
+			led-set = <0>;
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		port@26 {
+			reg = <26>;
+			label = "lan7";
+			phy-mode = "10gbase-r";
+			phy-handle = <&phy26>;
+			sfp = <&sfp6>;
+			led-num = <3>;
+			led-set = <0>;
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		port@27 {
+			reg = <27>;
+			label = "lan8";
+			phy-mode = "10gbase-r";
+			phy-handle = <&phy27>;
+			sfp = <&sfp7>;
+			led-num = <3>;
+			led-set = <0>;
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+			};
+		};
+	};
+};

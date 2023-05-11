@@ -30,6 +30,25 @@
 #define RTL8390_LED_SW_P_EN_CTRL(p)		(0x012C + (((p / 10) << 2)))
 #define RTL8390_LED_SW_P_CTRL(p)		(0x0144 + (((p) << 2)))
 
+#define RTL930X_LED_GLB_CTRL			(0xCC00)
+#define RTL930X_LED_PORT_NUM_CTRL(p)		(0xCC04 + (((p >> 4) << 2)))
+#define RTL930X_LED_SET3_1_CTRL			(0xCC0C)
+#define RTL930X_LED_SET3_0_CTRL			(0xCC10)
+#define RTL930X_LED_SET2_1_CTRL			(0xCC14)
+#define RTL930X_LED_SET2_0_CTRL			(0xCC18)
+#define RTL930X_LED_SET1_1_CTRL			(0xCC1C)
+#define RTL930X_LED_SET1_0_CTRL			(0xCC20)
+#define RTL930X_LED_SET0_1_CTRL			(0xCC24)
+#define RTL930X_LED_SET0_0_CTRL			(0xCC28)
+#define RTL930X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0xCC2C + (((p >> 4) << 2)))
+#define RTL930X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0xCC34 + (((p >> 4) << 2)))
+#define RTL930X_LED_PORT_COPR_MASK_CTRL		(0xCC3C)
+#define RTL930X_LED_PORT_FIB_MASK_CTRL		(0xCC40)
+#define RTL930X_LED_PORT_COMBO_MASK_CTRL	(0xCC44)
+#define RTL930X_SW_LED_LOAD			(0xCC48)
+#define RTL930X_LED_PORT_SW_EN_CTRL(p)		(0xCC4C + (((p >> 3) << 2)))
+#define RTL930X_LED_PORT_SW_CTRL(p)		(0xCC5C + (((p) << 2)))
+
 #define RTL838X_MIR_QID_CTRL(grp)		(0xAD44 + (((grp) << 2)))
 #define RTL838X_MIR_RSPAN_VLAN_CTRL(grp)	(0xA340 + (((grp) << 2)))
 #define RTL838X_MIR_RSPAN_VLAN_CTRL_MAC(grp)	(0xAA70 + (((grp) << 2)))
@@ -420,7 +439,7 @@ static ssize_t port_egress_rate_read(struct file *filp, char __user *buffer, siz
 	int value;
 	if (priv->family_id == RTL8380_FAMILY_ID)
 		value = rtl838x_get_egress_rate(priv, p->dp->index);
-	else
+	else if (priv->family_id == RTL8390_FAMILY_ID)
 		value = rtl839x_get_egress_rate(priv, p->dp->index);
 
 	if (value < 0)
@@ -442,7 +461,7 @@ static ssize_t port_egress_rate_write(struct file *filp, const char __user *buff
 
 	if (priv->family_id == RTL8380_FAMILY_ID)
 		rtl838x_set_egress_rate(priv, p->dp->index, value);
-	else
+	else if (priv->family_id == RTL8390_FAMILY_ID)
 		rtl839x_set_egress_rate(priv, p->dp->index, value);
 
 	return res;
@@ -519,7 +538,7 @@ static int rtl838x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv 
 	struct dentry *led_dir;
 	int p;
 	char led_sw_p_ctrl_name[20];
-	char port_led_name[20];
+	char port_led_name[32];
 
 	led_dir = debugfs_create_dir("led", parent);
 
@@ -584,6 +603,52 @@ static int rtl838x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv 
 			snprintf(port_led_name, sizeof(port_led_name), "led_sw_p_ctrl.%02d", p);
 			debugfs_create_x32(port_led_name, 0644, led_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL8390_LED_SW_P_CTRL(p)));
+		}
+	} else if (priv->family_id == RTL9300_FAMILY_ID) {
+		debugfs_create_x32("led_glb_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_GLB_CTRL));
+		debugfs_create_x32("led_set3_1_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_SET3_1_CTRL));
+		debugfs_create_x32("led_set3_0_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_SET3_0_CTRL));
+		debugfs_create_x32("led_set2_1_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_SET2_1_CTRL));
+		debugfs_create_x32("led_set2_0_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_SET2_0_CTRL));
+		debugfs_create_x32("led_set1_1_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_SET1_1_CTRL));
+		debugfs_create_x32("led_set1_0_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_SET1_0_CTRL));
+		debugfs_create_x32("led_set0_1_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_SET0_1_CTRL));
+		debugfs_create_x32("led_set0_0_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_SET0_0_CTRL));
+
+		for (p = 0; p < 2; p++) {
+			snprintf(port_led_name, sizeof(port_led_name), "led_port_copr_set_sel_ctrl_%1d", p);
+			debugfs_create_x32(port_led_name, 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_PORT_COPR_SET_SEL_CTRL(p << 4)));
+			snprintf(port_led_name, sizeof(port_led_name), "led_port_fib_set_sel_ctrl_%1d", p);
+			debugfs_create_x32(port_led_name, 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_PORT_FIB_SET_SEL_CTRL(p << 4)));
+		}
+		debugfs_create_x32("led_port_copr_mask_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_PORT_COPR_MASK_CTRL));
+		debugfs_create_x32("led_port_fib_mask_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_PORT_FIB_MASK_CTRL));
+		debugfs_create_x32("led_port_combo_mask_ctrl", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_PORT_COMBO_MASK_CTRL));
+		debugfs_create_x32("sw_led_load", 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_SW_LED_LOAD));
+		for (p = 0; p < 4; p++) {
+			snprintf(port_led_name, sizeof(port_led_name), "led_port_sw_en_ctrl_%1d", p);
+			debugfs_create_x32(port_led_name, 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_PORT_SW_EN_CTRL(p * 4)));
+		}
+		for (p = 0; p < 28; p++) {
+			snprintf(port_led_name, sizeof(port_led_name), "led_port_sw_ctrl_%02d", p);
+			debugfs_create_x32(port_led_name, 0644, led_dir,
+				(u32 *)(RTL838X_SW_BASE + RTL930X_LED_PORT_SW_CTRL(p)));
 		}
 	}
 	return 0;
@@ -716,6 +781,7 @@ err:
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv)
 {
 	struct dentry *dbg_dir;
+	int ret;
 
 	pr_info("%s called\n", __func__);
 	dbg_dir = debugfs_lookup(RTL838X_DRIVER_NAME, NULL);
@@ -724,7 +790,13 @@ void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv)
 
 	priv->dbgfs_dir = dbg_dir;
 
+	ret = rtl838x_dbgfs_leds(dbg_dir, priv);
+	if (ret)
+		goto err;
+
 	debugfs_create_file("drop_counters", 0400, dbg_dir, priv, &drop_counter_fops);
 
 	debugfs_create_file("l2_table", 0400, dbg_dir, priv, &l2_table_fops);
+	return;
+err:
 }
