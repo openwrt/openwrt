@@ -1,0 +1,10 @@
+--- a/src/drv_vmmc_bbd.c
++++ b/src/drv_vmmc_bbd.c
+@@ -1025,6 +1025,7 @@ static IFX_int32_t vmmc_BBD_WhiteListedCmdWr(VMMC_CHANNEL *pCh,
+                }
+             }
+          }
++         fallthrough;
+       case VMMC_WL_SDD_RING_CFG:
+       case VMMC_WL_SDD_DCDC_CFG:
+       case VMMC_WL_SDD_MWI_CFG:
