@@ -378,7 +378,7 @@ endef
 
 define Build/netgear-dni
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(NETGEAR_BOARD_ID) -v $(VERSION_DIST).$(firstword $(subst -, ,$(REVISION))) \
+		-B $(NETGEAR_BOARD_ID) -v $(shell cat $(VERSION_DIST)| sed -e 's/[[:space:]]/-/g').$(firstword $(subst -, ,$(REVISION))) \
 		$(if $(NETGEAR_HW_ID),-H $(NETGEAR_HW_ID)) \
 		-r "$(1)" \
 		-i $@ -o $@.new
@@ -391,7 +391,7 @@ define Build/netgear-encrypted-factory
 		--output-file $@ \
 		--model $(NETGEAR_ENC_MODEL) \
 		--region $(NETGEAR_ENC_REGION) \
-		--version V1.0.0.0.$(VERSION_DIST).$(firstword $(subst -, ,$(REVISION))) \
+		--version V1.0.0.0.$(shell cat $(VERSION_DIST)| sed -e 's/[[:space:]]/-/g').$(firstword $(subst -, ,$(REVISION))) \
 		--encryption-block-size 0x20000 \
 		--openssl-bin "$(STAGING_DIR_HOST)/bin/openssl" \
 		--key 6865392d342b4d212964363d6d7e7765312c7132613364316e26322a5a5e2538 \
