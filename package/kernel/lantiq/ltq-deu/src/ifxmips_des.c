@@ -205,12 +205,13 @@ void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
                         des->K3HR = DEU_ENDIAN_SWAP(*((u32 *) key + 4));
                         des->K3LR = DEU_ENDIAN_SWAP(*((u32 *) key + 5));
                         /* no break; */
-
+                        fallthrough;
                 case 16:
                         des->K2HR = DEU_ENDIAN_SWAP(*((u32 *) key + 2));
                         des->K2LR = DEU_ENDIAN_SWAP(*((u32 *) key + 3));
 
                         /* no break; */
+                        fallthrough;
                 case 8:
                         des->K1HR = DEU_ENDIAN_SWAP(*((u32 *) key + 0));
                         des->K1LR = DEU_ENDIAN_SWAP(*((u32 *) key + 1));

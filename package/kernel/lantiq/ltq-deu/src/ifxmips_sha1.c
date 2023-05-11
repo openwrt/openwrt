@@ -199,8 +199,8 @@ static int sha1_final(struct shash_desc *desc, u8 *out)
     u64 t;
     u8 bits[8] = { 0, };
     static const u8 padding[64] = { 0x80, };
-    volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
-    unsigned long flag;
+    //volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
+    //unsigned long flag;
 
     t = sctx->count;
     bits[7] = 0xff & t;
