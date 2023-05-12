@@ -7,7 +7,7 @@
 
 / {
 	compatible = "raisecom,msg1500-x-00", "mediatek,mt7621-soc";
-	model = "RAISECOM MSG1500 X.00";
+	model = "KM08-708H";
 
 	aliases {
 		led-boot = &led_usb;
@@ -21,19 +21,19 @@
 
 		wlan2g {
 			label = "blue:wlan2g";
-			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0radio";
 		};
 
 		wlan5g {
 			label = "blue:wlan5g";
-			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1radio";
 		};
 
 		led_usb: usb {
 			label = "blue:usb";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ehci_port2>;
 			linux,default-trigger = "usbport";
 		};
@@ -44,13 +44,13 @@
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 
 		wps {
 			label = "wps";
-			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
