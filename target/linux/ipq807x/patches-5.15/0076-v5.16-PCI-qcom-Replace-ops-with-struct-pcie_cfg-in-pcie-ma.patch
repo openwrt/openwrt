@@ -30,7 +30,7 @@ Reviewed-by: Stephen Boyd <swboyd@chromium.org>
  struct qcom_pcie {
  	struct dw_pcie *pci;
  	void __iomem *parf;			/* DT parf */
-@@ -1469,6 +1473,38 @@ static const struct qcom_pcie_ops ops_1_
+@@ -1467,6 +1471,38 @@ static const struct qcom_pcie_ops ops_1_
  	.config_sid = qcom_pcie_config_sid_sm8250,
  };
  
@@ -69,7 +69,7 @@ Reviewed-by: Stephen Boyd <swboyd@chromium.org>
  static const struct dw_pcie_ops dw_pcie_ops = {
  	.link_up = qcom_pcie_link_up,
  	.start_link = qcom_pcie_start_link,
-@@ -1480,6 +1516,7 @@ static int qcom_pcie_probe(struct platfo
+@@ -1478,6 +1514,7 @@ static int qcom_pcie_probe(struct platfo
  	struct pcie_port *pp;
  	struct dw_pcie *pci;
  	struct qcom_pcie *pcie;
@@ -77,7 +77,7 @@ Reviewed-by: Stephen Boyd <swboyd@chromium.org>
  	int ret;
  
  	pcie = devm_kzalloc(dev, sizeof(*pcie), GFP_KERNEL);
-@@ -1501,7 +1538,13 @@ static int qcom_pcie_probe(struct platfo
+@@ -1499,7 +1536,13 @@ static int qcom_pcie_probe(struct platfo
  
  	pcie->pci = pci;
  
@@ -92,7 +92,7 @@ Reviewed-by: Stephen Boyd <swboyd@chromium.org>
  
  	pcie->reset = devm_gpiod_get_optional(dev, "perst", GPIOD_OUT_HIGH);
  	if (IS_ERR(pcie->reset)) {
-@@ -1557,16 +1600,17 @@ err_pm_runtime_put:
+@@ -1555,16 +1598,17 @@ err_pm_runtime_put:
  }
  
  static const struct of_device_id qcom_pcie_match[] = {
