@@ -291,7 +291,7 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 
 void rtl838x_setup_prio2queue_matrix(int *min_queues)
 {
-	u32 v;
+	u32 v = 0;
 
 	pr_info("Current Intprio2queue setting: %08x\n", sw_r32(RTL838X_QM_INTPRI2QID_CTRL));
 	for (int i = 0; i < MAX_PRIOS; i++)
@@ -313,7 +313,7 @@ void rtl83xx_setup_prio2queue_cpu_matrix(int *max_queues)
 {
 	int reg = soc_info.family == RTL8380_FAMILY_ID ? RTL838X_QM_PKT2CPU_INTPRI_MAP
 					: RTL839X_QM_PKT2CPU_INTPRI_MAP;
-	u32 v;
+	u32 v = 0;
 
 	pr_info("QM_PKT2CPU_INTPRI_MAP: %08x\n", sw_r32(reg));
 	for (int i = 0; i < MAX_PRIOS; i++)

@@ -105,6 +105,15 @@ MAKE_KMOD := $(KERNEL_MAKE) \
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
+
+	# New kernel version changed the sysmbol exported from printk to _printk
+	# The object file provided by broadcom require modification to correctly
+	# modprobe and generate a .ko
+	$(TARGET_CROSS)objcopy $(PKG_BUILD_DIR)/driver/wl_apsta/wl_prebuilt.o \
+	  --redefine-sym printk=_printk
+	$(TARGET_CROSS)objcopy $(PKG_BUILD_DIR)/driver/wl_apsta_mini/wl_prebuilt.o \
+	  --redefine-sym printk=_printk
+
 	$(CP) $(PKG_BUILD_DIR)/driver $(PKG_BUILD_DIR)/driver-mini
 	$(CP) ./src/glue $(PKG_BUILD_DIR)/glue
 endef

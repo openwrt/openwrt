@@ -24,12 +24,6 @@ PKG_JOBS?=$(if $(PKG_BUILD_PARALLEL),$(MAKE_J),-j1)
 endif
 
 PKG_BUILD_FLAGS?=
-# TODO remove this when all packages moved to PKG_BUILD_FLAGS=no-mips16
-PKG_USE_MIPS16?=1
-ifneq ($(strip $(PKG_USE_MIPS16)),1)
-  PKG_BUILD_FLAGS+=no-mips16
-endif
-
 __unknown_flags=$(filter-out no-iremap no-mips16 gc-sections no-gc-sections lto no-lto,$(PKG_BUILD_FLAGS))
 ifneq ($(__unknown_flags),)
   $(error unknown PKG_BUILD_FLAGS: $(__unknown_flags))

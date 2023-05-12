@@ -197,6 +197,7 @@ int mtk_gsw_init(struct fe_priv *priv)
 	struct platform_device *pdev = of_find_device_by_node(np);
 	struct mt7620_gsw *gsw;
 	const __be32 *id;
+	int ret;
 	u8 val;
 
 	if (!pdev)
@@ -233,8 +234,12 @@ int mtk_gsw_init(struct fe_priv *priv)
 	mt7620_ephy_init(gsw);
 
 	if (gsw->irq) {
-		request_irq(gsw->irq, gsw_interrupt_mt7620, 0,
-			    "gsw", priv);
+		ret = request_irq(gsw->irq, gsw_interrupt_mt7620, 0,
+				  "gsw", priv);
+		if (ret) {
+			dev_err(&pdev->dev, "Failed to request irq");
+			return ret;
+		}
 		mtk_switch_w32(gsw, ~PORT_IRQ_ST_CHG, GSW_REG_IMR);
 	}
 

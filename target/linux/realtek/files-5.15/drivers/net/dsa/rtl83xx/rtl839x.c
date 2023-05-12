@@ -590,6 +590,16 @@ static void rtl839x_enable_bcast_flood(int port, bool enable)
 {
 
 }
+
+static void rtl839x_set_static_move_action(int port, bool forward)
+{
+	int shift = MV_ACT_PORT_SHIFT(port);
+	u32 val = forward ? MV_ACT_FORWARD : MV_ACT_DROP;
+
+	sw_w32_mask(MV_ACT_MASK << shift, val << shift,
+		    RTL839X_L2_PORT_STATIC_MV_ACT(port));
+}
+
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
@@ -1855,6 +1865,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.enable_flood = rtl839x_enable_flood,
 	.enable_mcast_flood = rtl839x_enable_mcast_flood,
 	.enable_bcast_flood = rtl839x_enable_bcast_flood,
+	.set_static_move_action = rtl839x_set_static_move_action,
 	.stp_get = rtl839x_stp_get,
 	.stp_set = rtl839x_stp_set,
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,

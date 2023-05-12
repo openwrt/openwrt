@@ -3,11 +3,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cpio
 PKG_CPE_ID:=cpe:/a:gnu:cpio
-PKG_VERSION:=2.13
+PKG_VERSION:=2.14
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@GNU/cpio
-PKG_HASH:=eab5bdc5ae1df285c59f2a4f140a98fc33678a0bf61bdba67d9436ae26b46f6d
+PKG_HASH:=fcdc15d60f7267a6fc7efcd6b9db7b6c8966c4f2fbbb964c24d41336fd3f2c12
 
 include $(INCLUDE_DIR)/host-build.mk
 

@@ -1,0 +1,297 @@
+--- a/driver/wl_iw.c
++++ b/driver/wl_iw.c
+@@ -495,9 +495,9 @@ wl_iw_get_range(
+ )
+ {
+ 	struct iw_range *range = (struct iw_range *) extra;
+-	int channels[MAXCHANNEL+1];
+-	wl_uint32_list_t *list = (wl_uint32_list_t *) channels;
+-	wl_rateset_t rateset;
++	int *channels;
++	wl_uint32_list_t *list;
++	wl_rateset_t *rateset;
+ 	int error, i;
+ 	uint sf, ch;
+ 
+@@ -506,6 +506,17 @@ wl_iw_get_range(
+ 	if (!extra)
+ 		return -EINVAL;
+ 
++	channels = kcalloc(MAXCHANNEL+1, sizeof(*channels), GFP_KERNEL);
++	if (!channels)
++		return -ENOMEM;
++	list = (wl_uint32_list_t *) channels;
++
++	rateset = kzalloc(sizeof(*rateset), GFP_KERNEL);
++	if (!rateset) {
++		error = -ENOMEM;
++		goto free_channels;
++	}
++
+ 	dwrq->length = sizeof(struct iw_range);
+ 	memset(range, 0, sizeof(range));
+ 
+@@ -514,8 +525,9 @@ wl_iw_get_range(
+ 
+ 	/* Set available channels/frequencies */
+ 	list->count = htod32(MAXCHANNEL);
+-	if ((error = dev_wlc_ioctl(dev, WLC_GET_VALID_CHANNELS, channels, sizeof(channels))))
+-		return error;
++	if ((error = dev_wlc_ioctl(dev, WLC_GET_VALID_CHANNELS, channels,
++				   (MAXCHANNEL+1) * sizeof(*channels))))
++		goto free_rateset;
+ 	for (i = 0; i < dtoh32(list->count) && i < IW_MAX_FREQUENCIES; i++) {
+ 		range->freq[i].i = dtoh32(list->element[i]);
+ 
+@@ -549,19 +561,19 @@ wl_iw_get_range(
+ #endif /* WIRELESS_EXT > 11 */
+ 
+ 	/* Set available bitrates */
+-	if ((error = dev_wlc_ioctl(dev, WLC_GET_CURR_RATESET, &rateset, sizeof(rateset))))
+-		return error;
+-	rateset.count = dtoh32(rateset.count);
+-	range->num_bitrates = rateset.count;
+-	for (i = 0; i < rateset.count && i < IW_MAX_BITRATES; i++)
+-		range->bitrate[i] = (rateset.rates[i] & 0x7f) * 500000; /* convert to bps */
++	if ((error = dev_wlc_ioctl(dev, WLC_GET_CURR_RATESET, rateset, sizeof(*rateset))))
++		goto free_rateset;
++	rateset->count = dtoh32(rateset->count);
++	range->num_bitrates = rateset->count;
++	for (i = 0; i < rateset->count && i < IW_MAX_BITRATES; i++)
++		range->bitrate[i] = (rateset->rates[i] & 0x7f) * 500000; /* convert to bps */
+ 
+ 	/* Set an indication of the max TCP throughput
+ 	 * in bit/s that we can expect using this interface.
+ 	 * May be use for QoS stuff... Jean II
+ 	 */
+ 	if ((error = dev_wlc_ioctl(dev, WLC_GET_PHYTYPE, &i, sizeof(i))))
+-		return error;
++		goto free_rateset;
+ 	i = dtoh32(i);
+ 	if (i == WLC_PHY_TYPE_A)
+ 		range->throughput = 24000000;	/* 24 Mbits/s */
+@@ -624,7 +636,12 @@ wl_iw_get_range(
+ #endif
+ #endif /* WIRELESS_EXT > 17 */
+ 
+-	return 0;
++free_rateset:
++	kfree(rateset);
++free_channels:
++	kfree(channels);
++
++	return error;
+ }
+ 
+ static int
+--- a/driver/bcmsrom.c
++++ b/driver/bcmsrom.c
+@@ -437,20 +437,37 @@ srom_write(si_t *sih, uint bustype, void *curmap, osl_t *osh,
+            uint byteoff, uint nbytes, uint16 *buf)
+ {
+ 	uint i, nw, crc_range;
+-	uint16 old[SROM_MAXW], new[SROM_MAXW];
++	uint16 *old, *new;
+ 	uint8 crc;
+ 	volatile uint32 val32;
++	int rc = 0;
+ 
+ 	ASSERT(bustype == BUSTYPE(bustype));
+ 
++	old = MALLOC(osh, SROM_MAXW);
++	ASSERT(old != NULL);
++	if (!old)
++		return -2;
++
++	new = MALLOC(osh, SROM_MAXW);
++	ASSERT(new != NULL);
++	if (!new) {
++		rc = -2;
++		goto free_old;
++	}
++
+ 	/* check input - 16-bit access only. use byteoff 0x55aa to indicate
+ 	 * srclear
+ 	 */
+-	if ((byteoff != 0x55aa) && ((byteoff & 1) || (nbytes & 1)))
+-		return 1;
++	if ((byteoff != 0x55aa) && ((byteoff & 1) || (nbytes & 1))) {
++		rc = 1;
++		goto free_new;
++	}
+ 
+-	if ((byteoff != 0x55aa) && ((byteoff + nbytes) > SROM_MAX))
+-		return 1;
++	if ((byteoff != 0x55aa) && ((byteoff + nbytes) > SROM_MAX)) {
++		rc = 1;
++		goto free_new;
++	}
+ 
+ 	if (BUSTYPE(bustype) == PCMCIA_BUS) {
+ 		crc_range = SROM_MAX;
+@@ -467,8 +484,10 @@ srom_write(si_t *sih, uint bustype, void *curmap, osl_t *osh,
+ 
+ 	nw = crc_range / 2;
+ 	/* read first small number words from srom, then adjust the length, read all */
+-	if (srom_read(sih, bustype, curmap, osh, 0, crc_range, old, FALSE))
+-		return 1;
++	if (srom_read(sih, bustype, curmap, osh, 0, crc_range, old, FALSE)) {
++		rc = 1;
++		goto free_new;
++	}
+ 
+ 	BS_ERROR(("%s: old[SROM4_SIGN] 0x%x, old[SROM8_SIGN] 0x%x\n",
+ 	          __FUNCTION__, old[SROM4_SIGN], old[SROM8_SIGN]));
+@@ -481,10 +500,13 @@ srom_write(si_t *sih, uint bustype, void *curmap, osl_t *osh,
+ 				__FUNCTION__, buf[SROM4_SIGN], buf[SROM8_SIGN]));
+ 
+ 			/* block invalid buffer size */
+-			if (nbytes < SROM4_WORDS * 2)
+-				return BCME_BUFTOOSHORT;
+-			else if (nbytes > SROM4_WORDS * 2)
+-				return BCME_BUFTOOLONG;
++			if (nbytes < SROM4_WORDS * 2) {
++				rc = BCME_BUFTOOSHORT;
++				goto free_new;
++			} else if (nbytes > SROM4_WORDS * 2) {
++				rc = BCME_BUFTOOLONG;
++				goto free_new;
++			}
+ 
+ 			nw = SROM4_WORDS;
+ 		} else if (nbytes == SROM_WORDS * 2){ /* the other possible SROM format */
+@@ -493,17 +515,22 @@ srom_write(si_t *sih, uint bustype, void *curmap, osl_t *osh,
+ 			nw = SROM_WORDS;
+ 		} else {
+ 			BS_ERROR(("%s: Invalid input file signature\n", __FUNCTION__));
+-			return BCME_BADARG;
++			rc = BCME_BADARG;
++			goto free_new;
+ 		}
+ 		crc_range = nw * 2;
+-		if (srom_read(sih, bustype, curmap, osh, 0, crc_range, old, FALSE))
+-			return 1;
++		if (srom_read(sih, bustype, curmap, osh, 0, crc_range, old, FALSE)) {
++			rc = 1;
++			goto free_new;
++		}
+ 	} else if ((old[SROM4_SIGN] == SROM4_SIGNATURE) ||
+ 	    (old[SROM8_SIGN] == SROM4_SIGNATURE)) {
+ 		nw = SROM4_WORDS;
+ 		crc_range = nw * 2;
+-		if (srom_read(sih, bustype, curmap, osh, 0, crc_range, old, FALSE))
+-			return 1;
++		if (srom_read(sih, bustype, curmap, osh, 0, crc_range, old, FALSE)) {
++			rc = 1;
++			goto free_new;
++		}
+ 	} else {
+ 		/* Assert that we have already read enough for sromrev 2 */
+ 		ASSERT(crc_range >= SROM_WORDS * 2);
+@@ -562,8 +589,10 @@ srom_write(si_t *sih, uint bustype, void *curmap, osl_t *osh,
+ 		}
+ 	} else if (BUSTYPE(bustype) == PCMCIA_BUS) {
+ 		/* enable writes to the SPROM */
+-		if (sprom_cmd_pcmcia(osh, SROM_WEN))
+-			return 1;
++		if (sprom_cmd_pcmcia(osh, SROM_WEN)) {
++			rc = 1;
++			goto free_new;
++		}
+ 		bcm_mdelay(WRITE_ENABLE_DELAY);
+ 		/* write srom */
+ 		for (i = 0; i < nw; i++) {
+@@ -573,14 +602,15 @@ srom_write(si_t *sih, uint bustype, void *curmap, osl_t *osh,
+ 			}
+ 		}
+ 		/* disable writes to the SPROM */
+-		if (sprom_cmd_pcmcia(osh, SROM_WDS))
+-			return 1;
++		if (sprom_cmd_pcmcia(osh, SROM_WDS)) {
++			rc = 1;
++			goto free_new;
++		}
+ 	} else if (BUSTYPE(bustype) == SI_BUS) {
+ #if defined(BCMUSBDEV)
+ 		if (SPROMBUS == PCMCIA_BUS) {
+ 			uint origidx;
+ 			void *regs;
+-			int rc;
+ 			bool wasup;
+ 
+ 			origidx = si_coreidx(sih);
+@@ -596,16 +626,24 @@ srom_write(si_t *sih, uint bustype, void *curmap, osl_t *osh,
+ 				si_core_disable(sih, 0);
+ 
+ 			si_setcoreidx(sih, origidx);
+-			return rc;
++			goto free_new;
+ 		}
+ #endif 
+-		return 1;
++		rc = 1;
++		goto free_new;
+ 	} else {
+-		return 1;
++		rc = 1;
++		goto free_new;
+ 	}
+ 
+ 	bcm_mdelay(WRITE_ENABLE_DELAY);
+-	return 0;
++	rc = 0;
++
++free_new:
++	MFREE(osh, new, SROM_MAXW);
++free_old:
++	MFREE(osh, old, SROM_MAXW);
++	return rc;
+ }
+ 
+ #if defined(BCMUSBDEV)
+--- a/driver/linux_osl.c
++++ b/driver/linux_osl.c
+@@ -600,20 +600,29 @@ int
+ osl_printf(const char *format, ...)
+ {
+ 	va_list args;
+-	char buf[1024];
++	char *buf;
+ 	int len;
+ 
++	buf = kcalloc(1024, sizeof(*buf), GFP_KERNEL);
++	if (!buf)
++		return (-ENOMEM);
++
+ 	/* sprintf into a local buffer because there *is* no "vprintk()".. */
+ 	va_start(args, format);
+ 	len = vsnprintf(buf, 1024, format, args);
+ 	va_end(args);
+ 
+-	if (len > sizeof(buf)) {
++	if (len > (sizeof(*buf) * 1024)) {
+ 		printk("osl_printf: buffer overrun\n");
+-		return (0);
++		goto exit;
+ 	}
+ 
+-	return (printk(buf));
++	printk(buf);
++
++exit:
++	kfree(buf);
++
++	return (0);
+ }
+ 
+ int
+--- a/driver/bcmutils.c
++++ b/driver/bcmutils.c
+@@ -13,6 +13,7 @@
+ 
+ #include <typedefs.h>
+ #include <bcmdefs.h>
++#define __need___va_list
+ #include <stdarg.h>
+ #include <bcmutils.h>
+ #ifdef BCMDRIVER

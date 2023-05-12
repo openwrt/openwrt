@@ -141,7 +141,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	irq_set_chained_handler_and_data(apc->irq, ar71xx_pci_irq_handler,
  					 apc);
  }
-@@ -325,6 +337,11 @@ static void ar71xx_pci_reset(void)
+@@ -325,10 +337,14 @@ static void ar71xx_pci_reset(void)
  	mdelay(100);
  }
  
@@ -153,7 +153,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
  static int ar71xx_pci_probe(struct platform_device *pdev)
  {
  	struct ar71xx_pci_controller *apc;
-@@ -345,26 +362,6 @@ static int ar71xx_pci_probe(struct platf
+-	struct resource *res;
+ 	u32 t;
+ 
+ 	apc = devm_kzalloc(&pdev->dev, sizeof(struct ar71xx_pci_controller),
+@@ -345,26 +361,6 @@ static int ar71xx_pci_probe(struct platf
  	if (apc->irq < 0)
  		return -EINVAL;
  
@@ -180,7 +184,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	ar71xx_pci_reset();
  
  	/* setup COMMAND register */
-@@ -377,9 +374,11 @@ static int ar71xx_pci_probe(struct platf
+@@ -377,9 +373,11 @@ static int ar71xx_pci_probe(struct platf
  
  	ar71xx_pci_irq_init(apc);
  
@@ -192,7 +196,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  	register_pci_controller(&apc->pci_ctrl);
  
-@@ -390,6 +389,7 @@ static struct platform_driver ar71xx_pci
+@@ -390,6 +388,7 @@ static struct platform_driver ar71xx_pci
  	.probe = ar71xx_pci_probe,
  	.driver = {
  		.name = "ar71xx-pci",

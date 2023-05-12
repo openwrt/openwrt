@@ -127,7 +127,7 @@ Submitted-by: John Crispin <john@phrozen.org>
  static void ar71xx_pci_reset(void)
  {
  	ath79_device_reset_set(AR71XX_RESET_PCI_BUS | AR71XX_RESET_PCI_CORE);
-@@ -358,10 +258,6 @@ static int ar71xx_pci_probe(struct platf
+@@ -357,10 +257,6 @@ static int ar71xx_pci_probe(struct platf
  	if (IS_ERR(apc->cfg_base))
  		return PTR_ERR(apc->cfg_base);
  
@@ -138,7 +138,7 @@ Submitted-by: John Crispin <john@phrozen.org>
  	ar71xx_pci_reset();
  
  	/* setup COMMAND register */
-@@ -372,8 +268,6 @@ static int ar71xx_pci_probe(struct platf
+@@ -371,8 +267,6 @@ static int ar71xx_pci_probe(struct platf
  	/* clear bus errors */
  	ar71xx_pci_check_error(apc, 1);
  

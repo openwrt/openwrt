@@ -1,4 +1,4 @@
-From 3e1825e00dafb68eec25df389b63f3ab3d905b59 Mon Sep 17 00:00:00 2001
+From 157ac9f52fd9b9a22cf12f7755a905fb34ef72f7 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <j4g8y7@gmail.com>
 Date: Fri, 25 Dec 2020 08:02:47 +0100
 Subject: [PATCH] net: phy: define PSGMII PHY interface mode
@@ -16,9 +16,9 @@ of connection between the MAC and PHY.
 Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
 ---
  Documentation/devicetree/bindings/net/ethernet-controller.yaml | 1 +
- drivers/net/phy/phylink.c                                      | 1 +
+ drivers/net/phy/phylink.c                                      | 2 ++
  include/linux/phy.h                                            | 3 +++
- 3 files changed, 5 insertions(+)
+ 3 files changed, 6 insertions(+)
 
 --- a/Documentation/devicetree/bindings/net/ethernet-controller.yaml
 +++ b/Documentation/devicetree/bindings/net/ethernet-controller.yaml
@@ -32,7 +32,15 @@ Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
        - rev-mii
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -629,6 +629,7 @@ static int phylink_parse_mode(struct phy
+@@ -366,6 +366,7 @@ void phylink_get_linkmodes(unsigned long
+ 	case PHY_INTERFACE_MODE_RGMII_RXID:
+ 	case PHY_INTERFACE_MODE_RGMII_ID:
+ 	case PHY_INTERFACE_MODE_RGMII:
++	case PHY_INTERFACE_MODE_PSGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_GMII:
+@@ -629,6 +630,7 @@ static int phylink_parse_mode(struct phy
  
  		switch (pl->link_config.interface) {
  		case PHY_INTERFACE_MODE_SGMII:

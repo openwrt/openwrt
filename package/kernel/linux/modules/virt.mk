@@ -104,7 +104,7 @@ define KernelPackage/vfio-pci
 	CONFIG_VFIO_PCI \
 	CONFIG_VFIO_PCI_IGD=y
   FILES:= \
-	$(LINUX_DIR)/drivers/vfio/pci/vfio-pci-core.ko@ge5.15 \
+	$(LINUX_DIR)/drivers/vfio/pci/vfio-pci-core.ko \
 	$(LINUX_DIR)/drivers/vfio/pci/vfio-pci.ko
   AUTOLOAD:=$(call AutoProbe,vfio-pci)
 endef

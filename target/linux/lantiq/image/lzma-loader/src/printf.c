@@ -11,7 +11,7 @@
 
 #include	"printf.h"
 
-extern void board_putc(int ch);
+extern void board_putc(char ch);
 
 /* this is the maximum width for a variable */
 #define		LP_MAX_BUF	256

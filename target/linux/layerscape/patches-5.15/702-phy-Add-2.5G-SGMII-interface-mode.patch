@@ -11,6 +11,27 @@ Signed-off-by: Bhaskar Upadhaya <Bhaskar.Upadhaya@nxp.com>
  include/linux/phy.h | 3 +++
  1 file changed, 3 insertions(+)
 
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -393,6 +393,7 @@ void phylink_get_linkmodes(unsigned long
+ 		caps |= MAC_1000FD;
+ 		break;
+ 
++	case PHY_INTERFACE_MODE_2500SGMII:
+ 	case PHY_INTERFACE_MODE_2500BASEX:
+ 		caps |= MAC_2500FD;
+ 		break;
+@@ -646,6 +647,10 @@ static int phylink_parse_mode(struct phy
+ 			phylink_set(pl->supported, 2500baseX_Full);
+ 			break;
+ 
++		case PHY_INTERFACE_MODE_2500SGMII:
++			phylink_set(pl->supported, 2500baseT_Full);
++			break;
++
+ 		case PHY_INTERFACE_MODE_5GBASER:
+ 			phylink_set(pl->supported, 5000baseT_Full);
+ 			break;
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
 @@ -152,6 +152,7 @@ typedef enum {

@@ -249,6 +249,19 @@
 #define RTL930X_L2_PORT_NEW_SA_FWD(p)		(0x8FF4 + (((p / 10) << 2)))
 #define RTL931X_L2_PORT_NEW_SA_FWD(p)		(0xC830 + (((p / 10) << 2)))
 
+#define RTL838X_L2_PORT_MV_ACT(p)		(0x335c + (((p >> 4) << 2)))
+#define RTL839X_L2_PORT_MV_ACT(p)		(0x3b80 + (((p >> 4) << 2)))
+
+#define RTL838X_L2_PORT_STATIC_MV_ACT(p)	(0x327c + (((p >> 4) << 2)))
+#define RTL839X_L2_PORT_STATIC_MV_ACT(p)	(0x38dc + (((p >> 4) << 2)))
+
+#define MV_ACT_PORT_SHIFT(p)			((p % 16) * 2)
+#define MV_ACT_MASK				0x3
+#define MV_ACT_FORWARD				0
+#define MV_ACT_DROP				1
+#define MV_ACT_TRAP2CPU				2
+#define MV_ACT_COPY2CPU				3
+
 #define RTL930X_ST_CTRL				(0x8798)
 
 #define RTL930X_L2_PORT_SABLK_CTRL		(0x905c)
@@ -978,6 +991,7 @@ struct rtl838x_reg {
 	void (*enable_flood)(int port, bool enable);
 	void (*enable_mcast_flood)(int port, bool enable);
 	void (*enable_bcast_flood)(int port, bool enable);
+	void (*set_static_move_action)(int port, bool forward);
 	void (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
 	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
 	int  (*mac_force_mode_ctrl)(int port);
@@ -1068,7 +1082,6 @@ struct rtl838x_switch_priv {
 	struct notifier_block fib_nb;
 	bool eee_enabled;
 	unsigned long int mc_group_bm[MAX_MC_GROUPS >> 5];
-	int mc_group_saves[MAX_MC_GROUPS];
 	int n_pie_blocks;
 	struct rhashtable tc_ht;
 	unsigned long int pie_use_bm[MAX_PIE_ENTRIES >> 5];
