@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_VERSION:=2021.07
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=1
 
 PKG_HASH:=312b7eeae44581d1362c3a3f02c28d806647756c82ba8c72241c7cdbe68ba77e
 
@@ -24,58 +24,54 @@ endef
 
 # RK3328 boards
 
-define U-Boot/nanopi-r2s-rk3328
+define U-Boot/rk3328/Default
   BUILD_SUBTARGET:=armv8
-  NAME:=NanoPi R2S
-  BUILD_DEVICES:= \
-    friendlyarm_nanopi-r2s
-  DEPENDS:=+PACKAGE_u-boot-nanopi-r2s-rk3328:arm-trusted-firmware-rockchip
-  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
+  DEPENDS:=+PACKAGE_u-boot-$(1):arm-trusted-firmware-rockchip
   ATF:=rk3328_bl31.elf
   OF_PLATDATA:=$(1)
 endef
 
+define U-Boot/nanopi-r2s-rk3328
+  $(U-Boot/rk3328/Default)
+  NAME:=NanoPi R2S
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-r2s
+endef
+
 define U-Boot/roc-cc-rk3328
-  BUILD_SUBTARGET:=armv8
+  $(U-Boot/rk3328/Default)
   NAME:=ROC-RK3328-CC
   BUILD_DEVICES:= \
     firefly_roc-rk3328-cc
-  DEPENDS:=+PACKAGE_u-boot-roc-cc-rk3328:arm-trusted-firmware-rockchip
-  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
-  ATF:=rk3328_bl31.elf
-  OF_PLATDATA:=$(1)
 endef
 
 # RK3399 boards
 
-define U-Boot/nanopi-r4s-rk3399
+define U-Boot/rk3399/Default
   BUILD_SUBTARGET:=armv8
+  DEPENDS:=+PACKAGE_u-boot-$(1):arm-trusted-firmware-rockchip
+  ATF:=rk3399_bl31.elf
+endef
+
+define U-Boot/nanopi-r4s-rk3399
+  $(U-Boot/rk3399/Default)
   NAME:=NanoPi R4S
   BUILD_DEVICES:= \
     friendlyarm_nanopi-r4s
-  DEPENDS:=+PACKAGE_u-boot-nanopi-r4s-rk3399:arm-trusted-firmware-rockchip
-  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
-  ATF:=rk3399_bl31.elf
 endef
 
 define U-Boot/rock-pi-4-rk3399
-  BUILD_SUBTARGET:=armv8
+  $(U-Boot/rk3399/Default)
   NAME:=Rock Pi 4
   BUILD_DEVICES:= \
     radxa_rock-pi-4a
-  DEPENDS:=+PACKAGE_u-boot-rock-pi-4-rk3399:arm-trusted-firmware-rockchip
-  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
-  ATF:=rk3399_bl31.elf
 endef
 
 define U-Boot/rockpro64-rk3399
-  BUILD_SUBTARGET:=armv8
+  $(U-Boot/rk3399/Default)
   NAME:=RockPro64
   BUILD_DEVICES:= \
     pine64_rockpro64
-  DEPENDS:=+PACKAGE_u-boot-rockpro64-rk3399:arm-trusted-firmware-rockchip
-  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip
-  ATF:=rk3399_bl31.elf
 endef
 
 UBOOT_TARGETS := \
