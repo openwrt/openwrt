@@ -217,7 +217,6 @@ define Device/arcadyan_we420223-99
   IMAGE_SIZE := 32128k
   KERNEL_SIZE := 4352k
   UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 64k
   PAGESIZE := 1
   SUBPAGESIZE := 1
   VID_HDR_OFFSET := 64
@@ -258,7 +257,6 @@ define Device/asus_rp-ac56
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RP-AC56
   IMAGE_SIZE := 16000k
-  BLOCKSIZE := 64k
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 \
 	kmod-i2c-ralink kmod-sound-mt7620 -uboot-envtools
   IMAGES += factory.bin
@@ -1409,7 +1407,6 @@ TARGET_DEVICES += jcg_y2
 define Device/keenetic_kn-3010
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 31488k
   DEVICE_VENDOR := Keenetic
   DEVICE_MODEL := KN-3010
@@ -1558,7 +1555,6 @@ TARGET_DEVICES += mediatek_ap-mt7621a-v60
 
 define Device/mediatek_mt7621-eval-board
   $(Device/dsa-migration)
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 15104k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7621 EVB
@@ -1583,7 +1579,6 @@ TARGET_DEVICES += mercusys_mr70x-v1
 define Device/MikroTik
   $(Device/dsa-migration)
   DEVICE_VENDOR := MikroTik
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 16128k
   DEVICE_PACKAGES := kmod-usb3 -uboot-envtools
   KERNEL_NAME := vmlinuz
@@ -2500,7 +2495,6 @@ TARGET_DEVICES += wavlink_wl-wn533a8
 
 define Device/wavlink_ws-wn572hp3-4g
   $(Device/dsa-migration)
-  BLOCKSIZE := 64k
   DEVICE_VENDOR := Wavlink
   DEVICE_MODEL := WS-WN572HP3
   DEVICE_VARIANT := 4G
