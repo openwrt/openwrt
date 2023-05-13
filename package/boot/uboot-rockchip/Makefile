@@ -31,6 +31,13 @@ define U-Boot/rk3328/Default
   OF_PLATDATA:=$(1)
 endef
 
+define U-Boot/nanopi-r2c-rk3328
+  $(U-Boot/rk3328/Default)
+  NAME:=NanoPi R2C
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-r2c
+endef
+
 define U-Boot/nanopi-r2s-rk3328
   $(U-Boot/rk3328/Default)
   NAME:=NanoPi R2S
@@ -78,6 +85,7 @@ UBOOT_TARGETS := \
   nanopi-r4s-rk3399 \
   rock-pi-4-rk3399 \
   rockpro64-rk3399 \
+  nanopi-r2c-rk3328 \
   nanopi-r2s-rk3328 \
   roc-cc-rk3328
 
