@@ -140,7 +140,7 @@ mac80211_hostapd_setup_base() {
 	[ -n "$acs_exclude_dfs" ] && [ "$acs_exclude_dfs" -gt 0 ] &&
 		append base_cfg "acs_exclude_dfs=1" "$N"
 
-	json_get_vars noscan ht_coex vendor_vht min_tx_power:0 tx_burst
+	json_get_vars noscan ht_coex min_tx_power:0 tx_burst
 	json_get_values ht_capab_list ht_capab
 	json_get_values channel_list channels
 
@@ -278,20 +278,38 @@ mac80211_hostapd_setup_base() {
 			vht_center_seg0=$idx
 		;;
 	esac
-	[ "$band" = "5g" ] && {
-		json_get_vars background_radar:0
+	if [ "$band" = "2g" ]; then
+		enable_ac=0
 
-		[ "$background_radar" -eq 1 ] && append base_cfg "enable_background_radar=1" "$N"
-	}
-	[ "$band" = "6g" ] && {
-		op_class=
 		case "$htmode" in
-			HE20) op_class=131;;
-			HE*) op_class=$((132 + $vht_oper_chwidth))
+			VHT20|VHT40)
+				vendor_vht=1
+			;;
+			HT20|HT40)
+				vendor_vht=0
+			;;
+			*)
+				htmode="HT20"
+				vendor_vht=0
+			;;
 		esac
-		[ -n "$op_class" ] && append base_cfg "op_class=$op_class" "$N"
-	}
-	[ "$hwmode" = "a" ] || enable_ac=0
+	else
+		[ "$band" = "5g" ] && {
+			json_get_vars background_radar:0
+
+			[ "$background_radar" -eq 1 ] && append base_cfg "enable_background_radar=1" "$N"
+		}
+		[ "$band" = "6g" ] && {
+			op_class=
+			case "$htmode" in
+				HE20) op_class=131;;
+				HE*) op_class=$((132 + $vht_oper_chwidth))
+			esac
+			[ -n "$op_class" ] && append base_cfg "op_class=$op_class" "$N"
+		}
+
+		vendor_vht=0
+	fi
 
 	if [ "$enable_ac" != "0" -o "$vendor_vht" = "1" ]; then
 		json_get_vars \
