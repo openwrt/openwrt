@@ -557,7 +557,6 @@ static inline int get_tx_desc(unsigned int itf, unsigned int *f_full)
 static irqreturn_t mailbox_irq_handler(int irq, void *dev_id)
 {
     unsigned int isr;
-    int i;
 
     isr = IFX_REG_R32(MBOX_IGU1_ISR);
     IFX_REG_W32(isr, MBOX_IGU1_ISRC);
