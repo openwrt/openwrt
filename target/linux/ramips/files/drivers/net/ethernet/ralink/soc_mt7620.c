@@ -144,11 +144,7 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 	struct mt7620_gsw *gsw = (struct mt7620_gsw *)priv->soc->swpriv;
 	const __be32 *_id = of_get_property(np, "reg", NULL);
 	const __be32 *phy_addr;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
-	int phy_mode;
-#else
 	phy_interface_t phy_mode = PHY_INTERFACE_MODE_NA;
-#endif
 	int size, id;
 	int shift = 12;
 	u32 val, mask = 0;
@@ -178,11 +174,7 @@ static void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 		priv->phy->phy_fixed[id] = NULL;
 	}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
-	phy_mode = of_get_phy_mode(np);
-#else
 	of_get_phy_mode(np, &phy_mode);
-#endif
 	switch (phy_mode) {
 	case PHY_INTERFACE_MODE_RGMII:
 		mask = 0;
