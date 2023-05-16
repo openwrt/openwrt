@@ -1,0 +1,49 @@
+--- a/src/device/drv_dsl_cpe_device_vrx.c
++++ b/src/device/drv_dsl_cpe_device_vrx.c
+@@ -8885,6 +8885,9 @@ DSL_Error_t DSL_DRV_DEV_AutobootHandleTr
+             (pContext, SYS_DBG_MSG"DSL[%02d]: ORDERLY_SHUTDOWN state reached"
+             DSL_DRV_CRLF, DSL_DEV_NUM(pContext)));
+          /* do not use break here, continue handling */
++
++         fallthrough;
++
+ #endif /* INCLUDE_DSL_CPE_API_VRX */
+       case DSL_LINESTATE_EXCEPTION:
+          if (!bPreFail)
+--- a/src/pm/drv_dsl_cpe_pm_core.c
++++ b/src/pm/drv_dsl_cpe_pm_core.c
+@@ -2355,15 +2355,19 @@ DSL_Error_t DSL_DRV_PM_CountersReset(
+       }
+ #endif /* #ifdef INCLUDE_DSL_CPE_PM_HISTORY*/
+ 
+-   if (ResetType == DSL_PM_RESET_HISTORY)
+-      break;
++      if (ResetType == DSL_PM_RESET_HISTORY)
++         break;
++
++      fallthrough;
+ 
+    case DSL_PM_RESET_TOTAL:
+ #ifdef INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS
+       memset(EpData.pRecTotal, nFillValue, EpData.nEpRecElementSize);
+ #endif /* #ifdef INCLUDE_DSL_CPE_PM_TOTAL_COUNTERS*/
+-   if (ResetType == DSL_PM_RESET_TOTAL)
+-      break;
++      if (ResetType == DSL_PM_RESET_TOTAL)
++         break;
++
++      fallthrough;
+ 
+    case DSL_PM_RESET_HISTORY_SHOWTIME:
+ #ifdef INCLUDE_DSL_CPE_PM_SHOWTIME_COUNTERS
+--- a/src/common/drv_dsl_cpe_api.c
++++ b/src/common/drv_dsl_cpe_api.c
+@@ -2652,6 +2652,8 @@ DSL_Error_t DSL_DRV_AutobootControlSet(
+                /* no break */
+                /* ... pass to restart*/
+ 
++               fallthrough;
++
+ #if defined (DSL_VRX_DEVICE_VR11)
+             case DSL_AUTOBOOT_CTRL_STOP_PD:
+ #endif

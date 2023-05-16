@@ -743,9 +743,10 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 	rtl838x_6275B_intPhy_perport = (void *)h + sizeof(struct fw_header) + h->parts[8].start;
 	rtl8218b_6276B_hwEsd_perport = (void *)h + sizeof(struct fw_header) + h->parts[9].start;
 
-	if (sw_r32(RTL838X_DMY_REG31) == 0x1) {
-		int ipd_flag = 1;
-	}
+	// Currently not used
+	// if (sw_r32(RTL838X_DMY_REG31) == 0x1) {
+	// 	int ipd_flag = 1;
+	// }
 
 	val = phy_read(phydev, 0);
 	if (val & BIT(11))
@@ -3330,13 +3331,14 @@ static void rtl931x_sds_rx_rst(u32 sds)
 	mdelay(50);
 }
 
-static void rtl931x_sds_disable(u32 sds)
-{
-	u32 v = 0x1f;
+// Currently not used
+// static void rtl931x_sds_disable(u32 sds)
+// {
+// 	u32 v = 0x1f;
 
-	v |= BIT(7);
-	sw_w32(v, RTL931X_SERDES_MODE_CTRL + (sds >> 2) * 4);
-}
+// 	v |= BIT(7);
+// 	sw_w32(v, RTL931X_SERDES_MODE_CTRL + (sds >> 2) * 4);
+// }
 
 static void rtl931x_sds_mii_mode_set(u32 sds, phy_interface_t mode)
 {

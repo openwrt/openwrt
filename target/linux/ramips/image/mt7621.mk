@@ -9,10 +9,6 @@ DEFAULT_SOC := mt7621
 
 DEVICE_VARS += ELECOM_HWNAME LINKSYS_HWNAME DLINK_HWID
 
-ifdef CONFIG_LINUX_5_10
-  DTS_CPPFLAGS += -DDTS_LEGACY
-endif
-
 define Build/arcadyan-trx
 	echo -ne "hsqs" > $@.hsqs
 	$(eval trx_magic=$(word 1,$(1)))
@@ -286,17 +282,19 @@ define Device/asus_rp-ac87
 endef
 TARGET_DEVICES += asus_rp-ac87
 
-define Device/asus_rt-ac57u
+define Device/asus_rt-ac57u-v1
   $(Device/dsa-migration)
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC57U
+  DEVICE_VARIANT := v1
   DEVICE_ALT0_VENDOR := ASUS
   DEVICE_ALT0_MODEL := RT-AC1200GU
   IMAGE_SIZE := 16064k
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 \
 	kmod-usb-ledtrig-usbport
+  SUPPORTED_DEVICES += asus,rt-ac57u
 endef
-TARGET_DEVICES += asus_rt-ac57u
+TARGET_DEVICES += asus_rt-ac57u-v1
 
 define Device/asus_rt-ac65p
   $(Device/dsa-migration)
@@ -1539,6 +1537,15 @@ define Device/linksys_re6500
 endef
 TARGET_DEVICES += linksys_re6500
 
+define Device/linksys_re7000
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := RE7000
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware
+endef
+TARGET_DEVICES += linksys_re7000
+
 define Device/mediatek_ap-mt7621a-v60
   $(Device/dsa-migration)
   IMAGE_SIZE := 7872k
@@ -2028,6 +2035,18 @@ define Device/sim_simax1800t
   DEVICE_MODEL := SIMAX1800T
 endef
 TARGET_DEVICES += sim_simax1800t
+
+define Device/snr_snr-cpe-me1
+	$(Device/dsa-migration)
+	$(Device/uimage-lzma-loader)
+	IMAGE_SIZE := 15040k
+	DEVICE_VENDOR := SNR
+	DEVICE_MODEL := SNR-CPE-ME1
+	UIMAGE_NAME := SNR-CPE-ME1-5GHZ-MT
+	DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x0e kmod-usb3 \
+		kmod-usb-ledtrig-usbport uboot-envtools
+endef
+TARGET_DEVICES += snr_snr-cpe-me1
 
 define Device/snr_snr-cpe-me2-lite
   $(Device/dsa-migration)

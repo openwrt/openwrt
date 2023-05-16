@@ -210,7 +210,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -	memcpy(&mac, &priv->pldata->mac, sizeof(struct sockaddr));
 +	memcpy(&mac.sa_data, ltq_get_eth_mac(), ETH_ALEN);
 +
-+	if (priv->mac && !is_valid_ether_addr(mac.sa_data))
++	if (!is_valid_ether_addr(mac.sa_data))
 +		memcpy(&mac.sa_data, priv->mac, ETH_ALEN);
 +
  	if (!is_valid_ether_addr(mac.sa_data)) {

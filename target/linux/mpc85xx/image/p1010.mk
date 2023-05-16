@@ -14,6 +14,26 @@ define Build/spi-loader-okli
 	mv "$@.new" "$@"
 endef
 
+define Device/aerohive_br200-wp
+  DEVICE_VENDOR := Aerohive
+  DEVICE_MODEL := BR200-WP
+  BLOCKSIZE := 128k
+  KERNEL_NAME := simpleImage.br200-wp
+  KERNEL := kernel-bin | uImage none
+  KERNEL_INITRAMFS := kernel-bin | uImage none
+  KERNEL_ENTRY := 0x1000000
+  KERNEL_LOADADDR := 0x1000000
+  KERNEL_SIZE := 8m
+  IMAGES := fdt.bin sysupgrade.bin
+  IMAGE/fdt.bin := append-dtb
+  IMAGE/sysupgrade.bin := append-dtb | pad-to 256k | check-size 256k | \
+	append-uImage-fakehdr ramdisk | pad-to 256k | check-size 512k | \
+	append-rootfs | pad-rootfs $$(BLOCKSIZE) | pad-to 41216k | check-size 41216k | \
+	append-kernel | append-metadata
+  IMAGE_SIZE = 63m
+endef
+TARGET_DEVICES += aerohive_br200-wp
+
 define Device/enterasys_ws-ap3715i
   DEVICE_VENDOR := Enterasys
   DEVICE_MODEL := WS-AP3715i

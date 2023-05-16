@@ -1113,45 +1113,46 @@ static void rtl931x_write_pie_templated(u32 r[], struct pie_rule *pr, enum templ
 	}
 }
 
-static void rtl931x_read_pie_fixed_fields(u32 r[], struct pie_rule *pr)
-{
-	pr->mgnt_vlan = r[7] & BIT(31);
-	if (pr->phase == PHASE_IACL)
-		pr->dmac_hit_sw = r[7] & BIT(30);
-	else  /* TODO: EACL/VACL phase handling */
-		pr->content_too_deep = r[7] & BIT(30);
-	pr->not_first_frag = r[7]  & BIT(29);
-	pr->frame_type_l4 = (r[7] >> 26) & 7;
-	pr->frame_type = (r[7] >> 24) & 3;
-	pr->otag_fmt = (r[7] >> 23) & 1;
-	pr->itag_fmt = (r[7] >> 22) & 1;
-	pr->otag_exist = (r[7] >> 21) & 1;
-	pr->itag_exist = (r[7] >> 20) & 1;
-	pr->frame_type_l2 = (r[7] >> 18) & 3;
-	pr->igr_normal_port = (r[7] >> 17) & 1;
-	pr->tid = (r[7] >> 16) & 1;
+// Currently unused
+// static void rtl931x_read_pie_fixed_fields(u32 r[], struct pie_rule *pr)
+// {
+// 	pr->mgnt_vlan = r[7] & BIT(31);
+// 	if (pr->phase == PHASE_IACL)
+// 		pr->dmac_hit_sw = r[7] & BIT(30);
+// 	else  /* TODO: EACL/VACL phase handling */
+// 		pr->content_too_deep = r[7] & BIT(30);
+// 	pr->not_first_frag = r[7]  & BIT(29);
+// 	pr->frame_type_l4 = (r[7] >> 26) & 7;
+// 	pr->frame_type = (r[7] >> 24) & 3;
+// 	pr->otag_fmt = (r[7] >> 23) & 1;
+// 	pr->itag_fmt = (r[7] >> 22) & 1;
+// 	pr->otag_exist = (r[7] >> 21) & 1;
+// 	pr->itag_exist = (r[7] >> 20) & 1;
+// 	pr->frame_type_l2 = (r[7] >> 18) & 3;
+// 	pr->igr_normal_port = (r[7] >> 17) & 1;
+// 	pr->tid = (r[7] >> 16) & 1;
 
-	pr->mgnt_vlan_m = r[14] & BIT(15);
-	if (pr->phase == PHASE_IACL)
-		pr->dmac_hit_sw_m = r[14] & BIT(14);
-	else
-		pr->content_too_deep_m = r[14] & BIT(14);
-	pr->not_first_frag_m = r[14] & BIT(13);
-	pr->frame_type_l4_m = (r[14] >> 10) & 7;
-	pr->frame_type_m = (r[14] >> 8) & 3;
-	pr->otag_fmt_m = r[14] & BIT(7);
-	pr->itag_fmt_m = r[14] & BIT(6);
-	pr->otag_exist_m = r[14] & BIT(5);
-	pr->itag_exist_m = r[14] & BIT (4);
-	pr->frame_type_l2_m = (r[14] >> 2) & 3;
-	pr->igr_normal_port_m = r[14] & BIT(1);
-	pr->tid_m = r[14] & 1;
+// 	pr->mgnt_vlan_m = r[14] & BIT(15);
+// 	if (pr->phase == PHASE_IACL)
+// 		pr->dmac_hit_sw_m = r[14] & BIT(14);
+// 	else
+// 		pr->content_too_deep_m = r[14] & BIT(14);
+// 	pr->not_first_frag_m = r[14] & BIT(13);
+// 	pr->frame_type_l4_m = (r[14] >> 10) & 7;
+// 	pr->frame_type_m = (r[14] >> 8) & 3;
+// 	pr->otag_fmt_m = r[14] & BIT(7);
+// 	pr->itag_fmt_m = r[14] & BIT(6);
+// 	pr->otag_exist_m = r[14] & BIT(5);
+// 	pr->itag_exist_m = r[14] & BIT (4);
+// 	pr->frame_type_l2_m = (r[14] >> 2) & 3;
+// 	pr->igr_normal_port_m = r[14] & BIT(1);
+// 	pr->tid_m = r[14] & 1;
 
-	pr->valid = r[15] & BIT(31);
-	pr->cond_not = r[15] & BIT(30);
-	pr->cond_and1 = r[15] & BIT(29);
-	pr->cond_and2 = r[15] & BIT(28);
-}
+// 	pr->valid = r[15] & BIT(31);
+// 	pr->cond_not = r[15] & BIT(30);
+// 	pr->cond_and1 = r[15] & BIT(29);
+// 	pr->cond_and2 = r[15] & BIT(28);
+// }
 
 static void rtl931x_write_pie_fixed_fields(u32 r[],  struct pie_rule *pr)
 {

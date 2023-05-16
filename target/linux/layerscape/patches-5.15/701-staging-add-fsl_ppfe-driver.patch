@@ -2507,7 +2507,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +{
 +	int ret = 0;
 +
-+	pr_info("PFE CDEV attempt copying (%lu) size of user.\n",
++	pr_info("PFE CDEV attempt copying (%zu) size of user.\n",
 +		sizeof(link_states));
 +
 +	pr_debug("Dump link_state on screen before copy_to_user\n");
@@ -2520,14 +2520,14 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +	/* Copy to user the value in buffer sized len */
 +	ret = copy_to_user(buf, &link_states, sizeof(link_states));
 +	if (ret != 0) {
-+		pr_err("Failed to send (%d)bytes of (%lu) requested.\n",
++		pr_err("Failed to send (%d)bytes of (%zu) requested.\n",
 +		       ret, len);
 +		return -EFAULT;
 +	}
 +
 +	/* offset set back to 0 as there is contextual reading offset */
 +	*off = 0;
-+	pr_debug("Read of (%lu) bytes performed.\n", sizeof(link_states));
++	pr_debug("Read of (%zu) bytes performed.\n", sizeof(link_states));
 +
 +	return sizeof(link_states);
 +}
@@ -6422,7 +6422,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +#endif /* _PFE_FIRMWARE_H_ */
 --- /dev/null
 +++ b/drivers/staging/fsl_ppfe/pfe_hal.c
-@@ -0,0 +1,1517 @@
+@@ -0,0 +1,1516 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright 2015-2016 Freescale Semiconductor, Inc.
@@ -7030,7 +7030,6 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +				util_pmem_memcpy(DDR_PHYS_TO_VIRT(
 +							DDR_PFE_TO_PHYS(addr)),
 +							data + offset, size);
-+			}
 +#endif
 +			} else {
 +				pr_err(
@@ -8060,11 +8059,11 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +		0x33221100, 0xa8c05544, 0x00000301, 0x00000000,
 +		0x00000000, 0x00000000, 0x00000000, 0xbe86c51f };
 +
-+	ddr_ptr = (void *)((u64)readl(BMU2_BASE_ADDR + BMU_ALLOC_CTRL));
++	ddr_ptr = (void *)((uintptr_t)readl(BMU2_BASE_ADDR + BMU_ALLOC_CTRL));
 +	if (!ddr_ptr)
 +		return;
 +
-+	lmem_ptr = (void *)((u64)readl(BMU1_BASE_ADDR + BMU_ALLOC_CTRL));
++	lmem_ptr = (void *)((uintptr_t)readl(BMU1_BASE_ADDR + BMU_ALLOC_CTRL));
 +	if (!lmem_ptr)
 +		return;
 +
@@ -8131,16 +8130,16 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +void pfe_hif_desc_dump(struct pfe_hif *hif)
 +{
 +	struct hif_desc	*desc;
-+	unsigned long desc_p;
++	u64 desc_p;
 +	int ii = 0;
 +
 +	pr_info("%s\n", __func__);
 +
 +	desc = hif->rx_base;
-+	desc_p = (u32)((u64)desc - (u64)hif->descr_baseaddr_v +
++	desc_p = ((void *)desc - hif->descr_baseaddr_v +
 +			hif->descr_baseaddr_p);
 +
-+	pr_info("HIF Rx desc base %p physical %x\n", desc, (u32)desc_p);
++	pr_info("HIF Rx desc base %p physical %llx\n", desc, desc_p);
 +	for (ii = 0; ii < hif->rx_ring_size; ii++) {
 +		pr_info("status: %08x, ctrl: %08x, data: %08x, next: %x\n",
 +			readl(&desc->status), readl(&desc->ctrl),
@@ -8149,10 +8148,10 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +	}
 +
 +	desc = hif->tx_base;
-+	desc_p = ((u64)desc - (u64)hif->descr_baseaddr_v +
++	desc_p = ((void *)desc - hif->descr_baseaddr_v +
 +			hif->descr_baseaddr_p);
 +
-+	pr_info("HIF Tx desc base %p physical %x\n", desc, (u32)desc_p);
++	pr_info("HIF Tx desc base %p physical %llx\n", desc, desc_p);
 +	for (ii = 0; ii < hif->tx_ring_size; ii++) {
 +		pr_info("status: %08x, ctrl: %08x, data: %08x, next: %x\n",
 +			readl(&desc->status), readl(&desc->ctrl),
@@ -11479,7 +11478,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +static ssize_t pfe_set_util(struct device *dev, struct device_attribute *attr,
 +			    const char *buf, size_t count)
 +{
-+	util_do_clear = kstrtoul(buf, NULL, 0);
++	util_do_clear = kstrtoul(buf, 0, 0);
 +	return count;
 +}
 +

@@ -1325,10 +1325,10 @@ static int ar934x_nfc_attach_chip(struct nand_chip *nand)
 	if (ret)
 		return ret;
 
-	if (mtd->writesize == 2048)
-		nand->options |= NAND_NO_SUBPAGE_WRITE;
-
 	if (nand->ecc.engine_type == NAND_ECC_ENGINE_TYPE_ON_HOST) {
+		if (mtd->writesize == 2048)
+			nand->options |= NAND_NO_SUBPAGE_WRITE;
+
 		ret = ar934x_nfc_setup_hwecc(nfc);
 		if (ret)
 			return ret;

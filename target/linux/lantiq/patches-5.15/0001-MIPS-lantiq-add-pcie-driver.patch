@@ -178,7 +178,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  int pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
  {
 +#ifdef CONFIG_PCIE_LANTIQ
-+	if (pci_find_capability(dev, PCI_CAP_ID_EXP))
++	if (pci_find_capability((struct pci_dev *)dev, PCI_CAP_ID_EXP))
 +		return ifx_pcie_bios_map_irq(dev, slot, pin);
 +#endif
 +

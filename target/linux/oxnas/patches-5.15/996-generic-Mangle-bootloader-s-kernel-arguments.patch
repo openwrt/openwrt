@@ -51,16 +51,58 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  #else
  #define do_extend_cmdline 0
  #endif
-@@ -69,6 +71,59 @@ static uint32_t get_cell_size(const void
+@@ -20,6 +22,7 @@ static int node_offset(void *fdt, const
+ 	return offset;
+ }
+ 
++#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
+ static int setprop(void *fdt, const char *node_path, const char *property,
+ 		   void *val_array, int size)
+ {
+@@ -28,6 +31,7 @@ static int setprop(void *fdt, const char
+ 		return offset;
+ 	return fdt_setprop(fdt, offset, property, val_array, size);
+ }
++#endif
+ 
+ static int setprop_string(void *fdt, const char *node_path,
+ 			  const char *property, const char *string)
+@@ -38,6 +42,7 @@ static int setprop_string(void *fdt, con
+ 	return fdt_setprop_string(fdt, offset, property, string);
+ }
+ 
++#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
+ static int setprop_cell(void *fdt, const char *node_path,
+ 			const char *property, uint32_t val)
+ {
+@@ -46,6 +51,7 @@ static int setprop_cell(void *fdt, const
+ 		return offset;
+ 	return fdt_setprop_cell(fdt, offset, property, val);
+ }
++#endif
+ 
+ static const void *getprop(const void *fdt, const char *node_path,
+ 			   const char *property, int *len)
+@@ -58,6 +64,7 @@ static const void *getprop(const void *f
+ 	return fdt_getprop(fdt, offset, property, len);
+ }
+ 
++#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
+ static uint32_t get_cell_size(const void *fdt)
+ {
+ 	int len;
+@@ -69,6 +76,61 @@ static uint32_t get_cell_size(const void
  	return cell_size;
  }
  
++#endif
++
 +#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
 +
 +static char *append_rootblock(char *dest, const char *str, int len, void *fdt)
 +{
-+	char *ptr, *end;
-+	char *root="root=";
++	const char *ptr, *end;
++	const char *root="root=";
 +	int i, l;
 +	const char *rootblock;
 +
@@ -111,7 +153,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
  {
  	char cmdline[COMMAND_LINE_SIZE];
-@@ -88,12 +143,21 @@ static void merge_fdt_bootargs(void *fdt
+@@ -88,18 +150,28 @@ static void merge_fdt_bootargs(void *fdt
  
  	/* and append the ATAG_CMDLINE */
  	if (fdt_cmdline) {
@@ -133,7 +175,36 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  	}
  	*ptr = '\0';
  
-@@ -168,7 +232,9 @@ int atags_to_fdt(void *atag_list, void *
+ 	setprop_string(fdt, "/chosen", "bootargs", cmdline);
+ }
+ 
++#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
+ static void hex_str(char *out, uint32_t value)
+ {
+ 	uint32_t digit;
+@@ -117,6 +189,7 @@ static void hex_str(char *out, uint32_t
+ 	}
+ 	*out = '\0';
+ }
++#endif
+ 
+ /*
+  * Convert and fold provided ATAGs into the provided FDT.
+@@ -131,9 +204,11 @@ int atags_to_fdt(void *atag_list, void *
+ 	struct tag *atag = atag_list;
+ 	/* In the case of 64 bits memory size, need to reserve 2 cells for
+ 	 * address and size for each bank */
++#ifndef CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
+ 	__be32 mem_reg_property[2 * 2 * NR_BANKS];
+-	int memcount = 0;
+-	int ret, memsize;
++	int memsize, memcount = 0;
++#endif
++	int ret;
+ 
+ 	/* make sure we've got an aligned pointer */
+ 	if ((u32)atag_list & 0x3)
+@@ -168,7 +243,9 @@ int atags_to_fdt(void *atag_list, void *
  			else
  				setprop_string(fdt, "/chosen", "bootargs",
  					       atag->u.cmdline.cmdline);
@@ -144,7 +215,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  			if (memcount >= sizeof(mem_reg_property)/4)
  				continue;
  			if (!atag->u.mem.size)
-@@ -212,6 +278,10 @@ int atags_to_fdt(void *atag_list, void *
+@@ -212,6 +289,10 @@ int atags_to_fdt(void *atag_list, void *
  		setprop(fdt, "/memory", "reg", mem_reg_property,
  			4 * memcount * memsize);
  	}

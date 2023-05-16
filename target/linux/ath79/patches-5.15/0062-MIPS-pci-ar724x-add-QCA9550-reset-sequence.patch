@@ -96,7 +96,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  
  	/* set PCIE Application Control to ready */
  	app = __raw_readl(apc->ctrl_base + AR724X_PCI_REG_APP);
-@@ -396,6 +412,14 @@ static int ar724x_pci_probe(struct platf
+@@ -395,6 +411,14 @@ static int ar724x_pci_probe(struct platf
  	if (apc->irq < 0)
  		return -EINVAL;
  
@@ -111,7 +111,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  	apc->np = pdev->dev.of_node;
  	apc->pci_controller.pci_ops = &ar724x_pci_ops;
  	apc->pci_controller.io_resource = &apc->io_res;
-@@ -406,7 +430,7 @@ static int ar724x_pci_probe(struct platf
+@@ -405,7 +429,7 @@ static int ar724x_pci_probe(struct platf
  	 * Do the full PCIE Root Complex Initialization Sequence if the PCIe
  	 * host controller is in reset.
  	 */
@@ -120,7 +120,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  		ar724x_pci_hw_init(apc);
  
  	apc->link_up = ar724x_pci_check_link(apc);
-@@ -424,6 +448,7 @@ static int ar724x_pci_probe(struct platf
+@@ -423,6 +447,7 @@ static int ar724x_pci_probe(struct platf
  
  static const struct of_device_id ar724x_pci_ids[] = {
  	{ .compatible = "qcom,ar7240-pci" },

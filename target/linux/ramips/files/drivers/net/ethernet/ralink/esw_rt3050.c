@@ -766,7 +766,6 @@ static irqreturn_t esw_interrupt(int irq, void *_esw)
 {
 	struct rt305x_esw *esw = (struct rt305x_esw *) _esw;
 	u32 status;
-	int i;
 
 	status = esw_r32(esw, RT305X_ESW_REG_ISR);
 	if (status & RT305X_ESW_PORT_ST_CHG) {
@@ -1533,7 +1532,7 @@ int rt3050_esw_init(struct fe_priv *priv)
 	}
 
 	dev_info(&pdev->dev, "mediatek esw at 0x%08lx, irq %d initialized\n",
-		   esw->base, esw->irq);
+		 (long unsigned int)esw->base, esw->irq);
 
 	return 0;
 }

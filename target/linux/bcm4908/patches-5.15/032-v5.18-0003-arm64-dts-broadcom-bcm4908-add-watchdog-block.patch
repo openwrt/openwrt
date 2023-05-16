@@ -12,11 +12,11 @@ binding which matches the first SoC with that block.
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
- arch/arm64/boot/dts/broadcom/bcm4908/bcm4908.dtsi | 9 +++++++++
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi | 9 +++++++++
  1 file changed, 9 insertions(+)
 
---- a/arch/arm64/boot/dts/broadcom/bcm4908/bcm4908.dtsi
-+++ b/arch/arm64/boot/dts/broadcom/bcm4908/bcm4908.dtsi
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
 @@ -278,6 +278,15 @@
  		twd: timer-mfd@400 {
  			compatible = "brcm,bcm4908-twd", "simple-mfd", "syscon";

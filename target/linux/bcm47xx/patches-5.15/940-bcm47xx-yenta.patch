@@ -1,23 +1,25 @@
 --- a/drivers/pcmcia/yenta_socket.c
 +++ b/drivers/pcmcia/yenta_socket.c
-@@ -932,6 +932,8 @@ static unsigned int yenta_probe_irq(stru
- 	 * Probe for usable interrupts using the force
- 	 * register to generate bogus card status events.
- 	 */
-+#ifndef CONFIG_BCM47XX
-+	/* WRT54G3G does not like this */
- 	cb_writel(socket, CB_SOCKET_EVENT, -1);
- 	cb_writel(socket, CB_SOCKET_MASK, CB_CSTSMASK);
- 	reg = exca_readb(socket, I365_CSCINT);
-@@ -947,6 +949,7 @@ static unsigned int yenta_probe_irq(stru
- 	}
- 	cb_writel(socket, CB_SOCKET_MASK, 0);
- 	exca_writeb(socket, I365_CSCINT, reg);
-+#endif
+@@ -923,6 +923,8 @@ static struct cardbus_type cardbus_type[
  
+ static unsigned int yenta_probe_irq(struct yenta_socket *socket, u32 isa_irq_mask)
+ {
++/* WRT54G3G does not like this */
++#ifndef CONFIG_BCM47XX
+ 	int i;
+ 	unsigned long val;
+ 	u32 mask;
+@@ -951,6 +953,9 @@ static unsigned int yenta_probe_irq(stru
  	mask = probe_irq_mask(val) & 0xffff;
  
-@@ -1031,6 +1034,10 @@ static void yenta_get_socket_capabilitie
+ 	return mask;
++#else
++	return 0;
++#endif
+ }
+ 
+ 
+@@ -1031,6 +1036,10 @@ static void yenta_get_socket_capabilitie
  	else
  		socket->socket.irq_mask = 0;
  
@@ -28,7 +30,7 @@
  	dev_info(&socket->dev->dev, "ISA IRQ mask 0x%04x, PCI irq %d\n",
  		 socket->socket.irq_mask, socket->cb_irq);
  }
-@@ -1262,6 +1269,15 @@ static int yenta_probe(struct pci_dev *d
+@@ -1262,6 +1271,15 @@ static int yenta_probe(struct pci_dev *d
  	dev_info(&dev->dev, "Socket status: %08x\n",
  		 cb_readl(socket, CB_SOCKET_STATE));
  

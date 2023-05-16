@@ -70,7 +70,7 @@ Acked-by: Stanimir Varbanov <svarbanov@mm-sol.com>
  };
  
  struct qcom_pcie;
-@@ -1282,6 +1292,112 @@ static void qcom_pcie_post_deinit_2_7_0(
+@@ -1280,6 +1290,112 @@ static void qcom_pcie_post_deinit_2_7_0(
  	clk_disable_unprepare(res->pipe_clk);
  }
  
@@ -183,7 +183,7 @@ Acked-by: Stanimir Varbanov <svarbanov@mm-sol.com>
  static int qcom_pcie_link_up(struct dw_pcie *pci)
  {
  	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
-@@ -1473,6 +1589,15 @@ static const struct qcom_pcie_ops ops_1_
+@@ -1471,6 +1587,15 @@ static const struct qcom_pcie_ops ops_1_
  	.config_sid = qcom_pcie_config_sid_sm8250,
  };
  
@@ -199,7 +199,7 @@ Acked-by: Stanimir Varbanov <svarbanov@mm-sol.com>
  static const struct qcom_pcie_cfg apq8084_cfg = {
  	.ops = &ops_1_0_0,
  };
-@@ -1505,6 +1630,10 @@ static const struct qcom_pcie_cfg sc7280
+@@ -1503,6 +1628,10 @@ static const struct qcom_pcie_cfg sc7280
  	.ops = &ops_1_9_0,
  };
  
@@ -210,7 +210,7 @@ Acked-by: Stanimir Varbanov <svarbanov@mm-sol.com>
  static const struct dw_pcie_ops dw_pcie_ops = {
  	.link_up = qcom_pcie_link_up,
  	.start_link = qcom_pcie_start_link,
-@@ -1611,6 +1740,7 @@ static const struct of_device_id qcom_pc
+@@ -1609,6 +1738,7 @@ static const struct of_device_id qcom_pc
  	{ .compatible = "qcom,pcie-sdm845", .data = &sdm845_cfg },
  	{ .compatible = "qcom,pcie-sm8250", .data = &sm8250_cfg },
  	{ .compatible = "qcom,pcie-sc7280", .data = &sc7280_cfg },

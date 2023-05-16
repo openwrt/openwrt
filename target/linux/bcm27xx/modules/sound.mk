@@ -371,8 +371,7 @@ define KernelPackage/sound-soc-chipdip-dac
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-chipdip-dac.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-chipdip-dac)
   DEPENDS:= \
-    kmod-sound-soc-bcm2835-i2s \
-    @LINUX_5_10
+    kmod-sound-soc-bcm2835-i2s
   $(call AddDepends/sound)
 endef
 

@@ -71,6 +71,7 @@ platform_copy_config() {
 	fsl,ls1012a-frwy-sdboot | \
 	fsl,ls1021a-iot-sdboot | \
 	fsl,ls1021a-twr-sdboot | \
+	fsl,ls1028a-rdb-sdboot | \
 	fsl,ls1043a-rdb-sdboot | \
 	fsl,ls1046a-frwy-sdboot | \
 	fsl,ls1046a-rdb-sdboot | \
@@ -95,6 +96,8 @@ platform_check_image() {
 	fsl,ls1021a-iot-sdboot | \
 	fsl,ls1021a-twr | \
 	fsl,ls1021a-twr-sdboot | \
+	fsl,ls1028a-rdb | \
+	fsl,ls1028a-rdb-sdboot | \
 	fsl,ls1043a-rdb | \
 	fsl,ls1043a-rdb-sdboot | \
 	fsl,ls1046a-frwy | \
@@ -130,6 +133,7 @@ platform_do_upgrade() {
 	fsl,ls1012a-frdm | \
 	fsl,ls1012a-rdb | \
 	fsl,ls1021a-twr | \
+	fsl,ls1028a-rdb | \
 	fsl,ls1043a-rdb | \
 	fsl,ls1046a-frwy | \
 	fsl,ls1046a-rdb | \
@@ -142,6 +146,7 @@ platform_do_upgrade() {
 	fsl,ls1012a-frwy-sdboot | \
 	fsl,ls1021a-iot-sdboot | \
 	fsl,ls1021a-twr-sdboot | \
+	fsl,ls1028a-rdb-sdboot | \
 	fsl,ls1043a-rdb-sdboot | \
 	fsl,ls1046a-frwy-sdboot | \
 	fsl,ls1046a-rdb-sdboot | \
