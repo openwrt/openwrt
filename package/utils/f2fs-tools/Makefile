@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=f2fs-tools
 PKG_VERSION:=1.15.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/snapshot/
@@ -110,6 +110,10 @@ endif
 
 CONFIGURE_VARS += \
 	ac_cv_file__git=no
+
+ifneq ($(CONFIG_USE_MUSL),)
+  CONFIGURE_VARS += ac_cv_func_lseek64=yes
+endif
 
 define Package/libf2fs/install
 	$(INSTALL_DIR) $(1)/usr/lib
