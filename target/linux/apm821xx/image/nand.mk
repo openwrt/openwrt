@@ -15,7 +15,7 @@ define Build/MerakiAdd-dtb
 	@mv $@.new $@
 endef
 
-define Build/MerakiNAND
+define Build/meraki-header
 	-$(STAGING_DIR_HOST)/bin/mkmerakifw \
 		-B $(BOARD_NAME) -s \
 		-i $@ \
@@ -32,7 +32,7 @@ define Device/meraki_mr24
   IMAGES := sysupgrade.bin
   DTB_SIZE := 64512
   IMAGE_SIZE := 8191k
-  KERNEL := kernel-bin | lzma | uImage lzma | MerakiAdd-dtb | MerakiNAND
+  KERNEL := kernel-bin | lzma | uImage lzma | MerakiAdd-dtb | meraki-header
   KERNEL_INITRAMFS := kernel-bin | lzma | dtb | MuImage-initramfs lzma
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5

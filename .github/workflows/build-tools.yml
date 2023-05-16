@@ -13,7 +13,7 @@ jobs:
   build:
     name: Build tools
     runs-on: ubuntu-latest
-    container: registry.gitlab.com/openwrt/buildbot/buildworker-3.4.1
+    container: ghcr.io/openwrt/buildbot/buildworker-v3.8.0:v2
 
     steps:
       - name: Checkout
