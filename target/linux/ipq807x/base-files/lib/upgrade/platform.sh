@@ -28,6 +28,13 @@ xiaomi_initramfs_prepare() {
 }
 
 platform_check_image() {
+	# ath11k has a TX queue flush issue, so until that is resolved
+	# lets workaround the issue by calling wpad stop before sysupgrade
+	# attempts to first SIGTERM and then SIGKILL hostapd which will fail
+	# as ath11k TX flush has not yet timed out.
+	# This in turn would cause sysupgrade to fail and leave old version on
+	# the boards.
+	service wpad stop
 	return 0;
 }
 
