@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=umdns
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=5
 
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/mdnsd.git
 PKG_SOURCE_PROTO:=git
