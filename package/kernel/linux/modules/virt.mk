@@ -82,6 +82,8 @@ define KernelPackage/vfio
 	CONFIG_VFIO \
 	CONFIG_VFIO_NOIOMMU=n \
 	CONFIG_VFIO_MDEV=n
+  MODPARAMS.vfio:=\
+	enable_unsafe_noiommu_mode=n
   FILES:= \
 	$(LINUX_DIR)/drivers/vfio/vfio.ko \
 	$(LINUX_DIR)/drivers/vfio/vfio_virqfd.ko \
@@ -102,7 +104,7 @@ define KernelPackage/vfio-pci
   DEPENDS:=@TARGET_x86_64 @PCI_SUPPORT +kmod-vfio +kmod-irqbypass
   KCONFIG:= \
 	CONFIG_VFIO_PCI \
-	CONFIG_VFIO_PCI_IGD=y
+	CONFIG_VFIO_PCI_IGD=n
   FILES:= \
 	$(LINUX_DIR)/drivers/vfio/pci/vfio-pci-core.ko \
 	$(LINUX_DIR)/drivers/vfio/pci/vfio-pci.ko
