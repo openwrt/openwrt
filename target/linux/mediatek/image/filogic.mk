@@ -100,6 +100,25 @@ define Device/bananapi_bpi-r3
 endef
 TARGET_DEVICES += bananapi_bpi-r3
 
+define Device/cudy_wr3000-v1
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := WR3000
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-cudy-wr3000-v1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGES := sysupgrade.bin
+  IMAGE_SIZE := 15424k
+  SUPPORTED_DEVICES += R31
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt7981-firmware
+endef
+TARGET_DEVICES += cudy_wr3000-v1
+
 define Device/mediatek_mt7986a-rfb-nand
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7986 rfba AP (NAND)
