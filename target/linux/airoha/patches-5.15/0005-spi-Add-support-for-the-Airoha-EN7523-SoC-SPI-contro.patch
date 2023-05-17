@@ -166,7 +166,7 @@
 +	}
 +}
 +
-+static void set_spi_clock_speed(int freq_mhz)
++/*static void set_spi_clock_speed(int freq_mhz)
 +{
 +	u32 tmp, val;
 +
@@ -177,7 +177,7 @@
 +	val = (400 / (freq_mhz * 2));
 +	tmp |= (val << 8) | 1;
 +	writel(tmp, ENSPI_CLOCK_DIVIDER);
-+}
++}*/
 +
 +static void init_hw(void)
 +{
