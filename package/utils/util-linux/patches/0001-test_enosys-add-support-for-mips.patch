@@ -1,0 +1,24 @@
+From 2558932c65524d953e4c86d7fda2282a582aa5ec Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <thomas@t-8ch.de>
+Date: Wed, 17 May 2023 16:50:47 +0200
+Subject: [PATCH] test_enosys: add support for mips
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Thomas Weißschuh <thomas@t-8ch.de>
+---
+ tests/helpers/test_enosys.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/tests/helpers/test_enosys.c
++++ b/tests/helpers/test_enosys.c
+@@ -53,6 +53,8 @@
+ #    else
+ # 	 define SECCOMP_ARCH_NATIVE AUDIT_ARCH_PPC64LE
+ #    endif
++#elif __mips__
++# 	 define SECCOMP_ARCH_NATIVE AUDIT_ARCH_MIPS
+ #else
+ #    error Unknown target architecture
+ #endif
