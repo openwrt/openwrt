@@ -184,6 +184,24 @@ define Device/iom_ix2-200
 endef
 TARGET_DEVICES += iom_ix2-200
 
+define Device/iom_ix4-200d
+  DEVICE_VENDOR := Iomega
+  DEVICE_MODEL := StorCenter ix4-200d
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
+	kmod-gpio-button-hotplug kmod-gpio-nxp-74hc164 \
+	kmod-hwmon-adt7475 kmod-mvsdio kmod-spi-gpio
+  PAGESIZE := 512
+  SUBPAGESIZE := 256
+  BLOCKSIZE := 16k
+  KERNEL_SIZE := 3072k
+  KERNEL_IN_UBI :=
+  UBINIZE_OPTS := -E 5
+  IMAGE_SIZE := 31744k
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
+	check-size
+endef
+TARGET_DEVICES += iom_ix4-200d
+
 define Device/iptime_nas1
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := NAS1
