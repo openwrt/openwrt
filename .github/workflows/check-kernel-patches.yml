@@ -85,6 +85,10 @@ jobs:
         run: |
           chown -R buildbot:buildbot openwrt
 
+      - name: Opt-out from Git stricter repository ownership checks
+        run: |
+          git config --global --add safe.directory '*'
+
       - name: Initialization environment
         run: |
           TARGET=$(echo ${{ inputs.target }} | cut -d "/" -f 1)

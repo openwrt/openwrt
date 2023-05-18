@@ -187,7 +187,7 @@ define DownloadMethod/svn
 		svn export --non-interactive --trust-server-cert -r$(VERSION) $(URL) $(SUBDIR) || \
 		svn export --non-interactive -r$(VERSION) $(URL) $(SUBDIR) ) && \
 		echo "Packing checkout..." && \
-		export TAR_TIMESTAMP="" && \
+		export TAR_TIMESTAMP="`svn info -r$(VERSION) --show-item last-changed-date $(URL)`" && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 		rm -rf $(SUBDIR); \

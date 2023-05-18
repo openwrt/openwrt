@@ -27,6 +27,28 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  	};
  
  	chosen {
+@@ -49,18 +54,18 @@
+ 
+ 		lan_led: led-0 {
+ 			gpios = <&gpio2 RK_PB7 GPIO_ACTIVE_HIGH>;
+-			label = "nanopi-r2s:green:lan";
++			label = "green:lan";
+ 		};
+ 
+ 		sys_led: led-1 {
+ 			gpios = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
+-			label = "nanopi-r2s:red:sys";
++			label = "red:sys";
+ 			default-state = "on";
+ 		};
+ 
+ 		wan_led: led-2 {
+ 			gpios = <&gpio2 RK_PC2 GPIO_ACTIVE_HIGH>;
+-			label = "nanopi-r2s:green:wan";
++			label = "green:wan";
+ 		};
+ 	};
+ 
 --- a/arch/arm64/boot/dts/rockchip/rk3328-roc-cc.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3328-roc-cc.dts
 @@ -13,6 +13,11 @@
