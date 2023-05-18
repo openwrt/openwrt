@@ -33,7 +33,7 @@
 +obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
-@@ -0,0 +1,1119 @@
+@@ -0,0 +1,1117 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -155,8 +155,6 @@
 +MODULE_AUTHOR("Sameer Dekate <sdekate@arubanetworks.com>, Imre Kaloz <kaloz@openwrt.org>, Felix Fietkau <nbd@nbd.name>");
 +MODULE_DESCRIPTION("AR231x Ethernet driver");
 +#endif
-+
-+#define virt_to_phys(x) ((u32)(x) & 0x1fffffff)
 +
 +/* prototypes */
 +static void ar231x_halt(struct net_device *dev);
