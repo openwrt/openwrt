@@ -435,6 +435,30 @@ $(shell \
 )
 endef
 
+define findrev
+  $(shell \
+    if git log -1 >/dev/null 2>/dev/null; then \
+      set -- $$(git log -1 --format="%ct %h" --abbrev=7 -- $(if $(1),$(1),.)); \
+      if [ -n "$$1" ]; then
+        secs="$$(($$1 % 86400))"; \
+        yday="$$(date --utc --date="@$$1" "+%y.%j")"; \
+        printf 'git-%s.%05d-%s' "$$yday" "$$secs" "$$2"; \
+      else \
+        echo "unknown"; \
+      fi; \
+    else \
+      ts=$$(find $(if $(1),$(1),.) -type f -printf '%T@\n' 2>/dev/null | sort -rn | head -n1 | cut -d. -f1); \
+      if [ -n "$$ts" ]; then \
+        secs="$$(($$ts % 86400))"; \
+        date="$$(date --utc --date="@$$ts" "+%y%m%d")"; \
+        printf '%s.%05d' "$$date" "$$secs"; \
+      else \
+        echo "unknown"; \
+      fi; \
+    fi \
+  )
+endef
+
 abi_version_str = $(subst -,,$(subst _,,$(subst .,,$(1))))
 
 COMMITCOUNT = $(if $(DUMP),0,$(call commitcount))
