@@ -555,8 +555,7 @@ define Device/ezviz_cs-w3-wd1200g-eup
 	DEVICE_COMPAT_MESSAGE := uboot's bootcmd has to be updated (see wiki). \
 		Upgrade via sysupgrade mechanism is not possible.
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += ezviz_cs-w3-wd1200g-eup
+TARGET_DEVICES += ezviz_cs-w3-wd1200g-eup
 
 define Device/glinet_gl-a1300
 	$(call Device/FitImage)

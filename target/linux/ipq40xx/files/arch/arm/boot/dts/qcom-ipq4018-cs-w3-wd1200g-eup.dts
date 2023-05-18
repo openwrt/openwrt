@@ -239,6 +239,42 @@
 	status = "okay";
 };
 
+&gmac {
+	status = "okay";
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+	label = "lan3";
+};
+
+&swport3 {
+	status = "okay";
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan1";
+};
+
+&swport5 {
+	status = "okay";
+	label = "wan";
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "ezviz-cs-w3-wd1200g-eup";
