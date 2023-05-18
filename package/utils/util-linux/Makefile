@@ -485,6 +485,7 @@ endef
 define Package/taskset
 $(call Package/util-linux/Default)
   TITLE:=set or retrieve a process's CPU affinity
+  ALTERNATIVES:=200:/usr/bin/taskset:/usr/bin/util-linux-taskset
 endef
 
 define Package/taskset/description
@@ -851,7 +852,7 @@ endef
 
 define Package/taskset/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/taskset $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/taskset $(1)/usr/bin/util-linux-taskset
 endef
 
 define Package/unshare/install
