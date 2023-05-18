@@ -272,7 +272,7 @@ define Device/meraki_mr18
   SOC := qca9557
   DEVICE_VENDOR := Meraki
   DEVICE_MODEL := MR18
-  DEVICE_PACKAGES := kmod-spi-gpio nu801
+  DEVICE_PACKAGES := kmod-leds-uleds kmod-spi-gpio nu801
   KERNEL_SIZE := 8m
   BLOCKSIZE := 128k
   PAGESIZE := 2048

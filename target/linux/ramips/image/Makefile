@@ -172,6 +172,7 @@ endef
 
 define Device/Default
   PROFILES = Default
+  BLOCKSIZE := 64k
   KERNEL := $(KERNEL_DTB) | uImage lzma
   KERNEL_LOADADDR := $(loadaddr-y)
   LZMA_TEXT_START := 0x81800000
@@ -185,7 +186,6 @@ define Device/Default
 endef
 
 define Device/netgear_sercomm_nor
-  BLOCKSIZE := 64k
   DEVICE_VENDOR := NETGEAR
   IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
@@ -197,7 +197,6 @@ define Device/netgear_sercomm_nor
 endef
 
 define Device/seama
-  BLOCKSIZE := 64k
   SEAMA_MTDBLOCK := 2
   IMAGES += factory.bin
 

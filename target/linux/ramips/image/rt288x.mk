@@ -12,11 +12,10 @@ define Build/gemtek-header
 endef
 
 define Device/airlink101_ar670w
-  BLOCKSIZE := 64k
   DEVICE_VENDOR := Airlink
   DEVICE_MODEL := AR670W
   IMAGE_SIZE := 3840k
-  KERNEL := $(KERNEL_DTB) | pad-to $$(BLOCKSIZE)
+  KERNEL := $(KERNEL_DTB) | pad-to $$$$(BLOCKSIZE)
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	wrg-header wrgn16a_airlink_ar670w
@@ -38,7 +37,6 @@ endef
 TARGET_DEVICES += airlink101_ar725w
 
 define Device/asus_rt-n15
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 3776k
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N15
@@ -60,7 +58,6 @@ endef
 TARGET_DEVICES += belkin_f5d8235-v1
 
 define Device/buffalo_wli-tx4-ag300n
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 3776k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WLI-TX4-AG300N
@@ -71,7 +68,6 @@ endef
 TARGET_DEVICES += buffalo_wli-tx4-ag300n
 
 define Device/buffalo_wzr-agl300nh
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 3776k
   DEVICE_VENDOR := Buffalo
   DEVICE_MODEL := WZR-AGL300NH
@@ -82,7 +78,6 @@ endef
 TARGET_DEVICES += buffalo_wzr-agl300nh
 
 define Device/dlink_dap-1522-a1
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 3712k
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DAP-1522
@@ -98,7 +93,6 @@ endef
 TARGET_DEVICES += dlink_dap-1522-a1
 
 define Device/ralink_v11st-fe
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 3776k
   DEVICE_VENDOR := Ralink
   DEVICE_MODEL := V11ST-FE

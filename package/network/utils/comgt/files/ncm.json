@@ -124,5 +124,17 @@
 		"connect": "AT+ZGACT=1,${context_type}",
 		"finalize": "AT+ZDHCPLEASE=0",
 		"disconnect": "AT+ZGACT=0,1"
+	},
+	"spreadtrum": {
+		"initialize": [
+			"AT+CFUN=1",
+			"AT+CCED=2,8",
+			"AT+SPTTYROUTER=1"
+		],
+		"configure": [
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\"${apn:+,\\\"$apn\\\"}"
+		],
+		"connect": "AT+SPTZCMD=\\\"Y29ubm1hbmN0bCBuZGlzZGlhbCBBVF5ORElTRFVOPSJ1c2IwIiwxLDE=\\\"",
+		"disconnect": "AT+SPTZCMD=\\\"Y29ubm1hbmN0bCBuZGlzZGlhbCBBVF5ORElTRFVOPSJ1c2IwIiwwLDE=\\\""
 	}
 }
