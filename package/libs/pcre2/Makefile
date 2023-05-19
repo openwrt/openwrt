@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pcre2
-PKG_VERSION:=10.37
-PKG_RELEASE:=2
+PKG_VERSION:=10.42
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=@SF/pcre/$(PKG_NAME)/$(PKG_VERSION)
-PKG_HASH:=4d95a96e8b80529893b4562be12648d798b957b1ba1aae39606bbc2ab956d270
+PKG_SOURCE_URL:=https://github.com/PCRE2Project/pcre2/releases/download/$(PKG_NAME)-$(PKG_VERSION)
+PKG_HASH:=8d36cd8cb6ea2a4c2bb358ff6411b0c788633a2a45dabbf1aeb4b701d1b5e840
 
 PKG_MAINTAINER:=Shane Peelar <lookatyouhacker@gmail.com>
 PKG_LICENSE:=BSD-3-Clause
