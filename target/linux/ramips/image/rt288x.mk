@@ -15,7 +15,7 @@ define Device/airlink101_ar670w
   DEVICE_VENDOR := Airlink
   DEVICE_MODEL := AR670W
   IMAGE_SIZE := 3840k
-  KERNEL := $(KERNEL_DTB) | pad-to $$$$(BLOCKSIZE)
+  KERNEL := $(KERNEL_DTB) | pad-to $$(BLOCKSIZE)
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | check-size | \
 	wrg-header wrgn16a_airlink_ar670w
