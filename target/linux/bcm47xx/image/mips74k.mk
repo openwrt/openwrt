@@ -24,6 +24,7 @@ define Device/asus_rt-n10
   DEVICE_PACKAGES := kmod-b43
   $(Device/asus)
   PRODUCTID := "RT-N10      "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_rt-n10
 
@@ -323,6 +324,7 @@ define Device/netgear_wgr614-v10-na
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H139T01_NETGEAR
   NETGEAR_REGION := 2
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wgr614-v10-na
 
@@ -332,6 +334,7 @@ define Device/netgear_wgr614-v10
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H139T01_NETGEAR
   NETGEAR_REGION := 1
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wgr614-v10
 
@@ -420,6 +423,7 @@ define Device/netgear_wnr1000-v3
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H139T00_NETGEAR
   NETGEAR_REGION := 2
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wnr1000-v3
 
