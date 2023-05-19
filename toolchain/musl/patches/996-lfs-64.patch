@@ -1,0 +1,612 @@
+re-add when:
+
+gcc-gdc builds without this
+rust builds without this
+
+https://github.com/rust-lang/libc/pull/2935
+https://github.com/rust-lang/rust/pull/106246
+https://github.com/rust-lang/libc/pull/3068
+
+--
+From a3a133b520457d13bd7a2fe6794278a3e578f347 Mon Sep 17 00:00:00 2001
+From: psykose <alice@ayaya.dev>
+Date: Tue, 11 Apr 2023 19:51:56 +0200
+Subject: [PATCH] Revert "remove LFS64 symbol aliases; replace with dynamic
+ linker remapping"
+
+This reverts commit 246f1c811448f37a44b41cd8df8d0ef9736d95f4.
+---
+ compat/time32/__xstat.c            |  8 +++----
+ compat/time32/aio_suspend_time32.c |  2 ++
+ compat/time32/fstat_time32.c       |  2 ++
+ compat/time32/fstatat_time32.c     |  2 ++
+ compat/time32/lstat_time32.c       |  2 ++
+ compat/time32/stat_time32.c        |  2 ++
+ ldso/dynlink.c                     | 34 ------------------------------
+ src/aio/aio.c                      |  7 ++++++
+ src/aio/aio_suspend.c              |  4 ++++
+ src/aio/lio_listio.c               |  2 ++
+ src/dirent/alphasort.c             |  2 ++
+ src/dirent/readdir.c               |  2 ++
+ src/dirent/readdir_r.c             |  2 ++
+ src/dirent/scandir.c               |  2 ++
+ src/dirent/versionsort.c           |  3 +++
+ src/fcntl/creat.c                  |  2 ++
+ src/fcntl/open.c                   |  2 ++
+ src/fcntl/openat.c                 |  2 ++
+ src/fcntl/posix_fadvise.c          |  2 ++
+ src/fcntl/posix_fallocate.c        |  2 ++
+ src/legacy/ftw.c                   |  2 ++
+ src/linux/fallocate.c              |  3 +++
+ src/linux/getdents.c               |  2 ++
+ src/linux/prlimit.c                |  3 +++
+ src/linux/sendfile.c               |  2 ++
+ src/misc/getrlimit.c               |  2 ++
+ src/misc/lockf.c                   |  2 ++
+ src/misc/setrlimit.c               |  2 ++
+ src/mman/mmap.c                    |  2 ++
+ src/regex/glob.c                   |  3 +++
+ src/stat/__xstat.c                 |  5 +++++
+ src/stat/fstat.c                   |  4 ++++
+ src/stat/fstatat.c                 |  4 ++++
+ src/stat/lstat.c                   |  4 ++++
+ src/stat/stat.c                    |  4 ++++
+ src/stat/statvfs.c                 |  5 +++++
+ src/stdio/fgetpos.c                |  2 ++
+ src/stdio/fopen.c                  |  2 ++
+ src/stdio/freopen.c                |  2 ++
+ src/stdio/fseek.c                  |  2 ++
+ src/stdio/fsetpos.c                |  2 ++
+ src/stdio/ftell.c                  |  2 ++
+ src/stdio/tmpfile.c                |  2 ++
+ src/temp/mkostemp.c                |  2 ++
+ src/temp/mkostemps.c               |  1 +
+ src/temp/mkstemp.c                 |  2 ++
+ src/temp/mkstemps.c                |  2 ++
+ src/unistd/ftruncate.c             |  2 ++
+ src/unistd/lseek.c                 |  1 +
+ src/unistd/mipsn32/lseek.c         |  1 +
+ src/unistd/pread.c                 |  2 ++
+ src/unistd/preadv.c                |  2 ++
+ src/unistd/pwrite.c                |  2 ++
+ src/unistd/pwritev.c               |  2 ++
+ src/unistd/truncate.c              |  2 ++
+ src/unistd/x32/lseek.c             |  1 +
+ 57 files changed, 135 insertions(+), 38 deletions(-)
+
+--- a/compat/time32/__xstat.c
++++ b/compat/time32/__xstat.c
+@@ -3,22 +3,22 @@
+ 
+ struct stat32;
+ 
+-int __fxstat(int ver, int fd, struct stat32 *buf)
++int __fxstat64(int ver, int fd, struct stat32 *buf)
+ {
+ 	return __fstat_time32(fd, buf);
+ }
+ 
+-int __fxstatat(int ver, int fd, const char *path, struct stat32 *buf, int flag)
++int __fxstatat64(int ver, int fd, const char *path, struct stat32 *buf, int flag)
+ {
+ 	return __fstatat_time32(fd, path, buf, flag);
+ }
+ 
+-int __lxstat(int ver, const char *path, struct stat32 *buf)
++int __lxstat64(int ver, const char *path, struct stat32 *buf)
+ {
+ 	return __lstat_time32(path, buf);
+ }
+ 
+-int __xstat(int ver, const char *path, struct stat32 *buf)
++int __xstat64(int ver, const char *path, struct stat32 *buf)
+ {
+ 	return __stat_time32(path, buf);
+ }
+--- a/compat/time32/aio_suspend_time32.c
++++ b/compat/time32/aio_suspend_time32.c
+@@ -7,3 +7,5 @@ int __aio_suspend_time32(const struct ai
+ 	return aio_suspend(cbs, cnt, ts32 ? (&(struct timespec){
+ 		.tv_sec = ts32->tv_sec, .tv_nsec = ts32->tv_nsec}) : 0);
+ }
++
++weak_alias(aio_suspend, aio_suspend64);
+--- a/compat/time32/fstat_time32.c
++++ b/compat/time32/fstat_time32.c
+@@ -13,3 +13,5 @@ int __fstat_time32(int fd, struct stat32
+ 	if (!r) memcpy(st32, &st, offsetof(struct stat, st_atim));
+ 	return r;
+ }
++
++weak_alias(fstat, fstat64);
+--- a/compat/time32/fstatat_time32.c
++++ b/compat/time32/fstatat_time32.c
+@@ -13,3 +13,5 @@ int __fstatat_time32(int fd, const char
+ 	if (!r) memcpy(st32, &st, offsetof(struct stat, st_atim));
+ 	return r;
+ }
++
++weak_alias(fstatat, fstatat64);
+--- a/compat/time32/lstat_time32.c
++++ b/compat/time32/lstat_time32.c
+@@ -13,3 +13,5 @@ int __lstat_time32(const char *restrict
+ 	if (!r) memcpy(st32, &st, offsetof(struct stat, st_atim));
+ 	return r;
+ }
++
++weak_alias(lstat, lstat64);
+--- a/compat/time32/stat_time32.c
++++ b/compat/time32/stat_time32.c
+@@ -13,3 +13,5 @@ int __stat_time32(const char *restrict p
+ 	if (!r) memcpy(st32, &st, offsetof(struct stat, st_atim));
+ 	return r;
+ }
++
++weak_alias(stat, stat64);
+--- a/ldso/dynlink.c
++++ b/ldso/dynlink.c
+@@ -343,40 +343,6 @@ static struct symdef find_sym(struct dso
+ 	return find_sym2(dso, s, need_def, 0);
+ }
+ 
+-static struct symdef get_lfs64(const char *name)
+-{
+-	const char *p;
+-	static const char lfs64_list[] =
+-		"aio_cancel\0aio_error\0aio_fsync\0aio_read\0aio_return\0"
+-		"aio_suspend\0aio_write\0alphasort\0creat\0fallocate\0"
+-		"fgetpos\0fopen\0freopen\0fseeko\0fsetpos\0fstat\0"
+-		"fstatat\0fstatfs\0fstatvfs\0ftello\0ftruncate\0ftw\0"
+-		"getdents\0getrlimit\0glob\0globfree\0lio_listio\0"
+-		"lockf\0lseek\0lstat\0mkostemp\0mkostemps\0mkstemp\0"
+-		"mkstemps\0mmap\0nftw\0open\0openat\0posix_fadvise\0"
+-		"posix_fallocate\0pread\0preadv\0prlimit\0pwrite\0"
+-		"pwritev\0readdir\0scandir\0sendfile\0setrlimit\0"
+-		"stat\0statfs\0statvfs\0tmpfile\0truncate\0versionsort\0"
+-		"__fxstat\0__fxstatat\0__lxstat\0__xstat\0";
+-	size_t l;
+-	char buf[16];
+-	for (l=0; name[l]; l++) {
+-		if (l >= sizeof buf) goto nomatch;
+-		buf[l] = name[l];
+-	}
+-	if (!strcmp(name, "readdir64_r"))
+-		return find_sym(&ldso, "readdir_r", 1);
+-	if (l<2 || name[l-2]!='6' || name[l-1]!='4')
+-		goto nomatch;
+-	buf[l-=2] = 0;
+-	for (p=lfs64_list; *p; p++) {
+-		if (!strcmp(buf, p)) return find_sym(&ldso, buf, 1);
+-		while (*p) p++;
+-	}
+-nomatch:
+-	return (struct symdef){ 0 };
+-}
+-
+ static void do_relocs(struct dso *dso, size_t *rel, size_t rel_size, size_t stride)
+ {
+ 	unsigned char *base = dso->base;
+@@ -430,7 +396,6 @@ static void do_relocs(struct dso *dso, s
+ 			def = (sym->st_info>>4) == STB_LOCAL
+ 				? (struct symdef){ .dso = dso, .sym = sym }
+ 				: find_sym(ctx, name, type==REL_PLT);
+-			if (!def.sym) def = get_lfs64(name);
+ 			if (!def.sym && (sym->st_shndx != SHN_UNDEF
+ 			    || sym->st_info>>4 != STB_WEAK)) {
+ 				if (dso->lazy && (type==REL_PLT || type==REL_GOT)) {
+--- a/src/aio/aio.c
++++ b/src/aio/aio.c
+@@ -430,3 +430,10 @@ void __aio_atfork(int who)
+ 	 * We are not a lock holder anyway; the thread in the parent was. */
+ 	pthread_rwlock_init(&maplock, 0);
+ }
++
++weak_alias(aio_cancel, aio_cancel64);
++weak_alias(aio_error, aio_error64);
++weak_alias(aio_fsync, aio_fsync64);
++weak_alias(aio_read, aio_read64);
++weak_alias(aio_write, aio_write64);
++weak_alias(aio_return, aio_return64);
+--- a/src/aio/aio_suspend.c
++++ b/src/aio/aio_suspend.c
+@@ -73,3 +73,7 @@ int aio_suspend(const struct aiocb *cons
+ 		}
+ 	}
+ }
++
++#if !_REDIR_TIME64
++weak_alias(aio_suspend, aio_suspend64);
++#endif
+--- a/src/aio/lio_listio.c
++++ b/src/aio/lio_listio.c
+@@ -139,3 +139,5 @@ int lio_listio(int mode, struct aiocb *r
+ 
+ 	return 0;
+ }
++
++weak_alias(lio_listio, lio_listio64);
+--- a/src/dirent/alphasort.c
++++ b/src/dirent/alphasort.c
+@@ -5,3 +5,5 @@ int alphasort(const struct dirent **a, c
+ {
+ 	return strcoll((*a)->d_name, (*b)->d_name);
+ }
++
++weak_alias(alphasort, alphasort64);
+--- a/src/dirent/readdir.c
++++ b/src/dirent/readdir.c
+@@ -25,3 +25,5 @@ struct dirent *readdir(DIR *dir)
+ 	dir->tell = de->d_off;
+ 	return de;
+ }
++
++weak_alias(readdir, readdir64);
+--- a/src/dirent/readdir_r.c
++++ b/src/dirent/readdir_r.c
+@@ -25,3 +25,5 @@ int readdir_r(DIR *restrict dir, struct
+ 	*result = buf;
+ 	return 0;
+ }
++
++weak_alias(readdir_r, readdir64_r);
+--- a/src/dirent/scandir.c
++++ b/src/dirent/scandir.c
+@@ -43,3 +43,5 @@ int scandir(const char *path, struct dir
+ 	*res = names;
+ 	return cnt;
+ }
++
++weak_alias(scandir, scandir64);
+--- a/src/dirent/versionsort.c
++++ b/src/dirent/versionsort.c
+@@ -6,3 +6,6 @@ int versionsort(const struct dirent **a,
+ {
+ 	return strverscmp((*a)->d_name, (*b)->d_name);
+ }
++
++#undef versionsort64
++weak_alias(versionsort, versionsort64);
+--- a/src/fcntl/creat.c
++++ b/src/fcntl/creat.c
+@@ -4,3 +4,5 @@ int creat(const char *filename, mode_t m
+ {
+ 	return open(filename, O_CREAT|O_WRONLY|O_TRUNC, mode);
+ }
++
++weak_alias(creat, creat64);
+--- a/src/fcntl/open.c
++++ b/src/fcntl/open.c
+@@ -19,3 +19,5 @@ int open(const char *filename, int flags
+ 
+ 	return __syscall_ret(fd);
+ }
++
++weak_alias(open, open64);
+--- a/src/fcntl/openat.c
++++ b/src/fcntl/openat.c
+@@ -15,3 +15,5 @@ int openat(int fd, const char *filename,
+ 
+ 	return syscall_cp(SYS_openat, fd, filename, flags|O_LARGEFILE, mode);
+ }
++
++weak_alias(openat, openat64);
+--- a/src/fcntl/posix_fadvise.c
++++ b/src/fcntl/posix_fadvise.c
+@@ -14,3 +14,5 @@ int posix_fadvise(int fd, off_t base, of
+ 		__SYSCALL_LL_E(len), advice);
+ #endif
+ }
++
++weak_alias(posix_fadvise, posix_fadvise64);
+--- a/src/fcntl/posix_fallocate.c
++++ b/src/fcntl/posix_fallocate.c
+@@ -6,3 +6,5 @@ int posix_fallocate(int fd, off_t base,
+ 	return -__syscall(SYS_fallocate, fd, 0, __SYSCALL_LL_E(base),
+ 		__SYSCALL_LL_E(len));
+ }
++
++weak_alias(posix_fallocate, posix_fallocate64);
+--- a/src/legacy/ftw.c
++++ b/src/legacy/ftw.c
+@@ -7,3 +7,5 @@ int ftw(const char *path, int (*fn)(cons
+ 	 * actually undefined, but works on all real-world machines. */
+ 	return nftw(path, (int (*)())fn, fd_limit, FTW_PHYS);
+ }
++
++weak_alias(ftw, ftw64);
+--- a/src/linux/fallocate.c
++++ b/src/linux/fallocate.c
+@@ -7,3 +7,6 @@ int fallocate(int fd, int mode, off_t ba
+ 	return syscall(SYS_fallocate, fd, mode, __SYSCALL_LL_E(base),
+ 		__SYSCALL_LL_E(len));
+ }
++
++#undef fallocate64
++weak_alias(fallocate, fallocate64);
+--- a/src/linux/getdents.c
++++ b/src/linux/getdents.c
+@@ -8,3 +8,5 @@ int getdents(int fd, struct dirent *buf,
+ 	if (len>INT_MAX) len = INT_MAX;
+ 	return syscall(SYS_getdents, fd, buf, len);
+ }
++
++weak_alias(getdents, getdents64);
+--- a/src/linux/prlimit.c
++++ b/src/linux/prlimit.c
+@@ -21,3 +21,6 @@ int prlimit(pid_t pid, int resource, con
+ 	}
+ 	return r;
+ }
++
++#undef prlimit64
++weak_alias(prlimit, prlimit64);
+--- a/src/linux/sendfile.c
++++ b/src/linux/sendfile.c
+@@ -5,3 +5,5 @@ ssize_t sendfile(int out_fd, int in_fd,
+ {
+ 	return syscall(SYS_sendfile, out_fd, in_fd, ofs, count);
+ }
++
++weak_alias(sendfile, sendfile64);
+--- a/src/misc/getrlimit.c
++++ b/src/misc/getrlimit.c
+@@ -26,3 +26,5 @@ int getrlimit(int resource, struct rlimi
+ 	return ret;
+ #endif
+ }
++
++weak_alias(getrlimit, getrlimit64);
+--- a/src/misc/lockf.c
++++ b/src/misc/lockf.c
+@@ -28,3 +28,5 @@ int lockf(int fd, int op, off_t size)
+ 	errno = EINVAL;
+ 	return -1;
+ }
++
++weak_alias(lockf, lockf64);
+--- a/src/misc/setrlimit.c
++++ b/src/misc/setrlimit.c
+@@ -49,3 +49,5 @@ int setrlimit(int resource, const struct
+ 	return __syscall_ret(ret);
+ #endif
+ }
++
++weak_alias(setrlimit, setrlimit64);
+--- a/src/mman/mmap.c
++++ b/src/mman/mmap.c
+@@ -37,3 +37,5 @@ void *__mmap(void *start, size_t len, in
+ }
+ 
+ weak_alias(__mmap, mmap);
++
++weak_alias(mmap, mmap64);
+--- a/src/regex/glob.c
++++ b/src/regex/glob.c
+@@ -306,3 +306,6 @@ void globfree(glob_t *g)
+ 	g->gl_pathc = 0;
+ 	g->gl_pathv = NULL;
+ }
++
++weak_alias(glob, glob64);
++weak_alias(globfree, globfree64);
+--- a/src/stat/__xstat.c
++++ b/src/stat/__xstat.c
+@@ -22,6 +22,11 @@ int __xstat(int ver, const char *path, s
+ 	return stat(path, buf);
+ }
+ 
++weak_alias(__fxstat, __fxstat64);
++weak_alias(__fxstatat, __fxstatat64);
++weak_alias(__lxstat, __lxstat64);
++weak_alias(__xstat, __xstat64);
++
+ #endif
+ 
+ int __xmknod(int ver, const char *path, mode_t mode, dev_t *dev)
+--- a/src/stat/fstat.c
++++ b/src/stat/fstat.c
+@@ -11,3 +11,7 @@ int __fstat(int fd, struct stat *st)
+ }
+ 
+ weak_alias(__fstat, fstat);
++
++#if !_REDIR_TIME64
++weak_alias(fstat, fstat64);
++#endif
+--- a/src/stat/fstatat.c
++++ b/src/stat/fstatat.c
+@@ -151,3 +151,7 @@ int __fstatat(int fd, const char *restri
+ }
+ 
+ weak_alias(__fstatat, fstatat);
++
++#if !_REDIR_TIME64
++weak_alias(fstatat, fstatat64);
++#endif
+--- a/src/stat/lstat.c
++++ b/src/stat/lstat.c
+@@ -5,3 +5,7 @@ int lstat(const char *restrict path, str
+ {
+ 	return fstatat(AT_FDCWD, path, buf, AT_SYMLINK_NOFOLLOW);
+ }
++
++#if !_REDIR_TIME64
++weak_alias(lstat, lstat64);
++#endif
+--- a/src/stat/stat.c
++++ b/src/stat/stat.c
+@@ -5,3 +5,7 @@ int stat(const char *restrict path, stru
+ {
+ 	return fstatat(AT_FDCWD, path, buf, 0);
+ }
++
++#if !_REDIR_TIME64
++weak_alias(stat, stat64);
++#endif
+--- a/src/stat/statvfs.c
++++ b/src/stat/statvfs.c
+@@ -56,3 +56,8 @@ int fstatvfs(int fd, struct statvfs *buf
+ 	fixup(buf, &kbuf);
+ 	return 0;
+ }
++
++weak_alias(statvfs, statvfs64);
++weak_alias(statfs, statfs64);
++weak_alias(fstatvfs, fstatvfs64);
++weak_alias(fstatfs, fstatfs64);
+--- a/src/stdio/fgetpos.c
++++ b/src/stdio/fgetpos.c
+@@ -7,3 +7,5 @@ int fgetpos(FILE *restrict f, fpos_t *re
+ 	*(long long *)pos = off;
+ 	return 0;
+ }
++
++weak_alias(fgetpos, fgetpos64);
+--- a/src/stdio/fopen.c
++++ b/src/stdio/fopen.c
+@@ -29,3 +29,5 @@ FILE *fopen(const char *restrict filenam
+ 	__syscall(SYS_close, fd);
+ 	return 0;
+ }
++
++weak_alias(fopen, fopen64);
+--- a/src/stdio/freopen.c
++++ b/src/stdio/freopen.c
+@@ -51,3 +51,5 @@ fail:
+ 	fclose(f);
+ 	return NULL;
+ }
++
++weak_alias(freopen, freopen64);
+--- a/src/stdio/fseek.c
++++ b/src/stdio/fseek.c
+@@ -46,3 +46,5 @@ int fseek(FILE *f, long off, int whence)
+ }
+ 
+ weak_alias(__fseeko, fseeko);
++
++weak_alias(fseeko, fseeko64);
+--- a/src/stdio/fsetpos.c
++++ b/src/stdio/fsetpos.c
+@@ -4,3 +4,5 @@ int fsetpos(FILE *f, const fpos_t *pos)
+ {
+ 	return __fseeko(f, *(const long long *)pos, SEEK_SET);
+ }
++
++weak_alias(fsetpos, fsetpos64);
+--- a/src/stdio/ftell.c
++++ b/src/stdio/ftell.c
+@@ -37,3 +37,5 @@ long ftell(FILE *f)
+ }
+ 
+ weak_alias(__ftello, ftello);
++
++weak_alias(ftello, ftello64);
+--- a/src/stdio/tmpfile.c
++++ b/src/stdio/tmpfile.c
+@@ -27,3 +27,5 @@ FILE *tmpfile(void)
+ 	}
+ 	return 0;
+ }
++
++weak_alias(tmpfile, tmpfile64);
+--- a/src/temp/mkostemp.c
++++ b/src/temp/mkostemp.c
+@@ -5,3 +5,5 @@ int mkostemp(char *template, int flags)
+ {
+ 	return __mkostemps(template, 0, flags);
+ }
++
++weak_alias(mkostemp, mkostemp64);
+--- a/src/temp/mkostemps.c
++++ b/src/temp/mkostemps.c
+@@ -26,3 +26,4 @@ int __mkostemps(char *template, int len,
+ }
+ 
+ weak_alias(__mkostemps, mkostemps);
++weak_alias(__mkostemps, mkostemps64);
+--- a/src/temp/mkstemp.c
++++ b/src/temp/mkstemp.c
+@@ -4,3 +4,5 @@ int mkstemp(char *template)
+ {
+ 	return __mkostemps(template, 0, 0);
+ }
++
++weak_alias(mkstemp, mkstemp64);
+--- a/src/temp/mkstemps.c
++++ b/src/temp/mkstemps.c
+@@ -5,3 +5,5 @@ int mkstemps(char *template, int len)
+ {
+ 	return __mkostemps(template, len, 0);
+ }
++
++weak_alias(mkstemps, mkstemps64);
+--- a/src/unistd/ftruncate.c
++++ b/src/unistd/ftruncate.c
+@@ -5,3 +5,5 @@ int ftruncate(int fd, off_t length)
+ {
+ 	return syscall(SYS_ftruncate, fd, __SYSCALL_LL_O(length));
+ }
++
++weak_alias(ftruncate, ftruncate64);
+--- a/src/unistd/lseek.c
++++ b/src/unistd/lseek.c
+@@ -12,3 +12,4 @@ off_t __lseek(int fd, off_t offset, int
+ }
+ 
+ weak_alias(__lseek, lseek);
++weak_alias(__lseek, lseek64);
+--- a/src/unistd/mipsn32/lseek.c
++++ b/src/unistd/mipsn32/lseek.c
+@@ -17,3 +17,4 @@ off_t __lseek(int fd, off_t offset, int
+ }
+ 
+ weak_alias(__lseek, lseek);
++weak_alias(__lseek, lseek64);
+--- a/src/unistd/pread.c
++++ b/src/unistd/pread.c
+@@ -5,3 +5,5 @@ ssize_t pread(int fd, void *buf, size_t
+ {
+ 	return syscall_cp(SYS_pread, fd, buf, size, __SYSCALL_LL_PRW(ofs));
+ }
++
++weak_alias(pread, pread64);
+--- a/src/unistd/preadv.c
++++ b/src/unistd/preadv.c
+@@ -8,3 +8,5 @@ ssize_t preadv(int fd, const struct iove
+ 	return syscall_cp(SYS_preadv, fd, iov, count,
+ 		(long)(ofs), (long)(ofs>>32));
+ }
++
++weak_alias(preadv, preadv64);
+--- a/src/unistd/pwrite.c
++++ b/src/unistd/pwrite.c
+@@ -5,3 +5,5 @@ ssize_t pwrite(int fd, const void *buf,
+ {
+ 	return syscall_cp(SYS_pwrite, fd, buf, size, __SYSCALL_LL_PRW(ofs));
+ }
++
++weak_alias(pwrite, pwrite64);
+--- a/src/unistd/pwritev.c
++++ b/src/unistd/pwritev.c
+@@ -8,3 +8,5 @@ ssize_t pwritev(int fd, const struct iov
+ 	return syscall_cp(SYS_pwritev, fd, iov, count,
+ 		(long)(ofs), (long)(ofs>>32));
+ }
++
++weak_alias(pwritev, pwritev64);
+--- a/src/unistd/truncate.c
++++ b/src/unistd/truncate.c
+@@ -5,3 +5,5 @@ int truncate(const char *path, off_t len
+ {
+ 	return syscall(SYS_truncate, path, __SYSCALL_LL_O(length));
+ }
++
++weak_alias(truncate, truncate64);
+--- a/src/unistd/x32/lseek.c
++++ b/src/unistd/x32/lseek.c
+@@ -12,3 +12,4 @@ off_t __lseek(int fd, off_t offset, int
+ }
+ 
+ weak_alias(__lseek, lseek);
++weak_alias(__lseek, lseek64);
