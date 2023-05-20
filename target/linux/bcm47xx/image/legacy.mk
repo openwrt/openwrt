@@ -315,6 +315,7 @@ define Device/usrobotics_usr5461
   DEVICE_PACKAGES := kmod-b43 $(USB1_PACKAGES)
   IMAGES := bin
   IMAGE/bin := append-rootfs | trx-with-loader | usrobotics-bin
+  DEFAULT := n
 endef
 TARGET_DEVICES += usrobotics_usr5461
 
