@@ -25,7 +25,7 @@ HOST_CFLAGS += -Wall -Werror -pedantic -std=c99
 define Host/Compile
 	$(MAKE) -C \
 		$(HOST_BUILD_DIR)/tools/fiptool \
-		PLAT_FIPTOOL_HELPER_MK="$(HOST_BUILD_DIR)/tools/nxp/plat_fiptool/plat_fiptool.mk"
+		PLAT_FIPTOOL_HELPER_MK="$(HOST_BUILD_DIR)/tools/nxp/plat_fiptool/plat_fiptool.mk" \
 		CFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)" \
 		HOSTCCFLAGS="$(HOST_CFLAGS)"

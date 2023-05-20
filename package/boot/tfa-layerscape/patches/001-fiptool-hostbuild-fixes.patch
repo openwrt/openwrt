@@ -88,3 +88,19 @@
  	@${ECHO_BLANK_LINE}
  	@echo "Built $@ successfully"
  	@${ECHO_BLANK_LINE}
+--- a/tools/nxp/plat_fiptool/plat_fiptool.mk	2023-05-20 22:28:28.079945619 +0200
++++ b/tools/nxp/plat_fiptool/plat_fiptool.mk	2023-05-20 22:26:59.443307771 +0200
+@@ -22,11 +22,11 @@ INCLUDE_PATHS += -I${PLAT_DEF_UUID_OID_C
+ $(shell rm ${PLAT_DEF_UUID_CONFIG_FILE_PATH}/${PLAT_DEF_UUID_CONFIG_FILE_NAME}.o)
+ 
+ ifeq (${PLAT_DEF_OID},yes)
+-HOSTCCFLAGS += -DPLAT_DEF_OID
++override HOSTCCFLAGS += -DPLAT_DEF_OID
+ endif
+ 
+ ifeq (${PLAT_DEF_UUID},yes)
+-HOSTCCFLAGS += -DPLAT_DEF_FIP_UUID
++override HOSTCCFLAGS += -DPLAT_DEF_FIP_UUID
+ PLAT_OBJECTS += ${PLAT_DEF_UUID_CONFIG_FILE_PATH}/${PLAT_DEF_UUID_CONFIG_FILE_NAME}.o
+ endif
+ 
