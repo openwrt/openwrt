@@ -94,7 +94,7 @@ HOST_CONFIGURE_ARGS += \
 
 ifeq ($(HOST_OS),FreeBSD)
 	CONFIGURE_ARGS +=
-		--with-terminfo=/usr/share/terminfo.db 
+		--with-terminfo=/usr/share/terminfo.db
 endif
 
 MAKE_FLAGS += \
@@ -128,6 +128,8 @@ ifneq ($(HOST_OS),FreeBSD)
 		l/linux \
 		r/rxvt \
 		r/rxvt-unicode \
+		p/putty \
+		p/putty-256color \
 		s/screen \
 		s/screen-256color \
 		t/tmux \
