@@ -124,6 +124,7 @@ define Device/asus_rt-n12p
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N11P/RT-N12+/RT-N12Eb1
   SUPPORTED_DEVICES += rt-n12p
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_rt-n12p
 
@@ -191,6 +192,7 @@ define Device/comfast_cf-wr800n
   DEVICE_VENDOR := Comfast
   DEVICE_MODEL := CF-WR800N
   SUPPORTED_DEVICES += cf-wr800n
+  DEFAULT := n
 endef
 TARGET_DEVICES += comfast_cf-wr800n
 
@@ -241,6 +243,7 @@ define Device/dlink_dwr-116-a1
   DLINK_ROM_ID := DLK6E3803001
   DLINK_FAMILY_MEMBER := 0x6E38
   DLINK_FIRMWARE_SIZE := 0x7E0000
+  DEFAULT := n
 endef
 TARGET_DEVICES += dlink_dwr-116-a1
 
@@ -853,6 +856,7 @@ define Device/netgear_wn3000rp-v3
   DEVICE_MODEL := WN3000RP
   DEVICE_VARIANT := v3
   SUPPORTED_DEVICES += wn3000rpv3
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wn3000rp-v3
 
@@ -1438,6 +1442,7 @@ define Device/zbtlink_zbt-wr8305rt
   DEVICE_MODEL := ZBT-WR8305RT
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
   SUPPORTED_DEVICES += zbt-wr8305rt
+  DEFAULT := n
 endef
 TARGET_DEVICES += zbtlink_zbt-wr8305rt
 

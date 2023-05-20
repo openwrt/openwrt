@@ -54,6 +54,7 @@ define Device/belkin_f5d8235-v1
   DEVICE_PACKAGES := kmod-switch-rtl8366s kmod-usb-ohci kmod-usb-ohci-pci \
 	kmod-usb2 kmod-usb2-pci kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += f5d8235-v1
+  DEFAULT := n
 endef
 TARGET_DEVICES += belkin_f5d8235-v1
 

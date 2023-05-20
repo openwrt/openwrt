@@ -76,5 +76,6 @@ define Device/pqi_air-pen
   DEVICE_PACKAGES := kmod-usb-chipidea2
   IMAGE_SIZE := 7680k
   SUPPORTED_DEVICES += pqi-air-pen
+  DEFAULT := n
 endef
 TARGET_DEVICES += pqi_air-pen

@@ -72,6 +72,7 @@ define Device/loewe_wmdr-143n
   DEVICE_VENDOR := Loewe
   DEVICE_MODEL := WMDR-143N
   SUPPORTED_DEVICES += wmdr-143n
+  DEFAULT := n
 endef
 TARGET_DEVICES += loewe_wmdr-143n
 

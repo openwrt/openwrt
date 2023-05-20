@@ -63,6 +63,7 @@ define Device/asus_wl-500w
   DEVICE_PACKAGES := kmod-b43 kmod-usb-uhci kmod-usb2-pci
   $(Device/asus)
   PRODUCTID := "WL500W      "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-500w
 
@@ -119,6 +120,7 @@ define Device/huawei_e970
   KERNEL_NAME = vmlinux.gz
   IMAGES := bin
   IMAGE/bin := append-rootfs | trx-without-loader | huawei-bin
+  DEFAULT := n
 endef
 TARGET_DEVICES += huawei_e970
 
@@ -220,6 +222,7 @@ define Device/linksys_wrt160n-v1
   $(Device/linksys)
   DEVICE_ID := N150
   VERSION := 1.50.1
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt160n-v1
 
@@ -231,6 +234,7 @@ define Device/linksys_wrt300n-v1
   IMAGES := bin trx
   DEVICE_ID := EWCB
   VERSION := 1.03.6
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt300n-v1
 
