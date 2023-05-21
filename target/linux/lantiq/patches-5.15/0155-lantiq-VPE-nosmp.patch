@@ -1,3 +1,13 @@
+From 07ce9e9bc4dcd5ac4728e587901112eef95bbe7b Mon Sep 17 00:00:00 2001
+From: Stefan Koch <stefan.koch10@gmail.com>
+Date: Mon, 13 Mar 2017 23:42:00 +0100
+Subject: [PATCH] lantiq: vpe nosmp
+
+Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
+---
+ arch/mips/kernel/vpe-mt.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
 --- a/arch/mips/kernel/vpe-mt.c
 +++ b/arch/mips/kernel/vpe-mt.c
 @@ -132,7 +132,10 @@ int vpe_run(struct vpe *v)

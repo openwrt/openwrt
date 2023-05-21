@@ -1,3 +1,13 @@
+From 5e93c85ac3e5626d1aa7e7f9c0a008b2a4224f04 Mon Sep 17 00:00:00 2001
+From: Matti Laakso <malaakso@elisanet.fi>
+Date: Sat, 14 Feb 2015 20:48:00 +0000
+Subject: [PATCH] MTD: cfi_cmdset_0001: disable buffered writes
+
+Signed-off-by: Matti Laakso <malaakso@elisanet.fi>
+---
+ drivers/mtd/chips/cfi_cmdset_0001.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
 --- a/drivers/mtd/chips/cfi_cmdset_0001.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0001.c
 @@ -39,7 +39,7 @@

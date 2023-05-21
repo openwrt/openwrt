@@ -1,3 +1,13 @@
+From ebaae1cd68cd79c7eee67c9c5c0fa45809e84525 Mon Sep 17 00:00:00 2001
+From: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
+Date: Fri, 14 Nov 2014 17:06:00 +0000
+Subject: [PATCH] owrt: lantiq: multiple flash
+
+Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
+---
+ drivers/mtd/maps/lantiq-flash.c | 168 +++++++++++++++++++++-----------
+ 1 file changed, 109 insertions(+), 59 deletions(-)
+
 --- a/drivers/mtd/maps/lantiq-flash.c
 +++ b/drivers/mtd/maps/lantiq-flash.c
 @@ -17,6 +17,7 @@

@@ -1,3 +1,26 @@
+From 1d1885f4a7abd7272f47b835b03d8662fb981d19 Mon Sep 17 00:00:00 2001
+From: Eddi De Pieri <eddi@depieri.net>
+Date: Tue, 14 Oct 2014 11:04:00 +0000
+Subject: [PATCH] MIPS: lantiq: ifxmips_pcie: use of
+
+Signed-off-by: Eddi De Pieri <eddi@depieri.net>
+---
+ arch/mips/pci/Makefile           |   2 +-
+ arch/mips/pci/ifxmips_pcie.c     | 151 +++++++++++++++++++++++++++----
+ arch/mips/pci/ifxmips_pcie_vr9.h | 105 ---------------------
+ 3 files changed, 133 insertions(+), 125 deletions(-)
+
+--- a/arch/mips/pci/Makefile
++++ b/arch/mips/pci/Makefile
+@@ -43,7 +43,7 @@ obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o
+ obj-$(CONFIG_SOC_MT7620)	+= pci-mt7620.o
+ obj-$(CONFIG_SOC_RT288X)	+= pci-rt2880.o
+ obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
+-obj-$(CONFIG_PCIE_LANTIQ)	+= ifxmips_pcie_phy.o ifxmips_pcie.o fixup-lantiq-pcie.o
++obj-$(CONFIG_PCIE_LANTIQ)	+= ifxmips_pcie.o fixup-lantiq-pcie.o
+ obj-$(CONFIG_PCIE_LANTIQ_MSI)	+= pcie-lantiq-msi.o
+ obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
+ obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
 --- a/arch/mips/pci/ifxmips_pcie.c
 +++ b/arch/mips/pci/ifxmips_pcie.c
 @@ -16,8 +16,15 @@
@@ -374,14 +397,3 @@
  static inline void pcie_core_pmu_setup(int pcie_port)
  {
  	struct clk *clk;
---- a/arch/mips/pci/Makefile
-+++ b/arch/mips/pci/Makefile
-@@ -43,7 +43,7 @@ obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o
- obj-$(CONFIG_SOC_MT7620)	+= pci-mt7620.o
- obj-$(CONFIG_SOC_RT288X)	+= pci-rt2880.o
- obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
--obj-$(CONFIG_PCIE_LANTIQ)	+= ifxmips_pcie_phy.o ifxmips_pcie.o fixup-lantiq-pcie.o
-+obj-$(CONFIG_PCIE_LANTIQ)	+= ifxmips_pcie.o fixup-lantiq-pcie.o
- obj-$(CONFIG_PCIE_LANTIQ_MSI)	+= pcie-lantiq-msi.o
- obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
- obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o

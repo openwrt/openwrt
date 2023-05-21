@@ -1,3 +1,13 @@
+From 870ed9cae083ff8a60a739ef7e74c5a1800533be Mon Sep 17 00:00:00 2001
+From: Johann Neuhauser <johann@it-neuhauser.de>
+Date: Thu, 17 May 2018 19:12:35 +0200
+Subject: [PATCH] net: lantiq_etop: of mdio
+
+Signed-off-by: Johann Neuhauser <johann@it-neuhauser.de>
+---
+ drivers/net/ethernet/lantiq_etop.c |  555 +++++++++++++++++++++++++-----------
+ 1 file changed, 389 insertions(+), 166 deletions(-)
+
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
 @@ -30,6 +30,7 @@

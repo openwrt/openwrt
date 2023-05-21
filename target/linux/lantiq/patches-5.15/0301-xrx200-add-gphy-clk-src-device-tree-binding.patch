@@ -1,3 +1,13 @@
+From 5502ef9d40ab20b2ac683660d1565a7c4968bcc8 Mon Sep 17 00:00:00 2001
+From: Mathias Kresin <openwrt@kresin.me>
+Date: Mon, 2 May 2016 18:50:00 +0000
+Subject: [PATCH] xrx200: add gphy clk src device tree binding
+
+Signed-off-by: Mathias Kresin <openwrt@kresin.me>
+---
+ arch/mips/lantiq/xway/sysctrl.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
 @@ -440,6 +440,20 @@ static void clkdev_add_clkout(void)

@@ -1,3 +1,13 @@
+From 3c92a781de062064e36b867c0ab22f9aba48f3d3 Mon Sep 17 00:00:00 2001
+From: Eddi De Pieri <eddi@depieri.net>
+Date: Tue, 8 Nov 2016 17:38:00 +0100
+Subject: [PATCH] lantiq: pci: bar11mask fix
+
+Signed-off-by: Eddi De Pieri <eddi@depieri.net>
+---
+ arch/mips/pci/pci-lantiq.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
 --- a/arch/mips/pci/pci-lantiq.c
 +++ b/arch/mips/pci/pci-lantiq.c
 @@ -59,6 +59,8 @@
