@@ -897,10 +897,12 @@ define KernelPackage/crypto-sha1/mpc85xx
   AUTOLOAD+=$(call AutoLoad,09,sha1-ppc-spe)
 endef
 
+ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-sha1/x86_64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/sha1-ssse3.ko
   AUTOLOAD+=$(call AutoLoad,09,sha1-ssse3)
 endef
+endif
 
 ifdef KernelPackage/crypto-sha1/$(ARCH)
   KernelPackage/crypto-sha1/$(CRYPTO_TARGET)=\
@@ -935,10 +937,12 @@ define KernelPackage/crypto-sha256/mpc85xx
   AUTOLOAD+=$(call AutoLoad,09,sha256-ppc-spe)
 endef
 
+ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-sha256/x86_64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/sha256-ssse3.ko
   AUTOLOAD+=$(call AutoLoad,09,sha256-ssse3)
 endef
+endif
 
 ifdef KernelPackage/crypto-sha256/$(ARCH)
   KernelPackage/crypto-sha256/$(CRYPTO_TARGET)=\
@@ -977,10 +981,12 @@ endef
 
 KernelPackage/crypto-sha512/tegra=$(KernelPackage/crypto-sha512/arm)
 
+ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-sha512/x86_64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/sha512-ssse3.ko
   AUTOLOAD+=$(call AutoLoad,09,sha512-ssse3)
 endef
+endif
 
 ifdef KernelPackage/crypto-sha512/$(ARCH)
   KernelPackage/crypto-sha512/$(CRYPTO_TARGET)=\
