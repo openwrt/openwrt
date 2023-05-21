@@ -74,6 +74,7 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
+	h3c,magic-nx30-pro|\
 	qihoo,360t7|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\

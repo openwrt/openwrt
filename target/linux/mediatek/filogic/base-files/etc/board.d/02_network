@@ -23,6 +23,9 @@ mediatek_setup_interfaces()
 	glinet,gl-mt3000)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
+	h3c,magic-nx30-pro)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
+		;;
 	mediatek,mt7986a-rfb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan6" "eth1 wan"
 		;;
@@ -71,6 +74,11 @@ mediatek_setup_macs()
 		;;
 	bananapi,bpi-r3)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		;;
+	h3c,magic-nx30-pro)
+		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		label_mac=$wan_mac
 		;;
 	mercusys,mr90x-v1)
 		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
