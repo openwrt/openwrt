@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020 Tony Ambardar <itugrok@yahoo.com>
+# Copyright (C) 2020-2023 Tony Ambardar <itugrok@yahoo.com>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bpftools
+PKG_VERSION:=7.2.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/libbpf/bpftool
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=7.1.0
-PKG_SOURCE_VERSION:=b01941c8f7890489f09713348a7d89567538504b
-PKG_MIRROR_HASH:=641fb337342e25ae784a3efe72c71d8c88600a326300d8d5834e26be21547015
-PKG_ABI_VERSION:=$(call abi_version_str,$(PKG_SOURCE_DATE))
+PKG_SOURCE_VERSION:=19ff0564980a7429e730f6987a0b0bf418b3c676
+PKG_MIRROR_HASH:=f9b9871f64986dd2e5dab7060bb919398256ba93964da49c62efaf0e6bc9bbc4
 
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
 
@@ -63,27 +62,8 @@ define Package/bpftool-full/description
   eBPF programs and jited code.
 endef
 
-define Package/libbpf
-  SECTION:=libs
-  CATEGORY:=Libraries
-  TITLE:=libbpf - eBPF helper library
-  VARIANT:=lib
-  LICENSE:=LGPL-2.1 OR BSD-2-Clause
-  ABI_VERSION:=$(PKG_ABI_VERSION)
-  URL:=http://www.kernel.org
-  DEPENDS:=+libelf
-endef
-
-define Package/libbpf/description
-  libbpf is a library for loading eBPF programs and reading and manipulating eBPF objects from user-space.
-endef
-
-
-# LTO not compatible with DSO using PIC
-ifneq ($(BUILD_VARIANT),lib)
-  TARGET_CFLAGS += -ffunction-sections -fdata-sections -flto
-  TARGET_LDFLAGS += -Wl,--gc-sections -flto
-endif
+TARGET_CFLAGS += -ffunction-sections -fdata-sections -flto
+TARGET_LDFLAGS += -Wl,--gc-sections -flto
 
 ifeq ($(BUILD_VARIANT),full)
   full:=1
@@ -99,7 +79,6 @@ MAKE_FLAGS += \
 	OUTPUT="$(PKG_BUILD_DIR)/" \
 	prefix="/usr" \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
-	LIBSUBDIR=lib \
 	check_feat=0 \
 	feature-clang-bpf-co-re=0 \
 	feature-libbfd=$(full) \
@@ -108,30 +87,7 @@ MAKE_FLAGS += \
 	feature-disassembler-four-args=1 \
 	feature-disassembler-init-styled=1
 
-ifeq ($(BUILD_VARIANT),lib)
-  MAKE_PATH = libbpf/src
-else
-  MAKE_PATH = src
-endif
-
-define Build/InstallDev/libbpf
-	$(INSTALL_DIR) $(1)/usr/include/bpf
-	$(CP) $(PKG_INSTALL_DIR)/usr/include/bpf/*.h $(1)/usr/include/bpf/
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbpf.{a,so*} \
-		$(1)/usr/lib/
-	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libbpf.pc \
-		$(1)/usr/lib/pkgconfig/
-	$(SED) 's,/usr/include,$$$${prefix}/include,g' \
-		$(1)/usr/lib/pkgconfig/libbpf.pc
-	$(SED) 's,/usr/lib,$$$${exec_prefix}/lib,g' \
-		$(1)/usr/lib/pkgconfig/libbpf.pc
-endef
-
-ifeq ($(BUILD_VARIANT),lib)
-  Build/InstallDev=$(Build/InstallDev/libbpf)
-endif
+MAKE_PATH = src
 
 define Package/bpftool-$(BUILD_VARIANT)/install
 	$(INSTALL_DIR) $(1)/usr/libexec
@@ -139,11 +95,5 @@ define Package/bpftool-$(BUILD_VARIANT)/install
 		$(1)/usr/libexec/bpftool-$(BUILD_VARIANT)
 endef
 
-define Package/libbpf/install
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbpf.so.* $(1)/usr/lib/
-endef
-
-$(eval $(call BuildPackage,libbpf))
 $(eval $(call BuildPackage,bpftool-full))
 $(eval $(call BuildPackage,bpftool-minimal))
