@@ -25,7 +25,7 @@ Subject: [PATCH] net/bridge: add bridge offload
 
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
-@@ -59,6 +59,7 @@ struct br_ip_list {
+@@ -60,6 +60,7 @@ struct br_ip_list {
  #define BR_TX_FWD_OFFLOAD	BIT(20)
  #define BR_PORT_LOCKED		BIT(21)
  #define BR_BPDU_FILTER		BIT(22)
@@ -54,7 +54,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  
  /*
   * Handle changes in state of network devices enslaved to a bridge.
-@@ -381,6 +382,10 @@ static int __init br_init(void)
+@@ -389,6 +390,10 @@ static int __init br_init(void)
  	if (err)
  		goto err_out;
  
@@ -65,7 +65,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  	err = register_pernet_subsys(&br_net_ops);
  	if (err)
  		goto err_out1;
-@@ -430,6 +435,8 @@ err_out3:
+@@ -438,6 +443,8 @@ err_out3:
  err_out2:
  	unregister_pernet_subsys(&br_net_ops);
  err_out1:
@@ -74,7 +74,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  	br_fdb_fini();
  err_out:
  	stp_proto_unregister(&br_stp_proto);
-@@ -452,6 +459,7 @@ static void __exit br_deinit(void)
+@@ -460,6 +467,7 @@ static void __exit br_deinit(void)
  #if IS_ENABLED(CONFIG_ATM_LANE)
  	br_fdb_test_addr_hook = NULL;
  #endif
@@ -84,7 +84,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  
 --- a/net/bridge/br_device.c
 +++ b/net/bridge/br_device.c
-@@ -524,6 +524,8 @@ void br_dev_setup(struct net_device *dev
+@@ -525,6 +525,8 @@ void br_dev_setup(struct net_device *dev
  	br->bridge_hello_time = br->hello_time = 2 * HZ;
  	br->bridge_forward_delay = br->forward_delay = 15 * HZ;
  	br->bridge_ageing_time = br->ageing_time = BR_DEFAULT_AGEING_TIME;
@@ -103,7 +103,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  
  static const struct rhashtable_params br_fdb_rht_params = {
  	.head_offset = offsetof(struct net_bridge_fdb_entry, rhnode),
-@@ -185,6 +185,8 @@ static void fdb_notify(struct net_bridge
+@@ -185,6 +186,8 @@ static void fdb_notify(struct net_bridge
  	struct sk_buff *skb;
  	int err = -ENOBUFS;
  
@@ -112,13 +112,13 @@ Subject: [PATCH] net/bridge: add bridge offload
  	if (swdev_notify)
  		br_switchdev_fdb_notify(br, fdb, type);
  
-@@ -518,6 +519,8 @@ static struct net_bridge_fdb_entry *fdb_
+@@ -393,6 +396,8 @@ static struct net_bridge_fdb_entry *fdb_
  	fdb->key.vlan_id = vid;
  	fdb->flags = flags;
  	fdb->updated = fdb->used = jiffies;
 +	INIT_HLIST_HEAD(&fdb->offload_in);
 +	INIT_HLIST_HEAD(&fdb->offload_out);
-	err = rhashtable_lookup_insert_fast(&br->fdb_hash_tbl, &fdb->rhnode,
+ 	err = rhashtable_lookup_insert_fast(&br->fdb_hash_tbl, &fdb->rhnode,
  					    br_fdb_rht_params);
  	if (err) {
 --- a/net/bridge/br_forward.c
@@ -150,7 +150,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  
  /*
   * Determine initial path cost based on speed.
-@@ -428,7 +429,7 @@ static struct net_bridge_port *new_nbp(s
+@@ -437,7 +438,7 @@ static struct net_bridge_port *new_nbp(s
  	p->path_cost = port_cost(dev);
  	p->priority = 0x8000 >> BR_PORT_BITS;
  	p->port_no = index;
@@ -159,7 +159,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  	br_init_port(p);
  	br_set_state(p, BR_STATE_DISABLED);
  	br_stp_port_timer_init(p);
-@@ -771,6 +772,9 @@ void br_port_flags_change(struct net_bri
+@@ -761,6 +762,9 @@ void br_port_flags_change(struct net_bri
  
  	if (mask & BR_NEIGH_SUPPRESS)
  		br_recalculate_neigh_suppress_enabled(br);
@@ -179,7 +179,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  
  static int
  br_netif_receive_skb(struct net *net, struct sock *sk, struct sk_buff *skb)
-@@ -171,6 +172,7 @@ int br_handle_frame_finish(struct net *n
+@@ -189,6 +190,7 @@ int br_handle_frame_finish(struct net *n
  			dst->used = now;
  		br_forward(dst->dst, skb, local_rcv, false);
  	} else {
@@ -187,7 +187,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  		if (!mcast_hit)
  			br_flood(br, skb, pkt_type, local_rcv, false);
  		else
-@@ -304,6 +306,9 @@ static rx_handler_result_t br_handle_fra
+@@ -322,6 +324,9 @@ static rx_handler_result_t br_handle_fra
  	memset(skb->cb, 0, sizeof(struct br_input_skb_cb));
  
  	p = br_port_get_rcu(skb->dev);
@@ -640,7 +640,7 @@ Subject: [PATCH] net/bridge: add bridge offload
 +}
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -268,7 +268,13 @@ struct net_bridge_fdb_entry {
+@@ -271,7 +271,13 @@ struct net_bridge_fdb_entry {
  	unsigned long			updated ____cacheline_aligned_in_smp;
  	unsigned long			used;
  
@@ -654,8 +654,8 @@ Subject: [PATCH] net/bridge: add bridge offload
 +	};
  };
  
- #define MDB_PG_FLAGS_PERMANENT	BIT(0)
-@@ -343,6 +349,12 @@ struct net_bridge_mdb_entry {
+ struct net_bridge_fdb_flush_desc {
+@@ -353,6 +359,12 @@ struct net_bridge_mdb_entry {
  	struct rcu_head			rcu;
  };
  
@@ -668,7 +668,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  struct net_bridge_port {
  	struct net_bridge		*br;
  	struct net_device		*dev;
-@@ -403,6 +415,7 @@ struct net_bridge_port {
+@@ -414,6 +426,7 @@ struct net_bridge_port {
  	u16				backup_redirected_cnt;
  
  	struct bridge_stp_xstats	stp_xstats;
@@ -676,7 +676,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  };
  
  #define kobj_to_brport(obj)	container_of(obj, struct net_bridge_port, kobj)
-@@ -519,6 +532,9 @@ struct net_bridge {
+@@ -531,6 +544,9 @@ struct net_bridge {
  	struct kobject			*ifobj;
  	u32				auto_cnt;
  
@@ -686,7 +686,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  #ifdef CONFIG_NET_SWITCHDEV
  	/* Counter used to make sure that hardware domains get unique
  	 * identifiers in case a bridge spans multiple switchdev instances.
-@@ -553,6 +569,10 @@ struct br_input_skb_cb {
+@@ -565,6 +581,10 @@ struct br_input_skb_cb {
  #ifdef CONFIG_NETFILTER_FAMILY_BRIDGE
  	u8 br_netfilter_broute:1;
  #endif
@@ -733,7 +733,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  
  /* since time values in bpdu are in jiffies and then scaled (1/256)
   * before sending, make sure that is at least one STP tick.
-@@ -52,6 +53,8 @@ void br_set_state(struct net_bridge_port
+@@ -58,6 +59,8 @@ void br_set_state(struct net_bridge_port
  				(unsigned int) p->port_no, p->dev->name,
  				br_port_state_names[p->state]);
  
@@ -752,7 +752,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  
  /* IMPORTANT: new bridge options must be added with netlink support only
   *            please do not add new sysfs entries
-@@ -930,6 +931,38 @@ static ssize_t vlan_stats_per_port_store
+@@ -933,6 +934,38 @@ static ssize_t vlan_stats_per_port_store
  static DEVICE_ATTR_RW(vlan_stats_per_port);
  #endif
  
@@ -791,7 +791,7 @@ Subject: [PATCH] net/bridge: add bridge offload
  static struct attribute *bridge_attrs[] = {
  	&dev_attr_forward_delay.attr,
  	&dev_attr_hello_time.attr,
-@@ -984,6 +1017,8 @@ static struct attribute *bridge_attrs[]
+@@ -987,6 +1020,8 @@ static struct attribute *bridge_attrs[]
  	&dev_attr_vlan_stats_enabled.attr,
  	&dev_attr_vlan_stats_per_port.attr,
  #endif

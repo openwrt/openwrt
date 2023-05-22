@@ -23,7 +23,7 @@ Subject: [PATCH] mtd/nand: add MediaTek NAND bad block managment table
  	depends on HAS_IOMEM
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -2,6 +2,7 @@
+@@ -3,6 +3,7 @@
  nandcore-objs := core.o bbt.o
  obj-$(CONFIG_MTD_NAND_CORE) += nandcore.o
  obj-$(CONFIG_MTD_NAND_ECC_MEDIATEK) += ecc-mtk.o

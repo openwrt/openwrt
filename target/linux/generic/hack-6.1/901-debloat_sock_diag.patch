@@ -28,7 +28,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	help
 --- a/net/core/Makefile
 +++ b/net/core/Makefile
-@@ -10,11 +10,12 @@ obj-$(CONFIG_SYSCTL) += sysctl_net_core.
+@@ -11,11 +11,12 @@ obj-$(CONFIG_SYSCTL) += sysctl_net_core.
  
  obj-y		     += dev.o dev_addr_lists.o dst.o netevent.o \
  			neighbour.o rtnetlink.o utils.o link_watch.o filter.o \
@@ -52,15 +52,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  #include <linux/uaccess.h>
  
-@@ -143,6 +144,7 @@
+@@ -145,6 +146,7 @@
  
  static DEFINE_MUTEX(proto_list_mutex);
  static LIST_HEAD(proto_list);
 +DEFINE_COOKIE(sock_cookie);
  
- static void sock_inuse_add(struct net *net, int val);
- 
-@@ -545,6 +547,18 @@ discard_and_relse:
+ static void sock_def_write_space_wfree(struct sock *sk);
+ static void sock_def_write_space(struct sock *sk);
+@@ -582,6 +584,18 @@ discard_and_relse:
  }
  EXPORT_SYMBOL(__sk_receive_skb);
  
@@ -79,7 +79,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  INDIRECT_CALLABLE_DECLARE(struct dst_entry *ip6_dst_check(struct dst_entry *,
  							  u32));
  INDIRECT_CALLABLE_DECLARE(struct dst_entry *ipv4_dst_check(struct dst_entry *,
-@@ -1983,9 +1997,11 @@ static void __sk_free(struct sock *sk)
+@@ -2174,9 +2188,11 @@ static void __sk_free(struct sock *sk)
  	if (likely(sk->sk_net_refcnt))
  		sock_inuse_add(sock_net(sk), -1);
  
@@ -93,7 +93,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock_diag.c
 +++ b/net/core/sock_diag.c
-@@ -11,7 +11,6 @@
+@@ -12,7 +12,6 @@
  #include <linux/tcp.h>
  #include <linux/workqueue.h>
  #include <linux/nospec.h>
@@ -101,7 +101,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/inet_diag.h>
  #include <linux/sock_diag.h>
  
-@@ -20,20 +19,6 @@ static int (*inet_rcv_compat)(struct sk_
+@@ -21,20 +20,6 @@ static int (*inet_rcv_compat)(struct sk_
  static DEFINE_MUTEX(sock_diag_table_mutex);
  static struct workqueue_struct *broadcast_wq;
  
@@ -124,7 +124,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u64 res;
 --- a/net/ipv4/Kconfig
 +++ b/net/ipv4/Kconfig
-@@ -424,6 +424,7 @@ config INET_TUNNEL
+@@ -423,6 +423,7 @@ config INET_TUNNEL
  
  config INET_DIAG
  	tristate "INET: socket monitoring interface"

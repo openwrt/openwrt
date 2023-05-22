@@ -16,8 +16,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
-@@ -34,7 +34,7 @@ config CRYPTO_FIPS
- 	  this is.
+@@ -55,7 +55,7 @@ config CRYPTO_FIPS_VERSION
+ 	  By default the KERNELRELEASE value is used.
  
  config CRYPTO_ALGAPI
 -	tristate
@@ -25,7 +25,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_ALGAPI2
  	help
  	  This option provides the API for cryptographic algorithms.
-@@ -43,7 +43,7 @@ config CRYPTO_ALGAPI2
+@@ -64,7 +64,7 @@ config CRYPTO_ALGAPI2
  	tristate
  
  config CRYPTO_AEAD
@@ -34,7 +34,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_AEAD2
  	select CRYPTO_ALGAPI
  
-@@ -54,7 +54,7 @@ config CRYPTO_AEAD2
+@@ -75,7 +75,7 @@ config CRYPTO_AEAD2
  	select CRYPTO_RNG2
  
  config CRYPTO_SKCIPHER
@@ -43,7 +43,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_SKCIPHER2
  	select CRYPTO_ALGAPI
  
-@@ -64,7 +64,7 @@ config CRYPTO_SKCIPHER2
+@@ -85,7 +85,7 @@ config CRYPTO_SKCIPHER2
  	select CRYPTO_RNG2
  
  config CRYPTO_HASH
@@ -52,7 +52,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_HASH2
  	select CRYPTO_ALGAPI
  
-@@ -73,7 +73,7 @@ config CRYPTO_HASH2
+@@ -94,7 +94,7 @@ config CRYPTO_HASH2
  	select CRYPTO_ALGAPI2
  
  config CRYPTO_RNG
@@ -92,7 +92,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -443,16 +443,16 @@ config BCH_CONST_T
+@@ -457,16 +457,16 @@ config BCH_CONST_T
  # Textsearch support is select'ed if needed
  #
  config TEXTSEARCH
@@ -115,8 +115,8 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -11,7 +11,7 @@ config NETFILTER_INGRESS
- 	  infrastructure.
+@@ -22,7 +22,7 @@ config NETFILTER_SKIP_EGRESS
+ 	def_bool NETFILTER_EGRESS && (NET_CLS_ACT || IFB)
  
  config NETFILTER_NETLINK
 -	tristate
@@ -147,7 +147,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  config CFG80211
  	tristate "cfg80211 - wireless configuration API"
-@@ -204,7 +204,7 @@ config CFG80211_WEXT_EXPORT
+@@ -208,7 +208,7 @@ config CFG80211_WEXT_EXPORT
  endif # CFG80211
  
  config LIB80211
@@ -156,7 +156,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	default n
  	help
  	  This options enables a library of common routines used
-@@ -213,17 +213,17 @@ config LIB80211
+@@ -217,17 +217,17 @@ config LIB80211
  	  Drivers should select this themselves if needed.
  
  config LIB80211_CRYPT_WEP
@@ -199,7 +199,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -432,7 +432,7 @@ config NET_DEVLINK
+@@ -430,7 +430,7 @@ config NET_DEVLINK
  	default n
  
  config PAGE_POOL

@@ -26,17 +26,17 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -393,6 +393,9 @@ static const struct sfp_quirk sfp_quirks
- 	// their EEPROM
+@@ -404,6 +404,9 @@ static const struct sfp_quirk sfp_quirks
  	SFP_QUIRK("HUAWEI", "MA5671A", sfp_quirk_2500basex,
  		  sfp_fixup_ignore_tx_fault),
-+
+ 
 +	// OEM SFP-GE-T is 1000Base-T module
 +	SFP_QUIRK_F("OEM", "SFP-GE-T", sfp_fixup_ignore_tx_fault),
- 
++
  	// Lantech 8330-262D-E can operate at 2500base-X, but incorrectly report
  	// 2500MBd NRZ in their EEPROM
-@@ -2303,7 +2308,8 @@ static void sfp_sm_main(struct sfp *sfp,
+ 	SFP_QUIRK_M("Lantech", "8330-262D-E", sfp_quirk_2500basex),
+@@ -2334,7 +2337,8 @@ static void sfp_sm_main(struct sfp *sfp,
  			 * or t_start_up, so assume there is a fault.
  			 */
  			sfp_sm_fault(sfp, SFP_S_INIT_TX_FAULT,
@@ -45,8 +45,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +				     (sfp->sm_fault_retries == N_FAULT_INIT));
  		} else if (event == SFP_E_TIMEOUT || event == SFP_E_TX_CLEAR) {
  	init_done:
- 			sfp->sm_phy_retries = R_PHY_RETRY;
-@@ -2535,10 +2541,12 @@ static void sfp_check_state(struct sfp *
+ 			/* Create mdiobus and start trying for PHY */
+@@ -2563,10 +2567,12 @@ static void sfp_check_state(struct sfp *
  	mutex_lock(&sfp->st_mutex);
  	state = sfp_get_state(sfp);
  	changed = state ^ sfp->state;

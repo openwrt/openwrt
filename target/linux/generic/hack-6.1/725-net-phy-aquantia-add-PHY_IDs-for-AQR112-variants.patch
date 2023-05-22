@@ -12,7 +12,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/aquantia_main.c
 +++ b/drivers/net/phy/aquantia_main.c
-@@ -21,6 +21,8 @@
+@@ -27,6 +27,8 @@
  #define PHY_ID_AQR112	0x03a1b662
  #define PHY_ID_AQR412	0x03a1b712
  #define PHY_ID_AQR113	0x31c31c40
@@ -21,7 +21,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #define MDIO_PHYXS_VEND_IF_STATUS		0xe812
  #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_MASK	GENMASK(7, 3)
-@@ -870,6 +872,30 @@ static struct phy_driver aqr_driver[] =
+@@ -990,6 +992,30 @@ static struct phy_driver aqr_driver[] =
  	.handle_interrupt = aqr_handle_interrupt,
  	.read_status	= aqr107_read_status,
  },
@@ -52,7 +52,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  module_phy_driver(aqr_driver);
-@@ -900,5 +926,7 @@ static struct mdio_device_id __maybe_unu
+@@ -1007,6 +1033,8 @@ static struct mdio_device_id __maybe_unu
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR412) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113) },
@@ -60,3 +60,4 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112R) },
  	{ }
  };
+ 

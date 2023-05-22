@@ -83,7 +83,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 
 --- a/include/uapi/linux/netfilter/xt_connmark.h
 +++ b/include/uapi/linux/netfilter/xt_connmark.h
-@@ -20,6 +20,11 @@ enum {
+@@ -15,6 +15,11 @@ enum {
  };
  
  enum {
@@ -95,7 +95,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	D_SHIFT_LEFT = 0,
  	D_SHIFT_RIGHT,
  };
-@@ -34,6 +39,11 @@ struct xt_connmark_tginfo2 {
+@@ -29,6 +34,11 @@ struct xt_connmark_tginfo2 {
  	__u8 shift_dir, shift_bits, mode;
  };
  

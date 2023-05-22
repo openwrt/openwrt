@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Align . to a 8 byte boundary equals to maximum function alignment. */
  #define ALIGN_FUNCTION()  . = ALIGN(8)
  
-@@ -485,14 +495,14 @@
+@@ -512,14 +522,14 @@
  	/* Kernel symbol table: Normal symbols */			\
  	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
  		__start___ksymtab = .;					\
@@ -47,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		__stop___ksymtab_gpl = .;				\
  	}								\
  									\
-@@ -512,7 +522,7 @@
+@@ -539,7 +549,7 @@
  									\
  	/* Kernel symbol table: strings */				\
          __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}								\
  									\
  	/* __*init sections */						\
-@@ -1018,6 +1028,8 @@
+@@ -1048,6 +1058,8 @@
  #define COMMON_DISCARDS							\
  	SANITIZER_DISCARDS						\
  	PATCHABLE_DISCARDS						\
@@ -67,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	*(.modinfo)							\
 --- a/include/linux/export.h
 +++ b/include/linux/export.h
-@@ -84,6 +84,12 @@ struct kernel_symbol {
+@@ -72,6 +72,12 @@ struct kernel_symbol {
  
  #else
  
@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /*
   * For every exported symbol, do the following:
   *
-@@ -101,7 +107,7 @@ struct kernel_symbol {
+@@ -87,7 +93,7 @@ struct kernel_symbol {
  	extern typeof(sym) sym;							\
  	extern const char __kstrtab_##sym[];					\
  	extern const char __kstrtabns_##sym[];					\
@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	    "__kstrtabns_" #sym ":					\n"	\
 --- a/include/asm-generic/export.h
 +++ b/include/asm-generic/export.h
-@@ -26,6 +26,12 @@
+@@ -31,6 +31,12 @@
  #endif
  .endm
  
@@ -104,7 +104,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /*
   * note on .section use: we specify progbits since usage of the "M" (SHF_MERGE)
   * section flag requires it. Use '%progbits' instead of '@progbits' since the
-@@ -39,7 +45,7 @@
+@@ -44,7 +50,7 @@
  __ksymtab_\name:
  	__put \val, __kstrtab_\name
  	.previous
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	.previous
 --- a/scripts/Makefile.build
 +++ b/scripts/Makefile.build
-@@ -397,7 +397,7 @@ targets += $(real-dtb-y) $(lib-y) $(alwa
+@@ -388,7 +388,7 @@ targets += $(real-dtb-y) $(lib-y) $(alwa
  # Linker scripts preprocessor (.lds.S -> .lds)
  # ---------------------------------------------------------------------------
  quiet_cmd_cpp_lds_S = LDS     $@

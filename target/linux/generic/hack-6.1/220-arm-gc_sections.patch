@@ -12,7 +12,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -117,6 +117,7 @@ config ARM
+@@ -122,6 +122,7 @@ config ARM
  	select HAVE_UID16
  	select HAVE_VIRT_CPU_ACCOUNTING_GEN
  	select IRQ_FORCED_THREADING
@@ -22,14 +22,14 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	select OF_EARLY_FLATTREE if OF
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
-@@ -92,6 +92,7 @@ endif
+@@ -91,6 +91,7 @@ endif
  ifeq ($(CONFIG_USE_OF),y)
  OBJS	+= $(libfdt_objs) fdt_check_mem_start.o
  endif
 +KBUILD_CFLAGS_KERNEL := $(patsubst -f%-sections,,$(KBUILD_CFLAGS_KERNEL))
  
- # -fstack-protector-strong triggers protection checks in this code,
- # but it is being used too early to link to meaningful stack_chk logic.
+ OBJS	+= lib1funcs.o ashldi3.o bswapsdi2.o
+ 
 --- a/arch/arm/kernel/vmlinux.lds.S
 +++ b/arch/arm/kernel/vmlinux.lds.S
 @@ -75,7 +75,7 @@ SECTIONS

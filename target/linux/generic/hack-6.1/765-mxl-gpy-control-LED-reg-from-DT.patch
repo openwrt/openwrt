@@ -23,7 +23,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/drivers/net/phy/mxl-gpy.c
 +++ b/drivers/net/phy/mxl-gpy.c
-@@ -8,6 +8,7 @@
+@@ -10,6 +10,7 @@
  #include <linux/bitfield.h>
  #include <linux/hwmon.h>
  #include <linux/mutex.h>
@@ -31,7 +31,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  #include <linux/phy.h>
  #include <linux/polynomial.h>
  #include <linux/netdevice.h>
-@@ -30,6 +31,7 @@
+@@ -33,6 +34,7 @@
  #define PHY_MIISTAT		0x18	/* MII state */
  #define PHY_IMASK		0x19	/* interrupt mask */
  #define PHY_ISTAT		0x1A	/* interrupt status */
@@ -39,7 +39,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  #define PHY_FWV			0x1E	/* firmware version */
  
  #define PHY_MIISTAT_SPD_MASK	GENMASK(2, 0)
-@@ -53,10 +55,15 @@
+@@ -56,10 +58,15 @@
  				 PHY_IMASK_ADSC | \
  				 PHY_IMASK_ANC)
  
@@ -55,9 +55,9 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  /* SGMII */
  #define VSPEC1_SGMII_CTRL	0x08
  #define VSPEC1_SGMII_CTRL_ANEN	BIT(12)		/* Aneg enable */
-@@ -80,6 +87,31 @@ static const struct {
- 	{9, 0x73},
- };
+@@ -241,6 +248,31 @@ out:
+ 	return ret;
+ }
  
 +static int gpy_led_write(struct phy_device *phydev)
 +{
@@ -87,7 +87,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  static int gpy_config_init(struct phy_device *phydev)
  {
  	int ret;
-@@ -91,7 +123,10 @@ static int gpy_config_init(struct phy_de
+@@ -252,7 +284,10 @@ static int gpy_config_init(struct phy_de
  
  	/* Clear all pending interrupts */
  	ret = phy_read(phydev, PHY_ISTAT);
@@ -98,4 +98,4 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +	return gpy_led_write(phydev);
  }
  
- static int gpy_probe(struct phy_device *phydev)
+ static bool gpy_has_broken_mdint(struct phy_device *phydev)

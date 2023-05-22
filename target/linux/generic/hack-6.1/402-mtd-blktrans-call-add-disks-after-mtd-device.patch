@@ -25,7 +25,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/mtd_blkdevs.c
 +++ b/drivers/mtd/mtd_blkdevs.c
-@@ -384,19 +384,8 @@ int add_mtd_blktrans_dev(struct mtd_blkt
+@@ -386,19 +386,8 @@ int add_mtd_blktrans_dev(struct mtd_blkt
  	if (new->readonly)
  		set_disk_ro(gd, 1);
  
@@ -45,7 +45,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  out_free_tag_set:
  	blk_mq_free_tag_set(new->tag_set);
  out_kfree_tag_set:
-@@ -402,6 +395,35 @@ out_list_del:
+@@ -408,6 +397,35 @@ out_list_del:
  	return ret;
  }
  
@@ -91,7 +91,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #include "mtdcore.h"
  
-@@ -1082,6 +1083,8 @@ int mtd_device_parse_register(struct mtd
+@@ -1074,6 +1075,8 @@ int mtd_device_parse_register(struct mtd
  		register_reboot_notifier(&mtd->reboot_notifier);
  	}
  

@@ -9,7 +9,7 @@ Signed-off-by: Birger Koblitz <git@birger-koblitz.de>
 
 --- a/drivers/net/phy/aquantia_main.c
 +++ b/drivers/net/phy/aquantia_main.c
-@@ -20,6 +20,7 @@
+@@ -23,6 +23,7 @@
  #define PHY_ID_AQCS109	0x03a1b5c2
  #define PHY_ID_AQR405	0x03a1b4b0
  #define PHY_ID_AQR113C	0x31c31c12
@@ -17,7 +17,7 @@ Signed-off-by: Birger Koblitz <git@birger-koblitz.de>
  
  #define MDIO_PHYXS_VEND_IF_STATUS		0xe812
  #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_MASK	GENMASK(7, 3)
-@@ -372,6 +374,49 @@ static int aqr107_read_rate(struct phy_d
+@@ -415,6 +416,49 @@ static int aqr107_read_rate(struct phy_d
  	return 0;
  }
  
@@ -67,7 +67,7 @@ Signed-off-by: Birger Koblitz <git@birger-koblitz.de>
  static int aqr107_read_status(struct phy_device *phydev)
  {
  	int val, ret;
-@@ -502,7 +547,7 @@ static void aqr107_chip_info(struct phy_
+@@ -554,7 +598,7 @@ static void aqr107_chip_info(struct phy_
  	build_id = FIELD_GET(VEND1_GLOBAL_RSVD_STAT1_FW_BUILD_ID, val);
  	prov_id = FIELD_GET(VEND1_GLOBAL_RSVD_STAT1_PROV_ID, val);
  
@@ -76,7 +76,7 @@ Signed-off-by: Birger Koblitz <git@birger-koblitz.de>
  		   fw_major, fw_minor, build_id, prov_id);
  }
  
-@@ -706,7 +706,7 @@ static struct phy_driver aqr_driver[] =
+@@ -809,7 +853,7 @@ static struct phy_driver aqr_driver[] =
  	.config_aneg    = aqr_config_aneg,
  	.config_intr    = aqr_config_intr,
  	.handle_interrupt       = aqr_handle_interrupt,
@@ -85,9 +85,9 @@ Signed-off-by: Birger Koblitz <git@birger-koblitz.de>
  	.get_tunable    = aqr107_get_tunable,
  	.set_tunable    = aqr107_set_tunable,
  	.suspend        = aqr107_suspend,
-@@ -708,6 +762,24 @@ static struct phy_driver aqr_driver[] =
- 	.handle_interrupt = aqr_handle_interrupt,
- 	.read_status	= aqr_read_status,
+@@ -819,6 +863,24 @@ static struct phy_driver aqr_driver[] =
+ 	.get_stats      = aqr107_get_stats,
+ 	.link_change_notify = aqr107_link_change_notify,
  },
 +{
 +	PHY_ID_MATCH_MODEL(PHY_ID_AQR813),
@@ -110,7 +110,7 @@ Signed-off-by: Birger Koblitz <git@birger-koblitz.de>
  };
  
  module_phy_driver(aqr_driver);
-@@ -709,6 +790,7 @@ static struct mdio_device_id __maybe_unu
+@@ -832,6 +894,7 @@ static struct mdio_device_id __maybe_unu
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQCS109) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR405) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113C) },

@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/base/Kconfig
 +++ b/drivers/base/Kconfig
-@@ -187,7 +187,7 @@ config SOC_BUS
+@@ -198,7 +198,7 @@ config SOC_BUS
  source "drivers/base/regmap/Kconfig"
  
  config DMA_SHARED_BUFFER
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +dma-buf-objs-$(CONFIG_DMABUF_HEAPS_CMA)		+= cma_heap.o
 --- a/drivers/dma-buf/Makefile
 +++ b/drivers/dma-buf/Makefile
-@@ -1,18 +1,22 @@
+@@ -1,12 +1,14 @@
  # SPDX-License-Identifier: GPL-2.0-only
 -obj-y := dma-buf.o dma-fence.o dma-fence-array.o dma-fence-chain.o \
 +obj-$(CONFIG_DMA_SHARED_BUFFER) := dma-shared-buffer.o
@@ -54,8 +54,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  dmabuf_selftests-y := \
  	selftest.o \
- 	st-dma-fence.o \
- 	st-dma-fence-chain.o \
+@@ -15,4 +17,6 @@ dmabuf_selftests-y := \
  	st-dma-fence-unwrap.o \
  	st-dma-resv.o
  
@@ -65,7 +64,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +dma-shared-buffer-objs :=  $(dma-buf-objs-y)
 --- a/drivers/dma-buf/dma-buf.c
 +++ b/drivers/dma-buf/dma-buf.c
-@@ -1513,4 +1513,5 @@ static void __exit dma_buf_deinit(void)
+@@ -1583,4 +1583,5 @@ static void __exit dma_buf_deinit(void)
  	kern_unmount(dma_buf_mnt);
  	dma_buf_uninit_sysfs_statistics();
  }
@@ -74,7 +73,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +MODULE_LICENSE("GPL");
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -4175,6 +4175,7 @@ int wake_up_state(struct task_struct *p,
+@@ -4363,6 +4363,7 @@ int wake_up_state(struct task_struct *p,
  {
  	return try_to_wake_up(p, state, 0);
  }
@@ -84,7 +83,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * Perform scheduler related setup for a newly forked process p.
 --- a/fs/d_path.c
 +++ b/fs/d_path.c
-@@ -316,6 +316,7 @@ char *dynamic_dname(struct dentry *dentr
+@@ -313,6 +313,7 @@ char *dynamic_dname(char *buffer, int bu
  	buffer += buflen - sz;
  	return memcpy(buffer, temp, sz);
  }

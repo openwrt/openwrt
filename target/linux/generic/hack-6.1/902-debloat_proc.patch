@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -2953,6 +2953,8 @@ static const struct seq_operations locks
+@@ -2909,6 +2909,8 @@ static const struct seq_operations locks
  
  static int __init proc_locks_init(void)
  {
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
 --- a/fs/proc/Kconfig
 +++ b/fs/proc/Kconfig
-@@ -100,6 +100,11 @@ config PROC_CHILDREN
+@@ -101,6 +101,11 @@ config PROC_CHILDREN
  	  Say Y if you are running any user-space software which takes benefit from
  	  this interface. For example, rkt is such a piece of software.
  
@@ -66,7 +66,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/fs/proc/proc_tty.c
 +++ b/fs/proc/proc_tty.c
-@@ -133,7 +133,10 @@ static const struct seq_operations tty_d
+@@ -131,7 +131,10 @@ static const struct seq_operations tty_d
  void proc_tty_register_driver(struct tty_driver *driver)
  {
  	struct proc_dir_entry *ent;
@@ -78,7 +78,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!driver->driver_name || driver->proc_entry ||
  	    !driver->ops->proc_show)
  		return;
-@@ -150,6 +153,9 @@ void proc_tty_unregister_driver(struct t
+@@ -148,6 +151,9 @@ void proc_tty_unregister_driver(struct t
  {
  	struct proc_dir_entry *ent;
  
@@ -88,7 +88,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ent = driver->proc_entry;
  	if (!ent)
  		return;
-@@ -164,6 +170,9 @@ void proc_tty_unregister_driver(struct t
+@@ -162,6 +168,9 @@ void proc_tty_unregister_driver(struct t
   */
  void __init proc_tty_init(void)
  {
@@ -135,7 +135,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	do {								\
 --- a/ipc/msg.c
 +++ b/ipc/msg.c
-@@ -1350,6 +1350,9 @@ void __init msg_init(void)
+@@ -1370,6 +1370,9 @@ void __init msg_init(void)
  {
  	msg_init_ns(&init_ipc_ns);
  
@@ -235,7 +235,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!pe)
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -3964,6 +3964,8 @@ static const struct seq_operations vmall
+@@ -4183,6 +4183,8 @@ static const struct seq_operations vmall
  
  static int __init proc_vmalloc_init(void)
  {
@@ -246,7 +246,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				&vmalloc_op,
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
-@@ -2083,10 +2083,12 @@ void __init init_mm_internals(void)
+@@ -2109,10 +2109,12 @@ void __init init_mm_internals(void)
  	start_shepherd_timer();
  #endif
  #ifdef CONFIG_PROC_FS
@@ -286,7 +286,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto err;
 --- a/net/core/net-procfs.c
 +++ b/net/core/net-procfs.c
-@@ -317,10 +317,12 @@ static int __net_init dev_proc_net_init(
+@@ -319,10 +319,12 @@ static int __net_init dev_proc_net_init(
  	if (!proc_create_net("dev", 0444, net->proc_net, &dev_seq_ops,
  			sizeof(struct seq_net_private)))
  		goto out;
@@ -301,7 +301,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			sizeof(struct seq_net_private)))
  		goto out_softnet;
  
-@@ -330,9 +332,11 @@ static int __net_init dev_proc_net_init(
+@@ -332,9 +334,11 @@ static int __net_init dev_proc_net_init(
  out:
  	return rc;
  out_ptype:
@@ -315,7 +315,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  out_dev:
  	remove_proc_entry("dev", net->proc_net);
  	goto out;
-@@ -342,8 +346,10 @@ static void __net_exit dev_proc_net_exit
+@@ -344,8 +348,10 @@ static void __net_exit dev_proc_net_exit
  {
  	wext_proc_exit(net);
  
@@ -330,7 +330,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -3855,6 +3855,8 @@ static __net_initdata struct pernet_oper
+@@ -4088,6 +4088,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
@@ -341,7 +341,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -3024,11 +3024,13 @@ static const struct seq_operations fib_r
+@@ -3031,11 +3031,13 @@ static const struct seq_operations fib_r
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -357,7 +357,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			fib_triestat_seq_show, NULL))
  		goto out2;
  
-@@ -3039,17 +3041,21 @@ int __net_init fib_proc_init(struct net
+@@ -3046,17 +3048,21 @@ int __net_init fib_proc_init(struct net
  	return 0;
  
  out3:
@@ -396,7 +396,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -387,6 +387,9 @@ static struct pernet_operations ip_rt_pr
+@@ -380,6 +380,9 @@ static struct pernet_operations ip_rt_pr
  
  static int __init ip_rt_proc_init(void)
  {

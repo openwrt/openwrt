@@ -19,7 +19,7 @@ Subject: [PATCH] kernel: add block fit partition parser
 
 --- a/block/blk.h
 +++ b/block/blk.h
-@@ -354,6 +354,8 @@ void blk_free_ext_minor(unsigned int min
+@@ -414,6 +414,8 @@ void blk_free_ext_minor(unsigned int min
  #define ADDPART_FLAG_NONE	0
  #define ADDPART_FLAG_RAID	1
  #define ADDPART_FLAG_WHOLEDISK	2
@@ -30,7 +30,7 @@ Subject: [PATCH] kernel: add block fit partition parser
  int bdev_del_partition(struct gendisk *disk, int partno);
 --- a/block/partitions/Kconfig
 +++ b/block/partitions/Kconfig
-@@ -101,6 +101,13 @@ config ATARI_PARTITION
+@@ -103,6 +103,13 @@ config ATARI_PARTITION
  	  Say Y here if you would like to use hard disks under Linux which
  	  were partitioned under the Atari OS.
  
@@ -56,7 +56,7 @@ Subject: [PATCH] kernel: add block fit partition parser
  obj-$(CONFIG_LDM_PARTITION) += ldm.o
 --- a/block/partitions/check.h
 +++ b/block/partitions/check.h
-@@ -58,6 +58,7 @@ int amiga_partition(struct parsed_partit
+@@ -57,6 +57,7 @@ int amiga_partition(struct parsed_partit
  int atari_partition(struct parsed_partitions *state);
  int cmdline_partition(struct parsed_partitions *state);
  int efi_partition(struct parsed_partitions *state);
@@ -64,7 +64,7 @@ Subject: [PATCH] kernel: add block fit partition parser
  int ibm_partition(struct parsed_partitions *);
  int karma_partition(struct parsed_partitions *state);
  int ldm_partition(struct parsed_partitions *state);
-@@ -68,3 +69,5 @@ int sgi_partition(struct parsed_partitio
+@@ -67,3 +68,5 @@ int sgi_partition(struct parsed_partitio
  int sun_partition(struct parsed_partitions *state);
  int sysv68_partition(struct parsed_partitions *state);
  int ultrix_partition(struct parsed_partitions *state);
@@ -72,9 +72,9 @@ Subject: [PATCH] kernel: add block fit partition parser
 +int parse_fit_partitions(struct parsed_partitions *state, u64 start_sector, u64 nr_sectors, int *slot, int add_remain);
 --- a/block/partitions/core.c
 +++ b/block/partitions/core.c
-@@ -12,6 +12,10 @@
+@@ -10,6 +10,10 @@
+ #include <linux/ctype.h>
  #include <linux/vmalloc.h>
- #include <linux/blktrace_api.h>
  #include <linux/raid/detect.h>
 +#ifdef CONFIG_FIT_PARTITION
 +#include <linux/root_dev.h>
@@ -83,7 +83,7 @@ Subject: [PATCH] kernel: add block fit partition parser
  #include "check.h"
  
  static int (*check_part[])(struct parsed_partitions *) = {
-@@ -48,6 +52,9 @@ static int (*check_part[])(struct parsed
+@@ -46,6 +50,9 @@ static int (*check_part[])(struct parsed
  #ifdef CONFIG_EFI_PARTITION
  	efi_partition,		/* this must come before msdos */
  #endif
@@ -93,7 +93,7 @@ Subject: [PATCH] kernel: add block fit partition parser
  #ifdef CONFIG_SGI_PARTITION
  	sgi_partition,
  #endif
-@@ -408,6 +415,11 @@ static struct block_device *add_partitio
+@@ -398,6 +405,11 @@ static struct block_device *add_partitio
  			goto out_del;
  	}
  
@@ -105,7 +105,7 @@ Subject: [PATCH] kernel: add block fit partition parser
  	/* everything is up and running, commence */
  	err = xa_insert(&disk->part_tbl, partno, bdev, GFP_KERNEL);
  	if (err)
-@@ -598,6 +610,11 @@ static bool blk_add_partition(struct gen
+@@ -585,6 +597,11 @@ static bool blk_add_partition(struct gen
  	    (state->parts[p].flags & ADDPART_FLAG_RAID))
  		md_autodetect_dev(part->bd_dev);
  
@@ -143,7 +143,7 @@ Subject: [PATCH] kernel: add block fit partition parser
  	kfree(gpt);
 --- a/block/partitions/efi.h
 +++ b/block/partitions/efi.h
-@@ -52,6 +52,9 @@
+@@ -51,6 +51,9 @@
  #define PARTITION_LINUX_LVM_GUID \
      EFI_GUID( 0xe6d6d379, 0xf507, 0x44c2, \
                0xa2, 0x3c, 0x23, 0x8f, 0x2a, 0x3d, 0xf9, 0x28)
