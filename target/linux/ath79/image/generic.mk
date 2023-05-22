@@ -740,6 +740,17 @@ define Device/comfast_cf-e375ac
 endef
 TARGET_DEVICES += comfast_cf-e375ac
 
+define Device/comfast_cf-e380ac-v2
+  SOC := qca9558
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E380AC
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-usb-core kmod-usb2 \
+	kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += comfast_cf-e380ac-v2
+
 define Device/comfast_cf-e5
   SOC := qca9531
   DEVICE_VENDOR := COMFAST
