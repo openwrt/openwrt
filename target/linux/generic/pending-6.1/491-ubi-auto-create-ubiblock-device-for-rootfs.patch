@@ -8,7 +8,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -642,6 +642,47 @@ static void __init ubiblock_create_from_
+@@ -653,6 +653,47 @@ static void __init ubiblock_create_from_
  	}
  }
  
@@ -56,7 +56,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void ubiblock_remove_all(void)
  {
  	struct ubiblock *next;
-@@ -674,6 +715,10 @@ int __init ubiblock_init(void)
+@@ -685,6 +726,10 @@ int __init ubiblock_init(void)
  	 */
  	ubiblock_create_from_param();
  

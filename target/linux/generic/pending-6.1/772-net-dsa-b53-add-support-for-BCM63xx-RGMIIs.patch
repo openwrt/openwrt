@@ -152,7 +152,7 @@ Reviewed-by: Andrew Lunn <andrew@lunn.ch>
  	if (is531x5(dev) && phy_interface_is_rgmii(phydev)) {
  		if (port == dev->imp_port)
  			off = B53_RGMII_CTRL_IMP;
-@@ -1419,6 +1462,9 @@ void b53_phylink_mac_link_up(struct dsa_
+@@ -1402,6 +1445,9 @@ void b53_phylink_mac_link_up(struct dsa_
  {
  	struct b53_device *dev = ds->priv;
  
@@ -164,7 +164,7 @@ Reviewed-by: Andrew Lunn <andrew@lunn.ch>
  
 --- a/drivers/net/dsa/b53/b53_priv.h
 +++ b/drivers/net/dsa/b53/b53_priv.h
-@@ -206,6 +206,7 @@ static inline int is58xx(struct b53_devi
+@@ -211,6 +211,7 @@ static inline int is58xx(struct b53_devi
  		dev->chip_id == BCM7278_DEVICE_ID;
  }
  

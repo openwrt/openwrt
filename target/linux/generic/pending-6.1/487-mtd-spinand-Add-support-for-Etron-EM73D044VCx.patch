@@ -47,7 +47,7 @@ Submitted-by: Daniel Danzberger <daniel@dd-wrt.com>
  obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -908,6 +908,7 @@ static const struct nand_ops spinand_ops
+@@ -939,6 +939,7 @@ static const struct nand_ops spinand_ops
  static const struct spinand_manufacturer *spinand_manufacturers[] = {
  	&ato_spinand_manufacturer,
  	&esmt_c8_spinand_manufacturer,
@@ -158,9 +158,9 @@ Submitted-by: Daniel Danzberger <daniel@dd-wrt.com>
 +};
 --- a/include/linux/mtd/spinand.h
 +++ b/include/linux/mtd/spinand.h
-@@ -261,6 +261,7 @@ struct spinand_manufacturer {
- 
+@@ -262,6 +262,7 @@ struct spinand_manufacturer {
  /* SPI NAND manufacturers */
+ extern const struct spinand_manufacturer ato_spinand_manufacturer;
  extern const struct spinand_manufacturer esmt_c8_spinand_manufacturer;
 +extern const struct spinand_manufacturer etron_spinand_manufacturer;
  extern const struct spinand_manufacturer gigadevice_spinand_manufacturer;

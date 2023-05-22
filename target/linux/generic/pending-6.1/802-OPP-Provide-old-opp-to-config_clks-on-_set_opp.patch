@@ -17,11 +17,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  include/linux/pm_opp.h            | 11 ++++++-----
  3 files changed, 15 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/devfreq/tegra30-devfreq.c b/drivers/devfreq/tegra30-devfreq.c
-index 503376b894b6..92cdb6bf9a89 100644
 --- a/drivers/devfreq/tegra30-devfreq.c
 +++ b/drivers/devfreq/tegra30-devfreq.c
-@@ -823,8 +823,9 @@ static int devm_tegra_devfreq_init_hw(struct device *dev,
+@@ -823,8 +823,9 @@ static int devm_tegra_devfreq_init_hw(st
  
  static int tegra_devfreq_config_clks_nop(struct device *dev,
  					 struct opp_table *opp_table,
@@ -33,11 +31,9 @@ index 503376b894b6..92cdb6bf9a89 100644
  {
  	/* We want to skip clk configuration via dev_pm_opp_set_opp() */
  	return 0;
-diff --git a/drivers/opp/core.c b/drivers/opp/core.c
-index e87567dbe99f..2f44ceaf8d3c 100644
 --- a/drivers/opp/core.c
 +++ b/drivers/opp/core.c
-@@ -816,7 +816,8 @@ static int _set_opp_voltage(struct device *dev, struct regulator *reg,
+@@ -816,7 +816,8 @@ static int _set_opp_voltage(struct devic
  
  static int
  _opp_config_clk_single(struct device *dev, struct opp_table *opp_table,
@@ -47,7 +43,7 @@ index e87567dbe99f..2f44ceaf8d3c 100644
  {
  	unsigned long *target = data;
  	unsigned long freq;
-@@ -848,8 +849,8 @@ _opp_config_clk_single(struct device *dev, struct opp_table *opp_table,
+@@ -848,8 +849,8 @@ _opp_config_clk_single(struct device *de
   * the order in which they are present in the array while scaling up.
   */
  int dev_pm_opp_config_clks_simple(struct device *dev,
@@ -58,7 +54,7 @@ index e87567dbe99f..2f44ceaf8d3c 100644
  {
  	int ret, i;
  
-@@ -1121,7 +1122,7 @@ static int _set_opp(struct device *dev, struct opp_table *opp_table,
+@@ -1121,7 +1122,7 @@ static int _set_opp(struct device *dev,
  	}
  
  	if (opp_table->config_clks) {
@@ -67,7 +63,7 @@ index e87567dbe99f..2f44ceaf8d3c 100644
  		if (ret)
  			return ret;
  	}
-@@ -1196,7 +1197,7 @@ int dev_pm_opp_set_rate(struct device *dev, unsigned long target_freq)
+@@ -1196,7 +1197,7 @@ int dev_pm_opp_set_rate(struct device *d
  		 * equivalent to a clk_set_rate()
  		 */
  		if (!_get_opp_count(opp_table)) {
@@ -76,11 +72,9 @@ index e87567dbe99f..2f44ceaf8d3c 100644
  						     &target_freq, false);
  			goto put_opp_table;
  		}
-diff --git a/include/linux/pm_opp.h b/include/linux/pm_opp.h
-index dc1fb5890792..6c24a4f9fc49 100644
 --- a/include/linux/pm_opp.h
 +++ b/include/linux/pm_opp.h
-@@ -61,7 +61,8 @@ typedef int (*config_regulators_t)(struct device *dev,
+@@ -61,7 +61,8 @@ typedef int (*config_regulators_t)(struc
  			struct dev_pm_opp *old_opp, struct dev_pm_opp *new_opp,
  			struct regulator **regulators, unsigned int count);
  
@@ -90,7 +84,7 @@ index dc1fb5890792..6c24a4f9fc49 100644
  			struct dev_pm_opp *opp, void *data, bool scaling_down);
  
  /**
-@@ -160,8 +161,8 @@ int dev_pm_opp_set_config(struct device *dev, struct dev_pm_opp_config *config);
+@@ -160,8 +161,8 @@ int dev_pm_opp_set_config(struct device
  int devm_pm_opp_set_config(struct device *dev, struct dev_pm_opp_config *config);
  void dev_pm_opp_clear_config(int token);
  int dev_pm_opp_config_clks_simple(struct device *dev,
@@ -101,7 +95,7 @@ index dc1fb5890792..6c24a4f9fc49 100644
  
  struct dev_pm_opp *dev_pm_opp_xlate_required_opp(struct opp_table *src_table, struct opp_table *dst_table, struct dev_pm_opp *src_opp);
  int dev_pm_opp_xlate_performance_state(struct opp_table *src_table, struct opp_table *dst_table, unsigned int pstate);
-@@ -346,8 +347,8 @@ static inline int devm_pm_opp_set_config(struct device *dev, struct dev_pm_opp_c
+@@ -346,8 +347,8 @@ static inline int devm_pm_opp_set_config
  static inline void dev_pm_opp_clear_config(int token) {}
  
  static inline int dev_pm_opp_config_clks_simple(struct device *dev,
@@ -112,6 +106,3 @@ index dc1fb5890792..6c24a4f9fc49 100644
  {
  	return -EOPNOTSUPP;
  }
--- 
-2.37.2
-

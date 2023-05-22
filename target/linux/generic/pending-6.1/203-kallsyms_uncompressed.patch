@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1447,6 +1447,17 @@ config SYSCTL_ARCH_UNALIGN_ALLOW
+@@ -1481,6 +1481,17 @@ config SYSCTL_ARCH_UNALIGN_ALLOW
  	  the unaligned access emulation.
  	  see arch/parisc/kernel/unaligned.c for reference
  
@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/kernel/kallsyms.c
 +++ b/kernel/kallsyms.c
-@@ -80,6 +80,11 @@ static unsigned int kallsyms_expand_symb
+@@ -69,6 +69,11 @@ static unsigned int kallsyms_expand_symb
  	 * For every byte on the compressed symbol data, copy the table
  	 * entry for that byte.
  	 */
@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	while (len) {
  		tptr = &kallsyms_token_table[kallsyms_token_index[*data]];
  		data++;
-@@ -112,6 +117,9 @@ tail:
+@@ -101,6 +106,9 @@ tail:
   */
  static char kallsyms_get_symbol_type(unsigned int off)
  {
@@ -57,7 +57,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	 * and return the first char from this token.
 --- a/scripts/kallsyms.c
 +++ b/scripts/kallsyms.c
-@@ -58,6 +58,7 @@ static struct addr_range percpu_range =
+@@ -75,6 +75,7 @@ static struct addr_range percpu_range =
  static struct sym_entry **table;
  static unsigned int table_size, table_cnt;
  static int all_symbols;
@@ -65,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int absolute_percpu;
  static int base_relative;
  
-@@ -486,6 +487,9 @@ static void write_src(void)
+@@ -535,6 +536,9 @@ static void write_src(void)
  
  	free(markers);
  
@@ -75,7 +75,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	output_label("kallsyms_token_table");
  	off = 0;
  	for (i = 0; i < 256; i++) {
-@@ -537,6 +541,9 @@ static unsigned char *find_token(unsigne
+@@ -586,6 +590,9 @@ static unsigned char *find_token(unsigne
  {
  	int i;
  
@@ -85,7 +85,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	for (i = 0; i < len - 1; i++) {
  		if (str[i] == token[0] && str[i+1] == token[1])
  			return &str[i];
-@@ -609,6 +616,9 @@ static void optimize_result(void)
+@@ -658,6 +665,9 @@ static void optimize_result(void)
  {
  	int i, best;
  
@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* using the '\0' symbol last allows compress_symbols to use standard
  	 * fast string functions */
  	for (i = 255; i >= 0; i--) {
-@@ -773,6 +783,7 @@ int main(int argc, char **argv)
+@@ -818,6 +828,7 @@ int main(int argc, char **argv)
  			{"all-symbols",     no_argument, &all_symbols,     1},
  			{"absolute-percpu", no_argument, &absolute_percpu, 1},
  			{"base-relative",   no_argument, &base_relative,   1},
@@ -105,7 +105,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/scripts/link-vmlinux.sh
 +++ b/scripts/link-vmlinux.sh
-@@ -266,6 +266,10 @@ kallsyms()
+@@ -156,6 +156,10 @@ kallsyms()
  		kallsymopt="${kallsymopt} --base-relative"
  	fi
  
@@ -114,5 +114,5 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	fi
 +
  	info KSYMS ${2}
- 	${NM} -n ${1} | scripts/kallsyms ${kallsymopt} > ${2}
+ 	scripts/kallsyms ${kallsymopt} ${1} > ${2}
  }

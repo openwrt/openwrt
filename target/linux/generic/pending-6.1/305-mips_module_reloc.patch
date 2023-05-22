@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -98,8 +98,18 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
+@@ -97,8 +97,18 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe -mno-branch-likely
  cflags-y			+= -msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
@@ -46,7 +46,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
 --- a/arch/mips/kernel/module.c
 +++ b/arch/mips/kernel/module.c
-@@ -31,23 +31,261 @@ struct mips_hi16 {
+@@ -32,23 +32,261 @@ struct mips_hi16 {
  static LIST_HEAD(dbe_list);
  static DEFINE_SPINLOCK(dbe_lock);
  
@@ -309,7 +309,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (v % 4) {
  		pr_err("module %s: dangerous R_MIPS_26 relocation\n",
  		       me->name);
-@@ -55,13 +293,17 @@ static int apply_r_mips_26(struct module
+@@ -56,13 +294,17 @@ static int apply_r_mips_26(struct module
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -331,7 +331,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	return 0;
  }
-@@ -441,9 +683,36 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -442,9 +684,36 @@ int module_finalize(const Elf_Ehdr *hdr,
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}

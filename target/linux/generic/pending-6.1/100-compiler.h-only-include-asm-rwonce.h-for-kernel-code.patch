@@ -11,16 +11,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/compiler.h
 +++ b/include/linux/compiler.h
-@@ -220,6 +220,8 @@ void ftrace_likely_update(struct ftrace_
- #define function_nocfi(x) (x)
- #endif
+@@ -203,6 +203,8 @@ void ftrace_likely_update(struct ftrace_
+ 	__v;								\
+ })
  
 +#include <asm/rwonce.h>
 +
  #endif /* __KERNEL__ */
  
  /*
-@@ -252,6 +254,4 @@ static inline void *offset_to_ptr(const
+@@ -243,6 +245,4 @@ static inline void *offset_to_ptr(const
   */
  #define prevent_tail_call_optimization()	mb()
  

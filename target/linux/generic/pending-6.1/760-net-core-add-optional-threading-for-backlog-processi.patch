@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -502,6 +502,7 @@ static inline bool napi_complete(struct
+@@ -520,6 +520,7 @@ static inline bool napi_complete(struct
  }
  
  int dev_set_threaded(struct net_device *dev, bool threaded);
@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /**
   *	napi_disable - prevent NAPI from scheduling
-@@ -3365,6 +3366,7 @@ struct softnet_data {
+@@ -3126,6 +3127,7 @@ struct softnet_data {
  	unsigned int		processed;
  	unsigned int		time_squeeze;
  	unsigned int		received_rps;
@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4574,7 +4574,7 @@ static int rps_ipi_queued(struct softnet
+@@ -4604,7 +4604,7 @@ static int napi_schedule_rps(struct soft
  	struct softnet_data *mysd = this_cpu_ptr(&softnet_data);
  
  #ifdef CONFIG_RPS
@@ -39,7 +39,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		sd->rps_ipi_next = mysd->rps_ipi_list;
  		mysd->rps_ipi_list = sd;
  
-@@ -5755,6 +5755,8 @@ static DEFINE_PER_CPU(struct work_struct
+@@ -5785,6 +5785,8 @@ static DEFINE_PER_CPU(struct work_struct
  /* Network device is going away, flush any packets still pending */
  static void flush_backlog(struct work_struct *work)
  {
@@ -48,7 +48,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct sk_buff *skb, *tmp;
  	struct softnet_data *sd;
  
-@@ -5770,8 +5772,17 @@ static void flush_backlog(struct work_st
+@@ -5799,8 +5801,17 @@ static void flush_backlog(struct work_st
  			input_queue_head_incr(sd);
  		}
  	}
@@ -66,7 +66,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	skb_queue_walk_safe(&sd->process_queue, skb, tmp) {
  		if (skb->dev->reg_state == NETREG_UNREGISTERING) {
  			__skb_unlink(skb, &sd->process_queue);
-@@ -5780,7 +5791,16 @@ static void flush_backlog(struct work_st
+@@ -5808,7 +5819,16 @@ static void flush_backlog(struct work_st
  			input_queue_head_incr(sd);
  		}
  	}
@@ -83,15 +83,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static bool flush_required(int cpu)
-@@ -6463,6 +6485,7 @@ static int process_backlog(struct napi_s
+@@ -5940,6 +5960,7 @@ static int process_backlog(struct napi_s
  		}
-
+ 
  		rps_lock_irq_disable(sd);
 +		sd->process_queue_empty++;
  		if (skb_queue_empty(&sd->input_pkt_queue)) {
  			/*
  			 * Inline a custom version of __napi_complete().
-@@ -6472,7 +6495,8 @@ static int process_backlog(struct napi_s
+@@ -5949,7 +5970,8 @@ static int process_backlog(struct napi_s
  			 * We can use a plain write instead of clear_bit(),
  			 * and we dont need an smp_mb() memory barrier.
  			 */
@@ -101,7 +101,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			again = false;
  		} else {
  			skb_queue_splice_tail_init(&sd->input_pkt_queue,
-@@ -6889,6 +6913,55 @@ int dev_set_threaded(struct net_device *
+@@ -6365,6 +6387,55 @@ int dev_set_threaded(struct net_device *
  }
  EXPORT_SYMBOL(dev_set_threaded);
  
@@ -155,9 +155,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +}
 +
  void netif_napi_add_weight(struct net_device *dev, struct napi_struct *napi,
- 		    int (*poll)(struct napi_struct *, int), int weight)
+ 			   int (*poll)(struct napi_struct *, int), int weight)
  {
-@@ -11367,6 +11442,9 @@ static int dev_cpu_dead(unsigned int old
+@@ -11137,6 +11208,9 @@ static int dev_cpu_dead(unsigned int old
  	raise_softirq_irqoff(NET_TX_SOFTIRQ);
  	local_irq_enable();
  
@@ -167,9 +167,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef CONFIG_RPS
  	remsd = oldsd->rps_ipi_list;
  	oldsd->rps_ipi_list = NULL;
-@@ -11706,6 +11784,7 @@ static int __init net_dev_init(void)
- 		sd->cpu = i;
- #endif
+@@ -11440,6 +11514,7 @@ static int __init net_dev_init(void)
+ 		INIT_CSD(&sd->defer_csd, trigger_rx_softirq, sd);
+ 		spin_lock_init(&sd->defer_lock);
  
 +		INIT_LIST_HEAD(&sd->backlog.poll_list);
  		init_gro_hash(&sd->backlog);
@@ -177,7 +177,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		sd->backlog.weight = weight_p;
 --- a/net/core/sysctl_net_core.c
 +++ b/net/core/sysctl_net_core.c
-@@ -28,6 +28,7 @@ static int int_3600 = 3600;
+@@ -29,6 +29,7 @@ static int int_3600 = 3600;
  static int min_sndbuf = SOCK_MIN_SNDBUF;
  static int min_rcvbuf = SOCK_MIN_RCVBUF;
  static int max_skb_frags = MAX_SKB_FRAGS;
@@ -185,7 +185,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  static int net_msg_warn;	/* Unused, but still a sysctl */
  
-@@ -114,6 +115,23 @@ static int rps_sock_flow_sysctl(struct c
+@@ -112,6 +113,23 @@ static int rps_sock_flow_sysctl(struct c
  }
  #endif /* CONFIG_RPS */
  
@@ -209,7 +209,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef CONFIG_NET_FLOW_LIMIT
  static DEFINE_MUTEX(flow_limit_update_mutex);
  
-@@ -470,6 +488,15 @@ static struct ctl_table net_core_table[]
+@@ -473,6 +491,15 @@ static struct ctl_table net_core_table[]
  		.proc_handler	= rps_sock_flow_sysctl
  	},
  #endif

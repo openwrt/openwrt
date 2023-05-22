@@ -77,7 +77,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void mtk_ppe_cache_clear(struct mtk_ppe *ppe)
-@@ -508,13 +523,6 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
+@@ -503,13 +518,6 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
  		hwe->ib1 |= FIELD_PREP(MTK_FOE_IB1_STATE, MTK_FOE_STATE_INVALID);
  		dma_wmb();
  		mtk_ppe_cache_clear(ppe);
@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  	entry->hash = 0xffff;
  
-@@ -539,11 +547,14 @@ static int __mtk_foe_entry_idle_time(str
+@@ -534,11 +542,14 @@ static int __mtk_foe_entry_idle_time(str
  }
  
  static bool
@@ -107,7 +107,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int len;
  
  	if (hash == 0xffff)
-@@ -554,18 +565,35 @@ mtk_flow_entry_update(struct mtk_ppe *pp
+@@ -549,18 +560,35 @@ mtk_flow_entry_update(struct mtk_ppe *pp
  	memcpy(&foe, hwe, len);
  
  	if (!mtk_flow_entry_match(ppe->eth, entry, &foe, len) ||
@@ -146,7 +146,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct mtk_flow_entry *cur;
  	struct hlist_node *tmp;
  	int idle;
-@@ -574,7 +602,9 @@ mtk_flow_entry_update_l2(struct mtk_ppe
+@@ -569,7 +597,9 @@ mtk_flow_entry_update_l2(struct mtk_ppe
  	hlist_for_each_entry_safe(cur, tmp, &entry->l2_flows, l2_list) {
  		int cur_idle;
  
@@ -157,7 +157,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			__mtk_foe_entry_clear(ppe, entry, false);
  			continue;
  		}
-@@ -589,10 +619,29 @@ mtk_flow_entry_update_l2(struct mtk_ppe
+@@ -584,10 +614,29 @@ mtk_flow_entry_update_l2(struct mtk_ppe
  	}
  }
  
@@ -187,7 +187,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct mtk_eth *eth = ppe->eth;
  	u16 timestamp = mtk_eth_timestamp(eth);
  	struct mtk_foe_entry *hwe;
-@@ -617,6 +666,12 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
+@@ -612,6 +661,12 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
  
  	dma_wmb();
  
@@ -200,7 +200,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	mtk_ppe_cache_clear(ppe);
  }
  
-@@ -781,21 +836,6 @@ out:
+@@ -776,21 +831,6 @@ out:
  	spin_unlock_bh(&ppe_lock);
  }
  
@@ -222,7 +222,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int mtk_ppe_prepare_reset(struct mtk_ppe *ppe)
  {
  	if (!ppe)
-@@ -823,32 +863,6 @@ int mtk_ppe_prepare_reset(struct mtk_ppe
+@@ -818,32 +858,6 @@ int mtk_ppe_prepare_reset(struct mtk_ppe
  	return mtk_ppe_wait_busy(ppe);
  }
  
@@ -266,7 +266,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  struct mtk_mib_entry {
-@@ -325,6 +327,7 @@ struct mtk_ppe *mtk_ppe_init(struct mtk_
+@@ -326,6 +328,7 @@ void mtk_ppe_deinit(struct mtk_eth *eth)
  void mtk_ppe_start(struct mtk_ppe *ppe);
  int mtk_ppe_stop(struct mtk_ppe *ppe);
  int mtk_ppe_prepare_reset(struct mtk_ppe *ppe);
@@ -274,7 +274,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash);
  
-@@ -373,9 +376,8 @@ int mtk_foe_entry_set_queue(struct mtk_e
+@@ -374,9 +377,8 @@ int mtk_foe_entry_set_queue(struct mtk_e
  			    unsigned int queue);
  int mtk_foe_entry_commit(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
  void mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);

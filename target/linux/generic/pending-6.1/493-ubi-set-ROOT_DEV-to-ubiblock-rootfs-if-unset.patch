@@ -16,7 +16,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #include "ubi-media.h"
  #include "ubi.h"
-@@ -451,6 +452,15 @@ int ubiblock_create(struct ubi_volume_in
+@@ -459,6 +460,15 @@ int ubiblock_create(struct ubi_volume_in
  	dev_info(disk_to_dev(dev->gd), "created from ubi%d:%d(%s)",
  		 dev->ubi_num, dev->vol_id, vi->name);
  	mutex_unlock(&devices_mutex);
@@ -31,4 +31,4 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
  	return 0;
  
- out_remove_minor:
+ out_destroy_wq:

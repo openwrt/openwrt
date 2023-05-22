@@ -10,7 +10,7 @@ Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -57,6 +57,22 @@ config MTD_CMDLINE_PARTS
+@@ -67,6 +67,22 @@ config MTD_CMDLINE_PARTS
  
  	  If unsure, say 'N'.
  
@@ -35,9 +35,9 @@ Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
  	default y
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -3,6 +3,7 @@ obj-$(CONFIG_MTD_AR7_PARTS)		+= ar7part.
- obj-$(CONFIG_MTD_BCM47XX_PARTS)		+= bcm47xxpart.o
+@@ -4,6 +4,7 @@ obj-$(CONFIG_MTD_BCM47XX_PARTS)		+= bcm4
  obj-$(CONFIG_MTD_BCM63XX_PARTS)		+= bcm63xxpart.o
+ obj-$(CONFIG_MTD_BRCM_U_BOOT)		+= brcm_u-boot.o
  obj-$(CONFIG_MTD_CMDLINE_PARTS)		+= cmdlinepart.o
 +obj-$(CONFIG_MTD_MYLOADER_PARTS)		+= myloader.o
  obj-$(CONFIG_MTD_OF_PARTS)		+= ofpart.o

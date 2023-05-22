@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/mtd/spi-nor/Makefile
 +++ b/drivers/mtd/spi-nor/Makefile
-@@ -17,7 +17,8 @@ spi-nor-objs			+= sst.o
+@@ -17,6 +17,7 @@ spi-nor-objs			+= sst.o
  spi-nor-objs			+= winbond.o
  spi-nor-objs			+= xilinx.o
  spi-nor-objs			+= xmc.o
@@ -39,7 +39,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  spi-nor-$(CONFIG_DEBUG_FS)	+= debugfs.o
  obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor.o
  
- obj-$(CONFIG_MTD_SPI_NOR)	+= controllers/
 --- /dev/null
 +++ b/drivers/mtd/spi-nor/xtx.c
 @@ -0,0 +1,17 @@
@@ -62,17 +61,17 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +};
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
-@@ -1859,6 +1859,7 @@ static const struct spi_nor_manufacturer
+@@ -1635,6 +1635,7 @@ static const struct spi_nor_manufacturer
  	&spi_nor_winbond,
  	&spi_nor_xilinx,
  	&spi_nor_xmc,
 +	&spi_nor_xtx,
  };
  
- static const struct flash_info *
+ static const struct flash_info *spi_nor_match_id(struct spi_nor *nor,
 --- a/drivers/mtd/spi-nor/core.h
 +++ b/drivers/mtd/spi-nor/core.h
-@@ -489,6 +489,7 @@ extern const struct spi_nor_manufacturer
+@@ -633,6 +633,7 @@ extern const struct spi_nor_manufacturer
  extern const struct spi_nor_manufacturer spi_nor_winbond;
  extern const struct spi_nor_manufacturer spi_nor_xilinx;
  extern const struct spi_nor_manufacturer spi_nor_xmc;

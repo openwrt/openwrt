@@ -41,8 +41,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
  /* Returns one of the generic firewall policies, like NF_ACCEPT. */
  unsigned int
- ipt_do_table(struct sk_buff *skb,
-@@ -266,27 +293,28 @@ ipt_do_table(struct sk_buff *skb,
+ ipt_do_table(void *priv,
+@@ -267,27 +294,28 @@ ipt_do_table(void *priv,
  	unsigned int addend;
  
  	/* Initialization */
@@ -86,7 +86,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	jumpstack  = (struct ipt_entry **)private->jumpstack[cpu];
  
  	/* Switch to alternate jumpstack if we're being invoked via TEE.
-@@ -299,7 +327,16 @@ ipt_do_table(struct sk_buff *skb,
+@@ -300,7 +328,16 @@ ipt_do_table(void *priv,
  	if (static_key_false(&xt_tee_enabled))
  		jumpstack += private->stacksize * __this_cpu_read(nf_skb_duplicated);
  

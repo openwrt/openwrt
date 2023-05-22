@@ -15,11 +15,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  net/wireless/Kconfig            | 4 ++++
  3 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index eddf8ee270e7..1ac7390772de 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -2156,7 +2156,7 @@ struct net_device {
+@@ -2167,7 +2167,7 @@ struct net_device {
  #if IS_ENABLED(CONFIG_AX25)
  	void			*ax25_ptr;
  #endif
@@ -28,11 +26,9 @@ index eddf8ee270e7..1ac7390772de 100644
  	struct wireless_dev	*ieee80211_ptr;
  #endif
  #if IS_ENABLED(CONFIG_IEEE802154) || IS_ENABLED(CONFIG_6LOWPAN)
-diff --git a/net/batman-adv/hard-interface.c b/net/batman-adv/hard-interface.c
-index 41c1ad33d009..58a1c5999b44 100644
 --- a/net/batman-adv/hard-interface.c
 +++ b/net/batman-adv/hard-interface.c
-@@ -308,7 +308,7 @@ static bool batadv_is_cfg80211_netdev(struct net_device *net_device)
+@@ -308,7 +308,7 @@ static bool batadv_is_cfg80211_netdev(st
  	if (!net_device)
  		return false;
  
@@ -41,8 +37,6 @@ index 41c1ad33d009..58a1c5999b44 100644
  	/* cfg80211 drivers have to set ieee80211_ptr */
  	if (net_device->ieee80211_ptr)
  		return true;
-diff --git a/net/wireless/Kconfig b/net/wireless/Kconfig
-index f620acd2a0f5..9f1aa9ec9fa3 100644
 --- a/net/wireless/Kconfig
 +++ b/net/wireless/Kconfig
 @@ -26,6 +26,7 @@ config CFG80211
@@ -63,6 +57,3 @@ index f620acd2a0f5..9f1aa9ec9fa3 100644
  if CFG80211
  
  config NL80211_TESTMODE
--- 
-2.37.2
-

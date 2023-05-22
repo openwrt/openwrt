@@ -16,7 +16,7 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 
 --- a/drivers/platform/Kconfig
 +++ b/drivers/platform/Kconfig
-@@ -15,3 +15,5 @@ source "drivers/platform/mellanox/Kconfi
+@@ -16,3 +16,5 @@ source "drivers/platform/olpc/Kconfig"
  source "drivers/platform/surface/Kconfig"
  
  source "drivers/platform/x86/Kconfig"
@@ -24,7 +24,7 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 +source "drivers/platform/mikrotik/Kconfig"
 --- a/drivers/platform/Makefile
 +++ b/drivers/platform/Makefile
-@@ -10,3 +10,4 @@ obj-$(CONFIG_OLPC_EC)		+= olpc/
+@@ -11,3 +11,4 @@ obj-$(CONFIG_OLPC_EC)		+= olpc/
  obj-$(CONFIG_GOLDFISH)		+= goldfish/
  obj-$(CONFIG_CHROME_PLATFORMS)	+= chrome/
  obj-$(CONFIG_SURFACE_PLATFORMS)	+= surface/

@@ -26,7 +26,7 @@ Cc: stable@vger.kernel.org # v5.8+
 
 --- a/fs/binfmt_elf.c
 +++ b/fs/binfmt_elf.c
-@@ -768,7 +768,7 @@ static int parse_elf_properties(struct f
+@@ -769,7 +769,7 @@ static int parse_elf_properties(struct f
  {
  	union {
  		struct elf_note nhdr;
@@ -35,7 +35,7 @@ Cc: stable@vger.kernel.org # v5.8+
  	} note;
  	loff_t pos;
  	ssize_t n;
-@@ -788,26 +788,38 @@ static int parse_elf_properties(struct f
+@@ -789,26 +789,38 @@ static int parse_elf_properties(struct f
  	if (phdr->p_filesz > sizeof(note))
  		return -ENOEXEC;
  
@@ -83,7 +83,7 @@ Cc: stable@vger.kernel.org # v5.8+
  	datasz = off + note.nhdr.n_descsz;
  
  	have_prev_type = false;
-@@ -817,6 +829,8 @@ static int parse_elf_properties(struct f
+@@ -818,6 +830,8 @@ static int parse_elf_properties(struct f
  		have_prev_type = true;
  	} while (!ret);
  
