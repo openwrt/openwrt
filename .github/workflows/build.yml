@@ -8,6 +8,9 @@ on:
       target:
         required: true
         type: string
+      subtarget:
+        required: true
+        type: string
       testing:
         type: boolean
       build_toolchain:
@@ -50,7 +53,7 @@ permissions:
 
 jobs:
   setup_build:
-    name: Setup build ${{ inputs.target }}
+    name: Setup build ${{ inputs.target }}/${{ inputs.subtarget }}
     runs-on: ubuntu-latest
     outputs:
       owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
@@ -109,7 +112,7 @@ jobs:
           echo "container_tag=$CONTAINER_TAG" >> $GITHUB_OUTPUT
 
   build:
-    name: Build ${{ inputs.target }}
+    name: Build ${{ inputs.target }}/${{ inputs.subtarget }}
     needs: setup_build
     runs-on: ubuntu-latest
 
@@ -156,13 +159,6 @@ jobs:
       - name: Fix permission
         run: |
           chown -R buildbot:buildbot openwrt
-
-      - name: Initialization environment
-        run: |
-          TARGET=$(echo ${{ inputs.target }} | cut -d "/" -f 1)
-          SUBTARGET=$(echo ${{ inputs.target }} | cut -d "/" -f 2)
-          echo "TARGET=$TARGET" >> "$GITHUB_ENV"
-          echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
 
       - name: Prepare prebuilt tools
         shell: su buildbot -c "sh -e {0}"
@@ -213,7 +209,7 @@ jobs:
             fi
           fi
 
-          SUMS_FILE="https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums"
+          SUMS_FILE="https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/${{ inputs.target }}/${{ inputs.subtarget }}/sha256sums"
           if curl $SUMS_FILE | grep -q ".*openwrt-toolchain.*tar.xz"; then
             TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*openwrt-toolchain.*tar.xz")"
             TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
@@ -235,16 +231,16 @@ jobs:
         uses: actions/cache@v3
         with:
           path: openwrt/.ccache
-          key: ccache-kernel-${{ env.TARGET }}/${{ env.SUBTARGET }}-${{ needs.setup_build.outputs.ccache_hash }}
+          key: ccache-kernel-${{ inputs.target }}/${{ inputs.subtarget }}-${{ needs.setup_build.outputs.ccache_hash }}
           restore-keys: |
-            ccache-kernel-${{ env.TARGET }}/${{ env.SUBTARGET }}-
+            ccache-kernel-${{ inputs.target }}/${{ inputs.subtarget }}-
 
       - name: Download external toolchain/sdk
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type != 'internal'
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
-          wget -O - https://downloads.cdn.openwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/${{ env.TOOLCHAIN_FILE }}.tar.xz \
+          wget -O - https://downloads.cdn.openwrt.org/${{ env.TOOLCHAIN_PATH }}/targets/${{ inputs.target }}/${{ inputs.subtarget }}/${{ env.TOOLCHAIN_FILE }}.tar.xz \
             | tar --xz -xf -
 
       - name: Configure testing kernel
@@ -289,7 +285,7 @@ jobs:
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
             --overwrite-config \
-            --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
+            --config ${{ inputs.target }}/${{ inputs.subtarget }}
 
       - name: Adapt external sdk to external toolchain format
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_sdk'
@@ -331,7 +327,7 @@ jobs:
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/staging_dir/toolchain-* \
             --overwrite-config \
-            --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
+            --config ${{ inputs.target }}/${{ inputs.subtarget }}
 
       - name: Configure internal toolchain
         if: inputs.build_toolchain == true || steps.parse-toolchain.outputs.toolchain-type == 'internal'
@@ -342,8 +338,8 @@ jobs:
           echo CONFIG_AUTOREMOVE=y >> .config
           echo CONFIG_CCACHE=y >> .config
 
-          echo "CONFIG_TARGET_${{ env.TARGET }}=y" >> .config
-          echo "CONFIG_TARGET_${{ env.TARGET }}_${{ env.SUBTARGET }}=y" >> .config
+          echo "CONFIG_TARGET_${{ inputs.target }}=y" >> .config
+          echo "CONFIG_TARGET_${{ inputs.target }}_${{ inputs.subtarget }}=y" >> .config
 
           make defconfig
 
@@ -435,5 +431,5 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.TARGET }}-${{ env.SUBTARGET }}-logs
+          name: ${{ inputs.target }}-${{ inputs.subtarget }}-logs
           path: "openwrt/logs"
