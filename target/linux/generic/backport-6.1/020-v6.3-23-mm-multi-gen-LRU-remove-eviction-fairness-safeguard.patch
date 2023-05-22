@@ -4,7 +4,7 @@ Date: Wed, 21 Dec 2022 21:19:01 -0700
 Subject: [PATCH 23/29] mm: multi-gen LRU: remove eviction fairness safeguard
 
 Recall that the eviction consumes the oldest generation: first it
-bucket-sorts pages whose gen counters were updated by the aging and
+bucket-sorts folios whose gen counters were updated by the aging and
 reclaims the rest; then it increments lrugen->min_seq.
 
 The current eviction fairness safeguard for global reclaim has a
@@ -61,13 +61,13 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  static bool writeback_throttling_sane(struct scan_control *sc)
  {
  	return true;
-@@ -4722,8 +4732,7 @@ static int isolate_pages(struct lruvec *
+@@ -4722,8 +4732,7 @@ static int isolate_folios(struct lruvec *
  	return scanned;
  }
  
--static int evict_pages(struct lruvec *lruvec, struct scan_control *sc, int swappiness,
--		       bool *need_swapping)
-+static int evict_pages(struct lruvec *lruvec, struct scan_control *sc, int swappiness)
+-static int evict_folios(struct lruvec *lruvec, struct scan_control *sc, int swappiness,
+-			bool *need_swapping)
++static int evict_folios(struct lruvec *lruvec, struct scan_control *sc, int swappiness)
  {
  	int type;
  	int scanned;
@@ -81,7 +81,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	return scanned;
  }
  
-@@ -4853,68 +4859,26 @@ done:
+@@ -4853,67 +4859,26 @@ done:
  	return min_seq[!can_swap] + MIN_NR_GENS <= max_seq ? nr_to_scan : 0;
  }
  
@@ -93,7 +93,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 -	DEFINE_MAX_SEQ(lruvec);
 -
 -	if (!current_is_kswapd()) {
--		/* age each memcg once to ensure fairness */
+-		/* age each memcg at most once to ensure fairness */
 -		if (max_seq - seq > 1)
 -			return true;
 -
@@ -118,10 +118,9 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 -
 -	/*
 -	 * A minimum amount of work was done under global memory pressure. For
--	 * kswapd, it may be overshooting. For direct reclaim, the target isn't
--	 * met, and yet the allocation may still succeed, since kswapd may have
--	 * caught up. In either case, it's better to stop now, and restart if
--	 * necessary.
+-	 * kswapd, it may be overshooting. For direct reclaim, the allocation
+-	 * may succeed if all suitable zones are somewhat safe. In either case,
+-	 * it's better to stop now, and restart later if necessary.
 -	 */
 -	for (i = 0; i <= sc->reclaim_idx; i++) {
 -		unsigned long wmark;
@@ -163,8 +162,8 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  		if (!nr_to_scan)
  			goto done;
  
--		delta = evict_pages(lruvec, sc, swappiness, &need_swapping);
-+		delta = evict_pages(lruvec, sc, swappiness);
+-		delta = evict_folios(lruvec, sc, swappiness, &need_swapping);
++		delta = evict_folios(lruvec, sc, swappiness);
  		if (!delta)
  			goto done;
  
@@ -181,8 +180,8 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  		if (sc->nr_reclaimed >= nr_to_reclaim)
  			return 0;
  
--		if (!evict_pages(lruvec, sc, swappiness, NULL))
-+		if (!evict_pages(lruvec, sc, swappiness))
+-		if (!evict_folios(lruvec, sc, swappiness, NULL))
++		if (!evict_folios(lruvec, sc, swappiness))
  			return 0;
  
  		cond_resched();

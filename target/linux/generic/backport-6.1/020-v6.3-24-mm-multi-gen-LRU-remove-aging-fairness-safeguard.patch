@@ -4,13 +4,13 @@ Date: Wed, 21 Dec 2022 21:19:02 -0700
 Subject: [PATCH 24/29] mm: multi-gen LRU: remove aging fairness safeguard
 
 Recall that the aging produces the youngest generation: first it scans
-for accessed pages and updates their gen counters; then it increments
+for accessed folios and updates their gen counters; then it increments
 lrugen->max_seq.
 
 The current aging fairness safeguard for kswapd uses two passes to
 ensure the fairness to multiple eligible memcgs. On the first pass,
 which is shared with the eviction, it checks whether all eligible
-memcgs are low on cold pages. If so, it requires a second pass, on
+memcgs are low on cold folios. If so, it requires a second pass, on
 which it ages all those memcgs at the same time.
 
 With memcg LRU, the aging, while ensuring eventual fairness, will run
@@ -56,11 +56,11 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	int gen, type, zone;
 @@ -4193,6 +4192,13 @@ static bool should_run_aging(struct lruv
  	unsigned long total = 0;
- 	struct lru_gen_page *lrugen = &lruvec->lrugen;
+ 	struct lru_gen_folio *lrugen = &lruvec->lrugen;
  	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
 +	DEFINE_MIN_SEQ(lruvec);
 +
-+	/* whether this lruvec is completely out of cold pages */
++	/* whether this lruvec is completely out of cold folios */
 +	if (min_seq[!can_swap] + MIN_NR_GENS > max_seq) {
 +		*nr_to_scan = 0;
 +		return true;
@@ -90,7 +90,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 +	int gen, type, zone;
 +	unsigned long total = 0;
 +	bool can_swap = get_swappiness(lruvec, sc);
-+	struct lru_gen_page *lrugen = &lruvec->lrugen;
++	struct lru_gen_folio *lrugen = &lruvec->lrugen;
  	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
  	DEFINE_MAX_SEQ(lruvec);
  	DEFINE_MIN_SEQ(lruvec);
@@ -134,7 +134,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 -		if (!nr_to_scan && sc->priority != DEF_PRIORITY)
 -			return false;
 -	}
-+	/* see the comment on lru_gen_page */
++	/* see the comment on lru_gen_folio */
 +	gen = lru_gen_from_seq(min_seq[LRU_GEN_FILE]);
 +	birth = READ_ONCE(lruvec->lrugen.timestamps[gen]);
  
@@ -242,7 +242,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 -		return nr_to_scan;
 -done:
 -	return min_seq[!can_swap] + MIN_NR_GENS <= max_seq ? nr_to_scan : 0;
-+	/* skip this lruvec as it's low on cold pages */
++	/* skip this lruvec as it's low on cold folios */
 +	return 0;
  }
  
@@ -267,7 +267,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 -			goto done;
 +			break;
  
- 		delta = evict_pages(lruvec, sc, swappiness);
+ 		delta = evict_folios(lruvec, sc, swappiness);
  		if (!delta)
 -			goto done;
 +			break;

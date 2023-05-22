@@ -1,7 +1,7 @@
 From fa6363828d314e837c5f79e97ea5e8c0d2f7f062 Mon Sep 17 00:00:00 2001
 From: Yu Zhao <yuzhao@google.com>
 Date: Wed, 21 Dec 2022 21:19:04 -0700
-Subject: [PATCH 26/29] mm: multi-gen LRU: per-node lru_gen_page lists
+Subject: [PATCH 26/29] mm: multi-gen LRU: per-node lru_gen_folio lists
 
 For each node, memcgs are divided into two generations: the old and
 the young. For each generation, memcgs are randomly sharded into
@@ -63,7 +63,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  include/linux/mm_inline.h  |  17 ++
  include/linux/mmzone.h     | 117 +++++++++++-
  mm/memcontrol.c            |  16 ++
- mm/page_alloc.c            |   1 +
+ mm/folio_alloc.c            |   1 +
  mm/vmscan.c                | 373 +++++++++++++++++++++++++++++++++----
  6 files changed, 499 insertions(+), 35 deletions(-)
 
@@ -123,7 +123,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 +	return 0;
 +}
 +
- static inline bool lru_gen_add_page(struct lruvec *lruvec, struct page *page, bool reclaiming)
+ static inline bool lru_gen_add_folio(struct lruvec *lruvec, struct folio *folio, bool reclaiming)
  {
  	return false;
 --- a/include/linux/mmzone.h
@@ -136,7 +136,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  #include <linux/wait.h>
  #include <linux/bitops.h>
  #include <linux/cache.h>
-@@ -357,6 +358,15 @@ struct page_vma_mapped_walk;
+@@ -357,6 +358,15 @@ struct folio_vma_mapped_walk;
  #define LRU_GEN_MASK		((BIT(LRU_GEN_WIDTH) - 1) << LRU_GEN_PGOFF)
  #define LRU_REFS_MASK		((BIT(LRU_REFS_WIDTH) - 1) << LRU_REFS_PGOFF)
  
@@ -152,16 +152,16 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  #ifdef CONFIG_LRU_GEN
  
  enum {
-@@ -416,6 +426,14 @@ struct lru_gen_page {
+@@ -416,6 +426,14 @@ struct lru_gen_folio {
  	atomic_long_t refaulted[NR_HIST_GENS][ANON_AND_FILE][MAX_NR_TIERS];
  	/* whether the multi-gen LRU is enabled */
  	bool enabled;
 +#ifdef CONFIG_MEMCG
-+	/* the memcg generation this lru_gen_page belongs to */
++	/* the memcg generation this lru_gen_folio belongs to */
 +	u8 gen;
-+	/* the list segment this lru_gen_page belongs to */
++	/* the list segment this lru_gen_folio belongs to */
 +	u8 seg;
-+	/* per-node lru_gen_page list for global reclaim */
++	/* per-node lru_gen_folio list for global reclaim */
 +	struct hlist_nulls_node list;
 +#endif
  };
@@ -216,9 +216,9 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 +struct lru_gen_memcg {
 +	/* the per-node memcg generation counter */
 +	unsigned long seq;
-+	/* each memcg has one lru_gen_page per node */
++	/* each memcg has one lru_gen_folio per node */
 +	unsigned long nr_memcgs[MEMCG_NR_GENS];
-+	/* per-node lru_gen_page list for global reclaim */
++	/* per-node lru_gen_folio list for global reclaim */
 +	struct hlist_nulls_head	fifo[MEMCG_NR_GENS][MEMCG_NR_BINS];
 +	/* protects the above */
 +	spinlock_t lock;
@@ -294,7 +294,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  #ifdef CONFIG_LRU_GEN
  	/* kswap mm walk data */
  	struct lru_gen_mm_walk	mm_walk;
-+	/* lru_gen_page list */
++	/* lru_gen_folio list */
 +	struct lru_gen_memcg memcg_lru;
  #endif
  
@@ -306,7 +306,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	struct mem_cgroup_tree_per_node *mctz;
  
 +	if (lru_gen_enabled()) {
-+		struct lruvec *lruvec = &mem_cgroup_page_nodeinfo(memcg, page)->lruvec;
++		struct lruvec *lruvec = &memcg->nodeinfo[nid]->lruvec;
 +
 +		/* see the comment on MEMCG_NR_GENS */
 +		if (soft_limit_excess(memcg) && lru_gen_memcg_seg(lruvec) != MEMCG_LRU_HEAD)
@@ -315,7 +315,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 +		return;
 +	}
 +
- 	mctz = soft_limit_tree_from_page(page);
+ 	mctz = soft_limit_tree.rb_tree_per_node[nid];
  	if (!mctz)
  		return;
 @@ -3433,6 +3443,9 @@ unsigned long mem_cgroup_soft_limit_recl
@@ -430,7 +430,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
 -	try_to_inc_max_seq(lruvec, max_seq, sc, can_swap, false);
 -
- 	/* skip this lruvec as it's low on cold pages */
+ 	/* skip this lruvec as it's low on cold folios */
 -	return 0;
 +	return try_to_inc_max_seq(lruvec, max_seq, sc, can_swap, false) ? -1 : 0;
  }
@@ -476,7 +476,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 +		if (nr_to_scan <= 0)
  			break;
  
- 		delta = evict_pages(lruvec, sc, swappiness);
+ 		delta = evict_folios(lruvec, sc, swappiness);
 @@ -4912,10 +4895,250 @@ static void lru_gen_shrink_lruvec(struct
  		cond_resched();
  	}
@@ -532,7 +532,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 +	int bin;
 +	int first_bin;
 +	struct lruvec *lruvec;
-+	struct lru_gen_page *lrugen;
++	struct lru_gen_folio *lrugen;
 +	const struct hlist_nulls_node *pos;
 +	int op = 0;
 +	struct mem_cgroup *memcg = NULL;

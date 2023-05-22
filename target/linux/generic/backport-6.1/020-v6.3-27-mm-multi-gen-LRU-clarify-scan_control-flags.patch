@@ -10,10 +10,10 @@ Among the flags in scan_control:
    opportunistically skip the aging path, since it is considered less
    latency sensitive.
 3. !(sc->gfp_mask & __GFP_IO), which indicates IO constraint, lowers
-   swappiness to prioritize file LRU, since clean file pages are more
+   swappiness to prioritize file LRU, since clean file folios are more
    likely to exist.
-4. sc->may_writepage and sc->may_unmap, which indicates opportunistic
-   reclaim, are rejected, since unmapped clean pages are already
+4. sc->may_writefolio and sc->may_unmap, which indicates opportunistic
+   reclaim, are rejected, since unmapped clean folios are already
    prioritized. Scanning for more of them is likely futile and can
    cause high reclaim latency when there is a large number of memcgs.
 
@@ -43,7 +43,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 +		return 0;
 +
  	if (!can_demote(pgdat->node_id, sc) &&
- 	    mem_cgroup_get_nr_swap_pages(memcg) < MIN_LRU_BATCH)
+ 	    mem_cgroup_get_nr_swap_folios(memcg) < MIN_LRU_BATCH)
  		return 0;
 @@ -3952,7 +3955,7 @@ static void walk_mm(struct lruvec *lruve
  	} while (err == -EAGAIN);
@@ -78,24 +78,24 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
 -	VM_WARN_ON_ONCE(sc->memcg_low_reclaim);
 -
- 	/* see the comment on lru_gen_page */
+ 	/* see the comment on lru_gen_folio */
  	gen = lru_gen_from_seq(min_seq[LRU_GEN_FILE]);
  	birth = READ_ONCE(lruvec->lrugen.timestamps[gen]);
-@@ -4472,12 +4473,8 @@ static bool isolate_page(struct lruvec *
+@@ -4472,12 +4473,8 @@ static bool isolate_folio(struct lruvec *
  {
  	bool success;
  
 -	/* unmapping inhibited */
--	if (!sc->may_unmap && page_mapped(page))
+-	if (!sc->may_unmap && folio_mapped(folio))
 -		return false;
 -
  	/* swapping inhibited */
 -	if (!(sc->may_writepage && (sc->gfp_mask & __GFP_IO)) &&
 +	if (!(sc->gfp_mask & __GFP_IO) &&
- 	    (PageDirty(page) ||
- 	     (PageAnon(page) && !PageSwapCache(page))))
+ 	    (folio_test_dirty(folio) ||
+ 	     (folio_test_anon(folio) && !folio_test_swapcache(folio))))
  		return false;
-@@ -4574,9 +4571,8 @@ static int scan_pages(struct lruvec *lru
+@@ -4574,9 +4571,8 @@ static int scan_folios(struct lruvec *lru
  	__count_vm_events(PGSCAN_ANON + type, isolated);
  
  	/*
@@ -123,7 +123,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	unsigned long nr_to_reclaim = get_nr_to_reclaim(sc);
 +	int swappiness = get_swappiness(lruvec, sc);
 +
-+	/* clean file pages are more likely to exist */
++	/* clean file folios are more likely to exist */
 +	if (swappiness && !(sc->gfp_mask & __GFP_IO))
 +		swappiness = 1;
  
@@ -151,7 +151,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	blk_start_plug(&plug);
  
 -	set_mm_walk(lruvec_pgdat(lruvec));
-+	set_mm_walk(NULL, false);
++	set_mm_walk(NULL, sc->proactive);
  
  	if (try_to_shrink_lruvec(lruvec, sc))
  		lru_gen_rotate_memcg(lruvec, MEMCG_LRU_YOUNG);
@@ -160,7 +160,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	VM_WARN_ON_ONCE(!global_reclaim(sc));
  
 +	/*
-+	 * Unmapped clean pages are already prioritized. Scanning for more of
++	 * Unmapped clean folios are already prioritized. Scanning for more of
 +	 * them is likely futile and can cause high reclaim latency when there
 +	 * is a large number of memcgs.
 +	 */
@@ -172,7 +172,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	blk_start_plug(&plug);
  
 -	set_mm_walk(pgdat);
-+	set_mm_walk(pgdat, false);
++	set_mm_walk(NULL, sc->proactive);
  
  	set_initial_priority(pgdat, sc);
  

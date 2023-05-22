@@ -58,9 +58,9 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 
 --- a/include/linux/mm_inline.h
 +++ b/include/linux/mm_inline.h
-@@ -333,4 +333,13 @@ static __always_inline void del_page_fro
- 	update_lru_size(lruvec, page_lru(page), page_zonenum(page),
- 			-thp_nr_pages(page));
+@@ -606,5 +606,13 @@ static __always_inline void del_page_fro
+ 			   make_pte_marker(PTE_MARKER_UFFD_WP));
+ #endif
  }
 +
 +static inline bool vma_has_recency(struct vm_area_struct *vma)
@@ -70,18 +70,10 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 +
 +	return true;
 +}
-+
+ 
  #endif
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -41,6 +41,7 @@
- 
- #include <linux/kernel_stat.h>
- #include <linux/mm.h>
-+#include <linux/mm_inline.h>
- #include <linux/sched/mm.h>
- #include <linux/sched/coredump.h>
- #include <linux/sched/numa_balancing.h>
 @@ -1353,8 +1354,7 @@ again:
  					force_flush = 1;
  					set_page_dirty(page);
@@ -121,10 +113,10 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 -				/*
 -				 * Don't treat a reference through
 -				 * a sequentially read mapping as such.
--				 * If the page has been used in another mapping,
+-				 * If the folio has been used in another mapping,
 -				 * we will catch it; if this other mapping is
 -				 * already gone, the unmap path will have set
--				 * PG_referenced or activated the page.
+-				 * the referenced flag or activated the folio.
 -				 */
 -				if (likely(!(vma->vm_flags & VM_SEQ_READ)))
 -					referenced++;
@@ -157,10 +149,10 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  	return false;
 @@ -876,6 +878,7 @@ int page_referenced(struct page *page,
- 		.rmap_one = page_referenced_one,
  		.arg = (void *)&pra,
- 		.anon_lock = page_lock_anon_vma_read,
-+		.invalid_vma = invalid_page_referenced_vma,
+ 		.anon_lock = folio_lock_anon_vma_read,
+ 		.try_lock = true,
++		.invalid_vma = invalid_folio_referenced_vma,
  	};
  
  	*vm_flags = 0;
@@ -174,10 +166,10 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 -	 * cgroups
 -	 */
 -	if (memcg) {
--		rwc.invalid_vma = invalid_page_referenced_vma;
+-		rwc.invalid_vma = invalid_folio_referenced_vma;
 -	}
 -
- 	rmap_walk(page, &rwc);
+ 	rmap_walk(folio, &rwc);
  	*vm_flags = pra.vm_flags;
  
 --- a/mm/vmscan.c

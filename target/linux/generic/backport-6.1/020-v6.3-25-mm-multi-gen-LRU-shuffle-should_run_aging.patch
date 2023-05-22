@@ -32,11 +32,11 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 -	unsigned long old = 0;
 -	unsigned long young = 0;
 -	unsigned long total = 0;
--	struct lru_gen_page *lrugen = &lruvec->lrugen;
+-	struct lru_gen_folio *lrugen = &lruvec->lrugen;
 -	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
 -	DEFINE_MIN_SEQ(lruvec);
 -
--	/* whether this lruvec is completely out of cold pages */
+-	/* whether this lruvec is completely out of cold folios */
 -	if (min_seq[!can_swap] + MIN_NR_GENS > max_seq) {
 -		*nr_to_scan = 0;
 -		return true;
@@ -101,11 +101,11 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 +	unsigned long old = 0;
 +	unsigned long young = 0;
 +	unsigned long total = 0;
-+	struct lru_gen_page *lrugen = &lruvec->lrugen;
++	struct lru_gen_folio *lrugen = &lruvec->lrugen;
 +	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
 +	DEFINE_MIN_SEQ(lruvec);
 +
-+	/* whether this lruvec is completely out of cold pages */
++	/* whether this lruvec is completely out of cold folios */
 +	if (min_seq[!can_swap] + MIN_NR_GENS > max_seq) {
 +		*nr_to_scan = 0;
 +		return true;

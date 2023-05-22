@@ -34,7 +34,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	int bin;
  	int first_bin;
  	struct lruvec *lruvec;
- 	struct lru_gen_page *lrugen;
+ 	struct lru_gen_folio *lrugen;
 +	struct mem_cgroup *memcg;
  	const struct hlist_nulls_node *pos;
 -	int op = 0;
