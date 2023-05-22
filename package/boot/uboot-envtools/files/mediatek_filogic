@@ -52,6 +52,10 @@ xiaomi,redmi-router-ax6000-ubootmod)
 	ubootenv_add_uci_config "$envdev" "0x0" "0x1f000" "0x20000" "1"
 	ubootenv_add_uci_config "$envdev2" "0x0" "0x1f000" "0x20000" "1"
 	;;
+zyxel,ex5601-t0)
+	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
+	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x40000" "2"
+	;;
 esac
 
 config_load ubootenv
