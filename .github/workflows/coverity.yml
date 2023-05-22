@@ -17,7 +17,8 @@ jobs:
       packages: read
     uses: ./.github/workflows/build.yml
     with:
-      target: x86/64
+      target: x86
+      subtarget: 64
       build_full: true
       include_feeds: true
       coverity_compiler_template_list: >-

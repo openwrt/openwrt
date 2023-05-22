@@ -40,8 +40,9 @@ jobs:
           JSON='['
           FIRST=1
           for TARGET in $TARGETS; do
+            TUPLE='{"target":"'"$(echo $TARGET | cut -d "/" -f 1)"'","subtarget":"'"$(echo $TARGET | cut -d "/" -f 2)"'"}'
             [[ $FIRST -ne 1 ]] && JSON="$JSON"','
-            JSON="$JSON"'"'"${TARGET}"'"'
+            JSON="$JSON""$TUPLE"
             FIRST=0
           done
           JSON="$JSON"']'
@@ -61,8 +62,9 @@ jobs:
     strategy:
        fail-fast: False
        matrix:
-         target: ${{fromJson(needs.determine_targets.outputs.target)}}
+         include: ${{fromJson(needs.determine_targets.outputs.target)}}
     uses: ./.github/workflows/build.yml
     with:
       target: ${{ matrix.target }}
+      subtarget: ${{ matrix.subtarget }}
       build_toolchain: true

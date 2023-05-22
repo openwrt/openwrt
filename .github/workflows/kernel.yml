@@ -64,8 +64,9 @@ jobs:
             if echo "$CHANGED_FILES" | grep -v -q target/linux ||
               echo "$CHANGED_FILES" | grep -q target/linux/generic ||
               echo "$CHANGED_FILES" | grep -q $(echo $TARGET | cut -d "/" -f 1); then
+              TUPLE='{"target":"'"$(echo $TARGET | cut -d "/" -f 1)"'","subtarget":"'"$(echo $TARGET | cut -d "/" -f 2)"'"}'
               [[ $FIRST -ne 1 ]] && JSON_TARGETS_SUBTARGETS="$JSON_TARGETS_SUBTARGETS"','
-              JSON_TARGETS_SUBTARGETS="$JSON_TARGETS_SUBTARGETS"'"'"${TARGET}"'"'
+              JSON_TARGETS_SUBTARGETS="$JSON_TARGETS_SUBTARGETS""$TUPLE"
               FIRST=0
             fi
           done
@@ -77,8 +78,9 @@ jobs:
             if echo "$CHANGED_FILES" | grep -v -q target/linux ||
               echo "$CHANGED_FILES" | grep -q target/linux/generic ||
               echo "$CHANGED_FILES" | grep -q $(echo $TARGET | cut -d "/" -f 1); then
+              TUPLE='{"target":"'"$(echo $TARGET | cut -d "/" -f 1)"'","subtarget":"'"$(echo $TARGET | cut -d "/" -f 2)"'"}'
               [[ $FIRST -ne 1 ]] && JSON_TARGETS="$JSON_TARGETS"','
-              JSON_TARGETS="$JSON_TARGETS"'"'"${TARGET}"'"'
+              JSON_TARGETS="$JSON_TARGETS""$TUPLE"
               FIRST=0
             fi
           done
@@ -104,10 +106,11 @@ jobs:
     strategy:
        fail-fast: False
        matrix:
-         target: ${{fromJson(needs.determine_targets.outputs.targets_subtargets)}}
+         include: ${{fromJson(needs.determine_targets.outputs.targets_subtargets)}}
     uses: ./.github/workflows/build.yml
     with:
       target: ${{ matrix.target }}
+      subtarget: ${{ matrix.subtarget }}
       build_kernel: true
       build_all_kmods: true
 
@@ -120,8 +123,9 @@ jobs:
     strategy:
        fail-fast: False
        matrix:
-         target: ${{fromJson(needs.determine_targets.outputs.targets)}}
+         include: ${{fromJson(needs.determine_targets.outputs.targets)}}
     uses: ./.github/workflows/check-kernel-patches.yml
     with:
       target: ${{ matrix.target }}
+      subtarget: ${{ matrix.subtarget }}
 
