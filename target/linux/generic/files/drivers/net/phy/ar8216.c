@@ -1419,8 +1419,7 @@ ar8xxx_sw_reset_switch(struct switch_dev *dev)
 	int i;
 
 	mutex_lock(&priv->reg_mutex);
-	memset(&priv->vlan, 0, sizeof(struct ar8xxx_priv) -
-		offsetof(struct ar8xxx_priv, vlan));
+	memset(&priv->ar8xxx_priv_volatile, 0, sizeof(priv->ar8xxx_priv_volatile));
 
 	for (i = 0; i < dev->vlans; i++)
 		priv->vlan_id[i] = i;
@@ -2461,7 +2460,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 		dev->phy_ptr = priv;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
 		dev->priv_flags |= IFF_NO_IP_ALIGN;
-#else LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0)
+#else
 		dev->extra_priv_flags |= IFF_NO_IP_ALIGN;
 #endif
 		dev->eth_mangle_rx = ar8216_mangle_rx;
@@ -2700,7 +2699,7 @@ ar8xxx_phy_detach(struct phy_device *phydev)
 	dev->phy_ptr = NULL;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
 	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
-#else LINUX_VERSION_CODE >= KERNEL_VERSION(5,15,0)
+#else
 	dev->extra_priv_flags &= ~IFF_NO_IP_ALIGN;
 #endif
 	dev->eth_mangle_rx = NULL;
