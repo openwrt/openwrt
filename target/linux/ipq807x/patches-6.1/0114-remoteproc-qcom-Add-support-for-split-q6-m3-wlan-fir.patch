@@ -82,7 +82,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  
  	ret = q6v5_wcss_init_mmio(wcss, pdev);
  	if (ret)
-@@ -1149,7 +1173,8 @@ static int q6v5_wcss_remove(struct platf
+@@ -1150,7 +1174,8 @@ static int q6v5_wcss_remove(struct platf
  
  static const struct wcss_data wcss_ipq8074_res_init = {
  	.init_clock = ipq8074_init_clock,
@@ -92,7 +92,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	.crash_reason_smem = WCSS_CRASH_REASON,
  	.aon_reset_required = true,
  	.wcss_q6_reset_required = true,
-@@ -1162,7 +1187,7 @@ static const struct wcss_data wcss_qcs40
+@@ -1163,7 +1188,7 @@ static const struct wcss_data wcss_qcs40
  	.init_clock = qcs404_init_clock,
  	.init_regulator = qcs404_init_regulator,
  	.crash_reason_smem = WCSS_CRASH_REASON,

@@ -1,22 +1,21 @@
-From 303fb163bb86f04432c93325ff8b9638c9e50641 Mon Sep 17 00:00:00 2001
+From c9df32c057e43e38c8113199e64f7a64f8d341df Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
 Date: Mon, 11 Apr 2022 14:35:36 +0200
 Subject: [PATCH] regulator: add Qualcomm CPR regulators
 
-Add Qualcomm CPR driver, which allows using the CPR HW to calculate the
-correct OPP point voltage dynamically based on the system load.
+Allow building Qualcomm CPR regulators.
 
 Signed-off-by: Robert Marko <robimarko@gmail.com>
 ---
  drivers/regulator/Kconfig               |   33 +
  drivers/regulator/Makefile              |    3 +
  drivers/regulator/cpr3-npu-regulator.c  |  695 +++
- drivers/regulator/cpr3-regulator.c      | 5112 +++++++++++++++++++++++
+ drivers/regulator/cpr3-regulator.c      | 5111 +++++++++++++++++++++++
  drivers/regulator/cpr3-regulator.h      | 1211 ++++++
  drivers/regulator/cpr3-util.c           | 2750 ++++++++++++
  drivers/regulator/cpr4-apss-regulator.c | 1819 ++++++++
  include/soc/qcom/socinfo.h              |  463 ++
- 8 files changed, 12086 insertions(+)
+ 8 files changed, 12085 insertions(+)
  create mode 100644 drivers/regulator/cpr3-npu-regulator.c
  create mode 100644 drivers/regulator/cpr3-regulator.c
  create mode 100644 drivers/regulator/cpr3-regulator.h
@@ -26,7 +25,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/drivers/regulator/Kconfig
 +++ b/drivers/regulator/Kconfig
-@@ -1423,5 +1423,38 @@ config REGULATOR_QCOM_LABIBB
+@@ -1524,4 +1524,37 @@ config REGULATOR_QCOM_LABIBB
  	  boost regulator and IBB can be used as a negative boost regulator
  	  for LCD display panel.
  
@@ -64,10 +63,9 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	  voltage and CPR target quotient values out of hardware fuses.
 +
  endif
- 
 --- a/drivers/regulator/Makefile
 +++ b/drivers/regulator/Makefile
-@@ -105,6 +105,9 @@ obj-$(CONFIG_REGULATOR_QCOM_RPMH) += qco
+@@ -110,6 +110,9 @@ obj-$(CONFIG_REGULATOR_QCOM_RPMH) += qco
  obj-$(CONFIG_REGULATOR_QCOM_SMD_RPM) += qcom_smd-regulator.o
  obj-$(CONFIG_REGULATOR_QCOM_SPMI) += qcom_spmi-regulator.o
  obj-$(CONFIG_REGULATOR_QCOM_USB_VBUS) += qcom_usb_vbus-regulator.o
@@ -777,7 +775,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +MODULE_ALIAS("platform:npu-ipq807x");
 --- /dev/null
 +++ b/drivers/regulator/cpr3-regulator.c
-@@ -0,0 +1,5112 @@
+@@ -0,0 +1,5111 @@
 +/*
 + * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
 + *
@@ -4419,7 +4417,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	config.init_data	= init_data;
 +	config.of_node		= vreg->of_node;
 +
-+	vreg->rdev = regulator_register(rdesc, &config);
++	vreg->rdev = regulator_register(vreg->thread->ctrl->dev, rdesc, &config);
 +	if (IS_ERR(vreg->rdev)) {
 +		rc = PTR_ERR(vreg->rdev);
 +		cpr3_err(vreg, "regulator_register failed, rc=%d\n", rc);
@@ -4613,7 +4611,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	.open	 = cpr3_debug_quot_open,
 +	.release = cpr3_debug_quot_release,
 +	.read	 = cpr3_debug_quot_read,
-+	.llseek  = no_llseek,
 +};
 +
 +/**

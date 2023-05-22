@@ -68,7 +68,7 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
  static const struct reg_field tsens_v2_regfields[MAX_REGFIELDS] = {
 --- a/drivers/thermal/qcom/tsens.c
 +++ b/drivers/thermal/qcom/tsens.c
-@@ -572,8 +572,8 @@ static int tsens_set_trips(void *_sensor
+@@ -573,8 +573,8 @@ static int tsens_set_trips(struct therma
  	dev_dbg(dev, "[%u] %s: proposed thresholds: (%d:%d)\n",
  		hw_id, __func__, low, high);
  
@@ -81,7 +81,7 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
  	low_val  = tsens_mC_to_hw(s, cl_low);
 --- a/drivers/thermal/qcom/tsens.h
 +++ b/drivers/thermal/qcom/tsens.h
-@@ -501,6 +501,8 @@ enum regfield_ids {
+@@ -499,6 +499,8 @@ enum regfield_ids {
   *              with SROT only being available to secure boot firmware?
   * @has_watchdog: does this IP support watchdog functionality?
   * @max_sensors: maximum sensors supported by this version of the IP
@@ -90,7 +90,7 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
   */
  struct tsens_features {
  	unsigned int ver_major;
-@@ -510,6 +512,8 @@ struct tsens_features {
+@@ -508,6 +510,8 @@ struct tsens_features {
  	unsigned int srot_split:1;
  	unsigned int has_watchdog:1;
  	unsigned int max_sensors;

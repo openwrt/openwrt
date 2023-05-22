@@ -21,7 +21,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/drivers/cpufreq/cpufreq-dt-platdev.c
 +++ b/drivers/cpufreq/cpufreq-dt-platdev.c
-@@ -159,6 +159,7 @@ static const struct of_device_id blockli
+@@ -164,6 +164,7 @@ static const struct of_device_id blockli
  	{ .compatible = "ti,omap3", },
  
  	{ .compatible = "qcom,ipq8064", },
@@ -41,7 +41,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  struct qcom_cpufreq_drv;
  
  struct qcom_cpufreq_match_data {
-@@ -218,6 +221,37 @@ len_error:
+@@ -216,6 +219,37 @@ len_error:
  	return ret;
  }
  
@@ -79,7 +79,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  static const struct qcom_cpufreq_match_data match_data_kryo = {
  	.get_version = qcom_cpufreq_kryo_name_version,
  };
-@@ -232,6 +266,10 @@ static const struct qcom_cpufreq_match_d
+@@ -230,6 +264,10 @@ static const struct qcom_cpufreq_match_d
  	.genpd_names = qcs404_genpd_names,
  };
  
@@ -90,7 +90,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  static int qcom_cpufreq_probe(struct platform_device *pdev)
  {
  	struct qcom_cpufreq_drv *drv;
-@@ -431,6 +469,7 @@ static const struct of_device_id qcom_cp
+@@ -375,6 +413,7 @@ static const struct of_device_id qcom_cp
  	{ .compatible = "qcom,msm8996", .data = &match_data_kryo },
  	{ .compatible = "qcom,qcs404", .data = &match_data_qcs404 },
  	{ .compatible = "qcom,ipq8064", .data = &match_data_krait },

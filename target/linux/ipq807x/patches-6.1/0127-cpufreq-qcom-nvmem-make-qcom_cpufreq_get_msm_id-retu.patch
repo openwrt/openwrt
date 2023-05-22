@@ -35,7 +35,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  struct qcom_cpufreq_drv;
  
  struct qcom_cpufreq_match_data {
-@@ -136,30 +130,16 @@ static void get_krait_bin_format_b(struc
+@@ -134,30 +128,16 @@ static void get_krait_bin_format_b(struc
  	dev_dbg(cpu_dev, "PVS version: %d\n", *pvs_ver);
  }
  
@@ -69,7 +69,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  }
  
  static int qcom_cpufreq_kryo_name_version(struct device *cpu_dev,
-@@ -168,25 +148,25 @@ static int qcom_cpufreq_kryo_name_versio
+@@ -166,25 +146,25 @@ static int qcom_cpufreq_kryo_name_versio
  					  struct qcom_cpufreq_drv *drv)
  {
  	size_t len;
