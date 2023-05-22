@@ -53,8 +53,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		.tx_sch_rate	= 0x4798,
  	},
  	.gdm1_cnt		= 0x1c00,
- 	.gdma_to_ppe0		= 0x3333,
-@@ -577,6 +581,75 @@ static void mtk_mac_link_down(struct phy
+ 	.gdma_to_ppe		= 0x3333,
+@@ -620,6 +624,75 @@ static void mtk_mac_link_down(struct phy
  	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
  }
  
@@ -130,7 +130,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static void mtk_mac_link_up(struct phylink_config *config,
  			    struct phy_device *phy,
  			    unsigned int mode, phy_interface_t interface,
-@@ -602,6 +675,8 @@ static void mtk_mac_link_up(struct phyli
+@@ -645,6 +718,8 @@ static void mtk_mac_link_up(struct phyli
  		break;
  	}
  
@@ -139,7 +139,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* Configure duplex */
  	if (duplex == DUPLEX_FULL)
  		mcr |= MAC_MCR_FORCE_DPX;
-@@ -1060,7 +1135,8 @@ static void mtk_tx_set_dma_desc_v1(struc
+@@ -1106,7 +1181,8 @@ static void mtk_tx_set_dma_desc_v1(struc
  
  	WRITE_ONCE(desc->txd1, info->addr);
  
@@ -149,7 +149,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (info->last)
  		data |= TX_DMA_LS0;
  	WRITE_ONCE(desc->txd3, data);
-@@ -1094,9 +1170,6 @@ static void mtk_tx_set_dma_desc_v2(struc
+@@ -1140,9 +1216,6 @@ static void mtk_tx_set_dma_desc_v2(struc
  		data |= TX_DMA_LS0;
  	WRITE_ONCE(desc->txd3, data);
  
@@ -159,7 +159,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	data = (mac->id + 1) << TX_DMA_FPORT_SHIFT_V2; /* forward port */
  	data |= TX_DMA_SWC_V2 | QID_BITS_V2(info->qid);
  	WRITE_ONCE(desc->txd4, data);
-@@ -1140,11 +1213,12 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1186,11 +1259,12 @@ static int mtk_tx_map(struct sk_buff *sk
  		.gso = gso,
  		.csum = skb->ip_summed == CHECKSUM_PARTIAL,
  		.vlan = skb_vlan_tag_present(skb),
@@ -173,7 +173,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
  	const struct mtk_soc_data *soc = eth->soc;
-@@ -1152,8 +1226,10 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1198,8 +1272,10 @@ static int mtk_tx_map(struct sk_buff *sk
  	struct mtk_tx_dma *itxd_pdma, *txd_pdma;
  	struct mtk_tx_buf *itx_buf, *tx_buf;
  	int i, n_desc = 1;
@@ -184,7 +184,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	itxd = ring->next_free;
  	itxd_pdma = qdma_to_pdma(ring, itxd);
  	if (itxd == ring->last_free)
-@@ -1202,7 +1278,7 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1248,7 +1324,7 @@ static int mtk_tx_map(struct sk_buff *sk
  			memset(&txd_info, 0, sizeof(struct mtk_tx_dma_desc_info));
  			txd_info.size = min_t(unsigned int, frag_size,
  					      soc->txrx.dma_max_len);
@@ -193,7 +193,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			txd_info.last = i == skb_shinfo(skb)->nr_frags - 1 &&
  					!(frag_size - txd_info.size);
  			txd_info.addr = skb_frag_dma_map(eth->dma_dev, frag,
-@@ -1241,7 +1317,7 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1287,7 +1363,7 @@ static int mtk_tx_map(struct sk_buff *sk
  			txd_pdma->txd2 |= TX_DMA_LS1;
  	}
  
@@ -202,7 +202,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	skb_tx_timestamp(skb);
  
  	ring->next_free = mtk_qdma_phys_to_virt(ring, txd->txd2);
-@@ -1253,8 +1329,7 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1299,8 +1375,7 @@ static int mtk_tx_map(struct sk_buff *sk
  	wmb();
  
  	if (MTK_HAS_CAPS(soc->caps, MTK_QDMA)) {
@@ -212,7 +212,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			mtk_w32(eth, txd->txd2, soc->reg_map->qdma.ctx_ptr);
  	} else {
  		int next_idx;
-@@ -1323,7 +1398,7 @@ static void mtk_wake_queue(struct mtk_et
+@@ -1369,7 +1444,7 @@ static void mtk_wake_queue(struct mtk_et
  	for (i = 0; i < MTK_MAC_COUNT; i++) {
  		if (!eth->netdev[i])
  			continue;
@@ -221,7 +221,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -1347,7 +1422,7 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1393,7 +1468,7 @@ static netdev_tx_t mtk_start_xmit(struct
  
  	tx_num = mtk_cal_txd_req(eth, skb);
  	if (unlikely(atomic_read(&ring->free_count) <= tx_num)) {
@@ -230,7 +230,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		netif_err(eth, tx_queued, dev,
  			  "Tx Ring full when queue awake!\n");
  		spin_unlock(&eth->page_lock);
-@@ -1373,7 +1448,7 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1419,7 +1494,7 @@ static netdev_tx_t mtk_start_xmit(struct
  		goto drop;
  
  	if (unlikely(atomic_read(&ring->free_count) <= ring->thresh))
@@ -239,7 +239,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	spin_unlock(&eth->page_lock);
  
-@@ -1540,10 +1615,12 @@ static int mtk_xdp_submit_frame(struct m
+@@ -1586,10 +1661,12 @@ static int mtk_xdp_submit_frame(struct m
  	struct skb_shared_info *sinfo = xdp_get_shared_info_from_frame(xdpf);
  	const struct mtk_soc_data *soc = eth->soc;
  	struct mtk_tx_ring *ring = &eth->tx_ring;
@@ -251,8 +251,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		.qid	= mac->id,
  	};
  	int err, index = 0, n_desc = 1, nr_frags;
- 	struct mtk_tx_dma *htxd, *txd, *txd_pdma;
-@@ -1594,6 +1671,7 @@ static int mtk_xdp_submit_frame(struct m
+ 	struct mtk_tx_buf *htx_buf, *tx_buf;
+@@ -1639,6 +1716,7 @@ static int mtk_xdp_submit_frame(struct m
  		memset(&txd_info, 0, sizeof(struct mtk_tx_dma_desc_info));
  		txd_info.size = skb_frag_size(&sinfo->frags[index]);
  		txd_info.last = index + 1 == nr_frags;
@@ -260,7 +260,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		data = skb_frag_address(&sinfo->frags[index]);
  
  		index++;
-@@ -1945,8 +2023,46 @@ rx_done:
+@@ -1993,8 +2071,46 @@ rx_done:
  	return done;
  }
  
@@ -308,7 +308,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	const struct mtk_reg_map *reg_map = eth->soc->reg_map;
  	struct mtk_tx_ring *ring = &eth->tx_ring;
-@@ -1976,12 +2092,9 @@ static int mtk_poll_tx_qdma(struct mtk_e
+@@ -2026,12 +2142,9 @@ static int mtk_poll_tx_qdma(struct mtk_e
  			break;
  
  		if (tx_buf->data != (void *)MTK_DMA_DUMMY_DESC) {
@@ -322,8 +322,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -			}
  			budget--;
  		}
- 		mtk_tx_unmap(eth, tx_buf, true);
-@@ -1999,7 +2112,7 @@ static int mtk_poll_tx_qdma(struct mtk_e
+ 		mtk_tx_unmap(eth, tx_buf, &bq, true);
+@@ -2050,7 +2163,7 @@ static int mtk_poll_tx_qdma(struct mtk_e
  }
  
  static int mtk_poll_tx_pdma(struct mtk_eth *eth, int budget,
@@ -332,7 +332,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
  	struct mtk_tx_ring *ring = &eth->tx_ring;
  	struct mtk_tx_buf *tx_buf;
-@@ -2015,12 +2128,8 @@ static int mtk_poll_tx_pdma(struct mtk_e
+@@ -2068,12 +2181,8 @@ static int mtk_poll_tx_pdma(struct mtk_e
  			break;
  
  		if (tx_buf->data != (void *)MTK_DMA_DUMMY_DESC) {
@@ -346,8 +346,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +				mtk_poll_tx_done(eth, state, 0, tx_buf->data);
  			budget--;
  		}
- 		mtk_tx_unmap(eth, tx_buf, true);
-@@ -2041,26 +2150,15 @@ static int mtk_poll_tx(struct mtk_eth *e
+ 		mtk_tx_unmap(eth, tx_buf, &bq, true);
+@@ -2095,26 +2204,15 @@ static int mtk_poll_tx(struct mtk_eth *e
  {
  	struct mtk_tx_ring *ring = &eth->tx_ring;
  	struct dim_sample dim_sample = {};
@@ -379,7 +379,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	dim_update_sample(eth->tx_events, eth->tx_packets, eth->tx_bytes,
  			  &dim_sample);
-@@ -2070,7 +2168,7 @@ static int mtk_poll_tx(struct mtk_eth *e
+@@ -2124,7 +2222,7 @@ static int mtk_poll_tx(struct mtk_eth *e
  	    (atomic_read(&ring->free_count) > ring->thresh))
  		mtk_wake_queue(eth);
  
@@ -388,7 +388,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void mtk_handle_status_irq(struct mtk_eth *eth)
-@@ -2156,6 +2254,7 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -2210,6 +2308,7 @@ static int mtk_tx_alloc(struct mtk_eth *
  	int i, sz = soc->txrx.txd_size;
  	struct mtk_tx_dma_v2 *txd;
  	int ring_size;
@@ -396,7 +396,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (MTK_HAS_CAPS(soc->caps, MTK_QDMA))
  		ring_size = MTK_QDMA_RING_SIZE;
-@@ -2223,8 +2322,25 @@ static int mtk_tx_alloc(struct mtk_eth *
+@@ -2277,8 +2376,25 @@ static int mtk_tx_alloc(struct mtk_eth *
  			ring->phys + ((ring_size - 1) * sz),
  			soc->reg_map->qdma.crx_ptr);
  		mtk_w32(eth, ring->last_free_ptr, soc->reg_map->qdma.drx_ptr);
@@ -424,7 +424,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	} else {
  		mtk_w32(eth, ring->phys_pdma, MT7628_TX_BASE_PTR0);
  		mtk_w32(eth, ring_size, MT7628_TX_MAX_CNT0);
-@@ -2904,7 +3020,7 @@ static int mtk_start_dma(struct mtk_eth
+@@ -2960,7 +3076,7 @@ static int mtk_start_dma(struct mtk_eth
  		if (MTK_HAS_CAPS(eth->soc->caps, MTK_NETSYS_V2))
  			val |= MTK_MUTLI_CNT | MTK_RESV_BUF |
  			       MTK_WCOMP_EN | MTK_DMAD_WR_WDONE |
@@ -433,7 +433,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		else
  			val |= MTK_RX_BT_32DWORDS;
  		mtk_w32(eth, val, reg_map->qdma.glo_cfg);
-@@ -2950,6 +3066,45 @@ static void mtk_gdm_config(struct mtk_et
+@@ -3006,6 +3122,45 @@ static void mtk_gdm_config(struct mtk_et
  	mtk_w32(eth, 0, MTK_RST_GL);
  }
  
@@ -479,7 +479,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int mtk_open(struct net_device *dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
-@@ -2994,7 +3149,8 @@ static int mtk_open(struct net_device *d
+@@ -3048,7 +3203,8 @@ static int mtk_open(struct net_device *d
  		refcount_inc(&eth->dma_refcnt);
  
  	phylink_start(mac->phylink);
@@ -489,7 +489,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
  }
  
-@@ -3717,8 +3873,12 @@ static int mtk_unreg_dev(struct mtk_eth
+@@ -3774,8 +3930,12 @@ static int mtk_unreg_dev(struct mtk_eth
  	int i;
  
  	for (i = 0; i < MTK_MAC_COUNT; i++) {
@@ -502,7 +502,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		unregister_netdev(eth->netdev[i]);
  	}
  
-@@ -3935,6 +4095,23 @@ static int mtk_set_rxnfc(struct net_devi
+@@ -3992,6 +4152,23 @@ static int mtk_set_rxnfc(struct net_devi
  	return ret;
  }
  
@@ -526,7 +526,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static const struct ethtool_ops mtk_ethtool_ops = {
  	.get_link_ksettings	= mtk_get_link_ksettings,
  	.set_link_ksettings	= mtk_set_link_ksettings,
-@@ -3970,6 +4147,7 @@ static const struct net_device_ops mtk_n
+@@ -4027,6 +4204,7 @@ static const struct net_device_ops mtk_n
  	.ndo_setup_tc		= mtk_eth_setup_tc,
  	.ndo_bpf		= mtk_xdp,
  	.ndo_xdp_xmit		= mtk_xdp_xmit,
@@ -534,7 +534,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
-@@ -3979,6 +4157,7 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4036,6 +4214,7 @@ static int mtk_add_mac(struct mtk_eth *e
  	struct phylink *phylink;
  	struct mtk_mac *mac;
  	int id, err;
@@ -542,7 +542,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (!_id) {
  		dev_err(eth->dev, "missing mac id\n");
-@@ -3996,7 +4175,10 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4053,7 +4232,10 @@ static int mtk_add_mac(struct mtk_eth *e
  		return -EINVAL;
  	}
  
@@ -554,7 +554,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!eth->netdev[id]) {
  		dev_err(eth->dev, "alloc_etherdev failed\n");
  		return -ENOMEM;
-@@ -4093,6 +4275,11 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4150,6 +4332,11 @@ static int mtk_add_mac(struct mtk_eth *e
  	else
  		eth->netdev[id]->max_mtu = MTK_MAX_RX_LENGTH_2K - MTK_RX_ETH_HLEN;
  
@@ -576,7 +576,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define MTK_QDMA_PAGE_SIZE	2048
  #define MTK_MAX_RX_LENGTH	1536
  #define MTK_MAX_RX_LENGTH_2K	2048
-@@ -215,8 +216,26 @@
+@@ -216,8 +217,26 @@
  #define MTK_RING_MAX_AGG_CNT_H		((MTK_HW_LRO_MAX_AGG_CNT >> 6) & 0x3)
  
  /* QDMA TX Queue Configuration Registers */
@@ -603,7 +603,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* QDMA Global Configuration Register */
  #define MTK_RX_2B_OFFSET	BIT(31)
  #define MTK_RX_BT_32DWORDS	(3 << 11)
-@@ -235,6 +254,7 @@
+@@ -236,6 +255,7 @@
  #define MTK_WCOMP_EN		BIT(24)
  #define MTK_RESV_BUF		(0x40 << 16)
  #define MTK_MUTLI_CNT		(0x4 << 12)
@@ -611,7 +611,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* QDMA Flow Control Register */
  #define FC_THRES_DROP_MODE	BIT(20)
-@@ -265,8 +285,6 @@
+@@ -266,8 +286,6 @@
  #define MTK_STAT_OFFSET		0x40
  
  /* QDMA TX NUM */
@@ -620,7 +620,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define QID_BITS_V2(x)		(((x) & 0x3f) << 16)
  #define MTK_QDMA_GMAC2_QID	8
  
-@@ -296,6 +314,7 @@
+@@ -297,6 +315,7 @@
  #define TX_DMA_PLEN0(x)		(((x) & eth->soc->txrx.dma_max_len) << eth->soc->txrx.dma_len_offset)
  #define TX_DMA_PLEN1(x)		((x) & eth->soc->txrx.dma_max_len)
  #define TX_DMA_SWC		BIT(14)
@@ -628,7 +628,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* PDMA on MT7628 */
  #define TX_DMA_DONE		BIT(31)
-@@ -953,6 +972,7 @@ struct mtk_reg_map {
+@@ -957,6 +976,7 @@ struct mtk_reg_map {
  	} pdma;
  	struct {
  		u32	qtx_cfg;	/* tx queue configuration */
@@ -636,15 +636,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		u32	rx_ptr;		/* rx base pointer */
  		u32	rx_cnt_cfg;	/* rx max count configuration */
  		u32	qcrx_ptr;	/* rx cpu pointer */
-@@ -970,6 +990,7 @@ struct mtk_reg_map {
+@@ -974,6 +994,7 @@ struct mtk_reg_map {
  		u32	fq_tail;	/* fq tail pointer */
  		u32	fq_count;	/* fq free page count */
  		u32	fq_blen;	/* fq free page buffer length */
 +		u32	tx_sch_rate;	/* tx scheduler rate control registers */
  	} qdma;
  	u32	gdm1_cnt;
- 	u32	gdma_to_ppe0;
-@@ -1173,6 +1194,7 @@ struct mtk_mac {
+ 	u32	gdma_to_ppe;
+@@ -1177,6 +1198,7 @@ struct mtk_mac {
  	__be32				hwlro_ip[MTK_MAX_LRO_IP_CNT];
  	int				hwlro_ip_cnt;
  	unsigned int			syscfg0;

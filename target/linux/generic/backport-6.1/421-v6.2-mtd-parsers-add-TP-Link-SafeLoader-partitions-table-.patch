@@ -42,7 +42,7 @@ Link: https://lore.kernel.org/linux-mtd/20221015092950.27467-2-zajec5@gmail.com
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -113,6 +113,21 @@ config MTD_AFS_PARTS
+@@ -123,6 +123,21 @@ config MTD_AFS_PARTS
  	  for your particular device. It won't happen automatically. The
  	  'physmap' map driver (CONFIG_MTD_PHYSMAP) does this, for example.
  
@@ -66,7 +66,7 @@ Link: https://lore.kernel.org/linux-mtd/20221015092950.27467-2-zajec5@gmail.com
  	depends on MTD && (BCM47XX || ARCH_BCM_5301X || ARCH_MEDIATEK || RALINK || COMPILE_TEST)
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -9,6 +9,7 @@ ofpart-$(CONFIG_MTD_OF_PARTS_BCM4908)	+=
+@@ -10,6 +10,7 @@ ofpart-$(CONFIG_MTD_OF_PARTS_BCM4908)	+=
  ofpart-$(CONFIG_MTD_OF_PARTS_LINKSYS_NS)+= ofpart_linksys_ns.o
  obj-$(CONFIG_MTD_PARSER_IMAGETAG)	+= parser_imagetag.o
  obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o

@@ -17,7 +17,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
-@@ -1259,7 +1259,8 @@ mtk_wed_wdma_rx_ring_setup(struct mtk_we
+@@ -1252,7 +1252,8 @@ mtk_wed_wdma_rx_ring_setup(struct mtk_we
  }
  
  static int
@@ -27,7 +27,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  {
  	u32 desc_size = sizeof(struct mtk_wdma_desc) * dev->hw->version;
  	struct mtk_wed_ring *wdma;
-@@ -1268,8 +1269,8 @@ mtk_wed_wdma_tx_ring_setup(struct mtk_we
+@@ -1261,8 +1262,8 @@ mtk_wed_wdma_tx_ring_setup(struct mtk_we
  		return -EINVAL;
  
  	wdma = &dev->tx_wdma[idx];
@@ -38,7 +38,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		return -ENOMEM;
  
  	wdma_w32(dev, MTK_WDMA_RING_TX(idx) + MTK_WED_RING_OFS_BASE,
-@@ -1279,6 +1280,9 @@ mtk_wed_wdma_tx_ring_setup(struct mtk_we
+@@ -1272,6 +1273,9 @@ mtk_wed_wdma_tx_ring_setup(struct mtk_we
  	wdma_w32(dev, MTK_WDMA_RING_TX(idx) + MTK_WED_RING_OFS_CPU_IDX, 0);
  	wdma_w32(dev, MTK_WDMA_RING_TX(idx) + MTK_WED_RING_OFS_DMA_IDX, 0);
  
@@ -48,7 +48,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	if (!idx)  {
  		wed_w32(dev, MTK_WED_WDMA_RING_TX + MTK_WED_RING_OFS_BASE,
  			wdma->desc_phys);
-@@ -1618,18 +1622,20 @@ mtk_wed_txfree_ring_setup(struct mtk_wed
+@@ -1611,18 +1615,20 @@ mtk_wed_txfree_ring_setup(struct mtk_wed
  }
  
  static int

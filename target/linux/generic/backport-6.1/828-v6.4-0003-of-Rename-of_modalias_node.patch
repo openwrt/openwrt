@@ -44,7 +44,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/acpi/bus.c
 +++ b/drivers/acpi/bus.c
-@@ -785,9 +785,10 @@ static bool acpi_of_modalias(struct acpi
+@@ -806,9 +806,10 @@ static bool acpi_of_modalias(struct acpi
   * @modalias:   Pointer to buffer that modalias value will be copied into
   * @len:	Length of modalias buffer
   *
@@ -104,7 +104,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	}
 --- a/drivers/of/base.c
 +++ b/drivers/of/base.c
-@@ -1159,19 +1159,23 @@ struct device_node *of_find_matching_nod
+@@ -1208,19 +1208,23 @@ struct device_node *of_find_matching_nod
  EXPORT_SYMBOL(of_find_matching_node_and_match);
  
  /**
@@ -133,7 +133,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  {
  	const char *compatible, *p;
  	int cplen;
-@@ -1180,10 +1184,10 @@ int of_modalias_node(struct device_node
+@@ -1229,10 +1233,10 @@ int of_modalias_node(struct device_node
  	if (!compatible || strlen(compatible) > cplen)
  		return -ENODEV;
  	p = strchr(compatible, ',');
@@ -148,7 +148,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
   * of_find_node_by_phandle - Find a node given a phandle
 --- a/drivers/spi/spi.c
 +++ b/drivers/spi/spi.c
-@@ -2128,8 +2128,8 @@ of_register_spi_device(struct spi_contro
+@@ -2315,8 +2315,8 @@ of_register_spi_device(struct spi_contro
  	}
  
  	/* Select device driver */
@@ -161,7 +161,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  		goto err_out;
 --- a/include/linux/of.h
 +++ b/include/linux/of.h
-@@ -361,7 +361,8 @@ extern int of_n_addr_cells(struct device
+@@ -362,7 +362,8 @@ extern int of_n_addr_cells(struct device
  extern int of_n_size_cells(struct device_node *np);
  extern const struct of_device_id *of_match_node(
  	const struct of_device_id *matches, const struct device_node *node);

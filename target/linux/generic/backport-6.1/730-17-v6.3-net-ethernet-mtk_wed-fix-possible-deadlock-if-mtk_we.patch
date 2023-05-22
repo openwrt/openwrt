@@ -43,7 +43,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	mutex_unlock(&hw_lock);
  }
  
-@@ -1545,8 +1550,10 @@ mtk_wed_attach(struct mtk_wed_device *de
+@@ -1538,8 +1543,10 @@ mtk_wed_attach(struct mtk_wed_device *de
  		ret = mtk_wed_wo_init(hw);
  	}
  out:

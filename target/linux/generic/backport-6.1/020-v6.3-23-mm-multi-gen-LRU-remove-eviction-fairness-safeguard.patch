@@ -37,7 +37,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -443,6 +443,11 @@ static bool cgroup_reclaim(struct scan_c
+@@ -448,6 +448,11 @@ static bool cgroup_reclaim(struct scan_c
  	return sc->target_mem_cgroup;
  }
  
@@ -49,7 +49,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  /**
   * writeback_throttling_sane - is the usual dirty throttling mechanism available?
   * @sc: scan_control in question
-@@ -493,6 +498,11 @@ static bool cgroup_reclaim(struct scan_c
+@@ -498,6 +503,11 @@ static bool cgroup_reclaim(struct scan_c
  	return false;
  }
  
@@ -61,7 +61,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  static bool writeback_throttling_sane(struct scan_control *sc)
  {
  	return true;
-@@ -4722,8 +4732,7 @@ static int isolate_folios(struct lruvec *
+@@ -4996,8 +5006,7 @@ static int isolate_folios(struct lruvec
  	return scanned;
  }
  
@@ -71,7 +71,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  {
  	int type;
  	int scanned;
-@@ -4812,9 +4821,6 @@ retry:
+@@ -5086,9 +5095,6 @@ retry:
  		goto retry;
  	}
  
@@ -81,7 +81,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	return scanned;
  }
  
-@@ -4853,67 +4859,26 @@ done:
+@@ -5127,67 +5133,26 @@ done:
  	return min_seq[!can_swap] + MIN_NR_GENS <= max_seq ? nr_to_scan : 0;
  }
  
@@ -158,7 +158,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  	lru_add_drain();
  
-@@ -4938,7 +4902,7 @@ static void lru_gen_shrink_lruvec(struct
+@@ -5211,7 +5176,7 @@ static void lru_gen_shrink_lruvec(struct
  		if (!nr_to_scan)
  			goto done;
  
@@ -167,7 +167,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  		if (!delta)
  			goto done;
  
-@@ -4946,7 +4910,7 @@ static void lru_gen_shrink_lruvec(struct
+@@ -5219,7 +5184,7 @@ static void lru_gen_shrink_lruvec(struct
  		if (scanned >= nr_to_scan)
  			break;
  
@@ -176,7 +176,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  			break;
  
  		cond_resched();
-@@ -5393,7 +5357,7 @@ static int run_eviction(struct lruvec *l
+@@ -5669,7 +5634,7 @@ static int run_eviction(struct lruvec *l
  		if (sc->nr_reclaimed >= nr_to_reclaim)
  			return 0;
  

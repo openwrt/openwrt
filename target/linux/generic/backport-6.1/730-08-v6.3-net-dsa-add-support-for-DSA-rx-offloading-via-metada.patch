@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/core/flow_dissector.c
 +++ b/net/core/flow_dissector.c
-@@ -940,12 +940,14 @@ bool __skb_flow_dissect(const struct net
+@@ -971,12 +971,14 @@ bool __skb_flow_dissect(const struct net
  #if IS_ENABLED(CONFIG_NET_DSA)
  		if (unlikely(skb->dev && netdev_uses_dsa(skb->dev) &&
  			     proto == htons(ETH_P_XDSA))) {
@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				else
 --- a/net/dsa/dsa.c
 +++ b/net/dsa/dsa.c
-@@ -20,6 +20,7 @@
+@@ -11,6 +11,7 @@
  #include <linux/netdevice.h>
  #include <linux/sysfs.h>
  #include <linux/ptp_classify.h>
@@ -38,7 +38,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  #include "dsa_priv.h"
  
-@@ -225,6 +226,7 @@ static bool dsa_skb_defer_rx_timestamp(s
+@@ -216,6 +217,7 @@ static bool dsa_skb_defer_rx_timestamp(s
  static int dsa_switch_rcv(struct sk_buff *skb, struct net_device *dev,
  			  struct packet_type *pt, struct net_device *unused)
  {
@@ -46,7 +46,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct dsa_port *cpu_dp = dev->dsa_ptr;
  	struct sk_buff *nskb = NULL;
  	struct dsa_slave_priv *p;
-@@ -238,7 +240,22 @@ static int dsa_switch_rcv(struct sk_buff
+@@ -229,7 +231,22 @@ static int dsa_switch_rcv(struct sk_buff
  	if (!skb)
  		return 0;
  

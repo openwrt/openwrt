@@ -51,7 +51,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		mtk_eth_path_name(path), __func__, updated);
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -4755,6 +4755,26 @@ static const struct mtk_soc_data mt7629_
+@@ -4808,6 +4808,26 @@ static const struct mtk_soc_data mt7629_
  	},
  };
  
@@ -78,7 +78,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static const struct mtk_soc_data mt7986_data = {
  	.reg_map = &mt7986_reg_map,
  	.ana_rgc3 = 0x128,
-@@ -4797,6 +4817,7 @@ const struct of_device_id of_mtk_match[]
+@@ -4849,6 +4869,7 @@ const struct of_device_id of_mtk_match[]
  	{ .compatible = "mediatek,mt7622-eth", .data = &mt7622_data},
  	{ .compatible = "mediatek,mt7623-eth", .data = &mt7623_data},
  	{ .compatible = "mediatek,mt7629-eth", .data = &mt7629_data},
@@ -88,7 +88,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	{},
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -553,11 +553,22 @@
+@@ -556,11 +556,22 @@
  #define SGMSYS_QPHY_PWR_STATE_CTRL 0xe8
  #define	SGMII_PHYA_PWD		BIT(4)
  
@@ -111,7 +111,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  /* MT7628/88 specific stuff */
  #define MT7628_PDMA_OFFSET	0x0800
  #define MT7628_SDM_OFFSET	0x0c00
-@@ -738,6 +749,17 @@ enum mtk_clks_map {
+@@ -741,6 +752,17 @@ enum mtk_clks_map {
  				 BIT(MTK_CLK_SGMII2_CDR_FB) | \
  				 BIT(MTK_CLK_SGMII_CK) | \
  				 BIT(MTK_CLK_ETH2PLL) | BIT(MTK_CLK_SGMIITOP))
@@ -129,7 +129,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define MT7986_CLKS_BITMAP	(BIT(MTK_CLK_FE) | BIT(MTK_CLK_GP2) | BIT(MTK_CLK_GP1) | \
  				 BIT(MTK_CLK_WOCPU1) | BIT(MTK_CLK_WOCPU0) | \
  				 BIT(MTK_CLK_SGMII_TX_250M) | \
-@@ -851,6 +873,7 @@ enum mkt_eth_capabilities {
+@@ -854,6 +876,7 @@ enum mkt_eth_capabilities {
  	MTK_NETSYS_V2_BIT,
  	MTK_SOC_MT7628_BIT,
  	MTK_RSTCTRL_PPE1_BIT,
@@ -137,7 +137,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	/* MUX BITS*/
  	MTK_ETH_MUX_GDM1_TO_GMAC1_ESW_BIT,
-@@ -885,6 +908,7 @@ enum mkt_eth_capabilities {
+@@ -888,6 +911,7 @@ enum mkt_eth_capabilities {
  #define MTK_NETSYS_V2		BIT(MTK_NETSYS_V2_BIT)
  #define MTK_SOC_MT7628		BIT(MTK_SOC_MT7628_BIT)
  #define MTK_RSTCTRL_PPE1	BIT(MTK_RSTCTRL_PPE1_BIT)
@@ -145,7 +145,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  #define MTK_ETH_MUX_GDM1_TO_GMAC1_ESW		\
  	BIT(MTK_ETH_MUX_GDM1_TO_GMAC1_ESW_BIT)
-@@ -963,6 +987,11 @@ enum mkt_eth_capabilities {
+@@ -966,6 +990,11 @@ enum mkt_eth_capabilities {
  		      MTK_MUX_U3_GMAC2_TO_QPHY | \
  		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA)
  
@@ -157,7 +157,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define MT7986_CAPS  (MTK_GMAC1_SGMII | MTK_GMAC2_SGMII | \
  		      MTK_MUX_GMAC12_TO_GEPHY_SGMII | MTK_QDMA | \
  		      MTK_NETSYS_V2 | MTK_RSTCTRL_PPE1)
-@@ -1076,12 +1105,14 @@ struct mtk_soc_data {
+@@ -1079,12 +1108,14 @@ struct mtk_soc_data {
   * @ana_rgc3:          The offset refers to register ANA_RGC3 related to regmap
   * @interface:         Currently configured interface mode
   * @pcs:               Phylink PCS structure

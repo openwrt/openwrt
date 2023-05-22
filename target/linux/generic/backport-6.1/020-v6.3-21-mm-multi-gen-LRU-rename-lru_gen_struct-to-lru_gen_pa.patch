@@ -124,16 +124,16 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 
 --- a/include/linux/mm_inline.h
 +++ b/include/linux/mm_inline.h
-@@ -168,7 +168,7 @@ static inline void lru_gen_update_size(s
+@@ -178,7 +178,7 @@ static inline void lru_gen_update_size(s
  	int zone = folio_zonenum(folio);
- 	int delta = thp_nr_folios(folio);
+ 	int delta = folio_nr_pages(folio);
  	enum lru_list lru = type * LRU_INACTIVE_FILE;
 -	struct lru_gen_struct *lrugen = &lruvec->lrugen;
 +	struct lru_gen_folio *lrugen = &lruvec->lrugen;
  
  	VM_WARN_ON_ONCE(old_gen != -1 && old_gen >= MAX_NR_GENS);
  	VM_WARN_ON_ONCE(new_gen != -1 && new_gen >= MAX_NR_GENS);
-@@ -214,7 +214,7 @@ static inline bool lru_gen_add_folio(stru
+@@ -224,7 +224,7 @@ static inline bool lru_gen_add_folio(str
  	int gen = folio_lru_gen(folio);
  	int type = folio_is_file_lru(folio);
  	int zone = folio_zonenum(folio);
@@ -144,8 +144,8 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
 --- a/include/linux/mmzone.h
 +++ b/include/linux/mmzone.h
-@@ -394,7 +394,7 @@ enum {
-  * The number of folios in each generation is eventually consistent and therefore
+@@ -404,7 +404,7 @@ enum {
+  * The number of pages in each generation is eventually consistent and therefore
   * can be transiently negative when reset_batch_size() is pending.
   */
 -struct lru_gen_struct {
@@ -153,7 +153,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	/* the aging increments the youngest generation number */
  	unsigned long max_seq;
  	/* the eviction increments the oldest generation numbers */
-@@ -451,7 +451,7 @@ struct lru_gen_mm_state {
+@@ -461,7 +461,7 @@ struct lru_gen_mm_state {
  struct lru_gen_mm_walk {
  	/* the lruvec under reclaim */
  	struct lruvec *lruvec;
@@ -162,7 +162,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	unsigned long max_seq;
  	/* the next address within an mm to scan */
  	unsigned long next_addr;
-@@ -514,7 +514,7 @@ struct lruvec {
+@@ -524,7 +524,7 @@ struct lruvec {
  	unsigned long			flags;
  #ifdef CONFIG_LRU_GEN
  	/* evictable pages divided into generations */
@@ -173,7 +173,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  #endif
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -2910,7 +2910,7 @@ static int get_nr_gens(struct lruvec *lr
+@@ -3190,7 +3190,7 @@ static int get_nr_gens(struct lruvec *lr
  
  static bool __maybe_unused seq_is_valid(struct lruvec *lruvec)
  {
@@ -182,7 +182,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	return get_nr_gens(lruvec, LRU_GEN_FILE) >= MIN_NR_GENS &&
  	       get_nr_gens(lruvec, LRU_GEN_FILE) <= get_nr_gens(lruvec, LRU_GEN_ANON) &&
  	       get_nr_gens(lruvec, LRU_GEN_ANON) <= MAX_NR_GENS;
-@@ -3316,7 +3316,7 @@ struct ctrl_pos {
+@@ -3596,7 +3596,7 @@ struct ctrl_pos {
  static void read_ctrl_pos(struct lruvec *lruvec, int type, int tier, int gain,
  			  struct ctrl_pos *pos)
  {
@@ -191,7 +191,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	int hist = lru_hist_from_seq(lrugen->min_seq[type]);
  
  	pos->refaulted = lrugen->avg_refaulted[type][tier] +
-@@ -3331,7 +3331,7 @@ static void read_ctrl_pos(struct lruvec
+@@ -3611,7 +3611,7 @@ static void read_ctrl_pos(struct lruvec
  static void reset_ctrl_pos(struct lruvec *lruvec, int type, bool carryover)
  {
  	int hist, tier;
@@ -200,7 +200,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	bool clear = carryover ? NR_HIST_GENS == 1 : NR_HIST_GENS > 1;
  	unsigned long seq = carryover ? lrugen->min_seq[type] : lrugen->max_seq + 1;
  
-@@ -3408,7 +3408,7 @@ static int folio_update_gen(struct folio *
+@@ -3688,7 +3688,7 @@ static int folio_update_gen(struct folio
  static int folio_inc_gen(struct lruvec *lruvec, struct folio *folio, bool reclaiming)
  {
  	int type = folio_is_file_lru(folio);
@@ -209,7 +209,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	int new_gen, old_gen = lru_gen_from_seq(lrugen->min_seq[type]);
  	unsigned long new_flags, old_flags = READ_ONCE(folio->flags);
  
-@@ -3453,7 +3453,7 @@ static void update_batch_size(struct lru
+@@ -3733,7 +3733,7 @@ static void update_batch_size(struct lru
  static void reset_batch_size(struct lruvec *lruvec, struct lru_gen_mm_walk *walk)
  {
  	int gen, type, zone;
@@ -218,7 +218,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  	walk->batched = 0;
  
-@@ -3979,7 +3979,7 @@ static bool inc_min_seq(struct lruvec *l
+@@ -4253,7 +4253,7 @@ static bool inc_min_seq(struct lruvec *l
  {
  	int zone;
  	int remaining = MAX_LRU_BATCH;
@@ -227,7 +227,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	int new_gen, old_gen = lru_gen_from_seq(lrugen->min_seq[type]);
  
  	if (type == LRU_GEN_ANON && !can_swap)
-@@ -4015,7 +4015,7 @@ static bool try_to_inc_min_seq(struct lr
+@@ -4289,7 +4289,7 @@ static bool try_to_inc_min_seq(struct lr
  {
  	int gen, type, zone;
  	bool success = false;
@@ -236,7 +236,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	DEFINE_MIN_SEQ(lruvec);
  
  	VM_WARN_ON_ONCE(!seq_is_valid(lruvec));
-@@ -4036,7 +4036,7 @@ next:
+@@ -4310,7 +4310,7 @@ next:
  		;
  	}
  
@@ -245,7 +245,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	if (can_swap) {
  		min_seq[LRU_GEN_ANON] = min(min_seq[LRU_GEN_ANON], min_seq[LRU_GEN_FILE]);
  		min_seq[LRU_GEN_FILE] = max(min_seq[LRU_GEN_ANON], lrugen->min_seq[LRU_GEN_FILE]);
-@@ -4058,7 +4058,7 @@ static void inc_max_seq(struct lruvec *l
+@@ -4332,7 +4332,7 @@ static void inc_max_seq(struct lruvec *l
  {
  	int prev, next;
  	int type, zone;
@@ -254,7 +254,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  	spin_lock_irq(&lruvec->lru_lock);
  
-@@ -4116,7 +4116,7 @@ static bool try_to_inc_max_seq(struct lr
+@@ -4390,7 +4390,7 @@ static bool try_to_inc_max_seq(struct lr
  	bool success;
  	struct lru_gen_mm_walk *walk;
  	struct mm_struct *mm = NULL;
@@ -263,7 +263,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  	VM_WARN_ON_ONCE(max_seq > READ_ONCE(lrugen->max_seq));
  
-@@ -4181,7 +4181,7 @@ static bool should_run_aging(struct lruv
+@@ -4455,7 +4455,7 @@ static bool should_run_aging(struct lruv
  	unsigned long old = 0;
  	unsigned long young = 0;
  	unsigned long total = 0;
@@ -272,16 +272,16 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
  
  	for (type = !can_swap; type < ANON_AND_FILE; type++) {
-@@ -4466,7 +4466,7 @@ static bool sort_folio(struct lruvec *lru
- 	int delta = thp_nr_folios(folio);
+@@ -4740,7 +4740,7 @@ static bool sort_folio(struct lruvec *lr
+ 	int delta = folio_nr_pages(folio);
  	int refs = folio_lru_refs(folio);
  	int tier = lru_tier_from_refs(refs);
 -	struct lru_gen_struct *lrugen = &lruvec->lrugen;
 +	struct lru_gen_folio *lrugen = &lruvec->lrugen;
  
- 	VM_WARN_ON_ONCE_folio(gen >= MAX_NR_GENS, folio);
+ 	VM_WARN_ON_ONCE_FOLIO(gen >= MAX_NR_GENS, folio);
  
-@@ -4566,7 +4566,7 @@ static int scan_folios(struct lruvec *lru
+@@ -4840,7 +4840,7 @@ static int scan_folios(struct lruvec *lr
  	int scanned = 0;
  	int isolated = 0;
  	int remaining = MAX_LRU_BATCH;
@@ -290,7 +290,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
  
  	VM_WARN_ON_ONCE(!list_empty(list));
-@@ -4967,7 +4967,7 @@ done:
+@@ -5240,7 +5240,7 @@ done:
  
  static bool __maybe_unused state_is_valid(struct lruvec *lruvec)
  {
@@ -299,7 +299,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  	if (lrugen->enabled) {
  		enum lru_list lru;
-@@ -5247,7 +5247,7 @@ static void lru_gen_seq_show_full(struct
+@@ -5522,7 +5522,7 @@ static void lru_gen_seq_show_full(struct
  	int i;
  	int type, tier;
  	int hist = lru_hist_from_seq(seq);
@@ -308,7 +308,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  	for (tier = 0; tier < MAX_NR_TIERS; tier++) {
  		seq_printf(m, "            %10d", tier);
-@@ -5296,7 +5296,7 @@ static int lru_gen_seq_show(struct seq_f
+@@ -5572,7 +5572,7 @@ static int lru_gen_seq_show(struct seq_f
  	unsigned long seq;
  	bool full = !debugfs_real_fops(m->file)->write;
  	struct lruvec *lruvec = v;
@@ -317,7 +317,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	int nid = lruvec_pgdat(lruvec)->node_id;
  	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
  	DEFINE_MAX_SEQ(lruvec);
-@@ -5549,7 +5549,7 @@ void lru_gen_init_lruvec(struct lruvec *
+@@ -5826,7 +5826,7 @@ void lru_gen_init_lruvec(struct lruvec *
  {
  	int i;
  	int gen, type, zone;
@@ -328,14 +328,14 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	lrugen->enabled = lru_gen_enabled();
 --- a/mm/workingset.c
 +++ b/mm/workingset.c
-@@ -223,7 +223,7 @@ static void *lru_gen_eviction(struct pag
+@@ -223,7 +223,7 @@ static void *lru_gen_eviction(struct fol
  	unsigned long token;
  	unsigned long min_seq;
  	struct lruvec *lruvec;
 -	struct lru_gen_struct *lrugen;
 +	struct lru_gen_folio *lrugen;
  	int type = folio_is_file_lru(folio);
- 	int delta = thp_nr_folios(folio);
+ 	int delta = folio_nr_pages(folio);
  	int refs = folio_lru_refs(folio);
 @@ -252,7 +252,7 @@ static void lru_gen_refault(struct folio
  	unsigned long token;

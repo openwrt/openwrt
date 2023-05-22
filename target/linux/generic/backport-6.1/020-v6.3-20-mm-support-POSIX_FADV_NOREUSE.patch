@@ -81,9 +81,9 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -167,6 +167,8 @@ typedef int (dio_iodone_t)(struct kiocb
- /* File is stream-like */
- #define FMODE_STREAM		((__force fmode_t)0x200000)
+@@ -166,6 +166,8 @@ typedef int (dio_iodone_t)(struct kiocb
+ /* File supports DIRECT IO */
+ #define	FMODE_CAN_ODIRECT	((__force fmode_t)0x400000)
  
 +#define	FMODE_NOREUSE		((__force fmode_t)0x400000)
 +
@@ -92,7 +92,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
 --- a/include/linux/mm_inline.h
 +++ b/include/linux/mm_inline.h
-@@ -339,6 +339,9 @@ static inline bool vma_has_recency(struc
+@@ -583,6 +583,9 @@ static inline bool vma_has_recency(struc
  	if (vma->vm_flags & (VM_SEQ_READ | VM_RAND_READ))
  		return false;
  
@@ -122,4 +122,4 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 +		spin_unlock(&file->f_lock);
  		break;
  	case POSIX_FADV_DONTNEED:
- 		if (!inode_write_congested(mapping->host))
+ 		__filemap_fdatawrite_range(mapping, offset, endbyte,

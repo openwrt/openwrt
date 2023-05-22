@@ -17,7 +17,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/of/device.c
 +++ b/drivers/of/device.c
-@@ -249,7 +249,7 @@ static ssize_t of_device_get_modalias(st
+@@ -256,7 +256,7 @@ static ssize_t of_device_get_modalias(st
  	ssize_t csize;
  	ssize_t tsize;
  
@@ -26,7 +26,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  		return -ENODEV;
  
  	/* Name & Type */
-@@ -372,7 +372,7 @@ int of_device_uevent_modalias(struct dev
+@@ -379,7 +379,7 @@ int of_device_uevent_modalias(struct dev
  {
  	int sl;
  
