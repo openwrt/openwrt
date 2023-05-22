@@ -85,10 +85,6 @@ jobs:
         run: |
           chown -R buildbot:buildbot openwrt
 
-      - name: Opt-out from Git stricter repository ownership checks
-        run: |
-          git config --global --add safe.directory '*'
-
       - name: Initialization environment
         run: |
           TARGET=$(echo ${{ inputs.target }} | cut -d "/" -f 1)
@@ -138,6 +134,7 @@ jobs:
         run: make target/linux/refresh V=s
 
       - name: Validate Refreshed Kernel Patches
+        shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
           . .github/workflows/scripts/ci_helpers.sh
