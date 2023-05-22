@@ -19,11 +19,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  arch/arm/mach-qcom/Kconfig | 13 +++++++++++++
  2 files changed, 15 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 1af63e17b4ad..0818d35973ad 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -282,6 +282,7 @@ config PHYS_OFFSET
+@@ -283,6 +283,7 @@ config PHYS_OFFSET
  	default 0x30000000 if ARCH_S3C24XX
  	default 0xa0000000 if ARCH_IOP32X || ARCH_PXA
  	default 0xc0000000 if ARCH_EP93XX || ARCH_SA1100
@@ -31,7 +29,7 @@ index 1af63e17b4ad..0818d35973ad 100644
  	default 0
  	help
  	  Please provide the physical address corresponding to the
-@@ -1701,7 +1702,7 @@ config CRASH_DUMP
+@@ -1702,7 +1703,7 @@ config CRASH_DUMP
  
  config AUTO_ZRELADDR
  	bool "Auto calculation of the decompressed kernel image address" if !ARCH_MULTIPLATFORM
@@ -40,8 +38,6 @@ index 1af63e17b4ad..0818d35973ad 100644
  	help
  	  ZRELADDR is the physical address where the decompressed kernel
  	  image will be placed. If AUTO_ZRELADDR is selected, the address
-diff --git a/arch/arm/mach-qcom/Kconfig b/arch/arm/mach-qcom/Kconfig
-index 12a812e61c16..b11b6e391ff0 100644
 --- a/arch/arm/mach-qcom/Kconfig
 +++ b/arch/arm/mach-qcom/Kconfig
 @@ -46,4 +46,17 @@ config ARCH_MDM9615
@@ -62,6 +58,3 @@ index 12a812e61c16..b11b6e391ff0 100644
 +	  disable AUTO_ZRELADDR.
 +
  endif
--- 
-2.37.2
-

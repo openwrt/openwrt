@@ -17,8 +17,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/clk/qcom/krait-cc.c | 50 +++++++++++++++++--------------------
  1 file changed, 23 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
-index 717eff44b6a4..90dee71e7c38 100644
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
 @@ -25,7 +25,9 @@ enum {
@@ -32,16 +30,16 @@ index 717eff44b6a4..90dee71e7c38 100644
  
  static unsigned int sec_mux_map[] = {
  	2,
-@@ -317,7 +319,7 @@ static int krait_cc_probe(struct platform_device *pdev)
+@@ -350,7 +352,7 @@ static int krait_cc_probe(struct platfor
  {
  	struct device *dev = &pdev->dev;
  	const struct of_device_id *id;
 -	unsigned long cur_rate, aux_rate, qsb_rate;
 +	unsigned long cur_rate, qsb_rate;
  	int cpu;
- 	struct clk *clk;
- 	struct clk **clks;
-@@ -397,28 +399,29 @@ static int krait_cc_probe(struct platform_device *pdev)
+ 	struct clk_hw *mux, *l2_pri_mux;
+ 	struct clk *clk, **clks;
+@@ -420,28 +422,29 @@ static int krait_cc_probe(struct platfor
  	 * two different rates to force a HFPLL reinit under all
  	 * circumstances.
  	 */
@@ -88,5 +86,3 @@ index 717eff44b6a4..90dee71e7c38 100644
  	}
  
  	of_clk_add_provider(dev->of_node, krait_of_get, clks);
- 
-

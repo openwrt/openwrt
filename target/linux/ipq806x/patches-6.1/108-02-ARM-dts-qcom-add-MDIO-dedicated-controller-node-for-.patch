@@ -15,7 +15,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
 
 --- a/arch/arm/boot/dts/qcom-ipq8064-rb3011.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-rb3011.dts
-@@ -24,73 +24,6 @@
+@@ -25,73 +25,6 @@
  		device_type = "memory";
  	};
  
@@ -89,7 +89,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  	mdio1: mdio-1 {
  		status = "okay";
  		compatible = "virtual,mdio-gpio";
-@@ -220,6 +153,73 @@
+@@ -222,6 +155,73 @@
  	status = "okay";
  };
  
@@ -165,8 +165,8 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -1446,6 +1446,20 @@
- 			};
+@@ -476,6 +476,20 @@
+ 			snps,blen = <16 0 0 0 0 0 0>;
  		};
  
 +		mdio0: mdio@37000000 {

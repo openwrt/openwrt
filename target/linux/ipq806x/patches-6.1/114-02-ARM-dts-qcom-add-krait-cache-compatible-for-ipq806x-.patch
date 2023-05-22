@@ -31,9 +31,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	};
  
  	opp_table_l2: opp_table_l2 {
-@@ -470,6 +460,16 @@
- 		ranges;
- 		compatible = "simple-bus";
+@@ -1410,6 +1400,16 @@
+ 			#reset-cells = <1>;
+ 		};
  
 +		L2: l2-cache {
 +			compatible = "cache", "qcom,krait-cache";

@@ -14,8 +14,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/clk/qcom/krait-cc.c | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
-index f1d64b16cac3..e91275663973 100644
 --- a/drivers/clk/qcom/krait-cc.c
 +++ b/drivers/clk/qcom/krait-cc.c
 @@ -25,6 +25,8 @@ enum {
@@ -27,7 +25,7 @@ index f1d64b16cac3..e91275663973 100644
  static unsigned int sec_mux_map[] = {
  	2,
  	0,
-@@ -322,7 +324,7 @@ static int krait_cc_probe(struct platform_device *pdev)
+@@ -364,7 +366,7 @@ static int krait_cc_probe(struct platfor
  	 */
  	clk = clk_get(dev, "qsb");
  	if (IS_ERR(clk))
@@ -36,6 +34,3 @@ index f1d64b16cac3..e91275663973 100644
  	if (IS_ERR(clk))
  		return PTR_ERR(clk);
  
--- 
-2.37.2
-

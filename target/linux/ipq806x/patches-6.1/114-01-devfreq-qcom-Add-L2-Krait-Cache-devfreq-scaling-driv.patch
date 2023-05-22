@@ -21,9 +21,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/devfreq/Kconfig
 +++ b/drivers/devfreq/Kconfig
-@@ -132,6 +132,17 @@ config ARM_RK3399_DMC_DEVFREQ
- 	  It sets the frequency for the memory controller and reads the usage counts
- 	  from hardware.
+@@ -151,6 +151,17 @@ config ARM_SUN8I_A33_MBUS_DEVFREQ
+ 	  This adds the DEVFREQ driver for the MBUS controller in some
+ 	  Allwinner sun8i (A33 through H3) and sun50i (A64 and H5) SoCs.
  
 +config ARM_KRAIT_CACHE_DEVFREQ
 +	tristate "Scaling support for Krait CPU Cache Devfreq"
@@ -41,9 +41,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  endif # PM_DEVFREQ
 --- a/drivers/devfreq/Makefile
 +++ b/drivers/devfreq/Makefile
-@@ -13,6 +13,7 @@ obj-$(CONFIG_ARM_IMX_BUS_DEVFREQ)	+= imx
- obj-$(CONFIG_ARM_IMX8M_DDRC_DEVFREQ)	+= imx8m-ddrc.o
+@@ -15,6 +15,7 @@ obj-$(CONFIG_ARM_MEDIATEK_CCI_DEVFREQ)	+
  obj-$(CONFIG_ARM_RK3399_DMC_DEVFREQ)	+= rk3399_dmc.o
+ obj-$(CONFIG_ARM_SUN8I_A33_MBUS_DEVFREQ)	+= sun8i-a33-mbus.o
  obj-$(CONFIG_ARM_TEGRA_DEVFREQ)		+= tegra30-devfreq.o
 +obj-$(CONFIG_ARM_KRAIT_CACHE_DEVFREQ)	+= krait-cache-devfreq.o
  
