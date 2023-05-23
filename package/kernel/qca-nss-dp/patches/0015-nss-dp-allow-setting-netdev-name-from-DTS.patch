@@ -13,11 +13,9 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  nss_dp_main.c | 17 ++++++++++++++---
  1 file changed, 14 insertions(+), 3 deletions(-)
 
-diff --git a/nss_dp_main.c b/nss_dp_main.c
-index 18e1088..19e14fb 100644
 --- a/nss_dp_main.c
 +++ b/nss_dp_main.c
-@@ -685,18 +685,29 @@ static int32_t nss_dp_probe(struct platform_device *pdev)
+@@ -685,18 +685,29 @@ static int32_t nss_dp_probe(struct platf
  	struct nss_dp_dev *dp_priv;
  	struct device_node *np = pdev->dev.of_node;
  	struct nss_gmac_hal_platform_data gmac_hal_pdata;
@@ -50,6 +48,3 @@ index 18e1088..19e14fb 100644
  		return -ENOMEM;
  	}
  
--- 
-2.38.1
-
