@@ -3,6 +3,7 @@ name: Build and Push prebuilt tools container
 on:
   push:
     paths:
+      - 'include/version.mk'
       - 'tools/**'
       - '.github/workflows/build-tools.yml'
       - '.github/workflows/push-containers.yml'
