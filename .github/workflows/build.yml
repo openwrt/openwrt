@@ -65,6 +65,7 @@ jobs:
     outputs:
       owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
       container_tag: ${{ steps.determine_tools_container.outputs.container_tag }}
+      container_name: ${{ steps.determine_tools_container.outputs.container_name }}
 
     steps:
       - name: Checkout
@@ -91,6 +92,7 @@ jobs:
       - name: Determine tools container tag
         id: determine_tools_container
         run: |
+          CONTAINER_NAME=${{ inputs.container_name }}
           CONTAINER_TAG=latest
           if [ -n "${{ github.base_ref }}" ]; then
             if echo "${{ github.base_ref }}" | grep -q -E '^openwrt-[0-9][0-9]\.[0-9][0-9]$'; then
@@ -107,15 +109,29 @@ jobs:
               CONTAINER_TAG=openwrt-"$(echo ${{ github.ref_name }} | sed 's/^v\([0-9][0-9]\.[0-9][0-9]\)\..\+/\1/')"
             fi
           fi
-          echo "Tools container to use tools:$CONTAINER_TAG"
+
+          if [ "$CONTAINER_NAME" = "toolchain" ]; then
+            GHCR_TOKEN=$(echo ${{ secrets.GITHUB_TOKEN }} | base64)
+            GHCR_HEADER="Authorization: Bearer ${GHCR_TOKEN}"
+            GHCR_MANIFEST_LINK=https://ghcr.io/v2/${{ steps.lower_owner.outputs.owner_lc }}/${{ inputs.container_name }}/manifests/${{ inputs.target }}-${{ inputs.subtarget }}-"$CONTAINER_TAG"
+            # Check if container exist
+            if [ $(curl -s -o /dev/null -w "%{http_code}" -H "$GHCR_HEADER" -I "$GHCR_MANIFEST_LINK") = 200 ]; then
+              CONTAINER_TAG=${{ inputs.target }}-${{ inputs.subtarget }}-"$CONTAINER_TAG"
+            else
+              CONTAINER_NAME=tools
+            fi
+          fi
+
+          echo "Tools container to use $CONTAINER_NAME:$CONTAINER_TAG"
           echo "container_tag=$CONTAINER_TAG" >> $GITHUB_OUTPUT
+          echo "container_name=$CONTAINER_NAME" >> $GITHUB_OUTPUT
 
   build:
     name: Build ${{ inputs.target }}/${{ inputs.subtarget }}
     needs: setup_build
     runs-on: ubuntu-latest
 
-    container: ghcr.io/${{ needs.setup_build.outputs.owner_lc }}/${{ inputs.container_name }}:${{ needs.setup_build.outputs.container_tag }}
+    container: ghcr.io/${{ needs.setup_build.outputs.owner_lc }}/${{ needs.setup_build.outputs.container_name }}:${{ needs.setup_build.outputs.container_tag }}
 
     permissions:
       contents: read
