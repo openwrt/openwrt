@@ -1,0 +1,50 @@
+From 2b88563ee5aafd9571d965b7f2093a0f58d98a31 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Thu, 26 Nov 2020 12:02:21 +0100
+Subject: [PATCH] realtek: update the tree to the latest refactored version
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+* rename the target to realtek
+* add refactored DSA driver
+* add latest gpio driver
+* lots of arch cleanups
+* new irq driver
+* additional boards
+
+Submitted-by: Bert Vermeulen <bert@biot.com>
+Submitted-by: Birger Koblitz <mail@birger-koblitz.de>
+Submitted-by: Sander Vanheule <sander@svanheule.net>
+Submitted-by: Bjørn Mork <bjorn@mork.no>
+Submitted-by: John Crispin <john@phrozen.org>
+---
+ drivers/gpio/Kconfig                          |    6 ++++++
+ drivers/gpio/Makefile                         |    1 +
+ 2 files changed, 7 insertions(+)
+
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -529,6 +529,12 @@ config GPIO_ROCKCHIP
+ 	help
+ 	  Say yes here to support GPIO on Rockchip SoCs.
+ 
++config GPIO_RTL8231
++	tristate "RTL8231 GPIO"
++	depends on RTL83XX
++	help
++	  Say yes here to support Realtek RTL8231 GPIO expansion chips.
++
+ config GPIO_SAMA5D2_PIOBU
+ 	tristate "SAMA5D2 PIOBU GPIO support"
+ 	depends on MFD_SYSCON
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -129,6 +129,7 @@ obj-$(CONFIG_GPIO_RDC321X)		+= gpio-rdc3
+ obj-$(CONFIG_GPIO_REALTEK_OTTO)		+= gpio-realtek-otto.o
+ obj-$(CONFIG_GPIO_REG)			+= gpio-reg.o
+ obj-$(CONFIG_GPIO_ROCKCHIP)	+= gpio-rockchip.o
++obj-$(CONFIG_GPIO_RTL8231)		+= gpio-rtl8231.o
+ obj-$(CONFIG_ARCH_SA1100)		+= gpio-sa1100.o
+ obj-$(CONFIG_GPIO_SAMA5D2_PIOBU)	+= gpio-sama5d2-piobu.o
+ obj-$(CONFIG_GPIO_SCH311X)		+= gpio-sch311x.o
