@@ -1,0 +1,23 @@
+From 6e4efd68e6e560a1994bc273fe6f7a72139f3957 Mon Sep 17 00:00:00 2001
+From: crao <quic_crao@quicinc.com>
+Date: Wed, 15 Mar 2023 11:19:39 +0800
+Subject: [PATCH] [qca-ssdk]: fix compilation issue in Miami yocto
+
+Change-Id: I8526b9e43667d72ae9afa4ef8a13167088d194ba
+Signed-off-by: crao <quic_crao@quicinc.com>
+---
+ Makefile | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/Makefile
++++ b/Makefile
+@@ -29,7 +29,9 @@ all: $(BIN_DIR) kslib
+ modules: $(BIN_DIR) kslib_c
+ 	mkdir -p ./temp/;cp * ./temp -a;cd ./temp;cp ../Makefile.modules ./Makefile;
+ 	make -C $(SYS_PATH) M=$(PRJ_PATH)/temp $(LNX_MAKEOPTS) modules
++	cp $(PRJ_PATH)/temp/Module.symvers $(PRJ_PATH)/Module.symvers;
+ 	cp temp/*.ko build/bin;
++	rm -Rf ./temp/*.o ./temp/*.ko ./temp/*.a
+ 	@echo "---Build [SSDK-$(VERSION)] at $(BUILD_DATE) finished."
+ 
+ kslib_c:
