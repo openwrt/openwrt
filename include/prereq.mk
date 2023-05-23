@@ -113,7 +113,7 @@ define SetupHostCommand
 						;; \
 				esac; \
 				ln -sf "$$$$$$$$bin" "$(STAGING_DIR_HOST)/bin/$(strip $(1))"; \
-				exit 1; \
+				exit 0; \
 			fi; \
 		fi; \
 	done; \
