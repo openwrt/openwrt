@@ -24,7 +24,6 @@ BUNDLER_PATH := $(subst $(space),:,$(filter-out $(TOPDIR)/%,$(subst :,$(space),$
 BUNDLER_COMMAND := PATH=$(BUNDLER_PATH) $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)
 
 EXCLUDE_DIRS:= \
-	*/stamp \
 	*/stampfiles \
 	*/man \
 	*/info \
@@ -111,6 +110,10 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 
 	$(TAR) -cf - -C $(TOPDIR) $(USERSPACE_FILES) | \
+		$(TAR) -xf - -C $(SDK_BUILD_DIR)
+
+	# Copy install stamps, so packages which provide host part, won't be rebuilt again and link to host libc instead of a bundled one.
+	$(TAR) -cf - -C $(TOPDIR) staging_dir/hostpkg/stamp/ | \
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 
 	(cd $(SDK_BUILD_DIR); find $(STAGING_SUBDIR_HOST)/bin $(STAGING_SUBDIR_HOST)/usr/bin \
