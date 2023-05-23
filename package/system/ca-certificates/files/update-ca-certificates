@@ -1,0 +1,214 @@
+#!/bin/sh -e
+#
+# update-ca-certificates
+#
+# Copyright (c) 2003 Fumitoshi UKAI <ukai@debian.or.jp>
+# Copyright (c) 2009 Philipp Kern <pkern@debian.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02111-1301,
+# USA.
+#
+
+verbose=0
+fresh=0
+default=0
+CERTSCONF=/etc/ca-certificates.conf
+CERTSDIR=/usr/share/ca-certificates
+LOCALCERTSDIR=/usr/local/share/ca-certificates
+CERTBUNDLE=ca-certificates.crt
+ETCCERTSDIR=/etc/ssl/certs
+HOOKSDIR=/etc/ca-certificates/update.d
+
+while [ $# -gt 0 ];
+do
+  case $1 in
+    --verbose|-v)
+      verbose=1;;
+    --fresh|-f)
+      fresh=1;;
+    --default|-d)
+      default=1
+      fresh=1;;
+    --certsconf)
+      shift
+      CERTSCONF="$1";;
+    --certsdir)
+      shift
+      CERTSDIR="$1";;
+    --localcertsdir)
+      shift
+      LOCALCERTSDIR="$1";;
+    --certbundle)
+      shift
+      CERTBUNDLE="$1";;
+    --etccertsdir)
+      shift
+      ETCCERTSDIR="$1";;
+    --hooksdir)
+      shift
+      HOOKSDIR="$1";;
+    --help|-h|*)
+      echo "$0: [--verbose] [--fresh]"
+      exit;;
+  esac
+  shift
+done
+
+if [ ! -s "$CERTSCONF" ]
+then
+  fresh=1
+fi
+
+cleanup() {
+  rm -f "$TEMPBUNDLE"
+  rm -f "$ADDED"
+  rm -f "$REMOVED"
+}
+trap cleanup 0
+
+# Helper files.  (Some of them are not simple arrays because we spawn
+# subshells later on.)
+TEMPBUNDLE="${ETCCERTSDIR}/${CERTBUNDLE}.new"
+ADDED="$(mktemp -p "${TMPDIR:-/tmp}" "ca-certificates.tmp.XXXXXX")"
+REMOVED="$(mktemp -p "${TMPDIR:-/tmp}" "ca-certificates.tmp.XXXXXX")"
+
+# Adds a certificate to the list of trusted ones.  This includes a symlink
+# in /etc/ssl/certs to the certificate file and its inclusion into the
+# bundle.
+add() {
+  CERT="$1"
+  PEM="$ETCCERTSDIR/$(basename "$CERT" .crt | sed -e 's/ /_/g' \
+                                                  -e 's/[()]/=/g' \
+                                                  -e 's/,/_/g').pem"
+  if ! test -e "$PEM" || [ "$(readlink "$PEM")" != "$CERT" ]
+  then
+    ln -sf "$CERT" "$PEM"
+    echo "+$PEM" >> "$ADDED"
+  fi
+  # Add trailing newline to certificate, if it is missing (#635570)
+  sed -e '$a\' "$CERT" >> "$TEMPBUNDLE"
+}
+
+remove() {
+  CERT="$1"
+  PEM="$ETCCERTSDIR/$(basename "$CERT" .crt).pem"
+  if test -L "$PEM"
+  then
+    rm -f "$PEM"
+    echo "-$PEM" >> "$REMOVED"
+  fi
+}
+
+cd "$ETCCERTSDIR"
+if [ "$fresh" = 1 ]; then
+  echo "Clearing symlinks in $ETCCERTSDIR..."
+  find . -type l -print | while read symlink
+  do
+    case $(readlink "$symlink") in
+      $CERTSDIR*|$LOCALCERTSDIR*) rm -f $symlink;;
+    esac
+  done
+  find . -type l -print | while read symlink
+  do
+    test -f "$symlink" || rm -f "$symlink"
+  done
+  echo "done."
+fi
+
+echo "Updating certificates in $ETCCERTSDIR..."
+
+# Add default certificate authorities if requested
+if [ "$default" = 1 ]; then
+  find -L "$CERTSDIR" -type f -name '*.crt' | sort | while read crt
+  do
+    add "$crt"
+  done
+fi
+
+# Handle certificates that should be removed.  This is an explicit act
+# by prefixing lines in the configuration files with exclamation marks (!).
+sed -n -e '/^$/d' -e 's/^!//p' "$CERTSCONF" | while read crt
+do
+  remove "$CERTSDIR/$crt"
+done
+
+sed -e '/^$/d' -e '/^#/d' -e '/^!/d' "$CERTSCONF" | while read crt
+do
+  if ! test -f "$CERTSDIR/$crt"
+  then
+    echo "W: $CERTSDIR/$crt not found, but listed in $CERTSCONF." >&2
+    continue
+  fi
+  add "$CERTSDIR/$crt"
+done
+
+# Now process certificate authorities installed by the local system
+# administrator.
+if [ -d "$LOCALCERTSDIR" ]
+then
+  find -L "$LOCALCERTSDIR" -type f -name '*.crt' | sort | while read crt
+  do
+    add "$crt"
+  done
+fi
+
+ADDED_CNT=$(wc -l < "$ADDED")
+REMOVED_CNT=$(wc -l < "$REMOVED")
+
+if [ "$ADDED_CNT" -gt 0 ] || [ "$REMOVED_CNT" -gt 0 ]
+then
+  # only run if set of files has changed
+  # Remove orphan symlinks found in ETCCERTSDIR to prevent `openssl rehash`
+  # from exiting with an error. See #895482, #895473.
+  find $ETCCERTSDIR -type l ! -exec test -e {} \; -print | while read orphan
+  do
+    rm -f "$orphan"
+    if [ "$verbose" = 1 ]; then
+      echo "Removed orphan symlink $orphan"
+    fi
+  done
+  if [ "$verbose" = 0 ]
+  then
+    openssl rehash . > /dev/null
+  else
+    openssl rehash -v .
+  fi
+fi
+
+# chmod and mv only if TEMPBUNDLE exists or install may fail, #996005
+if [ -f "$TEMPBUNDLE" ]
+then
+  chmod 0644 "$TEMPBUNDLE"
+  mv -f "$TEMPBUNDLE" "$CERTBUNDLE"
+  # Restore proper SELinux label after moving the file
+  [ -x /sbin/restorecon ] && /sbin/restorecon "$CERTBUNDLE" >/dev/null 2>&1
+fi
+
+echo "$ADDED_CNT added, $REMOVED_CNT removed; done."
+
+if [ -d "$HOOKSDIR" ]
+then
+
+  echo "Running hooks in $HOOKSDIR..."
+  VERBOSE_ARG=
+  [ "$verbose" = 0 ] || VERBOSE_ARG="--verbose"
+  eval run-parts "$VERBOSE_ARG" --test -- "$HOOKSDIR" | while read hook
+  do
+    ( cat "$ADDED"
+      cat "$REMOVED" ) | "$hook" || echo "E: $hook exited with code $?."
+  done
+  echo "done."
+
+fi
