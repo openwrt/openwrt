@@ -12,6 +12,7 @@ define Device/arcadyan_arv4510pw
 	kmod-ltq-tapi kmod-ltq-vmmc \
 	kmod-rt2800-pci kmod-ath5k wpad-basic-mbedtls
   SUPPORTED_DEVICES += ARV4510PW
+  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_arv4510pw
 
@@ -219,5 +220,6 @@ define Device/siemens_gigaset-sx76x
 	ltq-adsl-app ppp-mod-pppoe \
 	kmod-ath5k wpad-basic-mbedtls
   SUPPORTED_DEVICES += GIGASX76X
+  DEFAULT := n
 endef
 TARGET_DEVICES += siemens_gigaset-sx76x

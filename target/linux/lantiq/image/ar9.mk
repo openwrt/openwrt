@@ -154,6 +154,7 @@ define Device/zte_h201l
 	kmod-usb-dwc2 kmod-usb-ledtrig-usbport \
 	kmod-ltq-tapi kmod-ltq-vmmc
   SUPPORTED_DEVICES += H201L
+  DEFAULT := n
 endef
 TARGET_DEVICES += zte_h201l
 

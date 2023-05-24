@@ -386,11 +386,6 @@ static const struct pinconf_ops aw9523_pinconf_ops = {
 	.is_generic = true,
 };
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 5, 0)
-#define GPIO_LINE_DIRECTION_IN	1
-#define GPIO_LINE_DIRECTION_OUT	0
-#endif
-
 /*
  * aw9523_get_pin_direction - Get pin direction
  * @regmap: Regmap structure
@@ -436,11 +431,6 @@ static int aw9523_get_port_state(struct regmap *regmap, u8 pin,
 
 	return regmap_read(regmap, reg, state);
 }
-
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 5, 0)
-#undef GPIO_LINE_DIRECTION_IN
-#undef GPIO_LINE_DIRECTION_OUT
-#endif
 
 static int aw9523_gpio_irq_type(struct irq_data *d, unsigned int type)
 {

@@ -10,6 +10,7 @@ define Device/linksys_wrt300n-v1.1
   $(Device/linksys)
   DEVICE_ID := EWC2
   VERSION := 1.51.2
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt300n-v1.1
 
@@ -20,6 +21,7 @@ define Device/linksys_wrt310n-v1
   $(Device/linksys)
   DEVICE_ID := 310N
   VERSION := 1.0.10
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt310n-v1
 
@@ -30,6 +32,7 @@ define Device/linksys_wrt350n-v1
   $(Device/linksys)
   DEVICE_ID := EWCG
   VERSION := 1.04.1
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt350n-v1
 

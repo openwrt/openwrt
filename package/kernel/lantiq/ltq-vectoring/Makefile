@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ltq-vectoring
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=3
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://gitlab.com/prpl-foundation/intel/ppa_drv.git
 PKG_SOURCE_DATE:=2019-05-20

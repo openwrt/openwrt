@@ -50,7 +50,6 @@ endef
 TARGET_DEVICES += asus_rt-ac1200
 
 define Device/asus_rt-ac1200-v2
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AC1200
@@ -69,6 +68,7 @@ define Device/asus_rt-n10p-v3
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-N10P
   DEVICE_VARIANT := V3
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_rt-n10p-v3
 
@@ -83,6 +83,7 @@ define Device/asus_rt-n11p-b1
   DEVICE_ALT1_VENDOR := ASUS
   DEVICE_ALT1_MODEL := RT-N300
   DEVICE_ALT1_VARIANT := B1
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_rt-n11p-b1
 
@@ -323,7 +324,6 @@ endef
 TARGET_DEVICES += jotale_js76x8-32m
 
 define Device/keenetic_kn-1613
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 31488k
   DEVICE_VENDOR := Keenetic
   DEVICE_MODEL := KN-1613
@@ -381,7 +381,6 @@ endef
 TARGET_DEVICES += mediatek_linkit-smart-7688
 
 define Device/mediatek_mt7628an-eval-board
-  BLOCKSIZE := 64k
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7628 EVB
@@ -1040,7 +1039,6 @@ TARGET_DEVICES += zbtlink_zbt-we1226
 
 define Device/zyxel_keenetic-extra-ii
   IMAGE_SIZE := 29824k
-  BLOCKSIZE := 64k
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := Keenetic Extra II
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \

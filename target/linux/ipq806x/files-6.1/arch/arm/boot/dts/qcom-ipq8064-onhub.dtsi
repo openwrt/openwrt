@@ -1,0 +1,491 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright 2014 The ChromiumOS Authors
+ */
+
+#include "qcom-ipq8064-smb208.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac2;
+		mdio-gpio0 = &mdio;
+		serial0 = &gsbi4_serial;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		rsvd@41200000 {
+			reg = <0x41200000 0x300000>;
+			no-map;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+
+		dev {
+			label = "dev";
+			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_CONFIG>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+	};
+
+	mdio: mdio {
+		compatible = "virtual,mdio-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH>,
+			<&qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&mdio_pins>;
+		pinctrl-names = "default";
+
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+			qca,ar8327-initvals = <
+				0x00004 0x7600000   /* PAD0_MODE */
+				0x00008 0x1000000   /* PAD5_MODE */
+				0x0000c 0x80        /* PAD6_MODE */
+				0x000e4 0xaa545     /* MAC_POWER_SEL */
+				0x000e0 0xc74164de  /* SGMII_CTRL */
+				0x0007c 0x4e        /* PORT0_STATUS */
+				0x00094 0x4e        /* PORT6_STATUS */
+				>;
+		};
+
+		phy1: ethernet-phy@1 {
+			reg = <1>;
+		};
+	};
+
+	soc {
+		rng@1a500000 {
+			status = "disabled";
+		};
+
+		sound {
+			compatible = "google,storm-audio";
+			qcom,model = "ipq806x-storm";
+			cpu = <&lpass>;
+			codec = <&max98357a>;
+		};
+
+		lpass: lpass@28100000 {
+			status = "okay";
+			pinctrl-names = "default", "idle";
+			pinctrl-0 = <&mi2s_default>;
+			pinctrl-1 = <&mi2s_idle>;
+		};
+
+		max98357a: max98357a {
+			compatible = "maxim,max98357a";
+			#sound-dai-cells = <1>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&sdmode_pins>;
+			sdmode-gpios = <&qcom_pinmux 25 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&qcom_pinmux {
+	rgmii0_pins: rgmii0_pins {
+		mux {
+			pins = "gpio2", "gpio66";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+	mi2s_pins {
+		mi2s_default: mi2s_default {
+			dout {
+				pins = "gpio32";
+				function = "mi2s";
+				drive-strength = <16>;
+				bias-disable;
+			};
+			sync {
+				pins = "gpio27";
+				function = "mi2s";
+				drive-strength = <16>;
+				bias-disable;
+			};
+			clk {
+				pins = "gpio28";
+				function = "mi2s";
+				drive-strength = <16>;
+				bias-disable;
+			};
+		};
+		mi2s_idle: mi2s_idle {
+			dout {
+				pins = "gpio32";
+				function = "mi2s";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+			sync {
+				pins = "gpio27";
+				function = "mi2s";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+			clk {
+				pins = "gpio28";
+				function = "mi2s";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+	};
+
+	mdio_pins: mdio_pins {
+		mux {
+			pins = "gpio0", "gpio1";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-disable;
+		};
+		rst {
+			pins = "gpio26";
+			output-low;
+		};
+	};
+
+	sdmode_pins: sdmode_pinmux {
+		pins = "gpio25";
+		function = "gpio";
+		drive-strength = <16>;
+		bias-disable;
+	};
+
+	sdcc1_pins: sdcc1_pinmux {
+		mux {
+			pins = "gpio38", "gpio39", "gpio40",
+			       "gpio41", "gpio42", "gpio43",
+			       "gpio44", "gpio45", "gpio46",
+			       "gpio47";
+			function = "sdc1";
+		};
+		cmd {
+			pins = "gpio45";
+			drive-strength = <10>;
+			bias-pull-up;
+		};
+		data {
+			pins = "gpio38", "gpio39", "gpio40",
+			       "gpio41", "gpio43", "gpio44",
+			       "gpio46", "gpio47";
+			drive-strength = <10>;
+			bias-pull-up;
+		};
+		clk {
+			pins = "gpio42";
+			drive-strength = <16>;
+			bias-pull-down;
+		};
+	};
+
+	i2c1_pins: i2c1_pinmux {
+		pins = "gpio53", "gpio54";
+		function = "gsbi1";
+		bias-disable;
+	};
+
+	rpm_i2c_pinmux: rpm_i2c_pinmux {
+		mux {
+			pins = "gpio12", "gpio13";
+			function = "gsbi4";
+			drive-strength = <12>;
+			bias-disable;
+		};
+	};
+
+	spi_pins: spi_pins {
+		mux {
+			pins = "gpio18", "gpio19", "gpio21";
+			function = "gsbi5";
+			bias-pull-down;
+			/delete-property/ bias-none;
+			/delete-property/ drive-strength;
+		};
+		data {
+			pins = "gpio18", "gpio19";
+			drive-strength = <10>;
+		};
+		cs {
+			pins = "gpio20";
+			drive-strength = <10>;
+			bias-pull-up;
+		};
+		clk {
+			pins = "gpio21";
+			drive-strength = <12>;
+		};
+	};
+
+	fw_pinmux {
+		wp {
+			pins = "gpio17";
+			output-low;
+		};
+	};
+
+	button_pins: button_pins {
+		recovery {
+			pins = "gpio16";
+			function = "gpio";
+			bias-none;
+		};
+		developer {
+			pins = "gpio15";
+			function = "gpio";
+			bias-none;
+		};
+	};
+
+	spi6_pins: spi6_pins {
+		mux {
+			pins = "gpio55", "gpio56", "gpio58";
+			function = "gsbi6";
+			bias-pull-down;
+		};
+		data {
+			pins = "gpio55", "gpio56";
+			drive-strength = <10>;
+		};
+		cs {
+			pins = "gpio57";
+			drive-strength = <10>;
+			bias-pull-up;
+			output-high;
+		};
+		clk {
+			pins = "gpio58";
+			drive-strength = <12>;
+		};
+	};
+};
+
+&gmac0 {
+	status = "okay";
+	phy-mode = "rgmii";
+	qcom,id = <0>;
+	phy-handle = <&phy1>;
+
+	pinctrl-0 = <&rgmii0_pins>;
+	pinctrl-names = "default";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+	phy-handle = <&phy0>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gsbi1 {
+	status = "okay";
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+};
+
+&gsbi1_i2c {
+	status = "okay";
+
+	clock-frequency = <100000>;
+
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-names = "default";
+
+	tpm@20 {
+		compatible = "infineon,slb9645tt";
+		reg = <0x20>;
+		powered-while-suspended;
+	};
+};
+
+&gsbi4 {
+	status = "okay";
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+};
+
+&gsbi4_serial {
+	status = "okay";
+};
+
+&gsbi5 {
+	status = "okay";
+	qcom,mode = <GSBI_PROT_SPI>;
+
+	spi4: spi@1a280000 {
+		status = "okay";
+		spi-max-frequency = <50000000>;
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 0>;
+
+		flash: flash@0 {
+			compatible = "jedec,spi-nor";
+			spi-max-frequency = <50000000>;
+			reg = <0>;
+		};
+	};
+};
+
+&gsbi6 {
+	status = "okay";
+	qcom,mode = <GSBI_PROT_SPI>;
+};
+
+&gsbi6_spi {
+	status = "okay";
+	spi-max-frequency = <25000000>;
+
+	pinctrl-0 = <&spi6_pins>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&qcom_pinmux 57 GPIO_ACTIVE_HIGH>;
+
+	dmas = <&adm_dma 8 0xb>,
+	       <&adm_dma 7 0x14>;
+	dma-names = "rx", "tx";
+
+	/*
+	 * This "spidev" was included in the manufacturer device tree. I suspect
+	 * it's the (unused) Zigbee radio -- SiliconLabs EM3581 Zigbee? There's
+	 * no driver or binding for this at the moment.
+	 */
+	spidev@0 {
+		compatible = "spidev";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	pcie@0 {
+		reg = <0 0 0 0 0>;
+		#interrupt-cells = <1>;
+		#size-cells = <2>;
+		#address-cells = <3>;
+		device_type = "pci";
+
+		ath10k@0,0 {
+			reg = <0 0 0 0 0>;
+			device_type = "pci";
+			qcom,ath10k-sa-gpio = <2 3 4 0>;
+			qcom,ath10k-sa-gpio-func = <5 5 5 0>;
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+
+	pcie@0 {
+		reg = <0 0 0 0 0>;
+		#interrupt-cells = <1>;
+		#size-cells = <2>;
+		#address-cells = <3>;
+		device_type = "pci";
+
+		ath10k@0,0 {
+			reg = <0 0 0 0 0>;
+			device_type = "pci";
+			qcom,ath10k-sa-gpio = <2 3 4 0>;
+			qcom,ath10k-sa-gpio-func = <5 5 5 0>;
+		};
+	};
+};
+
+&pcie2 {
+	status = "okay";
+
+	pcie@0 {
+		reg = <0 0 0 0 0>;
+		#interrupt-cells = <1>;
+		#size-cells = <2>;
+		#address-cells = <3>;
+		device_type = "pci";
+
+		ath10k@0,0 {
+			reg = <0 0 0 0 0>;
+			device_type = "pci";
+		};
+	};
+};
+
+&rpm {
+	pinctrl-0 = <&rpm_i2c_pinmux>;
+	pinctrl-names = "default";
+};
+
+&sdcc1 {
+	status = "okay";
+	pinctrl-0 = <&sdcc1_pins>;
+	pinctrl-names = "default";
+	/delete-property/ mmc-ddr-1_8v;
+};
+
+&tcsr {
+	compatible = "qcom,tcsr-ipq8064", "qcom,tcsr", "syscon";
+	qcom,usb-ctrl-select = <TCSR_USB_SELECT_USB3_DUAL>;
+};
+
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
+	status = "okay";
+};
+
+&usb3_0 {
+	status = "okay";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
+};

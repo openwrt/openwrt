@@ -1,0 +1,88 @@
+From 6a77cf3f5f95ec0058e1b4d1ada018748cb0b83b Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 15 Sep 2022 03:33:13 +0200
+Subject: [PATCH 9/9] clk: qcom: krait-cc: rework mux reset logic and reset
+ hfpll
+
+Rework and clean mux reset logic.
+Compact it to a for loop to handle both CPU and L2 in one place.
+Move hardcoded aux_rate to define and add a new hfpll_rate value to
+reset hfpll settings.
+Change logic to now reset the hfpll to the lowest value of 600 Mhz and
+then restoring the previous frequency. This permits to reset the hfpll if
+the primary mux was set to source out of the secondary mux.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/qcom/krait-cc.c | 50 +++++++++++++++++--------------------
+ 1 file changed, 23 insertions(+), 27 deletions(-)
+
+--- a/drivers/clk/qcom/krait-cc.c
++++ b/drivers/clk/qcom/krait-cc.c
+@@ -25,7 +25,9 @@ enum {
+ 	clks_max,
+ };
+ 
+-#define QSB_RATE	2250000000
++#define QSB_RATE	225000000
++#define AUX_RATE	384000000
++#define HFPLL_RATE	600000000
+ 
+ static unsigned int sec_mux_map[] = {
+ 	2,
+@@ -350,7 +352,7 @@ static int krait_cc_probe(struct platfor
+ {
+ 	struct device *dev = &pdev->dev;
+ 	const struct of_device_id *id;
+-	unsigned long cur_rate, aux_rate, qsb_rate;
++	unsigned long cur_rate, qsb_rate;
+ 	int cpu;
+ 	struct clk_hw *mux, *l2_pri_mux;
+ 	struct clk *clk, **clks;
+@@ -420,28 +422,29 @@ static int krait_cc_probe(struct platfor
+ 	 * two different rates to force a HFPLL reinit under all
+ 	 * circumstances.
+ 	 */
+-	cur_rate = clk_get_rate(clks[l2_mux]);
+-	aux_rate = 384000000;
+-	if (cur_rate < aux_rate) {
+-		dev_info(dev, "L2 @ Undefined rate. Forcing new rate.\n");
+-		cur_rate = aux_rate;
+-	}
+-	clk_set_rate(clks[l2_mux], aux_rate);
+-	clk_set_rate(clks[l2_mux], 2);
+-	clk_set_rate(clks[l2_mux], cur_rate);
+-	dev_info(dev, "L2 @ %lu KHz\n", clk_get_rate(clks[l2_mux]) / 1000);
+-	for_each_possible_cpu(cpu) {
++	for (cpu = 0; cpu < 5; cpu++) {
++		const char *l2_s = "L2";
++		char cpu_s[5];
++
+ 		clk = clks[cpu];
++		if (!clk)
++			continue;
++
++		if (cpu < 4)
++			snprintf(cpu_s, 5, "CPU%d", cpu);
++
+ 		cur_rate = clk_get_rate(clk);
+-		if (cur_rate < aux_rate) {
+-			dev_info(dev, "CPU%d @ Undefined rate. Forcing new rate.\n", cpu);
+-			cur_rate = aux_rate;
++		if (cur_rate < AUX_RATE) {
++			dev_info(dev, "%s @ Undefined rate. Forcing new rate.\n",
++				 cpu < 4 ? cpu_s : l2_s);
++			cur_rate = AUX_RATE;
+ 		}
+ 
+-		clk_set_rate(clk, aux_rate);
+-		clk_set_rate(clk, 2);
++		clk_set_rate(clk, AUX_RATE);
++		clk_set_rate(clk, HFPLL_RATE);
+ 		clk_set_rate(clk, cur_rate);
+-		dev_info(dev, "CPU%d @ %lu KHz\n", cpu, clk_get_rate(clk) / 1000);
++		dev_info(dev, "%s @ %lu KHz\n", cpu < 4 ? cpu_s : l2_s,
++			 clk_get_rate(clk) / 1000);
+ 	}
+ 
+ 	of_clk_add_provider(dev->of_node, krait_of_get, clks);

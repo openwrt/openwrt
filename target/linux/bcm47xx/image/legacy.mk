@@ -7,6 +7,7 @@ define Device/asus_wl-300g
   DEVICE_PACKAGES := kmod-b43
   $(Device/asus)
   PRODUCTID := "WL300g      "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-300g
 
@@ -15,6 +16,7 @@ define Device/asus_wl-320gp
   DEVICE_PACKAGES := kmod-b43
   $(Device/asus)
   PRODUCTID := "WL320gP     "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-320gp
 
@@ -23,6 +25,7 @@ define Device/asus_wl-330ge
   DEVICE_PACKAGES := kmod-b43
   $(Device/asus)
   PRODUCTID := "WL-330gE    "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-330ge
 
@@ -31,6 +34,7 @@ define Device/asus_wl-500gd
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
   $(Device/asus)
   PRODUCTID := "WL500gx     "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-500gd
 
@@ -40,6 +44,7 @@ define Device/asus_wl-500gp-v1
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
   $(Device/asus)
   PRODUCTID := "WL500gp     "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-500gp-v1
 
@@ -49,6 +54,7 @@ define Device/asus_wl-500gp-v2
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
   $(Device/asus)
   PRODUCTID := "WL500gpv2   "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-500gp-v2
 
@@ -57,6 +63,7 @@ define Device/asus_wl-500w
   DEVICE_PACKAGES := kmod-b43 kmod-usb-uhci kmod-usb2-pci
   $(Device/asus)
   PRODUCTID := "WL500W      "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-500w
 
@@ -65,6 +72,7 @@ define Device/asus_wl-520gu
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
   $(Device/asus)
   PRODUCTID := "WL520gu     "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-520gu
 
@@ -73,6 +81,7 @@ define Device/asus_wl-550ge
   DEVICE_PACKAGES := kmod-b43
   $(Device/asus)
   PRODUCTID := "WL550gE     "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-550ge
 
@@ -81,6 +90,7 @@ define Device/asus_wl-hdd25
   DEVICE_PACKAGES := kmod-b43 $(USB1_PACKAGES)
   $(Device/asus)
   PRODUCTID := "WLHDD       "
+  DEFAULT := n
 endef
 TARGET_DEVICES += asus_wl-hdd25
 
@@ -99,6 +109,7 @@ define Device/edimax_ps1208-mfg
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
   IMAGES := bin
   IMAGE/bin := append-rootfs | trx-with-loader | edimax-bin
+  DEFAULT := n
 endef
 TARGET_DEVICES += edimax_ps1208-mfg
 
@@ -109,6 +120,7 @@ define Device/huawei_e970
   KERNEL_NAME = vmlinux.gz
   IMAGES := bin
   IMAGE/bin := append-rootfs | trx-without-loader | huawei-bin
+  DEFAULT := n
 endef
 TARGET_DEVICES += huawei_e970
 
@@ -118,6 +130,7 @@ define Device/linksys_wrt54g3g
   $(Device/linksys)
   DEVICE_ID := W54F
   VERSION := 2.20.1
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt54g3g
 
@@ -126,6 +139,7 @@ define Device/linksys_wrt54g3g-em
   $(Device/linksys)
   DEVICE_ID := W3GN
   VERSION := 2.20.1
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt54g3g-em
 
@@ -140,6 +154,7 @@ define Device/linksys_wrt54g3gv2-vf
   DEVICE_ID := 3G2V
   VERSION := 3.00.24
   SERIAL := 6
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt54g3gv2-vf
 
@@ -149,6 +164,7 @@ define Device/linksys_wrt54g
   $(Device/linksys)
   DEVICE_ID := W54G
   VERSION := 4.71.1
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt54g
 
@@ -163,6 +179,7 @@ define Device/linksys_wrt54gs
   FILESYSTEMS := $(FS_128K)
   DEVICE_ID := W54S
   VERSION := 4.80.1
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt54gs
 
@@ -173,6 +190,7 @@ define Device/linksys_wrt54gs-v4
   $(Device/linksys)
   DEVICE_ID := W54s
   VERSION := 1.09.1
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt54gs-v4
 
@@ -183,6 +201,7 @@ define Device/linksys_wrtsl54gs
   FILESYSTEMS := $(FS_128K)
   DEVICE_ID := W54U
   VERSION := 2.08.1
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrtsl54gs
 
@@ -192,6 +211,7 @@ define Device/linksys_wrt150n
   $(Device/linksys)
   DEVICE_ID := N150
   VERSION := 1.51.3
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt150n
 
@@ -202,6 +222,7 @@ define Device/linksys_wrt160n-v1
   $(Device/linksys)
   DEVICE_ID := N150
   VERSION := 1.50.1
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt160n-v1
 
@@ -213,6 +234,7 @@ define Device/linksys_wrt300n-v1
   IMAGES := bin trx
   DEVICE_ID := EWCB
   VERSION := 1.03.6
+  DEFAULT := n
 endef
 TARGET_DEVICES += linksys_wrt300n-v1
 
@@ -221,6 +243,7 @@ define Device/motorola_wa840g
   DEVICE_PACKAGES := kmod-b43
   $(Device/motorola)
   MOTOROLA_DEVICE := 2
+  DEFAULT := n
 endef
 TARGET_DEVICES += motorola_wa840g
 
@@ -229,6 +252,7 @@ define Device/motorola_we800g
   DEVICE_PACKAGES := kmod-b43
   $(Device/motorola)
   MOTOROLA_DEVICE := 3
+  DEFAULT := n
 endef
 TARGET_DEVICES += motorola_we800g
 
@@ -237,6 +261,7 @@ define Device/motorola_wr850g
   DEVICE_PACKAGES := kmod-b43
   $(Device/motorola)
   MOTOROLA_DEVICE := 1
+  DEFAULT := n
 endef
 TARGET_DEVICES += motorola_wr850g
 
@@ -247,6 +272,7 @@ define Device/netgear_wgr614-v8
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H072T00_NETGEAR
   NETGEAR_REGION := 2
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wgr614-v8
 
@@ -257,6 +283,7 @@ define Device/netgear_wgt634u
   FILESYSTEMS := $(FS_128K)
   IMAGES := bin
   IMAGE/bin := append-rootfs | trx-with-loader | prepend-with-elf
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wgt634u
 
@@ -267,6 +294,7 @@ define Device/netgear_wndr3300-v1
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H093T00_NETGEAR
   NETGEAR_REGION := 2
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wndr3300-v1
 
@@ -277,6 +305,7 @@ define Device/netgear_wnr834b-v2
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H081T00_NETGEAR
   NETGEAR_REGION := 2
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wnr834b-v2
 
@@ -286,6 +315,7 @@ define Device/usrobotics_usr5461
   DEVICE_PACKAGES := kmod-b43 $(USB1_PACKAGES)
   IMAGES := bin
   IMAGE/bin := append-rootfs | trx-with-loader | usrobotics-bin
+  DEFAULT := n
 endef
 TARGET_DEVICES += usrobotics_usr5461
 

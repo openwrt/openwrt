@@ -705,7 +705,7 @@ static int ssb_fbs_probe(struct platform_device *pdev)
 	if (is_valid_ether_addr(mac)) {
 		dev_info(dev, "mtd mac %pM\n", mac);
 	} else {
-		random_ether_addr(mac);
+		eth_random_addr(mac);
 		dev_info(dev, "random mac %pM\n", mac);
 	}
 

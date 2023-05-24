@@ -73,11 +73,7 @@
 
 int parse_fit_partitions(struct parsed_partitions *state, u64 fit_start_sector, u64 sectors, int *slot, int add_remain)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
 	struct block_device *bdev = state->disk->part0;
-#else
-	struct block_device *bdev = state->bdev;
-#endif
 	struct address_space *mapping = bdev->bd_inode->i_mapping;
 	struct page *page;
 	void *fit, *init_fit;

@@ -46,6 +46,7 @@ define KernelPackage/bonding
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Ethernet bonding driver
   KCONFIG:=CONFIG_BONDING
+  DEPENDS:=PACKAGE_kmod-tls:kmod-tls
   FILES:=$(LINUX_DIR)/drivers/net/bonding/bonding.ko
   AUTOLOAD:=$(call AutoLoad,40,bonding)
   MODPARAMS.bonding:=max_bonds=0
@@ -91,7 +92,9 @@ define KernelPackage/vxlan
 	+kmod-udptunnel4 \
 	+IPV6:kmod-udptunnel6
   KCONFIG:=CONFIG_VXLAN
-  FILES:=$(LINUX_DIR)/drivers/net/vxlan.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/vxlan.ko@lt5.18 \
+	$(LINUX_DIR)/drivers/net/vxlan/vxlan.ko@ge5.18
   AUTOLOAD:=$(call AutoLoad,13,vxlan)
 endef
 
@@ -1042,6 +1045,24 @@ endef
 
 $(eval $(call KernelPackage,tcp-bbr))
 
+define KernelPackage/tls
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=In-kernel TLS Support with HW Offload
+  KCONFIG:=CONFIG_TLS \
+	CONFIG_TLS_DEVICE=y
+  FILES:=$(LINUX_DIR)/net/tls/tls.ko
+  AUTOLOAD:=$(call AutoProbe,tls)
+endef
+
+define KernelPackage/tls/description
+ Kernel module for in-kernel TLS protocol support and hw offload
+ (to supported interfaces).
+ This allows symmetric encryption handling of the TLS protocol to
+ be done in-kernel and it's HW offload when available.
+endef
+
+$(eval $(call KernelPackage,tls))
+
 
 define KernelPackage/tcp-hybla
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
@@ -1295,7 +1316,8 @@ define KernelPackage/9pnet
 	CONFIG_NET_9P \
 	CONFIG_NET_9P_DEBUG=n \
 	CONFIG_NET_9P_XEN=n \
-	CONFIG_NET_9P_VIRTIO
+	CONFIG_NET_9P_VIRTIO \
+	CONFIG_NET_9P_FD=n@ge5.17
   FILES:= \
 	$(LINUX_DIR)/net/9p/9pnet.ko \
 	$(LINUX_DIR)/net/9p/9pnet_virtio.ko
