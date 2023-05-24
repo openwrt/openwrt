@@ -1,7 +1,7 @@
-From 686c3d4f71de9e0e7a27f03a5617a712385f90cd Mon Sep 17 00:00:00 2001
+From 9ca4e437a24dfc4ec6c362f319eb9850b9eca497 Mon Sep 17 00:00:00 2001
 From: Yu Zhao <yuzhao@google.com>
 Date: Fri, 30 Dec 2022 14:52:52 -0700
-Subject: [PATCH 20/29] mm: support POSIX_FADV_NOREUSE
+Subject: [PATCH 11/19] UPSTREAM: mm: support POSIX_FADV_NOREUSE
 
 This patch adds POSIX_FADV_NOREUSE to vma_has_recency() so that the LRU
 algorithm can ignore access to mapped files marked by this flag.
@@ -22,7 +22,7 @@ Its limitations are:
    by two users and one of them having set POSIX_FADV_NOREUSE on the
    file, this page will be activated upon the second user accessing
    it. This corner case can be covered by checking POSIX_FADV_NOREUSE
-   before calling mark_page_accessed() on the read path. But it is
+   before calling folio_mark_accessed() on the read path. But it is
    considered not worth the effort.
 
 There have been a few attempts to support POSIX_FADV_NOREUSE, e.g., [1].
@@ -67,32 +67,40 @@ which makes it on par with the active/inactive LRU.
 [2] https://openbenchmarking.org/result/2209259-PTS-MGLRU8GB57
 
 Link: https://lkml.kernel.org/r/20221230215252.2628425-2-yuzhao@google.com
+Change-Id: I0b7f5f971d78014ea1ba44cee6a8ec902a4330d0
 Signed-off-by: Yu Zhao <yuzhao@google.com>
 Cc: Alexander Viro <viro@zeniv.linux.org.uk>
 Cc: Andrea Righi <andrea.righi@canonical.com>
 Cc: Johannes Weiner <hannes@cmpxchg.org>
 Cc: Michael Larabel <Michael@MichaelLarabel.com>
 Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+(cherry picked from commit 17e810229cb3068b692fa078bd9b3a6527e0866a)
+Bug: 274865848
+Signed-off-by: T.J. Mercier <tjmercier@google.com>
 ---
  include/linux/fs.h        | 2 ++
  include/linux/mm_inline.h | 3 +++
  mm/fadvise.c              | 5 ++++-
  3 files changed, 9 insertions(+), 1 deletion(-)
 
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index f14ecbeab2a9d..97f9c41c1a43a 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -166,6 +166,8 @@ typedef int (dio_iodone_t)(struct kiocb
+@@ -166,6 +166,8 @@ typedef int (dio_iodone_t)(struct kiocb *iocb, loff_t offset,
  /* File supports DIRECT IO */
  #define	FMODE_CAN_ODIRECT	((__force fmode_t)0x400000)
  
-+#define	FMODE_NOREUSE		((__force fmode_t)0x400000)
++#define	FMODE_NOREUSE		((__force fmode_t)0x800000)
 +
  /* File was opened by fanotify and shouldn't generate fanotify events */
  #define FMODE_NONOTIFY		((__force fmode_t)0x4000000)
  
+diff --git a/include/linux/mm_inline.h b/include/linux/mm_inline.h
+index 7bb2e5f94734c..9a8e2049333c0 100644
 --- a/include/linux/mm_inline.h
 +++ b/include/linux/mm_inline.h
-@@ -583,6 +583,9 @@ static inline bool vma_has_recency(struc
+@@ -600,6 +600,9 @@ static inline bool vma_has_recency(struct vm_area_struct *vma)
  	if (vma->vm_flags & (VM_SEQ_READ | VM_RAND_READ))
  		return false;
  
@@ -102,9 +110,11 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	return true;
  }
  
+diff --git a/mm/fadvise.c b/mm/fadvise.c
+index c76ee665355a4..2ba24d865bf5f 100644
 --- a/mm/fadvise.c
 +++ b/mm/fadvise.c
-@@ -80,7 +80,7 @@ int generic_fadvise(struct file *file, l
+@@ -80,7 +80,7 @@ int generic_fadvise(struct file *file, loff_t offset, loff_t len, int advice)
  	case POSIX_FADV_NORMAL:
  		file->f_ra.ra_pages = bdi->ra_pages;
  		spin_lock(&file->f_lock);
@@ -113,7 +123,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  		spin_unlock(&file->f_lock);
  		break;
  	case POSIX_FADV_RANDOM:
-@@ -107,6 +107,9 @@ int generic_fadvise(struct file *file, l
+@@ -107,6 +107,9 @@ int generic_fadvise(struct file *file, loff_t offset, loff_t len, int advice)
  		force_page_cache_readahead(mapping, file, start_index, nrpages);
  		break;
  	case POSIX_FADV_NOREUSE:
@@ -123,3 +133,6 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  		break;
  	case POSIX_FADV_DONTNEED:
  		__filemap_fdatawrite_range(mapping, offset, endbyte,
+-- 
+2.40.1
+

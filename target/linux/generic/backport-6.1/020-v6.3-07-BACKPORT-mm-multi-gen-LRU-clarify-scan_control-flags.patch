@@ -1,7 +1,7 @@
-From 93147736b5b3a21bea24313bfc7a696829932009 Mon Sep 17 00:00:00 2001
+From 11b14ee8cbbbebd8204609076a9327a1171cd253 Mon Sep 17 00:00:00 2001
 From: Yu Zhao <yuzhao@google.com>
 Date: Wed, 21 Dec 2022 21:19:05 -0700
-Subject: [PATCH 27/29] mm: multi-gen LRU: clarify scan_control flags
+Subject: [PATCH 07/19] BACKPORT: mm: multi-gen LRU: clarify scan_control flags
 
 Among the flags in scan_control:
 1. sc->may_swap, which indicates swap constraint due to memsw.max, is
@@ -12,7 +12,7 @@ Among the flags in scan_control:
 3. !(sc->gfp_mask & __GFP_IO), which indicates IO constraint, lowers
    swappiness to prioritize file LRU, since clean file folios are more
    likely to exist.
-4. sc->may_writefolio and sc->may_unmap, which indicates opportunistic
+4. sc->may_writepage and sc->may_unmap, which indicates opportunistic
    reclaim, are rejected, since unmapped clean folios are already
    prioritized. Scanning for more of them is likely futile and can
    cause high reclaim latency when there is a large number of memcgs.
@@ -29,13 +29,21 @@ Cc: Mike Rapoport <rppt@kernel.org>
 Cc: Roman Gushchin <roman.gushchin@linux.dev>
 Cc: Suren Baghdasaryan <surenb@google.com>
 Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Bug: 274865848
+(cherry picked from commit e9d4e1ee788097484606c32122f146d802a9c5fb)
+[TJ: Resolved conflict with older function signature for min_cgroup_below_min, and over
+cdded861182142ac4488a4d64c571107aeb77f53 ("ANDROID: MGLRU: Don't skip anon reclaim if swap low")]
+Change-Id: Ic2e779eaf4e91a3921831b4e2fa10c740dc59d50
+Signed-off-by: T.J. Mercier <tjmercier@google.com>
 ---
  mm/vmscan.c | 55 +++++++++++++++++++++++++++--------------------------
  1 file changed, 28 insertions(+), 27 deletions(-)
 
+diff --git a/mm/vmscan.c b/mm/vmscan.c
+index 65eb28448f216..0a0e1250ffc87 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -3185,6 +3185,9 @@ static int get_swappiness(struct lruvec
+@@ -3185,6 +3185,9 @@ static int get_swappiness(struct lruvec *lruvec, struct scan_control *sc)
  	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
  	struct pglist_data *pgdat = lruvec_pgdat(lruvec);
  
@@ -45,7 +53,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	if (!can_demote(pgdat->node_id, sc) &&
  	    mem_cgroup_get_nr_swap_pages(memcg) < MIN_LRU_BATCH)
  		return 0;
-@@ -4226,7 +4229,7 @@ static void walk_mm(struct lruvec *lruve
+@@ -4223,7 +4226,7 @@ static void walk_mm(struct lruvec *lruvec, struct mm_struct *mm, struct lru_gen_
  	} while (err == -EAGAIN);
  }
  
@@ -54,7 +62,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  {
  	struct lru_gen_mm_walk *walk = current->reclaim_state->mm_walk;
  
-@@ -4234,7 +4237,7 @@ static struct lru_gen_mm_walk *set_mm_wa
+@@ -4231,7 +4234,7 @@ static struct lru_gen_mm_walk *set_mm_walk(struct pglist_data *pgdat)
  		VM_WARN_ON_ONCE(walk);
  
  		walk = &pgdat->mm_walk;
@@ -63,7 +71,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  		VM_WARN_ON_ONCE(current_is_kswapd());
  
  		walk = kzalloc(sizeof(*walk), __GFP_HIGH | __GFP_NOMEMALLOC | __GFP_NOWARN);
-@@ -4420,7 +4423,7 @@ static bool try_to_inc_max_seq(struct lr
+@@ -4417,7 +4420,7 @@ static bool try_to_inc_max_seq(struct lruvec *lruvec, unsigned long max_seq,
  		goto done;
  	}
  
@@ -72,7 +80,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	if (!walk) {
  		success = iterate_mm_list_nowalk(lruvec, max_seq);
  		goto done;
-@@ -4489,8 +4492,6 @@ static bool lruvec_is_reclaimable(struct
+@@ -4486,8 +4489,6 @@ static bool lruvec_is_reclaimable(struct lruvec *lruvec, struct scan_control *sc
  	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
  	DEFINE_MIN_SEQ(lruvec);
  
@@ -81,7 +89,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	/* see the comment on lru_gen_folio */
  	gen = lru_gen_from_seq(min_seq[LRU_GEN_FILE]);
  	birth = READ_ONCE(lruvec->lrugen.timestamps[gen]);
-@@ -4746,12 +4747,8 @@ static bool isolate_folio(struct lruvec
+@@ -4743,12 +4744,8 @@ static bool isolate_folio(struct lruvec *lruvec, struct folio *folio, struct sca
  {
  	bool success;
  
@@ -95,19 +103,19 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	    (folio_test_dirty(folio) ||
  	     (folio_test_anon(folio) && !folio_test_swapcache(folio))))
  		return false;
-@@ -4848,9 +4845,8 @@ static int scan_folios(struct lruvec *lr
+@@ -4845,9 +4842,8 @@ static int scan_folios(struct lruvec *lruvec, struct scan_control *sc,
  	__count_vm_events(PGSCAN_ANON + type, isolated);
  
  	/*
 -	 * There might not be eligible pages due to reclaim_idx, may_unmap and
 -	 * may_writepage. Check the remaining to prevent livelock if it's not
 -	 * making progress.
-+	 * There might not be eligible pages due to reclaim_idx. Check the
++	 * There might not be eligible folios due to reclaim_idx. Check the
 +	 * remaining to prevent livelock if it's not making progress.
  	 */
  	return isolated || !remaining ? scanned : 0;
  }
-@@ -5110,8 +5106,7 @@ static long get_nr_to_scan(struct lruvec
+@@ -5107,8 +5103,7 @@ static long get_nr_to_scan(struct lruvec *lruvec, struct scan_control *sc, bool
  	struct mem_cgroup *memcg = lruvec_memcg(lruvec);
  	DEFINE_MAX_SEQ(lruvec);
  
@@ -117,7 +125,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  		return 0;
  
  	if (!should_run_aging(lruvec, max_seq, sc, can_swap, &nr_to_scan))
-@@ -5139,17 +5134,14 @@ static bool try_to_shrink_lruvec(struct
+@@ -5136,17 +5131,14 @@ static bool try_to_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
  	long nr_to_scan;
  	unsigned long scanned = 0;
  	unsigned long nr_to_reclaim = get_nr_to_reclaim(sc);
@@ -140,7 +148,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  		nr_to_scan = get_nr_to_scan(lruvec, sc, swappiness);
  		if (nr_to_scan <= 0)
-@@ -5279,12 +5271,13 @@ static void lru_gen_shrink_lruvec(struct
+@@ -5277,12 +5269,13 @@ static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc
  	struct blk_plug plug;
  
  	VM_WARN_ON_ONCE(global_reclaim(sc));
@@ -155,7 +163,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
  	if (try_to_shrink_lruvec(lruvec, sc))
  		lru_gen_rotate_memcg(lruvec, MEMCG_LRU_YOUNG);
-@@ -5340,11 +5333,19 @@ static void lru_gen_shrink_node(struct p
+@@ -5338,11 +5331,19 @@ static void lru_gen_shrink_node(struct pglist_data *pgdat, struct scan_control *
  
  	VM_WARN_ON_ONCE(!global_reclaim(sc));
  
@@ -172,11 +180,11 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	blk_start_plug(&plug);
  
 -	set_mm_walk(pgdat);
-+	set_mm_walk(NULL, sc->proactive);
++	set_mm_walk(pgdat, sc->proactive);
  
  	set_initial_priority(pgdat, sc);
  
-@@ -5362,7 +5363,7 @@ static void lru_gen_shrink_node(struct p
+@@ -5360,7 +5361,7 @@ static void lru_gen_shrink_node(struct pglist_data *pgdat, struct scan_control *
  	clear_mm_walk();
  
  	blk_finish_plug(&plug);
@@ -185,7 +193,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	/* kswapd should never fail */
  	pgdat->kswapd_failures = 0;
  }
-@@ -5934,7 +5935,7 @@ static ssize_t lru_gen_seq_write(struct
+@@ -5932,7 +5933,7 @@ static ssize_t lru_gen_seq_write(struct file *file, const char __user *src,
  	set_task_reclaim_state(current, &sc.reclaim_state);
  	flags = memalloc_noreclaim_save();
  	blk_start_plug(&plug);
@@ -194,3 +202,6 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  		err = -ENOMEM;
  		goto done;
  	}
+-- 
+2.40.1
+
