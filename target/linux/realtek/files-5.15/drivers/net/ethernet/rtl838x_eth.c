@@ -1557,7 +1557,7 @@ static int rtl838x_set_mac_address(struct net_device *dev, void *p)
 	if (!is_valid_ether_addr(addr->sa_data))
 		return -EADDRNOTAVAIL;
 
-	memcpy(dev->dev_addr, addr->sa_data, ETH_ALEN);
+	dev_addr_set(dev, addr->sa_data);
 	rtl838x_set_mac_hw(dev, mac);
 
 	pr_info("Using MAC %08x%08x\n", sw_r32(priv->r->mac), sw_r32(priv->r->mac + 4));
@@ -2352,6 +2352,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	struct resource *res, *mem;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
+	u8 mac_addr[ETH_ALEN];
 	int err = 0, rxrings, rxringlen;
 	struct ring_b *ring;
 
@@ -2478,17 +2479,18 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	 * 1) from device tree data
 	 * 2) from internal registers set by bootloader
 	 */
-	of_get_mac_address(pdev->dev.of_node, dev->dev_addr);
-	if (is_valid_ether_addr(dev->dev_addr)) {
-		rtl838x_set_mac_hw(dev, (u8 *)dev->dev_addr);
+	of_get_mac_address(pdev->dev.of_node, mac_addr);
+	if (is_valid_ether_addr(mac_addr)) {
+		rtl838x_set_mac_hw(dev, mac_addr);
 	} else {
-		dev->dev_addr[0] = (sw_r32(priv->r->mac) >> 8) & 0xff;
-		dev->dev_addr[1] = sw_r32(priv->r->mac) & 0xff;
-		dev->dev_addr[2] = (sw_r32(priv->r->mac + 4) >> 24) & 0xff;
-		dev->dev_addr[3] = (sw_r32(priv->r->mac + 4) >> 16) & 0xff;
-		dev->dev_addr[4] = (sw_r32(priv->r->mac + 4) >> 8) & 0xff;
-		dev->dev_addr[5] = sw_r32(priv->r->mac + 4) & 0xff;
+		mac_addr[0] = (sw_r32(priv->r->mac) >> 8) & 0xff;
+		mac_addr[1] = sw_r32(priv->r->mac) & 0xff;
+		mac_addr[2] = (sw_r32(priv->r->mac + 4) >> 24) & 0xff;
+		mac_addr[3] = (sw_r32(priv->r->mac + 4) >> 16) & 0xff;
+		mac_addr[4] = (sw_r32(priv->r->mac + 4) >> 8) & 0xff;
+		mac_addr[5] = sw_r32(priv->r->mac + 4) & 0xff;
 	}
+	dev_addr_set(dev, mac_addr);
 	/* if the address is invalid, use a random value */
 	if (!is_valid_ether_addr(dev->dev_addr)) {
 		struct sockaddr sa = { AF_UNSPEC };
