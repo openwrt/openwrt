@@ -373,16 +373,6 @@ config KERNEL_DEBUG_INFO_BTF
 
 	  Required to run BPF CO-RE applications.
 
-config KERNEL_MODULE_ALLOW_BTF_MISMATCH
-	bool "Allow loading modules with non-matching BTF type info"
-	depends on KERNEL_DEBUG_INFO_BTF
-	help
-	  For modules whose split BTF does not match vmlinux, load without
-	  BTF rather than refusing to load. The default behavior with
-	  module BTF enabled is to reject modules with such mismatches;
-	  this option will still load module BTF where possible but ignore
-	  it when a mismatch is found.
-
 config KERNEL_DEBUG_INFO_REDUCED
 	bool "Reduce debugging information"
 	default y
