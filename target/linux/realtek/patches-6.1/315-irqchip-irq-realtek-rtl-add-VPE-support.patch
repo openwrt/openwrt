@@ -39,7 +39,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  /*
   * IRR0-IRR3 store 4 bits per interrupt, but Realtek uses inverted numbering,
-@@ -37,6 +48,11 @@
+@@ -37,6 +48,11 @@ static void __iomem *realtek_ictl_base;
  #define IRR_OFFSET(idx)		(4 * (3 - (idx * 4) / 32))
  #define IRR_SHIFT(idx)		((idx * 4) % 32)
  
@@ -51,7 +51,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  static void write_irr(void __iomem *irr0, int idx, u32 value)
  {
  	unsigned int offset = IRR_OFFSET(idx);
-@@ -52,12 +68,15 @@
+@@ -52,12 +68,15 @@ static void realtek_ictl_unmask_irq(stru
  {
  	unsigned long flags;
  	u32 value;
@@ -70,7 +70,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  }
-@@ -66,49 +85,132 @@
+@@ -66,49 +85,132 @@ static void realtek_ictl_mask_irq(struct
  {
  	unsigned long flags;
  	u32 value;
@@ -208,7 +208,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  	if (unlikely(!pending)) {
  		spurious_interrupt();
-@@ -123,52 +225,112 @@
+@@ -123,52 +225,112 @@ out:
  	chained_irq_exit(chip, desc);
  }
  

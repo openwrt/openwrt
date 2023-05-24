@@ -15,7 +15,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 
 --- a/drivers/net/mdio/Kconfig
 +++ b/drivers/net/mdio/Kconfig
-@@ -54,6 +54,17 @@
+@@ -54,6 +54,17 @@ config MDIO_SUN4I
  	  interface units of the Allwinner SoC that have an EMAC (A10,
  	  A12, A10s, etc.)
  
@@ -35,7 +35,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  	depends on ARCH_XGENE || COMPILE_TEST
 --- a/drivers/net/mdio/Makefile
 +++ b/drivers/net/mdio/Makefile
-@@ -19,6 +19,7 @@
+@@ -19,6 +19,7 @@ obj-$(CONFIG_MDIO_MOXART)		+= mdio-moxar
  obj-$(CONFIG_MDIO_MSCC_MIIM)		+= mdio-mscc-miim.o
  obj-$(CONFIG_MDIO_MVUSB)		+= mdio-mvusb.o
  obj-$(CONFIG_MDIO_OCTEON)		+= mdio-octeon.o
@@ -110,7 +110,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 +MODULE_LICENSE("GPL");
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -60,6 +60,7 @@
+@@ -60,6 +60,7 @@ config SFP
  	depends on I2C && PHYLINK
  	depends on HWMON || HWMON=n
  	select MDIO_I2C
@@ -120,7 +120,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  
 --- a/include/linux/mdio/mdio-i2c.h
 +++ b/include/linux/mdio/mdio-i2c.h
-@@ -18,7 +18,10 @@
+@@ -18,7 +18,10 @@ enum mdio_i2c_proto {
  	MDIO_I2C_ROLLBALL,
  };
  

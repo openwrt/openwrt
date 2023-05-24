@@ -15,14 +15,14 @@ Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
 --- a/drivers/irqchip/irq-realtek-rtl.c
 +++ b/drivers/irqchip/irq-realtek-rtl.c
 @@ -27,6 +27,7 @@
- #define REG(x)		(realtek_ictl_base + x)
+ #define REG(offset, cpu)	(realtek_ictl_base[cpu] + offset)
  
  static DEFINE_RAW_SPINLOCK(irq_lock);
 +static u32 realtek_ictl_unmask[NR_CPUS];
  static void __iomem *realtek_ictl_base[NR_CPUS];
  static cpumask_t realtek_ictl_cpu_configurable;
  
-@@ -40,10 +41,27 @@
+@@ -40,10 +41,27 @@ struct realtek_ictl_output {
  };
  
  /*
@@ -54,7 +54,7 @@ Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
   */
  #define IRR_OFFSET(idx)		(4 * (3 - (idx * 4) / 32))
  #define IRR_SHIFT(idx)		((idx * 4) % 32)
-@@ -64,19 +82,33 @@
+@@ -64,19 +82,33 @@ static void write_irr(void __iomem *irr0
  	writel(irr, irr0 + offset);
  }
  
@@ -94,7 +94,7 @@ Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
  
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  }
-@@ -84,16 +112,12 @@
+@@ -84,16 +116,12 @@ static void realtek_ictl_unmask_irq(stru
  static void realtek_ictl_mask_irq(struct irq_data *i)
  {
  	unsigned long flags;
@@ -113,7 +113,7 @@ Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
  
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  }
-@@ -117,11 +141,17 @@
+@@ -117,11 +145,17 @@ static int realtek_ictl_irq_affinity(str
  	cpumask_and(&cpu_enable, &cpu_configure, dest);
  	cpumask_andnot(&cpu_disable, &cpu_configure, dest);
  
@@ -133,7 +133,7 @@ Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
  
  	irq_data_update_effective_affinity(i, &cpu_enable);
  
-@@ -150,6 +180,7 @@
+@@ -150,6 +184,7 @@ static int intc_map(struct irq_domain *d
  	raw_spin_lock_irqsave(&irq_lock, flags);
  	output->child_mask |= BIT(hw);
  	write_irr(REG(RTL_ICTL_IRR0, 0), hw, output->output_index + 1);
@@ -141,7 +141,7 @@ Submitted-by: INAGAKI Hiroshi <musashino.open@gmail.com>
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  
  	return 0;
-@@ -287,6 +318,7 @@
+@@ -285,6 +320,7 @@ static int __init realtek_rtl_of_init(st
  			for (int soc_irq = 0; soc_irq < RTL_ICTL_NUM_INPUTS; soc_irq++) {
  				write_irr(REG(RTL_ICTL_IRR0, cpu), soc_irq, 0);
  				realtek_ictl_unmask[cpu] &= ~BIT(soc_irq);

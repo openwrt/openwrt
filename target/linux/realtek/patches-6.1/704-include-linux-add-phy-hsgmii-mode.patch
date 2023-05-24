@@ -16,7 +16,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 
 --- a/drivers/net/phy/phy-core.c
 +++ b/drivers/net/phy/phy-core.c
-@@ -123,6 +123,7 @@
+@@ -123,6 +123,7 @@ int phy_interface_num_ports(phy_interfac
  	case PHY_INTERFACE_MODE_XLGMII:
  	case PHY_INTERFACE_MODE_MOCA:
  	case PHY_INTERFACE_MODE_TRGMII:
@@ -26,7 +26,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  	case PHY_INTERFACE_MODE_SMII:
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -198,6 +198,7 @@
+@@ -198,6 +198,7 @@ static int phylink_interface_max_speed(p
  	case PHY_INTERFACE_MODE_5GBASER:
  		return SPEED_5000;
  
@@ -34,7 +34,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  	case PHY_INTERFACE_MODE_XGMII:
  	case PHY_INTERFACE_MODE_RXAUI:
  	case PHY_INTERFACE_MODE_XAUI:
-@@ -488,6 +488,7 @@
+@@ -488,6 +489,7 @@ unsigned long phylink_get_capabilities(p
  
  	case PHY_INTERFACE_MODE_XGMII:
  	case PHY_INTERFACE_MODE_RXAUI:
@@ -42,7 +42,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  	case PHY_INTERFACE_MODE_XAUI:
  	case PHY_INTERFACE_MODE_10GBASER:
  	case PHY_INTERFACE_MODE_10GKR:
-@@ -848,6 +849,7 @@
+@@ -848,6 +850,7 @@ static int phylink_parse_mode(struct phy
  			fallthrough;
  		case PHY_INTERFACE_MODE_USXGMII:
  		case PHY_INTERFACE_MODE_10GKR:
@@ -52,7 +52,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  			phylink_set(pl->supported, 10baseT_Full);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -140,6 +140,7 @@
+@@ -140,6 +140,7 @@ typedef enum {
  	PHY_INTERFACE_MODE_XGMII,
  	PHY_INTERFACE_MODE_XLGMII,
  	PHY_INTERFACE_MODE_MOCA,
@@ -60,7 +60,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  	PHY_INTERFACE_MODE_QSGMII,
  	PHY_INTERFACE_MODE_TRGMII,
  	PHY_INTERFACE_MODE_100BASEX,
-@@ -247,6 +248,8 @@
+@@ -247,6 +248,8 @@ static inline const char *phy_modes(phy_
  		return "xlgmii";
  	case PHY_INTERFACE_MODE_MOCA:
  		return "moca";

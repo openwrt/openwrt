@@ -22,7 +22,7 @@ Submitted-by: Sander Vanheule <sander@svanheule.net>
 
 --- a/drivers/gpio/gpio-realtek-otto.c
 +++ b/drivers/gpio/gpio-realtek-otto.c
-@@ -307,16 +307,22 @@
+@@ -307,16 +307,22 @@ static int realtek_gpio_irq_init(struct
  {
  	struct realtek_gpio_ctrl *ctrl = gpiochip_get_data(gc);
  	u32 mask_all = GENMASK(gc->ngpio - 1, 0);

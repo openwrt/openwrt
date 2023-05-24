@@ -10,7 +10,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -502,6 +502,35 @@
+@@ -502,6 +502,35 @@ static void sfp_gpio_set_state(struct sf
  	}
  }
  
@@ -46,7 +46,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  static int sfp_i2c_read(struct sfp *sfp, bool a2, u8 dev_addr, void *buf,
  			size_t len)
  {
-@@ -571,12 +600,17 @@
+@@ -571,12 +600,17 @@ static int sfp_i2c_write(struct sfp *sfp
  
  static int sfp_i2c_configure(struct sfp *sfp, struct i2c_adapter *i2c)
  {
@@ -67,7 +67,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  
  	return 0;
  }
-@@ -586,11 +620,21 @@
+@@ -586,11 +620,21 @@ static int sfp_i2c_mdiobus_create(struct
  	struct mii_bus *i2c_mii;
  	int ret;
  
