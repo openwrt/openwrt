@@ -30,12 +30,6 @@ static inline struct wpa_supplicant *get_wpas_from_object(struct ubus_object *ob
 	return container_of(obj, struct wpa_supplicant, ubus.obj);
 }
 
-static void ubus_receive(int sock, void *eloop_ctx, void *sock_ctx)
-{
-	struct ubus_context *ctx = eloop_ctx;
-	ubus_handle_event(ctx);
-}
-
 static void ubus_reconnect_timeout(void *eloop_data, void *user_ctx)
 {
 	if (ubus_reconnect(ctx, NULL)) {
@@ -43,12 +37,12 @@ static void ubus_reconnect_timeout(void *eloop_data, void *user_ctx)
 		return;
 	}
 
-	eloop_register_read_sock(ctx->sock.fd, ubus_receive, ctx, NULL);
+	ubus_add_uloop(ctx);
 }
 
 static void wpas_ubus_connection_lost(struct ubus_context *ctx)
 {
-	eloop_unregister_read_sock(ctx->sock.fd);
+	uloop_fd_delete(&ctx->sock);
 	eloop_register_timeout(1, 0, ubus_reconnect_timeout, ctx, NULL);
 }
 
@@ -57,12 +51,14 @@ static bool wpas_ubus_init(void)
 	if (ctx)
 		return true;
 
+	eloop_add_uloop();
 	ctx = ubus_connect(NULL);
 	if (!ctx)
 		return false;
 
 	ctx->connection_lost = wpas_ubus_connection_lost;
-	eloop_register_read_sock(ctx->sock.fd, ubus_receive, ctx, NULL);
+	ubus_add_uloop(ctx);
+
 	return true;
 }
 
@@ -80,7 +76,7 @@ static void wpas_ubus_ref_dec(void)
 	if (ctx_ref)
 		return;
 
-	eloop_unregister_read_sock(ctx->sock.fd);
+	uloop_fd_delete(&ctx->sock);
 	ubus_free(ctx);
 	ctx = NULL;
 }
