@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
 PKG_VERSION:=1.47.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/tytso/e2fsprogs/v$(PKG_VERSION)/
@@ -155,6 +155,10 @@ CONFIGURE_ARGS += \
 	--disable-nls		\
 	--disable-rpath		\
 	--disable-fuse2fs
+
+ifneq ($(CONFIG_USE_MUSL),)
+  CONFIGURE_VARS += ac_cv_func_lseek64=yes
+endif
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
