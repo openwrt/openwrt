@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       target: ${{ steps.set_target.outputs.target }}
+      subtarget: ${{ steps.set_target.outputs.subtarget }}
 
     steps:
       - name: Set target
