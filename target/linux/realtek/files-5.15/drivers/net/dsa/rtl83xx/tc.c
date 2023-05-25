@@ -2,6 +2,7 @@
 
 #include <net/dsa.h>
 #include <linux/delay.h>
+#include <linux/etherdevice.h>
 #include <linux/netdevice.h>
 #include <net/flow_offload.h>
 #include <linux/rhashtable.h>

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
+#include <linux/etherdevice.h>
 #include <linux/inetdevice.h>
 
 #include "rtl83xx.h"

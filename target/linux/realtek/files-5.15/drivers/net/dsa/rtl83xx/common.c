@@ -6,6 +6,8 @@
 #include <net/nexthop.h>
 #include <net/neighbour.h>
 #include <net/netevent.h>
+#include <linux/etherdevice.h>
+#include <linux/if_vlan.h>
 #include <linux/inetdevice.h>
 #include <linux/rhashtable.h>
 #include <linux/of_net.h>
