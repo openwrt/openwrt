@@ -11,6 +11,8 @@ on:
       - '.github/workflows/build.yml'
       - '.github/workflows/toolchain.yml'
       - 'toolchain/**'
+    branches-ignore:
+      - master
 
 permissions:
   contents: read
