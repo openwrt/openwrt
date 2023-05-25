@@ -43,6 +43,7 @@ TOOLCHAIN_BIN_DIR="$REALNAME_DIR/"
 
 # Set the PATH so that our run-time location is first
 # (get_feature is run from the path, so this has to be set)
+export ORIG_PATH=${ORIG_PATH:-$PATH}
 export PATH="$TOOLCHAIN_BIN_DIR":$PATH
 export GCC_HONOUR_COPTS
 
