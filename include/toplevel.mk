@@ -50,6 +50,7 @@ space:= $(empty) $(empty)
 path:=$(subst :,$(space),$(PATH))
 path:=$(filter-out .%,$(path))
 path:=$(subst $(space),:,$(path))
+export ORIG_PATH:=$(if $(ORIG_PATH),$(ORIG_PATH),$(PATH))
 export PATH:=$(path)
 export STAGING_DIR_HOST:=$(if $(STAGING_DIR),$(abspath $(STAGING_DIR)/../host),$(TOPDIR)/staging_dir/host)
 
