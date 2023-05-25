@@ -1135,7 +1135,9 @@ static int rtl83xx_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 }
 
 static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
-					struct net_device *bridge)
+                                    struct dsa_bridge bridge,
+                                    bool *tx_fwd_offload,
+                                    struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 port_bitmap = BIT_ULL(priv->cpu_port), v;
@@ -1154,7 +1156,7 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 		 * and not being setup until the port becomes enabled.
 		 */
 		if (dsa_is_user_port(ds, i) && !priv->is_lagmember[i] && i != port) {
-			if (dsa_to_port(ds, i)->bridge_dev != bridge)
+			if (dsa_port_bridge_dev_get(dsa_to_port(ds, i)) != bridge.dev)
 				continue;
 			if (priv->ports[i].enable)
 				priv->r->traffic_enable(i, port);
@@ -1182,7 +1184,7 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 }
 
 static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
-					struct net_device *bridge)
+                                      struct dsa_bridge bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 port_bitmap = 0, v;
@@ -1197,7 +1199,7 @@ static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
 		 * other port is still a VLAN-aware port.
 		 */
 		if (dsa_is_user_port(ds, i) && i != port) {
-			if (dsa_to_port(ds, i)->bridge_dev != bridge)
+			if (dsa_port_bridge_dev_get(dsa_to_port(ds, i)) != bridge.dev)
 				continue;
 			if (priv->ports[i].enable)
 				priv->r->traffic_disable(i, port);
@@ -1596,7 +1598,8 @@ static int rtl83xx_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
 }
 
 static int rtl83xx_port_fdb_add(struct dsa_switch *ds, int port,
-				const unsigned char *addr, u16 vid)
+				const unsigned char *addr, u16 vid,
+				const struct dsa_db db)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(addr);
@@ -1638,7 +1641,8 @@ out:
 }
 
 static int rtl83xx_port_fdb_del(struct dsa_switch *ds, int port,
-			   const unsigned char *addr, u16 vid)
+			   const unsigned char *addr, u16 vid,
+			   const struct dsa_db db)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(addr);
@@ -1711,7 +1715,8 @@ static int rtl83xx_port_fdb_dump(struct dsa_switch *ds, int port,
 }
 
 static int rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
-			const struct switchdev_obj_port_mdb *mdb)
+                                const struct switchdev_obj_port_mdb *mdb,
+                                const struct dsa_db db)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
@@ -1786,7 +1791,8 @@ out:
 }
 
 int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
-			const struct switchdev_obj_port_mdb *mdb)
+                         const struct switchdev_obj_port_mdb *mdb,
+                         const struct dsa_db db)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u64 mac = ether_addr_to_u64(mdb->addr);
@@ -1838,7 +1844,7 @@ out:
 
 static int rtl83xx_port_mirror_add(struct dsa_switch *ds, int port,
 				   struct dsa_mall_mirror_tc_entry *mirror,
-				   bool ingress)
+				   bool ingress, struct netlink_ext_ack *extack)
 {
 	/* We support 4 mirror groups, one destination port per group */
 	int group;
@@ -1998,20 +2004,22 @@ static int rtl83xx_port_lag_change(struct dsa_switch *ds, int port)
 	return 0;
 }
 
-static int rtl83xx_port_lag_join(struct dsa_switch *ds, int port,
-				   struct net_device *lag,
-				   struct netdev_lag_upper_info *info)
+static int rtl83xx_port_lag_join(struct dsa_switch *ds,
+                                 int port,
+                                 struct dsa_lag lag,
+                                 struct netdev_lag_upper_info *info,
+                                 struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int i, err = 0;
 
-	if (!rtl83xx_lag_can_offload(ds, lag, info))
+	if (!rtl83xx_lag_can_offload(ds, lag.dev, info))
 		return -EOPNOTSUPP;
 
 	mutex_lock(&priv->reg_mutex);
 
 	for (i = 0; i < priv->n_lags; i++) {
-		if ((!priv->lag_devs[i]) || (priv->lag_devs[i] == lag))
+		if ((!priv->lag_devs[i]) || (priv->lag_devs[i] == lag.dev))
 			break;
 	}
 	if (port >= priv->cpu_port) {
@@ -2020,7 +2028,7 @@ static int rtl83xx_port_lag_join(struct dsa_switch *ds, int port,
 	}
 	pr_info("port_lag_join: group %d, port %d\n",i, port);
 	if (!priv->lag_devs[i])
-		priv->lag_devs[i] = lag;
+		priv->lag_devs[i] = lag.dev;
 
 	if (priv->lag_primary[i] == -1) {
 		priv->lag_primary[i] = port;
@@ -2043,7 +2051,7 @@ out:
 }
 
 static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
-				    struct net_device *lag)
+				    struct dsa_lag lag)
 {
 	int i, group = -1, err;
 	struct rtl838x_switch_priv *priv = ds->priv;
