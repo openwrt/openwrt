@@ -257,7 +257,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  	if (unlikely(!pending)) {
  		spurious_interrupt();
-@@ -123,52 +260,113 @@
+@@ -123,52 +260,114 @@
  	chained_irq_exit(chip, desc);
  }
  
@@ -265,6 +265,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 +                                          int *parents,
 +                                          int num_parents)
 + {
++       struct fwnode_handle *fwnode = of_node_to_fwnode(node);
 +	struct realtek_ictl_output *outputs;
 +	int parent;
 +	int ret;
