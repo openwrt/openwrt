@@ -179,28 +179,6 @@ jobs:
           repository: openwrt/telephony
           path: openwrt/feeds/telephony
 
-      - name: Fix permission
-        run: |
-          chown -R buildbot:buildbot openwrt
-
-      - name: Prepare prebuilt tools
-        shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
-        run: |
-          mkdir -p staging_dir build_dir
-          ln -s /prebuilt_tools/staging_dir/host staging_dir/host
-          ln -s /prebuilt_tools/build_dir/host build_dir/host
-
-          ./scripts/ext-tools.sh --refresh
-
-      - name: Update & Install feeds
-        if: inputs.include_feeds == true
-        shell: su buildbot -c "sh -e {0}"
-        working-directory: openwrt
-        run: |
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-
       - name: Parse toolchain file
         if: inputs.build_toolchain == false
         id: parse-toolchain
@@ -254,6 +232,28 @@ jobs:
 
           echo "TOOLCHAIN_FILE=$TOOLCHAIN_FILE" >> "$GITHUB_ENV"
           echo "TOOLCHAIN_PATH=$TOOLCHAIN_PATH" >> "$GITHUB_ENV"
+
+      - name: Fix permission
+        run: |
+          chown -R buildbot:buildbot openwrt
+
+      - name: Prepare prebuilt tools
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          mkdir -p staging_dir build_dir
+          ln -s /prebuilt_tools/staging_dir/host staging_dir/host
+          ln -s /prebuilt_tools/build_dir/host build_dir/host
+
+          ./scripts/ext-tools.sh --refresh
+
+      - name: Update & Install feeds
+        if: inputs.include_feeds == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
 
       - name: Cache ccache
         uses: actions/cache@v3
