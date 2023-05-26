@@ -1,0 +1,31 @@
+From 50233e105a0332ec0f3bc83180c416e6b200471e Mon Sep 17 00:00:00 2001
+From: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Date: Fri, 24 Mar 2023 08:37:33 +0100
+Subject: PCI: mt7621: Use dev_info() to log PCIe card detection
+
+When there is no card plugged on a PCIe port a log reporting that
+the port will be disabled is flagged as an error (dev_err()).
+
+Since this is not an error at all, change the log level by using
+dev_info() instead.
+
+Link: https://lore.kernel.org/r/20230324073733.1596231-1-sergio.paracuellos@gmail.com
+Signed-off-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Signed-off-by: Lorenzo Pieralisi <lpieralisi@kernel.org>
+---
+ drivers/pci/controller/pcie-mt7621.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/pci/controller/pcie-mt7621.c
++++ b/drivers/pci/controller/pcie-mt7621.c
+@@ -383,8 +383,8 @@ static int mt7621_pcie_init_ports(struct
+ 		u32 slot = port->slot;
+ 
+ 		if (!mt7621_pcie_port_is_linkup(port)) {
+-			dev_err(dev, "pcie%d no card, disable it (RST & CLK)\n",
+-				slot);
++			dev_info(dev, "pcie%d no card, disable it (RST & CLK)\n",
++				 slot);
+ 			mt7621_control_assert(port);
+ 			port->enabled = false;
+ 			num_disabled++;
