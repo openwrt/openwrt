@@ -32,7 +32,7 @@
  		os_free(bss->dump_msk_file);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1534,6 +1534,7 @@ static int hostapd_setup_bss(struct host
+@@ -1538,6 +1538,7 @@ int hostapd_setup_bss(struct hostapd_dat
  		wpa_printf(MSG_ERROR, "GAS server initialization failed");
  		return -1;
  	}
@@ -40,7 +40,7 @@
  
  	if (conf->qos_map_set_len &&
  	    hostapd_drv_set_qos_map(hapd, conf->qos_map_set,
-@@ -1541,7 +1542,6 @@ static int hostapd_setup_bss(struct host
+@@ -1545,7 +1546,6 @@ int hostapd_setup_bss(struct hostapd_dat
  		wpa_printf(MSG_ERROR, "Failed to initialize QoS Map");
  		return -1;
  	}

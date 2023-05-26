@@ -29,11 +29,6 @@ static struct ubus_context *ctx;
 static struct blob_buf b;
 static int ctx_ref;
 
-static inline struct hapd_interfaces *get_hapd_interfaces_from_object(struct ubus_object *obj)
-{
-	return container_of(obj, struct hapd_interfaces, ubus);
-}
-
 static inline struct hostapd_data *get_hapd_from_object(struct ubus_object *obj)
 {
 	return container_of(obj, struct hostapd_data, ubus.obj);
@@ -123,38 +118,6 @@ static void hostapd_notify_ubus(struct ubus_object *obj, char *bssname, char *ev
 	free(event_type);
 }
 
-static void hostapd_send_procd_event(char *bssname, char *event)
-{
-	char *name, *s;
-	uint32_t id;
-	void *v;
-
-	if (!ctx || ubus_lookup_id(ctx, "service", &id))
-		return;
-
-	if (asprintf(&name, "hostapd.%s.%s", bssname, event) < 0)
-		return;
-
-	blob_buf_init(&b, 0);
-
-	s = blobmsg_alloc_string_buffer(&b, "type", strlen(name) + 1);
-	sprintf(s, "%s", name);
-	blobmsg_add_string_buffer(&b);
-
-	v = blobmsg_open_table(&b, "data");
-	blobmsg_close_table(&b, v);
-
-	ubus_invoke(ctx, id, "event", b.head, NULL, NULL, 1000);
-
-	free(name);
-}
-
-static void hostapd_send_shared_event(struct ubus_object *obj, char *bssname, char *event)
-{
-	hostapd_send_procd_event(bssname, event);
-	hostapd_notify_ubus(obj, bssname, event);
-}
-
 static void
 hostapd_bss_del_ban(void *eloop_data, void *user_ctx)
 {
@@ -199,10 +162,8 @@ hostapd_bss_reload(struct ubus_context *ctx, struct ubus_object *obj,
 		   struct blob_attr *msg)
 {
 	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
-	int ret = hostapd_reload_config(hapd->iface, 1);
 
-	hostapd_send_shared_event(&hapd->iface->interfaces->ubus, hapd->conf->iface, "reload");
-	return ret;
+	return hostapd_reload_config(hapd->iface, 1);
 }
 
 
@@ -682,68 +643,6 @@ enum {
 	CONFIG_FILE,
 	__CONFIG_MAX
 };
-
-static const struct blobmsg_policy config_add_policy[__CONFIG_MAX] = {
-	[CONFIG_IFACE] = { "iface", BLOBMSG_TYPE_STRING },
-	[CONFIG_FILE] = { "config", BLOBMSG_TYPE_STRING },
-};
-
-static int
-hostapd_config_add(struct ubus_context *ctx, struct ubus_object *obj,
-		   struct ubus_request_data *req, const char *method,
-		   struct blob_attr *msg)
-{
-	struct blob_attr *tb[__CONFIG_MAX];
-	struct hapd_interfaces *interfaces = get_hapd_interfaces_from_object(obj);
-	char buf[128];
-
-	blobmsg_parse(config_add_policy, __CONFIG_MAX, tb, blob_data(msg), blob_len(msg));
-
-	if (!tb[CONFIG_FILE] || !tb[CONFIG_IFACE])
-		return UBUS_STATUS_INVALID_ARGUMENT;
-
-	snprintf(buf, sizeof(buf), "bss_config=%s:%s",
-		blobmsg_get_string(tb[CONFIG_IFACE]),
-		blobmsg_get_string(tb[CONFIG_FILE]));
-
-	if (hostapd_add_iface(interfaces, buf))
-		return UBUS_STATUS_INVALID_ARGUMENT;
-
-	blob_buf_init(&b, 0);
-	blobmsg_add_u32(&b, "pid", getpid());
-	ubus_send_reply(ctx, req, b.head);
-
-	return UBUS_STATUS_OK;
-}
-
-enum {
-	CONFIG_REM_IFACE,
-	__CONFIG_REM_MAX
-};
-
-static const struct blobmsg_policy config_remove_policy[__CONFIG_REM_MAX] = {
-	[CONFIG_REM_IFACE] = { "iface", BLOBMSG_TYPE_STRING },
-};
-
-static int
-hostapd_config_remove(struct ubus_context *ctx, struct ubus_object *obj,
-		      struct ubus_request_data *req, const char *method,
-		      struct blob_attr *msg)
-{
-	struct blob_attr *tb[__CONFIG_REM_MAX];
-	struct hapd_interfaces *interfaces = get_hapd_interfaces_from_object(obj);
-	char buf[128];
-
-	blobmsg_parse(config_remove_policy, __CONFIG_REM_MAX, tb, blob_data(msg), blob_len(msg));
-
-	if (!tb[CONFIG_REM_IFACE])
-		return UBUS_STATUS_INVALID_ARGUMENT;
-
-	if (hostapd_remove_iface(interfaces, blobmsg_get_string(tb[CONFIG_REM_IFACE])))
-		return UBUS_STATUS_INVALID_ARGUMENT;
-
-	return UBUS_STATUS_OK;
-}
 
 enum {
 	CSA_FREQ,
@@ -1781,8 +1680,6 @@ void hostapd_ubus_add_bss(struct hostapd_data *hapd)
 	obj->n_methods = bss_object_type.n_methods;
 	ret = ubus_add_object(ctx, obj);
 	hostapd_ubus_ref_inc();
-
-	hostapd_send_shared_event(&hapd->iface->interfaces->ubus, hapd->conf->iface, "add");
 }
 
 void hostapd_ubus_free_bss(struct hostapd_data *hapd)
@@ -1797,8 +1694,6 @@ void hostapd_ubus_free_bss(struct hostapd_data *hapd)
 
 	if (!ctx)
 		return;
-
-	hostapd_send_shared_event(&hapd->iface->interfaces->ubus, hapd->conf->iface, "remove");
 
 	if (obj->id) {
 		ubus_remove_object(ctx, obj);
@@ -1843,47 +1738,6 @@ void hostapd_ubus_add_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan)
 void hostapd_ubus_remove_vlan(struct hostapd_data *hapd, struct hostapd_vlan *vlan)
 {
 	hostapd_ubus_vlan_action(hapd, vlan, "vlan_remove");
-}
-
-static const struct ubus_method daemon_methods[] = {
-	UBUS_METHOD("config_add", hostapd_config_add, config_add_policy),
-	UBUS_METHOD("config_remove", hostapd_config_remove, config_remove_policy),
-};
-
-static struct ubus_object_type daemon_object_type =
-	UBUS_OBJECT_TYPE("hostapd", daemon_methods);
-
-void hostapd_ubus_add(struct hapd_interfaces *interfaces)
-{
-	struct ubus_object *obj = &interfaces->ubus;
-	int ret;
-
-	if (!hostapd_ubus_init())
-		return;
-
-	obj->name = strdup("hostapd");
-
-	obj->type = &daemon_object_type;
-	obj->methods = daemon_object_type.methods;
-	obj->n_methods = daemon_object_type.n_methods;
-	ret = ubus_add_object(ctx, obj);
-	hostapd_ubus_ref_inc();
-}
-
-void hostapd_ubus_free(struct hapd_interfaces *interfaces)
-{
-	struct ubus_object *obj = &interfaces->ubus;
-	char *name = (char *) obj->name;
-
-	if (!ctx)
-		return;
-
-	if (obj->id) {
-		ubus_remove_object(ctx, obj);
-		hostapd_ubus_ref_dec();
-	}
-
-	free(name);
 }
 
 struct ubus_event_req {

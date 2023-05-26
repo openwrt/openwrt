@@ -23,15 +23,6 @@
  
  #define OCE_STA_CFON_ENABLED(hapd) \
  	((hapd->conf->oce & OCE_STA_CFON) && \
-@@ -92,7 +93,7 @@ struct hapd_interfaces {
- #ifdef CONFIG_CTRL_IFACE_UDP
-        unsigned char ctrl_iface_cookie[CTRL_IFACE_COOKIE_LEN];
- #endif /* CONFIG_CTRL_IFACE_UDP */
--
-+	struct ubus_object ubus;
- };
- 
- enum hostapd_chan_status {
 @@ -184,6 +185,7 @@ struct hostapd_data {
  	struct hostapd_iface *iface;
  	struct hostapd_config *iconf;
@@ -434,24 +425,6 @@
  	if (wpa_s->conf->wps_cred_processing == 1)
  		return 0;
  
---- a/hostapd/main.c
-+++ b/hostapd/main.c
-@@ -991,6 +991,7 @@ int main(int argc, char *argv[])
- 	}
- 
- 	hostapd_global_ctrl_iface_init(&interfaces);
-+	hostapd_ubus_add(&interfaces);
- 
- 	if (hostapd_global_run(&interfaces, daemonize, pid_file)) {
- 		wpa_printf(MSG_ERROR, "Failed to start eloop");
-@@ -1000,6 +1001,7 @@ int main(int argc, char *argv[])
- 	ret = 0;
- 
-  out:
-+	hostapd_ubus_free(&interfaces);
- 	hostapd_global_ctrl_iface_deinit(&interfaces);
- 	/* Deinitialize all interfaces */
- 	for (i = 0; i < interfaces.count; i++) {
 --- a/wpa_supplicant/main.c
 +++ b/wpa_supplicant/main.c
 @@ -204,7 +204,7 @@ int main(int argc, char *argv[])
