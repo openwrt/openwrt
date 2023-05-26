@@ -94,6 +94,10 @@ $(eval $(call TestHostCommand,perl-thread-queue, \
 	Please install the Perl Thread::Queue module, \
 	perl -MThread::Queue -e 1))
 
+$(eval $(call TestHostCommand,perl-ipc-cmd, \
+	Please install the Perl IPC:Cmd module, \
+	perl -MIPC::Cmd -e 1))
+
 $(eval $(call SetupHostCommand,tar,Please install GNU 'tar', \
 	gtar --version 2>&1 | grep GNU, \
 	gnutar --version 2>&1 | grep GNU, \
