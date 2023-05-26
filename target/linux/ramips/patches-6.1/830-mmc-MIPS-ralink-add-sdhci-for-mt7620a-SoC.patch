@@ -25,12 +25,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -1095,3 +1095,5 @@ config MMC_OWL
- 
+@@ -1102,6 +1102,8 @@ config MMC_OWL
  config MMC_SDHCI_EXTERNAL_DMA
  	bool
-+
+ 
 +source "drivers/mmc/host/mtk-mmc/Kconfig"
++
+ config MMC_LITEX
+ 	tristate "LiteX MMC Host Controller support"
+ 	depends on ((PPC_MICROWATT || LITEX) && OF && HAVE_CLK) || COMPILE_TEST
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
 @@ -3,6 +3,7 @@

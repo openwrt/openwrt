@@ -16,8 +16,6 @@ Signed-off-by: Nick Hainke <vincent@systemli.org>
  drivers/dma/mediatek/Makefile | 1 +
  2 files changed, 7 insertions(+)
 
-diff --git a/drivers/dma/mediatek/Kconfig b/drivers/dma/mediatek/Kconfig
-index 7a46a5455957..1a24d73ce87f 100644
 --- a/drivers/dma/mediatek/Kconfig
 +++ b/drivers/dma/mediatek/Kconfig
 @@ -36,3 +36,9 @@ config MTK_UART_APDMA
@@ -30,8 +28,6 @@ index 7a46a5455957..1a24d73ce87f 100644
 +	depends on RALINK && SOC_MT7621
 +	select DMA_ENGINE
 +	select DMA_VIRTUAL_CHANNELS
-diff --git a/drivers/dma/mediatek/Makefile b/drivers/dma/mediatek/Makefile
-index 5ba39a5edc13..784af039b7c0 100644
 --- a/drivers/dma/mediatek/Makefile
 +++ b/drivers/dma/mediatek/Makefile
 @@ -2,3 +2,4 @@
@@ -39,6 +35,3 @@ index 5ba39a5edc13..784af039b7c0 100644
  obj-$(CONFIG_MTK_HSDMA) += mtk-hsdma.o
  obj-$(CONFIG_MTK_CQDMA) += mtk-cqdma.o
 +obj-$(CONFIG_MTK_HSDMA) += hsdma-mt7621.o
--- 
-2.40.1
-

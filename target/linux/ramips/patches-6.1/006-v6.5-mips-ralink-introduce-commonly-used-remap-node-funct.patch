@@ -53,7 +53,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  {
 --- a/arch/mips/ralink/mt7621.c
 +++ b/arch/mips/ralink/mt7621.c
-@@ -58,15 +58,6 @@ static void __init mt7621_memory_detect(
+@@ -89,15 +89,6 @@ static void __init mt7621_memory_detect(
  	memblock_add(MT7621_HIGHMEM_BASE, MT7621_HIGHMEM_SIZE);
  }
  
@@ -71,7 +71,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  	return __raw_readl(MT7621_SYSC_BASE + SYSC_REG_CHIP_NAME0);
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
-@@ -29,26 +29,56 @@ __iomem void *rt_sysc_membase;
+@@ -29,28 +29,56 @@ __iomem void *rt_sysc_membase;
  __iomem void *rt_memc_membase;
  EXPORT_SYMBOL_GPL(rt_sysc_membase);
  
@@ -108,6 +108,8 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  
  	if (of_address_to_resource(np, 0, &res))
 -		panic("Failed to get resource for %s", node);
+-
+-	of_node_put(np);
 +		panic("Failed to get resource for %s node", np->name);
  
  	if (!request_mem_region(res.start,
@@ -130,9 +132,9 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 +		panic("Failed to remap core resources");
 +}
 +
- void __init device_tree_init(void)
+ void __init plat_mem_setup(void)
  {
- 	unflatten_and_copy_device_tree();
+ 	void *dtb;
 --- a/arch/mips/ralink/rt288x.c
 +++ b/arch/mips/ralink/rt288x.c
 @@ -17,15 +17,6 @@

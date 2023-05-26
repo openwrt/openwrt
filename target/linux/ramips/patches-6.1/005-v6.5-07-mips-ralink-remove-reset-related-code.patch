@@ -31,7 +31,7 @@ Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
  __iomem void *plat_of_remap_node(const char *node);
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
-@@ -95,10 +95,6 @@ static int __init plat_of_setup(void)
+@@ -81,10 +81,6 @@ static int __init plat_of_setup(void)
  {
  	__dt_register_buses(soc_info.compatible, "palmbus");
  

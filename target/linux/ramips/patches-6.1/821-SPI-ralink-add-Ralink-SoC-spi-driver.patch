@@ -16,7 +16,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -718,6 +718,12 @@ config SPI_QCOM_GENI
+@@ -823,6 +823,12 @@ config SPI_QCOM_GENI
  	  This driver can also be built as a module.  If so, the module
  	  will be called spi-geni-qcom.
  
@@ -31,7 +31,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  	depends on ARCH_S3C24XX
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -100,6 +100,7 @@ obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
+@@ -110,6 +110,7 @@ obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
  obj-$(CONFIG_MACH_REALTEK_RTL)		+= spi-realtek-rtl.o
  obj-$(CONFIG_SPI_RPCIF)			+= spi-rpc-if.o
  obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o

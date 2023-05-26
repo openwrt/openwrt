@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/media/usb/uvc/uvc_driver.c
 +++ b/drivers/media/usb/uvc/uvc_driver.c
-@@ -3158,6 +3158,18 @@ static const struct usb_device_id uvc_id
+@@ -2981,6 +2981,18 @@ static const struct usb_device_id uvc_id
  	  .bInterfaceSubClass	= 1,
  	  .bInterfaceProtocol	= 0,
  	  .driver_info		= UVC_INFO_META(V4L2_META_FMT_D4XX) },
@@ -34,7 +34,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	{ USB_INTERFACE_INFO(USB_CLASS_VIDEO, 1, UVC_PC_PROTOCOL_15) },
 --- a/drivers/media/usb/uvc/uvc_status.c
 +++ b/drivers/media/usb/uvc/uvc_status.c
-@@ -224,6 +224,7 @@ static void uvc_status_complete(struct u
+@@ -223,6 +223,7 @@ static void uvc_status_complete(struct u
  			if (uvc_event_control(urb, status, len))
  				/* The URB will be resubmitted in work context. */
  				return;
@@ -42,14 +42,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			break;
  		}
  
-@@ -272,6 +273,7 @@ int uvc_status_init(struct uvc_device *d
+@@ -271,6 +272,7 @@ int uvc_status_init(struct uvc_device *d
  	}
  
  	pipe = usb_rcvintpipe(dev->udev, ep->desc.bEndpointAddress);
 +	dev->motion = 0;
  
- 	/* For high-speed interrupt endpoints, the bInterval value is used as
- 	 * an exponent of two. Some developers forgot about it.
+ 	/*
+ 	 * For high-speed interrupt endpoints, the bInterval value is used as
 --- a/drivers/media/usb/uvc/uvc_video.c
 +++ b/drivers/media/usb/uvc/uvc_video.c
 @@ -19,6 +19,11 @@
@@ -64,7 +64,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include <media/v4l2-common.h>
  
-@@ -1214,9 +1219,149 @@ static void uvc_video_decode_data(struct
+@@ -1231,9 +1236,149 @@ static void uvc_video_decode_data(struct
  	uvc_urb->async_operations++;
  }
  
@@ -214,7 +214,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/* Mark the buffer as done if the EOF marker is set. */
  	if (data[1] & UVC_STREAM_EOF && buf->bytesused != 0) {
  		uvc_dbg(stream->dev, FRAME, "Frame complete (EOF found)\n");
-@@ -1801,6 +1946,8 @@ static int uvc_init_video_isoc(struct uv
+@@ -1815,6 +1960,8 @@ static int uvc_init_video_isoc(struct uv
  	if (npackets == 0)
  		return -ENOMEM;
  
@@ -225,7 +225,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	for_each_uvc_urb(uvc_urb, stream) {
 --- a/drivers/media/usb/uvc/uvcvideo.h
 +++ b/drivers/media/usb/uvc/uvcvideo.h
-@@ -210,6 +210,8 @@
+@@ -75,6 +75,8 @@
  #define UVC_QUIRK_FORCE_Y8		0x00000800
  #define UVC_QUIRK_FORCE_BPP		0x00001000
  #define UVC_QUIRK_WAKE_AUTOSUSPEND	0x00002000
@@ -234,7 +234,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  /* Format flags */
  #define UVC_FMT_FLAG_COMPRESSED		0x00000001
-@@ -701,6 +703,7 @@ struct uvc_device {
+@@ -562,6 +564,7 @@ struct uvc_device {
  	u8 *status;
  	struct input_dev *input;
  	char input_phys[64];

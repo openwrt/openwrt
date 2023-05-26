@@ -20,7 +20,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mtd/nand/raw/Kconfig
 +++ b/drivers/mtd/nand/raw/Kconfig
-@@ -358,6 +358,14 @@ config MTD_NAND_QCOM
+@@ -352,6 +352,14 @@ config MTD_NAND_QCOM
  	  Enables support for NAND flash chips on SoCs containing the EBI2 NAND
  	  controller. This controller is found on IPQ806x SoC.
  
@@ -34,7 +34,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +
  config MTD_NAND_MTK
  	tristate "MTK NAND controller"
- 	depends on ARCH_MEDIATEK || COMPILE_TEST
+ 	depends on MTD_NAND_ECC_MEDIATEK
 --- a/drivers/mtd/nand/raw/Makefile
 +++ b/drivers/mtd/nand/raw/Makefile
 @@ -48,6 +48,7 @@ obj-$(CONFIG_MTD_NAND_SUNXI)		+= sunxi_n
@@ -42,6 +42,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  obj-$(CONFIG_MTD_NAND_BRCMNAND)		+= brcmnand/
  obj-$(CONFIG_MTD_NAND_QCOM)		+= qcom_nandc.o
 +obj-$(CONFIG_MTD_NAND_MT7621)		+= mt7621_nand.o
- obj-$(CONFIG_MTD_NAND_MTK)		+= mtk_ecc.o mtk_nand.o
+ obj-$(CONFIG_MTD_NAND_MTK)		+= mtk_nand.o
  obj-$(CONFIG_MTD_NAND_MXIC)		+= mxic_nand.o
  obj-$(CONFIG_MTD_NAND_TEGRA)		+= tegra_nand.o
