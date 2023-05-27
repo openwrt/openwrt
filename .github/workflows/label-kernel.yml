@@ -21,8 +21,8 @@ jobs:
         env:
           CI_EVENT_LABEL_NAME: ${{ github.event.label.name }}
         run: |
-          echo "$CI_EVENT_LABEL_NAME" | sed -n 's/.*:\(.*\):\(.*\)$/target="\1"/p' | tee --append $GITHUB_OUTPUT
-          echo "$CI_EVENT_LABEL_NAME" | sed -n 's/.*:\(.*\):\(.*\)$/subtarget="\2"/p' | tee --append $GITHUB_OUTPUT
+          echo "$CI_EVENT_LABEL_NAME" | sed -n 's/.*:\(.*\):\(.*\)$/target=\1/p' | tee --append $GITHUB_OUTPUT
+          echo "$CI_EVENT_LABEL_NAME" | sed -n 's/.*:\(.*\):\(.*\)$/subtarget=\2/p' | tee --append $GITHUB_OUTPUT
 
   build_kernel:
     name: Build Kernel with external toolchain
