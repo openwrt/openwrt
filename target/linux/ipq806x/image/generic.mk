@@ -141,8 +141,7 @@ define Device/edgecore_ecw5410
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@v2.0-ap160
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct \
-		ipq-wifi-edgecore_ecw5410
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct
 endef
 TARGET_DEVICES += edgecore_ecw5410
 
@@ -247,7 +246,7 @@ define Device/nec_wg2600hp3
 	DEVICE_PACKAGES := -kmod-ata-ahci -kmod-ata-ahci-platform \
 		-kmod-usb-ohci -kmod-usb2 -kmod-usb-ledtrig-usbport \
 		-kmod-usb-phy-qcom-dwc3 -kmod-usb3 -kmod-usb-dwc3-qcom \
-		ath10k-firmware-qca9984-ct ipq-wifi-nec_wg2600hp3
+		ath10k-firmware-qca9984-ct
 endef
 TARGET_DEVICES += nec_wg2600hp3
 
