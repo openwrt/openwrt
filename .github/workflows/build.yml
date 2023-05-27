@@ -64,7 +64,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
-      ccache_hash: ${{ steps.ccache_hash.outputs.ccache_hash }}
       container_tag: ${{ steps.determine_tools_container.outputs.container_tag }}
       container_name: ${{ steps.determine_tools_container.outputs.container_name }}
 
@@ -83,13 +82,6 @@ jobs:
           fi
 
           echo "owner_lc=$OWNER_LC" >> $GITHUB_OUTPUT
-
-      - name: Generate ccache hash
-        id: ccache_hash
-        run: |
-          CCACHE_HASH=$(md5sum include/kernel-* | awk '{ print $1 }' \
-           | md5sum | awk '{ print $1 }')
-          echo "ccache_hash=$CCACHE_HASH" >> $GITHUB_OUTPUT
 
       # Per branch tools container tag
       # By default stick to latest
@@ -259,7 +251,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: openwrt/.ccache
-          key: ccache-kernel-${{ inputs.target }}/${{ inputs.subtarget }}-${{ needs.setup_build.outputs.ccache_hash }}
+          key: ccache-kernel-${{ inputs.target }}/${{ inputs.subtarget }}-${{ hashFiles('openwrt/include/kernel-**') }}
           restore-keys: |
             ccache-kernel-${{ inputs.target }}/${{ inputs.subtarget }}-
 
