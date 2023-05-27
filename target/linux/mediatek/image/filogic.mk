@@ -274,13 +274,13 @@ define Device/tplink_tl-xdr-common
         fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
   DEVICE_PACKAGES := kmod-usb3 kmod-mt7986-firmware mt7986-wo-firmware
   ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := bl2 spim-nand-ddr3
+  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ddr3
 endef
 
 define Device/tplink_tl-xdr4288
   DEVICE_MODEL := TL-XDR4288
   DEVICE_DTS := mt7986a-tplink-tl-xdr4288
-  ARTIFACT/bl31-uboot.fip := bl31-uboot tplink_tl-xdr4288
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot tplink_tl-xdr4288
   $(call Device/tplink_tl-xdr-common)
 endef
 TARGET_DEVICES += tplink_tl-xdr4288
@@ -288,7 +288,7 @@ TARGET_DEVICES += tplink_tl-xdr4288
 define Device/tplink_tl-xdr6086
   DEVICE_MODEL := TL-XDR6086
   DEVICE_DTS := mt7986a-tplink-tl-xdr6086
-  ARTIFACT/bl31-uboot.fip := bl31-uboot tplink_tl-xdr6086
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot tplink_tl-xdr6086
   $(call Device/tplink_tl-xdr-common)
 endef
 TARGET_DEVICES += tplink_tl-xdr6086
@@ -296,7 +296,7 @@ TARGET_DEVICES += tplink_tl-xdr6086
 define Device/tplink_tl-xdr6088
   DEVICE_MODEL := TL-XDR6088
   DEVICE_DTS := mt7986a-tplink-tl-xdr6088
-  ARTIFACT/bl31-uboot.fip := bl31-uboot tplink_tl-xdr6088
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot tplink_tl-xdr6088
   $(call Device/tplink_tl-xdr-common)
 endef
 TARGET_DEVICES += tplink_tl-xdr6088
@@ -337,8 +337,8 @@ define Device/xiaomi_redmi-router-ax6000-ubootmod
   IMAGE/sysupgrade.itb := append-kernel | \
         fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
   ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := bl2 spim-nand-ddr4
-  ARTIFACT/bl31-uboot.fip := bl31-uboot xiaomi_redmi-router-ax6000
+  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ddr4
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot xiaomi_redmi-router-ax6000
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   ARTIFACTS += initramfs-factory.ubi
   ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-recovery.itb | ubinize-kernel
