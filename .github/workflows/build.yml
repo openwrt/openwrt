@@ -247,8 +247,9 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Cache ccache
-        uses: actions/cache@v3
+      - name: Restore ccache cache
+        id: restore-ccache-cache
+        uses: actions/cache/restore@v3
         with:
           path: openwrt/.ccache
           key: ccache-kernel-${{ inputs.target }}/${{ inputs.subtarget }}-${{ hashFiles('openwrt/include/kernel-**') }}
@@ -473,6 +474,12 @@ jobs:
         with:
           name: ${{ inputs.target }}-${{ inputs.subtarget }}-logs
           path: "openwrt/logs"
+
+      - name: Save ccache cache
+        uses: actions/cache/save@v3
+        with:
+          path: openwrt/.ccache
+          key: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
 
       - name: Find external toolchain name
         id: get-toolchain-name
