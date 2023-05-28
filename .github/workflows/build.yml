@@ -136,6 +136,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      actions: write
 
     steps:
       - name: Checkout master directory
@@ -474,6 +475,16 @@ jobs:
         with:
           name: ${{ inputs.target }}-${{ inputs.subtarget }}-logs
           path: "openwrt/logs"
+
+      - name: Delete already present ccache cache
+        if: steps.restore-ccache-cache.outputs.cache-hit == 'true'
+        uses: octokit/request-action@v2.x
+        with:
+          route: DELETE /repos/{repository}/actions/caches?key={key}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_REPOSITORY: ${{ github.repository }}
+          INPUT_KEY: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
 
       - name: Save ccache cache
         uses: actions/cache/save@v3

@@ -30,6 +30,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      actions: write
     uses: ./.github/workflows/build.yml
     with:
       container_name: toolchain
@@ -44,6 +45,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      actions: write
     uses: ./.github/workflows/check-kernel-patches.yml
     with:
       target: ${{ needs.set_target.outputs.target }}

@@ -30,6 +30,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      actions: write
     uses: ./.github/workflows/build.yml
     with:
       container_name: toolchain
