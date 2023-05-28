@@ -32,6 +32,7 @@ jobs:
       packages: read
     uses: ./.github/workflows/build.yml
     with:
+      container_name: toolchain
       target: ${{ needs.set_target.outputs.target }}
       subtarget: ${{ needs.set_target.outputs.subtarget }}
       build_full: true
