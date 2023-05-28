@@ -302,11 +302,22 @@ jobs:
           echo CONFIG_TARGET_PER_DEVICE_ROOTFS=y >> .config
           echo CONFIG_TARGET_ALL_PROFILES=y >> .config
 
-      - name: Configure ccache
+        # ccache for some reason have problem detecting compiler type
+        # with external toolchain. This cause the complete malfunction
+        # of ccache with the result of tons of unsupported compiler
+        # option error.
+        # To fix this force compiler type to gcc.
+      - name: Configure ccache and apply fixes
         if: inputs.use_ccache_cache == true
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
+        env:
+          SYSTEM_CCACHE_CONF: staging_dir/host/etc/ccache.conf
         run: |
+          touch $SYSTEM_CCACHE_CONF
+
+          echo compiler_type=gcc >> $SYSTEM_CCACHE_CONF
+
           echo CONFIG_CCACHE=y >> .config
 
       - name: Configure external toolchain in container
