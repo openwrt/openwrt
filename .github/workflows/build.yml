@@ -307,6 +307,9 @@ jobs:
         # of ccache with the result of tons of unsupported compiler
         # option error.
         # To fix this force compiler type to gcc.
+        # Set some limits due to Github 10 GB cache limitation
+        # For kernel tests assign 75mb
+        # For packages assign 400MB
       - name: Configure ccache and apply fixes
         if: inputs.use_ccache_cache == true
         shell: su buildbot -c "sh -e {0}"
@@ -317,6 +320,11 @@ jobs:
           touch $SYSTEM_CCACHE_CONF
 
           echo compiler_type=gcc >> $SYSTEM_CCACHE_CONF
+          if [ "${{ inputs.ccache_type }}" = "kernel" ]; then
+            echo max_size=75M >> $SYSTEM_CCACHE_CONF
+          else
+            echo max_size=400M >> $SYSTEM_CCACHE_CONF
+          fi
 
           echo CONFIG_CCACHE=y >> .config
 
