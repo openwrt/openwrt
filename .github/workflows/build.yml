@@ -498,7 +498,7 @@ jobs:
           path: "openwrt/logs"
 
       - name: Delete already present ccache cache
-        if: steps.restore-ccache-cache.outputs.cache-hit == 'true' && inputs.use_ccache_cache == true
+        if: steps.restore-ccache-cache.outputs.cache-hit == 'true' && inputs.use_ccache_cache == true  && github.event_name == 'push'
         uses: octokit/request-action@v2.x
         with:
           route: DELETE /repos/{repository}/actions/caches?key={key}
@@ -508,7 +508,7 @@ jobs:
           INPUT_KEY: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
 
       - name: Save ccache cache
-        if: inputs.use_ccache_cache == true
+        if: inputs.use_ccache_cache == true && github.event_name == 'push'
         uses: actions/cache/save@v3
         with:
           path: openwrt/.ccache
