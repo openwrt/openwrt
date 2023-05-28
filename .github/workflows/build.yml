@@ -54,6 +54,9 @@ on:
         type: boolean
       upload_external_toolchain:
         type: boolean
+      use_ccache_cache:
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -250,6 +253,7 @@ jobs:
 
       - name: Restore ccache cache
         id: restore-ccache-cache
+        if: inputs.use_ccache_cache == true
         uses: actions/cache/restore@v3
         with:
           path: openwrt/.ccache
@@ -295,6 +299,13 @@ jobs:
           echo CONFIG_TARGET_PER_DEVICE_ROOTFS=y >> .config
           echo CONFIG_TARGET_ALL_PROFILES=y >> .config
 
+      - name: Configure ccache
+        if: inputs.use_ccache_cache == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          echo CONFIG_CCACHE=y >> .config
+
       - name: Configure external toolchain in container
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type == 'external_container'
         shell: su buildbot -c "sh -e {0}"
@@ -302,7 +313,6 @@ jobs:
         run: |
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
-          echo CONFIG_CCACHE=y >> .config
 
           ./scripts/ext-toolchain.sh \
             --toolchain /external-toolchain/$(ls /external-toolchain/ | grep openwrt-toolchain)/toolchain-* \
@@ -316,7 +326,6 @@ jobs:
         run: |
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
-          echo CONFIG_CCACHE=y >> .config
 
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/toolchain-* \
@@ -358,7 +367,6 @@ jobs:
         run: |
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
-          echo CONFIG_CCACHE=y >> .config
 
           ./scripts/ext-toolchain.sh \
             --toolchain ${{ env.TOOLCHAIN_FILE }}/staging_dir/toolchain-* \
@@ -372,7 +380,6 @@ jobs:
         run: |
           echo CONFIG_DEVEL=y >> .config
           echo CONFIG_AUTOREMOVE=y >> .config
-          echo CONFIG_CCACHE=y >> .config
 
           echo "CONFIG_TARGET_${{ inputs.target }}=y" >> .config
           echo "CONFIG_TARGET_${{ inputs.target }}_${{ inputs.subtarget }}=y" >> .config
@@ -477,7 +484,7 @@ jobs:
           path: "openwrt/logs"
 
       - name: Delete already present ccache cache
-        if: steps.restore-ccache-cache.outputs.cache-hit == 'true'
+        if: steps.restore-ccache-cache.outputs.cache-hit == 'true' && inputs.use_ccache_cache == true
         uses: octokit/request-action@v2.x
         with:
           route: DELETE /repos/{repository}/actions/caches?key={key}
@@ -487,6 +494,7 @@ jobs:
           INPUT_KEY: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
 
       - name: Save ccache cache
+        if: inputs.use_ccache_cache == true
         uses: actions/cache/save@v3
         with:
           path: openwrt/.ccache
