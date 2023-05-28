@@ -57,6 +57,9 @@ on:
       use_ccache_cache:
         type: boolean
         default: true
+      ccache_type:
+        type: string
+        default: kernel
 
 permissions:
   contents: read
@@ -257,9 +260,9 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: openwrt/.ccache
-          key: ccache-kernel-${{ inputs.target }}/${{ inputs.subtarget }}-${{ hashFiles('openwrt/include/kernel-**') }}
+          key: ccache-${{ inputs.ccache_type }}-${{ inputs.target }}/${{ inputs.subtarget }}-${{ hashFiles('openwrt/include/kernel-**') }}
           restore-keys: |
-            ccache-kernel-${{ inputs.target }}/${{ inputs.subtarget }}-
+            ccache-${{ inputs.ccache_type }}-${{ inputs.target }}/${{ inputs.subtarget }}-
 
       - name: Download external toolchain/sdk
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type != 'internal' && steps.parse-toolchain.outputs.toolchain-type != 'external_container'
