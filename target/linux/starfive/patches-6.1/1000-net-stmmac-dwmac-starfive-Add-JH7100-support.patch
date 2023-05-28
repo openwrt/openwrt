@@ -1,0 +1,63 @@
+From 22885637d0976473b04d4bae191fcf88e28b3df5 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Wed, 29 Sep 2021 20:50:22 +0200
+Subject: [PATCH 1000/1024] net: stmmac: dwmac-starfive: Add JH7100 support
+
+This adds support for setting the phy interface and delay chains on the
+StarFive JH7100 SoC.
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ .../net/ethernet/stmicro/stmmac/dwmac-starfive.c    | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/dwmac-starfive.c
++++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-starfive.c
+@@ -17,6 +17,10 @@
+ #define STARFIVE_DWMAC_PHY_INFT_RMII	0x4
+ #define STARFIVE_DWMAC_PHY_INFT_FIELD	0x7U
+ 
++#define JH7100_SYSMAIN_REGISTER28 0x70
++/* The value below is not a typo, just really bad naming by StarFive ¯\_(ツ)_/¯ */
++#define JH7100_SYSMAIN_REGISTER49 0xc8
++
+ struct starfive_dwmac {
+ 	struct device *dev;
+ 	struct clk *clk_tx;
+@@ -56,6 +60,7 @@ static int starfive_dwmac_set_mode(struc
+ 	struct regmap *regmap;
+ 	unsigned int args[2];
+ 	unsigned int mode;
++	u32 gtxclk_dlychain;
+ 	int err;
+ 
+ 	switch (plat_dat->interface) {
+@@ -65,6 +70,7 @@ static int starfive_dwmac_set_mode(struc
+ 
+ 	case PHY_INTERFACE_MODE_RGMII:
+ 	case PHY_INTERFACE_MODE_RGMII_ID:
++	case PHY_INTERFACE_MODE_RGMII_TXID:
+ 		mode = STARFIVE_DWMAC_PHY_INFT_RGMII;
+ 		break;
+ 
+@@ -87,6 +93,12 @@ static int starfive_dwmac_set_mode(struc
+ 	if (err)
+ 		return dev_err_probe(dwmac->dev, err, "error setting phy mode\n");
+ 
++	if (!of_property_read_u32(dwmac->dev->of_node, "starfive,gtxclk-dlychain", &gtxclk_dlychain)) {
++		err = regmap_write(regmap, JH7100_SYSMAIN_REGISTER49, gtxclk_dlychain);
++		if (err)
++			return dev_err_probe(dwmac->dev, err, "error selecting gtxclk delay chain\n");
++	}
++
+ 	return 0;
+ }
+ 
+@@ -149,6 +161,7 @@ static int starfive_dwmac_probe(struct p
+ }
+ 
+ static const struct of_device_id starfive_dwmac_match[] = {
++	{ .compatible = "starfive,jh7100-dwmac"	},
+ 	{ .compatible = "starfive,jh7110-dwmac"	},
+ 	{ /* sentinel */ }
+ };

@@ -1,0 +1,48 @@
+From f0548ab9212ef35abe79f46e5f509f4fc9d78699 Mon Sep 17 00:00:00 2001
+From: Xingyu Wu <xingyu.wu@starfivetech.com>
+Date: Mon, 20 Feb 2023 14:33:33 +0800
+Subject: [PATCH 039/122] riscv: dts: starfive: jh7110: Add PLL clock node and
+ modify syscrg node
+
+Add the PLL clock node for the Starfive JH7110 SoC and
+modify the SYSCRG node to add PLL clocks input.
+
+Signed-off-by: Xingyu Wu <xingyu.wu@starfivetech.com>
+---
+ arch/riscv/boot/dts/starfive/jh7110.dtsi | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7110.dtsi
+@@ -452,12 +452,16 @@
+ 				 <&gmac1_rgmii_rxin>,
+ 				 <&i2stx_bclk_ext>, <&i2stx_lrck_ext>,
+ 				 <&i2srx_bclk_ext>, <&i2srx_lrck_ext>,
+-				 <&tdm_ext>, <&mclk_ext>;
++				 <&tdm_ext>, <&mclk_ext>,
++				 <&pllclk JH7110_CLK_PLL0_OUT>,
++				 <&pllclk JH7110_CLK_PLL1_OUT>,
++				 <&pllclk JH7110_CLK_PLL2_OUT>;
+ 			clock-names = "osc", "gmac1_rmii_refin",
+ 				      "gmac1_rgmii_rxin",
+ 				      "i2stx_bclk_ext", "i2stx_lrck_ext",
+ 				      "i2srx_bclk_ext", "i2srx_lrck_ext",
+-				      "tdm_ext", "mclk_ext";
++				      "tdm_ext", "mclk_ext",
++				      "pll0_out", "pll1_out", "pll2_out";
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+ 		};
+@@ -465,6 +469,12 @@
+ 		sys_syscon: syscon@13030000 {
+ 			compatible = "starfive,jh7110-sys-syscon", "syscon", "simple-mfd";
+ 			reg = <0x0 0x13030000 0x0 0x1000>;
++
++			pllclk: clock-controller {
++				compatible = "starfive,jh7110-pll";
++				clocks = <&osc>;
++				#clock-cells = <1>;
++			};
+ 		};
+ 
+ 		sysgpio: pinctrl@13040000 {

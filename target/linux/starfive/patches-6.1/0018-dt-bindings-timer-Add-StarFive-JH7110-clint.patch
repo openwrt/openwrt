@@ -1,0 +1,27 @@
+From f043ba93a8f22fda312574eb98217be15468b7ef Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Sat, 1 Apr 2023 19:19:28 +0800
+Subject: [PATCH 018/122] dt-bindings: timer: Add StarFive JH7110 clint
+
+Add compatible string for the StarFive JH7110 clint.
+
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+---
+ Documentation/devicetree/bindings/timer/sifive,clint.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/timer/sifive,clint.yaml
++++ b/Documentation/devicetree/bindings/timer/sifive,clint.yaml
+@@ -27,6 +27,7 @@ properties:
+           - enum:
+               - sifive,fu540-c000-clint
+               - starfive,jh7100-clint
++              - starfive,jh7110-clint
+               - canaan,k210-clint
+           - const: sifive,clint0
+       - items:

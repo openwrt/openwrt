@@ -1,0 +1,128 @@
+From 6fd84cb9cceaa711671500a92dcee5b1072ab95a Mon Sep 17 00:00:00 2001
+From: Samin Guo <samin.guo@starfivetech.com>
+Date: Tue, 1 Nov 2022 18:11:02 +0800
+Subject: [PATCH 047/122] riscv: dts: starfive: visionfive 2: Add configuration
+ of gmac and phy
+
+v1.3B:
+  v1.3B uses motorcomm YT8531(rgmii-id phy) x2, need delay and
+  inverse configurations.
+  The tx_clk of v1.3B uses an external clock and needs to be
+  switched to an external clock source.
+
+v1.2A:
+  v1.2A gmac0 uses motorcomm YT8531(rgmii-id) PHY, and needs delay
+  configurations.
+  v1.2A gmac1 uses motorcomm YT8512(rmii) PHY, and needs to
+  switch rx and rx to external clock sources.
+
+Tested-by: Tommaso Merciai <tomm.merciai@gmail.com>
+Signed-off-by: Samin Guo <samin.guo@starfivetech.com>
+---
+ .../jh7110-starfive-visionfive-2-v1.2a.dts    | 13 +++++++
+ .../jh7110-starfive-visionfive-2-v1.3b.dts    | 27 +++++++++++++++
+ .../jh7110-starfive-visionfive-2.dtsi         | 34 +++++++++++++++++++
+ 3 files changed, 74 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-v1.2a.dts
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-v1.2a.dts
+@@ -11,3 +11,16 @@
+ 	model = "StarFive VisionFive 2 v1.2A";
+ 	compatible = "starfive,visionfive-2-v1.2a", "starfive,jh7110";
+ };
++
++&gmac1 {
++	phy-mode = "rmii";
++	assigned-clocks = <&syscrg JH7110_SYSCLK_GMAC1_TX>,
++			  <&syscrg JH7110_SYSCLK_GMAC1_RX>;
++	assigned-clock-parents = <&syscrg JH7110_SYSCLK_GMAC1_RMII_RTX>,
++				 <&syscrg JH7110_SYSCLK_GMAC1_RMII_RTX>;
++};
++
++&phy0 {
++	rx-internal-delay-ps = <1900>;
++	tx-internal-delay-ps = <1350>;
++};
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-v1.3b.dts
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2-v1.3b.dts
+@@ -11,3 +11,30 @@
+ 	model = "StarFive VisionFive 2 v1.3B";
+ 	compatible = "starfive,visionfive-2-v1.3b", "starfive,jh7110";
+ };
++
++&gmac0 {
++	starfive,tx-use-rgmii-clk;
++	assigned-clocks = <&aoncrg JH7110_AONCLK_GMAC0_TX>;
++	assigned-clock-parents = <&aoncrg JH7110_AONCLK_GMAC0_RMII_RTX>;
++};
++
++&gmac1 {
++	starfive,tx-use-rgmii-clk;
++	assigned-clocks = <&syscrg JH7110_SYSCLK_GMAC1_TX>;
++	assigned-clock-parents = <&syscrg JH7110_SYSCLK_GMAC1_RMII_RTX>;
++};
++
++&phy0 {
++	motorcomm,tx-clk-adj-enabled;
++	motorcomm,tx-clk-100-inverted;
++	motorcomm,tx-clk-1000-inverted;
++	rx-internal-delay-ps = <1500>;
++	tx-internal-delay-ps = <1500>;
++};
++
++&phy1 {
++	motorcomm,tx-clk-adj-enabled;
++	motorcomm,tx-clk-100-inverted;
++	rx-internal-delay-ps = <300>;
++	tx-internal-delay-ps = <0>;
++};
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
+@@ -11,6 +11,8 @@
+ 
+ / {
+ 	aliases {
++		ethernet0 = &gmac0;
++		ethernet1 = &gmac1;
+ 		i2c0 = &i2c0;
+ 		i2c2 = &i2c2;
+ 		i2c5 = &i2c5;
+@@ -86,6 +88,38 @@
+ 	clock-frequency = <49152000>;
+ };
+ 
++&gmac0 {
++	phy-handle = <&phy0>;
++	phy-mode = "rgmii-id";
++	status = "okay";
++
++	mdio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "snps,dwmac-mdio";
++
++		phy0: ethernet-phy@0 {
++			reg = <0>;
++		};
++	};
++};
++
++&gmac1 {
++	phy-handle = <&phy1>;
++	phy-mode = "rgmii-id";
++	status = "okay";
++
++	mdio {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "snps,dwmac-mdio";
++
++		phy1: ethernet-phy@1 {
++			reg = <0>;
++		};
++	};
++};
++
+ &i2c0 {
+ 	clock-frequency = <100000>;
+ 	i2c-sda-hold-time-ns = <300>;

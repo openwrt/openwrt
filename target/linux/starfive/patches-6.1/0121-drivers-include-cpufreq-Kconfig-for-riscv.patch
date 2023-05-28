@@ -1,0 +1,21 @@
+From 22b82c89dac3fadaa8c50760c25be7c78a2782a3 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Thu, 10 Aug 2023 23:42:13 +0200
+Subject: [PATCH] drivers: include cpufreq/Kconfig for riscv
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ drivers/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -237,6 +237,8 @@ source "drivers/most/Kconfig"
+ 
+ source "drivers/peci/Kconfig"
+ 
++source "drivers/cpufreq/Kconfig"
++
+ source "drivers/hte/Kconfig"
+ 
+ endmenu

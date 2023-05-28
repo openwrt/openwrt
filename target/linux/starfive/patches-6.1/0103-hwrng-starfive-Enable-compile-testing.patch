@@ -1,0 +1,28 @@
+From 4b02d00911c2e6bd31d8160b0337174dd55dc644 Mon Sep 17 00:00:00 2001
+From: Herbert Xu <herbert@gondor.apana.org.au>
+Date: Fri, 27 Jan 2023 19:03:21 +0800
+Subject: [PATCH 103/122] hwrng: starfive - Enable compile testing
+
+Enable compile testing for jh7110.  Also remove the dependency on
+HW_RANDOM.
+
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Jia Jie Ho <jiajie.ho@starfivetech.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/char/hw_random/Kconfig | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/char/hw_random/Kconfig
++++ b/drivers/char/hw_random/Kconfig
+@@ -551,8 +551,7 @@ config HW_RANDOM_CN10K
+ 
+ config HW_RANDOM_JH7110
+ 	tristate "StarFive JH7110 Random Number Generator support"
+-	depends on SOC_STARFIVE
+-	depends on HW_RANDOM
++	depends on SOC_STARFIVE || COMPILE_TEST
+ 	help
+ 	  This driver provides support for the True Random Number
+ 	  Generator in StarFive JH7110 SoCs.
