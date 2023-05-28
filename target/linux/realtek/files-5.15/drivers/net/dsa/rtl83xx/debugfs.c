@@ -605,7 +605,7 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 
 	priv->dbgfs_dir = rtl838x_dir;
 
-	debugfs_create_u32("soc", 0444, rtl838x_dir,
+	debugfs_create_x32("soc", 0444, rtl838x_dir,
 			   (u32 *)(RTL838X_SW_BASE + RTL838X_MODEL_NAME_INFO));
 
 	/* Create one directory per port */
