@@ -1,0 +1,21 @@
+From aa5fcd525c1a01ca07a6fdb631dbd304e22c9669 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Thu, 10 Aug 2023 23:23:45 +0200
+Subject: [PATCH 120/122] riscv: dts: visionfive2: add mmc aliases
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
+@@ -13,6 +13,8 @@
+ 	aliases {
+ 		ethernet0 = &gmac0;
+ 		ethernet1 = &gmac1;
++		mmc0 = &mmc0;
++		mmc1 = &mmc1;
+ 		i2c0 = &i2c0;
+ 		i2c2 = &i2c2;
+ 		i2c5 = &i2c5;

@@ -1,0 +1,48 @@
+From d91e8a78ce8d6a1f60a3f5c16b4f7c013ba40257 Mon Sep 17 00:00:00 2001
+From: "shanlong.li" <shanlong.li@starfivetech.com>
+Date: Wed, 31 May 2023 01:56:22 -0700
+Subject: [PATCH 099/122] update jh7110_defconfig for test
+
+Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
+---
+ arch/riscv/configs/jh7110_defconfig | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
+
+--- a/arch/riscv/configs/jh7110_defconfig
++++ b/arch/riscv/configs/jh7110_defconfig
+@@ -106,7 +106,6 @@ CONFIG_MMC=y
+ # CONFIG_PWRSEQ_SIMPLE is not set
+ CONFIG_MMC_DW=y
+ # CONFIG_VIRTIO_MENU is not set
+-CONFIG_CLK_STARFIVE_JH7110_AON=y
+ # CONFIG_VHOST_MENU is not set
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_BTRFS_FS=y
+@@ -160,6 +159,19 @@ CONFIG_PCI=y
+ CONFIG_USB_CDNS3_STARFIVE=y
+ CONFIG_PHY_STARFIVE_JH7110_PCIE=y
+ CONFIG_PHY_STARFIVE_JH7110_USB=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_HCD_PLATFORM=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_OHCI_HCD_PLATFORM=y
++CONFIG_SCSI=y
++CONFIG_USB_STORAGE=y
++CONFIG_USB_UAS=y
++CONFIG_USB_CDNS3_GADGET=y
++CONFIG_USB_CDNS3_HOST=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_CONFIGFS=y
++CONFIG_USB_CONFIGFS_F_FS=y
+ CONFIG_USB_CDNS_SUPPORT=y
+ CONFIG_USB_CDNS3=y
+ CONFIG_USB=y
+@@ -177,6 +189,7 @@ CONFIG_CRYPTO_HW=y
+ CONFIG_CRYPTO=y
+ CONFIG_SND_SOC_JH7110_TDM=y
+ CONFIG_SND_SOC_STARFIVE=y
++CONFIG_SND_SIMPLE_CARD=y
+ CONFIG_SND_SOC=y
+ CONFIG_SND=y
+ CONFIG_SOUND=y
