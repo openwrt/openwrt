@@ -114,6 +114,11 @@ define SetupHostCommand
 						find "$(STAGING_DIR_HOST)/stamp" | grep $(strip $(1)) && \
 						[ -x "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0 \
 						;; \
+					*" -> /"*) \
+						;; \
+					*" -> "*) \
+						[ -x "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0 \
+						;; \
 				esac; \
 				ln -sf "$$$$$$$$bin" "$(STAGING_DIR_HOST)/bin/$(strip $(1))"; \
 				exit 1; \
