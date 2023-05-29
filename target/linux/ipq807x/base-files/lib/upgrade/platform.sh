@@ -71,6 +71,7 @@ platform_do_upgrade() {
 	netgear,wax218)
 		nand_do_upgrade "$1"
 		;;
+	prpl,haze|\
 	qnap,301w)
 		kernelname="0:HLOS"
 		rootfsname="rootfs"
