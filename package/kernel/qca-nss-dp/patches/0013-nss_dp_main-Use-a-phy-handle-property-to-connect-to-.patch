@@ -155,11 +155,12 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 -		dp_priv->phydev = phy_connect(netdev, phy_id,
 -				&nss_dp_adjust_link,
 -				dp_priv->phy_mii_type);
+-		if (IS_ERR(dp_priv->phydev)) {
+-			netdev_dbg(netdev, "failed to connect to phy device\n");
 +		dp_priv->phydev = of_phy_connect(netdev, dp_priv->phy_node,
 +						 &nss_dp_adjust_link, 0,
 +						 dp_priv->phy_mii_type);
- 		if (IS_ERR(dp_priv->phydev)) {
--			netdev_dbg(netdev, "failed to connect to phy device\n");
++		if (!(dp_priv->phydev)) {
 +			dev_err(&pdev->dev, "Could not attach to PHY\n");
  			goto phy_setup_fail;
  		}
