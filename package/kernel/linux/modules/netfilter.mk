@@ -1149,7 +1149,7 @@ $(eval $(call KernelPackage,nft-bridge))
 
 define KernelPackage/nft-dup-inet
   SUBMENU:=$(NF_MENU)
-  TITLE:=Netfilter nf_tables dup in ip/ip6/inet familly support
+  TITLE:=Netfilter nf_tables dup in ip/ip6/inet family support
   DEPENDS:=+kmod-nft-core +kmod-nf-conntrack +IPV6:kmod-nf-conntrack6
   KCONFIG:= \
 	CONFIG_NF_DUP_IPV4 \
