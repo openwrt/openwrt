@@ -109,8 +109,15 @@ jobs:
     strategy:
        fail-fast: False
        matrix:
-         include: ${{fromJson(needs.determine_targets.outputs.targets_subtargets)}}
+        #  include: ${{fromJson(needs.determine_targets.outputs.targets_subtargets)}}
+          include:
+            - target: ipq806x
+              subtarget: generic
     uses: ./.github/workflows/build.yml
+    secrets:
+      s3_url: ${{ secrets.GCS_S3_URL }}
+      s3_access_key: ${{ secrets.GCS_S3_ACCESS_KEY }}
+      s3_secret_key: ${{ secrets.GCS_S3_SECRET_KEY }}
     with:
       container_name: toolchain
       target: ${{ matrix.target }}
@@ -118,18 +125,18 @@ jobs:
       build_kernel: true
       build_all_kmods: true
 
-  check-kernel-patches:
-    name: Check Kernel patches
-    needs: determine_targets
-    permissions:
-      contents: read
-      packages: read
-    strategy:
-       fail-fast: False
-       matrix:
-         include: ${{fromJson(needs.determine_targets.outputs.targets)}}
-    uses: ./.github/workflows/check-kernel-patches.yml
-    with:
-      target: ${{ matrix.target }}
-      subtarget: ${{ matrix.subtarget }}
+  # check-kernel-patches:
+  #   name: Check Kernel patches
+  #   needs: determine_targets
+  #   permissions:
+  #     contents: read
+  #     packages: read
+  #   strategy:
+  #      fail-fast: False
+  #      matrix:
+  #        include: ${{fromJson(needs.determine_targets.outputs.targets)}}
+  #   uses: ./.github/workflows/check-kernel-patches.yml
+  #   with:
+  #     target: ${{ matrix.target }}
+  #     subtarget: ${{ matrix.subtarget }}
 

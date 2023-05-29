@@ -4,6 +4,9 @@ on:
   workflow_call:
     secrets:
       coverity_api_token:
+      s3_url:
+      s3_access_key:
+      s3_secret_key:
     inputs:
       container_name:
         type: string
@@ -254,15 +257,25 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Restore ccache cache
-        id: restore-ccache-cache
+      - name: Download ccache from s3
         if: inputs.use_ccache_cache == true
-        uses: actions/cache/restore@v3
+        uses: whalemare/minio-cache@v1.1.14
         with:
+          endpoint: ${{ secrets.s3_url }}
+          accessKey: ${{ secrets.s3_access_key }}
+          secretKey: ${{ secrets.s3_secret_key }}
+          bucket: openwrt-ci-cache
+          key: ccache-${{ inputs.ccache_type }}-${{ inputs.target }}/${{ inputs.subtarget }}
           path: openwrt/.ccache
-          key: ccache-${{ inputs.ccache_type }}-${{ inputs.target }}/${{ inputs.subtarget }}-${{ hashFiles('openwrt/include/kernel-**') }}
-          restore-keys: |
-            ccache-${{ inputs.ccache_type }}-${{ inputs.target }}/${{ inputs.subtarget }}-
+      # - name: Restore ccache cache
+      #   id: restore-ccache-cache
+      #   if: inputs.use_ccache_cache == true
+      #   uses: actions/cache/restore@v3
+      #   with:
+      #     path: openwrt/.ccache
+      #     key: ccache-${{ inputs.ccache_type }}-${{ inputs.target }}/${{ inputs.subtarget }}-${{ hashFiles('openwrt/include/kernel-**') }}
+      #     restore-keys: |
+      #       ccache-${{ inputs.ccache_type }}-${{ inputs.target }}/${{ inputs.subtarget }}-
 
       - name: Download external toolchain/sdk
         if: inputs.build_toolchain == false && steps.parse-toolchain.outputs.toolchain-type != 'internal' && steps.parse-toolchain.outputs.toolchain-type != 'external_container'
@@ -320,11 +333,11 @@ jobs:
           touch $SYSTEM_CCACHE_CONF
 
           echo compiler_type=gcc >> $SYSTEM_CCACHE_CONF
-          if [ "${{ inputs.ccache_type }}" = "kernel" ]; then
-            echo max_size=75M >> $SYSTEM_CCACHE_CONF
-          else
-            echo max_size=400M >> $SYSTEM_CCACHE_CONF
-          fi
+          # if [ "${{ inputs.ccache_type }}" = "kernel" ]; then
+          #   echo max_size=75M >> $SYSTEM_CCACHE_CONF
+          # else
+          #   echo max_size=400M >> $SYSTEM_CCACHE_CONF
+          # fi
 
           echo CONFIG_CCACHE=y >> .config
 
@@ -505,22 +518,32 @@ jobs:
           name: ${{ inputs.target }}-${{ inputs.subtarget }}-logs
           path: "openwrt/logs"
 
-      - name: Delete already present ccache cache
-        if: steps.restore-ccache-cache.outputs.cache-hit == 'true' && inputs.use_ccache_cache == true  && github.event_name == 'push'
-        uses: octokit/request-action@v2.x
-        with:
-          route: DELETE /repos/{repository}/actions/caches?key={key}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          INPUT_REPOSITORY: ${{ github.repository }}
-          INPUT_KEY: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
+      # - name: Delete already present ccache cache
+      #   if: steps.restore-ccache-cache.outputs.cache-hit == 'true' && inputs.use_ccache_cache == true  && github.event_name == 'push'
+      #   uses: octokit/request-action@v2.x
+      #   with:
+      #     route: DELETE /repos/{repository}/actions/caches?key={key}
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     INPUT_REPOSITORY: ${{ github.repository }}
+      #     INPUT_KEY: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
 
-      - name: Save ccache cache
-        if: inputs.use_ccache_cache == true && github.event_name == 'push'
-        uses: actions/cache/save@v3
-        with:
-          path: openwrt/.ccache
-          key: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
+      # - name: Save ccache cache
+      #   if: inputs.use_ccache_cache == true && github.event_name == 'push'
+      #   uses: actions/cache/save@v3
+      #   with:
+      #     path: openwrt/.ccache
+      #     key: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
+
+      # - name: Upload ccache from s3
+      #   if: inputs.use_ccache_cache == true
+      #   uses: cloudkernels/minio-upload@v3
+      #   with:
+      #     url: ${{ secrets.s3_url }}
+      #     access-key: ${{ secrets.s3_access_key }}
+      #     secret-key: ${{ secrets.s3_secret_key }}
+      #     local-path: openwrt/.ccache
+      #     remote-path: openwrt-ci-cache/ccache/${{ inputs.target }}/${{ inputs.subtarget }}/
 
       - name: Find external toolchain name
         id: get-toolchain-name
