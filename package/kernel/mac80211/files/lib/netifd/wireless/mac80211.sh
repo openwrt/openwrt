@@ -1257,7 +1257,6 @@ drv_mac80211_setup() {
 				wireless_setup_failed HOSTAPD_START_FAILED
 				return
 			}
-			wireless_add_process "$(jsonfilter -s "$hostapd_res" -l 1 -e @.pid)" "/usr/sbin/hostapd" 1 1
 		fi
 	}
 	uci -q -P /var/state set wireless._${phy}.aplist="${NEWAPLIST}"
