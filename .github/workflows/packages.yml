@@ -54,4 +54,27 @@ jobs:
       build_all_modules: true
       build_full: true
       ccache_type: packages
+      upload_ccache_cache: ${{ github.repository_owner == 'openwrt' }}
+
+  upload-ccache-cache-in-s3:
+    if: github.event_name == 'push' && github.repository_owner == 'openwrt'
+    name: Upload ccache cache to s3
+    needs: build
+    strategy:
+       fail-fast: False
+       matrix:
+        include:
+          - target: malta
+            subtarget: be
+          - target: x86
+            subtarget: 64
+    secrets:
+      s3_access_key: ${{ secrets.GCS_S3_ACCESS_KEY }}
+      s3_secret_key: ${{ secrets.GCS_S3_SECRET_KEY }}
+    uses: ./.github/workflows/upload-file-s3.yml
+    with:
+      endpoint: https://storage.googleapis.com
+      bucket: openwrt-ci-cache
+      download_id: ${{ matrix.target }}-${{ matrix.subtarget }}-ccache-cache
+      filename: ccache-packages-${{ matrix.target }}-${{ matrix.subtarget }}.tar
 
