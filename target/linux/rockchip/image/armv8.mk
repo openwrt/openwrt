@@ -60,3 +60,12 @@ define Device/radxa_rock-pi-4a
   IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
 endef
 TARGET_DEVICES += radxa_rock-pi-4a
+
+define Device/xunlong_orangepi-r1-plus
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi R1 Plus
+  SOC := rk3328
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-usb-net-rtl8152
+endef
+TARGET_DEVICES += xunlong_orangepi-r1-plus
