@@ -60,6 +60,8 @@ on:
       ccache_type:
         type: string
         default: kernel
+      upload_ccache_cache:
+        type: boolean
 
 permissions:
   contents: read
@@ -232,6 +234,20 @@ jobs:
           echo "TOOLCHAIN_FILE=$TOOLCHAIN_FILE" >> "$GITHUB_ENV"
           echo "TOOLCHAIN_PATH=$TOOLCHAIN_PATH" >> "$GITHUB_ENV"
 
+      - name: Download and extract ccache cache from s3
+        id: restore-ccache-cache-s3
+        if: inputs.use_ccache_cache == true
+        working-directory: openwrt
+        run: |
+          ENDPOINT=https://storage.googleapis.com
+          BUCKET=openwrt-ci-cache
+          CCACHE_TAR=ccache-${{ inputs.ccache_type }}-${{ inputs.target }}-${{ inputs.subtarget }}.tar
+
+          if curl -o /dev/null -s --head --fail $ENDPOINT/$BUCKET/$CCACHE_TAR; then
+            wget -O - $ENDPOINT/$BUCKET/$CCACHE_TAR | tar -xf -
+            echo "cache-hit=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Fix permission
         run: |
           chown -R buildbot:buildbot openwrt
@@ -256,7 +272,7 @@ jobs:
 
       - name: Restore ccache cache
         id: restore-ccache-cache
-        if: inputs.use_ccache_cache == true
+        if: inputs.use_ccache_cache == true && steps.restore-ccache-cache-s3.outputs.cache-hit != 'true'
         uses: actions/cache/restore@v3
         with:
           path: openwrt/.ccache
@@ -498,7 +514,8 @@ jobs:
           path: "openwrt/logs"
 
       - name: Delete already present ccache cache
-        if: steps.restore-ccache-cache.outputs.cache-hit == 'true' && inputs.use_ccache_cache == true  && github.event_name == 'push'
+        if: steps.restore-ccache-cache.outputs.cache-hit == 'true' && inputs.use_ccache_cache == true  &&
+          github.event_name == 'push' && steps.restore-ccache-cache-s3.outputs.cache-hit != 'true'
         uses: octokit/request-action@v2.x
         with:
           route: DELETE /repos/{repository}/actions/caches?key={key}
@@ -508,11 +525,28 @@ jobs:
           INPUT_KEY: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
 
       - name: Save ccache cache
-        if: inputs.use_ccache_cache == true && github.event_name == 'push'
+        if: inputs.use_ccache_cache == true && github.event_name == 'push' &&
+          steps.restore-ccache-cache-s3.outputs.cache-hit != 'true'
         uses: actions/cache/save@v3
         with:
           path: openwrt/.ccache
           key: ${{ steps.restore-ccache-cache.outputs.cache-primary-key }}
+
+      - name: Archive ccache
+        if: inputs.use_ccache_cache == true  && github.event_name == 'push' &&
+          inputs.upload_ccache_cache == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: tar -cf ccache-${{ inputs.ccache_type }}-${{ inputs.target }}-${{ inputs.subtarget }}.tar .ccache
+
+      - name: Upload ccache cache
+        if: inputs.use_ccache_cache == true && github.event_name == 'push' &&
+          inputs.upload_ccache_cache == true
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.target }}-${{ inputs.subtarget }}-ccache-cache
+          path: openwrt/ccache-${{ inputs.ccache_type }}-${{ inputs.target }}-${{ inputs.subtarget }}.tar
+          retention-days: 1
 
       - name: Find external toolchain name
         id: get-toolchain-name
