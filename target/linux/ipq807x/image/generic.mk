@@ -10,6 +10,13 @@ define Device/FitImageLzma
 	KERNEL_NAME := Image
 endef
 
+define Device/EmmcImage
+	IMAGES += factory.bin sysupgrade.bin
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | sysupgrade-tar rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := e2fsprogs kmod-fs-ext4 losetup
+endef
+
 define Device/UbiFit
 	KERNEL_IN_UBI := 1
 	IMAGES := factory.ubi sysupgrade.bin
@@ -90,16 +97,14 @@ TARGET_DEVICES += netgear_wax218
 
 define Device/qnap_301w
 	$(call Device/FitImage)
+	$(call Device/EmmcImage)
 	DEVICE_VENDOR := QNAP
 	DEVICE_MODEL := 301w
 	DEVICE_DTS_CONFIG := config@hk01
 	KERNEL_SIZE := 16384k
 	BLOCKSIZE := 512k
 	SOC := ipq8072
-	IMAGES += factory.bin sysupgrade.bin
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k
-	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-qnap_301w e2fsprogs kmod-fs-ext4 losetup
+	DEVICE_PACKAGES += ipq-wifi-qnap_301w
 endef
 TARGET_DEVICES += qnap_301w
 
@@ -150,16 +155,14 @@ TARGET_DEVICES += xiaomi_ax9000
 
 define Device/zyxel_nbg7815
 	$(call Device/FitImage)
+	$(call Device/EmmcImage)
 	DEVICE_VENDOR := ZYXEL
 	DEVICE_MODEL := NBG7815
 	DEVICE_DTS_CONFIG := config@nbg7815
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := ipq8074
-	IMAGES += factory.bin sysupgrade.bin
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k
-	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci e2fsprogs kmod-fs-ext4 losetup \
-	kmod-hwmon-tmp103 kmod-bluetooth
+	DEVICE_PACKAGES += ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci kmod-hwmon-tmp103 \
+		kmod-bluetooth
 endef
 TARGET_DEVICES += zyxel_nbg7815
