@@ -17,11 +17,9 @@ Signed-off-by: T.J. Mercier <tjmercier@google.com>
  mm/vmscan.c | 40 ++++++++++++++++++++--------------------
  1 file changed, 20 insertions(+), 20 deletions(-)
 
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index d5d6f8d94f58a..8f496c2e670a9 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -3980,8 +3980,8 @@ static bool walk_pte_range(pmd_t *pmd, unsigned long start, unsigned long end,
+@@ -3980,8 +3980,8 @@ restart:
  }
  
  #if defined(CONFIG_TRANSPARENT_HUGEPAGE) || defined(CONFIG_ARCH_HAS_NONLEAF_PMD_YOUNG)
@@ -32,7 +30,7 @@ index d5d6f8d94f58a..8f496c2e670a9 100644
  {
  	int i;
  	pmd_t *pmd;
-@@ -3994,18 +3994,19 @@ static void walk_pmd_range_locked(pud_t *pud, unsigned long next, struct vm_area
+@@ -3994,18 +3994,19 @@ static void walk_pmd_range_locked(pud_t
  	VM_WARN_ON_ONCE(pud_leaf(*pud));
  
  	/* try to batch at most 1+MIN_LRU_BATCH+1 entries */
@@ -56,7 +54,7 @@ index d5d6f8d94f58a..8f496c2e670a9 100644
  
  	ptl = pmd_lockptr(args->mm, pmd);
  	if (!spin_trylock(ptl))
-@@ -4016,15 +4017,16 @@ static void walk_pmd_range_locked(pud_t *pud, unsigned long next, struct vm_area
+@@ -4016,15 +4017,16 @@ static void walk_pmd_range_locked(pud_t
  	do {
  		unsigned long pfn;
  		struct folio *folio;
@@ -76,7 +74,7 @@ index d5d6f8d94f58a..8f496c2e670a9 100644
  				pmdp_test_and_clear_young(vma, addr, pmd + i);
  			goto next;
  		}
-@@ -4053,12 +4055,11 @@ static void walk_pmd_range_locked(pud_t *pud, unsigned long next, struct vm_area
+@@ -4053,12 +4055,11 @@ next:
  	arch_leave_lazy_mmu_mode();
  	spin_unlock(ptl);
  done:
@@ -92,7 +90,7 @@ index d5d6f8d94f58a..8f496c2e670a9 100644
  {
  }
  #endif
-@@ -4071,9 +4072,9 @@ static void walk_pmd_range(pud_t *pud, unsigned long start, unsigned long end,
+@@ -4071,9 +4072,9 @@ static void walk_pmd_range(pud_t *pud, u
  	unsigned long next;
  	unsigned long addr;
  	struct vm_area_struct *vma;
@@ -104,7 +102,7 @@ index d5d6f8d94f58a..8f496c2e670a9 100644
  
  	VM_WARN_ON_ONCE(pud_leaf(*pud));
  
-@@ -4115,18 +4116,17 @@ static void walk_pmd_range(pud_t *pud, unsigned long start, unsigned long end,
+@@ -4115,18 +4116,17 @@ restart:
  			if (pfn < pgdat->node_start_pfn || pfn >= pgdat_end_pfn(pgdat))
  				continue;
  
@@ -126,7 +124,7 @@ index d5d6f8d94f58a..8f496c2e670a9 100644
  		}
  
  		if (!walk->force_scan && !test_bloom_filter(walk->lruvec, walk->max_seq, pmd + i))
-@@ -4143,7 +4143,7 @@ static void walk_pmd_range(pud_t *pud, unsigned long start, unsigned long end,
+@@ -4143,7 +4143,7 @@ restart:
  		update_bloom_filter(walk->lruvec, walk->max_seq + 1, pmd + i);
  	}
  
@@ -135,6 +133,3 @@ index d5d6f8d94f58a..8f496c2e670a9 100644
  
  	if (i < PTRS_PER_PMD && get_next_vma(PUD_MASK, PMD_SIZE, args, &start, &end))
  		goto restart;
--- 
-2.40.1
-

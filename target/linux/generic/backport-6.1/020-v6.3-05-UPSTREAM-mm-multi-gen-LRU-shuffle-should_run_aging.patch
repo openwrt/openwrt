@@ -24,11 +24,9 @@ Signed-off-by: T.J. Mercier <tjmercier@google.com>
  mm/vmscan.c | 124 ++++++++++++++++++++++++++--------------------------
  1 file changed, 62 insertions(+), 62 deletions(-)
 
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 5a2e83e673232..0c47952714b26 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -4454,68 +4454,6 @@ static bool try_to_inc_max_seq(struct lruvec *lruvec, unsigned long max_seq,
+@@ -4454,68 +4454,6 @@ done:
  	return true;
  }
  
@@ -97,7 +95,7 @@ index 5a2e83e673232..0c47952714b26 100644
  static bool lruvec_is_sizable(struct lruvec *lruvec, struct scan_control *sc)
  {
  	int gen, type, zone;
-@@ -5099,6 +5037,68 @@ static int evict_folios(struct lruvec *lruvec, struct scan_control *sc, int swap
+@@ -5099,6 +5037,68 @@ retry:
  	return scanned;
  }
  
@@ -166,6 +164,3 @@ index 5a2e83e673232..0c47952714b26 100644
  /*
   * For future optimizations:
   * 1. Defer try_to_inc_max_seq() to workqueues to reduce latency for memcg
--- 
-2.40.1
-

@@ -27,11 +27,9 @@ Signed-off-by: T.J. Mercier <tjmercier@google.com>
  mm/vmscan.c | 25 +++++++++++++++----------
  1 file changed, 15 insertions(+), 10 deletions(-)
 
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index aa9746f2bc80b..49da02f841c81 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -5206,18 +5206,20 @@ static int shrink_one(struct lruvec *lruvec, struct scan_control *sc)
+@@ -5206,18 +5206,20 @@ static int shrink_one(struct lruvec *lru
  
  static void shrink_many(struct pglist_data *pgdat, struct scan_control *sc)
  {
@@ -54,7 +52,7 @@ index aa9746f2bc80b..49da02f841c81 100644
  	gen = get_memcg_gen(READ_ONCE(pgdat->memcg_lru.seq));
  
  	rcu_read_lock();
-@@ -5241,14 +5243,22 @@ static void shrink_many(struct pglist_data *pgdat, struct scan_control *sc)
+@@ -5241,14 +5243,22 @@ restart:
  
  		op = shrink_one(lruvec, sc);
  
@@ -80,7 +78,7 @@ index aa9746f2bc80b..49da02f841c81 100644
  	/* restart if raced with lru_gen_rotate_memcg() */
  	if (gen != get_nulls_value(pos))
  		goto restart;
-@@ -5257,11 +5267,6 @@ static void shrink_many(struct pglist_data *pgdat, struct scan_control *sc)
+@@ -5257,11 +5267,6 @@ restart:
  	bin = get_memcg_bin(bin + 1);
  	if (bin != first_bin)
  		goto restart;
@@ -92,6 +90,3 @@ index aa9746f2bc80b..49da02f841c81 100644
  }
  
  static void lru_gen_shrink_lruvec(struct lruvec *lruvec, struct scan_control *sc)
--- 
-2.40.1
-
