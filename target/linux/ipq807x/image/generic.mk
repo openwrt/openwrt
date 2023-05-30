@@ -102,7 +102,6 @@ define Device/qnap_301w
 	DEVICE_MODEL := 301w
 	DEVICE_DTS_CONFIG := config@hk01
 	KERNEL_SIZE := 16384k
-	BLOCKSIZE := 512k
 	SOC := ipq8072
 	DEVICE_PACKAGES += ipq-wifi-qnap_301w
 endef
@@ -159,8 +158,6 @@ define Device/zyxel_nbg7815
 	DEVICE_VENDOR := ZYXEL
 	DEVICE_MODEL := NBG7815
 	DEVICE_DTS_CONFIG := config@nbg7815
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
 	SOC := ipq8074
 	DEVICE_PACKAGES += ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci kmod-hwmon-tmp103 \
 		kmod-bluetooth
