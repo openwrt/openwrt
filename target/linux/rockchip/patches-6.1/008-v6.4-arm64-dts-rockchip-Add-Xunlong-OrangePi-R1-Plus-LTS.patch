@@ -1,0 +1,71 @@
+From 387b3bbac5ea6a0a105d685237f033ffe0f184f1 Mon Sep 17 00:00:00 2001
+From: Tianling Shen <cnsztl@gmail.com>
+Date: Sat, 25 Mar 2023 15:40:22 +0800
+Subject: [PATCH] arm64: dts: rockchip: Add Xunlong OrangePi R1 Plus LTS
+
+The OrangePi R1 Plus LTS is a minor variant of OrangePi R1 Plus with
+the on-board NIC chip changed from rtl8211e to yt8531c, and otherwise
+identical to OrangePi R1 Plus.
+
+Signed-off-by: Tianling Shen <cnsztl@gmail.com>
+Link: https://lore.kernel.org/r/20230325074022.9818-5-cnsztl@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/Makefile         |  1 +
+ .../rockchip/rk3328-orangepi-r1-plus-lts.dts  | 40 +++++++++++++++++++
+ 2 files changed, 41 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
+
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -13,6 +13,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-ev
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-nanopi-r2c.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-nanopi-r2s.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-orangepi-r1-plus.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-orangepi-r1-plus-lts.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-rock64.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-rock-pi-e.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-roc-cc.dtb
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
+@@ -0,0 +1,40 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * Copyright (c) 2016 Xunlong Software. Co., Ltd.
++ * (http://www.orangepi.org)
++ *
++ * Copyright (c) 2021-2023 Tianling Shen <cnsztl@gmail.com>
++ */
++
++/dts-v1/;
++#include "rk3328-orangepi-r1-plus.dts"
++
++/ {
++	model = "Xunlong Orange Pi R1 Plus LTS";
++	compatible = "xunlong,orangepi-r1-plus-lts", "rockchip,rk3328";
++};
++
++&gmac2io {
++	phy-handle = <&yt8531c>;
++	tx_delay = <0x19>;
++	rx_delay = <0x05>;
++
++	mdio {
++		/delete-node/ ethernet-phy@1;
++
++		yt8531c: ethernet-phy@0 {
++			compatible = "ethernet-phy-ieee802.3-c22";
++			reg = <0>;
++
++			motorcomm,clk-out-frequency-hz = <125000000>;
++			motorcomm,keep-pll-enabled;
++			motorcomm,auto-sleep-disabled;
++
++			pinctrl-0 = <&eth_phy_reset_pin>;
++			pinctrl-names = "default";
++			reset-assert-us = <15000>;
++			reset-deassert-us = <50000>;
++			reset-gpios = <&gpio1 RK_PC2 GPIO_ACTIVE_LOW>;
++		};
++	};
++};
