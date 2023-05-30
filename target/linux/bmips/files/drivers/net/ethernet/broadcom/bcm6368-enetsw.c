@@ -20,6 +20,7 @@
 #include <linux/pm_domain.h>
 #include <linux/pm_runtime.h>
 #include <linux/reset.h>
+#include <linux/version.h>
 
 /* MTU */
 #define ENETSW_TAG_SIZE			(6 + VLAN_HLEN)
@@ -908,6 +909,7 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	struct bcm6368_enetsw *priv;
 	struct net_device *ndev;
 	struct resource *res;
+	unsigned char dev_addr[ETH_ALEN];
 	unsigned i;
 	int num_resets;
 	int ret;
@@ -995,12 +997,13 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	priv->tx_ring_size = ENETSW_DEF_TX_DESC;
 	priv->copybreak = ENETSW_DEF_CPY_BREAK;
 
-	of_get_mac_address(node, ndev->dev_addr);
-	if (is_valid_ether_addr(ndev->dev_addr)) {
-		dev_info(dev, "mtd mac %pM\n", ndev->dev_addr);
+	of_get_mac_address(node, dev_addr);
+	if (is_valid_ether_addr(dev_addr)) {
+		dev_addr_set(ndev, dev_addr);
+		dev_info(dev, "mtd mac %pM\n", dev_addr);
 	} else {
-		random_ether_addr(ndev->dev_addr);
-		dev_info(dev, "random mac %pM\n", ndev->dev_addr);
+		eth_hw_addr_random(ndev);
+		dev_info(dev, "random mac\n");
 	}
 
 	priv->rx_buf_size = ALIGN(ndev->mtu + ENETSW_MTU_OVERHEAD,
@@ -1065,7 +1068,11 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	ndev->min_mtu = ETH_ZLEN;
 	ndev->mtu = ETH_DATA_LEN + ENETSW_TAG_SIZE;
 	ndev->max_mtu = ETH_DATA_LEN + ENETSW_TAG_SIZE;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
+	netif_napi_add(ndev, &priv->napi, bcm6368_enetsw_poll);
+#else
 	netif_napi_add(ndev, &priv->napi, bcm6368_enetsw_poll, 16);
+#endif
 
 	ret = devm_register_netdev(dev, ndev);
 	if (ret) {
