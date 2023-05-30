@@ -45,6 +45,13 @@ define U-Boot/nanopi-r2s-rk3328
     friendlyarm_nanopi-r2s
 endef
 
+define U-Boot/orangepi-r1-plus-rk3328
+  $(U-Boot/rk3328/Default)
+  NAME:=Orange Pi R1 Plus
+  BUILD_DEVICES:= \
+    xunlong_orangepi-r1-plus
+endef
+
 define U-Boot/roc-cc-rk3328
   $(U-Boot/rk3328/Default)
   NAME:=ROC-RK3328-CC
@@ -87,6 +94,7 @@ UBOOT_TARGETS := \
   rockpro64-rk3399 \
   nanopi-r2c-rk3328 \
   nanopi-r2s-rk3328 \
+  orangepi-r1-plus-rk3328 \
   roc-cc-rk3328
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
