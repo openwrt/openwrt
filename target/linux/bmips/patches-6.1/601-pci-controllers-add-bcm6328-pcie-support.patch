@@ -24,7 +24,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 +	depends on OF
 +
  config PCI_MVEBU
- 	bool "Marvell EBU PCIe controller"
+ 	tristate "Marvell EBU PCIe controller"
  	depends on ARCH_MVEBU || ARCH_DOVE || COMPILE_TEST
 --- a/drivers/pci/controller/Makefile
 +++ b/drivers/pci/controller/Makefile

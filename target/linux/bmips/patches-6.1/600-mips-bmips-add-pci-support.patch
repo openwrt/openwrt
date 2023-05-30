@@ -10,21 +10,21 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 ---
  arch/mips/Kconfig      | 1 +
  arch/mips/pci/Makefile | 1 +
- 2 files changed, 2 insertions(+)
+ 2 files changed, 1 insertions(+), 1 deletions(-)
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -274,6 +274,7 @@ config BMIPS_GENERIC
- 	select SYNC_R4K
- 	select COMMON_CLK
- 	select BCM6345_L1_IRQ
-+	select HAVE_PCI
- 	select IRQ_MIPS_CPU
- 	select DMA_NONCOHERENT
- 	select SYS_SUPPORTS_32BIT_KERNEL
+@@ -286,7 +286,6 @@ config BMIPS_GENERIC
+ 	select USB_OHCI_BIG_ENDIAN_MMIO if CPU_BIG_ENDIAN
+ 	select HARDIRQS_SW_RESEND
+ 	select HAVE_PCI
+-	select PCI_DRIVERS_GENERIC
+ 	select FW_CFE
+ 	select MIPS_L1_CACHE_SHIFT_4
+ 	help
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -28,6 +28,7 @@ obj-$(CONFIG_PCI_XTALK_BRIDGE)	+= pci-xt
+@@ -26,6 +26,7 @@ obj-$(CONFIG_PCI_XTALK_BRIDGE)	+= pci-xt
  # These are still pretty much in the old state, watch, go blind.
  #
  obj-$(CONFIG_ATH79)		+= fixup-ath79.o
