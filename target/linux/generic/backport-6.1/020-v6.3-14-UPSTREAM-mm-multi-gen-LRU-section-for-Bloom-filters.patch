@@ -20,11 +20,9 @@ Signed-off-by: T.J. Mercier <tjmercier@google.com>
  mm/vmscan.c                       | 180 +++++++++++++++---------------
  2 files changed, 108 insertions(+), 88 deletions(-)
 
-diff --git a/Documentation/mm/multigen_lru.rst b/Documentation/mm/multigen_lru.rst
-index bd988a142bc2f..770b5d539856c 100644
 --- a/Documentation/mm/multigen_lru.rst
 +++ b/Documentation/mm/multigen_lru.rst
-@@ -170,6 +170,22 @@ promotes hot pages. If the scan was done cacheline efficiently, it
+@@ -170,6 +170,22 @@ promotes hot pages. If the scan was done
  adds the PMD entry pointing to the PTE table to the Bloom filter. This
  forms a feedback loop between the eviction and the aging.
  
@@ -47,15 +45,12 @@ index bd988a142bc2f..770b5d539856c 100644
  Summary
  -------
  The multi-gen LRU can be disassembled into the following parts:
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 8fa82630240d6..74b4f9d660b56 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -3208,6 +3208,98 @@ static bool __maybe_unused seq_is_valid(struct lruvec *lruvec)
- 	       get_nr_gens(lruvec, LRU_GEN_ANON) <= MAX_NR_GENS;
+@@ -3209,6 +3209,98 @@ static bool __maybe_unused seq_is_valid(
  }
  
-+/******************************************************************************
+ /******************************************************************************
 + *                          Bloom filters
 + ******************************************************************************/
 +
@@ -147,10 +142,11 @@ index 8fa82630240d6..74b4f9d660b56 100644
 +	WRITE_ONCE(lruvec->mm_state.filters[gen], filter);
 +}
 +
- /******************************************************************************
++/******************************************************************************
   *                          mm_struct list
   ******************************************************************************/
-@@ -3333,94 +3425,6 @@ void lru_gen_migrate_mm(struct mm_struct *mm)
+ 
+@@ -3333,94 +3425,6 @@ void lru_gen_migrate_mm(struct mm_struct
  }
  #endif
  
@@ -245,6 +241,3 @@ index 8fa82630240d6..74b4f9d660b56 100644
  static void reset_mm_stats(struct lruvec *lruvec, struct lru_gen_mm_walk *walk, bool last)
  {
  	int i;
--- 
-2.40.1
-

@@ -28,11 +28,9 @@ Signed-off-by: T.J. Mercier <tjmercier@google.com>
  mm/vmscan.c                       |  4 ++++
  2 files changed, 19 insertions(+)
 
-diff --git a/Documentation/mm/multigen_lru.rst b/Documentation/mm/multigen_lru.rst
-index d8f721f98868a..6e1483e70fdca 100644
 --- a/Documentation/mm/multigen_lru.rst
 +++ b/Documentation/mm/multigen_lru.rst
-@@ -141,6 +141,21 @@ loop has detected outlying refaults from the tier this page is in. To
+@@ -141,6 +141,21 @@ loop has detected outlying refaults from
  this end, the feedback loop uses the first tier as the baseline, for
  the reason stated earlier.
  
@@ -54,11 +52,9 @@ index d8f721f98868a..6e1483e70fdca 100644
  Summary
  -------
  The multi-gen LRU can be disassembled into the following parts:
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 596fed6ae0439..ab0b8d3b9d88f 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -4459,6 +4459,10 @@ static bool try_to_inc_max_seq(struct lruvec *lruvec, unsigned long max_seq,
+@@ -4459,6 +4459,10 @@ done:
  	return true;
  }
  
@@ -69,6 +65,3 @@ index 596fed6ae0439..ab0b8d3b9d88f 100644
  static bool lruvec_is_sizable(struct lruvec *lruvec, struct scan_control *sc)
  {
  	int gen, type, zone;
--- 
-2.40.1
-

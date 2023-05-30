@@ -24,11 +24,9 @@ Signed-off-by: T.J. Mercier <tjmercier@google.com>
  mm/vmscan.c | 73 +++++++++++++++++------------------------------------
  1 file changed, 23 insertions(+), 50 deletions(-)
 
-diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 8f496c2e670a9..f6ce7a1fd78a3 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
-@@ -4571,13 +4571,12 @@ static void lru_gen_age_node(struct pglist_data *pgdat, struct scan_control *sc)
+@@ -4571,13 +4571,12 @@ static void lru_gen_age_node(struct pgli
  void lru_gen_look_around(struct page_vma_mapped_walk *pvmw)
  {
  	int i;
@@ -44,7 +42,7 @@ index 8f496c2e670a9..f6ce7a1fd78a3 100644
  	struct folio *folio = pfn_folio(pvmw->pfn);
  	struct mem_cgroup *memcg = folio_memcg(folio);
  	struct pglist_data *pgdat = folio_pgdat(folio);
-@@ -4594,25 +4593,28 @@ void lru_gen_look_around(struct page_vma_mapped_walk *pvmw)
+@@ -4594,25 +4593,28 @@ void lru_gen_look_around(struct page_vma
  	/* avoid taking the LRU lock under the PTL when possible */
  	walk = current->reclaim_state ? current->reclaim_state->mm_walk : NULL;
  
@@ -81,7 +79,7 @@ index 8f496c2e670a9..f6ce7a1fd78a3 100644
  	for (i = 0, addr = start; addr != end; i++, addr += PAGE_SIZE) {
  		unsigned long pfn;
  
-@@ -4637,56 +4639,27 @@ void lru_gen_look_around(struct page_vma_mapped_walk *pvmw)
+@@ -4637,56 +4639,27 @@ void lru_gen_look_around(struct page_vma
  		      !folio_test_swapcache(folio)))
  			folio_mark_dirty(folio);
  
@@ -148,6 +146,3 @@ index 8f496c2e670a9..f6ce7a1fd78a3 100644
  }
  
  /******************************************************************************
--- 
-2.40.1
-
