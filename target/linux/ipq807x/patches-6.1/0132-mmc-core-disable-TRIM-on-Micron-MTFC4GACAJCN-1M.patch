@@ -1,0 +1,36 @@
+From f5aaf6669bd4f1f0218dd7fd5dc90941267ad860 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Tue, 30 May 2023 23:26:30 +0200
+Subject: [PATCH] mmc: core: disable TRIM on Micron MTFC4GACAJCN-1M
+
+It seems that Micron MTFC4GACAJCN-1M despite advertising TRIM support does
+not work when the core is trying to use REQ_OP_WRITE_ZEROES.
+
+We are seeing the following errors in OpenWrt under 6.1 on Qnap Qhora 301W
+that we did not previously have and tracked it down to REQ_OP_WRITE_ZEROES:
+[   18.085950] I/O error, dev loop0, sector 596 op 0x9:(WRITE_ZEROES) flags 0x800 phys_seg 0 prio class 2
+
+Disabling TRIM makes the error go away, so lets add a quirk for this eMMC
+to disable TRIM.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/mmc/core/quirks.h | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/mmc/core/quirks.h
++++ b/drivers/mmc/core/quirks.h
+@@ -101,6 +101,13 @@ static const struct mmc_fixup __maybe_un
+ 		  MMC_QUIRK_TRIM_BROKEN),
+ 
+ 	/*
++	 * Micron MTFC4GACAJCN-1M advertises TRIM but it does not seems to
++	 * support being used to offload WRITE_ZEROES.
++	 */
++	MMC_FIXUP("Q2J54A", CID_MANFID_MICRON, 0x014e, add_quirk_mmc,
++		  MMC_QUIRK_TRIM_BROKEN),
++
++	/*
+ 	 * Some SD cards reports discard support while they don't
+ 	 */
+ 	MMC_FIXUP(CID_NAME_ANY, CID_MANFID_SANDISK_SD, 0x5344, add_quirk_sd,
