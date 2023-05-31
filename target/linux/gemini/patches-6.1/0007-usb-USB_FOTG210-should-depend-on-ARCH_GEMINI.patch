@@ -1,0 +1,26 @@
+From 466b10510add46afd21ca19505b29d35ad853370 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Mon, 21 Nov 2022 16:22:19 +0100
+Subject: [PATCH 07/29] usb: USB_FOTG210 should depend on ARCH_GEMINI
+
+The Faraday Technology FOTG210 USB2 Dual Role Controller is only present
+on Cortina Systems Gemini SoCs.  Hence add a dependency on ARCH_GEMINI,
+to prevent asking the user about its drivers when configuring a kernel
+without Cortina Systems Gemini SoC support.
+
+Fixes: 1dd33a9f1b95ab59 ("usb: fotg210: Collect pieces of dual mode controller")
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/a989b3b798ecaf3b45f35160e30e605636d66a77.1669044086.git.geert+renesas@glider.be
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+--- a/drivers/usb/fotg210/Kconfig
++++ b/drivers/usb/fotg210/Kconfig
+@@ -4,6 +4,7 @@ config USB_FOTG210
+ 	tristate "Faraday FOTG210 USB2 Dual Role controller"
+ 	depends on USB || USB_GADGET
+ 	depends on HAS_DMA && HAS_IOMEM
++	depends on ARCH_GEMINI || COMPILE_TEST
+ 	default ARCH_GEMINI
+ 	select MFD_SYSCON
+ 	help

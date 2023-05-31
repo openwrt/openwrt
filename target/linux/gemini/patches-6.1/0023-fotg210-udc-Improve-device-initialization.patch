@@ -1,0 +1,62 @@
+From 367747c7813cecf19b46ef7134691f903ab76dc9 Mon Sep 17 00:00:00 2001
+From: Fabian Vogt <fabian@ritter-vogt.de>
+Date: Mon, 23 Jan 2023 08:35:08 +0100
+Subject: [PATCH 23/29] fotg210-udc: Improve device initialization
+
+Reset the device explicitly to get into a known state and also set the chip
+enable bit. Additionally, mask interrupts which aren't handled.
+
+Signed-off-by: Fabian Vogt <fabian@ritter-vogt.de>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/20230123073508.2350402-4-linus.walleij@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+--- a/drivers/usb/fotg210/fotg210-udc.c
++++ b/drivers/usb/fotg210/fotg210-udc.c
+@@ -7,6 +7,7 @@
+  * Author : Yuan-Hsin Chen <yhchen@faraday-tech.com>
+  */
+ 
++#include <linux/delay.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/err.h>
+ #include <linux/interrupt.h>
+@@ -1022,6 +1023,11 @@ static int fotg210_udc_start(struct usb_
+ 			dev_err(fotg210->dev, "can't bind to phy\n");
+ 	}
+ 
++	/* chip enable */
++	value = ioread32(fotg210->reg + FOTG210_DMCR);
++	value |= DMCR_CHIP_EN;
++	iowrite32(value, fotg210->reg + FOTG210_DMCR);
++
+ 	/* enable device global interrupt */
+ 	value = ioread32(fotg210->reg + FOTG210_DMCR);
+ 	value |= DMCR_GLINT_EN;
+@@ -1038,6 +1044,15 @@ static void fotg210_init(struct fotg210_
+ 	iowrite32(GMIR_MHC_INT | GMIR_MOTG_INT | GMIR_INT_POLARITY,
+ 		  fotg210->reg + FOTG210_GMIR);
+ 
++	/* mask interrupts for groups other than 0-2 */
++	iowrite32(~(DMIGR_MINT_G0 | DMIGR_MINT_G1 | DMIGR_MINT_G2),
++		  fotg210->reg + FOTG210_DMIGR);
++
++	/* udc software reset */
++	iowrite32(DMCR_SFRST, fotg210->reg + FOTG210_DMCR);
++	/* Better wait a bit, but without a datasheet, no idea how long. */
++	usleep_range(100, 200);
++
+ 	/* disable device global interrupt */
+ 	value = ioread32(fotg210->reg + FOTG210_DMCR);
+ 	value &= ~DMCR_GLINT_EN;
+--- a/drivers/usb/fotg210/fotg210-udc.h
++++ b/drivers/usb/fotg210/fotg210-udc.h
+@@ -58,6 +58,8 @@
+ 
+ /* Device Mask of Interrupt Group Register (0x130) */
+ #define FOTG210_DMIGR		0x130
++#define DMIGR_MINT_G2		(1 << 2)
++#define DMIGR_MINT_G1		(1 << 1)
+ #define DMIGR_MINT_G0		(1 << 0)
+ 
+ /* Device Mask of Interrupt Source Group 0(0x134) */

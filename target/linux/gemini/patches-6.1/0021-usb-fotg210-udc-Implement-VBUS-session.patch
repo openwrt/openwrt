@@ -1,0 +1,96 @@
+From 2fbbfb2c556944945639b17b13fcb1e05272b646 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 18 Jan 2023 08:09:21 +0100
+Subject: [PATCH 21/29] usb: fotg210-udc: Implement VBUS session
+
+Implement VBUS session handling for FOTG210. This is
+mainly used by the UDC driver which needs to call down to
+the FOTG210 core and enable/disable VBUS, as this needs to be
+handled outside of the HCD and UDC drivers, by platform
+specific glue code.
+
+The Gemini has a special bit in a system register to turn
+VBUS on and off so we implement this in the FOTG210 core.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/20230103-gemini-fotg210-usb-v2-7-100388af9810@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+--- a/drivers/usb/fotg210/fotg210-core.c
++++ b/drivers/usb/fotg210/fotg210-core.c
+@@ -95,6 +95,35 @@ static int fotg210_gemini_init(struct fo
+ 	return 0;
+ }
+ 
++/**
++ * fotg210_vbus() - Called by gadget driver to enable/disable VBUS
++ * @enable: true to enable VBUS, false to disable VBUS
++ */
++void fotg210_vbus(struct fotg210 *fotg, bool enable)
++{
++	u32 mask;
++	u32 val;
++	int ret;
++
++	switch (fotg->port) {
++	case GEMINI_PORT_0:
++		mask = GEMINI_MISC_USB0_VBUS_ON;
++		val = enable ? GEMINI_MISC_USB0_VBUS_ON : 0;
++		break;
++	case GEMINI_PORT_1:
++		mask = GEMINI_MISC_USB1_VBUS_ON;
++		val = enable ? GEMINI_MISC_USB1_VBUS_ON : 0;
++		break;
++	default:
++		return;
++	}
++	ret = regmap_update_bits(fotg->map, GEMINI_GLOBAL_MISC_CTRL, mask, val);
++	if (ret)
++		dev_err(fotg->dev, "failed to %s VBUS\n",
++			enable ? "enable" : "disable");
++	dev_info(fotg->dev, "%s: %s VBUS\n", __func__, enable ? "enable" : "disable");
++}
++
+ static int fotg210_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+--- a/drivers/usb/fotg210/fotg210-udc.c
++++ b/drivers/usb/fotg210/fotg210-udc.c
+@@ -1095,9 +1095,26 @@ static int fotg210_udc_stop(struct usb_g
+ 	return 0;
+ }
+ 
++/**
++ * fotg210_vbus_session - Called by external transceiver to enable/disable udc
++ * @_gadget: usb gadget
++ * @is_active: 0 if should disable UDC VBUS, 1 if should enable
++ *
++ * Returns 0
++ */
++static int fotg210_vbus_session(struct usb_gadget *g, int is_active)
++{
++	struct fotg210_udc *fotg210 = gadget_to_fotg210(g);
++
++	/* Call down to core integration layer to drive or disable VBUS */
++	fotg210_vbus(fotg210->fotg, is_active);
++	return 0;
++}
++
+ static const struct usb_gadget_ops fotg210_gadget_ops = {
+ 	.udc_start		= fotg210_udc_start,
+ 	.udc_stop		= fotg210_udc_stop,
++	.vbus_session		= fotg210_vbus_session,
+ };
+ 
+ /**
+--- a/drivers/usb/fotg210/fotg210.h
++++ b/drivers/usb/fotg210/fotg210.h
+@@ -17,6 +17,8 @@ struct fotg210 {
+ 	enum gemini_port port;
+ };
+ 
++void fotg210_vbus(struct fotg210 *fotg, bool enable);
++
+ #ifdef CONFIG_USB_FOTG210_HCD
+ int fotg210_hcd_probe(struct platform_device *pdev, struct fotg210 *fotg);
+ int fotg210_hcd_remove(struct platform_device *pdev);
