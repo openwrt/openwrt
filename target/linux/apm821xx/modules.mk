@@ -19,11 +19,12 @@ define KernelPackage/hw-crypto-4xx
 	CONFIG_HW_RANDOM=y \
 	CONFIG_CRYPTO_DEV_PPC4XX \
 	CONFIG_HW_RANDOM_PPC4XX=y
-  DEPENDS:=+kmod-random-core +kmod-crypto-manager \
+  DEPENDS:=@TARGET_apm821xx +kmod-random-core +kmod-crypto-manager \
 	   +kmod-crypto-ccm +kmod-crypto-gcm \
 	   +kmod-crypto-sha1 +kmod-crypto-sha256 +kmod-crypto-sha512
   FILES:=$(LINUX_DIR)/drivers/crypto/amcc/crypto4xx.ko
   AUTOLOAD:=$(call AutoLoad,09,sata_dwc_460ex,1)
+  $(call AddDepends/crypto)
 endef
 
 define KernelPackage/hw-crypto-4xx/description
