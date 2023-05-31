@@ -1,11 +1,11 @@
-From 86ab9452bd10f08dbfa22d94e1155838f6f9f2e0 Mon Sep 17 00:00:00 2001
+From 82e935c564699456a766044faa39367b47cce793 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 31 Oct 2021 23:11:11 +0100
 Subject: [PATCH] mips: Fix new syscall numbers
 
 The MIPS32 and MIPS64 O32 ABI are adding 4000 to all syscall numbers.
 The MIPS64 N64 ABI adds 5000 to each syscall and the MIPS64 N32 ABI adds
-6000 to each syscall number. We can not sue the shared file for MIPS and
+6000 to each syscall number. We can not use the shared file for MIPS and
 have to define this for each sycall separately.
 
 Without this change valgrind is not able to detect new syscalls like
@@ -13,10 +13,10 @@ clock_gettime64 correctly.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- include/pub_tool_vkiscnums_asm.h      |  3 ---
- include/vki/vki-scnums-mips32-linux.h | 36 +++++++++++++++++++++++++++
- include/vki/vki-scnums-mips64-linux.h | 32 ++++++++++++++++++++++++
- 3 files changed, 68 insertions(+), 3 deletions(-)
+ include/pub_tool_vkiscnums_asm.h      |  3 --
+ include/vki/vki-scnums-mips32-linux.h | 40 +++++++++++++++++++++++++++
+ include/vki/vki-scnums-mips64-linux.h | 40 +++++++++++++++++++++++++++
+ 3 files changed, 80 insertions(+), 3 deletions(-)
 
 --- a/include/pub_tool_vkiscnums_asm.h
 +++ b/include/pub_tool_vkiscnums_asm.h
@@ -38,7 +38,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #elif defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd)
 --- a/include/vki/vki-scnums-mips32-linux.h
 +++ b/include/vki/vki-scnums-mips32-linux.h
-@@ -401,6 +401,42 @@
+@@ -401,6 +401,46 @@
  #define __NR_pkey_free			(__NR_Linux + 365)
  #define __NR_statx			(__NR_Linux + 366)
  
@@ -73,17 +73,21 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#define __NR_fsmount			(__NR_Linux + 432)
 +#define __NR_fspick			(__NR_Linux + 433)
 +
++#define __NR_pidfd_open			(__NR_Linux + 434)
 +#define __NR_clone3			(__NR_Linux + 435)
 +#define __NR_close_range		(__NR_Linux + 436)
++#define __NR_openat2			(__NR_Linux + 437)
 +
 +#define __NR_faccessat2			(__NR_Linux + 439)
++
++#define __NR_epoll_pwait2		(__NR_Linux + 441)
 +
  /*
   * Offset of the last Linux o32 flavoured syscall
   */
 --- a/include/vki/vki-scnums-mips64-linux.h
 +++ b/include/vki/vki-scnums-mips64-linux.h
-@@ -363,6 +363,22 @@
+@@ -363,6 +363,26 @@
  #define __NR_pkey_free              (__NR_Linux + 325)
  #define __NR_statx                  (__NR_Linux + 326)
  
@@ -98,15 +102,19 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#define __NR_fsmount                 (__NR_Linux + 432)
 +#define __NR_fspick                  (__NR_Linux + 433)
 +
++#define __NR_pidfd_open              (__NR_Linux + 434)
 +#define __NR_clone3                  (__NR_Linux + 435)
 +#define __NR_close_range             (__NR_Linux + 436)
++#define __NR_openat2                 (__NR_Linux + 437)
 +
 +#define __NR_faccessat2              (__NR_Linux + 439)
++
++#define __NR_epoll_pwait2            (__NR_Linux + 441)
 +
  #elif defined(VGABI_N32)
  
  /*
-@@ -702,6 +718,22 @@
+@@ -702,6 +722,26 @@
  #define __NR_pkey_free               (__NR_Linux + 329)
  #define __NR_statx                   (__NR_Linux + 330)
  
@@ -121,10 +129,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#define __NR_fsmount                 (__NR_Linux + 432)
 +#define __NR_fspick                  (__NR_Linux + 433)
 +
++#define __NR_pidfd_open              (__NR_Linux + 434)
 +#define __NR_clone3                  (__NR_Linux + 435)
 +#define __NR_close_range             (__NR_Linux + 436)
++#define __NR_openat2                 (__NR_Linux + 437)
 +
 +#define __NR_faccessat2              (__NR_Linux + 439)
++
++#define __NR_epoll_pwait2            (__NR_Linux + 441)
 +
  #else
  #error unknown mips64 abi
