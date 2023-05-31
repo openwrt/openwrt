@@ -417,6 +417,35 @@
 	qcom,ath10k-calibration-variant = "Buffalo-WTR-M2133HP";
 };
 
+&switch {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+	label = "lan3";
+};
+
+&swport3 {
+	status = "okay";
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan1";
+};
+
+&swport5 {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_orgdata_20>;
+};
+
 &mdio {
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
