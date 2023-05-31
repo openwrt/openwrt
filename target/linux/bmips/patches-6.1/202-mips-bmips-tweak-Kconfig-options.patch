@@ -41,9 +41,9 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	help
  	  Build a generic DT-based kernel image that boots on select
  	  BCM33xx cable modem chips, BCM63xx DSL chips, and BCM7xxx set-top
---- a/drivers/irqchip/Kconfig	2023-05-30 19:59:04.671531242 +0200
-+++ b/drivers/irqchip/Kconfig	2023-05-30 19:59:55.203880697 +0200
-@@ -121,7 +121,6 @@ config BCM6345_L1_IRQ
+--- a/drivers/irqchip/Kconfig
++++ b/drivers/irqchip/Kconfig
+@@ -122,7 +122,6 @@ config BCM6345_L1_IRQ
  config BCM7038_L1_IRQ
  	tristate "Broadcom STB 7038-style L1/L2 interrupt controller driver"
  	depends on ARCH_BRCMSTB || BMIPS_GENERIC
@@ -51,7 +51,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	select GENERIC_IRQ_CHIP
  	select IRQ_DOMAIN
  	select GENERIC_IRQ_EFFECTIVE_AFF_MASK if SMP
-@@ -129,14 +128,12 @@ config BCM7038_L1_IRQ
+@@ -130,14 +129,12 @@ config BCM7038_L1_IRQ
  config BCM7120_L2_IRQ
  	tristate "Broadcom STB 7120-style L2 interrupt controller driver"
  	depends on ARCH_BRCMSTB || BMIPS_GENERIC
@@ -65,3 +65,4 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 -	default ARCH_BCM2835 || ARCH_BRCMSTB || BMIPS_GENERIC
  	select GENERIC_IRQ_CHIP
  	select IRQ_DOMAIN
+ 
