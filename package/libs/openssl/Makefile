@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_VERSION:=3.0.8
-PKG_RELEASE:=9
+PKG_RELEASE:=10
 PKG_BUILD_FLAGS:=no-mips16 gc-sections
 
 PKG_BUILD_PARALLEL:=1
@@ -141,7 +141,6 @@ endef
 ifneq ($(CONFIG_OPENSSL_ENGINE_BUILTIN_PADLOCK)$(CONFIG_OPENSSL_ENGINE_BUILTIN_DEVCRYPTO),)
 define Package/libopenssl-conf/postinst
 #!/bin/sh
-OPENSSL_UCI="$${IPKG_INSTROOT}/etc/config/openssl"
 
 add_engine_config() {
 	if [ -z "$${IPKG_INSTROOT}" ] && uci -q get "openssl.$$1" >/dev/null; then
@@ -149,12 +148,6 @@ add_engine_config() {
 		uci set "openssl.$$1.builtin=1" && uci commit openssl
 		return
 	fi
-	{
-		echo "engine '$$1'"
-		echo "	option enabled '1'"
-		echo "	option builtin '1'"
-		echo
-	} >>"$${OPENSSL_UCI}"
 }
 
 $(if $(CONFIG_OPENSSL_ENGINE_BUILTIN_DEVCRYPTO),add_engine_config devcrypto)
@@ -424,10 +417,10 @@ define Package/libopenssl-conf/install
 	touch $(1)/etc/config/openssl
 	$(if $(CONFIG_OPENSSL_ENGINE_BUILTIN_DEVCRYPTO),
 		$(CP) ./files/devcrypto.cnf $(1)/etc/ssl/modules.cnf.d/
-		echo -e "config engine 'devcrypto'\n\toption enabled '1'" >> $(1)/etc/config/openssl)
+		echo -e "config engine 'devcrypto'\n\toption enabled '1'\n\toption builtin '1'" >> $(1)/etc/config/openssl)
 	$(if $(CONFIG_OPENSSL_ENGINE_BUILTIN_PADLOCK),
 		$(CP) ./files/padlock.cnf $(1)/etc/ssl/modules.cnf.d/
-		echo -e "\nconfig engine 'padlock'\n\toption enabled '1'" >> $(1)/etc/config/openssl)
+		echo -e "\nconfig engine 'padlock'\n\toption enabled '1'\n\toption builtin '1'" >> $(1)/etc/config/openssl)
 endef
 
 define Package/openssl-util/install
