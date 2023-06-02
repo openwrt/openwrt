@@ -30,6 +30,13 @@ tplink,cpe610-v2|\
 tplink,tl-wa1201-v2)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
 	;;
+tplink,tl-wdr6500-v2)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	ucidef_set_led_switch "lan1" "LAN1" "green:lan1" "switch0" "0x02"
+	ucidef_set_led_switch "lan2" "LAN2" "green:lan2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x08"
+	ucidef_set_led_switch "lan4" "LAN4" "green:lan4" "switch0" "0x10"
+	;;
 alfa-network,n2q)
 	ucidef_set_led_netdev "lan2" "LAN2" "orange:lan2" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "orange:lan1" "switch0" "0x10"
