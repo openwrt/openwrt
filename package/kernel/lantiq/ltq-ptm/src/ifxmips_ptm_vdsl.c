@@ -153,7 +153,11 @@ static void ptm_setup(struct net_device *dev, int ndev)
     dev->netdev_ops      = &g_ptm_netdev_ops;
     /* Allow up to 1508 bytes, for RFC4638 */
     dev->max_mtu         = ETH_DATA_LEN + 8;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,19,0))
     netif_napi_add(dev, &g_ptm_priv_data.itf[ndev].napi, ptm_napi_poll, 16);
+#else
+    netif_napi_add_weight(dev, &g_ptm_priv_data.itf[ndev].napi, ptm_napi_poll, 16);
+#endif
     dev->watchdog_timeo  = ETH_WATCHDOG_TIMEOUT;
 
     addr[0] = 0x00;
