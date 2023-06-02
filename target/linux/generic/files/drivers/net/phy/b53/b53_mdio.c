@@ -280,7 +280,7 @@ static int b53_phy_probe(struct phy_device *phydev)
 	if (phydev->mdio.addr != B53_PSEUDO_PHY && phydev->mdio.addr != 0)
 		return -ENODEV;
 
-	dev = b53_switch_alloc(&phydev->mdio.dev, &b53_mdio_ops, phydev->mdio.bus);
+	dev = b53_swconfig_switch_alloc(&phydev->mdio.dev, &b53_mdio_ops, phydev->mdio.bus);
 	if (!dev)
 		return -ENOMEM;
 
@@ -290,7 +290,7 @@ static int b53_phy_probe(struct phy_device *phydev)
 	dev->pdata = NULL;
 	mutex_init(&dev->reg_mutex);
 
-	ret = b53_switch_detect(dev);
+	ret = b53_swconfig_switch_detect(dev);
 	if (ret)
 		return ret;
 
@@ -302,7 +302,7 @@ static int b53_phy_probe(struct phy_device *phydev)
 
 	linkmode_copy(phydev->advertising, phydev->supported);
 
-	ret = b53_switch_register(dev);
+	ret = b53_swconfig_switch_register(dev);
 	if (ret) {
 		dev_err(dev->dev, "failed to register switch: %i\n", ret);
 		return ret;
