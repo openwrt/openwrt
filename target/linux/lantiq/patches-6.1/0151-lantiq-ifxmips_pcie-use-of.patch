@@ -12,15 +12,15 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
 
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -43,7 +43,7 @@ obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o
+@@ -41,7 +41,7 @@ obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o
  obj-$(CONFIG_SOC_MT7620)	+= pci-mt7620.o
  obj-$(CONFIG_SOC_RT288X)	+= pci-rt2880.o
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
 -obj-$(CONFIG_PCIE_LANTIQ)	+= ifxmips_pcie_phy.o ifxmips_pcie.o fixup-lantiq-pcie.o
 +obj-$(CONFIG_PCIE_LANTIQ)	+= ifxmips_pcie.o fixup-lantiq-pcie.o
  obj-$(CONFIG_PCIE_LANTIQ_MSI)	+= pcie-lantiq-msi.o
- obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
- obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
+ obj-$(CONFIG_SOC_TX4927)	+= pci-tx4927.o
+ obj-$(CONFIG_SOC_TX4938)	+= pci-tx4938.o
 --- a/arch/mips/pci/ifxmips_pcie.c
 +++ b/arch/mips/pci/ifxmips_pcie.c
 @@ -16,8 +16,15 @@
