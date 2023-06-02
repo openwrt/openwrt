@@ -1,0 +1,88 @@
+From 97c07369ab8bf9895e05d4b468f18e6567263154 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Tue, 29 Nov 2022 16:12:12 +0200
+Subject: [PATCH 05/14] net: dpaa2-mac: absorb phylink_start() call into
+ dpaa2_mac_start()
+
+The phylink handling is intended to be hidden inside the dpaa2_mac
+object. Move the phylink_start() call into dpaa2_mac_start(), and
+phylink_stop() into dpaa2_mac_stop().
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Reviewed-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Tested-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c    | 5 +----
+ drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c    | 8 ++++++++
+ drivers/net/ethernet/freescale/dpaa2/dpaa2-switch.c | 5 +----
+ 3 files changed, 10 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
+@@ -2082,10 +2082,8 @@ static int dpaa2_eth_open(struct net_dev
+ 		goto enable_err;
+ 	}
+ 
+-	if (dpaa2_eth_is_type_phy(priv)) {
++	if (dpaa2_eth_is_type_phy(priv))
+ 		dpaa2_mac_start(priv->mac);
+-		phylink_start(priv->mac->phylink);
+-	}
+ 
+ 	return 0;
+ 
+@@ -2159,7 +2157,6 @@ static int dpaa2_eth_stop(struct net_dev
+ 	int retries = 10;
+ 
+ 	if (dpaa2_eth_is_type_phy(priv)) {
+-		phylink_stop(priv->mac->phylink);
+ 		dpaa2_mac_stop(priv->mac);
+ 	} else {
+ 		netif_tx_stop_all_queues(net_dev);
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
+@@ -336,12 +336,20 @@ static void dpaa2_mac_set_supported_inte
+ 
+ void dpaa2_mac_start(struct dpaa2_mac *mac)
+ {
++	ASSERT_RTNL();
++
+ 	if (mac->serdes_phy)
+ 		phy_power_on(mac->serdes_phy);
++
++	phylink_start(mac->phylink);
+ }
+ 
+ void dpaa2_mac_stop(struct dpaa2_mac *mac)
+ {
++	ASSERT_RTNL();
++
++	phylink_stop(mac->phylink);
++
+ 	if (mac->serdes_phy)
+ 		phy_power_off(mac->serdes_phy);
+ }
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch.c
+@@ -703,10 +703,8 @@ static int dpaa2_switch_port_open(struct
+ 
+ 	dpaa2_switch_enable_ctrl_if_napi(ethsw);
+ 
+-	if (dpaa2_switch_port_is_type_phy(port_priv)) {
++	if (dpaa2_switch_port_is_type_phy(port_priv))
+ 		dpaa2_mac_start(port_priv->mac);
+-		phylink_start(port_priv->mac->phylink);
+-	}
+ 
+ 	return 0;
+ }
+@@ -718,7 +716,6 @@ static int dpaa2_switch_port_stop(struct
+ 	int err;
+ 
+ 	if (dpaa2_switch_port_is_type_phy(port_priv)) {
+-		phylink_stop(port_priv->mac->phylink);
+ 		dpaa2_mac_stop(port_priv->mac);
+ 	} else {
+ 		netif_tx_stop_all_queues(netdev);
