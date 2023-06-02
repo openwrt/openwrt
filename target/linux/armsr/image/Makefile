@@ -73,7 +73,7 @@ define Build/grub-install
 	$(INSTALL_DIR) $@.grub2
 endef
 
-DEVICE_VARS += GRUB2_VARIANT
+DEVICE_VARS += GRUB2_VARIANT UBOOT
 define Device/efi-default
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
   IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
@@ -105,6 +105,7 @@ define Device/generic
   DEVICE_TITLE := Generic EFI Boot
   GRUB2_VARIANT := generic
   FILESYSTEMS := ext4 squashfs
+  UBOOT := $(if $(CONFIG_aarch64),qemu_armv8,qemu_armv7)
   DEVICE_PACKAGES += kmod-amazon-ena kmod-e1000e kmod-vmxnet3 kmod-rtc-rx8025 \
 	kmod-i2c-mux-pca954x kmod-gpio-pca953x partx-utils kmod-wdt-sp805 \
 	kmod-mvneta kmod-mvpp2 kmod-fsl-dpaa1-net kmod-fsl-dpaa2-net \
