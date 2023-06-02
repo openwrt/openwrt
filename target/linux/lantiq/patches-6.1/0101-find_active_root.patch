@@ -69,7 +69,7 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
  		return -ENOMEM;
  
  	i = 0;
-@@ -147,6 +183,11 @@ static int parse_fixed_partitions(struct
+@@ -166,6 +202,11 @@ static int parse_fixed_partitions(struct
  		if (of_property_read_bool(pp, "slc-mode"))
  			parts[i].add_flags |= MTD_SLC_ON_MLC_EMULATION;
  
@@ -81,7 +81,7 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
  		i++;
  	}
  
-@@ -156,6 +197,11 @@ static int parse_fixed_partitions(struct
+@@ -175,6 +216,11 @@ static int parse_fixed_partitions(struct
  	if (quirks && quirks->post_parse)
  		quirks->post_parse(master, parts, nr_parts);
  
@@ -93,7 +93,7 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
  	*pparts = parts;
  	return nr_parts;
  
-@@ -166,6 +212,7 @@ ofpart_fail:
+@@ -185,6 +231,7 @@ ofpart_fail:
  ofpart_none:
  	of_node_put(pp);
  	kfree(parts);

@@ -23,7 +23,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/usb/dwc2/params.c
 +++ b/drivers/usb/dwc2/params.c
-@@ -93,7 +93,14 @@ static void dwc2_set_rk_params(struct dw
+@@ -115,7 +115,15 @@ static void dwc2_set_rk_params(struct dw
  	p->power_down = DWC2_POWER_DOWN_PARAM_NONE;
  }
  
@@ -32,14 +32,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +{
 +	struct dwc2_core_params *p = &hsotg->params;
 +
-+	p->otg_cap = DWC2_CAP_PARAM_NO_HNP_SRP_CAPABLE;
++	p->otg_caps.hnp_support = false;
++	p->otg_caps.srp_support = false;
 +}
 +
 +static void dwc2_set_ltq_ase_params(struct dwc2_hsotg *hsotg)
  {
  	struct dwc2_core_params *p = &hsotg->params;
  
-@@ -101,12 +108,20 @@ static void dwc2_set_ltq_params(struct d
+@@ -124,12 +132,21 @@ static void dwc2_set_ltq_params(struct d
  	p->host_rx_fifo_size = 288;
  	p->host_nperio_tx_fifo_size = 128;
  	p->host_perio_tx_fifo_size = 96;
@@ -53,7 +54,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +{
 +	struct dwc2_core_params *p = &hsotg->params;
 +
-+	p->otg_cap = DWC2_CAP_PARAM_NO_HNP_SRP_CAPABLE;
++	p->otg_caps.hnp_support = false;
++	p->otg_caps.srp_support = false;
 +	p->host_rx_fifo_size = 288;
 +	p->host_nperio_tx_fifo_size = 128;
 +	p->host_perio_tx_fifo_size = 136;
@@ -62,9 +64,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static void dwc2_set_amlogic_params(struct dwc2_hsotg *hsotg)
  {
  	struct dwc2_core_params *p = &hsotg->params;
-@@ -205,8 +220,11 @@ const struct of_device_id dwc2_of_match_
- 	{ .compatible = "brcm,bcm2835-usb", .data = dwc2_set_bcm_params },
- 	{ .compatible = "hisilicon,hi6220-usb", .data = dwc2_set_his_params  },
+@@ -241,8 +258,11 @@ const struct of_device_id dwc2_of_match_
+ 	{ .compatible = "ingenic,x1830-otg", .data = dwc2_set_x1600_params },
+ 	{ .compatible = "ingenic,x2000-otg", .data = dwc2_set_x2000_params },
  	{ .compatible = "rockchip,rk3066-usb", .data = dwc2_set_rk_params },
 -	{ .compatible = "lantiq,arx100-usb", .data = dwc2_set_ltq_params },
 -	{ .compatible = "lantiq,xrx200-usb", .data = dwc2_set_ltq_params },
