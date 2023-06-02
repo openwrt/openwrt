@@ -48,7 +48,7 @@ images in EFI mode:
 gunzip -c bin/targets/armvirt/32/openwrt-armvirt-32-generic-ext4-combined.img.gz > openwrt-arm-32.img
 qemu-system-arm -nographic \
     -cpu cortex-a15 -machine virt \
-    -bios QEMU_EFI_32.fd \
+    -bios bin/targets/armvirt/32/u-boot-armvirt/u-boot.bin \
     -smp 1 -m 1024 \
     -device virtio-rng-pci \
     -drive file=openwrt-arm-32.img,format=raw,index=0,media=disk \
@@ -59,14 +59,13 @@ qemu-system-arm -nographic \
 gunzip -c bin/targets/armvirt/64/openwrt-armvirt-64-generic-ext4-combined.img.gz > openwrt-arm-64.img
 qemu-system-aarch64 -nographic \
     -cpu cortex-a53 -machine virt \
-    -bios QEMU_EFI_64.fd \
+    -bios bin/targets/armvirt/64/u-boot-armvirt64/u-boot.bin \
     -smp 1 -m 1024 \
     -device virtio-rng-pci \
     -drive file=openwrt-arm-64.img,format=raw,index=0,media=disk \
     -netdev user,id=testlan -net nic,netdev=testlan \
     -netdev user,id=testwan -net nic,netdev=testwan
 
-One can find EFI/BIOS binaries from:
-- Compile mainline U-Boot for the QEMU ARM virtual machine (qemu_arm_defconfig/qemu_arm64_defconfig)
-- From distribution packages (such as qemu-efi-arm and qemu-efi-aarch64 in Debian)
+One can obtain other EFI/BIOS binaries from:
+- Distribution packages (such as qemu-efi-arm and qemu-efi-aarch64 in Debian)
 - Community builds, like retrage/edk2-nightly: https://retrage.github.io/edk2-nightly/

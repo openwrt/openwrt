@@ -1,0 +1,62 @@
+From: Simon Glass <sjg@chromium.org>
+To: U-Boot Mailing List <u-boot@lists.denx.de>
+Subject: [PATCH v10 7/9] bootstd: Use blk uclass device numbers to set efi
+ bootdev
+Date: Mon, 24 Apr 2023 13:49:50 +1200
+Message-ID: 
+ <20230424134946.v10.7.Ia5f5e39c882ac22b5f71c4d576941b34e868eeba@changeid>
+
+From: Mathew McBride <matt@traverse.com.au>
+
+When loading a file from a block device, efiload_read_file
+was using the seq_num of the device (e.g "35" of virtio_blk#35)
+instead of the block device id (e.g what you get from running
+the corresponding device scan command, like "virtio 0")
+
+This cause EFI booting from these devices to fail as an
+invalid device number is passed to blk_get_device_part_str:
+
+  Scanning bootdev 'virtio-blk#35.bootdev':
+  distro_efi_read_bootflow_file start (efi,fname=<NULL>)
+  distro_efi_read_bootflow_file start (efi,fname=<NULL>)
+  setting bootdev virtio, 35, efi/boot/bootaa64.efi, 00000000beef9a40, 170800
+  efi_dp_from_name calling blk_get_device_part_str
+  dev=virtio devnr=35 path=efi/boot/bootaa64.efi
+  blk_get_device_part_str (virtio,35)
+  blk_get_device_by_str (virtio, 35)
+  ** Bad device specification virtio 35 **
+  Using default device tree: dtb/qemu-arm.dtb
+  No device tree available
+  0  efi          ready   virtio       1  virtio-blk#35.bootdev.par efi/boot/bootaa64.efi
+  ** Booting bootflow 'virtio-blk#35.bootdev.part_1' with efi
+  blk_get_device_part_str (virtio,0:1)
+  blk_get_device_by_str (virtio, 0)
+  No UEFI binary known at beef9a40 (image buf=00000000beef9a40,addr=0000000000000000)
+  Boot failed (err=-22)
+
+Signed-off-by: Mathew McBride <matt@traverse.com.au>
+Signed-off-by: Simon Glass <sjg@chromium.org>
+Signed-off-by: Petr Štetiar <ynezz@true.cz> [backport to 2023.04]
+---
+
+(no changes since v8)
+
+Changes in v8:
+- Add new patch to use blk uclass device numbers to set efi bootdev
+
+ boot/bootmeth_efi.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/boot/bootmeth_efi.c
++++ b/boot/bootmeth_efi.c
+@@ -117,7 +117,9 @@ static int efiload_read_file(struct blk_
+ 	 * this can go away.
+ 	 */
+ 	media_dev = dev_get_parent(bflow->dev);
+-	snprintf(devnum_str, sizeof(devnum_str), "%x", dev_seq(media_dev));
++	snprintf(devnum_str, sizeof(devnum_str), "%x:%x",
++		 desc ? desc->devnum : dev_seq(media_dev),
++		 bflow->part);
+ 
+ 	strlcpy(dirname, bflow->fname, sizeof(dirname));
+ 	last_slash = strrchr(dirname, '/');
