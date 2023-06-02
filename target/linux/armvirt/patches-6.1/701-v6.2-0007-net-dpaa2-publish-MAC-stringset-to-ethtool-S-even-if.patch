@@ -1,0 +1,111 @@
+From ce44b6ed9ee65efa9b3025552c513842eabcab88 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Tue, 29 Nov 2022 16:12:16 +0200
+Subject: [PATCH 09/14] net: dpaa2: publish MAC stringset to ethtool -S even if
+ MAC is missing
+
+DPNIs and DPSW objects can connect and disconnect at runtime from DPMAC
+objects on the same fsl-mc bus. The DPMAC object also holds "ethtool -S"
+unstructured counters. Those counters are only shown for the entity
+owning the netdev (DPNI, DPSW) if it's connected to a DPMAC.
+
+The ethtool stringset code path is split into multiple callbacks, but
+currently, connecting and disconnecting the DPMAC takes the rtnl_lock().
+This blocks the entire ethtool code path from running, see
+ethnl_default_doit() -> rtnl_lock() -> ops->prepare_data() ->
+strset_prepare_data().
+
+This is going to be a problem if we are going to no longer require
+rtnl_lock() when connecting/disconnecting the DPMAC, because the DPMAC
+could appear between ops->get_sset_count() and ops->get_strings().
+If it appears out of the blue, we will provide a stringset into an array
+that was dimensioned thinking the DPMAC wouldn't be there => array
+accessed out of bounds.
+
+There isn't really a good way to work around that, and I don't want to
+put too much pressure on the ethtool framework by playing locking games.
+Just make the DPMAC counters be always available. They'll be zeroes if
+the DPNI or DPSW isn't connected to a DPMAC.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Reviewed-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Tested-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/freescale/dpaa2/dpaa2-ethtool.c | 12 +++---------
+ .../ethernet/freescale/dpaa2/dpaa2-switch-ethtool.c  | 11 ++---------
+ 2 files changed, 5 insertions(+), 18 deletions(-)
+
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-ethtool.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-ethtool.c
+@@ -186,7 +186,6 @@ static int dpaa2_eth_set_pauseparam(stru
+ static void dpaa2_eth_get_strings(struct net_device *netdev, u32 stringset,
+ 				  u8 *data)
+ {
+-	struct dpaa2_eth_priv *priv = netdev_priv(netdev);
+ 	u8 *p = data;
+ 	int i;
+ 
+@@ -200,22 +199,17 @@ static void dpaa2_eth_get_strings(struct
+ 			strscpy(p, dpaa2_ethtool_extras[i], ETH_GSTRING_LEN);
+ 			p += ETH_GSTRING_LEN;
+ 		}
+-		if (dpaa2_eth_has_mac(priv))
+-			dpaa2_mac_get_strings(p);
++		dpaa2_mac_get_strings(p);
+ 		break;
+ 	}
+ }
+ 
+ static int dpaa2_eth_get_sset_count(struct net_device *net_dev, int sset)
+ {
+-	int num_ss_stats = DPAA2_ETH_NUM_STATS + DPAA2_ETH_NUM_EXTRA_STATS;
+-	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
+-
+ 	switch (sset) {
+ 	case ETH_SS_STATS: /* ethtool_get_stats(), ethtool_get_drvinfo() */
+-		if (dpaa2_eth_has_mac(priv))
+-			num_ss_stats += dpaa2_mac_get_sset_count();
+-		return num_ss_stats;
++		return DPAA2_ETH_NUM_STATS + DPAA2_ETH_NUM_EXTRA_STATS +
++		       dpaa2_mac_get_sset_count();
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch-ethtool.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch-ethtool.c
+@@ -145,14 +145,9 @@ dpaa2_switch_set_link_ksettings(struct n
+ static int
+ dpaa2_switch_ethtool_get_sset_count(struct net_device *netdev, int sset)
+ {
+-	struct ethsw_port_priv *port_priv = netdev_priv(netdev);
+-	int num_ss_stats = DPAA2_SWITCH_NUM_COUNTERS;
+-
+ 	switch (sset) {
+ 	case ETH_SS_STATS:
+-		if (port_priv->mac)
+-			num_ss_stats += dpaa2_mac_get_sset_count();
+-		return num_ss_stats;
++		return DPAA2_SWITCH_NUM_COUNTERS + dpaa2_mac_get_sset_count();
+ 	default:
+ 		return -EOPNOTSUPP;
+ 	}
+@@ -161,7 +156,6 @@ dpaa2_switch_ethtool_get_sset_count(stru
+ static void dpaa2_switch_ethtool_get_strings(struct net_device *netdev,
+ 					     u32 stringset, u8 *data)
+ {
+-	struct ethsw_port_priv *port_priv = netdev_priv(netdev);
+ 	u8 *p = data;
+ 	int i;
+ 
+@@ -172,8 +166,7 @@ static void dpaa2_switch_ethtool_get_str
+ 			       ETH_GSTRING_LEN);
+ 			p += ETH_GSTRING_LEN;
+ 		}
+-		if (port_priv->mac)
+-			dpaa2_mac_get_strings(p);
++		dpaa2_mac_get_strings(p);
+ 		break;
+ 	}
+ }
