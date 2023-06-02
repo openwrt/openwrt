@@ -237,6 +237,7 @@ TARGET_DEVICES += arcadyan_we420223-99
 
 define Device/asiarf_ap7621-001
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-001
@@ -247,6 +248,7 @@ TARGET_DEVICES += asiarf_ap7621-001
 
 define Device/asiarf_ap7621-nv1
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-NV1
