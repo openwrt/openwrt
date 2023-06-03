@@ -36,7 +36,7 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  static DEFINE_MUTEX(transaction_lock);
  
  static void response_callback(struct mbox_client *cl, void *msg)
-@@ -273,6 +275,7 @@ static int rpi_firmware_probe(struct pla
+@@ -280,6 +282,7 @@ static int rpi_firmware_probe(struct pla
  	kref_init(&fw->consumers);
  
  	platform_set_drvdata(pdev, fw);
@@ -44,7 +44,7 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  
  	rpi_firmware_print_firmware_revision(fw);
  	rpi_register_hwmon_driver(dev, fw);
-@@ -302,6 +305,8 @@ static int rpi_firmware_remove(struct pl
+@@ -309,6 +312,8 @@ static int rpi_firmware_remove(struct pl
  
  	rpi_firmware_put(fw);
  
@@ -53,7 +53,7 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  	return 0;
  }
  
-@@ -315,7 +320,7 @@ static int rpi_firmware_remove(struct pl
+@@ -322,7 +327,7 @@ static int rpi_firmware_remove(struct pl
   */
  struct rpi_firmware *rpi_firmware_get(struct device_node *firmware_node)
  {
@@ -62,7 +62,7 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  	struct rpi_firmware *fw;
  
  	if (!pdev)
-@@ -328,12 +333,9 @@ struct rpi_firmware *rpi_firmware_get(st
+@@ -335,12 +340,9 @@ struct rpi_firmware *rpi_firmware_get(st
  	if (!kref_get_unless_zero(&fw->consumers))
  		goto err_put_device;
  
@@ -75,7 +75,7 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  	return NULL;
  }
  EXPORT_SYMBOL_GPL(rpi_firmware_get);
-@@ -353,7 +355,18 @@ static struct platform_driver rpi_firmwa
+@@ -382,7 +384,18 @@ static struct platform_driver rpi_firmwa
  	.shutdown	= rpi_firmware_shutdown,
  	.remove		= rpi_firmware_remove,
  };

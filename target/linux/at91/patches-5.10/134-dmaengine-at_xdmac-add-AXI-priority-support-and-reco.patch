@@ -55,7 +55,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  };
  
  /* ----- Channels ----- */
-@@ -268,6 +287,7 @@ static const struct at_xdmac_layout at_x
+@@ -269,6 +288,7 @@ static const struct at_xdmac_layout at_x
  	.gswf = 0x40,
  	.chan_cc_reg_base = 0x50,
  	.sdif = true,
@@ -63,7 +63,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  };
  
  static const struct at_xdmac_layout at_xdmac_sama7g5_layout = {
-@@ -280,6 +300,7 @@ static const struct at_xdmac_layout at_x
+@@ -281,6 +301,7 @@ static const struct at_xdmac_layout at_x
  	.gswf = 0x50,
  	.chan_cc_reg_base = 0x60,
  	.sdif = false,
@@ -71,7 +71,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  };
  
  static inline void __iomem *at_xdmac_chan_reg_base(struct at_xdmac *atxdmac, unsigned int chan_nb)
-@@ -2003,6 +2024,30 @@ static int atmel_xdmac_resume(struct dev
+@@ -2006,6 +2027,30 @@ static int atmel_xdmac_resume(struct dev
  }
  #endif /* CONFIG_PM_SLEEP */
  
@@ -102,7 +102,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  static int at_xdmac_probe(struct platform_device *pdev)
  {
  	struct at_xdmac	*atxdmac;
-@@ -2147,6 +2192,8 @@ static int at_xdmac_probe(struct platfor
+@@ -2150,6 +2195,8 @@ static int at_xdmac_probe(struct platfor
  	dev_info(&pdev->dev, "%d channels, mapped at 0x%p\n",
  		 nr_channels, atxdmac->regs);
  
