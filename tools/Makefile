@@ -155,11 +155,25 @@ else
   tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_DWARVES),y) += dwarves
 endif
 
+# CMake and its dependencies cannot depend on Ccache, or it is circular.
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
-$(foreach tool, $(filter-out zstd zlib xz pkgconf patch ninja meson libressl expat cmake,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
-tools-y += ccache xxhash
-$(curdir)/xxhash/compile := $(curdir)/cmake/compile
-$(curdir)/ccache/compile := $(curdir)/xxhash/compile
+  tools-noccache :=
+  tools-noccache += cmake
+  tools-noccache += expat
+  tools-noccache += libressl
+  tools-noccache += meson
+  tools-noccache += ninja
+  tools-noccache += patch
+  tools-noccache += pkgconf
+  tools-noccache += xz
+  tools-noccache += zlib
+  tools-noccache += zstd
+
+  $(foreach tool, $(filter-out $(tools-noccache),$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
+  tools-y += ccache
+  tools-y += xxhash
+  $(curdir)/xxhash/compile := $(curdir)/cmake/compile
+  $(curdir)/ccache/compile := $(curdir)/xxhash/compile
 endif
 
 # in case there is no patch tool on the host we need to make patch tool a
