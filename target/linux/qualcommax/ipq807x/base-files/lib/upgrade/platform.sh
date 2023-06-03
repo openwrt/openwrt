@@ -110,6 +110,11 @@ platform_do_upgrade() {
 		fw_setenv upgrade_available 1
 		nand_do_upgrade "$1"
 		;;
+	zte,mf269)
+		CI_KERN_UBIPART="ubi_kernel"
+		CI_ROOT_UBIPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
 	zyxel,nbg7815)
 		local config_mtdnum="$(find_mtd_index 0:bootconfig)"
 		[ -z "$config_mtdnum" ] && reboot

@@ -271,6 +271,20 @@ define Device/yuncore_ax880
 endef
 TARGET_DEVICES += yuncore_ax880
 
+define Device/zte_mf269
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := ZTE
+	DEVICE_MODEL := MF269
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@ac04
+	SOC := ipq8071
+	KERNEL_SIZE := 53248k
+	DEVICE_PACKAGES := ipq-wifi-zte_mf269
+endef
+TARGET_DEVICES += zte_mf269
+
 define Device/zyxel_nbg7815
 	$(call Device/FitImage)
 	$(call Device/EmmcImage)
