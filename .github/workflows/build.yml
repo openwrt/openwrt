@@ -459,6 +459,27 @@ jobs:
         working-directory: openwrt
         run: make -j$(nproc) BUILD_LOG=1 || ret=$? .github/workflows/scripts/show_build_failures.sh
 
+      - name: Check packages
+        if: inputs.build_all_modules == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: make package/check FIXUP=1 -j$(nproc)
+
+      - name: Validate checked packages
+        if: inputs.build_all_modules == true
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          . .github/workflows/scripts/ci_helpers.sh
+
+          if git diff --name-only --exit-code; then
+            success "All packages seems ok"
+          else
+            err "Some package Makefiles have problems. (run 'make package/check FIXUP=1' and force push this pr)"
+            git diff --name-only
+            exit 1
+          fi
+
       - name: Build external toolchain
         if: inputs.build_external_toolchain == true
         shell: su buildbot -c "sh -e {0}"
