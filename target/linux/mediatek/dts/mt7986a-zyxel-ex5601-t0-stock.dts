@@ -246,7 +246,11 @@
 	};
 };
 
-&wmac {
+&watchdog {
+	status = "okay";
+};
+
+&wifi {
 	status = "okay";
 	pinctrl-names = "default", "dbdc";
 	pinctrl-0 = <&wf_2g_5g_pins>;
@@ -518,6 +522,10 @@
 &ssusb {
 	vusb33-supply = <&reg_3p3v>;
 	vbus-supply = <&reg_5v>;
+	status = "okay";
+};
+
+&trng {
 	status = "okay";
 };
 
