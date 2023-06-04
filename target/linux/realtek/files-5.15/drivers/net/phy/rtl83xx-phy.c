@@ -12,15 +12,13 @@
 #include <linux/firmware.h>
 #include <linux/crc32.h>
 #include <linux/sfp.h>
+#include <linux/mii.h>
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl83xx-phy.h"
 
 extern struct rtl83xx_soc_info soc_info;
 extern struct mutex smi_lock;
-
-#define PHY_CTRL_REG	0
-#define PHY_POWER_BIT	11
 
 #define PHY_PAGE_2	2
 #define PHY_PAGE_4	4
@@ -124,23 +122,23 @@ static int resume_polling(u64 saved_state)
 
 static void rtl8380_int_phy_on_off(struct phy_device *phydev, bool on)
 {
-	phy_modify(phydev, 0, BIT(11), on?0:BIT(11));
+	phy_modify(phydev, 0, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
 }
 
 static void rtl8380_rtl8214fc_on_off(struct phy_device *phydev, bool on)
 {
 	/* fiber ports */
 	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
-	phy_modify(phydev, 0x10, BIT(11), on?0:BIT(11));
+	phy_modify(phydev, 0x10, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
 
 	/* copper ports */
 	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
-	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BIT(11), on?0:BIT(11));
+	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
 }
 
 static void rtl8380_phy_reset(struct phy_device *phydev)
 {
-	phy_modify(phydev, 0, BIT(15), BIT(15));
+	phy_modify(phydev, 0, BMCR_RESET, BMCR_RESET);
 }
 
 /* The access registers for SDS_MODE_SEL and the LSB for each SDS within */
@@ -748,8 +746,8 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 	// 	int ipd_flag = 1;
 	// }
 
-	val = phy_read(phydev, 0);
-	if (val & BIT(11))
+	val = phy_read(phydev, MII_BMCR);
+	if (val & BMCR_PDOWN)
 		rtl8380_int_phy_on_off(phydev, true);
 	else
 		rtl8380_phy_reset(phydev);
@@ -839,8 +837,8 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	rtl8218B_6276B_rtl8380_perport = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
 	rtl8380_rtl8218b_perport = (void *)h + sizeof(struct fw_header) + h->parts[2].start;
 
-	val = phy_read(phydev, 0);
-	if (val & (1 << 11))
+	val = phy_read(phydev, MII_BMCR);
+	if (val & BMCR_PDOWN)
 		rtl8380_int_phy_on_off(phydev, true);
 	else
 		rtl8380_phy_reset(phydev);
@@ -939,7 +937,7 @@ static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
 	val = phy_package_read_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4]);
 	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
-	if (val & BIT(11))
+	if (val & BMCR_PDOWN)
 		return false;
 
 	return true;
@@ -958,9 +956,9 @@ static void rtl8214fc_power_set(struct phy_device *phydev, int port, bool on)
 	}
 
 	if (on) {
-		phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BIT(11), 0);
+		phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, 0);
 	} else {
-		phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, 0, BIT(11));
+		phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, 0, BMCR_PDOWN);
 	}
 
 	phy_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
@@ -1000,9 +998,9 @@ static void rtl8214fc_media_set(struct phy_device *phydev, bool set_fibre)
 
 	val |= BIT(10);
 	if (set_fibre) {
-		val &= ~BIT(11);
+		val &= ~BMCR_PDOWN;
 	} else {
-		val |= BIT(11);
+		val |= BMCR_PDOWN;
 	}
 
 	phy_package_write_paged(phydev, RTL83XX_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
@@ -1057,8 +1055,8 @@ void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 	/* Set GPHY page to copper */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
-	val = phy_read(phydev, 0);
-	an_enabled = val & BIT(12);
+	val = phy_read(phydev, MII_BMCR);
+	an_enabled = val & BMCR_ANENABLE;
 
 	/* Enable 100M (bit 1) / 1000M (bit 2) EEE */
 	val = phy_read_mmd(phydev, 7, 60);
@@ -1075,9 +1073,9 @@ void rtl8218d_eee_set(struct phy_device *phydev, bool enable)
 
 	/* Restart AN if enabled */
 	if (an_enabled) {
-		val = phy_read(phydev, 0);
-		val |= BIT(9);
-		phy_write(phydev, 0, val);
+		val = phy_read(phydev, MII_BMCR);
+		val |= BMCR_ANRESTART;
+		phy_write(phydev, MII_BMCR, val);
 	}
 
 	/* GPHY page back to auto */
@@ -1155,8 +1153,8 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 
 	/* Get auto-negotiation status */
-	val = phy_read(phydev, 0);
-	an_enabled = val & BIT(12);
+	val = phy_read(phydev, MII_BMCR);
+	an_enabled = val & BMCR_ANENABLE;
 
 	pr_info("%s: aneg: %d\n", __func__, an_enabled);
 	val = phy_read_paged(phydev, RTL821X_PAGE_MAC, 25);
@@ -1178,9 +1176,9 @@ static int rtl8214fc_set_eee(struct phy_device *phydev,
 	/* Restart AN if enabled */
 	if (an_enabled) {
 		pr_info("%s: doing aneg\n", __func__);
-		val = phy_read(phydev, 0);
-		val |= BIT(9);
-		phy_write(phydev, 0, val);
+		val = phy_read(phydev, MII_BMCR);
+		val |= BMCR_ANRESTART;
+		phy_write(phydev, MII_BMCR, val);
 	}
 
 	/* GPHY page back to auto */
@@ -1218,8 +1216,8 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 
 	/* Set GPHY page to copper */
 	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
-	val = phy_read(phydev, 0);
-	an_enabled = val & BIT(12);
+	val = phy_read(phydev, MII_BMCR);
+	an_enabled = val & BMCR_ANENABLE;
 
 	if (e->eee_enabled) {
 		/* 100/1000M EEE Capability */
@@ -1245,9 +1243,9 @@ static int rtl8218b_set_eee(struct phy_device *phydev, struct ethtool_eee *e)
 
 	/* Restart AN if enabled */
 	if (an_enabled) {
-		val = phy_read(phydev, 0);
-		val |= BIT(9);
-		phy_write(phydev, 0, val);
+		val = phy_read(phydev, MII_BMCR);
+		val |= BMCR_ANRESTART;
+		phy_write(phydev, MII_BMCR, val);
 	}
 
 	/* GPHY page back to auto */
@@ -1342,7 +1340,7 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	val = phy_read_paged(phydev, RTL83XX_PAGE_RAW, 28);
 
 	val = phy_read(phydev, 16);
-	if (val & (1 << 11))
+	if (val & BMCR_PDOWN)
 		rtl8380_rtl8214fc_on_off(phydev, true);
 	else
 		rtl8380_phy_reset(phydev);
@@ -2750,17 +2748,17 @@ void rtl9300_phy_enable_10g_1g(int sds_num)
 	u32 v;
 
 	/* Enable 1GBit PHY */
-	v = rtl930x_read_sds_phy(sds_num, PHY_PAGE_2, PHY_CTRL_REG);
+	v = rtl930x_read_sds_phy(sds_num, PHY_PAGE_2, MII_BMCR);
 	pr_info("%s 1gbit phy: %08x\n", __func__, v);
-	v &= ~BIT(PHY_POWER_BIT);
-	rtl930x_write_sds_phy(sds_num, PHY_PAGE_2, PHY_CTRL_REG, v);
+	v &= ~BMCR_PDOWN;
+	rtl930x_write_sds_phy(sds_num, PHY_PAGE_2, MII_BMCR, v);
 	pr_info("%s 1gbit phy enabled: %08x\n", __func__, v);
 
 	/* Enable 10GBit PHY */
-	v = rtl930x_read_sds_phy(sds_num, PHY_PAGE_4, PHY_CTRL_REG);
+	v = rtl930x_read_sds_phy(sds_num, PHY_PAGE_4, MII_BMCR);
 	pr_info("%s 10gbit phy: %08x\n", __func__, v);
-	v &= ~BIT(PHY_POWER_BIT);
-	rtl930x_write_sds_phy(sds_num, PHY_PAGE_4, PHY_CTRL_REG, v);
+	v &= ~BMCR_PDOWN;
+	rtl930x_write_sds_phy(sds_num, PHY_PAGE_4, MII_BMCR, v);
 	pr_info("%s 10gbit phy after: %08x\n", __func__, v);
 
 	/* dal_longan_construct_mac_default_10gmedia_fiber */
