@@ -221,9 +221,9 @@ int rtl839x_read_sds_phy(int phy_addr, int phy_reg)
 	 * which would otherwise read as 0.
 	 */
 	if (soc_info.id == 0x8393) {
-		if (phy_reg == 2)
+		if (phy_reg == MII_PHYSID1)
 			return 0x1c;
-		if (phy_reg == 3)
+		if (phy_reg == MII_PHYSID2)
 			return 0x8393;
 	}
 
@@ -495,10 +495,10 @@ static int rtl8226_advertise_aneg(struct phy_device *phydev)
 	if (v < 0)
 		goto out;
 
-	v |= BIT(5); /* HD 10M */
-	v |= BIT(6); /* FD 10M */
-	v |= BIT(7); /* HD 100M */
-	v |= BIT(8); /* FD 100M */
+	v |= ADVERTISE_10HALF;
+	v |= ADVERTISE_10FULL;
+	v |= ADVERTISE_100HALF;
+	v |= ADVERTISE_100FULL;
 
 	ret = phy_write_mmd(phydev, MMD_AN, 16, v);
 
@@ -506,7 +506,7 @@ static int rtl8226_advertise_aneg(struct phy_device *phydev)
 	v = phy_read_mmd(phydev, MMD_VEND2, 0xA412);
 	if (v < 0)
 		goto out;
-	v |= BIT(9); /* FD 1000M */
+	v |= ADVERTISE_1000FULL;
 
 	ret = phy_write_mmd(phydev, MMD_VEND2, 0xA412, v);
 	if (ret < 0)
