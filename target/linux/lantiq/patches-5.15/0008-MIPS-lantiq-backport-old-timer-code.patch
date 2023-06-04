@@ -981,7 +981,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +int __init lq_gptu_init(void)
 +{
 +	int ret;
-+	unsigned int i;
++	int i;
 +
 +	ltq_w32(0, LQ_GPTU_IRNEN);
 +	ltq_w32(0xfff, LQ_GPTU_IRNCR);
@@ -1007,10 +1007,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	for (i = 0; i < timer_dev.number_of_timers; i++) {
 +		ret = request_irq(TIMER_INTERRUPT + i, timer_irq_handler, IRQF_TIMER, gptu_miscdev.name, &timer_dev.timer[i]);
 +		if (ret) {
-+			for (; i >= 0; i--)
++			printk(KERN_ERR "gptu: failed in requesting irq (%d), get error %d\n", i, -ret);
++			for (i--; i >= 0; i--)
 +				free_irq(TIMER_INTERRUPT + i, &timer_dev.timer[i]);
 +			misc_deregister(&gptu_miscdev);
-+			printk(KERN_ERR "gptu: failed in requesting irq (%d), get error %d\n", i, -ret);
 +			return ret;
 +		} else {
 +			timer_dev.timer[i].irq = TIMER_INTERRUPT + i;
