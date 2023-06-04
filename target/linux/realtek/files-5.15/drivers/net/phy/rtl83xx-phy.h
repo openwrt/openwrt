@@ -35,10 +35,6 @@ struct __attribute__ ((__packed__)) fw_header {
 #define PHY_ID_RTL8393_I	0x001c8393
 #define PHY_ID_RTL9300_I	0x70d03106
 
-/* PHY MMD devices */
-#define MMD_AN		7
-#define MMD_VEND2	31
-
 /* Registers of the internal Serdes of the 8380 */
 #define RTL838X_SDS_MODE_SEL			(0x0028)
 #define RTL838X_SDS_CFG_REG			(0x0034)
