@@ -50,7 +50,7 @@ Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
  			phylink_set(pl->supported, 10baseT_Full);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -138,6 +138,7 @@ typedef enum {
+@@ -139,6 +139,7 @@ typedef enum {
  	PHY_INTERFACE_MODE_XGMII,
  	PHY_INTERFACE_MODE_XLGMII,
  	PHY_INTERFACE_MODE_MOCA,
@@ -58,7 +58,7 @@ Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
  	PHY_INTERFACE_MODE_QSGMII,
  	PHY_INTERFACE_MODE_TRGMII,
  	PHY_INTERFACE_MODE_100BASEX,
-@@ -243,6 +244,8 @@ static inline const char *phy_modes(phy_
+@@ -244,6 +245,8 @@ static inline const char *phy_modes(phy_
  		return "xlgmii";
  	case PHY_INTERFACE_MODE_MOCA:
  		return "moca";
