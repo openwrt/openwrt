@@ -25,6 +25,9 @@ ipq807x_setup_interfaces()
 	netgear,wax218)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
+	prpl,haze)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	qnap,301w)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g-2" "10g-1"
 		;;
