@@ -37,6 +37,9 @@ bananapi,bpi-r3)
 		;;
 	esac
 	;;
+glinet,gl-mt3000)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
+	;;
 netgear,wax220)
 	ubootenv_add_uci_config "/dev/mtd5" "0x0" "0x20000" "0x20000"
 	;;
