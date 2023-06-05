@@ -5,7 +5,7 @@ PKG_NAME:=ipq-wifi
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=https://github.com/ynezz/openwrt-firmware_qca-wireless
+PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
 PKG_SOURCE_DATE:=2023-05-30
 PKG_SOURCE_VERSION:=47d5229a458d7ef00cab9c14cd541f12a6497065
 PKG_MIRROR_HASH:=658213040f6d628349b4fe6398fbc8eb1a8bb76c904fe32984564537a931e2c4
