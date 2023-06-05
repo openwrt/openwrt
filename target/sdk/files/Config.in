@@ -119,6 +119,13 @@ menu "Advanced configuration options (for developers)"
 		help
 		  Compiler cache; see https://ccache.samba.org/
 
+	config CCACHE_DIR
+		string "Set ccache directory" if CCACHE
+		default ""
+		help
+		  Store ccache in this directory.
+		  If not set, uses './.ccache'
+
 	config BUILD_LOG
 		bool "Enable log files during build process"
 		help
