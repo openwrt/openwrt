@@ -41,7 +41,7 @@ endef
 
 Package/grub2=$(call Package/grub2/Default,x86,pc)
 Package/grub2-efi=$(call Package/grub2/Default,x86,efi)
-Package/grub2-efi-arm=$(call Package/grub2/Default,armvirt,efi)
+Package/grub2-efi-arm=$(call Package/grub2/Default,armsr,efi)
 
 define Package/grub2-editenv
   CATEGORY:=Utilities
