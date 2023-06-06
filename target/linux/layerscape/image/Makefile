@@ -64,6 +64,19 @@ define Build/traverse-fit
 	@mv -f $@.new $@
 endef
 
+define Build/traverse-fit-ls1088
+    ./mkits-multiple-config.sh -o $@.its -A $(LINUX_KARCH) \
+	-v $(LINUX_VERSION) -k $@ -a $(KERNEL_LOADADDR) \
+	-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
+	-C gzip -c 1 -c 2 \
+	-d $(DTS_DIR)/freescale/fsl-ls1088a-ten64.dtb \
+	-D "TEN64" -n "ten64" -a $(FDT_LOADADDR) -c 1 \
+	-d $(DTS_DIR)/freescale/fsl-ls1088a-rdb.dtb \
+	-D "LS1088ARDB" -n "ls1088ardb" -a $(FDT_LOADADDR) -c 2
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv -f $@.new $@
+endef
+
 define Device/fix-sysupgrade
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := DTB was added to sysupgrade. Image format is different. \
