@@ -416,7 +416,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static u32
  mt7530_mii_read(struct mt7530_priv *priv, u32 reg)
  {
-@@ -2944,72 +2895,6 @@ static const struct phylink_pcs_ops mt75
+@@ -2948,72 +2899,6 @@ static const struct phylink_pcs_ops mt75
  	.pcs_an_restart = mt7530_pcs_an_restart,
  };
  
@@ -489,7 +489,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int
  mt753x_setup(struct dsa_switch *ds)
  {
-@@ -3068,7 +2953,7 @@ static int mt753x_set_mac_eee(struct dsa
+@@ -3072,7 +2957,7 @@ static int mt753x_set_mac_eee(struct dsa
  	return 0;
  }
  
@@ -498,7 +498,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.get_tag_protocol	= mtk_get_tag_protocol,
  	.setup			= mt753x_setup,
  	.get_strings		= mt7530_get_strings,
-@@ -3102,8 +2987,9 @@ static const struct dsa_switch_ops mt753
+@@ -3106,8 +2991,9 @@ static const struct dsa_switch_ops mt753
  	.get_mac_eee		= mt753x_get_mac_eee,
  	.set_mac_eee		= mt753x_set_mac_eee,
  };
@@ -509,7 +509,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	[ID_MT7621] = {
  		.id = ID_MT7621,
  		.pcs_ops = &mt7530_pcs_ops,
-@@ -3136,16 +3022,9 @@ static const struct mt753x_info mt753x_t
+@@ -3140,16 +3026,9 @@ static const struct mt753x_info mt753x_t
  		.mac_port_config = mt7531_mac_config,
  	},
  };
@@ -528,7 +528,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  mt7530_probe_common(struct mt7530_priv *priv)
  {
  	struct device *dev = priv->dev;
-@@ -3182,88 +3061,9 @@ mt7530_probe_common(struct mt7530_priv *
+@@ -3186,88 +3065,9 @@ mt7530_probe_common(struct mt7530_priv *
  
  	return 0;
  }
@@ -619,7 +619,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  mt7530_remove_common(struct mt7530_priv *priv)
  {
  	if (priv->irq)
-@@ -3274,57 +3074,6 @@ mt7530_remove_common(struct mt7530_priv
+@@ -3278,57 +3078,6 @@ mt7530_remove_common(struct mt7530_priv
  	mutex_destroy(&priv->reg_mutex);
  }
  
