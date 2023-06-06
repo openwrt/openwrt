@@ -17,6 +17,10 @@ case "$(board_name)" in
 		ucidef_set_interface_lan "eth0 eth1 eth2 eth3 eth6"
 		ucidef_set_interface_wan "eth4"
 		;;
+	traverse,ten64)
+		ucidef_set_interface_lan "eth0 eth1 eth2 eth3"
+		ucidef_set_interface_wan "eth6"
+		;;
 esac
 
 board_config_flush
