@@ -135,7 +135,7 @@ define Device/bananapi_bpi-r3
   KERNEL_INITRAMFS := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
-  DTC_FLAGS += -@ --space 32768
+  DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Device tree overlay mechanism needs bootloader update
 endef
@@ -195,7 +195,6 @@ define Device/mediatek_mt7986a-rfb-nand
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_INITRAMFS = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
-  DTC_FLAGS += -@ --space 32768
 endef
 TARGET_DEVICES += mediatek_mt7986a-rfb-nand
 
@@ -367,6 +366,5 @@ define Device/zyxel_ex5601-t0-stock
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_INITRAMFS = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
-  DTC_FLAGS += -@ --space 32768
 endef
 TARGET_DEVICES += zyxel_ex5601-t0-stock
