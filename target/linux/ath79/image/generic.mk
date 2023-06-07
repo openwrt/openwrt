@@ -247,6 +247,32 @@ define Device/adtran_bsap1840
 endef
 TARGET_DEVICES += adtran_bsap1840
 
+define Device/adtran_bsap192x
+  SOC := ar9344
+  DEVICE_VENDOR := Adtran
+  DEVICE_PACKAGES := uboot-envtools
+  IMAGE_SIZE := 13312k
+# TODO: Define IMAGE/sysupgrade.bin
+
+# TODO: Define KERNEL
+# e.g. KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
+
+# TODO: (maybe?) Define KERNEL_INITRAMFS
+# e.g. KERNEL_INITRAMFS := kernel-bin | append-dtb
+endef
+
+define Device/adtran_bsap1920
+  $(Device/adtran_bsap192x)
+  DEVICE_MODEL := Bluesocket BSAP-1920
+endef
+TARGET_DEVICES += adtran_bsap1920
+
+define Device/adtran_bsap1925
+  $(Device/adtran_bsap192x)
+  DEVICE_MODEL := Bluesocket BSAP-1925
+endef
+TARGET_DEVICES += adtran_bsap1925
+
 define Device/alcatel_hh40v
   SOC := qca9531
   DEVICE_VENDOR := Alcatel
