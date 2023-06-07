@@ -101,8 +101,10 @@
 };
 
 &eth1 {
+	phy-handle = <&swphy0>;
 	nvmem-cells = <&macaddr_pridata_400>;
 	nvmem-cell-names = "mac-address";
+	/delete-node/ fixed-link;
 };
 
 &wmac {
