@@ -1,7 +1,7 @@
-From 55ea8c9b278aafe3211f7250986b1f9d9a06cd21 Mon Sep 17 00:00:00 2001
+From 6a49dd6bb2e40ce49351adb6100599f176d80494 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
 Date: Fri, 21 Oct 2022 13:40:15 +0200
-Subject: [PATCH] SSDK: qca808x: use get_random_u32
+Subject: [PATCH 14/14] SSDK: qca808x: use get_random_u32
 
 prandom has been removed from the kernel in 6.1-rc1, so use get_random_u32
 instead as its the drop-in replacement.

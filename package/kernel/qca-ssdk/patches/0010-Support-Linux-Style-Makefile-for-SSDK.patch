@@ -1,7 +1,7 @@
-From edd3d4347cc73a99c7cf59aceeb1e8ad4d4dd303 Mon Sep 17 00:00:00 2001
+From 2276a0b93751f015ef719dedf9a0d4b55ae684d5 Mon Sep 17 00:00:00 2001
 From: crao <quic_crao@quicinc.com>
 Date: Tue, 15 Nov 2022 18:50:01 +0800
-Subject: [PATCH] [qca-ssdk]: Support Linux-Style Makefile for SSDK
+Subject: [PATCH 10/14] Support Linux-Style Makefile for SSDK
 
 Change-Id: I8c4399433b6422ef6192f70bf08b0d3023cc94b6
 Signed-off-by: crao <quic_crao@quicinc.com>
@@ -13,12 +13,7 @@ Signed-off-by: crao <quic_crao@quicinc.com>
  make/target.mk    | 12 +++++++++++
  src/api/Makefile  |  2 +-
  6 files changed, 77 insertions(+), 23 deletions(-)
- mode change 100755 => 100644 Makefile
  create mode 100644 Makefile.modules
- mode change 100755 => 100644 make/defs.mk
- mode change 100755 => 100644 make/linux_opt.mk
- mode change 100755 => 100644 make/target.mk
- mode change 100755 => 100644 src/api/Makefile
 
 --- a/Makefile
 +++ b/Makefile
