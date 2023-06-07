@@ -1,4 +1,4 @@
-From ca71e00839fcdd26f122fb6d9e97903c9fe198f7 Mon Sep 17 00:00:00 2001
+From 80f582441193978edc81a117e3df66ed755b8755 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Sat, 6 May 2023 08:08:35 +0200
 Subject: [PATCH] binfmt_elf: dynamically allocate note.data in
@@ -16,17 +16,20 @@ fs/binfmt_elf.c:821:1: error: the frame size of 1040 bytes is larger than 1024 b
 cc1: all warnings being treated as errors
 
 Fix this by dynamically allocating the array.
+Update the sizeof of the union to the biggest element allocated.
 
 Fixes: 00e19ceec80b ("ELF: Add ELF program property parsing support")
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 Cc: stable@vger.kernel.org # v5.8+
 ---
- fs/binfmt_elf.c | 32 +++++++++++++++++++++++---------
- 1 file changed, 23 insertions(+), 9 deletions(-)
+ fs/binfmt_elf.c | 36 +++++++++++++++++++++++++-----------
+ 1 file changed, 25 insertions(+), 11 deletions(-)
 
+diff --git a/fs/binfmt_elf.c b/fs/binfmt_elf.c
+index 44b4c42ab8e8..90daa623ca13 100644
 --- a/fs/binfmt_elf.c
 +++ b/fs/binfmt_elf.c
-@@ -768,7 +768,7 @@ static int parse_elf_properties(struct f
+@@ -768,7 +768,7 @@ static int parse_elf_properties(struct file *f, const struct elf_phdr *phdr,
  {
  	union {
  		struct elf_note nhdr;
@@ -35,8 +38,12 @@ Cc: stable@vger.kernel.org # v5.8+
  	} note;
  	loff_t pos;
  	ssize_t n;
-@@ -788,26 +788,38 @@ static int parse_elf_properties(struct f
- 	if (phdr->p_filesz > sizeof(note))
+@@ -785,29 +785,41 @@ static int parse_elf_properties(struct file *f, const struct elf_phdr *phdr,
+ 		return -ENOEXEC;
+ 
+ 	/* If the properties are crazy large, that's too bad (for now): */
+-	if (phdr->p_filesz > sizeof(note))
++	if (phdr->p_filesz > sizeof(*note.data) * NOTE_DATA_SZ)
  		return -ENOEXEC;
  
 +	note.data = kcalloc(NOTE_DATA_SZ, sizeof(*note.data), GFP_KERNEL);
@@ -46,9 +53,10 @@ Cc: stable@vger.kernel.org # v5.8+
  	pos = phdr->p_offset;
  	n = kernel_read(f, &note, phdr->p_filesz, &pos);
  
- 	BUILD_BUG_ON(sizeof(note) < sizeof(note.nhdr) + NOTE_NAME_SZ);
+-	BUILD_BUG_ON(sizeof(note) < sizeof(note.nhdr) + NOTE_NAME_SZ);
 -	if (n < 0 || n < sizeof(note.nhdr) + NOTE_NAME_SZ)
 -		return -EIO;
++	BUILD_BUG_ON(sizeof(*note.data) * NOTE_DATA_SZ < sizeof(note.nhdr) + NOTE_NAME_SZ);
 +	if (n < 0 || n < sizeof(note.nhdr) + NOTE_NAME_SZ) {
 +		ret = -EIO;
 +		goto exit;
@@ -68,14 +76,13 @@ Cc: stable@vger.kernel.org # v5.8+
  		       ELF_GNU_PROPERTY_ALIGN);
 -	if (off > n)
 -		return -ENOEXEC;
--
--	if (note.nhdr.n_descsz > n - off)
--		return -ENOEXEC;
 +	if (off > n) {
 +		ret = -ENOEXEC;
 +		goto exit;
 +	}
-+
+ 
+-	if (note.nhdr.n_descsz > n - off)
+-		return -ENOEXEC;
 +	if (note.nhdr.n_descsz > n - off) {
 +		ret = -ENOEXEC;
 +		goto exit;
@@ -83,7 +90,7 @@ Cc: stable@vger.kernel.org # v5.8+
  	datasz = off + note.nhdr.n_descsz;
  
  	have_prev_type = false;
-@@ -817,6 +829,8 @@ static int parse_elf_properties(struct f
+@@ -817,6 +829,8 @@ static int parse_elf_properties(struct file *f, const struct elf_phdr *phdr,
  		have_prev_type = true;
  	} while (!ret);
  
@@ -92,3 +99,6 @@ Cc: stable@vger.kernel.org # v5.8+
  	return ret == -ENOENT ? 0 : ret;
  }
  
+-- 
+2.39.2
+
