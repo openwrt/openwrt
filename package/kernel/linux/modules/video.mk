@@ -439,6 +439,10 @@ $(AddDepends/video)
 	 CONFIG_MEDIA_CAMERA_SUPPORT=y
 endef
 
+define AddDepends/framegrabber
+$(AddDepends/video)
+  KCONFIG+=CONFIG_MEDIA_PCI_SUPPORT=y
+endef
 
 define KernelPackage/video-videobuf2
   TITLE:=videobuf2 lib
@@ -1122,3 +1126,19 @@ define KernelPackage/video-pxp/description
 endef
 
 $(eval $(call KernelPackage,video-pxp))
+
+define KernelPackage/video-tw686x
+  TITLE:=TW686x support
+  DEPENDS:=@PCIE_SUPPORT +kmod-video-dma +kmod-sound-core
+  KCONFIG:= CONFIG_VIDEO_TW686X
+  FILES:= $(LINUX_DIR)/drivers/media/pci/tw686x/tw686x.ko
+  AUTOLOAD:=$(call AutoProbe,tw686x)
+  MODPARAMS.tw686x:=dma_mode=contig
+  $(call AddDepends/framegrabber)
+endef
+
+define KernelPackage/video-tw686x/description
+ The Intersil/Techwell TW686x kernel module
+endef
+
+$(eval $(call KernelPackage,video-tw686x))
