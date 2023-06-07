@@ -1,4 +1,4 @@
-From 97505f4c049fa2e8c86a53411a9e599033898533 Mon Sep 17 00:00:00 2001
+From 7cbff3c3f867ff3b24de674f44ca03f54e416a37 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
 Date: Sat, 31 Dec 2022 00:27:42 +0100
 Subject: [PATCH] soc: qcom: socinfo: move SMEM item struct and defines to a
@@ -9,6 +9,9 @@ to reuse them in the Qualcomm NVMEM CPUFreq driver instead of duplicating
 them.
 
 Signed-off-by: Robert Marko <robimarko@gmail.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20230526204802.3081168-1-robimarko@gmail.com
 ---
  drivers/soc/qcom/socinfo.c       | 58 +--------------------------
  include/linux/soc/qcom/socinfo.h | 67 ++++++++++++++++++++++++++++++++

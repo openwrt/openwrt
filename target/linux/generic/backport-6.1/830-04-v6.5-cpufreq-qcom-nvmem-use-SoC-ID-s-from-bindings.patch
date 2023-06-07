@@ -1,21 +1,26 @@
-From 132b2f15b8ae3f848b3e6f2962f409cfab0ca759 Mon Sep 17 00:00:00 2001
+From 2b8634d1468ff498cc91b6adf993c27ae6fa079d Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
-Date: Fri, 30 Dec 2022 23:33:47 +0100
+Date: Fri, 26 May 2023 22:48:01 +0200
 Subject: [PATCH] cpufreq: qcom-nvmem: use SoC ID-s from bindings
 
 SMEM SoC ID-s are now stored in DT bindings so lets use those instead of
 defining them in the driver again.
 
 Signed-off-by: Robert Marko <robimarko@gmail.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Reviewed-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20230526204802.3081168-4-robimarko@gmail.com
 ---
  drivers/cpufreq/qcom-cpufreq-nvmem.c | 15 +++++----------
  1 file changed, 5 insertions(+), 10 deletions(-)
 
 --- a/drivers/cpufreq/qcom-cpufreq-nvmem.c
 +++ b/drivers/cpufreq/qcom-cpufreq-nvmem.c
-@@ -30,12 +30,7 @@
- #include <linux/soc/qcom/smem.h>
- #include <linux/soc/qcom/socinfo.h>
+@@ -31,12 +31,7 @@
+ 
+ #define MSM_ID_SMEM	137
  
 -enum _msm_id {
 -	MSM8996V3 = 0xF6ul,
@@ -27,10 +32,10 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
  enum _msm8996_version {
  	MSM8996_V3,
-@@ -150,12 +145,12 @@ static enum _msm8996_version qcom_cpufre
- 		return NUM_OF_MSM8996_VERSIONS;
+@@ -154,12 +149,12 @@ static enum _msm8996_version qcom_cpufre
+ 	msm_id++;
  
- 	switch (info->id) {
+ 	switch ((enum _msm_id)*msm_id) {
 -	case MSM8996V3:
 -	case APQ8096V3:
 +	case QCOM_ID_MSM8996:

@@ -1,29 +1,30 @@
-From 85bf71b130ab0e939f53ec9cf1131d67d148bc9a Mon Sep 17 00:00:00 2001
+From e7992615acacc27baeec310197108143afc77337 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
-Date: Sat, 31 Dec 2022 12:45:31 +0100
-Subject: [PATCH] cpufreq: qcom-nvmem: make qcom_cpufreq_get_msm_id() return
- the SoC ID
+Date: Fri, 26 May 2023 22:48:02 +0200
+Subject: [PATCH] cpufreq: qcom-nvmem: use helper to get SMEM SoC ID
 
-Currently, qcom_cpufreq_get_msm_id() does not simply return the SoC ID
-after getting it via SMEM call but instead uses an enum to encode the
-matched SMEM ID to 2 variants of MSM8996 which are then used in
-qcom_cpufreq_kryo_name_version() to set the supported version.
-
-This prevents qcom_cpufreq_get_msm_id() from being universal and its doing
-more than its name suggests, so lets make it just return the SoC ID
-directly which allows matching directly on the SoC ID and removes the need
-for msm8996_version enum which simplifies the driver.
-It also allows reusing the qcom_cpufreq_get_msm_id() for new SoC-s.
+Now that SMEM exports a helper to get the SMEM SoC ID lets utilize it.
+Currently qcom_cpufreq_get_msm_id() is encoding the returned SMEM SoC ID
+into an enum, however there is no reason to do so and we can just match
+directly on the SMEM SoC ID as returned by qcom_smem_get_soc_id().
 
 Signed-off-by: Robert Marko <robimarko@gmail.com>
+Acked-by: Viresh Kumar <viresh.kumar@linaro.org>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20230526204802.3081168-5-robimarko@gmail.com
 ---
- drivers/cpufreq/qcom-cpufreq-nvmem.c | 44 ++++++++--------------------
- 1 file changed, 12 insertions(+), 32 deletions(-)
+ drivers/cpufreq/qcom-cpufreq-nvmem.c | 56 +++++-----------------------
+ 1 file changed, 10 insertions(+), 46 deletions(-)
 
 --- a/drivers/cpufreq/qcom-cpufreq-nvmem.c
 +++ b/drivers/cpufreq/qcom-cpufreq-nvmem.c
-@@ -32,12 +32,6 @@
+@@ -29,16 +29,8 @@
+ #include <linux/slab.h>
+ #include <linux/soc/qcom/smem.h>
  
+-#define MSM_ID_SMEM	137
+-
  #include <dt-bindings/arm/qcom,ids.h>
  
 -enum _msm8996_version {
@@ -35,22 +36,24 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  struct qcom_cpufreq_drv;
  
  struct qcom_cpufreq_match_data {
-@@ -134,30 +128,16 @@ static void get_krait_bin_format_b(struc
+@@ -135,60 +127,32 @@ static void get_krait_bin_format_b(struc
  	dev_dbg(cpu_dev, "PVS version: %d\n", *pvs_ver);
  }
  
 -static enum _msm8996_version qcom_cpufreq_get_msm_id(void)
-+static int qcom_cpufreq_get_msm_id(void)
- {
- 	size_t len;
- 	struct socinfo *info;
+-{
+-	size_t len;
+-	u32 *msm_id;
 -	enum _msm8996_version version;
- 
- 	info = qcom_smem_get(QCOM_SMEM_HOST_ANY, SMEM_HW_SW_BUILD_ID, &len);
- 	if (IS_ERR(info))
+-
+-	msm_id = qcom_smem_get(QCOM_SMEM_HOST_ANY, MSM_ID_SMEM, &len);
+-	if (IS_ERR(msm_id))
 -		return NUM_OF_MSM8996_VERSIONS;
 -
--	switch (info->id) {
+-	/* The first 4 bytes are format, next to them is the actual msm-id */
+-	msm_id++;
+-
+-	switch ((enum _msm_id)*msm_id) {
 -	case QCOM_ID_MSM8996:
 -	case QCOM_ID_APQ8096:
 -		version = MSM8996_V3;
@@ -62,20 +65,20 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 -	default:
 -		version = NUM_OF_MSM8996_VERSIONS;
 -	}
-+		return PTR_ERR(info);
- 
+-
 -	return version;
-+	return info->id;
- }
- 
+-}
+-
  static int qcom_cpufreq_kryo_name_version(struct device *cpu_dev,
-@@ -166,25 +146,25 @@ static int qcom_cpufreq_kryo_name_versio
+ 					  struct nvmem_cell *speedbin_nvmem,
+ 					  char **pvs_name,
  					  struct qcom_cpufreq_drv *drv)
  {
  	size_t len;
-+	int msm_id;
++	u32 msm_id;
  	u8 *speedbin;
 -	enum _msm8996_version msm8996_version;
++	int ret;
  	*pvs_name = NULL;
  
 -	msm8996_version = qcom_cpufreq_get_msm_id();
@@ -83,9 +86,9 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 -		dev_err(cpu_dev, "Not Snapdragon 820/821!");
 -		return -ENODEV;
 -	}
-+	msm_id = qcom_cpufreq_get_msm_id();
-+	if (msm_id < 0)
-+		return msm_id;
++	ret = qcom_smem_get_soc_id(&msm_id);
++	if (ret)
++		return ret;
  
  	speedbin = nvmem_cell_read(speedbin_nvmem, &len);
  	if (IS_ERR(speedbin))
