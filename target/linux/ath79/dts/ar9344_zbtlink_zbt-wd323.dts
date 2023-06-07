@@ -59,6 +59,14 @@
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 	};
+	
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+		hw_algo = "toggle";
+		hw_margin_ms = <30000>;
+		always-running;
+	};
 };
 
 &wdt {
