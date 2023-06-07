@@ -342,7 +342,10 @@ define Device/asus_rt-ax53u
   DEVICE_MODEL := RT-AX53U
   DEVICE_ALT0_VENDOR := ASUS
   DEVICE_ALT0_MODEL := RT-AX1800U
-  IMAGE_SIZE := 51200k
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Sysupgrade is not possible due to partition \
+	layout change, proceed by installing factory image
+  IMAGE_SIZE := 118912k
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size

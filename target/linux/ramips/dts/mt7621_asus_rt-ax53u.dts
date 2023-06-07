@@ -65,8 +65,7 @@
 
 	mediatek,nmbm;
 	mediatek,bmt-remap-range =
-		<0x000000 0x7e0000>,
-		<0x35e0000 0x7800000>;
+		<0x000000 0x7e0000>;
 
 	partitions {
 		compatible = "fixed-partitions";
@@ -116,7 +115,7 @@
 
 		partition@3e0000 {
 			label = "firmware";
-			reg = <0x3e0000 0x3200000>;
+			reg = <0x3e0000 0x7420000>;
 
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -129,18 +128,8 @@
 
 			partition@400000 {
 				label = "ubi";
-				reg = <0x400000 0x2e00000>;
+				reg = <0x400000 0x7020000>;
 			};
-		};
-
-		partition@35e0000 {
-			label = "firmware2";
-			reg = <0x35e0000 0x3200000>;
-		};
-
-		partition@67e0000 {
-			label = "jffs2";
-			reg = <0x67e0000 0x1020000>;
 		};
 
 		/* Last 8M are reserved for NMBM management (bad blocks) */
