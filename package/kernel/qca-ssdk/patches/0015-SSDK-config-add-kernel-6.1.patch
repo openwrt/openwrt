@@ -1,4 +1,4 @@
-From 1f9eb43f118b86c0b68e9d82bfae77471d6c3921 Mon Sep 17 00:00:00 2001
+From 05aba6d6dfd49fe10b33cf221b7e81250a67033c Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
 Date: Thu, 29 Sep 2022 09:59:20 +0200
 Subject: [PATCH] SSDK: config: add kernel 6.1
@@ -13,23 +13,23 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/config
 +++ b/config
-@@ -28,6 +28,10 @@ ifeq ($(KVER),$(filter 5.15%,$(KVER)))
- OS_VER=5_15
+@@ -24,6 +24,10 @@ ifeq ($(KVER),$(filter 5.4%,$(KVER)))
+ 	OS_VER=5_4
  endif
  
 +ifeq ($(KVER),$(filter 6.1%,$(KVER)))
-+OS_VER=6_1
++	OS_VER=6_1
 +endif
 +
  ifeq ($(KVER), 3.4.0)
  	OS_VER=3_4
  endif
-@@ -136,7 +140,7 @@ ifeq ($(ARCH), arm)
+@@ -132,7 +136,7 @@ ifeq ($(ARCH), arm)
  endif
  
  ifeq ($(ARCH), arm64)
--	ifeq ($(KVER),$(filter 4.1% 4.4% 4.9% 5.4% 5.15%,$(KVER)))
-+	ifeq ($(KVER),$(filter 4.1% 4.4% 4.9% 5.4% 5.15% 6.1%,$(KVER)))
+-	ifeq ($(KVER),$(filter 4.1% 4.4% 4.9% 5.4%,$(KVER)))
++	ifeq ($(KVER),$(filter 4.1% 4.4% 4.9% 5.4% 6.1%,$(KVER)))
  		CPU_CFLAG=  -DMODULE -Os -pipe -march=armv8-a -mcpu=cortex-a53+crypto -fno-caller-saves -fno-strict-aliasing -fno-common -Wno-format-security -Wno-pointer-sign -Wno-unused-but-set-variable -Wno-error=unused-result -mcmodel=large
  	endif
  endif
@@ -39,8 +39,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
        KASAN_SHADOW_SCALE_SHIFT := 3
    endif
  
--  ifeq (5_4 5_15, $(OS_VER))
-+  ifeq (5_4 5_15 6_1, $(OS_VER))
+-  ifeq (5_4, $(OS_VER))
++  ifeq (5_4 6_1, $(OS_VER))
        ifeq ($(ARCH), arm64)
            KASAN_OPTION += -DKASAN_SHADOW_SCALE_SHIFT=$(KASAN_SHADOW_SCALE_SHIFT)
         endif
@@ -48,8 +48,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
    endif
  
--  ifeq ($(OS_VER),$(filter 4_4 5_4 5_15, $(OS_VER)))
-+  ifeq ($(OS_VER),$(filter 4_4 5_4 5_15 6_1, $(OS_VER)))
+-  ifeq ($(OS_VER),$(filter 4_4 5_4, $(OS_VER)))
++  ifeq ($(OS_VER),$(filter 4_4 5_4 6_1, $(OS_VER)))
                  MODULE_CFLAG += -DKVER34
                  MODULE_CFLAG += -DKVER32
              MODULE_CFLAG += -DLNX26_22
