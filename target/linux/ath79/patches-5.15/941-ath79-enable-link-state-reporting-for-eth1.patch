@@ -1,6 +1,14 @@
-diff -ruN a/drivers/net/ethernet/atheros/ag71xx/ag71xx.h b/drivers/net/ethernet/atheros/ag71xx/ag71xx.h
---- a/drivers/net/ethernet/atheros/ag71xx/ag71xx.h	2023-06-07 08:48:07.568151395 +0800
-+++ b/drivers/net/ethernet/atheros/ag71xx/ag71xx.h	2023-06-07 08:50:27.396879479 +0800
+From: 张 鹏 <sd20@qxwlan.com>
+Date: Sun, 7 June 2023 09:32:28 -0700
+Subject: [PATCH] ath79: enable link state reporting
+
+Tested on Qxwlan e750a e600g e600gac and ml181(qca9561).
+
+Link: https://github.com/openwrt/openwrt/pull/9971
+Signed-off-by: 张 鹏 <sd20@qxwlan.com>
+
+--- a/drivers/net/ethernet/atheros/ag71xx/ag71xx.h
++++ b/drivers/net/ethernet/atheros/ag71xx/ag71xx.h
 @@ -160,6 +160,7 @@
  	u16			rx_buf_size;
  	u8			rx_buf_offset;
@@ -9,9 +17,8 @@ diff -ruN a/drivers/net/ethernet/atheros/ag71xx/ag71xx.h b/drivers/net/ethernet/
  
  	struct net_device	*dev;
  	struct platform_device  *pdev;
-diff -ruN a/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c b/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c
---- a/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c	2023-06-07 08:48:20.136216458 +0800
-+++ b/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c	2023-06-07 08:53:41.781904202 +0800
+--- a/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c
++++ b/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c
 @@ -867,6 +867,8 @@
  	u32 cfg2;
  	u32 ifctl;
