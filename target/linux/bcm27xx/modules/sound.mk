@@ -392,7 +392,6 @@ define KernelPackage/sound-soc-dacberry-soundcard
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic3x.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-tlv320aic3x-i2c snd-soc-dacberry400)
   DEPENDS:= \
-    @LINUX_6_1 \
     kmod-sound-soc-bcm2835-i2s \
     +kmod-i2c-bcm2835 \
     +kmod-regmap-i2c
@@ -971,7 +970,7 @@ define KernelPackage/sound-soc-rpi-cirrus
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM_ADSP
   FILES:= \
-    $(LINUX_DIR)/drivers/firmware/cirrus/cs_dsp.ko@ge6.1 \
+    $(LINUX_DIR)/drivers/firmware/cirrus/cs_dsp.ko \
     $(LINUX_DIR)/drivers/mfd/arizona.ko \
     $(LINUX_DIR)/drivers/mfd/arizona-i2c.ko \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-cirrus.ko \
