@@ -1,0 +1,74 @@
+From d172f330087422b8f33ad5e0f60f903820e7b321 Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime@cerno.tech>
+Date: Thu, 8 Dec 2022 13:17:42 +0100
+Subject: [PATCH] .github: Add Github Workflow for KUnit
+
+Now that we have some KUnit coverage, let's add a github actions file to
+run them on each push or pull request.
+
+Signed-off-by: Maxime Ripard <maxime@cerno.tech>
+---
+ .github/workflows/kunit.yml | 57 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 57 insertions(+)
+ create mode 100644 .github/workflows/kunit.yml
+
+--- /dev/null
++++ b/.github/workflows/kunit.yml
+@@ -0,0 +1,57 @@
++name: KUnit Tests
++
++on:
++  pull_request:
++    branches: [ "rpi-*"]
++
++  push:
++    branches: [ "rpi-*"]
++
++jobs:
++  core:
++    name: Generic DRM/KMS Unit Tests
++    runs-on: ubuntu-latest
++
++    steps:
++      - uses: actions/checkout@v3
++
++      - name: Run Generic DRM Tests
++        run: |
++          ./tools/testing/kunit/kunit.py run \
++              --kunitconfig=drivers/gpu/drm/tests
++
++  vc4-arm:
++    name: VC4 Unit Tests on ARM
++    runs-on: ubuntu-latest
++
++    steps:
++      - uses: actions/checkout@v3
++
++      - name: Install Dependencies
++        run: |
++          sudo apt-get update
++          sudo apt-get install -y gcc-arm-linux-gnueabihf qemu-system-arm
++
++      - name: Run VC4 Tests
++        run: |
++          ./tools/testing/kunit/kunit.py run \
++              --kunitconfig=drivers/gpu/drm/vc4/tests \
++              --cross_compile=arm-linux-gnueabihf- --arch=arm
++
++  vc4-arm64:
++    name: VC4 Unit Tests on ARM64
++    runs-on: ubuntu-latest
++
++    steps:
++      - uses: actions/checkout@v3
++
++      - name: Install Dependencies
++        run: |
++          sudo apt-get update
++          sudo apt-get install -y gcc-aarch64-linux-gnu qemu-system-arm
++
++      - name: Run VC4 Tests
++        run: |
++          ./tools/testing/kunit/kunit.py run \
++              --kunitconfig=drivers/gpu/drm/vc4/tests \
++              --cross_compile=aarch64-linux-gnu- --arch=arm64
