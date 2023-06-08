@@ -3,7 +3,8 @@
 . /lib/functions.sh
 
 case "$(board_name)" in
-comtrend,vr-3025u)
+comtrend,vr-3025u |\
+observa,vh4032n)
 	mtd fixtrx firmware
 	;;
 esac

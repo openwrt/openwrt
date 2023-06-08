@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+. /lib/functions/leds.sh
 . /lib/functions/uci-defaults.sh
 
 board_config_update
 
 case "$(board_name)" in
-comtrend,vr-3025u |\
 observa,vh4032n)
-	ucidef_set_bridge_device switch
-	ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+	ucidef_set_led_usbport "usb1" "USB1" "blue:hspa" "usb1-port1" "usb2-port1"
+	ucidef_set_led_usbport "usb2" "USB2" "red:hspa" "1-2-port1" "1-2-port2"
 	;;
 esac
 
