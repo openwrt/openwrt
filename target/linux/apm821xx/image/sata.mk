@@ -11,9 +11,9 @@ define Device/wd_mybooklive
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-usb-ledtrig-usbport kmod-usb-storage kmod-fs-vfat wpad-basic-mbedtls
   SUPPORTED_DEVICES += mbl wd,mybooklive-duo
   BLOCKSIZE := 1k
-  DTB_SIZE := 16384
-  KERNEL := kernel-bin | dtb | libdeflate-gzip | uImage gzip
-  KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | dtb | MuImage-initramfs gzip
+  DEVICE_DTC_FLAGS := --pad 4096
+  KERNEL := kernel-bin | libdeflate-gzip | uImage gzip
+  KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | MuImage-initramfs gzip
   IMAGES := factory.img.gz sysupgrade.img.gz
   ARTIFACTS := apollo3g.dtb
   DEVICE_DTB := apollo3g.dtb
