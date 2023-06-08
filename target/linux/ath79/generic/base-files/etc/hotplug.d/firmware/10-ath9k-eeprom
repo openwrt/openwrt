@@ -93,9 +93,6 @@ case "$FIRMWARE" in
 	adtran,bsap1925)
 		caldata_extract "art" 0x5000 0x440
 		;;
-	aruba,ap-115)
-		caldata_extract "oemdata" 0x5000 0x440
-		;;
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
