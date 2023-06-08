@@ -78,8 +78,8 @@
 &pcie {
 	status = "okay";
 
-	wifi@0,0 {
-		compatible = "168c,0030";
+	ath9k: wifi@0,0 {
+		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&macaddr_senao_0>;
 		nvmem-cell-names = "mac-address";
