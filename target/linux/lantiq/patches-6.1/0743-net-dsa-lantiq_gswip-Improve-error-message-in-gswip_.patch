@@ -1,0 +1,26 @@
+From 00b5121435ccd4ce54f79179dd9ee3e2610d7dcf Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Fri, 14 Oct 2022 16:31:57 +0200
+Subject: [PATCH 743/768] net: dsa: lantiq_gswip: Improve error message in
+ gswip_port_fdb()
+
+Print the port which is not found to be part of a bridge so it's easier
+to investigate the underlying issue.
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+---
+ drivers/net/dsa/lantiq_gswip.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -1370,7 +1370,8 @@ static int gswip_port_fdb(struct dsa_swi
+ 	}
+ 
+ 	if (fid == -1) {
+-		dev_err(priv->dev, "Port not part of a bridge\n");
++		dev_err(priv->dev,
++			"Port %d is not known to be part of bridge\n", port);
+ 		return -EINVAL;
+ 	}
+ 
