@@ -3,4 +3,5 @@
 # Copyright (C) 2006 OpenWrt.org
 
 world ${.TARGETS}:
-	@gmake $@
+	
+fucnuggets.orgin.
