@@ -1,0 +1,52 @@
+From 87597566c5b598e85d9c31b713e0e1c98745cdfc Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Thu, 28 Jul 2022 20:22:38 +0200
+Subject: [PATCH 747/768] net: dsa: lantiq_gswip: Update per port flooding and
+ learning defaults
+
+Disable flooding and learning by default. These are sane defaults for
+standalone (which the driver calls "single port bridge") ports. Apply
+these settings during setup and while disabling the port. This ensures
+that the settings are back to their defaults after removing a port from
+a bridge and using the same port in standalone mode instead (OpenWrt's
+netifd seems to leave flooding enabled when removing the port from a
+bridge).
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+---
+ drivers/net/dsa/lantiq_gswip.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -775,6 +775,10 @@ static void gswip_port_disable(struct ds
+ 	if (!dsa_is_user_port(ds, port))
+ 		return;
+ 
++	gswip_port_set_learning(priv, port, false);
++	gswip_port_set_unicast_flood(priv, port, false);
++	gswip_port_set_multicast_broadcast_flood(priv, port, false);
++
+ 	gswip_switch_mask(priv, GSWIP_FDMA_PCTRL_EN, 0,
+ 			  GSWIP_FDMA_PCTRLp(port));
+ 	gswip_switch_mask(priv, GSWIP_SDMA_PCTRL_EN, 0,
+@@ -926,10 +930,16 @@ static int gswip_setup(struct dsa_switch
+ 		return err;
+ 	}
+ 
+-	/* Default unknown Broadcast/Multicast/Unicast port maps */
++	/* Disable monitoring on all ports except the CPU port */
+ 	gswip_switch_w(priv, BIT(cpu_port), GSWIP_PCE_PMAP1);
+-	gswip_switch_w(priv, BIT(cpu_port), GSWIP_PCE_PMAP2);
+-	gswip_switch_w(priv, BIT(cpu_port), GSWIP_PCE_PMAP3);
++
++	/* Zero the multicast (also used for broadcasts) port map (to disable
++	 * broadcast flooding).
++	 */
++	gswip_switch_w(priv, 0, GSWIP_PCE_PMAP2);
++
++	/* Zero the unknown unicast port map (to disable unicast flooding). */
++	gswip_switch_w(priv, 0, GSWIP_PCE_PMAP3);
+ 
+ 	/* Deactivate MDIO PHY auto polling. Some PHYs as the AR8030 have an
+ 	 * interoperability problem with this auto polling mechanism because

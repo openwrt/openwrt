@@ -1,0 +1,26 @@
+From 28be6bfb735d851e646abb05b8e24eb6764596f5 Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Mon, 1 Aug 2022 22:26:20 +0200
+Subject: [PATCH 740/768] net: dsa: lantiq_gswip: Fix error message in
+ gswip_add_single_port_br()
+
+The error message is printed when the port cannot be used. Update the
+error message to reflect that.
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+---
+ drivers/net/dsa/lantiq_gswip.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -651,7 +651,8 @@ static int gswip_add_single_port_br(stru
+ 	int err;
+ 
+ 	if (port >= max_ports || dsa_is_cpu_port(priv->ds, port)) {
+-		dev_err(priv->dev, "single port for %i supported\n", port);
++		dev_err(priv->dev, "single port for %i is not supported\n",
++			port);
+ 		return -EIO;
+ 	}
+ 
