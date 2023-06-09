@@ -10,6 +10,12 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
+	acer,predator-w6)
+		key_path="/var/qcidata/data"
+		[ "$PHYNBR" = "0" ] && cat $key_path/2gMAC > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && cat $key_path/6gMAC > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "2" ] && cat $key_path/5gMAC > /sys${DEVPATH}/macaddress
+		;;
 	asus,tuf-ax4200)
 		CI_UBIPART="UBI_DEV"
 		addr=$(mtd_get_mac_binary_ubi "Factory" 0x4)
