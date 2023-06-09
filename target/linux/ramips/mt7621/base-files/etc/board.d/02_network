@@ -109,6 +109,7 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
 		;;
 	tozed,zlt-s12-pro)
+		ucidef_set_interface_lan "lan1 lan2 lan3 wan"
 		ucidef_set_interface "wwan" device "/dev/ttyUSB0" protocol "ncm"
 		uci add_list firewall.@zone[1].network='wwan'
 		;;
