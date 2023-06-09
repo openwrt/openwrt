@@ -98,6 +98,21 @@ define Device/asus_tuf-ax4200
 endef
 TARGET_DEVICES += asus_tuf-ax4200
 
+define Device/acer_predator-w6
+  DEVICE_VENDOR := Acer
+  DEVICE_MODEL := Predator W6
+  DEVICE_DTS := mt7986a-acer-predator-w6
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7986-firmware kmod-mt7916-firmware mt7986-wo-firmware
+  IMAGES := sysupgrade.bin
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += acer_predator-w6
+
 define Device/bananapi_bpi-r3
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R3
