@@ -66,7 +66,7 @@
 		led {
 			label = "led";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
-			linux,code = <BTN_0>;
+			linux,code = <KEY_LIGHTS_TOGGLE>;
 		};
 
 		reset {
@@ -78,7 +78,7 @@
 		wps {
 			label = "wps";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_WLAN>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 };
