@@ -43,6 +43,21 @@ define Device/netgear_dgnd3800b
 endef
 TARGET_DEVICES += netgear_dgnd3800b
 
+define Device/netgear_evg2000
+  $(Device/bcm63xx_netgear)
+  DEVICE_MODEL := EVG2000
+  CFE_BOARD_ID := 96369PVG
+  CHIP_ID := 6368
+  SOC := bcm6369
+  BLOCKSIZE := 0x20000
+  NETGEAR_BOARD_ID := U12H154T90_NETGEAR
+  NETGEAR_REGION := 1
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES) broadcom-4322-sprom \
+    kmod-leds-gpio
+endef
+TARGET_DEVICES += netgear_evg2000
+
 define Device/observa_vh4032n
   $(Device/bcm63xx-cfe)
   DEVICE_VENDOR := Observa
