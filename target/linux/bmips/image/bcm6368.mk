@@ -14,6 +14,35 @@ define Device/comtrend_vr-3025u
 endef
 TARGET_DEVICES += comtrend_vr-3025u
 
+define Device/netgear_dgnd3700-v1
+  $(Device/bcm63xx_netgear)
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := DGND3700
+  DEVICE_VARIANT := v1
+  CFE_BOARD_ID := 96368MVWG
+  CHIP_ID := 6368
+  BLOCKSIZE := 0x20000
+  NETGEAR_BOARD_ID := U12L144T01_NETGEAR_NEWLED
+  NETGEAR_REGION := 1
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES)
+endef
+TARGET_DEVICES += netgear_dgnd3700-v1
+
+define Device/netgear_dgnd3800b
+  $(Device/bcm63xx_netgear)
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := DGND3800B
+  CFE_BOARD_ID := 96368MVWG
+  CHIP_ID := 6368
+  BLOCKSIZE := 0x20000
+  NETGEAR_BOARD_ID := U12L144T11_NETGEAR_NEWLED
+  NETGEAR_REGION := 1
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES)
+endef
+TARGET_DEVICES += netgear_dgnd3800b
+
 define Device/observa_vh4032n
   $(Device/bcm63xx-cfe)
   DEVICE_VENDOR := Observa
