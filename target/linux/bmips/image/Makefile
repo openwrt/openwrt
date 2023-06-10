@@ -313,6 +313,15 @@ define Device/bcm63xx-nand
   DEVICE_PACKAGES += nand-utils
 endef
 
+define Device/bcm63xx_netgear
+  $(Device/bcm63xx-cfe)
+  DEVICE_VENDOR := NETGEAR
+  IMAGES := factory.chk sysupgrade.bin
+  IMAGE/factory.chk := cfe-bin | netgear-chk
+  NETGEAR_BOARD_ID :=
+  NETGEAR_REGION :=
+endef
+
 define Device/sercomm-nand
   $(Device/bcm63xx-nand)
   IMAGES := factory.img sysupgrade.bin
