@@ -25,7 +25,8 @@ define Device/netgear_dgnd3700-v1
   NETGEAR_BOARD_ID := U12L144T01_NETGEAR_NEWLED
   NETGEAR_REGION := 1
   DEVICE_PACKAGES += $(USB2_PACKAGES) \
-    $(B43_PACKAGES)
+    $(B43_PACKAGES) \
+    kmod-leds-gpio
 endef
 TARGET_DEVICES += netgear_dgnd3700-v1
 
@@ -39,7 +40,8 @@ define Device/netgear_dgnd3800b
   NETGEAR_BOARD_ID := U12L144T11_NETGEAR_NEWLED
   NETGEAR_REGION := 1
   DEVICE_PACKAGES += $(USB2_PACKAGES) \
-    $(B43_PACKAGES)
+    $(B43_PACKAGES) \
+    kmod-leds-gpio
 endef
 TARGET_DEVICES += netgear_dgnd3800b
 
