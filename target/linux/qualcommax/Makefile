@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=aarch64
-BOARD:=ipq807x
-BOARDNAME:=Qualcomm Atheros IPQ807x
+BOARD:=qualcommax
+BOARDNAME:=Qualcomm Atheros 802.11ax WiSoC-s
 FEATURES:=squashfs ramdisk fpu nand rtc emmc
 KERNELNAME:=Image dtbs
 CPU_TYPE:=cortex-a53
