@@ -398,6 +398,23 @@ define Device/beeline_smartbox-giga
 endef
 TARGET_DEVICES += beeline_smartbox-giga
 
+define Device/beeline_smartbox-pro
+  $(Device/sercomm_s1500)
+  DEVICE_VENDOR := Beeline
+  DEVICE_MODEL := SmartBox PRO
+  DEVICE_ALT0_VENDOR := Sercomm
+  DEVICE_ALT0_MODEL := S1500 AWI
+  IMAGE_SIZE := 34816k
+  IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
+	sercomm-reset-slot1-chksum | append-ubi | check-size | \
+	sercomm-factory-cqr | sercomm-append-tail | sercomm-mkhash
+  SERCOMM_HWID := AWI
+  SERCOMM_HWVER := 10000
+  SERCOMM_ROOTFS2_OFFSET := 0x3d00000
+  SERCOMM_SWVER := 2020
+endef
+TARGET_DEVICES += beeline_smartbox-pro
+
 define Device/beeline_smartbox-turbo
   $(Device/sercomm_dxx)
   IMAGE_SIZE := 32768k
@@ -2452,6 +2469,24 @@ define Device/wevo_w2914ns-v2
   SUPPORTED_DEVICES += w2914nsv2
 endef
 TARGET_DEVICES += wevo_w2914ns-v2
+
+define Device/wifire_s1500-nbn
+  $(Device/sercomm_s1500)
+  DEVICE_VENDOR := WiFire
+  DEVICE_MODEL := S1500.NBN
+  DEVICE_ALT0_VENDOR := Sercomm
+  DEVICE_ALT0_MODEL := S1500 BUC
+  IMAGE_SIZE := 51200k
+  IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
+	sercomm-reset-slot1-chksum | append-ubi | check-size | \
+	sercomm-factory-cqr | sercomm-fix-buc-pid | sercomm-mkhash | \
+	sercomm-crypto
+  SERCOMM_HWID := BUC
+  SERCOMM_HWVER := 10000
+  SERCOMM_ROOTFS2_OFFSET := 0x4d00000
+  SERCOMM_SWVER := 2015
+endef
+TARGET_DEVICES += wifire_s1500-nbn
 
 define Device/winstars_ws-wn583a6
   $(Device/dsa-migration)
