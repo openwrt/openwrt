@@ -22,14 +22,12 @@ define Build/sercomm-factory-cqr
 		--hw-version $(SERCOMM_HWVER) \
 		--hw-id $(SERCOMM_HWID) \
 		--sw-version $(SERCOMM_SWVER) \
-		--pid-file $@.fhdr
+		--pid-file $@.fhdr \
+		--extra-padding-size 0x190
 	printf $$(stat -c%s $(IMAGE_KERNEL)) | \
 		dd seek=$$((0x70)) of=$@.fhdr bs=1 conv=notrunc 2>/dev/null
 	printf $$(($$(stat -c%s $@)-$$(stat -c%s $(IMAGE_KERNEL))-$$((0x200)))) | \
 		dd seek=$$((0x80)) of=$@.fhdr bs=1 conv=notrunc 2>/dev/null
-	dd bs=$$((0x200)) skip=1 if=$@ conv=notrunc 2>/dev/null | \
-		$(MKHASH) md5 | awk '{print $$1}' | tr -d '\n' | \
-		dd seek=$$((0x1e0)) of=$@.fhdr bs=1 conv=notrunc 2>/dev/null
 	dd if=$@ >> $@.fhdr 2>/dev/null
 	mv $@.fhdr $@
 endef
@@ -58,6 +56,12 @@ define Build/sercomm-kernel-factory
 	cat $@.khdr1 $@.khdr2 > $@.khdr
 	dd if=$@ >> $@.khdr 2>/dev/null
 	mv $@.khdr $@
+endef
+
+define Build/sercomm-mkhash
+	dd bs=$$((0x400)) skip=1 if=$@ conv=notrunc 2>/dev/null | \
+		$(MKHASH) md5 | awk '{print $$1}' | tr -d '\n' | \
+		dd seek=$$((0x1e0)) of=$@ bs=1 conv=notrunc 2>/dev/null
 endef
 
 define Build/sercomm-part-tag
@@ -118,7 +122,7 @@ define Device/sercomm_cxx
   IMAGE/sysupgrade.bin := append-kernel | sercomm-kernel | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
   IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
-	append-ubi | sercomm-factory-cqr
+	append-ubi | sercomm-factory-cqr | sercomm-mkhash
 endef
 
 define Device/sercomm_dxx
