@@ -59,6 +59,7 @@ platform_do_upgrade() {
 	asus,rt-ax54|\
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
+	beeline,smartbox-pro|\
 	beeline,smartbox-turbo|\
 	beeline,smartbox-turbo-plus|\
 	belkin,rt1800|\
@@ -106,6 +107,7 @@ platform_do_upgrade() {
 	sercomm,na502s|\
 	sim,simax1800t|\
 	tplink,ec330-g5u-v1|\
+	wifire,s1500-nbn|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\

@@ -1,0 +1,81 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "mt7621_sercomm_s1500.dtsi"
+
+/ {
+	compatible = "wifire,s1500-nbn", "mediatek,mt7621-soc";
+	model = "WiFire S1500.NBN";
+
+	aliases {
+		label-mac-device = &wan;
+	};
+
+	ubi-concat {
+		compatible = "mtd-concat";
+		devices = <&ubiconcat0 &ubiconcat1 &ubiconcat2 &ubiconcat3>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0x4680000>;
+			};
+		};
+	};
+};
+
+&led_wps {
+	label = "white:wps";
+	color = <LED_COLOR_ID_WHITE>;
+};
+
+&partitions {
+	partition@0_all {
+		label = "ALL";
+		reg = <0x0 0x7f80000>;
+		read-only;
+	};
+
+	partition@80000 {
+		label = "u-boot-env";
+		reg = <0x80000 0x20000>;
+	};
+
+	ubiconcat1: partition@200000 {
+		label = "sys_data";
+		reg = <0x200000 0x1400000>;
+	};
+
+	ubiconcat0: partition@1f00000 {
+		label = "RootFS_1";
+		reg = <0x1f00000 0x2e00000>;
+	};
+
+	partition@4d00000 {
+		label = "RootFS_2";
+		reg = <0x4d00000 0x2e00000>;
+		read-only;
+	};
+
+	ubiconcat2: partition@7b00000 {
+		label = "Ftool";
+		reg = <0x7b00000 0x100000>;
+	};
+
+	ubiconcat3: partition@7c00000 {
+		label = "BCT";
+		reg = <0x7c00000 0x380000>;
+	};
+
+	/*
+	 * 512 KiB reserved for the Bad Blocks
+	 * 0x8000000-0x7f80000=0x80000
+	 */
+};
+
+&wlan_2g {
+	mac-address-increment = <1>;
+};
