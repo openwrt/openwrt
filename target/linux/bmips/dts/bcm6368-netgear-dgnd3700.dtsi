@@ -59,14 +59,14 @@
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
-		/* usb front */
 		led@13 {
+			/* Front USB port */
 			label = "green:usb2";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		/* usb back */
 		led@14 {
+			/* Back USB port */
 			label = "green:usb1";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
@@ -85,7 +85,6 @@
 		led_power_green: led@24 {
 			label = "green:power";
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
-			default-state = "on";
 		};
 
 		led@26 {
