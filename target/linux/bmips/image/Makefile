@@ -313,7 +313,7 @@ define Device/bcm63xx-nand
   DEVICE_PACKAGES += nand-utils
 endef
 
-define Device/bcm63xx_netgear
+define Device/bcm63xx-netgear
   $(Device/bcm63xx-cfe)
   DEVICE_VENDOR := NETGEAR
   IMAGES := factory.chk sysupgrade.bin
