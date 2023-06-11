@@ -15,7 +15,7 @@ endef
 TARGET_DEVICES += comtrend_vr-3025u
 
 define Device/netgear_dgnd3700-v1
-  $(Device/bcm63xx_netgear)
+  $(Device/bcm63xx-netgear)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := DGND3700
   DEVICE_VARIANT := v1
@@ -30,7 +30,7 @@ endef
 TARGET_DEVICES += netgear_dgnd3700-v1
 
 define Device/netgear_dgnd3800b
-  $(Device/bcm63xx_netgear)
+  $(Device/bcm63xx-netgear)
   DEVICE_VENDOR := NETGEAR
   DEVICE_MODEL := DGND3800B
   CFE_BOARD_ID := 96368MVWG
@@ -44,7 +44,7 @@ endef
 TARGET_DEVICES += netgear_dgnd3800b
 
 define Device/netgear_evg2000
-  $(Device/bcm63xx_netgear)
+  $(Device/bcm63xx-netgear)
   DEVICE_MODEL := EVG2000
   CFE_BOARD_ID := 96369PVG
   CHIP_ID := 6368
