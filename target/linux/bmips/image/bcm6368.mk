@@ -27,6 +27,20 @@ define Device/comtrend_vr-3025un
 endef
 TARGET_DEVICES += comtrend_vr-3025un
 
+define Device/comtrend_wap-5813n
+  $(Device/bcm63xx-cfe)
+  DEVICE_VENDOR := Comtrend
+  DEVICE_MODEL := WAP-5813n
+  CHIP_ID := 6368
+  SOC := bcm6369
+  CFE_BOARD_ID := 96369R-1231N
+  FLASH_MB := 8
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES) broadcom-4322-sprom \
+    kmod-leds-gpio
+endef
+TARGET_DEVICES += comtrend_wap-5813n
+
 define Device/netgear_dgnd3700-v1
   $(Device/bcm63xx-netgear)
   DEVICE_VENDOR := NETGEAR
