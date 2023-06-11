@@ -14,6 +14,19 @@ define Device/comtrend_vr-3025u
 endef
 TARGET_DEVICES += comtrend_vr-3025u
 
+define Device/comtrend_vr-3025un
+  $(Device/bcm63xx-cfe)
+  DEVICE_VENDOR := Comtrend
+  DEVICE_MODEL := VR-3025un
+  CHIP_ID := 6368
+  CFE_BOARD_ID := 96368M-1341N
+  FLASH_MB := 8
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES) broadcom-43222-sprom \
+    kmod-leds-gpio
+endef
+TARGET_DEVICES += comtrend_vr-3025un
+
 define Device/netgear_dgnd3700-v1
   $(Device/bcm63xx-netgear)
   DEVICE_VENDOR := NETGEAR
