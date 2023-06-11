@@ -12,7 +12,7 @@ PKG_VERSION:=21.08
 PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://source.codeaurora.org/external/qoriq/qoriq-components/mc-utils
+PKG_SOURCE_URL:=https://github.com/nxp-qoriq/mc-utils
 PKG_SOURCE_VERSION:=LSDK-21.08
 PKG_MIRROR_HASH:=372498ff4b5c8a1ac64ead5856d03ee021332f57771989ed6fe066745372b242
 
