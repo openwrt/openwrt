@@ -70,7 +70,7 @@
  {
 --- a/boot/image-fit.c
 +++ b/boot/image-fit.c
-@@ -2051,6 +2051,50 @@ static const char *fit_get_image_type_pr
+@@ -2051,6 +2051,49 @@ static const char *fit_get_image_type_pr
  	return "unknown";
  }
  
@@ -89,9 +89,8 @@
 +
 +	hdrsize = fdt_totalsize(fit);
 +
-+	/* simple FIT with internal images */
-+	if (hdrsize > 0x1000)
-+		return hdrsize;
++	/* take care of simple FIT with internal images */
++	max_size = hdrsize;
 +
 +	images_noffset = fdt_path_offset(fit, FIT_IMAGES_PATH);
 +	if (images_noffset < 0) {
