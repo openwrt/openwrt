@@ -9,6 +9,9 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	sercomm,ad1018)
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
