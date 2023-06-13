@@ -42,6 +42,7 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	asus,rt-ax59u|\
 	asus,tuf-ax4200)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
