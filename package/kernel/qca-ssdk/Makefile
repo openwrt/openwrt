@@ -51,7 +51,7 @@ MAKE_FLAGS+= \
 	EXTRA_CFLAGS=-fno-stack-protector -I$(STAGING_DIR)/usr/include \
 	$(LNX_CONFIG_OPTS)
 
-ifeq ($(CONFIG_TARGET_BOARD), "ipq807x")
+ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq807x")
     MAKE_FLAGS+= CHIP_TYPE=HPPE PTP_FEATURE=disable SWCONFIG_FEATURE=disable
 endif
 
