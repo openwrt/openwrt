@@ -240,7 +240,8 @@ ath79_setup_interfaces()
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
-	comfast,cf-e375ac)
+	comfast,cf-e375ac|\
+	moxa,awk-1137c)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan"
 		;;
@@ -729,6 +730,11 @@ ath79_setup_macs()
 		;;
 	tplink,deco-s4-v2)
 		lan_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
+		label_mac=$lan_mac
+		;;
+	moxa,awk-1137c)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env mac_addr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env mac_addr)
 		label_mac=$lan_mac
 		;;
 	nec,wf1200cr|\

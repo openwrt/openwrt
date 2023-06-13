@@ -302,6 +302,10 @@ tplink,cpe210-v3)
 meraki,mr16)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
 	;;
+moxa,awk-1137c)
+	ucidef_set_led_switch "wan" "LAN1" "green:lan1" "switch0" "0x02"
+	ucidef_set_led_switch "lan" "LAN2" "green:lan2" "switch0" "0x04"
+	;;
 netgear,wnr2200-8m|\
 netgear,wnr2200-16m)
 	ucidef_set_led_netdev "wan-amber" "WAN (amber)" "amber:wan" "eth0"
