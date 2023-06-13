@@ -6,6 +6,10 @@
 board_config_update
 
 case "$(board_name)" in
+actiontec,r1000h)
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	;;
 comtrend,wap-5813n)
 	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
 	;;
