@@ -49,6 +49,7 @@ sub target_config_features(@) {
 		/^usb$/ and $ret .= "\tselect USB_SUPPORT\n";
 		/^usbgadget$/ and $ret .= "\tselect USB_GADGET_SUPPORT\n";
 		/^virtio$/ and $ret .= "\tselect VIRTIO_SUPPORT\n";
+		/^wireless$/ and $ret .= "\tselect WIRELESS_SUPPORT\n";
 	}
 	return $ret;
 }
