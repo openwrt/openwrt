@@ -21,6 +21,7 @@ sub target_config_features(@) {
 		/^ext4$/ and $ret .= "\tselect USES_EXT4\n";
 		/^fpu$/ and $ret .= "\tselect HAS_FPU\n";
 		/^gpio$/ and $ret .= "\tselect GPIO_SUPPORT\n";
+		/^grand-flash$/ and $ret .= "\tselect GRAND_FLASH\n";
 		/^jffs2$/ and $ret .= "\tselect USES_JFFS2\n";
 		/^jffs2_nand$/ and $ret .= "\tselect USES_JFFS2_NAND\n";
 		/^legacy-sdcard$/ and $ret .= "\tselect LEGACY_SDCARD_SUPPORT\n";
