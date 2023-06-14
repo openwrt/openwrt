@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_VERSION:=3.0.9
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_BUILD_FLAGS:=no-mips16 gc-sections
 
 PKG_BUILD_PARALLEL:=1
@@ -366,6 +366,7 @@ define Build/Configure
 			--libdir=lib \
 			--openssldir=/etc/ssl \
 			--cross-compile-prefix="$(TARGET_CROSS)" \
+			$(TARGET_CFLAGS) \
 			$(TARGET_CPPFLAGS) \
 			$(TARGET_LDFLAGS) \
 			$(OPENSSL_OPTIONS) && \
