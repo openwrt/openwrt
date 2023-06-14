@@ -3,7 +3,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=aarch64
 BOARD:=qualcommax
 BOARDNAME:=Qualcomm Atheros 802.11ax WiSoC-s
-FEATURES:=squashfs ramdisk fpu nand rtc emmc wireless
+FEATURES:=squashfs ramdisk fpu nand rtc emmc wireless grand-flash
 KERNELNAME:=Image dtbs
 CPU_TYPE:=cortex-a53
 SUBTARGETS:=ipq807x

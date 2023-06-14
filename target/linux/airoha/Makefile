@@ -4,7 +4,7 @@ ARCH:=arm
 BOARD:=airoha
 BOARDNAME:=Airoha ARM
 CPU_TYPE:=cortex-a7
-FEATURES:=dt squashfs nand ramdisk gpio source-only
+FEATURES:=dt squashfs nand ramdisk gpio source-only grand-flash
 
 KERNEL_PATCHVER:=5.15
 

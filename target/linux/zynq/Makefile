@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=zynq
 BOARDNAME:=Xilinx Zynq 7000 SoCs
-FEATURES:=fpu gpio rtc usb usbgadget boot-part rootfs-part squashfs
+FEATURES:=fpu gpio rtc usb usbgadget boot-part rootfs-part squashfs grand-flash
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=neon
 SUBTARGETS:=generic

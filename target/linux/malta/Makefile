@@ -8,7 +8,7 @@ BOARD:=malta
 BOARDNAME:=MIPS Malta CoreLV board (qemu)
 SUBTARGETS:=le be le64 be64
 INITRAMFS_EXTRA_FILES:=
-FEATURES:=cpiogz ext4 ramdisk squashfs targz wireless
+FEATURES:=cpiogz ext4 ramdisk squashfs targz wireless grand-flash
 
 KERNEL_PATCHVER:=5.15
 KERNEL_TESTING_PATCHVER:=6.1
