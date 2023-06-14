@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=bcm27xx
 BOARDNAME:=Broadcom BCM27xx
-FEATURES:=audio boot-part display ext4 fpu gpio rootfs-part rtc squashfs usb usbgadget
+FEATURES:=audio boot-part display ext4 fpu gpio rootfs-part rtc squashfs usb usbgadget wireless
 SUBTARGETS:=bcm2708 bcm2709 bcm2710 bcm2711
 
 KERNEL_PATCHVER:=6.1

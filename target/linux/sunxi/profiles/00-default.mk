@@ -12,8 +12,7 @@ define Profile/Default
 	kmod-rtl8xxxu \
 	kmod-sun4i-emac \
 	rtl8188eu-firmware \
-	swconfig \
-	wpad-basic-mbedtls
+	swconfig
   PRIORITY := 1
 endef
 

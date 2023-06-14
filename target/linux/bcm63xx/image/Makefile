@@ -303,12 +303,12 @@ define Device/Default
 endef
 DEVICE_VARS += CHIP_ID DEVICE_LOADADDR
 
-ATH5K_PACKAGES := kmod-ath5k wpad-basic-mbedtls
-ATH9K_PACKAGES := kmod-ath9k wpad-basic-mbedtls
-B43_PACKAGES := kmod-b43 wpad-basic-mbedtls
+ATH5K_PACKAGES := kmod-ath5k
+ATH9K_PACKAGES := kmod-ath9k
+B43_PACKAGES := kmod-b43
 BRCMWL_PACKAGES := kmod-brcm-wl nas wlc
-RT28_PACKAGES := kmod-rt2800-pci wpad-basic-mbedtls
-RT61_PACKAGES := kmod-rt61-pci wpad-basic-mbedtls
+RT28_PACKAGES := kmod-rt2800-pci
+RT61_PACKAGES := kmod-rt61-pci
 USB1_PACKAGES := kmod-usb-ohci kmod-usb-ledtrig-usbport
 USB2_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport
 

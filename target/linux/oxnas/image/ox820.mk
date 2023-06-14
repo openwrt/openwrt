@@ -41,7 +41,7 @@ define Device/akitio_mycloud
   DEVICE_MODEL := MyCloud Mini
   SUPPORTED_DEVICES += akitio
   DEVICE_PACKAGES := kmod-ata-oxnas-sata kmod-i2c-gpio kmod-rtc-ds1307 \
-	kmod-usb2-oxnas kmod-usb-ledtrig-usbport
+	kmod-usb2-oxnas kmod-usb-ledtrig-usbport $(PACKAGE_NO_WIRELESS)
 endef
 TARGET_DEVICES += akitio_mycloud
 
@@ -50,7 +50,7 @@ define Device/cloudengines_pogoplugpro
   DEVICE_MODEL := PogoPlug Pro (with mPCIe)
   SUPPORTED_DEVICES += pogoplug-pro
   DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport \
-	kmod-ata-oxnas-sata kmod-rt2800-pci wpad-basic-mbedtls
+	kmod-ata-oxnas-sata kmod-rt2800-pci
 endef
 TARGET_DEVICES += cloudengines_pogoplugpro
 
@@ -59,7 +59,7 @@ define Device/cloudengines_pogoplug-series-3
   DEVICE_MODEL := PogoPlug Series V3 (without mPCIe)
   SUPPORTED_DEVICES += cloudengines,pogoplugv3 pogoplug-v3
   DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb-ledtrig-usbport \
-	kmod-ata-oxnas-sata
+	kmod-ata-oxnas-sata $(PACKAGE_NO_WIRELESS)
 endef
 TARGET_DEVICES += cloudengines_pogoplug-series-3
 
@@ -70,7 +70,7 @@ define Device/shuttle_kd20
   DEVICE_PACKAGES := kmod-usb2-oxnas kmod-usb3 kmod-usb-ledtrig-usbport \
 	kmod-i2c-gpio kmod-rtc-pcf8563 kmod-gpio-beeper kmod-hwmon-drivetemp \
 	kmod-hwmon-gpiofan kmod-ata-oxnas-sata kmod-md-mod kmod-md-raid0 \
-	kmod-md-raid1 kmod-fs-ext4 kmod-fs-xfs
+	kmod-md-raid1 kmod-fs-ext4 kmod-fs-xfs $(PACKAGE_NO_WIRELESS)
 endef
 TARGET_DEVICES += shuttle_kd20
 
@@ -79,6 +79,6 @@ define Device/mitrastar_stg-212
   DEVICE_MODEL := STG-212
   SUPPORTED_DEVICES += stg212
   DEVICE_PACKAGES := kmod-ata-oxnas-sata kmod-fs-ext4 kmod-fs-xfs \
-	kmod-usb2-oxnas kmod-usb-ledtrig-usbport
+	kmod-usb2-oxnas kmod-usb-ledtrig-usbport $(PACKAGE_NO_WIRELESS)
 endef
 TARGET_DEVICES += mitrastar_stg-212

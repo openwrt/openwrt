@@ -133,11 +133,10 @@ DEVICE_VARS += SIGNATURE
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION TPLINK_BOARD
 DEVICE_VARS += LUXUL_BOARD
 
-IEEE8021X := wpad-basic-mbedtls
-B43 := $(IEEE8021X) kmod-b43
-BRCMFMAC_43602A1 := $(IEEE8021X) kmod-brcmfmac brcmfmac-firmware-43602a1-pcie
-BRCMFMAC_4366B1 := $(IEEE8021X) kmod-brcmfmac brcmfmac-firmware-4366b1-pcie
-BRCMFMAC_4366C0 := $(IEEE8021X) kmod-brcmfmac brcmfmac-firmware-4366c0-pcie
+B43 := kmod-b43
+BRCMFMAC_43602A1 := kmod-brcmfmac brcmfmac-firmware-43602a1-pcie
+BRCMFMAC_4366B1 := kmod-brcmfmac brcmfmac-firmware-4366b1-pcie
+BRCMFMAC_4366C0 := kmod-brcmfmac brcmfmac-firmware-4366c0-pcie
 USB2_PACKAGES := kmod-usb-ohci kmod-usb2 kmod-phy-bcm-ns-usb2
 USB2_PACKAGES += kmod-usb-ledtrig-usbport
 USB3_PACKAGES := $(USB2_PACKAGES) kmod-usb3 kmod-phy-bcm-ns-usb3

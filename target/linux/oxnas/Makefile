@@ -4,7 +4,7 @@ ARCH:=arm
 BOARD:=oxnas
 BOARDNAME:=PLXTECH/Oxford NAS782x/OX8xx
 SUBTARGETS:=ox810se ox820
-FEATURES:=gpio ramdisk rtc squashfs
+FEATURES:=gpio ramdisk rtc squashfs wireless
 DEVICE_TYPE:=nas
 
 KERNEL_PATCHVER:=5.15

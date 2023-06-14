@@ -4,7 +4,7 @@
 
 define Profile/Broadcom-mips74k-wl
   NAME:=Broadcom SoC, BCM43xx WiFi (proprietary wl)
-  PACKAGES:=-wpad-basic-mbedtls kmod-brcm-wl wlc nas
+  PACKAGES:=$(PACKAGE_NO_WIRELESS) kmod-brcm-wl wlc nas
 endef
 
 define Profile/Broadcom-mips74k-wl/Description

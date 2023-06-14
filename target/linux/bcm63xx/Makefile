@@ -9,7 +9,7 @@ ARCH:=mips
 BOARD:=bcm63xx
 BOARDNAME:=Broadcom BCM63xx
 SUBTARGETS:=generic smp
-FEATURES:=squashfs usb atm pci pcmcia usbgadget source-only
+FEATURES:=squashfs usb atm pci pcmcia usbgadget source-only wireless
 
 KERNEL_PATCHVER:=5.15
 

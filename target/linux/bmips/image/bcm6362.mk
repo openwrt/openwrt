@@ -17,7 +17,7 @@ define Device/huawei_hg253s-v2
   SUBPAGESIZE := 512
   VID_HDR_OFFSET := 2048
   DEVICE_PACKAGES += $(USB2_PACKAGES) \
-    kmod-leds-bcm6328 kmod-leds-gpio
+    kmod-leds-bcm6328 kmod-leds-gpio $(PACKAGE_NO_WIRELESS)
   CFE_WFI_FLASH_TYPE := 3
 endef
 TARGET_DEVICES += huawei_hg253s-v2

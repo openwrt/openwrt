@@ -1,7 +1,5 @@
-FEATURES += low_mem pcmcia small_flash
+FEATURES += low_mem pcmcia small_flash wireless
 BOARDNAME:=Legacy (BMIPS3300)
-
-DEFAULT_PACKAGES += wpad-basic-mbedtls
 
 define Target/Description
 	Build firmware for Broadcom BCM47xx and BCM53xx devices with

@@ -4,7 +4,7 @@
 
 define Profile/Broadcom-mips74k-none
   NAME:=Broadcom SoC, No WiFi
-  PACKAGES:=-wpad-basic-mbedtls
+  PACKAGES:=$(PACKAGE_NO_WIRELESS)
 endef
 
 define Profile/Broadcom-mips74k-none/Description

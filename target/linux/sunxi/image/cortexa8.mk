@@ -6,7 +6,7 @@
 define Device/cubietech_a10-cubieboard
   DEVICE_VENDOR := Cubietech
   DEVICE_MODEL := Cubieboard
-  DEVICE_PACKAGES:=kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
+  DEVICE_PACKAGES:=kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi $(PACKAGE_NO_WIRELESS)
   SOC := sun4i
 endef
 TARGET_DEVICES += cubietech_a10-cubieboard
@@ -15,7 +15,8 @@ define Device/haoyu_a10-marsboard
   DEVICE_VENDOR := HAOYU Electronics
   DEVICE_MODEL := MarsBoard A10
   DEVICE_PACKAGES:=kmod-ata-core kmod-ata-sunxi kmod-sun4i-emac \
-	kmod-rtc-sunxi kmod-sound-core kmod-sound-soc-sunxi
+	kmod-rtc-sunxi kmod-sound-core kmod-sound-soc-sunxi \
+	$(PACKAGE_NO_WIRELESS)
   SUPPORTED_DEVICES += marsboard,a10-marsboard
   SOC := sun4i
 endef
@@ -32,7 +33,7 @@ TARGET_DEVICES += linksprite_a10-pcduino
 define Device/olimex_a10-olinuxino-lime
   DEVICE_VENDOR := Olimex
   DEVICE_MODEL := A10-OLinuXino-LIME
-  DEVICE_PACKAGES:=kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
+  DEVICE_PACKAGES:=kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi $(PACKAGE_NO_WIRELESS)
   SOC := sun4i
 endef
 TARGET_DEVICES += olimex_a10-olinuxino-lime

@@ -4,7 +4,7 @@
 
 define Profile/Default
   NAME:=Default Profile
-  PACKAGES:=kmod-b43 wpad-basic-mbedtls
+  PACKAGES:=kmod-b43
   PRIORITY:=1
 endef
 

@@ -1,7 +1,5 @@
 BOARDNAME:=Generic
-FEATURES+=pcmcia
-
-DEFAULT_PACKAGES += wpad-basic-mbedtls
+FEATURES+=pcmcia wireless
 
 define Target/Description
 	Build generic firmware for all Broadcom BCM47xx and BCM53xx MIPS

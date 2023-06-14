@@ -33,6 +33,7 @@ define Device/friendlyarm_nanopi-neo-plus2
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi NEO Plus2
   SUPPORTED_DEVICES:=nanopi-neo-plus2
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   $(Device/sun50i-h5)
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo-plus2
@@ -41,6 +42,7 @@ define Device/friendlyarm_nanopi-neo2
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi NEO2
   SUPPORTED_DEVICES:=nanopi-neo2
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   $(Device/sun50i-h5)
 endef
 TARGET_DEVICES += friendlyarm_nanopi-neo2
@@ -48,7 +50,7 @@ TARGET_DEVICES += friendlyarm_nanopi-neo2
 define Device/friendlyarm_nanopi-r1s-h5
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := Nanopi R1S H5
-  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-usb-net-rtl8152
+  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-usb-net-rtl8152 $(PACKAGE_NO_WIRELESS)
   SUPPORTED_DEVICES:=nanopi-r1s-h5
   $(Device/sun50i-h5)
 endef
@@ -58,6 +60,7 @@ define Device/libretech_all-h3-cc-h5
   DEVICE_VENDOR := Libre Computer
   DEVICE_MODEL := ALL-H3-CC
   DEVICE_VARIANT := H5
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   $(Device/sun50i-h5)
   SUNXI_DTS := $$(SUNXI_DTS_DIR)$$(SOC)-libretech-all-h3-cc
 endef
@@ -102,6 +105,7 @@ define Device/xunlong_orangepi-one-plus
   $(Device/sun50i-h6)
   DEVICE_VENDOR := Xunlong
   DEVICE_MODEL := Orange Pi One Plus
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   SUNXI_DTS_DIR := allwinner/
 endef
 TARGET_DEVICES += xunlong_orangepi-one-plus
@@ -109,6 +113,7 @@ TARGET_DEVICES += xunlong_orangepi-one-plus
 define Device/xunlong_orangepi-pc2
   DEVICE_VENDOR := Xunlong
   DEVICE_MODEL := Orange Pi PC 2
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   $(Device/sun50i-h5)
 endef
 TARGET_DEVICES += xunlong_orangepi-pc2
@@ -123,6 +128,7 @@ TARGET_DEVICES += xunlong_orangepi-zero2
 define Device/xunlong_orangepi-zero-plus
   DEVICE_VENDOR := Xunlong
   DEVICE_MODEL := Orange Pi Zero Plus
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   $(Device/sun50i-h5)
 endef
 TARGET_DEVICES += xunlong_orangepi-zero-plus

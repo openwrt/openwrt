@@ -186,7 +186,7 @@ endef
 TARGET_DEVICES += ubnt_rocket-m
 
 define Device/ubnt_routerstation_common
-  DEVICE_PACKAGES := -kmod-ath9k -wpad-basic-mbedtls -uboot-envtools kmod-usb-ohci \
+  DEVICE_PACKAGES := -kmod-ath9k $(PACKAGE_NO_WIRELESS) -uboot-envtools kmod-usb-ohci \
 	kmod-usb2 fconfig
   DEVICE_VENDOR := Ubiquiti
   SOC := ar7161

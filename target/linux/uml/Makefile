@@ -11,14 +11,14 @@ ifeq ($(HOST_OS),Linux)
 ARCH:=x86_64
 BOARD:=uml
 BOARDNAME:=User Mode Linux
-FEATURES:=audio ext4 rootfs-part squashfs
+FEATURES:=audio ext4 rootfs-part squashfs wireless
 
 KERNEL_PATCHVER:=5.15
 KERNEL_TESTING_PATCHVER:=6.1
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += wpad-basic-mbedtls kmod-mac80211-hwsim mkf2fs e2fsprogs
+DEFAULT_PACKAGES += kmod-mac80211-hwsim mkf2fs e2fsprogs
 
   endif
 endif

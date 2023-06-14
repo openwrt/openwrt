@@ -4,7 +4,8 @@ define Device/allnet_all0333cj
   IMAGE_SIZE := 3700k
   DEVICE_PACKAGES := kmod-ltq-adsl-ase kmod-ltq-adsl-ase-mei \
 	kmod-ltq-adsl-ase-fw-b kmod-ltq-atm-ase \
-	ltq-adsl-app ppp-mod-pppoe
+	ltq-adsl-app ppp-mod-pppoe \
+	$(PACKAGE_NO_WIRELESS)
   DEFAULT := n
 endef
 TARGET_DEVICES += allnet_all0333cj
@@ -15,7 +16,8 @@ define Device/netgear_dgn1000b
   IMAGE_SIZE := 3712k
   DEVICE_PACKAGES := kmod-ltq-adsl-ase kmod-ltq-adsl-ase-mei \
 	kmod-ltq-adsl-ase-fw-b kmod-ltq-atm-ase \
-	ltq-adsl-app ppp-mod-pppoe
+	ltq-adsl-app ppp-mod-pppoe \
+	$(PACKAGE_NO_WIRELESS)
   SUPPORTED_DEVICES += DGN1000B
   DEFAULT := n
 endef

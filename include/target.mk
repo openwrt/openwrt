@@ -17,7 +17,6 @@ DEFAULT_PACKAGES:=\
 	fstools \
 	libc \
 	libgcc \
-	libustream-mbedtls \
 	logd \
 	mtd \
 	netifd \
@@ -36,6 +35,13 @@ endif
 # include ujail on systems with enough storage
 ifeq ($(CONFIG_SMALL_FLASH),)
 DEFAULT_PACKAGES+=procd-ujail
+endif
+
+# mbedTLS wireless features handling
+DEFAULT_PACKAGES+=libustream-mbedtls
+PACKAGE_NO_WIRELESS:=-wpad-basic-mbedtls
+ifneq($(CONFIG_WIRELESS_SUPPORT),)
+DEFAULT_PACKAGES+=wpad-basic-mbedtls
 endif
 
 # include seccomp ld-preload hooks if kernel supports it

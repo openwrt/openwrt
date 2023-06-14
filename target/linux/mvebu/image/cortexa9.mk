@@ -55,7 +55,7 @@ define Device/buffalo_ls421de
   DEVICE_PACKAGES :=  \
     kmod-rtc-rs5c372a kmod-hwmon-gpiofan kmod-hwmon-drivetemp kmod-usb3 \
     kmod-linkstation-poweroff kmod-md-raid0 kmod-md-raid1 kmod-md-mod \
-    kmod-fs-xfs mkf2fs e2fsprogs partx-utils
+    kmod-fs-xfs mkf2fs e2fsprogs partx-utils $(PACKAGE_NO_WIRELESS)
 endef
 TARGET_DEVICES += buffalo_ls421de
 
@@ -72,7 +72,8 @@ define Device/ctera_c200-v2
   KERNEL_SUFFIX := -factory.firm
   DEVICE_PACKAGES :=  \
     kmod-gpio-button-hotplug kmod-hwmon-drivetemp kmod-hwmon-nct7802 \
-    kmod-rtc-s35390a kmod-usb3 kmod-usb-ledtrig-usbport
+    kmod-rtc-s35390a kmod-usb3 kmod-usb-ledtrig-usbport \
+    $(PACKAGE_NO_WIRELESS)
   IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += ctera_c200-v2
@@ -86,7 +87,7 @@ define Device/cznic_turris-omnia
   KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
   DEVICE_PACKAGES :=  \
     mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
-    wpad-basic-mbedtls kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
     partx-utils kmod-i2c-mux-pca954x kmod-leds-turris-omnia
   IMAGES := sysupgrade.img.gz
   IMAGE/sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
@@ -106,7 +107,7 @@ define Device/fortinet_fg-50e
   DEVICE_DTS := armada-385-fortinet-fg-50e
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
     sysupgrade-tar rootfs=$$$$@ | append-metadata
-  DEVICE_PACKAGES := kmod-hwmon-nct7802
+  DEVICE_PACKAGES := kmod-hwmon-nct7802 $(PACKAGE_NO_WIRELESS)
 endef
 TARGET_DEVICES += fortinet_fg-50e
 
@@ -114,6 +115,7 @@ define Device/globalscale_mirabox
   $(Device/NAND-512K)
   DEVICE_VENDOR := Globalscale
   DEVICE_MODEL := Mirabox
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   SOC := armada-370
   SUPPORTED_DEVICES += mirabox
 endef
@@ -122,7 +124,8 @@ TARGET_DEVICES += globalscale_mirabox
 define Device/iptime_nas1dual
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := NAS1dual
-  DEVICE_PACKAGES := kmod-hwmon-drivetemp kmod-hwmon-gpiofan kmod-usb3
+  DEVICE_PACKAGES := kmod-hwmon-drivetemp kmod-hwmon-gpiofan kmod-usb3 \
+	$(PACKAGE_NO_WIRELESS)
   SOC := armada-385
   KERNEL := kernel-bin | append-dtb | iptime-naspkg nas1dual
   KERNEL_SIZE := 6144k
@@ -138,7 +141,7 @@ define Device/kobol_helios4
   DEVICE_MODEL := Helios4
   KERNEL_INSTALL := 1
   KERNEL := kernel-bin
-  DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils
+  DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils $(PACKAGE_NO_WIRELESS)
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   SOC := armada-388
@@ -150,7 +153,7 @@ TARGET_DEVICES += kobol_helios4
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_VENDOR := Linksys
-  DEVICE_PACKAGES := kmod-mwlwifi wpad-basic-mbedtls
+  DEVICE_PACKAGES := kmod-mwlwifi
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 	append-ubi | pad-to $$$$(PAGESIZE)
@@ -243,6 +246,7 @@ define Device/marvell_a370-db
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada 370 Development Board (DB-88F6710-BP-DDR3)
   DEVICE_DTS := armada-370-db
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   SUPPORTED_DEVICES += armada-370-db
 endef
 TARGET_DEVICES += marvell_a370-db
@@ -252,6 +256,7 @@ define Device/marvell_a370-rd
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada 370 RD (RD-88F6710-A1)
   DEVICE_DTS := armada-370-rd
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   SUPPORTED_DEVICES += armada-370-rd
 endef
 TARGET_DEVICES += marvell_a370-rd
@@ -261,6 +266,7 @@ define Device/marvell_a385-db-ap
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada 385 Development Board AP (DB-88F6820-AP)
   DEVICE_DTS := armada-385-db-ap
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 	append-ubi | pad-to $$$$(PAGESIZE)
@@ -273,6 +279,7 @@ define Device/marvell_a388-rd
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada 388 RD (RD-88F6820-AP)
   DEVICE_DTS := armada-388-rd
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   IMAGES := firmware.bin
   IMAGE/firmware.bin := append-kernel | pad-to 256k | append-rootfs | pad-rootfs
   SUPPORTED_DEVICES := armada-388-rd marvell,a385-rd
@@ -284,6 +291,7 @@ define Device/marvell_axp-db
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada XP Development Board (DB-78460-BP)
   DEVICE_DTS := armada-xp-db
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   SUPPORTED_DEVICES += armada-xp-db
 endef
 TARGET_DEVICES += marvell_axp-db
@@ -293,6 +301,7 @@ define Device/marvell_axp-gp
   DEVICE_VENDOR := Marvell
   DEVICE_MODEL := Armada Armada XP GP (DB-MV784MP-GP)
   DEVICE_DTS := armada-xp-gp
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   SUPPORTED_DEVICES += armada-xp-gp
 endef
 TARGET_DEVICES += marvell_axp-gp
@@ -301,6 +310,7 @@ define Device/plathome_openblocks-ax3-4
   DEVICE_VENDOR := Plat'Home
   DEVICE_MODEL := OpenBlocks AX3
   DEVICE_VARIANT := 4 ports
+  DEVICE_PACKAGES := $(PACKAGE_NO_WIRELESS)
   SOC := armada-xp
   SUPPORTED_DEVICES += openblocks-ax3-4
   BLOCKSIZE := 128k
@@ -315,7 +325,7 @@ define Device/solidrun_clearfog-base-a1
   DEVICE_MODEL := ClearFog Base
   KERNEL_INSTALL := 1
   KERNEL := kernel-bin
-  DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils
+  DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils $(PACKAGE_NO_WIRELESS)
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-base armada-388-clearfog-pro
@@ -333,7 +343,7 @@ define Device/solidrun_clearfog-pro-a1
   DEVICE_MODEL := ClearFog Pro
   KERNEL_INSTALL := 1
   KERNEL := kernel-bin
-  DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils
+  DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils $(PACKAGE_NO_WIRELESS)
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base

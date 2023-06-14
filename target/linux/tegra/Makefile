@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH := arm
 BOARD := tegra
 BOARDNAME := NVIDIA Tegra
-FEATURES := audio boot-part display ext4 fpu gpio pci pcie rootfs-part rtc squashfs usb
+FEATURES := audio boot-part display ext4 fpu gpio pci pcie rootfs-part rtc squashfs usb wireless
 CPU_TYPE := cortex-a9
 CPU_SUBTYPE := vfpv3-d16
 SUBTARGETS := generic

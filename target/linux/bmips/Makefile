@@ -7,7 +7,7 @@ CPU_TYPE:=mips32
 BOARD:=bmips
 BOARDNAME:=Broadcom BMIPS
 SUBTARGETS:=bcm6318 bcm6328 bcm6358 bcm6362 bcm6368 bcm63268
-FEATURES:=gpio squashfs usb
+FEATURES:=gpio squashfs usb wireless
 
 KERNEL_PATCHVER:=5.15
 KERNEL_TESTING_PATCHVER:=6.1
