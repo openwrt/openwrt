@@ -37,11 +37,31 @@ ifeq ($(CONFIG_SMALL_FLASH),)
 DEFAULT_PACKAGES+=procd-ujail
 endif
 
-# mbedTLS wireless features handling
-DEFAULT_PACKAGES+=libustream-mbedtls
-PACKAGE_NO_WIRELESS:=-wpad-basic-mbedtls
-ifneq($(CONFIG_WIRELESS_SUPPORT),)
-DEFAULT_PACKAGES+=wpad-basic-mbedtls
+# mbedTLS and wireless features handling
+ifeq ($(CONFIG_TLS_PROVIDER_MBEDTLS),y)
+  DEFAULT_PACKAGES+=libustream-mbedtls
+  PACKAGE_NO_WIRELESS:=-wpad-basic-mbedtls
+  ifneq ($(CONFIG_WIRELESS_SUPPORT),)
+    DEFAULT_PACKAGES+=wpad-basic-mbedtls
+  endif
+endif
+
+# OpenSSL and wireless features handling
+ifeq ($(CONFIG_TLS_PROVIDER_OPENSSL),y)
+  DEFAULT_PACKAGES+=libustream-openssl
+  PACKAGE_NO_WIRELESS:=-wpad-basic-openssl
+  ifneq ($(CONFIG_WIRELESS_SUPPORT),)
+    DEFAULT_PACKAGES+=wpad-basic-openssl
+  endif
+endif
+
+# wolfSSL and wireless features handling
+ifeq ($(CONFIG_TLS_PROVIDER_WOLFSSL),y)
+  DEFAULT_PACKAGES+=libustream-wolfssl
+  PACKAGE_NO_WIRELESS:=-wpad-basic-wolfssl
+  ifneq ($(CONFIG_WIRELESS_SUPPORT),)
+    DEFAULT_PACKAGES+=wpad-basic-wolfssl
+  endif
 endif
 
 # include seccomp ld-preload hooks if kernel supports it

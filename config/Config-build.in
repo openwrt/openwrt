@@ -130,6 +130,26 @@ menu "Global build settings"
 		  Useful for release builds, so that kernel issues can be debugged offline
 		  later.
 
+	choice
+		prompt "TLS provider"
+		default TLS_PROVIDER_MBEDTLS if !GRAND_FLASH
+		default TLS_PROVIDER_OPENSSL if GRAND_FLASH
+		help
+                  This allows to select TLS provider.
+
+	config TLS_PROVIDER_MBEDTLS
+		bool "mbedTLS"
+		select PACKAGE_libustream-mbedtls
+
+	config TLS_PROVIDER_OPENSSL
+		bool "OpenSSL"
+		select PACKAGE_libustream-openssl
+
+	config TLS_PROVIDER_WOLFSSL
+		bool "wolfSSL"
+		select PACKAGE_libustream-wolfssl
+	endchoice
+
 	menu "Kernel build options"
 
 	source "config/Config-kernel.in"

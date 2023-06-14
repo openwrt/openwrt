@@ -124,6 +124,9 @@ config USES_BOOT_PART
 
 config WIRELESS_SUPPORT
 	bool
+	imply PACKAGE_wpad-basic-mbedtls if TLS_PROVIDER_MBEDTLS
+	imply PACKAGE_wpad-basic-openssl if TLS_PROVIDER_OPENSSL
+	imply PACKAGE_wpad-basic-wolfssl if TLS_PROVIDER_WOLFSSL
 
 # Architecture selection
 
