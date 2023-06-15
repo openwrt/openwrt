@@ -1,0 +1,69 @@
+From b4fe1f680ba28588c330bcd65156ef7f8423426c Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 15 Jun 2023 19:44:53 +0200
+Subject: [PATCH] nl80211: add support for QAM-256 in 2.4GHz 802.11n
+
+Add support for QAM-256 in 2.4GHz 802.11n where VHT rates are set in
+2.4GHz 802.11n mode.
+
+To identify if we are using this non-standard mode, we refer to the
+hostapd conf providing vht_capab config.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ iwinfo_nl80211.c | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
+
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -3216,6 +3216,14 @@ static void nl80211_eval_modelist(struct
+ 	{
+ 		m->hw |= IWINFO_80211_B;
+ 		m->hw |= IWINFO_80211_G;
++
++		if (m->nl_vht > 0)
++		{
++			m->ht |= IWINFO_HTMODE_VHT20;
++
++			if (m->nl_ht & (1 << 1))
++				m->ht |= IWINFO_HTMODE_VHT40;
++		}
+ 	}
+ 
+ 	if (m->bands & IWINFO_BAND_5)
+@@ -3366,6 +3374,7 @@ static int nl80211_get_htmode(const char
+ 	struct chan_info chn = { 0 };
+ 	char *res, b[2] = { 0 };
+ 	int err;
++	bool vendor_qam256 = false;
+ 	bool he = false;
+ 	bool eht = false;
+ 
+@@ -3388,13 +3397,17 @@ static int nl80211_get_htmode(const char
+ 		eht = b[0] == '7';
+ 	}
+ 
++	if ((chn.width == NL80211_CHAN_WIDTH_20 || chn.width == NL80211_CHAN_WIDTH_40) &&
++	    nl80211_hostapd_query(res ? res : ifname, "vht_capab", b, sizeof(b)))
++		vendor_qam256 = true;
++
+ 	switch (chn.width) {
+ 	case NL80211_CHAN_WIDTH_20:
+ 		if (eht)
+ 			*buf = IWINFO_HTMODE_EHT20;
+ 		else if (he)
+ 			*buf = IWINFO_HTMODE_HE20;
+-		else if (chn.mode == -1)
++		else if (chn.mode == -1 || vendor_qam256)
+ 			*buf = IWINFO_HTMODE_VHT20;
+ 		else
+ 			*buf = IWINFO_HTMODE_HT20;
+@@ -3404,7 +3417,7 @@ static int nl80211_get_htmode(const char
+ 			*buf = IWINFO_HTMODE_EHT40;
+ 		else if (he)
+ 			*buf = IWINFO_HTMODE_HE40;
+-		else if (chn.mode == -1)
++		else if (chn.mode == -1 || vendor_qam256)
+ 			*buf = IWINFO_HTMODE_VHT40;
+ 		else
+ 			*buf = IWINFO_HTMODE_HT40;
