@@ -17,7 +17,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
 
 --- a/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c
 +++ b/drivers/staging/vc04_services/interface/vchiq_arm/vchiq_arm.c
-@@ -2696,6 +2696,7 @@ vchiq_register_child(struct platform_dev
+@@ -2698,6 +2698,7 @@ vchiq_register_child(struct platform_dev
  {
  	struct platform_device_info pdevinfo;
  	struct platform_device *child;
@@ -25,7 +25,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  
  	memset(&pdevinfo, 0, sizeof(pdevinfo));
  
-@@ -2711,10 +2712,20 @@ vchiq_register_child(struct platform_dev
+@@ -2713,10 +2714,20 @@ vchiq_register_child(struct platform_dev
  	}
  
  	/*

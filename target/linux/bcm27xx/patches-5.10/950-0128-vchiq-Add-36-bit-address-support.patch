@@ -182,7 +182,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  static const char *const ioctl_names[] = {
  	"CONNECT",
  	"SHUTDOWN",
-@@ -2679,6 +2684,7 @@ void vchiq_platform_conn_state_changed(s
+@@ -2681,6 +2686,7 @@ void vchiq_platform_conn_state_changed(s
  static const struct of_device_id vchiq_of_match[] = {
  	{ .compatible = "brcm,bcm2835-vchiq", .data = &bcm2835_drvdata },
  	{ .compatible = "brcm,bcm2836-vchiq", .data = &bcm2836_drvdata },

@@ -21,7 +21,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
  static struct vchiq_drvdata bcm2835_drvdata = {
  	.cache_line_size = 32,
-@@ -2796,6 +2797,7 @@ static int vchiq_probe(struct platform_d
+@@ -2798,6 +2799,7 @@ static int vchiq_probe(struct platform_d
  	bcm2835_codec = vchiq_register_child(pdev, "bcm2835-codec");
  	bcm2835_camera = vchiq_register_child(pdev, "bcm2835-camera");
  	bcm2835_audio = vchiq_register_child(pdev, "bcm2835_audio");
@@ -29,7 +29,7 @@ Signed-off-by: Naushir Patuck <naush@raspberrypi.com>
  
  	return 0;
  
-@@ -2808,6 +2810,7 @@ failed_platform_init:
+@@ -2810,6 +2812,7 @@ failed_platform_init:
  
  static int vchiq_remove(struct platform_device *pdev)
  {
