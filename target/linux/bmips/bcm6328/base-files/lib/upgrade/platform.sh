@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-. /lib/upgrade/cfe-jffs2-nand.sh
-
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
