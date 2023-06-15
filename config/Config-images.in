@@ -138,8 +138,6 @@ menu "Target Images"
 
 	config TARGET_ROOTFS_JFFS2_NAND
 		bool "jffs2 for NAND"
-		default y if USES_JFFS2_NAND
-		depends on USES_JFFS2_NAND
 		help
 		  Build a JFFS2 root filesystem for NAND flash.
 
