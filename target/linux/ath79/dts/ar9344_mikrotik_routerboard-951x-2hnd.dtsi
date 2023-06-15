@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344_mikrotik_routerboard.dtsi"
+
+&gpio {
+	nand_power {
+		gpio-hog;
+		gpios = <14 GPIO_ACTIVE_LOW>;
+		output-high;
+	};
+};
+
+&nand {
+	status = "okay";
+
+	nand-ecc-mode = "soft";
+	qca,nand-swap-dma;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "booter";
+			reg = <0x0000000 0x0040000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "kernel";
+			reg = <0x0040000 0x03c0000>;
+		};
+
+		partition@400000 {
+			label = "ubi";
+			reg = <0x0400000 0x7c00000>;
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "mikrotik,routerboot-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "routerboot";
+				reg = <0x0 0x0>;
+				read-only;
+			};
+
+			hard_config: hard_config {
+				read-only;
+			};
+
+			bios {
+				size = <0x1000>;
+				read-only;
+			};
+
+			soft_config {
+			};
+		};
+	};
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
