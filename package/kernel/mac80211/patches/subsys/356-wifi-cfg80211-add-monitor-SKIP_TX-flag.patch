@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -2272,6 +2272,7 @@ static inline int cfg80211_get_station(s
+@@ -2274,6 +2274,7 @@ static inline int cfg80211_get_station(s
   * @MONITOR_FLAG_OTHER_BSS: disable BSSID filtering
   * @MONITOR_FLAG_COOK_FRAMES: report frames after processing
   * @MONITOR_FLAG_ACTIVE: active monitor, ACKs frames on its MAC address
@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
  enum monitor_flags {
  	MONITOR_FLAG_CHANGED		= BIT(__NL80211_MNTR_FLAG_INVALID),
-@@ -2281,6 +2282,7 @@ enum monitor_flags {
+@@ -2283,6 +2284,7 @@ enum monitor_flags {
  	MONITOR_FLAG_OTHER_BSS		= BIT(NL80211_MNTR_FLAG_OTHER_BSS),
  	MONITOR_FLAG_COOK_FRAMES	= BIT(NL80211_MNTR_FLAG_COOK_FRAMES),
  	MONITOR_FLAG_ACTIVE		= BIT(NL80211_MNTR_FLAG_ACTIVE),

@@ -1,0 +1,50 @@
+From 462b0e7ce7cadef5c14bb16134e43573b169c9b5 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 14 Jun 2023 09:44:29 +0200
+Subject: [PATCH 4/4] wifi: ath11k: add support for QAM-256 in 2.4GHz 802.11n
+
+Ath11k supports non-standard QAM-256 in 2.4GHz in 802.11n. Permit for
+supported client to benefits from these extra bandwidth by enabling
+support for it.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 7 +++++--
+ drivers/net/wireless/ath/ath11k/wmi.c | 2 ++
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -2858,9 +2858,9 @@ static void ath11k_peer_assoc_h_phymode(
+ 		} else if (sta->deflink.vht_cap.vht_supported &&
+ 			   !ath11k_peer_assoc_h_vht_masked(vht_mcs_mask)) {
+ 			if (sta->deflink.bandwidth == IEEE80211_STA_RX_BW_40)
+-				phymode = MODE_11AC_VHT40;
++				phymode = MODE_11AC_VHT40_2G;
+ 			else
+-				phymode = MODE_11AC_VHT20;
++				phymode = MODE_11AC_VHT20_2G;
+ 		} else if (sta->deflink.ht_cap.ht_supported &&
+ 			   !ath11k_peer_assoc_h_ht_masked(ht_mcs_mask)) {
+ 			if (sta->deflink.bandwidth == IEEE80211_STA_RX_BW_40)
+@@ -5490,6 +5490,9 @@ static void ath11k_mac_setup_ht_vht_cap(
+ 			*ht_cap_info = ht_cap;
+ 		band->ht_cap = ath11k_create_ht_cap(ar, ht_cap,
+ 						    rate_cap_rx_chainmask);
++		band->vht_cap = ath11k_create_vht_cap(ar, rate_cap_tx_chainmask,
++						      rate_cap_rx_chainmask);
++		band->vht_cap.vendor_qam256_supported = true;
+ 	}
+ 
+ 	if (cap->supported_bands & WMI_HOST_WLAN_5G_CAP &&
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -411,6 +411,8 @@ ath11k_pull_mac_phy_cap_svc_ready_ext(st
+ 	 * handled.
+ 	 */
+ 	if (mac_phy_caps->supported_bands & WMI_HOST_WLAN_2G_CAP) {
++		pdev_cap->vht_cap = mac_phy_caps->vht_cap_info_2g;
++		pdev_cap->vht_mcs = mac_phy_caps->vht_supp_mcs_2g;
+ 		pdev_cap->tx_chain_mask = mac_phy_caps->tx_chain_mask_2g;
+ 		pdev_cap->rx_chain_mask = mac_phy_caps->rx_chain_mask_2g;
+ 	}
