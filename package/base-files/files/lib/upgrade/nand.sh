@@ -301,6 +301,7 @@ nand_upgrade_fit() {
 nand_upgrade_tar() {
 	local tar_file="$1"
 	local gz="$2"
+	local jffs2_markers="${CI_JFFS2_CLEAN_MARKERS:-0}"
 
 	# WARNING: This fails if tar contains more than one 'sysupgrade-*' directory.
 	local board_dir="$(tar t${gz}f "$tar_file" | grep -m 1 '^sysupgrade-.*/$')"
@@ -329,6 +330,7 @@ nand_upgrade_tar() {
 			ubi_kernel_length="$kernel_length"
 		fi
 	fi
+
 	local has_env=0
 	nand_upgrade_prepare_ubi "$rootfs_length" "$rootfs_type" "$ubi_kernel_length" "$has_env" || return 1
 
@@ -340,8 +342,14 @@ nand_upgrade_tar() {
 	fi
 	if [ "$kernel_length" ]; then
 		if [ "$kernel_mtd" ]; then
-			tar xO${gz}f "$tar_file" "$board_dir/kernel" | \
-				mtd write - "$CI_KERNPART"
+			if [ "$jffs2_markers" = 1 ]; then
+				flash_erase -j "/dev/mtd${kernel_mtd}" 0 0
+				tar xO${gz}f "$tar_file" "$board_dir/kernel" | \
+					nandwrite "/dev/mtd${kernel_mtd}" -
+			else
+				tar xO${gz}f "$tar_file" "$board_dir/kernel" | \
+					mtd write - "$CI_KERNPART"
+			fi
 		else
 			local ubidev="$( nand_find_ubi "${CI_KERN_UBIPART:-$CI_UBIPART}" )"
 			local kern_ubivol="$( nand_find_volume $ubidev "$CI_KERNPART" )"
