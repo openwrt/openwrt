@@ -90,9 +90,6 @@ endif
 ifneq ($(filter -march=armv%,$(TARGET_OPTIMIZATION)),)
   GCC_ARCH:=$(patsubst -march=%,%,$(filter -march=armv%,$(TARGET_OPTIMIZATION)))
 endif
-ifdef CONFIG_HAS_SPE_FPU
-  TARGET_SUFFIX:=$(TARGET_SUFFIX)spe
-endif
 ifdef CONFIG_MIPS64_ABI
   ifneq ($(CONFIG_MIPS64_ABI_O32),y)
      ARCH_SUFFIX:=$(ARCH_SUFFIX)_$(call qstrip,$(CONFIG_MIPS64_ABI))

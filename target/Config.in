@@ -5,11 +5,6 @@ source "tmp/.config-target.in"
 config HAS_TESTING_KERNEL
 	bool
 
-config HAS_SPE_FPU
-	depends on powerpc
-	select HAS_FPU
-	bool
-
 config HAS_FPU
 	bool
 

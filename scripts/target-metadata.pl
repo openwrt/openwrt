@@ -40,7 +40,6 @@ sub target_config_features(@) {
 		/^rtc$/ and $ret .= "\tselect RTC_SUPPORT\n";
 		/^separate-ramdisk$/ and $ret .= "\tselect USES_INITRAMFS\n\tselect USES_SEPARATE_INITRAMFS\n";
 		/^small-flash$/ and $ret .= "\tselect SMALL_FLASH\n";
-		/^spe_fpu$/ and $ret .= "\tselect HAS_SPE_FPU\n";
 		/^squashfs$/ and $ret .= "\tselect USES_SQUASHFS\n";
 		/^targz$/ and $ret .= "\tselect USES_TARGZ\n";
 		/^testing-kernel$/ and $ret .= "\tselect HAS_TESTING_KERNEL\n";
