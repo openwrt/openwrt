@@ -2,7 +2,7 @@
 
 SUBTARGET:=bcm6358
 BOARDNAME:=BCM6358 based boards
-FEATURES+=low_mem
+FEATURES+=low-mem
 
 define Target/Description
   Build firmware images for Broadcom BCM6358 based boards.

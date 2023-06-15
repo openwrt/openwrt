@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips
 BOARD:=ath25
 BOARDNAME:=Atheros AR231x/AR5312
-FEATURES:=squashfs low_mem small_flash source-only wireless
+FEATURES:=squashfs low-mem small_flash source-only wireless
 SUBTARGETS:=generic
 
 KERNEL_PATCHVER:=5.15

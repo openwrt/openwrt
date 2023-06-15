@@ -1,4 +1,4 @@
-FEATURES += low_mem pcmcia small_flash wireless
+FEATURES += low-mem pcmcia small_flash wireless
 BOARDNAME:=Legacy (BMIPS3300)
 
 define Target/Description

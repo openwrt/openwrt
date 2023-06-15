@@ -24,7 +24,7 @@ sub target_config_features(@) {
 		/^grand-flash$/ and $ret .= "\tselect GRAND_FLASH\n";
 		/^jffs2$/ and $ret .= "\tselect USES_JFFS2\n";
 		/^legacy-sdcard$/ and $ret .= "\tselect LEGACY_SDCARD_SUPPORT\n";
-		/^low_mem$/ and $ret .= "\tselect LOW_MEMORY_FOOTPRINT\n";
+		/^low-mem$/ and $ret .= "\tselect LOW_MEMORY_FOOTPRINT\n";
 		/^minor$/ and $ret .= "\tselect USES_MINOR\n";
 		/^mips16$/ and $ret .= "\tselect HAS_MIPS16\n";
 		/^nand$/ and $ret .= "\tselect NAND_SUPPORT\n";
