@@ -21,7 +21,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
 
 --- a/drivers/dma/at_xdmac.c
 +++ b/drivers/dma/at_xdmac.c
-@@ -866,7 +866,7 @@ at_xdmac_interleaved_queue_desc(struct d
+@@ -868,7 +868,7 @@ at_xdmac_interleaved_queue_desc(struct d
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
  	 */
@@ -30,7 +30,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  					| AT_XDMAC_CC_DIF(0)
  					| AT_XDMAC_CC_SIF(0)
  					| AT_XDMAC_CC_MBSIZE_SIXTEEN
-@@ -1048,7 +1048,7 @@ at_xdmac_prep_dma_memcpy(struct dma_chan
+@@ -1053,7 +1053,7 @@ at_xdmac_prep_dma_memcpy(struct dma_chan
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
  	 */
@@ -39,7 +39,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  					| AT_XDMAC_CC_DAM_INCREMENTED_AM
  					| AT_XDMAC_CC_SAM_INCREMENTED_AM
  					| AT_XDMAC_CC_DIF(0)
-@@ -1154,7 +1154,7 @@ static struct at_xdmac_desc *at_xdmac_me
+@@ -1160,7 +1160,7 @@ static struct at_xdmac_desc *at_xdmac_me
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
  	 */

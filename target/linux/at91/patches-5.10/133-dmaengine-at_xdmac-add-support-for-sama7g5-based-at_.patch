@@ -171,7 +171,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  		csize = ffs(atchan->sconfig.dst_maxburst) - 1;
  		if (csize < 0) {
  			dev_err(chan2dev(chan), "invalid src maxburst value\n");
-@@ -865,10 +909,12 @@ at_xdmac_interleaved_queue_desc(struct d
+@@ -867,10 +911,12 @@ at_xdmac_interleaved_queue_desc(struct d
  	 * ERRATA: Even if useless for memory transfers, the PERID has to not
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
@@ -186,7 +186,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  					| AT_XDMAC_CC_MBSIZE_SIXTEEN
  					| AT_XDMAC_CC_TYPE_MEM_TRAN;
  
-@@ -1047,12 +1093,14 @@ at_xdmac_prep_dma_memcpy(struct dma_chan
+@@ -1052,12 +1098,14 @@ at_xdmac_prep_dma_memcpy(struct dma_chan
  	 * ERRATA: Even if useless for memory transfers, the PERID has to not
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
@@ -203,7 +203,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  					| AT_XDMAC_CC_MBSIZE_SIXTEEN
  					| AT_XDMAC_CC_TYPE_MEM_TRAN;
  	unsigned long		irqflags;
-@@ -1153,12 +1201,14 @@ static struct at_xdmac_desc *at_xdmac_me
+@@ -1159,12 +1207,14 @@ static struct at_xdmac_desc *at_xdmac_me
  	 * ERRATA: Even if useless for memory transfers, the PERID has to not
  	 * match the one of another channel. If not, it could lead to spurious
  	 * flag status.
@@ -220,7 +220,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  					| AT_XDMAC_CC_MBSIZE_SIXTEEN
  					| AT_XDMAC_CC_MEMSET_HW_MODE
  					| AT_XDMAC_CC_TYPE_MEM_TRAN;
-@@ -1437,7 +1487,7 @@ at_xdmac_tx_status(struct dma_chan *chan
+@@ -1443,7 +1493,7 @@ at_xdmac_tx_status(struct dma_chan *chan
  	mask = AT_XDMAC_CC_TYPE | AT_XDMAC_CC_DSYNC;
  	value = AT_XDMAC_CC_TYPE_PER_TRAN | AT_XDMAC_CC_DSYNC_PER2MEM;
  	if ((desc->lld.mbr_cfg & mask) == value) {
@@ -229,7 +229,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  		while (!(at_xdmac_chan_read(atchan, AT_XDMAC_CIS) & AT_XDMAC_CIS_FIS))
  			cpu_relax();
  	}
-@@ -1495,7 +1545,7 @@ at_xdmac_tx_status(struct dma_chan *chan
+@@ -1501,7 +1551,7 @@ at_xdmac_tx_status(struct dma_chan *chan
  	 * FIFO flush ensures that data are really written.
  	 */
  	if ((desc->lld.mbr_cfg & mask) == value) {
@@ -238,7 +238,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  		while (!(at_xdmac_chan_read(atchan, AT_XDMAC_CIS) & AT_XDMAC_CIS_FIS))
  			cpu_relax();
  	}
-@@ -1763,7 +1813,7 @@ static int at_xdmac_device_pause(struct
+@@ -1758,7 +1808,7 @@ static int at_xdmac_device_pause(struct
  		return 0;
  
  	spin_lock_irqsave(&atchan->lock, flags);
@@ -247,7 +247,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  	while (at_xdmac_chan_read(atchan, AT_XDMAC_CC)
  	       & (AT_XDMAC_CC_WRIP | AT_XDMAC_CC_RDIP))
  		cpu_relax();
-@@ -1786,7 +1836,7 @@ static int at_xdmac_device_resume(struct
+@@ -1781,7 +1831,7 @@ static int at_xdmac_device_resume(struct
  		return 0;
  	}
  
@@ -256,7 +256,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  	clear_bit(AT_XDMAC_CHAN_IS_PAUSED, &atchan->status);
  	spin_unlock_irqrestore(&atchan->lock, flags);
  
-@@ -1995,6 +2045,10 @@ static int at_xdmac_probe(struct platfor
+@@ -1993,6 +2043,10 @@ static int at_xdmac_probe(struct platfor
  	atxdmac->regs = base;
  	atxdmac->irq = irq;
  
@@ -267,7 +267,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  	atxdmac->clk = devm_clk_get(&pdev->dev, "dma_clk");
  	if (IS_ERR(atxdmac->clk)) {
  		dev_err(&pdev->dev, "can't get dma_clk\n");
-@@ -2137,6 +2191,10 @@ static const struct dev_pm_ops atmel_xdm
+@@ -2135,6 +2189,10 @@ static const struct dev_pm_ops atmel_xdm
  static const struct of_device_id atmel_xdmac_dt_ids[] = {
  	{
  		.compatible = "atmel,sama5d4-dma",
