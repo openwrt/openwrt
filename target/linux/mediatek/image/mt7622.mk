@@ -107,7 +107,9 @@ define Device/bananapi_bpi-r64
 				   pad-to 46080k | append-image squashfs-sysupgrade.itb | check-size |\
 				) \
 				  gzip
+ifeq ($(DUMP),)
   IMAGE_SIZE := $$(shell expr 45 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
+endif
   KERNEL			:= kernel-bin | gzip
   KERNEL_INITRAMFS		:= kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb with-initrd | pad-to 128k
   IMAGE/sysupgrade.itb		:= append-kernel | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb external-static-with-rootfs | append-metadata
