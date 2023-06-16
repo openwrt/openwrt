@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR := 0x80010000		# RAM start + 64K
-LOADER_ENTRY := 0x80a00000		# RAM start + 10M, for relocate
+LOADER_ENTRY := 0x81000000		# RAM start + 16M, for relocate
 LZMA_TEXT_START := 0x82000000		# RAM start + 32M
 
 DEVICE_VARS += CFE_BOARD_ID CFE_EXTRAS

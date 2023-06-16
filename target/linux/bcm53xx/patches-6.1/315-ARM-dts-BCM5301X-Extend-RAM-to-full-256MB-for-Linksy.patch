@@ -1,0 +1,27 @@
+From e492f69e4da879db7b3e9a2290e5b6620f1335b5 Mon Sep 17 00:00:00 2001
+From: Aleksey Nasibulin <alealexpro100@ya.ru>
+Date: Thu, 13 Oct 2022 08:16:51 +0000
+Subject: [PATCH] ARM: dts: BCM5301X: Extend RAM to full 256MB for Linksys
+ EA6500 V2
+
+Linksys ea6500-v2 have 256MB of ram. Currently we only use 128MB.
+Expand the definition to use all the available RAM.
+
+Fixes: 03e96644d7a8 ("ARM: dts: BCM5301X: Add basic DT for Linksys EA6500 V2")
+Signed-off-by: Aleksey Nasibulin <alealexpro100@ya.ru>
+---
+ arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts
++++ b/arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts
+@@ -19,7 +19,8 @@
+ 
+ 	memory@0 {
+ 		device_type = "memory";
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000>,
++		      <0x88000000 0x08000000>;
+ 	};
+ 
+ 	gpio-keys {
