@@ -583,10 +583,6 @@ dhcp_add() {
 
 	nettag="${networkid:+set:${networkid},}"
 
-	if [ "$limit" -gt 0 ] ; then
-		limit=$((limit-1))
-	fi
-
 	# make sure the DHCP range is not empty
 	if [ "$dhcpv4" != "disabled" ] && ipcalc "${subnet%%/*}" "$netmask" "$start" "$limit" ; then
 		[ "$dynamicdhcpv4" = "0" ] && END="static"
