@@ -1,5 +1,6 @@
+From 73bcd133c910bff3b6d3b3834d0d14be9444e90a Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Thu, 6 Apr 2023 12:46:16 +0200
+Date: Sun, 11 Jun 2023 15:03:08 +0100
 Subject: [PATCH] nvmem: brcm_nvram: add .read_post_process() for MACs
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -9,6 +10,9 @@ Content-Transfer-Encoding: 8bit
 2. Calculate relative addresses based on index argument
 
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Message-ID: <20230611140330.154222-5-srinivas.kandagatla@linaro.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/nvmem/Kconfig      |  1 +
  drivers/nvmem/brcm_nvram.c | 28 ++++++++++++++++++++++++++++
