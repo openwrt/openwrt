@@ -64,13 +64,21 @@ BEGIN {
 	if (ARGC <= 3)
 		exit(0)
 
+	if (prefix<=30)
+		limit=network+1
+	else
+		limit=network
+
 	start=or(network,and(ip2int(ARGV[3]),compl32(netmask)))
-	limit=network+1
 	if (start<limit) start=limit
 	if (start==ipaddr) start=ipaddr+1
 
+	if (prefix<=30)
+		limit=or(network,compl32(netmask))-1
+	else
+		limit=or(network,compl32(netmask))
+
 	end=start+ARGV[4]-1
-	limit=or(network,compl32(netmask))-1
 	if (end>limit) end=limit
 	if (end==ipaddr) end=ipaddr-1
 
