@@ -69,7 +69,7 @@ BEGIN {
 	if (start<limit) start=limit
 	if (start==ipaddr) start=ipaddr+1
 
-	end=start+ARGV[4]
+	end=start+ARGV[4]-1
 	limit=or(network,compl32(netmask))-1
 	if (end>limit) end=limit
 	if (end==ipaddr) end=ipaddr-1
