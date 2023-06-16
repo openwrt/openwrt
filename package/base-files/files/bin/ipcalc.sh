@@ -50,12 +50,14 @@ BEGIN {
 
 	network=and(ipaddr,netmask)
 	prefix=32-bitcount(compl32(netmask))
-	broadcast=or(network,compl32(netmask))
 
 	print "IP="int2ip(ipaddr)
 	print "NETMASK="int2ip(netmask)
-	print "BROADCAST="int2ip(broadcast)
 	print "NETWORK="int2ip(network)
+	if (prefix<=30) {
+		broadcast=or(network,compl32(netmask))
+		print "BROADCAST="int2ip(broadcast)
+	}
 	print "PREFIX="prefix
 
 	# range calculations:
