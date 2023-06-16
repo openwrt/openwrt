@@ -9,7 +9,7 @@ define Device/wd_mybooklive
   DEVICE_ALT0_VENDOR := Western Digital
   DEVICE_ALT0_MODEL := My Book Live Duo
   DEVICE_PACKAGES := kmod-usb-dwc2 kmod-ata-dwc kmod-usb-ledtrig-usbport \
-	kmod-usb-storage kmod-fs-vfat
+	kmod-usb-storage kmod-fs-vfat $(PACKAGE_NO_WIRELESS)
   SUPPORTED_DEVICES += mbl wd,mybooklive-duo
   BLOCKSIZE := 1k
   DEVICE_DTC_FLAGS := --pad 4096
