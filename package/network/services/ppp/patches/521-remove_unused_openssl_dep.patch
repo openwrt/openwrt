@@ -1,0 +1,11 @@
+--- a/pppd/crypto_ms.c
++++ b/pppd/crypto_ms.c
+@@ -122,8 +122,6 @@ MakeKey(const unsigned char *key, unsign
+ 	DES_set_odd_parity((DES_cblock *)des_key);
+ }
+ 
+-#include <openssl/evp.h>
+-
+ int
+ DesEncrypt(const unsigned char *clear, const unsigned char *key, unsigned char *cipher)
+ {
