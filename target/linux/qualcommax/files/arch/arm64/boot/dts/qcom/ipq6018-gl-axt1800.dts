@@ -1,0 +1,130 @@
+/dts-v1/;
+/*
+ * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#include "ipq6018-gl-ax1800.dtsi"
+
+/ {
+	model = "GL Technologies, Inc. AXT1800";
+	compatible = "glinet,gl-axt1800", "qcom,ipq6018", "qcom,ipq6018-cp03";
+
+	aliases {
+		sdhc0 = &sdhc_1;
+	};
+
+	V30:V30 {
+		compatible = "regulator-fixed";
+		regulator-name = "vmmc-supply";
+		regulator-min-microvolt = <3000000>;
+		regulator-max-microvolt = <3000000>;
+		regulator-always-on;
+	};
+
+	V18:V18 {
+		compatible = "regulator-fixed";
+		regulator-name = "vqmmc-supply";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+	};
+};
+
+
+&tlmm {
+
+	sd_pins: sd_pins {
+		sd {
+			pins = "gpio62";
+			function = "sd_card";
+			bias-pull-up;
+		};
+		ldo {
+			pins = "gpio66";
+			function = "gpio";
+			bias-pull-up;
+		};
+	};
+
+	pwm_pins: pwm_pinmux {
+		pwm {
+			pins = "gpio30";
+			function = "pwm13";
+			drive-strength = <8>;
+		};
+	};
+
+	fan_pins: fan_pins {
+		pwr {
+			pins = "gpio29";
+			function = "gpio";
+			bias-pull-up;
+			output-high;
+		};
+		speed {
+			pins = "gpio31";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+};
+
+&soc {
+	fan0: pwm-fan  {
+		compatible = "pwm-fan";
+		pinctrl-0 = <&fan_pins>;
+		pinctrl-names = "default";
+		cooling-min-state = <0>;
+		cooling-max-state = <255>;
+		#cooling-cells = <2>;
+		pwms = <&pwm 1 40000 0>;
+		cooling-levels = <0 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36
+				36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 36 37 38 39
+				40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59
+				60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79
+				80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99
+				100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119
+				120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139
+				140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159
+				160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179
+				180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199
+				200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219
+				220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239
+				240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255>;
+	};
+
+};
+
+
+&pwm{
+	pinctrl-0 = <&pwm_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sdhc_1 {
+	pinctrl-0 = <&sd_pins>;
+	pinctrl-names = "default";
+	cd-gpios = <&tlmm 62 1>;
+	sd-ldo-gpios = <&tlmm 66 1>;
+	vqmmc-supply = <&V18>;
+	vmmc-supply = <&V30>;
+	status = "okay";
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "GL-iNet-AX1800";
+};
