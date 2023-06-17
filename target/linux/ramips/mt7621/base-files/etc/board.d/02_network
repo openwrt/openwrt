@@ -110,6 +110,9 @@ ramips_setup_interfaces()
 	mikrotik,routerboard-760igs)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
 		;;
+	mqmaker,witi)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan1 wan2"
+		;;
 	tozed,zlt-s12-pro)
 		ucidef_set_interface_lan "lan1 lan2 lan3 wan"
 		ucidef_set_interface "wwan" device "/dev/ttyUSB0" protocol "ncm"
