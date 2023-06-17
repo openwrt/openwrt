@@ -9,20 +9,21 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
-PKG_RELEASE:=5
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/paulusmack/ppp
-PKG_SOURCE_DATE:=2021-01-04
-PKG_SOURCE_VERSION:=4fb319056f168bb8379865b91b4fd3e1ada73f1e
-PKG_MIRROR_HASH:=429cb5fcff36e1d8698766130711d4764347f08b83233dfb4831bea21616efef
+PKG_SOURCE_URL:=https://github.com/ppp-project/ppp
+PKG_SOURCE_DATE:=2022-12-10
+PKG_SOURCE_VERSION:=760ce18f82670eb81cc186fb792919339a2e2fbe
+PKG_MIRROR_HASH:=5ba8f8e0517476d25e4f3e4c347cc8524ef46dd997f17651fdf5f76ef74e5e64
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-4-Clause
 PKG_CPE_ID:=cpe:/a:samba:ppp
+PKG_FIXUP:=autoreconf
 
-PKG_RELEASE_VERSION:=2.4.9
+PKG_RELEASE_VERSION:=2.5.0
 PKG_VERSION:=$(PKG_RELEASE_VERSION).git-$(PKG_SOURCE_DATE)
-
+# pcap is statically linked in patch #310:
 PKG_BUILD_DEPENDS:=libpcap
 
 PKG_ASLR_PIE_REGULAR:=1
@@ -31,6 +32,17 @@ PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
+# enable_microsoft_extensions should be yes for mppe/mppc, but it lead to openssl in upstream:
+# https://github.com/ppp-project/ppp/blob/master/pppd/crypto_ms.c#L125
+CONFIGURE_VARS += \
+    enable_microsoft_extensions=yes \
+	enable_eaptls=no \
+	enable_peap=no
+
+CONFIGURE_ARGS += \
+	with_pcap=no \
+	with_static_pcap=yes \
+	with_openssl=no
 
 define Package/ppp/Default
   SECTION:=net
@@ -45,8 +57,11 @@ $(call Package/ppp/Default)
   VARIANT:=default
 endef
 
+# implies tdb-trivial database:
 define Package/ppp-multilink
 $(call Package/ppp/Default)
+  CONFIGURE_VARS += \
+      enable_multilink=yes
   DEPENDS:=+kmod-ppp
   TITLE:=PPP daemon (with multilink support)
   VARIANT:=multilink
@@ -209,7 +224,7 @@ endif
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
-	$(CP) $(PKG_INSTALL_DIR)/include/pppd $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/pppd $(1)/usr/include/
 endef
 
 define Package/ppp/script_install
@@ -218,7 +233,7 @@ endef
 define Package/ppp/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppd $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppd $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_CONF) ./files/etc/ppp/chap-secrets $(1)/etc/ppp/
 	$(INSTALL_DATA) ./files/etc/ppp/filter $(1)/etc/ppp/
@@ -234,19 +249,19 @@ Package/ppp-multilink/install=$(Package/ppp/install)
 
 define Package/ppp-mod-pppoa/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/pppoatm.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/pppoatm.so \
 		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 endef
 
 define Package/ppp-mod-pppoe/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/pppoe.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/pppoe.so \
 		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 endef
 
 define Package/ppp-mod-radius/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/radius.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/radius.so \
 		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_DATA) ./files/etc/ppp/radius.conf $(1)/etc/ppp/
@@ -259,13 +274,13 @@ endef
 
 define Package/ppp-mod-pppol2tp/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/pppol2tp.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/pppol2tp.so \
 		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 endef
 
 define Package/ppp-mod-pptp/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/pptp.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/pptp.so \
 		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 	$(INSTALL_DIR) $(1)/etc/ppp
 	$(INSTALL_DATA) ./files/etc/ppp/options.pptp $(1)/etc/ppp/
@@ -273,28 +288,28 @@ endef
 
 define Package/ppp-mod-passwordfd/install
 	$(INSTALL_DIR) $(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/lib/pppd/$(PKG_RELEASE_VERSION)/passwordfd.so \
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/passwordfd.so \
 		$(1)/usr/lib/pppd/$(PKG_RELEASE_VERSION)/
 endef
 
 define Package/chat/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/chat $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/chat $(1)/usr/sbin/
 endef
 
 define Package/pppdump/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppdump $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppdump $(1)/usr/sbin/
 endef
 
 define Package/pppstats/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppstats $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppstats $(1)/usr/sbin/
 endef
 
 define Package/pppoe-discovery/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/sbin/pppoe-discovery $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/pppoe-discovery $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,ppp))

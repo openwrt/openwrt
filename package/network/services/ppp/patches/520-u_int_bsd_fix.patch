@@ -1,0 +1,10 @@
+--- a/pppd/ppp-sha1.c
++++ b/pppd/ppp-sha1.c
+@@ -107,6 +107,7 @@ static void sha1_clean(PPP_MD_CTX *ctx)
+  */
+
+ #include <string.h>
++#include <sys/types.h>
+ #include <netinet/in.h>	/* htonl() */
+
+ typedef struct {

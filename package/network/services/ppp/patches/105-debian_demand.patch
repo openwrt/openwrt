@@ -15,7 +15,7 @@
  #include <sys/socket.h>
 +#include <netinet/in.h>
 +#include <arpa/inet.h>
- #ifdef PPP_FILTER
+ #ifdef PPP_WITH_FILTER
  #include <pcap-bpf.h>
  #endif
 @@ -218,6 +222,14 @@ loop_chars(unsigned char *p, int n)
@@ -157,14 +157,13 @@
  	sifnpmode(f->unit, PPP_IPV6, NPMODE_PASS);
  
      } else {
---- a/pppd/pppd.h
-+++ b/pppd/pppd.h
-@@ -598,7 +598,7 @@ void demand_conf(void);	/* config interf
+--- a/pppd/pppd-private.h
++++ b/pppd/pppd-private.h
+@@ -362,7 +362,7 @@ void demand_conf(void);	/* config interface(s) for demand-dial */
  void demand_block(void);	/* set all NPs to queue up packets */
  void demand_unblock(void); /* set all NPs to pass packets */
  void demand_discard(void); /* set all NPs to discard packets */
 -void demand_rexmit(int);	/* retransmit saved frames for an NP */
-+void demand_rexmit(int, u_int32_t); /* retransmit saved frames for an NP*/
++void demand_rexmit(int, u_int32_t);	/* retransmit saved frames for an NP */
  int  loop_chars(unsigned char *, int); /* process chars from loopback */
  int  loop_frame(unsigned char *, int); /* should we bring link up? */
- 

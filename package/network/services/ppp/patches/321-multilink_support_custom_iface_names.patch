@@ -61,7 +61,7 @@ Signed-off-by: George Kashperko <george@znau.edu.ua>
 -		if (bundle_attach(unit)) {
 +		if (unit >= 0 && bundle_attach(unit)) {
  			set_ifunit(0);
- 			script_setenv("BUNDLE", bundle_id + 7, 0);
+			ppp_script_setenv("BUNDLE", bundle_id + 7, 0);
  			make_bundle_links(1);
  			unlock_db();
 -			info("Link attached to %s", ifname);
@@ -129,7 +129,7 @@ Signed-off-by: George Kashperko <george@znau.edu.ua>
 +#ifdef USE_TDB
 +	char tmp[11];
 +	slprintf(tmp, sizeof(tmp), "%d", ifunit);
-+	script_setenv("IFUNIT", tmp, 0);
++	ppp_script_setenv("IFUNIT", tmp, 0);
 +#endif
 +}
 +

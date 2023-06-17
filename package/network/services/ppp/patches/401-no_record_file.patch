@@ -5,16 +5,17 @@ information to the permanent storage, therfore remove this option.
 
 Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
---- a/pppd/pppd.h
-+++ b/pppd/pppd.h
-@@ -318,7 +318,6 @@ extern int	holdoff;	/* Dead time before
+--- a/pppd/pppd-private.h
++++ b/pppd/-private.h
+@@ -185,7 +185,6 @@ extern int	holdoff;	/* Dead time before
  extern bool	holdoff_specified; /* true if user gave a holdoff value */
  extern bool	notty;		/* Stdin/out is not a tty */
  extern char	*pty_socket;	/* Socket to connect to pty */
 -extern char	*record_file;	/* File to record chars sent/received */
- extern bool	sync_serial;	/* Device is synchronous serial device */
  extern int	maxfail;	/* Max # of unsuccessful connection attempts */
- extern char	linkname[MAXPATHLEN]; /* logical name for link */
+ extern char	linkname[];	/* logical name for link */
+ extern bool	tune_kernel;	/* May alter kernel settings as necessary */
+
 --- a/pppd/tty.c
 +++ b/pppd/tty.c
 @@ -143,7 +143,7 @@ char	*disconnect_script = NULL; /* Scrip
