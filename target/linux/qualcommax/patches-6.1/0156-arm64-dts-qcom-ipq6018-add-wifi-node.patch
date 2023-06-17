@@ -1,32 +1,31 @@
-From a67d1901741c162645eda0dbdc3a2c0c2aff5cf4 Mon Sep 17 00:00:00 2001
+From 956989efc090745f71120a7cab32a81c568e4a5d Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
-Date: Tue, 21 Dec 2021 14:49:36 +0100
-Subject: [PATCH] arm64: dts: ipq8074: Add WLAN node
+Date: Sun, 28 May 2023 14:31:09 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq6018: add wifi node
 
-IPQ8074 has a AHB based Q6v5 802.11ax radios that are supported
-by the ath11k.
-
-Add the required DT node to enable the built-in radios.
+IPQ6018 has ath11k compatible 802.11ax radios, so lets add the required
+DT node for it to operate.
 
 Signed-off-by: Robert Marko <robimarko@gmail.com>
 ---
- arch/arm64/boot/dts/qcom/ipq8074.dtsi | 111 ++++++++++++++++++++++++++
- 1 file changed, 111 insertions(+)
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 115 ++++++++++++++++++++++++++
+ 1 file changed, 115 insertions(+)
 
---- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
-+++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
-@@ -995,6 +995,117 @@
- 				};
- 			};
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -839,6 +839,121 @@
+ 
+ 			status = "disabled";
  		};
 +
 +		wifi: wifi@c0000000 {
-+			compatible = "qcom,ipq8074-wifi";
-+			reg = <0xc000000 0x2000000>;
++			compatible = "qcom,ipq6018-wifi";
++			reg = <0x0 0xc000000 0x0 0x1000000>;
 +
 +			interrupts = <GIC_SPI 320 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 319 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 318 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 317 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 316 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 315 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 314 IRQ_TYPE_EDGE_RISING>,
@@ -71,6 +70,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +				     <GIC_SPI 163 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 162 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 160 IRQ_TYPE_EDGE_RISING>,
++				     <GIC_SPI 414 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 159 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 158 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 157 IRQ_TYPE_EDGE_RISING>,
@@ -79,6 +79,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			interrupt-names = "misc-pulse1",
 +					  "misc-latch",
 +					  "sw-exception",
++					  "watchdog",
 +					  "ce0",
 +					  "ce1",
 +					  "ce2",
@@ -123,6 +124,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +					  "host2tcl-input-ring3",
 +					  "host2tcl-input-ring2",
 +					  "host2tcl-input-ring1",
++					  "wbm2host-tx-completions-ring4",
 +					  "wbm2host-tx-completions-ring3",
 +					  "wbm2host-tx-completions-ring2",
 +					  "wbm2host-tx-completions-ring1",

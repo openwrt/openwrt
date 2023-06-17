@@ -1,0 +1,35 @@
+From 26e828fe20e796ea3f56d3ffd8968e7f28271216 Mon Sep 17 00:00:00 2001
+From: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Date: Tue, 28 Feb 2023 22:17:42 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq6018: Fix the PCI I/O port range
+
+For 64KiB of the I/O region, the I/O ports of the legacy PCI devices are
+located in the range of 0x0 to 0x10000. Hence, fix the bogus PCI address
+(0x20200000) specified in the ranges property for I/O region.
+
+While at it, let's use the missing 0x prefix for the addresses.
+
+Fixes: 095bbdd9a5c3 ("arm64: dts: qcom: ipq6018: Add pcie support")
+Reported-by: Arnd Bergmann <arnd@arndb.de>
+Link: https://lore.kernel.org/linux-arm-msm/7c5dfa87-41df-4ba7-b0e4-72c8386402a8@app.fastmail.com/
+Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20230228164752.55682-7-manivannan.sadhasivam@linaro.org
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -738,8 +738,8 @@
+ 			phys = <&pcie_phy0>;
+ 			phy-names = "pciephy";
+ 
+-			ranges = <0x81000000 0 0x20200000 0 0x20200000 0 0x10000>,
+-				 <0x82000000 0 0x20220000 0 0x20220000 0 0xfde0000>;
++			ranges = <0x81000000 0x0 0x00000000 0x0 0x20200000 0x0 0x10000>,
++				 <0x82000000 0x0 0x20220000 0x0 0x20220000 0x0 0xfde0000>;
+ 
+ 			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL_HIGH>;
+ 			interrupt-names = "msi";

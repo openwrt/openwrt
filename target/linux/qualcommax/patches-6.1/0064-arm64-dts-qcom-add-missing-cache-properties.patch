@@ -1,0 +1,40 @@
+From 3a5932394988a354a06de44faa98458c255bfc38 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Sun, 16 Apr 2023 12:11:33 +0200
+Subject: [PATCH] arm64: dts: qcom: add missing cache properties
+
+Add required cache-level and cache-unified properties to fix warnings
+like:
+
+  qdu1000-idp.dtb: l3-cache: 'cache-unified' is a required property
+  qdu1000-idp.dtb: l2-cache: 'cache-level' is a required property
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20230416101134.95686-3-krzysztof.kozlowski@linaro.org
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 1 +
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -84,6 +84,7 @@
+ 		L2_0: l2-cache {
+ 			compatible = "cache";
+ 			cache-level = <2>;
++			cache-unified;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -67,6 +67,7 @@
+ 		L2_0: l2-cache {
+ 			compatible = "cache";
+ 			cache-level = <2>;
++			cache-unified;
+ 		};
+ 	};
+ 

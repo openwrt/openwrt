@@ -1,0 +1,27 @@
+From 722d46a957e3dd6b2efe3b6f6d619b894e1ca714 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Fri, 26 May 2023 23:23:23 +0200
+Subject: [PATCH 153/155] arm64: dts: qcom: ipq6018: add CPU speedbin fuse
+
+Add the CPU speedbin fuse to QFPROM, it will be required by CPUFreq
+NVMEM later.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -307,6 +307,11 @@
+ 			reg = <0x0 0x000a4000 0x0 0x2000>;
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
++
++			cpu_speed_bin: cpu_speed_bin@135 {
++				reg = <0x135 0x1>;
++				bits = <7 1>;
++			};
+ 		};
+ 
+ 		prng: qrng@e1000 {

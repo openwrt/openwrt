@@ -1,0 +1,38 @@
+From a9853b4f7e09587ab3b2daef759dab5b89cd4c08 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Sun, 16 Apr 2023 12:11:32 +0200
+Subject: [PATCH] arm64: dts: qcom: use decimal for cache level
+
+Cache level is by convention a decimal number, not hex.
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20230416101134.95686-2-krzysztof.kozlowski@linaro.org
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 2 +-
+ arch/arm64/boot/dts/qcom/ipq8074.dtsi | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -83,7 +83,7 @@
+ 
+ 		L2_0: l2-cache {
+ 			compatible = "cache";
+-			cache-level = <0x2>;
++			cache-level = <2>;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+@@ -66,7 +66,7 @@
+ 
+ 		L2_0: l2-cache {
+ 			compatible = "cache";
+-			cache-level = <0x2>;
++			cache-level = <2>;
+ 		};
+ 	};
+ 
