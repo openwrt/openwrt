@@ -48,6 +48,15 @@ define Device/mikrotik_routerboard-922uags-5hpacd
 endef
 TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
 
+define Device/mikrotik_routerboard-951g-2hnd
+  $(Device/mikrotik_nand)
+  SOC := ar9344
+  DEVICE_MODEL := RouterBOARD 951G-2HnD
+  DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2
+  SUPPORTED_DEVICES += rb-951g-2hnd
+endef
+TARGET_DEVICES += mikrotik_routerboard-951g-2hnd
+
 define Device/mikrotik_routerboard-951ui-2hnd
   $(Device/mikrotik_nand)
   SOC := ar9344

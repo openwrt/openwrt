@@ -1,0 +1,58 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344_mikrotik_routerboard-951x-2hnd.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-951g-2hnd", "qca,ar9344";
+	model = "Mikrotik RouterBOARD 951G-2HnD";
+
+	/delete-node/ aliases;
+	/delete-node/ leds;
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_usb_power {
+			gpio-export,name = "rb951g-2hnd:power:usb";
+			gpio-export,output = <1>;
+			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&ref {
+	clock-frequency = <25000000>;
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+
+                qca,ar8327-initvals = <
+			0x04 0x07600000 /* PAD0_MODE */
+			0x7c 0x0000007e /* PORT0_STATUS */
+		>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	pll-data = <0x6f000000 0x00000101 0x00001616>;
+
+	phy-mode = "rgmii";
+	phy-handle = <&phy0>;
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-gmac0 = <1>;
+		rxd-delay = <1>;
+		switch-only-mode = <1>;
+	};
+};
+
+&eth1 {
+	status = "disabled";
+};
