@@ -12,6 +12,7 @@ PKG_HASH:=312b7eeae44581d1362c3a3f02c28d806647756c82ba8c72241c7cdbe68ba77e
 
 PKG_MAINTAINER:=Tobias Maedel <openwrt@tbspace.de>
 
+UBOOT_FORCE_INTREE_DTC:=1
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
 

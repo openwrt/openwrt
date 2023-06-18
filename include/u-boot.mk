@@ -8,6 +8,10 @@ PKG_SOURCE_URL = \
 	ftp://ftp.denx.de/pub/u-boot
 endif
 
+ifdef UBOOT_FORCE_INTREE_DTC
+	$(eval $(call SetupHostCommand,swig,Please install 'swig', swig -help))
+endif
+
 PKG_BUILD_DIR = $(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
 PKG_TARGETS := bin
@@ -88,7 +92,9 @@ define Build/Configure/U-Boot
 		+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) $(UBOOT_CONFIGURE_VARS) oldconfig)
 endef
 
-DTC=$(wildcard $(LINUX_DIR)/scripts/dtc/dtc)
+ifndef UBOOT_FORCE_INTREE_DTC
+	DTC=$(wildcard $(LINUX_DIR)/scripts/dtc/dtc)
+endif
 
 define Build/Compile/U-Boot
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
