@@ -1,6 +1,6 @@
 --- a/arch/arm/boot/dts/armada-370.dtsi
 +++ b/arch/arm/boot/dts/armada-370.dtsi
-@@ -234,7 +234,7 @@
+@@ -254,7 +254,7 @@
  				clocks = <&gateclk 23>;
  				clock-names = "cesa0";
  				marvell,crypto-srams = <&crypto_sram>;
@@ -9,7 +9,7 @@
  			};
  		};
  
-@@ -255,12 +255,17 @@
+@@ -275,12 +275,17 @@
  			 * cpuidle workaround.
  			 */
  			idle-sram@0 {

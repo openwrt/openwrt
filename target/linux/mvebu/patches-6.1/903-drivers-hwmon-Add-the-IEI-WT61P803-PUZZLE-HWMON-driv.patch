@@ -20,13 +20,13 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 ---
  drivers/hwmon/Kconfig                     |   8 +
  drivers/hwmon/Makefile                    |   1 +
- drivers/hwmon/iei-wt61p803-puzzle-hwmon.c | 413 ++++++++++++++++++++++
- 3 files changed, 422 insertions(+)
+ drivers/hwmon/iei-wt61p803-puzzle-hwmon.c | 445 ++++++++++++++++++++++
+ 3 files changed, 454 insertions(+)
  create mode 100644 drivers/hwmon/iei-wt61p803-puzzle-hwmon.c
 
 --- a/drivers/hwmon/Kconfig
 +++ b/drivers/hwmon/Kconfig
-@@ -732,6 +732,14 @@ config SENSORS_IBMPOWERNV
+@@ -755,6 +755,14 @@ config SENSORS_IBMPOWERNV
  	  This driver can also be built as a module. If so, the module
  	  will be called ibmpowernv.
  
@@ -43,7 +43,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  	depends on IIO
 --- a/drivers/hwmon/Makefile
 +++ b/drivers/hwmon/Makefile
-@@ -84,6 +84,7 @@ obj-$(CONFIG_SENSORS_HIH6130)	+= hih6130
+@@ -87,6 +87,7 @@ obj-$(CONFIG_SENSORS_HIH6130)	+= hih6130
  obj-$(CONFIG_SENSORS_ULTRA45)	+= ultra45_env.o
  obj-$(CONFIG_SENSORS_I5500)	+= i5500_temp.o
  obj-$(CONFIG_SENSORS_I5K_AMB)	+= i5k_amb.o
