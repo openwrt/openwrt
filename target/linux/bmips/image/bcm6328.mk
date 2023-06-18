@@ -26,6 +26,19 @@ define Device/comtrend_ar-5387un
 endef
 TARGET_DEVICES += comtrend_ar-5387un
 
+define Device/nucom_r5010unv2
+  $(Device/bcm63xx-cfe)
+  DEVICE_VENDOR := NuCom
+  DEVICE_MODEL := R5010UNv2
+  CHIP_ID := 6328
+  CFE_BOARD_ID := 96328ang
+  FLASH_MB := 16
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES) broadcom-43217-sprom \
+    kmod-leds-bcm6328
+endef
+TARGET_DEVICES += nucom_r5010unv2
+
 define Device/sercomm_ad1018
   $(Device/sercomm-nand)
   DEVICE_VENDOR := Sercomm
