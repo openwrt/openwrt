@@ -3,12 +3,10 @@ name: Build Toolchains
 on:
   pull_request:
     paths:
-      - '.github/workflows/build.yml'
       - '.github/workflows/toolchain.yml'
       - 'toolchain/**'
   push:
     paths:
-      - '.github/workflows/build.yml'
       - '.github/workflows/toolchain.yml'
       - 'toolchain/**'
     branches-ignore:
@@ -22,52 +20,10 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  determine_targets:
-    name: Set targets
-    runs-on: ubuntu-latest
-    outputs:
-      target: ${{ steps.find_targets.outputs.target }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set targets
-        id: find_targets
-        run: |
-          export TARGETS="$(perl ./scripts/dump-target-info.pl targets 2>/dev/null \
-            | sort -u -t '/' -k1,1 \
-            | awk '{ print $1 }')"
-
-          JSON='['
-          FIRST=1
-          for TARGET in $TARGETS; do
-            TUPLE='{"target":"'"$(echo $TARGET | cut -d "/" -f 1)"'","subtarget":"'"$(echo $TARGET | cut -d "/" -f 2)"'"}'
-            [[ $FIRST -ne 1 ]] && JSON="$JSON"','
-            JSON="$JSON""$TUPLE"
-            FIRST=0
-          done
-          JSON="$JSON"']'
-
-           echo -e "\n---- targets ----\n"
-           echo "$JSON"
-           echo -e "\n---- targets ----\n"
-
-           echo "target=$JSON" >> $GITHUB_OUTPUT
-
-  build:
-    name: Build Target Toolchain
-    needs: determine_targets
+  build-toolchains:
+    name: Build Toolchains for each target
     permissions:
       contents: read
       packages: read
       actions: write
-    strategy:
-       fail-fast: False
-       matrix:
-         include: ${{fromJson(needs.determine_targets.outputs.target)}}
-    uses: ./.github/workflows/build.yml
-    with:
-      target: ${{ matrix.target }}
-      subtarget: ${{ matrix.subtarget }}
-      build_toolchain: true
+    uses: openwrt/actions-shared-workflows/.github/workflows/toolchain.yml@main
