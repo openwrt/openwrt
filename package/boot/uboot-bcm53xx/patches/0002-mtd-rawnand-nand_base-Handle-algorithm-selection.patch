@@ -1,0 +1,80 @@
+From d75483f8892f3a0dfb8f5aa4147e72c02c8b034c Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 7 Apr 2023 15:40:05 +0200
+Subject: [PATCH 2/5] mtd: rawnand: nand_base: Handle algorithm selection
+
+For BRCMNAND with 1-bit BCH ECC (BCH-1) such as used on the
+D-Link DIR-885L and DIR-890L routers, we need to explicitly
+select the ECC like this in the device tree:
+
+  nand-ecc-algo = "bch";
+  nand-ecc-strength = <1>;
+  nand-ecc-step-size = <512>;
+
+This is handled by the Linux kernel but U-Boot core does
+not respect this. Fix it up by parsing the algorithm and
+preserve the behaviour using this property to select
+software BCH as far as possible.
+
+Reviewed-by: Michael Trimarchi <michael@amarulasolutions.com>
+Acked-by: William Zhang <william.zhang@broadcom.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Tested-by: Tom Rini <trini@konsulko.com> [am335x_evm]
+Link: https://lore.kernel.org/all/20230407134008.1939717-3-linus.walleij@linaro.org/
+Signed-off-by: Dario Binacchi <dario.binacchi@amarulasolutions.com>
+---
+ drivers/mtd/nand/raw/nand_base.c | 29 +++++++++++++++++++++++++----
+ 1 file changed, 25 insertions(+), 4 deletions(-)
+
+--- a/drivers/mtd/nand/raw/nand_base.c
++++ b/drivers/mtd/nand/raw/nand_base.c
+@@ -4487,6 +4487,7 @@ EXPORT_SYMBOL(nand_detect);
+ static int nand_dt_init(struct mtd_info *mtd, struct nand_chip *chip, ofnode node)
+ {
+ 	int ret, ecc_mode = -1, ecc_strength, ecc_step;
++	int ecc_algo = NAND_ECC_UNKNOWN;
+ 	const char *str;
+ 
+ 	ret = ofnode_read_s32_default(node, "nand-bus-width", -1);
+@@ -4512,10 +4513,22 @@ static int nand_dt_init(struct mtd_info
+ 			ecc_mode = NAND_ECC_SOFT_BCH;
+ 	}
+ 
+-	if (ecc_mode == NAND_ECC_SOFT) {
+-		str = ofnode_read_string(node, "nand-ecc-algo");
+-		if (str && !strcmp(str, "bch"))
+-			ecc_mode = NAND_ECC_SOFT_BCH;
++	str = ofnode_read_string(node, "nand-ecc-algo");
++	if (str) {
++		/*
++		 * If we are in NAND_ECC_SOFT mode, just alter the
++		 * soft mode to BCH here. No change of algorithm.
++		 */
++		if (ecc_mode == NAND_ECC_SOFT) {
++			if (!strcmp(str, "bch"))
++				ecc_mode = NAND_ECC_SOFT_BCH;
++		} else {
++			if (!strcmp(str, "bch")) {
++				ecc_algo = NAND_ECC_BCH;
++			} else if (!strcmp(str, "hamming")) {
++				ecc_algo = NAND_ECC_HAMMING;
++			}
++		}
+ 	}
+ 
+ 	ecc_strength = ofnode_read_s32_default(node,
+@@ -4529,6 +4542,14 @@ static int nand_dt_init(struct mtd_info
+ 		return -EINVAL;
+ 	}
+ 
++	/*
++	 * Chip drivers may have assigned default algorithms here,
++	 * onlt override it if we have found something explicitly
++	 * specified in the device tree.
++	 */
++	if (ecc_algo != NAND_ECC_UNKNOWN)
++		chip->ecc.algo = ecc_algo;
++
+ 	if (ecc_mode >= 0)
+ 		chip->ecc.mode = ecc_mode;
+ 
