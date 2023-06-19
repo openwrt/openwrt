@@ -3,7 +3,6 @@ name: Build all core packages
 on:
   pull_request:
     paths:
-      - '.github/workflows/build.yml'
       - '.github/workflows/packages.yml'
       - 'config/**'
       - 'include/**'
@@ -12,7 +11,6 @@ on:
       - 'toolchain/**'
   push:
     paths:
-      - '.github/workflows/build.yml'
       - '.github/workflows/packages.yml'
       - 'config/**'
       - 'include/**'
@@ -30,51 +28,13 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build:
-    name: Build Packages with external toolchain
+  build-packages:
+    name: Build all core packages for selected target
     permissions:
       contents: read
       packages: read
       actions: write
-    strategy:
-      fail-fast: False
-      matrix:
-        include:
-          - target: malta
-            subtarget: be
-          - target: x86
-            subtarget: 64
-    uses: ./.github/workflows/build.yml
-    with:
-      container_name: toolchain
-      target: ${{ matrix.target }}
-      subtarget: ${{ matrix.subtarget }}
-      build_kernel: true
-      build_all_kmods: true
-      build_all_modules: true
-      build_full: true
-      ccache_type: packages
-      upload_ccache_cache: ${{ github.repository_owner == 'openwrt' }}
-
-  upload-ccache-cache-in-s3:
-    if: github.event_name == 'push' && github.repository_owner == 'openwrt'
-    name: Upload ccache cache to s3
-    needs: build
-    strategy:
-       fail-fast: False
-       matrix:
-        include:
-          - target: malta
-            subtarget: be
-          - target: x86
-            subtarget: 64
     secrets:
       s3_access_key: ${{ secrets.GCS_S3_ACCESS_KEY }}
       s3_secret_key: ${{ secrets.GCS_S3_SECRET_KEY }}
-    uses: ./.github/workflows/upload-file-s3.yml
-    with:
-      endpoint: https://storage.googleapis.com
-      bucket: openwrt-ci-cache
-      download_id: ${{ matrix.target }}-${{ matrix.subtarget }}-ccache-cache
-      filename: ccache-packages-${{ matrix.target }}-${{ matrix.subtarget }}.tar
-
+    uses: openwrt/actions-shared-workflows/.github/workflows/packages.yml@main
