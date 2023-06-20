@@ -471,19 +471,19 @@
 				phy-handle = <&phy_port5>;
 			};
 
-			/*
 			port@6 {
 				reg = <6>;
 				label = "cpu";
 				ethernet = <&gmac2>;
 				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+				qca,sgmii-rxclk-falling-edge;
 
 				fixed-link {
 					speed = <1000>;
 					full-duplex;
 				};
 			};
-			*/
 		};
 
 		mdio {

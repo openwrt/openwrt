@@ -21,6 +21,6 @@ DEFAULT_PACKAGES += \
 	kmod-usb-ohci kmod-usb2 kmod-usb-ledtrig-usbport \
 	kmod-phy-qcom-ipq806x-usb kmod-usb3 kmod-usb-dwc3-qcom \
 	kmod-ath10k-ct wpad-basic-mbedtls \
-	uboot-envtools
+	uboot-envtools ip-tiny
 
 $(eval $(call BuildTarget))

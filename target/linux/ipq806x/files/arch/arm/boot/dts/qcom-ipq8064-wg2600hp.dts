@@ -199,21 +199,19 @@ switch@10 {
 				phy-handle = <&phy_port5>;
 			};
 
-			/*
 			port@6 {
-				reg = <0>;
+				reg = <6>;
 				label = "cpu";
 				ethernet = <&gmac2>;
-				phy-mode = "rgmii";
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+				qca,sgmii-rxclk-falling-edge;
 
 				fixed-link {
 					speed = <1000>;
 					full-duplex;
-					pause;
-					asym-pause;
 				};
 			};
-			*/
 		};
 
 		mdio {
