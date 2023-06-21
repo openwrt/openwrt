@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /**
   *	napi_disable - prevent NAPI from scheduling
-@@ -3368,6 +3369,7 @@ struct softnet_data {
+@@ -3364,6 +3365,7 @@ struct softnet_data {
  	unsigned int		processed;
  	unsigned int		time_squeeze;
  	unsigned int		received_rps;
@@ -162,7 +162,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
  		    int (*poll)(struct napi_struct *, int), int weight)
  {
-@@ -11371,6 +11446,9 @@ static int dev_cpu_dead(unsigned int old
+@@ -11369,6 +11444,9 @@ static int dev_cpu_dead(unsigned int old
  	raise_softirq_irqoff(NET_TX_SOFTIRQ);
  	local_irq_enable();
  
@@ -172,7 +172,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef CONFIG_RPS
  	remsd = oldsd->rps_ipi_list;
  	oldsd->rps_ipi_list = NULL;
-@@ -11710,6 +11788,7 @@ static int __init net_dev_init(void)
+@@ -11708,6 +11786,7 @@ static int __init net_dev_init(void)
  		sd->cpu = i;
  #endif
  

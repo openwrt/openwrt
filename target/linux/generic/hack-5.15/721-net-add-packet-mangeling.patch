@@ -38,7 +38,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* Specifies the type of the struct net_device::ml_priv pointer */
  enum netdev_ml_priv_type {
-@@ -2015,6 +2020,7 @@ struct net_device {
+@@ -2014,6 +2019,7 @@ struct net_device {
  	/* Read-mostly cache-line for fast-path access */
  	unsigned int		flags;
  	unsigned int		priv_flags;
@@ -46,7 +46,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	const struct net_device_ops *netdev_ops;
  	int			ifindex;
  	unsigned short		gflags;
-@@ -2075,6 +2081,11 @@ struct net_device {
+@@ -2074,6 +2080,11 @@ struct net_device {
  	const struct tlsdev_ops *tlsdev_ops;
  #endif
  
@@ -58,7 +58,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	const struct header_ops *header_ops;
  
  	unsigned char		operstate;
-@@ -2149,6 +2160,10 @@ struct net_device {
+@@ -2145,6 +2156,10 @@ struct net_device {
  	struct mctp_dev __rcu	*mctp_ptr;
  #endif
  
