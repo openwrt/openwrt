@@ -764,6 +764,7 @@ define Device/meraki_mr33
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
+	DEFAULT := n
 endef
 TARGET_DEVICES += meraki_mr33
 
@@ -776,6 +777,7 @@ define Device/meraki_mr74
 	PAGESIZE := 2048
 	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
 	DEVICE_DTS_CONFIG := config@3
+	DEFAULT := n
 endef
 TARGET_DEVICES += meraki_mr74
 
