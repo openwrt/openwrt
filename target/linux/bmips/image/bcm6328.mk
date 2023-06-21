@@ -1,5 +1,18 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+define Device/arcadyan_ar7516
+  $(Device/bcm63xx-cfe)
+  DEVICE_VENDOR := Arcadyan
+  DEVICE_MODEL := AR7516
+  CHIP_ID := 6328
+  CFE_BOARD_ID := AR7516AAW
+  FLASH_MB := 8
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    $(B43_PACKAGES) broadcom-43227-sprom \
+    kmod-leds-bcm6328
+endef
+TARGET_DEVICES += arcadyan_ar7516
+
 define Device/comtrend_ar-5381u
   $(Device/bcm63xx-cfe)
   DEVICE_VENDOR := Comtrend
