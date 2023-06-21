@@ -154,13 +154,21 @@ define Kernel/CompileImage/Default
 	$(call Kernel/CopyImage)
 endef
 
+define Kernel/PrepareConfigPerRootfs
+	[ ! -d "$(1)" ] || rm -rf $(1)
+	mkdir $(1)
+
+	$(CP) $(LINUX_DIR)/.config $(1)
+endef
+
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 # $1: Custom TARGET_DIR. If omitted TARGET_DIR is used.
+# $2: If defined Generate Per Rootfs Kernel Directory and use it
 define Kernel/CompileImage/Initramfs
+	$(if $(2),$(call Kernel/PrepareConfigPerRootfs,$(LINUX_DIR)$(2)))
 	$(call Kernel/Configure/Initramfs,$(if $(1),$(1),$(TARGET_DIR)),$(LINUX_DIR)$(2))
 	$(CP) $(GENERIC_PLATFORM_DIR)/other-files/init $(if $(1),$(1),$(TARGET_DIR))/init
 	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(if $(1),$(1),$(TARGET_DIR)) $(if $(1),$(1),$(TARGET_DIR))/init)
-	rm -rf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/usr/initramfs_data.cpio*
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
 ifneq ($(call qstrip,$(CONFIG_EXTERNAL_CPIO)),)
 	$(CP) $(CONFIG_EXTERNAL_CPIO) $(KERNEL_BUILD_DIR)/initrd.cpio
@@ -176,8 +184,10 @@ endif
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_XZ),$(STAGING_DIR_HOST)/bin/xz -T$(if $(filter 1,$(NPROC)),2,0) -9 -fz --check=crc32 $(KERNEL_BUILD_DIR)/initrd.cpio)
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_ZSTD),$(STAGING_DIR_HOST)/bin/zstd -T0 -f -o $(KERNEL_BUILD_DIR)/initrd.cpio.zstd $(KERNEL_BUILD_DIR)/initrd.cpio)
 endif
-	+$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all)
-	$(call Kernel/CopyImage,-initramfs)
+	+$(call locked,$(if $(2),$(CP) $(LINUX_DIR)$(2)/.config* $(LINUX_DIR) && touch $(LINUX_DIR)/.config && )\
+		rm -rf $(LINUX_DIR)/usr/initramfs_data.cpio* $(LINUX_DIR)/.config.prev && \
+		$(KERNEL_MAKE) $(KERNEL_MAKEOPTS_IMAGE) $(if $(KERNELNAME),$(KERNELNAME),all) && \
+		{ $(call Kernel/CopyImage,-initramfs$(2)) },gen-initramfs)
 endef
 else
 define Kernel/CompileImage/Initramfs
