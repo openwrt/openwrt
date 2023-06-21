@@ -13,7 +13,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -272,19 +272,13 @@ config BMIPS_GENERIC
+@@ -273,19 +273,13 @@ config BMIPS_GENERIC
  	select SYNC_R4K
  	select COMMON_CLK
  	select BCM6345_L1_IRQ
@@ -33,7 +33,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  	select SWAP_IO_SPACE
  	select USB_EHCI_BIG_ENDIAN_DESC if CPU_BIG_ENDIAN
  	select USB_EHCI_BIG_ENDIAN_MMIO if CPU_BIG_ENDIAN
-@@ -294,6 +288,7 @@ config BMIPS_GENERIC
+@@ -295,6 +289,7 @@ config BMIPS_GENERIC
  	select HAVE_PCI
  	select PCI_DRIVERS_GENERIC
  	select FW_CFE

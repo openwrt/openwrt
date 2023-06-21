@@ -29,7 +29,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
   *
 @@ -6079,6 +6082,12 @@ int __init cgroup_init(void)
  
- 	mutex_unlock(&cgroup_mutex);
+ 	cgroup_unlock();
  
 +	/*
 +	 * Apply an implicit disable, knowing that an explicit enable will
@@ -40,7 +40,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	for_each_subsys(ss, ssid) {
  		if (ss->early_init) {
  			struct cgroup_subsys_state *css =
-@@ -6717,6 +6726,10 @@ static int __init cgroup_disable(char *s
+@@ -6716,6 +6725,10 @@ static int __init cgroup_disable(char *s
  			    strcmp(token, ss->legacy_name))
  				continue;
  
@@ -51,7 +51,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  			static_branch_disable(cgroup_subsys_enabled_key[i]);
  			pr_info("Disabling %s control group subsystem\n",
  				ss->name);
-@@ -6735,6 +6748,31 @@ static int __init cgroup_disable(char *s
+@@ -6734,6 +6747,31 @@ static int __init cgroup_disable(char *s
  }
  __setup("cgroup_disable=", cgroup_disable);
  
