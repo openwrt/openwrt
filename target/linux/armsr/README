@@ -49,7 +49,7 @@ With a EDKII or U-Boot binary for the QEMU ARM virtual machines, you can use the
 images in EFI mode:
 
 32-bit:
-gunzip -c bin/targets/armsr/armv7/openwrt-armsr-armv7-generic-ext4-combined.img.gz > openwrt-arm-32.img
+gunzip -c bin/targets/armsr/armv7/openwrt-armsr-armv7-generic-ext4-combined-efi.img.gz > openwrt-arm-32.img
 qemu-system-arm -nographic \
     -cpu cortex-a15 -machine virt \
     -bios bin/targets/armsr/armv7/u-boot-qemu_armv7/u-boot.bin \
@@ -60,7 +60,7 @@ qemu-system-arm -nographic \
     -netdev user,id=testwan -net nic,netdev=testwan
 
 64-bit:
-gunzip -c bin/targets/armsr/armv8/openwrt-armsr-armv8-generic-ext4-combined.img.gz > openwrt-arm-64.img
+gunzip -c bin/targets/armsr/armv8/openwrt-armsr-armv8-generic-ext4-combined-efi.img.gz > openwrt-arm-64.img
 qemu-system-aarch64 -nographic \
     -cpu cortex-a53 -machine virt \
     -bios bin/targets/armsr/armv8/u-boot-qemu_armv8/u-boot.bin \
