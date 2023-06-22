@@ -46,16 +46,9 @@
 		};
 
 		watchdog: watchdog@100 {
-			compatible = "ralink,mt7628an-wdt", "mediatek,mt7621-wdt";
-			reg = <0x100 0x30>;
-
-			clocks = <&sysc 6>;
-
-			resets = <&sysc 8>;
-			reset-names = "wdt";
-
-			interrupt-parent = <&intc>;
-			interrupts = <24>;
+			compatible = "mediatek,mt7621-wdt";
+			reg = <0x100 0x100>;
+			mediatek,sysctl = <&sysc>;
 		};
 
 		intc: intc@200 {
