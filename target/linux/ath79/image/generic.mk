@@ -251,13 +251,6 @@ define Device/adtran_bsap192x
   DEVICE_VENDOR := Adtran
   DEVICE_PACKAGES := uboot-envtools
   IMAGE_SIZE := 13312k
-# TODO: Define IMAGE/sysupgrade.bin
-
-# TODO: Define KERNEL
-# e.g. KERNEL := kernel-bin | append-dtb | lzma | pad-to $$(BLOCKSIZE)
-
-# TODO: (maybe?) Define KERNEL_INITRAMFS
-# e.g. KERNEL_INITRAMFS := kernel-bin | append-dtb
 endef
 
 define Device/adtran_bsap1920
