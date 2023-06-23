@@ -3,8 +3,10 @@
 . /lib/functions.sh
 
 case "$(board_name)" in
+arcadyan,ar7516 |\
 comtrend,ar-5381u |\
-comtrend,ar-5387un)
+comtrend,ar-5387un |\
+nucom,r5010unv2)
 	mtd fixtrx firmware
 	;;
 esac

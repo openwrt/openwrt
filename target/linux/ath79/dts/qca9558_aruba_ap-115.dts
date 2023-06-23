@@ -1,0 +1,239 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "aruba,ap-115", "qca,qca9558";
+	model = "Aruba AP-115";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+		label-mac-device = &eth0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,9600n8";
+	};
+
+	/**
+	 * Currently unused GPIOs in OpenWrt:
+	 *
+	 * TPM-CLK: 19
+	 * TPM-IO: 20
+	 * ETH-PHY-Interrupt: 11
+	 * Power-DC: 22
+	 * Power-PoE: 23
+	 * Power-PoE-8023af: 17
+	 */
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_green: power-green {
+			label = "green:power";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+		
+		led_power_red: power-red {
+			label = "red:power";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		radio-24-green {
+			label = "green:radio-24";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		radio-24-amber {
+			label = "amber:radio-24";
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		radio-5-green {
+			label = "green:radio-5";
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		radio-5-amber {
+			label = "amber:radio-5";
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	reg_usb_vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	ath9k: wifi@0,0 {
+		compatible = "pci168c,0033";
+		reg = <0x0000 0 0 0 0>;
+		qca,no-eeprom;
+
+		nvmem-cells = <&macaddr_oemdata_1d>;
+		nvmem-cell-names = "mac-address";
+
+		mac-address-increment = <1>;
+	};
+};
+
+&pinmux {
+	/**
+	 * Ugly hack ahead!
+	 *
+	 * GPIO05: Bank1-CS  / Bank2-CLK
+	 * GPIO14: Bank1-CLK / Bank2-CS
+	 *
+	 * We can not support this with OpenWrt, as this
+	 * would require us to influence the pinmux based on the CS.
+	 * 
+	 * We force-select Bank 1. Remember to blame Aruba for that.
+	 */
+	cs0_pin5: spi-cs0-pin5 {
+		pinctrl-single,bits = <0x4 0x900 0xff00>;
+	};
+
+	clk_pin14: spi-cs1-pin14 {
+		pinctrl-single,bits = <0xc 0x0a0000 0xff0000>;
+	};
+};
+
+&spi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&cs0_pin5 &clk_pin14>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@1 {
+				label = "flash-full";
+				reg = <0x0 0x1000000>;
+				read-only;
+			};
+
+			uboot: partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			/* Here be dragons */
+
+			partition@100000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x100000 0xe00000>;
+			};
+
+			oemdata: partition@fe0000 {
+				label = "oemdata";
+				reg = <0xfe0000 0x010000>;
+				read-only;
+			};
+
+			partition@ff0000 {
+				label = "u-boot-env";
+				reg = <0xff0000 0x10000>;
+			};
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	qca,no-eeprom;
+	nvmem-cells = <&macaddr_oemdata_1d>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+
+		reset-gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <10000>;
+
+		eee-broken-100tx;
+		eee-broken-1000t;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_oemdata_1d>;
+	nvmem-cell-names = "mac-address";
+
+	phy-handle = <&phy0>;
+	phy-mode = "rgmii-id";
+
+	pll-data = <0xa6000000 0xa0000101 0xa0001313>;
+
+	gmac-config {
+		device = <&gmac>;
+		ge0-sgmii = <0>;
+		txen-delay = <3>;
+		txd-delay = <3>;
+		rxdv-delay = <3>;
+		rxd-delay = <3>;
+		rgmii-enabled = <1>;
+	};
+};
+
+&oemdata {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_oemdata_1d: macaddr@1d {
+		reg = <0x1d 0x6>;
+	};
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb0 {
+	dr_mode = "host";
+	status = "okay";
+};

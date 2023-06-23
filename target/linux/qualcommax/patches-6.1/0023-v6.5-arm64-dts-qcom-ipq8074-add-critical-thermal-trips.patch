@@ -1,6 +1,6 @@
-From 145bbf2b88990ef3ff00ee541bb7662008683c16 Mon Sep 17 00:00:00 2001
+From 56d3067cb694ba60d654e7f5ef231b6fabc4697f Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
-Date: Wed, 7 Jun 2023 20:26:26 +0200
+Date: Wed, 7 Jun 2023 20:44:48 +0200
 Subject: [PATCH] arm64: dts: qcom: ipq8074: add critical thermal trips
 
 According to bindings, thermal zones must have associated trips as well.
@@ -9,13 +9,15 @@ lets start by defining critical trips to protect the devices against
 severe overheating.
 
 Signed-off-by: Robert Marko <robimarko@gmail.com>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20230607184448.2512179-1-robimarko@gmail.com
 ---
  arch/arm64/boot/dts/qcom/ipq8074.dtsi | 96 +++++++++++++++++++++++++++
  1 file changed, 96 insertions(+)
 
 --- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
-@@ -1293,6 +1293,14 @@
+@@ -896,6 +896,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 4>;
@@ -30,7 +32,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		nss0-thermal {
-@@ -1300,6 +1308,14 @@
+@@ -903,6 +911,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 5>;
@@ -45,7 +47,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		nss1-thermal {
-@@ -1307,6 +1323,14 @@
+@@ -910,6 +926,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 6>;
@@ -60,7 +62,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		wcss-phya0-thermal {
-@@ -1314,6 +1338,14 @@
+@@ -917,6 +941,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 7>;
@@ -75,7 +77,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		wcss-phya1-thermal {
-@@ -1321,6 +1353,14 @@
+@@ -924,6 +956,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 8>;
@@ -90,7 +92,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cpu0_thermal: cpu0-thermal {
-@@ -1328,6 +1368,14 @@
+@@ -931,6 +971,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 9>;
@@ -105,7 +107,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cpu1_thermal: cpu1-thermal {
-@@ -1335,6 +1383,14 @@
+@@ -938,6 +986,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 10>;
@@ -120,7 +122,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cpu2_thermal: cpu2-thermal {
-@@ -1342,6 +1398,14 @@
+@@ -945,6 +1001,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 11>;
@@ -135,7 +137,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cpu3_thermal: cpu3-thermal {
-@@ -1349,6 +1413,14 @@
+@@ -952,6 +1016,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 12>;
@@ -150,7 +152,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		cluster_thermal: cluster-thermal {
-@@ -1356,6 +1428,14 @@
+@@ -959,6 +1031,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 13>;
@@ -165,7 +167,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		wcss-phyb0-thermal {
-@@ -1363,6 +1443,14 @@
+@@ -966,6 +1046,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 14>;
@@ -180,7 +182,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  		};
  
  		wcss-phyb1-thermal {
-@@ -1370,6 +1458,14 @@
+@@ -973,6 +1061,14 @@
  			polling-delay = <1000>;
  
  			thermal-sensors = <&tsens 15>;
