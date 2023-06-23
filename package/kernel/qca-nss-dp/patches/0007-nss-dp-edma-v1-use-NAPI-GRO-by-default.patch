@@ -1,7 +1,7 @@
-From ae4fe8fb79b68f4cf4a887434ab6a8a9a1c65bfc Mon Sep 17 00:00:00 2001
+From c2df713569fe3bb671d1444c7bf758681081053c Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
 Date: Thu, 23 Jun 2022 14:18:50 +0200
-Subject: [PATCH] nss-dp: edma-v1: use NAPI GRO by default
+Subject: [PATCH 7/8] nss-dp: edma-v1: use NAPI GRO by default
 
 Utilize napi_gro_receive instead of plain netif_receive_skb on EDMA v1.
 
@@ -20,7 +20,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/hal/dp_ops/edma_dp/edma_v1/edma_data_plane.c
 +++ b/hal/dp_ops/edma_dp/edma_v1/edma_data_plane.c
-@@ -589,10 +589,12 @@ drop:
+@@ -597,10 +597,12 @@ drop:
   */
  static void edma_if_set_features(struct nss_dp_data_plane_ctx *dpc)
  {

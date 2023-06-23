@@ -1,7 +1,7 @@
-From 44a30d94abcbb10aacc21db29be212518a6b1bf7 Mon Sep 17 00:00:00 2001
+From 158032d3d4e5089afa2aa38c27c6e222ac427820 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
 Date: Thu, 20 May 2021 14:57:46 +0200
-Subject: [PATCH] EDMA: Use NAPI_POLL_WEIGHT as NAPI weight
+Subject: [PATCH 4/8] EDMA: Use NAPI_POLL_WEIGHT as NAPI weight
 
 Currently a weight of 100 is used by the EDMA, according
 to upstream max of 64 should be used and that is used for
@@ -20,7 +20,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/hal/dp_ops/edma_dp/edma_v1/edma_data_plane.c
 +++ b/hal/dp_ops/edma_dp/edma_v1/edma_data_plane.c
-@@ -837,7 +837,7 @@ static int edma_register_netdevice(struc
+@@ -845,7 +845,7 @@ static int edma_register_netdevice(struc
  	 */
  	if (!edma_hw.napi_added) {
  		netif_napi_add(netdev, &edma_hw.napi, edma_napi,
