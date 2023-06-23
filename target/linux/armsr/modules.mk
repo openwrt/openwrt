@@ -13,6 +13,28 @@ endef
 
 $(eval $(call KernelPackage,acpi-mdio))
 
+define KernelPackage/bcmgenet
+  SUBMENU=$(NETWORK_DEVICES_MENU)
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-mdio-bcm-unimac
+  TITLE:=Broadcom GENET internal MAC (Raspberry Pi 4)
+  KCONFIG:=CONFIG_BCMGENET
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/broadcom/genet/genet.ko
+  AUTOLOAD=$(call AutoLoad,30,genet)
+endef
+
+$(eval $(call KernelPackage,bcmgenet))
+
+define KernelPackage/mdio-bcm-unimac
+  SUBMENU=$(NETWORK_DEVICES_MENU)
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-of-mdio
+  TITLE:=Broadcom UniMAC MDIO bus controller
+  KCONFIG:=CONFIG_MDIO_BCM_UNIMAC
+  FILES=$(LINUX_DIR)/drivers/net/mdio/mdio-bcm-unimac.ko
+  AUTOLOAD=$(call AutoLoad,30,mdio-bcm-unimac)
+endef
+
+$(eval $(call KernelPackage,mdio-bcm-unimac))
+
 define KernelPackage/fsl-pcs-lynx
   SUBMENU=$(NETWORK_DEVICES_MENU)
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-libphy +kmod-of-mdio +kmod-phylink
