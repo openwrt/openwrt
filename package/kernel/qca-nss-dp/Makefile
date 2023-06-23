@@ -44,13 +44,10 @@ define Build/Configure
 endef
 
 define Build/Compile
-	+$(MAKE) -C "$(LINUX_DIR)" \
-		CROSS_COMPILE="$(TARGET_CROSS)" \
-		ARCH="$(LINUX_KARCH)" \
+	+$(KERNEL_MAKE) $(PKG_JOBS) \
+		-C "$(LINUX_DIR)" \
 		M="$(PKG_BUILD_DIR)" \
 		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" SoC="$(CONFIG_TARGET_SUBTARGET)" \
-		$(KERNEL_MAKE_FLAGS) \
-		$(PKG_JOBS) \
 		modules
 endef
 
