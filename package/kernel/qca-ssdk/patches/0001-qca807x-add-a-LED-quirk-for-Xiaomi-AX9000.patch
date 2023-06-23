@@ -1,7 +1,7 @@
-From 37255b97a9170f6dd1604931f0d7a8f847be5b5d Mon Sep 17 00:00:00 2001
+From cdcafa28c857e4d04c9210feb54dc84e427061fe Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
 Date: Tue, 11 Jan 2022 00:28:42 +0100
-Subject: [PATCH 05/14] qca807x: add a LED quirk for Xiaomi AX9000
+Subject: [PATCH 1/2] qca807x: add a LED quirk for Xiaomi AX9000
 
 Xiaomi AX9000 has a single LED for each of 4 gigabit ethernet ports that
 are connected to QCA8075, and that LED is connected to the 100M LED pin.
@@ -49,7 +49,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  #include "sw.h"
  #include "fal_port_ctrl.h"
  #include "hsl_api.h"
-@@ -2708,6 +2710,15 @@ malibu_phy_hw_init(a_uint32_t dev_id, a_
+@@ -2716,6 +2718,15 @@ malibu_phy_hw_init(a_uint32_t dev_id, a_
  			led_status |= MALIBU_LED_1000_CTRL1_100_10_MASK;
  			malibu_phy_mmd_write(dev_id, phy_addr, MALIBU_PHY_MMD7_NUM,
  				MALIBU_PHY_MMD7_LED_1000_CTRL1, led_status);
