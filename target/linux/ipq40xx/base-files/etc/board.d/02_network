@@ -107,6 +107,10 @@ ipq40xx_setup_interfaces()
 	zte,mf286d)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
 		;;
+	zte,mf287plus)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;

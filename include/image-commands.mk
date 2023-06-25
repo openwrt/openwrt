@@ -399,6 +399,15 @@ define Build/lzma-no-dict
 	@mv $@.new $@
 endef
 
+define Build/moxa-encode-fw
+	$(TOPDIR)/scripts/moxa-encode-fw.py \
+		--input $@ \
+		--output $@ \
+		--magic $(MOXA_MAGIC) \
+		--hwid $(MOXA_HWID) \
+		--buildid 00000000
+endef
+
 define Build/netgear-chk
 	$(STAGING_DIR_HOST)/bin/mkchkimg \
 		-o $@.new \

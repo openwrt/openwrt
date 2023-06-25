@@ -7,43 +7,39 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=arm-trusted-firmware-rockchip
-PKG_VERSION:=2.3
+PKG_VERSION:=2.9
 PKG_RELEASE:=1
 
-PKG_SOURCE:=atf-v$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/atf-builds/atf/releases/download/v$(PKG_VERSION)/atf-v$(PKG_VERSION).tar.gz?
-PKG_HASH:=bf352298743aed594cf2958dd588e06ab6713fc514bb6f809bf55a85a87134c1
-
-PKG_LICENSE:=BSD-3-Clause
-PKG_LICENSE_FILES:=license.md
+PKG_HASH:=76a66a1de0c01aeb83dfc7b72b51173fe62c6e51d6fca17cc562393117bed08b
 
 PKG_MAINTAINER:=Tobias Maedel <openwrt@tbspace.de>
 
-MAKE_PATH:=$(PKG_NAME)
-
+include $(INCLUDE_DIR)/kernel.mk
+include $(INCLUDE_DIR)/trusted-firmware-a.mk
 include $(INCLUDE_DIR)/package.mk
 
-define Package/arm-trusted-firmware-rockchip
-    SECTION:=boot
-    CATEGORY:=Boot Loaders
-    TITLE:=ARM Trusted Firmware for Rockchip
-    DEPENDS:=@TARGET_rockchip_armv8
+define Trusted-Firmware-A/Default
+  NAME:=Rockchip $(1) SoCs
+  BUILD_TARGET:=rockchip
 endef
 
-define Build/Prepare
-	$(TAR) -C $(PKG_BUILD_DIR) -xf $(DL_DIR)/$(PKG_SOURCE)
+define Trusted-Firmware-A/rk3328
+  BUILD_SUBTARGET:=armv8
+  PLAT=rk3328
 endef
 
-define Build/Compile
+define Trusted-Firmware-A/rk3399
+  BUILD_SUBTARGET:=armv8
+  PLAT:=rk3399
 endef
 
-define Build/InstallDev
-	$(INSTALL_DIR) -p $(STAGING_DIR_IMAGE)
-	$(CP) $(PKG_BUILD_DIR)/rk*.elf $(STAGING_DIR_IMAGE)/
+TFA_TARGETS:= \
+	rk3328 \
+	rk3399
+
+define Package/trusted-firmware-a/install
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/build/$(PLAT)/release/bl31/bl31.elf $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)_bl31.elf
 endef
 
-define Package/arm-trusted-firmware-rockchip/install
-endef
-
-$(eval $(call BuildPackage,arm-trusted-firmware-rockchip))
+$(eval $(call BuildPackage/Trusted-Firmware-A))

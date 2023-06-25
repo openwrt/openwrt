@@ -7,36 +7,10 @@ on:
       - labeled
 
 jobs:
-  set_target:
-    if: startsWith(github.event.label.name, 'ci:target:')
-    name: Set target
-    runs-on: ubuntu-latest
-    outputs:
-      target: ${{ steps.set_target.outputs.target }}
-      subtarget: ${{ steps.set_target.outputs.subtarget }}
-
-    steps:
-      - name: Set target
-        id: set_target
-        env:
-          CI_EVENT_LABEL_NAME: ${{ github.event.label.name }}
-        run: |
-          echo "$CI_EVENT_LABEL_NAME" | sed -n 's/.*:\(.*\):\(.*\)$/target=\1/p' | tee --append $GITHUB_OUTPUT
-          echo "$CI_EVENT_LABEL_NAME" | sed -n 's/.*:\(.*\):\(.*\)$/subtarget=\2/p' | tee --append $GITHUB_OUTPUT
-
-  build_target:
-    name: Build target
-    needs: set_target
+  build-target-label:
+    name: Build target from defined label
     permissions:
       contents: read
       packages: read
       actions: write
-    uses: ./.github/workflows/build.yml
-    with:
-      container_name: toolchain
-      target: ${{ needs.set_target.outputs.target }}
-      subtarget: ${{ needs.set_target.outputs.subtarget }}
-      build_full: true
-      build_all_kmods: true
-      build_all_boards: true
-      build_all_modules: true
+    uses: openwrt/actions-shared-workflows/.github/workflows/label-target.yml@main

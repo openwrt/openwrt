@@ -26,7 +26,7 @@ endef
 
 define U-Boot/rk3328/Default
   BUILD_SUBTARGET:=armv8
-  DEPENDS:=+PACKAGE_u-boot-$(1):arm-trusted-firmware-rockchip
+  DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3328
   ATF:=rk3328_bl31.elf
   OF_PLATDATA:=$(1)
 endef
@@ -70,7 +70,7 @@ endef
 
 define U-Boot/rk3399/Default
   BUILD_SUBTARGET:=armv8
-  DEPENDS:=+PACKAGE_u-boot-$(1):arm-trusted-firmware-rockchip
+  DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3399
   ATF:=rk3399_bl31.elf
 endef
 
