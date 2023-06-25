@@ -11,6 +11,40 @@ to update LED settings.
 Signed-off-by: Tianling Shen <cnsztl@gmail.com>
 ---
 
+--- a/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5c.dts
+@@ -32,27 +32,22 @@
+ 		pinctrl-0 = <&lan_led_pin>, <&power_led_pin>, <&wan_led_pin>, <&wlan_led_pin>;
+ 
+ 		led-lan {
+-			color = <LED_COLOR_ID_GREEN>;
+-			function = LED_FUNCTION_LAN;
++			label = "green:lan";
+ 			gpios = <&gpio3 RK_PA3 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+ 		power_led: led-power {
+-			color = <LED_COLOR_ID_RED>;
+-			function = LED_FUNCTION_POWER;
+-			linux,default-trigger = "heartbeat";
++			label = "red:power";
+ 			gpios = <&gpio3 RK_PA2 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+ 		led-wan {
+-			color = <LED_COLOR_ID_GREEN>;
+-			function = LED_FUNCTION_WAN;
++			label = "green:wan";
+ 			gpios = <&gpio3 RK_PA4 GPIO_ACTIVE_HIGH>;
+ 		};
+ 
+ 		led-wlan {
+-			color = <LED_COLOR_ID_GREEN>;
+-			function = LED_FUNCTION_WLAN;
++			label = "green:wlan";
+ 			gpios = <&gpio3 RK_PA5 GPIO_ACTIVE_HIGH>;
+ 		};
+ 	};
 --- a/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts
 @@ -23,29 +23,22 @@
