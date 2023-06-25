@@ -676,14 +676,12 @@ TARGET_DEVICES += dlink_covr-x1860-a1
 
 define Device/dlink_dxx-1xx0-x1
   DEVICE_VENDOR := D-Link
-  DEVICE_PACKAGES := kmod-mt7615-firmware rssileds
+  DEVICE_PACKAGES := kmod-mt7615-firmware rssileds -uboot-envtools
   IMAGE_SIZE := 16064k
   IMAGES += factory.bin
-  IMAGE/factory.bin := $$(sysupgrade_bin) | \
-    check-size 11009992 | pad-to 11009992 | \
-    append-md5sum-ascii-salted ffff | \
-    append-string $$(DLINK_HWID) | \
-    check-size
+  IMAGE/factory.bin := append-kernel | append-rootfs | \
+    pad-rootfs -x 60 | append-md5sum-ascii-salted ffff | \
+    append-string $$$$(DLINK_HWID) | check-size
 endef
 
 define Device/dlink_dap-1620-b1
