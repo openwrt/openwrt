@@ -1105,3 +1105,20 @@ define KernelPackage/video-coda/description
 endef
 
 $(eval $(call KernelPackage,video-coda))
+
+define KernelPackage/video-pxp
+  TITLE:=i.MX PXP support
+  DEPENDS:=@TARGET_imx +kmod-video-mem2mem +kmod-video-dma
+  KCONFIG:= CONFIG_VIDEO_IMX_PXP
+  FILES:= $(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/imx-pxp.ko
+  AUTOLOAD:=$(call AutoProbe,imx-pxp)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-pxp/description
+ The i.MX Pixel Pipeline (PXP) kernel module
+ This enables hardware accelerated support for image
+ Colour Conversion, Scaling and Rotation
+endef
+
+$(eval $(call KernelPackage,video-pxp))
