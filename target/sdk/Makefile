@@ -13,7 +13,7 @@ include $(INCLUDE_DIR)/download.mk
 
 override MAKEFLAGS=
 
-SDK_NAME:=$(VERSION_DIST_SANITIZED)-sdk-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))$(if $(GCCV),_gcc-$(GCCV))$(DIR_SUFFIX).$(HOST_OS)-$(HOST_ARCH)
+SDK_NAME:=$(VERSION_DIST_SANITIZED)-sdk-$(TARGET_TOOL_NAME)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 
 STAGING_SUBDIR_HOST := staging_dir/host
@@ -138,14 +138,13 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		$(SDK_BUILD_DIR)/target/linux/*/files* \
 		$(SDK_BUILD_DIR)/target/linux/*/patches*
 	./convert-config.pl $(TOPDIR)/.config > $(SDK_BUILD_DIR)/Config-build.in
-	$(CP) -L \
+	$(CP) \
+		./files/* \
+		$(TOPDIR)/.gitattributes \
+		$(TOPDIR)/.gitignore \
 		$(TOPDIR)/LICENSES \
 		$(TOPDIR)/COPYING \
 		$(TOPDIR)/rules.mk \
-		./files/Config.in \
-		./files/Makefile \
-		./files/include/prepare.mk \
-		./files/README.SDK \
 		$(SDK_BUILD_DIR)/
 	mkdir -p $(SDK_BUILD_DIR)/package/kernel
 	$(CP) \
