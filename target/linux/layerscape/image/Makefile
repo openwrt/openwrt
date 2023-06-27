@@ -51,19 +51,6 @@ define Build/ls-append-sdhead
 	dd if=$(STAGING_DIR_IMAGE)/$(1)-sdcard-head.img >> $@
 endef
 
-define Build/traverse-fit
-	./mkits-multiple-config.sh -o $@.its -A $(LINUX_KARCH) \
-		-v $(LINUX_VERSION) -k $@ -a $(KERNEL_LOADADDR) \
-		-e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
-		-C gzip -c 1 -c 2 \
-		-d $(DEVICE_DTS_DIR)/freescale/traverse-ls1043s.dtb \
-		-D "Traverse_LS1043S" -n "ls1043s" -a $(FDT_LOADADDR) -c 1 \
-		-d $(DEVICE_DTS_DIR)/freescale/traverse-ls1043v.dtb \
-		-D "Traverse_LS1043V" -n "ls1043v" -a $(FDT_LOADADDR) -c 2
-	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
-	@mv -f $@.new $@
-endef
-
 define Build/traverse-fit-ls1088
     ./mkits-multiple-config.sh -o $@.its -A $(LINUX_KARCH) \
 	-v $(LINUX_VERSION) -k $@ -a $(KERNEL_LOADADDR) \
