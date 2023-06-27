@@ -61,7 +61,7 @@ BEGIN {
 	print "PREFIX="prefix
 
 	# range calculations:
-	# ipcalc <ip> <netmask> <start> <num>
+	# ipcalc <ip> <netmask> <range_start> <range_size>
 
 	if (ARGC <= 3)
 		exit(0)
