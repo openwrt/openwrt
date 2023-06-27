@@ -52,7 +52,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl822x_probe(struct phy_device *phydev)
  {
  	struct device *dev = &phydev->mdio.dev;
-@@ -1084,7 +1116,7 @@ static struct phy_driver realtek_drvs[]
+@@ -1082,7 +1114,7 @@ static struct phy_driver realtek_drvs[]
  		.write_page     = rtl821x_write_page,
  		.soft_reset     = genphy_soft_reset,
  	}, {
