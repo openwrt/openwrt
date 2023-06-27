@@ -420,38 +420,6 @@ define Device/fsl_lx2160a-rdb-sdboot
 endef
 TARGET_DEVICES += fsl_lx2160a-rdb-sdboot
 
-define Device/traverse_ls1043
-  DEVICE_VENDOR := Traverse
-  DEVICE_MODEL := LS1043 Boards
-  KERNEL_NAME := Image
-  KERNEL_SUFFIX := -kernel.itb
-  KERNEL_INSTALL := 1
-  FDT_LOADADDR = 0x90000000
-  FILESYSTEMS := ubifs
-  MKUBIFS_OPTS := -m 1 -e 262016 -c 128
-  DEVICE_PACKAGES += \
-    layerscape-fman \
-    uboot-envtools \
-    kmod-i2c-mux-pca954x \
-    kmod-hwmon-core \
-    kmod-gpio-pca953x kmod-input-gpio-keys-polled \
-    kmod-rtc-isl1208
-  DEVICE_DESCRIPTION = \
-    Build images for Traverse LS1043 boards. This generates a single image \
-    capable of booting on any of the boards in this family.
-  DEVICE_DTS = freescale/traverse-ls1043s
-  DEVICE_DTS_DIR = $(LINUX_DIR)/arch/arm64/boot/dts
-  DEVICE_DTS_CONFIG = ls1043s
-  KERNEL := kernel-bin | gzip | traverse-fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-  IMAGES = root sysupgrade.bin
-  IMAGE/root = append-rootfs
-  IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata
-  MKUBIFS_OPTS := -m 2048 -e 124KiB -c 4096
-  SUPPORTED_DEVICES := traverse,ls1043s traverse,ls1043v
-endef
-TARGET_DEVICES += traverse_ls1043
-
 define Device/traverse_ten64_mtd
   DEVICE_VENDOR := Traverse
   DEVICE_MODEL := Ten64 (NAND boot)
