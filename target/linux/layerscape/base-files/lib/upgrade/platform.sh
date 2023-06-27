@@ -3,8 +3,8 @@
 # Copyright 2020 NXP
 #
 
-RAMFS_COPY_BIN="/usr/sbin/fw_printenv /usr/sbin/fw_setenv /usr/sbin/ubinfo /bin/echo"
-RAMFS_COPY_DATA="/etc/fw_env.config /var/lock/fw_printenv.lock"
+RAMFS_COPY_BIN=""
+RAMFS_COPY_DATA=""
 
 REQUIRE_IMAGE_METADATA=1
 
