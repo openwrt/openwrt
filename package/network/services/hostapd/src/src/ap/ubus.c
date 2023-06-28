@@ -512,6 +512,21 @@ static const struct blobmsg_policy del_policy[__DEL_CLIENT_MAX] = {
 	[DEL_CLIENT_BAN_TIME] = { "ban_time", BLOBMSG_TYPE_INT32 },
 };
 
+static void
+hostapd_del_client(struct hostapd_data *hapd, struct sta_info *sta,
+			bool deauth, int reason)
+{
+	u8 *addr = sta->addr;
+
+	if (deauth) {
+		hostapd_drv_sta_deauth(hapd, addr, reason);
+		ap_sta_deauthenticate(hapd, sta, reason);
+	} else {
+		hostapd_drv_sta_disassoc(hapd, addr, reason);
+		ap_sta_disassociate(hapd, sta, reason);
+	}
+}
+
 static int
 hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 			struct ubus_request_data *req, const char *method,
@@ -540,13 +555,10 @@ hostapd_bss_del_client(struct ubus_context *ctx, struct ubus_object *obj,
 
 	sta = ap_get_sta(hapd, addr);
 	if (sta) {
-		if (deauth) {
-			hostapd_drv_sta_deauth(hapd, addr, reason);
-			ap_sta_deauthenticate(hapd, sta, reason);
-		} else {
-			hostapd_drv_sta_disassoc(hapd, addr, reason);
-			ap_sta_disassociate(hapd, sta, reason);
-		}
+		hostapd_del_client(hapd, sta, deauth, reason);
+	} else if (is_broadcast_ether_addr(addr)) {
+		for (sta = hapd->sta_list; sta; sta = sta->next)
+			hostapd_del_client(hapd, sta, deauth, reason);
 	}
 
 	if (tb[DEL_CLIENT_BAN_TIME])
