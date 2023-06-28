@@ -1193,9 +1193,11 @@ endef
 TARGET_DEVICES += dlink_dir-835-a1
 
 define Device/dlink_dir-842-c
+  $(Device/dsa-migration)
   SOC := qca9563
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-842
+  DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-ath10k-ct -swconfig
   KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
   KERNEL_INITRAMFS := $$(KERNEL) | seama
   IMAGES += factory.bin
@@ -1216,31 +1218,31 @@ endef
 define Device/dlink_dir-842-c1
   $(Device/dlink_dir-842-c)
   DEVICE_VARIANT := C1
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
 endef
 TARGET_DEVICES += dlink_dir-842-c1
 
 define Device/dlink_dir-842-c2
   $(Device/dlink_dir-842-c)
   DEVICE_VARIANT := C2
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES += kmod-usb2
 endef
 TARGET_DEVICES += dlink_dir-842-c2
 
 define Device/dlink_dir-842-c3
   $(Device/dlink_dir-842-c)
   DEVICE_VARIANT := C3
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
 endef
 TARGET_DEVICES += dlink_dir-842-c3
 
 define Device/dlink_dir-859-ax
+  $(Device/dsa-migration)
   $(Device/seama)
   SOC := qca9563
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-859
   IMAGE_SIZE := 15872k
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct-smallbuffers \
+	ath10k-firmware-qca988x-ct -swconfig
   SEAMA_SIGNATURE := wrgac37_dlink.2013gui_dir859
 endef
 

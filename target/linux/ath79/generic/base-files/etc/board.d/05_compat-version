@@ -1,0 +1,20 @@
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+	dlink,dir-842-c1|\
+	dlink,dir-842-c2|\
+	dlink,dir-842-c3|\
+	dlink,dir-859-a1|\
+	dlink,dir-859-a3|\
+	dlink,dir-869-a1)
+		ucidef_set_compat_version "1.1"
+		;;
+esac
+
+board_config_flush
+
+exit 0

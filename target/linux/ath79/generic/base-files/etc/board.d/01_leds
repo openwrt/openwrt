@@ -239,10 +239,10 @@ dlink,dap-1365-a1)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan0" "76" "100"
 	;;
 dlink,dir-859-a1)
-	ucidef_set_led_switch "internet" "WAN" "green:internet" "switch0" "0x20"
+	ucidef_set_led_netdev "internet" "WAN" "green:internet" "wan"
 	;;
 dlink,dir-859-a3)
-	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x20"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
 engenius,ens202ext-v1|\
 engenius,enstationac-v1)

@@ -58,6 +58,31 @@
 	};
 };
 
+&lan1 {
+	nvmem-cells = <&macaddr_bdcfg_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&lan2 {
+	nvmem-cells = <&macaddr_bdcfg_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&lan3 {
+	nvmem-cells = <&macaddr_bdcfg_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&lan4 {
+	nvmem-cells = <&macaddr_bdcfg_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wan {
+	nvmem-cells = <&macaddr_bdcfg_ethaddr 3>;
+	nvmem-cell-names = "mac-address";
+};
+
 &wmac {
 	nvmem-cells = <&calibration_ath9k>, <&macaddr_bdcfg_ethaddr 0>;
 	nvmem-cell-names = "calibration", "mac-address";

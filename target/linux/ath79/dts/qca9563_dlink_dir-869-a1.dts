@@ -27,3 +27,72 @@
 		};
 	};
 };
+
+&ath10k {
+	nvmem-cells = <&calibration_ath10k>, <&macaddr_devdata_94 0>;
+	nvmem-cell-names = "calibration", "mac-address";
+};
+
+&devdata {
+	compatible = "nvmem-cells";
+
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_devdata_79: macaddr@79 {
+			compatible = "mac-base";
+			reg = <0x79 0x11>;
+			#nvmem-cell-cells = <1>;
+		};
+
+		macaddr_devdata_94: macaddr@94 {
+			compatible = "mac-base";
+			reg = <0x94 0x11>;
+			#nvmem-cell-cells = <1>;
+		};
+
+		macaddr_devdata_b0: macaddr@b0 {
+			compatible = "mac-base";
+			reg = <0xb0 0x11>;
+			#nvmem-cell-cells = <1>;
+		};
+
+		macaddr_devdata_c9: macaddr@c9 {
+			compatible = "mac-base";
+			reg = <0xc9 0x11>;
+			#nvmem-cell-cells = <1>;
+		};
+	};
+};
+
+&lan1 {
+	nvmem-cells = <&macaddr_devdata_c9 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&lan2 {
+	nvmem-cells = <&macaddr_devdata_c9 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&lan3 {
+	nvmem-cells = <&macaddr_devdata_c9 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&lan4 {
+	nvmem-cells = <&macaddr_devdata_c9 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wan {
+	nvmem-cells = <&macaddr_devdata_79 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	nvmem-cells = <&calibration_ath9k>, <&macaddr_devdata_b0 0>;
+	nvmem-cell-names = "calibration", "mac-address";
+};

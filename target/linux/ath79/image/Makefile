@@ -79,6 +79,11 @@ define Device/Default
 	append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 
+define Device/dsa-migration
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
+endef
+
 define Device/loader-okli-uimage
   LOADER_TYPE := bin
   COMPILE := loader-$(1).bin loader-$(1).uImage

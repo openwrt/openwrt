@@ -31,9 +31,6 @@
 	ath10k: wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0000 0 0 0 0>;
-
-		nvmem-cells = <&calibration_ath10k>, <&macaddr_devdata_94 0>;
-		nvmem-cell-names = "calibration", "mac-address";
 	};
 };
 
@@ -62,31 +59,10 @@
 				reg = <0x040000 0x010000>;
 			};
 
-			partition@50000 {
+			devdata: partition@50000 {
 				label = "devdata";
 				reg = <0x050000 0x010000>;
 				read-only;
-
-				compatible = "nvmem-cells";
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					macaddr_devdata_94: macaddr@94 {
-						compatible = "mac-base";
-						reg = <0x94 0x11>;
-						#nvmem-cell-cells = <1>;
-					};
-
-					macaddr_devdata_b0: macaddr@b0 {
-						compatible = "mac-base";
-						reg = <0xb0 0x11>;
-						#nvmem-cell-cells = <1>;
-					};
-				};
-
 			};
 
 			partition@60000 {
@@ -122,40 +98,119 @@
 	};
 };
 
-&mdio0 {
-	status = "okay";
-
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		phy-mode = "sgmii";
-		qca,mib-poll-interval = <500>;
-
-		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
-
-		qca,ar8327-initvals = <
-			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
-			0x10 0x81000080 /* POWER_ON_STRAP */
-			0x50 0xcc35cc35 /* LED_CTRL0 */
-			0x54 0xcb37cb37 /* LED_CTRL1 */
-			0x58 0x00000000 /* LED_CTRL2 */
-			0x5c 0x00f3cf00 /* LED_CTRL3 */
-			0x7c 0x0000007e /* PORT0_STATUS */
-			>;
-	};
-};
-
 &eth0 {
 	status = "okay";
 
 	pll-data = <0x03000101 0x00000101 0x00001919>;
 
-	phy-mode = "sgmii";
-	phy-handle = <&phy0>;
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&eth1 {
+	status = "disabled";
+};
+
+&mdio0 {
+	status = "okay";
+
+	switch0@0 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <0>;
+		reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		qca,ignore-power-on-sel;
+		qca,led-open-drain;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&eth0>;
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+				qca,sgmii-rxclk-falling-edge;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			lan4: port@1 {
+				reg = <1>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			lan3: port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			lan2: port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			lan1: port@4 {
+				reg = <4>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			wan: port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
+	};
+};
+
+&mdio1 {
+	status = "disabled";
 };
 
 &wmac {
 	status = "okay";
-
-	nvmem-cells = <&calibration_ath9k>, <&macaddr_devdata_b0 0>;
-	nvmem-cell-names = "calibration", "mac-address";
 };
