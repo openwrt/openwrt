@@ -1,0 +1,404 @@
+From: Oever González <software@notengobattery.com>
+Subject: [PATCH] net: ESSEDMA: remove default VLAN tagging
+Date: Sat, 18 Jul 2020 14:59:53 -0600
+
+This patch removes the default VLAN tagging, which is used by this switch to
+pretend to have 2 CPU ports. Actually, the switch only have one CPU port, at
+least on some devices, and for them it's better to use the kernel's VLAN
+tagging.
+
+This way, users can use VLAN as expected and the VLANs 1 and 2 become free (not
+longer reserved by the switch efforts to pretend it's a two MAC device). This,
+also, fully avoids the double-tagging when actually using a VLAN either on LAN
+or WAN.
+
+Signed-off-by: Oever González <software@notengobattery.com>
+---
+--- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
+@@ -700,7 +700,7 @@
+ 			qcom,rx_head_buf_size = <1540>;
+ 			qcom,mdio_supported;
+ 			qcom,poll_required = <1>;
+-			qcom,num_gmac = <2>;
++			qcom,num_gmac = <1>;
+ 			interrupts = <0  65 IRQ_TYPE_EDGE_RISING
+ 				      0  66 IRQ_TYPE_EDGE_RISING
+ 				      0  67 IRQ_TYPE_EDGE_RISING
+@@ -738,7 +738,7 @@
+ 
+ 			gmac0: gmac0 {
+ 				local-mac-address = [00 00 00 00 00 00];
+-				vlan_tag = <1 0x1f>;
++				vlan_tag = <1 0x3f>;
+ 			};
+ 
+ 			gmac1: gmac1 {
+--- a/drivers/net/ethernet/qualcomm/essedma/edma.c
++++ b/drivers/net/ethernet/qualcomm/essedma/edma.c
+@@ -727,13 +727,11 @@ static u16 edma_rx_complete(struct edma_common_info *edma_cinfo,
+ 			edma_receive_checksum(rd, skb);
+ 
+ 			/* Process VLAN HW acceleration indication provided by HW */
+-			if (unlikely(adapter->default_vlan_tag != rd->rrd4)) {
+-				vlan = rd->rrd4;
+-				if (likely(rd->rrd7 & EDMA_RRD_CVLAN))
+-					__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan);
+-				else if (rd->rrd1 & EDMA_RRD_SVLAN)
+-					__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021AD), vlan);
+-			}
++			vlan = rd->rrd4;
++			if (likely(rd->rrd7 & EDMA_RRD_CVLAN))
++				__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan);
++			else if (rd->rrd1 & EDMA_RRD_SVLAN)
++				__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021AD), vlan);
+ 
+ 			/* Update rx statistics */
+ 			adapter->stats.rx_packets++;
+@@ -1132,9 +1130,6 @@ static int edma_tx_map_and_fill(struct edma_common_info *edma_cinfo,
+ 			dev_err(&pdev->dev, "no ctag or stag present\n");
+ 			goto vlan_tag_error;
+ 		}
+-	} else if (flags_transmit & EDMA_VLAN_TX_TAG_INSERT_DEFAULT_FLAG) {
+-		word3 |= (1 << EDMA_TX_INS_CVLAN);
+-		word3 |= (adapter->default_vlan_tag) << EDMA_TX_CVLAN_TAG_SHIFT;
+ 	}
+ 
+ 	if (packet_is_rstp) {
+@@ -1409,10 +1404,8 @@ netdev_tx_t edma_xmit(struct sk_buff *skb,
+ 	}
+ 
+ 	/* Check and mark VLAN tag offload */
+-	if (unlikely(skb_vlan_tag_present(skb)))
++	if (likely(skb_vlan_tag_present(skb)))
+ 		flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_FLAG;
+-	else if (!adapter->edma_cinfo->is_single_phy && adapter->default_vlan_tag)
+-		flags_transmit |= EDMA_VLAN_TX_TAG_INSERT_DEFAULT_FLAG;
+ 
+ 	/* Check and mark checksum offload */
+ 	if (likely(skb->ip_summed == CHECKSUM_PARTIAL))
+@@ -1993,19 +1986,6 @@ void edma_assign_ath_hdr_type(int eth_type)
+ 	edma_ath_eth_type = eth_type & EDMA_ETH_TYPE_MASK;
+ }
+ 
+-/* edma_get_default_vlan_tag()
+- *	Used by other modules to get the default vlan tag
+- */
+-int edma_get_default_vlan_tag(struct net_device *netdev)
+-{
+-	struct edma_adapter *adapter = netdev_priv(netdev);
+-
+-	if (adapter->default_vlan_tag)
+-		return adapter->default_vlan_tag;
+-
+-	return 0;
+-}
+-
+ /* edma_open()
+  *	gets called when netdevice is up, start the queue.
+  */
+--- a/drivers/net/ethernet/qualcomm/essedma/edma.h
++++ b/drivers/net/ethernet/qualcomm/essedma/edma.h
+@@ -52,20 +52,6 @@
+ #define EDMA_MAX_RECEIVE_QUEUE 8
+ #define EDMA_MAX_TRANSMIT_QUEUE 16
+ 
+-/* WAN/LAN adapter number */
+-#define EDMA_WAN 0
+-#define EDMA_LAN 1
+-
+-/* VLAN tag */
+-#define EDMA_LAN_DEFAULT_VLAN 1
+-#define EDMA_WAN_DEFAULT_VLAN 2
+-
+-#define EDMA_DEFAULT_GROUP1_VLAN 1
+-#define EDMA_DEFAULT_GROUP2_VLAN 2
+-#define EDMA_DEFAULT_GROUP3_VLAN 3
+-#define EDMA_DEFAULT_GROUP4_VLAN 4
+-#define EDMA_DEFAULT_GROUP5_VLAN 5
+-
+ /* Queues exposed to linux kernel */
+ #define EDMA_NETDEV_TX_QUEUE 4
+ #define EDMA_NETDEV_RX_QUEUE 4
+@@ -402,7 +388,6 @@ struct edma_adapter {
+ 	u32 phy_mdio_addr; /* PHY device address on MII interface */
+ 	u32 poll_required; /* check if link polling is required */
+ 	u32 tx_start_offset[CONFIG_NR_CPUS]; /* tx queue start */
+-	u32 default_vlan_tag; /* vlan tag */
+ 	u32 dp_bitmap;
+ 	uint8_t phy_id[MII_BUS_ID_SIZE + 3];
+ };
+@@ -442,7 +427,6 @@ void edma_flow_may_expire(struct timer_list *t);
+ void edma_set_ethtool_ops(struct net_device *netdev);
+ void edma_set_stp_rstp(bool tag);
+ void edma_assign_ath_hdr_type(int tag);
+-int edma_get_default_vlan_tag(struct net_device *netdev);
+ void edma_adjust_link(struct net_device *netdev);
+ int edma_fill_netdev(struct edma_common_info *edma_cinfo, int qid, int num, int txq_id);
+ void edma_read_append_stats(struct edma_common_info *edma_cinfo);
+--- a/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
++++ b/drivers/net/ethernet/qualcomm/essedma/edma_axi.c
+@@ -45,13 +45,6 @@ static u16 tx_start[4] = {EDMA_TXQ_START_CORE0, EDMA_TXQ_START_CORE1,
+ static u32 tx_mask[4] = {EDMA_TXQ_IRQ_MASK_CORE0, EDMA_TXQ_IRQ_MASK_CORE1,
+ 			EDMA_TXQ_IRQ_MASK_CORE2, EDMA_TXQ_IRQ_MASK_CORE3};
+ 
+-static u32 edma_default_ltag  __read_mostly = EDMA_LAN_DEFAULT_VLAN;
+-static u32 edma_default_wtag  __read_mostly = EDMA_WAN_DEFAULT_VLAN;
+-static u32 edma_default_group1_vtag  __read_mostly = EDMA_DEFAULT_GROUP1_VLAN;
+-static u32 edma_default_group2_vtag  __read_mostly = EDMA_DEFAULT_GROUP2_VLAN;
+-static u32 edma_default_group3_vtag  __read_mostly = EDMA_DEFAULT_GROUP3_VLAN;
+-static u32 edma_default_group4_vtag  __read_mostly = EDMA_DEFAULT_GROUP4_VLAN;
+-static u32 edma_default_group5_vtag  __read_mostly = EDMA_DEFAULT_GROUP5_VLAN;
+ static u32 edma_rss_idt_val = EDMA_RSS_IDT_VALUE;
+ static u32 edma_rss_idt_idx;
+ 
+@@ -293,170 +286,6 @@ static int edma_ath_hdr_eth_type(struct ctl_table *table, int write,
+ 	return ret;
+ }
+ 
+-static int edma_change_default_lan_vlan(struct ctl_table *table, int write,
+-					void __user *buffer, size_t *lenp,
+-					loff_t *ppos)
+-{
+-	struct edma_adapter *adapter;
+-	int ret;
+-
+-	if (!edma_netdev[1]) {
+-		pr_err("Netdevice for default_lan does not exist\n");
+-		return -1;
+-	}
+-
+-	adapter = netdev_priv(edma_netdev[1]);
+-
+-	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+-
+-	if (write)
+-		adapter->default_vlan_tag = edma_default_ltag;
+-
+-	return ret;
+-}
+-
+-static int edma_change_default_wan_vlan(struct ctl_table *table, int write,
+-					void __user *buffer, size_t *lenp,
+-					loff_t *ppos)
+-{
+-	struct edma_adapter *adapter;
+-	int ret;
+-
+-	if (!edma_netdev[0]) {
+-		pr_err("Netdevice for default_wan does not exist\n");
+-		return -1;
+-	}
+-
+-	adapter = netdev_priv(edma_netdev[0]);
+-
+-	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+-
+-	if (write)
+-		adapter->default_vlan_tag = edma_default_wtag;
+-
+-	return ret;
+-}
+-
+-static int edma_change_group1_vtag(struct ctl_table *table, int write,
+-				   void __user *buffer, size_t *lenp,
+-				   loff_t *ppos)
+-{
+-	struct edma_adapter *adapter;
+-	struct edma_common_info *edma_cinfo;
+-	int ret;
+-
+-	if (!edma_netdev[0]) {
+-		pr_err("Netdevice for Group 1 does not exist\n");
+-		return -1;
+-	}
+-
+-	adapter = netdev_priv(edma_netdev[0]);
+-	edma_cinfo = adapter->edma_cinfo;
+-
+-	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+-
+-	if (write)
+-		adapter->default_vlan_tag = edma_default_group1_vtag;
+-
+-	return ret;
+-}
+-
+-static int edma_change_group2_vtag(struct ctl_table *table, int write,
+-				   void __user *buffer, size_t *lenp,
+-				   loff_t *ppos)
+-{
+-	struct edma_adapter *adapter;
+-	struct edma_common_info *edma_cinfo;
+-	int ret;
+-
+-	if (!edma_netdev[1]) {
+-		pr_err("Netdevice for Group 2 does not exist\n");
+-		return -1;
+-	}
+-
+-	adapter = netdev_priv(edma_netdev[1]);
+-	edma_cinfo = adapter->edma_cinfo;
+-
+-	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+-
+-	if (write)
+-		adapter->default_vlan_tag = edma_default_group2_vtag;
+-
+-	return ret;
+-}
+-
+-static int edma_change_group3_vtag(struct ctl_table *table, int write,
+-				   void __user *buffer, size_t *lenp,
+-				   loff_t *ppos)
+-{
+-	struct edma_adapter *adapter;
+-	struct edma_common_info *edma_cinfo;
+-	int ret;
+-
+-	if (!edma_netdev[2]) {
+-		pr_err("Netdevice for Group 3 does not exist\n");
+-		return -1;
+-	}
+-
+-	adapter = netdev_priv(edma_netdev[2]);
+-	edma_cinfo = adapter->edma_cinfo;
+-
+-	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+-
+-	if (write)
+-		adapter->default_vlan_tag = edma_default_group3_vtag;
+-
+-	return ret;
+-}
+-
+-static int edma_change_group4_vtag(struct ctl_table *table, int write,
+-				   void __user *buffer, size_t *lenp,
+-				   loff_t *ppos)
+-{
+-	struct edma_adapter *adapter;
+-	struct edma_common_info *edma_cinfo;
+-	int ret;
+-
+-	if (!edma_netdev[3]) {
+-		pr_err("Netdevice for Group 4 does not exist\n");
+-		return -1;
+-	}
+-
+-	adapter = netdev_priv(edma_netdev[3]);
+-	edma_cinfo = adapter->edma_cinfo;
+-
+-	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+-
+-	if (write)
+-		adapter->default_vlan_tag = edma_default_group4_vtag;
+-
+-	return ret;
+-}
+-
+-static int edma_change_group5_vtag(struct ctl_table *table, int write,
+-				   void __user *buffer, size_t *lenp,
+-				   loff_t *ppos)
+-{
+-	struct edma_adapter *adapter;
+-	struct edma_common_info *edma_cinfo;
+-	int ret;
+-
+-	if (!edma_netdev[4]) {
+-		pr_err("Netdevice for Group 5 does not exist\n");
+-		return -1;
+-	}
+-
+-	adapter = netdev_priv(edma_netdev[4]);
+-	edma_cinfo = adapter->edma_cinfo;
+-
+-	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+-
+-	if (write)
+-		adapter->default_vlan_tag = edma_default_group5_vtag;
+-
+-	return ret;
+-}
+-
+ static int edma_set_rss_idt_value(struct ctl_table *table, int write,
+ 				  void __user *buffer, size_t *lenp,
+ 				  loff_t *ppos)
+@@ -556,20 +385,6 @@ static int edma_queue_to_virtual_queue_map(struct ctl_table *table, int write,
+ }
+ 
+ static struct ctl_table edma_table[] = {
+-	{
+-		.procname       = "default_lan_tag",
+-		.data           = &edma_default_ltag,
+-		.maxlen         = sizeof(int),
+-		.mode           = 0644,
+-		.proc_handler   = edma_change_default_lan_vlan
+-	},
+-	{
+-		.procname       = "default_wan_tag",
+-		.data           = &edma_default_wtag,
+-		.maxlen         = sizeof(int),
+-		.mode           = 0644,
+-		.proc_handler   = edma_change_default_wan_vlan
+-	},
+ 	{
+ 		.procname       = "weight_assigned_to_queues",
+ 		.data           = &edma_weight_assigned_to_q,
+@@ -598,41 +413,6 @@ static struct ctl_table edma_table[] = {
+ 		.mode           = 0644,
+ 		.proc_handler   = edma_ath_hdr_eth_type
+ 	},
+-	{
+-		.procname       = "default_group1_vlan_tag",
+-		.data           = &edma_default_group1_vtag,
+-		.maxlen         = sizeof(int),
+-		.mode           = 0644,
+-		.proc_handler   = edma_change_group1_vtag
+-	},
+-	{
+-		.procname       = "default_group2_vlan_tag",
+-		.data           = &edma_default_group2_vtag,
+-		.maxlen         = sizeof(int),
+-		.mode           = 0644,
+-		.proc_handler   = edma_change_group2_vtag
+-	},
+-	{
+-		.procname       = "default_group3_vlan_tag",
+-		.data           = &edma_default_group3_vtag,
+-		.maxlen         = sizeof(int),
+-		.mode           = 0644,
+-		.proc_handler   = edma_change_group3_vtag
+-	},
+-	{
+-		.procname       = "default_group4_vlan_tag",
+-		.data           = &edma_default_group4_vtag,
+-		.maxlen         = sizeof(int),
+-		.mode           = 0644,
+-		.proc_handler   = edma_change_group4_vtag
+-	},
+-	{
+-		.procname       = "default_group5_vlan_tag",
+-		.data           = &edma_default_group5_vtag,
+-		.maxlen         = sizeof(int),
+-		.mode           = 0644,
+-		.proc_handler   = edma_change_group5_vtag
+-	},
+ 	{
+ 		.procname       = "edma_rss_idt_value",
+ 		.data           = &edma_rss_idt_val,
+@@ -693,7 +473,6 @@ static const struct net_device_ops edma_axi_netdev_ops = {
+ #ifdef CONFIG_RFS_ACCEL
+ 	.ndo_rx_flow_steer      = edma_rx_flow_steer,
+ 	.ndo_register_rfs_filter = edma_register_rfs_filter,
+-	.ndo_get_default_vlan_tag = edma_get_default_vlan_tag,
+ #endif
+ 	.ndo_get_stats          = edma_get_stats,
+ };
+@@ -1042,7 +821,6 @@ static int edma_axi_probe(struct platform_device *pdev)
+ 			goto err_rmap_alloc_fail;
+ 		}
+ 
+-		adapter[idx]->default_vlan_tag = of_read_number(vlan_tag, 1);
+ 		vlan_tag++;
+ 		portid_bmp = of_read_number(vlan_tag, 1);
+ 		adapter[idx]->dp_bitmap = portid_bmp;
