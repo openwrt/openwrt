@@ -16,7 +16,6 @@ LLDPD_RUN=/var/run/lldpd
 LLDPD_RESTART_HASH=${LLDPD_RUN}/lldpd.restart_hash
 
 . "$IPKG_INSTROOT/lib/functions/network.sh"
-. "$IPKG_INSTROOT/usr/share/libubox/jshn.sh"
 
 find_release_info()
 {
@@ -284,22 +283,6 @@ service_triggers() {
 	procd_add_config_trigger "config.change" "lldpd" /etc/init.d/lldpd reload
 }
 
-lldpcli_running_config_read() {
-	json_init
-	json_load "`$LLDPCLI -f json show configuration`"
-}
-
-lldpcli_running_config_get_value() {
-	local param=$1
-	local value=""
-	json_select "configuration"
-		json_select "config"
-			json_get_var value "$param"
-		json_select ..
-	json_select ..
-	echo $value
-}
-
 reload_service() {
 	running || return 1
 
@@ -339,6 +322,6 @@ reload_service() {
 }
 
 stop_service() {
-	rm -rf ${LLDPD_RUN} 2>/dev/null
+	rm -rf ${LLDPD_RUN} $LLDPSOCKET
 }
 
