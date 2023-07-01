@@ -152,6 +152,14 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:2" "3:lan:3" "6:lan:4"
 		;;
+	asus,zenwifi-cd6n)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:1" "4:lan:2"
+		;;
+	asus,zenwifi-cd6r)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:2" "3:lan:1" "4:lan:3" "2:wan"
+		;;
 	atheros,db120)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"
@@ -381,6 +389,8 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan"
 		;;
+	asus,rt-ac59u|\
+	asus,rt-ac59u-v2|\
 	mercury,mw4530r-v1|\
 	tplink,archer-a7-v5|\
 	tplink,archer-a9-v6|\

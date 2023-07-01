@@ -483,6 +483,70 @@ define Device/asus_rp-ac66
 endef
 TARGET_DEVICES += asus_rp-ac66
 
+define Device/asus_qcn5502
+  SOC := qcn5502
+  DEVICE_VENDOR := ASUS
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs
+endef
+
+define Device/asus_rt-ac59u
+  $(Device/asus_qcn5502)
+  DEVICE_MODEL := RT-AC59U
+  DEVICE_ALT0_VENDOR := ASUS
+  DEVICE_ALT0_MODEL := RT-AC1200GE
+  DEVICE_ALT1_VENDOR := ASUS
+  DEVICE_ALT1_MODEL := RT-AC1500G PLUS
+  DEVICE_ALT2_VENDOR := ASUS
+  DEVICE_ALT2_MODEL := RT-AC1500UHP
+  DEVICE_ALT3_VENDOR := ASUS
+  DEVICE_ALT3_MODEL := RT-AC57U
+  DEVICE_ALT3_VARIANT := v2
+  DEVICE_ALT4_VENDOR := ASUS
+  DEVICE_ALT4_MODEL := RT-AC58U
+  DEVICE_ALT4_VARIANT := v2
+  DEVICE_ALT5_VENDOR := ASUS
+  DEVICE_ALT5_MODEL := RT-ACRH12
+  IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES += kmod-usb2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += asus_rt-ac59u
+
+define Device/asus_rt-ac59u-v2
+  $(Device/asus_qcn5502)
+  DEVICE_MODEL := RT-AC59U
+  DEVICE_VARIANT := v2
+  DEVICE_ALT0_VENDOR := ASUS
+  DEVICE_ALT0_MODEL := RT-AC1300G PLUS
+  DEVICE_ALT0_VARIANT := v3
+  DEVICE_ALT1_VENDOR := ASUS
+  DEVICE_ALT1_MODEL := RT-AC57U
+  DEVICE_ALT1_VARIANT := v3
+  DEVICE_ALT2_VENDOR := ASUS
+  DEVICE_ALT2_MODEL := RT-AC58U
+  DEVICE_ALT2_VARIANT := v3
+  IMAGE_SIZE := 32384k
+  DEVICE_PACKAGES += kmod-usb2 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += asus_rt-ac59u-v2
+
+define Device/asus_zenwifi-cd6n
+  $(Device/asus_qcn5502)
+  DEVICE_MODEL := ZenWiFi CD6N
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += asus_zenwifi-cd6n
+
+define Device/asus_zenwifi-cd6r
+  $(Device/asus_qcn5502)
+  DEVICE_MODEL := ZenWiFi CD6R
+  IMAGE_SIZE := 32384k
+endef
+TARGET_DEVICES += asus_zenwifi-cd6r
+
 define Device/atheros_db120
   $(Device/loader-okli-uimage)
   SOC := ar9344
