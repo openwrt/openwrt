@@ -88,6 +88,7 @@ write_lldpd_conf()
 	local lldp_portidsubtype
 	local lldp_mgmt_ip
 	local lldp_syscapabilities
+	local lldp_location
 
 	config_load 'lldpd'
 	config_get lldp_description 'config' 'lldp_description' "$(find_release_info)"
@@ -102,6 +103,8 @@ write_lldpd_conf()
 	config_get lldp_syscapabilities 'config' 'lldp_syscapabilities'
 	config_get_bool lldpmed_fast_start 'config' 'lldpmed_fast_start' 0
 	config_get lldpmed_fast_start_tx_interval 'config' 'lldpmed_fast_start_tx_interval' 0
+	config_get lldp_syscapabilities 'config' 'lldp_syscapabilities'
+	config_get lldp_location 'config' 'lldp_location'
 
 	local ifaces
 	config_get ifaces 'config' 'interface'
@@ -135,6 +138,9 @@ write_lldpd_conf()
 		fi
     fi
 
+	[ -n "$lldp_syscapabilities" ] && echo "configure system capabilities enabled" "\"$lldp_syscapabilities\"" >> "$LLDPD_CONF"
+	[ -n "$lldp_location" ] && echo "configure med location" "\"$lldp_location\"" >> "$LLDPD_CONF"
+
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e $LLDPD_CONFS_DIR ] || ln -s /etc/lldpd.d $LLDPD_CONFS_DIR
 }
@@ -146,7 +152,6 @@ start_service() {
 	local enable_sonmp
 	local enable_edp
 	local lldp_class
-	local lldp_location
 	local lldpmed_no_inventory
 	local lldp_no_version
 	local readonly_mode
@@ -168,7 +173,6 @@ start_service() {
 	config_get_bool enable_sonmp 'config' 'enable_sonmp' 0
 	config_get_bool enable_edp 'config' 'enable_edp' 0
 	config_get lldp_class 'config' 'lldp_class'
-	config_get lldp_location 'config' 'lldp_location'
 	config_get_bool lldpmed_no_inventory 'config' 'lldpmed_no_inventory' 0
 	config_get_bool lldp_no_version 'config' 'lldp_no_version' 0
 	config_get_bool readonly_mode 'config' 'readonly_mode' 0
