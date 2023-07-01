@@ -76,7 +76,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  /**
   *	napi_synchronize - wait until NAPI is not running
-@@ -1868,6 +1858,8 @@ enum netdev_ml_priv_type {
+@@ -1867,6 +1857,8 @@ enum netdev_ml_priv_type {
   *
   *	@wol_enabled:	Wake-on-LAN is enabled
   *
@@ -85,7 +85,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
   *	@net_notifier_list:	List of per-net netdev notifier block
   *				that follow this device when it is moved
   *				to another network namespace.
-@@ -2187,6 +2179,7 @@ struct net_device {
+@@ -2183,6 +2175,7 @@ struct net_device {
  	struct lock_class_key	*qdisc_running_key;
  	bool			proto_down;
  	unsigned		wol_enabled:1;

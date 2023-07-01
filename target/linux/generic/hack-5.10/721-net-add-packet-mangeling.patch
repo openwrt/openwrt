@@ -35,7 +35,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* Specifies the type of the struct net_device::ml_priv pointer */
  enum netdev_ml_priv_type {
-@@ -2023,6 +2025,11 @@ struct net_device {
+@@ -2022,6 +2024,11 @@ struct net_device {
  	const struct tlsdev_ops *tlsdev_ops;
  #endif
  
@@ -47,7 +47,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	const struct header_ops *header_ops;
  
  	unsigned int		flags;
-@@ -2113,6 +2120,10 @@ struct net_device {
+@@ -2109,6 +2116,10 @@ struct net_device {
  	struct mpls_dev __rcu	*mpls_ptr;
  #endif
  
