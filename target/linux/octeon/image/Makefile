@@ -94,4 +94,22 @@ define Device/ubnt_unifi-usg
 endef
 TARGET_DEVICES += ubnt_unifi-usg
 
+define Device/cisco_vedge1000
+  DEVICE_VENDOR := Cisco Viptela
+  DEVICE_MODEL := vEdge 1000
+  BOARD_NAME := cisco,vedge1000
+  DEVICE_PACKAGES += \
+	kmod-hwmon-jc42 \
+	kmod-hwmon-max6697 \
+	kmod-of-mdio \
+	kmod-rtc-ds1307 \
+	kmod-usb-dwc3 \
+	kmod-usb-storage-uas \
+	kmod-usb3
+  KERNEL := kernel-bin | append-dtb-elf
+  KERNEL_DEPENDS := $$(wildcard $(DTS_DIR)/$(DEVICE_DTS).dts)
+  DEVICE_DTS := cn6130_cisco_vedge1000
+endef
+TARGET_DEVICES += cisco_vedge1000
+
 $(eval $(call BuildImage))

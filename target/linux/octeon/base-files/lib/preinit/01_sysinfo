@@ -3,6 +3,15 @@ do_sysinfo_octeon() {
 	local name
 
 	machine=$(grep "^system type" /proc/cpuinfo | sed "s/system type.*: \(.*\)/\1/g")
+	of_machine=$(head -n1 /sys/firmware/devicetree/base/compatible)
+
+	# Sadly for whatever reason the N821 (Cisco Viptela vEdge 1000) uses the
+	# same supposedly unique board ID as the EdgeRouter. This is bad, so
+	# we override what cpuinfo gives us using the device tree as a hint.
+	case "$of_machine" in
+	"cisco,vedge1000"*)
+		return 0
+	esac
 
 	case "$machine" in
 	"UBNT_E100"*)
