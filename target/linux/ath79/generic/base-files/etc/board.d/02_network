@@ -111,7 +111,9 @@ ath79_setup_interfaces()
 	ubnt,powerbeam-5ac-gen2|\
 	ubnt,powerbeam-m2-xw|\
 	ubnt,powerbeam-m5-xw|\
+	ubnt,powerbridge-m|\
 	ubnt,rocket-5ac-lite|\
+	ubnt,rocket-m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-lr|\
 	ubnt,unifiac-mesh|\
@@ -804,6 +806,8 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_text mac 0x18)
 		label_mac=$wan_mac
 		;;
+	ubnt,powerbridge-m|\
+	ubnt,rocket-m|\
 	ubnt,unifi)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
