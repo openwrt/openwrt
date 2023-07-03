@@ -319,7 +319,7 @@ ath79_setup_interfaces()
 		;;
 	embeddedwireless,dorin)
 		ucidef_add_switch "switch0" \
-			"0@eth0" "1:wan" "2:lan:3" "3:lan:2"
+			"0@eth0" "1:lan" "2:lan" "3:wan"
 		;;
 	engenius,eap300-v2)
 		ucidef_add_switch "switch0" \
