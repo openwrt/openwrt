@@ -54,9 +54,7 @@ ath79_setup_interfaces()
 	ubnt,bullet-m-ar7241|\
 	ubnt,nanobridge-m|\
 	ubnt,picostation-m|\
-	ubnt,nanostation-loco-m|\
-	ubnt,powerbridge-m|\
-	ubnt,rocket-m)
+	ubnt,nanostation-loco-m)
 		ucidef_set_interface_lan "eth0"
 		;;
 	engenius,enh202-v1)
@@ -135,9 +133,7 @@ ath79_setup_macs()
 	ubnt,nanobridge-m|\
 	ubnt,nanostation-loco-m|\
 	ubnt,nanostation-m|\
-	ubnt,picostation-m|\
-	ubnt,powerbridge-m|\
-	ubnt,rocket-m)
+	ubnt,picostation-m)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
 	tplink,tl-wr941-v2|\
