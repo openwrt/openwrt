@@ -158,6 +158,15 @@ define Device/ubnt_powerbeam-m5-xw
 endef
 TARGET_DEVICES += ubnt_powerbeam-m5-xw
 
+define Device/ubnt_powerbridge-m
+  $(Device/ubnt-xm)
+  SOC := ar7241
+  DEVICE_MODEL := PowerBridge M
+  DEVICE_PACKAGES += rssileds
+  SUPPORTED_DEVICES += bullet-m
+endef
+TARGET_DEVICES += ubnt_powerbridge-m
+
 define Device/ubnt_rocket-5ac-lite
   $(Device/ubnt-xc)
   SOC := qca9558
@@ -166,6 +175,15 @@ define Device/ubnt_rocket-5ac-lite
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
 endef
 TARGET_DEVICES += ubnt_rocket-5ac-lite
+
+define Device/ubnt_rocket-m
+  $(Device/ubnt-xm)
+  SOC := ar7241
+  DEVICE_MODEL := Rocket M
+  DEVICE_PACKAGES += rssileds
+  SUPPORTED_DEVICES += rocket-m
+endef
+TARGET_DEVICES += ubnt_rocket-m
 
 define Device/ubnt_routerstation_common
   DEVICE_PACKAGES := -kmod-ath9k -wpad-basic-mbedtls -uboot-envtools kmod-usb-ohci \

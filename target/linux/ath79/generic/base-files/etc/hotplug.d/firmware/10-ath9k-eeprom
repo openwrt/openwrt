@@ -113,6 +113,10 @@ case "$FIRMWARE" in
 	tplink,tl-wr842n-v1)
 		caldata_extract "art" 0x1000 0x3e0
 		;;
+	ubnt,powerbridge-m|\
+	ubnt,rocket-m)
+		caldata_extract "art" 0x1000 0x1000
+		;;
 	wd,mynet-n600|\
 	wd,mynet-n750)
 		caldata_extract "art" 0x5000 0x440
