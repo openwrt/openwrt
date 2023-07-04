@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=ipq-wifi
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -24,7 +24,8 @@ endef
 # You can find instructions and examples on the linux-wireless wiki:
 # <https://wireless.wiki.kernel.org/en/users/drivers/ath10k/boardfiles>
 
-ALLWIFIBOARDS:=
+ALLWIFIBOARDS:= \
+	zte_mf289f
 
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
@@ -85,4 +86,6 @@ endef
 # Place files in this directory as board-<devicename>.<qca4019|qca9888|qca9984>
 # Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
 
-#$(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
+$(eval $(call generate-ipq-wifi-package,zte_mf289f,ZTE MF289F))
+
+$(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
