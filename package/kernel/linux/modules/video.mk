@@ -1085,3 +1085,23 @@ define KernelPackage/video-dma/description
 endef
 
 $(eval $(call KernelPackage,video-dma))
+
+define KernelPackage/video-coda
+  TITLE:=i.MX VPU support
+  DEPENDS:=@(TARGET_imx&&!TARGET_imx_cortexa7) +kmod-video-mem2mem +kmod-video-dma
+  KCONFIG:= \
+  	CONFIG_VIDEO_CODA \
+  	CONFIG_VIDEO_IMX_VDOA
+  FILES:= \
+  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/coda/coda-vpu.ko \
+  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/coda/imx-vdoa.ko \
+ 	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-jpeg.ko
+  AUTOLOAD:=$(call AutoProbe,coda-vpu imx-vdoa v4l2-jpeg)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-coda/description
+ The i.MX Video Processing Unit (VPU) kernel module
+endef
+
+$(eval $(call KernelPackage,video-coda))
