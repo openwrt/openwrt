@@ -1,6 +1,6 @@
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -162,6 +162,21 @@ struct hostapd_sae_commit_queue {
+@@ -163,6 +163,21 @@ struct hostapd_sae_commit_queue {
  };
  
  /**
@@ -22,9 +22,9 @@
   * struct hostapd_data - hostapd per-BSS data structure
   */
  struct hostapd_data {
-@@ -175,6 +190,9 @@ struct hostapd_data {
+@@ -182,6 +197,9 @@ struct hostapd_data {
  
- 	u8 own_addr[ETH_ALEN];
+ 	struct hostapd_data *mld_first_bss;
  
 +	/* OpenWrt specific statistics */
 +	struct hostapd_openwrt_stats openwrt_stats;

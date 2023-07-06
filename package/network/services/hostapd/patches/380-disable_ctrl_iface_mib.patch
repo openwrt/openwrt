@@ -12,7 +12,7 @@
  else
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -3342,6 +3342,7 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -3377,6 +3377,7 @@ static int hostapd_ctrl_iface_receive_pr
  						      reply_size);
  	} else if (os_strcmp(buf, "STATUS-DRIVER") == 0) {
  		reply_len = hostapd_drv_status(hapd, reply, reply_size);
@@ -20,7 +20,7 @@
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = ieee802_11_get_mib(hapd, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -3383,6 +3384,7 @@ static int hostapd_ctrl_iface_receive_pr
+@@ -3418,6 +3419,7 @@ static int hostapd_ctrl_iface_receive_pr
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = hostapd_ctrl_iface_sta_next(hapd, buf + 9, reply,
  							reply_size);
@@ -172,7 +172,7 @@
  		if (os_snprintf_error(buflen - len, ret))
 --- a/src/ap/ieee802_1x.c
 +++ b/src/ap/ieee802_1x.c
-@@ -2753,6 +2753,7 @@ static const char * bool_txt(bool val)
+@@ -2834,6 +2834,7 @@ static const char * bool_txt(bool val)
  	return val ? "TRUE" : "FALSE";
  }
  
@@ -180,7 +180,7 @@
  
  int ieee802_1x_get_mib(struct hostapd_data *hapd, char *buf, size_t buflen)
  {
-@@ -2939,6 +2940,7 @@ int ieee802_1x_get_mib_sta(struct hostap
+@@ -3020,6 +3021,7 @@ int ieee802_1x_get_mib_sta(struct hostap
  	return len;
  }
  
@@ -190,7 +190,7 @@
  static void ieee802_1x_wnm_notif_send(void *eloop_ctx, void *timeout_ctx)
 --- a/src/ap/wpa_auth.c
 +++ b/src/ap/wpa_auth.c
-@@ -4786,6 +4786,7 @@ static const char * wpa_bool_txt(int val
+@@ -5328,6 +5328,7 @@ static const char * wpa_bool_txt(int val
  	return val ? "TRUE" : "FALSE";
  }
  
@@ -198,7 +198,7 @@
  
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
-@@ -4938,7 +4939,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
+@@ -5480,7 +5481,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
  
  	return len;
  }
