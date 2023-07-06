@@ -172,7 +172,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -2520,6 +2572,8 @@ void wpa_supplicant_associate(struct wpa
+@@ -2537,6 +2589,8 @@ void wpa_supplicant_associate(struct wpa
  			return;
  		}
  		wpa_s->current_bss = bss;
@@ -181,7 +181,7 @@
  #else /* CONFIG_MESH */
  		wpa_msg(wpa_s, MSG_ERROR,
  			"mesh mode support not included in the build");
-@@ -7010,6 +7064,16 @@ static int wpa_supplicant_init_iface(str
+@@ -7037,6 +7091,16 @@ static int wpa_supplicant_init_iface(str
  			   sizeof(wpa_s->bridge_ifname));
  	}
  
@@ -198,7 +198,7 @@
  	/* RSNA Supplicant Key Management - INITIALIZE */
  	eapol_sm_notify_portEnabled(wpa_s->eapol, false);
  	eapol_sm_notify_portValid(wpa_s->eapol, false);
-@@ -7352,6 +7416,11 @@ static void wpa_supplicant_deinit_iface(
+@@ -7379,6 +7443,11 @@ static void wpa_supplicant_deinit_iface(
  	if (terminate)
  		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_TERMINATING);
  
@@ -235,7 +235,7 @@
  
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -2716,6 +2716,12 @@ static int hostapd_ctrl_iface_chan_switc
+@@ -2751,6 +2751,12 @@ static int hostapd_ctrl_iface_chan_switc
  		return 0;
  	}
  
@@ -250,7 +250,7 @@
  		/* Save CHAN_SWITCH VHT, HE, and EHT config */
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -2052,11 +2052,6 @@ static int __ieee802_11_set_beacon(struc
+@@ -2108,11 +2108,6 @@ static int __ieee802_11_set_beacon(struc
  		return -1;
  	}
  
@@ -264,7 +264,7 @@
  	if (ieee802_11_build_ap_params(hapd, &params) < 0)
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -5237,6 +5237,60 @@ static void wpas_event_unprot_beacon(str
+@@ -5345,6 +5345,60 @@ static void wpas_link_reconfig(struct wp
  }
  
  
@@ -325,7 +325,7 @@
  void supplicant_event(void *ctx, enum wpa_event_type event,
  		      union wpa_event_data *data)
  {
-@@ -5586,8 +5640,10 @@ void supplicant_event(void *ctx, enum wp
+@@ -5697,8 +5751,10 @@ void supplicant_event(void *ctx, enum wp
  			channel_width_to_string(data->ch_switch.ch_width),
  			data->ch_switch.cf1,
  			data->ch_switch.cf2);
@@ -339,7 +339,7 @@
  		wpa_s->current_ssid->frequency = data->ch_switch.freq;
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -6324,6 +6324,7 @@ union wpa_event_data {
+@@ -6421,6 +6421,7 @@ union wpa_event_data {
  
  	/**
  	 * struct ch_switch
@@ -347,7 +347,7 @@
  	 * @freq: Frequency of new channel in MHz
  	 * @ht_enabled: Whether this is an HT channel
  	 * @ch_offset: Secondary channel offset
-@@ -6334,6 +6335,7 @@ union wpa_event_data {
+@@ -6431,6 +6432,7 @@ union wpa_event_data {
  	 * @punct_bitmap: Puncturing bitmap
  	 */
  	struct ch_switch {
@@ -357,7 +357,7 @@
  		int ch_offset;
 --- a/src/drivers/driver_nl80211_event.c
 +++ b/src/drivers/driver_nl80211_event.c
-@@ -997,6 +997,7 @@ static void mlme_event_ch_switch(struct
+@@ -1202,6 +1202,7 @@ static void mlme_event_ch_switch(struct
  				 struct nlattr *bw, struct nlattr *cf1,
  				 struct nlattr *cf2,
  				 struct nlattr *punct_bitmap,
@@ -365,7 +365,7 @@
  				 int finished)
  {
  	struct i802_bss *bss;
-@@ -1060,6 +1061,8 @@ static void mlme_event_ch_switch(struct
+@@ -1265,6 +1266,8 @@ static void mlme_event_ch_switch(struct
  		data.ch_switch.cf1 = nla_get_u32(cf1);
  	if (cf2)
  		data.ch_switch.cf2 = nla_get_u32(cf2);
@@ -374,7 +374,7 @@
  
  	if (finished)
  		bss->flink->freq = data.ch_switch.freq;
-@@ -3604,6 +3607,7 @@ static void do_process_drv_event(struct
+@@ -3848,6 +3851,7 @@ static void do_process_drv_event(struct
  				     tb[NL80211_ATTR_CENTER_FREQ1],
  				     tb[NL80211_ATTR_CENTER_FREQ2],
  				     tb[NL80211_ATTR_PUNCT_BITMAP],
@@ -382,7 +382,7 @@
  				     0);
  		break;
  	case NL80211_CMD_CH_SWITCH_NOTIFY:
-@@ -3616,6 +3620,7 @@ static void do_process_drv_event(struct
+@@ -3860,6 +3864,7 @@ static void do_process_drv_event(struct
  				     tb[NL80211_ATTR_CENTER_FREQ1],
  				     tb[NL80211_ATTR_CENTER_FREQ2],
  				     tb[NL80211_ATTR_PUNCT_BITMAP],
