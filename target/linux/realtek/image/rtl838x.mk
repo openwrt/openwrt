@@ -99,6 +99,14 @@ define Device/hpe_1920-8g
 endef
 TARGET_DEVICES += hpe_1920-8g
 
+define Device/hpe_1920-8g-poe
+  $(Device/hpe_1920)
+  SOC := rtl8380
+  DEVICE_MODEL := 1920-8G-PoE+ (JG922A)
+  H3C_DEVICE_ID := 0x00010025
+endef
+TARGET_DEVICES += hpe_1920-8g-poe
+
 define Device/hpe_1920-16g
   $(Device/hpe_1920)
   SOC := rtl8382
