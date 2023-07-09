@@ -90,6 +90,22 @@
 			linux,default-trigger = "phy1tpt";
 		};
 	};
+
+	ubi-concat {
+		compatible = "mtd-concat";
+		devices = <&ubiconcat0 &ubiconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
 };
 
 &spi {
@@ -165,10 +181,20 @@
 				reg = <0x0 0x400000>;
 			};
 
-			partition@400000 {
-				label = "ubi";
-				reg = <0x400000 0x7c00000>;
+			ubiconcat0: partition@400000 {
+				label = "ubiconcat0";
+				reg = <0x400000 0x5c00000>;
 			};
+
+			ubiconcat1: partition@6020000 {
+				label = "ubiconcat1";
+				reg = <0x6020000 0x1f60000>;
+			};
+			/*
+			 * U-boot always unconditionally marks block 768, 1020 - 1023 as
+			 * bad blocks on each boot. To avoid conflicts with the nand
+			 * driver, manually skip them.
+			 */
 		};
 	};
 };

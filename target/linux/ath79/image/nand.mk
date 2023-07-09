@@ -373,6 +373,9 @@ TARGET_DEVICES += netgear_wndr4300tn
 
 define Device/netgear_wndr4300-v2
   SOC := qca9563
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Partition table has been changed to fix the \
+	first reboot issue. Please reflash factory image with nmrp or tftp.
   DEVICE_MODEL := WNDR4300
   DEVICE_VARIANT := v2
   UIMAGE_MAGIC := 0x27051956
@@ -384,6 +387,9 @@ TARGET_DEVICES += netgear_wndr4300-v2
 
 define Device/netgear_wndr4500-v3
   SOC := qca9563
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Partition table has been changed to fix the \
+	first reboot issue. Please reflash factory image with nmrp or tftp.
   DEVICE_MODEL := WNDR4500
   DEVICE_VARIANT := v3
   UIMAGE_MAGIC := 0x27051956
