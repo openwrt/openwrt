@@ -1162,12 +1162,8 @@ define Device/zte_mf286d
 endef
 TARGET_DEVICES += zte_mf286d
 
-define Device/zte_mf287plus
+define Device/zte_mf287_common
 	$(call Device/zte_mf28x_common)
-	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
-	DEVICE_MODEL := MF287Plus
-	DEVICE_ALT0_VENDOR := ZTE
-	DEVICE_ALT0_MODEL := MF287
 	DEVICE_PACKAGES += ipq-wifi-zte_mf287plus
 	SOC := qcom-ipq4018
 #	The recovery image is used to return back to stock (an initramfs-based image
@@ -1178,7 +1174,22 @@ define Device/zte_mf287plus
 	IMAGE/factory.bin  := append-ubi
 	IMAGE/recovery.bin := append-squashfs4-fakeroot | sysupgrade-tar kernel=$$$$(BIN_DIR)/openwrt-$$(BOARD)$$(if $$(SUBTARGET),-$$(SUBTARGET))-$$(DEVICE_NAME)-initramfs-zImage.itb rootfs=$$$$@ | append-metadata
 endef
+
+define Device/zte_mf287plus
+	$(call Device/zte_mf287_common)
+	DEVICE_DTS_CONFIG := config@ap.dk01.1-c2
+	DEVICE_MODEL := MF287Plus
+	DEVICE_ALT0_VENDOR := ZTE
+	DEVICE_ALT0_MODEL := MF287
+endef
 TARGET_DEVICES += zte_mf287plus
+
+define Device/zte_mf287pro
+	$(call Device/zte_mf287_common)
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c1
+	DEVICE_MODEL := MF287Pro
+endef
+TARGET_DEVICES += zte_mf287pro
 
 define Device/zte_mf289f
 	$(call Device/zte_mf28x_common)

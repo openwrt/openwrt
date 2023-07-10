@@ -6,38 +6,57 @@
 #include "qcom-ipq4018-mf287.dtsi"
 
 / {
-	model = "ZTE MF287Plus";
-	compatible = "zte,mf287plus";
+	model = "ZTE MF287Pro";
+	compatible = "zte,mf287pro";
 
-	/*
-	 * This node is used to restart modem module to avoid anomalous
-	 * behaviours on initial communication.
-	 */
-	gpio-restart {
-		compatible = "gpio-restart";
-		gpios = <&tlmm 5 GPIO_ACTIVE_HIGH>;
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		modem {
+			gpio-export,name = "modem-reset";
+			gpio-export,output = <0>;
+			gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "USB_VBUS";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-always-on;
+		regulator-boot-on;
+		gpio = <&tlmm 25 GPIO_ACTIVE_LOW>;
 	};
 };
 
 &key_reset {
-	gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+	gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
 };
 
 &key_wps {
-	gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
+	gpios = <&tlmm 68 GPIO_ACTIVE_LOW>;
 };
 
 &led_status {
-	gpios = <&tlmm 0 GPIO_ACTIVE_LOW>;
+	gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <2000>;
 };
 
 &blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>,
-		   <&tlmm 59 GPIO_ACTIVE_HIGH>,
-		   <&tlmm 1 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>,
+				<&tlmm 54 GPIO_ACTIVE_HIGH>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -113,13 +132,13 @@
 
 			partition@0 {
 				label = "fota-flag";
-				reg = <0x0 0x140000>;
+				reg = <0x0 0xa0000>;
 				read-only;
 			};
 
-			partition@140000 {
+			partition@a0000 {
 				label = "ART";
-				reg = <0x140000 0x140000>;
+				reg = <0xa0000 0x80000>;
 				read-only;
 				compatible = "nvmem-cells";
 				#address-cells = <1>;
@@ -134,9 +153,9 @@
 				};
 			};
 
-			partition@280000 {
+			partition@120000 {
 				label = "mac";
-				reg = <0x280000 0x140000>;
+				reg = <0x120000 0x80000>;
 				read-only;
 				compatible = "nvmem-cells";
 				#address-cells = <1>;
@@ -147,25 +166,40 @@
 				};
 			};
 
-			partition@3c0000 {
+			partition@1a0000 {
+				label = "reserved2";
+				reg = <0x1a0000 0xc0000>;
+			};
+
+			partition@260000 {
 				label = "cfg-param";
-				reg = <0x3c0000 0x600000>;
+				reg = <0x260000 0x400000>;
 				read-only;
 			};
 
-			partition@9c0000 {
+			partition@660000 {
+				label = "log";
+				reg = <0x660000 0x400000>;
+			};
+
+			partition@a60000 {
 				label = "oops";
-				reg = <0x9c0000 0x140000>;
+				reg = <0xa60000 0xa0000>;
 			};
 
 			partition@b00000 {
-				label = "web";
-				reg = <0xb00000 0x800000>;
+				label = "reserved3";
+				reg = <0xb00000 0x500000>;
 			};
 
-			partition@1300000 {
+			partition@1000000 {
+				label = "web";
+				reg = <0x1000000 0x800000>;
+			};
+
+			partition@1800000 {
 				label = "rootfs";
-				reg = <0x1300000 0x2200000>;
+				reg = <0x1800000 0x1d00000>;
 			};
 
 			partition@3500000 {
@@ -179,21 +213,34 @@
 			};
 		};
 	};
-
-	zigbee@2 {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		compatible = "silabs,em3581";
-		reg = <2>;
-		spi-max-frequency = <12000000>;
-	};
 };
 
 &tlmm {
+	i2c_0_pins: i2c_0_pinmux {
+		mux {
+			pins = "gpio20", "gpio21";
+			function = "blsp_i2c0";
+			bias-disable;
+		};
+	};
+
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+
+		mux_2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
 	serial_pins: serial_pinmux {
 		mux {
-			pins = "gpio60", "gpio61";
+			pins = "gpio16", "gpio17";
 			function = "blsp_uart0";
 			bias-disable;
 		};
@@ -202,14 +249,14 @@
 	spi_0_pins: spi_0_pinmux {
 		pinmux {
 			function = "blsp_spi0";
-			pins = "gpio55", "gpio56", "gpio57";
+			pins = "gpio12", "gpio13", "gpio14", "gpio15";
 			drive-strength = <12>;
 			bias-disable;
 		};
 
 		pinmux_cs {
 			function = "gpio";
-			pins = "gpio54", "gpio59", "gpio1";
+			pins = "gpio12", "gpio54";
 			drive-strength = <2>;
 			bias-disable;
 			output-high;
