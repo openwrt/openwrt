@@ -5,72 +5,77 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-BOARDS:= \
-	imx23-olinuxino \
-	imx28-duckbill
-
 FAT32_BLOCK_SIZE=1024
-FAT32_BLOCKS=$(shell echo $$(($(CONFIG_TARGET_BOOTFS_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
+FAT32_BLOCKS=$(shell echo $$(($(CONFIG_MXS_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
-define Image/BuildKernel
-	mkimage -A arm -O linux -T kernel -C none \
-		-a 0x40008000 -e 0x40008000 \
-		-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/zImage $(KDIR)/uImage
-	cp $(KDIR)/uImage $(BIN_DIR)/$(IMG_PREFIX)-uImage
+KERNEL_LOADADDR:=0x40008000
+
+define Build/mxs-sdcard-ext4-ext4
+	./gen_sdcard_ext4_ext4.sh \
+		$@ \
+		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)/u-boot.sb \
+		$(IMAGE_ROOTFS) \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
 
-define Image/InstallKernel
-	mkdir -p $(TARGET_DIR)/boot
-	cp \
-		$(KDIR)/zImage $(KDIR)/uImage \
-		$(foreach board,$(BOARDS),$(DTS_DIR)/$(board).dtb) \
-		$(TARGET_DIR)/boot/
-endef
+define Build/mxs-sdcard-vfat-ext4
+	rm -f $@.boot
+	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
 
-define Image/Build/SDCard-vfat-ext4
-	rm -f $(KDIR)/boot.img
-	mkfs.fat $(KDIR)/boot.img -C $(FAT32_BLOCKS)
-
-	mcopy -i $(KDIR)/boot.img $(DTS_DIR)/$(3).dtb ::$(3).dtb
-	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage
+	mcopy -i $@.boot $(DTS_DIR)/$(DEVICE_DTS).dtb ::$(DEVICE_DTS).dtb
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::uImage
 
 	./gen_sdcard_vfat_ext4.sh \
-		$(BIN_DIR)/$(2) \
-		$(STAGING_DIR_IMAGE)/$(4)-u-boot.sb \
-		$(KDIR)/boot.img \
-		$(KDIR)/root.$(1) \
-		$(CONFIG_TARGET_BOOTFS_PARTSIZE) \
+		$@ \
+		$(STAGING_DIR_IMAGE)/$(DEVICE_NAME)/u-boot.sb \
+		$@.boot \
+		$(IMAGE_ROOTFS) \
+		$(CONFIG_MXS_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
-	$(call Image/Gzip,$(BIN_DIR)/$(2))
 endef
 
-define Image/Build/SDCard-ext4-ext4
-	./gen_sdcard_ext4_ext4.sh \
-		$(BIN_DIR)/$(2) \
-		$(STAGING_DIR_IMAGE)/$(4)-u-boot.sb \
-		$(KDIR)/root.$(1) \
-		$(CONFIG_TARGET_ROOTFS_PARTSIZE)
-	$(call Image/Gzip,$(BIN_DIR)/$(2))
+define Device/Default
+  PROFILES := Default
+  KERNEL_NAME := zImage
+  KERNEL := kernel-bin | uImage none
+  IMAGES := sdcard.img.gz
+  DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
 endef
 
-define Image/Build/Profile/olinuxino-maxi
-	$(call Image/Build/SDCard-vfat-ext4,$(1),$(2),imx23-olinuxino,mx23_olinuxino)
+define Device/i2se_duckbill
+  DEVICE_VENDOR := I2SE
+  DEVICE_MODEL := Duckbill
+  DEVICE_PACKAGES := -dnsmasq -firewall -ppp -ip6tables -iptables -6relayd -mtd \
+		     uboot-envtools kmod-leds-gpio -kmod-ipt-nathelper
+  SUPPORTED_DEVICES:=i2se,duckbill
+  SOC:=imx28
+  DEVICE_DTS:=imx28-duckbill
+  IMAGE/sdcard.img.gz = mxs-sdcard-ext4-ext4 | append-metadata | gzip
 endef
+TARGET_DEVICES += i2se_duckbill
 
-define Image/Build/Profile/olinuxino-micro
-	$(call Image/Build/SDCard-vfat-ext4,$(1),$(2),imx23-olinuxino,mx23_olinuxino)
+define Device/olinuxino_maxi
+  DEVICE_VENDOR := Olimex
+  DEVICE_MODEL := OLinuXino Maxi
+  DEVICE_PACKAGES := kmod-usb-net-smsc95xx kmod-pinctrl-mcp23s08-i2c \
+		     kmod-pinctrl-mcp23s08-spi kmod-leds-gpio kmod-sound-core
+  SUPPORTED_DEVICES:=olimex,imx23-olinuxino
+  SOC:=imx23
+  DEVICE_DTS:=imx23-olinuxino
+  IMAGE/sdcard.img.gz = mxs-sdcard-vfat-ext4 | append-metadata | gzip
 endef
+TARGET_DEVICES += olinuxino_maxi
 
-define Image/Build/Profile/duckbill
-	$(call Image/Build/SDCard-ext4-ext4,$(1),$(2),imx28-duckbill,duckbill)
+define Device/olinuxino_micro
+  DEVICE_VENDOR := Olimex
+  DEVICE_MODEL := OLinuXino Micro
+  DEVICE_PACKAGES := kmod-pinctrl-mcp23s08-spi kmod-pinctrl-mcp23s08-i2c \
+		     kmod-leds-gpio
+  SUPPORTED_DEVICES:=olimex,imx23-olinuxino
+  SOC:=imx23
+  DEVICE_DTS:=imx23-olinuxino
+  IMAGE/sdcard.img.gz = mxs-sdcard-vfat-ext4 | append-metadata | gzip
 endef
-
-define Image/Build
-	$(call Image/Build/$(1),$(1))
-	$(call Image/Build/Profile/$(PROFILE),$(1),$(IMG_PREFIX)-$(PROFILE)-sdcard.img)
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
-	$(call Image/Gzip,$(BIN_DIR)/$(IMG_PREFIX)-root.$(1))
-endef
+TARGET_DEVICES += olinuxino_micro
 
 $(eval $(call BuildImage))

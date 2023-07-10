@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qca-ssdk
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-ssdk.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2022-09-12
-PKG_SOURCE_VERSION:=628b22bc3d5ee81414b75ab3de6a255c82754dec
-PKG_MIRROR_HASH:=859344f79504b9953639dc5aa27042249f68e3a9a269e66d7f7a25e1ab38c110
+PKG_SOURCE_DATE:=2023-06-06
+PKG_SOURCE_VERSION:=74caf88aa3b6793c300f676e4fb1c62da7507be9
+PKG_MIRROR_HASH:=6bdb90919b773f5fb432c8b374c9419feac32ba6583ad82dfec5e41628a32dd9
 
 PKG_FLAGS:=nonshared
 PKG_BUILD_FLAGS:=no-lto
@@ -74,6 +74,9 @@ define Build/InstallDev
 	fi
 	if [ -f $(PKG_BUILD_DIR)/include/init/ssdk_init.h ]; then \
 	$(CP) -rf $(PKG_BUILD_DIR)/include/init/ssdk_init.h $(1)/usr/include/qca-ssdk/init/; \
+	fi
+	if [ -f $(PKG_BUILD_DIR)/include/init/ssdk_netlink.h ]; then \
+	$(CP) -rf $(PKG_BUILD_DIR)/include/init/ssdk_netlink.h $(1)/usr/include/qca-ssdk/init/; \
 	fi
 	$(CP) -rf $(PKG_BUILD_DIR)/include/fal $(1)/usr/include/qca-ssdk
 	$(CP) -rf $(PKG_BUILD_DIR)/include/common/*.h $(1)/usr/include/qca-ssdk

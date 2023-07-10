@@ -16,6 +16,9 @@ mediatek_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "6@eth0"
 		;;
+	netgear,ex6250-v2)
+		ucidef_set_interface_lan "eth0"
+		;;
 	esac
 }
 
@@ -24,7 +27,15 @@ mediatek_setup_macs()
 	local board="$1"
 
 	case $board in
+	netgear,ex6250-v2)
+		lan_mac=$(mtd_get_mac_ascii Config mac)
+		label_mac=$lan_mac
+		;;
 	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 }
 
 board_config_update

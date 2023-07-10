@@ -3,8 +3,8 @@
 # Copyright 2020 NXP
 #
 
-RAMFS_COPY_BIN="/usr/sbin/fw_printenv /usr/sbin/fw_setenv /usr/sbin/ubinfo /bin/echo"
-RAMFS_COPY_DATA="/etc/fw_env.config /var/lock/fw_printenv.lock"
+RAMFS_COPY_BIN=""
+RAMFS_COPY_DATA=""
 
 REQUIRE_IMAGE_METADATA=1
 
@@ -30,23 +30,6 @@ platform_do_upgrade_sdboot() {
 	dd if=/dev/zero of=/dev/mmcblk0p2 bs=1M > /dev/null 2>&1
 	echo "Writing rootfs..."
 	tar xf $tar_file ${board_dir}/root -O  | dd of=/dev/mmcblk0p2 bs=512k > /dev/null 2>&1
-
-}
-platform_do_upgrade_traverse_nandubi() {
-	bootsys=$(fw_printenv bootsys | awk -F= '{{print $2}}')
-	newbootsys=2
-	if [ "$bootsys" -eq "2" ]; then
-		newbootsys=1
-	fi
-
-	# If nand_do_upgrade succeeds, we don't have an opportunity to add any actions of
-	# our own, so do it here and set back on failure
-	echo "Setting bootsys to #${newbootsys}"
-	fw_setenv bootsys $newbootsys
-	CI_UBIPART="nandubi"
-	CI_KERNPART="kernel${newbootsys}"
-	CI_ROOTPART="rootfs${newbootsys}"
-	nand_do_upgrade "$1" || (echo "Upgrade failed, setting bootsys ${bootsys}" && fw_setenv bootsys $bootsys)
 
 }
 
@@ -105,11 +88,6 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
-	traverse,ls1043v | \
-	traverse,ls1043s)
-		nand_do_platform_check "traverse-ls1043" $1
-		return $?
-		;;
 	traverse,ten64)
 		nand_do_platform_check "ten64-mtd" $1
 		return $?
@@ -150,10 +128,6 @@ platform_do_upgrade() {
 	touch /var/lock/fw_printenv.lock
 
 	case "$board" in
-	traverse,ls1043v | \
-	traverse,ls1043s)
-		platform_do_upgrade_traverse_nandubi "$1"
-		;;
 	traverse,ten64)
 		platform_do_upgrade_traverse_slotubi "${1}"
 		;;

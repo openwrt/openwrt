@@ -200,6 +200,22 @@ endef
 $(eval $(call KernelPackage,i2c-mux-gpio))
 
 
+I2C_MUX_REG_MODULES:= \
+  CONFIG_I2C_MUX_REG:drivers/i2c/muxes/i2c-mux-reg
+
+define KernelPackage/i2c-mux-reg
+  $(call i2c_defaults,$(I2C_MUX_REG_MODULES),51)
+  TITLE:=Register-based I2C mux/switches
+  DEPENDS:=+kmod-i2c-mux
+endef
+
+define KernelPackage/i2c-mux-reg/description
+ Kernel modules for register-based I2C bus mux/switching devices
+endef
+
+$(eval $(call KernelPackage,i2c-mux-reg))
+
+
 I2C_MUX_PCA9541_MODULES:= \
   CONFIG_I2C_MUX_PCA9541:drivers/i2c/muxes/i2c-mux-pca9541
 

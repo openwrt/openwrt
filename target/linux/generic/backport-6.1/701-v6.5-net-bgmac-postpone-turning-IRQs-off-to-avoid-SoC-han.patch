@@ -1,0 +1,45 @@
+From e7731194fdf085f46d58b1adccfddbd0dfee4873 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 7 Jul 2023 08:53:25 +0200
+Subject: [PATCH] net: bgmac: postpone turning IRQs off to avoid SoC hangs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Turning IRQs off is done by accessing Ethernet controller registers.
+That can't be done until device's clock is enabled. It results in a SoC
+hang otherwise.
+
+This bug remained unnoticed for years as most bootloaders keep all
+Ethernet interfaces turned on. It seems to only affect a niche SoC
+family BCM47189. It has two Ethernet controllers but CFE bootloader uses
+only the first one.
+
+Fixes: 34322615cbaa ("net: bgmac: Mask interrupts during probe")
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Reviewed-by: Michal Kubiak <michal.kubiak@intel.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/broadcom/bgmac.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -1492,8 +1492,6 @@ int bgmac_enet_probe(struct bgmac *bgmac
+ 
+ 	bgmac->in_init = true;
+ 
+-	bgmac_chip_intrs_off(bgmac);
+-
+ 	net_dev->irq = bgmac->irq;
+ 	SET_NETDEV_DEV(net_dev, bgmac->dev);
+ 	dev_set_drvdata(bgmac->dev, bgmac);
+@@ -1511,6 +1509,8 @@ int bgmac_enet_probe(struct bgmac *bgmac
+ 	 */
+ 	bgmac_clk_enable(bgmac, 0);
+ 
++	bgmac_chip_intrs_off(bgmac);
++
+ 	/* This seems to be fixing IRQ by assigning OOB #6 to the core */
+ 	if (!(bgmac->feature_flags & BGMAC_FEAT_IDM_MASK)) {
+ 		if (bgmac->feature_flags & BGMAC_FEAT_IRQ_ID_OOB_6)

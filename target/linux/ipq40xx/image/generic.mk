@@ -1169,7 +1169,7 @@ TARGET_DEVICES += zte_mf287plus
 define Device/zte_mf289f
 	$(call Device/zte_mf28x_common)
 	DEVICE_MODEL := MF289F
-	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
+	DEVICE_PACKAGES += ipq-wifi-zte_mf289f ath10k-firmware-qca9984-ct
 endef
 TARGET_DEVICES += zte_mf289f
 

@@ -45,6 +45,13 @@ etisalat,s3|\
 rostelecom,rt-sf-1)
 	ubootenv_add_uci_config "/dev/mtd0" "0x80000" "0x1000" "0x20000"
 	;;
+beeline,smartbox-pro|\
+tplink,ec330-g5u-v1|\
+wifire,s1500-nbn)
+	idx="$(find_mtd_index u-boot-env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x20000"
+	;;
 buffalo,wsr-1166dhp|\
 buffalo,wsr-600dhp|\
 kroks,kndrt31r16|\
@@ -65,6 +72,7 @@ h3c,tx1801-plus|\
 h3c,tx1806|\
 jcg,q20|\
 linksys,e7350|\
+netgear,eax12|\
 netgear,wax202|\
 zyxel,wsm20)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
@@ -96,11 +104,6 @@ snr,cpe-w4n-mt)
 	idx="$(find_mtd_index uboot-env)"
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x1000"
-	;;
-tplink,ec330-g5u-v1)
-	idx="$(find_mtd_index u-boot-env)"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x20000"
 	;;
 xiaomi,mi-router-3g-v2|\
 xiaomi,mi-router-4a-gigabit|\

@@ -217,6 +217,21 @@ endef
 $(eval $(call KernelPackage,hwmon-it87))
 
 
+define KernelPackage/hwmon-jc42
+  TITLE:=Jedec JC42.4 compliant temperature sensors support
+  KCONFIG:=CONFIG_SENSORS_JC42
+  FILES:=$(LINUX_DIR)/drivers/hwmon/jc42.ko
+  AUTOLOAD:=$(call AutoProbe,jc42)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
+endef
+
+define KernelPackage/hwmon-jc42/description
+ Kernel module for Jedec JC42.4 compliant temperature sensors
+endef
+
+$(eval $(call KernelPackage,hwmon-jc42))
+
+
 define KernelPackage/hwmon-lm63
   TITLE:=LM63/64 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM63
@@ -367,6 +382,21 @@ define KernelPackage/hwmon-max6642/description
 endef
 
 $(eval $(call KernelPackage,hwmon-max6642))
+
+
+define KernelPackage/hwmon-max6697
+  TITLE:=MAX6697 monitoring support
+  KCONFIG:=CONFIG_SENSORS_MAX6697
+  FILES:=$(LINUX_DIR)/drivers/hwmon/max6697.ko
+  AUTOLOAD:=$(call AutoProbe,max6697)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-max6697/description
+ Kernel module for Maxim MAX6697 temperature monitor
+endef
+
+$(eval $(call KernelPackage,hwmon-max6697))
 
 
 define KernelPackage/hwmon-mcp3021

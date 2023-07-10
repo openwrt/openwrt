@@ -40,6 +40,14 @@ etisalat,s3|\
 rostelecom,rt-sf-1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
+beeline,smartbox-pro|\
+wifire,s1500-nbn)
+	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "lan3" "green:lan3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "lan4" "lan4" "green:lan4" "lan4" "link tx rx"
+	ucidef_set_led_netdev "wan"  "wan"  "green:wan"  "wan"  "link tx rx"
+	;;
 belkin,rt1800)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
@@ -137,6 +145,10 @@ mikrotik,routerboard-m11g)
 	;;
 mtc,wr1201)
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "br-lan"
+	;;
+netgear,eax12)
+	ucidef_set_led_netdev "eth_act" "LAN act" "yellow:eth" "lan" "tx rx"
+	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth" "lan" "link"
 	;;
 netgear,r6220|\
 netgear,r6260|\
