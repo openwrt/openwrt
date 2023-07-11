@@ -1,0 +1,838 @@
+From ba4aebce23b2affb810b8a60eae853674d2cded2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Mon, 5 Jun 2023 15:21:09 +0200
+Subject: [PATCH] ARM: dts: BCM5301X: Describe switch ports in the main DTS
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+All Northstar SoCs have BCM5301x switches (BCM53011, BCM53012) with 8
+ports (0-8 without 6). By design 3 switch ports (5, 7 and 8) are
+hardwired to 3 on-SoC Ethernet interfaces. Switch port 8 requires
+forcing link state.
+
+It seems that global Northstar .dtsi file is the best place to describe
+those hw details. Only device specific bits (like labels) should go to
+device .dts files.
+
+This seems to fit well with a tiny exception of Asus RT-AC88U which
+somehow was designed to have switch 5 connected to an extra switch. This
+case was simply handled with a /delete-property/.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Reviewed-by: Christian Lamparter <chunkeey@gmail.com> (MR32+MR26)
+Link: https://lore.kernel.org/r/20230605132109.7933-1-zajec5@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ arch/arm/boot/dts/bcm-ns.dtsi                 | 41 ++++++++++++++++++-
+ .../bcm4708-buffalo-wzr-1166dhp-common.dtsi   |  7 ----
+ arch/arm/boot/dts/bcm4708-luxul-xap-1510.dts  |  4 --
+ arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts  |  3 --
+ arch/arm/boot/dts/bcm4708-netgear-r6250.dts   |  7 ----
+ arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts |  7 ----
+ .../boot/dts/bcm47081-buffalo-wzr-600dhp2.dts |  7 ----
+ arch/arm/boot/dts/bcm47081-luxul-xap-1410.dts |  3 --
+ arch/arm/boot/dts/bcm47081-luxul-xwr-1200.dts |  7 ----
+ arch/arm/boot/dts/bcm4709-netgear-r8000.dts   | 12 ------
+ arch/arm/boot/dts/bcm47094-asus-rt-ac88u.dts  | 17 +-------
+ arch/arm/boot/dts/bcm47094-dlink-dir-885l.dts | 12 ------
+ arch/arm/boot/dts/bcm47094-dlink-dir-890l.dts | 12 ------
+ .../boot/dts/bcm47094-linksys-panamera.dts    | 34 ++++-----------
+ arch/arm/boot/dts/bcm47094-luxul-abr-4500.dts |  7 ----
+ arch/arm/boot/dts/bcm47094-luxul-xap-1610.dts |  4 --
+ arch/arm/boot/dts/bcm47094-luxul-xbr-4500.dts |  7 ----
+ arch/arm/boot/dts/bcm47094-luxul-xwc-2000.dts |  3 --
+ arch/arm/boot/dts/bcm47094-luxul-xwr-3100.dts |  7 ----
+ .../boot/dts/bcm47094-luxul-xwr-3150-v1.dts   |  7 ----
+ arch/arm/boot/dts/bcm53015-meraki-mr26.dts    |  3 --
+ arch/arm/boot/dts/bcm53016-meraki-mr32.dts    |  3 --
+ 22 files changed, 51 insertions(+), 163 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm-ns.dtsi
++++ b/arch/arm/boot/dts/bcm-ns.dtsi
+@@ -304,10 +304,49 @@
+ 
+ 		status = "disabled";
+ 
+-		/* ports are defined in board DTS */
+ 		ports {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++			};
++
++			port@1 {
++				reg = <1>;
++			};
++
++			port@2 {
++				reg = <2>;
++			};
++
++			port@3 {
++				reg = <3>;
++			};
++
++			port@4 {
++				reg = <4>;
++			};
++
++			port@5 {
++				reg = <5>;
++				ethernet = <&gmac0>;
++			};
++
++			port@7 {
++				reg = <7>;
++				ethernet = <&gmac1>;
++			};
++
++			port@8 {
++				reg = <8>;
++				ethernet = <&gmac2>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
+ 		};
+ 	};
+ 
+--- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1166dhp-common.dtsi
++++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1166dhp-common.dtsi
+@@ -159,34 +159,27 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm4708-luxul-xap-1510.dts
++++ b/arch/arm/boot/dts/bcm4708-luxul-xap-1510.dts
+@@ -75,19 +75,15 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "poe";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "lan";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
++++ b/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
+@@ -82,14 +82,11 @@
+ 
+ 	ports {
+ 		port@4 {
+-			reg = <4>;
+ 			label = "lan";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -100,34 +100,27 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
++++ b/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
+@@ -123,34 +123,27 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+@@ -123,34 +123,27 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47081-luxul-xap-1410.dts
++++ b/arch/arm/boot/dts/bcm47081-luxul-xap-1410.dts
+@@ -75,14 +75,11 @@
+ 
+ 	ports {
+ 		port@4 {
+-			reg = <4>;
+ 			label = "poe";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47081-luxul-xwr-1200.dts
++++ b/arch/arm/boot/dts/bcm47081-luxul-xwr-1200.dts
+@@ -124,36 +124,29 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 			nvmem-cells = <&et0macaddr 5>;
+ 			nvmem-cell-names = "mac-address";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
+@@ -191,39 +191,27 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 		};
+ 
+ 		port@8 {
+-			reg = <8>;
+ 			label = "cpu";
+-			ethernet = <&gmac2>;
+-
+-			fixed-link {
+-				speed = <1000>;
+-				full-duplex;
+-			};
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47094-asus-rt-ac88u.dts
++++ b/arch/arm/boot/dts/bcm47094-asus-rt-ac88u.dts
+@@ -181,32 +181,28 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 		};
+ 
+ 		sw0_p5: port@5 {
+-			reg = <5>;
++			/delete-property/ethernet;
++
+ 			label = "extsw";
+ 			phy-mode = "rgmii";
+ 
+@@ -218,8 +214,6 @@
+ 		};
+ 
+ 		port@7 {
+-			reg = <7>;
+-			ethernet = <&gmac1>;
+ 			label = "cpu";
+ 
+ 			fixed-link {
+@@ -229,14 +223,7 @@
+ 		};
+ 
+ 		port@8 {
+-			reg = <8>;
+-			ethernet = <&gmac2>;
+ 			label = "cpu";
+-
+-			fixed-link {
+-				speed = <1000>;
+-				full-duplex;
+-			};
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47094-dlink-dir-885l.dts
++++ b/arch/arm/boot/dts/bcm47094-dlink-dir-885l.dts
+@@ -124,39 +124,27 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 		};
+ 
+ 		port@8 {
+-			reg = <8>;
+ 			label = "cpu";
+-			ethernet = <&gmac2>;
+-
+-			fixed-link {
+-				speed = <1000>;
+-				full-duplex;
+-			};
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47094-dlink-dir-890l.dts
++++ b/arch/arm/boot/dts/bcm47094-dlink-dir-890l.dts
+@@ -172,40 +172,28 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 		};
+ 
+ 		port@8 {
+-			reg = <8>;
+ 			label = "cpu";
+-			ethernet = <&gmac2>;
+ 			phy-mode = "rgmii";
+-
+-			fixed-link {
+-				speed = <1000>;
+-				full-duplex;
+-			};
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47094-linksys-panamera.dts
++++ b/arch/arm/boot/dts/bcm47094-linksys-panamera.dts
+@@ -207,29 +207,32 @@
+ 	dsa,member = <0 0>;
+ 
+ 	ports {
++		sw0_p0: port@0 {
++			label = "extsw";
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
++		};
++
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan7";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan8";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+-			ethernet = <&gmac0>;
+ 			label = "cpu";
+ 			status = "disabled";
+ 
+@@ -240,8 +243,6 @@
+ 		};
+ 
+ 		port@7 {
+-			reg = <7>;
+-			ethernet = <&gmac1>;
+ 			label = "cpu";
+ 			status = "disabled";
+ 
+@@ -252,24 +253,7 @@
+ 		};
+ 
+ 		port@8 {
+-			reg = <8>;
+-			ethernet = <&gmac2>;
+ 			label = "cpu";
+-
+-			fixed-link {
+-				speed = <1000>;
+-				full-duplex;
+-			};
+-		};
+-
+-		sw0_p0: port@0 {
+-			reg = <0>;
+-			label = "extsw";
+-
+-			fixed-link {
+-				speed = <1000>;
+-				full-duplex;
+-			};
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47094-luxul-abr-4500.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-abr-4500.dts
+@@ -83,36 +83,29 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "wan";
+ 			nvmem-cells = <&et0macaddr 1>;
+ 			nvmem-cell-names = "mac-address";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47094-luxul-xap-1610.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-xap-1610.dts
+@@ -73,19 +73,15 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "poe";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47094-luxul-xbr-4500.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-xbr-4500.dts
+@@ -83,36 +83,29 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "wan";
+ 			nvmem-cells = <&et0macaddr 1>;
+ 			nvmem-cell-names = "mac-address";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47094-luxul-xwc-2000.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-xwc-2000.dts
+@@ -69,14 +69,11 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47094-luxul-xwr-3100.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-xwr-3100.dts
+@@ -123,36 +123,29 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 			nvmem-cells = <&et0macaddr 5>;
+ 			nvmem-cell-names = "mac-address";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm47094-luxul-xwr-3150-v1.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-xwr-3150-v1.dts
+@@ -98,36 +98,29 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "lan4";
+ 		};
+ 
+ 		port@1 {
+-			reg = <1>;
+ 			label = "lan3";
+ 		};
+ 
+ 		port@2 {
+-			reg = <2>;
+ 			label = "lan2";
+ 		};
+ 
+ 		port@3 {
+-			reg = <3>;
+ 			label = "lan1";
+ 		};
+ 
+ 		port@4 {
+-			reg = <4>;
+ 			label = "wan";
+ 			nvmem-cells = <&et0macaddr 5>;
+ 			nvmem-cell-names = "mac-address";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm53015-meraki-mr26.dts
++++ b/arch/arm/boot/dts/bcm53015-meraki-mr26.dts
+@@ -115,14 +115,11 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "poe";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 
+ 			fixed-link {
+ 				speed = <1000>;
+--- a/arch/arm/boot/dts/bcm53016-meraki-mr32.dts
++++ b/arch/arm/boot/dts/bcm53016-meraki-mr32.dts
+@@ -176,14 +176,11 @@
+ 
+ 	ports {
+ 		port@0 {
+-			reg = <0>;
+ 			label = "poe";
+ 		};
+ 
+ 		port@5 {
+-			reg = <5>;
+ 			label = "cpu";
+-			ethernet = <&gmac0>;
+ 
+ 			fixed-link {
+ 				speed = <1000>;
