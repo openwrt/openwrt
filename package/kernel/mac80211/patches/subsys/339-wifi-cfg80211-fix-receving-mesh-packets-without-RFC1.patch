@@ -1,0 +1,25 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 11 Jul 2023 13:30:12 +0200
+Subject: [PATCH] wifi: cfg80211: fix receving mesh packets without RFC1042
+ header
+
+Fix ethernet header length field after stripping the mesh header
+
+Cc: stable@vger.kernel.org
+Link: https://lore.kernel.org/all/CT5GNZSK28AI.2K6M69OXM9RW5@syracuse/
+Fixes: 986e43b19ae9 ("wifi: mac80211: fix receiving A-MSDU frames on mesh interfaces")
+Reported-by: Nicolas Escande <nico.escande@gmail.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/net/wireless/util.c
++++ b/net/wireless/util.c
+@@ -580,6 +580,8 @@ int ieee80211_strip_8023_mesh_hdr(struct
+ 		hdrlen += ETH_ALEN + 2;
+ 	else if (!pskb_may_pull(skb, hdrlen))
+ 		return -EINVAL;
++	else
++		payload.eth.h_proto = htons(skb->len - hdrlen);
+ 
+ 	mesh_addr = skb->data + sizeof(payload.eth) + ETH_ALEN;
+ 	switch (payload.flags & MESH_FLAGS_AE) {
