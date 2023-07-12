@@ -99,22 +99,28 @@
 		reg = <0>;
 		spi-max-frequency = <25000000>;
 
-		partition@0 {
-			label = "boot0";
-			read-only;
-			reg = <0x000000 0x300000>;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@300000 {
-			label = "dummy";
-			read-only;
-			reg = <0x300000 0x100000>;
-		};
+			partition@0 {
+				label = "boot0";
+				read-only;
+				reg = <0x000000 0x300000>;
+			};
 
-		eeprom: partition@400000 {
-			label = "eeprom";
-			read-only;
-			reg = <0x400000 0x10000>;
+			partition@300000 {
+				label = "dummy";
+				read-only;
+				reg = <0x300000 0x100000>;
+			};
+
+			eeprom: partition@400000 {
+				label = "eeprom";
+				read-only;
+				reg = <0x400000 0x10000>;
+			};
 		};
 	};
 };
