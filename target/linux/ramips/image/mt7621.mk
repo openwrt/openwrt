@@ -1017,7 +1017,7 @@ define Device/gnubee_gb-pc1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := GnuBee
-  DEVICE_MODEL := Personal Cloud One
+  DEVICE_MODEL := GB-PC1
   DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 \
 	-wpad-basic-mbedtls -uboot-envtools
   IMAGE_SIZE := 32448k
@@ -1028,7 +1028,7 @@ define Device/gnubee_gb-pc2
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := GnuBee
-  DEVICE_MODEL := Personal Cloud Two
+  DEVICE_MODEL := GB-PC2
   DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 \
 	-wpad-basic-mbedtls -uboot-envtools
   IMAGE_SIZE := 32448k
