@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2418,6 +2418,8 @@ static int hostapd_config_fill(struct ho
+@@ -2420,6 +2420,8 @@ static int hostapd_config_fill(struct ho
  		bss->isolate = atoi(pos);
  	} else if (os_strcmp(buf, "ap_max_inactivity") == 0) {
  		bss->ap_max_inactivity = atoi(pos);
@@ -9,7 +9,7 @@
  	} else if (os_strcmp(buf, "skip_inactivity_poll") == 0) {
  		bss->skip_inactivity_poll = atoi(pos);
  	} else if (os_strcmp(buf, "config_id") == 0) {
-@@ -3128,6 +3130,8 @@ static int hostapd_config_fill(struct ho
+@@ -3130,6 +3132,8 @@ static int hostapd_config_fill(struct ho
  		}
  	} else if (os_strcmp(buf, "acs_exclude_dfs") == 0) {
  		conf->acs_exclude_dfs = atoi(pos);

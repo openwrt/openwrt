@@ -55,7 +55,7 @@
  			   "x_snoop: Failed to initialize L2 packet processing %s",
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2320,6 +2320,8 @@ static int hostapd_config_fill(struct ho
+@@ -2322,6 +2322,8 @@ static int hostapd_config_fill(struct ho
  			os_strlcpy(bss->wds_bridge, pos, sizeof(bss->wds_bridge));
  	} else if (os_strcmp(buf, "bridge_hairpin") == 0) {
  		bss->bridge_hairpin = atoi(pos);
