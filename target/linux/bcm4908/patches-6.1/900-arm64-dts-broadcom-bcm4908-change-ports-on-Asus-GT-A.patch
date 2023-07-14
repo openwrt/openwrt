@@ -1,0 +1,28 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 21 May 2021 11:14:04 +0200
+Subject: [PATCH] arm64: dts: broadcom: bcm4908: change ports on Asus GT-AC5300
+
+---
+
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908-asus-gt-ac5300.dts
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908-asus-gt-ac5300.dts
+@@ -77,16 +77,16 @@
+ 	};
+ 
+ 	port@2 {
+-		label = "lan6";
++		label = "lan4";
+ 	};
+ 
+ 	port@3 {
+-		label = "lan5";
++		label = "lan3";
+ 	};
+ 
+ 	/* External BCM53134S switch */
+ 	port@7 {
+-		label = "sw";
++		label = "wan";
+ 		reg = <7>;
+ 		phy-mode = "rgmii";
+ 
