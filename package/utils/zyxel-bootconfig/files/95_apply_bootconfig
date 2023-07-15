@@ -3,6 +3,7 @@ apply_bootconfig() {
 
 	case $(board_name) in
 	zyxel,nwa50ax|\
+	zyxel,nwa50ax-pro|\
 	zyxel,nwa55axe)
 	        mtd_idx=$(find_mtd_index "bootconfig")
 		zyxel-bootconfig "/dev/mtd$mtd_idx" set-image-status 0 valid
