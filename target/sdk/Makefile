@@ -145,7 +145,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		./files/Config.in \
 		./files/Makefile \
 		./files/include/prepare.mk \
-		./files/README.SDK \
+		./files/README.md \
 		$(SDK_BUILD_DIR)/
 	mkdir -p $(SDK_BUILD_DIR)/package/kernel
 	$(CP) \
