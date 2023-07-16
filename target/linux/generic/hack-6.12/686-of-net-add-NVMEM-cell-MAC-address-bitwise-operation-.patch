@@ -1,0 +1,62 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sun, 16 Jul 2023 21:00:15 +0800
+Subject: [PATCH] of: net: add DT MAC address bitwise operation support
+
+This patch allow user to perform basic bitwise clear/set operation on
+OF DT MAC address. We use two new added dt-bindings to specific the
+MAC address bits clear/set mask. "mac-address-bitwise-set" can be used
+to set bit. And "mac-address-bitwise-clear" can be used to clear bit.
+
+The "mac-address-bitwise-*" property consists of two 32-bit(4 Bytes)
+hexadecimal. The first hex number mask the Byte[1-2] and the second
+one mask the Byte[3-6]. Each MAC address bit corresponds to the unique
+mask bit. When setting mask bit to "1", OF driver will clear/set the
+corresponding MAC address bit.
+
+Sample MAC Address and Property Mask:
+AA: BB : CC : DD : EE : FF      -->  mask:  <0xAABB 0xCCDDEEFF>
+^         ^              ^
+Byte[1]   Byte[3]        Byte[6]
+
+Usage Example:
+Assuming the base MAC address is "00:11:22:33:44:55", and we have dts
+as follows. then the final MAC address should be "ff:11:22:33:44:66".
+
+0xff1122334466 = 0x001122334455 & (~0x0000000000ff) | 0xff0000000066
+
+&gmac0 {
+	nvmem-cells = <&macaddr_base>;
+	nvmem-cell-names = "mac-address";
+	mac-address-bitwise-clear = <0x0000 0x000000ff>;
+	mac-address-bitwise-set = <0xff00 0x00000066>;
+};
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ net/core/of_net.c | 35 +++++++++++++++++++----------------
+ 1 file changed, 19 insertions(+), 16 deletions(-)
+
+--- a/net/core/of_net.c
++++ b/net/core/of_net.c
+@@ -147,6 +147,7 @@ free:
+ int of_get_mac_address(struct device_node *np, u8 *addr)
+ {
+ 	int ret;
++	u64 mac_val, mac_msk;
+ 
+ 	if (!np)
+ 		return -ENODEV;
+@@ -168,6 +169,13 @@ int of_get_mac_address(struct device_nod
+ 		return ret;
+ 
+ found:
++	mac_val = ether_addr_to_u64(addr);
++	if (!of_property_read_u64(np, "mac-address-bitwise-clear", &mac_msk))
++		mac_val &= ~mac_msk;
++	if (!of_property_read_u64(np, "mac-address-bitwise-set", &mac_msk))
++		mac_val |= mac_msk;
++	u64_to_ether_addr(mac_val, addr);
++
+ 	ret = of_add_mac_address(np, addr);
+ 	return ret;
+ }
