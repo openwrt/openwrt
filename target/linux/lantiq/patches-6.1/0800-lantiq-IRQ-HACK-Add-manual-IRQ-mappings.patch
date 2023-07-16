@@ -1,0 +1,42 @@
+From 7b9245b34a44304764bf075c66ffd4b406cdc2c5 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 16 Jul 2023 18:38:14 +0200
+Subject: [PATCH] lantiq: IRQ: HACK: Add manual IRQ mappings
+
+This adds manually some IRQ mappings for legacy drivers.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/lantiq/irq.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+--- a/arch/mips/lantiq/irq.c
++++ b/arch/mips/lantiq/irq.c
+@@ -412,6 +412,27 @@ int __init icu_of_init(struct device_nod
+ 	}
+ 	of_node_put(eiu_node);
+ 
++	/* HACK adding IRQ mappings. IRQs are not automatically mapped from HW to virtual IRQ numbers when the IRQ
++	 * domain is registered. This happens when the IRQ number is read from the device tree based on the IRQ
++	 * domain from the device tree now. In kernel 5.15 it was done when the IRQ domain was registered. The
++	 * GPTU and the PCIe driver are very old hacked drivers which do not use device tree, but hard code the
++	 * IRQ number in the code. This IRQ number is not mapped and registering the IRQ registration will fail.
++	 * Add this hack for now to map these IRQs at bootup manually. We should modify the drivers to register
++	 * them over device tree. */
++	/* gptu irqs */
++	irq_domain_associate(ltq_domain, 126, 126);
++	irq_domain_associate(ltq_domain, 127, 127);
++	irq_domain_associate(ltq_domain, 128, 128);
++	irq_domain_associate(ltq_domain, 129, 129);
++	irq_domain_associate(ltq_domain, 130, 130);
++	irq_domain_associate(ltq_domain, 131, 131);
++	/* PCIe irqs */
++	irq_domain_associate(ltq_domain, 161, 161);
++	irq_domain_associate(ltq_domain, 144, 144);
++	irq_domain_associate(ltq_domain, 145, 145);
++	irq_domain_associate(ltq_domain, 146, 146);
++	irq_domain_associate(ltq_domain, 147, 147);
++
+ 	return 0;
+ }
+ 
