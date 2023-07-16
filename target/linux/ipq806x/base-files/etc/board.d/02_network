@@ -6,101 +6,123 @@
 . /lib/functions/uci-defaults.sh
 . /lib/functions/system.sh
 
+ipq806x_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+	arris,tr4400-v2)
+		ucidef_set_interfaces_lan_wan "eth1" "eth2"
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "4:lan" "6u@eth1" "0u@eth0"
+		;;
+	askey,rt4230w-rev6 |\
+	asrock,g10 |\
+	nec,wg2600hp)
+		ucidef_add_switch "switch0" \
+			"2:lan" "3:lan" "4:lan" "5:lan" "6@eth1" "1:wan" "0@eth0"
+		;;
+	buffalo,wxr-2533dhp |\
+	compex,wpq864 |\
+	netgear,d7800 |\
+	netgear,r7500 |\
+	netgear,r7500v2 |\
+	qcom,ipq8064-ap148)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
+		;;
+	edgecore,ecw5410)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		;;
+	linksys,ea7500-v1)
+		ucidef_add_switch "switch0" \
+			"2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "6@eth1" "1:wan" "0@eth0"
+	;;
+	linksys,ea8500)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
+		;;
+	meraki,mr42)
+		ucidef_set_interface_lan "eth0"
+		;;
+	meraki,mr52)
+		ucidef_set_interfaces_lan_wan "eth0" "eth1"
+		;;
+	nec,wg2600hp3)
+		ucidef_add_switch "switch0" \
+			"2:lan" "3:lan" "4:lan" "5:lan" "0@eth1" "1:wan" "6@eth0"
+		;;
+	netgear,r7800 |\
+	netgear,xr450 |\
+	netgear,xr500 |\
+	tplink,c2600 |\
+	tplink,vr2600v)
+		ucidef_add_switch "switch0" \
+			"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "6@eth1" "5:wan" "0@eth0"
+		;;
+	qcom,ipq8064-ap161)
+		ucidef_set_interface_lan "eth1 eth2"
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3u@eth1" "6:wan" "4u@eth0"
+		;;
+	qcom,ipq8064-db149)
+		ucidef_set_interface_lan "eth1 eth2 eth3"
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "4:lan" "6u@eth1" "5:wan" "0u@eth0"
+		;;
+	tplink,ad7200)
+		ucidef_add_switch "switch0" \
+			"2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "6@eth1" "1:wan" "0@eth0"
+		;;
+	asus,onhub |\
+	tplink,onhub)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		ucidef_add_switch "switch0" \
+			"1:lan" "6@eth1" "2:wan" "0@eth0"
+		;;
+	nokia,ac400i |\
+	ubnt,unifi-ac-hd)
+		ucidef_set_interface_lan "eth0 eth1"
+		;;
+	zyxel,nbg6817)
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
+		;;
+	*)
+		echo "Unsupported hardware. Network interfaces not intialized"
+		;;
+	esac
+}
+
+ipq806x_setup_mac_address()
+{
+	local board="$1"
+
+	case "$board" in
+	linksys,ea7500-v1)
+		hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
+		ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
+		;;
+	linksys,ea8500)
+		hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
+		ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
+		;;
+	zyxel,nbg6817)
+		hw_mac_addr=$(mtd_get_mac_ascii 0:appsblenv ethaddr)
+		ucidef_set_interface_macaddr "lan" "$(macaddr_add $hw_mac_addr 2)"
+		ucidef_set_interface_macaddr "wan" "$(macaddr_add $hw_mac_addr 3)"
+		;;
+	esac
+}
+
 board_config_update
 
 board=$(board_name)
 
-case "$board" in
-arris,tr4400-v2)
-	ucidef_set_interfaces_lan_wan "eth1" "eth2"
-	ucidef_add_switch "switch0" \
-		"1:lan" "2:lan" "3:lan" "4:lan" "6u@eth1" "0u@eth0"
-	;;
-askey,rt4230w-rev6 |\
-asrock,g10 |\
-nec,wg2600hp)
-	ucidef_add_switch "switch0" \
-		"2:lan" "3:lan" "4:lan" "5:lan" "6@eth1" "1:wan" "0@eth0"
-	;;
-buffalo,wxr-2533dhp |\
-compex,wpq864 |\
-netgear,d7800 |\
-netgear,r7500 |\
-netgear,r7500v2 |\
-qcom,ipq8064-ap148)
-	ucidef_add_switch "switch0" \
-		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
-	;;
-edgecore,ecw5410)
-	ucidef_set_interfaces_lan_wan "eth1" "eth0"
-	;;
-linksys,ea7500-v1)
-	hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-	ucidef_add_switch "switch0" \
-		"2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "6@eth1" "1:wan" "0@eth0"
-	ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
-	ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
-	;;
-linksys,ea8500)
-	hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-	ucidef_add_switch "switch0" \
-		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
-	ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
-	ucidef_set_interface_macaddr "wan" "$hw_mac_addr"
-	;;
-meraki,mr42)
-	ucidef_set_interface_lan "eth0"
-	;;
-meraki,mr52)
-	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	;;
-nec,wg2600hp3)
-	ucidef_add_switch "switch0" \
-		"2:lan" "3:lan" "4:lan" "5:lan" "0@eth1" "1:wan" "6@eth0"
-	;;
-netgear,r7800 |\
-netgear,xr450 |\
-netgear,xr500 |\
-tplink,c2600 |\
-tplink,vr2600v)
-	ucidef_add_switch "switch0" \
-		"1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "6@eth1" "5:wan" "0@eth0"
-	;;
-qcom,ipq8064-ap161)
-	ucidef_set_interface_lan "eth1 eth2"
-	ucidef_add_switch "switch0" \
-		"0:lan" "1:lan" "2:lan" "3u@eth1" "6:wan" "4u@eth0"
-	;;
-qcom,ipq8064-db149)
-	ucidef_set_interface_lan "eth1 eth2 eth3"
-	ucidef_add_switch "switch0" \
-		"1:lan" "2:lan" "3:lan" "4:lan" "6u@eth1" "5:wan" "0u@eth0"
-	;;
-tplink,ad7200)
-	ucidef_add_switch "switch0" \
-		"2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "6@eth1" "1:wan" "0@eth0"
-	;;
-asus,onhub |\
-tplink,onhub)
-	ucidef_set_interfaces_lan_wan "eth1" "eth0"
-	ucidef_add_switch "switch0" \
-		"1:lan" "6@eth1" "2:wan" "0@eth0"
-	;;
-nokia,ac400i |\
-ubnt,unifi-ac-hd)
-	ucidef_set_interface_lan "eth0 eth1"
-	;;
-zyxel,nbg6817)
-	hw_mac_addr=$(mtd_get_mac_ascii 0:appsblenv ethaddr)
-	ucidef_add_switch "switch0" \
-		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
-	ucidef_set_interface_macaddr "lan" "$(macaddr_add $hw_mac_addr 2)"
-	ucidef_set_interface_macaddr "wan" "$(macaddr_add $hw_mac_addr 3)"
-	;;
-*)
-	echo "Unsupported hardware. Network interfaces not intialized"
-	;;
-esac
+ipq806x_setup_mac_address $board
+ipq806x_setup_interfaces $board
 
 board_config_flush
 
