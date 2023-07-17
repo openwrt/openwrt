@@ -39,6 +39,7 @@ boot() {
 	grep -q pstore /proc/filesystems && /bin/mount -o noatime -t pstore pstore /sys/fs/pstore
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
+	touch /tmp/.config_pending
 	/sbin/kmodloader
 
 	[ ! -f /etc/config/wireless ] && {
@@ -47,6 +48,8 @@ boot() {
 	}
 
 	/bin/config_generate
+	rm -f /tmp/.config_pending
+	/sbin/wifi config
 	uci_apply_defaults
 	sync
 	
