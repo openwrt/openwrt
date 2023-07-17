@@ -215,14 +215,15 @@ endef
 
 # Only intends to be called as a submethod from other DownloadMethod
 define DownloadMethod/rawgit
-	echo "Checking out files from the git repository..."; \
+	gitdir="$(DL_DIR)/git/`basename $(URL)`"; \
+	echo "Checking out files to $$$$gitdir ..."; \
 	mkdir -p $(TMP_DIR)/dl && \
 	cd $(TMP_DIR)/dl && \
 	rm -rf $(SUBDIR) && \
 	[ \! -d $(SUBDIR) ] && \
-	git clone $(OPTS) $(URL) $(SUBDIR) && \
-	(cd $(SUBDIR) && git checkout $(VERSION) && \
-	git submodule update --init --recursive) && \
+	mkdir -p "$(SUBDIR)" && \
+	mkdir -p $(DL_DIR)/git && \
+	"$(SCRIPT_DIR)"/git-cached-checkout.sh "$$$$gitdir" "$(URL)" "$(VERSION)" "$(TMP_DIR)/dl/$(SUBDIR)" && \
 	echo "Packing checkout..." && \
 	export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --format='@%ct'` && \
 	rm -rf $(SUBDIR)/.git && \
