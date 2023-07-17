@@ -1,0 +1,39 @@
+--- a/nat46/modules/nat46-netdev.c
++++ b/nat46/modules/nat46-netdev.c
+@@ -92,8 +92,8 @@ static netdev_tx_t nat46_netdev_xmit(str
+ 	struct pcpu_sw_netstats *tstats = get_cpu_ptr(dev->tstats);
+
+ 	u64_stats_update_begin(&tstats->syncp);
+-	tstats->rx_packets++;
+-	tstats->rx_bytes += skb->len;
++	u64_stats_inc(&tstats->rx_packets);
++	u64_stats_add(&tstats->rx_bytes, skb->len);
+ 	u64_stats_update_end(&tstats->syncp);
+ 	put_cpu_ptr(tstats);
+ 	if(ETH_P_IP == ntohs(skb->protocol)) {
+@@ -110,8 +110,8 @@ void nat46_netdev_count_xmit(struct sk_b
+ 	struct pcpu_sw_netstats *tstats = get_cpu_ptr(dev->tstats);
+
+ 	u64_stats_update_begin(&tstats->syncp);
+-	tstats->tx_packets++;
+-	tstats->tx_bytes += skb->len;
++	u64_stats_inc(&tstats->tx_packets);
++	u64_stats_add(&tstats->tx_bytes, skb->len);
+ 	u64_stats_update_end(&tstats->syncp);
+ 	put_cpu_ptr(tstats);
+ }
+@@ -122,10 +122,10 @@ void nat46_update_stats(struct net_devic
+ 	struct pcpu_sw_netstats *tstats = get_cpu_ptr(dev->tstats);
+
+ 	u64_stats_update_begin(&tstats->syncp);
+-	tstats->rx_packets += rx_packets;
+-	tstats->rx_bytes += rx_bytes;
+-	tstats->tx_packets += tx_packets;
+-	tstats->tx_bytes += tx_bytes;
++	u64_stats_add(&tstats->rx_packets, rx_packets);
++	u64_stats_add(&tstats->rx_bytes, rx_bytes);
++	u64_stats_add(&tstats->tx_packets, tx_packets);
++	u64_stats_add(&tstats->tx_bytes, tx_bytes);
+ 	dev->stats.rx_dropped += rx_dropped;
+ 	dev->stats.tx_dropped += tx_dropped;
+ 	u64_stats_update_end(&tstats->syncp);
