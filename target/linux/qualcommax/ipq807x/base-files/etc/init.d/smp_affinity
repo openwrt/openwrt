@@ -1,0 +1,40 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+enable_affinity_ipq807x(){
+    set_affinity() {
+        irq=$(awk "/$1/{ print substr(\$1, 1, length(\$1)-1); exit }" /proc/interrupts)
+        [ -n "$irq" ] && echo $2 > /proc/irq/$irq/smp_affinity
+    }
+
+    # assign 4 rx interrupts to each core
+    set_affinity 'reo2host-destination-ring1' 1
+    set_affinity 'reo2host-destination-ring2' 2
+    set_affinity 'reo2host-destination-ring3' 4
+    set_affinity 'reo2host-destination-ring4' 8
+
+    # assign 3 tcl completions to last 3 CPUs
+    set_affinity 'wbm2host-tx-completions-ring1' 2
+    set_affinity 'wbm2host-tx-completions-ring2' 4
+    set_affinity 'wbm2host-tx-completions-ring3' 8
+}
+
+boot() {
+    case $(board_name) in
+        buffalo,wxr-5950ax12|\
+        compex,wpq873|\
+        dynalink,dl-wrx36|\
+        edgecore,eap102|\
+        edimax,cax1800|\
+        netgear,wax218|\
+        prpl,haze|\
+        qnap,301w|\
+        redmi,ax6|\
+        xiaomi,ax3600|\
+        xiaomi,ax9000|\
+        zyxel,nbg7815)
+            enable_affinity_ipq807x
+        ;;
+    esac
+}
