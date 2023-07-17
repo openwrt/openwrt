@@ -93,6 +93,7 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_18a 0>;
 		nvmem-cell-names = "eeprom", "mac-address";
+		mac-address-bitwise-clear = <0x0400 0x00000000>;
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
