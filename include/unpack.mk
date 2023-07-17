@@ -5,7 +5,6 @@
 HOST_TAR:=$(TAR)
 TAR_CMD=$(HOST_TAR) -C $(1)/.. $(TAR_OPTIONS)
 UNZIP_CMD=unzip -q -d $(1)/.. $(DL_DIR)/$(PKG_SOURCE)
-
 ifeq ($(PKG_SOURCE),)
   PKG_UNPACK ?= true
 else
@@ -58,6 +57,9 @@ ifeq ($(strip $(UNPACK_CMD)),)
     ifeq ($(PKG_CAT),zcat)
       UNPACK_CMD=$(STAGING_DIR_HOST)/bin/libdeflate-gzip -dc $(DL_DIR)/$(PKG_SOURCE) | $(TAR_CMD)
     endif
+  endif
+  ifeq ($(strip $(PKG_SOURCE_PROTO)$(CONFIG_ENABLE_GIT_SOURCES)),gity)
+    UNPACK_CMD=cp -rHldp $(DL_DIR)/$(PKG_NAME)-$(PKG_VERSION)/* $(1)/
   endif
 endif
 

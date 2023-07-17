@@ -157,3 +157,10 @@ menuconfig DEVEL
 		default "-fno-caller-saves"
 		help
 		  Extra target-independent optimizations to use when building for the target.
+
+	config ENABLE_GIT_SOURCES
+		bool "Enable downloading sources as git repos" if DEVEL
+		default n
+		help
+		  If enabled, openwrt download and prepare steps will clone git sources into DL_DIR, no archiving action is preformed 
+		  then hard link them from DL_DIR into build_dir before hitting the compile step.
