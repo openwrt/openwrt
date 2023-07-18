@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1602,6 +1602,8 @@ static int parse_anqp_elem(struct hostap
+@@ -1604,6 +1604,8 @@ static int parse_anqp_elem(struct hostap
  	return 0;
  }
  
@@ -9,7 +9,7 @@
  
  static int parse_qos_map_set(struct hostapd_bss_config *bss,
  			     char *buf, int line)
-@@ -1643,8 +1645,6 @@ static int parse_qos_map_set(struct host
+@@ -1645,8 +1647,6 @@ static int parse_qos_map_set(struct host
  	return 0;
  }
  
@@ -18,7 +18,7 @@
  
  #ifdef CONFIG_HS20
  static int hs20_parse_conn_capab(struct hostapd_bss_config *bss, char *buf,
-@@ -4064,10 +4064,10 @@ static int hostapd_config_fill(struct ho
+@@ -4066,10 +4066,10 @@ static int hostapd_config_fill(struct ho
  		bss->gas_frag_limit = val;
  	} else if (os_strcmp(buf, "gas_comeback_delay") == 0) {
  		bss->gas_comeback_delay = atoi(pos);

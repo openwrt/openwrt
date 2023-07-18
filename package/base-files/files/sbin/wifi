@@ -175,6 +175,7 @@ wifi_detect_notice() {
 }
 
 wifi_config() {
+	[ -e /tmp/.config_pending ] && return
 	[ ! -f /etc/config/wireless ] && touch /etc/config/wireless
 
 	for driver in $DRIVERS; do (

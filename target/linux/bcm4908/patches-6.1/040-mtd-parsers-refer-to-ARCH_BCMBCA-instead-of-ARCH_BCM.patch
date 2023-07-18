@@ -1,0 +1,36 @@
+From 085679b15b5af65f9610f619afde41da0f966194 Mon Sep 17 00:00:00 2001
+From: Lukas Bulwahn <lukas.bulwahn@gmail.com>
+Date: Wed, 16 Nov 2022 13:49:32 +0100
+Subject: [PATCH] mtd: parsers: refer to ARCH_BCMBCA instead of ARCH_BCM4908
+
+Commit dd5c672d7ca9 ("arm64: bcmbca: Merge ARCH_BCM4908 to ARCH_BCMBCA")
+removes config ARCH_BCM4908 as config ARCH_BCMBCA has the same intent.
+
+Probably due to concurrent development, commit 002181f5b150 ("mtd: parsers:
+add Broadcom's U-Boot parser") introduces 'Broadcom's U-Boot partition
+parser' that depends on ARCH_BCM4908, but this use was not visible during
+the config refactoring from the commit above. Hence, these two changes
+create a reference to a non-existing config symbol.
+
+Adjust the MTD_BRCM_U_BOOT definition to refer to ARCH_BCMBCA instead of
+ARCH_BCM4908 to remove the reference to the non-existing config symbol
+ARCH_BCM4908.
+
+Signed-off-by: Lukas Bulwahn <lukas.bulwahn@gmail.com>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://lore.kernel.org/linux-mtd/20221116124932.4748-1-lukas.bulwahn@gmail.com
+---
+ drivers/mtd/parsers/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mtd/parsers/Kconfig
++++ b/drivers/mtd/parsers/Kconfig
+@@ -22,7 +22,7 @@ config MTD_BCM63XX_PARTS
+ 
+ config MTD_BRCM_U_BOOT
+ 	tristate "Broadcom's U-Boot partition parser"
+-	depends on ARCH_BCM4908 || COMPILE_TEST
++	depends on ARCH_BCMBCA || COMPILE_TEST
+ 	help
+ 	  Broadcom uses a custom way of storing U-Boot environment variables.
+ 	  They are placed inside U-Boot partition itself at unspecified offset.
