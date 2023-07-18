@@ -1,0 +1,32 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 14 Jul 2023 08:28:41 +0200
+Subject: [PATCH] leds: bcm63138: rename dependency symbol ARCH_BCM4908 to
+ ARCH_BCMBCA
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Symbol ARCH_BCM4908 has been merged/removed without updating leds
+Kconfig.
+
+Fixes: dd5c672d7ca9 ("arm64: bcmbca: Merge ARCH_BCM4908 to ARCH_BCMBCA")
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ drivers/leds/blink/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/leds/blink/Kconfig
++++ b/drivers/leds/blink/Kconfig
+@@ -1,10 +1,10 @@
+ config LEDS_BCM63138
+ 	tristate "LED Support for Broadcom BCM63138 SoC"
+ 	depends on LEDS_CLASS
+-	depends on ARCH_BCM4908 || ARCH_BCM_5301X || BCM63XX || COMPILE_TEST
++	depends on ARCH_BCMBCA || ARCH_BCM_5301X || BCM63XX || COMPILE_TEST
+ 	depends on HAS_IOMEM
+ 	depends on OF
+-	default ARCH_BCM4908
++	default ARCH_BCMBCA
+ 	help
+ 	  This option enables support for LED controller that is part of
+ 	  BCM63138 SoC. The same hardware block is known to be also used

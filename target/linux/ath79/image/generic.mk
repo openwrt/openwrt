@@ -247,6 +247,25 @@ define Device/adtran_bsap1840
 endef
 TARGET_DEVICES += adtran_bsap1840
 
+define Device/adtran_bsap192x
+  SOC := ar9344
+  DEVICE_VENDOR := Adtran
+  DEVICE_PACKAGES := uboot-envtools
+  IMAGE_SIZE := 13312k
+endef
+
+define Device/adtran_bsap1920
+  $(Device/adtran_bsap192x)
+  DEVICE_MODEL := Bluesocket BSAP-1920
+endef
+TARGET_DEVICES += adtran_bsap1920
+
+define Device/adtran_bsap1925
+  $(Device/adtran_bsap192x)
+  DEVICE_MODEL := Bluesocket BSAP-1925
+endef
+TARGET_DEVICES += adtran_bsap1925
+
 define Device/alcatel_hh40v
   SOC := qca9531
   DEVICE_VENDOR := Alcatel
