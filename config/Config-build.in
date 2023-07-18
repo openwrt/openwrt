@@ -159,6 +159,19 @@ menu "Global build settings"
 		  Adds LTO flags to the CFLAGS and LDFLAGS.
 		  Packages can choose to opt-out via setting PKG_BUILD_FLAGS:=no-lto
 
+	config MOLD
+		depends on (aarch64 || arm || i386 || i686 || m68k || powerpc || powerpc64 || sh4 || x86_64)
+		depends on !GCC_USE_VERSION_11
+		def_bool $(shell, ./config/check-hostcxx.sh 10 2 12)
+
+	config USE_MOLD
+		bool
+		prompt "Use the mold linker for all packages"
+		depends on MOLD
+		help
+		  Link packages with mold, a modern linker
+		  Packages can opt-out via setting PKG_BUILD_FLAGS:=no-mold
+
 	config IPV6
 		def_bool y
 
@@ -182,7 +195,6 @@ menu "Global build settings"
 			help
 			  This will install binaries stripped using strip from binutils.
 
-
 		config USE_SSTRIP
 			bool "sstrip"
 			depends on !USE_GLIBC
@@ -199,13 +211,12 @@ menu "Global build settings"
 		help
 		  Specifies arguments passed to the strip command when stripping binaries.
 
-	config SSTRIP_ARGS
-		string
-		prompt "Sstrip arguments"
-		depends on USE_SSTRIP
-		default "-z"
+	config SSTRIP_DISCARD_TRAILING_ZEROES
+		bool "Strip trailing zero bytes"
+		depends on USE_SSTRIP && !USE_MOLD
+		default y
 		help
-		  Specifies arguments passed to the sstrip command when stripping binaries.
+		  Use sstrip's -z option to discard trailing zero bytes
 
 	config STRIP_KERNEL_EXPORTS
 		bool "Strip unnecessary exports from the kernel image"

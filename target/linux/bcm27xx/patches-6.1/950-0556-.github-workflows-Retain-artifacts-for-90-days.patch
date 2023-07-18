@@ -1,0 +1,18 @@
+From 05a9a53de8785c82332081a5f44cc34dc9fa5f0c Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Wed, 25 Jan 2023 15:01:43 +0000
+Subject: [PATCH] .github/workflows: Retain artifacts for 90 days
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ .github/workflows/kernel-build.yml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/.github/workflows/kernel-build.yml
++++ b/.github/workflows/kernel-build.yml
+@@ -100,4 +100,4 @@ jobs:
+       with:
+         name: ${{matrix.name}}_build
+         path: ${{matrix.name}}_build.tar
+-        retention-days: 7
++        retention-days: 90

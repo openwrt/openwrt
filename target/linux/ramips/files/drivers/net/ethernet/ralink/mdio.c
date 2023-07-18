@@ -257,7 +257,7 @@ err_free_bus:
 err_put_node:
 	of_node_put(mii_np);
 err_no_bus:
-	dev_err(priv->dev, "%s disabled", "mdio-bus");
+	dev_info(priv->dev, "%s disabled", "mdio-bus");
 	priv->mii_bus = NULL;
 	return err;
 }

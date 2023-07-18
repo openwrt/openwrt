@@ -48,11 +48,11 @@ def get_kernel_header(args):
 	struct.pack_into('<L', header, 0x2c, rootfs_size)
 	struct.pack_into('<L', header, 0x30, crc)
 
-	rootfs_end_offset = args.rootfs_offset + rootfs_size
-	struct.pack_into('<L', header, 0x4, rootfs_end_offset)
-
 	kernel_size = os.path.getsize(args.kernel_file)
 	struct.pack_into('<L', header, 0x14, kernel_size)
+
+	kernel_end_offset = args.kernel_offset + kernel_size
+	struct.pack_into('<L', header, 0x4, kernel_end_offset)
 
 	buf = open(args.kernel_file,'rb').read()
 	crc = binascii.crc32(buf) & 0xffffffff

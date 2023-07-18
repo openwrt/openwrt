@@ -1,0 +1,27 @@
+From 10fcafcad54e1d055b6b67881a5b52b95dbd2da3 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Fri, 7 Oct 2022 10:38:31 +0100
+Subject: [PATCH] nvmem: Use NVMEM_DEVID_AUTO
+
+It is reasonable to declare multiple nvmem blocks. Unless a unique 'id'
+is passed in for each block there may be name clashes.
+
+Avoid this by using the magic token NVMEM_DEVID_AUTO.
+
+Fixes: 5a3fa75a4d9cb ("nvmem: Add driver to expose reserved memory as nvmem")
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ drivers/nvmem/rmem.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/nvmem/rmem.c
++++ b/drivers/nvmem/rmem.c
+@@ -71,6 +71,7 @@ static int rmem_probe(struct platform_de
+ 	config.dev = dev;
+ 	config.priv = priv;
+ 	config.name = "rmem";
++	config.id = NVMEM_DEVID_AUTO;
+ 	config.size = mem->size;
+ 	config.reg_read = rmem_read;
+ 

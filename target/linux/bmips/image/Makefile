@@ -4,8 +4,8 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 KERNEL_LOADADDR := 0x80010000		# RAM start + 64K
-LOADER_ENTRY := 0x80a00000		# RAM start + 10M, for relocate
-LZMA_TEXT_START := 0x81800000		# RAM start + 24M
+LOADER_ENTRY := 0x81000000		# RAM start + 16M, for relocate
+LZMA_TEXT_START := 0x82000000		# RAM start + 32M
 
 DEVICE_VARS += CFE_BOARD_ID CFE_EXTRAS
 DEVICE_VARS += CFE_PART_FLAGS CFE_PART_ID
@@ -311,6 +311,15 @@ define Device/bcm63xx-nand
   CFE_WFI_FLAGS :=
   UBINIZE_OPTS := -E 5
   DEVICE_PACKAGES += nand-utils
+endef
+
+define Device/bcm63xx-netgear
+  $(Device/bcm63xx-cfe)
+  DEVICE_VENDOR := NETGEAR
+  IMAGES := factory.chk sysupgrade.bin
+  IMAGE/factory.chk := cfe-bin | netgear-chk
+  NETGEAR_BOARD_ID :=
+  NETGEAR_REGION :=
 endef
 
 define Device/sercomm-nand

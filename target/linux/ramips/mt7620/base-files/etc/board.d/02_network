@@ -79,6 +79,7 @@ ramips_setup_interfaces()
 	asus,rt-ac54u|\
 	asus,rt-n14u|\
 	bdcom,wap2100-sk|\
+	dlink,dir-806a-b1|\
 	domywifi,dm202|\
 	domywifi,dm203|\
 	domywifi,dw22d|\
@@ -141,6 +142,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch1" \
 			"5:lan" "6@eth0"
 		ucidef_add_switch_attr "switch1" "enable" "false"
+		;;
+	edimax,br-6208ac-v2)
+		ucidef_add_switch "switch0" \
+			"1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "6@eth0"
 		;;
 	edimax,br-6478ac-v2|\
 	lb-link,bl-w1200|\
@@ -235,7 +240,7 @@ ramips_setup_interfaces()
 		;;
 	wavlink,wl-wn535k1)
 		ucidef_add_switch "switch0" \
-			"2:lan" "5:lan" "4:wan" "6@eth0"
+			"2:lan:2" "5:lan:1" "4:wan" "6@eth0"
 		;;
 	wavlink,wl-wn579x3)
 		ucidef_add_switch "switch0" \
@@ -273,6 +278,7 @@ ramips_setup_macs()
 	asus,rt-n12p|\
 	asus,rt-n14u|\
 	bdcom,wap2100-sk|\
+	edimax,br-6208ac-v2|\
 	edimax,ew-7478apc|\
 	fon,fon2601|\
 	head-weblink,hdrm200|\

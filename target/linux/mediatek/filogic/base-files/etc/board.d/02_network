@@ -11,6 +11,9 @@ mediatek_setup_interfaces()
 	asus,tuf-ax4200)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
 		;;
+	netgear,wax220)
+		ucidef_set_interface_lan "eth0"
+		;;
 	bananapi,bpi-r3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "eth1 wan"
 		;;
@@ -20,6 +23,9 @@ mediatek_setup_interfaces()
 	glinet,gl-mt3000)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
+	h3c,magic-nx30-pro)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
+		;;
 	mediatek,mt7986a-rfb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan6" "eth1 wan"
 		;;
@@ -28,6 +34,9 @@ mediatek_setup_interfaces()
 		;;
 	mediatek,mt7988a-dsa-10g-spim-snand)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" "eth1 eth2"
+		;;
+	mercusys,mr90x-v1)
+		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
 		;;
 	qihoo,360t7)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
@@ -65,6 +74,19 @@ mediatek_setup_macs()
 		;;
 	bananapi,bpi-r3)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		;;
+	h3c,magic-nx30-pro)
+		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		label_mac=$wan_mac
+		;;
+	mercusys,mr90x-v1)
+		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
+		lan_mac=$label_mac
+		;;
+	netgear,wax220)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env mac)
+		label_mac=$lan_mac
 		;;
 	qihoo,360t7)
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)

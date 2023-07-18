@@ -23,7 +23,7 @@ define KernelPackage/hw-crypto-4xx
 	   +kmod-crypto-ccm +kmod-crypto-gcm \
 	   +kmod-crypto-sha1 +kmod-crypto-sha256 +kmod-crypto-sha512
   FILES:=$(LINUX_DIR)/drivers/crypto/amcc/crypto4xx.ko
-  AUTOLOAD:=$(call AutoLoad,09,sata_dwc_460ex,1)
+  AUTOLOAD:=$(call AutoLoad,09,crypto4xx,1)
   $(call AddDepends/crypto)
 endef
 

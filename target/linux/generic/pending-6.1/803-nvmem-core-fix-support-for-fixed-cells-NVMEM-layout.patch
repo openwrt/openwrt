@@ -1,0 +1,40 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Thu, 13 Jul 2023 17:30:59 +0200
+Subject: [PATCH] nvmem: core: fix support for fixed cells NVMEM layout
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Returning -EPROBE_DEFER for "fixed-layout" makes nvmem_register() always
+fail (that layout is supported internally with no external module). That
+makes callers (e.g. mtd_nvmem_add()) fail as well and prevents booting
+on devices with "fixed-layout" in DT.
+
+Add a quick workaround for it.
+
+Fixes: 6468a6f45148 ("nvmem: core: handle the absence of expected layouts")
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -794,6 +794,19 @@ static struct nvmem_layout *nvmem_layout
+ 		return NULL;
+ 
+ 	/*
++	 * We should return -EPROBE_DEFER only when layout driver is expected to
++	 * become available later. Otherwise NVMEM will never probe successfully
++	 * for unsupported layouts. There is no known solution for that right
++	 * now.
++	 *
++	 * This problem also affects "fixed-layout". It's supported in NVMEM
++	 * core code so there never will be layout for it. We shouldn't return
++	 * -EPROBE_DEFER in such case. Add a quick workaround for that.
++	 */
++	if (of_device_is_compatible(layout_np, "fixed-layout"))
++		return NULL;
++
++	/*
+ 	 * In case the nvmem device was built-in while the layout was built as a
+ 	 * module, we shall manually request the layout driver loading otherwise
+ 	 * we'll never have any match.

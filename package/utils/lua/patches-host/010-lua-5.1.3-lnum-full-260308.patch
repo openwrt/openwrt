@@ -1600,18 +1600,18 @@
 + * (and doing them).
 + */
 +int try_addint( lua_Integer *r, lua_Integer ib, lua_Integer ic ) {
-+  lua_Integer v= ib+ic; /* may overflow */
-+  if (ib>0 && ic>0)      { if (v < 0) return 0; /*overflow, use floats*/ }
-+  else if (ib<0 && ic<0) { if (v >= 0) return 0; }
-+  *r= v;
++  /* Signed int overflow is undefined behavior, so catch it without causing it. */
++  if (ic>0)  { if (ib > LUA_INTEGER_MAX - ic) return 0; /*overflow, use floats*/ }
++  else       { if (ib < LUA_INTEGER_MIN - ic) return 0; }
++  *r = ib + ic;
 +  return 1;
 +}
 +
 +int try_subint( lua_Integer *r, lua_Integer ib, lua_Integer ic ) {
-+  lua_Integer v= ib-ic; /* may overflow */
-+  if (ib>=0 && ic<0)     { if (v < 0) return 0; /*overflow, use floats*/ }
-+  else if (ib<0 && ic>0) { if (v >= 0) return 0; }
-+  *r= v;
++  /* Signed int overflow is undefined behavior, so catch it without causing it. */
++  if (ic>0)  { if (ib < LUA_INTEGER_MIN + ic) return 0; /*overflow, use floats*/ }
++  else       { if (ib > LUA_INTEGER_MAX + ic) return 0; }
++  *r = ib - ic;
 +  return 1;
 +}
 +

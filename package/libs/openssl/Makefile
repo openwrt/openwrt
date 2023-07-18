@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=3.0.8
-PKG_RELEASE:=10
+PKG_VERSION:=3.0.9
+PKG_RELEASE:=2
 PKG_BUILD_FLAGS:=no-mips16 gc-sections
 
 PKG_BUILD_PARALLEL:=1
@@ -24,7 +24,7 @@ PKG_SOURCE_URL:= \
 	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/ \
 	ftp://ftp.pca.dfn.de/pub/tools/net/openssl/source/old/$(PKG_BASE)/
 
-PKG_HASH:=6c13d2bf38fdf31eac3ce2a347073673f5d63263398f1f69d0df4a41253e4b3e
+PKG_HASH:=eb1ab04781474360f77c318ab89d8c5a03abc38e63d65a603cabbf1b00a1dc90
 
 PKG_LICENSE:=Apache-2.0
 PKG_LICENSE_FILES:=LICENSE
@@ -366,6 +366,7 @@ define Build/Configure
 			--libdir=lib \
 			--openssldir=/etc/ssl \
 			--cross-compile-prefix="$(TARGET_CROSS)" \
+			$(TARGET_CFLAGS) \
 			$(TARGET_CPPFLAGS) \
 			$(TARGET_LDFLAGS) \
 			$(OPENSSL_OPTIONS) && \

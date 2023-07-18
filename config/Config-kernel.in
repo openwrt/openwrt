@@ -1107,6 +1107,12 @@ config KERNEL_NET_L3_MASTER_DEV
 	  This module provides glue between core networking code and device
 	  drivers to support L3 master devices like VRF.
 
+config KERNEL_XDP_SOCKETS
+	bool "XDP sockets support"
+	help
+	  XDP sockets allows a channel between XDP programs and
+	  userspace applications.
+
 config KERNEL_WIRELESS_EXT
 	def_bool n
 
@@ -1343,3 +1349,19 @@ config KERNEL_UBIFS_FS_SECURITY
 
 config KERNEL_JFFS2_FS_SECURITY
 	bool "JFFS2 Security Labels"
+
+config KERNEL_WERROR
+	bool "Compile the kernel with warnings as errors"
+	default BUILDBOT
+	default y if GCC_USE_VERSION_12
+	help
+	  A kernel build should not cause any compiler warnings, and this
+	  enables the '-Werror' (for C) and '-Dwarnings' (for Rust) flags
+	  to enforce that rule by default. Certain warnings from other tools
+	  such as the linker may be upgraded to errors with this option as
+	  well.
+
+	  However, if you have a new (or very old) compiler or linker with odd
+	  and unusual warnings, or you have some architecture with problems,
+	  you may need to disable this config option in order to
+	  successfully build the kernel.

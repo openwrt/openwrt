@@ -10,7 +10,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
 
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -206,7 +206,7 @@ static int driver_is_old       = 0;
+@@ -235,7 +235,7 @@ static int driver_is_old       = 0;
  static int restore_term        = 0;	/* 1 => we've munged the terminal */
  static struct termios inittermios;	/* Initial TTY termios */
  
@@ -19,7 +19,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  static char loop_name[20];
  static unsigned char inbuf[512]; /* buffer for chars read from loopback */
-@@ -225,8 +225,8 @@ static int	looped;			/* 1 if using loop
+@@ -254,8 +254,8 @@ static int	looped;			/* 1 if using loop
  static int	link_mtu;		/* mtu for the link (not bundle) */
  
  static struct utsname utsname;	/* for the kernel version */
@@ -29,7 +29,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  #define MAX_IFS		100
  
-@@ -1455,11 +1455,12 @@ int ccp_fatal_error (int unit)
+@@ -1933,11 +1933,12 @@ int ccp_fatal_error (int unit)
   *
   * path_to_procfs - find the path to the proc file system mount point
   */
@@ -44,7 +44,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      struct mntent *mntent;
      FILE *fp;
  
-@@ -1481,6 +1482,7 @@ static char *path_to_procfs(const char *
+@@ -1959,6 +1960,7 @@ static char *path_to_procfs(const char *
  	    fclose (fp);
  	}
      }
@@ -52,7 +52,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
      strlcpy(proc_path + proc_path_len, tail,
  	    sizeof(proc_path) - proc_path_len);
-@@ -2365,15 +2367,19 @@ int ppp_available(void)
+@@ -2843,15 +2845,19 @@ int ppp_available(void)
      int    my_version, my_modification, my_patch;
      int osmaj, osmin, ospatch;
  
@@ -72,7 +72,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  	/* XXX should get from driver */
  	driver_version = 2;
-@@ -2433,6 +2439,7 @@ int ppp_available(void)
+@@ -2911,6 +2917,7 @@ int ppp_available(void)
  
      if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
  	ok = 0;
@@ -80,7 +80,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  
  /*
   *  This is the PPP device. Validate the version of the driver at this
-@@ -3106,6 +3113,7 @@ get_pty(int *master_fdp, int *slave_fdp,
+@@ -3592,6 +3599,7 @@ get_pty(int *master_fdp, int *slave_fdp,
      }
  #endif /* TIOCGPTN */
  
@@ -88,7 +88,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      if (sfd < 0) {
  	/* the old way - scan through the pty name space */
  	for (i = 0; i < 64; ++i) {
-@@ -3124,6 +3132,7 @@ get_pty(int *master_fdp, int *slave_fdp,
+@@ -3610,6 +3618,7 @@ get_pty(int *master_fdp, int *slave_fdp,
  	    }
  	}
      }

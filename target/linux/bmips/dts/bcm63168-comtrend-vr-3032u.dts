@@ -11,10 +11,6 @@
 		led-failsafe = &led_power_green;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
-
-		led-dsl = &led_dsl_green;
-		led-internet = &led_internet_green;
-		led-usb = &led_usb_green;
 	};
 
 	keys {
@@ -78,13 +74,13 @@
 		label = "red:internet";
 	};
 
-	led_dsl_green: led@3 {
+	led@3 {
 		reg = <3>;
 		active-low;
 		label = "green:dsl";
 	};
 
-	led_usb_green: led@4 {
+	led@4 {
 		reg = <4>;
 		active-low;
 		label = "green:usb";
@@ -96,7 +92,7 @@
 		label = "green:wps";
 	};
 
-	led_internet_green: led@8 {
+	led@8 {
 		reg = <8>;
 		active-low;
 		label = "green:internet";

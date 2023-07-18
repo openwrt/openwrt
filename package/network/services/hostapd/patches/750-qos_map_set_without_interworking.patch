@@ -32,7 +32,7 @@
  		os_free(bss->dump_msk_file);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1499,6 +1499,7 @@ static int hostapd_setup_bss(struct host
+@@ -1534,6 +1534,7 @@ static int hostapd_setup_bss(struct host
  		wpa_printf(MSG_ERROR, "GAS server initialization failed");
  		return -1;
  	}
@@ -40,7 +40,7 @@
  
  	if (conf->qos_map_set_len &&
  	    hostapd_drv_set_qos_map(hapd, conf->qos_map_set,
-@@ -1506,7 +1507,6 @@ static int hostapd_setup_bss(struct host
+@@ -1541,7 +1542,6 @@ static int hostapd_setup_bss(struct host
  		wpa_printf(MSG_ERROR, "Failed to initialize QoS Map");
  		return -1;
  	}
@@ -50,7 +50,7 @@
  		wpa_printf(MSG_ERROR, "BSS Load initialization failed");
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -2672,8 +2672,6 @@ void wnm_bss_keep_alive_deinit(struct wp
+@@ -2683,8 +2683,6 @@ void wnm_bss_keep_alive_deinit(struct wp
  }
  
  
@@ -59,7 +59,7 @@
  static int wpas_qos_map_set(struct wpa_supplicant *wpa_s, const u8 *qos_map,
  			    size_t len)
  {
-@@ -2706,8 +2704,6 @@ static void interworking_process_assoc_r
+@@ -2717,8 +2715,6 @@ static void interworking_process_assoc_r
  	}
  }
  
@@ -68,7 +68,7 @@
  
  static void wpa_supplicant_set_4addr_mode(struct wpa_supplicant *wpa_s)
  {
-@@ -3087,10 +3083,8 @@ static int wpa_supplicant_event_associnf
+@@ -3098,10 +3094,8 @@ static int wpa_supplicant_event_associnf
  		wnm_process_assoc_resp(wpa_s, data->assoc_info.resp_ies,
  				       data->assoc_info.resp_ies_len);
  #endif /* CONFIG_WNM */

@@ -88,11 +88,6 @@ if [ -n "${COMPATIBLE}" ]; then
 	COMPATIBLE_PROP="compatible = \"${COMPATIBLE}\";"
 fi
 
-[ "$DTOVERLAY" ] && {
-	dtbsize=$(wc -c "$DTB" | awk '{print $1}')
-	DTADDR=$(printf "0x%08x" $(($LOAD_ADDR - $dtbsize)) )
-}
-
 [ "$FDTADDR" ] && {
 	DTADDR="$FDTADDR"
 }
@@ -108,10 +103,10 @@ if [ -n "${DTB}" ]; then
 			${DTADDR:+load = <${DTADDR}>;}
 			arch = \"${ARCH}\";
 			compression = \"none\";
-			hash@1 {
+			hash${REFERENCE_CHAR}1 {
 				algo = \"crc32\";
 			};
-			hash@2 {
+			hash${REFERENCE_CHAR}2 {
 				algo = \"${HASH}\";
 			};
 		};
@@ -128,10 +123,10 @@ if [ -n "${INITRD}" ]; then
 			type = \"ramdisk\";
 			arch = \"${ARCH}\";
 			os = \"linux\";
-			hash@1 {
+			hash${REFERENCE_CHAR}1 {
 				algo = \"crc32\";
 			};
-			hash@2 {
+			hash${REFERENCE_CHAR}2 {
 				algo = \"${HASH}\";
 			};
 		};
@@ -150,10 +145,10 @@ if [ -n "${ROOTFS}" ]; then
 			type = \"filesystem\";
 			arch = \"${ARCH}\";
 			compression = \"none\";
-			hash@1 {
+			hash${REFERENCE_CHAR}1 {
 				algo = \"crc32\";
 			};
-			hash@2 {
+			hash${REFERENCE_CHAR}2 {
 				algo = \"${HASH}\";
 			};
 		};
@@ -170,7 +165,6 @@ OVCONFIGS=""
 	ovnode="fdt-$ovname"
 	ovsize=$(wc -c "$overlay_blob" | awk '{print $1}')
 	echo "$ovname ($overlay_blob) : $ovsize" >&2
-	DTADDR=$(printf "0x%08x" $(($DTADDR - $ovsize)))
 	FDTOVERLAY_NODE="$FDTOVERLAY_NODE
 
 		$ovnode {
@@ -179,12 +173,11 @@ OVCONFIGS=""
 			data = /incbin/(\"${overlay_blob}\");
 			type = \"flat_dt\";
 			arch = \"${ARCH}\";
-			load = <${DTADDR}>;
 			compression = \"none\";
-			hash@1 {
+			hash${REFERENCE_CHAR}1 {
 				algo = \"crc32\";
 			};
-			hash@2 {
+			hash${REFERENCE_CHAR}2 {
 				algo = \"${HASH}\";
 			};
 		};
@@ -216,10 +209,10 @@ DATA="/dts-v1/;
 			compression = \"${COMPRESS}\";
 			load = <${LOAD_ADDR}>;
 			entry = <${ENTRY_ADDR}>;
-			hash@1 {
+			hash${REFERENCE_CHAR}1 {
 				algo = \"crc32\";
 			};
-			hash@2 {
+			hash${REFERENCE_CHAR}2 {
 				algo = \"$HASH\";
 			};
 		};

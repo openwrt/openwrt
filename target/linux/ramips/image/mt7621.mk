@@ -398,6 +398,23 @@ define Device/beeline_smartbox-giga
 endef
 TARGET_DEVICES += beeline_smartbox-giga
 
+define Device/beeline_smartbox-pro
+  $(Device/sercomm_s1500)
+  DEVICE_VENDOR := Beeline
+  DEVICE_MODEL := SmartBox PRO
+  DEVICE_ALT0_VENDOR := Sercomm
+  DEVICE_ALT0_MODEL := S1500 AWI
+  IMAGE_SIZE := 34816k
+  IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
+	sercomm-reset-slot1-chksum | append-ubi | check-size | \
+	sercomm-factory-cqr | sercomm-append-tail | sercomm-mkhash
+  SERCOMM_HWID := AWI
+  SERCOMM_HWVER := 10000
+  SERCOMM_ROOTFS2_OFFSET := 0x3d00000
+  SERCOMM_SWVER := 2020
+endef
+TARGET_DEVICES += beeline_smartbox-pro
+
 define Device/beeline_smartbox-turbo
   $(Device/sercomm_dxx)
   IMAGE_SIZE := 32768k
@@ -409,6 +426,18 @@ define Device/beeline_smartbox-turbo
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
 endef
 TARGET_DEVICES += beeline_smartbox-turbo
+
+define Device/beeline_smartbox-turbo-plus
+  $(Device/sercomm_cxx)
+  IMAGE_SIZE := 32768k
+  SERCOMM_HWID := CQR
+  SERCOMM_HWVER := 10000
+  SERCOMM_SWVER := 2010
+  DEVICE_VENDOR := Beeline
+  DEVICE_MODEL := SmartBox TURBO+
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
+endef
+TARGET_DEVICES += beeline_smartbox-turbo-plus
 
 define Device/belkin_rt1800
   $(Device/nand)
@@ -471,6 +500,20 @@ define Device/bolt_arion
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += bolt_arion
+
+define Device/comfast_cf-e390ax
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := ComFast
+  DEVICE_MODEL := CF-E390AX
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += comfast_cf-e390ax
 
 define Device/cudy_m1800
   $(Device/dsa-migration)
@@ -974,7 +1017,7 @@ define Device/gnubee_gb-pc1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := GnuBee
-  DEVICE_MODEL := Personal Cloud One
+  DEVICE_MODEL := GB-PC1
   DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 \
 	-wpad-basic-mbedtls -uboot-envtools
   IMAGE_SIZE := 32448k
@@ -985,7 +1028,7 @@ define Device/gnubee_gb-pc2
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := GnuBee
-  DEVICE_MODEL := Personal Cloud Two
+  DEVICE_MODEL := GB-PC2
   DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 \
 	-wpad-basic-mbedtls -uboot-envtools
   IMAGE_SIZE := 32448k
@@ -1586,6 +1629,32 @@ define Device/mts_wg430223
 endef
 TARGET_DEVICES += mts_wg430223
 
+define Device/netgear_eax12
+  $(Device/nand)
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := EAX12
+  DEVICE_ALT0_VENDOR := NETGEAR
+  DEVICE_ALT0_MODEL := EAX11
+  DEVICE_ALT0_VARIANT := v2
+  DEVICE_ALT1_VENDOR := NETGEAR
+  DEVICE_ALT1_MODEL := EAX15
+  DEVICE_ALT1_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  NETGEAR_ENC_MODEL := EAX12
+  NETGEAR_ENC_REGION := US
+  NETGEAR_ENC_HW_ID_LIST := 1010000004540000_NETGEAR
+  NETGEAR_ENC_MODEL_LIST := EAX12;EAX11v2;EAX15v2
+  IMAGE_SIZE := 57344k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+	append-squashfs4-fakeroot
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | netgear-encrypted-factory
+endef
+TARGET_DEVICES += netgear_eax12
+
 define Device/netgear_ex6150
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -2103,6 +2172,19 @@ define Device/tplink_eap235-wall-v1
 endef
 TARGET_DEVICES += tplink_eap235-wall-v1
 
+define Device/tplink_eap613-v1
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := EAP613
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  TPLINK_BOARD_ID := EAP610-V3
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-to 64k
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  IMAGE_SIZE := 13248k
+endef
+TARGET_DEVICES += tplink_eap613-v1
+
 define Device/tplink_eap615-wall-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
@@ -2415,6 +2497,24 @@ define Device/wevo_w2914ns-v2
 endef
 TARGET_DEVICES += wevo_w2914ns-v2
 
+define Device/wifire_s1500-nbn
+  $(Device/sercomm_s1500)
+  DEVICE_VENDOR := WiFire
+  DEVICE_MODEL := S1500.NBN
+  DEVICE_ALT0_VENDOR := Sercomm
+  DEVICE_ALT0_MODEL := S1500 BUC
+  IMAGE_SIZE := 51200k
+  IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
+	sercomm-reset-slot1-chksum | append-ubi | check-size | \
+	sercomm-factory-cqr | sercomm-fix-buc-pid | sercomm-mkhash | \
+	sercomm-crypto
+  SERCOMM_HWID := BUC
+  SERCOMM_HWVER := 10000
+  SERCOMM_ROOTFS2_OFFSET := 0x4d00000
+  SERCOMM_SWVER := 2015
+endef
+TARGET_DEVICES += wifire_s1500-nbn
+
 define Device/winstars_ws-wn583a6
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -2693,6 +2793,18 @@ define Device/zbtlink_zbt-wg1608-16m
 	-uboot-envtools
 endef
 TARGET_DEVICES += zbtlink_zbt-wg1608-16m
+
+define Device/zbtlink_zbt-wg1608-32m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG1608
+  DEVICE_VARIANT := 32M
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt7615e \
+	kmod-mt7663-firmware-ap kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += zbtlink_zbt-wg1608-32m
 
 define Device/zbtlink_zbt-wg2626
   $(Device/dsa-migration)

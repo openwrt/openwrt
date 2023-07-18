@@ -23,6 +23,7 @@ PKG_LICENSE_FILES:=LICENSE
 PKG_EXTMOD_SUBDIRS:=src
 
 PKG_FIXUP:=autoreconf
+PKG_BUILD_FLAGS:=no-mold
 
 include $(INCLUDE_DIR)/package.mk
 

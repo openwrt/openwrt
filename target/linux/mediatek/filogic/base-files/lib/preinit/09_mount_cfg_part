@@ -1,0 +1,23 @@
+. /lib/functions/system.sh
+
+mount_ubi_part() {
+	local part_name="$1"
+	local mtd_num=$(grep $part_name /proc/mtd | cut -c4)
+	local ubi_num=$(ubiattach -m $mtd_num | \
+		awk -F',' '/UBI device number [0-9]{1,}/{print $1}' | \
+		awk '{print $4}')
+	mkdir /tmp/$part_name
+	mount -r -t ubifs ubi$ubi_num:$part_name /tmp/$part_name
+}
+
+preinit_mount_cfg_part() {
+	case $(board_name) in
+	mercusys,mr90x-v1)
+		mount_ubi_part "tp_data"
+		;;
+	*)
+		;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_mount_cfg_part

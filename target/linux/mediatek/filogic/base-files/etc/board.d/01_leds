@@ -9,6 +9,17 @@ case $board in
 cudy,wr3000-v1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
+mercusys,mr90x-v1)
+	ucidef_set_led_netdev "lan0" "lan0" "green:lan0" "lan0" "link tx rx"
+	ucidef_set_led_netdev "lan1" "lan2" "green:lan1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
+	;;
+netgear,wax220)
+	ucidef_set_led_netdev "eth0" "LAN" "green:lan" "eth0"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan2g" "phy0-ap0"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan5g" "phy1-ap0"
+	;;
 xiaomi,redmi-router-ax6000-stock|\
 xiaomi,redmi-router-ax6000-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "rgb:network" "wan"

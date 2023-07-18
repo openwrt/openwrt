@@ -1372,7 +1372,7 @@ define KernelPackage/mdio-bus-mux
   AUTOLOAD:=$(call AutoLoad,32,mdio-mux)
 endef
 
-define KernelPackage/mdio/description
+define KernelPackage/mdio-bus-mux/description
  Kernel framework for MDIO bus multiplexers.
 endef
 
@@ -1432,6 +1432,22 @@ native Linux tools such as ss.
 endef
 
 $(eval $(call KernelPackage,inet-diag))
+
+
+define KernelPackage/xdp-sockets-diag
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=PF_XDP sockets monitoring interface support for ss utility
+  DEPENDS:=@KERNEL_XDP_SOCKETS
+  KCONFIG:=CONFIG_XDP_SOCKETS_DIAG
+  FILES:=$(LINUX_DIR)/net/xdp/xsk_diag.ko
+  AUTOLOAD:=$(call AutoLoad,31,xsk_diag)
+endef
+
+define KernelPackage/xdp-sockets-diag/description
+ Support for PF_XDP sockets monitoring interface used by the ss tool
+endef
+
+$(eval $(call KernelPackage,xdp-sockets-diag))
 
 
 define KernelPackage/wireguard
@@ -1511,7 +1527,7 @@ $(eval $(call KernelPackage,qrtr-tun))
 define KernelPackage/qrtr-smd
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=SMD IPC Router channels
-  DEPENDS:=+kmod-qrtr @TARGET_ipq807x
+  DEPENDS:=+kmod-qrtr @TARGET_qualcommax
   KCONFIG:=CONFIG_QRTR_SMD
   FILES:= $(LINUX_DIR)/net/qrtr/qrtr-smd.ko
   AUTOLOAD:=$(call AutoProbe,qrtr-smd)
