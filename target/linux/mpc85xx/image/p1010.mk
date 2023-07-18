@@ -14,6 +14,17 @@ define Build/spi-loader-okli
 	mv "$@.new" "$@"
 endef
 
+define Device/adtran_bsap-1930
+  DEVICE_VENDOR := Adtran
+  DEVICE_MODEL := Bluesocket BSAP-1930
+  # Original firmware uses a dedicated DTB-partition.
+  # The bootloader however supports FIT-images.
+  KERNEL = kernel-bin | lzma | fit lzma $(KDIR)/image-$$(DEVICE_DTS).dtb
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += adtran_bsap-1930
+
 define Device/aerohive_br200-wp
   DEVICE_VENDOR := Aerohive
   DEVICE_MODEL := BR200-WP

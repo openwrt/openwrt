@@ -1,0 +1,369 @@
+// SPDX-License-Identifier: GPL-2.0-or-later or MIT
+
+#include <dt-bindings/gpio/gpio.h>
+
+/include/ "fsl/p1010si-pre.dtsi"
+
+/ {
+	model = "Adtran Bluesocket BSAP-1930";
+	compatible = "adtran,bsap-1930";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+		label-mac-device = &enet0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	memory {
+		device_type = "memory";
+		reg = <0x0 0x0 0x0 0x10000000>;
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+
+		wifi1 {
+			gpios = <&spi_gpio 3 GPIO_ACTIVE_HIGH>;
+			label = "green:radio1";
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wifi2 {
+			gpios = <&spi_gpio 2 GPIO_ACTIVE_HIGH>;
+			label = "green:radio2";
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_power_green: power_green {
+			gpios = <&spi_gpio 0 GPIO_ACTIVE_HIGH>;
+			label = "green:power";
+		};
+
+		led_power_red: power_red {
+			gpios = <&spi_gpio 1 GPIO_ACTIVE_HIGH>;
+			label = "red:power";
+		};
+
+		lan1_red {
+			gpios = <&spi_gpio 6 GPIO_ACTIVE_HIGH>;
+			label = "red:lan1";
+		};
+
+		lan1_green {
+			gpios = <&spi_gpio 4 GPIO_ACTIVE_HIGH>;
+			label = "green:lan1";
+		};
+
+		lan2_red {
+			gpios = <&spi_gpio 7 GPIO_ACTIVE_HIGH>;
+			label = "red:lan2";
+		};
+
+		lan2_green {
+			gpios = <&spi_gpio 5 GPIO_ACTIVE_HIGH>;
+			label = "green:lan2";
+		};
+	};
+
+	soc: soc@ffe00000 {
+		ranges = <0x0 0x0 0xffe00000 0x100000>;
+
+		gpio0: gpio-controller@fc00 {
+		};
+
+		usb@22000 {
+			phy_type = "utmi";
+			dr_mode = "host";
+		};
+
+		mdio@24000 {
+			phy0: ethernet-phy@0 {
+				reg = <0x1>;
+			};
+
+			phy2: ethernet-phy@2 {
+				reg = <0x2>;
+			};
+		};
+
+		mdio@25000 {
+			tbi_phy: tbi-phy@11 {
+				reg = <0x11>;
+			};
+		};
+
+		mdio@26000 {
+			status = "disabled";
+		};
+
+		enet0: ethernet@b0000 {
+			phy-handle = <&phy0>;
+			phy-connection-type = "rgmii-id";
+
+			label = "lan1";
+		};
+
+		enet1: ethernet@b1000 {
+			phy-handle = <&phy2>;
+			phy-connection-type = "sgmii";
+
+			tbi-handle = <&tbi_phy>;
+
+			label = "lan2";
+		};
+
+		enet2: ethernet@b2000 {
+			status = "disabled";
+		};
+
+		sdhc@2e000 {
+			status = "disabled";
+		};
+	};
+
+	ifc: ifc@ffe1e000 {
+	};
+
+	pci0: pcie@ffe09000 {
+		reg = <0 0xffe09000 0 0x1000>;
+		ranges = <0x2000000 0x0 0xa0000000 0 0xa0000000 0x0 0x20000000
+			  0x1000000 0x0 0x00000000 0 0xffc10000 0x0 0x10000>;
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xa0000000
+				  0x2000000 0x0 0xa0000000
+				  0x0 0x20000000
+
+				  0x1000000 0x0 0x0
+				  0x1000000 0x0 0x0
+				  0x0 0x100000>;
+
+			wifi@0,0,0 {
+				compatible = "pci168c,0033";
+				reg = <0x0 0 0 0 0>;
+				ieee80211-freq-limit = <2400000 2500000>;
+			};
+		};
+	};
+
+	pci1: pcie@ffe0a000 {
+		reg = <0 0xffe0a000 0 0x1000>;
+		ranges = <0x2000000 0x0 0x80000000 0 0x80000000 0x0 0x20000000
+			  0x1000000 0x0 0x00000000 0 0xffc00000 0x0 0x10000>;
+		pcie@0 {
+			ranges = <0x2000000 0x0 0x80000000
+				  0x2000000 0x0 0x80000000
+				  0x0 0x20000000
+
+				  0x1000000 0x0 0x0
+				  0x1000000 0x0 0x0
+				  0x0 0x100000>;
+			
+			wifi@0,0,0 {
+				compatible = "pci168c,0033";
+				reg = <0x0 0 0 0 0>;
+				ieee80211-freq-limit = <5000000 6000000>;
+			};
+		};
+	};
+};
+
+&soc {
+	led_spi {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sck-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <0>;
+
+		spi_gpio: led_gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <1>;
+			spi-max-frequency = <100000>;
+		};
+	};
+
+	spi0: spi@7000 {
+		flash@0 {
+			compatible = "jedec,spi-nor";
+			reg = <0>;
+			spi-max-frequency = <50000000>;
+
+			/*
+				 * Original partition layout:
+				 * 0x000000000000-0x000000040000 : "Bootloader"
+				 * 0x000000040000-0x000000050000 : "Bootloader environment"
+				 * 0x000000050000-0x000000090000 : "Cert"
+				 * 0x000000090000-0x000000200000 : "Kdump"
+				 * 0x000000200000-0x000000300000 : "/var"
+				 *  - OS-Image 1
+				 * 0x000000300000-0x000000580000 : "Kernel A"
+				 * 0x000000580000-0x000001000000 : "Rootfs A"
+				 *  - OS-Image 2
+				 * 0x000001000000-0x000001280000 : "Kernel B"
+				 * 0x000001280000-0x000001d00000 : "Rootfs B"
+				 * 
+				 * 0x000001d00000-0x000001e00000 : "/home"
+				 * 0x000001e00000-0x000001f80000 : "/log"
+				 * 0x000001f80000-0x000001f90000 : "DTB A"
+				 * 0x000001f90000-0x000001fa0000 : "DTB B"
+				 * 0x000001ff0000-0x000002000000 : "ART"
+				 * 0x000001fe0000-0x000001ff0000 : "SENA0"
+				 */
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					reg = <0x0 0x40000>;
+					label = "Bootloader";
+					read-only;
+				};
+
+				partition@40000 {
+					reg = <0x40000 0x10000>;
+					label = "Bootloader environment";
+					read-only;
+				};
+
+				partition@50000{
+					reg = <0x50000 0x40000>;
+					label = "Cert";
+					read-only;
+				};
+
+				partition@90000{
+					reg = <0x90000 0x170000>;
+					label = "Kdump";
+					read-only;
+				};
+
+				partition@200000 {
+					reg = <0x200000 0x100000>;
+					label = "/var";
+					read-only;
+				};
+
+				partition@300000 {
+					reg = <0x300000 0x280000>;
+					label = "Kernel A";
+					read-only;
+				};
+
+				partition@580000 {
+					reg = <0x580000 0xA80000>;
+					label = "Rootfs A";
+					read-only;
+				};
+
+				partition@1000000 {
+					reg = <0x1000000 0x280000>;
+					label = "Kernel B";
+					read-only;
+				};
+
+				partition@1280000 {
+					reg = <0x1280000 0xA80000>;
+					label = "Rootfs B";
+					read-only;
+				};
+
+				partition@1d00000 {
+					reg = <0x1d00000 0x100000>;
+					label = "/home";
+					read-only;
+				};
+
+				partition@1e00000 {
+					reg = <0x1e00000 0x180000>;
+					label = "/log";
+					read-only;
+				};
+
+				partition@1f80000 {
+					reg = <0x1f80000 0x10000>;
+					label = "DTB A";
+					read-only;
+				};
+
+				partition@1f90000 {
+					reg = <0x1f90000 0x10000>;
+					label = "DTB B";
+					read-only;
+				};
+
+				partition@1ff0000 {
+					reg = <0x1ff0000 0x10000>;
+					label = "ART";
+					read-only;
+				};
+
+				partition@1fe0000 {
+					reg = <0x1fe0000 0x10000>;
+					label = "SENA0";
+					read-only;
+				};
+			};
+		};
+	};
+};
+
+/include/ "fsl/p1010si-post.dtsi"
+
+/ {
+	cpus {
+		PowerPC,P1010@0 {
+			bus-frequency = <399999996>;
+			timebase-frequency = <50000000>;
+			clock-frequency = <799999992>;
+			d-cache-block-size = <0x20>;
+			d-cache-size = <0x8000>;
+			d-cache-sets = <0x80>;
+			i-cache-block-size = <0x20>;
+			i-cache-size = <0x8000>;
+			i-cache-sets = <0x80>;
+		};
+	};
+
+	soc@ffe00000 {
+		bus-frequency = <399999996>;
+
+		serial@4600 {
+			clock-frequency = <399999996>;
+		};
+
+		serial@4500 {
+			clock-frequency = <399999996>;
+		};
+
+		pic@40000 {
+			clock-frequency = <399999996>;
+		};
+	};
+};
+
+/*
+ * For the OpenWrt 22.03 release, since Linux 5.10.138 now uses
+ * aliases to determine PCI domain numbers, drop aliases so as not to
+ * change the sysfs path of our wireless netdevs.
+ */
+
+/ {
+	aliases {
+		/delete-property/ pci0;
+		/delete-property/ pci1;
+	};
+};
+

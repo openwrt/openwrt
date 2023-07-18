@@ -3,6 +3,11 @@
 
 preinit_set_mac_address() {
 	case $(board_name) in
+	adtran,bsap-1930)
+		base_mac=$(mtd_get_mac_binary SENA0 0x18)
+		ip link set dev eth0 address $base_mac
+		ip link set dev eth1 address $(macaddr_add "$base_mac" 0x1f)
+		;;
 	enterasys,ws-ap3715i|\
 	extreme-networks,ws-ap3825i)
 		ip link set dev eth0 address $(mtd_get_mac_ascii cfg1 ethaddr)

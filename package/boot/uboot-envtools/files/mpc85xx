@@ -8,6 +8,9 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+adtran,bsap1930)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x10000"
+	;;
 enterasys,ws-ap3715i)
 	ubootenv_add_uci_config "$(find_mtd_part 'cfg1')" "0x0" "0x10000" "0x10000"
 	ubootenv_add_uci_config "$(find_mtd_part 'cfg2')" "0x0" "0x10000" "0x10000"
