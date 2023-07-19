@@ -38,6 +38,8 @@ mediatek_setup_interfaces()
 	mercusys,mr90x-v1)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
 		;;
+	jcg,q30_pro|\
+	360,t7|\
 	qihoo,360t7)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
@@ -88,6 +90,8 @@ mediatek_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env mac)
 		label_mac=$lan_mac
 		;;
+	jcg,q30_pro|\
+	360,t7|\
 	qihoo,360t7)
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
