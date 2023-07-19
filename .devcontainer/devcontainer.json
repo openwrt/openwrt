@@ -1,0 +1,30 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/alpine
+{
+	"name": "openwrt-build-Alpine",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/base:alpine-3.18",
+	"features": {
+	},
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "uname -a",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"commands": [
+			"sudo apk add argp-standalone asciidoc bash bc binutils bzip2 cdrkit coreutils diffutils elfutils-dev findutils flex musl-fts-dev g++ gawk gcc gettext git grep gzip intltool libxslt linux-headers make musl-libintl musl-obstack-dev ncurses-dev openssl-dev patch perl python3-dev rsync tar unzip util-linux wget zlib-dev",
+			"sudo ln -s /usr/lib/libncurses.so /usr/lib/libtinfo.so",
+			"sudo apk add vim"
+		]
+	}
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}
