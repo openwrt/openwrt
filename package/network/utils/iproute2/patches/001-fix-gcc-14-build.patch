@@ -1,0 +1,22 @@
+--- a/include/json_print.h
++++ b/include/json_print.h
+@@ -8,6 +8,8 @@
+ #ifndef _JSON_PRINT_H_
+ #define _JSON_PRINT_H_
+ 
++#include <sys/time.h>
++
+ #include "json_writer.h"
+ #include "color.h"
+ 
+--- a/rdma/rdma.c
++++ b/rdma/rdma.c
+@@ -4,6 +4,8 @@
+  * Authors:     Leon Romanovsky <leonro@mellanox.com>
+  */
+ 
++#include <libgen.h>
++
+ #include "rdma.h"
+ #include "version.h"
+ #include "color.h"

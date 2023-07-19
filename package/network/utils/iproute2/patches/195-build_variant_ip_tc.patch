@@ -11,7 +11,7 @@
  
 --- a/tc/Makefile
 +++ b/tc/Makefile
-@@ -132,7 +132,7 @@ MODDESTDIR := $(DESTDIR)$(LIBDIR)/tc
+@@ -120,7 +120,7 @@ MODDESTDIR := $(DESTDIR)$(LIBDIR)/tc
  	$(QUIET_CC)$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -shared -fpic $< -o $@
  
  
@@ -19,4 +19,4 @@
 +all: $(findstring tc,$(BUILD_VARIANT)) $(TCSO)
  
  tc: $(TCOBJ) $(LIBNETLINK) libtc.a
- 	$(QUIET_LINK)$(CC) $(filter-out dynsyms.list, $^) $(LDFLAGS) $(LDLIBS) -o $@
+ 	$(QUIET_LINK)$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
