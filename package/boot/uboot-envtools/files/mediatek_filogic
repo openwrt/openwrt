@@ -47,6 +47,7 @@ mercusys,mr90x-v1)
 netgear,wax220)
 	ubootenv_add_uci_config "/dev/mtd5" "0x0" "0x20000" "0x20000"
 	;;
+xiaomi,mi-router-wr30u-stock|\
 xiaomi,redmi-router-ax6000-stock)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x20000"
 	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x10000" "0x20000"
@@ -56,6 +57,7 @@ qihoo,360t7|\
 tplink,tl-xdr4288|\
 tplink,tl-xdr6086|\
 tplink,tl-xdr6088|\
+xiaomi,mi-router-wr30u-ubootmod|\
 xiaomi,redmi-router-ax6000-ubootmod)
 	. /lib/upgrade/nand.sh
 	local envubi=$(nand_find_ubi ubi)
