@@ -13,7 +13,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
 +++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
-@@ -928,9 +928,12 @@ static int bcm2835_pmx_free(struct pinct
+@@ -926,9 +926,12 @@ static int bcm2835_pmx_free(struct pinct
  		unsigned offset)
  {
  	struct bcm2835_pinctrl *pc = pinctrl_dev_get_drvdata(pctldev);
@@ -28,7 +28,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	return 0;
  }
  
-@@ -972,10 +975,7 @@ static void bcm2835_pmx_gpio_disable_fre
+@@ -970,10 +973,7 @@ static void bcm2835_pmx_gpio_disable_fre
  		struct pinctrl_gpio_range *range,
  		unsigned offset)
  {

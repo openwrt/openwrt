@@ -158,14 +158,14 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	pagelistinfo->scatterlist_mapped = 0;
  
 @@ -468,6 +515,7 @@ free_pagelist(struct vchiq_instance *ins
- int vchiq_platform_init(struct platform_device *pdev, struct vchiq_state *state)
+ static int vchiq_platform_init(struct platform_device *pdev, struct vchiq_state *state)
  {
  	struct device *dev = &pdev->dev;
 +	struct device *dma_dev = NULL;
  	struct vchiq_drvdata *drvdata = platform_get_drvdata(pdev);
  	struct rpi_firmware *fw = drvdata->fw;
  	struct vchiq_slot_zero *vchiq_slot_zero;
-@@ -489,6 +537,24 @@ int vchiq_platform_init(struct platform_
+@@ -489,6 +537,24 @@ static int vchiq_platform_init(struct pl
  	g_cache_line_size = drvdata->cache_line_size;
  	g_fragments_size = 2 * g_cache_line_size;
  
@@ -190,7 +190,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	/* Allocate space for the channels in coherent memory */
  	slot_mem_size = PAGE_ALIGN(TOTAL_SLOTS * VCHIQ_SLOT_SIZE);
  	frag_mem_size = PAGE_ALIGN(g_fragments_size * MAX_FRAGMENTS);
-@@ -501,13 +567,14 @@ int vchiq_platform_init(struct platform_
+@@ -501,13 +567,14 @@ static int vchiq_platform_init(struct pl
  	}
  
  	WARN_ON(((unsigned long)slot_mem & (PAGE_SIZE - 1)) != 0);
@@ -206,7 +206,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	vchiq_slot_zero->platform_data[VCHIQ_PLATFORM_FRAGMENTS_COUNT_IDX] =
  		MAX_FRAGMENTS;
  
-@@ -541,7 +608,6 @@ int vchiq_platform_init(struct platform_
+@@ -541,7 +608,6 @@ static int vchiq_platform_init(struct pl
  	}
  
  	/* Send the base address of the slots to VideoCore */
@@ -214,7 +214,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	err = rpi_firmware_property(fw, RPI_FIRMWARE_VCHIQ_INIT,
  				    &channelbase, sizeof(channelbase));
  	if (err || channelbase) {
-@@ -549,6 +615,8 @@ int vchiq_platform_init(struct platform_
+@@ -549,6 +615,8 @@ static int vchiq_platform_init(struct pl
  		return err ? : -ENXIO;
  	}
  

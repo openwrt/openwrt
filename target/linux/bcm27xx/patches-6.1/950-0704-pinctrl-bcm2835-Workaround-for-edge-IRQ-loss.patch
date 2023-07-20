@@ -19,7 +19,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
 +++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
-@@ -422,15 +422,32 @@ static void bcm2835_gpio_irq_handle_bank
+@@ -420,15 +420,32 @@ static void bcm2835_gpio_irq_handle_bank
  	unsigned long events;
  	unsigned offset;
  	unsigned gpio;
@@ -52,7 +52,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  }
  
  static void bcm2835_gpio_irq_handler(struct irq_desc *desc)
-@@ -670,11 +687,7 @@ static int bcm2835_gpio_irq_set_type(str
+@@ -668,11 +685,7 @@ static int bcm2835_gpio_irq_set_type(str
  
  static void bcm2835_gpio_irq_ack(struct irq_data *data)
  {

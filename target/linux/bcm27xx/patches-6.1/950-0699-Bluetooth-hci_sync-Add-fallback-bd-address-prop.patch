@@ -31,11 +31,11 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 @@ -4568,7 +4569,9 @@ static int hci_dev_setup_sync(struct hci
  
  	if (!ret) {
- 		if (test_bit(HCI_QUIRK_USE_BDADDR_PROPERTY, &hdev->quirks)) {
--			if (!bacmp(&hdev->public_addr, BDADDR_ANY))
-+			if (!bacmp(&hdev->public_addr, BDADDR_ANY) &&
-+			    (invalid_bdaddr ||
-+			     !fwnode_property_present(fwnode, "fallback-bd-address")))
- 				hci_dev_get_bd_addr_from_property(hdev);
+ 		if (test_bit(HCI_QUIRK_USE_BDADDR_PROPERTY, &hdev->quirks) &&
+-		    !bacmp(&hdev->public_addr, BDADDR_ANY))
++		    !bacmp(&hdev->public_addr, BDADDR_ANY) &&
++		    (invalid_bdaddr ||
++		     !fwnode_property_present(fwnode, "fallback-bd-address")))
+ 			hci_dev_get_bd_addr_from_property(hdev);
  
- 			if (bacmp(&hdev->public_addr, BDADDR_ANY) &&
+ 		if ((invalid_bdaddr ||

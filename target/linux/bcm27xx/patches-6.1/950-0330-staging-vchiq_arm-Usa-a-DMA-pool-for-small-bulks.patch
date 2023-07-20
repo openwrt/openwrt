@@ -102,7 +102,7 @@ Signed-off-by: Oliver Gjoneski <ogjoneski@gmail.com>
  	pagelistinfo->dma_dir =  (type == PAGELIST_WRITE) ?
  				  DMA_TO_DEVICE : DMA_FROM_DEVICE;
  	pagelistinfo->num_pages = num_pages;
-@@ -616,6 +634,13 @@ int vchiq_platform_init(struct platform_
+@@ -616,6 +634,13 @@ static int vchiq_platform_init(struct pl
  	}
  
  	g_dma_dev = dma_dev ?: dev;
