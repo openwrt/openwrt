@@ -93,7 +93,6 @@ define Host/Prepare
 endef
 
 define Host/Configure
-	env
 	yes '' | $(HOST_KMAKE) oldconfig
 	$(call Host/Configure/all)
 	$(call Host/Configure/post/$(ARCH))
