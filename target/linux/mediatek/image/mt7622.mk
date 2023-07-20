@@ -37,6 +37,25 @@ define Build/bl31-uboot
 	cat $(STAGING_DIR_IMAGE)/mt7622_$1-u-boot.fip >> $@
 endef
 
+# Append header to a D-Link M32 Kernel 1 partition
+define Build/m32-recovery-header-kernel1
+	echo -en "DLK6E6010001\x00\x00\xCF\x33" > "$@.header"
+	echo -en "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x8D\x57\x30\x0B" >> "$@.header"
+# Byte 0-3: Erase Start 0x002C0000
+# Byte 4-7: Erase Length 0x02D00000
+# Byte 8-11: Data offset: 0x002C0000
+# Byte 12-15: Data Length: 0x02D00000
+	echo -en "\x00\x00\x2C\x00\x00\x00\xD0\x02\x00\x00\x2C\x00\x00\x00\xD0\x02" >> "$@.header"
+# Only zeros
+	echo -en "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" >> "$@.header"
+# Note: The last 2 bytes of the following line are the checksum of the header
+# If any data in the header will be changed, the checksum must be re-calculated
+	echo -en "\x42\x48\x02\x00\x00\x00\x08\x00\x00\x00\x00\x00\x60\x6E\x68\x61" >> "$@.header"
+	cat "$@.header" "$@" > "$@.new"
+	mv "$@.new" "$@"
+	rm "$@.header"
+endef
+
 define Build/mt7622-gpt
 	cp $@ $@.tmp 2>/dev/null || true
 	ptgen -g -o $@.tmp -a 1 -l 1024 \
@@ -146,6 +165,25 @@ define Device/buffalo_wsr-3200ax4s
   DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += buffalo_wsr-3200ax4s
+
+define Device/dlink_eagle-pro-ai-m32-a1
+  IMAGE_SIZE := 46080k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := EAGLE PRO AI M32
+  DEVICE_VARIANT := A1
+  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-m32-a1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  KERNEL_SIZE := 8192k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  IMAGES += tftp.bin recovery.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/tftp.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | pad-to $$(IMAGE_SIZE) | m32-recovery-header-kernel1
+endef
+TARGET_DEVICES += dlink_eagle-pro-ai-m32-a1
 
 define Device/elecom_wrc-2533gent
   DEVICE_VENDOR := Elecom
