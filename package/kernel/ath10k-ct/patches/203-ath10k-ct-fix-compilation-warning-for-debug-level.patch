@@ -17,11 +17,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  ath10k-5.17/debug.c | 85 +++++++++++++++++++++++++--------------------
  2 files changed, 96 insertions(+), 74 deletions(-)
 
-diff --git a/ath10k-5.15/debug.c b/ath10k-5.15/debug.c
-index af84012..d0fa911 100644
 --- a/ath10k-5.15/debug.c
 +++ b/ath10k-5.15/debug.c
-@@ -1344,47 +1344,58 @@ static const struct file_operations fops_simulate_fw_crash = {
+@@ -1344,47 +1344,58 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -97,8 +95,6 @@ index af84012..d0fa911 100644
 -	sz = snprintf(wbuf, sizeof(wbuf), "Current debug level: 0x%x\n\n%s",
 -		      ath10k_debug_mask, buf);
 -	wbuf[sizeof(wbuf) - 1] = 0;
--
--	return simple_read_from_buffer(user_buf, count, ppos, wbuf, sz);
 +	int sz, ret;
 +	char *wbuf;
 +
@@ -112,16 +108,15 @@ index af84012..d0fa911 100644
 +
 +	ret = simple_read_from_buffer(user_buf, count, ppos, wbuf, sz);
 +	kfree(wbuf);
-+
+ 
+-	return simple_read_from_buffer(user_buf, count, ppos, wbuf, sz);
 +	return ret;
  }
  
  /* Set logging level.
-diff --git a/ath10k-5.17/debug.c b/ath10k-5.17/debug.c
-index af84012..d0fa911 100644
 --- a/ath10k-5.17/debug.c
 +++ b/ath10k-5.17/debug.c
-@@ -1344,47 +1344,58 @@ static const struct file_operations fops_simulate_fw_crash = {
+@@ -1344,47 +1344,58 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -197,8 +192,6 @@ index af84012..d0fa911 100644
 -	sz = snprintf(wbuf, sizeof(wbuf), "Current debug level: 0x%x\n\n%s",
 -		      ath10k_debug_mask, buf);
 -	wbuf[sizeof(wbuf) - 1] = 0;
--
--	return simple_read_from_buffer(user_buf, count, ppos, wbuf, sz);
 +	int sz, ret;
 +	char *wbuf;
 +
@@ -212,11 +205,9 @@ index af84012..d0fa911 100644
 +
 +	ret = simple_read_from_buffer(user_buf, count, ppos, wbuf, sz);
 +	kfree(wbuf);
-+
+ 
+-	return simple_read_from_buffer(user_buf, count, ppos, wbuf, sz);
 +	return ret;
  }
  
  /* Set logging level.
--- 
-2.39.2
-
