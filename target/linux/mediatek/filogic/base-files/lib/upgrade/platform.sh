@@ -1,6 +1,6 @@
 REQUIRE_IMAGE_METADATA=1
 
-redmi_ax6000_initial_setup()
+xiaomi_initial_setup()
 {
 	# initialize UBI and setup uboot-env if it's running on initramfs
 	[ "$(rootfs_type)" = "tmpfs" ] || return 0
@@ -35,7 +35,15 @@ redmi_ax6000_initial_setup()
 	fw_setenv flag_boot_success 1
 	fw_setenv flag_try_sys1_failed 8
 	fw_setenv flag_try_sys2_failed 8
-	fw_setenv mtdparts "nmbm0:1024k(bl2),256k(Nvram),256k(Bdata),2048k(factory),2048k(fip),256k(crash),256k(crash_log),30720k(ubi),30720k(ubi1),51200k(overlay)"
+
+	local board=$(board_name)
+	case "$board" in
+	xiaomi,mi-router-wr30u-stock)
+		fw_setenv mtdparts "nmbm0:1024k(bl2),256k(Nvram),256k(Bdata),2048k(factory),2048k(fip),256k(crash),256k(crash_log),34816k(ubi),34816k(ubi1),32768k(overlay),12288k(data),256k(KF)"
+	xiaomi,redmi-router-ax6000-stock)
+		fw_setenv mtdparts "nmbm0:1024k(bl2),256k(Nvram),256k(Bdata),2048k(factory),2048k(fip),256k(crash),256k(crash_log),30720k(ubi),30720k(ubi1),51200k(overlay)"
+		;;
+	esac
 }
 
 platform_do_upgrade() {
@@ -84,10 +92,12 @@ platform_do_upgrade() {
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
+	xiaomi,mi-router-wr30u-ubootmod|\
 	xiaomi,redmi-router-ax6000-ubootmod)
 		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
 		;;
+	xiaomi,mi-router-wr30u-stock|\
 	xiaomi,redmi-router-ax6000-stock)
 		CI_KERN_UBIPART=ubi_kernel
 		CI_ROOT_UBIPART=ubi
@@ -140,8 +150,9 @@ platform_pre_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	xiaomi,mi-router-wr30u-stock|\
 	xiaomi,redmi-router-ax6000-stock)
-		redmi_ax6000_initial_setup
+		xiaomi_initial_setup
 		;;
 	esac
 }
