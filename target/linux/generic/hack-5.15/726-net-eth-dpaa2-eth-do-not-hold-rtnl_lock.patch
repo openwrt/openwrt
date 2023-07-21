@@ -52,7 +52,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	dpaa2_eth_dl_traps_unregister(priv);
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
-@@ -351,7 +351,9 @@ int dpaa2_mac_connect(struct dpaa2_mac *
+@@ -357,7 +357,9 @@ int dpaa2_mac_connect(struct dpaa2_mac *
  	if (mac->pcs)
  		phylink_set_pcs(mac->phylink, &mac->pcs->pcs);
  
@@ -62,7 +62,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
  	if (err) {
  		netdev_err(net_dev, "phylink_fwnode_phy_connect() = %d\n", err);
  		goto err_phylink_destroy;
-@@ -372,7 +374,9 @@ void dpaa2_mac_disconnect(struct dpaa2_m
+@@ -378,7 +380,9 @@ void dpaa2_mac_disconnect(struct dpaa2_m
  	if (!mac->phylink)
  		return;
  
