@@ -1669,10 +1669,61 @@ hostapd_bss_update_airtime(struct ubus_context *ctx, struct ubus_object *obj,
 }
 #endif
 
+#ifdef CONFIG_TAXONOMY
+static const struct blobmsg_policy addr_policy[] = {
+	{ "address", BLOBMSG_TYPE_STRING }
+};
+
+static bool
+hostapd_add_b64_data(const char *name, const struct wpabuf *buf)
+{
+	char *str;
+
+	if (!buf)
+		return false;
+
+	str = blobmsg_alloc_string_buffer(&b, name, B64_ENCODE_LEN(wpabuf_len(buf)));
+	b64_encode(wpabuf_head(buf), wpabuf_len(buf), str, B64_ENCODE_LEN(wpabuf_len(buf)));
+	blobmsg_add_string_buffer(&b);
+
+	return true;
+}
+
+static int
+hostapd_bss_get_sta_ies(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+	struct blob_attr *tb;
+	struct sta_info *sta;
+	u8 addr[ETH_ALEN];
+
+	blobmsg_parse(addr_policy, 1, &tb, blobmsg_data(msg), blobmsg_len(msg));
+
+	if (!tb || hwaddr_aton(blobmsg_data(tb), addr))
+		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	sta = ap_get_sta(hapd, addr);
+	if (!sta || (!sta->probe_ie_taxonomy && !sta->assoc_ie_taxonomy))
+		return UBUS_STATUS_NOT_FOUND;
+
+	blob_buf_init(&b, 0);
+	hostapd_add_b64_data("probe_ie", sta->probe_ie_taxonomy);
+	hostapd_add_b64_data("assoc_ie", sta->assoc_ie_taxonomy);
+	ubus_send_reply(ctx, req, b.head);
+
+	return 0;
+}
+#endif
+
 
 static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("reload", hostapd_bss_reload),
 	UBUS_METHOD_NOARG("get_clients", hostapd_bss_get_clients),
+#ifdef CONFIG_TAXONOMY
+	UBUS_METHOD("get_sta_ies", hostapd_bss_get_sta_ies, addr_policy),
+#endif
 	UBUS_METHOD_NOARG("get_status", hostapd_bss_get_status),
 	UBUS_METHOD("del_client", hostapd_bss_del_client, del_policy),
 #ifdef CONFIG_AIRTIME_POLICY
