@@ -77,9 +77,22 @@
 			};
 
 			bdinfo: partition@10000 {
+				compatible = "nvmem-cells";
 				reg = <0x10000 0x10000>;
 				label = "bdinfo";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_bdinfo_18a: macaddr@18a {
+						compatible = "mac-base";
+						reg = <0x18a 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			firmware: partition@20000 {
@@ -124,33 +137,21 @@
 &eth0 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_bdinfo_18a>;
-	nvmem-cell-names = "mac-address-ascii";
-	mac-address-increment = <1>;
+	nvmem-cells = <&macaddr_bdinfo_18a 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_bdinfo_18a>;
-	nvmem-cell-names = "mac-address-ascii";
+	nvmem-cells = <&macaddr_bdinfo_18a 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
 	status = "okay";
 	mtd-cal-data = <&art 0x1000>;
 
-	nvmem-cells = <&macaddr_bdinfo_18a>;
-	nvmem-cell-names = "mac-address-ascii";
-	mac-address-increment = <2>;
-};
-
-&bdinfo {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_bdinfo_18a: macaddr@18a {
-		reg = <0x18a 0x11>;
-	};
+	nvmem-cells = <&macaddr_bdinfo_18a 2>;
+	nvmem-cell-names = "mac-address";
 };
