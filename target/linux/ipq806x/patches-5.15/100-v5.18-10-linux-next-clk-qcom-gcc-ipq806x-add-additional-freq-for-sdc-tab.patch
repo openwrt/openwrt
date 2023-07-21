@@ -19,7 +19,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-11-ansuelsmth@gmail.com
 
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
-@@ -1292,6 +1292,7 @@ static const struct freq_tbl clk_tbl_sdc
+@@ -1294,6 +1294,7 @@ static const struct freq_tbl clk_tbl_sdc
  	{  20210000, P_PLL8,  1, 1,  19 },
  	{  24000000, P_PLL8,  4, 1,   4 },
  	{  48000000, P_PLL8,  4, 1,   2 },
@@ -27,7 +27,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-11-ansuelsmth@gmail.com
  	{  64000000, P_PLL8,  3, 1,   2 },
  	{  96000000, P_PLL8,  4, 0,   0 },
  	{ 192000000, P_PLL8,  2, 0,   0 },
-@@ -1325,7 +1326,7 @@ static struct clk_rcg sdc1_src = {
+@@ -1327,7 +1328,7 @@ static struct clk_rcg sdc1_src = {
  			.name = "sdc1_src",
  			.parent_data = gcc_pxo_pll8,
  			.num_parents = ARRAY_SIZE(gcc_pxo_pll8),

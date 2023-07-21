@@ -17,7 +17,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
 
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
-@@ -373,7 +373,7 @@ static struct clk_rcg gsbi1_uart_src = {
+@@ -374,7 +374,7 @@ static struct clk_rcg gsbi1_uart_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi1_uart_src",
  			.parent_data = gcc_pxo_pll8,
@@ -26,7 +26,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -424,7 +424,7 @@ static struct clk_rcg gsbi2_uart_src = {
+@@ -425,7 +425,7 @@ static struct clk_rcg gsbi2_uart_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi2_uart_src",
  			.parent_data = gcc_pxo_pll8,
@@ -35,7 +35,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -475,7 +475,7 @@ static struct clk_rcg gsbi4_uart_src = {
+@@ -476,7 +476,7 @@ static struct clk_rcg gsbi4_uart_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi4_uart_src",
  			.parent_data = gcc_pxo_pll8,
@@ -44,7 +44,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -526,7 +526,7 @@ static struct clk_rcg gsbi5_uart_src = {
+@@ -527,7 +527,7 @@ static struct clk_rcg gsbi5_uart_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi5_uart_src",
  			.parent_data = gcc_pxo_pll8,
@@ -53,7 +53,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -577,7 +577,7 @@ static struct clk_rcg gsbi6_uart_src = {
+@@ -578,7 +578,7 @@ static struct clk_rcg gsbi6_uart_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi6_uart_src",
  			.parent_data = gcc_pxo_pll8,
@@ -62,7 +62,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -628,7 +628,7 @@ static struct clk_rcg gsbi7_uart_src = {
+@@ -629,7 +629,7 @@ static struct clk_rcg gsbi7_uart_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi7_uart_src",
  			.parent_data = gcc_pxo_pll8,
@@ -71,7 +71,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -692,7 +692,7 @@ static struct clk_rcg gsbi1_qup_src = {
+@@ -693,7 +693,7 @@ static struct clk_rcg gsbi1_qup_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi1_qup_src",
  			.parent_data = gcc_pxo_pll8,
@@ -80,7 +80,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -743,7 +743,7 @@ static struct clk_rcg gsbi2_qup_src = {
+@@ -744,7 +744,7 @@ static struct clk_rcg gsbi2_qup_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi2_qup_src",
  			.parent_data = gcc_pxo_pll8,
@@ -89,16 +89,16 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -794,7 +794,7 @@ static struct clk_rcg gsbi4_qup_src = {
+@@ -795,7 +795,7 @@ static struct clk_rcg gsbi4_qup_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi4_qup_src",
  			.parent_data = gcc_pxo_pll8,
 -			.num_parents = 2,
 +			.num_parents = ARRAY_SIZE(gcc_pxo_pll8),
  			.ops = &clk_rcg_ops,
- 			.flags = CLK_SET_PARENT_GATE,
+ 			.flags = CLK_SET_PARENT_GATE | CLK_IGNORE_UNUSED,
  		},
-@@ -845,7 +845,7 @@ static struct clk_rcg gsbi5_qup_src = {
+@@ -846,7 +846,7 @@ static struct clk_rcg gsbi5_qup_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi5_qup_src",
  			.parent_data = gcc_pxo_pll8,
@@ -107,16 +107,16 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -896,7 +896,7 @@ static struct clk_rcg gsbi6_qup_src = {
+@@ -897,7 +897,7 @@ static struct clk_rcg gsbi6_qup_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi6_qup_src",
  			.parent_data = gcc_pxo_pll8,
 -			.num_parents = 2,
 +			.num_parents = ARRAY_SIZE(gcc_pxo_pll8),
  			.ops = &clk_rcg_ops,
- 			.flags = CLK_SET_PARENT_GATE,
+ 			.flags = CLK_SET_PARENT_GATE | CLK_IGNORE_UNUSED,
  		},
-@@ -947,7 +947,7 @@ static struct clk_rcg gsbi7_qup_src = {
+@@ -948,7 +948,7 @@ static struct clk_rcg gsbi7_qup_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi7_qup_src",
  			.parent_data = gcc_pxo_pll8,
@@ -125,7 +125,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -1099,7 +1099,7 @@ static struct clk_rcg gp0_src = {
+@@ -1101,7 +1101,7 @@ static struct clk_rcg gp0_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gp0_src",
  			.parent_data = gcc_pxo_pll8_cxo,
@@ -134,7 +134,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_PARENT_GATE,
  		},
-@@ -1150,7 +1150,7 @@ static struct clk_rcg gp1_src = {
+@@ -1152,7 +1152,7 @@ static struct clk_rcg gp1_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gp1_src",
  			.parent_data = gcc_pxo_pll8_cxo,
@@ -143,7 +143,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
  		},
-@@ -1201,7 +1201,7 @@ static struct clk_rcg gp2_src = {
+@@ -1203,7 +1203,7 @@ static struct clk_rcg gp2_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gp2_src",
  			.parent_data = gcc_pxo_pll8_cxo,
@@ -152,7 +152,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
  		},
-@@ -1257,7 +1257,7 @@ static struct clk_rcg prng_src = {
+@@ -1259,7 +1259,7 @@ static struct clk_rcg prng_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "prng_src",
  			.parent_data = gcc_pxo_pll8,
@@ -161,7 +161,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  		},
  	},
-@@ -1321,7 +1321,7 @@ static struct clk_rcg sdc1_src = {
+@@ -1323,7 +1323,7 @@ static struct clk_rcg sdc1_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "sdc1_src",
  			.parent_data = gcc_pxo_pll8,
@@ -170,7 +170,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  		},
  	}
-@@ -1371,7 +1371,7 @@ static struct clk_rcg sdc3_src = {
+@@ -1373,7 +1373,7 @@ static struct clk_rcg sdc3_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "sdc3_src",
  			.parent_data = gcc_pxo_pll8,
@@ -179,16 +179,16 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  		},
  	}
-@@ -1456,7 +1456,7 @@ static struct clk_rcg tsif_ref_src = {
+@@ -1458,7 +1458,7 @@ static struct clk_rcg tsif_ref_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "tsif_ref_src",
  			.parent_data = gcc_pxo_pll8,
 -			.num_parents = 2,
 +			.num_parents = ARRAY_SIZE(gcc_pxo_pll8),
  			.ops = &clk_rcg_ops,
+ 			.flags = CLK_SET_RATE_GATE,
  		},
- 	}
-@@ -1620,7 +1620,7 @@ static struct clk_rcg pcie_ref_src = {
+@@ -1623,7 +1623,7 @@ static struct clk_rcg pcie_ref_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "pcie_ref_src",
  			.parent_data = gcc_pxo_pll3,
@@ -197,7 +197,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
  		},
-@@ -1714,7 +1714,7 @@ static struct clk_rcg pcie1_ref_src = {
+@@ -1717,7 +1717,7 @@ static struct clk_rcg pcie1_ref_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "pcie1_ref_src",
  			.parent_data = gcc_pxo_pll3,
@@ -206,7 +206,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
  		},
-@@ -1808,7 +1808,7 @@ static struct clk_rcg pcie2_ref_src = {
+@@ -1811,7 +1811,7 @@ static struct clk_rcg pcie2_ref_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "pcie2_ref_src",
  			.parent_data = gcc_pxo_pll3,
@@ -215,7 +215,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
  		},
-@@ -1907,7 +1907,7 @@ static struct clk_rcg sata_ref_src = {
+@@ -1910,7 +1910,7 @@ static struct clk_rcg sata_ref_src = {
  		.hw.init = &(struct clk_init_data){
  			.name = "sata_ref_src",
  			.parent_data = gcc_pxo_pll3,
@@ -224,7 +224,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
  		},
-@@ -2048,7 +2048,7 @@ static struct clk_rcg usb30_master_clk_s
+@@ -2051,7 +2051,7 @@ static struct clk_rcg usb30_master_clk_s
  		.hw.init = &(struct clk_init_data){
  			.name = "usb30_master_ref_src",
  			.parent_data = gcc_pxo_pll8_pll0,
@@ -233,7 +233,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
  		},
-@@ -2122,7 +2122,7 @@ static struct clk_rcg usb30_utmi_clk = {
+@@ -2125,7 +2125,7 @@ static struct clk_rcg usb30_utmi_clk = {
  		.hw.init = &(struct clk_init_data){
  			.name = "usb30_utmi_clk",
  			.parent_data = gcc_pxo_pll8_pll0,
@@ -242,7 +242,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
  		},
-@@ -2196,7 +2196,7 @@ static struct clk_rcg usb_hs1_xcvr_clk_s
+@@ -2199,7 +2199,7 @@ static struct clk_rcg usb_hs1_xcvr_clk_s
  		.hw.init = &(struct clk_init_data){
  			.name = "usb_hs1_xcvr_src",
  			.parent_data = gcc_pxo_pll8_pll0,
@@ -251,7 +251,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
  		},
-@@ -2262,7 +2262,7 @@ static struct clk_rcg usb_fs1_xcvr_clk_s
+@@ -2265,7 +2265,7 @@ static struct clk_rcg usb_fs1_xcvr_clk_s
  		.hw.init = &(struct clk_init_data){
  			.name = "usb_fs1_xcvr_src",
  			.parent_data = gcc_pxo_pll8_pll0,
@@ -260,7 +260,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_rcg_ops,
  			.flags = CLK_SET_RATE_GATE,
  		},
-@@ -2398,7 +2398,7 @@ static struct clk_dyn_rcg gmac_core1_src
+@@ -2401,7 +2401,7 @@ static struct clk_dyn_rcg gmac_core1_src
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core1_src",
  			.parent_data = gcc_pxo_pll8_pll14_pll18_pll0,
@@ -269,7 +269,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_dyn_rcg_ops,
  		},
  	},
-@@ -2470,7 +2470,7 @@ static struct clk_dyn_rcg gmac_core2_src
+@@ -2473,7 +2473,7 @@ static struct clk_dyn_rcg gmac_core2_src
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core2_src",
  			.parent_data = gcc_pxo_pll8_pll14_pll18_pll0,
@@ -278,7 +278,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_dyn_rcg_ops,
  		},
  	},
-@@ -2542,7 +2542,7 @@ static struct clk_dyn_rcg gmac_core3_src
+@@ -2545,7 +2545,7 @@ static struct clk_dyn_rcg gmac_core3_src
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core3_src",
  			.parent_data = gcc_pxo_pll8_pll14_pll18_pll0,
@@ -287,7 +287,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_dyn_rcg_ops,
  		},
  	},
-@@ -2614,7 +2614,7 @@ static struct clk_dyn_rcg gmac_core4_src
+@@ -2617,7 +2617,7 @@ static struct clk_dyn_rcg gmac_core4_src
  		.hw.init = &(struct clk_init_data){
  			.name = "gmac_core4_src",
  			.parent_data = gcc_pxo_pll8_pll14_pll18_pll0,
@@ -296,7 +296,7 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_dyn_rcg_ops,
  		},
  	},
-@@ -2674,7 +2674,7 @@ static struct clk_dyn_rcg nss_tcm_src =
+@@ -2677,7 +2677,7 @@ static struct clk_dyn_rcg nss_tcm_src =
  		.hw.init = &(struct clk_init_data){
  			.name = "nss_tcm_src",
  			.parent_data = gcc_pxo_pll8_pll14_pll18_pll0,
@@ -305,21 +305,21 @@ Link: https://lore.kernel.org/r/20220226135235.10051-7-ansuelsmth@gmail.com
  			.ops = &clk_dyn_rcg_ops,
  		},
  	},
-@@ -2752,7 +2752,7 @@ static struct clk_dyn_rcg ubi32_core1_sr
+@@ -2755,7 +2755,7 @@ static struct clk_dyn_rcg ubi32_core1_sr
  		.hw.init = &(struct clk_init_data){
  			.name = "ubi32_core1_src_clk",
  			.parent_data = gcc_pxo_pll8_pll14_pll18_pll0,
 -			.num_parents = 5,
 +			.num_parents = ARRAY_SIZE(gcc_pxo_pll8_pll14_pll18_pll0),
  			.ops = &clk_dyn_rcg_ops,
- 			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE,
- 		},
-@@ -2805,7 +2805,7 @@ static struct clk_dyn_rcg ubi32_core2_sr
+ 			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE |
+ 				 CLK_IGNORE_UNUSED,
+@@ -2809,7 +2809,7 @@ static struct clk_dyn_rcg ubi32_core2_sr
  		.hw.init = &(struct clk_init_data){
  			.name = "ubi32_core2_src_clk",
  			.parent_data = gcc_pxo_pll8_pll14_pll18_pll0,
 -			.num_parents = 5,
 +			.num_parents = ARRAY_SIZE(gcc_pxo_pll8_pll14_pll18_pll0),
  			.ops = &clk_dyn_rcg_ops,
- 			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE,
- 		},
+ 			.flags = CLK_SET_RATE_PARENT | CLK_GET_RATE_NOCACHE |
+ 				 CLK_IGNORE_UNUSED,
