@@ -93,15 +93,23 @@
 				read-only;
 
 				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				macaddr_mib0_4b: macaddr@4b {
-					reg = <0x4b 0x11>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_mib0_66: macaddr@66 {
-					reg = <0x66 0x11>;
+					macaddr_mib0_4b: macaddr@4b {
+						compatible = "mac-base";
+						reg = <0x4b 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_mib0_66: macaddr@66 {
+						compatible = "mac-base";
+						reg = <0x66 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
@@ -161,6 +169,6 @@
 
 	ieee80211-freq-limit = <2402000 2482000>;
 
-	nvmem-cells = <&macaddr_mib0_4b>, <&calibration_ath9k>;
-	nvmem-cell-names = "mac-address-ascii", "calibration";
+	nvmem-cells = <&macaddr_mib0_4b 0>, <&calibration_ath9k>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
