@@ -186,7 +186,7 @@ config BUSYBOX_DEFAULT_FEATURE_USE_BSS_TAIL
 	default n
 config BUSYBOX_DEFAULT_FLOAT_DURATION
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_RTMINMAX
 	bool
 	default n
@@ -258,7 +258,7 @@ config BUSYBOX_DEFAULT_FEATURE_EDITING_SAVE_ON_EXIT
 	default n
 config BUSYBOX_DEFAULT_FEATURE_REVERSE_SEARCH
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_TAB_COMPLETION
 	bool
 	default y
@@ -588,7 +588,7 @@ config BUSYBOX_DEFAULT_DF
 	default y
 config BUSYBOX_DEFAULT_FEATURE_DF_FANCY
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_SKIP_ROOTFS
 	bool
 	default n
@@ -792,7 +792,7 @@ config BUSYBOX_DEFAULT_SORT
 	default y
 config BUSYBOX_DEFAULT_FEATURE_SORT_BIG
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_SORT_OPTIMIZE_MEMORY
 	bool
 	default n
@@ -867,7 +867,7 @@ config BUSYBOX_DEFAULT_TR
 	default y
 config BUSYBOX_DEFAULT_FEATURE_TR_CLASSES
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_TR_EQUIV
 	bool
 	default n
@@ -919,7 +919,7 @@ config BUSYBOX_DEFAULT_WC
 	default y
 config BUSYBOX_DEFAULT_FEATURE_WC_LARGE
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_WHO
 	bool
 	default n
@@ -1138,19 +1138,19 @@ config BUSYBOX_DEFAULT_FEATURE_FIND_MTIME
 	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_ATIME
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_CTIME
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_MMIN
 	bool
 	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_AMIN
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_CMIN
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_PERM
 	bool
 	default y
@@ -1159,7 +1159,7 @@ config BUSYBOX_DEFAULT_FEATURE_FIND_TYPE
 	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_EXECUTABLE
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_XDEV
 	bool
 	default y
@@ -1171,16 +1171,16 @@ config BUSYBOX_DEFAULT_FEATURE_FIND_NEWER
 	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_INUM
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_SAMEFILE
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_EXEC
 	bool
 	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_EXEC_PLUS
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_USER
 	bool
 	default y
@@ -1204,13 +1204,13 @@ config BUSYBOX_DEFAULT_FEATURE_FIND_PRUNE
 	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_QUIT
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_DELETE
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_EMPTY
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_FIND_PATH
 	bool
 	default y
@@ -1222,7 +1222,7 @@ config BUSYBOX_DEFAULT_FEATURE_FIND_CONTEXT
 	default n
 config BUSYBOX_DEFAULT_FEATURE_FIND_LINKS
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_GREP
 	bool
 	default y
@@ -1252,13 +1252,13 @@ config BUSYBOX_DEFAULT_FEATURE_XARGS_SUPPORT_ZERO_TERM
 	default y
 config BUSYBOX_DEFAULT_FEATURE_XARGS_SUPPORT_REPL_STR
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_XARGS_SUPPORT_PARALLEL
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_XARGS_SUPPORT_ARGS_FILE
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_BOOTCHARTD
 	bool
 	default n
@@ -1717,7 +1717,7 @@ config BUSYBOX_DEFAULT_FEATURE_MOUNT_FAKE
 	default n
 config BUSYBOX_DEFAULT_FEATURE_MOUNT_VERBOSE
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_MOUNT_HELPERS
 	bool
 	default y
@@ -2011,7 +2011,7 @@ config BUSYBOX_DEFAULT_FEATURE_CROND_CALL_SENDMAIL
 	default n
 config BUSYBOX_DEFAULT_FEATURE_CROND_SPECIAL_TIMES
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_CROND_DIR
 	string
 	default "/etc"
@@ -2113,7 +2113,7 @@ config BUSYBOX_DEFAULT_FEATURE_LESS_MARKS
 	default n
 config BUSYBOX_DEFAULT_FEATURE_LESS_REGEXP
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_LESS_WINCH
 	bool
 	default n
@@ -2843,7 +2843,7 @@ config BUSYBOX_DEFAULT_FEATURE_PS_WIDE
 	default y
 config BUSYBOX_DEFAULT_FEATURE_PS_LONG
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_PS_TIME
 	bool
 	default n
@@ -2879,7 +2879,7 @@ config BUSYBOX_DEFAULT_FEATURE_TOP_CPU_GLOBAL_PERCENTS
 	default y
 config BUSYBOX_DEFAULT_FEATURE_TOP_SMP_CPU
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_TOP_DECIMALS
 	bool
 	default n
@@ -3176,7 +3176,7 @@ config BUSYBOX_DEFAULT_FEATURE_SH_MATH_64
 	default y
 config BUSYBOX_DEFAULT_FEATURE_SH_MATH_BASE
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_SH_EXTRA_QUIET
 	bool
 	default n
@@ -3188,7 +3188,7 @@ config BUSYBOX_DEFAULT_FEATURE_SH_NOFORK
 	default y
 config BUSYBOX_DEFAULT_FEATURE_SH_READ_FRAC
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_SH_HISTFILESIZE
 	bool
 	default n
