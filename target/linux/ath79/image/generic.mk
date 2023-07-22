@@ -1544,6 +1544,16 @@ define Device/fortinet_fap_common
 	gzip-filename $$$$(FACTORY_IMG_NAME)
 endef
 
+define Device/fortinet_fap-220-b
+  $(Device/fortinet_fap_common)
+  SOC := ar7161
+  DEVICE_MODEL := FAP-220-B
+  FACTORY_IMG_NAME := FAP22B-9.99-AP-build999-999999-patch99
+  DEVICE_PACKAGES := -uboot-envtools kmod-usb-ohci kmod-usb2 \
+	kmod-owl-loader
+endef
+TARGET_DEVICES += fortinet_fap-220-b
+
 define Device/fortinet_fap-221-b
   $(Device/fortinet_fap_common)
   SOC := ar9344
