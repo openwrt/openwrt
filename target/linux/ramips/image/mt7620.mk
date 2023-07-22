@@ -1257,6 +1257,15 @@ define Device/trendnet_tew-810dr
 endef
 TARGET_DEVICES += trendnet_tew-810dr
 
+define Device/unbranded_lw-ip301
+  SOC := mt7620n
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Unbranded
+  DEVICE_MODEL := LW-IP301
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2
+endef
+TARGET_DEVICES += unbranded_lw-ip301
+
 define Device/vonets_var11n-300
   SOC := mt7620n
   IMAGE_SIZE := 3776k
