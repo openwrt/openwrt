@@ -1051,13 +1051,13 @@ config BUSYBOX_DEFAULT_CMP
 	default y
 config BUSYBOX_DEFAULT_DIFF
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_DIFF_LONG_OPTIONS
 	bool
 	default n
 config BUSYBOX_DEFAULT_FEATURE_DIFF_DIR
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_ED
 	bool
 	default n
@@ -1513,7 +1513,7 @@ config BUSYBOX_DEFAULT_FEATURE_ACPID_COMPAT
 	default n
 config BUSYBOX_DEFAULT_BLKDISCARD
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_BLKID
 	bool
 	default n
@@ -1630,7 +1630,7 @@ config BUSYBOX_DEFAULT_FEATURE_HWCLOCK_ADJTIME_FHS
 	default n
 config BUSYBOX_DEFAULT_IONICE
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_IPCRM
 	bool
 	default n
@@ -1741,7 +1741,7 @@ config BUSYBOX_DEFAULT_FEATURE_MOUNT_OTHERTAB
 	default n
 config BUSYBOX_DEFAULT_MOUNTPOINT
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_NOLOGIN
 	bool
 	default n
@@ -1750,7 +1750,7 @@ config BUSYBOX_DEFAULT_NOLOGIN_DEPENDENCIES
 	default n
 config BUSYBOX_DEFAULT_NSENTER
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_PIVOT_ROOT
 	bool
 	default y
@@ -1789,16 +1789,16 @@ config BUSYBOX_DEFAULT_LINUX64
 	default n
 config BUSYBOX_DEFAULT_SETPRIV
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_SETPRIV_DUMP
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_SETPRIV_CAPABILITIES
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_SETPRIV_CAPABILITY_NAMES
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_SETSID
 	bool
 	default n
@@ -1840,7 +1840,7 @@ config BUSYBOX_DEFAULT_FEATURE_UMOUNT_ALL
 	default y
 config BUSYBOX_DEFAULT_UNSHARE
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_WALL
 	bool
 	default n
