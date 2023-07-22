@@ -320,11 +320,11 @@
 +	pinctrl-0 = <&eth_pins>;
 +
 +	mediatek,gmac-id = <0>;
-+	phy-mode = "sgmii";
++	phy-mode = "2500base-x";
 +	phy-handle = <&gphy>;
 +
 +	fixed-link {
-+		speed = <1000>;
++		speed = <2500>;
 +		full-duplex;
 +	};
 +
