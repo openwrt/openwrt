@@ -15,6 +15,11 @@
 		label-mac-device = &ethernet;
 	};
 
+	chosen {
+		bootargs = "console=ttyS0,57600";
+		bootargs-override = "console=ttyS0,57600";
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -72,7 +77,6 @@
 			partition@30000 {
 				label = "u-boot-env";
 				reg = <0x30000 0x10000>;
-				read-only;
 			};
 
 			factory: partition@40000 {
@@ -102,13 +106,13 @@
 	status = "okay";
 };
 
-// &ehci {
-// 	status = "okay";
-// };
+&ehci {
+	status = "okay";
+};
 
-// &ohci {
-// 	status = "okay";
-// };
+&ohci {
+	status = "okay";
+};
 
 &ethernet {
 	nvmem-cells = <&macaddr_factory_4>;

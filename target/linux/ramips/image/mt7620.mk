@@ -1262,7 +1262,10 @@ define Device/unbranded_lw-ip301
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Unbranded
   DEVICE_MODEL := LW-IP301
-  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci uboot-envtools
+  KERNEL := kernel-bin | lzma
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  IMAGE/sysupgrade.bin := append-kernel | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
 endef
 TARGET_DEVICES += unbranded_lw-ip301
 

@@ -1,0 +1,903 @@
+diff --git a/arch/mips/dts/Makefile b/arch/mips/dts/Makefile
+index 1b179116c9..1d530a05f6 100644
+--- a/arch/mips/dts/Makefile
++++ b/arch/mips/dts/Makefile
+@@ -18,6 +18,9 @@ dtb-$(CONFIG_BOARD_MT7620_RFB) += mediatek,mt7620-rfb.dtb
+ dtb-$(CONFIG_BOARD_MT7620_MT7530_RFB) += mediatek,mt7620-mt7530-rfb.dtb
+ dtb-$(CONFIG_BOARD_MT7621_RFB) += mediatek,mt7621-rfb.dtb
+ dtb-$(CONFIG_BOARD_MT7621_NAND_RFB) += mediatek,mt7621-nand-rfb.dtb
++dtb-$(CONFIG_BOARD_MT7620_unbranded_lw-ip301) += mt7620_unbranded_lw-ip301.dtb
++dtb-$(CONFIG_BOARD_MT7621_unielec_u7621-06) += mt7621_unielec_u7621-06.dtb
++dtb-$(CONFIG_BOARD_MT7621_yuncore_ax820) += mt7621_yuncore_ax820.dtb
+ dtb-$(CONFIG_BOARD_MT7628_RFB) += mediatek,mt7628-rfb.dtb
+ dtb-$(CONFIG_BOARD_GARDENA_SMART_GATEWAY_MT7688) += gardena-smart-gateway-mt7688.dtb
+ dtb-$(CONFIG_BOARD_LINKIT_SMART_7688) += linkit-smart-7688.dtb
+diff --git a/arch/mips/dts/mt7620_unbranded_lw-ip301.dts b/arch/mips/dts/mt7620_unbranded_lw-ip301.dts
+new file mode 100644
+index 0000000000..0298953a4b
+--- /dev/null
++++ b/arch/mips/dts/mt7620_unbranded_lw-ip301.dts
+@@ -0,0 +1,110 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2020 MediaTek Inc.
++ *
++ * Author: Weijie Gao <weijie.gao@mediatek.com>
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/gpio/gpio.h>
++#include "mt7620.dtsi"
++
++/ {
++	compatible = "unbranded,lw-ip301", "mediatek,mt7620-soc";
++	model = "Unbranded LW-IP301";
++
++	aliases {
++		serial0 = &uartlite;
++	};
++
++	chosen {
++		stdout-path = &uartlite;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		status {
++			label = "green:status";
++			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
++		};
++
++		lan1 {
++			label = "green:lan1";
++			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
++		};
++
++		lan2 {
++			label = "green:lan2";
++			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
++		};
++
++		wan {
++			label = "green:wan";
++			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++};
++
++&uartlite {
++	status = "okay";
++};
++
++&pinctrl {
++	state_default: pin_state {
++	};
++
++	gsw_pins: gsw_pins {
++		mdio {
++			groups = "mdio";
++			function = "mdio";
++		};
++
++		rgmii1 {
++			groups = "rgmii1";
++			function = "rgmii1";
++		};
++
++		rgmii2 {
++			groups = "rgmii2";
++			function = "rgmii2";
++		};
++	};
++};
++
++&spi0 {
++	status = "okay";
++	num-cs = <2>;
++
++	spi-flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "jedec,spi-nor";
++		spi-max-frequency = <25000000>;
++		reg = <0>;
++	};
++};
++
++&eth {
++	status = "okay";
++
++	pinctrl-names = "default";
++	pinctrl-0 = <&gsw_pins>;
++
++	port5 {
++		phy-mode = "rgmii";
++		phy-addr = <5>;
++	};
++};
+diff --git a/arch/mips/dts/mt7621_unielec_u7621-06.dts b/arch/mips/dts/mt7621_unielec_u7621-06.dts
+new file mode 100644
+index 0000000000..49e585de7f
+--- /dev/null
++++ b/arch/mips/dts/mt7621_unielec_u7621-06.dts
+@@ -0,0 +1,99 @@
++// SPDX-License-Identifier: BSD-3-Clause
++
++/dts-v1/;
++
++#include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/gpio/gpio.h>
++#include "mt7621.dtsi"
++
++/ {
++	compatible = "unielec,u7621-06", "mediatek,mt7621-soc";
++	model = "UniElec U7621-06";
++
++	aliases {
++		serial0 = &uart0;
++		spi0 = &spi;
++	};
++
++	chosen {
++		stdout-path = &uart0;
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		status {
++			label = "green:status";
++			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		led4 {
++			label = "green:led4";
++			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
++		};
++
++		led5 {
++			label = "green:led5";
++			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
++		};
++	};
++};
++
++&state_default {
++	gpio {
++		groups = "jtag", "uart2", "wdt";
++		function = "gpio";
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&gpio {
++	status = "okay";
++};
++
++&spi {
++	status = "okay";
++	num-cs = <2>;
++
++	spi-flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "jedec,spi-nor";
++		spi-max-frequency = <25000000>;
++		reg = <0>;
++	};
++};
++
++&eth {
++	status = "okay";
++};
++
++&mmc {
++	cap-sd-highspeed;
++
++	status = "okay";
++};
++
++&ssusb {
++	status = "okay";
++};
++
++&u3phy {
++	status = "okay";
++};
+diff --git a/arch/mips/dts/mt7621_yuncore_ax820.dts b/arch/mips/dts/mt7621_yuncore_ax820.dts
+new file mode 100644
+index 0000000000..d87b9bc08f
+--- /dev/null
++++ b/arch/mips/dts/mt7621_yuncore_ax820.dts
+@@ -0,0 +1,93 @@
++// SPDX-License-Identifier: BSD-3-Clause
++
++/dts-v1/;
++
++#include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/gpio/gpio.h>
++#include "mt7621.dtsi"
++
++/ {
++	compatible = "yuncore,ax820", "mediatek,mt7621-soc";
++	model = "YunCore AX820";
++
++	aliases {
++		serial0 = &uart0;
++		spi0 = &spi;
++	};
++
++	chosen {
++		stdout-path = &uart0;
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		system {
++			label = "system";
++			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		wlan2g {
++			label = "wlan2g";
++			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++
++		wlan5g {
++			label = "wlan5g";
++			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
++			default-state = "off";
++		};
++	};
++};
++
++&state_default {
++	gpio {
++		groups = "jtag", "uart2", "wdt";
++		function = "gpio";
++	};
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&gpio {
++	status = "okay";
++};
++
++&spi {
++	status = "okay";
++	num-cs = <2>;
++
++	spi-flash@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "jedec,spi-nor";
++		spi-max-frequency = <25000000>;
++		reg = <0>;
++	};
++};
++
++&eth {
++	status = "okay";
++};
++
++&ssusb {
++	status = "okay";
++};
++
++&u3phy {
++	status = "okay";
++};
+diff --git a/configs/mt7620_unbranded_lw-ip301_defconfig b/configs/mt7620_unbranded_lw-ip301_defconfig
+new file mode 100644
+index 0000000000..6e6920734f
+--- /dev/null
++++ b/configs/mt7620_unbranded_lw-ip301_defconfig
+@@ -0,0 +1,129 @@
++CONFIG_MIPS=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_SYS_MALLOC_LEN=0x100000
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_NR_DRAM_BANKS=1
++
++CONFIG_CMD_PING=y
++CONFIG_CMD_TFTPSRV=y
++
++CONFIG_BAUDRATE=57600
++
++# ENV
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_USE_DEFAULT_ENV_FILE=y
++CONFIG_DEFAULT_ENV_FILE="unbranded_lw-ip301_nor_env"
++
++# SPI ENV
++CONFIG_ENV_IS_IN_SPI_FLASH=y
++CONFIG_ENV_SIZE=0x10000
++CONFIG_ENV_OFFSET=0x30000
++CONFIG_ENV_SECT_SIZE=0x1000
++
++# LED
++CONFIG_LED=y
++CONFIG_LED_GPIO=y
++CONFIG_CMD_LED=y
++
++# BUTTON
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CMD_BUTTON=y
++
++# AUTOBOOT
++CONFIG_CMD_BOOTMENU=y
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_BOOTDELAY=30
++CONFIG_AUTOBOOT_MENU_SHOW=y
++CONFIG_HUSH_PARSER=y
++CONFIG_CMD_ASKENV=y
++
++# LOGGING
++CONFIG_LOGLEVEL=7
++
++# FDT
++CONFIG_OF_LIBFDT_OVERLAY=y
++
++# DHCP
++CONFIG_CMD_DHCP=y
++
++# NETCONSOLE
++CONFIG_NETCONSOLE=y
++
++CONFIG_DEFAULT_DEVICE_TREE="mt7620_unbranded_lw-ip301"
++CONFIG_SPL_SERIAL=y
++CONFIG_SPL_SYS_MALLOC_F_LEN=0x40000
++CONFIG_SPL=y
++CONFIG_DEBUG_UART_BASE=0xb0000c00
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_SYS_LOAD_ADDR=0x80010000
++CONFIG_ARCH_MTMIPS=y
++CONFIG_SYS_MIPS_TIMER_FREQ=290000000
++CONFIG_MIPS_CACHE_SETUP=y
++CONFIG_MIPS_CACHE_DISABLE=y
++CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
++CONFIG_MIPS_BOOT_FDT=y
++CONFIG_DEBUG_UART=y
++CONFIG_FIT=y
++# CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
++CONFIG_SYS_MALLOC_BOOTPARAMS=y
++CONFIG_SPL_MAX_SIZE=0x10000
++CONFIG_SPL_BSS_START_ADDR=0x80010000
++CONFIG_SPL_BSS_MAX_SIZE=0x10000
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_SPL_NOR_SUPPORT=y
++CONFIG_SYS_BOOTM_LEN=0x1000000
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++# CONFIG_CMD_CRC32 is not set
++# CONFIG_CMD_DM is not set
++CONFIG_CMD_GPIO=y
++# CONFIG_CMD_LOADS is not set
++# CONFIG_CMD_MMC=y
++CONFIG_CMD_SPI=y
++# CONFIG_CMD_USB=y
++# CONFIG_CMD_NFS is not set
++CONFIG_CMD_MII=y
++# CONFIG_CMD_MDIO is not set
++# CONFIG_CMD_FAT=y
++# CONFIG_CMD_FS_GENERIC=y
++# CONFIG_SPL_DOS_PARTITION is not set
++# CONFIG_ISO_PARTITION is not set
++# CONFIG_EFI_PARTITION=y
++# CONFIG_SPL_EFI_PARTITION is not set
++CONFIG_OF_SPL_REMOVE_PROPS="pinctrl-0 pinctrl-names clocks clock-names interrupt-parent interrupts resets reset-names"
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_SPL_DM=y
++# CONFIG_SIMPLE_BUS is not set
++# CONFIG_SPL_SIMPLE_BUS is not set
++# CONFIG_SPL_BLK is not set
++CONFIG_GPIO_HOG=y
++# CONFIG_INPUT is not set
++# CONFIG_MMC=y
++# CONFIG_MMC_QUIRKS is not set
++# CONFIG_MMC_HW_PARTITIONING is not set
++# CONFIG_MMC_MTK=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_MT7620_ETH=y
++CONFIG_PHY=y
++# CONFIG_MT7620_USB_PHY=y
++CONFIG_SPECIFY_CONSOLE_INDEX=y
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_SPI=y
++CONFIG_MT7620_SPI=y
++# CONFIG_USB=y
++# CONFIG_USB_EHCI_HCD=y
++# CONFIG_USB_EHCI_GENERIC=y
++CONFIG_LZMA=y
++CONFIG_SPL_LZMA=y
+diff --git a/configs/mt7621_unielec_u7621-06_defconfig b/configs/mt7621_unielec_u7621-06_defconfig
+new file mode 100644
+index 0000000000..608891983c
+--- /dev/null
++++ b/configs/mt7621_unielec_u7621-06_defconfig
+@@ -0,0 +1,157 @@
++CONFIG_MIPS=y
++CONFIG_BOARD_MT7621_unielec_u7621-06=y
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_SYS_MALLOC_LEN=0x100000
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_NR_DRAM_BANKS=1
++
++CONFIG_CMD_GPT=y
++CONFIG_CMD_GPT_RENAME=y
++CONFIG_CMD_LSBLK=y
++CONFIG_CMD_READ=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++
++# ENV
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_USE_DEFAULT_ENV_FILE=y
++CONFIG_DEFAULT_ENV_FILE="unielec_u7621-06_sdmmc_env"
++
++# # SPI ENV
++# CONFIG_ENV_IS_IN_SPI_FLASH=y
++# CONFIG_ENV_SIZE=0x10000
++# CONFIG_ENV_OFFSET=0x30000
++# CONFIG_ENV_SECT_SIZE=0x1000
++
++# MMC ENV
++CONFIG_ENV_IS_IN_MMC=y
++CONFIG_ENV_OFFSET=0x100000
++CONFIG_ENV_OFFSET_REDUND=0x180000
++CONFIG_ENV_SIZE=0x80000
++
++# USB
++CONFIG_USB=y
++CONFIG_USB_HOST=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_XHCI_MTK=y
++CONFIG_USB_STORAGE=y
++CONFIG_CMD_USB=y
++CONFIG_DM_USB=y
++
++# LED
++CONFIG_LED=y
++CONFIG_LED_GPIO=y
++CONFIG_CMD_LED=y
++
++# BUTTON
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CMD_BUTTON=y
++
++# AUTOBOOT
++CONFIG_CMD_BOOTMENU=y
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_BOOTDELAY=30
++CONFIG_AUTOBOOT_MENU_SHOW=y
++CONFIG_HUSH_PARSER=y
++CONFIG_CMD_ASKENV=y
++
++# LOGGING
++CONFIG_LOGLEVEL=7
++
++# MMC
++CONFIG_MMC=y
++CONFIG_MMC_DEFAULT_DEV=0
++CONFIG_MMC_HS200_SUPPORT=y
++CONFIG_MMC_MTK=y
++CONFIG_MMC_SUPPORTS_TUNING=y
++CONFIG_SUPPORT_EMMC_BOOT=y
++CONFIG_DM_MMC=y
++CONFIG_CMD_MMC=y
++# CONFIG_MMC_HW_PARTITIONING is not set
++
++# FDT
++CONFIG_OF_LIBFDT_OVERLAY=y
++
++# DHCP
++CONFIG_CMD_DHCP=y
++
++CONFIG_DEFAULT_DEVICE_TREE="mt7621_unielec_u7621-06"
++CONFIG_SPL_SERIAL=y
++CONFIG_TPL_SYS_MALLOC_F_LEN=0x1000
++CONFIG_SPL_SYS_MALLOC_F_LEN=0x40000
++CONFIG_SPL=y
++CONFIG_DEBUG_UART_BASE=0xbe000c00
++CONFIG_DEBUG_UART_CLOCK=50000000
++CONFIG_SYS_LOAD_ADDR=0x82000000
++CONFIG_ARCH_MTMIPS=y
++CONFIG_SOC_MT7621=y
++CONFIG_SYS_MIPS_TIMER_FREQ=440000000
++# CONFIG_MIPS_CACHE_SETUP is not set
++# CONFIG_MIPS_CACHE_DISABLE is not set
++CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
++CONFIG_MIPS_BOOT_FDT=y
++CONFIG_DEBUG_UART=y
++CONFIG_FIT=y
++# CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
++CONFIG_SYS_CONSOLE_INFO_QUIET=y
++CONFIG_SPL_MAX_SIZE=0x30000
++CONFIG_SPL_BSS_START_ADDR=0x80140000
++CONFIG_SPL_BSS_MAX_SIZE=0x80000
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_SPL_NOR_SUPPORT=y
++CONFIG_TPL=y
++# CONFIG_TPL_FRAMEWORK is not set
++# CONFIG_BOOTM_NETBSD is not set
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++CONFIG_SYS_BOOTM_LEN=0x2000000
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++# CONFIG_CMD_CRC32 is not set
++# CONFIG_CMD_DM is not set
++CONFIG_CMD_GPIO=y
++# CONFIG_CMD_LOADS is not set
++CONFIG_CMD_PART=y
++# CONFIG_CMD_PINMUX is not set
++CONFIG_CMD_SPI=y
++# CONFIG_CMD_NFS is not set
++CONFIG_DOS_PARTITION=y
++# CONFIG_SPL_DOS_PARTITION is not set
++# CONFIG_ISO_PARTITION is not set
++CONFIG_EFI_PARTITION=y
++# CONFIG_SPL_EFI_PARTITION is not set
++CONFIG_PARTITION_TYPE_GUID=y
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_NET_RANDOM_ETHADDR=y
++# CONFIG_I2C is not set
++# CONFIG_INPUT is not set
++CONFIG_SF_DEFAULT_SPEED=20000000
++CONFIG_SPI_FLASH_BAR=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_XTX=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PHY=y
++CONFIG_PHY_MTK_TPHY=y
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_SPI=y
++CONFIG_MT7621_SPI=y
++CONFIG_SYSRESET=y
++CONFIG_SYSRESET_RESETCTL=y
++CONFIG_WDT=y
++CONFIG_WDT_MT7621=y
++# CONFIG_BINMAN_FDT is not set
++CONFIG_LZMA=y
++# CONFIG_GZIP is not set
++CONFIG_SPL_LZMA=y
+diff --git a/configs/mt7621_yuncore_ax820_defconfig b/configs/mt7621_yuncore_ax820_defconfig
+new file mode 100644
+index 0000000000..a96529192f
+--- /dev/null
++++ b/configs/mt7621_yuncore_ax820_defconfig
+@@ -0,0 +1,142 @@
++CONFIG_MIPS=y
++CONFIG_BOARD_MT7621_yuncore_ax820=y
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_SYS_MALLOC_LEN=0x100000
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_NR_DRAM_BANKS=1
++
++CONFIG_CMD_PING=y
++
++# ENV
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_USE_DEFAULT_ENV_FILE=y
++CONFIG_DEFAULT_ENV_FILE="yuncore_ax820_nor_env"
++
++# SPI ENV
++CONFIG_ENV_IS_IN_SPI_FLASH=y
++CONFIG_ENV_SIZE=0x10000
++CONFIG_ENV_OFFSET=0x30000
++CONFIG_ENV_SECT_SIZE=0x1000
++
++# # USB
++# CONFIG_USB=y
++# CONFIG_USB_HOST=y
++# CONFIG_USB_XHCI_HCD=y
++# CONFIG_USB_XHCI_MTK=y
++# CONFIG_USB_STORAGE=y
++# CONFIG_CMD_USB=y
++# CONFIG_DM_USB=y
++
++# # FS
++# CONFIG_CMD_GPT=y
++# CONFIG_CMD_GPT_RENAME=y
++# CONFIG_CMD_LSBLK=y
++# CONFIG_CMD_READ=y
++# CONFIG_CMD_FAT=y
++# CONFIG_CMD_FS_GENERIC=y
++# CONFIG_CMD_PART=y
++# CONFIG_DOS_PARTITION=y
++# CONFIG_EFI_PARTITION=y
++# CONFIG_PARTITION_TYPE_GUID=y
++
++# LED
++CONFIG_LED=y
++CONFIG_LED_GPIO=y
++CONFIG_CMD_LED=y
++
++# BUTTON
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CMD_BUTTON=y
++
++# AUTOBOOT
++CONFIG_CMD_BOOTMENU=y
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_BOOTDELAY=30
++CONFIG_AUTOBOOT_MENU_SHOW=y
++CONFIG_HUSH_PARSER=y
++CONFIG_CMD_ASKENV=y
++
++# LOGGING
++CONFIG_LOGLEVEL=7
++
++# FDT
++CONFIG_OF_LIBFDT_OVERLAY=y
++
++# DHCP
++CONFIG_CMD_DHCP=y
++
++CONFIG_DEFAULT_DEVICE_TREE="mt7621_yuncore_ax820"
++CONFIG_SPL_SERIAL=y
++CONFIG_TPL_SYS_MALLOC_F_LEN=0x1000
++CONFIG_SPL_SYS_MALLOC_F_LEN=0x40000
++CONFIG_SPL=y
++CONFIG_DEBUG_UART_BASE=0xbe000c00
++CONFIG_DEBUG_UART_CLOCK=50000000
++CONFIG_SYS_LOAD_ADDR=0x82000000
++CONFIG_ARCH_MTMIPS=y
++CONFIG_SOC_MT7621=y
++CONFIG_SYS_MIPS_TIMER_FREQ=440000000
++# CONFIG_MIPS_CACHE_SETUP is not set
++# CONFIG_MIPS_CACHE_DISABLE is not set
++CONFIG_RESTORE_EXCEPTION_VECTOR_BASE=y
++CONFIG_MIPS_BOOT_FDT=y
++CONFIG_DEBUG_UART=y
++CONFIG_FIT=y
++# CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
++CONFIG_SYS_CONSOLE_INFO_QUIET=y
++CONFIG_SPL_MAX_SIZE=0x30000
++CONFIG_SPL_BSS_START_ADDR=0x80140000
++CONFIG_SPL_BSS_MAX_SIZE=0x80000
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_SPL_NOR_SUPPORT=y
++CONFIG_TPL=y
++# CONFIG_TPL_FRAMEWORK is not set
++# CONFIG_BOOTM_NETBSD is not set
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++CONFIG_SYS_BOOTM_LEN=0x2000000
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_XIMG is not set
++# CONFIG_CMD_CRC32 is not set
++# CONFIG_CMD_DM is not set
++CONFIG_CMD_GPIO=y
++# CONFIG_CMD_LOADS is not set
++# CONFIG_CMD_PINMUX is not set
++CONFIG_CMD_SPI=y
++# CONFIG_CMD_NFS is not set
++# CONFIG_SPL_DOS_PARTITION is not set
++# CONFIG_ISO_PARTITION is not set
++# CONFIG_SPL_EFI_PARTITION is not set
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_NET_RANDOM_ETHADDR=y
++# CONFIG_I2C is not set
++# CONFIG_INPUT is not set
++CONFIG_SF_DEFAULT_SPEED=20000000
++CONFIG_SPI_FLASH_BAR=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_XTX=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PHY=y
++CONFIG_PHY_MTK_TPHY=y
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_SPI=y
++CONFIG_MT7621_SPI=y
++CONFIG_SYSRESET=y
++CONFIG_SYSRESET_RESETCTL=y
++CONFIG_WDT=y
++CONFIG_WDT_MT7621=y
++# CONFIG_BINMAN_FDT is not set
++CONFIG_LZMA=y
++# CONFIG_GZIP is not set
++CONFIG_SPL_LZMA=y
+diff --git a/unbranded_lw-ip301_nor_env b/unbranded_lw-ip301_nor_env
+new file mode 100644
+index 0000000000..633d9016ae
+--- /dev/null
++++ b/unbranded_lw-ip301_nor_env
+@@ -0,0 +1,28 @@
++loadaddr=0x82000000
++bootconf=config-1
++bootdelay=0
++bootfile=openwrt-ramips-mt7620-unbranded_lw-ip301-initramfs-kernel.bin
++bootfile_upg=openwrt-ramips-mt7620-unbranded_lw-ip301-squashfs-sysupgrade.bin
++bootled_pwr=green:status
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=0
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )  [0;36m[SPI-NOR][0m
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Boot production system from SPI-NOR.=run boot_production ; run bootmenu_confirm_return
++bootmenu_3=Reboot.=reset
++bootmenu_4=Reset all settings to factory defaults.=run reset_factory ; reset
++boot_default=led $bootled_pwr off; sleep 1; led $bootled_pwr on; echo To interrupt default boot press RESET button for 1 second...; sleep 1; if button reset; then run boot_recovery; else led $bootled_pwr off ; run boot_production ; reset ; fi
++boot_production=led $bootled_pwr on; run nor_read_production && led $bootled_pwr off && bootm $loadaddr#$bootconf; led $bootled_pwr on
++boot_recovery=if env exists ipaddr && env exists ncip; then run netconsole; else run boot_tftp; reset; fi
++boot_tftp=env set ipaddr 192.168.0.1 && env set netmask 255.255.255.0 && tftpsrv && bootm
++nor_read_production=sf probe && sf read $loadaddr 0x50000 0x1000 && imsz $loadaddr image_size || env set image_size 0x400000 ; sf read $loadaddr 0x50000 $image_size
++reset_factory=env default -f -a && env save && reset
++_init_env=env set _init_env; run _env_set_ethaddr; env save
++_env_set_ethaddr=env set _env_set_ethaddr; sf probe && sf read $loadaddr 0x40004 0x6 && env set -f ethaddr && env readmem -b ethaddr $loadaddr 0x6
++_firstboot=env set _firstboot; run _switch_to_menu; run _init_env; bootmenu
++_switch_to_menu=env set _switch_to_menu; env set bootmenu_0 $bootmenu_0d; env set bootmenu_0d; run _bootmenu_update_title
++_bootmenu_update_title=env set _bootmenu_update_title; env set bootmenu_title "$bootmenu_title       [33m$ver[0m"
++netconsole=env set stdout nc && env set stdin nc
+diff --git a/unielec_u7621-06_sdmmc_env b/unielec_u7621-06_sdmmc_env
+new file mode 100644
+index 0000000000..8ffa112c07
+--- /dev/null
++++ b/unielec_u7621-06_sdmmc_env
+@@ -0,0 +1,47 @@
++ipaddr=192.168.1.1
++serverip=192.168.1.254
++loadaddr=0x83000000
++bootargs=console=ttyS0,115200 root=/dev/mmcblk0p4
++bootcmd=run boot_sdmmc ; run boot_recovery
++bootconf=config-1
++bootdelay=0
++bootfile=openwrt-ramips-mt7621-unielec_u7621-06-initramfs-recovery.itb
++bootfile_upg=openwrt-ramips-mt7621-unielec_u7621-06-squashfs-sysupgrade.itb
++bootled_pwr=green:status
++bootled_recovery=green:led4
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=0
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )  [0;36m[SD card][0m
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Boot production system from SD card.=run boot_production ; run bootmenu_confirm_return
++bootmenu_3=Boot recovery system from SD card.=run boot_recovery ; run bootmenu_confirm_return
++bootmenu_4=Load production system via TFTP then write to SD card.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_production ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
++bootmenu_5=Load recovery system via TFTP then write to SD card.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
++bootmenu_6=[31mInstall bootloader, recovery and production to SPI-NOR.[0m=run ubi_init ; run bootmenu_confirm_return
++bootmenu_7=Reboot.=reset
++bootmenu_8=Reset all settings to factory defaults.=run reset_factory ; reset
++boot_first=if button reset ; then led $bootled_recovery on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
++boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
++boot_production=led $bootled_pwr on ; run sdmmc_read_production && bootm $loadaddr#$bootconf ; led $bootled_pwr off
++boot_recovery=led $bootled_recovery on ; run sdmmc_read_recovery && bootm $loadaddr#$bootconf ; led $bootled_recovery off
++boot_sdmmc=run boot_production ; run boot_recovery
++boot_tftp_forever=led $bootled_recovery on ; while true ; do run boot_tftp_recovery ; sleep 1 ; done
++boot_tftp_production=tftpboot $loadaddr $bootfile_upg && env exists replacevol && iminfo $loadaddr && run sdmmc_write_production ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run sdmmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
++boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr
++mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
++mmc_read_vol=mmc read $loadaddr $part_addr 0x8 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size && setexpr filesize $image_size * 0x200
++part_default=production
++part_recovery=recovery
++reset_factory=eraseenv && reset
++sdmmc_read_production=mmc dev 0 && part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_read_vol
++sdmmc_read_recovery=mmc dev 0 && part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_read_vol
++sdmmc_write_production=mmc dev 0 && part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
++sdmmc_write_recovery=mmc dev 0 && part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
++_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
++_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
++_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
+diff --git a/yuncore_ax820_nor_env b/yuncore_ax820_nor_env
+new file mode 100644
+index 0000000000..61b281acb0
+--- /dev/null
++++ b/yuncore_ax820_nor_env
+@@ -0,0 +1,30 @@
++loadaddr=0x82000000
++bootargs=console=ttyS0,115200
++bootcmd=
++bootconf=config-1
++bootdelay=0
++bootfile=openwrt-ramips-mt7621-yuncore_ax820-initramfs-recovery.itb
++bootfile_upg=openwrt-ramips-mt7621-yuncore_ax820-squashfs-sysupgrade.itb
++bootled_pwr=green:status
++bootled_recovery=green:led4
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=0
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )  [0;36m[SPI-NOR][0m
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=Boot system via DHCP/TFTP.=run boot_dhcptftp ; run bootmenu_confirm_return
++bootmenu_2=Boot production system from SPI-NOR.=run boot_production ; run bootmenu_confirm_return
++bootmenu_3=Reboot.=reset
++bootmenu_4=Reset all settings to factory defaults.=run reset_factory ; reset
++boot_default=led system on; sleep 1; button reset && run boot_dhcptftp_forever; led wlan5g off; led system off; run boot_production; run boot_dhcptftp_forever
++boot_production=led system on; run nor_read_production && led system off && bootm $loadaddr#$bootconf; led system on
++boot_dhcptftp=dhcp && bootm
++boot_dhcptftp_forever=while true ; do led wlan5g on; run boot_dhcptftp ; led wlan5g off; sleep 1 ; done
++nor_read_production=sf probe && sf read $loadaddr 0x90000 0x400000
++reset_factory=env default -f -a && env save && reset
++_init_env=env set _init_env; run _env_set_ethaddr; env save
++_env_set_ethaddr=env set _env_set_ethaddr; sf probe && sf read $loadaddr 0x5e000 0x6 && env set -f ethaddr && env readmem -b ethaddr $loadaddr 0x6
++_firstboot=env set _firstboot; run _switch_to_menu; run _init_env; bootmenu
++_switch_to_menu=env set _switch_to_menu; env set bootdelay 3; env set bootmenu_delay 3; env set bootmenu_0 $bootmenu_0d; env set bootmenu_0d; run _bootmenu_update_title
++_bootmenu_update_title=env set _bootmenu_update_title; env set bootmenu_title "$bootmenu_title       [33m$ver[0m"
