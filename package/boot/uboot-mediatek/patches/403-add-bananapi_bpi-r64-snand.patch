@@ -20,14 +20,14 @@
 +&snand {
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&snfi_pins>;
++	quad-spi;
  	status = "okay";
 -
 -	spi-flash@0{
 -		compatible = "jedec,spi-nor";
 -		reg = <0>;
--		u-boot,dm-pre-reloc;
+-		bootph-all;
 -	};
-+	quad-spi;
  };
  
  &uart0 {
