@@ -341,7 +341,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1286,6 +1286,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1306,6 +1306,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \
@@ -433,7 +433,7 @@
  #ifdef CONFIG_MMC
  static int initr_mmc(void)
  {
-@@ -720,6 +735,9 @@ static init_fnc_t init_sequence_r[] = {
+@@ -713,6 +728,9 @@ static init_fnc_t init_sequence_r[] = {
  #ifdef CONFIG_NMBM_MTD
  	initr_nmbm,
  #endif

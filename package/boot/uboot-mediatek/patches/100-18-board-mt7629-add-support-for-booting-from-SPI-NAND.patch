@@ -23,7 +23,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +++ b/arch/arm/dts/mt7629-rfb-u-boot.dtsi
 @@ -40,3 +40,11 @@
  &snfi {
- 	u-boot,dm-pre-reloc;
+ 	bootph-all;
  };
 +
 +&pinctrl {
