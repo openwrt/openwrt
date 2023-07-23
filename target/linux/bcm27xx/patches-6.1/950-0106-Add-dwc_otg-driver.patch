@@ -4574,7 +4574,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 +		usb_gadget_unregister_driver(&fsg_driver);
 +
 +	/* Let the unbind and cleanup routines know the thread has exited */
-+	complete_and_exit(&fsg->thread_notifier, 0);
++	kthread_complete_and_exit(&fsg->thread_notifier, 0);
 +}
 +
 +
