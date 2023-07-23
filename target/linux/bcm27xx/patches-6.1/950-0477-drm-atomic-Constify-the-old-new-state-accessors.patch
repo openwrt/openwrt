@@ -16,7 +16,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20221123-rpi-kunit-tests-v1-
 
 --- a/drivers/gpu/drm/drm_atomic.c
 +++ b/drivers/gpu/drm/drm_atomic.c
-@@ -880,7 +880,7 @@ EXPORT_SYMBOL(drm_atomic_get_private_obj
+@@ -889,7 +889,7 @@ EXPORT_SYMBOL(drm_atomic_get_private_obj
   * or NULL if the private_obj is not part of the global atomic state.
   */
  struct drm_private_state *
@@ -25,7 +25,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20221123-rpi-kunit-tests-v1-
  				     struct drm_private_obj *obj)
  {
  	int i;
-@@ -902,7 +902,7 @@ EXPORT_SYMBOL(drm_atomic_get_old_private
+@@ -911,7 +911,7 @@ EXPORT_SYMBOL(drm_atomic_get_old_private
   * or NULL if the private_obj is not part of the global atomic state.
   */
  struct drm_private_state *
@@ -34,7 +34,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20221123-rpi-kunit-tests-v1-
  				     struct drm_private_obj *obj)
  {
  	int i;
-@@ -934,7 +934,7 @@ EXPORT_SYMBOL(drm_atomic_get_new_private
+@@ -943,7 +943,7 @@ EXPORT_SYMBOL(drm_atomic_get_new_private
   * not connected.
   */
  struct drm_connector *
@@ -43,7 +43,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20221123-rpi-kunit-tests-v1-
  					 struct drm_encoder *encoder)
  {
  	struct drm_connector_state *conn_state;
-@@ -968,7 +968,7 @@ EXPORT_SYMBOL(drm_atomic_get_old_connect
+@@ -977,7 +977,7 @@ EXPORT_SYMBOL(drm_atomic_get_old_connect
   * not connected.
   */
  struct drm_connector *
@@ -52,7 +52,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20221123-rpi-kunit-tests-v1-
  					 struct drm_encoder *encoder)
  {
  	struct drm_connector_state *conn_state;
-@@ -1118,7 +1118,7 @@ EXPORT_SYMBOL(drm_atomic_get_bridge_stat
+@@ -1127,7 +1127,7 @@ EXPORT_SYMBOL(drm_atomic_get_bridge_stat
   * the bridge is not part of the global atomic state.
   */
  struct drm_bridge_state *
@@ -61,7 +61,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20221123-rpi-kunit-tests-v1-
  				struct drm_bridge *bridge)
  {
  	struct drm_private_state *obj_state;
-@@ -1140,7 +1140,7 @@ EXPORT_SYMBOL(drm_atomic_get_old_bridge_
+@@ -1149,7 +1149,7 @@ EXPORT_SYMBOL(drm_atomic_get_old_bridge_
   * the bridge is not part of the global atomic state.
   */
  struct drm_bridge_state *
