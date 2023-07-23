@@ -12,6 +12,12 @@ confiabits,mt7981)
 	ucidef_set_led_netdev "lan3" "lan3" "blue:lan-3" "lan3" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
 	;;
+bananapi,bpi-r4)
+	ucidef_set_led_netdev "wan" "wan" "mt7530-0:00:green:lan" "wan" "link tx rx"
+	ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:01:green:lan" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:02:green:lan" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:03:green:lan" "lan3" "link tx rx"
+	;;
 cudy,wr3000-v1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
