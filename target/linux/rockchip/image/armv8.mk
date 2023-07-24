@@ -20,6 +20,7 @@ define Device/friendlyarm_nanopc-t4
   DEVICE_MODEL := NanoPC T4
   SOC := rk3399
   IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-brcmfmac brcmfmac-nvram-4356-sdio cypress-firmware-4356-sdio
 endef
 TARGET_DEVICES += friendlyarm_nanopc-t4
 

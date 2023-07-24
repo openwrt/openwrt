@@ -431,6 +431,7 @@ define KernelPackage/brcmfmac/config
 		bool "Enable SDIO bus interface support"
 		default y if TARGET_bcm27xx
 		default y if TARGET_imx_cortexa7
+		default y if TARGET_rockchip
 		default y if TARGET_sunxi
 		default n
 		help
