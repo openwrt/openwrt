@@ -15,6 +15,14 @@ define Device/firefly_roc-rk3328-cc
 endef
 TARGET_DEVICES += firefly_roc-rk3328-cc
 
+define Device/friendlyarm_nanopc-t4
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPC T4
+  SOC := rk3399
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+endef
+TARGET_DEVICES += friendlyarm_nanopc-t4
+
 define Device/friendlyarm_nanopi-r2c
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R2C
