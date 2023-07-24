@@ -1,0 +1,24 @@
+From 445502bc21ecf1b5120faee785cea578b810c759 Mon Sep 17 00:00:00 2001
+From: Lu jicong <jiconglu58@gmail.com>
+Date: Wed, 5 Jul 2023 17:13:55 +0800
+Subject: [PATCH] rockchip: rk3399: nanopc-t4: use 1600MHz sdram config
+
+Current 1866MHz sdram config is too high for NanoPC-T4.
+On this frequency, its lpddr3 sdram becomes unstable,
+causing memtest failures and random kernel crashes.
+
+Signed-off-by: Lu jicong <jiconglu58@gmail.com>
+---
+ arch/arm/dts/rk3399-nanopc-t4-u-boot.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/dts/rk3399-nanopc-t4-u-boot.dtsi b/arch/arm/dts/rk3399-nanopc-t4-u-boot.dtsi
+index 17201bcf41..8b6c9059ab 100644
+--- a/arch/arm/dts/rk3399-nanopc-t4-u-boot.dtsi
++++ b/arch/arm/dts/rk3399-nanopc-t4-u-boot.dtsi
+@@ -4,4 +4,4 @@
+  */
+ 
+ #include "rk3399-nanopi4-u-boot.dtsi"
+-#include "rk3399-sdram-lpddr3-samsung-4GB-1866.dtsi"
++#include "rk3399-sdram-lpddr3-4GB-1600.dtsi"
