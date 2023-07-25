@@ -1,0 +1,77 @@
+From b250b32ab1d044953af2dc5e790819a7703b7ee6 Mon Sep 17 00:00:00 2001
+From: John Allen <john.allen@amd.com>
+Date: Tue, 18 Jul 2023 23:19:59 +0000
+Subject: linux-firmware: Update AMD cpu microcode
+
+* Update AMD cpu microcode for processor family 19h
+
+Key Name        = AMD Microcode Signing Key (for signing microcode container files only)
+Key ID          = F328AE73
+Key Fingerprint = FC7C 6C50 5DAF CC14 7183 57CA E4BE 5339 F328 AE73
+
+Signed-off-by: John Allen <john.allen@amd.com>
+Signed-off-by: Josh Boyer <jwboyer@kernel.org>
+---
+ WHENCE                                 |   2 +-
+ amd-ucode/README                       |   6 +++---
+ amd-ucode/microcode_amd_fam19h.bin     | Bin 16804 -> 16804 bytes
+ amd-ucode/microcode_amd_fam19h.bin.asc |  16 ++++++++--------
+ 4 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/WHENCE b/WHENCE
+index de23a75e..b92e5299 100644
+--- a/WHENCE
++++ b/WHENCE
+@@ -3912,7 +3912,7 @@ Raw: amd-ucode/microcode_amd_fam17h.bin
+ Version: 2023-04-13
+ File: amd-ucode/microcode_amd_fam19h.bin
+ Raw: amd-ucode/microcode_amd_fam19h.bin
+-Version: 2023-01-31
++Version: 2023-07-18
+ File: amd-ucode/README
+ 
+ License: Redistributable. See LICENSE.amd-ucode for details
+diff --git a/amd-ucode/README b/amd-ucode/README
+index 0d97f910..4308fe2d 100644
+--- a/amd-ucode/README
++++ b/amd-ucode/README
+@@ -36,6 +36,6 @@ Microcode patches in microcode_amd_fam17h.bin:
+   Family=0x17 Model=0x31 Stepping=0x00: Patch=0x08301072 Length=3200 bytes
+ 
+ Microcode patches in microcode_amd_fam19h.bin:
+-  Family=0x19 Model=0x01 Stepping=0x00: Patch=0x0a001078 Length=5568 bytes
+-  Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011ce Length=5568 bytes
+-  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001231 Length=5568 bytes
++  Family=0x19 Model=0x01 Stepping=0x01: Patch=0x0a0011d1 Length=5568 bytes
++  Family=0x19 Model=0x01 Stepping=0x00: Patch=0x0a001079 Length=5568 bytes
++  Family=0x19 Model=0x01 Stepping=0x02: Patch=0x0a001234 Length=5568 bytes
+diff --git a/amd-ucode/microcode_amd_fam19h.bin b/amd-ucode/microcode_amd_fam19h.bin
+index 4bd623e1..50470c3f 100644
+Binary files a/amd-ucode/microcode_amd_fam19h.bin and b/amd-ucode/microcode_amd_fam19h.bin differ
+diff --git a/amd-ucode/microcode_amd_fam19h.bin.asc b/amd-ucode/microcode_amd_fam19h.bin.asc
+index 7c5193cf..a32b4d61 100644
+--- a/amd-ucode/microcode_amd_fam19h.bin.asc
++++ b/amd-ucode/microcode_amd_fam19h.bin.asc
+@@ -1,11 +1,11 @@
+ -----BEGIN PGP SIGNATURE-----
+ 
+-iQEzBAABCgAdFiEE/HxsUF2vzBRxg1fK5L5TOfMornMFAmPS0gkACgkQ5L5TOfMo
+-rnMWewf/SNlPcRuJ/RPEKThbPJyToBi98e7QLqlGkuIQ7sZBjZ/zZIycQDkQgjVV
+-MpO8E2yxn0Pp/2T6IzGBLPWpMVgvCabIn2gRe3qvRbJ5dYnxU3I5hfCITGHG0z2K
+-OgH3Z51aKZGX0fCRHKdrtVf9RMdcYcVHD9NU48q8x8gArdRg+IZSCPzqD3dNw7nT
+-TS2WHNiMzyqXkkqqkroofljUSZcuMIqDDEsfIB9LDQjFCMYEththlC0m0wz1QIRv
+-HJCJZ8p/E8xMPLEp0JvhA1zxBePlyKmKtHLxhslyvEePJif5fHECEx95Q2xYRS+F
+-rMXPlWVgxXzeM1NUxEBDM8vI6gaXtQ==
+-=+Rqf
++iQEzBAABCgAdFiEE/HxsUF2vzBRxg1fK5L5TOfMornMFAmS3F00ACgkQ5L5TOfMo
++rnNEhQgAizSV8IFpvaYNytaJKLA4uevrZneGPV4czjCXnnj1yHpfQmCTyZQnoLnx
++7gyzf7K5271zO51FBQ5z2Nm48a3XPUhMbQLNP4BZdekLiA3bRpMtSyHct6zD0ULm
++xaFaOQ7MR1tGADhlon1bDvtnOuixUhwrZhEIlR9MzQAzERKDMOAVTbxn9ZhMfYiT
++LhA791Blyyi+6Z9uh7BpaA8l8uvoxt+uuvlBTjQMR3ER/TEjgcsoy+XhhK4QKS0V
++wJCtcDle/3pF+N6SAFWiXbNZ+P8p19afhcYddDl97xtpzA6/8b20a2eHkrqnu/Ds
++jTozF9kmhiifYMYpXtXgSOwI3GRZbQ==
++=t+j1
+ -----END PGP SIGNATURE-----
+-- 
+cgit 
+

@@ -1,0 +1,25 @@
+From d3f66064cf43bd7338a79174bd0ff60c4ecbdf6d Mon Sep 17 00:00:00 2001
+From: Hamza Mahfooz <hamza.mahfooz@amd.com>
+Date: Wed, 5 Jul 2023 16:56:35 -0400
+Subject: Partially revert "amdgpu: DMCUB updates for DCN 3.1.4 and 3.1.5"
+
+This partially reverts commit ade163aaaeae0c1ad20cb3dd8ce878bf61c91b3a.
+
+The DCN315 DMCUB firmware update provided by the aforementioned commit
+wasn't thoroughly tested before being sent for public consumption and as
+such there are a number of issues with it. So, revert to the previous
+version until it can be fixed properly.
+
+Link: https://gitlab.freedesktop.org/drm/amd/-/issues/2666
+Signed-off-by: Hamza Mahfooz <hamza.mahfooz@amd.com>
+Signed-off-by: Josh Boyer <jwboyer@kernel.org>
+---
+ amdgpu/dcn_3_1_5_dmcub.bin | Bin 301344 -> 177296 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+
+diff --git a/amdgpu/dcn_3_1_5_dmcub.bin b/amdgpu/dcn_3_1_5_dmcub.bin
+index 18209407..a6686d44 100644
+Binary files a/amdgpu/dcn_3_1_5_dmcub.bin and b/amdgpu/dcn_3_1_5_dmcub.bin differ
+-- 
+cgit 
+
