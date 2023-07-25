@@ -46,6 +46,7 @@ define KernelPackage/bonding
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Ethernet bonding driver
   KCONFIG:=CONFIG_BONDING
+  DEPENDS:=PACKAGE_kmod-tls:kmod-tls
   FILES:=$(LINUX_DIR)/drivers/net/bonding/bonding.ko
   AUTOLOAD:=$(call AutoLoad,40,bonding)
   MODPARAMS.bonding:=max_bonds=0
@@ -91,7 +92,9 @@ define KernelPackage/vxlan
 	+kmod-udptunnel4 \
 	+IPV6:kmod-udptunnel6
   KCONFIG:=CONFIG_VXLAN
-  FILES:=$(LINUX_DIR)/drivers/net/vxlan.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/vxlan.ko@lt5.18 \
+	$(LINUX_DIR)/drivers/net/vxlan/vxlan.ko@ge5.18
   AUTOLOAD:=$(call AutoLoad,13,vxlan)
 endef
 
@@ -1042,6 +1045,24 @@ endef
 
 $(eval $(call KernelPackage,tcp-bbr))
 
+define KernelPackage/tls
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=In-kernel TLS Support with HW Offload
+  KCONFIG:=CONFIG_TLS \
+	CONFIG_TLS_DEVICE=y
+  FILES:=$(LINUX_DIR)/net/tls/tls.ko
+  AUTOLOAD:=$(call AutoProbe,tls)
+endef
+
+define KernelPackage/tls/description
+ Kernel module for in-kernel TLS protocol support and hw offload
+ (to supported interfaces).
+ This allows symmetric encryption handling of the TLS protocol to
+ be done in-kernel and it's HW offload when available.
+endef
+
+$(eval $(call KernelPackage,tls))
+
 
 define KernelPackage/tcp-hybla
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
@@ -1254,7 +1275,8 @@ define KernelPackage/rxrpc
   FILES:= \
 	$(LINUX_DIR)/net/rxrpc/rxrpc.ko
   AUTOLOAD:=$(call AutoLoad,30,rxrpc.ko)
-  DEPENDS:= +kmod-crypto-manager +kmod-crypto-pcbc +kmod-crypto-fcrypt
+  DEPENDS:= +kmod-crypto-manager +kmod-crypto-pcbc +kmod-crypto-fcrypt \
+    +kmod-udptunnel4 +kmod-udptunnel6
 endef
 
 define KernelPackage/rxrpc/description
@@ -1295,7 +1317,8 @@ define KernelPackage/9pnet
 	CONFIG_NET_9P \
 	CONFIG_NET_9P_DEBUG=n \
 	CONFIG_NET_9P_XEN=n \
-	CONFIG_NET_9P_VIRTIO
+	CONFIG_NET_9P_VIRTIO \
+	CONFIG_NET_9P_FD=n@ge5.17
   FILES:= \
 	$(LINUX_DIR)/net/9p/9pnet.ko \
 	$(LINUX_DIR)/net/9p/9pnet_virtio.ko
@@ -1339,6 +1362,21 @@ define KernelPackage/mdio/description
 endef
 
 $(eval $(call KernelPackage,mdio))
+
+define KernelPackage/mdio-bus-mux
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=MDIO bus multiplexers
+  KCONFIG:=CONFIG_MDIO_BUS_MUX
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/mdio/mdio-mux.ko
+  AUTOLOAD:=$(call AutoLoad,32,mdio-mux)
+endef
+
+define KernelPackage/mdio-bus-mux/description
+ Kernel framework for MDIO bus multiplexers.
+endef
+
+$(eval $(call KernelPackage,mdio-bus-mux))
 
 define KernelPackage/macsec
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
@@ -1394,6 +1432,22 @@ native Linux tools such as ss.
 endef
 
 $(eval $(call KernelPackage,inet-diag))
+
+
+define KernelPackage/xdp-sockets-diag
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=PF_XDP sockets monitoring interface support for ss utility
+  DEPENDS:=@KERNEL_XDP_SOCKETS
+  KCONFIG:=CONFIG_XDP_SOCKETS_DIAG
+  FILES:=$(LINUX_DIR)/net/xdp/xsk_diag.ko
+  AUTOLOAD:=$(call AutoLoad,31,xsk_diag)
+endef
+
+define KernelPackage/xdp-sockets-diag/description
+ Support for PF_XDP sockets monitoring interface used by the ss tool
+endef
+
+$(eval $(call KernelPackage,xdp-sockets-diag))
 
 
 define KernelPackage/wireguard
@@ -1473,7 +1527,7 @@ $(eval $(call KernelPackage,qrtr-tun))
 define KernelPackage/qrtr-smd
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=SMD IPC Router channels
-  DEPENDS:=+kmod-qrtr @TARGET_ipq807x
+  DEPENDS:=+kmod-qrtr @TARGET_qualcommax
   KCONFIG:=CONFIG_QRTR_SMD
   FILES:= $(LINUX_DIR)/net/qrtr/qrtr-smd.ko
   AUTOLOAD:=$(call AutoProbe,qrtr-smd)

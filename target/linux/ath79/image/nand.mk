@@ -272,7 +272,7 @@ define Device/meraki_mr18
   SOC := qca9557
   DEVICE_VENDOR := Meraki
   DEVICE_MODEL := MR18
-  DEVICE_PACKAGES := kmod-spi-gpio nu801
+  DEVICE_PACKAGES := kmod-leds-uleds kmod-spi-gpio nu801
   KERNEL_SIZE := 8m
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -426,8 +426,8 @@ TARGET_DEVICES += zte_mf282
 define Device/zte_mf286
   $(Device/zte_mf28x_common)
   DEVICE_MODEL := MF286
-  DEVICE_PACKAGES += ath10k-firmware-qca988x-ct kmod-usb-net-qmi-wwan \
-	kmod-usb-serial-option uqmi
+  DEVICE_PACKAGES += ath10k-firmware-qca988x-ct ath10k-firmware-qca9888-ct \
+	kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += zte_mf286
 

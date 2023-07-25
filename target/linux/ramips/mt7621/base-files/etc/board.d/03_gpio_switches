@@ -12,6 +12,9 @@ mikrotik,routerboard-760igs)
 telco-electronics,x1)
 	ucidef_add_gpio_switch "modem_reset" "Modem Reset" "496"
 	;;
+tozed,zlt-s12-pro)
+	ucidef_add_gpio_switch "lt72_power" "Power LTE modem" "lt72_power" "1"
+	;;
 tplink,eap235-wall-v1|\
 tplink,eap615-wall-v1)
 	ucidef_add_gpio_switch "poe_passthrough" "PoE Passthrough" "poe-passthrough"

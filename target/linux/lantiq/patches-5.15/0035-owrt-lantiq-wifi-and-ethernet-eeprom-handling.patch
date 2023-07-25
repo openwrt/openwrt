@@ -127,7 +127,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	if (!is_valid_ether_addr(athxk_eeprom_mac)) {
 +		dev_warn(&pdev->dev, "using random mac\n");
-+		random_ether_addr(athxk_eeprom_mac);
++		eth_random_addr(athxk_eeprom_mac);
 +	}
 +
 +	if (!of_property_read_u32(np, "ath,mac-increment", &mac_inc))

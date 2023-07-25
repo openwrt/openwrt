@@ -1,17 +1,17 @@
 From cf908990d4a8ccdb73ee4484aa8cadad379ca314 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Sun, 30 Nov 2014 14:54:27 +0100
-Subject: [PATCH 2/5] irqchip: add support for bcm6345-style external
- interrupt controller
+Subject: [PATCH] irqchip: add support for bcm6345-style external interrupt
+ controller
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
- .../interrupt-controller/brcm,bcm6345-ext-intc.txt |   29 ++
- drivers/irqchip/Kconfig                            |    4 +
- drivers/irqchip/Makefile                           |    1 +
- drivers/irqchip/irq-bcm6345-ext.c                  |  287 ++++++++++++++++++++
- include/linux/irqchip/irq-bcm6345-ext.h            |   14 +
- 5 files changed, 335 insertions(+)
+ .../brcm,bcm6345-ext-intc.txt                 |  29 ++
+ drivers/irqchip/Kconfig                       |   4 +
+ drivers/irqchip/Makefile                      |   1 +
+ drivers/irqchip/irq-bcm6345-ext.c             | 280 ++++++++++++++++++
+ include/linux/irqchip/irq-bcm6345-ext.h       |  14 +
+ 5 files changed, 328 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/interrupt-controller/brcm,bcm6345-ext-intc.txt
  create mode 100644 drivers/irqchip/irq-bcm6345-ext.c
  create mode 100644 include/linux/irqchip/irq-bcm6345-ext.h

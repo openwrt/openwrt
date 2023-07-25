@@ -351,7 +351,7 @@ define Device/meraki_mr26
   DEVICE_VENDOR := Meraki
   DEVICE_MODEL := MR26
   DEVICE_PACKAGES := $(B43) kmod-i2c-bcm-iproc kmod-eeprom-at24 \
-	kmod-hwmon-ina2xx nu801
+	kmod-hwmon-ina2xx kmod-leds-uleds nu801
   DEVICE_DTS := bcm53015-meraki-mr26
 # resize the initramfs to fit the size of the existing part.safe.
   KERNEL_LOADADDR := 0x00008000
@@ -461,6 +461,10 @@ TARGET_DEVICES += smartrg_sr400ac
 define Device/phicomm_k3
   DEVICE_VENDOR := PHICOMM
   DEVICE_MODEL := K3
+  DEVICE_ALT0_VENDOR := Wavlink
+  DEVICE_ALT0_MODEL := QUANTUM DAX
+  DEVICE_ALT1_VENDOR := Wavlink
+  DEVICE_ALT1_MODEL := WL-WN538A8
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
   IMAGES := trx
 endef

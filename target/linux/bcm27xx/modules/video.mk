@@ -7,7 +7,12 @@ define KernelPackage/camera-bcm2835
   KCONFIG:= \
     CONFIG_VIDEO_BCM2835 \
     CONFIG_VIDEO_BCM2835_MMAL \
+    CONFIG_VIDEO_ARDUCAM_64MP=n \
+    CONFIG_VIDEO_ARDUCAM_PIVARIETY=n \
     CONFIG_VIDEO_BCM2835_UNICAM=n \
+    CONFIG_VIDEO_IMX296=n \
+    CONFIG_VIDEO_IMX519=n \
+    CONFIG_VIDEO_IMX708=n \
     CONFIG_VIDEO_ISP_BCM2835=n
   FILES:= \
     $(LINUX_DIR)/drivers/staging/vc04_services/bcm2835-camera/bcm2835-v4l2.ko
@@ -37,6 +42,8 @@ define KernelPackage/drm-vc4
     CONFIG_DRM_V3D=n \
     CONFIG_DRM_TVE200=n
   FILES:= \
+    $(LINUX_DIR)/drivers/gpu/drm/display/drm_display_helper.ko \
+    $(LINUX_DIR)/drivers/gpu/drm/drm_dma_helper.ko \
     $(LINUX_DIR)/drivers/gpu/drm/vc4/vc4.ko \
     $(LINUX_DIR)/drivers/gpu/drm/drm_kms_helper.ko \
     $(LINUX_DIR)/drivers/media/cec/core/cec.ko

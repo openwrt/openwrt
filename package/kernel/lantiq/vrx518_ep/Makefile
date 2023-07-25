@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=vrx518_ep
 PKG_VERSION:=2.1.0
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk

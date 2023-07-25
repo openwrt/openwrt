@@ -12,6 +12,7 @@ define Device/alphanetworks_asl56026
   DEVICE_ALT0_VENDOR := BT Openreach
   DEVICE_ALT0_MODEL := ECI VDSL Modem V-2FUb/I
   IMAGE_SIZE := 7488k
+  DEFAULT := n
 endef
 TARGET_DEVICES += alphanetworks_asl56026
 
@@ -38,6 +39,7 @@ define Device/arcadyan_vg3503j
   DEVICE_MODEL := ECI VDSL Modem V-2FUb/R
   IMAGE_SIZE := 8000k
   SUPPORTED_DEVICES += VG3503J
+  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_vg3503j
 

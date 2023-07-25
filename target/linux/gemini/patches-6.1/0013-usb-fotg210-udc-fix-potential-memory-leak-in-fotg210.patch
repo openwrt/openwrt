@@ -1,0 +1,58 @@
+From 7b95ade85ac18eec63e81ac58a482b3e88361ffd Mon Sep 17 00:00:00 2001
+From: Yi Yang <yiyang13@huawei.com>
+Date: Fri, 2 Dec 2022 09:21:26 +0800
+Subject: [PATCH 13/29] usb: fotg210-udc: fix potential memory leak in
+ fotg210_udc_probe()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+In fotg210_udc_probe(), if devm_clk_get() or clk_prepare_enable()
+fails, 'fotg210' will not be freed, which will lead to a memory leak.
+Fix it by moving kfree() to a proper location.
+
+In addition，we can use "return -ENOMEM" instead of "goto err"
+to simplify the code.
+
+Fixes: 718a38d092ec ("fotg210-udc: Handle PCLK")
+Reviewed-by: Andrzej Pietrasiewicz <andrzej.p@collabora.com>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Yi Yang <yiyang13@huawei.com>
+Link: https://lore.kernel.org/r/20221202012126.246953-1-yiyang13@huawei.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+--- a/drivers/usb/fotg210/fotg210-udc.c
++++ b/drivers/usb/fotg210/fotg210-udc.c
+@@ -1176,12 +1176,10 @@ int fotg210_udc_probe(struct platform_de
+ 		return -ENODEV;
+ 	}
+ 
+-	ret = -ENOMEM;
+-
+ 	/* initialize udc */
+ 	fotg210 = kzalloc(sizeof(struct fotg210_udc), GFP_KERNEL);
+ 	if (fotg210 == NULL)
+-		goto err;
++		return -ENOMEM;
+ 
+ 	fotg210->dev = dev;
+ 
+@@ -1191,7 +1189,7 @@ int fotg210_udc_probe(struct platform_de
+ 		ret = clk_prepare_enable(fotg210->pclk);
+ 		if (ret) {
+ 			dev_err(dev, "failed to enable PCLK\n");
+-			return ret;
++			goto err;
+ 		}
+ 	} else if (PTR_ERR(fotg210->pclk) == -EPROBE_DEFER) {
+ 		/*
+@@ -1317,8 +1315,7 @@ err_pclk:
+ 	if (!IS_ERR(fotg210->pclk))
+ 		clk_disable_unprepare(fotg210->pclk);
+ 
+-	kfree(fotg210);
+-
+ err:
++	kfree(fotg210);
+ 	return ret;
+ }

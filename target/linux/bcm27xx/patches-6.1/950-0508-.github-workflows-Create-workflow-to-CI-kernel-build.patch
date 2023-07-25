@@ -1,0 +1,285 @@
+From baa2e8235af7143148d8799c5caed2a2eefd9107 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Fri, 11 Nov 2022 17:09:32 +0000
+Subject: [PATCH] .github/workflows: Create workflow to CI kernel
+ builds
+
+Builds the bcmrpi, bcm2709, bcm2711, and bcm2835 32 bit kernels,
+and defconfig and bcm2711 64bit kernels, saving the artifacts for
+7 days.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ .github/workflows/kernel-build.yml | 266 +++++++++++++++++++++++++++++
+ 1 file changed, 266 insertions(+)
+ create mode 100644 .github/workflows/kernel-build.yml
+
+--- /dev/null
++++ b/.github/workflows/kernel-build.yml
+@@ -0,0 +1,266 @@
++name: Pi kernel build tests
++
++on:
++  pull_request:
++    paths-ignore:
++      - '.github/**'
++    branches: [ "rpi-*" ]
++  push:
++    paths-ignore:
++      - '.github/**'
++    branches: [ "rpi-*" ]
++  workflow_dispatch:
++
++env:
++  NUM_JOBS: 3
++
++jobs:
++  build-bcm2835:
++
++    runs-on: ubuntu-latest
++
++    steps:
++    - name: Update install
++      run:
++        sudo apt-get update
++
++    - name: Install toolchain
++      run:
++        sudo apt-get install gcc-arm-linux-gnueabihf
++      timeout-minutes: 5
++
++    - uses: actions/checkout@v3
++      with:
++        fetch-depth: 1
++        clean: true
++
++    - name: Build kernel
++      run: |
++        mkdir ${{github.workspace}}/build
++        make ARCH=arm KERNEL=kernel CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build bcm2835_defconfig
++        make ARCH=arm KERNEL=kernel CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} Image modules dtbs
++        mkdir -p ${{github.workspace}}/install/boot
++        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
++        cp ${{github.workspace}}/build/arch/arm/boot/dts/*.dtb ${{github.workspace}}/install/boot/
++        cp -r ${{github.workspace}}/build/arch/arm/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/
++        cp ${{github.workspace}}/build/arch/arm/boot/Image ${{github.workspace}}/install/boot/
++
++    - name: Tar build
++      run: tar -cvf bcm2835_build.tar -C ${{github.workspace}}/install .
++
++    - name: Upload results
++      uses: actions/upload-artifact@v3
++      with:
++        name: bcm2835_build
++        path: bcm2835_build.tar
++        retention-days: 7
++
++  build-arm64:
++
++    runs-on: ubuntu-latest
++
++    steps:
++    - name: Update install
++      run:
++        sudo apt-get update
++
++    - name: Install toolchain
++      run:
++        sudo apt-get install gcc-aarch64-linux-gnu
++      timeout-minutes: 5
++
++    - uses: actions/checkout@v3
++      with:
++        fetch-depth: 1
++        clean: true
++
++    - name: Build kernel
++      run: |
++        mkdir ${{github.workspace}}/build
++        make ARCH=arm64 KERNEL=kernel8 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build defconfig
++        make ARCH=arm64 KERNEL=kernel8 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} Image.gz modules dtbs
++        mkdir -p ${{github.workspace}}/install/boot
++        make ARCH=arm64 KERNEL=kernel8 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
++        cp ${{github.workspace}}/build/arch/arm64/boot/dts/broadcom/*.dtb ${{github.workspace}}/install/boot/
++        cp -r ${{github.workspace}}/build/arch/arm64/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/
++        cp ${{github.workspace}}/build/arch/arm64/boot/Image.gz ${{github.workspace}}/install/boot/
++
++    - name: Tar build
++      run: tar -cvf arm64_build.tar -C ${{github.workspace}}/install .
++
++    - name: Upload results
++      uses: actions/upload-artifact@v3
++      with:
++        name: arm64_build
++        path: arm64_build.tar
++        retention-days: 7
++
++  build-bcmrpi:
++
++    runs-on: ubuntu-latest
++
++    steps:
++    - name: Update install
++      run:
++        sudo apt-get update
++
++    - name: Install toolchain
++      run:
++        sudo apt-get install gcc-arm-linux-gnueabihf
++      timeout-minutes: 5
++
++    - uses: actions/checkout@v3
++      with:
++        fetch-depth: 1
++        clean: true
++
++    - name: Build kernel
++      run: |
++        mkdir ${{github.workspace}}/build
++        make ARCH=arm KERNEL=kernel CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build bcm2711_defconfig
++        make ARCH=arm KERNEL=kernel CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} zImage modules dtbs
++        mkdir -p ${{github.workspace}}/install/boot
++        make ARCH=arm KERNEL=kernel CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
++        cp ${{github.workspace}}/build/arch/arm/boot/dts/*.dtb ${{github.workspace}}/install/boot/
++        cp -r ${{github.workspace}}/build/arch/arm/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/
++        cp ${{github.workspace}}/build/arch/arm/boot/zImage ${{github.workspace}}/install/boot/
++
++    - name: Tar build
++      run: tar -cvf bcmrpi_build.tar -C ${{github.workspace}}/install .
++
++    - name: Upload results
++      uses: actions/upload-artifact@v3
++      with:
++        name: bcmrpi_build
++        path: bcmrpi_build.tar
++        retention-days: 7
++
++  build-bcm2709:
++
++    runs-on: ubuntu-latest
++
++    steps:
++    - name: Update install
++      run:
++        sudo apt-get update
++
++    - name: Install toolchain
++      run:
++        sudo apt-get install gcc-arm-linux-gnueabihf
++      timeout-minutes: 5
++
++    - uses: actions/checkout@v3
++      with:
++        fetch-depth: 1
++        clean: true
++
++    - name: Build kernel
++      run: |
++        mkdir ${{github.workspace}}/build
++        make ARCH=arm KERNEL=kernel7 CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build bcm2709_defconfig
++        make ARCH=arm KERNEL=kernel7 CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} zImage modules dtbs
++        mkdir -p ${{github.workspace}}/install/boot
++        make ARCH=arm KERNEL=kernel7 CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
++        cp ${{github.workspace}}/build/arch/arm/boot/dts/*.dtb ${{github.workspace}}/install/boot/
++        cp -r ${{github.workspace}}/build/arch/arm/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/
++        cp ${{github.workspace}}/build/arch/arm/boot/zImage ${{github.workspace}}/install/boot/
++
++    - name: Tar build
++      run: tar -cvf bcm2709_build.tar -C ${{github.workspace}}/install .
++
++    - name: Upload results
++      uses: actions/upload-artifact@v3
++      with:
++        name: bcm2709_build
++        path: bcm2709_build.tar
++        retention-days: 7
++
++  build-bcm2711:
++
++    runs-on: ubuntu-latest
++
++    steps:
++    - name: Update install
++      run:
++        sudo apt-get update
++
++    - name: Install toolchain
++      run:
++        sudo apt-get install gcc-arm-linux-gnueabihf
++      timeout-minutes: 5
++
++    - uses: actions/checkout@v3
++      with:
++        fetch-depth: 1
++        clean: true
++
++    - name: Build kernel
++      run: |
++        mkdir ${{github.workspace}}/build
++        make ARCH=arm KERNEL=kernel7l CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build bcm2711_defconfig
++        make ARCH=arm KERNEL=kernel7l CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} zImage modules dtbs
++        mkdir -p ${{github.workspace}}/install/boot
++        make ARCH=arm KERNEL=kernel7l CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
++        cp ${{github.workspace}}/build/arch/arm/boot/dts/*.dtb ${{github.workspace}}/install/boot/
++        cp -r ${{github.workspace}}/build/arch/arm/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/
++        cp ${{github.workspace}}/build/arch/arm/boot/zImage ${{github.workspace}}/install/boot/
++
++    - name: Tar build
++      run: tar -cvf bcm2711_build.tar -C ${{github.workspace}}/install .
++
++    - name: Upload results
++      uses: actions/upload-artifact@v3
++      with:
++        name: bcm2711_build
++        path: bcm2711_build.tar
++        retention-days: 7
++
++  build-bcm2711-arm64:
++
++    runs-on: ubuntu-latest
++
++    steps:
++    - name: Update install
++      run:
++        sudo apt-get update
++
++    - name: Install toolchain
++      run:
++        sudo apt-get install gcc-arm-linux-gnueabihf
++      timeout-minutes: 5
++
++    - uses: actions/checkout@v3
++      with:
++        fetch-depth: 1
++        clean: true
++
++    - name: Install toolchain
++      run:
++        sudo apt-get install gcc-aarch64-linux-gnu
++      timeout-minutes: 5
++
++    - uses: actions/checkout@v3
++      with:
++        fetch-depth: 1
++        clean: true
++
++    - name: Build kernel
++      run: |
++        mkdir ${{github.workspace}}/build
++        make ARCH=arm64 KERNEL=kernel8 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build bcm2711_defconfig
++        make ARCH=arm64 KERNEL=kernel8 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} Image.gz modules dtbs
++        mkdir -p ${{github.workspace}}/install/boot
++        make ARCH=arm64 KERNEL=kernel8 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
++        cp ${{github.workspace}}/build/arch/arm64/boot/dts/broadcom/*.dtb ${{github.workspace}}/install/boot/
++        cp -r ${{github.workspace}}/build/arch/arm64/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/
++        cp ${{github.workspace}}/build/arch/arm64/boot/Image.gz ${{github.workspace}}/install/boot/
++
++    - name: Tar build
++      run: tar -cvf bcm2711_arm64_build.tar -C ${{github.workspace}}/install .
++
++    - name: Upload results
++      uses: actions/upload-artifact@v3
++      with:
++        name: bcm2711_arm64_build
++        path: bcm2711_arm64_build.tar
++        retention-days: 7

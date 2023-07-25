@@ -27,6 +27,10 @@ case "$board" in
 		hw_mac_addr=$(macaddr_unsetbit $hw_mac_addr 28)
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
 		;;
+	comfast,cf-e390ax)
+		[ "$PHYNBR" = "0" ] && echo -n "$(mtd_get_mac_binary factory 0x0004)" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && echo -n "$(mtd_get_mac_binary factory 0x8004)" > /sys${DEVPATH}/macaddress
+		;;
 	cudy,x6-v1|\
 	cudy,x6-v2)
 		hw_mac_addr="$(mtd_get_mac_binary bdinfo 0xde00)"
@@ -118,6 +122,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
+	netgear,eax12)
+		hw_mac_addr=$(mtd_get_mac_ascii Config mac)
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
+		;;
 	netgear,wax202)
 		hw_mac_addr=$(mtd_get_mac_ascii Config mac)
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
@@ -158,6 +167,7 @@ case "$board" in
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr 4 > /sys${DEVPATH}/macaddress
 		;;
+	tplink,eap613-v1|\
 	tplink,eap615-wall-v1)
 		hw_mac_addr="$(mtd_get_mac_binary product-info 0x8)"
 		macaddr_add "$hw_mac_addr" "$PHYNBR" > "/sys${DEVPATH}/macaddress"

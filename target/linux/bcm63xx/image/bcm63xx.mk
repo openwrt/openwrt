@@ -210,6 +210,7 @@ define Device/adb_a4001n
   CHIP_ID := 6328
   FLASH_MB := 8
   DEVICE_PACKAGES := $(USB2_PACKAGES) $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += adb_a4001n
 
@@ -222,6 +223,7 @@ define Device/adb_a4001n1
   CHIP_ID := 6328
   FLASH_MB := 16
   DEVICE_PACKAGES := $(USB2_PACKAGES) $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += adb_a4001n1
 
@@ -234,6 +236,7 @@ define Device/adb_pdg-a4001n-a-000-1a1-ax
   CHIP_ID := 6328
   FLASH_MB := 16
   DEVICE_PACKAGES := $(USB2_PACKAGES) $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += adb_pdg-a4001n-a-000-1a1-ax
 
@@ -269,6 +272,7 @@ define Device/alcatel_rg100a
   CHIP_ID := 6358
   BLOCK_SIZE := 0x20000
   DEVICE_PACKAGES := $(USB2_PACKAGES) $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += alcatel_rg100a
 
@@ -448,6 +452,7 @@ define Device/comtrend_ct-6373
   CFE_BOARD_ID := CT6373-1
   CHIP_ID := 6358
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += comtrend_ct-6373
 
@@ -532,6 +537,7 @@ define Device/d-link_dsl-2650u
   CFE_BOARD_ID := 96358VW2
   CHIP_ID := 6358
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += d-link_dsl-2650u
 
@@ -593,6 +599,7 @@ define Device/d-link_dsl-2750u-c1
   CHIP_ID := 6328
   FLASH_MB := 8
   DEVICE_PACKAGES := $(USB2_PACKAGES) $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += d-link_dsl-2750u-c1
 
@@ -618,6 +625,7 @@ define Device/d-link_dva-g3810bn-tl
   CFE_BOARD_ID := 96358VW
   CHIP_ID := 6358
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += d-link_dva-g3810bn-tl
 
@@ -765,6 +773,7 @@ define Device/huawei_echolife-hg622
   BLOCK_SIZE := 0x20000
   FLASH_MB := 16
   DEVICE_PACKAGES := $(RT28_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += huawei_echolife-hg622
 
@@ -825,6 +834,7 @@ define Device/netgear_cvg834g
   HCS_MAGIC_BYTES := 0xa020
   HCS_REV_MIN := 0001
   HCS_REV_MAJ := 0022
+  DEFAULT := n
 endef
 TARGET_DEVICES += netgear_cvg834g
 
@@ -930,6 +940,7 @@ define Device/pirelli_a226g
   CHIP_ID := 6358
   CFE_EXTRAS += --signature2 IMAGE --tag-version 8
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += pirelli_a226g
 
@@ -941,6 +952,7 @@ define Device/pirelli_a226m
   CHIP_ID := 6358
   CFE_EXTRAS += --signature2 IMAGE --tag-version 8
   DEVICE_PACKAGES := $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += pirelli_a226m
 
@@ -965,6 +977,7 @@ define Device/pirelli_agpf-s0
   CFE_EXTRAS += --signature2 IMAGE --tag-version 8
   BLOCK_SIZE := 0x20000
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += pirelli_agpf-s0
 
@@ -1009,6 +1022,7 @@ define Device/sagem_fast-2704n
   CHIP_ID := 6318
   FLASH_MB := 8
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += sagem_fast-2704n
 
@@ -1046,6 +1060,7 @@ define Device/sfr_neufbox-4-sercomm-r0
   CHIP_ID := 6358
   CFE_EXTRAS += --rsa-signature "$(VERSION_DIST)-$(firstword $(subst -,$(space),$(REVISION)))"
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += sfr_neufbox-4-sercomm-r0
 
@@ -1058,6 +1073,7 @@ define Device/sfr_neufbox-4-foxconn-r1
   CHIP_ID := 6358
   CFE_EXTRAS += --rsa-signature "$(VERSION_DIST)-$(firstword $(subst -,$(space),$(REVISION)))"
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += sfr_neufbox-4-foxconn-r1
 
@@ -1096,6 +1112,7 @@ define Device/t-com_speedport-w-303v
   CFE_BOARD_ID := 96358-502V
   CHIP_ID := 6358
   DEVICE_PACKAGES := $(B43_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += t-com_speedport-w-303v
 
@@ -1182,6 +1199,7 @@ define Device/telsey_cpva642
   CFE_EXTRAS += --signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0"
   FLASH_MB := 8
   DEVICE_PACKAGES := $(RT63_PACKAGES) $(USB2_PACKAGES)
+  DEFAULT := n
 endef
 TARGET_DEVICES += telsey_cpva642
 

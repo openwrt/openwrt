@@ -1,0 +1,50 @@
+From 81eebfa296eb1454cde3bf1cbd919f8b9eb6cf64 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dave.stevenson@raspberrypi.com>
+Date: Mon, 14 Nov 2022 17:14:15 +0000
+Subject: [PATCH] README: Add README.md with CI kernel build status
+ tags
+
+This is a copy of README with the tags added.
+
+You can not delete the file README as then checkpatch complains
+you aren't in a kernel tree.
+
+Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
+---
+ README.md | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+ create mode 100644 README.md
+
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,30 @@
++Linux kernel
++============
++
++There are several guides for kernel developers and users. These guides can
++be rendered in a number of formats, like HTML and PDF. Please read
++Documentation/admin-guide/README.rst first.
++
++In order to build the documentation, use ``make htmldocs`` or
++``make pdfdocs``.  The formatted documentation can also be read online at:
++
++    https://www.kernel.org/doc/html/latest/
++
++There are various text files in the Documentation/ subdirectory,
++several of them using the Restructured Text markup notation.
++
++Please read the Documentation/process/changes.rst file, as it contains the
++requirements for building and running the kernel, and information about
++the problems which may result by upgrading your kernel.
++
++Build status for rpi-5.15.y:
++[![Pi kernel build tests](https://github.com/raspberrypi/linux/actions/workflows/kernel-build.yml/badge.svg?branch=rpi-5.15.y)](https://github.com/raspberrypi/linux/actions/workflows/kernel-build.yml)
++[![dtoverlaycheck](https://github.com/raspberrypi/linux/actions/workflows/dtoverlaycheck.yml/badge.svg?branch=rpi-5.15.y)](https://github.com/raspberrypi/linux/actions/workflows/dtoverlaycheck.yml)
++
++Build status for rpi-6.0.y:
++[![Pi kernel build tests](https://github.com/raspberrypi/linux/actions/workflows/kernel-build.yml/badge.svg?branch=rpi-6.0.y)](https://github.com/raspberrypi/linux/actions/workflows/kernel-build.yml)
++[![dtoverlaycheck](https://github.com/raspberrypi/linux/actions/workflows/dtoverlaycheck.yml/badge.svg?branch=rpi-6.0.y)](https://github.com/raspberrypi/linux/actions/workflows/dtoverlaycheck.yml)
++
++Build status for rpi-6.1.y:
++[![Pi kernel build tests](https://github.com/raspberrypi/linux/actions/workflows/kernel-build.yml/badge.svg?branch=rpi-6.1.y)](https://github.com/raspberrypi/linux/actions/workflows/kernel-build.yml)
++[![dtoverlaycheck](https://github.com/raspberrypi/linux/actions/workflows/dtoverlaycheck.yml/badge.svg?branch=rpi-6.1.y)](https://github.com/raspberrypi/linux/actions/workflows/dtoverlaycheck.yml)

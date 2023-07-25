@@ -1,0 +1,36 @@
+From 2558932c65524d953e4c86d7fda2282a582aa5ec Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Thomas=20Wei=C3=9Fschuh?= <thomas@t-8ch.de>
+Date: Wed, 17 May 2023 16:50:47 +0200
+Subject: [PATCH] test_enosys: add support for mips, powerpc and arc
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Thomas Weißschuh <thomas@t-8ch.de>
+---
+ tests/helpers/test_enosys.c | 14 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/tests/helpers/test_enosys.c
++++ b/tests/helpers/test_enosys.c
+@@ -53,6 +53,20 @@
+ #    else
+ # 	 define SECCOMP_ARCH_NATIVE AUDIT_ARCH_PPC64LE
+ #    endif
++#elif __powerpc__
++# 	 define SECCOMP_ARCH_NATIVE AUDIT_ARCH_PPC
++#elif __mips__
++#    if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
++# 	 define SECCOMP_ARCH_NATIVE AUDIT_ARCH_MIPS
++#    else
++# 	 define SECCOMP_ARCH_NATIVE AUDIT_ARCH_MIPSEL
++#    endif
++#elif __arc__
++#    if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
++# 	 define SECCOMP_ARCH_NATIVE AUDIT_ARCH_ARCV2BE
++#    else
++# 	 define SECCOMP_ARCH_NATIVE AUDIT_ARCH_ARCV2
++#    endif
+ #else
+ #    error Unknown target architecture
+ #endif

@@ -97,72 +97,84 @@
 			label = "green:speed_wan1";
 			gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "f1072004.mdio-mii:00:1Gbps";
 		};
 
 		led-7 {
 			label = "green:speed_wan2";
 			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "f1072004.mdio-mii:01:1Gbps";
 		};
 
 		led-8 {
 			label = "amber:speed_lan5";
 			gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
+			linux,default-trigger = "mv88e6xxx-1:00:100Mbps";
 		};
 
 		led-9 {
 			label = "green:speed_lan5";
 			gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "mv88e6xxx-1:00:1Gbps";
 		};
 
 		led-10 {
 			label = "green:speed_lan4";
 			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "mv88e6xxx-1:01:1Gbps";
 		};
 
 		led-11 {
 			label = "amber:speed_lan4";
 			gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_AMBER>;
+			linux,default-trigger = "mv88e6xxx-1:01:100Mbps";
 		};
 
 		led-12 {
 			label = "amber:speed_lan3";
 			gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_AMBER>;
+			linux,default-trigger = "mv88e6xxx-1:02:100Mbps";
 		};
 
 		led-13 {
 			label = "green:speed_lan3";
 			gpios = <&gpio2 7 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "mv88e6xxx-1:02:1Gbps";
 		};
 
 		led-14 {
 			label = "green:speed_lan1";
 			gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "mv88e6xxx-1:04:1Gbps";
 		};
 
 		led-15 {
 			label = "amber:speed_lan1";
 			gpios = <&gpio2 13 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_AMBER>;
+			linux,default-trigger = "mv88e6xxx-1:04:100Mbps";
 		};
 
 		led-16 {
 			label = "green:speed_lan2";
 			gpios = <&gpio2 14 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			linux,default-trigger = "mv88e6xxx-1:03:1Gbps";
 		};
 
 		led-17 {
 			label = "amber:speed_lan2";
 			gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_AMBER>;
+			linux,default-trigger = "mv88e6xxx-1:03:100Mbps";
 		};
 	};
 

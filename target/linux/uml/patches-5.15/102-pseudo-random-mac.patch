@@ -49,7 +49,7 @@ Applies to vanilla kernel 3.9.4.
  #define DRIVER_NAME "uml-netdev"
  
  static DEFINE_SPINLOCK(opened_lock);
-@@ -274,9 +282,51 @@ static const struct ethtool_ops uml_net_
+@@ -274,9 +282,55 @@ static const struct ethtool_ops uml_net_
  	.get_ts_info	= ethtool_op_get_ts_info,
  };
  
@@ -59,24 +59,26 @@ Applies to vanilla kernel 3.9.4.
 + *  * an interface name. */
 +static int compute_hash(const char *umid, const char *ifname, char *hash)
 +{
-+	struct ahash_request *desc;
-+	struct crypto_ahash *tfm;
++	struct ahash_request *desc = NULL;
++	struct crypto_ahash *tfm = NULL;
 +	struct scatterlist sg;
-+	char vmif[1024];
-+	int ret;
++	char *vmif = NULL;
++	int ret = -ENOMEM;
++
++	vmif = kmalloc(1024, GFP_KERNEL);
++	if (!vmif)
++		goto out;
 +
 +	strcpy (vmif, umid);
 +	strcat (vmif, ifname);
 +
 +	tfm = crypto_alloc_ahash("sha1", 0, CRYPTO_ALG_ASYNC);
 +	if (IS_ERR(tfm))
-+		return -ENOMEM;
++		goto out;
 +
 +	desc = ahash_request_alloc(tfm, GFP_KERNEL);
-+	if (!desc) {
-+		ret = -ENOMEM;
++	if (!desc)
 +		goto out;
-+	}
 +
 +	crypto_ahash_clear_flags(tfm, ~0);
 +
@@ -88,6 +90,8 @@ Applies to vanilla kernel 3.9.4.
 +	ret = crypto_ahash_digest(desc);
 +out:
 +	crypto_free_ahash(tfm);
++	ahash_request_free(desc);
++	kfree(vmif);
 +
 +	return ret;
 +}
@@ -101,7 +105,7 @@ Applies to vanilla kernel 3.9.4.
  	char *end;
  	int i;
  
-@@ -319,9 +369,26 @@ void uml_net_setup_etheraddr(struct net_
+@@ -319,9 +373,26 @@ void uml_net_setup_etheraddr(struct net_
  	return;
  
  random:

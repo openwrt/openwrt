@@ -32,10 +32,10 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 
 --- a/drivers/net/dsa/qca/Kconfig
 +++ b/drivers/net/dsa/qca/Kconfig
-@@ -15,3 +15,13 @@ config NET_DSA_QCA8K
+@@ -23,3 +23,13 @@ config NET_DSA_QCA8K_LEDS_SUPPORT
  	help
- 	  This enables support for the Qualcomm Atheros QCA8K Ethernet
- 	  switch chips.
+ 	  This enabled support for LEDs present on the Qualcomm Atheros
+ 	  QCA8K Ethernet switch chips.
 +
 +config NET_DSA_QCA8K_IPQ4019
 +	tristate "Qualcomm Atheros IPQ4019 built-in Ethernet switch support"
@@ -48,9 +48,10 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +
 --- a/drivers/net/dsa/qca/Makefile
 +++ b/drivers/net/dsa/qca/Makefile
-@@ -1,4 +1,5 @@
+@@ -1,5 +1,6 @@
  # SPDX-License-Identifier: GPL-2.0-only
  obj-$(CONFIG_NET_DSA_AR9331)	+= ar9331.o
 +obj-$(CONFIG_NET_DSA_QCA8K_IPQ4019)	+= qca8k-ipq4019.o
  obj-$(CONFIG_NET_DSA_QCA8K)	+= qca8k.o
  qca8k-y 			+= qca8k-common.o qca8k-8xxx.o
+ ifdef CONFIG_NET_DSA_QCA8K_LEDS_SUPPORT

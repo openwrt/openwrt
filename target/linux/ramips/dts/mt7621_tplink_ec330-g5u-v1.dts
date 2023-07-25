@@ -230,12 +230,20 @@
 			read-only;
 
 			compatible = "nvmem-cells";
-			#address-cells = <1>;
-			#size-cells = <1>;
 
-			macaddr_factory_165: macaddr@165 {
-				reg = <0x165 0x11>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_factory_165: macaddr@165 {
+					compatible = "mac-base";
+					reg = <0x165 0x11>;
+					#nvmem-cell-cells = <1>;
+				};
 			};
+
+
 		};
 
 		partition@0_wholeflash {
@@ -257,8 +265,8 @@
 		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <2400000 2500000>;
 
-		nvmem-cells = <&macaddr_factory_165>;
-		nvmem-cell-names = "mac-address-ascii";
+		nvmem-cells = <&macaddr_factory_165 0>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
@@ -269,15 +277,14 @@
 		mediatek,mtd-eeprom = <&factory 0x14000>;
 		ieee80211-freq-limit = <5000000 6000000>;
 
-		nvmem-cells = <&macaddr_factory_165>;
-		nvmem-cell-names = "mac-address-ascii";
-		mac-address-increment = <(2)>;
+		nvmem-cells = <&macaddr_factory_165 2>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_165>;
-	nvmem-cell-names = "mac-address-ascii";
+	nvmem-cells = <&macaddr_factory_165 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gmac1 {
@@ -285,9 +292,8 @@
 	label = "wan";
 	phy-handle = <&ethphy0>;
 
-	nvmem-cells = <&macaddr_factory_165>;
-	nvmem-cell-names = "mac-address-ascii";
-	mac-address-increment = <(1)>;
+	nvmem-cells = <&macaddr_factory_165 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &mdio {

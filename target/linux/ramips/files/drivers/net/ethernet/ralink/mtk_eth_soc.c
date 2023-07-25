@@ -1096,11 +1096,7 @@ poll_again:
 	return rx_done;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
-static void fe_tx_timeout(struct net_device *dev)
-#else
 static void fe_tx_timeout(struct net_device *dev, unsigned int txqueue)
-#endif
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	struct fe_tx_ring *ring = &priv->tx_ring;

@@ -31,7 +31,7 @@ config MTD_SPLIT_BCM_WFI_FW
 
 config MTD_SPLIT_CFE_BOOTFS
 	bool "Parser finding rootfs appended to the CFE bootfs"
-	depends on MTD_SPLIT_SUPPORT && ARCH_BCM4908
+	depends on MTD_SPLIT_SUPPORT && (ARCH_BCM4908 || ARCH_BCMBCA)
 	select MTD_SPLIT
 	help
 	  cferom on BCM4908 (and bcm63xx) uses JFFS2 bootfs partition

@@ -11,6 +11,7 @@ proto_qmi_init_config() {
 	no_device=1
 	proto_config_add_string "device:device"
 	proto_config_add_string apn
+	proto_config_add_string v6apn
 	proto_config_add_string auth
 	proto_config_add_string username
 	proto_config_add_string password
@@ -19,6 +20,7 @@ proto_qmi_init_config() {
 	proto_config_add_string modes
 	proto_config_add_string pdptype
 	proto_config_add_int profile
+	proto_config_add_int v6profile
 	proto_config_add_boolean dhcp
 	proto_config_add_boolean dhcpv6
 	proto_config_add_boolean autoconnect
@@ -31,14 +33,14 @@ proto_qmi_init_config() {
 proto_qmi_setup() {
 	local interface="$1"
 	local dataformat connstat plmn_mode mcc mnc
-	local device apn auth username password pincode delay modes pdptype
-	local profile dhcp dhcpv6 autoconnect plmn timeout mtu $PROTO_DEFAULT_OPTIONS
+	local device apn v6apn auth username password pincode delay modes pdptype
+	local profile v6profile dhcp dhcpv6 autoconnect plmn timeout mtu $PROTO_DEFAULT_OPTIONS
 	local ip4table ip6table
 	local cid_4 pdh_4 cid_6 pdh_6
 	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
 
-	json_get_vars device apn auth username password pincode delay modes
-	json_get_vars pdptype profile dhcp dhcpv6 autoconnect plmn ip4table
+	json_get_vars device apn v6apn auth username password pincode delay modes
+	json_get_vars pdptype profile v6profile dhcp dhcpv6 autoconnect plmn ip4table
 	json_get_vars ip6table timeout mtu $PROTO_DEFAULT_OPTIONS
 
 	[ "$timeout" = "" ] && timeout="10"
@@ -309,10 +311,13 @@ proto_qmi_setup() {
 
 		uqmi -s -d "$device" --set-client-id wds,"$cid_6" --set-ip-family ipv6 > /dev/null 2>&1
 
+		: "${v6apn:=${apn}}"
+		: "${v6profile:=${profile}}"
+
 		pdh_6=$(uqmi -s -d "$device" --set-client-id wds,"$cid_6" \
 			--start-network \
-			${apn:+--apn $apn} \
-			${profile:+--profile $profile} \
+			${v6apn:+--apn $v6apn} \
+			${v6profile:+--profile $v6profile} \
 			${auth:+--auth-type $auth} \
 			${username:+--username $username} \
 			${password:+--password $password} \
@@ -383,6 +388,7 @@ proto_qmi_setup() {
 			json_init
 			json_add_string name "${interface}_6"
 			json_add_string ifname "@$interface"
+			[ "$pdptype" = "ipv4v6" ] && json_add_string iface_464xlat "0"
 			json_add_string proto "dhcpv6"
 			[ -n "$ip6table" ] && json_add_string ip6table "$ip6table"
 			proto_add_dynamic_defaults

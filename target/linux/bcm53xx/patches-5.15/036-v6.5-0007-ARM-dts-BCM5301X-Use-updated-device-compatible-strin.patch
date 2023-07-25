@@ -1,0 +1,90 @@
+From 9d7121f1d2faa0b50bf5b462adcd2dd91970c45e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Sat, 20 May 2023 13:26:01 +0200
+Subject: [PATCH] ARM: dts: BCM5301X: Use updated device "compatible" strings
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Northstar binding was updated to use minus/hyphen char between model and
+version for all devices.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/20230520112601.11821-2-zajec5@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ arch/arm/boot/dts/bcm4708-luxul-xap-1510.dts   | 2 +-
+ arch/arm/boot/dts/bcm4708-netgear-r6250.dts    | 2 +-
+ arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts | 2 +-
+ arch/arm/boot/dts/bcm47081-luxul-xap-1410.dts  | 2 +-
+ arch/arm/boot/dts/bcm47081-luxul-xwr-1200.dts  | 2 +-
+ arch/arm/boot/dts/bcm47094-luxul-xwr-3100.dts  | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm4708-luxul-xap-1510.dts
++++ b/arch/arm/boot/dts/bcm4708-luxul-xap-1510.dts
+@@ -8,7 +8,7 @@
+ #include "bcm4708.dtsi"
+ 
+ / {
+-	compatible = "luxul,xap-1510v1", "brcm,bcm4708";
++	compatible = "luxul,xap-1510-v1", "brcm,bcm4708";
+ 	model = "Luxul XAP-1510 V1";
+ 
+ 	chosen {
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -13,7 +13,7 @@
+ #include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+-	compatible = "netgear,r6250v1", "brcm,bcm4708";
++	compatible = "netgear,r6250-v1", "brcm,bcm4708";
+ 	model = "Netgear R6250 V1 (BCM4708)";
+ 
+ 	chosen {
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
+@@ -12,7 +12,7 @@
+ #include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+-	compatible = "netgear,r6300v2", "brcm,bcm4708";
++	compatible = "netgear,r6300-v2", "brcm,bcm4708";
+ 	model = "Netgear R6300 V2 (BCM4708)";
+ 
+ 	chosen {
+--- a/arch/arm/boot/dts/bcm47081-luxul-xap-1410.dts
++++ b/arch/arm/boot/dts/bcm47081-luxul-xap-1410.dts
+@@ -8,7 +8,7 @@
+ #include "bcm47081.dtsi"
+ 
+ / {
+-	compatible = "luxul,xap-1410v1", "brcm,bcm47081", "brcm,bcm4708";
++	compatible = "luxul,xap-1410-v1", "brcm,bcm47081", "brcm,bcm4708";
+ 	model = "Luxul XAP-1410 V1";
+ 
+ 	chosen {
+--- a/arch/arm/boot/dts/bcm47081-luxul-xwr-1200.dts
++++ b/arch/arm/boot/dts/bcm47081-luxul-xwr-1200.dts
+@@ -9,7 +9,7 @@
+ #include "bcm5301x-nand-cs0-bch4.dtsi"
+ 
+ / {
+-	compatible = "luxul,xwr-1200v1", "brcm,bcm47081", "brcm,bcm4708";
++	compatible = "luxul,xwr-1200-v1", "brcm,bcm47081", "brcm,bcm4708";
+ 	model = "Luxul XWR-1200 V1";
+ 
+ 	chosen {
+--- a/arch/arm/boot/dts/bcm47094-luxul-xwr-3100.dts
++++ b/arch/arm/boot/dts/bcm47094-luxul-xwr-3100.dts
+@@ -9,7 +9,7 @@
+ #include "bcm5301x-nand-cs0-bch4.dtsi"
+ 
+ / {
+-	compatible = "luxul,xwr-3100v1", "brcm,bcm47094", "brcm,bcm4708";
++	compatible = "luxul,xwr-3100-v1", "brcm,bcm47094", "brcm,bcm4708";
+ 	model = "Luxul XWR-3100 V1";
+ 
+ 	chosen {

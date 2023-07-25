@@ -1,11 +1,15 @@
 set_preinit_iface() {
-	ip link set eth0 up
-
 	case $(board_name) in
+	glinet,gl-mt3000)
+		ip link set eth1 up
+		ifname=eth1
+		;;
 	ubnt,unifi-6-lr)
+		ip link set eth0 up
 		ifname=eth0
 		;;
 	*)
+		ip link set eth0 up
 		ifname=lan1
 		;;
 	esac

@@ -280,7 +280,7 @@ out the configuration than the in kernel cfe config reader.
  	/* TODO: when nvram is on nand flash check for bad blocks first. */
  
  	/* Try every possible flash size and check for NVRAM at its end */
-@@ -172,6 +194,13 @@ int bcm47xx_nvram_getenv(const char *nam
+@@ -190,6 +212,13 @@ int bcm47xx_nvram_getenv(const char *nam
  	if (!name)
  		return -EINVAL;
  

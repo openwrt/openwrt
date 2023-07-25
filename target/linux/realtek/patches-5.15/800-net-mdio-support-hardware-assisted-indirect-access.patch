@@ -657,7 +657,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -80,6 +80,7 @@ extern const int phy_10gbit_features_arr
+@@ -81,6 +81,7 @@ extern const int phy_10gbit_features_arr
  #define PHY_IS_INTERNAL		0x00000001
  #define PHY_RST_AFTER_CLK_EN	0x00000002
  #define PHY_POLL_CABLE_TEST	0x00000004
@@ -665,7 +665,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define MDIO_DEVICE_IS_PHY	0x80000000
  
  /**
-@@ -420,6 +421,22 @@ struct mii_bus {
+@@ -421,6 +422,22 @@ struct mii_bus {
  
  	/** @shared: shared state across different PHYs */
  	struct phy_package_shared *shared[PHY_MAX_ADDR];
@@ -688,7 +688,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  #define to_mii_bus(d) container_of(d, struct mii_bus, dev)
  
-@@ -1754,6 +1771,66 @@ static inline int __phy_package_read(str
+@@ -1795,6 +1812,66 @@ static inline int __phy_package_read(str
  	return __mdiobus_read(phydev->mdio.bus, shared->addr, regnum);
  }
  
@@ -755,7 +755,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static inline int phy_package_write(struct phy_device *phydev,
  				    u32 regnum, u16 val)
  {
-@@ -1776,6 +1853,72 @@ static inline int __phy_package_write(st
+@@ -1817,6 +1894,72 @@ static inline int __phy_package_write(st
  	return __mdiobus_write(phydev->mdio.bus, shared->addr, regnum, val);
  }
  

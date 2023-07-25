@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr11-mei
 PKG_VERSION:=1.11.1
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=2
 PKG_BASE_NAME:=dsl_cpe_mei
 
 UGW_VERSION=8.5.2.10
@@ -25,6 +25,7 @@ PKG_EXTMOD_SUBDIRS:=src
 
 PKG_FIXUP:=autoreconf
 PKG_FLAGS:=nonshared
+PKG_BUILD_FLAGS:=no-mold
 
 include $(INCLUDE_DIR)/package.mk
 

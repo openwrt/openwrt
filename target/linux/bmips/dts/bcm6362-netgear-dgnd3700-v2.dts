@@ -11,12 +11,6 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
-
-		led-dsl = &led_dsl_green;
-		led-ethernet = &led_ethernet_green;
-		led-internet = &led_internet_green;
-		led-usb = &led_usb1_green;
-		led-usb2 = &led_usb2_green;
 	};
 
 	keys {
@@ -48,7 +42,7 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_dsl_green: led@28 {
+		led@28 {
 			label = "green:dsl";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
@@ -56,6 +50,7 @@
 		led_power_red: led@34 {
 			label = "red:power";
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			panic-indicator;
 		};
 	};
 };
@@ -82,7 +77,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_leds &pinctrl_serial_led>;
 
-	led_internet_green: led@1 {
+	led@1 {
 		reg = <1>;
 		active-low;
 		label = "green:internet";
@@ -99,13 +94,13 @@
 		label = "green:wps";
 	};
 
-	led_usb1_green: led@10 {
+	led@10 {
 		reg = <10>;
 		active-low;
 		label = "green:usb1";
 	};
 
-	led_usb2_green: led@11 {
+	led@11 {
 		reg = <11>;
 		active-low;
 		label = "green:usb2";
@@ -117,7 +112,7 @@
 		label = "amber:internet";
 	};
 
-	led_ethernet_green: led@13 {
+	led@13 {
 		reg = <13>;
 		active-low;
 		label = "green:ethernet";
@@ -227,6 +222,7 @@
 				compatible = "brcm,wfi";
 				label = "wfi";
 				reg = <0x0004000 0x1c7c000>;
+				brcm,cferam = "cfe";
 			};
 
 			partition@1c80000 {

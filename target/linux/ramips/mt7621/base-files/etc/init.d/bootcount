@@ -9,6 +9,7 @@ boot() {
 			echo -e "bootcount\nbootchanged\n" | /usr/sbin/fw_setenv -s -
 		;;
 	beeline,smartbox-turbo|\
+	beeline,smartbox-turbo-plus|\
 	rostelecom,rt-sf-1)
 		[[ $(hexdump -n 1 -e '/1 "%1d"' -s $((0x20001)) /dev/mtd3) == \
 			$((0xff)) ]] || printf '\xff' | dd of=/dev/mtdblock3 \

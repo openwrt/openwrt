@@ -350,13 +350,13 @@
 +		switch (read_len) {
 +		case 4:
 +			spi_data |= buf[3] << 24;
-+			/* fall through */
++			fallthrough;
 +		case 3:
 +			spi_data |= buf[2] << 16;
-+			/* fall through */
++			fallthrough;
 +		case 2:
 +			spi_data |= buf[1] << 8;
-+			/* fall through */
++			fallthrough;
 +		case 1:
 +			spi_data |= buf[0] & 0xff;
 +			break;

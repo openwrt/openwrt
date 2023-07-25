@@ -373,6 +373,16 @@ config KERNEL_DEBUG_INFO_BTF
 
 	  Required to run BPF CO-RE applications.
 
+config KERNEL_MODULE_ALLOW_BTF_MISMATCH
+	bool "Allow loading modules with non-matching BTF type info"
+	depends on KERNEL_DEBUG_INFO_BTF
+	help
+	  For modules whose split BTF does not match vmlinux, load without
+	  BTF rather than refusing to load. The default behavior with
+	  module BTF enabled is to reject modules with such mismatches;
+	  this option will still load module BTF where possible but ignore
+	  it when a mismatch is found.
+
 config KERNEL_DEBUG_INFO_REDUCED
 	bool "Reduce debugging information"
 	default y
@@ -386,6 +396,17 @@ config KERNEL_DEBUG_INFO_REDUCED
 	  build directory object sizes shrink dramatically over a full
 	  DEBUG_INFO build and compile times are reduced too.
 	  Only works with newer gcc versions.
+
+config KERNEL_FRAME_WARN
+	int
+	range 0 8192
+	default 1280 if KERNEL_KASAN && !ARCH_64BIT
+	default 1024 if !ARCH_64BIT
+	default 2048 if ARCH_64BIT
+	help
+	  Tell the compiler to warn at build time for stack frames larger than this.
+	  Setting this too low will cause a lot of warnings.
+	  Setting it to 0 disables the warning.
 
 # KERNEL_DEBUG_LL symbols must have the default value set as otherwise
 # KConfig wont evaluate them unless KERNEL_EARLY_PRINTK is selected
@@ -1086,6 +1107,12 @@ config KERNEL_NET_L3_MASTER_DEV
 	  This module provides glue between core networking code and device
 	  drivers to support L3 master devices like VRF.
 
+config KERNEL_XDP_SOCKETS
+	bool "XDP sockets support"
+	help
+	  XDP sockets allows a channel between XDP programs and
+	  userspace applications.
+
 config KERNEL_WIRELESS_EXT
 	def_bool n
 
@@ -1322,3 +1349,19 @@ config KERNEL_UBIFS_FS_SECURITY
 
 config KERNEL_JFFS2_FS_SECURITY
 	bool "JFFS2 Security Labels"
+
+config KERNEL_WERROR
+	bool "Compile the kernel with warnings as errors"
+	default BUILDBOT
+	default y if GCC_USE_VERSION_12
+	help
+	  A kernel build should not cause any compiler warnings, and this
+	  enables the '-Werror' (for C) and '-Dwarnings' (for Rust) flags
+	  to enforce that rule by default. Certain warnings from other tools
+	  such as the linker may be upgraded to errors with this option as
+	  well.
+
+	  However, if you have a new (or very old) compiler or linker with odd
+	  and unusual warnings, or you have some architecture with problems,
+	  you may need to disable this config option in order to
+	  successfully build the kernel.

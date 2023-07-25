@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.38.1
+PKG_VERSION:=2.39
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.38
-PKG_HASH:=60492a19b44e6cf9a3ddff68325b333b8b52b6c59ce3ebd6a0ecaa4c5117e84f
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.39
+PKG_HASH:=32b30a336cda903182ed61feb3e9b908b762a5e66fe14e43efb88d37162075cb
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
 PKG_LICENSE:=GPL-2.0-only
@@ -172,6 +172,17 @@ endef
 
 define Package/cfdisk/description
  cfdisk is a curses-based program for partitioning any hard disk drive
+endef
+
+define Package/colrm
+$(call Package/util-linux/Default)
+  TITLE:=colrm removes selected columns from a file
+  DEPENDS:=
+endef
+
+define Package/colrm/description
+ colrm removes selected columns from a file. Input is taken from
+ standard input. Output is sent to standard output.
 endef
 
 define Package/dmesg
@@ -485,6 +496,7 @@ endef
 define Package/taskset
 $(call Package/util-linux/Default)
   TITLE:=set or retrieve a process's CPU affinity
+  ALTERNATIVES:=200:/usr/bin/taskset:/usr/bin/util-linux-taskset
 endef
 
 define Package/taskset/description
@@ -698,6 +710,11 @@ define Package/cfdisk/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/cfdisk $(1)/usr/sbin/
 endef
 
+define Package/colrm/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/colrm $(1)/usr/bin/
+endef
+
 define Package/dmesg/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/dmesg $(1)/usr/bin/
@@ -851,7 +868,7 @@ endef
 
 define Package/taskset/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/taskset $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/taskset $(1)/usr/bin/util-linux-taskset
 endef
 
 define Package/unshare/install
@@ -897,6 +914,7 @@ $(eval $(call BuildPackage,blkid))
 $(eval $(call BuildPackage,blockdev))
 $(eval $(call BuildPackage,cal))
 $(eval $(call BuildPackage,cfdisk))
+$(eval $(call BuildPackage,colrm))
 $(eval $(call BuildPackage,dmesg))
 $(eval $(call BuildPackage,eject))
 $(eval $(call BuildPackage,fdisk))

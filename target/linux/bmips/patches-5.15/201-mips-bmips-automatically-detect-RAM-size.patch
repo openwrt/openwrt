@@ -1,7 +1,7 @@
 From f9ee3f28ecb979c77423be965ef9dd313bdb9e9b Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
 Date: Mon, 8 Mar 2021 16:58:34 +0100
-Subject: [PATCH 2/2] mips: bmips: automatically detect RAM size
+Subject: [PATCH] mips: bmips: automatically detect RAM size
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -10,8 +10,8 @@ Some devices have different amounts of RAM installed depending on HW revision.
 
 Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 ---
- arch/mips/bmips/setup.c | 118 ++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 118 insertions(+)
+ arch/mips/bmips/setup.c | 119 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 119 insertions(+)
 
 --- a/arch/mips/bmips/setup.c
 +++ b/arch/mips/bmips/setup.c

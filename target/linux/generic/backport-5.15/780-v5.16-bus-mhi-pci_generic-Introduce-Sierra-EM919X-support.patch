@@ -16,11 +16,11 @@ Signed-off-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
 Link: https://lore.kernel.org/r/20211216081227.237749-11-manivannan.sadhasivam@linaro.org
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- drivers/bus/mhi/pci_generic.c | 43 +++++++++++++++++++++++++++++++++++
+ drivers/bus/mhi/host/pci_generic.c | 43 +++++++++++++++++++++++++++++++++++
  1 file changed, 43 insertions(+)
 
---- a/drivers/bus/mhi/pci_generic.c
-+++ b/drivers/bus/mhi/pci_generic.c
+--- a/drivers/bus/mhi/host/pci_generic.c
++++ b/drivers/bus/mhi/host/pci_generic.c
 @@ -406,6 +406,46 @@ static const struct mhi_pci_dev_info mhi
  	.mru_default = 32768,
  };

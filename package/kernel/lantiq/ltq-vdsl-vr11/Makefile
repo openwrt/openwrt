@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr11
 PKG_VERSION:=4.23.1
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=2
 PKG_BASE_NAME:=dsl_cpe_api
 
 UGW_VERSION=8.5.2.10
@@ -23,6 +23,7 @@ PKG_LICENSE:=GPL-2.0 BSD-2-Clause
 PKG_LICENSE_FILES:=LICENSE
 
 PKG_FIXUP:=autoreconf
+PKG_BUILD_FLAGS:=no-mold
 
 include $(INCLUDE_DIR)/package.mk
 

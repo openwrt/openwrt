@@ -1,3 +1,13 @@
+From 2c82524000cca691c89c9fda251b55ef04eabcb6 Mon Sep 17 00:00:00 2001
+From: Mathias Kresin <openwrt@kresin.me>
+Date: Mon, 2 May 2016 18:50:00 +0000
+Subject: [PATCH] find active root
+
+Signed-off-by: Mathias Kresin <openwrt@kresin.me>
+---
+ drivers/mtd/parsers/ofpart_core.c | 49 ++++++++++++++++++++++++++++++-
+ 1 file changed, 48 insertions(+), 1 deletion(-)
+
 --- a/drivers/mtd/parsers/ofpart_core.c
 +++ b/drivers/mtd/parsers/ofpart_core.c
 @@ -38,6 +38,38 @@ static bool node_has_compatible(struct d

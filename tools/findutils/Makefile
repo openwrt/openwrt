@@ -14,6 +14,8 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
 PKG_HASH:=a2bfb8c09d436770edc59f50fa483e785b161a3b7b9d547573cb08065fd462fe
 
+PKG_PROGRAMS:=find locate updatedb xargs
+
 HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk

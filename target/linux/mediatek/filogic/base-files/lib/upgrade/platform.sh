@@ -67,6 +67,15 @@ platform_do_upgrade() {
 			;;
 		esac
 		;;
+	cudy,wr3000-v1)
+		default_do_upgrade "$1"
+		;;
+	mercusys,mr90x-v1)
+		CI_UBIPART="ubi0"
+		nand_do_upgrade "$1"
+		;;
+	h3c,magic-nx30-pro|\
+	qihoo,360t7|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\

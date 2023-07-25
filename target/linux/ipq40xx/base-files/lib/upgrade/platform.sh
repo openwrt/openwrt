@@ -27,6 +27,7 @@ EOF
 		;;
 	zte,mf18a |\
 	zte,mf286d |\
+	zte,mf287plus |\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
 		local mtdnum="$( find_mtd_index $CI_UBIPART )"
@@ -208,6 +209,7 @@ platform_do_upgrade() {
 	teltonika,rutx10 |\
 	zte,mf18a |\
 	zte,mf286d |\
+	zte,mf287plus |\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"

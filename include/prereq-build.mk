@@ -94,6 +94,10 @@ $(eval $(call TestHostCommand,perl-thread-queue, \
 	Please install the Perl Thread::Queue module, \
 	perl -MThread::Queue -e 1))
 
+$(eval $(call TestHostCommand,perl-ipc-cmd, \
+	Please install the Perl IPC:Cmd module, \
+	perl -MIPC::Cmd -e 1))
+
 $(eval $(call SetupHostCommand,tar,Please install GNU 'tar', \
 	gtar --version 2>&1 | grep GNU, \
 	gnutar --version 2>&1 | grep GNU, \
@@ -175,25 +179,21 @@ $(eval $(call SetupHostCommand,install,Please install GNU 'install', \
 $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
 	perl --version | grep "perl.*v5"))
 
-$(eval $(call CleanupPython2))
-
-$(eval $(call SetupHostCommand,python,Please install Python >= 3.6, \
+$(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
 	python3.11 -V 2>&1 | grep 'Python 3', \
 	python3.10 -V 2>&1 | grep 'Python 3', \
 	python3.9 -V 2>&1 | grep 'Python 3', \
 	python3.8 -V 2>&1 | grep 'Python 3', \
 	python3.7 -V 2>&1 | grep 'Python 3', \
-	python3.6 -V 2>&1 | grep 'Python 3', \
-	python3 -V 2>&1 | grep -E 'Python 3\.([6-9]|[0-9][0-9])\.?'))
+	python3 -V 2>&1 | grep -E 'Python 3\.([7-9]|[0-9][0-9])\.?'))
 
-$(eval $(call SetupHostCommand,python3,Please install Python >= 3.6, \
+$(eval $(call SetupHostCommand,python3,Please install Python >= 3.7, \
 	python3.11 -V 2>&1 | grep 'Python 3', \
 	python3.10 -V 2>&1 | grep 'Python 3', \
 	python3.9 -V 2>&1 | grep 'Python 3', \
 	python3.8 -V 2>&1 | grep 'Python 3', \
 	python3.7 -V 2>&1 | grep 'Python 3', \
-	python3.6 -V 2>&1 | grep 'Python 3', \
-	python3 -V 2>&1 | grep -E 'Python 3\.([6-9]|[0-9][0-9])\.?'))
+	python3 -V 2>&1 | grep -E 'Python 3\.([7-9]|[0-9][0-9])\.?'))
 
 $(eval $(call TestHostCommand,python3-distutils, \
 	Please install the Python3 distutils module, \

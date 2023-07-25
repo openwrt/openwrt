@@ -109,10 +109,10 @@ Examples
   $SELF malta be -m 64
   $SELF malta le64
   $SELF malta be-glibc
-  $SELF armvirt 32 \\
+  $SELF armsr armv7 \\
                 --machine virt,highmem=off \\
-                --kernel bin/targets/armvirt/32/openwrt-armvirt-32-zImage \\
-                --rootfs bin/targets/armvirt/32/openwrt-armvirt-32-root.ext4
+                --kernel bin/targets/armsr/armv7/openwrt-armsr-armv7-generic-kernel.bin \\
+                --rootfs bin/targets/armsr/armv7/openwrt-armsr-armv7-generic-ext4-rootfs.img
 EOF
 }
 
@@ -162,7 +162,7 @@ parse_args() {
 	o_bindir="${CONFIG_BINARY_FOLDER:-bin}/targets/$o_target/$o_subtarget"
 }
 
-start_qemu_armvirt() {
+start_qemu_armsr() {
 	local kernel="$o_kernel"
 	local rootfs="$o_rootfs"
 	local mach="${o_mach:-virt}"
@@ -170,15 +170,15 @@ start_qemu_armvirt() {
 	local qemu_exe
 
 	case "${o_subtarget%-*}" in
-		32)
+		armv7)
 			qemu_exe="qemu-system-arm"
 			cpu="cortex-a15"
-			[ -n "$kernel" ] || kernel="$o_bindir/openwrt-$o_target-${o_subtarget%-*}-zImage-initramfs"
+			[ -n "$kernel" ] || kernel="$o_bindir/openwrt-$o_target-${o_subtarget%-*}-generic-initramfs-kernel.bin"
 			;;
-		64)
+		armv8)
 			qemu_exe="qemu-system-aarch64"
 			cpu="cortex-a57"
-			[ -n "$kernel" ] || kernel="$o_bindir/openwrt-$o_target-${o_subtarget%-*}-Image-initramfs"
+			[ -n "$kernel" ] || kernel="$o_bindir/openwrt-$o_target-${o_subtarget%-*}-generic-initramfs-kernel.bin"
 			;;
 		*)
 			__errmsg "target $o_target: unknown subtarget $o_subtarget"
@@ -328,7 +328,7 @@ start_qemu_x86() {
 
 start_qemu() {
 	case "$o_target" in
-		armvirt)	start_qemu_armvirt	;;
+		armsr)		start_qemu_armsr	;;
 		malta)		start_qemu_malta	;;
 		x86)		start_qemu_x86		;;
 		*)
