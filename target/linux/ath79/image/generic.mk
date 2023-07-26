@@ -1532,12 +1532,9 @@ define Device/extreme-networks_ws-ap3805i
 endef
 TARGET_DEVICES += extreme-networks_ws-ap3805i
 
-define Device/fortinet_fap-221-b
+define Device/fortinet_fap_common
   $(Device/senao_loader_okli)
-  SOC := ar9344
   DEVICE_VENDOR := Fortinet
-  DEVICE_MODEL := FAP-221-B
-  FACTORY_IMG_NAME := FP221B-9.99-AP-build999-999999-patch99
   IMAGE_SIZE := 9216k
   LOADER_FLASH_OFFS := 0x040000
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
@@ -1545,6 +1542,13 @@ define Device/fortinet_fap-221-b
 	check-size | pad-to $$$$(IMAGE_SIZE) | \
 	append-loader-okli-uimage $(1) | pad-to 10944k | \
 	gzip-filename $$$$(FACTORY_IMG_NAME)
+endef
+
+define Device/fortinet_fap-221-b
+  $(Device/fortinet_fap_common)
+  SOC := ar9344
+  DEVICE_MODEL := FAP-221-B
+  FACTORY_IMG_NAME := FP221B-9.99-AP-build999-999999-patch99
 endef
 TARGET_DEVICES += fortinet_fap-221-b
 
