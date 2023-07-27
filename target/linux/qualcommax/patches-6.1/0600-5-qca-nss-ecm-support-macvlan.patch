@@ -3,7 +3,7 @@
 @@ -15,6 +15,13 @@ struct macvlan_port;
  #define MACVLAN_MC_FILTER_BITS	8
  #define MACVLAN_MC_FILTER_SZ	(1 << MACVLAN_MC_FILTER_BITS)
-
+ 
 +/* QCA NSS ECM Support - Start */
 +/*
 + * Callback for updating interface statistics for macvlan flows offloaded from host CPU.
@@ -20,7 +20,7 @@
  #endif
 +	macvlan_offload_stats_update_cb_t	offload_stats_update; /* QCA NSS ECM support */
  };
-
+ 
  static inline void macvlan_count_rx(const struct macvlan_dev *vlan,
 @@ -107,4 +115,26 @@ static inline int macvlan_release_l2fw_o
  	macvlan->accel_priv = NULL;
@@ -54,7 +54,7 @@
 @@ -933,6 +933,34 @@ static void macvlan_uninit(struct net_de
  		macvlan_port_destroy(port->dev);
  }
-
+ 
 +/* QCA NSS ECM Support - Start */
 +/* Update macvlan statistics processed by offload engines */
 +static void macvlan_dev_update_stats(struct net_device *dev,
@@ -91,6 +91,6 @@
  	vlan->port     = port;
  	vlan->set_features = MACVLAN_FEATURES;
 +	vlan->offload_stats_update = macvlan_dev_update_stats; /* QCA NSS ECM Support */
-
+ 
  	vlan->mode     = MACVLAN_MODE_VEPA;
  	if (data && data[IFLA_MACVLAN_MODE])
