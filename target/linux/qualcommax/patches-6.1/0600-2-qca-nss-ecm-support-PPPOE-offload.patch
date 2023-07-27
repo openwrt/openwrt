@@ -5,13 +5,13 @@
  #include <linux/atomic.h>
  #include <linux/refcount.h>
 +#include <linux/if_pppox.h>
-
+ 
  #include <linux/nsproxy.h>
  #include <net/net_namespace.h>
 @@ -254,6 +255,25 @@ struct ppp_net {
  #define seq_before(a, b)	((s32)((a) - (b)) < 0)
  #define seq_after(a, b)		((s32)((a) - (b)) > 0)
-
+ 
 +
 +/*
 + * Registration/Unregistration methods
@@ -40,10 +40,10 @@
  	int hdrlen;
 +	int ppp_proto;
 +	int version;
-
+ 
 +	int notify = 0;
  	pn = ppp_pernet(pch->chan_net);
-
+ 
  	mutex_lock(&pn->all_ppp_mutex);
 @@ -3485,13 +3508,40 @@ ppp_connect_channel(struct channel *pch,
  	++ppp->n_channels;
@@ -86,7 +86,7 @@
 +
  	return ret;
  }
-
+ 
 @@ -3509,6 +3559,13 @@ ppp_disconnect_channel(struct channel *p
  	pch->ppp = NULL;
  	write_unlock_bh(&pch->upl);
@@ -104,7 +104,7 @@
 @@ -3588,6 +3645,222 @@ static void *unit_find(struct idr *p, in
  	return idr_find(p, n);
  }
-
+ 
 +/* Updates the PPP interface statistics. */
 +void ppp_update_stats(struct net_device *dev, unsigned long rx_packets,
 +		      unsigned long rx_bytes, unsigned long tx_packets,
@@ -322,7 +322,7 @@
 +EXPORT_SYMBOL(ppp_release_channels);
 +
  /* Module/initialization stuff */
-
+ 
  module_init(ppp_init);
 @@ -3604,6 +3877,7 @@ EXPORT_SYMBOL(ppp_input_error);
  EXPORT_SYMBOL(ppp_output_wakeup);
@@ -344,26 +344,26 @@
  #include <linux/if_pppox.h>
 @@ -87,7 +88,7 @@
  static int __pppoe_xmit(struct sock *sk, struct sk_buff *skb);
-
+ 
  static const struct proto_ops pppoe_ops;
 -static const struct ppp_channel_ops pppoe_chan_ops;
 +static const struct pppoe_channel_ops pppoe_chan_ops;
-
+ 
  /* per-net private data for this module */
  static unsigned int pppoe_net_id __read_mostly;
 @@ -692,7 +693,7 @@ static int pppoe_connect(struct socket *
-
+ 
  		po->chan.mtu = dev->mtu - sizeof(struct pppoe_hdr) - 2;
  		po->chan.private = sk;
 -		po->chan.ops = &pppoe_chan_ops;
 +		po->chan.ops = (struct ppp_channel_ops *)&pppoe_chan_ops;
-
+ 
  		error = ppp_register_net_channel(dev_net(dev), &po->chan);
  		if (error) {
 @@ -995,9 +996,80 @@ static int pppoe_fill_forward_path(struc
  	return 0;
  }
-
+ 
 -static const struct ppp_channel_ops pppoe_chan_ops = {
 -	.start_xmit = pppoe_xmit,
 -	.fill_forward_path = pppoe_fill_forward_path,
@@ -442,14 +442,14 @@
 +	.ops.release = pppoe_release_chan,
 +	.ops.fill_forward_path = pppoe_fill_forward_path,
  };
-
+ 
  static int pppoe_recvmsg(struct socket *sock, struct msghdr *m,
 --- a/include/linux/if_pppox.h
 +++ b/include/linux/if_pppox.h
 @@ -91,4 +91,17 @@ enum {
      PPPOX_DEAD		= 16  /* dead, useless, please clean me up!*/
  };
-
+ 
 +/*
 + * PPPoE Channel specific operations
 + */
@@ -466,10 +466,10 @@
  #endif /* !(__LINUX_IF_PPPOX_H) */
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1707,6 +1707,24 @@ enum netdev_priv_flags {
+@@ -1710,6 +1710,24 @@ enum netdev_priv_flags {
  	IFF_NO_IP_ALIGN			= BIT_ULL(33),
  };
-
+ 
 +
 +/**
 + * enum netdev_priv_flags_ext - &struct net_device priv_flags_ext
@@ -491,7 +491,7 @@
  #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
  #define IFF_EBRIDGE			IFF_EBRIDGE
  #define IFF_BONDING			IFF_BONDING
-@@ -2050,7 +2068,8 @@ struct net_device {
+@@ -2053,7 +2071,8 @@ struct net_device {
  	/* Read-mostly cache-line for fast-path access */
  	unsigned int		flags;
  	unsigned long long	priv_flags;
@@ -511,7 +511,7 @@
 +
 +#define PPP_CHANNEL_DISCONNECT	0
 +#define PPP_CHANNEL_CONNECT	1
-
+ 
  struct net_device_path;
  struct net_device_path_ctx;
 @@ -30,9 +34,19 @@ struct ppp_channel_ops {
@@ -534,12 +534,12 @@
 +				struct net_device_path *,
 +				const struct ppp_channel *);
  };
-
+ 
  struct ppp_channel {
 @@ -76,6 +90,51 @@ extern int ppp_unit_number(struct ppp_ch
  /* Get the device name associated with a channel, or NULL if none */
  extern char *ppp_dev_name(struct ppp_channel *);
-
+ 
 +/* Call this to obtain the underlying protocol of the PPP channel,
 + * e.g. PX_PROTO_OE
 + */
