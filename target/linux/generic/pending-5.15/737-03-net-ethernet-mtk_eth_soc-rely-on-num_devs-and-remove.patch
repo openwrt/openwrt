@@ -78,7 +78,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		struct net_device *dev = eth->netdev[i];
  
  		mtk_w32(eth, MAC_MCR_FORCE_LINK_DOWN, MTK_MAC_MCR(i));
-@@ -3909,7 +3909,7 @@ static void mtk_pending_work(struct work
+@@ -3892,7 +3892,7 @@ static void mtk_pending_work(struct work
  	mtk_prepare_for_reset(eth);
  
  	/* stop all devices to make sure that dma is properly shut down */
@@ -87,7 +87,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		if (!eth->netdev[i] || !netif_running(eth->netdev[i]))
  			continue;
  
-@@ -3925,7 +3925,7 @@ static void mtk_pending_work(struct work
+@@ -3908,7 +3908,7 @@ static void mtk_pending_work(struct work
  	mtk_hw_init(eth, true);
  
  	/* restart DMA and enable IRQs */
@@ -96,7 +96,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		if (!test_bit(i, &restart))
  			continue;
  
-@@ -3953,7 +3953,7 @@ static int mtk_free_dev(struct mtk_eth *
+@@ -3936,7 +3936,7 @@ static int mtk_free_dev(struct mtk_eth *
  {
  	int i;
  
@@ -105,7 +105,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		if (!eth->netdev[i])
  			continue;
  		free_netdev(eth->netdev[i]);
-@@ -3972,7 +3972,7 @@ static int mtk_unreg_dev(struct mtk_eth
+@@ -3955,7 +3955,7 @@ static int mtk_unreg_dev(struct mtk_eth
  {
  	int i;
  
@@ -114,7 +114,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		struct mtk_mac *mac;
  		if (!eth->netdev[i])
  			continue;
-@@ -4277,7 +4277,7 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4259,7 +4259,7 @@ static int mtk_add_mac(struct mtk_eth *e
  	}
  
  	id = be32_to_cpup(_id);
@@ -123,7 +123,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		dev_err(eth->dev, "%d is not a valid mac id\n", id);
  		return -EINVAL;
  	}
-@@ -4407,7 +4407,7 @@ void mtk_eth_set_dma_device(struct mtk_e
+@@ -4400,7 +4400,7 @@ void mtk_eth_set_dma_device(struct mtk_e
  
  	rtnl_lock();
  
@@ -132,7 +132,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		dev = eth->netdev[i];
  
  		if (!dev || !(dev->flags & IFF_UP))
-@@ -4734,7 +4734,7 @@ static int mtk_remove(struct platform_de
+@@ -4727,7 +4727,7 @@ static int mtk_remove(struct platform_de
  	int i;
  
  	/* stop all devices to make sure that dma is properly shut down */

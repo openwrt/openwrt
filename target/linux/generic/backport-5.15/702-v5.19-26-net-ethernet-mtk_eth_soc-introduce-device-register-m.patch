@@ -507,7 +507,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	mtk_w32(eth, 0x21021000, MTK_FE_INT_GRP);
  
  	return 0;
-@@ -3171,14 +3234,6 @@ static int mtk_probe(struct platform_dev
+@@ -3164,14 +3227,6 @@ static int mtk_probe(struct platform_dev
  	if (IS_ERR(eth->base))
  		return PTR_ERR(eth->base);
  
@@ -522,7 +522,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628)) {
  		eth->rx_dma_l4_valid = RX_DMA_L4_VALID_PDMA;
  		eth->ip_align = NET_IP_ALIGN;
-@@ -3412,6 +3467,7 @@ static int mtk_remove(struct platform_de
+@@ -3405,6 +3460,7 @@ static int mtk_remove(struct platform_de
  }
  
  static const struct mtk_soc_data mt2701_data = {
@@ -530,7 +530,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.caps = MT7623_CAPS | MTK_HWLRO,
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7623_CLKS_BITMAP,
-@@ -3423,6 +3479,7 @@ static const struct mtk_soc_data mt2701_
+@@ -3416,6 +3472,7 @@ static const struct mtk_soc_data mt2701_
  };
  
  static const struct mtk_soc_data mt7621_data = {
@@ -538,7 +538,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.caps = MT7621_CAPS,
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7621_CLKS_BITMAP,
-@@ -3435,6 +3492,7 @@ static const struct mtk_soc_data mt7621_
+@@ -3428,6 +3485,7 @@ static const struct mtk_soc_data mt7621_
  };
  
  static const struct mtk_soc_data mt7622_data = {
@@ -546,7 +546,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.ana_rgc3 = 0x2028,
  	.caps = MT7622_CAPS | MTK_HWLRO,
  	.hw_features = MTK_HW_FEATURES,
-@@ -3448,6 +3506,7 @@ static const struct mtk_soc_data mt7622_
+@@ -3441,6 +3499,7 @@ static const struct mtk_soc_data mt7622_
  };
  
  static const struct mtk_soc_data mt7623_data = {
@@ -554,7 +554,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.caps = MT7623_CAPS | MTK_HWLRO,
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7623_CLKS_BITMAP,
-@@ -3460,6 +3519,7 @@ static const struct mtk_soc_data mt7623_
+@@ -3453,6 +3512,7 @@ static const struct mtk_soc_data mt7623_
  };
  
  static const struct mtk_soc_data mt7629_data = {
@@ -562,7 +562,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.ana_rgc3 = 0x128,
  	.caps = MT7629_CAPS | MTK_HWLRO,
  	.hw_features = MTK_HW_FEATURES,
-@@ -3472,6 +3532,7 @@ static const struct mtk_soc_data mt7629_
+@@ -3465,6 +3525,7 @@ static const struct mtk_soc_data mt7629_
  };
  
  static const struct mtk_soc_data rt5350_data = {

@@ -116,21 +116,17 @@
  				spi-max-frequency = <24000000>;
  			};
  		};
-@@ -103,9 +129,48 @@
+@@ -102,6 +128,45 @@
+ 			status = "okay";
  			perst-gpio = <&tlmm 38 0x1>;
  		};
- 
++
 +		i2c0: i2c@78b7000 { /* BLSP1 QUP2 */
 +			pinctrl-0 = <&i2c_0_pins>;
 +			pinctrl-names = "default";
 +
 +			status = "okay";
 +		};
-+
- 		qpic-nand@79b0000 {
- 			pinctrl-0 = <&nand_pins>;
- 			pinctrl-names = "default";
- 		};
 +
 +		usb3_ss_phy: ssphy@9a000 {
 +			status = "okay";
@@ -165,3 +161,4 @@
 +		};
  	};
  };
+ 
