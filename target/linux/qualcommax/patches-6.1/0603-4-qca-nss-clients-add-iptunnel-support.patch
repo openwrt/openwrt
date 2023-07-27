@@ -10,10 +10,10 @@
  	__u32 flags;		/* tunnel flags */
 --- a/include/net/ip_tunnels.h
 +++ b/include/net/ip_tunnels.h
-@@ -554,4 +554,9 @@ static inline void ip_tunnel_info_opts_s
-
+@@ -553,4 +553,9 @@ static inline void ip_tunnel_info_opts_s
+ 
  #endif /* CONFIG_INET */
-
+ 
 +/* QCA NSS Clients Support - Start */
 +void ipip6_update_offload_stats(struct net_device *dev, void *ptr);
 +void ip6_update_offload_stats(struct net_device *dev, void *ptr);
@@ -25,7 +25,7 @@
 @@ -2398,6 +2398,26 @@ nla_put_failure:
  	return -EMSGSIZE;
  }
-
+ 
 +/* QCA NSS Client Support - Start */
 +/*
 + * Update offload stats
@@ -54,7 +54,7 @@
 @@ -1733,6 +1733,23 @@ nla_put_failure:
  	return -EMSGSIZE;
  }
-
+ 
 +/* QCA NSS Clients Support - Start */
 +void ipip6_update_offload_stats(struct net_device *dev, void *ptr)
 +{

@@ -7,13 +7,13 @@
 +extern void br_dev_update_stats(struct net_device *dev,
 +				struct rtnl_link_stats64 *nlstats);
 +extern bool br_is_hairpin_enabled(struct net_device *dev);
-
+ 
  #if IS_ENABLED(CONFIG_BRIDGE) && IS_ENABLED(CONFIG_BRIDGE_IGMP_SNOOPING)
  int br_multicast_list_adjacent(struct net_device *dev,
 @@ -211,4 +214,42 @@ static inline clock_t br_get_ageing_time
  }
  #endif
-
+ 
 +/* QCA NSS ECM support - Start */
 +extern struct net_device *br_port_dev_get(struct net_device *dev,
 +					  unsigned char *addr,
@@ -56,9 +56,9 @@
 --- a/include/linux/if_vlan.h
 +++ b/include/linux/if_vlan.h
 @@ -227,7 +227,28 @@ extern void vlan_vids_del_by_dev(struct
-
+ 
  extern bool vlan_uses_dev(const struct net_device *dev);
-
+ 
 +/* QCA NSS ECM support - Start */
 +extern void __vlan_dev_update_accel_stats(struct net_device *dev,
 +                                    struct rtnl_link_stats64 *stats);
@@ -86,7 +86,7 @@
  		     __be16 vlan_proto, u16 vlan_id)
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -2830,6 +2830,10 @@ enum netdev_cmd {
+@@ -2831,6 +2831,10 @@ enum netdev_cmd {
  	NETDEV_OFFLOAD_XSTATS_DISABLE,
  	NETDEV_OFFLOAD_XSTATS_REPORT_USED,
  	NETDEV_OFFLOAD_XSTATS_REPORT_DELTA,
@@ -96,13 +96,13 @@
 +   /* QCA NSS ECM Support - End */
  };
  const char *netdev_cmd_to_name(enum netdev_cmd cmd);
-
+ 
 --- a/include/net/addrconf.h
 +++ b/include/net/addrconf.h
 @@ -506,4 +506,9 @@ int if6_proc_init(void);
  void if6_proc_exit(void);
  #endif
-
+ 
 +/* QCA NSS ECM support - Start */
 +struct net_device *ipv6_dev_find_and_hold(struct net *net, struct in6_addr *addr,
 +				 						  int strict);
@@ -114,7 +114,7 @@
 @@ -211,6 +211,11 @@ void rt6_multipath_rebalance(struct fib6
  void rt6_uncached_list_add(struct rt6_info *rt);
  void rt6_uncached_list_del(struct rt6_info *rt);
-
+ 
 +/* QCA NSS ECM support - Start */
 +int rt6_register_notifier(struct notifier_block *nb);
 +int rt6_unregister_notifier(struct notifier_block *nb);
@@ -125,7 +125,7 @@
  	const struct dst_entry *dst = skb_dst(skb);
 --- a/include/net/neighbour.h
 +++ b/include/net/neighbour.h
-@@ -604,4 +604,15 @@ static inline void neigh_update_is_route
+@@ -602,4 +602,15 @@ static inline void neigh_update_is_route
  		*notify = 1;
  	}
  }
@@ -143,10 +143,10 @@
  #endif
 --- a/include/net/route.h
 +++ b/include/net/route.h
-@@ -243,6 +243,11 @@ struct rtable *rt_dst_alloc(struct net_d
+@@ -240,6 +240,11 @@ struct rtable *rt_dst_alloc(struct net_d
  			    unsigned int flags, u16 type, bool noxfrm);
  struct rtable *rt_dst_clone(struct net_device *dev, struct rtable *rt);
-
+ 
 +/* QCA NSS ECM support - Start */
 +int ip_rt_register_notifier(struct notifier_block *nb);
 +int ip_rt_unregister_notifier(struct notifier_block *nb);
@@ -172,7 +172,7 @@
 @@ -548,4 +548,52 @@ static int __init vlan_offload_init(void
  	return 0;
  }
-
+ 
 +/* QCA NSS ECM support - Start */
 +/* Update the VLAN device with statistics from network offload engines */
 +void __vlan_dev_update_accel_stats(struct net_device *dev,
@@ -225,9 +225,9 @@
 --- a/net/bridge/br_fdb.c
 +++ b/net/bridge/br_fdb.c
 @@ -33,6 +33,35 @@ static const struct rhashtable_params br
-
+ 
  static struct kmem_cache *br_fdb_cache __read_mostly;
-
+ 
 +/* QCA NSS ECM support - Start */
 +ATOMIC_NOTIFIER_HEAD(br_fdb_notifier_list);
 +ATOMIC_NOTIFIER_HEAD(br_fdb_update_notifier_list);
@@ -263,7 +263,7 @@
 @@ -185,7 +214,26 @@ static void fdb_notify(struct net_bridge
  	struct sk_buff *skb;
  	int err = -ENOBUFS;
-
+ 
 -	if (swdev_notify)
 +	/* QCA NSS ECM support - Start */
 +	if (fdb->dst) {
@@ -286,14 +286,14 @@
 +
 +   if (swdev_notify)
  		br_switchdev_fdb_notify(br, fdb, type);
-
+ 
  	skb = nlmsg_new(fdb_nlmsg_size(), GFP_ATOMIC);
 @@ -520,6 +568,7 @@ void br_fdb_cleanup(struct work_struct *
  	unsigned long delay = hold_time(br);
  	unsigned long work_delay = delay;
  	unsigned long now = jiffies;
 +	u8 mac_addr[6]; /* QCA NSS ECM support */
-
+ 
  	/* this part is tricky, in order to avoid blocking learning and
  	 * consequently forwarding, we rely on rcu to delete objects with
 @@ -546,8 +595,15 @@ void br_fdb_cleanup(struct work_struct *
@@ -324,7 +324,7 @@
 +					0, (void *)addr);
 +				/* QCA NSS ECM support - End */
  			}
-
+ 
  			if (unlikely(test_bit(BR_FDB_ADDED_BY_USER, &flags)))
 @@ -1466,3 +1528,62 @@ void br_fdb_clear_offload(const struct n
  	spin_unlock_bh(&p->br->hash_lock);
@@ -392,9 +392,9 @@
 --- a/net/bridge/br_if.c
 +++ b/net/bridge/br_if.c
 @@ -26,6 +26,12 @@
-
+ 
  #include "br_private.h"
-
+ 
 +/* QCA NSS ECM support - Start */
 +/* Hook for external forwarding logic */
 +br_port_dev_get_hook_t __rcu *br_port_dev_get_hook __read_mostly;
@@ -404,25 +404,25 @@
  /*
   * Determine initial path cost based on speed.
   * using recommendations from 802.1d standard
-@@ -696,6 +702,8 @@ int br_add_if(struct net_bridge *br, str
-
+@@ -697,6 +703,8 @@ int br_add_if(struct net_bridge *br, str
+ 
  	kobject_uevent(&p->kobj, KOBJ_ADD);
-
+ 
 +	call_netdevice_notifiers(NETDEV_BR_JOIN, dev); /* QCA NSS ECM support */
 +
  	return 0;
-
+ 
  err6:
-@@ -731,6 +739,8 @@ int br_del_if(struct net_bridge *br, str
+@@ -732,6 +740,8 @@ int br_del_if(struct net_bridge *br, str
  	if (!p || p->br != br)
  		return -EINVAL;
-
+ 
 +	call_netdevice_notifiers(NETDEV_BR_LEAVE, dev); /* QCA NSS ECM support */
 +
  	/* Since more than one interface can be attached to a bridge,
  	 * there still maybe an alternate path for netconsole to use;
  	 * therefore there is no reason for a NETDEV_RELEASE event.
-@@ -774,3 +784,96 @@ bool br_port_flag_is_set(const struct ne
+@@ -775,3 +785,96 @@ bool br_port_flag_is_set(const struct ne
  	return p->flags & flag;
  }
  EXPORT_SYMBOL_GPL(br_port_flag_is_set);
@@ -521,10 +521,10 @@
 +/* QCA NSS ECM support - End */
 --- a/net/core/neighbour.c
 +++ b/net/core/neighbour.c
-@@ -1295,6 +1295,22 @@ static void neigh_update_hhs(struct neig
+@@ -1264,6 +1264,22 @@ static void neigh_update_hhs(struct neig
  	}
  }
-
+ 
 +/* QCA NSS ECM support - Start */
 +ATOMIC_NOTIFIER_HEAD(neigh_mac_update_notifier_list);
 +
@@ -544,15 +544,15 @@
  /* Generic update routine.
     -- lladdr is new lladdr or NULL, if it is not supplied.
     -- new    is new state.
-@@ -1323,6 +1339,7 @@ static int __neigh_update(struct neighbo
+@@ -1292,6 +1308,7 @@ static int __neigh_update(struct neighbo
  	struct net_device *dev;
  	int err, notify = 0;
  	u8 old;
 +   struct neigh_mac_update nmu; /* QCA NSS ECM support */
-
+ 
  	trace_neigh_update(neigh, lladdr, new, flags, nlmsg_pid);
-
-@@ -1337,7 +1354,10 @@ static int __neigh_update(struct neighbo
+ 
+@@ -1306,7 +1323,10 @@ static int __neigh_update(struct neighbo
  		new = old;
  		goto out;
  	}
@@ -563,8 +563,8 @@
 +   if (!(flags & NEIGH_UPDATE_F_ADMIN) &&
  	    (old & (NUD_NOARP | NUD_PERMANENT)))
  		goto out;
-
-@@ -1374,7 +1394,12 @@ static int __neigh_update(struct neighbo
+ 
+@@ -1343,7 +1363,12 @@ static int __neigh_update(struct neighbo
  		   - compare new & old
  		   - if they are different, check override flag
  		 */
@@ -578,7 +578,7 @@
  		    !memcmp(lladdr, neigh->ha, dev->addr_len))
  			lladdr = neigh->ha;
  	} else {
-@@ -1496,8 +1521,11 @@ out:
+@@ -1465,8 +1490,11 @@ out:
  		neigh_update_gc_list(neigh);
  	if (managed_update)
  		neigh_update_managed_list(neigh);
@@ -596,7 +596,7 @@
 @@ -1211,6 +1211,9 @@ static bool fib_valid_key_len(u32 key, u
  static void fib_remove_alias(struct trie *t, struct key_vector *tp,
  			     struct key_vector *l, struct fib_alias *old);
-
+ 
 +/* Define route change notification chain. */
 +static BLOCKING_NOTIFIER_HEAD(iproute_chain);	/* QCA NSS ECM support */
 +
@@ -611,22 +611,22 @@
 +				     RTM_NEWROUTE, fi);
 +
  	return 0;
-
+ 
  out_remove_new_fa:
-@@ -1774,6 +1780,9 @@ int fib_table_delete(struct net *net, st
+@@ -1775,6 +1781,9 @@ int fib_table_delete(struct net *net, st
  	if (fa_to_delete->fa_state & FA_S_ACCESSED)
  		rt_cache_flush(cfg->fc_nlinfo.nl_net);
-
+ 
 +	blocking_notifier_call_chain(&iproute_chain,
 +				     RTM_DELROUTE, fa_to_delete->fa_info);
 +
  	fib_release_info(fa_to_delete->fa_info);
  	alias_free_mem_rcu(fa_to_delete);
  	return 0;
-@@ -2402,6 +2411,20 @@ void __init fib_trie_init(void)
+@@ -2403,6 +2412,20 @@ void __init fib_trie_init(void)
  					   0, SLAB_PANIC | SLAB_ACCOUNT, NULL);
  }
-
+ 
 +/* QCA NSS ECM support - Start */
 +int ip_rt_register_notifier(struct notifier_block *nb)
 +{
@@ -646,51 +646,51 @@
  	struct fib_table *tb;
 --- a/net/ipv6/ndisc.c
 +++ b/net/ipv6/ndisc.c
-@@ -665,6 +665,7 @@ void ndisc_send_ns(struct net_device *de
+@@ -666,6 +666,7 @@ void ndisc_send_ns(struct net_device *de
  	if (skb)
  		ndisc_send_skb(skb, daddr, saddr);
  }
 +EXPORT_SYMBOL(ndisc_send_ns);
-
+ 
  void ndisc_send_rs(struct net_device *dev, const struct in6_addr *saddr,
  		   const struct in6_addr *daddr)
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -3853,6 +3853,9 @@ out_free:
+@@ -3857,6 +3857,9 @@ out_free:
  	return ERR_PTR(err);
  }
-
+ 
 +/* Define route change notification chain. */
 +ATOMIC_NOTIFIER_HEAD(ip6route_chain);	/* QCA NSS ECM support */
 +
  int ip6_route_add(struct fib6_config *cfg, gfp_t gfp_flags,
  		  struct netlink_ext_ack *extack)
  {
-@@ -3864,6 +3867,10 @@ int ip6_route_add(struct fib6_config *cf
+@@ -3868,6 +3871,10 @@ int ip6_route_add(struct fib6_config *cf
  		return PTR_ERR(rt);
-
+ 
  	err = __ip6_ins_rt(rt, &cfg->fc_nlinfo, extack);
 +	if (!err)
 +		atomic_notifier_call_chain(&ip6route_chain,
 +					   RTM_NEWROUTE, rt);
 +
  	fib6_info_release(rt);
-
+ 
  	return err;
-@@ -3885,6 +3892,9 @@ static int __ip6_del_rt(struct fib6_info
+@@ -3889,6 +3896,9 @@ static int __ip6_del_rt(struct fib6_info
  	err = fib6_del(rt, info);
  	spin_unlock_bh(&table->tb6_lock);
-
+ 
 +	if (!err)
 +		atomic_notifier_call_chain(&ip6route_chain,
 +					   RTM_DELROUTE, rt);
  out:
  	fib6_info_release(rt);
  	return err;
-@@ -6338,6 +6348,20 @@ static int ip6_route_dev_notify(struct n
+@@ -6342,6 +6352,20 @@ static int ip6_route_dev_notify(struct n
  	return NOTIFY_OK;
  }
-
+ 
 +/* QCA NSS ECM support - Start */
 +int rt6_register_notifier(struct notifier_block *nb)
 +{
@@ -710,7 +710,7 @@
   */
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -1629,6 +1629,7 @@ const char *netdev_cmd_to_name(enum netd
+@@ -1614,6 +1614,7 @@ const char *netdev_cmd_to_name(enum netd
  	N(SVLAN_FILTER_PUSH_INFO) N(SVLAN_FILTER_DROP_INFO)
  	N(PRE_CHANGEADDR) N(OFFLOAD_XSTATS_ENABLE) N(OFFLOAD_XSTATS_DISABLE)
  	N(OFFLOAD_XSTATS_REPORT_USED) N(OFFLOAD_XSTATS_REPORT_DELTA)
@@ -720,16 +720,16 @@
  	return "UNKNOWN_NETDEV_EVENT";
 --- a/net/ipv6/addrconf.c
 +++ b/net/ipv6/addrconf.c
-@@ -986,6 +986,7 @@ void inet6_ifa_finish_destroy(struct ine
-
+@@ -985,6 +985,7 @@ void inet6_ifa_finish_destroy(struct ine
+ 
  	kfree_rcu(ifp, rcu);
  }
 +EXPORT_SYMBOL(inet6_ifa_finish_destroy);
-
+ 
  static void
  ipv6_link_dev_addr(struct inet6_dev *idev, struct inet6_ifaddr *ifp)
-@@ -2044,6 +2045,36 @@ struct inet6_ifaddr *ipv6_get_ifaddr(str
-
+@@ -2043,6 +2044,36 @@ struct inet6_ifaddr *ipv6_get_ifaddr(str
+ 
  	return result;
  }
 +EXPORT_SYMBOL(ipv6_get_ifaddr);
@@ -762,15 +762,15 @@
 +    return dev;
 +}
 +EXPORT_SYMBOL(ipv6_dev_find_and_hold);
-
+ 
  /* Gets referenced address, destroys ifaddr */
-
+ 
 --- a/include/net/vxlan.h
 +++ b/include/net/vxlan.h
-@@ -427,6 +427,15 @@ static inline __be32 vxlan_compute_rco(u
+@@ -432,6 +432,15 @@ static inline __be32 vxlan_compute_rco(u
  	return vni_field;
  }
-
+ 
 +/*
 + * vxlan_get_vni()
 + *      Returns the vni corresponding to tunnel

@@ -131,7 +131,7 @@
  
 --- a/drivers/net/ppp/pptp.c
 +++ b/drivers/net/ppp/pptp.c
-@@ -49,6 +49,8 @@ static struct proto pptp_sk_proto __read
+@@ -50,6 +50,8 @@ static struct proto pptp_sk_proto __read
  static const struct ppp_channel_ops pptp_chan_ops;
  static const struct proto_ops pptp_ops;
  
@@ -140,7 +140,7 @@
  static struct pppox_sock *lookup_chan(u16 call_id, __be32 s_addr)
  {
  	struct pppox_sock *sock;
-@@ -90,6 +92,79 @@ static int lookup_chan_dst(u16 call_id,
+@@ -91,6 +93,79 @@ static int lookup_chan_dst(u16 call_id,
  	return i < MAX_CALLID;
  }
  
@@ -220,7 +220,16 @@
  static int add_chan(struct pppox_sock *sock,
  		    struct pptp_addr *sa)
  {
-@@ -145,8 +220,11 @@ static int pptp_xmit(struct ppp_channel
+@@ -136,7 +211,7 @@ static struct rtable *pptp_route_output(
+ 	struct net *net;
+ 
+ 	net = sock_net(sk);
+-	flowi4_init_output(fl4, sk->sk_bound_dev_if, sk->sk_mark, 0,
++	flowi4_init_output(fl4, 0, sk->sk_mark, 0,
+ 			   RT_SCOPE_UNIVERSE, IPPROTO_GRE, 0,
+ 			   po->proto.pptp.dst_addr.sin_addr.s_addr,
+ 			   po->proto.pptp.src_addr.sin_addr.s_addr,
+@@ -163,8 +238,11 @@ static int pptp_xmit(struct ppp_channel
  
  	struct rtable *rt;
  	struct net_device *tdev;
@@ -232,16 +241,7 @@
  
  	if (sk_pppox(po)->sk_state & PPPOX_DEAD)
  		goto tx_error;
-@@ -155,7 +233,7 @@ static int pptp_xmit(struct ppp_channel
- 				   opt->dst_addr.sin_addr.s_addr,
- 				   opt->src_addr.sin_addr.s_addr,
- 				   0, 0, IPPROTO_GRE,
--				   RT_TOS(0), sk->sk_bound_dev_if);
-+				   RT_TOS(0), 0);
- 	if (IS_ERR(rt))
- 		goto tx_error;
- 
-@@ -244,7 +322,32 @@ static int pptp_xmit(struct ppp_channel
+@@ -258,7 +336,32 @@ static int pptp_xmit(struct ppp_channel
  	ip_select_ident(net, skb, NULL);
  	ip_send_check(iph);
  
@@ -275,7 +275,7 @@
  	return 1;
  
  tx_error:
-@@ -300,6 +403,13 @@ static int pptp_rcv_core(struct sock *sk
+@@ -314,6 +417,13 @@ static int pptp_rcv_core(struct sock *sk
  		goto drop;
  
  	payload = skb->data + headersize;
@@ -289,7 +289,7 @@
  	/* check for expected sequence number */
  	if (seq < opt->seq_recv + 1 || WRAPPED(opt->seq_recv, seq)) {
  		if ((payload[0] == PPP_ALLSTATIONS) && (payload[1] == PPP_UI) &&
-@@ -357,6 +467,7 @@ static int pptp_rcv(struct sk_buff *skb)
+@@ -371,6 +481,7 @@ static int pptp_rcv(struct sk_buff *skb)
  	if (po) {
  		skb_dst_drop(skb);
  		nf_reset_ct(skb);
@@ -297,17 +297,7 @@
  		return sk_receive_skb(sk_pppox(po), skb, 0);
  	}
  drop:
-@@ -442,8 +553,7 @@ static int pptp_connect(struct socket *s
- 				   opt->dst_addr.sin_addr.s_addr,
- 				   opt->src_addr.sin_addr.s_addr,
- 				   0, 0,
--				   IPPROTO_GRE, RT_CONN_FLAGS(sk),
--				   sk->sk_bound_dev_if);
-+				   IPPROTO_GRE, RT_CONN_FLAGS(sk), 0);
- 	if (IS_ERR(rt)) {
- 		error = -EHOSTUNREACH;
- 		goto end;
-@@ -464,7 +574,7 @@ static int pptp_connect(struct socket *s
+@@ -473,7 +584,7 @@ static int pptp_connect(struct socket *s
  
  	opt->dst_addr = sp->sa_addr.pptp;
  	sk->sk_state |= PPPOX_CONNECTED;
@@ -316,7 +306,7 @@
   end:
  	release_sock(sk);
  	return error;
-@@ -594,9 +704,169 @@ static int pptp_ppp_ioctl(struct ppp_cha
+@@ -603,9 +714,169 @@ static int pptp_ppp_ioctl(struct ppp_cha
  	return err;
  }
  
