@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	return IRQ_HANDLED;
-@@ -4673,6 +4673,8 @@ static int mtk_probe(struct platform_dev
+@@ -4666,6 +4666,8 @@ static int mtk_probe(struct platform_dev
  	 * for NAPI to work
  	 */
  	init_dummy_netdev(&eth->dummy_dev);
