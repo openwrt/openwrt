@@ -160,6 +160,36 @@ define Device/elecom_wrc-x3200gst3
 endef
 TARGET_DEVICES += elecom_wrc-x3200gst3
 
+define Device/iptime_ax8004m
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := AX8004M
+  DEVICE_DTS := mt7622-iptime-ax8004m
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to 128k | append-rootfs | \
+	  pad-rootfs | iptime-crc32 ax8004m
+endef
+TARGET_DEVICES += iptime_ax8004m
+
+define Device/iptime_ax8004m-ubi
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := AX8004M
+  DEVICE_VARIANT := UBI
+  DEVICE_DTS := mt7622-iptime-ax8004m-ubi
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGES := sysupgrade.bin
+  KERNEL_IN_UBI := 1
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k | iptime-crc32 ax8004m
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += iptime_ax8004m-ubi
+
 define Device/linksys_e8450
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := E8450

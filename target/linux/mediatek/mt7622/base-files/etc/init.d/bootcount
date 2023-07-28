@@ -4,6 +4,11 @@ START=99
 
 boot() {
 	case $(board_name) in
+	iptime,ax8004m)
+		if ! grep -q `fw_printenv boot_from` /proc/cmdline; then
+			fw_setenv boot_from `grep -q boot_from=firmware1 /proc/cmdline && echo firmware1 || echo firmware2`
+		fi
+		;;
 	linksys,e8450)
 		mtd erase senv || true
 		;;

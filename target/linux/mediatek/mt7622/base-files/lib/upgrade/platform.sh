@@ -34,6 +34,17 @@ platform_do_upgrade() {
 		fi
 		;;
 	elecom,wrc-x3200gst3|\
+	iptime,ax8004m-ubi)
+		nand_do_upgrade_iptime_ubi "$1"
+		;;
+	iptime,ax8004m)
+		if grep -q boot_from=firmware1 /proc/cmdline; then
+			PART_NAME=firmware1
+		elif grep -q boot_from=firmware2 /proc/cmdline; then
+			PART_NAME=firmware2
+		fi
+		default_do_upgrade "$1"
+		;;
 	mediatek,mt7622-rfb1-ubi|\
 	netgear,wax206|\
 	totolink,a8000ru|\
@@ -71,6 +82,7 @@ platform_check_image() {
 		buffalo_check_image "$board" "$magic" "$1" || return 1
 		;;
 	elecom,wrc-x3200gst3|\
+	iptime,ax8004m-ubi|\
 	mediatek,mt7622-rfb1-ubi|\
 	netgear,wax206|\
 	totolink,a8000ru|\
@@ -100,4 +112,19 @@ platform_copy_config() {
 		fi
 		;;
 	esac
+}
+
+nand_do_upgrade_iptime_ubi() {
+	local file="$1"
+	local setenv_script="/tmp/fw_env_upgrade"
+
+	echo '_init_env env set _init_env true; mtdparts default; env set mtdparts ${mtdparts},0x7400000@0x0200000(ubi); env set boot_from ubi; env save' >> $setenv_script
+	echo 'bootstock if test "$boot_from" = "firmware1" || test "$boot_from" = "firmware2"; then efm boot; fi' >> $setenv_script
+	echo 'bootubi if test "$boot_from" = "ubi"; then ubi part ubi && ubi read $loadaddr kernel && bootm $loadaddr#config-1; fi' >> $setenv_script
+	echo 'bootmenu_11 c. Boot efm firmware or OpenWrt via Flash.=run boot11' >> $setenv_script
+	echo 'boot11 rst_event; run _init_env ; run bootstock ; run bootubi ; efm tftpup ; reset' >> $setenv_script
+
+	sync
+	nand_do_flash_file "$file" && fw_setenv -s $setenv_script && nand_do_upgrade_success
+	nand_do_upgrade_failed
 }
