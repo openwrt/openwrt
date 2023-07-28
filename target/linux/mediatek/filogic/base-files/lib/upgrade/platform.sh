@@ -83,6 +83,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	h3c,magic-nx30-pro|\
+	360,t7|\
 	qihoo,360t7|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
