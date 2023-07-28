@@ -8,6 +8,26 @@ ramips_setup_interfaces()
 	local board="$1"
 
 	case $board in
+	alfa-network,ax1800rm|\
+	ampedwireless,ally-r1900k|\
+	asus,rt-ax53u|\
+	gehua,ghl-r-001|\
+	h3c,tx1800-plus|\
+	h3c,tx1801-plus|\
+	h3c,tx1806|\
+	haier,har-20s2u1|\
+	hiwifi,hc5962|\
+	netgear,wax202|\
+	sim,simax1800t|\
+	xiaomi,mi-router-3-pro|\
+	xiaomi,mi-router-ac2100|\
+	xiaomi,mi-router-cr6606|\
+	xiaomi,mi-router-cr6608|\
+	xiaomi,mi-router-cr6609|\
+	xiaomi,redmi-router-ac2100|\
+	zyxel,wsm20)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	arcadyan,we420223-99)
 		ucidef_set_interface_lan "swp0 swp1"
 		;;
@@ -38,25 +58,6 @@ ramips_setup_interfaces()
 	zyxel,nwa50ax|\
 	zyxel,nwa55axe)
 		ucidef_set_interface_lan "lan"
-		;;
-	ampedwireless,ally-r1900k|\
-	asus,rt-ax53u|\
-	gehua,ghl-r-001|\
-	h3c,tx1800-plus|\
-	h3c,tx1801-plus|\
-	h3c,tx1806|\
-	haier,har-20s2u1|\
-	hiwifi,hc5962|\
-	netgear,wax202|\
-	sim,simax1800t|\
-	xiaomi,mi-router-3-pro|\
-	xiaomi,mi-router-ac2100|\
-	xiaomi,mi-router-cr6606|\
-	xiaomi,mi-router-cr6608|\
-	xiaomi,mi-router-cr6609|\
-	xiaomi,redmi-router-ac2100|\
-	zyxel,wsm20)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	asiarf,ap7621-001|\
 	humax,e10|\
@@ -166,6 +167,16 @@ ramips_setup_macs()
 	local label_mac=""
 
 	case $board in
+	alfa-network,ax1800rm|\
+	jcg,y2|\
+	wavlink,wl-wn531a6|\
+	wavlink,wl-wn533a8|\
+	winstars,ws-wn583a6|\
+	zbtlink,zbt-we1326|\
+	zbtlink,zbt-wg3526-16m|\
+	zbtlink,zbt-wg3526-32m)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
+		;;
 	ampedwireless,ally-00x19k)
 		lan_mac=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
 		label_mac=$lan_mac
@@ -235,15 +246,6 @@ ramips_setup_macs()
 	iptime,t5004)
 		lan_mac=$(mtd_get_mac_ascii config ethaddr)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-	jcg,y2|\
-	wavlink,wl-wn531a6|\
-	wavlink,wl-wn533a8|\
-	winstars,ws-wn583a6|\
-	zbtlink,zbt-we1326|\
-	zbtlink,zbt-wg3526-16m|\
-	zbtlink,zbt-wg3526-32m)
-		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	linksys,e5600|\
 	linksys,ea6350-v4|\

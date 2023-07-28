@@ -209,6 +209,18 @@ define Device/afoundry_ew1200
 endef
 TARGET_DEVICES += afoundry_ew1200
 
+define Device/alfa-network_ax1800rm
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 15488k
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := AX1800RM
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += recovery.bin
+  IMAGE/recovery.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += alfa-network_ax1800rm
+
 define Device/alfa-network_quad-e4g
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
