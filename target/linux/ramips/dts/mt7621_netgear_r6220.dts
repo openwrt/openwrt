@@ -52,10 +52,18 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
+				eeprom0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
 				macaddr_factory_4: macaddr@4 {
 					compatible = "mac-base";
 					reg = <0x4 0x6>;
 					#nvmem-cell-cells = <1>;
+				};
+
+				eeprom1: eeprom@8000 {
+					reg = <0x8000 0x200>;
 				};
 			};
 		};
