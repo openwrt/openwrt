@@ -40,6 +40,7 @@ xiaomi_initial_setup()
 	case "$board" in
 	xiaomi,mi-router-wr30u-stock)
 		fw_setenv mtdparts "nmbm0:1024k(bl2),256k(Nvram),256k(Bdata),2048k(factory),2048k(fip),256k(crash),256k(crash_log),34816k(ubi),34816k(ubi1),32768k(overlay),12288k(data),256k(KF)"
+		;;
 	xiaomi,redmi-router-ax6000-stock)
 		fw_setenv mtdparts "nmbm0:1024k(bl2),256k(Nvram),256k(Bdata),2048k(factory),2048k(fip),256k(crash),256k(crash_log),30720k(ubi),30720k(ubi1),51200k(overlay)"
 		;;
