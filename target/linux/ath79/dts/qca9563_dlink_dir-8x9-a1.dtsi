@@ -32,8 +32,8 @@
 		compatible = "qcom,ath10k";
 		reg = <0x0000 0 0 0 0>;
 
-		nvmem-cells = <&calibration_ath10k>, <&macaddr_devdata_94>;
-		nvmem-cell-names = "calibration", "mac-address-ascii";
+		nvmem-cells = <&calibration_ath10k>, <&macaddr_devdata_94 0>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };
 
@@ -68,16 +68,25 @@
 				read-only;
 
 				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				macaddr_devdata_94: macaddr@94 {
-					reg = <0x94 0x11>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_devdata_94: macaddr@94 {
+						compatible = "mac-base";
+						reg = <0x94 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_devdata_b0: macaddr@b0 {
+						compatible = "mac-base";
+						reg = <0xb0 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 
-				macaddr_devdata_b0: macaddr@b0 {
-					reg = <0xb0 0x11>;
-				};
 			};
 
 			partition@60000 {
@@ -147,6 +156,6 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&calibration_ath9k>, <&macaddr_devdata_b0>;
-	nvmem-cell-names = "calibration", "mac-address-ascii";
+	nvmem-cells = <&calibration_ath9k>, <&macaddr_devdata_b0 0>;
+	nvmem-cell-names = "calibration", "mac-address";
 };
