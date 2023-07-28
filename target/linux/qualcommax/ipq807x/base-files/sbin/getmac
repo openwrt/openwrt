@@ -1,0 +1,122 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+usage() {
+	echo "getmac <wifi0 | wifi1 | eth0 | eth1 | eth2 | eth3 | eth4 | eth4 | eth5 *>"
+	echo "example: getmac"
+	echo "         getmac eth0"
+	echo "         getmac eth1"
+	echo "         getmac eth2"
+	echo "         getmac eth3"
+	echo "         getmac eth4"
+	echo "         getmac eth5"
+	echo "         getmac wl0"
+	echo "         getmac wl1"
+	echo "         getmac wl2"
+}
+
+art_mtd=$(find_mtd_part 0:art)
+if [ -z "$art_mtd" ]; then
+art_mtd=$(find_mmc_part "0:art")
+fi
+
+get_eth0()
+{
+	eth0adr="`hexdump -s 0 -n 6 -e '6/1 "%02x:"'  "$art_mtd" | cut -b-17`"
+}
+
+get_eth1()
+{
+	eth1adr="`hexdump -s 6 -n 6 -e '6/1 "%02x:"'  "$art_mtd" | cut -b-17`"
+}
+
+get_eth2()
+{
+	eth2adr="`hexdump -s 12 -n 6 -e '6/1 "%02x:"'  "$art_mtd" | cut -b-17`"
+}
+
+get_eth3()
+{
+	eth3adr="`hexdump -s 18 -n 6 -e '6/1 "%02x:"'  "$art_mtd" | cut -b-17`"
+}
+
+get_eth4()
+{
+	eth4adr="`hexdump -s 24 -n 6 -e '6/1 "%02x:"'  "$art_mtd" | cut -b-17`"
+}
+
+get_eth5()
+{
+	eth5adr="`hexdump -s 30 -n 6 -e '6/1 "%02x:"'  "$art_mtd" | cut -b-17`"
+}
+
+#wifi0 wifi1都是soc0的子设备，用caldata.bin,wifi1.caldata存放soc1的子设备9889的wifi2的mac
+get_wifi0()
+{
+	wifi0adr="`hexdump -s 14 -n 6 -e '6/1 "%02x:"' /lib/firmware/ath11k/IPQ8074/hw2.0/cal-ahb-c000000.wifi.bin | cut -b -17`"
+	[ "${wifi0adr}" == "" -o "$wifi0adr" = "ff:ff:ff:ff:ff:ff" ] && wifi0adr="`cat /sys/class/net/wifi0/address 2>/dev/null`"
+	ath0adr="$wifi0adr"
+}
+
+get_wifi1()
+{
+	wifi1adr="`hexdump -s 20 -n 6 -e '6/1 "%02x:"' /lib/firmware/ath11k/IPQ8074/hw2.0/cal-ahb-c000000.wifi.bin -e | cut -b -17`"
+	[ "${wifi1adr}" == "" -o "$wifi1adr" = "ff:ff:ff:ff:ff:ff" ] && wifi1adr="`cat /sys/class/net/wifi1/address 2>/dev/null`"
+	ath1adr="$wifi1adr"
+}
+
+# eth0 eth1 2g 5g plc eth2 eth3 bt
+case $1 in
+	-h)
+	usage
+	;;
+
+	wifi0)
+	# wl0=5g iface, to adapt miwifi habit
+	get_wifi0
+	echo "$ath0adr"
+	;;
+	
+	wifi1)
+	# wl1=2.4g iface, to adapt miwifi habit
+	get_wifi1
+	echo "$ath1adr"
+	;;
+
+	eth0)
+	get_eth0
+	echo "$eth0adr"
+	;;
+
+	eth1)
+	get_eth1
+	echo "$eth1adr"
+	;;
+
+	eth2)
+	get_eth2
+	echo "$eth2adr"
+	;;
+
+	eth3)
+	get_eth3
+	echo "$eth3adr"
+	;;
+
+	eth4)
+	get_eth4
+	echo "$eth4adr"
+	;;
+
+	eth5)
+	get_eth5
+	echo "$eth5adr"
+	;;
+
+	*)
+	usage
+	;;
+esac
+

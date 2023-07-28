@@ -78,6 +78,18 @@ define Device/edgecore_eap102
 endef
 TARGET_DEVICES += edgecore_eap102
 
+define Device/pangu_l8072v2
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := PANGU
+	DEVICE_MODEL := L8072V2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk07
+	SOC := ipq8072
+endef
+TARGET_DEVICES += pangu_l8072v2
+
 define Device/edimax_cax1800
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

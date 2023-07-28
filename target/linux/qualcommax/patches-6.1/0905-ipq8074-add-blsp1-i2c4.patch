@@ -1,0 +1,25 @@
+diff -uprN a/arch/arm64/boot/dts/qcom/ipq8074.dtsi b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
+--- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi	2023-06-22 18:11:32.910676000 -0700
++++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi	2023-07-26 21:43:58.269612521 -0700
+@@ -750,6 +750,21 @@
+ 			status = "disabled";
+ 		};
+ 
++		blsp1_i2c4: i2c@78b8000 {
++			compatible = "qcom,i2c-qup-v2.2.1";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0x078b8000 0x600>;
++			interrupts = <GIC_SPI 98 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&gcc GCC_BLSP1_QUP4_I2C_APPS_CLK>,
++				 <&gcc GCC_BLSP1_AHB_CLK>;
++			clock-names = "core", "iface";
++			clock-frequency = <100000>;
++			dmas = <&blsp_dma 18>, <&blsp_dma 19>;
++			dma-names = "tx", "rx";
++			status = "disabled";
++		};
++
+ 		blsp1_i2c5: i2c@78b9000 {
+ 			compatible = "qcom,i2c-qup-v2.2.1";
+ 			#address-cells = <1>;
