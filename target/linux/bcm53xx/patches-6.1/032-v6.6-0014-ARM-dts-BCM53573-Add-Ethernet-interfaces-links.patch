@@ -1,0 +1,73 @@
+From e0ae343a2c1b782a346d9b844ea65e1d49c428b2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Mon, 24 Jul 2023 12:12:27 +0200
+Subject: [PATCH] ARM: dts: BCM53573: Add Ethernet interfaces links
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BCM53573 has 2 Ethernet interfaces each connected to one of switch ports
+in the default design. They both use fixed links.
+
+An exception are Luxul XAP devices that have switch replaced by a single
+PHY.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Link: https://lore.kernel.org/r/20230724101227.5420-1-zajec5@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ .../boot/dts/broadcom/bcm47189-luxul-xap-1440.dts    |  2 ++
+ .../arm/boot/dts/broadcom/bcm47189-luxul-xap-810.dts |  2 ++
+ arch/arm/boot/dts/broadcom/bcm53573.dtsi             | 12 ++++++++++++
+ 3 files changed, 16 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
++++ b/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
+@@ -50,6 +50,8 @@
+ 	phy-mode = "rgmii";
+ 	phy-handle = <&bcm54210e>;
+ 
++	/delete-node/ fixed-link;
++
+ 	mdio {
+ 		/delete-node/ switch@1e;
+ 
+--- a/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
++++ b/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
+@@ -86,6 +86,8 @@
+ 	phy-mode = "rgmii";
+ 	phy-handle = <&bcm54210e>;
+ 
++	/delete-node/ fixed-link;
++
+ 	mdio {
+ 		/delete-node/ switch@1e;
+ 
+--- a/arch/arm/boot/dts/bcm53573.dtsi
++++ b/arch/arm/boot/dts/bcm53573.dtsi
+@@ -181,6 +181,12 @@
+ 
+ 		gmac0: ethernet@5000 {
+ 			reg = <0x5000 0x1000>;
++			phy-mode = "internal";
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
+ 
+ 			mdio {
+ 				#address-cells = <1>;
+@@ -237,6 +243,12 @@
+ 
+ 		gmac1: ethernet@b000 {
+ 			reg = <0xb000 0x1000>;
++			phy-mode = "internal";
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
+ 		};
+ 
+ 		pmu@12000 {
