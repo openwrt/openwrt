@@ -8,6 +8,10 @@ boot() {
 	adtran,bsap1840)
 		fconfig -s -w -d $(find_mtd_part "RedBoot config") -n boot_cntb -x 0
 		;;
+	adtran,bsap1920|\
+	adtran,bsap1925)
+		fw_setenv bootcnt 0
+		;;
 	moxa,awk-1137c)
 		fw_setenv fwr_verify 0
 		;;
