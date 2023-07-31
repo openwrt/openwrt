@@ -108,6 +108,14 @@ $(BIN_DIR)/profiles.json: FORCE
 
 json_overview_image_info: $(BIN_DIR)/profiles.json
 
+json_packages_info: FORCE
+	find "$(PACKAGE_DIR)" "$(OUTPUT_DIR)/packages/$(ARCH_PACKAGES)/" \
+		-name "Packages.manifest" -exec cat {} + > \
+		$(TMP_DIR)/.concatenated_packages_manifest.txt
+	$(SCRIPT_DIR)/json_packages_info.py \
+		--input-file $(TMP_DIR)/.concatenated_packages_manifest.txt \
+		--output-file $(BIN_DIR)/packages-info.json
+
 checksum: FORCE
 	$(call sha256sums,$(BIN_DIR),$(CONFIG_BUILDBOT))
 
@@ -130,6 +138,7 @@ prepare: .config $(tools/stamp-compile) $(toolchain/stamp-compile)
 world: prepare $(target/stamp-compile) $(package/stamp-compile) $(package/stamp-install) $(target/stamp-install) FORCE
 	$(_SINGLE)$(SUBMAKE) -r package/index
 	$(_SINGLE)$(SUBMAKE) -r json_overview_image_info
+	$(_SINGLE)$(SUBMAKE) -r json_packages_info
 	$(_SINGLE)$(SUBMAKE) -r checksum
 ifneq ($(CONFIG_CCACHE),)
 	$(STAGING_DIR_HOST)/bin/ccache -s
