@@ -1,0 +1,44 @@
+From f92c2f22197b7beed59b81f2aa179e16987c02e4 Mon Sep 17 00:00:00 2001
+From: Sricharan Ramabadhran <quic_srichara@quicinc.com>
+Date: Mon, 24 Jul 2023 12:04:29 +0530
+Subject: [PATCH] PCI: qcom: Fixing broken pcie enumeration for 2_3_3 configs
+ ops
+
+PARF_SLV_ADDR_SPACE_SIZE_2_3_3 macro is used for IPQ8074 2_3_3 post_init.
+PCIe slave addr register offset is 0x358, but was wrongly changed to
+0x168 as a part of commit 39171b33f652 ("PCI: qcom: Remove PCIE20_ prefix
+from register definitions"). Fixing it, by using the right macro and remove
+the unused PARF_SLV_ADDR_SPACE_SIZE_2_3_3.
+
+Without this access to the registers of slave addr space like iATU etc
+are broken leading to pcie enumeration failure.
+
+Fixes: 39171b33f652 ("PCI: qcom: Remove PCIE20_ prefix from register definitions")
+Cc: <Stable@vger.kernel.org>
+Reviewed-by: Manivannan Sadhasivam <mani@kernel.org>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@linaro.org>
+Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
+---
+ drivers/pci/controller/dwc/pcie-qcom.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- a/drivers/pci/controller/dwc/pcie-qcom.c
++++ b/drivers/pci/controller/dwc/pcie-qcom.c
+@@ -40,7 +40,6 @@
+ #define PARF_PHY_REFCLK				0x4c
+ #define PARF_CONFIG_BITS			0x50
+ #define PARF_DBI_BASE_ADDR			0x168
+-#define PARF_SLV_ADDR_SPACE_SIZE_2_3_3		0x16c /* Register offset specific to IP ver 2.3.3 */
+ #define PARF_MHI_CLOCK_RESET_CTRL		0x174
+ #define PARF_AXI_MSTR_WR_ADDR_HALT		0x178
+ #define PARF_AXI_MSTR_WR_ADDR_HALT_V2		0x1a8
+@@ -1148,8 +1147,7 @@ static int qcom_pcie_post_init_2_3_3(str
+ 	u16 offset = dw_pcie_find_capability(pci, PCI_CAP_ID_EXP);
+ 	u32 val;
+ 
+-	writel(SLV_ADDR_SPACE_SZ,
+-		pcie->parf + PARF_SLV_ADDR_SPACE_SIZE_2_3_3);
++	writel(SLV_ADDR_SPACE_SZ, pcie->parf + PARF_SLV_ADDR_SPACE_SIZE);
+ 
+ 	val = readl(pcie->parf + PARF_PHY_CTRL);
+ 	val &= ~BIT(0);
