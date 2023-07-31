@@ -36,6 +36,68 @@ define Build/arcadyan-trx
 	rm $@.hsqs $@.tail
 endef
 
+define Build/dna-header
+	BC='$(STAGING_DIR_HOST)/bin/bc' ;\
+	ubifsofs="1024" ;\
+	ubifs="$$(stat -c%s $@)" ;\
+	pkginfoofs="$$(echo $${ubifsofs} + $${ubifs} | $${BC})" ;\
+	pkginfo="0" ;\
+	scrofs="$$(echo $${pkginfoofs} + $${pkginfo} | $${BC})" ;\
+	scr="0" ;\
+	sigofs="$$(echo $${scrofs} + $${scr} | $${BC})" ;\
+	sig="0" ;\
+	md5ofs="$$(echo $${sigofs} + $${sig} | $${BC})" ;\
+	md5="32" ;\
+	size="$$(echo $${md5ofs} + $${md5} | $${BC})" ;\
+	echo "IntenoIopY" > $@.tmp ;\
+	echo "version 5" >> $@.tmp ;\
+	echo "integrity MD5SUM" >> $@.tmp ;\
+	echo "board EX400" >> $@.tmp ;\
+	echo "chip 7621" >> $@.tmp ;\
+	echo "arch all mipsel_1004kc" >> $@.tmp ;\
+	echo "model EX400" >> $@.tmp ;\
+	echo "release EX400-X-DNA-4.3.6.100-R-210518_0935" >> $@.tmp ;\
+	echo "customer DNA" >> $@.tmp ;\
+	echo "ubifsofs $${ubifsofs}" >> $@.tmp ;\
+	echo "ubifs $${ubifs}" >> $@.tmp ;\
+	echo "pkginfoofs $${pkginfoofs}" >> $@.tmp ;\
+	echo "pkginfo $${pkginfo}" >> $@.tmp ;\
+	echo "scrofs $${scrofs}" >> $@.tmp ;\
+	echo "scr $${scr}" >> $@.tmp ;\
+	echo "sigofs $${sigofs}" >> $@.tmp ;\
+	echo "sig $${sig}" >> $@.tmp ;\
+	echo "md5ofs $${md5ofs}" >> $@.tmp ;\
+	echo "md5 $${md5}" >> $@.tmp ;\
+	echo "size $${size}" >> $@.tmp
+
+	dd if=$@.tmp of=$@.tmp2 bs=1024 count=1 conv=sync
+	cat $@.tmp2 $@ > $@.tmp
+	rm $@.tmp2
+	mv $@.tmp $@
+endef
+
+define Build/dna-bootfs
+	mkdir -p $@.ubifs-dir/boot
+
+	# populate the boot fs with the dtb and with either initramfs kernel or
+	# the normal kernel
+	$(CP) $(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb $@.ubifs-dir/boot/dtb
+
+	$(if $(findstring with-initrd,$(word 1,$(1))),\
+		( \
+			$(CP) $@ $@.ubifs-dir/boot/uImage \
+		) , \
+		( \
+			$(CP) $(IMAGE_KERNEL) $@.ubifs-dir/boot/uImage \
+		) \
+	)
+
+	# create ubifs
+	$(STAGING_DIR_HOST)/bin/mkfs.ubifs ${MKUBIFS_OPTS} -r $@.ubifs-dir/ -o $@.new
+	rm -rf $@.ubifs-dir
+	mv $@.new $@
+endef
+
 define Build/gemtek-trailer
 	printf "%s%08X" ".GEMTEK." "$$(cksum $@ | cut -d ' ' -f1)" >> $@
 endef
@@ -101,6 +163,10 @@ define Build/iodata-mstc-header2
 	) | dd of=$@.new bs=4 oflag=seek_bytes seek=110 conv=notrunc
 
 	mv $@.new $@
+endef
+
+define Build/kernel-initramfs-bin
+	$(CP) $(KDIR)/vmlinux-initramfs $@
 endef
 
 define Build/znet-header
@@ -987,6 +1053,27 @@ define Device/d-team_pbr-m1
   SUPPORTED_DEVICES += pbr-m1
 endef
 TARGET_DEVICES += d-team_pbr-m1
+
+define Device/dna_valokuitu-plus-ex400
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 117m
+  PAGESIZE := 2048
+  MKUBIFS_OPTS := --min-io-size=$$(PAGESIZE) --leb-size=124KiB --max-leb-cnt=96 \
+  		  --log-lebs=2 --space-fixup --squash-uids
+  DEVICE_VENDOR := DNA
+  DEVICE_MODEL := Valokuitu Plus EX400
+  KERNEL := kernel-bin | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  IMAGES := factory.bin sysupgrade.tar
+  IMAGE/factory.bin := kernel-initramfs-bin | lzma | uImage lzma | \
+                       dna-bootfs with-initrd | dna-header | \
+                       append-md5sum-ascii-salted
+  IMAGE/sysupgrade.tar := dna-bootfs | sysupgrade-tar kernel=$$$$@ | check-size | \
+  			  append-metadata
+  DEVICE_IMG_NAME = $$(DEVICE_IMG_PREFIX)-$$(2)
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
+endef
+TARGET_DEVICES += dna_valokuitu-plus-ex400
 
 define Device/edimax_ra21s
   $(Device/dsa-migration)
