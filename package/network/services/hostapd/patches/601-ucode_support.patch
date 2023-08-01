@@ -138,6 +138,16 @@
  endif
  
  ifdef CONFIG_CODE_COVERAGE
+@@ -999,6 +1011,9 @@ OBJS += ../src/ap/ctrl_iface_ap.o
+ ifdef CONFIG_UBUS
+ OBJS += ../src/ap/ubus.o
+ endif
++ifdef CONFIG_UCODE
++OBJS += ../src/ap/ucode.o
++endif
+ endif
+ 
+ CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
 @@ -7636,6 +7636,7 @@ struct wpa_supplicant * wpa_supplicant_a
