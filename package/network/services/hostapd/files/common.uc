@@ -34,7 +34,7 @@ function find_reusable_wdev(phyidx)
 	if (!__phy_is_fullmac(phyidx))
 		return null;
 
-	data = nl80211.request(
+	let data = nl80211.request(
 		nl80211.const.NL80211_CMD_GET_INTERFACE,
 		nl80211.const.NLM_F_DUMP,
 		{ wiphy: phyidx });
