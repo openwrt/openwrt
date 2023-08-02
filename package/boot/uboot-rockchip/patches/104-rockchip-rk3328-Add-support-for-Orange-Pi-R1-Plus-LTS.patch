@@ -34,7 +34,7 @@ Signed-off-by: Tianling Shen <cnsztl@gmail.com>
  	rk3328-rock-pi-e.dtb
 --- /dev/null
 +++ b/arch/arm/dts/rk3328-orangepi-r1-plus-lts-u-boot.dtsi
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,57 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*
 + * (C) Copyright 2018-2019 Rockchip Electronics Co., Ltd
@@ -45,8 +45,19 @@ Signed-off-by: Tianling Shen <cnsztl@gmail.com>
 +#include "rk3328-sdram-lpddr3-666.dtsi"
 +/ {
 +	chosen {
-+		u-boot,spl-boot-order = "same-as-spl", &sdmmc, &emmc;
++		u-boot,spl-boot-order = "same-as-spl", &sdmmc;
 +	};
++
++	aliases {
++		mmc0 = &sdmmc;
++	};
++};
++
++&sdmmc {
++	u-boot,dm-pre-reloc;
++
++	/* mmc to sram can't do dma, prevent aborts transfering TF-A parts */
++	u-boot,spl-fifo-mode;
 +};
 +
 +&gpio0 {
