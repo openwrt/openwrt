@@ -8,8 +8,8 @@
 	model = "Xiaomi MiWiFi Mini";
 
 	aliases {
-		led-boot = &led_blue;
-		led-failsafe = &led_blue;
+		led-boot = &led_yellow;
+		led-failsafe = &led_red;
 		led-running = &led_blue;
 		led-upgrade = &led_blue;
 		label-mac-device = &ethernet;
@@ -25,15 +25,14 @@
 		led_blue: blue {
 			label = "blue:status";
 			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
-			default-state = "on";
 		};
 
-		yellow {
+		led_yellow: yellow {
 			label = "yellow:status";
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 		};
 
-		red {
+		led_red: red {
 			label = "red:status";
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		};
