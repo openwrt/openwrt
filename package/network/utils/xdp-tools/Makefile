@@ -94,7 +94,7 @@ MAKE_VARS += \
 
 define Build/Configure
 	$(call Build/Configure/Default)
-	echo "BPF_CFLAGS += -I$(BPF_HEADERS_DIR)/tools/lib" >> $(PKG_BUILD_DIR)/config.mk
+	echo "BPF_CFLAGS += -I$(BPF_HEADERS_DIR)/tools/lib -fno-stack-protector" >> $(PKG_BUILD_DIR)/config.mk
 endef
 
 define Build/InstallDev
