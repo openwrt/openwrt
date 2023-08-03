@@ -57,7 +57,7 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
     define Kernel/SetInitramfs/PreConfigure
 	grep -v -e INITRAMFS -e CONFIG_RD_ -e CONFIG_BLK_DEV_INITRD $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
 	echo 'CONFIG_BLK_DEV_INITRD=y' >> $(LINUX_DIR)/.config
-	echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(TARGET_DIR) $(INITRAMFS_EXTRA_FILES))"' >> $(LINUX_DIR)/.config
+	echo 'CONFIG_INITRAMFS_SOURCE="$(strip $(1) $(INITRAMFS_EXTRA_FILES))"' >> $(LINUX_DIR)/.config
     endef
   else
     define Kernel/SetInitramfs/PreConfigure
@@ -70,7 +70,7 @@ endif
   define Kernel/SetInitramfs
 	rm -f $(LINUX_DIR)/.config.prev
 	mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
-	$(call Kernel/SetInitramfs/PreConfigure)
+	$(call Kernel/SetInitramfs/PreConfigure,$(1))
 	echo "# CONFIG_INITRAMFS_PRESERVE_MTIME is not set" >> $(LINUX_DIR)/.config
   ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
 	echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
@@ -120,7 +120,7 @@ define Kernel/Configure/Default
 endef
 
 define Kernel/Configure/Initramfs
-	$(call Kernel/SetInitramfs)
+	$(call Kernel/SetInitramfs,$(1))
 endef
 
 define Kernel/CompileModules/Default
@@ -158,16 +158,17 @@ define Kernel/CompileImage/Default
 endef
 
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+# $1: Custom TARGET_DIR. If omitted TARGET_DIR is used.
 define Kernel/CompileImage/Initramfs
-	$(call Kernel/Configure/Initramfs)
-	$(CP) $(GENERIC_PLATFORM_DIR)/other-files/init $(TARGET_DIR)/init
-	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(TARGET_DIR) $(TARGET_DIR)/init)
+	$(call Kernel/Configure/Initramfs,$(if $(1),$(1),$(TARGET_DIR)))
+	$(CP) $(GENERIC_PLATFORM_DIR)/other-files/init $(if $(1),$(1),$(TARGET_DIR))/init
+	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(if $(1),$(1),$(TARGET_DIR)) $(if $(1),$(1),$(TARGET_DIR))/init)
 	rm -rf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/usr/initramfs_data.cpio*
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
 ifneq ($(call qstrip,$(CONFIG_EXTERNAL_CPIO)),)
 	$(CP) $(CONFIG_EXTERNAL_CPIO) $(KERNEL_BUILD_DIR)/initrd.cpio
 else
-	( cd $(TARGET_DIR); find . | LC_ALL=C sort | $(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 > $(KERNEL_BUILD_DIR)/initrd.cpio )
+	( cd $(if $(1),$(1),$(TARGET_DIR)); find . | LC_ALL=C sort | $(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 > $(KERNEL_BUILD_DIR)/initrd.cpio )
 endif
 	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(KERNEL_BUILD_DIR)/initrd.cpio)
 	$(if $(CONFIG_TARGET_INITRAMFS_COMPRESSION_BZIP2),$(STAGING_DIR_HOST)/bin/bzip2 -9 -c < $(KERNEL_BUILD_DIR)/initrd.cpio > $(KERNEL_BUILD_DIR)/initrd.cpio.bzip2)
