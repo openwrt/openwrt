@@ -1,7 +1,7 @@
 #!/usr/bin/env ucode
 'use strict';
 import { vlist_new, is_equal, wdev_create, wdev_remove } from "/usr/share/hostap/common.uc";
-import { readfile, writefile, basename, glob } from "fs";
+import { readfile, writefile, basename, readlink, glob } from "fs";
 
 let keep_devices = {};
 let phy = shift(ARGV);
@@ -104,6 +104,9 @@ function add_existing(phy, config)
 	wdevs = map(wdevs, (arg) => basename(arg));
 	for (let wdev in wdevs) {
 		if (config[wdev])
+			continue;
+
+		if (basename(readlink(`/sys/class/net/${wdev}/phy80211`)) != phy)
 			continue;
 
 		if (trim(readfile(`/sys/class/net/${wdev}/operstate`)) == "down")
