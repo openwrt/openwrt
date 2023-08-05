@@ -117,9 +117,10 @@
 			};
 
 			partition@10000 {
-				compatible = "brcm,bcm963xx-imagetag";
+				compatible = "openwrt,uimage", "denx,uimage";
 				reg = <0x010000 0xfe0000>;
 				label = "firmware";
+				openwrt,offset = <0x30000>;
 			};
 
 			partition@ff0000 {
