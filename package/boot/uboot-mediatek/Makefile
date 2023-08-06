@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2023.04
-PKG_HASH:=e31cac91545ff41b71cec5d8c22afd695645cd6e2a442ccdacacd60534069341
+PKG_VERSION:=2023.07.02
+PKG_HASH:=6b6a48581c14abb0f95bd87c1af4d740922406d7b801002a9f94727fdde021d5
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 
 include $(INCLUDE_DIR)/u-boot.mk
@@ -321,6 +321,66 @@ define U-Boot/mt7986_xiaomi_redmi-router-ax6000
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr4
 endef
 
+define U-Boot/mt7988_rfb-spim-nand
+  NAME:=MT7988 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  UBOOT_CONFIG:=mt7988_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ddr4
+endef
+
+define U-Boot/mt7988_rfb-snand
+  NAME:=MT7988 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  UBOOT_CONFIG:=mt7988_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=snand
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-snand-ddr4
+endef
+
+define U-Boot/mt7988_rfb-nor
+  NAME:=MT7988 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  UBOOT_CONFIG:=mt7988_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-nor-ddr4
+endef
+
+define U-Boot/mt7988_rfb-emmc
+  NAME:=MT7988 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  UBOOT_CONFIG:=mt7988_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-emmc-ddr4
+endef
+
+define U-Boot/mt7988_rfb-sd
+  NAME:=MT7988 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  UBOOT_CONFIG:=mt7988_sd_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=sdmmc
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-ddr4
+endef
+
 UBOOT_TARGETS := \
 	mt7620_mt7530_rfb \
 	mt7620_rfb \
@@ -348,7 +408,12 @@ UBOOT_TARGETS := \
 	mt7986_tplink_tl-xdr6086 \
 	mt7986_tplink_tl-xdr6088 \
 	mt7986_xiaomi_redmi-router-ax6000 \
-	mt7986_rfb
+	mt7986_rfb \
+	mt7988_rfb-spim-nand \
+	mt7988_rfb-snand \
+	mt7988_rfb-nor \
+	mt7988_rfb-emmc \
+	mt7988_rfb-sd
 
 ifdef CONFIG_TARGET_mediatek
 UBOOT_MAKE_FLAGS += $(UBOOT_IMAGE:.fip=.bin)

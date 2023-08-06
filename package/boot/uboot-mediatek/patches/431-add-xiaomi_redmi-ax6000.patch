@@ -182,7 +182,7 @@
 +CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/arch/arm/dts/mt7986a-xiaomi_redmi-ax6000.dts
-@@ -0,0 +1,156 @@
+@@ -0,0 +1,161 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2021 MediaTek Inc.
@@ -203,6 +203,11 @@
 +	chosen {
 +		stdout-path = &uart0;
 +		tick-timer = &timer0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x20000000>;
 +	};
 +
 +	keys {

@@ -40,6 +40,15 @@
  	int rts_threshold;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
+@@ -127,7 +127,7 @@ void hostapd_reconfig_encryption(struct
+ }
+ 
+ 
+-static void hostapd_reload_bss(struct hostapd_data *hapd)
++void hostapd_reload_bss(struct hostapd_data *hapd)
+ {
+ 	struct hostapd_ssid *ssid;
+ 
 @@ -255,6 +255,10 @@ static int hostapd_iface_conf_changed(st
  {
  	size_t i;
@@ -60,7 +69,7 @@
  {
  	struct hapd_interfaces *interfaces = iface->interfaces;
  	struct hostapd_data *hapd = iface->bss[0];
-@@ -296,6 +300,9 @@ int hostapd_reload_config(struct hostapd
+@@ -298,6 +302,9 @@ int hostapd_reload_config(struct hostapd
  		char *fname;
  		int res;
  
@@ -70,7 +79,7 @@
  		hostapd_clear_old(iface);
  
  		wpa_printf(MSG_DEBUG,
-@@ -322,6 +329,24 @@ int hostapd_reload_config(struct hostapd
+@@ -324,6 +331,24 @@ int hostapd_reload_config(struct hostapd
  			wpa_printf(MSG_ERROR,
  				   "Failed to enable interface on config reload");
  		return res;
@@ -95,7 +104,7 @@
  	}
  	iface->conf = newconf;
  
-@@ -338,6 +363,12 @@ int hostapd_reload_config(struct hostapd
+@@ -340,6 +365,12 @@ int hostapd_reload_config(struct hostapd
  
  	for (j = 0; j < iface->num_bss; j++) {
  		hapd = iface->bss[j];
@@ -108,7 +117,17 @@
  		if (!hapd->conf->config_id || !newconf->bss[j]->config_id ||
  		    os_strcmp(hapd->conf->config_id,
  			      newconf->bss[j]->config_id) != 0)
-@@ -2700,6 +2731,10 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -1236,8 +1267,7 @@ static int hostapd_start_beacon(struct h
+  * initialized. Most of the modules that are initialized here will be
+  * deinitialized in hostapd_cleanup().
+  */
+-static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
+-			     bool start_beacon)
++int hostapd_setup_bss(struct hostapd_data *hapd, int first, bool start_beacon)
+ {
+ 	struct hostapd_bss_config *conf = hapd->conf;
+ 	u8 ssid[SSID_MAX_LEN + 1];
+@@ -2705,6 +2735,10 @@ hostapd_alloc_bss_data(struct hostapd_if
  	hapd->iconf = conf;
  	hapd->conf = bss;
  	hapd->iface = hapd_iface;
@@ -119,9 +138,18 @@
  	if (conf)
  		hapd->driver = conf->driver;
  	hapd->ctrl_sock = -1;
+@@ -2723,7 +2757,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+ }
+ 
+ 
+-static void hostapd_bss_deinit(struct hostapd_data *hapd)
++void hostapd_bss_deinit(struct hostapd_data *hapd)
+ {
+ 	if (!hapd)
+ 		return;
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -47,7 +47,7 @@ struct mesh_conf;
+@@ -48,7 +48,7 @@ struct mesh_conf;
  struct hostapd_iface;
  
  struct hapd_interfaces {
@@ -130,23 +158,33 @@
  	struct hostapd_config * (*config_read_cb)(const char *config_fname);
  	int (*ctrl_iface_init)(struct hostapd_data *hapd);
  	void (*ctrl_iface_deinit)(struct hostapd_data *hapd);
-@@ -186,6 +186,7 @@ struct hostapd_data {
- 	struct hostapd_config *iconf;
+@@ -192,6 +192,7 @@ struct hostapd_data {
  	struct hostapd_bss_config *conf;
  	struct hostapd_ubus_bss ubus;
+ 	struct hostapd_ucode_bss ucode;
 +	char *config_id;
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -689,7 +690,7 @@ struct hostapd_iface {
+@@ -696,7 +697,9 @@ struct hostapd_iface {
  int hostapd_for_each_interface(struct hapd_interfaces *interfaces,
  			       int (*cb)(struct hostapd_iface *iface,
  					 void *ctx), void *ctx);
 -int hostapd_reload_config(struct hostapd_iface *iface);
 +int hostapd_reload_config(struct hostapd_iface *iface, int reconf);
++void hostapd_reload_bss(struct hostapd_data *hapd);
++void hostapd_bss_deinit(struct hostapd_data *hapd);
  void hostapd_reconfig_encryption(struct hostapd_data *hapd);
  struct hostapd_data *
  hostapd_alloc_bss_data(struct hostapd_iface *hapd_iface,
+@@ -713,6 +716,7 @@ struct hostapd_iface * hostapd_init(stru
+ struct hostapd_iface *
+ hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
+ 			   const char *config_fname, int debug);
++int hostapd_setup_bss(struct hostapd_data *hapd, int first, bool start_beacon);
+ void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
+ 			   int reassoc);
+ void hostapd_interface_deinit_free(struct hostapd_iface *iface);
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
 @@ -5322,6 +5322,9 @@ static int wpa_driver_nl80211_set_ap(voi

@@ -178,7 +178,7 @@
 +CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/arch/arm/dts/mt7981_xiaomi_mi-router-wr30u.dts
-@@ -0,0 +1,216 @@
+@@ -0,0 +1,221 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2022 MediaTek Inc.
@@ -204,6 +204,11 @@
 +	config {
 +		blink_led = "yellow:network";
 +		system_led = "yellow:system";
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x10000000>;
 +	};
 +
 +	gpio-keys {

@@ -207,8 +207,8 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 -	ret = spinand_manufacturer_detect(spinand);
 +	ret = spinand_id_detect(spinand);
  	if (ret) {
- 		dev_err(spinand->slave->dev, "unknown raw ID %*phN\n",
- 			SPINAND_MAX_ID_LEN, spinand->id.data);
+ 		dev_err(spinand->slave->dev, "unknown raw ID %02x %02x %02x %02x\n",
+ 			spinand->id.data[0], spinand->id.data[1],
 --- a/drivers/mtd/nand/spi/gigadevice.c
 +++ b/drivers/mtd/nand/spi/gigadevice.c
 @@ -22,8 +22,13 @@

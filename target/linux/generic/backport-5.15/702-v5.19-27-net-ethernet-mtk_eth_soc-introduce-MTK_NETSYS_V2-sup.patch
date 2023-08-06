@@ -568,7 +568,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return 0;
  
  err_disable_pm:
-@@ -3234,12 +3403,8 @@ static int mtk_probe(struct platform_dev
+@@ -3227,12 +3396,8 @@ static int mtk_probe(struct platform_dev
  	if (IS_ERR(eth->base))
  		return PTR_ERR(eth->base);
  
@@ -582,7 +582,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	spin_lock_init(&eth->page_lock);
  	spin_lock_init(&eth->tx_irq_lock);
-@@ -3475,6 +3640,10 @@ static const struct mtk_soc_data mt2701_
+@@ -3468,6 +3633,10 @@ static const struct mtk_soc_data mt2701_
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
@@ -593,7 +593,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -3488,6 +3657,10 @@ static const struct mtk_soc_data mt7621_
+@@ -3481,6 +3650,10 @@ static const struct mtk_soc_data mt7621_
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
@@ -604,7 +604,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -3502,6 +3675,10 @@ static const struct mtk_soc_data mt7622_
+@@ -3495,6 +3668,10 @@ static const struct mtk_soc_data mt7622_
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
@@ -615,7 +615,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -3515,6 +3692,10 @@ static const struct mtk_soc_data mt7623_
+@@ -3508,6 +3685,10 @@ static const struct mtk_soc_data mt7623_
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
@@ -626,7 +626,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -3528,6 +3709,10 @@ static const struct mtk_soc_data mt7629_
+@@ -3521,6 +3702,10 @@ static const struct mtk_soc_data mt7629_
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
@@ -637,7 +637,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	},
  };
  
-@@ -3540,6 +3725,10 @@ static const struct mtk_soc_data rt5350_
+@@ -3533,6 +3718,10 @@ static const struct mtk_soc_data rt5350_
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),

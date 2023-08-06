@@ -1591,29 +1591,6 @@ EOF
 	return 0
 }
 
-wpa_supplicant_run() {
-	local ifname="$1"
-	local hostapd_ctrl="$2"
-
-	_wpa_supplicant_common "$ifname"
-
-	ubus wait_for wpa_supplicant
-	local supplicant_res="$(ubus call wpa_supplicant config_add "{ \
-		\"driver\": \"${_w_driver:-wext}\", \"ctrl\": \"$_rpath\", \
-		\"iface\": \"$ifname\", \"config\": \"$_config\" \
-		${network_bridge:+, \"bridge\": \"$network_bridge\"} \
-		${hostapd_ctrl:+, \"hostapd_ctrl\": \"$hostapd_ctrl\"} \
-		}")"
-
-	ret="$?"
-
-	[ "$ret" != 0 -o -z "$supplicant_res" ] && wireless_setup_vif_failed WPA_SUPPLICANT_FAILED
-
-	wireless_add_process "$(jsonfilter -s "$supplicant_res" -l 1 -e @.pid)" "/usr/sbin/wpa_supplicant" 1 1
-
-	return $ret
-}
-
 hostapd_common_cleanup() {
 	killall meshd-nl80211
 }

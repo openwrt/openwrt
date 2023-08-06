@@ -1,0 +1,25 @@
+From e8f10b21abd8ae440632f561f8b65f37b4b55cc8 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 30 Jul 2023 11:16:32 +0200
+Subject: [PATCH 1/5] os_dep/osdep_service: use new get_random_u32
+
+Drop prandom_u32 as got deprecated for get_random_u32.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ os_dep/osdep_service.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/os_dep/osdep_service.c
++++ b/os_dep/osdep_service.c
+@@ -2335,7 +2335,9 @@ u64 rtw_division64(u64 x, u64 y)
+ inline u32 rtw_random32(void)
+ {
+ #ifdef PLATFORM_LINUX
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0))
++	return get_random_u32();
++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+ 	return prandom_u32();
+ #elif (LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,18))
+ 	u32 random_int;

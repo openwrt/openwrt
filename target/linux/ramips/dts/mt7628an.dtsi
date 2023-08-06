@@ -38,27 +38,24 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sysc: sysc@0 {
-			compatible = "ralink,mt7620a-sysc", "syscon";
+		sysc: syscon@0 {
+			compatible = "ralink,mt7628-sysc", "syscon";
 			reg = <0x0 0x100>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
 		};
 
 		watchdog: watchdog@100 {
-			compatible = "ralink,mt7628an-wdt", "mediatek,mt7621-wdt";
-			reg = <0x100 0x30>;
-
-			resets = <&rstctrl 8>;
-			reset-names = "wdt";
-
-			interrupt-parent = <&intc>;
-			interrupts = <24>;
+			compatible = "mediatek,mt7621-wdt";
+			reg = <0x100 0x100>;
+			mediatek,sysctl = <&sysc>;
 		};
 
 		intc: intc@200 {
 			compatible = "ralink,mt7628an-intc", "ralink,rt2880-intc";
 			reg = <0x200 0x100>;
 
-			resets = <&rstctrl 9>;
+			resets = <&sysc 9>;
 			reset-names = "intc";
 
 			interrupt-controller;
@@ -76,7 +73,7 @@
 			compatible = "ralink,mt7620a-memc", "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
 
-			resets = <&rstctrl 10>;
+			resets = <&sysc 10>;
 			reset-names = "mc";
 
 			interrupt-parent = <&intc>;
@@ -101,7 +98,10 @@
 			compatible = "mediatek,mt7621-i2c";
 			reg = <0x900 0x100>;
 
-			resets = <&rstctrl 16>;
+			clocks = <&sysc 7>;
+			clock-names = "i2c";
+
+			resets = <&sysc 16>;
 			reset-names = "i2c";
 
 			#address-cells = <1>;
@@ -117,7 +117,9 @@
 			compatible = "mediatek,mt7628-i2s";
 			reg = <0xa00 0x100>;
 
-			resets = <&rstctrl 17>;
+			clocks = <&sysc 8>;
+
+			resets = <&sysc 17>;
 			reset-names = "i2s";
 
 			interrupt-parent = <&intc>;
@@ -137,7 +139,10 @@
 			compatible = "ralink,mt7621-spi";
 			reg = <0xb00 0x100>;
 
-			resets = <&rstctrl 18>;
+			clocks = <&sysc 9>;
+			clock-names = "spi";
+
+			resets = <&sysc 18>;
 			reset-names = "spi";
 
 			#address-cells = <1>;
@@ -149,7 +154,7 @@
 			status = "disabled";
 		};
 
-		uartlite: uartlite@c00 {
+		uartlite: uart0@c00 {
 			compatible = "ns16550a";
 			reg = <0xc00 0x100>;
 
@@ -157,10 +162,9 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clock-frequency = <40000000>;
+			clocks = <&sysc 11>;
 
-			resets = <&rstctrl 12>;
-			reset-names = "uartl";
+			resets = <&sysc 12>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <20>;
@@ -177,10 +181,9 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clock-frequency = <40000000>;
+			clocks = <&sysc 12>;
 
-			resets = <&rstctrl 19>;
-			reset-names = "uart1";
+			resets = <&sysc 19>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <21>;
@@ -199,10 +202,9 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clock-frequency = <40000000>;
+			clocks = <&sysc 13>;
 
-			resets = <&rstctrl 20>;
-			reset-names = "uart2";
+			resets = <&sysc 20>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <22>;
@@ -218,7 +220,7 @@
 			reg = <0x5000 0x1000>;
 			#pwm-cells = <2>;
 
-			resets = <&rstctrl 31>;
+			resets = <&sysc 31>;
 			reset-names = "pwm";
 
 			pinctrl-names = "default";
@@ -231,7 +233,7 @@
 			compatible = "ralink,mt7620a-pcm";
 			reg = <0x2000 0x800>;
 
-			resets = <&rstctrl 11>;
+			resets = <&sysc 11>;
 			reset-names = "pcm";
 
 			interrupt-parent = <&intc>;
@@ -244,7 +246,7 @@
 			compatible = "ralink,rt3883-gdma";
 			reg = <0x2800 0x800>;
 
-			resets = <&rstctrl 14>;
+			resets = <&sysc 14>;
 			reset-names = "dma";
 
 			interrupt-parent = <&intc>;
@@ -351,26 +353,15 @@
 		};
 	};
 
-	rstctrl: rstctrl {
-		compatible = "ralink,mt7620a-reset", "ralink,rt2880-reset";
-		#reset-cells = <1>;
-	};
-
-	clkctrl: clkctrl {
-		compatible = "ralink,rt2880-clock";
-		#clock-cells = <1>;
-	};
-
 	usbphy: usbphy@10120000 {
 		compatible = "mediatek,mt7628-usbphy", "mediatek,mt7620-usbphy";
 		reg = <0x10120000 0x1000>;
 		#phy-cells = <0>;
 
 		ralink,sysctl = <&sysc>;
-		resets = <&rstctrl 22 &rstctrl 25>;
+		/* usb phy reset is only controled by RSTCTRL bit 22 */
+		resets = <&sysc 22>, <&sysc 25>;
 		reset-names = "host", "device";
-		clocks = <&clkctrl 22 &clkctrl 25>;
-		clock-names = "host", "device";
 	};
 
 	sdhci: sdhci@10130000 {
@@ -429,7 +420,7 @@
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
 
-		resets = <&rstctrl 21>;
+		resets = <&sysc 21>;
 		reset-names = "fe";
 
 		mediatek,switch = <&esw>;
@@ -439,7 +430,7 @@
 		compatible = "mediatek,mt7628-esw", "ralink,rt3050-esw";
 		reg = <0x10110000 0x8000>;
 
-		resets = <&rstctrl 23 &rstctrl 24>;
+		resets = <&sysc 23>, <&sysc 24>;
 		reset-names = "esw", "ephy";
 
 		interrupt-parent = <&intc>;
@@ -457,10 +448,8 @@
 		interrupt-parent = <&cpuintc>;
 		interrupts = <4>;
 
-		resets = <&rstctrl 26 &rstctrl 27>;
-		reset-names = "pcie0", "pcie1";
-		clocks = <&clkctrl 26 &clkctrl 27>;
-		clock-names = "pcie0", "pcie1";
+		resets = <&sysc 26>;
+		reset-names = "pcie0";
 
 		status = "disabled";
 
@@ -487,6 +476,8 @@
 	wmac: wmac@10300000 {
 		compatible = "mediatek,mt7628-wmac";
 		reg = <0x10300000 0x100000>;
+
+		clocks = <&sysc 14>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;

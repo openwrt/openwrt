@@ -40,14 +40,18 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sysc: sysc@0 {
-			compatible = "ralink,rt3883-sysc", "ralink,rt3050-sysc", "syscon";
+		sysc: syscon@0 {
+			compatible = "ralink,rt3883-sysc", "syscon";
 			reg = <0x0 0x100>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
 		};
 
 		timer: timer@100 {
 			compatible = "ralink,rt3883-timer", "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
+
+			clocks = <&sysc 3>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <1>;
@@ -57,7 +61,9 @@
 			compatible = "ralink,rt3883-wdt", "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
-			resets = <&rstctrl 8>;
+			clocks = <&sysc 4>;
+
+			resets = <&sysc 8>;
 			reset-names = "wdt";
 
 			interrupt-parent = <&intc>;
@@ -68,7 +74,7 @@
 			compatible = "ralink,rt3883-intc", "ralink,rt2880-intc";
 			reg = <0x200 0x100>;
 
-			resets = <&rstctrl 19>;
+			resets = <&sysc 19>;
 			reset-names = "intc";
 
 			interrupt-controller;
@@ -82,7 +88,7 @@
 			compatible = "ralink,rt3883-memc", "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
 
-			resets = <&rstctrl 20>;
+			resets = <&sysc 20>;
 			reset-names = "mc";
 
 			interrupt-parent = <&intc>;
@@ -93,8 +99,9 @@
 			compatible = "ralink,rt3883-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0x500 0x100>;
 
-			resets = <&rstctrl 12>;
-			reset-names = "uart";
+			clocks = <&sysc 5>;
+
+			resets = <&sysc 12>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <5>;
@@ -108,7 +115,7 @@
 			compatible = "ralink,rt3883-gpio", "ralink,rt2880-gpio";
 			reg = <0x600 0x34>;
 
-			resets = <&rstctrl 13>;
+			resets = <&sysc 13>;
 			reset-names = "pio";
 
 			interrupt-parent = <&intc>;
@@ -176,7 +183,9 @@
 			compatible = "ralink,rt2880-i2c";
 			reg = <0x900 0x100>;
 
-			resets = <&rstctrl 16>;
+			clocks = <&sysc 6>;
+
+			resets = <&sysc 16>;
 			reset-names = "i2c";
 
 			#address-cells = <1>;
@@ -192,7 +201,9 @@
 			compatible = "ralink,rt3883-i2s";
 			reg = <0xa00 0x100>;
 
-			resets = <&rstctrl 17>;
+			clocks = <&sysc 7>;
+
+			resets = <&sysc 17>;
 			reset-names = "i2s";
 
 			interrupt-parent = <&intc>;
@@ -214,7 +225,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			resets = <&rstctrl 18>;
+			clocks = <&sysc 8>;
+
+			resets = <&sysc 18>;
 			reset-names = "spi";
 
 			pinctrl-names = "default";
@@ -229,7 +242,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			resets = <&rstctrl 18>;
+			clocks = <&sysc 9>;
+
+			resets = <&sysc 18>;
 			reset-names = "spi";
 
 			pinctrl-names = "default";
@@ -242,8 +257,9 @@
 			compatible = "ralink,rt3883-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 
-			resets = <&rstctrl 19>;
-			reset-names = "uartl";
+			clocks = <&sysc 10>;
+
+			resets = <&sysc 19>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <12>;
@@ -258,7 +274,7 @@
 			compatible = "ralink,rt3883-gdma";
 			reg = <0x2800 0x800>;
 
-			resets = <&rstctrl 14>;
+			resets = <&sysc 14>;
 			reset-names = "dma";
 
 			interrupt-parent = <&intc>;
@@ -323,7 +339,9 @@
 		#size-cells = <0>;
 		reg = <0x10100000 0x10000>;
 
-		resets = <&rstctrl 21>;
+		clocks = <&sysc 11>;
+
+		resets = <&sysc 21>;
 		reset-names = "fe";
 
 		interrupt-parent = <&cpuintc>;
@@ -340,16 +358,6 @@
 
 			status = "disabled";
 		};
-	};
-
-	rstctrl: rstctrl {
-		compatible = "ralink,rt3883-reset", "ralink,rt2880-reset";
-		#reset-cells = <1>;
-	};
-
-	clkctrl: clkctrl {
-		compatible = "ralink,rt2880-clock";
-		#clock-cells = <1>;
 	};
 
 	pci: pci@10140000 {
@@ -441,15 +449,15 @@
 		#phy-cells = <0>;
 
 		ralink,sysctl = <&sysc>;
-		resets = <&rstctrl 22 &rstctrl 25>;
+		resets = <&sysc 22>, <&sysc 25>;
 		reset-names = "host", "device";
-		clocks = <&clkctrl 22 &clkctrl 25>;
-		clock-names = "host", "device";
 	};
 
 	wmac: wmac@10180000 {
 		compatible = "ralink,rt3883-wmac", "ralink,rt2880-wmac";
 		reg = <0x10180000 0x40000>;
+
+		clocks = <&sysc 12>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;

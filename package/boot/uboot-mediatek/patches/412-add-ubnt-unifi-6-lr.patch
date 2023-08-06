@@ -150,7 +150,7 @@
 +CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/arch/arm/dts/mt7622-ubnt-unifi-6-lr.dts
-@@ -0,0 +1,188 @@
+@@ -0,0 +1,193 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2019 MediaTek Inc.
@@ -171,6 +171,11 @@
 +	chosen {
 +		stdout-path = &uart0;
 +		tick-timer = &timer0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x20000000>;
 +	};
 +
 +	aliases {
@@ -320,11 +325,11 @@
 +	pinctrl-0 = <&eth_pins>;
 +
 +	mediatek,gmac-id = <0>;
-+	phy-mode = "sgmii";
++	phy-mode = "2500base-x";
 +	phy-handle = <&gphy>;
 +
 +	fixed-link {
-+		speed = <1000>;
++		speed = <2500>;
 +		full-duplex;
 +	};
 +
@@ -341,7 +346,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1286,6 +1286,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1306,6 +1306,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \
@@ -433,7 +438,7 @@
  #ifdef CONFIG_MMC
  static int initr_mmc(void)
  {
-@@ -720,6 +735,9 @@ static init_fnc_t init_sequence_r[] = {
+@@ -713,6 +728,9 @@ static init_fnc_t init_sequence_r[] = {
  #ifdef CONFIG_NMBM_MTD
  	initr_nmbm,
  #endif
