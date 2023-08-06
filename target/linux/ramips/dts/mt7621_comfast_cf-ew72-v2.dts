@@ -1,0 +1,161 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "comfast,cf-ew72-v2", "mediatek,mt7621-soc";
+	model = "COMFAST CF-EW72 V2";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led2_between_power_and_wan {
+			label = "blue:led2_between_power_and_wan";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led4_between_wan_and_lan {
+			label = "blue:led4_between_wan_and_lan";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi {
+			label = "blue:wifi";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		label-mac-device = &wan;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		m25p,fast-read;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Bootloader";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+			
+			partition@0x30000 {
+				label = "Config";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+			
+			factory: partition@0x40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+			
+			partition@0x50000 {
+				label = "firmware";
+				compatible = "denx,uimage";
+				reg = <0x50000 0xfb0000>;
+			};
+		};
+	};
+};
+
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cell-names = "mac-address";
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uart2", "uart3", "sdhci", "jtag";
+		function = "gpio";
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0000>;
+		ieee80211-freq-limit = <2400000 2500000>;
+		nvmem-cells = <&macaddr_factory_e000>;
+		nvmem-cell-names = "mac-address";
+		mac-address-increment = <2>;
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&macaddr_factory_e000>;
+		nvmem-cell-names = "mac-address";
+		mac-address-increment = <3>;
+	};
+};
+
+&switch0 {
+	ports {
+		wan: port@0 {
+			status = "okay";
+			label = "wan";
+			nvmem-cells = <&macaddr_factory_e000>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <0>;
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan";
+			nvmem-cells = <&macaddr_factory_e000>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <1>;
+		};
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_e000: macaddr@e000 {
+		reg = <0xe000 0x6>;
+	};
+};
