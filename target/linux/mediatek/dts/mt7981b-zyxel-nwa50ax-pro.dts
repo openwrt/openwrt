@@ -84,6 +84,9 @@
 	phy0: ethernet-phy@5 {
 		reg = <5>;
 		compatible = "ethernet-phy-ieee802.3-c45";
+
+		/* LED0: Amber ; LED1: nc ; LED2: nc ; LED3: Green */
+		mxl,led-config = <0x3b0 0x0 0x0 0x3c0>;
 	};
 };
 
