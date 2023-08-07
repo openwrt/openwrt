@@ -89,6 +89,7 @@ USERSPACE_UTILS_FILES := \
 	tools/power/cpupower \
 	tools/scripts \
 	tools/spi \
+	tools/thermal/tmon \
 	tools/usb/usbip
 
 USERSPACE_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(USERSPACE_UTILS_FILES))))
