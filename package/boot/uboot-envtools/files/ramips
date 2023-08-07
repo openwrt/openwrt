@@ -63,6 +63,11 @@ linksys,ea8100-v2|\
 mts,wg430223)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
 	;;
+snr,cpe-w4n-mt)
+	idx="$(find_mtd_index uboot-env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x1000"
+	;;
 xiaomi,mi-router-3g-v2|\
 xiaomi,mi-router-4a-gigabit|\
 xiaomi,miwifi-3c)

@@ -1066,6 +1066,17 @@ define Device/sitecom_wlr-4100-v1-002
 endef
 TARGET_DEVICES += sitecom_wlr-4100-v1-002
 
+define Device/snr_cpe-w4n-mt
+  $(Device/uimage-lzma-loader)
+  SOC := mt7620n
+  IMAGE_SIZE := 7360k
+  DEVICE_VENDOR := SNR
+  DEVICE_MODEL := CPE-W4N
+  DEVICE_VARIANT := MT
+  UIMAGE_NAME := SNR-CPE-W4N-MT
+endef
+TARGET_DEVICES += snr_cpe-w4n-mt
+
 define Device/tplink_archer-c20i
   $(Device/tplink-v2)
   SOC := mt7620a

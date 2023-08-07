@@ -86,6 +86,7 @@ ramips_setup_interfaces()
 	glinet,gl-mt300n|\
 	glinet,gl-mt750|\
 	hiwifi,hc5661|\
+	snr,cpe-w4n-mt|\
 	wrtnode,wrtnode|\
 	zbtlink,zbt-wa05|\
 	zyxel,keenetic-omni-ii)
@@ -373,6 +374,11 @@ ramips_setup_macs()
 		;;
 	linksys,e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
+		;;
+	snr,cpe-w4n-mt)
+		lan_mac=$(mtd_get_mac_binary Factory 0x28)
+		wan_mac=$(mtd_get_mac_binary Factory 0x2e)
+		label_mac=$wan_mac
 		;;
 	tplink,archer-c2-v1|\
 	tplink,archer-c20-v1|\

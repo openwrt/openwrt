@@ -151,6 +151,11 @@ kingston,mlwg2|\
 sanlinking,d240)
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wifi" "wlan0"
 	;;
+snr,cpe-w4n-mt)
+	ucidef_set_led_heartbeat "wps" "WPS" "green:wps"
+	ucidef_set_led_timer "sys" "System" "green:sys" "500" "500"
+	ucidef_set_led_wlan "wlan" "Wi-Fi" "green:wlan" "phy0tpt"
+	;;
 lenovo,newifi-y1)
 	ucidef_set_led_netdev "wifi" "WIFI" "blue:wifi" "wlan1"
 	ucidef_set_led_netdev "wifi5g" "WIFI5G" "blue:wifi5g" "wlan0"
