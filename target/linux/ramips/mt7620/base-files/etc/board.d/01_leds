@@ -44,6 +44,9 @@ comfast,cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "white:ethernet" eth0.1
 	ucidef_set_led_netdev "wifi_led" "wifi" "white:wifi" "wlan0"
 	;;
+dlink,dir-806a-b1)
+	ucidef_set_led_netdev "wifi_led" "2.4g" "green:wlan" "wlan1"
+	;;
 dlink,dir-810l|\
 trendnet,tew-810dr)
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
