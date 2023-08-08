@@ -1089,13 +1089,17 @@ drv_mac80211_setup() {
 	json_get_values scan_list scan_list
 	json_select ..
 
+	json_select data && {
+		json_get_var prev_rxantenna rxantenna
+		json_get_var prev_txantenna txantenna
+		json_select ..
+	}
+
 	find_phy || {
 		echo "Could not find PHY for device '$1'"
 		wireless_set_retry 0
 		return 1
 	}
-
-	wireless_set_data phy="$phy"
 
 	local wdev
 	local cwdev
@@ -1129,6 +1133,9 @@ drv_mac80211_setup() {
 
 	[ "$txantenna" = "all" ] && txantenna=0xffffffff
 	[ "$rxantenna" = "all" ] && rxantenna=0xffffffff
+
+	[ "$rxantenna" = "$prev_rxantenna" -a "$txantenna" = "$prev_txantenna" ] || mac80211_reset_config "$phy"
+	wireless_set_data phy="$phy" txantenna="$txantenna" rxantenna="$rxantenna"
 
 	iw phy "$phy" set antenna $txantenna $rxantenna >/dev/null 2>&1
 	iw phy "$phy" set antenna_gain $antenna_gain >/dev/null 2>&1
