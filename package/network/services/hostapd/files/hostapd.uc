@@ -117,6 +117,9 @@ function iface_reload_config(phy, config, old_config)
 	if (is_equal(old_config.bss, config.bss))
 		return true;
 
+	if (!old_config.bss || !old_config.bss[0])
+		return false;
+
 	if (config.bss[0].ifname != old_config.bss[0].ifname)
 		return false;
 
