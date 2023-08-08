@@ -21,7 +21,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -284,6 +284,7 @@ config PHYS_OFFSET
+@@ -285,6 +285,7 @@ config PHYS_OFFSET
  	default 0x30000000 if ARCH_S3C24XX
  	default 0xa0000000 if ARCH_IOP32X || ARCH_PXA
  	default 0xc0000000 if ARCH_EP93XX || ARCH_SA1100
@@ -29,7 +29,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	default 0
  	help
  	  Please provide the physical address corresponding to the
-@@ -1703,7 +1704,7 @@ config CRASH_DUMP
+@@ -1704,7 +1705,7 @@ config CRASH_DUMP
  
  config AUTO_ZRELADDR
  	bool "Auto calculation of the decompressed kernel image address" if !ARCH_MULTIPLATFORM
