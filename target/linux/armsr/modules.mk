@@ -267,10 +267,22 @@ endef
 
 $(eval $(call KernelPackage,dwmac-rockchip))
 
+define KernelPackage/mdio-thunder
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Marvell (Cavium) Thunder MDIO controller
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-of-mdio
+  KCONFIG:=CONFIG_MDIO_THUNDER
+  FILES=$(LINUX_DIR)/drivers/net/mdio/mdio-cavium.ko \
+    $(LINUX_DIR)/drivers/net/mdio/mdio-thunder.ko
+  AUTOLOAD=$(call AutoLoad,30,mdio-cavium mdio-thunder)
+endef
+
+$(eval $(call KernelPackage,mdio-thunder))
+
 define KernelPackage/thunderx-net
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Marvell (Cavium) Thunder network drivers
-  DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink +kmod-of-mdio
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink +kmod-mdio-thunder
   KCONFIG:=CONFIG_NET_VENDOR_CAVIUM \
     CONFIG_THUNDER_NIC_PF \
     CONFIG_THUNDER_NIC_VF \
