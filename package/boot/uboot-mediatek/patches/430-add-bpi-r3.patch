@@ -840,7 +840,7 @@
 +boot_tftp_recovery=run boot_update_conf ; tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run sdmmc_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
 +boot_tftp=run boot_update_conf ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
-+mmc_read_vol=mmc read $loadaddr $part_addr 0x8 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size && setexpr filesize $image_size * 0x200
++mmc_read_vol=mmc read $loadaddr $part_addr 0x100 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size && setexpr filesize $image_size * 0x200
 +part_default=production
 +part_recovery=recovery
 +reset_factory=eraseenv && reset
@@ -931,8 +931,8 @@
 +boot_write_fip=mtd erase fip && mtd write fip $loadaddr
 +boot_write_preloader=mtd erase bl2 && mtd write bl2 $loadaddr
 +reset_factory=mtd erase u-boot-env
-+nor_read_production=mtd read fit $loadaddr 0x0 0x1000 && imsz $loadaddr image_size && mtd read fit $loadaddr 0x0 $image_size
-+nor_read_recovery=mtd read recovery $loadaddr 0x0 0x1000 && imsz $loadaddr image_size && mtd read recovery $loadaddr 0x0 $image_size
++nor_read_production=mtd read fit $loadaddr 0x0 0x20000 && imsz $loadaddr image_size && mtd read fit $loadaddr 0x0 $image_size
++nor_read_recovery=mtd read recovery $loadaddr 0x0 0x20000 && imsz $loadaddr image_size && mtd read recovery $loadaddr 0x0 $image_size
 +nor_pad_size=imsz $loadaddr image_size ; setexpr image_eb 0x$image_size / 0x10000 ; setexpr tmp1 0x$image_size % 0x10000 ; test 0x$tmp1 -gt 0 && setexpr image_eb 0x$image_eb + 1 ; setexpr image_eb $image_eb * 0x10000
 +nor_write_production=run nor_pad_size ; test 0x$image_eb -le 0x3000000 && mtd erase fit && mtd write fit $loadaddr 0x0 $image_eb
 +nor_write_recovery=run nor_pad_size ; test 0x$image_eb -le 0x900000 && mtd erase recovery 0x0 0x$image_eb && mtd write recovery $loadaddr 0x0 $image_eb
@@ -1067,7 +1067,7 @@
 +boot_tftp=run boot_update_conf ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +boot_update_conf=if nand info ; then setenv bootconf $bootconf_base#$bootconf_emmc#$bootconf_nand ; else setenv bootconf $bootconf_base#$bootconf_emmc#$bootconf_nor ; fi
 +mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
-+mmc_read_vol=mmc read $loadaddr $part_addr 0x8 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size && setexpr filesize $image_size * 0x200
++mmc_read_vol=mmc read $loadaddr $part_addr 0x100 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size && setexpr filesize $image_size * 0x200
 +part_default=production
 +part_recovery=recovery
 +reset_factory=eraseenv && reset
