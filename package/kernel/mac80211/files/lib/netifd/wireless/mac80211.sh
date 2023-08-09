@@ -765,7 +765,7 @@ mac80211_prepare_iw_htmode() {
 
 mac80211_add_mesh_params() {
 	for var in $MP_CONFIG_INT $MP_CONFIG_BOOL $MP_CONFIG_STRING; do
-		eval "mp_val=\"\$var\""
+		eval "mp_val=\"\$$var\""
 		[ -n "$mp_val" ] && json_add_string "$var" "$mp_val"
 	done
 }
