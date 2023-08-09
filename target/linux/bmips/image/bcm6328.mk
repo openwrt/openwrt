@@ -39,6 +39,18 @@ define Device/comtrend_ar-5387un
 endef
 TARGET_DEVICES += comtrend_ar-5387un
 
+define Device/innacomm_w3400v6
+  $(Device/bcm63xx-cfe)
+  DEVICE_VENDOR := Innacomm
+  DEVICE_MODEL := W3400V6
+  CHIP_ID := 6328
+  CFE_BOARD_ID := 96328ang
+  FLASH_MB := 8
+  DEVICE_PACKAGES += $(B43_PACKAGES) \
+    broadcom-4318-sprom kmod-leds-bcm6328
+endef
+TARGET_DEVICES += innacomm_w3400v6
+
 define Device/nucom_r5010unv2
   $(Device/bcm63xx-cfe)
   DEVICE_VENDOR := NuCom
