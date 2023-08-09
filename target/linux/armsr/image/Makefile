@@ -112,7 +112,7 @@ define Device/generic
 	kmod-fsl-enetc-net kmod-dwmac-imx kmod-fsl-fec kmod-thunderx-net \
 	kmod-dwmac-rockchip kmod-dwmac-sun8i kmod-phy-aquantia kmod-phy-broadcom \
 	kmod-phy-marvell kmod-phy-marvell-10g kmod-sfp kmod-atlantic \
-	kmod-bcmgenet
+	kmod-bcmgenet kmod-octeontx2-net
 endef
 TARGET_DEVICES += generic
 

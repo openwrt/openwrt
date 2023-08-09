@@ -269,7 +269,7 @@ $(eval $(call KernelPackage,dwmac-rockchip))
 
 define KernelPackage/thunderx-net
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Marvell (Cavium) ThunderX/2 network drivers
+  TITLE:=Marvell (Cavium) Thunder network drivers
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink +kmod-of-mdio
   KCONFIG:=CONFIG_NET_VENDOR_CAVIUM \
     CONFIG_THUNDER_NIC_PF \
@@ -284,6 +284,25 @@ define KernelPackage/thunderx-net
 endef
 
 $(eval $(call KernelPackage,thunderx-net))
+
+define KernelPackage/octeontx2-net
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Marvell (Cavium) ThunderX2 network drivers
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink +kmod-of-mdio +kmod-macsec \
+    +kmod-ptp
+  KCONFIG:=CONFIG_OCTEONTX2_MBOX \
+    CONFIG_OCTEONTX2_AF \
+    CONFIG_OCTEONTX2_PF \
+    CONFIG_OCTEONTX2_VF \
+    CONFIG_NDC_DIS_DYNAMIC_CACHING=n
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/af/rvu_mbox.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/af/rvu_af.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/nic/rvu_nicpf.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/nic/rvu_nicvf.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/nic/otx2_ptp.ko
+  AUTOLOAD=$(call AutoLoad,40,rvu_af rvu_mbox rvu_nicpf rvu_nicvf otx2_ptp)
+endef
+$(eval $(call KernelPackage,octeontx2-net))
 
 define KernelPackage/wdt-sp805
   SUBMENU:=$(OTHER_MENU)
