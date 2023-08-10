@@ -1159,9 +1159,6 @@ hostapd_set_bss_options() {
 		append bss_conf "$val" "$N"
 	done
 
-	bss_md5sum="$(echo $bss_conf | md5sum | cut -d" " -f1)"
-	append bss_conf "config_id=$bss_md5sum" "$N"
-
 	append "$var" "$bss_conf" "$N"
 	return 0
 }
