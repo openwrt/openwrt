@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2850,6 +2850,14 @@ static int hostapd_config_fill(struct ho
+@@ -2848,6 +2848,14 @@ static int hostapd_config_fill(struct ho
  				   line, bss->max_num_sta, MAX_STA_COUNT);
  			return 1;
  		}
@@ -17,7 +17,7 @@
  	} else if (os_strcmp(buf, "extended_key_id") == 0) {
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -744,6 +744,7 @@ void hostapd_cleanup_cs_params(struct ho
+@@ -742,6 +742,7 @@ void hostapd_cleanup_cs_params(struct ho
  void hostapd_periodic_iface(struct hostapd_iface *iface);
  int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
  void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
@@ -27,9 +27,9 @@
  void hostapd_cleanup_cca_params(struct hostapd_data *hapd);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -272,6 +272,30 @@ static int hostapd_iface_conf_changed(st
+@@ -244,6 +244,29 @@ static int hostapd_iface_conf_changed(st
+ 	return 0;
  }
- 
  
 +static inline int hostapd_iface_num_sta(struct hostapd_iface *iface)
 +{
@@ -54,10 +54,9 @@
 +
 +	return 0;
 +}
-+
- int hostapd_reload_config(struct hostapd_iface *iface, int reconf)
+ 
+ int hostapd_reload_config(struct hostapd_iface *iface)
  {
- 	struct hapd_interfaces *interfaces = iface->interfaces;
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
 @@ -1252,7 +1252,7 @@ void handle_probe_req(struct hostapd_dat
@@ -71,7 +70,7 @@
  			   " since no room for additional STA",
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1037,6 +1037,8 @@ struct hostapd_config {
+@@ -1036,6 +1036,8 @@ struct hostapd_config {
  	unsigned int track_sta_max_num;
  	unsigned int track_sta_max_age;
  

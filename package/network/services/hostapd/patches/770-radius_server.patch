@@ -13,15 +13,15 @@
  OBJS += ../src/ap/drv_callbacks.o
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -42,6 +42,7 @@ static struct hapd_global global;
- static int daemonize = 0;
- static char *pid_file = NULL;
+@@ -40,6 +40,7 @@ struct hapd_global {
+ 
+ static struct hapd_global global;
  
 +extern int radius_main(int argc, char **argv);
  
  #ifndef CONFIG_NO_HOSTAPD_LOGGER
  static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
-@@ -755,6 +756,11 @@ int main(int argc, char *argv[])
+@@ -758,6 +759,11 @@ int main(int argc, char *argv[])
  	if (os_program_init())
  		return -1;
  

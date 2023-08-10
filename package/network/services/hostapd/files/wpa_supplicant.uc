@@ -5,11 +5,13 @@ import { wdev_create, wdev_remove, is_equal, vlist_new } from "common";
 let ubus = libubus.connect();
 
 wpas.data.config = {};
+wpas.data.iface_phy = {};
 
 function iface_stop(iface)
 {
 	let ifname = iface.config.iface;
 
+	delete wpas.data.iface_phy[ifname];
 	wpas.remove_iface(ifname);
 	wdev_remove(ifname);
 	iface.running = false;
@@ -22,6 +24,7 @@ function iface_start(phy, iface)
 
 	let ifname = iface.config.iface;
 
+	wpas.data.iface_phy[ifname] = phy;
 	wdev_remove(ifname);
 	let ret = wdev_create(phy, ifname, iface.config);
 	if (ret)
@@ -146,6 +149,46 @@ function iface_event(type, name, data) {
 	ubus.call("service", "event", { type: `wpa_supplicant.${name}.${type}`, data: {} });
 }
 
+function iface_hostapd_notify(phy, ifname, iface, state)
+{
+	let ubus = wpas.data.ubus;
+	let status = iface.status();
+	let msg = { phy: phy };
+
+	switch (state) {
+	case "DISCONNECTED":
+	case "AUTHENTICATING":
+		msg.up = false;
+		break;
+	case "INTERFACE_DISABLED":
+	case "INACTIVE":
+		msg.up = true;
+		break;
+	case "COMPLETED":
+		msg.up = true;
+		msg.frequency = status.frequency;
+		msg.sec_chan_offset = status.sec_chan_offset;
+		break;
+	default:
+		return;
+	}
+
+	ubus.call("hostapd", "apsta_state", msg);
+}
+
+function iface_channel_switch(phy, ifname, iface, info)
+{
+	let msg = {
+		phy: phy,
+		up: true,
+		csa: true,
+		csa_count: info.csa_count ? info.csa_count - 1 : 0,
+		frequency: info.frequency,
+		sec_chan_offset: info.sec_chan_offset,
+	};
+	ubus.call("hostapd", "apsta_state", msg);
+}
+
 return {
 	shutdown: function() {
 		for (let phy in wpas.data.config)
@@ -153,9 +196,31 @@ return {
 		wpas.ubus.disconnect();
 	},
 	iface_add: function(name, obj) {
+		obj.data.name = name;
 		iface_event("add", name);
 	},
 	iface_remove: function(name, obj) {
 		iface_event("remove", name);
+	},
+	state: function(iface, state) {
+		let ifname = iface.data.name;
+		let phy = wpas.data.iface_phy[ifname];
+		if (!phy) {
+			wpas.printf(`no PHY for ifname ${ifname}`);
+			return;
+		}
+
+		iface_hostapd_notify(phy, ifname, iface, state);
+	},
+	event: function(iface, ev, info) {
+		let ifname = iface.data.name;
+		let phy = wpas.data.iface_phy[ifname];
+		if (!phy) {
+			wpas.printf(`no PHY for ifname ${ifname}`);
+			return;
+		}
+
+		if (ev == "CH_SWITCH_STARTED")
+			iface_channel_switch(phy, ifname, iface, info);
 	}
 };

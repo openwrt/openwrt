@@ -305,6 +305,78 @@ let main_obj = {
 			return 0;
 		}
 	},
+	apsta_state: {
+		args: {
+			phy: "",
+			up: true,
+			frequency: 0,
+			sec_chan_offset: 0,
+			csa: true,
+			csa_count: 0,
+		},
+		call: function(req) {
+			if (req.args.up == null || !req.args.phy)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			let phy = req.args.phy;
+			let config = hostapd.data.config[phy];
+			if (!config || !config.bss || !config.bss[0] || !config.bss[0].ifname)
+				return 0;
+
+			let iface = hostapd.interfaces[config.bss[0].ifname];
+			if (!iface)
+				return 0;
+
+			if (!req.args.up) {
+				iface.stop();
+				return 0;
+			}
+
+			let freq = req.args.frequency;
+			if (!freq)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			let sec_offset = req.args.sec_chan_offset;
+			if (sec_offset != -1 && sec_offset != 1)
+				sec_offset = 0;
+
+			let width = 0;
+			for (let line in config.radio.data) {
+				if (!sec_offset && match(line, /^ht_capab=.*HT40/)) {
+					sec_offset = null; // auto-detect
+					continue;
+				}
+
+				let val = match(line, /^(vht_oper_chwidth|he_oper_chwidth)=(\d+)/);
+				if (!val)
+					continue;
+
+				val = int(val[2]);
+				if (val > width)
+					width = val;
+			}
+
+			if (freq < 4000)
+				width = 0;
+
+			let freq_info = hostapd.freq_info(freq, sec_offset, width);
+			if (!freq_info)
+				return libubus.STATUS_UNKNOWN_ERROR;
+
+			let ret;
+			if (req.args.csa) {
+				freq_info.csa_count = req.args.csa_count ?? 10;
+				ret = iface.switch_channel(freq_info);
+			} else {
+				iface.stop();
+				ret = iface.start(freq_info);
+			}
+			if (!ret)
+				return libubus.STATUS_UNKNOWN_ERROR;
+
+			return 0;
+		}
+	},
 	config_set: {
 		args: {
 			phy: "",

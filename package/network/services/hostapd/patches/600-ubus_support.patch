@@ -41,7 +41,7 @@
  struct hostapd_iface * hostapd_alloc_iface(void);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -455,6 +455,7 @@ void hostapd_free_hapd_data(struct hosta
+@@ -435,6 +435,7 @@ void hostapd_free_hapd_data(struct hosta
  	hapd->beacon_set_done = 0;
  
  	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
@@ -49,7 +49,7 @@
  	accounting_deinit(hapd);
  	hostapd_deinit_wpa(hapd);
  	vlan_deinit(hapd);
-@@ -1207,6 +1208,8 @@ static int hostapd_start_beacon(struct h
+@@ -1187,6 +1188,8 @@ static int hostapd_start_beacon(struct h
  	if (hapd->driver && hapd->driver->set_operstate)
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
@@ -58,7 +58,7 @@
  	return 0;
  }
  
-@@ -2295,6 +2298,7 @@ static int hostapd_setup_interface_compl
+@@ -2275,6 +2278,7 @@ static int hostapd_setup_interface_compl
  	if (err)
  		goto fail;
  
@@ -66,7 +66,7 @@
  	wpa_printf(MSG_DEBUG, "Completing interface initialization");
  	if (iface->freq) {
  #ifdef NEED_AP_MLME
-@@ -2514,6 +2518,7 @@ dfs_offload:
+@@ -2494,6 +2498,7 @@ dfs_offload:
  
  fail:
  	wpa_printf(MSG_ERROR, "Interface initialization failed");
@@ -74,7 +74,7 @@
  
  	if (iface->is_no_ir) {
  		hostapd_set_state(iface, HAPD_IFACE_NO_IR);
-@@ -3004,6 +3009,7 @@ void hostapd_interface_deinit_free(struc
+@@ -2984,6 +2989,7 @@ void hostapd_interface_deinit_free(struc
  		   (unsigned int) iface->conf->num_bss);
  	driver = iface->bss[0]->driver;
  	drv_priv = iface->bss[0]->drv_priv;
@@ -322,7 +322,7 @@
  
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -194,6 +194,13 @@ ifdef CONFIG_EAPOL_TEST
+@@ -192,6 +192,13 @@ ifdef CONFIG_EAPOL_TEST
  CFLAGS += -Werror -DEAPOL_TEST
  endif
  
@@ -336,7 +336,7 @@
  ifdef CONFIG_CODE_COVERAGE
  CFLAGS += -O0 -fprofile-arcs -ftest-coverage
  LIBS += -lgcov
-@@ -989,6 +996,9 @@ ifdef CONFIG_CTRL_IFACE_MIB
+@@ -987,6 +994,9 @@ ifdef CONFIG_CTRL_IFACE_MIB
  CFLAGS += -DCONFIG_CTRL_IFACE_MIB
  endif
  OBJS += ../src/ap/ctrl_iface_ap.o
@@ -348,7 +348,7 @@
  CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -7635,6 +7635,8 @@ struct wpa_supplicant * wpa_supplicant_a
+@@ -7566,6 +7566,8 @@ struct wpa_supplicant * wpa_supplicant_a
  	}
  #endif /* CONFIG_P2P */
  
@@ -357,7 +357,7 @@
  	return wpa_s;
  }
  
-@@ -7661,6 +7663,8 @@ int wpa_supplicant_remove_iface(struct w
+@@ -7592,6 +7594,8 @@ int wpa_supplicant_remove_iface(struct w
  	struct wpa_supplicant *parent = wpa_s->parent;
  #endif /* CONFIG_MESH */
  
@@ -366,7 +366,7 @@
  	/* Remove interface from the global list of interfaces */
  	prev = global->ifaces;
  	if (prev == wpa_s) {
-@@ -8007,8 +8011,12 @@ int wpa_supplicant_run(struct wpa_global
+@@ -7938,8 +7942,12 @@ int wpa_supplicant_run(struct wpa_global
  	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
  	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
  
@@ -389,7 +389,7 @@
  
  extern const char *const wpa_supplicant_version;
  extern const char *const wpa_supplicant_license;
-@@ -324,6 +325,8 @@ struct wpa_global {
+@@ -319,6 +320,8 @@ struct wpa_global {
  #endif /* CONFIG_WIFI_DISPLAY */
  
  	struct psk_list_entry *add_psk; /* From group formation */
@@ -398,7 +398,7 @@
  };
  
  
-@@ -655,6 +658,7 @@ struct wpa_supplicant {
+@@ -650,6 +653,7 @@ struct wpa_supplicant {
  	unsigned char own_addr[ETH_ALEN];
  	unsigned char perm_addr[ETH_ALEN];
  	char ifname[100];
@@ -427,16 +427,16 @@
  
 --- a/wpa_supplicant/main.c
 +++ b/wpa_supplicant/main.c
-@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
+@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
  
  	for (;;) {
  		c = getopt(argc, argv,
--			   "b:Bc:C:D:de:f:g:G:hH:i:I:KLMm:No:O:p:P:qsTtuv::W");
-+			   "b:Bc:C:D:de:f:g:G:hH:i:I:KLMm:nNo:O:p:P:qsTtuv::W");
+-			   "b:Bc:C:D:de:f:g:G:hi:I:KLMm:No:O:p:P:qsTtuv::W");
++			   "b:Bc:C:D:de:f:g:G:hi:I:KLMm:nNo:O:p:P:qsTtuv::W");
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -272,6 +272,9 @@ int main(int argc, char *argv[])
+@@ -268,6 +268,9 @@ int main(int argc, char *argv[])
  			params.conf_p2p_dev = optarg;
  			break;
  #endif /* CONFIG_P2P */
