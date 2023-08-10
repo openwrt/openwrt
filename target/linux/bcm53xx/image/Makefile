@@ -159,6 +159,14 @@ define Device/asus
   IMAGE/trx := append-ubi | trx-nand | asus-trx
 endef
 
+define Device/asus_rt-ac3100
+  $(call Device/asus)
+  DEVICE_MODEL := RT-AC3100
+  DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC3100
+endef
+TARGET_DEVICES += asus_rt-ac3100
+
 define Device/asus_rt-ac56u
   $(call Device/asus)
   DEVICE_MODEL := RT-AC56U
