@@ -119,7 +119,12 @@ uc_value_t *uc_wpa_freq_info(uc_vm_t *vm, size_t nargs)
 	if (!sec_channel)
 		return ret;
 
-	center_ofs = freq_val >= 5900 ? 0 : 3;
+	if (freq_val >= 5900)
+		center_ofs = 0;
+	else if (freq_val >= 5745)
+		center_ofs = 20;
+	else
+		center_ofs = 35;
 	tmp_channel = channel - center_ofs;
 	tmp_channel &= ~((8 << width) - 1);
 	center_idx = tmp_channel + center_ofs + (4 << width) - 1;
