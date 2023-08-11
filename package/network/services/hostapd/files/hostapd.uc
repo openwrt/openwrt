@@ -66,10 +66,12 @@ function iface_restart(phy, config, old_config)
 	if (err)
 		hostapd.printf(`Failed to create ${bss.ifname} on phy ${phy}: ${err}`);
 	let config_inline = iface_gen_config(phy, config);
-	if (hostapd.add_iface(`bss_config=${bss.ifname}:${config_inline}`) < 0) {
+
+	let ubus = hostapd.data.ubus;
+	ubus.call("wpa_supplicant", "phy_set_state", { phy: phy, stop: true });
+	if (hostapd.add_iface(`bss_config=${bss.ifname}:${config_inline}`) < 0)
 		hostapd.printf(`hostapd.add_iface failed for phy ${phy} ifname=${bss.ifname}`);
-		return;
-	}
+	ubus.call("wpa_supplicant", "phy_set_state", { phy: phy, stop: false });
 }
 
 function array_to_obj(arr, key, start)

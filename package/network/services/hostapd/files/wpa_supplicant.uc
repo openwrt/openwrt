@@ -11,6 +11,9 @@ function iface_stop(iface)
 {
 	let ifname = iface.config.iface;
 
+	if (!iface.running)
+		return;
+
 	delete wpas.data.iface_phy[ifname];
 	wpas.remove_iface(ifname);
 	wdev_remove(ifname);
@@ -40,7 +43,7 @@ function iface_cb(new_if, old_if)
 		return;
 	}
 
-	if (old_if && old_if.running)
+	if (old_if)
 		iface_stop(old_if);
 }
 
@@ -76,6 +79,28 @@ function start_pending(phy_name)
 }
 
 let main_obj = {
+	phy_set_state: {
+		args: {
+			phy: "",
+			stop: true,
+		},
+		call: function(req) {
+			if (!req.args.phy || req.args.stop == null)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			let phy = wpas.data.config[req.args.phy];
+			if (!phy)
+				return libubus.STATUS_NOT_FOUND;
+
+			if (req.args.stop) {
+				for (let ifname in phy.data)
+					iface_stop(phy.data[ifname]);
+			} else {
+				start_pending(req.args.phy);
+			}
+			return 0;
+		}
+	},
 	config_set: {
 		args: {
 			phy: "",
