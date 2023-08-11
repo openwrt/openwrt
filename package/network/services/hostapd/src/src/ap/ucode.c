@@ -332,16 +332,21 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 		conf->channel = intval;
 	if ((intval = ucv_int64_get(ucv_object_get(info, "sec_channel", NULL))) && !errno)
 		conf->secondary_channel = intval;
+#ifdef CONFIG_IEEE80211AC
 	if ((intval = ucv_int64_get(ucv_object_get(info, "center_seg0_idx", NULL))) && !errno) {
 		conf->vht_oper_centr_freq_seg0_idx = intval;
+#ifdef CONFIG_IEEE80211AX
 		conf->he_oper_centr_freq_seg0_idx = intval;
+#endif
 #ifdef CONFIG_IEEE80211BE
 		conf->eht_oper_centr_freq_seg0_idx = intval;
 #endif
 	}
 	if ((intval = ucv_int64_get(ucv_object_get(info, "center_seg1_idx", NULL))) && !errno) {
 		conf->vht_oper_centr_freq_seg1_idx = intval;
+#ifdef CONFIG_IEEE80211AX
 		conf->he_oper_centr_freq_seg1_idx = intval;
+#endif
 #ifdef CONFIG_IEEE80211BE
 		conf->eht_oper_centr_freq_seg1_idx = intval;
 #endif
@@ -349,11 +354,14 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 	intval = ucv_int64_get(ucv_object_get(info, "oper_chwidth", NULL));
 	if (!errno) {
 		conf->vht_oper_chwidth = intval;
+#ifdef CONFIG_IEEE80211AX
 		conf->he_oper_chwidth = intval;
+#endif
 #ifdef CONFIG_IEEE80211BE
 		conf->eht_oper_chwidth = intval;
 #endif
 	}
+#endif
 
 out:
 	if (conf->channel)
