@@ -92,11 +92,16 @@ let main_obj = {
 			if (!phy)
 				return libubus.STATUS_NOT_FOUND;
 
-			if (req.args.stop) {
-				for (let ifname in phy.data)
-					iface_stop(phy.data[ifname]);
-			} else {
-				start_pending(req.args.phy);
+			try {
+				if (req.args.stop) {
+					for (let ifname in phy.data)
+						iface_stop(phy.data[ifname]);
+				} else {
+					start_pending(req.args.phy);
+				}
+			} catch (e) {
+				wpas.printf(`Error chaging state: ${e}\n${e.stacktrace[0].context}`);
+				return libubus.STATUS_INVALID_ARGUMENT;
 			}
 			return 0;
 		}
@@ -221,14 +226,12 @@ return {
 		wpas.ubus.disconnect();
 	},
 	iface_add: function(name, obj) {
-		obj.data.name = name;
 		iface_event("add", name);
 	},
 	iface_remove: function(name, obj) {
 		iface_event("remove", name);
 	},
-	state: function(iface, state) {
-		let ifname = iface.data.name;
+	state: function(ifname, iface, state) {
 		let phy = wpas.data.iface_phy[ifname];
 		if (!phy) {
 			wpas.printf(`no PHY for ifname ${ifname}`);
@@ -237,8 +240,7 @@ return {
 
 		iface_hostapd_notify(phy, ifname, iface, state);
 	},
-	event: function(iface, ev, info) {
-		let ifname = iface.data.name;
+	event: function(ifname, iface, ev, info) {
 		let phy = wpas.data.iface_phy[ifname];
 		if (!phy) {
 			wpas.printf(`no PHY for ifname ${ifname}`);

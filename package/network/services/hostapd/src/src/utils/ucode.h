@@ -17,7 +17,7 @@ void wpa_ucode_free_vm(void);
 
 uc_value_t *wpa_ucode_global_init(const char *name, uc_resource_type_t *global_type);
 
-void wpa_ucode_registry_add(uc_value_t *reg, uc_value_t *val, int *idx);
+int wpa_ucode_registry_add(uc_value_t *reg, uc_value_t *val);
 uc_value_t *wpa_ucode_registry_get(uc_value_t *reg, int idx);
 uc_value_t *wpa_ucode_registry_remove(uc_value_t *reg, int idx);
 

@@ -125,13 +125,18 @@ function iface_reload_config(phy, config, old_config)
 	if (config.bss[0].ifname != old_config.bss[0].ifname)
 		return false;
 
-	let iface = hostapd.interfaces[config.bss[0].ifname];
+	let iface_name = config.bss[0].ifname;
+	let iface = hostapd.interfaces[iface_name];
 	if (!iface)
+		return false;
+
+	let first_bss = hostapd.bss[iface_name];
+	if (!first_bss)
 		return false;
 
 	let config_inline = iface_gen_config(phy, config);
 
-	bss_reload_psk(iface.bss[0], config.bss[0], old_config.bss[0]);
+	bss_reload_psk(first_bss, config.bss[0], old_config.bss[0]);
 	if (!is_equal(config.bss[0], old_config.bss[0])) {
 		if (phy_is_fullmac(phy))
 			return false;
@@ -140,18 +145,17 @@ function iface_reload_config(phy, config, old_config)
 			return false;
 
 		hostapd.printf(`Reload config for bss '${config.bss[0].ifname}' on phy '${phy}'`);
-		if (iface.bss[0].set_config(config_inline, 0) < 0) {
+		if (first_bss.set_config(config_inline, 0) < 0) {
 			hostapd.printf(`Failed to set config`);
 			return false;
 		}
 	}
 
-	let bss_list = array_to_obj(iface.bss, "name", 1);
 	let new_cfg = array_to_obj(config.bss, "ifname", 1);
 	let old_cfg = array_to_obj(old_config.bss, "ifname", 1);
 
 	for (let name in old_cfg) {
-		let bss = bss_list[name];
+		let bss = hostapd.bss[name];
 		if (!bss) {
 			hostapd.printf(`bss '${name}' not found`);
 			return false;

@@ -23,7 +23,7 @@ hostapd_ucode_bss_get_uval(struct hostapd_data *hapd)
 		return wpa_ucode_registry_get(bss_registry, hapd->ucode.idx);
 
 	val = uc_resource_new(bss_type, hapd);
-	wpa_ucode_registry_add(bss_registry, val, &hapd->ucode.idx);
+	hapd->ucode.idx = wpa_ucode_registry_add(bss_registry, val);
 
 	return val;
 }
@@ -37,46 +37,46 @@ hostapd_ucode_iface_get_uval(struct hostapd_iface *hapd)
 		return wpa_ucode_registry_get(iface_registry, hapd->ucode.idx);
 
 	val = uc_resource_new(iface_type, hapd);
-	wpa_ucode_registry_add(iface_registry, val, &hapd->ucode.idx);
+	hapd->ucode.idx = wpa_ucode_registry_add(iface_registry, val);
 
 	return val;
 }
 
 static void
-hostapd_ucode_update_bss_list(struct hostapd_iface *iface)
+hostapd_ucode_update_bss_list(struct hostapd_iface *iface, uc_value_t *if_bss, uc_value_t *bss)
 {
-	uc_value_t *ifval, *list;
+	uc_value_t *list;
 	int i;
 
 	list = ucv_array_new(vm);
 	for (i = 0; i < iface->num_bss; i++) {
 		struct hostapd_data *hapd = iface->bss[i];
 		uc_value_t *val = hostapd_ucode_bss_get_uval(hapd);
-		uc_value_t *proto = ucv_prototype_get(val);
 
-		ucv_object_add(proto, "name", ucv_get(ucv_string_new(hapd->conf->iface)));
-		ucv_object_add(proto, "index", ucv_int64_new(i));
-		ucv_array_set(list, i, ucv_get(val));
+		ucv_array_set(list, i, ucv_get(ucv_string_new(hapd->conf->iface)));
+		ucv_object_add(bss, hapd->conf->iface, ucv_get(val));
 	}
-
-	ifval = hostapd_ucode_iface_get_uval(iface);
-	ucv_object_add(ucv_prototype_get(ifval), "bss", ucv_get(list));
+	ucv_object_add(if_bss, iface->phy, ucv_get(list));
 }
 
 static void
 hostapd_ucode_update_interfaces(void)
 {
 	uc_value_t *ifs = ucv_object_new(vm);
+	uc_value_t *if_bss = ucv_array_new(vm);
+	uc_value_t *bss = ucv_object_new(vm);
 	int i;
 
 	for (i = 0; i < interfaces->count; i++) {
 		struct hostapd_iface *iface = interfaces->iface[i];
 
 		ucv_object_add(ifs, iface->phy, ucv_get(hostapd_ucode_iface_get_uval(iface)));
-		hostapd_ucode_update_bss_list(iface);
+		hostapd_ucode_update_bss_list(iface, if_bss, bss);
 	}
 
 	ucv_object_add(ucv_prototype_get(global), "interfaces", ucv_get(ifs));
+	ucv_object_add(ucv_prototype_get(global), "interface_bss", ucv_get(if_bss));
+	ucv_object_add(ucv_prototype_get(global), "bss", ucv_get(bss));
 	ucv_gc(vm);
 }
 
@@ -199,7 +199,7 @@ uc_hostapd_bss_delete(uc_vm_t *vm, size_t nargs)
 	hostapd_config_free_bss(hapd->conf);
 	os_free(hapd);
 
-	hostapd_ucode_update_bss_list(iface);
+	hostapd_ucode_update_interfaces();
 	ucv_gc(vm);
 
 	return NULL;
@@ -252,7 +252,7 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 	iface->conf->bss[iface->conf->num_bss] = bss;
 	conf->bss[idx] = NULL;
 	ret = hostapd_ucode_bss_get_uval(hapd);
-	hostapd_ucode_update_bss_list(iface);
+	hostapd_ucode_update_interfaces();
 	goto out;
 
 deinit_ctrl:
