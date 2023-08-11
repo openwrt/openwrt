@@ -987,39 +987,6 @@ define Device/plasmacloud_pa2200
 endef
 TARGET_DEVICES += plasmacloud_pa2200
 
-define Device/qcom_ap-dk01.1-c1
-	DEVICE_VENDOR := Qualcomm Atheros
-	DEVICE_MODEL := AP-DK01.1
-	DEVICE_VARIANT := C1
-	BOARD_NAME := ap-dk01.1-c1
-	SOC := qcom-ipq4019
-	DEVICE_DTS := qcom-ipq4019-ap.dk01.1-c1
-	KERNEL_INSTALL := 1
-	KERNEL_SIZE := 4096k
-	IMAGE_SIZE := 26624k
-	$(call Device/FitImage)
-	IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | append-metadata
-	DEFAULT := n
-endef
-TARGET_DEVICES += qcom_ap-dk01.1-c1
-
-define Device/qcom_ap-dk04.1-c1
-	$(call Device/FitImage)
-	$(call Device/UbiFit)
-	DEVICE_VENDOR := Qualcomm Atheros
-	DEVICE_MODEL := AP-DK04.1
-	DEVICE_VARIANT := C1
-	SOC := qcom-ipq4019
-	DEVICE_DTS := qcom-ipq4019-ap.dk04.1-c1
-	KERNEL_INSTALL := 1
-	KERNEL_SIZE := 4048k
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
-	BOARD_NAME := ap-dk04.1-c1
-	DEFAULT := n
-endef
-TARGET_DEVICES += qcom_ap-dk04.1-c1
-
 define Device/qxwlan_e2600ac-c1
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Qxwlan
