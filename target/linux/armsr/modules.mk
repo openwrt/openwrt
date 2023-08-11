@@ -151,17 +151,6 @@ endef
 
 $(eval $(call KernelPackage,marvell-mdio))
 
-define KernelPackage/phy-marvell-10g
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Marvell Alaska 10G PHY driver
-  DEPENDS:=@(TARGET_armsr_armv8) +kmod-libphy
-  KCONFIG:=CONFIG_MARVELL_10G_PHY
-  FILES=$(LINUX_DIR)/drivers/net/phy/marvell10g.ko
-  AUTOLOAD=$(call AutoLoad,35,marvell10g)
-endef
-
-$(eval $(call KernelPackage,phy-marvell-10g))
-
 define KernelPackage/mvneta
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Marvell Armada 370/38x/XP/37xx network driver
