@@ -31,7 +31,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/drm_atomic_helper.c
 +++ b/drivers/gpu/drm/drm_atomic_helper.c
-@@ -2049,6 +2049,9 @@ crtc_or_fake_commit(struct drm_atomic_st
+@@ -2058,6 +2058,9 @@ crtc_or_fake_commit(struct drm_atomic_st
   * should always call this function from their
   * &drm_mode_config_funcs.atomic_commit hook.
   *
@@ -41,7 +41,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
   * To be able to use this support drivers need to use a few more helper
   * functions. drm_atomic_helper_wait_for_dependencies() must be called before
   * actually committing the hardware state, and for nonblocking commits this call
-@@ -2092,8 +2095,11 @@ int drm_atomic_helper_setup_commit(struc
+@@ -2101,8 +2104,11 @@ int drm_atomic_helper_setup_commit(struc
  	struct drm_plane *plane;
  	struct drm_plane_state *old_plane_state, *new_plane_state;
  	struct drm_crtc_commit *commit;
@@ -53,7 +53,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	for_each_oldnew_crtc_in_state(state, crtc, old_crtc_state, new_crtc_state, i) {
  		commit = kzalloc(sizeof(*commit), GFP_KERNEL);
  		if (!commit)
-@@ -2170,6 +2176,9 @@ int drm_atomic_helper_setup_commit(struc
+@@ -2179,6 +2185,9 @@ int drm_atomic_helper_setup_commit(struc
  		new_plane_state->commit = drm_crtc_commit_get(commit);
  	}
  

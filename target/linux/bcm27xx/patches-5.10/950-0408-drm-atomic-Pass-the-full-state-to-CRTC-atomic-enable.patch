@@ -376,7 +376,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  		else if (funcs->disable)
  			funcs->disable(crtc);
  		else if (funcs->dpms)
-@@ -1368,7 +1368,7 @@ void drm_atomic_helper_commit_modeset_en
+@@ -1377,7 +1377,7 @@ void drm_atomic_helper_commit_modeset_en
  			DRM_DEBUG_ATOMIC("enabling [CRTC:%d:%s]\n",
  					 crtc->base.id, crtc->name);
  			if (funcs->atomic_enable)

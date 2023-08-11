@@ -933,7 +933,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
 --- a/drivers/net/ethernet/microchip/lan743x_main.c
 +++ b/drivers/net/ethernet/microchip/lan743x_main.c
-@@ -2831,7 +2831,6 @@ static int lan743x_pcidev_probe(struct p
+@@ -2844,7 +2844,6 @@ static int lan743x_pcidev_probe(struct p
  {
  	struct lan743x_adapter *adapter = NULL;
  	struct net_device *netdev = NULL;
@@ -941,7 +941,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int ret = -ENODEV;
  
  	netdev = devm_alloc_etherdev(&pdev->dev,
-@@ -2848,9 +2847,7 @@ static int lan743x_pcidev_probe(struct p
+@@ -2861,9 +2860,7 @@ static int lan743x_pcidev_probe(struct p
  			      NETIF_MSG_IFDOWN | NETIF_MSG_TX_QUEUED;
  	netdev->max_mtu = LAN743X_MAX_FRAME_SIZE;
  
@@ -1618,7 +1618,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int addr_width = 32;
  	u32 value;
  
-@@ -2044,13 +2044,14 @@ static int axienet_probe(struct platform
+@@ -2049,13 +2049,14 @@ static int axienet_probe(struct platform
  		dev_info(&pdev->dev, "Ethernet core IRQ not defined\n");
  
  	/* Retrieve the MAC address */
