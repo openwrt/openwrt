@@ -136,6 +136,9 @@ function iface_reload_config(phy, config, old_config)
 		if (phy_is_fullmac(phy))
 			return false;
 
+		if (config.bss[0].bssid != old_config.bss[0].bssid)
+			return false;
+
 		hostapd.printf(`Reload config for bss '${config.bss[0].ifname}' on phy '${phy}'`);
 		if (iface.bss[0].set_config(config_inline, 0) < 0) {
 			hostapd.printf(`Failed to set config`);
@@ -268,6 +271,9 @@ function iface_load_config(filename)
 		let val = split(line, "=", 2);
 		if (!val[0])
 			continue;
+
+		if (val[0] == "bssid")
+			bss.bssid = val[1];
 
 		if (val[0] == "bss") {
 			bss = config_add_bss(config, val[1]);
