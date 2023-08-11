@@ -115,7 +115,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	priv->rcdev = devm_reset_control_get_optional_exclusive(&pdev->dev,
  								"switch");
-@@ -1358,6 +1401,8 @@ static int bcm_sf2_sw_probe(struct platf
+@@ -1362,6 +1405,8 @@ static int bcm_sf2_sw_probe(struct platf
  		goto out_clk_mdiv;
  	}
  

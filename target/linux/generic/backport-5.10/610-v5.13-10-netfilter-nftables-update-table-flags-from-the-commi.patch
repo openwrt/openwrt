@@ -70,7 +70,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	nft_trans_table_update(trans) = true;
  	nft_trans_commit_list_add_tail(ctx->net, trans);
  	return 0;
-@@ -8183,11 +8187,10 @@ static int nf_tables_commit(struct net *
+@@ -8191,11 +8195,10 @@ static int nf_tables_commit(struct net *
  		switch (trans->msg_type) {
  		case NFT_MSG_NEWTABLE:
  			if (nft_trans_table_update(trans)) {
@@ -86,7 +86,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  			} else {
  				nft_clear(net, trans->ctx.table);
  			}
-@@ -8406,11 +8409,9 @@ static int __nf_tables_abort(struct net
+@@ -8414,11 +8417,9 @@ static int __nf_tables_abort(struct net
  		switch (trans->msg_type) {
  		case NFT_MSG_NEWTABLE:
  			if (nft_trans_table_update(trans)) {
