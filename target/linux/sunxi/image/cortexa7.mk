@@ -104,7 +104,8 @@ TARGET_DEVICES += sinovoip_bananapi-m2-ultra
 define Device/lemaker_bananapro
   DEVICE_VENDOR := LeMaker
   DEVICE_MODEL := Banana Pro
-  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi kmod-brcmfmac
+  DEVICE_PACKAGES:=kmod-rtc-sunxi kmod-ata-sunxi kmod-brcmfmac \
+	cypress-firmware-43362-sdio wpad-basic-mbedtls
   SOC := sun7i-a20
 endef
 TARGET_DEVICES += lemaker_bananapro
