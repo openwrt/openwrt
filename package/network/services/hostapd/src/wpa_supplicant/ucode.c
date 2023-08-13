@@ -1,8 +1,10 @@
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "utils/ucode.h"
+#include "drivers/driver.h"
 #include "wpa_supplicant_i.h"
 #include "wps_supplicant.h"
+#include "bss.h"
 #include "ucode.h"
 
 static struct wpa_global *wpa_global;
@@ -63,9 +65,60 @@ void wpas_ucode_free_bss(struct wpa_supplicant *wpa_s)
 	if (wpa_ucode_call_prepare("iface_remove"))
 		return;
 
-	uc_value_push(ucv_string_new(wpa_s->ifname));
+	uc_value_push(ucv_get(ucv_string_new(wpa_s->ifname)));
 	uc_value_push(ucv_get(val));
 	ucv_put(wpa_ucode_call(2));
+	ucv_gc(vm);
+}
+
+void wpas_ucode_update_state(struct wpa_supplicant *wpa_s)
+{
+	const char *state;
+	uc_value_t *val;
+
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	if (!val)
+		return;
+
+	if (wpa_ucode_call_prepare("state"))
+		return;
+
+	state = wpa_supplicant_state_txt(wpa_s->wpa_state);
+	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_get(ucv_string_new(state)));
+	ucv_put(wpa_ucode_call(2));
+	ucv_gc(vm);
+}
+
+void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_data *data)
+{
+	const char *state;
+	uc_value_t *val;
+
+	if (event != EVENT_CH_SWITCH_STARTED)
+		return;
+
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	if (!val)
+		return;
+
+	if (wpa_ucode_call_prepare("event"))
+		return;
+
+	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_get(ucv_string_new(event_to_string(event))));
+	val = ucv_object_new(vm);
+	uc_value_push(ucv_get(val));
+
+	if (event == EVENT_CH_SWITCH_STARTED) {
+		ucv_object_add(val, "csa_count", ucv_int64_new(data->ch_switch.count));
+		ucv_object_add(val, "frequency", ucv_int64_new(data->ch_switch.freq));
+		ucv_object_add(val, "sec_chan_offset", ucv_int64_new(data->ch_switch.ch_offset));
+		ucv_object_add(val, "center_freq1", ucv_int64_new(data->ch_switch.cf1));
+		ucv_object_add(val, "center_freq2", ucv_int64_new(data->ch_switch.cf2));
+	}
+
+	ucv_put(wpa_ucode_call(3));
 	ucv_gc(vm);
 }
 
@@ -84,7 +137,6 @@ uc_wpas_add_iface(uc_vm_t *vm, size_t nargs)
 	uc_value_t *bridge = ucv_object_get(info, "bridge", NULL);
 	uc_value_t *config = ucv_object_get(info, "config", NULL);
 	uc_value_t *ctrl = ucv_object_get(info, "ctrl", NULL);
-	uc_value_t *hapd_ctrl = ucv_object_get(info, "hostapd_ctrl", NULL);
 	struct wpa_interface iface;
 	int ret = -1;
 
@@ -97,7 +149,6 @@ uc_wpas_add_iface(uc_vm_t *vm, size_t nargs)
 		.bridge_ifname = ucv_string_get(bridge),
 		.confname = ucv_string_get(config),
 		.ctrl_interface = ucv_string_get(ctrl),
-		.hostapd_ctrl = ucv_string_get(hapd_ctrl),
 	};
 
 	if (!iface.ifname || !iface.confname)
@@ -135,6 +186,45 @@ out:
 	return ucv_int64_new(ret);
 }
 
+static uc_value_t *
+uc_wpas_iface_status(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
+	struct wpa_bss *bss;
+	uc_value_t *ret, *val;
+
+	if (!wpa_s)
+		return NULL;
+
+	ret = ucv_object_new(vm);
+
+	val = ucv_string_new(wpa_supplicant_state_txt(wpa_s->wpa_state));
+	ucv_object_add(ret, "state", ucv_get(val));
+
+	bss = wpa_s->current_bss;
+	if (bss) {
+		int sec_chan = 0;
+		const u8 *ie;
+
+		ie = wpa_bss_get_ie(bss, WLAN_EID_HT_OPERATION);
+		if (ie && ie[1] >= 2) {
+			const struct ieee80211_ht_operation *ht_oper;
+
+			ht_oper = (const void *) (ie + 2);
+			if (ht_oper->ht_param & HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE)
+				sec_chan = 1;
+			else if (ht_oper->ht_param &
+				 HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW)
+				sec_chan = -1;
+		}
+
+		ucv_object_add(ret, "sec_chan_offset", ucv_int64_new(sec_chan));
+		ucv_object_add(ret, "frequency", ucv_int64_new(bss->freq));
+	}
+
+	return ret;
+}
+
 int wpas_ucode_init(struct wpa_global *gl)
 {
 	static const uc_function_list_t global_fns[] = {
@@ -144,6 +234,7 @@ int wpas_ucode_init(struct wpa_global *gl)
 		{ "remove_iface", uc_wpas_remove_iface },
 	};
 	static const uc_function_list_t iface_fns[] = {
+		{ "status", uc_wpas_iface_status },
 	};
 	uc_value_t *data, *proto;
 
@@ -151,7 +242,7 @@ int wpas_ucode_init(struct wpa_global *gl)
 	vm = wpa_ucode_create_vm();
 
 	global_type = uc_type_declare(vm, "wpas.global", global_fns, NULL);
-	iface_type = uc_type_declare(vm, "hostapd.iface", iface_fns, NULL);
+	iface_type = uc_type_declare(vm, "wpas.iface", iface_fns, NULL);
 
 	iface_registry = ucv_array_new(vm);
 	uc_vm_registry_set(vm, "hostap.iface_registry", iface_registry);

@@ -18,7 +18,7 @@
  
  #ifdef CONFIG_HS20
  static int hs20_parse_conn_capab(struct hostapd_bss_config *bss, char *buf,
-@@ -4066,10 +4066,10 @@ static int hostapd_config_fill(struct ho
+@@ -4062,10 +4062,10 @@ static int hostapd_config_fill(struct ho
  		bss->gas_frag_limit = val;
  	} else if (os_strcmp(buf, "gas_comeback_delay") == 0) {
  		bss->gas_comeback_delay = atoi(pos);
@@ -32,7 +32,7 @@
  		os_free(bss->dump_msk_file);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1538,6 +1538,7 @@ int hostapd_setup_bss(struct hostapd_dat
+@@ -1486,6 +1486,7 @@ int hostapd_setup_bss(struct hostapd_dat
  		wpa_printf(MSG_ERROR, "GAS server initialization failed");
  		return -1;
  	}
@@ -40,7 +40,7 @@
  
  	if (conf->qos_map_set_len &&
  	    hostapd_drv_set_qos_map(hapd, conf->qos_map_set,
-@@ -1545,7 +1546,6 @@ int hostapd_setup_bss(struct hostapd_dat
+@@ -1493,7 +1494,6 @@ int hostapd_setup_bss(struct hostapd_dat
  		wpa_printf(MSG_ERROR, "Failed to initialize QoS Map");
  		return -1;
  	}

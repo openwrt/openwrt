@@ -163,7 +163,7 @@ hostapd_bss_reload(struct ubus_context *ctx, struct ubus_object *obj,
 {
 	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
 
-	return hostapd_reload_config(hapd->iface, 1);
+	return hostapd_reload_config(hapd->iface);
 }
 
 

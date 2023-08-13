@@ -3,6 +3,7 @@
 #include "utils/eloop.h"
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
+#include "common/ieee802_11_common.h"
 #include <libubox/uloop.h>
 #include <ucode/compiler.h>
 
@@ -43,6 +44,97 @@ uc_value_t *uc_wpa_printf(uc_vm_t *vm, size_t nargs)
 	ucv_put(ret);
 
 	return NULL;
+}
+
+uc_value_t *uc_wpa_freq_info(uc_vm_t *vm, size_t nargs)
+{
+	uc_value_t *freq = uc_fn_arg(0);
+	uc_value_t *sec = uc_fn_arg(1);
+	int width = ucv_uint64_get(uc_fn_arg(2));
+	int freq_val, center_idx, center_ofs;
+	enum oper_chan_width chanwidth;
+	enum hostapd_hw_mode hw_mode;
+	u8 op_class, channel, tmp_channel;
+	const char *modestr;
+	int sec_channel = 0;
+	uc_value_t *ret;
+
+	if (ucv_type(freq) != UC_INTEGER)
+		return NULL;
+
+	freq_val = ucv_int64_get(freq);
+	if (ucv_type(sec) == UC_INTEGER)
+		sec_channel = ucv_int64_get(sec);
+	else if (sec)
+		return NULL;
+	else if (freq_val > 4000)
+		sec_channel = (freq_val / 20) & 1 ? 1 : -1;
+	else
+		sec_channel = freq_val < 2442 ? 1 : -1;
+
+	if (sec_channel != -1 && sec_channel != 1 && sec_channel != 0)
+		return NULL;
+
+	switch (width) {
+	case 0:
+		chanwidth = CONF_OPER_CHWIDTH_USE_HT;
+		break;
+	case 1:
+		chanwidth = CONF_OPER_CHWIDTH_80MHZ;
+		break;
+	case 2:
+		chanwidth = CONF_OPER_CHWIDTH_160MHZ;
+		break;
+	default:
+		return NULL;
+	}
+
+	hw_mode = ieee80211_freq_to_channel_ext(freq_val, sec_channel,
+						chanwidth, &op_class, &channel);
+	switch (hw_mode) {
+	case HOSTAPD_MODE_IEEE80211B:
+		modestr = "b";
+		break;
+	case HOSTAPD_MODE_IEEE80211G:
+		modestr = "g";
+		break;
+	case HOSTAPD_MODE_IEEE80211A:
+		modestr = "a";
+		break;
+	case HOSTAPD_MODE_IEEE80211AD:
+		modestr = "ad";
+		break;
+	default:
+		return NULL;
+	}
+
+	ret = ucv_object_new(vm);
+	ucv_object_add(ret, "op_class", ucv_int64_new(op_class));
+	ucv_object_add(ret, "channel", ucv_int64_new(channel));
+	ucv_object_add(ret, "hw_mode", ucv_int64_new(hw_mode));
+	ucv_object_add(ret, "hw_mode_str", ucv_get(ucv_string_new(modestr)));
+	ucv_object_add(ret, "sec_channel", ucv_int64_new(sec_channel));
+	ucv_object_add(ret, "frequency", ucv_int64_new(freq_val));
+
+	if (!sec_channel)
+		return ret;
+
+	if (freq_val >= 5900)
+		center_ofs = 0;
+	else if (freq_val >= 5745)
+		center_ofs = 20;
+	else
+		center_ofs = 35;
+	tmp_channel = channel - center_ofs;
+	tmp_channel &= ~((8 << width) - 1);
+	center_idx = tmp_channel + center_ofs + (4 << width) - 1;
+
+	ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(center_idx));
+	center_idx = (center_idx - channel) * 5 + freq_val;
+	ucv_object_add(ret, "center_freq1", ucv_int64_new(center_idx));
+
+out:
+	return ret;
 }
 
 uc_value_t *uc_wpa_getpid(uc_vm_t *vm, size_t nargs)
@@ -179,6 +271,20 @@ uc_value_t *wpa_ucode_global_init(const char *name, uc_resource_type_t *global_t
 	return global;
 }
 
+static uc_value_t *wpa_ucode_prototype_clone(uc_value_t *uval)
+{
+	uc_value_t *proto, *proto_new;
+
+	proto = ucv_prototype_get(uval);
+	proto_new = ucv_object_new(&vm);
+
+	ucv_object_foreach(proto, key, val)
+		ucv_object_add(proto_new, key, ucv_get(val));
+	ucv_prototype_set(uval, ucv_get(proto));
+
+	return proto;
+}
+
 void wpa_ucode_registry_add(uc_value_t *reg, uc_value_t *val, int *idx)
 {
 	uc_value_t *data;
@@ -190,7 +296,7 @@ void wpa_ucode_registry_add(uc_value_t *reg, uc_value_t *val, int *idx)
 	ucv_array_set(reg, i, ucv_get(val));
 
 	data = ucv_object_new(&vm);
-	ucv_object_add(ucv_prototype_get(val), "data", ucv_get(data));
+	ucv_object_add(wpa_ucode_prototype_clone(val), "data", ucv_get(data));
 
 	*idx = i + 1;
 }

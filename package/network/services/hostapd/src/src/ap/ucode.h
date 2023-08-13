@@ -25,7 +25,7 @@ void hostapd_ucode_free(void);
 void hostapd_ucode_free_iface(struct hostapd_iface *iface);
 void hostapd_ucode_add_bss(struct hostapd_data *hapd);
 void hostapd_ucode_free_bss(struct hostapd_data *hapd);
-void hostapd_ucode_reload_bss(struct hostapd_data *hapd, int reconf);
+void hostapd_ucode_reload_bss(struct hostapd_data *hapd);
 
 #else
 
@@ -39,7 +39,7 @@ static inline void hostapd_ucode_free(void)
 static inline void hostapd_ucode_free_iface(struct hostapd_iface *iface)
 {
 }
-static inline void hostapd_ucode_reload_bss(struct hostapd_data *hapd, int reconf)
+static inline void hostapd_ucode_reload_bss(struct hostapd_data *hapd)
 {
 }
 static inline void hostapd_ucode_add_bss(struct hostapd_data *hapd)
