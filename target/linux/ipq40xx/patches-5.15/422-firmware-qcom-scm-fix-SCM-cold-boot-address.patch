@@ -1,3 +1,20 @@
+From aaa675f07e781e248fcf169ce9a917b48bc2cc9b Mon Sep 17 00:00:00 2001
+From: Brian Norris <computersforpeace@gmail.com>
+Date: Fri, 28 Jul 2023 12:06:23 +0200
+Subject: [PATCH 3/3] firmware: qcom: scm: fix SCM cold boot address
+
+This effectively reverts upstream Linux commit 13e77747800e ("firmware:
+qcom: scm: Use atomic SCM for cold boot"), because Google WiFi boot
+firmwares don't support the atomic variant.
+
+This fixes SMP support for Google WiFi.
+
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+---
+ drivers/firmware/qcom_scm-legacy.c | 62 +++++++++++++++++++++++++-----
+ drivers/firmware/qcom_scm.c        | 11 ++++++
+ 2 files changed, 63 insertions(+), 10 deletions(-)
+
 --- a/drivers/firmware/qcom_scm-legacy.c
 +++ b/drivers/firmware/qcom_scm-legacy.c
 @@ -13,6 +13,9 @@
