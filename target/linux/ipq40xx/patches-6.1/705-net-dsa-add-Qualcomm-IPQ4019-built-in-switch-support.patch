@@ -1,0 +1,57 @@
+From b5f71652b85a85ea53162e9e2b760b84fd0d254f Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 1 Nov 2021 18:10:28 +0100
+Subject: [PATCH] net: dsa: add Qualcomm IPQ4019 built-in switch support
+
+Qualcomm IPQ40xx SoC-s have a variant of QCA8337N switch built-in.
+
+It shares most of the stuff with its external counterpart, however it is
+modified for the SoC.
+Namely, it doesn't have second CPU port (Port 6), so it has 6 ports
+instead of 7.
+It also has no built-in PHY-s but rather requires external PSGMII based
+companion PHY-s (QCA8072 and QCA8075) for which it first needs to carry
+out calibration before using them.
+PSGMII has a SoC built-in PHY that is used to connect to the PHY-s which
+unfortunately requires some magic values as the datasheet doesnt document
+the bits that are being set or the register at all.
+
+Since its built-in it is MMIO like other peripherals and doesn't have its
+own MDIO bus but depends on the SoC provided one.
+
+CPU connection is at Port 0 and it uses some kind of a internal connection
+and no traditional RGMII/SGMII.
+It also doesn't use in-band tagging like other qca8k switches so a shinfo
+based tagger is used.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/net/dsa/qca/Kconfig  | 9 +++++++++
+ drivers/net/dsa/qca/Makefile | 1 +
+ 2 files changed, 10 insertions(+)
+
+--- a/drivers/net/dsa/qca/Kconfig
++++ b/drivers/net/dsa/qca/Kconfig
+@@ -23,3 +23,13 @@ config NET_DSA_QCA8K_LEDS_SUPPORT
+ 	help
+ 	  This enabled support for LEDs present on the Qualcomm Atheros
+ 	  QCA8K Ethernet switch chips.
++
++config NET_DSA_QCA8K_IPQ4019
++	tristate "Qualcomm Atheros IPQ4019 built-in Ethernet switch support"
++	depends on HAS_IOMEM && NET_DSA
++	select NET_DSA_TAG_IPQ4019
++	select REGMAP
++	help
++	  This enables support for the Qualcomm Atheros IPQ4019 SoC built-in
++	  Ethernet switch.
++
+--- a/drivers/net/dsa/qca/Makefile
++++ b/drivers/net/dsa/qca/Makefile
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ obj-$(CONFIG_NET_DSA_AR9331)	+= ar9331.o
++obj-$(CONFIG_NET_DSA_QCA8K_IPQ4019)	+= qca8k-ipq4019.o
+ obj-$(CONFIG_NET_DSA_QCA8K)	+= qca8k.o
+ qca8k-y 			+= qca8k-common.o qca8k-8xxx.o
+ ifdef CONFIG_NET_DSA_QCA8K_LEDS_SUPPORT
