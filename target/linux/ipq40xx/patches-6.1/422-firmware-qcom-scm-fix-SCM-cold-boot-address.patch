@@ -53,7 +53,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  /**
   * scm_legacy_call() - Sends a command to the SCM and waits for the command to
   * finish processing.
-@@ -160,10 +182,16 @@ int scm_legacy_call(struct device *dev,
+@@ -163,10 +185,16 @@ int scm_legacy_call(struct device *dev,
  
  	rsp = scm_legacy_command_to_response(cmd);
  
@@ -74,7 +74,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  	}
  
  	smc.args[0] = 1;
-@@ -179,13 +207,26 @@ int scm_legacy_call(struct device *dev,
+@@ -182,13 +210,26 @@ int scm_legacy_call(struct device *dev,
  		goto out;
  
  	do {
@@ -106,7 +106,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  
  	if (res) {
  		res_buf = scm_legacy_get_response_buffer(rsp);
-@@ -193,7 +234,8 @@ int scm_legacy_call(struct device *dev,
+@@ -196,7 +237,8 @@ int scm_legacy_call(struct device *dev,
  			res->result[i] = le32_to_cpu(res_buf[i]);
  	}
  out:
@@ -118,7 +118,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  }
 --- a/drivers/firmware/qcom_scm.c
 +++ b/drivers/firmware/qcom_scm.c
-@@ -344,6 +344,17 @@ int qcom_scm_set_cold_boot_addr(void *en
+@@ -305,6 +305,17 @@ static int qcom_scm_set_boot_addr(void *
  	desc.args[0] = flags;
  	desc.args[1] = virt_to_phys(entry);
  
@@ -135,4 +135,4 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
 +
  	return qcom_scm_call_atomic(__scm ? __scm->dev : NULL, &desc, NULL);
  }
- EXPORT_SYMBOL(qcom_scm_set_cold_boot_addr);
+ 

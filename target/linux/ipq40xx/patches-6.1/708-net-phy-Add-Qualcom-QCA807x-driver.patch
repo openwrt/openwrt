@@ -1,6 +1,6 @@
-From f825cdc8bfde7616a14e2163f16303a8973031d2 Mon Sep 17 00:00:00 2001
+From 95179775debad6b0bdab241d4a305135fc5e67dc Mon Sep 17 00:00:00 2001
 From: Robert Marko <robert.marko@sartura.hr>
-Date: Wed, 7 Oct 2020 17:38:48 +0200
+Date: Fri, 9 Sep 2022 23:44:42 +0200
 Subject: [PATCH] net: phy: Add Qualcom QCA807x driver
 
 This adds driver for the Qualcomm QCA8072 and QCA8075 PHY-s.
@@ -19,32 +19,33 @@ These are commonly used in Qualcomm IPQ40xx, IPQ60xx and IPQ807x boards.
 
 Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 ---
- drivers/net/phy/Kconfig  | 6 ++++++
+ drivers/net/phy/Kconfig  | 7 +++++++
  drivers/net/phy/Makefile | 1 +
- 2 files changed, 7 insertions(+)
+ 2 files changed, 8 insertions(+)
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -347,6 +347,12 @@ config AT803X_PHY
+@@ -362,6 +362,13 @@ config AT803X_PHY
  	  Currently supports the AR8030, AR8031, AR8033, AR8035 and internal
  	  QCA8337(Internal qca8k PHY) model
  
 +config QCA807X_PHY
-+	tristate "Qualcomm QCA807X PHYs"
++	tristate "Qualcomm QCA807x PHYs"
 +	depends on OF_MDIO
 +	help
-+	  Currently supports the QCA8072 and QCA8075 models.
++	  Currently supports the Qualcomm QCA8072, QCA8075 and the PSGMII
++	  control PHY.
 +
  config QSEMI_PHY
  	tristate "Quality Semiconductor PHYs"
  	help
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -92,6 +92,7 @@ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
+@@ -94,6 +94,7 @@ obj-$(CONFIG_MOTORCOMM_PHY)	+= motorcomm
+ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
  obj-$(CONFIG_NXP_C45_TJA11XX_PHY)	+= nxp-c45-tja11xx.o
  obj-$(CONFIG_NXP_TJA11XX_PHY)	+= nxp-tja11xx.o
- obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
 +obj-$(CONFIG_QCA807X_PHY)		+= qca807x.o
+ obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
  obj-$(CONFIG_RENESAS_PHY)	+= uPD60620.o
- obj-$(CONFIG_ROCKCHIP_PHY)	+= rockchip.o

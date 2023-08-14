@@ -18,7 +18,7 @@ Acked-by: Mukesh Ojha <quic_mojha@quicinc.com>
 
 --- a/drivers/firmware/qcom_scm.c
 +++ b/drivers/firmware/qcom_scm.c
-@@ -389,6 +389,29 @@ int qcom_scm_set_remote_state(u32 state,
+@@ -400,6 +400,29 @@ int qcom_scm_set_remote_state(u32 state,
  }
  EXPORT_SYMBOL(qcom_scm_set_remote_state);
  
@@ -56,5 +56,5 @@ Acked-by: Mukesh Ojha <quic_mojha@quicinc.com>
  #define QCOM_SCM_BOOT_TERMINATE_PC	0x02
 +#define QCOM_SCM_BOOT_SDI_CONFIG	0x09
  #define QCOM_SCM_BOOT_SET_DLOAD_MODE	0x10
+ #define QCOM_SCM_BOOT_SET_ADDR_MC	0x11
  #define QCOM_SCM_BOOT_SET_REMOTE_STATE	0x0a
- #define QCOM_SCM_FLUSH_FLAG_MASK	0x3

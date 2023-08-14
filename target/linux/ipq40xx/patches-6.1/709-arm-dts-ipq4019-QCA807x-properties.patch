@@ -1,4 +1,4 @@
-From e0fa88eaa3c176b71e563da68949ac2ab45aaa61 Mon Sep 17 00:00:00 2001
+From 03ebcd291974e4ca5d77026111f63309bc708326 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robert.marko@sartura.hr>
 Date: Fri, 2 Oct 2020 10:43:26 +0200
 Subject: [PATCH] arm: dts: ipq4019: QCA807x properties
@@ -7,8 +7,8 @@ This adds necessary DT properties for QCA807x PHY-s to IPQ4019 DTSI.
 
 Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 ---
- arch/arm/boot/dts/qcom-ipq4019.dtsi | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ arch/arm/boot/dts/qcom-ipq4019.dtsi | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
 --- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
@@ -20,7 +20,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  
  / {
  	#address-cells = <1>;
-@@ -726,22 +727,38 @@
+@@ -724,22 +725,38 @@
  
  			ethphy0: ethernet-phy@0 {
  				reg = <0>;
