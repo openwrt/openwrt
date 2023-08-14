@@ -762,7 +762,7 @@ define Device/meraki_common
 	SOC := qcom-ipq4029
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_PACKAGES := -swconfig ath10k-firmware-qca9887-ct
+	DEVICE_PACKAGES := ath10k-firmware-qca9887-ct
 endef
 
 define Device/meraki_mr33
