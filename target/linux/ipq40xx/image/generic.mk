@@ -762,13 +762,13 @@ define Device/meraki_common
 	SOC := qcom-ipq4029
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
+	DEVICE_DTS_LOADADDR := 0x89000000
 	DEVICE_PACKAGES := ath10k-firmware-qca9887-ct
 endef
 
 define Device/meraki_mr33
 	$(call Device/meraki_common)
 	DEVICE_MODEL := MR33
-	DEFAULT := n
 endef
 TARGET_DEVICES += meraki_mr33
 
@@ -776,7 +776,6 @@ define Device/meraki_mr74
 	$(call Device/meraki_common)
 	DEVICE_MODEL := MR74
 	DEVICE_DTS_CONFIG := config@3
-	DEFAULT := n
 endef
 TARGET_DEVICES += meraki_mr74
 
