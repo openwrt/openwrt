@@ -100,7 +100,7 @@ define KernelPackage/fsl-enetc-net
   KCONFIG:= \
     CONFIG_FSL_ENETC \
     CONFIG_FSL_ENETC_VF \
-    CONFIG_FSL_ENETC_QOS
+    CONFIG_FSL_ENETC_QOS=y
   FILES:= \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc.ko \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-vf.ko \
