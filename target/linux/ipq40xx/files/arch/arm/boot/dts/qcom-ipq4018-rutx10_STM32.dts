@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "qcom-ipq4018-rutx-shiftreg.dtsi"
+#include "qcom-ipq4018-rutx-stm32.dtsi"
 
 / {
 	model = "Teltonika RUTX10";
@@ -12,13 +12,13 @@
 
 			wifi2g {
 				label = "green:wifi2g";
-				gpios = <&shift_io 5 GPIO_ACTIVE_HIGH>;
+				gpios = <&stm32_io 19 GPIO_ACTIVE_HIGH>;
 				linux,default-trigger = "phy0tpt";
 			};
 
 			wifi5g {
 				label = "green:wifi5g";
-				gpios = <&shift_io 6 GPIO_ACTIVE_HIGH>;
+				gpios = <&stm32_io 18 GPIO_ACTIVE_HIGH>;
 				linux,default-trigger = "phy1tpt";
 			};
 		};
@@ -31,14 +31,14 @@
 				gpio-export,name = "gpio_out";
 				gpio-export,output = <0>;
 				gpio-export,direction_may_change = <0>;
-				gpios = <&shift_io 0 GPIO_ACTIVE_HIGH>;
+				gpios = <&stm32_io 23 GPIO_ACTIVE_HIGH>;
 			};
 
 			gpio_in {
 				gpio-export,name = "gpio_in";
 				gpio-export,input = <0>;
 				gpio-export,direction_may_change = <0>;
-				gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
+				gpios = <&stm32_io 24 GPIO_ACTIVE_LOW>;
 			};
 		};
 	};

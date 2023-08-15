@@ -3,9 +3,27 @@ DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
 
+define Build/tlt-rutx-fit
+	$(TOPDIR)/scripts/mkits-tlt-rutx-fit.sh \
+		-D $(DEVICE_NAME) -o $@.its -k $@ \
+		$(if $(word 2,$(1)),-d $(word 2,$(1))) -C $(word 1,$(1)) \
+		-a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
+		$(if $(DEVICE_FDT_NUM),-n $(DEVICE_FDT_NUM)) \
+		-c $(if $(DEVICE_DTS_CONFIG),$(DEVICE_DTS_CONFIG),"config@1") \
+		-A $(LINUX_KARCH) -v $(LINUX_VERSION)
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
+
 define Device/FitImage
 	KERNEL_SUFFIX := -uImage.itb
 	KERNEL = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+	KERNEL_NAME := Image
+endef
+
+define Device/TLTFitImage
+	KERNEL_SUFFIX := -fit-uImage.itb
+	KERNEL = kernel-bin | gzip | tlt-rutx-fit gzip "$$(KDIR)/{$$(subst $$(space),$$(comma),$$(addprefix image-,$$(addsuffix .dtb,$$(DEVICE_DTS))))}"
 	KERNEL_NAME := Image
 endef
 
@@ -1058,7 +1076,7 @@ endef
 TARGET_DEVICES += sony_ncp-hg100-cellular
 
 define Device/teltonika_rutx10
-	$(call Device/FitImage)
+	$(call Device/TLTFitImage)
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := Teltonika
 	DEVICE_MODEL := RUTX10
@@ -1070,9 +1088,10 @@ define Device/teltonika_rutx10
 	FILESYSTEMS := squashfs
 	IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
 	DEVICE_PACKAGES := kmod-bluetooth
+	DEVICE_DTS := \
+		qcom-ipq4018-rutx10_STM32 qcom-ipq4018-rutx10
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += teltonika_rutx10
+TARGET_DEVICES += teltonika_rutx10
 
 define Device/teltonika_rutx50
 	$(call Device/FitImage)
