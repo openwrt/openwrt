@@ -10,7 +10,7 @@ UBNT_REVISION := $(VERSION_DIST)-$(REVISION)
 define Build/mkubntimage
 	-$(STAGING_DIR_HOST)/bin/mkfwimage -B $(UBNT_BOARD) \
 		-v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-$(VERSION_DIST)-$(REVISION) \
-		-k $(IMAGE_KERNEL) -r $@ -o $@
+		-k $(if $(1),$(1),$(IMAGE_KERNEL)) -r $@ -o $@
 endef
 
 define Build/mkubntimage2
