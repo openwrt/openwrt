@@ -104,7 +104,7 @@ define Device/acer_predator-w6
   DEVICE_DTS := mt7986a-acer-predator-w6
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7986-firmware kmod-mt7916-firmware mt7986-wo-firmware
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7986-firmware kmod-mt7916-firmware mt7986-wo-firmware e2fsprogs f2fsck mkf2fs
   IMAGES := sysupgrade.bin
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_INITRAMFS := kernel-bin | lzma | \
