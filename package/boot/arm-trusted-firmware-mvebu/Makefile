@@ -190,8 +190,8 @@ define Download/mox-boot-builder
   SUBDIR:=$(MOX_BB_NAME)
 endef
 
-CM3_GCC_NAME:=gcc-arm
-CM3_GCC_RELEASE:=11.2-2022.02
+CM3_GCC_NAME:=arm-gnu-toolchain
+CM3_GCC_RELEASE:=12.3.rel1
 CM3_GCC_VERSION:=$(HOST_ARCH)-arm-none-eabi
 CM3_GCC_SOURCE=$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION).tar.xz
 
@@ -199,9 +199,9 @@ define Download/cm3-gcc
   FILE:=$(CM3_GCC_SOURCE)
   URL:=https://developer.arm.com/-/media/Files/downloads/gnu/$(CM3_GCC_RELEASE)/binrel
 ifeq ($(HOST_ARCH),aarch64)
-  HASH:=ef1d82e5894e3908cb7ed49c5485b5b95deefa32872f79c2b5f6f5447cabf55f
+  HASH:=14c0487d5753f6071d24e568881f7c7e67f80dd83165dec5164b3731394af431
 else
-  HASH:=8c5acd5ae567c0100245b0556941c237369f210bceb196edfe5a2e7532c60326
+  HASH:=12a2815644318ebcceaf84beabb665d0924b6e79e21048452c5331a56332b309
 endif
 endef
 
