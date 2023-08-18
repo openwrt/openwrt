@@ -151,14 +151,14 @@ define Download/a3700-utils
 endef
 
 CRYPTOPP_NAME:=cryptopp
-CRYPTOPP_RELEASE:=f210224
+CRYPTOPP_RELEASE:=4d0cad5
 CRYPTOPP_SOURCE=$(CRYPTOPP_NAME)-$(CRYPTOPP_RELEASE).tar.bz2
 
 define Download/cryptopp
   FILE:=$(CRYPTOPP_SOURCE)
   PROTO:=git
   URL:=https://github.com/weidai11/cryptopp.git
-  VERSION:=f2102243e6fdd48c0b2a393a0993cca228f20573
+  VERSION:=4d0cad5401d1a2c998b314bc89288c9620d3021d
   MIRROR_HASH:=74ec9e48ee04b9f2d9a1d8c4f2392ed0ab52780d7af0f70405d7bbb23d1504fa
   SUBDIR:=$(CRYPTOPP_NAME)
 endef
