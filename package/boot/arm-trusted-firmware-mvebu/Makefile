@@ -7,9 +7,9 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.7
-PKG_RELEASE:=6
-PKG_HASH:=53422dc649153838e03820330ba17cb10afe3e330ecde0db11e4d5f1361a33e6
+PKG_VERSION:=2.9
+PKG_RELEASE:=1
+PKG_HASH:=76a66a1de0c01aeb83dfc7b72b51173fe62c6e51d6fca17cc562393117bed08b
 
 PKG_MAINTAINER:=Vladimir Vid <vladimir.vid@sartura.hr>
 
