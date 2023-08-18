@@ -1,0 +1,192 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "comfast,cf-ew72-v2", "mediatek,mt7621-soc";
+	model = "COMFAST CF-EW72 V2";
+	
+	// There are at least two HW variants of cf-ew72-v2: 
+	// With external RAM chip and with integrated RAM (RAM chip not soldered).
+	// Both act same.
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		// The only both visible and controllable indicator is wifi LED.
+		// CF-EW72 have 8 LEDs: 
+		//  "wlan" is the only LED is controllable with GPIO and have proper hole in shell.
+		//  "power", "wan" and "lan" LEDs have proper holes in shell, but can not be controlled with GPIO
+		//  "hidden_led_2" and "hidden_led_4" can be controlled with GPIO, but have no proper holes in shell
+		//     "hidden_led_2" is between POWER and WAN LEDs
+		//     "hidden_led_4" is between WAN and LAN LEDs
+		//  "noconn_led_6" and "noconn_led_8" exist, but have no proper holes in shell and not controlled:
+		//     "noconn_led_6" is between LAN and WLAN LEDs
+		//     "noconn_led_8" is after WLAN LED
+		
+		// LED "hidden_led_2" between POWER and WAN LEDs is controllable with GPIO, but it has no proper hole in shell;
+		// LED "hidden_led_4" between WAN and LAN LEDs is controllable with GPIO, but it has no proper hole in shell;
+
+		// TABLE of LEDs. All leds are blue.
+		//
+		// Place (WAN->ANT) | Num | GPIO | LED name (LuCI)   | Note
+		// -----------------|-----|-----------------------------------------------------------------------------------------         
+		//            power | 1   |      |                   | POWER LED. Not controlled with GPIO.
+		//     hidden_led_2 | 2   | 13   | blue:hidden_led_2 | This LED does not have proper hole in shell.
+		//              wan | 3   |      |                   | WAN LED. Not controlled with GPIO.
+		//     hidden_led_4 | 4   | 16   | blue:hidden_led_4 | This LED does not have proper hole in shell.
+		//              lan | 5   |      |                   | LAN LED. Not controlled with GPIO.
+		//     noconn_led_6 | 6   |      |                   | Not controlled with GPIO, possibly not connected
+		//             wlan | 7   | 15   | blue:wlan         | WLAN LED. Wireless indicator.
+		//     noconn_led_8 | 8   |      |                   | Not controlled with GPIO, possibly not connected
+
+		hidden_led_2_blue {
+			label = "blue:hidden_led_2";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		hidden_led_4_blue {
+			label = "blue:hidden_led_4";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan_blue {
+			label = "blue:wlan";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		label-mac-device = &wan;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "w25q128";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		m25p,fast-read;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Bootloader";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+			
+			partition@30000 {
+				label = "Config";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+			
+			factory: partition@40000  {
+				label = "factory";
+				compatible = "nvmem-cells";
+				reg = <0x40000 0x10000>;
+				read-only;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					macaddr_factory_e000: macaddr@e000 {
+						compatible = "mac-base";
+						reg = <0xe000 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					// Serial number can be found in "factory" at 0xE100. 
+					//   it starts and ends with double quotes `"` and is ASCII string
+				};
+			};
+			
+			partition@50000  {
+				label = "firmware";
+				compatible = "denx,uimage";
+				reg = <0x50000 0xfb0000>;
+			};
+		};
+	};
+};
+
+&gpio {
+	groups = "i2c", "uart2", "uart3", "sdhci", "jtag";
+	function = "gpio";
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_e000 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi_2_4_ghz: wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x0000>;
+		// Wi-Fi device reads it's MAC address from EEPROM (&factory + 4)
+		// adding anything related to mac-address here will cause use random MAC
+	};
+};
+
+&pcie1 {
+	wifi_5_0_ghz: wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x8000>;
+		// Wi-Fi device reads it's MAC address from EEPROM, (&factory + 0x8000 + 4)
+		// adding anything related to mac-address here will cause use random MAC.
+	};
+};
+
+&pcie2 {
+	status = "disabled";
+};
+
+&switch0 {
+	mediatek,mcm;
+	ports {
+		wan: port@0 {
+			status = "okay";
+			label = "wan";
+			nvmem-cells = <&macaddr_factory_e000 1>;
+			nvmem-cell-names = "mac-address";
+		};
+		
+		lan: port@1 {
+			status = "okay";
+			label = "lan";
+			nvmem-cells = <&macaddr_factory_e000 0>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
