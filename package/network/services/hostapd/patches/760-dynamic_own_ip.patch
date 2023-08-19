@@ -98,7 +98,7 @@
  	    hapd->conf->own_ip_addr.af == AF_INET &&
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2688,6 +2688,8 @@ static int hostapd_config_fill(struct ho
+@@ -2690,6 +2690,8 @@ static int hostapd_config_fill(struct ho
  	} else if (os_strcmp(buf, "iapp_interface") == 0) {
  		wpa_printf(MSG_INFO, "DEPRECATED: iapp_interface not used");
  #endif /* CONFIG_IAPP */

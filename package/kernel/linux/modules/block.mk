@@ -505,7 +505,7 @@ define KernelPackage/nvme
   FILES:= \
 	$(LINUX_DIR)/drivers/nvme/host/nvme-core.ko \
 	$(LINUX_DIR)/drivers/nvme/host/nvme.ko
-  AUTOLOAD:=$(call AutoLoad,30,nvme-core nvme)
+  AUTOLOAD:=$(call AutoLoad,30,nvme-core nvme,1)
 endef
 
 define KernelPackage/nvme/description
