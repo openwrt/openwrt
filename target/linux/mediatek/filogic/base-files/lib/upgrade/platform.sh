@@ -51,6 +51,11 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	acer,predator-w6)
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		emmc_do_upgrade "$1"
+		;;
 	asus,tuf-ax4200)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"

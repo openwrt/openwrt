@@ -646,7 +646,7 @@
  	struct fib_table *tb;
 --- a/net/ipv6/ndisc.c
 +++ b/net/ipv6/ndisc.c
-@@ -665,6 +665,7 @@ void ndisc_send_ns(struct net_device *de
+@@ -666,6 +666,7 @@ void ndisc_send_ns(struct net_device *de
  	if (skb)
  		ndisc_send_skb(skb, daddr, saddr);
  }
@@ -656,7 +656,7 @@
  		   const struct in6_addr *daddr)
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -3853,6 +3853,9 @@ out_free:
+@@ -3854,6 +3854,9 @@ out_free:
  	return ERR_PTR(err);
  }
  
@@ -666,7 +666,7 @@
  int ip6_route_add(struct fib6_config *cfg, gfp_t gfp_flags,
  		  struct netlink_ext_ack *extack)
  {
-@@ -3864,6 +3867,10 @@ int ip6_route_add(struct fib6_config *cf
+@@ -3865,6 +3868,10 @@ int ip6_route_add(struct fib6_config *cf
  		return PTR_ERR(rt);
  
  	err = __ip6_ins_rt(rt, &cfg->fc_nlinfo, extack);
@@ -677,7 +677,7 @@
  	fib6_info_release(rt);
  
  	return err;
-@@ -3885,6 +3892,9 @@ static int __ip6_del_rt(struct fib6_info
+@@ -3886,6 +3893,9 @@ static int __ip6_del_rt(struct fib6_info
  	err = fib6_del(rt, info);
  	spin_unlock_bh(&table->tb6_lock);
  
@@ -687,7 +687,7 @@
  out:
  	fib6_info_release(rt);
  	return err;
-@@ -6338,6 +6348,20 @@ static int ip6_route_dev_notify(struct n
+@@ -6339,6 +6349,20 @@ static int ip6_route_dev_notify(struct n
  	return NOTIFY_OK;
  }
  
@@ -767,7 +767,7 @@
  
 --- a/include/net/vxlan.h
 +++ b/include/net/vxlan.h
-@@ -427,6 +427,15 @@ static inline __be32 vxlan_compute_rco(u
+@@ -432,6 +432,15 @@ static inline __be32 vxlan_compute_rco(u
  	return vni_field;
  }
  

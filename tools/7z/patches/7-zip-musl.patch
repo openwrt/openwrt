@@ -1,6 +1,6 @@
 --- a/C/CpuArch.c
 +++ b/C/CpuArch.c
-@@ -421,8 +421,6 @@ BoolInt CPU_IsSupported_AES (void) { ret
+@@ -766,8 +766,6 @@ BoolInt CPU_IsSupported_AES (void) { ret
  
  #ifdef USE_HWCAP
  
@@ -11,7 +11,7 @@
  
 --- a/C/Threads.c
 +++ b/C/Threads.c
-@@ -257,7 +257,7 @@ WRes Thread_Create_With_CpuSet(CThread *
+@@ -265,7 +265,7 @@ WRes Thread_Create_With_CpuSet(CThread *
        */
  
        // ret2 =
@@ -20,7 +20,7 @@
        // if (ret2) ret = ret2;
        #endif
      }
-@@ -267,14 +267,12 @@ WRes Thread_Create_With_CpuSet(CThread *
+@@ -275,14 +275,12 @@ WRes Thread_Create_With_CpuSet(CThread *
      if (!ret)
      {
        p->_created = 1;
@@ -37,7 +37,7 @@
    // ret2 =
 --- a/C/Threads.h
 +++ b/C/Threads.h
-@@ -19,6 +19,7 @@
+@@ -20,6 +20,7 @@
  #endif
  
  #include <pthread.h>

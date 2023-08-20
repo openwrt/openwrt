@@ -105,6 +105,10 @@ snr,cpe-w4n-mt)
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x1000"
 	;;
+xiaomi,miwifi-mini)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
+	ubootenv_add_uci_sys_config "/dev/mtd9" "0x0" "0x4000" "0x10000"
+	;;
 xiaomi,mi-router-3g-v2|\
 xiaomi,mi-router-4a-gigabit|\
 xiaomi,miwifi-3c)

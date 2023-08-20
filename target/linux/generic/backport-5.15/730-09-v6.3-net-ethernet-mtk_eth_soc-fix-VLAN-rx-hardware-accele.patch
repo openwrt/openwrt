@@ -146,7 +146,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* Enable RX VLan Offloading */
  	mtk_w32(eth, 1, MTK_CDMP_EG_CTRL);
-@@ -3865,6 +3925,12 @@ static int mtk_free_dev(struct mtk_eth *
+@@ -3848,6 +3908,12 @@ static int mtk_free_dev(struct mtk_eth *
  		free_netdev(eth->netdev[i]);
  	}
  

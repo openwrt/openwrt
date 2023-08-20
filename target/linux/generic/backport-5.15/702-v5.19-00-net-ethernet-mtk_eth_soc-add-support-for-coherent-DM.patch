@@ -225,7 +225,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628)) {
  		ret = device_reset(eth->dev);
  		if (ret) {
-@@ -3079,6 +3086,35 @@ free_netdev:
+@@ -3072,6 +3079,35 @@ free_netdev:
  	return err;
  }
  
@@ -261,7 +261,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int mtk_probe(struct platform_device *pdev)
  {
  	struct device_node *mac_np;
-@@ -3092,6 +3128,7 @@ static int mtk_probe(struct platform_dev
+@@ -3085,6 +3121,7 @@ static int mtk_probe(struct platform_dev
  	eth->soc = of_device_get_match_data(&pdev->dev);
  
  	eth->dev = &pdev->dev;
@@ -269,7 +269,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	eth->base = devm_platform_ioremap_resource(pdev, 0);
  	if (IS_ERR(eth->base))
  		return PTR_ERR(eth->base);
-@@ -3140,6 +3177,16 @@ static int mtk_probe(struct platform_dev
+@@ -3133,6 +3170,16 @@ static int mtk_probe(struct platform_dev
  		}
  	}
  

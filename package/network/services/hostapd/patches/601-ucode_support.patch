@@ -1,0 +1,333 @@
+--- a/hostapd/Makefile
++++ b/hostapd/Makefile
+@@ -168,9 +168,21 @@ OBJS += ../src/eapol_auth/eapol_auth_sm.
+ 
+ ifdef CONFIG_UBUS
+ CFLAGS += -DUBUS_SUPPORT
+-OBJS += ../src/utils/uloop.o
+ OBJS += ../src/ap/ubus.o
+-LIBS += -lubox -lubus
++LIBS += -lubus
++NEED_ULOOP:=y
++endif
++
++ifdef CONFIG_UCODE
++CFLAGS += -DUCODE_SUPPORT
++OBJS += ../src/utils/ucode.o
++OBJS += ../src/ap/ucode.o
++NEED_ULOOP:=y
++endif
++
++ifdef NEED_ULOOP
++OBJS += ../src/utils/uloop.o
++LIBS += -lubox
+ endif
+ 
+ ifdef CONFIG_CODE_COVERAGE
+--- a/hostapd/main.c
++++ b/hostapd/main.c
+@@ -994,6 +994,7 @@ int main(int argc, char *argv[])
+ 	}
+ 
+ 	hostapd_global_ctrl_iface_init(&interfaces);
++	hostapd_ucode_init(&interfaces);
+ 
+ 	if (hostapd_global_run(&interfaces, daemonize, pid_file)) {
+ 		wpa_printf(MSG_ERROR, "Failed to start eloop");
+@@ -1003,6 +1004,7 @@ int main(int argc, char *argv[])
+ 	ret = 0;
+ 
+  out:
++	hostapd_ucode_free();
+ 	hostapd_global_ctrl_iface_deinit(&interfaces);
+ 	/* Deinitialize all interfaces */
+ 	for (i = 0; i < interfaces.count; i++) {
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -19,6 +19,7 @@
+ #include "ap_config.h"
+ #include "drivers/driver.h"
+ #include "ubus.h"
++#include "ucode.h"
+ 
+ #define OCE_STA_CFON_ENABLED(hapd) \
+ 	((hapd->conf->oce & OCE_STA_CFON) && \
+@@ -51,6 +52,10 @@ struct hapd_interfaces {
+ 	struct hostapd_config * (*config_read_cb)(const char *config_fname);
+ 	int (*ctrl_iface_init)(struct hostapd_data *hapd);
+ 	void (*ctrl_iface_deinit)(struct hostapd_data *hapd);
++	int (*ctrl_iface_recv)(struct hostapd_data *hapd,
++			       char *buf, char *reply, int reply_size,
++			       struct sockaddr_storage *from,
++			       socklen_t fromlen);
+ 	int (*for_each_interface)(struct hapd_interfaces *interfaces,
+ 				  int (*cb)(struct hostapd_iface *iface,
+ 					    void *ctx), void *ctx);
+@@ -186,6 +191,7 @@ struct hostapd_data {
+ 	struct hostapd_config *iconf;
+ 	struct hostapd_bss_config *conf;
+ 	struct hostapd_ubus_bss ubus;
++	struct hostapd_ucode_bss ucode;
+ 	int interface_added; /* virtual interface added for this BSS */
+ 	unsigned int started:1;
+ 	unsigned int disabled:1;
+@@ -506,6 +512,7 @@ struct hostapd_sta_info {
+  */
+ struct hostapd_iface {
+ 	struct hapd_interfaces *interfaces;
++	struct hostapd_ucode_iface ucode;
+ 	void *owner;
+ 	char *config_fname;
+ 	struct hostapd_config *conf;
+@@ -706,6 +713,8 @@ struct hostapd_iface * hostapd_init(stru
+ struct hostapd_iface *
+ hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
+ 			   const char *config_fname, int debug);
++int hostapd_setup_bss(struct hostapd_data *hapd, int first, bool start_beacon);
++void hostapd_bss_deinit(struct hostapd_data *hapd);
+ void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
+ 			   int reassoc);
+ void hostapd_interface_deinit_free(struct hostapd_iface *iface);
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -252,6 +252,8 @@ int hostapd_reload_config(struct hostapd
+ 	struct hostapd_config *newconf, *oldconf;
+ 	size_t j;
+ 
++	hostapd_ucode_reload_bss(hapd);
++
+ 	if (iface->config_fname == NULL) {
+ 		/* Only in-memory config in use - assume it has been updated */
+ 		hostapd_clear_old(iface);
+@@ -435,6 +437,7 @@ void hostapd_free_hapd_data(struct hosta
+ 	hapd->beacon_set_done = 0;
+ 
+ 	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
++	hostapd_ucode_free_bss(hapd);
+ 	hostapd_ubus_free_bss(hapd);
+ 	accounting_deinit(hapd);
+ 	hostapd_deinit_wpa(hapd);
+@@ -599,6 +602,7 @@ void hostapd_cleanup_iface_partial(struc
+ static void hostapd_cleanup_iface(struct hostapd_iface *iface)
+ {
+ 	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);
++	hostapd_ucode_free_iface(iface);
+ 	eloop_cancel_timeout(channel_list_update_timeout, iface, NULL);
+ 	eloop_cancel_timeout(hostapd_interface_setup_failure_handler, iface,
+ 			     NULL);
+@@ -1189,6 +1193,7 @@ static int hostapd_start_beacon(struct h
+ 		hapd->driver->set_operstate(hapd->drv_priv, 1);
+ 
+ 	hostapd_ubus_add_bss(hapd);
++	hostapd_ucode_add_bss(hapd);
+ 
+ 	return 0;
+ }
+@@ -1211,8 +1216,7 @@ static int hostapd_start_beacon(struct h
+  * initialized. Most of the modules that are initialized here will be
+  * deinitialized in hostapd_cleanup().
+  */
+-static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
+-			     bool start_beacon)
++int hostapd_setup_bss(struct hostapd_data *hapd, int first, bool start_beacon)
+ {
+ 	struct hostapd_bss_config *conf = hapd->conf;
+ 	u8 ssid[SSID_MAX_LEN + 1];
+@@ -2698,7 +2702,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+ }
+ 
+ 
+-static void hostapd_bss_deinit(struct hostapd_data *hapd)
++void hostapd_bss_deinit(struct hostapd_data *hapd)
+ {
+ 	if (!hapd)
+ 		return;
+--- a/wpa_supplicant/Makefile
++++ b/wpa_supplicant/Makefile
+@@ -195,8 +195,20 @@ endif
+ ifdef CONFIG_UBUS
+ CFLAGS += -DUBUS_SUPPORT
+ OBJS += ubus.o
++LIBS += -lubus
++NEED_ULOOP:=y
++endif
++
++ifdef CONFIG_UCODE
++CFLAGS += -DUCODE_SUPPORT
++OBJS += ../src/utils/ucode.o
++OBJS += ucode.o
++NEED_ULOOP:=y
++endif
++
++ifdef NEED_ULOOP
+ OBJS += ../src/utils/uloop.o
+-LIBS += -lubox -lubus
++LIBS += -lubox
+ endif
+ 
+ ifdef CONFIG_CODE_COVERAGE
+@@ -997,6 +1009,9 @@ OBJS += ../src/ap/ctrl_iface_ap.o
+ ifdef CONFIG_UBUS
+ OBJS += ../src/ap/ubus.o
+ endif
++ifdef CONFIG_UCODE
++OBJS += ../src/ap/ucode.o
++endif
+ endif
+ 
+ CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -1044,6 +1044,7 @@ void wpa_supplicant_set_state(struct wpa
+ 		sme_sched_obss_scan(wpa_s, 0);
+ 	}
+ 	wpa_s->wpa_state = state;
++	wpas_ucode_update_state(wpa_s);
+ 
+ #ifdef CONFIG_BGSCAN
+ 	if (state == WPA_COMPLETED && wpa_s->current_ssid != wpa_s->bgscan_ssid)
+@@ -7567,6 +7568,7 @@ struct wpa_supplicant * wpa_supplicant_a
+ #endif /* CONFIG_P2P */
+ 
+ 	wpas_ubus_add_bss(wpa_s);
++	wpas_ucode_add_bss(wpa_s);
+ 
+ 	return wpa_s;
+ }
+@@ -7594,6 +7596,7 @@ int wpa_supplicant_remove_iface(struct w
+ 	struct wpa_supplicant *parent = wpa_s->parent;
+ #endif /* CONFIG_MESH */
+ 
++	wpas_ucode_free_bss(wpa_s);
+ 	wpas_ubus_free_bss(wpa_s);
+ 
+ 	/* Remove interface from the global list of interfaces */
+@@ -7904,6 +7907,7 @@ struct wpa_global * wpa_supplicant_init(
+ 
+ 	eloop_register_timeout(WPA_SUPPLICANT_CLEANUP_INTERVAL, 0,
+ 			       wpas_periodic, global, NULL);
++	wpas_ucode_init(global);
+ 
+ 	return global;
+ }
+@@ -7942,12 +7946,8 @@ int wpa_supplicant_run(struct wpa_global
+ 	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
+ 	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
+ 
+-	wpas_ubus_add(global);
+-
+ 	eloop_run();
+ 
+-	wpas_ubus_free(global);
+-
+ 	return 0;
+ }
+ 
+@@ -7980,6 +7980,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+ 
+ 	wpas_notify_supplicant_deinitialized(global);
+ 
++	wpas_ucode_free();
++
+ 	eap_peer_unregister_methods();
+ #ifdef CONFIG_AP
+ 	eap_server_unregister_methods();
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -22,6 +22,7 @@
+ #include "wmm_ac.h"
+ #include "pasn/pasn_common.h"
+ #include "ubus.h"
++#include "ucode.h"
+ 
+ extern const char *const wpa_supplicant_version;
+ extern const char *const wpa_supplicant_license;
+@@ -654,6 +655,7 @@ struct wpa_supplicant {
+ 	unsigned char perm_addr[ETH_ALEN];
+ 	char ifname[100];
+ 	struct wpas_ubus_bss ubus;
++	struct wpas_ucode_bss ucode;
+ #ifdef CONFIG_MATCH_IFACE
+ 	int matched;
+ #endif /* CONFIG_MATCH_IFACE */
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -4856,6 +4856,7 @@ try_again:
+ 		return -1;
+ 	}
+ 
++	interface->ctrl_iface_recv = hostapd_ctrl_iface_receive_process;
+ 	wpa_msg_register_cb(hostapd_ctrl_iface_msg_cb);
+ 
+ 	return 0;
+@@ -4957,6 +4958,7 @@ fail:
+ 	os_free(fname);
+ 
+ 	interface->global_ctrl_sock = s;
++	interface->ctrl_iface_recv = hostapd_ctrl_iface_receive_process;
+ 	eloop_register_read_sock(s, hostapd_global_ctrl_iface_receive,
+ 				 interface, NULL);
+ 
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -6426,6 +6426,7 @@ union wpa_event_data {
+ 
+ 	/**
+ 	 * struct ch_switch
++	 * @count: Count until channel switch activates
+ 	 * @freq: Frequency of new channel in MHz
+ 	 * @ht_enabled: Whether this is an HT channel
+ 	 * @ch_offset: Secondary channel offset
+@@ -6436,6 +6437,7 @@ union wpa_event_data {
+ 	 * @punct_bitmap: Puncturing bitmap
+ 	 */
+ 	struct ch_switch {
++		int count;
+ 		int freq;
+ 		int ht_enabled;
+ 		int ch_offset;
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -1202,6 +1202,7 @@ static void mlme_event_ch_switch(struct
+ 				 struct nlattr *bw, struct nlattr *cf1,
+ 				 struct nlattr *cf2,
+ 				 struct nlattr *punct_bitmap,
++				 struct nlattr *count,
+ 				 int finished)
+ {
+ 	struct i802_bss *bss;
+@@ -1265,6 +1266,8 @@ static void mlme_event_ch_switch(struct
+ 		data.ch_switch.cf1 = nla_get_u32(cf1);
+ 	if (cf2)
+ 		data.ch_switch.cf2 = nla_get_u32(cf2);
++	if (count)
++		data.ch_switch.count = nla_get_u32(count);
+ 
+ 	if (finished)
+ 		bss->flink->freq = data.ch_switch.freq;
+@@ -3848,6 +3851,7 @@ static void do_process_drv_event(struct
+ 				     tb[NL80211_ATTR_CENTER_FREQ1],
+ 				     tb[NL80211_ATTR_CENTER_FREQ2],
+ 				     tb[NL80211_ATTR_PUNCT_BITMAP],
++				     tb[NL80211_ATTR_CH_SWITCH_COUNT],
+ 				     0);
+ 		break;
+ 	case NL80211_CMD_CH_SWITCH_NOTIFY:
+@@ -3860,6 +3864,7 @@ static void do_process_drv_event(struct
+ 				     tb[NL80211_ATTR_CENTER_FREQ1],
+ 				     tb[NL80211_ATTR_CENTER_FREQ2],
+ 				     tb[NL80211_ATTR_PUNCT_BITMAP],
++				     NULL,
+ 				     1);
+ 		break;
+ 	case NL80211_CMD_DISCONNECT:
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -5381,6 +5381,7 @@ void supplicant_event(void *ctx, enum wp
+ 		event_to_string(event), event);
+ #endif /* CONFIG_NO_STDOUT_DEBUG */
+ 
++	wpas_ucode_event(wpa_s, event, data);
+ 	switch (event) {
+ 	case EVENT_AUTH:
+ #ifdef CONFIG_FST

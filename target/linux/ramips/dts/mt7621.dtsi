@@ -1,8 +1,9 @@
 /dts-v1/;
 
-#include <dt-bindings/interrupt-controller/mips-gic.h>
 #include <dt-bindings/clock/mt7621-clk.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/interrupt-controller/mips-gic.h>
+#include <dt-bindings/reset/mt7621-reset.h>
 
 / {
 	#address-cells = <1>;
@@ -41,14 +42,6 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	sysclock: sysclock {
-		#clock-cells = <0>;
-		compatible = "fixed-clock";
-
-		/* FIXME: there should be way to detect this */
-		clock-frequency = <50000000>;
-	};
-
 	palmbus: palmbus@1e000000 {
 		compatible = "palmbus";
 		reg = <0x1e000000 0x100000>;
@@ -60,6 +53,7 @@
 		sysc: syscon@0 {
 			compatible = "mediatek,mt7621-sysc", "syscon";
 			#clock-cells = <1>;
+			#reset-cells = <1>;
 			ralink,memctl = <&memc>;
 			clock-output-names = "xtal", "cpu", "bus",
 					     "50m", "125m", "150m",
@@ -67,9 +61,10 @@
 			reg = <0x0 0x100>;
 		};
 
-		wdt: wdt@100 {
+		wdt: watchdog@100 {
 			compatible = "mediatek,mt7621-wdt";
 			reg = <0x100 0x100>;
+			mediatek,sysctl = <&sysc>;
 		};
 
 		gpio: gpio@600 {
@@ -88,9 +83,10 @@
 			compatible = "mediatek,mt7621-i2c";
 			reg = <0x900 0x100>;
 
-			clocks = <&sysclock>;
+			clocks = <&sysc MT7621_CLK_I2C>;
+			clock-names = "i2c";
 
-			resets = <&rstctrl 16>;
+			resets = <&sysc MT7621_RST_I2C>;
 			reset-names = "i2c";
 
 			#address-cells = <1>;
@@ -106,9 +102,9 @@
 			compatible = "mediatek,mt7621-i2s";
 			reg = <0xa00 0x100>;
 
-			clocks = <&sysclock>;
+			clocks = <&sysc MT7621_CLK_I2S>;
 
-			resets = <&rstctrl 17>;
+			resets = <&sysc MT7621_RST_I2S>;
 			reset-names = "i2s";
 
 			interrupt-parent = <&gic>;
@@ -128,14 +124,14 @@
 			compatible = "ralink,mt7621-systick", "ralink,cevt-systick";
 			reg = <0x500 0x10>;
 
-			resets = <&rstctrl 28>;
+			resets = <&sysc MT7621_RST_AUX_STCK>;
 			reset-names = "intc";
 
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 5 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
-		memc: syscon@5000 {
+		memc: memory-controller@5000 {
 			compatible = "mediatek,mt7621-memc", "syscon";
 			reg = <0x5000 0x1000>;
 		};
@@ -144,7 +140,9 @@
 			compatible = "ns16550a";
 			reg = <0xc00 0x100>;
 
-			clock-frequency = <50000000>;
+			clocks = <&sysc MT7621_CLK_UART1>;
+
+			resets = <&sysc MT7621_RST_UART1>;
 
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 26 IRQ_TYPE_LEVEL_HIGH>;
@@ -158,7 +156,9 @@
 			compatible = "ns16550a";
 			reg = <0xd00 0x100>;
 
-			clock-frequency = <50000000>;
+			clocks = <&sysc MT7621_CLK_UART2>;
+
+			resets = <&sysc MT7621_RST_UART2>;
 
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 27 IRQ_TYPE_LEVEL_HIGH>;
@@ -176,7 +176,9 @@
 			compatible = "ns16550a";
 			reg = <0xe00 0x100>;
 
-			clock-frequency = <50000000>;
+			clocks = <&sysc MT7621_CLK_UART3>;
+
+			resets = <&sysc MT7621_RST_UART3>;
 
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 28 IRQ_TYPE_LEVEL_HIGH>;
@@ -196,9 +198,10 @@
 			compatible = "ralink,mt7621-spi";
 			reg = <0xb00 0x100>;
 
-			clocks = <&sysc MT7621_CLK_BUS>;
+			clocks = <&sysc MT7621_CLK_SPI>;
+			clock-names = "spi";
 
-			resets = <&rstctrl 18>;
+			resets = <&sysc MT7621_RST_SPI>;
 			reset-names = "spi";
 
 			#address-cells = <1>;
@@ -212,7 +215,7 @@
 			compatible = "ralink,rt3883-gdma";
 			reg = <0x2800 0x800>;
 
-			resets = <&rstctrl 14>;
+			resets = <&sysc MT7621_RST_GDMA>;
 			reset-names = "dma";
 
 			interrupt-parent = <&gic>;
@@ -229,7 +232,7 @@
 			compatible = "mediatek,mt7621-hsdma";
 			reg = <0x7000 0x1000>;
 
-			resets = <&rstctrl 5>;
+			resets = <&sysc MT7621_RST_HSDMA>;
 			reset-names = "hsdma";
 
 			interrupt-parent = <&gic>;
@@ -334,16 +337,6 @@
 		};
 	};
 
-	rstctrl: rstctrl {
-		compatible = "ralink,rt2880-reset";
-		#reset-cells = <1>;
-	};
-
-	clkctrl: clkctrl {
-		compatible = "ralink,rt2880-clock";
-		#clock-cells = <1>;
-	};
-
 	sdhci: sdhci@1e130000 {
 		status = "disabled";
 
@@ -366,7 +359,7 @@
 		       0x1e1d0700 0x0100>;
 		reg-names = "mac", "ippc";
 
-		clocks = <&sysclock>;
+		clocks = <&sysc MT7621_CLK_XTAL>;
 		clock-names = "sys_ck";
 
 		interrupt-parent = <&gic>;
@@ -408,13 +401,6 @@
 		};
 	};
 
-	nficlock: nficlock {
-		#clock-cells = <0>;
-		compatible = "fixed-clock";
-
-		clock-frequency = <125000000>;
-	};
-
 	cpc: cpc@1fbf0000 {
 		compatible = "mti,mips-cpc";
 		reg = <0x1fbf0000 0x8000>;
@@ -433,7 +419,7 @@
 			0x1e003800 0x800>;
 		reg-names = "nfi", "ecc";
 
-		clocks = <&nficlock>;
+		clocks = <&sysc MT7621_CLK_NAND>;
 		clock-names = "nfi_clk";
 	};
 
@@ -441,14 +427,13 @@
 		compatible = "mediatek,mt7621-eth";
 		reg = <0x1e100000 0x10000>;
 
-		clocks = <&sysc MT7621_CLK_FE>,
-			 <&sysc MT7621_CLK_ETH>;
+		clocks = <&sysc MT7621_CLK_FE>, <&sysc MT7621_CLK_ETH>;
 		clock-names = "fe", "ethif";
 
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		resets = <&rstctrl 6>, <&rstctrl 23>;
+		resets = <&sysc MT7621_RST_FE>, <&sysc MT7621_RST_ETH>;
 		reset-names = "fe", "eth";
 
 		interrupt-parent = <&gic>;
@@ -486,7 +471,7 @@
 				compatible = "mediatek,mt7621";
 				reg = <0x1f>;
 				mediatek,mcm;
-				resets = <&rstctrl 2>;
+				resets = <&sysc MT7621_RST_MCM>;
 				reset-names = "mcm";
 				interrupt-controller;
 				#interrupt-cells = <1>;
@@ -578,7 +563,7 @@
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0>;
 			interrupt-map = <0 0 0 0 &gic GIC_SHARED 4 IRQ_TYPE_LEVEL_HIGH>;
-			resets = <&rstctrl 24>;
+			resets = <&sysc MT7621_RST_PCIE0>;
 			clocks = <&sysc MT7621_CLK_PCIE0>;
 			phys = <&pcie0_phy 1>;
 			phy-names = "pcie-phy0";
@@ -593,7 +578,7 @@
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0>;
 			interrupt-map = <0 0 0 0 &gic GIC_SHARED 24 IRQ_TYPE_LEVEL_HIGH>;
-			resets = <&rstctrl 25>;
+			resets = <&sysc MT7621_RST_PCIE1>;
 			clocks = <&sysc MT7621_CLK_PCIE1>;
 			phys = <&pcie0_phy 1>;
 			phy-names = "pcie-phy1";
@@ -608,7 +593,7 @@
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0>;
 			interrupt-map = <0 0 0 0 &gic GIC_SHARED 25 IRQ_TYPE_LEVEL_HIGH>;
-			resets = <&rstctrl 26>;
+			resets = <&sysc MT7621_RST_PCIE2>;
 			clocks = <&sysc MT7621_CLK_PCIE2>;
 			phys = <&pcie2_phy 0>;
 			phy-names = "pcie-phy2";

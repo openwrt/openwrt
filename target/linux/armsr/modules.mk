@@ -13,6 +13,28 @@ endef
 
 $(eval $(call KernelPackage,acpi-mdio))
 
+define KernelPackage/bcmgenet
+  SUBMENU=$(NETWORK_DEVICES_MENU)
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-mdio-bcm-unimac
+  TITLE:=Broadcom GENET internal MAC (Raspberry Pi 4)
+  KCONFIG:=CONFIG_BCMGENET
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/broadcom/genet/genet.ko
+  AUTOLOAD=$(call AutoLoad,30,genet)
+endef
+
+$(eval $(call KernelPackage,bcmgenet))
+
+define KernelPackage/mdio-bcm-unimac
+  SUBMENU=$(NETWORK_DEVICES_MENU)
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-of-mdio
+  TITLE:=Broadcom UniMAC MDIO bus controller
+  KCONFIG:=CONFIG_MDIO_BCM_UNIMAC
+  FILES=$(LINUX_DIR)/drivers/net/mdio/mdio-bcm-unimac.ko
+  AUTOLOAD=$(call AutoLoad,30,mdio-bcm-unimac)
+endef
+
+$(eval $(call KernelPackage,mdio-bcm-unimac))
+
 define KernelPackage/fsl-pcs-lynx
   SUBMENU=$(NETWORK_DEVICES_MENU)
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-libphy +kmod-of-mdio +kmod-phylink
@@ -78,7 +100,7 @@ define KernelPackage/fsl-enetc-net
   KCONFIG:= \
     CONFIG_FSL_ENETC \
     CONFIG_FSL_ENETC_VF \
-    CONFIG_FSL_ENETC_QOS
+    CONFIG_FSL_ENETC_QOS=y
   FILES:= \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc.ko \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-vf.ko \
@@ -150,17 +172,6 @@ define KernelPackage/marvell-mdio
 endef
 
 $(eval $(call KernelPackage,marvell-mdio))
-
-define KernelPackage/phy-marvell-10g
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Marvell Alaska 10G PHY driver
-  DEPENDS:=@(TARGET_armsr_armv8) +kmod-libphy
-  KCONFIG:=CONFIG_MARVELL_10G_PHY
-  FILES=$(LINUX_DIR)/drivers/net/phy/marvell10g.ko
-  AUTOLOAD=$(call AutoLoad,35,marvell10g)
-endef
-
-$(eval $(call KernelPackage,phy-marvell-10g))
 
 define KernelPackage/mvneta
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -256,10 +267,22 @@ endef
 
 $(eval $(call KernelPackage,dwmac-rockchip))
 
+define KernelPackage/mdio-thunder
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Marvell (Cavium) Thunder MDIO controller
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-of-mdio
+  KCONFIG:=CONFIG_MDIO_THUNDER
+  FILES=$(LINUX_DIR)/drivers/net/mdio/mdio-cavium.ko \
+    $(LINUX_DIR)/drivers/net/mdio/mdio-thunder.ko
+  AUTOLOAD=$(call AutoLoad,30,mdio-cavium mdio-thunder)
+endef
+
+$(eval $(call KernelPackage,mdio-thunder))
+
 define KernelPackage/thunderx-net
   SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Marvell (Cavium) ThunderX/2 network drivers
-  DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink +kmod-of-mdio
+  TITLE:=Marvell (Cavium) Thunder network drivers
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink +kmod-mdio-thunder
   KCONFIG:=CONFIG_NET_VENDOR_CAVIUM \
     CONFIG_THUNDER_NIC_PF \
     CONFIG_THUNDER_NIC_VF \
@@ -273,6 +296,25 @@ define KernelPackage/thunderx-net
 endef
 
 $(eval $(call KernelPackage,thunderx-net))
+
+define KernelPackage/octeontx2-net
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Marvell (Cavium) ThunderX2 network drivers
+  DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink +kmod-of-mdio +kmod-macsec \
+    +kmod-ptp
+  KCONFIG:=CONFIG_OCTEONTX2_MBOX \
+    CONFIG_OCTEONTX2_AF \
+    CONFIG_OCTEONTX2_PF \
+    CONFIG_OCTEONTX2_VF \
+    CONFIG_NDC_DIS_DYNAMIC_CACHING=n
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/af/rvu_mbox.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/af/rvu_af.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/nic/rvu_nicpf.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/nic/rvu_nicvf.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/marvell/octeontx2/nic/otx2_ptp.ko
+  AUTOLOAD=$(call AutoLoad,40,rvu_af rvu_mbox rvu_nicpf rvu_nicvf otx2_ptp)
+endef
+$(eval $(call KernelPackage,octeontx2-net))
 
 define KernelPackage/wdt-sp805
   SUBMENU:=$(OTHER_MENU)

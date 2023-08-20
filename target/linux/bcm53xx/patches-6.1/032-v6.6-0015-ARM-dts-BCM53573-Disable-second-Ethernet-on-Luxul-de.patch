@@ -1,0 +1,39 @@
+From d8835601e3c306fda78f8736f1aef688e99e892d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Mon, 24 Jul 2023 12:11:59 +0200
+Subject: [PATCH] ARM: dts: BCM53573: Disable second Ethernet on Luxul devices
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+XAP-810 and XAP-1440 both have a single Ethernet port and BCM54210E PHY.
+Their second Ethernet interface is not connected to anything.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Link: https://lore.kernel.org/r/20230724101159.5289-1-zajec5@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ arch/arm/boot/dts/broadcom/bcm47189-luxul-xap-1440.dts | 4 ++++
+ arch/arm/boot/dts/broadcom/bcm47189-luxul-xap-810.dts  | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
++++ b/arch/arm/boot/dts/bcm47189-luxul-xap-1440.dts
+@@ -60,3 +60,7 @@
+ 		};
+ 	};
+ };
++
++&gmac1 {
++	status = "disabled";
++};
+--- a/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
++++ b/arch/arm/boot/dts/bcm47189-luxul-xap-810.dts
+@@ -96,3 +96,7 @@
+ 		};
+ 	};
+ };
++
++&gmac1 {
++	status = "disabled";
++};

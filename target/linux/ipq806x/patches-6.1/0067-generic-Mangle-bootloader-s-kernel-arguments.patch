@@ -22,7 +22,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1587,6 +1587,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
+@@ -1588,6 +1588,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
  	  The command-line arguments provided by the boot loader will be
  	  appended to the the device tree bootargs property.
  
@@ -248,7 +248,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  }
 --- a/init/main.c
 +++ b/init/main.c
-@@ -114,6 +114,10 @@
+@@ -112,6 +112,10 @@
  
  #include <kunit/test.h>
  
@@ -259,7 +259,7 @@ Signed-off-by: Adrian Panella <ianchi74@outlook.com>
  static int kernel_init(void *);
  
  extern void init_IRQ(void);
-@@ -994,6 +998,18 @@ asmlinkage __visible void __init __no_sa
+@@ -991,6 +995,18 @@ asmlinkage __visible void __init __no_sa
  	pr_notice("Kernel command line: %s\n", saved_command_line);
  	/* parameters may set static keys */
  	jump_label_init();

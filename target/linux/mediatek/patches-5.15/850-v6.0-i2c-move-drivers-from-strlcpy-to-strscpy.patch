@@ -257,7 +257,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  
 --- a/drivers/i2c/busses/i2c-ibm_iic.c
 +++ b/drivers/i2c/busses/i2c-ibm_iic.c
-@@ -738,7 +738,7 @@ static int iic_probe(struct platform_dev
+@@ -736,7 +736,7 @@ static int iic_probe(struct platform_dev
  	adap = &dev->adap;
  	adap->dev.parent = &ofdev->dev;
  	adap->dev.of_node = of_node_get(np);
@@ -425,7 +425,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	if (ret)
 --- a/drivers/i2c/busses/i2c-qup.c
 +++ b/drivers/i2c/busses/i2c-qup.c
-@@ -1878,7 +1878,7 @@ nodma:
+@@ -1885,7 +1885,7 @@ nodma:
  	qup->adap.dev.of_node = pdev->dev.of_node;
  	qup->is_last = true;
  

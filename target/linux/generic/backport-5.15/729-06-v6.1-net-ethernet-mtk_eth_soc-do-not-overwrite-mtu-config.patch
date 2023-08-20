@@ -63,7 +63,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* Indicates CDM to parse the MTK special tag from CPU
  	 * which also is working out for untag packets.
-@@ -3367,7 +3399,6 @@ static int mtk_change_mtu(struct net_dev
+@@ -3350,7 +3382,6 @@ static int mtk_change_mtu(struct net_dev
  	int length = new_mtu + MTK_RX_ETH_HLEN;
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
@@ -71,7 +71,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	if (rcu_access_pointer(eth->prog) &&
  	    length > MTK_PP_MAX_BUF_SIZE) {
-@@ -3375,23 +3406,7 @@ static int mtk_change_mtu(struct net_dev
+@@ -3358,23 +3389,7 @@ static int mtk_change_mtu(struct net_dev
  		return -EINVAL;
  	}
  

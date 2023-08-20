@@ -1,0 +1,53 @@
+From ad911365cac3723d1c00d048905a5e22ff4a10f3 Mon Sep 17 00:00:00 2001
+From: Stefan Kalscheuer <stefan@stklcode.de>
+Date: Sun, 18 Jun 2023 17:53:27 +0200
+Subject: [PATCH 1/2] remove uaccess and get_fs calls from PCIe for Kenel >=
+ 5.18
+
+Remove the calls to deprecated get_fs and force_uaccess_* API for modern
+kernels.
+
+The get_fs functionality and the transitional force_uaccess_* calls have
+been removed Kernel 5.18 [1] while read and write operations have been
+refactored, so the code can work on kernel- and userspace data without
+the need to shifting the boundary using set_fs().
+
+[1] https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?id=967747bbc084b93b54e66f9047d342232314cd25
+
+Signed-off-by: Stefan Kalscheuer <stefan@stklcode.de>
+---
+ hif/pcie/pcie.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/hif/pcie/pcie.c b/hif/pcie/pcie.c
+index 24453b6..bee1cc5 100644
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -1294,7 +1294,9 @@ static void pcie_bf_mimo_ctrl_decode(struct mwl_priv *priv,
+ 	const char filename[] = "/tmp/BF_MIMO_Ctrl_Field_Output.txt";
+ 	char str_buf[256];
+ 	char *buf = &str_buf[0];
++#if LINUX_VERSION_CODE < KERNEL_VERSION(5,18,0)
+ 	mm_segment_t oldfs;
++#endif
+ 
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
+ 	oldfs = get_fs();
+@@ -1302,7 +1304,7 @@ static void pcie_bf_mimo_ctrl_decode(struct mwl_priv *priv,
+ #elif LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
+ 	oldfs = get_fs();
+ 	set_fs(KERNEL_DS);
+-#else
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,18,0)
+ 	oldfs = force_uaccess_begin();
+ #endif
+ 
+@@ -1326,7 +1328,7 @@ static void pcie_bf_mimo_ctrl_decode(struct mwl_priv *priv,
+ 
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
+ 	set_fs(oldfs);
+-#else
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,18,0)
+ 	force_uaccess_end(oldfs);
+ #endif
+ }

@@ -1,0 +1,44 @@
+Revert "tools: env: use /run to store lockfile"
+
+In OpenWRT we still use /var/lock as default location for lock files and
+/run might not even exist. Revert the upstream change and restore the
+previous default path.
+
+This reverts upstream commit
+ https://source.denx.de/u-boot/u-boot/-/commit/aeb40f1166e072856f865d26d42a4bea1ec3a514
+---
+ tools/env/fw_env_main.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/tools/env/fw_env_main.c b/tools/env/fw_env_main.c
+index 0b201b9e62..1d193bd437 100644
+--- a/tools/env/fw_env_main.c
++++ b/tools/env/fw_env_main.c
+@@ -73,7 +73,7 @@ void usage_printenv(void)
+ 		" -c, --config         configuration file, default:" CONFIG_FILE "\n"
+ #endif
+ 		" -n, --noheader       do not repeat variable name in output\n"
+-		" -l, --lock           lock node, default:/run\n"
++		" -l, --lock           lock node, default:/var/lock\n"
+ 		"\n");
+ }
+ 
+@@ -88,7 +88,7 @@ void usage_env_set(void)
+ #ifdef CONFIG_FILE
+ 		" -c, --config         configuration file, default:" CONFIG_FILE "\n"
+ #endif
+-		" -l, --lock           lock node, default:/run\n"
++		" -l, --lock           lock node, default:/var/lock\n"
+ 		" -s, --script         batch mode to minimize writes\n"
+ 		"\n"
+ 		"Examples:\n"
+@@ -206,7 +206,7 @@ int parse_setenv_args(int argc, char *argv[])
+ 
+ int main(int argc, char *argv[])
+ {
+-	char *lockname = "/run/" CMD_PRINTENV ".lock";
++	char *lockname = "/var/lock/" CMD_PRINTENV ".lock";
+ 	int lockfd = -1;
+ 	int retval = EXIT_SUCCESS;
+ 	char *_cmdname;
+

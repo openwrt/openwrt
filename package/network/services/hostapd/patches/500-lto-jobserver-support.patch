@@ -20,7 +20,7 @@
  NOBJS = nt_password_hash.o ../src/crypto/ms_funcs.o $(SHA1OBJS)
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -2039,31 +2039,31 @@ wpa_supplicant_multi.a: .config $(BCHECK
+@@ -2037,31 +2037,31 @@ wpa_supplicant_multi.a: .config $(BCHECK
  	@$(AR) cr $@ wpa_supplicant_multi.o $(OBJS)
  
  wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)

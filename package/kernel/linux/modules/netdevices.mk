@@ -308,6 +308,24 @@ endef
 
 $(eval $(call KernelPackage,phy-marvell))
 
+define KernelPackage/phy-marvell-10g
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Marvell 10 Gigabit Ethernet PHY driver
+   KCONFIG:=CONFIG_MARVELL_10G_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/marvell10g.ko
+   AUTOLOAD:=$(call AutoLoad,18,marvell10g)
+endef
+
+define KernelPackage/phy-marvell/description
+   Supports Marvell 10 Gigabit Ethernet PHYs:
+   * 88E2110
+   * 88E2111
+   * 88x3310
+   * 88x3340
+endef
+
+$(eval $(call KernelPackage,phy-marvell-10g))
 
 define KernelPackage/phy-realtek
    SUBMENU:=$(NETWORK_DEVICES_MENU)
