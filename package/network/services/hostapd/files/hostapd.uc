@@ -66,10 +66,12 @@ function iface_restart(phy, config, old_config)
 	if (err)
 		hostapd.printf(`Failed to create ${bss.ifname} on phy ${phy}: ${err}`);
 	let config_inline = iface_gen_config(phy, config);
-	if (hostapd.add_iface(`bss_config=${bss.ifname}:${config_inline}`) < 0) {
+
+	let ubus = hostapd.data.ubus;
+	ubus.call("wpa_supplicant", "phy_set_state", { phy: phy, stop: true });
+	if (hostapd.add_iface(`bss_config=${bss.ifname}:${config_inline}`) < 0)
 		hostapd.printf(`hostapd.add_iface failed for phy ${phy} ifname=${bss.ifname}`);
-		return;
-	}
+	ubus.call("wpa_supplicant", "phy_set_state", { phy: phy, stop: false });
 }
 
 function array_to_obj(arr, key, start)
@@ -123,30 +125,37 @@ function iface_reload_config(phy, config, old_config)
 	if (config.bss[0].ifname != old_config.bss[0].ifname)
 		return false;
 
-	let iface = hostapd.interfaces[config.bss[0].ifname];
+	let iface_name = config.bss[0].ifname;
+	let iface = hostapd.interfaces[iface_name];
 	if (!iface)
+		return false;
+
+	let first_bss = hostapd.bss[iface_name];
+	if (!first_bss)
 		return false;
 
 	let config_inline = iface_gen_config(phy, config);
 
-	bss_reload_psk(iface.bss[0], config.bss[0], old_config.bss[0]);
+	bss_reload_psk(first_bss, config.bss[0], old_config.bss[0]);
 	if (!is_equal(config.bss[0], old_config.bss[0])) {
 		if (phy_is_fullmac(phy))
 			return false;
 
+		if (config.bss[0].bssid != old_config.bss[0].bssid)
+			return false;
+
 		hostapd.printf(`Reload config for bss '${config.bss[0].ifname}' on phy '${phy}'`);
-		if (iface.bss[0].set_config(config_inline, 0) < 0) {
+		if (first_bss.set_config(config_inline, 0) < 0) {
 			hostapd.printf(`Failed to set config`);
 			return false;
 		}
 	}
 
-	let bss_list = array_to_obj(iface.bss, "name", 1);
 	let new_cfg = array_to_obj(config.bss, "ifname", 1);
 	let old_cfg = array_to_obj(old_config.bss, "ifname", 1);
 
 	for (let name in old_cfg) {
-		let bss = bss_list[name];
+		let bss = hostapd.bss[name];
 		if (!bss) {
 			hostapd.printf(`bss '${name}' not found`);
 			return false;
@@ -266,6 +275,9 @@ function iface_load_config(filename)
 		let val = split(line, "=", 2);
 		if (!val[0])
 			continue;
+
+		if (val[0] == "bssid")
+			bss.bssid = val[1];
 
 		if (val[0] == "bss") {
 			bss = config_add_bss(config, val[1]);

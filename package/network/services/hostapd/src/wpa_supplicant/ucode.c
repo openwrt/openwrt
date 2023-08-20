@@ -21,7 +21,7 @@ wpas_ucode_iface_get_uval(struct wpa_supplicant *wpa_s)
 		return wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
 
 	val = uc_resource_new(iface_type, wpa_s);
-	wpa_ucode_registry_add(iface_registry, val, &wpa_s->ucode.idx);
+	wpa_s->ucode.idx = wpa_ucode_registry_add(iface_registry, val);
 
 	return val;
 }
@@ -84,9 +84,10 @@ void wpas_ucode_update_state(struct wpa_supplicant *wpa_s)
 		return;
 
 	state = wpa_supplicant_state_txt(wpa_s->wpa_state);
+	uc_value_push(ucv_get(ucv_string_new(wpa_s->ifname)));
 	uc_value_push(ucv_get(val));
 	uc_value_push(ucv_get(ucv_string_new(state)));
-	ucv_put(wpa_ucode_call(2));
+	ucv_put(wpa_ucode_call(3));
 	ucv_gc(vm);
 }
 
@@ -105,6 +106,7 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	if (wpa_ucode_call_prepare("event"))
 		return;
 
+	uc_value_push(ucv_get(ucv_string_new(wpa_s->ifname)));
 	uc_value_push(ucv_get(val));
 	uc_value_push(ucv_get(ucv_string_new(event_to_string(event))));
 	val = ucv_object_new(vm);
@@ -118,7 +120,7 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 		ucv_object_add(val, "center_freq2", ucv_int64_new(data->ch_switch.cf2));
 	}
 
-	ucv_put(wpa_ucode_call(3));
+	ucv_put(wpa_ucode_call(4));
 	ucv_gc(vm);
 }
 
@@ -245,7 +247,7 @@ int wpas_ucode_init(struct wpa_global *gl)
 	iface_type = uc_type_declare(vm, "wpas.iface", iface_fns, NULL);
 
 	iface_registry = ucv_array_new(vm);
-	uc_vm_registry_set(vm, "hostap.iface_registry", iface_registry);
+	uc_vm_registry_set(vm, "wpas.iface_registry", iface_registry);
 
 	global = wpa_ucode_global_init("wpas", global_type);
 

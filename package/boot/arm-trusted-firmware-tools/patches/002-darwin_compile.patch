@@ -1,0 +1,21 @@
+--- a/tools/fiptool/fiptool.c
++++ b/tools/fiptool/fiptool.c
+@@ -3,7 +3,7 @@
+  *
+  * SPDX-License-Identifier: BSD-3-Clause
+  */
+-
++#define _DARWIN_C_SOURCE
+ #ifndef _MSC_VER
+ #include <sys/mount.h>
+ #endif
+@@ -18,6 +18,9 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <unistd.h>
++
++#define uuid_t fiptool_uuid_t
+ 
+ #include "fiptool.h"
+ #include "tbbr_config.h"

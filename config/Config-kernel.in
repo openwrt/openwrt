@@ -47,6 +47,7 @@ config KERNEL_MIPS_FP_SUPPORT
 
 config KERNEL_ARM_PMU
 	bool
+	default y if TARGET_armsr_armv8
 	depends on (arm || aarch64)
 
 config KERNEL_X86_VSYSCALL_EMULATION

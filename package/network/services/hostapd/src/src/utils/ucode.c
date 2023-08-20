@@ -271,21 +271,7 @@ uc_value_t *wpa_ucode_global_init(const char *name, uc_resource_type_t *global_t
 	return global;
 }
 
-static uc_value_t *wpa_ucode_prototype_clone(uc_value_t *uval)
-{
-	uc_value_t *proto, *proto_new;
-
-	proto = ucv_prototype_get(uval);
-	proto_new = ucv_object_new(&vm);
-
-	ucv_object_foreach(proto, key, val)
-		ucv_object_add(proto_new, key, ucv_get(val));
-	ucv_prototype_set(uval, ucv_get(proto));
-
-	return proto;
-}
-
-void wpa_ucode_registry_add(uc_value_t *reg, uc_value_t *val, int *idx)
+int wpa_ucode_registry_add(uc_value_t *reg, uc_value_t *val)
 {
 	uc_value_t *data;
 	int i = 0;
@@ -295,10 +281,7 @@ void wpa_ucode_registry_add(uc_value_t *reg, uc_value_t *val, int *idx)
 
 	ucv_array_set(reg, i, ucv_get(val));
 
-	data = ucv_object_new(&vm);
-	ucv_object_add(wpa_ucode_prototype_clone(val), "data", ucv_get(data));
-
-	*idx = i + 1;
+	return i + 1;
 }
 
 uc_value_t *wpa_ucode_registry_get(uc_value_t *reg, int idx)
