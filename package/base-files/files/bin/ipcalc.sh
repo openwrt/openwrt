@@ -80,8 +80,7 @@ BEGIN {
 	}
 
 	if (ipaddr > start && ipaddr < end) {
-		print "ipaddr inside range" > "/dev/stderr"
-		exit(1)
+		print "warning: ipaddr inside range - this might not be supported in future releases of Openwrt" > "/dev/stderr"
 	}
 
 	print "START="int2ip(start)
