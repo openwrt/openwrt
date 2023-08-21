@@ -172,6 +172,33 @@ define Device/netgear_rax120v2
 endef
 TARGET_DEVICES += netgear_rax120v2
 
+define Device/netgear_sxk80
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_PACKAGES += ipq-wifi-netgear_sxk80
+	DEVICE_VENDOR := Netgear
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk01
+	SOC := ipq8074
+	KERNEL_SIZE := 6272k
+	NETGEAR_HW_ID := 29766265+0+512+1024+4x4+4x4+4x4
+endef
+
+define Device/netgear_sxr80
+	$(call Device/netgear_sxk80)
+	DEVICE_MODEL := SXR80
+	NETGEAR_BOARD_ID := SXR80
+endef
+TARGET_DEVICES += netgear_sxr80
+
+define Device/netgear_sxs80
+	$(call Device/netgear_sxk80)
+	DEVICE_MODEL := SXS80
+	NETGEAR_BOARD_ID := SXS80
+endef
+TARGET_DEVICES += netgear_sxs80
+
 define Device/netgear_wax218
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

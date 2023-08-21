@@ -49,6 +49,8 @@ platform_do_upgrade() {
 	dynalink,dl-wrx36|\
 	edimax,cax1800|\
 	netgear,rax120v2|\
+	netgear,sxr80|\
+	netgear,sxs80|\
 	netgear,wax218|\
 	netgear,wax620|\
 	netgear,wax630|\
