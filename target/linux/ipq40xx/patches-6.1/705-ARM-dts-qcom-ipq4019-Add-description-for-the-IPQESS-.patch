@@ -1,27 +1,27 @@
-From 44327d7098d4f32c24ec8c528e5aff6e030956bc Mon Sep 17 00:00:00 2001
-From: Robert Marko <robert.marko@sartura.hr>
-Date: Wed, 20 Oct 2021 13:21:45 +0200
-Subject: [PATCH] arm: dts: ipq4019: add ethernet controller DT node
+From 5b71dbb867680887d47954ce1cc145cb747cbce6 Mon Sep 17 00:00:00 2001
+From: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Date: Fri, 4 Nov 2022 18:41:51 +0100
+Subject: [PATCH] ARM: dts: qcom: ipq4019: Add description for the IPQESS
+ Ethernet controller
 
-Since IPQ40xx SoC built-in ethernet controller now has a driver,
-add its DT node so it can be used.
+The Qualcomm IPQ4019 includes an internal 5 ports switch, which is
+connected to the CPU through the internal IPQESS Ethernet controller.
 
-Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Add support for this internal interface, which is internally connected to a
+modified version of the QCA8K Ethernet switch.
+
+This Ethernet controller only support a specific internal interface mode
+for connection to the switch.
+
+Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 ---
  arch/arm/boot/dts/qcom-ipq4019.dtsi | 48 +++++++++++++++++++++++++++++
  1 file changed, 48 insertions(+)
 
 --- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
-@@ -38,6 +38,7 @@
- 		spi1 = &blsp1_spi2;
- 		i2c0 = &blsp1_i2c3;
- 		i2c1 = &blsp1_i2c4;
-+		ethernet0 = &gmac;
- 	};
- 
- 	cpus {
-@@ -589,6 +590,57 @@
+@@ -591,6 +591,54 @@
  			status = "disabled";
  		};
  
@@ -29,9 +29,9 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +			compatible = "qcom,ipq4019-ess-edma";
 +			reg = <0xc080000 0x8000>;
 +			resets = <&gcc ESS_RESET>;
-+			reset-names = "ess_rst";
++			reset-names = "ess";
 +			clocks = <&gcc GCC_ESS_CLK>;
-+			clock-names = "ess_clk";
++			clock-names = "ess";
 +			interrupts = <GIC_SPI  65 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI  66 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI  67 IRQ_TYPE_EDGE_RISING>,
@@ -64,15 +64,12 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +				     <GIC_SPI 253 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 254 IRQ_TYPE_EDGE_RISING>,
 +				     <GIC_SPI 255 IRQ_TYPE_EDGE_RISING>;
-+
-+			status = "disabled";
-+
 +			phy-mode = "internal";
++			status = "disabled";
 +			fixed-link {
 +				speed = <1000>;
 +				full-duplex;
 +				pause;
-+				asym-pause;
 +			};
 +		};
 +

@@ -1,12 +1,14 @@
-From 6038ba75e2aa8e57d4eaf20a90c8061c43b1117f Mon Sep 17 00:00:00 2001
+From 20014461691efc9e274c3870357152db7f091820 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robert.marko@sartura.hr>
-Date: Mon, 14 Aug 2023 12:39:04 +0200
-Subject: [PATCH 2/2] clk: qcom: gcc-ipq4019: add missing networking resets
+Date: Mon, 14 Aug 2023 12:40:24 +0200
+Subject: [PATCH] clk: qcom: gcc-ipq4019: add missing networking resets
 
 IPQ4019 has more networking related resets that will be required for future
 wired networking support, so lets add them.
 
 Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Link: https://lore.kernel.org/r/20230814104119.96858-2-robert.marko@sartura.hr
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 ---
  drivers/clk/qcom/gcc-ipq4019.c | 6 ++++++
  1 file changed, 6 insertions(+)
