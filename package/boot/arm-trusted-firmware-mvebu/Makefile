@@ -123,7 +123,7 @@ TFA_MAKE_FLAGS += \
 		BL33=$(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.bin \
 		MV_DDR_PATH=$(BUILD_DIR)/$(MV_DDR_NAME) \
 		WTP=$(BUILD_DIR)/$(A3700_UTILS_NAME) \
-		WTMI_IMG=$(BUILD_DIR)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE)/wtmi_app.bin \
+		WTMI_IMG=$(BUILD_DIR)/$(MOX_BB_NAME)/wtmi_app.bin \
 		CRYPTOPP_PATH=$(BUILD_DIR)/$(CRYPTOPP_NAME) \
 		HOST_LDFLAGS="$(HOST_LDFLAGS)" \
 		HOST_CPPFLAGS="$(HOST_CPPFLAGS)" \
@@ -177,13 +177,17 @@ define Download/mv-ddr-marvell
 endef
 
 MOX_BB_NAME:=mox-boot-builder
-MOX_BB_RELEASE:=v2022.06.11
+MOX_BB_RELEASE:=604f8f51
 MOX_BB_SOURCE:=$(MOX_BB_NAME)-$(MOX_BB_RELEASE).tar.bz2
 
 define Download/mox-boot-builder
   FILE:=$(MOX_BB_SOURCE)
-  URL:=https://gitlab.nic.cz/turris/mox-boot-builder/-/archive/$(MOX_BB_RELEASE)
-  HASH:=75e7661c38f4f5e6d8910dd789d6d9ffd8652455548b68c98e5bf45eaab5b6eb
+  PROTO:=git
+  SUBMODULES:=skip
+  URL:=https://gitlab.nic.cz/turris/mox-boot-builder.git
+  VERSION:=604f8f51d97b4e59fa6d1e579101daa194d6ed2d
+  MIRROR_HASH:=b09337a7dde140f57e40133b6e7b7e1eb338e7cea9b15a3af6874824462f15f7
+  SUBDIR:=$(MOX_BB_NAME)
 endef
 
 CM3_GCC_NAME:=gcc-arm
@@ -206,7 +210,7 @@ define Build/Clean
 		$(BUILD_DIR)/$(CRYPTOPP_NAME) \
 		$(BUILD_DIR)/$(A3700_UTILS_NAME) \
 		$(BUILD_DIR)/$(MV_DDR_NAME) \
-		$(BUILD_DIR)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
+		$(BUILD_DIR)/$(MOX_BB_NAME) \
 		$(BUILD_DIR)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)
 endef
 
@@ -226,7 +230,7 @@ define Build/Prepare
 	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(MV_DDR_SOURCE)
 	$(call PatchDir/Default,$(BUILD_DIR)/$(MV_DDR_NAME),./patches-mv-ddr-marvell)
 	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(MOX_BB_SOURCE)
-	$(call PatchDir/Default,$(BUILD_DIR)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE),./patches-mox-boot-builder)
+	$(call PatchDir/Default,$(BUILD_DIR)/$(MOX_BB_NAME),./patches-mox-boot-builder)
 	$(TAR) -C $(BUILD_DIR) -xf $(DL_DIR)/$(CM3_GCC_SOURCE)
 endef
 
@@ -235,7 +239,7 @@ define Build/Compile
 		CROSS_CM3=$(BUILD_DIR)/$(CM3_GCC_NAME)-$(CM3_GCC_RELEASE)-$(CM3_GCC_VERSION)/bin/arm-none-eabi- \
 		WTMI_VERSION=$(MOX_BB_RELEASE) \
 		CRYPTOPP_PATH=$PWD/cryptopp/ \
-		-C $(BUILD_DIR)/$(MOX_BB_NAME)-$(MOX_BB_RELEASE) \
+		-C $(BUILD_DIR)/$(MOX_BB_NAME) \
 		wtmi_app.bin
 	$(call Build/Compile/Default)
 endef
