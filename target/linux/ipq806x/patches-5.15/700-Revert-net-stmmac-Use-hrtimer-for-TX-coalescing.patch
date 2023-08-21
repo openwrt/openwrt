@@ -1,0 +1,155 @@
+From 0db3e9ac75b107d2158b227426f58df9bb00529f Mon Sep 17 00:00:00 2001
+From: Oskari Lemmela <oskari@lemmela.net>
+Date: Sun, 20 Aug 2023 15:25:09 +0300
+Subject: [PATCH] Revert "net: stmmac: Use hrtimer for TX coalescing"
+
+This reverts commit d5a05e69ac6e4c431c380ced2b534c91f7bc3280.
+
+hrtimer uses raw_spin_lock which causes high CPU usage.
+ipq806x platform's TCP transmit speed dropped from 950 Mbps to 250 Mbps
+due to high ksoftirq.
+
+Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac.h  |  3 +--
+ .../net/ethernet/stmicro/stmmac/stmmac_main.c | 25 +++++++------------
+ 2 files changed, 10 insertions(+), 18 deletions(-)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac.h
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac.h
+@@ -13,7 +13,6 @@
+ #define DRV_MODULE_VERSION	"Jan_2016"
+ 
+ #include <linux/clk.h>
+-#include <linux/hrtimer.h>
+ #include <linux/if_vlan.h>
+ #include <linux/stmmac.h>
+ #include <linux/phylink.h>
+@@ -59,7 +58,7 @@ struct stmmac_tx_info {
+ struct stmmac_tx_queue {
+ 	u32 tx_count_frames;
+ 	int tbs;
+-	struct hrtimer txtimer;
++	struct timer_list txtimer;
+ 	u32 queue_index;
+ 	struct stmmac_priv *priv_data;
+ 	struct dma_extended_desc *dma_etx ____cacheline_aligned_in_smp;
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -142,7 +142,7 @@ static void stmmac_init_fs(struct net_de
+ static void stmmac_exit_fs(struct net_device *dev);
+ #endif
+ 
+-#define STMMAC_COAL_TIMER(x) (ns_to_ktime((x) * NSEC_PER_USEC))
++#define STMMAC_COAL_TIMER(x) (jiffies + usecs_to_jiffies(x))
+ 
+ int stmmac_bus_clks_config(struct stmmac_priv *priv, bool enabled)
+ {
+@@ -2725,9 +2725,7 @@ static int stmmac_tx_clean(struct stmmac
+ 
+ 	/* We still have pending packets, let's call for a new scheduling */
+ 	if (tx_q->dirty_tx != tx_q->cur_tx)
+-		hrtimer_start(&tx_q->txtimer,
+-			      STMMAC_COAL_TIMER(priv->tx_coal_timer[queue]),
+-			      HRTIMER_MODE_REL);
++		mod_timer(&tx_q->txtimer, STMMAC_COAL_TIMER(priv->tx_coal_timer[queue]));
+ 
+ 	__netif_tx_unlock_bh(netdev_get_tx_queue(priv->dev, queue));
+ 
+@@ -3019,9 +3017,7 @@ static void stmmac_tx_timer_arm(struct s
+ {
+ 	struct stmmac_tx_queue *tx_q = &priv->dma_conf.tx_queue[queue];
+ 
+-	hrtimer_start(&tx_q->txtimer,
+-		      STMMAC_COAL_TIMER(priv->tx_coal_timer[queue]),
+-		      HRTIMER_MODE_REL);
++	mod_timer(&tx_q->txtimer, STMMAC_COAL_TIMER(priv->tx_coal_timer[queue]));
+ }
+ 
+ /**
+@@ -3030,9 +3026,9 @@ static void stmmac_tx_timer_arm(struct s
+  * Description:
+  * This is the timer handler to directly invoke the stmmac_tx_clean.
+  */
+-static enum hrtimer_restart stmmac_tx_timer(struct hrtimer *t)
++static void stmmac_tx_timer(struct timer_list *t)
+ {
+-	struct stmmac_tx_queue *tx_q = container_of(t, struct stmmac_tx_queue, txtimer);
++	struct stmmac_tx_queue *tx_q = from_timer(tx_q, t, txtimer);
+ 	struct stmmac_priv *priv = tx_q->priv_data;
+ 	struct stmmac_channel *ch;
+ 	struct napi_struct *napi;
+@@ -3048,8 +3044,6 @@ static enum hrtimer_restart stmmac_tx_ti
+ 		spin_unlock_irqrestore(&ch->lock, flags);
+ 		__napi_schedule(napi);
+ 	}
+-
+-	return HRTIMER_NORESTART;
+ }
+ 
+ /**
+@@ -3072,8 +3066,7 @@ static void stmmac_init_coalesce(struct
+ 		priv->tx_coal_frames[chan] = STMMAC_TX_FRAMES;
+ 		priv->tx_coal_timer[chan] = STMMAC_COAL_TX_TIMER;
+ 
+-		hrtimer_init(&tx_q->txtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+-		tx_q->txtimer.function = stmmac_tx_timer;
++		timer_setup(&tx_q->txtimer, stmmac_tx_timer, 0);
+ 	}
+ 
+ 	for (chan = 0; chan < rx_channel_count; chan++)
+@@ -3902,7 +3895,7 @@ irq_error:
+ 	phylink_stop(priv->phylink);
+ 
+ 	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
+-		hrtimer_cancel(&priv->dma_conf.tx_queue[chan].txtimer);
++		del_timer_sync(&priv->dma_conf.tx_queue[chan].txtimer);
+ 
+ 	stmmac_hw_teardown(dev);
+ init_error:
+@@ -3958,7 +3951,7 @@ static int stmmac_release(struct net_dev
+ 	stmmac_disable_all_queues(priv);
+ 
+ 	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
+-		hrtimer_cancel(&priv->dma_conf.tx_queue[chan].txtimer);
++		del_timer_sync(&priv->dma_conf.tx_queue[chan].txtimer);
+ 
+ 	netif_tx_disable(dev);
+ 
+@@ -6655,7 +6648,7 @@ void stmmac_xdp_release(struct net_devic
+ 	stmmac_disable_all_queues(priv);
+ 
+ 	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
+-		hrtimer_cancel(&priv->dma_conf.tx_queue[chan].txtimer);
++		del_timer_sync(&priv->dma_conf.tx_queue[chan].txtimer);
+ 
+ 	/* Free the IRQ lines */
+ 	stmmac_free_irq(dev, REQ_IRQ_ERR_ALL, 0);
+@@ -6750,8 +6743,7 @@ int stmmac_xdp_open(struct net_device *d
+ 		stmmac_set_tx_tail_ptr(priv, priv->ioaddr,
+ 				       tx_q->tx_tail_addr, chan);
+ 
+-		hrtimer_init(&tx_q->txtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+-		tx_q->txtimer.function = stmmac_tx_timer;
++		timer_setup(&tx_q->txtimer, stmmac_tx_timer, 0);
+ 	}
+ 
+ 	/* Enable the MAC Rx/Tx */
+@@ -6774,7 +6766,7 @@ int stmmac_xdp_open(struct net_device *d
+ 
+ irq_error:
+ 	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
+-		hrtimer_cancel(&priv->dma_conf.tx_queue[chan].txtimer);
++		del_timer_sync(&priv->dma_conf.tx_queue[chan].txtimer);
+ 
+ 	stmmac_hw_teardown(dev);
+ init_error:
+@@ -7495,7 +7487,7 @@ int stmmac_suspend(struct device *dev)
+ 	stmmac_disable_all_queues(priv);
+ 
+ 	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
+-		hrtimer_cancel(&priv->dma_conf.tx_queue[chan].txtimer);
++		del_timer_sync(&priv->dma_conf.tx_queue[chan].txtimer);
+ 
+ 	if (priv->eee_enabled) {
+ 		priv->tx_path_in_lpi_mode = false;
