@@ -42,6 +42,25 @@
  		dev_err(&pdev->dev,
  			"%s: Failed to enable MSI interrupts error code: %d\n",
  			__func__, err);
+@@ -589,15 +589,15 @@ static int dc_ep_probe(struct pci_dev *p
+ 	/* Target structures have a limit of 32 bit DMA pointers.
+ 	 * DMA pointers can be wider than 32 bits by default on some systems.
+ 	 */
+-	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
++	ret = dma_set_mask(&pdev->dev, DMA_BIT_MASK(32));
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "32-bit DMA not available: %d\n", ret);
+ 		goto err_region;
+ 	}
+ 
+-	ret = pci_set_consistent_dma_mask(pdev, DMA_BIT_MASK(32));
++	ret = dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(32));
+ 	if (ret) {
+-		dev_err(&pdev->dev, "cannot enable 32-bit consistent DMA\n");
++		dev_err(&pdev->dev, "cannot enable 32-bit coherent DMA\n");
+ 		goto err_region;
+ 	}
+ 
 @@ -654,7 +654,7 @@ static int dc_ep_probe(struct pci_dev *p
  		goto err_iomap;
  
