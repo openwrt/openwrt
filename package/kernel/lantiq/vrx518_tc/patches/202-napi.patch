@@ -334,7 +334,7 @@
  	int (*umt_init)(u32 umt_id, u32 umt_period, u32 umt_dst);
 --- a/dcdp/ptm_tc.c
 +++ b/dcdp/ptm_tc.c
-@@ -141,7 +141,11 @@ static int ptm_open(struct net_device *d
+@@ -146,7 +146,11 @@ static int ptm_open(struct net_device *d
  	struct ptm_priv *ptm_tc = netdev_priv(dev);
  
  	tc_info(ptm_tc->tc_priv, MSG_EVENT, "ptm open\n");
@@ -346,7 +346,7 @@
  #ifdef CONFIG_SOC_TYPE_XWAY
  	xet_phy_wan_port(7, NULL, 1, 1);
  	if (ppa_hook_ppa_phys_port_add_fn)
-@@ -158,7 +162,11 @@ static int ptm_stop(struct net_device *d
+@@ -163,7 +167,11 @@ static int ptm_stop(struct net_device *d
  	struct ptm_priv *ptm_tc = netdev_priv(dev);
  
  	tc_info(ptm_tc->tc_priv, MSG_EVENT, "ptm stop\n");
@@ -358,7 +358,7 @@
  #ifdef CONFIG_SOC_TYPE_XWAY
      if (ppa_drv_datapath_mac_entry_setting)
          ppa_drv_datapath_mac_entry_setting(dev->dev_addr, 0, 6, 10, 1, 2);
-@@ -555,7 +563,7 @@ static void ptm_rx(struct net_device *de
+@@ -564,7 +572,7 @@ static void ptm_rx(struct net_device *de
  	ptm_tc->stats64.rx_packets++;
  	ptm_tc->stats64.rx_bytes += skb->len;
  
@@ -367,17 +367,22 @@
  		ptm_tc->stats64.rx_dropped++;
  
  	return;
-@@ -651,6 +659,9 @@ static int ptm_dev_init(struct tc_priv *
+@@ -664,6 +672,14 @@ static int ptm_dev_init(struct tc_priv *
  	memcpy(ptm_tc->outq_map, def_outq_map, sizeof(def_outq_map));
  	SET_NETDEV_DEV(ptm_tc->dev, tc_priv->ep_dev[id].dev);
  
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0))
++	netif_napi_add(ptm_tc->dev, &ptm_tc->napi_rx, tc_priv->tc_ops.napi_rx);
++	netif_napi_add_tx(ptm_tc->dev, &ptm_tc->napi_tx, tc_priv->tc_ops.napi_tx);
++#else
 +	netif_napi_add(ptm_tc->dev, &ptm_tc->napi_rx, tc_priv->tc_ops.napi_rx, NAPI_POLL_WEIGHT);
 +	netif_tx_napi_add(ptm_tc->dev, &ptm_tc->napi_tx, tc_priv->tc_ops.napi_tx, NAPI_POLL_WEIGHT);
 +
++#endif
  	err = register_netdev(ptm_tc->dev);
  	if (err)
  		goto err1;
-@@ -2605,7 +2616,9 @@ static int ptm_ring_init(struct ptm_ep_p
+@@ -2618,7 +2634,9 @@ static int ptm_ring_init(struct ptm_ep_p
  {
  	ptm_aca_ring_config_init(priv, id, bonding);
  	return priv->tc_priv->tc_ops.dev_reg(priv->ptm_tc->dev,
@@ -388,7 +393,7 @@
  }
  
  /**
-@@ -2960,7 +2973,9 @@ void ptm_tc_unload(enum dsl_tc_mode tc_m
+@@ -2973,7 +2991,9 @@ void ptm_tc_unload(enum dsl_tc_mode tc_m
  	/* unregister device */
  	if (ptm_tc->tc_priv->tc_ops.dev_unreg != NULL)
  		ptm_tc->tc_priv->tc_ops.dev_unreg(ptm_tc->dev,
@@ -399,7 +404,7 @@
  
  	/* remove PTM callback function */
  	ptm_cb_setup(ptm_tc, 0);
-@@ -2978,6 +2993,10 @@ void ptm_exit(void)
+@@ -2991,6 +3011,10 @@ void ptm_exit(void)
  
  	if (!priv)
  		return;

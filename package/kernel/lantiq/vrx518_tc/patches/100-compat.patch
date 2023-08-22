@@ -243,7 +243,33 @@
  
  #include "inc/tc_main.h"
  #include "inc/reg_addr.h"
-@@ -182,8 +182,8 @@ static int ptm_get_qid(struct net_device
+@@ -62,6 +62,9 @@
+ #include "inc/fw/vrx518_addr_def.h"
+ #include "inc/fw/vrx518_ppe_fw.h"
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0))
++#define PDE_DATA pde_data
++#endif
+ 
+ static struct ptm_priv *g_ptm_priv;
+ static struct ptm_ep_priv g_ep_priv[BOND_MAX];
+@@ -84,6 +87,7 @@ static int ptm_erb_addr_get(const unsign
+ 	unsigned int *data_addr, unsigned int *desc_addr);
+ 
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,16,0))
+ static inline void tc_ether_addr_copy(u8 *dst, const u8 *src)
+ {
+ #if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)
+@@ -98,6 +102,7 @@ static inline void tc_ether_addr_copy(u8
+ 	a[2] = b[2];
+ #endif
+ }
++#endif
+ 
+ static inline int is_ptm_sl(struct ptm_ep_priv *priv)
+ {
+@@ -182,8 +187,8 @@ static int ptm_get_qid(struct net_device
  	return qid;
  }
  
@@ -254,7 +280,7 @@
  {
  	struct ptm_priv *ptm_tc = netdev_priv(dev);
  
-@@ -191,8 +191,6 @@ static struct rtnl_link_stats64 *ptm_get
+@@ -191,8 +196,6 @@ static struct rtnl_link_stats64 *ptm_get
  		memcpy(storage, &ptm_tc->stats64, sizeof(ptm_tc->stats64));
  	else
  		storage->tx_errors += ptm_tc->stats64.tx_errors;
@@ -263,7 +289,16 @@
  }
  
  static int ptm_set_mac_address(struct net_device *dev, void *p)
-@@ -209,7 +207,7 @@ static int ptm_set_mac_address(struct ne
+@@ -204,12 +207,16 @@ static int ptm_set_mac_address(struct ne
+ 		return -EBUSY;
+ 
+ 	tc_info(ptm_tc->tc_priv, MSG_EVENT, "ptm mac address update!\n");
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,16,0))
++	eth_hw_addr_set(dev, addr->sa_data);
++#else
+ 	tc_ether_addr_copy(dev->dev_addr, addr->sa_data);
++#endif
+ 
  	return 0;
  }
  
@@ -272,7 +307,7 @@
  {
  	struct ptm_priv *ptm_tc = netdev_priv(dev);
  
-@@ -503,7 +501,7 @@ static int ptm_xmit(struct sk_buff *skb,
+@@ -503,7 +510,7 @@ static int ptm_xmit(struct sk_buff *skb,
  	if (!showtime_stat(ptm_tc->tc_priv))
  		goto PTM_XMIT_DROP;
  
@@ -281,7 +316,7 @@
  		goto PTM_XMIT_DROP;
  
  	dump_skb_info(ptm_tc->tc_priv, skb, (MSG_TX | MSG_TXDATA));
-@@ -632,11 +630,8 @@ static int ptm_dev_init(struct tc_priv *
+@@ -632,11 +639,8 @@ static int ptm_dev_init(struct tc_priv *
  	struct ptm_priv *ptm_tc;
  	const char macaddr[ETH_ALEN]
  		= {0xAC, 0x9A, 0x96, 0x11, 0x22, 0x33};
@@ -295,7 +330,19 @@
  	if (!dev) {
  		tc_dbg(tc_priv, MSG_INIT, "Cannot alloc net device\n");
  		return -ENOMEM;
-@@ -2103,7 +2098,6 @@ static int ptm_showtime_exit(const unsig
+@@ -644,7 +648,11 @@ static int ptm_dev_init(struct tc_priv *
+ 	ptm_tc = netdev_priv(dev);
+ 	ptm_tc->dev = dev;
+ 	ptm_tc->tc_priv = tc_priv;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,16,0))
++	eth_hw_addr_set(dev, macaddr);
++#else
+ 	tc_ether_addr_copy(dev->dev_addr, macaddr);
++#endif
+ 	spin_lock_init(&ptm_tc->ptm_lock);
+ 	memcpy(ptm_tc->outq_map, def_outq_map, sizeof(def_outq_map));
+ 	SET_NETDEV_DEV(ptm_tc->dev, tc_priv->ep_dev[id].dev);
+@@ -2103,7 +2111,6 @@ static int ptm_showtime_exit(const unsig
  	struct ptm_ep_priv *priv = tc_ep_priv(idx);
  	u32 stop = ACA_TXIN_EN;
  	struct dc_ep_dev *ep;
@@ -398,7 +445,18 @@
  #include <net/genetlink.h>
  #include <linux/time.h>
  #include "inc/tc_main.h"
-@@ -353,7 +355,7 @@ static ssize_t mem_proc_write(struct fil
+@@ -35,6 +37,10 @@
+ #include "inc/platform.h"
+ #include "inc/dsl_tc.h"
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0))
++#define PDE_DATA pde_data
++#endif
++
+ #define ATM_HEADER_SIZE (ATM_CELL_SIZE - ATM_CELL_PAYLOAD)
+ static char *dbg_flag_str[] = {
+ 	"rx",
+@@ -353,7 +359,7 @@ static ssize_t mem_proc_write(struct fil
  	}
  	addr = set_val = repeat_cnt = 0;
  
@@ -407,7 +465,7 @@
  		return -EFAULT;
  
  	len = count < sizeof(str) ? count : sizeof(str) - 1;
-@@ -450,13 +452,12 @@ static int proc_read_mem_seq_open(struct
+@@ -450,13 +456,12 @@ static int proc_read_mem_seq_open(struct
  	return single_open(file, proc_read_mem, NULL);
  }
  
@@ -427,7 +485,7 @@
  };
  
  static ssize_t pp32_proc_write(struct file *file, const char __user *buf,
-@@ -748,13 +749,12 @@ static int proc_read_pp32_seq_open(struc
+@@ -748,13 +753,12 @@ static int proc_read_pp32_seq_open(struc
  	return single_open(file, proc_read_pp32, PDE_DATA(inode));
  }
  
@@ -447,7 +505,7 @@
  };
  
  static int proc_read_tc_cfg(struct seq_file *seq, void *v)
-@@ -865,13 +865,12 @@ static int proc_read_tc_cfg_seq_open(str
+@@ -865,13 +869,12 @@ static int proc_read_tc_cfg_seq_open(str
  	return single_open(file, proc_read_tc_cfg, PDE_DATA(inode));
  }
  
@@ -467,7 +525,7 @@
  };
  
  static ssize_t proc_write_dbg(struct file *file, const char __user *buf,
-@@ -951,13 +950,12 @@ static int proc_read_dbg_seq_open(struct
+@@ -951,13 +954,12 @@ static int proc_read_dbg_seq_open(struct
  	return single_open(file, proc_read_dbg, PDE_DATA(inode));
  }
  
@@ -487,7 +545,7 @@
  };
  
  static ssize_t proc_write_tc_switch(struct file *file, const char __user *buf,
-@@ -1018,11 +1016,11 @@ proc_tc_switch_help:
+@@ -1018,11 +1020,11 @@ proc_tc_switch_help:
  	return count;
  }
  
@@ -503,7 +561,7 @@
  static ssize_t proc_write_show_time(struct file *file, const char __user *buf,
  			size_t count, loff_t *data)
  {
-@@ -1077,10 +1075,9 @@ proc_show_time_help:
+@@ -1077,10 +1079,9 @@ proc_show_time_help:
  	return count;
  }
  
@@ -517,7 +575,7 @@
  };
  
  static int proc_read_ver(struct seq_file *seq, void *v)
-@@ -1128,12 +1125,11 @@ static int proc_read_ver_seq_open(struct
+@@ -1128,12 +1129,11 @@ static int proc_read_ver_seq_open(struct
  	return single_open(file, proc_read_ver, PDE_DATA(inode));
  }
  
@@ -535,7 +593,7 @@
  };
  
  static int proc_read_soc(struct seq_file *seq, void *v)
-@@ -1142,20 +1138,18 @@ static int proc_read_soc(struct seq_file
+@@ -1142,20 +1142,18 @@ static int proc_read_soc(struct seq_file
  
  	tcpriv = (struct tc_priv *)seq->private;
  
@@ -564,7 +622,7 @@
  
  	return 0;
  }
-@@ -1165,15 +1159,13 @@ static int proc_read_soc_seq_open(struct
+@@ -1165,15 +1163,13 @@ static int proc_read_soc_seq_open(struct
  	return single_open(file, proc_read_soc, PDE_DATA(inode));
  }
  
@@ -585,7 +643,7 @@
  static struct tc_proc_list tc_procs[] = {
  	{TC_PROC_DIR,	0,	NULL,			1},
  	{"cfg",		0644, &tc_cfg_proc_fops,	0},
-@@ -1241,13 +1233,12 @@ static int proc_read_ptm_wanmib_seq_open
+@@ -1241,13 +1237,12 @@ static int proc_read_ptm_wanmib_seq_open
  	return single_open(file, proc_read_ptm_wanmib, PDE_DATA(inode));
  }
  
@@ -605,7 +663,7 @@
  };
  
  static int proc_ptm_read_cfg(struct seq_file *seq, void *v)
-@@ -1300,7 +1291,7 @@ static ssize_t ptm_cfg_proc_write(struct
+@@ -1300,7 +1295,7 @@ static ssize_t ptm_cfg_proc_write(struct
  		return -EINVAL;
  	}
  
@@ -614,7 +672,7 @@
  		return -EFAULT;
  
  	len = count < sizeof(str) ? count : sizeof(str) - 1;
-@@ -1343,13 +1334,12 @@ proc_ptm_cfg_help:
+@@ -1343,13 +1338,12 @@ proc_ptm_cfg_help:
  }
  
  
@@ -634,7 +692,7 @@
  };
  
  static ssize_t proc_ptm_write_prio(struct file *file, const char __user *buf,
-@@ -1455,13 +1445,12 @@ static int proc_ptm_read_prio_seq_open(s
+@@ -1455,13 +1449,12 @@ static int proc_ptm_read_prio_seq_open(s
  	return single_open(file, proc_ptm_read_prio, PDE_DATA(inode));
  }
  
@@ -654,7 +712,7 @@
  };
  
  static int proc_ptm_read_bond_seq_open(struct inode *inode, struct file *file)
-@@ -1469,12 +1458,11 @@ static int proc_ptm_read_bond_seq_open(s
+@@ -1469,12 +1462,11 @@ static int proc_ptm_read_bond_seq_open(s
  	return single_open(file, proc_ptm_read_bond, PDE_DATA(inode));
  }
  
@@ -672,7 +730,7 @@
  };
  
  static int proc_ptm_read_bondmib_seq_open(struct inode *inode,
-@@ -1483,13 +1471,12 @@ static int proc_ptm_read_bondmib_seq_ope
+@@ -1483,13 +1475,12 @@ static int proc_ptm_read_bondmib_seq_ope
  	return single_open(file, proc_ptm_read_bondmib, PDE_DATA(inode));
  }
  
@@ -692,7 +750,7 @@
  };
  
  struct fwdbg_t {
-@@ -1910,14 +1897,14 @@ static int proc_read_fwdbg_seq_open(stru
+@@ -1910,14 +1901,14 @@ static int proc_read_fwdbg_seq_open(stru
  {
  	return single_open(file, proc_read_fwdbg, NULL);
  }
@@ -714,7 +772,7 @@
  static struct tc_proc_list ptm_sl_procs[] = {
  	{TC_PROC_PTM_DIR, 0,	NULL,			1},
  	{"mem",		0644,	&mem_proc_fops,		0},
-@@ -2077,7 +2064,7 @@ static ssize_t atm_cfg_proc_write(struct
+@@ -2077,7 +2068,7 @@ static ssize_t atm_cfg_proc_write(struct
  
  	priv = (struct atm_priv *)PDE_DATA(file_inode(file));
  
@@ -723,7 +781,7 @@
  		return -EFAULT;
  
  	len = count < sizeof(str) ? count : sizeof(str) - 1;
-@@ -2119,13 +2106,12 @@ proc_atm_cfg_help:
+@@ -2119,13 +2110,12 @@ proc_atm_cfg_help:
  	return count;
  }
  
@@ -743,7 +801,7 @@
  };
  
  static ssize_t proc_write_atm_wanmib(struct file *file, const char __user *buf,
-@@ -2173,13 +2159,12 @@ static int proc_read_atm_wanmib_seq_open
+@@ -2173,13 +2163,12 @@ static int proc_read_atm_wanmib_seq_open
  
  
  
@@ -763,7 +821,7 @@
  };
  
  static int proc_read_htu_seq_open(struct inode *inode, struct file *file)
-@@ -2187,12 +2172,11 @@ static int proc_read_htu_seq_open(struct
+@@ -2187,12 +2176,11 @@ static int proc_read_htu_seq_open(struct
  	return single_open(file, proc_read_htu, PDE_DATA(inode));
  }
  
@@ -781,7 +839,7 @@
  };
  
  static int proc_read_queue_seq_open(struct inode *inode, struct file *file)
-@@ -2200,12 +2184,11 @@ static int proc_read_queue_seq_open(stru
+@@ -2200,12 +2188,11 @@ static int proc_read_queue_seq_open(stru
  	return single_open(file, proc_read_queue, PDE_DATA(inode));
  }
  
@@ -799,7 +857,7 @@
  };
  
  static void set_q_prio(struct atm_priv *priv,
-@@ -2428,13 +2411,12 @@ static const struct seq_operations pvc_m
+@@ -2428,13 +2415,12 @@ static const struct seq_operations pvc_m
  	.show = pvc_mib_seq_show,
  };
  
@@ -819,7 +877,7 @@
  };
  
  static int proc_read_pvc_mib_seq_open(struct inode *inode, struct file *file)
-@@ -2447,12 +2429,11 @@ static int proc_read_pvc_mib_seq_open(st
+@@ -2447,12 +2433,11 @@ static int proc_read_pvc_mib_seq_open(st
  	return ret;
  }
  
@@ -837,7 +895,7 @@
  };
  
  static ssize_t proc_write_cell(struct file *file,
-@@ -2592,13 +2573,12 @@ static int proc_read_cell_seq_open(struc
+@@ -2592,13 +2577,12 @@ static int proc_read_cell_seq_open(struc
  	return single_open(file, proc_read_cell, NULL);
  }
  
