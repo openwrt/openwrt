@@ -188,6 +188,7 @@ function iface_hostapd_notify(phy, ifname, iface, state)
 	switch (state) {
 	case "DISCONNECTED":
 	case "AUTHENTICATING":
+	case "SCANNING":
 		msg.up = false;
 		break;
 	case "INTERFACE_DISABLED":
