@@ -107,15 +107,9 @@ define SetupHostCommand
 			bin="$$$$$$$$(command -v "$$$$$$$${cmd%% *}")"; \
 			if [ -x "$$$$$$$$bin" ] && eval "$$$$$$$$cmd" >/dev/null 2>/dev/null; then \
 				case "$$$$$$$$(ls -dl -- $(STAGING_DIR_HOST)/bin/$(strip $(1)))" in \
-					*" -> $$$$$$$$bin"*) \
-						[ -x "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0 \
-						;; \
-					"-"*) \
-						[ -x "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0 \
-						;; \
-					*" -> /"*) \
-						;; \
-					*" -> "*) \
+					"-"* | \
+					*" -> $$$$$$$$bin"* | \
+					*" -> "[!/]*) \
 						[ -x "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0 \
 						;; \
 				esac; \
