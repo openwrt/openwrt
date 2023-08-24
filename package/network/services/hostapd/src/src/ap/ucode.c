@@ -7,6 +7,7 @@
 #include "beacon.h"
 #include "hw_features.h"
 #include "ap_drv_ops.h"
+#include "dfs.h"
 #include <libubox/uloop.h>
 
 static uc_resource_type_t *global_type, *bss_type, *iface_type;
@@ -366,6 +367,13 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 out:
 	if (conf->channel)
 		iface->freq = hostapd_hw_get_freq(iface->bss[0], conf->channel);
+
+	if (hostapd_is_dfs_required(iface) && !hostapd_is_dfs_chan_available(iface)) {
+		wpa_printf(MSG_INFO, "DFS CAC required on new channel, restart interface");
+		hostapd_disable_iface(iface);
+		hostapd_enable_iface(iface);
+		return ucv_boolean_new(true);
+	}
 
 	for (i = 0; i < iface->num_bss; i++) {
 		struct hostapd_data *hapd = iface->bss[i];
