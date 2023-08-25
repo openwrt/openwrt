@@ -43,14 +43,7 @@ platform_pre_upgrade() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	buffalo,wxr-5950ax12)
-		CI_KERN_UBIPART="rootfs"
-		CI_ROOT_UBIPART="user_property"
-		buffalo_upgrade_prepare
-		nand_do_flash_file "$1" || nand_do_upgrade_failed
-		nand_do_restore_config || nand_do_upgrade_failed
-		buffalo_upgrade_optvol
-		;;
+	arcadyan,aw1000|\
 	compex,wpq873|\
 	dynalink,dl-wrx36|\
 	edimax,cax1800|\
@@ -59,6 +52,14 @@ platform_do_upgrade() {
 	netgear,wax620|\
 	netgear,wax630)
 		nand_do_upgrade "$1"
+		;;
+	buffalo,wxr-5950ax12)
+		CI_KERN_UBIPART="rootfs"
+		CI_ROOT_UBIPART="user_property"
+		buffalo_upgrade_prepare
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+		nand_do_restore_config || nand_do_upgrade_failed
+		buffalo_upgrade_optvol
 		;;
 	edgecore,eap102)
 		active="$(fw_printenv -n active)"

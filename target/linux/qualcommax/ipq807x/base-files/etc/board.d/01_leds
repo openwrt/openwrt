@@ -6,6 +6,10 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+arcadyan,aw1000)
+	ucidef_set_led_netdev "5g" "5G" "green:5g" "wwan0"
+	ucidef_set_led_netdev "wan" "WAN" "green:internet" "wan"
+	;;
 edgecore,eap102)
 	ucidef_set_led_netdev "wan" "WAN" "green:wanpoe" "wan"
 	;;
