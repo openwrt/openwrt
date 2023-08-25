@@ -8,10 +8,8 @@
 #include "mt7986b.dtsi"
 
 / {
-	#address-cells = <0x2>;
-	#size-cells = <0x2>;
 	model = "Netgear WAX220";
-	compatible = "netgear,wax220", "mediatek,mt7986b-spim-snand-rfb";
+	compatible = "netgear,wax220", "mediatek,mt7986b";
 
 	aliases {
 		serial0 = &uart0;
@@ -106,8 +104,6 @@
 };
 
 &mdio {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	phy6: ethernet-phy@6 {
 		reg = <6>;
 		reset-assert-us = <100000>;
@@ -119,7 +115,6 @@
 		interrupts = <46 IRQ_TYPE_LEVEL_HIGH>;
 	};
 };
-
 
 &pio {
 	spi_flash_pins: spi-flash-pins-33-to-38 {
@@ -145,13 +140,13 @@
 			groups = "wf_2g", "wf_5g";
 		};
 		conf {
-			pins =  "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
-				"WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
-				"WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
-				"WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
-				"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
-				"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
-				"WF1_TOP_CLK", "WF1_TOP_DATA";
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+			       "WF1_TOP_CLK", "WF1_TOP_DATA";
 			drive-strength = <4>;
 		};
 	};
@@ -163,9 +158,9 @@
 		};
 		conf {
 			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
-			 "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
-			 "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
-			 "WF0_TOP_CLK", "WF0_TOP_DATA";
+			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			       "WF0_TOP_CLK", "WF0_TOP_DATA";
 			drive-strength = <4>;
 		};
 	};
@@ -196,29 +191,10 @@
 			#size-cells = <0x1>;
 			compatible = "fixed-partitions";
 
-			partition@5fc0000 {
-				label = "Traffic";
-				reg = <0x5fc0000 0x200000>;
-			};
-
-			partition@63c0000 {
-				label = "NTGRcryptD";
-				reg = <0x63c0000 0x500000>;
-			};
-
-			partition@580000 {
-				label = "ubi";
-				reg = <0x580000 0x5140000>;
-			};
-
-			factory: partition@180000 {
-				label = "Factory";
-				reg = <0x180000 0x200000>;
-			};
-
-			partition@69c0000 {
-				label = "User_data";
-				reg = <0x69c0000 0x640000>;
+			partition@0 {
+				label = "BL2";
+				read-only;
+				reg = <0x0 0x100000>;
 			};
 
 			partition@100000 {
@@ -226,30 +202,9 @@
 				reg = <0x100000 0x80000>;
 			};
 
-			partition@68c0000 {
-				label = "LOG";
-				reg = <0x68c0000 0x100000>;
-			};
-
-			partition@5ac0000 {
-				label = "POT";
-				reg = <0x5ac0000 0x100000>;
-			};
-
-			partition@0 {
-				label = "BL2";
-				read-only;
-				reg = <0x0 0x100000>;
-			};
-
-			partition@5bc0000 {
-				label = "Language";
-				reg = <0x5bc0000 0x400000>;
-			};
-
-			partition@61c0000 {
-				label = "Cert";
-				reg = <0x61c0000 0x100000>;
+			factory: partition@180000 {
+				label = "Factory";
+				reg = <0x180000 0x200000>;
 			};
 
 			partition@380000 {
@@ -257,14 +212,54 @@
 				reg = <0x380000 0x200000>;
 			};
 
+			partition@580000 {
+				label = "ubi";
+				reg = <0x580000 0x5140000>;
+			};
+
 			partition@56c0000 {
 				label = "RAE";
 				reg = <0x56c0000 0x400000>;
 			};
 
+			partition@5ac0000 {
+				label = "POT";
+				reg = <0x5ac0000 0x100000>;
+			};
+
+			partition@5bc0000 {
+				label = "Language";
+				reg = <0x5bc0000 0x400000>;
+			};
+
+			partition@5fc0000 {
+				label = "Traffic";
+				reg = <0x5fc0000 0x200000>;
+			};
+
+			partition@61c0000 {
+				label = "Cert";
+				reg = <0x61c0000 0x100000>;
+			};
+
 			partition@62c0000 {
 				label = "NTGRcryptK";
 				reg = <0x62c0000 0x100000>;
+			};
+
+			partition@63c0000 {
+				label = "NTGRcryptD";
+				reg = <0x63c0000 0x500000>;
+			};
+
+			partition@68c0000 {
+				label = "LOG";
+				reg = <0x68c0000 0x100000>;
+			};
+
+			partition@69c0000 {
+				label = "User_data";
+				reg = <0x69c0000 0x640000>;
 			};
 		};
 	};
