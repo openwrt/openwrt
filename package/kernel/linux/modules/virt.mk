@@ -82,8 +82,6 @@ define KernelPackage/vfio
 	CONFIG_VFIO \
 	CONFIG_VFIO_NOIOMMU=n \
 	CONFIG_VFIO_MDEV=n
-  MODPARAMS.vfio:=\
-	enable_unsafe_noiommu_mode=n
   FILES:= \
 	$(LINUX_DIR)/drivers/vfio/vfio.ko \
 	$(LINUX_DIR)/drivers/vfio/vfio_virqfd.ko \
