@@ -324,60 +324,61 @@ endef
 define U-Boot/mt7988_rfb-spim-nand
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
-  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  BUILD_DEVICES:=mediatek_mt7988a-rfb
   UBOOT_CONFIG:=mt7988_rfb
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7988
-  BL2_DDRTYPE:=ddr4
-  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ddr4
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-comb
 endef
 
 define U-Boot/mt7988_rfb-snand
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
-  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  BUILD_DEVICES:=mediatek_mt7988a-rfb
   UBOOT_CONFIG:=mt7988_rfb
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=snand
   BL2_SOC:=mt7988
-  BL2_DDRTYPE:=ddr4
-  DEPENDS:=+trusted-firmware-a-mt7988-snand-ddr4
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-snand-comb
 endef
 
 define U-Boot/mt7988_rfb-nor
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
-  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  BUILD_DEVICES:=mediatek_mt7988a-rfb
   UBOOT_CONFIG:=mt7988_rfb
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=nor
   BL2_SOC:=mt7988
-  BL2_DDRTYPE:=ddr4
-  DEPENDS:=+trusted-firmware-a-mt7988-nor-ddr4
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-nor-comb
+  FIP_COMPRESS:=1
 endef
 
 define U-Boot/mt7988_rfb-emmc
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
-  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  BUILD_DEVICES:=mediatek_mt7988a-rfb
   UBOOT_CONFIG:=mt7988_rfb
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=emmc
   BL2_SOC:=mt7988
-  BL2_DDRTYPE:=ddr4
-  DEPENDS:=+trusted-firmware-a-mt7988-emmc-ddr4
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-emmc-comb
 endef
 
 define U-Boot/mt7988_rfb-sd
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
-  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  BUILD_DEVICES:=mediatek_mt7988a-rfb
   UBOOT_CONFIG:=mt7988_sd_rfb
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=sdmmc
   BL2_SOC:=mt7988
-  BL2_DDRTYPE:=ddr4
+  BL2_DDRTYPE:=comb
   DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-ddr4
 endef
 

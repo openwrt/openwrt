@@ -310,3 +310,14 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  
  		switch (key) {
  		case BKEY_PLUS:
+--- a/boot/bootflow_menu.c
++++ b/boot/bootflow_menu.c
+@@ -231,7 +231,7 @@ int bootflow_menu_run(struct bootstd_pri
+ 
+ 		key = 0;
+ 		if (ichar) {
+-			key = bootmenu_conv_key(ichar);
++			key = bootmenu_conv_key(NULL, ichar, NULL);
+ 			if (key == BKEY_NONE)
+ 				key = ichar;
+ 		}
