@@ -74,6 +74,9 @@ ipq40xx_setup_interfaces()
 	devolo,magic-2-wifi-next)
 		ucidef_set_interface_lan "lan1 lan2 ghn"
 		;;
+	extreme-networks,ws-ap391x)
+		ucidef_set_interfaces_lan_wan "sw-eth1 sw-eth2 sw-eth3 sw-eth5" "sw-eth4"
+		;;
 	linksys,whw01)
 		ucidef_set_interface_lan "eth1 eth2"
 		;;
