@@ -1,17 +1,19 @@
-From 45b575fd9e6a455090820248bf1b98b1f2c7b6c8 Mon Sep 17 00:00:00 2001
+From db797ae0542220a98658229397da464c383c991c Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
-Date: Tue, 7 Mar 2023 15:56:00 +0000
-Subject: [PATCH 5/7] net: ethernet: mtk_eth_soc: convert caps in mtk_soc_data
- struct to u64
+Date: Tue, 25 Jul 2023 01:53:13 +0100
+Subject: [PATCH 103/250] net: ethernet: mtk_eth_soc: convert caps in
+ mtk_soc_data struct to u64
 
 This is a preliminary patch to introduce support for MT7988 SoC.
 
 Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://lore.kernel.org/r/9499ac3670b2fc5b444404b84e8a4a169beabbf2.1690246066.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
- drivers/net/ethernet/mediatek/mtk_eth_path.c | 22 +++----
- drivers/net/ethernet/mediatek/mtk_eth_soc.h  | 62 ++++++++++----------
- 2 files changed, 42 insertions(+), 42 deletions(-)
+ drivers/net/ethernet/mediatek/mtk_eth_path.c | 22 ++++----
+ drivers/net/ethernet/mediatek/mtk_eth_soc.h  | 56 ++++++++++----------
+ 2 files changed, 39 insertions(+), 39 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_path.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_path.c
@@ -111,7 +113,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  				MTK_ETH_PATH_GMAC2_RGMII;
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -878,44 +878,44 @@ enum mkt_eth_capabilities {
+@@ -863,41 +863,41 @@ enum mkt_eth_capabilities {
  };
  
  /* Supported hardware group on SoCs */
@@ -127,9 +129,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 -#define MTK_SHARED_INT		BIT(MTK_SHARED_INT_BIT)
 -#define MTK_TRGMII_MT7621_CLK	BIT(MTK_TRGMII_MT7621_CLK_BIT)
 -#define MTK_QDMA		BIT(MTK_QDMA_BIT)
--#define MTK_NETSYS_V1		BIT(MTK_NETSYS_V1_BIT)
--#define MTK_NETSYS_V2		BIT(MTK_NETSYS_V2_BIT)
--#define MTK_NETSYS_V3		BIT(MTK_NETSYS_V3_BIT)
 -#define MTK_SOC_MT7628		BIT(MTK_SOC_MT7628_BIT)
 -#define MTK_RSTCTRL_PPE1	BIT(MTK_RSTCTRL_PPE1_BIT)
 -#define MTK_U3_COPHY_V2		BIT(MTK_U3_COPHY_V2_BIT)
@@ -145,9 +144,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#define MTK_SHARED_INT		BIT_ULL(MTK_SHARED_INT_BIT)
 +#define MTK_TRGMII_MT7621_CLK	BIT_ULL(MTK_TRGMII_MT7621_CLK_BIT)
 +#define MTK_QDMA		BIT_ULL(MTK_QDMA_BIT)
-+#define MTK_NETSYS_V1		BIT_ULL(MTK_NETSYS_V1_BIT)
-+#define MTK_NETSYS_V2		BIT_ULL(MTK_NETSYS_V2_BIT)
-+#define MTK_NETSYS_V3		BIT_ULL(MTK_NETSYS_V3_BIT)
 +#define MTK_SOC_MT7628		BIT_ULL(MTK_SOC_MT7628_BIT)
 +#define MTK_RSTCTRL_PPE1	BIT_ULL(MTK_RSTCTRL_PPE1_BIT)
 +#define MTK_U3_COPHY_V2		BIT_ULL(MTK_U3_COPHY_V2_BIT)
@@ -186,7 +182,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #define MTK_GMAC1_RGMII		(MTK_ETH_PATH_GMAC1_RGMII | MTK_RGMII)
  #define MTK_GMAC1_TRGMII	(MTK_ETH_PATH_GMAC1_TRGMII | MTK_TRGMII)
-@@ -1071,7 +1071,7 @@ struct mtk_reg_map {
+@@ -1042,7 +1042,7 @@ struct mtk_reg_map {
  struct mtk_soc_data {
  	const struct mtk_reg_map *reg_map;
  	u32             ana_rgc3;

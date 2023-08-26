@@ -63,8 +63,8 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
 +
  			if (!eth->ppe[i]) {
  				err = -ENOMEM;
- 				goto err_free_dev;
-@@ -4763,6 +4763,7 @@ static const struct mtk_soc_data mt7622_
+ 				goto err_deinit_ppe;
+@@ -4762,6 +4762,7 @@ static const struct mtk_soc_data mt7622_
  	.required_pctl = false,
  	.offload_version = 2,
  	.hash_offset = 2,
@@ -72,7 +72,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  	.foe_entry_size = sizeof(struct mtk_foe_entry) - 16,
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
-@@ -4800,6 +4801,7 @@ static const struct mtk_soc_data mt7629_
+@@ -4799,6 +4800,7 @@ static const struct mtk_soc_data mt7629_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7629_CLKS_BITMAP,
  	.required_pctl = false,
@@ -80,7 +80,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
-@@ -4820,6 +4822,7 @@ static const struct mtk_soc_data mt7981_
+@@ -4819,6 +4821,7 @@ static const struct mtk_soc_data mt7981_
  	.offload_version = 2,
  	.hash_offset = 4,
  	.foe_entry_size = sizeof(struct mtk_foe_entry),
@@ -88,7 +88,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma_v2),
  		.rxd_size = sizeof(struct mtk_rx_dma_v2),
-@@ -4840,6 +4843,7 @@ static const struct mtk_soc_data mt7986_
+@@ -4839,6 +4842,7 @@ static const struct mtk_soc_data mt7986_
  	.offload_version = 2,
  	.hash_offset = 4,
  	.foe_entry_size = sizeof(struct mtk_foe_entry),
@@ -98,7 +98,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  		.rxd_size = sizeof(struct mtk_rx_dma_v2),
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-@@ -1014,6 +1014,8 @@ struct mtk_reg_map {
+@@ -1008,6 +1008,8 @@ struct mtk_reg_map {
   *				the extra setup for those pins used by GMAC.
   * @hash_offset			Flow table hash offset.
   * @foe_entry_size		Foe table entry size.
@@ -107,7 +107,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
   * @txd_size			Tx DMA descriptor size.
   * @rxd_size			Rx DMA descriptor size.
   * @rx_irq_done_mask		Rx irq done register mask.
-@@ -1031,6 +1033,7 @@ struct mtk_soc_data {
+@@ -1025,6 +1027,7 @@ struct mtk_soc_data {
  	u8		hash_offset;
  	u16		foe_entry_size;
  	netdev_features_t hw_features;
@@ -166,10 +166,10 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  static void mtk_ppe_cache_clear(struct mtk_ppe *ppe)
  {
  	ppe_set(ppe, MTK_PPE_CACHE_CTL, MTK_PPE_CACHE_CTL_CLEAR);
-@@ -464,6 +506,13 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
- 		hwe->ib1 &= ~MTK_FOE_IB1_STATE;
+@@ -465,6 +507,13 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
  		hwe->ib1 |= FIELD_PREP(MTK_FOE_IB1_STATE, MTK_FOE_STATE_INVALID);
  		dma_wmb();
+ 		mtk_ppe_cache_clear(ppe);
 +		if (ppe->accounting) {
 +			struct mtk_foe_accounting *acct;
 +
@@ -180,7 +180,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  	}
  	entry->hash = 0xffff;
  
-@@ -571,6 +620,9 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
+@@ -572,6 +621,9 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
  	wmb();
  	hwe->ib1 = entry->ib1;
  
@@ -190,7 +190,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  	dma_wmb();
  
  	mtk_ppe_cache_clear(ppe);
-@@ -762,11 +814,39 @@ int mtk_ppe_prepare_reset(struct mtk_ppe
+@@ -763,11 +815,39 @@ int mtk_ppe_prepare_reset(struct mtk_ppe
  	return mtk_ppe_wait_busy(ppe);
  }
  
@@ -232,7 +232,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  	struct mtk_ppe *ppe;
  	u32 foe_flow_size;
  	void *foe;
-@@ -783,7 +863,8 @@ struct mtk_ppe *mtk_ppe_init(struct mtk_
+@@ -784,7 +864,8 @@ struct mtk_ppe *mtk_ppe_init(struct mtk_
  	ppe->base = base;
  	ppe->eth = eth;
  	ppe->dev = dev;
@@ -242,9 +242,9 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  
  	foe = dmam_alloc_coherent(ppe->dev,
  				  MTK_PPE_ENTRIES * soc->foe_entry_size,
-@@ -799,6 +880,23 @@ struct mtk_ppe *mtk_ppe_init(struct mtk_
+@@ -800,6 +881,23 @@ struct mtk_ppe *mtk_ppe_init(struct mtk_
  	if (!ppe->foe_flow)
- 		return NULL;
+ 		goto err_free_l2_flows;
  
 +	if (accounting) {
 +		mib = dmam_alloc_coherent(ppe->dev, MTK_PPE_ENTRIES * sizeof(*mib),
@@ -266,7 +266,7 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
  	mtk_ppe_debugfs_init(ppe, index);
  
  	return ppe;
-@@ -913,6 +1011,16 @@ void mtk_ppe_start(struct mtk_ppe *ppe)
+@@ -929,6 +1027,16 @@ void mtk_ppe_start(struct mtk_ppe *ppe)
  		ppe_w32(ppe, MTK_PPE_DEFAULT_CPU_PORT1, 0xcb777);
  		ppe_w32(ppe, MTK_PPE_SBW_CTRL, 0x7f);
  	}
@@ -335,10 +335,10 @@ v2: fix wrong variable name in return value check spotted by Denis Kirjanov
 -struct mtk_ppe *mtk_ppe_init(struct mtk_eth *eth, void __iomem *base,
 -			     int version, int index);
 +struct mtk_ppe *mtk_ppe_init(struct mtk_eth *eth, void __iomem *base, int index);
+ void mtk_ppe_deinit(struct mtk_eth *eth);
  void mtk_ppe_start(struct mtk_ppe *ppe);
  int mtk_ppe_stop(struct mtk_ppe *ppe);
- int mtk_ppe_prepare_reset(struct mtk_ppe *ppe);
-@@ -358,5 +376,7 @@ int mtk_foe_entry_commit(struct mtk_ppe
+@@ -359,5 +377,7 @@ int mtk_foe_entry_commit(struct mtk_ppe
  void mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
  int mtk_foe_entry_idle_time(struct mtk_ppe *ppe, struct mtk_flow_entry *entry);
  int mtk_ppe_debugfs_init(struct mtk_ppe *ppe, int index);
