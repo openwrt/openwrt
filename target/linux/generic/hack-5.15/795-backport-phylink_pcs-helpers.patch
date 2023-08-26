@@ -17,7 +17,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/include/linux/phylink.h
 +++ b/include/linux/phylink.h
-@@ -584,10 +584,37 @@ int phylink_speed_up(struct phylink *pl)
+@@ -600,10 +600,37 @@ int phylink_speed_up(struct phylink *pl)
  #define phylink_test(bm, mode)	__phylink_do_bit(test_bit, bm, mode)
  
  void phylink_set_port_modes(unsigned long *bits);
@@ -57,7 +57,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  					  const unsigned long *advertising);
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -885,7 +885,6 @@ static int phylink_change_inband_advert(
+@@ -931,7 +931,6 @@ static int phylink_change_inband_advert(
  
  	return 0;
  }
@@ -65,7 +65,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void phylink_mac_pcs_get_state(struct phylink *pl,
  				      struct phylink_link_state *state)
  {
-@@ -2966,6 +2965,52 @@ void phylink_mii_c22_pcs_get_state(struc
+@@ -3014,6 +3013,52 @@ void phylink_mii_c22_pcs_get_state(struc
  EXPORT_SYMBOL_GPL(phylink_mii_c22_pcs_get_state);
  
  /**
@@ -118,7 +118,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * phylink_mii_c22_pcs_set_advertisement() - configure the clause 37 PCS
   *	advertisement
   * @pcs: a pointer to a &struct mdio_device.
-@@ -3037,6 +3082,46 @@ int phylink_mii_c22_pcs_set_advertisemen
+@@ -3085,6 +3130,46 @@ int phylink_mii_c22_pcs_set_advertisemen
  EXPORT_SYMBOL_GPL(phylink_mii_c22_pcs_set_advertisement);
  
  /**

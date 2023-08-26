@@ -13,7 +13,7 @@ Signed-off-by: Bhaskar Upadhaya <Bhaskar.Upadhaya@nxp.com>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -393,6 +393,7 @@ void phylink_get_linkmodes(unsigned long
+@@ -398,6 +398,7 @@ void phylink_get_linkmodes(unsigned long
  		caps |= MAC_1000FD;
  		break;
  
@@ -21,7 +21,7 @@ Signed-off-by: Bhaskar Upadhaya <Bhaskar.Upadhaya@nxp.com>
  	case PHY_INTERFACE_MODE_2500BASEX:
  		caps |= MAC_2500FD;
  		break;
-@@ -646,6 +647,10 @@ static int phylink_parse_mode(struct phy
+@@ -651,6 +652,10 @@ static int phylink_parse_mode(struct phy
  			phylink_set(pl->supported, 2500baseX_Full);
  			break;
  
