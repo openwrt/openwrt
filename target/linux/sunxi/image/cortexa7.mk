@@ -276,7 +276,7 @@ define Device/myir_myd-yt113x
   SOC := sun8i-t113s
   IMAGES += emmc.img.gz
   IMAGE/sdcard.img.gz := sunxi-sdcard | append-metadata | gzip
-  IMAGE/emmc.img.gz := boot-scr-emmc | sunxi-emmc | append-metadata | gzip
+  IMAGE/emmc.img.gz := sunxi-emmc-uboot-copy | boot-scr-emmc | sunxi-emmc | append-metadata | gzip
 endef
 TARGET_DEVICES += myir_myd-yt113x
 

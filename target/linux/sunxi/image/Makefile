@@ -48,6 +48,10 @@ define Build/sunxi-emmc
 	rm -f $@.boot
 endef
 
+define Build/sunxi-emmc-uboot-copy
+	$(CP) $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-u-boot-with-spl.bin $(BIN_DIR)/
+endef
+
 define Device/Default
   PROFILES := Default
   KERNEL_NAME := zImage
