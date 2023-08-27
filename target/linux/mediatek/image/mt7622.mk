@@ -101,7 +101,7 @@ define Device/buffalo_wsr-2533dhp2
   DEVICE_DTS := mt7622-buffalo-wsr-2533dhp2
   DEVICE_DTS_DIR := ../dts
   IMAGE_SIZE := 59392k
-  KERNEL_SIZE := 4096k
+  KERNEL_SIZE := 6144k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   SUBPAGESIZE := 512
@@ -123,6 +123,10 @@ define Device/buffalo_wsr-2533dhp2
 	buffalo-trx 0x32504844 $(KDIR)/tmp/$$(DEVICE_NAME).null | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
   DEVICE_PACKAGES := kmod-mt7615-firmware swconfig
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Partition table has been changed due to kernel size restrictions. \
+	Please upgrade via sysupgrade with factory-uboot.bin image and '-F' option. \
+	(Warning: your configurations will be erased!)
 endef
 TARGET_DEVICES += buffalo_wsr-2533dhp2
 
