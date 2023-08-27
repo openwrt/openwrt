@@ -124,10 +124,34 @@ define U-Boot/mt7622_bananapi_bpi-r64-snand
   DEPENDS:=+trusted-firmware-a-mt7622-snand-2ddr
 endef
 
-define U-Boot/mt7622_ubnt_unifi-6-lr
+define U-Boot/mt7622_ubnt_unifi-6-lr-v1
   NAME:=Ubiquiti UniFi 6 LR
-  UBOOT_CONFIG:=mt7622_ubnt_unifi-6-lr
-  BUILD_DEVICES:=ubnt_unifi-6-lr-v1-ubootmod ubnt_unifi-6-lr-v2-ubootmod
+  UBOOT_CONFIG:=mt7622_ubnt_unifi-6-lr-v1
+  BUILD_DEVICES:=ubnt_unifi-6-lr-v1-ubootmod
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_DDRBLOB:=2
+  DEPENDS:=+trusted-firmware-a-mt7622-nor-2ddr
+  FIP_COMPRESS:=1
+endef
+
+define U-Boot/mt7622_ubnt_unifi-6-lr-v2
+  NAME:=Ubiquiti UniFi 6 LR v2
+  UBOOT_CONFIG:=mt7622_ubnt_unifi-6-lr-v2
+  BUILD_DEVICES:=ubnt_unifi-6-lr-v2-ubootmod
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_DDRBLOB:=2
+  DEPENDS:=+trusted-firmware-a-mt7622-nor-2ddr
+  FIP_COMPRESS:=1
+endef
+
+define U-Boot/mt7622_ubnt_unifi-6-lr-v3
+  NAME:=Ubiquiti UniFi 6 LR v3
+  UBOOT_CONFIG:=mt7622_ubnt_unifi-6-lr-v3
+  BUILD_DEVICES:=ubnt_unifi-6-lr-v3-ubootmod
   BUILD_SUBTARGET:=mt7622
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=nor
@@ -392,7 +416,9 @@ UBOOT_TARGETS := \
 	mt7622_bananapi_bpi-r64-snand \
 	mt7622_linksys_e8450 \
 	mt7622_rfb1 \
-	mt7622_ubnt_unifi-6-lr \
+	mt7622_ubnt_unifi-6-lr-v1 \
+	mt7622_ubnt_unifi-6-lr-v2 \
+	mt7622_ubnt_unifi-6-lr-v3 \
 	mt7623n_bpir2 \
 	mt7623a_unielec_u7623 \
 	mt7628_rfb \
