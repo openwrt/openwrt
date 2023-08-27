@@ -6,19 +6,24 @@ define Image/Prepare
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
 endef
 
-define Build/buffalo-kernel-trx
+define Build/buffalo-trx
 	$(eval magic=$(word 1,$(1)))
-	$(eval dummy=$(word 2,$(1)))
+	$(eval kern_bin=$(if $(1),$(IMAGE_KERNEL),$@))
+	$(eval rtfs_bin=$(word 2,$(1)))
+	$(eval apnd_bin=$(word 3,$(1)))
 	$(eval kern_size=$(if $(KERNEL_SIZE),$(KERNEL_SIZE),0x400000))
 
-	$(if $(dummy),touch $(dummy))
+	$(if $(rtfs_bin),touch $(rtfs_bin))
 	$(STAGING_DIR_HOST)/bin/otrx create $@.new \
 		$(if $(magic),-M $(magic),) \
-		-f $@ \
-		$(if $(dummy),\
+		-f $(kern_bin) \
+		$(if $(rtfs_bin),\
 			-a 0x20000 \
 			-b $$(( $(subst k, * 1024,$(kern_size)) )) \
-			-f $(dummy),)
+			-f $(rtfs_bin),) \
+		$(if $(apnd_bin),\
+			-A $(apnd_bin) \
+			-a 0x20000)
 	mv $@.new $@
 endef
 
@@ -49,19 +54,6 @@ define Build/mt7622-gpt
 		)
 	cat $@.tmp >> $@
 	rm $@.tmp
-endef
-
-define Build/trx-nand
-	# kernel: always use 4 MiB (-28 B or TRX header) to allow upgrades even
-	#	  if it grows up between releases
-	# root: UBI with one extra block containing UBI mark to trigger erasing
-	#	rest of partition
-	$(STAGING_DIR_HOST)/bin/otrx create $@.new \
-		-M 0x32504844 \
-		-f $(IMAGE_KERNEL) -a 0x20000 -b 0x400000 \
-		-f $@ \
-		-A $(KDIR)/ubi_mark -a 0x20000
-	mv $@.new $@
 endef
 
 define Device/bananapi_bpi-r64
@@ -120,13 +112,15 @@ define Device/buffalo_wsr-2533dhp2
   IMAGES += factory.bin factory-uboot.bin
   KERNEL_INITRAMFS := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
-	buffalo-kernel-trx
-  IMAGE/factory.bin := append-ubi | trx-nand | \
+	buffalo-trx
+  IMAGE/factory.bin := append-ubi | \
+	buffalo-trx 0x32504844 $$$$@ $(KDIR)/ubi_mark | \
 	buffalo-enc WSR-2533DHP2 $$(BUFFALO_TAG_VERSION) -l | \
 	buffalo-tag-dhp WSR-2533DHP2 JP JP | buffalo-enc-tag -l | buffalo-dhp-image
-  IMAGE/factory-uboot.bin := append-ubi | trx-nand
-  IMAGE/sysupgrade.bin := append-kernel | \
-	buffalo-kernel-trx 0x32504844 $(KDIR)/tmp/$$(DEVICE_NAME).null | \
+  IMAGE/factory-uboot.bin := append-ubi | \
+	buffalo-trx 0x32504844 $$$$@ $(KDIR)/ubi_mark
+  IMAGE/sysupgrade.bin := \
+	buffalo-trx 0x32504844 $(KDIR)/tmp/$$(DEVICE_NAME).null | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
   DEVICE_PACKAGES := kmod-mt7615-firmware swconfig
 endef
