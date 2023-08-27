@@ -193,13 +193,6 @@
 		};
 	};
 
-	pwm7_pins: pwm1-2-pins {
-		mux {
-			function = "pwm";
-			groups = "pwm_ch7_2";
-		};
-	};
-
 	uart0_pins: uart0-pins {
 		mux {
 			function = "uart";
@@ -330,8 +323,6 @@
 };
 
 &pwm {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm7_pins>;
 	status = "okay";
 };
 
