@@ -403,7 +403,7 @@ define U-Boot/mt7988_rfb-sd
   BL2_BOOTDEV:=sdmmc
   BL2_SOC:=mt7988
   BL2_DDRTYPE:=comb
-  DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-comb
 endef
 
 UBOOT_TARGETS := \
