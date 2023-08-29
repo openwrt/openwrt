@@ -73,6 +73,13 @@ define U-Boot/rock64-rk3328
     pine64_rock64
 endef
 
+define U-Boot/rock-pi-e-rk3328
+  $(U-Boot/rk3328/Default)
+  NAME:=ROCK Pi E
+  BUILD_DEVICES:= \
+    radxa_rock-pi-e
+endef
+
 # RK3399 boards
 
 define U-Boot/rk3399/Default
@@ -119,7 +126,8 @@ UBOOT_TARGETS := \
   orangepi-r1-plus-rk3328 \
   orangepi-r1-plus-lts-rk3328 \
   roc-cc-rk3328 \
-  rock64-rk3328
+  rock64-rk3328 \
+  rock-pi-e-rk3328
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
