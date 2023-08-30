@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/mesh.c
 +++ b/net/mac80211/mesh.c
-@@ -703,6 +703,9 @@ bool ieee80211_mesh_xmit_fast(struct iee
+@@ -765,6 +765,9 @@ bool ieee80211_mesh_xmit_fast(struct iee
  			      struct sk_buff *skb, u32 ctrl_flags)
  {
  	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_mesh_fast_tx *entry;
  	struct ieee80211s_hdr *meshhdr;
  	u8 sa[ETH_ALEN] __aligned(2);
-@@ -738,7 +741,10 @@ bool ieee80211_mesh_xmit_fast(struct iee
+@@ -800,7 +803,10 @@ bool ieee80211_mesh_xmit_fast(struct iee
  			return false;
  	}
  
@@ -38,7 +38,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/mesh.h
 +++ b/net/mac80211/mesh.h
-@@ -133,9 +133,33 @@ struct mesh_path {
+@@ -134,9 +134,33 @@ struct mesh_path {
  #define MESH_FAST_TX_CACHE_TIMEOUT		8000 /* msecs */
  
  /**
@@ -73,7 +73,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @fast_tx: base fast_tx data
   * @hdr: cached mesh and rfc1042 headers
   * @hdrlen: length of mesh + rfc1042
-@@ -146,7 +170,7 @@ struct mesh_path {
+@@ -147,7 +171,7 @@ struct mesh_path {
   */
  struct ieee80211_mesh_fast_tx {
  	struct rhash_head rhash;
@@ -82,7 +82,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	struct ieee80211_fast_tx fast_tx;
  	u8 hdr[sizeof(struct ieee80211s_hdr) + sizeof(rfc1042_header)];
-@@ -329,7 +353,8 @@ void mesh_path_tx_root_frame(struct ieee
+@@ -334,7 +358,8 @@ void mesh_path_tx_root_frame(struct ieee
  
  bool mesh_action_is_path_sel(struct ieee80211_mgmt *mgmt);
  struct ieee80211_mesh_fast_tx *
@@ -189,7 +189,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -2726,7 +2726,10 @@ ieee80211_rx_mesh_fast_forward(struct ie
+@@ -2727,7 +2727,10 @@ ieee80211_rx_mesh_fast_forward(struct ie
  			       struct sk_buff *skb, int hdrlen)
  {
  	struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
@@ -201,7 +201,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211s_hdr *mesh_hdr;
  	struct tid_ampdu_tx *tid_tx;
  	struct sta_info *sta;
-@@ -2735,9 +2738,13 @@ ieee80211_rx_mesh_fast_forward(struct ie
+@@ -2736,9 +2739,13 @@ ieee80211_rx_mesh_fast_forward(struct ie
  
  	mesh_hdr = (struct ieee80211s_hdr *)(skb->data + sizeof(eth));
  	if ((mesh_hdr->flags & MESH_FLAGS_AE) == MESH_FLAGS_AE_A5_A6)

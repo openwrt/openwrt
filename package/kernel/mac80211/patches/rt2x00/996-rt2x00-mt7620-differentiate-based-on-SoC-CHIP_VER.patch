@@ -192,7 +192,7 @@
  
  	/* BBP for G band GLRT function (BBP_128 ~ BBP_221) */
  	rt2800_bbp_glrt_write(rt2x00dev, 0, 0x00);
-@@ -10408,31 +10436,36 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10406,31 +10434,36 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write(rt2x00dev, 42, 0x5B);
  	rt2800_rfcsr_write(rt2x00dev, 43, 0x00);
  
@@ -254,7 +254,7 @@
  
  	/* Initialize RF channel register to default value */
  	rt2800_rfcsr_write_chanreg(rt2x00dev, 0, 0x03);
-@@ -10498,63 +10531,71 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10496,63 +10529,71 @@ static void rt2800_init_rfcsr_6352(struc
  
  	rt2800_rfcsr_write_bank(rt2x00dev, 6, 45, 0xC5);
  
@@ -383,7 +383,7 @@
  
  	/* Initialize RF DC calibration register to default value */
  	rt2800_rfcsr_write_dccal(rt2x00dev, 0, 0x47);
-@@ -10617,12 +10658,17 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10615,12 +10656,17 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write_dccal(rt2x00dev, 62, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 63, 0x00);
  

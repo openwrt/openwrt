@@ -227,7 +227,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	rt2800_register_write(rt2x00dev, MAC_SYS_CTRL, maccfg);
  
  	if (unlikely(rt2800_wait_bbp_rf_ready(rt2x00dev, MAC_STATUS_CFG_BBP_RF_BUSY_RX)))
-@@ -10688,30 +10617,143 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10686,30 +10615,143 @@ static void rt2800_init_rfcsr_6352(struc
  		rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
  		rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
  	}
@@ -385,7 +385,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	}
  }
  
-@@ -10804,6 +10846,10 @@ int rt2800_enable_radio(struct rt2x00_de
+@@ -10802,6 +10844,10 @@ int rt2800_enable_radio(struct rt2x00_de
  	rt2800_init_bbp(rt2x00dev);
  	rt2800_init_rfcsr(rt2x00dev);
  
