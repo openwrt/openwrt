@@ -26,7 +26,7 @@ drv_mac80211_init_device_config() {
 	config_add_string tx_burst
 	config_add_string distance
 	config_add_int beacon_int chanbw frag rts
-	config_add_int rxantenna txantenna antenna_gain txpower min_tx_power
+	config_add_int rxantenna txantenna txpower min_tx_power
 	config_add_boolean noscan ht_coex acs_exclude_dfs background_radar
 	config_add_array ht_capab
 	config_add_array channels
@@ -1080,7 +1080,7 @@ drv_mac80211_setup() {
 	json_get_vars \
 		phy macaddr path \
 		country chanbw distance \
-		txpower antenna_gain \
+		txpower \
 		rxantenna txantenna \
 		frag rts beacon_int:100 htmode
 	json_get_values basic_rate_list basic_rate
@@ -1127,7 +1127,6 @@ drv_mac80211_setup() {
 	set_default rxantenna 0xffffffff
 	set_default txantenna 0xffffffff
 	set_default distance 0
-	set_default antenna_gain 0
 
 	[ "$txantenna" = "all" ] && txantenna=0xffffffff
 	[ "$rxantenna" = "all" ] && rxantenna=0xffffffff
@@ -1136,7 +1135,6 @@ drv_mac80211_setup() {
 	wireless_set_data phy="$phy" txantenna="$txantenna" rxantenna="$rxantenna"
 
 	iw phy "$phy" set antenna $txantenna $rxantenna >/dev/null 2>&1
-	iw phy "$phy" set antenna_gain $antenna_gain >/dev/null 2>&1
 	iw phy "$phy" set distance "$distance" >/dev/null 2>&1
 
 	if [ -n "$txpower" ]; then
