@@ -90,6 +90,21 @@ define Build/zyxel-nwa-fit-filogic
 	@mv $@.new $@
 endef
 
+define Build/cetron-header
+	$(eval magic=$(word 1,$(1)))
+	$(eval model=$(word 2,$(1)))
+	( \
+		dd if=/dev/zero bs=856 count=1 2>/dev/null; \
+		printf "$(model)," | dd bs=128 count=1 conv=sync 2>/dev/null; \
+		md5sum $@ | cut -f1 -d" " | dd bs=32 count=1 2>/dev/null; \
+		printf "$(magic)" | dd bs=4 count=1 conv=sync 2>/dev/null; \
+		cat $@; \
+	) > $@.tmp
+	fw_crc=$$(gzip -c $@.tmp | tail -c 8 | od -An -N4 -tx4 --endian little | tr -d ' \n'); \
+	printf "$$(echo $$fw_crc | sed 's/../\\x&/g')" | cat - $@.tmp > $@
+	rm $@.tmp
+endef
+
 define Device/asus_tuf-ax4200
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := TUF-AX4200
@@ -171,6 +186,23 @@ define Device/bananapi_bpi-r3
   DEVICE_COMPAT_MESSAGE := Device tree overlay mechanism needs bootloader update
 endef
 TARGET_DEVICES += bananapi_bpi-r3
+
+define Device/cetron_ct3003
+  DEVICE_VENDOR := Cetron
+  DEVICE_MODEL := CT3003
+  DEVICE_DTS := mt7981b-cetron-ct3003
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-rfb
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/sysupgrade.bin) | cetron-header rd30 CT3003
+endef
+TARGET_DEVICES += cetron_ct3003
 
 define Device/cudy_wr3000-v1
   DEVICE_VENDOR := Cudy
