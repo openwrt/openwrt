@@ -388,7 +388,7 @@ define Device/devolo_magic-2-wifi-next
 	DEFAULT := n
 endef
 # Missing DSA Setup
-#TARGET_DEVICES += devolo_magic-2-wifi-next
+TARGET_DEVICES += devolo_magic-2-wifi-next
 
 define Device/dlink_dap-2610
 	$(call Device/FitImageLzma)
