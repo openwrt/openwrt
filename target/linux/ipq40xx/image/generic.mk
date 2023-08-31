@@ -371,7 +371,7 @@ endef
 TARGET_DEVICES += compex_wpj428
 
 define Device/devolo_magic-2-wifi-next
-	$(call Device/FitImage)
+	$(call Device/FitzImage)
 	DEVICE_VENDOR := devolo
 	DEVICE_MODEL := Magic 2 WiFi next
 	SOC := qcom-ipq4018
@@ -387,7 +387,6 @@ define Device/devolo_magic-2-wifi-next
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
 	DEFAULT := n
 endef
-# Missing DSA Setup
 TARGET_DEVICES += devolo_magic-2-wifi-next
 
 define Device/dlink_dap-2610
