@@ -161,6 +161,9 @@ sub mconf_depends {
 		my $condition = $parent_condition;
 
 		next if $condition eq $depend;
+		next if $seen->{"$parent_condition:$depend"};
+		next if $seen->{":$depend"};
+		$seen->{"$parent_condition:$depend"} = 1;
 		if ($depend =~ /^(.+):(.+)$/) {
 			if ($1 ne "PACKAGE_$pkgname") {
 				if ($condition) {
@@ -171,9 +174,6 @@ sub mconf_depends {
 			}
 			$depend = $2;
 		}
-		next if $seen->{"$parent_condition:$depend"};
-		next if $seen->{":$depend"};
-		$seen->{"$parent_condition:$depend"} = 1;
 		if ($flags =~ /\+/) {
 			my $vdep = $vpackage{$depend};
 			if ($vdep) {
