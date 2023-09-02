@@ -211,12 +211,13 @@ uc_wpas_iface_status(uc_vm_t *vm, size_t nargs)
 		ie = wpa_bss_get_ie(bss, WLAN_EID_HT_OPERATION);
 		if (ie && ie[1] >= 2) {
 			const struct ieee80211_ht_operation *ht_oper;
+			int sec;
 
 			ht_oper = (const void *) (ie + 2);
-			if (ht_oper->ht_param & HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE)
+			sec = ht_oper->ht_param & HT_INFO_HT_PARAM_SECONDARY_CHNL_OFF_MASK;
+			if (sec == HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE)
 				sec_chan = 1;
-			else if (ht_oper->ht_param &
-				 HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW)
+			else if (sec == HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW)
 				sec_chan = -1;
 		}
 
