@@ -129,7 +129,10 @@ uc_value_t *uc_wpa_freq_info(uc_vm_t *vm, size_t nargs)
 	tmp_channel &= ~((8 << width) - 1);
 	center_idx = tmp_channel + center_ofs + (4 << width) - 1;
 
-	ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(center_idx));
+	if (freq_val < 3000)
+		ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(0));
+	else
+		ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(center_idx));
 	center_idx = (center_idx - channel) * 5 + freq_val;
 	ucv_object_add(ret, "center_freq1", ucv_int64_new(center_idx));
 

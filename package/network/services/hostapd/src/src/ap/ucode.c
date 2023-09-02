@@ -333,10 +333,15 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 		conf->channel = intval;
 	if ((intval = ucv_int64_get(ucv_object_get(info, "sec_channel", NULL))) && !errno)
 		conf->secondary_channel = intval;
-	if ((intval = ucv_int64_get(ucv_object_get(info, "center_seg0_idx", NULL))) && !errno)
+
+	intval = ucv_int64_get(ucv_object_get(info, "center_seg0_idx", NULL));
+	if (!errno)
 		hostapd_set_oper_centr_freq_seg0_idx(conf, intval);
-	if ((intval = ucv_int64_get(ucv_object_get(info, "center_seg1_idx", NULL))) && !errno)
+
+	intval = ucv_int64_get(ucv_object_get(info, "center_seg1_idx", NULL));
+	if (!errno)
 		hostapd_set_oper_centr_freq_seg1_idx(conf, intval);
+
 	intval = ucv_int64_get(ucv_object_get(info, "oper_chwidth", NULL));
 	if (!errno)
 		hostapd_set_oper_chwidth(conf, intval);
