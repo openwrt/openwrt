@@ -297,6 +297,8 @@
 		interrupt-parent = <&gpio0>;
 		interrupts = <20 IRQ_TYPE_LEVEL_LOW>;
 		reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <10000>;
 		/*
 		 * LINK/ACT   (Green): LED[0], Active Low
 		 * SPEED 100M (Amber): LED[1], Active High
@@ -313,6 +315,8 @@
 		interrupt-parent = <&gpio1>;
 		interrupts = <9 IRQ_TYPE_LEVEL_LOW>;
 		reset-gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <10000>;
 		/*
 		 * LINK/ACT   (Green): LED[0], Active Low
 		 * SPEED 100M (Amber): LED[1], Active High
