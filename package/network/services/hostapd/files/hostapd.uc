@@ -31,7 +31,7 @@ function iface_remove(cfg)
 		wdev_remove(bss.ifname);
 }
 
-function iface_gen_config(phy, config)
+function iface_gen_config(phy, config, start_disabled)
 {
 	let str = `data:
 ${join("\n", config.radio.data)}
@@ -46,9 +46,66 @@ channel=${config.radio.channel}
 ${type}=${bss.ifname}
 ${join("\n", bss.data)}
 `;
+		if (start_disabled)
+			str += `
+start_disabled=1
+`;
 	}
 
 	return str;
+}
+
+function iface_freq_info(iface, config, params)
+{
+	let freq = params.frequency;
+	if (!freq)
+		return null;
+
+	let sec_offset = params.sec_chan_offset;
+	if (sec_offset != -1 && sec_offset != 1)
+		sec_offset = 0;
+
+	let width = 0;
+	for (let line in config.radio.data) {
+		if (!sec_offset && match(line, /^ht_capab=.*HT40/)) {
+			sec_offset = null; // auto-detect
+			continue;
+		}
+
+		let val = match(line, /^(vht_oper_chwidth|he_oper_chwidth)=(\d+)/);
+		if (!val)
+			continue;
+
+		val = int(val[2]);
+		if (val > width)
+			width = val;
+	}
+
+	if (freq < 4000)
+		width = 0;
+
+	return hostapd.freq_info(freq, sec_offset, width);
+}
+
+function iface_add(phy, config, phy_status)
+{
+	let config_inline = iface_gen_config(phy, config, !!phy_status);
+
+	let bss = config.bss[0];
+	let ret = hostapd.add_iface(`bss_config=${bss.ifname}:${config_inline}`);
+	if (ret < 0)
+		return false;
+
+	if (!phy_status)
+		return true;
+
+	let iface = hostapd.interfaces[bss.ifname];
+	if (!iface)
+		return false;
+
+	let freq_info = iface_freq_info(iface, config, phy_status);
+
+	return iface.start(freq_info) >= 0;
 }
 
 function iface_restart(phy, config, old_config)
@@ -65,11 +122,18 @@ function iface_restart(phy, config, old_config)
 	let err = wdev_create(phy, bss.ifname, { mode: "ap" });
 	if (err)
 		hostapd.printf(`Failed to create ${bss.ifname} on phy ${phy}: ${err}`);
-	let config_inline = iface_gen_config(phy, config);
 
 	let ubus = hostapd.data.ubus;
+	let phy_status = ubus.call("wpa_supplicant", "phy_status", { phy: phy });
+	if (phy_status && phy_status.state == "COMPLETED") {
+		if (iface_add(phy, config, phy_status))
+			return;
+
+		hostapd.printf(`Failed to bring up phy ${phy} ifname=${bss.ifname} with supplicant provided frequency`);
+	}
+
 	ubus.call("wpa_supplicant", "phy_set_state", { phy: phy, stop: true });
-	if (hostapd.add_iface(`bss_config=${bss.ifname}:${config_inline}`) < 0)
+	if (!iface_add(phy, config))
 		hostapd.printf(`hostapd.add_iface failed for phy ${phy} ifname=${bss.ifname}`);
 	ubus.call("wpa_supplicant", "phy_set_state", { phy: phy, stop: false });
 }
@@ -295,7 +359,6 @@ function iface_load_config(filename)
 }
 
 
-
 let main_obj = {
 	reload: {
 		args: {
@@ -344,34 +407,10 @@ let main_obj = {
 				return 0;
 			}
 
-			let freq = req.args.frequency;
-			if (!freq)
+			if (!req.args.frequency)
 				return libubus.STATUS_INVALID_ARGUMENT;
 
-			let sec_offset = req.args.sec_chan_offset;
-			if (sec_offset != -1 && sec_offset != 1)
-				sec_offset = 0;
-
-			let width = 0;
-			for (let line in config.radio.data) {
-				if (!sec_offset && match(line, /^ht_capab=.*HT40/)) {
-					sec_offset = null; // auto-detect
-					continue;
-				}
-
-				let val = match(line, /^(vht_oper_chwidth|he_oper_chwidth)=(\d+)/);
-				if (!val)
-					continue;
-
-				val = int(val[2]);
-				if (val > width)
-					width = val;
-			}
-
-			if (freq < 4000)
-				width = 0;
-
-			let freq_info = hostapd.freq_info(freq, sec_offset, width);
+			let freq_info = iface_freq_info(iface, config, req.args);
 			if (!freq_info)
 				return libubus.STATUS_UNKNOWN_ERROR;
 

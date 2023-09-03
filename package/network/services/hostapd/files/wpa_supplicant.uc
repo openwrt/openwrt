@@ -43,6 +43,11 @@ function iface_cb(new_if, old_if)
 		return;
 	}
 
+	if (new_if && old_if)
+		wpas.printf(`Update configuration for interface ${old_if.config.iface}`);
+	else if (old_if)
+		wpas.printf(`Remove interface ${old_if.config.iface}`);
+
 	if (old_if)
 		iface_stop(old_if);
 }
@@ -106,6 +111,41 @@ let main_obj = {
 			return 0;
 		}
 	},
+	phy_status: {
+		args: {
+			phy: ""
+		},
+		call: function(req) {
+			if (!req.args.phy)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			let phy = wpas.data.config[req.args.phy];
+			if (!phy)
+				return libubus.STATUS_NOT_FOUND;
+
+			for (let ifname in phy.data) {
+				try {
+					let iface = wpas.interfaces[ifname];
+					if (!iface)
+						continue;
+
+					let status = iface.status();
+					if (!status)
+						continue;
+
+					if (status.state == "INTERFACE_DISABLED")
+						continue;
+
+					status.ifname = ifname;
+					return status;
+				} catch (e) {
+					continue;
+				}
+			}
+
+			return libubus.STATUS_NOT_FOUND;
+		}
+	},
 	config_set: {
 		args: {
 			phy: "",
@@ -116,6 +156,7 @@ let main_obj = {
 			if (!req.args.phy)
 				return libubus.STATUS_INVALID_ARGUMENT;
 
+			wpas.printf(`Set new config for phy ${req.args.phy}`);
 			try {
 				if (req.args.config)
 					set_config(req.args.phy, req.args.config);

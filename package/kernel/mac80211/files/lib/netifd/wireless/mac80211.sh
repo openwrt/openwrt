@@ -889,7 +889,6 @@ wpa_supplicant_init_config() {
 wpa_supplicant_add_interface() {
 	local ifname="$1"
 	local mode="$2"
-	local hostapd_ctrl="$3"
 	local prev
 
 	_wpa_supplicant_common "$ifname"
@@ -903,7 +902,6 @@ wpa_supplicant_add_interface() {
 	json_add_string config "$_config"
 	json_add_string macaddr "$macaddr"
 	[ -n "$network_bridge" ] && json_add_string bridge "$network_bridge"
-	[ -n "$hostapd_ctrl" ] && json_add_string hostapd_ctrl "$hostapd_ctrl"
 	[ -n "$wds" ] && json_add_boolean 4addr "$wds"
 	json_add_boolean powersave "$powersave"
 	[ "$mode" = "mesh" ] && mac80211_add_mesh_params
@@ -978,7 +976,7 @@ mac80211_setup_supplicant() {
 		wpa_supplicant_add_network "$ifname" "$freq" "$htmode" "$noscan"
 	fi
 
-	wpa_supplicant_add_interface "$ifname" "$mode" "$hostapd_ctrl"
+	wpa_supplicant_add_interface "$ifname" "$mode"
 
 	return 0
 }
