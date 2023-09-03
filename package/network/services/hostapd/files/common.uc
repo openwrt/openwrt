@@ -150,7 +150,7 @@ function is_equal(val1, val2) {
 			if (!is_equal(val1[key], val2[key]))
 				return false;
 		for (let key in val2)
-			if (!val1[key])
+			if (val1[key] == null)
 				return false;
 		return true;
 	} else {
