@@ -6,13 +6,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=busybox
 PKG_VERSION:=1.36.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_FLAGS:=essential
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=https://www.busybox.net/downloads \
-		http://sources.buildroot.net
-PKG_HASH:=b8cc24c9574d809e7279c3be349795c5d5ceb6fdf19ca709f80cde50e47de314
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL=https://git.busybox.net/busybox.git
+PKG_SOURCE_DATE:=2023-05-19
+PKG_SOURCE_VERSION:=1a64f6a20aaf6ea4dbba68bbfa8cc1ab7e5c57c4
+PKG_MIRROR_HASH:=b8cc24c9574d809e7279c3be349795c5d5ceb6fdf19ca709f80cde50e47de314
 
 PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam
 PKG_BUILD_PARALLEL:=1
@@ -43,7 +44,7 @@ define Package/busybox/Default
   CATEGORY:=Base system
   MAINTAINER:=Felix Fietkau <nbd@nbd.name>
   TITLE:=Core utilities for embedded Linux
-  URL:=http://busybox.net/
+  URL:=https://busybox.net/
   DEPENDS:=+BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter
   USERID:=ntp=123:ntp=123
 endef
