@@ -158,6 +158,7 @@ define Device/Default
   BOARD_NAME = $$(DEVICE_DTS)
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | append-dtb | uImage none
+  FILESYSTEMS := squashfs
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
@@ -168,6 +169,7 @@ endef
 define Device/Default-arm64
   BOOT_SCRIPT := generic-arm64
   DEVICE_DTS_DIR := $(DTS_DIR)/marvell
+  FILESYSTEMS := ext4 squashfs
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   KERNEL_NAME := Image
