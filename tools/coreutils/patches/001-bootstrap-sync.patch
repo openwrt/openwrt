@@ -1,0 +1,73 @@
+From 9becda5d9371c16a6e5e2815c8a28158696e4a23 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?P=C3=A1draig=20Brady?= <P@draigBrady.com>
+Date: Sun, 10 Dec 2023 19:04:59 +0000
+Subject: build: update gnulib submodule to latest
+
+* bootstrap: Copy from latest Gnulib,
+to fix --bootstrap-sync with other options.
+---
+ bootstrap | 16 ++++++++++------
+ 1 file changed, 10 insertions(+), 6 deletions(-)
+
+(limited to 'bootstrap')
+
+--- a/bootstrap
++++ b/bootstrap
+@@ -3,7 +3,7 @@
+ 
+ # Bootstrap this package from checked-out sources.
+ 
+-scriptversion=2023-07-01.18; # UTC
++scriptversion=2023-12-10.18; # UTC
+ 
+ # Copyright (C) 2003-2023 Free Software Foundation, Inc.
+ #
+@@ -37,7 +37,7 @@ medir=`dirname "$me"`
+ 
+ # A library of shell functions for autopull.sh, autogen.sh, and bootstrap.
+ 
+-scriptlibversion=2023-07-01.17; # UTC
++scriptlibversion=2023-12-10.18; # UTC
+ 
+ # Copyright (C) 2003-2023 Free Software Foundation, Inc.
+ #
+@@ -659,7 +659,9 @@ Optional environment variables:
+                            Use this if you already have gnulib sources
+                            and history on your machine, and do not want
+                            to waste your bandwidth downloading them again.
+-  GNULIB_URL               Cloneable URL of the gnulib repository.
++  GNULIB_URL               URL of the gnulib repository.  The default is
++                           $default_gnulib_url,
++                           which is Gnulib's upstream repository.
+ 
+ Options:
+   --bootstrap-sync         if this bootstrap script is not identical to
+@@ -775,7 +777,7 @@ autopull()
+   if $use_gnulib || $bootstrap_sync; then
+     prepare_GNULIB_SRCDIR
+     if $bootstrap_sync; then
+-      upgrade_bootstrap
++      upgrade_bootstrap "$@"
+     fi
+   fi
+ 
+@@ -1347,7 +1349,9 @@ Optional environment variables:
+                            have gnulib sources on your machine, and
+                            do not want to waste your bandwidth downloading
+                            them again.
+-  GNULIB_URL               Cloneable URL of the gnulib repository.
++  GNULIB_URL               URL of the gnulib repository.  The default is
++                           $default_gnulib_url,
++                           which is Gnulib's upstream repository.
+ 
+ Options:
+ 
+@@ -1492,7 +1496,7 @@ check_build_prerequisites $use_git
+ 
+ if $bootstrap_sync; then
+   prepare_GNULIB_SRCDIR
+-  upgrade_bootstrap
++  upgrade_bootstrap "$@"
+   # Since we have now upgraded if needed, no need to try it a second time below.
+   bootstrap_sync=false
+ fi

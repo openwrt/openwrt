@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=coreutils
 PKG_CPE_ID:=cpe:/a:gnu:coreutils
-PKG_VERSION:=9.3
+PKG_VERSION:=9.4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/coreutils
-PKG_HASH:=a33d2c0bc49be3c79a4794944dcd87103bf497b53a14bafcd431c8ca53975252
+PKG_HASH:=5f600d9093973b0afe25393d9bc18c44f2232657f4ca0d95ea31c702eb66b739
 
 HOST_BUILD_PARALLEL := 1
 
@@ -22,7 +22,17 @@ include $(INCLUDE_DIR)/host-build.mk
 
 export GNULIB_SRCDIR:=$(HOST_GNULIB_SRCDIR)
 
+HOST_GNULIB_SKIP := \
+	lib/math.in.h \
+	lib/stdlib.in.h \
+	lib/string.in.h \
+	lib/uchar.in.h \
+	lib/unistd.in.h \
+	lib/wchar.in.h \
+	lib/wctype.in.h
+
 HOST_CONFIGURE_ARGS += \
+	--disable-year2038 \
 	 --enable-install-program=$(subst $(space),$(comma),$(strip $(PKG_PROGRAMS)))
 
 HOST_MAKE_FLAGS += \
@@ -50,7 +60,7 @@ endef
 
 define Host/Configure
 	$(if $(QUILT),$(call Host/Bootstrap))
-	-$(CP) $(HOST_BUILD_DIR)/lib/time.in.h~ $(HOST_BUILD_DIR)/lib/time.in.h # @GNULIB_TIME@ not defined
+	$(foreach src,$(HOST_GNULIB_SKIP),mv -f $(HOST_BUILD_DIR)/$(src)~ $(HOST_BUILD_DIR)/$(src) || true; )
 	$(call Host/Configure/Default)
 endef
 
