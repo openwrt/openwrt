@@ -191,6 +191,8 @@ platform_do_upgrade() {
 	mikrotik,hap-ac3)
 		platform_do_upgrade_mikrotik_nand "$1"
 		;;
+	netgear,rbr40|\
+	netgear,rbs40|\
 	netgear,rbr50 |\
 	netgear,rbs50 |\
 	netgear,srr60 |\

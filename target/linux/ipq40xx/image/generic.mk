@@ -826,6 +826,30 @@ define Device/netgear_orbi
 	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct e2fsprogs kmod-fs-ext4 losetup
 endef
 
+define Device/netgear_rbx40
+	$(call Device/netgear_orbi)
+	NETGEAR_HW_ID := 29765515+0+4096+512+2x2+2x2+2x2
+	KERNEL_SIZE := 3932160
+	ROOTFS_SIZE := 32243712
+	IMAGE_SIZE := 36175872
+endef
+
+define Device/netgear_rbr40
+	$(call Device/netgear_rbx40)
+	DEVICE_MODEL := RBR40
+	DEVICE_VARIANT := v1
+	NETGEAR_BOARD_ID := RBR40
+endef
+TARGET_DEVICES += netgear_rbr40
+
+define Device/netgear_rbs40
+	$(call Device/netgear_rbx40)
+	DEVICE_MODEL := RBS40
+	DEVICE_VARIANT := v1
+	NETGEAR_BOARD_ID := RBS40
+endef
+TARGET_DEVICES += netgear_rbs40
+
 define Device/netgear_rbx50
 	$(call Device/netgear_orbi)
 	NETGEAR_HW_ID := 29765352+0+4000+512+2x2+2x2+4x4
