@@ -80,8 +80,9 @@ legacy_sdcard_do_upgrade() {
 
 legacy_sdcard_copy_config() {
 	local partdev
+	local partidx=${1:-1}
 
-	if export_partdevice partdev 1; then
+	if export_partdevice partdev $partidx; then
 		mkdir -p /boot
 		[ -f /boot/kernel.img ] || mount -o rw,noatime /dev/$partdev /boot
 		cp -af "$UPGRADE_BACKUP" "/boot/$BACKUP_FILE"
