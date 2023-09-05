@@ -121,7 +121,7 @@ define Build/ctera-firmware
 endef
 
 define Build/sdcard-img
-	SIGNATURE="$(IMG_PART_SIGNATURE)" \
+	SIGNATURE="$(if $(1),$(1),$(IMG_PART_SIGNATURE))" \
 	./gen_mvebu_sdcard_img.sh $@ \
 		$(if $(UBOOT),$(STAGING_DIR_IMAGE)/$(UBOOT)) \
 		c $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
