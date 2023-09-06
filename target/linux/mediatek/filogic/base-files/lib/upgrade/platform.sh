@@ -61,6 +61,11 @@ platform_do_upgrade() {
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
 		;;
+	asus,tuf-ax6000)
+		CI_UBIPART="UBI_DEV"
+		CI_KERNPART="linux"
+		nand_do_upgrade "$1"
+		;;
 	bananapi,bpi-r3)
 		local rootdev="$(cmdline_get_var root)"
 		rootdev="${rootdev##*/}"
