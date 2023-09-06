@@ -21,10 +21,10 @@ Submitted-by: John Crispin <john@phrozen.org>
 
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -943,6 +943,10 @@ struct phy_driver {
- 	int (*get_sqi)(struct phy_device *dev);
- 	/** @get_sqi_max: Get the maximum signal quality indication */
- 	int (*get_sqi_max)(struct phy_device *dev);
+@@ -984,6 +984,10 @@ struct phy_driver {
+ 	int (*led_blink_set)(struct phy_device *dev, u8 index,
+ 			     unsigned long *delay_on,
+ 			     unsigned long *delay_off);
 +	int (*get_port)(struct phy_device *dev);
 +	int (*set_port)(struct phy_device *dev, int port);
 +	int (*get_eee)(struct phy_device *dev, struct ethtool_eee *e);
