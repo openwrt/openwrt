@@ -10,13 +10,15 @@
 name: OpenWrt-CI
 
 on:
-  push:
-    branches: 
-      - master
-  # schedule:
-  #   - cron: 0 20 * * *
-  release:
-    types: [published]
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: true
+        default: 'flase'
+  watch:
+    types: started
 
 jobs:
 
