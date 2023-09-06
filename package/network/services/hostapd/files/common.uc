@@ -94,6 +94,88 @@ function wdev_create(phy, name, data)
 	return null;
 }
 
+function phy_sysfs_file(phy, name)
+{
+	return trim(readfile(`/sys/class/ieee80211/${phy}/${name}`));
+}
+
+function macaddr_split(str)
+{
+	return map(split(str, ":"), (val) => hex(val));
+}
+
+function macaddr_join(addr)
+{
+	return join(":", map(addr, (val) => sprintf("%02x", val)));
+}
+
+function wdev_generate_macaddr(phy, data)
+{
+	let idx = int(data.id ?? 0);
+	let mbssid = int(data.mbssid ?? 0) > 0;
+	let num_global = int(data.num_global ?? 1);
+	let use_global = !mbssid && idx < num_global;
+
+	let base_addr = phy_sysfs_file(phy, "macaddress");
+	if (!base_addr)
+		return null;
+
+	if (!idx && !mbssid)
+		return base_addr;
+
+	let base_mask = phy_sysfs_file(phy, "address_mask");
+	if (!base_mask)
+		return null;
+
+	if (base_mask == "00:00:00:00:00:00" && idx >= num_global) {
+		let addrs = split(phy_sysfs_file(phy, "addresses"), "\n");
+
+		if (idx < length(addrs))
+			return addrs[idx];
+
+		base_mask = "ff:ff:ff:ff:ff:ff";
+	}
+
+	let addr = macaddr_split(base_addr);
+	let mask = macaddr_split(base_mask);
+	let type;
+
+	if (mbssid)
+		type = "b5";
+	else if (use_global)
+		type = "add";
+	else if (mask[0] > 0)
+		type = "b1";
+	else if (mask[5] < 0xff)
+		type = "b5";
+	else
+		type = "add";
+
+	switch (type) {
+	case "b1":
+		if (!(addr[0] & 2))
+			idx--;
+		addr[0] |= 2;
+		addr[0] ^= idx << 2;
+		break;
+	case "b5":
+		if (mbssid)
+			addr[0] |= 2;
+		addr[5] ^= idx;
+		break;
+	default:
+		for (let i = 5; i > 0; i--) {
+			addr[i] += idx;
+			if (addr[i] < 256)
+				break;
+			addr[i] %= 256;
+		}
+		break;
+	}
+
+	return macaddr_join(addr);
+}
+
 const vlist_proto = {
 	update: function(values, arg) {
 		let data = this.data;
@@ -165,4 +247,4 @@ function vlist_new(cb) {
 		}, vlist_proto);
 }
 
-export { wdev_remove, wdev_create, is_equal, vlist_new, phy_is_fullmac };
+export { wdev_remove, wdev_create, wdev_generate_macaddr, is_equal, vlist_new, phy_is_fullmac };

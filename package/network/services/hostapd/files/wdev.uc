@@ -1,11 +1,11 @@
 #!/usr/bin/env ucode
 'use strict';
-import { vlist_new, is_equal, wdev_create, wdev_remove } from "/usr/share/hostap/common.uc";
+import { vlist_new, is_equal, wdev_create, wdev_remove, wdev_generate_macaddr } from "/usr/share/hostap/common.uc";
 import { readfile, writefile, basename, readlink, glob } from "fs";
 
 let keep_devices = {};
 let phy = shift(ARGV);
-let new_config = shift(ARGV);
+
 const mesh_params = [
 	"mesh_retry_timeout", "mesh_confirm_timeout", "mesh_holding_timeout", "mesh_max_peer_links",
 	"mesh_max_retries", "mesh_ttl", "mesh_element_ttl", "mesh_hwmp_max_preq_retries",
@@ -114,43 +114,79 @@ function add_existing(phy, config)
 	}
 }
 
+function usage()
+{
+	warn(`Usage: ${basename(sourcepath())} <phy> <command> [<arguments>]
 
-let statefile = `/var/run/wdev-${phy}.json`;
-
-for (let dev in ARGV)
-	keep_devices[dev] = true;
-
-if (!phy || !new_config) {
-	warn(`Usage: ${basename(sourcepath())} <phy> <config> [<device]...]\n`);
+Commands:
+	set_config <config> [<device]...] - set phy configuration
+	get_macaddr <id>		  - get phy MAC address for vif index <id>
+`);
 	exit(1);
 }
+
+const commands = {
+	set_config: function(args) {
+		let statefile = `/var/run/wdev-${phy}.json`;
+
+		let new_config = shift(args);
+		for (let dev in ARGV)
+			keep_devices[dev] = true;
+
+		if (!new_config)
+			usage();
+
+		new_config = json(new_config);
+		if (!new_config) {
+			warn("Invalid configuration\n");
+			exit(1);
+		}
+
+		let old_config = readfile(statefile);
+		if (old_config)
+			old_config = json(old_config);
+
+		let config = vlist_new(iface_cb);
+		if (type(old_config) == "object")
+			config.data = old_config;
+
+		add_existing(phy, config.data);
+		add_ifname(config.data);
+		drop_inactive(config.data);
+
+		add_ifname(new_config);
+		config.update(new_config);
+
+		drop_inactive(config.data);
+		delete_ifname(config.data);
+		writefile(statefile, sprintf("%J", config.data));
+	},
+	get_macaddr: function(args) {
+		let data = {};
+
+		for (let arg in args) {
+			arg = split(arg, "=", 2);
+			data[arg[0]] = arg[1];
+		}
+
+		let macaddr = wdev_generate_macaddr(phy, data);
+		if (!macaddr) {
+			warn(`Could not get MAC address for phy ${phy}\n`);
+			exit(1);
+		}
+
+		print(macaddr + "\n");
+	},
+};
+
+let command = shift(ARGV);
+
+if (!phy || !command | !commands[command])
+	usage();
 
 if (!readfile(`/sys/class/ieee80211/${phy}/index`)) {
 	warn(`PHY ${phy} does not exist\n`);
 	exit(1);
 }
 
-new_config = json(new_config);
-if (!new_config) {
-	warn("Invalid configuration\n");
-	exit(1);
-}
-
-let old_config = readfile(statefile);
-if (old_config)
-	old_config = json(old_config);
-
-let config = vlist_new(iface_cb);
-if (type(old_config) == "object")
-	config.data = old_config;
-
-add_existing(phy, config.data);
-add_ifname(config.data);
-drop_inactive(config.data);
-
-add_ifname(new_config);
-config.update(new_config);
-
-drop_inactive(config.data);
-delete_ifname(config.data);
-writefile(statefile, sprintf("%J", config.data));
+commands[command](ARGV);

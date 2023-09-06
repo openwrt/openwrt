@@ -533,47 +533,7 @@ mac80211_generate_mac() {
 	local phy="$1"
 	local id="${macidx:-0}"
 
-	local ref="$(cat /sys/class/ieee80211/${phy}/macaddress)"
-	local mask="$(cat /sys/class/ieee80211/${phy}/address_mask)"
-
-	[ "$mask" = "00:00:00:00:00:00" ] && {
-		mask="ff:ff:ff:ff:ff:ff";
-
-		[ "$(wc -l < /sys/class/ieee80211/${phy}/addresses)" -gt $id ] && {
-			addr="$(mac80211_get_addr "$phy" "$id")"
-			[ -n "$addr" ] && {
-				echo "$addr"
-				return
-			}
-		}
-	}
-
-	local oIFS="$IFS"; IFS=":"; set -- $mask; IFS="$oIFS"
-
-	local mask1=$1
-	local mask6=$6
-
-	local oIFS="$IFS"; IFS=":"; set -- $ref; IFS="$oIFS"
-
-	macidx=$(($id + 1))
-	[ "$((0x$mask1))" -gt 0 ] && {
-		b1="0x$1"
-		[ "$id" -gt 0 ] && \
-			b1=$(($b1 ^ ((($id - !($b1 & 2)) << 2)) | 0x2))
-		printf "%02x:%s:%s:%s:%s:%s" $b1 $2 $3 $4 $5 $6
-		return
-	}
-
-	[ "$((0x$mask6))" -lt 255 ] && {
-		printf "%s:%s:%s:%s:%s:%02x" $1 $2 $3 $4 $5 $(( 0x$6 ^ $id ))
-		return
-	}
-
-	off2=$(( (0x$6 + $id) / 0x100 ))
-	printf "%s:%s:%s:%s:%02x:%02x" \
-		$1 $2 $3 $4 \
-		$(( (0x$5 + $off2) % 0x100 )) \
-		$(( (0x$6 + $id) % 0x100 ))
+	wdev_tool "$phy" get_macaddr id=$id
 }
 
 get_board_phy_name() (
@@ -1070,7 +1030,7 @@ mac80211_reset_config() {
 	hostapd_conf_file="/var/run/hostapd-$phy.conf"
 	ubus call hostapd config_set '{ "phy": "'"$phy"'", "config": "", "prev_config": "'"$hostapd_conf_file"'" }' > /dev/null
 	ubus call wpa_supplicant config_set '{ "phy": "'"$phy"'", "config": [] }' > /dev/null
-	wdev_tool "$phy" '{}'
+	wdev_tool "$phy" set_config '{}'
 }
 
 drv_mac80211_setup() {
@@ -1174,7 +1134,7 @@ drv_mac80211_setup() {
 	[ -x /usr/sbin/wpa_supplicant ] && wpa_supplicant_start "$phy"
 
 	json_set_namespace wdev_uc prev
-	wdev_tool "$phy" "$(json_dump)" $active_ifnames
+	wdev_tool "$phy" set_config "$(json_dump)" $active_ifnames
 	json_set_namespace "$prev"
 
 	for_each_interface "ap sta adhoc mesh monitor" mac80211_set_vif_txpower
