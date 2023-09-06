@@ -270,7 +270,33 @@
  
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -6426,6 +6426,7 @@ union wpa_event_data {
+@@ -3787,6 +3787,25 @@ struct wpa_driver_ops {
+ 			 const char *ifname);
+ 
+ 	/**
++	 * if_rename - Rename a virtual interface
++	 * @priv: Private driver interface data
++	 * @type: Interface type
++	 * @ifname: Interface name of the virtual interface to be renamed
++	 *	    (NULL when renaming the AP BSS interface)
++	 * @new_name: New interface name of the virtual interface
++	 * Returns: 0 on success, -1 on failure
++	 */
++	int (*if_rename)(void *priv, enum wpa_driver_if_type type,
++			 const char *ifname, const char *new_name);
++
++	/**
++	 * set_first_bss - Make a virtual interface the first (primary) bss
++	 * @priv: Private driver interface data
++	 * Returns: 0 on success, -1 on failure
++	 */
++	int (*set_first_bss)(void *priv);
++
++	/**
+ 	 * set_sta_vlan - Bind a station into a specific interface (AP only)
+ 	 * @priv: Private driver interface data
+ 	 * @ifname: Interface (main or virtual BSS or VLAN)
+@@ -6426,6 +6445,7 @@ union wpa_event_data {
  
  	/**
  	 * struct ch_switch
@@ -278,7 +304,7 @@
  	 * @freq: Frequency of new channel in MHz
  	 * @ht_enabled: Whether this is an HT channel
  	 * @ch_offset: Secondary channel offset
-@@ -6436,6 +6437,7 @@ union wpa_event_data {
+@@ -6436,6 +6456,7 @@ union wpa_event_data {
  	 * @punct_bitmap: Puncturing bitmap
  	 */
  	struct ch_switch {
@@ -331,3 +357,187 @@
  	switch (event) {
  	case EVENT_AUTH:
  #ifdef CONFIG_FST
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -393,6 +393,23 @@ static inline int hostapd_drv_stop_ap(st
+ 	return hapd->driver->stop_ap(hapd->drv_priv);
+ }
+ 
++static inline int hostapd_drv_if_rename(struct hostapd_data *hapd,
++					enum wpa_driver_if_type type,
++					const char *ifname,
++					const char *new_name)
++{
++	if (!hapd->driver || !hapd->driver->if_rename || !hapd->drv_priv)
++		return -1;
++	return hapd->driver->if_rename(hapd->drv_priv, type, ifname, new_name);
++}
++
++static inline int hostapd_drv_set_first_bss(struct hostapd_data *hapd)
++{
++	if (!hapd->driver || !hapd->driver->set_first_bss || !hapd->drv_priv)
++		return 0;
++	return hapd->driver->set_first_bss(hapd->drv_priv);
++}
++
+ static inline int hostapd_drv_channel_info(struct hostapd_data *hapd,
+ 					   struct wpa_channel_info *ci)
+ {
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -1333,7 +1333,7 @@ static void wpa_driver_nl80211_event_rtm
+ 		}
+ 		wpa_printf(MSG_DEBUG, "nl80211: Interface down (%s/%s)",
+ 			   namebuf, ifname);
+-		if (os_strcmp(drv->first_bss->ifname, ifname) != 0) {
++		if (drv->first_bss->ifindex != ifi->ifi_index) {
+ 			wpa_printf(MSG_DEBUG,
+ 				   "nl80211: Not the main interface (%s) - do not indicate interface down",
+ 				   drv->first_bss->ifname);
+@@ -1369,7 +1369,7 @@ static void wpa_driver_nl80211_event_rtm
+ 		}
+ 		wpa_printf(MSG_DEBUG, "nl80211: Interface up (%s/%s)",
+ 			   namebuf, ifname);
+-		if (os_strcmp(drv->first_bss->ifname, ifname) != 0) {
++		if (drv->first_bss->ifindex != ifi->ifi_index) {
+ 			wpa_printf(MSG_DEBUG,
+ 				   "nl80211: Not the main interface (%s) - do not indicate interface up",
+ 				   drv->first_bss->ifname);
+@@ -8432,6 +8432,7 @@ static void *i802_init(struct hostapd_da
+ 	char master_ifname[IFNAMSIZ];
+ 	int ifindex, br_ifindex = 0;
+ 	int br_added = 0;
++	int err;
+ 
+ 	bss = wpa_driver_nl80211_drv_init(hapd, params->ifname,
+ 					  params->global_priv, 1,
+@@ -8491,21 +8492,17 @@ static void *i802_init(struct hostapd_da
+ 	    (params->num_bridge == 0 || !params->bridge[0]))
+ 		add_ifidx(drv, br_ifindex, drv->ifindex);
+ 
+-	if (bss->added_if_into_bridge || bss->already_in_bridge) {
+-		int err;
+-
+-		drv->rtnl_sk = nl_socket_alloc();
+-		if (drv->rtnl_sk == NULL) {
+-			wpa_printf(MSG_ERROR, "nl80211: Failed to allocate nl_sock");
+-			goto failed;
+-		}
++	drv->rtnl_sk = nl_socket_alloc();
++	if (drv->rtnl_sk == NULL) {
++		wpa_printf(MSG_ERROR, "nl80211: Failed to allocate nl_sock");
++		goto failed;
++	}
+ 
+-		err = nl_connect(drv->rtnl_sk, NETLINK_ROUTE);
+-		if (err) {
+-			wpa_printf(MSG_ERROR, "nl80211: Failed to connect nl_sock to NETLINK_ROUTE: %s",
+-				   nl_geterror(err));
+-			goto failed;
+-		}
++	err = nl_connect(drv->rtnl_sk, NETLINK_ROUTE);
++	if (err) {
++		wpa_printf(MSG_ERROR, "nl80211: Failed to connect nl_sock to NETLINK_ROUTE: %s",
++			   nl_geterror(err));
++		goto failed;
+ 	}
+ 
+ 	if (drv->capa.flags2 & WPA_DRIVER_FLAGS2_CONTROL_PORT_RX) {
+@@ -8874,6 +8871,50 @@ static int wpa_driver_nl80211_if_remove(
+ 	return 0;
+ }
+ 
++static int wpa_driver_nl80211_if_rename(struct i802_bss *bss,
++					enum wpa_driver_if_type type,
++					const char *ifname, const char *new_name)
++{
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++	struct ifinfomsg ifi = {
++		.ifi_family = AF_UNSPEC,
++		.ifi_index = bss->ifindex,
++	};
++	struct nl_msg *msg;
++	int res = -ENOMEM;
++
++	if (ifname)
++		ifi.ifi_index = if_nametoindex(ifname);
++
++	msg = nlmsg_alloc_simple(RTM_SETLINK, 0);
++	if (!msg)
++		return res;
++
++	if (nlmsg_append(msg, &ifi, sizeof(ifi), NLMSG_ALIGNTO) < 0)
++		goto out;
++
++	if (nla_put_string(msg, IFLA_IFNAME, new_name))
++		goto out;
++
++	res = nl_send_auto_complete(drv->rtnl_sk, msg);
++	if (res < 0)
++		goto out;
++
++	res = nl_wait_for_ack(drv->rtnl_sk);
++	if (res) {
++		wpa_printf(MSG_INFO,
++			   "nl80211: Renaming device %s to %s failed: %s",
++			   ifname ? ifname : bss->ifname, new_name, nl_geterror(res));
++		goto out;
++	}
++
++	if (type == WPA_IF_AP_BSS && !ifname)
++		os_strlcpy(bss->ifname, new_name, sizeof(bss->ifname));
++
++out:
++	nlmsg_free(msg);
++	return res;
++}
+ 
+ static int cookie_handler(struct nl_msg *msg, void *arg)
+ {
+@@ -10472,6 +10513,37 @@ static int driver_nl80211_if_remove(void
+ }
+ 
+ 
++static int driver_nl80211_if_rename(void *priv, enum wpa_driver_if_type type,
++				    const char *ifname, const char *new_name)
++{
++	struct i802_bss *bss = priv;
++	return wpa_driver_nl80211_if_rename(bss, type, ifname, new_name);
++}
++
++
++static int driver_nl80211_set_first_bss(void *priv)
++{
++	struct i802_bss *bss = priv, *tbss;
++	struct wpa_driver_nl80211_data *drv = bss->drv;
++
++	if (drv->first_bss == bss)
++		return 0;
++
++	for (tbss = drv->first_bss; tbss; tbss = tbss->next) {
++		if (tbss->next != bss)
++			continue;
++
++		tbss->next = bss->next;
++		bss->next = drv->first_bss;
++		drv->first_bss = bss;
++		drv->ctx = bss->ctx;
++		return 0;
++	}
++
++	return -1;
++}
++
++
+ static int driver_nl80211_send_mlme(void *priv, const u8 *data,
+ 				    size_t data_len, int noack,
+ 				    unsigned int freq,
+@@ -13656,6 +13728,8 @@ const struct wpa_driver_ops wpa_driver_n
+ 	.set_acl = wpa_driver_nl80211_set_acl,
+ 	.if_add = wpa_driver_nl80211_if_add,
+ 	.if_remove = driver_nl80211_if_remove,
++	.if_rename = driver_nl80211_if_rename,
++	.set_first_bss = driver_nl80211_set_first_bss,
+ 	.send_mlme = driver_nl80211_send_mlme,
+ 	.get_hw_feature_data = nl80211_get_hw_feature_data,
+ 	.sta_add = wpa_driver_nl80211_sta_add,
