@@ -8,7 +8,7 @@
 #include "qca956x.dtsi"
 
 / {
-	model = "Xwrt CSAC2";
+	model = "XWRT CSAC2";
 	compatible = "xwrt,csac2", "qca,qca9563";
 
 	aliases {
@@ -61,6 +61,24 @@
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x0>;
+				label = "firmware";
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <IH_MAGIC_OKLI>;
+			};
+		};
+	};
 };
 
 &uart {
@@ -107,10 +125,8 @@
 				reg = <0x050000 0x010000>;
 			};
 
-			partition@60000 {
-				compatible = "openwrt,uimage", "denx,uimage";
-				openwrt,ih-magic = <IH_MAGIC_OKLI>;
-				label = "firmware";
+			fwconcat0: partition@60000 {
+				label = "fwconcat0";
 				reg = <0x060000 0xe20000>;
 			};
 
@@ -119,8 +135,8 @@
 				reg = <0xe80000 0x010000>;
 			};
 
-			partition@e90000 {
-				label = "unused";
+			fwconcat1: partition@e90000 {
+				label = "fwconcat1";
 				reg = <0xe90000 0x160000>;
 			};
 
