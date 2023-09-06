@@ -3145,6 +3145,21 @@ define Build/xwrt_csac05-factory
   printf %32s CSAC05 >>"$@" && \
   rm -rf "$@.tmp" $@.tmp.tgz
 endef
+
+define Device/xwrt_csac
+  SOC := qca9563
+  DEVICE_VENDOR := XWRT
+  DEVICE_MODEL := CSAC
+  KERNEL_SIZE := 1472k
+  IMAGE_SIZE := 16000k
+  IMAGES += factory-10.bin factory-05.bin
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 14528k | append-kernel | append-metadata | check-size
+  IMAGE/factory-10.bin := $$(IMAGE/sysupgrade.bin) | xwrt_csac10-factory $(1)
+  IMAGE/factory-05.bin := $$(IMAGE/sysupgrade.bin) | xwrt_csac05-factory $(1)
+  DEVICE_PACKAGES := kmod-leds-reset kmod-ath10k-ct ath10k-firmware-qca9888-ct kmod-usb-core kmod-usb2 lte-modem-xwrt-csac
+endef
+TARGET_DEVICES += xwrt_csac
+
 define Device/xwrt_csac2
   $(Device/loader-okli-uimage)
   SOC := qca9563
