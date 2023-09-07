@@ -20,12 +20,26 @@ define Build/boot-scr
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d $@-new.bootscript $@-boot.scr
 endef
 
-define Build/boot-img
+define Build/boot-img-common
+	$(eval kern_name=$(if $(1),$(1),$(KERNEL_NAME)))
+	$(eval initrd_name=$(2))
+	$(eval dts_devs=$(3))
+
 	rm -f $@.boot
 	mkfs.fat -C $@.boot $$(( $(CONFIG_TARGET_KERNEL_PARTSIZE) * 1024 ))
-	$(foreach dts,$(DEVICE_DTS), mcopy -i $@.boot $(KDIR)/image-$(dts).dtb ::$(dts).dtb;)
-	mcopy -i $@.boot $(IMAGE_KERNEL) ::$(KERNEL_NAME)
-	-mcopy -i $@.boot $@-boot.scr ::boot.scr
+	$(foreach dts,$(dts_devs), mcopy -i $@.boot $(KDIR)/image-$(dts).dtb ::$(dts).dtb;)
+	mcopy -i $@.boot $(IMAGE_KERNEL) ::$(kern_name)
+	$(if $(BOOT_SCRIPT),-mcopy -i $@.boot $@-boot.scr ::boot.scr)
+	$(if $(initrd_name),\
+		mcopy -i $@.boot $(KDIR)/$(DEVICE_NAME).initrd ::$(initrd_name))
+endef
+
+define Build/boot-img
+	$(call Build/boot-img-common,,,$(DEVICE_DTS))
+endef
+
+define Build/boot-img-nodtb
+	$(call Build/boot-img-common,$(word 1,$(1)),$(word 2,$(1)),)
 endef
 
 define Build/boot-img-ext4
