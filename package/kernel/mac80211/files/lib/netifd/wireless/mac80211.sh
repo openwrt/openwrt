@@ -27,6 +27,7 @@ drv_mac80211_init_device_config() {
 	config_add_string distance
 	config_add_int beacon_int chanbw frag rts
 	config_add_int rxantenna txantenna txpower min_tx_power
+	config_add_int num_global_macaddr
 	config_add_boolean noscan ht_coex acs_exclude_dfs background_radar
 	config_add_array ht_capab
 	config_add_array channels
@@ -533,7 +534,7 @@ mac80211_generate_mac() {
 	local phy="$1"
 	local id="${macidx:-0}"
 
-	wdev_tool "$phy" get_macaddr id=$id
+	wdev_tool "$phy" get_macaddr id=$id num_global=$num_global_macaddr
 }
 
 get_board_phy_name() (
@@ -1040,7 +1041,8 @@ drv_mac80211_setup() {
 		country chanbw distance \
 		txpower \
 		rxantenna txantenna \
-		frag rts beacon_int:100 htmode
+		frag rts beacon_int:100 htmode \
+		num_global_macaddr:1
 	json_get_values basic_rate_list basic_rate
 	json_get_values scan_list scan_list
 	json_select ..
