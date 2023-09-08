@@ -121,7 +121,7 @@ kill_remaining() { # [ <signal> [ <loop> ] ]
 			v "Sending signal $sig to $name ($pid)"
 			kill -$sig $pid 2>/dev/null
 
-			[ $loop -eq 1 ] && run=true
+			[ $loop -eq 1 ] && sleep 2 && run=true
 		done
 
 		let loop_limit--
