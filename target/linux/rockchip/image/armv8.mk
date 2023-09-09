@@ -2,8 +2,13 @@
 #
 # Copyright (C) 2020 Tobias Maedel
 
+# Modified Sept 2023 by Tahomasoft to add RK35xx board support
+
+
 # FIT will be loaded at 0x02080000. Leave 16M for that, align it to 2M and load the kernel after it.
 KERNEL_LOADADDR := 0x03200000
+
+## RK33XX Boards ##
 
 define Device/firefly_roc-rk3328-cc
   DEVICE_VENDOR := Firefly
@@ -78,3 +83,27 @@ define Device/xunlong_orangepi-r1-plus-lts
   DEVICE_PACKAGES := kmod-usb-net-rtl8152
 endef
 TARGET_DEVICES += xunlong_orangepi-r1-plus-lts
+
+
+## RK35xx Boards ##
+
+# LinkStar H68K #
+
+
+define Device/linkstar_common
+  DEVICE_VENDOR := SeeedLinkStar
+  SOC := rk3568
+  UBOOT_DEVICE_NAME := opc-h68k-rk3568
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r5s | rk35xx-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-ata-ahci-platform kmod-mt7921e kmod-r8125 kmod-usb-serial-cp210x wpad-openssl ethtool
+endef
+
+define Device/linkstar_opc-h68k
+
+$(call Device/linkstar_common)
+  DEVICE_MODEL := H68K
+endef
+TARGET_DEVICES += linkstar_opc-h68k
+
+
+
