@@ -1160,6 +1160,20 @@ define Device/zte_mf28x_common
 	DEVICE_PACKAGES := kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 
+define Device/zte_mf282plus
+	$(call Device/zte_mf28x_common)
+	DEVICE_MODEL := MF282Plus
+#	The recovery image is used to return back to stock (an initramfs-based image
+#	that can be flashed to the device via sysupgrade
+#	The factory image is used to install from the stock firmware by using an
+#	exploit for the web interface
+	IMAGES += factory.bin recovery.bin
+	IMAGE/factory.bin  := append-ubi
+	IMAGE/recovery.bin := append-squashfs4-fakeroot | sysupgrade-tar kernel=$$$$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE) rootfs=$$$$@ | append-metadata
+	DEVICE_PACKAGES := kmod-usb-acm kmod-usb-net-rndis
+endef
+TARGET_DEVICES += zte_mf282plus
+
 define Device/zte_mf286d
 	$(call Device/zte_mf28x_common)
 	DEVICE_MODEL := MF286D
