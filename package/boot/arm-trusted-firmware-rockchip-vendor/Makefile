@@ -58,5 +58,7 @@ define Package/arm-trusted-firmware-rk3568/install
 endef
 
 
-$(eval $(call BuildPackage,arm-trusted-firmware-rk3568))
+#$(eval $(call BuildPackage,arm-trusted-firmware-rk3568))
+# $(call BuildPackage,arm-trusted-firmware-rk3568)
+
 
