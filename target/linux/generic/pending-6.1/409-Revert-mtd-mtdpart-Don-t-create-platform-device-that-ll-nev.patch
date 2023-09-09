@@ -1,0 +1,31 @@
+Revert fb42378dcc7f247df56f0ecddfdae85487495fbc
+From: Saravana Kannan <saravanak@google.com>
+Date: Mon, 6 Feb 2023 17:42:04 -0800
+Subject: [PATCH] mtd: mtdpart: Don't create platform device that'll never probe
+Link: https://lore.kernel.org/r/20230207014207.1678715-13-saravanak@google.com
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
+@@ -712,7 +712,6 @@ static int mtd_part_of_parse(struct mtd_
+ {
+ 	struct mtd_part_parser *parser;
+ 	struct device_node *np;
+-	struct device_node *child;
+ 	struct property *prop;
+ 	struct device *dev;
+ 	const char *compat;
+@@ -730,15 +729,6 @@ static int mtd_part_of_parse(struct mtd_
+ 	else
+ 		np = of_get_child_by_name(np, "partitions");
+ 
+-	/*
+-	 * Don't create devices that are added to a bus but will never get
+-	 * probed. That'll cause fw_devlink to block probing of consumers of
+-	 * this partition until the partition device is probed.
+-	 */
+-	for_each_child_of_node(np, child)
+-		if (of_device_is_compatible(child, "nvmem-cells"))
+-			of_node_set_flag(child, OF_POPULATED);
+-
+ 	of_property_for_each_string(np, "compatible", prop, compat) {
+ 		parser = mtd_part_get_compatible_parser(compat);
+ 		if (!parser)
