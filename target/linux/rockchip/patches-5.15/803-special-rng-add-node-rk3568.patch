@@ -1,0 +1,29 @@
+Extracted from: https://github.com/Linkstar-H-series/Openwrt/blob/addcb4335b42b9a443d50fada43841d71b926bcd/target/linux/rockchip/patches-5.15/801-04-arm64-dts-rockchip-rk3568-add-rng-node.patch#L4
+From 7d56fae4afef7a73e4973c491e324c7fde60203c Mon Sep 17 00:00:00 2001
+From: Lin Jinhan <troy.lin@rock-chips.com>
+Date: Mon, 30 Nov 2020 19:26:29 +0800
+Subject: [PATCH] arm64: dts: rockchip: rk3568: add rng node
+
+Original patch worked on more files not relevant to rk3568 and failed.
+
+
+
+--- a/arch/arm64/boot/dts/rockchip/rk3568.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3568.dtsi
+@@ -213,6 +213,16 @@
+ 		};
+ 	};
+ 
++	rng: rng@fe388000 {
++		compatible = "rockchip,cryptov2-rng";
++		reg = <0x0 0xfe388000 0x0 0x2000>;
++		clocks = <&cru CLK_TRNG_NS>, <&cru HCLK_TRNG_NS>;
++		clock-names = "clk_trng", "hclk_trng";
++		resets = <&cru SRST_TRNG_NS>;
++		reset-names = "reset";
++		status = "disabled";
++	};
++
+ 	combphy0: phy@fe820000 {
+ 		compatible = "rockchip,rk3568-naneng-combphy";
+ 		reg = <0x0 0xfe820000 0x0 0x100>;
