@@ -489,6 +489,7 @@ ${channel_list:+chanlist=$channel_list}
 ${hostapd_noscan:+noscan=1}
 ${tx_burst:+tx_queue_data2_burst=$tx_burst}
 mbssid=$multiple_bssid
+#num_global_macaddr=$num_global_macaddr
 $base_cfg
 
 EOF
@@ -519,6 +520,7 @@ mac80211_hostapd_setup_bss() {
 	cat >> /var/run/hostapd-$phy.conf <<EOF
 $hostapd_cfg
 bssid=$macaddr
+${default_macaddr:+#default_macaddr}
 ${dtim_period:+dtim_period=$dtim_period}
 ${max_listen_int:+max_listen_interval=$max_listen_int}
 EOF
@@ -646,13 +648,16 @@ mac80211_prepare_vif() {
 	set_default powersave 0
 	json_add_string _ifname "$ifname"
 
+	default_macaddr=
 	if [ -z "$macaddr" ]; then
 		macaddr="$(mac80211_generate_mac $phy)"
 		macidx="$(($macidx + 1))"
+		default_macaddr=1
 	elif [ "$macaddr" = 'random' ]; then
 		macaddr="$(macaddr_random)"
 	fi
 	json_add_string _macaddr "$macaddr"
+	json_add_string _default_macaddr "$default_macaddr"
 	json_select ..
 
 
@@ -776,7 +781,7 @@ mac80211_setup_adhoc() {
 
 	json_add_object "$ifname"
 	json_add_string mode adhoc
-	json_add_string macaddr "$macaddr"
+	[ -n "$default_macaddr" ] || json_add_string macaddr "$macaddr"
 	json_add_string ssid "$ssid"
 	json_add_string freq "$freq"
 	json_add_string htmode "$iw_htmode"
@@ -802,7 +807,7 @@ mac80211_setup_mesh() {
 
 	json_add_object "$ifname"
 	json_add_string mode mesh
-	json_add_string macaddr "$macaddr"
+	[ -n "$default_macaddr" ] || json_add_string macaddr "$macaddr"
 	json_add_string ssid "$ssid"
 	json_add_string freq "$freq"
 	json_add_string htmode "$iw_htmode"
@@ -862,7 +867,7 @@ wpa_supplicant_add_interface() {
 	json_add_string iface "$ifname"
 	json_add_string mode "$mode"
 	json_add_string config "$_config"
-	json_add_string macaddr "$macaddr"
+	[ -n "$default_macaddr" ] || json_add_string macaddr "$macaddr"
 	[ -n "$network_bridge" ] && json_add_string bridge "$network_bridge"
 	[ -n "$wds" ] && json_add_boolean 4addr "$wds"
 	json_add_boolean powersave "$powersave"
@@ -950,6 +955,7 @@ mac80211_setup_vif() {
 	json_select config
 	json_get_var ifname _ifname
 	json_get_var macaddr _macaddr
+	json_get_var default_macaddr _default_macaddr
 	json_get_vars mode wds powersave
 
 	set_default powersave 0
