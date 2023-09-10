@@ -55,7 +55,9 @@ endef
 
 define Package/opkg/conffiles
 /etc/opkg.conf
+ifneq ($(CONFIG_FORGET_OPKG_KEYS),y)
 /etc/opkg/keys/
+endif
 /etc/opkg/customfeeds.conf
 endef
 
