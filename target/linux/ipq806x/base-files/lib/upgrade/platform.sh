@@ -82,7 +82,7 @@ platform_do_upgrade() {
 }
 
 platform_copy_config() {
-	case "${board_name}" in
+	case "$(board_name)" in
 	asus,onhub |\
 	tplink,onhub)
 		emmc_copy_config
