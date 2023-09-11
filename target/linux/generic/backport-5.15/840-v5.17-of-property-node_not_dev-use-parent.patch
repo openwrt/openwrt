@@ -1,0 +1,64 @@
+From 3cd6bab2f81da960322227e4758c675b95c2895c Mon Sep 17 00:00:00 2001
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Thu, 2 Sep 2021 11:02:21 +0200
+Subject: [PATCH] of: property: fw_devlink: Fixup behaviour when 'node_not_dev'
+ is set
+
+In the struct supplier_bindings the member 'node_not_dev' is described as
+"The consumer node containing the property is never a device.", but that is
+inconsistent with the behaviour of the code in of_link_property(), as it
+calls of_get_compat_node() that starts parsing for a compatible property
+from the node it gets passed to it. The proper behaviour is to start at the
+node's parent, so let's do that.
+
+While at it, let's take the opportunity to update the description of the
+'node_not_dev' flag, as to clarify its purpose.
+
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Reviewed-by: Saravana Kannan <saravanak@google.com>
+Signed-off-by: Rob Herring <robh@kernel.org>
+Link: https://lore.kernel.org/r/20210902090221.820254-1-ulf.hansson@linaro.org
+---
+ drivers/of/property.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+--- a/drivers/of/property.c
++++ b/drivers/of/property.c
+@@ -1077,6 +1077,17 @@ static struct device_node *of_get_compat
+ 	return np;
+ }
+ 
++static struct device_node *of_get_compat_node_parent(struct device_node *np)
++{
++	struct device_node *parent, *node;
++
++	parent = of_get_parent(np);
++	node = of_get_compat_node(parent);
++	of_node_put(parent);
++
++	return node;
++}
++
+ /**
+  * of_link_to_phandle - Add fwnode link to supplier from supplier phandle
+  * @con_np: consumer device tree node
+@@ -1251,7 +1262,9 @@ static struct device_node *parse_##fname
+  * @parse_prop.index: For properties holding a list of phandles, this is the
+  *		      index into the list
+  * @optional: Describes whether a supplier is mandatory or not
+- * @node_not_dev: The consumer node containing the property is never a device.
++ * @node_not_dev: The consumer node containing the property is never converted
++ *		  to a struct device. Instead, parse ancestor nodes for the
++ *		  compatible property to find a node corresponding to a device.
+  *
+  * Returns:
+  * parse_prop() return values are
+@@ -1426,7 +1439,7 @@ static int of_link_property(struct devic
+ 			struct device_node *con_dev_np;
+ 
+ 			con_dev_np = s->node_not_dev
+-					? of_get_compat_node(con_np)
++					? of_get_compat_node_parent(con_np)
+ 					: of_node_get(con_np);
+ 			matched = true;
+ 			i++;
