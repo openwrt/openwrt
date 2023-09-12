@@ -1172,7 +1172,7 @@ define Device/zte_mf287_common
 #	exploit for the web interface
 	IMAGES += factory.bin recovery.bin
 	IMAGE/factory.bin  := append-ubi
-	IMAGE/recovery.bin := append-squashfs4-fakeroot | sysupgrade-tar kernel=$$$$(BIN_DIR)/openwrt-$$(BOARD)$$(if $$(SUBTARGET),-$$(SUBTARGET))-$$(DEVICE_NAME)-initramfs-zImage.itb rootfs=$$$$@ | append-metadata
+	IMAGE/recovery.bin := append-squashfs4-fakeroot | sysupgrade-tar kernel=$$$$(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE) rootfs=$$$$@ | append-metadata
 endef
 
 define Device/zte_mf287plus
