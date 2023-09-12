@@ -11,7 +11,8 @@ mediatek_setup_interfaces()
 	acer,predator-w6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
 		;;
-	asus,tuf-ax4200)
+	asus,tuf-ax4200|\
+	mediatek,mt7981-rfb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
 		;;
 	netgear,wax220|\
