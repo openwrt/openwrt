@@ -2,6 +2,7 @@
 #include "utils/common.h"
 #include "utils/ucode.h"
 #include "drivers/driver.h"
+#include "ap/hostapd.h"
 #include "wpa_supplicant_i.h"
 #include "wps_supplicant.h"
 #include "bss.h"
@@ -224,6 +225,15 @@ uc_wpas_iface_status(uc_vm_t *vm, size_t nargs)
 		ucv_object_add(ret, "sec_chan_offset", ucv_int64_new(sec_chan));
 		ucv_object_add(ret, "frequency", ucv_int64_new(bss->freq));
 	}
+
+#ifdef CONFIG_MESH
+	if (wpa_s->ifmsh) {
+		struct hostapd_iface *ifmsh = wpa_s->ifmsh;
+
+		ucv_object_add(ret, "sec_chan_offset", ucv_int64_new(ifmsh->conf->secondary_channel));
+		ucv_object_add(ret, "frequency", ucv_int64_new(ifmsh->freq));
+	}
+#endif
 
 	return ret;
 }
