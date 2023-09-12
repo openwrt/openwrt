@@ -89,6 +89,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	h3c,magic-nx30-pro|\
+	mediatek,mt7981-rfb|\
 	qihoo,360t7|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
