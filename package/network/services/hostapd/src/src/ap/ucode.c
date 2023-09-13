@@ -146,6 +146,7 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 	hostapd_config_free(conf);
 
 	hostapd_setup_bss(hapd, hapd == iface->bss[0], !iface->conf->mbssid);
+	hostapd_ucode_update_interfaces();
 
 	ret = 0;
 
