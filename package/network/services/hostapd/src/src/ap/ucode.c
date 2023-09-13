@@ -394,7 +394,7 @@ uc_hostapd_iface_stop(uc_vm_t *vm, size_t nargs)
 		struct hostapd_data *hapd = iface->bss[i];
 
 		hostapd_drv_stop_ap(hapd);
-		hapd->started = 0;
+		hapd->beacon_set_done = 0;
 	}
 }
 
@@ -471,7 +471,6 @@ out:
 		struct hostapd_data *hapd = iface->bss[i];
 		int ret;
 
-		hapd->started = 1;
 		hapd->conf->start_disabled = 0;
 		hostapd_set_freq(hapd, conf->hw_mode, iface->freq,
 				 conf->channel,
