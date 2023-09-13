@@ -76,7 +76,7 @@ Signed-off-by: T.J. Mercier <tjmercier@google.com>
 
 --- a/include/linux/memcontrol.h
 +++ b/include/linux/memcontrol.h
-@@ -790,6 +790,11 @@ static inline void obj_cgroup_put(struct
+@@ -795,6 +795,11 @@ static inline void obj_cgroup_put(struct
  	percpu_ref_put(&objcg->refcnt);
  }
  
@@ -88,7 +88,7 @@ Signed-off-by: T.J. Mercier <tjmercier@google.com>
  static inline void mem_cgroup_put(struct mem_cgroup *memcg)
  {
  	if (memcg)
-@@ -1290,6 +1295,11 @@ static inline void obj_cgroup_put(struct
+@@ -1295,6 +1300,11 @@ static inline void obj_cgroup_put(struct
  {
  }
  
