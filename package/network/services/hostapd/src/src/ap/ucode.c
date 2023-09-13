@@ -8,6 +8,7 @@
 #include "hw_features.h"
 #include "ap_drv_ops.h"
 #include "dfs.h"
+#include "acs.h"
 #include <libubox/uloop.h>
 
 static uc_resource_type_t *global_type, *bss_type, *iface_type;
@@ -299,6 +300,14 @@ uc_hostapd_iface_stop(uc_vm_t *vm, size_t nargs)
 	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
 	int i;
 
+#ifdef CONFIG_ACS
+	if (iface->state == HAPD_IFACE_ACS) {
+		acs_cleanup(iface);
+		iface->scan_cb = NULL;
+		hostapd_disable_iface(iface);
+	}
+#endif
+
 	for (i = 0; i < iface->num_bss; i++) {
 		struct hostapd_data *hapd = iface->bss[i];
 
@@ -319,6 +328,7 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 	if (!iface)
 		return NULL;
 
+	iface->freq = 0;
 	if (!info)
 		goto out;
 
@@ -347,13 +357,30 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 	if (!errno)
 		hostapd_set_oper_chwidth(conf, intval);
 
+	intval = ucv_int64_get(ucv_object_get(info, "frequency", NULL));
+	if (!errno)
+		iface->freq = intval;
+	conf->acs = 0;
+
 out:
-	if (conf->channel)
+	switch (iface->state) {
+	case HAPD_IFACE_DISABLED:
+		break;
+	case HAPD_IFACE_ENABLED:
+		if (!hostapd_is_dfs_required(iface) ||
+			hostapd_is_dfs_chan_available(iface))
+			break;
+		wpa_printf(MSG_INFO, "DFS CAC required on new channel, restart interface");
+		/* fallthrough */
+	default:
+		hostapd_disable_iface(iface);
+		break;
+	}
+
+	if (conf->channel && !iface->freq)
 		iface->freq = hostapd_hw_get_freq(iface->bss[0], conf->channel);
 
-	if (hostapd_is_dfs_required(iface) && !hostapd_is_dfs_chan_available(iface)) {
-		wpa_printf(MSG_INFO, "DFS CAC required on new channel, restart interface");
-		hostapd_disable_iface(iface);
+	if (iface->state != HAPD_IFACE_ENABLED) {
 		hostapd_enable_iface(iface);
 		return ucv_boolean_new(true);
 	}
