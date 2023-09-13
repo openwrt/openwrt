@@ -84,7 +84,7 @@
  		   __func__, driver, drv_priv);
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
-@@ -2778,7 +2778,7 @@ static void handle_auth(struct hostapd_d
+@@ -2786,7 +2786,7 @@ static void handle_auth(struct hostapd_d
  	u16 auth_alg, auth_transaction, status_code;
  	u16 resp = WLAN_STATUS_SUCCESS;
  	struct sta_info *sta = NULL;
@@ -93,7 +93,7 @@
  	u16 fc;
  	const u8 *challenge = NULL;
  	u8 resp_ies[2 + WLAN_AUTH_CHALLENGE_LEN];
-@@ -2787,6 +2787,11 @@ static void handle_auth(struct hostapd_d
+@@ -2795,6 +2795,11 @@ static void handle_auth(struct hostapd_d
  	struct radius_sta rad_info;
  	const u8 *dst, *sa, *bssid;
  	bool mld_sta = false;
@@ -105,7 +105,7 @@
  
  	if (len < IEEE80211_HDRLEN + sizeof(mgmt->u.auth)) {
  		wpa_printf(MSG_INFO, "handle_auth - too short payload (len=%lu)",
-@@ -2978,6 +2983,13 @@ static void handle_auth(struct hostapd_d
+@@ -2986,6 +2991,13 @@ static void handle_auth(struct hostapd_d
  		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
  		goto fail;
  	}
@@ -119,7 +119,7 @@
  	if (res == HOSTAPD_ACL_PENDING)
  		return;
  
-@@ -5141,7 +5153,7 @@ static void handle_assoc(struct hostapd_
+@@ -5161,7 +5173,7 @@ static void handle_assoc(struct hostapd_
  	int resp = WLAN_STATUS_SUCCESS;
  	u16 reply_res = WLAN_STATUS_UNSPECIFIED_FAILURE;
  	const u8 *pos;
@@ -128,7 +128,7 @@
  	struct sta_info *sta;
  	u8 *tmp = NULL;
  #ifdef CONFIG_FILS
-@@ -5354,6 +5366,11 @@ static void handle_assoc(struct hostapd_
+@@ -5374,6 +5386,11 @@ static void handle_assoc(struct hostapd_
  		left = res;
  	}
  #endif /* CONFIG_FILS */
@@ -140,7 +140,7 @@
  
  	/* followed by SSID and Supported rates; and HT capabilities if 802.11n
  	 * is used */
-@@ -5452,6 +5469,13 @@ static void handle_assoc(struct hostapd_
+@@ -5472,6 +5489,13 @@ static void handle_assoc(struct hostapd_
  	}
  #endif /* CONFIG_FILS */
  
@@ -154,7 +154,7 @@
   fail:
  
  	/*
-@@ -5733,6 +5757,7 @@ static void handle_disassoc(struct hosta
+@@ -5753,6 +5777,7 @@ static void handle_disassoc(struct hosta
  			   (unsigned long) len);
  		return;
  	}
@@ -162,7 +162,7 @@
  
  	sta = ap_get_sta(hapd, mgmt->sa);
  	if (!sta) {
-@@ -5764,6 +5789,8 @@ static void handle_deauth(struct hostapd
+@@ -5784,6 +5809,8 @@ static void handle_deauth(struct hostapd
  	/* Clear the PTKSA cache entries for PASN */
  	ptksa_cache_flush(hapd->ptksa, mgmt->sa, WPA_CIPHER_NONE);
  
@@ -201,7 +201,7 @@
  
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -145,6 +145,10 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -260,6 +260,10 @@ int hostapd_notif_assoc(struct hostapd_d
  	u16 reason = WLAN_REASON_UNSPECIFIED;
  	int status = WLAN_STATUS_SUCCESS;
  	const u8 *p2p_dev_addr = NULL;
@@ -212,7 +212,7 @@
  
  	if (addr == NULL) {
  		/*
-@@ -237,6 +241,12 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -396,6 +400,12 @@ int hostapd_notif_assoc(struct hostapd_d
  		goto fail;
  	}
  
@@ -348,7 +348,7 @@
  CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -7566,6 +7566,8 @@ struct wpa_supplicant * wpa_supplicant_a
+@@ -7593,6 +7593,8 @@ struct wpa_supplicant * wpa_supplicant_a
  	}
  #endif /* CONFIG_P2P */
  
@@ -357,7 +357,7 @@
  	return wpa_s;
  }
  
-@@ -7592,6 +7594,8 @@ int wpa_supplicant_remove_iface(struct w
+@@ -7619,6 +7621,8 @@ int wpa_supplicant_remove_iface(struct w
  	struct wpa_supplicant *parent = wpa_s->parent;
  #endif /* CONFIG_MESH */
  
@@ -366,7 +366,7 @@
  	/* Remove interface from the global list of interfaces */
  	prev = global->ifaces;
  	if (prev == wpa_s) {
-@@ -7938,8 +7942,12 @@ int wpa_supplicant_run(struct wpa_global
+@@ -7965,8 +7969,12 @@ int wpa_supplicant_run(struct wpa_global
  	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
  	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
  
@@ -398,7 +398,7 @@
  };
  
  
-@@ -650,6 +653,7 @@ struct wpa_supplicant {
+@@ -685,6 +688,7 @@ struct wpa_supplicant {
  	unsigned char own_addr[ETH_ALEN];
  	unsigned char perm_addr[ETH_ALEN];
  	char ifname[100];
@@ -508,7 +508,7 @@
  
 --- a/src/ap/dfs.c
 +++ b/src/ap/dfs.c
-@@ -1211,6 +1211,8 @@ int hostapd_dfs_pre_cac_expired(struct h
+@@ -1216,6 +1216,8 @@ int hostapd_dfs_pre_cac_expired(struct h
  		"freq=%d ht_enabled=%d chan_offset=%d chan_width=%d cf1=%d cf2=%d",
  		freq, ht_enabled, chan_offset, chan_width, cf1, cf2);
  

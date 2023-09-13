@@ -120,7 +120,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		 * Convert 80+80 MHz channel width to new style as interop
 --- a/src/common/hw_features_common.c
 +++ b/src/common/hw_features_common.c
-@@ -808,6 +808,7 @@ int ieee80211ac_cap_check(u32 hw, u32 co
+@@ -811,6 +811,7 @@ int ieee80211ac_cap_check(u32 hw, u32 co
  	VHT_CAP_CHECK(VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB);
  	VHT_CAP_CHECK(VHT_CAP_RX_ANTENNA_PATTERN);
  	VHT_CAP_CHECK(VHT_CAP_TX_ANTENNA_PATTERN);
@@ -130,7 +130,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  #undef VHT_CAP_CHECK_MAX
 --- a/src/common/ieee802_11_defs.h
 +++ b/src/common/ieee802_11_defs.h
-@@ -1348,6 +1348,8 @@ struct ieee80211_ampe_ie {
+@@ -1349,6 +1349,8 @@ struct ieee80211_ampe_ie {
  #define VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB     ((u32) BIT(26) | BIT(27))
  #define VHT_CAP_RX_ANTENNA_PATTERN                  ((u32) BIT(28))
  #define VHT_CAP_TX_ANTENNA_PATTERN                  ((u32) BIT(29))

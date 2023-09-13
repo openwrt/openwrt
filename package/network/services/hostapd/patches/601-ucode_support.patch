@@ -26,7 +26,7 @@
  ifdef CONFIG_CODE_COVERAGE
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -994,6 +994,7 @@ int main(int argc, char *argv[])
+@@ -1007,6 +1007,7 @@ int main(int argc, char *argv[])
  	}
  
  	hostapd_global_ctrl_iface_init(&interfaces);
@@ -34,7 +34,7 @@
  
  	if (hostapd_global_run(&interfaces, daemonize, pid_file)) {
  		wpa_printf(MSG_ERROR, "Failed to start eloop");
-@@ -1003,6 +1004,7 @@ int main(int argc, char *argv[])
+@@ -1016,6 +1017,7 @@ int main(int argc, char *argv[])
  	ret = 0;
  
   out:
@@ -186,7 +186,7 @@
  
  #ifdef CONFIG_BGSCAN
  	if (state == WPA_COMPLETED && wpa_s->current_ssid != wpa_s->bgscan_ssid)
-@@ -7567,6 +7568,7 @@ struct wpa_supplicant * wpa_supplicant_a
+@@ -7594,6 +7595,7 @@ struct wpa_supplicant * wpa_supplicant_a
  #endif /* CONFIG_P2P */
  
  	wpas_ubus_add_bss(wpa_s);
@@ -194,7 +194,7 @@
  
  	return wpa_s;
  }
-@@ -7594,6 +7596,7 @@ int wpa_supplicant_remove_iface(struct w
+@@ -7621,6 +7623,7 @@ int wpa_supplicant_remove_iface(struct w
  	struct wpa_supplicant *parent = wpa_s->parent;
  #endif /* CONFIG_MESH */
  
@@ -202,7 +202,7 @@
  	wpas_ubus_free_bss(wpa_s);
  
  	/* Remove interface from the global list of interfaces */
-@@ -7904,6 +7907,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -7931,6 +7934,7 @@ struct wpa_global * wpa_supplicant_init(
  
  	eloop_register_timeout(WPA_SUPPLICANT_CLEANUP_INTERVAL, 0,
  			       wpas_periodic, global, NULL);
@@ -210,7 +210,7 @@
  
  	return global;
  }
-@@ -7942,12 +7946,8 @@ int wpa_supplicant_run(struct wpa_global
+@@ -7969,12 +7973,8 @@ int wpa_supplicant_run(struct wpa_global
  	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
  	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
  
@@ -223,7 +223,7 @@
  	return 0;
  }
  
-@@ -7980,6 +7980,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+@@ -8007,6 +8007,8 @@ void wpa_supplicant_deinit(struct wpa_gl
  
  	wpas_notify_supplicant_deinitialized(global);
  
@@ -242,7 +242,7 @@
  
  extern const char *const wpa_supplicant_version;
  extern const char *const wpa_supplicant_license;
-@@ -654,6 +655,7 @@ struct wpa_supplicant {
+@@ -689,6 +690,7 @@ struct wpa_supplicant {
  	unsigned char perm_addr[ETH_ALEN];
  	char ifname[100];
  	struct wpas_ubus_bss ubus;
@@ -296,7 +296,7 @@
  	 * set_sta_vlan - Bind a station into a specific interface (AP only)
  	 * @priv: Private driver interface data
  	 * @ifname: Interface (main or virtual BSS or VLAN)
-@@ -6426,6 +6445,7 @@ union wpa_event_data {
+@@ -6440,6 +6459,7 @@ union wpa_event_data {
  
  	/**
  	 * struct ch_switch
@@ -304,7 +304,7 @@
  	 * @freq: Frequency of new channel in MHz
  	 * @ht_enabled: Whether this is an HT channel
  	 * @ch_offset: Secondary channel offset
-@@ -6436,6 +6456,7 @@ union wpa_event_data {
+@@ -6450,6 +6470,7 @@ union wpa_event_data {
  	 * @punct_bitmap: Puncturing bitmap
  	 */
  	struct ch_switch {
@@ -331,7 +331,7 @@
  
  	if (finished)
  		bss->flink->freq = data.ch_switch.freq;
-@@ -3848,6 +3851,7 @@ static void do_process_drv_event(struct
+@@ -3912,6 +3915,7 @@ static void do_process_drv_event(struct
  				     tb[NL80211_ATTR_CENTER_FREQ1],
  				     tb[NL80211_ATTR_CENTER_FREQ2],
  				     tb[NL80211_ATTR_PUNCT_BITMAP],
@@ -339,7 +339,7 @@
  				     0);
  		break;
  	case NL80211_CMD_CH_SWITCH_NOTIFY:
-@@ -3860,6 +3864,7 @@ static void do_process_drv_event(struct
+@@ -3924,6 +3928,7 @@ static void do_process_drv_event(struct
  				     tb[NL80211_ATTR_CENTER_FREQ1],
  				     tb[NL80211_ATTR_CENTER_FREQ2],
  				     tb[NL80211_ATTR_PUNCT_BITMAP],
@@ -349,7 +349,7 @@
  	case NL80211_CMD_DISCONNECT:
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -5381,6 +5381,7 @@ void supplicant_event(void *ctx, enum wp
+@@ -5389,6 +5389,7 @@ void supplicant_event(void *ctx, enum wp
  		event_to_string(event), event);
  #endif /* CONFIG_NO_STDOUT_DEBUG */
  
@@ -494,7 +494,7 @@
  
  static int cookie_handler(struct nl_msg *msg, void *arg)
  {
-@@ -10472,6 +10513,37 @@ static int driver_nl80211_if_remove(void
+@@ -10512,6 +10553,37 @@ static int driver_nl80211_if_remove(void
  }
  
  
@@ -532,7 +532,7 @@
  static int driver_nl80211_send_mlme(void *priv, const u8 *data,
  				    size_t data_len, int noack,
  				    unsigned int freq,
-@@ -13656,6 +13728,8 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -13696,6 +13768,8 @@ const struct wpa_driver_ops wpa_driver_n
  	.set_acl = wpa_driver_nl80211_set_acl,
  	.if_add = wpa_driver_nl80211_if_add,
  	.if_remove = driver_nl80211_if_remove,
