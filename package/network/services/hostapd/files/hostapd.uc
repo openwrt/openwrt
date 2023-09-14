@@ -688,7 +688,6 @@ let main_obj = {
 				freq_info.csa_count = req.args.csa_count ?? 10;
 				ret = iface.switch_channel(freq_info);
 			} else {
-				iface.stop();
 				ret = iface.start(freq_info);
 			}
 			if (!ret)

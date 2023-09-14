@@ -382,13 +382,23 @@ uc_hostapd_iface_stop(uc_vm_t *vm, size_t nargs)
 	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
 	int i;
 
+	switch (iface->state) {
+	case HAPD_IFACE_ENABLED:
+	case HAPD_IFACE_DISABLED:
+		break;
 #ifdef CONFIG_ACS
-	if (iface->state == HAPD_IFACE_ACS) {
+	case HAPD_IFACE_ACS:
 		acs_cleanup(iface);
 		iface->scan_cb = NULL;
-		hostapd_disable_iface(iface);
-	}
+		/* fallthrough */
 #endif
+	default:
+		hostapd_disable_iface(iface);
+		break;
+	}
+
+	if (iface->state != HAPD_IFACE_ENABLED)
+		hostapd_disable_iface(iface);
 
 	for (i = 0; i < iface->num_bss; i++) {
 		struct hostapd_data *hapd = iface->bss[i];
@@ -406,28 +416,37 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
 	uc_value_t *info = uc_fn_arg(0);
 	struct hostapd_config *conf;
+	bool changed = false;
 	uint64_t intval;
 	int i;
 
 	if (!iface)
 		return NULL;
 
-	iface->freq = 0;
-	if (!info)
+	if (!info) {
+		iface->freq = 0;
 		goto out;
+	}
 
 	if (ucv_type(info) != UC_OBJECT)
 		return NULL;
 
+#define UPDATE_VAL(field, name)							\
+	if ((intval = ucv_int64_get(ucv_object_get(info, name, NULL))) &&	\
+		!errno && intval != conf->field) do {				\
+		conf->field = intval;						\
+		changed = true;							\
+	} while(0)
+
 	conf = iface->conf;
-	if ((intval = ucv_int64_get(ucv_object_get(info, "op_class", NULL))) &&	!errno)
-		conf->op_class = intval;
-	if ((intval = ucv_int64_get(ucv_object_get(info, "hw_mode", NULL))) && !errno)
-		conf->hw_mode = intval;
-	if ((intval = ucv_int64_get(ucv_object_get(info, "channel", NULL))) && !errno)
-		conf->channel = intval;
-	if ((intval = ucv_int64_get(ucv_object_get(info, "sec_channel", NULL))) && !errno)
-		conf->secondary_channel = intval;
+	UPDATE_VAL(op_class, "op_class");
+	UPDATE_VAL(hw_mode, "hw_mode");
+	UPDATE_VAL(channel, "channel");
+	UPDATE_VAL(secondary_channel, "sec_channel");
+	if (!changed &&
+	    (iface->bss[0]->beacon_set_done ||
+	     iface->state == HAPD_IFACE_DFS))
+		return ucv_boolean_new(true);
 
 	intval = ucv_int64_get(ucv_object_get(info, "center_seg0_idx", NULL));
 	if (!errno)
@@ -444,6 +463,8 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 	intval = ucv_int64_get(ucv_object_get(info, "frequency", NULL));
 	if (!errno)
 		iface->freq = intval;
+	else
+		iface->freq = 0;
 	conf->acs = 0;
 
 out:
