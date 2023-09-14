@@ -1,0 +1,46 @@
+From 19f291d8a65cd19e7595006c7872cd95aa6f9e93 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alexis=20Lothor=C3=A9?= <alexis.lothore@bootlin.com>
+Date: Fri, 4 Aug 2023 19:13:10 +0200
+Subject: [PATCH 893/898] net: dsa: mv88e6xxx: pass directly chip structure to
+ mv88e6xxx_phy_is_internal
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Since this function is a simple helper, we do not need to pass a full
+dsa_switch structure, we can directly pass the mv88e6xxx_chip structure.
+Doing so will allow to share this function with any other function
+not manipulating dsa_switch structure but needing info about number of
+internal phys
+
+Signed-off-by: Alexis Lothoré <alexis.lothore@bootlin.com>
+Reviewed-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/mv88e6xxx/chip.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/dsa/mv88e6xxx/chip.c
++++ b/drivers/net/dsa/mv88e6xxx/chip.c
+@@ -459,10 +459,8 @@ restore_link:
+ 	return err;
+ }
+ 
+-static int mv88e6xxx_phy_is_internal(struct dsa_switch *ds, int port)
++static int mv88e6xxx_phy_is_internal(struct mv88e6xxx_chip *chip, int port)
+ {
+-	struct mv88e6xxx_chip *chip = ds->priv;
+-
+ 	return port < chip->info->num_internal_phys;
+ }
+ 
+@@ -704,7 +702,7 @@ static void mv88e6xxx_mac_config(struct
+ 
+ 	mv88e6xxx_reg_lock(chip);
+ 
+-	if (mode != MLO_AN_PHY || !mv88e6xxx_phy_is_internal(ds, port)) {
++	if (mode != MLO_AN_PHY || !mv88e6xxx_phy_is_internal(chip, port)) {
+ 		/* In inband mode, the link may come up at any time while the
+ 		 * link is not forced down. Force the link down while we
+ 		 * reconfigure the interface mode.
