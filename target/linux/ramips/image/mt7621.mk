@@ -119,7 +119,7 @@ define Build/belkin-header
 
 	( \
 		type_fw_date=$$(printf "01%02x%02x%02x" \
-			$$(date -d "@$(SOURCE_DATE_EPOCH)" "+%y %m %d")); \
+			$$(date -d "@$(SOURCE_DATE_EPOCH)" "+%-y %-m %-d")); \
 		hw_fw_ver=$$(printf "%02x%02x%02x%02x" \
 			$(hw_ver) $$(echo $(fw_ver) | cut -d. -f-3 | tr . ' ')); \
 		fw_len_crc=$$(gzip -c $@ | tail -c 8 | od -An -tx8 | tr -d ' \n'); \
