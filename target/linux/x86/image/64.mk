@@ -8,3 +8,16 @@ define Device/generic
   GRUB2_VARIANT := generic
 endef
 TARGET_DEVICES += generic
+
+define Device/mellanox_spectrum-sn2000
+  DEVICE_VENDOR := Mellanox
+  DEVICE_MODEL := Spectrum SN2000 Series
+  DEVICE_PACKAGES += \
+  	kmod-mlxsw-core kmod-mlxsw-pci kmod-mlxsw-i2c \
+  	kmod-mlxsw-spectrum kmod-mlxsw-minimal kmod-mlxfw \
+  	kmod-leds-mlxcpld kmod-lib-objagg kmod-lib-parman \
+  	kmod-hwmon-coretemp kmod-hwmon-drivetemp kmod-hwmon-jc42 \
+  	kmod-i2c-i801 kmod-igb mlxsw_spectrum-firmware
+  GRUB2_VARIANT := generic
+endef
+TARGET_DEVICES += mellanox_spectrum-sn2000

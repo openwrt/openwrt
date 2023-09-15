@@ -216,6 +216,7 @@ menu "Target Images"
 	config GRUB_CONSOLE
 		bool "Use Console Terminal (in addition to Serial)"
 		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+		default n if TARGET_x86_64_DEVICE_mellanox_spectrum-sn2000
 		default y
 
 	config GRUB_SERIAL
