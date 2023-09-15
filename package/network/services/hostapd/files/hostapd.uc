@@ -215,6 +215,7 @@ function bss_remove_file_fields(config)
 	for (let key in config.hash)
 		new_cfg.hash[key] = config.hash[key];
 	delete new_cfg.hash.wpa_psk_file;
+	delete new_cfg.hash.vlan_file;
 
 	return new_cfg;
 }
@@ -475,11 +476,12 @@ function iface_reload_config(phydev, config, old_config)
 		             bss_remove_file_fields(bss_list_cfg[i]))) {
 			hostapd.printf(`Update config data files for bss ${ifname}`);
 			if (bss.set_config(config_inline, i, true) < 0) {
-				hostapd.printf(`Failed to update config data files for bss ${ifname}`);
+				hostapd.printf(`Could not update config data files for bss ${ifname}`);
 				return false;
+			} else {
+				bss.ctrl("RELOAD_WPA_PSK");
+				continue;
 			}
-			bss.ctrl("RELOAD_WPA_PSK");
-			continue;
 		}
 
 		bss_reload_psk(bss, config.bss[i], bss_list_cfg[i]);
@@ -487,8 +489,6 @@ function iface_reload_config(phydev, config, old_config)
 			continue;
 
 		hostapd.printf(`Reload config for bss '${config.bss[0].ifname}' on phy '${phy}'`);
-		hostapd.printf(`old: ${bss_remove_file_fields(bss_list_cfg[i])}`);
-		hostapd.printf(`new: ${bss_remove_file_fields(config.bss[i])}`);
 		if (bss.set_config(config_inline, i) < 0) {
 			hostapd.printf(`Failed to set config for bss ${ifname}`);
 			return false;
