@@ -147,6 +147,22 @@ endef
 $(eval $(call KernelPackage,leds-apu))
 
 
+define KernelPackage/leds-mlxcpld
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED support for the Mellanox boards
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-mlxcpld.ko
+  KCONFIG:=CONFIG_LEDS_MLXCPLD
+  AUTOLOAD:=$(call AutoProbe,leds-mlxcpld)
+endef
+
+define KernelPackage/leds-mlxcpld/description
+  This option enables support for the LEDs on the Mellanox
+  boards.
+endef
+
+$(eval $(call KernelPackage,leds-mlxcpld))
+
+
 define KernelPackage/leds-pca955x
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED driver for PCA955x I2C chips
