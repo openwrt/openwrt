@@ -16,7 +16,8 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && cat $key_path/6gMAC > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "2" ] && cat $key_path/5gMAC > /sys${DEVPATH}/macaddress
 		;;
-	asus,tuf-ax4200)
+	asus,tuf-ax4200|\
+	asus,tuf-ax6000)
 		CI_UBIPART="UBI_DEV"
 		addr=$(mtd_get_mac_binary_ubi "Factory" 0x4)
 		# Originally, phy0 is phy1 mac with LA bit set. However, this would conflict
