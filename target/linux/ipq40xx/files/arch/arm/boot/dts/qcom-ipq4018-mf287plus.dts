@@ -3,7 +3,7 @@
 // Copyright (c) 2022, Giammarco Marzano <stich86@gmail.com>.
 // Copyright (c) 2023, Andreas Böhler <dev@aboehler.at>
 
-#include "qcom-ipq4018-mf287.dtsi"
+#include "qcom-ipq4018-mf287_common.dtsi"
 
 / {
 	model = "ZTE MF287Plus";
@@ -215,4 +215,12 @@
 			output-high;
 		};
 	};
+};
+
+&wifi0 {
+	qcom,ath10k-calibration-variant = "zte,mf287plus";
+};
+
+&wifi1{
+	qcom,ath10k-calibration-variant = "zte,mf287plus";
 };

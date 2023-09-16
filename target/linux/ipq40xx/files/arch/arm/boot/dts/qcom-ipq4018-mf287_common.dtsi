@@ -171,7 +171,6 @@
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_1000>, <&macaddr_mac_0>;
-	qcom,ath10k-calibration-variant = "zte,mf287plus";
 };
 
 &wifi1 {
@@ -179,5 +178,4 @@
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_5000>, <&macaddr_mac_0>;
 	mac-address-increment = <1>;
-	qcom,ath10k-calibration-variant = "zte,mf287plus";
 };
