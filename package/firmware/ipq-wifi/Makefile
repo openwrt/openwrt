@@ -2,13 +2,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=ipq-wifi
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2023-06-03
-PKG_SOURCE_VERSION:=cd9c30ca47b8e5388b770c523a7f6b8b969e2f92
-PKG_MIRROR_HASH:=45e623fcc512b514ade0f22e217275536aa8de4afba7dfdb11696482b8fa71a2
+PKG_SOURCE_DATE:=2023-09-16
+PKG_SOURCE_VERSION:=57aa1b1562ac60f11a6bec8be02cd3b68b12b3fa
+PKG_MIRROR_HASH:=f8f9ab78ae85180a6e601d7c911d6c350b0cc132172d4baefc8f9fe07566ce0f
 
 PKG_FLAGS:=nonshared
 
@@ -41,6 +41,7 @@ ALLWIFIBOARDS:= \
 	wallys_dr40x9 \
 	xiaomi_ax3600 \
 	xiaomi_ax9000 \
+	yyets_le1 \
 	zte_mf289f \
 	zte_mf287plus \
 	zyxel_nbg7815
@@ -130,6 +131,7 @@ $(eval $(call generate-ipq-wifi-package,redmi_ax6,Redmi AX6))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
+$(eval $(call generate-ipq-wifi-package,yyets_le1,YYeTs LE1))
 $(eval $(call generate-ipq-wifi-package,zte_mf289f,ZTE MF289F))
 $(eval $(call generate-ipq-wifi-package,zte_mf287plus,ZTE MF287Plus))
 $(eval $(call generate-ipq-wifi-package,zyxel_nbg7815,Zyxel NBG7815))
