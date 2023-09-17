@@ -82,6 +82,9 @@ endif
 ifneq ($(CONFIG_LLDPD_WITH_SNMP),y)
 	sed -i -e '/agentxsocket/d' $(1)/etc/init.d/lldpd $(1)/etc/config/lldpd
 endif
+ifneq ($(CONFIG_LLDPD_WITH_LLDPMED),y)
+	sed -i -e '/lldp_class/d' $(1)/etc/init.d/lldpd $(1)/etc/config/lldpd
+endif
 endef
 
 define Package/lldpd/conffiles
