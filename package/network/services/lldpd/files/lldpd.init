@@ -38,6 +38,10 @@ write_lldpd_conf()
 	for iface in $ifaces; do
 		local ifname=""
 		if network_get_device ifname "$iface" || [ -e "/sys/class/net/$iface" ]; then
+			if [ -e "/sys/class/net/$ifname/bridge" -o -e "/sys/class/net/$ifname/lower_bridge" ] ; then
+				local ports=$(jsonfilter -i /etc/board.json -e "@.network.$iface.device")
+				[ "${ports// /,}" ] && ifname="${ports// /,}"
+			fi
 			append ifnames "${ifname:-$iface}" ","
 		fi
 	done
