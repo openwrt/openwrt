@@ -8,15 +8,10 @@
 / {
 	model = "ZTE MF287Plus";
 	compatible = "zte,mf287plus";
+};
 
-	/*
-	 * This node is used to restart modem module to avoid anomalous
-	 * behaviours on initial communication.
-	 */
-	gpio-restart {
-		compatible = "gpio-restart";
-		gpios = <&tlmm 5 GPIO_ACTIVE_HIGH>;
-	};
+&gpio_modem_reset {
+	gpios = <&tlmm 5 GPIO_ACTIVE_HIGH>;
 };
 
 &key_reset {
