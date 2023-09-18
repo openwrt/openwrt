@@ -18,6 +18,7 @@ PKG_HASH:=67bd9df49fe34e8b82144f6dfb93b320f384a8ea59727e92ff8d18b5f4b579a8
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=COPYING
+PKG_CPE_ID:=cpe:/a:netfilter:libnetfilter_conntrack
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
