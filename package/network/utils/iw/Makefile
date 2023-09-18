@@ -18,6 +18,7 @@ PKG_MIRROR_HASH:=797b322bc03952f3127ae0a7da476c14ada1bbe9a9ae234a56dd6f864c568e1
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-2.0
+PKG_CPE_ID:=cpe:/a:kernel:iw
 
 include $(INCLUDE_DIR)/package.mk
 

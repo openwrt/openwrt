@@ -12,6 +12,8 @@ PKG_HASH:=10503b0217e1b07933e29e8d347a00015b2431bea5f59afe0bed3af30340c82d
 PKG_SOURCE_URL:=@KERNEL/software/utils/dtc
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=GPL
+PKG_CPE_ID:=cpe:/a:dtc_project:dtc
+
 PKG_INSTALL:=1
 PKG_MAINTAINER:=Yousong Zhou <yszhou4tech@gmail.com>
 

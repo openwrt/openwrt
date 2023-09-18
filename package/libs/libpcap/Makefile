@@ -16,6 +16,7 @@ PKG_SOURCE_URL:=http://www.tcpdump.org/release/
 PKG_HASH:=635237637c5b619bcceba91900666b64d56ecb7be63f298f601ec786ce087094
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
+PKG_CPE_ID:=cpe:/a:tcpdump:libpcap
 
 PKG_ASLR_PIE_REGULAR:=1
 PKG_BUILD_PARALLEL:=1
