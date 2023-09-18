@@ -17,6 +17,7 @@ PKG_SOURCE_VERSION:=48cff25dfea5b37e16ba5dc6601e98ab140f5f99
 PKG_MIRROR_HASH:=1327cdc3402e5e3056819e4e9b6f9d4a5bfd401f2c4f58447afb2c3c73fc8aac
 
 PKG_LICENSE:=GPL-2.0
+PKG_CPE_ID:=cpe:/a:netfilter:ebtables
 
 include $(INCLUDE_DIR)/package.mk
 

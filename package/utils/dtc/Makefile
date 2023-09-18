@@ -15,6 +15,7 @@ PKG_SOURCE_URL:=@KERNEL/software/utils/dtc
 PKG_MAINTAINER:=Yousong Zhou <yszhou4tech@gmail.com>
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=GPL
+PKG_CPE_ID:=cpe:/a:dtc_project:dtc
 
 PKG_INSTALL:=1
 

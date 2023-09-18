@@ -17,6 +17,7 @@ PKG_HASH:=4c44e42762f903f9094ba5a598998c800a97a62afd6fd31ec1e0a799e308659c
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-2.0
+PKG_CPE_ID:=cpe:/a:kernel:iw
 
 include $(INCLUDE_DIR)/package.mk
 
