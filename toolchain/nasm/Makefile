@@ -11,6 +11,7 @@ PKG_SOURCE_URL:=https://www.nasm.us/pub/nasm/releasebuilds/$(PKG_VERSION)/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 
 PKG_HASH:=3caf6729c1073bf96629b57cee31eeb54f4f8129b01902c73428836550b30a3f
+PKG_CPE_ID:=cpe:/a:nasm:nasm
 
 HOST_BUILD_PARALLEL:=1
 
