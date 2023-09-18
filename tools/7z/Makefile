@@ -7,6 +7,7 @@ PKG_SOURCE_VERSION:=2301
 PKG_SOURCE:=$(PKG_NAME)$(PKG_SOURCE_VERSION)-src.tar.xz
 PKG_SOURCE_URL:=https://7-zip.org/a/
 PKG_HASH:=356071007360e5a1824d9904993e8b2480b51b570e8c9faf7c0f58ebe4bf9f74
+PKG_CPE_ID:=cpe:/a:7-zip:7zip
 
 # This builds the 7zr variant which supports only 7z, so no non-LGPL code should be included
 PKG_LICENSE:=LGPL-2.1-or-later
