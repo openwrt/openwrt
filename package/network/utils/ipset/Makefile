@@ -18,6 +18,7 @@ PKG_HASH:=be49c9ff489dd6610cad6541e743c3384eac96e9f24707da7b3929d8f2ac64d8
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0
+PKG_CPE_ID:=cpe:/a:netfilter:ipset
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
