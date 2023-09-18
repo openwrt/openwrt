@@ -35,6 +35,16 @@
 		};
 	};
 
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		gpio_modem_reset: modem {
+			gpio-export,name = "modem-reset";
+			gpio-export,output = <0>;
+		};
+	};
+
 	keys {
 		compatible = "gpio-keys";
 

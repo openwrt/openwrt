@@ -9,17 +9,6 @@
 	model = "ZTE MF287Pro";
 	compatible = "zte,mf287pro";
 
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		modem {
-			gpio-export,name = "modem-reset";
-			gpio-export,output = <0>;
-			gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
 	regulator-usb-vbus {
 		compatible = "regulator-fixed";
 		regulator-name = "USB_VBUS";
@@ -29,6 +18,10 @@
 		regulator-boot-on;
 		gpio = <&tlmm 25 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&gpio_modem_reset {
+	gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
 };
 
 &key_reset {
