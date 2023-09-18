@@ -1,7 +1,7 @@
-From 26e872db0f14c09ab57486b538ecc3a24c579df2 Mon Sep 17 00:00:00 2001
+From cd40cd8b1ca4a6f531c6c3fd78b306e5014f9c04 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Mon, 18 Sep 2023 14:39:01 +0200
-Subject: [PATCH 2/3] net: stmmac: improve TX timer arm logic
+Subject: [PATCH 3/4] net: stmmac: improve TX timer arm logic
 
 There is currently a problem with the TX timer getting armed multiple
 unnecessary times causing big performance regression on some device that
@@ -45,7 +45,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -2974,13 +2974,25 @@ static void stmmac_tx_timer_arm(struct s
+@@ -2975,13 +2975,25 @@ static void stmmac_tx_timer_arm(struct s
  {
  	struct stmmac_tx_queue *tx_q = &priv->dma_conf.tx_queue[queue];
  	u32 tx_coal_timer = priv->tx_coal_timer[queue];
