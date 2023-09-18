@@ -21,6 +21,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=0
 PKG_LICENSE:=BSD-3-Clause
+PKG_CPE_ID:=cpe:/a:tcpdump:libpcap
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk

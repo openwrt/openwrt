@@ -20,6 +20,7 @@ PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 
 PKG_FIXUP:=autoreconf
 PKG_LICENSE:=GPL-2.0+
+PKG_CPE_ID:=cpe:/a:netfilter:libnetfilter_conntrack
 
 PKG_INSTALL:=1
 

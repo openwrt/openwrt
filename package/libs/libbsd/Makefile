@@ -10,6 +10,7 @@ PKG_SOURCE_URL:=https://libbsd.freedesktop.org/releases
 
 PKG_LICENSE:=BSD-4-Clause
 PKG_LICENSE_FILES:=COPYING
+PKG_CPE_ID:=cpe:/a:freedesktop:libbsd
 
 include $(INCLUDE_DIR)/package.mk
 
