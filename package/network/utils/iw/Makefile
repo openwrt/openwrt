@@ -17,6 +17,7 @@ PKG_HASH:=f167bbe947dd53bb9ebc0c1dcef5db6ad73ac1d6084f2c6f9376c5c360cc4d4e
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-2.0
+PKG_CPE_ID:=cpe:/a:kernel:iw
 
 PKG_BUILD_FLAGS:=gc-sections lto
 
