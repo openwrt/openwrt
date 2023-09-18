@@ -13,6 +13,7 @@ PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://infraroot.at/pub/mtd/
 PKG_HASH:=386e27fd121699b6b729bc2e8e04dda987b31cca6b16e12fb6cc6dcf26449f46
+PKG_CPE_ID:=cpe:/a:mtd-utils_project:mtd-utils
 
 PKG_FIXUP:=autoreconf
 
