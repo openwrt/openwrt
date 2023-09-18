@@ -118,7 +118,7 @@ define Trusted-Firmware-A/mt7981-sdmmc-ddr3
   DDR_TYPE:=ddr3
 endef
 
-define Trusted-Firmware-A/mt7986-snand-ddr3
+define Trusted-Firmware-A/mt7981-snand-ddr3
   NAME:=MediaTek MT7981 (SPI-NAND via SNFI, DDR3)
   BOOT_DEVICE:=snand
   BUILD_SUBTARGET:=filogic
@@ -347,7 +347,7 @@ TFA_TARGETS:= \
 	mt7981-emmc-ddr3 \
 	mt7981-nor-ddr3 \
 	mt7981-sdmmc-ddr3 \
-	mt7986-snand-ddr3 \
+	mt7981-snand-ddr3 \
 	mt7981-spim-nand-ddr3 \
 	mt7986-emmc-ddr3 \
 	mt7986-nor-ddr3 \
