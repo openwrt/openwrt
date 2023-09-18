@@ -18,7 +18,7 @@ Link: https://lore.kernel.org/r/20230726092113.78794-1-dmantipov@yandex.ru
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -8255,7 +8255,7 @@ ath11k_mac_validate_vht_he_fixed_rate_se
+@@ -8258,7 +8258,7 @@ ath11k_mac_validate_vht_he_fixed_rate_se
  					       const struct cfg80211_bitrate_mask *mask)
  {
  	bool he_fixed_rate = false, vht_fixed_rate = false;
@@ -27,7 +27,7 @@ Link: https://lore.kernel.org/r/20230726092113.78794-1-dmantipov@yandex.ru
  	const u16 *vht_mcs_mask, *he_mcs_mask;
  	struct ieee80211_link_sta *deflink;
  	u8 vht_nss, he_nss;
-@@ -8278,7 +8278,7 @@ ath11k_mac_validate_vht_he_fixed_rate_se
+@@ -8281,7 +8281,7 @@ ath11k_mac_validate_vht_he_fixed_rate_se
  
  	rcu_read_lock();
  	spin_lock_bh(&ar->ab->base_lock);

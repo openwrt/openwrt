@@ -231,7 +231,7 @@ Link: https://lore.kernel.org/r/20230821-ath11k_vif_to_arvif-v1-1-fa2c3b60b5cf@q
  	struct wmi_wmm_params_arg *p = NULL;
  	int ret;
  
-@@ -6455,7 +6455,7 @@ static int ath11k_mac_setup_vdev_params_
+@@ -6458,7 +6458,7 @@ static int ath11k_mac_setup_vdev_params_
  		return 0;
  	}
  
@@ -240,7 +240,7 @@ Link: https://lore.kernel.org/r/20230821-ath11k_vif_to_arvif-v1-1-fa2c3b60b5cf@q
  
  	if (arvif->vif->bss_conf.nontransmitted) {
  		if (ar->hw->wiphy != ieee80211_vif_to_wdev(tx_vif)->wiphy)
-@@ -7408,7 +7408,7 @@ ath11k_mac_update_vif_chan(struct ath11k
+@@ -7411,7 +7411,7 @@ ath11k_mac_update_vif_chan(struct ath11k
  	/* TODO: Update ar->rx_channel */
  
  	for (i = 0; i < n_vifs; i++) {
@@ -249,7 +249,7 @@ Link: https://lore.kernel.org/r/20230821-ath11k_vif_to_arvif-v1-1-fa2c3b60b5cf@q
  
  		if (WARN_ON(!arvif->is_started))
  			continue;
-@@ -7450,7 +7450,7 @@ ath11k_mac_update_vif_chan(struct ath11k
+@@ -7453,7 +7453,7 @@ ath11k_mac_update_vif_chan(struct ath11k
  
  		mbssid_tx_vif = arvif->vif->mbssid_tx_vif;
  		if (mbssid_tx_vif)
@@ -258,7 +258,7 @@ Link: https://lore.kernel.org/r/20230821-ath11k_vif_to_arvif-v1-1-fa2c3b60b5cf@q
  
  		ret = ath11k_wmi_vdev_up(arvif->ar, arvif->vdev_id, arvif->aid,
  					 arvif->bssid,
-@@ -7546,7 +7546,7 @@ static int ath11k_start_vdev_delay(struc
+@@ -7549,7 +7549,7 @@ static int ath11k_start_vdev_delay(struc
  {
  	struct ath11k *ar = hw->priv;
  	struct ath11k_base *ab = ar->ab;
@@ -267,7 +267,7 @@ Link: https://lore.kernel.org/r/20230821-ath11k_vif_to_arvif-v1-1-fa2c3b60b5cf@q
  	int ret;
  
  	if (WARN_ON(arvif->is_started))
-@@ -7596,7 +7596,7 @@ ath11k_mac_op_assign_vif_chanctx(struct
+@@ -7599,7 +7599,7 @@ ath11k_mac_op_assign_vif_chanctx(struct
  {
  	struct ath11k *ar = hw->priv;
  	struct ath11k_base *ab = ar->ab;
@@ -276,7 +276,7 @@ Link: https://lore.kernel.org/r/20230821-ath11k_vif_to_arvif-v1-1-fa2c3b60b5cf@q
  	int ret;
  	struct peer_create_params param;
  
-@@ -7686,7 +7686,7 @@ ath11k_mac_op_unassign_vif_chanctx(struc
+@@ -7689,7 +7689,7 @@ ath11k_mac_op_unassign_vif_chanctx(struc
  {
  	struct ath11k *ar = hw->priv;
  	struct ath11k_base *ab = ar->ab;
@@ -285,7 +285,7 @@ Link: https://lore.kernel.org/r/20230821-ath11k_vif_to_arvif-v1-1-fa2c3b60b5cf@q
  	struct ath11k_peer *peer;
  	int ret;
  
-@@ -8307,7 +8307,7 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+@@ -8310,7 +8310,7 @@ ath11k_mac_op_set_bitrate_mask(struct ie
  			       struct ieee80211_vif *vif,
  			       const struct cfg80211_bitrate_mask *mask)
  {
@@ -294,7 +294,7 @@ Link: https://lore.kernel.org/r/20230821-ath11k_vif_to_arvif-v1-1-fa2c3b60b5cf@q
  	struct cfg80211_chan_def def;
  	struct ath11k_pdev_cap *cap;
  	struct ath11k *ar = arvif->ar;
-@@ -8904,7 +8904,7 @@ static int ath11k_mac_op_remain_on_chann
+@@ -8907,7 +8907,7 @@ static int ath11k_mac_op_remain_on_chann
  					   enum ieee80211_roc_type type)
  {
  	struct ath11k *ar = hw->priv;
