@@ -52,7 +52,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		return 0;
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -187,6 +187,7 @@ static int phylink_interface_max_speed(p
+@@ -192,6 +192,7 @@ static int phylink_interface_max_speed(p
  	case PHY_INTERFACE_MODE_RGMII_RXID:
  	case PHY_INTERFACE_MODE_RGMII_ID:
  	case PHY_INTERFACE_MODE_RGMII:
@@ -60,7 +60,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	case PHY_INTERFACE_MODE_QSGMII:
  	case PHY_INTERFACE_MODE_QUSGMII:
  	case PHY_INTERFACE_MODE_SGMII:
-@@ -448,6 +449,7 @@ unsigned long phylink_get_capabilities(p
+@@ -453,6 +454,7 @@ unsigned long phylink_get_capabilities(p
  	case PHY_INTERFACE_MODE_RGMII_RXID:
  	case PHY_INTERFACE_MODE_RGMII_ID:
  	case PHY_INTERFACE_MODE_RGMII:
@@ -68,7 +68,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	case PHY_INTERFACE_MODE_QSGMII:
  	case PHY_INTERFACE_MODE_QUSGMII:
  	case PHY_INTERFACE_MODE_SGMII:
-@@ -814,6 +816,7 @@ static int phylink_parse_mode(struct phy
+@@ -819,6 +821,7 @@ static int phylink_parse_mode(struct phy
  
  		switch (pl->link_config.interface) {
  		case PHY_INTERFACE_MODE_SGMII:
