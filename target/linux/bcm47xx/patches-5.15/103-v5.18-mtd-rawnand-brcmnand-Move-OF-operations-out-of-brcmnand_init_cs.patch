@@ -17,7 +17,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 
 --- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
-@@ -2768,7 +2768,7 @@ static const struct nand_controller_ops
+@@ -2803,7 +2803,7 @@ static const struct nand_controller_ops
  	.attach_chip = brcmnand_attach_chip,
  };
  
@@ -26,7 +26,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  {
  	struct brcmnand_controller *ctrl = host->ctrl;
  	struct device *dev = ctrl->dev;
-@@ -2777,16 +2777,9 @@ static int brcmnand_init_cs(struct brcmn
+@@ -2812,16 +2812,9 @@ static int brcmnand_init_cs(struct brcmn
  	int ret;
  	u16 cfg_offs;
  
@@ -43,7 +43,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  	nand_set_controller_data(chip, host);
  	mtd->name = devm_kasprintf(dev, GFP_KERNEL, "brcmnand.%d",
  				   host->cs);
-@@ -3193,7 +3186,16 @@ int brcmnand_probe(struct platform_devic
+@@ -3228,7 +3221,16 @@ int brcmnand_probe(struct platform_devic
  			host->pdev = pdev;
  			host->ctrl = ctrl;
  

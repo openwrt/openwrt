@@ -23,7 +23,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  #include <linux/err.h>
  #include <linux/completion.h>
  #include <linux/interrupt.h>
-@@ -2768,7 +2769,8 @@ static const struct nand_controller_ops
+@@ -2803,7 +2804,8 @@ static const struct nand_controller_ops
  	.attach_chip = brcmnand_attach_chip,
  };
  
@@ -33,7 +33,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  {
  	struct brcmnand_controller *ctrl = host->ctrl;
  	struct device *dev = ctrl->dev;
-@@ -2821,7 +2823,7 @@ static int brcmnand_init_cs(struct brcmn
+@@ -2856,7 +2858,7 @@ static int brcmnand_init_cs(struct brcmn
  	if (ret)
  		return ret;
  
@@ -42,7 +42,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  	if (ret)
  		nand_cleanup(chip);
  
-@@ -2990,17 +2992,15 @@ static int brcmnand_edu_setup(struct pla
+@@ -3025,17 +3027,15 @@ static int brcmnand_edu_setup(struct pla
  
  int brcmnand_probe(struct platform_device *pdev, struct brcmnand_soc *soc)
  {
@@ -63,7 +63,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  		return -ENODEV;
  
  	ctrl = devm_kzalloc(dev, sizeof(*ctrl), GFP_KERNEL);
-@@ -3027,7 +3027,7 @@ int brcmnand_probe(struct platform_devic
+@@ -3062,7 +3062,7 @@ int brcmnand_probe(struct platform_devic
  	/* NAND register range */
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	ctrl->nand_base = devm_ioremap_resource(dev, res);
@@ -72,7 +72,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  		return PTR_ERR(ctrl->nand_base);
  
  	/* Enable clock before using NAND registers */
-@@ -3171,7 +3171,6 @@ int brcmnand_probe(struct platform_devic
+@@ -3206,7 +3206,6 @@ int brcmnand_probe(struct platform_devic
  
  	for_each_available_child_of_node(dn, child) {
  		if (of_device_is_compatible(child, "brcm,nandcs")) {
@@ -80,7 +80,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  
  			host = devm_kzalloc(dev, sizeof(*host), GFP_KERNEL);
  			if (!host) {
-@@ -3191,7 +3190,7 @@ int brcmnand_probe(struct platform_devic
+@@ -3226,7 +3225,7 @@ int brcmnand_probe(struct platform_devic
  
  			nand_set_flash_node(&host->chip, child);
  
@@ -89,7 +89,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  			if (ret) {
  				devm_kfree(dev, host);
  				continue; /* Try all chip-selects */
-@@ -3201,6 +3200,32 @@ int brcmnand_probe(struct platform_devic
+@@ -3236,6 +3235,32 @@ int brcmnand_probe(struct platform_devic
  		}
  	}
  

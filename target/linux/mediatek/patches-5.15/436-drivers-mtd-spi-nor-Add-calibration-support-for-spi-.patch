@@ -26,7 +26,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
-@@ -3060,6 +3060,18 @@ static void spi_nor_debugfs_init(struct
+@@ -3061,6 +3061,18 @@ static void spi_nor_debugfs_init(struct
  					 info->id_len, info->id);
  }
  
@@ -45,7 +45,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static const struct flash_info *spi_nor_get_flash_info(struct spi_nor *nor,
  						       const char *name)
  {
-@@ -3133,6 +3145,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -3134,6 +3146,9 @@ int spi_nor_scan(struct spi_nor *nor, co
  	if (!nor->bouncebuf)
  		return -ENOMEM;
  
