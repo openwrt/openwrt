@@ -291,7 +291,7 @@
 #define RTL838X_LED_P_EN_CTRL		(0xA008)
 
 /* LED control by software */
-#define RTL838X_LED_SW_CTRL		(0x0128)
+#define RTL838X_LED_SW_CTRL		(0xA00C)
 #define RTL839X_LED_SW_CTRL		(0xA00C)
 #define RTL838X_LED_SW_P_EN_CTRL	(0xA010)
 #define RTL839X_LED_SW_P_EN_CTRL	(0x012C)
