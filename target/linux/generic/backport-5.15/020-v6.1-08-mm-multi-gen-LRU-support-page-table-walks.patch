@@ -167,7 +167,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  		BUG_ON(active_mm != old_mm);
 --- a/include/linux/memcontrol.h
 +++ b/include/linux/memcontrol.h
-@@ -348,6 +348,11 @@ struct mem_cgroup {
+@@ -353,6 +353,11 @@ struct mem_cgroup {
  	struct deferred_split deferred_split_queue;
  #endif
  

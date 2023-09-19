@@ -14,7 +14,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 
 --- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
-@@ -2998,6 +2998,7 @@ int brcmnand_probe(struct platform_devic
+@@ -3033,6 +3033,7 @@ int brcmnand_probe(struct platform_devic
  
  	dev_set_drvdata(dev, ctrl);
  	ctrl->dev = dev;
@@ -22,7 +22,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  
  	init_completion(&ctrl->done);
  	init_completion(&ctrl->dma_done);
-@@ -3138,8 +3139,6 @@ int brcmnand_probe(struct platform_devic
+@@ -3173,8 +3174,6 @@ int brcmnand_probe(struct platform_devic
  	 * interesting ways
  	 */
  	if (soc) {
