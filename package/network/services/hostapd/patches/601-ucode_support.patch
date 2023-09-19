@@ -142,6 +142,16 @@
  {
  	if (!hapd)
  		return;
+@@ -3491,7 +3495,8 @@ int hostapd_remove_iface(struct hapd_int
+ 		hapd_iface = interfaces->iface[i];
+ 		if (hapd_iface == NULL)
+ 			return -1;
+-		if (!os_strcmp(hapd_iface->conf->bss[0]->iface, buf)) {
++		if (!os_strcmp(hapd_iface->phy, buf) ||
++		    !os_strcmp(hapd_iface->conf->bss[0]->iface, buf)) {
+ 			wpa_printf(MSG_INFO, "Remove interface '%s'", buf);
+ 			hapd_iface->driver_ap_teardown =
+ 				!!(hapd_iface->drv_flags &
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
 @@ -195,8 +195,20 @@ endif
