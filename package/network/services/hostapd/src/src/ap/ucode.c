@@ -471,6 +471,9 @@ uc_hostapd_iface_stop(uc_vm_t *vm, size_t nargs)
 	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
 	int i;
 
+	if (!iface)
+		return NULL;
+
 	switch (iface->state) {
 	case HAPD_IFACE_ENABLED:
 	case HAPD_IFACE_DISABLED:
