@@ -73,6 +73,7 @@ BEGIN {
 		print "BROADCAST="int2ip(broadcast)
 	}
 	print "PREFIX="prefix
+	print "HOSTS="compl32(netmask)
 
 	# range calculations:
 	# ipcalc <ip> <netmask> <range_start> <range_size>
