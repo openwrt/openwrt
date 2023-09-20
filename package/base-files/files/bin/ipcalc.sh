@@ -12,6 +12,8 @@ function bitcount(c) {
 function ip2int(ip,   ret, n, x) {
 	ret=0
 	n=split(ip,a,"\\.")
+	if (n != 4)
+		return
 	for (x=1;x<=n;x++)
 		ret=or(lshift(ret,8),a[x])
 	return ret
@@ -32,17 +34,29 @@ function compl32(v,   ret) {
 	return ret
 }
 
+function notquad(addr) {
+	print "Not a dotted-quad "addr > "/dev/stderr"
+	exit(1)
+}
+
 BEGIN {
 	slpos=index(ARGV[1],"/")
 	if (slpos == 0) {
 		ipaddr=ip2int(ARGV[1])
+		if (ipaddr == "")
+			notquad(ARGV[1])
 		dotpos=index(ARGV[2],".")
 		if (dotpos == 0)
 			netmask=compl32(2**(32-int(ARGV[2]))-1)
-		else
+		else {
 			netmask=ip2int(ARGV[2])
+			if (netmask == "")
+				notquad(ARGV[2])
+		}
 	} else {
 		ipaddr=ip2int(substr(ARGV[1],0,slpos-1))
+		if (ipaddr == "")
+			notquad(substr(ARGV[1],0,slpos-1))
 		netmask=compl32(2**(32-int(substr(ARGV[1],slpos+1)))-1)
 		ARGV[4]=ARGV[3]
 		ARGV[3]=ARGV[2]
