@@ -9,7 +9,7 @@ function bitcount(c) {
 	return c
 }
 
-function ip2int(ip) {
+function ip2int(ip,   ret, n, x) {
 	ret=0
 	n=split(ip,a,"\\.")
 	for (x=1;x<=n;x++)
@@ -17,7 +17,7 @@ function ip2int(ip) {
 	return ret
 }
 
-function int2ip(ip,ret,x) {
+function int2ip(ip,   ret, x) {
 	ret=and(ip,255)
 	ip=rshift(ip,8)
 	for(;x<3;x++) {
@@ -27,7 +27,7 @@ function int2ip(ip,ret,x) {
 	return ret
 }
 
-function compl32(v) {
+function compl32(v,   ret) {
 	ret=xor(v, 0xffffffff)
 	return ret
 }
