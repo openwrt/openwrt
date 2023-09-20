@@ -1185,7 +1185,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  }
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -5580,7 +5580,7 @@ static void port_event(struct usb_hub *h
+@@ -5636,7 +5636,7 @@ static void port_event(struct usb_hub *h
  		port_dev->over_current_count++;
  		port_over_current_notify(port_dev);
  
@@ -1196,7 +1196,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  				USB_PORT_FEAT_C_OVER_CURRENT);
 --- a/drivers/usb/core/message.c
 +++ b/drivers/usb/core/message.c
-@@ -2140,6 +2140,85 @@ free_interfaces:
+@@ -2135,6 +2135,85 @@ free_interfaces:
  	if (cp->string == NULL &&
  			!(dev->quirks & USB_QUIRK_CONFIG_INTF_STRINGS))
  		cp->string = usb_cache_string(dev, cp->desc.iConfiguration);

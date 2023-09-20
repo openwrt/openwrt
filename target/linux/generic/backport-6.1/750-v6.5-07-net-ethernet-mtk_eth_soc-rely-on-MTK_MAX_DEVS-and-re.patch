@@ -53,7 +53,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			     !eth->netdev[mac]))
  			goto release_desc;
  
-@@ -2897,7 +2897,7 @@ static void mtk_dma_free(struct mtk_eth
+@@ -2900,7 +2900,7 @@ static void mtk_dma_free(struct mtk_eth
  	const struct mtk_soc_data *soc = eth->soc;
  	int i;
  
@@ -62,7 +62,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (eth->netdev[i])
  			netdev_reset_queue(eth->netdev[i]);
  	if (eth->scratch_ring) {
-@@ -3051,8 +3051,13 @@ static void mtk_gdm_config(struct mtk_et
+@@ -3054,8 +3054,13 @@ static void mtk_gdm_config(struct mtk_et
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
  		return;
  
@@ -78,7 +78,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  		/* default setup the forward port to send frame to PDMA */
  		val &= ~0xffff;
-@@ -3062,7 +3067,7 @@ static void mtk_gdm_config(struct mtk_et
+@@ -3065,7 +3070,7 @@ static void mtk_gdm_config(struct mtk_et
  
  		val |= config;
  
@@ -87,7 +87,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			val |= MTK_GDMA_SPECIAL_TAG;
  
  		mtk_w32(eth, val, MTK_GDMA_FWD_CFG(i));
-@@ -3659,15 +3664,15 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -3662,15 +3667,15 @@ static int mtk_hw_init(struct mtk_eth *e
  	 * up with the more appropriate value when mtk_mac_config call is being
  	 * invoked.
  	 */
@@ -109,7 +109,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	/* Indicates CDM to parse the MTK special tag from CPU
-@@ -3847,7 +3852,7 @@ static void mtk_pending_work(struct work
+@@ -3850,7 +3855,7 @@ static void mtk_pending_work(struct work
  	mtk_prepare_for_reset(eth);
  
  	/* stop all devices to make sure that dma is properly shut down */
@@ -118,7 +118,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (!eth->netdev[i] || !netif_running(eth->netdev[i]))
  			continue;
  
-@@ -3863,8 +3868,8 @@ static void mtk_pending_work(struct work
+@@ -3866,8 +3871,8 @@ static void mtk_pending_work(struct work
  	mtk_hw_init(eth, true);
  
  	/* restart DMA and enable IRQs */
@@ -129,7 +129,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			continue;
  
  		if (mtk_open(eth->netdev[i])) {
-@@ -3891,7 +3896,7 @@ static int mtk_free_dev(struct mtk_eth *
+@@ -3894,7 +3899,7 @@ static int mtk_free_dev(struct mtk_eth *
  {
  	int i;
  
@@ -138,7 +138,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (!eth->netdev[i])
  			continue;
  		free_netdev(eth->netdev[i]);
-@@ -3910,7 +3915,7 @@ static int mtk_unreg_dev(struct mtk_eth
+@@ -3913,7 +3918,7 @@ static int mtk_unreg_dev(struct mtk_eth
  {
  	int i;
  
@@ -147,7 +147,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		struct mtk_mac *mac;
  		if (!eth->netdev[i])
  			continue;
-@@ -4211,7 +4216,7 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4214,7 +4219,7 @@ static int mtk_add_mac(struct mtk_eth *e
  	}
  
  	id = be32_to_cpup(_id);
@@ -156,7 +156,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		dev_err(eth->dev, "%d is not a valid mac id\n", id);
  		return -EINVAL;
  	}
-@@ -4356,7 +4361,7 @@ void mtk_eth_set_dma_device(struct mtk_e
+@@ -4359,7 +4364,7 @@ void mtk_eth_set_dma_device(struct mtk_e
  
  	rtnl_lock();
  
@@ -165,7 +165,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		dev = eth->netdev[i];
  
  		if (!dev || !(dev->flags & IFF_UP))
-@@ -4662,7 +4667,7 @@ static int mtk_remove(struct platform_de
+@@ -4665,7 +4670,7 @@ static int mtk_remove(struct platform_de
  	int i;
  
  	/* stop all devices to make sure that dma is properly shut down */

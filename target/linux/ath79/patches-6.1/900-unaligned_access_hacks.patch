@@ -654,7 +654,7 @@ SVN-Revision: 35130
  		return false;
  
  	return true;
-@@ -800,13 +804,13 @@ static inline void ipv6_addr_set_v4mappe
+@@ -805,13 +809,13 @@ static inline void ipv6_addr_set_v4mappe
   */
  static inline int __ipv6_addr_diff32(const void *token1, const void *token2, int addrlen)
  {
@@ -670,7 +670,7 @@ SVN-Revision: 35130
  		if (xb)
  			return i * 32 + 31 - __fls(ntohl(xb));
  	}
-@@ -1000,17 +1004,18 @@ static inline u32 ip6_multipath_hash_fie
+@@ -1005,17 +1009,18 @@ static inline u32 ip6_multipath_hash_fie
  static inline void ip6_flow_hdr(struct ipv6hdr *hdr, unsigned int tclass,
  				__be32 flowlabel)
  {
@@ -750,7 +750,7 @@ SVN-Revision: 35130
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -4166,14 +4166,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -4165,14 +4165,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  

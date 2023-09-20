@@ -132,7 +132,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			rxd->rxd5 = 0;
  			rxd->rxd6 = 0;
  			rxd->rxd7 = 0;
-@@ -3023,7 +3023,7 @@ static int mtk_start_dma(struct mtk_eth
+@@ -3026,7 +3026,7 @@ static int mtk_start_dma(struct mtk_eth
  		       MTK_TX_BT_32DWORDS | MTK_NDP_CO_PRO |
  		       MTK_RX_2B_OFFSET | MTK_TX_WB_DDONE;
  
@@ -141,7 +141,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			val |= MTK_MUTLI_CNT | MTK_RESV_BUF |
  			       MTK_WCOMP_EN | MTK_DMAD_WR_WDONE |
  			       MTK_CHK_DDONE_EN | MTK_LEAKY_BUCKET_EN;
-@@ -3165,7 +3165,7 @@ static int mtk_open(struct net_device *d
+@@ -3168,7 +3168,7 @@ static int mtk_open(struct net_device *d
  	phylink_start(mac->phylink);
  	netif_tx_start_all_queues(dev);
  
@@ -150,7 +150,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		return 0;
  
  	if (mtk_uses_dsa(dev) && !eth->prog) {
-@@ -3430,7 +3430,7 @@ static void mtk_hw_reset(struct mtk_eth
+@@ -3433,7 +3433,7 @@ static void mtk_hw_reset(struct mtk_eth
  {
  	u32 val;
  
@@ -159,7 +159,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		regmap_write(eth->ethsys, ETHSYS_FE_RST_CHK_IDLE_EN, 0);
  		val = RSTCTRL_PPE0_V2;
  	} else {
-@@ -3442,7 +3442,7 @@ static void mtk_hw_reset(struct mtk_eth
+@@ -3445,7 +3445,7 @@ static void mtk_hw_reset(struct mtk_eth
  
  	ethsys_reset(eth, RSTCTRL_ETH | RSTCTRL_FE | val);
  
@@ -168,7 +168,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		regmap_write(eth->ethsys, ETHSYS_FE_RST_CHK_IDLE_EN,
  			     0x3ffffff);
  }
-@@ -3468,7 +3468,7 @@ static void mtk_hw_warm_reset(struct mtk
+@@ -3471,7 +3471,7 @@ static void mtk_hw_warm_reset(struct mtk
  		return;
  	}
  
@@ -177,7 +177,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		rst_mask = RSTCTRL_ETH | RSTCTRL_PPE0_V2;
  	else
  		rst_mask = RSTCTRL_ETH | RSTCTRL_PPE0;
-@@ -3638,7 +3638,7 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -3641,7 +3641,7 @@ static int mtk_hw_init(struct mtk_eth *e
  	else
  		mtk_hw_reset(eth);
  
@@ -186,7 +186,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		/* Set FE to PDMAv2 if necessary */
  		val = mtk_r32(eth, MTK_FE_GLO_MISC);
  		mtk_w32(eth,  val | BIT(4), MTK_FE_GLO_MISC);
-@@ -3675,7 +3675,7 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -3678,7 +3678,7 @@ static int mtk_hw_init(struct mtk_eth *e
  	 */
  	val = mtk_r32(eth, MTK_CDMQ_IG_CTRL);
  	mtk_w32(eth, val | MTK_CDMQ_STAG_EN, MTK_CDMQ_IG_CTRL);
@@ -195,7 +195,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		val = mtk_r32(eth, MTK_CDMP_IG_CTRL);
  		mtk_w32(eth, val | MTK_CDMP_STAG_EN, MTK_CDMP_IG_CTRL);
  
-@@ -3697,7 +3697,7 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -3700,7 +3700,7 @@ static int mtk_hw_init(struct mtk_eth *e
  	mtk_w32(eth, eth->soc->txrx.rx_irq_done_mask, reg_map->qdma.int_grp + 4);
  	mtk_w32(eth, 0x21021000, MTK_FE_INT_GRP);
  
@@ -204,7 +204,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		/* PSE should not drop port8 and port9 packets from WDMA Tx */
  		mtk_w32(eth, 0x00000300, PSE_DROP_CFG);
  
-@@ -4486,7 +4486,7 @@ static int mtk_probe(struct platform_dev
+@@ -4489,7 +4489,7 @@ static int mtk_probe(struct platform_dev
  		}
  	}
  
@@ -213,7 +213,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  		if (!res) {
  			err = -EINVAL;
-@@ -4594,9 +4594,8 @@ static int mtk_probe(struct platform_dev
+@@ -4597,9 +4597,8 @@ static int mtk_probe(struct platform_dev
  	}
  
  	if (eth->soc->offload_version) {
@@ -224,7 +224,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		num_ppe = min_t(u32, ARRAY_SIZE(eth->ppe), num_ppe);
  		for (i = 0; i < num_ppe; i++) {
  			u32 ppe_addr = eth->soc->reg_map->ppe_base + i * 0x400;
-@@ -4688,6 +4687,7 @@ static const struct mtk_soc_data mt2701_
+@@ -4691,6 +4690,7 @@ static const struct mtk_soc_data mt2701_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
@@ -232,7 +232,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
-@@ -4704,6 +4704,7 @@ static const struct mtk_soc_data mt7621_
+@@ -4707,6 +4707,7 @@ static const struct mtk_soc_data mt7621_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7621_CLKS_BITMAP,
  	.required_pctl = false,
@@ -240,7 +240,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.offload_version = 1,
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
-@@ -4724,6 +4725,7 @@ static const struct mtk_soc_data mt7622_
+@@ -4727,6 +4728,7 @@ static const struct mtk_soc_data mt7622_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7622_CLKS_BITMAP,
  	.required_pctl = false,
@@ -248,7 +248,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.offload_version = 2,
  	.hash_offset = 2,
  	.has_accounting = true,
-@@ -4744,6 +4746,7 @@ static const struct mtk_soc_data mt7623_
+@@ -4747,6 +4749,7 @@ static const struct mtk_soc_data mt7623_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
@@ -256,7 +256,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.offload_version = 1,
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
-@@ -4766,6 +4769,7 @@ static const struct mtk_soc_data mt7629_
+@@ -4769,6 +4772,7 @@ static const struct mtk_soc_data mt7629_
  	.required_clks = MT7629_CLKS_BITMAP,
  	.required_pctl = false,
  	.has_accounting = true,
@@ -264,7 +264,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.txrx = {
  		.txd_size = sizeof(struct mtk_tx_dma),
  		.rxd_size = sizeof(struct mtk_rx_dma),
-@@ -4783,6 +4787,7 @@ static const struct mtk_soc_data mt7981_
+@@ -4786,6 +4790,7 @@ static const struct mtk_soc_data mt7981_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7981_CLKS_BITMAP,
  	.required_pctl = false,
@@ -272,7 +272,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.offload_version = 2,
  	.hash_offset = 4,
  	.has_accounting = true,
-@@ -4804,6 +4809,7 @@ static const struct mtk_soc_data mt7986_
+@@ -4807,6 +4812,7 @@ static const struct mtk_soc_data mt7986_
  	.hw_features = MTK_HW_FEATURES,
  	.required_clks = MT7986_CLKS_BITMAP,
  	.required_pctl = false,
@@ -280,7 +280,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.offload_version = 2,
  	.hash_offset = 4,
  	.has_accounting = true,
-@@ -4824,6 +4830,7 @@ static const struct mtk_soc_data rt5350_
+@@ -4827,6 +4833,7 @@ static const struct mtk_soc_data rt5350_
  	.hw_features = MTK_HW_FEATURES_MT7628,
  	.required_clks = MT7628_CLKS_BITMAP,
  	.required_pctl = false,

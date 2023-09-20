@@ -61,7 +61,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  #include <linux/clockchips.h>
  #include <linux/clocksource.h>
  #include <linux/clocksource_ids.h>
-@@ -1021,6 +1022,16 @@ static void __init arch_timer_of_configu
+@@ -1028,6 +1029,16 @@ static void __init arch_timer_of_configu
  	if (of_property_read_u32(np, "clock-frequency", &arch_timer_rate))
  		arch_timer_rate = rate;
  

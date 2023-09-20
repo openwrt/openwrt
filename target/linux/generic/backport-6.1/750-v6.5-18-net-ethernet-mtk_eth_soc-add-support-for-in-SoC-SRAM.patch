@@ -123,7 +123,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		dma_free_coherent(eth->dma_dev,
  				  ring->dma_size * eth->soc->txrx.rxd_size,
  				  ring->dma, ring->phys);
-@@ -3057,7 +3081,7 @@ static void mtk_dma_free(struct mtk_eth
+@@ -3060,7 +3084,7 @@ static void mtk_dma_free(struct mtk_eth
  	for (i = 0; i < MTK_MAX_DEVS; i++)
  		if (eth->netdev[i])
  			netdev_reset_queue(eth->netdev[i]);
@@ -132,7 +132,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		dma_free_coherent(eth->dma_dev,
  				  MTK_QDMA_RING_SIZE * soc->txrx.txd_size,
  				  eth->scratch_ring, eth->phy_scratch_ring);
-@@ -3065,13 +3089,13 @@ static void mtk_dma_free(struct mtk_eth
+@@ -3068,13 +3092,13 @@ static void mtk_dma_free(struct mtk_eth
  		eth->phy_scratch_ring = 0;
  	}
  	mtk_tx_clean(eth);
@@ -149,7 +149,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	kfree(eth->scratch_head);
-@@ -4639,7 +4663,7 @@ static int mtk_sgmii_init(struct mtk_eth
+@@ -4642,7 +4666,7 @@ static int mtk_sgmii_init(struct mtk_eth
  
  static int mtk_probe(struct platform_device *pdev)
  {
@@ -158,7 +158,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	struct device_node *mac_np;
  	struct mtk_eth *eth;
  	int err, i;
-@@ -4659,6 +4683,20 @@ static int mtk_probe(struct platform_dev
+@@ -4662,6 +4686,20 @@ static int mtk_probe(struct platform_dev
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SOC_MT7628))
  		eth->ip_align = NET_IP_ALIGN;
  
@@ -179,7 +179,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	spin_lock_init(&eth->page_lock);
  	spin_lock_init(&eth->tx_irq_lock);
  	spin_lock_init(&eth->rx_irq_lock);
-@@ -4722,6 +4760,18 @@ static int mtk_probe(struct platform_dev
+@@ -4725,6 +4763,18 @@ static int mtk_probe(struct platform_dev
  			err = -EINVAL;
  			goto err_destroy_sgmii;
  		}
