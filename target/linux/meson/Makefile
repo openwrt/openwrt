@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=meson
 BOARDNAME:=Amlogic Meson family
-FEATURES:=audio boot-part ext4 fpu legacy-sdcard squashfs usbgadget
+FEATURES:=boot-part ext4 fpu legacy-sdcard squashfs usbgadget
 MAINTAINER:=shiyu1314 <1052672227@qq.com>
 SUBTARGETS:=meson8b
 
@@ -23,8 +23,6 @@ include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
 	e2fsprogs \
-	kmod-sound-core \
-	kmod-usb-hid \
 	mkf2fs \
 	automount \
 	resize2fs \
