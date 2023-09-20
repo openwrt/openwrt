@@ -1,4 +1,4 @@
-#!/usr/bin/awk -f
+#!/usr/bin/awk -E
 
 function bitcount(c) {
 	c=and(rshift(c, 1),0x55555555)+and(c,0x55555555)
@@ -20,6 +20,8 @@ function ip2int(ip,   ret, n, x) {
 }
 
 function int2ip(ip,   ret, x) {
+	if (use_decimal)
+		return ip
 	ret=and(ip,255)
 	ip=rshift(ip,8)
 	for(;x<3;x++) {
@@ -40,7 +42,21 @@ function notquad(addr) {
 }
 
 BEGIN {
+	use_decimal=0
+	if (ARGC >= 2 && ARGV[1] == "-d") {
+		for (n=1;n<ARGC-1;++n)
+			ARGV[n]=ARGV[n+1]
+		--ARGC
+		use_decimal=1
+	}
+
 	slpos=index(ARGV[1],"/")
+
+	if (ARGC < ((slpos != 0) ? 2 : 3)) {
+		print "Usage: "ARGV[0]" <ip> <netmask> [ <start> <num> ]" > "/dev/stderr"
+		exit(1)
+	}
+
 	if (slpos == 0) {
 		ipaddr=ip2int(ARGV[1])
 		if (ipaddr == "")
