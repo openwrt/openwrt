@@ -75,10 +75,10 @@ metadata_json = \
 		"metadata_version": "1.1", \
 		"compat_version": "$(call json_quote,$(compat_version))", \
 		$(if $(DEVICE_COMPAT_MESSAGE),"compat_message": "$(call json_quote,$(DEVICE_COMPAT_MESSAGE))"$(comma)) \
-		$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices": \
+		$(if $(SUPPORTED_DEVICES),$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices": \
 			[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma) \
 			"supported_devices": ["$(call json_quote,$(legacy_supported_message))"]$(comma)) \
-		$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma)) \
+		$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_DEVICES))]$(comma))) \
 		"version": { \
 			"dist": "$(call json_quote,$(VERSION_DIST))", \
 			"version": "$(call json_quote,$(VERSION_NUMBER))", \
@@ -89,7 +89,7 @@ metadata_json = \
 	}'
 
 define Build/append-metadata
-	$(if $(SUPPORTED_DEVICES),-echo $(call metadata_json) | fwtool -I - $@)
+	-echo $(call metadata_json) | fwtool -I - $@
 	sha256sum "$@" | cut -d" " -f1 > "$@.sha256sum"
 	[ ! -s "$(BUILD_KEY)" -o ! -s "$(BUILD_KEY).ucert" -o ! -s "$@" ] || { \
 		cp "$(BUILD_KEY).ucert" "$@.ucert" ;\
