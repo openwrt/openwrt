@@ -4,7 +4,7 @@ define Device/generic
   DEVICE_PACKAGES += \
 	kmod-amazon-ena kmod-amd-xgbe kmod-bnx2 kmod-e1000e kmod-e1000 \
 	kmod-forcedeth kmod-fs-vfat kmod-igb kmod-igc kmod-ixgbe kmod-r8169 \
-	kmod-tg3
+	kmod-tg3 kmod-vhost-net
   GRUB2_VARIANT := generic
 endef
 TARGET_DEVICES += generic
