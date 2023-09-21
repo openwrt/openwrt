@@ -203,6 +203,35 @@ define Device/glinet_gl-e750
 endef
 TARGET_DEVICES += glinet_gl-e750
 
+define Device/glinet_gl-s200-common
+  SOC := qca9531
+  DEVICE_VENDOR := GL.iNet
+  DEVICE_MODEL := GL-S200
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-serial-ch341
+  SUPPORTED_DEVICES += gl-s200 glinet,gl-s200
+endef
+
+define Device/glinet_gl-s200-nor
+  $(Device/glinet_gl-s200-common)
+  DEVICE_VARIANT := NOR
+  IMAGE_SIZE := 16000k
+endef
+TARGET_DEVICES += glinet_gl-s200-nor
+
+define Device/glinet_gl-s200-nor-nand
+  $(Device/glinet_gl-s200-common)
+  DEVICE_VARIANT := NOR/NAND
+  KERNEL_SIZE := 4096k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  VID_HDR_OFFSET := 2048
+  IMAGES += factory.img
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  SUPPORTED_DEVICES += gl-s200 glinet,gl-s200
+endef
+TARGET_DEVICES += glinet_gl-s200-nor-nand
+
 define Device/glinet_gl-xe300
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet
