@@ -11,8 +11,7 @@ FEATURES:=boot-part ext4 fpu legacy-sdcard squashfs usbgadget
 MAINTAINER:=shiyu1314 <1052672227@qq.com>
 SUBTARGETS:=meson8b
 
-KERNEL_PATCHVER:=5.15
-KERNEL_TESTING_PATCHVER:=6.1
+KERNEL_PATCHVER:=6.1
 
 define Target/Description
 	Build firmware image for Amlogic Meson SoC devices.
