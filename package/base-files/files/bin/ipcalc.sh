@@ -1,4 +1,4 @@
-#!/usr/bin/awk -E
+#!/usr/bin/awk -f
 
 function bitcount(c) {
 	c=and(rshift(c, 1),0x55555555)+and(c,0x55555555)
@@ -43,12 +43,14 @@ function notquad(addr) {
 
 BEGIN {
 	use_decimal=0
-	if (ARGC >= 2 && ARGV[1] == "-d") {
-		for (n=1;n<ARGC-1;++n)
-			ARGV[n]=ARGV[n+1]
-		--ARGC
+##	if (ARGC >= 2 && ARGV[1] == "-d") {
+##		for (n=1;n<ARGC-1;++n)
+##			ARGV[n]=ARGV[n+1]
+##		--ARGC
+##		use_decimal=1
+##	}
+	if (ENVIRON["USEDECIMAL"] != "")
 		use_decimal=1
-	}
 
 	slpos=index(ARGV[1],"/")
 
