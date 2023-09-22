@@ -728,6 +728,21 @@ endef
 
 $(eval $(call KernelPackage,rtc-pcf2127))
 
+define KernelPackage/rtc-r7301
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Epson RTC7301 support
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  KCONFIG:=CONFIG_RTC_DRV_R7301 \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-r7301.ko
+  AUTOLOAD:=$(call AutoLoad,50,rtc-r7301,1)
+endef
+
+define KernelPackage/rtc-r7301/description
+ Kernel module for Epson RTC7301 RTC chip
+endef
+
+$(eval $(call KernelPackage,rtc-r7301))
 
 define KernelPackage/rtc-rs5c372a
   SUBMENU:=$(OTHER_MENU)
