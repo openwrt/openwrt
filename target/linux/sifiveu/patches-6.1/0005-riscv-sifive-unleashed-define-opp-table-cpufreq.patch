@@ -14,9 +14,9 @@ Signed-off-by: David Abdurachmanov <david.abdurachmanov@sifive.com>
 
 --- a/arch/riscv/Kconfig
 +++ b/arch/riscv/Kconfig
-@@ -566,6 +566,14 @@ config BUILTIN_DTB
- 	depends on OF
- 	default y if XIP_KERNEL
+@@ -711,6 +711,14 @@ config PORTABLE
+ 	select OF
+ 	select MMU
  
 +menu "CPU Power Management"
 +
@@ -35,7 +35,7 @@ Signed-off-by: David Abdurachmanov <david.abdurachmanov@sifive.com>
  			i-cache-size = <16384>;
  			reg = <0>;
  			riscv,isa = "rv64imac";
-+			clocks = <&prci PRCI_CLK_COREPLL>;
++			clocks = <&prci FU540_PRCI_CLK_COREPLL>;
  			status = "disabled";
  			cpu0_intc: interrupt-controller {
  				#interrupt-cells = <1>;
@@ -43,7 +43,7 @@ Signed-off-by: David Abdurachmanov <david.abdurachmanov@sifive.com>
  			reg = <1>;
  			riscv,isa = "rv64imafdc";
  			tlb-split;
-+			clocks = <&prci PRCI_CLK_COREPLL>;
++			clocks = <&prci FU540_PRCI_CLK_COREPLL>;
  			next-level-cache = <&l2cache>;
  			cpu1_intc: interrupt-controller {
  				#interrupt-cells = <1>;
@@ -51,7 +51,7 @@ Signed-off-by: David Abdurachmanov <david.abdurachmanov@sifive.com>
  			reg = <2>;
  			riscv,isa = "rv64imafdc";
  			tlb-split;
-+			clocks = <&prci PRCI_CLK_COREPLL>;
++			clocks = <&prci FU540_PRCI_CLK_COREPLL>;
  			next-level-cache = <&l2cache>;
  			cpu2_intc: interrupt-controller {
  				#interrupt-cells = <1>;
@@ -59,7 +59,7 @@ Signed-off-by: David Abdurachmanov <david.abdurachmanov@sifive.com>
  			reg = <3>;
  			riscv,isa = "rv64imafdc";
  			tlb-split;
-+			clocks = <&prci PRCI_CLK_COREPLL>;
++			clocks = <&prci FU540_PRCI_CLK_COREPLL>;
  			next-level-cache = <&l2cache>;
  			cpu3_intc: interrupt-controller {
  				#interrupt-cells = <1>;
@@ -67,13 +67,13 @@ Signed-off-by: David Abdurachmanov <david.abdurachmanov@sifive.com>
  			reg = <4>;
  			riscv,isa = "rv64imafdc";
  			tlb-split;
-+			clocks = <&prci PRCI_CLK_COREPLL>;
++			clocks = <&prci FU540_PRCI_CLK_COREPLL>;
  			next-level-cache = <&l2cache>;
  			cpu4_intc: interrupt-controller {
  				#interrupt-cells = <1>;
 --- a/arch/riscv/boot/dts/sifive/hifive-unleashed-a00.dts
 +++ b/arch/riscv/boot/dts/sifive/hifive-unleashed-a00.dts
-@@ -84,6 +84,40 @@
+@@ -80,6 +80,40 @@
  			label = "d4";
  		};
  	};
