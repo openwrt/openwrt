@@ -73,4 +73,16 @@ define Device/nslu2
 endef
 TARGET_DEVICES += nslu2
 
+define Device/usr8200
+	DEVICE_VENDOR := USRobotics
+	DEVICE_MODEL := USR8200
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-r7301 kmod-usb2-pci kmod-firewire-ohci
+	DEVICE_DTS := intel-ixp42x-usrobotics-usr8200
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := kernel.bin rootfs.bin
+	IMAGE/kernel.bin := append-kernel
+	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
+endef
+TARGET_DEVICES += usr8200
+
 $(eval $(call BuildImage))

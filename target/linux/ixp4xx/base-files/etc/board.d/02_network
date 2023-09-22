@@ -11,6 +11,11 @@ gateworks,gw2358)
 linksys,nslu2)
 	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
+usrobotics,usr8200)
+	# These are all connected to eth0 thru the MV88E6060 switch
+	ucidef_set_interface "eth" device "eth0" protocol "none"
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
+	;;
 *)
 	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
