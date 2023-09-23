@@ -14,6 +14,17 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
+"mediatek/mt7981_eeprom_mt7976_dbdc.bin")
+	case "$board" in
+	cmcc,rax3000m)
+		case "$(cmdline_get_var root)" in
+		/dev/mmc*)
+			caldata_extract_mmc "factory" 0x0 0x1000
+			;;
+		esac
+		;;
+	esac
+	;;
 "mediatek/mt7986_eeprom_mt7976.bin")
 	case "$board" in
 	acer,predator-w6)

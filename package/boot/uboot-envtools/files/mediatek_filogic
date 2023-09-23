@@ -37,6 +37,23 @@ bananapi,bpi-r3)
 		;;
 	esac
 	;;
+cmcc,rax3000m)
+	case "$(cmdline_get_var root)" in
+	/dev/mmc*)
+		local envdev=$(find_mmc_part "ubootenv" "mmcblk0")
+		ubootenv_add_uci_config "$envdev" "0x0" "0x40000" "0x40000" "1"
+		ubootenv_add_uci_config "$envdev" "0x40000" "0x40000" "0x40000" "1"
+		;;
+	*)
+		. /lib/upgrade/nand.sh
+		local envubi=$(nand_find_ubi ubi)
+		local envdev=/dev/$(nand_find_volume $envubi ubootenv)
+		local envdev2=/dev/$(nand_find_volume $envubi ubootenv2)
+		ubootenv_add_uci_config "$envdev" "0x0" "0x1f000" "0x1f000" "1"
+		ubootenv_add_uci_config "$envdev2" "0x0" "0x1f000" "0x1f000" "1"
+		;;
+	esac
+	;;
 glinet,gl-mt3000)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
 	;;
