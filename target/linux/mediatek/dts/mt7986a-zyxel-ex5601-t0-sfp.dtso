@@ -1,0 +1,55 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Author: Nicolò Veronese >nicveronese@gmail.com>
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "zyxel,ex5601-t0-ubootmod", "mediatek,mt7986a";
+
+	fragment@0 {
+		target-path = "/";
+
+		__overlay__ {
+			sfp_wan: sfp0 {
+				compatible = "sff,sfp";
+				i2c-bus = <&i2c0>;
+				los-gpios = <&pio 23 GPIO_ACTIVE_HIGH>;
+				mod-def0-gpios = <&pio 57 GPIO_ACTIVE_LOW>;
+				tx-disable-gpios = <&pio 26 GPIO_ACTIVE_HIGH>;
+				/* tx-fault-gpios = <&pio 28 GPIO_ACTIVE_HIGH>; */
+				maximum-power-milliwatt = <3000>;
+			};
+		};
+	};
+
+	fragment@1 {
+                target-path = "/soc/ethernet@15100000/mac@1";
+
+		__overlay__ {
+		        phy-mode = "2500base-x";
+			managed = "in-band-status";
+			sfp = <&sfp_wan>;
+			status = "okay";
+		};
+	};
+
+        fragment@2 {
+                target-path = "/soc/pinctrl@1001f000";
+
+                __overlay__ {
+			sfp-mux-hog {
+				gpio-hog;
+				gpios = <10 GPIO_ACTIVE_LOW>;
+				output-high;
+				line-name = "sfp-gmac1-mux";
+			};
+
+                };
+        };
+
+};
