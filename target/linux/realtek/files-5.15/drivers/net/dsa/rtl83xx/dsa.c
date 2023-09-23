@@ -429,8 +429,11 @@ static void rtl93xx_phylink_validate(struct dsa_switch *ds, int port,
 		phylink_set(mask, 10000baseCR_Full);
 	}
 
-	if (state->interface == PHY_INTERFACE_MODE_USXGMII)
+	if (state->interface == PHY_INTERFACE_MODE_USXGMII) {
+		phylink_set(mask, 2500baseT_Full);
+		phylink_set(mask, 5000baseT_Full);
 		phylink_set(mask, 10000baseT_Full);
+	}
 
 	phylink_set(mask, 10baseT_Half);
 	phylink_set(mask, 10baseT_Full);
