@@ -559,7 +559,7 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 	}
 
 	if (priv->family_id == RTL9310_FAMILY_ID
-		&& (port >= 52 || port <= 55)) { /* Internal serdes */
+		&& (port >= 52 && port <= 55)) { /* Internal serdes */
 			state->speed = SPEED_10000;
 			state->link = 1;
 			state->duplex = 1;
