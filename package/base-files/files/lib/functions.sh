@@ -40,6 +40,14 @@ append() {
 	eval "export ${NO_EXPORT:+-n} -- \"$var=\${$var:+\${$var}\${value:+\$sep}}\$value\""
 }
 
+prepend() {
+	local var="$1"
+	local value="$2"
+	local sep="${3:- }"
+
+	eval "export ${NO_EXPORT:+-n} -- \"$var=\${$value:+\${$value}\$sep}\$var\""
+}
+
 list_contains() {
 	local var="$1"
 	local str="$2"
