@@ -263,7 +263,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	data |= TX_DMA_SWC_V2 | QID_BITS_V2(info->qid);
  	WRITE_ONCE(desc->txd4, data);
  
-@@ -4358,6 +4487,17 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4361,6 +4490,17 @@ static int mtk_add_mac(struct mtk_eth *e
  			  mac->phylink_config.supported_interfaces);
  	}
  
@@ -281,7 +281,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	phylink = phylink_create(&mac->phylink_config,
  				 of_fwnode_handle(mac->of_node),
  				 phy_mode, &mtk_phylink_ops);
-@@ -4878,6 +5018,24 @@ static const struct mtk_soc_data mt7986_
+@@ -4881,6 +5021,24 @@ static const struct mtk_soc_data mt7986_
  	},
  };
  
@@ -306,7 +306,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static const struct mtk_soc_data rt5350_data = {
  	.reg_map = &mt7628_reg_map,
  	.caps = MT7628_CAPS,
-@@ -4896,14 +5054,15 @@ static const struct mtk_soc_data rt5350_
+@@ -4899,14 +5057,15 @@ static const struct mtk_soc_data rt5350_
  };
  
  const struct of_device_id of_mtk_match[] = {

@@ -126,7 +126,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
        - MEDIA_BUS_FMT_RGB666_1X24_CPADHI
 --- a/drivers/gpu/drm/panel/panel-simple.c
 +++ b/drivers/gpu/drm/panel/panel-simple.c
-@@ -2136,6 +2136,38 @@ static const struct panel_desc innolux_a
+@@ -2138,6 +2138,38 @@ static const struct panel_desc innolux_a
  	.bus_flags = DRM_BUS_FLAG_DE_HIGH | DRM_BUS_FLAG_PIXDATA_DRIVE_POSEDGE,
  };
  
@@ -165,7 +165,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  static const struct drm_display_mode innolux_at070tn92_mode = {
  	.clock = 33333,
  	.hdisplay = 800,
-@@ -4141,6 +4173,9 @@ static const struct of_device_id platfor
+@@ -4143,6 +4175,9 @@ static const struct of_device_id platfor
  		.compatible = "innolux,at043tn24",
  		.data = &innolux_at043tn24,
  	}, {

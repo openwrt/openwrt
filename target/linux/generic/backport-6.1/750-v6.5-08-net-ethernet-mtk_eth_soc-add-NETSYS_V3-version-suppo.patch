@@ -167,7 +167,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  			budget--;
  		}
-@@ -3702,7 +3730,24 @@ static int mtk_hw_init(struct mtk_eth *e
+@@ -3705,7 +3733,24 @@ static int mtk_hw_init(struct mtk_eth *e
  	mtk_w32(eth, eth->soc->txrx.rx_irq_done_mask, reg_map->qdma.int_grp + 4);
  	mtk_w32(eth, 0x21021000, MTK_FE_INT_GRP);
  
@@ -193,7 +193,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		/* PSE should not drop port8 and port9 packets from WDMA Tx */
  		mtk_w32(eth, 0x00000300, PSE_DROP_CFG);
  
-@@ -4264,7 +4309,11 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4267,7 +4312,11 @@ static int mtk_add_mac(struct mtk_eth *e
  	}
  	spin_lock_init(&mac->hw_stats->stats_lock);
  	u64_stats_init(&mac->hw_stats->syncp);

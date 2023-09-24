@@ -2546,6 +2546,20 @@ define Device/wavlink_ws-wn572hp3-4g
 endef
 TARGET_DEVICES += wavlink_ws-wn572hp3-4g
 
+
+define Device/wavlink_wl-wn573hx1
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN573HX1
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += wavlink_wl-wn573hx1
+
 define Device/wevo_11acnas
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
