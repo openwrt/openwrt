@@ -10,6 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=at91bootstrap
 PKG_VERSION:=v3.9.3
+PKG_CPE_ID:=cpe:/a:linux4sam:at91bootstrap
 PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
