@@ -17,7 +17,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
 
 --- a/sound/soc/atmel/atmel-i2s.c
 +++ b/sound/soc/atmel/atmel-i2s.c
-@@ -581,8 +581,8 @@ static int atmel_i2s_sama5d2_mck_init(st
+@@ -584,8 +584,8 @@ static int atmel_i2s_sama5d2_mck_init(st
  		err = PTR_ERR(muxclk);
  		if (err == -EPROBE_DEFER)
  			return -EPROBE_DEFER;

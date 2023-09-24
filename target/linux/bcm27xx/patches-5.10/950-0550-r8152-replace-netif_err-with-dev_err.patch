@@ -16,7 +16,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/usb/r8152.c
 +++ b/drivers/net/usb/r8152.c
-@@ -6596,7 +6596,7 @@ static int rtl_ops_init(struct r8152 *tp
+@@ -6599,7 +6599,7 @@ static int rtl_ops_init(struct r8152 *tp
  
  	default:
  		ret = -ENODEV;
@@ -25,7 +25,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		break;
  	}
  
-@@ -6853,7 +6853,7 @@ static int rtl8152_probe(struct usb_inte
+@@ -6856,7 +6856,7 @@ static int rtl8152_probe(struct usb_inte
  
  	ret = register_netdev(netdev);
  	if (ret != 0) {
