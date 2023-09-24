@@ -423,7 +423,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  
 --- a/drivers/gpu/drm/exynos/exynos_drm_crtc.c
 +++ b/drivers/gpu/drm/exynos/exynos_drm_crtc.c
-@@ -65,7 +65,7 @@ static int exynos_crtc_atomic_check(stru
+@@ -64,7 +64,7 @@ static int exynos_crtc_atomic_check(stru
  }
  
  static void exynos_crtc_atomic_begin(struct drm_crtc *crtc,
@@ -432,7 +432,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  {
  	struct exynos_drm_crtc *exynos_crtc = to_exynos_crtc(crtc);
  
-@@ -74,7 +74,7 @@ static void exynos_crtc_atomic_begin(str
+@@ -73,7 +73,7 @@ static void exynos_crtc_atomic_begin(str
  }
  
  static void exynos_crtc_atomic_flush(struct drm_crtc *crtc,
