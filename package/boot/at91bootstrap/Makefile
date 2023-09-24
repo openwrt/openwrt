@@ -11,6 +11,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=at91bootstrap
 PKG_VERSION:=v3.8.10
 PKG_RELEASE:=
+PKG_CPE_ID:=cpe:/a:linux4sam:at91bootstrap
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/linux4sam/at91bootstrap.git

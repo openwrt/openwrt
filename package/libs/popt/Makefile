@@ -18,6 +18,7 @@ PKG_SOURCE_URL:= \
 	http://rpm5.org/files/popt/
 PKG_HASH:=e728ed296fe9f069a0e005003c3d6b2dde3d9cad453422a10d6558616d304cc8
 PKG_LICENSE:=MIT
+PKG_CPE_ID:=cpe:/a:popt_project:popt
 
 PKG_FIXUP:=autoreconf
 PKG_REMOVE_FILES:=autogen.sh aclocal.m4
