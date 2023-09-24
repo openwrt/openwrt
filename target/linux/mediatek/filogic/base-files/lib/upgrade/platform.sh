@@ -84,6 +84,11 @@ platform_do_upgrade() {
 	cudy,wr3000-v1)
 		default_do_upgrade "$1"
 		;;
+	glinet,gl-mt6000)
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		emmc_do_upgrade "$1"
+		;;
 	mercusys,mr90x-v1)
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
@@ -150,6 +155,7 @@ platform_copy_config() {
 			;;
 		esac
 		;;
+	glinet,gl-mt6000|\
 	ubnt,unifi-6-plus)
 		emmc_copy_config
 		;;
