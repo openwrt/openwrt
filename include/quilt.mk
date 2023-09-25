@@ -34,8 +34,8 @@ endif
 ifneq ($(if $(DUMP),1,$(__quilt_inc)),1)
 __quilt_inc:=1
 
-PATCH_DIR?=./patches
-FILES_DIR?=./files
+PATCH_DIR?=$(CURDIR)/patches
+FILES_DIR?=$(CURDIR)/files
 HOST_PATCH_DIR?=$(PATCH_DIR)
 HOST_FILES_DIR?=$(FILES_DIR)
 
