@@ -88,6 +88,11 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
+	ubnt,unifi-6-plus)
+		CI_KERNPART="kernel0"
+		EMMC_ROOT_DEV="$(cmdline_get_var root)"
+		emmc_do_upgrade "$1"
+		;;
 	h3c,magic-nx30-pro|\
 	mediatek,mt7981-rfb|\
 	qihoo,360t7|\
@@ -144,6 +149,9 @@ platform_copy_config() {
 			emmc_copy_config
 			;;
 		esac
+		;;
+	ubnt,unifi-6-plus)
+		emmc_copy_config
 		;;
 	esac
 }

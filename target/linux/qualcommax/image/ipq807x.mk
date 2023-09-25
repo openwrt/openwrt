@@ -115,6 +115,20 @@ define Device/netgear_rax120v2
 endef
 TARGET_DEVICES += netgear_rax120v2
 
+define Device/netgear_wax620
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Netgear
+	DEVICE_MODEL := WAX620
+	DEVICE_DTS_CONFIG := config@hk07
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq8072
+	DEVICE_PACKAGES += kmod-spi-gpio kmod-gpio-nxp-74hc164 \
+		ipq-wifi-netgear_wax620
+endef
+TARGET_DEVICES += netgear_wax620
+
 define Device/netgear_wax218
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
