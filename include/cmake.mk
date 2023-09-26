@@ -89,6 +89,7 @@ define Build/Configure/Default
 		CXXFLAGS="$(TARGET_CXXFLAGS) $(EXTRA_CXXFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)" \
 		cmake \
+			--no-warn-unused-cli \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
 			-DCMAKE_SYSTEM_PROCESSOR=$(ARCH) \
@@ -141,6 +142,7 @@ define Host/Configure/Default
 		CXXFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)" \
 		cmake \
+			--no-warn-unused-cli \
 			-DCMAKE_BUILD_TYPE=Release \
 			-DCMAKE_C_COMPILER_LAUNCHER="$(CMAKE_C_COMPILER_LAUNCHER)" \
 			-DCMAKE_C_COMPILER="$(CMAKE_HOST_C_COMPILER)" \
