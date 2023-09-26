@@ -70,7 +70,7 @@
 
 &ethernet {
 	pinctrl-names = "default";
-	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
+	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
 
 	nvmem-cells = <&macaddr_factory_4>;
 	nvmem-cell-names = "mac-address";
@@ -91,6 +91,10 @@
 			phy-mode = "rgmii";
 		};
 	};
+};
+
+&gsw {
+	mediatek,ephy-base = /bits/ 8 <12>;
 };
 
 &pcie {

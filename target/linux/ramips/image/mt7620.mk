@@ -549,7 +549,7 @@ define Device/hiwifi_hc5861
   DEVICE_VENDOR := HiWiFi
   DEVICE_MODEL := HC5861
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620 \
-	kmod-usb-ledtrig-usbport
+	kmod-phy-realtek kmod-usb-ledtrig-usbport
   SUPPORTED_DEVICES += hc5861
 endef
 TARGET_DEVICES += hiwifi_hc5861
