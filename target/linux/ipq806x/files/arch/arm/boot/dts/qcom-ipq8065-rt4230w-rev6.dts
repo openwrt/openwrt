@@ -2,6 +2,7 @@
 
 #include "qcom-ipq8065-smb208.dtsi"
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Askey RT4230W REV6";
@@ -326,6 +327,25 @@
 				label = "wan";
 				phy-mode = "internal";
 				phy-handle = <&phy_port1>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_WAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_AMBER>;
+						function = LED_FUNCTION_WAN;
+						default-state = "keep";
+					};
+				};
 			};
 
 			port@2 {
@@ -333,6 +353,25 @@
 				label = "lan1";
 				phy-mode = "internal";
 				phy-handle = <&phy_port2>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_AMBER>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
 			};
 
 			port@3 {
@@ -340,6 +379,25 @@
 				label = "lan2";
 				phy-mode = "internal";
 				phy-handle = <&phy_port3>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_AMBER>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
 			};
 
 			port@4 {
@@ -347,6 +405,25 @@
 				label = "lan3";
 				phy-mode = "internal";
 				phy-handle = <&phy_port4>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_AMBER>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
 			};
 
 			port@5 {
@@ -354,6 +431,25 @@
 				label = "lan4";
 				phy-mode = "internal";
 				phy-handle = <&phy_port5>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_AMBER>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
 			};
 
 			port@6 {
