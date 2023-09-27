@@ -75,6 +75,12 @@ package_depends:
 
 	make package_depends PACKAGE="<pkg>"
 
+sign_images:
+	Sign the image with the local build key
+	You can use the following parameters:
+
+	make sign_images IMAGES="<image> [<image> [<image> ...]]]"
+
 endef
 $(eval $(call shexport,Helptext))
 
@@ -292,5 +298,18 @@ endif
 	@$(MAKE) -s package_reload
 	@$(OPKG) depends -A $(PACKAGE)
 
+sign_images: FORCE
+ifeq ($(IMAGES),)
+	@echo 'Variable `IMAGES` is not set but required by `sign_images`'
+	@exit 1
+endif
+	for IMAGE in $(IMAGES); do \
+		fwtool -t -s /dev/null "$$IMAGE" && echo "Removed previous signautre" ;\
+		cp "$(BUILD_KEY).ucert" "$$IMAGE.ucert" ;\
+		usign -S -m "$$IMAGE" -s "$(BUILD_KEY)" -x "$$IMAGE.sig" ;\
+		ucert -A -c "$$IMAGE.ucert" -x "$$IMAGE.sig" ;\
+		fwtool -S "$$IMAGE.ucert" "$$IMAGE" ;\
+		echo "Signed image $$IMAGE" ;\
+	done
 
-.SILENT: help info image manifest package_whatdepends package_depends
+.SILENT: help info image manifest package_whatdepends package_depends sign_images
