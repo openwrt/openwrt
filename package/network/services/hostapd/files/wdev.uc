@@ -41,7 +41,7 @@ function iface_start(wdev)
 		wdev_config[key] = wdev[key];
 	if (!wdev_config.macaddr && wdev.mode != "monitor")
 		wdev_config.macaddr = phydev.macaddr_next();
-	wdev_create(phy, ifname, wdev);
+	wdev_create(phy, ifname, wdev_config);
 	system([ "ip", "link", "set", "dev", ifname, "up" ]);
 	if (wdev.freq)
 		system(`iw dev ${ifname} set freq ${wdev.freq} ${wdev.htmode}`);
