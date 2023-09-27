@@ -129,7 +129,10 @@ uc_value_t *uc_wpa_freq_info(uc_vm_t *vm, size_t nargs)
 	tmp_channel &= ~((8 << width) - 1);
 	center_idx = tmp_channel + center_ofs + (4 << width) - 1;
 
-	ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(center_idx));
+	if (freq_val < 3000)
+		ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(0));
+	else
+		ucv_object_add(ret, "center_seg0_idx", ucv_int64_new(center_idx));
 	center_idx = (center_idx - channel) * 5 + freq_val;
 	ucv_object_add(ret, "center_freq1", ucv_int64_new(center_idx));
 
@@ -295,9 +298,15 @@ uc_value_t *wpa_ucode_registry_get(uc_value_t *reg, int idx)
 uc_value_t *wpa_ucode_registry_remove(uc_value_t *reg, int idx)
 {
 	uc_value_t *val = wpa_ucode_registry_get(reg, idx);
+	void **dataptr;
 
-	if (val)
-		ucv_array_set(reg, idx - 1, NULL);
+	if (!val)
+		return NULL;
+
+	ucv_array_set(reg, idx - 1, NULL);
+	dataptr = ucv_resource_dataptr(val, NULL);
+	if (dataptr)
+		*dataptr = NULL;
 
 	return val;
 }

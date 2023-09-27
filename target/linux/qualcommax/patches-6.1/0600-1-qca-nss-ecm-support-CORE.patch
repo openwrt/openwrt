@@ -86,7 +86,7 @@
  		     __be16 vlan_proto, u16 vlan_id)
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -2833,6 +2833,10 @@ enum netdev_cmd {
+@@ -2831,6 +2831,10 @@ enum netdev_cmd {
  	NETDEV_OFFLOAD_XSTATS_DISABLE,
  	NETDEV_OFFLOAD_XSTATS_REPORT_USED,
  	NETDEV_OFFLOAD_XSTATS_REPORT_DELTA,
@@ -613,7 +613,7 @@
  	return 0;
  
  out_remove_new_fa:
-@@ -1774,6 +1780,9 @@ int fib_table_delete(struct net *net, st
+@@ -1775,6 +1781,9 @@ int fib_table_delete(struct net *net, st
  	if (fa_to_delete->fa_state & FA_S_ACCESSED)
  		rt_cache_flush(cfg->fc_nlinfo.nl_net);
  
@@ -623,7 +623,7 @@
  	fib_release_info(fa_to_delete->fa_info);
  	alias_free_mem_rcu(fa_to_delete);
  	return 0;
-@@ -2402,6 +2411,20 @@ void __init fib_trie_init(void)
+@@ -2403,6 +2412,20 @@ void __init fib_trie_init(void)
  					   0, SLAB_PANIC | SLAB_ACCOUNT, NULL);
  }
  
@@ -656,7 +656,7 @@
  		   const struct in6_addr *daddr)
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -3854,6 +3854,9 @@ out_free:
+@@ -3857,6 +3857,9 @@ out_free:
  	return ERR_PTR(err);
  }
  
@@ -666,7 +666,7 @@
  int ip6_route_add(struct fib6_config *cfg, gfp_t gfp_flags,
  		  struct netlink_ext_ack *extack)
  {
-@@ -3865,6 +3868,10 @@ int ip6_route_add(struct fib6_config *cf
+@@ -3868,6 +3871,10 @@ int ip6_route_add(struct fib6_config *cf
  		return PTR_ERR(rt);
  
  	err = __ip6_ins_rt(rt, &cfg->fc_nlinfo, extack);
@@ -677,7 +677,7 @@
  	fib6_info_release(rt);
  
  	return err;
-@@ -3886,6 +3893,9 @@ static int __ip6_del_rt(struct fib6_info
+@@ -3889,6 +3896,9 @@ static int __ip6_del_rt(struct fib6_info
  	err = fib6_del(rt, info);
  	spin_unlock_bh(&table->tb6_lock);
  
@@ -687,7 +687,7 @@
  out:
  	fib6_info_release(rt);
  	return err;
-@@ -6339,6 +6349,20 @@ static int ip6_route_dev_notify(struct n
+@@ -6342,6 +6352,20 @@ static int ip6_route_dev_notify(struct n
  	return NOTIFY_OK;
  }
  
@@ -710,7 +710,7 @@
   */
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -1629,6 +1629,7 @@ const char *netdev_cmd_to_name(enum netd
+@@ -1614,6 +1614,7 @@ const char *netdev_cmd_to_name(enum netd
  	N(SVLAN_FILTER_PUSH_INFO) N(SVLAN_FILTER_DROP_INFO)
  	N(PRE_CHANGEADDR) N(OFFLOAD_XSTATS_ENABLE) N(OFFLOAD_XSTATS_DISABLE)
  	N(OFFLOAD_XSTATS_REPORT_USED) N(OFFLOAD_XSTATS_REPORT_DELTA)

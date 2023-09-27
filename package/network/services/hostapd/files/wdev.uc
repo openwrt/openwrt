@@ -1,11 +1,14 @@
 #!/usr/bin/env ucode
 'use strict';
-import { vlist_new, is_equal, wdev_create, wdev_remove } from "/usr/share/hostap/common.uc";
+import { vlist_new, is_equal, wdev_create, wdev_remove, phy_open } from "/usr/share/hostap/common.uc";
 import { readfile, writefile, basename, readlink, glob } from "fs";
+let libubus = require("ubus");
 
 let keep_devices = {};
 let phy = shift(ARGV);
-let new_config = shift(ARGV);
+let command = shift(ARGV);
+let phydev;
+
 const mesh_params = [
 	"mesh_retry_timeout", "mesh_confirm_timeout", "mesh_holding_timeout", "mesh_max_peer_links",
 	"mesh_max_retries", "mesh_ttl", "mesh_element_ttl", "mesh_hwmp_max_preq_retries",
@@ -33,6 +36,11 @@ function iface_start(wdev)
 		system([ "ip", "link", "set", "dev", ifname, "down" ]);
 		wdev_remove(ifname);
 	}
+	let wdev_config = {};
+	for (let key in wdev)
+		wdev_config[key] = wdev[key];
+	if (!wdev_config.macaddr && wdev.mode != "monitor")
+		wdev_config.macaddr = phydev.macaddr_next();
 	wdev_create(phy, ifname, wdev);
 	system([ "ip", "link", "set", "dev", ifname, "up" ]);
 	if (wdev.freq)
@@ -114,43 +122,86 @@ function add_existing(phy, config)
 	}
 }
 
+function usage()
+{
+	warn(`Usage: ${basename(sourcepath())} <phy> <command> [<arguments>]
 
-let statefile = `/var/run/wdev-${phy}.json`;
-
-for (let dev in ARGV)
-	keep_devices[dev] = true;
-
-if (!phy || !new_config) {
-	warn(`Usage: ${basename(sourcepath())} <phy> <config> [<device]...]\n`);
+Commands:
+	set_config <config> [<device]...] - set phy configuration
+	get_macaddr <id>		  - get phy MAC address for vif index <id>
+`);
 	exit(1);
 }
 
-if (!readfile(`/sys/class/ieee80211/${phy}/index`)) {
+const commands = {
+	set_config: function(args) {
+		let statefile = `/var/run/wdev-${phy}.json`;
+
+		let new_config = shift(args);
+		for (let dev in ARGV)
+			keep_devices[dev] = true;
+
+		if (!new_config)
+			usage();
+
+		new_config = json(new_config);
+		if (!new_config) {
+			warn("Invalid configuration\n");
+			exit(1);
+		}
+
+		let old_config = readfile(statefile);
+		if (old_config)
+			old_config = json(old_config);
+
+		let config = vlist_new(iface_cb);
+		if (type(old_config) == "object")
+			config.data = old_config;
+
+		add_existing(phy, config.data);
+		add_ifname(config.data);
+		drop_inactive(config.data);
+
+		let ubus = libubus.connect();
+		let data = ubus.call("hostapd", "config_get_macaddr_list", { phy: phy });
+		let macaddr_list = [];
+		if (type(data) == "object" && data.macaddr)
+			macaddr_list = data.macaddr;
+		ubus.disconnect();
+		phydev.macaddr_init(macaddr_list);
+
+		add_ifname(new_config);
+		config.update(new_config);
+
+		drop_inactive(config.data);
+		delete_ifname(config.data);
+		writefile(statefile, sprintf("%J", config.data));
+	},
+	get_macaddr: function(args) {
+		let data = {};
+
+		for (let arg in args) {
+			arg = split(arg, "=", 2);
+			data[arg[0]] = arg[1];
+		}
+
+		let macaddr = phydev.macaddr_generate(data);
+		if (!macaddr) {
+			warn(`Could not get MAC address for phy ${phy}\n`);
+			exit(1);
+		}
+
+		print(macaddr + "\n");
+	},
+};
+
+if (!phy || !command | !commands[command])
+	usage();
+
+phydev = phy_open(phy);
+if (!phydev) {
 	warn(`PHY ${phy} does not exist\n`);
 	exit(1);
 }
 
-new_config = json(new_config);
-if (!new_config) {
-	warn("Invalid configuration\n");
-	exit(1);
-}
-
-let old_config = readfile(statefile);
-if (old_config)
-	old_config = json(old_config);
-
-let config = vlist_new(iface_cb);
-if (type(old_config) == "object")
-	config.data = old_config;
-
-add_existing(phy, config.data);
-add_ifname(config.data);
-drop_inactive(config.data);
-
-add_ifname(new_config);
-config.update(new_config);
-
-drop_inactive(config.data);
-delete_ifname(config.data);
-writefile(statefile, sprintf("%J", config.data));
+commands[command](ARGV);

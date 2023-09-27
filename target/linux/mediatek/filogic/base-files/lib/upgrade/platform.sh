@@ -93,7 +93,6 @@ platform_do_upgrade() {
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
-	xiaomi,mi-router-wr30u-112m-nmbm|\
 	xiaomi,mi-router-wr30u-ubootmod|\
 	xiaomi,redmi-router-ax6000-ubootmod)
 		CI_KERNPART="fit"

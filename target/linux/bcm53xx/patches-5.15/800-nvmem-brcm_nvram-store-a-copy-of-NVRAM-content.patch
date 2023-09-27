@@ -1,0 +1,128 @@
+From a18378409fee1cac0f0c58a4770ff557b498c778 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 1 Sep 2023 10:44:26 +0200
+Subject: [PATCH] nvmem: brcm_nvram: store a copy of NVRAM content
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ drivers/nvmem/brcm_nvram.c | 54 +++++++++++++++++++-------------------
+ 1 file changed, 27 insertions(+), 27 deletions(-)
+
+--- a/drivers/nvmem/brcm_nvram.c
++++ b/drivers/nvmem/brcm_nvram.c
+@@ -19,7 +19,7 @@
+ 
+ struct brcm_nvram {
+ 	struct device *dev;
+-	void __iomem *base;
++	uint8_t *data;
+ 	struct nvmem_cell_info *cells;
+ 	int ncells;
+ };
+@@ -36,10 +36,8 @@ static int brcm_nvram_read(void *context
+ 			   size_t bytes)
+ {
+ 	struct brcm_nvram *priv = context;
+-	u8 *dst = val;
+ 
+-	while (bytes--)
+-		*dst++ = readb(priv->base + offset++);
++	memcpy(val, priv->data + offset, bytes);
+ 
+ 	return 0;
+ }
+@@ -110,35 +108,27 @@ static int brcm_nvram_add_cells(struct b
+ 
+ static int brcm_nvram_parse(struct brcm_nvram *priv)
+ {
++	struct brcm_nvram_header *header = (struct brcm_nvram_header *)priv->data;
+ 	struct device *dev = priv->dev;
+-	struct brcm_nvram_header header;
+-	uint8_t *data;
++	uint8_t tmp;
+ 	size_t len;
+ 	int err;
+ 
+-	memcpy_fromio(&header, priv->base, sizeof(header));
+-
+-	if (memcmp(header.magic, NVRAM_MAGIC, 4)) {
++	if (memcmp(header->magic, NVRAM_MAGIC, 4)) {
+ 		dev_err(dev, "Invalid NVRAM magic\n");
+ 		return -EINVAL;
+ 	}
+ 
+-	len = le32_to_cpu(header.len);
++	len = le32_to_cpu(header->len);
+ 
+-	data = kzalloc(len, GFP_KERNEL);
+-	if (!data)
+-		return -ENOMEM;
+-
+-	memcpy_fromio(data, priv->base, len);
+-	data[len - 1] = '\0';
++	tmp = priv->data[len - 1];
++	priv->data[len - 1] = '\0';
+ 
+-	err = brcm_nvram_add_cells(priv, data, len);
+-	if (err) {
++	err = brcm_nvram_add_cells(priv, priv->data, len);
++	if (err)
+ 		dev_err(dev, "Failed to add cells: %d\n", err);
+-		return err;
+-	}
+ 
+-	kfree(data);
++	priv->data[len - 1] = tmp;
+ 
+ 	return 0;
+ }
+@@ -150,8 +140,10 @@ static int brcm_nvram_probe(struct platf
+ 		.reg_read = brcm_nvram_read,
+ 	};
+ 	struct device *dev = &pdev->dev;
+-	struct resource *res;
+ 	struct brcm_nvram *priv;
++	struct resource *res;
++	void __iomem *base;
++	size_t size;
+ 	int err;
+ 
+ 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+@@ -159,21 +151,29 @@ static int brcm_nvram_probe(struct platf
+ 		return -ENOMEM;
+ 	priv->dev = dev;
+ 
+-	priv->base = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
+-	if (IS_ERR(priv->base))
+-		return PTR_ERR(priv->base);
++	base = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	size = resource_size(res);
++
++	priv->data = kzalloc(size, GFP_KERNEL);
++	if (!priv->data)
++		return -ENOMEM;
++
++	memcpy_fromio(priv->data, base, size);
+ 
+ 	err = brcm_nvram_parse(priv);
+ 	if (err)
+ 		return err;
+ 
+-	bcm47xx_nvram_init_from_iomem(priv->base, resource_size(res));
++	bcm47xx_nvram_init_from_iomem(base, size);
+ 
+ 	config.dev = dev;
+ 	config.cells = priv->cells;
+ 	config.ncells = priv->ncells;
+ 	config.priv = priv;
+-	config.size = resource_size(res);
++	config.size = size;
+ 
+ 	return PTR_ERR_OR_ZERO(devm_nvmem_register(dev, &config));
+ }

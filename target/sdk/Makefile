@@ -86,9 +86,10 @@ KERNEL_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(
 #
 USERSPACE_UTILS_FILES := \
 	tools/build \
+	tools/power/cpupower \
 	tools/scripts \
-	tools/usb/usbip \
-	tools/spi
+	tools/spi \
+	tools/usb/usbip
 
 USERSPACE_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(USERSPACE_UTILS_FILES))))
 

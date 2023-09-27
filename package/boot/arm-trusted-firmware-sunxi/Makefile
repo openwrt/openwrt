@@ -36,9 +36,15 @@ define Trusted-Firmware-A/sunxi-h6
 	PLAT:=sun50i_h6
 endef
 
+define Trusted-Firmware-A/sunxi-h616
+	NAME:=Allwinner H616
+	PLAT:=sun50i_h616
+endef
+
 TFA_TARGETS:= \
 	sunxi-a64 \
-	sunxi-h6
+	sunxi-h6 \
+	sunxi-h616
 
 define Package/trusted-firmware-a/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)

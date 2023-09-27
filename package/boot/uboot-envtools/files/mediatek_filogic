@@ -44,8 +44,9 @@ mercusys,mr90x-v1)
 	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
 	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
 	;;
+cetron,ct3003|\
 netgear,wax220)
-	ubootenv_add_uci_config "/dev/mtd5" "0x0" "0x20000" "0x20000"
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 xiaomi,mi-router-wr30u-112m-nmbm|\
 xiaomi,mi-router-wr30u-stock|\
@@ -70,6 +71,9 @@ xiaomi,redmi-router-ax6000-ubootmod)
 zyxel,ex5601-t0)
 	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
 	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x40000" "2"
+	;;
+zyxel,ex5700-telenor)
+	ubootenv_add_uci_config "/dev/ubootenv" "0x0" "0x4000" "0x4000" "1"
 	;;
 esac
 

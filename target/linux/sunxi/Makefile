@@ -10,7 +10,7 @@ BOARDNAME:=Allwinner A1x/A20/A3x/H3/H5/R40
 FEATURES:=fpu usb ext4 display rootfs-part rtc squashfs
 SUBTARGETS:=cortexa8 cortexa7 cortexa53
 
-KERNEL_PATCHVER:=5.15
+KERNEL_PATCHVER:=6.1
 
 KERNELNAME:=zImage dtbs
 

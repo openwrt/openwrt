@@ -1,11 +1,12 @@
 let libubus = require("ubus");
 import { open, readfile } from "fs";
-import { wdev_create, wdev_remove, is_equal, vlist_new } from "common";
+import { wdev_create, wdev_remove, is_equal, vlist_new, phy_open } from "common";
 
 let ubus = libubus.connect();
 
 wpas.data.config = {};
 wpas.data.iface_phy = {};
+wpas.data.macaddr_list = {};
 
 function iface_stop(iface)
 {
@@ -20,16 +21,23 @@ function iface_stop(iface)
 	iface.running = false;
 }
 
-function iface_start(phy, iface)
+function iface_start(phydev, iface, macaddr_list)
 {
+	let phy = phydev.name;
+
 	if (iface.running)
 		return;
 
 	let ifname = iface.config.iface;
+	let wdev_config = {};
+	for (let field in iface.config)
+		wdev_config[field] = iface.config[field];
+	if (!wdev_config.macaddr)
+		wdev_config.macaddr = phydev.macaddr_next();
 
 	wpas.data.iface_phy[ifname] = phy;
 	wdev_remove(ifname);
-	let ret = wdev_create(phy, ifname, iface.config);
+	let ret = wdev_create(phy, ifname, wdev_config);
 	if (ret)
 		wpas.printf(`Failed to create device ${ifname}: ${ret}`);
 	wpas.add_iface(iface.config);
@@ -42,6 +50,11 @@ function iface_cb(new_if, old_if)
 		new_if.running = old_if.running;
 		return;
 	}
+
+	if (new_if && old_if)
+		wpas.printf(`Update configuration for interface ${old_if.config.iface}`);
+	else if (old_if)
+		wpas.printf(`Remove interface ${old_if.config.iface}`);
 
 	if (old_if)
 		iface_stop(old_if);
@@ -73,9 +86,22 @@ function set_config(phy_name, config_list)
 function start_pending(phy_name)
 {
 	let phy = wpas.data.config[phy_name];
+	let ubus = wpas.data.ubus;
+
+	if (!phy || !phy.data)
+		return;
+
+	let phydev = phy_open(phy_name);
+	if (!phydev) {
+		wpas.printf(`Could not open phy ${phy_name}`);
+		return;
+	}
+
+	let macaddr_list = wpas.data.macaddr_list[phy_name];
+	phydev.macaddr_init(macaddr_list);
 
 	for (let ifname in phy.data)
-		iface_start(phy_name, phy.data[ifname]);
+		iface_start(phydev, phy.data[ifname]);
 }
 
 let main_obj = {
@@ -106,6 +132,55 @@ let main_obj = {
 			return 0;
 		}
 	},
+	phy_set_macaddr_list: {
+		args: {
+			phy: "",
+			macaddr: [],
+		},
+		call: function(req) {
+			let phy = req.args.phy;
+			if (!phy)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			wpas.data.macaddr_list[phy] = req.args.macaddr;
+			return 0;
+		}
+	},
+	phy_status: {
+		args: {
+			phy: ""
+		},
+		call: function(req) {
+			if (!req.args.phy)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			let phy = wpas.data.config[req.args.phy];
+			if (!phy)
+				return libubus.STATUS_NOT_FOUND;
+
+			for (let ifname in phy.data) {
+				try {
+					let iface = wpas.interfaces[ifname];
+					if (!iface)
+						continue;
+
+					let status = iface.status();
+					if (!status)
+						continue;
+
+					if (status.state == "INTERFACE_DISABLED")
+						continue;
+
+					status.ifname = ifname;
+					return status;
+				} catch (e) {
+					continue;
+				}
+			}
+
+			return libubus.STATUS_NOT_FOUND;
+		}
+	},
 	config_set: {
 		args: {
 			phy: "",
@@ -116,6 +191,7 @@ let main_obj = {
 			if (!req.args.phy)
 				return libubus.STATUS_INVALID_ARGUMENT;
 
+			wpas.printf(`Set new config for phy ${req.args.phy}`);
 			try {
 				if (req.args.config)
 					set_config(req.args.phy, req.args.config);
@@ -188,6 +264,7 @@ function iface_hostapd_notify(phy, ifname, iface, state)
 	switch (state) {
 	case "DISCONNECTED":
 	case "AUTHENTICATING":
+	case "SCANNING":
 		msg.up = false;
 		break;
 	case "INTERFACE_DISABLED":

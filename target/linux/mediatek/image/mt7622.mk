@@ -71,6 +71,7 @@ define Device/bananapi_bpi-r64
   DEVICE_DTS_OVERLAY := mt7622-bananapi-bpi-r64-pcie1 mt7622-bananapi-bpi-r64-sata
   DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3 e2fsprogs mkf2fs f2fsck
   DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
   ARTIFACTS := emmc-preloader.bin emmc-bl31-uboot.fip sdcard.img.gz snand-preloader.bin snand-bl31-uboot.fip
   IMAGES := sysupgrade.itb
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
@@ -307,7 +308,7 @@ define Device/ubnt_unifi-6-lr-v1-ubootmod
   IMAGE/sysupgrade.itb := append-kernel | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
   ARTIFACTS := preloader.bin bl31-uboot.fip
   ARTIFACT/preloader.bin := bl2 nor-2ddr
-  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr
+  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr-v1
   SUPPORTED_DEVICES += ubnt,unifi-6-lr-ubootmod
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr-v1-ubootmod
@@ -337,9 +338,38 @@ define Device/ubnt_unifi-6-lr-v2-ubootmod
   IMAGE/sysupgrade.itb := append-kernel | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
   ARTIFACTS := preloader.bin bl31-uboot.fip
   ARTIFACT/preloader.bin := bl2 nor-2ddr
-  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr
+  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr-v2
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr-v2-ubootmod
+
+define Device/ubnt_unifi-6-lr-v3
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi 6 LR
+  DEVICE_VARIANT := v3
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+endef
+TARGET_DEVICES += ubnt_unifi-6-lr-v3
+
+define Device/ubnt_unifi-6-lr-v3-ubootmod
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi 6 LR
+  DEVICE_VARIANT := v3 U-Boot mod
+  DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v3-ubootmod
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  KERNEL := kernel-bin | lzma
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := bl2 nor-2ddr
+  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr-v3
+endef
+TARGET_DEVICES += ubnt_unifi-6-lr-v3-ubootmod
 
 define Device/xiaomi_redmi-router-ax6s
   DEVICE_VENDOR := Xiaomi

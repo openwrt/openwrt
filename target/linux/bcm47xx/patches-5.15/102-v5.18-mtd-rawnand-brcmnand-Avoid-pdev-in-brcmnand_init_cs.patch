@@ -16,7 +16,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 
 --- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
-@@ -2771,7 +2771,7 @@ static const struct nand_controller_ops
+@@ -2806,7 +2806,7 @@ static const struct nand_controller_ops
  static int brcmnand_init_cs(struct brcmnand_host *host, struct device_node *dn)
  {
  	struct brcmnand_controller *ctrl = host->ctrl;
@@ -25,7 +25,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  	struct mtd_info *mtd;
  	struct nand_chip *chip;
  	int ret;
-@@ -2779,7 +2779,7 @@ static int brcmnand_init_cs(struct brcmn
+@@ -2814,7 +2814,7 @@ static int brcmnand_init_cs(struct brcmn
  
  	ret = of_property_read_u32(dn, "reg", &host->cs);
  	if (ret) {
@@ -34,7 +34,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  		return -ENXIO;
  	}
  
-@@ -2788,13 +2788,13 @@ static int brcmnand_init_cs(struct brcmn
+@@ -2823,13 +2823,13 @@ static int brcmnand_init_cs(struct brcmn
  
  	nand_set_flash_node(chip, dn);
  	nand_set_controller_data(chip, host);

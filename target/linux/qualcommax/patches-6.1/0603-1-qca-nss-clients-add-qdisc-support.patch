@@ -52,7 +52,7 @@
  	dev->needs_free_netdev = true;
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -4590,6 +4590,15 @@ void dev_uc_flush(struct net_device *dev
+@@ -4588,6 +4588,15 @@ void dev_uc_flush(struct net_device *dev
  void dev_uc_init(struct net_device *dev);
  
  /**
@@ -68,7 +68,7 @@
   *  __dev_uc_sync - Synchonize device's unicast list
   *  @dev:  device to sync
   *  @sync: function to call if address should be added
-@@ -5135,6 +5144,11 @@ static inline bool netif_is_failover_sla
+@@ -5133,6 +5142,11 @@ static inline bool netif_is_failover_sla
  	return dev->priv_flags & IFF_FAILOVER_SLAVE;
  }
  
@@ -341,7 +341,7 @@
  
  struct Qdisc *qdisc_lookup_rcu(struct net_device *dev, u32 handle)
  {
-@@ -2359,4 +2360,26 @@ static int __init pktsched_init(void)
+@@ -2386,4 +2387,26 @@ static int __init pktsched_init(void)
  	return 0;
  }
  

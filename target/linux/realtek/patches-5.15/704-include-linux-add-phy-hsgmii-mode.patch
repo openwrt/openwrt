@@ -15,7 +15,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -403,6 +403,7 @@ void phylink_get_linkmodes(unsigned long
+@@ -408,6 +408,7 @@ void phylink_get_linkmodes(unsigned long
  
  	case PHY_INTERFACE_MODE_XGMII:
  	case PHY_INTERFACE_MODE_RXAUI:
@@ -23,7 +23,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  	case PHY_INTERFACE_MODE_XAUI:
  	case PHY_INTERFACE_MODE_10GBASER:
  	case PHY_INTERFACE_MODE_10GKR:
-@@ -657,6 +658,7 @@ static int phylink_parse_mode(struct phy
+@@ -662,6 +663,7 @@ static int phylink_parse_mode(struct phy
  			fallthrough;
  		case PHY_INTERFACE_MODE_USXGMII:
  		case PHY_INTERFACE_MODE_10GKR:

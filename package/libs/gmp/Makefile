@@ -19,6 +19,7 @@ PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 PKG_FIXUP:=autoreconf
 PKG_LICENSE:=GPL-2.0-or-later
+PKG_CPE_ID:=cpe:/a:gmplib:gmp
 
 PKG_BUILD_FLAGS:=no-mips16
 

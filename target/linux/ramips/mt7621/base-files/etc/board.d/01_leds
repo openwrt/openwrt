@@ -7,6 +7,12 @@ board=$(board_name)
 board_config_update
 
 case $board in
+alfa-network,ax1800rm)
+	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1"
+	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2"
+	ucidef_set_led_netdev "lan3" "lan3" "green:lan3" "lan3"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
+	;;
 asus,rp-ac87)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_rssimon "wlan1" "200000" "1"
@@ -69,7 +75,8 @@ jcg,y2|\
 xzwifi,creativebox-v1)
 	ucidef_set_led_netdev "internet" "internet" "blue:internet" "wan"
 	;;
-dlink,dap-1620-b1)
+dlink,dap-1620-b1|\
+dlink,dra-1360-a1)
 	ucidef_set_rssimon "wlan1" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "RSSILOW" "red:rssilow" "wlan1" "1" "40"
 	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "green:rssilow" "wlan1" "21" "100"

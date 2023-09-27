@@ -82,7 +82,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	bbp = rt2800_bbp_read(rt2x00dev, 4);
-@@ -10583,6 +10624,7 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10581,6 +10622,7 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_rfcsr_write_dccal(rt2x00dev, 5, 0x00);
  	rt2800_rfcsr_write_dccal(rt2x00dev, 17, 0x7C);
  
@@ -90,7 +90,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	rt2800_r_calibration(rt2x00dev);
  	rt2800_rf_self_txdc_cal(rt2x00dev);
  	rt2800_rxdcoc_calibration(rt2x00dev);
-@@ -10590,6 +10632,22 @@ static void rt2800_init_rfcsr_6352(struc
+@@ -10588,6 +10630,22 @@ static void rt2800_init_rfcsr_6352(struc
  	rt2800_bw_filter_calibration(rt2x00dev, false);
  	rt2800_loft_iq_calibration(rt2x00dev);
  	rt2800_rxiq_calibration(rt2x00dev);

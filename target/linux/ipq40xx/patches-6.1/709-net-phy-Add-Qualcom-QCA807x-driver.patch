@@ -1,0 +1,51 @@
+From 876bb5b69c1e083be526c0ea261982d5eb78556f Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Fri, 9 Sep 2022 23:44:42 +0200
+Subject: [PATCH] net: phy: Add Qualcom QCA807x driver
+
+This adds driver for the Qualcomm QCA8072 and QCA8075 PHY-s.
+
+They are 2 or 5 port IEEE 802.3 clause 22 compliant 10BASE-Te, 100BASE-TX and 1000BASE-T PHY-s.
+
+They feature 2 SerDes, one for PSGMII or QSGMII connection with MAC, while second one is SGMII for connection to MAC or fiber.
+
+Both models have a combo port that supports 1000BASE-X and 100BASE-FX fiber.
+
+Each PHY inside of QCA807x series has 4 digitally controlled output only pins that natively drive LED-s.
+But some vendors used these to driver generic LED-s controlled by userspace,
+so lets enable registering each PHY as GPIO controller and add driver for it.
+
+These are commonly used in Qualcomm IPQ40xx, IPQ60xx and IPQ807x boards.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/net/phy/Kconfig  | 7 +++++++
+ drivers/net/phy/Makefile | 1 +
+ 2 files changed, 8 insertions(+)
+
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -369,6 +369,13 @@ config AT803X_PHY
+ 	  Currently supports the AR8030, AR8031, AR8033, AR8035 and internal
+ 	  QCA8337(Internal qca8k PHY) model
+ 
++config QCA807X_PHY
++	tristate "Qualcomm QCA807x PHYs"
++	depends on OF_MDIO
++	help
++	  Currently supports the Qualcomm QCA8072, QCA8075 and the PSGMII
++	  control PHY.
++
+ config QSEMI_PHY
+ 	tristate "Quality Semiconductor PHYs"
+ 	help
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -94,6 +94,7 @@ obj-$(CONFIG_MOTORCOMM_PHY)	+= motorcomm
+ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
+ obj-$(CONFIG_NXP_C45_TJA11XX_PHY)	+= nxp-c45-tja11xx.o
+ obj-$(CONFIG_NXP_TJA11XX_PHY)	+= nxp-tja11xx.o
++obj-$(CONFIG_QCA807X_PHY)		+= qca807x.o
+ obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
+ obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
+ obj-$(CONFIG_RENESAS_PHY)	+= uPD60620.o

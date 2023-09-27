@@ -32,7 +32,7 @@ Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
        - rev-mii
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -366,6 +366,7 @@ void phylink_get_linkmodes(unsigned long
+@@ -371,6 +371,7 @@ void phylink_get_linkmodes(unsigned long
  	case PHY_INTERFACE_MODE_RGMII_RXID:
  	case PHY_INTERFACE_MODE_RGMII_ID:
  	case PHY_INTERFACE_MODE_RGMII:
@@ -40,7 +40,7 @@ Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
  	case PHY_INTERFACE_MODE_QSGMII:
  	case PHY_INTERFACE_MODE_SGMII:
  	case PHY_INTERFACE_MODE_GMII:
-@@ -629,6 +630,7 @@ static int phylink_parse_mode(struct phy
+@@ -634,6 +635,7 @@ static int phylink_parse_mode(struct phy
  
  		switch (pl->link_config.interface) {
  		case PHY_INTERFACE_MODE_SGMII:

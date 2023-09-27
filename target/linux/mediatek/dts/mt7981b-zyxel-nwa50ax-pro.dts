@@ -84,6 +84,9 @@
 	phy0: ethernet-phy@5 {
 		reg = <5>;
 		compatible = "ethernet-phy-ieee802.3-c45";
+
+		/* LED0: Amber ; LED1: nc ; LED2: nc ; LED3: Green */
+		mxl,led-config = <0x3b0 0x0 0x0 0x3c0>;
 	};
 };
 
@@ -106,15 +109,11 @@
 		spi-cal-addrlen = <5>;
 		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
 
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 		mediatek,nmbm;
 		mediatek,bmt-max-ratio = <1>;
 		mediatek,bmt-max-reserved-blocks = <64>;
-
-		mediatek,bmt-remap-range =
-			<0x0 0x580000>,
-			<0xef00000 0xef80000>;
 
 		partitions {
 			compatible = "fixed-partitions";

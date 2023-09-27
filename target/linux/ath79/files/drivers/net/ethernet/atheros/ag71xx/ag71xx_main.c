@@ -333,7 +333,7 @@ static unsigned char *ag71xx_speed_str(struct ag71xx *ag)
 	return "?";
 }
 
-static void ag71xx_hw_set_macaddr(struct ag71xx *ag, unsigned char *mac)
+static void ag71xx_hw_set_macaddr(struct ag71xx *ag, const unsigned char *mac)
 {
 	u32 t;
 
@@ -1166,7 +1166,7 @@ static int ag71xx_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	switch (cmd) {
 	case SIOCSIFHWADDR:
 		if (copy_from_user
-			(dev->dev_addr, ifr->ifr_data, sizeof(dev->dev_addr)))
+			((void*)dev->dev_addr, ifr->ifr_data, sizeof(dev->dev_addr)))
 			return -EFAULT;
 		return 0;
 
@@ -1669,10 +1669,9 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->stop_desc->ctrl = 0;
 	ag->stop_desc->next = (u32) ag->stop_desc_dma;
 
-	of_get_mac_address(np, dev->dev_addr);
-	if (!is_valid_ether_addr(dev->dev_addr)) {
+	if (of_get_ethdev_address(np, dev)) {
 		dev_err(&pdev->dev, "invalid MAC address, using random address\n");
-		eth_random_addr(dev->dev_addr);
+		eth_hw_addr_random(dev);
 	}
 
 	err = of_get_phy_mode(np, &ag->phy_if_mode);
@@ -1699,7 +1698,11 @@ static int ag71xx_probe(struct platform_device *pdev)
 			break;
 		}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,19,0)
+	netif_napi_add_weight(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
+#else
 	netif_napi_add(dev, &ag->napi, ag71xx_poll, AG71XX_NAPI_WEIGHT);
+#endif
 
 	ag71xx_dump_regs(ag);
 
