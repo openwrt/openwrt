@@ -1,8 +1,8 @@
 PKG_DRIVERS += \
 	rtlwifi rtlwifi-pci rtlwifi-btcoexist rtlwifi-usb rtl8192c-common \
 	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8723bs rtl8821ae \
-	rtl8xxxu rtw88 rtw88-pci rtw88-usb rtw88-8822b rtw88-8822c rtw88-8723d \
-	rtw88-8822be rtw88-8822bu rtw88-8822ce rtw88-8723de
+	rtl8xxxu rtw88 rtw88-pci rtw88-usb rtw88-8821c rtw88-8822b rtw88-8822c \
+	rtw88-8723d rtw88-8821ce rtw88-8822be rtw88-8822bu rtw88-8822ce rtw88-8723de
 
 config-$(call config_package,rtlwifi) += RTL_CARDS RTLWIFI
 config-$(call config_package,rtlwifi-pci) += RTLWIFI_PCI
@@ -25,6 +25,8 @@ config-y += STAGING
 config-$(call config_package,rtw88) += RTW88 RTW88_CORE
 config-$(call config_package,rtw88-pci) += RTW88_PCI
 config-$(call config_package,rtw88-usb) += RTW88_USB
+config-$(call config_package,rtw88-8821c) += RTW88_8821C
+config-$(call config_package,rtw88-8821ce) += RTW88_8821CE
 config-$(call config_package,rtw88-8822b) += RTW88_8822B
 config-$(call config_package,rtw88-8822be) += RTW88_8822BE
 config-$(call config_package,rtw88-8822bu) += RTW88_8822BU
@@ -202,6 +204,15 @@ define KernelPackage/rtw88-usb
   HIDDEN:=1
 endef
 
+define KernelPackage/rtw88-8821c
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8821C family support
+  DEPENDS+= +kmod-rtw88 +rtl8821ce-firmware +@DRIVER_11AC_SUPPORT
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8821c.ko
+  AUTOLOAD:=$(call AutoProbe,rtw88_8821c)
+  HIDDEN:=1
+endef
+
 define KernelPackage/rtw88-8822b
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8822B family support
@@ -227,6 +238,14 @@ define KernelPackage/rtw88-8723d
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8723d.ko
   AUTOLOAD:=$(call AutoProbe,rtw88_8723d)
   HIDDEN:=1
+endef
+
+define KernelPackage/rtw88-8821ce
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8821CE support
+  DEPENDS+= +kmod-rtw88-pci +kmod-rtw88-8821c
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8821ce.ko
+  AUTOLOAD:=$(call AutoProbe,rtw88_8821ce)
 endef
 
 define KernelPackage/rtw88-8822be
