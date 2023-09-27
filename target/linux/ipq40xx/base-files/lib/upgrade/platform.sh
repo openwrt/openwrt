@@ -214,7 +214,9 @@ platform_do_upgrade() {
 	teltonika,rutx10 |\
 	teltonika,rutx50 |\
 	zte,mf18a |\
+	zte,mf282plus |\
 	zte,mf286d |\
+	zte,mf287 |\
 	zte,mf287plus |\
 	zte,mf287pro |\
 	zte,mf289f)

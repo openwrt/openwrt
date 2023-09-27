@@ -1,6 +1,8 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2007-2012 OpenWrt.org
 
+. /lib/functions.sh
+
 START=19
 
 USE_PROCD=1
@@ -509,7 +511,6 @@ dhcp_boot_add() {
 	dhcp_option_add "$cfg" "$networkid" "$force"
 }
 
-
 dhcp_add() {
 	local cfg="$1"
 	local dhcp6range="::"
@@ -582,12 +583,8 @@ dhcp_add() {
 
 	nettag="${networkid:+set:${networkid},}"
 
-	if [ "$limit" -gt 0 ] ; then
-		limit=$((limit-1))
-	fi
-
 	# make sure the DHCP range is not empty
-	if [ "$dhcpv4" != "disabled" ] && eval "$(ipcalc.sh "${subnet%%/*}" "$netmask" "$start" "$limit")" ; then
+	if [ "$dhcpv4" != "disabled" ] && ipcalc "${subnet%%/*}" "$netmask" "$start" "$limit" ; then
 		[ "$dynamicdhcpv4" = "0" ] && END="static"
 
 		xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
