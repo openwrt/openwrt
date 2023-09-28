@@ -122,6 +122,14 @@ function iface_config_macaddr_list(config)
 	return macaddr_list;
 }
 
+function iface_update_supplicant_macaddr(phy, config)
+{
+	let macaddr_list = [];
+	for (let i = 0; i < length(config.bss); i++)
+		push(macaddr_list, config.bss[i].bssid);
+	ubus.call("wpa_supplicant", "phy_set_macaddr_list", { phy: phy, macaddr: macaddr_list });
+}
+
 function iface_restart(phydev, config, old_config)
 {
 	let phy = phydev.name;
@@ -141,6 +149,8 @@ function iface_restart(phydev, config, old_config)
 		if (bss.default_macaddr)
 			bss.bssid = phydev.macaddr_next();
 	}
+
+	iface_update_supplicant_macaddr(phy, config);
 
 	let bss = config.bss[0];
 	let err = wdev_create(phy, bss.ifname, { mode: "ap" });
@@ -498,14 +508,6 @@ function iface_reload_config(phydev, config, old_config)
 	return true;
 }
 
-function iface_update_supplicant_macaddr(phy, config)
-{
-	let macaddr_list = [];
-	for (let i = 0; i < length(config.bss); i++)
-		push(macaddr_list, config.bss[i].bssid);
-	ubus.call("wpa_supplicant", "phy_set_macaddr_list", { phy: phy, macaddr: macaddr_list });
-}
-
 function iface_set_config(phy, config)
 {
 	let old_config = hostapd.data.config[phy];
@@ -536,7 +538,6 @@ function iface_set_config(phy, config)
 
 	hostapd.printf(`Restart interface for phy ${phy}`);
 	let ret = iface_restart(phydev, config, old_config);
-	iface_update_supplicant_macaddr(phy, config);
 
 	return ret;
 }
