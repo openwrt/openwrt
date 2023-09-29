@@ -148,6 +148,10 @@ ramips_setup_interfaces()
 	ubnt,usw-flex)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
+	zyxel,lte5398-m904)
+		ucidef_set_interface_lan "lan1 lan2"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
+		;;
 	zyxel,wap6805)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "qtn" ifname "eth1" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.0"
