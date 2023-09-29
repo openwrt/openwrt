@@ -3,7 +3,7 @@ PKG_DRIVERS += \
 	rtl8192ce rtl8192se rtl8192de rtl8192cu rtl8723bs rtl8821ae \
 	rtl8xxxu rtw88 rtw88-pci rtw88-usb rtw88-8821c rtw88-8822b rtw88-8822c \
 	rtw88-8723d rtw88-8821ce rtw88-8821cu rtw88-8822be rtw88-8822bu \
-	rtw88-8822ce rtw88-8723de
+	rtw88-8822ce rtw88-8822cu rtw88-8723de
 
 config-$(call config_package,rtlwifi) += RTL_CARDS RTLWIFI
 config-$(call config_package,rtlwifi-pci) += RTLWIFI_PCI
@@ -34,6 +34,7 @@ config-$(call config_package,rtw88-8822be) += RTW88_8822BE
 config-$(call config_package,rtw88-8822bu) += RTW88_8822BU
 config-$(call config_package,rtw88-8822c) += RTW88_8822C
 config-$(call config_package,rtw88-8822ce) += RTW88_8822CE
+config-$(call config_package,rtw88-8822cu) += RTW88_8822CU
 config-$(call config_package,rtw88-8723d) += RTW88_8723D
 config-$(call config_package,rtw88-8723de) += RTW88_8723DE
 config-$(CONFIG_PACKAGE_RTW88_DEBUG) += RTW88_DEBUG
@@ -280,6 +281,14 @@ define KernelPackage/rtw88-8822ce
   DEPENDS+= +kmod-rtw88-pci +kmod-rtw88-8822c
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8822ce.ko
   AUTOLOAD:=$(call AutoProbe,rtw88_8822ce)
+endef
+
+define KernelPackage/rtw88-8822cu
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8822CU support
+  DEPENDS+= +kmod-rtw88-usb +kmod-rtw88-8822c
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8822cu.ko
+  AUTOLOAD:=$(call AutoProbe,rtw88_8822cu)
 endef
 
 define KernelPackage/rtw88-8723de
