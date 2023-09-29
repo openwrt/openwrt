@@ -149,6 +149,7 @@ platform_do_upgrade() {
 		platform_upgrade_ubnt_erx "$1"
 		;;
 	zyxel,lte3301-plus|\
+	zyxel,lte5398-m904|\
 	zyxel,nr7101)
 		fw_setenv CheckBypass 0
 		fw_setenv Image1Stable 0

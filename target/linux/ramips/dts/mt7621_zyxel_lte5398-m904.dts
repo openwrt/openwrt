@@ -1,0 +1,228 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "zyxel,lte5398-m904", "mediatek,mt7621-soc";
+	model = "ZyXEL LTE5398-M904";
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_green: power_green {
+			label = "green:power";
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+
+		power_blue {
+			label = "blue:power";
+			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "usbport";
+			trigger-sources = <&ehci_port2>;
+		};
+
+		internet {
+			label = "green:internet";
+			gpios = <&gpio 23 GPIO_ACTIVE_HIGH>;
+		};
+
+		wifi {
+			label = "green:wifi";
+			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		voice {
+			label = "green:voice";
+			gpios = <&gpio 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		lte_green {
+			label = "green:lte";
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		};
+
+		lte_orange {
+			label = "orange:lte";
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		lte_red {
+			label = "red:lte";
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		lte_power {
+			gpio-export,name = "lte_power";
+			gpio-export,output = <0>;
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+		};
+
+		usb_power {
+			gpio-export,name = "usb_power";
+			gpio-export,output = <1>;
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "Bootloader";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "Config";
+			reg = <0x80000 0x80000>;
+		};
+
+		factory: partition@100000 {
+			compatible = "nvmem-cells";
+			label = "Factory";
+			reg = <0x100000 0x40000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			read-only;
+
+			eeprom_factory_0: eeprom@0 {
+				reg = <0x0 0x400>;
+			};
+
+			eeprom_factory_8000: eeprom@8000 {
+				reg = <0x8000 0x4da8>;
+			};
+
+			macaddr_factory_fe6e: macaddr@fe6e {
+				reg = <0xfe6e 0x6>;
+			};
+		};
+
+		partition@140000 {
+			label = "Kernel";
+			reg = <0x140000 0x1ec0000>;
+		};
+
+		partition@540000 {
+			label = "ubi";
+			reg = <0x540000 0x1ac0000>;
+		};
+
+		partition@2140000 {
+			label = "Kernel2";
+			reg = <0x2140000 0x1ec0000>;
+		};
+
+		partition@4000000 {
+			label = "wwan";
+			reg = <0x4000000 0x100000>;
+		};
+
+		partition@4100000 {
+			label = "data";
+			reg = <0x4100000 0x1000000>;
+		};
+
+		partition@5100000 {
+			label = "rom-d";
+			reg = <0x5100000 0x100000>;
+			read-only;
+		};
+
+		partition@5200000 {
+			label = "reserve";
+			reg = <0x5200000 0x80000>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&ethernet {
+	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "rgmii2", "uart3", "jtag", "wdt";
+		function = "gpio";
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_fe6e>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "lan1";
+		};
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+	};
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+	};
+};
