@@ -145,6 +145,7 @@ USB3_PACKAGES := $(USB2_PACKAGES) kmod-usb3 kmod-phy-bcm-ns-usb3
 define Device/Default
   # .dtb files are prefixed by SoC type, e.g. bcm4708- which is not included in device/image names
   # extract the full dtb name based on the device info
+  PROFILES = Generic $$(DEVICE_NAME)
   DEVICE_DTS := $(patsubst %.dtb,%,$(notdir $(wildcard $(if $(IB),$(KDIR),$(DTS_DIR))/*-$(subst _,-,$(1)).dtb)))
   KERNEL := kernel-bin | append-dtb | lzma-d16
   KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
