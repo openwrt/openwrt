@@ -16,7 +16,8 @@ mediatek_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "6@eth0"
 		;;
-	netgear,ex6250-v2)
+	netgear,ex6250-v2|\
+	tplink,eap225-v5)
 		ucidef_set_interface_lan "eth0"
 		;;
 	esac
