@@ -29,6 +29,9 @@ ipq807x_setup_interfaces()
 	netgear,wax620)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
+	netgear,wax630)
+		ucidef_set_interface_lan "lan1 lan2" "dhcp"
+		;;
 	prpl,haze)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
