@@ -96,6 +96,10 @@
 				#size-cells = <1>;
 				read-only;
 
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
+
 				macaddr_factory_4: macaddr@4 {
 					reg = <0x4 0x6>;
 				};
@@ -212,7 +216,8 @@
 &pcie1 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
