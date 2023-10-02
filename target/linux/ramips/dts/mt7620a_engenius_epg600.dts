@@ -116,15 +116,33 @@
 			};
 
 			factory: partition@40000 {
+				compatible = "nvmem-cells";
 				label = "factory";
 				reg = <0x40000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
 			};
 
 			rf: partition@50000 {
+				compatible = "nvmem-cells";
 				label = "rf";
 				reg = <0x50000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_rf_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
+
+				macaddr_rf_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
 			};
 
 			partition@60000 {
@@ -194,12 +212,14 @@
 	wifi@0,1,0 {
 		compatible = "pci1814,3091";
 		reg = <0x0 1 0 0 0>;
-		ralink,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&rf 0x0>;
+	nvmem-cells = <&eeprom_rf_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &ehci {
@@ -214,15 +234,5 @@
 	default {
 		groups = "ephy", "wled", "spi refclk", "i2c", "uartf", "nd_sd";
 		function = "gpio";
-	};
-};
-
-&rf {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_rf_4: macaddr@4 {
-		reg = <0x4 0x6>;
 	};
 };

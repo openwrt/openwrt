@@ -106,9 +106,16 @@
 			};
 
 			rom: partition@7d0000 {
+				compatible = "nvmem-cells";
 				label = "rom";
 				reg = <0x7d0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				macaddr_rom_f100: macaddr@f100 {
+					reg = <0xf100 0x6>;
+				};
 			};
 
 			partition@7e0000 {
@@ -118,9 +125,16 @@
 			};
 
 			radio: partition@7f0000 {
+				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0x7f0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_radio_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
 			};
 		};
 	};
@@ -164,9 +178,8 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&radio 0x0>;
-	nvmem-cells = <&macaddr_rom_f100>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_radio_0>, <&macaddr_rom_f100>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
 
 &ehci {
@@ -188,15 +201,5 @@
 		nvmem-cells = <&macaddr_rom_f100>;
 		nvmem-cell-names = "mac-address";
 		mac-address-increment = <(-1)>;
-	};
-};
-
-&rom {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_rom_f100: macaddr@f100 {
-		reg = <0xf100 0x6>;
 	};
 };

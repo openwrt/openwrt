@@ -32,9 +32,20 @@
 			};
 
 			devdata: partition@30000 {
+				compatible = "nvmem-cells";
 				label = "devdata";
 				reg = <0x30000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_devdata_4000: eeprom@4000 {
+					reg = <0x4000 0x200>;
+				};
+
+				macaddr_devdata_4004: macaddr@4004 {
+					reg = <0x4004 0x6>;
+				};
 			};
 
 			partition@40000 {
@@ -115,15 +126,6 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&devdata 0x4000>;
-};
-
-&devdata {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_devdata_4004: macaddr@4004 {
-		reg = <0x4004 0x6>;
-	};
+	nvmem-cells = <&eeprom_devdata_4000>;
+	nvmem-cell-names = "eeprom";
 };
