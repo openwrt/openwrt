@@ -130,9 +130,20 @@
 			};
 
 			factory: partition@40000 {
+				compatible = "nvmem-cells";
 				label = "rf-eeprom";
 				reg = <0x40000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
 			};
 
 			firmware1: partition@50000 {
@@ -196,7 +207,8 @@
 &wmac {
 	status = "okay";
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &pcie {
@@ -209,15 +221,5 @@
 		reg = <0x0000 0 0 0 0>;
 		mediatek,mtd-eeprom = <&factory 0x0400>;
 		ieee80211-freq-limit = <5000000 6000000>;
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
 	};
 };
