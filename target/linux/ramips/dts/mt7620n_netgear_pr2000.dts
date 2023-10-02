@@ -110,9 +110,16 @@
 			};
 
 			board_data: partition@f70000 {
+				compatible = "nvmem-cells";
 				label = "board_data";
 				reg = <0xf70000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				macaddr_board_data_b0: macaddr@b0 {
+					reg = <0xb0 0x6>;
+				};
 			};
 
 			partition@f80000 {
@@ -166,8 +173,9 @@
 };
 
 &ethernet {
-	mtd-mac-address = <&board_data 0xb0>;
 	mediatek,portmap = "wllll";
+	nvmem-cells = <&macaddr_board_data_b0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ehci {
@@ -180,7 +188,8 @@
 
 &wmac {
 	ralink,mtd-eeprom = <&factory 0x0>;
-	mtd-mac-address = <&board_data 0xb0>;
+	nvmem-cells = <&macaddr_board_data_b0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &state_default {
