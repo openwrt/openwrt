@@ -112,6 +112,10 @@
 				reg = <0x0 0x400>;
 			};
 
+			eeprom_factory_8000: eeprom@8000 {
+				reg = <0x8000 0x4da8>;
+			};
+
 			macaddr_factory_21000: macaddr@21000 {
 				reg = <0x21000 0x6>;
 			};
@@ -171,11 +175,10 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <5000000 6000000>;
 
-		nvmem-cells = <&macaddr_factory_21000>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_21000>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		mac-address-increment = <(5)>;
 	};
 };
