@@ -85,9 +85,16 @@
 			};
 
 			factory: partition@40000 {
+				compatible = "nvmem-cells";
 				label = "factory";
 				reg = <0x40000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
 			};
 
 			partition@50000 {
@@ -109,9 +116,16 @@
 			};
 
 			bdinfo: partition@ff0000 {
+				compatible = "nvmem-cells";
 				label = "bdinfo";
 				reg = <0xff0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				macaddr_bdinfo_de00: macaddr@de00 {
+					reg = <0xde00 0x6>;
+				};
 			};
 		};
 	};
@@ -125,9 +139,8 @@
 	wifi@0,0 {
 		compatible = "pci14c3,7603";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0000>;
-		nvmem-cells = <&macaddr_bdinfo_de00>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_bdinfo_de00>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <2400000 2500000>;
 
 		led {
@@ -202,15 +215,5 @@
 	gpio {
 		groups = "wdt", "i2c", "jtag";
 		function = "gpio";
-	};
-};
-
-&bdinfo {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_bdinfo_de00: macaddr@de00 {
-		reg = <0xde00 0x6>;
 	};
 };

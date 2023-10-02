@@ -98,14 +98,17 @@
 		};
 
 		factory: partition@200000 {
+			compatible = "nvmem-cells";
 			label = "Factory";
 			reg = <0x200000 0x100000>;
 			sercomm,scpart-id = <2>;
-			read-only;
-
-			compatible = "nvmem-cells";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			read-only;
+
+			eeprom_factory_0: eeprom@0 {
+				reg = <0x0 0x400>;
+			};
 
 			macaddr_factory_21000: macaddr@21000 {
 				reg = <0x21000 0x6>;
@@ -181,7 +184,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };

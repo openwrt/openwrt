@@ -74,9 +74,20 @@
 		};
 
 		factory: partition@200000 {
+			compatible = "nvmem-cells";
 			label = "Factory";
 			reg = <0x200000 0x100000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			read-only;
+
+			eeprom_factory_0: eeprom@0 {
+				reg = <0x0 0x400>;
+			};
+
+			macaddr_factory_e000: macaddr@e000 {
+				reg = <0xe000 0x6>;
+			};
 		};
 
 		partition@300000 {
@@ -123,7 +134,8 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
@@ -170,15 +182,5 @@
 	gpio {
 		groups = "i2c", "uart3", "jtag", "wdt";
 		function = "gpio";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_e000: macaddr@e000 {
-		reg = <0xe000 0x6>;
 	};
 };
