@@ -116,9 +116,23 @@ Do not install it for any other device!
   PREV_BOARD+=ipq-wifi-$(1)
 endef
 
-# Add board name to ALLWIFIBOARDS
-# Place files in this directory as board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq8074>
-# Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
+# To add local files for testing:
+# 1. create a new directory in the ipq-wifi package directory called "files".
+# 2. place there the needed board files.
+#
+# To send a board file upstream:
+# 1. create a pull request in https://github.com/openwrt/firmware_qca-wireless or
+#    send a patch to the mailing list adding the tag firmware/qca-wireless before
+#     the PATCH tag.
+# 2. create a pull request in the main openwrt repository bumping the ipq-wifi
+#    package to the new version and adding the required lines to add the board file.
+#
+# Changes needed to the ipq-wifi Makefile:
+# 1. Add board name to ALLWIFIBOARDS
+# 2. Add $(eval $(call generate-ipq-wifi-package,<devicename>,<display name>))
+#
+# Board files should follow this name structure:
+#   board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq8074>
 
 $(eval $(call generate-ipq-wifi-package,buffalo_wxr-5950ax12,Buffalo WXR-5950AX12))
 $(eval $(call generate-ipq-wifi-package,compex_wpq873,Compex WPQ-873))
