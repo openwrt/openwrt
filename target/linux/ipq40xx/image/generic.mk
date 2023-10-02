@@ -742,7 +742,7 @@ define Device/linksys_whw01
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := WHW01
 	KERNEL_SIZE := 6144k
-	IMAGE_SIZE := 75776K
+	IMAGE_SIZE := 75776k
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
