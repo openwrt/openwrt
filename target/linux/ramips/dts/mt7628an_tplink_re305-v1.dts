@@ -61,16 +61,18 @@
 				eeprom_radio_0: eeprom@0 {
 					reg = <0x0 0x400>;
 				};
+
+				eeprom_radio_8000: eeprom@8000 {
+					reg = <0x8000 0x200>;
+				};
 			};
 		};
 	};
 };
 
 &wlan5g {
-	mediatek,mtd-eeprom = <&radio 0x8000>;
-
-	nvmem-cells = <&macaddr_config_10008>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_10008>;
+	nvmem-cell-names = "eeprom", "mac-address";
 	mac-address-increment = <2>;
 };
 

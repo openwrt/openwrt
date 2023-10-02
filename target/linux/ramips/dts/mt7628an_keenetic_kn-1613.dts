@@ -141,6 +141,10 @@
 					reg = <0x0 0x400>;
 				};
 
+				eeprom_factory_400: eeprom@400 {
+					reg = <0x400 0x4da8>;
+				};
+
 				macaddr_factory_4: macaddr@4 {
 					reg = <0x4 0x6>;
 				};
@@ -219,7 +223,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0400>;
+		nvmem-cells = <&eeprom_factory_400>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };

@@ -40,6 +40,10 @@
 					reg = <0x1f400 0x200>;
 				};
 
+				eeprom_uboot_1f800: eeprom@1f800 {
+					reg = <0x1f800 0x200>;
+				};
+
 				macaddr_uboot_1fc20: macaddr@1fc20 {
 					reg = <0x1fc20 0x6>;
 				};
@@ -80,7 +84,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&uboot 0x1f800>;
+		nvmem-cells = <&eeprom_uboot_1f800>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 
 		led {

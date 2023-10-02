@@ -92,9 +92,20 @@
 			};
 
 			config: partition@ff0000 {
+				compatible = "nvmem-cells";
 				label = "config";
 				reg = <0xff0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_config_e08a: eeprom@e08a {
+					reg = <0xe08a 0x200>;
+				};
+
+				macaddr_config_e07e: macaddr@e07e {
+					reg = <0xe07e 0x6>;
+				};
 			};
 		};
 	};
@@ -150,10 +161,9 @@
 &pcie0 {
 	mt76x0e@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_config_e07e>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(2)>;
-		mediatek,mtd-eeprom = <&config 0xe08a>;
+		nvmem-cells = <&eeprom_config_e08a>, <&macaddr_config_e07e>;
+		nvmem-cell-names = "eeprom", "mac-address";
+		mac-address-increment = <2>;
 	};
 };
 
@@ -161,15 +171,5 @@
 	gpio {
 		groups = "uartf", "i2c";
 		function = "gpio";
-	};
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_e07e: macaddr@e07e {
-		reg = <0xe07e 0x6>;
 	};
 };

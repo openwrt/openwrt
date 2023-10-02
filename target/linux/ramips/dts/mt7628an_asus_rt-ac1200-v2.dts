@@ -7,6 +7,11 @@
 	model = "ASUS RT-AC1200 V2";
 };
 
+&eeprom_factory_8000 {
+	/* V2 has different eeprom size '0x4da8' for MT7613 */
+	reg = <0x8000 0x4da8>;
+};
+
 &state_default {
 	spis {
 		groups = "spis";

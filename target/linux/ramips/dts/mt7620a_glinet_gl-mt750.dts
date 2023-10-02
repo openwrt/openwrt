@@ -101,6 +101,10 @@
 					reg = <0x0 0x200>;
 				};
 
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x200>;
+				};
+
 				macaddr_factory_4000: macaddr@4000 {
 					reg = <0x4000 0x6>;
 				};
@@ -151,7 +155,8 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
