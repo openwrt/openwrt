@@ -152,7 +152,7 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 static void rtl83xx_setup_bpdu_traps(struct rtl838x_switch_priv *priv)
 {
 	for (int i = 0; i < priv->cpu_port; i++)
-		priv->r->set_receive_management_action(i, BPDU, COPY2CPU);
+		priv->r->set_receive_management_action(i, BPDU, TRAP2CPU);
 }
 
 static void rtl83xx_port_set_salrn(struct rtl838x_switch_priv *priv,
