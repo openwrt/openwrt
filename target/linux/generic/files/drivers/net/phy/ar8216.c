@@ -2892,6 +2892,20 @@ static int __init ar8216_init(void)
 {
 	int ret;
 
+	if (of_find_node_with_property(NULL, "qca,disable-legacy-phy")) {
+		pr_warn("ar8xxx: skipping legacy drivers as requested.\n");
+		return -ENODEV;
+	}
+
+	if (of_find_compatible_node(NULL, NULL, "qca,ar9331-switch") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8327") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8328") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8334") ||
+	    of_find_compatible_node(NULL, NULL, "qca,qca8337")) {
+		pr_warn("ar8xxx: dsa switch found. skipping legacy drivers.\n");
+		return -ENODEV;
+	}
+
 	ret = phy_drivers_register(ar8xxx_phy_driver,
 				   ARRAY_SIZE(ar8xxx_phy_driver),
 				   THIS_MODULE);
