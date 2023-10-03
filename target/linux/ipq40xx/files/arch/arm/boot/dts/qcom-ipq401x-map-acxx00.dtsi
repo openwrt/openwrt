@@ -102,3 +102,41 @@
 		};
 	};
 };
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};

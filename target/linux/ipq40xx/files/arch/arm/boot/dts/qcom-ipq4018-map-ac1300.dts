@@ -1,0 +1,97 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/leds/common.h>
+#include "qcom-ipq4018-asus.dtsi"
+#include "qcom-ipq401x-map-acxx00.dtsi"
+
+/ {
+	model = "ASUS Lyra Mini";
+	compatible = "asus,map-ac1300";
+
+	aliases {
+		led-boot = &led_blue0;
+		led-failsafe = &led_red0;
+		led-running = &led_blue0;
+		led-upgrade = &led_red0;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset-button {
+			label = "reset-button";
+			gpios = <&tlmm 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps-button {
+			label = "wps-button";
+			gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+	
+};
+
+&tlmm {
+	i2c_0_pins: i2c_0_pinmux {
+		pinmux {
+			function = "blsp_i2c0";
+			pins = "gpio58", "gpio59";
+			drive-strength = <16>;
+			bias-disable;
+		};
+	};
+
+	serial_pins: serial_pinmux {
+		mux {
+			pins = "gpio60", "gpio61";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		mux {
+			function = "blsp_spi0";
+			pins = "gpio55", "gpio56", "gpio57";
+			drive-strength = <12>;
+			bias-disable;
+		};
+		
+		mux_cs {
+			function = "gpio";
+			pins = "gpio54", "gpio1";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+
+	};
+};
+
+&blsp1_spi1 { /* BLSP1 QUP1 */
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>,
+		   <&tlmm 1 GPIO_ACTIVE_LOW>;
+};
+
+&swport4 {
+	status = "okay";
+	label = "wan";
+};
+
+&swport5 {
+	status = "okay";	
+	label = "lan";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "ASUS-MAP-AC1300";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "ASUS-MAP-AC1300";
+};

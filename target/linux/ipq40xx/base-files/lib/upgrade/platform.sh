@@ -6,6 +6,7 @@ RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_check_image() {
 	case "$(board_name)" in
+	asus,map-ac1300 |\
 	asus,rt-ac42u |\
 	asus,rt-ac58u)
 		local ubidev=$(nand_find_ubi $CI_UBIPART)
@@ -148,6 +149,7 @@ platform_do_upgrade() {
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
 		;;
+	asus,map-ac1300 |\
 	asus,rt-ac42u |\
 	asus,rt-ac58u)
 		CI_KERNPART="linux"

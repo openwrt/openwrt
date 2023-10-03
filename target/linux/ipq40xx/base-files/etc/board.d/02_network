@@ -31,6 +31,7 @@ ipq40xx_setup_interfaces()
 		;;
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
+	asus,map-ac1300|\
 	asus,map-ac2200|\
 	cilab,meshpoint-one|\
 	edgecore,ecw5211|\
@@ -160,6 +161,11 @@ ipq40xx_setup_macs()
 	case "$board" in
 	8dev,habanero-dvk)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
+		;;
+	asus,map-ac1300)
+		label_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
+		lan_mac=$(macaddr_add "$label_mac" 1)
+		wan_mac=$(macaddr_add "$label_mac" 3)
 		;;
 	asus,rt-ac42u)
 		label_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
