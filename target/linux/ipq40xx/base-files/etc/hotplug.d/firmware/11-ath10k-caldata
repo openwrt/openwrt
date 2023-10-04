@@ -20,7 +20,7 @@ case "$FIRMWARE" in
 	case "$board" in
 	asus,map-ac2200)
 		caldata_extract_ubi "Factory" 0x9000 0x2f20
-		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
+		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:01\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
 	asus,rt-ac42u)
