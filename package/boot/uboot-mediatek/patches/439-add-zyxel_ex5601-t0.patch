@@ -362,7 +362,7 @@
 +};
 --- /dev/null
 +++ b/zyxel_ex5601-t0_env
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,60 @@
 +ethaddr_factory=mtd read Factory 0x40080000 0x0 0x20000 && env readmem -b ethaddr 0x4008002A 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
@@ -372,6 +372,9 @@
 +bootargs=console=ttyS0,115200n8 console_msg_format=syslog
 +bootcmd=if pstore check ; then run boot_recovery ; else if env exists flag_recover ; then run boot_recovery ; else run boot_ubi ; fi ; fi
 +bootconf=config-1
++bootconf_base=config-1
++bootconf_rj45=mt7986a-zyxel-ex5601-t0-rj45
++bootconf_sfp=mt7986a-zyxel-ex5601-t0-sfp
 +bootdelay=0
 +bootfile=openwrt-mediatek-filogic-zyxel_ex5601-t0-ubootmod-initramfs-recovery.itb
 +bootfile_bl2=openwrt-mediatek-filogic-zyxel_ex5601-t0-ubootmod-preloader.bin
@@ -392,10 +395,11 @@
 +bootmenu_7=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
 +bootmenu_8=Reboot.=reset
 +bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
++boot_update_conf=if env exists sfp_inserted ; then setenv bootconf $bootconf_base#$bootconf_sfp ; else setenv bootconf $bootconf_base#$bootconf_rj45 ; fi
 +boot_first=if button reset ; then run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
-+boot_production=run ubi_read_production && bootm $loadaddr#$bootconf
-+boot_recovery=run ubi_read_recovery && bootm $loadaddr#$bootconf
++boot_production=run boot_update_conf ; run ubi_read_production && bootm $loadaddr#$bootconf
++boot_recovery=run boot_update_conf ; run ubi_read_recovery && bootm $loadaddr#$bootconf
 +boot_ubi=run boot_production ; run boot_recovery ; run boot_tftp_forever
 +boot_tftp_forever=while true ; do run boot_tftp_recovery ; sleep 1 ; done
 +boot_tftp_recovery=tftpboot $loadaddr $bootfile && env exists replacevol && iminfo $loadaddr && run ubi_write_recovery ; if env exists noboot ; then else bootm $loadaddr#$bootconf ; fi
