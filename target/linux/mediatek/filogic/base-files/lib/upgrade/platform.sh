@@ -129,6 +129,11 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART=ubi
 		nand_do_upgrade "$1"
 		;;
+        zyxel,ex5601-t0-ubootmod)
+		CI_KERNPART="fit"
+		CI_ROOTPART="ubi_rootfs"
+                nand_do_upgrade "$1"
+                ;;
 	*)
 		nand_do_upgrade "$1"
 		;;
