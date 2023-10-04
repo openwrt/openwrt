@@ -1,0 +1,433 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2021 MediaTek Inc.
+ * Author: Sam.Shih <sam.shih@mediatek.com>
+ */
+
+#include "mt7986a.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	aliases {
+		serial0 = &uart0;
+		label-mac-device = &gmac0;
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_red;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory {
+		reg = <0 0x40000000 0 0x40000000>;
+	};
+
+	reg_1p8v: regulator-1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_5v: regulator-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-5V";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		poll-interval = <20>;
+
+		reset-button {
+			label = "reset";
+			gpios = <&pio 21 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wlan-button {
+			label = "wlan";
+			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WLAN>;
+		};
+		wps-button {
+			label = "wps";
+			gpios = <&pio 56 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_green_wifi24g {
+			label = "green:wifi24g";
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_green_wifi5g {
+			label = "green:wifi5g";
+			gpios = <&pio 2 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_green_inet {
+			label = "green:inet";
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_red_inet {
+			label = "red:inet";
+			gpios = <&pio 15 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_status_green: led_green_pwr {
+			label = "green:pwr";
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "timer"; /* Default blinking */
+			led-pattern = <125 125>; /* Fast blink is 4 HZ */
+		};
+
+		led_status_red: led_red_pwr {
+			label = "red:pwr";
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		led_green_fxs {
+			label = "green:fxs";
+			gpios = <&pio 16 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led_amber_fxs {
+			label = "amber:fxs";
+			gpios = <&pio 17 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led_amber_wps24g {
+			label = "amber:wps24g";
+			gpios = <&pio 18 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led_amber_wps5g {
+			label = "amber:wps5g";
+			gpios = <&pio 19 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led_green_lan {
+			label = "green:lan";
+			gpios = <&pio 20 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led_green_sfp {
+			label = "green:sfp";
+			gpios = <&pio 24 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+};
+
+&spi0 {
+        pinctrl-names = "default";
+        pinctrl-0 = <&spi_flash_pins>;
+        cs-gpios = <0>, <0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        status = "okay";
+
+        spi_nand: spi_nand@0 {
+                #address-cells = <1>;
+                #size-cells = <1>;
+                compatible = "spi-nand";
+                reg = <1>;
+                spi-max-frequency = <10000000>;
+                spi-tx-bus-width = <4>;
+                spi-rx-bus-width = <4>;
+
+		nand_partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&eth_pins>;
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy = <&phy6>;
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <1500000>;
+		reset-post-delay-us = <1000000>;
+
+		phy5: phy@5 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <5>;
+			mxl,led-config = <0x03f0 0x0 0x0 0x0>;
+		};
+
+		phy6: phy@6 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <6>;
+			mxl,led-config = <0x00f0 0x0 0x0 0x0>;
+		};
+
+		switch@1f {
+			compatible = "mediatek,mt7531";
+			reg = <31>;
+			reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@1 {
+					reg = <1>;
+					label = "lan2";
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan3";
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan4";
+				};
+
+				port@5 {
+					reg = <5>;
+					label = "lan1";
+					phy-mode = "2500base-x";
+					phy = <&phy5>;
+				};
+
+				port@6 {
+					reg = <6>;
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+		};
+	};
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+	pinctrl-names = "default", "dbdc";
+	pinctrl-0 = <&wf_2g_5g_pins>;
+	pinctrl-1 = <&wf_dbdc_pins>;
+};
+
+&crypto {
+	status = "okay";
+};
+
+&pio {
+	eth_pins: eth-pins {
+		mux {
+			function = "eth";
+			groups = "switch_int", "mdc_mdio";
+		};
+	};
+
+	spic_pins_g2: spic-pins-29-to-32 {
+		mux {
+			function = "spi";
+			groups = "spi1_2";
+		};
+	};
+
+	spi_flash_pins: spi-flash-pins-33-to-38 {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+		conf-pu {
+			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
+			drive-strength = <8>;
+			mediatek,pull-up-adv = <0>;	/* bias-disable */
+		};
+		conf-pd {
+			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
+			drive-strength = <8>;
+			mediatek,pull-down-adv = <0>;	/* bias-disable */
+		};
+	};
+
+	uart0_pins: uart0-pins {
+                mux {
+                        function = "uart";
+                        groups = "uart0";
+                };
+        };
+
+	uart1_pins: uart1-pins {
+		mux {
+			function = "uart";
+			groups = "uart1";
+		};
+	};
+
+	uart2_pins: uart2-pins {
+		mux {
+			function = "uart";
+			groups = "uart2";
+		};
+	};
+
+	wf_2g_5g_pins: wf_2g_5g-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_2g", "wf_5g";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+			       "WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <4>;
+		};
+	};
+
+	wf_dbdc_pins: wf_dbdc-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_dbdc";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+			       "WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <4>;
+		};
+	};
+
+        usb-oc-hog {
+                gpio-hog;
+                gpios = <7 GPIO_ACTIVE_LOW>;
+                input;
+                line-name = "usb-oc";
+        };
+};
+
+&spi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spic_pins_g2>;
+	status = "okay";
+
+	proslic_spi: proslic_spi@0 {
+		compatible = "silabs,proslic_spi";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		spi-cpha = <1>;
+		spi-cpol = <1>;
+		channel_count = <1>;
+		debug_level = <4>;       /* 1 = TRC, 2 = DBG, 4 = ERR */
+		reset_gpio = <&pio 25 GPIO_ACTIVE_HIGH>;
+		ig,enable-spi = <1>;     /* 1: Enable, 0: Disable */
+	};
+};
+
+&ssusb {
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_5v>;
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_pins>;
+	status = "disabled";
+
+	/* EFR32MG21 Zigbee (BOOT)*/
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pins>;
+	status = "disabled";
+
+	/* EFR32MG21 Zigbee */
+};
+
+&usb_phy {
+	status = "okay";
+};
