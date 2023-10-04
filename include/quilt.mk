@@ -107,7 +107,8 @@ endef
 
 define Quilt/RefreshDir
 	mkdir -p $(2)
-	-rm -f $(2)/* 2>/dev/null >/dev/null
+	-rm -f $(2)/* $(1)/patches/empty 2>/dev/null >/dev/null
+	-grep -q ^empty $(1)/patches/series && : > $(1)/patches/series
 	@( \
 		for patch in $$$$($(if $(3),grep "^$(3)",cat) $(1)/patches/series | awk '{print $$$$1}'); do \
 			$(CP) -v "$(1)/patches/$$$$patch" $(2); \
@@ -156,7 +157,7 @@ define Quilt/Template
 	}
 	@[ -f "$(1)/patches/series" ] || { \
 		echo "The source directory contains no quilt patches."; \
-		false; \
+		echo empty > $(1)/patches/series && touch $(1)/patches/empty; \
 	}
 	@[ -n "$$$$(ls $(1)/patches/series)" -o \
 	   "$$$$(cat $(1)/patches/series | $(MKHASH) md5)" = "$$(sort $(1)/patches/series | $(MKHASH) md5)" ] || { \
@@ -165,7 +166,7 @@ define Quilt/Template
 	}
 
   $(3)refresh: $(3)quilt-check
-	@cd "$(1)"; $(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null
+	@cd "$(1)"; $(QUILT_CMD) pop -a -f >/dev/null 2>/dev/null || [ $$$$? -eq 2 ] && true
 	@cd "$(1)"; while $(QUILT_CMD) next 2>/dev/null >/dev/null && $(QUILT_CMD) push; do \
 		QUILT_DIFF_OPTS="-p" $(QUILT_CMD) refresh -p ab --no-index --no-timestamps; \
 	done; ! $(QUILT_CMD) next 2>/dev/null >/dev/null
