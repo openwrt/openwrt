@@ -12,7 +12,7 @@
 +
 +	/* De-assert PERST# signals */
 +	val &= ~(PCIE_PE_RSTB);
-+	writel_relaxed(val, port->base + PCIE_RST_CTRL_REG);
++	writel_relaxed(val, pcie->base + PCIE_RST_CTRL_REG);
 +
  	/* Check if the link is up or not */
  	err = readl_poll_timeout(pcie->base + PCIE_LINK_STATUS_REG, val,
