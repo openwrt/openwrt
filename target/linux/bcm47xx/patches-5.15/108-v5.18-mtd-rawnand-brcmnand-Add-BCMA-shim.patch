@@ -187,7 +187,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 +MODULE_DESCRIPTION("NAND controller driver glue for BCMA chips");
 --- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
-@@ -598,7 +598,11 @@ enum {
+@@ -627,7 +627,11 @@ enum {
  
  static inline bool brcmnand_non_mmio_ops(struct brcmnand_controller *ctrl)
  {

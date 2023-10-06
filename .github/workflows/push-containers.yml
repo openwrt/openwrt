@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'include/version.mk'
+      - 'include/cmake.mk'
       - 'tools/**'
       - '.github/workflows/push-containers.yml'
       - 'toolchain/**'
@@ -14,7 +15,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

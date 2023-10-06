@@ -14,15 +14,15 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 
 --- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
 +++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
-@@ -3033,6 +3033,7 @@ int brcmnand_probe(struct platform_devic
+@@ -3059,6 +3059,7 @@ int brcmnand_probe(struct platform_devic
  
  	dev_set_drvdata(dev, ctrl);
  	ctrl->dev = dev;
 +	ctrl->soc = soc;
  
- 	init_completion(&ctrl->done);
- 	init_completion(&ctrl->dma_done);
-@@ -3173,8 +3174,6 @@ int brcmnand_probe(struct platform_devic
+ 	/* Enable the static key if the soc provides I/O operations indicating
+ 	 * that a non-memory mapped IO access path must be used
+@@ -3205,8 +3206,6 @@ int brcmnand_probe(struct platform_devic
  	 * interesting ways
  	 */
  	if (soc) {
