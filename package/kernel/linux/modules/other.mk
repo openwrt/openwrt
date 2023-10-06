@@ -1298,3 +1298,109 @@ define KernelPackage/mhi-pci-generic/description
 endef
 
 $(eval $(call KernelPackage,mhi-pci-generic))
+
+
+define KernelPackage/charlcd
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Character LCD core support
+  HIDDEN:=1
+  KCONFIG:= \
+	CONFIG_AUXDISPLAY=y \
+	CONFIG_CHARLCD \
+	$(if $(CONFIG_PANEL_CHANGE_MESSAGE),
+          PANEL_CHANGE_MESSAGE=y
+	  PANEL_BOOT_MESSAGE=$(CONFIG_PANEL_BOOT_MESSAGE)) \
+	CONFIG_CHARLCD_BL_OFF=$(if $(CONFIG_CHARLCD_BL_OFF),y,n) \
+	CONFIG_CHARLCD_BL_ON=$(if $(CONFIG_CHARLCD_BL_ON),y,n) \
+	CONFIG_CHARLCD_BL_FLASH=$(if $(CONFIG_CHARLCD_BL_FLASH),y,n)
+  FILES:=$(LINUX_DIR)/drivers/auxdisplay/charlcd.ko
+  AUTOLOAD:=$(call AutoProbe,charlcd)
+endef
+
+$(eval $(call KernelPackage,charlcd))
+
+define KernelPackage/linedisp
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Character line display core support
+  HIDDEN:=1
+  KCONFIG:= \
+	CONFIG_AUXDISPLAY=y \
+	CONFIG_LINEDISP
+  FILES:=$(LINUX_DIR)/drivers/auxdisplay/line-display.ko
+  AUTOLOAD:=$(call AutoProbe,linedisp)
+endef
+
+$(eval $(call KernelPackage,linedisp))
+
+
+define KernelPackage/hd44780
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=HD44780 Character LCD support
+  DEPENDS:=@GPIO_SUPPORT +kmod-charlcd
+  KCONFIG:= CONFIG_HD44780
+  FILES:= \
+    $(LINUX_DIR)/drivers/auxdisplay/hd44780.ko \
+    $(LINUX_DIR)/drivers/auxdisplay/hd44780_common.ko
+  AUTOLOAD:=$(call AutoProbe,hd44780)
+endef
+
+define KernelPackage/hd44780/description
+  Kernel module for Character LCDs using a HD44780 controller.
+  The LCD is accessible through the /dev/lcd char device (10, 156).
+endef
+
+define KernelPackage/hd44780/config
+  if PACKAGE_kmod-charlcd
+    config PANEL_CHANGE_MESSAGE
+      bool "Change LCD initialization message ?"
+      default "n"
+      help
+        This allows you to replace the boot message indicating the kernel version
+        and the driver version with a custom message. This is useful on appliances
+        where a simple 'Starting system' message can be enough to stop a customer
+        from worrying.
+
+        If you say 'Y' here, you'll be able to choose a message yourself. Otherwise,
+        say 'N' and keep the default message with the version.
+
+    config PANEL_BOOT_MESSAGE
+      depends on PANEL_CHANGE_MESSAGE="y"
+      string "New initialization message"
+      default ""
+      help
+        This allows you to replace the boot message indicating the kernel version
+        and the driver version with a custom message. This is useful on appliances
+        where a simple 'Starting system' message can be enough to stop a customer
+        from worrying.
+
+        An empty message will only clear the display at driver init time. Any other
+        printf()-formatted message is valid with newline and escape codes.
+
+    choice
+      prompt "Backlight initial state"
+      default CHARLCD_BL_FLASH
+      help
+        Select the initial backlight state on boot or module load.
+
+        Previously, there was no option for this: the backlight flashed
+        briefly on init. Now you can also turn it off/on.
+
+      config CHARLCD_BL_OFF
+        bool "Off"
+        help
+          Backlight is initially turned off
+
+      config CHARLCD_BL_ON
+        bool "On"
+        help
+          Backlight is initially turned on
+
+      config CHARLCD_BL_FLASH
+        bool "Flash"
+        help
+          Backlight is flashed briefly on init
+    endchoice
+  endif
+endef
+
+$(eval $(call KernelPackage,hd44780))
