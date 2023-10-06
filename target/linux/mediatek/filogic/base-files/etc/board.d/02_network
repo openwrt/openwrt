@@ -21,7 +21,8 @@ mediatek_setup_interfaces()
 		ucidef_set_interface_lan "eth0"
 		;;
 	bananapi,bpi-r3)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "eth1 wan"
+		ucidef_set_network_device_path "sfp1" "eth1"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "sfp1 wan"
 		;;
 	cudy,wr3000-v1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
