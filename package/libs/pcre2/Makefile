@@ -84,8 +84,8 @@ CMAKE_OPTIONS += \
 define Build/InstallDev
 	$(call Build/InstallDev/cmake,$(1))
 	$(SED) 	's,^\(prefix\|exec_prefix\)=.*,\1=$(STAGING_DIR)/usr,g' $(1)/usr/bin/pcre2-config
-	$(INSTALL_DIR) $(2)/bin
-	$(LN) ../../usr/bin/pcre2-config $(2)/bin/pcre2-config
+	$(INSTALL_DIR) $(1)/bin
+	$(LN) ../usr/bin/pcre2-config $(1)/bin/pcre2-config
 endef
 
 define Package/libpcre2/install
