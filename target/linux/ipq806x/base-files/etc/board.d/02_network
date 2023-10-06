@@ -39,7 +39,8 @@ ipq806x_setup_interfaces()
 	tplink,onhub)
 		ucidef_set_interfaces_lan_wan "lan1" "wan"
 		;;
-	edgecore,ecw5410)
+	edgecore,ecw5410 |\
+	extreme,ap3935)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 	qcom,ipq8064-ap161)
