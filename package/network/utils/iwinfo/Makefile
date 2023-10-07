@@ -17,6 +17,8 @@ PKG_MIRROR_HASH:=5eddf584a1c3ed5637162d6bfc573ed1ce3691fcb38bdd55bf9f1e11e82ccc4
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=GPL-2.0
 
+PKG_BUILD_FLAGS:=no-lto
+
 IWINFO_ABI_VERSION:=20230701
 
 include $(INCLUDE_DIR)/package.mk
