@@ -253,7 +253,7 @@ proto_qmi_setup() {
 	uqmi -s -d "$device" --network-register > /dev/null 2>&1
 
 	echo "Waiting for network registration"
-	sleep 1
+	sleep 5
 	local registration_timeout=0
 	local registration_state=""
 	while true; do
