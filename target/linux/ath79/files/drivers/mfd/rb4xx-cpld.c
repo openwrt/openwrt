@@ -151,11 +151,6 @@ static int rb4xx_cpld_probe(struct spi_device *spi)
 				    NULL, 0, NULL);
 }
 
-static int rb4xx_cpld_remove(struct spi_device *spi)
-{
-	return 0;
-}
-
 static const struct of_device_id rb4xx_cpld_dt_match[] = {
 	{ .compatible = "mikrotik,rb4xx-cpld", },
 	{ },
@@ -164,7 +159,6 @@ MODULE_DEVICE_TABLE(of, rb4xx_cpld_dt_match);
 
 static struct spi_driver rb4xx_cpld_driver = {
 	.probe = rb4xx_cpld_probe,
-	.remove = rb4xx_cpld_remove,
 	.driver = {
 		.name = "rb4xx-cpld",
 		.bus = &spi_bus_type,
