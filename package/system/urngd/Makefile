@@ -12,6 +12,9 @@ PKG_MIRROR_HASH:=427d4228fd65cf4320b8c212e710b86bcbfcdd4239f4e67132b3b471f743720
 PKG_LICENSE:=GPL-2.0 BSD-3-Clause
 PKG_LICENSE_FILES:=
 
+# urngd compilation with fortify sources fails with glibc because it uses -O0
+PKG_FORTIFY_SOURCE:=0
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
