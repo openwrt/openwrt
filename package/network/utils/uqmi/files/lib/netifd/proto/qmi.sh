@@ -98,6 +98,37 @@ proto_qmi_setup() {
 		fi
 	done
 
+	# Check if UIM application is stuck in illegal state
+	local uim_state_timeout=0
+	while true; do
+		json_load "$(uqmi -s -d "$device" --uim-get-sim-state)"
+		json_get_var card_application_state card_application_state
+
+		# SIM card is either completely absent or state is labeled as illegal
+		# Try to power-cycle the SIM card to recover from this state
+		if [ -z "$card_application_state" -o "$card_application_state" = "illegal" ]; then
+			echo "SIM in illegal state - Power-cycling SIM"
+
+			# Try to reset SIM application
+			uqmi -d "$device" --uim-power-off --uim-slot 1
+			sleep 3
+			uqmi -d "$device" --uim-power-on --uim-slot 1
+
+			if [ "$uim_state_timeout" -lt "$timeout" ] || [ "$timeout" = "0" ]; then
+				let uim_state_timeout++
+				sleep 1
+				continue
+			fi
+
+			# Recovery failed
+			proto_notify_error "$interface" SIM_ILLEGAL_STATE
+			proto_block_restart "$interface"
+			return 1
+		else
+			break
+		fi
+	done
+
 	if uqmi -s -d "$device" --uim-get-sim-state | grep -q '"Not supported"\|"Invalid QMI command"' &&
 	   uqmi -s -d "$device" --get-pin-status | grep -q '"Not supported"\|"Invalid QMI command"' ; then
 		[ -n "$pincode" ] && {
