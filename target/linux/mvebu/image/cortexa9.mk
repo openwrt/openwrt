@@ -401,10 +401,12 @@ define Device/solidrun_clearfog-base-a1
   KERNEL_INSTALL := 1
   KERNEL := kernel-bin
   DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils
-  IMAGES := sdcard.img.gz
+  IMAGES := emmc.img.gz sdcard.img.gz
+  IMAGE/emmc.img.gz := boot-scr | boot-img-ext4 | emmc-img-ext4 | gzip | append-metadata
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-base armada-388-clearfog-pro
   UBOOT := clearfog-u-boot-with-spl.kwb
+  UBOOT_EMMC := clearfog-emmc-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
   SUPPORTED_DEVICES += armada-388-clearfog-base
   DEVICE_COMPAT_VERSION := 1.1
@@ -419,10 +421,12 @@ define Device/solidrun_clearfog-pro-a1
   KERNEL_INSTALL := 1
   KERNEL := kernel-bin
   DEVICE_PACKAGES := mkf2fs e2fsprogs partx-utils
-  IMAGES := sdcard.img.gz
+  IMAGES := emmc.img.gz sdcard.img.gz
+  IMAGE/emmc.img.gz := boot-scr | boot-img-ext4 | emmc-img-ext4 | gzip | append-metadata
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
   UBOOT := clearfog-u-boot-with-spl.kwb
+  UBOOT_EMMC := clearfog-emmc-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
   SUPPORTED_DEVICES += armada-388-clearfog armada-388-clearfog-pro
 endef
