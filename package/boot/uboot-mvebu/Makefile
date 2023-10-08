@@ -23,9 +23,18 @@ define U-Boot/Default
 endef
 
 define U-Boot/clearfog
-  NAME:=SolidRun ClearFog A1
+  NAME:=SolidRun ClearFog A1 (SD-Card)
   BUILD_DEVICES:=solidrun_clearfog-base-a1 solidrun_clearfog-pro-a1
   BUILD_SUBTARGET:=cortexa9
+  UBOOT_IMAGE:=u-boot-with-spl.kwb
+endef
+
+define U-Boot/clearfog-emmc
+  NAME:=SolidRun ClearFog A1 (eMMC)
+  BUILD_DEVICES:=solidrun_clearfog-base-a1 solidrun_clearfog-pro-a1
+  BUILD_SUBTARGET:=cortexa9
+  UBOOT_CUSTOMIZE_CONFIG:= \
+    --set-val SYS_MMCSD_RAW_MODE_U_BOOT_DATA_PART_OFFSET 0x1000
   UBOOT_IMAGE:=u-boot-with-spl.kwb
 endef
 
@@ -70,6 +79,7 @@ endef
 
 UBOOT_TARGETS:= \
 	clearfog \
+	clearfog-emmc \
 	helios4 \
 	omnia \
 	espressobin \
