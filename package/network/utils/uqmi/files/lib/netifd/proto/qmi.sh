@@ -216,15 +216,6 @@ proto_qmi_setup() {
 		fi
 	fi
 
-	if [ -n "$mcc" -a -n "$mnc" ]; then
-		uqmi -s -d "$device" --set-plmn --mcc "$mcc" --mnc "$mnc" > /dev/null 2>&1 || {
-			echo "Unable to set PLMN"
-			proto_notify_error "$interface" PLMN_FAILED
-			proto_block_restart "$interface"
-			return 1
-		}
-	fi
-
 	# Cleanup current state if any
 	uqmi -s -d "$device" --stop-network 0xffffffff --autoconnect > /dev/null 2>&1
 	uqmi -s -d "$device" --set-ip-family ipv6 --stop-network 0xffffffff --autoconnect > /dev/null 2>&1
@@ -251,6 +242,16 @@ proto_qmi_setup() {
 	uqmi -s -d "$device" --sync > /dev/null 2>&1
 
 	uqmi -s -d "$device" --network-register > /dev/null 2>&1
+
+	# PLMN selection must happen after the call to network-register
+	if [ -n "$mcc" -a -n "$mnc" ]; then
+		uqmi -s -d "$device" --set-plmn --mcc "$mcc" --mnc "$mnc" > /dev/null 2>&1 || {
+			echo "Unable to set PLMN"
+			proto_notify_error "$interface" PLMN_FAILED
+			proto_block_restart "$interface"
+			return 1
+		}
+	fi
 
 	[ -n "$modes" ] && {
 		uqmi -s -d "$device" --set-network-modes "$modes" > /dev/null 2>&1
