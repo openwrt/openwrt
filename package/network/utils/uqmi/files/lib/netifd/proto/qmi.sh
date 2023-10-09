@@ -252,6 +252,13 @@ proto_qmi_setup() {
 
 	uqmi -s -d "$device" --network-register > /dev/null 2>&1
 
+	[ -n "$modes" ] && {
+		uqmi -s -d "$device" --set-network-modes "$modes" > /dev/null 2>&1
+		sleep 3
+		# Scan network to not rely on registration-timeout after RAT change
+		uqmi -s -d "$device" --network-scan > /dev/null 2>&1
+	}
+
 	echo "Waiting for network registration"
 	sleep 5
 	local registration_timeout=0
@@ -281,7 +288,6 @@ proto_qmi_setup() {
 		return 1
 	done
 
-	[ -n "$modes" ] && uqmi -s -d "$device" --set-network-modes "$modes" > /dev/null 2>&1
 
 	echo "Starting network $interface"
 
