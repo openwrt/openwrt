@@ -20,8 +20,7 @@ netgear,wndap660)
 	;;
 meraki,mx60|\
 netgear,wndr4700)
-	ucidef_add_switch "switch0" \
-		"0@eth0" "4:lan" "3:lan" "2:lan" "1:lan" "5:wan"
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 	;;
 
 *)
