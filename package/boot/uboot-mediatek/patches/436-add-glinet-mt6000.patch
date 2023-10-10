@@ -259,7 +259,7 @@
 +bootmenu_0=Startup system (Default).=run boot_system
 +bootmenu_1=Load Firmware via TFTP then write to eMMC.=run boot_tftp_firmware ; run bootmenu_confirm_return
 +bootmenu_2=Load BL31+U-Boot FIP via TFTP then write to eMMC.=run boot_tftp_write_fip ; run bootmenu_confirm_return
-+bootmenu_3=mLoad BL2 preloader via TFTP then write to eMMC.=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_3=Load BL2 preloader via TFTP then write to eMMC.=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
 +bootmenu_4=Reboot.=reset
 +bootmenu_5=Reset all settings to factory defaults.=run reset_factory ; reset
 +filesize_to_blk=setexpr cnt $filesize + 0x1ff && setexpr cnt $cnt / 0x200
