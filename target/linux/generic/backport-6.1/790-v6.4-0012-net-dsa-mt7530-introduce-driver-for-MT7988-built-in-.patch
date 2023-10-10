@@ -21,9 +21,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/dsa/Kconfig       |  12 +++
  drivers/net/dsa/Makefile      |   1 +
  drivers/net/dsa/mt7530-mmio.c | 101 +++++++++++++++++++++++++
- drivers/net/dsa/mt7530.c      | 137 +++++++++++++++++++++++++++++++++-
+ drivers/net/dsa/mt7530.c      | 135 +++++++++++++++++++++++++++++++++-
  drivers/net/dsa/mt7530.h      |  12 +--
- 6 files changed, 255 insertions(+), 10 deletions(-)
+ 6 files changed, 253 insertions(+), 10 deletions(-)
  create mode 100644 drivers/net/dsa/mt7530-mmio.c
 
 --- a/MAINTAINERS
@@ -184,7 +184,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +MODULE_LICENSE("GPL");
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -2001,6 +2001,47 @@ static const struct irq_domain_ops mt753
+@@ -2005,6 +2005,47 @@ static const struct irq_domain_ops mt753
  };
  
  static void
@@ -232,7 +232,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  mt7530_setup_mdio_irq(struct mt7530_priv *priv)
  {
  	struct dsa_switch *ds = priv->ds;
-@@ -2034,8 +2075,15 @@ mt7530_setup_irq(struct mt7530_priv *pri
+@@ -2038,8 +2079,15 @@ mt7530_setup_irq(struct mt7530_priv *pri
  		return priv->irq ? : -EINVAL;
  	}
  
@@ -250,7 +250,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (!priv->irq_domain) {
  		dev_err(dev, "failed to create IRQ domain\n");
  		return -ENOMEM;
-@@ -2534,6 +2582,25 @@ static void mt7531_mac_port_get_caps(str
+@@ -2538,6 +2586,25 @@ static void mt7531_mac_port_get_caps(str
  	}
  }
  
@@ -276,7 +276,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int
  mt753x_pad_setup(struct dsa_switch *ds, const struct phylink_link_state *state)
  {
-@@ -2610,6 +2677,17 @@ static bool mt753x_is_mac_port(u32 port)
+@@ -2614,6 +2681,17 @@ static bool mt753x_is_mac_port(u32 port)
  }
  
  static int
@@ -294,7 +294,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  mt7531_mac_config(struct dsa_switch *ds, int port, unsigned int mode,
  		  phy_interface_t interface)
  {
-@@ -2679,7 +2757,8 @@ mt753x_phylink_mac_config(struct dsa_swi
+@@ -2683,7 +2761,8 @@ mt753x_phylink_mac_config(struct dsa_swi
  
  	switch (port) {
  	case 0 ... 4: /* Internal phy */
@@ -304,7 +304,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			goto unsupported;
  		break;
  	case 5: /* 2nd cpu port with phy of port 0 or 4 / external phy */
-@@ -2757,7 +2836,8 @@ static void mt753x_phylink_mac_link_up(s
+@@ -2761,7 +2840,8 @@ static void mt753x_phylink_mac_link_up(s
  	/* MT753x MAC works in 1G full duplex mode for all up-clocked
  	 * variants.
  	 */
@@ -314,7 +314,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	    (phy_interface_mode_is_8023z(interface))) {
  		speed = SPEED_1000;
  		duplex = DUPLEX_FULL;
-@@ -2837,6 +2917,21 @@ mt7531_cpu_port_config(struct dsa_switch
+@@ -2841,6 +2921,21 @@ mt7531_cpu_port_config(struct dsa_switch
  	return 0;
  }
  
@@ -336,7 +336,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static void mt753x_phylink_get_caps(struct dsa_switch *ds, int port,
  				    struct phylink_config *config)
  {
-@@ -2982,6 +3077,27 @@ static int mt753x_set_mac_eee(struct dsa
+@@ -2986,6 +3081,27 @@ static int mt753x_set_mac_eee(struct dsa
  	return 0;
  }
  
@@ -364,7 +364,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  const struct dsa_switch_ops mt7530_switch_ops = {
  	.get_tag_protocol	= mtk_get_tag_protocol,
  	.setup			= mt753x_setup,
-@@ -3050,6 +3166,17 @@ const struct mt753x_info mt753x_table[]
+@@ -3054,6 +3170,17 @@ const struct mt753x_info mt753x_table[]
  		.mac_port_get_caps = mt7531_mac_port_get_caps,
  		.mac_port_config = mt7531_mac_config,
  	},
@@ -407,7 +407,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  					 MT7531_MIRROR_MASK : MIRROR_MASK)
  
  /* Registers for BPDU and PAE frame control*/
-@@ -300,9 +301,8 @@ enum mt7530_vlan_port_acc_frm {
+@@ -302,9 +303,8 @@ enum mt7530_vlan_port_acc_frm {
  					 MT7531_FORCE_DPX | \
  					 MT7531_FORCE_RX_FC | \
  					 MT7531_FORCE_TX_FC)

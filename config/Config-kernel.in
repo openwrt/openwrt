@@ -47,6 +47,7 @@ config KERNEL_MIPS_FP_SUPPORT
 
 config KERNEL_ARM_PMU
 	bool
+	default y if TARGET_armsr_armv8
 	depends on (arm || aarch64)
 
 config KERNEL_X86_VSYSCALL_EMULATION
@@ -184,16 +185,73 @@ config KERNEL_KASAN_VMALLOC
 	  will have no effect.
 
 if KERNEL_KASAN
-	config KERNEL_KASAN_GENERIC
-	def_bool y
+choice
+	prompt "KASAN mode"
+	depends on KERNEL_KASAN
+	default KERNEL_KASAN_GENERIC
+	help
+	  KASAN has three modes:
 
-	config KERNEL_KASAN_SW_TAGS
-	def_bool n
+	  1. Generic KASAN (supported by many architectures, enabled with
+	     CONFIG_KASAN_GENERIC, similar to userspace ASan),
+	  2. Software Tag-Based KASAN (arm64 only, based on software memory
+	     tagging, enabled with CONFIG_KASAN_SW_TAGS, similar to userspace
+	     HWASan), and
+	  3. Hardware Tag-Based KASAN (arm64 only, based on hardware memory
+	     tagging, enabled with CONFIG_KASAN_HW_TAGS).
+
+config KERNEL_KASAN_GENERIC
+	bool "Generic KASAN"
+	select KERNEL_SLUB_DEBUG
+	help
+	  Enables Generic KASAN.
+
+	  Consumes about 1/8th of available memory at kernel start and adds an
+	  overhead of ~50% for dynamic allocations.
+	  The performance slowdown is ~x3.
+
+config KERNEL_KASAN_SW_TAGS
+	bool "Software Tag-Based KASAN"
+	depends on aarch64
+	select KERNEL_SLUB_DEBUG
+	help
+	  Enables Software Tag-Based KASAN.
+
+	  Supported only on arm64 CPUs and relies on Top Byte Ignore.
+
+	  Consumes about 1/16th of available memory at kernel start and
+	  add an overhead of ~20% for dynamic allocations.
+
+	  May potentially introduce problems related to pointer casting and
+	  comparison, as it embeds a tag into the top byte of each pointer.
+
+config KERNEL_KASAN_HW_TAGS
+	bool "Hardware Tag-Based KASAN"
+	depends on aarch64
+	select KERNEL_SLUB_DEBUG
+	select KERNEL_ARM64_MTE
+	help
+	  Enables Hardware Tag-Based KASAN.
+
+	  Supported only on arm64 CPUs starting from ARMv8.5 and relies on
+	  Memory Tagging Extension and Top Byte Ignore.
+
+	  Consumes about 1/32nd of available memory.
+
+	  May potentially introduce problems related to pointer casting and
+	  comparison, as it embeds a tag into the top byte of each pointer.
+
+endchoice
+
+	config KERNEL_ARM64_MTE
+		def_bool n
+
 endif
 
 choice
 	prompt "Instrumentation type"
 	depends on KERNEL_KASAN
+	depends on !KERNEL_KASAN_HW_TAGS
 	default KERNEL_KASAN_OUTLINE
 
 config KERNEL_KASAN_OUTLINE

@@ -31,7 +31,8 @@ lan_mac_end=""
 label_mac=""
 case $board in
 hpe,1920-8g|\
-hpe,1920-8g-poe|\
+hpe,1920-8g-poe-65w|\
+hpe,1920-8g-poe-180w|\
 hpe,1920-16g|\
 hpe,1920-24g)
 	label_mac=$(mtd_get_mac_binary factory 0x68)
@@ -67,7 +68,10 @@ done
 [ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 
 case $board in
-hpe,1920-8g-poe)
+hpe,1920-8g-poe-65w)
+	ucidef_set_poe 65 "$lan_list_rev" "lan9 lan10"
+	;;
+hpe,1920-8g-poe-180w)
 	ucidef_set_poe 180 "$lan_list_rev" "lan9 lan10"
 	;;
 netgear,gs110tpp-v1)

@@ -1,7 +1,8 @@
 . /lib/functions.sh
 
 case "$(board_name)" in
-	bananapi,bpi-r64)
+	bananapi,bpi-r64|\
+	buffalo,wsr-2533dhp2)
 	uci set system.@system[0].compat_version="1.1"
 	uci commit system
 	;;

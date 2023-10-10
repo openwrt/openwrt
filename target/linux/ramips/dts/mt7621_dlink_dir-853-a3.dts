@@ -105,9 +105,28 @@
 		};
 
 		factory: partition@100000 {
+			compatible = "nvmem-cells";
 			label = "factory";
 			reg = <0x100000 0x40000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			read-only;
+
+			eeprom_factory_0: eeprom@0 {
+				reg = <0x0 0x4da8>;
+			};
+
+			macaddr_factory_4: macaddr@4 {
+				reg = <0x4 0x6>;
+			};
+
+			macaddr_factory_e000: macaddr@e000 {
+				reg = <0xe000 0x6>;
+			};
+
+			macaddr_factory_e006: macaddr@e006 {
+				reg = <0xe006 0x6>;
+			};
 		};
 
 		partition@140000 {
@@ -156,11 +175,10 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
 		/* 5 GHz (phy1) does not take the address from calibration data,
 		   but setting it manually here works */
-		nvmem-cells = <&macaddr_factory_4>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
@@ -212,23 +230,5 @@
 	gpio {
 		groups = "i2c", "uart2", "uart3", "jtag", "wdt";
 		function = "gpio";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
-
-	macaddr_factory_e000: macaddr@e000 {
-		reg = <0xe000 0x6>;
-	};
-
-	macaddr_factory_e006: macaddr@e006 {
-		reg = <0xe006 0x6>;
 	};
 };

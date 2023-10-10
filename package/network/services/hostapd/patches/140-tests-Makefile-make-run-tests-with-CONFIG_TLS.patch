@@ -903,7 +903,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      for exp, flags in tests:
          hapd.disable()
          hapd.set("tls_flags", flags)
-@@ -7115,6 +7173,7 @@ def test_ap_wpa2_eap_assoc_rsn(dev, apde
+@@ -7138,6 +7196,7 @@ def test_ap_wpa2_eap_assoc_rsn(dev, apde
  def test_eap_tls_ext_cert_check(dev, apdev):
      """EAP-TLS and external server certification validation"""
      # With internal server certificate chain validation
@@ -911,7 +911,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      id = dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="TLS",
                          identity="tls user",
                          ca_cert="auth_serv/ca.pem",
-@@ -7127,6 +7186,7 @@ def test_eap_tls_ext_cert_check(dev, apd
+@@ -7150,6 +7209,7 @@ def test_eap_tls_ext_cert_check(dev, apd
  def test_eap_ttls_ext_cert_check(dev, apdev):
      """EAP-TTLS and external server certification validation"""
      # Without internal server certificate chain validation
@@ -919,7 +919,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      id = dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="TTLS",
                          identity="pap user", anonymous_identity="ttls",
                          password="password", phase2="auth=PAP",
-@@ -7137,6 +7197,7 @@ def test_eap_ttls_ext_cert_check(dev, ap
+@@ -7160,6 +7220,7 @@ def test_eap_ttls_ext_cert_check(dev, ap
  def test_eap_peap_ext_cert_check(dev, apdev):
      """EAP-PEAP and external server certification validation"""
      # With internal server certificate chain validation
@@ -927,7 +927,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      id = dev[0].connect("test-wpa2-eap", key_mgmt="WPA-EAP", eap="PEAP",
                          identity="user", anonymous_identity="peap",
                          ca_cert="auth_serv/ca.pem",
-@@ -7147,6 +7208,7 @@ def test_eap_peap_ext_cert_check(dev, ap
+@@ -7170,6 +7231,7 @@ def test_eap_peap_ext_cert_check(dev, ap
  
  def test_eap_fast_ext_cert_check(dev, apdev):
      """EAP-FAST and external server certification validation"""
@@ -935,7 +935,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      check_eap_capa(dev[0], "FAST")
      # With internal server certificate chain validation
      dev[0].request("SET blob fast_pac_auth_ext ")
-@@ -7161,10 +7223,6 @@ def test_eap_fast_ext_cert_check(dev, ap
+@@ -7184,10 +7246,6 @@ def test_eap_fast_ext_cert_check(dev, ap
      run_ext_cert_check(dev, apdev, id)
  
  def run_ext_cert_check(dev, apdev, net_id):
@@ -948,7 +948,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
 --- a/tests/hwsim/test_ap_ft.py
 +++ b/tests/hwsim/test_ap_ft.py
-@@ -2471,11 +2471,11 @@ def test_ap_ft_ap_oom5(dev, apdev):
+@@ -2474,11 +2474,11 @@ def test_ap_ft_ap_oom5(dev, apdev):
          # This will fail to roam
          dev[0].roam(bssid1, check_bssid=False)
  
@@ -1138,7 +1138,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      heavy_groups = [14, 15, 16]
      suitable_groups = [15, 16, 17, 18, 19, 20, 21]
      groups = [str(g) for g in sae_groups]
-@@ -2188,6 +2193,8 @@ def run_sae_pwe_group(dev, apdev, group)
+@@ -2193,6 +2198,8 @@ def run_sae_pwe_group(dev, apdev, group)
              logger.info("Add Brainpool EC groups since OpenSSL is new enough")
          elif tls.startswith("wolfSSL"):
              logger.info("Make sure Brainpool EC groups were enabled when compiling wolfSSL")

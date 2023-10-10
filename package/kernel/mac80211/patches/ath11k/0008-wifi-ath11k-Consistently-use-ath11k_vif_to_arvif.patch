@@ -1,0 +1,316 @@
+From 9476cda44c136089f14f8951ae5197d63e91735c Mon Sep 17 00:00:00 2001
+From: Jeff Johnson <quic_jjohnson@quicinc.com>
+Date: Mon, 21 Aug 2023 07:13:36 -0700
+Subject: [PATCH] wifi: ath11k: Consistently use ath11k_vif_to_arvif()
+
+Helper function ath11k_vif_to_arvif() exists to retrieve a struct
+ath11k_vif from a struct ieee80211_vif. However, in multiple places
+this logic is open-coded with inline typecasting. Since the
+typecasting prevents the compiler from type-checking the source and
+destination, update the driver to consistently use the helper
+function.
+
+No functional changes, compile tested only.
+
+Signed-off-by: Jeff Johnson <quic_jjohnson@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20230821-ath11k_vif_to_arvif-v1-1-fa2c3b60b5cf@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/mac.c      | 64 +++++++++++-----------
+ drivers/net/wireless/ath/ath11k/testmode.c |  2 +-
+ 2 files changed, 33 insertions(+), 33 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -566,7 +566,7 @@ static void ath11k_get_arvif_iter(void *
+ 				  struct ieee80211_vif *vif)
+ {
+ 	struct ath11k_vif_iter *arvif_iter = data;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 
+ 	if (arvif->vdev_id == arvif_iter->vdev_id)
+ 		arvif_iter->arvif = arvif;
+@@ -1464,7 +1464,7 @@ static int ath11k_mac_setup_bcn_tmpl_ema
+ 	u32 params = 0;
+ 	u8 i = 0;
+ 
+-	tx_arvif = (void *)arvif->vif->mbssid_tx_vif->drv_priv;
++	tx_arvif = ath11k_vif_to_arvif(arvif->vif->mbssid_tx_vif);
+ 
+ 	beacons = ieee80211_beacon_get_template_ema_list(tx_arvif->ar->hw,
+ 							 tx_arvif->vif, 0);
+@@ -1520,8 +1520,8 @@ static int ath11k_mac_setup_bcn_tmpl_mbs
+ 	struct sk_buff *bcn;
+ 	int ret;
+ 
+-	if (arvif->vif->mbssid_tx_vif) {
+-		tx_arvif = (void *)arvif->vif->mbssid_tx_vif->drv_priv;
++	if (vif->mbssid_tx_vif) {
++		tx_arvif = ath11k_vif_to_arvif(vif->mbssid_tx_vif);
+ 		if (tx_arvif != arvif) {
+ 			ar = tx_arvif->ar;
+ 			ab = ar->ab;
+@@ -1562,7 +1562,7 @@ static int ath11k_mac_setup_bcn_tmpl(str
+ 	 * non-transmitting interfaces, and results in a crash if sent.
+ 	 */
+ 	if (vif->mbssid_tx_vif &&
+-	    arvif != (void *)vif->mbssid_tx_vif->drv_priv && arvif->is_up)
++	    arvif != ath11k_vif_to_arvif(vif->mbssid_tx_vif) && arvif->is_up)
+ 		return 0;
+ 
+ 	if (vif->bss_conf.ema_ap && vif->mbssid_tx_vif)
+@@ -1626,7 +1626,7 @@ static void ath11k_control_beaconing(str
+ 	ether_addr_copy(arvif->bssid, info->bssid);
+ 
+ 	if (arvif->vif->mbssid_tx_vif)
+-		tx_arvif = (struct ath11k_vif *)arvif->vif->mbssid_tx_vif->drv_priv;
++		tx_arvif = ath11k_vif_to_arvif(arvif->vif->mbssid_tx_vif);
+ 
+ 	ret = ath11k_wmi_vdev_up(arvif->ar, arvif->vdev_id, arvif->aid,
+ 				 arvif->bssid,
+@@ -1649,7 +1649,7 @@ static void ath11k_mac_handle_beacon_ite
+ {
+ 	struct sk_buff *skb = data;
+ 	struct ieee80211_mgmt *mgmt = (void *)skb->data;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 
+ 	if (vif->type != NL80211_IFTYPE_STATION)
+ 		return;
+@@ -1672,7 +1672,7 @@ static void ath11k_mac_handle_beacon_mis
+ 					       struct ieee80211_vif *vif)
+ {
+ 	u32 *vdev_id = data;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct ath11k *ar = arvif->ar;
+ 	struct ieee80211_hw *hw = ar->hw;
+ 
+@@ -1718,7 +1718,7 @@ static void ath11k_peer_assoc_h_basic(st
+ 				      struct ieee80211_sta *sta,
+ 				      struct peer_assoc_params *arg)
+ {
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	u32 aid;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+@@ -1746,7 +1746,7 @@ static void ath11k_peer_assoc_h_crypto(s
+ 	struct ieee80211_bss_conf *info = &vif->bss_conf;
+ 	struct cfg80211_chan_def def;
+ 	struct cfg80211_bss *bss;
+-	struct ath11k_vif *arvif = (struct ath11k_vif *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	const u8 *rsnie = NULL;
+ 	const u8 *wpaie = NULL;
+ 
+@@ -1804,7 +1804,7 @@ static void ath11k_peer_assoc_h_rates(st
+ 				      struct ieee80211_sta *sta,
+ 				      struct peer_assoc_params *arg)
+ {
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct wmi_rate_set_arg *rateset = &arg->peer_legacy_rates;
+ 	struct cfg80211_chan_def def;
+ 	const struct ieee80211_supported_band *sband;
+@@ -1867,7 +1867,7 @@ static void ath11k_peer_assoc_h_ht(struc
+ 				   struct peer_assoc_params *arg)
+ {
+ 	const struct ieee80211_sta_ht_cap *ht_cap = &sta->deflink.ht_cap;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct cfg80211_chan_def def;
+ 	enum nl80211_band band;
+ 	const u8 *ht_mcs_mask;
+@@ -2064,7 +2064,7 @@ static void ath11k_peer_assoc_h_vht(stru
+ 				    struct peer_assoc_params *arg)
+ {
+ 	const struct ieee80211_sta_vht_cap *vht_cap = &sta->deflink.vht_cap;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct cfg80211_chan_def def;
+ 	enum nl80211_band band;
+ 	u16 *vht_mcs_mask;
+@@ -2261,7 +2261,7 @@ static void ath11k_peer_assoc_h_he(struc
+ 				   struct ieee80211_sta *sta,
+ 				   struct peer_assoc_params *arg)
+ {
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct cfg80211_chan_def def;
+ 	const struct ieee80211_sta_he_cap *he_cap = &sta->deflink.he_cap;
+ 	enum nl80211_band band;
+@@ -2584,7 +2584,7 @@ static void ath11k_peer_assoc_h_qos(stru
+ 				    struct ieee80211_sta *sta,
+ 				    struct peer_assoc_params *arg)
+ {
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 
+ 	switch (arvif->vdev_type) {
+ 	case WMI_VDEV_TYPE_AP:
+@@ -2747,7 +2747,7 @@ static void ath11k_peer_assoc_h_phymode(
+ 					struct ieee80211_sta *sta,
+ 					struct peer_assoc_params *arg)
+ {
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct cfg80211_chan_def def;
+ 	enum nl80211_band band;
+ 	const u8 *ht_mcs_mask;
+@@ -2933,7 +2933,7 @@ static bool ath11k_mac_vif_recalc_sta_he
+ 					      struct ieee80211_vif *vif,
+ 					      struct ieee80211_sta_he_cap *he_cap)
+ {
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct ieee80211_he_cap_elem he_cap_elem = {0};
+ 	struct ieee80211_sta_he_cap *cap_band = NULL;
+ 	struct cfg80211_chan_def def;
+@@ -2995,7 +2995,7 @@ static void ath11k_bss_assoc(struct ieee
+ 			     struct ieee80211_bss_conf *bss_conf)
+ {
+ 	struct ath11k *ar = hw->priv;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct peer_assoc_params peer_arg;
+ 	struct ieee80211_sta *ap_sta;
+ 	struct ath11k_peer *peer;
+@@ -3111,7 +3111,7 @@ static void ath11k_bss_disassoc(struct i
+ 				struct ieee80211_vif *vif)
+ {
+ 	struct ath11k *ar = hw->priv;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	int ret;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+@@ -3160,7 +3160,7 @@ static void ath11k_recalculate_mgmt_rate
+ 					 struct ieee80211_vif *vif,
+ 					 struct cfg80211_chan_def *def)
+ {
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	const struct ieee80211_supported_band *sband;
+ 	u8 basic_rate_idx;
+ 	int hw_rate_code;
+@@ -4632,7 +4632,7 @@ static int ath11k_station_disassoc(struc
+ 				   struct ieee80211_vif *vif,
+ 				   struct ieee80211_sta *sta)
+ {
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	int ret = 0;
+ 
+ 	lockdep_assert_held(&ar->conf_mutex);
+@@ -5160,7 +5160,7 @@ static int ath11k_mac_op_sta_set_txpwr(s
+ 				       struct ieee80211_sta *sta)
+ {
+ 	struct ath11k *ar = hw->priv;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	int ret = 0;
+ 	s16 txpwr;
+ 
+@@ -5210,7 +5210,7 @@ static void ath11k_mac_op_sta_rc_update(
+ {
+ 	struct ath11k *ar = hw->priv;
+ 	struct ath11k_sta *arsta = (struct ath11k_sta *)sta->drv_priv;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct ath11k_peer *peer;
+ 	u32 bw, smps;
+ 
+@@ -5337,7 +5337,7 @@ static int ath11k_mac_op_conf_tx(struct
+ 				 const struct ieee80211_tx_queue_params *params)
+ {
+ 	struct ath11k *ar = hw->priv;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct wmi_wmm_params_arg *p = NULL;
+ 	int ret;
+ 
+@@ -6458,7 +6458,7 @@ static int ath11k_mac_setup_vdev_params_
+ 		return 0;
+ 	}
+ 
+-	tx_arvif = (void *)tx_vif->drv_priv;
++	tx_arvif = ath11k_vif_to_arvif(tx_vif);
+ 
+ 	if (arvif->vif->bss_conf.nontransmitted) {
+ 		if (ar->hw->wiphy != ieee80211_vif_to_wdev(tx_vif)->wiphy)
+@@ -7411,7 +7411,7 @@ ath11k_mac_update_vif_chan(struct ath11k
+ 	/* TODO: Update ar->rx_channel */
+ 
+ 	for (i = 0; i < n_vifs; i++) {
+-		arvif = (void *)vifs[i].vif->drv_priv;
++		arvif = ath11k_vif_to_arvif(vifs[i].vif);
+ 
+ 		if (WARN_ON(!arvif->is_started))
+ 			continue;
+@@ -7453,7 +7453,7 @@ ath11k_mac_update_vif_chan(struct ath11k
+ 
+ 		mbssid_tx_vif = arvif->vif->mbssid_tx_vif;
+ 		if (mbssid_tx_vif)
+-			tx_arvif = (struct ath11k_vif *)mbssid_tx_vif->drv_priv;
++			tx_arvif = ath11k_vif_to_arvif(mbssid_tx_vif);
+ 
+ 		ret = ath11k_wmi_vdev_up(arvif->ar, arvif->vdev_id, arvif->aid,
+ 					 arvif->bssid,
+@@ -7549,7 +7549,7 @@ static int ath11k_start_vdev_delay(struc
+ {
+ 	struct ath11k *ar = hw->priv;
+ 	struct ath11k_base *ab = ar->ab;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	int ret;
+ 
+ 	if (WARN_ON(arvif->is_started))
+@@ -7599,7 +7599,7 @@ ath11k_mac_op_assign_vif_chanctx(struct
+ {
+ 	struct ath11k *ar = hw->priv;
+ 	struct ath11k_base *ab = ar->ab;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	int ret;
+ 	struct peer_create_params param;
+ 
+@@ -7689,7 +7689,7 @@ ath11k_mac_op_unassign_vif_chanctx(struc
+ {
+ 	struct ath11k *ar = hw->priv;
+ 	struct ath11k_base *ab = ar->ab;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct ath11k_peer *peer;
+ 	int ret;
+ 
+@@ -8310,7 +8310,7 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+ 			       struct ieee80211_vif *vif,
+ 			       const struct cfg80211_bitrate_mask *mask)
+ {
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct cfg80211_chan_def def;
+ 	struct ath11k_pdev_cap *cap;
+ 	struct ath11k *ar = arvif->ar;
+@@ -8907,7 +8907,7 @@ static int ath11k_mac_op_remain_on_chann
+ 					   enum ieee80211_roc_type type)
+ {
+ 	struct ath11k *ar = hw->priv;
+-	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	struct scan_req_params arg;
+ 	int ret;
+ 	u32 scan_time_msec;
+--- a/drivers/net/wireless/ath/ath11k/testmode.c
++++ b/drivers/net/wireless/ath/ath11k/testmode.c
+@@ -350,7 +350,7 @@ static int ath11k_tm_cmd_wmi(struct ath1
+ 	if (ar->ab->fw_mode != ATH11K_FIRMWARE_MODE_FTM &&
+ 	    (tag == WMI_TAG_VDEV_SET_PARAM_CMD || tag == WMI_TAG_UNIT_TEST_CMD)) {
+ 		if (vif) {
+-			arvif = (struct ath11k_vif *)vif->drv_priv;
++			arvif = ath11k_vif_to_arvif(vif);
+ 			*ptr = arvif->vdev_id;
+ 		} else {
+ 			ret = -EINVAL;

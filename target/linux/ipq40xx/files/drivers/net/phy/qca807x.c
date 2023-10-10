@@ -644,8 +644,13 @@ static int qca807x_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
 	__ETHTOOL_DECLARE_LINK_MODE_MASK(support) = { 0, };
 	phy_interface_t iface;
 	int ret;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
+	DECLARE_PHY_INTERFACE_MASK(interfaces);
 
+	sfp_parse_support(phydev->sfp_bus, id, support, interfaces);
+#else
 	sfp_parse_support(phydev->sfp_bus, id, support);
+#endif
 	iface = sfp_select_interface(phydev->sfp_bus, support);
 
 	dev_info(&phydev->mdio.dev, "%s SFP module inserted\n", phy_modes(iface));

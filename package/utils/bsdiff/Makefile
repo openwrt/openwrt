@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bsdiff
 PKG_VERSION:=4.3
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://www.daemonology.net/bsdiff/
@@ -18,6 +18,7 @@ PKG_MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 HOST_BUILD_DEPENDS:=bzip2/host
 
 PKG_LICENSE:=BSD-2-Clause
+PKG_CPE_ID:=cpe:/a:daemonology:bsdiff
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk

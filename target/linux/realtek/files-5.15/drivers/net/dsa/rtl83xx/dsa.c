@@ -152,7 +152,7 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 static void rtl83xx_setup_bpdu_traps(struct rtl838x_switch_priv *priv)
 {
 	for (int i = 0; i < priv->cpu_port; i++)
-		priv->r->set_receive_management_action(i, BPDU, COPY2CPU);
+		priv->r->set_receive_management_action(i, BPDU, TRAP2CPU);
 }
 
 static void rtl83xx_port_set_salrn(struct rtl838x_switch_priv *priv,
@@ -429,8 +429,11 @@ static void rtl93xx_phylink_validate(struct dsa_switch *ds, int port,
 		phylink_set(mask, 10000baseCR_Full);
 	}
 
-	if (state->interface == PHY_INTERFACE_MODE_USXGMII)
+	if (state->interface == PHY_INTERFACE_MODE_USXGMII) {
+		phylink_set(mask, 2500baseT_Full);
+		phylink_set(mask, 5000baseT_Full);
 		phylink_set(mask, 10000baseT_Full);
+	}
 
 	phylink_set(mask, 10baseT_Half);
 	phylink_set(mask, 10baseT_Full);
@@ -559,7 +562,7 @@ static int rtl93xx_phylink_mac_link_state(struct dsa_switch *ds, int port,
 	}
 
 	if (priv->family_id == RTL9310_FAMILY_ID
-		&& (port >= 52 || port <= 55)) { /* Internal serdes */
+		&& (port >= 52 && port <= 55)) { /* Internal serdes */
 			state->speed = SPEED_10000;
 			state->link = 1;
 			state->duplex = 1;

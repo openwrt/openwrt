@@ -1,0 +1,38 @@
+From 6f092c98dcfa1e4cf37d45f9b8e4d4a3cbeb79d4 Mon Sep 17 00:00:00 2001
+From: Dmitry Antipov <dmantipov@yandex.ru>
+Date: Wed, 26 Jul 2023 12:21:02 +0300
+Subject: [PATCH 2/5] wifi: ath11k: simplify
+ ath11k_mac_validate_vht_he_fixed_rate_settings()
+
+In ath11k_mac_validate_vht_he_fixed_rate_settings() ar->ab->peers
+list is not altered so list_for_each_entry() should be safe.
+
+Compile tested only.
+
+Signed-off-by: Dmitry Antipov <dmantipov@yandex.ru>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20230726092113.78794-1-dmantipov@yandex.ru
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8258,7 +8258,7 @@ ath11k_mac_validate_vht_he_fixed_rate_se
+ 					       const struct cfg80211_bitrate_mask *mask)
+ {
+ 	bool he_fixed_rate = false, vht_fixed_rate = false;
+-	struct ath11k_peer *peer, *tmp;
++	struct ath11k_peer *peer;
+ 	const u16 *vht_mcs_mask, *he_mcs_mask;
+ 	struct ieee80211_link_sta *deflink;
+ 	u8 vht_nss, he_nss;
+@@ -8281,7 +8281,7 @@ ath11k_mac_validate_vht_he_fixed_rate_se
+ 
+ 	rcu_read_lock();
+ 	spin_lock_bh(&ar->ab->base_lock);
+-	list_for_each_entry_safe(peer, tmp, &ar->ab->peers, list) {
++	list_for_each_entry(peer, &ar->ab->peers, list) {
+ 		if (peer->sta) {
+ 			deflink = &peer->sta->deflink;
+ 

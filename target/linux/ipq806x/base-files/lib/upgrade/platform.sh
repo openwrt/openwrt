@@ -44,6 +44,11 @@ platform_do_upgrade() {
 		fi
 		nand_do_upgrade "$1"
 		;;
+	extreme,ap3935)
+		CI_ROOTPART="nand_flash"
+		CI_KERNPART="PriImg"
+		nand_do_upgrade "$1"
+		;;
 	linksys,ea7500-v1 |\
 	linksys,ea8500)
 		platform_do_upgrade_linksys "$1"
@@ -82,7 +87,7 @@ platform_do_upgrade() {
 }
 
 platform_copy_config() {
-	case "${board_name}" in
+	case "$(board_name)" in
 	asus,onhub |\
 	tplink,onhub)
 		emmc_copy_config

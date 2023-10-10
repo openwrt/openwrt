@@ -1,0 +1,44 @@
+From adb0b206709f4f2f1256a1ea20619ab98e99f2e7 Mon Sep 17 00:00:00 2001
+From: Yue Haibing <yuehaibing@huawei.com>
+Date: Fri, 11 Aug 2023 18:44:13 +0800
+Subject: [PATCH] wifi: ath11k: Remove unused declarations
+
+Commit 2c3960c2253d ("ath11k: setup ce tasklet for control path")
+declared but never implemented ath11k_ce_map_service_to_pipe().
+Commit e3396b8bddd2 ("ath11k: ce: support different CE configurations")
+declared but never implemented ath11k_ce_attr_attach().
+Commit d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+declared but never implemented ath11k_qmi_event_work()/ath11k_qmi_msg_recv_work().
+
+Signed-off-by: Yue Haibing <yuehaibing@huawei.com>
+Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20230811104413.33668-1-yuehaibing@huawei.com
+---
+ drivers/net/wireless/ath/ath11k/ce.h  | 3 ---
+ drivers/net/wireless/ath/ath11k/qmi.h | 2 --
+ 2 files changed, 5 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/ce.h
++++ b/drivers/net/wireless/ath/ath11k/ce.h
+@@ -203,9 +203,6 @@ int ath11k_ce_alloc_pipes(struct ath11k_
+ void ath11k_ce_free_pipes(struct ath11k_base *ab);
+ int ath11k_ce_get_attr_flags(struct ath11k_base *ab, int ce_id);
+ void ath11k_ce_poll_send_completed(struct ath11k_base *ab, u8 pipe_id);
+-int ath11k_ce_map_service_to_pipe(struct ath11k_base *ab, u16 service_id,
+-				  u8 *ul_pipe, u8 *dl_pipe);
+-int ath11k_ce_attr_attach(struct ath11k_base *ab);
+ void ath11k_ce_get_shadow_config(struct ath11k_base *ab,
+ 				 u32 **shadow_cfg, u32 *shadow_cfg_len);
+ void ath11k_ce_stop_shadow_timers(struct ath11k_base *ab);
+--- a/drivers/net/wireless/ath/ath11k/qmi.h
++++ b/drivers/net/wireless/ath/ath11k/qmi.h
+@@ -514,8 +514,6 @@ struct qmi_wlanfw_wlan_ini_resp_msg_v01
+ int ath11k_qmi_firmware_start(struct ath11k_base *ab,
+ 			      u32 mode);
+ void ath11k_qmi_firmware_stop(struct ath11k_base *ab);
+-void ath11k_qmi_event_work(struct work_struct *work);
+-void ath11k_qmi_msg_recv_work(struct work_struct *work);
+ void ath11k_qmi_deinit_service(struct ath11k_base *ab);
+ int ath11k_qmi_init_service(struct ath11k_base *ab);
+ void ath11k_qmi_free_resource(struct ath11k_base *ab);

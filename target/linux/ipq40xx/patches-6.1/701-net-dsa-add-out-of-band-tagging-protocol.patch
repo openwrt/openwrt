@@ -1,0 +1,238 @@
+From a32e16b3c2fc1954ad6e09737439f60e5890278e Mon Sep 17 00:00:00 2001
+From: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Date: Fri, 4 Nov 2022 18:41:49 +0100
+Subject: [PATCH] net: dsa: add out-of-band tagging protocol
+
+This tagging protocol is designed for the situation where the link
+between the MAC and the Switch is designed such that the Destination
+Port, which is usually embedded in some part of the Ethernet Header, is
+sent out-of-band, and isn't present at all in the Ethernet frame.
+
+This can happen when the MAC and Switch are tightly integrated on an
+SoC, as is the case with the Qualcomm IPQ4019 for example, where the DSA
+tag is inserted directly into the DMA descriptors. In that case,
+the MAC driver is responsible for sending the tag to the switch using
+the out-of-band medium. To do so, the MAC driver needs to have the
+information of the destination port for that skb.
+
+Add a new tagging protocol based on SKB extensions to convey the
+information about the destination port to the MAC driver
+
+Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+---
+ Documentation/networking/dsa/dsa.rst | 13 +++++++-
+ MAINTAINERS                          |  1 +
+ include/linux/dsa/oob.h              | 16 +++++++++
+ include/linux/skbuff.h               |  3 ++
+ include/net/dsa.h                    |  2 ++
+ net/core/skbuff.c                    | 10 ++++++
+ net/dsa/Kconfig                      |  9 +++++
+ net/dsa/Makefile                     |  1 +
+ net/dsa/tag_oob.c                    | 49 ++++++++++++++++++++++++++++
+ 9 files changed, 103 insertions(+), 1 deletion(-)
+ create mode 100644 include/linux/dsa/oob.h
+ create mode 100644 net/dsa/tag_oob.c
+
+--- a/Documentation/networking/dsa/dsa.rst
++++ b/Documentation/networking/dsa/dsa.rst
+@@ -66,7 +66,8 @@ Switch tagging protocols
+ ------------------------
+ 
+ DSA supports many vendor-specific tagging protocols, one software-defined
+-tagging protocol, and a tag-less mode as well (``DSA_TAG_PROTO_NONE``).
++tagging protocol, a tag-less mode as well (``DSA_TAG_PROTO_NONE``) and an
++out-of-band tagging protocol (``DSA_TAG_PROTO_OOB``).
+ 
+ The exact format of the tag protocol is vendor specific, but in general, they
+ all contain something which:
+@@ -217,6 +218,16 @@ receive all frames regardless of the val
+ setting the ``promisc_on_master`` property of the ``struct dsa_device_ops``.
+ Note that this assumes a DSA-unaware master driver, which is the norm.
+ 
++Some SoCs have a tight integration between the conduit network interface and the
++embedded switch, such that the DSA tag isn't transmitted in the packet data,
++but through another media, using so-called out-of-band tagging. In that case,
++the host MAC driver is in charge of transmitting the tag to the switch.
++An example is the IPQ4019 SoC, that transmits the tag between the ipqess
++ethernet controller and the qca8k switch using the DMA descriptor. In that
++configuration, tag-chaining is permitted, but the OOB tag will always be the
++top-most switch in the tree. The tagger (``DSA_TAG_PROTO_OOB``) uses skb
++extensions to transmit the tag to and from the MAC driver.
++
+ Master network devices
+ ----------------------
+ 
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -17070,6 +17070,7 @@ L:	netdev@vger.kernel.org
+ S:	Maintained
+ F:	Documentation/devicetree/bindings/net/qcom,ipq4019-ess-edma.yaml
+ F:	drivers/net/ethernet/qualcomm/ipqess/
++F:	net/dsa/tag_oob.c
+ 
+ QUALCOMM ETHQOS ETHERNET DRIVER
+ M:	Vinod Koul <vkoul@kernel.org>
+--- /dev/null
++++ b/include/linux/dsa/oob.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: GPL-2.0-only
++ * Copyright (C) 2022 Maxime Chevallier <maxime.chevallier@bootlin.com>
++ */
++
++#ifndef _NET_DSA_OOB_H
++#define _NET_DSA_OOB_H
++
++#include <linux/skbuff.h>
++
++struct dsa_oob_tag_info {
++	u16 port;
++};
++
++int dsa_oob_tag_push(struct sk_buff *skb, struct dsa_oob_tag_info *ti);
++int dsa_oob_tag_pop(struct sk_buff *skb, struct dsa_oob_tag_info *ti);
++#endif
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -4588,6 +4588,9 @@ enum skb_ext_id {
+ #if IS_ENABLED(CONFIG_MCTP_FLOWS)
+ 	SKB_EXT_MCTP,
+ #endif
++#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
++	SKB_EXT_DSA_OOB,
++#endif
+ 	SKB_EXT_NUM, /* must be last */
+ };
+ 
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -55,6 +55,7 @@ struct phylink_link_state;
+ #define DSA_TAG_PROTO_RTL8_4T_VALUE		25
+ #define DSA_TAG_PROTO_RZN1_A5PSW_VALUE		26
+ #define DSA_TAG_PROTO_LAN937X_VALUE		27
++#define DSA_TAG_PROTO_OOB_VALUE			28
+ 
+ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
+@@ -85,6 +86,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_RTL8_4T		= DSA_TAG_PROTO_RTL8_4T_VALUE,
+ 	DSA_TAG_PROTO_RZN1_A5PSW	= DSA_TAG_PROTO_RZN1_A5PSW_VALUE,
+ 	DSA_TAG_PROTO_LAN937X		= DSA_TAG_PROTO_LAN937X_VALUE,
++	DSA_TAG_PROTO_OOB		= DSA_TAG_PROTO_OOB_VALUE,
+ };
+ 
+ struct dsa_switch;
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -62,8 +62,12 @@
+ #include <linux/mpls.h>
+ #include <linux/kcov.h>
+ #include <linux/if.h>
++#ifdef CONFIG_NET_DSA_TAG_OOB
++#include <linux/dsa/oob.h>
++#endif
+ 
+ #include <net/protocol.h>
++#include <net/dsa.h>
+ #include <net/dst.h>
+ #include <net/sock.h>
+ #include <net/checksum.h>
+@@ -4515,6 +4519,9 @@ static const u8 skb_ext_type_len[] = {
+ #if IS_ENABLED(CONFIG_MCTP_FLOWS)
+ 	[SKB_EXT_MCTP] = SKB_EXT_CHUNKSIZEOF(struct mctp_flow),
+ #endif
++#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
++	[SKB_EXT_DSA_OOB] = SKB_EXT_CHUNKSIZEOF(struct dsa_oob_tag_info),
++#endif
+ };
+ 
+ static __always_inline unsigned int skb_ext_total_length(void)
+@@ -4535,6 +4542,9 @@ static __always_inline unsigned int skb_
+ #if IS_ENABLED(CONFIG_MCTP_FLOWS)
+ 		skb_ext_type_len[SKB_EXT_MCTP] +
+ #endif
++#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
++		skb_ext_type_len[SKB_EXT_DSA_OOB] +
++#endif
+ 		0;
+ }
+ 
+--- a/net/dsa/Kconfig
++++ b/net/dsa/Kconfig
+@@ -113,6 +113,15 @@ config NET_DSA_TAG_OCELOT_8021Q
+ 	  this mode, less TCAM resources (VCAP IS1, IS2, ES0) are available for
+ 	  use with tc-flower.
+ 
++config NET_DSA_TAG_OOB
++	select SKB_EXTENSIONS
++	tristate "Tag driver for Out-of-band tagging drivers"
++	help
++	  Say Y or M if you want to enable support for pairs of embedded
++	  switches and host MAC drivers which perform demultiplexing and
++	  packet steering to ports using out of band metadata processed
++	  by the DSA master, rather than tags present in the packets.
++
+ config NET_DSA_TAG_QCA
+ 	tristate "Tag driver for Qualcomm Atheros QCA8K switches"
+ 	help
+--- a/net/dsa/Makefile
++++ b/net/dsa/Makefile
+@@ -22,6 +22,7 @@ obj-$(CONFIG_NET_DSA_TAG_LAN9303) += tag
+ obj-$(CONFIG_NET_DSA_TAG_MTK) += tag_mtk.o
+ obj-$(CONFIG_NET_DSA_TAG_OCELOT) += tag_ocelot.o
+ obj-$(CONFIG_NET_DSA_TAG_OCELOT_8021Q) += tag_ocelot_8021q.o
++obj-$(CONFIG_NET_DSA_TAG_OOB) += tag_oob.o
+ obj-$(CONFIG_NET_DSA_TAG_QCA) += tag_qca.o
+ obj-$(CONFIG_NET_DSA_TAG_RTL4_A) += tag_rtl4_a.o
+ obj-$(CONFIG_NET_DSA_TAG_RTL8_4) += tag_rtl8_4.o
+--- /dev/null
++++ b/net/dsa/tag_oob.c
+@@ -0,0 +1,49 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++/* Copyright (c) 2022, Maxime Chevallier <maxime.chevallier@bootlin.com> */
++
++#include <linux/bitfield.h>
++#include <linux/dsa/oob.h>
++#include <linux/skbuff.h>
++
++#include "dsa_priv.h"
++
++static struct sk_buff *oob_tag_xmit(struct sk_buff *skb,
++				    struct net_device *dev)
++{
++	struct dsa_oob_tag_info *tag_info = skb_ext_add(skb, SKB_EXT_DSA_OOB);
++	struct dsa_port *dp = dsa_slave_to_port(dev);
++
++	tag_info->port = dp->index;
++
++	return skb;
++}
++
++static struct sk_buff *oob_tag_rcv(struct sk_buff *skb,
++				   struct net_device *dev)
++{
++	struct dsa_oob_tag_info *tag_info = skb_ext_find(skb, SKB_EXT_DSA_OOB);
++
++	if (!tag_info)
++		return NULL;
++
++	skb->dev = dsa_master_find_slave(dev, 0, tag_info->port);
++	if (!skb->dev)
++		return NULL;
++
++	return skb;
++}
++
++static const struct dsa_device_ops oob_tag_dsa_ops = {
++	.name	= "oob",
++	.proto	= DSA_TAG_PROTO_OOB,
++	.xmit	= oob_tag_xmit,
++	.rcv	= oob_tag_rcv,
++};
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("DSA tag driver for out-of-band tagging");
++MODULE_AUTHOR("Maxime Chevallier <maxime.chevallier@bootlin.com>");
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_OOB);
++
++module_dsa_tag_driver(oob_tag_dsa_ops);

@@ -124,10 +124,34 @@ define U-Boot/mt7622_bananapi_bpi-r64-snand
   DEPENDS:=+trusted-firmware-a-mt7622-snand-2ddr
 endef
 
-define U-Boot/mt7622_ubnt_unifi-6-lr
+define U-Boot/mt7622_ubnt_unifi-6-lr-v1
   NAME:=Ubiquiti UniFi 6 LR
-  UBOOT_CONFIG:=mt7622_ubnt_unifi-6-lr
-  BUILD_DEVICES:=ubnt_unifi-6-lr-v1-ubootmod ubnt_unifi-6-lr-v2-ubootmod
+  UBOOT_CONFIG:=mt7622_ubnt_unifi-6-lr-v1
+  BUILD_DEVICES:=ubnt_unifi-6-lr-v1-ubootmod
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_DDRBLOB:=2
+  DEPENDS:=+trusted-firmware-a-mt7622-nor-2ddr
+  FIP_COMPRESS:=1
+endef
+
+define U-Boot/mt7622_ubnt_unifi-6-lr-v2
+  NAME:=Ubiquiti UniFi 6 LR v2
+  UBOOT_CONFIG:=mt7622_ubnt_unifi-6-lr-v2
+  BUILD_DEVICES:=ubnt_unifi-6-lr-v2-ubootmod
+  BUILD_SUBTARGET:=mt7622
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_DDRBLOB:=2
+  DEPENDS:=+trusted-firmware-a-mt7622-nor-2ddr
+  FIP_COMPRESS:=1
+endef
+
+define U-Boot/mt7622_ubnt_unifi-6-lr-v3
+  NAME:=Ubiquiti UniFi 6 LR v3
+  UBOOT_CONFIG:=mt7622_ubnt_unifi-6-lr-v3
+  BUILD_DEVICES:=ubnt_unifi-6-lr-v3-ubootmod
   BUILD_SUBTARGET:=mt7622
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=nor
@@ -186,6 +210,66 @@ define U-Boot/mt7981_h3c_magic-nx30-pro
   BL2_SOC:=mt7981
   BL2_DDRTYPE:=ddr3
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_rfb-spim-nand
+  NAME:=MT7981 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7981-rfb
+  UBOOT_CONFIG:=mt7981_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_rfb-emmc
+  NAME:=MT7981 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7981-rfb
+  UBOOT_CONFIG:=mt7981_emmc_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3
+endef
+
+define U-Boot/mt7981_rfb-nor
+  NAME:=MT7981 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7981-rfb
+  UBOOT_CONFIG:=mt7981_nor_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-nor-ddr3
+endef
+
+define U-Boot/mt7981_rfb-sd
+  NAME:=MT7981 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7981-rfb
+  UBOOT_CONFIG:=mt7981_sd_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=sdmmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-sdmmc-ddr3
+endef
+
+define U-Boot/mt7981_rfb-snfi
+  NAME:=MT7981 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7981-rfb
+  UBOOT_CONFIG:=mt7981_snfi_nand_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=snand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-snand-ddr3
 endef
 
 define U-Boot/mt7981_qihoo_360t7
@@ -273,6 +357,18 @@ define U-Boot/mt7986_bananapi_bpi-r3-nor
   FIP_COMPRESS:=1
 endef
 
+define U-Boot/mt7986_glinet_gl-mt6000
+  NAME:=GL.iNet GL-MT6000
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=glinet_gl-mt6000
+  UBOOT_CONFIG:=mt7986a_glinet_gl-mt6000
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7986-emmc-ddr4
+endef
+
 define U-Boot/mt7986_tplink_tl-xdr4288
   NAME:=TP-LINK TL-XDR4288
   BUILD_SUBTARGET:=filogic
@@ -324,61 +420,62 @@ endef
 define U-Boot/mt7988_rfb-spim-nand
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
-  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  BUILD_DEVICES:=mediatek_mt7988a-rfb
   UBOOT_CONFIG:=mt7988_rfb
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7988
-  BL2_DDRTYPE:=ddr4
-  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ddr4
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-comb
 endef
 
 define U-Boot/mt7988_rfb-snand
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
-  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  BUILD_DEVICES:=mediatek_mt7988a-rfb
   UBOOT_CONFIG:=mt7988_rfb
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=snand
   BL2_SOC:=mt7988
-  BL2_DDRTYPE:=ddr4
-  DEPENDS:=+trusted-firmware-a-mt7988-snand-ddr4
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-snand-comb
 endef
 
 define U-Boot/mt7988_rfb-nor
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
-  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  BUILD_DEVICES:=mediatek_mt7988a-rfb
   UBOOT_CONFIG:=mt7988_rfb
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=nor
   BL2_SOC:=mt7988
-  BL2_DDRTYPE:=ddr4
-  DEPENDS:=+trusted-firmware-a-mt7988-nor-ddr4
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-nor-comb
+  FIP_COMPRESS:=1
 endef
 
 define U-Boot/mt7988_rfb-emmc
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
-  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  BUILD_DEVICES:=mediatek_mt7988a-rfb
   UBOOT_CONFIG:=mt7988_rfb
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=emmc
   BL2_SOC:=mt7988
-  BL2_DDRTYPE:=ddr4
-  DEPENDS:=+trusted-firmware-a-mt7988-emmc-ddr4
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-emmc-comb
 endef
 
 define U-Boot/mt7988_rfb-sd
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
-  BUILD_DEVICES:=mediatek_mt7988a-rfb-nand
+  BUILD_DEVICES:=mediatek_mt7988a-rfb
   UBOOT_CONFIG:=mt7988_sd_rfb
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=sdmmc
   BL2_SOC:=mt7988
-  BL2_DDRTYPE:=ddr4
-  DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-ddr4
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7988-sdmmc-comb
 endef
 
 UBOOT_TARGETS := \
@@ -391,19 +488,27 @@ UBOOT_TARGETS := \
 	mt7622_bananapi_bpi-r64-snand \
 	mt7622_linksys_e8450 \
 	mt7622_rfb1 \
-	mt7622_ubnt_unifi-6-lr \
+	mt7622_ubnt_unifi-6-lr-v1 \
+	mt7622_ubnt_unifi-6-lr-v2 \
+	mt7622_ubnt_unifi-6-lr-v3 \
 	mt7623n_bpir2 \
 	mt7623a_unielec_u7623 \
 	mt7628_rfb \
 	ravpower_rp-wd009 \
 	mt7629_rfb \
 	mt7981_h3c_magic-nx30-pro \
+	mt7981_rfb-spim-nand \
+	mt7981_rfb-emmc \
+	mt7981_rfb-nor \
+	mt7981_rfb-sd \
+	mt7981_rfb-snfi \
 	mt7981_qihoo_360t7 \
 	mt7981_xiaomi_mi-router-wr30u \
 	mt7986_bananapi_bpi-r3-emmc \
 	mt7986_bananapi_bpi-r3-sdmmc \
 	mt7986_bananapi_bpi-r3-snand \
 	mt7986_bananapi_bpi-r3-nor \
+	mt7986_glinet_gl-mt6000 \
 	mt7986_tplink_tl-xdr4288 \
 	mt7986_tplink_tl-xdr6086 \
 	mt7986_tplink_tl-xdr6088 \

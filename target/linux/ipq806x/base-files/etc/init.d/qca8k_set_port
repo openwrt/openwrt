@@ -1,0 +1,45 @@
+#!/bin/sh /etc/rc.common
+
+START=15
+
+set_qca8k_port() {
+	local port=$1
+	local master=$2
+
+	ip link set $port type dsa conduit $master
+}
+
+boot() {
+	# Restore original implementation where the eth1 (port 6) was used
+	# for the lan port and the eth0 (port 0) was used for the wan port
+	case $(board_name) in
+		askey,rt4230w-rev6 |\
+		asrock,g10 |\
+		buffalo,wxr-2533dhp |\
+		compex,wpq864 |\
+		nec,wg2600hp |\
+		nec,wg2600hp3 |\
+		netgear,d7800 |\
+		netgear,r7500 |\
+		netgear,r7500v2 |\
+		netgear,r7800 |\
+		netgear,xr450 |\
+		netgear,xr500 |\
+		nokia,ac400i |\
+		tplink,ad7200 |\
+		tplink,c2600 |\
+		tplink,vr2600v |\
+		zyxel,nbg6817)
+			set_qca8k_port lan1 eth1
+			set_qca8k_port lan2 eth1
+			set_qca8k_port lan3 eth1
+			set_qca8k_port lan4 eth1
+			set_qca8k_port wan eth0
+			;;
+		asus,onhub |\
+		tplink,onhub)
+			set_qca8k_port lan1 eth1
+			set_qca8k_port wan eth0
+			;;
+	esac
+}

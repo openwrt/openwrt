@@ -24,6 +24,11 @@ define Device/sun50i-h6
   $(Device/sun50i)
 endef
 
+define Device/sun50i-h616
+  SOC := sun50i-h616
+  $(Device/sun50i)
+endef
+
 define Device/friendlyarm_nanopi-neo-plus2
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi NEO Plus2
@@ -107,6 +112,13 @@ define Device/xunlong_orangepi-pc2
   $(Device/sun50i-h5)
 endef
 TARGET_DEVICES += xunlong_orangepi-pc2
+
+define Device/xunlong_orangepi-zero2
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi Zero 2
+  $(Device/sun50i-h616)
+endef
+TARGET_DEVICES += xunlong_orangepi-zero2
 
 define Device/xunlong_orangepi-zero-plus
   DEVICE_VENDOR := Xunlong

@@ -309,12 +309,12 @@ start_qemu_x86() {
 			# To use AHCI interface
 			#
 			#	-device ich9-ahci,id=ahci \
-			#	-device ide-drive,drive=drv0,bus=ahci.0 \
+			#	-device ide-hd,drive=drv0,bus=ahci.0 \
 			#	-drive "file=$rootfs,format=raw,id=drv0,if=none" \
 			#
 			# [1] https://dev.openwrt.org/ticket/17947
 			"$qemu_exe" -machine "$mach" -nographic \
-				-device ide-drive,drive=drv0 \
+				-device ide-hd,drive=drv0 \
 				-drive "file=$rootfs,format=raw,id=drv0,if=none" \
 				"${o_qemu_extra[@]}"
 			;;

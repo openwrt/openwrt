@@ -80,8 +80,15 @@ static void ag71xx_ethtool_set_msglevel(struct net_device *dev, u32 msg_level)
 	ag->msg_enable = msg_level;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0)
+static void ag71xx_ethtool_get_ringparam(struct net_device *dev,
+					 struct ethtool_ringparam *er,
+					 struct kernel_ethtool_ringparam *kernel_ring,
+					 struct netlink_ext_ack *extack)
+#else
 static void ag71xx_ethtool_get_ringparam(struct net_device *dev,
 					 struct ethtool_ringparam *er)
+#endif
 {
 	struct ag71xx *ag = netdev_priv(dev);
 
@@ -99,8 +106,15 @@ static void ag71xx_ethtool_get_ringparam(struct net_device *dev,
 		er->tx_pending /= AG71XX_TX_RING_DS_PER_PKT;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0)
+static int ag71xx_ethtool_set_ringparam(struct net_device *dev,
+					struct ethtool_ringparam *er,
+					struct kernel_ethtool_ringparam *kernel_ring,
+					struct netlink_ext_ack *extack)
+#else
 static int ag71xx_ethtool_set_ringparam(struct net_device *dev,
 					struct ethtool_ringparam *er)
+#endif
 {
 	struct ag71xx *ag = netdev_priv(dev);
 	unsigned tx_size;

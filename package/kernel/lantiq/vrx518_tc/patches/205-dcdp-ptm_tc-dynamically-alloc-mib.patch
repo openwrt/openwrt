@@ -1,6 +1,6 @@
 --- a/dcdp/ptm_tc.c
 +++ b/dcdp/ptm_tc.c
-@@ -298,15 +298,19 @@ static int ptm_tc_get_stats(struct ptm_e
+@@ -307,15 +307,19 @@ static int ptm_tc_get_stats(struct ptm_e
  )
  {
  	struct rtnl_link_stats64 *stat;
@@ -21,7 +21,7 @@
  	if (bonding)
  		stats->tc_info = TC_PTM_BND_MODE;
  	else
-@@ -340,11 +344,11 @@ static int ptm_tc_get_stats(struct ptm_e
+@@ -349,11 +353,11 @@ static int ptm_tc_get_stats(struct ptm_e
  		? cur_cnt - last_cnt
  		: cur_cnt + ((unsigned int)(-1) - last_cnt);
  
@@ -36,7 +36,7 @@
  
  	cur_cnt = tc_r32(GIF0_RX_CRC_ERR_CNT);
  	last_cnt = priv->ptm_mib.rx_crc_err_pdu[0];
-@@ -358,7 +362,7 @@ static int ptm_tc_get_stats(struct ptm_e
+@@ -367,7 +371,7 @@ static int ptm_tc_get_stats(struct ptm_e
  		? cur_cnt - last_cnt
  		: cur_cnt + ((unsigned int)(-1) - last_cnt);
  
@@ -45,7 +45,7 @@
  	cur_cnt = sb_r32(__US_TC_LOCAL_Q_CFG_CTXT_BASE +
  		offsetof(desq_cfg_ctxt_t, deq_pkt_cnt) / 4);
  	last_cnt = priv->ptm_mib.tx_total_pdu[0];
-@@ -376,90 +380,108 @@ static int ptm_tc_get_stats(struct ptm_e
+@@ -385,90 +389,108 @@ static int ptm_tc_get_stats(struct ptm_e
  	/* For bonding information */
  	if (bonding) {
  		int i;

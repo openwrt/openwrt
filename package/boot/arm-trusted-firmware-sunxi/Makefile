@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.8
+PKG_VERSION:=2.9
 PKG_RELEASE:=1
 
-PKG_HASH:=df4e0f3803479df0ea4cbf3330b59731bc2efc2112c951f9adb3685229163af9
+PKG_HASH:=76a66a1de0c01aeb83dfc7b72b51173fe62c6e51d6fca17cc562393117bed08b
 
 PKG_LICENSE:=BSD-3-Clause
 PKG_LICENSE_FILES:=license.md
@@ -36,9 +36,15 @@ define Trusted-Firmware-A/sunxi-h6
 	PLAT:=sun50i_h6
 endef
 
+define Trusted-Firmware-A/sunxi-h616
+	NAME:=Allwinner H616
+	PLAT:=sun50i_h616
+endef
+
 TFA_TARGETS:= \
 	sunxi-a64 \
-	sunxi-h6
+	sunxi-h6 \
+	sunxi-h616
 
 define Package/trusted-firmware-a/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)

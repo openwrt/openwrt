@@ -23,7 +23,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  	unsigned int		dma_irq;
  	int			nand_version;
  
-@@ -1610,7 +1610,7 @@ static bool brcmstb_nand_wait_for_comple
+@@ -1650,7 +1650,7 @@ static bool brcmstb_nand_wait_for_comple
  	bool err = false;
  	int sts;
  
@@ -32,7 +32,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  		/* switch to interrupt polling and PIO mode */
  		disable_ctrl_irqs(ctrl);
  		sts = bcmnand_ctrl_poll_status(ctrl, NAND_CTRL_RDY,
-@@ -3144,33 +3144,29 @@ int brcmnand_probe(struct platform_devic
+@@ -3187,33 +3187,29 @@ int brcmnand_probe(struct platform_devic
  	}
  
  	/* IRQ */

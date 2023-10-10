@@ -21,7 +21,8 @@ platform_do_upgrade() {
 			;;
 		esac
 		;;
-	buffalo,wsr-2533dhp2)
+	buffalo,wsr-2533dhp2|\
+	buffalo,wsr-3200ax4s)
 		local magic="$(get_magic_long "$1")"
 
 		# use "mtd write" if the magic is "DHP2 (0x44485032)"
@@ -67,7 +68,8 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
-	buffalo,wsr-2533dhp2)
+	buffalo,wsr-2533dhp2|\
+	buffalo,wsr-3200ax4s)
 		buffalo_check_image "$board" "$magic" "$1" || return 1
 		;;
 	elecom,wrc-x3200gst3|\
