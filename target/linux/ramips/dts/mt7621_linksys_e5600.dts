@@ -83,9 +83,20 @@
 		};
 
 		factory: partition@c0000 {
+			compatible = "nvmem-cells";
 			label = "factory";
 			reg = <0xc0000 0x40000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			read-only;
+
+			eeprom_factory_0: eeprom@0 {
+				reg = <0x0 0x400>;
+			};
+
+			eeprom_factory_8000: eeprom@8000 {
+				reg = <0x8000 0x4da8>;
+			};
 		};
 
 		partition@100000 {
@@ -136,7 +147,8 @@
 	mt76@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0000>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
@@ -144,7 +156,8 @@
 	mt76@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 

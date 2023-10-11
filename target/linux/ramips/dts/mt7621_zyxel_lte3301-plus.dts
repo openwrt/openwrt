@@ -126,8 +126,19 @@
 			reg = <0x80000 0x80000>; /* 64 KB */
 		};
 		factory: partition@100000 {
+			compatible = "nvmem-cells";
 			label = "factory";
 			reg = <0x100000 0x40000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eeprom_factory_0: eeprom@0 {
+				reg = <0x0 0x4da8>;
+			};
+
+			macaddr_factory_fe6e: macaddr@fe6e {
+				reg = <0xfe6e 0x6>;
+			};
 		};
 		partition@140000 {
 			label = "Kernel";
@@ -197,21 +208,9 @@
 		compatible = "pci14c3,7615";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,firmware-eeprom = "mt7615e_eeprom.bin";
-		mediatek,mtd-eeprom = <&factory 0x0000>;
-		nvmem-cells = <&macaddr_factory_fe6e>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_fe6e>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		mac-address-increment = <(1)>;
 	};
 
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-	mtd-mac-address = <&factory 0xfe6e>;
-
-	macaddr_factory_fe6e: macaddr@fe6e {
-		reg = <0xfe6e 0x6>;
-	};
 };

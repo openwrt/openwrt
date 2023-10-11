@@ -99,13 +99,23 @@ define Device/hpe_1920-8g
 endef
 TARGET_DEVICES += hpe_1920-8g
 
-define Device/hpe_1920-8g-poe
+define Device/hpe_1920-8g-poe-65w
   $(Device/hpe_1920)
   SOC := rtl8380
-  DEVICE_MODEL := 1920-8G-PoE+ (JG922A)
-  H3C_DEVICE_ID := 0x00010025
+  DEVICE_MODEL := 1920-8G-PoE+ 65W (JG921A)
+  DEVICE_PACKAGES += realtek-poe
+  H3C_DEVICE_ID := 0x00010024
 endef
-TARGET_DEVICES += hpe_1920-8g-poe
+TARGET_DEVICES += hpe_1920-8g-poe-65w
+
+define Device/hpe_1920-8g-poe-180w
+  $(Device/hpe_1920)
+  SOC := rtl8380
+  DEVICE_MODEL := 1920-8G-PoE+ 180W (JG922A)
+  H3C_DEVICE_ID := 0x00010025
+  SUPPORTED_DEVICES += hpe_1920-8g-poe
+endef
+TARGET_DEVICES += hpe_1920-8g-poe-180w
 
 define Device/hpe_1920-16g
   $(Device/hpe_1920)

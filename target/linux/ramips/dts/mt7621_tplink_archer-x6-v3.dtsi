@@ -99,15 +99,33 @@
 			};
 
 			config: partition@fa0000 {
+				compatible = "nvmem-cells";
 				label = "config";
 				reg = <0xfa0000 0x50000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				macaddr_config_8: macaddr@8 {
+					reg = <0x8 0x6>;
+				};
 			};
 
 			radio: partition@ff0000 {
+				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0xff0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_radio_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				eeprom_radio_8000: eeprom@8000 {
+					reg = <0x8000 0x4da8>;
+				};
 			};
 		};
 	};
@@ -128,9 +146,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 0x0>;
-		nvmem-cells = <&macaddr_config_8>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_8>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		mac-address-increment = <1>;
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
@@ -140,9 +157,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 0x8000>;
-		nvmem-cells = <&macaddr_config_8>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_8>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		mac-address-increment = <2>;
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
@@ -183,15 +199,5 @@
 			status = "okay";
 			label = "lan4";
 		};
-	};
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_8: macaddr@8 {
-		reg = <0x8 0x6>;
 	};
 };

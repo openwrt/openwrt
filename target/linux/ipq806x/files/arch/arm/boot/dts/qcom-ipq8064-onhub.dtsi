@@ -345,7 +345,6 @@
 	status = "okay";
 	phy-mode = "rgmii";
 	qcom,id = <0>;
-	phy-handle = <&phy1>;
 
 	pinctrl-0 = <&rgmii0_pins>;
 	pinctrl-names = "default";
@@ -360,7 +359,6 @@
 	status = "okay";
 	phy-mode = "sgmii";
 	qcom,id = <2>;
-	phy-handle = <&phy0>;
 
 	fixed-link {
 		speed = <1000>;
