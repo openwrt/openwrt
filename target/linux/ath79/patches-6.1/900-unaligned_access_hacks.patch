@@ -349,7 +349,7 @@ SVN-Revision: 35130
  	list_for_each_entry(p, head, list) {
 --- a/net/ipv4/tcp_output.c
 +++ b/net/ipv4/tcp_output.c
-@@ -611,48 +611,53 @@ static void tcp_options_write(struct tcp
+@@ -610,48 +610,53 @@ static void tcp_options_write(struct tcp
  	u16 options = opts->options;	/* mungable copy */
  
  	if (unlikely(OPTION_MD5 & options)) {
@@ -426,7 +426,7 @@ SVN-Revision: 35130
  	}
  
  	if (unlikely(opts->num_sack_blocks)) {
-@@ -660,16 +665,17 @@ static void tcp_options_write(struct tcp
+@@ -659,16 +664,17 @@ static void tcp_options_write(struct tcp
  			tp->duplicate_sack : tp->selective_acks;
  		int this_sack;
  
@@ -450,7 +450,7 @@ SVN-Revision: 35130
  		}
  
  		tp->rx_opt.dsack = 0;
-@@ -682,13 +688,14 @@ static void tcp_options_write(struct tcp
+@@ -681,13 +687,14 @@ static void tcp_options_write(struct tcp
  
  		if (foc->exp) {
  			len = TCPOLEN_EXP_FASTOPEN_BASE + foc->len;
@@ -750,7 +750,7 @@ SVN-Revision: 35130
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -4165,14 +4165,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -4178,14 +4178,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
