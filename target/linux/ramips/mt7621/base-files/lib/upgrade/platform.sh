@@ -185,6 +185,9 @@ platform_do_upgrade() {
 		iodata_mstc_set_flag "bootnum" "persist" "0x4" "1,2" "1"
 		nand_do_upgrade "$1"
 		;;
+	plasmacloud,pax1800-lite)
+		platform_do_upgrade_dualboot_datachk "$1"
+		;;
 	tplink,er605-v2)
 		echo "Upgrading tplink,er605-v2"
 		CI_UBIPART="firmware"
