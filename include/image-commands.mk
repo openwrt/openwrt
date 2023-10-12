@@ -640,6 +640,19 @@ define Build/openmesh-image
 		"$(call param_get_default,rootfs,$(1),$@)" "rootfs"
 endef
 
+define Build/dualboot-datachk-nand-image
+	$(TOPDIR)/scripts/nand-fwupgradecfg-gen.sh \
+		"$(call param_get_default,ce_type,$(1),$(DEVICE_NAME))" \
+		"$@-fwupgrade.cfg" \
+		"$(call param_get_default,kernel,$(1),$(IMAGE_KERNEL))" \
+		"$(call param_get_default,rootfs,$(1),$@)"
+	$(TOPDIR)/scripts/combined-ext-image.sh \
+		"$(call param_get_default,ce_type,$(1),$(DEVICE_NAME))" "$@" \
+		"$@-fwupgrade.cfg" "fwupgrade.cfg" \
+		"$(call param_get_default,kernel,$(1),$(IMAGE_KERNEL))" "kernel" \
+		"$(call param_get_default,rootfs,$(1),$@)" "rootfs"
+endef
+
 define Build/pad-extra
 	dd if=/dev/zero bs=$(1) count=1 >> $@
 endef
