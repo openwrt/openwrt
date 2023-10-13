@@ -10,7 +10,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 
 --- a/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
 +++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
-@@ -92,3 +92,33 @@
+@@ -92,3 +92,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -41,12 +41,20 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +
 +		port@5 {
 +			label = "cpu";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
 +		};
 +	};
 +};
 --- a/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
 +++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
-@@ -83,3 +83,33 @@
+@@ -83,3 +83,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -77,12 +85,20 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +
 +		port@5 {
 +			label = "cpu";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
 +		};
 +	};
 +};
 --- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
 +++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
-@@ -149,3 +149,33 @@
+@@ -149,3 +149,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -113,12 +129,20 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +
 +		port@5 {
 +			label = "cpu";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
 +		};
 +	};
 +};
 --- a/arch/arm/boot/dts/bcm4708-linksys-ea6300-v1.dts
 +++ b/arch/arm/boot/dts/bcm4708-linksys-ea6300-v1.dts
-@@ -46,3 +46,33 @@
+@@ -46,3 +46,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -149,12 +173,20 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +
 +		port@5 {
 +			label = "cpu";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
 +		};
 +	};
 +};
 --- a/arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts
 +++ b/arch/arm/boot/dts/bcm4708-linksys-ea6500-v2.dts
-@@ -43,3 +43,33 @@
+@@ -43,3 +43,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -185,12 +217,20 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +
 +		port@5 {
 +			label = "cpu";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
 +		};
 +	};
 +};
 --- a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
-@@ -86,3 +86,33 @@
+@@ -86,3 +86,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -221,12 +261,20 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +
 +		port@5 {
 +			label = "cpu";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
 +		};
 +	};
 +};
 --- a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
 +++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
-@@ -77,3 +77,33 @@
+@@ -77,3 +77,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -258,11 +306,19 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +		port@5 {
 +			label = "cpu";
 +		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
++		};
 +	};
 +};
 --- a/arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
 +++ b/arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
-@@ -77,6 +77,32 @@
+@@ -77,6 +77,40 @@
  	status = "okay";
  };
  
@@ -286,8 +342,16 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +			label = "lan3";
 +		};
 +
++		port@5 {
++			status = "disabled";
++		};
++
 +		port@7 {
 +			label = "cpu";
++		};
++
++		port@8 {
++			status = "disabled";
 +		};
 +	};
 +};
@@ -297,7 +361,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  		compatible = "fixed-partitions";
 --- a/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
 +++ b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
-@@ -130,3 +130,33 @@
+@@ -130,3 +130,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -329,11 +393,19 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +		port@5 {
 +			label = "cpu";
 +		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
++		};
 +	};
 +};
 --- a/arch/arm/boot/dts/bcm4709-linksys-ea9200.dts
 +++ b/arch/arm/boot/dts/bcm4709-linksys-ea9200.dts
-@@ -47,3 +47,33 @@
+@@ -47,3 +47,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -360,6 +432,14 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +
 +		port@4 {
 +			label = "wan";
++		};
++
++		port@5 {
++			status = "disabled";
++		};
++
++		port@7 {
++			status = "disabled";
 +		};
 +
 +		port@8 {
@@ -369,7 +449,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +};
 --- a/arch/arm/boot/dts/bcm4709-netgear-r7000.dts
 +++ b/arch/arm/boot/dts/bcm4709-netgear-r7000.dts
-@@ -104,3 +104,33 @@
+@@ -104,3 +104,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -401,11 +481,19 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +		port@5 {
 +			label = "cpu";
 +		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
++		};
 +	};
 +};
 --- a/arch/arm/boot/dts/bcm47094-netgear-r8500.dts
 +++ b/arch/arm/boot/dts/bcm47094-netgear-r8500.dts
-@@ -94,3 +94,33 @@
+@@ -94,3 +94,41 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -434,6 +522,14 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +			label = "lan4";
 +		};
 +
++		port@5 {
++			status = "disabled";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
 +		port@8 {
 +			label = "cpu";
 +		};
@@ -441,7 +537,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +};
 --- a/arch/arm/boot/dts/bcm47094-phicomm-k3.dts
 +++ b/arch/arm/boot/dts/bcm47094-phicomm-k3.dts
-@@ -38,6 +38,32 @@
+@@ -38,6 +38,40 @@
  	status = "okay";
  };
  
@@ -468,6 +564,14 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +		port@5 {
 +			label = "cpu";
 +		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
++		};
 +	};
 +};
 +
@@ -476,7 +580,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  		compatible = "fixed-partitions";
 --- a/arch/arm/boot/dts/bcm47081-tplink-archer-c5-v2.dts
 +++ b/arch/arm/boot/dts/bcm47081-tplink-archer-c5-v2.dts
-@@ -91,6 +91,36 @@
+@@ -91,6 +91,44 @@
  	};
  };
  
@@ -507,6 +611,14 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +		port@5 {
 +			label = "cpu";
 +		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
++		};
 +	};
 +};
 +
@@ -515,7 +627,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  
 --- a/arch/arm/boot/dts/bcm4709-tplink-archer-c9-v1.dts
 +++ b/arch/arm/boot/dts/bcm4709-tplink-archer-c9-v1.dts
-@@ -100,6 +100,36 @@
+@@ -100,6 +100,44 @@
  	vcc-gpio = <&chipcommon 12 GPIO_ACTIVE_HIGH>;
  };
  
@@ -546,6 +658,14 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +		port@5 {
 +			label = "cpu";
 +		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
++		};
 +	};
 +};
 +
@@ -554,7 +674,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  
 --- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
 +++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
-@@ -107,3 +107,34 @@
+@@ -107,3 +107,42 @@
  &usb3_phy {
  	status = "okay";
  };
@@ -585,6 +705,14 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +
 +		port@5 {
 +			label = "cpu";
++		};
++
++		port@7 {
++			status = "disabled";
++		};
++
++		port@8 {
++			status = "disabled";
 +		};
 +	};
 +};
