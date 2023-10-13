@@ -76,9 +76,22 @@ $(TOOLCHAIN_DIR)/info.mk $(STAGING_DIR)/.prepared: $(TOOLCHAIN_DIR)/stamp/.ver_c
 endif
 endif
 
+ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
+  $(TOOLCHAIN_DIR)/include: ;
+else
+  $(TOOLCHAIN_DIR)/include: .config;
+	@for dir in $(TOOLCHAIN_DIR); do ( \
+		$(if $(QUIET),,set -x;) \
+		mkdir -p "$$dir"; \
+		cd "$$dir"; \
+		ln -nsf $(TOOLCHAIN_ROOT_DIR)/include include; \
+	); done
+	@touch $@
+endif
+
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
-$(curdir)//compile = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk $(tools/stamp-compile)
+$(curdir)//compile = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk $(TOOLCHAIN_DIR)/include $(tools/stamp-compile)
 
 ifndef DUMP_TARGET_DB
 $(TOOLCHAIN_DIR)/stamp/.gcc_final_installed:
