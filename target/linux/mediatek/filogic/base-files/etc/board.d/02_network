@@ -66,7 +66,8 @@ mediatek_setup_interfaces()
 		ucidef_set_interface_lan "eth0"
 		;;
 	smartrg,sdg-8622|\
-	smartrg,sdg-8632)
+	smartrg,sdg-8632|\
+	yuncore,ax835)
 		ucidef_set_interfaces_lan_wan lan wan
 		;;
 	tplink,tl-xdr6086)
@@ -169,6 +170,9 @@ mediatek_setup_macs()
 	xiaomi,redmi-router-ax6000-ubootmod)
 		wan_mac=$(mtd_get_mac_ascii Bdata ethaddr_wan)
 		label_mac=$wan_mac
+		;;
+	yuncore,ax835)
+		label_mac=$(mtd_get_mac_binary "Factory" 0x4)
 		;;
 	esac
 
