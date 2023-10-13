@@ -593,7 +593,7 @@ function iface_load_config(filename)
 		push(config.radio.data, line);
 	}
 
-	while ((line = trim(f.read("line"))) != null) {
+	while ((line = f.read("line")) != null) {
 		if (line == "#default_macaddr")
 			bss.default_macaddr = true;
 
