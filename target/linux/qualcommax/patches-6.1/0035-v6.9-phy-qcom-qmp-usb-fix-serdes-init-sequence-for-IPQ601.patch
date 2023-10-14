@@ -1,0 +1,102 @@
+From 62a5df451ab911421da96655fcc4d1e269ff6e2f Mon Sep 17 00:00:00 2001
+From: Mantas Pucka <mantas@8devices.com>
+Date: Tue, 23 Jan 2024 18:09:20 +0200
+Subject: [PATCH] phy: qcom-qmp-usb: fix serdes init sequence for IPQ6018
+
+Commit 23fd679249df ("phy: qcom-qmp: add USB3 PHY support for IPQ6018")
+noted that IPQ6018 init is identical to IPQ8074. Yet downstream uses
+separate serdes init sequence for IPQ6018. Since already existing IPQ9574
+serdes init sequence is identical, just reuse it and fix failing USB3 mode
+in IPQ6018.
+
+Fixes: 23fd679249df ("phy: qcom-qmp: add USB3 PHY support for IPQ6018")
+Signed-off-by: Mantas Pucka <mantas@8devices.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Link: https://lore.kernel.org/r/1706026160-17520-3-git-send-email-mantas@8devices.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/phy/qualcomm/phy-qcom-qmp-usb.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
+
+--- a/drivers/phy/qualcomm/phy-qcom-qmp-usb.c
++++ b/drivers/phy/qualcomm/phy-qcom-qmp-usb.c
+@@ -233,6 +233,43 @@ static const struct qmp_phy_init_tbl ipq
+ 	QMP_PHY_INIT_CFG(QPHY_V3_PCS_TXDEEMPH_M3P5DB_V0, 0x0f),
+ };
+ 
++static const struct qmp_phy_init_tbl ipq9574_usb3_serdes_tbl[] = {
++	QMP_PHY_INIT_CFG(QSERDES_COM_SYSCLK_EN_SEL, 0x1a),
++	QMP_PHY_INIT_CFG(QSERDES_COM_BIAS_EN_CLKBUFLR_EN, 0x08),
++	QMP_PHY_INIT_CFG(QSERDES_COM_CLK_SELECT, 0x30),
++	QMP_PHY_INIT_CFG(QSERDES_COM_BG_TRIM, 0x0f),
++	QMP_PHY_INIT_CFG(QSERDES_RX_UCDR_FASTLOCK_FO_GAIN, 0x0b),
++	QMP_PHY_INIT_CFG(QSERDES_COM_SVS_MODE_CLK_SEL, 0x01),
++	QMP_PHY_INIT_CFG(QSERDES_COM_HSCLK_SEL, 0x00),
++	QMP_PHY_INIT_CFG(QSERDES_COM_CMN_CONFIG, 0x06),
++	QMP_PHY_INIT_CFG(QSERDES_COM_PLL_IVCO, 0x0f),
++	QMP_PHY_INIT_CFG(QSERDES_COM_SYS_CLK_CTRL, 0x06),
++	/* PLL and Loop filter settings */
++	QMP_PHY_INIT_CFG(QSERDES_COM_DEC_START_MODE0, 0x68),
++	QMP_PHY_INIT_CFG(QSERDES_COM_DIV_FRAC_START1_MODE0, 0xab),
++	QMP_PHY_INIT_CFG(QSERDES_COM_DIV_FRAC_START2_MODE0, 0xaa),
++	QMP_PHY_INIT_CFG(QSERDES_COM_DIV_FRAC_START3_MODE0, 0x02),
++	QMP_PHY_INIT_CFG(QSERDES_COM_CP_CTRL_MODE0, 0x09),
++	QMP_PHY_INIT_CFG(QSERDES_COM_PLL_RCTRL_MODE0, 0x16),
++	QMP_PHY_INIT_CFG(QSERDES_COM_PLL_CCTRL_MODE0, 0x28),
++	QMP_PHY_INIT_CFG(QSERDES_COM_INTEGLOOP_GAIN0_MODE0, 0xa0),
++	QMP_PHY_INIT_CFG(QSERDES_COM_LOCK_CMP1_MODE0, 0xaa),
++	QMP_PHY_INIT_CFG(QSERDES_COM_LOCK_CMP2_MODE0, 0x29),
++	QMP_PHY_INIT_CFG(QSERDES_COM_LOCK_CMP3_MODE0, 0x00),
++	QMP_PHY_INIT_CFG(QSERDES_COM_CORE_CLK_EN, 0x00),
++	QMP_PHY_INIT_CFG(QSERDES_COM_LOCK_CMP_CFG, 0x00),
++	QMP_PHY_INIT_CFG(QSERDES_COM_VCO_TUNE_MAP, 0x00),
++	QMP_PHY_INIT_CFG(QSERDES_COM_BG_TIMER, 0x0a),
++	/* SSC settings */
++	QMP_PHY_INIT_CFG(QSERDES_COM_SSC_EN_CENTER, 0x01),
++	QMP_PHY_INIT_CFG(QSERDES_COM_SSC_PER1, 0x7d),
++	QMP_PHY_INIT_CFG(QSERDES_COM_SSC_PER2, 0x01),
++	QMP_PHY_INIT_CFG(QSERDES_COM_SSC_ADJ_PER1, 0x00),
++	QMP_PHY_INIT_CFG(QSERDES_COM_SSC_ADJ_PER2, 0x00),
++	QMP_PHY_INIT_CFG(QSERDES_COM_SSC_STEP_SIZE1, 0x0a),
++	QMP_PHY_INIT_CFG(QSERDES_COM_SSC_STEP_SIZE2, 0x05),
++};
++
+ static const struct qmp_phy_init_tbl msm8996_usb3_serdes_tbl[] = {
+ 	QMP_PHY_INIT_CFG(QSERDES_COM_SYSCLK_EN_SEL, 0x14),
+ 	QMP_PHY_INIT_CFG(QSERDES_COM_BIAS_EN_CLKBUFLR_EN, 0x08),
+@@ -1591,6 +1628,26 @@ static const char * const qmp_phy_vreg_l
+ 	"vdda-phy", "vdda-pll",
+ };
+ 
++static const struct qmp_phy_cfg ipq6018_usb3phy_cfg = {
++	.lanes			= 1,
++
++	.serdes_tbl		= ipq9574_usb3_serdes_tbl,
++	.serdes_tbl_num		= ARRAY_SIZE(ipq9574_usb3_serdes_tbl),
++	.tx_tbl			= msm8996_usb3_tx_tbl,
++	.tx_tbl_num		= ARRAY_SIZE(msm8996_usb3_tx_tbl),
++	.rx_tbl			= ipq8074_usb3_rx_tbl,
++	.rx_tbl_num		= ARRAY_SIZE(ipq8074_usb3_rx_tbl),
++	.pcs_tbl		= ipq8074_usb3_pcs_tbl,
++	.pcs_tbl_num		= ARRAY_SIZE(ipq8074_usb3_pcs_tbl),
++	.clk_list		= msm8996_phy_clk_l,
++	.num_clks		= ARRAY_SIZE(msm8996_phy_clk_l),
++	.reset_list		= msm8996_usb3phy_reset_l,
++	.num_resets		= ARRAY_SIZE(msm8996_usb3phy_reset_l),
++	.vreg_list		= qmp_phy_vreg_l,
++	.num_vregs		= ARRAY_SIZE(qmp_phy_vreg_l),
++	.regs			= qmp_v3_usb3phy_regs_layout,
++};
++
+ static const struct qmp_phy_cfg ipq8074_usb3phy_cfg = {
+ 	.lanes			= 1,
+ 
+@@ -2534,7 +2591,7 @@ static const struct of_device_id qmp_usb
+ 		.data = &msm8996_usb3phy_cfg,
+ 	}, {
+ 		.compatible = "qcom,ipq6018-qmp-usb3-phy",
+-		.data = &ipq8074_usb3phy_cfg,
++		.data = &ipq6018_usb3phy_cfg,
+ 	}, {
+ 		.compatible = "qcom,sc7180-qmp-usb3-phy",
+ 		.data = &sc7180_usb3phy_cfg,
