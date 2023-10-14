@@ -1,28 +1,3 @@
-define Device/FitImage
-	KERNEL_SUFFIX := -uImage.itb
-	KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
-	KERNEL_NAME := Image
-endef
-
-define Device/FitImageLzma
-	KERNEL_SUFFIX := -uImage.itb
-	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
-	KERNEL_NAME := Image
-endef
-
-define Device/EmmcImage
-	IMAGES += factory.bin sysupgrade.bin
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k
-	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | sysupgrade-tar rootfs=$$$$@ | append-metadata
-endef
-
-define Device/UbiFit
-	KERNEL_IN_UBI := 1
-	IMAGES := factory.ubi sysupgrade.bin
-	IMAGE/factory.ubi := append-ubi
-	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-endef
-
 define Build/wax6xx-netgear-tar
 	mkdir $@.tmp
 	mv $@ $@.tmp/nand-ipq807x-apps.img
