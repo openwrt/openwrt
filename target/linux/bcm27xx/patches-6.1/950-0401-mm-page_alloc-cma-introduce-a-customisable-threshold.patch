@@ -20,7 +20,7 @@ Signed-off-by: David Plowman <david.plowman@raspberrypi.com>
 
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -273,6 +273,27 @@ EXPORT_SYMBOL(init_on_alloc);
+@@ -253,6 +253,27 @@ EXPORT_SYMBOL(init_on_alloc);
  DEFINE_STATIC_KEY_MAYBE(CONFIG_INIT_ON_FREE_DEFAULT_ON, init_on_free);
  EXPORT_SYMBOL(init_on_free);
  
@@ -48,7 +48,7 @@ Signed-off-by: David Plowman <david.plowman@raspberrypi.com>
  static bool _init_on_alloc_enabled_early __read_mostly
  				= IS_ENABLED(CONFIG_INIT_ON_ALLOC_DEFAULT_ON);
  static int __init early_init_on_alloc(char *buf)
-@@ -3093,12 +3114,13 @@ __rmqueue(struct zone *zone, unsigned in
+@@ -3073,12 +3094,13 @@ __rmqueue(struct zone *zone, unsigned in
  	if (IS_ENABLED(CONFIG_CMA)) {
  		/*
  		 * Balance movable allocations between regular and CMA areas by

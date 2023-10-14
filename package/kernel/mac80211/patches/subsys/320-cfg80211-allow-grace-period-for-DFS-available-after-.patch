@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -873,6 +875,49 @@ static bool cfg80211_get_chans_dfs_avail
+@@ -874,6 +876,49 @@ static bool cfg80211_get_chans_dfs_avail
  	return true;
  }
  
@@ -113,15 +113,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
 --- a/net/wireless/core.h
 +++ b/net/wireless/core.h
-@@ -487,6 +487,8 @@ void cfg80211_set_dfs_state(struct wiphy
+@@ -474,6 +474,8 @@ void cfg80211_set_dfs_state(struct wiphy
  			    enum nl80211_dfs_state dfs_state);
  
  void cfg80211_dfs_channels_update_work(struct work_struct *work);
 +void cfg80211_update_last_available(struct wiphy *wiphy,
 +				    const struct cfg80211_chan_def *chandef);
  
- unsigned int
- cfg80211_chandef_dfs_cac_time(struct wiphy *wiphy,
+ void cfg80211_sched_dfs_chan_update(struct cfg80211_registered_device *rdev);
+ 
 --- a/net/wireless/mlme.c
 +++ b/net/wireless/mlme.c
 @@ -915,6 +915,8 @@ void cfg80211_dfs_channels_update_work(s
