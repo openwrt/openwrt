@@ -38,8 +38,9 @@
 #include <linux/lzo.h>
 
 #include "routerboot.h"
+#include "rb_hardconfig_lz77.h"
 
-#define RB_HARDCONFIG_VER		"0.07"
+#define RB_HARDCONFIG_VER		"0.08"
 #define RB_HC_PR_PFX			"[rb_hardconfig] "
 
 /* ID values for hardware settings */
@@ -563,6 +564,63 @@ fail:
 	return ret;
 }
 
+static int hc_wlan_data_unpack_lz77(const u16 tag_id, const u8 *inbuf, size_t inlen,
+				    void *outbuf, size_t *outlen)
+{
+	u16 rle_ofs, rle_len;
+	u8 *tempbuf;
+	size_t templen;
+	int ret;
+
+	/* Temporary buffer same size as the outbuf */
+	tempbuf = kmalloc(*outlen, GFP_KERNEL);
+	if (!tempbuf)
+		return -ENOMEM;
+
+	/* LZO-decompress lzo_len bytes of outbuf into the tempbuf */
+	ret = lz77_mikrotik_wlan_decompress(
+			(const unsigned char *)inbuf,
+			inlen,
+			(unsigned char *)tempbuf,
+			outlen);
+	if (ret < 0) {
+		pr_err(RB_HC_PR_PFX "LZ77: LZ77 decompress fail\n");
+		goto lz77_fail;
+	}
+	templen = ret;
+
+	pr_debug(RB_HC_PR_PFX "LZ77: decompressed from %zu to %d\n",
+			inlen, templen);
+
+	/* skip DRE magic */
+	tempbuf += 4;
+	templen -= 4;
+
+	/* Past magic. Look for tag node */
+	ret = routerboot_tag_find(tempbuf, templen, tag_id, &rle_ofs, &rle_len);
+	if (ret) {
+		pr_debug(RB_HC_PR_PFX "LZ77: no RLE data for id 0x%04x\n", tag_id);
+		goto lz77_fail;
+	}
+	pr_debug(RB_HC_PR_PFX "LZ77: found RLE data for id 0x%04x\n", tag_id);
+
+	if (rle_len > templen) {
+		pr_err(RB_HC_PR_PFX "LZ77: Invalid RLE data length\n");
+		ret = -EINVAL;
+		goto lz77_fail;
+	}
+
+	/* RLE-decode tempbuf back into the outbuf */
+	ret = routerboot_rle_decode(tempbuf+rle_ofs, rle_len, outbuf, outlen);
+	if (ret)
+		pr_debug(RB_HC_PR_PFX "LZ77: RLE decoding error (%d)\n", ret);
+
+lz77_fail:
+	kfree(tempbuf);
+	return ret;
+}
+
+
 static int hc_wlan_data_unpack(const u16 tag_id, const size_t tofs, size_t tlen,
 			       void *outbuf, size_t *outlen)
 {
@@ -585,6 +643,13 @@ static int hc_wlan_data_unpack(const u16 tag_id, const size_t tofs, size_t tlen,
 		tlen -= sizeof(magic);
 		ret = hc_wlan_data_unpack_lzor(tag_id, lbuf, tlen, outbuf, outlen);
 		break;
+	case RB_MAGIC_LZ77:
+		/* Skip magic */
+		lbuf += sizeof(magic);
+		tlen -= sizeof(magic);
+		ret = hc_wlan_data_unpack_lz77(tag_id, lbuf, tlen, outbuf, outlen);
+		break;
+
 	case RB_MAGIC_ERD:
 		/* Skip magic */
 		lbuf += sizeof(magic);
