@@ -108,6 +108,9 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 endef
 
+define Build/Quilt
+endef
+
 define Build/Compile/Default
 
 endef
