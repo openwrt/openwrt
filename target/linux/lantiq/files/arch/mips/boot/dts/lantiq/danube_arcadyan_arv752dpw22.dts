@@ -242,7 +242,7 @@
 		compatible = "pci1814,3592";
 		reg = <0x7000 0 0 0 0>;
 		ralink,mtd-eeprom = <&boardconfig 0x410>;
-		ralink,mtd-eeprom-swap;
+		ralink,eeprom-swap;
 		nvmem-cells = <&macaddr_boardconfig_16>;
 		nvmem-cell-names = "mac-address";
 	};
