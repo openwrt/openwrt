@@ -1,0 +1,78 @@
+From c60e96e1fa6c0a48c7396d0091a2a1d985741526 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 17 Oct 2023 19:23:56 +0200
+Subject: [PATCH 3/6] wifi: mt76: limit support of precal loading for mt7915 to
+ MTD only
+
+Limit support for precal loading for mt7915 only to MTD. Passing data
+from DT doesn't support offset and NVMEM require a different cell name
+and doesn't support offset hence only MTD way is actually supported.
+
+Rename mt76_get_of_eeprom_from_mtd to mt76_get_of_data_from_mtd as it is
+now used for a more generic purpose and export it.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+/eeprom.c        | 5 +++--
+/mt76.h          | 1 +
+/mt7915/eeprom.c | 2 +-
+ 3 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/eeprom.c b/eeprom.c
+index 1de3c734e136..817074a5d2fc 100644
+--- a/eeprom.c
++++ b/eeprom.c
+@@ -28,7 +28,7 @@ static int mt76_get_of_eeprom_data(struct mt76_dev *dev, void *eep, int len)
+ 	return 0;
+ }
+ 
+-static int mt76_get_of_epprom_from_mtd(struct mt76_dev *dev, void *eep, int offset, int len)
++int mt76_get_of_data_from_mtd(struct mt76_dev *dev, void *eep, int offset, int len)
+ {
+ #ifdef CONFIG_MTD
+ 	struct device_node *np = dev->dev->of_node;
+@@ -105,6 +105,7 @@ static int mt76_get_of_epprom_from_mtd(struct mt76_dev *dev, void *eep, int offs
+ 	return -ENOENT;
+ #endif
+ }
++EXPORT_SYMBOL_GPL(mt76_get_of_data_from_mtd);
+ 
+ static int mt76_get_of_eeprom_from_nvmem(struct mt76_dev *dev, void *eep, int len)
+ {
+@@ -149,7 +150,7 @@ int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int offset, int len)
+ 	if (!ret)
+ 		return 0;
+ 
+-	ret = mt76_get_of_epprom_from_mtd(dev, eep, offset, len);
++	ret = mt76_get_of_data_from_mtd(dev, eep, offset, len);
+ 	if (!ret)
+ 		return 0;
+ 
+diff --git a/mt76.h b/mt76.h
+index e8757865a3d0..f6c850557447 100644
+--- a/mt76.h
++++ b/mt76.h
+@@ -1095,6 +1095,7 @@ void mt76_seq_puts_array(struct seq_file *file, const char *str,
+ 
+ int mt76_eeprom_init(struct mt76_dev *dev, int len);
+ void mt76_eeprom_override(struct mt76_phy *phy);
++int mt76_get_of_data_from_mtd(struct mt76_dev *dev, void *eep, int offset, int len);
+ int mt76_get_of_eeprom(struct mt76_dev *dev, void *data, int offset, int len);
+ 
+ struct mt76_queue *
+diff --git a/mt7915/eeprom.c b/mt7915/eeprom.c
+index 76be7308460b..5228f710b3da 100644
+--- a/mt7915/eeprom.c
++++ b/mt7915/eeprom.c
+@@ -25,7 +25,7 @@ static int mt7915_eeprom_load_precal(struct mt7915_dev *dev)
+ 
+ 	offs = is_mt7915(&dev->mt76) ? MT_EE_PRECAL : MT_EE_PRECAL_V2;
+ 
+-	return mt76_get_of_eeprom(mdev, dev->cal, offs, val);
++	return mt76_get_of_data_from_mtd(mdev, dev->cal, offs, val);
+ }
+ 
+ static int mt7915_check_eeprom(struct mt7915_dev *dev)
+-- 
+2.40.1
+

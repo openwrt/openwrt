@@ -1,0 +1,40 @@
+From 150039e9ef733827a9d24618b54cba418339f2ef Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 17 Oct 2023 17:02:11 +0200
+Subject: [PATCH 2/6] wifi: mt76: fix typo in mt76_get_of_eeprom_from_nvmem
+ function
+
+Fix typo in mt76_get_of_eeprom_from_nvmem where eeprom was misspelled as
+epprom.
+
+Fixes: 5bef3a406c6e ("wifi: mt76: add support for providing eeprom in nvmem cells")
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+/eeprom.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/eeprom.c b/eeprom.c
+index 2558788f7ffb..1de3c734e136 100644
+--- a/eeprom.c
++++ b/eeprom.c
+@@ -106,7 +106,7 @@ static int mt76_get_of_epprom_from_mtd(struct mt76_dev *dev, void *eep, int offs
+ #endif
+ }
+ 
+-static int mt76_get_of_epprom_from_nvmem(struct mt76_dev *dev, void *eep, int len)
++static int mt76_get_of_eeprom_from_nvmem(struct mt76_dev *dev, void *eep, int len)
+ {
+ 	struct device_node *np = dev->dev->of_node;
+ 	struct nvmem_cell *cell;
+@@ -153,7 +153,7 @@ int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int offset, int len)
+ 	if (!ret)
+ 		return 0;
+ 
+-	return mt76_get_of_epprom_from_nvmem(dev, eep, len);
++	return mt76_get_of_eeprom_from_nvmem(dev, eep, len);
+ }
+ EXPORT_SYMBOL_GPL(mt76_get_of_eeprom);
+ 
+-- 
+2.40.1
+

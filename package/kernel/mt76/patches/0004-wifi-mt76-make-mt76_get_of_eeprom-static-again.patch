@@ -1,0 +1,68 @@
+From f00fe587de86c5935f9a728a36c0f16189ad4816 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 17 Oct 2023 19:48:26 +0200
+Subject: [PATCH 4/6] wifi: mt76: make mt76_get_of_eeprom static again
+
+Since mt76_get_of_eeprom is not used by mt7915 anymore, unexport it and
+make it static again.
+
+Also drop offset arg as it's only supported for MTD and was always set
+to 0, hardcode the MTD functio instead.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+/eeprom.c | 7 +++----
+/mt76.h   | 1 -
+ 2 files changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/eeprom.c b/eeprom.c
+index 817074a5d2fc..748f4b643a5e 100644
+--- a/eeprom.c
++++ b/eeprom.c
+@@ -138,7 +138,7 @@ static int mt76_get_of_eeprom_from_nvmem(struct mt76_dev *dev, void *eep, int le
+ 	return ret;
+ }
+ 
+-int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int offset, int len)
++static int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int len)
+ {
+ 	struct device_node *np = dev->dev->of_node;
+ 	int ret;
+@@ -150,13 +150,12 @@ int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int offset, int len)
+ 	if (!ret)
+ 		return 0;
+ 
+-	ret = mt76_get_of_data_from_mtd(dev, eep, offset, len);
++	ret = mt76_get_of_data_from_mtd(dev, eep, 0, len);
+ 	if (!ret)
+ 		return 0;
+ 
+ 	return mt76_get_of_eeprom_from_nvmem(dev, eep, len);
+ }
+-EXPORT_SYMBOL_GPL(mt76_get_of_eeprom);
+ 
+ void
+ mt76_eeprom_override(struct mt76_phy *phy)
+@@ -410,6 +409,6 @@ mt76_eeprom_init(struct mt76_dev *dev, int len)
+ 	if (!dev->eeprom.data)
+ 		return -ENOMEM;
+ 
+-	return !mt76_get_of_eeprom(dev, dev->eeprom.data, 0, len);
++	return !mt76_get_of_eeprom(dev, dev->eeprom.data, len);
+ }
+ EXPORT_SYMBOL_GPL(mt76_eeprom_init);
+diff --git a/mt76.h b/mt76.h
+index f6c850557447..41e4f398083e 100644
+--- a/mt76.h
++++ b/mt76.h
+@@ -1096,7 +1096,6 @@ void mt76_seq_puts_array(struct seq_file *file, const char *str,
+ int mt76_eeprom_init(struct mt76_dev *dev, int len);
+ void mt76_eeprom_override(struct mt76_phy *phy);
+ int mt76_get_of_data_from_mtd(struct mt76_dev *dev, void *eep, int offset, int len);
+-int mt76_get_of_eeprom(struct mt76_dev *dev, void *data, int offset, int len);
+ 
+ struct mt76_queue *
+ mt76_init_queue(struct mt76_dev *dev, int qid, int idx, int n_desc,
+-- 
+2.40.1
+

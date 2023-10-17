@@ -1,0 +1,45 @@
+From 38e5fc4f8ee5f5456b1ac85eef270793cfeb3a19 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 17 Oct 2023 19:57:26 +0200
+Subject: [PATCH 6/6] wifi: mt76: permit to load precal from NVMEM cell for
+ mt7915
+
+Permit to load precal from NVMEM cell for mt7915. The NVMEM cell must be
+named "precal" to be correctly loaded.
+
+NVMEM cell must already account the correct offset and be placed after
+the EEPROM as the function expect the data right from the start.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+/mt7915/eeprom.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/mt7915/eeprom.c b/mt7915/eeprom.c
+index 5228f710b3da..3bb2643d1b26 100644
+--- a/mt7915/eeprom.c
++++ b/mt7915/eeprom.c
+@@ -11,6 +11,7 @@ static int mt7915_eeprom_load_precal(struct mt7915_dev *dev)
+ 	u8 *eeprom = mdev->eeprom.data;
+ 	u32 val = eeprom[MT_EE_DO_PRE_CAL];
+ 	u32 offs;
++	int ret;
+ 
+ 	if (!dev->flash_mode)
+ 		return 0;
+@@ -25,7 +26,11 @@ static int mt7915_eeprom_load_precal(struct mt7915_dev *dev)
+ 
+ 	offs = is_mt7915(&dev->mt76) ? MT_EE_PRECAL : MT_EE_PRECAL_V2;
+ 
+-	return mt76_get_of_data_from_mtd(mdev, dev->cal, offs, val);
++	ret = mt76_get_of_data_from_mtd(mdev, dev->cal, offs, val);
++	if (!ret)
++		return ret;
++
++	return mt76_get_of_data_from_nvmem(mdev, dev->cal, "precal", val);
+ }
+ 
+ static int mt7915_check_eeprom(struct mt7915_dev *dev)
+-- 
+2.40.1
+

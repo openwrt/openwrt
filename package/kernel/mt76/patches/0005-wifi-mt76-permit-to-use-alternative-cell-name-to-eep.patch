@@ -1,0 +1,76 @@
+From 1067dfd7fddcda621c97e10cca493c8a634509b3 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 17 Oct 2023 19:53:15 +0200
+Subject: [PATCH 5/6] wifi: mt76: permit to use alternative cell name to eeprom
+ NVMEM load
+
+Generilize mt76_get_of_eeprom_from_nvmem to use alternative cell name by
+passing the cell name as an arg and expose it.
+
+Rename it to mt76_get_of_data_from_nvmem to better reflect the now more
+generic usage.
+
+This is to permit driver to load additional cell, like precal cell.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+/eeprom.c | 8 +++++---
+/mt76.h   | 2 ++
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/eeprom.c b/eeprom.c
+index 748f4b643a5e..ac6c0a0e876f 100644
+--- a/eeprom.c
++++ b/eeprom.c
+@@ -107,7 +107,8 @@ int mt76_get_of_data_from_mtd(struct mt76_dev *dev, void *eep, int offset, int l
+ }
+ EXPORT_SYMBOL_GPL(mt76_get_of_data_from_mtd);
+ 
+-static int mt76_get_of_eeprom_from_nvmem(struct mt76_dev *dev, void *eep, int len)
++int mt76_get_of_data_from_nvmem(struct mt76_dev *dev, void *eep,
++				const char *cell_name, int len)
+ {
+ 	struct device_node *np = dev->dev->of_node;
+ 	struct nvmem_cell *cell;
+@@ -115,7 +116,7 @@ static int mt76_get_of_eeprom_from_nvmem(struct mt76_dev *dev, void *eep, int le
+ 	size_t retlen;
+ 	int ret = 0;
+ 
+-	cell = of_nvmem_cell_get(np, "eeprom");
++	cell = of_nvmem_cell_get(np, cell_name);
+ 	if (IS_ERR(cell))
+ 		return PTR_ERR(cell);
+ 
+@@ -137,6 +138,7 @@ static int mt76_get_of_eeprom_from_nvmem(struct mt76_dev *dev, void *eep, int le
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(mt76_get_of_data_from_nvmem);
+ 
+ static int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int len)
+ {
+@@ -154,7 +156,7 @@ static int mt76_get_of_eeprom(struct mt76_dev *dev, void *eep, int len)
+ 	if (!ret)
+ 		return 0;
+ 
+-	return mt76_get_of_eeprom_from_nvmem(dev, eep, len);
++	return mt76_get_of_data_from_nvmem(dev, eep, "eeprom", len);
+ }
+ 
+ void
+diff --git a/mt76.h b/mt76.h
+index 41e4f398083e..c9934258c49d 100644
+--- a/mt76.h
++++ b/mt76.h
+@@ -1096,6 +1096,8 @@ void mt76_seq_puts_array(struct seq_file *file, const char *str,
+ int mt76_eeprom_init(struct mt76_dev *dev, int len);
+ void mt76_eeprom_override(struct mt76_phy *phy);
+ int mt76_get_of_data_from_mtd(struct mt76_dev *dev, void *eep, int offset, int len);
++int mt76_get_of_data_from_nvmem(struct mt76_dev *dev, void *eep,
++				const char *cell_name, int len);
+ 
+ struct mt76_queue *
+ mt76_init_queue(struct mt76_dev *dev, int qid, int idx, int n_desc,
+-- 
+2.40.1
+
