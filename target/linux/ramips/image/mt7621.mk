@@ -1679,6 +1679,19 @@ define Device/mikrotik_routerboard-m33g
 endef
 TARGET_DEVICES += mikrotik_routerboard-m33g
 
+define Device/mofinetwork_mofi5500-5gxelte
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 27656k
+  DEVICE_VENDOR := MoFi Network
+  DEVICE_MODEL := MOFI5500-5GXeLTE
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 kmod-scsi-core kmod-leds-gpio \
+	kmod-wwan kmod-gpio-button-hotplug kmod-hsdma-mtk kmod-mmc kmod-mhi-bus \
+	kmod-mhipci-generic kmod-sdhci kmod-sdhci-mt7620 kmod-usb-core kmod-usb2 \
+	kmod-mac80211 kmod-mt7615e
+  SUPPORTED_DEVICES += mofi5500
+endef
+TARGET_DEVICES += mofinetwork_mofi5500-5gxelte
+
 define Device/mqmaker_witi
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
