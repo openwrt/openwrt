@@ -103,24 +103,9 @@
 		};
 
 		factory: partition@200000 {
-			compatible = "nvmem-cells";
 			reg = <0x200000 0x1c0000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
 			label = "Factory";
 			read-only;
-
-			eeprom_factory_0: eeprom@0 {
-				reg = <0x0 0xe00>;
-			};
-
-			macaddr_factory_1fdfa: macaddr@1fdfa {
-				reg = <0x1fdfa 0x6>;
-			};
-
-			macaddr_factory_1fdf4: macaddr@1fdf4 {
-				reg = <0x1fdf4 0x6>;
-			};
 		};
 
 		partition@3c0000 {
@@ -200,8 +185,7 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_0>;
-		nvmem-cell-names = "eeprom";
+		mediatek,mtd-eeprom = <&factory 0x0>;
 		mediatek,disable-radar-background;
 	};
 };
@@ -231,5 +215,19 @@
 	gpio {
 		groups = "i2c", "uart3", "jtag", "wdt";
 		function = "gpio";
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_factory_1fdfa: macaddr@1fdfa {
+		reg = <0x1fdfa 0x6>;
+	};
+
+	macaddr_factory_1fdf4: macaddr@1fdf4 {
+		reg = <0x1fdf4 0x6>;
 	};
 };
