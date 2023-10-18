@@ -108,16 +108,9 @@
 			};
 
 			radio: partition@ff0000 {
-				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0xff0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
-
-				eeprom_radio_0: eeprom@0 {
-					reg = <0x0 0xe00>;
-				};
 			};
 		};
 	};
@@ -138,8 +131,7 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_radio_0>;
-		nvmem-cell-names = "eeprom";
+		mediatek,mtd-eeprom = <&radio 0x0>;
 		mediatek,disable-radar-background;
 	};
 };

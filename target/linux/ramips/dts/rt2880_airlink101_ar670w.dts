@@ -31,9 +31,20 @@
 			};
 
 			factory: partition@30000 {
-				reg = <0x30000 0x10000>;
+				compatible = "nvmem-cells";
 				label = "factory";
+				reg = <0x30000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_factory_2000: eeprom@2000 {
+					reg = <0x2000 0x200>;
+				};
+
+				macaddr_factory_2004: macaddr@2004 {
+					reg = <0x2004 0x6>;
+				};
 			};
 
 			partition@40000 {
@@ -104,16 +115,6 @@
 };
 
 &wmac {
-	status = "okay";
-	ralink,mtd-eeprom = <&factory 0x2000>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_2004: macaddr@2004 {
-		reg = <0x2004 0x6>;
-	};
+	nvmem-cells = <&eeprom_factory_2000>;
+	nvmem-cell-names = "eeprom";
 };

@@ -43,15 +43,33 @@
 			};
 
 			factory: partition@1d800 {
+				compatible = "nvmem-cells";
 				label = "factory_info";
 				reg = <0x1d800 0x800>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				macaddr_factory_d: macaddr@d {
+					reg = <0xd 0x6>;
+				};
 			};
 
 			art: partition@1e000 {
+				compatible = "nvmem-cells";
 				label = "art";
 				reg = <0x1e000 0x2000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_art_1000: eeprom@1000 {
+					reg = <0x1000 0x200>;
+				};
 			};
 
 			partition@20000 {
@@ -86,8 +104,8 @@
 &wmac {
 	status = "okay";
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
-	ralink,mtd-eeprom = <&art 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &pcie {
@@ -97,17 +115,8 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&art 0x1000>;
+		nvmem-cells = <&eeprom_art_1000>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_d: macaddr@d {
-		reg = <0xd 0x6>;
 	};
 };

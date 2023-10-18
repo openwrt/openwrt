@@ -47,10 +47,6 @@
 				eeprom_factory_0: eeprom@0 {
 					reg = <0x0 0x400>;
 				};
-
-				eeprom_factory_20000: eeprom@20000 {
-					reg = <0x20000 0xe00>;
-				};
 			};
 
 			eeprom: partition@b0000 {
@@ -108,8 +104,10 @@
 &wlan_5g {
 	compatible = "mediatek,mt76";
 
-	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_eeprom_6>;
-	nvmem-cell-names = "eeprom", "mac-address";
+	mediatek,mtd-eeprom = <&factory 0x20000>;
+
+	nvmem-cells = <&macaddr_eeprom_6>;
+	nvmem-cell-names = "mac-address";
 
 	/* This is a workaround.
 	 *

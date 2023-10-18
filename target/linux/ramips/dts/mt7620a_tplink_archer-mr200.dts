@@ -139,9 +139,16 @@
 			};
 
 			rom: partition@7d0000 {
+				compatible = "nvmem-cells";
 				label = "rom";
 				reg = <0x7d0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				macaddr_rom_f100: macaddr@f100 {
+					reg = <0xf100 0x6>;
+				};
 			};
 
 			partition@7e0000 {
@@ -151,9 +158,20 @@
 			};
 
 			radio: partition@7f0000 {
+				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0x7f0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_radio_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
+
+				eeprom_radio_8000: eeprom@8000 {
+					reg = <0x8000 0x200>;
+				};
 			};
 		};
 	};
@@ -180,7 +198,8 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&radio 0x0>;
+	nvmem-cells = <&eeprom_radio_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &pcie {
@@ -190,16 +209,7 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 0x8000>;
-	};
-};
-
-&rom {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_rom_f100: macaddr@f100 {
-		reg = <0xf100 0x6>;
+		nvmem-cells = <&eeprom_radio_8000>;
+		nvmem-cell-names = "eeprom";
 	};
 };

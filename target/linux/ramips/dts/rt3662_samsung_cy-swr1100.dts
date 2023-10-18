@@ -37,9 +37,20 @@
 			};
 
 			factory: partition@34000 {
+				compatible = "nvmem-cells";
 				label = "factory";
 				reg = <0x34000 0x4000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
+
+				eeprom_factory_2000: eeprom@2000 {
+					reg = <0x2000 0x200>;
+				};
 			};
 
 			partition@38000 {
@@ -135,14 +146,15 @@
 	wifi@0,0 {
 		compatible = "pci1814,3091";
 		reg = <0x10000 0 0 0 0>;
-		ralink,mtd-eeprom = <&factory 0x2000>;
+		nvmem-cells = <&eeprom_factory_2000>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
 &wmac {
-	status = "okay";
 	ralink,2ghz = <0>;
-	ralink,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &ehci {
