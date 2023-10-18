@@ -534,7 +534,6 @@ $(eval $(call KernelPackage,usb-wdm))
 define KernelPackage/usb-audio
   TITLE:=Support for USB audio devices
   KCONFIG:= \
-	CONFIG_USB_AUDIO \
 	CONFIG_SND_USB=y \
 	CONFIG_SND_USB_AUDIO
   $(call AddDepends/usb)
