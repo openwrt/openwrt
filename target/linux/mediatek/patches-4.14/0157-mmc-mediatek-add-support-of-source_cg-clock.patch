@@ -82,4 +82,4 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 +
  	host->irq = platform_get_irq(pdev, 0);
  	if (host->irq < 0) {
- 		ret = -EINVAL;
+ 		ret = host->irq;

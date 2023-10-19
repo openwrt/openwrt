@@ -113,7 +113,7 @@ Acked-by: Florian Westphal <fw@strlen.de>
  #ifdef CONFIG_NF_CONNTRACK_ZONES
  static void nft_ct_tmpl_put_pcpu(void)
  {
-@@ -489,7 +456,7 @@ static int nft_ct_get_init(const struct
+@@ -488,7 +455,7 @@ static int nft_ct_get_init(const struct
  	if (err < 0)
  		return err;
  
@@ -122,7 +122,7 @@ Acked-by: Florian Westphal <fw@strlen.de>
  	if (err < 0)
  		return err;
  
-@@ -583,7 +550,7 @@ static int nft_ct_set_init(const struct
+@@ -581,7 +548,7 @@ static int nft_ct_set_init(const struct
  	if (err < 0)
  		goto err1;
  
@@ -131,7 +131,7 @@ Acked-by: Florian Westphal <fw@strlen.de>
  	if (err < 0)
  		goto err1;
  
-@@ -606,7 +573,7 @@ static void nft_ct_set_destroy(const str
+@@ -604,7 +571,7 @@ static void nft_ct_set_destroy(const str
  	struct nft_ct *priv = nft_expr_priv(expr);
  
  	__nft_ct_set_destroy(ctx, priv);

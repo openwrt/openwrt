@@ -579,7 +579,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  static long pci_endpoint_test_ioctl(struct file *file, unsigned int cmd,
  				    unsigned long arg)
  {
-@@ -436,7 +610,8 @@ static long pci_endpoint_test_ioctl(stru
+@@ -440,7 +614,8 @@ static long pci_endpoint_test_ioctl(stru
  		ret = pci_endpoint_test_legacy_irq(test);
  		break;
  	case PCITEST_MSI:
@@ -589,7 +589,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  		break;
  	case PCITEST_WRITE:
  		ret = pci_endpoint_test_write(test, arg);
-@@ -447,6 +622,12 @@ static long pci_endpoint_test_ioctl(stru
+@@ -451,6 +626,12 @@ static long pci_endpoint_test_ioctl(stru
  	case PCITEST_COPY:
  		ret = pci_endpoint_test_copy(test, arg);
  		break;
@@ -602,7 +602,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  ret:
-@@ -462,9 +643,7 @@ static const struct file_operations pci_
+@@ -466,9 +647,7 @@ static const struct file_operations pci_
  static int pci_endpoint_test_probe(struct pci_dev *pdev,
  				   const struct pci_device_id *ent)
  {
@@ -612,7 +612,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	int id;
  	char name[24];
  	enum pci_barno bar;
-@@ -486,12 +665,15 @@ static int pci_endpoint_test_probe(struc
+@@ -490,12 +669,15 @@ static int pci_endpoint_test_probe(struc
  	test->alignment = 0;
  	test->pdev = pdev;
  
@@ -629,7 +629,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	init_completion(&test->irq_raised);
-@@ -511,36 +693,21 @@ static int pci_endpoint_test_probe(struc
+@@ -515,36 +697,21 @@ static int pci_endpoint_test_probe(struc
  
  	pci_set_master(pdev);
  
@@ -677,7 +677,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	}
  
  	test->base = test->bar[test_reg_bar];
-@@ -556,24 +723,31 @@ static int pci_endpoint_test_probe(struc
+@@ -560,24 +727,31 @@ static int pci_endpoint_test_probe(struc
  	id = ida_simple_get(&pci_endpoint_test_ida, 0, 0, GFP_KERNEL);
  	if (id < 0) {
  		err = id;
@@ -713,7 +713,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  err_ida_remove:
  	ida_simple_remove(&pci_endpoint_test_ida, id);
  
-@@ -583,11 +757,13 @@ err_iounmap:
+@@ -587,11 +761,13 @@ err_iounmap:
  			pci_iounmap(pdev, test->bar[bar]);
  	}
  
@@ -729,7 +729,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	pci_release_regions(pdev);
  
  err_disable_pdev:
-@@ -610,14 +786,15 @@ static void pci_endpoint_test_remove(str
+@@ -614,14 +790,15 @@ static void pci_endpoint_test_remove(str
  		return;
  
  	misc_deregister(&test->miscdev);
@@ -748,7 +748,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	pci_release_regions(pdev);
  	pci_disable_device(pdev);
  }
-@@ -625,6 +802,7 @@ static void pci_endpoint_test_remove(str
+@@ -629,6 +806,7 @@ static void pci_endpoint_test_remove(str
  static const struct pci_device_id pci_endpoint_test_tbl[] = {
  	{ PCI_DEVICE(PCI_VENDOR_ID_TI, PCI_DEVICE_ID_TI_DRA74x) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_TI, PCI_DEVICE_ID_TI_DRA72x) },
@@ -5808,7 +5808,7 @@ Signed-off-by: Yangbo Lu <yangbo.lu@nxp.com>
  	struct pci_epc		*epc;
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1947,6 +1947,7 @@ void pcibios_release_device(struct pci_d
+@@ -1949,6 +1949,7 @@ void pcibios_release_device(struct pci_d
  void pcibios_penalize_isa_irq(int irq, int active);
  int pcibios_alloc_irq(struct pci_dev *dev);
  void pcibios_free_irq(struct pci_dev *dev);

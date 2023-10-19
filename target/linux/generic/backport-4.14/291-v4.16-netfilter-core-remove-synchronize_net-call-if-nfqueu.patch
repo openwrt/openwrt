@@ -65,7 +65,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  int __init netfilter_log_init(void);
 --- a/net/netfilter/nf_queue.c
 +++ b/net/netfilter/nf_queue.c
-@@ -109,18 +109,15 @@ bool nf_queue_entry_get_refs(struct nf_q
+@@ -107,18 +107,15 @@ bool nf_queue_entry_get_refs(struct nf_q
  }
  EXPORT_SYMBOL_GPL(nf_queue_entry_get_refs);
  
@@ -88,7 +88,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 --- a/net/netfilter/nfnetlink_queue.c
 +++ b/net/netfilter/nfnetlink_queue.c
-@@ -948,23 +948,18 @@ static struct notifier_block nfqnl_dev_n
+@@ -953,23 +953,18 @@ static struct notifier_block nfqnl_dev_n
  	.notifier_call	= nfqnl_rcv_dev_event,
  };
  

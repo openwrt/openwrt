@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -417,7 +417,11 @@ static int bcm5481_config_aneg(struct ph
+@@ -429,7 +429,11 @@ static int bcm5481_config_aneg(struct ph
  	ret = genphy_config_aneg(phydev);
  
  	/* Then we can set up the delay. */

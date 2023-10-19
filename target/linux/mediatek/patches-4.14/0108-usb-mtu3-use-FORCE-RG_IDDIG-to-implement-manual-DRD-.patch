@@ -62,7 +62,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  
 --- a/drivers/usb/mtu3/mtu3_dr.c
 +++ b/drivers/usb/mtu3/mtu3_dr.c
-@@ -261,21 +261,22 @@ static void extcon_register_dwork(struct
+@@ -259,21 +259,22 @@ static void extcon_register_dwork(struct
   * depending on user input.
   * This is useful in special cases, such as uses TYPE-A receptacle but also
   * wants to support dual-role mode.
@@ -93,7 +93,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  static int ssusb_mode_show(struct seq_file *sf, void *unused)
  {
  	struct ssusb_mtk *ssusb = sf->private;
-@@ -388,17 +389,45 @@ static void ssusb_debugfs_exit(struct ss
+@@ -386,17 +387,45 @@ static void ssusb_debugfs_exit(struct ss
  	debugfs_remove_recursive(ssusb->dbgfs_root);
  }
  
@@ -144,7 +144,7 @@ Signed-off-by: Felipe Balbi <felipe.balbi@linux.intel.com>
  
  	return 0;
  }
-@@ -407,8 +436,8 @@ void ssusb_otg_switch_exit(struct ssusb_
+@@ -405,8 +434,8 @@ void ssusb_otg_switch_exit(struct ssusb_
  {
  	struct otg_switch_mtk *otg_sx = &ssusb->otg_switch;
  

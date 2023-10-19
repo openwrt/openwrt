@@ -24,7 +24,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
 
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -636,21 +636,6 @@ out_error:
+@@ -638,21 +638,6 @@ out_error:
  	return ret;
  }
  
@@ -46,7 +46,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
  /*
   * Set a few defaults based on the parent devices, if not provided by the
   * driver
-@@ -701,7 +686,7 @@ int mtd_device_parse_register(struct mtd
+@@ -703,7 +688,7 @@ int mtd_device_parse_register(struct mtd
  			      const struct mtd_partition *parts,
  			      int nr_parts)
  {
@@ -55,7 +55,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
  	int ret;
  
  	mtd_set_dev_defaults(mtd);
-@@ -712,24 +697,20 @@ int mtd_device_parse_register(struct mtd
+@@ -714,24 +699,20 @@ int mtd_device_parse_register(struct mtd
  			return ret;
  	}
  

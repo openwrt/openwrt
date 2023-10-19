@@ -52,7 +52,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  			return -ENODEV;
  
  		phy_start(lmac->phydev);
-@@ -1296,6 +1298,8 @@ static int bgx_init_of_phy(struct bgx *b
+@@ -1298,6 +1300,8 @@ static int bgx_init_of_phy(struct bgx *b
  		bgx->lmac[lmac].lmacid = lmac;
  
  		phy_np = of_parse_phandle(node, "phy-handle", 0);
@@ -61,7 +61,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  		/* If there is no phy or defective firmware presents
  		 * this cortina phy, for which there is no driver
  		 * support, ignore it.
-@@ -1441,7 +1445,6 @@ static int bgx_probe(struct pci_dev *pde
+@@ -1443,7 +1447,6 @@ static int bgx_probe(struct pci_dev *pde
  		bgx->max_lmac = 1;
  		bgx->bgx_id = MAX_BGX_PER_CN81XX - 1;
  		bgx_vnic[bgx->bgx_id] = bgx;
@@ -69,7 +69,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  	}
  
  	/* On 81xx all are DLMs and on 83xx there are 3 BGX QLMs and one
-@@ -1458,6 +1461,8 @@ static int bgx_probe(struct pci_dev *pde
+@@ -1460,6 +1463,8 @@ static int bgx_probe(struct pci_dev *pde
  	if (err)
  		goto err_enable;
  

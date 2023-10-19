@@ -154,7 +154,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  	MT_LOW_VECTORS,
 --- a/arch/arm/include/asm/pgtable.h
 +++ b/arch/arm/include/asm/pgtable.h
-@@ -119,6 +119,13 @@ extern pgprot_t		pgprot_s2_device;
+@@ -128,6 +128,13 @@ extern pgprot_t		pgprot_s2_device;
  #define pgprot_noncached(prot) \
  	__pgprot_modify(prot, L_PTE_MT_MASK, L_PTE_MT_UNCACHED)
  

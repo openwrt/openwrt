@@ -31,8 +31,8 @@ Signed-off-by: Gokul Sriram Palanisamy <gpalan@codeaurora.org>
  struct qcom_pcie_resources_2_1_0 {
  	struct clk *iface_clk;
  	struct clk *core_clk;
-@@ -1470,6 +1478,35 @@ static int qcom_pcie_probe(struct platfo
- 	return 0;
+@@ -1475,6 +1483,35 @@ err_phy_exit:
+ 	return ret;
  }
  
 +static void qcom_pcie_fixup_final(struct pci_dev *dev)

@@ -18,7 +18,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -779,7 +779,16 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -790,7 +790,16 @@ static int mtk_tx_map(struct sk_buff *sk
  	WRITE_ONCE(itxd->txd3, (TX_DMA_SWC | TX_DMA_PLEN0(skb_headlen(skb)) |
  				(!nr_frags * TX_DMA_LS0)));
  
@@ -36,7 +36,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	skb_tx_timestamp(skb);
  
  	ring->next_free = mtk_qdma_phys_to_virt(ring, txd->txd2);
-@@ -1076,20 +1085,17 @@ static int mtk_poll_tx(struct mtk_eth *e
+@@ -1090,20 +1099,17 @@ static int mtk_poll_tx(struct mtk_eth *e
  	struct mtk_tx_dma *desc;
  	struct sk_buff *skb;
  	struct mtk_tx_buf *tx_buf;
@@ -61,7 +61,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  		u32 next_cpu = desc->txd2;
  		int mac = 0;
  
-@@ -1106,9 +1112,8 @@ static int mtk_poll_tx(struct mtk_eth *e
+@@ -1120,9 +1126,8 @@ static int mtk_poll_tx(struct mtk_eth *e
  			break;
  
  		if (skb != (struct sk_buff *)MTK_DMA_DUMMY_DESC) {
@@ -73,7 +73,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  		}
  		mtk_tx_unmap(eth, tx_buf);
  
-@@ -1120,11 +1125,13 @@ static int mtk_poll_tx(struct mtk_eth *e
+@@ -1134,11 +1139,13 @@ static int mtk_poll_tx(struct mtk_eth *e
  
  	mtk_w32(eth, cpu, MTK_QTX_CRX_PTR);
  

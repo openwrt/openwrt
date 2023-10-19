@@ -9,7 +9,7 @@
  
  #define MAX_RETRIES 3
  
-@@ -51,7 +51,9 @@
+@@ -55,7 +55,9 @@ enum cfi_quirks {
  
  static int cfi_amdstd_read (struct mtd_info *, loff_t, size_t, size_t *, u_char *);
  static int cfi_amdstd_write_words(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
@@ -19,7 +19,7 @@
  static int cfi_amdstd_erase_chip(struct mtd_info *, struct erase_info *);
  static int cfi_amdstd_erase_varsize(struct mtd_info *, struct erase_info *);
  static void cfi_amdstd_sync (struct mtd_info *);
-@@ -202,6 +204,7 @@ static void fixup_amd_bootblock(struct m
+@@ -206,6 +208,7 @@ static void fixup_amd_bootblock(struct m
  }
  #endif
  
@@ -27,7 +27,7 @@
  static void fixup_use_write_buffers(struct mtd_info *mtd)
  {
  	struct map_info *map = mtd->priv;
-@@ -211,6 +214,7 @@ static void fixup_use_write_buffers(stru
+@@ -215,6 +218,7 @@ static void fixup_use_write_buffers(stru
  		mtd->_write = cfi_amdstd_write_buffers;
  	}
  }
@@ -35,7 +35,7 @@
  
  /* Atmel chips don't use the same PRI format as AMD chips */
  static void fixup_convert_atmel_pri(struct mtd_info *mtd)
-@@ -1799,6 +1803,7 @@ static int cfi_amdstd_write_words(struct
+@@ -1810,6 +1814,7 @@ static int cfi_amdstd_write_words(struct
  /*
   * FIXME: interleaved mode not tested, and probably not supported!
   */
@@ -43,7 +43,7 @@
  static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
  				    unsigned long adr, const u_char *buf,
  				    int len)
-@@ -1931,7 +1936,6 @@ static int __xipram do_write_buffer(stru
+@@ -1942,7 +1947,6 @@ static int __xipram do_write_buffer(stru
  	return ret;
  }
  
@@ -51,7 +51,7 @@
  static int cfi_amdstd_write_buffers(struct mtd_info *mtd, loff_t to, size_t len,
  				    size_t *retlen, const u_char *buf)
  {
-@@ -2006,6 +2010,7 @@ static int cfi_amdstd_write_buffers(stru
+@@ -2017,6 +2021,7 @@ static int cfi_amdstd_write_buffers(stru
  
  	return 0;
  }

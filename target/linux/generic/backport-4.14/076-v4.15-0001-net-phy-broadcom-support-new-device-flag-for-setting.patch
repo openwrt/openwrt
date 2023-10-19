@@ -29,7 +29,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -43,6 +43,12 @@ static int bcm54210e_config_init(struct
+@@ -44,6 +44,12 @@ static int bcm54210e_config_init(struct
  	val &= ~BCM54810_SHD_CLK_CTL_GTXCLK_EN;
  	bcm_phy_write_shadow(phydev, BCM54810_SHD_CLK_CTL, val);
  

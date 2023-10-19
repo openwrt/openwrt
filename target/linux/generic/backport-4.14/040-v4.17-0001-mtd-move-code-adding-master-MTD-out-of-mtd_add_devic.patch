@@ -24,7 +24,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
 
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -641,20 +641,12 @@ static int mtd_add_device_partitions(str
+@@ -643,20 +643,12 @@ static int mtd_add_device_partitions(str
  {
  	const struct mtd_partition *real_parts = parts->parts;
  	int nbparts = parts->nr_parts;
@@ -49,7 +49,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
  
  	return 0;
  }
-@@ -714,6 +706,12 @@ int mtd_device_parse_register(struct mtd
+@@ -716,6 +708,12 @@ int mtd_device_parse_register(struct mtd
  
  	mtd_set_dev_defaults(mtd);
  
@@ -62,7 +62,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
  	memset(&parsed, 0, sizeof(parsed));
  
  	ret = parse_mtd_partitions(mtd, types, &parsed, parser_data);
-@@ -753,6 +751,9 @@ int mtd_device_parse_register(struct mtd
+@@ -755,6 +753,9 @@ int mtd_device_parse_register(struct mtd
  out:
  	/* Cleanup any parsed partitions */
  	mtd_part_parser_cleanup(&parsed);

@@ -149,7 +149,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	int ret;
 --- a/drivers/usb/core/usb.c
 +++ b/drivers/usb/core/usb.c
-@@ -593,6 +593,7 @@ struct usb_device *usb_alloc_dev(struct
+@@ -669,6 +669,7 @@ struct usb_device *usb_alloc_dev(struct
  	dev->dev.dma_mask = bus->sysdev->dma_mask;
  	dev->dev.dma_pfn_offset = bus->sysdev->dma_pfn_offset;
  	set_dev_node(&dev->dev, dev_to_node(bus->sysdev));
@@ -314,7 +314,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  /**
   * dwc3_core_init - Low-level initialization of DWC3 Core
   * @dwc: Pointer to our controller context structure
-@@ -827,6 +961,8 @@ static int dwc3_core_init(struct dwc3 *d
+@@ -832,6 +966,8 @@ static int dwc3_core_init(struct dwc3 *d
  	/* Adjust Frame Length */
  	dwc3_frame_length_adjustment(dwc);
  
@@ -323,7 +323,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	usb_phy_set_suspend(dwc->usb2_phy, 0);
  	usb_phy_set_suspend(dwc->usb3_phy, 0);
  	ret = phy_power_on(dwc->usb2_generic_phy);
-@@ -873,6 +1009,22 @@ static int dwc3_core_init(struct dwc3 *d
+@@ -878,6 +1014,22 @@ static int dwc3_core_init(struct dwc3 *d
  		dwc3_writel(dwc->regs, DWC3_GUCTL1, reg);
  	}
  
@@ -346,7 +346,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	return 0;
  
  err4:
-@@ -1079,6 +1231,8 @@ static void dwc3_get_properties(struct d
+@@ -1084,6 +1236,8 @@ static void dwc3_get_properties(struct d
  				&hird_threshold);
  	dwc->usb3_lpm_capable = device_property_read_bool(dev,
  				"snps,usb3_lpm_capable");
@@ -355,7 +355,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  
  	dwc->disable_scramble_quirk = device_property_read_bool(dev,
  				"snps,disable_scramble_quirk");
-@@ -1113,8 +1267,16 @@ static void dwc3_get_properties(struct d
+@@ -1118,8 +1272,16 @@ static void dwc3_get_properties(struct d
  	dwc->parkmode_disable_ss_quirk = device_property_read_bool(dev,
  				"snps,parkmode-disable-ss-quirk");
  
@@ -372,7 +372,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	device_property_read_u8(dev, "snps,tx_de_emphasis",
  				&tx_de_emphasis);
  	device_property_read_string(dev, "snps,hsphy_interface",
-@@ -1125,6 +1287,9 @@ static void dwc3_get_properties(struct d
+@@ -1130,6 +1292,9 @@ static void dwc3_get_properties(struct d
  	dwc->dis_metastability_quirk = device_property_read_bool(dev,
  				"snps,dis_metastability_quirk");
  
@@ -382,7 +382,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	dwc->lpm_nyet_threshold = lpm_nyet_threshold;
  	dwc->tx_de_emphasis = tx_de_emphasis;
  
-@@ -1387,12 +1552,14 @@ static int dwc3_resume_common(struct dwc
+@@ -1393,12 +1558,14 @@ static int dwc3_resume_common(struct dwc
  
  	switch (dwc->dr_mode) {
  	case USB_DR_MODE_PERIPHERAL:
@@ -528,7 +528,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		reg &= ~DWC3_DCTL_INITU2ENA;
 --- a/drivers/usb/dwc3/gadget.c
 +++ b/drivers/usb/dwc3/gadget.c
-@@ -3259,6 +3259,7 @@ int dwc3_gadget_init(struct dwc3 *dwc)
+@@ -3266,6 +3266,7 @@ int dwc3_gadget_init(struct dwc3 *dwc)
  {
  	int ret;
  	int irq;
@@ -536,7 +536,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  
  	irq = dwc3_gadget_get_irq(dwc);
  	if (irq < 0) {
-@@ -3337,6 +3338,12 @@ int dwc3_gadget_init(struct dwc3 *dwc)
+@@ -3344,6 +3345,12 @@ int dwc3_gadget_init(struct dwc3 *dwc)
  
  	dwc3_gadget_set_speed(&dwc->gadget, dwc->maximum_speed);
  
@@ -832,7 +832,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
 +};
 +
  #define DRIVER_DESC "Freescale EHCI Host controller driver"
- #define DRV_NAME "ehci-fsl"
+ #define DRV_NAME "fsl-ehci"
  
  static struct hc_driver __read_mostly fsl_ehci_hc_driver;
  
@@ -1289,7 +1289,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		xhci->quirks |= XHCI_BROKEN_PORT_PED;
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -2029,10 +2029,12 @@ static int finish_td(struct xhci_hcd *xh
+@@ -2032,10 +2032,12 @@ static int finish_td(struct xhci_hcd *xh
  	union xhci_trb *ep_trb, struct xhci_transfer_event *event,
  	struct xhci_virt_ep *ep, int *status)
  {
@@ -1302,7 +1302,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	u32 trb_comp_code;
  	int ep_index;
  
-@@ -2055,14 +2057,30 @@ static int finish_td(struct xhci_hcd *xh
+@@ -2058,14 +2060,30 @@ static int finish_td(struct xhci_hcd *xh
  	if (trb_comp_code == COMP_STALL_ERROR ||
  		xhci_requires_manual_halt_cleanup(xhci, ep_ctx,
  						trb_comp_code)) {
@@ -1340,7 +1340,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  		while (ep_ring->dequeue != td->last_trb)
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
-@@ -1625,13 +1625,38 @@ static int xhci_urb_dequeue(struct usb_h
+@@ -1639,13 +1639,38 @@ static int xhci_urb_dequeue(struct usb_h
  			ret = -ENOMEM;
  			goto done;
  		}
@@ -1387,7 +1387,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  	spin_unlock_irqrestore(&xhci->lock, flags);
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1795,7 +1795,7 @@ struct xhci_hcd {
+@@ -1798,7 +1798,7 @@ struct xhci_hcd {
  #define XHCI_STATE_DYING	(1 << 0)
  #define XHCI_STATE_HALTED	(1 << 1)
  #define XHCI_STATE_REMOVING	(1 << 2)
@@ -1396,7 +1396,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  #define	XHCI_LINK_TRB_QUIRK	BIT_ULL(0)
  #define XHCI_RESET_EP_QUIRK	BIT_ULL(1)
  #define XHCI_NEC_HOST		BIT_ULL(2)
-@@ -1831,6 +1831,9 @@ struct xhci_hcd {
+@@ -1834,6 +1834,9 @@ struct xhci_hcd {
  #define XHCI_SSIC_PORT_UNUSED	BIT_ULL(22)
  #define XHCI_NO_64BIT_SUPPORT	BIT_ULL(23)
  #define XHCI_MISSING_CAS	BIT_ULL(24)
@@ -1406,7 +1406,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  /* For controller with a broken Port Disable implementation */
  #define XHCI_BROKEN_PORT_PED	BIT_ULL(25)
  #define XHCI_LIMIT_ENDPOINT_INTERVAL_7	BIT_ULL(26)
-@@ -1839,8 +1842,9 @@ struct xhci_hcd {
+@@ -1842,8 +1845,9 @@ struct xhci_hcd {
  #define XHCI_HW_LPM_DISABLE	BIT_ULL(29)
  #define XHCI_SUSPEND_DELAY	BIT_ULL(30)
  #define XHCI_INTEL_USB_ROLE_SW	BIT_ULL(31)
@@ -1567,7 +1567,7 @@ Signed-off-by: Zhao Chenhui <chenhui.zhao@freescale.com>
  #define BCSR5_INT_USB			(0x02)
 --- a/include/linux/usb.h
 +++ b/include/linux/usb.h
-@@ -432,6 +432,7 @@ struct usb_bus {
+@@ -437,6 +437,7 @@ struct usb_bus {
  					 * for control transfers?
  					 */
  	u8 otg_port;			/* 0, or number of OTG/HNP port */

@@ -11,7 +11,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/net/netfilter/nf_tables_api.c
 +++ b/net/netfilter/nf_tables_api.c
-@@ -655,10 +655,7 @@ err:
+@@ -678,10 +678,7 @@ err:
  	return err;
  }
  
@@ -23,7 +23,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  {
  	struct nft_chain *chain;
  	u32 i = 0;
-@@ -676,9 +673,7 @@ static void _nf_tables_table_disable(str
+@@ -699,9 +696,7 @@ static void _nf_tables_table_disable(str
  	}
  }
  
@@ -34,7 +34,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  {
  	struct nft_chain *chain;
  	int err, i = 0;
-@@ -698,15 +693,13 @@ static int nf_tables_table_enable(struct
+@@ -721,15 +716,13 @@ static int nf_tables_table_enable(struct
  	return 0;
  err:
  	if (i)
@@ -53,7 +53,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  }
  
  static int nf_tables_updtable(struct nft_ctx *ctx)
-@@ -735,7 +728,7 @@ static int nf_tables_updtable(struct nft
+@@ -758,7 +751,7 @@ static int nf_tables_updtable(struct nft
  		nft_trans_table_enable(trans) = false;
  	} else if (!(flags & NFT_TABLE_F_DORMANT) &&
  		   ctx->table->flags & NFT_TABLE_F_DORMANT) {
@@ -62,7 +62,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		if (ret >= 0) {
  			ctx->table->flags &= ~NFT_TABLE_F_DORMANT;
  			nft_trans_table_enable(trans) = true;
-@@ -5820,7 +5813,6 @@ static int nf_tables_commit(struct net *
+@@ -5966,7 +5959,6 @@ static int nf_tables_commit(struct net *
  			if (nft_trans_table_update(trans)) {
  				if (!nft_trans_table_enable(trans)) {
  					nf_tables_table_disable(net,
@@ -70,7 +70,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  								trans->ctx.table);
  					trans->ctx.table->flags |= NFT_TABLE_F_DORMANT;
  				}
-@@ -5984,7 +5976,6 @@ static int nf_tables_abort(struct net *n
+@@ -6134,7 +6126,6 @@ static int nf_tables_abort(struct net *n
  			if (nft_trans_table_update(trans)) {
  				if (nft_trans_table_enable(trans)) {
  					nf_tables_table_disable(net,

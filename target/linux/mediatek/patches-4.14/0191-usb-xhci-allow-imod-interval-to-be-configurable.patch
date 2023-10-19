@@ -68,7 +68,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	usb@f0931000 {
 --- a/drivers/usb/host/xhci-mtk.c
 +++ b/drivers/usb/host/xhci-mtk.c
-@@ -636,6 +636,15 @@ static int xhci_mtk_probe(struct platfor
+@@ -637,6 +637,15 @@ static int xhci_mtk_probe(struct platfor
  
  	xhci = hcd_to_xhci(hcd);
  	xhci->main_hcd = hcd;
@@ -86,7 +86,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	if (!xhci->shared_hcd) {
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
-@@ -296,6 +296,9 @@ static int xhci_pci_setup(struct usb_hcd
+@@ -302,6 +302,9 @@ static int xhci_pci_setup(struct usb_hcd
  	if (!xhci->sbrn)
  		pci_read_config_byte(pdev, XHCI_SBRN_OFFSET, &xhci->sbrn);
  
@@ -127,7 +127,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	/* Set the HCD state before we enable the irqs */
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1731,6 +1731,8 @@ struct xhci_hcd {
+@@ -1734,6 +1734,8 @@ struct xhci_hcd {
  	u8		max_interrupters;
  	u8		max_ports;
  	u8		isoc_threshold;

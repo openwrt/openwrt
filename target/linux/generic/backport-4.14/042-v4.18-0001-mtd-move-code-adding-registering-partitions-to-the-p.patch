@@ -29,7 +29,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
 
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -686,7 +686,6 @@ int mtd_device_parse_register(struct mtd
+@@ -688,7 +688,6 @@ int mtd_device_parse_register(struct mtd
  			      const struct mtd_partition *parts,
  			      int nr_parts)
  {
@@ -37,7 +37,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
  	int ret;
  
  	mtd_set_dev_defaults(mtd);
-@@ -698,13 +697,10 @@ int mtd_device_parse_register(struct mtd
+@@ -700,13 +699,10 @@ int mtd_device_parse_register(struct mtd
  	}
  
  	/* Prefer parsed partitions over driver-provided fallback */
@@ -55,7 +55,7 @@ Signed-off-by: Boris Brezillon <boris.brezillon@bootlin.com>
  		ret = add_mtd_partitions(mtd, parts, nr_parts);
  	else if (!device_is_registered(&mtd->dev))
  		ret = add_mtd_device(mtd);
-@@ -730,8 +726,6 @@ int mtd_device_parse_register(struct mtd
+@@ -732,8 +728,6 @@ int mtd_device_parse_register(struct mtd
  	}
  
  out:

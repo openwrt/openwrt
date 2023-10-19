@@ -21,7 +21,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/Makefile
 +++ b/Makefile
-@@ -272,6 +272,11 @@ else
+@@ -279,6 +279,11 @@ else
  scripts/Kbuild.include: ;
  include scripts/Kbuild.include
  
@@ -33,7 +33,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  # Read KERNELRELEASE from include/config/kernel.release (if it exists)
  KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
  KERNELVERSION = $(VERSION)$(if $(PATCHLEVEL),.$(PATCHLEVEL)$(if $(SUBLEVEL),.$(SUBLEVEL)))$(EXTRAVERSION)
-@@ -785,11 +790,6 @@ ifdef CONFIG_DEBUG_SECTION_MISMATCH
+@@ -797,11 +802,6 @@ ifdef CONFIG_DEBUG_SECTION_MISMATCH
  KBUILD_CFLAGS += $(call cc-option, -fno-inline-functions-called-once)
  endif
  
@@ -47,7 +47,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  CHECKFLAGS     += $(NOSTDINC_FLAGS)
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -92,6 +92,7 @@ config ARM
+@@ -93,6 +93,7 @@ config ARM
  	select HAVE_UID16
  	select HAVE_VIRT_CPU_ACCOUNTING_GEN
  	select IRQ_FORCED_THREADING
@@ -180,7 +180,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	.init.data : {
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -40,6 +40,7 @@ config MIPS
+@@ -41,6 +41,7 @@ config MIPS
  	select HAVE_CBPF_JIT if (!64BIT && !CPU_MICROMIPS)
  	select HAVE_EBPF_JIT if (64BIT && !CPU_MICROMIPS)
  	select HAVE_CC_STACKPROTECTOR

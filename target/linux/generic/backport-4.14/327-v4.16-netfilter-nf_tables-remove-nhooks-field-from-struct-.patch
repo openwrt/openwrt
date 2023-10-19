@@ -14,7 +14,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/include/net/netfilter/nf_tables.h
 +++ b/include/net/netfilter/nf_tables.h
-@@ -971,7 +971,6 @@ enum nft_af_flags {
+@@ -1018,7 +1018,6 @@ enum nft_af_flags {
   *
   *	@list: used internally
   *	@family: address family
@@ -22,7 +22,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
   *	@owner: module owner
   *	@tables: used internally
   *	@flags: family flags
-@@ -979,7 +978,6 @@ enum nft_af_flags {
+@@ -1026,7 +1025,6 @@ enum nft_af_flags {
  struct nft_af_info {
  	struct list_head		list;
  	int				family;
@@ -72,7 +72,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
 --- a/net/netfilter/nf_tables_api.c
 +++ b/net/netfilter/nf_tables_api.c
-@@ -1374,9 +1374,6 @@ static int nft_chain_parse_hook(struct n
+@@ -1397,9 +1397,6 @@ static int nft_chain_parse_hook(struct n
  		return -EINVAL;
  
  	hook->num = ntohl(nla_get_be32(ha[NFTA_HOOK_HOOKNUM]));
@@ -82,7 +82,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	hook->priority = ntohl(nla_get_be32(ha[NFTA_HOOK_PRIORITY]));
  
  	type = chain_type[afi->family][NFT_CHAIN_T_DEFAULT];
-@@ -5015,7 +5012,7 @@ static int nf_tables_flowtable_parse_hoo
+@@ -5161,7 +5158,7 @@ static int nf_tables_flowtable_parse_hoo
  		return -EINVAL;
  
  	hooknum = ntohl(nla_get_be32(tb[NFTA_FLOWTABLE_HOOK_NUM]));

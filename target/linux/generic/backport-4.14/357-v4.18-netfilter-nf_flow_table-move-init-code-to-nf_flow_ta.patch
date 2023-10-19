@@ -236,7 +236,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	.owner		= THIS_MODULE,
 --- a/net/netfilter/nf_tables_api.c
 +++ b/net/netfilter/nf_tables_api.c
-@@ -5109,40 +5109,38 @@ static int nf_tables_newflowtable(struct
+@@ -5255,40 +5255,38 @@ static int nf_tables_newflowtable(struct
  	}
  
  	flowtable->data.type = type;
@@ -285,7 +285,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  err3:
  	module_put(type->owner);
  err2:
-@@ -5423,10 +5421,8 @@ err:
+@@ -5569,10 +5567,8 @@ err:
  
  static void nf_tables_flowtable_destroy(struct nft_flowtable *flowtable)
  {

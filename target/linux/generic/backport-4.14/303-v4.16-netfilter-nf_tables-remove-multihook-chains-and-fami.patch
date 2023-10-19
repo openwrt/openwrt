@@ -7,11 +7,12 @@ extra infrastructure in nf_tables to handle the double hook
 registration, one for IPv4 and another for IPv6.
 
 Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+[linus.luessing@c0d3.blue: rebased onto Linux v4.14.327]
 ---
 
 --- a/include/net/netfilter/nf_tables.h
 +++ b/include/net/netfilter/nf_tables.h
-@@ -900,8 +900,6 @@ struct nft_stats {
+@@ -924,8 +924,6 @@ struct nft_stats {
  	struct u64_stats_sync	syncp;
  };
  
@@ -20,7 +21,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  /**
   *	struct nft_base_chain - nf_tables base chain
   *
-@@ -913,7 +911,7 @@ struct nft_stats {
+@@ -937,7 +935,7 @@ struct nft_stats {
   *	@dev_name: device name that this base chain is attached to (if any)
   */
  struct nft_base_chain {
@@ -29,7 +30,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	const struct nf_chain_type	*type;
  	u8				policy;
  	u8				flags;
-@@ -974,8 +972,6 @@ enum nft_af_flags {
+@@ -1021,8 +1019,6 @@ enum nft_af_flags {
   *	@owner: module owner
   *	@tables: used internally
   *	@flags: family flags
@@ -38,7 +39,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
   *	@hooks: hookfn overrides for packet validation
   */
  struct nft_af_info {
-@@ -985,9 +981,6 @@ struct nft_af_info {
+@@ -1032,9 +1028,6 @@ struct nft_af_info {
  	struct module			*owner;
  	struct list_head		tables;
  	u32				flags;
@@ -90,8 +91,8 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		[NF_INET_LOCAL_OUT]	= nft_ipv6_output,
 --- a/net/netfilter/nf_tables_api.c
 +++ b/net/netfilter/nf_tables_api.c
-@@ -139,29 +139,26 @@ static void nft_trans_destroy(struct nft
- 	kfree(trans);
+@@ -173,29 +173,26 @@ static void nft_set_trans_unbind(const s
+ 	return __nft_set_trans_bind(ctx, set, false);
  }
  
 -static int nf_tables_register_hooks(struct net *net,
@@ -128,7 +129,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  }
  
  static int nft_trans_table_add(struct nft_ctx *ctx, int msg_type)
-@@ -639,8 +636,7 @@ static void _nf_tables_table_disable(str
+@@ -662,8 +659,7 @@ static void _nf_tables_table_disable(str
  		if (cnt && i++ == cnt)
  			break;
  
@@ -138,7 +139,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	}
  }
  
-@@ -657,8 +653,7 @@ static int nf_tables_table_enable(struct
+@@ -680,8 +676,7 @@ static int nf_tables_table_enable(struct
  		if (!nft_is_base_chain(chain))
  			continue;
  
@@ -148,7 +149,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		if (err < 0)
  			goto err;
  
-@@ -1070,7 +1065,7 @@ static int nf_tables_fill_chain_info(str
+@@ -1093,7 +1088,7 @@ static int nf_tables_fill_chain_info(str
  
  	if (nft_is_base_chain(chain)) {
  		const struct nft_base_chain *basechain = nft_base_chain(chain);
@@ -157,7 +158,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		struct nlattr *nest;
  
  		nest = nla_nest_start(skb, NFTA_CHAIN_HOOK);
-@@ -1298,8 +1293,8 @@ static void nf_tables_chain_destroy(stru
+@@ -1321,8 +1316,8 @@ static void nf_tables_chain_destroy(stru
  		free_percpu(basechain->stats);
  		if (basechain->stats)
  			static_branch_dec(&nft_counters_enabled);
@@ -168,15 +169,15 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		kfree(chain->name);
  		kfree(basechain);
  	} else {
-@@ -1395,7 +1390,6 @@ static int nf_tables_addchain(struct nft
+@@ -1418,7 +1413,6 @@ static int nf_tables_addchain(struct nft
  	struct nft_stats __percpu *stats;
  	struct net *net = ctx->net;
  	struct nft_chain *chain;
 -	unsigned int i;
  	int err;
  
- 	if (table->use == UINT_MAX)
-@@ -1434,21 +1428,18 @@ static int nf_tables_addchain(struct nft
+ 	if (nla[NFTA_CHAIN_HOOK]) {
+@@ -1454,21 +1448,18 @@ static int nf_tables_addchain(struct nft
  		basechain->type = hook.type;
  		chain = &basechain->chain;
  
@@ -210,7 +211,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  		chain->flags |= NFT_BASE_CHAIN;
  		basechain->policy = policy;
-@@ -1466,7 +1457,7 @@ static int nf_tables_addchain(struct nft
+@@ -1486,7 +1477,7 @@ static int nf_tables_addchain(struct nft
  		goto err1;
  	}
  
@@ -219,16 +220,16 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	if (err < 0)
  		goto err1;
  
-@@ -1480,7 +1471,7 @@ static int nf_tables_addchain(struct nft
- 
- 	return 0;
+@@ -1506,7 +1497,7 @@ static int nf_tables_addchain(struct nft
  err2:
+ 	nft_use_dec_restore(&table->use);
+ err_use:
 -	nf_tables_unregister_hooks(net, table, chain, afi->nops);
 +	nf_tables_unregister_hook(net, table, chain);
  err1:
  	nf_tables_chain_destroy(chain);
  
-@@ -1493,13 +1484,12 @@ static int nf_tables_updchain(struct nft
+@@ -1519,13 +1510,12 @@ static int nf_tables_updchain(struct nft
  	const struct nlattr * const *nla = ctx->nla;
  	struct nft_table *table = ctx->table;
  	struct nft_chain *chain = ctx->chain;
@@ -243,7 +244,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  
  	if (nla[NFTA_CHAIN_HOOK]) {
  		if (!nft_is_base_chain(chain))
-@@ -1516,14 +1506,12 @@ static int nf_tables_updchain(struct nft
+@@ -1542,14 +1532,12 @@ static int nf_tables_updchain(struct nft
  			return -EBUSY;
  		}
  
@@ -264,7 +265,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		}
  		nft_chain_release_hook(&hook);
  	}
-@@ -5163,10 +5151,9 @@ static int nf_tables_commit(struct net *
+@@ -5309,10 +5297,9 @@ static int nf_tables_commit(struct net *
  		case NFT_MSG_DELCHAIN:
  			list_del_rcu(&trans->ctx.chain->list);
  			nf_tables_chain_notify(&trans->ctx, NFT_MSG_DELCHAIN);
@@ -278,9 +279,9 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  			break;
  		case NFT_MSG_NEWRULE:
  			nft_clear(trans->ctx.net, nft_trans_rule(trans));
-@@ -5303,10 +5290,9 @@ static int nf_tables_abort(struct net *n
+@@ -5453,10 +5440,9 @@ static int nf_tables_abort(struct net *n
  			} else {
- 				trans->ctx.table->use--;
+ 				nft_use_dec_restore(&trans->ctx.table->use);
  				list_del_rcu(&trans->ctx.chain->list);
 -				nf_tables_unregister_hooks(trans->ctx.net,
 -							   trans->ctx.table,
@@ -292,7 +293,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  			}
  			break;
  		case NFT_MSG_DELCHAIN:
-@@ -5409,7 +5395,7 @@ int nft_chain_validate_hooks(const struc
+@@ -5569,7 +5555,7 @@ int nft_chain_validate_hooks(const struc
  	if (nft_is_base_chain(chain)) {
  		basechain = nft_base_chain(chain);
  
@@ -301,7 +302,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  			return 0;
  
  		return -EOPNOTSUPP;
-@@ -5891,8 +5877,7 @@ int __nft_release_basechain(struct nft_c
+@@ -6092,8 +6078,7 @@ int __nft_release_basechain(struct nft_c
  
  	BUG_ON(!nft_is_base_chain(ctx->chain));
  
@@ -310,8 +311,8 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 +	nf_tables_unregister_hook(ctx->net, ctx->chain->table, ctx->chain);
  	list_for_each_entry_safe(rule, nr, &ctx->chain->rules, list) {
  		list_del(&rule->list);
- 		ctx->chain->use--;
-@@ -5921,8 +5906,7 @@ static void __nft_release_afinfo(struct
+ 		nft_use_dec(&ctx->chain->use);
+@@ -6122,8 +6107,7 @@ static void __nft_release_afinfo(struct
  
  	list_for_each_entry_safe(table, nt, &afi->tables, list) {
  		list_for_each_entry(chain, &table->chains, list)

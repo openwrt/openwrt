@@ -11708,7 +11708,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
   *
   * There is no Shared Descriptor for PKC so that the Job Descriptor must carry
   * all the desired key parameters, input and output pointers.
-@@ -1017,46 +1018,22 @@ static struct akcipher_alg caam_rsa = {
+@@ -1019,46 +1020,22 @@ static struct akcipher_alg caam_rsa = {
  };
  
  /* Public Key Cryptography module initialization handler */
@@ -11764,7 +11764,7 @@ Signed-off-by: Zhao Qiang <qiang.zhao@nxp.com>
  
  	err = crypto_register_akcipher(&caam_rsa);
  	if (err)
-@@ -1068,14 +1045,7 @@ static int __init caam_pkc_init(void)
+@@ -1070,14 +1047,7 @@ static int __init caam_pkc_init(void)
  	return err;
  }
  

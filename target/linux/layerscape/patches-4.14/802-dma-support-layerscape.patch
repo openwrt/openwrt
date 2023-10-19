@@ -72,7 +72,7 @@ Signed-off-by: Yuan Yao <yao.yuan@nxp.com>
  config DMA_BCM2835
  	tristate "BCM2835 DMA engine support"
  	depends on ARCH_BCM2835
-@@ -216,6 +234,20 @@ config FSL_EDMA
+@@ -217,6 +235,20 @@ config FSL_EDMA
  	  multiplexing capability for DMA request sources(slot).
  	  This module can be found on Freescale Vybrid and LS-1 SoCs.
  
@@ -93,7 +93,7 @@ Signed-off-by: Yuan Yao <yao.yuan@nxp.com>
  config FSL_RAID
          tristate "Freescale RAID engine Support"
          depends on FSL_SOC && !ASYNC_TX_ENABLE_CHANNEL_SWITCH
-@@ -601,7 +633,6 @@ config ZX_DMA
+@@ -603,7 +635,6 @@ config ZX_DMA
  	help
  	  Support the DMA engine for ZTE ZX family platform devices.
  

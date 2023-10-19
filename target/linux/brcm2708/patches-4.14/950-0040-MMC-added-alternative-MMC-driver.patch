@@ -111,7 +111,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  static inline int mmc_blk_part_switch(struct mmc_card *card,
  				      unsigned int part_type);
  
-@@ -2741,6 +2748,7 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2746,6 +2753,7 @@ static int mmc_blk_probe(struct mmc_card
  {
  	struct mmc_blk_data *md, *part_md;
  	char cap_str[10];
@@ -119,7 +119,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  	/*
  	 * Check that the card supports the command class(es) we need.
-@@ -2748,7 +2756,16 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2753,7 +2761,16 @@ static int mmc_blk_probe(struct mmc_card
  	if (!(card->csd.cmdclass & CCC_BLOCK_READ))
  		return -ENODEV;
  
@@ -137,7 +137,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  
  	md = mmc_blk_alloc(card);
  	if (IS_ERR(md))
-@@ -2756,9 +2773,14 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2761,9 +2778,14 @@ static int mmc_blk_probe(struct mmc_card
  
  	string_get_size((u64)get_capacity(md->disk), 512, STRING_UNITS_2,
  			cap_str, sizeof(cap_str));
@@ -156,7 +156,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  		goto out;
 --- a/drivers/mmc/core/core.c
 +++ b/drivers/mmc/core/core.c
-@@ -2213,7 +2213,8 @@ EXPORT_SYMBOL(mmc_erase);
+@@ -2219,7 +2219,8 @@ EXPORT_SYMBOL(mmc_erase);
  int mmc_can_erase(struct mmc_card *card)
  {
  	if ((card->host->caps & MMC_CAP_ERASE) &&
@@ -202,7 +202,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  		return NULL;
 --- a/drivers/mmc/core/quirks.h
 +++ b/drivers/mmc/core/quirks.h
-@@ -99,6 +99,14 @@ static const struct mmc_fixup mmc_blk_fi
+@@ -113,6 +113,14 @@ static const struct mmc_fixup mmc_blk_fi
  	MMC_FIXUP("V10016", CID_MANFID_KINGSTON, CID_OEMID_ANY, add_quirk_mmc,
  		  MMC_QUIRK_TRIM_BROKEN),
  

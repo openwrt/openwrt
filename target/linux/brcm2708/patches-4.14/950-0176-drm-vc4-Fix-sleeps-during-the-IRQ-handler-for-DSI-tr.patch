@@ -25,7 +25,7 @@ Reviewed-by: Boris Brezillon <boris.brezillon@free-electrons.com> (v2)
 
 --- a/drivers/gpu/drm/vc4/vc4_dsi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dsi.c
-@@ -1383,6 +1383,27 @@ static void dsi_handle_error(struct vc4_
+@@ -1381,6 +1381,27 @@ static void dsi_handle_error(struct vc4_
  	*ret = IRQ_HANDLED;
  }
  
@@ -53,7 +53,7 @@ Reviewed-by: Boris Brezillon <boris.brezillon@free-electrons.com> (v2)
  static irqreturn_t vc4_dsi_irq_handler(int irq, void *data)
  {
  	struct vc4_dsi *dsi = data;
-@@ -1566,8 +1587,15 @@ static int vc4_dsi_bind(struct device *d
+@@ -1564,8 +1585,15 @@ static int vc4_dsi_bind(struct device *d
  	/* Clear any existing interrupt state. */
  	DSI_PORT_WRITE(INT_STAT, DSI_PORT_READ(INT_STAT));
  

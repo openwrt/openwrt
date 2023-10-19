@@ -129,7 +129,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  };
 --- a/net/ipv6/netfilter/nft_fib_ipv6.c
 +++ b/net/ipv6/netfilter/nft_fib_ipv6.c
-@@ -60,7 +60,6 @@ static u32 __nft_fib6_eval_type(const st
+@@ -63,7 +63,6 @@ static u32 __nft_fib6_eval_type(const st
  {
  	const struct net_device *dev = NULL;
  	const struct nf_ipv6_ops *v6ops;
@@ -137,7 +137,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  	int route_err, addrtype;
  	struct rt6_info *rt;
  	struct flowi6 fl6 = {
-@@ -69,8 +68,8 @@ static u32 __nft_fib6_eval_type(const st
+@@ -72,8 +71,8 @@ static u32 __nft_fib6_eval_type(const st
  	};
  	u32 ret = 0;
  
@@ -148,7 +148,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  		return RTN_UNREACHABLE;
  
  	if (priv->flags & NFTA_FIB_F_IIF)
-@@ -80,12 +79,11 @@ static u32 __nft_fib6_eval_type(const st
+@@ -83,12 +82,11 @@ static u32 __nft_fib6_eval_type(const st
  
  	nft_fib6_flowi_init(&fl6, priv, pkt, dev, iph);
  

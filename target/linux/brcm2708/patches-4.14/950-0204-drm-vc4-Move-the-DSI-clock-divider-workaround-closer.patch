@@ -18,7 +18,7 @@ Reviewed-by: Boris Brezillon <boris.brezillon@free-electrons.com>
 
 --- a/drivers/gpu/drm/vc4/vc4_dsi.c
 +++ b/drivers/gpu/drm/vc4/vc4_dsi.c
-@@ -864,11 +864,7 @@ static bool vc4_dsi_encoder_mode_fixup(s
+@@ -862,11 +862,7 @@ static bool vc4_dsi_encoder_mode_fixup(s
  	pll_clock = parent_rate / divider;
  	pixel_clock_hz = pll_clock / dsi->divider;
  
@@ -31,7 +31,7 @@ Reviewed-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  
  	/* Given the new pixel clock, adjust HFP to keep vrefresh the same. */
  	adjusted_mode->htotal = adjusted_mode->clock * mode->htotal /
-@@ -906,7 +902,11 @@ static void vc4_dsi_encoder_enable(struc
+@@ -904,7 +900,11 @@ static void vc4_dsi_encoder_enable(struc
  		vc4_dsi_dump_regs(dsi);
  	}
  

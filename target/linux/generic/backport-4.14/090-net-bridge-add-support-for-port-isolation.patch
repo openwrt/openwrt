@@ -42,7 +42,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  int br_dev_queue_push_xmit(struct net *net, struct sock *sk, struct sk_buff *skb)
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -170,6 +170,7 @@ int br_handle_frame_finish(struct net *n
+@@ -177,6 +177,7 @@ int br_handle_frame_finish(struct net *n
  		goto drop;
  
  	BR_INPUT_SKB_CB(skb)->brdev = br->dev;

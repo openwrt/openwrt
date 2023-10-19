@@ -31,7 +31,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	help
 --- a/init/main.c
 +++ b/init/main.c
-@@ -358,6 +358,29 @@ static inline void setup_nr_cpu_ids(void
+@@ -357,6 +357,29 @@ static inline void setup_nr_cpu_ids(void
  static inline void smp_prepare_cpus(unsigned int maxcpus) { }
  #endif
  
@@ -61,9 +61,9 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  /*
   * We need to store the untouched command line for future reference.
   * We also need to store the touched command line since the parameter
-@@ -539,6 +562,7 @@ asmlinkage __visible void __init start_k
- 	add_device_randomness(command_line, strlen(command_line));
- 	boot_init_stack_canary();
+@@ -529,6 +552,7 @@ asmlinkage __visible void __init start_k
+ 	pr_notice("%s", linux_banner);
+ 	setup_arch(&command_line);
  	mm_init_cpumask(&init_mm);
 +	mangle_bootargs(command_line);
  	setup_command_line(command_line);

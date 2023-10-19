@@ -8,7 +8,7 @@
  
  err_put_node:
  	of_node_put(mii_np);
-@@ -1472,7 +1473,10 @@ static void mtk_hwlro_rx_uninit(struct m
+@@ -1489,7 +1490,10 @@ static void mtk_hwlro_rx_uninit(struct m
  	for (i = 0; i < 10; i++) {
  		val = mtk_r32(eth, MTK_PDMA_LRO_CTRL_DW0);
  		if (val & MTK_LRO_RING_RELINQUISH_DONE) {
@@ -20,7 +20,7 @@
  			continue;
  		}
  		break;
-@@ -1869,7 +1873,10 @@ static void mtk_stop_dma(struct mtk_eth
+@@ -1892,7 +1896,10 @@ static void mtk_stop_dma(struct mtk_eth
  	for (i = 0; i < 10; i++) {
  		val = mtk_r32(eth, glo_cfg);
  		if (val & (MTK_TX_DMA_BUSY | MTK_RX_DMA_BUSY)) {
@@ -32,7 +32,7 @@
  			continue;
  		}
  		break;
-@@ -1907,7 +1914,10 @@ static void ethsys_reset(struct mtk_eth
+@@ -1930,7 +1937,10 @@ static void ethsys_reset(struct mtk_eth
  			   reset_bits,
  			   reset_bits);
  

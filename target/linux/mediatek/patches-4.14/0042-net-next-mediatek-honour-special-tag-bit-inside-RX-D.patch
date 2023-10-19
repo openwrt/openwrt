@@ -17,7 +17,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -999,10 +999,16 @@ static int mtk_poll_rx(struct napi_struc
+@@ -1010,10 +1010,16 @@ static int mtk_poll_rx(struct napi_struc
  		if (!(trxd.rxd2 & RX_DMA_DONE))
  			break;
  
