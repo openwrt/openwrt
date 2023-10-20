@@ -15,52 +15,5 @@ jobs:
     permissions:
       contents: read
       packages: read
-    uses: ./.github/workflows/build.yml
-    with:
-      container_name: toolchain
-      target: x86
-      subtarget: 64
-      build_full: true
-      include_feeds: true
-      coverity_compiler_template_list: >-
-        x86_64-openwrt-linux-gcc
-        x86_64-openwrt-linux-musl-gcc
-      #  qosify fails to build with cov-build
-      coverity_check_packages: >-
-        cgi-io
-        dnsmasq
-        dropbear
-        firewall
-        fstools
-        fwtool
-        iwinfo
-        jsonfilter
-        libnl-tiny
-        libubox
-        mtd
-        netifd
-        odhcp6c
-        odhcpd
-        opkg
-        procd
-        relayd
-        rpcd
-        swconfig
-        ubox
-        ubus
-        ucert
-        uci
-        uclient
-        ucode
-        ugps
-        uhttpd
-        umbim
-        umdns
-        unetd
-        uqmi
-        urngd
-        usbmode
-        usign
-        usteer
-        ustp
-        ustream-ssl
+      actions: write
+    uses: openwrt/actions-shared-workflows/.github/workflows/coverity.yml@main

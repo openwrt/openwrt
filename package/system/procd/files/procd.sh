@@ -524,7 +524,10 @@ _procd_send_signal() {
 _procd_status() {
 	local service="$1"
 	local instance="$2"
-	local data
+	local data state
+	local n_running=0
+	local n_stopped=0
+	local n_total=0
 
 	json_init
 	[ -n "$service" ] && json_add_string name "$service"
@@ -539,10 +542,29 @@ _procd_status() {
 	fi
 
 	[ -n "$instance" ] && instance="\"$instance\"" || instance='*'
-	if [ -z "$(echo "$data" | jsonfilter -e '$['"$instance"']')" ]; then
-		echo "unknown instance $instance"; return 4
+
+	for state in $(jsonfilter -s "$data" -e '$['"$instance"'].running'); do
+		n_total=$((n_total + 1))
+		case "$state" in
+		false) n_stopped=$((n_stopped + 1)) ;;
+		true)  n_running=$((n_running + 1)) ;;
+		esac
+	done
+
+	if [ $n_total -gt 0 ]; then
+		if [ $n_running -gt 0 ] && [ $n_stopped -eq 0 ]; then
+			echo "running"
+			return 0
+		elif [ $n_running -gt 0 ]; then
+			echo "running ($n_running/$n_total)"
+			return 0
+		else
+			echo "not running"
+			return 5
+		fi
 	else
-		echo "running"; return 0
+		echo "unknown instance $instance"
+		return 4
 	fi
 }
 

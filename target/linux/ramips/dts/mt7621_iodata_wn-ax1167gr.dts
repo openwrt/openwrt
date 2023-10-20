@@ -89,15 +89,37 @@
 			};
 
 			factory: partition@40000 {
+				compatible = "nvmem-cells";
 				label = "factory";
 				reg = <0x40000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
 			};
 
 			iNIC_rf: partition@50000 {
+				compatible = "nvmem-cells";
 				label = "iNIC_rf";
 				reg = <0x50000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_iNIC_rf_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				macaddr_iNIC_rf_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
 			};
 
 			partition@60000 {
@@ -186,38 +208,20 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&iNIC_rf 0x0>;
+		nvmem-cells = <&eeprom_iNIC_rf_0>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
 &pcie1 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
 
 &xhci {
 	status = "disabled";
-};
-
-&iNIC_rf {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_iNIC_rf_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
 };

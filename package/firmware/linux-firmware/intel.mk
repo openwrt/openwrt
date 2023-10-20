@@ -3,6 +3,8 @@ define Package/ibt-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/intel
 	$(CP) \
 		$(PKG_BUILD_DIR)/intel/*.bseq \
+		$(PKG_BUILD_DIR)/intel/ibt*.sfi \
+		$(PKG_BUILD_DIR)/intel/ibt*.ddc \
 		$(1)/lib/firmware/intel
 endef
 $(eval $(call BuildPackage,ibt-firmware))
@@ -171,14 +173,14 @@ $(eval $(call BuildPackage,iwlwifi-firmware-iwl9260))
 Package/iwlwifi-firmware-ax200 = $(call Package/firmware-default,Intel AX200 firmware)
 define Package/iwlwifi-firmware-ax200/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-cc-a0-66.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-cc-a0-72.ucode $(1)/lib/firmware
 endef
 $(eval $(call BuildPackage,iwlwifi-firmware-ax200))
 
 Package/iwlwifi-firmware-ax210 = $(call Package/firmware-default,Intel AX210 firmware)
 define Package/iwlwifi-firmware-ax210/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-ty-a0-gf-a0-66.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-ty-a0-gf-a0-72.ucode $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-ty-a0-gf-a0.pnvm $(1)/lib/firmware
 endef
 $(eval $(call BuildPackage,iwlwifi-firmware-ax210))

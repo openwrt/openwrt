@@ -11,10 +11,6 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_red;
 		led-upgrade = &led_power_red;
-
-		led-internet = &led_internet_green;
-		led-usb = &led_modem_green;
-		led-wireless = &led_wireless_green;
 	};
 
 	i2c {
@@ -82,7 +78,7 @@
 			label = "red:modem";
 		};
 
-		led_modem_green: led@2 {
+		led@2 {
 			reg = <2>;
 			label = "green:modem";
 		};
@@ -107,7 +103,7 @@
 			label = "green:phone";
 		};
 
-		led_wireless_green: led@7 {
+		led@7 {
 			reg = <7>;
 			label = "green:wifi";
 		};
@@ -117,7 +113,7 @@
 			label = "red:power";
 		};
 
-		led_internet_green: led@9 {
+		led@9 {
 			reg = <9>;
 			label = "green:internet";
 		};

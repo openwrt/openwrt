@@ -150,6 +150,14 @@ menuconfig EXTERNAL_TOOLCHAIN
 
 	endchoice
 
+	config EXTERNAL_GCC_VERSION
+		string
+		prompt "External Toolchain GCC Version" if DEVEL
+		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		help
+		  Manually specify the GCC version used by the selected
+		  external toolchain.
+
 	config TOOLCHAIN_LIBC
 		string
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN

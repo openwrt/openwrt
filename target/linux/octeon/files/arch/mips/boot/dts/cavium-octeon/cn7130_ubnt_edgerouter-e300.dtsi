@@ -33,12 +33,12 @@
 
 		led_power_blue: power_blue {
 			label = "blue:power";
-			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_white: power_white {
 			label = "white:power";
-			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -99,22 +99,36 @@
 		reg = <0>;
 		spi-max-frequency = <25000000>;
 
-		partition@0 {
-			label = "boot0";
-			read-only;
-			reg = <0x000000 0x300000>;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@300000 {
-			label = "dummy";
-			read-only;
-			reg = <0x300000 0x100000>;
-		};
+			partition@0 {
+				label = "boot0";
+				read-only;
+				reg = <0x000000 0x300000>;
+			};
 
-		eeprom: partition@400000 {
-			label = "eeprom";
-			read-only;
-			reg = <0x400000 0x10000>;
+			partition@300000 {
+				label = "dummy";
+				read-only;
+				reg = <0x300000 0x100000>;
+			};
+
+			partition@400000 {
+				compatible = "nvmem-cells";
+				reg = <0x400000 0x10000>;
+				label = "eeprom";
+				read-only;
+
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_eeprom_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+			};
 		};
 	};
 };
@@ -207,12 +221,3 @@
 	};
 };
 
-&eeprom {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_eeprom_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-};

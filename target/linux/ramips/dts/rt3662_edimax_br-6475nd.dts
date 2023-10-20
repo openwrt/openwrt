@@ -75,15 +75,33 @@
 			};
 
 			factory: partition@40000 {
-				reg = <0x00040000 0x00010000>;
+				compatible = "nvmem-cells";
 				label = "factory";
+				reg = <0x00040000 0x00010000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
+
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x200>;
+				};
 			};
 
 			devdata: partition@50000 {
-				reg = <0x00050000 0x00020000>;
+				compatible = "nvmem-cells";
 				label = "devdata";
+				reg = <0x00050000 0x00020000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				macaddr_devdata_d: macaddr@d {
+					reg = <0xd 0x6>;
+				};
 			};
 
 			partition@70000 {
@@ -148,8 +166,8 @@
 };
 
 &wmac {
-	status = "okay";
-	ralink,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };
 
 &pci {
@@ -163,7 +181,8 @@
 		compatible = "pci0,0";
 		reg = <0x10000 0 0 0 0>;
 		ralink,5ghz = <0>;
-		ralink,mtd-eeprom = <&factory 0x8000>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
@@ -173,14 +192,4 @@
 
 &ohci {
 	status = "okay";
-};
-
-&devdata {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_devdata_d: macaddr@d {
-		reg = <0xd 0x6>;
-	};
 };

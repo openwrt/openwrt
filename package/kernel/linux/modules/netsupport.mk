@@ -93,8 +93,7 @@ define KernelPackage/vxlan
 	+IPV6:kmod-udptunnel6
   KCONFIG:=CONFIG_VXLAN
   FILES:= \
-	$(LINUX_DIR)/drivers/net/vxlan.ko@lt5.18 \
-	$(LINUX_DIR)/drivers/net/vxlan/vxlan.ko@ge5.18
+	$(LINUX_DIR)/drivers/net/vxlan/vxlan.ko
   AUTOLOAD:=$(call AutoLoad,13,vxlan)
 endef
 
@@ -972,6 +971,18 @@ endef
 $(eval $(call KernelPackage,sched-red))
 
 
+define KernelPackage/sched-skbprio
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=SKB priority queue scheduler (SKBPRIO)
+  DEPENDS:=+kmod-sched-core
+  KCONFIG:= CONFIG_NET_SCH_SKBPRIO
+  FILES:= $(LINUX_DIR)/net/sched/sch_skbprio.ko
+  AUTOLOAD:=$(call AutoProbe,sch_skbprio)
+endef
+
+$(eval $(call KernelPackage,sched-skbprio))
+
+
 define KernelPackage/bpf-test
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Test Berkeley Packet Filter functionality
@@ -982,7 +993,7 @@ endef
 $(eval $(call KernelPackage,bpf-test))
 
 
-SCHED_MODULES_EXTRA = sch_codel sch_dsmark sch_gred sch_multiq sch_sfq sch_teql sch_fq act_pedit act_simple act_csum em_cmp em_nbyte em_meta em_text
+SCHED_MODULES_EXTRA = sch_codel sch_dsmark sch_gred sch_multiq sch_sfq sch_teql sch_fq act_pedit act_simple act_skbmod act_csum em_cmp em_nbyte em_meta em_text
 SCHED_FILES_EXTRA = $(foreach mod,$(SCHED_MODULES_EXTRA),$(LINUX_DIR)/net/sched/$(mod).ko)
 
 define KernelPackage/sched
@@ -999,6 +1010,7 @@ define KernelPackage/sched
 	CONFIG_NET_SCH_FQ \
 	CONFIG_NET_ACT_PEDIT \
 	CONFIG_NET_ACT_SIMP \
+	CONFIG_NET_ACT_SKBMOD \
 	CONFIG_NET_ACT_CSUM \
 	CONFIG_NET_EMATCH_CMP \
 	CONFIG_NET_EMATCH_NBYTE \
@@ -1275,7 +1287,8 @@ define KernelPackage/rxrpc
   FILES:= \
 	$(LINUX_DIR)/net/rxrpc/rxrpc.ko
   AUTOLOAD:=$(call AutoLoad,30,rxrpc.ko)
-  DEPENDS:= +kmod-crypto-manager +kmod-crypto-pcbc +kmod-crypto-fcrypt
+  DEPENDS:= +kmod-crypto-manager +kmod-crypto-pcbc +kmod-crypto-fcrypt \
+    +kmod-udptunnel4 +kmod-udptunnel6
 endef
 
 define KernelPackage/rxrpc/description
@@ -1311,17 +1324,13 @@ $(eval $(call KernelPackage,mpls))
 define KernelPackage/9pnet
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Plan 9 Resource Sharing Support (9P2000)
-  DEPENDS:=@VIRTIO_SUPPORT
   KCONFIG:= \
 	CONFIG_NET_9P \
 	CONFIG_NET_9P_DEBUG=n \
-	CONFIG_NET_9P_XEN=n \
-	CONFIG_NET_9P_VIRTIO \
 	CONFIG_NET_9P_FD=n@ge5.17
   FILES:= \
-	$(LINUX_DIR)/net/9p/9pnet.ko \
-	$(LINUX_DIR)/net/9p/9pnet_virtio.ko
-  AUTOLOAD:=$(call AutoLoad,29,9pnet 9pnet_virtio)
+	$(LINUX_DIR)/net/9p/9pnet.ko
+  AUTOLOAD:=$(call AutoLoad,29,9pnet)
 endef
 
 define KernelPackage/9pnet/description
@@ -1330,6 +1339,25 @@ define KernelPackage/9pnet/description
 endef
 
 $(eval $(call KernelPackage,9pnet))
+
+define KernelPackage/9pvirtio
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Plan 9 Virtio Support
+  DEPENDS:=+kmod-9pnet @VIRTIO_SUPPORT
+  KCONFIG:= \
+	CONFIG_NET_9P_XEN=n \
+	CONFIG_NET_9P_VIRTIO
+  FILES:= \
+	$(LINUX_DIR)/net/9p/9pnet_virtio.ko
+  AUTOLOAD:=$(call AutoLoad,29,9pnet_virtio)
+endef
+
+define KernelPackage/9pvirtio/description
+  Kernel support support for
+  Plan 9 resource sharing for virtio.
+endef
+
+$(eval $(call KernelPackage,9pvirtio))
 
 
 define KernelPackage/nlmon
@@ -1361,6 +1389,21 @@ define KernelPackage/mdio/description
 endef
 
 $(eval $(call KernelPackage,mdio))
+
+define KernelPackage/mdio-bus-mux
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=MDIO bus multiplexers
+  KCONFIG:=CONFIG_MDIO_BUS_MUX
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/mdio/mdio-mux.ko
+  AUTOLOAD:=$(call AutoLoad,32,mdio-mux)
+endef
+
+define KernelPackage/mdio-bus-mux/description
+ Kernel framework for MDIO bus multiplexers.
+endef
+
+$(eval $(call KernelPackage,mdio-bus-mux))
 
 define KernelPackage/macsec
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
@@ -1416,6 +1459,22 @@ native Linux tools such as ss.
 endef
 
 $(eval $(call KernelPackage,inet-diag))
+
+
+define KernelPackage/xdp-sockets-diag
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=PF_XDP sockets monitoring interface support for ss utility
+  DEPENDS:=@KERNEL_XDP_SOCKETS
+  KCONFIG:=CONFIG_XDP_SOCKETS_DIAG
+  FILES:=$(LINUX_DIR)/net/xdp/xsk_diag.ko
+  AUTOLOAD:=$(call AutoLoad,31,xsk_diag)
+endef
+
+define KernelPackage/xdp-sockets-diag/description
+ Support for PF_XDP sockets monitoring interface used by the ss tool
+endef
+
+$(eval $(call KernelPackage,xdp-sockets-diag))
 
 
 define KernelPackage/wireguard
@@ -1495,7 +1554,7 @@ $(eval $(call KernelPackage,qrtr-tun))
 define KernelPackage/qrtr-smd
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=SMD IPC Router channels
-  DEPENDS:=+kmod-qrtr @TARGET_ipq807x
+  DEPENDS:=+kmod-qrtr @TARGET_qualcommax
   KCONFIG:=CONFIG_QRTR_SMD
   FILES:= $(LINUX_DIR)/net/qrtr/qrtr-smd.ko
   AUTOLOAD:=$(call AutoProbe,qrtr-smd)

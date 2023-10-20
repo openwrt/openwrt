@@ -79,13 +79,16 @@
 		};
 
 		factory: partition@200000 {
+			compatible = "nvmem-cells";
 			label = "Factory";
 			reg = <0x200000 0x100000>;
-			read-only;
-
-			compatible = "nvmem-cells";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			read-only;
+
+			eeprom_factory_0: eeprom@0 {
+				reg = <0x0 0x4da8>;
+			};
 
 			/* We keep the block below to prevent eth0 MAC
 			 * from randomization. Unique WAN, LAN, WLAN MACs
@@ -162,7 +165,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 

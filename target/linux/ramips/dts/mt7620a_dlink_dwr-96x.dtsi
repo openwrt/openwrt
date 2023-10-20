@@ -120,9 +120,6 @@
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		nvmem-cells = <&macaddr_config_e50e>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(2)>;
 	};
 };
 
@@ -155,12 +152,19 @@
 
 			config: partition@ff0000 {
 				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
 				label = "config";
 				reg = <0xff0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_config_e08e: eeprom@e08e {
+					reg = <0xe08e 0x200>;
+				};
+
+				eeprom_config_e29e: eeprom@e29e {
+					reg = <0xe29e 0x200>;
+				};
 
 				macaddr_config_e50e: macaddr@e50e {
 					reg = <0xe50e 0x6>;

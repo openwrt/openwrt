@@ -1,0 +1,224 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Copyright (C) 2023 Stefan Weil <sw@weilnetz.de>
+ */
+
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	compatible = "edimax,br-6208ac-v2", "ralink,mt7620a-soc";
+	model = "Edimax BR-6208AC v2";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_firmware;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		// Vendor firmware: /proc/RESET_BUTTON
+		reset_wps {
+			label = "reset_wps";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	// Vendor firmware: /proc/driver/led
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		};
+
+		// RALINK_REG_PIO3924DATA 39-24
+		led_internet: internet {
+			label = "green:internet";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+		};
+
+		// RALINK_REG_PIO7140DATA 44-40
+		led_wlan_2_4ghz: wlan_2_4ghz {
+			label = "green:wlan2g";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		// RALINK_REG_PIO7140DATA 43-40
+		led_wlan_5ghz: wlan_5ghz {
+			label = "green:wlan5g";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		// RALINK_REG_PIO7140DATA 42-40
+		led_firmware: firmware {
+			label = "green:firmware";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
+			// default-state = "keep";
+		};
+
+		// RALINK_REG_PIO7140DATA 41-40
+		led_vpn: vpn {
+			label = "green:vpn";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gdma {
+	status = "okay";
+};
+
+// Vendor firmware: RALINK_REG_PIO7140 - gpio0: gpio@600
+// Vendor firmware: RALINK_REG_PIO3924 - gpio1: gpio@638
+// Vendor firmware: RALINK_REG_PIO7140 - gpio2: gpio@660
+// Vendor firmware: RALINK_REG_PIO72   - gpio3: gpio@688
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			// Vendor partitions:
+			// 0x000000000000-0x000000030000 : "Bootloader"
+			// 0x000000030000-0x000000040000 : "Config"
+			// 0x000000040000-0x000000050000 : "Factory"
+			// 0x000000050000-0x000000070000 : "Cimage"
+			// 0x000000070000-0x000000fe0000 : "Uimage"
+			// 0x000000070000-0x000000190000 : "Kernel"
+			// 0x000000190000-0x000000fe0000 : "RootFS"
+			// 0x000000fe0000-0x000001000000 : "FreeSpace"
+
+			// Bootloader
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			// Config
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			// Factory
+			factory: partition@40000 {
+				compatible = "nvmem-cells";
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				read-only;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
+
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x200>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
+
+				macaddr_factory_2e: macaddr@2e {
+					reg = <0x2e 0x6>;
+				};
+			};
+
+			// Cimage
+			partition@50000 {
+				label = "cimage";
+				reg = <0x50000 0x20000>;
+				read-only;
+			};
+
+			partition@70000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,offset = <FW_EDIMAX_OFFSET>;
+				openwrt,partition-magic = <FW_MAGIC_EDIMAX>;
+				label = "firmware";
+				reg = <0x00070000 0x00f70000>;
+			};
+
+			// FreeSpace
+			partition@fe0000 {
+				label = "freespace";
+				reg = <0xfe0000 0x20000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		// TODO: "spi refclk"?
+		groups = "i2c", "uartf", "rgmii1", "rgmii2", "ephy", "wled", "nd_sd";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_2e>;
+	nvmem-cell-names = "mac-address";
+
+	mediatek,portmap = "llllw";
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};

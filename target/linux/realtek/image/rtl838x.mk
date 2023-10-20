@@ -99,6 +99,24 @@ define Device/hpe_1920-8g
 endef
 TARGET_DEVICES += hpe_1920-8g
 
+define Device/hpe_1920-8g-poe-65w
+  $(Device/hpe_1920)
+  SOC := rtl8380
+  DEVICE_MODEL := 1920-8G-PoE+ 65W (JG921A)
+  DEVICE_PACKAGES += realtek-poe
+  H3C_DEVICE_ID := 0x00010024
+endef
+TARGET_DEVICES += hpe_1920-8g-poe-65w
+
+define Device/hpe_1920-8g-poe-180w
+  $(Device/hpe_1920)
+  SOC := rtl8380
+  DEVICE_MODEL := 1920-8G-PoE+ 180W (JG922A)
+  H3C_DEVICE_ID := 0x00010025
+  SUPPORTED_DEVICES += hpe_1920-8g-poe
+endef
+TARGET_DEVICES += hpe_1920-8g-poe-180w
+
 define Device/hpe_1920-16g
   $(Device/hpe_1920)
   SOC := rtl8382
@@ -233,6 +251,16 @@ define Device/tplink_sg2210p-v3
   DEVICE_PACKAGES := kmod-hwmon-tps23861
 endef
 TARGET_DEVICES += tplink_sg2210p-v3
+
+define Device/tplink_t1600g-28ts-v3
+  SOC := rtl8382
+  KERNEL_SIZE := 6m
+  IMAGE_SIZE := 26m
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := T1600G-28TS
+  DEVICE_VARIANT := v3
+endef
+TARGET_DEVICES += tplink_t1600g-28ts-v3
 
 define Device/zyxel_gs1900-10hp
   $(Device/zyxel_gs1900)

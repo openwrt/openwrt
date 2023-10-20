@@ -1,0 +1,145 @@
+From daf73c70f69386fb15960526772ef584a4efcaf2 Mon Sep 17 00:00:00 2001
+From: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Date: Mon, 19 Jun 2023 06:09:36 +0200
+Subject: [PATCH 4/9] mips: ralink: rt305x: remove clock related code
+
+A properly clock driver for ralink SoCs has been added. Hence there is no
+need to have clock related code in 'arch/mips/ralink' folder anymore.
+
+Signed-off-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/include/asm/mach-ralink/rt305x.h | 21 --------
+ arch/mips/ralink/rt305x.c                  | 78 ------------------------------
+ 2 files changed, 99 deletions(-)
+
+--- a/arch/mips/include/asm/mach-ralink/rt305x.h
++++ b/arch/mips/include/asm/mach-ralink/rt305x.h
+@@ -66,26 +66,9 @@ static inline int soc_is_rt5350(void)
+ #define CHIP_ID_ID_SHIFT		8
+ #define CHIP_ID_REV_MASK		0xff
+ 
+-#define RT305X_SYSCFG_CPUCLK_SHIFT		18
+-#define RT305X_SYSCFG_CPUCLK_MASK		0x1
+-#define RT305X_SYSCFG_CPUCLK_LOW		0x0
+-#define RT305X_SYSCFG_CPUCLK_HIGH		0x1
+-
+ #define RT305X_SYSCFG_SRAM_CS0_MODE_SHIFT	2
+-#define RT305X_SYSCFG_CPUCLK_MASK		0x1
+ #define RT305X_SYSCFG_SRAM_CS0_MODE_WDT		0x1
+ 
+-#define RT3352_SYSCFG0_CPUCLK_SHIFT	8
+-#define RT3352_SYSCFG0_CPUCLK_MASK	0x1
+-#define RT3352_SYSCFG0_CPUCLK_LOW	0x0
+-#define RT3352_SYSCFG0_CPUCLK_HIGH	0x1
+-
+-#define RT5350_SYSCFG0_CPUCLK_SHIFT	8
+-#define RT5350_SYSCFG0_CPUCLK_MASK	0x3
+-#define RT5350_SYSCFG0_CPUCLK_360	0x0
+-#define RT5350_SYSCFG0_CPUCLK_320	0x2
+-#define RT5350_SYSCFG0_CPUCLK_300	0x3
+-
+ #define RT5350_SYSCFG0_DRAM_SIZE_SHIFT  12
+ #define RT5350_SYSCFG0_DRAM_SIZE_MASK   7
+ #define RT5350_SYSCFG0_DRAM_SIZE_2M     0
+@@ -116,13 +99,9 @@ static inline int soc_is_rt5350(void)
+ 
+ #define RT3352_SYSC_REG_SYSCFG0		0x010
+ #define RT3352_SYSC_REG_SYSCFG1         0x014
+-#define RT3352_SYSC_REG_CLKCFG1         0x030
+ #define RT3352_SYSC_REG_RSTCTRL         0x034
+ #define RT3352_SYSC_REG_USB_PS          0x05c
+ 
+-#define RT3352_CLKCFG0_XTAL_SEL		BIT(20)
+-#define RT3352_CLKCFG1_UPHY0_CLK_EN	BIT(18)
+-#define RT3352_CLKCFG1_UPHY1_CLK_EN	BIT(20)
+ #define RT3352_RSTCTRL_UHST		BIT(22)
+ #define RT3352_RSTCTRL_UDEV		BIT(25)
+ #define RT3352_SYSCFG1_USB0_HOST_MODE	BIT(10)
+--- a/arch/mips/ralink/rt305x.c
++++ b/arch/mips/ralink/rt305x.c
+@@ -53,84 +53,6 @@ static unsigned long rt5350_get_mem_size
+ 	return ret;
+ }
+ 
+-void __init ralink_clk_init(void)
+-{
+-	unsigned long cpu_rate, sys_rate, wdt_rate, uart_rate;
+-	unsigned long wmac_rate = 40000000;
+-
+-	u32 t = rt_sysc_r32(SYSC_REG_SYSTEM_CONFIG);
+-
+-	if (soc_is_rt305x() || soc_is_rt3350()) {
+-		t = (t >> RT305X_SYSCFG_CPUCLK_SHIFT) &
+-		     RT305X_SYSCFG_CPUCLK_MASK;
+-		switch (t) {
+-		case RT305X_SYSCFG_CPUCLK_LOW:
+-			cpu_rate = 320000000;
+-			break;
+-		case RT305X_SYSCFG_CPUCLK_HIGH:
+-			cpu_rate = 384000000;
+-			break;
+-		}
+-		sys_rate = uart_rate = wdt_rate = cpu_rate / 3;
+-	} else if (soc_is_rt3352()) {
+-		t = (t >> RT3352_SYSCFG0_CPUCLK_SHIFT) &
+-		     RT3352_SYSCFG0_CPUCLK_MASK;
+-		switch (t) {
+-		case RT3352_SYSCFG0_CPUCLK_LOW:
+-			cpu_rate = 384000000;
+-			break;
+-		case RT3352_SYSCFG0_CPUCLK_HIGH:
+-			cpu_rate = 400000000;
+-			break;
+-		}
+-		sys_rate = wdt_rate = cpu_rate / 3;
+-		uart_rate = 40000000;
+-	} else if (soc_is_rt5350()) {
+-		t = (t >> RT5350_SYSCFG0_CPUCLK_SHIFT) &
+-		     RT5350_SYSCFG0_CPUCLK_MASK;
+-		switch (t) {
+-		case RT5350_SYSCFG0_CPUCLK_360:
+-			cpu_rate = 360000000;
+-			sys_rate = cpu_rate / 3;
+-			break;
+-		case RT5350_SYSCFG0_CPUCLK_320:
+-			cpu_rate = 320000000;
+-			sys_rate = cpu_rate / 4;
+-			break;
+-		case RT5350_SYSCFG0_CPUCLK_300:
+-			cpu_rate = 300000000;
+-			sys_rate = cpu_rate / 3;
+-			break;
+-		default:
+-			BUG();
+-		}
+-		uart_rate = 40000000;
+-		wdt_rate = sys_rate;
+-	} else {
+-		BUG();
+-	}
+-
+-	if (soc_is_rt3352() || soc_is_rt5350()) {
+-		u32 val = rt_sysc_r32(RT3352_SYSC_REG_SYSCFG0);
+-
+-		if (!(val & RT3352_CLKCFG0_XTAL_SEL))
+-			wmac_rate = 20000000;
+-	}
+-
+-	ralink_clk_add("cpu", cpu_rate);
+-	ralink_clk_add("sys", sys_rate);
+-	ralink_clk_add("10000900.i2c", uart_rate);
+-	ralink_clk_add("10000a00.i2s", uart_rate);
+-	ralink_clk_add("10000b00.spi", sys_rate);
+-	ralink_clk_add("10000b40.spi", sys_rate);
+-	ralink_clk_add("10000100.timer", wdt_rate);
+-	ralink_clk_add("10000120.watchdog", wdt_rate);
+-	ralink_clk_add("10000500.uart", uart_rate);
+-	ralink_clk_add("10000c00.uartlite", uart_rate);
+-	ralink_clk_add("10100000.ethernet", sys_rate);
+-	ralink_clk_add("10180000.wmac", wmac_rate);
+-}
+-
+ void __init ralink_of_remap(void)
+ {
+ 	rt_sysc_membase = plat_of_remap_node("ralink,rt3050-sysc");

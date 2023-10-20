@@ -58,6 +58,37 @@ define Build/iodata-mstc-header
 	)
 endef
 
+define Build/iodata-mstc-header2
+	$(eval model=$(word 1,$(1)))
+	$(eval model_id=$(word 2,$(1)))
+
+	( \
+		fw_len_crc=$$(gzip -c $@ | tail -c 8 | \
+			od -An -tx8 --endian little); \
+		printf "\x03\x1d\x61\x29\x07$(model)" | \
+			dd bs=21 count=1 conv=sync 2>/dev/null; \
+		printf "0.00.000" | dd bs=16 count=1 conv=sync 2>/dev/null; \
+		printf "$$(echo $(REVISION) | cut -d- -f1 | head -c8)" | \
+			dd bs=9 count=1 conv=sync 2>/dev/null; \
+		printf "$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)" | \
+			dd bs=33 count=1 conv=sync 2>/dev/null; \
+		date -d "@$(SOURCE_DATE_EPOCH)" "+%F" | tr -d "\n" | \
+			dd bs=15 count=1 conv=sync 2>/dev/null; \
+		printf "$$(echo $(model_id) | sed 's/../\\x&/g')" | \
+			dd bs=8 count=1 conv=sync 2>/dev/null; \
+		printf "$$(echo $$fw_len_crc | sed 's/../\\x&/g')" | \
+			dd bs=14 count=1 conv=sync 2>/dev/null; \
+		cat $@; \
+	) > $@.new
+	( \
+		header_crc="$$(head -c116 $@.new | gzip -c | tail -c8 | \
+			od -An -tx4 -N4 --endian little)"; \
+		printf "$$(echo $$header_crc | sed 's/../\\x&/g')"; \
+	) | dd of=$@.new bs=4 oflag=seek_bytes seek=110 conv=notrunc
+
+	mv $@.new $@
+endef
+
 define Build/znet-header
 	$(eval version=$(word 1,$(1)))
 	( \
@@ -88,7 +119,7 @@ define Build/belkin-header
 
 	( \
 		type_fw_date=$$(printf "01%02x%02x%02x" \
-			$$(date -d "@$(SOURCE_DATE_EPOCH)" "+%y %m %d")); \
+			$$(date -d "@$(SOURCE_DATE_EPOCH)" "+%-y %-m %-d")); \
 		hw_fw_ver=$$(printf "%02x%02x%02x%02x" \
 			$(hw_ver) $$(echo $(fw_ver) | cut -d. -f-3 | tr . ' ')); \
 		fw_len_crc=$$(gzip -c $@ | tail -c 8 | od -An -tx8 | tr -d ' \n'); \
@@ -178,6 +209,18 @@ define Device/afoundry_ew1200
 endef
 TARGET_DEVICES += afoundry_ew1200
 
+define Device/alfa-network_ax1800rm
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 15488k
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := AX1800RM
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += recovery.bin
+  IMAGE/recovery.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += alfa-network_ax1800rm
+
 define Device/alfa-network_quad-e4g
   $(Device/dsa-migration)
   IMAGE_SIZE := 16064k
@@ -237,6 +280,7 @@ TARGET_DEVICES += arcadyan_we420223-99
 
 define Device/asiarf_ap7621-001
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-001
@@ -247,6 +291,7 @@ TARGET_DEVICES += asiarf_ap7621-001
 
 define Device/asiarf_ap7621-nv1
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 16000k
   DEVICE_VENDOR := AsiaRF
   DEVICE_MODEL := AP7621-NV1
@@ -396,6 +441,23 @@ define Device/beeline_smartbox-giga
 endef
 TARGET_DEVICES += beeline_smartbox-giga
 
+define Device/beeline_smartbox-pro
+  $(Device/sercomm_s1500)
+  DEVICE_VENDOR := Beeline
+  DEVICE_MODEL := SmartBox PRO
+  DEVICE_ALT0_VENDOR := Sercomm
+  DEVICE_ALT0_MODEL := S1500 AWI
+  IMAGE_SIZE := 34816k
+  IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
+	sercomm-reset-slot1-chksum | append-ubi | check-size | \
+	sercomm-factory-cqr | sercomm-append-tail | sercomm-mkhash
+  SERCOMM_HWID := AWI
+  SERCOMM_HWVER := 10000
+  SERCOMM_ROOTFS2_OFFSET := 0x3d00000
+  SERCOMM_SWVER := 2020
+endef
+TARGET_DEVICES += beeline_smartbox-pro
+
 define Device/beeline_smartbox-turbo
   $(Device/sercomm_dxx)
   IMAGE_SIZE := 32768k
@@ -407,6 +469,18 @@ define Device/beeline_smartbox-turbo
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
 endef
 TARGET_DEVICES += beeline_smartbox-turbo
+
+define Device/beeline_smartbox-turbo-plus
+  $(Device/sercomm_cxx)
+  IMAGE_SIZE := 32768k
+  SERCOMM_HWID := CQR
+  SERCOMM_HWVER := 10000
+  SERCOMM_SWVER := 2010
+  DEVICE_VENDOR := Beeline
+  DEVICE_MODEL := SmartBox TURBO+
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3
+endef
+TARGET_DEVICES += beeline_smartbox-turbo-plus
 
 define Device/belkin_rt1800
   $(Device/nand)
@@ -469,6 +543,35 @@ define Device/bolt_arion
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2
 endef
 TARGET_DEVICES += bolt_arion
+
+define Device/comfast_cf-e390ax
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := ComFast
+  DEVICE_MODEL := CF-E390AX
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += comfast_cf-e390ax
+
+define Device/comfast_cf-ew72-v2
+    $(Device/dsa-migration)
+    $(Device/uimage-lzma-loader)
+    IMAGE_SIZE := 15808k
+    DEVICE_VENDOR := ComFast
+    DEVICE_MODEL := CF-EW72 V2
+    DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+        -uboot-envtools
+    IMAGES += factory.bin
+    IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+        check-size | append-metadata
+    IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += comfast_cf-ew72-v2
 
 define Device/cudy_m1800
   $(Device/dsa-migration)
@@ -538,12 +641,9 @@ define Device/cudy_x6-v2
 endef
 TARGET_DEVICES += cudy_x6-v2
 
-define Device/dlink_dap-1620-b1
+define Device/dlink_dxx-1xx0-x1
   DEVICE_VENDOR := D-Link
-  DEVICE_MODEL := DAP-1620
-  DEVICE_VARIANT := B1
   DEVICE_PACKAGES := kmod-mt7615-firmware rssileds
-  DLINK_HWID := MT76XMT7621-RP-PR2475-NA
   IMAGE_SIZE := 16064k
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | \
@@ -551,6 +651,13 @@ define Device/dlink_dap-1620-b1
     append-md5sum-ascii-salted ffff | \
     append-string $$(DLINK_HWID) | \
     check-size
+endef
+
+define Device/dlink_dap-1620-b1
+  $(Device/dlink_dxx-1xx0-x1)
+  DEVICE_MODEL := DAP-1620
+  DEVICE_VARIANT := B1
+  DLINK_HWID := MT76XMT7621-RP-PR2475-NA
 endef
 TARGET_DEVICES += dlink_dap-1620-b1
 
@@ -730,6 +837,14 @@ define Device/dlink_dir-882-r1
 	ab0dff19af8842cdb70a86b4b68d23f7
 endef
 TARGET_DEVICES += dlink_dir-882-r1
+
+define Device/dlink_dra-1360-a1
+  $(Device/dlink_dxx-1xx0-x1)
+  DEVICE_MODEL := DRA-1360
+  DEVICE_VARIANT := A1
+  DLINK_HWID := MT76XMT7621-RP-RA1360-NA
+endef
+TARGET_DEVICES += dlink_dra-1360-a1
 
 define Device/dual-q_h721
   $(Device/dsa-migration)
@@ -980,7 +1095,7 @@ define Device/gnubee_gb-pc1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := GnuBee
-  DEVICE_MODEL := Personal Cloud One
+  DEVICE_MODEL := GB-PC1
   DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 \
 	-wpad-basic-mbedtls -uboot-envtools
   IMAGE_SIZE := 32448k
@@ -991,7 +1106,7 @@ define Device/gnubee_gb-pc2
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := GnuBee
-  DEVICE_MODEL := Personal Cloud Two
+  DEVICE_MODEL := GB-PC2
   DEVICE_PACKAGES := kmod-ata-ahci kmod-usb3 kmod-sdhci-mt7620 \
 	-wpad-basic-mbedtls -uboot-envtools
   IMAGE_SIZE := 32448k
@@ -1157,6 +1272,27 @@ define Device/iodata_wn-ax2033gr
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += iodata_wn-ax2033gr
+
+define Device/iodata_wn-deax1800gr
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := I-O DATA
+  DEVICE_MODEL := WN-DEAX1800GR
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 6144k
+  IMAGE_SIZE := 47104k
+  UBINIZE_OPTS := -E 5
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
+	check-size | xor-image -p 29944a25120984c2 -x | \
+	iodata-mstc-header2 WN-DEAX1800GR 00021003
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+endef
+TARGET_DEVICES += iodata_wn-deax1800gr
 
 define Device/iodata_wn-dx1167r
   $(Device/iodata_nand)
@@ -1592,6 +1728,32 @@ define Device/mts_wg430223
 endef
 TARGET_DEVICES += mts_wg430223
 
+define Device/netgear_eax12
+  $(Device/nand)
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := EAX12
+  DEVICE_ALT0_VENDOR := NETGEAR
+  DEVICE_ALT0_MODEL := EAX11
+  DEVICE_ALT0_VARIANT := v2
+  DEVICE_ALT1_VENDOR := NETGEAR
+  DEVICE_ALT1_MODEL := EAX15
+  DEVICE_ALT1_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  NETGEAR_ENC_MODEL := EAX12
+  NETGEAR_ENC_REGION := US
+  NETGEAR_ENC_HW_ID_LIST := 1010000004540000_NETGEAR
+  NETGEAR_ENC_MODEL_LIST := EAX12;EAX11v2;EAX15v2
+  IMAGE_SIZE := 57344k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+	append-squashfs4-fakeroot
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | netgear-encrypted-factory
+endef
+TARGET_DEVICES += netgear_eax12
+
 define Device/netgear_ex6150
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1974,7 +2136,7 @@ define Device/telco-electronics_x1
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := Telco Electronics
   DEVICE_MODEL := X1
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt76 -uboot-envtools
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7603 kmod-mt76x2 -uboot-envtools
 endef
 TARGET_DEVICES += telco-electronics_x1
 
@@ -2109,6 +2271,19 @@ define Device/tplink_eap235-wall-v1
 endef
 TARGET_DEVICES += tplink_eap235-wall-v1
 
+define Device/tplink_eap613-v1
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := EAP613
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  TPLINK_BOARD_ID := EAP610-V3
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-to 64k
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  IMAGE_SIZE := 13248k
+endef
+TARGET_DEVICES += tplink_eap613-v1
+
 define Device/tplink_eap615-wall-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
@@ -2166,6 +2341,9 @@ define Device/tplink_mr600-v2-eu
   TPLINK_FLASHLAYOUT := 16Mltq
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
 		kmod-usb-net-qmi-wwan uqmi kmod-usb3 -uboot-envtools
+  IMAGE/factory.bin := tplink-v2-image -e -a 0x10000
+  IMAGE/sysupgrade.bin := tplink-v2-image -s -e -a 0x10000 | check-size | \
+	append-metadata
   KERNEL := $(KERNEL_DTB) | uImage lzma
   KERNEL_INITRAMFS := $$(KERNEL) | tplink-v2-header
   TPLINK_BOARD_ID := MR600-V2-EU
@@ -2391,6 +2569,20 @@ define Device/wavlink_ws-wn572hp3-4g
 endef
 TARGET_DEVICES += wavlink_ws-wn572hp3-4g
 
+
+define Device/wavlink_wl-wn573hx1
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 15808k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN573HX1
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+	check-size | append-metadata
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += wavlink_wl-wn573hx1
+
 define Device/wevo_11acnas
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -2417,6 +2609,24 @@ define Device/wevo_w2914ns-v2
   SUPPORTED_DEVICES += w2914nsv2
 endef
 TARGET_DEVICES += wevo_w2914ns-v2
+
+define Device/wifire_s1500-nbn
+  $(Device/sercomm_s1500)
+  DEVICE_VENDOR := WiFire
+  DEVICE_MODEL := S1500.NBN
+  DEVICE_ALT0_VENDOR := Sercomm
+  DEVICE_ALT0_MODEL := S1500 BUC
+  IMAGE_SIZE := 51200k
+  IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
+	sercomm-reset-slot1-chksum | append-ubi | check-size | \
+	sercomm-factory-cqr | sercomm-fix-buc-pid | sercomm-mkhash | \
+	sercomm-crypto
+  SERCOMM_HWID := BUC
+  SERCOMM_HWVER := 10000
+  SERCOMM_ROOTFS2_OFFSET := 0x4d00000
+  SERCOMM_SWVER := 2015
+endef
+TARGET_DEVICES += wifire_s1500-nbn
 
 define Device/winstars_ws-wn583a6
   $(Device/dsa-migration)
@@ -2696,6 +2906,18 @@ define Device/zbtlink_zbt-wg1608-16m
 	-uboot-envtools
 endef
 TARGET_DEVICES += zbtlink_zbt-wg1608-16m
+
+define Device/zbtlink_zbt-wg1608-32m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-WG1608
+  DEVICE_VARIANT := 32M
+  DEVICE_PACKAGES := kmod-sdhci-mt7620 kmod-mt7603 kmod-mt7615e \
+	kmod-mt7663-firmware-ap kmod-usb3 kmod-usb-ledtrig-usbport
+endef
+TARGET_DEVICES += zbtlink_zbt-wg1608-32m
 
 define Device/zbtlink_zbt-wg2626
   $(Device/dsa-migration)

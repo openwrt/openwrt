@@ -59,7 +59,9 @@ platform_do_upgrade() {
 	asus,rt-ax54|\
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
+	beeline,smartbox-pro|\
 	beeline,smartbox-turbo|\
+	beeline,smartbox-turbo-plus|\
 	belkin,rt1800|\
 	dlink,dap-x1860-a1|\
 	dlink,dir-1960-a1|\
@@ -87,6 +89,7 @@ platform_do_upgrade() {
 	linksys,ea8100-v1|\
 	linksys,ea8100-v2|\
 	mts,wg430223|\
+	netgear,eax12|\
 	netgear,r6220|\
 	netgear,r6260|\
 	netgear,r6350|\
@@ -106,6 +109,7 @@ platform_do_upgrade() {
 	sercomm,na502s|\
 	sim,simax1800t|\
 	tplink,ec330-g5u-v1|\
+	wifire,s1500-nbn|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
@@ -122,11 +126,17 @@ platform_do_upgrade() {
 	iodata,wn-ax2033gr|\
 	iodata,wn-dx1167r|\
 	iodata,wn-dx2033gr)
-		iodata_mstc_upgrade_prepare "0xfe75"
+		iodata_mstc_set_flag "debugflag" "factory" "0xfe75" "0,1" "1"
+		iodata_mstc_set_flag "bootnum" "persist" "0x4" "1,2" "1"
+		nand_do_upgrade "$1"
+		;;
+	iodata,wn-deax1800gr)
+		iodata_mstc_set_flag "bootnum" "working" "0x4" "0,1" "0"
 		nand_do_upgrade "$1"
 		;;
 	iodata,wn-dx1200gr)
-		iodata_mstc_upgrade_prepare "0x1fe75"
+		iodata_mstc_set_flag "debugflag" "factory" "0x1fe75" "0,1" "1"
+		iodata_mstc_set_flag "bootnum" "persist" "0x4" "1,2" "1"
 		nand_do_upgrade "$1"
 		;;
 	tplink,er605-v2)

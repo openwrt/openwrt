@@ -8,16 +8,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libbpf
-PKG_VERSION:=1.2.0
+PKG_VERSION:=1.2.2
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/libbpf/libbpf
+PKG_MIRROR_HASH:=d20f5a226e5729c87c367f3fba61c44d5e13176ef12637d0e0b30629fa3ab0d6
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=fbd60dbff51c870f5e80a17c4f2fd639eb80af90
-PKG_MIRROR_HASH:=80a80dfba71576e017b596fb28068e2a92de629e426f063e4b37314c8d576336
+PKG_SOURCE_VERSION:=1728e3e4bef0e138ea95ffe62163eb9a6ac6fa32
 PKG_ABI_VERSION:=$(firstword $(subst .,$(space),$(PKG_VERSION)))
 
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
+PKG_CPE_ID:=cpe:/a:libbpf_project:libbpf
 
 PKG_BUILD_FLAGS:=no-mips16
 PKG_BUILD_PARALLEL:=1

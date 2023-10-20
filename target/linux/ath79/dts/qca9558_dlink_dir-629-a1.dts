@@ -65,8 +65,8 @@
 
 	phy-mode = "mii";
 
-	nvmem-cells = <&macaddr_mfcdata_35>;
-	nvmem-cell-names = "mac-address-ascii";
+	nvmem-cells = <&macaddr_mfcdata_35 0>;
+	nvmem-cell-names = "mac-address";
 
 	fixed-link {
 		speed = <100>;
@@ -115,15 +115,23 @@
 				read-only;
 
 				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				macaddr_mfcdata_35: macaddr@35 {
-					reg = <0x35 0x11>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_mfcdata_51: macaddr@51 {
-					reg = <0x51 0x11>;
+					macaddr_mfcdata_35: macaddr@35 {
+						compatible = "mac-base";
+						reg = <0x35 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_mfcdata_51: macaddr@51 {
+						compatible = "mac-base";
+						reg = <0x51 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
@@ -165,6 +173,6 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&cal_art_1000>, <&macaddr_mfcdata_51>;
-	nvmem-cell-names = "calibration", "mac-address-ascii";
+	nvmem-cells = <&cal_art_1000>, <&macaddr_mfcdata_51 0>;
+	nvmem-cell-names = "calibration", "mac-address";
 };

@@ -1,0 +1,372 @@
+From 652a6fa45b6c9d52dd9685fc12ad662e54a9092e Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Mon, 24 Apr 2023 09:38:30 +0200
+Subject: [PATCH 5/5] board: Add new Broadcom Northstar board
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This adds a simple Northstar "BRCMNS" board to be used with
+the BCM4708x and BCM5301x chips.
+
+The main intention is to use this with the D-Link DIR-890L
+and DIR-885L routers for loading the kernel into RAM from
+NAND memory using the BCH-1 ECC and using the separately
+submitted SEAMA load command, so we are currently not adding
+support for things such as networking.
+
+The DTS file is a multiplatform NorthStar board, designed to
+be usable with several NorthStar designs by avoiding any
+particulars not related to the operation of U-Boot.
+
+If other board need other ECC for example, they need to
+create a separate DTS file and augment the code, but I don't
+know if any other users will turn up.
+
+Cc: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/Kconfig                 |  1 +
+ arch/arm/dts/Makefile            |  2 ++
+ arch/arm/dts/ns-board.dts        | 57 ++++++++++++++++++++++++++++++
+ board/broadcom/bcmns/Kconfig     | 12 +++++++
+ board/broadcom/bcmns/MAINTAINERS |  6 ++++
+ board/broadcom/bcmns/Makefile    |  2 ++
+ board/broadcom/bcmns/ns.c        | 60 ++++++++++++++++++++++++++++++++
+ configs/bcmns_defconfig          | 41 ++++++++++++++++++++++
+ doc/board/broadcom/index.rst     |  1 +
+ doc/board/broadcom/northstar.rst | 44 +++++++++++++++++++++++
+ include/configs/bcmns.h          | 49 ++++++++++++++++++++++++++
+ 11 files changed, 275 insertions(+)
+ create mode 100644 arch/arm/dts/ns-board.dts
+ create mode 100644 board/broadcom/bcmns/Kconfig
+ create mode 100644 board/broadcom/bcmns/MAINTAINERS
+ create mode 100644 board/broadcom/bcmns/Makefile
+ create mode 100644 board/broadcom/bcmns/ns.c
+ create mode 100644 configs/bcmns_defconfig
+ create mode 100644 doc/board/broadcom/northstar.rst
+ create mode 100644 include/configs/bcmns.h
+
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -2286,6 +2286,7 @@ source "board/Marvell/octeontx2/Kconfig"
+ source "board/armltd/vexpress/Kconfig"
+ source "board/armltd/vexpress64/Kconfig"
+ source "board/cortina/presidio-asic/Kconfig"
++source "board/broadcom/bcmns/Kconfig"
+ source "board/broadcom/bcmns3/Kconfig"
+ source "board/cavium/thunderx/Kconfig"
+ source "board/eets/pdu001/Kconfig"
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -1185,6 +1185,8 @@ dtb-$(CONFIG_ARCH_BCM283X) += \
+ 	bcm2837-rpi-cm3-io3.dtb \
+ 	bcm2711-rpi-4-b.dtb
+ 
++dtb-$(CONFIG_TARGET_BCMNS) += ns-board.dtb
++
+ dtb-$(CONFIG_TARGET_BCMNS3) += ns3-board.dtb
+ 
+ dtb-$(CONFIG_ARCH_BCMSTB) += bcm7xxx.dtb
+--- /dev/null
++++ b/arch/arm/dts/ns-board.dts
+@@ -0,0 +1,57 @@
++// SPDX-License-Identifier:      GPL-2.0+
++
++/dts-v1/;
++
++#include "bcm5301x.dtsi"
++
++/ {
++	/*
++	 * The Northstar does not have a proper fallback compatible, but
++	 * these basic chips will suffice.
++	 */
++	model = "Northstar model";
++	compatible = "brcm,bcm47094", "brcm,bcm4708";
++	#address-cells = <1>;
++	#size-cells = <1>;
++	interrupt-parent = <&gic>;
++
++	memory {
++		device_type = "memory";
++		reg = <0x00000000 0x08000000>,
++		      <0x88000000 0x08000000>;
++	};
++
++	aliases {
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	nand-controller@18028000 {
++		nandcs: nand@0 {
++			compatible = "brcm,nandcs";
++			reg = <0>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			/*
++			 * Same as using the bcm5301x-nand-cs0-bch1.dtsi
++			 * include from the Linux kernel.
++			 */
++			nand-ecc-algo = "bch";
++			nand-ecc-strength = <1>;
++			nand-ecc-step-size = <512>;
++
++			partitions {
++				compatible = "brcm,bcm947xx-cfe-partitions";
++			};
++		};
++	};
++};
++
++&uart0 {
++	clock-frequency = <125000000>;
++	status = "okay";
++};
+--- /dev/null
++++ b/board/broadcom/bcmns/Kconfig
+@@ -0,0 +1,12 @@
++if TARGET_BCMNS
++
++config SYS_BOARD
++	default "bcmns"
++
++config SYS_VENDOR
++	default "broadcom"
++
++config SYS_CONFIG_NAME
++	default "bcmns"
++
++endif
+--- /dev/null
++++ b/board/broadcom/bcmns/MAINTAINERS
+@@ -0,0 +1,6 @@
++BCMNS BOARD
++M:	Linus Walleij <linus.walleij@linaro.org>
++S:	Maintained
++F:	board/broadcom/bcmnsp/
++F:	configs/bcmnsp_defconfig
++F:	include/configs/bcmnsp.h
+--- /dev/null
++++ b/board/broadcom/bcmns/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0-or-later
++obj-y	:= ns.o
+--- /dev/null
++++ b/board/broadcom/bcmns/ns.c
+@@ -0,0 +1,60 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Broadcom Northstar generic board set-up code
++ * Copyright (C) 2023 Linus Walleij <linus.walleij@linaro.org>
++ */
++
++#include <common.h>
++#include <dm.h>
++#include <init.h>
++#include <log.h>
++#include <ram.h>
++#include <serial.h>
++#include <asm/global_data.h>
++#include <asm/io.h>
++#include <asm/armv7m.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++int dram_init(void)
++{
++	return fdtdec_setup_mem_size_base();
++}
++
++int dram_init_banksize(void)
++{
++	return fdtdec_setup_memory_banksize();
++}
++
++int board_late_init(void)
++{
++	/* LEDs etc can be initialized here */
++	return 0;
++}
++
++int board_init(void)
++{
++	return 0;
++}
++
++void reset_cpu(void)
++{
++}
++
++int print_cpuinfo(void)
++{
++	printf("BCMNS Northstar SoC\n");
++	return 0;
++}
++
++int misc_init_r(void)
++{
++	return 0;
++}
++
++int ft_board_setup(void *fdt, struct bd_info *bd)
++{
++	printf("Northstar board setup: DTB at 0x%08lx\n", (ulong)fdt);
++	return 0;
++}
++
+--- /dev/null
++++ b/configs/bcmns_defconfig
+@@ -0,0 +1,41 @@
++CONFIG_ARM=y
++CONFIG_TARGET_BCMNS=y
++CONFIG_TEXT_BASE=0x00008000
++CONFIG_SYS_MALLOC_LEN=0x2000000
++CONFIG_SYS_MALLOC_F_LEN=0x8000
++CONFIG_NR_DRAM_BANKS=2
++CONFIG_DEFAULT_DEVICE_TREE="ns-board"
++CONFIG_IDENT_STRING="Broadcom Northstar"
++CONFIG_SYS_LOAD_ADDR=0x00008000
++CONFIG_HAS_CUSTOM_SYS_INIT_SP_ADDR=y
++CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0x00100000
++# CONFIG_BOOTSTD is not set
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_AUTOBOOT_PROMPT="Boot Northstar system in %d seconds\n"
++CONFIG_BOOTDELAY=1
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="run bootcmd_dlink_dir8xxl"
++CONFIG_SYS_PROMPT="northstar> "
++CONFIG_ENV_VARS_UBOOT_CONFIG=y
++CONFIG_OF_BOARD_SETUP=y
++CONFIG_OF_STDOUT_VIA_ALIAS=y
++CONFIG_DISPLAY_BOARDINFO_LATE=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_MAXARGS=64
++CONFIG_CMD_SEAMA=y
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_CACHE=y
++CONFIG_OF_EMBED=y
++CONFIG_USE_HOSTNAME=y
++CONFIG_HOSTNAME="NS"
++CONFIG_CLK=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_RAW_NAND=y
++CONFIG_NAND_BRCMNAND=y
++CONFIG_SYS_NAND_ONFI_DETECTION=y
++CONFIG_CMD_NAND=y
++CONFIG_DM_SERIAL=y
++CONFIG_SYS_NS16550=y
++# CONFIG_NET is not set
++# CONFIG_EFI_LOADER is not set
+--- a/doc/board/broadcom/index.rst
++++ b/doc/board/broadcom/index.rst
+@@ -9,3 +9,4 @@ Broadcom
+ 
+    bcm7xxx
+    raspberrypi
++   northstar
+--- /dev/null
++++ b/doc/board/broadcom/northstar.rst
+@@ -0,0 +1,44 @@
++.. SPDX-License-Identifier: GPL-2.0+
++.. Copyright (C) 2023 Linus Walleij <linus.walleij@linaro.org>
++
++Broadcom Northstar Boards
++=========================
++
++This document describes how to use U-Boot on the Broadcom Northstar
++boards, comprised of the Cortex A9 ARM-based BCM470x and BCM5301x SoCs. These
++were introduced in 2012-2013 and some of them are also called StrataGX.
++
++Northstar is part of the iProc SoC family.
++
++A good overview of these boards can be found in Jon Mason's presentation
++"Enabling New Hardware in U-Boot" where the difference between Northstar
++and Northstar Plus and Northstar 2 (Aarch64) is addressed.
++
++The ROM in the Northstar SoC will typically look into NOR flash memory
++for a boot loader, and the way this works is undocumented. It should be
++possible to execute U-Boot as the first binary from the NOR flash but
++this usage path is unexplored. Please add information if you know more.
++
++D-Link Boards
++-------------
++
++When we use U-Boot with D-Link routers, the NOR flash has a boot loader
++and web server that can re-flash the bigger NAND flash memory for object
++code in the SEAMA format, so on these platforms U-Boot is converted into
++a SEAMA binary and installed in the SoC using the flash tool resident in
++the NOR flash. Details can be found in the OpenWrt project codebase.
++
++Configure
++---------
++
++.. code-block:: console
++
++	$ make CROSS_COMPILE=${CROSS_COMPILE} bcmns_defconfig
++
++Build
++-----
++
++.. code-block:: console
++
++	$ make CROSS_COMPILE=${CROSS_COMPILE}
++	$ ${CROSS_COMPILE}strip u-boot
+--- /dev/null
++++ b/include/configs/bcmns.h
+@@ -0,0 +1,49 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++
++#ifndef __BCM_NS_H
++#define __BCM_NS_H
++
++#include <linux/sizes.h>
++
++/* Physical Memory Map */
++#define V2M_BASE			0x00000000
++#define PHYS_SDRAM_1			V2M_BASE
++
++#define CFG_SYS_SDRAM_BASE		PHYS_SDRAM_1
++
++/* Called "periph_clk" in Linux, used by the global timer */
++#define CFG_SYS_HZ_CLOCK		500000000
++
++/* Called "iprocslow" in Linux */
++#define CFG_SYS_NS16550_CLK		125000000
++
++/* console configuration */
++#define CONSOLE_ARGS "console_args=console=ttyS0,115200n8\0"
++#define MAX_CPUS "max_cpus=maxcpus=2\0"
++#define EXTRA_ARGS "extra_args=earlycon=uart8250,mmio32,0x18000300\0"
++
++#define BASE_ARGS "${console_args} ${extra_args} ${pcie_args}"	\
++		  " ${max_cpus}  ${log_level} ${reserved_mem}"
++#define SETBOOTARGS "setbootargs=setenv bootargs " BASE_ARGS "\0"
++
++#define KERNEL_LOADADDR_CFG \
++	"loadaddr=0x01000000\0" \
++	"dtb_loadaddr=0x02000000\0"
++
++/*
++ * Hardcoded for the only boards we support, if you add more
++ * boards, add a more clever bootcmd!
++ */
++#define NS_BOOTCMD "bootcmd_dlink_dir8xxl=seama 0x00fe0000; go 0x01000000"
++
++#define ARCH_ENV_SETTINGS \
++	CONSOLE_ARGS \
++	MAX_CPUS \
++	EXTRA_ARGS \
++	KERNEL_LOADADDR_CFG \
++	NS_BOOTCMD
++
++#define CFG_EXTRA_ENV_SETTINGS \
++	ARCH_ENV_SETTINGS
++
++#endif /* __BCM_NS_H */

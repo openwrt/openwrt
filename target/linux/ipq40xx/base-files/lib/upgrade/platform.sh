@@ -26,7 +26,11 @@ EOF
 		return 1
 		;;
 	zte,mf18a |\
+	zte,mf282plus|\
 	zte,mf286d |\
+	zte,mf287|\
+	zte,mf287plus |\
+	zte,mf287pro |\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
 		local mtdnum="$( find_mtd_index $CI_UBIPART )"
@@ -189,6 +193,8 @@ platform_do_upgrade() {
 	mikrotik,hap-ac3)
 		platform_do_upgrade_mikrotik_nand "$1"
 		;;
+	netgear,rbr40|\
+	netgear,rbs40|\
 	netgear,rbr50 |\
 	netgear,rbs50 |\
 	netgear,srr60 |\
@@ -206,8 +212,13 @@ platform_do_upgrade() {
 		sony_emmc_do_upgrade "$1"
 		;;
 	teltonika,rutx10 |\
+	teltonika,rutx50 |\
 	zte,mf18a |\
+	zte,mf282plus |\
 	zte,mf286d |\
+	zte,mf287 |\
+	zte,mf287plus |\
+	zte,mf287pro |\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"

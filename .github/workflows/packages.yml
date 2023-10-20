@@ -3,7 +3,6 @@ name: Build all core packages
 on:
   pull_request:
     paths:
-      - '.github/workflows/build.yml'
       - '.github/workflows/packages.yml'
       - 'config/**'
       - 'include/**'
@@ -12,13 +11,14 @@ on:
       - 'toolchain/**'
   push:
     paths:
-      - '.github/workflows/build.yml'
       - '.github/workflows/packages.yml'
       - 'config/**'
       - 'include/**'
       - 'package/**'
       - 'target/linux/generic/**'
       - 'toolchain/**'
+    branches-ignore:
+      - master
 
 permissions:
   contents: read
@@ -28,26 +28,15 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  build:
-    name: Build Packages with external toolchain
+  build-packages:
+    name: Build all core packages for selected target
     permissions:
       contents: read
       packages: read
-    strategy:
-      fail-fast: False
-      matrix:
-        include:
-          - target: malta
-            subtarget: be
-          - target: x86
-            subtarget: 64
-    uses: ./.github/workflows/build.yml
-    with:
-      container_name: toolchain
-      target: ${{ matrix.target }}
-      subtarget: ${{ matrix.subtarget }}
-      build_kernel: true
-      build_all_kmods: true
-      build_all_modules: true
-      build_full: true
-
+      actions: write
+    secrets:
+      ccache_s3_endpoint: ${{ secrets.CCACHE_S3_ENDPOINT }}
+      ccache_s3_bucket: ${{ secrets.CCACHE_S3_BUCKET }}
+      ccache_s3_access_key: ${{ secrets.CCACHE_S3_ACCESS_KEY }}
+      ccache_s3_secret_key: ${{ secrets.CCACHE_S3_SECRET_KEY }}
+    uses: openwrt/actions-shared-workflows/.github/workflows/packages.yml@main

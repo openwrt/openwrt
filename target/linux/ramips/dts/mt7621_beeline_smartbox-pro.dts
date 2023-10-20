@@ -1,0 +1,118 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "mt7621_sercomm_s1500.dtsi"
+
+/ {
+	compatible = "beeline,smartbox-pro", "mediatek,mt7621-soc";
+	model = "Beeline SmartBox PRO";
+
+	aliases {
+		label-mac-device = &gmac0;
+	};
+
+	keys {
+		switch_bt {
+			label = "ROUT<->REP Switch_bt";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_SW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+		};
+	};
+
+	ubi-concat {
+		compatible = "mtd-concat";
+		devices = <&ubiconcat0 &ubiconcat1 &ubiconcat2 &ubiconcat3 \
+			&ubiconcat4 &ubiconcat5 &ubiconcat6>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0xd2e0000>;
+			};
+		};
+	};
+};
+
+&led_wps {
+	label = "blue:wps";
+	color = <LED_COLOR_ID_BLUE>;
+};
+
+&partitions {
+	partition@0_all {
+		label = "ALL";
+		reg = <0x0 0xff80000>;
+		read-only;
+	};
+
+	partition@200000 {
+		label = "sys_data";
+		reg = <0x200000 0x1400000>;
+
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ubiconcat5: partition@0 {
+			label = "sys_data_1";
+			reg = <0x0 0x600000>;
+		};
+
+		/*
+		 * Sercomm U-Boot saves the environment at 0x800000 from
+		 * the start of the NAND, destroying the "sys_data"
+		 * partition. To prevent this, we split "sys_data" into
+		 * two parts with "u-boot-env" partition between them.
+		 */
+		partition@600000 {
+			label = "u-boot-env";
+			reg = <0x600000 0x20000>;
+		};
+
+		ubiconcat6: partition@620000 {
+			label = "sys_data_2";
+			reg = <0x620000 0xde0000>;
+		};
+	};
+
+	ubiconcat0: partition@1f00000 {
+		label = "RootFS_1";
+		reg = <0x1f00000 0x1e00000>;
+	};
+
+	partition@3d00000 {
+		label = "RootFS_2";
+		reg = <0x3d00000 0x1e00000>;
+		read-only;
+	};
+
+	ubiconcat1: partition@5b00000 {
+		label = "JVM/OSGI1";
+		reg = <0x5b00000 0x3200000>;
+	};
+
+	ubiconcat2: partition@8d00000 {
+		label = "JVM/OSGI2";
+		reg = <0x8d00000 0x3200000>;
+	};
+
+	ubiconcat3: partition@bf00000 {
+		label = "OSGI data";
+		reg = <0xbf00000 0x3c00000>;
+	};
+
+	ubiconcat4: partition@fb00000 {
+		label = "Ftool";
+		reg = <0xfb00000 0x100000>;
+	};
+
+	/*
+	 * 4 MiB Reserved for the Bad Blocka
+	 * 0x10000000-0xfc00000=0x400000
+	 */
+};

@@ -382,6 +382,29 @@ endef
 $(eval $(call KernelPackage,sound-soc-chipdip-dac))
 
 
+define KernelPackage/sound-soc-dacberry-soundcard
+  TITLE:=Support for DACBERRY400 Soundcard
+  KCONFIG:= \
+    CONFIG_SND_DACBERRY400 \
+    CONFIG_SND_SOC_TLV320AIC3X_I2C
+  FILES:= \
+    $(LINUX_DIR)/sound/soc/bcm/snd-soc-dacberry400.ko \
+    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic3x.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-tlv320aic3x-i2c snd-soc-dacberry400)
+  DEPENDS:= \
+    kmod-sound-soc-bcm2835-i2s \
+    +kmod-i2c-bcm2835 \
+    +kmod-regmap-i2c
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-dacberry-soundcard/description
+  This package contains support for DACBERRY400 Soundcard
+endef
+
+$(eval $(call KernelPackage,sound-soc-dacberry-soundcard))
+
+
 define KernelPackage/sound-soc-digidac1-soundcard
   TITLE:=Support for RRA DigiDAC1
   KCONFIG:= \
@@ -947,6 +970,7 @@ define KernelPackage/sound-soc-rpi-cirrus
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM_ADSP
   FILES:= \
+    $(LINUX_DIR)/drivers/firmware/cirrus/cs_dsp.ko \
     $(LINUX_DIR)/drivers/mfd/arizona.ko \
     $(LINUX_DIR)/drivers/mfd/arizona-i2c.ko \
     $(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-cirrus.ko \
@@ -954,7 +978,7 @@ define KernelPackage/sound-soc-rpi-cirrus
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm-adsp.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm5102.ko \
     $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm1794a snd-soc-rpi-cirrus)
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-rpi-cirrus)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
     +kmod-i2c-bcm2835 \

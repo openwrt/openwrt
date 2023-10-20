@@ -7,6 +7,12 @@ board=$(board_name)
 board_config_update
 
 case $board in
+alfa-network,ax1800rm)
+	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1"
+	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2"
+	ucidef_set_led_netdev "lan3" "lan3" "green:lan3" "lan3"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
+	;;
 asus,rp-ac87)
 	ucidef_set_rssimon "wlan0" "200000" "1"
 	ucidef_set_rssimon "wlan1" "200000" "1"
@@ -35,9 +41,18 @@ asus,rt-n56u-b1)
 beeline,smartbox-flash|\
 beeline,smartbox-giga|\
 beeline,smartbox-turbo|\
+beeline,smartbox-turbo-plus|\
 etisalat,s3|\
 rostelecom,rt-sf-1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
+	;;
+beeline,smartbox-pro|\
+wifire,s1500-nbn)
+	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "lan3" "green:lan3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "lan4" "lan4" "green:lan4" "lan4" "link tx rx"
+	ucidef_set_led_netdev "wan"  "wan"  "green:wan"  "wan"  "link tx rx"
 	;;
 belkin,rt1800)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
@@ -60,7 +75,8 @@ jcg,y2|\
 xzwifi,creativebox-v1)
 	ucidef_set_led_netdev "internet" "internet" "blue:internet" "wan"
 	;;
-dlink,dap-1620-b1)
+dlink,dap-1620-b1|\
+dlink,dra-1360-a1)
 	ucidef_set_rssimon "wlan1" "200000" "1"
 	ucidef_set_led_rssi "rssilow" "RSSILOW" "red:rssilow" "wlan1" "1" "40"
 	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "green:rssilow" "wlan1" "21" "100"
@@ -137,6 +153,10 @@ mikrotik,routerboard-m11g)
 	;;
 mtc,wr1201)
 	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth_link" "br-lan"
+	;;
+netgear,eax12)
+	ucidef_set_led_netdev "eth_act" "LAN act" "yellow:eth" "lan" "tx rx"
+	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth" "lan" "link"
 	;;
 netgear,r6220|\
 netgear,r6260|\

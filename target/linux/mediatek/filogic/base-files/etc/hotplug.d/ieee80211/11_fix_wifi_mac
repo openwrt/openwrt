@@ -10,6 +10,12 @@ PHYNBR=${DEVPATH##*/phy}
 board=$(board_name)
 
 case "$board" in
+	acer,predator-w6)
+		key_path="/var/qcidata/data"
+		[ "$PHYNBR" = "0" ] && cat $key_path/2gMAC > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && cat $key_path/6gMAC > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "2" ] && cat $key_path/5gMAC > /sys${DEVPATH}/macaddress
+		;;
 	asus,tuf-ax4200)
 		CI_UBIPART="UBI_DEV"
 		addr=$(mtd_get_mac_binary_ubi "Factory" 0x4)
@@ -24,6 +30,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_unsetbit $addr 6 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_setbit $addr 6 > /sys${DEVPATH}/macaddress
 		;;
+	cetron,ct3003)
+		addr=$(mtd_get_mac_binary "art" 0)
+		[ "$PHYNBR" = "0" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr 2) > /sys${DEVPATH}/macaddress
+		;;
 	cudy,wr3000-v1)
 		addr=$(mtd_get_mac_binary bdinfo 0xde00)
 		# Originally, phy0 is phy1 mac with LA bit set. However, this would conflict
@@ -31,6 +42,36 @@ case "$board" in
 		# mac-address instead.
 		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr 1) > /sys${DEVPATH}/macaddress
+		;;
+	glinet,gl-mt6000)
+		addr=$(mmc_get_mac_binary factory 0x04)
+		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		;;
+	h3c,magic-nx30-pro)
+		addr=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
+		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
+		;;
+	mercusys,mr90x-v1)
+		addr=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
+		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr -1 > /sys${DEVPATH}/macaddress
+		;;
+	netgear,wax220)
+		hw_mac_addr=$(mtd_get_mac_ascii u-boot-env mac)
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
+		;;
+	ubnt,unifi-6-plus)
+		addr=$(mtd_get_mac_binary EEPROM 0x6)
+		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		;;
+	qihoo,360t7)
+		addr=$(mtd_get_mac_ascii factory lanMac)
+		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
@@ -40,5 +81,10 @@ case "$board" in
 	zyxel,ex5601-t0)
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		;;
+	zyxel,nwa50ax-pro)
+		hw_mac_addr="$(mtd_get_mac_binary mrd 0x1fff8)"
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
 esac

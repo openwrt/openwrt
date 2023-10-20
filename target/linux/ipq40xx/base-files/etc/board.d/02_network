@@ -24,6 +24,8 @@ ipq40xx_setup_interfaces()
 	p2w,r619ac-64m|\
 	p2w,r619ac-128m|\
 	pakedge,wr-1|\
+	teltonika,rutx50|\
+	yyets,le1|\
 	zyxel,nbg6617)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
@@ -55,7 +57,8 @@ ipq40xx_setup_interfaces()
 	mikrotik,lhgg-60ad|\
 	mikrotik,sxtsq-5-ac|\
 	netgear,ex6100v2|\
-	netgear,ex6150v2)
+	netgear,ex6150v2|\
+	zte,mf282plus)
 		ucidef_set_interface_lan "lan"
 		;;
 	avm,fritzbox-7530)
@@ -67,6 +70,12 @@ ipq40xx_setup_interfaces()
 		;;
 	compex,wpj428)
 		ucidef_set_interface_lan "lan1 lan2"
+		;;
+	devolo,magic-2-wifi-next)
+		ucidef_set_interface_lan "lan1 lan2 ghn"
+		;;
+	extreme-networks,ws-ap391x)
+		ucidef_set_interfaces_lan_wan "sw-eth1 sw-eth2 sw-eth3 sw-eth5" "sw-eth4"
 		;;
 	linksys,whw01)
 		ucidef_set_interface_lan "eth1 eth2"
@@ -82,7 +91,10 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interface_lan "sw-eth1 sw-eth2"
 		;;
 	aruba,ap-303h|\
+	buffalo,wtr-m2133hp|\
 	ezviz,cs-w3-wd1200g-eup|\
+	netgear,rbr40|\
+	netgear,rbs40|\
 	netgear,rbr50|\
 	netgear,rbs50|\
 	netgear,srr60|\
@@ -97,8 +109,20 @@ ipq40xx_setup_interfaces()
 	plasmacloud,pa2200)
 		ucidef_set_interfaces_lan_wan "ethernet1" "ethernet2"
 		;;
+	qxwlan,e2600ac-c1)
+		ucidef_set_interfaces_lan_wan "sw-eth1" "sw-eth2"
+		;;
+	qxwlan,e2600ac-c2)
+		ucidef_set_interfaces_lan_wan "sw-eth1 sw-eth2" "sw-eth3"
+		;;
 	zte,mf286d)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
+		;;
+	zte,mf287|\
+	zte,mf287plus|\
+	zte,mf287pro)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"

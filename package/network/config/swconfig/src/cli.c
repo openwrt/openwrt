@@ -102,6 +102,24 @@ speed_str(int speed)
 }
 
 static void
+free_attr_val(const struct switch_attr *attr, const struct switch_val *val)
+{
+	switch (attr->type) {
+	case SWITCH_TYPE_STRING:
+		free(val->value.s);
+		break;
+	case SWITCH_TYPE_PORTS:
+		free(val->value.ports);
+		break;
+	case SWITCH_TYPE_LINK:
+		free(val->value.link);
+		break;
+	default:
+		break;
+	}
+}
+
+static void
 print_attr_val(const struct switch_attr *attr, const struct switch_val *val)
 {
 	struct switch_port_link *link;
@@ -150,8 +168,10 @@ show_attrs(struct switch_dev *dev, struct switch_attr *attr, struct switch_val *
 			printf("\t%s: ", attr->name);
 			if (swlib_get_attr(dev, attr, val) < 0)
 				printf("???");
-			else
+			else {
 				print_attr_val(attr, val);
+				free_attr_val(attr, val);
+			}
 			putchar('\n');
 		}
 		attr = attr->next;
@@ -354,6 +374,7 @@ int main(int argc, char **argv)
 			goto out;
 		}
 		print_attr_val(a, &val);
+		free_attr_val(a, &val);
 		putchar('\n');
 		break;
 	case CMD_LOAD:

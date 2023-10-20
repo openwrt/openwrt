@@ -8,7 +8,7 @@ CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=neon-vfpv4
 SUBTARGETS:=generic chromium mikrotik
 
-KERNEL_PATCHVER:=5.15
+KERNEL_PATCHVER:=6.1
 
 KERNELNAME:=zImage Image dtbs
 

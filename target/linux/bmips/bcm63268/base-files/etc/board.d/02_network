@@ -16,6 +16,7 @@ sercomm,h500-s-vfes)
 	ucidef_set_interface "qtn" device "wifi" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.252"
 	uci add_list firewall.@zone[0].network='qtn'
 	;;
+comtrend,vg-8050 |\
 sercomm,shg2500)
 	ucidef_set_bridge_device switch
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"

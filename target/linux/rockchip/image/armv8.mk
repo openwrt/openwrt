@@ -15,6 +15,15 @@ define Device/firefly_roc-rk3328-cc
 endef
 TARGET_DEVICES += firefly_roc-rk3328-cc
 
+define Device/friendlyarm_nanopc-t4
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPC T4
+  SOC := rk3399
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-brcmfmac brcmfmac-nvram-4356-sdio cypress-firmware-4356-sdio
+endef
+TARGET_DEVICES += friendlyarm_nanopc-t4
+
 define Device/friendlyarm_nanopi-r2c
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R2C
@@ -43,6 +52,15 @@ define Device/friendlyarm_nanopi-r4s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r4s
 
+define Device/pine64_rock64
+  DEVICE_VENDOR := Pine64
+  DEVICE_MODEL := Rock64
+  SOC := rk3328
+  UBOOT_DEVICE_NAME := rock64-rk3328
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+endef
+TARGET_DEVICES += pine64_rock64
+
 define Device/pine64_rockpro64
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := RockPro64
@@ -60,3 +78,30 @@ define Device/radxa_rock-pi-4a
   IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
 endef
 TARGET_DEVICES += radxa_rock-pi-4a
+
+define Device/radxa_rock-pi-e
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK Pi E
+  SOC := rk3328
+  UBOOT_DEVICE_NAME := rock-pi-e-rk3328
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+endef
+TARGET_DEVICES += radxa_rock-pi-e
+
+define Device/xunlong_orangepi-r1-plus
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi R1 Plus
+  SOC := rk3328
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-usb-net-rtl8152
+endef
+TARGET_DEVICES += xunlong_orangepi-r1-plus
+
+define Device/xunlong_orangepi-r1-plus-lts
+  DEVICE_VENDOR := Xunlong
+  DEVICE_MODEL := Orange Pi R1 Plus LTS
+  SOC := rk3328
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-usb-net-rtl8152
+endef
+TARGET_DEVICES += xunlong_orangepi-r1-plus-lts

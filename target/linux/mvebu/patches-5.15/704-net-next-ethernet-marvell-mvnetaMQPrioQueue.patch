@@ -22,7 +22,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/marvell/mvneta.c
 +++ b/drivers/net/ethernet/marvell/mvneta.c
-@@ -493,7 +493,6 @@ struct mvneta_port {
+@@ -498,7 +498,6 @@ struct mvneta_port {
  	u8 mcast_count[256];
  	u16 tx_ring_size;
  	u16 rx_ring_size;
@@ -30,7 +30,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	phy_interface_t phy_interface;
  	struct device_node *dn;
-@@ -4892,13 +4891,12 @@ static void mvneta_clear_rx_prio_map(str
+@@ -4955,13 +4954,12 @@ static void mvneta_clear_rx_prio_map(str
  	mvreg_write(pp, MVNETA_VLAN_PRIO_TO_RXQ, 0);
  }
  
@@ -48,7 +48,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	mvreg_write(pp, MVNETA_VLAN_PRIO_TO_RXQ, val);
  }
-@@ -4907,8 +4905,8 @@ static int mvneta_setup_mqprio(struct ne
+@@ -4970,8 +4968,8 @@ static int mvneta_setup_mqprio(struct ne
  			       struct tc_mqprio_qopt_offload *mqprio)
  {
  	struct mvneta_port *pp = netdev_priv(dev);
@@ -58,7 +58,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	if (mqprio->qopt.hw != TC_MQPRIO_HW_OFFLOAD_TCS)
  		return 0;
-@@ -4918,21 +4916,28 @@ static int mvneta_setup_mqprio(struct ne
+@@ -4981,21 +4979,28 @@ static int mvneta_setup_mqprio(struct ne
  	if (num_tc > rxq_number)
  		return -EINVAL;
  

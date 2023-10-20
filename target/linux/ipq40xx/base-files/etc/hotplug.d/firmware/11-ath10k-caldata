@@ -40,6 +40,8 @@ case "$FIRMWARE" in
 		# OEM assigns 4 sequential MACs
 		ath10k_patch_mac $(macaddr_setbit_la $(macaddr_add "$(cat /sys/class/net/eth0/address)" 4))
 		;;
+	netgear,rbr40|\
+	netgear,rbs40|\
 	netgear,rbr50|\
 	netgear,rbs50|\
 	netgear,srr60|\
@@ -51,9 +53,6 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-ahb-a000000.wifi.bin")
 	case "$board" in
-	qcom,ap-dk01.1-c1)
-		caldata_extract "ART" 0x1000 0x2f20
-		;;
 	asus,map-ac2200|\
 	asus,rt-ac42u|\
 	asus,rt-ac58u)
@@ -95,7 +94,8 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 2)
 		;;
-	extreme-networks,ws-ap3915i)
+	extreme-networks,ws-ap3915i |\
+	extreme-networks,ws-ap391x)
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR0)
 		;;
@@ -120,6 +120,8 @@ case "$FIRMWARE" in
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x0 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x0 0x2f20 )
 		;;
+	netgear,rbr40|\
+	netgear,rbs40|\
 	netgear,rbr50|\
 	netgear,rbs50|\
 	netgear,srr60|\
@@ -131,7 +133,8 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(get_mac_label) 2)
 		;;
-	teltonika,rutx10)
+	teltonika,rutx10|\
+	teltonika,rutx50)
 		caldata_extract "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 2)
 		;;
@@ -147,9 +150,6 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-ahb-a800000.wifi.bin")
 	case "$board" in
-	qcom,ap-dk01.1-c1)
-		caldata_extract "ART" 0x5000 0x2f20
-		;;
 	asus,map-ac2200|\
 	asus,rt-ac58u)
 		caldata_extract_ubi "Factory" 0x5000 0x2f20
@@ -190,7 +190,8 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 3)
 		;;
-	extreme-networks,ws-ap3915i)
+	extreme-networks,ws-ap3915i |\
+	extreme-networks,ws-ap391x)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR1)
 		;;
@@ -216,6 +217,8 @@ case "$FIRMWARE" in
 		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x8000 0x2f20 ) || \
 		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x0 0x2f20 )
 		;;
+	netgear,rbr40|\
+	netgear,rbs40|\
 	netgear,rbr50|\
 	netgear,rbs50|\
 	netgear,srr60|\
@@ -227,7 +230,8 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(get_mac_label) 4)
 		;;
-	teltonika,rutx10)
+	teltonika,rutx10|\
+	teltonika,rutx50)
 		caldata_extract "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 3)
 		;;

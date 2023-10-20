@@ -90,3 +90,17 @@
     return ret;
  }
  
+--- a/src/linux/ifxos_linux_thread_drv.c
++++ b/src/linux/ifxos_linux_thread_drv.c
+@@ -154,7 +154,11 @@ IFXOS_STATIC int IFXOS_KernelThreadStart
+    retVal = pThrCntrl->pThrFct(&pThrCntrl->thrParams);
+    pThrCntrl->thrParams.bRunning = IFX_FALSE;
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0))
++   kthread_complete_and_exit(&pThrCntrl->thrCompletion, (long)retVal);
++#else
+    complete_and_exit(&pThrCntrl->thrCompletion, (long)retVal);
++#endif
+ 
+    IFXOS_PRN_USR_DBG_NL( IFXOS, IFXOS_PRN_LEVEL_NORMAL,
+       ("EXIT - Kernel Thread Startup <%s>" IFXOS_CRLF,

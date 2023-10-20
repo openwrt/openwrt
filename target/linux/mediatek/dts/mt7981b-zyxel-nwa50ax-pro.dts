@@ -1,0 +1,225 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+/dts-v1/;
+
+#include "mt7981.dtsi"
+
+/ {
+	model = "ZyXEL NWA50AX Pro";
+	compatible = "zyxel,nwa50ax-pro", "mediatek,mt7981";
+
+	aliases {
+		led-boot = &led_green;
+		led-failsafe = &led_red;
+		led-running = &led_green;
+		led-upgrade = &led_red;
+		serial0 = &uart0;
+		label-mac-device = &gmac1;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_green: led@0 {
+			label = "green:system";
+			gpios = <&pio 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		led@1 {
+			label = "blue:system";
+			gpios = <&pio 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_red: led@2 {
+			label = "red:system";
+			gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
+	status = "okay";
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+
+		phy-handle = <&phy0>;
+
+		nvmem-cells = <&macaddr_mrd_1fff8>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&mdio_bus {
+	reset-gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <1500000>;
+	reset-post-delay-us = <1000000>;
+
+	phy0: ethernet-phy@5 {
+		reg = <5>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+
+		/* LED0: Amber ; LED1: nc ; LED2: nc ; LED3: Green */
+		mxl,led-config = <0x3b0 0x0 0x0 0x3c0>;
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand: flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+
+		spi-cal-enable;
+		spi-cal-mode = "read-data";
+		spi-cal-datalen = <7>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>;
+		spi-cal-addrlen = <5>;
+		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
+
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "BL2";
+				reg = <0x00000 0x0100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x0100000 0x0080000>;
+			};
+
+			factory: partition@180000 {
+				label = "Factory";
+				reg = <0x180000 0x0200000>;
+				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr: macaddr@a {
+					reg = <0xa 0x6>;
+				};
+			};
+
+			partition@380000 {
+				label = "FIP";
+				reg = <0x380000 0x0200000>;
+				read-only;
+			};
+
+			partition@580000 {
+				label = "ubi";
+				reg = <0x580000 0x3200000>;
+			};
+
+			partition@3780000 {
+				label = "ubi_1";
+				reg = <0x3780000 0x3200000>;
+				read-only;
+			};
+
+			partition@6980000 {
+				label = "rootfs-data";
+				reg = <0x6980000 0x3c00000>;
+				read-only;
+			};
+
+			partition@a580000 {
+				label = "logs";
+				reg = <0xa580000 0x3a80000>;
+				read-only;
+			};
+
+			partition@e000000 {
+				label = "myzyxel";
+				reg = <0xe000000 0xf00000>;
+				read-only;
+			};
+
+			partition@ef00000 {
+				label = "bootconfig";
+				reg = <0xef00000 0x80000>;
+			};
+
+			partition@ef80000 {
+				label = "mrd";
+				reg = <0xef80000 0x80000>;
+				read-only;
+
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_mrd_1fff8: macaddr@1fff8 {
+					reg = <0x1fff8 0x6>;
+				};
+			};
+		};
+	};
+};
+
+&pio {
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+	};
+
+	pwm_pins: pwm0-pins {
+		mux {
+			function = "pwm";
+			groups = "pwm0_1";
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+
+	mediatek,mtd-eeprom = <&factory 0x0>;
+};

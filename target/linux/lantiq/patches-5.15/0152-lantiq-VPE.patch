@@ -1,6 +1,21 @@
+From 4d48a3d1ef6f8d036bd926e3c1f70b56fcc679b2 Mon Sep 17 00:00:00 2001
+From: Stefan Koch <stefan.koch10@gmail.com>
+Date: Thu, 20 Oct 2016 21:32:00 +0200
+Subject: [PATCH] lantiq: vpe
+
+Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
+---
+ arch/mips/Kconfig                  |  6 ++++
+ arch/mips/include/asm/mipsmtregs.h |  5 ++++
+ arch/mips/include/asm/vpe.h        |  9 ++++++
+ arch/mips/kernel/vpe-mt.c          | 47 ++++++++++++++++++++++++++++++
+ arch/mips/kernel/vpe.c             | 35 ++++++++++++++++++++++
+ arch/mips/lantiq/prom.c            |  4 +++
+ 6 files changed, 106 insertions(+)
+
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -2429,6 +2429,12 @@ config MIPS_VPE_LOADER
+@@ -2431,6 +2431,12 @@ config MIPS_VPE_LOADER
  	  Includes a loader for loading an elf relocatable object
  	  onto another VPE and running it.
  
@@ -13,6 +28,27 @@
  config MIPS_VPE_LOADER_CMP
  	bool
  	default "y"
+--- a/arch/mips/include/asm/mipsmtregs.h
++++ b/arch/mips/include/asm/mipsmtregs.h
+@@ -32,6 +32,9 @@
+ #define read_c0_vpeconf1()		__read_32bit_c0_register($1, 3)
+ #define write_c0_vpeconf1(val)		__write_32bit_c0_register($1, 3, val)
+ 
++#define read_c0_vpeopt()		__read_32bit_c0_register($1, 7)
++#define write_c0_vpeopt(val)		__write_32bit_c0_register($1, 7, val)
++
+ #define read_c0_tcstatus()		__read_32bit_c0_register($2, 1)
+ #define write_c0_tcstatus(val)		__write_32bit_c0_register($2, 1, val)
+ 
+@@ -378,6 +381,8 @@ do {									\
+ #define write_vpe_c0_vpeconf0(val)	mttc0(1, 2, val)
+ #define read_vpe_c0_vpeconf1()		mftc0(1, 3)
+ #define write_vpe_c0_vpeconf1(val)	mttc0(1, 3, val)
++#define read_vpe_c0_vpeopt()		mftc0(1, 7)
++#define write_vpe_c0_vpeopt(val)	mttc0(1, 7, val)
+ #define read_vpe_c0_count()		mftc0(9, 0)
+ #define write_vpe_c0_count(val)		mttc0(9, 0, val)
+ #define read_vpe_c0_status()		mftc0(12, 0)
 --- a/arch/mips/include/asm/vpe.h
 +++ b/arch/mips/include/asm/vpe.h
 @@ -124,4 +124,13 @@ void cleanup_tc(struct tc *tc);
@@ -157,24 +193,3 @@
  
  int ltq_soc_type(void)
  {
---- a/arch/mips/include/asm/mipsmtregs.h
-+++ b/arch/mips/include/asm/mipsmtregs.h
-@@ -32,6 +32,9 @@
- #define read_c0_vpeconf1()		__read_32bit_c0_register($1, 3)
- #define write_c0_vpeconf1(val)		__write_32bit_c0_register($1, 3, val)
- 
-+#define read_c0_vpeopt()		__read_32bit_c0_register($1, 7)
-+#define write_c0_vpeopt(val)		__write_32bit_c0_register($1, 7, val)
-+
- #define read_c0_tcstatus()		__read_32bit_c0_register($2, 1)
- #define write_c0_tcstatus(val)		__write_32bit_c0_register($2, 1, val)
- 
-@@ -378,6 +381,8 @@ do {									\
- #define write_vpe_c0_vpeconf0(val)	mttc0(1, 2, val)
- #define read_vpe_c0_vpeconf1()		mftc0(1, 3)
- #define write_vpe_c0_vpeconf1(val)	mttc0(1, 3, val)
-+#define read_vpe_c0_vpeopt()		mftc0(1, 7)
-+#define write_vpe_c0_vpeopt(val)	mttc0(1, 7, val)
- #define read_vpe_c0_count()		mftc0(9, 0)
- #define write_vpe_c0_count(val)		mttc0(9, 0, val)
- #define read_vpe_c0_status()		mftc0(12, 0)

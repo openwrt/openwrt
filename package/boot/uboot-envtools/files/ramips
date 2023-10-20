@@ -24,14 +24,16 @@ sitecom,wlr-4100-v1-002|\
 zyxel,keenetic-lite-iii-a)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x1000"
 	;;
-arcadyan,we420223-99)
-	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x1000" "0x1000"
-	;;
+alfa-network,ax1800rm|\
 allnet,all0256n-4m|\
 allnet,all0256n-8m|\
 allnet,all5002|\
 yuncore,ax820)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
+	;;
+arcadyan,we420223-99|\
+dlink,dir-806a-b1)
+	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x1000" "0x1000"
 	;;
 ampedwireless,ally-00x19k|\
 ampedwireless,ally-r1900k)
@@ -39,9 +41,17 @@ ampedwireless,ally-r1900k)
 	;;
 beeline,smartbox-giga|\
 beeline,smartbox-turbo|\
+beeline,smartbox-turbo-plus|\
 etisalat,s3|\
 rostelecom,rt-sf-1)
 	ubootenv_add_uci_config "/dev/mtd0" "0x80000" "0x1000" "0x20000"
+	;;
+beeline,smartbox-pro|\
+tplink,ec330-g5u-v1|\
+wifire,s1500-nbn)
+	idx="$(find_mtd_index u-boot-env)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x20000"
 	;;
 buffalo,wsr-1166dhp|\
 buffalo,wsr-600dhp|\
@@ -63,6 +73,7 @@ h3c,tx1801-plus|\
 h3c,tx1806|\
 jcg,q20|\
 linksys,e7350|\
+netgear,eax12|\
 netgear,wax202|\
 zyxel,wsm20)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
@@ -95,10 +106,9 @@ snr,cpe-w4n-mt)
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x1000"
 	;;
-tplink,ec330-g5u-v1)
-	idx="$(find_mtd_index u-boot-env)"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x20000"
+xiaomi,miwifi-mini)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
+	ubootenv_add_uci_sys_config "/dev/mtd9" "0x0" "0x4000" "0x10000"
 	;;
 xiaomi,mi-router-3g-v2|\
 xiaomi,mi-router-4a-gigabit|\

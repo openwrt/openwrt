@@ -30,5 +30,7 @@
 };
 
 &wifi {
-	mediatek,mtd-eeprom = <&config 0xe08e>;
+	nvmem-cells = <&eeprom_config_e08e>, <&macaddr_config_e50e>;
+	nvmem-cell-names = "eeprom", "mac-address";
+	mac-address-increment = <2>;
 };

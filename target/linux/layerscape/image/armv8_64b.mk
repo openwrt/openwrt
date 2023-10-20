@@ -420,34 +420,34 @@ define Device/fsl_lx2160a-rdb-sdboot
 endef
 TARGET_DEVICES += fsl_lx2160a-rdb-sdboot
 
-define Device/traverse_ls1043
+define Device/traverse_ten64_mtd
   DEVICE_VENDOR := Traverse
-  DEVICE_MODEL := LS1043 Boards
-  KERNEL_NAME := Image
-  KERNEL_SUFFIX := -kernel.itb
-  KERNEL_INSTALL := 1
-  FDT_LOADADDR = 0x90000000
-  FILESYSTEMS := ubifs
-  MKUBIFS_OPTS := -m 1 -e 262016 -c 128
+  DEVICE_MODEL := Ten64 (NAND boot)
+  DEVICE_NAME := ten64-mtd
   DEVICE_PACKAGES += \
-    layerscape-fman \
     uboot-envtools \
+    kmod-rtc-rx8025 \
+    kmod-sfp \
     kmod-i2c-mux-pca954x \
-    kmod-hwmon-core \
-    kmod-gpio-pca953x kmod-input-gpio-keys-polled \
-    kmod-rtc-isl1208
+    restool
   DEVICE_DESCRIPTION = \
-    Build images for Traverse LS1043 boards. This generates a single image \
-    capable of booting on any of the boards in this family.
-  DEVICE_DTS = freescale/traverse-ls1043s
-  DEVICE_DTS_DIR = $(LINUX_DIR)/arch/arm64/boot/dts
-  DEVICE_DTS_CONFIG = ls1043s
-  KERNEL := kernel-bin | gzip | traverse-fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
-  IMAGES = root sysupgrade.bin
-  IMAGE/root = append-rootfs
-  IMAGE/sysupgrade.bin = sysupgrade-tar | append-metadata
-  MKUBIFS_OPTS := -m 2048 -e 124KiB -c 4096
-  SUPPORTED_DEVICES := traverse,ls1043s traverse,ls1043v
+    Generate images for booting from NAND/ubifs on Traverse Ten64 (LS1088A) \
+    family boards. For disk (NVMe/USB/SD) boot, use the armvirt target instead.
+  FILESYSTEMS := squashfs
+  KERNEL_LOADADDR := 0x80000000
+  KERNEL_ENTRY_POINT := 0x80000000
+  FDT_LOADADDR := 0x90000000
+  KERNEL_SUFFIX := -kernel.itb
+  DEVICE_DTS := freescale/fsl-ls1088a-ten64
+  IMAGES := nand.ubi sysupgrade.bin
+  KERNEL := kernel-bin | gzip | traverse-fit-ls1088 gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb $$(FDT_LOADADDR)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/nand.ubi := append-ubi
+  KERNEL_IN_UBI := 1
+  BLOCKSIZE := 128KiB
+  PAGESIZE := 2048
+  MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB -c 600
+  SUPPORTED_DEVICES = traverse,ten64
 endef
-TARGET_DEVICES += traverse_ls1043
+TARGET_DEVICES += traverse_ten64_mtd
+

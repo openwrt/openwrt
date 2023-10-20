@@ -1,0 +1,28 @@
+From 9e8cb08bc64530e7511b86a131cfad1ae0199586 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 10 Sep 2023 23:35:47 +0100
+Subject: [PATCH] mt7622: move wdt init after dram init
+
+resolves hang on reboot
+---
+ plat/mediatek/mt7622/bl2/bl2_plat_init.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/plat/mediatek/mt7622/bl2/bl2_plat_init.c
++++ b/plat/mediatek/mt7622/bl2/bl2_plat_init.c
+@@ -40,7 +40,6 @@ bool plat_is_my_cpu_primary(void)
+ const struct initcall bl2_initcalls[] = {
+ 	INITCALL(plat_mt_cpuxgpt_init),
+ 	INITCALL(generic_delay_timer_init),
+-	INITCALL(mtk_wdt_init),
+ 	INITCALL(mtk_print_cpu),
+ 	INITCALL(mtk_pin_init),
+ #ifndef IMAGE_BL2PL
+@@ -49,6 +48,7 @@ const struct initcall bl2_initcalls[] =
+ 	INITCALL(mtk_pwrap_init),
+ 	INITCALL(mtk_pmic_init),
+ 	INITCALL(mtk_mem_init),
++	INITCALL(mtk_wdt_init),
+ 
+ 	INITCALL(NULL)
+ };

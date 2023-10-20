@@ -416,7 +416,10 @@ define KernelPackage/brcmfmac
   DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +@DRIVER_11AC_SUPPORT \
   	+kmod-brcmutil +BRCMFMAC_SDIO:kmod-mmc @!TARGET_uml \
 	+BRCMFMAC_USB:kmod-usb-core +BRCMFMAC_USB:brcmfmac-firmware-usb
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko \
+	$(foreach type,bca cyw wcc, \
+		$(PKG_BUILD_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmfmac/$(type)/brcmfmac-$(type).ko)
   AUTOLOAD:=$(call AutoProbe,brcmfmac)
 endef
 
@@ -431,6 +434,7 @@ define KernelPackage/brcmfmac/config
 		bool "Enable SDIO bus interface support"
 		default y if TARGET_bcm27xx
 		default y if TARGET_imx_cortexa7
+		default y if TARGET_rockchip
 		default y if TARGET_sunxi
 		default n
 		help

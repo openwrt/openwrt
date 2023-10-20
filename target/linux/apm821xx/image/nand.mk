@@ -3,16 +3,12 @@ define Build/create-uImage-dtb
 	-$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) \
 		-O linux -T kernel -C none \
 		-n '$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)' \
-		-d "$@.dtb" "$@.dtb.uimage"
+		-d "$(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb" "$@.dtb.uimage"
 endef
 
-define Build/MerakiAdd-dtb
-	$(call Image/BuildDTB,../dts/$(DEVICE_DTS).dts,$@.dtb)
-	( \
-		dd if=$@.dtb bs=$(DTB_SIZE) conv=sync; \
-		cat $@ ; \
-	) > $@.new
-	@mv $@.new $@
+define Build/prepend-dtb-uImage
+	cat "$@.dtb.uimage" "$@" > "$@.new"
+	mv "$@.new" "$@"
 endef
 
 define Build/meraki-header
@@ -30,10 +26,10 @@ define Device/meraki_mr24
   DEVICE_PACKAGES := kmod-spi-gpio -swconfig
   BOARD_NAME := mr24
   IMAGES := sysupgrade.bin
-  DTB_SIZE := 64512
+  DEVICE_DTC_FLAGS := --space 64512
   IMAGE_SIZE := 8191k
-  KERNEL := kernel-bin | lzma | uImage lzma | MerakiAdd-dtb | meraki-header
-  KERNEL_INITRAMFS := kernel-bin | lzma | dtb | MuImage-initramfs lzma
+  KERNEL := kernel-bin | lzma | uImage lzma | prepend-dtb | meraki-header
+  KERNEL_INITRAMFS := kernel-bin | lzma | MuImage-initramfs lzma
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
   SUPPORTED_DEVICES += mr24
@@ -49,9 +45,9 @@ define Device/meraki_mx60
 		     kmod-usb-storage block-mount
   BLOCKSIZE := 128k
   IMAGES := sysupgrade.bin
-  DTB_SIZE := 20480
+  DEVICE_DTC_FLAGS := --space 20480
   IMAGE_SIZE := 1021m
-  KERNEL := kernel-bin | libdeflate-gzip | dtb | MuImage-initramfs gzip
+  KERNEL := kernel-bin | libdeflate-gzip | MuImage-initramfs gzip
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
   DEVICE_COMPAT_VERSION := 2.0
@@ -66,11 +62,11 @@ define Device/netgear_wndap6x0
   SUBPAGESIZE := 256
   PAGESIZE := 512
   BLOCKSIZE := 16k
-  DTB_SIZE := 32768
+  DEVICE_DTC_FLAGS := --space 32768
   IMAGE_SIZE := 27392k
   IMAGES := sysupgrade.bin factory.img
   KERNEL_SIZE := 6080k
-  KERNEL := dtb | kernel-bin | libdeflate-gzip | MuImage-initramfs gzip
+  KERNEL := kernel-bin | libdeflate-gzip | MuImage-initramfs gzip
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
   UBINIZE_OPTS := -E 5
@@ -100,12 +96,12 @@ define Device/netgear_wndr4700
 	kmod-dm kmod-fs-ext4 kmod-fs-vfat kmod-usb-ledtrig-usbport \
 	kmod-md-mod kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-iso8859-15 \
 	kmod-nls-utf8 kmod-usb3 kmod-usb-dwc2 kmod-usb-storage \
-	partx-utils
+	partx-utils kmod-ata-dwc
   BOARD_NAME := wndr4700
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k
-  DTB_SIZE := 131008
+  DEVICE_DTC_FLAGS := --space 131008
   IMAGE_SIZE := 24960k
   IMAGES := factory.img sysupgrade.bin
   ARTIFACTS := device-tree.dtb
@@ -113,8 +109,8 @@ define Device/netgear_wndr4700
   # append a fake/empty rootfs to fool netgear's uboot
   # CHECK_DNI_FIRMWARE_ROOTFS_INTEGRITY in do_chk_dniimg()
   KERNEL := kernel-bin | lzma -d16 | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | \
-	    append-uImage-fakehdr filesystem | dtb | create-uImage-dtb | prepend-dtb
-  KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | dtb | MuImage-initramfs gzip
+	    append-uImage-fakehdr filesystem | create-uImage-dtb | prepend-dtb-uImage
+  KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | MuImage-initramfs gzip
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 		       netgear-dni | check-size
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata

@@ -1,27 +1,20 @@
 --- a/CPP/7zip/7zip_gcc.mak
 +++ b/CPP/7zip/7zip_gcc.mak
-@@ -18,13 +18,13 @@ PROGPATH_STATIC = $(O)/$(PROG)s
+@@ -24,7 +24,7 @@ PROGPATH_STATIC = $(O)/$(PROG)s
  
  
  ifneq ($(CC), xlc)
--CFLAGS_WARN_WALL = -Wall -Werror -Wextra
+-CFLAGS_WARN_WALL = -Werror -Wall -Wextra
 +CFLAGS_WARN_WALL = -Wall -Wextra
  endif
  
  # for object file
+@@ -32,7 +32,7 @@ endif
+ # -save-temps
  CFLAGS_BASE_LIST = -c
  # CFLAGS_BASE_LIST = -S
 -CFLAGS_BASE = -O2 $(CFLAGS_BASE_LIST) $(CFLAGS_WARN_WALL) $(CFLAGS_WARN) \
 +CFLAGS_BASE = $(CFLAGS_BASE_LIST) $(CFLAGS_WARN_WALL) $(CFLAGS_WARN) -D_GNU_SOURCE \
   -DNDEBUG -D_REENTRANT -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE \
   -fPIC
- 
-@@ -192,7 +192,7 @@ all: $(O) $(PROGPATH) $(STATIC_TARGET)
- $(O):
- 	$(MY_MKDIR) $(O)
- 
--LFLAGS_ALL = -s $(MY_ARCH_2) $(LDFLAGS) $(LD_arch) $(OBJS) $(MY_LIBS) $(LIB2)
-+LFLAGS_ALL = $(MY_ARCH_2) $(LDFLAGS) $(LD_arch) $(OBJS) $(MY_LIBS) $(LIB2)
- $(PROGPATH): $(OBJS)
- 	$(CXX) -o $(PROGPATH) $(LFLAGS_ALL)
  

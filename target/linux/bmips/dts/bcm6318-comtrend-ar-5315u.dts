@@ -11,10 +11,6 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
-
-		led-dsl = &led_dsl_green;
-		led-internet = &led_internet_green;
-		led-usb = &led_usb_green;
 	};
 
 	keys {
@@ -130,41 +126,41 @@
 		label = "green:power";
 	};
 
-	led_usb_green: led@2 {
+	led@2 {
 		reg = <2>;
 		active-low;
 		label = "green:usb";
 	};
 
 	led@4 {
+		/* EPHY0 Act */
 		reg = <4>;
 		brcm,hardware-controlled;
 		brcm,link-signal-sources = <4>;
-		/* EPHY0 Act */
 	};
 
 	led@5 {
+		/* EPHY1 Act */
 		reg = <5>;
 		brcm,hardware-controlled;
 		brcm,link-signal-sources = <5>;
-		/* EPHY1 Act */
 	};
 
 	led@6 {
+		/* EPHY2 Act */
 		reg = <6>;
 		brcm,hardware-controlled;
 		brcm,link-signal-sources = <6>;
-		/* EPHY2 Act */
 	};
 
 	led@7 {
+		/* EPHY3 Act */
 		reg = <7>;
 		brcm,hardware-controlled;
 		brcm,link-signal-sources = <7>;
-		/* EPHY3 Act */
 	};
 
-	led_internet_green: led@8 {
+	led@8 {
 		reg = <8>;
 		active-low;
 		label = "green:internet";
@@ -176,7 +172,7 @@
 		label = "red:internet";
 	};
 
-	led_dsl_green: led@10 {
+	led@10 {
 		reg = <10>;
 		active-low;
 		label = "green:dsl";
@@ -186,6 +182,7 @@
 		reg = <11>;
 		active-low;
 		label = "red:power";
+		panic-indicator;
 	};
 };
 

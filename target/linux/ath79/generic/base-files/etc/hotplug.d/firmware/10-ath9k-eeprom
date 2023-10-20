@@ -12,6 +12,9 @@ case "$FIRMWARE" in
 	8dev,lima)
 		caldata_extract "art" 0x1000 0x800
 		;;
+	aruba,ap-115)
+		caldata_extract "oemdata" 0x1000 0x440
+		;;
 	asus,pl-ac56|\
 	asus,rp-ac51|\
 	asus,rp-ac66)
@@ -59,6 +62,10 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
+	moxa,awk-1137c)
+		caldata_extract "art" 0x1000 0x440
+		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env mac_addr)
+		;;
 	nec,wg800hp)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(mtd_get_mac_text board_data 0x680)
@@ -79,6 +86,9 @@ case "$FIRMWARE" in
 	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
+	aruba,ap-115)
+		caldata_extract "oemdata" 0x5000 0x440
+		;;
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
@@ -102,6 +112,10 @@ case "$FIRMWARE" in
 	netgear,wnr2200-16m|\
 	tplink,tl-wr842n-v1)
 		caldata_extract "art" 0x1000 0x3e0
+		;;
+	ubnt,powerbridge-m|\
+	ubnt,rocket-m)
+		caldata_extract "art" 0x1000 0x1000
 		;;
 	wd,mynet-n600|\
 	wd,mynet-n750)

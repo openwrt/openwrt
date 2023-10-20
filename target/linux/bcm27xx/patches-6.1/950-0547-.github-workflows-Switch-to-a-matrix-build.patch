@@ -1,0 +1,333 @@
+From 3ca614742a496b66a9b92ce6be05ff555fdfc2c2 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.com>
+Date: Mon, 23 Jan 2023 16:50:51 +0000
+Subject: [PATCH] .github/workflows: Switch to a matrix build
+
+Remove the per-build duplication by putting build parameters in a
+matrix.
+
+Signed-off-by: Phil Elwell <phil@raspberrypi.com>
+---
+ .github/workflows/kernel-build.yml | 293 ++++++-----------------------
+ 1 file changed, 59 insertions(+), 234 deletions(-)
+
+--- a/.github/workflows/kernel-build.yml
++++ b/.github/workflows/kernel-build.yml
+@@ -15,177 +15,40 @@ env:
+   NUM_JOBS: 3
+ 
+ jobs:
+-  build-bcm2835:
+-
+-    runs-on: ubuntu-latest
+-
+-    steps:
+-    - name: Update install
+-      run:
+-        sudo apt-get update
+-
+-    - name: Install toolchain
+-      run:
+-        sudo apt-get install gcc-arm-linux-gnueabihf
+-      timeout-minutes: 5
+-
+-    - uses: actions/checkout@v3
+-      with:
+-        fetch-depth: 1
+-        clean: true
+-
+-    - name: Build kernel
+-      run: |
+-        mkdir ${{github.workspace}}/build
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build bcm2835_defconfig
+-        scripts/config --file ${{github.workspace}}/build/.config --set-val CONFIG_WERROR y
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} zImage modules dtbs
+-        mkdir -p ${{github.workspace}}/install/boot/overlays
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
+-        cp ${{github.workspace}}/build/arch/arm/boot/dts/*.dtb ${{github.workspace}}/install/boot/
+-        cp ${{github.workspace}}/build/arch/arm/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/arch/arm/boot/dts/overlays/README ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/build/arch/arm/boot/zImage ${{github.workspace}}/install/boot/kernel.img
+-
+-    - name: Tar build
+-      run: tar -cvf bcm2835_build.tar -C ${{github.workspace}}/install .
+-
+-    - name: Upload results
+-      uses: actions/upload-artifact@v3
+-      with:
+-        name: bcm2835_build
+-        path: bcm2835_build.tar
+-        retention-days: 7
+-
+-  build-arm64:
+-
+-    runs-on: ubuntu-latest
+-
+-    steps:
+-    - name: Update install
+-      run:
+-        sudo apt-get update
+-
+-    - name: Install toolchain
+-      run:
+-        sudo apt-get install gcc-aarch64-linux-gnu
+-      timeout-minutes: 5
+-
+-    - uses: actions/checkout@v3
+-      with:
+-        fetch-depth: 1
+-        clean: true
+-
+-    - name: Build kernel
+-      run: |
+-        mkdir ${{github.workspace}}/build
+-        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build defconfig
+-        scripts/config --file ${{github.workspace}}/build/.config --set-val CONFIG_WERROR y
+-        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} Image.gz modules dtbs
+-        mkdir -p ${{github.workspace}}/install/boot/overlays
+-        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
+-        cp ${{github.workspace}}/build/arch/arm64/boot/dts/broadcom/*.dtb ${{github.workspace}}/install/boot/
+-        cp ${{github.workspace}}/build/arch/arm64/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/arch/arm64/boot/dts/overlays/README ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/build/arch/arm64/boot/Image.gz ${{github.workspace}}/install/boot/kernel8.img
+-
+-    - name: Tar build
+-      run: tar -cvf arm64_build.tar -C ${{github.workspace}}/install .
+-
+-    - name: Upload results
+-      uses: actions/upload-artifact@v3
+-      with:
+-        name: arm64_build
+-        path: arm64_build.tar
+-        retention-days: 7
+-
+-  build-bcmrpi:
+-
+-    runs-on: ubuntu-latest
+-
+-    steps:
+-    - name: Update install
+-      run:
+-        sudo apt-get update
+-
+-    - name: Install toolchain
+-      run:
+-        sudo apt-get install gcc-arm-linux-gnueabihf
+-      timeout-minutes: 5
+-
+-    - uses: actions/checkout@v3
+-      with:
+-        fetch-depth: 1
+-        clean: true
+-
+-    - name: Build kernel
+-      run: |
+-        mkdir ${{github.workspace}}/build
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build bcmrpi_defconfig
+-        scripts/config --file ${{github.workspace}}/build/.config --set-val CONFIG_WERROR y
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} zImage modules dtbs
+-        mkdir -p ${{github.workspace}}/install/boot/overlays
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
+-        cp ${{github.workspace}}/build/arch/arm/boot/dts/*.dtb ${{github.workspace}}/install/boot/
+-        cp ${{github.workspace}}/build/arch/arm/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/arch/arm/boot/dts/overlays/README ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/build/arch/arm/boot/zImage ${{github.workspace}}/install/boot/kernel.img
+-
+-    - name: Tar build
+-      run: tar -cvf bcmrpi_build.tar -C ${{github.workspace}}/install .
+-
+-    - name: Upload results
+-      uses: actions/upload-artifact@v3
+-      with:
+-        name: bcmrpi_build
+-        path: bcmrpi_build.tar
+-        retention-days: 7
+-
+-  build-bcm2709:
+-
++  build:
+     runs-on: ubuntu-latest
++    strategy:
++      matrix:
++        include:
++          - name: bcm2835
++            arch: arm
++            defconfig: bcm2835_defconfig
++            kernel: kernel
+ 
+-    steps:
+-    - name: Update install
+-      run:
+-        sudo apt-get update
+-
+-    - name: Install toolchain
+-      run:
+-        sudo apt-get install gcc-arm-linux-gnueabihf
+-      timeout-minutes: 5
+-
+-    - uses: actions/checkout@v3
+-      with:
+-        fetch-depth: 1
+-        clean: true
++          - name: arm64
++            arch: arm64
++            defconfig: defconfig
++            kernel: kernel8
+ 
+-    - name: Build kernel
+-      run: |
+-        mkdir ${{github.workspace}}/build
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build bcm2709_defconfig
+-        scripts/config --file ${{github.workspace}}/build/.config --set-val CONFIG_WERROR y
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} zImage modules dtbs
+-        mkdir -p ${{github.workspace}}/install/boot/overlays
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
+-        cp ${{github.workspace}}/build/arch/arm/boot/dts/*.dtb ${{github.workspace}}/install/boot/
+-        cp ${{github.workspace}}/build/arch/arm/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/arch/arm/boot/dts/overlays/README ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/build/arch/arm/boot/zImage ${{github.workspace}}/install/boot/kernel7.img
++          - name: bcmrpi
++            arch: arm
++            defconfig: bcmrpi_defconfig
++            kernel: kernel
+ 
+-    - name: Tar build
+-      run: tar -cvf bcm2709_build.tar -C ${{github.workspace}}/install .
++          - name: bcm2709
++            arch: arm
++            defconfig: bcm2709_defconfig
++            kernel: kernel7
+ 
+-    - name: Upload results
+-      uses: actions/upload-artifact@v3
+-      with:
+-        name: bcm2709_build
+-        path: bcm2709_build.tar
+-        retention-days: 7
+-
+-  build-bcm2711:
++          - name: bcm2711
++            arch: arm
++            defconfig: bcm2711_defconfig
++            kernel: kernel7l
+ 
+-    runs-on: ubuntu-latest
++          - name: bcm2711_arm64
++            arch: arm64
++            defconfig: bcm2711_defconfig
++            kernel: kernel8
+ 
+     steps:
+     - name: Update install
+@@ -194,59 +57,11 @@ jobs:
+ 
+     - name: Install toolchain
+       run:
+-        sudo apt-get install gcc-arm-linux-gnueabihf
+-      timeout-minutes: 5
+-
+-    - uses: actions/checkout@v3
+-      with:
+-        fetch-depth: 1
+-        clean: true
+-
+-    - name: Build kernel
+-      run: |
+-        mkdir ${{github.workspace}}/build
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build bcm2711_defconfig
+-        scripts/config --file ${{github.workspace}}/build/.config --set-val CONFIG_WERROR y
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} zImage modules dtbs
+-        mkdir -p ${{github.workspace}}/install/boot/overlays
+-        make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
+-        cp ${{github.workspace}}/build/arch/arm/boot/dts/*.dtb ${{github.workspace}}/install/boot/
+-        cp ${{github.workspace}}/build/arch/arm/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/arch/arm/boot/dts/overlays/README ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/build/arch/arm/boot/zImage ${{github.workspace}}/install/boot/kernel7l.img
+-
+-    - name: Tar build
+-      run: tar -cvf bcm2711_build.tar -C ${{github.workspace}}/install .
+-
+-    - name: Upload results
+-      uses: actions/upload-artifact@v3
+-      with:
+-        name: bcm2711_build
+-        path: bcm2711_build.tar
+-        retention-days: 7
+-
+-  build-bcm2711-arm64:
+-
+-    runs-on: ubuntu-latest
+-
+-    steps:
+-    - name: Update install
+-      run:
+-        sudo apt-get update
+-
+-    - name: Install toolchain
+-      run:
+-        sudo apt-get install gcc-arm-linux-gnueabihf
+-      timeout-minutes: 5
+-
+-    - uses: actions/checkout@v3
+-      with:
+-        fetch-depth: 1
+-        clean: true
+-
+-    - name: Install toolchain
+-      run:
+-        sudo apt-get install gcc-aarch64-linux-gnu
++        if [[ "${{matrix.arch}}" == "arm64" ]]; then
++          sudo apt-get install gcc-aarch64-linux-gnu;
++        else
++          sudo apt-get install gcc-arm-linux-gnueabihf;
++        fi
+       timeout-minutes: 5
+ 
+     - uses: actions/checkout@v3
+@@ -254,25 +69,35 @@ jobs:
+         fetch-depth: 1
+         clean: true
+ 
+-    - name: Build kernel
++    - name: Build kernel ${{matrix.name}}
+       run: |
+         mkdir ${{github.workspace}}/build
+-        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build bcm2711_defconfig
++        export ARCH=${{matrix.arch}}
++        if [[ "$ARCH" == "arm64" ]]; then
++          export CROSS_COMPILE=aarch64-linux-gnu-
++          export DTS_SUBDIR=broadcom
++          export IMAGE=Image.gz
++        else
++          export CROSS_COMPILE=arm-linux-gnueabihf-
++          export DTS_SUBDIR=
++          export IMAGE=zImage
++        fi
++        make O=${{github.workspace}}/build ${{matrix.defconfig}}
+         scripts/config --file ${{github.workspace}}/build/.config --set-val CONFIG_WERROR y
+-        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} Image.gz modules dtbs
++        make O=${{github.workspace}}/build -j ${{env.NUM_JOBS}} $IMAGE modules dtbs
+         mkdir -p ${{github.workspace}}/install/boot/overlays
+-        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
+-        cp ${{github.workspace}}/build/arch/arm64/boot/dts/broadcom/*.dtb ${{github.workspace}}/install/boot/
+-        cp ${{github.workspace}}/build/arch/arm64/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/arch/arm64/boot/dts/overlays/README ${{github.workspace}}/install/boot/overlays/
+-        cp ${{github.workspace}}/build/arch/arm64/boot/Image.gz ${{github.workspace}}/install/boot/kernel8.img
++        make O=${{github.workspace}}/build INSTALL_MOD_PATH=${{github.workspace}}/install modules_install
++        cp ${{github.workspace}}/build/arch/${ARCH}/boot/dts/${DTS_SUBDIR}/*.dtb ${{github.workspace}}/install/boot/
++        cp ${{github.workspace}}/build/arch/${ARCH}/boot/dts/overlays/*.dtb* ${{github.workspace}}/install/boot/overlays/
++        cp ${{github.workspace}}/arch/${ARCH}/boot/dts/overlays/README ${{github.workspace}}/install/boot/overlays/
++        cp ${{github.workspace}}/build/arch/${ARCH}/boot/$IMAGE ${{github.workspace}}/install/boot/${{matrix.kernel}}.img
+ 
+     - name: Tar build
+-      run: tar -cvf bcm2711_arm64_build.tar -C ${{github.workspace}}/install .
++      run: tar -cvf ${{matrix.name}}_build.tar -C ${{github.workspace}}/install .
+ 
+     - name: Upload results
+       uses: actions/upload-artifact@v3
+       with:
+-        name: bcm2711_arm64_build
+-        path: bcm2711_arm64_build.tar
++        name: ${{matrix.name}}_build
++        path: ${{matrix.name}}_build.tar
+         retention-days: 7

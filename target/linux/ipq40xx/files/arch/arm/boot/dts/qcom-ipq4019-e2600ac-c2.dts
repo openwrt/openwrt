@@ -79,6 +79,14 @@
 				precal_art_5000: precal@5000 {
 					reg = <0x5000 0x2f20>;
 				};
+
+				macaddr_gmac0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_gmac1: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
 			};
 		};
 	};
@@ -136,4 +144,36 @@
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_5000>;
 	qcom,ath10k-calibration-variant = "Qxwlan-E2600AC-C2";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+	label = "sw-eth1";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0>;
+};
+
+&swport4 {
+	status = "okay";
+	label = "sw-eth2";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0>;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "sw-eth3";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac1>;
 };

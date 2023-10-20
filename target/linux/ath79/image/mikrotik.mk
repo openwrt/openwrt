@@ -9,6 +9,15 @@ define Device/mikrotik_routerboard-493g
 endef
 TARGET_DEVICES += mikrotik_routerboard-493g
 
+define Device/mikrotik_routerboard-750-r2
+  $(Device/mikrotik_nor)
+  SOC := qca9533
+  DEVICE_MODEL := RouterBOARD 750 r2 (hEX lite)
+  IMAGE_SIZE := 16256k
+  SUPPORTED_DEVICES += rb-750-r2
+endef
+TARGET_DEVICES += mikrotik_routerboard-750-r2
+
 define Device/mikrotik_routerboard-911-lite
   $(Device/mikrotik_nor)
   SOC := ar9344
@@ -47,6 +56,15 @@ define Device/mikrotik_routerboard-922uags-5hpacd
   SUPPORTED_DEVICES += rb-922uags-5hpacd
 endef
 TARGET_DEVICES += mikrotik_routerboard-922uags-5hpacd
+
+define Device/mikrotik_routerboard-951g-2hnd
+  $(Device/mikrotik_nand)
+  SOC := ar9344
+  DEVICE_MODEL := RouterBOARD 951G-2HnD
+  DEVICE_PACKAGES += kmod-usb-ohci kmod-usb2
+  SUPPORTED_DEVICES += rb-951g-2hnd
+endef
+TARGET_DEVICES += mikrotik_routerboard-951g-2hnd
 
 define Device/mikrotik_routerboard-951ui-2hnd
   $(Device/mikrotik_nand)

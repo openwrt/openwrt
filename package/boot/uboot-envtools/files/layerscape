@@ -12,9 +12,8 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
-	traverse,ls1043v|\
-	traverse,ls1043s)
-		ubootenv_add_uci_config "/dev/mtd1" "0x40000" "0x2000"  "0x20000"
+	traverse,ten64)
+		ubootenv_add_uci_config "/dev/mtd3" "0x0000" "0x80000" "0x80000"
 	;;
 esac
 

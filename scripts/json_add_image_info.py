@@ -13,7 +13,6 @@ if len(argv) != 2:
 json_path = Path(argv[1])
 file_path = Path(getenv("FILE_DIR")) / getenv("FILE_NAME")
 
-
 if not file_path.is_file():
     print("Skip JSON creation for non existing file", file_path)
     exit(0)
@@ -21,7 +20,7 @@ if not file_path.is_file():
 
 def get_titles():
     titles = []
-    for prefix in ["", "ALT0_", "ALT1_", "ALT2_", "ALT3_", "ALT4_"]:
+    for prefix in ["", "ALT0_", "ALT1_", "ALT2_", "ALT3_", "ALT4_", "ALT5_"]:
         title = {}
         for var in ["vendor", "model", "variant"]:
             if getenv("DEVICE_{}{}".format(prefix, var.upper())):
@@ -37,7 +36,14 @@ def get_titles():
 
 
 device_id = getenv("DEVICE_ID")
-hash_file = hashlib.sha256(file_path.read_bytes()).hexdigest()
+
+sha256_hash = hashlib.sha256()
+with open(str(file_path),"rb") as f:
+    # Read and update hash string value in blocks of 4K
+    for byte_block in iter(lambda: f.read(4096),b""):
+        sha256_hash.update(byte_block)
+
+hash_file = sha256_hash.hexdigest()
 
 if file_path.with_suffix(file_path.suffix + ".sha256sum").exists():
     hash_unsigned = (

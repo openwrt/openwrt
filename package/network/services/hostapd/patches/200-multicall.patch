@@ -156,7 +156,7 @@
  wpa_cli.exe: wpa_cli
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -6544,8 +6544,8 @@ union wpa_event_data {
+@@ -6667,8 +6667,8 @@ union wpa_event_data {
   * Driver wrapper code should call this function whenever an event is received
   * from the driver.
   */
@@ -167,7 +167,7 @@
  
  /**
   * wpa_supplicant_event_global - Report a driver event for wpa_supplicant
-@@ -6557,7 +6557,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -6680,7 +6680,7 @@ void wpa_supplicant_event(void *ctx, enu
   * Same as wpa_supplicant_event(), but we search for the interface in
   * wpa_global.
   */
@@ -178,7 +178,7 @@
  /*
 --- a/src/ap/drv_callbacks.c
 +++ b/src/ap/drv_callbacks.c
-@@ -1887,8 +1887,8 @@ err:
+@@ -2184,8 +2184,8 @@ err:
  #endif /* CONFIG_OWE */
  
  
@@ -189,7 +189,7 @@
  {
  	struct hostapd_data *hapd = ctx;
  #ifndef CONFIG_NO_STDOUT_DEBUG
-@@ -2161,7 +2161,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -2489,7 +2489,7 @@ void wpa_supplicant_event(void *ctx, enu
  }
  
  
@@ -231,7 +231,7 @@
  	os_memset(&global, 0, sizeof(global));
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -5237,8 +5237,8 @@ static void wpas_event_unprot_beacon(str
+@@ -5353,8 +5353,8 @@ static void wpas_link_reconfig(struct wp
  }
  
  
@@ -242,7 +242,7 @@
  {
  	struct wpa_supplicant *wpa_s = ctx;
  	int resched;
-@@ -6149,7 +6149,7 @@ void wpa_supplicant_event(void *ctx, enu
+@@ -6272,7 +6272,7 @@ void wpa_supplicant_event(void *ctx, enu
  }
  
  
@@ -253,7 +253,7 @@
  	struct wpa_supplicant *wpa_s;
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -7408,7 +7408,6 @@ struct wpa_interface * wpa_supplicant_ma
+@@ -7462,7 +7462,6 @@ struct wpa_interface * wpa_supplicant_ma
  	return NULL;
  }
  
@@ -261,7 +261,7 @@
  /**
   * wpa_supplicant_match_existing - Match existing interfaces
   * @global: Pointer to global data from wpa_supplicant_init()
-@@ -7443,6 +7442,11 @@ static int wpa_supplicant_match_existing
+@@ -7497,6 +7496,11 @@ static int wpa_supplicant_match_existing
  
  #endif /* CONFIG_MATCH_IFACE */
  
@@ -273,7 +273,7 @@
  
  /**
   * wpa_supplicant_add_iface - Add a new network interface
-@@ -7699,6 +7703,8 @@ struct wpa_global * wpa_supplicant_init(
+@@ -7753,6 +7757,8 @@ struct wpa_global * wpa_supplicant_init(
  #ifndef CONFIG_NO_WPA_MSG
  	wpa_msg_register_ifname_cb(wpa_supplicant_msg_ifname_cb);
  #endif /* CONFIG_NO_WPA_MSG */
@@ -284,7 +284,7 @@
  		wpa_debug_open_file(params->wpa_debug_file_path);
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -595,6 +595,11 @@ fail:
+@@ -698,6 +698,11 @@ fail:
  	return -1;
  }
  
@@ -296,7 +296,7 @@
  
  #ifdef CONFIG_WPS
  static int gen_uuid(const char *txt_addr)
-@@ -688,6 +693,8 @@ int main(int argc, char *argv[])
+@@ -791,6 +796,8 @@ int main(int argc, char *argv[])
  		return -1;
  #endif /* CONFIG_DPP */
  

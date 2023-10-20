@@ -25,6 +25,15 @@
 	model = "Compex WPJ428";
 	compatible = "compex,wpj428";
 
+	chosen {
+		/*
+		 * There's a chance that SPI reads fail even though the data itself is alright.
+		 * The read result is cached and squashfs can't recover.
+		 * Just panic when that happens and hope that next time it doesn't.
+		 */
+		bootargs-append = " rootflags=errors=panic";
+	};
+
 	soc {
 		rng@22000 {
 			status = "okay";

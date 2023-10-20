@@ -26,7 +26,7 @@ endef
 
 define U-Boot/rk3328/Default
   BUILD_SUBTARGET:=armv8
-  DEPENDS:=+PACKAGE_u-boot-$(1):arm-trusted-firmware-rockchip
+  DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3328
   ATF:=rk3328_bl31.elf
   OF_PLATDATA:=$(1)
 endef
@@ -45,6 +45,20 @@ define U-Boot/nanopi-r2s-rk3328
     friendlyarm_nanopi-r2s
 endef
 
+define U-Boot/orangepi-r1-plus-rk3328
+  $(U-Boot/rk3328/Default)
+  NAME:=Orange Pi R1 Plus
+  BUILD_DEVICES:= \
+    xunlong_orangepi-r1-plus
+endef
+
+define U-Boot/orangepi-r1-plus-lts-rk3328
+  $(U-Boot/rk3328/Default)
+  NAME:=Orange Pi R1 Plus LTS
+  BUILD_DEVICES:= \
+    xunlong_orangepi-r1-plus-lts
+endef
+
 define U-Boot/roc-cc-rk3328
   $(U-Boot/rk3328/Default)
   NAME:=ROC-RK3328-CC
@@ -52,12 +66,33 @@ define U-Boot/roc-cc-rk3328
     firefly_roc-rk3328-cc
 endef
 
+define U-Boot/rock64-rk3328
+  $(U-Boot/rk3328/Default)
+  NAME:=Rock64
+  BUILD_DEVICES:= \
+    pine64_rock64
+endef
+
+define U-Boot/rock-pi-e-rk3328
+  $(U-Boot/rk3328/Default)
+  NAME:=ROCK Pi E
+  BUILD_DEVICES:= \
+    radxa_rock-pi-e
+endef
+
 # RK3399 boards
 
 define U-Boot/rk3399/Default
   BUILD_SUBTARGET:=armv8
-  DEPENDS:=+PACKAGE_u-boot-$(1):arm-trusted-firmware-rockchip
+  DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3399
   ATF:=rk3399_bl31.elf
+endef
+
+define U-Boot/nanopc-t4-rk3399
+  $(U-Boot/rk3399/Default)
+  NAME:=NanoPC T4
+  BUILD_DEVICES:= \
+    friendlyarm_nanopc-t4
 endef
 
 define U-Boot/nanopi-r4s-rk3399
@@ -82,12 +117,17 @@ define U-Boot/rockpro64-rk3399
 endef
 
 UBOOT_TARGETS := \
+  nanopc-t4-rk3399 \
   nanopi-r4s-rk3399 \
   rock-pi-4-rk3399 \
   rockpro64-rk3399 \
   nanopi-r2c-rk3328 \
   nanopi-r2s-rk3328 \
-  roc-cc-rk3328
+  orangepi-r1-plus-rk3328 \
+  orangepi-r1-plus-lts-rk3328 \
+  roc-cc-rk3328 \
+  rock64-rk3328 \
+  rock-pi-e-rk3328
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 

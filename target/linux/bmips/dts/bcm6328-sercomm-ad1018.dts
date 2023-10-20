@@ -1,0 +1,312 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6328.dtsi"
+
+/ {
+	model = "Sercomm AD1018";
+	compatible = "sercomm,ad1018", "brcm,bcm6328";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+
+		wlan {
+			label = "wlan";
+			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WLAN>;
+			debounce-interval = <60>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	bcm432217-sprom {
+		compatible = "brcm,bcma-sprom";
+
+		pci-bus = <1>;
+		pci-dev = <0>;
+
+		nvmem-cells = <&macaddr_cferom_6a0>;
+		nvmem-cell-names = "mac-address";
+		mac-address-increment = <1>;
+
+		brcm,sprom = "brcm/bcm43217-sprom.bin";
+		brcm,sprom-fixups = <6 0x1c00>,
+				    <65 0x1256>,
+				    <96 0x2046>,
+				    <97 0xfe69>,
+				    <98 0x1726>,
+				    <99 0xfa5c>,
+				    <112 0x2046>,
+				    <113 0xfea8>,
+				    <114 0x1978>,
+				    <115 0xfa26>,
+				    <161 0x2222>,
+				    <169 0x2222>,
+				    <171 0x2222>,
+				    <173 0x2222>,
+				    <174 0x4444>,
+				    <175 0x2222>,
+				    <176 0x4444>;
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cferom_6a0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&leds {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_leds &pinctrl_serial_led
+		     &pinctrl_ephy0_spd_led &pinctrl_ephy1_act_led
+		     &pinctrl_ephy2_act_led &pinctrl_ephy3_act_led>;
+
+	brcm,serial-leds;
+	brcm,serial-shift-inv;
+	brcm,serial-dat-low;
+
+	led@0 {
+		reg = <0>;
+		active-low;
+		label = "red:internet";
+	};
+
+	led@1 {
+		reg = <1>;
+		active-low;
+		label = "green:internet";
+	};
+
+	led_power_green: led@8 {
+		reg = <8>;
+		active-low;
+		label = "green:power";
+		default-state = "on";
+	};
+
+	led@10 {
+		reg = <10>;
+		active-low;
+		label = "green:adsl";
+	};
+
+	led@11 {
+		reg = <11>;
+		active-low;
+		label = "red:adsl";
+	};
+
+	led@12 {
+		reg = <12>;
+		active-low;
+		label = "green:phone";
+	};
+
+	led@13 {
+		reg = <13>;
+		active-low;
+		label = "green:wps";
+	};
+
+	led@14 {
+		reg = <14>;
+		active-low;
+		label = "green:wifi";
+	};
+
+	led@15 {
+		reg = <15>;
+		active-low;
+		label = "green:usb";
+	};
+
+	led@17 {
+		/* EPHY0 Spd */
+		reg = <17>;
+		brcm,hardware-controlled;
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pinctrl {
+	pinctrl_leds: leds {
+		function = "led";
+		pins = "gpio0", "gpio1";
+	};
+};
+
+&nflash {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		reg = <0>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <15>;
+		nand-on-flash-bbt;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			cferom: partition@0 {
+				label = "cferom";
+				reg = <0x0000000 0x0020000>;
+				read-only;
+			};
+
+			partition@20000 {
+				label = "mmap";
+				reg = <0x0020000 0x00a0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "cferam1";
+				reg = <0x00c0000 0x0140000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "cferam2";
+				reg = <0x0200000 0x0140000>;
+				read-only;
+			};
+
+			partition@340000 {
+				label = "serial";
+				reg = <0x0340000 0x00a0000>;
+				read-only;
+			};
+
+			partition@3e0000 {
+				label = "protect";
+				reg = <0x03e0000 0x0140000>;
+				read-only;
+			};
+
+			partition@6920000 {
+				label = "bootflag1";
+				reg = <0x6920000 0x0140000>;
+				read-only;
+			};
+
+			partition@6a60000 {
+				label = "bootflag2";
+				reg = <0x6a60000 0x0140000>;
+				read-only;
+			};
+
+			partition@520000 {
+				compatible = "sercomm,wfi";
+				label = "wfi";
+				reg = <0x0520000 0x6400000>;
+			};
+
+			partition@6ba0000 {
+				label = "xml_cfg";
+				reg = <0x6ba0000 0x0280000>;
+				read-only;
+			};
+
+			partition@6e20000 {
+				label = "app_dat";
+				reg = <0x6e20000 0x0280000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			reg = <0>;
+			label = "fibre";
+
+			phy-handle = <&phy1>;
+			phy-mode = "mii";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan3";
+
+			phy-handle = <&phy2>;
+			phy-mode = "mii";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+
+			phy-handle = <&phy3>;
+			phy-mode = "mii";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan1";
+
+			phy-handle = <&phy4>;
+			phy-mode = "mii";
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};
+
+&cferom {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_cferom_6a0: macaddr@6a0 {
+		reg = <0x6a0 0x6>;
+	};
+};

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "qcom-ipq4019-ap.dk01.1.dtsi"
+#include "qcom-ipq4019.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
 	memory {
@@ -11,28 +12,39 @@
 		reg = <0x80000000 0x10000000>;
 	};
 
-	soc {
-		pinctrl@1000000 {
-			mdio_pins: mdio_pinmux {
-				mux_1 {
-					pins = "gpio53";
-					function = "mdio";
-					bias-pull-up;
-				};
-				mux_2 {
-					pins = "gpio52";
-					function = "mdc";
-					bias-pull-up;
-				};
-			};
+	aliases {
+		serial0 = &blsp1_uart1;
+	};
 
-			i2c_0_pins: i2c_0_pinmux {
-				mux {
-					pins = "gpio58", "gpio59";
-					function = "blsp_i2c0";
-					bias-disable;
-				};
-			};
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	soc {
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			status = "okay";
+
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
 		keys {
@@ -44,49 +56,94 @@
 				linux,code = <KEY_RESTART>;
 			};
 		};
+	};
+};
 
-		gpio_export {
-			compatible = "gpio-export";
-			#size-cells = <0>;
+&prng {
+	status = "okay";
+};
 
-			gpio_out {
-				gpio-export,name = "gpio_out";
-				gpio-export,output = <0>;
-				gpio-export,direction_may_change = <0>;
-				gpios = <&stm32_io 23 GPIO_ACTIVE_HIGH>;
-			};
+&watchdog {
+	status = "okay";
+};
 
-			gpio_in {
-				gpio-export,name = "gpio_in";
-				gpio-export,input = <0>;
-				gpio-export,direction_may_change = <0>;
-				gpios = <&stm32_io 24 GPIO_ACTIVE_LOW>;
-			};
+&cryptobam {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&tlmm {
+	serial_pins: serial_pinmux {
+		mux {
+			pins = "gpio60", "gpio61";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		pinmux {
+			function = "blsp_spi0";
+			pins = "gpio55", "gpio56", "gpio57";
+		};
+		pinmux_cs {
+			function = "gpio";
+			pins = "gpio54";
+		};
+		pinconf {
+			pins = "gpio55", "gpio56", "gpio57";
+			drive-strength = <12>;
+			bias-disable;
+		};
+		pinconf_cs {
+			pins = "gpio54";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio53";
+			function = "mdio";
+			bias-pull-up;
+		};
+		mux_2 {
+			pins = "gpio52";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	i2c_0_pins: i2c_0_pinmux {
+		mux {
+			pins = "gpio58", "gpio59";
+			function = "blsp_i2c0";
+			bias-disable;
 		};
 	};
 };
 
-&blsp1_i2c3 {
+&blsp_dma {
 	status = "okay";
-	pinctrl-0 = <&i2c_0_pins>;
-	pinctrl-names = "default";
-	clock-frequency = <400000>;
+};
 
-	stm32_io: stm32@74 {
-		compatible = "tlt,stm32v1";
-		#gpio-cells = <2>;
-		#interrupt-cells = <2>;
-		gpio-controller;
-		interrupt-controller;
-		interrupt-parent = <&tlmm>;
-		interrupts = <5 2>;
-		reg = <0x74>;
-	};
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
 	cs-gpios = <&tlmm 54 0>, <&tlmm 63 0>;
 	num-cs = <2>;
+	status = "okay";
 
 	xt25f128b@0 {
 		/*
@@ -244,4 +301,24 @@
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
 	phy-reset-gpio = <&tlmm 62 0>;
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
 };

@@ -11,9 +11,6 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
-
-		led-dsl = &led_dsl_green;
-		led-internet = &led_internet_green;
 	};
 
 	keys {
@@ -129,9 +126,10 @@
 	led_power_red: led@4 {
 		reg = <4>;
 		label = "red:power";
+		panic-indicator;
 	};
 
-	led_internet_green: led@7 {
+	led@7 {
 		reg = <7>;
 		label = "green:internet";
 	};
@@ -141,7 +139,7 @@
 		label = "green:power";
 	};
 
-	led_dsl_green: led@11 {
+	led@11 {
 		reg = <11>;
 		active-low;
 		label = "green:dsl";

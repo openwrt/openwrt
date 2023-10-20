@@ -1,0 +1,167 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "dlink,dir-806a-b1", "ralink,mt7620a-soc";
+	model = "D-Link DIR-806A B1";
+
+	aliases {
+		led-boot = &wps_led;
+		led-failsafe = &wps_led;
+		led-running = &wps_led;
+		led-upgrade = &wps_led;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;	// #12
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wifi_led: 2.4g {
+			label = "green:wlan";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;	// #72
+		};
+
+		wps_led: wps {
+			label = "green:wps";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;	// #39
+		};
+
+	};
+
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <48000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ALL";
+				reg = <0x0 0x800000>;
+				read-only;
+			};
+
+			partition@0_1 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+			};
+
+			factory: partition@40000 {
+				compatible = "nvmem-cells";
+				label = "Factory";
+				reg = <0x40000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				read-only;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
+
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x200>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
+
+				macaddr_factory_8004: macaddr@8004 {
+					reg = <0x8004 0x6>;
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0x7b0000>;
+			};
+
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uartf", "ephy";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <(-2)>;
+};
+
+&wmac {
+	pinctrl-names = "default", "pa_gpio";
+	pinctrl-0 = <&pa_pins>;
+	pinctrl-1 = <&pa_gpio_pins>;
+
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4>;
+	nvmem-cell-names = "eeprom", "mac-address";
+	mac-address-increment = <(-1)>;
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_8004>;
+		nvmem-cell-names = "eeprom", "mac-address";
+		mac-address-increment = <(-3)>;
+
+		led {
+			led-active-low;
+		};
+	};
+};

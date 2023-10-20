@@ -47,6 +47,7 @@ config KERNEL_MIPS_FP_SUPPORT
 
 config KERNEL_ARM_PMU
 	bool
+	default y if TARGET_armsr_armv8
 	depends on (arm || aarch64)
 
 config KERNEL_X86_VSYSCALL_EMULATION
@@ -184,16 +185,73 @@ config KERNEL_KASAN_VMALLOC
 	  will have no effect.
 
 if KERNEL_KASAN
-	config KERNEL_KASAN_GENERIC
-	def_bool y
+choice
+	prompt "KASAN mode"
+	depends on KERNEL_KASAN
+	default KERNEL_KASAN_GENERIC
+	help
+	  KASAN has three modes:
 
-	config KERNEL_KASAN_SW_TAGS
-	def_bool n
+	  1. Generic KASAN (supported by many architectures, enabled with
+	     CONFIG_KASAN_GENERIC, similar to userspace ASan),
+	  2. Software Tag-Based KASAN (arm64 only, based on software memory
+	     tagging, enabled with CONFIG_KASAN_SW_TAGS, similar to userspace
+	     HWASan), and
+	  3. Hardware Tag-Based KASAN (arm64 only, based on hardware memory
+	     tagging, enabled with CONFIG_KASAN_HW_TAGS).
+
+config KERNEL_KASAN_GENERIC
+	bool "Generic KASAN"
+	select KERNEL_SLUB_DEBUG
+	help
+	  Enables Generic KASAN.
+
+	  Consumes about 1/8th of available memory at kernel start and adds an
+	  overhead of ~50% for dynamic allocations.
+	  The performance slowdown is ~x3.
+
+config KERNEL_KASAN_SW_TAGS
+	bool "Software Tag-Based KASAN"
+	depends on aarch64
+	select KERNEL_SLUB_DEBUG
+	help
+	  Enables Software Tag-Based KASAN.
+
+	  Supported only on arm64 CPUs and relies on Top Byte Ignore.
+
+	  Consumes about 1/16th of available memory at kernel start and
+	  add an overhead of ~20% for dynamic allocations.
+
+	  May potentially introduce problems related to pointer casting and
+	  comparison, as it embeds a tag into the top byte of each pointer.
+
+config KERNEL_KASAN_HW_TAGS
+	bool "Hardware Tag-Based KASAN"
+	depends on aarch64
+	select KERNEL_SLUB_DEBUG
+	select KERNEL_ARM64_MTE
+	help
+	  Enables Hardware Tag-Based KASAN.
+
+	  Supported only on arm64 CPUs starting from ARMv8.5 and relies on
+	  Memory Tagging Extension and Top Byte Ignore.
+
+	  Consumes about 1/32nd of available memory.
+
+	  May potentially introduce problems related to pointer casting and
+	  comparison, as it embeds a tag into the top byte of each pointer.
+
+endchoice
+
+	config KERNEL_ARM64_MTE
+		def_bool n
+
 endif
 
 choice
 	prompt "Instrumentation type"
 	depends on KERNEL_KASAN
+	depends on !KERNEL_KASAN_HW_TAGS
 	default KERNEL_KASAN_OUTLINE
 
 config KERNEL_KASAN_OUTLINE
@@ -396,6 +454,17 @@ config KERNEL_DEBUG_INFO_REDUCED
 	  build directory object sizes shrink dramatically over a full
 	  DEBUG_INFO build and compile times are reduced too.
 	  Only works with newer gcc versions.
+
+config KERNEL_FRAME_WARN
+	int
+	range 0 8192
+	default 1280 if KERNEL_KASAN && !ARCH_64BIT
+	default 1024 if !ARCH_64BIT
+	default 2048 if ARCH_64BIT
+	help
+	  Tell the compiler to warn at build time for stack frames larger than this.
+	  Setting this too low will cause a lot of warnings.
+	  Setting it to 0 disables the warning.
 
 # KERNEL_DEBUG_LL symbols must have the default value set as otherwise
 # KConfig wont evaluate them unless KERNEL_EARLY_PRINTK is selected
@@ -1096,6 +1165,12 @@ config KERNEL_NET_L3_MASTER_DEV
 	  This module provides glue between core networking code and device
 	  drivers to support L3 master devices like VRF.
 
+config KERNEL_XDP_SOCKETS
+	bool "XDP sockets support"
+	help
+	  XDP sockets allows a channel between XDP programs and
+	  userspace applications.
+
 config KERNEL_WIRELESS_EXT
 	def_bool n
 
@@ -1332,3 +1407,19 @@ config KERNEL_UBIFS_FS_SECURITY
 
 config KERNEL_JFFS2_FS_SECURITY
 	bool "JFFS2 Security Labels"
+
+config KERNEL_WERROR
+	bool "Compile the kernel with warnings as errors"
+	default BUILDBOT
+	default y if GCC_USE_VERSION_12
+	help
+	  A kernel build should not cause any compiler warnings, and this
+	  enables the '-Werror' (for C) and '-Dwarnings' (for Rust) flags
+	  to enforce that rule by default. Certain warnings from other tools
+	  such as the linker may be upgraded to errors with this option as
+	  well.
+
+	  However, if you have a new (or very old) compiler or linker with odd
+	  and unusual warnings, or you have some architecture with problems,
+	  you may need to disable this config option in order to
+	  successfully build the kernel.

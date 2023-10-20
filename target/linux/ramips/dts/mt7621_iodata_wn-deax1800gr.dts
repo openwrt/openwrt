@@ -1,0 +1,239 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "iodata,wn-deax1800gr", "mediatek,mt7621-soc";
+	model = "I-O DATA WN-DEAX1800GR";
+
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-upgrade = &led_status_green;
+		label-mac-device = &gmac1;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: led-0 {
+			label = "green:status";
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		led_status_red: led-1 {
+			label = "red:status";
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		led-2 {
+			label = "green:wps_wifi";
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+		};
+
+		led-3 {
+			label = "green:power";
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			default-state = "on";
+		};
+
+		led-4 {
+			label = "green:router";
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+		};
+
+		led-5 {
+			label = "green:internet";
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		led_on {
+			label = "led_on";
+			gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
+			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	mediatek,nmbm;
+	mediatek,bmt-remap-range =
+		<0x0000000 0x780000>, /*  u-boot - kernel1(6 MiB) */
+		<0x2f80000 0x600000>, /* kernel2 - kernel2(6 MiB) */
+		<0x5d80000 0x780000>; /* storage - working */
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "u-boot-env";
+			reg = <0x80000 0x80000>;
+			read-only;
+		};
+
+		partition@100000 {
+			compatible = "nvmem-cells";
+			label = "factory";
+			reg = <0x100000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+
+				macaddr_factory_4: macaddr@4 {
+					compatible = "mac-base";
+					reg = <0x4 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@180000 {
+			label = "kernel";
+			reg = <0x180000 0x600000>;
+		};
+
+		partition@580000 {
+			label = "ubi";
+			reg = <0x780000 0x2800000>;
+		};
+
+		partition@2f80000 {
+			label = "firmware2";
+			reg = <0x2f80000 0x2e00000>;
+		};
+
+		partition@5d80000 {
+			label = "storage";
+			reg = <0x5d80000 0x600000>;
+			read-only;
+		};
+
+		partition@6380000 {
+			label = "idmkey";
+			reg = <0x6380000 0x100000>;
+			read-only;
+		};
+
+		partition@6480000 {
+			label = "working";
+			reg = <0x6480000 0x80000>;
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_factory_4 2>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+/*
+ * pcie0: MT7915 HIF (14c3,7916)
+ * pcie1: MT7915     (14c3,7915)
+ */
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+
+		nvmem-cells = <&eeprom>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "jtag", "uart2", "uart3";
+		function = "gpio";
+	};
+};
+
+&xhci {
+	status = "disabled";
+};

@@ -1,0 +1,265 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6368.dtsi"
+
+/ {
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led@2 {
+			label = "green:dsl";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led@4 {
+			label = "red:wan";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led@5 {
+			label = "green:wan";
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led@11 {
+			label = "green:wps";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led@13 {
+			/* Front USB port */
+			label = "green:usb2";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led@14 {
+			/* Back USB port */
+			label = "green:usb1";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: led@22 {
+			label = "red:power";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+
+		led@23 {
+			label = "green:lan";
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: led@24 {
+			label = "green:power";
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
+		};
+
+		led@26 {
+			label = "green:wifi2g";
+			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
+		};
+
+		led@27 {
+			label = "blue:wifi5g";
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&lsspi {
+	status = "okay";
+
+	switch@1 {
+		compatible = "brcm,bcm53115";
+		reg = <1>;
+		spi-max-frequency = <781000>;
+		dsa,member = <1 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "wan";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan4";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan2";
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan1";
+			};
+
+			port@8 {
+				reg = <8>;
+
+				phy-mode = "rgmii";
+				ethernet = <&switch0port5>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&nflash {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		reg = <0>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <15>;
+		nand-on-flash-bbt;
+		brcm,nand-oob-sector-size = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "storage";
+				reg = <0 0>; /* autodetected size */
+			};
+		};
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pci {
+	status = "okay";
+};
+
+&pflash {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cfe: partition@0 {
+			label = "CFE";
+			reg = <0x0000000 0x0020000>;
+			read-only;
+		};
+
+		partition@20000 {
+			compatible = "brcm,bcm963xx-imagetag";
+			label = "firmware";
+			reg = <0x0020000 0x1e20000>;
+		};
+
+		partition@1e40000 {
+			label = "board_data";
+			reg = <0x1e40000 0x1a0000>;
+			read-only;
+		};
+
+		partition@1fe0000 {
+			label = "nvram";
+			reg = <0x1fe0000 0x020000>;
+		};
+	};
+};
+
+&switch0 {
+	dsa,member = <0 0>;
+
+	ports {
+		switch0port5: port@5 {
+			reg = <5>;
+			label = "extsw";
+
+			phy-mode = "rgmii";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};
+
+&cfe {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_cfe_6a0: macaddr@6a0 {
+		reg = <0x6a0 0x6>;
+	};
+};

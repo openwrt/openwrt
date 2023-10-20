@@ -7,8 +7,11 @@ rockchip_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	friendlyarm,nanopi-r2c|\
 	friendlyarm,nanopi-r2s|\
-	friendlyarm,nanopi-r4s)
+	friendlyarm,nanopi-r4s|\
+	xunlong,orangepi-r1-plus|\
+	xunlong,orangepi-r1-plus-lts)
 		ucidef_set_interfaces_lan_wan 'eth1' 'eth0'
 		;;
 	*)
@@ -54,6 +57,10 @@ rockchip_setup_macs()
 	friendlyarm,nanopi-r4s)
 		wan_mac=$(nanopi_r4s_get_mac wan)
 		lan_mac=$(nanopi_r4s_get_mac lan)
+		;;
+	xunlong,orangepi-r1-plus|\
+	xunlong,orangepi-r1-plus-lts)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth1/address)" -1)
 		;;
 	esac
 

@@ -33,7 +33,7 @@ BPF_TARGET:=bpf$(if $(CONFIG_BIG_ENDIAN),eb,el)
 BPF_HEADERS_DIR:=$(STAGING_DIR)/bpf-headers
 
 BPF_KERNEL_INCLUDE := \
-	-nostdinc -isystem $(TOOLCHAIN_DIR)/include \
+	-nostdinc -isystem $(TOOLCHAIN_INC_DIRS) \
 	-I$(BPF_HEADERS_DIR)/arch/$(BPF_KARCH)/include \
 	-I$(BPF_HEADERS_DIR)/arch/$(BPF_KARCH)/include/asm/mach-generic \
 	-I$(BPF_HEADERS_DIR)/arch/$(BPF_KARCH)/include/generated \

@@ -13,6 +13,7 @@ PKG_VERSION:=v4.0.3
 PKG_MIRROR_HASH:=1ecdc31a13350fcdcaa3f77ed8ad73906f79fc668dbb2f337e1d5dd877bf9882
 PKG_SOURCE_VERSION:=1d9e673698d9db4a4f2301559f481274de2e75ae
 BINARIES_DIR:=build/binaries
+PKG_CPE_ID:=cpe:/a:linux4sam:at91bootstrap
 
 AT91BOOTSTRAP_V4=y
 ifdef CONFIG_PACKAGE_at91bootstrap-sama5d4_xplaineddf_uboot_secure

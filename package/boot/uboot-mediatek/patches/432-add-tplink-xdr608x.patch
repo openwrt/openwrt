@@ -555,7 +555,7 @@
 +CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/arch/arm/dts/mt7986a-tplink-tl-xdr608x.dts
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,196 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2021 MediaTek Inc.
@@ -576,6 +576,11 @@
 +	chosen {
 +		stdout-path = &uart0;
 +		tick-timer = &timer0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x20000000>;
 +	};
 +
 +	keys {
@@ -634,12 +639,12 @@
 +&eth {
 +	status = "okay";
 +	mediatek,gmac-id = <0>;
-+	phy-mode = "sgmii";
++	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
 +	reset-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
-+		speed = <1000>;
++		speed = <2500>;
 +		full-duplex;
 +	};
 +};

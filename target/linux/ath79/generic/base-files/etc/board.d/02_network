@@ -27,6 +27,7 @@ ath79_setup_interfaces()
 	avm,fritzdvbc|\
 	comfast,cf-wr752ac-v1|\
 	comfast,cf-e130n-v2|\
+	comfast,cf-e380ac-v2|\
 	devolo,dvl1200i|\
 	devolo,dvl1750c|\
 	devolo,dvl1750i|\
@@ -110,7 +111,9 @@ ath79_setup_interfaces()
 	ubnt,powerbeam-5ac-gen2|\
 	ubnt,powerbeam-m2-xw|\
 	ubnt,powerbeam-m5-xw|\
+	ubnt,powerbridge-m|\
 	ubnt,rocket-5ac-lite|\
+	ubnt,rocket-m|\
 	ubnt,unifiac-lite|\
 	ubnt,unifiac-lr|\
 	ubnt,unifiac-mesh|\
@@ -150,6 +153,14 @@ ath79_setup_interfaces()
 		# port 6 (internal) is the power-line port
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:1" "2:lan:2" "3:lan:3" "6:lan:4"
+		;;
+	asus,zenwifi-cd6n)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:1" "4:lan:2"
+		;;
+	asus,zenwifi-cd6r)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan:2" "3:lan:1" "4:lan:3" "2:wan"
 		;;
 	atheros,db120)
 		ucidef_add_switch "switch0" \
@@ -240,14 +251,16 @@ ath79_setup_interfaces()
 	ubnt,routerstation)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
-	comfast,cf-e375ac)
+	comfast,cf-e375ac|\
+	moxa,awk-1137c)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:wan" "2:lan"
 		;;
 	comfast,cf-e560ac|\
 	qca,ap143-8m|\
 	qca,ap143-16m|\
-	tplink,tl-wr841hp-v3)
+	tplink,tl-wr841hp-v3|\
+	tplink,tl-wdr6500-v2)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan"
@@ -378,6 +391,8 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "1:lan"
 		;;
+	asus,rt-ac59u|\
+	asus,rt-ac59u-v2|\
 	mercury,mw4530r-v1|\
 	tplink,archer-a7-v5|\
 	tplink,archer-a9-v6|\
@@ -730,6 +745,11 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_encrypted_deco $(find_mtd_part config))
 		label_mac=$lan_mac
 		;;
+	moxa,awk-1137c)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env mac_addr)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env mac_addr)
+		label_mac=$lan_mac
+		;;
 	nec,wf1200cr|\
 	nec,wg1200cr)
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
@@ -741,6 +761,7 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_text board_data 0x480)
 		label_mac=$wan_mac
 		;;
+	comfast,cf-e380ac-v2|\
 	netgear,wndr3700|\
 	netgear,wndr3700-v2|\
 	netgear,wndr3800|\
@@ -785,6 +806,8 @@ ath79_setup_macs()
 		wan_mac=$(mtd_get_mac_text mac 0x18)
 		label_mac=$wan_mac
 		;;
+	ubnt,powerbridge-m|\
+	ubnt,rocket-m|\
 	ubnt,unifi)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;

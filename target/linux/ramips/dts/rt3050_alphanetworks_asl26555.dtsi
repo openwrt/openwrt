@@ -89,7 +89,8 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&devdata 0x4000>;
+	nvmem-cells = <&eeprom_devdata_4000>;
+	nvmem-cell-names = "eeprom";
 };
 
 &otg {
