@@ -70,7 +70,7 @@
  {
 --- a/boot/image-fit.c
 +++ b/boot/image-fit.c
-@@ -2051,6 +2051,49 @@ static const char *fit_get_image_type_pr
+@@ -2051,6 +2051,47 @@ static const char *fit_get_image_type_pr
  	return "unknown";
  }
  
@@ -93,11 +93,8 @@
 +	max_size = hdrsize;
 +
 +	images_noffset = fdt_path_offset(fit, FIT_IMAGES_PATH);
-+	if (images_noffset < 0) {
-+		printf("Can't find images parent node '%s' (%s)\n",
-+		FIT_IMAGES_PATH, fdt_strerror(images_noffset));
-+		return 0;
-+	}
++	if (images_noffset < 0)
++		goto out;
 +
 +	for (ndepth = 0,
 +	     noffset = fdt_next_node(fit, images_noffset, &ndepth);
@@ -106,7 +103,7 @@
 +		if (ndepth == 1) {
 +			ret = fit_image_get_data_and_size(fit, noffset, &data, &data_size);
 +			if (ret)
-+				return 0;
++				goto out;
 +
 +			img_total = data_size + (data - fit);
 +
@@ -114,6 +111,7 @@
 +		}
 +	}
 +
++out:
 +	return max_size;
 +}
 +
