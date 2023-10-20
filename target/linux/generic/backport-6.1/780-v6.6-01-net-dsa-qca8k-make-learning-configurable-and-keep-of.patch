@@ -32,7 +32,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/dsa/qca/qca8k-8xxx.c
 +++ b/drivers/net/dsa/qca/qca8k-8xxx.c
-@@ -1883,9 +1883,8 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -1894,9 +1894,8 @@ qca8k_setup(struct dsa_switch *ds)
  			if (ret)
  				return ret;
  
@@ -44,7 +44,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			if (ret)
  				return ret;
  
-@@ -1991,6 +1990,8 @@ static const struct dsa_switch_ops qca8k
+@@ -2002,6 +2001,8 @@ static const struct dsa_switch_ops qca8k
  	.port_change_mtu	= qca8k_port_change_mtu,
  	.port_max_mtu		= qca8k_port_max_mtu,
  	.port_stp_state_set	= qca8k_port_stp_state_set,

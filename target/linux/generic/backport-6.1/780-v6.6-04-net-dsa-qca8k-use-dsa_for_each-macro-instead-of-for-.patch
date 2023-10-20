@@ -17,7 +17,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/dsa/qca/qca8k-8xxx.c
 +++ b/drivers/net/dsa/qca/qca8k-8xxx.c
-@@ -1817,7 +1817,8 @@ static int
+@@ -1828,7 +1828,8 @@ static int
  qca8k_setup(struct dsa_switch *ds)
  {
  	struct qca8k_priv *priv = (struct qca8k_priv *)ds->priv;
@@ -27,7 +27,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	u32 mask;
  
  	cpu_port = qca8k_find_cpu_port(ds);
-@@ -1868,27 +1869,27 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -1879,27 +1880,27 @@ qca8k_setup(struct dsa_switch *ds)
  		dev_warn(priv->dev, "mib init failed");
  
  	/* Initial setup of all ports */
@@ -70,7 +70,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}
  
  	/* Forward all unknown frames to CPU port for Linux processing
-@@ -1910,48 +1911,48 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -1921,48 +1922,48 @@ qca8k_setup(struct dsa_switch *ds)
  		return ret;
  
  	/* Setup connection between CPU port & user ports

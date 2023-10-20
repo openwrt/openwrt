@@ -17,7 +17,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/dsa/qca/qca8k-8xxx.c
 +++ b/drivers/net/dsa/qca/qca8k-8xxx.c
-@@ -1773,6 +1773,46 @@ static int qca8k_connect_tag_protocol(st
+@@ -1784,6 +1784,46 @@ static int qca8k_connect_tag_protocol(st
  	return 0;
  }
  
@@ -64,7 +64,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int
  qca8k_setup(struct dsa_switch *ds)
  {
-@@ -1908,42 +1948,8 @@ qca8k_setup(struct dsa_switch *ds)
+@@ -1919,42 +1959,8 @@ qca8k_setup(struct dsa_switch *ds)
  		 * missing settings to improve switch stability under load condition.
  		 * This problem is limited to qca8337 and other qca8k switch are not affected.
  		 */
