@@ -732,6 +732,7 @@ define KernelPackage/rtc-r7301
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Epson RTC7301 support
   DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-regmap-mmio
   KCONFIG:=CONFIG_RTC_DRV_R7301 \
 	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-r7301.ko
