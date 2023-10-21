@@ -184,14 +184,14 @@ ifndef DUMP
     -include $(TOOLCHAIN_DIR)/info.mk
     export GCC_HONOUR_COPTS:=0
     TARGET_CROSS:=$(if $(TARGET_CROSS),$(TARGET_CROSS),$(OPTIMIZE_FOR_CPU)-openwrt-linux$(if $(TARGET_SUFFIX),-$(TARGET_SUFFIX))-)
+    TOOLCHAIN_ROOT_DIR:=$(TOPDIR)/staging_dir/$(TOOLCHAIN_DIR_NAME)
+    TOOLCHAIN_BIN_DIRS:=$(TOOLCHAIN_ROOT_DIR)/bin
+    TOOLCHAIN_INC_DIRS:=$(TOOLCHAIN_ROOT_DIR)/usr/include $(TOOLCHAIN_ROOT_DIR)/include
+    TOOLCHAIN_LIB_DIRS:=$(TOOLCHAIN_ROOT_DIR)/usr/lib $(TOOLCHAIN_ROOT_DIR)/lib
     TARGET_CFLAGS+= -fhonour-copts
-    TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/usr/include
     ifeq ($(CONFIG_USE_MUSL),y)
-      TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/include/fortify
+      TOOLCHAIN_INC_DIRS+= $(TOOLCHAIN_DIR)/include/fortify
     endif
-    TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/include
-    TARGET_LDFLAGS+= -L$(TOOLCHAIN_DIR)/usr/lib -L$(TOOLCHAIN_DIR)/lib
-    TARGET_PATH:=$(TOOLCHAIN_DIR)/bin:$(TARGET_PATH)
   else
     ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
       TARGET_CROSS:=$(call qstrip,$(CONFIG_TOOLCHAIN_PREFIX))
@@ -199,16 +199,16 @@ ifndef DUMP
       TOOLCHAIN_BIN_DIRS:=$(patsubst ./%,$(TOOLCHAIN_ROOT_DIR)/%,$(call qstrip,$(CONFIG_TOOLCHAIN_BIN_PATH)))
       TOOLCHAIN_INC_DIRS:=$(patsubst ./%,$(TOOLCHAIN_ROOT_DIR)/%,$(call qstrip,$(CONFIG_TOOLCHAIN_INC_PATH)))
       TOOLCHAIN_LIB_DIRS:=$(patsubst ./%,$(TOOLCHAIN_ROOT_DIR)/%,$(call qstrip,$(CONFIG_TOOLCHAIN_LIB_PATH)))
-      ifneq ($(TOOLCHAIN_BIN_DIRS),)
-        TARGET_PATH:=$(subst $(space),:,$(TOOLCHAIN_BIN_DIRS)):$(TARGET_PATH)
-      endif
-      ifneq ($(TOOLCHAIN_INC_DIRS),)
-        TARGET_CPPFLAGS+= $(patsubst %,-I%,$(TOOLCHAIN_INC_DIRS))
-      endif
-      ifneq ($(TOOLCHAIN_LIB_DIRS),)
-        TARGET_LDFLAGS+= $(patsubst %,-L%,$(TOOLCHAIN_LIB_DIRS))
-      endif
     endif
+  endif
+  ifneq ($(TOOLCHAIN_BIN_DIRS),)
+    TARGET_PATH:=$(subst $(space),:,$(TOOLCHAIN_BIN_DIRS)):$(TARGET_PATH)
+  endif
+  ifneq ($(TOOLCHAIN_INC_DIRS),)
+    TARGET_CPPFLAGS+= $(patsubst %,-I%,$(TOOLCHAIN_INC_DIRS))
+  endif
+  ifneq ($(TOOLCHAIN_LIB_DIRS),)
+    TARGET_LDFLAGS+= $(patsubst %,-L%,$(TOOLCHAIN_LIB_DIRS))
   endif
 endif
 
