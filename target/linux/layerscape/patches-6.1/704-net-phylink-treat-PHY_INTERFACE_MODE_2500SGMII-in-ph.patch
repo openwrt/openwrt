@@ -30,11 +30,9 @@ Signed-off-by: Ioana Ciornei <ioana.ciornei@nxp.com>
  drivers/net/phy/phylink.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/net/phy/phylink.c b/drivers/net/phy/phylink.c
-index 2805b04d6402..a1e34b127401 100644
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -485,6 +485,7 @@ unsigned long phylink_get_capabilities(phy_interface_t interface,
+@@ -485,6 +485,7 @@ unsigned long phylink_get_capabilities(p
  		break;
  
  	case PHY_INTERFACE_MODE_2500BASEX:
@@ -42,6 +40,3 @@ index 2805b04d6402..a1e34b127401 100644
  		caps |= MAC_2500FD;
  		break;
  
--- 
-2.25.1
-

@@ -149,11 +149,9 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  drivers/staging/fsl_ppfe/pfe_sysfs.c |  2 +-
  3 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/staging/fsl_ppfe/pfe_cdev.c b/drivers/staging/fsl_ppfe/pfe_cdev.c
-index f19a1821af42..e0b3af0892ac 100644
 --- a/drivers/staging/fsl_ppfe/pfe_cdev.c
 +++ b/drivers/staging/fsl_ppfe/pfe_cdev.c
-@@ -34,7 +34,7 @@ static ssize_t pfe_cdev_read(struct file *fp, char *buf,
+@@ -34,7 +34,7 @@ static ssize_t pfe_cdev_read(struct file
  {
  	int ret = 0;
  
@@ -162,7 +160,7 @@ index f19a1821af42..e0b3af0892ac 100644
  		sizeof(link_states));
  
  	pr_debug("Dump link_state on screen before copy_to_user\n");
-@@ -47,14 +47,14 @@ static ssize_t pfe_cdev_read(struct file *fp, char *buf,
+@@ -47,14 +47,14 @@ static ssize_t pfe_cdev_read(struct file
  	/* Copy to user the value in buffer sized len */
  	ret = copy_to_user(buf, &link_states, sizeof(link_states));
  	if (ret != 0) {
@@ -179,8 +177,6 @@ index f19a1821af42..e0b3af0892ac 100644
  
  	return sizeof(link_states);
  }
-diff --git a/drivers/staging/fsl_ppfe/pfe_hif.c b/drivers/staging/fsl_ppfe/pfe_hif.c
-index dcc3f7f1e9ef..5347401f92c0 100644
 --- a/drivers/staging/fsl_ppfe/pfe_hif.c
 +++ b/drivers/staging/fsl_ppfe/pfe_hif.c
 @@ -115,11 +115,11 @@ static void send_dummy_pkt_to_hif(void)
@@ -197,7 +193,7 @@ index dcc3f7f1e9ef..5347401f92c0 100644
  	if (!lmem_ptr)
  		return;
  
-@@ -186,16 +186,16 @@ static void pfe_hif_free_descr(struct pfe_hif *hif)
+@@ -186,16 +186,16 @@ static void pfe_hif_free_descr(struct pf
  void pfe_hif_desc_dump(struct pfe_hif *hif)
  {
  	struct hif_desc	*desc;
@@ -217,7 +213,7 @@ index dcc3f7f1e9ef..5347401f92c0 100644
  	for (ii = 0; ii < hif->rx_ring_size; ii++) {
  		pr_info("status: %08x, ctrl: %08x, data: %08x, next: %x\n",
  			readl(&desc->status), readl(&desc->ctrl),
-@@ -204,10 +204,10 @@ void pfe_hif_desc_dump(struct pfe_hif *hif)
+@@ -204,10 +204,10 @@ void pfe_hif_desc_dump(struct pfe_hif *h
  	}
  
  	desc = hif->tx_base;
@@ -230,11 +226,9 @@ index dcc3f7f1e9ef..5347401f92c0 100644
  	for (ii = 0; ii < hif->tx_ring_size; ii++) {
  		pr_info("status: %08x, ctrl: %08x, data: %08x, next: %x\n",
  			readl(&desc->status), readl(&desc->ctrl),
-diff --git a/drivers/staging/fsl_ppfe/pfe_sysfs.c b/drivers/staging/fsl_ppfe/pfe_sysfs.c
-index 1792e88140d1..ede651be51bf 100644
 --- a/drivers/staging/fsl_ppfe/pfe_sysfs.c
 +++ b/drivers/staging/fsl_ppfe/pfe_sysfs.c
-@@ -535,7 +535,7 @@ static ssize_t pfe_show_tmu3_queues(struct device *dev, struct device_attribute
+@@ -535,7 +535,7 @@ static ssize_t pfe_show_tmu3_queues(stru
  static ssize_t pfe_set_util(struct device *dev, struct device_attribute *attr,
  			    const char *buf, size_t count)
  {
@@ -243,6 +237,3 @@ index 1792e88140d1..ede651be51bf 100644
  	return count;
  }
  
--- 
-2.25.1
-
