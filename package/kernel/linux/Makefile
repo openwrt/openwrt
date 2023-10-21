@@ -37,6 +37,9 @@ endef
 define Build/Configure
 endef
 
+define Build/Quilt
+endef
+
 define Build/Compile
 endef
 

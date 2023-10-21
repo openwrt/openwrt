@@ -523,6 +523,8 @@ define KernelPackage/crypto-lib-chacha20/arm
   FILES:=$(LINUX_DIR)/arch/arm/crypto/chacha-neon.ko
 endef
 
+KernelPackage/crypto-lib-chacha20/armeb=$(KernelPackage/crypto-lib-chacha20/arm)
+
 define KernelPackage/crypto-lib-chacha20/aarch64
   KCONFIG+=CONFIG_CRYPTO_CHACHA20_NEON
   FILES+=$(LINUX_DIR)/arch/arm64/crypto/chacha-neon.ko
@@ -615,6 +617,8 @@ define KernelPackage/crypto-lib-poly1305/arm
   KCONFIG+=CONFIG_CRYPTO_POLY1305_ARM
   FILES:=$(LINUX_DIR)/arch/arm/crypto/poly1305-arm.ko
 endef
+
+KernelPackage/crypto-lib-poly1305/armeb=$(KernelPackage/crypto-lib-poly1305/arm)
 
 define KernelPackage/crypto-lib-poly1305/aarch64
   KCONFIG+=CONFIG_CRYPTO_POLY1305_NEON
