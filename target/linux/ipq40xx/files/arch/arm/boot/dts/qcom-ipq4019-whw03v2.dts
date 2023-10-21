@@ -416,16 +416,19 @@
 				reg = <0xae00000 0x9b00000>;
 			};
 
-			partition@14900000 {
-				label = "sysdiag";
+			stock_partition@14900000 {
+				label = "stock_sysdiag";
 				reg = <0x14900000 0x200000>;
-				read-only;
 			};
 
-			partition@14b00000 {
-				label = "syscfg";
+			stock_partition@14b00000 {
+				label = "stock_syscfg";
 				reg = <0x14b00000 0xb500000>;
-				read-only;
+			};
+
+			partition@14900000 {
+				label = "extra";
+				reg = <0x14900000 0xb700000>;
 			};
 		};
 	};
