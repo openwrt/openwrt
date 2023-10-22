@@ -4,10 +4,34 @@
 
 PROG="$(basename "$0")"
 
+# hook for library function
+_ip2str() {
+    local var="$1" n="$2"
+    assert_uint32 "$n" || exit 1
+
+    if [ "$decimal" -ne 0 ]; then
+	export -- "$var=$n"
+    elif [ "$hexadecimal" -ne 0 ]; then
+	export -- "$var=$(printf "%x" "$n")"
+    else
+        ip2str "$@"
+    fi
+}
+
 usage() {
-    echo "Usage: $PROG address/prefix [ start limit ]" >&2
+    echo "Usage: $PROG [ -d | -x ] address/prefix [ start limit ]" >&2
     exit 1
 }
+
+decimal=0
+hexadecimal=0
+if [ "$1" = "-d" ]; then
+    decimal=1
+    shift
+elif [ "$1" = "-x" ]; then
+    hexadecimal=1
+    shift
+fi
 
 if [ $# -eq 0 ]; then
     usage
@@ -51,14 +75,14 @@ hostmask=$((netmask ^ 0xffffffff))
 network=$((ipaddr & netmask))
 broadcast=$((network | hostmask))
 
-ip2str IP "$ipaddr"
-ip2str NETMASK "$netmask"
-ip2str NETWORK "$network"
+_ip2str IP "$ipaddr"
+_ip2str NETMASK "$netmask"
+_ip2str NETWORK "$network"
 
 echo "IP=$IP"
 echo "NETMASK=$NETMASK"
 if [ "$prefix" -le 30 ]; then
-    ip2str BROADCAST "$broadcast"
+    _ip2str BROADCAST "$broadcast"
     echo "BROADCAST=$BROADCAST"
 fi
 echo "NETWORK=$NETWORK"
@@ -95,8 +119,8 @@ if [ "$start" -gt "$end" ]; then
     exit 1
 fi
 
-ip2str START "$start"
-ip2str END "$end"
+_ip2str START "$start"
+_ip2str END "$end"
 
 if [ "$start" -le "$ipaddr" ] && [ "$ipaddr" -le "$end" ]; then
     echo "error: address $IP inside range $START..$END" >&2
