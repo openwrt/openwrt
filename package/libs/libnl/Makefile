@@ -55,10 +55,16 @@ $(call Package/libnl/default)
   DEPENDS:=+libnl-route
 endef
 
+define Package/libnl-cli
+$(call Package/libnl/default)
+  TITLE:=CLI Netlink Library
+  DEPENDS:=+libnl-genl +libnl-nf
+endef
+
 define Package/libnl
 $(call Package/libnl/default)
   TITLE:=Full Netlink Library
-  DEPENDS:=+libnl-genl +libnl-route +libnl-nf
+  DEPENDS:=+libnl-genl +libnl-route +libnl-nf +libnl-cli
 endef
 
 define Package/libnl-core/description
@@ -75,6 +81,10 @@ endef
 
 define Package/libnl-nf/description
  Netfilter Netlink Library Functions
+endef
+
+define Package/libnl-cli/description
+ CLI Netlink Library Functions
 endef
 
 define Package/libnl/description
@@ -98,6 +108,7 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-genl-3.so $(1)/usr/lib/libnl-genl.so
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-nf-3.so $(1)/usr/lib/libnl-nf.so
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-route-3.so $(1)/usr/lib/libnl-route.so
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-cli-3.so $(1)/usr/lib/libnl-cli.so
 endef
 
 define Package/libnl-core/install
@@ -120,6 +131,11 @@ define Package/libnl-nf/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-nf-3.so.* $(1)/usr/lib/
 endef
 
+define Package/libnl-cli/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libnl-cli-3.so.* $(1)/usr/lib/
+endef
+
 define Package/libnl/install
 	:
 endef
@@ -128,4 +144,5 @@ $(eval $(call BuildPackage,libnl-core))
 $(eval $(call BuildPackage,libnl-genl))
 $(eval $(call BuildPackage,libnl-route))
 $(eval $(call BuildPackage,libnl-nf))
+$(eval $(call BuildPackage,libnl-cli))
 $(eval $(call BuildPackage,libnl))

@@ -9,6 +9,7 @@ clear_partialboots() {
 	# clear partialboots
 
 	case $(board_name) in
+		linksys,ea9200|\
 		linksys,panamera)
 			COMMIT=1
 			nvram set partialboots=0
