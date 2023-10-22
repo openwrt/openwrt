@@ -1,0 +1,45 @@
+From a01633cd867b8ddf2d8321fe575dc3c54e037b09 Mon Sep 17 00:00:00 2001
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Fri, 29 Jul 2022 16:03:46 +0200
+Subject: leds: turris-omnia: convert to use dev_groups
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The driver core supports the ability to handle the creation and removal
+of device-specific sysfs files in a race-free manner.  Take advantage of
+that by converting this driver to use this by moving the sysfs
+attributes into a group and assigning the dev_groups pointer to it.
+
+Cc: Pavel Machek <pavel@ucw.cz>
+Cc: linux-leds@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org
+Reviewed-by: Marek Behún <kabel@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Pavel Machek <pavel@ucw.cz>
+---
+ drivers/leds/leds-turris-omnia.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+(limited to 'drivers/leds/leds-turris-omnia.c')
+
+--- a/drivers/leds/leds-turris-omnia.c
++++ b/drivers/leds/leds-turris-omnia.c
+@@ -239,9 +239,6 @@ static int omnia_leds_probe(struct i2c_c
+ 		led += ret;
+ 	}
+ 
+-	if (devm_device_add_groups(dev, omnia_led_controller_groups))
+-		dev_warn(dev, "Could not add attribute group!\n");
+-
+ 	return 0;
+ }
+ 
+@@ -283,6 +280,7 @@ static struct i2c_driver omnia_leds_driv
+ 	.driver		= {
+ 		.name	= "leds-turris-omnia",
+ 		.of_match_table = of_omnia_leds_match,
++		.dev_groups = omnia_led_controller_groups,
+ 	},
+ };
+ 
