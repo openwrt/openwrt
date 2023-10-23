@@ -74,4 +74,17 @@ define Device/linksys_nslu2
 endef
 TARGET_DEVICES += linksys_nslu2
 
+define Device/usrobotics_usr8200
+	DEVICE_VENDOR := USRobotics
+	DEVICE_MODEL := USR8200
+	# USB2 is compiled in and needs no package
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-rtc-r7301 kmod-firewire kmod-firewire-ohci
+	DEVICE_DTS := intel-ixp42x-usrobotics-usr8200
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := kernel.bin rootfs.bin
+	IMAGE/kernel.bin := append-kernel
+	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
+endef
+TARGET_DEVICES += usrobotics_usr8200
+
 $(eval $(call BuildImage))

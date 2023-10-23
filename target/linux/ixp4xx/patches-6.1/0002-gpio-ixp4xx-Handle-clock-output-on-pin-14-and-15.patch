@@ -1,0 +1,93 @@
+From fc58944733a2082e3290eda240eb3247a00ad73a Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 21 Sep 2023 00:12:42 +0200
+Subject: [PATCH] gpio: ixp4xx: Handle clock output on pin 14 and 15
+
+This makes it possible to provide basic clock output on pins
+14 and 15. The clocks are typically used by random electronics,
+not modeled in the device tree, so they just need to be provided
+on request.
+
+In order to not disturb old systems that require that the
+hardware defaults are kept in the clock setting bits, we only
+manipulate these if either device tree property is present.
+Once we know a device needs one of the clocks we can set it
+in the device tree.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/gpio/gpio-ixp4xx.c | 49 +++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 48 insertions(+), 1 deletion(-)
+
+--- a/drivers/gpio/gpio-ixp4xx.c
++++ b/drivers/gpio/gpio-ixp4xx.c
+@@ -38,6 +38,18 @@
+ #define IXP4XX_GPIO_STYLE_MASK		GENMASK(2, 0)
+ #define IXP4XX_GPIO_STYLE_SIZE		3
+ 
++/*
++ * Clock output control register defines.
++ */
++#define IXP4XX_GPCLK_CLK0DC_SHIFT	0
++#define IXP4XX_GPCLK_CLK0TC_SHIFT	4
++#define IXP4XX_GPCLK_CLK0_MASK		GENMASK(7, 0)
++#define IXP4XX_GPCLK_MUX14		BIT(8)
++#define IXP4XX_GPCLK_CLK1DC_SHIFT	16
++#define IXP4XX_GPCLK_CLK1TC_SHIFT	20
++#define IXP4XX_GPCLK_CLK1_MASK		GENMASK(23, 16)
++#define IXP4XX_GPCLK_MUX15		BIT(24)
++
+ /**
+  * struct ixp4xx_gpio - IXP4 GPIO state container
+  * @dev: containing device for this instance
+@@ -203,6 +215,8 @@ static int ixp4xx_gpio_probe(struct plat
+ 	struct ixp4xx_gpio *g;
+ 	struct gpio_irq_chip *girq;
+ 	struct device_node *irq_parent;
++	bool clk_14, clk_15;
++	u32 val;
+ 	int ret;
+ 
+ 	g = devm_kzalloc(dev, sizeof(*g), GFP_KERNEL);
+@@ -233,7 +247,40 @@ static int ixp4xx_gpio_probe(struct plat
+ 	 */
+ 	if (of_machine_is_compatible("dlink,dsm-g600-a") ||
+ 	    of_machine_is_compatible("iom,nas-100d"))
+-		__raw_writel(0x0, g->base + IXP4XX_REG_GPCLK);
++		val = 0;
++	else
++		val = __raw_readl(g->base + IXP4XX_REG_GPCLK);
++
++	/*
++	 * If either clock output is enabled explicitly in the device tree
++	 * we take full control of the clock by masking off all bits for
++	 * the clock control and selectively enabling them. Otherwise
++	 * we leave the hardware default settings.
++	 *
++	 * Enable clock outputs with default timings of requested clock.
++	 * If you need control over TC and DC, add these to the device
++	 * tree bindings and use them here.
++	 */
++	clk_14 = of_property_read_bool(np, "intel,ixp4xx-gpio14-clkout");
++	clk_15 = of_property_read_bool(np, "intel,ixp4xx-gpio15-clkout");
++	if (clk_14 || clk_15) {
++		val &= ~(IXP4XX_GPCLK_MUX14 | IXP4XX_GPCLK_MUX15);
++		val &= ~IXP4XX_GPCLK_CLK0_MASK;
++		val &= ~IXP4XX_GPCLK_CLK1_MASK;
++		if (clk_14) {
++			val |= (0 << IXP4XX_GPCLK_CLK0DC_SHIFT);
++			val |= (1 << IXP4XX_GPCLK_CLK0TC_SHIFT);
++			val |= IXP4XX_GPCLK_MUX14;
++		}
++
++		if (clk_15) {
++			val |= (0 << IXP4XX_GPCLK_CLK1DC_SHIFT);
++			val |= (1 << IXP4XX_GPCLK_CLK1TC_SHIFT);
++			val |= IXP4XX_GPCLK_MUX15;
++		}
++	}
++
++	__raw_writel(val, g->base + IXP4XX_REG_GPCLK);
+ 
+ 	/*
+ 	 * This is a very special big-endian ARM issue: when the IXP4xx is
