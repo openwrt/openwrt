@@ -1,0 +1,74 @@
+From 4e242d6e08ad1d85b832e158cd0eafcb8f3f76a1 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 30 May 2023 22:40:31 +0200
+Subject: [PATCH v3] mtd: cfi_cmdset_0001: Byte swap OTP info
+
+Currently the offset into the device when looking for OTP
+bits can go outside of the address of the MTD NOR devices,
+and if that memory isn't readable, bad things happen
+on the IXP4xx (added prints that illustrate the problem before
+the crash):
+
+cfi_intelext_otp_walk walk OTP on chip 0 start at reg_prot_offset 0x00000100
+ixp4xx_copy_from copy from 0x00000100 to 0xc880dd78
+cfi_intelext_otp_walk walk OTP on chip 0 start at reg_prot_offset 0x12000000
+ixp4xx_copy_from copy from 0x12000000 to 0xc880dd78
+8<--- cut here ---
+Unable to handle kernel paging request at virtual address db000000
+[db000000] *pgd=00000000
+(...)
+
+This happens in this case because the IXP4xx is big endian and
+the 32- and 16-bit fields in the struct cfi_intelext_otpinfo are not
+properly byteswapped. Compare to how the code in read_pri_intelext()
+byteswaps the fields in struct cfi_pri_intelext.
+
+Adding a small byte swapping loop for the OTP in read_pri_intelext()
+and the crash goes away.
+
+The problem went unnoticed for many years until I enabled
+CONFIG_MTD_OTP on the IXP4xx as well, triggering the bug.
+
+Cc: Nicolas Pitre <npitre@baylibre.com>
+Cc: stable@vger.kernel.org
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ChangeLog v2->v3:
+- Move the byte swapping to a small loop in read_pri_intelext()
+  so all bytes are swapped as we reach cfi_intelext_otp_walk().
+ChangeLog v1->v2:
+- Drill deeper and discover a big endian compatibility issue.
+---
+ drivers/mtd/chips/cfi_cmdset_0001.c | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+
+--- a/drivers/mtd/chips/cfi_cmdset_0001.c
++++ b/drivers/mtd/chips/cfi_cmdset_0001.c
+@@ -421,9 +421,25 @@ read_pri_intelext(struct map_info *map,
+ 		extra_size = 0;
+ 
+ 		/* Protection Register info */
+-		if (extp->NumProtectionFields)
++		if (extp->NumProtectionFields) {
++			struct cfi_intelext_otpinfo *otp =
++				(struct cfi_intelext_otpinfo *)&extp->extra[0];
++
+ 			extra_size += (extp->NumProtectionFields - 1) *
+-				      sizeof(struct cfi_intelext_otpinfo);
++				sizeof(struct cfi_intelext_otpinfo);
++
++			if (extp_size >= sizeof(*extp) + extra_size) {
++				int i;
++
++				/* Do some byteswapping if necessary */
++				for (i = 0; i < extp->NumProtectionFields - 1; i++) {
++					otp->ProtRegAddr = le32_to_cpu(otp->ProtRegAddr);
++					otp->FactGroups = le16_to_cpu(otp->FactGroups);
++					otp->UserGroups = le16_to_cpu(otp->UserGroups);
++					otp++;
++				}
++			}
++		}
+ 	}
+ 
+ 	if (extp->MinorVersion >= '1') {
