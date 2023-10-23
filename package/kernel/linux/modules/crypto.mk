@@ -399,6 +399,19 @@ endef
 
 $(eval $(call KernelPackage,crypto-hw-hifn-795x))
 
+define KernelPackage/crypto-hw-ixp4xx
+  TITLE:=Intel IXP4xx crypto accelerator
+  DEPENDS:=@TARGET_ixp4xx +kmod-random-core +kmod-crypto-manager +kmod-crypto-authenc +kmod-crypto-des
+  KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
+	CONFIG_CRYPTO_DEV_IXP4XX
+  FILES:=$(LINUX_DIR)/drivers/crypto/ixp4xx_crypto.ko
+  AUTOLOAD:=$(call AutoProbe,ixp4xx_crypto)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-hw-ixp4xx))
+
 
 define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
