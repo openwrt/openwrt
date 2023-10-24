@@ -4,6 +4,8 @@
 
 PROG="$(basename "$0")"
 
+# wrapper to convert an integer to an address, unless we're using
+# decimal output format.
 # hook for library function
 _ip2str() {
     local var="$1" n="$2"
@@ -39,11 +41,13 @@ fi
 
 case "$1" in
 */*.*)
+    # data is n.n.n.n/m.m.m.m format, like on a Cisco router
     str2ip ipaddr "${1%/*}" || exit 1
     str2ip netmask "${1#*/}" || exit 1
     shift
     ;;
 */*)
+    # more modern prefix notation of n.n.n.n/p
     str2ip ipaddr "${1%/*}" || exit 1
     prefix="${1#*/}"
     assert_uint32 "$prefix" || exit 1
@@ -55,12 +59,14 @@ case "$1" in
     shift
     ;;
 *)
+    # address and netmask as two separate arguments
     str2ip ipaddr "$1" || exit 1
     str2ip netmask "$2" || exit 1
     shift 2
     ;;
 esac
 
+# we either have no arguments left, or we have a range start and length
 if [ $# -ne 0 ] && [ $# -ne 2 ]; then
     usage
 fi
@@ -74,6 +80,7 @@ fi
 hostmask=$((netmask ^ 0xffffffff))
 network=$((ipaddr & netmask))
 broadcast=$((network | hostmask))
+count=$((hostmask + 1))
 
 _ip2str IP "$ipaddr"
 _ip2str NETMASK "$netmask"
@@ -81,13 +88,16 @@ _ip2str NETWORK "$network"
 
 echo "IP=$IP"
 echo "NETMASK=$NETMASK"
+# don't include this-network or broadcast addresses
 if [ "$prefix" -le 30 ]; then
     _ip2str BROADCAST "$broadcast"
     echo "BROADCAST=$BROADCAST"
 fi
 echo "NETWORK=$NETWORK"
 echo "PREFIX=$prefix"
+echo "COUNT=$count"
 
+# if there's no range, we're done
 [ $# -eq 0 ] && exit 0
 
 if [ "$prefix" -le 30 ]; then

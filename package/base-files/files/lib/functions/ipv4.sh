@@ -1,5 +1,7 @@
 uint_max=4294967295
 
+# check that $1 is only base 10 digits, and that it doesn't
+# exceed 2^32-1
 assert_uint32() {
     local __n="$1"
 
@@ -21,6 +23,7 @@ assert_uint32() {
     return 0
 }
 
+# return a count of the number of bits set in $1
 bitcount() {
     local __var="$1" __c="$2"
     assert_uint32 "$__c" || return 1
@@ -35,6 +38,8 @@ bitcount() {
 }
 
 # tedious but portable with busybox's limited shell
+# we check each octet to be in the range of 0..255,
+# and also make sure there's no extaneous characters.
 str2ip() {
     local __var="$1" __ip="$2" __n __val=0
 
@@ -131,6 +136,7 @@ str2ip() {
     return 0
 }
 
+# convert back from an integer to dotted-quad.
 ip2str() {
     local __var="$1" __n="$2"
     assert_uint32 "$__n" || return 1
