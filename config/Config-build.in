@@ -26,6 +26,14 @@ menu "Global build settings"
 		  directory containing machine readable list of built profiles
 		  and resulting images.
 
+	config JSON_CYCLONEDX_SBOM
+		bool "Create CycloneDX SBOM JSON"
+		default BUILDBOT
+		help
+		  Create a JSON files *.bom.cdx.json in the build
+		  directory containing Software Bill Of Materials in CycloneDX
+		  format.
+
 	config ALL_NONSHARED
 		bool "Select all target specific packages by default"
 		select ALL_KMODS
