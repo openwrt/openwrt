@@ -106,6 +106,14 @@ ifdef CONFIG_SIGNED_PACKAGES
 		$(STAGING_DIR_HOST)/bin/usign -S -m Packages -s $(BUILD_KEY); \
 	); done
 endif
+ifdef CONFIG_JSON_CYCLONEDX_SBOM
+	@echo Creating CycloneDX package SBOMs...
+	@for d in $(PACKAGE_SUBDIRS); do ( \
+		[ -d $$d ] && \
+			cd $$d || continue; \
+		$(SCRIPT_DIR)/package-metadata.pl pkgcyclonedxsbom Packages.manifest > Packages.bom.cdx.json || true; \
+	); done
+endif
 
 $(curdir)/flags-install:= -j1
 
