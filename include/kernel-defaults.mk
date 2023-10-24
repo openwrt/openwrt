@@ -166,7 +166,7 @@ define Kernel/CompileImage/Initramfs
 	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $(TARGET_DIR) $(TARGET_DIR)/init)
 	rm -rf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/usr/initramfs_data.cpio*
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE),y)
-ifneq ($(qstrip $(CONFIG_EXTERNAL_CPIO)),)
+ifneq ($(call qstrip,$(CONFIG_EXTERNAL_CPIO)),)
 	$(CP) $(CONFIG_EXTERNAL_CPIO) $(KERNEL_BUILD_DIR)/initrd.cpio
 else
 	( cd $(TARGET_DIR); find . | LC_ALL=C sort | $(STAGING_DIR_HOST)/bin/cpio --reproducible -o -H newc -R 0:0 > $(KERNEL_BUILD_DIR)/initrd.cpio )
