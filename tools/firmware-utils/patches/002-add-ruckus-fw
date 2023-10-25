@@ -1,0 +1,288 @@
+This image builder builds a tftp updatable binary for Ruckus hardware
+
+Signed-off-by: Damien Mascord <tus...@tusker.org>
+---
+ CMakeLists.txt         |   1 +
+ src/ruckus_fw_header.c | 258 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 259 insertions(+)
+ create mode 100644 src/ruckus_fw_header.c
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index f406520..c6fbf5c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -88,6 +88,7 @@ FW_UTIL(oseama src/md5.c "" "")
+ FW_UTIL(otrx "" "" "")
+ FW_UTIL(pc1crypt "" "" "")
+ FW_UTIL(ptgen src/cyg_crc32.c "" "")
++FW_UTIL(ruckus_fw_header src/md5.c "" "")
+ FW_UTIL(seama src/md5.c "" "")
+ FW_UTIL(sign_dlink_ru src/md5.c "" "")
+ FW_UTIL(spw303v "" "" "")
+diff --git a/src/ruckus_fw_header.c b/src/ruckus_fw_header.c
+new file mode 100644
+index 0000000..aad3a81
+--- /dev/null
++++ b/src/ruckus_fw_header.c
+@@ -0,0 +1,258 @@
++/*
++ * rucks_fw_header.c - partially based on OpenWrt's xorimage.c
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ */
++
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <stdint.h>
++#include <unistd.h>
++#include <sys/stat.h>
++#include "md5.h"
++
++#define BUF_SIZE                0x200
++static int data_size;
++
++static int get_file_size(char *name)
++{
++       struct stat st;
++       int res;
++
++       res = stat(name, &st);
++       if (res){
++               fprintf(stderr,"stat failed on %s", name);
++               return -1;
++       }
++
++       return st.st_size;
++}
++
++static int md5_file(const char *filename, uint8_t *dst)
++{
++        FILE *fp_src;
++        MD5_CTX ctx;
++        char buf[BUF_SIZE];
++        size_t bytes_read;
++
++        MD5_Init(&ctx);
++
++        fp_src = fopen(filename, "r+b");
++        if (!fp_src) {
++                return -1;
++        }
++        while (!feof(fp_src)) {
++                bytes_read = fread(&buf, 1, BUF_SIZE, fp_src);
++                MD5_Update(&ctx, &buf, bytes_read);
++        }
++        fclose(fp_src);
++
++        MD5_Final(dst, &ctx);
++
++        return 0;
++}
++
++int write_header(FILE *out, char* md5sum){
++       // lzma kernel offset is ruckus header + uimage header = 160 + 64 = 224 = 0xE0
++       char header1[12] = {
++               0x52, 0x43, 0x4b, 0x53, 0x00, 0x13, 0x00, 0x00, 0x00, 0xe0, 0x6c, 0x37 };
++       char load_address[4] = {        
++               0x80, 0x06, 0x00, 0x00 };       
++       char fakesize[4] = {
++               0x01, 0x76, 0xd7, 0x5c };
++       char header_postsize[4] = {
++               0x60, 0x9a, 0x43, 0xd2 };
++       char fakemd5[16] = {
++               0x39, 0x17, 0x73, 0x56, 0xed, 0x87, 0x33, 0x9a, 0xe3, 0xe4, 0xff, 0xc9,
++               0xee, 0xcd, 0xd2, 0x9c };
++       char header2[4] = {
++               0x00, 0x04, 0x66, 0x69 };
++       //200.7.10.202.9 - OPENWRT12345678
++       char fake_version[16] = {
++               0x4f, 0x50, 0x45, 0x4e, 0x57, 0x52, 0x54, 0x31, 0x32, 0x33, 0x34, 0x35, 
++               0x36, 0x37, 0x38, 0x39 };
++       char header3[48] = {
++               0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
++               0x7a, 0x66, 0x37, 0x37, 0x35, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
++       //200.7.10.202.9 - OPENWRT12345678
++       char header4[4] = {     
++               0x00, 0x00, 0x00, 0x03 };
++       char entry_point[4] = { 
++               0x80, 0x06, 0x00, 0x00 };
++       char header_postentry[28] = {
++           0x00, 0x00, 0x00, 0x01, 0x01, 0x76, 0xcf, 0x60, 0x00, 0x00, 0x00, 0x00, 
++           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
++           0x00, 0x00, 0x00, 0x00 };
++
++       if (!fwrite(header1, sizeof(header1), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++       
++       if (!fwrite(load_address, sizeof(load_address), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++       
++       u_int32_t ds = htonl(data_size);
++       fprintf(stdout, "data_size: %d\n", ds);
++       if (!fwrite(&ds, sizeof(ds), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++       
++       if (!fwrite(header_postsize, sizeof(header_postsize), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++
++       if (!fwrite(md5sum, 0x10, 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++
++       if (!fwrite(header2, sizeof(header2), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++       
++       if (!fwrite(fake_version, sizeof(fake_version), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++       
++       if (!fwrite(header3, sizeof(header3), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++       
++       if (!fwrite(fake_version, sizeof(fake_version), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++       
++       if (!fwrite(header4, sizeof(header4), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++       
++       if (!fwrite(entry_point, sizeof(entry_point), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++       
++       if (!fwrite(header_postentry, sizeof(header_postentry), 1, out)) {
++               fprintf(stderr, "fwrite error\n");
++               return EXIT_FAILURE;
++       }
++       
++       return 0;
++}
++
++void usage(void) __attribute__ (( __noreturn__ ));
++
++void usage(void)
++{
++       fprintf(stderr, "Usage: ruckus_fw_header [-i infile] [-o outfile] [-d]\n");
++       exit(EXIT_FAILURE);
++}
++
++int main(int argc, char **argv)
++{
++       char buf[1];    /* keep this at 1k or adjust garbage calc below */
++       FILE *in = stdin;
++       FILE *out = stdout;
++       char *ifn = NULL;
++       char *ofn = NULL;
++       int c;
++       int v0, v1, v2;
++       size_t n;
++       int p_len, p_off = 0;
++    uint8_t  md5sum[0x10];
++
++       while ((c = getopt(argc, argv, "i:o:h")) != -1) {
++               switch (c) {
++                       case 'i':
++                               ifn = optarg;
++                               break;
++                       case 'o':
++                               ofn = optarg;
++                               break;
++                       case 'h':
++                       default:
++                               usage();
++               }
++       }
++       
++       data_size = get_file_size(ifn);
++
++       if (optind != argc || optind == 1) {
++               fprintf(stderr, "illegal arg \"%s\"\n", argv[optind]);
++               usage();
++       }
++
++       if (ifn && md5_file(ifn, md5sum)) {
++               fprintf(stderr, "can not get md5sum for \"%s\"\n", ifn);
++               usage();
++       }
++
++       if (ifn && !(in = fopen(ifn, "r"))) {
++               fprintf(stderr, "can not open \"%s\" for reading\n", ifn);
++               usage();
++       }
++
++       if (ofn && !(out = fopen(ofn, "w"))) {
++               fprintf(stderr, "can not open \"%s\" for writing\n", ofn);
++               usage();
++       }
++
++       if (ofn && (write_header(out, md5sum))) {
++               fprintf(stderr, "can not write header to \"%s\"\n", ofn);
++               usage();
++       }
++
++       while ((n = fread(buf, 1, sizeof(buf), in)) > 0) {
++               if (n < sizeof(buf)) {
++                       if (ferror(in)) {
++                       FREAD_ERROR:
++                               fprintf(stderr, "fread error\n");
++                               return EXIT_FAILURE;
++                       }
++               }
++
++               if (!fwrite(buf, n, 1, out)) {
++               FWRITE_ERROR:
++                       fprintf(stderr, "fwrite error\n");
++                       return EXIT_FAILURE;
++               }
++       }
++
++       if (ferror(in)) {
++               goto FREAD_ERROR;
++       }
++
++       if (fflush(out)) {
++               goto FWRITE_ERROR;
++       }
++
++       fclose(in);
++       fclose(out);
++
++       return EXIT_SUCCESS;
++}
+-- 
+2.30.2
+
