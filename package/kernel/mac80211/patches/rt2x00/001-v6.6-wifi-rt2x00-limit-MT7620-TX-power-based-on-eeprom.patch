@@ -1,7 +1,7 @@
+From 821b5192c955144bd2f0aeea6cd153e1aedd16e1 Mon Sep 17 00:00:00 2001
 From: Shiji Yang <yangshiji66@outlook.com>
-Date: Sat, 22 Jul 2023 21:56:30 +0800
-Subject: [PATCH] wifi: rt2x00: limit MT7620 TX power based on eeprom
- calibration
+Date: Fri, 11 Aug 2023 14:34:54 +0800
+Subject: wifi: rt2x00: limit MT7620 TX power based on eeprom calibration
 
 In the vendor driver, the current channel power is queried from
 EEPROM_TXPOWER_BG1 and EEPROM_TXPOWER_BG2. And then the mixed value
@@ -18,29 +18,36 @@ Based on these eeprom values, this patch adds basic TX power control
 for the MT7620 and limits its maximum TX power. This can avoid the
 link speed decrease caused by chip overheating. rt2800_config_alc()
 function has also been renamed to rt2800_config_alc_rt6352() because
-it's only used by RT6352(MT7620).
+it's only used by RT6352 (MT7620).
 
 Notice:
 It's still need some work to sync the max channel power to the user
-interface. This part is missing from the rt2x00 driver structure. If
+interface. This part is missing from the rt2x00 driver framework. If
 we set the power exceed the calibration value, it won't take effect.
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://lore.kernel.org/r/TYAP286MB03159090ED14044215E59FD6BC10A@TYAP286MB0315.JPNP286.PROD.OUTLOOK.COM
 ---
- .../net/wireless/ralink/rt2x00/rt2800lib.c    | 49 +++++++++++++------
- 1 file changed, 34 insertions(+), 15 deletions(-)
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 57 ++++++++++++++++++--------
+ 1 file changed, 40 insertions(+), 17 deletions(-)
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
-@@ -3891,28 +3891,47 @@ static void rt2800_config_channel_rf7620
+@@ -3865,28 +3865,51 @@ static void rt2800_config_channel_rf7620
  	}
  }
  
 -static void rt2800_config_alc(struct rt2x00_dev *rt2x00dev,
-+static void rt2800_config_alc_rt6352(struct rt2x00_dev *rt2x00dev,
- 			      struct ieee80211_channel *chan,
- 			      int power_level) {
+-			      struct ieee80211_channel *chan,
+-			      int power_level) {
 -	u16 eeprom, target_power, max_power;
++static void rt2800_config_alc_rt6352(struct rt2x00_dev *rt2x00dev,
++				     struct ieee80211_channel *chan,
++				     int power_level)
++{
++	int cur_channel = rt2x00dev->rf_channel;
 +	u16 eeprom, chan_power, rate_power, target_power;
 +	u16 tx_power[2];
 +	s8 *power_group[2];
@@ -57,27 +64,29 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 -	max_power = chan->max_power * 2;
 -	if (max_power > 0x2f)
 -		max_power = 0x2f;
-+	/* get per channel power, 2 channels in total, unit is 0.5dBm */
++	if (WARN_ON(cur_channel < 1 || cur_channel > 14))
++		return;
++
++	/* get per chain power, 2 chains in total, unit is 0.5dBm */
 +	power_level = (power_level - 3) * 2;
-+	/*
-+	 * We can't get the accurate TX power. Based on some tests, the real
++
++	/* We can't get the accurate TX power. Based on some tests, the real
 +	 * TX power is approximately equal to channel_power + (max)rate_power.
 +	 * Usually max rate_power is the gain of the OFDM 6M rate. The antenna
 +	 * gain and externel PA gain are not included as we are unable to
 +	 * obtain these values.
 +	 */
 +	rate_power = rt2800_eeprom_read_from_array(rt2x00dev,
-+				EEPROM_TXPOWER_BYRATE, 1) & 0x3f;
++						   EEPROM_TXPOWER_BYRATE, 1);
++	rate_power &= 0x3f;
 +	power_level -= rate_power;
 +	if (power_level < 1)
 +		power_level = 1;
-+	if (power_level > chan->max_power * 2)
-+		power_level = chan->max_power * 2;
 +
 +	power_group[0] = rt2800_eeprom_addr(rt2x00dev, EEPROM_TXPOWER_BG1);
 +	power_group[1] = rt2800_eeprom_addr(rt2x00dev, EEPROM_TXPOWER_BG2);
 +	for (cnt = 0; cnt < 2; cnt++) {
-+		chan_power = power_group[cnt][rt2x00dev->rf_channel - 1];
++		chan_power = power_group[cnt][cur_channel - 1];
 +		if (chan_power >= 0x20 || chan_power == 0)
 +			chan_power = 0x10;
 +		tx_power[cnt] = power_level < chan_power ? power_level : chan_power;
@@ -95,7 +104,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  
  	eeprom = rt2800_eeprom_read(rt2x00dev, EEPROM_NIC_CONF1);
  	if (rt2x00_get_field16(eeprom, EEPROM_NIC_CONF1_INTERNAL_TX_ALC)) {
-@@ -5321,7 +5340,7 @@ static void rt2800_config_txpower_rt6352
+@@ -5268,7 +5291,7 @@ static void rt2800_config_txpower_rt6352
  	rt2x00_set_field32(&pwreg, TX_PWR_CFG_9B_STBC_MCS7, t);
  	rt2800_register_write(rt2x00dev, TX_PWR_CFG_9, pwreg);
  
