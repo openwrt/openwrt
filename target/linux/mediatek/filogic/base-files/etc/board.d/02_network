@@ -56,6 +56,9 @@ mediatek_setup_interfaces()
 	tplink,tl-xdr6086)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
 		;;
+	wavlink,wl-wn586x3)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
+		;;
 	xiaomi,mi-router-wr30u-112m-nmbm|\
 	xiaomi,mi-router-wr30u-stock|\
 	xiaomi,mi-router-wr30u-ubootmod|\
@@ -113,6 +116,10 @@ mediatek_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$wan_mac
+		;;
+	wavlink,wl-wn586x3)
+		lan_mac=$(mtd_get_mac_text hw 0x460 17)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	xiaomi,mi-router-wr30u-112m-nmbm|\
 	xiaomi,mi-router-wr30u-stock|\

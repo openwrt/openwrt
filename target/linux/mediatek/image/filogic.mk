@@ -546,6 +546,17 @@ define Device/ubnt_unifi-6-plus
 endef
 TARGET_DEVICES += ubnt_unifi-6-plus
 
+define Device/wavlink_wl-wn586x3
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN586X3
+  DEVICE_DTS := mt7981b-wavlink-wl-wn586x3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGE_SIZE := 15424k
+  DEVICE_PACKAGES := kmod-mt7981-firmware
+endef
+TARGET_DEVICES += wavlink_wl-wn586x3
+
 define Device/xiaomi_mi-router-wr30u-112m-nmbm
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router WR30U (112M UBI with NMBM-Enabled layout)

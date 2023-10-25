@@ -20,6 +20,12 @@ netgear,wax220)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan2g" "phy0-ap0"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan5g" "phy1-ap0"
 	;;
+wavlink,wl-wn586x3)
+	ucidef_set_led_netdev "lan1" "lan1" "blue:lan1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "blue:lan2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wifi5" "phy1-ap0"
+	;;
 xiaomi,mi-router-wr30u-112m-nmbm|\
 xiaomi,mi-router-wr30u-stock|\
 xiaomi,mi-router-wr30u-ubootmod)
