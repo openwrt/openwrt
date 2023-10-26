@@ -90,41 +90,23 @@ it on BCM4708 family.
  /*
   * Reset a halted HC.
   *
-@@ -611,10 +654,20 @@ static int xhci_init(struct usb_hcd *hcd
- 
- static int xhci_run_finished(struct xhci_hcd *xhci)
- {
--	if (xhci_start(xhci)) {
--		xhci_halt(xhci);
--		return -ENODEV;
-+	int err;
-+
-+	err = xhci_start(xhci);
-+	if (err) {
-+		err = -ENODEV;
-+		goto err_halt;
+@@ -634,6 +677,16 @@ static int xhci_run_finished(struct xhci
+ 		spin_unlock_irqrestore(&xhci->lock, flags);
+ 		return -ENODEV;
  	}
 +
 +	if (xhci->quirks & XHCI_FAKE_DOORBELL) {
-+		err = xhci_fake_doorbell(xhci, 1);
-+		if (err)
-+			goto err_halt;
++		int err = xhci_fake_doorbell(xhci, 1);
++		if (err) {
++			xhci_halt(xhci);
++			spin_unlock_irqrestore(&xhci->lock, flags);
++			return err;
++		}
 +	}
 +
  	xhci->shared_hcd->state = HC_STATE_RUNNING;
  	xhci->cmd_ring_state = CMD_RING_STATE_RUNNING;
  
-@@ -624,6 +677,10 @@ static int xhci_run_finished(struct xhci
- 	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
- 			"Finished xhci_run for USB3 roothub");
- 	return 0;
-+
-+err_halt:
-+	xhci_halt(xhci);
-+	return err;
- }
- 
- /*
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
 @@ -1908,6 +1908,7 @@ struct xhci_hcd {
