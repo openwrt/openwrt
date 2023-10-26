@@ -90,7 +90,7 @@ it on BCM4708 family.
  /*
   * Reset a halted HC.
   *
-@@ -641,6 +684,14 @@ static int xhci_run_finished(struct xhci
+@@ -641,6 +684,15 @@ static int xhci_run_finished(struct xhci
  		return -ENODEV;
  	}
  
@@ -98,6 +98,7 @@ it on BCM4708 family.
 +		int err = xhci_fake_doorbell(xhci, 1);
 +		if (err) {
 +			xhci_halt(xhci);
++			spin_unlock_irqrestore(&xhci->lock, flags);
 +			return err;
 +		}
 +	}
