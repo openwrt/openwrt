@@ -252,6 +252,16 @@ define Device/tplink_sg2210p-v3
 endef
 TARGET_DEVICES += tplink_sg2210p-v3
 
+define Device/tplink_t1600g-28ts-v3
+  SOC := rtl8382
+  KERNEL_SIZE := 6m
+  IMAGE_SIZE := 26m
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := T1600G-28TS
+  DEVICE_VARIANT := v3
+endef
+TARGET_DEVICES += tplink_t1600g-28ts-v3
+
 define Device/zyxel_gs1900-10hp
   $(Device/zyxel_gs1900)
   SOC := rtl8380

@@ -1,0 +1,31 @@
+From 72a29725b6f2577fa447ca9059cdcd17100043b4 Mon Sep 17 00:00:00 2001
+From: Marek Behún <kabel@kernel.org>
+Date: Wed, 2 Aug 2023 18:07:45 +0200
+Subject: leds: turris-omnia: Use sysfs_emit() instead of sprintf()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Use the dedicated sysfs_emit() function instead of sprintf() in sysfs
+attribute accessor brightness_show().
+
+Signed-off-by: Marek Behún <kabel@kernel.org>
+Link: https://lore.kernel.org/r/20230802160748.11208-4-kabel@kernel.org
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/leds/leds-turris-omnia.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+(limited to 'drivers/leds/leds-turris-omnia.c')
+
+--- a/drivers/leds/leds-turris-omnia.c
++++ b/drivers/leds/leds-turris-omnia.c
+@@ -166,7 +166,7 @@ static ssize_t brightness_show(struct de
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	return sprintf(buf, "%d\n", ret);
++	return sysfs_emit(buf, "%d\n", ret);
+ }
+ 
+ static ssize_t brightness_store(struct device *dev, struct device_attribute *a,

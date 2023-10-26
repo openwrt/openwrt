@@ -107,7 +107,7 @@ ucidef_set_bridge_mac() {
 }
 
 ucidef_set_network_device_mac() {
-	json_select_object "network-device"
+	json_select_object "network_device"
 	json_select_object "${1}"
 	json_add_string macaddr "${2}"
 	json_select ..

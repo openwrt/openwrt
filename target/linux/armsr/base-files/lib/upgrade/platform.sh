@@ -36,7 +36,8 @@ platform_check_image() {
 platform_copy_config() {
 	local partdev parttype=ext4
 
-	if export_partdevice partdev 2; then
+	if export_partdevice partdev 1; then
+		part_magic_fat "/dev/$partdev" && parttype=vfat
 		mount -t $parttype -o rw,noatime "/dev/$partdev" /mnt
 		cp -af "$UPGRADE_BACKUP" "/mnt/$BACKUP_FILE"
 		umount /mnt

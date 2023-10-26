@@ -224,6 +224,22 @@ endef
 $(eval $(call KernelPackage,phylib-broadcom))
 
 
+define KernelPackage/phy-amd
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=AMD PHY driver
+   KCONFIG:=CONFIG_AMD_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/amd.ko
+   AUTOLOAD:=$(call AutoProbe,amd,1)
+endef
+
+define KernelPackage/phy-amd/description
+   Currently supports the AMD and Altima PHYs.
+endef
+
+$(eval $(call KernelPackage,phy-amd))
+
+
 define KernelPackage/phy-ax88796b
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=Asix PHY driver
