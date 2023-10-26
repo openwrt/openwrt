@@ -80,15 +80,17 @@ TARGET_DEVICES += edimax_cax1800
 define Device/netgear_wax218
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
-	ARTIFACTS := web-ui-factory.fit
 	DEVICE_VENDOR := Netgear
 	DEVICE_MODEL := WAX218
 	DEVICE_DTS_CONFIG := config@hk07
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := ipq8072
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	ARTIFACTS := web-ui-factory.fit
 	ARTIFACT/web-ui-factory.fit := append-image initramfs-uImage.itb | \
 		ubinize-kernel | qsdk-ipq-factory-nand
+endif
 	DEVICE_PACKAGES := kmod-spi-gpio kmod-spi-bitbang kmod-gpio-nxp-74hc164 \
 		ipq-wifi-netgear_wax218
 endef
