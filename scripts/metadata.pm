@@ -257,6 +257,7 @@ sub parse_package_metadata($) {
 		/^License: \s*(.+)\s*$/ and $pkg->{license} = $1;
 		/^LicenseFiles: \s*(.+)\s*$/ and $pkg->{licensefiles} = $1;
 		/^CPE-ID: \s*(.+)\s*$/ and $pkg->{cpe_id} = $1;
+		/^ABI-Version: \s*(.+)\s*$/ and $pkg->{abi_version} = $1;
 		/^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
 		/^Provides: \s*(.+)\s*$/ and do {
 			my @vpkg = split /\s+/, $1;
