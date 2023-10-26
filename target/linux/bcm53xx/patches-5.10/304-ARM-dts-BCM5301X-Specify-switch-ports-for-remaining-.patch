@@ -403,50 +403,6 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +		};
 +	};
 +};
---- a/arch/arm/boot/dts/bcm4709-linksys-ea9200.dts
-+++ b/arch/arm/boot/dts/bcm4709-linksys-ea9200.dts
-@@ -47,3 +47,41 @@
- &usb3_phy {
- 	status = "okay";
- };
-+
-+&srab {
-+	status = "okay";
-+
-+	ports {
-+		port@0 {
-+			label = "lan1";
-+		};
-+
-+		port@1 {
-+			label = "lan2";
-+		};
-+
-+		port@2 {
-+			label = "lan3";
-+		};
-+
-+		port@3 {
-+			label = "lan4";
-+		};
-+
-+		port@4 {
-+			label = "wan";
-+		};
-+
-+		port@5 {
-+			status = "disabled";
-+		};
-+
-+		port@7 {
-+			status = "disabled";
-+		};
-+
-+		port@8 {
-+			label = "cpu";
-+		};
-+	};
-+};
 --- a/arch/arm/boot/dts/bcm4709-netgear-r7000.dts
 +++ b/arch/arm/boot/dts/bcm4709-netgear-r7000.dts
 @@ -104,3 +104,41 @@
