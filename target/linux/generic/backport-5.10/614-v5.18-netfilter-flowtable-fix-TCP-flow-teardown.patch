@@ -156,7 +156,7 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  				  const struct nft_pktinfo *pkt)
 @@ -293,7 +299,8 @@ static void nft_flow_offload_eval(const
  	case IPPROTO_TCP:
- 		tcph = skb_header_pointer(pkt->skb, pkt->xt.thoff,
+ 		tcph = skb_header_pointer(pkt->skb, nft_thoff(pkt),
  					  sizeof(_tcph), &_tcph);
 -		if (unlikely(!tcph || tcph->fin || tcph->rst))
 +		if (unlikely(!tcph || tcph->fin || tcph->rst ||
