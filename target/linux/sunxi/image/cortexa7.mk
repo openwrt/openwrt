@@ -112,6 +112,14 @@ define Device/lemaker_bananapro
 endef
 TARGET_DEVICES += lemaker_bananapro
 
+define Device/licheepi_licheepi-zero-dock
+  DEVICE_VENDOR := LicheePi
+  DEVICE_MODEL := Zero with Dock (V3s)
+  DEVICE_PACKAGES:=kmod-rtc-sunxi
+  SOC := sun8i-v3s
+endef
+TARGET_DEVICES += licheepi_licheepi-zero-dock
+
 define Device/linksprite_pcduino3
   DEVICE_VENDOR := LinkSprite
   DEVICE_MODEL := pcDuino3
