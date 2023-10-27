@@ -274,7 +274,7 @@ XARGS:=xargs -r
 BASH:=bash
 TAR:=tar
 FIND:=find
-PATCH:=patch
+PATCH:=patch -b
 PYTHON:=python3
 
 ifeq ($(HOST_OS),Darwin)
