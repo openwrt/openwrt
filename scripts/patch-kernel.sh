@@ -37,7 +37,7 @@ for i in ${patchdir}/${patchpattern} ; do
     [ -d "${i}" ] && echo "Ignoring subdirectory ${i}" && continue	
     echo ""
     echo "Applying ${i} using ${type}: " 
-    ${uncomp} ${i} | ${PATCH:-patch} -f -p1 -d ${targetdir}
+    ${uncomp} ${i} | ${PATCH:-patch} -b -f -p1 -d ${targetdir}
     if [ $? != 0 ] ; then
         echo "Patch failed!  Please fix $i!"
 	exit 1
