@@ -91,7 +91,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  			return PTR_ERR(crtc_state);
 --- a/drivers/gpu/drm/drm_connector.c
 +++ b/drivers/gpu/drm/drm_connector.c
-@@ -2168,6 +2168,34 @@ int drm_connector_attach_hdr_output_meta
+@@ -2186,6 +2186,34 @@ int drm_connector_attach_hdr_output_meta
  EXPORT_SYMBOL(drm_connector_attach_hdr_output_metadata_property);
  
  /**
@@ -157,7 +157,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	return 0;
 --- a/include/drm/drm_connector.h
 +++ b/include/drm/drm_connector.h
-@@ -1623,6 +1623,8 @@ int drm_connector_attach_scaling_mode_pr
+@@ -1648,6 +1648,8 @@ int drm_connector_attach_scaling_mode_pr
  int drm_connector_attach_vrr_capable_property(
  		struct drm_connector *connector);
  int drm_connector_attach_hdr_output_metadata_property(struct drm_connector *connector);

@@ -23,7 +23,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/bcm_sf2.c
 +++ b/drivers/net/dsa/bcm_sf2.c
-@@ -827,11 +827,9 @@ static void bcm_sf2_sw_mac_link_up(struc
+@@ -833,11 +833,9 @@ static void bcm_sf2_sw_mac_link_up(struc
  	bcm_sf2_sw_mac_link_set(ds, port, interface, true);
  
  	if (port != core_readl(priv, CORE_IMP0_PRT_ID)) {
@@ -36,7 +36,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (priv->type == BCM4908_DEVICE_ID ||
  		    priv->type == BCM7445_DEVICE_ID)
  			offset = CORE_STS_OVERRIDE_GMIIP_PORT(port);
-@@ -842,6 +840,7 @@ static void bcm_sf2_sw_mac_link_up(struc
+@@ -848,6 +846,7 @@ static void bcm_sf2_sw_mac_link_up(struc
  		    interface == PHY_INTERFACE_MODE_RGMII_TXID ||
  		    interface == PHY_INTERFACE_MODE_MII ||
  		    interface == PHY_INTERFACE_MODE_REVMII) {

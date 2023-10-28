@@ -57,7 +57,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static void bcm_sf2_imp_setup(struct dsa_switch *ds, int port)
  {
  	struct bcm_sf2_priv *priv = bcm_sf2_to_priv(ds);
-@@ -696,6 +721,7 @@ static void bcm_sf2_sw_mac_config(struct
+@@ -702,6 +727,7 @@ static void bcm_sf2_sw_mac_config(struct
  {
  	struct bcm_sf2_priv *priv = bcm_sf2_to_priv(ds);
  	u32 id_mode_dis = 0, port_mode;
@@ -65,7 +65,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	u32 reg;
  
  	if (port == core_readl(priv, CORE_IMP0_PRT_ID))
-@@ -719,10 +745,12 @@ static void bcm_sf2_sw_mac_config(struct
+@@ -725,10 +751,12 @@ static void bcm_sf2_sw_mac_config(struct
  		return;
  	}
  
@@ -79,7 +79,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	reg &= ~ID_MODE_DIS;
  	reg &= ~(PORT_MODE_MASK << PORT_MODE_SHIFT);
  
-@@ -730,13 +758,14 @@ static void bcm_sf2_sw_mac_config(struct
+@@ -736,13 +764,14 @@ static void bcm_sf2_sw_mac_config(struct
  	if (id_mode_dis)
  		reg |= ID_MODE_DIS;
  
@@ -95,7 +95,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	u32 reg;
  
  	if (!phy_interface_mode_is_rgmii(interface) &&
-@@ -744,13 +773,15 @@ static void bcm_sf2_sw_mac_link_set(stru
+@@ -750,13 +779,15 @@ static void bcm_sf2_sw_mac_link_set(stru
  	    interface != PHY_INTERFACE_MODE_REVMII)
  		return;
  
@@ -113,7 +113,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static void bcm_sf2_sw_mac_link_down(struct dsa_switch *ds, int port,
-@@ -787,11 +818,15 @@ static void bcm_sf2_sw_mac_link_up(struc
+@@ -793,11 +824,15 @@ static void bcm_sf2_sw_mac_link_up(struc
  {
  	struct bcm_sf2_priv *priv = bcm_sf2_to_priv(ds);
  	struct ethtool_eee *p = &priv->dev->ports[port].eee;
@@ -130,7 +130,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (priv->type == BCM4908_DEVICE_ID ||
  		    priv->type == BCM7445_DEVICE_ID)
  			offset = CORE_STS_OVERRIDE_GMIIP_PORT(port);
-@@ -802,7 +837,7 @@ static void bcm_sf2_sw_mac_link_up(struc
+@@ -808,7 +843,7 @@ static void bcm_sf2_sw_mac_link_up(struc
  		    interface == PHY_INTERFACE_MODE_RGMII_TXID ||
  		    interface == PHY_INTERFACE_MODE_MII ||
  		    interface == PHY_INTERFACE_MODE_REVMII) {
@@ -139,7 +139,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			reg &= ~(RX_PAUSE_EN | TX_PAUSE_EN);
  
  			if (tx_pause)
-@@ -810,7 +845,7 @@ static void bcm_sf2_sw_mac_link_up(struc
+@@ -816,7 +851,7 @@ static void bcm_sf2_sw_mac_link_up(struc
  			if (rx_pause)
  				reg |= RX_PAUSE_EN;
  

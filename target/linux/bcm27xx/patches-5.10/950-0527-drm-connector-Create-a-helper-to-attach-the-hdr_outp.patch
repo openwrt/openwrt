@@ -47,7 +47,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
 --- a/drivers/gpu/drm/drm_connector.c
 +++ b/drivers/gpu/drm/drm_connector.c
-@@ -2147,6 +2147,27 @@ int drm_connector_attach_max_bpc_propert
+@@ -2165,6 +2165,27 @@ int drm_connector_attach_max_bpc_propert
  EXPORT_SYMBOL(drm_connector_attach_max_bpc_property);
  
  /**
@@ -89,7 +89,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		drm_connector_attach_max_bpc_property(connector, 8, 12);
 --- a/include/drm/drm_connector.h
 +++ b/include/drm/drm_connector.h
-@@ -1622,6 +1622,7 @@ int drm_connector_attach_scaling_mode_pr
+@@ -1647,6 +1647,7 @@ int drm_connector_attach_scaling_mode_pr
  					       u32 scaling_mode_mask);
  int drm_connector_attach_vrr_capable_property(
  		struct drm_connector *connector);
