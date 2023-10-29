@@ -3,6 +3,7 @@
 /dts-v1/;
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
 
 #include "mt7986b.dtsi"
 
@@ -41,34 +42,43 @@
 		compatible = "gpio-leds";
 
 	 	led-0 {
-			label = "green:lan2";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
 			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
 		};
 
 		led-1 {
-			label = "green:lan1";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
 			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 
 		led-2 {
-			label = "green:lan0";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <0>;
 			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		led-3 {
-			label = "green:wan";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		led-4 {
-			label = "orange:status";
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&pio 16 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
 		};
 
 		led_status_green: led-5 {
-			label = "green:status";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&pio 17 GPIO_ACTIVE_HIGH>;
-			panic-indicator;
 		};
 	};
 };
