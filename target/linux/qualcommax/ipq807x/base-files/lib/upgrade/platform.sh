@@ -51,7 +51,13 @@ platform_do_upgrade() {
 		nand_do_restore_config || nand_do_upgrade_failed
 		buffalo_upgrade_optvol
 		;;
-	dynalink,dl-wrx36)
+	compex,wpq873|\
+	dynalink,dl-wrx36|\
+	edimax,cax1800|\
+	netgear,rax120v2|\
+	netgear,wax218|\
+	netgear,wax620|\
+	netgear,wax630)
 		nand_do_upgrade "$1"
 		;;
 	edgecore,eap102)
@@ -66,33 +72,11 @@ platform_do_upgrade() {
 		fw_setenv upgrade_available 1
 		nand_do_upgrade "$1"
 		;;
-	compex,wpq873|\
-	edimax,cax1800|\
-	netgear,rax120v2|\
-	netgear,wax218|\
-	netgear,wax620|\
-	netgear,wax630)
-		nand_do_upgrade "$1"
-		;;
 	prpl,haze|\
 	qnap,301w)
 		kernelname="0:HLOS"
 		rootfsname="rootfs"
 		mmc_do_upgrade "$1"
-		;;
-	zyxel,nbg7815)
-		local config_mtdnum="$(find_mtd_index 0:bootconfig)"
-		[ -z "$config_mtdnum" ] && reboot
-		part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 168 -C /dev/mtd$config_mtdnum | cut -f 1 -d "|" | head -n1)"
-		if [ "$part_num" -eq "0" ]; then
-			kernelname="0:HLOS"
-			rootfsname="rootfs"
-			mmc_do_upgrade "$1"
-		else
-			kernelname="0:HLOS_1"
-			rootfsname="rootfs_1"
-			mmc_do_upgrade "$1"
-		fi
 		;;
 	redmi,ax6|\
 	xiaomi,ax3600|\
@@ -124,6 +108,20 @@ platform_do_upgrade() {
 		fw_setenv bootcount 3
 		fw_setenv upgrade_available 1
 		nand_do_upgrade "$1"
+		;;
+	zyxel,nbg7815)
+		local config_mtdnum="$(find_mtd_index 0:bootconfig)"
+		[ -z "$config_mtdnum" ] && reboot
+		part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 168 -C /dev/mtd$config_mtdnum | cut -f 1 -d "|" | head -n1)"
+		if [ "$part_num" -eq "0" ]; then
+			kernelname="0:HLOS"
+			rootfsname="rootfs"
+			mmc_do_upgrade "$1"
+		else
+			kernelname="0:HLOS_1"
+			rootfsname="rootfs_1"
+			mmc_do_upgrade "$1"
+		fi
 		;;
 	*)
 		default_do_upgrade "$1"

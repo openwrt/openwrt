@@ -48,16 +48,16 @@ endef
 TARGET_DEVICES += buffalo_wxr-5950ax12
 
 define Device/compex_wpq873
-       $(call Device/FitImage)
-       $(call Device/UbiFit)
-       DEVICE_VENDOR := Compex
-       DEVICE_MODEL := WPQ873
-       BLOCKSIZE := 128k
-       PAGESIZE := 2048
-       DEVICE_DTS_CONFIG := config@hk09.wpq873
-       SOC := ipq8072
-       DEVICE_PACKAGES := ipq-wifi-compex_wpq873
-       IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Compex
+	DEVICE_MODEL := WPQ873
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk09.wpq873
+	SOC := ipq8072
+	DEVICE_PACKAGES := ipq-wifi-compex_wpq873
+	IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand
 endef
 TARGET_DEVICES += compex_wpq873
 
@@ -242,18 +242,6 @@ endif
 endef
 TARGET_DEVICES += xiaomi_ax9000
 
-define Device/zyxel_nbg7815
-	$(call Device/FitImage)
-	$(call Device/EmmcImage)
-	DEVICE_VENDOR := ZYXEL
-	DEVICE_MODEL := NBG7815
-	DEVICE_DTS_CONFIG := config@nbg7815
-	SOC := ipq8074
-	DEVICE_PACKAGES += ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci kmod-hwmon-tmp103 \
-		kmod-bluetooth
-endef
-TARGET_DEVICES += zyxel_nbg7815
-
 define Device/yuncore_ax880
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -269,3 +257,14 @@ define Device/yuncore_ax880
 endef
 TARGET_DEVICES += yuncore_ax880
 
+define Device/zyxel_nbg7815
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := ZYXEL
+	DEVICE_MODEL := NBG7815
+	DEVICE_DTS_CONFIG := config@nbg7815
+	SOC := ipq8074
+	DEVICE_PACKAGES += ipq-wifi-zyxel_nbg7815 kmod-ath11k-pci \
+		kmod-bluetooth kmod-hwmon-tmp103
+endef
+TARGET_DEVICES += zyxel_nbg7815

@@ -16,6 +16,11 @@ ipq807x_setup_interfaces()
 	xiaomi,ax9000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
+	compex,wpq873|\
+	redmi,ax6|\
+	xiaomi,ax3600)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	edgecore,eap102|\
 	yuncore,ax880)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
@@ -38,11 +43,6 @@ ipq807x_setup_interfaces()
 		;;
 	qnap,301w)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g-2" "10g-1"
-		;;
-	compex,wpq873|\
-	redmi,ax6|\
-	xiaomi,ax3600)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	zyxel,nbg7815)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g" "wan"
