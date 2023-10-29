@@ -304,7 +304,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
 --- a/drivers/net/dsa/bcm_sf2.c
 +++ b/drivers/net/dsa/bcm_sf2.c
-@@ -686,7 +686,7 @@ static void bcm_sf2_sw_validate(struct d
+@@ -692,7 +692,7 @@ static void bcm_sf2_sw_validate(struct d
  	    state->interface != PHY_INTERFACE_MODE_GMII &&
  	    state->interface != PHY_INTERFACE_MODE_INTERNAL &&
  	    state->interface != PHY_INTERFACE_MODE_MOCA) {
@@ -313,7 +313,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (port != core_readl(priv, CORE_IMP0_PRT_ID))
  			dev_err(ds->dev,
  				"Unsupported interface: %d for port %d\n",
-@@ -714,10 +714,8 @@ static void bcm_sf2_sw_validate(struct d
+@@ -720,10 +720,8 @@ static void bcm_sf2_sw_validate(struct d
  	phylink_set(mask, 100baseT_Half);
  	phylink_set(mask, 100baseT_Full);
  

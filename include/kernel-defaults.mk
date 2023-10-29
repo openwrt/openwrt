@@ -9,10 +9,6 @@ endif
 
 INITRAMFS_EXTRA_FILES ?= $(GENERIC_PLATFORM_DIR)/image/initramfs-base-files.txt
 
-ifneq (,$(KERNEL_CC))
-  KERNEL_MAKEOPTS += CC="$(KERNEL_CC)"
-endif
-
 export HOST_EXTRACFLAGS=-I$(STAGING_DIR_HOST)/include
 
 # defined in quilt.mk

@@ -119,6 +119,10 @@ KERNEL_MAKE_FLAGS = \
 	cmd_syscalls= \
 	$(if $(__package_mk),KBUILD_EXTRA_SYMBOLS="$(wildcard $(PKG_SYMVERS_DIR)/*.symvers)")
 
+ifneq (,$(KERNEL_CC))
+  KERNEL_MAKE_FLAGS += CC="$(KERNEL_CC)"
+endif
+
 KERNEL_NOSTDINC_FLAGS = \
 	-nostdinc $(if $(DUMP),, -isystem $(shell $(TARGET_CC) -print-file-name=include))
 

@@ -95,6 +95,21 @@ define Device/cznic_turris-omnia
 endef
 TARGET_DEVICES += cznic_turris-omnia
 
+define Device/fortinet_fg-30e
+  DEVICE_VENDOR := Fortinet
+  DEVICE_MODEL := FortiGate 30E
+  SOC := armada-385
+  KERNEL := kernel-bin | append-dtb
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FGT30E
+  KERNEL_SIZE := 6144k
+  DEVICE_DTS := armada-385-fortinet-fg-30e
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
+    sysupgrade-tar rootfs=$$$$@ | append-metadata
+  DEVICE_PACKAGES := kmod-hwmon-nct7802
+endef
+TARGET_DEVICES += fortinet_fg-30e
+
 define Device/fortinet_fg-50e
   DEVICE_VENDOR := Fortinet
   DEVICE_MODEL := FortiGate 50E

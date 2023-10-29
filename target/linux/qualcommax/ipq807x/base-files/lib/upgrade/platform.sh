@@ -70,7 +70,8 @@ platform_do_upgrade() {
 	edimax,cax1800|\
 	netgear,rax120v2|\
 	netgear,wax218|\
-	netgear,wax620)
+	netgear,wax620|\
+	netgear,wax630)
 		nand_do_upgrade "$1"
 		;;
 	prpl,haze|\

@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2023-09-16
-PKG_SOURCE_VERSION:=57aa1b1562ac60f11a6bec8be02cd3b68b12b3fa
-PKG_MIRROR_HASH:=f8f9ab78ae85180a6e601d7c911d6c350b0cc132172d4baefc8f9fe07566ce0f
+PKG_SOURCE_DATE:=2023-10-12
+PKG_SOURCE_VERSION:=cd04ab7f984fe28613276c01fd0ac7afbe5516d5
+PKG_MIRROR_HASH:=857ae436fd09785749411a665b31c82cec84b68b1e096f69ebb6c2a0efb5583f
 
 PKG_FLAGS:=nonshared
 
@@ -36,6 +36,7 @@ ALLWIFIBOARDS:= \
 	netgear_rax120v2 \
 	netgear_wax218 \
 	netgear_wax620 \
+	netgear_wax630 \
 	prpl_haze \
 	qnap_301w \
 	redmi_ax6 \
@@ -142,6 +143,7 @@ $(eval $(call generate-ipq-wifi-package,edimax_cax1800,Edimax CAX1800))
 $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))
 $(eval $(call generate-ipq-wifi-package,netgear_wax620,Netgear WAX620))
+$(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))
 $(eval $(call generate-ipq-wifi-package,qnap_301w,QNAP 301w))
 $(eval $(call generate-ipq-wifi-package,prpl_haze,prpl Haze))
 $(eval $(call generate-ipq-wifi-package,redmi_ax6,Redmi AX6))
