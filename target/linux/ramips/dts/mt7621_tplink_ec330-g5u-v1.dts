@@ -73,7 +73,7 @@
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <0>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1radio";
+			linux,default-trigger = "phy1tpt";
 		};
 
 		led-6 {
@@ -82,7 +82,7 @@
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <1>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0radio";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		led_power: led-7 {
