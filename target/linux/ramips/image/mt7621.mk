@@ -2974,6 +2974,21 @@ define Device/zyxel_lte3301-plus
 endef
 TARGET_DEVICES += zyxel_lte3301-plus
 
+define Device/zyxel_lte5398-m904
+  $(Device/nand)
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := LTE5398-M904
+  KERNEL_SIZE := 31488k
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-usb3 uqmi \
+  kmod-usb-net-qmi-wwan kmod-usb-serial-option kmod-usb-ledtrig-usbport
+  KERNEL := $(KERNEL_DTB) | uImage lzma | \
+	zytrx-header $$(DEVICE_MODEL) $$(VERSION_DIST)-$$(REVISION)
+  KERNEL_INITRAMFS := $(KERNEL_DTB) | uImage lzma | \
+	zytrx-header $$(DEVICE_MODEL) 9.99(ABQU.1)$$(VERSION_DIST)-recovery
+  KERNEL_INITRAMFS_SUFFIX := -recovery.bin
+endef
+TARGET_DEVICES += zyxel_lte5398-m904
+
 define Device/zyxel_nr7101
   $(Device/nand)
   DEVICE_VENDOR := ZyXEL

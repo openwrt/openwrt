@@ -248,6 +248,9 @@ yuncore,ax820)
 zyxel,lte3301-plus)
 	ucidef_set_led_netdev "internet" "internet" "white:internet" "wwan0"
 	;;
+zyxel,lte5398-m904)
+	ucidef_set_led_netdev "internet" "LTE/3G Internet Activity" "green:internet" "wwan0" "rx tx"
+	;;
 esac
 
 board_config_flush
