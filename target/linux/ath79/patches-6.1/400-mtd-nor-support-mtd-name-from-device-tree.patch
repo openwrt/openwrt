@@ -33,7 +33,7 @@ Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
  	mtd->flags = MTD_CAP_NORFLASH;
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -840,6 +840,17 @@ out_error:
+@@ -863,6 +863,17 @@ out_error:
   */
  static void mtd_set_dev_defaults(struct mtd_info *mtd)
  {
