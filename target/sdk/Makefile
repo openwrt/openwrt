@@ -86,6 +86,7 @@ KERNEL_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(
 #
 USERSPACE_UTILS_FILES := \
 	tools/build \
+	tools/leds \
 	tools/power/cpupower \
 	tools/scripts \
 	tools/spi \
