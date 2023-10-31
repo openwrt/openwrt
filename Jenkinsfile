@@ -38,6 +38,7 @@ pipeline {
   parameters {
     string(name:'buildBranch', defaultValue:env.BRANCH_NAME, description:'branch to use for feeds.git and mfw_build.git')
     choice(name:'startClean', choices:['false', 'true'], description:'start clean')
+    choice(name:'onlyBuildUS', choices:['true', 'false'], description:'build only US images (no EU or other regions)')
     string(name:'makeOptions', defaultValue:'-j32', description:'options passed directly to make')
   }
 
@@ -52,6 +53,10 @@ pipeline {
             def jobName = build.key
             def option = ""
             def dpdkFlag = ""
+
+            if (myRegion != 'us' && onlyBuildUS == 'true') {
+              return
+            }
 
             echo "Adding job ${build.key}"
             jobs[build.key] = {
