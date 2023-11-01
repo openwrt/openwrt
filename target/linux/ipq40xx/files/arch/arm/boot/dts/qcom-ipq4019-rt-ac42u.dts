@@ -1,86 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include "qcom-ipq4019.dtsi"
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
-#include <dt-bindings/soc/qcom,tcsr.h>
+#include "qcom-ipq4019-asus.dtsi"
 
 / {
 	model = "ASUS RT-AC42U";
 	compatible = "asus,rt-ac42u";
-
-	memory {
-		device_type = "memory";
-		reg = <0x80000000 0x10000000>; /* 256MB */
-	};
 
 	aliases {
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
-	};
-
-	soc {
-		rng@22000 {
-			status = "okay";
-		};
-
-		mdio@90000 {
-			status = "okay";
-		};
-
-		tcsr@1949000 {
-			compatible = "qcom,tcsr";
-			reg = <0x1949000 0x100>;
-			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
-		};
-
-		tcsr@194b000 {
-			compatible = "qcom,tcsr";
-			reg = <0x194b000 0x100>;
-			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
-		};
-
-		ess_tcsr@1953000 {
-			compatible = "qcom,tcsr";
-			reg = <0x1953000 0x1000>;
-			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
-		};
-
-		tcsr@1957000 {
-			compatible = "qcom,tcsr";
-			reg = <0x1957000 0x100>;
-			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
-		};
-
-		usb3@8af8800 {
-			status = "okay";
-
-			dwc3@8a00000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				usb3_port1: port@1 {
-					reg = <1>;
-					#trigger-source-cells = <0>;
-				};
-
-				usb3_port2: port@2 {
-					reg = <2>;
-					#trigger-source-cells = <0>;
-				};
-			};
-		};
-
-		crypto@8e3a000 {
-			status = "okay";
-		};
-
-		watchdog@b017000 {
-			status = "okay";
-		};
 	};
 
 	keys {
@@ -168,20 +100,8 @@
 	};
 };
 
-&cryptobam {
-	status = "okay";
-};
-
-&blsp_dma {
-	status = "okay";
-};
-
-&qpic_bam {
-	status = "okay";
-};
-
 &tlmm {
-	serial_0_pins: serial0_pinmux {
+	serial_pins: serial_pinmux {
 		mux {
 			pins = "gpio16", "gpio17";
 			function = "blsp_uart0";
@@ -206,57 +126,21 @@
 	};
 };
 
-&blsp1_uart1 {
-	pinctrl-0 = <&serial_0_pins>;
-	pinctrl-names = "default";
+&usb3 {
 	status = "okay";
-};
+	
+	dwc3@8a00000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-&nand {
-	pinctrl-0 = <&nand_pins>;
-	pinctrl-names = "default";
-	status = "okay";
+		usb3_port1: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
 
-	nand@0 {
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				label = "SBL1";
-				reg = <0x00000000 0x00080000>;
-				read-only;
-			};
-			partition@80000 {
-				label = "MIBIB";
-				reg = <0x00080000 0x00080000>;
-				read-only;
-			};
-			partition@100000 {
-				label = "QSEE";
-				reg = <0x00100000 0x00100000>;
-				read-only;
-			};
-			partition@200000 {
-				label = "CDT";
-				reg = <0x00200000 0x00080000>;
-				read-only;
-			};
-			partition@280000 {
-				label = "APPSBL";
-				reg = <0x00280000 0x00140000>;
-				read-only;
-			};
-			partition@3C0000 {
-				label = "APPSBLENV";
-				reg = <0x003C0000 0x00040000>;
-				read-only;
-			};
-			partition@400000 {
-				label = "ubi";
-				reg = <0x00400000 0x07C00000>;
-			};
+		usb3_port2: port@2 {
+			reg = <2>;
+			#trigger-source-cells = <0>;
 		};
 	};
 };
@@ -266,14 +150,6 @@
 };
 
 &usb3_hs_phy {
-	status = "okay";
-};
-
-&gmac {
-	status = "okay";
-};
-
-&switch {
 	status = "okay";
 };
 
@@ -317,7 +193,6 @@
 		wifi2: wifi@1,0 {
 			compatible = "qcom,ath10k";
 			reg = <0x00010000 0 0 0 0>;
-
 			qcom,ath10k-calibration-variant = "ASUS-RT-AC42U";
 		};
 	};

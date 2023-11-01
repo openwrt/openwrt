@@ -1,0 +1,104 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	led-controller@32 {
+		/* 9-channel RGB LED controller */
+		compatible = "national,lp5523";
+		reg = <0x32>;
+		clock-mode = /bits/ 8 <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * There is only one single extremely bright RGB-LED.
+		 * The RGB-color channels are running in parallel to
+		 * increase the current delivery capabilities beyond
+		 * what a single PWM-output of the controller can do.
+		 */
+
+		led_blue0: led@0 {
+			chan-name = "blue-0";
+			led-cur = /bits/ 8 <0xfa>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <0>;
+			color = <LED_COLOR_ID_BLUE>;
+			function-enumerator = <0>;
+		};
+
+		led@1 {
+			chan-name = "blue-1";
+			led-cur = /bits/ 8 <0xfa>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <1>;
+			color = <LED_COLOR_ID_BLUE>;
+			function-enumerator = <1>;
+		};
+
+		led@2 {
+			chan-name = "blue-2";
+			led-cur = /bits/ 8 <0xfa>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <2>;
+			color = <LED_COLOR_ID_BLUE>;
+			function-enumerator = <2>;
+		};
+
+		led_green0: led@3 {
+			chan-name = "green-0";
+			led-cur = /bits/ 8 <0xfa>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <3>;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <0>;
+		};
+
+		led@4 {
+			chan-name = "green-1";
+			led-cur = /bits/ 8 <0xfa>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <4>;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <1>;
+		};
+
+		led@5 {
+			chan-name = "green-2";
+			led-cur = /bits/ 8 <0xfa>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <5>;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <2>;
+		};
+
+		led_red0: led@6 {
+			chan-name = "red-0";
+			led-cur = /bits/ 8 <0xfa>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <6>;
+			color = <LED_COLOR_ID_RED>;
+			function-enumerator = <0>;
+		};
+
+		led@7 {
+			chan-name = "red-1";
+			led-cur = /bits/ 8 <0xfa>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <7>;
+			color = <LED_COLOR_ID_RED>;
+			function-enumerator = <1>;
+		};
+
+		led@8 {
+			chan-name = "red-2";
+			led-cur = /bits/ 8 <0xfa>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <8>;
+			color = <LED_COLOR_ID_RED>;
+			function-enumerator = <2>;
+		};
+	};
+};
