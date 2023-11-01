@@ -450,6 +450,32 @@ define Device/jcg_q30-pro
 endef
 TARGET_DEVICES += jcg_q30-pro
 
+define Device/jdcloud_re-cp-03
+  DEVICE_VENDOR := JDCloud
+  DEVICE_MODEL := RE-CP-03
+  DEVICE_DTS := mt7986a-jdcloud-re-cp-03
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := kmod-mt7986-firmware mt7986-wo-firmware \
+	e2fsprogs f2fsck mkf2fs
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES := sysupgrade.itb
+  IMAGE_SIZE := $$(shell expr 64 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	pad-rootfs | append-metadata
+  ARTIFACTS :=gpt.bin preloader.bin bl31-uboot.fip
+  ARTIFACT/gpt.bin := mt798x-gpt emmc
+  ARTIFACT/preloader.bin := mt7986-bl2 emmc-ddr4
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot jdcloud_re-cp-03
+endef
+TARGET_DEVICES += jdcloud_re-cp-03
+
 define Device/mediatek_mt7981-rfb
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7981 rfb
