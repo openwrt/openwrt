@@ -34,6 +34,7 @@ HOST_CONFIGURE_ARGS += \
 	--disable-shared \
 	--enable-static \
 	--without-lzma \
+	--without-bzlib \
 	--without-zstd
 
 ifeq ($(HOST_OS),Darwin)
