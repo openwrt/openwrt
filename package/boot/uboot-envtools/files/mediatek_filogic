@@ -89,6 +89,11 @@ glinet,gl-mt6000)
 	local envdev=$(find_mmc_part "u-boot-env")
 	ubootenv_add_uci_config "$envdev" "0x0" "0x80000"
 	;;
+jdcloud,re-cp-03)
+	local envdev=$(find_mmc_part "ubootenv" "mmcblk0")
+	ubootenv_add_uci_config "$envdev" "0x0" "0x40000" "0x40000" "1"
+	ubootenv_add_uci_config "$envdev" "0x40000" "0x40000" "0x40000" "1"
+	;;
 mercusys,mr90x-v1|\
 routerich,ax3000)
 	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
