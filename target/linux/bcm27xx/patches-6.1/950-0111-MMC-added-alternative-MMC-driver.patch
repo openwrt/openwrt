@@ -266,7 +266,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  static inline int mmc_blk_part_switch(struct mmc_card *card,
  				      unsigned int part_type);
  static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
-@@ -2970,6 +2977,8 @@ static int mmc_blk_probe(struct mmc_card
+@@ -2994,6 +3001,8 @@ static int mmc_blk_probe(struct mmc_card
  {
  	struct mmc_blk_data *md;
  	int ret = 0;
@@ -275,7 +275,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	/*
  	 * Check that the card supports the command class(es) we need.
-@@ -2977,7 +2986,16 @@ static int mmc_blk_probe(struct mmc_card
+@@ -3001,7 +3010,16 @@ static int mmc_blk_probe(struct mmc_card
  	if (!(card->csd.cmdclass & CCC_BLOCK_READ))
  		return -ENODEV;
  
@@ -293,7 +293,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	card->complete_wq = alloc_workqueue("mmc_complete",
  					WQ_MEM_RECLAIM | WQ_HIGHPRI, 0);
-@@ -2992,6 +3010,17 @@ static int mmc_blk_probe(struct mmc_card
+@@ -3016,6 +3034,17 @@ static int mmc_blk_probe(struct mmc_card
  		goto out_free;
  	}
  
