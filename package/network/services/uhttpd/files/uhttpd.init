@@ -219,10 +219,76 @@ start_instance()
 	procd_close_instance
 }
 
+uhttpd_interfaces()
+{
+	local cfg="$1"
+	local http https listen ips
+
+	config_get http "$cfg" listen_http
+	config_get https "$cfg" listen_https
+	for listen in $http $https; do
+		case "$listen" in
+		"" |\
+		"0.0.0.0:"* |\
+		"[::]:"* )
+			continue
+			;;
+		*.*.*.*:*)
+			ips="$ips ${listen%%:*}
+"
+			;;
+		\[*\]:* )
+			listen="${listen:1}"
+			ips="$ips ${listen%%]:*}
+"
+			;;
+		esac
+	done
+	ips="$( echo "$ips" | sort -u )"
+	echo "$ips"
+}
+
+resolve_iface()
+{
+	local cfg="$1"
+	local ipaddr ipaddrs testip="$2"
+
+	config_get ipaddrs "$cfg" ipaddr
+	for ipaddr in $ipaddrs; do
+		[ "$ipaddr" = "$testip" ] && echo "$cfg"
+	done
+}
+
+get_interface_by_ip()
+{
+	config_load network
+	config_foreach resolve_iface interface "$@"
+}
+
 service_triggers()
 {
+	local iface ifaces all=0
+
 	procd_add_reload_trigger "uhttpd"
 	procd_add_raw_trigger acme.renew 5000 /etc/init.d/uhttpd reload
+
+	config_load uhttpd
+	ips="$(config_foreach uhttpd_interfaces uhttpd)"
+	[ -z "$ips" ] && return 0
+
+	for ip in $ips; do
+		iface="$(get_interface_by_ip $ip)"
+		[ -z "$iface" ] && all=1
+		ifaces="$ifaces $iface"
+	done
+
+	if [ "$all" = "1" ]; then
+		procd_add_raw_trigger "interface.*.up" 1000 /etc/init.d/uhttpd start
+	else
+		for iface in $ifaces; do
+			procd_add_raw_trigger "interface.$iface.up" 1000 /etc/init.d/uhttpd start
+		done
+	fi
 }
 
 start_service() {
