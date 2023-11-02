@@ -119,7 +119,7 @@
  	if (res == HOSTAPD_ACL_PENDING)
  		return;
  
-@@ -5161,7 +5173,7 @@ static void handle_assoc(struct hostapd_
+@@ -5156,7 +5168,7 @@ static void handle_assoc(struct hostapd_
  	int resp = WLAN_STATUS_SUCCESS;
  	u16 reply_res = WLAN_STATUS_UNSPECIFIED_FAILURE;
  	const u8 *pos;
@@ -173,7 +173,7 @@
  		wpa_msg(hapd->msg_ctx, MSG_DEBUG, "Station " MACSTR
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -1036,6 +1036,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -1045,6 +1045,12 @@ void handle_probe_req(struct hostapd_dat
  	u16 csa_offs[2];
  	size_t csa_offs_len;
  	struct radius_sta rad_info;
@@ -186,7 +186,7 @@
  
  	if (hapd->iconf->rssi_ignore_probe_request && ssi_signal &&
  	    ssi_signal < hapd->iconf->rssi_ignore_probe_request)
-@@ -1222,6 +1228,12 @@ void handle_probe_req(struct hostapd_dat
+@@ -1231,6 +1237,12 @@ void handle_probe_req(struct hostapd_dat
  	}
  #endif /* CONFIG_P2P */
  
@@ -212,7 +212,7 @@
  
  	if (addr == NULL) {
  		/*
-@@ -396,6 +400,12 @@ int hostapd_notif_assoc(struct hostapd_d
+@@ -404,6 +408,12 @@ int hostapd_notif_assoc(struct hostapd_d
  		goto fail;
  	}
  
@@ -348,7 +348,7 @@
  CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -7593,6 +7593,8 @@ struct wpa_supplicant * wpa_supplicant_a
+@@ -7600,6 +7600,8 @@ struct wpa_supplicant * wpa_supplicant_a
  	}
  #endif /* CONFIG_P2P */
  
@@ -357,7 +357,7 @@
  	return wpa_s;
  }
  
-@@ -7619,6 +7621,8 @@ int wpa_supplicant_remove_iface(struct w
+@@ -7626,6 +7628,8 @@ int wpa_supplicant_remove_iface(struct w
  	struct wpa_supplicant *parent = wpa_s->parent;
  #endif /* CONFIG_MESH */
  
@@ -366,7 +366,7 @@
  	/* Remove interface from the global list of interfaces */
  	prev = global->ifaces;
  	if (prev == wpa_s) {
-@@ -7965,8 +7969,12 @@ int wpa_supplicant_run(struct wpa_global
+@@ -7972,8 +7976,12 @@ int wpa_supplicant_run(struct wpa_global
  	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
  	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
  

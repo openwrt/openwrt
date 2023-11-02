@@ -18,7 +18,7 @@
  
  #ifdef CONFIG_HS20
  static int hs20_parse_conn_capab(struct hostapd_bss_config *bss, char *buf,
-@@ -4062,10 +4062,10 @@ static int hostapd_config_fill(struct ho
+@@ -4064,10 +4064,10 @@ static int hostapd_config_fill(struct ho
  		bss->gas_frag_limit = val;
  	} else if (os_strcmp(buf, "gas_comeback_delay") == 0) {
  		bss->gas_comeback_delay = atoi(pos);
@@ -50,7 +50,7 @@
  		wpa_printf(MSG_ERROR, "BSS Load initialization failed");
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -2683,8 +2683,6 @@ void wnm_bss_keep_alive_deinit(struct wp
+@@ -2849,8 +2849,6 @@ void wnm_bss_keep_alive_deinit(struct wp
  }
  
  
@@ -59,7 +59,7 @@
  static int wpas_qos_map_set(struct wpa_supplicant *wpa_s, const u8 *qos_map,
  			    size_t len)
  {
-@@ -2717,8 +2715,6 @@ static void interworking_process_assoc_r
+@@ -2883,8 +2881,6 @@ static void interworking_process_assoc_r
  	}
  }
  
@@ -68,7 +68,7 @@
  
  static void wpa_supplicant_set_4addr_mode(struct wpa_supplicant *wpa_s)
  {
-@@ -3098,10 +3094,8 @@ static int wpa_supplicant_event_associnf
+@@ -3264,10 +3260,8 @@ static int wpa_supplicant_event_associnf
  		wnm_process_assoc_resp(wpa_s, data->assoc_info.resp_ies,
  				       data->assoc_info.resp_ies_len);
  #endif /* CONFIG_WNM */

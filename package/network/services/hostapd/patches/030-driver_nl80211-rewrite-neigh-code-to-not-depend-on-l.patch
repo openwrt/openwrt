@@ -92,7 +92,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (drv->capa.flags2 & WPA_DRIVER_FLAGS2_CONTROL_PORT_RX) {
  		wpa_printf(MSG_DEBUG,
-@@ -11883,13 +11880,14 @@ static int wpa_driver_br_add_ip_neigh(vo
+@@ -11893,13 +11890,14 @@ static int wpa_driver_br_add_ip_neigh(vo
  				      const u8 *ipaddr, int prefixlen,
  				      const u8 *addr)
  {
@@ -112,7 +112,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int res;
  
  	if (!ipaddr || prefixlen == 0 || !addr)
-@@ -11908,85 +11906,66 @@ static int wpa_driver_br_add_ip_neigh(vo
+@@ -11918,85 +11916,66 @@ static int wpa_driver_br_add_ip_neigh(vo
  	}
  
  	if (version == 4) {
@@ -220,7 +220,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		addrsize = 16;
  	} else {
  		return -EINVAL;
-@@ -12004,41 +11983,30 @@ static int wpa_driver_br_delete_ip_neigh
+@@ -12014,41 +11993,30 @@ static int wpa_driver_br_delete_ip_neigh
  		return -1;
  	}
  

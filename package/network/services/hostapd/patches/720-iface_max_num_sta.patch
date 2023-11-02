@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2848,6 +2848,14 @@ static int hostapd_config_fill(struct ho
+@@ -2850,6 +2850,14 @@ static int hostapd_config_fill(struct ho
  				   line, bss->max_num_sta, MAX_STA_COUNT);
  			return 1;
  		}
@@ -59,7 +59,7 @@
  {
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -1252,7 +1252,7 @@ void handle_probe_req(struct hostapd_dat
+@@ -1261,7 +1261,7 @@ void handle_probe_req(struct hostapd_dat
  	if (hapd->conf->no_probe_resp_if_max_sta &&
  	    is_multicast_ether_addr(mgmt->da) &&
  	    is_multicast_ether_addr(mgmt->bssid) &&
@@ -70,7 +70,7 @@
  			   " since no room for additional STA",
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -1039,6 +1039,8 @@ struct hostapd_config {
+@@ -1040,6 +1040,8 @@ struct hostapd_config {
  	unsigned int track_sta_max_num;
  	unsigned int track_sta_max_age;
  

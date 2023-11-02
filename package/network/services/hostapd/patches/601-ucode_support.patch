@@ -196,7 +196,7 @@
  
  #ifdef CONFIG_BGSCAN
  	if (state == WPA_COMPLETED && wpa_s->current_ssid != wpa_s->bgscan_ssid)
-@@ -7594,6 +7595,7 @@ struct wpa_supplicant * wpa_supplicant_a
+@@ -7601,6 +7602,7 @@ struct wpa_supplicant * wpa_supplicant_a
  #endif /* CONFIG_P2P */
  
  	wpas_ubus_add_bss(wpa_s);
@@ -204,7 +204,7 @@
  
  	return wpa_s;
  }
-@@ -7621,6 +7623,7 @@ int wpa_supplicant_remove_iface(struct w
+@@ -7628,6 +7630,7 @@ int wpa_supplicant_remove_iface(struct w
  	struct wpa_supplicant *parent = wpa_s->parent;
  #endif /* CONFIG_MESH */
  
@@ -212,7 +212,7 @@
  	wpas_ubus_free_bss(wpa_s);
  
  	/* Remove interface from the global list of interfaces */
-@@ -7931,6 +7934,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -7938,6 +7941,7 @@ struct wpa_global * wpa_supplicant_init(
  
  	eloop_register_timeout(WPA_SUPPLICANT_CLEANUP_INTERVAL, 0,
  			       wpas_periodic, global, NULL);
@@ -220,7 +220,7 @@
  
  	return global;
  }
-@@ -7969,12 +7973,8 @@ int wpa_supplicant_run(struct wpa_global
+@@ -7976,12 +7980,8 @@ int wpa_supplicant_run(struct wpa_global
  	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
  	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
  
@@ -233,7 +233,7 @@
  	return 0;
  }
  
-@@ -8007,6 +8007,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+@@ -8014,6 +8014,8 @@ void wpa_supplicant_deinit(struct wpa_gl
  
  	wpas_notify_supplicant_deinitialized(global);
  
@@ -280,7 +280,7 @@
  
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -3787,6 +3787,25 @@ struct wpa_driver_ops {
+@@ -3796,6 +3796,25 @@ struct wpa_driver_ops {
  			 const char *ifname);
  
  	/**
@@ -306,7 +306,7 @@
  	 * set_sta_vlan - Bind a station into a specific interface (AP only)
  	 * @priv: Private driver interface data
  	 * @ifname: Interface (main or virtual BSS or VLAN)
-@@ -6440,6 +6459,7 @@ union wpa_event_data {
+@@ -6449,6 +6468,7 @@ union wpa_event_data {
  
  	/**
  	 * struct ch_switch
@@ -314,7 +314,7 @@
  	 * @freq: Frequency of new channel in MHz
  	 * @ht_enabled: Whether this is an HT channel
  	 * @ch_offset: Secondary channel offset
-@@ -6450,6 +6470,7 @@ union wpa_event_data {
+@@ -6459,6 +6479,7 @@ union wpa_event_data {
  	 * @punct_bitmap: Puncturing bitmap
  	 */
  	struct ch_switch {
@@ -324,7 +324,7 @@
  		int ch_offset;
 --- a/src/drivers/driver_nl80211_event.c
 +++ b/src/drivers/driver_nl80211_event.c
-@@ -1202,6 +1202,7 @@ static void mlme_event_ch_switch(struct
+@@ -1203,6 +1203,7 @@ static void mlme_event_ch_switch(struct
  				 struct nlattr *bw, struct nlattr *cf1,
  				 struct nlattr *cf2,
  				 struct nlattr *punct_bitmap,
@@ -332,7 +332,7 @@
  				 int finished)
  {
  	struct i802_bss *bss;
-@@ -1265,6 +1266,8 @@ static void mlme_event_ch_switch(struct
+@@ -1266,6 +1267,8 @@ static void mlme_event_ch_switch(struct
  		data.ch_switch.cf1 = nla_get_u32(cf1);
  	if (cf2)
  		data.ch_switch.cf2 = nla_get_u32(cf2);
@@ -341,7 +341,7 @@
  
  	if (finished)
  		bss->flink->freq = data.ch_switch.freq;
-@@ -3912,6 +3915,7 @@ static void do_process_drv_event(struct
+@@ -3913,6 +3916,7 @@ static void do_process_drv_event(struct
  				     tb[NL80211_ATTR_CENTER_FREQ1],
  				     tb[NL80211_ATTR_CENTER_FREQ2],
  				     tb[NL80211_ATTR_PUNCT_BITMAP],
@@ -349,7 +349,7 @@
  				     0);
  		break;
  	case NL80211_CMD_CH_SWITCH_NOTIFY:
-@@ -3924,6 +3928,7 @@ static void do_process_drv_event(struct
+@@ -3925,6 +3929,7 @@ static void do_process_drv_event(struct
  				     tb[NL80211_ATTR_CENTER_FREQ1],
  				     tb[NL80211_ATTR_CENTER_FREQ2],
  				     tb[NL80211_ATTR_PUNCT_BITMAP],
@@ -359,7 +359,7 @@
  	case NL80211_CMD_DISCONNECT:
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -5389,6 +5389,7 @@ void supplicant_event(void *ctx, enum wp
+@@ -5566,6 +5566,7 @@ void supplicant_event(void *ctx, enum wp
  		event_to_string(event), event);
  #endif /* CONFIG_NO_STDOUT_DEBUG */
  
@@ -542,7 +542,7 @@
  static int driver_nl80211_send_mlme(void *priv, const u8 *data,
  				    size_t data_len, int noack,
  				    unsigned int freq,
-@@ -13697,6 +13769,8 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -13707,6 +13779,8 @@ const struct wpa_driver_ops wpa_driver_n
  	.set_acl = wpa_driver_nl80211_set_acl,
  	.if_add = wpa_driver_nl80211_if_add,
  	.if_remove = driver_nl80211_if_remove,

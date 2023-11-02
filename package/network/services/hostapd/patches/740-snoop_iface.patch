@@ -104,7 +104,7 @@
  static inline int hostapd_drv_vendor_cmd(struct hostapd_data *hapd,
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -4209,7 +4209,7 @@ struct wpa_driver_ops {
+@@ -4218,7 +4218,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, negative (<0) on failure
  	 */
  	int (*br_set_net_param)(void *priv, enum drv_br_net_param param,
@@ -115,7 +115,7 @@
  	 * get_wowlan - Get wake-on-wireless status
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -12168,7 +12168,7 @@ static const char * drv_br_net_param_str
+@@ -12178,7 +12178,7 @@ static const char * drv_br_net_param_str
  
  
  static int wpa_driver_br_set_net_param(void *priv, enum drv_br_net_param param,
@@ -124,7 +124,7 @@
  {
  	struct i802_bss *bss = priv;
  	char path[128];
-@@ -12194,8 +12194,11 @@ static int wpa_driver_br_set_net_param(v
+@@ -12204,8 +12204,11 @@ static int wpa_driver_br_set_net_param(v
  			return -EINVAL;
  	}
  

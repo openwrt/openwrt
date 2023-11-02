@@ -26,7 +26,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -2283,6 +2283,9 @@ struct wpa_driver_capa {
+@@ -2292,6 +2292,9 @@ struct wpa_driver_capa {
  	/** Maximum number of iterations in a single scan plan */
  	u32 max_sched_scan_plan_iterations;
  
@@ -38,7 +38,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  
 --- a/src/drivers/driver_nl80211_capa.c
 +++ b/src/drivers/driver_nl80211_capa.c
-@@ -949,6 +949,10 @@ static int wiphy_info_handler(struct nl_
+@@ -953,6 +953,10 @@ static int wiphy_info_handler(struct nl_
  			nla_get_u32(tb[NL80211_ATTR_MAX_SCAN_PLAN_ITERATIONS]);
  	}
  
