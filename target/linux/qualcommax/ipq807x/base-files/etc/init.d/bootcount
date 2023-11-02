@@ -4,7 +4,8 @@ START=99
 
 boot() {
 	case $(board_name) in
-	edgecore,eap102)
+	edgecore,eap102|\
+	yuncore,ax880)
 		fw_setenv upgrade_available 0
 		# Unset changed flag after sysupgrade complete
 		fw_setenv changed

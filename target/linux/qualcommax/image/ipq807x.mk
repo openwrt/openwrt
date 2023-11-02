@@ -253,3 +253,19 @@ define Device/zyxel_nbg7815
 		kmod-bluetooth
 endef
 TARGET_DEVICES += zyxel_nbg7815
+
+define Device/yuncore_ax880
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Yuncore
+	DEVICE_MODEL := AX880
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk09
+	SOC := ipq8072
+	DEVICE_PACKAGES := ipq-wifi-yuncore_ax880
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
+endef
+TARGET_DEVICES += yuncore_ax880
+
