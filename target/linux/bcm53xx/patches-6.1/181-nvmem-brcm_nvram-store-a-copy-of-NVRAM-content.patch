@@ -25,23 +25,27 @@ Cc: Arınç ÜNAL <arinc.unal@arinc9.com>
 Cc: Florian Fainelli <florian.fainelli@broadcom.com>
 Cc: Scott Branden <scott.branden@broadcom.com>
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Acked-by: Arınç ÜNAL <arinc.unal@arinc9.com>
 ---
- drivers/nvmem/brcm_nvram.c | 130 +++++++++++++++++++++++++------------
- 1 file changed, 90 insertions(+), 40 deletions(-)
+ drivers/nvmem/brcm_nvram.c | 134 ++++++++++++++++++++++++++-----------
+ 1 file changed, 94 insertions(+), 40 deletions(-)
 
 --- a/drivers/nvmem/brcm_nvram.c
 +++ b/drivers/nvmem/brcm_nvram.c
-@@ -17,9 +17,20 @@
+@@ -17,9 +17,23 @@
  
  #define NVRAM_MAGIC			"FLSH"
  
 +/**
 + * struct brcm_nvram - driver state internal struct
 + *
++ * @dev:		NVMEM device pointer
 + * @nvmem_size:		Size of the whole space available for NVRAM
 + * @data:		NVRAM data copy stored to avoid poking underlaying flash controller
 + * @data_len:		NVRAM data size
 + * @padding_byte:	Padding value used to fill remaining space
++ * @cells:		Array of discovered NVMEM cells
++ * @ncells:		Number of elements in cells
 + */
  struct brcm_nvram {
  	struct device *dev;
@@ -53,7 +57,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	struct nvmem_cell_info *cells;
  	int ncells;
  };
-@@ -36,10 +47,47 @@ static int brcm_nvram_read(void *context
+@@ -36,10 +50,47 @@ static int brcm_nvram_read(void *context
  			   size_t bytes)
  {
  	struct brcm_nvram *priv = context;
@@ -104,7 +108,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  
  	return 0;
  }
-@@ -67,8 +115,13 @@ static int brcm_nvram_add_cells(struct b
+@@ -67,8 +118,13 @@ static int brcm_nvram_add_cells(struct b
  				size_t len)
  {
  	struct device *dev = priv->dev;
@@ -119,7 +123,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  
  	priv->ncells = 0;
  	for (var = data + sizeof(struct brcm_nvram_header);
-@@ -78,67 +131,67 @@ static int brcm_nvram_add_cells(struct b
+@@ -78,67 +134,68 @@ static int brcm_nvram_add_cells(struct b
  	}
  
  	priv->cells = devm_kcalloc(dev, priv->ncells, sizeof(*priv->cells), GFP_KERNEL);
@@ -204,7 +208,8 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 -		return err;
 +	len = le32_to_cpu(header->len);
 +	if (len > priv->nvmem_size) {
-+		dev_err(dev, "NVRAM length (%zd) exceeds mapped size (%zd)\n", len, priv->nvmem_size);
++		dev_err(dev, "NVRAM length (%zd) exceeds mapped size (%zd)\n", len,
++			priv->nvmem_size);
 +		return -EINVAL;
  	}
  
@@ -215,7 +220,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  
  	return 0;
  }
-@@ -150,7 +203,6 @@ static int brcm_nvram_probe(struct platf
+@@ -150,7 +207,6 @@ static int brcm_nvram_probe(struct platf
  		.reg_read = brcm_nvram_read,
  	};
  	struct device *dev = &pdev->dev;
@@ -223,7 +228,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  	struct brcm_nvram *priv;
  	int err;
  
-@@ -159,21 +211,19 @@ static int brcm_nvram_probe(struct platf
+@@ -159,21 +215,19 @@ static int brcm_nvram_probe(struct platf
  		return -ENOMEM;
  	priv->dev = dev;
  
