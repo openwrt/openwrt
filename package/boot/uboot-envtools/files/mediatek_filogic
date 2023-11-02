@@ -102,6 +102,14 @@ zyxel,ex5601-t0)
 	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
 	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x40000" "2"
 	;;
+zyxel,ex5601-t0-ubootmod)
+        . /lib/upgrade/nand.sh
+        local envubi=$(nand_find_ubi ubi)
+        local envdev=/dev/$(nand_find_volume $envubi ubootenv)
+        local envdev2=/dev/$(nand_find_volume $envubi ubootenv2)
+        ubootenv_add_uci_config "$envdev" "0x0" "0x1f000" "0x20000" "1"
+        ubootenv_add_uci_config "$envdev2" "0x0" "0x1f000" "0x20000" "1"
+        ;;
 zyxel,ex5700-telenor)
 	ubootenv_add_uci_config "/dev/ubootenv" "0x0" "0x4000" "0x4000" "1"
 	;;
