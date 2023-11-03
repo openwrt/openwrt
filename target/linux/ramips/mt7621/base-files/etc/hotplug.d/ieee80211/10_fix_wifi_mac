@@ -45,6 +45,13 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_add $lan_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
+	dlink,covr-x1860-a1)
+		label_mac=$(mtd_get_mac_ascii config2 factory_mac)
+		[ "$PHYNBR" = "0" ] && \
+			macaddr_add $label_mac 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_add $label_mac 2 > /sys${DEVPATH}/macaddress
+		;;
 	dlink,dap-x1860-a1)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		[ "$PHYNBR" = "0" ] && \
