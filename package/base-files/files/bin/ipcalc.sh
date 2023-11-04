@@ -55,7 +55,7 @@ case "$1" in
 	printf "Prefix out of range (%s)\n" "$prefix" >&2
 	exit 1
     fi
-    netmask=$(((0xffffffff << (32 - prefix)) & 0xffffffff))
+    prefix2netmask netmask "$prefix" || exit 1
     shift
     ;;
 *)

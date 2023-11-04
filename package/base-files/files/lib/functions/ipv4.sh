@@ -144,3 +144,16 @@ ip2str() {
     export -- "$__var=$((__n >> 24)).$(((__n >> 16) & 255)).$(((__n >> 8) & 255)).$((__n & 255))"
 }
 
+# convert prefix into an integer bitmask
+prefix2netmask() {
+    local __var="$1" __n="$2"
+    assert_uint32 "$__n" || return 1
+
+    if [ "$__n" -gt 32 ]; then
+	printf "Prefix out-of-range (%s)" "$__n" >&2
+	return 1
+    fi
+
+    export -- "$__var=$(((~(uint_max >> __n)) & uint_max))"
+}
+
