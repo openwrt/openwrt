@@ -56,6 +56,20 @@ platform_do_upgrade() {
 	fortinet,fg-50e)
 		fortinet_do_upgrade "$1"
 		;;
+	iij,sa-w2)
+		local envmtd=$(find_mtd_part "bootloader-env")
+		local bootdev=$(grep "BOOTDEV=" "$envmtd")
+		case "${bootdev#*=}" in
+		flash)  PART_NAME="firmware" ;;
+		rescue) PART_NAME="rescue"   ;;
+		*)
+			echo "invalid BOOTDEV is set (\"${bootdev#*=}\")"
+			umount -a
+			reboot -f
+			;;
+		esac
+		default_do_upgrade "$1"
+		;;
 	linksys,wrt1200ac|\
 	linksys,wrt1900ac-v1|\
 	linksys,wrt1900ac-v2|\

@@ -38,6 +38,7 @@ proto_qmi_setup() {
 	local ip4table ip6table
 	local cid_4 pdh_4 cid_6 pdh_6
 	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
+	local profile_pdptype
 
 	json_get_vars device apn v6apn auth username password pincode delay modes
 	json_get_vars pdptype profile v6profile dhcp dhcpv6 autoconnect plmn ip4table
@@ -95,6 +96,37 @@ proto_qmi_setup() {
 			proto_notify_error "$interface" SIM_NOT_INITIALIZED
 			proto_block_restart "$interface"
 			return 1
+		fi
+	done
+
+	# Check if UIM application is stuck in illegal state
+	local uim_state_timeout=0
+	while true; do
+		json_load "$(uqmi -s -d "$device" --uim-get-sim-state)"
+		json_get_var card_application_state card_application_state
+
+		# SIM card is either completely absent or state is labeled as illegal
+		# Try to power-cycle the SIM card to recover from this state
+		if [ -z "$card_application_state" -o "$card_application_state" = "illegal" ]; then
+			echo "SIM in illegal state - Power-cycling SIM"
+
+			# Try to reset SIM application
+			uqmi -d "$device" --uim-power-off --uim-slot 1
+			sleep 3
+			uqmi -d "$device" --uim-power-on --uim-slot 1
+
+			if [ "$uim_state_timeout" -lt "$timeout" ] || [ "$timeout" = "0" ]; then
+				let uim_state_timeout++
+				sleep 1
+				continue
+			fi
+
+			# Recovery failed
+			proto_notify_error "$interface" SIM_ILLEGAL_STATE
+			proto_block_restart "$interface"
+			return 1
+		else
+			break
 		fi
 	done
 
@@ -185,15 +217,6 @@ proto_qmi_setup() {
 		fi
 	fi
 
-	if [ -n "$mcc" -a -n "$mnc" ]; then
-		uqmi -s -d "$device" --set-plmn --mcc "$mcc" --mnc "$mnc" > /dev/null 2>&1 || {
-			echo "Unable to set PLMN"
-			proto_notify_error "$interface" PLMN_FAILED
-			proto_block_restart "$interface"
-			return 1
-		}
-	fi
-
 	# Cleanup current state if any
 	uqmi -s -d "$device" --stop-network 0xffffffff --autoconnect > /dev/null 2>&1
 	uqmi -s -d "$device" --set-ip-family ipv6 --stop-network 0xffffffff --autoconnect > /dev/null 2>&1
@@ -221,8 +244,25 @@ proto_qmi_setup() {
 
 	uqmi -s -d "$device" --network-register > /dev/null 2>&1
 
+	# PLMN selection must happen after the call to network-register
+	if [ -n "$mcc" -a -n "$mnc" ]; then
+		uqmi -s -d "$device" --set-plmn --mcc "$mcc" --mnc "$mnc" > /dev/null 2>&1 || {
+			echo "Unable to set PLMN"
+			proto_notify_error "$interface" PLMN_FAILED
+			proto_block_restart "$interface"
+			return 1
+		}
+	fi
+
+	[ -n "$modes" ] && {
+		uqmi -s -d "$device" --set-network-modes "$modes" > /dev/null 2>&1
+		sleep 3
+		# Scan network to not rely on registration-timeout after RAT change
+		uqmi -s -d "$device" --network-scan > /dev/null 2>&1
+	}
+
 	echo "Waiting for network registration"
-	sleep 1
+	sleep 5
 	local registration_timeout=0
 	local registration_state=""
 	while true; do
@@ -247,17 +287,22 @@ proto_qmi_setup() {
 		fi
 
 		proto_notify_error "$interface" NETWORK_REGISTRATION_FAILED
-		proto_block_restart "$interface"
 		return 1
 	done
 
-	[ -n "$modes" ] && uqmi -s -d "$device" --set-network-modes "$modes" > /dev/null 2>&1
 
 	echo "Starting network $interface"
 
 	pdptype="$(echo "$pdptype" | awk '{print tolower($0)}')"
 
 	[ "$pdptype" = "ip" -o "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] || pdptype="ip"
+
+	# Configure PDP type and APN for profile 1.
+	# In case GGSN rejects IPv4v6 PDP, modem might not be able to
+	# establish a non-LTE data session.
+	profile_pdptype="$pdptype"
+	[ "$profile_pdptype" = "ip" ] && profile_pdptype="ipv4"
+	uqmi -s -d "$device" --modify-profile "3gpp,1" --apn "$apn" --pdp-type "$profile_pdptype" > /dev/null 2>&1
 
 	if [ "$pdptype" = "ip" ]; then
 		[ -z "$autoconnect" ] && autoconnect=1

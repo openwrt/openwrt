@@ -157,7 +157,8 @@ ramips_setup_interfaces()
 		ucidef_set_interface "qtn" ifname "eth1" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.0"
 		;;
 	comfast,cf-e390ax|\
-	comfast,cf-ew72-v2)
+	comfast,cf-ew72-v2|\
+	meig,slt866)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	*)

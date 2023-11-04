@@ -291,7 +291,7 @@
    case DW_TAG_rvalue_reference_type
  
 +#define auxv_info_alias(arch) \
-+	int EBLHOOK_1(arch, auxv_info) (GElf_Xword a_type, const char **name, const char **format) \
++	int EBLHOOK_1(arch ## _, auxv_info) (GElf_Xword a_type, const char **name, const char **format) \
 +	{ \
 +		return EBLHOOK(auxv_info)(a_type, name, format); \
 +	}

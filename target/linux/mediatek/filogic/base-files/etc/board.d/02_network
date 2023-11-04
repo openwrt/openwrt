@@ -15,6 +15,9 @@ mediatek_setup_interfaces()
 	mediatek,mt7981-rfb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
 		;;
+	asus,tuf-ax6000)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
+		;;
 	netgear,wax220|\
 	ubnt,unifi-6-plus|\
 	zyxel,nwa50ax-pro)
@@ -78,7 +81,8 @@ mediatek_setup_macs()
 	local label_mac=""
 
 	case $board in
-	asus,tuf-ax4200)
+	asus,tuf-ax4200|\
+	asus,tuf-ax6000)
 		CI_UBIPART="UBI_DEV"
 		addr=$(mtd_get_mac_binary_ubi "Factory" 0x4)
 		wan_mac="${addr}"

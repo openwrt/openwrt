@@ -23,7 +23,7 @@ ifeq ($(HOST_OS),Darwin)
   HOST_CFLAGS += -I/opt/homebrew/include
 endif
 
-HOST_CFLAGS += -Wno-error
+HOST_CFLAGS += -Wno-error -fPIC
 
 HOST_CONFIGURE_ARGS += \
 	--without-libintl-prefix \
@@ -34,6 +34,7 @@ HOST_CONFIGURE_ARGS += \
 	--disable-shared \
 	--enable-static \
 	--without-lzma \
+	--without-bzlib \
 	--without-zstd
 
 ifeq ($(HOST_OS),Darwin)

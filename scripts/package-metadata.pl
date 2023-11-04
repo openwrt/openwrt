@@ -4,6 +4,8 @@ use lib "$FindBin::Bin";
 use strict;
 use metadata;
 use Getopt::Long;
+use Time::Piece;
+use JSON::PP;
 
 my %board;
 
@@ -611,6 +613,7 @@ ${json}{
 "version":"$pkg->{version}",
 "category":"$pkg->{category}",
 "license":"$pkg->{license}",
+"cpe_id":"$pkg->{cpe_id}",
 "maintainer": [$pkg_maintainer],
 "depends":[$pkg_deps]},
 END_JSON
@@ -619,6 +622,173 @@ END_JSON
 	$json =~ s/[\n\r]//g;
 	$json =~ s/\,$//;
 	print "[$json]";
+}
+
+sub image_manifest_packages($)
+{
+	my %packages;
+	my $imgmanifest = shift;
+
+	open FILE, "<$imgmanifest" or return;
+	while (<FILE>) {
+		/^(.+?) - (.+)$/ and $packages{$1} = $2;
+	}
+	close FILE;
+
+	return %packages;
+}
+
+sub dump_cyclonedxsbom_json {
+	my (@components) = @_;
+
+	my $uuid = sprintf(
+	    "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
+	    rand(0xffff), rand(0xffff), rand(0xffff),
+	    rand(0x0fff) | 0x4000,
+	    rand(0x3fff) | 0x8000,
+	    rand(0xffff), rand(0xffff), rand(0xffff)
+	);
+
+	my $cyclonedx = {
+		bomFormat => "CycloneDX",
+		specVersion => "1.4",
+		serialNumber => "urn:uuid:$uuid",
+		version => 1,
+		metadata => {
+			timestamp => gmtime->datetime,
+		},
+		"components" => [@components],
+	};
+
+	return encode_json($cyclonedx);
+}
+
+sub gen_image_cyclonedxsbom() {
+	my $pkginfo = shift @ARGV;
+	my $imgmanifest = shift @ARGV;
+	my @components;
+	my %image_packages;
+
+	%image_packages = image_manifest_packages($imgmanifest);
+	%image_packages or exit 1;
+	parse_package_metadata($pkginfo) or exit 1;
+
+	$package{"kernel"} = {
+		license => "GPL-2.0",
+		cpe_id  => "cpe:/o:linux:linux_kernel",
+		name    => "kernel",
+	};
+
+	my %abimap;
+	my @abipkgs = grep { defined $package{$_}->{abi_version} } keys %package;
+	foreach my $name (@abipkgs) {
+		my $pkg = $package{$name};
+		my $abipkg = $name . $pkg->{abi_version};
+		$abimap{$abipkg} = $name;
+	}
+
+	foreach my $name (sort {uc($a) cmp uc($b)} keys %image_packages) {
+		my $pkg = $package{$name};
+		if (!$pkg) {
+			$pkg = $package{$abimap{$name}};
+			next if !$pkg;
+		}
+
+		my @licenses;
+		my @license = split(/\s+/, $pkg->{license});
+		foreach my $lic (@license) {
+			push @licenses, (
+				{ "license" => { "name" => $lic } }
+			);
+		}
+		my $type;
+		if ($pkg->{category}) {
+			my $category = $pkg->{category};
+			my %cat_type = (
+				"Firmware"        => "firmware",
+				"Libraries"       => "library"
+			);
+
+			if ($cat_type{$category}) {
+				$type = $cat_type{$category};
+			} else {
+				$type = "application";
+			}
+		}
+
+		my $version = $pkg->{version};
+		if ($image_packages{$name}) {
+			$version = $image_packages{$name};
+		}
+		$version =~ s/-\d+$// if $version;
+		if ($name =~ /^(kernel|kmod-)/ and $version =~ /^(\d+\.\d+\.\d+)/) {
+			$version = $1;
+		}
+
+		push @components, {
+			name => $pkg->{name},
+			version => $version,
+			@licenses > 0 ? (licenses => [ @licenses ]) : (),
+			$pkg->{cpe_id} ? (cpe => $pkg->{cpe_id}.":".$version) : (),
+			$type ? (type => $type) : (),
+			$version ? (version => $version) : (),
+		};
+	}
+
+	print dump_cyclonedxsbom_json(@components);
+}
+
+sub gen_package_cyclonedxsbom() {
+	my $pkgmanifest = shift @ARGV;
+	my @components;
+	my %mpkgs;
+
+	%mpkgs = parse_package_manifest_metadata($pkgmanifest);
+	%mpkgs or exit 1;
+
+	foreach my $name (sort {uc($a) cmp uc($b)} keys %mpkgs) {
+		my $pkg = $mpkgs{$name};
+
+		my @licenses;
+		my @license = split(/\s+/, $pkg->{license});
+		foreach my $lic (@license) {
+			push @licenses, (
+				{ "license" => { "name" => $lic } }
+			);
+		}
+
+		my $type;
+		if ($pkg->{section}) {
+			my $section = $pkg->{section};
+			my %section_type = (
+				"firmware" => "firmware",
+				"libs" => "library"
+			);
+
+			if ($section_type{$section}) {
+				$type = $section_type{$section};
+			} else {
+				$type = "application";
+			}
+		}
+
+		my $version = $pkg->{version};
+		$version =~ s/-\d+$// if $version;
+		if ($name =~ /^(kernel|kmod-)/ and $version =~ /^(\d+\.\d+\.\d+)/) {
+			$version = $1;
+		}
+
+		push @components, {
+			name => $name,
+			version => $version,
+			@licenses > 0 ? (licenses => [ @licenses ]) : (),
+			$pkg->{cpe_id} ? (cpe => $pkg->{cpe_id}.":".$version) : (),
+			$type ? (type => $type) : (),
+			$version ? (version => $version) : (),
+		};
+	}
+
+	print dump_cyclonedxsbom_json(@components);
 }
 
 sub parse_command() {
@@ -631,6 +801,8 @@ sub parse_command() {
 		/^source$/ and return gen_package_source();
 		/^pkgaux$/ and return gen_package_auxiliary();
 		/^pkgmanifestjson$/ and return gen_package_manifest_json();
+		/^imgcyclonedxsbom$/ and return gen_image_cyclonedxsbom();
+		/^pkgcyclonedxsbom$/ and return gen_package_cyclonedxsbom();
 		/^license$/ and return gen_package_license(0);
 		/^licensefull$/ and return gen_package_license(1);
 		/^usergroup$/ and return gen_usergroup_list();
@@ -638,15 +810,17 @@ sub parse_command() {
 	}
 	die <<EOF
 Available Commands:
-	$0 mk [file]				Package metadata in makefile format
-	$0 config [file] 			Package metadata in Kconfig format
+	$0 mk [file]					Package metadata in makefile format
+	$0 config [file] 				Package metadata in Kconfig format
 	$0 kconfig [file] [config] [patchver]	Kernel config overrides
-	$0 source [file] 			Package source file information
-	$0 pkgaux [file]			Package auxiliary variables in makefile format
-	$0 pkgmanifestjson [file]		Package manifests in JSON format
-	$0 license [file] 			Package license information
+	$0 source [file] 				Package source file information
+	$0 pkgaux [file]				Package auxiliary variables in makefile format
+	$0 pkgmanifestjson [file]			Package manifests in JSON format
+	$0 imgcyclonedxsbom <file> [manifest]	Image package manifest in CycloneDX SBOM JSON format
+	$0 pkgcyclonedxsbom <file>			Package manifest in CycloneDX SBOM JSON format
+	$0 license [file] 				Package license information
 	$0 licensefull [file] 			Package license information (full list)
-	$0 usergroup [file]			Package usergroup allocation list
+	$0 usergroup [file]				Package usergroup allocation list
 	$0 version_filter [patchver] [list...]	Filter list of version tagged strings
 
 Options:

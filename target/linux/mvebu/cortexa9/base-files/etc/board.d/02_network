@@ -30,6 +30,9 @@ mvebu_setup_interfaces()
 	fortinet,fg-50e)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "eth1 eth2"
 		;;
+	iij,sa-w2)
+		ucidef_set_interfaces_lan_wan "ge1_0 ge1_1 ge1_2 ge1_3" "ge0"
+		;;
 	iptime,nas1dual)
 		ucidef_set_interface_lan "eth0 eth1" "dhcp"
 		;;

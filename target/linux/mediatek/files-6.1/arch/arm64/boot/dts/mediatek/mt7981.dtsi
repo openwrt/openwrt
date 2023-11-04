@@ -55,8 +55,8 @@
 
 	fan: pwm-fan {
 		compatible = "pwm-fan";
-		/* cooling level (0, 1, 2, 3) : (0% duty, 50% duty, 75% duty, 100% duty) */
-		cooling-levels = <0 128 192 255>;
+		/* cooling level (0, 1, 2, 3, 4, 5, 6, 7) : (0%/25%/37.5%/50%/62.5%/75%/87.5%/100% duty) */
+		cooling-levels = <0 63 95 127 159 191 223 255>;
 		#cooling-cells = <2>;
 		status = "disabled";
 	};
@@ -67,54 +67,66 @@
 			polling-delay = <1000>;
 			thermal-sensors = <&thermal 0>;
 			trips {
-				cpu_trip_crit: crit {
-					temperature = <125000>;
+				cpu_trip_active_highest: active-highest {
+					temperature = <70000>;
 					hysteresis = <2000>;
-					type = "critical";
-				};
-
-				cpu_trip_hot: hot {
-					temperature = <120000>;
-					hysteresis = <2000>;
-					type = "hot";
+					type = "active";
 				};
 
 				cpu_trip_active_high: active-high {
-					temperature = <115000>;
+					temperature = <60000>;
 					hysteresis = <2000>;
 					type = "active";
 				};
 
 				cpu_trip_active_med: active-med {
-					temperature = <85000>;
+					temperature = <50000>;
 					hysteresis = <2000>;
 					type = "active";
 				};
 
 				cpu_trip_active_low: active-low {
-					temperature = <60000>;
+					temperature = <45000>;
+					hysteresis = <2000>;
+					type = "active";
+				};
+
+				cpu_trip_active_lowest: active-lowest {
+					temperature = <40000>;
 					hysteresis = <2000>;
 					type = "active";
 				};
 			};
 
 			cooling-maps {
+				cpu-active-highest {
+					/* active: set fan to cooling level 7 */
+					cooling-device = <&fan 7 7>;
+					trip = <&cpu_trip_active_highest>;
+				};
+
 				cpu-active-high {
-					/* active: set fan to cooling level 3 */
-					cooling-device = <&fan 3 3>;
+					/* active: set fan to cooling level 5 */
+					cooling-device = <&fan 5 5>;
 					trip = <&cpu_trip_active_high>;
 				};
 
 				cpu-active-med {
-					/* active: set fan to cooling level 2 */
-					cooling-device = <&fan 2 2>;
+					/* active: set fan to cooling level 3 */
+					cooling-device = <&fan 3 3>;
 					trip = <&cpu_trip_active_med>;
 				};
 
 				cpu-active-low {
-					/* passive: set fan to cooling level 1 */
-					cooling-device = <&fan 1 1>;
+					/* active: set fan to cooling level 2 */
+					cooling-device = <&fan 2 2>;
 					trip = <&cpu_trip_active_low>;
+				};
+
+				cpu-active-lowest {
+					/* active: set fan to cooling level 1 */
+					cooling-device = <&fan 1 1>;
+					trip = <&cpu_trip_active_lowest>;
 				};
 			};
 		};
