@@ -540,7 +540,7 @@ dhcp_add() {
 	[ static = "$proto" ] || return 0
 
 	# Override interface netmask with dhcp config if applicable
-	config_get netmask "$cfg" netmask "${subnet##*/}"
+	config_get netmask "$cfg" netmask
 
 	#check for an already active dhcp server on the interface, unless 'force' is set
 	config_get_bool force "$cfg" force 0
@@ -583,7 +583,8 @@ dhcp_add() {
 	nettag="${networkid:+set:${networkid},}"
 
 	# make sure the DHCP range is not empty
-	if [ "$dhcpv4" != "disabled" ] && ipcalc "${subnet%%/*}" "$netmask" "$start" "$limit" ; then
+	if [ "$dhcpv4" != "disabled" ] && ipcalc "$subnet" &&
+		ipcalc "$NETWORK" "${netmask:-$NETMASK}" "$start" "$limit" ; then
 		[ "$dynamicdhcpv4" = "0" ] && END="static"
 
 		xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
