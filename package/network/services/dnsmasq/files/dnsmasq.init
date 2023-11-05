@@ -540,7 +540,9 @@ dhcp_add() {
 	[ static = "$proto" ] || return 0
 
 	# Override interface netmask with dhcp config if applicable
-	config_get netmask "$cfg" netmask "${subnet##*/}"
+	config_get netmask "$cfg" netmask
+
+	[ -n "$netmask" ] && echo "dnsmasq: the 'netmask' parameter is no longer supported and is being ignored." >&2
 
 	#check for an already active dhcp server on the interface, unless 'force' is set
 	config_get_bool force "$cfg" force 0
@@ -583,10 +585,11 @@ dhcp_add() {
 	nettag="${networkid:+set:${networkid},}"
 
 	# make sure the DHCP range is not empty
-	if [ "$dhcpv4" != "disabled" ] && ipcalc "${subnet%%/*}" "$netmask" "$start" "$limit" ; then
+	if [ "$dhcpv4" != "disabled" ] && ipcalc "$subnet" "$start" "$limit" ; then
 		[ "$dynamicdhcpv4" = "0" ] && END="static"
 
-		xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
+		# don't need a netmask for the pool since we're not a relay
+		xappend "--dhcp-range=$tags$nettag$START,$END,,$leasetime${options:+ $options}"
 	fi
 
 	if [ "$dynamicdhcpv6" = "0" ] ; then
