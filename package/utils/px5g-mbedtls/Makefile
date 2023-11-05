@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=px5g-mbedtls
-PKG_RELEASE:=9
+PKG_RELEASE:=10
 PKG_LICENSE:=LGPL-2.1
 
 PKG_BUILD_FLAGS:=no-mips16
