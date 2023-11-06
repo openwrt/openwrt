@@ -277,11 +277,13 @@ endef
 define Image/Manifest
 	$(call opkg,$(TARGET_DIR_ORIG)) list-installed > \
 		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest
+ifndef IB
 	$(if $(CONFIG_JSON_CYCLONEDX_SBOM), \
 		$(SCRIPT_DIR)/package-metadata.pl imgcyclonedxsbom \
 		$(TMP_DIR)/.packageinfo \
 		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest > \
 		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).bom.cdx.json)
+endif
 endef
 
 define Image/gzip-ext4-padded-squashfs
