@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=px5g-wolfssl
-PKG_RELEASE:=8.2
+PKG_RELEASE:=9
 PKG_LICENSE:=GPL-2.0-or-later
 
 PKG_BUILD_FLAGS:=no-mips16
