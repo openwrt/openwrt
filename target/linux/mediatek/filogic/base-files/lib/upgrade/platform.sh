@@ -102,15 +102,6 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
-	mercusys,mr90x-v1)
-		CI_UBIPART="ubi0"
-		nand_do_upgrade "$1"
-		;;
-	ubnt,unifi-6-plus)
-		CI_KERNPART="kernel0"
-		EMMC_ROOT_DEV="$(cmdline_get_var root)"
-		emmc_do_upgrade "$1"
-		;;
 	h3c,magic-nx30-pro|\
 	jcg,q30-pro|\
 	mediatek,mt7981-rfb|\
@@ -122,6 +113,15 @@ platform_do_upgrade() {
 	xiaomi,redmi-router-ax6000-ubootmod)
 		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
+		;;
+	mercusys,mr90x-v1)
+		CI_UBIPART="ubi0"
+		nand_do_upgrade "$1"
+		;;
+	ubnt,unifi-6-plus)
+		CI_KERNPART="kernel0"
+		EMMC_ROOT_DEV="$(cmdline_get_var root)"
+		emmc_do_upgrade "$1"
 		;;
 	xiaomi,mi-router-wr30u-stock|\
 	xiaomi,redmi-router-ax6000-stock)

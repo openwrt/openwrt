@@ -105,6 +105,21 @@ define Build/cetron-header
 	rm $@.tmp
 endef
 
+define Device/acer_predator-w6
+  DEVICE_VENDOR := Acer
+  DEVICE_MODEL := Predator W6
+  DEVICE_DTS := mt7986a-acer-predator-w6
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7986-firmware kmod-mt7916-firmware mt7986-wo-firmware e2fsprogs f2fsck mkf2fs
+  IMAGES := sysupgrade.bin
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += acer_predator-w6
+
 define Device/asus_tuf-ax4200
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := TUF-AX4200
@@ -136,21 +151,6 @@ define Device/asus_tuf-ax6000
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += asus_tuf-ax6000
-
-define Device/acer_predator-w6
-  DEVICE_VENDOR := Acer
-  DEVICE_MODEL := Predator W6
-  DEVICE_DTS := mt7986a-acer-predator-w6
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_DTS_LOADADDR := 0x47000000
-  DEVICE_PACKAGES := kmod-usb3 kmod-mt7986-firmware kmod-mt7916-firmware mt7986-wo-firmware e2fsprogs f2fsck mkf2fs
-  IMAGES := sysupgrade.bin
-  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-endef
-TARGET_DEVICES += acer_predator-w6
 
 define Device/bananapi_bpi-r3
   DEVICE_VENDOR := Bananapi
@@ -354,24 +354,6 @@ define Device/jcg_q30-pro
 endef
 TARGET_DEVICES += jcg_q30-pro
 
-define Device/netgear_wax220
-  DEVICE_VENDOR := NETGEAR
-  DEVICE_MODEL := WAX220
-  DEVICE_DTS := mt7986b-netgear-wax220
-  DEVICE_DTS_DIR := ../dts
-  NETGEAR_ENC_MODEL := WAX220
-  NETGEAR_ENC_REGION := US
-  DEVICE_PACKAGES := kmod-mt7986-firmware mt7986-wo-firmware
-  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
-  IMAGE_SIZE := 32768k
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  IMAGES += factory.img
-  # Padding to 10M seems to be required by OEM web interface
-  IMAGE/factory.img := sysupgrade-tar | \
-	  pad-to 10M | check-size | netgear-encrypted-factory
-endef
-TARGET_DEVICES += netgear_wax220
-
 define Device/mediatek_mt7981-rfb
   DEVICE_VENDOR := MediaTek
   DEVICE_MODEL := MT7981 rfb
@@ -542,6 +524,24 @@ define Device/mercusys_mr90x-v1
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += mercusys_mr90x-v1
+
+define Device/netgear_wax220
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WAX220
+  DEVICE_DTS := mt7986b-netgear-wax220
+  DEVICE_DTS_DIR := ../dts
+  NETGEAR_ENC_MODEL := WAX220
+  NETGEAR_ENC_REGION := US
+  DEVICE_PACKAGES := kmod-mt7986-firmware mt7986-wo-firmware
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGE_SIZE := 32768k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGES += factory.img
+  # Padding to 10M seems to be required by OEM web interface
+  IMAGE/factory.img := sysupgrade-tar | \
+	  pad-to 10M | check-size | netgear-encrypted-factory
+endef
+TARGET_DEVICES += netgear_wax220
 
 define Device/qihoo_360t7
   DEVICE_VENDOR := Qihoo
