@@ -34,6 +34,17 @@ case "$FIRMWARE" in
 		ln -sf /tmp/tp_data/MT7986_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
 		;;
+	tplink,ex820v)
+		mkdir /tmp/calmnt/
+		ubiattach -m 5 -d 1
+		ubiblock --create /dev/ubi1_2
+		mount /dev/ubiblock1_2 /tmp/calmnt/
+		cp /tmp/calmnt/lib/firmware/MT7986_iPAiLNA_EEPROM_AX6000.bin /lib/firmware/mediatek/mt7986_eeprom_mt7975_dual.bin
+		umount /tmp/calmnt/
+		ubiblock --remove /dev/ubi1_2
+		ubidetach -d 1
+		rmdir /tmp/calmnt/
+		;;
 	esac
 	;;
 "mediatek/mt7986_eeprom_mt7976.bin")
