@@ -682,10 +682,23 @@ config KERNEL_PRINTK_TIME
 	default y
 
 config KERNEL_SLUB_DEBUG
-	bool
+	bool "Enable SLUB debugging support"
+	help
+	  This enables various debugging features:
+	    - Accepts "slub_debug" kernel parameter
+	    - Provides caches debugging options (e.g. tracing, validating)
+	    - Adds /sys/kernel/slab/ attrs for reading amounts of *objects*
+	    - Enables /proc/slabinfo support
+	    - Prints info when running out of memory
+
+	  Enabling this can result in a significant increase of code size.
 
 config KERNEL_SLUB_DEBUG_ON
-	bool
+	depends on KERNEL_SLUB_DEBUG
+	bool "Boot kernel with basic caches debugging enabled"
+	help
+	  This enables by default sanity_checks, red_zone, poison and store_user
+	  debugging options for all caches.
 
 config KERNEL_SLABINFO
 	select KERNEL_SLUB_DEBUG
