@@ -106,6 +106,20 @@
 			reg = <0x200000 0x1c0000>;
 			label = "Factory";
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_factory_1fdfa: macaddr@1fdfa {
+					reg = <0x1fdfa 0x6>;
+				};
+
+				macaddr_factory_1fdf4: macaddr@1fdf4 {
+					reg = <0x1fdf4 0x6>;
+				};
+			};
 		};
 
 		partition@3c0000 {
@@ -215,19 +229,5 @@
 	gpio {
 		groups = "i2c", "uart3", "jtag", "wdt";
 		function = "gpio";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_1fdfa: macaddr@1fdfa {
-		reg = <0x1fdfa 0x6>;
-	};
-
-	macaddr_factory_1fdf4: macaddr@1fdf4 {
-		reg = <0x1fdf4 0x6>;
 	};
 };

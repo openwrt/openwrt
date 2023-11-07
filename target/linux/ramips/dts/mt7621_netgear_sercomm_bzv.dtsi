@@ -343,6 +343,16 @@
 			reg = <0x4600000 0x200000>;
 			sercomm,scpart-id = <16>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_factory_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
+			};
 		};
 
 		partition@4800000 {
@@ -428,15 +438,5 @@
 			sercomm,scpart-id = <28>;
 			read-only;
 		};
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
 	};
 };

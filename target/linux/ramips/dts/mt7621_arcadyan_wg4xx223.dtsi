@@ -79,25 +79,28 @@
 		};
 
 		factory: partition@200000 {
-			compatible = "nvmem-cells";
 			label = "Factory";
 			reg = <0x200000 0x100000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
 			read-only;
 
-			eeprom_factory_0: eeprom@0 {
-				reg = <0x0 0x4da8>;
-			};
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			/* We keep the block below to prevent eth0 MAC
-			 * from randomization. Unique WAN, LAN, WLAN MACs
-			 * are stored in u-boot-env.
-			 */
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x4da8>;
+				};
 
-			/* Default Ralink MAC (00:0c:43:28:80:xx) */
-			macaddr_factory_fff0: macaddr@fff0 {
-				reg = <0xfff0 0x6>;
+				/* We keep the block below to prevent eth0 MAC
+				 * from randomization. Unique WAN, LAN, WLAN MACs
+				 * are stored in u-boot-env.
+				 */
+
+				/* Default Ralink MAC (00:0c:43:28:80:xx) */
+				macaddr_factory_fff0: macaddr@fff0 {
+					reg = <0xfff0 0x6>;
+				};
 			};
 		};
 

@@ -70,6 +70,16 @@
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+				};
 			};
 
 			partition@50000 {
@@ -134,15 +144,5 @@
 	gpio {
 		groups = "uart3", "wdt";
 		function = "gpio";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
 	};
 };

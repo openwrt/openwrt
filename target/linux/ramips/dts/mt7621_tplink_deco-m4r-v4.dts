@@ -131,12 +131,14 @@
 				reg = <0xfa0000 0x010000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_config_8: macaddr@8 {
-					reg = <0x8 0x6>;
+					macaddr_config_8: macaddr@8 {
+						reg = <0x8 0x6>;
+					};
 				};
 			};
 
@@ -147,19 +149,22 @@
 			};
 
 			radio: partition@ff0000 {
-				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0xff0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_radio_0: eeprom@0 {
-					reg = <0x0 0x400>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				eeprom_radio_8000: eeprom@8000 {
-					reg = <0x8000 0x4da8>;
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_radio_8000: eeprom@8000 {
+						reg = <0x8000 0x4da8>;
+					};
 				};
 			};
 		};

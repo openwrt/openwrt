@@ -109,15 +109,18 @@
 			};
 
 			romfile: partition@fc0000 {
-				compatible = "nvmem-cells";
 				label = "romfile";
 				reg = <0xfc0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				macaddr_romfile_f100: romfile@f100 {
-					reg = <0xf100 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_romfile_f100: romfile@f100 {
+						reg = <0xf100 0x6>;
+					};
 				};
 			};
 
@@ -128,19 +131,22 @@
 			};
 
 			radio: partition@fe0000 {
-				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0xfe0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_radio_0: eeprom@0 {
-					reg = <0x0 0x400>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				eeprom_radio_8000: eeprom@8000 {
-					reg = <0x8000 0x4da8>;
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_radio_8000: eeprom@8000 {
+						reg = <0x8000 0x4da8>;
+					};
 				};
 			};
 		};
