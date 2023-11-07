@@ -1,0 +1,383 @@
+/*
+ * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#include "ipq6018.dtsi"
+#include "ipq6018-ess.dtsi"
+#include "ipq6018-512m.dtsi"
+
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	aliases {
+		ethernet0 = &dp1;
+		ethernet1 = &dp2;
+		ethernet2 = &dp3;
+		label-mac-device = &dp1;
+        serial0 = &blsp1_uart3;
+		led-boot = &led_system_white;
+		led-failsafe = &led_system_white;
+		led-running = &led_system_white;
+		led-upgrade = &led_system_white;
+	};
+
+	/delete-node/ rpm-glink;
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+
+    keys {
+        compatible = "gpio-keys";
+
+        reset {
+            label = "reset";
+            gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+            linux,code = <KEY_RESTART>;
+        };
+
+        switch {
+            label = "switch";
+            gpios = <&tlmm 9 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+    };
+
+    leds {
+        compatible = "gpio-leds";
+
+        led_system_white: system-white {
+            label = "white:system";
+            gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+            color = <LED_COLOR_ID_WHITE>;
+        };
+
+        led_system_blue: system-blue {
+            label = "blue:system";
+            gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+            color = <LED_COLOR_ID_BLUE>;
+        };
+    };
+};
+
+&tlmm {
+	gpio-reserved-ranges = <20 1>;
+
+	spi_1_pins: spi_1_pins {
+		mux {
+			pins = "gpio38", "gpio39", "gpio40", "gpio41";
+			function = "blsp0_spi";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	button_pins: button_pins {
+		switch_button {
+			pins = "gpio9";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+		reset_button {
+			pins = "gpio18";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mux_2 {
+			pins = "gpio74";
+			function = "gpio";
+			bias-pull-up;
+		};
+	};
+
+	usb_power_pins: usb_power_pins {
+		mux {
+			pins = "gpio0";
+			function = "gpio";
+			bias-pull-up;
+			output-high;
+		};
+	};
+
+	leds_pins: leds_pins {
+		white {
+			pins = "gpio35";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+		blue {
+			pins = "gpio37";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	i2c_1_pins: i2c_1_pins {
+		mux {
+			pins = "gpio42", "gpio43";
+			function = "blsp2_i2c";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_1_pins>;
+	pinctrl-names = "default";
+	cs-select = <0>;
+	status = "okay";
+
+	m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "n25q128a11";
+		linux,modalias = "m25p80", "n25q128a11";
+		spi-max-frequency = <50000000>;
+		use-default-sizes;
+	};
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb3 {
+	pinctrl-0 = <&usb_power_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&edma {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 74 GPIO_ACTIVE_LOW>;
+
+	qca8075_0: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+	};
+
+	qca8075_1: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <1>;
+	};
+
+	qca8075_2: ethernet-phy@2 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <2>;
+	};
+
+};
+
+&switch {
+	status = "okay";
+
+	switch_cpu_bmp = <0x1>;  /* cpu port bitmap */
+	switch_lan_bmp = <0x0c>; /* lan port bitmap */
+	switch_wan_bmp = <0x02>; /* wan port bitmap */
+	switch_mac_mode = <0x0>; /* mac mode for uniphy instance0*/
+	switch_mac_mode1 = <0xff>; /* mac mode for uniphy instance1*/
+	switch_mac_mode2 = <0xff>; /* mac mode for uniphy instance2*/
+	qcom,port_phyinfo {
+		port@0 {
+			port_id = <1>;
+			phy_address = <0>;
+		};
+		port@1 {
+			port_id = <2>;
+			phy_address = <1>;
+		};
+		port@2 {
+			port_id = <3>;
+			phy_address = <2>;
+		};
+	};
+};
+
+&soc {
+    dp1: dp@1 {
+		device_type = "network";
+		compatible = "qcom,nss-dp";
+		reg = <0x0 0x3a001000 0x0 0x200>;
+		qcom,mactype = <0>;
+		local-mac-address = [000000000000];
+		qcom,id = <1>;
+		phy-handle = <&qca8075_0>;
+		phy-mode = "sgmii";
+	};
+
+    dp2: dp@2 {
+		device_type = "network";
+		compatible = "qcom,nss-dp";
+		reg = <0x0 0x3a001200 0x0 0x200>;
+		qcom,mactype = <0>;
+		local-mac-address = [000000000000];
+		qcom,id = <2>;
+		phy-handle = <&qca8075_1>;
+		phy-mode = "sgmii";
+	};
+
+    dp3: dp@3 {
+		device_type = "network";
+		compatible = "qcom,nss-dp";
+		reg = <0x0 0x3a001400 0x0 0x200>;
+		qcom,mactype = <0>;
+		local-mac-address = [000000000000];
+		qcom,id = <3>;
+		phy-handle = <&qca8075_2>;
+		phy-mode = "sgmii";
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		switch {
+			label = "switch";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&tlmm 9 GPIO_ACTIVE_HIGH>;
+			linux,input-type = <1>;
+			debounce-interval = <60>;
+		};
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			debounce-interval = <60>;
+		};
+	};
+
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+        partitions {
+			compatible = "qcom,smem-part";
+		};
+	};
+};
+
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-fw-memory-mode = <1>;
+ };
+
+
+&CPU0 {
+	/delete-property/ cpu-supply;
+};
+
+&CPU1 {
+	/delete-property/ cpu-supply;
+};
+
+&CPU2 {
+	/delete-property/ cpu-supply;
+};
+
+&CPU3 {
+	/delete-property/ cpu-supply;
+};

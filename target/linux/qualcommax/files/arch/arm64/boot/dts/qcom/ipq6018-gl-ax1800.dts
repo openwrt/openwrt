@@ -1,0 +1,84 @@
+/dts-v1/;
+/*
+ * Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+#include "ipq6018-gl-ax1800.dtsi"
+
+/ {
+	model = "GL Technologies, Inc. AX1800";
+	compatible = "glinet,gl-ax1800", "qcom,ipq6018", "qcom,ipq6018-cp03";
+
+	aliases {
+		ethernet3 = &dp4;
+		ethernet4 = &dp5;
+	};
+};
+
+&mdio {
+	qca8075_3: ethernet-phy@3 {
+        compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <3>;
+	};
+	qca8075_4: ethernet-phy@4 {
+        compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <4>;
+	};
+};
+
+&switch {
+	switch_lan_bmp = <0x3c>; /* lan port bitmap */
+
+	qcom,port_phyinfo {
+		port@3 {
+			port_id = <4>;
+			phy_address = <3>;
+		};
+		port@4 {
+			port_id = <5>;
+			phy_address = <4>;
+		};
+	};
+};
+
+&soc {
+    dp4: dp@4 {
+        device_type = "network";
+		compatible = "qcom,nss-dp";
+		reg = <0x0 0x3a001600 0x0 0x200>;
+		qcom,mactype = <0>;
+        local-mac-address = [000000000000];
+		qcom,id = <4>;
+		phy-handle = <&qca8075_3>;
+		phy-mode = "sgmii";
+	};
+
+    dp5: dp@5 {
+        device_type = "network";
+		compatible = "qcom,nss-dp";
+		reg = <0x0 0x3a001800 0x0 0x200>;
+		qcom,mactype = <0>;
+        local-mac-address = [000000000000];
+		qcom,id = <5>;
+		phy-handle = <&qca8075_4>;
+		phy-mode = "sgmii";
+	};
+
+};
+
+
+&wifi {
+	qcom,ath11k-calibration-variant = "GL-iNet-AX1800";
+};

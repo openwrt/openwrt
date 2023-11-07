@@ -1,0 +1,20 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath11k/IPQ6018/hw1.0/cal-ahb-c000000.wifi.bin")
+	case $(board_name) in
+	glinet,gl-axt1800|\
+	glinet,gl-ax1800)
+		caldata_extract "0:art" 0x1000 0x10000
+		;;
+	*)
+		exit 1
+		;;
+	esac
+esac

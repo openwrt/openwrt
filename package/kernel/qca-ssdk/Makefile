@@ -47,6 +47,8 @@ MAKE_FLAGS+= \
 
 ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq807x")
     MAKE_FLAGS+= CHIP_TYPE=HPPE PTP_FEATURE=disable SWCONFIG_FEATURE=disable
+else ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq60xx")
+    MAKE_FLAGS+= CHIP_TYPE=CPPE PTP_FEATURE=disable SWCONFIG_FEATURE=disable
 endif
 
 define Build/InstallDev

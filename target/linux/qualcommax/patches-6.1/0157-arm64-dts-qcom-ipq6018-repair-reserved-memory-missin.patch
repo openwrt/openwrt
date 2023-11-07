@@ -1,0 +1,45 @@
+From 0ad5a9666e0eca72fc4546ed384a40b1430ddd8b Mon Sep 17 00:00:00 2001
+From: JiaY-shi <shi05275@163.com>
+Date: Mon, 12 Jun 2023 15:06:01 +0800
+Subject: [PATCH] arm64: dts: qcom: ipq6018: repair reserved-memory missing
+ nodes
+
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 31 +++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -176,6 +176,32 @@
+ 			reg = <0x0 0x4ab00000 0x0 0x05500000>;
+ 			no-map;
+ 		};
++
++		nss@40000000 {
++			no-map;
++			reg = <0x0 0x40000000 0x0 0x01000000>;
++		};
++
++		uboot@4A100000 {
++			no-map;
++			reg = <0x0 0x4a100000 0x0 0x00400000>;
++		};
++
++		sbl@4a500000 {
++			no-map;
++			reg = <0x0 0x4a500000 0x0 0x00100000>;
++		};
++
++		q6_etr_region: q6_etr_dump@1 {
++			no-map;
++			reg = <0x0 0x50000000 0x0 0x00100000>;
++		};
++
++		m3_dump_region: m3_dump@50100000 {
++			no-map;
++			reg = <0x0 0x50100000 0x0 0x00100000>;
++		};
++
+ 	};
+ 
+ 	rpm-glink {
