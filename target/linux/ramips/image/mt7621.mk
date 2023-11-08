@@ -1973,6 +1973,7 @@ TARGET_DEVICES += samknows_whitebox-v8
 
 define Device/sercomm_na502
   $(Device/nand)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 20480k
   DEVICE_VENDOR := SERCOMM
   DEVICE_MODEL := NA502
