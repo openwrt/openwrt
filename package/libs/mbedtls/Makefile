@@ -8,13 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mbedtls
-PKG_VERSION:=2.28.8
+PKG_VERSION:=3.6.0
 PKG_RELEASE:=1
 PKG_BUILD_FLAGS:=no-mips16 gc-sections no-lto
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/ARMmbed/mbedtls/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=4fef7de0d8d542510d726d643350acb3cdb9dc76ad45611b59c9aa08372b4213
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL=https://github.com/Mbed-TLS/mbedtls.git
+PKG_SOURCE_VERSION:=2ca6c285a0dd3f33982dd57299012dacab1ff206
+PKG_MIRROR_HASH:=a684012126590b4e0b6ab41e244cc2af0d2bcfc4b6c94bf42fc37d2d08f0553e
 
 PKG_LICENSE:=GPL-2.0-or-later
 PKG_LICENSE_FILES:=gpl-2.0.txt
@@ -55,7 +56,10 @@ MBEDTLS_BUILD_OPTS_CIPHERS= \
   CONFIG_MBEDTLS_NIST_KW_C \
   CONFIG_MBEDTLS_RIPEMD160_C \
   CONFIG_MBEDTLS_RSA_NO_CRT \
-  CONFIG_MBEDTLS_XTEA_C
+  CONFIG_MBEDTLS_XTEA_C \
+  CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED \
+  CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED \
+  CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
 
 MBEDTLS_BUILD_OPTS= \
   $(MBEDTLS_BUILD_OPTS_CURVES) \
@@ -73,7 +77,12 @@ MBEDTLS_BUILD_OPTS= \
   CONFIG_MBEDTLS_THREADING_C \
   CONFIG_MBEDTLS_THREADING_PTHREAD \
   CONFIG_MBEDTLS_VERSION_C \
-  CONFIG_MBEDTLS_VERSION_FEATURES
+  CONFIG_MBEDTLS_VERSION_FEATURES \
+  CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT \
+  CONFIG_MBEDTLS_DEPRECATED_WARNING \
+  CONFIG_MBEDTLS_SSL_PROTO_TLS1_2 \
+  CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 \
+  CONFIG_MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
 
 PKG_CONFIG_DEPENDS := $(MBEDTLS_BUILD_OPTS)
 
@@ -96,7 +105,7 @@ $(call Package/mbedtls/Default)
   CATEGORY:=Libraries
   SUBMENU:=SSL
   TITLE+= (library)
-  ABI_VERSION:=13
+  ABI_VERSION:=21
   MENU:=1
 endef
 
@@ -137,7 +146,7 @@ define Build/Prepare
        $(if $(strip $(foreach opt,$(MBEDTLS_BUILD_OPTS),$($(opt)))),
 	 $(foreach opt,$(MBEDTLS_BUILD_OPTS),
 	 $(PKG_BUILD_DIR)/scripts/config.py \
-	 -f $(PKG_BUILD_DIR)/include/mbedtls/config.h \
+	 -f $(PKG_BUILD_DIR)/include/mbedtls/mbedtls_config.h \
 	 $(if $($(opt)),set,unset) $(patsubst CONFIG_%,%,$(opt))),)
 endef
 
@@ -150,6 +159,12 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib*.so* $(1)/usr/lib/
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lib*.a $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/pkgconfig/mbedcrypto.pc \
+		$(PKG_INSTALL_DIR)/usr/lib/pkgconfig/mbedtls.pc \
+		$(PKG_INSTALL_DIR)/usr/lib/pkgconfig/mbedx509.pc \
+		$(1)/usr/lib/pkgconfig/
 endef
 
 define Package/libmbedtls/install
