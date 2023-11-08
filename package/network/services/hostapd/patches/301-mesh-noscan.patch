@@ -24,8 +24,8 @@
  			   frequency);
  		goto out_free;
  	}
-+	if (ssid->noscan)
-+		conf->noscan = 1;
++	if (conf->noscan)
++		ssid->noscan = 1;
  
  	if (ssid->mesh_basic_rates == NULL) {
  		/*
