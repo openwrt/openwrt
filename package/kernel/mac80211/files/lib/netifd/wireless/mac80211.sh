@@ -753,7 +753,7 @@ mac80211_setup_supplicant() {
 	if [ "$mode" = "sta" ]; then
 		wpa_supplicant_add_network "$ifname"
 	else
-		wpa_supplicant_add_network "$ifname" "$freq" "$htmode" "$noscan"
+		wpa_supplicant_add_network "$ifname" "$freq" "$htmode" "$hostapd_noscan"
 	fi
 
 	NEWSPLIST="${NEWSPLIST}$ifname "
@@ -783,7 +783,7 @@ mac80211_setup_supplicant_noctl() {
 		return 1
 	}
 
-	wpa_supplicant_add_network "$ifname" "$freq" "$htmode" "$noscan"
+	wpa_supplicant_add_network "$ifname" "$freq" "$htmode" "$hostapd_noscan"
 
 	NEWSPLIST="${NEWSPLIST}$ifname "
 	[ "$enable" = 0 ] && {
