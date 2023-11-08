@@ -6,7 +6,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dtc
 PKG_VERSION:=1.7.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_HASH:=29edce3d302a15563d8663198bbc398c5a0554765c83830d0d4c0409d21a16c4
@@ -33,6 +33,17 @@ define Package/dtc/description
   Device Tree Compiler for Flat Device Trees Device Tree Compiler, dtc, takes
   as input a device-tree in a given format and outputs a device-tree in another
   format for booting kernels on embedded systems.
+endef
+
+define Package/dtc/config
+	config DTC_STATIC_BUILD
+		depends on PACKAGE_dtc
+		bool "Build dtc as static binary"
+		default n
+		help
+			Builds dtc as a static binary.
+			This is usefull in order to export live DTS from a device running
+			various vendor modified OpenWrt versions.
 endef
 
 define Package/dtc/install
@@ -80,7 +91,8 @@ MESON_ARGS += \
 	-Dtools=true \
 	-Dyaml=disabled \
 	-Dvalgrind=disabled \
-	-Dpython=disabled
+	-Dpython=disabled \
+	-Dstatic-build=$(if $(CONFIG_DTC_STATIC_BUILD),true,false)
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib
