@@ -58,6 +58,15 @@
  	u8 channel;
  	bool is_6ghz;
  	bool dfs_enabled = wpa_s->conf->country[0] && (wpa_s->drv_flags & WPA_DRIVER_FLAGS_RADAR);
+@@ -3080,6 +3080,8 @@ void ibss_mesh_setup_freq(struct wpa_sup
+ 		freq->he_enabled = ibss_mesh_can_use_he(wpa_s, ssid, mode,
+ 							ieee80211_mode);
+ 	freq->channel = channel;
++	if (mode->mode == HOSTAPD_MODE_IEEE80211G && ssid->noscan)
++		ibss_mesh_select_40mhz(wpa_s, ssid, mode, freq, obss_scan, dfs_enabled);
+ 	/* Setup higher BW only for 5 GHz */
+ 	if (mode->mode == HOSTAPD_MODE_IEEE80211A) {
+ 		ibss_mesh_select_40mhz(wpa_s, ssid, mode, freq, obss_scan, dfs_enabled);
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
 @@ -1035,6 +1035,8 @@ struct wpa_ssid {
