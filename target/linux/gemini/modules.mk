@@ -1,6 +1,6 @@
 define KernelPackage/usb-fotg210
   TITLE:=Support for FOTG210 USB host and device controllers
-  DEPENDS:=@USB_SUPPORT @TARGET_gemini
+  DEPENDS:=@TARGET_gemini
   KCONFIG:= \
   CONFIG_USB_FOTG210 \
   CONFIG_USB_FOTG210_HCD=y \
