@@ -1,6 +1,6 @@
 #!/usr/bin/env ucode
 'use strict';
-import { vlist_new, is_equal, wdev_create, wdev_set_mesh_params, wdev_remove, phy_open } from "/usr/share/hostap/common.uc";
+import { vlist_new, is_equal, wdev_create, wdev_set_mesh_params, wdev_remove, wdev_set_up, phy_open } from "/usr/share/hostap/common.uc";
 import { readfile, writefile, basename, readlink, glob } from "fs";
 let libubus = require("ubus");
 
@@ -22,7 +22,7 @@ function iface_start(wdev)
 	let ifname = wdev.ifname;
 
 	if (readfile(`/sys/class/net/${ifname}/ifindex`)) {
-		system([ "ip", "link", "set", "dev", ifname, "down" ]);
+		wdev_set_up(ifname, false);
 		wdev_remove(ifname);
 	}
 	let wdev_config = {};
@@ -31,7 +31,7 @@ function iface_start(wdev)
 	if (!wdev_config.macaddr && wdev.mode != "monitor")
 		wdev_config.macaddr = phydev.macaddr_next();
 	wdev_create(phy, ifname, wdev_config);
-	system([ "ip", "link", "set", "dev", ifname, "up" ]);
+	wdev_set_up(ifname, true);
 	if (wdev.freq)
 		system(`iw dev ${ifname} set freq ${wdev.freq} ${wdev.htmode}`);
 	if (wdev.mode == "adhoc") {

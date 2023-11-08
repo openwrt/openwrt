@@ -144,6 +144,11 @@ function wdev_set_mesh_params(name, data)
 	return nl80211.error();
 }
 
+function wdev_set_up(name, up)
+{
+	rtnl.request(rtnl.const.RTM_SETLINK, 0, { dev: name, change: 1, flags: up ? 1 : 0 });
+}
+
 function phy_sysfs_file(phy, name)
 {
 	return trim(readfile(`/sys/class/ieee80211/${phy}/${name}`));
@@ -365,4 +370,4 @@ function vlist_new(cb) {
 		}, vlist_proto);
 }
 
-export { wdev_remove, wdev_create, wdev_set_mesh_params, is_equal, vlist_new, phy_is_fullmac, phy_open };
+export { wdev_remove, wdev_create, wdev_set_mesh_params, wdev_set_up, is_equal, vlist_new, phy_is_fullmac, phy_open };
