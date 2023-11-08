@@ -44,7 +44,9 @@
 					};
 
 					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
 						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					macaddr_factory_e000: macaddr@e000 {

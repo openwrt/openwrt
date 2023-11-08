@@ -85,7 +85,9 @@
 					#size-cells = <1>;
 
 					macaddr_factory_e000: macaddr@e000 {
+						compatible = "mac-base";
 						reg = <0xe000 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -109,8 +111,23 @@
 	status = "okay";
 };
 
+&mdio {
+	ethphy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cells = <&macaddr_factory_e000 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_factory_e000 1>;
 	nvmem-cell-names = "mac-address";
 };
 

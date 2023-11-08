@@ -122,7 +122,9 @@
 					#size-cells = <1>;
 
 					macaddr_config_2008: macaddr@2008 {
+						compatible = "mac-base";
 						reg = <0x2008 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -165,7 +167,7 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_2008>;
+		nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_2008 0>;
 		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
@@ -175,9 +177,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_2008>;
+		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_2008 1>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <1>;
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
@@ -187,7 +188,7 @@
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_config_2008>;
+	nvmem-cells = <&macaddr_config_2008 0>;
 	nvmem-cell-names = "mac-address";
 };
 

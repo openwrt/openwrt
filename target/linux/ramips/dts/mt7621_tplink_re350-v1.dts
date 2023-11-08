@@ -118,7 +118,9 @@
 					#size-cells = <1>;
 
 					macaddr_config_10008: macaddr@10008 {
+						compatible = "mac-base";
 						reg = <0x10008 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -153,9 +155,8 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_10008>;
+		nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_10008 1>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <1>;
 	};
 };
 
@@ -163,9 +164,8 @@
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_10008>;
+		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_10008 2>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <2>;
 	};
 };
 
@@ -174,7 +174,7 @@
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_config_10008>;
+	nvmem-cells = <&macaddr_config_10008 0>;
 	nvmem-cell-names = "mac-address";
 };
 

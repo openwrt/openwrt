@@ -7,22 +7,6 @@
 	model = "AsiaRF AP7621-NV1";
 };
 
-&gmac1 {
-	status = "okay";
-	label = "wan";
-	phy-handle = <&ethphy0>;
-
-	nvmem-cells = <&macaddr_factory_e000>;
-	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
-};
-
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
-};
-
 &switch0 {
 	ports {
 		port@2 {

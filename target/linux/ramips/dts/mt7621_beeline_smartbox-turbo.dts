@@ -9,22 +9,19 @@
 
 &pcie0 {
 	wifi@0,0 {
-		nvmem-cells = <&macaddr_factory_21000>;
+		nvmem-cells = <&macaddr_factory_21000 5>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(5)>;
 	};
 };
 
 &pcie1 {
 	wifi@0,0 {
-		nvmem-cells = <&macaddr_factory_21000>;
+		nvmem-cells = <&macaddr_factory_21000 4>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(4)>;
 	};
 };
 
 &gmac1 {
-	nvmem-cells = <&macaddr_factory_21000>;
+	nvmem-cells = <&macaddr_factory_21000 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(1)>;
 };

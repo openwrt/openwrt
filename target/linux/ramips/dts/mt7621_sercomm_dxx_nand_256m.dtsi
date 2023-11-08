@@ -117,7 +117,9 @@
 				};
 
 				macaddr_factory_21000: macaddr@21000 {
+					compatible = "mac-base";
 					reg = <0x21000 0x6>;
+					#nvmem-cell-cells = <1>;
 				};
 			};
 		};

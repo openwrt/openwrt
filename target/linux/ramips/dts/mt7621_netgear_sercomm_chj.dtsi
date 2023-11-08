@@ -96,7 +96,7 @@
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cells = <&macaddr_factory_4 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -105,9 +105,8 @@
 	label = "wan";
 	phy-handle = <&ethphy4>;
 
-	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cells = <&macaddr_factory_4 2>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <2>;
 };
 
 &mdio {
@@ -277,7 +276,9 @@
 				#size-cells = <1>;
 
 				macaddr_factory_4: macaddr@4 {
+					compatible = "mac-base";
 					reg = <0x4 0x6>;
+					#nvmem-cell-cells = <1>;
 				};
 			};
 		};

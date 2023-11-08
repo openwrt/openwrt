@@ -93,7 +93,9 @@
 					};
 
 					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
 						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					macaddr_factory_8004: macaddr@8004 {
@@ -164,7 +166,7 @@
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cells = <&macaddr_factory_4 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -173,9 +175,8 @@
 		port@0 {
 			status = "okay";
 			label = "wan";
-			nvmem-cells = <&macaddr_factory_4>;
+			nvmem-cells = <&macaddr_factory_4 1>;
 			nvmem-cell-names = "mac-address";
-			mac-address-increment = <1>;
 		};
 
 		port@1 {

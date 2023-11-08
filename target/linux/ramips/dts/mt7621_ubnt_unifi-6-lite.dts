@@ -67,7 +67,9 @@
 					};
 
 					macaddr_eeprom_6: macaddr@6 {
+						compatible = "mac-base";
 						reg = <0x6 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -112,9 +114,6 @@
 
 	mediatek,mtd-eeprom = <&factory 0x20000>;
 
-	nvmem-cells = <&macaddr_eeprom_6>;
-	nvmem-cell-names = "mac-address";
-
 	/* This is a workaround.
 	 *
 	 * Ubiquiti uses a +2 offset in the first octet relative
@@ -127,7 +126,8 @@
 	 * mac80211 increases the first octet by two for each VAP, leading
 	 * to conflicting MAC addresses for subsequent interfaces.
 	 */
-	mac-address-increment = <1>;
+	nvmem-cells = <&macaddr_eeprom_6 1>;
+	nvmem-cell-names = "mac-address";
 
 	ieee80211-freq-limit = <5000000 6000000>;
 
