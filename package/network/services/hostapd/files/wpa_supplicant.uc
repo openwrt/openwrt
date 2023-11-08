@@ -1,6 +1,6 @@
 let libubus = require("ubus");
 import { open, readfile } from "fs";
-import { wdev_create, wdev_remove, is_equal, vlist_new, phy_open } from "common";
+import { wdev_create, wdev_set_mesh_params, wdev_remove, is_equal, vlist_new, phy_open } from "common";
 
 let ubus = libubus.connect();
 
@@ -316,6 +316,23 @@ return {
 		}
 
 		iface_hostapd_notify(phy, ifname, iface, state);
+
+		if (state != "COMPLETED")
+			return;
+
+		let phy_data = wpas.data.config[phy];
+		if (!phy_data)
+			return;
+
+		let iface_data = phy_data.data[ifname];
+		if (!iface_data)
+			return;
+
+		let wdev_config = iface_data.config;
+		if (!wdev_config || wdev_config.mode != "mesh")
+			return;
+
+		wdev_set_mesh_params(ifname, wdev_config);
 	},
 	event: function(ifname, iface, ev, info) {
 		let phy = wpas.data.iface_phy[ifname];
