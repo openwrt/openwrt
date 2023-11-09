@@ -66,6 +66,10 @@ zbtlink,zbt-wg2626|\
 zte,mf283plus)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
 	;;
+xiaomi,mir3p|\
+mir3g)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x20000"
+	;;
 asus,rt-ax53u|\
 asus,rt-ax54|\
 belkin,rt1800|\
