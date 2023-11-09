@@ -120,7 +120,9 @@ platform_do_upgrade() {
 		default_do_upgrade "$1"
 		;;
 	glinet,gl-mt2500|\
-	glinet,gl-mt6000)
+	glinet,gl-mt6000|\
+	glinet,gl-x3000|\
+	glinet,gl-xe3000)
 		CI_KERNPART="kernel"
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
@@ -216,6 +218,8 @@ platform_copy_config() {
 	acer,predator-w6|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt6000|\
+	glinet,gl-x3000|\
+	glinet,gl-xe3000|\
 	jdcloud,re-cp-03|\
 	ubnt,unifi-6-plus)
 		emmc_copy_config
