@@ -348,7 +348,7 @@
  CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -7593,6 +7593,8 @@ struct wpa_supplicant * wpa_supplicant_a
+@@ -7595,6 +7595,8 @@ struct wpa_supplicant * wpa_supplicant_a
  	}
  #endif /* CONFIG_P2P */
  
@@ -357,7 +357,7 @@
  	return wpa_s;
  }
  
-@@ -7619,6 +7621,8 @@ int wpa_supplicant_remove_iface(struct w
+@@ -7621,6 +7623,8 @@ int wpa_supplicant_remove_iface(struct w
  	struct wpa_supplicant *parent = wpa_s->parent;
  #endif /* CONFIG_MESH */
  
@@ -366,7 +366,7 @@
  	/* Remove interface from the global list of interfaces */
  	prev = global->ifaces;
  	if (prev == wpa_s) {
-@@ -7965,8 +7969,12 @@ int wpa_supplicant_run(struct wpa_global
+@@ -7967,8 +7971,12 @@ int wpa_supplicant_run(struct wpa_global
  	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
  	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
  
