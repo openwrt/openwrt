@@ -10,6 +10,36 @@ const iftypes = {
 	monitor: nl80211.const.NL80211_IFTYPE_MONITOR,
 };
 
+const mesh_params = {
+	mesh_retry_timeout: "retry_timeout",
+	mesh_confirm_timeout: "confirm_timeout",
+	mesh_holding_timeout: "holding_timeout",
+	mesh_max_peer_links: "max_peer_links",
+	mesh_max_retries: "max_retries",
+	mesh_ttl: "ttl",
+	mesh_element_ttl: "element_ttl",
+	mesh_auto_open_plinks: "auto_open_plinks",
+	mesh_hwmp_max_preq_retries: "hwmp_max_preq_retries",
+	mesh_path_refresh_time: "path_refresh_time",
+	mesh_min_discovery_timeout: "min_discovery_timeout",
+	mesh_hwmp_active_path_timeout: "hwmp_active_path_timeout",
+	mesh_hwmp_preq_min_interval: "hwmp_preq_min_interval",
+	mesh_hwmp_net_diameter_traversal_time: "hwmp_net_diam_trvs_time",
+	mesh_hwmp_rootmode: "hwmp_rootmode",
+	mesh_hwmp_rann_interval: "hwmp_rann_interval",
+	mesh_gate_announcements: "gate_announcements",
+	mesh_sync_offset_max_neighor: "sync_offset_max_neighbor",
+	mesh_rssi_threshold: "rssi_threshold",
+	mesh_hwmp_active_path_to_root_timeout: "hwmp_path_to_root_timeout",
+	mesh_hwmp_root_interval: "hwmp_root_interval",
+	mesh_hwmp_confirmation_interval: "hwmp_confirmation_interval",
+	mesh_awake_window: "awake_window",
+	mesh_plink_timeout: "plink_timeout",
+	mesh_fwding: "forwarding",
+	mesh_power_mode: "power_mode",
+	mesh_nolearn: "nolearn"
+};
+
 function wdev_remove(name)
 {
 	nl80211.request(nl80211.const.NL80211_CMD_DEL_INTERFACE, 0, { dev: name });
@@ -92,6 +122,31 @@ function wdev_create(phy, name, data)
 	}
 
 	return null;
+}
+
+function wdev_set_mesh_params(name, data)
+{
+	let mesh_cfg = {};
+
+	for (let key in mesh_params) {
+		let val = data[key];
+		if (val == null)
+			continue;
+		mesh_cfg[mesh_params[key]] = int(val);
+	}
+
+	if (!length(mesh_cfg))
+		return null;
+
+	nl80211.request(nl80211.const.NL80211_CMD_SET_MESH_CONFIG, 0,
+		{ dev: name, mesh_params: mesh_cfg });
+
+	return nl80211.error();
+}
+
+function wdev_set_up(name, up)
+{
+	rtnl.request(rtnl.const.RTM_SETLINK, 0, { dev: name, change: 1, flags: up ? 1 : 0 });
 }
 
 function phy_sysfs_file(phy, name)
@@ -315,4 +370,4 @@ function vlist_new(cb) {
 		}, vlist_proto);
 }
 
-export { wdev_remove, wdev_create, is_equal, vlist_new, phy_is_fullmac, phy_open };
+export { wdev_remove, wdev_create, wdev_set_mesh_params, wdev_set_up, is_equal, vlist_new, phy_is_fullmac, phy_open };

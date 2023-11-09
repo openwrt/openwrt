@@ -50,7 +50,7 @@ This patch makes it possible to set a custom image magic.
  			break;
 --- a/tools/default_image.c
 +++ b/tools/default_image.c
-@@ -63,7 +63,7 @@ static int image_verify_header(unsigned
+@@ -68,7 +68,7 @@ static int image_verify_header(unsigned
  	 */
  	memcpy(hdr, ptr, sizeof(struct legacy_img_hdr));
  
@@ -59,7 +59,7 @@ This patch makes it possible to set a custom image magic.
  		debug("%s: Bad Magic Number: \"%s\" is no valid image\n",
  		      params->cmdname, params->imagefile);
  		return -FDT_ERR_BADMAGIC;
-@@ -142,7 +142,7 @@ static void image_set_header(void *ptr,
+@@ -147,7 +147,7 @@ static void image_set_header(void *ptr,
  	}
  
  	/* Build new header */
