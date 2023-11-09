@@ -113,6 +113,18 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
+	yuncore,ax880)
+		active="$(fw_printenv -n active)"
+		if [ "$active" -eq "1" ]; then
+			CI_UBIPART="rootfs_1"
+		else
+			CI_UBIPART="rootfs"
+		fi
+		# force altbootcmd which handles partition change in u-boot
+		fw_setenv bootcount 3
+		fw_setenv upgrade_available 1
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
