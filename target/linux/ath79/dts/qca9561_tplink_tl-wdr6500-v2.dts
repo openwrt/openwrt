@@ -81,12 +81,14 @@
 				reg = <0x000000 0x010000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_uboot_0fc00: macaddr@0fc00 {
-					reg = <0x0fc00 0x6>;
+					macaddr_uboot_0fc00: macaddr@0fc00 {
+						reg = <0x0fc00 0x6>;
+					};
 				};
 			};
 
@@ -101,16 +103,18 @@
 				reg = <0x7f0000 0x010000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				calibration_ath9k: calibration@1000 {
-					reg = <0x1000 0x440>;
-				};
+					calibration_ath9k: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 
-				calibration_ath10k: calibration@5000 {
-					reg = <0x5000 0x844>;
+					calibration_ath10k: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
 				};
 			};
 		};

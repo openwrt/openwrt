@@ -104,6 +104,16 @@
 				label = "ART";
 				reg = <0xfc0000 0x040000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+				};
 			};
 		};
 	};
@@ -136,14 +146,4 @@
 	nvmem-cells = <&macaddr_art_0>;
 	nvmem-cell-names = "mac-address";
 	mac-address-increment = <2>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
 };

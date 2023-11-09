@@ -164,6 +164,16 @@
 				label = "oemdata";
 				reg = <0xfe0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_oemdata_1d: macaddr@1d {
+						reg = <0x1d 0x6>;
+					};
+				};
 			};
 
 			partition@ff0000 {
@@ -216,16 +226,6 @@
 		rxdv-delay = <3>;
 		rxd-delay = <3>;
 		rgmii-enabled = <1>;
-	};
-};
-
-&oemdata {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_oemdata_1d: macaddr@1d {
-		reg = <0x1d 0x6>;
 	};
 };
 

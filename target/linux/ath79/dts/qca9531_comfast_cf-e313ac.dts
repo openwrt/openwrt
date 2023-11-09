@@ -93,6 +93,20 @@
 				label = "art";
 				reg = <0x010000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_art_1002: macaddr@1002 {
+						reg = <0x1002 0x6>;
+					};
+				};
 			};
 
 			partition@20000 {
@@ -141,19 +155,5 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
-	};
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_art_1002: macaddr@1002 {
-		reg = <0x1002 0x6>;
 	};
 };

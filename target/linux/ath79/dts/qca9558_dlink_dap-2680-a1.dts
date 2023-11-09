@@ -90,7 +90,17 @@
 };
 
 &art {
-	precal_ath10k: pre-calibration@5000 {
-		reg = <0x5000 0x2f20>;
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cal_ath9k: calibration@1000 {
+			reg = <0x1000 0x440>;
+		};
+
+		precal_ath10k: pre-calibration@5000 {
+			reg = <0x5000 0x2f20>;
+		};
 	};
 };

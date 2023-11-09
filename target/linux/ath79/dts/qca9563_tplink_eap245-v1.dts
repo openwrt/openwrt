@@ -44,8 +44,18 @@
 };
 
 &art {
-	calibration_ath10k: calibration@5000 {
-		reg = <0x5000 0x844>;
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_info_8: macaddr@8 {
+			reg = <0x8 0x6>;
+		};
+
+		calibration_ath10k: calibration@5000 {
+			reg = <0x5000 0x844>;
+		};
 	};
 };
 

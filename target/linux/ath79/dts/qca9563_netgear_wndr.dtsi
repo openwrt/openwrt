@@ -162,6 +162,28 @@
 				label = "caldata";
 				reg = <0x1f0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_caldata_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_caldata_c: macaddr@c {
+						reg = <0xc 0x6>;
+					};
+
+					cal_art_1000: cal@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: cal@5000 {
+						reg = <0x5000 0x440>;
+					};
+				};
 			};
 		};
 	};
@@ -260,26 +282,4 @@
 
 &usb0 {
 	status = "okay";
-};
-
-&caldata {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_caldata_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_caldata_c: macaddr@c {
-		reg = <0xc 0x6>;
-	};
-
-	cal_art_1000: cal@1000 {
-		reg = <0x1000 0x440>;
-	};
-
-	cal_art_5000: cal@5000 {
-		reg = <0x5000 0x440>;
-	};
 };

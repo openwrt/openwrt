@@ -84,20 +84,22 @@
 				reg = <0xff0000 0x010000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_art_lan: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
+					macaddr_art_lan: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
 
-				macaddr_art_wan: macaddr@6 {
-					reg = <0x6 0x6>;
-				};
+					macaddr_art_wan: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
 
-				calibration_art_wlan: calibration@1000 {
-					reg = <0x1000 0x440>;
+					calibration_art_wlan: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 				};
 			};
 		};

@@ -46,14 +46,6 @@
 				label = "art";
 				reg = <0xff0000 0x10000>;
 				read-only;
-
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				cal_ath9k: calibration@1000 {
-					reg = <0x1000 0x440>;
-				};
 			};
 		};
 	};
