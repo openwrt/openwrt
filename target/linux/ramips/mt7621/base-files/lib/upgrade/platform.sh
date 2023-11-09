@@ -148,9 +148,6 @@ platform_do_upgrade() {
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
 		;;
-  	xiaomi,mir3p)
-                nand_do_upgrade "$ARGV"
-                ;;
 	zyxel,lte3301-plus|\
 	zyxel,lte5398-m904|\
 	zyxel,nr7101)
