@@ -122,6 +122,14 @@ ucidef_set_network_device_path() {
 	_ucidef_set_network_device_common $1 path $2
 }
 
+ucidef_set_network_device_gro() {
+	_ucidef_set_network_device_common $1 gro $2
+}
+
+ucidef_set_network_device_conduit() {
+	_ucidef_set_network_device_common $1 conduit $2
+}
+
 _ucidef_add_switch_port() {
 	# inherited: $num $device $need_tag $want_untag $role $index $prev_role
 	# inherited: $n_cpu $n_ports $n_vlan $cpu0 $cpu1 $cpu2 $cpu3 $cpu4 $cpu5
