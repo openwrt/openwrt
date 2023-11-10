@@ -37,6 +37,14 @@ bananapi,bpi-r3)
 		;;
 	esac
 	;;
+comfast,cf-e393ax)
+	. /lib/upgrade/nand.sh
+	local envubi=$(nand_find_ubi ubi)
+	local envdev=/dev/$(nand_find_volume $envubi ubootenv)
+	local envdev2=/dev/$(nand_find_volume $envubi ubootenv2)
+	ubootenv_add_uci_config "$envdev" "0x0" "0x1f000" "0x1f000" "1"
+	ubootenv_add_uci_config "$envdev2" "0x0" "0x1f000" "0x1f000" "1"
+	;;
 cmcc,rax3000m)
 	case "$(cmdline_get_var root)" in
 	/dev/mmc*)

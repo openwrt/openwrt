@@ -16,6 +16,9 @@ case "$FIRMWARE" in
 	;;
 "mediatek/mt7981_eeprom_mt7976_dbdc.bin")
 	case "$board" in
+	comfast,cf-e393ax)
+		caldata_extract "Factory" 0x0 0x1000
+		;;
 	cmcc,rax3000m)
 		case "$(cmdline_get_var root)" in
 		/dev/mmc*)

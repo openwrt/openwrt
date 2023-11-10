@@ -111,6 +111,7 @@ platform_do_upgrade() {
 		EMMC_ROOT_DEV="$(cmdline_get_var root)"
 		emmc_do_upgrade "$1"
 		;;
+	comfast,cf-e393ax|\
 	h3c,magic-nx30-pro|\
 	mediatek,mt7981-rfb|\
 	qihoo,360t7|\
