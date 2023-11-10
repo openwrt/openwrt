@@ -40,6 +40,9 @@ mediatek_setup_interfaces()
 	zbtlink,zbt-z8103ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
 		;;
+	comfast,cf-e393ax)
+		ucidef_set_interfaces_lan_wan "lan1" eth1
+		;;
 	glinet,gl-mt2500|\
 	glinet,gl-mt3000)
 		ucidef_set_interfaces_lan_wan eth1 eth0
