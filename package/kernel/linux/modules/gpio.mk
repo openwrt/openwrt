@@ -2,10 +2,10 @@
 # See /LICENSE for more information.
 #
 
-MENU_TITLE:=GPIO support
+GPIO_MENU:=GPIO support
 
 define KernelPackage/gpio-cascade
-  SUBMENU:=$(MENU_TITLE)
+  SUBMENU:=$(GPIO_MENU)
   TITLE:=Generic GPIO cascade
   KCONFIG:=CONFIG_GPIO_CASCADE
   DEPENDS:=@GPIO_SUPPORT +kmod-mux-core
