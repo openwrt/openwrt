@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <wolfssl/options.h>
 #include <wolfssl/wolfcrypt/asn.h>
 #include <wolfssl/wolfcrypt/asn_public.h>
@@ -24,27 +26,38 @@ enum {
   RSA_KEY_TYPE = 1,
 };
 
-int write_file(byte *buf, int bufSz, char *path) {
-  int ret;
-  FILE *file;
+int write_file(byte *buf, int bufSz, char *path, bool cert) {
+  mode_t mode = S_IRUSR | S_IWUSR;
+  ssize_t written;
+  int err;
+  int fd;
+
+  if (cert)
+    mode |= S_IRGRP | S_IROTH;
+
   if (path) {
-    file = fopen(path, "wb");
-    if (file == NULL) {
+    fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
+    if (fd < 0) {
       perror("Error opening file");
       exit(1);
     }
   } else {
-    file = stdout;
+    fd = STDERR_FILENO;
   }
-  ret = (int)fwrite(buf, 1, bufSz, file);
+  written = write(fd, buf, bufSz);
+  if (written != bufSz) {
+    perror("Error write file");
+    exit(1);
+  }
+  err = fsync(fd);
+  if (err < 0) {
+    perror("Error fsync file");
+    exit(1);
+  }
   if (path) {
-    fclose(file);
+    close(fd);
   }
-  if (ret > 0) {
-    /* ret > 0 indicates a successful file write, set to zero for return */
-    ret = 0;
-  }
-  return ret;
+  return 0;
 }
 
 int write_key(ecc_key *ecKey, RsaKey *rsaKey, int type, int keySz, char *fName,
@@ -73,9 +86,9 @@ int write_key(ecc_key *ecKey, RsaKey *rsaKey, int type, int keySz, char *fName,
       fprintf(stderr, "DER to PEM failed: %d\n", ret);
     }
     pemSz = ret;
-    ret = write_file(pem, pemSz, fName);
+    ret = write_file(pem, pemSz, fName, false);
   } else {
-    ret = write_file(der, derSz, fName);
+    ret = write_file(der, derSz, fName, false);
   }
   return ret;
 }
@@ -281,7 +294,7 @@ int selfsigned(WC_RNG *rng, char **arg) {
   }
   pemSz = ret;
 
-  ret = write_file(pemBuf, pemSz, certpath);
+  ret = write_file(pemBuf, pemSz, certpath, true);
   if (ret != 0) {
     fprintf(stderr, "Write Cert failed: %d\n", ret);
     return ret;
