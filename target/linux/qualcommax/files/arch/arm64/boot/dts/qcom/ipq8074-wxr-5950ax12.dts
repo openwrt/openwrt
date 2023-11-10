@@ -267,9 +267,8 @@
 &switch {
 	status = "okay";
 
-	switch_cpu_bmp = <0x1>;
-	switch_lan_bmp = <0x3e>;
-	switch_wan_bmp = <0x40>;
+	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>;
+	switch_wan_bmp = <ESS_PORT6>;
 	switch_mac_mode = <0xb>;
 	switch_mac_mode1 = <0xd>;
 	switch_mac_mode2 = <0xd>;

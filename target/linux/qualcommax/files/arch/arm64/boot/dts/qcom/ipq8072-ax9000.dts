@@ -382,9 +382,8 @@
 &switch {
 	status = "okay";
 
-	switch_cpu_bmp = <0x1>;  /* cpu port bitmap */
-	switch_lan_bmp = <0x1e>; /* lan port bitmap */
-	switch_wan_bmp = <0x20>; /* wan port bitmap */
+	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4)>; /* lan port bitmap */
+	switch_wan_bmp = <ESS_PORT5>; /* wan port bitmap */
 	switch_mac_mode = <0xb>; /* mac mode for uniphy instance0*/
 	switch_mac_mode1 = <0xc>; /* mac mode for uniphy instance1*/
 	switch_mac_mode2 = <0xff>; /* mac mode for uniphy instance2*/
