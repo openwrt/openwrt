@@ -34,10 +34,17 @@ ipq806x_setup_interfaces()
 	tplink,ad7200 |\
 	zyxel,nbg6817)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "lan2" "eth1"
+		ucidef_set_network_device_conduit "lan3" "eth1"
+		ucidef_set_network_device_conduit "lan4" "eth1"
+		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
 	asus,onhub |\
 	tplink,onhub)
 		ucidef_set_interfaces_lan_wan "lan1" "wan"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
 	edgecore,ecw5410 |\
 	extreme,ap3935)
