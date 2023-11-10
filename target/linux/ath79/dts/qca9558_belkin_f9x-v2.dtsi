@@ -158,7 +158,9 @@
 					#size-cells = <1>;
 
 					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -188,7 +190,7 @@
 &eth0 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
 	phy-handle = <&phy0>;
 	pll-data = <0xa6000000 0x00000101 0x00001616>;
@@ -202,9 +204,8 @@
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 (-1)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-1)>;
 	pll-data = <0x03000101 0x00000101 0x00001616>;
 
 	fixed-link {

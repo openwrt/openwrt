@@ -56,7 +56,9 @@
 			#size-cells = <1>;
 
 			macaddr_art_0: macaddr@0 {
+				compatible = "mac-base";
 				reg = <0x0 0x6>;
+				#nvmem-cell-cells = <1>;
 			};
 
 			calibration_art_1000: calibration@1000 {
@@ -90,7 +92,7 @@
 &eth0 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-handle = <&phy1>;
@@ -102,9 +104,8 @@
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 
 	phy-handle = <&phy2>;
 
@@ -116,17 +117,15 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>, <&calibration_art_1000>;
+	nvmem-cells = <&macaddr_art_0 2>, <&calibration_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
-	mac-address-increment = <2>;
 };
 
 &ath10k_1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>, <&calibration_art_5000>;
+	nvmem-cells = <&macaddr_art_0 3>, <&calibration_art_5000>;
 	nvmem-cell-names = "mac-address", "calibration";
-	mac-address-increment = <3>;
 };
 
 &pcie1 {

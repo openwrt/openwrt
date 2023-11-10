@@ -137,7 +137,9 @@
 					#size-cells = <1>;
 
 					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					macaddr_art_6: macaddr@6 {
@@ -171,7 +173,7 @@
 
 	pll-data = <0x82000101 0x80000101 0x80001313>;
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii-id";
@@ -204,9 +206,8 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 2>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <2>;
 };
 
 &pcie1 {

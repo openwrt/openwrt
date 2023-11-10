@@ -115,7 +115,7 @@
 
 	pll-data = <0x03000000 0x00000101 0x00001313>;
 
-	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cells = <&macaddr_info_8 0>;
 	nvmem-cell-names = "mac-address";
 
 	qca956x-serdes-fixup;
@@ -128,6 +128,6 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_info_8>, <&calibration_ath9k>;
+	nvmem-cells = <&macaddr_info_8 0>, <&calibration_ath9k>;
 	nvmem-cell-names = "mac-address", "calibration";
 };

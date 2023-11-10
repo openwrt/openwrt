@@ -150,7 +150,9 @@
 					};
 
 					macaddr_art_1002: macaddr@1002 {
+						compatible = "mac-base";
 						reg = <0x1002 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -171,15 +173,14 @@
 
 	phy-handle = <&swphy0>;
 
-	nvmem-cells = <&macaddr_art_1002>;
+	nvmem-cells = <&macaddr_art_1002 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &eth1 {
 	phy-handle = <&swphy4>;
 
-	nvmem-cells = <&macaddr_art_1002>;
+	nvmem-cells = <&macaddr_art_1002 0>;
 	nvmem-cell-names = "mac-address";
 
 	gmac-config {

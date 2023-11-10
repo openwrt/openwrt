@@ -66,7 +66,9 @@
 			#size-cells = <1>;
 
 			macaddr_art_0: macaddr@0 {
+				compatible = "mac-base";
 				reg = <0x0 0x6>;
+				#nvmem-cell-cells = <1>;
 			};
 		};
 	};
@@ -85,7 +87,7 @@
 &eth0 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-handle = <&phy5>;
@@ -99,9 +101,8 @@
 
 	mtd-cal-data = <&art 0x1000>;
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &pcie0 {

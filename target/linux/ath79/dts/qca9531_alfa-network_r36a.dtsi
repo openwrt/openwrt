@@ -97,7 +97,9 @@
 					};
 
 					macaddr_art_1002: macaddr@1002 {
+						compatible = "mac-base";
 						reg = <0x1002 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -122,6 +124,6 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&cal_art_1000>, <&macaddr_art_1002>;
+	nvmem-cells = <&cal_art_1000>, <&macaddr_art_1002 0>;
 	nvmem-cell-names = "calibration", "mac-address";
 };

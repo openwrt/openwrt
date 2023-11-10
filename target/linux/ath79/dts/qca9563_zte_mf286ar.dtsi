@@ -91,7 +91,9 @@
 				#size-cells = <1>;
 
 				macaddr_mac_0: mac-address@0 {
+					compatible = "mac-base";
 					reg = <0x0 0x6>;
+					#nvmem-cell-cells = <1>;
 				};
 			};
 		};
@@ -122,17 +124,16 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_mac_0>;
+	nvmem-cells = <&macaddr_mac_0 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wifi_ath10k {
-	nvmem-cells = <&macaddr_mac_0>, <&precal_art_5000>;
+	nvmem-cells = <&macaddr_mac_0 0x20000>, <&precal_art_5000>;
 	nvmem-cell-names = "mac-address", "pre-calibration";
-	mac-address-increment = <0x20000>;
 };
 
 &wmac {
-	nvmem-cells = <&macaddr_mac_0>, <&cal_art_1000>;
+	nvmem-cells = <&macaddr_mac_0 0>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
 };
