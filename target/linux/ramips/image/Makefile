@@ -31,7 +31,7 @@ KERNEL_DTB = kernel-bin | append-dtb | lzma
 
 define Build/jcg-header
 	$(STAGING_DIR_HOST)/bin/jcgimage -v $(1) \
-		$(if $(JCG_MAXSIZE), -m $$(($(subst k, * 1024,$(JCG_MAXSIZE)))),) \
+		$(if $(JCG_MAXSIZE), -m $$(($(call exp_units,$(JCG_MAXSIZE)))),) \
 		-u $@ -o $@.new
 	mv $@.new $@
 endef
@@ -142,7 +142,7 @@ endef
 define Build/trx
 	$(STAGING_DIR_HOST)/bin/trx $(1) \
 		-o $@ \
-		-m $$(($(subst k, * 1024,$(IMAGE_SIZE)))) \
+		-m $$(($(call exp_units,$(IMAGE_SIZE)))) \
 		-f $(IMAGE_KERNEL) \
 		-a 4 -f $(IMAGE_ROOTFS)
 endef

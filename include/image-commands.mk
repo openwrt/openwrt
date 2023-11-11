@@ -215,7 +215,7 @@ endef
 
 define Build/check-size
 	@imagesize="$$(stat -c%s $@)"; \
-	limitsize="$$(($(subst k,* 1024,$(subst m, * 1024k,$(if $(1),$(1),$(IMAGE_SIZE))))))"; \
+	limitsize="$$(($(call exp_units,$(if $(1),$(1),$(IMAGE_SIZE)))))"; \
 	[ $$limitsize -ge $$imagesize ] || { \
 		$(call ERROR_MESSAGE,    WARNING: Image file $@ is too big: $$imagesize > $$limitsize); \
 		rm -f $@; \
@@ -466,8 +466,8 @@ endef
 define Build/pad-offset
 	let \
 		size="$$(stat -c%s $@)" \
-		pad="$(subst k,* 1024,$(word 1, $(1)))" \
-		offset="$(subst k,* 1024,$(word 2, $(1)))" \
+		pad="$(call exp_units,$(word 1, $(1)))" \
+		offset="$(call exp_units,$(word 2, $(1)))" \
 		pad="(pad - ((size + offset) % pad)) % pad" \
 		newsize='size + pad'; \
 		dd if=$@ of=$@.new bs=$$newsize count=1 conv=sync
@@ -629,7 +629,7 @@ endef
 
 define Build/zyxel-ras-image
 	let \
-		newsize="$(subst k,* 1024,$(RAS_ROOTFS_SIZE))"; \
+		newsize="$(call exp_units,$(RAS_ROOTFS_SIZE))"; \
 		$(STAGING_DIR_HOST)/bin/mkrasimage \
 			-b $(RAS_BOARD) \
 			-v $(RAS_VERSION) \

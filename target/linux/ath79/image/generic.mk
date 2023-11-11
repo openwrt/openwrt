@@ -85,7 +85,7 @@ define Build/mkmylofw_16m
 
 	let \
 		size="$$(stat -c%s $@)" \
-		pad="$(subst k,* 1024,$(BLOCKSIZE))" \
+		pad="$(call exp_units,$(BLOCKSIZE))" \
 		pad="(pad - (size % pad)) % pad" \
 		newsize='size + pad' ; \
 		[ $$newsize -lt $$((0x660000)) ] && newsize=0x660000 ; \
