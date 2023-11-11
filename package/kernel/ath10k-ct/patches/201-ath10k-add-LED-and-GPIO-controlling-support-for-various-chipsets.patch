@@ -66,24 +66,24 @@ v13:
 
 * cleanup includes
 
- ath10k-6.2/Kconfig   |  10 +++
- ath10k-6.2/Makefile  |   1 +
- ath10k-6.2/core.c    |  22 +++++++
- ath10k-6.2/core.h    |   9 ++-
- ath10k-6.2/hw.h      |   1 +
- ath10k-6.2/leds.c    | 103 ++++++++++++++++++++++++++++++
- ath10k-6.2/leds.h    |  45 +++++++++++++
- ath10k-6.2/mac.c     |   1 +
- ath10k-6.2/wmi-ops.h |  32 ++++++++++
- ath10k-6.2/wmi-tlv.c |   2 +
- ath10k-6.2/wmi.c     |  54 ++++++++++++++++
- ath10k-6.2/wmi.h     |  35 ++++++++++
+ ath10k-6.4/Kconfig   |  10 +++
+ ath10k-6.4/Makefile  |   1 +
+ ath10k-6.4/core.c    |  22 +++++++
+ ath10k-6.4/core.h    |   9 ++-
+ ath10k-6.4/hw.h      |   1 +
+ ath10k-6.4/leds.c    | 103 ++++++++++++++++++++++++++++++
+ ath10k-6.4/leds.h    |  45 +++++++++++++
+ ath10k-6.4/mac.c     |   1 +
+ ath10k-6.4/wmi-ops.h |  32 ++++++++++
+ ath10k-6.4/wmi-tlv.c |   2 +
+ ath10k-6.4/wmi.c     |  54 ++++++++++++++++
+ ath10k-6.4/wmi.h     |  35 ++++++++++
  12 files changed, 314 insertions(+), 1 deletion(-)
- create mode 100644 ath10k-6.2/leds.c
- create mode 100644 ath10k-6.2/leds.h
+ create mode 100644 ath10k-6.4/leds.c
+ create mode 100644 ath10k-6.4/leds.h
 
---- a/ath10k-6.2/Kconfig
-+++ b/ath10k-6.2/Kconfig
+--- a/ath10k-6.4/Kconfig
++++ b/ath10k-6.4/Kconfig
 @@ -67,6 +67,16 @@ config ATH10K_DEBUGFS
  
  	  If unsure, say Y to make it easier to debug problems.
@@ -101,8 +101,8 @@ v13:
  config ATH10K_SPECTRAL
  	bool "Atheros ath10k spectral scan support"
  	depends on ATH10K_DEBUGFS
---- a/ath10k-6.2/Makefile
-+++ b/ath10k-6.2/Makefile
+--- a/ath10k-6.4/Makefile
++++ b/ath10k-6.4/Makefile
 @@ -20,6 +20,7 @@ ath10k_core-$(CONFIG_ATH10K_SPECTRAL) +=
  ath10k_core-$(CONFIG_NL80211_TESTMODE) += testmode.o
  ath10k_core-$(CONFIG_ATH10K_TRACING) += trace.o
@@ -111,8 +111,8 @@ v13:
  ath10k_core-$(CONFIG_MAC80211_DEBUGFS) += debugfs_sta.o
  ath10k_core-$(CONFIG_PM) += wow.o
  ath10k_core-$(CONFIG_ATH10K_CE) += ce.o
---- a/ath10k-6.2/core.c
-+++ b/ath10k-6.2/core.c
+--- a/ath10k-6.4/core.c
++++ b/ath10k-6.4/core.c
 @@ -28,6 +28,7 @@
  #include "testmode.h"
  #include "wmi-ops.h"
@@ -200,8 +200,8 @@ v13:
  	ath10k_thermal_unregister(ar);
  	/* Stop spectral before unregistering from mac80211 to remove the
  	 * relayfs debugfs file cleanly. Otherwise the parent debugfs tree
---- a/ath10k-6.2/core.h
-+++ b/ath10k-6.2/core.h
+--- a/ath10k-6.4/core.h
++++ b/ath10k-6.4/core.h
 @@ -14,6 +14,7 @@
  #include <linux/pci.h>
  #include <linux/uuid.h>
@@ -224,8 +224,8 @@ v13:
  		/* protected by data_lock */
  		u32 rx_crc_err_drop;
  		u32 fw_crash_counter;
---- a/ath10k-6.2/hw.h
-+++ b/ath10k-6.2/hw.h
+--- a/ath10k-6.4/hw.h
++++ b/ath10k-6.4/hw.h
 @@ -523,6 +523,7 @@ struct ath10k_hw_params {
  	const char *name;
  	u32 patch_load_addr;
@@ -235,7 +235,7 @@ v13:
  
  	/* Type of hw cycle counter wraparound logic, for more info
 --- /dev/null
-+++ b/ath10k-6.2/leds.c
++++ b/ath10k-6.4/leds.c
 @@ -0,0 +1,103 @@
 +/*
 + * Copyright (c) 2005-2011 Atheros Communications Inc.
@@ -341,7 +341,7 @@ v13:
 +}
 +
 --- /dev/null
-+++ b/ath10k-6.2/leds.h
++++ b/ath10k-6.4/leds.h
 @@ -0,0 +1,41 @@
 +/*
 + * Copyright (c) 2018, The Linux Foundation. All rights reserved.
@@ -384,8 +384,8 @@ v13:
 +
 +#endif
 +#endif /* _LEDS_H_ */
---- a/ath10k-6.2/mac.c
-+++ b/ath10k-6.2/mac.c
+--- a/ath10k-6.4/mac.c
++++ b/ath10k-6.4/mac.c
 @@ -25,6 +25,7 @@
  #include "wmi-tlv.h"
  #include "wmi-ops.h"
@@ -394,8 +394,8 @@ v13:
  
  /*********/
  /* Rates */
---- a/ath10k-6.2/wmi-ops.h
-+++ b/ath10k-6.2/wmi-ops.h
+--- a/ath10k-6.4/wmi-ops.h
++++ b/ath10k-6.4/wmi-ops.h
 @@ -228,7 +228,10 @@ struct wmi_ops {
  			 const struct wmi_bb_timing_cfg_arg *arg);
  	struct sk_buff *(*gen_per_peer_per_tid_cfg)(struct ath10k *ar,
@@ -443,8 +443,8 @@ v13:
  static inline int
  ath10k_wmi_dbglog_cfg(struct ath10k *ar, u64 module_enable, u32 log_level)
  {
---- a/ath10k-6.2/wmi-tlv.c
-+++ b/ath10k-6.2/wmi-tlv.c
+--- a/ath10k-6.4/wmi-tlv.c
++++ b/ath10k-6.4/wmi-tlv.c
 @@ -4601,6 +4601,8 @@ static const struct wmi_ops wmi_tlv_ops
  	.gen_echo = ath10k_wmi_tlv_op_gen_echo,
  	.gen_vdev_spectral_conf = ath10k_wmi_tlv_op_gen_vdev_spectral_conf,
@@ -454,8 +454,8 @@ v13:
  };
  
  static const struct wmi_peer_flags_map wmi_tlv_peer_flags_map = {
---- a/ath10k-6.2/wmi.c
-+++ b/ath10k-6.2/wmi.c
+--- a/ath10k-6.4/wmi.c
++++ b/ath10k-6.4/wmi.c
 @@ -8438,6 +8438,49 @@ ath10k_wmi_op_gen_peer_set_param(struct
  	return skb;
  }
@@ -552,8 +552,8 @@ v13:
  };
  
  int ath10k_wmi_attach(struct ath10k *ar)
---- a/ath10k-6.2/wmi.h
-+++ b/ath10k-6.2/wmi.h
+--- a/ath10k-6.4/wmi.h
++++ b/ath10k-6.4/wmi.h
 @@ -3133,6 +3133,41 @@ enum wmi_10_4_feature_mask {
  
  };
