@@ -158,6 +158,11 @@
 			      "nss_port4_rst", "nss_port5_rst",
 			      "nss_port6_rst";
 		mdio-bus = <&mdio>;
+
+		switch_mac_mode = <MAC_MODE_DISABLED>; /* MAC mode for UNIPHY instance 0 */
+		switch_mac_mode1 = <MAC_MODE_DISABLED>; /* MAC mode for UNIPHY instance 1 */
+		switch_mac_mode2 = <MAC_MODE_DISABLED>; /* MAC mode for UNIPHY instance 2 */
+
 		status = "disabled";
 
 		port_scheduler_resource {
