@@ -100,7 +100,7 @@
 /* GPIO 19: switch reset */
 &gsw {
 	phy-mode = "rmii";
-	nvmem-cells = <&macaddr_boardconfig_16>;
+	nvmem-cells = <&macaddr_boardconfig_16 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -136,6 +136,18 @@
 				label = "board_config";
 				reg = <0x7f0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_16: macaddr@16 {
+						compatible = "mac-base";
+						reg = <0x16 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -155,18 +167,7 @@
 		reg = <0x7000 0 0 0 0>;
 		ralink,mtd-eeprom = <&boardconfig 0x410>;
 		ralink,eeprom-swap;
-		nvmem-cells = <&macaddr_boardconfig_16>;
+		nvmem-cells = <&macaddr_boardconfig_16 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
-	};
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_16: macaddr@16 {
-		reg = <0x16 0x6>;
 	};
 };

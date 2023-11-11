@@ -43,16 +43,20 @@
 				reg = <0x00000 0x20000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				cal_urlader_985: cal@985 {
-					reg = <0x985 0x440>;
-				};
+					cal_urlader_985: cal@985 {
+						reg = <0x985 0x440>;
+					};
 
-				macaddr_urlader_a91: macaddr@a91 {
-					reg = <0xa91 0x6>;
+					macaddr_urlader_a91: macaddr@a91 {
+						compatible = "mac-base";
+						reg = <0xa91 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
@@ -77,9 +81,8 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_urlader_a91>;
+	nvmem-cells = <&macaddr_urlader_a91 (-2)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-2)>;
 };
 
 &phy0 {

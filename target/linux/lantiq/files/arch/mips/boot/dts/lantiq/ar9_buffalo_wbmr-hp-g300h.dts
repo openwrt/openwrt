@@ -175,6 +175,16 @@
 				label = "board";
 				reg = <0x1fc0000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_10024: macaddr@10024 {
+						reg = <0x10024 0x6>;
+					};
+				};
 			};
 
 			partition@1fe0000 {
@@ -193,14 +203,4 @@
 &usb0 {
 	status = "okay";
 	vbus-supply = <&usb_vbus>;
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_10024: macaddr@10024 {
-		reg = <0x10024 0x6>;
-	};
 };

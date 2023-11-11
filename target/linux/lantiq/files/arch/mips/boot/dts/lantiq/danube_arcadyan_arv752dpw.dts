@@ -192,6 +192,16 @@
 				label = "board_config";
 				reg = <0x7f0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_16: macaddr@16 {
+						reg = <0x16 0x6>;
+					};
+				};
 			};
 		};
 	};
@@ -240,14 +250,4 @@
 &vmmc {
 	status = "okay";
 	gpios = <&gpiomm 1 GPIO_ACTIVE_HIGH>;
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_16: macaddr@16 {
-		reg = <0x16 0x6>;
-	};
 };

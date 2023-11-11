@@ -97,9 +97,8 @@
 &gsw {
 	phy-mode = "rmii";
 	phy-handle = <&phy0>;
-	nvmem-cells = <&macaddr_ath9k_cal_a91>;
+	nvmem-cells = <&macaddr_ath9k_cal_a91 (-2)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-2)>;
 
 	mdio-bus {
 		#address-cells = <1>;
@@ -128,6 +127,18 @@
 				label = "urlader";
 				reg = <0x00000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_ath9k_cal_a91: macaddr@a91 {
+						compatible = "mac-base";
+						reg = <0xa91 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@20000 {
@@ -169,15 +180,5 @@
 		compatible = "pci0,0";
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
-	};
-};
-
-&ath9k_cal {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_ath9k_cal_a91: macaddr@a91 {
-		reg = <0xa91 0x6>;
 	};
 };

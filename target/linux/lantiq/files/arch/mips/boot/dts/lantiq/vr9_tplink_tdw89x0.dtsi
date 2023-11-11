@@ -110,7 +110,7 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_ath9k_cal_f100>;
+	nvmem-cells = <&macaddr_ath9k_cal_f100 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -204,9 +204,8 @@
 			gpio-controller;
 			qca,no-eeprom;
 			ieee80211-freq-limit = <2402000 2482000>;
-			nvmem-cells = <&macaddr_ath9k_cal_f100>;
+			nvmem-cells = <&macaddr_ath9k_cal_f100 2>;
 			nvmem-cell-names = "mac-address";
-			mac-address-increment = <2>;
 		};
 	};
 };
@@ -246,6 +245,18 @@
 				reg = <0x7d0000 0x30000>;
 				label = "boardconfig";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_ath9k_cal_f100: macaddr@f100 {
+						compatible = "mac-base";
+						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -267,14 +278,4 @@
 &usb1 {
 	status = "okay";
 	vbus-supply = <&usb_vbus>;
-};
-
-&ath9k_cal {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_ath9k_cal_f100: macaddr@f100 {
-		reg = <0xf100 0x6>;
-	};
 };
