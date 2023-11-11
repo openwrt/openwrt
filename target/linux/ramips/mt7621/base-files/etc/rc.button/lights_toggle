@@ -1,16 +1,41 @@
 #!/bin/sh
 
-[[ "${ACTION}" = "released" ]] || exit 0
-
+# include to get to $(board_name)
 . /lib/functions.sh
 
+# set led path depending on model
 case "$(board_name)" in
 tplink,ec330-g5u-v1)
 	led_light="/sys/class/gpio/led-light/value"
-	echo "$((!$(cat $led_light)))" > "$led_light"
+	led_logic="toggle"
 ;;
-	*)
+# on/off buttons
+zyxel,wsm20)
+	led_light="/sys/class/leds/white:system/brightness"
+	led_logic="on/off"
+;;
+*)
+	return 0
 ;;
 esac
+
+# set new state depending on button logic
+case "$led_logic" in
+toggle)
+        [[ "${ACTION}" = "released" ]] || exit 0
+	led_value=$((!$(cat $led_light)))
+;;
+on/off)
+        [ "${ACTION}" = "released" ] || [ "${ACTION}" = "pressed" ] || exit 0
+	led_value="0"
+        [ "${ACTION}" = "pressed" ]  || led_value="1"
+;;
+*)
+	return 0
+;;
+esac
+
+# finally, apply new state
+echo "$led_value" > "$led_light"
 
 return 0
