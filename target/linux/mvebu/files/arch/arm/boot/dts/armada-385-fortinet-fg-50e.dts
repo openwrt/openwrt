@@ -56,9 +56,8 @@
 	phy-connection-type = "sgmii";
 	buffer-manager = <&bm>;
 	bm,pool-long = <2>;
-	nvmem-cells = <&macaddr_bdinfo_d880>;
+	nvmem-cells = <&macaddr_bdinfo_d880 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &eth2 {
@@ -68,9 +67,8 @@
 	phy-connection-type = "sgmii";
 	buffer-manager = <&bm>;
 	bm,pool-long = <3>;
-	nvmem-cells = <&macaddr_bdinfo_d880>;
+	nvmem-cells = <&macaddr_bdinfo_d880 2>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <2>;
 };
 
 &mdio {
@@ -126,41 +124,36 @@
 			port@0 {
 				reg = <0>;
 				label = "lan5";
-				nvmem-cells = <&macaddr_bdinfo_d880>;
+				nvmem-cells = <&macaddr_bdinfo_d880 7>;
 				nvmem-cell-names = "mac-address";
-				mac-address-increment = <7>;
 			};
 
 			port@1 {
 				reg = <1>;
 				label = "lan4";
-				nvmem-cells = <&macaddr_bdinfo_d880>;
+				nvmem-cells = <&macaddr_bdinfo_d880 6>;
 				nvmem-cell-names = "mac-address";
-				mac-address-increment = <6>;
 			};
 
 			port@2 {
 				reg = <2>;
 				label = "lan3";
-				nvmem-cells = <&macaddr_bdinfo_d880>;
+				nvmem-cells = <&macaddr_bdinfo_d880 5>;
 				nvmem-cell-names = "mac-address";
-				mac-address-increment = <5>;
 			};
 
 			port@3 {
 				reg = <3>;
 				label = "lan2";
-				nvmem-cells = <&macaddr_bdinfo_d880>;
+				nvmem-cells = <&macaddr_bdinfo_d880 4>;
 				nvmem-cell-names = "mac-address";
-				mac-address-increment = <4>;
 			};
 
 			port@4 {
 				reg = <4>;
 				label = "lan1";
-				nvmem-cells = <&macaddr_bdinfo_d880>;
+				nvmem-cells = <&macaddr_bdinfo_d880 3>;
 				nvmem-cell-names = "mac-address";
-				mac-address-increment = <3>;
 			};
 
 			port@6 {
