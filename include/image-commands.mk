@@ -133,6 +133,8 @@ define Build/append-md5sum-ascii-salted
 	rm $@.salted
 endef
 
+UBI_NAND_SIZE_LIMIT = $(IMAGE_SIZE) - ($(NAND_SIZE)*20/1024 + 4*$(BLOCKSIZE))
+
 define Build/append-ubi
 	sh $(TOPDIR)/scripts/ubinize-image.sh \
 		$(if $(UBOOTENV_IN_UBI),--uboot-env) \
@@ -146,6 +148,8 @@ define Build/append-ubi
 		$(UBINIZE_OPTS)
 	cat $@.tmp >> $@
 	rm $@.tmp
+	$(if $(and $(IMAGE_SIZE),$(NAND_SIZE)),\
+		$(call Build/check-size,$(UBI_NAND_SIZE_LIMIT)))
 endef
 
 define Build/ubinize-kernel
