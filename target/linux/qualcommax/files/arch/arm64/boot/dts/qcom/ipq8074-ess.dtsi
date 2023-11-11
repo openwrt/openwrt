@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <dt-bindings/net/qcom-ipq-ess.h>
+
 &clocks {
 	bias_pll_cc_clk {
 		compatible = "fixed-clock";
@@ -19,8 +21,8 @@
 		compatible = "qcom,ess-switch-ipq807x";
 		reg = <0x3a000000 0x1000000>;
 		switch_access_mode = "local bus";
-		switch_cpu_bmp = <0x1>;  /* cpu port bitmap */
-		switch_inner_bmp = <0x80>; /*inner port bitmap*/
+		switch_cpu_bmp = <ESS_PORT0>;  /* cpu port bitmap */
+		switch_inner_bmp = <ESS_PORT7>; /*inner port bitmap*/
 		clocks = <&gcc GCC_CMN_12GPLL_AHB_CLK>,
 			 <&gcc GCC_CMN_12GPLL_SYS_CLK>,
 			 <&gcc GCC_UNIPHY0_AHB_CLK>,
