@@ -21,7 +21,7 @@ define Build/buffalo-trx
 		-f $(kern_bin) \
 		$(if $(rtfs_bin),\
 			-a 0x20000 \
-			-b $$(( $(subst k, * 1024,$(kern_size)) )) \
+			-b $$(( $(call exp_units,$(kern_size)) )) \
 			-f $(rtfs_bin),) \
 		$(if $(apnd_bin),\
 			-A $(apnd_bin) \

@@ -68,7 +68,7 @@ define Build/mkmylofw_32m
 
 	let \
 		size="$$(stat -c%s $@)" \
-		pad="$(subst k,* 1024,$(BLOCKSIZE))" \
+		pad="$(call exp_units,$(BLOCKSIZE))" \
 		pad="(pad - (size % pad)) % pad" \
 		newsize='size + pad'; \
 		$(STAGING_DIR_HOST)/bin/mkmylofw \
