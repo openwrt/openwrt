@@ -157,3 +157,42 @@ prefix2netmask() {
     export -- "$__var=$(((~(uint_max >> __n)) & uint_max))"
 }
 
+_is_contiguous() {
+    local __x="$1"	# no checking done
+    local __y=$((~__x & uint_max))
+    local __z=$(((__y + 1) & uint_max))
+
+    [ $((__z & __y)) -eq 0 ]
+}
+
+# check argument as being contiguous upper bits (and yes,
+# 0 doesn't have any discontiguous bits).
+is_contiguous() {
+    local __var="$1" __x="$2" __val=0
+    assert_uint32 "$__x" || return 1
+
+    local __y=$((~__x & uint_max))
+    local __z=$(((__y + 1) & uint_max))
+
+    [ $((__z & __y)) -eq 0 ] && __val=1
+
+    export -- "$__var=$__val"
+}
+
+# convert mask to prefix, validating that it's a conventional
+# (contiguous) netmask.
+netmask2prefix() {
+    local __var="$1" __n="$2" __cont __bits
+    assert_uint32 "$__n" || return 1
+
+    is_contiguous __cont "$__n" || return 1
+    if [ $__cont -eq 0 ]; then
+	printf "Not a contiguous netmask (%08x)\n" "$__n" >&2
+	return 1
+    fi
+
+    bitcount __bits "$__n"		# already checked
+
+    export -- "$__var=$__bits"
+}
+

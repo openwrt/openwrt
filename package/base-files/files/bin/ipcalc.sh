@@ -44,6 +44,7 @@ case "$1" in
     # data is n.n.n.n/m.m.m.m format, like on a Cisco router
     str2ip ipaddr "${1%/*}" || exit 1
     str2ip netmask "${1#*/}" || exit 1
+    netmask2prefix prefix "$netmask" || exit 1
     shift
     ;;
 */*)
@@ -62,6 +63,7 @@ case "$1" in
     # address and netmask as two separate arguments
     str2ip ipaddr "$1" || exit 1
     str2ip netmask "$2" || exit 1
+    netmask2prefix prefix "$netmask" || exit 1
     shift 2
     ;;
 esac
@@ -69,11 +71,6 @@ esac
 # we either have no arguments left, or we have a range start and length
 if [ $# -ne 0 ] && [ $# -ne 2 ]; then
     usage
-fi
-
-if ! bitcount prefix "$netmask"; then
-    printf "Invalid netmask (%s)\n" "$netmask" >&2
-    exit 1
 fi
 
 # complement of the netmask, i.e. the hostmask
