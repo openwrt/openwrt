@@ -268,12 +268,16 @@
 					reg = <0xfaf100 0x00200>;
 					read-only;
 
-					compatible = "nvmem-cells";
-					#address-cells = <1>;
-					#size-cells = <1>;
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
 
-					macaddr_defaultmac_0: macaddr@0 {
-						reg = <0x0 0x6>;
+						macaddr_defaultmac_0: macaddr@0 {
+							compatible = "mac-base";
+							reg = <0x0 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
 					};
 				};
 
@@ -282,16 +286,18 @@
 					reg = <0xfc0000 0x40000>;
 					read-only;
 
-					compatible = "nvmem-cells";
-					#address-cells = <1>;
-					#size-cells = <1>;
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
 
-					precal_ART_1000: precal@1000 {
-						reg = <0x1000 0x2f20>;
-					};
+						precal_ART_1000: precal@1000 {
+							reg = <0x1000 0x2f20>;
+						};
 
-					precal_ART_5000: precal@5000 {
-						reg = <0x5000 0x2f20>;
+						precal_ART_5000: precal@5000 {
+							reg = <0x5000 0x2f20>;
+						};
 					};
 				};
 			};
@@ -336,9 +342,8 @@
 			compatible = "pci168c,0040";
 			reg = <0x00010000 0 0 0 0>;
 
-			nvmem-cells = <&macaddr_defaultmac_0>, <&precal_ART_1000>;
+			nvmem-cells = <&macaddr_defaultmac_0 (-1)>, <&precal_ART_1000>;
 			nvmem-cell-names = "mac-address", "pre-calibration";
-			mac-address-increment = <(-1)>;
 		};
 	};
 };
@@ -357,7 +362,7 @@
 			compatible = "pci168c,0040";
 			reg = <0x00010000 0 0 0 0>;
 
-			nvmem-cells = <&macaddr_defaultmac_0>, <&precal_ART_5000>;
+			nvmem-cells = <&macaddr_defaultmac_0 0>, <&precal_ART_5000>;
 			nvmem-cell-names = "mac-address", "pre-calibration";
 		};
 	};
@@ -477,9 +482,8 @@
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
 
-	nvmem-cells = <&macaddr_defaultmac_0>;
+	nvmem-cells = <&macaddr_defaultmac_0 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 
 	fixed-link {
 		speed = <1000>;
@@ -492,7 +496,7 @@
 	phy-mode = "sgmii";
 	qcom,id = <2>;
 
-	nvmem-cells = <&macaddr_defaultmac_0>;
+	nvmem-cells = <&macaddr_defaultmac_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	fixed-link {
