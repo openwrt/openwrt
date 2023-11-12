@@ -18,10 +18,6 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $basemac 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $basemac 8 > /sys${DEVPATH}/macaddress
 		;;
-	dlink,eagle-pro-ai-m32-a1)
-		[ "$PHYNBR" = "0" ] && macaddr_add $(cat /sys/class/net/eth0/address) 2 > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_add $(cat /sys/class/net/eth0/address) 3 > /sys${DEVPATH}/macaddress
-		;;
 	reyee,ax3200-e5|\
 	ruijie,rg-ew3200gx-pro)
 		[ "$PHYNBR" = "0" ] && macaddr_add $(get_mac_label) 3 > /sys${DEVPATH}/macaddress

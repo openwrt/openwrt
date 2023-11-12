@@ -12,6 +12,10 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+dlink,eagle-pro-ai-m32-a1|\
+dlink,eagle-pro-ai-r32-a1)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x2000" "0x2000"
+	;;
 linksys,e8450-ubi)
 	ubootenv_add_uci_config "/dev/ubi0_0" "0x0" "0x1f000" "0x1f000" "1"
 	ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x1f000" "0x1f000" "1"
