@@ -196,7 +196,7 @@
  
  #ifdef CONFIG_BGSCAN
  	if (state == WPA_COMPLETED && wpa_s->current_ssid != wpa_s->bgscan_ssid)
-@@ -7594,6 +7595,7 @@ struct wpa_supplicant * wpa_supplicant_a
+@@ -7596,6 +7597,7 @@ struct wpa_supplicant * wpa_supplicant_a
  #endif /* CONFIG_P2P */
  
  	wpas_ubus_add_bss(wpa_s);
@@ -204,7 +204,7 @@
  
  	return wpa_s;
  }
-@@ -7621,6 +7623,7 @@ int wpa_supplicant_remove_iface(struct w
+@@ -7623,6 +7625,7 @@ int wpa_supplicant_remove_iface(struct w
  	struct wpa_supplicant *parent = wpa_s->parent;
  #endif /* CONFIG_MESH */
  
@@ -212,7 +212,7 @@
  	wpas_ubus_free_bss(wpa_s);
  
  	/* Remove interface from the global list of interfaces */
-@@ -7931,6 +7934,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -7933,6 +7936,7 @@ struct wpa_global * wpa_supplicant_init(
  
  	eloop_register_timeout(WPA_SUPPLICANT_CLEANUP_INTERVAL, 0,
  			       wpas_periodic, global, NULL);
@@ -220,7 +220,7 @@
  
  	return global;
  }
-@@ -7969,12 +7973,8 @@ int wpa_supplicant_run(struct wpa_global
+@@ -7971,12 +7975,8 @@ int wpa_supplicant_run(struct wpa_global
  	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
  	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
  
@@ -233,7 +233,7 @@
  	return 0;
  }
  
-@@ -8007,6 +8007,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+@@ -8009,6 +8009,8 @@ void wpa_supplicant_deinit(struct wpa_gl
  
  	wpas_notify_supplicant_deinitialized(global);
  
