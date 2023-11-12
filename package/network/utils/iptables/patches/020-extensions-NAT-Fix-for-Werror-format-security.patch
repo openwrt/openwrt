@@ -1,0 +1,24 @@
+From ed4082a7405a5838c205a34c1559e289949200cc Mon Sep 17 00:00:00 2001
+From: Phil Sutter <phil@nwl.cc>
+Date: Thu, 12 Jan 2023 14:38:44 +0100
+Subject: [PATCH 01/24] extensions: NAT: Fix for -Werror=format-security
+
+Have to pass either a string literal or format string to xt_xlate_add().
+
+Fixes: f30c5edce0413 ("extensions: Merge SNAT, DNAT, REDIRECT and MASQUERADE")
+Signed-off-by: Phil Sutter <phil@nwl.cc>
+---
+ extensions/libxt_NAT.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/extensions/libxt_NAT.c
++++ b/extensions/libxt_NAT.c
+@@ -424,7 +424,7 @@ __NAT_xlate(struct xt_xlate *xl, const s
+ 	if (r->flags & NF_NAT_RANGE_PROTO_OFFSET)
+ 		return 0;
+ 
+-	xt_xlate_add(xl, tgt);
++	xt_xlate_add(xl, "%s", tgt);
+ 	if (strlen(range_str))
+ 		xt_xlate_add(xl, " to %s", range_str);
+ 	if (r->flags & NF_NAT_RANGE_PROTO_RANDOM) {
