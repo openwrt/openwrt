@@ -38,10 +38,6 @@ define Build/sercomm-factory-cqr
 	mv $@.fhdr $@
 endef
 
-define Build/sercomm-fix-buc-pid
-	printf 1 | dd seek=$$((0x13)) of=$@ bs=1 conv=notrunc 2>/dev/null
-endef
-
 define Build/sercomm-kernel
 	$(TOPDIR)/scripts/sercomm-kernel-header.py \
 		--kernel-image $@ \
@@ -102,6 +98,10 @@ define Build/sercomm-payload
 		--pid-file $@.pid
 	mv $@.tmp $@
 	rm $@.pid
+endef
+
+define Build/sercomm-pid-setbit
+	printf 1 | dd seek=$$(($(1))) of=$@ bs=1 conv=notrunc 2>/dev/null
 endef
 
 define Build/sercomm-prepend-tagged-kernel

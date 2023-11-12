@@ -2518,7 +2518,7 @@ define Device/wifire_s1500-nbn
   IMAGE_SIZE := 51200k
   IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
 	sercomm-reset-slot1-chksum | append-ubi | check-size | \
-	sercomm-factory-cqr | sercomm-fix-buc-pid | sercomm-mkhash | \
+	sercomm-factory-cqr | sercomm-pid-setbit 0x13 | sercomm-mkhash | \
 	sercomm-crypto
   SERCOMM_HWID := BUC
   SERCOMM_HWVER := 10000
