@@ -22,6 +22,9 @@ HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
+export ZSTD_CFLAGS=-I$(STAGING_DIR_HOST)/include
+export ZSTD_LIBS=-L$(STAGING_DIR_HOST)/lib -lzstd
+
 HOST_CONFIGURE_VARS += \
 	acx_cv_cc_gcc_supports_ada=false \
 	gdb_cv_func_sigsetjmp=yes
