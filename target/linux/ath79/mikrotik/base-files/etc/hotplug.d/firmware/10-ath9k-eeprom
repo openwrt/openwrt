@@ -23,6 +23,9 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
+	mikrotik,routerboard-2011uias-2hnd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 11)
+		;;
 	mikrotik,routerboard-911-lite|\
 	mikrotik,routerboard-911g-xhpnd|\
 	mikrotik,routerboard-912uag-2hpnd|\

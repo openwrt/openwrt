@@ -6,6 +6,13 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+mikrotik,routerboard-2011uias-2hnd)
+	ucidef_set_led_switch "eth6" "eth6" "green:eth-6" "switch1" "0x20"
+	ucidef_set_led_switch "eth7" "eth7" "green:eth-7" "switch1" "0x10"
+	ucidef_set_led_switch "eth8" "eth8" "green:eth-8" "switch1" "0x08"
+	ucidef_set_led_switch "eth9" "eth9" "green:eth-9" "switch1" "0x04"
+	ucidef_set_led_switch "eth10" "eth10" "green:eth-10" "switch1" "0x02"
+	;;
 mikrotik,routerboard-911-lite|\
 mikrotik,routerboard-lhg-5nd)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
