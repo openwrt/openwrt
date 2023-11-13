@@ -167,7 +167,7 @@
 				#size-cells = <1>;
 
 				cal_art_1000: cal@1000 {
-					reg = <0x1000 0x440>;
+					reg = <0x1000 0x540>;
 				};
 
 				precal_art_5000: precal@5000 {
@@ -231,8 +231,8 @@
 };
 
 &wmac {
-	/* TODO: missing support in ath9k */
-	status = "disabled";
+	compatible = "qca,qcn5502-wmac";
+	status = "okay";
 
 	nvmem-cells = <&cal_art_1000>, <&macaddr_info_8>;
 	nvmem-cell-names = "calibration", "mac-address";

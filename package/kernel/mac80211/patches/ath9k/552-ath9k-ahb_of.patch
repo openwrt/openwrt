@@ -16,7 +16,7 @@
  
  static const struct platform_device_id ath9k_platform_id_table[] = {
  	{
-@@ -69,6 +77,236 @@ static const struct ath_bus_ops ath_ahb_
+@@ -73,6 +81,244 @@ static const struct ath_bus_ops ath_ahb_
  	.eeprom_read = ath_ahb_eeprom_read,
  };
  
@@ -129,6 +129,7 @@
 +	QCA953X_WMAC,
 +	QCA955X_WMAC,
 +	QCA956X_WMAC,
++	QCN550X_WMAC,
 +};
 +
 +static int ar9330_get_soc_revision(void)
@@ -188,6 +189,12 @@
 +		.bootstrap_ref = QCA956X_BOOTSTRAP_REF_CLK_40,
 +		.soc_revision = ath79_get_soc_revision,
 +	},
++	[QCN550X_WMAC] = {
++		.dev_id = AR9300_DEVID_QCN550X,
++		.bootstrap_reg = QCA956X_RESET_REG_BOOTSTRAP,
++		.bootstrap_ref = QCA956X_BOOTSTRAP_REF_CLK_40,
++		.soc_revision = ath79_get_soc_revision,
++	},
 +};
 +
 +const struct of_device_id of_ath_ahb_match[] = {
@@ -197,6 +204,7 @@
 +	{ .compatible = "qca,qca9530-wmac", .data = &of_ath_ahb_data[QCA953X_WMAC] },
 +	{ .compatible = "qca,qca9550-wmac", .data = &of_ath_ahb_data[QCA955X_WMAC] },
 +	{ .compatible = "qca,qca9560-wmac", .data = &of_ath_ahb_data[QCA956X_WMAC] },
++	{ .compatible = "qca,qcn5502-wmac", .data = &of_ath_ahb_data[QCN550X_WMAC] },
 +	{},
 +};
 +MODULE_DEVICE_TABLE(of, of_ath_ahb_match);
@@ -253,7 +261,7 @@
  static int ath_ahb_probe(struct platform_device *pdev)
  {
  	void __iomem *mem;
-@@ -80,6 +318,17 @@ static int ath_ahb_probe(struct platform
+@@ -84,6 +330,17 @@ static int ath_ahb_probe(struct platform
  	int ret = 0;
  	struct ath_hw *ah;
  	char hw_name[64];
@@ -271,7 +279,7 @@
  
  	if (!dev_get_platdata(&pdev->dev)) {
  		dev_err(&pdev->dev, "no platform data specified\n");
-@@ -118,13 +367,16 @@ static int ath_ahb_probe(struct platform
+@@ -122,13 +379,16 @@ static int ath_ahb_probe(struct platform
  	sc->mem = mem;
  	sc->irq = irq;
  
@@ -289,7 +297,7 @@
  	if (ret) {
  		dev_err(&pdev->dev, "failed to initialize device\n");
  		goto err_irq;
-@@ -155,6 +407,9 @@ static int ath_ahb_remove(struct platfor
+@@ -159,6 +419,9 @@ static int ath_ahb_remove(struct platfor
  		free_irq(sc->irq, sc);
  		ieee80211_free_hw(sc->hw);
  	}
@@ -299,7 +307,7 @@
  
  	return 0;
  }
-@@ -164,6 +419,9 @@ static struct platform_driver ath_ahb_dr
+@@ -168,6 +431,9 @@ static struct platform_driver ath_ahb_dr
  	.remove     = ath_ahb_remove,
  	.driver		= {
  		.name	= "ath9k",
