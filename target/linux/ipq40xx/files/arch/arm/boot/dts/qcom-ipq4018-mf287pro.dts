@@ -160,7 +160,9 @@
 					#size-cells = <1>;
 
 					macaddr_mac_0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};

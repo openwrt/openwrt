@@ -362,7 +362,9 @@
 					#size-cells = <1>;
 
 					macaddr_gmac0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					macaddr_gmac1: macaddr@6 {
@@ -479,7 +481,7 @@
 	label = "wan";
 
 	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_gmac0>;
+	nvmem-cells = <&macaddr_gmac0 0>;
 };
 
 &wifi0 {
@@ -495,8 +497,7 @@
 	qcom,ath10k-calibration-variant = "linksys-whw03v2";
 
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_gmac0>;
-	mac-address-increment = <1>;
+	nvmem-cells = <&precal_art_1000>, <&macaddr_gmac0 1>;
 };
 
 &wifi1 {
@@ -506,8 +507,7 @@
 	qcom,ath10k-calibration-variant = "linksys-whw03v2";
 
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_5000>, <&macaddr_gmac0>;
-	mac-address-increment = <2>;
+	nvmem-cells = <&precal_art_5000>, <&macaddr_gmac0 2>;
 };
 
 &wifi2 {
@@ -517,6 +517,5 @@
 	qcom,ath10k-calibration-variant = "linksys-whw03v2";
 
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_9000>, <&macaddr_gmac0>;
-	mac-address-increment = <3>;
+	nvmem-cells = <&precal_art_9000>, <&macaddr_gmac0 3>;
 };

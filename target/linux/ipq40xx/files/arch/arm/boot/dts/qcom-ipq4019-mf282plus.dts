@@ -223,7 +223,7 @@
 &gmac {
 	status = "okay";
 	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_config_0>;
+	nvmem-cells = <&macaddr_config_0 0>;
 };
 
 &nand {
@@ -274,7 +274,9 @@
 					#size-cells = <1>;
 
 					macaddr_config_0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -436,8 +438,7 @@
 &wifi0 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_config_0>;
-	mac-address-increment = <1>;
+	nvmem-cells = <&precal_art_1000>, <&macaddr_config_0 1>;
 	qcom,ath10k-calibration-variant = "zte,mf286d";
 };
 
@@ -448,7 +449,6 @@
 &wifi1 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_5000>, <&macaddr_config_0>;
-	mac-address-increment = <1>;
+	nvmem-cells = <&precal_art_5000>, <&macaddr_config_0 1>;
 	qcom,ath10k-calibration-variant = "zte,mf286d";
 };

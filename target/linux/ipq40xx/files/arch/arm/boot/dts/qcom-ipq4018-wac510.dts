@@ -270,7 +270,9 @@
 					#size-cells = <1>;
 
 					macaddr_manudata_6: macaddr@6 {
+						compatible = "mac-base";
 						reg = <0x6 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -373,14 +375,13 @@
 &wifi0 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_manudata_6>;
+	nvmem-cells = <&precal_art_1000>, <&macaddr_manudata_6 0>;
 	qcom,ath10k-calibration-variant = "Netgear-WAC510";
 };
 
 &wifi1 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_5000>, <&macaddr_manudata_6>;
-	mac-address-increment = <16>;
+	nvmem-cells = <&precal_art_5000>, <&macaddr_manudata_6 16>;
 	qcom,ath10k-calibration-variant = "Netgear-WAC510";
 };

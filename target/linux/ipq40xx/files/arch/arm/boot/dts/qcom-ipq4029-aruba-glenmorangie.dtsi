@@ -259,14 +259,13 @@
 &wifi0 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_mfginfo_1d>;
+	nvmem-cells = <&precal_art_1000>, <&macaddr_mfginfo_1d 0>;
 	qcom,ath10k-calibration-variant = "Aruba-AP-303";
 };
 
 &wifi1 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_5000>, <&macaddr_mfginfo_1d>;
-	mac-address-increment = <1>;
+	nvmem-cells = <&precal_art_5000>, <&macaddr_mfginfo_1d 1>;
 	qcom,ath10k-calibration-variant = "Aruba-AP-303";
 };
