@@ -782,8 +782,33 @@ let main_obj = {
 	},
 };
 
+function handle_debug_config(cfg) {
+	hostapd.printf(`handle_debug_config: ${cfg}\n`);
+	if (!cfg)
+		return;
+
+	let data = cfg.service;
+	if (!data)
+		return;
+
+	data = data.hostapd;
+	if (!data)
+		return;
+
+	hostapd.udebug_set(!!+data.enabled);
+}
+
 hostapd.data.ubus = ubus;
 hostapd.data.obj = ubus.publish("hostapd", main_obj);
+hostapd.data.debug_sub = ubus.subscriber((req) => {
+	if (req.type != "config")
+		return;
+
+	handle_debug_config(req.data);
+});
+
+hostapd.data.debug_sub.subscribe("udebug");
+handle_debug_config(ubus.call("udebug", "get_config", {}));
 
 function bss_event(type, name, data) {
 	let ubus = hostapd.data.ubus;
