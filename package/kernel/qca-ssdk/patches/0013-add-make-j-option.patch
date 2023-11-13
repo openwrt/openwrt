@@ -1,0 +1,21 @@
+diff -aur a/Makefile b/Makefile
+--- a/Makefile	2023-06-06 10:21:48.000000000 +0300
++++ b/Makefile	2023-11-08 01:58:41.206664137 +0300
+@@ -17,7 +17,7 @@
+ ####################################################################
+ all: $(BIN_DIR) kslib
+ 	mkdir -p ./temp/;cd ./temp;cp ../build/bin/ssdk_ks_km.a ./;ar -x ssdk_ks_km.a; cp ../ko_Makefile ./Makefile;
+-	make -C $(SYS_PATH) M=$(PRJ_PATH)/temp/ CROSS_COMPILE=$(TOOLPREFIX) modules
++	make -j $(shell nproc) -C $(SYS_PATH) M=$(PRJ_PATH)/temp/ CROSS_COMPILE=$(TOOLPREFIX) modules
+ 	cp $(PRJ_PATH)/temp/Module.symvers $(PRJ_PATH)/Module.symvers;
+ 	cp temp/*.ko build/bin;
+ 	rm -Rf ./temp/*.o ./temp/*.ko ./temp/*.a
+@@ -28,7 +28,7 @@
+ ####################################################################
+ modules: $(BIN_DIR) kslib_c
+ 	mkdir -p ./temp/;cp * ./temp -a;cd ./temp;cp ../Makefile.modules ./Makefile;
+-	make -C $(SYS_PATH) M=$(PRJ_PATH)/temp $(LNX_MAKEOPTS) modules
++	make -j $(shell nproc) -C $(SYS_PATH) M=$(PRJ_PATH)/temp $(LNX_MAKEOPTS) modules
+ 	cp $(PRJ_PATH)/temp/Module.symvers $(PRJ_PATH)/Module.symvers;
+ 	cp temp/*.ko build/bin;
+ 	rm -Rf ./temp/*.o ./temp/*.ko ./temp/*.a
