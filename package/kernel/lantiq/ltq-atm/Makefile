@@ -39,9 +39,8 @@ define Build/Configure
 endef
 
 define Build/Compile
-	cd $(LINUX_DIR); \
-		ARCH=mips CROSS_COMPILE="$(KERNEL_CROSS)" \
-		$(MAKE) $(KERNEL_MAKE_FLAGS) BUILD_VARIANT=$(BUILD_VARIANT) M=$(PKG_BUILD_DIR) V=1 modules
+	ARCH=mips CROSS_COMPILE="$(KERNEL_CROSS)" \
+	$(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKE_FLAGS) BUILD_VARIANT=$(BUILD_VARIANT) M=$(PKG_BUILD_DIR) V=1 modules
 endef
 
 $(eval $(call KernelPackage,ltq-atm-danube))
