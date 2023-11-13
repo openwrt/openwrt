@@ -1022,7 +1022,7 @@ define Device/sagem_fast-2704n
   CHIP_ID := 6318
   FLASH_MB := 8
   DEVICE_PACKAGES := $(B43_PACKAGES) $(USB2_PACKAGES)
-  DEFAULT := n
+# Same profile works on tp-link_td-w8960n_v5 and tp-link_td-w8968_v3 (8/64)
 endef
 TARGET_DEVICES += sagem_fast-2704n
 
