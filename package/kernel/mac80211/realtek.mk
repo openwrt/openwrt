@@ -196,7 +196,7 @@ endef
 define KernelPackage/rtw88-usb
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTW88 USB chips support
-  DEPENDS+= @USB_SUPPORT +kmod-rtw88
+  DEPENDS+= @USB_SUPPORT +kmod-rtw88 +kmod-usb-core
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_usb.ko
   AUTOLOAD:=$(call AutoProbe,rtw88_usb)
   HIDDEN:=1
@@ -205,7 +205,7 @@ endef
 define KernelPackage/rtw88-8822b
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8822B family support
-  DEPENDS+= +kmod-rtw88 +@DRIVER_11AC_SUPPORT
+  DEPENDS+= +kmod-rtw88 +rtl8822be-firmware +@DRIVER_11AC_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8822b.ko
   AUTOLOAD:=$(call AutoProbe,rtw88_8822b)
   HIDDEN:=1
@@ -214,7 +214,7 @@ endef
 define KernelPackage/rtw88-8822c
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8822C family support
-  DEPENDS+= +kmod-rtw88 +@DRIVER_11AC_SUPPORT
+  DEPENDS+= +kmod-rtw88 +rtl8822ce-firmware +@DRIVER_11AC_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8822c.ko
   AUTOLOAD:=$(call AutoProbe,rtw88_8822c)
   HIDDEN:=1
@@ -223,7 +223,7 @@ endef
 define KernelPackage/rtw88-8723d
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8723D family support
-  DEPENDS+= +kmod-rtw88
+  DEPENDS+= +kmod-rtw88 +rtl8723de-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8723d.ko
   AUTOLOAD:=$(call AutoProbe,rtw88_8723d)
   HIDDEN:=1
@@ -240,7 +240,7 @@ endef
 define KernelPackage/rtw88-8822bu
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8822BU support
-  DEPENDS+= +kmod-rtw88-usb +rtl8822be-firmware +kmod-rtw88-8822b
+  DEPENDS+= +kmod-rtw88-usb +kmod-rtw88-8822b
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtw88/rtw88_8822bu.ko
   AUTOLOAD:=$(call AutoProbe,rtw88_8822bu)
 endef
