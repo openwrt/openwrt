@@ -151,28 +151,30 @@
 				reg = <0x800000 0x80000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_dp2: macaddr@6 {
-					reg = <0x6 0x6>;
-				};
+					macaddr_dp2: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
 
-				macaddr_dp3: macaddr@c {
-					reg = <0xc 0x6>;
-				};
+					macaddr_dp3: macaddr@c {
+						reg = <0xc 0x6>;
+					};
 
-				macaddr_dp4: macaddr@12 {
-					reg = <0x12 0x6>;
-				};
+					macaddr_dp4: macaddr@12 {
+						reg = <0x12 0x6>;
+					};
 
-				macaddr_dp5: macaddr@18 {
-					reg = <0x18 0x6>;
-				};
+					macaddr_dp5: macaddr@18 {
+						reg = <0x18 0x6>;
+					};
 
-				caldata_qca9889: caldata@4d000 {
-					reg = <0x33000 0x844>;
+					caldata_qca9889: caldata@4d000 {
+						reg = <0x33000 0x844>;
+					};
 				};
 			};
 
