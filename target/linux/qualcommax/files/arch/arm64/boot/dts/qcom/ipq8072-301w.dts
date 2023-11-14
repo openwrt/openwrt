@@ -321,8 +321,8 @@
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>; /* lan port bitmap */
-	switch_wan_bmp = <ESS_PORT6>; /* wan port bitmap */
+	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT6)>; /* lan port bitmap */
+	switch_wan_bmp = <ESS_PORT5>; /* wan port bitmap */
 	malibu_first_phy_addr = <16>; /* PHY addr of the first malibu PHY */
 	switch_mac_mode = <MAC_MODE_QSGMII>; /* mac mode for uniphy instance0*/
 	switch_mac_mode1 = <MAC_MODE_USXGMII>; /* mac mode for uniphy instance1*/

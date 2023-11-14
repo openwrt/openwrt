@@ -325,18 +325,18 @@
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <ESS_PORT5>; /* lan port bitmap */
-	switch_wan_bmp = <ESS_PORT6>; /* wan port bitmap */
+	switch_lan_bmp = <ESS_PORT6>; /* lan port bitmap */
+	switch_wan_bmp = <ESS_PORT5>; /* wan port bitmap */
 	switch_mac_mode1 = <MAC_MODE_SGMII_CHANNEL0>; /* mac mode for uniphy instance1*/
 	switch_mac_mode2 = <MAC_MODE_SGMII_CHANNEL0>; /* mac mode for uniphy instance2*/
 
 	qcom,port_phyinfo {
-		port@4 {
+		port@5 {
 			port_id = <5>;
 			phy_address = <24>;
 			port_mac_sel = "QGMAC_PORT";
 		};
-		port@5 {
+		port@6 {
 			port_id = <6>;
 			phy_address = <28>;
 			port_mac_sel = "QGMAC_PORT";
