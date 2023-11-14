@@ -635,71 +635,6 @@ mac80211_set_ifname() {
 	eval "ifname=\"$phy-$prefix\${idx_$prefix:-0}\"; idx_$prefix=\$((\${idx_$prefix:-0 } + 1))"
 }
 
-mac80211_prepare_vif() {
-	json_select config
-
-	json_get_vars ifname mode ssid wds powersave macaddr enable wpa_psk_file vlan_file
-
-	[ -n "$ifname" ] || {
-		local prefix;
-
-		case "$mode" in
-		ap|sta|mesh) prefix=$mode;;
-		adhoc) prefix=ibss;;
-		monitor) prefix=mon;;
-		esac
-
-		mac80211_set_ifname "$phy" "$prefix"
-	}
-
-	append active_ifnames "$ifname"
-	set_default wds 0
-	set_default powersave 0
-	json_add_string _ifname "$ifname"
-
-	default_macaddr=
-	if [ -z "$macaddr" ]; then
-		macaddr="$(mac80211_generate_mac $phy)"
-		macidx="$(($macidx + 1))"
-		default_macaddr=1
-	elif [ "$macaddr" = 'random' ]; then
-		macaddr="$(macaddr_random)"
-	fi
-	json_add_string _macaddr "$macaddr"
-	json_add_string _default_macaddr "$default_macaddr"
-	json_select ..
-
-
-	[ "$mode" == "ap" ] && {
-		[ -z "$wpa_psk_file" ] && hostapd_set_psk "$ifname"
-		[ -z "$vlan_file" ] && hostapd_set_vlan "$ifname"
-	}
-
-	json_select config
-
-	# It is far easier to delete and create the desired interface
-	case "$mode" in
-		ap)
-			# Hostapd will handle recreating the interface and
-			# subsequent virtual APs belonging to the same PHY
-			if [ -n "$hostapd_ctrl" ]; then
-				type=bss
-			else
-				type=interface
-			fi
-
-			mac80211_hostapd_setup_bss "$phy" "$ifname" "$macaddr" "$type" || return
-
-			[ -n "$hostapd_ctrl" ] || {
-				ap_ifname="${ifname}"
-				hostapd_ctrl="${hostapd_ctrl:-/var/run/hostapd/$ifname}"
-			}
-		;;
-	esac
-
-	json_select ..
-}
-
 mac80211_prepare_iw_htmode() {
 	case "$htmode" in
 		VHT20|HT20|HE20) iw_htmode=HT20;;
@@ -842,17 +777,6 @@ mac80211_setup_monitor() {
 	json_set_namespace "$prev"
 }
 
-mac80211_set_vif_txpower() {
-	local name="$1"
-
-	json_select config
-	json_get_var ifname _ifname
-	json_get_vars vif_txpower
-	json_select ..
-
-	[ -z "$vif_txpower" ] || iw dev "$ifname" set txpower fixed "${vif_txpower%%.*}00"
-}
-
 wpa_supplicant_init_config() {
 	json_set_namespace wpa_supp prev
 
@@ -957,19 +881,41 @@ mac80211_setup_supplicant() {
 	return 0
 }
 
-mac80211_setup_vif() {
-	local name="$1"
-	local failed
-
+mac80211_prepare_vif() {
 	json_select config
-	json_get_var ifname _ifname
-	json_get_var macaddr _macaddr
-	json_get_var default_macaddr _default_macaddr
-	json_get_vars mode wds powersave
 
-	set_default powersave 0
+	json_get_vars ifname mode ssid wds powersave macaddr enable wpa_psk_file vlan_file
+	local config_wpa_psk_file="$wpa_psk_file"
+	local config_vlan_file="$vlan_file"
+
+	[ -n "$ifname" ] || {
+		local prefix;
+
+		case "$mode" in
+		ap|sta|mesh) prefix=$mode;;
+		adhoc) prefix=ibss;;
+		monitor) prefix=mon;;
+		esac
+
+		mac80211_set_ifname "$phy" "$prefix"
+	}
+
+	append active_ifnames "$ifname"
+
+	default_macaddr=
+	if [ -z "$macaddr" ]; then
+		macaddr="$(mac80211_generate_mac $phy)"
+		macidx="$(($macidx + 1))"
+		default_macaddr=1
+	elif [ "$macaddr" = 'random' ]; then
+		macaddr="$(macaddr_random)"
+	fi
+
+	local failed=
 	set_default wds 0
+	set_default powersave 0
 
+	# It is far easier to delete and create the desired interface
 	case "$mode" in
 		mesh)
 			json_get_vars $MP_CONFIG_INT $MP_CONFIG_BOOL $MP_CONFIG_STRING
@@ -995,10 +941,48 @@ mac80211_setup_vif() {
 		monitor)
 			mac80211_setup_monitor
 		;;
+		ap)
+			# Hostapd will handle recreating the interface and
+			# subsequent virtual APs belonging to the same PHY
+			if [ -n "$hostapd_ctrl" ]; then
+				type=bss
+			else
+				type=interface
+			fi
+
+			mac80211_hostapd_setup_bss "$phy" "$ifname" "$macaddr" "$type" || return
+
+			[ -n "$hostapd_ctrl" ] || {
+				ap_ifname="${ifname}"
+				hostapd_ctrl="${hostapd_ctrl:-/var/run/hostapd/$ifname}"
+			}
+		;;
 	esac
 
+	[ -n "$failed" ] || {
+		json_add_string _ifname "$ifname"
+		json_add_string _macaddr "$macaddr"
+		json_add_string _default_macaddr "$default_macaddr"
+	}
+
 	json_select ..
-	[ -n "$failed" ] || wireless_add_vif "$name" "$ifname"
+
+	[ "$mode" == "ap" ] && {
+		[ -z "$config_wpa_psk_file" ] && hostapd_set_psk "$ifname"
+		[ -z "$config_vlan_file" ] && hostapd_set_vlan "$ifname"
+	}
+}
+
+mac80211_setup_vif() {
+	local name="$1"
+
+	json_select config
+	json_get_var ifname _ifname
+	json_get_vars vif_txpower
+	json_select ..
+
+	[ -z "$vif_txpower" ] || iw dev "$ifname" set txpower fixed "${vif_txpower%%.*}00"
+	[ -n "$ifname" ] && wireless_add_vif "$name" "$ifname"
 }
 
 get_freq() {
@@ -1144,7 +1128,6 @@ drv_mac80211_setup() {
 	mac80211_prepare_iw_htmode
 	active_ifnames=
 	for_each_interface "ap sta adhoc mesh monitor" mac80211_prepare_vif
-	for_each_interface "ap sta adhoc mesh monitor" mac80211_setup_vif
 
 	[ -x /usr/sbin/wpa_supplicant ] && wpa_supplicant_set_config "$phy"
 	[ -x /usr/sbin/hostapd ] && hostapd_set_config "$phy"
@@ -1155,7 +1138,7 @@ drv_mac80211_setup() {
 	wdev_tool "$phy" set_config "$(json_dump)" $active_ifnames
 	json_set_namespace "$prev"
 
-	for_each_interface "ap sta adhoc mesh monitor" mac80211_set_vif_txpower
+	for_each_interface "ap sta adhoc mesh monitor" mac80211_setup_vif
 	wireless_set_up
 }
 
