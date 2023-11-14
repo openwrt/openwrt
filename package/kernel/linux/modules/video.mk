@@ -1475,6 +1475,25 @@ endef
 
 $(eval $(call KernelPackage,video-mux))
 
+define KernelPackage/video-ov5645
+  TITLE:=OmniVision OV5645 sensor support
+  DEPENDS:=+kmod-video-fwnode
+  KCONFIG:= \
+	CONFIG_MEDIA_CAMERA_SUPPORT=y \
+	CONFIG_VIDEO_CAMERA_SENSOR=y \
+	CONFIG_VIDEO_OV5645
+  FILES:=$(LINUX_DIR)/drivers/media/i2c/ov5645.ko
+  AUTOLOAD:=$(call AutoProbe,ov5645)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-ov5645/description
+ This is a Video4Linux2 sensor driver for the OmniVision
+ OV5645 camera.
+endef
+
+$(eval $(call KernelPackage,video-ov5645))
+
 define KernelPackage/video-tw686x
   TITLE:=TW686x support
   DEPENDS:=@PCIE_SUPPORT +kmod-video-dma-contig +kmod-video-dma-sg +kmod-sound-core
