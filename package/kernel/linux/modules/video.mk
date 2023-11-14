@@ -1460,6 +1460,21 @@ endef
 
 $(eval $(call KernelPackage,video-imx8mq-csi2))
 
+define KernelPackage/video-mux
+  TITLE:=Video Multiplexer
+  DEPENDS:=+kmod-video-async +kmod-mux-core
+  KCONFIG:=CONFIG_VIDEO_MUX
+  FILES:=$(LINUX_DIR)/drivers/media/platform/video-mux.ko
+  AUTOLOAD:=$(call AutoProbe,video-mux)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-mux/description
+ This driver provides support for N:1 video bus multiplexers.
+endef
+
+$(eval $(call KernelPackage,video-mux))
+
 define KernelPackage/video-tw686x
   TITLE:=TW686x support
   DEPENDS:=@PCIE_SUPPORT +kmod-video-dma-contig +kmod-video-dma-sg +kmod-sound-core
