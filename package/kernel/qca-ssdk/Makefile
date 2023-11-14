@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=qca-ssdk
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_URL:=https://git.codelinaro.org/clo/qsdk/oss/lklm/qca-ssdk.git
 PKG_SOURCE_PROTO:=git
@@ -43,6 +43,7 @@ MAKE_FLAGS+= \
 	TARGET_SUFFIX=$(CONFIG_TARGET_SUFFIX) \
 	GCC_VERSION=$(GCC_VERSION) \
 	EXTRA_CFLAGS=-fno-stack-protector -I$(STAGING_DIR)/usr/include \
+	SoC=$(CONFIG_TARGET_SUBTARGET) \
 	$(LNX_CONFIG_OPTS)
 
 ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq807x")
