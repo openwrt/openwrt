@@ -44,10 +44,11 @@ MAKE_FLAGS+= \
 	GCC_VERSION=$(GCC_VERSION) \
 	EXTRA_CFLAGS=-fno-stack-protector -I$(STAGING_DIR)/usr/include \
 	SoC=$(CONFIG_TARGET_SUBTARGET) \
+	PTP_FEATURE=disable SWCONFIG_FEATURE=disable \
 	$(LNX_CONFIG_OPTS)
 
 ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq807x")
-    MAKE_FLAGS+= CHIP_TYPE=HPPE PTP_FEATURE=disable SWCONFIG_FEATURE=disable
+    MAKE_FLAGS+= CHIP_TYPE=HPPE
 endif
 
 define Build/InstallDev
