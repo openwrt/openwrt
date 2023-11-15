@@ -1,0 +1,40 @@
+From da5b32fb4656ab69fe1156eb7e36c7c961839e8a Mon Sep 17 00:00:00 2001
+From: Phil Sutter <phil@nwl.cc>
+Date: Wed, 8 Jun 2022 13:45:13 +0200
+Subject: [PATCH] extensions: string: Review parse_string() function
+
+* Compare against sizeof(info->pattern) which is more clear than having
+  to know that this buffer is of size XT_STRING_MAX_PATTERN_SIZE
+
+* Invert the check and error early to reduce indenting
+
+* Pass info->patlen to memcpy() to avoid reading past end of 's'
+
+Signed-off-by: Phil Sutter <phil@nwl.cc>
+---
+ extensions/libxt_string.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+
+--- a/extensions/libxt_string.c
++++ b/extensions/libxt_string.c
+@@ -78,14 +78,13 @@ static void string_init(struct xt_entry_
+ 
+ static void
+ parse_string(const char *s, struct xt_string_info *info)
+-{	
++{
+ 	/* xt_string does not need \0 at the end of the pattern */
+-	if (strlen(s) <= XT_STRING_MAX_PATTERN_SIZE) {
+-		memcpy(info->pattern, s, XT_STRING_MAX_PATTERN_SIZE);
+-		info->patlen = strnlen(s, XT_STRING_MAX_PATTERN_SIZE);
+-		return;
+-	}
+-	xtables_error(PARAMETER_PROBLEM, "STRING too long \"%s\"", s);
++	if (strlen(s) > sizeof(info->pattern))
++		xtables_error(PARAMETER_PROBLEM, "STRING too long \"%s\"", s);
++
++	info->patlen = strnlen(s, sizeof(info->pattern));
++	memcpy(info->pattern, s, info->patlen);
+ }
+ 
+ static void

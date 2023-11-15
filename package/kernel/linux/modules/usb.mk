@@ -750,8 +750,9 @@ $(eval $(call KernelPackage,usb-serial-mct))
 
 define KernelPackage/usb-serial-mos7720
   TITLE:=Support for Moschip MOS7720 devices
-  KCONFIG:=CONFIG_USB_SERIAL_MOS7720
+  KCONFIG:=CONFIG_USB_SERIAL_MOS7720 CONFIG_USB_SERIAL_MOS7715_PARPORT=y
   FILES:=$(LINUX_DIR)/drivers/usb/serial/mos7720.ko
+  DEPENDS:=+kmod-ppdev
   AUTOLOAD:=$(call AutoProbe,mos7720)
   $(call AddDepends/usb-serial)
 endef

@@ -181,7 +181,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -1088,7 +1088,7 @@ int ath9k_init_device(u16 devid, struct
+@@ -1089,7 +1089,7 @@ int ath9k_init_device(u16 devid, struct
  
  #ifdef CPTCFG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
@@ -192,9 +192,9 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1506,6 +1506,61 @@ static const struct file_operations fops
- 	.llseek = default_llseek,
- };
+@@ -128,6 +128,61 @@ static const struct file_operations fops
+ 
+ #define DMA_BUF_LEN 1024
  
 +#ifdef CONFIG_MAC80211_LEDS
 +
@@ -252,12 +252,12 @@
 +#endif
 +
  
- int ath9k_init_debug(struct ath_hw *ah)
- {
-@@ -1530,6 +1585,10 @@ int ath9k_init_debug(struct ath_hw *ah)
- 			    &fops_eeprom);
- 	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
- 			    sc, &fops_chanbw);
+ static ssize_t read_file_ani(struct file *file, char __user *user_buf,
+ 			     size_t count, loff_t *ppos)
+@@ -1432,6 +1487,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+ 	ath9k_tx99_init_debug(sc);
+ 	ath9k_cmn_spectral_init_debug(&sc->spec_priv, sc->debug.debugfs_phy);
+ 
 +#ifdef CONFIG_MAC80211_LEDS
 +	debugfs_create_file("gpio_led", S_IWUSR,
 +			   sc->debug.debugfs_phy, sc, &fops_gpio_led);

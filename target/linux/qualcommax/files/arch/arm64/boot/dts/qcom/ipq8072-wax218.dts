@@ -90,11 +90,8 @@
 	status = "okay";
 
 	switch_wan_bmp = <ESS_PORT6>;
-	switch_mac_mode = <0x00>;
-	switch_mac_mode1 = <0xff>;
-	switch_mac_mode2 = <0x0f>;
-	bm_tick_mode = <0>;
-	tm_tick_mode = <0>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+	switch_mac_mode2 = <MAC_MODE_SGMII_CHANNEL0>;
 
 	qcom,port_phyinfo {
 		port@5 {

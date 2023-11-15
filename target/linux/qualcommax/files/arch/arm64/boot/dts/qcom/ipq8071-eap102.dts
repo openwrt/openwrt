@@ -345,11 +345,8 @@
 
 	switch_lan_bmp = <ESS_PORT5>; /* lan port bitmap */
 	switch_wan_bmp = <ESS_PORT6>; /* wan port bitmap */
-	switch_mac_mode = <0xff>; /* mac mode for uniphy instance0*/
-	switch_mac_mode1 = <0xf>; /* mac mode for uniphy instance1*/
-	switch_mac_mode2 = <0xf>; /* mac mode for uniphy instance2*/
-	bm_tick_mode = <0>; /* bm tick mode */
-	tm_tick_mode = <0>; /* tm tick mode */
+	switch_mac_mode1 = <MAC_MODE_SGMII_CHANNEL0>; /* mac mode for uniphy instance1*/
+	switch_mac_mode2 = <MAC_MODE_SGMII_CHANNEL0>; /* mac mode for uniphy instance2*/
 
 	qcom,port_phyinfo {
 		port@4 {

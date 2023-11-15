@@ -8,8 +8,11 @@ include $(INCLUDE_DIR)/image.mk
 LS_SD_KERNELPART_SIZE = 40
 LS_SD_KERNELPART_OFFSET = 16
 LS_SD_ROOTFSPART_OFFSET = 64
+
+ifeq ($(DUMP),)
 LS_SD_IMAGE_SIZE = $(shell echo $$((($(LS_SD_ROOTFSPART_OFFSET) + \
 	$(CONFIG_TARGET_ROOTFS_PARTSIZE)))))
+endif
 
 # The limitation of flash sysupgrade.bin is 1MB dtb + 16MB kernel + 32MB rootfs
 LS_SYSUPGRADE_IMAGE_SIZE = 49m
