@@ -10,15 +10,15 @@ board=$(board_name)
 
 case "$board" in
 askey,rt4230w-rev6)
-	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "qca8k-0.0:00:green:wan" "wan" "link-10 link-100 link-1000"
+	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "qca8k-0.0:00:green:wan" "wan" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "wan-port-activity" "WAN-PORT-ACTIVITY" "qca8k-0.0:00:amber:wan" "wan" "tx rx"
-	ucidef_set_led_netdev "lan1-port-link" "LAN1-PORT-LINK" "qca8k-0.0:01:green:lan" "lan1" "link-10 link-100 link-1000"
+	ucidef_set_led_netdev "lan1-port-link" "LAN1-PORT-LINK" "qca8k-0.0:01:green:lan" "lan1" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "lan1-port-activity" "LAN1-PORT-ACTIVITY" "qca8k-0.0:01:amber:lan" "lan1" "tx rx"
-	ucidef_set_led_netdev "lan2-port-link" "LAN2-PORT-LINK" "qca8k-0.0:02:green:lan" "lan2" "link-10 link-100 link-1000"
+	ucidef_set_led_netdev "lan2-port-link" "LAN2-PORT-LINK" "qca8k-0.0:02:green:lan" "lan2" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "lan2-port-activity" "LAN2-PORT-ACTIVITY" "qca8k-0.0:02:amber:lan" "lan2" "tx rx"
-	ucidef_set_led_netdev "lan3-port-link" "LAN3-PORT-LINK" "qca8k-0.0:03:green:lan" "lan3" "link-10 link-100 link-1000"
+	ucidef_set_led_netdev "lan3-port-link" "LAN3-PORT-LINK" "qca8k-0.0:03:green:lan" "lan3" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "lan3-port-activity" "LAN3-PORT-ACTIVITY" "qca8k-0.0:03:amber:lan" "lan3" "tx rx"
-	ucidef_set_led_netdev "lan4-port-link" "LAN4-PORT-LINK" "qca8k-0.0:04:green:lan" "lan4" "link-10 link-100 link-1000"
+	ucidef_set_led_netdev "lan4-port-link" "LAN4-PORT-LINK" "qca8k-0.0:04:green:lan" "lan4" "link_10 link_100 link_1000"
 	ucidef_set_led_netdev "lan4-port-activity" "LAN4-PORT-ACTIVITY" "qca8k-0.0:04:amber:lan" "lan4" "tx rx"
 	;;
 buffalo,wxr-2533dhp)
@@ -48,21 +48,21 @@ nec,wg2600hp)
 	;;
 nec,wg2600hp3)
 	ucidef_set_led_netdev "wan" "WAN" "green:active" "wan"
-	ucidef_set_led_netdev "wan-port-10" "WAN-PORT-10" "qca8k-0.0:00:green:wan-1" "wan" "tx rx link-10"
-	ucidef_set_led_netdev "wan-port-100" "WAN-PORT-100" "qca8k-0.0:00:green:wan-2" "wan" "tx rx link-100"
-	ucidef_set_led_netdev "wan-port-1000" "WAN-PORT-1000" "qca8k-0.0:00:green:wan-3" "wan" "tx rx link-1000"
-	ucidef_set_led_netdev "lan1-port-10" "LAN1-PORT-10" "qca8k-0.0:01:green:lan-1" "lan1" "tx rx link-10"
-	ucidef_set_led_netdev "lan1-port-100" "LAN1-PORT-100" "qca8k-0.0:01:green:lan-2" "lan1" "tx rx link-100"
-	ucidef_set_led_netdev "lan1-port-1000" "LAN1-PORT-1000" "qca8k-0.0:01:green:lan-3" "lan1" "tx rx link-1000"
-	ucidef_set_led_netdev "lan2-port-10" "LAN2-PORT-10" "qca8k-0.0:02:green:lan-1" "lan2" "tx rx link-10"
-	ucidef_set_led_netdev "lan2-port-100" "LAN2-PORT-100" "qca8k-0.0:02:green:lan-2" "lan2" "tx rx link-100"
-	ucidef_set_led_netdev "lan2-port-1000" "LAN2-PORT-1000" "qca8k-0.0:02:green:lan-3" "lan2" "tx rx link-1000"
-	ucidef_set_led_netdev "lan3-port-10" "LAN3-PORT-10" "qca8k-0.0:03:green:lan-1" "lan3" "tx rx link-10"
-	ucidef_set_led_netdev "lan3-port-100" "LAN3-PORT-100" "qca8k-0.0:03:green:lan-2" "lan3" "tx rx link-100"
-	ucidef_set_led_netdev "lan3-port-1000" "LAN3-PORT-1000" "qca8k-0.0:03:green:lan-3" "lan3" "tx rx link-1000"
-	ucidef_set_led_netdev "lan4-port-10" "LAN4-PORT-10" "qca8k-0.0:04:green:lan-1" "lan4" "tx rx link-10"
-	ucidef_set_led_netdev "lan4-port-100" "LAN4-PORT-100" "qca8k-0.0:04:green:lan-2" "lan4" "tx rx link-100"
-	ucidef_set_led_netdev "lan4-port-1000" "LAN4-PORT-1000" "qca8k-0.0:04:green:lan-3" "lan4" "tx rx link-1000"
+	ucidef_set_led_netdev "wan-port-10" "WAN-PORT-10" "qca8k-0.0:00:green:wan-1" "wan" "tx rx link_10"
+	ucidef_set_led_netdev "wan-port-100" "WAN-PORT-100" "qca8k-0.0:00:green:wan-2" "wan" "tx rx link_100"
+	ucidef_set_led_netdev "wan-port-1000" "WAN-PORT-1000" "qca8k-0.0:00:green:wan-3" "wan" "tx rx link_1000"
+	ucidef_set_led_netdev "lan1-port-10" "LAN1-PORT-10" "qca8k-0.0:01:green:lan-1" "lan1" "tx rx link_10"
+	ucidef_set_led_netdev "lan1-port-100" "LAN1-PORT-100" "qca8k-0.0:01:green:lan-2" "lan1" "tx rx link_100"
+	ucidef_set_led_netdev "lan1-port-1000" "LAN1-PORT-1000" "qca8k-0.0:01:green:lan-3" "lan1" "tx rx link_1000"
+	ucidef_set_led_netdev "lan2-port-10" "LAN2-PORT-10" "qca8k-0.0:02:green:lan-1" "lan2" "tx rx link_10"
+	ucidef_set_led_netdev "lan2-port-100" "LAN2-PORT-100" "qca8k-0.0:02:green:lan-2" "lan2" "tx rx link_100"
+	ucidef_set_led_netdev "lan2-port-1000" "LAN2-PORT-1000" "qca8k-0.0:02:green:lan-3" "lan2" "tx rx link_1000"
+	ucidef_set_led_netdev "lan3-port-10" "LAN3-PORT-10" "qca8k-0.0:03:green:lan-1" "lan3" "tx rx link_10"
+	ucidef_set_led_netdev "lan3-port-100" "LAN3-PORT-100" "qca8k-0.0:03:green:lan-2" "lan3" "tx rx link_100"
+	ucidef_set_led_netdev "lan3-port-1000" "LAN3-PORT-1000" "qca8k-0.0:03:green:lan-3" "lan3" "tx rx link_1000"
+	ucidef_set_led_netdev "lan4-port-10" "LAN4-PORT-10" "qca8k-0.0:04:green:lan-1" "lan4" "tx rx link_10"
+	ucidef_set_led_netdev "lan4-port-100" "LAN4-PORT-100" "qca8k-0.0:04:green:lan-2" "lan4" "tx rx link_100"
+	ucidef_set_led_netdev "lan4-port-1000" "LAN4-PORT-1000" "qca8k-0.0:04:green:lan-3" "lan4" "tx rx link_1000"
 	;;
 netgear,d7800 |\
 netgear,r7500 |\
