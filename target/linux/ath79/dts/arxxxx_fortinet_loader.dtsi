@@ -40,6 +40,18 @@
 				label = "u-boot";
 				reg = <0x000000 0x040000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_3ff80: mac-address@3ff80 {
+						compatible = "mac-base";
+						reg = <0x3ff80 0xc>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			fwconcat0: partition@40000 {
