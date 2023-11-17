@@ -10,7 +10,7 @@ autoconf_bool = $(patsubst %,$(if $($(1)),--enable,--disable)-%,$(2))
 # delete *.la-files from staging_dir - we can not yet remove respective lines within all package
 # Makefiles, since backfire still uses libtool v1.5.x which (may) require those files
 define libtool_remove_files
-	find $(1) -name '*.la' | $(XARGS) rm -f;
+	find $(1) -name '*.la' -delete;
 endef
 
 

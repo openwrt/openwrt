@@ -134,7 +134,7 @@ stop() {
 	for gadget_path in ${GADGET_FS}/${GADGET_PREFIX}* ; do
 		[ -d "$gadget_path" ] || continue
 		echo "" > ${gadget_path}/UDC
-		find ${gadget_path}/configs -maxdepth 2 -type l -exec rm '{}' ';'
+		find ${gadget_path}/configs -maxdepth 2 -type l -delete
 		rmdir ${gadget_path}/configs/*/strings/*
 		rmdir ${gadget_path}/configs/*
 		rmdir ${gadget_path}/functions/*
