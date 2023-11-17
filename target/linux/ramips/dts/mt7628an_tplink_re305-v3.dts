@@ -33,47 +33,51 @@
 			};
 
 			config: partition@7c0000 {
+				compatible = "nvmem-cells";
 				label = "config";
 				reg = <0x7c0000 0x30000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				macaddr_config_2008: macaddr@2008 {
+					reg = <0x2008 0x6>;
+				};
 			};
 
 			radio: partition@7f0000 {
+				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0x7f0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_radio_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				eeprom_radio_8000: eeprom@8000 {
+					reg = <0x8000 0x200>;
+				};
 			};
 		};
 	};
 };
 
 &wlan5g {
-	mediatek,mtd-eeprom = <&radio 0x8000>;
-
-	nvmem-cells = <&macaddr_config_2008>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_2008>;
+	nvmem-cell-names = "eeprom", "mac-address";
 	mac-address-increment = <(-2)>;
 };
 
 &wmac {
-	mediatek,mtd-eeprom = <&radio 0x0>;
-
-	nvmem-cells = <&macaddr_config_2008>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_2008>;
+	nvmem-cell-names = "eeprom", "mac-address";
 	mac-address-increment = <(-1)>;
 };
 
 &ethernet {
 	nvmem-cells = <&macaddr_config_2008>;
 	nvmem-cell-names = "mac-address";
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_2008: macaddr@2008 {
-		reg = <0x2008 0x6>;
-	};
 };

@@ -18,10 +18,11 @@ define Host/Install
 	$(INSTALL_DATA) $(HOST_BUILD_DIR)/m4/*.m4 $(1)/share/aclocal/
 	$(INSTALL_DIR) $(1)/share/gnulib
 	$(CP) $(HOST_BUILD_DIR)/* $(1)/share/gnulib/
+	ln -sf ../share/gnulib/gnulib-tool $(STAGING_DIR_HOST)/bin/gnulib-tool
 endef
 
 define Host/Clean
-	rm -rf $(STAGING_DIR_HOST)/share/gnulib
+	rm -rf $(STAGING_DIR_HOST)/bin/gnulib-tool $(STAGING_DIR_HOST)/share/gnulib
 endef
 
 $(eval $(call HostBuild))

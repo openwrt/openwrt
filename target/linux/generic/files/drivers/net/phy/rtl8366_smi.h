@@ -115,10 +115,6 @@ int rtl8366_smi_write_reg_noack(struct rtl8366_smi *smi, u32 addr, u32 data);
 int rtl8366_smi_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data);
 int rtl8366_smi_rmwr(struct rtl8366_smi *smi, u32 addr, u32 mask, u32 data);
 
-int rtl8366_reset_vlan(struct rtl8366_smi *smi);
-int rtl8366_enable_vlan(struct rtl8366_smi *smi, int enable);
-int rtl8366_enable_all_ports(struct rtl8366_smi *smi, int enable);
-
 #ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 int rtl8366_debugfs_open(struct inode *inode, struct file *file);
 #endif

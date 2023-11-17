@@ -56,7 +56,8 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
-	asus,tuf-ax4200)
+	asus,tuf-ax4200|\
+	asus,tuf-ax6000)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
@@ -81,14 +82,37 @@ platform_do_upgrade() {
 			;;
 		esac
 		;;
+	cmcc,rax3000m)
+		case "$(cmdline_get_var root)" in
+		/dev/mmc*)
+			CI_KERNPART="production"
+			emmc_do_upgrade "$1"
+			;;
+		*)
+			CI_KERNPART="fit"
+			nand_do_upgrade "$1"
+			;;
+		esac
+		;;
 	cudy,wr3000-v1)
 		default_do_upgrade "$1"
+		;;
+	glinet,gl-mt6000)
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		emmc_do_upgrade "$1"
 		;;
 	mercusys,mr90x-v1)
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
+	ubnt,unifi-6-plus)
+		CI_KERNPART="kernel0"
+		EMMC_ROOT_DEV="$(cmdline_get_var root)"
+		emmc_do_upgrade "$1"
+		;;
 	h3c,magic-nx30-pro|\
+	mediatek,mt7981-rfb|\
 	qihoo,360t7|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
@@ -119,7 +143,8 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
-	bananapi,bpi-r3)
+	bananapi,bpi-r3|\
+	cmcc,rax3000m)
 		[ "$magic" != "d00dfeed" ] && {
 			echo "Invalid image type."
 			return 1
@@ -137,12 +162,17 @@ platform_check_image() {
 
 platform_copy_config() {
 	case "$(board_name)" in
-	bananapi,bpi-r3)
+	bananapi,bpi-r3|\
+	cmcc,rax3000m)
 		case "$(cmdline_get_var root)" in
 		/dev/mmc*)
 			emmc_copy_config
 			;;
 		esac
+		;;
+	glinet,gl-mt6000|\
+	ubnt,unifi-6-plus)
+		emmc_copy_config
 		;;
 	esac
 }

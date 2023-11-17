@@ -45,9 +45,16 @@
 			#size-cells = <1>;
 
 			uboot: partition@0 {
+				compatible = "nvmem-cells";
 				label = "u-boot";
 				reg = <0x0 0x20000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				macaddr_uboot_1fc00: macaddr@1fc00 {
+					reg = <0x1fc00 0x6>;
+				};
 			};
 
 			partition@20000 {
@@ -63,9 +70,20 @@
 			};
 
 			radio: partition@7f0000 {
+				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0x7f0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_radio_0: eeprom@0 {
+					reg = <0x0 0x200>;
+				};
+
+				eeprom_radio_8000: eeprom@8000 {
+					reg = <0x8000 0x200>;
+				};
 			};
 		};
 	};
@@ -77,9 +95,8 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&radio 0x0>;
-	nvmem-cells = <&macaddr_uboot_1fc00>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_radio_0>, <&macaddr_uboot_1fc00>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
 
 &pcie {
@@ -89,20 +106,9 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 0x8000>;
-		nvmem-cells = <&macaddr_uboot_1fc00>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <2>;
 		ieee80211-freq-limit = <5000000 6000000>;
-	};
-};
-
-&uboot {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_uboot_1fc00: macaddr@1fc00 {
-		reg = <0x1fc00 0x6>;
+		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_uboot_1fc00>;
+		nvmem-cell-names = "eeprom", "mac-address";
+		mac-address-increment = <2>;
 	};
 };

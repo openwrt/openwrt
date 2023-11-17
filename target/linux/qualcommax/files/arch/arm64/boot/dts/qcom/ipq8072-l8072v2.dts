@@ -23,10 +23,10 @@
 		led-running = &pwr;
 		led-upgrade = &sys;
 		/* Aliases as required by u-boot to patch MAC addresses */
-		ethernet0 = &dp2;
-		ethernet1 = &dp3;
-		ethernet2 = &dp6;
-		label-mac-device = &dp2;
+		ethernet0 = &dp6;
+		ethernet1 = &dp2;
+		ethernet2 = &dp3;
+		label-mac-device = &dp6;
 	};
 
 	chosen {
@@ -50,76 +50,91 @@
 		wifi1 {
 			label = "green:wlan2g";
 			gpios = <&tlmm 42 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		wifi0 {
 			label = "green:wlan5g";
 			gpios = <&tlmm 43 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		sys: sys {
 			label = "green:sys";
 			gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		pwr: pwr {
 			label = "green:pwr";
 			gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		5g1 {
 			label = "green:5g1";
 			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		5g2 {
 			label = "green:5g2";
 			gpios = <&tlmm 47 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		5g3 {
 			label = "green:5g3";
 			gpios = <&tlmm 48 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 		
 		5g1pwr {
 			label = "green:5g1pwr";
 			gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		5g2pwr {
 			label = "green:5g2pwr";
 			gpios = <&tlmm 55 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		5g3pwr {
 			label = "green:5g3pwr";
 			gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		lan {
 			label = "green:lan";
 			gpios = <&tlmm 49 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		wan {
 			label = "green:wan";
 			gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 		
 		vpn {
 			label = "green:vpn";
 			gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		fengshan {
 			label = "green:fengshan";
 			gpios = <&tlmm 53 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 		
 		dianliang {
 			label = "green:dianliang";
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 	};
 };
@@ -184,15 +199,6 @@
 		function = "blsp3_i2c";
 		drive-strength = <8>;
 		bias-disable;
-	};
-
-	button_pins: button_pins {
-		reset_button {
-			pins = "gpio34";
-			function = "gpio";
-			drive-strength = <8>;
-			bias-pull-up;
-		};
 	};
 };
 
@@ -433,6 +439,11 @@
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <2>;
 	};
+
+	qca8075_psgmii: ethernet-phy@5 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <5>;
+	};
 	
 	qca8081: ethernet-phy@28 {
 		compatible = "ethernet-phy-id004d.d101";
@@ -444,33 +455,22 @@
 &switch {
 	status = "okay";
 
-	switch_cpu_bmp = <0x1>;  /* cpu port bitmap */
-	switch_lan_bmp = <0x3e>; /* lan port bitmap */
-	switch_wan_bmp = <0x40>; /* wan port bitmap */
-	switch_mac_mode = <0x0>; /* mac mode for uniphy instance0*/
-	switch_mac_mode1 = <0xff>; /* mac mode for uniphy instance1*/
-	switch_mac_mode2 = <0x0f>; /* mac mode for uniphy instance2*/
-	bm_tick_mode = <0>; /* bm tick mode */
-	tm_tick_mode = <0>; /* tm tick mode */
+	switch_lan_bmp = <(ESS_PORT2 | ESS_PORT3)>; /* lan port bitmap */
+	switch_wan_bmp = <ESS_PORT6>; /* wan port bitmap */
+	switch_mac_mode = <MAC_MODE_PSGMII>; /* mac mode for uniphy instance0*/
+	switch_mac_mode2 = <MAC_MODE_USXGMII>; /* mac mode for uniphy instance2*/
+	
 
 	qcom,port_phyinfo {
-		port@0 {
+		port@2 {
 			port_id = <1>;
-			phy_address = <0>;
-		};
-		port@1 {
-			port_id = <2>;
 			phy_address = <1>;
 		};
-		port@2 {
+		port@3 {
 			port_id = <3>;
 			phy_address = <2>;
 		};
-		port@3 {
-			port_id = <4>;
-			phy_address = <3>;
-		};
-		port@5 {
+		port@6 {
 			port_id = <6>;
 			phy_address = <28>;
 			port_mac_sel = "QGMAC_PORT";
@@ -512,5 +512,5 @@
 
 &wifi {
 	status = "okay";
-	qcom,ath11k-calibration-variant = "Xiaomi-AX3600";	
+	qcom,ath11k-calibration-variant = "QNAP-301w";
 };

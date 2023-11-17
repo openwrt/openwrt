@@ -16,6 +16,23 @@ define Build/fortigate-header
   mv $@.new $@
 endef
 
+define Build/seil-header
+  ( \
+    data_size_crc="$$(gzip -c $@ | tail -c8 | \
+        od -An -tx8 --endian little | tr -d ' \n')"; \
+    printf "SEIL2015"; \
+    printf "$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)" | \
+        dd bs=80 count=1 conv=sync 2>/dev/null; \
+    printf "$$(echo $${data_size_crc:8:8} | sed 's/../\\x&/g')"; \
+    printf "\x00\x00\x00\x01\x00\x00\x00\x09\x00\x00\x00\x63"; \
+    printf "$(REVISION)" | dd bs=32 count=1 conv=sync 2>/dev/null; \
+    printf "\x00\x00\x00\x00"; \
+    printf "$$(echo $${data_size_crc:0:8} | sed 's/../\\x&/g')"; \
+    cat $@; \
+  ) > $@.new
+  mv $@.new $@
+endef
+
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
@@ -95,6 +112,21 @@ define Device/cznic_turris-omnia
 endef
 TARGET_DEVICES += cznic_turris-omnia
 
+define Device/fortinet_fg-30e
+  DEVICE_VENDOR := Fortinet
+  DEVICE_MODEL := FortiGate 30E
+  SOC := armada-385
+  KERNEL := kernel-bin | append-dtb
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FGT30E
+  KERNEL_SIZE := 6144k
+  DEVICE_DTS := armada-385-fortinet-fg-30e
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
+    sysupgrade-tar rootfs=$$$$@ | append-metadata
+  DEVICE_PACKAGES := kmod-hwmon-nct7802
+endef
+TARGET_DEVICES += fortinet_fg-30e
+
 define Device/fortinet_fg-50e
   DEVICE_VENDOR := Fortinet
   DEVICE_MODEL := FortiGate 50E
@@ -118,6 +150,20 @@ define Device/globalscale_mirabox
   SUPPORTED_DEVICES += mirabox
 endef
 TARGET_DEVICES += globalscale_mirabox
+
+define Device/iij_sa-w2
+  DEVICE_VENDOR := IIJ
+  DEVICE_MODEL := SA-W2
+  SOC := armada-380
+  KERNEL := kernel-bin | append-dtb | seil-header
+  DEVICE_DTS := armada-380-iij-sa-w2
+  IMAGE_SIZE := 15360k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
+    append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    wpad-basic-mbedtls
+endef
+TARGET_DEVICES += iij_sa-w2
 
 define Device/iptime_nas1dual
   DEVICE_VENDOR := ipTIME

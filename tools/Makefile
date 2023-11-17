@@ -39,6 +39,7 @@ tools-y += cmake
 tools-y += cpio
 tools-y += dosfstools
 tools-y += e2fsprogs
+tools-y += elfutils
 tools-y += expat
 tools-y += fakeroot
 tools-y += findutils
@@ -95,6 +96,7 @@ $(curdir)/cbootimage/compile += $(curdir)/automake/compile
 $(curdir)/cmake/compile += $(curdir)/libressl/compile $(curdir)/ninja/compile $(curdir)/expat/compile $(curdir)/xz/compile $(curdir)/zlib/compile $(curdir)/zstd/compile
 $(curdir)/dosfstools/compile := $(curdir)/automake/compile
 $(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile
+$(curdir)/elfutils/compile := $(curdir)/m4/compile $(curdir)/zlib/compile $(curdir)/gnulib/compile $(curdir)/libtool/compile
 $(curdir)/fakeroot/compile := $(curdir)/libtool/compile
 $(curdir)/findutils/compile := $(curdir)/bison/compile
 $(curdir)/firmware-utils/compile += $(curdir)/cmake/compile
@@ -137,9 +139,7 @@ ifeq ($(HOST_OS),Darwin)
   tools-y += bash
 else
   $(curdir)/dwarves/compile += $(curdir)/elfutils/compile
-  $(curdir)/elfutils/compile := $(curdir)/m4/compile $(curdir)/zlib/compile
   tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_DWARVES),y) += dwarves
-  tools-y += elfutils
 endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)

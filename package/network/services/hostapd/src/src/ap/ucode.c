@@ -465,17 +465,10 @@ uc_hostapd_bss_ctrl(uc_vm_t *vm, size_t nargs)
 	return ucv_string_new_length(reply, reply_len);
 }
 
-static uc_value_t *
-uc_hostapd_iface_stop(uc_vm_t *vm, size_t nargs)
+static void
+uc_hostapd_disable_iface(struct hostapd_iface *iface)
 {
-	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
-	int i;
-
-	if (!iface)
-		return NULL;
-
 	switch (iface->state) {
-	case HAPD_IFACE_ENABLED:
 	case HAPD_IFACE_DISABLED:
 		break;
 #ifdef CONFIG_ACS
@@ -488,9 +481,19 @@ uc_hostapd_iface_stop(uc_vm_t *vm, size_t nargs)
 		hostapd_disable_iface(iface);
 		break;
 	}
+}
+
+static uc_value_t *
+uc_hostapd_iface_stop(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
+	int i;
+
+	if (!iface)
+		return NULL;
 
 	if (iface->state != HAPD_IFACE_ENABLED)
-		hostapd_disable_iface(iface);
+		uc_hostapd_disable_iface(iface);
 
 	for (i = 0; i < iface->num_bss; i++) {
 		struct hostapd_data *hapd = iface->bss[i];
@@ -561,8 +564,6 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 
 out:
 	switch (iface->state) {
-	case HAPD_IFACE_DISABLED:
-		break;
 	case HAPD_IFACE_ENABLED:
 		if (!hostapd_is_dfs_required(iface) ||
 			hostapd_is_dfs_chan_available(iface))
@@ -570,7 +571,7 @@ out:
 		wpa_printf(MSG_INFO, "DFS CAC required on new channel, restart interface");
 		/* fallthrough */
 	default:
-		hostapd_disable_iface(iface);
+		uc_hostapd_disable_iface(iface);
 		break;
 	}
 

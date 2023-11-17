@@ -511,7 +511,6 @@ dhcp_boot_add() {
 	dhcp_option_add "$cfg" "$networkid" "$force"
 }
 
-
 dhcp_add() {
 	local cfg="$1"
 	local dhcp6range="::"
@@ -542,8 +541,13 @@ dhcp_add() {
 	# Do not support non-static interfaces for now
 	[ static = "$proto" ] || return 0
 
+	ipaddr="${subnet%%/*}"
+	prefix_or_netmask="${subnet##*/}"
+
 	# Override interface netmask with dhcp config if applicable
-	config_get netmask "$cfg" netmask "${subnet##*/}"
+	config_get netmask "$cfg" netmask
+
+	[ -n "$netmask" ] && prefix_or_netmask="$netmask"
 
 	#check for an already active dhcp server on the interface, unless 'force' is set
 	config_get_bool force "$cfg" force 0
@@ -569,6 +573,7 @@ dhcp_add() {
 	config_get ra_management "$cfg" ra_management
 	config_get ra_preference "$cfg" ra_preference
 	config_get dns "$cfg" dns
+	config_get dns_sl "$cfg" domain
 
 	config_list_foreach "$cfg" "interface_name" append_interface_name "$ifname"
 
@@ -584,12 +589,8 @@ dhcp_add() {
 
 	nettag="${networkid:+set:${networkid},}"
 
-	if [ "$limit" -gt 0 ] ; then
-		limit=$((limit-1))
-	fi
-
 	# make sure the DHCP range is not empty
-	if [ "$dhcpv4" != "disabled" ] && eval "$(ipcalc.sh "${subnet%%/*}" "$netmask" "$start" "$limit")" ; then
+	if [ "$dhcpv4" != "disabled" ] && ipcalc "$ipaddr/$prefix_or_netmask" "$start" "$limit" ; then
 		[ "$dynamicdhcpv4" = "0" ] && END="static"
 
 		xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
@@ -652,6 +653,13 @@ dhcp_add() {
 		fi
 
 		dhcp_option_append "option6:dns-server,$dnss" "$networkid"
+
+		if [ -n "$dns_sl" ]; then
+			ddssl=""
+			for dd in $dns_sl; do append ddssl "$dd" ","; done
+		fi
+
+		dhcp_option_append "option6:domain-search,$ddssl" "$networkid"
 	fi
 
 	dhcp_option_add "$cfg" "$networkid" 0

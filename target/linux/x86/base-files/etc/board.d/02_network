@@ -31,6 +31,9 @@ cisco-mx100-hw)
 	ucidef_set_network_device_path "eth11" "pci0000:00/0000:00:01.1/0000:02:00.2"
 	ucidef_set_interfaces_lan_wan "mgmt eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 eth11" "wan"
 	;;
+mellanox-technologies-ltd-msn2100)
+	ucidef_set_interface_lan "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 eth9 eth10 eth11 eth12 eth13 eth14 eth15 eth16"
+	;;
 pc-engines-apu1|pc-engines-apu2|pc-engines-apu3)
 	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
 	;;

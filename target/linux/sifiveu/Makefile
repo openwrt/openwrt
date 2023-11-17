@@ -11,7 +11,7 @@ FEATURES:=ext4
 KERNELNAME:=Image dtbs
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=5.15
+KERNEL_PATCHVER:=6.1
 
 include $(INCLUDE_DIR)/target.mk
 

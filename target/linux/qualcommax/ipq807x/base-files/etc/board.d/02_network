@@ -16,7 +16,8 @@ ipq807x_setup_interfaces()
 	xiaomi,ax9000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
-	edgecore,eap102)
+	edgecore,eap102|\
+	yuncore,ax880)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	edimax,cax1800)
@@ -25,8 +26,12 @@ ipq807x_setup_interfaces()
 	netgear,rax120v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
 		;;
-	netgear,wax218)
+	netgear,wax218|\
+	netgear,wax620)
 		ucidef_set_interface_lan "lan" "dhcp"
+		;;
+	netgear,wax630)
+		ucidef_set_interface_lan "lan1 lan2" "dhcp"
 		;;
 	prpl,haze)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"

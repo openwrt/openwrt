@@ -4,6 +4,7 @@
 
 #include "ipq8074.dtsi"
 #include "ipq8074-ess.dtsi"
+#include "ipq8074-nss.dtsi"
 #include "ipq8074-hk-cpu.dtsi"
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
@@ -195,13 +196,10 @@
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <0x3e>; /* lan port bitmap */
-	switch_wan_bmp = <0x40>; /* wan port bitmap */
-	switch_mac_mode = <0x0>; /* mac mode for uniphy instance0*/
-	switch_mac_mode1 = <0xff>; /* mac mode for uniphy instance1*/
-	switch_mac_mode2 = <0xd>; /* mac mode for uniphy instance2*/
-	bm_tick_mode = <0>; /* bm tick mode */
-	tm_tick_mode = <0>; /* tm tick mode */
+	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT6)>; /* lan port bitmap */
+	switch_wan_bmp = <ESS_PORT5>; /* wan port bitmap */
+	switch_mac_mode = <MAC_MODE_PSGMII>; /* mac mode for uniphy instance0*/
+	switch_mac_mode2 = <MAC_MODE_USXGMII>; /* mac mode for uniphy instance2*/
 
 	qcom,port_phyinfo {
 		port@1 {

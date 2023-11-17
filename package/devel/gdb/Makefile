@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
-PKG_VERSION:=12.1
-PKG_RELEASE:=3
+PKG_VERSION:=13.2
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gdb
-PKG_HASH:=0e1793bf8f2b54d53f46dea84ccfd446f48f81b297b28c4f7fc017b818d69fed
+PKG_HASH:=fd5bebb7be1833abdb6e023c2f498a354498281df9d05523d8915babeb893f0a
 
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
@@ -58,6 +58,7 @@ CONFIGURE_ARGS+= \
 	--with-system-zlib \
 	--without-expat \
 	--without-lzma \
+	--without-zstd \
 	--disable-unit-tests \
 	--disable-ubsan \
 	--disable-sim \

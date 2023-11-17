@@ -1,0 +1,17 @@
+. /lib/functions.sh
+. /lib/functions/migrations.sh
+
+board=$(board_name)
+
+case "$board" in
+tplink,archer-a6-v3|\
+tplink,archer-c6-v3)
+	migrate_leds ':wifi2g$=:wlan-2' ':wifi5g$=:wlan-5'
+	;;
+esac
+
+remove_devicename_leds
+
+migrations_apply system
+
+exit 0

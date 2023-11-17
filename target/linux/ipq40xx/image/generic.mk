@@ -354,7 +354,7 @@ endef
 #TARGET_DEVICES += compex_wpj419
 
 define Device/compex_wpj428
-	$(call Device/FitImage)
+	$(call Device/FitzImage)
 	DEVICE_VENDOR := Compex
 	DEVICE_MODEL := WPJ428
 	SOC := qcom-ipq4028
@@ -537,6 +537,16 @@ define Device/extreme-networks_ws-ap3915i
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += extreme-networks_ws-ap3915i
+
+define Device/extreme-networks_ws-ap391x
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Extreme Networks
+	DEVICE_MODEL := WS-AP391x
+	IMAGE_SIZE := 15040k
+	SOC := qcom-ipq4029
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += extreme-networks_ws-ap391x
 
 define Device/ezviz_cs-w3-wd1200g-eup
 	$(call Device/FitImage)

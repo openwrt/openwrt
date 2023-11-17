@@ -104,7 +104,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0000>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
@@ -113,7 +114,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
@@ -144,13 +146,20 @@
 			};
 
 			factory: partition@40000 {
+				compatible = "nvmem-cells";
 				label = "Factory";
 				reg = <0x40000 0x10000>;
-				read-only;
-
-				compatible = "nvmem-cells";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				read-only;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x200>;
+				};
 
 				macaddr_factory_e000: macaddr@e000 {
 					reg = <0xe000 0x6>;

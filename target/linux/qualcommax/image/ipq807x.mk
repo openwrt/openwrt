@@ -23,6 +23,16 @@ define Device/UbiFit
 	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
+define Build/wax6xx-netgear-tar
+	mkdir $@.tmp
+	mv $@ $@.tmp/nand-ipq807x-apps.img
+	md5sum $@.tmp/nand-ipq807x-apps.img | cut -c 1-32 > $@.tmp/nand-ipq807x-apps.md5sum
+	echo $(DEVICE_MODEL) > $@.tmp/metadata.txt
+	echo $(DEVICE_MODEL)"_V9.9.9.9" > $@.tmp/version
+	tar -C $@.tmp/ -cf $@ .
+	rm -rf $@.tmp
+endef
+
 define Device/buffalo_wxr-5950ax12
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Buffalo
@@ -78,18 +88,6 @@ define Device/edgecore_eap102
 endef
 TARGET_DEVICES += edgecore_eap102
 
-define Device/pangu_l8072v2
-	$(call Device/FitImage)
-	$(call Device/UbiFit)
-	DEVICE_VENDOR := PANGU
-	DEVICE_MODEL := L8072V2
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
-	DEVICE_DTS_CONFIG := config@hk07
-	SOC := ipq8072
-endef
-TARGET_DEVICES += pangu_l8072v2
-
 define Device/edimax_cax1800
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -130,19 +128,50 @@ TARGET_DEVICES += netgear_rax120v2
 define Device/netgear_wax218
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
-	ARTIFACTS := web-ui-factory.fit
 	DEVICE_VENDOR := Netgear
 	DEVICE_MODEL := WAX218
 	DEVICE_DTS_CONFIG := config@hk07
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := ipq8072
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	ARTIFACTS := web-ui-factory.fit
 	ARTIFACT/web-ui-factory.fit := append-image initramfs-uImage.itb | \
 		ubinize-kernel | qsdk-ipq-factory-nand
+endif
 	DEVICE_PACKAGES := kmod-spi-gpio kmod-spi-bitbang kmod-gpio-nxp-74hc164 \
 		ipq-wifi-netgear_wax218
 endef
 TARGET_DEVICES += netgear_wax218
+
+define Device/netgear_wax620
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Netgear
+	DEVICE_MODEL := WAX620
+	DEVICE_DTS_CONFIG := config@hk07
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq8072
+	DEVICE_PACKAGES += kmod-spi-gpio kmod-gpio-nxp-74hc164 \
+		ipq-wifi-netgear_wax620
+endef
+TARGET_DEVICES += netgear_wax620
+
+define Device/netgear_wax630
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Netgear
+	DEVICE_MODEL := WAX630
+	DEVICE_DTS_CONFIG := config@hk01
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq8074
+	IMAGES := ui-factory.tar factory.ubi sysupgrade.bin
+	IMAGE/ui-factory.tar := append-ubi | wax6xx-netgear-tar
+	DEVICE_PACKAGES += kmod-spi-gpio ipq-wifi-netgear_wax630
+endef
+TARGET_DEVICES += netgear_wax630
 
 define Device/prpl_haze
 	$(call Device/FitImage)
@@ -224,3 +253,31 @@ define Device/zyxel_nbg7815
 		kmod-bluetooth
 endef
 TARGET_DEVICES += zyxel_nbg7815
+
+define Device/yuncore_ax880
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Yuncore
+	DEVICE_MODEL := AX880
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk09
+	SOC := ipq8072
+	DEVICE_PACKAGES := ipq-wifi-yuncore_ax880
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
+endef
+TARGET_DEVICES += yuncore_ax880
+
+define Device/pangu_l8072v2
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := PANGU
+	DEVICE_MODEL := L8072V2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk07
+	SOC := ipq8072
+endef
+TARGET_DEVICES += pangu_l8072v2
+

@@ -138,6 +138,10 @@ linksys,ea8100-v2)
 	ucidef_set_led_netdev "lan4" "lan4 link" "green:lan4" "lan4" "link"
 	ucidef_set_led_netdev "wan" "wan link" "green:wan" "wan" "link"
 	;;
+meig,slt866)
+	ucidef_set_led_netdev "lan" "eth" "blue:lanwan" "lan" "link tx rx"
+	ucidef_set_led_netdev "wwan0" "net" "blue:internet" "wwan0" "link tx rx"
+	;;
 mikrotik,routerboard-760igs)
 	ucidef_set_led_netdev "sfp" "SFP" "blue:sfp" "sfp"
 	;;
@@ -247,6 +251,9 @@ yuncore,ax820)
 	;;
 zyxel,lte3301-plus)
 	ucidef_set_led_netdev "internet" "internet" "white:internet" "wwan0"
+	;;
+zyxel,lte5398-m904)
+	ucidef_set_led_netdev "internet" "LTE/3G Internet Activity" "green:internet" "wwan0" "rx tx"
 	;;
 esac
 

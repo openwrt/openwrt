@@ -8,7 +8,10 @@ boardname="${board##*,}"
 board_config_update
 
 case $board in
-enterasys,ws-ap3715i|\
+enterasys,ws-ap3715i)
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "eth0"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "eth1"
+	;;
 extreme-networks,ws-ap3825i)
 	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "eth1"
 	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "eth0"

@@ -17,6 +17,7 @@ ramips_setup_interfaces()
 	h3c,tx1806|\
 	haier,har-20s2u1|\
 	hiwifi,hc5962|\
+	mercusys,mr70x-v1|\
 	netgear,wax202|\
 	sim,simax1800t|\
 	xiaomi,mi-router-3-pro|\
@@ -55,6 +56,7 @@ ramips_setup_interfaces()
 	ubnt,unifi-flexhd|\
 	ubnt,unifi-nanohd|\
 	yuncore,fap690|\
+	wavlink,wl-wn573hx1|\
 	zyxel,nwa50ax|\
 	zyxel,nwa55axe)
 		ucidef_set_interface_lan "lan"
@@ -93,7 +95,7 @@ ramips_setup_interfaces()
 		;;
 	cudy,m1800|\
 	yuncore,ax820|\
-	zyxel,nt7101)
+	zyxel,nr7101)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	gnubee,gb-pc1)
@@ -146,11 +148,17 @@ ramips_setup_interfaces()
 	ubnt,usw-flex)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
+	zyxel,lte5398-m904)
+		ucidef_set_interface_lan "lan1 lan2"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
+		;;
 	zyxel,wap6805)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "qtn" ifname "eth1" protocol "static" ipaddr "1.1.1.1" netmask "255.255.255.0"
 		;;
-	comfast,cf-e390ax)
+	comfast,cf-e390ax|\
+	comfast,cf-ew72-v2|\
+	meig,slt866)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	*)

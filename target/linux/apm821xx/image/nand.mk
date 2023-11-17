@@ -3,7 +3,12 @@ define Build/create-uImage-dtb
 	-$(STAGING_DIR_HOST)/bin/mkimage -A $(LINUX_KARCH) \
 		-O linux -T kernel -C none \
 		-n '$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)' \
-		-d "$@.dtb" "$@.dtb.uimage"
+		-d "$(KDIR)/image-$(firstword $(DEVICE_DTS)).dtb" "$@.dtb.uimage"
+endef
+
+define Build/prepend-dtb-uImage
+	cat "$@.dtb.uimage" "$@" > "$@.new"
+	mv "$@.new" "$@"
 endef
 
 define Build/meraki-header
@@ -104,7 +109,7 @@ define Device/netgear_wndr4700
   # append a fake/empty rootfs to fool netgear's uboot
   # CHECK_DNI_FIRMWARE_ROOTFS_INTEGRITY in do_chk_dniimg()
   KERNEL := kernel-bin | lzma -d16 | uImage lzma | pad-offset $$(BLOCKSIZE) 64 | \
-	    append-uImage-fakehdr filesystem | create-uImage-dtb | prepend-dtb
+	    append-uImage-fakehdr filesystem | create-uImage-dtb | prepend-dtb-uImage
   KERNEL_INITRAMFS := kernel-bin | libdeflate-gzip | MuImage-initramfs gzip
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 		       netgear-dni | check-size

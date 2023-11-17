@@ -1,0 +1,72 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	virtual_flash {
+		compatible = "mtd-concat";
+
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x73714f4b>;
+				label = "firmware";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			uboot: partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			fwconcat0: partition@40000 {
+				label = "fwconcat0";
+				reg = <0x040000 0x900000>;
+			};
+
+			partition@940000 {
+				label = "loader";
+				reg = <0x940000 0x010000>;
+			};
+
+			fwconcat1: partition@950000 {
+				label = "fwconcat1";
+				reg = <0x950000 0x1a0000>;
+			};
+
+			fwconcat2: partition@af0000 {
+				label = "reserved";
+				reg = <0xaf0000 0x500000>;
+			};
+
+			art: partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x010000>;
+				read-only;
+			};
+		};
+	};
+};

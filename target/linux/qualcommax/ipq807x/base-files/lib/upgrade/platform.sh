@@ -66,11 +66,13 @@ platform_do_upgrade() {
 		fw_setenv upgrade_available 1
 		nand_do_upgrade "$1"
 		;;
-	pangu,l8072v2|\
 	compex,wpq873|\
+	pangu,l8072v2|\
 	edimax,cax1800|\
 	netgear,rax120v2|\
-	netgear,wax218)
+	netgear,wax218|\
+	netgear,wax620|\
+	netgear,wax630)
 		nand_do_upgrade "$1"
 		;;
 	prpl,haze|\
@@ -110,6 +112,18 @@ platform_do_upgrade() {
 		# Kernel and rootfs are placed in 2 different UBI
 		CI_KERN_UBIPART="ubi_kernel"
 		CI_ROOT_UBIPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
+	yuncore,ax880)
+		active="$(fw_printenv -n active)"
+		if [ "$active" -eq "1" ]; then
+			CI_UBIPART="rootfs_1"
+		else
+			CI_UBIPART="rootfs"
+		fi
+		# force altbootcmd which handles partition change in u-boot
+		fw_setenv bootcount 3
+		fw_setenv upgrade_available 1
 		nand_do_upgrade "$1"
 		;;
 	*)

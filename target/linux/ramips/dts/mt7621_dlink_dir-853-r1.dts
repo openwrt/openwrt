@@ -95,12 +95,10 @@
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 
-		mediatek,mtd-eeprom = <&factory 0x0>;
-
 		/* 5 GHz (phy1) does not take the address from calibration data,
 		   but setting it manually here works */
-		nvmem-cells = <&macaddr_factory_4>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
@@ -154,15 +152,5 @@
 	gpio {
 		groups = "i2c", "uart3", "uart2", "jtag", "wdt";
 		function = "gpio";
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
 	};
 };

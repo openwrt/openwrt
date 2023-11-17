@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -21,14 +22,14 @@
 	keys {
 		compatible = "gpio-keys";
 
-		wps {
+		button-wps {
 			label = "wps";
-			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
-		reset {
+		button-reset {
 			label = "reset";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
@@ -39,35 +40,44 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_power: power {
+		led_power: led-power {
 			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
-		wan_orange {
-			label = "orange:wan";
+		led-wan-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
-		lan {
-			label = "green:lan";
+		led-lan {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi5g {
-			label = "green:wifi5g";
+		led-wifi5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <5>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 
-		wifi2g {
-			label = "green:wifi2g";
+		led-wifi2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <2>;
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
-		wan_green {
-			label = "green:wan";
+		led-wan-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -99,15 +109,33 @@
 			};
 
 			config: partition@fa0000 {
+				compatible = "nvmem-cells";
 				label = "config";
 				reg = <0xfa0000 0x50000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				macaddr_config_8: macaddr@8 {
+					reg = <0x8 0x6>;
+				};
 			};
 
 			radio: partition@ff0000 {
+				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0xff0000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				read-only;
+
+				eeprom_radio_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				eeprom_radio_8000: eeprom@8000 {
+					reg = <0x8000 0x4da8>;
+				};
 			};
 		};
 	};
@@ -128,9 +156,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 0x0>;
-		nvmem-cells = <&macaddr_config_8>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_8>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		mac-address-increment = <1>;
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
@@ -140,9 +167,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 0x8000>;
-		nvmem-cells = <&macaddr_config_8>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_8>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		mac-address-increment = <2>;
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
@@ -183,15 +209,5 @@
 			status = "okay";
 			label = "lan4";
 		};
-	};
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_8: macaddr@8 {
-		reg = <0x8 0x6>;
 	};
 };
