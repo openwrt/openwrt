@@ -249,7 +249,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 -
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -474,6 +474,30 @@ static void mtk_setup_bridge_switch(stru
+@@ -475,6 +475,30 @@ static void mtk_setup_bridge_switch(stru
  		MTK_GSW_CFG);
  }
  
@@ -280,7 +280,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static struct phylink_pcs *mtk_mac_select_pcs(struct phylink_config *config,
  					      phy_interface_t interface)
  {
-@@ -482,12 +506,20 @@ static struct phylink_pcs *mtk_mac_selec
+@@ -483,12 +507,20 @@ static struct phylink_pcs *mtk_mac_selec
  	struct mtk_eth *eth = mac->hw;
  	unsigned int sid;
  
@@ -307,7 +307,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	return NULL;
-@@ -543,7 +575,22 @@ static void mtk_mac_config(struct phylin
+@@ -544,7 +576,22 @@ static void mtk_mac_config(struct phylin
  					goto init_err;
  			}
  			break;
@@ -330,7 +330,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			break;
  		default:
  			goto err_phy;
-@@ -598,8 +645,6 @@ static void mtk_mac_config(struct phylin
+@@ -599,8 +646,6 @@ static void mtk_mac_config(struct phylin
  		val &= ~SYSCFG0_GE_MODE(SYSCFG0_GE_MASK, mac->id);
  		val |= SYSCFG0_GE_MODE(ge_mode, mac->id);
  		regmap_write(eth->ethsys, ETHSYS_SYSCFG0, val);
@@ -339,7 +339,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	/* SGMII */
-@@ -616,21 +661,40 @@ static void mtk_mac_config(struct phylin
+@@ -617,21 +662,40 @@ static void mtk_mac_config(struct phylin
  
  		/* Save the syscfg0 value for mac_finish */
  		mac->syscfg0 = val;
@@ -387,7 +387,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return;
  
  err_phy:
-@@ -676,10 +740,13 @@ static void mtk_mac_link_down(struct phy
+@@ -677,10 +741,13 @@ static void mtk_mac_link_down(struct phy
  {
  	struct mtk_mac *mac = container_of(config, struct mtk_mac,
  					   phylink_config);
@@ -404,7 +404,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  }
  
  static void mtk_set_queue_speed(struct mtk_eth *eth, unsigned int idx,
-@@ -751,13 +818,11 @@ static void mtk_set_queue_speed(struct m
+@@ -752,13 +819,11 @@ static void mtk_set_queue_speed(struct m
  	mtk_w32(eth, val, soc->reg_map->qdma.qtx_sch + ofs);
  }
  
@@ -422,7 +422,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	u32 mcr;
  
  	mcr = mtk_r32(mac->hw, MTK_MAC_MCR(mac->id));
-@@ -791,6 +856,55 @@ static void mtk_mac_link_up(struct phyli
+@@ -792,6 +857,55 @@ static void mtk_mac_link_up(struct phyli
  	mtk_w32(mac->hw, mcr, MTK_MAC_MCR(mac->id));
  }
  
@@ -478,7 +478,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static const struct phylink_mac_ops mtk_phylink_ops = {
  	.validate = phylink_generic_validate,
  	.mac_select_pcs = mtk_mac_select_pcs,
-@@ -4616,8 +4730,21 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4617,8 +4731,21 @@ static int mtk_add_mac(struct mtk_eth *e
  		phy_interface_zero(mac->phylink_config.supported_interfaces);
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
  			  mac->phylink_config.supported_interfaces);
@@ -500,7 +500,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	phylink = phylink_create(&mac->phylink_config,
  				 of_fwnode_handle(mac->of_node),
  				 phy_mode, &mtk_phylink_ops);
-@@ -4810,6 +4937,13 @@ static int mtk_probe(struct platform_dev
+@@ -4811,6 +4938,13 @@ static int mtk_probe(struct platform_dev
  
  		if (err)
  			return err;
