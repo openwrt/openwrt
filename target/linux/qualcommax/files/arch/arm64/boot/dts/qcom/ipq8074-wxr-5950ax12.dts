@@ -230,19 +230,28 @@
 		reg = <0x8>;
 	};
 
-	qca8075_1: ethernet-phy@19 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <0x19>;
-	};
+	ethernet-phy-package@17 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0x18>;
 
-	qca8075_2: ethernet-phy@1a {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <0x1a>;
-	};
+		qcom,package-mode = "qsgmii";
 
-	qca8075_3: ethernet-phy@1b {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <0x1b>;
+		qca8075_1: ethernet-phy@19 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x19>;
+		};
+
+		qca8075_2: ethernet-phy@1a {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x1a>;
+		};
+
+		qca8075_3: ethernet-phy@1b {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0x1b>;
+		};
 	};
 };
 
@@ -251,7 +260,6 @@
 
 	switch_lan_bmp = <(ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT6)>;
 	switch_wan_bmp = <ESS_PORT5>;
-	malibu_first_phy_addr = <0x18>;
 	switch_mac_mode = <MAC_MODE_QSGMII>;
 	switch_mac_mode1 = <MAC_MODE_USXGMII>;
 	switch_mac_mode2 = <MAC_MODE_USXGMII>;
@@ -292,6 +300,7 @@
 
 &dp2 {
 	status = "okay";
+	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_1>;
 	label = "lan4";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
@@ -300,6 +309,7 @@
 
 &dp3 {
 	status = "okay";
+	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_2>;
 	label = "lan3";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
@@ -308,6 +318,7 @@
 
 &dp4 {
 	status = "okay";
+	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_3>;
 	label = "lan2";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr>;

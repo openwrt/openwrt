@@ -366,24 +366,33 @@
 		nvmem-cells = <&aqr1_fw>;
 	};
 
-	qca8075_16: ethernet-phy@16 {
-		compatible = "ethernet-phy-ieee802.3-c22";
+	ethernet-phy-package@16 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
 		reg = <16>;
-	};
 
-	qca8075_17: ethernet-phy@17 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <17>;
-	};
+		qcom,package-mode = "qsgmii";
 
-	qca8075_18: ethernet-phy@18 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <18>;
-	};
+		qca8075_16: ethernet-phy@16 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <16>;
+		};
 
-	qca8075_19: ethernet-phy@19 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <19>;
+		qca8075_17: ethernet-phy@17 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <17>;
+		};
+
+		qca8075_18: ethernet-phy@18 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <18>;
+		};
+
+		qca8075_19: ethernet-phy@19 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <19>;
+		};
 	};
 };
 
@@ -448,24 +457,28 @@
 
 &dp1 {
 	status = "okay";
+	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_16>;
 	label = "lan4";
 };
 
 &dp2 {
 	status = "okay";
+	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_17>;
 	label = "lan3";
 };
 
 &dp3 {
 	status = "okay";
+	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_18>;
 	label = "lan2";
 };
 
 &dp4 {
 	status = "okay";
+	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_19>;
 	label = "lan1";
 };
