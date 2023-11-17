@@ -1,5 +1,10 @@
 set_preinit_iface() {
 	case $(board_name) in
+	smartrg,sdg-8622|\
+	smartrg,sdg-8632)
+		ip link set lan up
+		ifname=lan
+		;;
 	glinet,gl-mt3000)
 		ip link set eth1 up
 		ifname=eth1

@@ -62,6 +62,10 @@ mediatek_setup_interfaces()
 	zyxel,nwa50ax-pro)
 		ucidef_set_interface_lan "eth0"
 		;;
+	smartrg,sdg-8622|\
+	smartrg,sdg-8632)
+		ucidef_set_interfaces_lan_wan lan wan
+		;;
 	tplink,tl-xdr6086)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
 		;;
@@ -141,6 +145,14 @@ mediatek_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$wan_mac
+		;;
+	smartrg,sdg-8612|\
+	smartrg,sdg-8614|\
+	smartrg,sdg-8622|\
+	smartrg,sdg-8632)
+		label_mac=$(mmc_get_mac_ascii mfginfo MFG_MAC)
+		wan_mac=$label_mac
+		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;
 	xiaomi,mi-router-wr30u-112m-nmbm|\
 	xiaomi,mi-router-wr30u-stock|\
