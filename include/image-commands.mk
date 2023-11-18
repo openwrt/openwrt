@@ -226,6 +226,11 @@ define Build/copy-file
 	cat "$(1)" > "$@"
 endef
 
+define Build/dlink-sge-image
+	$(STAGING_DIR_HOST)/bin/dlink-sge-image $(1) $@ $@.enc
+	mv $@.enc $@
+endef
+
 define Build/edimax-header
 	$(STAGING_DIR_HOST)/bin/mkedimaximg -i $@ -o $@.new $(1)
 	@mv $@.new $@

@@ -84,7 +84,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static const char *
  rt2x00lib_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
  {
-@@ -164,5 +199,9 @@ int rt2x00lib_read_eeprom(struct rt2x00_
+@@ -164,6 +199,10 @@ int rt2x00lib_read_eeprom(struct rt2x00_
  		return 0;
  #endif
  
@@ -94,3 +94,4 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
  	return rt2x00lib_read_eeprom_file(rt2x00dev);
  }
+ EXPORT_SYMBOL_GPL(rt2x00lib_read_eeprom);

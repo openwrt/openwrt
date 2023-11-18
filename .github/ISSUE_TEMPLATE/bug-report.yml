@@ -20,6 +20,15 @@ body:
     validations:
       required: true
   - type: input
+    id: release
+    attributes:
+      label: OpenWrt release
+      description: |
+        The OpenWrt release or commit hash where this bug occurs (use command below).
+        ```. /etc/openwrt_release && echo $DISTRIB_RELEASE```
+    validations:
+      required: true
+  - type: input
     id: target
     attributes:
       label: OpenWrt target/subtarget

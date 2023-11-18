@@ -199,7 +199,8 @@ define Package/base-files/install
 		$(1)/usr/lib \
 		$(1)/usr/bin \
 		$(1)/sys \
-		$(1)/www \
+		$(1)/www
+	mkdir -p -m 750 \
 		$(1)/root
 
 	$(LN) /proc/mounts $(1)/etc/mtab
