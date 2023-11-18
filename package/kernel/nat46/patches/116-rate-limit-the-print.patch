@@ -1,0 +1,34 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Wed Sep 30 14:05:50 2020 +0530
+
+nat46: Add rate limit to a print.
+
+This patch is propagated from the kernel 4.4 commit
+d47f62508d2c105f236470e56bedbe279db0e6f1
+
+Change-Id: I2119fbe54d630c3ed39535f1cb1b8a0d9d3199b4
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -1828,7 +1828,9 @@ void nat46_ipv6_input(struct sk_buff *ol
+           memcpy(&hdr6.saddr, &ip6h_inner->daddr, 16);
+           memcpy(&hdr6.daddr, &ip6h_inner->saddr, 16);
+           if (!pairs_xlate_v6_to_v4_outer(nat46, &apair, &hdr6, proto, &v4saddr, &v4daddr)) {
+-            nat46debug(0, "[nat46] Could not translate v6->v4");
++            if (net_ratelimit()) {
++              nat46debug(0, "[nat46] Could not translate v6->v4");
++            }
+             goto done;
+           }
+           v4saddr = apair->local.v4_pref;
+@@ -2296,7 +2298,9 @@ void nat46_ipv4_input(struct sk_buff *ol
+   }
+ 
+   if(!pairs_xlate_v4_to_v6_outer(nat46, &apair, hdr4, having_l4 ? &sport : NULL, having_l4 ? &dport : NULL, v6saddr, v6daddr)) {
+-    nat46debug(0, "[nat46] Could not translate v4->v6");
++    if (net_ratelimit()) {
++      nat46debug(0, "[nat46] Could not translate v4->v6");
++    }
+     goto done;
+   }
+ 

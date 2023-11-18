@@ -1,0 +1,52 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Wed Aug 5 21:16:50 2020 +0530
+
+nat46: fix nat46 crash during stability test
+
+This patch is propagated from the kernel 4.4 commit
+8a2df2e4170f6f9b7eb0930d067e197bfec68129
+
+when deleting the same device in a very close time, the first deletion
+is not finished yet, the second one will hit the BUG_ON.
+
+Change-Id: I09ec95a132e925a304b57c35d1cb51619be37229
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-module.c
++++ b/nat46/modules/nat46-module.c
+@@ -61,6 +61,7 @@ bool add_dummy_header = 0;
+ module_param(add_dummy_header, bool, 0);
+ MODULE_PARM_DESC(add_dummy_header, "Add dummy fragment header");
+ 
++static DEFINE_MUTEX(add_del_lock);
+ static struct proc_dir_entry *nat46_proc_entry;
+ static struct proc_dir_entry *nat46_proc_parent;
+ 
+@@ -115,19 +116,27 @@ static ssize_t nat46_proc_write(struct f
+ 		if (0 == strcmp(arg_name, "add")) {
+ 			devname = get_devname(&tail);
+ 			printk(KERN_INFO "nat46: adding device (%s)\n", devname);
++			mutex_lock(&add_del_lock);
+ 			nat46_create(devname);
++			mutex_unlock(&add_del_lock);
+ 		} else if (0 == strcmp(arg_name, "del")) {
+ 			devname = get_devname(&tail);
+ 			printk(KERN_INFO "nat46: deleting device (%s)\n", devname);
++			mutex_lock(&add_del_lock);
+ 			nat46_destroy(devname);
++			mutex_unlock(&add_del_lock);
+ 		} else if (0 == strcmp(arg_name, "config")) {
+ 			devname = get_devname(&tail);
+ 			printk(KERN_INFO "nat46: configure device (%s) with '%s'\n", devname, tail);
++			mutex_lock(&add_del_lock);
+ 			nat46_configure(devname, tail);
++			mutex_unlock(&add_del_lock);
+ 		} else if (0 == strcmp(arg_name, "insert")) {
+ 			devname = get_devname(&tail);
+ 			printk(KERN_INFO "nat46: insert new rule into device (%s) with '%s'\n", devname, tail);
++			mutex_lock(&add_del_lock);
+ 			nat46_insert(devname, tail);
++			mutex_unlock(&add_del_lock);
+ 		}
+ 	}
+ 

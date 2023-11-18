@@ -1,0 +1,639 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Tue Aug 4 10:33:59 2020 +0530
+
+nat46: Adding support for multiple MAP-T rules.
+
+This patch is propagated from kernel 4.4 commit
+05a122b0cb0d3a99f040c94b3f626e7350f1445b
+
+This change covers:
+1. Support for adding maximum of 32 MAP-T rules (DMR + FMRs).
+2. Support for rule lookup based on Longest Prefix Match method.
+3. Support for validation of new rules being inserted.
+
+Change-Id: Id87448a8f544273b40c20aaab6e5c63b0dbd72e
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -121,6 +121,13 @@ int try_parse_ipv6_prefix(struct in6_add
+     *arg_plen++ = 0;
+     if (pref_len) {
+       *pref_len = simple_strtol(arg_plen, NULL, 10);
++
++      /*
++       * ipv6 prefix should be <= 128
++       */
++      if (*pref_len > IPV6_BITS_MAX) {
++        return -1;
++      }
+     }
+   }
+   err = (1 != in6_pton(arg, -1, (u8 *)pref, '\0', NULL));
+@@ -134,6 +141,13 @@ int try_parse_ipv4_prefix(u32 *v4addr, i
+     *arg_plen++ = 0;
+     if (pref_len) {
+       *pref_len = simple_strtol(arg_plen, NULL, 10);
++
++      /*
++       * ipv4 prefix len should be <= 32
++       */
++      if (*pref_len > IPV4_BITS_MAX) {
++        return -1;
++      }
+     }
+   }
+   err = (1 != in4_pton(arg, -1, (u8 *)v4addr, '/', NULL));
+@@ -176,11 +190,127 @@ int try_parse_rule_arg(nat46_xlate_rule_
+   return err;
+ }
+ 
+-/* 
+- * Parse the config commands in the buffer, 
+- * destructive (puts zero between the args) 
++static inline void nat46_swap(nat46_xlate_rulepair_t *var1, nat46_xlate_rulepair_t *var2) {
++	nat46_xlate_rulepair_t temp;
++	temp = *var1;
++	*var1 = *var2;
++	*var2 = temp;
++}
++
++/*
++ * Sort rule pairs based on prefix length.
+  */
++void nat46_sort_rule_array(nat46_instance_t *nat46) {
++	int i, j;
++	int nelem = nat46->npairs;
++	nat46_xlate_rulepair_t *array = NULL;
++
++	memcpy(nat46->sorted_ipv4_local_pairs, nat46->pairs, nelem * sizeof(nat46_xlate_rulepair_t));
++	memcpy(nat46->sorted_ipv4_remote_pairs, nat46->pairs, nelem * sizeof(nat46_xlate_rulepair_t));
++	memcpy(nat46->sorted_ipv6_local_pairs, nat46->pairs, nelem * sizeof(nat46_xlate_rulepair_t));
++	memcpy(nat46->sorted_ipv6_remote_pairs, nat46->pairs, nelem * sizeof(nat46_xlate_rulepair_t));
++
++	array = &nat46->sorted_ipv4_local_pairs[0];
++	for (i = 0; i < nelem - 1; i++) {
++		for (j = 0; j < nelem - i - 1; j++) {
++			if (array[j].local.v4_pref_len < array[j+1].local.v4_pref_len) {
++				nat46_swap (&array[j], &array[j+1]);
++			}
++		}
++	}
++
++	array = &nat46->sorted_ipv4_remote_pairs[0];
++	for (i = 0; i < nelem - 1; i++) {
++		for (j = 0; j < nelem - i - 1; j++) {
++			if (array[j].remote.v4_pref_len < array[j+1].remote.v4_pref_len) {
++				nat46_swap (&array[j], &array[j+1]);
++			}
++		}
++	}
+ 
++	array = &nat46->sorted_ipv6_local_pairs[0];
++	for (i = 0; i < nelem - 1; i++) {
++		for (j = 0; j < nelem - i - 1; j++) {
++			if (array[j].local.v6_pref_len < array[j+1].local.v6_pref_len) {
++				nat46_swap (&array[j], &array[j+1]);
++			}
++		}
++	}
++
++	array = &nat46->sorted_ipv6_remote_pairs[0];
++	for (i = 0; i < nelem - 1; i++) {
++		for (j = 0; j < nelem - i - 1; j++) {
++			if (array[j].remote.v6_pref_len < array[j+1].remote.v6_pref_len) {
++				nat46_swap (&array[j], &array[j+1]);
++			}
++		}
++	}
++}
++
++bool nat46_validate_RFC6052_style(nat46_instance_t *nat46, nat46_xlate_rule_t rule)
++{
++	if (rule.style == NAT46_XLATE_RFC6052) {
++		if (!((rule.v6_pref_len == 32) || (rule.v6_pref_len == 40) ||
++					(rule.v6_pref_len == 48) || (rule.v6_pref_len == 56) ||
++					(rule.v6_pref_len == 64) || (rule.v6_pref_len == 96))) {
++			nat46debug(3, "IPv6 prefix len is invalid");
++			return false;
++		}
++	}
++	return true;
++}
++
++bool nat46_validate_MAP_style(nat46_instance_t *nat46, nat46_xlate_rule_t rule)
++{
++	int psid_len;
++	if (rule.style == NAT46_XLATE_MAP) {
++
++		/*
++		 * max ea_len is 48
++		 */
++		if (rule.ea_len > EA_LEN_MAX) {
++			nat46debug(3, "EA-length should not exceed 48");
++			return false;
++		}
++
++		if (rule.v4_pref_len + rule.ea_len > IPV4_BITS_MAX) {
++			psid_len = rule.ea_len - (IPV4_BITS_MAX - rule.v4_pref_len);
++		} else {
++			psid_len = 0;
++		}
++
++		if (psid_len + rule.psid_offset > PSID_LEN_MAX) {
++			nat46debug(3, "psid_len + psid_offset should not exceed 16");
++			return false;
++		}
++	}
++	return true;
++}
++
++int nat46_validate_ipair_config(nat46_instance_t *nat46, nat46_xlate_rulepair_t *apair)
++{
++	if (!nat46_validate_RFC6052_style(nat46, apair->local)) {
++		return -1;
++	}
++
++	if (!nat46_validate_RFC6052_style(nat46, apair->remote)) {
++		return -1;
++	}
++
++	if (!nat46_validate_MAP_style(nat46, apair->local)) {
++		return -1;
++	}
++
++	if (!nat46_validate_MAP_style(nat46, apair->remote)) {
++		return -1;
++	}
++	return 0;
++}
++
++/*
++ * Parse the config commands in the buffer,
++ * destructive (puts zero between the args)
++ */
+ int nat46_set_ipair_config(nat46_instance_t *nat46, int ipair, char *buf, int count) {
+   char *tail = buf;
+   char *arg_name;
+@@ -210,7 +340,18 @@ int nat46_set_ipair_config(nat46_instanc
+       err = try_parse_rule_arg(&apair->remote, arg_name, &tail);
+     }
+   }
+-  return err;
++
++  err = nat46_validate_ipair_config(nat46, apair);
++  if (err) {
++    return err;
++  }
++
++  /*
++   * sort nat46->pairs based on prefix length.
++   */
++  nat46_sort_rule_array(nat46);
++
++  return 0;
+ }
+ 
+ int nat46_set_config(nat46_instance_t *nat46, char *buf, int count) {
+@@ -854,37 +995,120 @@ int is_last_pair_in_group(nat46_xlate_ru
+   return ( (apair->local.style != NAT46_XLATE_NONE) && (apair->remote.style != NAT46_XLATE_NONE) );
+ }
+ 
++nat46_xlate_rulepair_t *nat46_lpm(nat46_instance_t *nat46, nat46_rule_type_t type, void *paddr) {
++	int ipair = 0;
++	nat46_xlate_rulepair_t *apair = NULL;
++	uint32_t mask = 0;
++	uint8_t *pa1;
++	uint8_t *pa2;
++
++	if(!nat46 || !paddr) {
++		return NULL;
++	}
++
++	switch (type) {
++	case NAT46_IPV4_LOCAL:
++		for (ipair = 0; ipair < nat46->npairs; ipair++) {
++			apair = &nat46->sorted_ipv4_local_pairs[ipair];
++
++			/*
++			 * For a 32-bit number, if the shift count is 32, then the
++			 * result of the left shift operation is always 0.
++			 */
++			if (apair->local.v4_pref_len) {
++				mask = htonl(U32_MASK << (IPV4_BITS_MAX - apair->local.v4_pref_len));
++			}
++
++			if((*(uint32_t *)paddr & mask) == (apair->local.v4_pref & mask)) {
++				return apair;
++			}
++		}
++		break;
++	case NAT46_IPV4_REMOTE:
++		for (ipair = 0; ipair < nat46->npairs; ipair++) {
++			apair = &nat46->sorted_ipv4_remote_pairs[ipair];
++
++			/*
++			 * For a 32-bit number, if the shift count is 32, then the
++			 * result of the left shift operation is always 0.
++			 */
++			if (apair->remote.v4_pref_len) {
++				mask = htonl(U32_MASK << (IPV4_BITS_MAX - apair->remote.v4_pref_len));
++			}
++
++			if((*(uint32_t *)paddr & mask) == (apair->remote.v4_pref & mask)) {
++				return apair;
++			}
++		}
++		break;
++	case NAT46_IPV6_LOCAL:
++		for (ipair = 0; ipair < nat46->npairs; ipair++) {
++			apair = &nat46->sorted_ipv6_local_pairs[ipair];
++			if(memcmp(paddr, &apair->local.v6_pref, apair->local.v6_pref_len / BITS_PER_BYTE)) {
++				continue;
++			}
++			if(apair->local.v6_pref_len % BITS_PER_BYTE) {
++				mask = U8_MASK << (BITS_PER_BYTE - (apair->local.v6_pref_len % BITS_PER_BYTE));
++				pa1 = (uint8_t *)paddr + (apair->local.v6_pref_len / BITS_PER_BYTE);
++				pa2 = (uint8_t *)&apair->local.v6_pref + (apair->local.v6_pref_len / BITS_PER_BYTE);
++
++				if ((*pa1 & mask) == (*pa2 & mask)) {
++					return apair;
++				}
++			}
++			else
++				return apair;
++		}
++		break;
++	case NAT46_IPV6_REMOTE:
++		for (ipair = 0; ipair < nat46->npairs; ipair++) {
++			apair = &nat46->sorted_ipv6_remote_pairs[ipair];
++			if(memcmp(paddr, &apair->remote.v6_pref, apair->remote.v6_pref_len / BITS_PER_BYTE)) {
++				continue;
++			}
++			if(apair->remote.v6_pref_len % BITS_PER_BYTE) {
++				mask = U8_MASK << (BITS_PER_BYTE - (apair->remote.v6_pref_len % BITS_PER_BYTE));
++				pa1 = (uint8_t *)paddr + (apair->remote.v6_pref_len / BITS_PER_BYTE);
++				pa2 = (uint8_t *)&apair->remote.v6_pref + (apair->remote.v6_pref_len / BITS_PER_BYTE);
++
++				if((*pa1 & mask) == (*pa2 & mask)) {
++					return apair;
++				}
++			}
++			else
++				return apair;
++		}
++		break;
++	default:
++		nat46debug(0, "%s : Invalid prefix type.\n", __func__);
++	}
++	return NULL;
++}
++
+ void pairs_xlate_v6_to_v4_inner(nat46_instance_t *nat46, struct ipv6hdr *ip6h, __u32 *pv4saddr, __u32 *pv4daddr) {
+   int ipair = 0;
+   nat46_xlate_rulepair_t *apair = NULL;
+   int xlate_src = -1;
+   int xlate_dst = -1;
+ 
+-  for(ipair = 0; ipair < nat46->npairs; ipair++) {
+-    apair = &nat46->pairs[ipair];
++  apair = nat46_lpm(nat46, NAT46_IPV6_REMOTE, &ip6h->daddr);
++  if (!apair) {
++    return;
++  }
+ 
+-    if(-1 == xlate_dst) {
+-      if(xlate_v6_to_v4(nat46, &apair->remote, &ip6h->daddr, pv4daddr)) {
+-        xlate_dst = ipair;
+-      }
+-    }
+-    if(-1 == xlate_src) {
+-      if(xlate_v6_to_v4(nat46, &apair->local, &ip6h->saddr, pv4saddr)) {
+-        xlate_src = ipair;
+-      }
+-    }
+-    if((xlate_src >= 0) && (xlate_dst >= 0)) {
+-      /* we did manage to translate it */
+-      break;
+-    } else {
+-      /* We did not match fully and there are more rules */
+-      if((ipair+1 < nat46->npairs) && is_last_pair_in_group(apair)) {
+-        xlate_src = -1;
+-        xlate_dst = -1;
+-      }
+-    }
++  if (xlate_v6_to_v4(nat46, &apair->remote, &ip6h->daddr, pv4daddr)) {
++    xlate_dst = ipair;
++  }
++  if (xlate_v6_to_v4(nat46, &apair->local, &ip6h->saddr, pv4saddr)) {
++    xlate_src = ipair;
++  }
++
++  if ((xlate_src >= 0) && (xlate_dst >= 0)) {
++    /* we did manage to translate it */
++    nat46debug(5, "[nat46payload] xlate results: src %d dst %d", xlate_src, xlate_dst);
++  } else {
++    nat46debug(1, "[nat46] Could not find a translation pair v6->v4 src %pI6c dst %pI6c", &ip6h->saddr, &ip6h->daddr);
+   }
+-  nat46debug(5, "[nat46payload] xlate results: src %d dst %d", xlate_src, xlate_dst);
+ }
+ 
+ /*
+@@ -1471,40 +1695,28 @@ static uint16_t nat46_fixup_icmp(nat46_i
+   return ret;
+ }
+ 
+-int pairs_xlate_v6_to_v4_outer(nat46_instance_t *nat46, struct ipv6hdr *ip6h, uint16_t proto, __u32 *pv4saddr, __u32 *pv4daddr) {
++int pairs_xlate_v6_to_v4_outer(nat46_instance_t *nat46, nat46_xlate_rulepair_t *apair,
++		struct ipv6hdr *ip6h, uint16_t proto, __u32 *pv4saddr, __u32 *pv4daddr) {
+   int ipair = 0;
+-  nat46_xlate_rulepair_t *apair = NULL;
+   int xlate_src = -1;
+   int xlate_dst = -1;
+ 
+-  for(ipair = 0; ipair < nat46->npairs; ipair++) {
+-    apair = &nat46->pairs[ipair];
++  apair = nat46_lpm(nat46, NAT46_IPV6_REMOTE, &ip6h->saddr);
++  if (!apair) {
++    return 0;
++  }
+ 
+-    if(-1 == xlate_dst) {
+-      if (xlate_v6_to_v4(nat46, &apair->local, &ip6h->daddr, pv4daddr)) {
+-        nat46debug(5, "Dst addr %pI6 to %pI4 \n", &ip6h->daddr, pv4daddr);
+-        xlate_dst = ipair;
+-      }
+-    }
+-    if(-1 == xlate_src) {
+-      if (xlate_v6_to_v4(nat46, &apair->remote, &ip6h->saddr, pv4saddr)) {
+-        nat46debug(5, "Src addr %pI6 to %pI4 \n", &ip6h->saddr, pv4saddr);
+-        xlate_src = ipair;
+-      }
+-    }
+-    if( (xlate_src >= 0) && (xlate_dst >= 0) ) {
+-      break;
+-    } else {
+-      /* We did not match fully and there are more rules */
+-      if((ipair+1 < nat46->npairs) && is_last_pair_in_group(apair)) {
+-        xlate_src = -1;
+-        xlate_dst = -1;
+-      }
+-    }
++  if (xlate_v6_to_v4(nat46, &apair->local, &ip6h->daddr, pv4daddr)) {
++    nat46debug(5, "Dst addr %pI6 to %pI4 \n", &ip6h->daddr, pv4daddr);
++    xlate_dst = ipair;
++  }
++  if (xlate_v6_to_v4(nat46, &apair->remote, &ip6h->saddr, pv4saddr)) {
++    nat46debug(5, "Src addr %pI6 to %pI4 \n", &ip6h->saddr, pv4saddr);
++    xlate_src = ipair;
+   }
+   if (xlate_dst >= 0) {
+     if (xlate_src < 0) {
+-      if(proto == NEXTHDR_ICMP) {
++      if (proto == NEXTHDR_ICMP) {
+         nat46debug(1, "[nat46] Could not translate remote address v6->v4, ipair %d, for ICMP6 use dest addr", ipair);
+         *pv4saddr = *pv4daddr;
+         xlate_src = xlate_dst;
+@@ -1520,12 +1732,14 @@ int pairs_xlate_v6_to_v4_outer(nat46_ins
+ }
+ 
+ int xlate_6_to_4(struct net_device *dev, struct ipv6hdr *ip6h, uint16_t proto, __u32 *pv4saddr, __u32 *pv4daddr) {
+-	return pairs_xlate_v6_to_v4_outer(netdev_nat46_instance(dev), ip6h, proto, pv4saddr, pv4daddr);
++	nat46_xlate_rulepair_t apair;
++	return pairs_xlate_v6_to_v4_outer(netdev_nat46_instance(dev), &apair, ip6h, proto, pv4saddr, pv4daddr);
+ }
+ EXPORT_SYMBOL(xlate_6_to_4);
+ 
+ void nat46_ipv6_input(struct sk_buff *old_skb) {
+   struct ipv6hdr *ip6h = ipv6_hdr(old_skb);
++  nat46_xlate_rulepair_t apair;
+   nat46_instance_t *nat46 = get_nat46_instance(old_skb);
+   uint16_t proto;
+   uint16_t frag_off;
+@@ -1586,7 +1800,7 @@ void nat46_ipv6_input(struct sk_buff *ol
+     check_for_l4 = 1;
+   }
+ 
+-  if(!pairs_xlate_v6_to_v4_outer(nat46, ip6h, proto, &v4saddr, &v4daddr)) {
++  if (!pairs_xlate_v6_to_v4_outer(nat46, &apair, ip6h, proto, &v4saddr, &v4daddr)) {
+     nat46debug(0, "[nat46] Could not translate v6->v4");
+     goto done;
+   }
+@@ -1730,56 +1944,44 @@ int ip4_input_not_interested(nat46_insta
+   return 0;
+ }
+ 
+-int pairs_xlate_v4_to_v6_outer(nat46_instance_t *nat46, struct iphdr *hdr4, uint16_t *sport, uint16_t *dport, void *v6saddr, void *v6daddr) {
++int pairs_xlate_v4_to_v6_outer(nat46_instance_t *nat46, nat46_xlate_rulepair_t *apair,
++		struct iphdr *hdr4, uint16_t *sport, uint16_t *dport, void *v6saddr, void *v6daddr) {
+   int ipair = 0;
+-  nat46_xlate_rulepair_t *apair = NULL;
+   int xlate_src = -1;
+   int xlate_dst = -1;
++  int ret = 0;
+ 
+-  for(ipair = 0; ipair < nat46->npairs; ipair++) {
+-    apair = &nat46->pairs[ipair];
++  apair = nat46_lpm(nat46, NAT46_IPV4_REMOTE, &hdr4->daddr);
++  if (!apair) {
++    return 0;
++  }
+ 
+-    if(-1 == xlate_src) {
+-      if(xlate_v4_to_v6(nat46, &apair->local, &hdr4->saddr, v6saddr, sport)) {
+-        nat46debug(5, "Src addr %pI4 to %pI6 \n", &hdr4->saddr, v6saddr);
+-        xlate_src = ipair;
+-      }
+-    }
+-    if(-1 == xlate_dst) {
+-      if(xlate_v4_to_v6(nat46, &apair->remote, &hdr4->daddr, v6daddr, dport)) {
+-        nat46debug(5, "Dst addr %pI4 to %pI6 \n", &hdr4->daddr, v6daddr);
+-        xlate_dst = ipair;
+-      }
+-    }
+-    if( (xlate_src >= 0) && (xlate_dst >= 0) ) {
+-      break;
+-    } else {
+-      /* We did not match fully and there are more rules */
+-      if((ipair+1 < nat46->npairs) && is_last_pair_in_group(apair)) {
+-        xlate_src = -1;
+-        xlate_dst = -1;
+-      }
+-    }
++  if (xlate_v4_to_v6(nat46, &apair->local, &hdr4->saddr, v6saddr, sport)) {
++    nat46debug(5, "Src addr %pI4 to %pI6 \n", &hdr4->saddr, v6saddr);
++    xlate_src = ipair;
++  }
++  if (xlate_v4_to_v6(nat46, &apair->remote, &hdr4->daddr, v6daddr, dport)) {
++    nat46debug(5, "Dst addr %pI4 to %pI6 \n", &hdr4->daddr, v6daddr);
++    xlate_dst = ipair;
+   }
+   nat46debug(5, "[nat46] pairs_xlate_v4_to_v6_outer result: src %d dst %d", xlate_src, xlate_dst);
+   if ( (xlate_src >= 0) && (xlate_dst >= 0) ) {
+-    return 1;
++    ret = 1;
++  } else {
++    nat46debug(1, "[nat46] Could not find a translation pair v4->v6");
+   }
+-
+-  nat46debug(1, "[nat46] Could not find a translation pair v4->v6");
+-
+-  return 0;
++  return ret;
+ }
+ 
+ int xlate_4_to_6(struct net_device *dev, struct iphdr *hdr4, uint16_t sport, uint16_t dport, void *v6saddr, void *v6daddr) {
+-	return pairs_xlate_v4_to_v6_outer(netdev_nat46_instance(dev), hdr4, &sport, &dport, v6saddr, v6daddr);
++	nat46_xlate_rulepair_t apair;
++	return pairs_xlate_v4_to_v6_outer(netdev_nat46_instance(dev), &apair, hdr4, &sport, &dport, v6saddr, v6daddr);
+ }
+ EXPORT_SYMBOL(xlate_4_to_6);
+ 
+-/* FIXME: This is a workaround, till the LPM is not added. The sport & dport in inner header will be dport & sport of the outer
+- * header, respectively. Hence, dest. and source ips of inner header will be found in local & remote rules, respectively.
+- * Will work only for a pair of local & remote rules. Once LPM is brought in, this method can be removed and
+- * pairs_xlate_v4_to_v6_outer be used instead.
++/*
++ * The sport & dport in inner header will be dport & sport of the outer header, respectively.
++ * Hence, dest. and source ips of inner header will be found in local & remote rules, respectively.
+  */
+ int pairs_xlate_v4_to_v6_inner(nat46_instance_t *nat46, struct iphdr *iph,
+ 		uint16_t sport, uint16_t dport, void *v6saddr, void *v6daddr) {
+@@ -1788,35 +1990,27 @@ int pairs_xlate_v4_to_v6_inner(nat46_ins
+ 	int xlate_src = -1;
+ 	int xlate_dst = -1;
+ 
+-	for (ipair = 0; ipair < nat46->npairs; ipair++) {
+-		apair = &nat46->pairs[ipair];
++	apair = nat46_lpm(nat46, NAT46_IPV4_REMOTE, &iph->saddr);
++	if (!apair) {
++		return 0;
++	}
+ 
+-		if (-1 == xlate_dst) {
+-			if (xlate_v4_to_v6(nat46, &apair->local, &iph->daddr, v6daddr, &dport)) {
+-				nat46debug(3, "Dst addr %pI4 to %pI6 \n", &iph->daddr, v6daddr);
+-				xlate_dst = ipair;
+-			}
+-		}
+-		if (-1 == xlate_src) {
+-			if(xlate_v4_to_v6(nat46, &apair->remote, &iph->saddr, v6saddr, &sport)) {
+-				nat46debug(3, "Src addr %pI4 to %pI6 \n", &iph->saddr, v6saddr);
+-				xlate_src = ipair;
+-			}
+-		}
+-		if ((xlate_src >= 0) && (xlate_dst >= 0)) {
+-			/* we did manage to translate it */
+-			nat46debug(5, "[nat46] Inner header xlate results: src %d dst %d", xlate_src, xlate_dst);
+-			return 1;
+-		} else {
+-			/* We did not match fully and there are more rules */
+-			if((ipair+1 < nat46->npairs) && is_last_pair_in_group(apair)) {
+-				xlate_src = -1;
+-				xlate_dst = -1;
+-			}
+-		}
+-}
++	if (xlate_v4_to_v6(nat46, &apair->local, &iph->daddr, v6daddr, &dport)) {
++		nat46debug(3, "Dst addr %pI4 to %pI6 \n", &iph->daddr, v6daddr);
++		xlate_dst = ipair;
++	}
++	if (xlate_v4_to_v6(nat46, &apair->remote, &iph->saddr, v6saddr, &sport)) {
++		nat46debug(3, "Src addr %pI4 to %pI6 \n", &iph->saddr, v6saddr);
++		xlate_src = ipair;
++	}
++	if ((xlate_src >= 0) && (xlate_dst >= 0)) {
++		/* we did manage to translate it */
++		nat46debug(5, "[nat46] Inner header xlate results: src %d dst %d", xlate_src, xlate_dst);
++		return 1;
++	} else {
++		nat46debug(1, "[nat46] Could not find a translation pair v4->v6");
++	}
+ 
+-	nat46debug(1, "[nat46] Could not find a translation pair v4->v6");
+ 	return 0;
+ }
+ 
+@@ -1913,6 +2107,7 @@ static uint16_t xlate_pkt_in_err_v4_to_v
+ 
+ void nat46_ipv4_input(struct sk_buff *old_skb) {
+   nat46_instance_t *nat46 = get_nat46_instance(old_skb);
++  nat46_xlate_rulepair_t apair;
+   struct sk_buff *new_skb;
+   uint16_t sport = 0, dport = 0, ret = 0;
+ 
+@@ -1979,7 +2174,7 @@ void nat46_ipv4_input(struct sk_buff *ol
+     having_l4 = 1;
+   }
+ 
+-  if(!pairs_xlate_v4_to_v6_outer(nat46, hdr4, having_l4 ? &sport : NULL, having_l4 ? &dport : NULL, v6saddr, v6daddr)) {
++  if(!pairs_xlate_v4_to_v6_outer(nat46, &apair, hdr4, having_l4 ? &sport : NULL, having_l4 ? &dport : NULL, v6saddr, v6daddr)) {
+     nat46debug(0, "[nat46] Could not translate v4->v6");
+     goto done;
+   }
+--- a/nat46/modules/nat46-core.h
++++ b/nat46/modules/nat46-core.h
+@@ -23,6 +23,15 @@
+ // #define nat46debug(level, format, ...)
+ #define nat46debug(level, format, ...) do { if(nat46->debug >= level) { printk(format "\n", ##__VA_ARGS__); } } while (0)
+ 
++#define U8_MASK (uint8_t)(0xFF)
++#define U32_MASK (uint32_t)(~0U)
++#define BITS_PER_BYTE 8
++#define PSID_LEN_MAX 16
++#define NUM_RULE_PAIRS_MAX 32
++#define IPV4_BITS_MAX 32
++#define EA_LEN_MAX 48
++#define IPV6_BITS_MAX 128
++
+ #define IPV6HDRSIZE 40
+ #define IPV4HDRSIZE 20
+ #define IPV6V4HDRDELTA (IPV6HDRSIZE - IPV4HDRSIZE)
+@@ -39,6 +48,17 @@ typedef enum {
+   NAT46_XLATE_RFC6052
+ } nat46_xlate_style_t;
+ 
++/*
++ * Enumeration for sorting pairs based on
++ * type of prefix length.
++ */
++typedef enum {
++  NAT46_IPV4_LOCAL = 0,
++  NAT46_IPV4_REMOTE,
++  NAT46_IPV6_LOCAL,
++  NAT46_IPV6_REMOTE
++} nat46_rule_type_t;
++
+ #define NAT46_SIGNATURE 0x544e3634
+ #define FREED_NAT46_SIGNATURE 0xdead544e
+ 
+@@ -64,7 +84,11 @@ typedef struct {
+   int debug;
+ 
+   int npairs;
+-  nat46_xlate_rulepair_t pairs[0]; /* npairs */
++  nat46_xlate_rulepair_t pairs[NUM_RULE_PAIRS_MAX]; /* npairs */
++  nat46_xlate_rulepair_t sorted_ipv4_local_pairs[NUM_RULE_PAIRS_MAX]; /* npairs */
++  nat46_xlate_rulepair_t sorted_ipv4_remote_pairs[NUM_RULE_PAIRS_MAX]; /* npairs */
++  nat46_xlate_rulepair_t sorted_ipv6_local_pairs[NUM_RULE_PAIRS_MAX]; /* npairs */
++  nat46_xlate_rulepair_t sorted_ipv6_remote_pairs[NUM_RULE_PAIRS_MAX]; /* npairs */
+ } nat46_instance_t;
+ 
+ void nat46_ipv6_input(struct sk_buff *old_skb);
+--- a/nat46/modules/nat46-netdev.c
++++ b/nat46/modules/nat46-netdev.c
+@@ -263,7 +263,13 @@ int nat46_insert(char *devname, char *bu
+ 	int ret = -1;
+ 	if(dev) {
+ 		nat46_instance_t *nat46 = netdev_nat46_instance(dev);
+-		nat46_instance_t *nat46_new = alloc_nat46_instance(nat46->npairs+1, nat46, 0, 1);
++		nat46_instance_t *nat46_new;
++		if(nat46->npairs == NUM_RULE_PAIRS_MAX) {
++			printk("Could not insert a new rule on device %s\n", devname);
++			return ret;
++		}
++
++		nat46_new = alloc_nat46_instance(nat46->npairs+1, nat46, 0, 1);
+ 		if(nat46_new) {
+ 			netdev_nat46_set_instance(dev, nat46_new);
+ 			ret = nat46_set_ipair_config(nat46_new, 0, buf, strlen(buf));
