@@ -210,7 +210,7 @@
 +    return;
 +
 +  ubus_free(ubus);
-+  ubus = NULL;
++  daemon->ubus = NULL;
 +}
 +
  static int ubus_handle_metrics(struct ubus_context *ctx, struct ubus_object *obj,
