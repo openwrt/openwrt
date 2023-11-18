@@ -28,6 +28,16 @@ define Device/mikrotik_routerboard-911-lite
 endef
 TARGET_DEVICES += mikrotik_routerboard-911-lite
 
+define Device/mikrotik_routerboard-911g-xhpnd
+  $(Device/mikrotik_nand)
+  SOC := ar9342
+  DEVICE_MODEL := RouterBOARD 911G-2HPnD
+  DEVICE_ALT0_VENDOR := Mikrotik
+  DEVICE_ALT0_MODEL := RouterBOARD 911G-5HPnD
+  SUPPORTED_DEVICES += rb-912uag-2hpnd
+endef
+TARGET_DEVICES += mikrotik_routerboard-911g-xhpnd
+
 define Device/mikrotik_routerboard-912uag-2hpnd
   $(Device/mikrotik_nand)
   SOC := ar9342
