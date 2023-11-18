@@ -86,8 +86,6 @@
 };
 
 &mdio1 {
-	status = "okay";
-
 	phy_sfp: ethernet-phy@0 {
 		reg = <0>;
 		phy-mode = "sgmii";
@@ -96,8 +94,6 @@
 };
 
 &eth1 {
-	status = "okay";
-
 	phy-handle = <&phy_sfp>;
 	pll-data = <0x03000000 0x00000101 0x00001616>;
 	qca955x-sgmii-fixup;

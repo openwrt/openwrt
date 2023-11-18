@@ -50,6 +50,15 @@ define Device/mikrotik_routerboard-912uag-2hpnd
 endef
 TARGET_DEVICES += mikrotik_routerboard-912uag-2hpnd
 
+define Device/mikrotik_routerboard-911g-5hpacd
+  $(Device/mikrotik_nand)
+  SOC := qca9558
+  DEVICE_MODEL := RouterBOARD 911G-5HPacD
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  SUPPORTED_DEVICES += rb-921gs-5hpacd-r2
+endef
+TARGET_DEVICES += mikrotik_routerboard-911g-5hpacd
+
 define Device/mikrotik_routerboard-921gs-5hpacd-15s
   $(Device/mikrotik_nand)
   SOC := qca9558

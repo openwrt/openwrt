@@ -3,8 +3,8 @@
 #include "qca9558_mikrotik_routerboard-92x.dtsi"
 
 / {
-	compatible = "mikrotik,routerboard-921gs-5hpacd-15s", "qca,qca9558";
-	model = "MikroTik RouterBOARD 921GS-5HPacD-15s";
+	compatible = "mikrotik,routerboard-911g-5hpacd", "qca,qca9558";
+	model = "MikroTik RouterBOARD 911G-5HPacD";
 
 	ath10k-leds {
 		compatible = "gpio-leds";
@@ -15,14 +15,6 @@
 			linux,default-trigger = "phy0tpt";
 		};
 	};
-};
-
-&mdio1 {
-	status = "okay";
-};
-
-&eth1 {
-	status = "okay";
 };
 
 &pcie1 {
