@@ -34,6 +34,7 @@ define Device/mikrotik_routerboard-911g-xhpnd
   DEVICE_MODEL := RouterBOARD 911G-2HPnD
   DEVICE_ALT0_VENDOR := Mikrotik
   DEVICE_ALT0_MODEL := RouterBOARD 911G-5HPnD
+  DEVICE_PACKAGES += rssileds
   SUPPORTED_DEVICES += rb-912uag-2hpnd
 endef
 TARGET_DEVICES += mikrotik_routerboard-911g-xhpnd
@@ -44,7 +45,7 @@ define Device/mikrotik_routerboard-912uag-2hpnd
   DEVICE_MODEL := RouterBOARD 912UAG-2HPnD
   DEVICE_ALT0_VENDOR := Mikrotik
   DEVICE_ALT0_MODEL := RouterBOARD 912UAG-5HPnD
-  DEVICE_PACKAGES += kmod-usb-ehci kmod-usb2
+  DEVICE_PACKAGES += kmod-usb-ehci kmod-usb2 rssileds
   SUPPORTED_DEVICES += rb-912uag-2hpnd
 endef
 TARGET_DEVICES += mikrotik_routerboard-912uag-2hpnd
