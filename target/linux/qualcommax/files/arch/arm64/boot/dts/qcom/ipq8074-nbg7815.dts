@@ -298,40 +298,40 @@
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>;
-	switch_wan_bmp = <ESS_PORT6>;
+	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT6)>;
+	switch_wan_bmp = <ESS_PORT5>;
 	switch_mac_mode = <MAC_MODE_PSGMII>;
 	switch_mac_mode1 = <MAC_MODE_SGMII_CHANNEL0>;
 	switch_mac_mode2 = <MAC_MODE_USXGMII>;
 
 	qcom,port_phyinfo {
-		port@0 {
+		port@1 {
 			port_id = <1>;
 			phy_address = <0>;
 		};
 
-		port@1 {
+		port@2 {
 			port_id = <2>;
 			phy_address = <1>;
 		};
 
-		port@2 {
+		port@3 {
 			port_id = <3>;
 			phy_address = <2>;
 		};
 
-		port@3 {
+		port@4 {
 			port_id = <4>;
 			phy_address = <3>;
 		};
 
-		port@4 {
+		port@5 {
 			port_id = <5>;
 			phy_address = <28>;
 			port_mac_sel = "QGMAC_PORT";
 		};
 
-		port@5 {
+		port@6 {
 			port_id = <6>;
 			ethernet-phy-ieee802.3-c45;
 			phy_address = <8>;
