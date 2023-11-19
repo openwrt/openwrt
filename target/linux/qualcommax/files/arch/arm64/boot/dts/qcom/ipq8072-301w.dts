@@ -276,12 +276,14 @@
 		compatible ="ethernet-phy-ieee802.3-c45";
 		reg = <0>;
 		reset-gpios = <&tlmm 59 GPIO_ACTIVE_LOW>;
+		firmware-name = "marvell/AQR-G4_v5.4.C-AQR_CIG_WF-1945_0x0_ID44778_VER1630.cld";
 	};
 
 	aqr113c_8: ethernet-phy@8 {
 		compatible ="ethernet-phy-ieee802.3-c45";
 		reg = <8>;
 		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
+		firmware-name = "marvell/AQR-G4_v5.4.C-AQR_CIG_WF-1945_0x8_ID44776_VER1630.cld";
 	};
 
 	qca8075_16: ethernet-phy@16 {
