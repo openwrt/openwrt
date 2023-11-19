@@ -1,0 +1,190 @@
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/mtd/partitions/uimage.h>
+
+/ {
+	compatible = "tuoshi,lt22m", "mediatek,mt7628an-soc";
+	model = "Tuoshi LT22M 4G Wireless Router";
+
+	leds {
+		compatible = "gpio-leds";
+		led-wlan {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			linux,default-trigger = "phy0tpt";
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan-1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+		};
+
+		led-2g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = "wwan";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = "wwan-3g";
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = "wwan-4g";
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		modem_enable {
+			gpio-export,name = "modem_enable";
+			gpio-export,output = <0>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0 &fwconcat1 &fwconcat2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x0>;
+				label = "firmware";
+				compatible = "openwrt,uimage", "denx,uimage";
+				openwrt,ih-magic = <0x27151967>;
+			};
+		};
+	};
+
+};
+
+&state_default {
+	gpio {
+		groups = "i2c";
+		function = "gpio";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+	partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					macaddr_factory_28: macaddr@28 {
+						compatible = "mac-base";
+						reg = <0x28 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				
+					// macaddr@4 is used by WiFi
+					// macaddr@28 (same mac as macaddr@4) is used by
+					//            ethernet
+					// macaddr@2e (macaddr@4 plus 2) was used for LAN2
+					//            on the original firmware
+				};
+			};
+
+			fwconcat0: partition@50000 {
+				label = "fwconcat0"; // original: "firmware"
+				reg = <0x50000 0x770000>;
+			};
+
+			// the original firmware mapped <0x50000 0x129d70> as "kernel"
+			// and <0x179d70 0x646290> as rootfs. That's not needed since
+			// OpenWrt auto-detects this.
+
+			fwconcat1: partition@800000 {
+				label = "fwconcat1"; // original: unused space
+				reg = <0x800000 0x50000>;
+			};
+
+			partition@7c0000 {
+				label = "storage";
+				reg = <0x7c0000 0x40000>;
+				read-only;
+			};
+
+			partition@850000 {
+				compatible = "denx,uimage";
+				label = "firmware2";
+				reg = <0x850000 0x770000>;
+				read-only;
+			};
+			fwconcat2: partition@fc0000 {
+				label = "fwconcat2"; // original: unused space
+				reg = <0xfc0000 0x40000>;
+			};
+
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+	nvmem-cells = <&eeprom_factory_0 0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_28 0>;
+	nvmem-cell-names = "mac-address";
+};
