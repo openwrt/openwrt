@@ -8,6 +8,9 @@ mediatek_setup_interfaces()
 	local board="$1"
 
 	case $board in
+	acelink,ew-7886cax)
+		ucidef_set_interface_lan "eth0" "dhcp"
+		;;
 	acer,predator-w6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
 		;;

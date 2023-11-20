@@ -105,6 +105,23 @@ define Build/cetron-header
 	rm $@.tmp
 endef
 
+define Device/acelink_ew-7886cax
+  DEVICE_VENDOR := Acelink
+  DEVICE_MODEL := EW-7886CAX
+  DEVICE_DTS := mt7986a-acelink-ew-7886cax
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7986-firmware mt7986-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += acelink_ew-7886cax
+
 define Device/acer_predator-w6
   DEVICE_VENDOR := Acer
   DEVICE_MODEL := Predator W6
