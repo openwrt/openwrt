@@ -7,7 +7,7 @@ define KernelPackage/mmc-at91
   TITLE:=MMC/SD Card Support on AT91
   DEPENDS:=@TARGET_at91 +kmod-mmc
   KCONFIG:=CONFIG_MMC_AT91
-  FILES:=$(LINUX_DIR)/drivers/mmc/host/at91_mci.ko
+  FILES:=drivers/mmc/host/at91_mci.ko
   AUTOLOAD:=$(call AutoLoad,90,at91_mci,1)
 endef
 
@@ -22,7 +22,7 @@ define KernelPackage/pwm-atmel
   TITLE:=PWM on atmel SoC
   DEPENDS:=@TARGET_at91
   KCONFIG:=CONFIG_ATMEL_PWM
-  FILES:=$(LINUX_DIR)/drivers/misc/atmel_pwm.ko
+  FILES:=drivers/misc/atmel_pwm.ko
   AUTOLOAD:=$(call AutoLoad,51,atmel_pwm)
 endef
 
@@ -37,7 +37,7 @@ define KernelPackage/at91-adc
   TITLE:=ADC on atmel SoC
   DEPENDS:=@TARGET_at91 +kmod-iio-core +kmod-input-core
   KCONFIG:=CONFIG_AT91_ADC
-  FILES:=$(LINUX_DIR)/drivers/iio/adc/at91_adc.ko
+  FILES:=drivers/iio/adc/at91_adc.ko
   AUTOLOAD:=$(call AutoLoad,40,at91_adc)
 endef
 
@@ -52,7 +52,7 @@ define KernelPackage/at91-udc
   TITLE:=USB Device Controller on atmel SoC
   DEPENDS:=@TARGET_at91 +kmod-usb-gadget +kmod-regmap-core
   KCONFIG:=CONFIG_USB_AT91
-  FILES:=$(LINUX_DIR)/drivers/usb/gadget/udc/at91_udc.ko
+  FILES:=drivers/usb/gadget/udc/at91_udc.ko
   AUTOLOAD:=$(call AutoLoad,51,at91_udc)
 endef
 
@@ -67,7 +67,7 @@ define KernelPackage/atmel-usba-udc
   TITLE:=High-speed USB Device Controller on atmel SoC
   DEPENDS:=@TARGET_at91 +kmod-usb-gadget
   KCONFIG:=CONFIG_USB_ATMEL_USBA
-  FILES:=$(LINUX_DIR)/drivers/usb/gadget/udc/atmel_usba_udc.ko
+  FILES:=drivers/usb/gadget/udc/atmel_usba_udc.ko
   AUTOLOAD:=$(call AutoLoad,51,atmel_usba_udc)
 endef
 

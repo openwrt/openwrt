@@ -8,7 +8,7 @@ define KernelPackage/mfd-ac100
     DEPENDS:=@TARGET_sunxi
     KCONFIG:= \
 	CONFIG_MFD_AC100
-    FILES:=$(LINUX_DIR)/drivers/mfd/ac100.ko
+    FILES:=drivers/mfd/ac100.ko
     AUTOLOAD:=$(call AutoLoad,50,ac100)
 endef
 
@@ -26,7 +26,7 @@ define KernelPackage/rtc-ac100
     KCONFIG:= \
 	CONFIG_RTC_DRV_AC100 \
 	CONFIG_RTC_CLASS=y
-    FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ac100.ko
+    FILES:=drivers/rtc/rtc-ac100.ko
     AUTOLOAD:=$(call AutoLoad,50,rtc-ac100)
 endef
 
@@ -43,7 +43,7 @@ define KernelPackage/rtc-sunxi
     KCONFIG:= \
 	CONFIG_RTC_DRV_SUNXI \
 	CONFIG_RTC_CLASS=y
-    FILES:=$(LINUX_DIR)/drivers/rtc/rtc-sunxi.ko
+    FILES:=drivers/rtc/rtc-sunxi.ko
     AUTOLOAD:=$(call AutoLoad,50,rtc-sunxi)
 endef
 
@@ -63,7 +63,7 @@ define KernelPackage/sunxi-ir
 	CONFIG_RC_DEVICES=y \
 	CONFIG_RC_CORE=y \
 	CONFIG_IR_SUNXI
-    FILES:=$(LINUX_DIR)/drivers/media/rc/sunxi-cir.ko
+    FILES:=drivers/media/rc/sunxi-cir.ko
     AUTOLOAD:=$(call AutoLoad,50,sunxi-cir)
 endef
 
@@ -78,7 +78,7 @@ define KernelPackage/ata-sunxi
     SUBMENU:=$(BLOCK_MENU)
     DEPENDS:=@TARGET_sunxi +kmod-ata-ahci-platform +kmod-scsi-core
     KCONFIG:=CONFIG_AHCI_SUNXI
-    FILES:=$(LINUX_DIR)/drivers/ata/ahci_sunxi.ko
+    FILES:=drivers/ata/ahci_sunxi.ko
     AUTOLOAD:=$(call AutoLoad,41,ahci_sunxi,1)
 endef
 
@@ -93,7 +93,7 @@ define KernelPackage/sun4i-emac
   TITLE:=AllWinner EMAC Ethernet support
   DEPENDS:=@TARGET_sunxi +kmod-of-mdio +kmod-libphy
   KCONFIG:=CONFIG_SUN4I_EMAC
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/allwinner/sun4i-emac.ko
+  FILES:=drivers/net/ethernet/allwinner/sun4i-emac.ko
   AUTOLOAD:=$(call AutoProbe,sun4i-emac)
 endef
 
@@ -102,7 +102,7 @@ $(eval $(call KernelPackage,sun4i-emac))
 define KernelPackage/sound-soc-sunxi
   TITLE:=AllWinner built-in SoC sound support
   KCONFIG:=CONFIG_SND_SUN4I_CODEC
-  FILES:=$(LINUX_DIR)/sound/soc/sunxi/sun4i-codec.ko
+  FILES:=sound/soc/sunxi/sun4i-codec.ko
   AUTOLOAD:=$(call AutoLoad,65,sun4i-codec)
   DEPENDS:=@TARGET_sunxi +kmod-sound-soc-core
   $(call AddDepends/sound)
@@ -117,7 +117,7 @@ $(eval $(call KernelPackage,sound-soc-sunxi))
 define KernelPackage/sound-soc-sunxi-spdif
   TITLE:=Allwinner A10 SPDIF Support
   KCONFIG:=CONFIG_SND_SUN4I_SPDIF
-  FILES:=$(LINUX_DIR)/sound/soc/sunxi/sun4i-spdif.ko
+  FILES:=sound/soc/sunxi/sun4i-spdif.ko
   AUTOLOAD:=$(call AutoLoad,65,sun4i-spdif)
   DEPENDS:=@TARGET_sunxi +kmod-sound-soc-spdif
   $(call AddDepends/sound)

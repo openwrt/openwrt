@@ -7,7 +7,7 @@ define KernelPackage/phy-bcm-ns-usb2
   KCONFIG:=CONFIG_PHY_BCM_NS_USB2
   DEPENDS:=@TARGET_bcm53xx
   SUBMENU:=$(USB_MENU)
-  FILES:=$(LINUX_DIR)/drivers/phy/broadcom/phy-bcm-ns-usb2.ko
+  FILES:=drivers/phy/broadcom/phy-bcm-ns-usb2.ko
   AUTOLOAD:=$(call AutoLoad,45,phy-bcm-ns-usb2,1)
 endef
 
@@ -23,7 +23,7 @@ define KernelPackage/phy-bcm-ns-usb3
   KCONFIG:=CONFIG_PHY_BCM_NS_USB3
   DEPENDS:=@TARGET_bcm53xx
   SUBMENU:=$(USB_MENU)
-  FILES:=$(LINUX_DIR)/drivers/phy/broadcom/phy-bcm-ns-usb3.ko
+  FILES:=drivers/phy/broadcom/phy-bcm-ns-usb3.ko
   AUTOLOAD:=$(call AutoLoad,45,phy-bcm-ns-usb3,1)
 endef
 
@@ -41,7 +41,7 @@ define KernelPackage/i2c-bcm-iproc
 	CONFIG_I2C_SLAVE_TESTUNIT=n
   DEPENDS:=@TARGET_bcm53xx +kmod-i2c-core
   SUBMENU:=$(I2C_MENU)
-  FILES:=$(LINUX_DIR)/drivers/i2c/busses/i2c-bcm-iproc.ko
+  FILES:=drivers/i2c/busses/i2c-bcm-iproc.ko
   AUTOLOAD:=$(call AutoLoad,59,i2c-bcm-iproc,1)
 endef
 

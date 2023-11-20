@@ -5,7 +5,7 @@ define KernelPackage/leds-reset
   TITLE:=reset controller LED support
   DEPENDS:= @TARGET_ath79
   KCONFIG:=CONFIG_LEDS_RESET=m
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-reset.ko
+  FILES:=drivers/leds/leds-reset.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-reset,1)
 endef
 

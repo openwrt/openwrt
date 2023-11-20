@@ -1,7 +1,7 @@
 define KernelPackage/ata-dwc
   TITLE:=DesignWare Cores SATA support
   KCONFIG:=CONFIG_SATA_DWC
-  FILES:=$(LINUX_DIR)/drivers/ata/sata_dwc_460ex.ko
+  FILES:=drivers/ata/sata_dwc_460ex.ko
   AUTOLOAD:=$(call AutoLoad,40,sata_dwc_460ex,1)
   $(call AddDepends/ata)
 endef
@@ -22,7 +22,7 @@ define KernelPackage/hw-crypto-4xx
   DEPENDS:=@TARGET_apm821xx +kmod-random-core +kmod-crypto-manager \
 	   +kmod-crypto-ccm +kmod-crypto-gcm \
 	   +kmod-crypto-sha1 +kmod-crypto-sha256 +kmod-crypto-sha512
-  FILES:=$(LINUX_DIR)/drivers/crypto/amcc/crypto4xx.ko
+  FILES:=drivers/crypto/amcc/crypto4xx.ko
   AUTOLOAD:=$(call AutoLoad,09,crypto4xx,1)
   $(call AddDepends/crypto)
 endef

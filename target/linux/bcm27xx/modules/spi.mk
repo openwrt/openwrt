@@ -9,7 +9,7 @@ define KernelPackage/spi-bcm2835
     CONFIG_SPI=y \
     CONFIG_SPI_BCM2835 \
     CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spi-bcm2835.ko
+  FILES:=drivers/spi/spi-bcm2835.ko
   AUTOLOAD:=$(call AutoLoad,89,spi-bcm2835)
   DEPENDS:=@TARGET_bcm27xx
 endef
@@ -28,7 +28,7 @@ define KernelPackage/spi-bcm2835-aux
     CONFIG_SPI=y \
     CONFIG_SPI_BCM2835AUX \
     CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/spi/spi-bcm2835aux.ko
+  FILES:=drivers/spi/spi-bcm2835aux.ko
   AUTOLOAD:=$(call AutoLoad,89,spi-bcm2835aux)
   DEPENDS:=@TARGET_bcm27xx
 endef

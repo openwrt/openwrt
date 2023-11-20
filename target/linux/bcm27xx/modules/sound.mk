@@ -9,7 +9,7 @@ define KernelPackage/sound-arm-bcm2835
     CONFIG_SND_BCM2835 \
     CONFIG_SND_ARMAACI=n
   FILES:= \
-    $(LINUX_DIR)/drivers/staging/vc04_services/bcm2835-audio/snd-bcm2835.ko
+    drivers/staging/vc04_services/bcm2835-audio/snd-bcm2835.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-bcm2835)
   DEPENDS:=@TARGET_bcm27xx
   $(call AddDepends/sound)
@@ -29,7 +29,7 @@ define KernelPackage/sound-soc-bcm2835-i2s
     CONFIG_SND_SOC_DMAENGINE_PCM=y \
     CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-bcm2835-i2s.ko
+    sound/soc/bcm/snd-soc-bcm2835-i2s.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-bcm2835-i2s)
   DEPENDS:=@TARGET_bcm27xx +kmod-sound-soc-core
   $(call AddDepends/sound)
@@ -47,7 +47,7 @@ define KernelPackage/sound-soc-rpi-simple-soundcard
   KCONFIG:= \
     CONFIG_SND_RPI_SIMPLE_SOUNDCARD
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-simple-soundcard.ko
+    sound/soc/bcm/snd-soc-rpi-simple-soundcard.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-rpi-simple-soundcard)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s
@@ -66,7 +66,7 @@ define KernelPackage/sound-soc-rpi-wm8804-soundcard
   KCONFIG:= \
     CONFIG_SND_RPI_WM8804_SOUNDCARD
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-wm8804-soundcard.ko
+    sound/soc/bcm/snd-soc-rpi-wm8804-soundcard.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-rpi-wm8804-soundcard)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s
@@ -87,8 +87,8 @@ define KernelPackage/sound-soc-adau1977-adc
     CONFIG_SND_SOC_ADAU1977 \
     CONFIG_SND_SOC_ADAU1977_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-adau1977.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-adau1977-i2c.ko
+    sound/soc/codecs/snd-soc-adau1977.ko \
+    sound/soc/codecs/snd-soc-adau1977-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-adau1977 snd-soc-adau1977-i2c)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -112,9 +112,9 @@ define KernelPackage/sound-soc-allo-boss-dac
     CONFIG_SND_SOC_PCM512x \
     CONFIG_SND_SOC_PCM512x_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-allo-boss-dac.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+    sound/soc/bcm/snd-soc-allo-boss-dac.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x-i2c snd-soc-pcm512x \
     snd-soc-allo-boss-dac)
   DEPENDS:= \
@@ -137,7 +137,7 @@ define KernelPackage/sound-soc-allo-boss2-dac
     CONFIG_SND_AUDIO_GRAPH_CARD \
     CONFIG_SND_BCM2708_SOC_ALLO_BOSS2_DAC
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-allo-boss2-dac.ko
+    sound/soc/bcm/snd-soc-allo-boss2-dac.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-allo-boss2-dac)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -160,8 +160,8 @@ define KernelPackage/sound-soc-allo-digione
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM8804_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
+    sound/soc/codecs/snd-soc-wm8804.ko \
+    sound/soc/codecs/snd-soc-wm8804-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804-i2c snd-soc-wm8804 \
     snd-soc-allo-digione)
   DEPENDS:= \
@@ -186,9 +186,9 @@ define KernelPackage/sound-soc-allo-piano-dac
     CONFIG_SND_SOC_PCM512x \
     CONFIG_SND_SOC_PCM512x_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-allo-piano-dac.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+    sound/soc/bcm/snd-soc-allo-piano-dac.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x-i2c snd-soc-pcm512x \
     snd-soc-allo-piano-dac)
   DEPENDS:= \
@@ -212,9 +212,9 @@ define KernelPackage/sound-soc-allo-piano-dac-plus
     CONFIG_SND_SOC_PCM512x \
     CONFIG_SND_SOC_PCM512x_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-allo-piano-dac-plus.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+    sound/soc/bcm/snd-soc-allo-piano-dac-plus.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x-i2c snd-soc-pcm512x \
     snd-soc-allo-piano-dac-plus)
   DEPENDS:= \
@@ -238,9 +238,9 @@ define KernelPackage/sound-soc-audiosense-pi
     CONFIG_SND_SOC_TLV320AIC32X4 \
     CONFIG_SND_SOC_TLV320AIC32X4_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-audiosense-pi.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic32x4.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic32x4-i2c.ko
+    sound/soc/bcm/snd-soc-audiosense-pi.ko \
+    sound/soc/codecs/snd-soc-tlv320aic32x4.ko \
+    sound/soc/codecs/snd-soc-tlv320aic32x4-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-tlv320aic32x4-i2c snd-soc-tlv320aic32x4 \
     snd-soc-audiosense-pi)
   DEPENDS:= \
@@ -266,9 +266,9 @@ define KernelPackage/sound-soc-allo-katana-codec
     CONFIG_SND_SOC_PCM512x_I2C \
     CONFIG_SND_SIMPLE_CARD_UTILS
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-allo-katana-codec.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+    sound/soc/bcm/snd-soc-allo-katana-codec.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x-i2c snd-soc-pcm512x \
     snd-soc-allo-katana-codec)
   DEPENDS:= \
@@ -292,8 +292,8 @@ define KernelPackage/sound-soc-audioinjector-isolated-soundcard
     CONFIG_SND_SOC_CS4271 \
     CONFIG_SND_SOC_CS4271_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-audioinjector-isolated-soundcard.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8731.ko
+    sound/soc/bcm/snd-soc-audioinjector-isolated-soundcard.ko \
+    sound/soc/codecs/snd-soc-wm8731.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-cs4271.o \
     snd-soc-cs4271-i2c \
     snd-soc-audioinjector-isolated-soundcard)
@@ -319,9 +319,9 @@ define KernelPackage/sound-soc-audioinjector-octo-soundcard
     CONFIG_SND_SOC_CS42XX8 \
     CONFIG_SND_SOC_CS42XX8_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-audioinjector-octo-soundcard.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-cs42xx8.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-cs42xx8-i2c.ko
+    sound/soc/bcm/snd-soc-audioinjector-octo-soundcard.ko \
+    sound/soc/codecs/snd-soc-cs42xx8.ko \
+    sound/soc/codecs/snd-soc-cs42xx8-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc- \
     snd-soc-audioinjector-octo-soundcard)
   DEPENDS:= \
@@ -344,8 +344,8 @@ define KernelPackage/sound-soc-audioinjector-pi-soundcard
     CONFIG_SND_AUDIOINJECTOR_PI_SOUNDCARD \
     CONFIG_SND_SOC_WM8731
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-audioinjector-pi-soundcard.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8731.ko
+    sound/soc/bcm/snd-soc-audioinjector-pi-soundcard.ko \
+    sound/soc/codecs/snd-soc-wm8731.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8731 \
     snd-soc-audioinjector-pi-soundcard)
   DEPENDS:= \
@@ -368,7 +368,7 @@ define KernelPackage/sound-soc-chipdip-dac
   KCONFIG:= \
     CONFIG_SND_BCM2708_SOC_CHIPDIP_DAC
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-chipdip-dac.ko
+    sound/soc/bcm/snd-soc-chipdip-dac.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-chipdip-dac)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s
@@ -388,8 +388,8 @@ define KernelPackage/sound-soc-dacberry-soundcard
     CONFIG_SND_DACBERRY400 \
     CONFIG_SND_SOC_TLV320AIC3X_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-dacberry400.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tlv320aic3x.ko
+    sound/soc/bcm/snd-soc-dacberry400.ko \
+    sound/soc/codecs/snd-soc-tlv320aic3x.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-tlv320aic3x-i2c snd-soc-dacberry400)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -413,10 +413,10 @@ define KernelPackage/sound-soc-digidac1-soundcard
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM8804_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-digidac1-soundcard.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8741.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
+    sound/soc/bcm/snd-soc-digidac1-soundcard.ko \
+    sound/soc/codecs/snd-soc-wm8741.ko \
+    sound/soc/codecs/snd-soc-wm8804.ko \
+    sound/soc/codecs/snd-soc-wm8804-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8741 \
     snd-soc-wm8804 snd-soc-wm8804-i2c \
     snd-soc-digidac1-soundcard)
@@ -441,8 +441,8 @@ define KernelPackage/sound-soc-dionaudio-loco
     CONFIG_SND_BCM2708_SOC_DIONAUDIO_LOCO \
     CONFIG_SND_SOC_PCM5102A
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-dionaudio-loco.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm5102a.ko
+    sound/soc/bcm/snd-soc-dionaudio-loco.ko \
+    sound/soc/codecs/snd-soc-pcm5102a.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm5102a \
     snd-soc-dionaudio-loco)
   DEPENDS:= \
@@ -464,9 +464,9 @@ define KernelPackage/sound-soc-dionaudio-loco-v2
     CONFIG_SND_SOC_PCM512x \
     CONFIG_SND_SOC_PCM512x_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-dionaudio-loco.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+    sound/soc/bcm/snd-soc-dionaudio-loco.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c \
     snd-soc-dionaudio-loco)
   DEPENDS:= \
@@ -488,8 +488,8 @@ define KernelPackage/sound-soc-fe-pi
     CONFIG_SND_BCM2708_SOC_FE_PI_AUDIO \
     CONFIG_SND_SOC_SGTL5000
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-fe-pi-audio.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-sgtl5000.ko
+    sound/soc/bcm/snd-soc-fe-pi-audio.ko \
+    sound/soc/codecs/snd-soc-sgtl5000.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-sgtl5000 \
     snd-soc-fe-pi-audio)
   DEPENDS:= \
@@ -511,7 +511,7 @@ define KernelPackage/sound-soc-googlevoicehat
     CONFIG_SND_BCM2708_SOC_GOOGLEVOICEHAT_SOUNDCARD \
     CONFIG_SND_SOC_VOICEHAT
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-googlevoicehat-codec.ko
+    sound/soc/bcm/snd-soc-googlevoicehat-codec.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-googlevoicehat-codec)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -532,7 +532,7 @@ define KernelPackage/sound-soc-hifiberry-dac
     CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC \
     CONFIG_SND_SOC_PCM5102A
   FILES:= \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm5102a.ko
+    sound/soc/codecs/snd-soc-pcm5102a.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm5102a)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -555,10 +555,10 @@ define KernelPackage/sound-soc-hifiberry-dacplus
     CONFIG_SND_SOC_PCM512x \
     CONFIG_SND_SOC_PCM512x_I2C
   FILES:= \
-    $(LINUX_DIR)/drivers/clk/clk-hifiberry-dacpro.ko \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplus.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+    drivers/clk/clk-hifiberry-dacpro.ko \
+    sound/soc/bcm/snd-soc-hifiberry-dacplus.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,clk-hifiberry-dacpro snd-soc-pcm512x \
     snd-soc-pcm512x-i2c snd-soc-hifiberry-dacplus)
   DEPENDS:= \
@@ -582,10 +582,10 @@ define KernelPackage/sound-soc-hifiberry-dacplusadc
     CONFIG_SND_SOC_PCM512x \
     CONFIG_SND_SOC_DMIC
   FILES:= \
-    $(LINUX_DIR)/drivers/clk/clk-hifiberry-dacpro.ko \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplusadc.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-dmic.ko
+    drivers/clk/clk-hifiberry-dacpro.ko \
+    sound/soc/bcm/snd-soc-hifiberry-dacplusadc.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-dmic.ko
   AUTOLOAD:=$(call AutoLoad,68,clk-hifiberry-dacpro snd-soc-pcm512x \
     snd-soc-dmic snd-soc-hifiberry-dacplusadc)
   DEPENDS:= \
@@ -606,7 +606,7 @@ define KernelPackage/sound-soc-hifiberry-dacplusdsp
   KCONFIG:= \
     CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUSDSP
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplusdsp.ko
+    sound/soc/bcm/snd-soc-hifiberry-dacplusdsp.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-hifiberry-dacplusdsp)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -628,10 +628,10 @@ define KernelPackage/sound-soc-hifiberry-dacplushd
     CONFIG_SND_SOC_PCM179X \
     CONFIG_SND_SOC_PCM179X_I2C
   FILES:= \
-    $(LINUX_DIR)/drivers/clk/clk-hifiberry-dachd.ko \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplushd.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm179x-codec.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm179x-i2c.ko
+    drivers/clk/clk-hifiberry-dachd.ko \
+    sound/soc/bcm/snd-soc-hifiberry-dacplushd.ko \
+    sound/soc/codecs/snd-soc-pcm179x-codec.ko \
+    sound/soc/codecs/snd-soc-pcm179x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,clk-hifiberry-dachd snd-soc-pcm179x-codec \
     snd-soc-pcm179x-i2c snd-soc-hifiberry-dacplushd)
   DEPENDS:= \
@@ -657,11 +657,11 @@ define KernelPackage/sound-soc-hifiberry-dacplusadc-pro
     CONFIG_SND_SOC_PCM512x \
     CONFIG_SND_SOC_PCM512x_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplusadcpro.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm186x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm186x-i2c.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+    sound/soc/bcm/snd-soc-hifiberry-dacplusadcpro.ko \
+    sound/soc/codecs/snd-soc-pcm186x.ko \
+    sound/soc/codecs/snd-soc-pcm186x-i2c.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm186x snd-soc-pcm186x-i2c \
     snd-soc-pcm512x snd-soc-pcm512x-i2c snd-soc-hifiberry-dacplusadcpro)
   DEPENDS:= \
@@ -685,8 +685,8 @@ define KernelPackage/sound-soc-hifiberry-digi
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM8804_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
+    sound/soc/codecs/snd-soc-wm8804.ko \
+    sound/soc/codecs/snd-soc-wm8804-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804 snd-soc-wm8804-i2c)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -709,7 +709,7 @@ define KernelPackage/sound-soc-hifiberry-amp
     CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP \
     CONFIG_SND_SOC_TAS5713
   FILES:= \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tas5713.ko
+    sound/soc/codecs/snd-soc-tas5713.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-tas5713)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -732,8 +732,8 @@ define KernelPackage/sound-soc-iqaudio-codec
     CONFIG_SND_BCM2708_SOC_IQAUDIO_CODEC \
     CONFIG_SND_SOC_DA7213
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-iqaudio-codec.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-da7213.ko
+    sound/soc/bcm/snd-soc-iqaudio-codec.ko \
+    sound/soc/codecs/snd-soc-da7213.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-da7213 snd-soc-iqaudio-codec)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -756,9 +756,9 @@ define KernelPackage/sound-soc-iqaudio-dac
     CONFIG_SND_SOC_PCM512x \
     CONFIG_SND_SOC_PCM512x_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-iqaudio-dac.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+    sound/soc/bcm/snd-soc-iqaudio-dac.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c \
     snd-soc-iqaudio-dac)
   DEPENDS:= \
@@ -782,8 +782,8 @@ define KernelPackage/sound-soc-iqaudio-digi
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM8804_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
+    sound/soc/codecs/snd-soc-wm8804.ko \
+    sound/soc/codecs/snd-soc-wm8804-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804 snd-soc-wm8804-i2c)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -806,8 +806,8 @@ define KernelPackage/sound-soc-i-sabe-q2m
     CONFIG_SND_BCM2708_SOC_I_SABRE_Q2M \
     CONFIG_SND_SOC_I_SABRE_CODEC
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-i-sabre-q2m.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-i-sabre-codec.ko
+    sound/soc/bcm/snd-soc-i-sabre-q2m.ko \
+    sound/soc/codecs/snd-soc-i-sabre-codec.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-i-sabre-codec snd-soc-i-sabre-q2m)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -832,11 +832,11 @@ define KernelPackage/sound-soc-justboom-both
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM8804_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-justboom-both.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
+    sound/soc/bcm/snd-soc-justboom-both.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-pcm512x-i2c.ko \
+    sound/soc/codecs/snd-soc-wm8804.ko \
+    sound/soc/codecs/snd-soc-wm8804-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x-i2c snd-soc-pcm512x \
     snd-soc-wm8804-i2c snd-soc-wm8804 \
     snd-soc-justboom-both)
@@ -862,9 +862,9 @@ define KernelPackage/sound-soc-justboom-dac
     CONFIG_SND_SOC_PCM512x \
     CONFIG_SND_SOC_PCM512x_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-justboom-dac.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+    sound/soc/bcm/snd-soc-justboom-dac.ko \
+    sound/soc/codecs/snd-soc-pcm512x.ko \
+    sound/soc/codecs/snd-soc-pcm512x-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x-i2c snd-soc-pcm512x \
     snd-soc-justboom-dac)
   DEPENDS:= \
@@ -888,8 +888,8 @@ define KernelPackage/sound-soc-justboom-digi
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM8804_I2C
   FILES:= \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804-i2c.ko
+    sound/soc/codecs/snd-soc-wm8804.ko \
+    sound/soc/codecs/snd-soc-wm8804-i2c.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804-i2c snd-soc-wm8804)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -913,8 +913,8 @@ define KernelPackage/sound-soc-pifi-40-amp
     CONFIG_SND_PIFI_40 \
     CONFIG_SND_SOC_TAS571X
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-pifi-40.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-tas571x.ko
+    sound/soc/bcm/snd-soc-pifi-40.ko \
+    sound/soc/codecs/snd-soc-tas571x.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-tas571x)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s
@@ -934,8 +934,8 @@ define KernelPackage/sound-soc-pisound
     CONFIG_SND_PISOUND \
     CONFIG_SND_SOC_PCM5102A
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-pisound.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm5102a.ko
+    sound/soc/bcm/snd-soc-pisound.ko \
+    sound/soc/codecs/snd-soc-pcm5102a.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm5102a snd-soc-pisound)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s
@@ -970,14 +970,14 @@ define KernelPackage/sound-soc-rpi-cirrus
     CONFIG_SND_SOC_WM8804 \
     CONFIG_SND_SOC_WM_ADSP
   FILES:= \
-    $(LINUX_DIR)/drivers/firmware/cirrus/cs_dsp.ko \
-    $(LINUX_DIR)/drivers/mfd/arizona.ko \
-    $(LINUX_DIR)/drivers/mfd/arizona-i2c.ko \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-cirrus.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-arizona.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm-adsp.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm5102.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko
+    drivers/firmware/cirrus/cs_dsp.ko \
+    drivers/mfd/arizona.ko \
+    drivers/mfd/arizona-i2c.ko \
+    sound/soc/bcm/snd-soc-rpi-cirrus.ko \
+    sound/soc/codecs/snd-soc-arizona.ko \
+    sound/soc/codecs/snd-soc-wm-adsp.ko \
+    sound/soc/codecs/snd-soc-wm5102.ko \
+    sound/soc/codecs/snd-soc-wm8804.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-rpi-cirrus)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -999,7 +999,7 @@ define KernelPackage/sound-soc-rpi-dac
     CONFIG_SND_BCM2708_SOC_RPI_DAC \
     CONFIG_SND_SOC_PCM1794A
   FILES:= \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm1794a.ko
+    sound/soc/codecs/snd-soc-pcm1794a.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm1794a)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -1020,7 +1020,7 @@ define KernelPackage/sound-soc-merus-amp
   KCONFIG:= \
     CONFIG_SND_SOC_MA120X0P
   FILES:= \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-ma120x0p.ko
+    sound/soc/codecs/snd-soc-ma120x0p.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-ma120x0p)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \
@@ -1043,8 +1043,8 @@ define KernelPackage/sound-soc-rpi-proto
     CONFIG_SND_BCM2708_SOC_RPI_PROTO \
     CONFIG_SND_SOC_WM8731
   FILES:= \
-    $(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-proto.ko \
-    $(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8731.ko
+    sound/soc/bcm/snd-soc-rpi-proto.ko \
+    sound/soc/codecs/snd-soc-wm8731.ko
   AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8731 snd-soc-rpi-proto)
   DEPENDS:= \
     kmod-sound-soc-bcm2835-i2s \

@@ -2,7 +2,7 @@ define KernelPackage/ata-marvell-sata
   TITLE:=Marvell Serial ATA support
   DEPENDS:=@TARGET_kirkwood
   KCONFIG:=CONFIG_SATA_MV CONFIG_SATA_PMP=y
-  FILES:=$(LINUX_DIR)/drivers/ata/sata_mv.ko
+  FILES:=drivers/ata/sata_mv.ko
   AUTOLOAD:=$(call AutoLoad,41,sata_mv,1)
   $(call AddDepends/ata)
 endef
@@ -19,7 +19,7 @@ define KernelPackage/mvsdio
   DEPENDS:=+kmod-mmc @TARGET_kirkwood
   KCONFIG:= CONFIG_MMC_MVSDIO
   FILES:= \
-	$(LINUX_DIR)/drivers/mmc/host/mvsdio.ko
+	drivers/mmc/host/mvsdio.ko
   AUTOLOAD:=$(call AutoProbe,mvsdio,1)
 endef
 
