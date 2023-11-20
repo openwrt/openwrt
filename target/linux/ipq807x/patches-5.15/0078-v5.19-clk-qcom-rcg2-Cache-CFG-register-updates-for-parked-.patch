@@ -110,7 +110,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  static int update_config(struct clk_rcg2 *rcg)
  {
  	int count, ret;
-@@ -164,12 +174,10 @@ calc_rate(unsigned long rate, u32 m, u32
+@@ -158,12 +168,10 @@ calc_rate(unsigned long rate, u32 m, u32
  }
  
  static unsigned long
@@ -125,7 +125,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  
  	if (rcg->mnd_width) {
  		mask = BIT(rcg->mnd_width) - 1;
-@@ -190,6 +198,17 @@ clk_rcg2_recalc_rate(struct clk_hw *hw,
+@@ -184,6 +192,17 @@ clk_rcg2_recalc_rate(struct clk_hw *hw,
  	return calc_rate(parent_rate, m, n, mode, hid_div);
  }
  
@@ -143,7 +143,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  static int _freq_tbl_determine_rate(struct clk_hw *hw, const struct freq_tbl *f,
  				    struct clk_rate_request *req,
  				    enum freq_policy policy)
-@@ -263,7 +282,8 @@ static int clk_rcg2_determine_floor_rate
+@@ -257,7 +276,8 @@ static int clk_rcg2_determine_floor_rate
  	return _freq_tbl_determine_rate(hw, rcg->freq_tbl, req, FLOOR);
  }
  
@@ -153,7 +153,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  {
  	u32 cfg, mask, d_val, not2d_val, n_minus_m;
  	struct clk_hw *hw = &rcg->clkr.hw;
-@@ -305,15 +325,27 @@ static int __clk_rcg2_configure(struct c
+@@ -299,15 +319,27 @@ static int __clk_rcg2_configure(struct c
  	cfg |= rcg->parent_map[index].cfg << CFG_SRC_SEL_SHIFT;
  	if (rcg->mnd_width && f->n && (f->m != f->n))
  		cfg |= CFG_MODE_DUAL_EDGE;
@@ -184,7 +184,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  	if (ret)
  		return ret;
  
-@@ -994,11 +1026,12 @@ static int clk_rcg2_shared_set_rate(stru
+@@ -988,11 +1020,12 @@ static int clk_rcg2_shared_set_rate(stru
  		return -EINVAL;
  
  	/*
@@ -201,7 +201,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  
  	return clk_rcg2_shared_force_enable_clear(hw, f);
  }
-@@ -1022,6 +1055,11 @@ static int clk_rcg2_shared_enable(struct
+@@ -1016,6 +1049,11 @@ static int clk_rcg2_shared_enable(struct
  	if (ret)
  		return ret;
  
@@ -213,7 +213,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  	ret = update_config(rcg);
  	if (ret)
  		return ret;
-@@ -1032,13 +1070,12 @@ static int clk_rcg2_shared_enable(struct
+@@ -1026,13 +1064,12 @@ static int clk_rcg2_shared_enable(struct
  static void clk_rcg2_shared_disable(struct clk_hw *hw)
  {
  	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
@@ -228,7 +228,7 @@ Link: https://lore.kernel.org/r/20220426212136.1543984-1-bjorn.andersson@linaro.
  
  	/*
  	 * Park the RCG at a safe configuration - sourced off of safe source.
-@@ -1056,17 +1093,52 @@ static void clk_rcg2_shared_disable(stru
+@@ -1050,17 +1087,52 @@ static void clk_rcg2_shared_disable(stru
  	update_config(rcg);
  
  	clk_rcg2_clear_force_enable(hw);
