@@ -50,10 +50,10 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 +	while (!num_words) {
 +		if (!wait || !retries)
  			return 0;
--		hwrng_msleep(rng, 1000);
+-		hwrng_yield(rng);
 +		retries--;
 +		usleep_range((u32)RNG_US_PER_WORD,
-+			     (u32)RNG_US_PER_WORD * RNG_FIFO_WORDS);
++				(u32)RNG_US_PER_WORD * RNG_FIFO_WORDS);
 +		num_words = rng_readl(priv, RNG_STATUS) >> 24;
  	}
  

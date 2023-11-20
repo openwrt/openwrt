@@ -64,7 +64,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  /**
 --- a/drivers/clk/qcom/clk-rcg2.c
 +++ b/drivers/clk/qcom/clk-rcg2.c
-@@ -209,11 +209,60 @@ clk_rcg2_recalc_rate(struct clk_hw *hw,
+@@ -203,11 +203,60 @@ clk_rcg2_recalc_rate(struct clk_hw *hw,
  	return __clk_rcg2_recalc_rate(hw, parent_rate, cfg);
  }
  
@@ -125,7 +125,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	struct clk_hw *p;
  	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
  	int index;
-@@ -232,7 +281,15 @@ static int _freq_tbl_determine_rate(stru
+@@ -226,7 +275,15 @@ static int _freq_tbl_determine_rate(stru
  	if (!f)
  		return -EINVAL;
  
@@ -142,7 +142,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	if (index < 0)
  		return index;
  
-@@ -242,18 +299,18 @@ static int _freq_tbl_determine_rate(stru
+@@ -236,18 +293,18 @@ static int _freq_tbl_determine_rate(stru
  		return -EINVAL;
  
  	if (clk_flags & CLK_SET_RATE_PARENT) {
@@ -167,7 +167,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  			rate = tmp;
  		}
  	} else {
-@@ -261,7 +318,7 @@ static int _freq_tbl_determine_rate(stru
+@@ -255,7 +312,7 @@ static int _freq_tbl_determine_rate(stru
  	}
  	req->best_parent_hw = p;
  	req->best_parent_rate = rate;
@@ -176,7 +176,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	return 0;
  }
-@@ -357,6 +414,7 @@ static int __clk_rcg2_set_rate(struct cl
+@@ -351,6 +408,7 @@ static int __clk_rcg2_set_rate(struct cl
  {
  	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
  	const struct freq_tbl *f;
@@ -184,7 +184,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	switch (policy) {
  	case FLOOR:
-@@ -372,7 +430,15 @@ static int __clk_rcg2_set_rate(struct cl
+@@ -366,7 +424,15 @@ static int __clk_rcg2_set_rate(struct cl
  	if (!f)
  		return -EINVAL;
  
