@@ -177,6 +177,7 @@ platform_copy_config() {
 			;;
 		esac
 		;;
+	acer,predator-w6|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt6000|\
 	ubnt,unifi-6-plus)
