@@ -25,7 +25,7 @@ Signed-off-by: Pavel Machek <pavel@ucw.cz>
 
 --- a/drivers/leds/leds-turris-omnia.c
 +++ b/drivers/leds/leds-turris-omnia.c
-@@ -239,9 +239,6 @@ static int omnia_leds_probe(struct i2c_c
+@@ -260,9 +260,6 @@ static int omnia_leds_probe(struct i2c_c
  		led += ret;
  	}
  
@@ -35,7 +35,7 @@ Signed-off-by: Pavel Machek <pavel@ucw.cz>
  	return 0;
  }
  
-@@ -283,6 +280,7 @@ static struct i2c_driver omnia_leds_driv
+@@ -304,6 +301,7 @@ static struct i2c_driver omnia_leds_driv
  	.driver		= {
  		.name	= "leds-turris-omnia",
  		.of_match_table = of_omnia_leds_match,
