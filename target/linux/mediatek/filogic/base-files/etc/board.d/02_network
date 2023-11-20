@@ -14,6 +14,15 @@ mediatek_setup_interfaces()
 	acer,predator-w6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
 		;;
+	asus,rt-ax59u|\
+	cetron,ct3003|\
+	confiabits,mt7981|\
+	cudy,wr3000-v1|\
+	jcg,q30-pro|\
+	qihoo,360t7|\
+	routerich,ax3000)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
+		;;
 	asus,tuf-ax4200|\
 	mediatek,mt7981-rfb|\
 	zbtlink,zbt-z8102ax)
@@ -24,14 +33,6 @@ mediatek_setup_interfaces()
 		;;
 	bananapi,bpi-r3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "eth1 wan"
-		;;
-	cetron,ct3003|\
-	confiabits,mt7981|\
-	cudy,wr3000-v1|\
-	jcg,q30-pro|\
-	qihoo,360t7|\
-	routerich,ax3000)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
 	cmcc,rax3000m|\
 	h3c,magic-nx30-pro|\
@@ -96,6 +97,7 @@ mediatek_setup_macs()
 	local label_mac=""
 
 	case $board in
+	asus,rt-ax59u|\
 	asus,tuf-ax4200|\
 	asus,tuf-ax6000)
 		CI_UBIPART="UBI_DEV"
