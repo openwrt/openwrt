@@ -34,19 +34,19 @@ function compl32(v) {
 
 BEGIN {
 	slpos=index(ARGV[1],"/")
-	if (slpos == 0) {
-		ipaddr=ip2int(ARGV[1])
-		dotpos=index(ARGV[2],".")
-		if (dotpos == 0)
-			netmask=compl32(2**(32-int(ARGV[2]))-1)
-		else
-			netmask=ip2int(ARGV[2])
-	} else {
-		ipaddr=ip2int(substr(ARGV[1],0,slpos-1))
-		netmask=compl32(2**(32-int(substr(ARGV[1],slpos+1)))-1)
+	if (slpos != 0) {
+		# rearrange arguments to not use compound notation
 		ARGV[4]=ARGV[3]
 		ARGV[3]=ARGV[2]
+		ARGV[2]=substr(ARGV[1],slpos+1)
+		ARGV[1]=substr(ARGV[1],0,slpos-1)
 	}
+	ipaddr=ip2int(ARGV[1])
+	dotpos=index(ARGV[2],".")
+	if (dotpos == 0)
+		netmask=compl32(2**(32-int(ARGV[2]))-1)
+	else
+		netmask=ip2int(ARGV[2])
 
 	network=and(ipaddr,netmask)
 	prefix=32-bitcount(compl32(netmask))
