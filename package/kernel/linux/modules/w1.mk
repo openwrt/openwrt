@@ -6,14 +6,14 @@
 #
 
 W1_MENU:=W1 support
-W1_MASTERS_DIR:=$(LINUX_DIR)/drivers/w1/masters
-W1_SLAVES_DIR:=$(LINUX_DIR)/drivers/w1/slaves
+W1_MASTERS_DIR:=drivers/w1/masters
+W1_SLAVES_DIR:=drivers/w1/slaves
 
 define KernelPackage/w1
   SUBMENU:=$(W1_MENU)
   TITLE:=Dallas's 1-wire support
   KCONFIG:=CONFIG_W1
-  FILES:=$(LINUX_DIR)/drivers/w1/wire.ko
+  FILES:=drivers/w1/wire.ko
   DEPENDS:=+kmod-hwmon-core
 endef
 

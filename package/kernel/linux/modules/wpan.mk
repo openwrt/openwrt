@@ -14,8 +14,8 @@ define KernelPackage/ieee802154
 	CONFIG_IEEE802154_SOCKET=y \
 	CONFIG_IEEE802154_NL802154_EXPERIMENTAL=n
   FILES:= \
-	$(LINUX_DIR)/net/ieee802154/ieee802154.ko \
-	$(LINUX_DIR)/net/ieee802154/ieee802154_socket.ko
+	net/ieee802154/ieee802154.ko \
+	net/ieee802154/ieee802154_socket.ko
   AUTOLOAD:=$(call AutoLoad,90,ieee802154 ieee802154_socket)
 endef
 
@@ -36,7 +36,7 @@ define KernelPackage/mac802154
   KCONFIG:= \
 	CONFIG_MAC802154 \
 	CONFIG_IEEE802154_DRIVERS=y
-  FILES:=$(LINUX_DIR)/net/mac802154/mac802154.ko
+  FILES:=net/mac802154/mac802154.ko
   AUTOLOAD:=$(call AutoLoad,91,mac802154)
 endef
 
@@ -57,7 +57,7 @@ define KernelPackage/fakelb
   TITLE:=Fake LR-WPAN driver
   DEPENDS:=+kmod-mac802154
   KCONFIG:=CONFIG_IEEE802154_FAKELB
-  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/fakelb.ko
+  FILES:=drivers/net/ieee802154/fakelb.ko
   AUTOLOAD:=$(call AutoLoad,92,fakelb)
 endef
 
@@ -73,7 +73,7 @@ define KernelPackage/atusb
   TITLE:=ATUSB transceiver driver
   DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-mac802154
   KCONFIG:=CONFIG_IEEE802154_ATUSB
-  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/atusb.ko
+  FILES:=drivers/net/ieee802154/atusb.ko
   AUTOLOAD:=$(call AutoProbe,atusb)
 endef
 
@@ -87,7 +87,7 @@ define KernelPackage/at86rf230
 	CONFIG_IEEE802154_AT86RF230_DEBUGFS=n \
 	CONFIG_SPI=y \
 	CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/at86rf230.ko
+  FILES:=drivers/net/ieee802154/at86rf230.ko
   AUTOLOAD:=$(call AutoProbe,at86rf230)
 endef
 
@@ -100,7 +100,7 @@ define KernelPackage/mrf24j40
   KCONFIG:=CONFIG_IEEE802154_MRF24J40 \
 	CONFIG_SPI=y \
 	CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/mrf24j40.ko
+  FILES:=drivers/net/ieee802154/mrf24j40.ko
   AUTOLOAD:=$(call AutoProbe,mrf24j40)
 endef
 
@@ -113,7 +113,7 @@ define KernelPackage/cc2520
   KCONFIG:=CONFIG_IEEE802154_CC2520 \
 	CONFIG_SPI=y \
 	CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/cc2520.ko
+  FILES:=drivers/net/ieee802154/cc2520.ko
   AUTOLOAD:=$(call AutoProbe,cc2520)
 endef
 
@@ -128,7 +128,7 @@ define KernelPackage/ca8210
 	CONFIG_SPI=y \
 	CONFIG_SPI_MASTER=y \
 	CONFIG_IEEE802154_CA8210_DEBUGFS=n
-  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/ca8210.ko
+  FILES:=drivers/net/ieee802154/ca8210.ko
   AUTOLOAD:=$(call AutoProbe,ca8210)
 endef
 
@@ -141,7 +141,7 @@ define KernelPackage/ieee802154-6lowpan
   DEPENDS:=+kmod-6lowpan +kmod-ieee802154
   KCONFIG:=CONFIG_IEEE802154_6LOWPAN
   FILES:= \
-	$(LINUX_DIR)/net/ieee802154/6lowpan/ieee802154_6lowpan.ko
+	net/ieee802154/6lowpan/ieee802154_6lowpan.ko
   AUTOLOAD:=$(call AutoLoad,91,ieee802154_6lowpan)
 endef
 

@@ -12,7 +12,7 @@ define KernelPackage/leds-gpio
   TITLE:=GPIO LED support
   DEPENDS:= @GPIO_SUPPORT
   KCONFIG:=CONFIG_LEDS_GPIO
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-gpio.ko
+  FILES:=drivers/leds/leds-gpio.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-gpio,1)
 endef
 
@@ -22,7 +22,7 @@ endef
 
 $(eval $(call KernelPackage,leds-gpio))
 
-LED_TRIGGER_DIR=$(LINUX_DIR)/drivers/leds/trigger
+LED_TRIGGER_DIR=drivers/leds/trigger
 
 define KernelPackage/ledtrig-activity
   SUBMENU:=$(LEDS_MENU)
@@ -136,7 +136,7 @@ define KernelPackage/leds-apu
   TITLE:=PC Engines APU1 LED support
   DEPENDS:= @GPIO_SUPPORT @TARGET_x86
   KCONFIG:=CONFIG_LEDS_APU
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-apu.ko
+  FILES:=drivers/leds/leds-apu.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-apu,1)
 endef
 
@@ -150,7 +150,7 @@ $(eval $(call KernelPackage,leds-apu))
 define KernelPackage/leds-mlxcpld
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED support for the Mellanox boards
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-mlxcpld.ko
+  FILES:=drivers/leds/leds-mlxcpld.ko
   KCONFIG:=CONFIG_LEDS_MLXCPLD
   AUTOLOAD:=$(call AutoProbe,leds-mlxcpld)
 endef
@@ -169,7 +169,7 @@ define KernelPackage/leds-pca955x
   DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core
   KCONFIG:=CONFIG_LEDS_PCA955X \
     CONFIG_LEDS_PCA955X_GPIO=y
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-pca955x.ko
+  FILES:=drivers/leds/leds-pca955x.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-pca955x,1)
 endef
 
@@ -187,7 +187,7 @@ define KernelPackage/leds-pca963x
   TITLE:=PCA963x LED support
   DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_LEDS_PCA963X
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-pca963x.ko
+  FILES:=drivers/leds/leds-pca963x.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-pca963x,1)
 endef
 
@@ -203,7 +203,7 @@ define KernelPackage/leds-pwm
   TITLE:=PWM driven LED Support
   KCONFIG:=CONFIG_LEDS_PWM
   DEPENDS:= @PWM_SUPPORT
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-pwm.ko
+  FILES:=drivers/leds/leds-pwm.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-pwm,1)
 endef
 
@@ -219,7 +219,7 @@ define KernelPackage/leds-tlc591xx
   TITLE:=LED driver for TLC59108 and TLC59116 controllers
   DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c
   KCONFIG:=CONFIG_LEDS_TLC591XX
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-tlc591xx.ko
+  FILES:=drivers/leds/leds-tlc591xx.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-tlc591xx,1)
 endef
 
@@ -235,7 +235,7 @@ define KernelPackage/leds-uleds
   SUBMENU:=$(LEDS_MENU)
   TITLE:=Userspace LEDs
   KCONFIG:=CONFIG_LEDS_USER
-  FILES:=$(LINUX_DIR)/drivers/leds/uleds.ko
+  FILES:=drivers/leds/uleds.ko
   AUTOLOAD:=$(call AutoLoad,60,uleds,1)
 endef
 
@@ -251,7 +251,7 @@ define KernelPackage/input-leds
   TITLE:=Input device LED support
   DEPENDS:=+kmod-input-core
   KCONFIG:=CONFIG_INPUT_LEDS
-  FILES:=$(LINUX_DIR)/drivers/input/input-leds.ko
+  FILES:=drivers/input/input-leds.ko
   AUTOLOAD:=$(call AutoLoad,50,input-leds,1)
 endef
 
@@ -268,7 +268,7 @@ define KernelPackage/leds-lp55xx-common
   TITLE:=LED common driver for LP5521/LP5523/LP55231/LP5562 controllers
   DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_LEDS_LP55XX_COMMON
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-lp55xx-common.ko
+  FILES:=drivers/leds/leds-lp55xx-common.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-lp55xx-common,1)
 endef
 
@@ -285,7 +285,7 @@ define KernelPackage/leds-lp5562
   TITLE:=LED driver for LP5562 controllers
   DEPENDS:=+kmod-i2c-core +kmod-leds-lp55xx-common
   KCONFIG:=CONFIG_LEDS_LP5562
-  FILES:=$(LINUX_DIR)/drivers/leds/leds-lp5562.ko
+  FILES:=drivers/leds/leds-lp5562.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-lp5562,1)
 endef
 

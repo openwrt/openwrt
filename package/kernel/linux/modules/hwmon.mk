@@ -14,7 +14,7 @@ define KernelPackage/hwmon-core
 	CONFIG_HWMON \
 	CONFIG_HWMON_DEBUG_CHIP=n
   FILES:= \
-	$(LINUX_DIR)/drivers/hwmon/hwmon.ko
+	drivers/hwmon/hwmon.ko
 endef
 
 define KernelPackage/hwmon-core/description
@@ -32,7 +32,7 @@ endef
 define KernelPackage/hwmon-ad7418
   TITLE:=AD741x monitoring support
   KCONFIG:=CONFIG_SENSORS_AD7418
-  FILES:=$(LINUX_DIR)/drivers/hwmon/ad7418.ko
+  FILES:=drivers/hwmon/ad7418.ko
   AUTOLOAD:=$(call AutoLoad,60,ad7418 ad7418)
   $(call AddDepends/hwmon,+kmod-i2c-core +LINUX_6_6:kmod-regmap-core)
 endef
@@ -49,8 +49,8 @@ define KernelPackage/hwmon-adt7410
 	CONFIG_SENSORS_ADT7X10 \
 	CONFIG_SENSORS_ADT7410
   FILES:= \
-	$(LINUX_DIR)/drivers/hwmon/adt7x10.ko \
-	$(LINUX_DIR)/drivers/hwmon/adt7410.ko
+	drivers/hwmon/adt7x10.ko \
+	drivers/hwmon/adt7410.ko
   AUTOLOAD:=$(call AutoLoad,60,adt7x10 adt7410)
   $(call AddDepends/hwmon,+kmod-i2c-core +!LINUX_5_15:kmod-regmap-core)
 endef
@@ -65,7 +65,7 @@ $(eval $(call KernelPackage,hwmon-adt7410))
 define KernelPackage/hwmon-adt7475
   TITLE:=ADT7473/7475/7476/7490 monitoring support
   KCONFIG:=CONFIG_SENSORS_ADT7475
-  FILES:=$(LINUX_DIR)/drivers/hwmon/adt7475.ko
+  FILES:=drivers/hwmon/adt7475.ko
   AUTOLOAD:=$(call AutoProbe,adt7475)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
 endef
@@ -80,7 +80,7 @@ $(eval $(call KernelPackage,hwmon-adt7475))
 define KernelPackage/hwmon-coretemp
   TITLE:=Intel Core/Core2/Atom temperature sensor
   KCONFIG:=CONFIG_SENSORS_CORETEMP
-  FILES:=$(LINUX_DIR)/drivers/hwmon/coretemp.ko
+  FILES:=drivers/hwmon/coretemp.ko
   AUTOLOAD:=$(call AutoProbe,coretemp)
   $(call AddDepends/hwmon,@TARGET_x86)
 endef
@@ -98,7 +98,7 @@ define KernelPackage/hwmon-dme1737
   TITLE:=SMSC DME1737 and compatible monitoring support
   KCONFIG:=CONFIG_SENSORS_DME1737
   FILES:= \
-	$(LINUX_DIR)/drivers/hwmon/dme1737.ko
+	drivers/hwmon/dme1737.ko
   AUTOLOAD:=$(call AutoProbe,dme1737)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
 endef
@@ -113,7 +113,7 @@ $(eval $(call KernelPackage,hwmon-dme1737))
 define KernelPackage/hwmon-drivetemp
   TITLE:=Hard disk drives with temperature sensor
   KCONFIG:=CONFIG_SENSORS_DRIVETEMP
-  FILES:=$(LINUX_DIR)/drivers/hwmon/drivetemp.ko
+  FILES:=drivers/hwmon/drivetemp.ko
   AUTOLOAD:=$(call AutoLoad,60,drivetemp)
   $(call AddDepends/hwmon,+kmod-ata-core +kmod-scsi-core)
 endef
@@ -128,7 +128,7 @@ $(eval $(call KernelPackage,hwmon-drivetemp))
 define KernelPackage/hwmon-emc2305
   TITLE:=Microchip EMC2301/2/3/5 fan controller
   KCONFIG:=CONFIG_SENSORS_EMC2305
-  FILES:=$(LINUX_DIR)/drivers/hwmon/emc2305.ko
+  FILES:=drivers/hwmon/emc2305.ko
   AUTOLOAD:=$(call AutoProbe,emc2305)
   $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal +kmod-regmap-i2c @LINUX_6_1||LINUX_6_6)
 endef
@@ -145,8 +145,8 @@ define KernelPackage/hwmon-gsc
   KCONFIG:=CONFIG_MFD_GATEWORKS_GSC \
         CONFIG_SENSORS_GSC
   FILES:= \
-	$(LINUX_DIR)/drivers/mfd/gateworks-gsc.ko \
-	$(LINUX_DIR)/drivers/hwmon/gsc-hwmon.ko
+	drivers/mfd/gateworks-gsc.ko \
+	drivers/hwmon/gsc-hwmon.ko
   AUTOLOAD:=$(call AutoLoad,20,gsc-hwmon,1)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-mfd)
 endef
@@ -162,7 +162,7 @@ $(eval $(call KernelPackage,hwmon-gsc))
 define KernelPackage/hwmon-gpiofan
   TITLE:=Generic GPIO FAN support
   KCONFIG:=CONFIG_SENSORS_GPIO_FAN
-  FILES:=$(LINUX_DIR)/drivers/hwmon/gpio-fan.ko
+  FILES:=drivers/hwmon/gpio-fan.ko
   AUTOLOAD:=$(call AutoLoad,60,gpio-fan)
   $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal)
 endef
@@ -177,7 +177,7 @@ $(eval $(call KernelPackage,hwmon-gpiofan))
 define KernelPackage/hwmon-f71882fg
   TITLE:=F71882FG compatible monitoring support
   KCONFIG:=CONFIG_SENSORS_F71882FG
-  FILES:=$(LINUX_DIR)/drivers/hwmon/f71882fg.ko
+  FILES:=drivers/hwmon/f71882fg.ko
   AUTOLOAD:=$(call AutoProbe,f71882fg)
   $(call AddDepends/hwmon,@TARGET_x86)
 endef
@@ -192,7 +192,7 @@ $(eval $(call KernelPackage,hwmon-f71882fg))
 define KernelPackage/hwmon-g762
   TITLE:=G762/G763 fan speed PWM controller support
   KCONFIG:=CONFIG_SENSORS_G762
-  FILES:=$(LINUX_DIR)/drivers/hwmon/g762.ko
+  FILES:=drivers/hwmon/g762.ko
   AUTOLOAD:=$(call AutoProbe,g762)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -207,7 +207,7 @@ $(eval $(call KernelPackage,hwmon-g762))
 define KernelPackage/hwmon-ina209
   TITLE:=INA209 monitoring support
   KCONFIG:=CONFIG_SENSORS_INA209
-  FILES:=$(LINUX_DIR)/drivers/hwmon/ina209.ko
+  FILES:=drivers/hwmon/ina209.ko
   AUTOLOAD:=$(call AutoProbe,ina209)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -222,7 +222,7 @@ $(eval $(call KernelPackage,hwmon-ina209))
 define KernelPackage/hwmon-ina2xx
   TITLE:=INA2XX monitoring support
   KCONFIG:=CONFIG_SENSORS_INA2XX
-  FILES:=$(LINUX_DIR)/drivers/hwmon/ina2xx.ko
+  FILES:=drivers/hwmon/ina2xx.ko
   AUTOLOAD:=$(call AutoProbe,ina2xx)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
 endef
@@ -237,7 +237,7 @@ $(eval $(call KernelPackage,hwmon-ina2xx))
 define KernelPackage/hwmon-it87
   TITLE:=IT87 monitoring support
   KCONFIG:=CONFIG_SENSORS_IT87
-  FILES:=$(LINUX_DIR)/drivers/hwmon/it87.ko
+  FILES:=drivers/hwmon/it87.ko
   AUTOLOAD:=$(call AutoProbe,it87)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid +PACKAGE_kmod-thermal:kmod-thermal)
 endef
@@ -252,7 +252,7 @@ $(eval $(call KernelPackage,hwmon-it87))
 define KernelPackage/hwmon-jc42
   TITLE:=Jedec JC42.4 compliant temperature sensors support
   KCONFIG:=CONFIG_SENSORS_JC42
-  FILES:=$(LINUX_DIR)/drivers/hwmon/jc42.ko
+  FILES:=drivers/hwmon/jc42.ko
   AUTOLOAD:=$(call AutoProbe,jc42)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
 endef
@@ -267,7 +267,7 @@ $(eval $(call KernelPackage,hwmon-jc42))
 define KernelPackage/hwmon-lm63
   TITLE:=LM63/64 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM63
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm63.ko
+  FILES:=drivers/hwmon/lm63.ko
   AUTOLOAD:=$(call AutoProbe,lm63)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
 endef
@@ -284,7 +284,7 @@ define KernelPackage/hwmon-lm70
   KCONFIG:=CONFIG_SENSORS_LM70 \
         CONFIG_SPI=y \
         CONFIG_SPI_MASTER=y
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm70.ko
+  FILES:=drivers/hwmon/lm70.ko
   AUTOLOAD:=$(call AutoProbe,lm70)
   $(call AddDepends/hwmon)
 endef
@@ -299,7 +299,7 @@ $(eval $(call KernelPackage,hwmon-lm70))
 define KernelPackage/hwmon-lm75
   TITLE:=LM75 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM75
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm75.ko
+  FILES:=drivers/hwmon/lm75.ko
   AUTOLOAD:=$(call AutoProbe,lm75)
   $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal +kmod-regmap-i2c)
 endef
@@ -314,7 +314,7 @@ $(eval $(call KernelPackage,hwmon-lm75))
 define KernelPackage/hwmon-lm77
   TITLE:=LM77 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM77
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm77.ko
+  FILES:=drivers/hwmon/lm77.ko
   AUTOLOAD:=$(call AutoProbe,lm77)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -329,7 +329,7 @@ $(eval $(call KernelPackage,hwmon-lm77))
 define KernelPackage/hwmon-lm85
   TITLE:=LM85 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM85
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm85.ko
+  FILES:=drivers/hwmon/lm85.ko
   AUTOLOAD:=$(call AutoProbe,lm85)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
 endef
@@ -344,7 +344,7 @@ $(eval $(call KernelPackage,hwmon-lm85))
 define KernelPackage/hwmon-lm90
   TITLE:=LM90 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM90
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm90.ko
+  FILES:=drivers/hwmon/lm90.ko
   AUTOLOAD:=$(call AutoProbe,lm90)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -359,7 +359,7 @@ $(eval $(call KernelPackage,hwmon-lm90))
 define KernelPackage/hwmon-lm92
   TITLE:=LM92 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM92
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm92.ko
+  FILES:=drivers/hwmon/lm92.ko
   AUTOLOAD:=$(call AutoProbe,lm92)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -374,7 +374,7 @@ $(eval $(call KernelPackage,hwmon-lm92))
 define KernelPackage/hwmon-lm95241
   TITLE:=LM95241 monitoring support
   KCONFIG:=CONFIG_SENSORS_LM95241
-  FILES:=$(LINUX_DIR)/drivers/hwmon/lm95241.ko
+  FILES:=drivers/hwmon/lm95241.ko
   AUTOLOAD:=$(call AutoProbe,lm95241)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -389,7 +389,7 @@ $(eval $(call KernelPackage,hwmon-lm95241))
 define KernelPackage/hwmon-ltc4151
   TITLE:=LTC4151 monitoring support
   KCONFIG:=CONFIG_SENSORS_LTC4151
-  FILES:=$(LINUX_DIR)/drivers/hwmon/ltc4151.ko
+  FILES:=drivers/hwmon/ltc4151.ko
   AUTOLOAD:=$(call AutoProbe,ltc4151)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -404,7 +404,7 @@ $(eval $(call KernelPackage,hwmon-ltc4151))
 define KernelPackage/hwmon-max6642
   TITLE:=MAX6642 monitoring support
   KCONFIG:=CONFIG_SENSORS_MAX6642
-  FILES:=$(LINUX_DIR)/drivers/hwmon/max6642.ko
+  FILES:=drivers/hwmon/max6642.ko
   AUTOLOAD:=$(call AutoLoad,60,max6642 max6642)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -419,7 +419,7 @@ $(eval $(call KernelPackage,hwmon-max6642))
 define KernelPackage/hwmon-max6697
   TITLE:=MAX6697 monitoring support
   KCONFIG:=CONFIG_SENSORS_MAX6697
-  FILES:=$(LINUX_DIR)/drivers/hwmon/max6697.ko
+  FILES:=drivers/hwmon/max6697.ko
   AUTOLOAD:=$(call AutoProbe,max6697)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -434,7 +434,7 @@ $(eval $(call KernelPackage,hwmon-max6697))
 define KernelPackage/hwmon-mcp3021
   TITLE:=MCP3021/3221 monitoring support
   KCONFIG:=CONFIG_SENSORS_MCP3021
-  FILES:=$(LINUX_DIR)/drivers/hwmon/mcp3021.ko
+  FILES:=drivers/hwmon/mcp3021.ko
   AUTOLOAD:=$(call AutoProbe,mcp3021)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -450,8 +450,8 @@ define KernelPackage/hwmon-nct6775
   TITLE:=NCT6106D/6775F/6776F/6779D/6791D/6792D/6793D and compatibles monitoring support
   KCONFIG:=CONFIG_SENSORS_NCT6775
   FILES:= \
-	$(LINUX_DIR)/drivers/hwmon/nct6775.ko \
-	$(LINUX_DIR)/drivers/hwmon/nct6775-core.ko
+	drivers/hwmon/nct6775.ko \
+	drivers/hwmon/nct6775-core.ko
   AUTOLOAD:=$(call AutoProbe,nct6775)
   $(call AddDepends/hwmon,@PCI_SUPPORT @TARGET_x86 +kmod-hwmon-vid +kmod-regmap-core)
 endef
@@ -466,7 +466,7 @@ $(eval $(call KernelPackage,hwmon-nct6775))
 define KernelPackage/hwmon-nct7802
   TITLE:=NCT7802Y and compatibles monitoring support
   KCONFIG:=CONFIG_SENSORS_NCT7802
-  FILES:=$(LINUX_DIR)/drivers/hwmon/nct7802.ko
+  FILES:=drivers/hwmon/nct7802.ko
   AUTOLOAD:=$(call AutoProbe,nct7802)
   $(call AddDepends/hwmon,+kmod-regmap-i2c)
 endef
@@ -481,7 +481,7 @@ $(eval $(call KernelPackage,hwmon-nct7802))
 define KernelPackage/hwmon-pc87360
   TITLE:=PC87360 monitoring support
   KCONFIG:=CONFIG_SENSORS_PC87360
-  FILES:=$(LINUX_DIR)/drivers/hwmon/pc87360.ko
+  FILES:=drivers/hwmon/pc87360.ko
   AUTOLOAD:=$(call AutoProbe,pc87360)
   $(call AddDepends/hwmon,@TARGET_x86 +kmod-hwmon-vid)
 endef
@@ -496,7 +496,7 @@ $(eval $(call KernelPackage,hwmon-pc87360))
 define KernelPackage/pmbus-core
   TITLE:=PMBus support
   KCONFIG:= CONFIG_PMBUS
-  FILES:=$(LINUX_DIR)/drivers/hwmon/pmbus/pmbus_core.ko
+  FILES:=drivers/hwmon/pmbus/pmbus_core.ko
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
@@ -510,7 +510,7 @@ $(eval $(call KernelPackage,pmbus-core))
 define KernelPackage/pmbus-zl6100
   TITLE:=Intersil / Zilker Labs ZL6100 hardware monitoring
   KCONFIG:=CONFIG_SENSORS_ZL6100
-  FILES:=$(LINUX_DIR)/drivers/hwmon/pmbus/zl6100.ko
+  FILES:=drivers/hwmon/pmbus/zl6100.ko
   AUTOLOAD:=$(call AutoProbe,zl6100)
   $(call AddDepends/hwmon, +kmod-pmbus-core)
 endef
@@ -526,7 +526,7 @@ $(eval $(call KernelPackage,pmbus-zl6100))
 define KernelPackage/hwmon-pwmfan
   TITLE:=Generic PWM FAN support
   KCONFIG:=CONFIG_SENSORS_PWM_FAN
-  FILES:=$(LINUX_DIR)/drivers/hwmon/pwm-fan.ko
+  FILES:=drivers/hwmon/pwm-fan.ko
   AUTOLOAD:=$(call AutoLoad,60,pwm-fan)
   $(call AddDepends/hwmon, +PACKAGE_kmod-thermal:kmod-thermal)
 endef
@@ -544,8 +544,8 @@ define KernelPackage/hwmon-sch5627
 	CONFIG_SENSORS_SCH5627 \
 	CONFIG_WATCHDOG_CORE=y
   FILES:= \
-	$(LINUX_DIR)/drivers/hwmon/sch5627.ko \
-	$(LINUX_DIR)/drivers/hwmon/sch56xx-common.ko
+	drivers/hwmon/sch5627.ko \
+	drivers/hwmon/sch56xx-common.ko
   AUTOLOAD:=$(call AutoProbe,sch5627)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -560,7 +560,7 @@ $(eval $(call KernelPackage,hwmon-sch5627))
 define KernelPackage/hwmon-sht21
   TITLE:=Sensiron SHT21 and compat. monitoring support
   KCONFIG:=CONFIG_SENSORS_SHT21
-  FILES:=$(LINUX_DIR)/drivers/hwmon/sht21.ko
+  FILES:=drivers/hwmon/sht21.ko
   AUTOLOAD:=$(call AutoProbe,sht21)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -575,7 +575,7 @@ $(eval $(call KernelPackage,hwmon-sht21))
 define KernelPackage/hwmon-sht3x
   TITLE:=Sensiron SHT3x and compat. monitoring support
   KCONFIG:=CONFIG_SENSORS_SHT3x
-  FILES:=$(LINUX_DIR)/drivers/hwmon/sht3x.ko
+  FILES:=drivers/hwmon/sht3x.ko
   AUTOLOAD:=$(call AutoProbe,sht3x)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-lib-crc8)
 endef
@@ -590,7 +590,7 @@ $(eval $(call KernelPackage,hwmon-sht3x))
 define KernelPackage/hwmon-tc654
   TITLE:=TC654 monitoring support
   KCONFIG:=CONFIG_SENSORS_TC654
-  FILES:=$(LINUX_DIR)/drivers/hwmon/tc654.ko
+  FILES:=drivers/hwmon/tc654.ko
   AUTOLOAD:=$(call AutoLoad,60,tc654)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -605,7 +605,7 @@ $(eval $(call KernelPackage,hwmon-tc654))
 define KernelPackage/hwmon-tmp102
   TITLE:=Texas Instruments TMP102 monitoring support
   KCONFIG:=CONFIG_SENSORS_TMP102
-  FILES:=$(LINUX_DIR)/drivers/hwmon/tmp102.ko
+  FILES:=drivers/hwmon/tmp102.ko
   AUTOLOAD:=$(call AutoProbe,tmp102)
   $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal +kmod-regmap-i2c)
 endef
@@ -620,7 +620,7 @@ $(eval $(call KernelPackage,hwmon-tmp102))
 define KernelPackage/hwmon-tmp103
   TITLE:=Texas Instruments TMP103 monitoring support
   KCONFIG:=CONFIG_SENSORS_TMP103
-  FILES:=$(LINUX_DIR)/drivers/hwmon/tmp103.ko
+  FILES:=drivers/hwmon/tmp103.ko
   AUTOLOAD:=$(call AutoProbe,tmp103)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
 endef
@@ -635,7 +635,7 @@ $(eval $(call KernelPackage,hwmon-tmp103))
 define KernelPackage/hwmon-tmp421
   TITLE:=TI TMP421 and compatible monitoring support
   KCONFIG:=CONFIG_SENSORS_TMP421
-  FILES:=$(LINUX_DIR)/drivers/hwmon/tmp421.ko
+  FILES:=drivers/hwmon/tmp421.ko
   AUTOLOAD:=$(call AutoLoad,60,tmp421)
   $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
@@ -650,7 +650,7 @@ $(eval $(call KernelPackage,hwmon-tmp421))
 define KernelPackage/hwmon-tps23861
   TITLE:=Texas Instruments TPS23861 PoE PSE
   KCONFIG:=CONFIG_SENSORS_TPS23861
-  FILES:=$(LINUX_DIR)/drivers/hwmon/tps23861.ko
+  FILES:=drivers/hwmon/tps23861.ko
   AUTOLOAD:=$(call AutoProbe,tps23861)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
 endef
@@ -664,7 +664,7 @@ $(eval $(call KernelPackage,hwmon-tps23861))
 define KernelPackage/hwmon-vid
   TITLE:=VID/VRM/VRD voltage conversion module.
   KCONFIG:=CONFIG_HWMON_VID
-  FILES:=$(LINUX_DIR)/drivers/hwmon/hwmon-vid.ko
+  FILES:=drivers/hwmon/hwmon-vid.ko
   AUTOLOAD:=$(call AutoLoad,41,hwmon-vid)
   $(call AddDepends/hwmon,)
 endef
@@ -679,7 +679,7 @@ $(eval $(call KernelPackage,hwmon-vid))
 define KernelPackage/hwmon-w83627ehf
   TITLE:=Winbond W83627EHF/EHG/DHG/UHG, W83667HG monitoring support
   KCONFIG:=CONFIG_SENSORS_W83627EHF
-  FILES:=$(LINUX_DIR)/drivers/hwmon/w83627ehf.ko
+  FILES:=drivers/hwmon/w83627ehf.ko
   AUTOLOAD:=$(call AutoProbe,w83627ehf)
   $(call AddDepends/hwmon,@TARGET_x86 +kmod-hwmon-vid)
 endef
@@ -696,7 +696,7 @@ $(eval $(call KernelPackage,hwmon-w83627ehf))
 define KernelPackage/hwmon-w83627hf
   TITLE:=Winbond W83627HF monitoring support
   KCONFIG:=CONFIG_SENSORS_W83627HF
-  FILES:=$(LINUX_DIR)/drivers/hwmon/w83627hf.ko
+  FILES:=drivers/hwmon/w83627hf.ko
   AUTOLOAD:=$(call AutoLoad,50,w83627hf)
   $(call AddDepends/hwmon,@TARGET_x86 +kmod-hwmon-vid)
 endef
@@ -711,7 +711,7 @@ $(eval $(call KernelPackage,hwmon-w83627hf))
 define KernelPackage/hwmon-w83793
   TITLE:=Winbond W83793G/R monitoring support
   KCONFIG:=CONFIG_SENSORS_W83793
-  FILES:=$(LINUX_DIR)/drivers/hwmon/w83793.ko
+  FILES:=drivers/hwmon/w83793.ko
   AUTOLOAD:=$(call AutoProbe,w83793)
   $(call AddDepends/hwmon,+kmod-i2c-core +kmod-hwmon-vid)
 endef
@@ -726,7 +726,7 @@ $(eval $(call KernelPackage,hwmon-w83793))
 define KernelPackage/hwmon-adcxx
   TITLE:=ADCxx monitoring support
   KCONFIG:=CONFIG_SENSORS_ADCXX
-  FILES:=$(LINUX_DIR)/drivers/hwmon/adcxx.ko
+  FILES:=drivers/hwmon/adcxx.ko
   AUTOLOAD:=$(call AutoLoad,60,adcxx)
   $(call AddDepends/hwmon,)
 endef

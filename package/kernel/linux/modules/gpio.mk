@@ -9,7 +9,7 @@ define KernelPackage/gpio-amd-fch
   DEPENDS:=@GPIO_SUPPORT @TARGET_x86
   TITLE:=GPIO support for AMD Fusion Controller Hub (G-series SOCs)
   KCONFIG:=CONFIG_GPIO_AMD_FCH
-  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-amd-fch.ko
+  FILES:=drivers/gpio/gpio-amd-fch.ko
   AUTOLOAD:=$(call AutoLoad,25,gpio-amd-fch,1)
 endef
 
@@ -29,7 +29,7 @@ define KernelPackage/gpio-beeper
 	CONFIG_INPUT_MISC=y \
 	CONFIG_INPUT_GPIO_BEEPER
   FILES:= \
-	$(LINUX_DIR)/drivers/input/misc/gpio-beeper.ko
+	drivers/input/misc/gpio-beeper.ko
   AUTOLOAD:=$(call AutoLoad,50,gpio-beeper)
 endef
 
@@ -45,7 +45,7 @@ define KernelPackage/gpio-cascade
   TITLE:=Generic GPIO cascade
   KCONFIG:=CONFIG_GPIO_CASCADE
   DEPENDS:=@GPIO_SUPPORT +kmod-mux-core
-  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-cascade.ko
+  FILES:=drivers/gpio/gpio-cascade.ko
   AUTOLOAD:=$(call AutoLoad,29,gpio-cascade,1)
 endef
 
@@ -61,7 +61,7 @@ define KernelPackage/gpio-f7188x
   TITLE:=Fintek F718xx/F818xx GPIO Support
   DEPENDS:=@GPIO_SUPPORT @TARGET_x86
   KCONFIG:=CONFIG_GPIO_F7188X
-  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-f7188x.ko
+  FILES:=drivers/gpio/gpio-f7188x.ko
   AUTOLOAD:=$(call AutoProbe,gpio-f7188x)
 endef
 
@@ -77,7 +77,7 @@ define KernelPackage/gpio-it87
   DEPENDS:=@GPIO_SUPPORT @TARGET_x86
   TITLE:=GPIO support for IT87xx Super I/O chips
   KCONFIG:=CONFIG_GPIO_IT87
-  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-it87.ko
+  FILES:=drivers/gpio/gpio-it87.ko
   AUTOLOAD:=$(call AutoLoad,25,gpio-it87,1)
 endef
 
@@ -94,7 +94,7 @@ define KernelPackage/gpio-nxp-74hc164
   SUBMENU:=$(GPIO_MENU)
   TITLE:=NXP 74HC164 GPIO expander support
   KCONFIG:=CONFIG_GPIO_74X164
-  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-74x164.ko
+  FILES:=drivers/gpio/gpio-74x164.ko
   AUTOLOAD:=$(call AutoProbe,gpio-74x164)
 endef
 
@@ -110,7 +110,7 @@ define KernelPackage/gpio-pca953x
   DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +kmod-regmap-i2c
   TITLE:=PCA95xx, TCA64xx, and MAX7310 I/O ports
   KCONFIG:=CONFIG_GPIO_PCA953X
-  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-pca953x.ko
+  FILES:=drivers/gpio/gpio-pca953x.ko
   AUTOLOAD:=$(call AutoLoad,55,gpio-pca953x)
 endef
 
@@ -127,7 +127,7 @@ define KernelPackage/gpio-pcf857x
   DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core
   TITLE:=PCX857x, PCA967x and MAX732X I2C GPIO expanders
   KCONFIG:=CONFIG_GPIO_PCF857X
-  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-pcf857x.ko
+  FILES:=drivers/gpio/gpio-pcf857x.ko
   AUTOLOAD:=$(call AutoLoad,55,gpio-pcf857x)
 endef
 

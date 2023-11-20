@@ -8,10 +8,10 @@
 I2C_MENU:=I2C support
 
 ModuleConfVar=$(word 1,$(subst :,$(space),$(1)))
-ModuleFullPath=$(LINUX_DIR)/$(word 2,$(subst :,$(space),$(1))).ko
+ModuleName=$(word 2,$(subst :,$(space),$(1))).ko
 ModuleKconfig=$(foreach mod,$(1),$(call ModuleConfVar,$(mod)))
-ModuleFiles=$(foreach mod,$(1),$(call ModuleFullPath,$(mod)))
-ModuleAuto=$(call AutoLoad,$(1),$(foreach mod,$(2),$(basename $(notdir $(call ModuleFullPath,$(mod))))),$(3))
+ModuleFiles=$(foreach mod,$(1),$(call ModuleName,$(mod)))
+ModuleAuto=$(call AutoLoad,$(1),$(foreach mod,$(2),$(basename $(call ModuleName,$(mod)))),$(3))
 
 define i2c_defaults
   SUBMENU:=$(I2C_MENU)

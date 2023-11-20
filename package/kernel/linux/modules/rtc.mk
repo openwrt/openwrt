@@ -14,7 +14,7 @@ define KernelPackage/rtc-ds1307
   DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c +kmod-hwmon-core
   KCONFIG:=CONFIG_RTC_DRV_DS1307 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1307.ko
+  FILES:=drivers/rtc/rtc-ds1307.ko
   AUTOLOAD:=$(call AutoProbe,rtc-ds1307)
 endef
 
@@ -34,7 +34,7 @@ define KernelPackage/rtc-ds1374
   KCONFIG:=CONFIG_RTC_DRV_DS1374 \
 	CONFIG_RTC_DRV_DS1374_WDT=n \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1374.ko
+  FILES:=drivers/rtc/rtc-ds1374.ko
   AUTOLOAD:=$(call AutoProbe,rtc-ds1374)
 endef
 
@@ -52,7 +52,7 @@ define KernelPackage/rtc-ds1672
   DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_DS1672 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1672.ko
+  FILES:=drivers/rtc/rtc-ds1672.ko
   AUTOLOAD:=$(call AutoProbe,rtc-ds1672)
 endef
 
@@ -70,7 +70,7 @@ define KernelPackage/rtc-em3027
   DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_EM3027 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-em3027.ko
+  FILES:=drivers/rtc/rtc-em3027.ko
   AUTOLOAD:=$(call AutoProbe,rtc-em3027)
 endef
 
@@ -88,7 +88,7 @@ define KernelPackage/rtc-isl1208
   DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_ISL1208 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-isl1208.ko
+  FILES:=drivers/rtc/rtc-isl1208.ko
   AUTOLOAD:=$(call AutoProbe,rtc-isl1208)
 endef
 
@@ -105,7 +105,7 @@ define KernelPackage/rtc-mv
   DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
   KCONFIG:=CONFIG_RTC_DRV_MV \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-mv.ko
+  FILES:=drivers/rtc/rtc-mv.ko
   AUTOLOAD:=$(call AutoProbe,rtc-mv)
 endef
 
@@ -123,7 +123,7 @@ define KernelPackage/rtc-pcf8563
   DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_PCF8563 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf8563.ko
+  FILES:=drivers/rtc/rtc-pcf8563.ko
   AUTOLOAD:=$(call AutoProbe,rtc-pcf8563)
 endef
 
@@ -142,7 +142,7 @@ define KernelPackage/rtc-pcf2123
   DEPENDS:=+kmod-regmap-spi
   KCONFIG:=CONFIG_RTC_DRV_PCF2123 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2123.ko
+  FILES:=drivers/rtc/rtc-pcf2123.ko
   AUTOLOAD:=$(call AutoProbe,rtc-pcf2123)
 endef
 
@@ -159,7 +159,7 @@ define KernelPackage/rtc-pcf2127
   DEPENDS:=+kmod-i2c-core +kmod-regmap-spi
   KCONFIG:=CONFIG_RTC_DRV_PCF2127 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2127.ko
+  FILES:=drivers/rtc/rtc-pcf2127.ko
   AUTOLOAD:=$(call AutoProbe,rtc-pcf2127)
 endef
 
@@ -176,7 +176,7 @@ define KernelPackage/rtc-r7301
   DEPENDS:=+kmod-regmap-mmio
   KCONFIG:=CONFIG_RTC_DRV_R7301 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-r7301.ko
+  FILES:=drivers/rtc/rtc-r7301.ko
   AUTOLOAD:=$(call AutoProbe,rtc-r7301)
 endef
 
@@ -193,7 +193,7 @@ define KernelPackage/rtc-rs5c372a
   DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_RS5C372 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-rs5c372.ko
+  FILES:=drivers/rtc/rtc-rs5c372.ko
   AUTOLOAD:=$(call AutoLoad,50,rtc-rs5c372,1)
 endef
 
@@ -210,7 +210,7 @@ define KernelPackage/rtc-rx8025
   DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_RX8025 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-rx8025.ko
+  FILES:=drivers/rtc/rtc-rx8025.ko
   AUTOLOAD:=$(call AutoLoad,50,rtc-rx8025,1)
 endef
 
@@ -227,7 +227,7 @@ define KernelPackage/rtc-s35390a
   DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_S35390A \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-s35390a.ko
+  FILES:=drivers/rtc/rtc-s35390a.ko
   AUTOLOAD:=$(call AutoLoad,50,rtc-s35390a,1)
 endef
 
@@ -244,7 +244,7 @@ define KernelPackage/rtc-x1205
   DEPENDS:=+kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_X1205 \
 	CONFIG_RTC_CLASS=y
-  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-x1205.ko
+  FILES:=drivers/rtc/rtc-x1205.ko
   AUTOLOAD:=$(call AutoProbe,rtc-x1205)
 endef
 

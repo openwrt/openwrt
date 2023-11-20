@@ -13,7 +13,7 @@ define KernelPackage/iio-core
 	CONFIG_IIO \
 	CONFIG_IIO_BUFFER=y \
 	CONFIG_IIO_TRIGGER=y
-  FILES:=$(LINUX_DIR)/drivers/iio/industrialio.ko
+  FILES:=drivers/iio/industrialio.ko
   AUTOLOAD:=$(call AutoLoad,55,industrialio)
 endef
 
@@ -33,7 +33,7 @@ endef
 define KernelPackage/iio-kfifo-buf
   TITLE:=Industrial I/O buffering based on kfifo
   KCONFIG:=CONFIG_IIO_KFIFO_BUF
-  FILES:=$(LINUX_DIR)/drivers/iio/buffer/kfifo_buf.ko
+  FILES:=drivers/iio/buffer/kfifo_buf.ko
   AUTOLOAD:=$(call AutoLoad,55,kfifo_buf)
   $(call AddDepends/iio)
 endef
@@ -50,7 +50,7 @@ define KernelPackage/industrialio-triggered-buffer
   TITLE:=Provides helper functions for setting up triggered buffers.
   DEPENDS:=+kmod-iio-kfifo-buf
   KCONFIG:=CONFIG_IIO_TRIGGERED_BUFFER
-  FILES:=$(LINUX_DIR)/drivers/iio/buffer/industrialio-triggered-buffer.ko
+  FILES:=drivers/iio/buffer/industrialio-triggered-buffer.ko
   AUTOLOAD:=$(call AutoLoad,55,industrialio-triggered-buffer)
   $(call AddDepends/iio)
 endef
@@ -68,7 +68,7 @@ define KernelPackage/iio-ad799x
   KCONFIG:= \
 	CONFIG_AD799X_RING_BUFFER=y \
 	CONFIG_AD799X
-  FILES:=$(LINUX_DIR)/drivers/iio/adc/ad799x.ko
+  FILES:=drivers/iio/adc/ad799x.ko
   AUTOLOAD:=$(call AutoLoad,56,ad799x)
   $(call AddDepends/iio)
 endef
@@ -85,7 +85,7 @@ define KernelPackage/iio-ads1015
   DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c +kmod-industrialio-triggered-buffer
   TITLE:=Texas Instruments ADS1015 ADC driver
   KCONFIG:= CONFIG_TI_ADS1015
-  FILES:=$(LINUX_DIR)/drivers/iio/adc/ti-ads1015.ko
+  FILES:=drivers/iio/adc/ti-ads1015.ko
   AUTOLOAD:=$(call AutoLoad,56,ti-ads1015)
   $(call AddDepends/iio)
 endef
@@ -101,8 +101,8 @@ define KernelPackage/iio-hmc5843
   TITLE:=Honeywell HMC58x3 Magnetometer
   KCONFIG:= CONFIG_SENSORS_HMC5843_I2C
   FILES:= \
-      $(LINUX_DIR)/drivers/iio/magnetometer/hmc5843_i2c.ko \
-      $(LINUX_DIR)/drivers/iio/magnetometer/hmc5843_core.ko
+      drivers/iio/magnetometer/hmc5843_i2c.ko \
+      drivers/iio/magnetometer/hmc5843_core.ko
   AUTOLOAD:=$(call AutoLoad,56,hmc5843)
   $(call AddDepends/iio)
 endef
@@ -117,7 +117,7 @@ define KernelPackage/iio-bh1750
   DEPENDS:=+kmod-i2c-core
   TITLE:=ROHM BH1750 ambient light sensor
   KCONFIG:= CONFIG_BH1750
-  FILES:=$(LINUX_DIR)/drivers/iio/light/bh1750.ko
+  FILES:=drivers/iio/light/bh1750.ko
   AUTOLOAD:=$(call AutoLoad,56,bh1750)
   $(call AddDepends/iio)
 endef
@@ -130,7 +130,7 @@ define KernelPackage/iio-am2315
   DEPENDS:=+kmod-i2c-core +kmod-industrialio-triggered-buffer
   TITLE:=Asong AM2315 humidity/temperature sensor
   KCONFIG:= CONFIG_AM2315
-  FILES:=$(LINUX_DIR)/drivers/iio/humidity/am2315.ko
+  FILES:=drivers/iio/humidity/am2315.ko
   AUTOLOAD:=$(call AutoLoad,56,am2315)
   $(call AddDepends/iio)
 endef
@@ -144,7 +144,7 @@ define KernelPackage/iio-mxs-lradc
   TITLE:=Freescale i.MX23/i.MX28 LRADC ADC driver
   KCONFIG:= \
 	CONFIG_MXS_LRADC_ADC
-  FILES:=$(LINUX_DIR)/drivers/iio/adc/mxs-lradc-adc.ko
+  FILES:=drivers/iio/adc/mxs-lradc-adc.ko
   AUTOLOAD:=$(call AutoLoad,56,mxs-lradc-adc)
   $(call AddDepends/iio)
 endef
@@ -160,7 +160,7 @@ define KernelPackage/iio-dht11
   TITLE:=DHT11 (and compatible) humidity and temperature sensors
   KCONFIG:= \
 	CONFIG_DHT11
-  FILES:=$(LINUX_DIR)/drivers/iio/humidity/dht11.ko
+  FILES:=drivers/iio/humidity/dht11.ko
   AUTOLOAD:=$(call AutoLoad,56,dht11)
   $(call AddDepends/iio)
 endef
@@ -178,7 +178,7 @@ define KernelPackage/iio-bme680
   TITLE:=BME680 gas/humidity/pressure/temperature sensor
   DEPENDS:=+kmod-regmap-core
   KCONFIG:=CONFIG_BME680
-  FILES:=$(LINUX_DIR)/drivers/iio/chemical/bme680_core.ko
+  FILES:=drivers/iio/chemical/bme680_core.ko
   $(call AddDepends/iio)
 endef
 
@@ -193,7 +193,7 @@ define KernelPackage/iio-bme680-i2c
   TITLE:=BME680 gas/humidity/pressure/temperature sensor (I2C)
   DEPENDS:=+kmod-iio-bme680 +kmod-regmap-i2c
   KCONFIG:=CONFIG_BME680_I2C
-  FILES:=$(LINUX_DIR)/drivers/iio/chemical/bme680_i2c.ko
+  FILES:=drivers/iio/chemical/bme680_i2c.ko
   AUTOLOAD:=$(call AutoProbe,bme680-i2c)
   $(call AddDepends/iio)
 endef
@@ -207,7 +207,7 @@ define KernelPackage/iio-bme680-spi
   TITLE:=BME680 gas/humidity/pressure/temperature sensor (SPI)
   DEPENDS:=+kmod-iio-bme680 +kmod-regmap-spi
   KCONFIG:=CONFIG_BME680_SPI
-  FILES:=$(LINUX_DIR)/drivers/iio/chemical/bme680_spi.ko
+  FILES:=drivers/iio/chemical/bme680_spi.ko
   AUTOLOAD:=$(call AutoProbe,bme680-spi)
   $(call AddDepends/iio)
 endef
@@ -222,7 +222,7 @@ define KernelPackage/iio-bmp280
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor
   DEPENDS:=+kmod-regmap-core
   KCONFIG:=CONFIG_BMP280
-  FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280.ko
+  FILES:=drivers/iio/pressure/bmp280.ko
   $(call AddDepends/iio)
 endef
 
@@ -239,7 +239,7 @@ define KernelPackage/iio-bmp280-i2c
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor (I2C)
   DEPENDS:=+kmod-iio-bmp280 +kmod-i2c-core +kmod-regmap-i2c
   KCONFIG:=CONFIG_BMP280_I2C
-  FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280-i2c.ko
+  FILES:=drivers/iio/pressure/bmp280-i2c.ko
   AUTOLOAD:=$(call AutoProbe,bmp280-i2c)
   $(call AddDepends/iio)
 endef
@@ -255,7 +255,7 @@ define KernelPackage/iio-bmp280-spi
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor (SPI)
   DEPENDS:=+kmod-iio-bmp280 +kmod-spi-bitbang
   KCONFIG:=CONFIG_BMP280_SPI
-  FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280-spi.ko
+  FILES:=drivers/iio/pressure/bmp280-spi.ko
   AUTOLOAD:=$(call AutoProbe,bmp280-spi)
   $(call AddDepends/iio)
 endef
@@ -273,8 +273,8 @@ define KernelPackage/iio-htu21
        CONFIG_HTU21 \
        CONFIG_IIO_MS_SENSORS_I2C
   FILES:= \
-       $(LINUX_DIR)/drivers/iio/humidity/htu21.ko \
-       $(LINUX_DIR)/drivers/iio/common/ms_sensors/ms_sensors_i2c.ko
+       drivers/iio/humidity/htu21.ko \
+       drivers/iio/common/ms_sensors/ms_sensors_i2c.ko
   AUTOLOAD:=$(call AutoLoad,56,htu21)
   $(call AddDepends/iio)
 endef
@@ -294,7 +294,7 @@ define KernelPackage/iio-ccs811
   TITLE:=AMS CCS811 VOC sensor
   KCONFIG:= \
 	CONFIG_CCS811
-  FILES:= $(LINUX_DIR)/drivers/iio/chemical/ccs811.ko
+  FILES:= drivers/iio/chemical/ccs811.ko
   AUTOLOAD:=$(call AutoLoad,56,ccs811)
   $(call AddDepends/iio)
 endef
@@ -310,7 +310,7 @@ define KernelPackage/iio-si7020
   DEPENDS:=+kmod-i2c-core
   TITLE:=Silicon Labs Si7020 sensor
   KCONFIG:= CONFIG_SI7020
-  FILES:=$(LINUX_DIR)/drivers/iio/humidity/si7020.ko
+  FILES:=drivers/iio/humidity/si7020.ko
   AUTOLOAD:=$(call AutoLoad,56,si7020)
   $(call AddDepends/iio)
 endef
@@ -331,8 +331,8 @@ define KernelPackage/iio-st_accel
 	CONFIG_IIO_ST_ACCEL_3AXIS \
 	CONFIG_IIO_ST_SENSORS_CORE
   FILES:= \
-	$(LINUX_DIR)/drivers/iio/accel/st_accel.ko \
-	$(LINUX_DIR)/drivers/iio/common/st_sensors/st_sensors.ko
+	drivers/iio/accel/st_accel.ko \
+	drivers/iio/common/st_sensors/st_sensors.ko
   $(call AddDepends/iio)
 endef
 
@@ -351,8 +351,8 @@ define KernelPackage/iio-st_accel-i2c
   DEPENDS:=+kmod-iio-st_accel +kmod-i2c-core +kmod-regmap-i2c
   KCONFIG:= CONFIG_IIO_ST_ACCEL_I2C_3AXIS
   FILES:= \
-	$(LINUX_DIR)/drivers/iio/accel/st_accel_i2c.ko \
-	$(LINUX_DIR)/drivers/iio/common/st_sensors/st_sensors_i2c.ko
+	drivers/iio/accel/st_accel_i2c.ko \
+	drivers/iio/common/st_sensors/st_sensors_i2c.ko
   AUTOLOAD:=$(call AutoLoad,56,st_accel_i2c)
   $(call AddDepends/iio)
 endef
@@ -369,8 +369,8 @@ define KernelPackage/iio-st_accel-spi
   DEPENDS:=+kmod-iio-st_accel +kmod-regmap-spi
   KCONFIG:= CONFIG_IIO_ST_ACCEL_SPI_3AXIS
   FILES:= \
-	$(LINUX_DIR)/drivers/iio/accel/st_accel_spi.ko \
-	$(LINUX_DIR)/drivers/iio/common/st_sensors/st_sensors_spi.ko
+	drivers/iio/accel/st_accel_spi.ko \
+	drivers/iio/common/st_sensors/st_sensors_spi.ko
   AUTOLOAD:=$(call AutoLoad,56,st_accel_spi)
   $(call AddDepends/iio)
 endef
@@ -386,7 +386,7 @@ define KernelPackage/iio-lsm6dsx
   DEPENDS:=+kmod-iio-kfifo-buf +kmod-regmap-core +LINUX_6_6:kmod-industrialio-triggered-buffer
   TITLE:=ST LSM6DSx driver for IMU MEMS sensors
   KCONFIG:=CONFIG_IIO_ST_LSM6DSX
-  FILES:=$(LINUX_DIR)/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx.ko
+  FILES:=drivers/iio/imu/st_lsm6dsx/st_lsm6dsx.ko
   AUTOLOAD:=$(call AutoProbe,st_lsm6dsx)
   $(call AddDepends/iio)
 endef
@@ -402,7 +402,7 @@ define KernelPackage/iio-lsm6dsx-i2c
   DEPENDS:=+kmod-iio-lsm6dsx +kmod-i2c-core +kmod-regmap-i2c
   TITLE:=ST LSM6DSx driver for IMU MEMS sensors (I2C)
   KCONFIG:=CONFIG_IIO_ST_LSM6DSX
-  FILES:=$(LINUX_DIR)/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_i2c.ko
+  FILES:=drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_i2c.ko
   AUTOLOAD:=$(call AutoProbe,st_lsm6dsx-i2c)
   $(call AddDepends/iio)
 endef
@@ -418,7 +418,7 @@ define KernelPackage/iio-lsm6dsx-spi
   DEPENDS:=+kmod-iio-lsm6dsx +kmod-regmap-spi
   TITLE:=ST LSM6DSx driver for IMU MEMS sensors (SPI)
   KCONFIG:=CONFIG_IIO_ST_LSM6DSX
-  FILES:=$(LINUX_DIR)/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_spi.ko
+  FILES:=drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_spi.ko
   AUTOLOAD:=$(call AutoProbe,st_lsm6dsx-spi)
   $(call AddDepends/iio)
 endef
@@ -437,8 +437,8 @@ define KernelPackage/iio-sps30
 	CONFIG_SPS30 \
 	CONFIG_SPS30_I2C
   FILES:= \
-	$(LINUX_DIR)/drivers/iio/chemical/sps30.ko \
-	$(LINUX_DIR)/drivers/iio/chemical/sps30_i2c.ko
+	drivers/iio/chemical/sps30.ko \
+	drivers/iio/chemical/sps30_i2c.ko
   AUTOLOAD:=$(call AutoProbe,sps30 sps30_i2c)
   $(call AddDepends/iio)
 endef
@@ -454,7 +454,7 @@ define KernelPackage/iio-tsl4531
   DEPENDS:=+kmod-i2c-core
   TITLE:=TAOS TSL4531 ambient light sensor
   KCONFIG:= CONFIG_TSL4531
-  FILES:=$(LINUX_DIR)/drivers/iio/light/tsl4531.ko
+  FILES:=drivers/iio/light/tsl4531.ko
   AUTOLOAD:=$(call AutoLoad,56,tsl4531)
   $(call AddDepends/iio)
 endef
@@ -472,7 +472,7 @@ define KernelPackage/iio-fxas21002c
   TITLE:=Freescale FXAS21002C 3-axis gyro driver
   DEPENDS:=+kmod-regmap-core +kmod-industrialio-triggered-buffer
   KCONFIG:= CONFIG_FXAS21002C
-  FILES:=$(LINUX_DIR)/drivers/iio/gyro/fxas21002c_core.ko
+  FILES:=drivers/iio/gyro/fxas21002c_core.ko
   AUTOLOAD:=$(call AutoLoad,56,fxas21002c)
   $(call AddDepends/iio)
 endef
@@ -488,7 +488,7 @@ define KernelPackage/iio-fxas21002c-i2c
   TITLE:=Freescale FXAS21002C 3-axis gyro driver (I2C)
   DEPENDS:=+kmod-iio-fxas21002c +kmod-i2c-core +kmod-regmap-i2c
   KCONFIG:= CONFIG_FXAS21002C_I2C
-  FILES:=$(LINUX_DIR)/drivers/iio/gyro/fxas21002c_i2c.ko
+  FILES:=drivers/iio/gyro/fxas21002c_i2c.ko
   AUTOLOAD:=$(call AutoLoad,56,fxas21002c_i2c)
   $(call AddDepends/iio)
 endef
@@ -505,7 +505,7 @@ define KernelPackage/iio-fxas21002c-spi
   DEPENDS:=+kmod-iio-fxas21002c +kmod-regmap-spi
   TITLE:=Freescale FXAS21002C 3-axis gyro driver (SPI)
   KCONFIG:= CONFIG_FXAS21002C_SPI
-  FILES:=$(LINUX_DIR)/drivers/iio/gyro/fxas21002c_spi.ko
+  FILES:=drivers/iio/gyro/fxas21002c_spi.ko
   AUTOLOAD:=$(call AutoLoad,56,fxas21002c_spi)
   $(call AddDepends/iio)
 endef
@@ -522,7 +522,7 @@ define KernelPackage/iio-fxos8700
   TITLE:=Freescale FXOS8700 3-axis accelerometer driver
   DEPENDS:=+kmod-regmap-core
   KCONFIG:= CONFIG_FXOS8700
-  FILES:=$(LINUX_DIR)/drivers/iio/imu/fxos8700_core.ko
+  FILES:=drivers/iio/imu/fxos8700_core.ko
   AUTOLOAD:=$(call AutoLoad,56,fxos8700)
   $(call AddDepends/iio)
 endef
@@ -538,7 +538,7 @@ define KernelPackage/iio-fxos8700-i2c
   TITLE:=Freescale FXOS8700 3-axis acceleromter driver (I2C)
   DEPENDS:=+kmod-iio-fxos8700 +kmod-i2c-core +kmod-regmap-i2c
   KCONFIG:= CONFIG_FXOS8700_I2C
-  FILES:=$(LINUX_DIR)/drivers/iio/imu/fxos8700_i2c.ko
+  FILES:=drivers/iio/imu/fxos8700_i2c.ko
   AUTOLOAD:=$(call AutoLoad,56,fxos8700_i2c)
   $(call AddDepends/iio)
 endef
@@ -555,7 +555,7 @@ define KernelPackage/iio-fxos8700-spi
   DEPENDS:=+kmod-iio-fxos8700 +kmod-regmap-spi
   TITLE:=Freescale FXOS8700 3-axis accelerometer driver (SPI)
   KCONFIG:= CONFIG_FXOS8700_SPI
-  FILES:=$(LINUX_DIR)/drivers/iio/imu/fxos8700_spi.ko
+  FILES:=drivers/iio/imu/fxos8700_spi.ko
   AUTOLOAD:=$(call AutoLoad,56,fxos8700_spi)
   $(call AddDepends/iio)
 endef
@@ -571,7 +571,7 @@ define KernelPackage/iio-ti-am335x-adc
   TITLE:= TI Sitara AM335x ADC driver
   DEPENDS:=@TARGET_omap
   KCONFIG:=CONFIG_TI_AM335X_ADC
-  FILES:=$(LINUX_DIR)/drivers/iio/adc/ti_am335x_adc.ko
+  FILES:=drivers/iio/adc/ti_am335x_adc.ko
   AUTOLOAD:=$(call AutoProbe,ti_am335x_adc)
   $(call AddDepends/iio,+kmod-iio-kfifo-buf)
 endef
