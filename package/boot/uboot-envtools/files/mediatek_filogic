@@ -12,6 +12,9 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
+asus,rt-ax59u)
+	ubootenv_add_uci_config "/dev/mtd0" "0x100000" "0x20000" "0x20000"
+	;;
 bananapi,bpi-r3)
 	rootdev="$(cmdline_get_var root)"
 	rootdev="${rootdev##*/}"

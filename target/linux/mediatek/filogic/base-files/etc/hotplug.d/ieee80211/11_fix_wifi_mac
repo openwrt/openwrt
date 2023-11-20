@@ -16,6 +16,16 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && cat $key_path/6gMAC > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "2" ] && cat $key_path/5gMAC > /sys${DEVPATH}/macaddress
 		;;
+	asus,rt-ax59u)
+		CI_UBIPART="UBI_DEV"
+		addr=$(mtd_get_mac_binary_ubi "Factory" 0x4)
+		# Originally, phy1 is phy0 mac with LA and 28th bits set. However, this would conflict
+		# addresses on multiple VIFs with the other radio when bit 28 is already set.
+		# Set LA and 28 bits and increment mac-address instead.
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_setbit_la $(macaddr_setbit $(macaddr_add $addr 1) 28) > \
+			/sys${DEVPATH}/macaddress
+		;;
 	asus,tuf-ax4200|\
 	asus,tuf-ax6000)
 		CI_UBIPART="UBI_DEV"
