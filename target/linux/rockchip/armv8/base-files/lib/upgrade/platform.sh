@@ -1,3 +1,5 @@
+REQUIRE_IMAGE_METADATA=1
+
 platform_check_image() {
 	local diskdev partdev diff
 
