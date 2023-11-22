@@ -67,6 +67,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	compex,wpq873|\
+	wallys,dr8072A|\
 	edimax,cax1800|\
 	netgear,rax120v2|\
 	netgear,wax218|\
