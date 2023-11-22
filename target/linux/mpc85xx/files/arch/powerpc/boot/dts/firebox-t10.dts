@@ -21,6 +21,9 @@
 		led-failsafe = &led_failover;
 		led-running = &led_mode;
 		led-upgrade = &led_attention;
+		/delete-property/ ethernet0;
+		/delete-property/ ethernet1;
+		/delete-property/ ethernet2;
 	};
 
 	memory {
@@ -105,6 +108,30 @@
 						reg = <0xc0000 0x40000>;
 						label = "device_id";
 						read-only;
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							macaddr_device_id_1830: mac-address@1830 {
+								compatible = "mac-base";
+								reg = <0x1830 0x11>;
+								#nvmem-cell-cells = <1>;
+							};
+
+							macaddr_device_id_1844: mac-address@1844 {
+								compatible = "mac-base";
+								reg = <0x1844 0x11>;
+								#nvmem-cell-cells = <1>;
+							};
+
+							macaddr_device_id_1858: mac-address@1858 {
+								compatible = "mac-base";
+								reg = <0x1858 0x11>;
+								#nvmem-cell-cells = <1>;
+							};
+						};
 					};
 				};
 			};
@@ -149,18 +176,27 @@
 		enet0: ethernet@b0000 {
 			phy-handle = <&phy1>;
 			phy-connection-type = "rgmii-id";
+
+			nvmem-cells = <&macaddr_device_id_1830 0>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		enet1: ethernet@b1000 {
 			tbi-handle = <&tbi_phy1>;
 			phy-handle = <&phy2>;
 			phy-connection-type = "sgmii";
+
+			nvmem-cells = <&macaddr_device_id_1844 0>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		enet2: ethernet@b2000 {
 			tbi-handle = <&tbi_phy2>;
 			phy-handle = <&phy3>;
 			phy-connection-type = "sgmii";
+
+			nvmem-cells = <&macaddr_device_id_1858 0>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		sdhc@2e000 {
