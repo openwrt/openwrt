@@ -272,6 +272,22 @@ define Device/cmcc_rax3000m
 endef
 TARGET_DEVICES += cmcc_rax3000m
 
+define Device/confiabits_mt7981
+  DEVICE_VENDOR := Confiabits
+  DEVICE_MODEL := MT7981
+  DEVICE_DTS := mt7981b-confiabits-mt7981
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-2500wan-gmac2-rfb
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_IN_UBI := 1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7981-firmware
+endef
+TARGET_DEVICES += confiabits_mt7981
+
 define Device/cudy_wr3000-v1
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := WR3000
