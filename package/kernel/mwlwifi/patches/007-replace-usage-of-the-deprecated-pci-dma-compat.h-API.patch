@@ -1,0 +1,352 @@
+From 61c75dce424c180b633c64613a1948df5a41cf1e Mon Sep 17 00:00:00 2001
+From: Stefan Kalscheuer <stefan@stklcode.de>
+Date: Sun, 18 Jun 2023 17:59:07 +0200
+Subject: [PATCH 2/2] replace usage of the deprecated "pci-dma-compat.h" API
+
+The pci-dma-compat API has been legacy for quite a while and was removed
+with 5.18 [1]. Migrate all calls, so the module can be compiled against
+modern kernel versions.
+
+Replace some compat calls:
+* pci_set_dma_mask with dma_set_mask
+* pci_(un)map_single with dma_(un)map_single
+* pci_dma_mapping_error with dma_mapping_error
+* PCI_DMA_{FROM,TO}DEVICE with DMA_{FOM,TO}_DEVICE
+
+[1] https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?id=7968778914e53788a01c2dee2692cab157de9ac0
+
+Signed-off-by: Stefan Kalscheuer <stefan@stklcode.de>
+---
+ hif/pcie/pcie.c   |  2 +-
+ hif/pcie/rx.c     | 20 ++++++++++----------
+ hif/pcie/rx_ndp.c | 20 ++++++++++----------
+ hif/pcie/tx.c     | 22 +++++++++++-----------
+ hif/pcie/tx_ndp.c | 14 +++++++-------
+ 5 files changed, 39 insertions(+), 39 deletions(-)
+
+--- a/hif/pcie/pcie.c
++++ b/hif/pcie/pcie.c
+@@ -1701,7 +1701,7 @@ static int pcie_probe(struct pci_dev *pd
+ 		return rc;
+ 	}
+ 
+-	rc = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
++	rc = dma_set_mask(&pdev->dev, DMA_BIT_MASK(32));
+ 	if (rc) {
+ 		pr_err("%s: 32-bit PCI DMA not supported\n",
+ 		       PCIE_DRV_NAME);
+--- a/hif/pcie/8864/rx.c
++++ b/hif/pcie/8864/rx.c
+@@ -107,11 +107,11 @@ static int pcie_rx_ring_init(struct mwl_
+ 			desc->prx_ring[i].rssi = 0x00;
+ 			desc->prx_ring[i].pkt_len =
+ 				cpu_to_le16(SYSADPT_MAX_AGGR_SIZE);
+-			dma = pci_map_single(pcie_priv->pdev,
++			dma = dma_map_single(&(pcie_priv->pdev)->dev,
+ 					     rx_hndl->psk_buff->data,
+ 					     desc->rx_buf_size,
+-					     PCI_DMA_FROMDEVICE);
+-			if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
++					     DMA_FROM_DEVICE);
++			if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+ 				wiphy_err(priv->hw->wiphy,
+ 					  "failed to map pci memory!\n");
+ 				return -ENOMEM;
+@@ -153,11 +153,11 @@ static void pcie_rx_ring_cleanup(struct
+ 			if (!rx_hndl->psk_buff)
+ 				continue;
+ 
+-			pci_unmap_single(pcie_priv->pdev,
++			dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 					 le32_to_cpu
+ 					 (rx_hndl->pdesc->pphys_buff_data),
+ 					 desc->rx_buf_size,
+-					 PCI_DMA_FROMDEVICE);
++					 DMA_FROM_DEVICE);
+ 
+ 			dev_kfree_skb_any(rx_hndl->psk_buff);
+ 
+@@ -332,11 +332,11 @@ static inline int pcie_rx_refill(struct
+ 	rx_hndl->pdesc->rssi = 0x00;
+ 	rx_hndl->pdesc->pkt_len = cpu_to_le16(desc->rx_buf_size);
+ 
+-	dma = pci_map_single(pcie_priv->pdev,
++	dma = dma_map_single(&pcie_priv->pdev->dev,
+ 			     rx_hndl->psk_buff->data,
+ 			     desc->rx_buf_size,
+-			     PCI_DMA_FROMDEVICE);
+-	if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
++			     DMA_FROM_DEVICE);
++	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+ 		dev_kfree_skb_any(rx_hndl->psk_buff);
+ 		wiphy_err(priv->hw->wiphy,
+ 			  "failed to map pci memory!\n");
+@@ -410,10 +410,10 @@ void pcie_8864_rx_recv(unsigned long dat
+ 		prx_skb = curr_hndl->psk_buff;
+ 		if (!prx_skb)
+ 			goto out;
+-		pci_unmap_single(pcie_priv->pdev,
++		dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 				 le32_to_cpu(curr_hndl->pdesc->pphys_buff_data),
+ 				 desc->rx_buf_size,
+-				 PCI_DMA_FROMDEVICE);
++				 DMA_FROM_DEVICE);
+ 		pkt_len = le16_to_cpu(curr_hndl->pdesc->pkt_len);
+ 
+ 		if (skb_tailroom(prx_skb) < pkt_len) {
+--- a/hif/pcie/8864/tx.c
++++ b/hif/pcie/8864/tx.c
+@@ -171,11 +171,11 @@ static void pcie_tx_ring_cleanup(struct
+ 					    desc->tx_hndl[i].psk_buff->data,
+ 					    le32_to_cpu(
+ 					    desc->ptx_ring[i].pkt_ptr));
+-				pci_unmap_single(pcie_priv->pdev,
++				dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 						 le32_to_cpu(
+ 						 desc->ptx_ring[i].pkt_ptr),
+ 						 desc->tx_hndl[i].psk_buff->len,
+-						 PCI_DMA_TODEVICE);
++						 DMA_TO_DEVICE);
+ 				dev_kfree_skb_any(desc->tx_hndl[i].psk_buff);
+ 				desc->ptx_ring[i].status =
+ 					cpu_to_le32(EAGLE_TXD_STATUS_IDLE);
+@@ -291,9 +291,9 @@ static inline void pcie_tx_skb(struct mw
+ 	tx_desc->type = tx_ctrl->type;
+ 	tx_desc->xmit_control = tx_ctrl->xmit_control;
+ 	tx_desc->sap_pkt_info = 0;
+-	dma = pci_map_single(pcie_priv->pdev, tx_skb->data,
+-			     tx_skb->len, PCI_DMA_TODEVICE);
+-	if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
++	dma = dma_map_single(&(pcie_priv->pdev)->dev, tx_skb->data,
++			     tx_skb->len, DMA_TO_DEVICE);
++	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+ 		dev_kfree_skb_any(tx_skb);
+ 		wiphy_err(priv->hw->wiphy,
+ 			  "failed to map pci memory!\n");
+@@ -447,10 +447,10 @@ static void pcie_non_pfu_tx_done(struct
+ 		       (tx_desc->status & cpu_to_le32(EAGLE_TXD_STATUS_OK)) &&
+ 		       (!(tx_desc->status &
+ 		       cpu_to_le32(EAGLE_TXD_STATUS_FW_OWNED)))) {
+-			pci_unmap_single(pcie_priv->pdev,
++			dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 					 le32_to_cpu(tx_desc->pkt_ptr),
+ 					 le16_to_cpu(tx_desc->pkt_len),
+-					 PCI_DMA_TODEVICE);
++					 DMA_TO_DEVICE);
+ 			done_skb = tx_hndl->psk_buff;
+ 			rate = le32_to_cpu(tx_desc->rate_info);
+ 			tx_desc->pkt_ptr = 0;
+@@ -925,4 +925,4 @@ void pcie_8864_tx_del_sta_amsdu_pkts(str
+ 		}
+ 	}
+ 	spin_unlock_bh(&sta_info->amsdu_lock);
+-}
+\ No newline at end of file
++}
+--- a/hif/pcie/8964/rx_ndp.c
++++ b/hif/pcie/8964/rx_ndp.c
+@@ -86,11 +86,11 @@ static int pcie_rx_ring_init_ndp(struct
+ 			}
+ 			skb_reserve(psk_buff, MIN_BYTES_RX_HEADROOM);
+ 
+-			dma = pci_map_single(pcie_priv->pdev,
++			dma = dma_map_single(&(pcie_priv->pdev)->dev,
+ 					     psk_buff->data,
+ 					     desc->rx_buf_size,
+-					     PCI_DMA_FROMDEVICE);
+-			if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
++					     DMA_FROM_DEVICE);
++			if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+ 				wiphy_err(priv->hw->wiphy,
+ 					  "failed to map pci memory!\n");
+ 				return -ENOMEM;
+@@ -120,11 +120,11 @@ static void pcie_rx_ring_cleanup_ndp(str
+ 	if (desc->prx_ring) {
+ 		for (i = 0; i < MAX_NUM_RX_DESC; i++) {
+ 			if (desc->rx_vbuflist[i]) {
+-				pci_unmap_single(pcie_priv->pdev,
++				dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 						 le32_to_cpu(
+ 						 desc->prx_ring[i].data),
+ 						 desc->rx_buf_size,
+-						 PCI_DMA_FROMDEVICE);
++						 DMA_FROM_DEVICE);
+ 				desc->rx_vbuflist[i] = NULL;
+ 			}
+ 		}
+@@ -411,11 +411,11 @@ static inline int pcie_rx_refill_ndp(str
+ 		return -ENOMEM;
+ 	skb_reserve(psk_buff, MIN_BYTES_RX_HEADROOM);
+ 
+-	dma = pci_map_single(pcie_priv->pdev,
++	dma = dma_map_single(&(pcie_priv->pdev)->dev,
+ 			     psk_buff->data,
+ 			     desc->rx_buf_size,
+-			     PCI_DMA_FROMDEVICE);
+-	if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
++			     DMA_FROM_DEVICE);
++	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+ 		wiphy_err(priv->hw->wiphy,
+ 			  "refill: failed to map pci memory!\n");
+ 		return -ENOMEM;
+@@ -520,10 +520,10 @@ recheck:
+ 			break;
+ 		}
+ 
+-		pci_unmap_single(pcie_priv->pdev,
++		dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 				 le32_to_cpu(prx_desc->data),
+ 				 desc->rx_buf_size,
+-				 PCI_DMA_FROMDEVICE);
++				 DMA_FROM_DEVICE);
+ 
+ 		bad_mic = false;
+ 		ctrl = le32_to_cpu(prx_ring_done->ctrl);
+--- a/hif/pcie/8964/tx_ndp.c
++++ b/hif/pcie/8964/tx_ndp.c
+@@ -132,10 +132,10 @@ static void pcie_tx_ring_cleanup_ndp(str
+ 	for (i = 0; i < MAX_TX_RING_SEND_SIZE; i++) {
+ 		tx_skb = desc->tx_vbuflist[i];
+ 		if (tx_skb) {
+-			pci_unmap_single(pcie_priv->pdev,
++			dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 					 desc->pphys_tx_buflist[i],
+ 					 tx_skb->len,
+-					 PCI_DMA_TODEVICE);
++					 DMA_TO_DEVICE);
+ 			dev_kfree_skb_any(tx_skb);
+ 			desc->pphys_tx_buflist[i] = 0;
+ 			desc->tx_vbuflist[i] = NULL;
+@@ -267,9 +267,9 @@ static inline int pcie_tx_skb_ndp(struct
+ 			(TXRING_CTRL_TAG_MGMT << TXRING_CTRL_TAG_SHIFT));
+ 	}
+ 
+-	dma = pci_map_single(pcie_priv->pdev, tx_skb->data,
+-			     tx_skb->len, PCI_DMA_TODEVICE);
+-	if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
++	dma = dma_map_single(&(pcie_priv->pdev)->dev, tx_skb->data,
++			     tx_skb->len, DMA_TO_DEVICE);
++	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+ 		dev_kfree_skb_any(tx_skb);
+ 		wiphy_err(priv->hw->wiphy,
+ 			  "failed to map pci memory!\n");
+@@ -451,10 +451,10 @@ void pcie_tx_done_ndp(struct ieee80211_h
+ 				  "buffer is NULL for tx done ring\n");
+ 			break;
+ 		}
+-		pci_unmap_single(pcie_priv->pdev,
++		dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 				 desc->pphys_tx_buflist[index],
+ 				 skb->len,
+-				 PCI_DMA_TODEVICE);
++				 DMA_TO_DEVICE);
+ 		desc->pphys_tx_buflist[index] = 0;
+ 		desc->tx_vbuflist[index] = NULL;
+ 
+--- a/hif/pcie/8997/rx.c
++++ b/hif/pcie/8997/rx.c
+@@ -107,11 +107,11 @@ static int pcie_rx_ring_init(struct mwl_
+ 			desc->prx_ring[i].rssi = 0x00;
+ 			desc->prx_ring[i].pkt_len =
+ 				cpu_to_le16(SYSADPT_MAX_AGGR_SIZE);
+-			dma = pci_map_single(pcie_priv->pdev,
++			dma = dma_map_single(&(pcie_priv->pdev)->dev,
+ 					     rx_hndl->psk_buff->data,
+ 					     desc->rx_buf_size,
+-					     PCI_DMA_FROMDEVICE);
+-			if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
++					     DMA_FROM_DEVICE);
++			if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+ 				wiphy_err(priv->hw->wiphy,
+ 					  "failed to map pci memory!\n");
+ 				return -ENOMEM;
+@@ -153,11 +153,11 @@ static void pcie_rx_ring_cleanup(struct
+ 			if (!rx_hndl->psk_buff)
+ 				continue;
+ 
+-			pci_unmap_single(pcie_priv->pdev,
++			dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 					 le32_to_cpu
+ 					 (rx_hndl->pdesc->pphys_buff_data),
+ 					 desc->rx_buf_size,
+-					 PCI_DMA_FROMDEVICE);
++					 DMA_FROM_DEVICE);
+ 
+ 			dev_kfree_skb_any(rx_hndl->psk_buff);
+ 
+@@ -332,11 +332,11 @@ static inline int pcie_rx_refill(struct
+ 	rx_hndl->pdesc->rssi = 0x00;
+ 	rx_hndl->pdesc->pkt_len = cpu_to_le16(desc->rx_buf_size);
+ 
+-	dma = pci_map_single(pcie_priv->pdev,
++	dma = dma_map_single(&pcie_priv->pdev->dev,
+ 			     rx_hndl->psk_buff->data,
+ 			     desc->rx_buf_size,
+-			     PCI_DMA_FROMDEVICE);
+-	if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
++			     DMA_FROM_DEVICE);
++	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+ 		dev_kfree_skb_any(rx_hndl->psk_buff);
+ 		wiphy_err(priv->hw->wiphy,
+ 			  "failed to map pci memory!\n");
+@@ -410,10 +410,10 @@ void pcie_8997_rx_recv(unsigned long dat
+ 		prx_skb = curr_hndl->psk_buff;
+ 		if (!prx_skb)
+ 			goto out;
+-		pci_unmap_single(pcie_priv->pdev,
++		dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 				 le32_to_cpu(curr_hndl->pdesc->pphys_buff_data),
+ 				 desc->rx_buf_size,
+-				 PCI_DMA_FROMDEVICE);
++				 DMA_FROM_DEVICE);
+ 		pkt_len = le16_to_cpu(curr_hndl->pdesc->pkt_len);
+ 
+ 		if (skb_tailroom(prx_skb) < pkt_len) {
+--- a/hif/pcie/8997/tx.c
++++ b/hif/pcie/8997/tx.c
+@@ -139,10 +139,10 @@ static void pcie_txbd_ring_delete(struct
+ 			skb = pcie_priv->tx_buf_list[num];
+ 			tx_desc = (struct pcie_tx_desc *)skb->data;
+ 
+-			pci_unmap_single(pcie_priv->pdev,
++			dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 					 le32_to_cpu(tx_desc->pkt_ptr),
+ 					 skb->len,
+-					 PCI_DMA_TODEVICE);
++					 DMA_TO_DEVICE);
+ 			dev_kfree_skb_any(skb);
+ 		}
+ 		pcie_priv->tx_buf_list[num] = NULL;
+@@ -222,9 +222,9 @@ static inline void pcie_tx_skb(struct mw
+ 	tx_desc->type = tx_ctrl->type;
+ 	tx_desc->xmit_control = tx_ctrl->xmit_control;
+ 	tx_desc->sap_pkt_info = 0;
+-	dma = pci_map_single(pcie_priv->pdev, tx_skb->data,
+-			     tx_skb->len, PCI_DMA_TODEVICE);
+-	if (pci_dma_mapping_error(pcie_priv->pdev, dma)) {
++	dma = dma_map_single(&(pcie_priv->pdev)->dev, tx_skb->data,
++			     tx_skb->len, DMA_TO_DEVICE);
++	if (dma_mapping_error(&(pcie_priv->pdev)->dev, dma)) {
+ 		dev_kfree_skb_any(tx_skb);
+ 		wiphy_err(priv->hw->wiphy,
+ 			  "failed to map pci memory!\n");
+@@ -401,10 +401,10 @@ static void pcie_pfu_tx_done(struct mwl_
+ 			pfu_dma = (struct pcie_pfu_dma_data *)done_skb->data;
+ 			tx_desc = &pfu_dma->tx_desc;
+ 			dma_data = &pfu_dma->dma_data;
+-			pci_unmap_single(pcie_priv->pdev,
++			dma_unmap_single(&(pcie_priv->pdev)->dev,
+ 					 le32_to_cpu(data_buf->paddr),
+ 					 le16_to_cpu(data_buf->len),
+-					 PCI_DMA_TODEVICE);
++					 DMA_TO_DEVICE);
+ 			tx_desc->pkt_ptr = 0;
+ 			tx_desc->pkt_len = 0;
+ 			tx_desc->status = cpu_to_le32(EAGLE_TXD_STATUS_IDLE);
+@@ -875,4 +875,4 @@ void pcie_8997_tx_del_sta_amsdu_pkts(str
+ 		}
+ 	}
+ 	spin_unlock_bh(&sta_info->amsdu_lock);
+-}
+\ No newline at end of file
++}
