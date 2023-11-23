@@ -4,12 +4,20 @@
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
 #include "common/ieee802_11_common.h"
+#include <linux/netlink.h>
+#include <linux/genetlink.h>
+#include <linux/nl80211.h>
 #include <libubox/uloop.h>
 #include <ucode/compiler.h>
+#include <udebug.h>
 
 static uc_value_t *registry;
 static uc_vm_t vm;
 static struct uloop_timeout gc_timer;
+static struct udebug ud;
+static struct udebug_buf ud_log, ud_nl[3];
+
+#define UDEBUG_FLAG_RX_FRAME	(1ULL << 0)
 
 static void uc_gc_timer(struct uloop_timeout *timeout)
 {
@@ -249,6 +257,115 @@ int wpa_ucode_call_prepare(const char *fname)
 	uc_vm_stack_push(&vm, ucv_get(func));
 
 	return 0;
+}
+
+static void udebug_printf_hook(int level, const char *fmt, va_list ap)
+{
+	udebug_entry_init(&ud_log);
+	udebug_entry_vprintf(&ud_log, fmt, ap);
+	udebug_entry_add(&ud_log);
+}
+
+static void udebug_hexdump_hook(int level, const char *title,
+                const void *data, size_t len)
+{
+	char *buf;
+
+	udebug_entry_init(&ud_log);
+	udebug_entry_printf(&ud_log, "%s - hexdump:", title);
+	buf = udebug_entry_append(&ud_log, NULL, 3 * len);
+	for (size_t i = 0; i < len; i++)
+		buf += sprintf(buf, " %02x", *(uint8_t *)(data + i));
+	udebug_entry_add(&ud_log);
+}
+
+static void udebug_netlink_hook(int tx, const void *data, size_t len)
+{
+	struct {
+		uint16_t pkttype;
+		uint16_t arphdr;
+		uint16_t _pad[5];
+		uint16_t proto;
+	} hdr = {
+		.pkttype = host_to_be16(tx ? 7 : 6),
+		.arphdr = host_to_be16(824),
+		.proto = host_to_be16(16),
+	};
+	const struct nlmsghdr *nlh = data;
+	const struct genlmsghdr *gnlh = data + NLMSG_HDRLEN;
+	struct udebug_buf *buf = &ud_nl[!!tx];
+
+	if (nlh->nlmsg_type == 0x10)
+		buf = &ud_nl[2];
+	else if (!tx && gnlh->cmd == NL80211_CMD_FRAME &&
+	         !(udebug_buf_flags(buf) & UDEBUG_FLAG_RX_FRAME))
+		return;
+
+	udebug_entry_init(buf);
+	udebug_entry_append(buf, &hdr, sizeof(hdr));
+	udebug_entry_append(buf, data, len);
+	udebug_entry_add(buf);
+}
+
+uc_value_t *uc_wpa_udebug_set(uc_vm_t *vm, size_t nargs)
+{
+	static const struct udebug_buf_meta meta_log = {
+		.name = "wpa_log",
+		.format = UDEBUG_FORMAT_STRING,
+	};
+	static const struct udebug_buf_meta meta_nl_ll = {
+		.name = "wpa_nl_ctrl",
+		.format = UDEBUG_FORMAT_PACKET,
+		.sub_format = UDEBUG_DLT_NETLINK,
+	};
+	static const struct udebug_buf_meta meta_nl_tx = {
+		.name = "wpa_nl_tx",
+		.format = UDEBUG_FORMAT_PACKET,
+		.sub_format = UDEBUG_DLT_NETLINK,
+	};
+	static const struct udebug_buf_flag rx_flags[] = {
+		{  "rx_frame", UDEBUG_FLAG_RX_FRAME },
+	};
+	static const struct udebug_buf_meta meta_nl_rx = {
+		.name = "wpa_nl_rx",
+		.format = UDEBUG_FORMAT_PACKET,
+		.sub_format = UDEBUG_DLT_NETLINK,
+		.flags = rx_flags,
+		.n_flags = ARRAY_SIZE(rx_flags),
+	};
+	bool val = ucv_is_truish(uc_fn_arg(0));
+	static bool enabled = false;
+
+	if (enabled == val)
+		return ucv_boolean_new(true);
+
+	enabled = val;
+	if (val) {
+		udebug_init(&ud);
+		udebug_auto_connect(&ud, NULL);
+		udebug_buf_init(&ud_log, 1024, 64 * 1024);
+		udebug_buf_add(&ud, &ud_log, &meta_log);
+		udebug_buf_init(&ud_nl[0], 1024, 256 * 1024);
+		udebug_buf_add(&ud, &ud_nl[0], &meta_nl_rx);
+		udebug_buf_init(&ud_nl[1], 1024, 64 * 1024);
+		udebug_buf_add(&ud, &ud_nl[1], &meta_nl_tx);
+		udebug_buf_init(&ud_nl[2], 256, 32 * 1024);
+		udebug_buf_add(&ud, &ud_nl[2], &meta_nl_ll);
+
+		wpa_printf_hook = udebug_printf_hook;
+		wpa_hexdump_hook = udebug_hexdump_hook;
+		wpa_netlink_hook = udebug_netlink_hook;
+	} else {
+		for (size_t i = 0; i < ARRAY_SIZE(ud_nl); i++)
+			udebug_buf_free(&ud_nl[i]);
+		udebug_buf_free(&ud_log);
+		udebug_free(&ud);
+		wpa_printf_hook = NULL;
+		wpa_hexdump_hook = NULL;
+		wpa_netlink_hook = NULL;
+	}
+
+	return ucv_boolean_new(true);
 }
 
 uc_value_t *wpa_ucode_global_init(const char *name, uc_resource_type_t *global_type)

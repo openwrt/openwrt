@@ -207,6 +207,16 @@
 			label = "CFE";
 			reg = <0x0000000 0x0020000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_cfe_6a0: macaddr@6a0 {
+					reg = <0x6a0 0x6>;
+				};
+			};
 		};
 
 		partition@20000 {
@@ -252,14 +262,4 @@
 
 &usbh {
 	status = "okay";
-};
-
-&cfe {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_cfe_6a0: macaddr@6a0 {
-		reg = <0x6a0 0x6>;
-	};
 };

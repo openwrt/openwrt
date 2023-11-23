@@ -31,9 +31,8 @@
 		pci-bus = <1>;
 		pci-dev = <0>;
 
-		nvmem-cells = <&macaddr_cfe_6a0>;
+		nvmem-cells = <&macaddr_cfe_6a0 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 
 		brcm,sprom = "brcm/bcm43225-sprom.bin";
 		brcm,sprom-fixups = <97 0xfee5>,
@@ -52,7 +51,7 @@
 &ethernet {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_cfe_6a0>;
+	nvmem-cells = <&macaddr_cfe_6a0 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -78,6 +77,18 @@
 				reg = <0x000000 0x010000>;
 				label = "cfe";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_cfe_6a0: macaddr@6a0 {
+						compatible = "mac-base";
+						reg = <0x6a0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@10000 {
@@ -177,14 +188,4 @@
 
 &usbh {
 	status = "okay";
-};
-
-&cfe {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_cfe_6a0: macaddr@6a0 {
-		reg = <0x6a0 0x6>;
-	};
 };

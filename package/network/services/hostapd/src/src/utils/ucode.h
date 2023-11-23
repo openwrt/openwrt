@@ -21,6 +21,7 @@ int wpa_ucode_registry_add(uc_value_t *reg, uc_value_t *val);
 uc_value_t *wpa_ucode_registry_get(uc_value_t *reg, int idx);
 uc_value_t *wpa_ucode_registry_remove(uc_value_t *reg, int idx);
 
+uc_value_t *uc_wpa_udebug_set(uc_vm_t *vm, size_t nargs);
 uc_value_t *uc_wpa_printf(uc_vm_t *vm, size_t nargs);
 uc_value_t *uc_wpa_getpid(uc_vm_t *vm, size_t nargs);
 uc_value_t *uc_wpa_sha1(uc_vm_t *vm, size_t nargs);

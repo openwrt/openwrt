@@ -179,6 +179,16 @@
 				label = "board_config";
 				reg = <0xfe0000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_16: macaddr@16 {
+						reg = <0x16 0x6>;
+					};
+				};
 			};
 		};
 	};
@@ -213,14 +223,4 @@
 
 &vmmc {
 	status = "okay";
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_16: macaddr@16 {
-		reg = <0x16 0x6>;
-	};
 };

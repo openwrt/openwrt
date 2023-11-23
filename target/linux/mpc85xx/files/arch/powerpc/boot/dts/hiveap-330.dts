@@ -76,12 +76,16 @@
 					label = "hw-info";
 					read-only;
 
-					compatible = "nvmem-cells";
-					#address-cells = <1>;
-					#size-cells = <1>;
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
 
-					macaddr_hwinfo_0: macaddr@0 {
-						reg = <0x0 0x6>;
+						macaddr_hwinfo_0: macaddr@0 {
+							compatible = "mac-base";
+							reg = <0x0 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
 					};
 				};
 
@@ -229,7 +233,7 @@
 			status = "okay";
 			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
-			nvmem-cells = <&macaddr_hwinfo_0>;
+			nvmem-cells = <&macaddr_hwinfo_0 0>;
 			nvmem-cell-names = "mac-address";
 		};
 
@@ -241,9 +245,8 @@
 			status = "okay";
 			phy-handle = <&phy1>;
 			phy-connection-type = "rgmii-id";
-			nvmem-cells = <&macaddr_hwinfo_0>;
+			nvmem-cells = <&macaddr_hwinfo_0 1>;
 			nvmem-cell-names = "mac-address";
-			mac-address-increment = <1>;
 		};
 
 		gpio0: gpio-controller@fc00 {

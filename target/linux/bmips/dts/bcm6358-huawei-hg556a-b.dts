@@ -134,7 +134,7 @@
 &ethernet1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_cfe_6a0>;
+	nvmem-cells = <&macaddr_cfe_6a0 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "mii";
@@ -162,9 +162,8 @@
 
 		qca,no-eeprom;
 
-		nvmem-cells = <&macaddr_cfe_6a0>;
+		nvmem-cells = <&macaddr_cfe_6a0 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -183,6 +182,18 @@
 			label = "cfe";
 			reg = <0x000000 0x020000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_cfe_6a0: macaddr@6a0 {
+					compatible = "mac-base";
+					reg = <0x6a0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		partition@20000 {
@@ -195,6 +206,16 @@
 			label = "cal_data";
 			reg = <0xee0000 0x100000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_data_1e000: cal@1e000 {
+					reg = <0x1e000 0xeb8>;
+				};
+			};
 		};
 
 		partition@fe0000 {
@@ -210,24 +231,4 @@
 
 &usbh {
 	status = "okay";
-};
-
-&cal_data {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	cal_data_1e000: cal@1e000 {
-		reg = <0x1e000 0xeb8>;
-	};
-};
-
-&cfe {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_cfe_6a0: macaddr@6a0 {
-		reg = <0x6a0 0x6>;
-	};
 };

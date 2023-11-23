@@ -127,9 +127,8 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_boardconfig_16>;
+	nvmem-cells = <&macaddr_boardconfig_16 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &gphy0 {
@@ -225,6 +224,18 @@
 				label = "board_config";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_16: macaddr@16 {
+						compatible = "mac-base";
+						reg = <0x16 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -239,9 +250,8 @@
 		reg = <0x7000 0 0 0 0>;
 		ralink,mtd-eeprom = <&boardconfig 0x410>;
 		ralink,eeprom-swap;
-		nvmem-cells = <&macaddr_boardconfig_16>;
+		nvmem-cells = <&macaddr_boardconfig_16 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 };
 
@@ -279,14 +289,4 @@
 	gpios = <&gpio 30 GPIO_ACTIVE_HIGH  //fxs relay
 		 &gpio 31 GPIO_ACTIVE_HIGH  //still unknown
 		 &gpio 3  GPIO_ACTIVE_HIGH>; //reset_slic?
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_16: macaddr@16 {
-		reg = <0x16 0x6>;
-	};
 };

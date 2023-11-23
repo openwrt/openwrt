@@ -388,3 +388,22 @@ define Device/solidrun_clearfog-pro-a1
   SUPPORTED_DEVICES += armada-388-clearfog armada-388-clearfog-pro
 endef
 TARGET_DEVICES += solidrun_clearfog-pro-a1
+
+define Device/synology_ds213j
+  DEVICE_VENDOR := Synology
+  DEVICE_MODEL := DS213j
+  KERNEL_SIZE := 6912k
+  IMAGE_SIZE := 7168k
+  FILESYSTEMS := squashfs ubifs
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  DEVICE_DTS := armada-370-synology-ds213j
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+                          check-size | append-metadata
+  DEVICE_PACKAGES := \
+    kmod-rtc-s35390a kmod-hwmon-gpiofan kmod-hwmon-drivetemp \
+    kmod-md-raid0 kmod-md-raid1 kmod-md-mod e2fsprogs mdadm \
+    -ppp -kmod-nft-offload -firewall4 -dnsmasq -odhcpd-ipv6only
+endef
+TARGET_DEVICES += synology_ds213j
