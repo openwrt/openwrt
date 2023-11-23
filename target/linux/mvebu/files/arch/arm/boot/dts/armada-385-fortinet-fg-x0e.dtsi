@@ -211,7 +211,7 @@
 	buffer-manager = <&bm>;
 	bm,pool-long = <0>;
 	bm,pool-short = <1>;
-	nvmem-cells = <&macaddr_bdinfo_d880>;
+	nvmem-cells = <&macaddr_bdinfo_d880 0>;
 	nvmem-cell-names = "mac-address";
 
 	fixed-link {
@@ -285,12 +285,16 @@
 				label = "board-info";
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_bdinfo_d880: macaddr@d880 {
-					reg = <0xd880 0x6>;
+					macaddr_bdinfo_d880: macaddr@d880 {
+						compatible = "mac-base";
+						reg = <0xd880 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
