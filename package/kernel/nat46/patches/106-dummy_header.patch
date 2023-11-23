@@ -1,0 +1,100 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:      Wed Aug 5 10:09:45 2020 +0530
+
+nat46: Add dummy fragment header for DF=0 IPv4 packet.
+
+This patch is propagated from 4.4 kernel commit
+b45f19e86ebcc19ea26d5e014bfdcb837148f99e.
+
+Add dummy fragment header to IPv6 translated packet for
+every DF=0 IPv4 packet.
+
+Change-Id: Id72945eefac030e95e4fd18305e48c46e525def3
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -21,6 +21,7 @@
+ 
+ #include "nat46-glue.h"
+ #include "nat46-core.h"
++#include "nat46-module.h"
+ 
+ static uint16_t xlate_pkt_in_err_v4_to_v6(nat46_instance_t *nat46, struct iphdr *iph,
+ 			struct sk_buff *old_skb, uint16_t *sport, uint16_t *dport);
+@@ -2134,6 +2135,11 @@ void nat46_ipv4_input(struct sk_buff *ol
+   nat46debug(5, "nat46_ipv4_input protocol: %d, len: %d, flags: %02x", hdr4->protocol, old_skb->len, IPCB(old_skb)->flags);
+   if(0 == (ntohs(hdr4->frag_off) & 0x3FFF) ) { /* Checking for MF */
+     check_for_l4 = 1;
++    if (add_dummy_header) {
++      if (0 == (ntohs(hdr4->frag_off) & IP_DF)) {
++        add_frag_header = 1;
++      }
++    }
+   } else {
+     add_frag_header = 1;
+     if (0 == (ntohs(hdr4->frag_off) & 0x1FFF)) { /* Checking for Frag Offset */
+@@ -2263,3 +2269,24 @@ bool nat46_get_rule_config(struct net_de
+ 	return true;
+ }
+ EXPORT_SYMBOL(nat46_get_rule_config);
++
++/*
++ * Function to get MAP-T rules and flags.
++ */
++bool nat46_get_info(struct net_device *dev, nat46_xlate_rulepair_t **nat46_rule_pair,
++		 int *count, u8 *flag) {
++	if ((!dev) || (!nat46_rule_pair) || (!count) || (!flag)) {
++		return false;
++	}
++
++	if (!nat46_get_rule_config(dev, nat46_rule_pair, count)) {
++		return false;
++	}
++
++	/* Check add dummy header flag */
++	if (add_dummy_header) {
++		*flag = ADD_DUMMY_HEADER;
++	}
++	return true;
++}
++EXPORT_SYMBOL(nat46_get_info);
+--- a/nat46/modules/nat46-core.h
++++ b/nat46/modules/nat46-core.h
+@@ -32,6 +32,9 @@
+ #define EA_LEN_MAX 48
+ #define IPV6_BITS_MAX 128
+ 
++/* Flag definations for MAP-T */
++#define ADD_DUMMY_HEADER 0x01
++
+ #define IPV6HDRSIZE 40
+ #define IPV4HDRSIZE 20
+ #define IPV6V4HDRDELTA (IPV6HDRSIZE - IPV4HDRSIZE)
+@@ -110,5 +113,6 @@ int xlate_6_to_4(struct net_device *dev,
+ int xlate_4_to_6(struct net_device *dev, struct iphdr *hdr4, uint16_t sport, uint16_t dport, void *v6saddr, void *v6daddr);
+ bool nat46_get_rule_config(struct net_device *dev, nat46_xlate_rulepair_t **nat46_rule_pair, int *count);
+ int nat46_get_npairs(struct net_device *dev);
+-
++bool nat46_get_info(struct net_device *dev, nat46_xlate_rulepair_t **nat46_rule_pair,
++		int *count, u8 *flag);
+ #endif
+--- a/nat46/modules/nat46-module.c
++++ b/nat46/modules/nat46-module.c
+@@ -57,6 +57,9 @@ MODULE_DESCRIPTION("NAT46 stateless tran
+ int debug = 0;
+ module_param(debug, int, 0);
+ MODULE_PARM_DESC(debug, "debugging messages level (default=1)");
++bool add_dummy_header = 0;
++module_param(add_dummy_header, bool, 0);
++MODULE_PARM_DESC(add_dummy_header, "Add dummy fragment header");
+ 
+ static struct proc_dir_entry *nat46_proc_entry;
+ static struct proc_dir_entry *nat46_proc_parent;
+--- a/nat46/modules/nat46-module.h
++++ b/nat46/modules/nat46-module.h
+@@ -14,3 +14,4 @@
+  */
+ 
+ extern int debug;
++extern bool add_dummy_header;

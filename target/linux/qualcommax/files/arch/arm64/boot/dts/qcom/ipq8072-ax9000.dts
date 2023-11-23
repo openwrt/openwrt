@@ -6,6 +6,7 @@
 #include "ipq8074.dtsi"
 #include "ipq8074-hk-cpu.dtsi"
 #include "ipq8074-ess.dtsi"
+#include "ipq8074-nss.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
@@ -128,6 +129,31 @@
 
 	pinctrl-0 = <&i2c_pins>;
 	pinctrl-names = "default";
+
+        lm63@4C {
+                compatible = "ti,lm63";
+                reg = <0x4c>;
+                #address-cells = <0x01>;
+                #size-cells = <0x00>;
+        };
+
+        emc2301@2f {
+                compatible = "smsc,emc2301", "emc2301";
+                reg = <0x2f>;
+                model_name = "emc2301";
+                #address-cells = <1>;
+                #size-cells = <0>;
+                        emc2305_fan@0 {
+                                reg = <0>;
+                                name = "emc2305_fan";
+                                pwm-output-mode = <1>;
+                                pwm-channel = <5>;
+                                pwm-max = <255>;
+                                pwm-min = <0>;
+                                cooling-levels = <10>;
+                        };
+        };
+
 };
 
 &prng {
