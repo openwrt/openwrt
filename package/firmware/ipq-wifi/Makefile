@@ -28,7 +28,6 @@ endef
 # <https://wireless.wiki.kernel.org/en/users/drivers/ath10k/boardfiles>
 
 ALLWIFIBOARDS:= \
-  	wallys_dr8072A \
 	buffalo_wxr-5950ax12 \
 	compex_wpq873 \
 	dynalink_dl-wrx36 \
@@ -42,6 +41,7 @@ ALLWIFIBOARDS:= \
 	qnap_301w \
 	redmi_ax6 \
 	wallys_dr40x9 \
+	wallys_dr8072A \
 	xiaomi_ax3600 \
 	xiaomi_ax9000 \
 	yyets_le1 \

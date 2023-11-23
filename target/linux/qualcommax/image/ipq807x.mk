@@ -61,20 +61,6 @@ define Device/compex_wpq873
 endef
 TARGET_DEVICES += compex_wpq873
 
-define Device/wallys_dr8072A
-       $(call Device/FitImage)
-       $(call Device/UbiFit)
-       DEVICE_VENDOR := Wallys
-       DEVICE_MODEL := DR8072A
-       BLOCKSIZE := 128k
-       PAGESIZE := 2048
-       DEVICE_DTS_CONFIG := config@hk01.c2
-       SOC := ipq8072
-       DEVICE_PACKAGES := ipq-wifi-wallys_dr8072A
-       IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand
-endef
-TARGET_DEVICES += wallys_dr8072A
-
 define Device/dynalink_dl-wrx36
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -218,6 +204,20 @@ define Device/redmi_ax6
 	DEVICE_PACKAGES := ipq-wifi-redmi_ax6
 endef
 TARGET_DEVICES += redmi_ax6
+
+define Device/wallys_dr8072A
+       $(call Device/FitImage)
+       $(call Device/UbiFit)
+       DEVICE_VENDOR := Wallys
+       DEVICE_MODEL := DR8072A
+       BLOCKSIZE := 128k
+       PAGESIZE := 2048
+       DEVICE_DTS_CONFIG := config@hk01.c2
+       SOC := ipq8072
+       DEVICE_PACKAGES := ipq-wifi-wallys_dr8072A
+       IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand
+endef
+TARGET_DEVICES += wallys_dr8072A
 
 define Device/xiaomi_ax3600
 	$(call Device/FitImage)
