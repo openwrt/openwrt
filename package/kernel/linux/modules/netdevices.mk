@@ -378,9 +378,11 @@ $(eval $(call KernelPackage,phy-smsc))
 define KernelPackage/phy-aquantia
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Aquantia Ethernet PHYs
-  DEPENDS:=+kmod-libphy +kmod-hwmon-core
+  DEPENDS:=+kmod-libphy +kmod-hwmon-core +kmod-lib-crc-ccitt
   KCONFIG:=CONFIG_AQUANTIA_PHY
-  FILES:=$(LINUX_DIR)/drivers/net/phy/aquantia.ko
+  FILES:= \
+  $(LINUX_DIR)/drivers/net/phy/aquantia.ko@lt6.1 \
+   $(LINUX_DIR)/drivers/net/phy/aquantia/aquantia.ko@ge6.1
   AUTOLOAD:=$(call AutoLoad,18,aquantia,1)
 endef
 
