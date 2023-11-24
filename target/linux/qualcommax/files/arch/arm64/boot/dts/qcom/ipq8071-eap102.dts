@@ -21,8 +21,8 @@
 		led-running = &led_system_green;
 		led-upgrade = &led_system_green;
 		/* Aliases as required by u-boot to patch MAC addresses */
-		ethernet0 = &dp5;
-		ethernet1 = &dp6;
+		ethernet0 = &dp6;
+		ethernet1 = &dp5;
 		label-mac-device = &dp5;
 	};
 
@@ -343,8 +343,8 @@
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <ESS_PORT6>; /* lan port bitmap */
-	switch_wan_bmp = <ESS_PORT5>; /* wan port bitmap */
+	switch_lan_bmp = <ESS_PORT5>; /* lan port bitmap */
+	switch_wan_bmp = <ESS_PORT6>; /* wan port bitmap */
 	switch_mac_mode1 = <MAC_MODE_SGMII_CHANNEL0>; /* mac mode for uniphy instance1*/
 	switch_mac_mode2 = <MAC_MODE_SGMII_CHANNEL0>; /* mac mode for uniphy instance2*/
 
@@ -368,14 +368,14 @@
 
 &dp5 {
 	status = "okay";
-	phy-handle = <&qca8081_28>;
-	label = "wan";
+	phy-handle = <&qca8081_24>;
+	label = "lan";
 };
 
 &dp6 {
 	status = "okay";
-	phy-handle = <&qca8081_24>;
-	label = "lan";
+	phy-handle = <&qca8081_28>;
+	label = "wan";
 };
 
 &wifi {
