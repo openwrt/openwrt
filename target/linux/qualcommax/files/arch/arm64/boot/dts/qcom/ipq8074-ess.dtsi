@@ -23,6 +23,24 @@
 		switch_access_mode = "local bus";
 		switch_cpu_bmp = <ESS_PORT0>;  /* cpu port bitmap */
 		switch_inner_bmp = <ESS_PORT7>; /*inner port bitmap*/
+		/* This is a special binding that controls how the malibu PHY are
+		 * init. This value reflect the PHY addr of the first malibu PHY.
+		 * Malibu PHY are in a bundle of 5 PHY.
+		 * Some device might have some port not connected.
+		 * SSDK still needs the addrs of the first PHY (even if not connected)
+		 * to correctly setup the malibu PHY.
+		 *
+		 * This is needed as previously SSDK based this on the port bmp, but
+		 * this can be problematic now that we specify correct bmp.
+		 *
+		 * Most common configuration have the malibu PHY placed at 0.
+		 * But some device might have it placed at address 16.
+		 * To drive the correct value, check the port id of the malibu PHY
+		 * and try to understand what is the first one in devices where some
+		 * port are missing. port_phyinfo is normally the way to go to derive
+		 * this value in the few special cases.
+		 */
+		malibu_first_phy_addr = <0>;
 		clocks = <&gcc GCC_CMN_12GPLL_AHB_CLK>,
 			 <&gcc GCC_CMN_12GPLL_SYS_CLK>,
 			 <&gcc GCC_UNIPHY0_AHB_CLK>,
@@ -140,6 +158,14 @@
 			      "nss_port4_rst", "nss_port5_rst",
 			      "nss_port6_rst";
 		mdio-bus = <&mdio>;
+
+		switch_mac_mode = <MAC_MODE_DISABLED>; /* MAC mode for UNIPHY instance 0 */
+		switch_mac_mode1 = <MAC_MODE_DISABLED>; /* MAC mode for UNIPHY instance 1 */
+		switch_mac_mode2 = <MAC_MODE_DISABLED>; /* MAC mode for UNIPHY instance 2 */
+
+		bm_tick_mode = <0>; /* bm tick mode */
+		tm_tick_mode = <0>; /* tm tick mode */
+
 		status = "disabled";
 
 		port_scheduler_resource {
