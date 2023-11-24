@@ -11,7 +11,8 @@ boot() {
 		fw_setenv changed
 	;;
 	linksys,mx4200v1|\
-	linksys,mx4200v2)
+	linksys,mx4200v2|\
+	linksys,mx5300)
 		mtd resetbc s_env || true
 	;;
 	esac

@@ -126,6 +126,23 @@ define Device/linksys_mx4200v2
 endef
 TARGET_DEVICES += linksys_mx4200v2
 
+define Device/linksys_mx5300
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := MX5300
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_SIZE := 6144k
+	IMAGE_SIZE := 147456k
+	NAND_SIZE := 512m
+	SOC := ipq8072
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MX5300
+	DEVICE_PACKAGES := kmod-leds-pca963x kmod-rtc-ds1307 \
+		ipq-wifi-linksys_mx5300 kmod-ath10k-ct ath10k-firmware-qca9984-ct
+endef
+TARGET_DEVICES += linksys_mx5300
+
 define Device/netgear_rax120v2
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
