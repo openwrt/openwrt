@@ -83,6 +83,13 @@
 	};
 };
 
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_factory_f100 0>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
 &esw {
 	mediatek,portmap = <0x3e>;
 };
@@ -95,8 +102,7 @@
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		nvmem-cells = <&eeprom_factory_28000>, <&macaddr_factory_f100>;
+		nvmem-cells = <&eeprom_factory_28000>, <&macaddr_factory_f100 (-1)>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <(-1)>;
 	};
 };

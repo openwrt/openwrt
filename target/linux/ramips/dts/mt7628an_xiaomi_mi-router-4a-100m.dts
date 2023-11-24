@@ -64,9 +64,8 @@
 };
 
 &ethernet {
-	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cells = <&macaddr_factory_4 (-1)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-1)>;
 };
 
 &esw {

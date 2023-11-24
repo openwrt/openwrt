@@ -55,7 +55,9 @@
 					#size-cells = <1>;
 
 					macaddr_factory_f100: macaddr@f100 {
+						compatible = "mac-base";
 						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					eeprom_factory_20000: eeprom@20000 {
@@ -71,14 +73,7 @@
 	};
 };
 
-&wmac {
-	status = "okay";
-
-	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_factory_f100>;
-	nvmem-cell-names = "eeprom", "mac-address";
-};
-
 &ethernet {
-	nvmem-cells = <&macaddr_factory_f100>;
+	nvmem-cells = <&macaddr_factory_f100 0>;
 	nvmem-cell-names = "mac-address";
 };
