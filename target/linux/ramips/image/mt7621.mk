@@ -2381,6 +2381,20 @@ define Device/tplink_er605-v2
 endef
 TARGET_DEVICES += tplink_er605-v2
 
+define Device/tplink_ex220-v1
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := EX220
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  TPLINK_BOARD_ID := EX220-V1
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_ex220-v1
+
 define Device/tplink_mr600-v2-eu
   $(Device/dsa-migration)
   $(Device/tplink-v2)

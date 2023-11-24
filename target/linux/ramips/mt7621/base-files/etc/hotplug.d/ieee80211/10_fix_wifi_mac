@@ -180,6 +180,10 @@ case "$board" in
 		hw_mac_addr="$(mtd_get_mac_binary product-info 0x8)"
 		macaddr_add "$hw_mac_addr" "$PHYNBR" > "/sys${DEVPATH}/macaddress"
 		;;
+	tplink,ex220-v1)
+		hw_mac_addr="$(mtd_get_mac_binary rom_file 0xf100)"
+		[ "$PHYNBR" = "1" ] &&  macaddr_add "$hw_mac_addr" 2 > "/sys${DEVPATH}/macaddress"
+		;;
 	yuncore,ax820)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary Factory 0xe000)" > /sys${DEVPATH}/macaddress
