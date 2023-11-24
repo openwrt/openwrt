@@ -51,7 +51,9 @@
 					};
 
 					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
 						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -109,7 +111,7 @@
 
 &ethernet {
 	status = "okay";
-	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cells = <&macaddr_factory_4 0>;
 	nvmem-cell-names = "mac-address";
 
 	port@0 {
@@ -155,7 +157,6 @@
 
 &wmac {
 	ralink,5ghz = <0>;
-	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4>;
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4 3>;
 	nvmem-cell-names = "eeprom", "mac-address";
-	mac-address-increment = <3>;
 };
