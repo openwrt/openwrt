@@ -115,6 +115,16 @@
 				label = "config";
 				reg = <0xff0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_e4a8: macaddr@e4a8 {
+						reg = <0xe4a8 0x6>;
+					};
+				};
 			};
 		};
 	};
@@ -179,14 +189,4 @@
 &gsw {
 	mediatek,port4-gmac;
 	mediatek,ephy-base = /bits/ 8 <2>;
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_e4a8: macaddr@e4a8 {
-		reg = <0xe4a8 0x6>;
-	};
 };

@@ -94,19 +94,22 @@
 			};
 
 			config: partition@ff0000 {
-				compatible = "nvmem-cells";
 				label = "config";
 				reg = <0xff0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_config_e05d: eeprom@e05d {
-					reg = <0xe05d 0x200>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_config_e490: macaddr@e490 {
-					reg = <0xe490 0x6>;
+					eeprom_config_e05d: eeprom@e05d {
+						reg = <0xe05d 0x200>;
+					};
+
+					macaddr_config_e490: macaddr@e490 {
+						reg = <0xe490 0x6>;
+					};
 				};
 			};
 		};
