@@ -240,7 +240,7 @@ define Device/meraki_mr42
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	KERNEL_LOADADDR = 0x44208000
-	DEVICE_PACKAGES := -swconfig -kmod-ata-ahci -kmod-ata-ahci-platform \
+	DEVICE_PACKAGES := -kmod-ata-ahci -kmod-ata-ahci-platform \
 		-kmod-usb-ohci -kmod-usb2 -kmod-usb-ledtrig-usbport \
 		-kmod-phy-qcom-ipq806x-usb -kmod-usb3 -kmod-usb-dwc3-qcom \
 		-uboot-envtools ath10k-firmware-qca9887-ct \
@@ -258,7 +258,7 @@ define Device/meraki_mr52
 	PAGESIZE := 2048
 	KERNEL_LOADADDR = 0x44208000
 	DEVICE_DTS_CONFIG := config@2
-	DEVICE_PACKAGES := -swconfig -kmod-ata-ahci -kmod-ata-ahci-platform \
+	DEVICE_PACKAGES := -kmod-ata-ahci -kmod-ata-ahci-platform \
 		-kmod-usb-ohci -kmod-usb2 -kmod-usb-ledtrig-usbport \
 		-kmod-phy-qcom-ipq806x-usb -kmod-usb3 -kmod-usb-dwc3-qcom \
 		-uboot-envtools ath10k-firmware-qca9887-ct \
