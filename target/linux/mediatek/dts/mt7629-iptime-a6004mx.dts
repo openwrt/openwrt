@@ -97,9 +97,8 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
-		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cells = <&macaddr_factory_4 3>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <3>;
 
 		fixed-link {
 			speed = <2500>;
@@ -113,9 +112,8 @@
 		reg = <1>;
 		phy-mode = "gmii";
 		phy-handle = <&phy0>;
-		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cells = <&macaddr_factory_4 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 
 	mdio: mdio-bus {
@@ -218,7 +216,9 @@
 					#size-cells = <1>;
 
 					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
 						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};

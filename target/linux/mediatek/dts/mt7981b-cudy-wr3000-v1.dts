@@ -95,7 +95,7 @@
 		phy-mode = "2500base-x";
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_bdinfo_de00>;
+		nvmem-cells = <&macaddr_bdinfo_de00 0>;
 
 		fixed-link {
 			speed = <2500>;
@@ -175,7 +175,9 @@
 					#size-cells = <1>;
 
 					macaddr_bdinfo_de00: macaddr@de00 {
+						compatible = "mac-base";
 						reg = <0xde00 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -233,8 +235,7 @@
 			label = "wan";
 
 			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00>;
-			mac-address-increment = <1>;
+			nvmem-cells = <&macaddr_bdinfo_de00 1>;
 		};
 
 		lan1: port@1 {
@@ -242,7 +243,7 @@
 			label = "lan1";
 
 			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00>;
+			nvmem-cells = <&macaddr_bdinfo_de00 0>;
 		};
 
 		port@2 {
@@ -250,7 +251,7 @@
 			label = "lan2";
 
 			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00>;
+			nvmem-cells = <&macaddr_bdinfo_de00 0>;
 		};
 
 		port@3 {
@@ -258,7 +259,7 @@
 			label = "lan3";
 
 			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00>;
+			nvmem-cells = <&macaddr_bdinfo_de00 0>;
 		};
 
 		port@6 {
