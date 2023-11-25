@@ -108,7 +108,9 @@
 					};
 
 					macaddr_config_e490: macaddr@e490 {
+						compatible = "mac-base";
 						reg = <0xe490 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -131,9 +133,8 @@
 &pcie0 {
 	mt76x0e@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_config_e05d>, <&macaddr_config_e490>;
+		nvmem-cells = <&eeprom_config_e05d>, <&macaddr_config_e490 2>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <(2)>;
 	};
 };
 

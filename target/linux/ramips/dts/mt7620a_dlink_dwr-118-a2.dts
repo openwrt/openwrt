@@ -122,7 +122,9 @@
 					#size-cells = <1>;
 
 					macaddr_config_e4a8: macaddr@e4a8 {
+						compatible = "mac-base";
 						reg = <0xe4a8 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -153,9 +155,8 @@
 	wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		nvmem-cells = <&macaddr_config_e4a8>;
+		nvmem-cells = <&macaddr_config_e4a8 2>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(2)>;
 
 		led {
 			led-sources = <2>;

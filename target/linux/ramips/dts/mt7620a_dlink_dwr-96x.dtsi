@@ -169,7 +169,9 @@
 					};
 
 					macaddr_config_e50e: macaddr@e50e {
+						compatible = "mac-base";
 						reg = <0xe50e 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};

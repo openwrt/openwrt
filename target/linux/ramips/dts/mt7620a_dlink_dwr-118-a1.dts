@@ -129,7 +129,9 @@
 					};
 
 					macaddr_config_e496: macaddr@e496 {
+						compatible = "mac-base";
 						reg = <0xe496 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -159,9 +161,8 @@
 &pcie0 {
 	wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_config_e083>, <&macaddr_config_e496>;
+		nvmem-cells = <&eeprom_config_e083>, <&macaddr_config_e496 2>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <(2)>;
 
 		led {
 			led-sources = <0>;

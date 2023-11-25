@@ -109,11 +109,15 @@
 					};
 
 					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
 						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					macaddr_factory_8004: macaddr@8004 {
+						compatible = "mac-base";
 						reg = <0x8004 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -136,9 +140,8 @@
 };
 
 &ethernet {
-	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cells = <&macaddr_factory_4 (-2)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-2)>;
 };
 
 &wmac {
@@ -146,9 +149,8 @@
 	pinctrl-0 = <&pa_pins>;
 	pinctrl-1 = <&pa_gpio_pins>;
 
-	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4>;
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4 (-1)>;
 	nvmem-cell-names = "eeprom", "mac-address";
-	mac-address-increment = <(-1)>;
 };
 
 &pcie {
@@ -159,9 +161,8 @@
 	wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_8004>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_8004 (-3)>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <(-3)>;
 
 		led {
 			led-active-low;

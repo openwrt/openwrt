@@ -79,7 +79,9 @@
 					#size-cells = <1>;
 
 					macaddr_rom_f100: macaddr@f100 {
+						compatible = "mac-base";
 						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
