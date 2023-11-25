@@ -182,6 +182,16 @@
 				label = "config";
 				reg = <0x100000 0x0060000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_1c: macaddr@1c {
+						reg = <0x1c 0x6>;
+					};
+				};
 			};
 
 			factory: partition@160000 {
@@ -257,14 +267,4 @@
 	nvmem-cell-names = "mac-address";
 	mac-address-increment = <2>;
 	status = "okay";
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_1c: macaddr@1c {
-		reg = <0x1c 0x6>;
-	};
 };

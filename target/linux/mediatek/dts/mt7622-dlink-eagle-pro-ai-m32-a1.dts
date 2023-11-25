@@ -300,22 +300,24 @@
 			};
 
 			odm: partition@180000 {
-				compatible = "nvmem-cells";
 				label = "Odm";
 				reg = <0x00180000 0x00040000>;
 				read-only;
 
-				macaddr_odm_83: macaddr@83 {
-					reg = <0x83 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_odm_83: macaddr@83 {
+						reg = <0x83 0x6>;
+					};
 				};
 			};
 
 			config1: partition@1C0000 {
-				compatible = "nvmem-cells";
 				label = "Config1";
 				reg = <0x001C0000 0x00080000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 			};
 

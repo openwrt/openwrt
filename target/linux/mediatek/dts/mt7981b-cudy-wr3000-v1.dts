@@ -168,6 +168,16 @@
 				label = "bdinfo";
 				reg = <0x60000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_bdinfo_de00: macaddr@de00 {
+						reg = <0xde00 0x6>;
+					};
+				};
 			};
 
 			partition@70000 {
@@ -269,14 +279,4 @@
 &wifi {
 	status = "okay";
 	mediatek,mtd-eeprom = <&factory 0x0>;
-};
-
-&bdinfo {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_bdinfo_de00: macaddr@de00 {
-		reg = <0xde00 0x6>;
-	};
 };

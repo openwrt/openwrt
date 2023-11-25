@@ -179,12 +179,14 @@
 				reg = <0x180000 0x0200000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr: macaddr@a {
-					reg = <0xa 0x6>;
+					macaddr: macaddr@a {
+						reg = <0xa 0x6>;
+					};
 				};
 			};
 

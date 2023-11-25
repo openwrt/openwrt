@@ -102,11 +102,16 @@
 			partition@90000 {
 				label = "Factory";
 				reg = <0x00090000 0x00010000>;
-				compatible = "nvmem-cells";
 				read-only;
 
-				macaddr_factory_8: macaddr@8 {
-					reg = <0x8 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_factory_8: macaddr@8 {
+						reg = <0x8 0x6>;
+					};
 				};
 			};
 
