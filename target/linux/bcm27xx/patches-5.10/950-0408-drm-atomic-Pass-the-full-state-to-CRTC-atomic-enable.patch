@@ -567,7 +567,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  	unsigned int var;
 --- a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
 +++ b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
-@@ -517,7 +517,7 @@ void mtk_drm_crtc_async_update(struct dr
+@@ -520,7 +520,7 @@ void mtk_drm_crtc_async_update(struct dr
  }
  
  static void mtk_drm_crtc_atomic_enable(struct drm_crtc *crtc,
@@ -576,7 +576,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  {
  	struct mtk_drm_crtc *mtk_crtc = to_mtk_crtc(crtc);
  	struct mtk_ddp_comp *comp = mtk_crtc->ddp_comp[0];
-@@ -542,7 +542,7 @@ static void mtk_drm_crtc_atomic_enable(s
+@@ -545,7 +545,7 @@ static void mtk_drm_crtc_atomic_enable(s
  }
  
  static void mtk_drm_crtc_atomic_disable(struct drm_crtc *crtc,

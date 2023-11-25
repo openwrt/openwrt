@@ -357,7 +357,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201211114237.213288-2-tomi
  static const struct drm_plane_helper_funcs ingenic_drm_plane_helper_funcs = {
 --- a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
 +++ b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
-@@ -614,7 +614,6 @@ static const struct drm_crtc_funcs mtk_c
+@@ -617,7 +617,6 @@ static const struct drm_crtc_funcs mtk_c
  	.reset			= mtk_drm_crtc_reset,
  	.atomic_duplicate_state	= mtk_drm_crtc_duplicate_state,
  	.atomic_destroy_state	= mtk_drm_crtc_destroy_state,
@@ -405,7 +405,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201211114237.213288-2-tomi
  /* -----------------------------------------------------------------------------
 --- a/drivers/gpu/drm/rockchip/rockchip_drm_vop.c
 +++ b/drivers/gpu/drm/rockchip/rockchip_drm_vop.c
-@@ -1645,7 +1645,6 @@ static const struct drm_crtc_funcs vop_c
+@@ -1649,7 +1649,6 @@ static const struct drm_crtc_funcs vop_c
  	.disable_vblank = vop_crtc_disable_vblank,
  	.set_crc_source = vop_crtc_set_crc_source,
  	.verify_crc_source = vop_crtc_verify_crc_source,
