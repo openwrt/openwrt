@@ -15,6 +15,8 @@ PKG_HASH:=e31cac91545ff41b71cec5d8c22afd695645cd6e2a442ccdacacd60534069341
 
 PKG_MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
+UBOOT_USE_INTREE_DTC:=1
+
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
 
