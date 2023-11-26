@@ -182,20 +182,22 @@
 				label = "artmtd";
 				reg = <0xfe0000 0x10000>;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_artmtd_0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
+					macaddr_artmtd_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
 
-				macaddr_artmtd_6: macaddr@6 {
-					reg = <0x6 0x6>;
-				};
+					macaddr_artmtd_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
 
-				macaddr_artmtd_c: macaddr@c {
-					reg = <0xc 0x6>;
+					macaddr_artmtd_c: macaddr@c {
+						reg = <0xc 0x6>;
+					};
 				};
 			};
 
@@ -204,16 +206,18 @@
 				reg = <0xff0000 0x10000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				cal_art_1000: cal@1000 {
-					reg = <0x1000 0x440>;
-				};
+					cal_art_1000: cal@1000 {
+						reg = <0x1000 0x440>;
+					};
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 		};
