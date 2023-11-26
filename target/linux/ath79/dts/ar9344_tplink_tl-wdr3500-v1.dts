@@ -49,16 +49,30 @@
 	status = "okay";
 };
 
-&ath9k {
-	mac-address-increment = <1>;
+&wmac {
+	status = "okay";
+	nvmem-cells = <&macaddr_uboot_1fc00 0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&pcie {
+	status = "okay";
+
+	ath9k: wifi@0,0 {
+		compatible = "pci168c,0033";
+		reg = <0x0000 0 0 0 0>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		nvmem-cells = <&macaddr_uboot_1fc00 1>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
+	};
 };
 
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_uboot_1fc00>;
+	nvmem-cells = <&macaddr_uboot_1fc00 (-1)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-1)>;
 
 	gmac-config {
 		device = <&gmac>;
@@ -72,7 +86,6 @@
 
 	phy-handle = <&swphy4>;
 
-	nvmem-cells = <&macaddr_uboot_1fc00>;
+	nvmem-cells = <&macaddr_uboot_1fc00 2>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <2>;
 };

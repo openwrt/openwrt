@@ -85,7 +85,9 @@
 					#size-cells = <1>;
 
 					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -96,16 +98,15 @@
 &eth0 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 2>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <2>;
 };
 
 &wmac {

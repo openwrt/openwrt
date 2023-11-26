@@ -72,9 +72,8 @@
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_uboot_1fc00>;
+	nvmem-cells = <&macaddr_uboot_1fc00 (-1)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-1)>;
 
 	gmac-config {
 		device = <&gmac>;
@@ -107,7 +106,9 @@
 					#size-cells = <1>;
 
 					macaddr_uboot_1fc00: macaddr@1fc00 {
+						compatible = "mac-base";
 						reg = <0x1fc00 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -132,6 +133,6 @@
 
 	mtd-cal-data = <&art 0x1000>;
 
-	nvmem-cells = <&macaddr_uboot_1fc00>;
+	nvmem-cells = <&macaddr_uboot_1fc00 0>;
 	nvmem-cell-names = "mac-address";
 };

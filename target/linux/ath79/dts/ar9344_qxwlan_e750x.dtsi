@@ -92,7 +92,9 @@
 					#size-cells = <1>;
 
 					macaddr_pridata_400: macaddr@400 {
+						compatible = "mac-base";
 						reg = <0x400 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};

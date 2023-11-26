@@ -123,7 +123,9 @@
 					#size-cells = <1>;
 
 					macaddr_art_1002: macaddr@1002 {
+						compatible = "mac-base";
 						reg = <0x1002 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -140,9 +142,8 @@
 
 	pll-data = <0x02000000 0x00000101 0x00001616>;
 
-	nvmem-cells = <&macaddr_art_1002>;
+	nvmem-cells = <&macaddr_art_1002 2>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <2>;
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;

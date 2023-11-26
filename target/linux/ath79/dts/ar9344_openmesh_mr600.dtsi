@@ -81,7 +81,9 @@
 					#size-cells = <1>;
 
 					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					calibration_art_1000: calibration@1000 {
@@ -112,7 +114,7 @@
 
 	pll-data = <0x02000000 0x00000101 0x00001313>;
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii-id";
@@ -129,9 +131,8 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>, <&calibration_art_1000>;
+	nvmem-cells = <&macaddr_art_0 1>, <&calibration_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
-	mac-address-increment = <1>;
 };
 
 &pcie {
@@ -140,9 +141,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_art_0>, <&calibration_art_5000>;
+		nvmem-cells = <&macaddr_art_0 8>, <&calibration_art_5000>;
 		nvmem-cell-names = "mac-address", "calibration";
-		mac-address-increment = <8>;
 
 		gpio-controller;
 		#gpio-cells = <2>;
