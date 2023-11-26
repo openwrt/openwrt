@@ -195,6 +195,7 @@
 					reg = <0x2a0000 0x0010000>;
 
 					ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
 					};
 				};
 
@@ -327,7 +328,7 @@
 	phy-mode = "rgmii";
 	phy-handle = <&phy1>;
 
-	nvmem-cells = <&ethaddr>;
+	nvmem-cells = <&ethaddr 0>;
 	nvmem-cell-names = "mac-address";
 
 	fixed-link {
@@ -344,6 +345,9 @@
 
 	phy-mode = "sgmii";
 	phy-handle = <&phy2>;
+
+	nvmem-cells = <&ethaddr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &adm_dma {
