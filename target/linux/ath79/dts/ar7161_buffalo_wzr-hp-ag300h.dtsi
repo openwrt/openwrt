@@ -148,6 +148,20 @@
 				label = "art";
 				reg = <0x0050000 0x0010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_120c: macaddr@120c {
+						reg = <0x120c 0x6>;
+					};
+
+					macaddr_art_520c: macaddr@520c {
+						reg = <0x520c 0x6>;
+					};
+				};
 			};
 
 			partition@60000 {
@@ -245,18 +259,4 @@
 	mac-address-increment = <1>;
 
 	phy-handle = <&phy4>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_120c: macaddr@120c {
-		reg = <0x120c 0x6>;
-	};
-
-	macaddr_art_520c: macaddr@520c {
-		reg = <0x520c 0x6>;
-	};
 };

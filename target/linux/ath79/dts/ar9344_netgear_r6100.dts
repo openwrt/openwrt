@@ -130,6 +130,32 @@
 			label = "caldata";
 			reg = <0x0020000 0x0040000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_ath9k: calibration@1000 {
+					reg = <0x1000 0x440>;
+				};
+
+				cal_ath10k: calibration@5000 {
+					reg = <0x5000 0x844>;
+				};
+
+				macaddr_caldata_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_caldata_6: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
+
+				macaddr_caldata_c: macaddr@c {
+					reg = <0xc 0x6>;
+				};
+			};
 		};
 
 		partition@60000 {
@@ -203,30 +229,4 @@
 
 	nvmem-cells = <&cal_ath9k>;
 	nvmem-cell-names = "calibration";
-};
-
-&caldata {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	cal_ath9k: calibration@1000 {
-		reg = <0x1000 0x440>;
-	};
-
-	cal_ath10k: calibration@5000 {
-		reg = <0x5000 0x844>;
-	};
-
-	macaddr_caldata_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_caldata_6: macaddr@6 {
-		reg = <0x6 0x6>;
-	};
-
-	macaddr_caldata_c: macaddr@c {
-		reg = <0xc 0x6>;
-	};
 };

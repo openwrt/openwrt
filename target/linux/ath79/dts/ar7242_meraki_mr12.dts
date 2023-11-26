@@ -140,6 +140,16 @@
 				label = "config";
 				reg = <0x80000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_66: macaddr@66 {
+						reg = <0x66 0x6>;
+					};
+				};
 			};
 
 			partition@a0000 {
@@ -154,15 +164,5 @@
 				read-only;
 			};
 		};
-	};
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_66: macaddr@66 {
-		reg = <0x66 0x6>;
 	};
 };

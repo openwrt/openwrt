@@ -187,6 +187,16 @@
 				label = "hwinfo";
 				reg = <0xfe0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_hwinfo_1c: macaddr@1c {
+						reg = <0x1c 0x6>;
+					};
+				};
 			};
 
 			partition@ff0000 {
@@ -195,16 +205,6 @@
 				read-only;
 			};
 		};
-	};
-};
-
-&hwinfo {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_hwinfo_1c: macaddr@1c {
-		reg = <0x1c 0x6>;
 	};
 };
 

@@ -137,6 +137,16 @@
 				label = "art";
 				reg = <0x1fe0000 0x020000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_1120c: macaddr@1120c {
+						reg = <0x1120c 0x6>;
+					};
+				};
 			};
 		};
 	};
@@ -249,14 +259,4 @@
 
 &usb_phy {
 	status = "okay";
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_1120c: macaddr@1120c {
-		reg = <0x1120c 0x6>;
-	};
 };
