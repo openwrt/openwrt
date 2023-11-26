@@ -262,11 +262,6 @@ default_postinst() {
 
 	add_group_and_user "${pkgname}"
 
-	if [ -f "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" ]; then
-		( . "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" )
-		ret=$?
-	fi
-
 	if [ -d "$root/rootfs-overlay" ]; then
 		cp -R $root/rootfs-overlay/. $root/
 		rm -fR $root/rootfs-overlay/
@@ -290,6 +285,11 @@ default_postinst() {
 		fi
 
 		rm -f /tmp/luci-indexcache
+	fi
+
+	if [ -f "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" ]; then
+		( . "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" )
+		ret=$?
 	fi
 
 	local shell="$(command -v bash)"
