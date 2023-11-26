@@ -37,7 +37,7 @@ Signed-off-by: Rajkumar Ayyasamy <arajkuma@codeaurora.org>
  static struct clk_alpha_pll gpll0_main = {
  	.offset = 0x21000,
  	.regs = clk_alpha_pll_regs[CLK_ALPHA_PLL_TYPE_DEFAULT],
-@@ -636,6 +652,12 @@ static const struct freq_tbl ftbl_pcie_a
+@@ -630,6 +646,12 @@ static const struct freq_tbl ftbl_pcie_a
  	{ }
  };
  
@@ -50,7 +50,7 @@ Signed-off-by: Rajkumar Ayyasamy <arajkuma@codeaurora.org>
  static struct clk_rcg2 pcie0_axi_clk_src = {
  	.cmd_rcgr = 0x75054,
  	.freq_tbl = ftbl_pcie_axi_clk_src,
-@@ -2036,6 +2058,78 @@ static struct clk_rcg2 gp3_clk_src = {
+@@ -2030,6 +2052,78 @@ static struct clk_rcg2 gp3_clk_src = {
  	},
  };
  
@@ -129,7 +129,7 @@ Signed-off-by: Rajkumar Ayyasamy <arajkuma@codeaurora.org>
  static struct clk_branch gcc_blsp1_ahb_clk = {
  	.halt_reg = 0x01008,
  	.clkr = {
-@@ -4231,13 +4325,7 @@ static struct clk_branch gcc_gp3_clk = {
+@@ -4225,13 +4319,7 @@ static struct clk_branch gcc_gp3_clk = {
  	},
  };
  
@@ -144,7 +144,7 @@ Signed-off-by: Rajkumar Ayyasamy <arajkuma@codeaurora.org>
  	.cmd_rcgr = 0x75070,
  	.freq_tbl = ftbl_pcie_rchng_clk_src,
  	.hid_width = 5,
-@@ -4329,6 +4417,114 @@ static const struct alpha_pll_config nss
+@@ -4323,6 +4411,114 @@ static const struct alpha_pll_config nss
  	.alpha_en_mask = BIT(24),
  };
  
@@ -259,7 +259,7 @@ Signed-off-by: Rajkumar Ayyasamy <arajkuma@codeaurora.org>
  static struct clk_hw *gcc_ipq8074_hws[] = {
  	&gpll0_out_main_div2.hw,
  	&gpll6_out_main_div2.hw,
-@@ -4337,6 +4533,7 @@ static struct clk_hw *gcc_ipq8074_hws[]
+@@ -4331,6 +4527,7 @@ static struct clk_hw *gcc_ipq8074_hws[]
  	&gcc_xo_div4_clk_src.hw,
  	&nss_noc_clk_src.hw,
  	&nss_ppe_cdiv_clk_src.hw,
@@ -267,7 +267,7 @@ Signed-off-by: Rajkumar Ayyasamy <arajkuma@codeaurora.org>
  };
  
  static struct clk_regmap *gcc_ipq8074_clks[] = {
-@@ -4568,6 +4765,15 @@ static struct clk_regmap *gcc_ipq8074_cl
+@@ -4562,6 +4759,15 @@ static struct clk_regmap *gcc_ipq8074_cl
  	[GCC_PCIE0_RCHNG_CLK] = &gcc_pcie0_rchng_clk.clkr,
  	[GCC_PCIE0_AXI_S_BRIDGE_CLK] = &gcc_pcie0_axi_s_bridge_clk.clkr,
  	[GCC_CRYPTO_PPE_CLK] = &gcc_crypto_ppe_clk.clkr,

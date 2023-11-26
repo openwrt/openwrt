@@ -16,7 +16,7 @@ Signed-off-by: Selvam Sathappan Periakaruppan <speriaka@codeaurora.org>
 
 --- a/drivers/clk/qcom/gcc-ipq8074.c
 +++ b/drivers/clk/qcom/gcc-ipq8074.c
-@@ -4418,10 +4418,10 @@ static const struct alpha_pll_config nss
+@@ -4412,10 +4412,10 @@ static const struct alpha_pll_config nss
  };
  
  static struct clk_branch gcc_snoc_bus_timeout2_ahb_clk = {
@@ -29,7 +29,7 @@ Signed-off-by: Selvam Sathappan Periakaruppan <speriaka@codeaurora.org>
  		.enable_mask = BIT(0),
  		.hw.init = &(struct clk_init_data){
  			.name = "gcc_snoc_bus_timeout2_ahb_clk",
-@@ -4436,10 +4436,10 @@ static struct clk_branch gcc_snoc_bus_ti
+@@ -4430,10 +4430,10 @@ static struct clk_branch gcc_snoc_bus_ti
  };
  
  static struct clk_branch gcc_snoc_bus_timeout3_ahb_clk = {
