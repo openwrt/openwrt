@@ -1546,7 +1546,7 @@ $(eval $(call KernelPackage,sfp))
 define KernelPackage/stmmac-core
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Synopsis Ethernet Controller core (NXP,STMMicro,others)
-  DEPENDS:=@(TARGET_armsr_armv8) +kmod-pcs-xpcs +kmod-ptp \
+  DEPENDS:=@TARGET_x86_64||TARGET_armsr_armv8 +kmod-pcs-xpcs +kmod-ptp \
     +kmod-of-mdio
   KCONFIG:=CONFIG_STMMAC_ETH \
     CONFIG_STMMAC_SELFTESTS=n \
