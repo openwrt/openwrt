@@ -26,14 +26,14 @@ define Package/libudebug
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=udebug client library
-  DEPENDS:=+libubox
+  DEPENDS:=+libubox +libubus
 endef
 
 define Package/udebugd
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=OpenWrt debug service
-  DEPENDS:=+libudebug +libubus
+  DEPENDS:=+libudebug
 endef
 
 define Package/udebugd/conffiles
