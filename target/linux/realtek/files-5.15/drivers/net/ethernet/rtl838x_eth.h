@@ -216,6 +216,9 @@
 /* Registers of the internal Serdes of the 8380 */
 #define RTL838X_SDS4_FIB_REG0			(0xF800)
 
+/* Default MTU with jumbo frames support */
+#define DEFAULT_MTU 9000
+
 inline int rtl838x_mac_port_ctrl(int p)
 {
 	return RTL838X_MAC_PORT_CTRL + (p << 7);

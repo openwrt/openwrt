@@ -43,6 +43,9 @@ extern struct rtl83xx_soc_info soc_info;
 #define RX_EN		0x4
 #define TX_EN_93XX	0x20
 #define RX_EN_93XX	0x10
+#define RX_TRUNCATE_EN_93XX BIT(6)
+#define RX_TRUNCATE_EN_83XX BIT(4)
+#define TX_PAD_EN_838X BIT(5)
 #define TX_DO		0x2
 #define WRAP		0x2
 #define MAX_PORTS	57
@@ -727,8 +730,8 @@ static void rtl838x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	/* Disable Head of Line features for all RX rings */
 	sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
 
-	/* Truncate RX buffer to 0x640 (1600) bytes, pad TX */
-	sw_w32(0x06400020, priv->r->dma_if_ctrl);
+	/* Truncate RX buffer to DEFAULT_MTU bytes, pad TX */
+	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X, priv->r->dma_if_ctrl);
 
 	/* Enable RX done, RX overflow and TX done interrupts */
 	sw_w32(0xfffff, priv->r->dma_if_intr_msk);
@@ -752,7 +755,7 @@ static void rtl838x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 {
 	/* Setup CPU-Port: RX Buffer */
-	sw_w32(0x0000c808, priv->r->dma_if_ctrl);
+	sw_w32((DEFAULT_MTU << 5) | RX_TRUNCATE_EN_83XX, priv->r->dma_if_ctrl);
 
 	/* Enable Notify, RX done, RX overflow and TX done interrupts */
 	sw_w32(0x007fffff, priv->r->dma_if_intr_msk); /* Notify IRQ! */
@@ -775,8 +778,8 @@ static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 
 static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 {
-	/* Setup CPU-Port: RX Buffer truncated at 1600 Bytes */
-	sw_w32(0x06400040, priv->r->dma_if_ctrl);
+	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
+	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, priv->r->dma_if_ctrl);
 
 	for (int i = 0; i < priv->rxrings; i++) {
 		int pos = (i % 3) * 10;
@@ -2415,7 +2418,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	dev->ethtool_ops = &rtl838x_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
-	dev->max_mtu = 1536;
+	dev->max_mtu = DEFAULT_MTU;
 	dev->features = NETIF_F_RXCSUM | NETIF_F_HW_CSUM;
 	dev->hw_features = NETIF_F_RXCSUM;
 
