@@ -386,6 +386,18 @@
 	status = "okay";
 };
 
+&uart1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_2_lite_pins>;
+};
+
+&uart2 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_3_pins>;
+};
+
 &watchdog {
 	status = "okay";
 };

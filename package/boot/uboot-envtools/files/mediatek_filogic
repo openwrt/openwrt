@@ -52,6 +52,19 @@ bananapi,bpi-r3)
 		;;
 	esac
 	;;
+bananapi,bpi-r4)
+	. /lib/upgrade/platform.sh
+
+	bootdev="$(platform_get_bootdev)"
+	case "$bootdev" in
+	ubi*)
+		ubootenv_add_ubi_default
+		;;
+	mmc*)
+		ubootenv_add_mmc_default "${bootdev%%p[0-9]*}"
+		;;
+	esac
+	;;
 cmcc,rax3000m)
 	case "$(cmdline_get_var root)" in
 	/dev/mmc*)
