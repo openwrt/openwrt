@@ -1430,6 +1430,8 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	pr_debug("%s port %d, vid %d, flags %x\n",
 		__func__, port, vlan->vid, vlan->flags);
 
+	if(!vlan->vid) return 0;
+
 	if (vlan->vid > 4095) {
 		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
 		return -ENOTSUPP;
