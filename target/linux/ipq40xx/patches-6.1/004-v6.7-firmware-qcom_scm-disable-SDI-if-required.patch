@@ -27,7 +27,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 
 --- a/drivers/firmware/qcom_scm.c
 +++ b/drivers/firmware/qcom_scm.c
-@@ -400,6 +400,29 @@ int qcom_scm_set_remote_state(u32 state,
+@@ -407,6 +407,29 @@ int qcom_scm_set_remote_state(u32 state,
  }
  EXPORT_SYMBOL(qcom_scm_set_remote_state);
  
@@ -57,7 +57,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  static int __qcom_scm_set_dload_mode(struct device *dev, bool enable)
  {
  	struct qcom_scm_desc desc = {
-@@ -1404,6 +1427,13 @@ static int qcom_scm_probe(struct platfor
+@@ -1411,6 +1434,13 @@ static int qcom_scm_probe(struct platfor
  
  	__get_convention();
  
