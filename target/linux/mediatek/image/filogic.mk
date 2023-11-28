@@ -299,7 +299,7 @@ define Device/glinet_gl-mt2500
   DEVICE_PACKAGES := e2fsprogs f2fsck mkf2fs kmod-usb3
   SUPPORTED_DEVICES += glinet,mt2500-emmc
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-gl-metadata
 endef
 TARGET_DEVICES += glinet_gl-mt2500
 
