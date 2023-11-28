@@ -1,0 +1,390 @@
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/thermal/thermal.h>
+
+/ {
+	compatible = "hatlab,gateboard-one", "mediatek,mt7621-soc";
+	model = "HATLab GateBoard-One";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	aliases {
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys: sys {
+			label = "green:sys";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		usb {
+			label = "blue:usb";
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+			trigger-sources = <&xhci_ehci_port1>;
+			linux,default-trigger = "usbport";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		power_peripheral {
+			gpio-export,name = "power_peripheral";
+			gpio-export,output = <0>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	cpu_fan: cpu_fan {
+		compatible = "gpio-fan";
+		gpios = <&gpio 13 GPIO_ACTIVE_HIGH
+				 &gpio 14 GPIO_ACTIVE_HIGH>;
+		gpio-fan,speed-map = <	0		0
+								2000	1
+								4000	2
+								6000	3>;
+		#cooling-cells = <2>;
+	};
+
+	thermal-zones {
+		cpu-thermal {
+			polling-delay = <1000>;
+			polling-delay-passive = <250>;
+
+			thermal-sensors = <&cpu_sensor>;
+
+			trips {
+				cpu_warm: cpu-warm {
+					temperature = <26000>;
+					hysteresis = <2000>;
+					type = "passive";
+				};
+
+				cpu_hot: cpu-hot {
+					temperature = <37000>;
+					hysteresis = <2000>;
+					type = "active";
+				};
+
+				cpu_alert: cpu-alert {
+					temperature = <75000>;
+					hysteresis = <2000>;
+					type = "hot";
+				};
+			};
+
+			cooling-maps {
+				map0 {
+					trip = <&cpu_warm>;
+					cooling-device = <&cpu_fan THERMAL_NO_LIMIT 2>;
+				};
+
+				map1 {
+					trip = <&cpu_hot>;
+					cooling-device = <&cpu_fan 3 THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+	};
+
+	crypto: crypto@1e004000 {
+		status = "okay";
+
+		compatible = "mediatek,mtk-eip93";
+		reg = <0x1e004000 0x1000>;
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 19 IRQ_TYPE_LEVEL_HIGH>;
+	};
+	
+	i2c_gpio: i2c-gpio {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&gpio 3 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 4 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "disabled";
+	};
+
+	i2c_sfp: i2c-sfp {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&expender0 1 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&expender0 2 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	i2c_sfp_alias_0: i2c-sfp-alias-0 {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&expender0_alias_0 1 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&expender0_alias_0 2 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp: sfp {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp>;
+
+		maximum-power-milliwatt = <5000>;
+
+		mod-def0-gpios = <&expender0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+		// los-gpios = <&expender0 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		// rate-select0-gpios = <&expender0 4 GPIO_ACTIVE_HIGH>;
+		// tx-disable-gpios = <&expender0 6 GPIO_ACTIVE_HIGH>;
+		// tx-fault-gpios = <&expender0 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+
+	sfp_alias_0: sfp-alias-0 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp_alias_0>;
+
+		maximum-power-milliwatt = <5000>;
+
+		mod-def0-gpios = <&expender0_alias_0 5 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+		// los-gpios = <&expender0_alias_0 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		// rate-select0-gpios = <&expender0_alias_0 4 GPIO_ACTIVE_HIGH>;
+		// tx-disable-gpios = <&expender0_alias_0 6 GPIO_ACTIVE_HIGH>;
+		// tx-fault-gpios = <&expender0_alias_0 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	spi-nor@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <30000000>;
+
+		partitions@0 {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x70000>;
+				read-only;
+			};
+
+			partition@70000 {
+				label = "u-boot-env";
+				reg = <0x70000 0x8000>;
+			};
+
+			factory: partition@78000 {
+				label = "factory";
+				reg = <0x78000 0x8000>;
+			};
+		};
+	};
+
+	spi-nand@1 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <30000000>;
+
+		partition@0 {
+			label = "nand0-ubi";
+			reg = <0x0 0x0>;
+		};
+	};
+};
+
+&uartlite2 {
+	status = "okay";
+};
+
+&uartlite3 {
+	status = "okay";
+};
+
+&state_default {
+	gpio {
+		groups = "wdt", "jtag", "i2c";
+		function = "gpio";
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,eeprom-file = "mt76.pcie0.eeprom";
+	};
+};
+
+&pcie1 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,eeprom-file = "mt76.pcie1.eeprom";
+	};
+};
+
+&pcie2 {
+	mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,eeprom-file = "mt76.pcie2.eeprom";
+	};
+};
+
+&sdhci {
+	status = "okay";
+	max-frequency = <20000000>;
+};
+
+&mdio {
+	ephy7: ethernet-phy@7 {
+		reg = <7>;
+		eee-broken-1000t;
+		eee-broken-100tx;
+		realtek,autotxid;
+	};
+};
+
+&gmac0 {
+	label = "dsa0";
+	nvmem-cells = <&macaddr_factory_0>;
+	nvmem-cell-names = "mac-address";
+	phy-mode = "trgmii";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "eth5";
+
+	nvmem-cells = <&macaddr_factory_0>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <6>;
+
+	phy-handle = <&ephy7>;
+	phy-mode = "rgmii-rxid";
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "eth0";
+			nvmem-cells = <&macaddr_factory_0>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <1>;
+		};
+
+		port@1 {
+			status = "okay";
+			label = "eth1";
+			nvmem-cells = <&macaddr_factory_0>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <2>;
+		};
+
+		port@2 {
+			status = "okay";
+			label = "eth2";
+			nvmem-cells = <&macaddr_factory_0>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <3>;
+		};
+
+		port@3 {
+			status = "okay";
+			label = "eth3";
+			nvmem-cells = <&macaddr_factory_0>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <4>;
+		};
+
+		port@4 {
+			status = "okay";
+			label = "eth4";
+			nvmem-cells = <&macaddr_factory_0>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <5>;
+		};
+	};
+};
+
+&i2c_gpio {
+	status = "okay";
+
+	expender0: pcf8574a@38 {
+		compatible = "nxp,pcf8574a";
+		reg = <0x38>;
+		interrupt-parent = <&gpio>;
+		interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+
+	expender0_alias_0: pcf8574@20 {
+		compatible = "nxp,pcf8574";
+		reg = <0x20>;
+		interrupt-parent = <&gpio>;
+		interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+
+	rtc0: pcf8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+	};
+
+	cpu_sensor: lm75@4f {
+		compatible = "national,lm75";
+		reg = <0x4f>;
+		#thermal-sensor-cells = <0>;
+	};
+};
+
+&factory {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	#mtd-mac-address = <&factory 0x0>;
+
+	macaddr_factory_0: macaddr@0 {
+		reg = <0x0 0x6>;
+	};
+};

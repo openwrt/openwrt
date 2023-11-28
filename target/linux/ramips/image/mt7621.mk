@@ -42,6 +42,21 @@ define Build/haier-sim_wr1800k-factory
   rm -rf "$@.tmp" "$@.tmp.tgz"
 endef
 
+define Build/hatlab-gateboard-combined
+  rm -fR $@.bootfs.img
+
+	mkfs.fat $@.bootfs.img -C 16384
+	mcopy -i $@.bootfs.img $(IMAGE_KERNEL) ::vmlinux.itb
+
+	( \
+		set $$(ptgen -o $@ -h 4 -s 63 -l 1024 -g -p 16M -p "${CONFIG_TARGET_ROOTFS_PARTSIZE}M" -G ${IMG_PART_DISKGUID}); \
+		BOOTFSOFFSET="$$(($$1 / 512))"; \
+		ROOTFSOFFSET="$$(($$3 / 512))"; \
+		dd if="$@.bootfs.img" of="$@" bs=512 seek="$${BOOTFSOFFSET}" conv=notrunc; \
+		dd if="${IMAGE_ROOTFS}" of="$@" bs=512 seek="$${ROOTFSOFFSET}" conv=notrunc; \
+	)
+endef
+
 define Build/iodata-mstc-header
 	( \
 		data_size_crc="$$(dd if=$@ ibs=64 skip=1 2>/dev/null | gzip -c | \
@@ -1122,6 +1137,28 @@ define Device/haier_har-20s2u1
   DEVICE_MODEL := HAR-20S2U1
 endef
 TARGET_DEVICES += haier_har-20s2u1
+
+define Device/hatlab_gateboard-one
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := HATLab
+  DEVICE_MODEL := GateBoard-One
+  DEVICE_PACKAGES := kmod-i2c-gpio kmod-gpio-pcf857x kmod-sdhci-mt7620 kmod-usb3 kmod-usb-storage kmod-usb-ledtrig-usbport kmod-fs-ext4 kmod-hwmon-lm75 kmod-thermal kmod-hwmon-gpiofan kmod-rtc-pcf8563 kmod-phy-realtek kmod-sfp
+  MKUBIFS_OPTS := -m 2048 -e 124KiB -c 1024
+  KERNEL := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/kernel.itb := append-kernel
+  IMAGE/rootfs.img := append-rootfs
+  IMAGE/rootfs.img.gz := append-rootfs | gzip
+  IMAGE/combined.img := hatlab-gateboard-combined | append-metadata
+  IMAGE/combined.img.gz := hatlab-gateboard-combined | gzip | append-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGES := kernel.itb sysupgrade.bin
+  ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
+    IMAGES += rootfs.img.gz combined.img.gz
+  else
+    IMAGES += rootfs.img combined.img
+  endif
+endef
+TARGET_DEVICES += hatlab_gateboard-one
 
 define Device/hilink_hlk-7621a-evb
   $(Device/dsa-migration)

@@ -162,6 +162,12 @@ platform_do_upgrade() {
 		zyxel_mstc_upgrade_prepare
 		nand_do_upgrade "$1"
 		;;
+	hatlab,gateboard-one)
+		CI_KERNPART="vmlinux.itb"
+		CI_UBIPART="nand0-ubi"
+
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
