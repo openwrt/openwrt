@@ -1,0 +1,47 @@
+--- a/drivers/mtd/spi-nor/Makefile
++++ b/drivers/mtd/spi-nor/Makefile
+@@ -12,6 +12,7 @@ spi-nor-objs			+= intel.o
+ spi-nor-objs			+= issi.o
+ spi-nor-objs			+= macronix.o
+ spi-nor-objs			+= micron-st.o
++spi-nor-objs			+= puya.o
+ spi-nor-objs			+= spansion.o
+ spi-nor-objs			+= sst.o
+ spi-nor-objs			+= winbond.o
+--- /dev/null
++++ b/drivers/mtd/spi-nor/puya.c
+@@ -0,0 +1,14 @@
++#include <linux/mtd/spi-nor.h>
++
++#include "core.h"
++
++static const struct flash_info puya_parts[] = {
++	/* PUYA */
++	{ "p25d40h", INFO(0x856013, 0, 64 * 1024,  8,  SECT_4K) },
++};
++
++const struct spi_nor_manufacturer spi_nor_puya = {
++	.name = "puya",
++	.parts = puya_parts,
++	.nparts = ARRAY_SIZE(puya_parts),
++};
+--- a/drivers/mtd/spi-nor/core.c
++++ b/drivers/mtd/spi-nor/core.c
+@@ -1852,6 +1852,7 @@ static const struct spi_nor_manufacturer
+ 	&spi_nor_issi,
+ 	&spi_nor_macronix,
+ 	&spi_nor_micron,
++	&spi_nor_puya,
+ 	&spi_nor_st,
+ 	&spi_nor_spansion,
+ 	&spi_nor_sst,
+--- a/drivers/mtd/spi-nor/core.h
++++ b/drivers/mtd/spi-nor/core.h
+@@ -483,6 +483,7 @@ extern const struct spi_nor_manufacturer
+ extern const struct spi_nor_manufacturer spi_nor_issi;
+ extern const struct spi_nor_manufacturer spi_nor_macronix;
+ extern const struct spi_nor_manufacturer spi_nor_micron;
++extern const struct spi_nor_manufacturer spi_nor_puya;
+ extern const struct spi_nor_manufacturer spi_nor_st;
+ extern const struct spi_nor_manufacturer spi_nor_spansion;
+ extern const struct spi_nor_manufacturer spi_nor_sst;
