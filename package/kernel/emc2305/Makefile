@@ -8,23 +8,23 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=emc2301
+PKG_NAME:=emc2305
 PKG_RELEASE:=0
 PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/emc2301
+define KernelPackage/emc2305
   SUBMENU:=Hardware Monitoring Support
-  TITLE:=emc2301
+  TITLE:=emc2305
   DEPENDS:=+kmod-i2c-core +kmod-hwmon-core +kmod-regmap-i2c
-  FILES:=$(PKG_BUILD_DIR)/emc2301.ko
-  AUTOLOAD:=$(call AutoLoad,80,emc2301,1)
+  FILES:=$(PKG_BUILD_DIR)/emc2305.ko
+  AUTOLOAD:=$(call AutoLoad,30,emc2305,1)
   KCONFIG:=
 endef
 
-define KernelPackage/emc2301/description
-	Kernel package for emc2301 fan controller for the Xiaomi AX9000. 
+define KernelPackage/emc2305/description
+	Kernel package for emc2305 fan controller for the Xiaomi AX9000. 
 endef
 
 MAKE_OPTS:= \
@@ -40,4 +40,4 @@ define Build/Compile
 		modules
 endef
 
-$(eval $(call KernelPackage,emc2301))
+$(eval $(call KernelPackage,emc2305))
