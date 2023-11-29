@@ -102,7 +102,7 @@ else
   LINUX_KARCH := $(ARCH)
 endif
 
-KERNEL_MAKE = $(MAKE) $(KERNEL_MAKEOPTS)
+KERNEL_MAKE = $(MAKE) -C $(LINUX_DIR) $(KERNEL_MAKE_FLAGS)
 
 KERNEL_MAKE_FLAGS = \
 	KCFLAGS="$(call iremap,$(BUILD_DIR),$(notdir $(BUILD_DIR))) $(filter-out -fno-plt,$(call qstrip,$(CONFIG_EXTRA_OPTIMIZATION))) $(call qstrip,$(CONFIG_KERNEL_CFLAGS))" \
@@ -138,10 +138,8 @@ ifneq ($(HOST_OS),Linux)
   export SKIP_STACK_VALIDATION:=1
 endif
 
-KERNEL_MAKEOPTS = -C $(LINUX_DIR) $(KERNEL_MAKE_FLAGS)
-
 ifdef CONFIG_USE_SPARSE
-  KERNEL_MAKEOPTS += C=1 CHECK=$(STAGING_DIR_HOST)/bin/sparse
+  KERNEL_MAKE_FLAGS += C=1 CHECK=$(STAGING_DIR_HOST)/bin/sparse
 endif
 
 PKG_EXTMOD_SUBDIRS ?= .
