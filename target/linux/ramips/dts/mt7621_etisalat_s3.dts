@@ -100,24 +100,29 @@
 		};
 
 		factory: partition@200000 {
-			compatible = "nvmem-cells";
 			label = "Factory";
 			reg = <0x200000 0x100000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
 			sercomm,scpart-id = <2>;
 			read-only;
 
-			eeprom_factory_0: eeprom@0 {
-				reg = <0x0 0x400>;
-			};
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			eeprom_factory_8000: eeprom@8000 {
-				reg = <0x8000 0x4da8>;
-			};
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
 
-			macaddr_factory_21000: macaddr@21000 {
-				reg = <0x21000 0x6>;
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x4da8>;
+				};
+
+				macaddr_factory_21000: macaddr@21000 {
+					compatible = "mac-base";
+					reg = <0x21000 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
 			};
 		};
 
@@ -177,9 +182,8 @@
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
 
-		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_21000>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_21000 3>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <(3)>;
 	};
 };
 
@@ -189,14 +193,13 @@
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <2400000 2500000>;
 
-		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_21000>;
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_21000 2>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <(2)>;
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_21000>;
+	nvmem-cells = <&macaddr_factory_21000 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -205,9 +208,8 @@
 	label = "wan";
 	phy-handle = <&ethphy0>;
 
-	nvmem-cells = <&macaddr_factory_21000>;
+	nvmem-cells = <&macaddr_factory_21000 11>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(11)>;
 };
 
 &mdio {

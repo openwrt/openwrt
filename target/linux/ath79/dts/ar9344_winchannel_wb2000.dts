@@ -124,16 +124,18 @@
 				reg = <0xfe0000 0x10000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				calibration_art_1000: calibration@1000 {
-					reg = <0x1000 0x440>;
-				};
+					calibration_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 
-				calibration_art_5000: calibration@5000 {
-					reg = <0x5000 0x440>;
+					calibration_art_5000: calibration@5000 {
+						reg = <0x5000 0x440>;
+					};
 				};
 			};
 
@@ -142,12 +144,16 @@
 				reg = <0xff0000 0x10000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_addr_0: macaddr@0 {
-					reg = <0x0 0x6>;
+					macaddr_addr_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 		};
@@ -160,9 +166,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_addr_0>, <&calibration_art_5000>;
+		nvmem-cells = <&macaddr_addr_0 0x10>, <&calibration_art_5000>;
 		nvmem-cell-names = "mac-address", "calibration";
-		mac-address-increment = <0x10>;
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
@@ -179,7 +184,7 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_addr_0>, <&calibration_art_1000>;
+	nvmem-cells = <&macaddr_addr_0 0>, <&calibration_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
 };
 
@@ -196,9 +201,8 @@
 
 	pll-data = <0xe000000 0x04000101 0x04001313>;
 
-	nvmem-cells = <&macaddr_addr_0>;
+	nvmem-cells = <&macaddr_addr_0 0x21>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <0x21>;
 
 	phy-mode = "rgmii-rxid";
 	phy-handle = <&phy4>;

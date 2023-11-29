@@ -208,6 +208,14 @@ zbtlink,zbt-we826-e)
 ravpower,rp-wd03)
 	ucidef_set_led_netdev "internet" "internet" "green:wifi" "eth0"
 	;;
+rostelecom,rt-fl-1|\
+rostelecom,s1010)
+	ucidef_set_led_switch "lan-1" "lan-1" "green:lan-1" "switch0" "0x02"
+	ucidef_set_led_switch "lan-2" "lan-2" "green:lan-2" "switch0" "0x04"
+	ucidef_set_led_switch "lan-3" "lan-3" "green:lan-3" "switch0" "0x08"
+	ucidef_set_led_switch "lan-4" "lan-4" "green:lan-4" "switch0" "0x10"
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
+	;;
 tplink,archer-c2-v1)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch1" "0x01"

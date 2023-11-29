@@ -107,6 +107,18 @@
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -118,9 +130,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "168c,0030";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_art_0>;
+		nvmem-cells = <&macaddr_art_0 (-2)>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(-2)>;
 		mtd-cal-data = <&art 0x5000>;
 		qca,no-eeprom;
 		ieee80211-freq-limit = <2402000 2482000>;
@@ -134,9 +145,8 @@
 
 	ieee80211-freq-limit = <4900000 5990000>;
 	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 (-1)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-1)>;
 };
 
 &mdio0 {
@@ -154,19 +164,9 @@
 	/* default for ar934x, except for 1000M */
 	pll-data = <0x06000000 0x00000101 0x00001616>;
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
 };

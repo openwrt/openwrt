@@ -116,3 +116,14 @@
 	 * 0x10000000-0xfc00000=0x400000
 	 */
 };
+
+&pcie1 {
+	wlan_2g: wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <2400000 2500000>;
+
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_1000 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};

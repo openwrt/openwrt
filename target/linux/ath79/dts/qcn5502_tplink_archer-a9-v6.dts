@@ -88,7 +88,7 @@
 	phy-mode = "sgmii";
 	phy-handle = <&phy0>;
 
-	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cells = <&macaddr_info_8 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -118,10 +118,8 @@
 		compatible = "pci168c,0046";
 		reg = <0 0 0 0 0>;
 
-		nvmem-cells = <&macaddr_info_8>, <&precal_art_5000>;
+		nvmem-cells = <&macaddr_info_8 (-1)>, <&precal_art_5000>;
 		nvmem-cell-names = "mac-address", "pre-calibration";
-
-		mac-address-increment = <(-1)>;
 	};
 };
 
@@ -162,16 +160,18 @@
 				reg = <0x050000 0x010000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				cal_art_1000: cal@1000 {
-					reg = <0x1000 0x440>;
-				};
+					cal_art_1000: cal@1000 {
+						reg = <0x1000 0x440>;
+					};
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 
@@ -180,12 +180,16 @@
 				reg = <0x060000 0x020000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_info_8: macaddr@8 {
-					reg = <0x8 0x6>;
+					macaddr_info_8: macaddr@8 {
+						compatible = "mac-base";
+						reg = <0x8 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
@@ -234,6 +238,6 @@
 	/* TODO: missing support in ath9k */
 	status = "disabled";
 
-	nvmem-cells = <&cal_art_1000>, <&macaddr_info_8>;
+	nvmem-cells = <&cal_art_1000>, <&macaddr_info_8 0>;
 	nvmem-cell-names = "calibration", "mac-address";
 };

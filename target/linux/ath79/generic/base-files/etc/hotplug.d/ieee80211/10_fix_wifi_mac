@@ -47,9 +47,6 @@ case "$board" in
 	engenius,esr900)
 		macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" "$PHYNBR" > /sys${DEVPATH}/macaddress
 		;;
-	fortinet,fap-221-b)
-		macaddr_add "$(mtd_get_mac_text u-boot 0x3ff80 12)" $((PHYNBR*7+1)) > /sys${DEVPATH}/macaddress
-		;;
 	iodata,wn-ac1600dgr)
 		# There is no eeprom data for 5 GHz wlan in "art" partition
 		# which would allow to patch the macaddress

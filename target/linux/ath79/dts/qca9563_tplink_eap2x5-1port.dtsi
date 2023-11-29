@@ -82,12 +82,14 @@
 				reg = <0xff0000 0x010000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				calibration_ath9k: calibration@1000 {
-					reg = <0x1000 0x440>;
+					calibration_ath9k: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 				};
 			};
 		};
@@ -113,7 +115,7 @@
 
 	pll-data = <0x03000000 0x00000101 0x00001313>;
 
-	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cells = <&macaddr_info_8 0>;
 	nvmem-cell-names = "mac-address";
 
 	qca956x-serdes-fixup;
@@ -126,16 +128,6 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_info_8>, <&calibration_ath9k>;
+	nvmem-cells = <&macaddr_info_8 0>, <&calibration_ath9k>;
 	nvmem-cell-names = "mac-address", "calibration";
-};
-
-&info {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_info_8: macaddr@8 {
-		reg = <0x8 0x6>;
-	};
 };

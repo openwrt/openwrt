@@ -34,6 +34,7 @@ ath79_setup_interfaces()
 	devolo,dvl1750x|\
 	dlink,dap-1330-a1|\
 	dlink,dap-1365-a1|\
+	dlink,dap-1720-a1|\
 	dlink,dap-2230-a1|\
 	dlink,dap-2660-a1|\
 	dlink,dap-2680-a1|\
@@ -724,10 +725,6 @@ ath79_setup_macs()
 		;;
 	enterasys,ws-ap3705i)
 		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
-		;;
-	fortinet,fap-221-b)
-		lan_mac=$(mtd_get_mac_text u-boot 0x3ff80 12)
-		label_mac=$lan_mac
 		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)

@@ -195,24 +195,29 @@
 				label = "ART";
 				reg = <0x170000 0x10000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
-				};
+					macaddr_gmac0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 
-				macaddr_gmac0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
+					macaddr_gmac1: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
 
-				macaddr_gmac1: macaddr@6 {
-					reg = <0x6 0x6>;
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 
@@ -288,8 +293,7 @@
 
 	label = "lan2";
 	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_gmac0>;
-	mac-address-increment = <2>;
+	nvmem-cells = <&macaddr_gmac0 2>;
 };
 
 &swport4 {
@@ -297,7 +301,7 @@
 
 	label = "lan1";
 	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_gmac0>;
+	nvmem-cells = <&macaddr_gmac0 0>;
 };
 
 &swport5 {

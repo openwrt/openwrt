@@ -267,7 +267,7 @@
 	status = "okay";
 
 	// RGB LEDs
-	pca9633: led-controller {
+	pca9633: led-controller@62 {
 		compatible = "nxp,pca9633";
 		nxp,hw-blink;
 		reg = <0x62>;
@@ -354,29 +354,34 @@
 			partition@580000 {
 				label = "ART";
 				reg = <0x580000 0x80000>;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
-				};
+					macaddr_gmac0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 
-				precal_art_9000: precal@9000 {
-					reg = <0x9000 0x2f20>;
-				};
+					macaddr_gmac1: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
 
-				macaddr_gmac0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
 
-				macaddr_gmac1: macaddr@6 {
-					reg = <0x6 0x6>;
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					precal_art_9000: precal@9000 {
+						reg = <0x9000 0x2f20>;
+					};
 				};
 			};
 
@@ -476,7 +481,7 @@
 	label = "wan";
 
 	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_gmac0>;
+	nvmem-cells = <&macaddr_gmac0 0>;
 };
 
 &wifi0 {
@@ -492,8 +497,7 @@
 	qcom,ath10k-calibration-variant = "linksys-whw03v2";
 
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_gmac0>;
-	mac-address-increment = <1>;
+	nvmem-cells = <&precal_art_1000>, <&macaddr_gmac0 1>;
 };
 
 &wifi1 {
@@ -503,8 +507,7 @@
 	qcom,ath10k-calibration-variant = "linksys-whw03v2";
 
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_5000>, <&macaddr_gmac0>;
-	mac-address-increment = <2>;
+	nvmem-cells = <&precal_art_5000>, <&macaddr_gmac0 2>;
 };
 
 &wifi2 {
@@ -514,6 +517,5 @@
 	qcom,ath10k-calibration-variant = "linksys-whw03v2";
 
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_9000>, <&macaddr_gmac0>;
-	mac-address-increment = <3>;
+	nvmem-cells = <&precal_art_9000>, <&macaddr_gmac0 3>;
 };

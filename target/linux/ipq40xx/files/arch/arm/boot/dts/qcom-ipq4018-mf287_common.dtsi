@@ -129,8 +129,7 @@
 &gmac {
 	status = "okay";
 	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_mac_0>;
-	mac-address-increment = <2>;
+	nvmem-cells = <&macaddr_mac_0 2>;
 };
 
 &switch {
@@ -180,12 +179,11 @@
 &wifi0 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_mac_0>;
+	nvmem-cells = <&precal_art_1000>, <&macaddr_mac_0 0>;
 };
 
 &wifi1 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_5000>, <&macaddr_mac_0>;
-	mac-address-increment = <1>;
+	nvmem-cells = <&precal_art_5000>, <&macaddr_mac_0 1>;
 };

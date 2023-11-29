@@ -97,10 +97,8 @@
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
 
-		nvmem-cells = <&macaddr_oemdata_1d>;
+		nvmem-cells = <&macaddr_oemdata_1d 1>;
 		nvmem-cell-names = "mac-address";
-
-		mac-address-increment = <1>;
 	};
 };
 
@@ -164,6 +162,18 @@
 				label = "oemdata";
 				reg = <0xfe0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_oemdata_1d: macaddr@1d {
+						compatible = "mac-base";
+						reg = <0x1d 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@ff0000 {
@@ -178,7 +188,7 @@
 	status = "okay";
 
 	qca,no-eeprom;
-	nvmem-cells = <&macaddr_oemdata_1d>;
+	nvmem-cells = <&macaddr_oemdata_1d 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -200,7 +210,7 @@
 &eth0 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_oemdata_1d>;
+	nvmem-cells = <&macaddr_oemdata_1d 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-handle = <&phy0>;
@@ -216,16 +226,6 @@
 		rxdv-delay = <3>;
 		rxd-delay = <3>;
 		rgmii-enabled = <1>;
-	};
-};
-
-&oemdata {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_oemdata_1d: macaddr@1d {
-		reg = <0x1d 0x6>;
 	};
 };
 

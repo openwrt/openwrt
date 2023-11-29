@@ -28,6 +28,10 @@ traverse-technologies-geos)
 	ucidef_set_led_netdev "wlan" "WiFi" "geos:2" "phy0tpt"
 	ucidef_set_led_default "diag" "DIAG" "geos:3" "1"
 	;;
+silicom-80500-0214-*)
+        ucidef_set_led_netdev "wan" "WAN" "multicolor:fp_center" "wan0"
+        ucidef_set_led_netdev "lan" "LAN" "multicolor:fp_right" "br-lan"
+        ;;
 esac
 board_config_flush
 

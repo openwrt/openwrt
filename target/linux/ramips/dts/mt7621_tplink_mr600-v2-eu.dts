@@ -109,15 +109,20 @@
 			};
 
 			romfile: partition@fc0000 {
-				compatible = "nvmem-cells";
 				label = "romfile";
 				reg = <0xfc0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				macaddr_romfile_f100: romfile@f100 {
-					reg = <0xf100 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_romfile_f100: romfile@f100 {
+						compatible = "mac-base";
+						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
@@ -128,19 +133,22 @@
 			};
 
 			radio: partition@fe0000 {
-				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0xfe0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_radio_0: eeprom@0 {
-					reg = <0x0 0x400>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				eeprom_radio_8000: eeprom@8000 {
-					reg = <0x8000 0x4da8>;
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_radio_8000: eeprom@8000 {
+						reg = <0x8000 0x4da8>;
+					};
 				};
 			};
 		};
@@ -156,7 +164,7 @@
 	mt76@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_radio_0>, <&macaddr_romfile_f100>;
+		nvmem-cells = <&eeprom_radio_0>, <&macaddr_romfile_f100 0>;
 		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
@@ -167,14 +175,13 @@
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_romfile_f100>;
+		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_romfile_f100 (-1)>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <(-1)>;
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_romfile_f100>;
+	nvmem-cells = <&macaddr_romfile_f100 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -183,7 +190,7 @@
 	label = "wan";
 	phy-handle = <&ethphy4>;
 
-	nvmem-cells = <&macaddr_romfile_f100>;
+	nvmem-cells = <&macaddr_romfile_f100 0>;
 	nvmem-cell-names = "mac-address";
 };
 

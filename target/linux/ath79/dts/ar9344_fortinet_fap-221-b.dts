@@ -6,6 +6,10 @@
 	compatible = "fortinet,fap-221-b", "qca,ar9344";
 	model = "Fortinet FAP-221-B";
 
+	aliases {
+		label-mac-device = <&eth0>;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -51,25 +55,34 @@
 &ath9k {
 	ieee80211-freq-limit = <2402000 2482000>;
 
-	nvmem-cells = <&calibration_pcie>;
-	nvmem-cell-names = "calibration";
+	nvmem-cells = <&calibration_pcie>, <&macaddr_uboot_3ff80 8>;
+	nvmem-cell-names = "calibration", "mac-address";
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_uboot_3ff80 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
 	ieee80211-freq-limit = <2402000 2482000 4900000 5990000>;
 
-	nvmem-cells = <&calibration_wmac>;
-	nvmem-cell-names = "calibration";
+	nvmem-cells = <&calibration_wmac>, <&macaddr_uboot_3ff80 1>;
+	nvmem-cell-names = "calibration", "mac-address";
 };
 
 &art {
-	compatible = "nvmem-cells";
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	calibration_wmac: calibration@1000 {
-		reg = <0x1000 0x440>;
-	};
+		calibration_wmac: calibration@1000 {
+			reg = <0x1000 0x440>;
+		};
 
-	calibration_pcie: calibration@5000 {
-		reg = <0x5000 0x440>;
+		calibration_pcie: calibration@5000 {
+			reg = <0x5000 0x440>;
+		};
 	};
 };

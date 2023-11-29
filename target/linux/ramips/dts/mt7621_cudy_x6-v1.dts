@@ -31,28 +31,31 @@
 		reg = <0x1ff0000 0x10000>;
 		read-only;
 
-		compatible = "nvmem-cells";
-		#address-cells = <1>;
-		#size-cells = <1>;
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		macaddr_bdinfo_de00: macaddr@de00 {
-			reg = <0xde00 0x6>;
+			macaddr_bdinfo_de00: macaddr@de00 {
+				compatible = "mac-base";
+				reg = <0xde00 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
 		};
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_bdinfo_de00>;
+	nvmem-cells = <&macaddr_bdinfo_de00 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &gmac1 {
-	nvmem-cells = <&macaddr_bdinfo_de00>;
+	nvmem-cells = <&macaddr_bdinfo_de00 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &wifi {
-	nvmem-cells = <&macaddr_bdinfo_de00>;
+	nvmem-cells = <&macaddr_bdinfo_de00 0>;
 	nvmem-cell-names = "mac-address";
 };

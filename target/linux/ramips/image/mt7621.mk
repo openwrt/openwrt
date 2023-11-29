@@ -615,6 +615,18 @@ define Device/cudy_wr1300-v2
 endef
 TARGET_DEVICES += cudy_wr1300-v2
 
+define Device/cudy_wr1300-v3
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := WR1300
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	-uboot-envtools
+  SUPPORTED_DEVICES += cudy,wr1300 R30
+endef
+TARGET_DEVICES += cudy_wr1300-v3
+
 define Device/cudy_wr2100
   $(Device/dsa-migration)
   DEVICE_VENDOR := Cudy
@@ -2367,6 +2379,20 @@ define Device/tplink_er605-v2
 endef
 TARGET_DEVICES += tplink_er605-v2
 
+define Device/tplink_ex220-v1
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := EX220
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  TPLINK_BOARD_ID := EX220-V1
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_ex220-v1
+
 define Device/tplink_mr600-v2-eu
   $(Device/dsa-migration)
   $(Device/tplink-v2)
@@ -2653,7 +2679,7 @@ define Device/wifire_s1500-nbn
   IMAGE_SIZE := 51200k
   IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
 	sercomm-reset-slot1-chksum | append-ubi | check-size | \
-	sercomm-factory-cqr | sercomm-fix-buc-pid | sercomm-mkhash | \
+	sercomm-factory-cqr | sercomm-pid-setbit 0x13 | sercomm-mkhash | \
 	sercomm-crypto
   SERCOMM_HWID := BUC
   SERCOMM_HWVER := 10000

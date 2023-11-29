@@ -136,12 +136,14 @@
 				reg = <0x180000 0x0200000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr: macaddr@a {
-					reg = <0xa 0x6>;
+					macaddr: macaddr@a {
+						reg = <0xa 0x6>;
+					};
 				};
 			};
 
@@ -190,12 +192,14 @@
 				reg = <0xef80000 0x80000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_mrd_1fff8: macaddr@1fff8 {
-					reg = <0x1fff8 0x6>;
+					macaddr_mrd_1fff8: macaddr@1fff8 {
+						reg = <0x1fff8 0x6>;
+					};
 				};
 			};
 		};

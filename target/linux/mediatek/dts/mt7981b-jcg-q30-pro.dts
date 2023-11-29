@@ -118,6 +118,20 @@
 				label = "Factory";
 				reg = <0x0180000 0x0200000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_wan: macaddr@a0024 {
+						reg = <0xa0024 0x6>;
+					};
+
+					macaddr_lan: macaddr@a002a {
+						reg = <0xa002a 0x6>;
+					};
+				};
 			};
 
 			partition@380000 {
@@ -208,18 +222,4 @@
 	status = "okay";
 
 	mediatek,mtd-eeprom = <&factory 0x0>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_wan: macaddr@a0024 {
-		reg = <0xa0024 0x6>;
-	};
-
-	macaddr_lan: macaddr@a002a {
-		reg = <0xa002a 0x6>;
-	};
 };

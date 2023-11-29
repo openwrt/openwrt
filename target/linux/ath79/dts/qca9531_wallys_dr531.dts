@@ -116,6 +116,20 @@
 			env: partition@30000 {
 				label = "u-boot-env";
 				reg = <0x030000 0x010000>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_env_f810: macaddr@f810 {
+						reg = <0xf810 0x6>;
+					};
+
+					macaddr_env_f818: macaddr@f818 {
+						reg = <0xf818 0x6>;
+					};
+				};
 			};
 
 			partition@40000 {
@@ -151,18 +165,4 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-};
-
-&env {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_env_f810: macaddr@f810 {
-		reg = <0xf810 0x6>;
-	};
-
-	macaddr_env_f818: macaddr@f818 {
-		reg = <0xf818 0x6>;
-	};
 };

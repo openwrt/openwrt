@@ -29,23 +29,26 @@
 			#size-cells = <1>;
 
 			uboot: partition@0 {
-				compatible = "nvmem-cells";
 				label = "u-boot";
 				reg = <0x0 0x20000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_uboot_1f400: eeprom@1f400 {
-					reg = <0x1f400 0x200>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				eeprom_uboot_1f800: eeprom@1f800 {
-					reg = <0x1f800 0x200>;
-				};
+					eeprom_uboot_1f400: eeprom@1f400 {
+						reg = <0x1f400 0x200>;
+					};
 
-				macaddr_uboot_1fc20: macaddr@1fc20 {
-					reg = <0x1fc20 0x6>;
+					eeprom_uboot_1f800: eeprom@1f800 {
+						reg = <0x1f800 0x200>;
+					};
+
+					macaddr_uboot_1fc20: macaddr@1fc20 {
+						reg = <0x1fc20 0x6>;
+					};
 				};
 			};
 

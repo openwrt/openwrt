@@ -124,6 +124,18 @@
 				label = "romfile";
 				reg = <0x7d0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_romfile_f100: macaddr@f100 {
+						compatible = "mac-base";
+						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@7e0000 {
@@ -146,13 +158,12 @@
 
 	phy-handle = <&swphy4>;
 
-	nvmem-cells = <&macaddr_romfile_f100>;
+	nvmem-cells = <&macaddr_romfile_f100 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &eth1 {
-	nvmem-cells = <&macaddr_romfile_f100>;
+	nvmem-cells = <&macaddr_romfile_f100 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -160,7 +171,7 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_romfile_f100>;
+	nvmem-cells = <&macaddr_romfile_f100 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -179,14 +190,4 @@
 
 &usb0 {
 	status = "okay";
-};
-
-&romfile {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_romfile_f100: macaddr@f100 {
-		reg = <0xf100 0x6>;
-	};
 };

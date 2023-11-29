@@ -91,6 +91,16 @@
 				label = "bdinfo";
 				reg = <0xfe0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_bdinfo_9: macaddr@9 {
+						reg = <0x9 0x6>;
+					};
+				};
 			};
 
 			partition@ff0000 {
@@ -116,14 +126,4 @@
 
 &wmac {
 	status = "okay";
-};
-
-&bdinfo {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_bdinfo_9: macaddr@9 {
-		reg = <0x9 0x6>;
-	};
 };

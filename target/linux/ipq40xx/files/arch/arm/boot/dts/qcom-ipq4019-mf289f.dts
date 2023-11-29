@@ -216,16 +216,19 @@
 				label = "ART";
 				reg = <0xa0000 0x80000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 
@@ -233,12 +236,17 @@
 				label = "mac";
 				reg = <0x120000 0x80000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				macaddr_mac_0: macaddr@0 {
-					reg = <0x0 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_mac_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
@@ -310,7 +318,7 @@
 &gmac {
 	status = "okay";
 	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_mac_0>;
+	nvmem-cells = <&macaddr_mac_0 0>;
 };
 
 &switch {
@@ -323,8 +331,7 @@
 	label = "wan";
 
 	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_mac_0>;
-	mac-address-increment = <1>;
+	nvmem-cells = <&macaddr_mac_0 1>;
 };
 
 &swport5 {
@@ -401,8 +408,7 @@
 &wifi0 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_mac_0>;
-	mac-address-increment = <2>;
+	nvmem-cells = <&precal_art_1000>, <&macaddr_mac_0 2>;
 	qcom,ath10k-calibration-variant = "zte,mf289f";
 };
 
@@ -410,8 +416,7 @@
 &wifi1 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_5000>, <&macaddr_mac_0>;
-	mac-address-increment = <3>;
+	nvmem-cells = <&precal_art_5000>, <&macaddr_mac_0 3>;
 	qcom,ath10k-calibration-variant = "zte,mf289f";
 };
 
@@ -430,8 +435,7 @@
 
 		wifi2: wifi@1,0 {
 			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_mac_0>;
-			mac-address-increment = <4>;
+			nvmem-cells = <&macaddr_mac_0 4>;
 			compatible = "qcom,ath10k";
 			reg = <0x00010000 0 0 0 0>;
 			qcom,ath10k-calibration-variant = "zte,mf289f";

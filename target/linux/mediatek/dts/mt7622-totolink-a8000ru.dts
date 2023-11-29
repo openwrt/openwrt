@@ -284,6 +284,20 @@
 				label = "factory";
 				reg = <0x1c0000 0x40000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_factory_24: macaddr@24 {
+						reg = <0x24 0x6>;
+					};
+
+					macaddr_factory_2a: macaddr@2a {
+						reg = <0x2a 0x6>;
+					};
+				};
 			};
 
 			partition@200000 {
@@ -302,20 +316,6 @@
 				reg = <0x6700000 0>;
 			};
 		};
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_24: macaddr@24 {
-		reg = <0x24 0x6>;
-	};
-
-	macaddr_factory_2a: macaddr@2a {
-		reg = <0x2a 0x6>;
 	};
 };
 

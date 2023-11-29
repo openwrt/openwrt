@@ -12,29 +12,34 @@ mediatek_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
 		;;
 	asus,tuf-ax4200|\
-	mediatek,mt7981-rfb)
+	mediatek,mt7981-rfb|\
+	zbtlink,zbt-z8102ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
 		;;
 	asus,tuf-ax6000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
 		;;
-	netgear,wax220|\
-	ubnt,unifi-6-plus|\
-	zyxel,nwa50ax-pro)
-		ucidef_set_interface_lan "eth0"
-		;;
 	bananapi,bpi-r3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "eth1 wan"
 		;;
-	cudy,wr3000-v1)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
-		;;
-	glinet,gl-mt3000)
-		ucidef_set_interfaces_lan_wan eth1 eth0
+	cetron,ct3003|\
+	cudy,wr3000-v1|\
+	jcg,q30-pro|\
+	qihoo,360t7)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
 	cmcc,rax3000m|\
 	h3c,magic-nx30-pro)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
+		;;
+	glinet,gl-mt2500|\
+	glinet,gl-mt3000)
+		ucidef_set_interfaces_lan_wan eth1 eth0
+		;;
+	glinet,gl-mt6000|\
+	tplink,tl-xdr4288|\
+	tplink,tl-xdr6088)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
 		;;
 	mediatek,mt7986a-rfb)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan6" "eth1 wan"
@@ -48,15 +53,10 @@ mediatek_setup_interfaces()
 	mercusys,mr90x-v1)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
 		;;
-	cetron,ct3003|\
-	jcg,q30-pro|\
-	qihoo,360t7)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
-		;;
-	glinet,gl-mt6000|\
-	tplink,tl-xdr4288|\
-	tplink,tl-xdr6088)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" eth1
+	netgear,wax220|\
+	ubnt,unifi-6-plus|\
+	zyxel,nwa50ax-pro)
+		ucidef_set_interface_lan "eth0"
 		;;
 	tplink,tl-xdr6086)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
@@ -67,6 +67,10 @@ mediatek_setup_interfaces()
 	xiaomi,redmi-router-ax6000-stock|\
 	xiaomi,redmi-router-ax6000-ubootmod)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" wan
+		;;
+	zyxel,ex5601-t0-stock|\
+	zyxel,ex5601-t0-ubootmod)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" wan
@@ -105,6 +109,11 @@ mediatek_setup_macs()
 			label_mac=$wan_mac
 		;;
 		esac
+		;;
+	glinet,gl-mt2500)
+		label_mac="$(get_mac_binary "/dev/mmcblk0boot1" 0xA)"
+		wan_mac="$label_mac"
+		lan_mac="$(macaddr_add $label_mac 1)"
 		;;
 	glinet,gl-mt6000)
 		label_mac=$(mmc_get_mac_binary factory 0x0a)

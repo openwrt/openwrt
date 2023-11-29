@@ -19,11 +19,9 @@ Signed-off-by: Stefan Kalscheuer <stefan@stklcode.de>
  hif/pcie/pcie.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/hif/pcie/pcie.c b/hif/pcie/pcie.c
-index 24453b6..bee1cc5 100644
 --- a/hif/pcie/pcie.c
 +++ b/hif/pcie/pcie.c
-@@ -1294,7 +1294,9 @@ static void pcie_bf_mimo_ctrl_decode(struct mwl_priv *priv,
+@@ -1439,7 +1439,9 @@ static void pcie_bf_mimo_ctrl_decode(str
  	const char filename[] = "/tmp/BF_MIMO_Ctrl_Field_Output.txt";
  	char str_buf[256];
  	char *buf = &str_buf[0];
@@ -33,7 +31,7 @@ index 24453b6..bee1cc5 100644
  
  #if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
  	oldfs = get_fs();
-@@ -1302,7 +1304,7 @@ static void pcie_bf_mimo_ctrl_decode(struct mwl_priv *priv,
+@@ -1447,7 +1449,7 @@ static void pcie_bf_mimo_ctrl_decode(str
  #elif LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
  	oldfs = get_fs();
  	set_fs(KERNEL_DS);
@@ -42,7 +40,7 @@ index 24453b6..bee1cc5 100644
  	oldfs = force_uaccess_begin();
  #endif
  
-@@ -1326,7 +1328,7 @@ static void pcie_bf_mimo_ctrl_decode(struct mwl_priv *priv,
+@@ -1471,7 +1473,7 @@ static void pcie_bf_mimo_ctrl_decode(str
  
  #if LINUX_VERSION_CODE < KERNEL_VERSION(5,10,0)
  	set_fs(oldfs);

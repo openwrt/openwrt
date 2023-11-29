@@ -80,6 +80,16 @@
 				label = "info";
 				reg = <0x030000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_info_8: macaddr@8 {
+						reg = <0x8 0x6>;
+					};
+				};
 			};
 
 			partition@40000 {
@@ -118,14 +128,4 @@
 	mtd-cal-data = <&art 0x1000>;
 	nvmem-cells = <&macaddr_info_8>;
 	nvmem-cell-names = "mac-address";
-};
-
-&info {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_info_8: macaddr@8 {
-		reg = <0x8 0x6>;
-	};
 };

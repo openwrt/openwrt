@@ -119,6 +119,8 @@ ramips_setup_interfaces()
 	netgear,jwnr2010-v5|\
 	phicomm,k2-v22.4|\
 	phicomm,k2-v22.5|\
+	rostelecom,rt-fl-1|\
+	rostelecom,s1010|\
 	trendnet,tew-810dr|\
 	zbtlink,zbt-we2026)
 		ucidef_add_switch "switch0" \
@@ -392,6 +394,11 @@ ramips_setup_macs()
 	linksys,e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
+	rostelecom,rt-fl-1|\
+	rostelecom,s1010)
+		label_mac=$(mtd_get_mac_binary "SC Nvram(permanent data)" 0x0)
+		wan_mac=$(macaddr_add "$label_mac" 10)
+		;;
 	snr,cpe-w4n-mt)
 		lan_mac=$(mtd_get_mac_binary Factory 0x28)
 		wan_mac=$(mtd_get_mac_binary Factory 0x2e)
@@ -412,7 +419,7 @@ ramips_setup_macs()
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	zyxel,keenetic-lite-iii-a)
-		lan_mac=$(mtd_get_mac_binary RF-EEPROM 0x4)		
+		lan_mac=$(mtd_get_mac_binary RF-EEPROM 0x4)
 		wan_mac=$(mtd_get_mac_binary RF-EEPROM 0x28)
 		label_mac=$wan_mac
 		;;

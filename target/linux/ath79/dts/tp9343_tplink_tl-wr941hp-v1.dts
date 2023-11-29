@@ -120,6 +120,18 @@
 				label = "config";
 				reg = <0x750000 0x0a0000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_8: macaddr@8 {
+						compatible = "mac-base";
+						reg = <0x8 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			art: partition@7f0000 {
@@ -136,15 +148,14 @@
 
 	phy-handle = <&swphy0>;
 
-	nvmem-cells = <&macaddr_config_8>;
+	nvmem-cells = <&macaddr_config_8 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_config_8>;
+	nvmem-cells = <&macaddr_config_8 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -152,16 +163,6 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_config_8>;
+	nvmem-cells = <&macaddr_config_8 0>;
 	nvmem-cell-names = "mac-address";
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_8: macaddr@8 {
-		reg = <0x8 0x6>;
-	};
 };

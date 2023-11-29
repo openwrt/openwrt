@@ -37,15 +37,18 @@
 			};
 
 			factory: partition@40000 {
-				compatible = "nvmem-cells";
-				label = "factory";
 				reg = <0x00040000 0x00010000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
+				label = "factory";
 				read-only;
 
-				eeprom_factory_0: eeprom@0 {
-					reg = <0x0 0x200>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
 				};
 			};
 

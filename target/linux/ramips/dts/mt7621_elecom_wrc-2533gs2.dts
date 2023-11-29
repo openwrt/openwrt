@@ -50,15 +50,17 @@
 };
 
 &factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	macaddr_factory_fff4: macaddr@fff4 {
-		reg = <0xfff4 0x6>;
-	};
+		macaddr_factory_fff4: macaddr@fff4 {
+			reg = <0xfff4 0x6>;
+		};
 
-	macaddr_factory_fffa: macaddr@fffa {
-		reg = <0xfffa 0x6>;
+		macaddr_factory_fffa: macaddr@fffa {
+			reg = <0xfffa 0x6>;
+		};
 	};
 };

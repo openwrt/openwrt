@@ -238,7 +238,7 @@
 &gmac {
 	status = "okay";
 	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_config_0>;
+	nvmem-cells = <&macaddr_config_0 0>;
 };
 
 &switch {
@@ -251,8 +251,7 @@
 	label = "wan";
 
 	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_config_0>;
-	mac-address-increment = <1>;
+	nvmem-cells = <&macaddr_config_0 1>;
 };
 
 &swport3 {
@@ -282,16 +281,19 @@
 				label = "ART";
 				reg = <0xa0000 0x80000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_art_9000: precal@9000 {
-					reg = <0x9000 0x2f20>;
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_9000: precal@9000 {
+						reg = <0x9000 0x2f20>;
+					};
 				};
 			};
 
@@ -299,12 +301,17 @@
 				label = "mac";
 				reg = <0x120000 0x80000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				macaddr_config_0: macaddr@0 {
-					reg = <0x0 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
@@ -451,8 +458,7 @@
 &wifi0 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-	nvmem-cells = <&precal_art_1000>, <&macaddr_config_0>;
-	mac-address-increment = <2>;
+	nvmem-cells = <&precal_art_1000>, <&macaddr_config_0 2>;
 	qcom,ath10k-calibration-variant = "ZTE-MF18A";
 };
 
@@ -472,8 +478,7 @@
 		wifi2: wifi@1,0 {
 			compatible = "pci168c,0040";
 			nvmem-cell-names = "pre-calibration", "mac-address";
-			nvmem-cells = <&precal_art_9000>, <&macaddr_config_0>;
-			mac-address-increment = <3>;
+			nvmem-cells = <&precal_art_9000>, <&macaddr_config_0 3>;
 			qcom,ath10k-calibration-variant = "ZTE-MF18A";
 			reg = <0x00010000 0 0 0 0>;
 		};

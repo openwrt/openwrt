@@ -127,11 +127,29 @@
 };
 
 &board_data {
-	macaddr_board_data_6c: macaddr@6c {
-		reg = <0x6c 0x6>;
-	};
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	macaddr_board_data_76: macaddr@76 {
-		reg = <0x76 0x6>;
+		macaddr_board_data_60: macaddr@60 {
+			reg = <0x60 0x6>;
+		};
+
+		macaddr_board_data_66: macaddr@66 {
+			reg = <0x66 0x6>;
+		};
+
+		macaddr_board_data_6c: macaddr@6c {
+			reg = <0x6c 0x6>;
+		};
+
+		macaddr_board_data_76: macaddr@76 {
+			reg = <0x76 0x6>;
+		};
+
+		cal_board_data_41000: cal@41000 {
+			reg = <0x41000 0x440>;
+		};
 	};
 };

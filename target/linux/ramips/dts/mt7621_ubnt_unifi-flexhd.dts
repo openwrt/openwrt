@@ -67,6 +67,18 @@
 				label = "eeprom";
 				reg = <0x80000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_eeprom_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@90000 {
@@ -95,18 +107,8 @@
 	};
 };
 
-&eeprom {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_eeprom_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-};
-
 &gmac0 {
-	nvmem-cells = <&macaddr_eeprom_0>;
+	nvmem-cells = <&macaddr_eeprom_0 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -129,9 +131,8 @@
 		mediatek,mtd-eeprom = <&factory 0x0>;
 		// On newer devices there is a MediaTek MAC in the above
 		// device EEPROM, so override it with a calculated one.
-		nvmem-cells = <&macaddr_eeprom_0>;
+		nvmem-cells = <&macaddr_eeprom_0 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 };
 
@@ -141,9 +142,8 @@
 		mediatek,mtd-eeprom = <&factory 0x8000>;
 		// On newer devices there is a MediaTek MAC in the above
 		// device EEPROM, so override it with a calculated one.
-		nvmem-cells = <&macaddr_eeprom_0>;
+		nvmem-cells = <&macaddr_eeprom_0 2>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <2>;
 	};
 };
 
