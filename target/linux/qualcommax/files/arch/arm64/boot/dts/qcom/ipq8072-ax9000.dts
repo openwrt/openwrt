@@ -142,14 +142,7 @@
                 reg = <0x2f>;
 		#cooling-cells = <2>;
                         fan@0 {
-				min-rpm = /bits/ 16 <3500>;
-                                max-rpm = /bits/ 16 <5500>;
-                                pwm-output-mode = <1>;
-                                pwm-channel = <5>;
-                                pwm-max = <255>;
-                                pwm-min = <0>;
-                                pwm1 = <128>;
-                                pwm1_enable = <1>;
+				reg = <0>;
                         };
         };
 
