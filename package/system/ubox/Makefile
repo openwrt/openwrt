@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ubox
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/ubox.git
-PKG_SOURCE_DATE:=2022-08-13
-PKG_SOURCE_VERSION:=4c7b720b9c63b826fb9404e454ae54f2ef5649d5
-PKG_MIRROR_HASH:=35178148034dfef36c5fda2bc8217617920bc1a3b86f72efbe87e85048a6a2a8
+PKG_SOURCE_DATE:=2023-11-30
+PKG_SOURCE_VERSION:=c08709cceb554cba02c935d1442f6a042fe6b2a8
+PKG_MIRROR_HASH:=719ae701546df7c5972352d778a980cbc9f48623dda86443398698837124818b
 CMAKE_INSTALL:=1
 
 PKG_LICENSE:=GPL-2.0
@@ -44,7 +44,7 @@ endef
 define Package/logd
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+libubox +libubus +libblobmsg-json
+  DEPENDS:=+libubox +libubus +libblobmsg-json +libudebug
   TITLE:=OpenWrt system log implementation
   USERID:=logd=514:logd=514
 endef
