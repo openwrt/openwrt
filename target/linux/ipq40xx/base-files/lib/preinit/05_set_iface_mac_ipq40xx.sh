@@ -25,6 +25,7 @@ preinit_set_mac_address() {
 		ip link set dev eth0 address $(mtd_get_mac_ascii CFG1 ethaddr)
 		;;
 	linksys,ea8300|\
+	linksys,mr6350|\
 	linksys,mr8300)
 		base_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		ip link set dev lan1 address $(macaddr_add "$base_mac" 1)
