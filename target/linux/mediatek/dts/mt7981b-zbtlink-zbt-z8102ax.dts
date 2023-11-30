@@ -53,40 +53,29 @@
 
 		led_status_red: red {
 			label = "red:status";
-			gpios = <&pio 9 GPIO_ACTIVE_HIGH>;
-			color = <LED_COLOR_ID_RED>;
-			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_green: green {
 			label = "green:status";
 			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
 		};
-
-		blue {
+		
+		led_status_blue: blue {
 			label = "blue:status";
 			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_STATUS;
 		};
-
-		4g {
-			label = "blue:4g";
+		
+		led_status_4g: 4g {
+			label = "4g:status";
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_USB;
-			function-enumerator = <0>;
+		};
+		
+		led_status_4g2: 4g2 {
+			label = "4g2:status";
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		4g2 {
-			label = "blue:4g2";
-			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_USB;
-			function-enumerator = <1>;
-		};
 	};
 
 	watchdog {
