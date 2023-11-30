@@ -48,6 +48,7 @@ ALLWIFIBOARDS:= \
 	iodata_wn-dax3000gr \
 	linksys_homewrk \
 	linksys_mr5500 \
+	linksys_mr6350 \
 	linksys_mr7350 \
 	linksys_mr7500 \
 	linksys_mx2000 \
@@ -225,6 +226,7 @@ $(eval $(call generate-ipq-wifi-package,ignitenet_ss-w2-ac2600,Ignitenet SS-W2-A
 $(eval $(call generate-ipq-wifi-package,iodata_wn-dax3000gr,I-O DATA WN-DAX3000GR))
 $(eval $(call generate-ipq-wifi-package,linksys_homewrk,Linksys HomeWRK))
 $(eval $(call generate-ipq-wifi-package,linksys_mr5500,Linksys MR5500))
+$(eval $(call generate-ipq-wifi-package,linksys_mr6350,Linksys MR6350))
 $(eval $(call generate-ipq-wifi-package,linksys_mr7350,Linksys MR7350))
 $(eval $(call generate-ipq-wifi-package,linksys_mr7500,Linksys MR7500))
 $(eval $(call generate-ipq-wifi-package,linksys_mx2000,Linksys MX2000))
