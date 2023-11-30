@@ -111,10 +111,10 @@ cc1: all warnings being treated as errors
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
- debugfs.c         | 2 +-
- hif/fwcmd.c       | 2 +-
- hif/pcie/pcie.c   | 4 ++--
- hif/pcie/tx_ndp.c | 2 +-
+ debugfs.c              | 2 +-
+ hif/fwcmd.c            | 2 +-
+ hif/pcie/8964/tx_ndp.c | 2 +-
+ hif/pcie/pcie.c        | 4 ++--
  4 files changed, 5 insertions(+), 5 deletions(-)
 
 --- a/debugfs.c
@@ -152,7 +152,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		return -ENOMEM;
 --- a/hif/pcie/pcie.c
 +++ b/hif/pcie/pcie.c
-@@ -1464,8 +1464,8 @@ static void pcie_bf_mimo_ctrl_decode(str
+@@ -1466,8 +1466,8 @@ static void pcie_bf_mimo_ctrl_decode(struct mwl_priv *priv,
  			       &fp_data->f_pos);
  		filp_close(fp_data, current->files);
  	} else {
