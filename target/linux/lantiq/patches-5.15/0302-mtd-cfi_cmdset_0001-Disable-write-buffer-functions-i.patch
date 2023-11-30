@@ -44,7 +44,7 @@ Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  
  /*
   * Some chips power-up with all sectors locked by default.
-@@ -1703,6 +1707,7 @@ static int cfi_intelext_write_words (str
+@@ -1719,6 +1723,7 @@ static int cfi_intelext_write_words (str
  }
  
  
@@ -52,7 +52,7 @@ Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
  static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
  				    unsigned long adr, const struct kvec **pvec,
  				    unsigned long *pvec_seek, int len)
-@@ -1931,6 +1936,7 @@ static int cfi_intelext_write_buffers (s
+@@ -1947,6 +1952,7 @@ static int cfi_intelext_write_buffers (s
  
  	return cfi_intelext_writev(mtd, &vec, 1, to, retlen);
  }
