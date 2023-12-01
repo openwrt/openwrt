@@ -62,6 +62,14 @@ define Device/ubnt_litebeam-ac-gen2
 endef
 TARGET_DEVICES += ubnt_litebeam-ac-gen2
 
+define Device/ubnt_litebeam-m5-xw
+  $(Device/ubnt-xw)
+  DEVICE_MODEL := LiteBeam M5
+  SUPPORTED_DEVICES += lbe-m5
+  DEVICE_PACKAGES := -kmod-usb2
+endef
+TARGET_DEVICES += ubnt_litebeam-m5-xw
+
 define Device/ubnt_nanobeam-ac
   $(Device/ubnt-wa)
   DEVICE_MODEL := NanoBeam AC
