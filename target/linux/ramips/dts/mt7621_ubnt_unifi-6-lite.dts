@@ -37,32 +37,40 @@
 			};
 
 			factory: partition@70000 {
-				compatible = "nvmem-cells";
 				label = "factory";
 				reg = <0x70000 0x40000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_factory_0: eeprom@0 {
-					reg = <0x0 0x400>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
 				};
 			};
 
 			eeprom: partition@b0000 {
-				compatible = "nvmem-cells";
 				label = "eeprom";
 				reg = <0xb0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				macaddr_eeprom_0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_eeprom_6: macaddr@6 {
-					reg = <0x6 0x6>;
+					macaddr_eeprom_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_eeprom_6: macaddr@6 {
+						compatible = "mac-base";
+						reg = <0x6 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
@@ -106,9 +114,6 @@
 
 	mediatek,mtd-eeprom = <&factory 0x20000>;
 
-	nvmem-cells = <&macaddr_eeprom_6>;
-	nvmem-cell-names = "mac-address";
-
 	/* This is a workaround.
 	 *
 	 * Ubiquiti uses a +2 offset in the first octet relative
@@ -121,7 +126,8 @@
 	 * mac80211 increases the first octet by two for each VAP, leading
 	 * to conflicting MAC addresses for subsequent interfaces.
 	 */
-	mac-address-increment = <1>;
+	nvmem-cells = <&macaddr_eeprom_6 1>;
+	nvmem-cell-names = "mac-address";
 
 	ieee80211-freq-limit = <5000000 6000000>;
 

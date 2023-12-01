@@ -61,16 +61,18 @@
 			reg = <0x140000 0x140000>;
 			read-only;
 
-			compatible = "nvmem-cells";
-			#address-cells = <1>;
-			#size-cells = <1>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			cal_caldata_1000: cal@1000 {
-				reg = <0x1000 0x440>;
-			};
+				cal_caldata_1000: cal@1000 {
+					reg = <0x1000 0x440>;
+				};
 
-			cal_caldata_5000: cal@5000 {
-				reg = <0x5000 0x844>;
+				cal_caldata_5000: cal@5000 {
+					reg = <0x5000 0x844>;
+				};
 			};
 		};
 
@@ -79,12 +81,16 @@
 			reg = <0x280000 0x140000>;
 			read-only;
 
-			compatible = "nvmem-cells";
-			#address-cells = <1>;
-			#size-cells = <1>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			macaddr_mac_0: macaddr@0 {
-				reg = <0x0 0x6>;
+				macaddr_mac_0: macaddr@0 {
+					compatible = "mac-base";
+					reg = <0x0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
 			};
 		};
 
@@ -113,17 +119,16 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_mac_0>;
+	nvmem-cells = <&macaddr_mac_0 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wifi_ath10k {
-	nvmem-cells = <&macaddr_mac_0>, <&cal_caldata_5000>;
+	nvmem-cells = <&macaddr_mac_0 1>, <&cal_caldata_5000>;
 	nvmem-cell-names = "mac-address", "calibration";
-	mac-address-increment = <1>;
 };
 
 &wmac {
-	nvmem-cells = <&macaddr_mac_0>, <&cal_caldata_1000>;
+	nvmem-cells = <&macaddr_mac_0 0>, <&cal_caldata_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
 };

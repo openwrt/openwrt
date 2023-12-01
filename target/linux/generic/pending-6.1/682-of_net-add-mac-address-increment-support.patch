@@ -20,14 +20,12 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 
 --- a/net/core/of_net.c
 +++ b/net/core/of_net.c
-@@ -119,28 +119,63 @@ static int of_get_mac_addr_nvmem(struct
+@@ -119,10 +119,19 @@ static int of_get_mac_addr_nvmem(struct
   * this case, the real MAC is in 'local-mac-address', and 'mac-address' exists
   * but is all zeros.
   *
 + * DT can tell the system to increment the mac-address after is extracted by
 + * using:
-+ * - mac-address-increment-byte to decide what byte to increase
-+ *   (if not defined is increased the last byte)
 + * - mac-address-increment to decide how much to increase. The value WILL
 + *   overflow to other bytes if the increment is over 255 or the total
 + *   increment will exceed 255 of the current byte.
@@ -38,19 +36,11 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
  */
  int of_get_mac_address(struct device_node *np, u8 *addr)
  {
-+	u32 inc_idx, mac_inc, mac_val;
++	u32 mac_inc, mac_val;
  	int ret;
  
-+	/* Check first if the increment byte is present and valid.
-+	 * If not set assume to increment the last byte if found.
-+	 */
-+	if (of_property_read_u32(np, "mac-address-increment-byte", &inc_idx))
-+		inc_idx = 5;
-+	if (inc_idx < 3 || inc_idx > 5)
-+		return -EINVAL;
-+
  	if (!np)
- 		return -ENODEV;
+@@ -130,17 +139,33 @@ int of_get_mac_address(struct device_nod
  
  	ret = of_get_mac_addr(np, "mac-address", addr);
  	if (!ret)
@@ -75,7 +65,7 @@ Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 +	if (!of_property_read_u32(np, "mac-address-increment", &mac_inc)) {
 +		/* Convert to a contiguous value */
 +		mac_val = (addr[3] << 16) + (addr[4] << 8) + addr[5];
-+		mac_val += mac_inc << 8 * (5-inc_idx);
++		mac_val += mac_inc;
 +
 +		/* Apply the incremented value handling overflow case */
 +		addr[3] = (mac_val >> 16) & 0xff;

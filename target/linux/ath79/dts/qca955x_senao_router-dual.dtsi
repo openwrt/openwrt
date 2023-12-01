@@ -103,14 +103,18 @@
 				reg = <0xff0000 0x010000>;
 				read-only;
 
-				compatible = "nvmem-cells";
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				calibration_art_1000: calibration@1000 {
-					reg = <0x1000 0x440>;
-				};
+					calibration_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 
-				calibration_art_5000: calibration@5000 {
-					reg = <0x5000 0x844>;
+					calibration_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
 				};
 			};
 		};

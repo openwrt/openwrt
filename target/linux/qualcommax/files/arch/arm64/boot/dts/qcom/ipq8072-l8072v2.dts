@@ -23,10 +23,10 @@
 		led-running = &pwr;
 		led-upgrade = &sys;
 		/* Aliases as required by u-boot to patch MAC addresses */
-		ethernet0 = &dp6;
-		ethernet1 = &dp2;
-		ethernet2 = &dp3;
-		label-mac-device = &dp6;
+		ethernet0 = &dp2;
+		ethernet1 = &dp3;
+		ethernet2 = &dp6;
+		label-mac-device = &dp2;
 	};
 
 	chosen {
@@ -439,11 +439,6 @@
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <2>;
 	};
-
-	qca8075_psgmii: ethernet-phy@5 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <5>;
-	};
 	
 	qca8081: ethernet-phy@28 {
 		compatible = "ethernet-phy-id004d.d101";
@@ -463,7 +458,7 @@
 
 	qcom,port_phyinfo {
 		port@2 {
-			port_id = <1>;
+			port_id = <2>;
 			phy_address = <1>;
 		};
 		port@3 {

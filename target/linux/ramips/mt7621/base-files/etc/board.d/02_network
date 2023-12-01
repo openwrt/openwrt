@@ -98,6 +98,9 @@ ramips_setup_interfaces()
 	zyxel,nr7101)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
+	dlink,covr-x1860-a1)
+		ucidef_set_interfaces_lan_wan "ethernet" "internet"
+		;;
 	gnubee,gb-pc1)
 		ucidef_set_interface_lan "ethblack ethblue"
 		;;
@@ -218,6 +221,11 @@ ramips_setup_macs()
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		label_mac=$lan_mac
 		wan_mac=$(macaddr_add "$lan_mac" 1)
+		;;
+	dlink,covr-x1860-a1)
+		label_mac=$(mtd_get_mac_ascii config2 factory_mac)
+		wan_mac=$(macaddr_add "$label_mac" 3)
+		lan_mac=$label_mac
 		;;
 	dlink,dir-860l-b1)
 		lan_mac=$(mtd_get_mac_ascii factory lanmac)

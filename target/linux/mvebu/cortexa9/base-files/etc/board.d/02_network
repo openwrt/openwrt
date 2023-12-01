@@ -12,7 +12,8 @@ mvebu_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	ctera,c200-v2)
+	ctera,c200-v2|\
+	synology,ds213j)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
 	cznic,turris-omnia)

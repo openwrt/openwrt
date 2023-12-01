@@ -29,6 +29,13 @@ xiaomi,redmi-router-ax6000-stock|\
 xiaomi,redmi-router-ax6000-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "rgb:network" "wan"
 	;;
+zyxel_ex5601-t0-stock|\
+zyxel,ex5601-t0-ubootmod)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0" "link tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "green:inet" "eth1" "link tx rx"
+	ucidef_set_led_netdev "wifi-24g" "WIFI-2.4G" "green:wifi24g" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wifi-5g" "WIFI-5G" "green:wifi5g" "phy1-ap0" "link tx rx"
+        ;;
 esac
 
 board_config_flush

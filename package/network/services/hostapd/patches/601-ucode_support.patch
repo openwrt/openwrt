@@ -196,7 +196,7 @@
  
  #ifdef CONFIG_BGSCAN
  	if (state == WPA_COMPLETED && wpa_s->current_ssid != wpa_s->bgscan_ssid)
-@@ -7596,6 +7597,7 @@ struct wpa_supplicant * wpa_supplicant_a
+@@ -7594,6 +7595,7 @@ struct wpa_supplicant * wpa_supplicant_a
  #endif /* CONFIG_P2P */
  
  	wpas_ubus_add_bss(wpa_s);
@@ -204,7 +204,7 @@
  
  	return wpa_s;
  }
-@@ -7623,6 +7625,7 @@ int wpa_supplicant_remove_iface(struct w
+@@ -7621,6 +7623,7 @@ int wpa_supplicant_remove_iface(struct w
  	struct wpa_supplicant *parent = wpa_s->parent;
  #endif /* CONFIG_MESH */
  
@@ -212,7 +212,7 @@
  	wpas_ubus_free_bss(wpa_s);
  
  	/* Remove interface from the global list of interfaces */
-@@ -7933,6 +7936,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -7931,6 +7934,7 @@ struct wpa_global * wpa_supplicant_init(
  
  	eloop_register_timeout(WPA_SUPPLICANT_CLEANUP_INTERVAL, 0,
  			       wpas_periodic, global, NULL);
@@ -220,7 +220,7 @@
  
  	return global;
  }
-@@ -7971,12 +7975,8 @@ int wpa_supplicant_run(struct wpa_global
+@@ -7969,12 +7973,8 @@ int wpa_supplicant_run(struct wpa_global
  	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
  	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
  
@@ -233,7 +233,7 @@
  	return 0;
  }
  
-@@ -8009,6 +8009,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+@@ -8007,6 +8007,8 @@ void wpa_supplicant_deinit(struct wpa_gl
  
  	wpas_notify_supplicant_deinitialized(global);
  
@@ -395,7 +395,60 @@
  {
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -1333,7 +1333,7 @@ static void wpa_driver_nl80211_event_rtm
+@@ -73,6 +73,16 @@ enum nlmsgerr_attrs {
+ 
+ #endif /* ANDROID */
+ 
++static void handle_nl_debug_hook(struct nl_msg *msg, int tx)
++{
++	const struct nlmsghdr *nlh;
++
++	if (!wpa_netlink_hook)
++		return;
++
++	nlh = nlmsg_hdr(msg);
++	wpa_netlink_hook(tx, nlh, nlh->nlmsg_len);
++}
+ 
+ static struct nl_sock * nl_create_handle(struct nl_cb *cb, const char *dbg)
+ {
+@@ -379,6 +389,11 @@ static int no_seq_check(struct nl_msg *m
+ 	return NL_OK;
+ }
+ 
++static int debug_handler(struct nl_msg *msg, void *arg)
++{
++	handle_nl_debug_hook(msg, 0);
++	return NL_OK;
++}
+ 
+ static void nl80211_nlmsg_clear(struct nl_msg *msg)
+ {
+@@ -415,6 +430,7 @@ static int send_and_recv(struct nl80211_
+ 	if (!msg)
+ 		return -ENOMEM;
+ 
++	handle_nl_debug_hook(msg, 1);
+ 	cb = nl_cb_clone(global->nl_cb);
+ 	if (!cb)
+ 		goto out;
+@@ -443,6 +459,7 @@ static int send_and_recv(struct nl80211_
+ 
+ 	err = 1;
+ 
++	nl_cb_set(cb, NL_CB_MSG_IN, NL_CB_CUSTOM, debug_handler, NULL);
+ 	nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &err);
+ 	nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
+ 	if (ack_handler_custom) {
+@@ -919,6 +936,7 @@ nl80211_get_wiphy_data_ap(struct i802_bs
+ 			os_free(w);
+ 			return NULL;
+ 		}
++		nl_cb_set(w->nl_cb, NL_CB_MSG_IN, NL_CB_CUSTOM, debug_handler, NULL);
+ 		nl_cb_set(w->nl_cb, NL_CB_SEQ_CHECK, NL_CB_CUSTOM,
+ 			  no_seq_check, NULL);
+ 		nl_cb_set(w->nl_cb, NL_CB_VALID, NL_CB_CUSTOM,
+@@ -1333,7 +1351,7 @@ static void wpa_driver_nl80211_event_rtm
  		}
  		wpa_printf(MSG_DEBUG, "nl80211: Interface down (%s/%s)",
  			   namebuf, ifname);
@@ -404,7 +457,7 @@
  			wpa_printf(MSG_DEBUG,
  				   "nl80211: Not the main interface (%s) - do not indicate interface down",
  				   drv->first_bss->ifname);
-@@ -1369,7 +1369,7 @@ static void wpa_driver_nl80211_event_rtm
+@@ -1369,7 +1387,7 @@ static void wpa_driver_nl80211_event_rtm
  		}
  		wpa_printf(MSG_DEBUG, "nl80211: Interface up (%s/%s)",
  			   namebuf, ifname);
@@ -413,7 +466,23 @@
  			wpa_printf(MSG_DEBUG,
  				   "nl80211: Not the main interface (%s) - do not indicate interface up",
  				   drv->first_bss->ifname);
-@@ -8432,6 +8432,7 @@ static void *i802_init(struct hostapd_da
+@@ -1992,6 +2010,7 @@ static int wpa_driver_nl80211_init_nl_gl
+ 		/* Continue without vendor events */
+ 	}
+ 
++	nl_cb_set(global->nl_cb, NL_CB_MSG_IN, NL_CB_CUSTOM, debug_handler, NULL);
+ 	nl_cb_set(global->nl_cb, NL_CB_SEQ_CHECK, NL_CB_CUSTOM,
+ 		  no_seq_check, NULL);
+ 	nl_cb_set(global->nl_cb, NL_CB_VALID, NL_CB_CUSTOM,
+@@ -2160,6 +2179,7 @@ static int nl80211_init_bss(struct i802_
+ 	if (!bss->nl_cb)
+ 		return -1;
+ 
++	nl_cb_set(bss->nl_cb, NL_CB_MSG_IN, NL_CB_CUSTOM, debug_handler, NULL);
+ 	nl_cb_set(bss->nl_cb, NL_CB_SEQ_CHECK, NL_CB_CUSTOM,
+ 		  no_seq_check, NULL);
+ 	nl_cb_set(bss->nl_cb, NL_CB_VALID, NL_CB_CUSTOM,
+@@ -8432,6 +8452,7 @@ static void *i802_init(struct hostapd_da
  	char master_ifname[IFNAMSIZ];
  	int ifindex, br_ifindex = 0;
  	int br_added = 0;
@@ -421,7 +490,7 @@
  
  	bss = wpa_driver_nl80211_drv_init(hapd, params->ifname,
  					  params->global_priv, 1,
-@@ -8491,21 +8492,17 @@ static void *i802_init(struct hostapd_da
+@@ -8491,21 +8512,17 @@ static void *i802_init(struct hostapd_da
  	    (params->num_bridge == 0 || !params->bridge[0]))
  		add_ifidx(drv, br_ifindex, drv->ifindex);
  
@@ -453,7 +522,7 @@
  	}
  
  	if (drv->capa.flags2 & WPA_DRIVER_FLAGS2_CONTROL_PORT_RX) {
-@@ -8875,6 +8872,50 @@ static int wpa_driver_nl80211_if_remove(
+@@ -8875,6 +8892,50 @@ static int wpa_driver_nl80211_if_remove(
  	return 0;
  }
  
@@ -504,7 +573,7 @@
  
  static int cookie_handler(struct nl_msg *msg, void *arg)
  {
-@@ -10513,6 +10554,37 @@ static int driver_nl80211_if_remove(void
+@@ -10513,6 +10574,37 @@ static int driver_nl80211_if_remove(void
  }
  
  
@@ -542,7 +611,7 @@
  static int driver_nl80211_send_mlme(void *priv, const u8 *data,
  				    size_t data_len, int noack,
  				    unsigned int freq,
-@@ -13697,6 +13769,8 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -13697,6 +13789,8 @@ const struct wpa_driver_ops wpa_driver_n
  	.set_acl = wpa_driver_nl80211_set_acl,
  	.if_add = wpa_driver_nl80211_if_add,
  	.if_remove = driver_nl80211_if_remove,
@@ -551,3 +620,52 @@
  	.send_mlme = driver_nl80211_send_mlme,
  	.get_hw_feature_data = nl80211_get_hw_feature_data,
  	.sta_add = wpa_driver_nl80211_sta_add,
+--- a/src/utils/wpa_debug.c
++++ b/src/utils/wpa_debug.c
+@@ -26,6 +26,10 @@ static FILE *wpa_debug_tracing_file = NU
+ #define WPAS_TRACE_PFX "wpas <%d>: "
+ #endif /* CONFIG_DEBUG_LINUX_TRACING */
+ 
++void (*wpa_printf_hook)(int level, const char *fmt, va_list ap);
++void (*wpa_hexdump_hook)(int level, const char *title, const void *buf,
++			 size_t len);
++void (*wpa_netlink_hook)(int tx, const void *data, size_t len);
+ 
+ int wpa_debug_level = MSG_INFO;
+ int wpa_debug_show_keys = 0;
+@@ -210,6 +214,12 @@ void _wpa_printf(int level, const char *
+ {
+ 	va_list ap;
+ 
++	if (wpa_printf_hook) {
++		va_start(ap, fmt);
++		wpa_printf_hook(level, fmt, ap);
++		va_end(ap);
++	}
++
+ 	if (level >= wpa_debug_level) {
+ #ifdef CONFIG_ANDROID_LOG
+ 		va_start(ap, fmt);
+@@ -260,6 +270,9 @@ void _wpa_hexdump(int level, const char
+ {
+ 	size_t i;
+ 
++	if (wpa_hexdump_hook)
++		wpa_hexdump_hook(level, title, buf, len);
++
+ #ifdef CONFIG_DEBUG_LINUX_TRACING
+ 	if (wpa_debug_tracing_file != NULL) {
+ 		fprintf(wpa_debug_tracing_file,
+--- a/src/utils/wpa_debug.h
++++ b/src/utils/wpa_debug.h
+@@ -11,6 +11,10 @@
+ 
+ #include "wpabuf.h"
+ 
++extern void (*wpa_printf_hook)(int level, const char *fmt, va_list ap);
++extern void (*wpa_hexdump_hook)(int level, const char *title,
++				const void *buf, size_t len);
++extern void (*wpa_netlink_hook)(int tx, const void *data, size_t len);
+ extern int wpa_debug_level;
+ extern int wpa_debug_show_keys;
+ extern int wpa_debug_timestamp;

@@ -74,9 +74,8 @@
 		compatible = "pci168c,002a";
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_config_66>;
+		nvmem-cells = <&macaddr_config_66 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 };
 
@@ -91,7 +90,7 @@
 &eth0 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_config_66>;
+	nvmem-cells = <&macaddr_config_66 0>;
 	nvmem-cell-names = "mac-address";
 
 	pll-data = <0x02000000 0x00000101 0x00001313>;
@@ -107,7 +106,7 @@
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_config_66>;
+	nvmem-cells = <&macaddr_config_66 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -140,6 +139,18 @@
 				label = "config";
 				reg = <0x80000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_66: macaddr@66 {
+						compatible = "mac-base";
+						reg = <0x66 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@a0000 {
@@ -154,15 +165,5 @@
 				read-only;
 			};
 		};
-	};
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_66: macaddr@66 {
-		reg = <0x66 0x6>;
 	};
 };

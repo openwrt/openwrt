@@ -207,6 +207,16 @@
 				label = "boardconfig";
 				reg = <0x1f80000 0x80000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_boardconfig_16: macaddr@16 {
+						reg = <0x16 0x6>;
+					};
+				};
 			};
 		};
 	};
@@ -233,14 +243,4 @@
 &usb1 {
 	status = "okay";
 	vbus-supply = <&usb_vbus>;
-};
-
-&boardconfig {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_boardconfig_16: macaddr@16 {
-		reg = <0x16 0x6>;
-	};
 };

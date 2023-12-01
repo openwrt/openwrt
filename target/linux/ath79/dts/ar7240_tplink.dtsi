@@ -77,6 +77,18 @@
 				reg = <0x0 0x20000>;
 				label = "u-boot";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_1fc00: macaddr@1fc00 {
+						compatible = "mac-base";
+						reg = <0x1fc00 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@20000 {
@@ -104,7 +116,7 @@
 	ath9k: wifi@0,0 {
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_uboot_1fc00>;
+		nvmem-cells = <&macaddr_uboot_1fc00 0>;
 		nvmem-cell-names = "mac-address";
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -114,15 +126,5 @@
 &pinmux {
 	pinmux_switch_led_pins: switch_led_pins {
 		pinctrl-single,bits = <0x0 0x0 0xf8>;
-	};
-};
-
-&uboot {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_uboot_1fc00: macaddr@1fc00 {
-		reg = <0x1fc00 0x6>;
 	};
 };

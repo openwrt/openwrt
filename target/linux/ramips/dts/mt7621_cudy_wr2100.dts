@@ -78,7 +78,7 @@
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_bdinfo_de00>;
+	nvmem-cells = <&macaddr_bdinfo_de00 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -132,19 +132,22 @@
 			};
 
 			factory: partition@40000 {
-				compatible = "nvmem-cells";
 				label = "factory";
 				reg = <0x40000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_factory_0: eeprom@0 {
-					reg = <0x0 0x400>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				eeprom_factory_8000: eeprom@8000 {
-					reg = <0x8000 0x4da8>;
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x4da8>;
+					};
 				};
 			};
 
@@ -167,15 +170,20 @@
 			};
 
 			bdinfo: partition@ff0000 {
-				compatible = "nvmem-cells";
 				label = "bdinfo";
 				reg = <0xff0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				macaddr_bdinfo_de00: macaddr@de00 {
-					reg = <0xde00 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_bdinfo_de00: macaddr@de00 {
+						compatible = "mac-base";
+						reg = <0xde00 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 		};
@@ -194,9 +202,8 @@
 	label = "wan";
 	phy-handle = <&ethphy4>;
 
-	nvmem-cells = <&macaddr_bdinfo_de00>;
+	nvmem-cells = <&macaddr_bdinfo_de00 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &mdio {

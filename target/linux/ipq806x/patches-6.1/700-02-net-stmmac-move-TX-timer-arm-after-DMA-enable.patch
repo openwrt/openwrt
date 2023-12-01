@@ -36,7 +36,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	__netif_tx_unlock_bh(netdev_get_tx_queue(priv->dev, queue));
  
-@@ -5474,12 +5475,13 @@ static int stmmac_napi_poll_tx(struct na
+@@ -5475,12 +5476,13 @@ static int stmmac_napi_poll_tx(struct na
  	struct stmmac_channel *ch =
  		container_of(napi, struct stmmac_channel, tx_napi);
  	struct stmmac_priv *priv = ch->priv_data;
@@ -51,7 +51,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	work_done = min(work_done, budget);
  
  	if (work_done < budget && napi_complete_done(napi, work_done)) {
-@@ -5490,6 +5492,10 @@ static int stmmac_napi_poll_tx(struct na
+@@ -5491,6 +5493,10 @@ static int stmmac_napi_poll_tx(struct na
  		spin_unlock_irqrestore(&ch->lock, flags);
  	}
  
@@ -62,7 +62,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	return work_done;
  }
  
-@@ -5499,11 +5505,12 @@ static int stmmac_napi_poll_rxtx(struct
+@@ -5500,11 +5506,12 @@ static int stmmac_napi_poll_rxtx(struct
  		container_of(napi, struct stmmac_channel, rxtx_napi);
  	struct stmmac_priv *priv = ch->priv_data;
  	int rx_done, tx_done, rxtx_done;
@@ -76,7 +76,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	tx_done = min(tx_done, budget);
  
  	rx_done = stmmac_rx_zc(priv, budget, chan);
-@@ -5528,6 +5535,10 @@ static int stmmac_napi_poll_rxtx(struct
+@@ -5529,6 +5536,10 @@ static int stmmac_napi_poll_rxtx(struct
  		spin_unlock_irqrestore(&ch->lock, flags);
  	}
  

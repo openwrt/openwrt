@@ -95,7 +95,7 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 
-		nvmem-cells = <&macaddr_config_1c>;
+		nvmem-cells = <&macaddr_config_1c 0>;
 		nvmem-cell-names = "mac-address";
 
 		fixed-link {
@@ -111,9 +111,8 @@
 		phy-handle = <&phy7>;
 		phy-mode = "2500base-x";
 
-		nvmem-cells = <&macaddr_config_1c>;
+		nvmem-cells = <&macaddr_config_1c 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 
 	mdio: mdio-bus {
@@ -141,7 +140,7 @@
 		realtek,aldps-enable;
 	};
 
-	switch: switch@31 {
+	switch: switch@1f {
 		compatible = "mediatek,mt7531";
 		reg = <31>;
 		reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
@@ -182,6 +181,18 @@
 				label = "config";
 				reg = <0x100000 0x0060000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_1c: macaddr@1c {
+						compatible = "mac-base";
+						reg = <0x1c 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			factory: partition@160000 {
@@ -253,18 +264,7 @@
 
 &wifi {
 	mediatek,mtd-eeprom = <&factory 0x0>;
-	nvmem-cells = <&macaddr_config_1c>;
+	nvmem-cells = <&macaddr_config_1c 2>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <2>;
 	status = "okay";
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_1c: macaddr@1c {
-		reg = <0x1c 0x6>;
-	};
 };

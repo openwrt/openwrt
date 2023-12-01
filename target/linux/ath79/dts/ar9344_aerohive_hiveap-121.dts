@@ -106,9 +106,8 @@
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
 
-		nvmem-cells = <&macaddr_hw_info_0>;
+		nvmem-cells = <&macaddr_hw_info_0 2>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <2>;
 	};
 };
 
@@ -141,6 +140,18 @@
 				label = "hw-info";
 				reg = <0x90000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_hw_info_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@a0000 {
@@ -161,9 +172,8 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_hw_info_0>;
+	nvmem-cells = <&macaddr_hw_info_0 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &nand {
@@ -217,7 +227,7 @@
 
 	pll-data = <0x06000000 0x00000101 0x00001313>;
 
-	nvmem-cells = <&macaddr_hw_info_0>;
+	nvmem-cells = <&macaddr_hw_info_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii-id";
@@ -228,15 +238,5 @@
 		rgmii-gmac0 = <1>;
 		rxd-delay = <1>;
 		rxdv-delay = <1>;
-	};
-};
-
-&hw_info {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_hw_info_0: macaddr@0 {
-		reg = <0x0 0x6>;
 	};
 };

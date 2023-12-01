@@ -72,15 +72,18 @@
 				reg = <0x1b00000 0x400000>;
 			};
 			partition@1f00000 {
-				compatible = "nvmem-cells";
 				label = "para";
 				reg = <0x1f00000 0x100000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				factory_macaddr: macaddr@fdff4 {
-					reg = <0xfdff4 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					factory_macaddr: macaddr@fdff4 {
+						reg = <0xfdff4 0x6>;
+					};
 				};
 			};
 		};

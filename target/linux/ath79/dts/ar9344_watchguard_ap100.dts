@@ -56,9 +56,8 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 (-2)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-2)>;
 };
 
 &pcie {
@@ -73,25 +72,28 @@
 &wmac {
 	/delete-property/ ieee80211-freq-limit;
 
-	nvmem-cells = <&macaddr_art_0>, <&calibration_art_1000>;
+	nvmem-cells = <&macaddr_art_0 (-2)>, <&calibration_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
-	mac-address-increment = <(-2)>;
 };
 
 &art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
+		macaddr_art_0: macaddr@0 {
+			compatible = "mac-base";
+			reg = <0x0 0x6>;
+			#nvmem-cell-cells = <1>;
+		};
 
-	calibration_art_1000: calibration@1000 {
-		reg = <0x1000 0x440>;
-	};
+		calibration_art_1000: calibration@1000 {
+			reg = <0x1000 0x440>;
+		};
 
-	calibration_art_5000: calibration@5000 {
-		reg = <0x5000 0x440>;
+		calibration_art_5000: calibration@5000 {
+			reg = <0x5000 0x440>;
+		};
 	};
 };

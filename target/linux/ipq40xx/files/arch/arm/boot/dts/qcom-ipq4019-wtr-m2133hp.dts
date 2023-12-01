@@ -331,20 +331,23 @@
 				label = "ART";
 				reg = <0x0b00000 0x0080000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
-				};
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
 
-				precal_art_9000: precal@9000 {
-					reg = <0x5000 0x2f20>;
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					precal_art_9000: precal@9000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 
@@ -358,21 +361,24 @@
 				label = "ORGDATA";
 				reg = <0x0c00000 0x0080000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				macaddr_orgdata_20: macaddr@20 {
-					reg = <0x20 0x6>;
-				};
-				macaddr_orgdata_26: macaddr@26 {
-					reg = <0x26 0x6>;
-				};
-				macaddr_orgdata_2c: macaddr@2c {
-					reg = <0x2c 0x6>;
-				};
-				macaddr_orgdata_32: macaddr@32 {
-					reg = <0x32 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_orgdata_20: macaddr@20 {
+						reg = <0x20 0x6>;
+					};
+					macaddr_orgdata_26: macaddr@26 {
+						reg = <0x26 0x6>;
+					};
+					macaddr_orgdata_2c: macaddr@2c {
+						reg = <0x2c 0x6>;
+					};
+					macaddr_orgdata_32: macaddr@32 {
+						reg = <0x32 0x6>;
+					};
 				};
 			};
 

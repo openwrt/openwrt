@@ -70,16 +70,18 @@
 			};
 
 			partition@90000 {
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
 				label = "product-info";
 				reg = <0x90000 0x10000>;
 				read-only;
 
-				macaddr: macaddr@8 {
-					reg = <0x8 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr: macaddr@8 {
+						reg = <0x8 0x6>;
+					};
 				};
 			};
 

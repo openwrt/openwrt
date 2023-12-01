@@ -138,16 +138,18 @@
 				label = "art";
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_art_120c: macaddr@120c {
-					reg = <0x120c 0x6>;
-				};
+					macaddr_art_120c: macaddr@120c {
+						reg = <0x120c 0x6>;
+					};
 
-				calibration_art_1000: calibration@1000 {
-					reg = <0x1000 0xeb8>;
+					calibration_art_1000: calibration@1000 {
+						reg = <0x1000 0xeb8>;
+					};
 				};
 			};
 

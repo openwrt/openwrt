@@ -46,6 +46,13 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_add $lan_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
+	dlink,covr-x1860-a1)
+		label_mac=$(mtd_get_mac_ascii config2 factory_mac)
+		[ "$PHYNBR" = "0" ] && \
+			macaddr_add $label_mac 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_add $label_mac 2 > /sys${DEVPATH}/macaddress
+		;;
 	dlink,dap-x1860-a1)
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		[ "$PHYNBR" = "0" ] && \
@@ -172,6 +179,10 @@ case "$board" in
 	tplink,eap615-wall-v1)
 		hw_mac_addr="$(mtd_get_mac_binary product-info 0x8)"
 		macaddr_add "$hw_mac_addr" "$PHYNBR" > "/sys${DEVPATH}/macaddress"
+		;;
+	tplink,ex220-v1)
+		hw_mac_addr="$(mtd_get_mac_binary rom_file 0xf100)"
+		[ "$PHYNBR" = "1" ] &&  macaddr_add "$hw_mac_addr" 2 > "/sys${DEVPATH}/macaddress"
 		;;
 	yuncore,ax820)
 		[ "$PHYNBR" = "1" ] && \

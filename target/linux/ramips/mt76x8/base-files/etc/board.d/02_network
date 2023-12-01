@@ -46,6 +46,7 @@ ramips_setup_interfaces()
 	tplink,archer-c20-v5|\
 	tplink,archer-c50-v3|\
 	tplink,archer-c50-v4|\
+	tplink,archer-c50-v6|\
 	tplink,tl-mr3420-v5|\
 	tplink,tl-wr840n-v4|\
 	tplink,tl-wr840n-v5|\
@@ -294,7 +295,8 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0xf100)" 1)
 		;;
 	tplink,archer-c20-v5|\
-	tplink,archer-c50-v4)
+	tplink,archer-c50-v4|\
+	tplink,archer-c50-v6)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary rom 0xf100)" 1)
 		;;
 	wavlink,wl-wn570ha1|\

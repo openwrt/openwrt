@@ -91,12 +91,14 @@
 			reg = <0x1e0000 0x100000>;
 			read-only;
 
-			compatible = "nvmem-cells";
-			#address-cells = <1>;
-			#size-cells = <1>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			macaddr_factory_4: macaddr@4 {
-				reg = <0x4 0x6>;
+				macaddr_factory_4: macaddr@4 {
+					reg = <0x4 0x6>;
+				};
 			};
 		};
 

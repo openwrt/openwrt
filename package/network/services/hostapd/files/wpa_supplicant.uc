@@ -244,8 +244,32 @@ let main_obj = {
 	},
 };
 
+function handle_debug_config(cfg) {
+	if (!cfg)
+		return;
+
+	let data = cfg.service;
+	if (!data)
+		return;
+
+	data = data.wpa_supplicant;
+	if (!data)
+		return;
+
+	wpas.udebug_set(!!+data.enabled);
+}
+
 wpas.data.ubus = ubus;
 wpas.data.obj = ubus.publish("wpa_supplicant", main_obj);
+wpas.data.debug_sub = ubus.subscriber((req) => {
+	if (req.type != "config")
+		return;
+
+	handle_debug_config(req.data);
+});
+
+wpas.data.debug_sub.subscribe("udebug");
+handle_debug_config(ubus.call("udebug", "get_config", {}));
 
 function iface_event(type, name, data) {
 	let ubus = wpas.data.ubus;

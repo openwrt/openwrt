@@ -262,6 +262,7 @@ int wpas_ucode_init(struct wpa_global *gl)
 		{ "getpid", uc_wpa_getpid },
 		{ "add_iface", uc_wpas_add_iface },
 		{ "remove_iface", uc_wpas_remove_iface },
+		{ "udebug_set", uc_wpa_udebug_set },
 	};
 	static const uc_function_list_t iface_fns[] = {
 		{ "status", uc_wpas_iface_status },

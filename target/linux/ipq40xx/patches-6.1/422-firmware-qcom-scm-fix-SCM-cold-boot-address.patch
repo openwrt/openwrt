@@ -118,7 +118,7 @@ Signed-off-by: Brian Norris <computersforpeace@gmail.com>
  }
 --- a/drivers/firmware/qcom_scm.c
 +++ b/drivers/firmware/qcom_scm.c
-@@ -305,6 +305,17 @@ static int qcom_scm_set_boot_addr(void *
+@@ -312,6 +312,17 @@ static int qcom_scm_set_boot_addr(void *
  	desc.args[0] = flags;
  	desc.args[1] = virt_to_phys(entry);
  

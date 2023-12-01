@@ -76,6 +76,13 @@
 	};
 };
 
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_factory_f100 0>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
 &esw {
 	mediatek,portmap = <0x3e>;
 };

@@ -114,15 +114,20 @@
 			};
 
 			config: partition@e00000 {
-				compatible = "nvmem-cells";
 				label = "config";
 				reg = <0xe00000 0x50000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				macaddr_config_10008: macaddr@10008 {
-					reg = <0x10008 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_10008: macaddr@10008 {
+						compatible = "mac-base";
+						reg = <0x10008 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
@@ -131,19 +136,22 @@
 			 */
 
 			radio: partition@ff0000 {
-				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0xff0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_radio_0: eeprom@0 {
-					reg = <0x0 0x4da8>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				eeprom_radio_8000: eeprom@8000 {
-					reg = <0x8000 0x4da8>;
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0x4da8>;
+					};
+
+					eeprom_radio_8000: eeprom@8000 {
+						reg = <0x8000 0x4da8>;
+					};
 				};
 			};
 		};
@@ -165,9 +173,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_10008>;
+		nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_10008 1>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <1>;
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
@@ -176,9 +183,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_10008>;
+		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_10008 2>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <2>;
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
@@ -188,7 +194,7 @@
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_config_10008>;
+	nvmem-cells = <&macaddr_config_10008 0>;
 	nvmem-cell-names = "mac-address";
 };
 

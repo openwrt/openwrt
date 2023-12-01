@@ -1,3 +1,5 @@
+include $(INCLUDE_DIR)/prereq.mk
+
 PKG_NAME ?= u-boot
 
 ifndef PKG_SOURCE_PROTO
@@ -16,7 +18,32 @@ PKG_FLAGS:=nonshared
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
 PKG_LICENSE_FILES:=Licenses/README
 
-PKG_BUILD_PARALLEL:=1
+PKG_BUILD_PARALLEL ?= 1
+
+ifdef UBOOT_USE_BINMAN
+  $(eval $(call TestHostCommand,python3-pyelftools, \
+    Please install the Python3 elftools module, \
+    $(STAGING_DIR_HOST)/bin/python3 -c 'import elftools'))
+endif
+
+ifdef UBOOT_USE_INTREE_DTC
+  $(eval $(call TestHostCommand,python3-dev, \
+    Please install the python3-dev package, \
+    python3.11-config --includes 2>&1 | grep 'python3', \
+    python3.10-config --includes 2>&1 | grep 'python3', \
+    python3.9-config --includes 2>&1 | grep 'python3', \
+    python3.8-config --includes 2>&1 | grep 'python3', \
+    python3.7-config --includes 2>&1 | grep 'python3', \
+    python3-config --includes 2>&1 | grep -E 'python3\.([7-9]|[0-9][0-9])\.?'))
+
+  $(eval $(call TestHostCommand,python3-setuptools, \
+    Please install the Python3 setuptools module, \
+    $(STAGING_DIR_HOST)/bin/python3 -c 'import setuptools'))
+
+  $(eval $(call TestHostCommand,swig, \
+    Please install the swig package, \
+    swig -version))
+endif
 
 export GCC_HONOUR_COPTS=s
 
@@ -88,7 +115,9 @@ define Build/Configure/U-Boot
 		+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) $(UBOOT_CONFIGURE_VARS) oldconfig)
 endef
 
-DTC=$(wildcard $(LINUX_DIR)/scripts/dtc/dtc)
+ifndef UBOOT_USE_INTREE_DTC
+  DTC=$(wildcard $(LINUX_DIR)/scripts/dtc/dtc)
+endif
 
 define Build/Compile/U-Boot
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \

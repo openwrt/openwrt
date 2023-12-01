@@ -79,6 +79,16 @@
 				label = "u-boot";
 				reg = <0x000000 0x030000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_2e010: macaddr@2e010 {
+						reg = <0x2e010 0x6>;
+					};
+				};
 			};
 
 			partition@30000 {
@@ -142,14 +152,4 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-};
-
-&uboot {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_uboot_2e010: macaddr@2e010 {
-		reg = <0x2e010 0x6>;
-	};
 };

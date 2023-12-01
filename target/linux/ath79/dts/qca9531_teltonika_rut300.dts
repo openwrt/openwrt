@@ -84,6 +84,18 @@
 				label = "config";
 				reg = <0x020000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@30000 {
@@ -118,28 +130,17 @@
 	status = "okay";
 };
 
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-};
-
 &eth0 {
 	status = "okay";
 	phy-handle = <&swphy0>;
 
-	nvmem-cells = <&macaddr_config_0>;
+	nvmem-cells = <&macaddr_config_0 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &eth1 {
 	phy-handle = <&swphy4>;
-	nvmem-cells = <&macaddr_config_0>;
+	nvmem-cells = <&macaddr_config_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	gmac-config {

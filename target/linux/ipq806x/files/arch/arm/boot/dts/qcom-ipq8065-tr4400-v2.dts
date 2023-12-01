@@ -188,15 +188,17 @@
 				reg = <0x1200000 0x0140000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_ART_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
-				precal_ART_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
+					precal_ART_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+					precal_ART_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 			stock_partition@1340000 {
@@ -273,24 +275,26 @@
 				label = "fw_env";
 				reg = <0x6400000 0x0100000>;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_fw_env_0: macaddr@0 {
-					reg = <0x00 0x6>;
-				};
-				macaddr_fw_env_6: macaddr@6 {
-					reg = <0x06 0x6>;
-				};
-				macaddr_fw_env_c: macaddr@c {
-					reg = <0x0c 0x6>;
-				};
-				macaddr_fw_env_12: macaddr@12 {
-					reg = <0x12 0x6>;
-				};
-				macaddr_fw_env_18: macaddr@18 {
-					reg = <0x18 0x6>;
+					macaddr_fw_env_0: macaddr@0 {
+						reg = <0x00 0x6>;
+					};
+					macaddr_fw_env_6: macaddr@6 {
+						reg = <0x06 0x6>;
+					};
+					macaddr_fw_env_c: macaddr@c {
+						reg = <0x0c 0x6>;
+					};
+					macaddr_fw_env_12: macaddr@12 {
+						reg = <0x12 0x6>;
+					};
+					macaddr_fw_env_18: macaddr@18 {
+						reg = <0x18 0x6>;
+					};
 				};
 			};
 			partition@6500000 {

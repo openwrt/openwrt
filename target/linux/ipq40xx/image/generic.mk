@@ -68,7 +68,7 @@ define Build/mkmylofw_32m
 
 	let \
 		size="$$(stat -c%s $@)" \
-		pad="$(subst k,* 1024,$(BLOCKSIZE))" \
+		pad="$(call exp_units,$(BLOCKSIZE))" \
 		pad="(pad - (size % pad)) % pad" \
 		newsize='size + pad'; \
 		$(STAGING_DIR_HOST)/bin/mkmylofw \
@@ -680,6 +680,7 @@ define Device/linksys_ea6350v3
 	PAGESIZE := 2048
 	KERNEL_SIZE := 5120k
 	IMAGE_SIZE := 35840k
+	NAND_SIZE := 128m
 	UBINIZE_OPTS := -E 5
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=EA6350v3
@@ -694,6 +695,7 @@ define Device/linksys_ea8300
 	SOC := qcom-ipq4019
 	KERNEL_SIZE := 5120k
 	IMAGE_SIZE := 84992k
+	NAND_SIZE := 256m
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
@@ -711,6 +713,7 @@ define Device/linksys_mr8300
 	SOC := qcom-ipq4019
 	KERNEL_SIZE := 5120k
 	IMAGE_SIZE := 84992k
+	NAND_SIZE := 256m
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
@@ -728,6 +731,7 @@ define Device/linksys_whw03v2
 	SOC := qcom-ipq4019
 	KERNEL_SIZE := 6144k
 	IMAGE_SIZE := 158720k
+	NAND_SIZE := 512m
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
@@ -742,7 +746,8 @@ define Device/linksys_whw01
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := WHW01
 	KERNEL_SIZE := 6144k
-	IMAGE_SIZE := 75776K
+	IMAGE_SIZE := 75776k
+	NAND_SIZE := 256m
 	SOC := qcom-ipq4018
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048

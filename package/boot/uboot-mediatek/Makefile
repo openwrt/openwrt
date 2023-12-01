@@ -5,6 +5,8 @@ PKG_VERSION:=2023.07.02
 PKG_HASH:=6b6a48581c14abb0f95bd87c1af4d740922406d7b801002a9f94727fdde021d5
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 
+UBOOT_USE_INTREE_DTC:=1
+
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
@@ -236,6 +238,18 @@ define U-Boot/mt7981_h3c_magic-nx30-pro
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_jcg_q30-pro
+  NAME:=JCG Q30 PRO
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=jcg_q30-pro
+  UBOOT_CONFIG:=mt7981_jcg_q30-pro
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
 define U-Boot/mt7981_rfb-spim-nand
   NAME:=MT7981 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -441,6 +455,18 @@ define U-Boot/mt7986_xiaomi_redmi-router-ax6000
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr4
 endef
 
+define U-Boot/mt7986_zyxel_ex5601-t0
+  NAME:=Zyxel EX5601-T0
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=zyxel_ex5601-t0-ubootmod
+  UBOOT_CONFIG:=mt7986_zyxel_ex5601-t0
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-4k
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-4k-ddr4
+endef
+
 define U-Boot/mt7988_rfb-spim-nand
   NAME:=MT7988 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -523,6 +549,7 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-emmc \
 	mt7981_cmcc_rax3000m-nand \
 	mt7981_h3c_magic-nx30-pro \
+	mt7981_jcg_q30-pro \
 	mt7981_rfb-spim-nand \
 	mt7981_rfb-emmc \
 	mt7981_rfb-nor \
@@ -539,6 +566,7 @@ UBOOT_TARGETS := \
 	mt7986_tplink_tl-xdr6086 \
 	mt7986_tplink_tl-xdr6088 \
 	mt7986_xiaomi_redmi-router-ax6000 \
+	mt7986_zyxel_ex5601-t0 \
 	mt7986_rfb \
 	mt7988_rfb-spim-nand \
 	mt7988_rfb-snand \

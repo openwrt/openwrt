@@ -33,6 +33,17 @@ define Build/cybertan-trx
 	-rm $@-empty.bin
 endef
 
+define Build/dlink-sge-signature
+	( \
+		crc=$$(gzip -c $@ | tail -c 8 | od -An -tx4 --endian little | cut -d " " -f2); \
+		cat $@; \
+		$(MKHASH) md5 $@ ; \
+		echo $(1); \
+		echo -n $$crc; \
+	) > $@.new
+	mv $@.new $@
+endef
+
 define Build/edimax-headers
 	$(eval edimax_magic=$(word 1,$(1)))
 	$(eval edimax_model=$(word 2,$(1)))
@@ -74,7 +85,7 @@ define Build/mkmylofw_16m
 
 	let \
 		size="$$(stat -c%s $@)" \
-		pad="$(subst k,* 1024,$(BLOCKSIZE))" \
+		pad="$(call exp_units,$(BLOCKSIZE))" \
 		pad="(pad - (size % pad)) % pad" \
 		newsize='size + pad' ; \
 		[ $$newsize -lt $$((0x660000)) ] && newsize=0x660000 ; \
@@ -995,6 +1006,26 @@ define Device/devolo_magic-2-wifi
 endef
 TARGET_DEVICES += devolo_magic-2-wifi
 
+define Device/dlink_covr-p2500-a1
+  $(Device/loader-okli-uimage)
+  SOC := qca9563
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := COVR-P2500
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  LOADER_FLASH_OFFS := 0x050000
+  LOADER_KERNEL_MAGIC := 0x68737173
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x68737173
+  IMAGE_SIZE := 14528k
+  IMAGES += factory.bin recovery.bin
+  IMAGE/recovery.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | pad-to 14528k | \
+	append-loader-okli-uimage $(1) | pad-to 15616k
+  IMAGE/factory.bin := $$(IMAGE/recovery.bin) | \
+	dlink-sge-image COVR-P2500 | dlink-sge-signature COVR-P2500
+endef
+TARGET_DEVICES += dlink_covr-p2500-a1
+
 define Device/dlink_dap-13xx
   SOC := qca9533
   DEVICE_VENDOR := D-Link
@@ -1021,6 +1052,22 @@ define Device/dlink_dap-1365-a1
   DAP_SIGNATURE := HONEYBEE-FIRMWARE-DAP-1365
 endef
 TARGET_DEVICES += dlink_dap-1365-a1
+
+define Device/dlink_dap-1720-a1
+  $(Device/seama)
+  SOC := qca9563
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-1720
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES := rssileds -swconfig \
+	kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  SEAMA_SIGNATURE := wapac28_dlink.2015_dap1720
+  IMAGE_SIZE := 15872k
+  IMAGES += recovery.bin
+  IMAGE/recovery.bin := $$(IMAGE/default) | pad-rootfs -x 64 | seama | \
+	seama-seal | check-size
+endef
+TARGET_DEVICES += dlink_dap-1720-a1
 
 define Device/dlink_dap-2xxx
   IMAGES += factory.img

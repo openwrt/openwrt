@@ -711,6 +711,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "freq_info", uc_wpa_freq_info },
 		{ "add_iface", uc_hostapd_add_iface },
 		{ "remove_iface", uc_hostapd_remove_iface },
+		{ "udebug_set", uc_wpa_udebug_set },
 	};
 	static const uc_function_list_t bss_fns[] = {
 		{ "ctrl", uc_hostapd_bss_ctrl },

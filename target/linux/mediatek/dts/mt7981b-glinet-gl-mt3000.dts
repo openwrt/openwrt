@@ -91,7 +91,7 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 		phy-handle = <&phy0>;
-		nvmem-cells = <&macaddr>;
+		nvmem-cells = <&macaddr 0>;
 		nvmem-cell-names = "mac-address";
 	};
 
@@ -100,9 +100,8 @@
 		reg = <1>;
 		phy-mode = "gmii";
 		phy-handle = <&int_gbe_phy>;
-		nvmem-cells = <&macaddr>;
+		nvmem-cells = <&macaddr 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 };
 
@@ -179,12 +178,16 @@
 				reg = <0x180000 0x0200000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr: macaddr@a {
-					reg = <0xa 0x6>;
+					macaddr: macaddr@a {
+						compatible = "mac-base";
+						reg = <0xa 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 

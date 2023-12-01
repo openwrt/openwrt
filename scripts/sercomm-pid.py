@@ -34,7 +34,7 @@ def get_pid(args):
 		enc = args.hw_version.rjust(8, '0').encode('ascii')
 		struct.pack_into('>8s', buf, 0x0, enc)
 
-		enc = binascii.hexlify(args.hw_id.encode())
+		enc = binascii.hexlify(args.hw_id.encode()).upper()
 		struct.pack_into('>6s', buf, 0x8, enc)
 
 	enc = args.sw_version.rjust(4, '0').encode('ascii')

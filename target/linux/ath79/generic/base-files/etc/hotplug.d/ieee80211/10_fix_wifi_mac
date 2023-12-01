@@ -17,6 +17,12 @@ case "$board" in
 	adtran,bsap1840)
 		macaddr_add "$(mtd_get_mac_binary 'Board data' 2)" $(($PHYNBR * 8 + 1)) > /sys${DEVPATH}/macaddress
 		;;
+	dlink,covr-p2500-a1)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_ascii art "protest_ath1_mac" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_ascii art "protest_ath0_mac" > /sys${DEVPATH}/macaddress
+		;;
 	dlink,dap-1330-a1|\
 	dlink,dap-1365-a1|\
 	dlink,dch-g020-a1)
@@ -40,9 +46,6 @@ case "$board" in
 	engenius,esr1750|\
 	engenius,esr900)
 		macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" "$PHYNBR" > /sys${DEVPATH}/macaddress
-		;;
-	fortinet,fap-221-b)
-		macaddr_add "$(mtd_get_mac_text u-boot 0x3ff80 12)" $((PHYNBR*7+1)) > /sys${DEVPATH}/macaddress
 		;;
 	iodata,wn-ac1600dgr)
 		# There is no eeprom data for 5 GHz wlan in "art" partition

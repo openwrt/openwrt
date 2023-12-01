@@ -32,7 +32,7 @@ endef
 
 define Build/zyxel-factory
 	let \
-		maxsize="$(subst k,* 1024,$(RAS_ROOTFS_SIZE))"; \
+		maxsize="$(call exp_units,$(RAS_ROOTFS_SIZE))"; \
 		let size="$$(stat -c%s $@)"; \
 		if [ $$size -lt $$maxsize ]; then \
 			$(STAGING_DIR_HOST)/bin/mkrasimage \

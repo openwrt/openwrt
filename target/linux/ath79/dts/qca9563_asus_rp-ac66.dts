@@ -113,12 +113,14 @@
 				reg = <0x050000 0x10000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_art_1002: macaddr@1002 {
-					reg = <0x1002 0x6>;
+					macaddr_art_1002: macaddr@1002 {
+						reg = <0x1002 0x6>;
+					};
 				};
 			};
 

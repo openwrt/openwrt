@@ -138,17 +138,18 @@
 			};
 
 			part_eeprom: partition@80000 {
-				compatible = "nvmem-cells";
-
-				#address-cells = <1>;
-				#size-cells = <1>;
-
 				label = "eeprom";
 				reg = <0x80000 0x10000>;
 				read-only;
 
-				macaddr_eeprom: macaddr@0 {
-					reg = <0x0 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_eeprom: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
 				};
 			};
 

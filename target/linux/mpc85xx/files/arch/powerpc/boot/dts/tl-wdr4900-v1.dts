@@ -57,12 +57,14 @@
 						label = "u-boot";
 						read-only;
 
-						compatible = "nvmem-cells";
-						#address-cells = <1>;
-						#size-cells = <1>;
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
 
-						macaddr_uboot_4fc00: macaddr@4fc00 {
-							reg = <0x4fc00 0x6>;
+							macaddr_uboot_4fc00: macaddr@4fc00 {
+								reg = <0x4fc00 0x6>;
+							};
 						};
 					};
 

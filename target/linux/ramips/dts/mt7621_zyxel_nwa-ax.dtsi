@@ -96,6 +96,16 @@
 			label = "mrd";
 			reg = <0x7780000 0x80000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_mrd_1fff8: macaddr@1fff8 {
+					reg = <0x1fff8 0x6>;
+				};
+			};
 		};
 	};
 };
@@ -126,16 +136,6 @@
 			status = "okay";
 			label = "lan";
 		};
-	};
-};
-
-&mrd {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_mrd_1fff8: macaddr@1fff8 {
-		reg = <0x1fff8 0x6>;
 	};
 };
 

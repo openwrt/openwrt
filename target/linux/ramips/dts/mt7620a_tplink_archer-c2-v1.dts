@@ -106,15 +106,20 @@
 			};
 
 			rom: partition@7d0000 {
-				compatible = "nvmem-cells";
 				label = "rom";
 				reg = <0x7d0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				macaddr_rom_f100: macaddr@f100 {
-					reg = <0xf100 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_rom_f100: macaddr@f100 {
+						compatible = "mac-base";
+						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
 				};
 			};
 
@@ -125,19 +130,22 @@
 			};
 
 			radio: partition@7f0000 {
-				compatible = "nvmem-cells";
 				label = "radio";
 				reg = <0x7f0000 0x10000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_radio_0: eeprom@0 {
-					reg = <0x0 0x200>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				eeprom_radio_8000: eeprom@8000 {
-					reg = <0x8000 0x200>;
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					eeprom_radio_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
 				};
 			};
 		};
@@ -148,7 +156,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
 
-	nvmem-cells = <&macaddr_rom_f100>;
+	nvmem-cells = <&macaddr_rom_f100 0>;
 	nvmem-cell-names = "mac-address";
 
 	port@5 {
@@ -182,7 +190,7 @@
 };
 
 &wmac {
-	nvmem-cells = <&eeprom_radio_0>, <&macaddr_rom_f100>;
+	nvmem-cells = <&eeprom_radio_0>, <&macaddr_rom_f100 0>;
 	nvmem-cell-names = "eeprom", "mac-address";
 };
 
@@ -201,8 +209,7 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_rom_f100>;
+		nvmem-cells = <&eeprom_radio_8000>, <&macaddr_rom_f100 (-1)>;
 		nvmem-cell-names = "eeprom", "mac-address";
-		mac-address-increment = <(-1)>;
 	};
 };

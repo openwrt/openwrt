@@ -105,32 +105,38 @@
 			};
 
 			factory: partition@40000 {
-				compatible = "nvmem-cells";
 				label = "factory";
 				reg = <0x40000 0x8000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_factory_0: eeprom@0 {
-					reg = <0x0 0x200>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_factory_4: macaddr@4 {
-					reg = <0x4 0x6>;
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
 				};
 			};
 
 			iNIC_rf: partition@48000 {
-				compatible = "nvmem-cells";
 				label = "iNIC_rf";
 				reg = <0x48000 0x8000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
 				read-only;
 
-				eeprom_iNIC_rf_0: eeprom@0 {
-					reg = <0x0 0x200>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_iNIC_rf_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
 				};
 			};
 

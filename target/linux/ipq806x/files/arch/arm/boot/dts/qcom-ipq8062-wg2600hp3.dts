@@ -319,22 +319,47 @@
 					label = "PRODUCTDATA";
 					reg = <0x02b0000 0x0030000>;
 					read-only;
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						macaddr_factory_0: macaddr@0 {
+							reg = <0x0 0x6>;
+						};
+
+						macaddr_factory_6: macaddr@6 {
+							reg = <0x6 0x6>;
+						};
+
+						macaddr_PRODUCTDATA_c: macaddr@c {
+							reg = <0xc 0x6>;
+						};
+
+						macaddr_PRODUCTDATA_12: macaddr@12 {
+							reg = <0x12 0x6>;
+						};
+					};
 				};
 
 				partition@2e0000 {
 					label = "ART";
 					reg = <0x02e0000 0x0040000>;
 					read-only;
-					compatible = "nvmem-cells";
-					#address-cells = <1>;
-					#size-cells = <1>;
 
-					precal_ART_1000: precal@1000 {
-						reg = <0x1000 0x2f20>;
-					};
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
 
-					precal_ART_5000: precal@5000 {
-						reg = <0x5000 0x2f20>;
+						precal_ART_1000: precal@1000 {
+							reg = <0x1000 0x2f20>;
+						};
+
+						precal_ART_5000: precal@5000 {
+							reg = <0x5000 0x2f20>;
+						};
 					};
 				};
 
@@ -688,28 +713,6 @@
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
-	};
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_factory_6: macaddr@6 {
-		reg = <0x6 0x6>;
-	};
-
-	macaddr_PRODUCTDATA_c: macaddr@c {
-		reg = <0xc 0x6>;
-	};
-
-	macaddr_PRODUCTDATA_12: macaddr@12 {
-		reg = <0x12 0x6>;
 	};
 };
 

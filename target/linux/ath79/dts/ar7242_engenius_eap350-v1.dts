@@ -63,7 +63,7 @@
 &eth0 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-handle = <&phy4>;
@@ -78,9 +78,8 @@
 	ath9k: wifi@0,0,0 {
 		compatible = "pci168c,002a";
 		reg = <0x0 0 0 0 0>;
-		nvmem-cells = <&macaddr_art_0>;
+		nvmem-cells = <&macaddr_art_0 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 		qca,no-eeprom;
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -88,11 +87,15 @@
 };
 
 &art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
+		macaddr_art_0: macaddr@0 {
+			compatible = "mac-base";
+			reg = <0x0 0x6>;
+			#nvmem-cell-cells = <1>;
+		};
 	};
 };

@@ -75,6 +75,16 @@
 				label = "config";
 				reg = <0x060000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_201a: macaddr@201a {
+						reg = <0x201a 0x6>;
+					};
+				};
 			};
 
 			partition@70000 {
@@ -125,14 +135,4 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_201a: macaddr@201a {
-		reg = <0x201a 0x6>;
-	};
 };

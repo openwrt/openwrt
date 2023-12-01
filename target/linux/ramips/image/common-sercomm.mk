@@ -23,6 +23,35 @@ define Build/sercomm-crypto
 	rm -f $@.enc $@.key
 endef
 
+define Build/sercomm-factory-cpj
+	dd bs=$$((0x1fff00)) count=1 if=$@ of=$@.kernel conv=notrunc \
+		2>/dev/null
+	dd bs=$$((0x1fff00)) skip=1 if=$@ of=$@.rootfs1 conv=notrunc \
+		2>/dev/null
+	cp $@.rootfs1 $@.rootfs2
+	$(TOPDIR)/scripts/sercomm-kernel-header.py \
+		--kernel-image $@.kernel \
+		--kernel-offset $(SERCOMM_KERNEL_OFFSET) \
+		--rootfs-image $@.rootfs1 \
+		--rootfs-offset $(SERCOMM_ROOTFS_OFFSET) \
+		--output-header $@.header1
+	$(TOPDIR)/scripts/sercomm-kernel-header.py \
+		--kernel-image $@.kernel \
+		--kernel-offset $(SERCOMM_KERNEL2_OFFSET) \
+		--rootfs-image $@.rootfs2 \
+		--rootfs-offset $(SERCOMM_ROOTFS2_OFFSET) \
+		--output-header $@.header2
+	cat $@.header1 $@.kernel > $@.kernel1
+	cat $@.header2 $@.kernel > $@.kernel2
+	rm $@.header1 $@.header2 $@.kernel
+	$(call Build/sercomm-part-tag-common,kernel $@.kernel1)
+	$(call Build/sercomm-part-tag-common,kernel2 $@.kernel2)
+	$(call Build/sercomm-part-tag-common,rootfs $@.rootfs1)
+	$(call Build/sercomm-part-tag-common,rootfs2 $@.rootfs2)
+	cat $@.kernel2 $@.rootfs2 $@.kernel1 $@.rootfs1 > $@
+	rm $@.kernel1 $@.rootfs1 $@.kernel2 $@.rootfs2
+endef
+
 define Build/sercomm-factory-cqr
 	$(TOPDIR)/scripts/sercomm-pid.py \
 		--hw-version $(SERCOMM_HWVER) \
@@ -36,10 +65,6 @@ define Build/sercomm-factory-cqr
 		dd seek=$$((0x80)) of=$@.fhdr bs=1 conv=notrunc 2>/dev/null
 	dd if=$@ >> $@.fhdr 2>/dev/null
 	mv $@.fhdr $@
-endef
-
-define Build/sercomm-fix-buc-pid
-	printf 1 | dd seek=$$((0x13)) of=$@ bs=1 conv=notrunc 2>/dev/null
 endef
 
 define Build/sercomm-kernel
@@ -104,6 +129,10 @@ define Build/sercomm-payload
 	rm $@.pid
 endef
 
+define Build/sercomm-pid-setbit
+	printf 1 | dd seek=$$(($(1))) of=$@ bs=1 conv=notrunc 2>/dev/null
+endef
+
 define Build/sercomm-prepend-tagged-kernel
 	$(CP) $(IMAGE_KERNEL) $(IMAGE_KERNEL).tagged
 	$(call Build/sercomm-part-tag-common,$(word 1,$(1)) \
@@ -117,10 +146,44 @@ define Build/sercomm-reset-slot1-chksum
 		dd of=$@ seek=$$((0x118)) bs=1 conv=notrunc 2>/dev/null
 endef
 
+define Build/sercomm-sysupgrade-cpj
+	dd bs=$$((0x1fff00)) count=1 if=$@ of=$@.kernel conv=notrunc \
+		2>/dev/null
+	dd bs=$$((0x1fff00)) skip=1 if=$@ of=$@.rootfs conv=notrunc \
+		2>/dev/null
+	$(TOPDIR)/scripts/sercomm-kernel-header.py \
+		--kernel-image $@.kernel \
+		--kernel-offset $(SERCOMM_KERNEL_OFFSET) \
+		--rootfs-image $@.rootfs \
+		--rootfs-offset $(SERCOMM_ROOTFS_OFFSET) \
+		--output-header $@.header
+	cat $@.header $@.kernel $@.rootfs > $@
+	rm $@.header $@.kernel $@.rootfs
+endef
+
 define Device/sercomm
   $(Device/nand)
   LOADER_TYPE := bin
   IMAGES += factory.img
+endef
+
+define Device/sercomm_cpj
+  SOC := mt7620a
+  DEVICE_VENDOR := Rostelecom
+  DEVICE_ALT0_VENDOR := Sercomm
+  IMAGE_SIZE := 7743k
+  SERCOMM_HWID := CPJ
+  SERCOMM_HWVER := 10000
+  SERCOMM_SWVER := 1001
+  SERCOMM_KERNEL_OFFSET := 0x70100
+  SERCOMM_ROOTFS_OFFSET := 0x270000
+  SERCOMM_KERNEL2_OFFSET := 0x800100
+  SERCOMM_ROOTFS2_OFFSET := 0xa00000
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	sercomm-sysupgrade-cpj | pad-rootfs | check-size | \
+	append-metadata
+  ARTIFACTS := initramfs-factory.img
+  DEVICE_PACKAGES := kmod-mt76x2
 endef
 
 define Device/sercomm_cxx_dxx

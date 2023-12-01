@@ -95,7 +95,7 @@
 		phy-mode = "2500base-x";
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_bdinfo_de00>;
+		nvmem-cells = <&macaddr_bdinfo_de00 0>;
 
 		fixed-link {
 			speed = <2500>;
@@ -112,7 +112,7 @@
 };
 
 &mdio_bus {
-	switch: switch@0 {
+	switch: switch@1f {
 		compatible = "mediatek,mt7531";
 		reg = <31>;
 		reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
@@ -168,6 +168,18 @@
 				label = "bdinfo";
 				reg = <0x60000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_bdinfo_de00: macaddr@de00 {
+						compatible = "mac-base";
+						reg = <0xde00 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@70000 {
@@ -223,8 +235,7 @@
 			label = "wan";
 
 			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00>;
-			mac-address-increment = <1>;
+			nvmem-cells = <&macaddr_bdinfo_de00 1>;
 		};
 
 		lan1: port@1 {
@@ -232,7 +243,7 @@
 			label = "lan1";
 
 			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00>;
+			nvmem-cells = <&macaddr_bdinfo_de00 0>;
 		};
 
 		port@2 {
@@ -240,7 +251,7 @@
 			label = "lan2";
 
 			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00>;
+			nvmem-cells = <&macaddr_bdinfo_de00 0>;
 		};
 
 		port@3 {
@@ -248,7 +259,7 @@
 			label = "lan3";
 
 			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00>;
+			nvmem-cells = <&macaddr_bdinfo_de00 0>;
 		};
 
 		port@6 {
@@ -269,14 +280,4 @@
 &wifi {
 	status = "okay";
 	mediatek,mtd-eeprom = <&factory 0x0>;
-};
-
-&bdinfo {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_bdinfo_de00: macaddr@de00 {
-		reg = <0xde00 0x6>;
-	};
 };

@@ -225,24 +225,27 @@
 				label = "0:ART";
 				reg = <0x00170000 0x00010000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
-				};
+					macaddr_art_e010: mac-address@e010 {
+						reg = <0xe010 0x6>;
+					};
 
-				macaddr_art_e010: mac-address@e010 {
-					reg = <0xe010 0x6>;
-				};
+					macaddr_art_e018: mac-address@e018 {
+						reg = <0xe018 0x6>;
+					};
 
-				macaddr_art_e018: mac-address@e018 {
-					reg = <0xe018 0x6>;
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 			partition6@180000 {

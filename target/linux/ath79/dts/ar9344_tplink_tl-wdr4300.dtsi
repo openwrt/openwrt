@@ -76,7 +76,22 @@
 };
 
 &wmac {
-	mac-address-increment = <(-1)>;
+	status = "okay";
+	nvmem-cells = <&macaddr_uboot_1fc00 (-1)>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&pcie {
+	status = "okay";
+
+	ath9k: wifi@0,0 {
+		compatible = "pci168c,0033";
+		reg = <0x0000 0 0 0 0>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		nvmem-cells = <&macaddr_uboot_1fc00 0>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
+	};
 };
 
 &mdio0 {
@@ -104,7 +119,7 @@
 	/* default for ar934x, except for 1000M */
 	pll-data = <0x06000000 0x00000101 0x00001616>;
 
-	nvmem-cells = <&macaddr_uboot_1fc00>;
+	nvmem-cells = <&macaddr_uboot_1fc00 0>;
 	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii";

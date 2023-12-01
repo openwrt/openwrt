@@ -90,20 +90,22 @@
 			reg = <0x140000 0x40000>;
 			read-only;
 
-			compatible = "nvmem-cells";
-			#address-cells = <1>;
-			#size-cells = <1>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			cal_macaddr: macaddr@0 {
-				reg = <0x6 0x6>;
-			};
+				cal_macaddr: macaddr@0 {
+					reg = <0x6 0x6>;
+				};
 
-			cal_ath9k_soc: cal_ath9k@1000 {
-				reg = <0x1000 0x440>;
-			};
+				cal_ath9k_soc: cal_ath9k@1000 {
+					reg = <0x1000 0x440>;
+				};
 
-			cal_ath9k_pci: cal_ath9k@5000 {
-				reg = <0x5000 0x440>;
+				cal_ath9k_pci: cal_ath9k@5000 {
+					reg = <0x5000 0x440>;
+				};
 			};
 		};
 

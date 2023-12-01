@@ -34,6 +34,7 @@ ath79_setup_interfaces()
 	devolo,dvl1750x|\
 	dlink,dap-1330-a1|\
 	dlink,dap-1365-a1|\
+	dlink,dap-1720-a1|\
 	dlink,dap-2230-a1|\
 	dlink,dap-2660-a1|\
 	dlink,dap-2680-a1|\
@@ -285,6 +286,10 @@ ath79_setup_interfaces()
 	devolo,magic-2-wifi)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:wan" "3:lan" "4:lan"
+		;;
+	dlink,covr-p2500-a1)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:lan" "2:lan" "3:wan" "4:plc"
 		;;
 	dlink,dap-2695-a1)
 		ucidef_add_switch "switch0" \
@@ -634,6 +639,13 @@ ath79_setup_macs()
 	devolo,magic-2-wifi)
 		label_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" 3)
 		;;
+	dlink,covr-p2500-a1)
+		lan_mac=$(mtd_get_mac_ascii art "protest_lan_mac")
+		wan_mac=$(mtd_get_mac_ascii art "protest_lan_mac")
+		label_mac=$(mtd_get_mac_ascii art "protest_plc_mac")
+		plc_mac=$(mtd_get_mac_ascii art "protest_plc_mac")
+		[ -n "$plc_mac" ] && ucidef_set_interface_macaddr "plc" $plc_mac
+		;;
 	dlink,dap-1330-a1|\
 	dlink,dap-1365-a1|\
 	dlink,dch-g020-a1)
@@ -713,10 +725,6 @@ ath79_setup_macs()
 		;;
 	enterasys,ws-ap3705i)
 		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
-		;;
-	fortinet,fap-221-b)
-		lan_mac=$(mtd_get_mac_text u-boot 0x3ff80 12)
-		label_mac=$lan_mac
 		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)
