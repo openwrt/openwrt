@@ -13,7 +13,7 @@ define Build/sdcard-img
                 $(foreach dtb,$(DEVICE_DTS),$(CP) $(KDIR)/image-$(dtb).dtb $@.boot), \
                 $(CP) $(KDIR)/image-/*.dtb $@.boot)
 
-        $(SCRIPT_DIR)/gen_image_generic.sh \
+        PADDING=1 $(SCRIPT_DIR)/gen_image_generic.sh \
                 $@ \
                 $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
                 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
