@@ -370,7 +370,7 @@ define Quilt/Refresh/Package
 endef
 
 define Build/Compile
-	$(SH_FUNC) var2file "$(call shvar,mac80211_config)" $(PKG_BUILD_DIR)/.config
+	[ -z "$$$${$(call shvar,mac80211_config)}" ] || echo "$$$${$(call shvar,mac80211_config)}" > "$(PKG_BUILD_DIR)/.config"
 	$(MAKE) $(MAKE_OPTS) allnoconfig
 	$(call Build/Compile/kmod)
 endef
