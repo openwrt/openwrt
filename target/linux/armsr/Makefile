@@ -18,4 +18,19 @@ DEFAULT_PACKAGES += mkf2fs e2fsprogs
 # in sysupgrade
 DEFAULT_PACKAGES += blkid
 
+# Overwrite global LINUX_KCONFIG_LIST to add arch/arm64/configs/defconfig before
+# armv8 configs
+#
+# Discard global generic linux and target/board (armsr) linux configs as
+# upstream configs provide all required configs
+#
+# Prefer not creating this condition and put the body in armv8/target.mk, but
+# it looks that makefile is called before global target.mk and
+# LINUX_KCONFIG_LIST is not set as expected
+ifeq ($(SUBTARGET),armv8)
+LINUX_KCONFIG_LIST = \
+	$(LINUX_DIR)/arch/arm64/configs/defconfig \
+	$(wildcard $(LINUX_SUBTARGET_CONFIG))
+endif
+
 $(eval $(call BuildTarget))
