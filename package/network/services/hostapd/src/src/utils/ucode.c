@@ -16,8 +16,59 @@ static uc_vm_t vm;
 static struct uloop_timeout gc_timer;
 static struct udebug ud;
 static struct udebug_buf ud_log, ud_nl[3];
-
+static const struct udebug_buf_meta meta_log = {
+	.name = "wpa_log",
+	.format = UDEBUG_FORMAT_STRING,
+};
+static const struct udebug_buf_meta meta_nl_ll = {
+	.name = "wpa_nl_ctrl",
+	.format = UDEBUG_FORMAT_PACKET,
+	.sub_format = UDEBUG_DLT_NETLINK,
+};
+static const struct udebug_buf_meta meta_nl_tx = {
+	.name = "wpa_nl_tx",
+	.format = UDEBUG_FORMAT_PACKET,
+	.sub_format = UDEBUG_DLT_NETLINK,
+};
 #define UDEBUG_FLAG_RX_FRAME	(1ULL << 0)
+static const struct udebug_buf_flag rx_flags[] = {
+	{  "rx_frame", UDEBUG_FLAG_RX_FRAME },
+};
+static const struct udebug_buf_meta meta_nl_rx = {
+	.name = "wpa_nl_rx",
+	.format = UDEBUG_FORMAT_PACKET,
+	.sub_format = UDEBUG_DLT_NETLINK,
+	.flags = rx_flags,
+	.n_flags = ARRAY_SIZE(rx_flags),
+};
+static struct udebug_ubus_ring udebug_rings[] = {
+	{
+		.buf = &ud_log,
+		.meta = &meta_log,
+		.default_entries = 1024,
+		.default_size = 64 * 1024
+	},
+	{
+		.buf = &ud_nl[0],
+		.meta = &meta_nl_rx,
+		.default_entries = 1024,
+		.default_size = 256 * 1024,
+	},
+	{
+		.buf = &ud_nl[1],
+		.meta = &meta_nl_tx,
+		.default_entries = 1024,
+		.default_size = 64 * 1024,
+	},
+	{
+		.buf = &ud_nl[2],
+		.meta = &meta_nl_ll,
+		.default_entries = 1024,
+		.default_size = 32 * 1024,
+	}
+};
+char *udebug_service;
+struct udebug_ubus ud_ubus;
 
 static void uc_gc_timer(struct uloop_timeout *timeout)
 {
@@ -301,68 +352,67 @@ static void udebug_netlink_hook(int tx, const void *data, size_t len)
 	         !(udebug_buf_flags(buf) & UDEBUG_FLAG_RX_FRAME))
 		return;
 
+	if (!udebug_buf_valid(buf))
+		return;
+
 	udebug_entry_init(buf);
 	udebug_entry_append(buf, &hdr, sizeof(hdr));
 	udebug_entry_append(buf, data, len);
 	udebug_entry_add(buf);
 }
 
-uc_value_t *uc_wpa_udebug_set(uc_vm_t *vm, size_t nargs)
+static void
+wpa_udebug_config(struct udebug_ubus *ctx, struct blob_attr *data,
+		  bool enabled)
 {
-	static const struct udebug_buf_meta meta_log = {
-		.name = "wpa_log",
-		.format = UDEBUG_FORMAT_STRING,
-	};
-	static const struct udebug_buf_meta meta_nl_ll = {
-		.name = "wpa_nl_ctrl",
-		.format = UDEBUG_FORMAT_PACKET,
-		.sub_format = UDEBUG_DLT_NETLINK,
-	};
-	static const struct udebug_buf_meta meta_nl_tx = {
-		.name = "wpa_nl_tx",
-		.format = UDEBUG_FORMAT_PACKET,
-		.sub_format = UDEBUG_DLT_NETLINK,
-	};
-	static const struct udebug_buf_flag rx_flags[] = {
-		{  "rx_frame", UDEBUG_FLAG_RX_FRAME },
-	};
-	static const struct udebug_buf_meta meta_nl_rx = {
-		.name = "wpa_nl_rx",
-		.format = UDEBUG_FORMAT_PACKET,
-		.sub_format = UDEBUG_DLT_NETLINK,
-		.flags = rx_flags,
-		.n_flags = ARRAY_SIZE(rx_flags),
-	};
-	bool val = ucv_is_truish(uc_fn_arg(0));
-	static bool enabled = false;
+	udebug_ubus_apply_config(&ud, udebug_rings, ARRAY_SIZE(udebug_rings),
+				 data, enabled);
 
-	if (enabled == val)
-		return ucv_boolean_new(true);
-
-	enabled = val;
-	if (val) {
-		udebug_init(&ud);
-		udebug_auto_connect(&ud, NULL);
-		udebug_buf_init(&ud_log, 1024, 64 * 1024);
-		udebug_buf_add(&ud, &ud_log, &meta_log);
-		udebug_buf_init(&ud_nl[0], 1024, 256 * 1024);
-		udebug_buf_add(&ud, &ud_nl[0], &meta_nl_rx);
-		udebug_buf_init(&ud_nl[1], 1024, 64 * 1024);
-		udebug_buf_add(&ud, &ud_nl[1], &meta_nl_tx);
-		udebug_buf_init(&ud_nl[2], 256, 32 * 1024);
-		udebug_buf_add(&ud, &ud_nl[2], &meta_nl_ll);
-
+	if (udebug_buf_valid(&ud_log)) {
 		wpa_printf_hook = udebug_printf_hook;
 		wpa_hexdump_hook = udebug_hexdump_hook;
-		wpa_netlink_hook = udebug_netlink_hook;
 	} else {
-		for (size_t i = 0; i < ARRAY_SIZE(ud_nl); i++)
-			udebug_buf_free(&ud_nl[i]);
-		udebug_buf_free(&ud_log);
-		udebug_free(&ud);
 		wpa_printf_hook = NULL;
 		wpa_hexdump_hook = NULL;
+	}
+
+	if (udebug_buf_valid(&ud_nl[0]) ||
+	    udebug_buf_valid(&ud_nl[1]) ||
+	    udebug_buf_valid(&ud_nl[2]))
+		wpa_netlink_hook = udebug_netlink_hook;
+	else
 		wpa_netlink_hook = NULL;
+}
+
+uc_value_t *uc_wpa_udebug_set(uc_vm_t *vm, size_t nargs)
+{
+	uc_value_t *name = uc_fn_arg(0);
+	uc_value_t *ubus = uc_fn_arg(1);
+	static bool enabled = false;
+	struct ubus_context *ctx;
+	bool cur_en;
+
+	cur_en = ucv_type(name) == UC_STRING;
+	ctx = ucv_resource_data(ubus, "ubus.connection");
+	if (!ctx)
+		cur_en = false;
+
+	if (enabled == cur_en)
+		return ucv_boolean_new(true);
+
+	enabled = cur_en;
+	if (enabled) {
+		udebug_service = strdup(ucv_string_get(name));
+		udebug_init(&ud);
+		udebug_auto_connect(&ud, NULL);
+		udebug_ubus_init(&ud_ubus, ctx, udebug_service, wpa_udebug_config);
+	} else {
+		udebug_ubus_free(&ud_ubus);
+		for (size_t i = 0; i < ARRAY_SIZE(udebug_rings); i++)
+			if (udebug_buf_valid(udebug_rings[i].buf))
+				udebug_buf_free(udebug_rings[i].buf);
+		udebug_free(&ud);
+		free(udebug_service);
 	}
 
 	return ucv_boolean_new(true);
