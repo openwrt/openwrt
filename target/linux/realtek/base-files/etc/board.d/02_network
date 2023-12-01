@@ -69,6 +69,19 @@ done
 [ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 
 case $board in
+d-link,dgs-1210-10mp-f)
+	ucidef_set_poe 130 "$lan_list" "lan9 lan10"
+	;;
+d-link,dgs-1210-10p)
+	ucidef_set_poe 65 "$lan_list" "lan9 lan10"
+	;;
+d-link,dgs-1210-28mp-f)
+	ucidef_set_poe 370 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23
+			lan22 lan21 lan20 lan19 lan18 lan17" "lan25 lan26 lan27 lan28"
+	;;
+engenius,ews2910p)
+	ucidef_set_poe 60 "$lan_list" "lan9 lan10"
+	;;
 hpe,1920-8g-poe-65w)
 	ucidef_set_poe 65 "$lan_list_rev" "lan9 lan10"
 	;;
