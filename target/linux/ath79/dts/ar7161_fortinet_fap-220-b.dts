@@ -95,7 +95,7 @@
 &pcie0 {
 	status = "okay";
 
-	ath9k0: wifi@0,11 { /* 2.4 GHz */
+	ath9k0: wifi@11,0 { /* 2.4 GHz */
 		compatible = "pci168c,0029";
 		reg = <0x8800 0 0 0 0>;
 		ieee80211-freq-limit = <2402000 2482000>;
@@ -105,7 +105,7 @@
 		gpio-controller;
 	};
 
-	ath9k1: wifi@0,12 { /* 5 GHz */
+	ath9k1: wifi@12,0 { /* 5 GHz */
 		compatible = "pci168c,0029";
 		reg = <0x9000 0 0 0 0>;
 		ieee80211-freq-limit = <2402000 2482000 4900000 5990000>;

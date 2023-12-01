@@ -94,7 +94,7 @@
 &pcie0 {
 	status = "okay";
 
-	ath9k0: wifi@0,11 { /* 2.4 GHz */
+	ath9k0: wifi@11,0 { /* 2.4 GHz */
 		compatible = "pci168c,0029";
 		nvmem-cells = <&macaddr_hwinfo_1c 1>;
 		nvmem-cell-names = "mac-address";
@@ -103,7 +103,7 @@
 		gpio-controller;
 	};
 
-	ath9k1: wifi@0,12 { /* 5 GHz */
+	ath9k1: wifi@12,0 { /* 5 GHz */
 		compatible = "pci168c,0029";
 		nvmem-cells = <&macaddr_hwinfo_1c 2>;
 		nvmem-cell-names = "mac-address";
