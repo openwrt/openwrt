@@ -255,27 +255,6 @@
 	status = "okay";
 };
 
-&pcie0 {
-	mt76@0,0 {
-		reg = <0x0000 0 0 0 0>;
-		mediatek,eeprom-file = "mt76.pcie0.eeprom";
-	};
-};
-
-&pcie1 {
-	mt76@0,0 {
-		reg = <0x0000 0 0 0 0>;
-		mediatek,eeprom-file = "mt76.pcie1.eeprom";
-	};
-};
-
-&pcie2 {
-	mt76@0,0 {
-		reg = <0x0000 0 0 0 0>;
-		mediatek,eeprom-file = "mt76.pcie2.eeprom";
-	};
-};
-
 &sdhci {
 	status = "okay";
 	max-frequency = <20000000>;
