@@ -194,6 +194,7 @@ define Package/dropbear/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(if $(CONFIG_DROPBEAR_DBCLIENT),$(LN) ../sbin/dropbear $(1)/usr/bin/dbclient,)
 	$(LN) ../sbin/dropbear $(1)/usr/bin/dropbearkey
+	$(LN) ../sbin/dropbear $(1)/usr/bin/ssh-keygen
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/dropbear.config $(1)/etc/config/dropbear
 	$(INSTALL_DIR) $(1)/etc/init.d
