@@ -74,16 +74,13 @@ xiaomi,redmi-router-ax6000-ubootmod)
 	ubootenv_add_uci_config "$envdev" "0x0" "0x1f000" "0x20000" "1"
 	ubootenv_add_uci_config "$envdev2" "0x0" "0x1f000" "0x20000" "1"
 	;;
-glinet,gl-mt2500)
-	local envdev=$(find_mmc_part "u-boot-env")
-	ubootenv_add_uci_config "$envdev" "0x400000" "0x80000"
-	;;
-glinet,gl-mt3000)
-	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
-	;;
+glinet,gl-mt2500|\
 glinet,gl-mt6000)
 	local envdev=$(find_mmc_part "u-boot-env")
 	ubootenv_add_uci_config "$envdev" "0x0" "0x80000"
+	;;
+glinet,gl-mt3000)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
 	;;
 mercusys,mr90x-v1)
 	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
