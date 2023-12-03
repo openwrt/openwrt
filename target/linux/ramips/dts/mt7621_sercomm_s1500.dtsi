@@ -110,7 +110,7 @@
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <24>;
-			linux,default-trigger = "phy1radio";
+			linux,default-trigger = "phy1tpt";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 
@@ -130,7 +130,7 @@
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <50>;
-			linux,default-trigger = "phy0radio";
+			linux,default-trigger = "phy0tpt";
 			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
 		};
 	};
