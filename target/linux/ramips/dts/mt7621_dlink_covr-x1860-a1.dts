@@ -4,16 +4,17 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "dlink,covr-x1860-a1", "mediatek,mt7621-soc";
 	model = "D-Link COVR-X1860 A1";
 
 	aliases {
-		led-boot = &status_orange;
-		led-failsafe = &status_red;
-		led-running = &status_white;
-		led-upgrade = &status_red;
+		led-boot = &led_status_orange;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_white;
+		led-upgrade = &led_status_red;
 	};
 
 	chosen {
@@ -39,19 +40,22 @@
 	leds {
 		compatible = "gpio-leds";
 
-		status_white: power {
-			label = "white:status";
+		led_status_white: led-status-white {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
-		status_orange: status_orange {
-			label = "orange:status";
+		led_status_orange: led-status-orange {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
-		status_red: status_red {
-			label = "red:status";
+		led_status_red: led-status-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 	};
