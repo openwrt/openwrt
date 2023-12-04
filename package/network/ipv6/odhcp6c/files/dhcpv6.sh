@@ -10,7 +10,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string 'reqaddress:or("try","force","none")'
 	proto_config_add_string 'reqprefix:or("auto","no",range(0, 64))'
 	proto_config_add_string clientid
-	proto_config_add_string 'reqopts:list(uinteger)'
+	proto_config_add_array 'reqopts:list(uinteger)'
 	proto_config_add_string 'defaultreqopts:bool'
 	proto_config_add_string 'noslaaconly:bool'
 	proto_config_add_string 'forceprefix:bool'
@@ -49,6 +49,10 @@ proto_dhcpv6_add_prefix() {
 
 proto_dhcpv6_add_sendopts() {
 	[ -n "$1" ] && append "$3" "-x$1"
+}
+
+proto_dhcpv6_add_reqopts() {
+	[ -n "$1" ] && append "$3" "-r$1"
 }
 
 proto_dhcpv6_setup() {
@@ -96,12 +100,9 @@ proto_dhcpv6_setup() {
 
 	[ "$verbose" = "1" ] && append opts "-v"
 
-	local opt
-	for opt in $reqopts; do
-		append opts "-r$opt"
-	done
 
 	json_for_each_item proto_dhcpv6_add_sendopts sendopts opts
+	json_for_each_item proto_dhcpv6_add_reqopts reqopts opts
 
 	append opts "-t${soltimeout:-120}"
 
