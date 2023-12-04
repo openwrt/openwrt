@@ -855,6 +855,16 @@ define Device/tplink_tl-wr902ac-v3
 endef
 TARGET_DEVICES += tplink_tl-wr902ac-v3
 
+define Device/trolink_w7628dna
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := TroLink
+  DEVICE_MODEL := W7628DNA AP Module
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
+  kmod-mmc kmod-usb-storage
+  SUPPORTED_DEVICES += trolink_w7628dna
+endef
+TARGET_DEVICES += trolink_w7628dna
+
 define Device/unielec_u7628-01-16m
   IMAGE_SIZE := 16064k
   DEVICE_VENDOR := UniElec
