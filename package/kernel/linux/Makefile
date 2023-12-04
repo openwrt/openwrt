@@ -58,7 +58,9 @@ define Package/kernel
 endef
 
 define Package/kernel/install
-  # nothing to do
+	$(INSTALL_DIR) $(1)/$(MODULES_SUBDIR)
+	$(INSTALL_DATA) $(LINUX_DIR)/modules.builtin $(1)/$(MODULES_SUBDIR)
+	$(SED) 's,.*/,,' $(1)/$(MODULES_SUBDIR)/modules.builtin
 endef
 
 define Package/kernel/extra_provides
