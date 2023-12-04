@@ -509,13 +509,14 @@ mac80211_hostapd_setup_bss() {
 	json_get_vars wds wds_bridge dtim_period max_listen_int start_disabled
 
 	set_default wds 0
-	set_default start_disabled 0
-
 	[ "$wds" -gt 0 ] && {
 		append hostapd_cfg "wds_sta=1" "$N"
 		[ -n "$wds_bridge" ] && append hostapd_cfg "wds_bridge=$wds_bridge" "$N"
 	}
-	[ "$staidx" -gt 0 -o "$start_disabled" -eq 1 ] && append hostapd_cfg "start_disabled=1" "$N"
+
+	[ "$staidx" -gt 0 ] && set_default start_disabled 1
+	set_default start_disabled 0
+	[ "$start_disabled" -eq 1 ] && append hostapd_cfg "start_disabled=1" "$N"
 
 	cat >> /var/run/hostapd-$phy.conf <<EOF
 $hostapd_cfg
