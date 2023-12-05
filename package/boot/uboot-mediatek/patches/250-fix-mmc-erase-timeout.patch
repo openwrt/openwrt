@@ -1,0 +1,13 @@
+diff --git a/drivers/mmc/mmc_write.c b/drivers/mmc/mmc_write.c
+index a6f93380dd0..5c573fe5c4c 100644
+--- a/drivers/mmc/mmc_write.c
++++ b/drivers/mmc/mmc_write.c
+@@ -80,7 +80,7 @@ ulong mmc_berase(struct blk_desc *block_dev, lbaint_t start, lbaint_t blkcnt)
+ 	u32 start_rem, blkcnt_rem, erase_args = 0;
+ 	struct mmc *mmc = find_mmc_device(dev_num);
+ 	lbaint_t blk = 0, blk_r = 0;
+-	int timeout_ms = 1000;
++	int timeout_ms = blkcnt;
+ 
+ 	if (!mmc)
+ 		return -1;
