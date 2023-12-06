@@ -49,7 +49,8 @@
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 		power: power {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
@@ -62,7 +63,8 @@
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power_red {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		internet_red {

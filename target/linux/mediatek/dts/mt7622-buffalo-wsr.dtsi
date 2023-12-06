@@ -32,17 +32,15 @@
 		};
 
 		power_amber: led-1 {
-			label = "amber:power";
-			gpios = <&pio 3 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_POWER;
+			gpios = <&pio 3 GPIO_ACTIVE_LOW>;
 		};
 
 		power_green: led-2 {
-			label = "green:power";
-			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		led-3 {

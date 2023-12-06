@@ -56,20 +56,23 @@
 	led@0 {
 		reg = <0>;
 		active-low;
-		label = "red:power";
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_POWER;
 	};
 
 	led_power_green: led@1 {
 		reg = <1>;
 		active-low;
-		label = "green:power";
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_POWER;
 		default-state = "on";
 	};
 
 	led@2 {
 		reg = <2>;
 		active-low;
-		label = "blue:power";
+		color = <LED_COLOR_ID_BLUE>;
+		function = LED_FUNCTION_POWER;
 	};
 
 	led@3 {

@@ -32,12 +32,14 @@
 		compatible = "gpio-leds";
 
 		led_power_blue: power_blue {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_white: power_white {
-			label = "white:power";
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 	};

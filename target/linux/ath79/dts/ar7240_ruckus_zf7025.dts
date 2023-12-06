@@ -71,13 +71,15 @@
 		};
 
 		led_power_red: power-red {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
 
 		led_power_green: power-green {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};

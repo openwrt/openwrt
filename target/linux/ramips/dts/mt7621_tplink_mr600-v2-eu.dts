@@ -42,7 +42,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "white:power";
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		wlan {

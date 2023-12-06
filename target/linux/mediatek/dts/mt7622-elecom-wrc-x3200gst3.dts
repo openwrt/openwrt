@@ -40,27 +40,24 @@
 		};
 
 		led_power_red: led-1 {
-			label = "red:power";
-			gpios = <&pio 48 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_POWER;
 			function-enumerator = <1>;
+			gpios = <&pio 48 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_green: led-2 {
-			label = "green:power";
-			gpios = <&pio 49 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
 			function-enumerator = <2>;
+			gpios = <&pio 49 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-3 {
-			label = "blue:power";
-			gpios = <&pio 50 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_POWER;
 			function-enumerator = <3>;
+			gpios = <&pio 50 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-4 {

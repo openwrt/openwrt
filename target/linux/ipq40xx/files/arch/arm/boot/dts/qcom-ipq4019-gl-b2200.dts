@@ -84,7 +84,8 @@
 		compatible = "gpio-leds";
 
 		power_blue {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 57 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
@@ -93,7 +94,8 @@
 			gpios = <&tlmm 60 GPIO_ACTIVE_HIGH>;
 		};
 		power_white {
-			label = "white:power";
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
 		};
 		internet_white {

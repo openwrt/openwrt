@@ -36,12 +36,14 @@
 		};
 
 		led_power_blue: led-power-blue {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_yellow: led-power-yellow {
-			label = "yellow:power";
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 

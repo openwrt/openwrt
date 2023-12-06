@@ -90,17 +90,20 @@
 		compatible = "gpio-leds";
 
 		led_power: power_g {
-			label = "wrc-2533:green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_b {
-			label = "wrc-2533:blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pio 19 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_r {
-			label = "wrc-2533:red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pio 73 GPIO_ACTIVE_HIGH>;
 		};
 

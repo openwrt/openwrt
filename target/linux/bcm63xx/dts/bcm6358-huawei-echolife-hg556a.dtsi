@@ -52,7 +52,8 @@
 		};
 
 		led_power_red: power_red {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pinctrl 3 1>;
 			default-state = "on";
 		};

@@ -62,7 +62,8 @@
 
 	led_power_red: power_red {
 		reg = <8>;
-		label = "red:power";
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_POWER;
 	};
 
 	wifi_green {
@@ -97,7 +98,8 @@
 
 	led_power_green: power_green {
 		reg = <17>;
-		label = "green:power";
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_POWER;
 		default-state = "on";
 	};
 

@@ -86,16 +86,19 @@
 		};
 
 		power_red: power-red {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpios 13 GPIO_ACTIVE_HIGH>;
 		};
 		power_orange: power-orange {
-			label = "orange:power";
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpios 14 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		power_blue: power-blue {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpios 15 GPIO_ACTIVE_HIGH>;
 		};
 	};

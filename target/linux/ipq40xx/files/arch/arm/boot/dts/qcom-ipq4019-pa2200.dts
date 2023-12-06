@@ -66,7 +66,8 @@
 		compatible = "gpio-leds";
 
 		led_power_orange: power_orange {
-			label = "orange:power";
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 43 GPIO_ACTIVE_LOW>;
 		};
 

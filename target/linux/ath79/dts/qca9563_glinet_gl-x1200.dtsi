@@ -54,12 +54,14 @@
 
 		gpio_modem1_power {
 			gpio-export,name = "gl-x1200:4g1:power";
+			function = LED_FUNCTION_POWER;
 			gpio-export,output = <0>;
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		gpio_modem2_power {
 			gpio-export,name = "gl-x1200:4g2:power";
+			function = LED_FUNCTION_POWER;
 			gpio-export,output = <0>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};

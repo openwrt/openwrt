@@ -20,7 +20,8 @@
 		pinctrl-0 = <&enable_gpio_11>;
 
 		led_power_blue: power_blue {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 
@@ -48,7 +49,8 @@
 		};
 
 		led_power_orange: power_orange {
-			label = "orange:power";
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 

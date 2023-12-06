@@ -19,7 +19,8 @@
 		pinctrl-0 = <&led_wan_pin>;
 
 		power {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};

@@ -59,12 +59,14 @@
 			gpios = <&pinctrl 12 1>;
 		};
 		led_power_blue: power_blue {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pinctrl 22 0>;
 			default-state = "on";
 		};
 		power_red {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pinctrl 24 0>;
 		};
 		voice_blue {

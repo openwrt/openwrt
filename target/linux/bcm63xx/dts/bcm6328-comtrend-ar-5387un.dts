@@ -84,7 +84,8 @@
 
 	led@4 {
 		reg = <4>;
-		label = "red:power";
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_POWER;
 	};
 
 	led@7 {
@@ -94,7 +95,8 @@
 
 	led_power_green: led@8 {
 		reg = <8>;
-		label = "green:power";
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_POWER;
 		default-state = "on";
 	};
 

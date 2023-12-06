@@ -36,10 +36,9 @@
 		pinctrl-names = "default";
 
 		led_power: power {
-			label = "blue:power";
-			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan2g {

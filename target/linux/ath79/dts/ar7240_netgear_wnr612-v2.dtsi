@@ -34,7 +34,8 @@
 		pinctrl-0 = <&jtag_disable_pins &switch_led_disable_pins &clks_disable_pins>;
 
 		led_power: power {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 

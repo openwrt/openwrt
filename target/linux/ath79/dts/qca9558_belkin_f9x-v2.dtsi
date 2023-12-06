@@ -52,6 +52,7 @@
 
 		usb2_power {
 			gpio-export,name = "usb2:power";
+			function = LED_FUNCTION_POWER;
 			gpio-export,output = <1>;
 			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};

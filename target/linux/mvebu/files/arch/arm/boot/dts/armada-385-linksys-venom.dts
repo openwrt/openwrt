@@ -93,8 +93,9 @@
 
 &gpio_leds {
 	power {
+    		color = <LED_COLOR_ID_BLUE>;
+    		function = LED_FUNCTION_POWER;
 		gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
-		label = "venom:blue:power";
 	};
 
 	sata {

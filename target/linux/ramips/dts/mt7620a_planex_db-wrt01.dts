@@ -18,7 +18,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "orange:power";
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
 		};
 	};

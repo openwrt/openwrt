@@ -67,7 +67,8 @@
 		pinctrl-names = "default";
 
 		led_power_green: power_green {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -87,7 +88,8 @@
 		};
 
 		led_power_red: power_red {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&qcom_pinmux 28 GPIO_ACTIVE_LOW>;
 		};
 

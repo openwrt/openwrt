@@ -76,7 +76,8 @@
 		compatible = "gpio-leds";
 
 		power: power {
-			label = "amber:power";
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 58 GPIO_ACTIVE_LOW>;
 		};
 

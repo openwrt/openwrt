@@ -9,7 +9,8 @@
 
 &leds {
 	led_power: power {
-		label = "blue:power";
+		color = <LED_COLOR_ID_BLUE>;
+		function = LED_FUNCTION_POWER;
 		gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		default-state = "on";
 	};

@@ -47,14 +47,16 @@
 		compatible = "gpio-leds";
 
 		led_power_blue: power_blue {
+		  	color = <LED_COLOR_ID_BLUE>;
+		  	function = LED_FUNCTION_POWER;
 			gpios = <&led_gpio 0 GPIO_ACTIVE_HIGH>;
-			label = "blue:power";
 			default-state = "on";
 		};
 
 		led_power_red: power_red {
+	  		color = <LED_COLOR_ID_RED>;
+	  		function = LED_FUNCTION_POWER;
 			gpios = <&led_gpio 1 GPIO_ACTIVE_HIGH>;
-			label = "red:power";
 		};
 
 		tp28 {

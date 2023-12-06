@@ -57,7 +57,8 @@
 		};
 
 		led@34 {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pinctrl 34 1>;
 		};
 	};
@@ -81,7 +82,8 @@
 
 	led_power_green: led@8 {
 		reg = <8>;
-		label = "green:power";
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_POWER;
 		default-state = "on";
 	};
 

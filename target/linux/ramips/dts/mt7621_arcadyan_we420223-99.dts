@@ -42,18 +42,16 @@
 		compatible = "gpio-leds";
 
 		led_power_green: power_green {
-			label = "green:power";
-			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		led_power_red: power_red {
-			label = "red:power";
-			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_FAULT;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wifi_blue: wifi_blue {

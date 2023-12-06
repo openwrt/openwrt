@@ -73,17 +73,20 @@
 		compatible = "gpio-leds";
 
 		power_red: power_red {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
 		};
 
 		power_green: power_green {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_yellow {
-			label = "yellow:power";
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
 		};
 	};

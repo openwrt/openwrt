@@ -81,7 +81,8 @@
 	led@8 {
 		reg = <8>;
 		active-low;
-		label = "red:power";
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_POWER;
 	};
 
 	led@9 {
@@ -105,7 +106,8 @@
 	led_power_green: led@12 {
 		reg = <12>;
 		active-low;
-		label = "green:power";
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_POWER;
 		default-state = "on";
 	};
 };

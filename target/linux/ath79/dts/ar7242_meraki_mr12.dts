@@ -45,13 +45,15 @@
 		};
 
 		led_power_orange: power_orange {
-			label = "orange:power";
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
 
 		led_power_green: power_green {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 	};

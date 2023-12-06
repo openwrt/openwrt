@@ -41,7 +41,8 @@
 		compatible = "gpio-leds";
 
 		power: power {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&stp 9 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};

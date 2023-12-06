@@ -46,13 +46,15 @@
 		};
 
 		led_power_green: power_green {
+		  	color = <LED_COLOR_ID_GREEN>;
+		  	function = LED_FUNCTION_POWER;
 			gpios = <&spi_gpio 0 GPIO_ACTIVE_HIGH>;
-			label = "green:power";
 		};
 
 		led_power_red: power_red {
+		  	color = <LED_COLOR_ID_RED>;
+		  	function = LED_FUNCTION_POWER;
 			gpios = <&spi_gpio 1 GPIO_ACTIVE_HIGH>;
-			label = "red:power";
 		};
 
 		lan1_red {

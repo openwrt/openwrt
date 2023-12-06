@@ -46,10 +46,9 @@
 		};
 
 		led-3 {
-			label = "green:power";
-			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 

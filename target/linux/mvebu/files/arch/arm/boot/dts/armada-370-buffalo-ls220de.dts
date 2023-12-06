@@ -134,24 +134,21 @@
 		};
 
 		led_power: power_white {
-			label = "white:power";
-			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		led_failsafe: power_red {
-			label = "red:power";
-			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_upgrade: power_orange {
-			label = "amber:power";
-			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio1 25 GPIO_ACTIVE_HIGH>;
 		};
 

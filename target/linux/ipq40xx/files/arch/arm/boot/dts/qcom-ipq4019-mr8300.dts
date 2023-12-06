@@ -30,7 +30,8 @@
 		};
 
 		led_blue: blue {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
 		};
 

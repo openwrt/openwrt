@@ -71,13 +71,15 @@
 		pinctrl-names = "default";
 
 		power_white: power_white {
-			label = "white:power";
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 
 		power_amber: power_amber {
-			label = "amber:power";
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
 		};
 

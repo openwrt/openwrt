@@ -86,13 +86,15 @@
 		compatible = "gpio-leds";
 
 		led-0 {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		led-1 {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 64 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};

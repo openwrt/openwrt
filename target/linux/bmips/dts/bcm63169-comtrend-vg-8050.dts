@@ -121,14 +121,16 @@
 	led_power_red: led@3 {
 		reg = <3>;
 		active-low;
-		label = "red:power";
+		color = <LED_COLOR_ID_RED>;
+		function = LED_FUNCTION_POWER;
 		panic-indicator;
 	};
 
 	led_power_green: led@6 {
 		reg = <6>;
 		active-low;
-		label = "green:power";
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_POWER;
 	};
 
 	led@7 {

@@ -74,7 +74,8 @@
 			gpios = <&pinctrl 14 1>;
 		};
 		power_red {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pinctrl 22 1>;
 		};
 		lan_green {
@@ -82,7 +83,8 @@
 			gpios = <&pinctrl 23 1>;
 		};
 		led_power_green: power_green {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pinctrl 24 1>;
 			default-state = "on";
 		};

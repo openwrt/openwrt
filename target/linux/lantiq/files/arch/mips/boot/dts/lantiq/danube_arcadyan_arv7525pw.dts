@@ -45,12 +45,14 @@
 	leds {
 		compatible = "gpio-leds";
 		power_green: power {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
 		power_red: power1 {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 		online: online {

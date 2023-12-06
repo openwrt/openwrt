@@ -43,11 +43,13 @@
 		compatible = "gpio-leds";
 
 		power_orange {
-			label = "orange:power";
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pinctrl 2 1>;
 		};
 		power_green {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pinctrl 10 1>;
 			default-state = "on";
 		};

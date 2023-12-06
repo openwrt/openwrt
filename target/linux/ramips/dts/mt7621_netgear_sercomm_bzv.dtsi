@@ -42,13 +42,15 @@
 		compatible = "gpio-leds";
 
 		led_power_orange: power_orange {
+		  	color = <LED_COLOR_ID_ORANGE>;
+		  	function = LED_FUNCTION_POWER;
 			gpios = <&gpio_expander 0 GPIO_ACTIVE_LOW>;
-			label = "orange:power";
 		};
 
 		led_power_white: power_white {
+		  	color = <LED_COLOR_ID_WHITE>;
+		  	function = LED_FUNCTION_POWER;
 			gpios = <&gpio_expander 1 GPIO_ACTIVE_LOW>;
-			label = "white:power";
 		};
 
 		wan_orange {

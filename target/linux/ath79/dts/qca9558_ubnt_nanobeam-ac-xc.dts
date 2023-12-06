@@ -71,7 +71,8 @@
 			gpios = <&led_gpio 3 GPIO_ACTIVE_LOW>;
 		};
 		led_power: power {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&led_gpio 4 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};

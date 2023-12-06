@@ -95,8 +95,9 @@
 			};
 
 			led_power: led@3 {
+				color = <LED_COLOR_ID_YELLOW>;
+				function = LED_FUNCTION_POWER;
 				reg = <3>;
-				label = "yellow:power";
 				active-low;
 				default-state = "on";
 			};

@@ -70,7 +70,8 @@
 		compatible = "gpio-leds";
 
 		power: white {
-			label = "white:power";
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&tlmm 4 GPIO_ACTIVE_HIGH>;
 		};
 

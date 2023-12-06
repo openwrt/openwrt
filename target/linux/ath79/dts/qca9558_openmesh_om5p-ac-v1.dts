@@ -26,7 +26,8 @@
 		compatible = "gpio-leds";
 
 		led_power_blue: power_blue {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};

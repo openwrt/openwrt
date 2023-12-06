@@ -33,12 +33,14 @@
 		compatible = "gpio-leds";
 
 		led-power1 {
-			label = "udpu:green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpionb 11 GPIO_ACTIVE_LOW>;
 		};
 
 		led-power2 {
-			label = "udpu:red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpionb 12 GPIO_ACTIVE_LOW>;
 		};
 

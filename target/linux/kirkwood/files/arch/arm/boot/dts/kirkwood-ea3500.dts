@@ -61,7 +61,8 @@
 		pinctrl-names = "default";
 
 		led_power: power {
-			label = "audi:green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};

@@ -35,7 +35,8 @@
 		};
 
 		led_power: power {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 		};
 	};

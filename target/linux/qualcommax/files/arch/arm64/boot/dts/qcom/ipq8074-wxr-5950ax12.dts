@@ -43,17 +43,15 @@
 		};
 
 		led_power_red: led-2 {
-			label = "red:power";
-			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_white: led-3 {
-			label = "white:power";
-			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-4 {

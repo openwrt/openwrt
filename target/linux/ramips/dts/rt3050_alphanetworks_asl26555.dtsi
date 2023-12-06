@@ -54,12 +54,14 @@
 		};
 
 		led_power_green: power-green {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		power-red {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 		};
 

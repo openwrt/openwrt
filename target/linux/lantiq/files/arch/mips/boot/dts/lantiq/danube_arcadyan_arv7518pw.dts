@@ -46,7 +46,8 @@
 	leds {
 		compatible = "gpio-leds";
 		power_green: power {
-			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
@@ -63,7 +64,8 @@
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 		power_red: power2 {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
 		online2 {

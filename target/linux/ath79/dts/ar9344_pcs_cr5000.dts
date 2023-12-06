@@ -41,7 +41,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "amber:power";
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>,
 				<&gpio 4 GPIO_ACTIVE_LOW>;
 			default-state = "on";

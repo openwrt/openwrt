@@ -48,7 +48,8 @@
 		};
 
 		led_power_red: led@34 {
-			label = "red:power";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
@@ -85,7 +86,8 @@
 
 	led_power_green: led@8 {
 		reg = <8>;
-		label = "green:power";
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_POWER;
 	};
 
 	led@9 {

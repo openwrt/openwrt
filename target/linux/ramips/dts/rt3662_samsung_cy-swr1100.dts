@@ -115,7 +115,8 @@
 		};
 
 		led_power: power {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 		};
 	};
