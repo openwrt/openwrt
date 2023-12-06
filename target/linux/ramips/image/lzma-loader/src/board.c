@@ -26,21 +26,24 @@
 #define KSEG0ADDR(a)		(CPHYSADDR(a) | KSEG0)
 #define KSEG1ADDR(a)		(CPHYSADDR(a) | KSEG1)
 
+#define UART_LSR_THRE		0x20
+#define UART_LSR_TEMT		0x40
+
 #if defined(SOC_MT7620) || defined(SOC_RT3883)
 #define UART_BASE			KSEG1ADDR(0x10000c00)
 #define UART_THR			(UART_BASE + 0x04)
 #define UART_LSR			(UART_BASE + 0x1c)
-#define UART_LSR_THRE_MASK	0x40
+#define UART_LSR_MASK			UART_LSR_TEMT
 #elif defined(SOC_MT7621)
 #define UART_BASE			KSEG1ADDR(0x1e000c00)
 #define UART_THR			(UART_BASE + 0x00)
 #define UART_LSR			(UART_BASE + 0x14)
-#define UART_LSR_THRE_MASK	0x20
+#define UART_LSR_MASK			UART_LSR_THRE
 #elif defined(SOC_RT305X)
 #define UART_BASE			KSEG1ADDR(0x10000500)
 #define UART_THR			(UART_BASE + 0x04)
 #define UART_LSR			(UART_BASE + 0x1c)
-#define UART_LSR_THRE_MASK	0x20
+#define UART_LSR_MASK			UART_LSR_THRE
 #else
 #error "Unsupported SOC..."
 #endif
@@ -56,7 +59,7 @@ void board_init(void)
 
 void board_putc(int ch)
 {
-	while ((READREG(UART_LSR) & UART_LSR_THRE_MASK) == 0);
+	while ((READREG(UART_LSR) & UART_LSR_MASK) == 0);
 	WRITEREG(UART_THR, ch);
-	while ((READREG(UART_LSR) & UART_LSR_THRE_MASK) == 0);
+	while ((READREG(UART_LSR) & UART_LSR_MASK) == 0);
 }
