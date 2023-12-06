@@ -40,7 +40,7 @@
 #define UART_LSR			(UART_BASE + 0x14)
 #define UART_LSR_MASK			UART_LSR_THRE
 #elif defined(SOC_RT305X)
-#define UART_BASE			KSEG1ADDR(0x10000500)
+#define UART_BASE			KSEG1ADDR(0x10000c00)
 #define UART_THR			(UART_BASE + 0x04)
 #define UART_LSR			(UART_BASE + 0x1c)
 #define UART_LSR_MASK			UART_LSR_THRE
