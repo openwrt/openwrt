@@ -21,6 +21,7 @@ case "$FIRMWARE" in
 	zyxel,emg2926-q10a|\
 	zyxel,nbg6716)
 		caldata_extract "art" 0x5000 0x844
+		caldata_validate "4408" || rm /lib/firmware/$FIRMWARE
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 1)
 		;;
 	esac
