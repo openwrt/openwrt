@@ -48,7 +48,7 @@ This fixes the following error message when compiling with a GCC 10 MIPS BE 32:
  
 --- a/coregrind/m_machine.c
 +++ b/coregrind/m_machine.c
-@@ -2106,6 +2106,7 @@ Bool VG_(machine_get_hwcaps)( void )
+@@ -2109,6 +2109,7 @@ Bool VG_(machine_get_hwcaps)( void )
             we are using alternative way to determine FP mode */
          ULong result = 0;
  
@@ -56,7 +56,7 @@ This fixes the following error message when compiling with a GCC 10 MIPS BE 32:
          if (!VG_MINIMAL_SETJMP(env_unsup_insn)) {
             __asm__ volatile (
                ".set push\n\t"
-@@ -2123,6 +2124,9 @@ Bool VG_(machine_get_hwcaps)( void )
+@@ -2126,6 +2127,9 @@ Bool VG_(machine_get_hwcaps)( void )
  
             fpmode = (result != 0x3FF0000000000000ull);
          }
