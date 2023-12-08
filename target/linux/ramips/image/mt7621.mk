@@ -2023,6 +2023,19 @@ define Device/netis_wf2881
 endef
 TARGET_DEVICES += netis_wf2881
 
+define Device/oraybox_p5
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 32768k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+  DEVICE_VENDOR := OrayBox
+  DEVICE_MODEL := P5
+  DEVICE_PACKAGES := kmod-usb3
+endef
+TARGET_DEVICES += oraybox_p5
+
 define Device/oraybox_x3a
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)

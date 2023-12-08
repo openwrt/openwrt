@@ -103,6 +103,7 @@ platform_do_upgrade() {
 	netgear,wac124|\
 	netgear,wax202|\
 	netis,wf2881|\
+	oraybox,p5|\
 	raisecom,msg1500-x-00|\
 	rostelecom,rt-fe-1a|\
 	rostelecom,rt-sf-1|\
