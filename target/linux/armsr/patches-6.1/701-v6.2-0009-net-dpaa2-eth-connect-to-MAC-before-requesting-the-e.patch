@@ -33,7 +33,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
-@@ -4710,6 +4710,10 @@ static int dpaa2_eth_probe(struct fsl_mc
+@@ -4708,6 +4708,10 @@ static int dpaa2_eth_probe(struct fsl_mc
  	}
  #endif
  
@@ -44,7 +44,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	err = dpaa2_eth_setup_irqs(dpni_dev);
  	if (err) {
  		netdev_warn(net_dev, "Failed to set link interrupt, fall back to polling\n");
-@@ -4722,10 +4726,6 @@ static int dpaa2_eth_probe(struct fsl_mc
+@@ -4720,10 +4724,6 @@ static int dpaa2_eth_probe(struct fsl_mc
  		priv->do_link_poll = true;
  	}
  
