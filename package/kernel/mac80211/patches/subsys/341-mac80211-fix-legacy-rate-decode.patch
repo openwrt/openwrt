@@ -1,0 +1,14 @@
+Index: backports-6.1.24/net/mac80211/sta_info.c
+===================================================================
+--- backports-6.1.24.orig/net/mac80211/sta_info.c
++++ backports-6.1.24/net/mac80211/sta_info.c
+@@ -2363,6 +2363,9 @@ static void sta_stats_decode_rate(struct
+ 
+ 		sband = local->hw.wiphy->bands[band];
+ 
++		if (WARN_ON_ONCE(!sband))
++			break;
++
+ 		if (WARN_ON_ONCE(!sband->bitrates))
+ 			break;
+ 
