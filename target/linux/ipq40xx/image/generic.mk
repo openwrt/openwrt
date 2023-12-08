@@ -559,7 +559,7 @@ endef
 TARGET_DEVICES += extreme-networks_ws-ap391x
 
 define Device/ezviz_cs-w3-wd1200g-eup
-	$(call Device/FitImage)
+	$(call Device/FitzImage)
 	DEVICE_VENDOR := EZVIZ
 	DEVICE_MODEL := CS-W3-WD1200G
 	DEVICE_VARIANT := EUP
