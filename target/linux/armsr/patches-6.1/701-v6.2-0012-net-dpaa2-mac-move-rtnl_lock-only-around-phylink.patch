@@ -34,7 +34,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
-@@ -4529,7 +4529,6 @@ static irqreturn_t dpni_irq0_handler_thr
+@@ -4527,7 +4527,6 @@ static irqreturn_t dpni_irq0_handler_thr
  		dpaa2_eth_set_mac_addr(netdev_priv(net_dev));
  		dpaa2_eth_update_tx_fqids(priv);
  
@@ -42,7 +42,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		/* We can avoid locking because the "endpoint changed" IRQ
  		 * handler is the only one who changes priv->mac at runtime,
  		 * so we are not racing with anyone.
-@@ -4539,7 +4538,6 @@ static irqreturn_t dpni_irq0_handler_thr
+@@ -4537,7 +4536,6 @@ static irqreturn_t dpni_irq0_handler_thr
  			dpaa2_eth_disconnect_mac(priv);
  		else
  			dpaa2_eth_connect_mac(priv);
