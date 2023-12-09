@@ -104,6 +104,7 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
+	routerich,ax3000|\
 	zbtlink,zbt-z8102ax|\
 	zbtlink,zbt-z8103ax|\
 	zyxel,ex5601-t0|\
