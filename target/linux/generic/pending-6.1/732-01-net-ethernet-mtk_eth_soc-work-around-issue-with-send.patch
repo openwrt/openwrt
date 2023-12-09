@@ -16,7 +16,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1562,12 +1562,28 @@ static void mtk_wake_queue(struct mtk_et
+@@ -1563,12 +1563,28 @@ static void mtk_wake_queue(struct mtk_et
  	}
  }
  
@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool gso = false;
  	int tx_num;
  
-@@ -1589,6 +1605,18 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1590,6 +1606,18 @@ static netdev_tx_t mtk_start_xmit(struct
  		return NETDEV_TX_BUSY;
  	}
  
@@ -64,7 +64,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* TSO: fill MSS info in tcp checksum field */
  	if (skb_is_gso(skb)) {
  		if (skb_cow_head(skb, 0)) {
-@@ -1604,8 +1632,14 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1605,8 +1633,14 @@ static netdev_tx_t mtk_start_xmit(struct
  		}
  	}
  

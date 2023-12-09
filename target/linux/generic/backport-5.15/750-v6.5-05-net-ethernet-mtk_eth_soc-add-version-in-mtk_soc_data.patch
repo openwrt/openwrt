@@ -530,7 +530,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  				pse_port = 8;
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
-@@ -1091,7 +1091,7 @@ mtk_wed_rx_reset(struct mtk_wed_device *
+@@ -1084,7 +1084,7 @@ mtk_wed_rx_reset(struct mtk_wed_device *
  	} else {
  		struct mtk_eth *eth = dev->hw->eth;
  
@@ -539,7 +539,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			wed_set(dev, MTK_WED_RESET_IDX,
  				MTK_WED_RESET_IDX_RX_V2);
  		else
-@@ -1813,7 +1813,7 @@ void mtk_wed_add_hw(struct device_node *
+@@ -1806,7 +1806,7 @@ void mtk_wed_add_hw(struct device_node *
  	hw->wdma = wdma;
  	hw->index = index;
  	hw->irq = irq;

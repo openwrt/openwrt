@@ -9,10 +9,13 @@ flow accounting support.
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
+ drivers/net/ethernet/mediatek/mtk_ppe.c | 162 ++++++++++++------------
+ drivers/net/ethernet/mediatek/mtk_ppe.h |  15 +--
+ 2 files changed, 86 insertions(+), 91 deletions(-)
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
-@@ -483,42 +483,43 @@ int mtk_foe_entry_set_queue(struct mtk_e
+@@ -476,42 +476,43 @@ int mtk_foe_entry_set_queue(struct mtk_e
  	return 0;
  }
  
@@ -72,7 +75,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		struct mtk_foe_entry *hwe = mtk_foe_get_entry(ppe, entry->hash);
  
  		hwe->ib1 &= ~MTK_FOE_IB1_STATE;
-@@ -538,7 +539,8 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
+@@ -531,7 +532,8 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
  	if (entry->type != MTK_FLOW_TYPE_L2_SUBFLOW)
  		return;
  
@@ -82,7 +85,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	kfree(entry);
  }
  
-@@ -554,66 +556,55 @@ static int __mtk_foe_entry_idle_time(str
+@@ -547,66 +549,55 @@ static int __mtk_foe_entry_idle_time(str
  		return now - timestamp;
  }
  
@@ -178,7 +181,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void
-@@ -656,7 +647,8 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
+@@ -649,7 +640,8 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
  void mtk_foe_entry_clear(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
  {
  	spin_lock_bh(&ppe_lock);
@@ -188,7 +191,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	spin_unlock_bh(&ppe_lock);
  }
  
-@@ -703,8 +695,8 @@ mtk_foe_entry_commit_subflow(struct mtk_
+@@ -696,8 +688,8 @@ mtk_foe_entry_commit_subflow(struct mtk_
  {
  	const struct mtk_soc_data *soc = ppe->eth->soc;
  	struct mtk_flow_entry *flow_info;
@@ -198,7 +201,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u32 ib1_mask = mtk_get_ib1_pkt_type_mask(ppe->eth) | MTK_FOE_IB1_UDP;
  	int type;
  
-@@ -712,30 +704,30 @@ mtk_foe_entry_commit_subflow(struct mtk_
+@@ -705,30 +697,30 @@ mtk_foe_entry_commit_subflow(struct mtk_
  	if (!flow_info)
  		return;
  
@@ -239,7 +242,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  void __mtk_ppe_check_skb(struct mtk_ppe *ppe, struct sk_buff *skb, u16 hash)
-@@ -745,9 +737,11 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+@@ -738,9 +730,11 @@ void __mtk_ppe_check_skb(struct mtk_ppe
  	struct mtk_foe_entry *hwe = mtk_foe_get_entry(ppe, hash);
  	struct mtk_flow_entry *entry;
  	struct mtk_foe_bridge key = {};
@@ -251,7 +254,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u8 *tag;
  
  	spin_lock_bh(&ppe_lock);
-@@ -755,20 +749,14 @@ void __mtk_ppe_check_skb(struct mtk_ppe
+@@ -748,20 +742,14 @@ void __mtk_ppe_check_skb(struct mtk_ppe
  	if (FIELD_GET(MTK_FOE_IB1_STATE, hwe->ib1) == MTK_FOE_STATE_BIND)
  		goto out;
  
@@ -278,7 +281,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			continue;
  		}
  
-@@ -819,9 +807,17 @@ out:
+@@ -810,9 +798,17 @@ out:
  
  int mtk_foe_entry_idle_time(struct mtk_ppe *ppe, struct mtk_flow_entry *entry)
  {

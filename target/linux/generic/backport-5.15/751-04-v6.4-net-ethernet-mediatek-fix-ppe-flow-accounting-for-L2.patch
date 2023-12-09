@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
-@@ -80,9 +80,9 @@ static int mtk_ppe_mib_wait_busy(struct
+@@ -79,9 +79,9 @@ static int mtk_ppe_mib_wait_busy(struct
  	int ret;
  	u32 val;
  
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (ret)
  		dev_err(ppe->dev, "MIB table busy");
-@@ -90,17 +90,31 @@ static int mtk_ppe_mib_wait_busy(struct
+@@ -89,17 +89,31 @@ static int mtk_ppe_mib_wait_busy(struct
  	return ret;
  }
  
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	cnt_r0 = readl(ppe->base + MTK_PPE_MIB_SER_R0);
  	cnt_r1 = readl(ppe->base + MTK_PPE_MIB_SER_R1);
-@@ -109,19 +123,19 @@ static int mtk_mib_entry_read(struct mtk
+@@ -108,19 +122,19 @@ static int mtk_mib_entry_read(struct mtk
  	if (mtk_is_netsys_v3_or_greater(ppe->eth)) {
  		/* 64 bit for each counter */
  		u32 cnt_r3 = readl(ppe->base + MTK_PPE_MIB_SER_R3);
@@ -86,7 +86,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static void mtk_ppe_cache_clear(struct mtk_ppe *ppe)
-@@ -526,13 +540,6 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
+@@ -525,13 +539,6 @@ __mtk_foe_entry_clear(struct mtk_ppe *pp
  		hwe->ib1 |= FIELD_PREP(MTK_FOE_IB1_STATE, MTK_FOE_STATE_INVALID);
  		dma_wmb();
  		mtk_ppe_cache_clear(ppe);
@@ -100,7 +100,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  	entry->hash = 0xffff;
  
-@@ -557,11 +564,14 @@ static int __mtk_foe_entry_idle_time(str
+@@ -556,11 +563,14 @@ static int __mtk_foe_entry_idle_time(str
  }
  
  static bool
@@ -116,7 +116,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	int len;
  
  	if (hash == 0xffff)
-@@ -572,18 +582,35 @@ mtk_flow_entry_update(struct mtk_ppe *pp
+@@ -571,18 +581,35 @@ mtk_flow_entry_update(struct mtk_ppe *pp
  	memcpy(&foe, hwe, len);
  
  	if (!mtk_flow_entry_match(ppe->eth, entry, &foe, len) ||
@@ -155,7 +155,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct mtk_flow_entry *cur;
  	struct hlist_node *tmp;
  	int idle;
-@@ -592,7 +619,9 @@ mtk_flow_entry_update_l2(struct mtk_ppe
+@@ -591,7 +618,9 @@ mtk_flow_entry_update_l2(struct mtk_ppe
  	hlist_for_each_entry_safe(cur, tmp, &entry->l2_flows, l2_list) {
  		int cur_idle;
  
@@ -166,7 +166,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			__mtk_foe_entry_clear(ppe, entry, false);
  			continue;
  		}
-@@ -607,10 +636,29 @@ mtk_flow_entry_update_l2(struct mtk_ppe
+@@ -606,10 +635,29 @@ mtk_flow_entry_update_l2(struct mtk_ppe
  	}
  }
  
@@ -196,7 +196,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct mtk_eth *eth = ppe->eth;
  	u16 timestamp = mtk_eth_timestamp(eth);
  	struct mtk_foe_entry *hwe;
-@@ -641,6 +689,12 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
+@@ -640,6 +688,12 @@ __mtk_foe_entry_commit(struct mtk_ppe *p
  
  	dma_wmb();
  
@@ -209,7 +209,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	mtk_ppe_cache_clear(ppe);
  }
  
-@@ -805,21 +859,6 @@ out:
+@@ -802,21 +856,6 @@ out:
  	spin_unlock_bh(&ppe_lock);
  }
  
@@ -231,7 +231,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int mtk_ppe_prepare_reset(struct mtk_ppe *ppe)
  {
  	if (!ppe)
-@@ -847,32 +886,6 @@ int mtk_ppe_prepare_reset(struct mtk_ppe
+@@ -844,32 +883,6 @@ int mtk_ppe_prepare_reset(struct mtk_ppe
  	return mtk_ppe_wait_busy(ppe);
  }
  
