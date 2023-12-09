@@ -33,7 +33,8 @@ mediatek_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
 	cmcc,rax3000m|\
-	h3c,magic-nx30-pro)
+	h3c,magic-nx30-pro|\
+	zbtlink,zbt-z8103ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
 		;;
 	glinet,gl-mt2500|\
