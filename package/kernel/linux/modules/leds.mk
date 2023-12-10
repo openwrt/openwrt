@@ -134,7 +134,7 @@ $(eval $(call KernelPackage,ledtrig-tty))
 define KernelPackage/leds-apu
   SUBMENU:=$(LEDS_MENU)
   TITLE:=PC Engines APU1 LED support
-  DEPENDS:= @GPIO_SUPPORT @TARGET_x86
+  DEPENDS:= @GPIO_SUPPORT @(x86_64||x86)
   KCONFIG:=CONFIG_LEDS_APU
   FILES:=$(LINUX_DIR)/drivers/leds/leds-apu.ko
   AUTOLOAD:=$(call AutoLoad,60,leds-apu,1)

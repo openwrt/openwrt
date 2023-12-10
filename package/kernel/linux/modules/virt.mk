@@ -18,7 +18,7 @@ $(eval $(call KernelPackage,irqbypass))
 define KernelPackage/kvm-x86
   SUBMENU:=Virtualization
   TITLE:=Kernel-based Virtual Machine (KVM) support
-  DEPENDS:=@TARGET_x86_generic||TARGET_x86_64 +kmod-irqbypass
+  DEPENDS:=@TARGET_x86_generic||x86_64 +kmod-irqbypass
   KCONFIG:=\
 	  CONFIG_KVM \
 	  CONFIG_KVM_MMU_AUDIT=n \

@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/gpio-nct5104d
   SUBMENU:=GPIO support
   TITLE:= GPIO nct5104d support
-  DEPENDS:= @GPIO_SUPPORT @TARGET_x86
+  DEPENDS:= @GPIO_SUPPORT @(x86_64||x86)
   FILES:=$(PKG_BUILD_DIR)/gpio-nct5104d.ko
   AUTOLOAD:=$(call AutoLoad,30,gpio-nct5104d,1)
   KCONFIG:=
