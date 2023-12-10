@@ -149,7 +149,7 @@ void fe_reset_fe(struct fe_priv *priv)
 	reset_control_assert(priv->resets);
 	usleep_range(60, 120);
 	reset_control_deassert(priv->resets);
-	usleep_range(60, 120);
+	usleep_range(1000, 1200);
 }
 
 static inline void fe_int_disable(u32 mask)
