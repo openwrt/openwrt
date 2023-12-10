@@ -944,8 +944,7 @@ static void rtl83xx_get_strings(struct dsa_switch *ds,
 		return;
 
 	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++)
-		strncpy(data + i * ETH_GSTRING_LEN, rtl83xx_mib[i].name,
-			ETH_GSTRING_LEN);
+		ethtool_puts(&data, rtl83xx_mib[i].name);
 }
 
 static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
