@@ -1054,7 +1054,7 @@ $(eval $(call KernelPackage,tpm))
 define KernelPackage/tpm-tis
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TPM TIS 1.2 Interface / TPM 2.0 FIFO Interface
-	DEPENDS:= @TARGET_x86 +kmod-tpm
+	DEPENDS:= @(x86_64||x86) +kmod-tpm
   KCONFIG:= CONFIG_TCG_TIS
   FILES:= \
 	drivers/char/tpm/tpm_tis.ko \

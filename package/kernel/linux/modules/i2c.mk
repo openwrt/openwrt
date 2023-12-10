@@ -150,7 +150,7 @@ I2C_I801_MODULES:= \
 define KernelPackage/i2c-i801
   $(call i2c_defaults,$(I2C_I801_MODULES),59)
   TITLE:=Intel I801 and compatible I2C interfaces
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +kmod-i2c-smbus
+  DEPENDS:=@PCI_SUPPORT @(x86_64||x86) +kmod-i2c-core +kmod-i2c-smbus
 endef
 
 define KernelPackage/i2c-i801/description
@@ -175,7 +175,7 @@ I2C_MLXCPLD_MODULES:= \
 define KernelPackage/i2c-mlxcpld
   $(call i2c_defaults,$(I2C_MLXCPLD_MODULES),59)
   TITLE:=Mellanox I2C driver
-  DEPENDS:=@TARGET_x86_64 +kmod-regmap-core
+  DEPENDS:=@x86_64 +kmod-regmap-core
 endef
 
 define KernelPackage/i2c-mlxcpld/description
@@ -289,7 +289,7 @@ I2C_PIIX4_MODULES:= \
 define KernelPackage/i2c-piix4
   $(call i2c_defaults,$(I2C_PIIX4_MODULES),59)
   TITLE:=Intel PIIX4 and compatible I2C interfaces
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core
+  DEPENDS:=@PCI_SUPPORT @(x86_64||x86) +kmod-i2c-core
 endef
 
 define KernelPackage/i2c-piix4/description

@@ -19,7 +19,7 @@ V4L2_MEM2MEM_DIR=platform
 define KernelPackage/acpi-video
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=ACPI Extensions For Display Adapters
-  DEPENDS:=@TARGET_x86||TARGET_loongarch64 +kmod-backlight
+  DEPENDS:=@(x86_64||x86||TARGET_loongarch64) +kmod-backlight
   HIDDEN:=1
   KCONFIG:=CONFIG_ACPI_VIDEO
   FILES:=drivers/acpi/video.ko
@@ -378,7 +378,7 @@ $(eval $(call KernelPackage,drm-suballoc-helper))
 define KernelPackage/drm-amdgpu
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=AMDGPU DRM support
-  DEPENDS:=@TARGET_x86||TARGET_loongarch64 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-ttm \
+  DEPENDS:=@(x86_64||x86||TARGET_loongarch64) @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-ttm \
 	+kmod-drm-ttm-helper +kmod-drm-kms-helper +kmod-i2c-algo-bit +amdgpu-firmware \
 	+kmod-drm-display-helper +kmod-drm-buddy +kmod-acpi-video \
 	+LINUX_6_6:kmod-drm-exec +LINUX_6_6:kmod-drm-suballoc-helper
@@ -490,7 +490,7 @@ $(eval $(call KernelPackage,drm-imx-ldb))
 define KernelPackage/drm-radeon
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Radeon DRM support
-  DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-kms-helper \
+  DEPENDS:=@(x86_64||x86) @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-kms-helper \
 	+kmod-drm-ttm +kmod-drm-ttm-helper +kmod-i2c-algo-bit +radeon-firmware \
 	+kmod-drm-display-helper +kmod-acpi-video +LINUX_6_6:kmod-drm-suballoc-helper
   KCONFIG:=CONFIG_DRM_RADEON

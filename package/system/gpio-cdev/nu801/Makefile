@@ -20,7 +20,7 @@ define Package/nu801
   SECTION:=utils
   CATEGORY:=Utilities
   SUBMENU:=Userspace GPIO Drivers
-  DEPENDS:=@(TARGET_ath79_nand||TARGET_bcm53xx||TARGET_x86)
+  DEPENDS:=@(TARGET_ath79_nand||TARGET_bcm53xx||x86_64||x86)
   KCONFIG:=CONFIG_GPIO_CDEV=y
   TITLE:=NU801 LED Driver
 endef
