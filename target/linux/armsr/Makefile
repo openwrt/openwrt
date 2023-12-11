@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 BOARD:=armsr
 BOARDNAME:=Arm SystemReady (EFI) compliant
 FEATURES:=fpu pci pcie rtc usb boot-part rootfs-part
-FEATURES+=cpiogz ext4 ramdisk squashfs targz vmdk
+FEATURES+=cpiogz ext4 separate_ramdisk squashfs targz vmdk
 
 KERNEL_PATCHVER:=5.15
 
