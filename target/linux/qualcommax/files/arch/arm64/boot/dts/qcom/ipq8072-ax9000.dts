@@ -130,12 +130,12 @@
 	pinctrl-0 = <&i2c_pins>;
 	pinctrl-names = "default";
 
-//        lm63@4C {
-//               compatible = "ti,lm63";
-//                reg = <0x4c>;
-//                #address-cells = <0x01>;
-//                #size-cells = <0x00>;
-//        };
+        lm63@4C {
+               compatible = "ti,lm63";
+                reg = <0x4c>;
+                #address-cells = <0x01>;
+                #size-cells = <0x00>;
+        };
 
         fanctrl: emc2301@2f {
                 compatible = "smsc,emc2301", "emc2301", "microchip,emc2301";
