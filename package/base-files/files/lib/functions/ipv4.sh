@@ -1,5 +1,23 @@
 uint_max=4294967295
 
+d_10_0_0_0=167772160
+d_10_255_255_255=184549375
+
+d_172_16_0_0=2886729728
+d_172_31_255_255=2887778303
+
+d_192_168_0_0=3232235520
+d_192_168_255_255=3232301055
+
+d_169_254_0_0=2851995648
+d_169_254_255_255=2852061183
+
+d_127_0_0_0=2130706432
+d_127_255_255_255=2147483647
+
+d_224_0_0_0=3758096384
+d_239_255_255_255=4026531839
+
 # check that $1 is only base 10 digits, and that it doesn't
 # exceed 2^32-1
 assert_uint32() {
@@ -194,5 +212,57 @@ netmask2prefix() {
     bitcount __bits "$__n"		# already checked
 
     export -- "$__var=$__bits"
+}
+
+# check the argument as being an rfc-1918 address
+is_rfc1918() {
+    local __var="$1" __x="$2" __val=0
+    assert_uint32 "$__x" || return 1
+
+    if [ $d_10_0_0_0 -le $__x ] && [ $__x -le $d_10_255_255_255 ]; then
+	__val=1
+    elif [ $d_172_16_0_0 -le $__x ] && [ $__x -le $d_172_31_255_255 ]; then
+	__val=1
+    elif [ $d_192_168_0_0 -le $__x ] && [ $__x -le $d_192_168_255_255 ]; then
+	__val=1
+    fi
+
+    export -- "$__var=$__val"
+}
+
+# check the argument as being an rfc-3927 address
+is_rfc3927() {
+    local __var="$1" __x="$2" __val=0
+    assert_uint32 "$__x" || return 1
+
+    if [ $d_169_254_0_0 -le $__x ] && [ $__x -le $d_169_254_255_255 ]; then
+	__val=1
+    fi
+
+    export -- "$__var=$__val"
+}
+
+# check the argument as being an rfc-1122 loopback address
+is_loopback() {
+    local __var="$1" __x="$2" __val=0
+    assert_uint32 "$__x" || return 1
+
+    if [ $d_127_0_0_0 -le $__x ] && [ $__x -le $d_127_255_255_255 ]; then
+	__val=1
+    fi
+
+    export -- "$__var=$__val"
+}
+
+# check the argument as being a multicast address
+is_multicast() {
+    local __var="$1" __x="$2" __val=0
+    assert_uint32 "$__x" || return 1
+
+    if [ $d_224_0_0_0 -le $__x ] && [ $__x -le $d_239_255_255_255 ]; then
+	__val=1
+    fi
+
+    export -- "$__var=$__val"
 }
 
