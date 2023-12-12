@@ -271,7 +271,7 @@ int write_phy(u32 port, u32 page, u32 reg, u32 val)
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
 	struct device *dev = priv->dev;
-	struct device_node *dn, *phy_node, *mii_np = dev->of_node;
+	struct device_node *dn, *phy_node, *led_node, *mii_np = dev->of_node;
 	struct mii_bus *bus;
 	int ret;
 	u32 pn;
@@ -325,9 +325,12 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		return -ENODEV;
 	}
 
+	led_node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
+
 	for_each_node_by_name(dn, "port") {
 		phy_interface_t interface;
 		u32 led_set;
+		char led_set_str[16] = {0};
 
 		if (!of_device_is_available(dn))
 			continue;
@@ -355,9 +358,18 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		if (interface == PHY_INTERFACE_MODE_10GBASER)
 			priv->ports[pn].is10G = true;
 
-		if (of_property_read_u32(dn, "led-set", &led_set))
-			led_set = 0;
-		priv->ports[pn].led_set = led_set;
+		priv->ports[pn].leds_on_this_port = 0;
+		if (led_node) {
+			if (of_property_read_u32(dn, "led-set", &led_set))
+				led_set = 0;
+			priv->ports[pn].led_set = led_set;
+			sprintf(led_set_str, "led_set%d", led_set);
+			priv->ports[pn].leds_on_this_port = of_property_count_u32_elems(led_node, led_set_str);
+			if (priv->ports[pn].leds_on_this_port > 4) {
+				dev_err(priv->dev, "led_set %d for port %d configuration is invalid\n", led_set, pn);
+				return -ENODEV;
+			}
+		}
 
 		/* Check for the integrated SerDes of the RTL8380M first */
 		if (of_property_read_bool(phy_node, "phy-is-integrated")
