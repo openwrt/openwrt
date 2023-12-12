@@ -324,6 +324,22 @@ define Device/asus_tuf-ax6000
 endef
 TARGET_DEVICES += asus_tuf-ax6000
 
+define Device/asus_rt-ax52
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-AX52
+  DEVICE_DTS := mt7981b-asus-rt-ax52
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGES := sysupgrade.bin
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb  with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += asus_rt-ax52
+
 define Device/bananapi_bpi-r3
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R3
