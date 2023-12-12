@@ -71,6 +71,9 @@ extern struct mutex smi_lock;
 #define RTL930X_SDS_MODE_10GBASER	0x1a
 #define RTL930X_SDS_OFF			0x1f
 #define RTL930X_SDS_MASK		0x1f
+#define RTL822X_SUPPORTS_5000FULL			BIT(14)
+#define RTL822X_SUPPORTS_2500FULL			BIT(13)
+#define RTL822X_SUPPORTS_10000FULL			BIT(0)
 
 /* This lock protects the state of the SoC automatically polling the PHYs over the SMI
  * bus to detect e.g. link and media changes. For operations on the PHYs such as
@@ -575,6 +578,30 @@ static int rtl8226_config_aneg(struct phy_device *phydev)
 
 out:
 	return ret;
+}
+
+static int rtl8226_get_features(struct phy_device *phydev)
+{
+	int val;
+	linkmode_copy(phydev->supported, PHY_10GBIT_FEATURES);
+
+	if (phydev->is_c45) {
+		return genphy_c45_pma_read_abilities(phydev);
+	}
+	else {
+		val = phy_read_paged(phydev, 0xa61, 0x13);
+		if (val < 0)
+			return val;
+
+		linkmode_mod_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
+				phydev->supported, val & RTL822X_SUPPORTS_2500FULL);
+		linkmode_mod_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
+				phydev->supported, val & RTL822X_SUPPORTS_5000FULL);
+		linkmode_mod_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT,
+				phydev->supported, val & RTL822X_SUPPORTS_10000FULL);
+
+		return genphy_read_abilities(phydev);
+	}
 }
 
 static int rtl8226_get_eee(struct phy_device *phydev,
@@ -3913,7 +3940,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8224),
 		.name		= "REALTEK RTL8224",
-		.features	= PHY_10GBIT_FEATURES,
 		.flags		= PHY_HAS_REALTEK_PAGES,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
@@ -3923,6 +3949,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.set_eee = rtl8226_set_eee,
 		.get_eee = rtl8226_get_eee,
 		.probe		= rtl8224_phy_probe,
+		.get_features = rtl8226_get_features,
 	},
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8226),
