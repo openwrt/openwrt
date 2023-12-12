@@ -141,7 +141,7 @@ void fe_reset(u32 reset_bits)
 	usleep_range(10, 20);
 }
 
-void fe_reset_fe(struct fe_priv *priv)
+static void fe_reset_fe(struct fe_priv *priv)
 {
 	if (!priv->resets)
 		return;
@@ -1366,10 +1366,7 @@ static int __init fe_init(struct net_device *dev)
 	struct device_node *port;
 	int err;
 
-	if (priv->soc->reset_fe)
-		priv->soc->reset_fe(priv);
-	else
-		fe_reset_fe(priv);
+	fe_reset_fe(priv);
 
 	if (priv->soc->switch_init) {
 		err = priv->soc->switch_init(priv);
