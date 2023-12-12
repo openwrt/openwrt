@@ -61,7 +61,7 @@ env_init() {
 	mkdir -p "$ENVDIR" || error "Failed to create the environment directory"
 	cd "$ENVDIR" || error "Failed to switch to the environment directory"
 	[ -d .git ] || { 
-		git init -b master &&
+		git init -b main &&
 		touch .config &&
 		mkdir files &&
 		git add . && 
@@ -98,7 +98,7 @@ env_do_reset() {
 
 env_list() {
 	env_init
-	git branch --color | grep -vE '^. master$'
+	git branch --color | grep -vE '^. main$'
 }
 
 env_diff() {
@@ -179,13 +179,13 @@ env_rename() {
 env_new() {
 	local NAME="$1"
 	local branch
-	local from="master"
+	local from="main"
 
 	[ -z "$NAME" ] && usage
 	env_init 1
 	
 	branch="$(git branch | grep '^\* ' | awk '{print $2}')"
-	if [ -n "$branch" ] && [ "$branch" != "master" ]; then
+	if [ -n "$branch" ] && [ "$branch" != "main" ]; then
 		env_ask_sync
 		if ask_bool 0 "Do you want to clone the current environment?"; then
 			from="$branch"
