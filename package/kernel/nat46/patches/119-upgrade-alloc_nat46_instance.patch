@@ -1,0 +1,56 @@
+--- a/nat46/modules/nat46-core.h
++++ b/nat46/modules/nat46-core.h
+@@ -106,7 +106,7 @@ int nat46_get_config(nat46_instance_t *n
+ char *get_next_arg(char **ptail);
+ nat46_instance_t *get_nat46_instance(struct sk_buff *sk);
+ 
+-nat46_instance_t *alloc_nat46_instance(int npairs, nat46_instance_t *old, int from_ipair, int to_ipair);
++nat46_instance_t *alloc_nat46_instance(int npairs, nat46_instance_t *old, int from_ipair, int to_ipair, int remove_ipair);
+ void release_nat46_instance(nat46_instance_t *nat46);
+ 
+ int xlate_6_to_4(struct net_device *dev, struct ipv6hdr *ip6h, uint16_t proto, __u32 *pv4saddr, __u32 *pv4daddr);
+--- a/nat46/modules/nat46-glue.c
++++ b/nat46/modules/nat46-glue.c
+@@ -23,7 +23,7 @@ int is_valid_nat46(nat46_instance_t *nat
+   return (nat46 && (nat46->sig == NAT46_SIGNATURE));
+ }
+ 
+-nat46_instance_t *alloc_nat46_instance(int npairs, nat46_instance_t *old, int from_ipair, int to_ipair) {
++nat46_instance_t *alloc_nat46_instance(int npairs, nat46_instance_t *old, int from_ipair, int to_ipair, int remove_ipair) {
+   nat46_instance_t *nat46 = kzalloc(sizeof(nat46_instance_t) + npairs*sizeof(nat46_xlate_rulepair_t), GFP_KERNEL);
+   if (!nat46) {
+     printk("[nat46] make_nat46_instance: can not alloc a nat46 instance with %d pairs\n", npairs);
+@@ -37,8 +37,11 @@ nat46_instance_t *alloc_nat46_instance(i
+   if (old) {
+     nat46->debug = old->debug;
+     for(; (from_ipair >= 0) && (to_ipair >= 0) &&
+-          (from_ipair < old->npairs) && (to_ipair < nat46->npairs); from_ipair++, to_ipair++) {
+-      nat46->pairs[to_ipair] = old->pairs[from_ipair];
++          (from_ipair < old->npairs) && (to_ipair < nat46->npairs); from_ipair++) {
++      if (from_ipair != remove_ipair) {
++        nat46->pairs[to_ipair] = old->pairs[from_ipair];
++        to_ipair++;
++      }
+     }
+   }
+   return nat46;
+--- a/nat46/modules/nat46-netdev.c
++++ b/nat46/modules/nat46-netdev.c
+@@ -155,7 +155,7 @@ static void netdev_nat46_set_instance(st
+ static void nat46_netdev_setup(struct net_device *dev)
+ {
+ 	nat46_netdev_priv_t *priv = netdev_priv(dev);
+-	nat46_instance_t *nat46 = alloc_nat46_instance(1, NULL, -1, -1);
++	nat46_instance_t *nat46 = alloc_nat46_instance(1, NULL, -1, -1, -1);
+ 
+ 	memset(priv, 0, sizeof(*priv));
+ 	priv->sig = NAT46_DEVICE_SIGNATURE;
+@@ -316,7 +316,7 @@ int nat46_insert(char *devname, char *bu
+ 			return ret;
+ 		}
+ 
+-		nat46_new = alloc_nat46_instance(nat46->npairs+1, nat46, 0, 1);
++		nat46_new = alloc_nat46_instance(nat46->npairs+1, nat46, 0, 1, -1);
+ 		if(nat46_new) {
+ 			netdev_nat46_set_instance(dev, nat46_new);
+ 			ret = nat46_set_ipair_config(nat46_new, 0, buf, strlen(buf));

@@ -1,0 +1,144 @@
+Author: Ken Zhu <guigenz@codeaurora.org>
+Date:   Fri Mar 26 12:27:17 2021 -0700
+
+    [nat46]: fix icmp checksum error based on the correct packet length
+
+    UDP/TCP checksum includes the pseudo header in addition to the palyload.
+    But in nat46 case, their length in the pseudo header could be ignored
+    since it keeps unchanged between IPv4/IPv6 transition.
+
+    ICMPv6 checksum includes pseudo IPV6 header in addition to packet payload
+    while ICMPv4 does not counter in the pseudo header.
+    the length of pseudo header should count in all fragmented payload.
+
+    The change get the length by reassembling the fragments.
+
+    Change-Id: I56e59958aa21eed5b595ae1a9ab02285dba2185b
+    Signed-off-by: Ken Zhu <guigenz@codeaurora.org>
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -18,6 +18,8 @@
+ 
+ #include <net/route.h>
+ #include <linux/version.h>
++#include <net/ipv6_frag.h>
++#include <net/netfilter/ipv6/nf_defrag_ipv6.h>
+ 
+ #include "nat46-glue.h"
+ #include "nat46-core.h"
+@@ -1751,7 +1753,8 @@ void nat46_ipv6_input(struct sk_buff *ol
+ 
+   struct iphdr * iph;
+   __u32 v4saddr, v4daddr;
+-  struct sk_buff * new_skb = 0;
++  struct sk_buff *new_skb = NULL;
++  struct sk_buff *reasm_skb = NULL;
+   int truncSize = 0;
+   int tailTruncSize = 0;
+   int v6packet_l3size = sizeof(*ip6h);
+@@ -1802,6 +1805,46 @@ void nat46_ipv6_input(struct sk_buff *ol
+         frag_id = fold_ipv6_frag_id(fh->identification);
+         nat46debug(2, "Not first fragment, frag_off: %04X, frag id: %04X orig frag_off: %04X", ntohs(frag_off), frag_id, ntohs(fh->frag_off));
+       }
++
++      /* ICMPv6 counts the pseudo ipv6 header into its checksum, but ICMP doesn't
++       * but the length filed of the pseudo header count in all fragmented
++       * packets, so we need gather the framented packets into one packet to
++       * get the l3 payload length.
++       */
++      if (proto == NEXTHDR_ICMP) {
++        struct sk_buff *skb = skb_get(old_skb);
++	int err;
++	if (skb == NULL) {
++          goto done;
++	}
++
++        err = nf_ct_frag6_gather(dev_net(old_skb->dev), skb, IP6_DEFRAG_LOCAL_DELIVER);
++
++	/* EINPROGRESS means the skb was queued but the gather not finished yet */
++        if (err == -EINPROGRESS) {
++          goto done;
++        }
++
++	reasm_skb = skb;
++	/* other than EINPROGRESS error returned means the skb wasn't queued
++	 * 0 returned means that all fragments are all gathered
++	 * and the original skb was queued
++	 */
++        if (err != 0) {
++          goto done;
++        }
++
++        /* Use the reassembly packet as the input */
++        ip6h = ipv6_hdr(reasm_skb);
++        proto = ip6h->nexthdr;
++        v6packet_l3size = sizeof(*ip6h);
++
++	/* No fragment header in the re-assembly packet */
++        frag_off = 0;
++        l3_infrag_payload_len = ntohs(ip6h->payload_len);
++        old_skb = reasm_skb;
++	check_for_l4 = 1;
++      }
+     }
+   } else {
+     frag_off = htons(IP_DF);
+@@ -1850,20 +1893,28 @@ void nat46_ipv6_input(struct sk_buff *ol
+       /* CHECKSUMS UPDATE */
+       case NEXTHDR_TCP: {
+         struct tcphdr *th = add_offset(ip6h, v6packet_l3size);
+-        u16 sum1 = csum_ipv6_unmagic(nat46, &ip6h->saddr, &ip6h->daddr, l3_infrag_payload_len, NEXTHDR_TCP, th->check);
+-        u16 sum2 = csum_tcpudp_remagic(v4saddr, v4daddr, l3_infrag_payload_len, NEXTHDR_TCP, sum1);
++
++	/* TCP payload length won't change, needn't unmagic its value. */
++        u16 sum1 = csum_ipv6_unmagic(nat46, &ip6h->saddr, &ip6h->daddr, 0, NEXTHDR_TCP, th->check);
++        u16 sum2 = csum_tcpudp_remagic(v4saddr, v4daddr, 0, NEXTHDR_TCP, sum1);
+         th->check = sum2;
+         break;
+         }
+       case NEXTHDR_UDP: {
+         struct udphdr *udp = add_offset(ip6h, v6packet_l3size);
+-        u16 sum1 = csum_ipv6_unmagic(nat46, &ip6h->saddr, &ip6h->daddr, l3_infrag_payload_len, NEXTHDR_UDP, udp->check);
+-        u16 sum2 = csum_tcpudp_remagic(v4saddr, v4daddr, l3_infrag_payload_len, NEXTHDR_UDP, sum1);
++
++	/* UDP payload length won't change, needn't unmagic its value. */
++        u16 sum1 = csum_ipv6_unmagic(nat46, &ip6h->saddr, &ip6h->daddr, 0, NEXTHDR_UDP, udp->check);
++        u16 sum2 = csum_tcpudp_remagic(v4saddr, v4daddr, 0, NEXTHDR_UDP, sum1);
+         udp->check = sum2;
+         break;
+         }
+       case NEXTHDR_ICMP: {
+         struct icmp6hdr *icmp6h = add_offset(ip6h, v6packet_l3size);
++
++	/* ICMPv6 count the pseudo IPv6 header into its checksum, but icmp
++	 * doesn't, unmagic the whole the pseudo IPv6 header from the checksum.
++	 */
+         u16 sum1 = csum_ipv6_unmagic(nat46, &ip6h->saddr, &ip6h->daddr, l3_infrag_payload_len, NEXTHDR_ICMP, icmp6h->icmp6_cksum);
+         icmp6h->icmp6_cksum = sum1;
+         nat46debug_dump(nat46, 10, icmp6h, l3_infrag_payload_len);
+@@ -1909,10 +1960,6 @@ void nat46_ipv6_input(struct sk_buff *ol
+   fill_v4hdr_from_v6hdr(iph, ip6h, v4saddr, v4daddr, frag_id, frag_off, proto, l3_infrag_payload_len);
+   new_skb->protocol = htons(ETH_P_IP);
+ 
+-  if (ntohs(iph->tot_len) >= 2000) {
+-    nat46debug(0, "Too big IP len: %d", ntohs(iph->tot_len));
+-  }
+-
+   nat46debug(5, "about to send v4 packet, flags: %02x",  IPCB(new_skb)->flags);
+   nat46_netdev_count_xmit(new_skb, old_skb->dev);
+ 
+@@ -1924,11 +1971,12 @@ void nat46_ipv6_input(struct sk_buff *ol
+   /* TBD: should copy be released here? */
+ 
+ done:
++  if (reasm_skb) {
++    kfree_skb(reasm_skb);
++  }
+   release_nat46_instance(nat46);
+ }
+ 
+-
+-
+ void ip6_update_csum(struct sk_buff * skb, struct ipv6hdr * ip6hdr, int do_atomic_frag)
+ {
+   u32 sum1=0;

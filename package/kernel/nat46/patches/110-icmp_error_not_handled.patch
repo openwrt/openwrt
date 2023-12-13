@@ -1,0 +1,99 @@
+Author:  Pavithra R <pavir@codeaurora.org>
+Date:    Wed Aug 5 20:16:27 2020 +0530
+
+nat46: fix ICMPv6 error message dropped locally
+
+This patch is propagated from the kernel 4.4 commit
+1b96bd0e9ee9182566b119741854c03bf4b94a99
+
+While routing IPv6 packets from a customer-side translated device (CLAT)
+to a provider-side translated device (PLAT), it is possible that the IPv6
+destination is unknown. In such a scenario, the IPv6 stack must send back
+an ICMP error. However, the source IPv6 address of this error message does
+not have a MAP-T translation. According to RFC2473, the translation layer
+should use the tunnel's own IPv4 address for the IPv6 ICMP packet's source
+address.
+
+Change-Id: I784473cddf9214843c466d10763cb66852139ef6
+Signed-off-by: Pavithra R <pavir@codeaurora.org>
+
+--- a/nat46/modules/nat46-core.c
++++ b/nat46/modules/nat46-core.c
+@@ -1697,17 +1697,19 @@ static uint16_t nat46_fixup_icmp(nat46_i
+   return ret;
+ }
+ 
+-int pairs_xlate_v6_to_v4_outer(nat46_instance_t *nat46, nat46_xlate_rulepair_t *apair,
++int pairs_xlate_v6_to_v4_outer(nat46_instance_t *nat46, nat46_xlate_rulepair_t **papair,
+ 		struct ipv6hdr *ip6h, uint16_t proto, __u32 *pv4saddr, __u32 *pv4daddr) {
+   int ipair = 0;
+   int xlate_src = -1;
+   int xlate_dst = -1;
++  nat46_xlate_rulepair_t *apair;
+ 
+   apair = nat46_lpm(nat46, NAT46_IPV6_REMOTE, &ip6h->saddr);
+   if (!apair) {
+     return 0;
+   }
+ 
++  *papair = apair;
+   if (xlate_v6_to_v4(nat46, &apair->local, &ip6h->daddr, pv4daddr)) {
+     nat46debug(5, "Dst addr %pI6 to %pI4 \n", &ip6h->daddr, pv4daddr);
+     xlate_dst = ipair;
+@@ -1734,14 +1736,14 @@ int pairs_xlate_v6_to_v4_outer(nat46_ins
+ }
+ 
+ int xlate_6_to_4(struct net_device *dev, struct ipv6hdr *ip6h, uint16_t proto, __u32 *pv4saddr, __u32 *pv4daddr) {
+-	nat46_xlate_rulepair_t apair;
++	nat46_xlate_rulepair_t *apair;
+ 	return pairs_xlate_v6_to_v4_outer(netdev_nat46_instance(dev), &apair, ip6h, proto, pv4saddr, pv4daddr);
+ }
+ EXPORT_SYMBOL(xlate_6_to_4);
+ 
+ void nat46_ipv6_input(struct sk_buff *old_skb) {
+   struct ipv6hdr *ip6h = ipv6_hdr(old_skb);
+-  nat46_xlate_rulepair_t apair;
++  nat46_xlate_rulepair_t *apair;
+   nat46_instance_t *nat46 = get_nat46_instance(old_skb);
+   uint16_t proto;
+   uint16_t frag_off;
+@@ -1803,8 +1805,37 @@ void nat46_ipv6_input(struct sk_buff *ol
+   }
+ 
+   if (!pairs_xlate_v6_to_v4_outer(nat46, &apair, ip6h, proto, &v4saddr, &v4daddr)) {
+-    nat46debug(0, "[nat46] Could not translate v6->v4");
+-    goto done;
++    if (proto == NEXTHDR_ICMP) {
++      struct icmp6hdr *icmp6h = add_offset(ip6h, v6packet_l3size);
++      struct ipv6hdr *ip6h_inner = (struct ipv6hdr *) (icmp6h + 1);
++      struct ipv6hdr hdr6;
++      switch(icmp6h->icmp6_type) {
++        case ICMPV6_DEST_UNREACH:
++        case ICMPV6_PKT_TOOBIG:
++        case ICMPV6_TIME_EXCEED:
++        case ICMPV6_PARAMPROB:
++          /*
++           * For icmpv6 error message, using the original message
++           * address to  locate the apair one more time according
++           * to the RFC 2473, and use the ipv4 address of the
++           * tunnel as SRC ipv4 address
++           */
++          memcpy(&hdr6.saddr, &ip6h_inner->daddr, 16);
++          memcpy(&hdr6.daddr, &ip6h_inner->saddr, 16);
++          if (!pairs_xlate_v6_to_v4_outer(nat46, &apair, &hdr6, proto, &v4saddr, &v4daddr)) {
++            nat46debug(0, "[nat46] Could not translate v6->v4");
++            goto done;
++          }
++          v4saddr = apair->local.v4_pref;
++          break;
++        default:
++          nat46debug(0, "[nat46] Could not translate v6->v4");
++          goto done;
++      }
++    } else {
++      nat46debug(0, "[nat46] Could not translate v6->v4");
++      goto done;
++    }
+   }
+ 
+   if (check_for_l4) {

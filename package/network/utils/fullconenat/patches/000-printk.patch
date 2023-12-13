@@ -1,0 +1,19 @@
+diff --git a/xt_FULLCONENAT.c b/xt_FULLCONENAT.c
+index 30e7686..492f638 100644
+--- a/xt_FULLCONENAT.c
++++ b/xt_FULLCONENAT.c
+@@ -1345,9 +1345,13 @@ static struct xt_target tg_reg[] __read_mostly = {
+ static int __init fullconenat_tg_init(void)
+ {
+   int ret;
++
++  printk(KERN_INFO "xt_FULLCONENAT: RFC3489 Full Cone NAT module\n"
++    "xt_FULLCONENAT: Copyright (C) 2018 Chion Tang <tech@chionlab.moe>\n");
++
+   wq = create_singlethread_workqueue("xt_FULLCONENAT");
+   if (wq == NULL) {
+-    printk("xt_FULLCONENAT: warning: failed to create workqueue\n");
++    printk(KERN_WARNING "xt_FULLCONENAT: warning: failed to create workqueue\n");
+   }
+
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)

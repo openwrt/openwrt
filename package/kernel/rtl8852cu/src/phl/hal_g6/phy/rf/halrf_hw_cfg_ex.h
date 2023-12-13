@@ -1,0 +1,41 @@
+/******************************************************************************
+ *
+ * Copyright(c) 2007 - 2020  Realtek Corporation.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * The full GNU General Public License is included in this distribution in the
+ * file called LICENSE.
+ *
+ * Contact Information:
+ * wlanfae <wlanfae@realtek.com>
+ * Realtek Corporation, No. 2, Innovation Road II, Hsinchu Science Park,
+ * Hsinchu 300, Taiwan.
+ *
+ * Larry Finger <Larry.Finger@lwfinger.net>
+ *
+ *****************************************************************************/
+#ifndef _HALRF_HW_CFG_EX_H_
+#define _HALRF_HW_CFG_EX_H_
+
+/*@--------------------------[Define] ---------------------------------------*/
+
+/*@--------------------------[Enum]------------------------------------------*/
+
+/*@--------------------------[Structure]-------------------------------------*/
+
+/*@--------------------------[Prptotype]-------------------------------------*/
+struct rf_info;
+bool halrf_init_reg_by_hdr(void *rf_void);
+bool halrf_nctl_init_reg_by_hdr(void *rf_void);
+bool halrf_config_power_limit_6g(void *rf_void, enum phl_phy_idx phy);
+bool halrf_config_power_limit_ru_6g(void *rf_void, enum phl_phy_idx phy);
+
+#endif
