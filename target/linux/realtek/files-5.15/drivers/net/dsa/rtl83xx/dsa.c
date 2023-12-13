@@ -870,6 +870,8 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	if (state->duplex == DUPLEX_FULL)
 		reg |= RTL930X_DUPLEX_MODE;
+	else
+		reg &= ~RTL930X_DUPLEX_MODE; /* Clear duplex bit otherwise */
 
 	if (priv->ports[port].phy_is_integrated)
 		reg &= ~RTL930X_FORCE_EN; /* Clear MAC_FORCE_EN to allow SDS-MAC link */
