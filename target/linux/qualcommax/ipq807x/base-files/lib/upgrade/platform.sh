@@ -71,7 +71,8 @@ platform_do_upgrade() {
 	netgear,rax120v2|\
 	netgear,wax218|\
 	netgear,wax620|\
-	netgear,wax630)
+	netgear,wax630|\
+	wallys,dr8072v01)
 		nand_do_upgrade "$1"
 		;;
 	prpl,haze|\

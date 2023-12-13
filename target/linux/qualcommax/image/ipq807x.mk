@@ -205,6 +205,22 @@ define Device/redmi_ax6
 endef
 TARGET_DEVICES += redmi_ax6
 
+define Device/wallys_dr8072v01
+       $(call Device/FitImage)
+       $(call Device/UbiFit)
+       DEVICE_VENDOR := Wallys
+       DEVICE_MODEL := DR8072V01
+       BLOCKSIZE := 128k
+       PAGESIZE := 2048
+       DEVICE_DTS_CONFIG := config@hk01.c2
+       SOC := ipq8072
+       DEVICE_PACKAGES := ipq-wifi-wallys_dr8072v01
+       IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand
+       IMAGES += factory.bin
+       IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
+endef
+TARGET_DEVICES += wallys_dr8072v01
+
 define Device/xiaomi_ax3600
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
