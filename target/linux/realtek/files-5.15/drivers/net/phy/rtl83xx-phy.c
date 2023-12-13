@@ -450,6 +450,51 @@ static int rtl8226_write_page(struct phy_device *phydev, int page)
 	return __phy_write(phydev, RTL8XXX_PAGE_SELECT, page);
 }
 
+static int rtl8224_read_status(struct phy_device *phydev)
+{
+	u32 val;
+	val = genphy_c45_read_status(phydev);
+	if (val < 0) return val;
+
+	/* Read link status */
+	val = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_STAT1);
+	phydev->link = !!(val & BIT(2));
+
+	/* Read duplex info */
+	val = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA434);
+	phydev->duplex = !!(val & BIT(3));
+
+	/* Read speed */
+	switch (val & 0x0630) {
+	case 0x0000:
+		phydev->speed = SPEED_10;
+		break;
+	case 0x0010:
+		phydev->speed = SPEED_100;
+		break;
+	case 0x0020:
+		phydev->speed = SPEED_1000;
+		break;
+	case 0x0200:
+		phydev->speed = SPEED_10000;
+		break;
+	case 0x0210:
+		phydev->speed = SPEED_2500;
+		break;
+	case 0x0220:
+		phydev->speed = SPEED_5000;
+		break;
+	default:
+		if (phydev->link)
+			phydev->speed = SPEED_10;
+		break;
+	}
+
+	/* Read advertised auto nego abilities */
+
+	return 0;
+}
+
 static int rtl8226_read_status(struct phy_device *phydev)
 {
 	int ret = 0;
@@ -516,10 +561,19 @@ static int rtl8226_advertise_aneg(struct phy_device *phydev)
 	if (v < 0)
 		goto out;
 
-	v |= ADVERTISE_10HALF;
-	v |= ADVERTISE_10FULL;
-	v |= ADVERTISE_100HALF;
-	v |= ADVERTISE_100FULL;
+	v &= ~(ADVERTISE_10HALF | ADVERTISE_10FULL | ADVERTISE_100HALF | ADVERTISE_100FULL);
+
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_10baseT_Half_BIT, phydev->advertising))
+		v |= ADVERTISE_10HALF;
+
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT, phydev->advertising))
+		v |= ADVERTISE_10FULL;
+
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_100baseT_Half_BIT, phydev->advertising))
+		v |= ADVERTISE_100HALF;
+
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, phydev->advertising))
+		v |= ADVERTISE_100FULL;
 
 	ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_ADVERTISE, v);
 
@@ -527,7 +581,11 @@ static int rtl8226_advertise_aneg(struct phy_device *phydev)
 	v = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA412);
 	if (v < 0)
 		goto out;
-	v |= ADVERTISE_1000FULL;
+
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, phydev->advertising))
+		v |= ADVERTISE_1000FULL;
+	else
+		v &= ~(ADVERTISE_1000FULL);
 
 	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA412, v);
 	if (ret < 0)
@@ -538,7 +596,11 @@ static int rtl8226_advertise_aneg(struct phy_device *phydev)
 	if (v < 0)
 		goto out;
 
-	v |= MDIO_AN_10GBT_CTRL_ADV2_5G;
+	if (linkmode_test_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT, phydev->advertising))
+		v |= MDIO_AN_10GBT_CTRL_ADV2_5G;
+	else
+		v &= ~(MDIO_AN_10GBT_CTRL_ADV2_5G);
+
 	ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_10GBT_CTRL, v);
 
 out:
@@ -555,24 +617,39 @@ static int rtl8226_config_aneg(struct phy_device *phydev)
 		ret = rtl8226_advertise_aneg(phydev);
 		if (ret)
 			goto out;
-		/* AutoNegotiationEnable */
-		v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_CTRL1);
-		if (v < 0)
-			goto out;
-
-		v |= MDIO_AN_CTRL1_ENABLE; /* Enable AN */
-		ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_CTRL1, v);
-		if (ret < 0)
-			goto out;
-
-		/* RestartAutoNegotiation */
-		v = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA400);
-		if (v < 0)
-			goto out;
-		v |= MDIO_AN_CTRL1_RESTART;
-
-		ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA400, v);
+	} else {
+		if (phydev->is_c45)
+		{
+			ret = genphy_c45_pma_setup_forced(phydev);
+			if (ret)
+				goto out;
+		}
+#if 0
+		goto out;
+#endif
 	}
+
+	/* AutoNegotiationEnable */
+	v = phy_read_mmd(phydev, MDIO_MMD_AN, MDIO_CTRL1);
+	if (v < 0)
+		goto out;
+
+	if (phydev->autoneg == AUTONEG_ENABLE)
+		v |= MDIO_AN_CTRL1_ENABLE; /* Enable AN */
+	else
+		v &= ~(MDIO_AN_CTRL1_ENABLE);
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_CTRL1, v);
+	if (ret < 0)
+		goto out;
+
+	/* RestartAutoNegotiation */
+	v = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA400);
+	if (v < 0)
+		goto out;
+	v |= MDIO_AN_CTRL1_RESTART;
+
+	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, 0xA400, v);
 
 /*	TODO: ret = __genphy_config_aneg(phydev, ret); */
 
@@ -3944,7 +4021,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.set_loopback	= genphy_loopback,
-		.read_status = rtl8226_read_status,
+		.read_status = rtl8224_read_status,
 		.config_aneg = rtl8226_config_aneg,
 		.set_eee = rtl8226_set_eee,
 		.get_eee = rtl8226_get_eee,
