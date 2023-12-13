@@ -47,17 +47,6 @@ endef
 
 $(eval $(call KernelPackage,fsl-pcs-lynx))
 
-define KernelPackage/pcs-xpcs
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Synopsis DesignWare PCS driver
-  DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink
-  KCONFIG:=CONFIG_PCS_XPCS
-  FILES:=$(LINUX_DIR)/drivers/net/pcs/pcs_xpcs.ko
-  AUTOLOAD:=$(call AutoLoad,20,pcs_xpcs)
-endef
-
-$(eval $(call KernelPackage,pcs-xpcs))
-
 define KernelPackage/fsl-fec
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-libphy +kmod-of-mdio \
