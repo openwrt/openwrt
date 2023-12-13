@@ -3712,6 +3712,14 @@ static int rtl8214c_phy_probe(struct phy_device *phydev)
 	return 0;
 }
 
+static int rtl8224_phy_probe(struct phy_device *phydev)
+{
+	int value;
+	value = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_CTRL1);
+	value &= (~BMCR_PDOWN);
+	return phy_write_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_CTRL1, value);
+}
+
 static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
@@ -3901,6 +3909,20 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.config_aneg    = rtl8226_config_aneg,
 		.set_eee        = rtl8226_set_eee,
 		.get_eee        = rtl8226_get_eee,
+	},
+	{
+		PHY_ID_MATCH_MODEL(PHY_ID_RTL8224),
+		.name		= "REALTEK RTL8224",
+		.features	= PHY_10GBIT_FEATURES,
+		.flags		= PHY_HAS_REALTEK_PAGES,
+		.suspend	= genphy_suspend,
+		.resume		= genphy_resume,
+		.set_loopback	= genphy_loopback,
+		.read_status = rtl8226_read_status,
+		.config_aneg = rtl8226_config_aneg,
+		.set_eee = rtl8226_set_eee,
+		.get_eee = rtl8226_get_eee,
+		.probe		= rtl8224_phy_probe,
 	},
 	{
 		PHY_ID_MATCH_MODEL(PHY_ID_RTL8226),
