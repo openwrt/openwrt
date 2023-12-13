@@ -1,6 +1,6 @@
 --- a/board/mediatek/mt7988/mt7988_rfb.c
 +++ b/board/mediatek/mt7988/mt7988_rfb.c
-@@ -11,6 +11,8 @@
+@@ -11,7 +11,9 @@
  #include <env.h>
  #include <init.h>
  #include <asm/global_data.h>
@@ -9,7 +9,8 @@
 +#include <linux/libfdt.h>
  
  #ifndef CONFIG_RESET_BUTTON_LABEL
-@@ -44,3 +50,54 @@ int board_late_init(void)
+ #define CONFIG_RESET_BUTTON_LABEL "reset"
+@@ -44,3 +46,54 @@ int board_late_init(void)
  	env_relocate();
  	return 0;
  }
