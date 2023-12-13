@@ -22,7 +22,7 @@ Signed-off-by: Roman Kuzmitskii <damex.pp@icloud.com>
 +	if (priv->of_node)
 +		label = of_get_property(priv->of_node, "label", NULL);
 +
- 	ret = of_get_mac_address(priv->of_node, dev->dev_addr);
+ 	ret = of_get_ethdev_address(priv->of_node, dev);
  	if (ret)
  		eth_hw_addr_random(dev);
 @@ -441,6 +445,9 @@ int cvm_oct_common_init(struct net_devic

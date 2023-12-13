@@ -51,7 +51,11 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	acer,predator-w6)
+	acer,predator-w6|\
+	smartrg,sdg-8612|\
+	smartrg,sdg-8614|\
+	smartrg,sdg-8622|\
+	smartrg,sdg-8632)
 		CI_KERNPART="kernel"
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"

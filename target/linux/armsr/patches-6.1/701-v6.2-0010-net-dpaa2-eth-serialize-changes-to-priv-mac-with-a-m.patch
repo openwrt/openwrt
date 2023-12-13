@@ -41,7 +41,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
-@@ -2020,8 +2020,11 @@ static int dpaa2_eth_link_state_update(s
+@@ -2018,8 +2018,11 @@ static int dpaa2_eth_link_state_update(s
  
  	/* When we manage the MAC/PHY using phylink there is no need
  	 * to manually update the netif_carrier.
@@ -54,7 +54,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		goto out;
  
  	/* Chech link state; speed / duplex changes are not treated yet */
-@@ -2060,6 +2063,8 @@ static int dpaa2_eth_open(struct net_dev
+@@ -2058,6 +2061,8 @@ static int dpaa2_eth_open(struct net_dev
  			   priv->dpbp_dev->obj_desc.id, priv->bpid);
  	}
  
@@ -63,7 +63,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (!dpaa2_eth_is_type_phy(priv)) {
  		/* We'll only start the txqs when the link is actually ready;
  		 * make sure we don't race against the link up notification,
-@@ -2078,6 +2083,7 @@ static int dpaa2_eth_open(struct net_dev
+@@ -2076,6 +2081,7 @@ static int dpaa2_eth_open(struct net_dev
  
  	err = dpni_enable(priv->mc_io, 0, priv->mc_token);
  	if (err < 0) {
@@ -71,7 +71,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		netdev_err(net_dev, "dpni_enable() failed\n");
  		goto enable_err;
  	}
-@@ -2085,6 +2091,8 @@ static int dpaa2_eth_open(struct net_dev
+@@ -2083,6 +2089,8 @@ static int dpaa2_eth_open(struct net_dev
  	if (dpaa2_eth_is_type_phy(priv))
  		dpaa2_mac_start(priv->mac);
  
@@ -80,7 +80,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	return 0;
  
  enable_err:
-@@ -2156,6 +2164,8 @@ static int dpaa2_eth_stop(struct net_dev
+@@ -2154,6 +2162,8 @@ static int dpaa2_eth_stop(struct net_dev
  	int dpni_enabled = 0;
  	int retries = 10;
  
@@ -89,7 +89,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (dpaa2_eth_is_type_phy(priv)) {
  		dpaa2_mac_stop(priv->mac);
  	} else {
-@@ -2163,6 +2173,8 @@ static int dpaa2_eth_stop(struct net_dev
+@@ -2161,6 +2171,8 @@ static int dpaa2_eth_stop(struct net_dev
  		netif_carrier_off(net_dev);
  	}
  
@@ -98,7 +98,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	/* On dpni_disable(), the MC firmware will:
  	 * - stop MAC Rx and wait for all Rx frames to be enqueued to software
  	 * - cut off WRIOP dequeues from egress FQs and wait until transmission
-@@ -2488,12 +2500,20 @@ static int dpaa2_eth_ts_ioctl(struct net
+@@ -2486,12 +2498,20 @@ static int dpaa2_eth_ts_ioctl(struct net
  static int dpaa2_eth_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
  {
  	struct dpaa2_eth_priv *priv = netdev_priv(dev);
@@ -121,7 +121,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	return -EOPNOTSUPP;
  }
-@@ -4453,7 +4473,9 @@ static int dpaa2_eth_connect_mac(struct
+@@ -4451,7 +4471,9 @@ static int dpaa2_eth_connect_mac(struct
  			goto err_close_mac;
  	}
  
@@ -131,7 +131,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	return 0;
  
-@@ -4466,9 +4488,12 @@ err_free_mac:
+@@ -4464,9 +4486,12 @@ err_free_mac:
  
  static void dpaa2_eth_disconnect_mac(struct dpaa2_eth_priv *priv)
  {
@@ -145,7 +145,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	if (!mac)
  		return;
-@@ -4487,6 +4512,7 @@ static irqreturn_t dpni_irq0_handler_thr
+@@ -4485,6 +4510,7 @@ static irqreturn_t dpni_irq0_handler_thr
  	struct fsl_mc_device *dpni_dev = to_fsl_mc_device(dev);
  	struct net_device *net_dev = dev_get_drvdata(dev);
  	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
@@ -153,7 +153,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	int err;
  
  	err = dpni_get_irq_status(dpni_dev->mc_io, 0, dpni_dev->mc_handle,
-@@ -4504,7 +4530,12 @@ static irqreturn_t dpni_irq0_handler_thr
+@@ -4502,7 +4528,12 @@ static irqreturn_t dpni_irq0_handler_thr
  		dpaa2_eth_update_tx_fqids(priv);
  
  		rtnl_lock();
@@ -167,7 +167,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			dpaa2_eth_disconnect_mac(priv);
  		else
  			dpaa2_eth_connect_mac(priv);
-@@ -4605,6 +4636,8 @@ static int dpaa2_eth_probe(struct fsl_mc
+@@ -4603,6 +4634,8 @@ static int dpaa2_eth_probe(struct fsl_mc
  	priv = netdev_priv(net_dev);
  	priv->net_dev = net_dev;
  
