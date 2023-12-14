@@ -244,12 +244,15 @@ $(call KernelPackage/$(1)/config)
 
   ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m y,$(foreach c,$(call version_filter,$(filter-out %=y %=n %=m,$(KCONFIG))),$($(c)))),.),)
     define Package/kmod-$(1)/install
-		  @for mod in $$(call version_filter,$$(FILES)); do \
+		  @for entr in $$(call version_filter,$$(FILES)); do \
+			mod="$$$$$$$${entr#-}"; \
 			if grep -q "$$$$$$$${mod##$(LINUX_DIR)/}" "$(LINUX_DIR)/modules.builtin"; then \
 				echo "NOTICE: module '$$$$$$$$mod' is built-in."; \
 			elif [ -e $$$$$$$$mod ]; then \
 				mkdir -p $$(1)/$(MODULES_SUBDIR) ; \
 				$(CP) -L $$$$$$$$mod $$(1)/$(MODULES_SUBDIR)/ ; \
+			elif [ -z "$$$$$$$${entr%%-*}" ]; then \
+				echo "NOTICE: module '$$$$$$$$mod' skipped."; \
 			else \
 				echo "ERROR: module '$$$$$$$$mod' is missing." >&2; \
 				exit 1; \

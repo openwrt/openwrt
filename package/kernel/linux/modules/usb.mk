@@ -286,10 +286,8 @@ define KernelPackage/usb-ohci
 	CONFIG_USB_OHCI_HCD_PLATFORM=y
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko \
-	$(LINUX_DIR)/drivers/usb/host/ohci-platform.ko
-  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ohci-at91.ko),)
-    FILES+=$(LINUX_DIR)/drivers/usb/host/ohci-at91.ko
-  endif
+	$(LINUX_DIR)/drivers/usb/host/ohci-platform.ko \
+	-$(LINUX_DIR)/drivers/usb/host/ohci-at91.ko
   AUTOLOAD:=$(call AutoLoad,50,ohci-hcd ohci-platform ohci-at91,1)
   $(call AddDepends/usb)
 endef
@@ -374,19 +372,11 @@ define KernelPackage/usb2
 	CONFIG_USB_EHCI_HCD_AT91=y \
 	CONFIG_USB_EHCI_FSL
   FILES:= \
-	$(LINUX_DIR)/drivers/usb/host/ehci-platform.ko
-  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-orion.ko),)
-    FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-orion.ko
-  endif
-  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko),)
-    FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko
-  endif
-  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko),)
-    FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko
-  endif
-  ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko),)
-    FILES+=$(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko
-  endif
+	$(LINUX_DIR)/drivers/usb/host/ehci-platform.ko \
+	-$(LINUX_DIR)/drivers/usb/host/ehci-orion.ko \
+	-$(LINUX_DIR)/drivers/usb/host/ehci-atmel.ko \
+	-$(LINUX_DIR)/drivers/usb/host/ehci-fsl.ko \
+	-$(LINUX_DIR)/drivers/usb/host/fsl-mph-dr-of.ko
   AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion ehci-atmel ehci-fsl fsl-mph-dr-of,1)
   $(call AddDepends/usb)
 endef
@@ -959,7 +949,7 @@ define KernelPackage/usb-serial-keyspan
 	CONFIG_USB_SERIAL_KEYSPAN_USA49WLC
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/serial/keyspan.ko \
-	$(wildcard $(LINUX_DIR)/drivers/usb/misc/ezusb.ko)
+	-$(LINUX_DIR)/drivers/usb/misc/ezusb.ko
   AUTOLOAD:=$(call AutoProbe,ezusb keyspan)
   $(call AddDepends/usb-serial)
 endef
@@ -1781,7 +1771,7 @@ endef
 $(eval $(call KernelPackage,usbmon))
 
 XHCI_MODULES := xhci-pci xhci-plat-hcd
-XHCI_FILES := $(wildcard $(patsubst %,$(LINUX_DIR)/drivers/usb/host/%.ko,$(XHCI_MODULES)))
+XHCI_FILES := $(patsubst %,-$(LINUX_DIR)/drivers/usb/host/%.ko,$(XHCI_MODULES))
 XHCI_AUTOLOAD := $(patsubst $(LINUX_DIR)/drivers/usb/host/%.ko,%,$(XHCI_FILES))
 
 define KernelPackage/usb3

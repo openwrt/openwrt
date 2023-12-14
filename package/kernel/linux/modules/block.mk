@@ -27,10 +27,9 @@ define KernelPackage/ata-core
   TITLE:=Serial and Parallel ATA support
   DEPENDS:=@PCI_SUPPORT||TARGET_sunxi +kmod-scsi-core
   KCONFIG:=CONFIG_ATA
-  FILES:=$(LINUX_DIR)/drivers/ata/libata.ko
-ifneq ($(wildcard $(LINUX_DIR)/drivers/ata/libahci.ko),)
-  FILES+=$(LINUX_DIR)/drivers/ata/libahci.ko
-endif
+  FILES:= \
+	$(LINUX_DIR)/drivers/ata/libata.ko \
+	-$(LINUX_DIR)/drivers/ata/libahci.ko
 endef
 
 $(eval $(call KernelPackage,ata-core))
