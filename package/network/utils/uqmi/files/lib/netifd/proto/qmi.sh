@@ -141,10 +141,10 @@ proto_qmi_setup() {
 			}
 		}
 	else
-		json_load "$(uqmi -s -d "$device" --get-pin-status)"
+		json_load "$(uqmi -s -d "$device" --get-pin-status)" 2>/dev/null
 		json_get_var pin1_status pin1_status
 		if [ -z "$pin1_status" ]; then
-			json_load "$(uqmi -s -d "$device" --uim-get-sim-state)"
+			json_load "$(uqmi -s -d "$device" --uim-get-sim-state)" 2>/dev/null
 			json_get_var pin1_status pin1_status
 		fi
 		json_get_var pin1_verify_tries pin1_verify_tries
