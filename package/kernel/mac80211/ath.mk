@@ -306,6 +306,10 @@ define KernelPackage/ath11k
   +kmod-crypto-michael-mic +ATH11K_THERMAL:kmod-hwmon-core +ATH11K_THERMAL:kmod-thermal +ATH11K_NSS_SUPPORT:kmod-qca-nss-drv
   FILES:=$(PKG_BUILD_DIR)/drivers/soc/qcom/qmi_helpers.ko \
   $(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k.ko
+  AUTOLOAD:=$(call AutoProbe,ath11k)
+ifdef CONFIG_ATH11K_NSS_SUPPORT
+  MODPARAMS.ath11k:=nss_offload=1 frame_mode=2
+endif
 endef
 
 define KernelPackage/ath11k/description
@@ -326,6 +330,13 @@ define KernelPackage/ath11k/config
 
 
 endef
+
+ifdef CONFIG_ATH11K_NSS_SUPPORT
+ define KernelPackage/ath11k/install
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/firmware
+	$(INSTALL_DATA) ./files/ath11k_nss.hotplug $(1)/etc/hotplug.d/firmware/12-ath11k_nss
+ endef
+endif
 
 define KernelPackage/ath11k-ahb
   $(call KernelPackage/mac80211/Default)
