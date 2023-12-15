@@ -497,8 +497,7 @@ struct fe_priv {
 	struct work_struct		pending_work;
 	DECLARE_BITMAP(pending_flags, FE_FLAG_MAX);
 
-	struct reset_control		*rst_ppe;
-	struct reset_control		*rst_fe;
+	struct reset_control		*resets;
 	struct mtk_foe_entry		*foe_table;
 	dma_addr_t			foe_table_phys;
 	struct flow_offload __rcu	**foe_flow_table;
