@@ -517,6 +517,13 @@ define Device/tama_w06
 endef
 TARGET_DEVICES += tama_w06
 
+define Device/telix_ell200
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := TELIX
+  DEVICE_MODEL := ELL200
+endef
+TARGET_DEVICES += telix_ell200
+
 define Device/totolink_a3
   IMAGE_SIZE := 7936k
   UIMAGE_NAME := za3

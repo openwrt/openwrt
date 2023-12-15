@@ -69,6 +69,11 @@ tama,w06)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	;;
+telix,ell200)
+	ucidef_set_led_netdev "eth0_act" "eth0_act" "red:eth0_act" "eth0" "tx rx"
+	ucidef_set_led_switch "eth0_link" "eth0_link" "grn:eth0_link" "switch0" "0x01"
+	ucidef_set_led_heartbeat "heartbeat" "heartbeat" "grn:heartbeat"
+	;;
 tplink,archer-c20-v4|\
 tplink,archer-c20-v5|\
 tplink,tl-wr850n-v2)

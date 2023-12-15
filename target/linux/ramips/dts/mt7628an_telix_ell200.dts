@@ -1,0 +1,240 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "telix,ell200", "mediatek,mt7628an-soc";
+	model = "TELIX ELL200";
+
+	aliases {
+		led-boot = &led_heartbeat;
+		led-failsafe = &led_heartbeat;
+		led-running = &led_heartbeat;
+		led-upgrade = &led_heartbeat;	
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+	
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/*33->WLED_N[GPIO#44]->LED_GRN_HEARTBEAT*/	
+		led_heartbeat: heartbeat {
+			label = "grn:heartbeat";
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		/*6->REF_CLK0[GPIO#37]->LED_RED_HEARTBEAT*/
+		led_red_heartbeat{
+			label = "red:heartbeat";
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+			default-state = "off";				
+		};
+
+		/*19->I2S_WS[GPIO#2]->LED_RED_UART_MAIN_ACT*/
+		led_red_uart_main_act{
+			label = "red:uart_main_act";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			default-state = "off";		
+		};
+		
+		/*20->I2S_CLK[GPIO#3]->LED_GRN_UART_MAIN_LINK*/	
+		led_grn_uart_main_link{
+			label = "grn:uart_main_link";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			default-state = "off";				
+		};	
+
+		/*46->MDI_TP_P3[GPIO#22]->LED_GRN_LTE_SVC*/
+		led_grn_lte_svc{
+			label = "grn:lte_svc";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};	
+		
+		/*47->MDI_TN_P3[GPIO#23]->LED_RED_LTE_SVC*/
+		led_red_lte_svc{
+			label = "red:lte_svc";
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+				
+		/*48->MDI_RP_P3[GPIO#24]->LED_GRN_LTE_RSSI*/
+		led_grn_lte_rssi{
+			label = "grn:lte_rssi";
+			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};	
+		
+		/*49->MDI_RN_P3[GPIO#25]->LED_RED_LTE_RSSI*/
+		led_red_lte_rssi{
+			label = "red:lte_rssi";
+			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};			
+		
+		/*50->MDI_RP_P4[GPIO#26]->LED_GRN_SMS_RX*/
+		led_grn_sms_rx{
+			label = "grn:sms_rx";
+			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};	
+		
+		/*51-> MDI_RN_P4[GPIO#27]->LED_RED_SMS_TX*/
+		led_red_sms_tx{
+			label = "red:sms_tx";
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};	
+
+		/*52->MDI_TP_P4[GPIO#28]->LED_GRN_ETH0_LINK*/
+		led_grn_eth0_link{
+			label = "grn:eth0_link";
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};	
+		
+		/*53-> MDI_TN_P4[GPIO#29]->LED_RED_ETH0_ACT*/
+		led_red_eth0_act{
+			label = "red:eth0_act";
+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};							
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		/*9-> EPHY_LED4[GPIO#39]->LTE_RESET*/
+		lte_reset {
+			gpio-export,name = "lte_reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio 39 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+
+		/*30-> GPIO0[GPIO#11]->MAIN_POWER_OFF*/
+		main_power_off {
+			gpio-export,name = "main_power_off";
+			gpio-export,input = <0>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		/*42-> MDI_RP_P2[GPIO#18]->RF_STATUS_LED*/
+		rf_status_led {
+			gpio-export,name = "rf_status_led";
+			gpio-export,output = <1>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};		
+
+		/*43-> MDI_RN_P2[GPIO#19]->MODEM_ACTIVE*/
+		modem_active {
+			gpio-export,name = "modem_active";
+			gpio-export,output = <1>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};				
+	};	
+
+};
+
+&state_default {
+	gpio {
+		groups = "refclk", "perst", "wdt", "p4led_an", "p3led_an", "p2led_an", "p1led_an", "p0led_an", "i2s","gpio0", "sd", "wled_an","pwm0","pwm1";
+		function = "gpio";
+	};
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&uart2 {
+	status = "okay";
+};
+
+&i2c {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		broken-flash-reset;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					macaddr_factory_28: macaddr@28 {
+						reg = <0x28 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0x1fb0000>;
+			};
+		};
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_28>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
