@@ -85,9 +85,6 @@
 			compatible = "ralink,rt3352-memc", "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
 
-			resets = <&sysc 20>;
-			reset-names = "mc";
-
 			interrupt-parent = <&intc>;
 			interrupts = <3>;
 		};
@@ -120,8 +117,6 @@
 			ralink,register-map = [ 00 04 08 0c
 						20 24 28 2c
 						30 34 ];
-			resets = <&sysc 13>;
-			reset-names = "pio";
 
 			interrupt-parent = <&intc>;
 			interrupts = <6>;

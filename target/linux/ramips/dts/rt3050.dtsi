@@ -73,9 +73,6 @@
 			compatible = "ralink,rt3050-intc", "ralink,rt2880-intc";
 			reg = <0x200 0x100>;
 
-			resets = <&sysc 19>;
-			reset-names = "intc";
-
 			interrupt-controller;
 			#interrupt-cells = <1>;
 
@@ -86,9 +83,6 @@
 		memc: memc@300 {
 			compatible = "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
-
-			resets = <&sysc 20>;
-			reset-names = "mc";
 
 			interrupt-parent = <&intc>;
 			interrupts = <3>;
@@ -122,9 +116,6 @@
 			ralink,register-map = [ 00 04 08 0c
 						20 24 28 2c
 						30 34 ];
-
-			resets = <&sysc 13>;
-			reset-names = "pio";
 
 			interrupt-parent = <&intc>;
 			interrupts = <6>;
