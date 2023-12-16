@@ -18,11 +18,11 @@ mmc_do_upgrade() {
 	local rootfs=
 	local kernel=
 
-			[ -z "$kernel" ] && kernel=$(find_mmc_part ${kernelname})
-			[ -z "$rootfs" ] && rootfs=$(find_mmc_part ${rootfsname})
+	[ -z "$kernel" ] && kernel=$(find_mmc_part ${kernelname})
+	[ -z "$rootfs" ] && rootfs=$(find_mmc_part ${rootfsname})
 
-			[ -z "$kernel" ] && echo "Upgrade failed: kernel partition not found! Rebooting..." && reboot -f
-			[ -z "$rootfs" ] && echo "Upgrade failed: rootfs partition not found! Rebooting..." && reboot -f
+	[ -z "$kernel" ] && echo "Upgrade failed: kernel partition not found! Rebooting..." && reboot -f
+	[ -z "$rootfs" ] && echo "Upgrade failed: rootfs partition not found! Rebooting..." && reboot -f
 
 	mmc_do_flash $tar_file $kernel $rootfs
 

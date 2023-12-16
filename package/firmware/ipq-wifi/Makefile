@@ -28,6 +28,7 @@ endef
 # <https://wireless.wiki.kernel.org/en/users/drivers/ath10k/boardfiles>
 
 ALLWIFIBOARDS:= \
+	arcadyan_aw1000 \
 	buffalo_wxr-5950ax12 \
 	compex_wpq873 \
 	dynalink_dl-wrx36 \
@@ -45,6 +46,7 @@ ALLWIFIBOARDS:= \
 	xiaomi_ax9000 \
 	yyets_le1 \
 	yuncore_ax880 \
+	zte_mf269 \
 	zte_mf289f \
 	zte_mf287 \
 	zte_mf287plus \
@@ -136,6 +138,7 @@ endef
 # Board files should follow this name structure:
 #   board-<devicename>.<qca4019|qca9888|qca9889|qca9984|qca99x0|ipq8074>
 
+$(eval $(call generate-ipq-wifi-package,arcadyan_aw1000,Arcadyan AW1000))
 $(eval $(call generate-ipq-wifi-package,buffalo_wxr-5950ax12,Buffalo WXR-5950AX12))
 $(eval $(call generate-ipq-wifi-package,compex_wpq873,Compex WPQ-873))
 $(eval $(call generate-ipq-wifi-package,dynalink_dl-wrx36,Dynalink DL-WRX36))
@@ -153,6 +156,7 @@ $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
 $(eval $(call generate-ipq-wifi-package,yyets_le1,YYeTs LE1))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax880,Yuncore AX880))
+$(eval $(call generate-ipq-wifi-package,zte_mf269,ZTE MF269))
 $(eval $(call generate-ipq-wifi-package,zte_mf289f,ZTE MF289F))
 $(eval $(call generate-ipq-wifi-package,zte_mf287,ZTE MF287))
 $(eval $(call generate-ipq-wifi-package,zte_mf287plus,ZTE MF287Plus))
