@@ -337,8 +337,14 @@ $(eval $(call KernelPackage,crypto-ghash))
 
 define KernelPackage/crypto-hash
   TITLE:=CryptoAPI hash support
-  KCONFIG:=CONFIG_CRYPTO_HASH
-  FILES:=crypto/crypto_hash.ko
+  KCONFIG:= \
+	CONFIG_CRYPTO_HASH \
+	CONFIG_CRYPTO_HASH2 \
+	CONFIG_CRYPTO_ALGAPI \
+	CONFIG_CRYPTO_ALGAPI2
+  FILES:= \
+	crypto/crypto_algapi.ko \
+	crypto/crypto_hash.ko
   AUTOLOAD:=$(call AutoLoad,02,crypto_hash,1)
   $(call AddDepends/crypto)
 endef
