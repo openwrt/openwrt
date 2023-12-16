@@ -4,6 +4,8 @@
 START=90
 STOP=01
 
+CONFIG_LLDPD_WITH_LLDPMED=y
+
 USE_PROCD=1
 LLDPDBIN=/usr/sbin/lldpd
 LLDPCLI=/usr/sbin/lldpcli
@@ -37,6 +39,9 @@ get_config_restart_hash() {
 	config_get      v 'config' 'filter'; append _string "$v" ","
 	config_get_bool v 'config' 'readonly_mode'; append _string "$v" ","
 	config_get_bool v 'config' 'lldp_no_version'; append _string "$v" ","
+	if [ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ]; then
+		config_get_bool v 'config' 'lldpmed_no_inventory'; append _string "$v" ","
+	fi
 	config_get_bool v 'config' 'enable_lldp' 1; append _string "$v" ","
 	config_get_bool v 'config' 'enable_cdp'; append _string "$v" ","
 	config_get_bool v 'config' 'enable_edp'; append _string "$v" ","
@@ -110,6 +115,7 @@ start_service() {
 	local lldp_class
 	local lldp_location
 	local lldp_no_version
+	local lldpmed_no_inventory
 	local readonly_mode
 	local agentxsocket
 	local filter
@@ -122,6 +128,9 @@ start_service() {
 	config_get lldp_class 'config' 'lldp_class'
 	config_get lldp_location 'config' 'lldp_location'
 	config_get_bool lldp_no_version 'config' 'lldp_no_version' 0
+	if [ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ]; then
+		config_get_bool lldpmed_no_inventory 'config' 'lldpmed_no_inventory' 0
+	fi
 	config_get_bool readonly_mode 'config' 'readonly_mode' 0
 	config_get agentxsocket 'config' 'agentxsocket'
 	config_get filter 'config' 'filter' 15
@@ -142,6 +151,7 @@ start_service() {
 	[ $enable_edp -gt 0 ] && procd_append_param command '-e'
 	[ $readonly_mode -gt 0 ] && procd_append_param command '-r'
 	[ $lldp_no_version -gt 0 ] && procd_append_param command '-k'
+	[ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ] && [ $lldpmed_no_inventory -gt 0 ] && procd_append_param command '-i'
 	[ -n "$lldp_class" ] && procd_append_param command -M "$lldp_class"
 	[ -n "$agentxsocket" ] && procd_append_param command -x -X "$agentxsocket"
 	[ -n "$filter" ] && procd_append_param command -H "$filter"
