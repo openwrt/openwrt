@@ -36,6 +36,7 @@ get_config_restart_hash() {
 	config_get      v 'config' 'cid_interface'; append _string "$v" ","
 	config_get      v 'config' 'filter'; append _string "$v" ","
 	config_get_bool v 'config' 'readonly_mode'; append _string "$v" ","
+	config_get_bool v 'config' 'lldp_no_version'; append _string "$v" ","
 	config_get_bool v 'config' 'enable_lldp' 1; append _string "$v" ","
 	config_get_bool v 'config' 'enable_cdp'; append _string "$v" ","
 	config_get_bool v 'config' 'enable_edp'; append _string "$v" ","
@@ -108,6 +109,7 @@ start_service() {
 	local enable_edp
 	local lldp_class
 	local lldp_location
+	local lldp_no_version
 	local readonly_mode
 	local agentxsocket
 	local filter
@@ -119,6 +121,7 @@ start_service() {
 	config_get_bool enable_edp 'config' 'enable_edp' 0
 	config_get lldp_class 'config' 'lldp_class'
 	config_get lldp_location 'config' 'lldp_location'
+	config_get_bool lldp_no_version 'config' 'lldp_no_version' 0
 	config_get_bool readonly_mode 'config' 'readonly_mode' 0
 	config_get agentxsocket 'config' 'agentxsocket'
 	config_get filter 'config' 'filter' 15
@@ -138,6 +141,7 @@ start_service() {
 	[ $enable_sonmp -gt 0 ] && procd_append_param command '-s'
 	[ $enable_edp -gt 0 ] && procd_append_param command '-e'
 	[ $readonly_mode -gt 0 ] && procd_append_param command '-r'
+	[ $lldp_no_version -gt 0 ] && procd_append_param command '-k'
 	[ -n "$lldp_class" ] && procd_append_param command -M "$lldp_class"
 	[ -n "$agentxsocket" ] && procd_append_param command -x -X "$agentxsocket"
 	[ -n "$filter" ] && procd_append_param command -H "$filter"
