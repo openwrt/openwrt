@@ -1,0 +1,145 @@
+From 3be7ae2d65b6638c4165d66c1c4b5d82d95517d9 Mon Sep 17 00:00:00 2001
+From: Tamizh Chelvam <tamizhr@codeaurora.org>
+Date: Wed, 10 Mar 2021 12:21:49 +0530
+Subject: [PATCH] Revert "net: mac80211: use core API for updating TX/RX stats"
+
+This reverts 36ec144f041bedc2f14b32faa2da11d4d9660003 commit
+in QSDK since 4.4 backports does not support netstats APIs
+for tx/rx stats and retaining the original logic for calculating
+tx/rx stats.
+
+Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
+---
+ net/mac80211/rx.c | 18 ++++++++++++++----
+ net/mac80211/tx.c | 16 +++++++++++++---
+ 2 files changed, 27 insertions(+), 7 deletions(-)
+
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -33,6 +33,18 @@
+ #include "wme.h"
+ #include "rate.h"
+ 
++static inline void ieee80211_rx_stats(struct net_device *dev, u32 len)
++{
++	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev_tstats(dev));
++
++	u64_stats_update_begin(&tstats->syncp);
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
++	tstats->rx_packets++;
++	tstats->rx_bytes += len;
++#endif
++	u64_stats_update_end(&tstats->syncp);
++}
++
+ /*
+  * monitor mode reception
+  *
+@@ -50,7 +62,11 @@ static struct sk_buff *ieee80211_clean_s
+ 
+ 	if (present_fcs_len)
+ 		__pskb_trim(skb, skb->len - present_fcs_len);
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
++	__pskb_pull(skb, rtap_space);
++#else
+ 	pskb_pull(skb, rtap_space);
++#endif
+ 
+ 	/* After pulling radiotap header, clear all flags that indicate
+ 	 * info in skb->data.
+@@ -83,7 +99,11 @@ static struct sk_buff *ieee80211_clean_s
+ 
+ 	memmove(skb->data + IEEE80211_HT_CTL_LEN, skb->data,
+ 		hdrlen - IEEE80211_HT_CTL_LEN);
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
++	__pskb_pull(skb, IEEE80211_HT_CTL_LEN);
++#else
+ 	pskb_pull(skb, IEEE80211_HT_CTL_LEN);
++#endif
+ 
+ 	return skb;
+ }
+@@ -853,7 +873,7 @@ ieee80211_rx_monitor(struct ieee80211_lo
+ 
+ 			if (skb) {
+ 				skb->dev = sdata->dev;
+-				dev_sw_netstats_rx_add(skb->dev, skb->len);
++				ieee80211_rx_stats(skb->dev, skb->len);
+ 				netif_receive_skb(skb);
+ 			}
+ 		}
+@@ -2686,7 +2706,7 @@ ieee80211_deliver_skb(struct ieee80211_r
+ 	skb = rx->skb;
+ 	xmit_skb = NULL;
+ 
+-	dev_sw_netstats_rx_add(dev, skb->len);
++	ieee80211_rx_stats(dev, skb->len);
+ 
+ 	if (rx->sta) {
+ 		/* The seqno index has the same property as needed
+@@ -4098,7 +4118,7 @@ static void ieee80211_rx_cooked_monitor(
+ 		}
+ 
+ 		prev_dev = sdata->dev;
+-		dev_sw_netstats_rx_add(sdata->dev, skb->len);
++		ieee80211_rx_stats(sdata->dev, skb->len);
+ 	}
+ 
+ 	if (prev_dev) {
+@@ -4806,7 +4826,7 @@ static void ieee80211_rx_8023(struct iee
+ 
+ 	skb->dev = fast_rx->dev;
+ 
+-	dev_sw_netstats_rx_add(fast_rx->dev, skb->len);
++	ieee80211_rx_stats(fast_rx->dev, skb->len);
+ 
+ 	/* The seqno index has the same property as needed
+ 	 * for the rx_msdu field, i.e. it is IEEE80211_NUM_TIDS
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -40,6 +40,18 @@
+ static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
+ 				struct net_device *dev, struct sta_info *sta,
+ 				struct ieee80211_key *key, struct sk_buff *skb);
++
++static inline void ieee80211_tx_stats(struct net_device *dev, u32 len)
++{
++	struct pcpu_sw_netstats *tstats = this_cpu_ptr(netdev_tstats(dev));
++
++	u64_stats_update_begin(&tstats->syncp);
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 1, 0))
++	tstats->tx_packets++;
++	tstats->tx_bytes += len;
++#endif
++	u64_stats_update_end(&tstats->syncp);
++}
+ /* misc utils */
+ 
+ static __le16 ieee80211_duration(struct ieee80211_tx_data *tx,
+@@ -3557,7 +3569,7 @@ ieee80211_xmit_fast_finish(struct ieee80
+ 	if (key)
+ 		info->control.hw_key = &key->conf;
+ 
+-	dev_sw_netstats_tx_add(skb->dev, 1, skb->len);
++	ieee80211_tx_stats(skb->dev, skb->len);
+ 
+ 	if (hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_QOS_DATA)) {
+ 		tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
+@@ -4346,7 +4358,7 @@ void __ieee80211_subif_start_xmit(struct
+ 			goto out;
+ 		}
+ 
+-		dev_sw_netstats_tx_add(dev, 1, skb->len);
++		ieee80211_tx_stats(dev, skb->len);
+ 
+ 		ieee80211_xmit(sdata, sta, skb);
+ 	}
+@@ -4717,7 +4729,7 @@ static void ieee80211_8023_xmit(struct i
+ 		info->ack_frame_id = ieee80211_store_ack_skb(local, skb,
+ 							     &info->flags, NULL);
+ 
+-	dev_sw_netstats_tx_add(dev, skbs, len);
++	ieee80211_tx_stats(dev, len);
+ 	if (!ieee80211_hw_check(&local->hw, SUPPORTS_NSS_OFFLOAD)) {
+ 		sta->deflink.tx_stats.packets[queue] += skbs;
+ 		sta->deflink.tx_stats.bytes[queue] += len;

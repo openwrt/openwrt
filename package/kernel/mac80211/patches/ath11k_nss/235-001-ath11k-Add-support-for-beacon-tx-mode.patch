@@ -1,0 +1,45 @@
+From a297f43a9ad6d8c95cf8b984337ffb410f3eb92c Mon Sep 17 00:00:00 2001
+From: Maharaja Kennadyrajan <mkenna@codeaurora.org>
+Date: Tue, 12 Jan 2021 18:07:51 +0530
+Subject: [PATCH] ath11k: Add support for beacon tx mode
+
+User can configure the beacon tx mode while bring-up the
+AP via hostapd configuration.
+
+Use the below configuration in the hostapd to configure
+the beacon tx mode.
+
+"beacon_tx_mode=N", where N = 0 for STAGGERED beacon mode
+and N = 1 for BURST beacon mode.
+
+Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -3483,7 +3483,10 @@ static void ath11k_mac_op_bss_info_chang
+ 
+ 	if (changed & BSS_CHANGED_BEACON) {
+ 		param_id = WMI_PDEV_PARAM_BEACON_TX_MODE;
+-		param_value = WMI_BEACON_STAGGERED_MODE;
++		if (info->beacon_tx_mode == NL80211_BEACON_BURST_MODE)
++			param_value = WMI_BEACON_BURST_MODE;
++		else
++			param_value = WMI_BEACON_STAGGERED_MODE;
+ 		ret = ath11k_wmi_pdev_set_param(ar, param_id,
+ 						param_value, ar->pdev->pdev_id);
+ 		if (ret)
+@@ -3491,8 +3494,9 @@ static void ath11k_mac_op_bss_info_chang
+ 				    arvif->vdev_id);
+ 		else
+ 			ath11k_dbg(ar->ab, ATH11K_DBG_MAC,
+-				   "Set staggered beacon mode for VDEV: %d\n",
+-				   arvif->vdev_id);
++				   "Set %s beacon mode for VDEV: %d mode: %d\n",
++				   param_value ? "burst" : "staggered",
++				   arvif->vdev_id, param_value);
+ 
+ 		if (!arvif->do_not_send_tmpl || !arvif->bcca_zero_sent) {
+ 			ret = ath11k_mac_setup_bcn_tmpl(arvif);
