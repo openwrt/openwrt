@@ -1,0 +1,236 @@
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -2305,6 +2305,7 @@ static void ath11k_dp_rx_h_undecap_snap(
+ 	struct ieee80211_hdr *hdr;
+ 	size_t hdr_len;
+ 	u8 l3_pad_bytes;
++	int expand_by;
+ 	struct hal_rx_desc *rx_desc;
+ 	struct ath11k_skb_rxcb *rxcb = ATH11K_SKB_RXCB(msdu);
+ 
+@@ -2329,12 +2330,22 @@ static void ath11k_dp_rx_h_undecap_snap(
+ 	hdr_len = ieee80211_hdrlen(hdr->frame_control);
+ 
+ 	if (!(status->flag & RX_FLAG_IV_STRIPPED)) {
+-		memcpy(skb_push(msdu,
+-				ath11k_dp_rx_crypto_param_len(ar, enctype)),
+-		       (void *)hdr + hdr_len,
+-			ath11k_dp_rx_crypto_param_len(ar, enctype));
++		int crypto_param_len = ath11k_dp_rx_crypto_param_len(ar, enctype);
++
++		if (skb_headroom(msdu) < crypto_param_len) {
++			expand_by = crypto_param_len - skb_headroom(msdu);
++			if (WARN_ON_ONCE(pskb_expand_head(msdu, expand_by, 0, GFP_ATOMIC)))
++				return;
++		}
++		memcpy(skb_push(msdu, crypto_param_len),
++		       (void *)hdr + hdr_len, crypto_param_len);
+ 	}
+ 
++	if (skb_headroom(msdu) < hdr_len) {
++		expand_by = hdr_len - skb_headroom(msdu);
++		if (WARN_ON_ONCE(pskb_expand_head(msdu, expand_by, 0, GFP_ATOMIC)))
++			return;
++	}
+ 	memcpy(skb_push(msdu, hdr_len), hdr, hdr_len);
+ }
+ 
+@@ -2464,7 +2475,7 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 				struct ieee80211_rx_status *rx_status,
+ 				bool *fast_rx)
+ {
+-	bool  fill_crypto_hdr;
++	bool fill_crypto_hdr = 0;
+ 	enum hal_encrypt_type enctype;
+ 	bool is_decrypted = false;
+ 	struct ath11k_skb_rxcb *rxcb;
+@@ -2479,7 +2490,8 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 
+ 	/* PN for multicast packets will be checked in mac80211 */
+ 	rxcb = ATH11K_SKB_RXCB(msdu);
+-	fill_crypto_hdr = ath11k_dp_rx_h_attn_is_mcbc(ar->ab, rx_desc);
++	if (!ar->ab->nss.enabled)
++		fill_crypto_hdr = ath11k_dp_rx_h_attn_is_mcbc(ar->ab, rx_desc);
+ 	rxcb->is_mcbc = fill_crypto_hdr;
+ 
+ 	if (rxcb->is_mcbc) {
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -9224,7 +9224,7 @@ void cfg80211_bss_flush(struct wiphy *wi
+  * @count: the number of TBTTs until the color change happens
+  * @color_bitmap: representations of the colors that the local BSS is aware of
+  */
+-int cfg80211_bss_color_notify(struct net_device *dev,
++int cfg80211_bss_color_notify(struct net_device *dev, gfp_t gfp,
+ 			      enum nl80211_commands cmd, u8 count,
+ 			      u64 color_bitmap);
+ 
+@@ -9234,9 +9234,9 @@ int cfg80211_bss_color_notify(struct net
+  * @color_bitmap: representations of the colors that the local BSS is aware of
+  */
+ static inline int cfg80211_obss_color_collision_notify(struct net_device *dev,
+-						       u64 color_bitmap)
++						       u64 color_bitmap, gfp_t gfp)
+ {
+-	return cfg80211_bss_color_notify(dev, NL80211_CMD_OBSS_COLOR_COLLISION,
++	return cfg80211_bss_color_notify(dev, gfp, NL80211_CMD_OBSS_COLOR_COLLISION,
+ 					 0, color_bitmap);
+ }
+ 
+@@ -9250,7 +9250,7 @@ static inline int cfg80211_obss_color_co
+ static inline int cfg80211_color_change_started_notify(struct net_device *dev,
+ 						       u8 count)
+ {
+-	return cfg80211_bss_color_notify(dev, NL80211_CMD_COLOR_CHANGE_STARTED,
++	return cfg80211_bss_color_notify(dev, GFP_KERNEL, NL80211_CMD_COLOR_CHANGE_STARTED,
+ 					 count, 0);
+ }
+ 
+@@ -9262,7 +9262,7 @@ static inline int cfg80211_color_change_
+  */
+ static inline int cfg80211_color_change_aborted_notify(struct net_device *dev)
+ {
+-	return cfg80211_bss_color_notify(dev, NL80211_CMD_COLOR_CHANGE_ABORTED,
++	return cfg80211_bss_color_notify(dev, GFP_KERNEL, NL80211_CMD_COLOR_CHANGE_ABORTED,
+ 					 0, 0);
+ }
+ 
+@@ -9274,7 +9274,7 @@ static inline int cfg80211_color_change_
+  */
+ static inline int cfg80211_color_change_notify(struct net_device *dev)
+ {
+-	return cfg80211_bss_color_notify(dev,
++	return cfg80211_bss_color_notify(dev, GFP_KERNEL,
+ 					 NL80211_CMD_COLOR_CHANGE_COMPLETED,
+ 					 0, 0);
+ }
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -5239,6 +5239,10 @@ void ieee80211_tx_status_ext(struct ieee
+  *	(NULL for multicast packets)
+  * @info: tx status information
+  */
++void ieee80211_tx_status_8023(struct ieee80211_hw *hw,
++                               struct ieee80211_vif *vif,
++                               struct sk_buff *skb);
++
+ static inline void ieee80211_tx_status_noskb(struct ieee80211_hw *hw,
+ 					     struct ieee80211_sta *sta,
+ 					     struct ieee80211_tx_info *info)
+--- a/net/mac80211/cfg.c
++++ b/net/mac80211/cfg.c
+@@ -4775,7 +4775,7 @@ void ieee80211_color_collision_detection
+ 	struct ieee80211_sub_if_data *sdata = link->sdata;
+ 
+ 	sdata_lock(sdata);
+-	cfg80211_obss_color_collision_notify(sdata->dev, link->color_bitmap);
++	cfg80211_obss_color_collision_notify(sdata->dev, link->color_bitmap, GFP_KERNEL);
+ 	sdata_unlock(sdata);
+ }
+ 
+--- a/net/mac80211/debugfs_netdev.c
++++ b/net/mac80211/debugfs_netdev.c
+@@ -889,7 +889,7 @@ void ieee80211_debugfs_add_netdev(struct
+ {
+ 	char buf[10+IFNAMSIZ];
+ 
+-	sprintf(buf, "netdev:%s", sdata->name);
++	snprintf(buf, 10 + IFNAMSIZ, "netdev:%s", sdata->name);
+ 	sdata->vif.debugfs_dir = debugfs_create_dir(buf,
+ 		sdata->local->hw.wiphy->debugfsdir);
+ 	sdata->debugfs.subdir_stations = debugfs_create_dir("stations",
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -1406,18 +1406,6 @@ static void __sta_info_destroy_part2(str
+ 		WARN_ON_ONCE(ret);
+ 	}
+ 
+-	/* Flush queues before removing keys, as that might remove them
+-	 * from hardware, and then depending on the offload method, any
+-	 * frames sitting on hardware queues might be sent out without
+-	 * any encryption at all.
+-	 */
+-	if (local->ops->set_key) {
+-		if (local->ops->flush_sta)
+-			drv_flush_sta(local, sta->sdata, sta);
+-		else
+-			ieee80211_flush_queues(local, sta->sdata, false);
+-	}
+-
+ 	/* now keys can no longer be reached */
+ 	ieee80211_free_sta_keys(local, sta);
+ 
+--- a/net/mac80211/status.c
++++ b/net/mac80211/status.c
+@@ -1244,6 +1244,30 @@ void ieee80211_tx_rate_update(struct iee
+ }
+ EXPORT_SYMBOL(ieee80211_tx_rate_update);
+ 
++void ieee80211_tx_status_8023(struct ieee80211_hw *hw,
++                              struct ieee80211_vif *vif,
++                              struct sk_buff *skb)
++{
++        struct ieee80211_sub_if_data *sdata;
++        struct ieee80211_tx_status status = {
++                .skb = skb,
++                .info = IEEE80211_SKB_CB(skb),
++        };
++        struct sta_info *sta;
++
++        sdata = vif_to_sdata(vif);
++
++        rcu_read_lock();
++
++        if (!ieee80211_lookup_ra_sta(sdata, skb, &sta) && !IS_ERR(sta))
++                status.sta = &sta->sta;
++
++        ieee80211_tx_status_ext(hw, &status);
++
++        rcu_read_unlock();
++}
++EXPORT_SYMBOL(ieee80211_tx_status_8023);
++
+ void ieee80211_report_low_ack(struct ieee80211_sta *pubsta, u32 num_packets)
+ {
+ 	struct sta_info *sta = container_of(pubsta, struct sta_info, sta);
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -19406,7 +19406,7 @@ void cfg80211_ch_switch_started_notify(s
+ }
+ EXPORT_SYMBOL(cfg80211_ch_switch_started_notify);
+ 
+-int cfg80211_bss_color_notify(struct net_device *dev,
++int cfg80211_bss_color_notify(struct net_device *dev, gfp_t gfp,
+ 			      enum nl80211_commands cmd, u8 count,
+ 			      u64 color_bitmap)
+ {
+@@ -19420,7 +19420,7 @@ int cfg80211_bss_color_notify(struct net
+ 
+ 	trace_cfg80211_bss_color_notify(dev, cmd, count, color_bitmap);
+ 
+-	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, GFP_KERNEL);
++	msg = nlmsg_new(NLMSG_DEFAULT_SIZE, gfp);
+ 	if (!msg)
+ 		return -ENOMEM;
+ 
+@@ -19443,7 +19443,7 @@ int cfg80211_bss_color_notify(struct net
+ 	genlmsg_end(msg, hdr);
+ 
+ 	return genlmsg_multicast_netns(&nl80211_fam, wiphy_net(&rdev->wiphy),
+-				       msg, 0, NL80211_MCGRP_MLME, GFP_KERNEL);
++				       msg, 0, NL80211_MCGRP_MLME, gfp);
+ 
+ nla_put_failure:
+ 	nlmsg_free(msg);
+--- a/backport-include/linux/netdevice.h
++++ b/backport-include/linux/netdevice.h
+@@ -70,6 +70,9 @@ static inline void netif_trans_update(st
+ 	(_dev)->needs_free_netdev = true;
+ #endif
+ 
++#define netdev_tstats(dev)  dev->tstats
++#define netdev_assign_tstats(dev, e)    dev->tstats = (e);
++
+ #if LINUX_VERSION_IS_LESS(4,15,0)
+ static inline int _bp_netdev_upper_dev_link(struct net_device *dev,
+ 					    struct net_device *upper_dev)

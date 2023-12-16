@@ -1,0 +1,30 @@
+--- linux-6.1.71/arch/arm64/boot/dts/qcom/ipq8074.dtsi	2024-01-07 01:44:56.908138962 -0500
++++ linux-6.1.71/arch/arm64/boot/dts/qcom/ipq8074.dtsi	2024-01-07 01:44:58.908138962 -0500
+@@ -1170,7 +1170,14 @@
+ 		wifi: wifi@c0000000 {
+ 			compatible = "qcom,ipq8074-wifi";
+ 			reg = <0xc000000 0x2000000>;
+-
++			qcom,hw-mode-id = <1>;
++		#ifdef __IPQ_MEM_PROFILE_256_MB__
++			qcom,tgt-mem-mode = <2>;
++		#elif __IPQ_MEM_PROFILE_512_MB__
++			qcom,tgt-mem-mode = <1>;
++		#else
++			qcom,tgt-mem-mode = <0>;
++		#endif
+ 			interrupts = <GIC_SPI 320 IRQ_TYPE_EDGE_RISING>,
+ 				     <GIC_SPI 319 IRQ_TYPE_EDGE_RISING>,
+ 				     <GIC_SPI 318 IRQ_TYPE_EDGE_RISING>,
+@@ -1276,6 +1283,12 @@
+ 					  "tcl2host-status-ring";
+ 			qcom,rproc = <&q6v5_wcss>;
+ 			status = "disabled";
++			qcom,pta-num = <0>;
++			qcom,coex-mode = <0x2>;
++			qcom,bt-active-time = <0x12>;
++			qcom,bt-priority-time = <0x0c>;
++			qcom,coex-algo = <0x2>;
++			qcom,pta-priority = <0x80800505>;
+ 		};
+ 	};

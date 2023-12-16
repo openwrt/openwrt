@@ -1,0 +1,48 @@
+From 9e4857cfe7f646c239fde030eb16b3d6520c34d8 Mon Sep 17 00:00:00 2001
+From: Hari Chandrakanthan <quic_haric@quicinc.com>
+Date: Fri, 6 Jan 2023 12:49:44 +0530
+Subject: [PATCH] ath11k: fix memory leak in dp rx
+
+In dp rx path, by default, fast_rx is set as true.
+And if peer supports fast rx, the frame is sent to upper layer
+through napi_gro_receive.
+
+If peer doesn't support fast rx, the frames need to be processed in
+ath11k_dp_rx_deliver_msdu and sent to mac80211 using ieee80211_rx_napi.
+In dp rx path, the api ath11k_dp_rx_h_mpdu checks whether peer supports
+fast rx.
+
+If peer find fails in ath11k_dp_rx_h_mpdu, the skb is not sent to network stack
+as well as mac80211. Because the argument fast_rx is not set to false in ath11k_dp_rx_h_mpdu
+when peer find fails.
+
+This can lead to memory leak.
+
+Fix it by setting argument fast_rx as false in ath11k_dp_rx_h_mpdu
+so that the skb is sent to mac80211 through ath11k_dp_rx_deliver_msdu.
+
+Signed-off-by: Hari Chandrakanthan <quic_haric@quicinc.com>
+---
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -2512,8 +2512,6 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 			}
+ 		}
+ 
+-		*fast_rx = false;
+-
+ 		if (rxcb->is_mcbc)
+ 			enctype = peer->sec_type_grp;
+ 		else
+@@ -2523,6 +2521,8 @@ static void ath11k_dp_rx_h_mpdu(struct a
+ 	}
+ 	spin_unlock_bh(&ar->ab->base_lock);
+ 
++	*fast_rx = false;
++
+ 	rx_attention = ath11k_dp_rx_get_attention(ar->ab, rx_desc);
+ 	err_bitmap = ath11k_dp_rx_h_attn_mpdu_err(rx_attention);
+ 	if (enctype != HAL_ENCRYPT_TYPE_OPEN && !err_bitmap)
