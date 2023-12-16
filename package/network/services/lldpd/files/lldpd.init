@@ -102,6 +102,9 @@ write_lldpd_conf()
 		config_get lldpmed_fast_start_tx_interval 'config' 'lldpmed_fast_start_tx_interval' 0
 	fi
 
+	local lldp_agenttype
+	config_get lldp_agenttype 'config' 'lldp_agenttype' 'nearest-bridge'
+
 	# Clear out the config file first
 	echo -n > "$LLDPD_CONF"
 	[ -n "$ifnames" ] && echo "configure system interface pattern" "$ifnames" >> "$LLDPD_CONF"
@@ -116,6 +119,7 @@ write_lldpd_conf()
 			echo "configure med fast-start" "enable" >> "$LLDPD_CONF"
 		fi
 	fi
+	[ -n "$lldp_agenttype" ] && echo "configure lldp agent-type" "\"$lldp_agenttype\"" >> "$LLDPD_CONF"
 
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
