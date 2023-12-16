@@ -94,6 +94,14 @@ write_lldpd_conf()
 	local lldp_syscapabilities
 	config_get lldp_syscapabilities 'config' 'lldp_syscapabilities'
 
+	if [ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ]; then
+		local lldpmed_fast_start
+		config_get_bool lldpmed_fast_start 'config' 'lldpmed_fast_start' 0
+
+		local lldpmed_fast_start_tx_interval
+		config_get lldpmed_fast_start_tx_interval 'config' 'lldpmed_fast_start_tx_interval' 0
+	fi
+
 	# Clear out the config file first
 	echo -n > "$LLDPD_CONF"
 	[ -n "$ifnames" ] && echo "configure system interface pattern" "$ifnames" >> "$LLDPD_CONF"
@@ -101,6 +109,14 @@ write_lldpd_conf()
 	[ -n "$lldp_hostname" ] && echo "configure system hostname" "\"$lldp_hostname\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_mgmt_ip" ] && echo "configure system ip management pattern" "\"$lldp_mgmt_ip\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_syscapabilities" ] && echo "configure system capabilities enabled" "\"$lldp_syscapabilities\"" >> "$LLDPD_CONF"
+	if [ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ] && [ $lldpmed_fast_start -gt 0 ]; then
+		if [ $lldpmed_fast_start_tx_interval -gt 0 ]; then
+			echo "configure med fast-start tx-interval" "\"$lldpmed_fast_start_tx_interval\"" >> "$LLDPD_CONF"
+		else
+			echo "configure med fast-start" "enable" >> "$LLDPD_CONF"
+		fi
+	fi
+
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e $LLDPD_CONFS_DIR ] || ln -s /etc/lldpd.d $LLDPD_CONFS_DIR
@@ -192,7 +208,7 @@ reload_service() {
 		restart
 		return 0
 	fi
-	
+
 	$LLDPCLI -u $LLDPSOCKET &> /dev/null <<-EOF
 		pause
 		unconfigure lldp custom-tlv
@@ -201,6 +217,11 @@ reload_service() {
 		unconfigure system hostname
 		unconfigure system ip management pattern
 	EOF
+	if [ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ]; then
+		$LLDPCLI -u $LLDPSOCKET &> /dev/null <<-EOF
+			unconfigure med fast-start
+		EOF
+	fi
 	# Rewrite lldpd.conf
 	# If something changed it should be included by the lldpcli call
 	write_lldpd_conf
