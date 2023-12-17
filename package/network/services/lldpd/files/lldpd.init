@@ -43,6 +43,7 @@ get_config_restart_hash() {
 		config_get_bool v 'config' 'lldpmed_no_inventory'; append _string "$v" ","
 	fi
 	config_get_bool v 'config' 'enable_lldp' 1; append _string "$v" ","
+	config_get_bool v 'config' 'force_lldp'; append _string "$v" ","
 	config_get_bool v 'config' 'enable_cdp'; append _string "$v" ","
 	config_get_bool v 'config' 'enable_edp'; append _string "$v" ","
 	config_get_bool v 'config' 'enable_fdp'; append _string "$v" ","
@@ -131,6 +132,8 @@ write_lldpd_conf()
 
 start_service() {
 
+	local enable_lldp
+	local force_lldp
 	local enable_cdp
 	local enable_fdp
 	local enable_sonmp
@@ -144,6 +147,8 @@ start_service() {
 	local filter
 
 	config_load 'lldpd'
+	config_get_bool enable_lldp 'config' 'enable_lldp' 1
+	config_get_bool force_lldp 'config' 'force_lldp' 0
 	config_get_bool enable_cdp 'config' 'enable_cdp' 0
 	config_get_bool enable_fdp 'config' 'enable_fdp' 0
 	config_get_bool enable_sonmp 'config' 'enable_sonmp' 0
@@ -167,6 +172,15 @@ start_service() {
 	procd_open_instance
 	procd_set_param command ${LLDPDBIN}
 	procd_append_param command -d
+
+	if [ $enable_lldp -gt 0 ]; then
+		if [ $force_lldp -gt 0 ]; then
+			procd_append_param command '-l'
+		fi
+	else
+		# Disable LLDP
+		procd_append_param command '-ll'
+	fi
 
 	[ $enable_cdp -gt 0 ] && procd_append_param command '-c'
 	[ $enable_fdp -gt 0 ] && procd_append_param command '-f'
