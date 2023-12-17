@@ -4,6 +4,7 @@
 START=90
 STOP=01
 
+CONFIG_LLDPD_WITH_CDP=y
 CONFIG_LLDPD_WITH_LLDPMED=y
 
 USE_PROCD=1
@@ -44,7 +45,12 @@ get_config_restart_hash() {
 	fi
 	config_get_bool v 'config' 'enable_lldp' 1; append _string "$v" ","
 	config_get_bool v 'config' 'force_lldp'; append _string "$v" ","
-	config_get_bool v 'config' 'enable_cdp'; append _string "$v" ","
+	if [ "$CONFIG_LLDPD_WITH_CDP" == "y" ]; then
+		config_get_bool v 'config' 'enable_cdp'; append _string "$v" ","
+		config_get      v 'config' 'cdp_version'; append _string "$v" ","
+		config_get_bool v 'config' 'force_cdp'; append _string "$v" ","
+		config_get_bool v 'config' 'force_cdpv2'; append _string "$v" ","
+	fi
 	config_get_bool v 'config' 'enable_edp'; append _string "$v" ","
 	config_get_bool v 'config' 'enable_fdp'; append _string "$v" ","
 	config_get_bool v 'config' 'enable_sonmp'; append _string "$v" ","
@@ -135,6 +141,9 @@ start_service() {
 	local enable_lldp
 	local force_lldp
 	local enable_cdp
+	local cdp_version
+	local force_cdp
+	local force_cdpv2
 	local enable_fdp
 	local enable_sonmp
 	local enable_edp
@@ -149,7 +158,12 @@ start_service() {
 	config_load 'lldpd'
 	config_get_bool enable_lldp 'config' 'enable_lldp' 1
 	config_get_bool force_lldp 'config' 'force_lldp' 0
-	config_get_bool enable_cdp 'config' 'enable_cdp' 0
+	if [ "$CONFIG_LLDPD_WITH_CDP" == "y" ]; then
+		config_get_bool enable_cdp 'config' 'enable_cdp' 0
+		config_get cdp_version 'config' 'cdp_version' 'cdpv1v2'
+		config_get_bool force_cdp 'config' 'force_cdp' 0
+		config_get_bool force_cdpv2 'config' 'force_cdpv2' 0
+	fi
 	config_get_bool enable_fdp 'config' 'enable_fdp' 0
 	config_get_bool enable_sonmp 'config' 'enable_sonmp' 0
 	config_get_bool enable_edp 'config' 'enable_edp' 0
@@ -182,12 +196,34 @@ start_service() {
 		procd_append_param command '-ll'
 	fi
 
-	[ $enable_cdp -gt 0 ] && procd_append_param command '-c'
+	if [ "$CONFIG_LLDPD_WITH_CDP" == "y" ] && [ $enable_cdp -gt 0 ]; then
+		if [ $cdp_version == "cdpv2" ]; then
+			if [ $force_cdp -gt 0 ]; then
+				# CDPv1 disabled, CDPv2 forced
+				procd_append_param command '-ccccc'
+			else
+				# CDPv1 disabled, CDPv2 enabled
+				procd_append_param command '-cccc'
+			fi
+		elif [ $cdp_version == "cdpv1v2" ]; then
+			if [ $force_cdp -gt 0 ] && [ $force_cdpv2 -gt 0 ]; then
+				# CDPv1 enabled, CDPv2 forced
+				procd_append_param command '-ccc'
+			elif [ $force_cdp -gt 0 ]; then
+				# CDPv1 forced, CDPv2 enabled
+				procd_append_param command '-cc'
+			else
+				# CDPv1 and CDPv2 enabled
+				procd_append_param command '-c'
+			fi
+		fi
+	fi
+
 	[ $enable_fdp -gt 0 ] && procd_append_param command '-f'
 	[ $enable_sonmp -gt 0 ] && procd_append_param command '-s'
 	[ $enable_edp -gt 0 ] && procd_append_param command '-e'
 	[ $readonly_mode -gt 0 ] && procd_append_param command '-r'
-	[ $lldp_no_version -gt 0 ] && procd_append_param command '-k'
+	[ $lldp_no_version -gt 0 ] && procd_append_param commanpackage/network/services/lldpd/Makefile package/network/services/lldpd/files/lldpd.initd '-k'
 	[ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ] && [ $lldpmed_no_inventory -gt 0 ] && procd_append_param command '-i'
 	[ -n "$lldp_class" ] && procd_append_param command -M "$lldp_class"
 	[ -n "$agentxsocket" ] && procd_append_param command -x -X "$agentxsocket"
