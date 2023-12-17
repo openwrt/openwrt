@@ -5,6 +5,7 @@ START=90
 STOP=01
 
 CONFIG_LLDPD_WITH_CDP=y
+CONFIG_LLDPD_WITH_FDP=y
 CONFIG_LLDPD_WITH_LLDPMED=y
 
 USE_PROCD=1
@@ -52,7 +53,10 @@ get_config_restart_hash() {
 		config_get_bool v 'config' 'force_cdpv2'; append _string "$v" ","
 	fi
 	config_get_bool v 'config' 'enable_edp'; append _string "$v" ","
-	config_get_bool v 'config' 'enable_fdp'; append _string "$v" ","
+	if [ "$CONFIG_LLDPD_WITH_FDP" == "y" ]; then
+		config_get_bool v 'config' 'enable_fdp'; append _string "$v" ","
+		config_get_bool v 'config' 'force_fdp'; append _string "$v" ","
+	fi
 	config_get_bool v 'config' 'enable_sonmp'; append _string "$v" ","
 
 	_hash=`echo -n "${_string}" | md5sum | awk '{ print \$1 }'`
@@ -60,8 +64,7 @@ get_config_restart_hash() {
 }
 
 get_config_cid_ifaces() {
-	local _ifaces
-	config_get _ifaces 'config' 'cid_interface'
+	local _ifacesCONFIG_LLDPD_WITH_FDP
 
 	local _iface _ifnames=""
 	for _iface in $_ifaces; do
@@ -145,6 +148,7 @@ start_service() {
 	local force_cdp
 	local force_cdpv2
 	local enable_fdp
+	local force_fdp
 	local enable_sonmp
 	local enable_edp
 	local lldp_class
@@ -164,7 +168,10 @@ start_service() {
 		config_get_bool force_cdp 'config' 'force_cdp' 0
 		config_get_bool force_cdpv2 'config' 'force_cdpv2' 0
 	fi
-	config_get_bool enable_fdp 'config' 'enable_fdp' 0
+	if [ "$CONFIG_LLDPD_WITH_FDP" == "y" ]; then
+		config_get_bool enable_fdp 'config' 'enable_fdp' 0
+		config_get_bool force_fdp 'config' 'force_fdp' 0
+	fi
 	config_get_bool enable_sonmp 'config' 'enable_sonmp' 0
 	config_get_bool enable_edp 'config' 'enable_edp' 0
 	config_get lldp_class 'config' 'lldp_class'
@@ -219,7 +226,16 @@ start_service() {
 		fi
 	fi
 
-	[ $enable_fdp -gt 0 ] && procd_append_param command '-f'
+	if [ "$CONFIG_LLDPD_WITH_FDP" == "y" ] && [ $enable_fdp -gt 0 ]; then
+		if [ $force_fdp -gt 0 ]; then
+			# FDP enbled and forced
+			procd_append_param command '-ff'
+		else
+			# FDP enabled
+			procd_append_param command '-f'
+		fi
+	fi
+
 	[ $enable_sonmp -gt 0 ] && procd_append_param command '-s'
 	[ $enable_edp -gt 0 ] && procd_append_param command '-e'
 	[ $readonly_mode -gt 0 ] && procd_append_param command '-r'
@@ -278,6 +294,7 @@ reload_service() {
 		$LLDPCLI -u $LLDPSOCKET &> /dev/null <<-EOF
 			unconfigure med fast-start
 		EOF
+
 	fi
 	# Rewrite lldpd.conf
 	# If something changed it should be included by the lldpcli call
