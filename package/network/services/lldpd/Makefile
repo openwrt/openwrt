@@ -72,7 +72,8 @@ ifneq ($(CONFIG_LLDPD_WITH_CDP),y)
 	sed -i -e '/cdp/d' $(1)/etc/config/lldpd
 endif
 ifneq ($(CONFIG_LLDPD_WITH_FDP),y)
-	sed -i -e '/fdp/d' $(1)/etc/init.d/lldpd $(1)/etc/config/lldpd
+	sed -i -e 's/CONFIG_LLDPD_WITH_FDP=y/CONFIG_LLDPD_WITH_FDP=n/g' $(1)/etc/init.d/lldpd
+	sed -i -e '/fdp/d' $(1)/etc/config/lldpd
 endif
 ifneq ($(CONFIG_LLDPD_WITH_EDP),y)
 	sed -i -e '/edp/d' $(1)/etc/init.d/lldpd $(1)/etc/config/lldpd
