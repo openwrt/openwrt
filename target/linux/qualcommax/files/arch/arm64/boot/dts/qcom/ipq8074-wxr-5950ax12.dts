@@ -267,8 +267,9 @@
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT6)>;
-	switch_wan_bmp = <ESS_PORT5>;
+	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>;
+	switch_wan_bmp = <ESS_PORT6>;
+	malibu_first_phy_addr = <0x18>;
 	switch_mac_mode = <MAC_MODE_QSGMII>;
 	switch_mac_mode1 = <MAC_MODE_USXGMII>;
 	switch_mac_mode2 = <MAC_MODE_USXGMII>;
