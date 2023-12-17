@@ -122,6 +122,9 @@ write_lldpd_conf()
 	local lldp_portidsubtype
 	config_get lldp_portidsubtype 'config' 'lldp_portidsubtype' 'macaddress'
 
+	local lldp_platform
+	config_get lldp_platform 'config' 'lldp_platform' ""
+
 	# Clear out the config file first
 	echo -n > "$LLDPD_CONF"
 	[ -n "$ifnames" ] && echo "configure system interface pattern" "$ifnames" >> "$LLDPD_CONF"
@@ -138,6 +141,7 @@ write_lldpd_conf()
 	fi
 	[ -n "$lldp_agenttype" ] && echo "configure lldp agent-type" "\"$lldp_agenttype\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_portidsubtype" ] && echo "configure lldp portidsubtype" "\"$lldp_portidsubtype\"" >> "$LLDPD_CONF"
+	[ -n "$lldp_platform" ] && echo "configure system platform" "\"$lldp_platform\"" >> "$LLDPD_CONF"
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e $LLDPD_CONFS_DIR ] || ln -s /etc/lldpd.d $LLDPD_CONFS_DIR
@@ -307,6 +311,7 @@ reload_service() {
 		unconfigure system description
 		unconfigure system hostname
 		unconfigure system ip management pattern
+		unconfigure system platform
 	EOF
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ]; then
 		$LLDPCLI -u $LLDPSOCKET &> /dev/null <<-EOF
