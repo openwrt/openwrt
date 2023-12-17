@@ -1461,6 +1461,10 @@ define Device/iptime_ax2004m
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := AX2004M
   DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 -uboot-envtools
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := NMBM has been newly enabled, and its flash block \
+	mapping might be incompatible with existing installation. \
+	New installation via recovery mode is recommended.
 endef
 TARGET_DEVICES += iptime_ax2004m
 
