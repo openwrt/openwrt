@@ -68,7 +68,8 @@ define Package/lldpd/install
 	$(INSTALL_BIN) ./files/lldpd.init $(1)/etc/init.d/lldpd
 	$(INSTALL_CONF) ./files/lldpd.config $(1)/etc/config/lldpd
 ifneq ($(CONFIG_LLDPD_WITH_CDP),y)
-	sed -i -e '/cdp/d' $(1)/etc/init.d/lldpd $(1)/etc/config/lldpd
+	sed -i -e 's/CONFIG_LLDPD_WITH_CDP=y/CONFIG_LLDPD_WITH_CDP=n/g' $(1)/etc/init.d/lldpd
+	sed -i -e '/cdp/d' $(1)/etc/config/lldpd
 endif
 ifneq ($(CONFIG_LLDPD_WITH_FDP),y)
 	sed -i -e '/fdp/d' $(1)/etc/init.d/lldpd $(1)/etc/config/lldpd
