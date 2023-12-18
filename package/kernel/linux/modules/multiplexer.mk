@@ -32,3 +32,18 @@ define KernelPackage/mux-gpio/description
 endef
 
 $(eval $(call KernelPackage,mux-gpio))
+
+define KernelPackage/mux-mmio
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=MMIO/Regmap register bitfield-controlled Multiplexer controller
+  DEPENDS:=+kmod-mux-core
+  KCONFIG:=CONFIG_MUX_MMIO
+  FILES:=$(LINUX_DIR)/drivers/mux/mux-mmio.ko
+  AUTOLOAD:=$(call AutoProbe,mux-mmio)
+endef
+
+define KernelPackage/mux-mmio/description
+  Kernel module for the MMIO/Regmap multiplexer driver.
+endef
+
+$(eval $(call KernelPackage,mux-mmio))
