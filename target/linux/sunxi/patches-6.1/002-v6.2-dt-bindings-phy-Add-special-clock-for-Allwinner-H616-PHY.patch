@@ -1,8 +1,7 @@
-From e2078ae0c559b6ac91db19262b56d8cf334354cb Mon Sep 17 00:00:00 2001
+From 6964affe65066651eca21e97247d3b7cac5153dc Mon Sep 17 00:00:00 2001
 From: Andre Przywara <andre.przywara@arm.com>
-Date: Mon, 12 Sep 2022 00:03:22 +0100
-Subject: [PATCH 5001/5006] dt-bindings: phy: Add special clock for Allwinner
- H616 PHY
+Date: Mon, 31 Oct 2022 11:13:53 +0000
+Subject: [PATCH] dt-bindings: phy: Add special clock for Allwinner H616 PHY
 
 The USB PHY IP in the Allwinner H616 SoC requires a quirk that involves
 some resources from port 2's PHY and HCI IP. In particular the PMU clock
@@ -17,6 +16,9 @@ PHY driver can apply the quirk in isolation, without requiring help from
 port 2's HCI driver.
 
 Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+Reviewed-by: Rob Herring <robh@kernel.org>
+Link: https://lore.kernel.org/r/20221031111358.3387297-3-andre.przywara@arm.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
 ---
  .../phy/allwinner,sun8i-h3-usb-phy.yaml       | 26 +++++++++++++++++++
  1 file changed, 26 insertions(+)

@@ -1,7 +1,7 @@
-From e4045c8125d88a9eb8b4f8f74b5c7955d5d9adc0 Mon Sep 17 00:00:00 2001
+From 28a1a6474c5053bae01bd29946b4d5ede539176b Mon Sep 17 00:00:00 2001
 From: Andre Przywara <andre.przywara@arm.com>
-Date: Thu, 17 Jun 2021 10:54:22 +0100
-Subject: [PATCH 5000/5006] dt-bindings: usb: Add H616 compatible string
+Date: Mon, 31 Oct 2022 11:13:52 +0000
+Subject: [PATCH] dt-bindings: usb: Add H616 compatible string
 
 The Allwinner H616 contains four fully OHCI/EHCI compatible USB host
 controllers, so just add their compatible strings to the list of
@@ -9,6 +9,8 @@ generic OHCI/EHCI controllers.
 
 Signed-off-by: Andre Przywara <andre.przywara@arm.com>
 Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20221031111358.3387297-2-andre.przywara@arm.com
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
 ---
  Documentation/devicetree/bindings/usb/generic-ehci.yaml | 1 +
  Documentation/devicetree/bindings/usb/generic-ohci.yaml | 1 +

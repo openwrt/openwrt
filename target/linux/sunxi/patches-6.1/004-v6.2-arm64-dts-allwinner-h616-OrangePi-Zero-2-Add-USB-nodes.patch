@@ -1,8 +1,7 @@
-From 1bc12a9ae690a22a525f9b71778022bb4533fec1 Mon Sep 17 00:00:00 2001
+From db5f028309ede13767e2ba356c1975ac37a4fd6c Mon Sep 17 00:00:00 2001
 From: Andre Przywara <andre.przywara@arm.com>
-Date: Wed, 16 Jun 2021 18:32:36 +0100
-Subject: [PATCH 5005/5006] arm64: dts: allwinner: h616: OrangePi Zero 2: Add
- USB nodes
+Date: Mon, 31 Oct 2022 11:13:57 +0000
+Subject: [PATCH] arm64: dts: allwinner: h616: OrangePi Zero 2: Add USB nodes
 
 The OrangePi Zero 2 has one USB-A host port, VBUS is provided by
 a GPIO controlled regulator.
@@ -10,6 +9,9 @@ The USB-C port is meant to power the board, but is also connected to
 the USB 0 port, which we configure as an MUSB peripheral.
 
 Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+Reviewed-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Link: https://lore.kernel.org/r/20221031111358.3387297-7-andre.przywara@arm.com
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
 ---
  .../allwinner/sun50i-h616-orangepi-zero2.dts  | 41 +++++++++++++++++++
  1 file changed, 41 insertions(+)

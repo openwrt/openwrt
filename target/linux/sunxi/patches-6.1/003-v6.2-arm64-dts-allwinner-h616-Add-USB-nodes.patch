@@ -1,7 +1,7 @@
-From 4cfd9d9350a57fc3ced240dbf61ca2f444283c50 Mon Sep 17 00:00:00 2001
+From f40cf244c3feb4e1a442f8029b691add2c65b3ab Mon Sep 17 00:00:00 2001
 From: Andre Przywara <andre.przywara@arm.com>
-Date: Wed, 16 Jun 2021 18:20:47 +0100
-Subject: [PATCH 5004/5006] arm64: dts: allwinner: h616: Add USB nodes
+Date: Mon, 31 Oct 2022 11:13:56 +0000
+Subject: [PATCH] arm64: dts: allwinner: h616: Add USB nodes
 
 Add the nodes for the MUSB and the four USB host controllers to the SoC
 .dtsi, along with the PHY node needed to bind all of them together.
@@ -10,6 +10,9 @@ EHCI/OHCI and MUSB are compatible to previous SoCs, but the PHY requires
 some quirks (handled in the driver).
 
 Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+Reviewed-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Link: https://lore.kernel.org/r/20221031111358.3387297-6-andre.przywara@arm.com
+Signed-off-by: Jernej Skrabec <jernej.skrabec@gmail.com>
 ---
  .../arm64/boot/dts/allwinner/sun50i-h616.dtsi | 160 ++++++++++++++++++
  1 file changed, 160 insertions(+)
