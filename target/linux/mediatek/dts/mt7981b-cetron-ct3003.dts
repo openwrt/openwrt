@@ -12,6 +12,7 @@
 
 	aliases {
 		serial0 = &uart0;
+		label-mac-device = &gmac0;
 		led-boot = &led_status_red;
 		led-failsafe = &led_status_red;
 		led-running = &led_status_green;
@@ -65,7 +66,7 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 
-		nvmem-cells = <&macaddr_art_0>;
+		nvmem-cells = <&macaddr_art_0 0>;
 		nvmem-cell-names = "mac-address";
 
 		fixed-link {
@@ -134,7 +135,9 @@
 					#size-cells = <1>;
 
 					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -192,6 +195,8 @@
 		port@3 {
 			reg = <3>;
 			label = "wan";
+			nvmem-cells = <&macaddr_art_0 3>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port@6 {
