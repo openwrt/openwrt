@@ -1,0 +1,32 @@
+From 31dda26801fd076d2492e954419f3a2684c4b243 Mon Sep 17 00:00:00 2001
+From: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
+Date: Tue, 28 Nov 2023 12:49:45 +0530
+Subject: [PATCH] ath11k: Fixing with correct arugment in function
+
+In DECLARE_EVENT_CLASS is expecting the dynamic array as char string but
+this is different in the rebased code. Adding correct arugment in the
+function DECLARE_EVENT_CLASS for avoiding the compilation issue.
+
+Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
+---
+ net/mac80211/trace_msg.h                | 6 ++++--
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+--- a/net/mac80211/trace_msg.h
++++ b/net/mac80211/trace_msg.h
+@@ -24,11 +24,13 @@ DECLARE_EVENT_CLASS(mac80211_msg_event,
+ 	TP_ARGS(vaf),
+ 
+ 	TP_STRUCT__entry(
+-		__vstring(msg, vaf->fmt, vaf->va)
++		__dynamic_array(char, msg, MAX_MSG_LEN)
+ 	),
+ 
+ 	TP_fast_assign(
+-		__assign_vstr(msg, vaf->fmt, vaf->va);
++		WARN_ON_ONCE(vsnprintf(__get_dynamic_array(msg),
++				       MAX_MSG_LEN, vaf->fmt,
++				       *vaf->va) >= MAX_MSG_LEN);
+ 	),
+ 
+ 	TP_printk("%s", __get_str(msg))

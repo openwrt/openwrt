@@ -1,0 +1,34 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+enable_nss_offload=$(cat /sys/module/ath11k/parameters/nss_offload)
+
+[ "$enable_nss_offload" -eq 0 ] && exit 0
+
+board=$(board_name)
+
+# Common queue limits
+sysctl -w dev.nss.n2hcfg.n2h_queue_limit_core0=256 >/dev/null 2>/dev/null
+sysctl -w dev.nss.n2hcfg.n2h_queue_limit_core1=256 >/dev/null 2>/dev/null
+
+case "$board" in
+redmi,ax6) # 256MB profile
+	sysctl -w dev.nss.n2hcfg.extra_pbuf_core0=3100000 >/dev/null 2>/dev/null
+	sysctl -w dev.nss.n2hcfg.n2h_high_water_core0=30528 >/dev/null 2>/dev/null
+	sysctl -w dev.nss.n2hcfg.n2h_wifi_pool_buf=4096 >/dev/null 2>/dev/null
+	;;
+edimax,cax1800|\
+xiaomi,ax3600) # 512MB profile
+	sysctl -w dev.nss.n2hcfg.extra_pbuf_core0=3100000 >/dev/null 2>/dev/null
+	sysctl -w dev.nss.n2hcfg.n2h_high_water_core0=30624 >/dev/null 2>/dev/null
+	sysctl -w dev.nss.n2hcfg.n2h_wifi_pool_buf=8192 >/dev/null 2>/dev/null
+	;;
+edgecore,eap102|\
+qnap,301w|\
+xiaomi,ax9000) #1G profile
+	sysctl -w dev.nss.n2hcfg.extra_pbuf_core0=10000000 >/dev/null 2>/dev/null
+	sysctl -w dev.nss.n2hcfg.n2h_high_water_core0=72512 >/dev/null 2>/dev/null
+	sysctl -w dev.nss.n2hcfg.n2h_wifi_pool_buf=36864 >/dev/null 2>/dev/null
+	;;
+esac

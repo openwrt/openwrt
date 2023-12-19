@@ -1,0 +1,42 @@
+From dd145381fc37af6c67e97844dfc7c488f546245e Mon Sep 17 00:00:00 2001
+From: Seevalamuthu Mariappan <quic_seevalam@quicinc.com>
+Date: Wed, 29 Dec 2021 14:25:39 +0530
+Subject: [PATCH] ath11k: Handle failure in qmi firmware ready
+
+In some scenarios like firmware crash during init time and
+hardware gets restarted after qmi firmware ready event.
+During restart, ath11k_core_qmi_firmware_ready() returns timeout.
+But, this failure is not handled and ATH11K_FLAG_REGISTERED is set.
+
+When hardware restart completed, firmware sends firmware ready event
+again. Since ATH11K_FLAG_REGISTERED is already set, ath11k handles
+this as core restart. Inits are not done because of previous timeout.
+But, ath11k_core_restart does deinits which causes NULL pointer crash.
+
+[   26.863182] Workqueue: ath11k_wq ath11k_core_restart [ath11k]
+[   26.867731] PC is at ath11k_cfr_deinit+0x2c/0xc0 [ath11k]
+[   26.873545] LR is at ath11k_core_restart+0x1a8/0x3d0 [ath11k]
+[   26.878901] pc : [<3fa27c04>]    lr : [<3f9cc82c>]    psr: 80000013
+[   26.884659] sp : 7c535ef0  ip : 00000000  fp : 00000000
+.
+[   27.003409] [<3fa27c04>] (ath11k_cfr_deinit [ath11k]) from [<3f9cc82c>] (ath11k_core_restart+0x1a8/0x3d0 [ath11k])
+[   27.011407] [<3f9cc82c>] (ath11k_core_restart [ath11k]) from [<421319c8>] (process_one_work+0x1dc/0x314)
+[   27.021618] [<421319c8>] (process_one_work) from [<42132d5c>] (worker_thread+0x2bc/0x40c)
+[   27.031251] [<42132d5c>] (worker_thread) from [<42137414>] (kthread+0x164/0x180)
+
+Signed-off-by: Seevalamuthu Mariappan <quic_seevalam@quicinc.com>
+---
+ drivers/net/wireless/ath/ath11k/qmi.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -4713,6 +4713,8 @@ static void ath11k_qmi_driver_event_work
+ 				clear_bit(ATH11K_FLAG_RECOVERY, &ab->dev_flags);
+ 				ret = ath11k_core_qmi_firmware_ready(ab);
+ 				if (ret) {
++					ath11k_warn(ab,
++						    "failed to init after firmware ready: %d\n", ret);
+ 					set_bit(ATH11K_FLAG_QMI_FAIL, &ab->dev_flags);
+ 					break;
+ 				}

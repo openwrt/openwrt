@@ -19,7 +19,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/Kconfig
 +++ b/drivers/net/wireless/ath/ath11k/Kconfig
-@@ -12,6 +12,16 @@ config ATH11K
+@@ -13,6 +13,16 @@ config ATH11K
  
  	  If you choose to build a module, it'll be called ath11k.
  
@@ -38,30 +38,29 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	depends on m
 --- a/drivers/net/wireless/ath/ath11k/Makefile
 +++ b/drivers/net/wireless/ath/ath11k/Makefile
-@@ -2424,6 +2424,8 @@
+@@ -25,6 +25,7 @@ ath11k-$(CPTCFG_ATH11K_TRACING) += trace
+ ath11k-$(CPTCFG_ATH11K_THERMAL) += thermal.o
+ ath11k-$(CPTCFG_ATH11K_SPECTRAL) += spectral.o
+ ath11k-$(CONFIG_PM) += wow.o
++ath11k-$(CPTCFG_ATH11K_NSS_SUPPORT) += nss.o
+ 
  obj-$(CPTCFG_ATH11K_AHB) += ath11k_ahb.o
  ath11k_ahb-y += ahb.o
-
-+ath11k-$(CPTCFG_ATH11K_NSS_SUPPORT) += nss.o
-+
- obj-$(CPTCFG_ATH11K_PCI) += ath11k_pci.o
- ath11k_pci-y += mhi.o pci.o
-
 --- /dev/null
 +++ b/drivers/net/wireless/ath/ath11k/nss.c
-@@ -0,0 +1,2395 @@
+@@ -0,0 +1,2392 @@
 +// SPDX-License-Identifier: BSD-3-Clause-Clear
 +/*
 + * Copyright (c) 2020 The Linux Foundation. All rights reserved.
 + */
 +
++#include "debug.h"
 +#include "mac.h"
 +#include "nss.h"
 +#include "core.h"
 +#include "peer.h"
-+#include "dp_rx.h"
-+#include "dp_tx.h"
 +#include "hif.h"
++#include "wmi.h"
 +#include "../../../../../net/mac80211/sta_info.h"
 +
 +/*-----------------------------ATH11K-NSS Helpers--------------------------*/
@@ -1350,7 +1349,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +	peer->nss.nss_stats->rxrate.bw = ath11k_mac_bw_to_mac80211_bw(ppdu_info->bw);
 +}
 +
-+int ath11k_nss_peer_delete(struct ath11k_base *ab, u8 *addr)
++int ath11k_nss_peer_delete(struct ath11k_base *ab, const u8 *addr)
 +{
 +	struct nss_wifili_peer_msg *peer_msg;
 +	struct nss_wifili_msg *wlmsg = NULL;
@@ -1366,7 +1365,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +
 +	peer = ath11k_peer_find_by_addr(ab, addr);
 +	if (!peer) {
-+		ath11k_warn(ab, "peer not found for nss peer delete\n");
++		ath11k_warn(ab, "peer (%pM) not found for nss peer delete\n", addr);
 +		spin_unlock_bh(&ab->base_lock);
 +		return -EINVAL;
 +	}
@@ -1765,8 +1764,6 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +		return ATH11K_WIFILI_TARGET_TYPE_QCA6018;
 +	case ATH11K_HW_QCN9074_HW10:
 +		return ATH11K_WIFILI_TARGET_TYPE_QCN9074;
-+	case ATH11K_HW_IPQ5018:
-+		return ATH11K_WIFILI_TARGET_TYPE_QCA5018;
 +	default:
 +		ath11k_warn(ab, "NSS Offload not supported for this HW\n");
 +		return ATH11K_WIFILI_TARGET_TYPE_UNKNOWN;
@@ -1778,7 +1775,6 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +	switch (ab->hw_rev) {
 +	case ATH11K_HW_IPQ8074:
 +	case ATH11K_HW_IPQ6018_HW10:
-+	case ATH11K_HW_IPQ5018:
 +		return NSS_WIFILI_INTERNAL_INTERFACE;
 +	case ATH11K_HW_QCN9074_HW10:
 +		return nss_get_available_wifili_external_if();
@@ -2447,7 +2443,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +}
 --- /dev/null
 +++ b/drivers/net/wireless/ath/ath11k/nss.h
-@@ -0,0 +1,304 @@
+@@ -0,0 +1,305 @@
 +/* SPDX-License-Identifier: BSD-3-Clause-Clear */
 +/*
 + * Copyright (c) 2020 The Linux Foundation. All rights reserved.
@@ -2456,6 +2452,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +#ifndef ATH11K_NSS_H
 +#define ATH11K_NSS_H
 +
++#include "net/cfg80211.h"
 +#ifdef CPTCFG_ATH11K_NSS_SUPPORT
 +#include <nss_api_if.h>
 +#include <nss_cmn.h>
@@ -2545,8 +2542,8 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +		break;	\
 +	tstats = this_cpu_ptr(netdev_tstats(wdev->netdev));	\
 +	u64_stats_update_begin(&tstats->syncp);	\
-+	tstats->txrx ## _packets += pkt_count;	\
-+	tstats->txrx ## _bytes += len;	\
++	u64_stats_add(&tstats->txrx ## _packets, pkt_count); \
++	u64_stats_add(&tstats->txrx ## _bytes, len); \
 +	u64_stats_update_end(&tstats->syncp);	\
 +} while (0)
 +
@@ -2644,7 +2641,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +void ath11k_nss_vdev_delete(struct ath11k_vif *arvif);
 +int ath11k_nss_vdev_up(struct ath11k_vif *arvif);
 +int ath11k_nss_vdev_down(struct ath11k_vif *arvif);
-+int ath11k_nss_peer_delete(struct ath11k_base *ab, u8 *addr);
++int ath11k_nss_peer_delete(struct ath11k_base *ab, const u8 *addr);
 +int ath11k_nss_set_peer_authorize(struct ath11k *ar, u16 peer_id);
 +int ath11k_nss_peer_create(struct ath11k_base *ab, struct ath11k_peer *peer);
 +void ath11k_nss_peer_stats_enable(struct ath11k *ar);
@@ -2709,7 +2706,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +	return 0;
 +}
 +
-+static inline int ath11k_nss_peer_delete(struct ath11k_base *ab, u8 *addr)
++static inline int ath11k_nss_peer_delete(struct ath11k_base *ab, const u8 *addr)
 +{
 +	return 0;
 +}
@@ -2752,6 +2749,31 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +}
 +#endif /* CPTCFG_ATH11K_NSS_SUPPORT */
 +#endif
+--- a/drivers/net/wireless/ath/ath11k/hif.h
++++ b/drivers/net/wireless/ath/ath11k/hif.h
+@@ -30,6 +30,7 @@ struct ath11k_hif_ops {
+ 	void (*ce_irq_enable)(struct ath11k_base *ab);
+ 	void (*ce_irq_disable)(struct ath11k_base *ab);
+ 	void (*get_ce_msi_idx)(struct ath11k_base *ab, u32 ce_id, u32 *msi_idx);
++	u32 (*get_window_offset)(struct ath11k_base *ab, u32 offset);
+ };
+ 
+ static inline void ath11k_hif_ce_irq_enable(struct ath11k_base *ab)
+@@ -136,6 +137,14 @@ static inline void ath11k_get_msi_addres
+ 	ab->hif.ops->get_msi_address(ab, msi_addr_lo, msi_addr_hi);
+ }
+ 
++static inline u32 ath11k_hif_get_window_offset(struct ath11k_base *ab, u32 offset)
++{
++	if (ab->hif.ops->get_window_offset)
++		return ab->hif.ops->get_window_offset(ab, offset);
++
++	return offset;
++}
++
+ static inline void ath11k_get_ce_msi_idx(struct ath11k_base *ab, u32 ce_id,
+ 					 u32 *msi_data_idx)
+ {
 --- a/drivers/net/wireless/ath/ath11k/pci.c
 +++ b/drivers/net/wireless/ath/ath11k/pci.c
 @@ -67,6 +67,20 @@ static u32 ath11k_pci_get_window_start(s
@@ -2775,7 +2797,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  static inline void ath11k_pci_select_window(struct ath11k_pci *ab_pci, u32 offset)
  {
  	struct ath11k_base *ab = ab_pci->ab;
-@@ -702,6 +716,7 @@ static const struct ath11k_hif_ops ath11
+@@ -708,6 +722,7 @@ static const struct ath11k_hif_ops ath11
  	.map_service_to_pipe = ath11k_pcic_map_service_to_pipe,
  	.ce_irq_enable = ath11k_pci_hif_ce_irq_enable,
  	.ce_irq_disable = ath11k_pci_hif_ce_irq_disable,
@@ -2785,7 +2807,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -997,6 +997,29 @@ unlock_exit:
+@@ -992,6 +992,29 @@ unlock_exit:
  	spin_unlock_bh(&ab->base_lock);
  }
  
@@ -2817,7 +2839,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  			     enum hal_pn_type pn_type)
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -1134,6 +1134,44 @@ int ath11k_wmi_send_pdev_set_regdomain(s
+@@ -1164,6 +1164,44 @@ int ath11k_wmi_send_pdev_set_regdomain(s
  	return ret;
  }
  
@@ -2864,7 +2886,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  {
 --- a/drivers/net/wireless/ath/ath11k/wmi.h
 +++ b/drivers/net/wireless/ath/ath11k/wmi.h
-@@ -2841,6 +2841,27 @@ struct pdev_set_regdomain_params {
+@@ -2873,6 +2873,27 @@ struct pdev_set_regdomain_params {
  	u32 pdev_id;
  };
  
@@ -2892,7 +2914,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  struct rx_reorder_queue_remove_params {
  	u8 *peer_macaddr;
  	u16 vdev_id;
-@@ -3093,6 +3114,16 @@ struct wmi_pdev_set_regdomain_cmd {
+@@ -3121,6 +3142,16 @@ struct wmi_pdev_set_regdomain_cmd {
  	u32 dfs_domain;
  } __packed;
  
@@ -2909,7 +2931,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  struct wmi_peer_set_param_cmd {
  	u32 tlv_header;
  	u32 vdev_id;
-@@ -6300,6 +6331,8 @@ int ath11k_wmi_send_peer_create_cmd(stru
+@@ -6362,6 +6393,8 @@ int ath11k_wmi_send_peer_create_cmd(stru
  int ath11k_wmi_vdev_set_param_cmd(struct ath11k *ar, u32 vdev_id,
  				  u32 param_id, u32 param_value);
  
@@ -2955,7 +2977,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  enum dp_rx_decap_type {
  	DP_RX_DECAP_TYPE_RAW,
  	DP_RX_DECAP_TYPE_NATIVE_WIFI,
-@@ -75,6 +103,9 @@ void ath11k_peer_rx_tid_delete(struct at
+@@ -56,6 +84,9 @@ void ath11k_peer_rx_tid_delete(struct at
  int ath11k_peer_rx_tid_setup(struct ath11k *ar, const u8 *peer_mac, int vdev_id,
  			     u8 tid, u32 ba_win_sz, u16 ssn,
  			     enum hal_pn_type pn_type);
@@ -2967,8 +2989,8 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  int ath11k_dp_pdev_reo_setup(struct ath11k_base *ab);
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6121,6 +6121,16 @@ static int ath11k_mac_op_start(struct ie
- 		}
+@@ -6365,6 +6365,16 @@ static int ath11k_mac_op_start(struct ie
+ 		goto err;
  	}
  
 +	/* nss offload requires eapol packets to be routed to wbm release ring */
@@ -2984,3 +3006,13 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	__ath11k_set_antenna(ar, ar->cfg_tx_chainmask, ar->cfg_rx_chainmask);
  
  	/* TODO: Do we need to enable ANI? */
+--- a/drivers/net/wireless/ath/ath11k/core.h
++++ b/drivers/net/wireless/ath/ath11k/core.h
+@@ -913,6 +913,7 @@ struct ath11k_base {
+ 	struct list_head peers;
+ 	wait_queue_head_t peer_mapping_wq;
+ 	u8 mac_addr[ETH_ALEN];
++	int userpd_id;
+ 	int irq_num[ATH11K_IRQ_NUM_MAX];
+ 	struct ath11k_ext_irq_grp ext_irq_grp[ATH11K_EXT_IRQ_GRP_NUM_MAX];
+ 	struct ath11k_targ_cap target_caps;

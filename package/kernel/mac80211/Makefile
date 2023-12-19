@@ -121,10 +121,15 @@ define KernelPackage/mac80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=Linux 802.11 Wireless Networking Stack
   # +kmod-crypto-cmac is a runtime only dependency of net/mac80211/aes_cmac.c
-  DEPENDS+= +kmod-cfg80211 +kmod-crypto-cmac +kmod-crypto-ccm +kmod-crypto-gcm +hostapd-common
+  DEPENDS+= +kmod-cfg80211 +kmod-crypto-cmac +kmod-crypto-ccm +kmod-crypto-gcm +hostapd-common \
+  +ATH11K_NSS_SUPPORT:kmod-qca-nss-drv
   KCONFIG:=\
 	CONFIG_AVERAGE=y
   FILES:= $(PKG_BUILD_DIR)/net/mac80211/mac80211.ko
+ifdef CONFIG_ATH11K_NSS_SUPPORT
+  AUTOLOAD:=$(call AutoProbe,mac80211)
+  MODPARAMS.mac80211:=nss_redirect=1
+endif
   ABI_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   MENU:=1
 endef
@@ -274,7 +279,7 @@ ifeq ($(BUILD_VARIANT),smallbuffers)
 endif
 
 ifdef CONFIG_ATH11K_NSS_SUPPORT
-	EXTRA_CFLAGS+=-I$(STAGING_DIR)/usr/include/qca-nss-drv
+	IREMAP_CFLAGS+=-I$(STAGING_DIR)/usr/include/qca-nss-drv
 endif
 
 MAKE_OPTS:= \

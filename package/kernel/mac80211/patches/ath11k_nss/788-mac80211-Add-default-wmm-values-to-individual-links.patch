@@ -1,0 +1,35 @@
+From ed68b4361bd1b783a8b35ab853d1828c8da041f3 Mon Sep 17 00:00:00 2001
+From: Ramanathan Choodamani <quic_rchoodam@quicinc.com>
+Date: Wed, 5 Jul 2023 23:08:02 -0700
+Subject: [PATCH] mac80211: Add default wmm values to individual links
+
+Usually during bring up, hostapd sends wmm values only
+to the first link within a BSS.
+
+Then the do_open() sets default wmm values only to the
+deflink but not to the individual links.
+
+This change adds default wmm values to the individual
+links in different BSS during bring up.
+
+Signed-off-by: Ramanathan Choodamani <quic_rchoodam@quicinc.com>
+---
+ net/mac80211/link.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/net/mac80211/link.c b/net/mac80211/link.c
+index ee8ba71..88ea237 100644
+--- a/net/mac80211/link.c
++++ b/net/mac80211/link.c
+@@ -293,6 +293,8 @@ static int ieee80211_vif_update_links(struct ieee80211_sub_if_data *sdata,
+ 		link = links[link_id];
+ 		ieee80211_link_init(sdata, link_id, &link->data, &link->conf);
+ 		ieee80211_link_setup(&link->data);
++		ieee80211_set_wmm_default(&link->data, true,
++			sdata->vif.type != NL80211_IFTYPE_STATION);
+ 	}
+ 
+ 	if (new_links == 0)
+-- 
+2.7.4
+
