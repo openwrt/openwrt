@@ -52,11 +52,7 @@ define KernelPackage/at91-udc
   TITLE:=USB Device Controller on atmel SoC
   DEPENDS:=@TARGET_at91 +kmod-usb-gadget +kmod-regmap-core
   KCONFIG:=CONFIG_USB_AT91
-ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/gadget/udc/at91_udc.ko),)
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/udc/at91_udc.ko
-else
-  FILES:=$(LINUX_DIR)/drivers/usb/gadget/at91_udc.ko
-endif
   AUTOLOAD:=$(call AutoLoad,51,at91_udc)
 endef
 
@@ -71,11 +67,7 @@ define KernelPackage/atmel-usba-udc
   TITLE:=High-speed USB Device Controller on atmel SoC
   DEPENDS:=@TARGET_at91 +kmod-usb-gadget
   KCONFIG:=CONFIG_USB_ATMEL_USBA
-ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/gadget/udc/atmel_usba_udc.ko),)
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/udc/atmel_usba_udc.ko
-else
-  FILES:=$(LINUX_DIR)/drivers/usb/gadget/atmel_usba_udc.ko
-endif
   AUTOLOAD:=$(call AutoLoad,51,atmel_usba_udc)
 endef
 
