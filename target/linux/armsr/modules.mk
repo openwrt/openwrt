@@ -47,17 +47,6 @@ endef
 
 $(eval $(call KernelPackage,fsl-pcs-lynx))
 
-define KernelPackage/pcs-xpcs
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=Synopsis DesignWare PCS driver
-  DEPENDS:=@(TARGET_armsr_armv8) +kmod-phylink
-  KCONFIG:=CONFIG_PCS_XPCS
-  FILES:=$(LINUX_DIR)/drivers/net/pcs/pcs_xpcs.ko
-  AUTOLOAD:=$(call AutoLoad,20,pcs_xpcs)
-endef
-
-$(eval $(call KernelPackage,pcs-xpcs))
-
 define KernelPackage/fsl-fec
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   DEPENDS:=@(TARGET_armsr_armv8) +kmod-libphy +kmod-of-mdio \
@@ -219,7 +208,7 @@ $(eval $(call KernelPackage,imx7-ulp-wdt))
 define KernelPackage/dwmac-imx
   SUBMENU=$(NETWORK_DEVICES_MENU)
   TITLE:=NXP i.MX8 Ethernet controller
-  DEPENDS:=+kmod-stmmac-core
+  DEPENDS:=+kmod-stmmac-core +kmod-of-mdio
   KCONFIG:=CONFIG_DWMAC_IMX8
   FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-imx.ko
   AUTOLOAD=$(call AutoLoad,45,dwmac-imx)
@@ -230,7 +219,7 @@ $(eval $(call KernelPackage,dwmac-imx))
 define KernelPackage/dwmac-sun8i
   SUBMENU=$(NETWORK_DEVICES_MENU)
   TITLE:=Allwinner H3/A83T/A64 (sun8i) Ethernet
-  DEPENDS:=+kmod-stmmac-core +kmod-mdio-bus-mux
+  DEPENDS:=+kmod-stmmac-core +kmod-of-mdio +kmod-mdio-bus-mux
   KCONFIG:=CONFIG_DWMAC_SUN8I
   FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-sun8i.ko
   AUTOLOAD=$(call AutoLoad,45,dwmac-sun8i)
@@ -241,7 +230,7 @@ $(eval $(call KernelPackage,dwmac-sun8i))
 define KernelPackage/dwmac-rockchip
   SUBMENU=$(NETWORK_DEVICES_MENU)
   TITLE:=Rockchip RK3328/RK3399/RK3568 Ethernet
-  DEPENDS:=+kmod-stmmac-core +kmod-mdio-bus-mux
+  DEPENDS:=+kmod-stmmac-core +kmod-of-mdio +kmod-mdio-bus-mux
   KCONFIG:=CONFIG_DWMAC_ROCKCHIP
   FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-rk.ko
   AUTOLOAD=$(call AutoLoad,45,dwmac-rk)

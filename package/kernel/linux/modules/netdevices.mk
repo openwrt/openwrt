@@ -1543,11 +1543,22 @@ endef
 $(eval $(call KernelPackage,sfp))
 
 
+define KernelPackage/pcs-xpcs
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Synopsis DesignWare PCS driver
+  DEPENDS:=@(TARGET_x86_64||TARGET_armsr_armv8) +kmod-phylink
+  KCONFIG:=CONFIG_PCS_XPCS
+  FILES:=$(LINUX_DIR)/drivers/net/pcs/pcs_xpcs.ko
+  AUTOLOAD:=$(call AutoLoad,20,pcs_xpcs)
+endef
+
+$(eval $(call KernelPackage,pcs-xpcs))
+
+
 define KernelPackage/stmmac-core
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Synopsis Ethernet Controller core (NXP,STMMicro,others)
-  DEPENDS:=@TARGET_x86_64||TARGET_armsr_armv8 +kmod-pcs-xpcs +kmod-ptp \
-    +kmod-of-mdio
+  DEPENDS:=@TARGET_x86_64||TARGET_armsr_armv8 +kmod-pcs-xpcs +kmod-ptp
   KCONFIG:=CONFIG_STMMAC_ETH \
     CONFIG_STMMAC_SELFTESTS=n \
     CONFIG_STMMAC_PLATFORM \

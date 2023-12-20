@@ -1,0 +1,70 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 12 Dec 2023 18:23:45 +0100
+Subject: [PATCH] fw_env: fix reading NVMEM device's "compatible" value
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Call to fread() was changed to check for return value. The problem is it
+can't be checked for returning 1 (as it is) to determine success.
+
+We call fread() with buffer size as "size" argument. Reading any
+"compatible" value shorter than buffer size will result in returning 0
+even on success.
+
+Modify code to use fstat() to determine expected read length.
+
+This fixes regression that broke using fw_env with NVMEM devices.
+
+Fixes: c059a22b7776 ("tools: env: fw_env: Fix unused-result warning")
+Cc: Jaehoon Chung <jh80.chung@samsung.com>
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ tools/env/fw_env.c | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
+
+--- a/tools/env/fw_env.c
++++ b/tools/env/fw_env.c
+@@ -1732,6 +1732,7 @@ static int find_nvmem_device(void)
+ 	}
+ 
+ 	while (!nvmem && (dent = readdir(dir))) {
++		struct stat s;
+ 		FILE *fp;
+ 		size_t size;
+ 
+@@ -1749,14 +1750,22 @@ static int find_nvmem_device(void)
+ 			continue;
+ 		}
+ 
+-		size = fread(buf, sizeof(buf), 1, fp);
++		if (fstat(fileno(fp), &s)) {
++			fprintf(stderr, "Failed to fstat %s\n", comp);
++			goto next;
++		}
++
++		if (s.st_size >= sizeof(buf)) {
++			goto next;
++		}
++
++		size = fread(buf, s.st_size, 1, fp);
+ 		if (size != 1) {
+ 			fprintf(stderr,
+ 				"read failed about %s\n", comp);
+-			fclose(fp);
+-			return -EIO;
++			goto next;
+ 		}
+-
++		buf[s.st_size] = '\0';
+ 
+ 		if (!strcmp(buf, "u-boot,env")) {
+ 			bytes = asprintf(&nvmem, "%s/%s/nvmem", path, dent->d_name);
+@@ -1765,6 +1774,7 @@ static int find_nvmem_device(void)
+ 			}
+ 		}
+ 
++next:
+ 		fclose(fp);
+ 	}
+ 

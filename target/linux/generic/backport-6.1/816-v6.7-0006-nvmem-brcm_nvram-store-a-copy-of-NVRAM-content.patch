@@ -1,5 +1,6 @@
+From 1e37bf84afacd5ba17b7a13a18ca2bc78aff05c0 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
-Date: Thu, 14 Sep 2023 07:59:09 +0200
+Date: Fri, 15 Dec 2023 11:13:58 +0000
 Subject: [PATCH] nvmem: brcm_nvram: store a copy of NVRAM content
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -21,11 +22,15 @@ allocating so much memory check for actual data length.
 
 Link: https://lore.kernel.org/linux-mtd/CACna6rwf3_9QVjYcM+847biTX=K0EoWXuXcSMkJO1Vy_5vmVqA@mail.gmail.com/
 Fixes: 3fef9ed0627a ("nvmem: brcm_nvram: new driver exposing Broadcom's NVRAM")
+Cc:  <Stable@vger.kernel.org>
 Cc: Arınç ÜNAL <arinc.unal@arinc9.com>
 Cc: Florian Fainelli <florian.fainelli@broadcom.com>
 Cc: Scott Branden <scott.branden@broadcom.com>
 Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 Acked-by: Arınç ÜNAL <arinc.unal@arinc9.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20231215111358.316727-3-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  drivers/nvmem/brcm_nvram.c | 134 ++++++++++++++++++++++++++-----------
  1 file changed, 94 insertions(+), 40 deletions(-)
