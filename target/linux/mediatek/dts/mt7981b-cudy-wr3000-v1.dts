@@ -10,7 +10,7 @@
 
 	aliases {
 		ethernet0 = &gmac0;
-		label-mac-device = &lan1;
+		label-mac-device = &gmac0;
 		led-boot = &led_status;
 		led-failsafe = &led_status;
 		led-running = &led_status;
@@ -238,28 +238,19 @@
 			nvmem-cells = <&macaddr_bdinfo_de00 1>;
 		};
 
-		lan1: port@1 {
+		port@1 {
 			reg = <1>;
 			label = "lan1";
-
-			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00 0>;
 		};
 
 		port@2 {
 			reg = <2>;
 			label = "lan2";
-
-			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00 0>;
 		};
 
 		port@3 {
 			reg = <3>;
 			label = "lan3";
-
-			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_bdinfo_de00 0>;
 		};
 
 		port@6 {
