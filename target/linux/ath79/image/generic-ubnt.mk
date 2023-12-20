@@ -62,6 +62,14 @@ define Device/ubnt_litebeam-ac-gen2
 endef
 TARGET_DEVICES += ubnt_litebeam-ac-gen2
 
+define Device/ubnt_litebeam-m5-xw
+  $(Device/ubnt-xw)
+  DEVICE_MODEL := LiteBeam M5
+  SUPPORTED_DEVICES += lbe-m5
+  DEVICE_PACKAGES := -kmod-usb2
+endef
+TARGET_DEVICES += ubnt_litebeam-m5-xw
+
 define Device/ubnt_nanobeam-ac
   $(Device/ubnt-wa)
   DEVICE_MODEL := NanoBeam AC
@@ -87,14 +95,6 @@ define Device/ubnt_nanobeam-ac-xc
 endef
 TARGET_DEVICES += ubnt_nanobeam-ac-xc
 
-define Device/ubnt_nanobeam-m5-xw
-  $(Device/ubnt-xw)
-  DEVICE_MODEL := NanoBeam M5
-  DEVICE_PACKAGES += rssileds
-  SUPPORTED_DEVICES += loco-m-xw
-endef
-TARGET_DEVICES += ubnt_nanobeam-m5-xw
-
 define Device/ubnt_nanostation-ac
   $(Device/ubnt-wa)
   DEVICE_MODEL := Nanostation AC
@@ -112,8 +112,17 @@ TARGET_DEVICES += ubnt_nanostation-ac-loco
 define Device/ubnt_nanostation-loco-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Nanostation Loco M
-  DEVICE_PACKAGES += rssileds
-  SUPPORTED_DEVICES += loco-m-xw
+  DEVICE_PACKAGES += rssileds -kmod-usb2
+  DEVICE_ALT0_VENDOR := Ubiquiti
+  DEVICE_ALT0_MODEL := AirGrid M5 HP
+  DEVICE_ALT0_VARIANT := XW
+  DEVICE_ALT1_VENDOR := Ubiquiti
+  DEVICE_ALT1_MODEL := PowerBeam M5 300
+  DEVICE_ALT1_VARIANT := XW
+  DEVICE_ALT2_VENDOR := Ubiquiti
+  DEVICE_ALT2_MODEL := NanoBeam M5
+  DEVICE_ALT2_VARIANT := XW
+  SUPPORTED_DEVICES += loco-m-xw nanostation-m-xw ubnt,nanobeam-m5-xw
 endef
 TARGET_DEVICES += ubnt_nanostation-loco-m-xw
 

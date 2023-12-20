@@ -9,38 +9,6 @@
 	compatible = "ubnt,xw", "qca,ar9342";
 	model = "Ubiquiti Networks XW board";
 
-	aliases {
-		led-boot = &led_link4;
-		led-running = &led_link4;
-		led-upgrade = &led_link4;
-		led-failsafe = &led_link4;
-		label-mac-device = &wmac;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		link1 {
-			label = "red:link1";
-			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
-		};
-
-		link2 {
-			label = "orange:link2";
-			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
-		};
-
-		link3 {
-			label = "green:link3";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-		};
-
-		led_link4: link4 {
-			label = "green:link4";
-			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -107,6 +75,10 @@
 					macaddr_art_0: macaddr@0 {
 						reg = <0x0 0x6>;
 					};
+
+					calibration_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 				};
 			};
 		};
@@ -116,7 +88,8 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
+	nvmem-cells = <&calibration_art_1000>;
+	nvmem-cell-names = "calibration";
 };
 
 &eth0 {
