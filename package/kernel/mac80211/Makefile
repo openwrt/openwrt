@@ -128,7 +128,7 @@ define KernelPackage/mac80211
   FILES:= $(PKG_BUILD_DIR)/net/mac80211/mac80211.ko
 ifdef CONFIG_ATH11K_NSS_SUPPORT
   AUTOLOAD:=$(call AutoProbe,mac80211)
-  MODPARAMS.mac80211:=nss_redirect=1
+  MODPARAMS.mac80211:=nss_redirect=true
 endif
   ABI_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   MENU:=1
