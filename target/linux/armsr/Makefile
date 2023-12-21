@@ -18,6 +18,8 @@ DEFAULT_PACKAGES += mkf2fs e2fsprogs
 # in sysupgrade
 DEFAULT_PACKAGES += blkid
 
+INITRAMFS_OTHER_FILES = $(PLATFORM_DIR)/other-files/init
+
 # Overwrite global LINUX_KCONFIG_LIST to add arch/arm64/configs/defconfig before
 # armv8 configs
 #
