@@ -67,6 +67,7 @@ load_led() {
 	config_get delay $1 delay "150"
 	config_get message $1 message ""
 	config_get gpio $1 gpio "0"
+	config_get pattern $1 pattern "0 1000 25 1000"
 	config_get_bool inverted $1 inverted "0"
 	config_get brightness $1 brightness
 
@@ -158,6 +159,10 @@ load_led() {
 		"gpio")
 			echo $gpio > /sys/class/leds/${sysfs}/gpio
 			echo $inverted > /sys/class/leds/${sysfs}/inverted
+			;;
+
+		"pattern")
+			echo $pattern > /sys/class/leds/${sysfs}/pattern
 			;;
 
 		switch[0-9]*)
