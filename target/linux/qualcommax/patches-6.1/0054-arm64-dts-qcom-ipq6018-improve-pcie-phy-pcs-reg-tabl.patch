@@ -1,0 +1,32 @@
+From f9a4a6c7b8365eac9af974796c3edaed810546bf Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 3 Nov 2022 22:21:25 +0100
+Subject: [PATCH] arm64: dts: qcom: ipq6018: improve pcie phy pcs reg table
+
+This is not a fix on its own but more a cleanup. Phy qmp pcie driver
+currently have a workaround to handle pcs_misc not declared and add
+0x400 offset to the pcs reg if pcs_misc is not declared.
+
+Correctly declare pcs_misc reg and reduce PCS size to the common value
+of 0x1f0 as done for every other qmp based pcie phy device.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Vinod Koul <vkoul@kernel.org>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20221103212125.17156-2-ansuelsmth@gmail.com
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -406,7 +406,8 @@
+ 			pcie_phy0: phy@84200 {
+ 				reg = <0x0 0x84200 0x0 0x16c>, /* Serdes Tx */
+ 				      <0x0 0x84400 0x0 0x200>, /* Serdes Rx */
+-				      <0x0 0x84800 0x0 0x4f4>; /* PCS: Lane0, COM, PCIE */
++				      <0x0 0x84800 0x0 0x1f0>, /* PCS: Lane0, COM, PCIE */
++				      <0x0 0x84c00 0x0 0xf4>; /* pcs_misc */
+ 				#phy-cells = <0>;
+ 
+ 				clocks = <&gcc GCC_PCIE0_PIPE_CLK>;

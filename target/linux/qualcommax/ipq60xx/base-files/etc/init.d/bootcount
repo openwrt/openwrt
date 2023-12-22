@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+. /lib/functions.sh
+
+boot() {
+	case $(board_name) in
+		yuncore,ax840)
+			(
+			# Using brackets and & to prevent block on sleep
+			echo resetting owrt_bootcount in 5 min...
+			sleep 300 && fw_setenv owrt_bootcount 0
+			) &
+		;;
+	esac
+}

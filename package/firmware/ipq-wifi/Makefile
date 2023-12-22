@@ -46,6 +46,7 @@ ALLWIFIBOARDS:= \
 	xiaomi_ax3600 \
 	xiaomi_ax9000 \
 	yyets_le1 \
+	yuncore_ax840 \
 	yuncore_ax880 \
 	zte_mf269 \
 	zte_mf289f \
@@ -73,6 +74,7 @@ define ipq-wifi-install-ath11-one-to
   $(INSTALL_DATA) $(1) $(2)/lib/firmware/ath11k/$(3)/board-2.bin
 endef
 
+
 define ipq-wifi-install-one
   $(if $(filter $(suffix $(1)),.QCA4019 .qca4019),\
     $(call ipq-wifi-install-one-to,$(1),$(2),QCA4019/hw1.0),\
@@ -84,12 +86,16 @@ define ipq-wifi-install-one
     $(call ipq-wifi-install-one-to,$(1),$(2),QCA9984/hw1.0),\
   $(if $(filter $(suffix $(1)),.QCA99X0 .qca99x0),\
     $(call ipq-wifi-install-one-to,$(1),$(2),QCA99X0/hw2.0),\
+  $(if $(filter $(suffix $(1)),.IPQ6018 .ipq6018),\
+    $(call ipq-wifi-install-ath11-one-to,$(1),$(2),IPQ6018/hw1.0),\
   $(if $(filter $(suffix $(1)),.IPQ8074 .ipq8074 .ipq8174),\
     $(call ipq-wifi-install-ath11-one-to,$(1),$(2),IPQ8074/hw2.0),\
   $(if $(filter $(suffix $(1)),.QCN9074 .qcn9074),\
     $(call ipq-wifi-install-ath11-one-to,$(1),$(2),QCN9074/hw1.0),\
     $(error Unrecognized board-file suffix '$(suffix $(1))' for '$(1)')\
-  )))))))
+  ))))))))
+
+
 
 endef
 # Blank line required at end of above define due to foreach context
@@ -157,6 +163,7 @@ $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
 $(eval $(call generate-ipq-wifi-package,yyets_le1,YYeTs LE1))
+$(eval $(call generate-ipq-wifi-package,yuncore_ax840,Yuncore AX840))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax880,Yuncore AX880))
 $(eval $(call generate-ipq-wifi-package,zte_mf269,ZTE MF269))
 $(eval $(call generate-ipq-wifi-package,zte_mf289f,ZTE MF289F))

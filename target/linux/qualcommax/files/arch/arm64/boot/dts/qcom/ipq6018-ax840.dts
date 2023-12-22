@@ -1,0 +1,324 @@
+// SPDX-License-Identifier: MIT, GPL-2.0 or later
+/* Copyright (c) 2023, Ruslan Isaev <legale.legale@gmail.com> */
+
+/dts-v1/;
+
+
+#include "ipq6018.dtsi"
+#include "ipq6018-ess.dtsi"
+#include "ipq6018-512m.dtsi"
+#include "ipq6018-nss.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Yuncore AX840";
+	compatible = "yuncore,ax840", "qcom,ipq6018-cp03", "qcom,ipq6018";
+	
+	/delete-node/ rpm-glink;
+	
+	aliases {
+		ethernet0 = &dp5;
+		ethernet1 = &dp4;
+		serial0 = &blsp1_uart3;
+		led-boot = &led_system;
+		led-failsafe = &led_system;
+		led-running = &led_system;
+		led-upgrade = &led_system;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1 earlycon debug iomem=relaxed";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system: led_system {
+			label = "system";
+			color = "red";
+			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_wlan2g {
+			label = "wlan2g";
+			color = "green";
+			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_wlan5g {
+			label = "wlan5g";
+			color = "blue";
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&soc {
+	q6v5_m3: q6v5_m3 {
+		compatible = "qca,q6v5-m3-rproc";
+		firmware = "IPQ6018/m3_fw.mdt";
+		qca,auto-restart;
+		qcom,restart-group = <&q6v5_m3 &q6v5_wcss>;
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	led_enable {
+		gpio-hog;
+		output-high;
+		gpios = <36 GPIO_ACTIVE_HIGH>;
+		line-name = "enable-leds";
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	qca8075_3: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	qca8075_4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+&switch {
+	status = "okay";
+	switch_cpu_bmp =   <ESS_PORT0>; /* cpu port bitmap */
+	switch_lan_bmp =   <ESS_PORT4>; /* lan port bitmap */
+	switch_wan_bmp =   <ESS_PORT5>; /* wan port bitmap */
+	switch_inner_bmp = <0xc0>; /*inner port bitmap - ESS_PORT6 | ESS_PORT7 */
+	switch_mac_mode =  <MAC_MODE_PSGMII>; /* mac mode for uniphy instance0*/
+	switch_mac_mode1 = <MAC_MODE_DISABLED>; /* mac mode for uniphy instance1*/
+	switch_mac_mode2 = <MAC_MODE_DISABLED>; /* mac mode for uniphy instance2*/
+
+	qcom,port_phyinfo {
+		port@3 {
+			port_id = <0x04>;
+			phy_address = <0x03>;
+		};
+
+		port@4 {
+			port_id = <0x05>;
+			phy_address = <0x04>;
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp4 {
+	status = "okay";
+	phy-handle = <&qca8075_3>;
+	label = "lan";
+};
+
+&dp5 {
+	status = "okay";
+	phy-handle = <&qca8075_4>;
+	label = "wan";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	status = "okay";
+	
+	partitions {
+		status = "disabled";
+	};
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+
+
+			partition@0 {
+				reg = <0x00 0xc0000>;
+				label = "0:sbl1";
+			};
+
+			partition@c0000 {
+				reg = <0xc0000 0x10000>;
+				label = "0:mibib";
+			};
+
+			partition@d0000 {
+				reg = <0xd0000 0x20000>;
+				label = "0:bootconfig";
+			};
+
+			partition@f0000 {
+				reg = <0xf0000 0x20000>;
+				label = "0:bootconfig1";
+			};
+
+			partition@110000 {
+				reg = <0x110000 0x1a0000>;
+				label = "0:qsee";
+			};
+
+			partition@2b0000 {
+				reg = <0x2b0000 0x1a0000>;
+				label = "0:qsee_1";
+			};
+
+			partition@450000 {
+				reg = <0x450000 0x10000>;
+				label = "0:devcfg";
+			};
+
+			partition@460000 {
+				reg = <0x460000 0x10000>;
+				label = "0:devcfg_1";
+			};
+
+			partition@470000 {
+				reg = <0x470000 0x40000>;
+				label = "0:rpm";
+			};
+
+			partition@4b0000 {
+				reg = <0x4b0000 0x40000>;
+				label = "0:rpm_1";
+			};
+
+			partition@4f0000 {
+				reg = <0x4f0000 0x10000>;
+				label = "0:cdt";
+			};
+
+			partition@500000 {
+				reg = <0x500000 0x10000>;
+				label = "0:cdt_1";
+			};
+
+			partition@510000 {
+				reg = <0x510000 0x10000>;
+				label = "0:appsblenv";
+			};
+
+			partition@520000 {
+				reg = <0x520000 0xa0000>;
+				label = "0:appsbl";
+			};
+
+			partition@5c0000 {
+				reg = <0x5c0000 0xa0000>;
+				label = "0:appsbl_1";
+			};
+
+			partition@660000 {
+				reg = <0x660000 0x40000>;
+				label = "0:art";
+			};
+
+		};
+	};
+};
+
+&qpic_nand {
+	status = "okay";
+	partitions {
+		status = "disabled";
+	};
+
+	nand@0 {
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+	
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "rootfs";
+				reg = <0x0 0x3c00000>;
+			};
+			partition@3c00000 {
+				label = "rootfs_1";
+				reg = <0x3c00000 0x3c00000>;
+			};
+		};
+	};
+};
+
+&wifi {
+ 	qcom,ath11k-calibration-variant = "Yuncore-AX840";
+	qcom,tgt-mem-mode = <1>;
+	qcom,ath11k-fw-memory-mode = <1>;
+	status = "okay";
+};
+
+&CPU0 {
+	/delete-property/ cpu-supply;
+};
+
+&CPU1 {
+	/delete-property/ cpu-supply;
+};
+
+&CPU2 {
+	/delete-property/ cpu-supply;
+};
+
+&CPU3 {
+	/delete-property/ cpu-supply;
+};
+

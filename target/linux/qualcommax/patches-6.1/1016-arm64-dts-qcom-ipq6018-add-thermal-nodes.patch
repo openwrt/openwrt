@@ -1,0 +1,220 @@
+From 580b1dcf4c071aae0f959a583d237674cc31ef5a Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Sun, 15 Oct 2023 22:55:43 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq6018: add thermal nodes
+
+IPQ6018 has a tsens v2.3.1 peripheral which monitors temperatures around
+the various subsystems on the die.
+
+We can use those temperature sensors in order to protect the SoC from
+overheating, so lets setup passive cooling trips to cool the CPU via
+CPUFreq downlocking it, and if that doesnt work trigger the criticla trip.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 154 ++++++++++++++++++++++++++
+ 1 file changed, 154 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -9,6 +9,7 @@
+ #include <dt-bindings/clock/qcom,gcc-ipq6018.h>
+ #include <dt-bindings/reset/qcom,gcc-ipq6018.h>
+ #include <dt-bindings/clock/qcom,apss-ipq.h>
++#include <dt-bindings/thermal/thermal.h>
+ 
+ / {
+ 	#address-cells = <2>;
+@@ -63,6 +64,7 @@
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			cpu-supply = <&ipq6018_s2>;
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		CPU1: cpu@1 {
+@@ -75,6 +77,7 @@
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			cpu-supply = <&ipq6018_s2>;
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		CPU2: cpu@2 {
+@@ -87,6 +90,7 @@
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			cpu-supply = <&ipq6018_s2>;
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		CPU3: cpu@3 {
+@@ -99,6 +103,7 @@
+ 			clock-names = "cpu";
+ 			operating-points-v2 = <&cpu_opp_table>;
+ 			cpu-supply = <&ipq6018_s2>;
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		L2_0: l2-cache {
+@@ -379,6 +384,16 @@
+ 			clock-names = "core";
+ 		};
+ 
++		tsens: thermal-sensor@4a9000 {
++			compatible = "qcom,ipq6018-tsens", "qcom,ipq8074-tsens";
++			reg = <0x0 0x4a9000 0x0 0x1000>, /* TM */
++			      <0x0 0x4a8000 0x0 0x1000>; /* SROT */
++			interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "combined";
++			#qcom,sensors = <16>;
++			#thermal-sensor-cells = <1>;
++		};
++
+ 		cryptobam: dma-controller@704000 {
+ 			compatible = "qcom,bam-v1.7.0";
+ 			reg = <0x0 0x00704000 0x0 0x20000>;
+@@ -1062,4 +1077,143 @@
+ 			#interrupt-cells = <2>;
+ 		};
+ 	};
++
++	thermal-zones {
++		nss-top-thermal {
++			polling-delay-passive = <250>;
++			polling-delay = <1000>;
++
++			thermal-sensors = <&tsens 4>;
++
++			trips {
++				nss-top-crit {
++					temperature = <110000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++			};
++		};
++
++		nss0-thermal {
++			polling-delay-passive = <250>;
++			polling-delay = <1000>;
++
++			thermal-sensors = <&tsens 5>;
++
++			trips {
++				nss-0-crit {
++					temperature = <110000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++			};
++		};
++
++		wcss-phya0-thermal {
++			polling-delay-passive = <250>;
++			polling-delay = <1000>;
++
++			thermal-sensors = <&tsens 7>;
++
++			trips {
++				wcss-phya0-crit {
++					temperature = <110000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++			};
++		};
++
++		wcss-phya1-thermal {
++			polling-delay-passive = <250>;
++			polling-delay = <1000>;
++
++			thermal-sensors = <&tsens 8>;
++
++			trips {
++				wcss-phya1-crit {
++					temperature = <110000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++			};
++		};
++
++		cluster_thermal: cluster-thermal {
++			polling-delay-passive = <250>;
++			polling-delay = <1000>;
++
++			thermal-sensors = <&tsens 13>;
++
++			trips {
++				cluster_passive: cluster-passive {
++					temperature = <95000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				cluster-crit {
++					temperature = <110000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&cluster_passive>;
++					cooling-device = <&CPU0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&CPU1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&CPU2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&CPU3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++
++		lpass-qsdp6-thermal {
++			polling-delay-passive = <250>;
++			polling-delay = <1000>;
++
++			thermal-sensors = <&tsens 14>;
++
++			trips {
++				lpass-qsdp6-crit {
++					temperature = <110000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++			};
++		};
++
++		package-top-thermal {
++			polling-delay-passive = <250>;
++			polling-delay = <1000>;
++
++			thermal-sensors = <&tsens 15>;
++
++			trips {
++				package_top_passive: package-top-passive {
++					temperature = <95000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				package-top-crit {
++					temperature = <110000>;
++					hysteresis = <1000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				map0 {
++					trip = <&package_top_passive>;
++					cooling-device = <&CPU0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&CPU1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&CPU2 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
++							 <&CPU3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++	};
+ };

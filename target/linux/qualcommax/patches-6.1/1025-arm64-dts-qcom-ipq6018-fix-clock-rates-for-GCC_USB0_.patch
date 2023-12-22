@@ -1,0 +1,25 @@
+From eb21bb7e28a0dc64c8c8830d8977fe1dbd90164b Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Sat, 11 Nov 2023 11:04:16 +0100
+Subject: [PATCH] arm64: dts: qcom: ipq6018: fix clock rates for
+ GCC_USB0_MOCK_UTMI_CLK
+
+The clock provided by XO is 24MHz, not 20MHz.
+
+Fixes: 5726079cd486 ("arm64: dts: ipq6018: Use reference clock to set dwc3 period")
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -753,7 +753,7 @@
+ 					  <&gcc GCC_USB0_MOCK_UTMI_CLK>;
+ 			assigned-clock-rates = <133330000>,
+ 					       <133330000>,
+-					       <20000000>;
++					       <24000000>;
+ 
+ 			resets = <&gcc GCC_USB0_BCR>;
+ 			status = "disabled";

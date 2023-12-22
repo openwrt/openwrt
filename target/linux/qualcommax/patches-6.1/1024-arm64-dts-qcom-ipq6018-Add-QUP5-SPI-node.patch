@@ -1,0 +1,41 @@
+From dc5423c92edffac4d3b59aa5fd0dcbdfdcba0bf3 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Sat, 11 Nov 2023 15:50:03 +0800
+Subject: [PATCH] arm64: dts: qcom: ipq6018: Add QUP5 SPI node
+
+Add node to support the QUP5 SPI controller inside of IPQ6018.
+Some routers use this bus to connect SPI TPM chips.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq6018.dtsi b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+index bf9381376dba..a730e28012cd 100644
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -644,6 +644,20 @@
+ 			status = "disabled";
+ 		};
+ 
++		blsp1_spi5: spi@78b9000 {
++			compatible = "qcom,spi-qup-v2.2.1";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			reg = <0x0 0x078b9000 0x0 0x600>;
++			interrupts = <GIC_SPI 299 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&gcc GCC_BLSP1_QUP5_SPI_APPS_CLK>,
++				 <&gcc GCC_BLSP1_AHB_CLK>;
++			clock-names = "core", "iface";
++			dmas = <&blsp_dma 20>, <&blsp_dma 21>;
++			dma-names = "tx", "rx";
++			status = "disabled";
++		};
++
+ 		blsp1_i2c2: i2c@78b6000 {
+ 			compatible = "qcom,i2c-qup-v2.2.1";
+ 			#address-cells = <1>;
+-- 
+2.25.1
+
