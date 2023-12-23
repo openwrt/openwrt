@@ -1,6 +1,6 @@
 --- a/drivers/firmware/qcom_scm.c
 +++ b/drivers/firmware/qcom_scm.c
-@@ -404,6 +404,20 @@ static int __qcom_scm_set_dload_mode(str
+@@ -411,6 +411,20 @@ static int __qcom_scm_set_dload_mode(str
  	return qcom_scm_call_atomic(__scm->dev, &desc, NULL);
  }
  
@@ -21,7 +21,7 @@
  static void qcom_scm_set_download_mode(bool enable)
  {
  	bool avail;
-@@ -1314,6 +1328,13 @@ static int qcom_scm_probe(struct platfor
+@@ -1321,6 +1335,13 @@ static int qcom_scm_probe(struct platfor
  	if (download_mode)
  		qcom_scm_set_download_mode(true);
  
