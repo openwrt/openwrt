@@ -101,7 +101,7 @@
  }
 --- a/drivers/firmware/qcom_scm.c
 +++ b/drivers/firmware/qcom_scm.c
-@@ -344,6 +344,17 @@ int qcom_scm_set_cold_boot_addr(void *en
+@@ -351,6 +351,17 @@ int qcom_scm_set_cold_boot_addr(void *en
  	desc.args[0] = flags;
  	desc.args[1] = virt_to_phys(entry);
  
