@@ -491,6 +491,21 @@ define Device/cudy_wr3000-v1
 endef
 TARGET_DEVICES += cudy_wr3000-v1
 
+define Device/dlink_aquila-pro-ai-m30-a1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := AQUILA PRO AI M30
+  DEVICE_VARIANT := A1
+  DEVICE_DTS := mt7981b-dlink-aquila-pro-ai-m30-a1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-leds-gca230718 kmod-mt7981-firmware mt7981-wo-firmware
+  KERNEL_IN_UBI := 1
+  IMAGES += recovery.bin
+  IMAGE_SIZE := 51200k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/recovery.bin := sysupgrade-tar | pad-to $$(IMAGE_SIZE) | dlink-ai-recovery-header DLK6E6110001 \x6A\x28\xEE\x0B \x00\x00\x2C\x00 \x00\x00\x20\x03 \x61\x6E
+endef
+TARGET_DEVICES += dlink_aquila-pro-ai-m30-a1
+
 define Device/glinet_gl-mt2500
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT2500
