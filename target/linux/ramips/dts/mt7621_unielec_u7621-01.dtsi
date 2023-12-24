@@ -9,13 +9,6 @@
 / {
 	compatible = "unielec,u7621-01", "mediatek,mt7621-soc";
 
-	aliases {
-		led-boot = &led_status;
-		led-failsafe = &led_status;
-		led-running = &led_status;
-		led-upgrade = &led_status;
-	};
-
 	gpio-export {
 		compatible = "gpio-export";
 		#size-cells = <0>;
@@ -34,16 +27,6 @@
 			label = "reset";
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-		};
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_status: status {
-			function = LED_FUNCTION_STATUS;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
