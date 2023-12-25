@@ -6,6 +6,11 @@
 	compatible = "tplink,archer-c6-v2-us", "qca,qca9563";
 	model = "TP-Link Archer C6 v2 (US) / A6 v2 (US/TW)";
 
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x08000000>;
+	};
+
 	aliases {
 		label-mac-device = &eth0;
 
