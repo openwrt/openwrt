@@ -1092,6 +1092,15 @@ define Device/xiaomi_mi-router-4a-100m-intl
 endef
 TARGET_DEVICES += xiaomi_mi-router-4a-100m-intl
 
+define Device/xiaomi_mi-router-4a-100m-intl-v2
+  IMAGE_SIZE := 14976k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 4A
+  DEVICE_VARIANT := 100M International Edition V2
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += xiaomi_mi-router-4a-100m-intl-v2
+
 define Device/xiaomi_mi-router-4c
   IMAGE_SIZE := 14976k
   DEVICE_VENDOR := Xiaomi
