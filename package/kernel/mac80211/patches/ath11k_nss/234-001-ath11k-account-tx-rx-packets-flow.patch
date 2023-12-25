@@ -106,17 +106,20 @@ Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
  	u16 tcl_metadata;
  
  	/* Protected with ar->data_lock */
+--- a/drivers/net/wireless/ath/ath11k/debugfs.h
++++ b/drivers/net/wireless/ath/ath11k/debugfs.h
+@@ -98,7 +98,7 @@ struct ath_pktlog_hdr {
+ };
+ 
+ #define ATH11K_HTT_PEER_STATS_RESET BIT(16)
+-
++#define ATH11K_DRV_TX_STATS_SIZE      1024
+ #define ATH11K_HTT_STATS_BUF_SIZE (1024 * 512)
+ #define ATH11K_FW_STATS_BUF_SIZE (1024 * 1024)
+ 
 --- a/drivers/net/wireless/ath/ath11k/debugfs_sta.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs_sta.c
-@@ -7,7 +7,6 @@
- 
- #include "debugfs_sta.h"
- #include "core.h"
--#include "peer.h"
- #include "debug.h"
- #include "dp_tx.h"
- #include "debugfs_htt_stats.h"
-@@ -146,9 +145,6 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
+@@ -146,9 +146,6 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
  	const int size = 2 * 4096;
  	char *buf;
  
@@ -126,7 +129,7 @@ Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
  	buf = kzalloc(size, GFP_KERNEL);
  	if (!buf)
  		return -ENOMEM;
-@@ -156,6 +152,12 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
+@@ -156,6 +153,12 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
  	mutex_lock(&ar->conf_mutex);
  
  	spin_lock_bh(&ar->data_lock);
@@ -139,7 +142,7 @@ Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
  	for (k = 0; k < ATH11K_STATS_TYPE_MAX; k++) {
  		for (j = 0; j < ATH11K_COUNTER_TYPE_MAX; j++) {
  			stats = &arsta->tx_stats->stats[k];
-@@ -229,6 +231,11 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
+@@ -229,6 +232,11 @@ static ssize_t ath11k_dbg_sta_dump_tx_st
  
  	mutex_unlock(&ar->conf_mutex);
  	return retval;
@@ -151,6 +154,222 @@ Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
  }
  
  static const struct file_operations fops_tx_stats = {
+@@ -847,17 +855,211 @@ static const struct file_operations fops
+ 	.llseek = default_llseek,
+ };
+ 
++static ssize_t ath11k_dbg_sta_reset_rx_stats(struct file *file,
++					     const char __user *buf,
++					     size_t count, loff_t *ppos)
++{
++	struct ieee80211_sta *sta = file->private_data;
++	struct ath11k_sta *arsta = (struct ath11k_sta *)sta->drv_priv;
++	struct ath11k *ar = arsta->arvif->ar;
++	int ret, reset;
++
++	if (!arsta->rx_stats)
++		return -ENOENT;
++
++	ret = kstrtoint_from_user(buf, count, 0, &reset);
++	if (ret)
++		return ret;
++
++	if (!reset || reset > 1)
++		return -EINVAL;
++
++	spin_lock_bh(&ar->ab->base_lock);
++	memset(arsta->rx_stats, 0, sizeof(*arsta->rx_stats));
++	atomic_set(&arsta->drv_rx_pkts.pkts_frm_hw, 0);
++	atomic_set(&arsta->drv_rx_pkts.pkts_out, 0);
++	atomic_set(&arsta->drv_rx_pkts.pkts_out_to_netif, 0);
++	spin_unlock_bh(&ar->ab->base_lock);
++
++	ret = count;
++	return ret;
++}
++
++static const struct file_operations fops_reset_rx_stats = {
++	.write = ath11k_dbg_sta_reset_rx_stats,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++static ssize_t
++ath11k_dbg_sta_dump_driver_tx_pkts_flow(struct file *file,
++					char __user *user_buf,
++					size_t count, loff_t *ppos)
++{
++	struct ieee80211_sta *sta = file->private_data;
++	struct ath11k_sta *arsta = (struct ath11k_sta *)sta->drv_priv;
++	struct ath11k *ar = arsta->arvif->ar;
++	int len = 0, ret_val;
++	const int size = ATH11K_DRV_TX_STATS_SIZE;
++	char *buf;
++
++	buf = kzalloc(ATH11K_DRV_TX_STATS_SIZE, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	mutex_lock(&ar->conf_mutex);
++	spin_lock_bh(&ar->ab->base_lock);
++
++	if (!arsta->tx_stats) {
++		ret_val = -ENOENT;
++		goto end;
++	}
++
++	len += scnprintf(buf + len, size - len,
++			 "Tx packets inflow from mac80211: %u\n",
++			 atomic_read(&arsta->drv_tx_pkts.pkts_in));
++	len += scnprintf(buf + len, size - len,
++			 "Tx packets outflow to HW: %u\n",
++			 atomic_read(&arsta->drv_tx_pkts.pkts_out));
++	spin_unlock_bh(&ar->ab->base_lock);
++
++	if (len > size)
++		len = size;
++
++	ret_val = simple_read_from_buffer(user_buf, count, ppos, buf, len);
++	kfree(buf);
++
++	mutex_unlock(&ar->conf_mutex);
++	return ret_val;
++end:
++	spin_unlock_bh(&ar->ab->base_lock);
++	mutex_unlock(&ar->conf_mutex);
++	kfree(buf);
++	return ret_val;
++}
++
++static const struct file_operations fops_driver_tx_pkts_flow = {
++	.read = ath11k_dbg_sta_dump_driver_tx_pkts_flow,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++static ssize_t ath11k_dbg_sta_reset_tx_stats(struct file *file,
++					     const char __user *buf,
++					     size_t count, loff_t *ppos)
++{
++	struct ieee80211_sta *sta = file->private_data;
++	struct ath11k_sta *arsta = (struct ath11k_sta *)sta->drv_priv;
++	struct ath11k *ar = arsta->arvif->ar;
++	int ret, reset;
++
++	ret = kstrtoint_from_user(buf, count, 0, &reset);
++	if (ret)
++		return ret;
++
++	if (!reset || reset > 1)
++		return -EINVAL;
++
++	spin_lock_bh(&ar->ab->base_lock);
++
++	if (!arsta->tx_stats) {
++		spin_unlock_bh(&ar->ab->base_lock);
++		return -ENOENT;
++	}
++
++	memset(arsta->tx_stats, 0, sizeof(*arsta->tx_stats));
++	atomic_set(&arsta->drv_tx_pkts.pkts_in, 0);
++	atomic_set(&arsta->drv_tx_pkts.pkts_out, 0);
++	spin_unlock_bh(&ar->ab->base_lock);
++
++	ret = count;
++	return ret;
++}
++
++static const struct file_operations fops_reset_tx_stats = {
++	.write = ath11k_dbg_sta_reset_tx_stats,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
++static ssize_t
++ath11k_dbg_sta_dump_driver_rx_pkts_flow(struct file *file,
++					char __user *user_buf,
++					size_t count, loff_t *ppos)
++{
++	struct ieee80211_sta *sta = file->private_data;
++	struct ath11k_sta *arsta = (struct ath11k_sta *)sta->drv_priv;
++	struct ath11k *ar = arsta->arvif->ar;
++	struct ath11k_rx_peer_stats *rx_stats = arsta->rx_stats;
++	int len = 0, ret_val = 0;
++	const int size = 1024;
++	char *buf;
++
++	if (!rx_stats)
++		return -ENOENT;
++
++	buf = kzalloc(size, GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	mutex_lock(&ar->conf_mutex);
++	spin_lock_bh(&ar->ab->base_lock);
++
++	len += scnprintf(buf + len, size - len,
++			 "Rx packets inflow from HW: %u\n",
++			 atomic_read(&arsta->drv_rx_pkts.pkts_frm_hw));
++	len += scnprintf(buf + len, size - len,
++			 "Rx packets outflow from driver: %u\n",
++			 atomic_read(&arsta->drv_rx_pkts.pkts_out));
++	len += scnprintf(buf + len, size - len,
++			 "Rx packets outflow from driver to netif in Fast rx: %u\n",
++			 atomic_read(&arsta->drv_rx_pkts.pkts_out_to_netif));
++
++	len += scnprintf(buf + len, size - len, "\n");
++
++	spin_unlock_bh(&ar->ab->base_lock);
++
++	if (len > size)
++		len = size;
++
++	ret_val = simple_read_from_buffer(user_buf, count, ppos, buf, len);
++	kfree(buf);
++
++	mutex_unlock(&ar->conf_mutex);
++	return ret_val;
++}
++
++static const struct file_operations fops_driver_rx_pkts_flow = {
++	.read = ath11k_dbg_sta_dump_driver_rx_pkts_flow,
++	.open = simple_open,
++	.owner = THIS_MODULE,
++	.llseek = default_llseek,
++};
++
+ void ath11k_debugfs_sta_op_add(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			       struct ieee80211_sta *sta, struct dentry *dir)
+ {
+ 	struct ath11k *ar = hw->priv;
+ 
+-	if (ath11k_debugfs_is_extd_tx_stats_enabled(ar))
+-		debugfs_create_file("tx_stats", 0400, dir, sta,
+-				    &fops_tx_stats);
+-	if (ath11k_debugfs_is_extd_rx_stats_enabled(ar))
++	if (ath11k_debugfs_is_extd_tx_stats_enabled(ar)) {
++ 		debugfs_create_file("tx_stats", 0400, dir, sta,
++ 				    &fops_tx_stats);
++		debugfs_create_file("reset_tx_stats", 0600, dir, sta,
++				    &fops_reset_tx_stats);
++		debugfs_create_file("driver_tx_pkts_flow", 0400, dir, sta,
++				    &fops_driver_tx_pkts_flow);
++	}
++	if (ath11k_debugfs_is_extd_rx_stats_enabled(ar)) {
+ 		debugfs_create_file("rx_stats", 0400, dir, sta,
+ 				    &fops_rx_stats);
++		debugfs_create_file("reset_rx_stats", 0600, dir, sta,
++				    &fops_reset_rx_stats);
++		debugfs_create_file("driver_rx_pkts_flow", 0400, dir, sta,
++				    &fops_driver_rx_pkts_flow);
++ 	}
+ 
+ 	debugfs_create_file("htt_peer_stats", 0400, dir, sta,
+ 			    &fops_htt_peer_stats);
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
 @@ -2416,6 +2416,7 @@ static void ath11k_dp_rx_h_mpdu(struct a
@@ -249,7 +468,7 @@ Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6250,6 +6250,7 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6252,6 +6252,7 @@ static void ath11k_mac_op_tx(struct ieee
  	struct ath11k_mgmt_frame_stats *mgmt_stats = &arvif->mgmt_stats;
  	struct ath11k_sta *arsta = NULL;
  	u32 info_flags = info->flags;
@@ -257,7 +476,7 @@ Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
  	bool is_prb_rsp;
  	u16 frm_type = 0;
  	int ret;
-@@ -6310,6 +6311,15 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6312,6 +6313,15 @@ static void ath11k_mac_op_tx(struct ieee
  		ieee80211_free_txskb(ar->hw, skb);
  		return;
  	}

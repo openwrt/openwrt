@@ -68,7 +68,7 @@ Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
  				netif_receive_skb(skb);
  			}
  		}
-@@ -2684,7 +2704,7 @@ ieee80211_deliver_skb(struct ieee80211_r
+@@ -2686,7 +2706,7 @@ ieee80211_deliver_skb(struct ieee80211_r
  	skb = rx->skb;
  	xmit_skb = NULL;
  
@@ -77,7 +77,7 @@ Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
  
  	if (rx->sta) {
  		/* The seqno index has the same property as needed
-@@ -4095,7 +4115,7 @@ static void ieee80211_rx_cooked_monitor(
+@@ -4098,7 +4118,7 @@ static void ieee80211_rx_cooked_monitor(
  		}
  
  		prev_dev = sdata->dev;
@@ -86,7 +86,7 @@ Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
  	}
  
  	if (prev_dev) {
-@@ -4803,7 +4823,7 @@ static void ieee80211_rx_8023(struct iee
+@@ -4806,7 +4826,7 @@ static void ieee80211_rx_8023(struct iee
  
  	skb->dev = fast_rx->dev;
  
@@ -125,7 +125,7 @@ Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
  
  	if (hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_QOS_DATA)) {
  		tid = skb->priority & IEEE80211_QOS_CTL_TAG1D_MASK;
-@@ -4343,7 +4355,7 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4346,7 +4358,7 @@ void __ieee80211_subif_start_xmit(struct
  			goto out;
  		}
  
@@ -134,7 +134,7 @@ Signed-off-by: Tamizh Chelvam <tamizhr@codeaurora.org>
  
  		ieee80211_xmit(sdata, sta, skb);
  	}
-@@ -4711,7 +4723,7 @@ static void ieee80211_8023_xmit(struct i
+@@ -4717,7 +4729,7 @@ static void ieee80211_8023_xmit(struct i
  		info->ack_frame_id = ieee80211_store_ack_skb(local, skb,
  							     &info->flags, NULL);
  

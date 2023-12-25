@@ -13,6 +13,8 @@ PKG_CONFIG_DEPENDS += \
 	CONFIG_ATH10K_LEDS \
 	CONFIG_ATH10K_THERMAL \
 	CONFIG_ATH11K_THERMAL \
+	CONFIG_ATH11K_MEM_PROFILE_512M \
+	CONFIG_ATH11K_NSS_SUPPORT \
 	CONFIG_ATH_USER_REGD
 
 ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
@@ -57,6 +59,7 @@ config-$(CONFIG_ATH10K_LEDS) += ATH10K_LEDS
 config-$(CONFIG_ATH10K_THERMAL) += ATH10K_THERMAL
 config-$(CONFIG_ATH11K_THERMAL) += ATH11K_THERMAL
 config-$(CONFIG_ATH11K_NSS_SUPPORT) += ATH11K_NSS_SUPPORT
+config-$(CONFIG_ATH11K_MEM_PROFILE_512M) += ATH11K_MEM_PROFILE_512
 
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
@@ -329,6 +332,11 @@ define KernelPackage/ath11k/config
                bool "Enable NSS WiFi offload"
                default n if TARGET_qualcommax
 
+       config ATH11K_MEM_PROFILE_512M
+               bool "Use memory limits with 512MB memory size"
+               default n
+               help
+                  This allows selecting the ath11k memory size profile to be used.
 
 endef
 

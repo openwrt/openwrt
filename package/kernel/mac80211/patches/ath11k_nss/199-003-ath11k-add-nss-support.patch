@@ -533,7 +533,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  static void ath11k_mac_op_bss_info_changed(struct ieee80211_hw *hw,
  					   struct ieee80211_vif *vif,
  					   struct ieee80211_bss_conf *info,
-@@ -4293,6 +4337,26 @@ static int ath11k_mac_op_set_key(struct
+@@ -4295,6 +4339,26 @@ static int ath11k_mac_op_set_key(struct
  
  	spin_lock_bh(&ab->base_lock);
  	peer = ath11k_peer_find(ab, arvif->vdev_id, peer_addr);
@@ -560,7 +560,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	if (peer && cmd == SET_KEY) {
  		peer->keys[key->keyidx] = key;
  		if (key->flags & IEEE80211_KEY_FLAG_PAIRWISE) {
-@@ -4331,9 +4395,8 @@ static int ath11k_mac_op_set_key(struct
+@@ -4333,9 +4397,8 @@ static int ath11k_mac_op_set_key(struct
  			break;
  		}
  	}
@@ -571,7 +571,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  exit:
  	mutex_unlock(&ar->conf_mutex);
  	return ret;
-@@ -6214,10 +6277,14 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6216,10 +6279,14 @@ static void ath11k_mac_op_tx(struct ieee
  	if (control->sta)
  		arsta = ath11k_sta_to_arsta(control->sta);
  
@@ -587,7 +587,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  }
  
-@@ -6239,6 +6306,8 @@ static int ath11k_mac_config_mon_status_
+@@ -6241,6 +6308,8 @@ static int ath11k_mac_config_mon_status_
  
  	if (enable) {
  		tlv_filter = ath11k_mac_mon_status_filter_default;
@@ -596,7 +596,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  		if (ath11k_debugfs_rx_filter(ar))
  			tlv_filter.rx_filter = ath11k_debugfs_rx_filter(ar);
  	}
-@@ -6537,7 +6606,7 @@ static int ath11k_mac_setup_vdev_create_
+@@ -6539,7 +6608,7 @@ static int ath11k_mac_setup_vdev_create_
  	return 0;
  }
  
@@ -605,7 +605,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  					     struct ieee80211_vif *vif)
  {
  	struct ath11k *ar = hw->priv;
-@@ -6583,6 +6652,8 @@ static void ath11k_mac_op_update_vif_off
+@@ -6585,6 +6654,8 @@ static void ath11k_mac_op_update_vif_off
  			    arvif->vdev_id, ret);
  		vif->offload_flags &= ~IEEE80211_OFFLOAD_DECAP_ENABLED;
  	}
@@ -614,7 +614,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  }
  
  static bool ath11k_mac_vif_ap_active_any(struct ath11k_base *ab)
-@@ -6713,6 +6784,8 @@ static int ath11k_mac_vdev_delete(struct
+@@ -6715,6 +6786,8 @@ static int ath11k_mac_vdev_delete(struct
  
  	reinit_completion(&ar->vdev_delete_done);
  
@@ -623,7 +623,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	ret = ath11k_wmi_vdev_delete(ar, arvif->vdev_id);
  	if (ret) {
  		ath11k_warn(ar->ab, "failed to delete WMI vdev %d: %d\n",
-@@ -6853,7 +6926,34 @@ static int ath11k_mac_op_add_interface(s
+@@ -6855,7 +6928,34 @@ static int ath11k_mac_op_add_interface(s
  	list_add(&arvif->list, &ar->arvifs);
  	spin_unlock_bh(&ar->data_lock);
  
@@ -659,7 +659,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
  	nss = get_num_chains(ar->cfg_tx_chainmask) ? : 1;
  	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
-@@ -6977,6 +7077,7 @@ err_peer_del:
+@@ -6979,6 +7079,7 @@ err_peer_del:
  	}
  
  err_vdev_del:
@@ -667,7 +667,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	ath11k_mac_vdev_delete(ar, arvif);
  	spin_lock_bh(&ar->data_lock);
  	list_del(&arvif->list);
-@@ -7487,6 +7588,10 @@ ath11k_mac_update_vif_chan(struct ath11k
+@@ -7489,6 +7590,10 @@ ath11k_mac_update_vif_chan(struct ath11k
  				    arvif->vdev_id, ret);
  			continue;
  		}
@@ -678,7 +678,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  
  	/* Restart the internal monitor vdev on new channel */
-@@ -8769,6 +8874,8 @@ static void ath11k_mac_op_sta_statistics
+@@ -8771,6 +8876,8 @@ static void ath11k_mac_op_sta_statistics
  	sinfo->signal_avg = ewma_avg_rssi_read(&arsta->avg_rssi) +
  		ATH11K_DEFAULT_NOISE_FLOOR;
  	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_SIGNAL_AVG);
@@ -687,7 +687,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  }
  
  #if IS_ENABLED(CONFIG_IPV6)
-@@ -9188,6 +9295,7 @@ static const struct ieee80211_ops ath11k
+@@ -9190,6 +9297,7 @@ static const struct ieee80211_ops ath11k
  	.update_vif_offload		= ath11k_mac_op_update_vif_offload,
  	.config                         = ath11k_mac_op_config,
  	.bss_info_changed               = ath11k_mac_op_bss_info_changed,
@@ -695,7 +695,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	.configure_filter		= ath11k_mac_op_configure_filter,
  	.hw_scan                        = ath11k_mac_op_hw_scan,
  	.cancel_hw_scan                 = ath11k_mac_op_cancel_hw_scan,
-@@ -9573,7 +9681,8 @@ static int __ath11k_mac_register(struct
+@@ -9575,7 +9683,8 @@ static int __ath11k_mac_register(struct
  		ieee80211_hw_set(ar->hw, TX_AMPDU_SETUP_IN_HW);
  		ieee80211_hw_set(ar->hw, SUPPORTS_REORDERING_BUFFER);
  		ieee80211_hw_set(ar->hw, SUPPORTS_AMSDU_IN_AMPDU);
@@ -705,7 +705,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  
  	ar->hw->wiphy->features |= NL80211_FEATURE_STATIC_SMPS;
-@@ -9688,6 +9797,9 @@ static int __ath11k_mac_register(struct
+@@ -9690,6 +9799,9 @@ static int __ath11k_mac_register(struct
  	    ab->hw_params.bios_sar_capa)
  		ar->hw->wiphy->sar_capa = ab->hw_params.bios_sar_capa;
  
@@ -734,15 +734,54 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  
  	ath11k_dbg(ab, ATH11K_DBG_DP_HTT, "peer map vdev %d peer %pM id %d\n",
-@@ -332,6 +335,8 @@ static int __ath11k_peer_delete(struct a
+@@ -298,17 +301,13 @@ static int __ath11k_peer_delete(struct a
  
- 	reinit_completion(&ar->peer_delete_done);
+ 	lockdep_assert_held(&ar->conf_mutex);
  
++	reinit_completion(&ar->peer_delete_done);
 +	ath11k_nss_peer_delete(ar->ab, addr);
 +
+ 	mutex_lock(&ab->tbl_mtx_lock);
+ 	spin_lock_bh(&ab->base_lock);
+ 
+ 	peer = ath11k_peer_find_by_addr(ab, addr);
+-	/* Check if the found peer is what we want to remove.
+-	 * While the sta is transitioning to another band we may
+-	 * have 2 peer with the same addr assigned to different
+-	 * vdev_id. Make sure we are deleting the correct peer.
+-	 */
+-	if (peer && peer->vdev_id == vdev_id)
+-		ath11k_peer_rhash_delete(ab, peer);
+ 
+ 	/* Fallback to peer list search if the correct peer can't be found.
+ 	 * Skip the deletion of the peer from the rhash since it has already
+@@ -327,10 +326,17 @@ static int __ath11k_peer_delete(struct a
+ 		return -EINVAL;
+ 	}
+ 
++	/* Check if the found peer is what we want to remove.
++	 * While the sta is transitioning to another band we may
++	 * have 2 peer with the same addr assigned to different
++	 * vdev_id. Make sure we are deleting the correct peer.
++	 */
++	if (peer && peer->vdev_id == vdev_id)
++		ath11k_peer_rhash_delete(ab, peer);
++
+ 	spin_unlock_bh(&ab->base_lock);
+ 	mutex_unlock(&ab->tbl_mtx_lock);
+ 
+-	reinit_completion(&ar->peer_delete_done);
+ 
  	ret = ath11k_wmi_send_peer_delete_cmd(ar, addr, vdev_id);
  	if (ret) {
- 		ath11k_warn(ab,
+@@ -446,6 +452,7 @@ int ath11k_peer_create(struct ath11k *ar
+ 	peer->sec_type_grp = HAL_ENCRYPT_TYPE_OPEN;
+ 	peer->vif = arvif->vif;
+ 
++
+ 	if (sta) {
+ 		arsta = ath11k_sta_to_arsta(sta);
+ 		arsta->tcl_metadata |= FIELD_PREP(HTT_TCL_META_DATA_TYPE, 0) |
 --- a/drivers/net/wireless/ath/ath11k/peer.h
 +++ b/drivers/net/wireless/ath/ath11k/peer.h
 @@ -17,6 +17,7 @@ struct ath11k_peer {

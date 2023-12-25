@@ -3,7 +3,7 @@
 @@ -311,6 +311,16 @@ struct ath11k_rekey_data {
  	bool enable_offload;
  };
-
+ 
 +#define ATH11K_STATS_MGMT_FRM_TYPE_MAX 16
 +
 +struct ath11k_mgmt_frame_stats {
@@ -24,14 +24,14 @@
 +
 +	struct ath11k_mgmt_frame_stats mgmt_stats;
  };
-
+ 
  struct ath11k_vif_iter {
 --- a/drivers/net/wireless/ath/ath11k/debugfs.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs.c
 @@ -1588,6 +1588,87 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
-
+ 
 +static ssize_t ath11k_dump_mgmt_stats(struct file *file, char __user *ubuf,
 +				      size_t count, loff_t *ppos)
 +{
@@ -123,12 +123,12 @@
 +	debugfs_create_file("dump_mgmt_stats", 0644,
 +			    ar->debug.debugfs_pdev, ar,
 +			    &fops_dump_mgmt_stats);
-
+ 
  	if (ar->hw->wiphy->bands[NL80211_BAND_5GHZ]) {
  		debugfs_create_file("dfs_simulate_radar", 0200,
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6146,9 +6146,9 @@ static int ath11k_mac_mgmt_tx(struct ath
+@@ -6148,9 +6148,9 @@ static int ath11k_mac_mgmt_tx(struct ath
  	 */
  	if (is_prb_rsp &&
  	    atomic_read(&ar->num_pending_mgmt_tx) > ATH11K_PRB_RSP_DROP_THRESHOLD) {
@@ -138,9 +138,9 @@
 -		return -ENOSPC;
 +		return -EBUSY;
  	}
-
+ 
  	if (skb_queue_len_lockless(q) >= ATH11K_TX_MGMT_NUM_PENDING_MAX) {
-@@ -6174,9 +6174,11 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6176,9 +6176,11 @@ static void ath11k_mac_op_tx(struct ieee
  	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
  	struct ieee80211_key_conf *key = info->control.hw_key;
@@ -150,9 +150,9 @@
  	bool is_prb_rsp;
 +	u16 frm_type = 0;
  	int ret;
-
+ 
  	memset(skb_cb, 0, sizeof(*skb_cb));
-@@ -6190,12 +6192,21 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6192,12 +6194,21 @@ static void ath11k_mac_op_tx(struct ieee
  	if (info_flags & IEEE80211_TX_CTL_HW_80211_ENCAP) {
  		skb_cb->flags |= ATH11K_SKB_HW_80211_ENCAP;
  	} else if (ieee80211_is_mgmt(hdr->frame_control)) {
@@ -179,11 +179,11 @@
 --- a/drivers/net/wireless/ath/ath11k/peer.c
 +++ b/drivers/net/wireless/ath/ath11k/peer.c
 @@ -444,6 +444,7 @@ int ath11k_peer_create(struct ath11k *ar
-
+ 
  	peer->sec_type = HAL_ENCRYPT_TYPE_OPEN;
  	peer->sec_type_grp = HAL_ENCRYPT_TYPE_OPEN;
 +	peer->vif = arvif->vif;
-
+ 
  	if (sta) {
  		arsta = ath11k_sta_to_arsta(sta);
 --- a/drivers/net/wireless/ath/ath11k/peer.h
@@ -209,12 +209,12 @@
 +	struct ath11k_mgmt_frame_stats *mgmt_stats;
 +	u16 frm_type;
  	int num_mgmt;
-
+ 
  	spin_lock_bh(&ar->txmgmt_idr_lock);
 @@ -5850,6 +5856,31 @@ static int wmi_process_mgmt_tx_comp(stru
  			info->status.ack_signal = tx_compl_param->ack_rssi;
  	}
-
+ 
 +	hdr = (struct ieee80211_hdr *)msdu->data;
 +	frm_type = FIELD_GET(IEEE80211_FCTL_STYPE, hdr->frame_control);
 +
@@ -241,7 +241,7 @@
 +
 +skip_mgmt_stats:
  	ieee80211_tx_status_irqsafe(ar->hw, msdu);
-
+ 
  	num_mgmt = atomic_dec_if_positive(&ar->num_pending_mgmt_tx);
 @@ -7519,6 +7550,11 @@ static void ath11k_mgmt_rx_event(struct
  	struct ieee80211_hdr *hdr;
@@ -252,11 +252,11 @@
 +	struct ath11k_vif *arvif;
 +	struct ath11k_mgmt_frame_stats *mgmt_stats;
 +	u16 frm_type = 0;
-
+ 
  	if (ath11k_pull_mgmt_rx_params_tlv(ab, skb, &rx_ev) != 0) {
  		ath11k_warn(ab, "failed to extract mgmt rx event");
 @@ -7584,7 +7620,34 @@ static void ath11k_mgmt_rx_event(struct
-
+ 
  	hdr = (struct ieee80211_hdr *)skb->data;
  	fc = le16_to_cpu(hdr->frame_control);
 +	frm_type = FIELD_GET(IEEE80211_FCTL_STYPE, fc);
@@ -285,7 +285,7 @@
 +	mgmt_stats->rx_cnt[frm_type]++;
 +
 +	spin_unlock_bh(&ar->data_lock);
-
+ 
 +skip_mgmt_stats:
  	/* Firmware is guaranteed to report all essential management frames via
  	 * WMI while it can deliver some extra via HTT. Since there can be

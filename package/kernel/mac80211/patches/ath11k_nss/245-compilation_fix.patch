@@ -77,7 +77,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	/* then other type-dependent work */
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4662,19 +4662,21 @@ static void ieee80211_8023_xmit(struct i
+@@ -4668,19 +4668,21 @@ static void ieee80211_8023_xmit(struct i
  
  	ieee80211_aggr_check(sdata, sta, skb);
  
@@ -111,7 +111,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	}
  
  	skb = ieee80211_tx_skb_fixup(skb, ieee80211_sdata_netdev_features(sdata));
-@@ -4730,7 +4732,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4739,7 +4741,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ethhdr *ehdr = (struct ethhdr *)skb->data;
@@ -120,7 +120,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	struct sta_info *sta;
  
  #ifdef CPTCFG_MAC80211_NSS_SUPPORT
-@@ -4748,9 +4750,13 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4757,9 +4759,13 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  		goto out;
  	}
  
@@ -137,7 +137,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  		goto skip_offload;
  
  	key = rcu_dereference(sta->ptk[sta->ptk_idx]);
-@@ -4761,6 +4767,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4770,6 +4776,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  		goto skip_offload;
  
  	sk_pacing_shift_update(skb->sk, sdata->local->hw.tx_sk_pacing_shift);
@@ -147,7 +147,16 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  
 --- a/net/mac80211/rx.c
 +++ b/net/mac80211/rx.c
-@@ -5429,8 +5429,6 @@ void ieee80211_rx_list(struct ieee80211_
+@@ -5342,7 +5342,7 @@ void ieee80211_rx_list(struct ieee80211_
+ 
+ 	if (pubsta) {
+ 		sta = container_of(pubsta, struct sta_info, sta);
+-		if (sta && napi) {
++		if (sta) {
+ 			if (!(status->flag & RX_FLAG_ONLY_MONITOR))
+ 				atomic_inc(&sta->rx_drv_pkts);
+ 		}
+@@ -5442,8 +5442,6 @@ void ieee80211_rx_list(struct ieee80211_
  
  	status->rx_flags = 0;
  
@@ -156,7 +165,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	/*
  	 * Frames with failed FCS/PLCP checksum are not returned,
  	 * all other frames are returned without radiotap header
-@@ -5450,7 +5448,6 @@ void ieee80211_rx_list(struct ieee80211_
+@@ -5463,7 +5461,6 @@ void ieee80211_rx_list(struct ieee80211_
  			__ieee80211_rx_handle_packet(hw, pubsta, skb, list);
  	}
  

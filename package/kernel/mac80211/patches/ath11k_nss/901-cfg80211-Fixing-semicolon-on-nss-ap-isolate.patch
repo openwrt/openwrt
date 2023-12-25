@@ -1,0 +1,11 @@
+--- a/net/mac80211/trace.h	2023-12-25 05:49:01.460159123 +0000
++++ b/net/mac80211/trace.h	2023-12-25 05:49:01.460159123 +0000
+@@ -401,7 +401,7 @@
+ 		LOCAL_ENTRY
+ 		VIF_ENTRY
+ 		__field(u32, changed)
+-		__field(bool, nss_ap_isolate);
++		__field(bool, nss_ap_isolate)
+ 	),
+ 
+ 	TP_fast_assign(
