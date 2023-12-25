@@ -274,6 +274,8 @@ int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v)
 	sw_w32(v, RTL930X_SDS_INDACS_DATA);
 	cmd = phy_addr << 2 | page << 7 | phy_reg << 13 | 0x3;
 
+	sw_w32(cmd, RTL930X_SDS_INDACS_CMD);
+
 	for (i = 0; i < 100; i++) {
 		if (!(sw_r32(RTL930X_SDS_INDACS_CMD) & 0x1))
 			break;
