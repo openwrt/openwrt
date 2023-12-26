@@ -294,21 +294,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  		i =  fls(ab->hw_params.ring_mask->rx[grp_id]) - 1;
  		work_done = ath11k_dp_process_rx(ab, i, napi,
  						 budget);
-@@ -822,9 +841,10 @@ int ath11k_dp_service_srng(struct ath11k
- 				if (ab->hw_params.ring_mask->rx_mon_status[grp_id] &
- 					BIT(id)) {
- 					work_done =
--					ath11k_dp_rx_process_mon_rings(ab,
--								       id,
--								       napi, budget);
-+						ath11k_dp_rx_process_mon_rings(ab,
-+									       id,
-+									       napi,
-+									       budget);
- 					budget -= work_done;
- 					tot_work_done += work_done;
- 
-@@ -838,7 +858,7 @@ int ath11k_dp_service_srng(struct ath11k
+@@ -838,7 +857,7 @@ int ath11k_dp_service_srng(struct ath11k
  	if (ab->hw_params.ring_mask->reo_status[grp_id])
  		ath11k_dp_process_reo_status(ab);
  
@@ -571,13 +557,15 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  exit:
  	mutex_unlock(&ar->conf_mutex);
  	return ret;
-@@ -6216,10 +6279,14 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6216,10 +6279,16 @@ static void ath11k_mac_op_tx(struct ieee
  	if (control->sta)
  		arsta = ath11k_sta_to_arsta(control->sta);
  
 -	ret = ath11k_dp_tx(ar, arvif, arsta, skb);
-+	if (ar->ab->nss.enabled)
-+		ret = ath11k_nss_tx(arvif,skb);
++	if (ar->ab->nss.enabled) {
++		arvif->ar->ab->nss.debug_mode = true;
++		ret = ath11k_nss_tx(arvif, skb);
++  }
 +	else
 +		ret = ath11k_dp_tx(ar, arvif, arsta, skb);
  	if (unlikely(ret)) {
@@ -587,7 +575,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  }
  
-@@ -6241,6 +6308,8 @@ static int ath11k_mac_config_mon_status_
+@@ -6241,6 +6310,8 @@ static int ath11k_mac_config_mon_status_
  
  	if (enable) {
  		tlv_filter = ath11k_mac_mon_status_filter_default;
@@ -596,7 +584,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  		if (ath11k_debugfs_rx_filter(ar))
  			tlv_filter.rx_filter = ath11k_debugfs_rx_filter(ar);
  	}
-@@ -6539,7 +6608,7 @@ static int ath11k_mac_setup_vdev_create_
+@@ -6539,7 +6610,7 @@ static int ath11k_mac_setup_vdev_create_
  	return 0;
  }
  
@@ -605,7 +593,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  					     struct ieee80211_vif *vif)
  {
  	struct ath11k *ar = hw->priv;
-@@ -6585,6 +6654,8 @@ static void ath11k_mac_op_update_vif_off
+@@ -6585,6 +6656,8 @@ static void ath11k_mac_op_update_vif_off
  			    arvif->vdev_id, ret);
  		vif->offload_flags &= ~IEEE80211_OFFLOAD_DECAP_ENABLED;
  	}
@@ -614,7 +602,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  }
  
  static bool ath11k_mac_vif_ap_active_any(struct ath11k_base *ab)
-@@ -6715,6 +6786,8 @@ static int ath11k_mac_vdev_delete(struct
+@@ -6715,6 +6788,8 @@ static int ath11k_mac_vdev_delete(struct
  
  	reinit_completion(&ar->vdev_delete_done);
  
@@ -623,7 +611,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	ret = ath11k_wmi_vdev_delete(ar, arvif->vdev_id);
  	if (ret) {
  		ath11k_warn(ar->ab, "failed to delete WMI vdev %d: %d\n",
-@@ -6855,7 +6928,34 @@ static int ath11k_mac_op_add_interface(s
+@@ -6855,7 +6930,34 @@ static int ath11k_mac_op_add_interface(s
  	list_add(&arvif->list, &ar->arvifs);
  	spin_unlock_bh(&ar->data_lock);
  
@@ -659,7 +647,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  
  	nss = get_num_chains(ar->cfg_tx_chainmask) ? : 1;
  	ret = ath11k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
-@@ -6979,6 +7079,7 @@ err_peer_del:
+@@ -6979,6 +7081,7 @@ err_peer_del:
  	}
  
  err_vdev_del:
@@ -667,7 +655,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	ath11k_mac_vdev_delete(ar, arvif);
  	spin_lock_bh(&ar->data_lock);
  	list_del(&arvif->list);
-@@ -7489,6 +7590,10 @@ ath11k_mac_update_vif_chan(struct ath11k
+@@ -7489,6 +7592,10 @@ ath11k_mac_update_vif_chan(struct ath11k
  				    arvif->vdev_id, ret);
  			continue;
  		}
@@ -678,7 +666,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  
  	/* Restart the internal monitor vdev on new channel */
-@@ -8771,6 +8876,8 @@ static void ath11k_mac_op_sta_statistics
+@@ -8771,6 +8878,8 @@ static void ath11k_mac_op_sta_statistics
  	sinfo->signal_avg = ewma_avg_rssi_read(&arsta->avg_rssi) +
  		ATH11K_DEFAULT_NOISE_FLOOR;
  	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_SIGNAL_AVG);
@@ -687,7 +675,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  }
  
  #if IS_ENABLED(CONFIG_IPV6)
-@@ -9190,6 +9297,7 @@ static const struct ieee80211_ops ath11k
+@@ -9190,6 +9299,7 @@ static const struct ieee80211_ops ath11k
  	.update_vif_offload		= ath11k_mac_op_update_vif_offload,
  	.config                         = ath11k_mac_op_config,
  	.bss_info_changed               = ath11k_mac_op_bss_info_changed,
@@ -695,7 +683,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	.configure_filter		= ath11k_mac_op_configure_filter,
  	.hw_scan                        = ath11k_mac_op_hw_scan,
  	.cancel_hw_scan                 = ath11k_mac_op_cancel_hw_scan,
-@@ -9575,7 +9683,8 @@ static int __ath11k_mac_register(struct
+@@ -9575,7 +9685,8 @@ static int __ath11k_mac_register(struct
  		ieee80211_hw_set(ar->hw, TX_AMPDU_SETUP_IN_HW);
  		ieee80211_hw_set(ar->hw, SUPPORTS_REORDERING_BUFFER);
  		ieee80211_hw_set(ar->hw, SUPPORTS_AMSDU_IN_AMPDU);
@@ -705,7 +693,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  
  	ar->hw->wiphy->features |= NL80211_FEATURE_STATIC_SMPS;
-@@ -9690,6 +9799,9 @@ static int __ath11k_mac_register(struct
+@@ -9690,6 +9801,9 @@ static int __ath11k_mac_register(struct
  	    ab->hw_params.bios_sar_capa)
  		ar->hw->wiphy->sar_capa = ab->hw_params.bios_sar_capa;
  
@@ -1167,7 +1155,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  enum ath11k_nss_opmode {
  	ATH11K_NSS_OPMODE_UNKNOWN,
  	ATH11K_NSS_OPMODE_AP,
-@@ -190,7 +197,8 @@ struct ath11k_soc_nss {
+@@ -192,7 +199,8 @@ struct ath11k_soc_nss {
  
  #ifdef CPTCFG_ATH11K_NSS_SUPPORT
  int ath11k_nss_tx(struct ath11k_vif *arvif, struct sk_buff *skb);
@@ -1177,7 +1165,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  int ath11k_nss_vdev_create(struct ath11k_vif *arvif);
  void ath11k_nss_vdev_delete(struct ath11k_vif *arvif);
  int ath11k_nss_vdev_up(struct ath11k_vif *arvif);
-@@ -217,7 +225,8 @@ static inline int ath11k_nss_tx(struct a
+@@ -219,7 +227,8 @@ static inline int ath11k_nss_tx(struct a
  	return 0;
  }
  

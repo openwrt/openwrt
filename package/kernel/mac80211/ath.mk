@@ -13,9 +13,9 @@ PKG_CONFIG_DEPENDS += \
 	CONFIG_ATH10K_LEDS \
 	CONFIG_ATH10K_THERMAL \
 	CONFIG_ATH11K_THERMAL \
+	CONFIG_ATH_USER_REGD \
 	CONFIG_ATH11K_MEM_PROFILE_512M \
-	CONFIG_ATH11K_NSS_SUPPORT \
-	CONFIG_ATH_USER_REGD
+	CONFIG_ATH11K_NSS_SUPPORT
 
 ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
   config-y += \
@@ -58,9 +58,8 @@ config-$(CONFIG_ATH9K_UBNTHSR) += ATH9K_UBNTHSR
 config-$(CONFIG_ATH10K_LEDS) += ATH10K_LEDS
 config-$(CONFIG_ATH10K_THERMAL) += ATH10K_THERMAL
 config-$(CONFIG_ATH11K_THERMAL) += ATH11K_THERMAL
+config-$(CONFIG_ATH11K_MEM_PROFILE_512M) += ATH11K_MEM_PROFILE_512M
 config-$(CONFIG_ATH11K_NSS_SUPPORT) += ATH11K_NSS_SUPPORT
-config-$(CONFIG_ATH11K_MEM_PROFILE_512M) += ATH11K_MEM_PROFILE_512
-
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k) += ATH10K ATH10K_PCI
@@ -307,11 +306,12 @@ define KernelPackage/ath11k
   TITLE:=Qualcomm 802.11ax wireless chipset support (common code)
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath11k
   DEPENDS+= +kmod-ath +@DRIVER_11AC_SUPPORT +@DRIVER_11AX_SUPPORT \
-  +kmod-crypto-michael-mic +ATH11K_THERMAL:kmod-hwmon-core +ATH11K_THERMAL:kmod-thermal +ATH11K_NSS_SUPPORT:kmod-qca-nss-drv
+  +kmod-crypto-michael-mic +ATH11K_THERMAL:kmod-hwmon-core +ATH11K_THERMAL:kmod-thermal \
+  +ATH11K_NSS_SUPPORT:kmod-qca-nss-drv
   FILES:=$(PKG_BUILD_DIR)/drivers/soc/qcom/qmi_helpers.ko \
   $(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k.ko
-  AUTOLOAD:=$(call AutoProbe,ath11k)
 ifdef CONFIG_ATH11K_NSS_SUPPORT
+  AUTOLOAD:=$(call AutoProbe,ath11k)
   MODPARAMS.ath11k:=nss_offload=1 frame_mode=2
 endif
 endef
@@ -330,22 +330,18 @@ define KernelPackage/ath11k/config
 
        config ATH11K_NSS_SUPPORT
                bool "Enable NSS WiFi offload"
-               default n if TARGET_qualcommax
+               default y if TARGET_qualcommax
 
-       config ATH11K_MEM_PROFILE_512M
-               bool "Use memory limits with 512MB memory size"
+       if PACKAGE_kmod-ath11k
+
+         config ATH11K_MEM_PROFILE_512M
+               bool "Use limits for the 512MB memory size"
                default n
                help
-                  This allows selecting the ath11k memory size profile to be used.
-
+                  For IPQ devices with 512MB RAM (i.e. Xiaomi AX3600).
+                  Unselected is 1GB.
+       endif
 endef
-
-ifdef CONFIG_ATH11K_NSS_SUPPORT
- define KernelPackage/ath11k/install
-	$(INSTALL_DIR) $(1)/etc/hotplug.d/firmware
-	$(INSTALL_DATA) ./files/ath11k_nss.hotplug $(1)/etc/hotplug.d/firmware/12-ath11k_nss
- endef
-endif
 
 define KernelPackage/ath11k-ahb
   $(call KernelPackage/mac80211/Default)

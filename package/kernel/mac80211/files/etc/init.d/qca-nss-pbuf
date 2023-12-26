@@ -1,0 +1,67 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (c) 2021 The Linux Foundation. All rights reserved.
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+START=71
+
+apply_nss_config() {
+  sysctl -w dev.nss.n2hcfg.n2h_queue_limit_core0=256 > /dev/null 2> /dev/null
+  sysctl -w dev.nss.n2hcfg.n2h_queue_limit_core1=256 > /dev/null 2> /dev/null
+
+  case "$(board_name)" in
+    # 1GB+ RAM Boards
+      buffalo,wxr-5950ax12|\
+      dynalink,dl-wrx36|\
+      edgecore,eap102|\
+      netgear,rax120v2|\
+      netgear,wax620|\
+      netgear,wax630|\
+      prpl,haze|\
+      qnap,301w|\
+      xiaomi,ax9000|\
+      zyxel,nbg7815)
+      sysctl -w dev.nss.n2hcfg.extra_pbuf_core0=9000000 > /dev/null 2> /dev/null
+      sysctl -w dev.nss.n2hcfg.n2h_high_water_core0=67392 > /dev/null 2> /dev/null
+      sysctl -w dev.nss.n2hcfg.n2h_wifi_pool_buf=40960 > /dev/null 2> /dev/null
+      ;;
+    # < 256MB Boards
+    netgear,wax218)
+      sysctl -w dev.nss.n2hcfg.extra_pbuf_core0=3100000 > /dev/null 2> /dev/null
+      sysctl -w dev.nss.n2hcfg.n2h_high_water_core0=30528 > /dev/null 2> /dev/null
+      sysctl -w dev.nss.n2hcfg.n2h_wifi_pool_buf=4096 > /dev/null 2> /dev/null
+      ;;
+    # 512MB+ Boards
+    *)
+      #default settings
+      sysctl -w dev.nss.n2hcfg.extra_pbuf_core0=7800000 > /dev/null 2> /dev/null
+      sysctl -w dev.nss.n2hcfg.n2h_high_water_core0=60176 > /dev/null 2> /dev/null
+      sysctl -w dev.nss.n2hcfg.n2h_wifi_pool_buf=35840 > /dev/null 2> /dev/null
+      ;;
+  esac
+}
+
+start() {
+  if [ -d "/sys/kernel/debug/ath11k" ]; then
+    enable_nss_offload=$(cat /sys/module/ath11k/parameters/nss_offload)
+    if [ "$enable_nss_offload" -eq 1 ]; then
+      /etc/init.d/qca-nss-ecm start
+      apply_nss_config
+    fi
+
+    if [ "$enable_nss_offload" -eq 0 ]; then
+      /etc/init.d/qca-nss-ecm stop
+    fi
+  fi
+}

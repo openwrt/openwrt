@@ -675,9 +675,9 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +	int encap_type = ath11k_dp_tx_get_encap_type(arvif, skb);
 +	struct ath11k_soc_dp_stats *soc_stats = &ar->ab->soc_stats;
 +
-+	if(encap_type != arvif->nss.encap) {
++	if (!arvif->ar->ab->nss.debug_mode && encap_type != arvif->nss.encap) {
 +		ath11k_warn(ar->ab, "encap mismatch in nss tx skb encap type %d" \
-+			    "vif encap type %d\n", encap_type, arvif->nss.encap);
++			    " vif encap type %d\n", encap_type, arvif->nss.encap);
 +		goto drop;
 +	}
 +
@@ -2443,7 +2443,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +}
 --- /dev/null
 +++ b/drivers/net/wireless/ath/ath11k/nss.h
-@@ -0,0 +1,305 @@
+@@ -0,0 +1,307 @@
 +/* SPDX-License-Identifier: BSD-3-Clause-Clear */
 +/*
 + * Copyright (c) 2020 The Linux Foundation. All rights reserved.
@@ -2623,6 +2623,8 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +	void* ctx;
 +	/* if_num to be used for soc related nss messages */
 +	int if_num;
++	/* debug mode to disable the regular mesh configuration from mac80211 */
++	bool debug_mode;
 +	/* Completion to nss message response */
 +	struct completion complete;
 +	/* Response to nss messages are stored here on msg callback

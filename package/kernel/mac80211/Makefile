@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=6.5
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 # PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v5.15.58/
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
 PKG_HASH:=908c22dceba185eab83caa5a1e58ce6b3ebdc58f099c3fd3e11c7352ebfab2d7
@@ -34,6 +34,8 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_MAC80211_DEBUGFS \
 	CONFIG_PACKAGE_MAC80211_MESH \
 	CONFIG_PACKAGE_MAC80211_TRACING \
+	CONFIG_PACKAGE_MAC80211_NSS_SUPPORT \
+	CONFIG_PACKAGE_MAC80211_NSS_REDIRECT \
 	CONFIG_PACKAGE_IWLWIFI_DEBUG \
 	CONFIG_PACKAGE_IWLWIFI_DEBUGFS \
 	CONFIG_PACKAGE_RTLWIFI_DEBUG \
@@ -126,9 +128,9 @@ define KernelPackage/mac80211
   KCONFIG:=\
 	CONFIG_AVERAGE=y
   FILES:= $(PKG_BUILD_DIR)/net/mac80211/mac80211.ko
-ifdef CONFIG_ATH11K_NSS_SUPPORT
-  AUTOLOAD:=$(call AutoProbe,mac80211)
-  MODPARAMS.mac80211:=nss_redirect=true
+ifdef CONFIG_PACKAGE_MAC80211_NSS_REDIRECT
+  AUTOLOAD:=$(call AutoProbe, mac80211)
+  MODPARAMS.mac80211:=nss_redirect=1
 endif
   ABI_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   MENU:=1
@@ -136,6 +138,21 @@ endef
 
 define KernelPackage/mac80211/config
   if PACKAGE_kmod-mac80211
+
+  if PACKAGE_kmod-qca-nss-drv
+		config PACKAGE_MAC80211_NSS_SUPPORT
+			bool "Enable NSS support"
+			default y
+			help
+				This option enables support for NSS in QCA boards.
+		config PACKAGE_MAC80211_NSS_REDIRECT
+			bool "Enable autoloading with 'nss_redirect=1' (not needed on ath11k)"
+			depends on PACKAGE_MAC80211_NSS_SUPPORT
+			default n
+			help
+				This option enables autoloading mac80211 with 'nss_redirect=1'.
+				However, it is not required for wifi offloading.
+  endif
 
 	config PACKAGE_MAC80211_DEBUGFS
 		bool "Export mac80211 internals in DebugFS"
@@ -282,9 +299,11 @@ ifdef CONFIG_ATH11K_NSS_SUPPORT
 	IREMAP_CFLAGS+=-I$(STAGING_DIR)/usr/include/qca-nss-drv
 endif
 
+config-$(CONFIG_PACKAGE_MAC80211_NSS_SUPPORT) += MAC80211_NSS_SUPPORT
+
 MAKE_OPTS:= \
 	$(subst -C $(LINUX_DIR),-C "$(PKG_BUILD_DIR)",$(KERNEL_MAKEOPTS)) \
-	EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include $(IREMAP_CFLAGS) $(C_DEFINES)" \
+	EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include $(IREMAP_CFLAGS) $(C_DEFINES) -Wno-incompatible-pointer-types" \
 	KLIB_BUILD="$(LINUX_DIR)" \
 	MODPROBE=true \
 	KLIB=$(TARGET_MODULES_DIR) \
@@ -402,6 +421,13 @@ define KernelPackage/cfg80211/install
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/ieee80211
 	$(INSTALL_DATA) ./files/mac80211.hotplug $(1)/etc/hotplug.d/ieee80211/10-wifi-detect
 endef
+
+ifdef CONFIG_ATH11K_NSS_SUPPORT
+define KernelPackage/ath11k/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/etc/init.d/qca-nss-pbuf $(1)/etc/init.d
+endef
+endif
 
 $(eval $(foreach drv,$(PKG_DRIVERS),$(call KernelPackage,$(drv))))
 $(eval $(call KernelPackage,cfg80211))
