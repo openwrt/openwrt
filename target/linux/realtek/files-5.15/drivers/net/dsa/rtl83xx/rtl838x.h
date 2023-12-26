@@ -3,6 +3,7 @@
 #ifndef _RTL838X_H
 #define _RTL838X_H
 
+#include <linux/types.h>
 #include <net/dsa.h>
 
 /* Register definition */
@@ -566,23 +567,6 @@ typedef enum {
 #define RTL930X_L3_HW_LU_CTRL			(0xACC0)
 #define RTL930X_L3_IP_ROUTE_CTRL		0xab44
 
-/* Port LED Control */
-#define RTL930X_LED_PORT_NUM_CTRL(p)		(0xCC04 + (((p >> 4) << 2)))
-#define RTL930X_LED_SET0_0_CTRL			(0xCC28)
-#define RTL930X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0xCC2C + (((p >> 4) << 2)))
-#define RTL930X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0xCC34 + (((p >> 4) << 2)))
-#define RTL930X_LED_PORT_COPR_MASK_CTRL		(0xCC3C)
-#define RTL930X_LED_PORT_FIB_MASK_CTRL		(0xCC40)
-#define RTL930X_LED_PORT_COMBO_MASK_CTRL	(0xCC44)
-
-#define RTL931X_LED_PORT_NUM_CTRL(p)		(0x0604 + (((p >> 4) << 2)))
-#define RTL931X_LED_SET0_0_CTRL			(0x0630)
-#define RTL931X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0x0634 + (((p >> 4) << 2)))
-#define RTL931X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0x0644 + (((p >> 4) << 2)))
-#define RTL931X_LED_PORT_COPR_MASK_CTRL		(0x0654)
-#define RTL931X_LED_PORT_FIB_MASK_CTRL		(0x065c)
-#define RTL931X_LED_PORT_COMBO_MASK_CTRL	(0x0664)
-
 #define MAX_VLANS 4096
 #define MAX_LAGS 16
 #define MAX_PRIOS 8
@@ -635,6 +619,7 @@ struct rtl838x_port {
 	bool is2G5;
 	int sds_num;
 	int led_set;
+	u32 led_num;
 	const struct dsa_port *dp;
 };
 

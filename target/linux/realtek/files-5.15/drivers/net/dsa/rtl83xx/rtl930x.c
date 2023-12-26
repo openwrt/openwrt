@@ -6,6 +6,72 @@
 
 #include "rtl83xx.h"
 
+#define RTL930X_LED_GLB_CTRL_REG                        (0xcc00)
+#define RTL930X_LED_GLB_CTRL_CFG_MDX_DELAY                     GENMASK(31, 28)
+#define RTL930X_LED_GLB_CTRL_LED_STACK_FTG_IGNORE              BIT(27)
+#define RTL930X_LED_GLB_CTRL_LED_STACK                         GENMASK(26, 25)
+#define RTL930X_LED_GLB_CTRL_LED_STACK_DISABLE                         0x0
+#define RTL930X_LED_GLB_CTRL_LED_STACK_TRIGGER_OUTPUT                  0x1
+#define RTL930X_LED_GLB_CTRL_LED_STACK_TRIGGER_INPUT                   0x2
+/* Reserved                                                            0x3 */
+#define RTL930X_LED_GLB_CTRL_LEDIC_PAGE_ACCESS                 BIT(24)
+#define RTL930X_LED_GLB_CTRL_LEDIC_RESTART                     BIT(23)
+#define RTL930X_LED_GLB_CTRL_LED_ACTIVE                        BIT(22)
+#define RTL930X_LED_GLB_CTRL_LED_SIGNAL_INVERT                 BIT(21)
+#define RTL930X_LED_GLB_CTRL_BLINK_TIME_SEL                    GENMASK(20, 18)
+#define RTL930X_LED_GLB_CTRL_LED_CLK_SEL                       GENMASK(17, 16)
+#define RTL930X_LED_GLB_CTRL_LED_LOAD_EN                       BIT(15)
+#define RTL930X_LED_GLB_CTRL_SYS_LED_MODE                      GENMASK(14, 13)
+#define RTL930X_LED_GLB_CTRL_SYS_LED_EN                        BIT(12)
+#define RTL930X_LED_GLB_CTRL_STP2_PWR_ON_LED                   GENMASK(11, 8)
+#define RTL930X_LED_GLB_CTRL_STP1_PWR_ON_LED                   GENMASK(7, 4)
+#define RTL930X_LED_GLB_CTRL_PWR_ON_BLINK_SEL                  GENMASK(3, 2)
+#define RTL930X_LED_GLB_CTRL_LED_MODE                          GENMASK(1, 0)
+#define RTL930X_LED_GLB_CTRL_LED_MODE_DISABLE                          0x0
+#define RTL930X_LED_GLB_CTRL_LED_MODE_SERIAL                           0x1
+#define RTL930X_LED_GLB_CTRL_LED_MODE_SCAN_SINGLECOLOR                 0x2
+#define RTL930X_LED_GLB_CTRL_LED_MODE_SCAN_BICOLOR                     0x3
+
+#define RTL930X_LED_PORT_NUM_CTRL_REG(p)                ((0xcc04) + REALTEK_REG_PORT_OFFSET((p), 2, 0x4))
+#define _RTL930X_LED_PORT_NUM_CTRL_SEL_MASK                     GENMASK(1, 0)
+#define RTL930X_LED_PORT_NUM_CTRL_SEL(p, l) \
+        (((l) & _RTL930X_LED_PORT_NUM_CTRL_SEL_MASK) << REALTEK_REG_PORT_INDEX((p), 2))
+#define RTL930X_LED_PORT_NUM_CTRL_SEL_COUNT                     4
+#define RTL930X_LED_PORT_NUM_CTRL_COUNT                         4
+
+/* Index number counts down (3 - 0), and address runs up (0xcc00 - 0xcc28) */
+#define __LS2P(set, led) \
+        (((set) * RTL930X_LED_PORT_NUM_CTRL_COUNT) + (led))
+#define RTL930X_LED_SET_CTRL_REG(s, l)                  ((0xcc28) - REALTEK_REG_PORT_OFFSET(__LS2P(s, l), 16, 0x4))
+#define _RTL930X_LED_SET_CTRL_LED_MASK                          GENMASK(15, 0)
+#define RTL930X_LED_SET_CTRL_LED(led, sel) \
+        (((sel) & _RTL930X_LED_SET_CTRL_LED_MASK) << REALTEK_REG_PORT_INDEX(led, 16))
+
+#define RTL930X_LED_PORT_COPR_SET_SEL_CTRL_REG(p)       ((0xcc2c) + REALTEK_REG_PORT_OFFSET((p), 2, 0x4))
+#define _RTL930X_LED_PORT_COPR_SET_SEL_CTRL_SET_MASK            GENMASK(1, 0)
+#define RTL930X_LED_PORT_COPR_SET_SEL_CTRL_SET(p, l) \
+        (((l) & _RTL930X_LED_PORT_COPR_SET_SEL_CTRL_SET_MASK) << REALTEK_REG_PORT_INDEX((p), 2))
+
+#define RTL930X_LED_PORT_FIB_SET_SEL_CTRL_REG(p)        ((0xcc34) + REALTEK_REG_PORT_OFFSET((p), 2, 0x4))
+#define _RTL930X_LED_PORT_FIB_SET_SEL_CTRL_SET_MASK             GENMASK(1, 0)
+#define RTL930X_LED_PORT_FIB_SET_SEL_CTRL_SET(p, l) \
+        (((l) & _RTL930X_LED_PORT_FIB_SET_SEL_CTRL_SET_MASK) << REALTEK_REG_PORT_INDEX((p), 2))
+
+#define RTL930X_LED_PORT_COPR_MASK_CTRL_REG(p)          ((0xcc3c) + REALTEK_REG_PORT_OFFSET((p), 1, 0x4))
+#define _RTL930X_LED_PORT_COPR_MASK_CTRL_MASK                   BIT(0)
+#define RTL930X_LED_PORT_COPR_MASK_CTRL_PMASK(p, m) \
+        (((m) & _RTL930X_LED_PORT_COPR_MASK_CTRL_MASK) << REALTEK_REG_PORT_INDEX((p), 1))
+
+#define RTL930X_LED_PORT_FIB_MASK_CTRL_REG(p)           ((0xcc40) + REALTEK_REG_PORT_OFFSET((p), 1, 0x4))
+#define _RTL930X_LED_PORT_FIB_MASK_CTRL_MASK                    BIT(0)
+#define RTL930X_LED_PORT_FIB_MASK_CTRL_PMASK(p, m) \
+        (((m) & _RTL930X_LED_PORT_FIB_MASK_CTRL_MASK) << REALTEK_REG_PORT_INDEX((p), 1))
+
+#define RTL930X_LED_PORT_COMBO_MASK_CTRL_REG(p)         ((0xcc44) + REALTEK_REG_PORT_OFFSET((p), 1, 0x4))
+#define _RTL930X_LED_PORT_COMBO_MASK_CTRL_MASK                  BIT(0)
+#define RTL930X_LED_PORT_COMBO_MASK_CTRL_PMASK(p, m) \
+        (((m) & _RTL930X_LED_PORT_COMBO_MASK_CTRL_MASK) << REALTEK_REG_PORT_INDEX((p), 1))
+
 #define RTL930X_VLAN_PORT_TAG_STS_INTERNAL			0x0
 #define RTL930X_VLAN_PORT_TAG_STS_UNTAG				0x1
 #define RTL930X_VLAN_PORT_TAG_STS_TAGGED			0x2
@@ -21,8 +87,6 @@
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(2,2)
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1,1)
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0,0)
-
-#define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
 
 extern struct mutex smi_lock;
 extern struct rtl83xx_soc_info soc_info;
@@ -2386,73 +2450,78 @@ void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
 
 static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 {
+	u32 led_copper_port_set[REALTEK_PORT_ARRAY_SIZE(RTL930X_CPU_PORT, 2)] = { 0x00 };
+	u32 led_fiber_port_set[REALTEK_PORT_ARRAY_SIZE(RTL930X_CPU_PORT, 2)] = { 0x00 };
+	u32 port_mask_copper[REALTEK_PORT_ARRAY_SIZE(RTL930X_CPU_PORT, 1)] = { 0x0 };
+	u32 port_mask_fiber[REALTEK_PORT_ARRAY_SIZE(RTL930X_CPU_PORT, 1)] = { 0x0 };
+	u32 port_mask_combo[REALTEK_PORT_ARRAY_SIZE(RTL930X_CPU_PORT, 1)] = { 0x0 };
+	u32 led_port_num[REALTEK_PORT_ARRAY_SIZE(RTL930X_CPU_PORT, 2)] = { 0x00 };
 	struct device_node *node;
-	u32 pm = 0;
 
 	pr_info("%s called\n", __func__);
-	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
+
+	node = of_find_compatible_node(NULL, NULL, "realtek,rtl930x-leds");
 	if (!node) {
-		pr_info("%s No compatible LED node found\n", __func__);
+		pr_warn("%s No compatible LED node found\n", __func__);
 		return;
 	}
 
-	for (int i = 0; i < priv->cpu_port; i++) {
-		int pos = (i << 1) % 32;
-		u32 set;
-		u32 v;
+	for (int led_set = 0; led_set < RTL930X_LED_PORT_NUM_CTRL_COUNT; led_set++) {
+		u16 led_sel[RTL930X_LED_PORT_NUM_CTRL_SEL_COUNT] = { 0x0000 };
+		char led_set_name[sizeof("led_setN")];
 
-		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
-		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
+		snprintf(led_set_name, sizeof(led_set_name), "led_set%d", led_set);
+		of_property_read_u16_array(node, led_set_name, led_sel, RTL930X_LED_PORT_NUM_CTRL_SEL_COUNT);
+		for (int led = 0; led < RTL930X_LED_PORT_NUM_CTRL_SEL_COUNT; led += 2)
+			sw_w32(RTL930X_LED_SET_CTRL_LED(led + 0, led_sel[led + 0]) |
+			       RTL930X_LED_SET_CTRL_LED(led + 1, led_sel[led + 1]),
+			       RTL930X_LED_SET_CTRL_REG(led_set, led));
+	}
 
-		if (!priv->ports[i].phy)
+	sw_w32_mask(RTL930X_LED_GLB_CTRL_LED_ACTIVE |
+	            RTL930X_LED_GLB_CTRL_LED_MODE,
+	            (of_property_read_bool(node, "active-high") ? RTL930X_LED_GLB_CTRL_LED_ACTIVE : 0) |
+	            RTL930X_LED_GLB_CTRL_LED_MODE_SERIAL,
+	            RTL930X_LED_GLB_CTRL_REG);
+
+	/* TODO can we not setup this from where led_set gets setup? */
+	/* Cache registers first, to avoid huge amounts of read-modify-write's */
+	for (int port = 0; port < priv->cpu_port; port++) {
+		u32 led_num = hweight32(priv->ports[port].led_num);
+
+		if (led_num == 0)
 			continue;
+		else
+			led_num--;
 
-		v = 0x1;
-		if (priv->ports[i].is10G)
-			v = 0x3;
-		if (priv->ports[i].phy_is_integrated)
-			v = 0x1;
-		sw_w32_mask(0x3 << pos, v << pos, RTL930X_LED_PORT_NUM_CTRL(i));
+		led_port_num[REALTEK_PORT_ARRAY_INDEX(port, 2)] |= RTL930X_LED_PORT_NUM_CTRL_SEL(port, led_num);
 
-		pm |= BIT(i);
+		led_copper_port_set[REALTEK_PORT_ARRAY_INDEX(port, 2)] |= RTL930X_LED_PORT_COPR_SET_SEL_CTRL_SET(port, priv->ports[port].led_set);
+		/* TODO probably need 2 properties, no need to have these tied together */
+		led_fiber_port_set[REALTEK_PORT_ARRAY_INDEX(port, 2)] |= RTL930X_LED_PORT_FIB_SET_SEL_CTRL_SET(port, priv->ports[port].led_set);
 
-		set = priv->ports[i].led_set;
-		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
-		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
+		/* TODO: Should determine the exact type and exactly set the masks based on phy-mode/type */
+		if (priv->ports[port].phy) {
+			if (priv->ports[port].phy_is_integrated)
+				port_mask_fiber[REALTEK_PORT_ARRAY_INDEX(port, 1)] |= RTL930X_LED_PORT_FIB_MASK_CTRL_PMASK(port, true);
+			else
+				port_mask_copper[REALTEK_PORT_ARRAY_INDEX(port, 1)] |= RTL930X_LED_PORT_COPR_MASK_CTRL_PMASK(port, true);
+			/* TODO need to figure out if leds are either/or */
+			port_mask_combo[REALTEK_PORT_ARRAY_INDEX(port, 1)] |= RTL930X_LED_PORT_COMBO_MASK_CTRL_PMASK(port, true);
+		}
 	}
 
-	for (int i = 0; i < 4; i++) {
-		const __be32 *led_set;
-		char set_name[9];
-		u32 setlen;
-		u32 v;
-
-		sprintf(set_name, "led_set%d", i);
-		led_set = of_get_property(node, set_name, &setlen);
-		if (!led_set || setlen != 16)
-			break;
-		v = be32_to_cpup(led_set) << 16 | be32_to_cpup(led_set + 1);
-		sw_w32(v, RTL930X_LED_SET0_0_CTRL - 4 - i * 8);
-		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
-		sw_w32(v, RTL930X_LED_SET0_0_CTRL - i * 8);
+	for (int i = 0; i < REALTEK_PORT_ARRAY_SIZE(priv->cpu_port, 2); i++) {
+		sw_w32(led_copper_port_set[i], RTL930X_LED_PORT_COPR_SET_SEL_CTRL_REG(REALTEK_INDEX_ARRAY_PORT(i, 2)));
+		sw_w32(led_fiber_port_set[i], RTL930X_LED_PORT_FIB_SET_SEL_CTRL_REG(REALTEK_INDEX_ARRAY_PORT(i, 2)));
+		sw_w32(led_port_num[i], RTL930X_LED_PORT_NUM_CTRL_REG(REALTEK_INDEX_ARRAY_PORT(i, 2)));
 	}
 
-	/* Set LED mode to serial (0x1) */
-	sw_w32_mask(0x3, 0x1, RTL930X_LED_GLB_CTRL);
-
-	/* Set LED active state */
-	if (of_property_read_bool(node, "active-low"))
-		sw_w32_mask(RTL930X_LED_GLB_ACTIVE_LOW, 0, RTL930X_LED_GLB_CTRL);
-	else
-		sw_w32_mask(0, RTL930X_LED_GLB_ACTIVE_LOW, RTL930X_LED_GLB_CTRL);
-
-	/* Set port type masks */
-	sw_w32(pm, RTL930X_LED_PORT_COPR_MASK_CTRL);
-	sw_w32(pm, RTL930X_LED_PORT_FIB_MASK_CTRL);
-	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
-
-	for (int i = 0; i < 24; i++)
-		pr_info("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
+	for (int i = 0; i < REALTEK_PORT_ARRAY_SIZE(priv->cpu_port, 1); i++) {
+		sw_w32(port_mask_copper[i], RTL930X_LED_PORT_COPR_MASK_CTRL_REG(REALTEK_INDEX_ARRAY_PORT(i, 1)));
+		sw_w32(port_mask_fiber[i], RTL930X_LED_PORT_FIB_MASK_CTRL_REG(REALTEK_INDEX_ARRAY_PORT(i, 1)));
+		sw_w32(port_mask_combo[i], RTL930X_LED_PORT_COMBO_MASK_CTRL_REG(REALTEK_INDEX_ARRAY_PORT(i, 1)));
+	}
 }
 
 const struct rtl838x_reg rtl930x_reg = {

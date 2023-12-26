@@ -6,6 +6,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/leds/leds-realtek.h>
 
 / {
 	compatible = "zyxel,xgs1250-12", "realtek,rtl838x-soc";
@@ -62,14 +63,78 @@
 		tx-disable-gpio = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 	};
 
-	led_set: led_set@0 {
-		compatible = "realtek,rtl9300-leds";
-		active-low;
+	led_sets {
+		compatible = "realtek,rtl9302-leds", "realtek,rtl930x-leds";
 
-		led_set0 = <0x0000 0xffff 0x0a20 0x0b80>; // LED set 0: 1000Mbps,  10/100Mbps
-		led_set1 = <0x0a0b 0x0a28 0x0a82 0x0a0b>; // LED set 1: (10G, 5G, 2.5G) (2.5G, 1G)
-							  // (5G, 10/100) (10G, 5G, 2.5G)
-		led_set2 = <0x0000 0xffff 0x0a20 0x0a01>; // LED set 2: 1000MBit, 10GBit
+		led_set0 = /bits/ 16 <
+			/* LED0 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_100M_LINK |
+				RTL93XX_LED_SET_10M_LINK
+			)
+			/* LED1 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_1000M_LINK
+			)
+			/* LED2 */
+			RTL93XX_LED_SET_NONE
+			/* LED3 */
+			RTL93XX_LED_SET_NONE
+		>;
+		led_set2 = /bits/ 16 <
+			/* LED0 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_10G_LINK |
+				RTL93XX_LED_SET_5G_LINK |
+				RTL93XX_LED_SET_2G5_LINK
+			)
+			/* LED1 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_5G_LINK |
+				RTL93XX_LED_SET_100M_LINK
+			)
+			/* LED2 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_2G5_LINK |
+				RTL93XX_LED_SET_1000M_LINK
+			)
+			/* LED3 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_10G_LINK |
+				RTL93XX_LED_SET_5G_LINK |
+				RTL93XX_LED_SET_2G5_LINK
+			)
+		>;
+		led_set3 = /bits/ 16 <
+			/* LED0 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_10G_LINK
+			)
+			/* LED1 */
+			(
+				RTL93XX_LED_SET_LINK_ACTIVITY |
+				RTL93XX_LED_SET_LINK_UP_SOLID |
+				RTL93XX_LED_SET_1000M_LINK
+			)
+			/* LED2 */
+			RTL93XX_LED_SET_NONE
+			/* LED3 */
+			RTL93XX_LED_SET_NONE
+		>;
 	};
 };
 
@@ -224,6 +289,10 @@
 			phy-handle = <&phy0>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@1 {
 			reg = <1>;
@@ -231,6 +300,10 @@
 			phy-handle = <&phy1>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@2 {
 			reg = <2>;
@@ -238,6 +311,10 @@
 			phy-handle = <&phy2>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@3 {
 			reg = <3>;
@@ -245,6 +322,10 @@
 			phy-handle = <&phy3>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@4 {
 			reg = <4>;
@@ -252,6 +333,10 @@
 			phy-handle = <&phy4>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@5 {
 			reg = <5>;
@@ -259,6 +344,10 @@
 			phy-handle = <&phy5>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@6 {
 			reg = <6>;
@@ -266,6 +355,10 @@
 			phy-handle = <&phy6>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 		port@7 {
 			reg = <7>;
@@ -273,6 +366,10 @@
 			phy-handle = <&phy7>;
 			phy-mode = "xgmii";
 			led-set = <0>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 		};
 
 		port@24 {
@@ -280,21 +377,39 @@
 			label = "lan9";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy24>;
-			led-set = <1>;
+			led-set = <2>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber/Lime | RGB */
+				RTL93XX_LED_NUM1 | /* Amber      | Red */
+				RTL93XX_LED_NUM2 | /* Lime       | Green */
+				RTL93XX_LED_NUM3   /* off        | Blue */
+			)>;
 		};
 		port@25 {
 			reg = <25>;
 			label = "lan10";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy25>;
-			led-set = <1>;
+			led-set = <2>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber/Lime | RGB */
+				RTL93XX_LED_NUM1 | /* Amber      | Red */
+				RTL93XX_LED_NUM2 | /* Lime       | Green */
+				RTL93XX_LED_NUM3   /* off        | Blue */
+			)>;
 		};
 		port@26 {
 			reg = <26>;
 			label = "lan11";
 			phy-mode = "usxgmii";
 			phy-handle = <&phy26>;
-			led-set = <1>;
+			led-set = <2>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Amber/Lime | RGB */
+				RTL93XX_LED_NUM1 | /* Amber      | Red */
+				RTL93XX_LED_NUM2 | /* Lime       | Green */
+				RTL93XX_LED_NUM3   /* off        | Blue */
+			)>;
 		};
 
 		port@27 {
@@ -303,7 +418,11 @@
 			phy-mode = "10gbase-r";
 			phy-handle = <&phy27>;
 			sfp = <&sfp0>;
-			led-set = <2>;
+			led-set = <3>;
+			led-num = <(
+				RTL93XX_LED_NUM0 | /* Blue */
+				RTL93XX_LED_NUM1   /* Lime */
+			)>;
 
 			fixed-link {
 				speed = <10000>;

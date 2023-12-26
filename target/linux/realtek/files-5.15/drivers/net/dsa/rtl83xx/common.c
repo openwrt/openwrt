@@ -355,6 +355,9 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		if (interface == PHY_INTERFACE_MODE_10GBASER)
 			priv->ports[pn].is10G = true;
 
+		if (of_property_read_u32(dn, "led-num", &priv->ports[pn].led_num))
+			priv->ports[pn].led_num = 0;
+
 		if (of_property_read_u32(dn, "led-set", &led_set))
 			led_set = 0;
 		priv->ports[pn].led_set = led_set;
