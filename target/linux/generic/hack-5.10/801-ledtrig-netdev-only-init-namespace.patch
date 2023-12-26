@@ -1,0 +1,38 @@
+From 62c679f6b4ca68841a446339ea80ae0e431947e6 Mon Sep 17 00:00:00 2001
+From: Liangbin Lian <jjm2473@gmail.com>
+Date: Tue, 26 Dec 2023 14:08:01 +0800
+Subject: [PATCH] ledtrig-netdev: we only care about new device in init
+ namespace
+
+Signed-off-by: Liangbin Lian <jjm2473@gmail.com>
+---
+ drivers/leds/trigger/ledtrig-netdev.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+--- a/drivers/leds/trigger/ledtrig-netdev.c
++++ b/drivers/leds/trigger/ledtrig-netdev.c
+@@ -307,8 +307,9 @@ static int netdev_trig_notify(struct not
+ 		return NOTIFY_DONE;
+ 
+ 	if (!(dev == trigger_data->net_dev ||
+-	      (evt == NETDEV_CHANGENAME && !strcmp(dev->name, trigger_data->device_name)) ||
+-	      (evt == NETDEV_REGISTER && !strcmp(dev->name, trigger_data->device_name))))
++		((evt == NETDEV_CHANGENAME || evt == NETDEV_REGISTER)
++			&& net_eq(dev_net(dev), &init_net)
++			&& !strcmp(dev->name, trigger_data->device_name))))
+ 		return NOTIFY_DONE;
+ 
+ 	cancel_delayed_work_sync(&trigger_data->work);
+@@ -328,8 +329,10 @@ static int netdev_trig_notify(struct not
+ 		trigger_data->net_dev = dev;
+ 		break;
+ 	case NETDEV_UNREGISTER:
+-		dev_put(trigger_data->net_dev);
+-		trigger_data->net_dev = NULL;
++		if (dev->reg_state >= NETREG_UNREGISTERING) {
++			dev_put(trigger_data->net_dev);
++			trigger_data->net_dev = NULL;
++		}
+ 		break;
+ 	case NETDEV_UP:
+ 	case NETDEV_CHANGE:
