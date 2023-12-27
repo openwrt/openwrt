@@ -31,7 +31,8 @@ DEFAULT_PACKAGES += blkid kmod-fs-vfat
 ifeq ($(SUBTARGET),armv8)
 LINUX_KCONFIG_LIST = \
 	$(LINUX_DIR)/arch/arm64/configs/defconfig \
-	$(PLATFORM_SUBDIR)/config-6.1-openwrt
+	$(PLATFORM_SUBDIR)/config-6.1-openwrt \
+	$(PLATFORM_SUBDIR)/config-6.1-upstream
 endif
 
 $(eval $(call BuildTarget))
