@@ -426,6 +426,23 @@ define Device/h3c_magic-nx30-pro
 endef
 TARGET_DEVICES += h3c_magic-nx30-pro
 
+define Device/h3c_magic-nx30-pro-nmbm
+  DEVICE_VENDOR := H3C
+  DEVICE_MODEL := Magic NX30 Pro (NMBM layout)
+  DEVICE_DTS := mt7981b-h3c-magic-nx30-pro-nmbm
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  IMAGE_SIZE := 65536k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += h3c_magic-nx30-pro-nmbm
+
 define Device/jcg_q30-pro
   DEVICE_VENDOR := JCG
   DEVICE_MODEL := Q30 PRO

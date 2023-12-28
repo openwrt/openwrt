@@ -36,6 +36,7 @@ mediatek_setup_interfaces()
 		;;
 	cmcc,rax3000m|\
 	h3c,magic-nx30-pro|\
+	h3c,magic-nx30-pro-nmbm|\
 	zbtlink,zbt-z8103ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
 		;;
@@ -132,7 +133,8 @@ mediatek_setup_macs()
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 2)
 		;;
-	h3c,magic-nx30-pro)
+	h3c,magic-nx30-pro|\
+	h3c,magic-nx30-pro-nmbm)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
