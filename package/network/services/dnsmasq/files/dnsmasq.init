@@ -587,11 +587,15 @@ dhcp_add() {
 
 	nettag="${networkid:+set:${networkid},}"
 
-	# make sure the DHCP range is not empty
-	if [ "$dhcpv4" != "disabled" ] && ipcalc "$ipaddr/$prefix_or_netmask" "$start" "$limit" ; then
-		[ "$dynamicdhcpv4" = "0" ] && END="static"
 
-		xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
+	# if DHCPv4 server is enabled globally
+	if [ $DHCPV4_SERVER_ENABLE -eq 1 ] ; then
+		# make sure the DHCP range is not empty
+		if [ "$dhcpv4" != "disabled" ] && eval "$(ipcalc.sh "${subnet%%/*}" "$netmask" "$start" "$limit")" ; then
+			[ "$dynamicdhcpv4" = "0" ] && END="static"
+
+			xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
+		fi
 	fi
 
 	if [ "$dynamicdhcpv6" = "0" ] ; then
