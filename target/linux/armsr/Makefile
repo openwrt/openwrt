@@ -30,7 +30,7 @@ DEFAULT_PACKAGES += blkid
 ifeq ($(SUBTARGET),armv8)
 LINUX_KCONFIG_LIST = \
 	$(LINUX_DIR)/arch/arm64/configs/defconfig \
-	$(wildcard $(LINUX_SUBTARGET_CONFIG))
+	$(PLATFORM_SUBDIR)/config-5.15-openwrt
 endif
 
 $(eval $(call BuildTarget))
