@@ -550,7 +550,7 @@ $(eval $(call KernelPackage,slhc))
 define KernelPackage/ppp
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=PPP modules
-  DEPENDS:=+kmod-lib-crc-ccitt +kmod-slhc
+  DEPENDS:=@!TARGET_armsr_armv8 +kmod-lib-crc-ccitt +kmod-slhc
   KCONFIG:= \
 	CONFIG_PPP \
 	CONFIG_PPP_ASYNC

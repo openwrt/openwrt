@@ -13,10 +13,8 @@ KERNEL_PATCHVER:=5.15
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += mkf2fs e2fsprogs
-# blkid used for resolving PARTUUID
-# in sysupgrade
-DEFAULT_PACKAGES += blkid
+# blkid used for resolving PARTUUID in sysupgrade
+DEFAULT_PACKAGES += mkf2fs e2fsprogs blkid
 
 INITRAMFS_OTHER_FILES = $(PLATFORM_DIR)/other-files/init
 
