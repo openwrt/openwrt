@@ -13,11 +13,8 @@ KERNEL_PATCHVER:=6.1
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += mkf2fs e2fsprogs
-# blkid used for resolving PARTUUID
-# in sysupgrade. vfat required for
-# mounting ESP partition
-DEFAULT_PACKAGES += blkid kmod-fs-vfat
+# blkid used for resolving PARTUUID in sysupgrade
+DEFAULT_PACKAGES += mkf2fs e2fsprogs blkid
 
 INITRAMFS_OTHER_FILES = $(PLATFORM_DIR)/other-files/init
 
