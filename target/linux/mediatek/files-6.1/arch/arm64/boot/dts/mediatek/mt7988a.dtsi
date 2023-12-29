@@ -19,11 +19,13 @@
 	#address-cells = <2>;
 	#size-cells = <2>;
 
-	clk40m: oscillator@0 {
-		compatible = "fixed-clock";
-		clock-frequency = <40000000>;
-		#clock-cells = <0>;
-		clock-output-names = "clkxtal";
+	cci: cci {
+		compatible = "mediatek,mt7988-cci",
+			     "mediatek,mt8183-cci";
+		clocks = <&mcusys CLK_MCU_BUS_DIV_SEL>,
+			 <&topckgen CLK_TOP_XTAL>;
+		clock-names = "cci", "intermediate";
+		operating-points-v2 = <&cci_opp>;
 	};
 
 	cpus {
@@ -99,15 +101,6 @@
 		};
 	};
 
-	cci: cci {
-		compatible = "mediatek,mt7988-cci",
-			     "mediatek,mt8183-cci";
-		clocks = <&mcusys CLK_MCU_BUS_DIV_SEL>,
-			 <&topckgen CLK_TOP_XTAL>;
-		clock-names = "cci", "intermediate";
-		operating-points-v2 = <&cci_opp>;
-	};
-
 	cci_opp: opp_table_cci {
 		compatible = "operating-points-v2";
 		opp-shared;
@@ -129,6 +122,13 @@
 		};
 	};
 
+	clk40m: oscillator@0 {
+		compatible = "fixed-clock";
+		clock-frequency = <40000000>;
+		#clock-cells = <0>;
+		clock-output-names = "clkxtal";
+	};
+
 	pmu {
 		compatible = "arm,cortex-a73-pmu";
 		interrupt-parent = <&gic>;
@@ -138,86 +138,6 @@
 	psci {
 		compatible  = "arm,psci-0.2";
 		method      = "smc";
-	};
-
-	reserved-memory {
-		#address-cells = <2>;
-		#size-cells = <2>;
-		ranges;
-
-		/* 320 KiB reserved for ARM Trusted Firmware (BL31 and BL32) */
-		secmon_reserved: secmon@43000000 {
-			reg = <0 0x43000000 0 0x50000>;
-			no-map;
-		};
-	};
-
-	thermal-zones {
-		cpu_thermal: cpu-thermal {
-			polling-delay-passive = <1000>;
-			polling-delay = <1000>;
-			thermal-sensors = <&lvts 0>;
-			trips {
-				cpu_trip_crit: crit {
-					temperature = <125000>;
-					hysteresis = <2000>;
-					type = "critical";
-				};
-
-				cpu_trip_hot: hot {
-					temperature = <120000>;
-					hysteresis = <2000>;
-					type = "hot";
-				};
-
-				cpu_trip_active_high: active-high {
-					temperature = <115000>;
-					hysteresis = <2000>;
-					type = "active";
-				};
-
-				cpu_trip_active_med: active-med {
-					temperature = <85000>;
-					hysteresis = <2000>;
-					type = "active";
-				};
-
-				cpu_trip_active_low: active-low {
-					temperature = <40000>;
-					hysteresis = <2000>;
-					type = "active";
-				};
-			};
-
-			cooling-maps {
-				cpu-active-high {
-				/* active: set fan to cooling level 2 */
-					cooling-device = <&fan 3 3>;
-					trip = <&cpu_trip_active_high>;
-				};
-
-				cpu-active-low {
-				/* active: set fan to cooling level 1 */
-					cooling-device = <&fan 2 2>;
-					trip = <&cpu_trip_active_med>;
-				};
-
-				cpu-passive {
-				/* passive: set fan to cooling level 0 */
-					cooling-device = <&fan 1 1>;
-					trip = <&cpu_trip_active_low>;
-				};
-			};
-		};
-	};
-
-	timer {
-		compatible = "arm,armv8-timer";
-		interrupt-parent = <&gic>;
-		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_LOW>,
-			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>,
-			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
-			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
 	};
 
 	reg_1p8v: regulator-1p8v {
@@ -236,6 +156,18 @@
 		regulator-max-microvolt = <3300000>;
 		regulator-boot-on;
 		regulator-always-on;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		/* 320 KiB reserved for ARM Trusted Firmware (BL31 and BL32) */
+		secmon_reserved: secmon@43000000 {
+			reg = <0 0x43000000 0 0x50000>;
+			no-map;
+		};
 	};
 
 	soc {
@@ -539,6 +471,25 @@
 			};
 		};
 
+		pwm: pwm@10048000 {
+			compatible = "mediatek,mt7988-pwm";
+			reg = <0 0x10048000 0 0x1000>;
+			#pwm-cells = <2>;
+			clocks = <&infracfg CLK_INFRA_66M_PWM_BCK>,
+				 <&infracfg CLK_INFRA_66M_PWM_HCK>,
+				 <&infracfg CLK_INFRA_66M_PWM_CK1>,
+				 <&infracfg CLK_INFRA_66M_PWM_CK2>,
+				 <&infracfg CLK_INFRA_66M_PWM_CK3>,
+				 <&infracfg CLK_INFRA_66M_PWM_CK4>,
+				 <&infracfg CLK_INFRA_66M_PWM_CK5>,
+				 <&infracfg CLK_INFRA_66M_PWM_CK6>,
+				 <&infracfg CLK_INFRA_66M_PWM_CK7>,
+				 <&infracfg CLK_INFRA_66M_PWM_CK8>;
+			clock-names = "top", "main", "pwm1", "pwm2", "pwm3",
+				      "pwm4","pwm5","pwm6","pwm7","pwm8";
+			status = "disabled";
+		};
+
 		sgmiisys0: syscon@10060000 {
 			compatible = "mediatek,mt7988-sgmiisys",
 				     "mediatek,mt7988-sgmiisys_0",
@@ -568,28 +519,6 @@
 				     "mediatek,mt7988-usxgmiisys_1",
 				     "syscon";
 			reg = <0 0x10081000 0 0x1000>;
-			#clock-cells = <1>;
-		};
-
-		xfi_pextp0: xfi-pextp@11f20000 {
-			compatible = "mediatek,mt7988-xfi-pextp",
-				     "mediatek,mt7988-xfi-pextp_0",
-				     "syscon";
-			reg = <0 0x11f20000 0 0x10000>;
-			#clock-cells = <1>;
-		};
-
-		xfi_pextp1: xfi-pextp@11f30000 {
-			compatible = "mediatek,mt7988-xfi-pextp",
-				     "mediatek,mt7988-xfi-pextp_1",
-				     "syscon";
-			reg = <0 0x11f30000 0 0x10000>;
-			#clock-cells = <1>;
-		};
-
-		xfi_pll: xfi-pll@11f40000 {
-			compatible = "mediatek,mt7988-xfi-pll", "syscon";
-			reg = <0 0x11f40000 0 0x1000>;
 			#clock-cells = <1>;
 		};
 
@@ -742,25 +671,6 @@
 			status = "disabled";
 		};
 
-		pwm: pwm@10048000 {
-			compatible = "mediatek,mt7988-pwm";
-			reg = <0 0x10048000 0 0x1000>;
-			#pwm-cells = <2>;
-			clocks = <&infracfg CLK_INFRA_66M_PWM_BCK>,
-				 <&infracfg CLK_INFRA_66M_PWM_HCK>,
-				 <&infracfg CLK_INFRA_66M_PWM_CK1>,
-				 <&infracfg CLK_INFRA_66M_PWM_CK2>,
-				 <&infracfg CLK_INFRA_66M_PWM_CK3>,
-				 <&infracfg CLK_INFRA_66M_PWM_CK4>,
-				 <&infracfg CLK_INFRA_66M_PWM_CK5>,
-				 <&infracfg CLK_INFRA_66M_PWM_CK6>,
-				 <&infracfg CLK_INFRA_66M_PWM_CK7>,
-				 <&infracfg CLK_INFRA_66M_PWM_CK8>;
-			clock-names = "top", "main", "pwm1", "pwm2", "pwm3",
-				      "pwm4","pwm5","pwm6","pwm7","pwm8";
-			status = "disabled";
-		};
-
 		fan: pwm-fan {
 			compatible = "pwm-fan";
 			/* cooling level (0, 1, 2) : (0% duty, 50% duty, 100% duty) */
@@ -780,15 +690,53 @@
 			nvmem-cell-names = "e_data1";
 		};
 
-		crypto: crypto@15600000 {
-			compatible = "inside-secure,safexcel-eip197b";
-			reg = <0 0x15600000 0 0x180000>;
-			interrupts = <GIC_SPI 214 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 215 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 216 IRQ_TYPE_LEVEL_HIGH>,
-				     <GIC_SPI 217 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "ring0", "ring1", "ring2", "ring3";
-			status = "okay";
+		ssusb0: usb@11190000 {
+			compatible = "mediatek,mt7988-xhci",
+				     "mediatek,mtk-xhci";
+			reg = <0 0x11190000 0 0x2e00>,
+			      <0 0x11193e00 0 0x0100>;
+			reg-names = "mac", "ippc";
+			interrupts = <GIC_SPI 173 IRQ_TYPE_LEVEL_HIGH>;
+			phys = <&xphyu2port0 PHY_TYPE_USB2>,
+			       <&xphyu3port0 PHY_TYPE_USB3>;
+			clocks = <&infracfg CLK_INFRA_USB_SYS>,
+				 <&infracfg CLK_INFRA_USB_XHCI>,
+				 <&infracfg CLK_INFRA_USB_REF>,
+				 <&infracfg CLK_INFRA_66M_USB_HCK>,
+				 <&infracfg CLK_INFRA_133M_USB_HCK>;
+			clock-names = "sys_ck",
+				      "xhci_ck",
+				      "ref_ck",
+				      "mcu_ck",
+				      "dma_ck";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			mediatek,p0_speed_fixup;
+			status = "disabled";
+		};
+
+		ssusb1: usb@11200000 {
+			compatible = "mediatek,mt7988-xhci",
+				     "mediatek,mtk-xhci";
+			reg = <0 0x11200000 0 0x2e00>,
+			      <0 0x11203e00 0 0x0100>;
+			reg-names = "mac", "ippc";
+			interrupts = <GIC_SPI 172 IRQ_TYPE_LEVEL_HIGH>;
+			phys = <&tphyu2port0 PHY_TYPE_USB2>,
+			       <&tphyu3port0 PHY_TYPE_USB3>;
+			clocks = <&infracfg CLK_INFRA_USB_SYS_CK_P1>,
+				 <&infracfg CLK_INFRA_USB_XHCI_CK_P1>,
+				 <&infracfg CLK_INFRA_USB_CK_P1>,
+				 <&infracfg CLK_INFRA_66M_USB_HCK_CK_P1>,
+				 <&infracfg CLK_INFRA_133M_USB_HCK_CK_P1>;
+			clock-names = "sys_ck",
+				      "xhci_ck",
+				      "ref_ck",
+				      "mcu_ck",
+				      "dma_ck";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			status = "disabled";
 		};
 
 		afe: audio-controller@11210000 {
@@ -817,6 +765,29 @@
 						 <&topckgen CLK_TOP_APLL2_D4>,
 						 <&apmixedsys CLK_APMIXED_APLL2>,
 						 <&topckgen CLK_TOP_APLL2_D4>;
+			status = "disabled";
+		};
+
+		mmc0: mmc@11230000 {
+			compatible = "mediatek,mt7986-mmc",
+				     "mediatek,mt7981-mmc";
+			reg = <0 0x11230000 0 0x1000>,
+			      <0 0x11D60000 0 0x1000>;
+			interrupts = <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&infracfg CLK_INFRA_MSDC400>,
+				 <&infracfg CLK_INFRA_MSDC2_HCK>,
+				 <&infracfg CLK_INFRA_66M_MSDC_0_HCK>,
+				 <&infracfg CLK_INFRA_133M_MSDC_0_HCK>;
+			assigned-clocks = <&topckgen CLK_TOP_EMMC_250M_SEL>,
+					  <&topckgen CLK_TOP_EMMC_400M_SEL>;
+			assigned-clock-parents = <&topckgen CLK_TOP_NET1PLL_D5_D2>,
+						 <&apmixedsys CLK_APMIXED_MSDCPLL>;
+			clock-names = "source",
+				      "hclk",
+				      "axi_cg",
+				      "ahb_cg";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
@@ -979,78 +950,6 @@
 			};
 		};
 
-		ssusb0: usb@11190000 {
-			compatible = "mediatek,mt7988-xhci",
-				     "mediatek,mtk-xhci";
-			reg = <0 0x11190000 0 0x2e00>,
-			      <0 0x11193e00 0 0x0100>;
-			reg-names = "mac", "ippc";
-			interrupts = <GIC_SPI 173 IRQ_TYPE_LEVEL_HIGH>;
-			phys = <&xphyu2port0 PHY_TYPE_USB2>,
-			       <&xphyu3port0 PHY_TYPE_USB3>;
-			clocks = <&infracfg CLK_INFRA_USB_SYS>,
-				 <&infracfg CLK_INFRA_USB_XHCI>,
-				 <&infracfg CLK_INFRA_USB_REF>,
-				 <&infracfg CLK_INFRA_66M_USB_HCK>,
-				 <&infracfg CLK_INFRA_133M_USB_HCK>;
-			clock-names = "sys_ck",
-				      "xhci_ck",
-				      "ref_ck",
-				      "mcu_ck",
-				      "dma_ck";
-			#address-cells = <2>;
-			#size-cells = <2>;
-			mediatek,p0_speed_fixup;
-			status = "disabled";
-		};
-
-		ssusb1: usb@11200000 {
-			compatible = "mediatek,mt7988-xhci",
-				     "mediatek,mtk-xhci";
-			reg = <0 0x11200000 0 0x2e00>,
-			      <0 0x11203e00 0 0x0100>;
-			reg-names = "mac", "ippc";
-			interrupts = <GIC_SPI 172 IRQ_TYPE_LEVEL_HIGH>;
-			phys = <&tphyu2port0 PHY_TYPE_USB2>,
-			       <&tphyu3port0 PHY_TYPE_USB3>;
-			clocks = <&infracfg CLK_INFRA_USB_SYS_CK_P1>,
-				 <&infracfg CLK_INFRA_USB_XHCI_CK_P1>,
-				 <&infracfg CLK_INFRA_USB_CK_P1>,
-				 <&infracfg CLK_INFRA_66M_USB_HCK_CK_P1>,
-				 <&infracfg CLK_INFRA_133M_USB_HCK_CK_P1>;
-			clock-names = "sys_ck",
-				      "xhci_ck",
-				      "ref_ck",
-				      "mcu_ck",
-				      "dma_ck";
-			#address-cells = <2>;
-			#size-cells = <2>;
-			status = "disabled";
-		};
-
-		mmc0: mmc@11230000 {
-			compatible = "mediatek,mt7986-mmc",
-				     "mediatek,mt7981-mmc";
-			reg = <0 0x11230000 0 0x1000>,
-			      <0 0x11D60000 0 0x1000>;
-			interrupts = <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&infracfg CLK_INFRA_MSDC400>,
-				 <&infracfg CLK_INFRA_MSDC2_HCK>,
-				 <&infracfg CLK_INFRA_66M_MSDC_0_HCK>,
-				 <&infracfg CLK_INFRA_133M_MSDC_0_HCK>;
-			assigned-clocks = <&topckgen CLK_TOP_EMMC_250M_SEL>,
-					  <&topckgen CLK_TOP_EMMC_400M_SEL>;
-			assigned-clock-parents = <&topckgen CLK_TOP_NET1PLL_D5_D2>,
-						 <&apmixedsys CLK_APMIXED_MSDCPLL>;
-			clock-names = "source",
-				      "hclk",
-				      "axi_cg",
-				      "ahb_cg";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
 		tphy: tphy@11c50000 {
 			compatible = "mediatek,mt7988",
 				     "mediatek,generic-tphy-v2";
@@ -1106,6 +1005,28 @@
 				#phy-cells = <1>;
 				mediatek,syscon-type = <&topmisc 0x218 0>;
 			};
+		};
+
+		xfi_pextp0: xfi-pextp@11f20000 {
+			compatible = "mediatek,mt7988-xfi-pextp",
+				     "mediatek,mt7988-xfi-pextp_0",
+				     "syscon";
+			reg = <0 0x11f20000 0 0x10000>;
+			#clock-cells = <1>;
+		};
+
+		xfi_pextp1: xfi-pextp@11f30000 {
+			compatible = "mediatek,mt7988-xfi-pextp",
+				     "mediatek,mt7988-xfi-pextp_1",
+				     "syscon";
+			reg = <0 0x11f30000 0 0x10000>;
+			#clock-cells = <1>;
+		};
+
+		xfi_pll: xfi-pll@11f40000 {
+			compatible = "mediatek,mt7988-xfi-pll", "syscon";
+			reg = <0 0x11f40000 0 0x1000>;
+			#clock-cells = <1>;
 		};
 
 		efuse: efuse@11f50000 {
@@ -1437,5 +1358,84 @@
 				};
 			};
 		};
+
+		crypto: crypto@15600000 {
+			compatible = "inside-secure,safexcel-eip197b";
+			reg = <0 0x15600000 0 0x180000>;
+			interrupts = <GIC_SPI 214 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 215 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 216 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 217 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "ring0", "ring1", "ring2", "ring3";
+			status = "okay";
+		};
+	};
+
+	thermal-zones {
+		cpu_thermal: cpu-thermal {
+			polling-delay-passive = <1000>;
+			polling-delay = <1000>;
+			thermal-sensors = <&lvts 0>;
+			trips {
+				cpu_trip_crit: crit {
+					temperature = <125000>;
+					hysteresis = <2000>;
+					type = "critical";
+				};
+
+				cpu_trip_hot: hot {
+					temperature = <120000>;
+					hysteresis = <2000>;
+					type = "hot";
+				};
+
+				cpu_trip_active_high: active-high {
+					temperature = <115000>;
+					hysteresis = <2000>;
+					type = "active";
+				};
+
+				cpu_trip_active_med: active-med {
+					temperature = <85000>;
+					hysteresis = <2000>;
+					type = "active";
+				};
+
+				cpu_trip_active_low: active-low {
+					temperature = <40000>;
+					hysteresis = <2000>;
+					type = "active";
+				};
+			};
+
+			cooling-maps {
+				cpu-active-high {
+				/* active: set fan to cooling level 2 */
+					cooling-device = <&fan 3 3>;
+					trip = <&cpu_trip_active_high>;
+				};
+
+				cpu-active-low {
+				/* active: set fan to cooling level 1 */
+					cooling-device = <&fan 2 2>;
+					trip = <&cpu_trip_active_med>;
+				};
+
+				cpu-passive {
+				/* passive: set fan to cooling level 0 */
+					cooling-device = <&fan 1 1>;
+					trip = <&cpu_trip_active_low>;
+				};
+			};
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
 	};
 };
