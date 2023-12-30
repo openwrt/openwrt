@@ -1,6 +1,10 @@
 #
 # Extra modules additions on top of arch/arm64/configs/defconfig
 #
+# Avoid increasing rootfs size by compressing the modules
+CONFIG_MODULE_COMPRESS_GZIP=y
+CONFIG_MODULE_DECOMPRESS=y
+
 # They are matching what was in the main branch before this change 
 #
 # Configuration splitted by SoC family.
