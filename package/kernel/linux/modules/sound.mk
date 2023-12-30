@@ -41,7 +41,7 @@ SOUNDCORE_FILES += \
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
-  DEPENDS:=@AUDIO_SUPPORT +kmod-input-core
+  DEPENDS:=@!TARGET_armsr_armv8 @AUDIO_SUPPORT +kmod-input-core
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
