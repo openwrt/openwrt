@@ -10,8 +10,6 @@ to build a complete firmware around it; for users this means the ability for
 full customization, to use the device in ways never envisioned.
 
 Sunshine!
-## Specs
-https://web.archive.org/web/*/https://ztemobiles.com.au/optus-mf289d/
 
 ## Download
 
@@ -33,7 +31,7 @@ An advanced user may require additional or specific package. (Toolchain, SDK, ..
 
 ## Development
 
-To build your own firmware you need a GNU/Linux, BSD or macOS system (case
+To build your own firmware you need a GNU/Linux, BSD or MacOSX system (case
 sensitive filesystem required). Cygwin is unsupported because of the lack of a
 case sensitive file system.
 
