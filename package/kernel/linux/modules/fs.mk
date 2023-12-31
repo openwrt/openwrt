@@ -442,7 +442,8 @@ define KernelPackage/fs-nfs
   KCONFIG:= \
 	CONFIG_NFS_FS \
 	CONFIG_NFS_USE_LEGACY_DNS=n \
-	CONFIG_NFS_USE_NEW_IDMAPPER=n
+	CONFIG_NFS_USE_NEW_IDMAPPER=n \
+	CONFIG_NFS_V3=n
   FILES:= \
 	$(LINUX_DIR)/fs/nfs/nfs.ko
   AUTOLOAD:=$(call AutoLoad,40,nfs)
@@ -463,12 +464,9 @@ define KernelPackage/fs-nfs-common
 	CONFIG_LOCKD \
 	CONFIG_SUNRPC \
 	CONFIG_GRACE_PERIOD \
-	CONFIG_NFS_V4=y \
-	CONFIG_NFS_V4_1=y \
-	CONFIG_NFS_V4_1_IMPLEMENTATION_ID_DOMAIN="kernel.org" \
-	CONFIG_NFS_V4_1_MIGRATION=n \
+	CONFIG_NFS_ACL_SUPPORT=y \
 	CONFIG_NFS_V4_2=y \
-	CONFIG_NFS_V4_2_READ_PLUS=n
+	CONFIG_NFS_V4_2_SSC_HELPER=y
   FILES:= \
 	$(LINUX_DIR)/fs/lockd/lockd.ko \
 	$(LINUX_DIR)/net/sunrpc/sunrpc.ko \
@@ -512,6 +510,8 @@ define KernelPackage/fs-nfs-v3
   SUBMENU:=$(FS_MENU)
   TITLE:=NFS3 filesystem client support
   DEPENDS:=+kmod-fs-nfs
+  KCONFIG:= \
+	CONFIG_NFS_V3
   FILES:= \
 	$(LINUX_DIR)/fs/nfs/nfsv3.ko
   AUTOLOAD:=$(call AutoLoad,41,nfsv3)
@@ -529,7 +529,12 @@ define KernelPackage/fs-nfs-v4
   TITLE:=NFS4 filesystem client support
   DEPENDS:=+kmod-fs-nfs
   KCONFIG:= \
-	CONFIG_NFS_V4=y
+	CONFIG_NFS_V4 \
+	CONFIG_NFS_V4_1=y \
+	CONFIG_NFS_V4_1_IMPLEMENTATION_ID_DOMAIN="kernel.org" \
+	CONFIG_NFS_V4_1_MIGRATION=n \
+	CONFIG_NFS_V4_2=y \
+	CONFIG_NFS_V4_2_READ_PLUS=n
   FILES:= \
 	$(LINUX_DIR)/fs/nfs/nfsv4.ko
   AUTOLOAD:=$(call AutoLoad,41,nfsv4)
