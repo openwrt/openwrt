@@ -2,7 +2,6 @@
 //Based On the work of:
 // Copyright (c) 2022, Pawel Dembicki <paweldembicki@gmail.com>.
 // Copyright (c) 2022, Giammarco Marzano <stich86@gmail.com>.
-
 //Check and modified compatibility with ZTE MF289D (Apple Way)
 // Copyright (c) 2024, Dimitrios Sideris <dimsid@protonmail.com>.
 
@@ -416,7 +415,7 @@
 	qcom,ath10k-calibration-variant = "zte,mf289d";
 };
 
-/* This node is used only on AT2 version for 5Ghz on IPQ4019 with board-id=21
+/* This node is used only on AT2 version for 5Ghz on IPQ4019 with board-id=21 */
 &wifi1 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
@@ -424,7 +423,6 @@
 	qcom,ath10k-calibration-variant = "zte,mf289d";
 };
 
-*/
 /* This node is used only on AT1 version for 5Ghz on QCA9984 */
 &pcie0 {
 	status = "okay";
@@ -447,3 +445,4 @@
 		};
 	};
 };
+
