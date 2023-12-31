@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 //Based On the work of:
 // Copyright (c) 2022, Pawel Dembicki <paweldembicki@gmail.com>.
-<<<<<<< HEAD:target/linux/ipq40xx/files-6.6/arch/arm/boot/dts/qcom/qcom-ipq4019-mf289d.dts
 // Copyright (c) 2022, Giammarco Marzano <stich86@gmail.com>.
-//Check and modified compatibility with ZTE MF289D (Apple Way)
-=======
-// Copyright (c) 2022, Giammarco Marzano <stich86@gmail.com>.
-
-Check and modified compatibility with ZTE MF289D (Apple Way)
->>>>>>> 220733d42d (Testing: Rename items with same parts as 289f):target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4019-mf289d.dts
+// Check and modified compatibility with ZTE MF289D (Apple Way)
 // Copyright (c) 2024, Dimitrios Sideris <dimsid@protonmail.com>.
 
 #include "qcom-ipq4019.dtsi"
@@ -422,13 +416,8 @@ Check and modified compatibility with ZTE MF289D (Apple Way)
 &wifi0 {
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
-<<<<<<< HEAD:target/linux/ipq40xx/files-6.6/arch/arm/boot/dts/qcom/qcom-ipq4019-mf289d.dts
 	nvmem-cells = <&precal_art_1000>, <&macaddr_mac_0 2>;
 	qcom,ath10k-calibration-variant = "zte,mf289d";
-=======
-	nvmem-cells = <&precal_art_1000>, <&macaddr_mac_0 2>;
-	qcom,ath10k-calibration-variant = "zte,mf289f";
->>>>>>> 220733d42d (Testing: Rename items with same parts as 289f):target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4019-mf289d.dts
 };
 
 /* This node is used only on AT2 version for 5Ghz on IPQ4019 with board-id=21 */
@@ -436,11 +425,7 @@ Check and modified compatibility with ZTE MF289D (Apple Way)
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_5000>, <&macaddr_mac_0 3>;
-<<<<<<< HEAD:target/linux/ipq40xx/files-6.6/arch/arm/boot/dts/qcom/qcom-ipq4019-mf289d.dts
 	qcom,ath10k-calibration-variant = "zte,mf289d";
-=======
-	qcom,ath10k-calibration-variant = "zte,mf289f";
->>>>>>> 220733d42d (Testing: Rename items with same parts as 289f):target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4019-mf289d.dts
 };
 
 /* This node is used only on AT1 version for 5Ghz on QCA9984 */
@@ -460,13 +445,8 @@ Check and modified compatibility with ZTE MF289D (Apple Way)
 			nvmem-cell-names = "mac-address";
 			nvmem-cells = <&macaddr_mac_0 4>;
 			compatible = "qcom,ath10k";
-<<<<<<< HEAD:target/linux/ipq40xx/files-6.6/arch/arm/boot/dts/qcom/qcom-ipq4019-mf289d.dts
 			reg = <0x00010000 0 0 0 0>;
 			qcom,ath10k-calibration-variant = "zte,mf289d";
-=======
-			reg = <0x00010000 0 0 0 0>;
-			qcom,ath10k-calibration-variant = "zte,mf289f";
->>>>>>> 220733d42d (Testing: Rename items with same parts as 289f):target/linux/ipq40xx/files/arch/arm/boot/dts/qcom-ipq4019-mf289d.dts
 		};
 	};
 };
