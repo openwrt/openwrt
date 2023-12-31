@@ -10,6 +10,8 @@ to build a complete firmware around it; for users this means the ability for
 full customization, to use the device in ways never envisioned.
 
 Sunshine!
+## Specs
+https://web.archive.org/web/*/https://ztemobiles.com.au/optus-mf289d/
 
 ## Download
 
