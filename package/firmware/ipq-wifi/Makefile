@@ -72,6 +72,8 @@ ALLWIFIBOARDS:= \
 	yuncore_fap650 \
 	zbtlink_zbt-z800ax \
 	zte_mf269 \
+	zte_mf289d \
+	zte_mf289f \
 	zte_mf287 \
 	zte_mf287plus \
 	zyxel_nbg7815
@@ -213,6 +215,8 @@ $(eval $(call generate-ipq-wifi-package,yuncore_ax880,Yuncore AX880))
 $(eval $(call generate-ipq-wifi-package,yuncore_fap650,Yuncore FAP650))
 $(eval $(call generate-ipq-wifi-package,zbtlink_zbt-z800ax,Zbtlink ZBT-Z800AX))
 $(eval $(call generate-ipq-wifi-package,zte_mf269,ZTE MF269))
+$(eval $(call generate-ipq-wifi-package,zte_mf289d,ZTE MF289D))
+$(eval $(call generate-ipq-wifi-package,zte_mf289f,ZTE MF289F))
 $(eval $(call generate-ipq-wifi-package,zte_mf287,ZTE MF287))
 $(eval $(call generate-ipq-wifi-package,zte_mf287plus,ZTE MF287Plus))
 $(eval $(call generate-ipq-wifi-package,zyxel_nbg7815,Zyxel NBG7815))
