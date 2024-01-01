@@ -910,10 +910,10 @@ define KernelPackage/arptables
   SUBMENU:=$(NF_MENU)
   TITLE:=ARP firewalling modules
   DEPENDS:=+kmod-ipt-core
-  FILES:=$(LINUX_DIR)/net/ipv4/netfilter/arp*.ko
   KCONFIG:=CONFIG_IP_NF_ARPTABLES \
     CONFIG_IP_NF_ARPFILTER \
     CONFIG_IP_NF_ARP_MANGLE
+  FILES:=$(foreach mod,$(ARP_MODULES),$(LINUX_DIR)/net/ipv4/netfilter/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(ARP_MODULES))
 endef
 
