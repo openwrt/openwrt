@@ -45,7 +45,7 @@ prepend() {
 	local value="$2"
 	local sep="${3:- }"
 
-	eval "export ${NO_EXPORT:+-n} -- \"$var=\${$value:+\${$value}\$sep}\$var\""
+	eval "export ${NO_EXPORT:+-n} -- \"$var=\$value\${$var:+\${sep}\${$var}}\""
 }
 
 list_contains() {
