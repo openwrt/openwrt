@@ -459,6 +459,44 @@ endef
 $(eval $(call KernelPackage,usb-dwc2-pci))
 
 
+define KernelPackage/usb-cdns
+  TITLE:=Cadence USB USB controller driver
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget +kmod-usb-roles
+  KCONFIG:= \
+	CONFIG_USB_CDNS_SUPPORT
+  FILES:= $(LINUX_DIR)/drivers/usb/cdns3/cdns-usb-common.ko
+  AUTOLOAD:=$(call AutoLoad,50,cdns-usb-common,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-cdns/description
+ This driver provides USB Device Controller support for the
+ Cadence USB Core
+endef
+
+$(eval $(call KernelPackage,usb-cdns))
+
+
+define KernelPackage/usb-cdns3
+  TITLE:=Cadence USB3 USB controller driver
+  DEPENDS:=+kmod-usb-cdns
+  KCONFIG:= \
+	CONFIG_USB_CDNS3 \
+	CONFIG_USB_CDNS3_GADGET=y \
+	CONFIG_USB_CDNS3_HOST=y
+  FILES:= $(LINUX_DIR)/drivers/usb/cdns3/cdns3.ko
+  AUTOLOAD:=$(call AutoLoad,54,cdns3,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb-cdns3/description
+ This driver provides support for the Dual Role SuperSpeed
+ USB Controller based on the Cadence USB3 IP Core
+endef
+
+$(eval $(call KernelPackage,usb-cdns3))
+
+
 define KernelPackage/usb-dwc3
   TITLE:=DWC3 USB controller driver
   KCONFIG:= \
