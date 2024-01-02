@@ -10,11 +10,13 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=6.5
-PKG_RELEASE:=3
+PKG_VERSION:=6.1.31
+PKG_RELEASE:=5
 # PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v5.15.58/
-PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
-PKG_HASH:=908c22dceba185eab83caa5a1e58ce6b3ebdc58f099c3fd3e11c7352ebfab2d7
+#PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
+#PKG_HASH:=908c22dceba185eab83caa5a1e58ce6b3ebdc58f099c3fd3e11c7352ebfab2d7
+
+PKG_HASH:=0ded4164dd2e408f692d502bd586b85e5c682e5aef480115cf12b9cb69af52b0
 
 PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/backports-$(PKG_VERSION)
@@ -30,6 +32,7 @@ PKG_DRIVERS = \
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-mac80211 \
+	$(patsubst %,CONFIG_PACKAGE_kmod-%,$(PKG_DRIVERS)) \
 	CONFIG_PACKAGE_CFG80211_TESTMODE \
 	CONFIG_PACKAGE_MAC80211_DEBUGFS \
 	CONFIG_PACKAGE_MAC80211_MESH \
@@ -94,7 +97,7 @@ PKG_CONFIG_DEPENDS += \
 define KernelPackage/cfg80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=cfg80211 - wireless configuration API
-  DEPENDS+= +iw +iwinfo +wireless-regdb +USE_RFKILL:kmod-rfkill
+  DEPENDS+= +iw +iwinfo +wireless-regdb +USE_RFKILL:kmod-rfkill +kmod-qca-nss-drv-wifi-meshmgr
   ABI_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   FILES:= \
 	$(PKG_BUILD_DIR)/compat/compat.ko \
@@ -130,7 +133,6 @@ define KernelPackage/mac80211
   FILES:= $(PKG_BUILD_DIR)/net/mac80211/mac80211.ko
 ifdef CONFIG_PACKAGE_MAC80211_NSS_REDIRECT
   AUTOLOAD:=$(call AutoProbe, mac80211)
-  MODPARAMS.mac80211:=nss_redirect=1
 endif
   ABI_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
   MENU:=1
@@ -189,7 +191,6 @@ define KernelPackage/mac80211-hwsim
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/virtual/mac80211_hwsim.ko
   AUTOLOAD:=$(call AutoProbe,mac80211_hwsim)
 endef
-
 
 define KernelPackage/mt7601u
   $(call KernelPackage/mac80211/Default)
@@ -296,14 +297,18 @@ ifeq ($(BUILD_VARIANT),smallbuffers)
 endif
 
 ifdef CONFIG_ATH11K_NSS_SUPPORT
-	IREMAP_CFLAGS+=-I$(STAGING_DIR)/usr/include/qca-nss-drv
+	IREMAP_CFLAGS+=-I$(STAGING_DIR)/usr/include/qca-nss-drv \
+	-I$(STAGING_DIR)/usr/include/qca-nss-clients 
+	
 endif
 
 config-$(CONFIG_PACKAGE_MAC80211_NSS_SUPPORT) += MAC80211_NSS_SUPPORT
+config-$(CONFIG_PACKAGE_kmod-ath11k) += ATH11K_SPECTRAL ATH11K_CFR
+config-$(call config_package,ath11k) += ATH11K ATH11K_AHB ATH11K_PCI
 
 MAKE_OPTS:= \
 	$(subst -C $(LINUX_DIR),-C "$(PKG_BUILD_DIR)",$(KERNEL_MAKEOPTS)) \
-	EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include $(IREMAP_CFLAGS) $(C_DEFINES) -Wno-incompatible-pointer-types" \
+	EXTRA_CFLAGS="-I$(PKG_BUILD_DIR)/include $(IREMAP_CFLAGS) $(C_DEFINES) -Wall -Werror -Wno-incompatible-pointer-types -Wno-implicit-function-declaration -Wno-discarded-qualifiers -Wno-int-conversion -Wno-enum-int-mismatch " \
 	KLIB_BUILD="$(LINUX_DIR)" \
 	MODPROBE=true \
 	KLIB=$(TARGET_MODULES_DIR) \
@@ -347,17 +352,6 @@ ifneq ($(CONFIG_PACKAGE_kmod-cfg80211),)
 	rm -rf $(PKG_BUILD_DIR)/modules
 	+$(MAKE) $(PKG_JOBS) $(MAKE_OPTS) modules
  endef
-endif
-
-#do not Build/Configure for EXTERNAL KERNEL
-ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
-  ifeq ($(strip $(CONFIG_KERNEL_GIT_CLONE_URI)),"")
-    define Build/Configure
-	  cmp $(PKG_BUILD_DIR)/include/linux/ath9k_platform.h $(LINUX_DIR)/include/linux/ath9k_platform.h
-	  cmp $(PKG_BUILD_DIR)/include/linux/ath5k_platform.h $(LINUX_DIR)/include/linux/ath5k_platform.h
-	  cmp $(PKG_BUILD_DIR)/include/linux/rt2x00_platform.h $(LINUX_DIR)/include/linux/rt2x00_platform.h
-    endef
-  endif
 endif
 
 define Build/Patch

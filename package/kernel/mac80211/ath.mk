@@ -23,6 +23,7 @@ ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
 	ATH9K_HTC_DEBUGFS \
 	ATH10K_DEBUGFS \
 	ATH11K_DEBUGFS \
+	ATH11K_PKTLOG \
 	CARL9170_DEBUGFS \
 	ATH5K_DEBUG \
 	ATH6KL_DEBUG \
@@ -307,7 +308,7 @@ define KernelPackage/ath11k
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath11k
   DEPENDS+= +kmod-ath +@DRIVER_11AC_SUPPORT +@DRIVER_11AX_SUPPORT \
   +kmod-crypto-michael-mic +ATH11K_THERMAL:kmod-hwmon-core +ATH11K_THERMAL:kmod-thermal \
-  +ATH11K_NSS_SUPPORT:kmod-qca-nss-drv
+  +kmod-mhi-bus
   FILES:=$(PKG_BUILD_DIR)/drivers/soc/qcom/qmi_helpers.ko \
   $(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k.ko
 ifdef CONFIG_ATH11K_NSS_SUPPORT
@@ -361,7 +362,7 @@ define KernelPackage/ath11k-pci
   $(call KernelPackage/mac80211/Default)
   TITLE:=Qualcomm 802.11ax PCI wireless chipset support
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath11k
-  DEPENDS+= @PCI_SUPPORT +kmod-qrtr-mhi +kmod-ath11k
+  DEPENDS+= @TARGET_qualcommax +kmod-ath11k +kmod-qrtr-mhi +kmod-mhi-bus +kmod-mhi-pci-generic
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k_pci.ko
   AUTOLOAD:=$(call AutoProbe,ath11k_pci)
 endef
