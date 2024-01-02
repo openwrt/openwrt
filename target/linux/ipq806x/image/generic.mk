@@ -177,6 +177,18 @@ define Device/extreme_ap3935
 endef
 TARGET_DEVICES += extreme_ap3935
 
+define Device/fortinet_fap-421e
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Fortinet
+	DEVICE_MODEL := FAP-421E
+	SOC := qcom-ipq8064
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := fap-421e
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+endef
+TARGET_DEVICES += fortinet_fap-421e
+
 define Device/linksys_ea7500-v1
 	$(call Device/LegacyImage)
 	$(Device/kernel-size-migration)

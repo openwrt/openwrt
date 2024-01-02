@@ -37,6 +37,15 @@ extreme,ap3935)
 	ucidef_set_led_netdev "wan" "wan" "orange:lan1" "eth1"
 	ucidef_set_led_netdev "lan" "lan" "orange:lan2" "eth0"
 	;;
+fortinet,fap-421e)
+	ucidef_set_led_netdev "eth1-100" "ETH1-100" "amber:eth1" "eth0" "link_100"
+	ucidef_set_led_netdev "eth1-1000" "ETH1-1000" "yellow:eth1" "eth0" "link_1000"
+	ucidef_set_led_netdev "eth2-100" "ETH2-100" "amber:eth2" "eth1" "link_100"
+	ucidef_set_led_netdev "eth2-1000" "ETH2-1000" "yellow:eth2" "eth1" "link_1000"
+	ucidef_set_led_wlan "wlan2g" "2.4G" "yellow:2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "5G" "yellow:5g" "phy0tpt"
+	ucidef_set_led_usbport "usb" "USB" "amber:power" "usb1-port1" "usb2-port1"
+	;;
 meraki,mr52)
 	ucidef_set_led_netdev "eth0" "eth0" "green:lan1" "eth0"
 	ucidef_set_led_netdev "eth1" "eth1" "green:lan2" "eth1"
