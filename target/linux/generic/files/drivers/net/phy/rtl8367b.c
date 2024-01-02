@@ -1634,21 +1634,36 @@ static struct rtl8366_smi_ops rtl8367b_smi_ops = {
 };
 
 #ifdef CONFIG_OF
-static const struct of_device_id rtl8367b_match[] = {
-	{ .compatible = "realtek,rtl8367b" },
+struct rtl8367xx_chip {
+	unsigned long flags;
+};
+
+const struct rtl8367xx_chip rtl8367b_chip = {
+	.flags = 0,
+};
+
+const struct rtl8367xx_chip rtl8367c_chip = {
+	.flags = RTL8367B_FLAG_MATCH_CHIP_NUM,
+};
+
+static const struct of_device_id rtl8367bc_match[] = {
 	{
+		.compatible = "realtek,rtl8367b",
+		.data = &rtl8367b_chip,
+	}, {
 		.compatible = "realtek,rtl8367c",
-		.data = (void *)RTL8367B_FLAG_MATCH_CHIP_NUM,
+		.data = &rtl8367c_chip,
 	},
 	{},
 };
-MODULE_DEVICE_TABLE(of, rtl8367b_match);
+MODULE_DEVICE_TABLE(of, rtl8367bc_match);
 #endif
 
 static int  rtl8367b_probe(struct platform_device *pdev)
 {
 #ifdef CONFIG_OF
 	const struct of_device_id *match;
+	const struct rtl8367xx_chip *chip;
 #endif
 	struct rtl8366_smi *smi;
 	int err;
@@ -1658,11 +1673,15 @@ static int  rtl8367b_probe(struct platform_device *pdev)
 		return PTR_ERR(smi);
 
 #ifdef CONFIG_OF
-	match = of_match_device(rtl8367b_match, &pdev->dev);
-	if (match)
-		smi->flags = (u32)match->data;
+	match = of_match_device(rtl8367bc_match, &pdev->dev);
+        if (match) {
+		chip = (const struct rtl8367xx_chip *) match->data;
+		smi->flags = chip->flags;
+	} else
+		smi->flags = 0;
+#else
+	smi->flags = 0;
 #endif
-
 	smi->clk_delay = 1500;
 	smi->cmd_read = 0xb9;
 	smi->cmd_write = 0xb8;
@@ -1722,7 +1741,7 @@ static struct platform_driver rtl8367b_driver = {
 		.name		= RTL8367B_DRIVER_NAME,
 		.owner		= THIS_MODULE,
 #ifdef CONFIG_OF
-		.of_match_table = of_match_ptr(rtl8367b_match),
+		.of_match_table = of_match_ptr(rtl8367bc_match),
 #endif
 	},
 	.probe		= rtl8367b_probe,
