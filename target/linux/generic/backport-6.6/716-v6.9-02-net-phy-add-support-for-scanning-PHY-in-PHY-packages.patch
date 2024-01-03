@@ -115,9 +115,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* auto scan for PHYs with empty reg property */
  	for_each_available_child_of_node(np, child) {
 -		/* Skip PHYs with reg property set */
--		if (of_find_property(child, "reg", NULL))
+-		if (of_property_present(child, "reg"))
 +		/* Skip PHYs with reg property set or ethernet-phy-package node */
-+		if (of_find_property(child, "reg", NULL) ||
++		if (of_property_present(child, "reg") ||
 +		    of_node_name_eq(child, "ethernet-phy-package"))
  			continue;
  

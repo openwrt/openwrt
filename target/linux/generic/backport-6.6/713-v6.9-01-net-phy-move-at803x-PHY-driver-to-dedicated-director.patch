@@ -25,9 +25,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -277,12 +277,7 @@ config NXP_TJA11XX_PHY
- 	help
- 	  Currently supports the NXP TJA1100 and TJA1101 PHY.
+@@ -318,12 +318,7 @@ config NCN26000_PHY
+ 	  Currently supports the NCN26000 10BASE-T1S Industrial PHY
+ 	  with MII interface.
  
 -config AT803X_PHY
 -	tristate "Qualcomm Atheros AR803X PHYs and QCA833x PHYs"
@@ -41,7 +41,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	tristate "Quality Semiconductor PHYs"
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -34,7 +34,6 @@ obj-$(CONFIG_ADIN_PHY)		+= adin.o
+@@ -36,7 +36,6 @@ obj-$(CONFIG_ADIN_PHY)		+= adin.o
  obj-$(CONFIG_ADIN1100_PHY)	+= adin1100.o
  obj-$(CONFIG_AMD_PHY)		+= amd.o
  obj-$(CONFIG_AQUANTIA_PHY)	+= aquantia/
@@ -49,9 +49,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  obj-$(CONFIG_AX88796B_PHY)	+= ax88796b.o
  obj-$(CONFIG_BCM54140_PHY)	+= bcm54140.o
  obj-$(CONFIG_BCM63XX_PHY)	+= bcm63xx.o
-@@ -75,6 +74,7 @@ obj-$(CONFIG_MOTORCOMM_PHY)	+= motorcomm
- obj-$(CONFIG_NATIONAL_PHY)	+= national.o
+@@ -82,6 +81,7 @@ obj-$(CONFIG_NCN26000_PHY)	+= ncn26000.o
  obj-$(CONFIG_NXP_C45_TJA11XX_PHY)	+= nxp-c45-tja11xx.o
+ obj-$(CONFIG_NXP_CBTX_PHY)	+= nxp-cbtx.o
  obj-$(CONFIG_NXP_TJA11XX_PHY)	+= nxp-tja11xx.o
 +obj-y				+= qcom/
  obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
@@ -2010,7 +2010,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 -		return at803x_debug_reg_mask(phydev, QCA808X_PHY_DEBUG_LOCAL_SEED,
 -				QCA808X_MASTER_SLAVE_SEED_ENABLE, 0);
 -
--	seed_value = prandom_u32_max(QCA808X_MASTER_SLAVE_SEED_RANGE);
+-	seed_value = get_random_u32_below(QCA808X_MASTER_SLAVE_SEED_RANGE);
 -	return at803x_debug_reg_mask(phydev, QCA808X_PHY_DEBUG_LOCAL_SEED,
 -			QCA808X_MASTER_SLAVE_SEED_CFG | QCA808X_MASTER_SLAVE_SEED_ENABLE,
 -			FIELD_PREP(QCA808X_MASTER_SLAVE_SEED_CFG, seed_value) |
@@ -4772,7 +4772,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 +		return at803x_debug_reg_mask(phydev, QCA808X_PHY_DEBUG_LOCAL_SEED,
 +				QCA808X_MASTER_SLAVE_SEED_ENABLE, 0);
 +
-+	seed_value = prandom_u32_max(QCA808X_MASTER_SLAVE_SEED_RANGE);
++	seed_value = get_random_u32_below(QCA808X_MASTER_SLAVE_SEED_RANGE);
 +	return at803x_debug_reg_mask(phydev, QCA808X_PHY_DEBUG_LOCAL_SEED,
 +			QCA808X_MASTER_SLAVE_SEED_CFG | QCA808X_MASTER_SLAVE_SEED_ENABLE,
 +			FIELD_PREP(QCA808X_MASTER_SLAVE_SEED_CFG, seed_value) |

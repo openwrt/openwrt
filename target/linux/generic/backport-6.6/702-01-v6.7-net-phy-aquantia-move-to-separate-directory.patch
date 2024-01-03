@@ -26,7 +26,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -90,10 +90,7 @@ config ADIN1100_PHY
+@@ -96,10 +96,7 @@ config ADIN1100_PHY
  	  Currently supports the:
  	  - ADIN1100 - Robust,Industrial, Low Power 10BASE-T1L Ethernet PHY
  
@@ -40,7 +40,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	tristate "Asix PHYs"
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -33,11 +33,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
+@@ -35,11 +35,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
  obj-$(CONFIG_ADIN_PHY)		+= adin.o
  obj-$(CONFIG_ADIN1100_PHY)	+= adin1100.o
  obj-$(CONFIG_AMD_PHY)		+= amd.o
@@ -323,7 +323,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +	.config = aqr_hwmon_temp_config,
 +};
 +
-+static const struct hwmon_channel_info *aqr_hwmon_info[] = {
++static const struct hwmon_channel_info * const aqr_hwmon_info[] = {
 +	&aqr_hwmon_chip,
 +	&aqr_hwmon_temp,
 +	NULL,
@@ -363,7 +363,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +#endif
 --- /dev/null
 +++ b/drivers/net/phy/aquantia/aquantia_main.c
-@@ -0,0 +1,842 @@
+@@ -0,0 +1,882 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Driver for Aquantia PHY
@@ -388,6 +388,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +#define PHY_ID_AQR107	0x03a1b4e0
 +#define PHY_ID_AQCS109	0x03a1b5c2
 +#define PHY_ID_AQR405	0x03a1b4b0
++#define PHY_ID_AQR112	0x03a1b662
++#define PHY_ID_AQR412	0x03a1b712
 +#define PHY_ID_AQR113C	0x31c31c12
 +
 +#define MDIO_PHYXS_VEND_IF_STATUS		0xe812
@@ -1167,6 +1169,42 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +	.read_status	= aqr_read_status,
 +},
 +{
++	PHY_ID_MATCH_MODEL(PHY_ID_AQR112),
++	.name		= "Aquantia AQR112",
++	.probe		= aqr107_probe,
++	.config_aneg    = aqr_config_aneg,
++	.config_intr	= aqr_config_intr,
++	.handle_interrupt = aqr_handle_interrupt,
++	.get_tunable    = aqr107_get_tunable,
++	.set_tunable    = aqr107_set_tunable,
++	.suspend	= aqr107_suspend,
++	.resume		= aqr107_resume,
++	.read_status	= aqr107_read_status,
++	.get_rate_matching = aqr107_get_rate_matching,
++	.get_sset_count = aqr107_get_sset_count,
++	.get_strings	= aqr107_get_strings,
++	.get_stats	= aqr107_get_stats,
++	.link_change_notify = aqr107_link_change_notify,
++},
++{
++	PHY_ID_MATCH_MODEL(PHY_ID_AQR412),
++	.name		= "Aquantia AQR412",
++	.probe		= aqr107_probe,
++	.config_aneg    = aqr_config_aneg,
++	.config_intr	= aqr_config_intr,
++	.handle_interrupt = aqr_handle_interrupt,
++	.get_tunable    = aqr107_get_tunable,
++	.set_tunable    = aqr107_set_tunable,
++	.suspend	= aqr107_suspend,
++	.resume		= aqr107_resume,
++	.read_status	= aqr107_read_status,
++	.get_rate_matching = aqr107_get_rate_matching,
++	.get_sset_count = aqr107_get_sset_count,
++	.get_strings	= aqr107_get_strings,
++	.get_stats	= aqr107_get_stats,
++	.link_change_notify = aqr107_link_change_notify,
++},
++{
 +	PHY_ID_MATCH_MODEL(PHY_ID_AQR113C),
 +	.name           = "Aquantia AQR113C",
 +	.probe          = aqr107_probe,
@@ -1197,6 +1235,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR107) },
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQCS109) },
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR405) },
++	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112) },
++	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR412) },
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113C) },
 +	{ }
 +};
@@ -1421,7 +1461,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -	.config = aqr_hwmon_temp_config,
 -};
 -
--static const struct hwmon_channel_info *aqr_hwmon_info[] = {
+-static const struct hwmon_channel_info * const aqr_hwmon_info[] = {
 -	&aqr_hwmon_chip,
 -	&aqr_hwmon_temp,
 -	NULL,
@@ -1461,7 +1501,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -#endif
 --- a/drivers/net/phy/aquantia_main.c
 +++ /dev/null
-@@ -1,842 +0,0 @@
+@@ -1,882 +0,0 @@
 -// SPDX-License-Identifier: GPL-2.0
 -/*
 - * Driver for Aquantia PHY
@@ -1486,6 +1526,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -#define PHY_ID_AQR107	0x03a1b4e0
 -#define PHY_ID_AQCS109	0x03a1b5c2
 -#define PHY_ID_AQR405	0x03a1b4b0
+-#define PHY_ID_AQR112	0x03a1b662
+-#define PHY_ID_AQR412	0x03a1b712
 -#define PHY_ID_AQR113C	0x31c31c12
 -
 -#define MDIO_PHYXS_VEND_IF_STATUS		0xe812
@@ -2265,6 +2307,42 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -	.read_status	= aqr_read_status,
 -},
 -{
+-	PHY_ID_MATCH_MODEL(PHY_ID_AQR112),
+-	.name		= "Aquantia AQR112",
+-	.probe		= aqr107_probe,
+-	.config_aneg    = aqr_config_aneg,
+-	.config_intr	= aqr_config_intr,
+-	.handle_interrupt = aqr_handle_interrupt,
+-	.get_tunable    = aqr107_get_tunable,
+-	.set_tunable    = aqr107_set_tunable,
+-	.suspend	= aqr107_suspend,
+-	.resume		= aqr107_resume,
+-	.read_status	= aqr107_read_status,
+-	.get_rate_matching = aqr107_get_rate_matching,
+-	.get_sset_count = aqr107_get_sset_count,
+-	.get_strings	= aqr107_get_strings,
+-	.get_stats	= aqr107_get_stats,
+-	.link_change_notify = aqr107_link_change_notify,
+-},
+-{
+-	PHY_ID_MATCH_MODEL(PHY_ID_AQR412),
+-	.name		= "Aquantia AQR412",
+-	.probe		= aqr107_probe,
+-	.config_aneg    = aqr_config_aneg,
+-	.config_intr	= aqr_config_intr,
+-	.handle_interrupt = aqr_handle_interrupt,
+-	.get_tunable    = aqr107_get_tunable,
+-	.set_tunable    = aqr107_set_tunable,
+-	.suspend	= aqr107_suspend,
+-	.resume		= aqr107_resume,
+-	.read_status	= aqr107_read_status,
+-	.get_rate_matching = aqr107_get_rate_matching,
+-	.get_sset_count = aqr107_get_sset_count,
+-	.get_strings	= aqr107_get_strings,
+-	.get_stats	= aqr107_get_stats,
+-	.link_change_notify = aqr107_link_change_notify,
+-},
+-{
 -	PHY_ID_MATCH_MODEL(PHY_ID_AQR113C),
 -	.name           = "Aquantia AQR113C",
 -	.probe          = aqr107_probe,
@@ -2295,6 +2373,8 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR107) },
 -	{ PHY_ID_MATCH_MODEL(PHY_ID_AQCS109) },
 -	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR405) },
+-	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112) },
+-	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR412) },
 -	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113C) },
 -	{ }
 -};

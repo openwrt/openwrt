@@ -242,7 +242,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	refcount_t refcnt;
  	unsigned long flags;
  	size_t priv_size;
-@@ -1763,10 +1764,10 @@ int phy_ethtool_get_link_ksettings(struc
+@@ -1969,10 +1970,10 @@ int phy_ethtool_get_link_ksettings(struc
  int phy_ethtool_set_link_ksettings(struct net_device *ndev,
  				   const struct ethtool_link_ksettings *cmd);
  int phy_ethtool_nway_reset(struct net_device *ndev);
@@ -253,11 +253,11 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -			  int addr, size_t priv_size);
 +			  int base_addr, size_t priv_size);
  
- #if IS_ENABLED(CONFIG_PHYLIB)
  int __init mdio_bus_init(void);
-@@ -1778,46 +1779,65 @@ int phy_ethtool_get_sset_count(struct ph
- int phy_ethtool_get_stats(struct phy_device *phydev,
- 			  struct ethtool_stats *stats, u64 *data);
+ void mdio_bus_exit(void);
+@@ -1995,46 +1996,65 @@ int __phy_hwtstamp_set(struct phy_device
+ 		       struct kernel_hwtstamp_config *config,
+ 		       struct netlink_ext_ack *extack);
  
 -static inline int phy_package_read(struct phy_device *phydev, u32 regnum)
 +static inline int phy_package_address(struct phy_device *phydev,

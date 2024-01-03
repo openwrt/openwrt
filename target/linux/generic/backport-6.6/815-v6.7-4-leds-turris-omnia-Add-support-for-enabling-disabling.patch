@@ -217,10 +217,10 @@ Signed-off-by: Lee Jones <lee@kernel.org>
 +	return le16_to_cpu(reply);
 +}
 +
- static int omnia_leds_probe(struct i2c_client *client,
- 			    const struct i2c_device_id *id)
+ static int omnia_leds_probe(struct i2c_client *client)
  {
-@@ -383,6 +471,21 @@ static int omnia_leds_probe(struct i2c_c
+ 	struct device *dev = &client->dev;
+@@ -382,6 +470,21 @@ static int omnia_leds_probe(struct i2c_c
  	leds->client = client;
  	i2c_set_clientdata(client, leds);
  

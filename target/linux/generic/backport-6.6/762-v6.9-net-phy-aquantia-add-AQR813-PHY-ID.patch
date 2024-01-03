@@ -16,7 +16,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 --- a/drivers/net/phy/aquantia/aquantia_main.c
 +++ b/drivers/net/phy/aquantia/aquantia_main.c
 @@ -26,6 +26,7 @@
- #define PHY_ID_AQR111B0	0x03a1b612
+ #define PHY_ID_AQR412	0x03a1b712
  #define PHY_ID_AQR113	0x31c31c40
  #define PHY_ID_AQR113C	0x31c31c12
 +#define PHY_ID_AQR813	0x31c31cb2
@@ -50,7 +50,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  module_phy_driver(aqr_driver);
 @@ -856,6 +876,7 @@ static struct mdio_device_id __maybe_unu
- 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR111B0) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR412) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113C) },
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR813) },

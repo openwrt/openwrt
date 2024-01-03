@@ -328,7 +328,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 -		return at803x_debug_reg_mask(phydev, QCA808X_PHY_DEBUG_LOCAL_SEED,
 -				QCA808X_MASTER_SLAVE_SEED_ENABLE, 0);
 -
--	seed_value = prandom_u32_max(QCA808X_MASTER_SLAVE_SEED_RANGE);
+-	seed_value = get_random_u32_below(QCA808X_MASTER_SLAVE_SEED_RANGE);
 -	return at803x_debug_reg_mask(phydev, QCA808X_PHY_DEBUG_LOCAL_SEED,
 -			QCA808X_MASTER_SLAVE_SEED_CFG | QCA808X_MASTER_SLAVE_SEED_ENABLE,
 -			FIELD_PREP(QCA808X_MASTER_SLAVE_SEED_CFG, seed_value) |
@@ -1255,7 +1255,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 +		return at803x_debug_reg_mask(phydev, QCA808X_PHY_DEBUG_LOCAL_SEED,
 +				QCA808X_MASTER_SLAVE_SEED_ENABLE, 0);
 +
-+	seed_value = prandom_u32_max(QCA808X_MASTER_SLAVE_SEED_RANGE);
++	seed_value = get_random_u32_below(QCA808X_MASTER_SLAVE_SEED_RANGE);
 +	return at803x_debug_reg_mask(phydev, QCA808X_PHY_DEBUG_LOCAL_SEED,
 +			QCA808X_MASTER_SLAVE_SEED_CFG | QCA808X_MASTER_SLAVE_SEED_ENABLE,
 +			FIELD_PREP(QCA808X_MASTER_SLAVE_SEED_CFG, seed_value) |

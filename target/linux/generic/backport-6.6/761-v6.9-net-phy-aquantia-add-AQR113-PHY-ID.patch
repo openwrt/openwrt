@@ -17,15 +17,15 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 --- a/drivers/net/phy/aquantia/aquantia_main.c
 +++ b/drivers/net/phy/aquantia/aquantia_main.c
 @@ -24,6 +24,7 @@
- #define PHY_ID_AQR405	0x03a1b4b0
- #define PHY_ID_AQR111	0x03a1b610
  #define PHY_ID_AQR111B0	0x03a1b612
+ #define PHY_ID_AQR112	0x03a1b662
+ #define PHY_ID_AQR412	0x03a1b712
 +#define PHY_ID_AQR113	0x31c31c40
  #define PHY_ID_AQR113C	0x31c31c12
  
  #define MDIO_PHYXS_VEND_IF_STATUS		0xe812
 @@ -802,6 +803,25 @@ static struct phy_driver aqr_driver[] =
- 	.read_status	= aqr_read_status,
+ 	.link_change_notify = aqr107_link_change_notify,
  },
  {
 +	PHY_ID_MATCH_MODEL(PHY_ID_AQR113),
@@ -51,9 +51,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	.name           = "Aquantia AQR113C",
  	.probe          = aqr107_probe,
 @@ -834,6 +854,7 @@ static struct mdio_device_id __maybe_unu
- 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR405) },
- 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR111) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR111B0) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR412) },
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113C) },
  	{ }

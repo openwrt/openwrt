@@ -26,9 +26,9 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  #define PHY_ID_AQR405	0x03a1b4b0
 +#define PHY_ID_AQR111	0x03a1b610
 +#define PHY_ID_AQR111B0	0x03a1b612
+ #define PHY_ID_AQR112	0x03a1b662
+ #define PHY_ID_AQR412	0x03a1b712
  #define PHY_ID_AQR113C	0x31c31c12
- 
- #define MDIO_PHYXS_VEND_IF_STATUS		0xe812
 @@ -670,6 +672,16 @@ static int aqr107_probe(struct phy_devic
  	return aqr_hwmon_probe(phydev);
  }
@@ -91,12 +91,12 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	PHY_ID_MATCH_MODEL(PHY_ID_AQR405),
  	.name		= "Aquantia AQR405",
  	.config_aneg    = aqr_config_aneg,
-@@ -782,6 +832,8 @@ static struct mdio_device_id __maybe_unu
+@@ -820,6 +870,8 @@ static struct mdio_device_id __maybe_unu
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR107) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQCS109) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR405) },
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR111) },
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR111B0) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR412) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113C) },
- 	{ }
- };
