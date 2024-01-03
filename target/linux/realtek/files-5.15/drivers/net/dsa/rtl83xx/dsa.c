@@ -137,9 +137,9 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 		priv->r->vlan_set_tagged(i, &info);
 
 	/* reset PVIDs; defaults to 1 on reset */
-	for (int i = 0; i <= priv->ds->num_ports; i++) {
-		priv->r->vlan_port_pvid_set(i, PBVLAN_TYPE_INNER, 0);
-		priv->r->vlan_port_pvid_set(i, PBVLAN_TYPE_OUTER, 0);
+	for (int i = 0; i <= priv->cpu_port; i++) {
+		priv->r->vlan_port_pvid_set(i, PBVLAN_TYPE_INNER, 1);
+		priv->r->vlan_port_pvid_set(i, PBVLAN_TYPE_OUTER, 1);
 		priv->r->vlan_port_pvidmode_set(i, PBVLAN_TYPE_INNER, PBVLAN_MODE_UNTAG_AND_PRITAG);
 		priv->r->vlan_port_pvidmode_set(i, PBVLAN_TYPE_OUTER, PBVLAN_MODE_UNTAG_AND_PRITAG);
 	}
