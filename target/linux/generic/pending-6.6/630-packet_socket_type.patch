@@ -21,10 +21,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /* Packet socket options */
  
 @@ -59,6 +61,7 @@ struct sockaddr_ll {
- #define PACKET_ROLLOVER_STATS		21
  #define PACKET_FANOUT_DATA		22
  #define PACKET_IGNORE_OUTGOING		23
-+#define PACKET_RECV_TYPE		24
+ #define PACKET_VNET_HDR_SZ		24
++#define PACKET_RECV_TYPE		25
  
  #define PACKET_FANOUT_HASH		0
  #define PACKET_FANOUT_LB		1
@@ -96,7 +96,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (sock->type == SOCK_PACKET)
  		po->prot_hook.func = packet_rcv_spkt;
 @@ -4013,6 +4016,16 @@ packet_setsockopt(struct socket *sock, i
- 		WRITE_ONCE(po->xmit, val ? packet_direct_xmit : dev_queue_xmit);
+ 		packet_sock_flag_set(po, PACKET_SOCK_QDISC_BYPASS, val);
  		return 0;
  	}
 +	case PACKET_RECV_TYPE:
@@ -113,8 +113,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return -ENOPROTOOPT;
  	}
 @@ -4069,6 +4082,13 @@ static int packet_getsockopt(struct sock
- 	case PACKET_VNET_HDR:
- 		val = po->has_vnet_hdr;
+ 	case PACKET_VNET_HDR_SZ:
+ 		val = READ_ONCE(po->vnet_hdr_sz);
  		break;
 +	case PACKET_RECV_TYPE:
 +		if (len > sizeof(unsigned int))
@@ -129,10 +129,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/net/packet/internal.h
 +++ b/net/packet/internal.h
 @@ -136,6 +136,7 @@ struct packet_sock {
- 	int			(*xmit)(struct sk_buff *skb);
+ 	struct net_device __rcu	*cached_dev;
  	struct packet_type	prot_hook ____cacheline_aligned_in_smp;
  	atomic_t		tp_drops ____cacheline_aligned_in_smp;
 +	unsigned int		pkt_type;
  };
  
- static inline struct packet_sock *pkt_sk(struct sock *sk)
+ #define pkt_sk(ptr) container_of_const(ptr, struct packet_sock, sk)

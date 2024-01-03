@@ -22,7 +22,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	int val;
 +	u32 id;
 +
-+	if (phydev->mdio.bus->probe_capabilities >= MDIOBUS_C45) {
++	if (phydev->drv->read_mmd) {
 +		val = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_PKGID1);
 +		if (val < 0)
 +			return 0;

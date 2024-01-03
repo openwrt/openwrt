@@ -25,7 +25,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#include <linux/namei.h>
  #include <linux/slab.h>
  #include <linux/mtd/ubi.h>
- #include <linux/workqueue.h>
+ #include <linux/blkdev.h>
 @@ -67,10 +68,10 @@ struct ubiblock_pdu {
  };
  

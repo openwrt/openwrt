@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +++ b/arch/mips/Makefile
 @@ -97,8 +97,18 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlin
  cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe -mno-branch-likely
- cflags-y			+= -msoft-float
+ cflags-y			+= -msoft-float -Wa,-msoft-float
  LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
 +ifdef CONFIG_64BIT
  KBUILD_AFLAGS_MODULE		+= -mlong-calls

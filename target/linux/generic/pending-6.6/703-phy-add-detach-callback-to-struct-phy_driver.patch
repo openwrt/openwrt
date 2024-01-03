@@ -11,9 +11,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1850,6 +1850,9 @@ void phy_detach(struct phy_device *phyde
- 	struct module *ndev_owner = NULL;
- 	struct mii_bus *bus;
+@@ -1753,6 +1753,9 @@ void phy_detach(struct phy_device *phyde
+ 	if (phydev->devlink)
+ 		device_link_del(phydev->devlink);
  
 +	if (phydev->drv && phydev->drv->detach)
 +		phydev->drv->detach(phydev);

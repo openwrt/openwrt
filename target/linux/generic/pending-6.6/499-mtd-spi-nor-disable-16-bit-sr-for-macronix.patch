@@ -20,11 +20,11 @@ Signed-off-by: Nick Hainke <vincent@systemli.org>
 
 --- a/drivers/mtd/spi-nor/macronix.c
 +++ b/drivers/mtd/spi-nor/macronix.c
-@@ -107,6 +107,7 @@ static void macronix_nor_default_init(st
+@@ -115,6 +115,7 @@ static void macronix_nor_default_init(st
  {
- 	nor->params->quad_enable = spi_nor_sr1_bit6_quad_enable;
- 	nor->params->set_4byte_addr_mode = spi_nor_set_4byte_addr_mode;
+ 	if (!nor->params->set_4byte_addr_mode)
+ 		nor->params->set_4byte_addr_mode = spi_nor_set_4byte_addr_mode_en4b_ex4b;
 +	nor->flags &= ~SNOR_F_HAS_16BIT_SR;
  	nor->flags |= SNOR_F_HAS_LOCK;
- }
  
+ 	return 0;

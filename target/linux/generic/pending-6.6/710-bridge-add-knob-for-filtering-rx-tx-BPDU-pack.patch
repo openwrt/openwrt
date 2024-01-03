@@ -15,18 +15,18 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
 @@ -59,6 +59,7 @@ struct br_ip_list {
- #define BR_MRP_LOST_IN_CONT	BIT(19)
- #define BR_TX_FWD_OFFLOAD	BIT(20)
  #define BR_PORT_LOCKED		BIT(21)
-+#define BR_BPDU_FILTER		BIT(22)
+ #define BR_PORT_MAB		BIT(22)
+ #define BR_NEIGH_VLAN_SUPPRESS	BIT(23)
++#define BR_BPDU_FILTER		BIT(24)
  
  #define BR_DEFAULT_AGEING_TIME	(300 * HZ)
  
 --- a/net/bridge/br_forward.c
 +++ b/net/bridge/br_forward.c
 @@ -199,6 +199,7 @@ out:
- void br_flood(struct net_bridge *br, struct sk_buff *skb,
- 	      enum br_pkt_type pkt_type, bool local_rcv, bool local_orig)
+ 	      enum br_pkt_type pkt_type, bool local_rcv, bool local_orig,
+ 	      u16 vid)
  {
 +	const unsigned char *dest = eth_hdr(skb)->h_dest;
  	struct net_bridge_port *prev = NULL;
@@ -107,9 +107,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/include/uapi/linux/if_link.h
 +++ b/include/uapi/linux/if_link.h
 @@ -561,6 +561,7 @@ enum {
- 	IFLA_BRPORT_MCAST_EHT_HOSTS_LIMIT,
- 	IFLA_BRPORT_MCAST_EHT_HOSTS_CNT,
- 	IFLA_BRPORT_LOCKED,
+ 	IFLA_BRPORT_MCAST_MAX_GROUPS,
+ 	IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
+ 	IFLA_BRPORT_BACKUP_NHID,
 +	IFLA_BRPORT_BPDU_FILTER,
  	__IFLA_BRPORT_MAX
  };
@@ -117,47 +117,47 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/net/bridge/br_netlink.c
 +++ b/net/bridge/br_netlink.c
 @@ -188,6 +188,7 @@ static inline size_t br_port_info_size(v
- 		+ nla_total_size(1)	/* IFLA_BRPORT_NEIGH_SUPPRESS */
- 		+ nla_total_size(1)	/* IFLA_BRPORT_ISOLATED */
  		+ nla_total_size(1)	/* IFLA_BRPORT_LOCKED */
+ 		+ nla_total_size(1)	/* IFLA_BRPORT_MAB */
+ 		+ nla_total_size(1)	/* IFLA_BRPORT_NEIGH_VLAN_SUPPRESS */
 +		+ nla_total_size(1)	/* IFLA_BRPORT_BPDU_FILTER */
  		+ nla_total_size(sizeof(struct ifla_bridge_id))	/* IFLA_BRPORT_ROOT_ID */
  		+ nla_total_size(sizeof(struct ifla_bridge_id))	/* IFLA_BRPORT_BRIDGE_ID */
  		+ nla_total_size(sizeof(u16))	/* IFLA_BRPORT_DESIGNATED_PORT */
 @@ -274,7 +275,8 @@ static int br_port_fill_attrs(struct sk_
- 	    nla_put_u8(skb, IFLA_BRPORT_MRP_IN_OPEN,
- 		       !!(p->flags & BR_MRP_LOST_IN_CONT)) ||
- 	    nla_put_u8(skb, IFLA_BRPORT_ISOLATED, !!(p->flags & BR_ISOLATED)) ||
--	    nla_put_u8(skb, IFLA_BRPORT_LOCKED, !!(p->flags & BR_PORT_LOCKED)))
-+	    nla_put_u8(skb, IFLA_BRPORT_LOCKED, !!(p->flags & BR_PORT_LOCKED)) ||
+ 	    nla_put_u8(skb, IFLA_BRPORT_LOCKED, !!(p->flags & BR_PORT_LOCKED)) ||
+ 	    nla_put_u8(skb, IFLA_BRPORT_MAB, !!(p->flags & BR_PORT_MAB)) ||
+ 	    nla_put_u8(skb, IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
+-		       !!(p->flags & BR_NEIGH_VLAN_SUPPRESS)))
++		       !!(p->flags & BR_NEIGH_VLAN_SUPPRESS)) ||
 +	    nla_put_u8(skb, IFLA_BRPORT_BPDU_FILTER, !!(p->flags & BR_BPDU_FILTER)))
  		return -EMSGSIZE;
  
  	timerval = br_timer_value(&p->message_age_timer);
 @@ -878,6 +880,7 @@ static const struct nla_policy br_port_p
- 	[IFLA_BRPORT_LOCKED] = { .type = NLA_U8 },
- 	[IFLA_BRPORT_BACKUP_PORT] = { .type = NLA_U32 },
- 	[IFLA_BRPORT_MCAST_EHT_HOSTS_LIMIT] = { .type = NLA_U32 },
+ 	[IFLA_BRPORT_MCAST_MAX_GROUPS] = { .type = NLA_U32 },
+ 	[IFLA_BRPORT_NEIGH_VLAN_SUPPRESS] = NLA_POLICY_MAX(NLA_U8, 1),
+ 	[IFLA_BRPORT_BACKUP_NHID] = { .type = NLA_U32 },
 +	[IFLA_BRPORT_BPDU_FILTER] = { .type = NLA_U8 },
  };
  
  /* Change the state of the port and notify spanning tree */
 @@ -943,6 +946,7 @@ static int br_setport(struct net_bridge_
- 	br_set_port_flag(p, tb, IFLA_BRPORT_NEIGH_SUPPRESS, BR_NEIGH_SUPPRESS);
- 	br_set_port_flag(p, tb, IFLA_BRPORT_ISOLATED, BR_ISOLATED);
- 	br_set_port_flag(p, tb, IFLA_BRPORT_LOCKED, BR_PORT_LOCKED);
+ 	br_set_port_flag(p, tb, IFLA_BRPORT_MAB, BR_PORT_MAB);
+ 	br_set_port_flag(p, tb, IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
+ 			 BR_NEIGH_VLAN_SUPPRESS);
 +	br_set_port_flag(p, tb, IFLA_BRPORT_BPDU_FILTER, BR_BPDU_FILTER);
  
- 	changed_mask = old_flags ^ p->flags;
- 
+ 	if ((p->flags & BR_PORT_MAB) &&
+ 	    (!(p->flags & BR_PORT_LOCKED) || !(p->flags & BR_LEARNING))) {
 --- a/net/core/rtnetlink.c
 +++ b/net/core/rtnetlink.c
 @@ -57,7 +57,7 @@
  #include "dev.h"
  
  #define RTNL_MAX_TYPE		50
--#define RTNL_SLAVE_MAX_TYPE	40
-+#define RTNL_SLAVE_MAX_TYPE	41
+-#define RTNL_SLAVE_MAX_TYPE	44
++#define RTNL_SLAVE_MAX_TYPE	45
  
  struct rtnl_link {
  	rtnl_doit_func		doit;

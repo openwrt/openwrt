@@ -26,8 +26,8 @@ Signed-off-by: Daniel González Cabanelas <dgcbueu@gmail.com>
  	dev_dbg(&client->dev, "%s\n", __func__);
  
 @@ -868,6 +869,12 @@ static int rs5c372_probe(struct i2c_clie
- 	else
  		rs5c372->type = id->driver_data;
+ 	}
  
 +#ifdef CONFIG_OF
 +	if(of_property_read_bool(client->dev.of_node,

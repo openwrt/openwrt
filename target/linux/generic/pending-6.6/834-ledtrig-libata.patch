@@ -46,7 +46,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 --- a/drivers/ata/libata-core.c
 +++ b/drivers/ata/libata-core.c
 @@ -663,6 +663,19 @@ u64 ata_tf_read_block(const struct ata_t
- 	return block;
+ 	qc->flags |= ATA_QCFLAG_HAS_CDL | ATA_QCFLAG_RESULT_TF;
  }
  
 +#ifdef CONFIG_ATA_LEDS
@@ -85,10 +85,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ata_sff_port_init(ap);
  
  	return ap;
-@@ -5473,6 +5492,12 @@ static void ata_host_release(struct kref
- 
+@@ -5469,6 +5488,12 @@ static void ata_host_release(struct kref
  		kfree(ap->pmp_link);
  		kfree(ap->slave_link);
+ 		kfree(ap->ncq_sense_buf);
 +#ifdef CONFIG_ATA_LEDS
 +		if (ap->ledtrig) {
 +			led_trigger_unregister(ap->ledtrig);
@@ -145,5 +145,5 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#endif
 +
  	/* owned by EH */
+ 	u8			*ncq_sense_buf;
  	u8			sector_buf[ATA_SECT_SIZE] ____cacheline_aligned;
- };

@@ -21,10 +21,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
  #include "check.h"
  
- static int (*check_part[])(struct parsed_partitions *) = {
+ static int (*const check_part[])(struct parsed_partitions *) = {
 @@ -298,6 +300,43 @@ static ssize_t whole_disk_show(struct de
  }
- static DEVICE_ATTR(whole_disk, 0444, whole_disk_show, NULL);
+ static const DEVICE_ATTR(whole_disk, 0444, whole_disk_show, NULL);
  
 +static struct fwnode_handle *find_partition_fwnode(struct block_device *bdev)
 +{

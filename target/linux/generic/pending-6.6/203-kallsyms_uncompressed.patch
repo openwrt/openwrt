@@ -66,8 +66,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int base_relative;
  static int lto_clang;
 @@ -608,6 +609,9 @@ static void write_src(void)
- 			(unsigned char)(table[i]->seq >> 0));
- 	printf("\n");
+ 
+ 	free(markers);
  
 +	if (uncompressed)
 +		return;

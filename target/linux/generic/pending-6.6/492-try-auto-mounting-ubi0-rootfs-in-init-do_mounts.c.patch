@@ -40,14 +40,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #ifdef CONFIG_ROOT_NFS
  
  #define NFSROOT_TIMEOUT_MIN	5
-@@ -579,6 +602,10 @@ void __init mount_root(void)
- 		return;
- 	}
- #endif
+@@ -408,6 +408,11 @@ void __init mount_root(void)
+ 
+ void __init mount_root(char *root_device_name)
+ {
 +#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
 +	if (!mount_ubi_rootfs())
 +		return;
 +#endif
- 	if (ROOT_DEV == 0 && root_device_name && root_fs_names) {
- 		if (mount_nodev_root() == 0)
- 			return;
++
+ 	switch (ROOT_DEV) {
+ 	case Root_NFS:
+ 		mount_nfs_root();

@@ -17,9 +17,9 @@ Subject: [PATCH] fs: add cdrom dependency
  	tristate "Apple Macintosh file system support"
  	depends on BLOCK
 +	select CDROM
+ 	select BUFFER_HEAD
  	select NLS
- 	help
- 	  If you say Y here, you will be able to mount Macintosh-formatted
+ 	select LEGACY_DIRECT_IO
 --- a/fs/hfsplus/Kconfig
 +++ b/fs/hfsplus/Kconfig
 @@ -2,6 +2,7 @@
@@ -27,9 +27,9 @@ Subject: [PATCH] fs: add cdrom dependency
  	tristate "Apple Extended HFS file system support"
  	depends on BLOCK
 +	select CDROM
+ 	select BUFFER_HEAD
  	select NLS
  	select NLS_UTF8
- 	help
 --- a/fs/isofs/Kconfig
 +++ b/fs/isofs/Kconfig
 @@ -1,6 +1,7 @@
@@ -37,9 +37,9 @@ Subject: [PATCH] fs: add cdrom dependency
  config ISO9660_FS
  	tristate "ISO 9660 CDROM file system support"
 +	select CDROM
+ 	select BUFFER_HEAD
  	help
  	  This is the standard file system used on CD-ROMs.  It was previously
- 	  known as "High Sierra File System" and is called "hsfs" on other
 --- a/fs/udf/Kconfig
 +++ b/fs/udf/Kconfig
 @@ -1,6 +1,7 @@
@@ -47,6 +47,6 @@ Subject: [PATCH] fs: add cdrom dependency
  config UDF_FS
  	tristate "UDF file system support"
 +	select CDROM
+ 	select BUFFER_HEAD
  	select CRC_ITU_T
  	select NLS
- 	help

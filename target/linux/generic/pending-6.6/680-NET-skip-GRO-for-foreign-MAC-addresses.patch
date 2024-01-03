@@ -28,13 +28,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif
 +	__u8			gro_skip:1;
  
+ #if IS_ENABLED(CONFIG_IP_VS)
  	__u8			ipvs_property:1;
- 	__u8			inner_protocol_type:1;
 --- a/net/core/gro.c
 +++ b/net/core/gro.c
 @@ -491,6 +491,9 @@ static enum gro_result dev_gro_receive(s
+ 	enum gro_result ret;
  	int same_flow;
- 	int grow;
  
 +	if (skb->gro_skip)
 +		goto normal;
@@ -109,9 +109,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER,
  				      &changeupper_info.info);
  
-@@ -8824,6 +8868,7 @@ int dev_set_mac_address(struct net_devic
- 	if (err)
- 		return err;
+@@ -8821,6 +8865,7 @@ int dev_set_mac_address(struct net_devic
+ 			return err;
+ 	}
  	dev->addr_assign_type = NET_ADDR_SET;
 +	netdev_update_addr_mask(dev);
  	call_netdevice_notifiers(NETDEV_CHANGEADDR, dev);

@@ -33,7 +33,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
  source "block/partitions/Kconfig"
  
- config BLOCK_COMPAT
+ config BLK_MQ_PCI
 --- a/block/Makefile
 +++ b/block/Makefile
 @@ -35,6 +35,7 @@ obj-$(CONFIG_BLK_DEV_ZONED)	+= blk-zoned
@@ -97,7 +97,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (!bnv->bdev->bd_disk->fops->open)
 +		return -EIO;
 +
-+	ret = bnv->bdev->bd_disk->fops->open(bnv->bdev, FMODE_READ);
++	ret = bnv->bdev->bd_disk->fops->open(bnv->bdev->bd_disk, BLK_OPEN_READ);
 +	if (ret)
 +		return ret;
 +
@@ -119,12 +119,12 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	}
 +
 +err_release_bdev:
-+	bnv->bdev->bd_disk->fops->release(bnv->bdev->bd_disk, FMODE_READ);
++	bnv->bdev->bd_disk->fops->release(bnv->bdev->bd_disk);
 +
 +	return ret;
 +}
 +
-+static int blk_nvmem_register(struct device *dev, struct class_interface *iface)
++static int blk_nvmem_register(struct device *dev)
 +{
 +	struct device_node *np = dev_of_node(dev);
 +	struct block_device *bdev = dev_to_bdev(dev);
@@ -192,7 +192,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	return 0;
 +}
 +
-+static void blk_nvmem_unregister(struct device *dev, struct class_interface *iface)
++static void blk_nvmem_unregister(struct device *dev)
 +{
 +	struct block_device *bdev = dev_to_bdev(dev);
 +	struct blk_nvmem *bnv_c, *bnv = NULL;

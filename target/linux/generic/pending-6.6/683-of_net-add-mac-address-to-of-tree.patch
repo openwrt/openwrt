@@ -18,8 +18,8 @@ property. This way, the MAC address can be accessed using procfs.
 --- a/net/core/of_net.c
 +++ b/net/core/of_net.c
 @@ -95,6 +95,27 @@ static int of_get_mac_addr_nvmem(struct
- 	return 0;
  }
+ EXPORT_SYMBOL(of_get_mac_address_nvmem);
  
 +static int of_add_mac_address(struct device_node *np, u8* addr)
 +{
@@ -62,8 +62,8 @@ property. This way, the MAC address can be accessed using procfs.
 -		return 0;
 +		goto found;
  
--	return of_get_mac_addr_nvmem(np, addr);
-+	ret = of_get_mac_addr_nvmem(np, addr);
+-	return of_get_mac_address_nvmem(np, addr);
++	ret = of_get_mac_address_nvmem(np, addr);
 +	if (ret)
 +		return ret;
 +

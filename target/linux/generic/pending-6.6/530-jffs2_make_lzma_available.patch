@@ -66,26 +66,33 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +CFLAGS_compr_lzma.o += -Iinclude/linux -Ilib/lzma
 --- a/fs/jffs2/compr.c
 +++ b/fs/jffs2/compr.c
-@@ -378,6 +378,9 @@ int __init jffs2_compressors_init(void)
- #ifdef CONFIG_JFFS2_LZO
- 	jffs2_lzo_init();
- #endif
-+#ifdef CONFIG_JFFS2_LZMA
-+	jffs2_lzma_init();
-+#endif
+@@ -381,6 +381,9 @@ int __init jffs2_compressors_init(void)
+ 	ret = jffs2_lzo_init();
+ 	if (ret)
+ 		goto exit_dynrubin;
++	ret = jffs2_lzma_init();
++	if (ret)
++		goto exit_lzo;
+ 
+ 
  /* Setting default compression mode */
- #ifdef CONFIG_JFFS2_CMODE_NONE
- 	jffs2_compression_mode = JFFS2_COMPR_MODE_NONE;
-@@ -401,6 +404,9 @@ int __init jffs2_compressors_init(void)
+@@ -402,6 +405,8 @@ int __init jffs2_compressors_init(void)
+ #endif
+ 	return 0;
+ 
++exit_lzo:
++	jffs2_lzo_exit();
+ exit_dynrubin:
+ 	jffs2_dynrubin_exit();
+ exit_runinmips:
+@@ -417,6 +422,7 @@ int __init jffs2_compressors_init(void)
  int jffs2_compressors_exit(void)
  {
  /* Unregistering compressors */
-+#ifdef CONFIG_JFFS2_LZMA
 +	jffs2_lzma_exit();
-+#endif
- #ifdef CONFIG_JFFS2_LZO
  	jffs2_lzo_exit();
- #endif
+ 	jffs2_dynrubin_exit();
+ 	jffs2_rubinmips_exit();
 --- a/fs/jffs2/compr.h
 +++ b/fs/jffs2/compr.h
 @@ -29,9 +29,9 @@
@@ -101,13 +108,16 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  
  #define JFFS2_RUBINMIPS_DISABLED /* RUBINs will be used only */
  #define JFFS2_DYNRUBIN_DISABLED  /*	   for decompression */
-@@ -101,5 +101,9 @@ void jffs2_zlib_exit(void);
- int jffs2_lzo_init(void);
- void jffs2_lzo_exit(void);
+@@ -115,5 +115,12 @@ extern void jffs2_lzo_exit(void);
+ static inline int jffs2_lzo_init(void) { return 0; }
+ static inline void jffs2_lzo_exit(void) {}
  #endif
 +#ifdef CONFIG_JFFS2_LZMA
-+int jffs2_lzma_init(void);
-+void jffs2_lzma_exit(void);
++extern int jffs2_lzma_init(void);
++extern void jffs2_lzma_exit(void);
++#else
++static inline int jffs2_lzma_init(void) { return 0; }
++static inline void jffs2_lzma_exit(void) {}
 +#endif
  
  #endif /* __JFFS2_COMPR_H__ */

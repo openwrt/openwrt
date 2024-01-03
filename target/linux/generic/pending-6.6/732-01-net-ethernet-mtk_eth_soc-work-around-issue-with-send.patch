@@ -16,6 +16,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -26,6 +26,7 @@
+ #include <linux/bitfield.h>
+ #include <net/dsa.h>
+ #include <net/dst_metadata.h>
++#include <net/gso.h>
+ #include <net/page_pool/helpers.h>
+
+ #include "mtk_eth_soc.h"
 @@ -1562,12 +1562,28 @@ static void mtk_wake_queue(struct mtk_et
  	}
  }

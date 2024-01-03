@@ -10,14 +10,14 @@ string.
 
 --- a/drivers/nvmem/Kconfig
 +++ b/drivers/nvmem/Kconfig
-@@ -1,6 +1,7 @@
- # SPDX-License-Identifier: GPL-2.0-only
+@@ -2,6 +2,7 @@
  menuconfig NVMEM
  	bool "NVMEM Support"
-+	select GENERIC_NET_UTILS
  	imply NVMEM_LAYOUTS
++	select GENERIC_NET_UTILS
  	help
  	  Support for NVMEM(Non Volatile Memory) devices like EEPROM, EFUSES...
+ 
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
 @@ -7,9 +7,12 @@
