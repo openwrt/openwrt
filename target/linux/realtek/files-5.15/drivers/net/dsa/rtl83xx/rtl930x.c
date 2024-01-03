@@ -258,9 +258,9 @@ static void rtl930x_vlan_fwd_on_inner(int port, bool is_set)
 {
 	/* Always set all tag modes to fwd based on either inner or outer tag */
 	if (is_set)
-		sw_w32_mask(0, 0xf, RTL930X_VLAN_PORT_FWD + (port << 2));
-	else
 		sw_w32_mask(0xf, 0, RTL930X_VLAN_PORT_FWD + (port << 2));
+	else
+		sw_w32_mask(0, 0xf, RTL930X_VLAN_PORT_FWD + (port << 2));
 }
 
 static void rtl930x_vlan_profile_setup(int profile)
