@@ -74,8 +74,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  struct page;
  struct kmem_cache;
 @@ -51,7 +55,9 @@ typedef __s8  s8;
- #define __force
  #define __user
+ #endif
  #define __must_check
 +#ifndef __cold
  #define __cold
@@ -108,7 +108,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/tools/arch/x86/include/asm/orc_types.h
 +++ b/tools/arch/x86/include/asm/orc_types.h
 @@ -40,7 +40,6 @@
- #define ORC_REG_MAX			15
+ #define ORC_TYPE_REGS_PARTIAL		4
  
  #ifndef __ASSEMBLY__
 -#include <asm/byteorder.h>
@@ -123,13 +123,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#if __BYTE_ORDER == __LITTLE_ENDIAN
  	unsigned	sp_reg:4;
  	unsigned	bp_reg:4;
- 	unsigned	type:2;
- 	unsigned	end:1;
+ 	unsigned	type:3;
+ 	unsigned	signal:1;
 -#elif defined(__BIG_ENDIAN_BITFIELD)
 +#elif __BYTE_ORDER == __BIG_ENDIAN
  	unsigned	bp_reg:4;
  	unsigned	sp_reg:4;
- 	unsigned	unused:5;
+ 	unsigned	unused:4;
 --- a/tools/arch/x86/lib/insn.c
 +++ b/tools/arch/x86/lib/insn.c
 @@ -15,7 +15,11 @@
@@ -199,15 +199,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	unsigned long  __rb_parent_color;
 --- a/tools/objtool/Makefile
 +++ b/tools/objtool/Makefile
-@@ -4,7 +4,7 @@ include ../scripts/Makefile.arch
+@@ -40,7 +40,7 @@ include ../scripts/Makefile.arch
+ OBJTOOL_CFLAGS += $(if $(elfshdr),,-DLIBELF_USE_DEPRECATED)
  
- # always use the host compiler
- AR	 = $(HOSTAR)
--CC	 = $(HOSTCC)
-+CC	 = $(HOSTCC) $(HOST_EXTRACFLAGS)
- LD	 = $(HOSTLD)
+ # Always want host compilation.
+-HOST_OVERRIDES := CC="$(HOSTCC)" LD="$(HOSTLD)" AR="$(HOSTAR)"
++HOST_OVERRIDES := CC="$(HOSTCC) $(HOST_EXTRACFLAGS)" LD="$(HOSTLD)" AR="$(HOSTAR)"
  
- ifeq ($(srctree),)
+ AWK = awk
+ MKDIR = mkdir
 @@ -43,6 +43,7 @@ BUILD_ORC := n
  
  ifeq ($(SRCARCH),x86)
@@ -252,8 +252,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 +#endif
  
- #define NEGATIVE_RELOC	((void *)-1L)
- 
+ static struct reloc *insn_reloc(struct objtool_file *file, struct instruction *insn)
+ {
 --- a/tools/objtool/include/objtool/objtool.h
 +++ b/tools/objtool/include/objtool/objtool.h
 @@ -12,7 +12,9 @@
@@ -268,10 +268,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool clean;
 --- a/tools/objtool/orc_dump.c
 +++ b/tools/objtool/orc_dump.c
-@@ -5,10 +5,10 @@
+@@ -4,10 +4,10 @@
+  */
  
  #include <unistd.h>
- #include <linux/objtool.h>
 -#include <asm/orc_types.h>
  #include <objtool/objtool.h>
  #include <objtool/warn.h>
@@ -285,7 +285,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 @@ -7,11 +7,11 @@
  #include <string.h>
  
- #include <linux/objtool.h>
+ #include <linux/objtool_types.h>
 -#include <asm/orc_types.h>
  
  #include <objtool/check.h>

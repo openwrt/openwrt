@@ -14,39 +14,41 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/crypto/Kconfig
 +++ b/crypto/Kconfig
-@@ -142,13 +142,13 @@ config CRYPTO_MANAGER
+@@ -148,15 +148,15 @@ config CRYPTO_MANAGER
  	  cbc(aes).
  
  config CRYPTO_MANAGER2
 -	def_tristate CRYPTO_MANAGER || (CRYPTO_MANAGER!=n && CRYPTO_ALGAPI=y)
--	select CRYPTO_AEAD2
--	select CRYPTO_HASH2
--	select CRYPTO_SKCIPHER2
--	select CRYPTO_AKCIPHER2
--	select CRYPTO_KPP2
 -	select CRYPTO_ACOMP2
+-	select CRYPTO_AEAD2
+-	select CRYPTO_AKCIPHER2
+-	select CRYPTO_SIG2
+-	select CRYPTO_HASH2
+-	select CRYPTO_KPP2
+-	select CRYPTO_RNG2
+-	select CRYPTO_SKCIPHER2
 +	def_tristate CRYPTO_MANAGER || (CRYPTO_MANAGER!=n && CRYPTO_ALGAPI=y && !CRYPTO_MANAGER_DISABLE_TESTS)
-+	select CRYPTO_AEAD2 if !CRYPTO_MANAGER_DISABLE_TESTS
-+	select CRYPTO_HASH2 if !CRYPTO_MANAGER_DISABLE_TESTS
-+	select CRYPTO_SKCIPHER2 if !CRYPTO_MANAGER_DISABLE_TESTS
-+	select CRYPTO_AKCIPHER2 if !CRYPTO_MANAGER_DISABLE_TESTS
-+	select CRYPTO_KPP2 if !CRYPTO_MANAGER_DISABLE_TESTS
 +	select CRYPTO_ACOMP2 if !CRYPTO_MANAGER_DISABLE_TESTS
++	select CRYPTO_AEAD2 if !CRYPTO_MANAGER_DISABLE_TESTS
++	select CRYPTO_AKCIPHER2 if !CRYPTO_MANAGER_DISABLE_TESTS
++	select CRYPTO_SIG2 if !CRYPTO_MANAGER_DISABLE_TESTS
++	select CRYPTO_HASH2 if !CRYPTO_MANAGER_DISABLE_TESTS
++	select CRYPTO_KPP2 if !CRYPTO_MANAGER_DISABLE_TESTS
++	select CRYPTO_RNG2 if !CRYPTO_MANAGER_DISABLE_TESTS
++	select CRYPTO_SKCIPHER2 if !CRYPTO_MANAGER_DISABLE_TESTS
  
  config CRYPTO_USER
  	tristate "Userspace cryptographic algorithm configuration"
 --- a/crypto/algboss.c
 +++ b/crypto/algboss.c
-@@ -211,8 +211,12 @@ static int cryptomgr_schedule_test(struc
- 	type = alg->cra_flags;
+@@ -204,6 +204,10 @@ static int cryptomgr_schedule_test(struc
+ 	memcpy(param->alg, alg->cra_name, sizeof(param->alg));
+ 	param->type = alg->cra_flags;
  
- 	/* Do not test internal algorithms. */
 +#ifdef CONFIG_CRYPTO_MANAGER_DISABLE_TESTS
-+	type |= CRYPTO_ALG_TESTED;
-+#else
- 	if (type & CRYPTO_ALG_INTERNAL)
- 		type |= CRYPTO_ALG_TESTED;
++	param->type |= CRYPTO_ALG_TESTED;
 +#endif
- 
- 	param->type = type;
- 
++
+ 	thread = kthread_run(cryptomgr_test, param, "cryptomgr_test");
+ 	if (IS_ERR(thread))
+ 		goto err_free_param;

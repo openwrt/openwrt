@@ -19,11 +19,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1730,6 +1730,7 @@ enum netdev_priv_flags {
- 	/* was IFF_LIVE_RENAME_OK */
+@@ -1707,6 +1707,7 @@ enum netdev_priv_flags {
  	IFF_TX_SKB_NO_LINEAR		= BIT_ULL(31),
  	IFF_CHANGE_PROTO_DOWN		= BIT_ULL(32),
-+	IFF_NO_IP_ALIGN			= BIT_ULL(33),
+ 	IFF_SEE_ALL_HWTSTAMP_REQUESTS	= BIT_ULL(33),
++	IFF_NO_IP_ALIGN			= BIT_ULL(34),
  };
  
  #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN

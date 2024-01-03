@@ -14,20 +14,27 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/base/regmap/Kconfig
 +++ b/drivers/base/regmap/Kconfig
-@@ -4,10 +4,9 @@
+@@ -4,8 +4,7 @@
  # subsystems should select the appropriate symbols.
  
  config REGMAP
--	default y if (REGMAP_I2C || REGMAP_SPI || REGMAP_SPMI || REGMAP_W1 || REGMAP_AC97 || REGMAP_MMIO || REGMAP_IRQ || REGMAP_SOUNDWIRE || REGMAP_SOUNDWIRE_MBQ || REGMAP_SCCB || REGMAP_I3C || REGMAP_SPI_AVMM || REGMAP_MDIO)
+-	bool
+-	default y if (REGMAP_I2C || REGMAP_SPI || REGMAP_SPMI || REGMAP_W1 || REGMAP_AC97 || REGMAP_MMIO || REGMAP_IRQ || REGMAP_SOUNDWIRE || REGMAP_SOUNDWIRE_MBQ || REGMAP_SCCB || REGMAP_I3C || REGMAP_SPI_AVMM || REGMAP_MDIO || REGMAP_FSI)
++	tristate
  	select IRQ_DOMAIN if REGMAP_IRQ
  	select MDIO_BUS if REGMAP_MDIO
--	bool
-+	tristate
+ 	help
+@@ -19,7 +18,7 @@ config REGMAP
  
- config REGCACHE_COMPRESSED
- 	select LZO_COMPRESS
-@@ -15,53 +14,67 @@ config REGCACHE_COMPRESSED
- 	bool
+ config REGMAP_KUNIT
+ 	tristate "KUnit tests for regmap"
+-	depends on KUNIT && REGMAP
++	depends on KUNIT
+ 	default KUNIT_ALL_TESTS
+ 	select REGMAP_RAM
+ 
+@@ -34,60 +33,76 @@ config REGMAP_BUILD
+ 	  normally enabled.
  
  config REGMAP_AC97
 +	select REGMAP
@@ -70,6 +77,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	select REGMAP
  	bool
  
+ config REGMAP_RAM
++	select REGMAP
+ 	tristate
+ 
  config REGMAP_SOUNDWIRE
 +	select REGMAP
  	tristate
@@ -94,27 +105,28 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	select REGMAP
  	tristate
  	depends on SPI
+ 
+ config REGMAP_FSI
++	select REGMAP
+ 	tristate
+ 	depends on FSI
 --- a/drivers/base/regmap/Makefile
 +++ b/drivers/base/regmap/Makefile
-@@ -2,10 +2,14 @@
+@@ -2,9 +2,11 @@
  # For include/trace/define_trace.h to include trace.h
  CFLAGS_regmap.o := -I$(src)
  
 -obj-$(CONFIG_REGMAP) += regmap.o regcache.o
--obj-$(CONFIG_REGMAP) += regcache-rbtree.o regcache-flat.o
--obj-$(CONFIG_REGCACHE_COMPRESSED) += regcache-lzo.o
+-obj-$(CONFIG_REGMAP) += regcache-rbtree.o regcache-flat.o regcache-maple.o
 -obj-$(CONFIG_DEBUG_FS) += regmap-debugfs.o
-+regmap-core-objs = regmap.o regcache.o regcache-rbtree.o regcache-flat.o
++regmap-core-objs = regmap.o regcache.o regcache-rbtree.o regcache-flat.o regcache-maple.o
 +ifdef CONFIG_DEBUG_FS
 +regmap-core-objs += regmap-debugfs.o
 +endif
-+ifdef CONFIG_REGCACHE_COMPRESSED
-+regmap-core-objs += regcache-lzo.o
-+endif
 +obj-$(CONFIG_REGMAP) += regmap-core.o
+ obj-$(CONFIG_REGMAP_KUNIT) += regmap-kunit.o
  obj-$(CONFIG_REGMAP_AC97) += regmap-ac97.o
  obj-$(CONFIG_REGMAP_I2C) += regmap-i2c.o
- obj-$(CONFIG_REGMAP_SLIMBUS) += regmap-slimbus.o
 --- a/drivers/base/regmap/regmap.c
 +++ b/drivers/base/regmap/regmap.c
 @@ -9,6 +9,7 @@

@@ -27,8 +27,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#define SYMTAB_DISCARD_GPL
 +#endif
 +
- /* Align . to a 8 byte boundary equals to maximum function alignment. */
- #define ALIGN_FUNCTION()  . = ALIGN(8)
+ /* Align . function alignment. */
+ #define ALIGN_FUNCTION()  . = ALIGN(CONFIG_FUNCTION_ALIGNMENT)
  
 @@ -511,14 +521,14 @@
  	/* Kernel symbol table: Normal symbols */			\
@@ -64,12 +64,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	SYMTAB_DISCARD_GPL						\
  	*(.discard)							\
  	*(.discard.*)							\
- 	*(.modinfo)							\
---- a/include/linux/export.h
-+++ b/include/linux/export.h
-@@ -72,6 +72,12 @@ struct kernel_symbol {
- 
- #else
+ 	*(.export_symbol)						\
+--- a/include/linux/export-internal.h
++++ b/include/linux/export-internal.h
+@@ -23,6 +23,12 @@
+ #define __KSYM_REF(sym)		".long " #sym
+ #endif
  
 +#ifdef MODULE
 +#define __EXPORT_SUFFIX(sym)
@@ -80,39 +80,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /*
   * For every exported symbol, do the following:
   *
-@@ -87,7 +93,7 @@ struct kernel_symbol {
- 	extern typeof(sym) sym;							\
- 	extern const char __kstrtab_##sym[];					\
- 	extern const char __kstrtabns_##sym[];					\
--	asm("	.section \"__ksymtab_strings\",\"aMS\",%progbits,1	\n"	\
-+	asm("	.section \"__ksymtab_strings" __EXPORT_SUFFIX(sym) "\",\"aMS\",%progbits,1	\n"	\
- 	    "__kstrtab_" #sym ":					\n"	\
- 	    "	.asciz 	\"" #sym "\"					\n"	\
- 	    "__kstrtabns_" #sym ":					\n"	\
---- a/include/asm-generic/export.h
-+++ b/include/asm-generic/export.h
-@@ -31,6 +31,12 @@
- #endif
- .endm
- 
-+#ifdef MODULE
-+#define __EXPORT_SUFFIX(name)
-+#else
-+#define __EXPORT_SUFFIX(name) + #name
-+#endif
-+
- /*
-  * note on .section use: we specify progbits since usage of the "M" (SHF_MERGE)
-  * section flag requires it. Use '%progbits' instead of '@progbits' since the
-@@ -44,7 +50,7 @@
- __ksymtab_\name:
- 	__put \val, __kstrtab_\name
- 	.previous
--	.section __ksymtab_strings,"aMS",%progbits,1
-+	.section __ksymtab_strings __EXPORT_SUFFIX(name),"aMS",%progbits,1
- __kstrtab_\name:
- 	.asciz "\name"
- 	.previous
+@@ -35,7 +41,7 @@
+  * former apparently works on all arches according to the binutils source.
+  */
+ #define __KSYMTAB(name, sym, sec, ns)						\
+-	asm("	.section \"__ksymtab_strings\",\"aMS\",%progbits,1"	"\n"	\
++	asm("	.section \"__ksymtab_strings" __EXPORT_SUFFIX(sym) "\",\"aMS\",%progbits,1"	"\n"	\
+ 	    "__kstrtab_" #name ":"					"\n"	\
+ 	    "	.asciz \"" #name "\""					"\n"	\
+ 	    "__kstrtabns_" #name ":"					"\n"	\
 --- a/scripts/Makefile.build
 +++ b/scripts/Makefile.build
 @@ -388,7 +388,7 @@ targets += $(real-dtb-y) $(lib-y) $(alwa

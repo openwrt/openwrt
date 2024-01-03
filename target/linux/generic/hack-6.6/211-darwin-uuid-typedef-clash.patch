@@ -11,12 +11,12 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
 --- a/scripts/mod/file2alias.c
 +++ b/scripts/mod/file2alias.c
 @@ -38,6 +38,9 @@ typedef struct {
- 	__u8 b[16];
- } guid_t;
+ typedef uint16_t	__u16;
+ typedef unsigned char	__u8;
  
 +#ifdef __APPLE__
 +#define uuid_t compat_uuid_t
 +#endif
- /* backwards compatibility, don't use in new code */
+ /* UUID types for backward compatibility, don't use in new code */
  typedef struct {
  	__u8 b[16];

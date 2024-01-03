@@ -30,7 +30,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +#include <linux/of.h>
  #include <linux/phy.h>
  #include <linux/polynomial.h>
- #include <linux/netdevice.h>
+ #include <linux/property.h>
 @@ -33,6 +34,7 @@
  #define PHY_MIISTAT		0x18	/* MII state */
  #define PHY_IMASK		0x19	/* interrupt mask */
@@ -52,9 +52,9 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +/* LED */
 +#define VSPEC1_LED(x)		(0x1 + x)
 +
- /* SGMII */
- #define VSPEC1_SGMII_CTRL	0x08
- #define VSPEC1_SGMII_CTRL_ANEN	BIT(12)		/* Aneg enable */
+ #define PHY_PMA_MGBT_POLARITY	0x82
+ #define PHY_MDI_MDI_X_MASK	GENMASK(1, 0)
+ #define PHY_MDI_MDI_X_NORMAL	0x3
 @@ -241,6 +248,35 @@ out:
  	return ret;
  }
@@ -102,4 +102,4 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +	return gpy_led_write(phydev);
  }
  
- static bool gpy_has_broken_mdint(struct phy_device *phydev)
+ static int gpy_probe(struct phy_device *phydev)

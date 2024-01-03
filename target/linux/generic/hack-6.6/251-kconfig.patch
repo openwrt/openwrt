@@ -35,7 +35,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_ALGAPI
  
 @@ -75,7 +75,7 @@ config CRYPTO_AEAD2
- 	select CRYPTO_RNG2
+ 	select CRYPTO_ALGAPI2
  
  config CRYPTO_SKCIPHER
 -	tristate
@@ -44,7 +44,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_ALGAPI
  
 @@ -85,7 +85,7 @@ config CRYPTO_SKCIPHER2
- 	select CRYPTO_RNG2
+ 	select CRYPTO_ALGAPI2
  
  config CRYPTO_HASH
 -	tristate
@@ -136,7 +136,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  config SND_SEQ_DEVICE
  	tristate
 @@ -27,7 +27,7 @@ config SND_RAWMIDI
- 	select SND_SEQ_DEVICE if SND_SEQUENCER != n
+ 	  The device contains 16 substreams corresponding to UMP groups.
  
  config SND_COMPRESS_OFFLOAD
 -	tristate
