@@ -30,7 +30,7 @@ define KernelPackage/cryptodev
   TITLE:=Driver for cryptographic acceleration
   URL:=http://cryptodev-linux.org/
   DEPENDS:=+kmod-crypto-authenc +kmod-crypto-hash
-  FILES:=$(PKG_BUILD_DIR)/cryptodev.$(LINUX_KMOD_SUFFIX)
+  FILES:=$(PKG_BUILD_DIR)/cryptodev.ko
   AUTOLOAD:=$(call AutoLoad,50,cryptodev)
   MODPARAMS.cryptodev:=cryptodev_verbosity=-1
 endef
