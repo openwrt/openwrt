@@ -33,6 +33,7 @@ define KernelPackage/qca-nss-cfi-cryptoapi
   TITLE:=Kernel driver for NSS cfi
   FILES:=$(PKG_BUILD_DIR)/$(CFI_CRYPTOAPI_DIR)/qca-nss-cfi-cryptoapi.ko
   AUTOLOAD:=$(call AutoLoad,59,qca-nss-cfi-cryptoapi)
+  MODPARAMS.qca-nss-cfi-cryptoapi=enable_ablk=n
 endef
 
 define Build/InstallDev
@@ -44,6 +45,22 @@ endef
 define KernelPackage/qca-nss-cfi/Description
 This package contains a NSS cfi driver for QCA chipset
 endef
+
+#define KernelPackage/qca-nss-cfi-ocf
+#  SECTION:=kernel
+#  CATEGORY:=Kernel modules
+#  SUBMENU:=Cryptographic API modules
+#  DEPENDS:=@TARGET_qualcommax +kmod-qca-nss-crypto +PACKAGE_kmod-crypto-ocf:kmod-crypto-ocf
+#  TITLE:=Kernel driver for NSS cfi
+#  FILES:=$(PKG_BUILD_DIR)/$(CFI_OCF_DIR)/qca-nss-cfi-ocf.ko
+#
+#ifdef CFI_IPSEC_DIR
+#  FILES+=$(PKG_BUILD_DIR)/$(CFI_IPSEC_DIR)/qca-nss-ipsec.ko
+#  AUTOLOAD:=$(call AutoLoad,61,qca-nss-cfi-ocf qca-nss-ipsec)
+#else
+#  AUTOLOAD:=$(call AutoLoad,61,qca-nss-cfi-ocf)
+#endif
+#endef
 
 EXTRA_CFLAGS+= \
 	-DCONFIG_NSS_DEBUG_LEVEL=4 \
@@ -63,6 +80,10 @@ MAKE_OPTS+= \
 	NSS_CRYPTOAPI_ABLK=n \
 	NSS_CRYPTOAPI_SKCIPHER=y
 endif
+
+#ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-cfi-ocf),)
+#MAKE_OPTS+=ocf=y
+#endif
 
 ifeq ($(CONFIG_TARGET_BOARD), "qualcommax")
 	SOC:=$(CONFIG_TARGET_SUBTARGET)
@@ -85,3 +106,4 @@ define Build/Compile
 endef
 
 $(eval $(call KernelPackage,qca-nss-cfi-cryptoapi))
+#$(eval $(call KernelPackage,qca-nss-cfi-ocf))
