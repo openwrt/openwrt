@@ -943,6 +943,10 @@ hostapd_set_bss_options() {
 				set_default pmk_r1_push 0
 
 				[ -n "$r0kh" -a -n "$r1kh" ] || {
+					if [ -z "$auth_secret" -a -z "$key" ]; then
+						wireless_setup_vif_failed FT_KEY_CANT_BE_DERIVED
+						return 1
+					fi
 					ft_key=`echo -n "$mobility_domain/${auth_secret:-${key}}" | md5sum | awk '{print $1}'`
 
 					set_default r0kh "ff:ff:ff:ff:ff:ff,*,$ft_key"
