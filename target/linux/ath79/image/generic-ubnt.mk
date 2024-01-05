@@ -244,13 +244,6 @@ define Device/ubnt_unifi-ap-lr
 endef
 TARGET_DEVICES += ubnt_unifi-ap-lr
 
-define Device/ubnt_unifiac
-  DEVICE_VENDOR := Ubiquiti
-  SOC := qca9563
-  IMAGE_SIZE := 15488k
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-endef
-
 define Device/ubnt_unifiac-lite
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC Lite
