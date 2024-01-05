@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/broadcom/b44.c
 +++ b/drivers/net/ethernet/broadcom/b44.c
-@@ -429,10 +429,34 @@ static void b44_wap54g10_workaround(stru
+@@ -430,10 +430,34 @@ static void b44_wap54g10_workaround(stru
  error:
  	pr_warn("PHY: cannot reset MII transceiver isolate bit\n");
  }
@@ -35,7 +35,7 @@
  #endif
  
  static int b44_setup_phy(struct b44 *bp)
-@@ -441,6 +465,7 @@ static int b44_setup_phy(struct b44 *bp)
+@@ -442,6 +466,7 @@ static int b44_setup_phy(struct b44 *bp)
  	int err;
  
  	b44_wap54g10_workaround(bp);
@@ -43,7 +43,7 @@
  
  	if (bp->flags & B44_FLAG_EXTERNAL_PHY)
  		return 0;
-@@ -2173,6 +2198,8 @@ static int b44_get_invariants(struct b44
+@@ -2175,6 +2200,8 @@ static int b44_get_invariants(struct b44
  	 * valid PHY address. */
  	bp->phy_addr &= 0x1F;
  
