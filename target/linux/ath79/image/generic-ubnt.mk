@@ -229,6 +229,13 @@ define Device/ubnt_routerstation-pro
 endef
 TARGET_DEVICES += ubnt_routerstation-pro
 
+define Device/ubnt_uk-ultra
+  $(Device/ubnt_unifiac)
+  DEVICE_MODEL := UniFi Swiss Army Knife Ultra
+  DEVICE_PACKAGES += rssileds -swconfig
+endef
+TARGET_DEVICES += ubnt_uk-ultra
+
 define Device/ubnt_unifi-ap
   $(Device/ubnt-bz)
   DEVICE_MODEL := UniFi AP
