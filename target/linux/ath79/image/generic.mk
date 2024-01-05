@@ -1533,7 +1533,7 @@ define Device/engenius_ews511ap
   SOC := qca9531
   DEVICE_VENDOR := EnGenius
   DEVICE_MODEL := EWS511AP
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += engenius_ews511ap
@@ -1670,7 +1670,7 @@ define Device/glinet_gl-ar750
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-AR750
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k ath10k-firmware-qca9887
   IMAGE_SIZE := 16000k
   SUPPORTED_DEVICES += gl-ar750
 endef
@@ -1708,7 +1708,7 @@ define Device/glinet_gl-x750
   SOC := qca9531
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-X750
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k ath10k-firmware-qca9887
   IMAGE_SIZE := 16000k
 endef
 TARGET_DEVICES += glinet_gl-x750
@@ -2012,7 +2012,7 @@ define Device/nec_wg800hp
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size | \
 	xor-image -p 6A57190601121E4C004C1E1201061957 -x | nec-fw LASER_ATERM
-  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9887-ct-full-htt
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887
 endef
 TARGET_DEVICES += nec_wg800hp
 
@@ -2665,7 +2665,7 @@ define Device/qxwlan_e600gac-v2
   SOC := qca9531
   DEVICE_VENDOR := Qxwlan
   DEVICE_MODEL := E600GAC
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887
   SUPPORTED_DEVICES += e600gac-v2
 endef
 
@@ -3134,7 +3134,7 @@ define Device/yuncore_a770
   SOC := qca9531
   DEVICE_VENDOR := YunCore
   DEVICE_MODEL := A770
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9887-ct
+  DEVICE_PACKAGES := kmod-ath10k ath10k-firmware-qca9887
   IMAGE_SIZE := 16000k
   IMAGES += tftp.bin
   IMAGE/tftp.bin := $$(IMAGE/sysupgrade.bin) | yuncore-tftp-header-16m
