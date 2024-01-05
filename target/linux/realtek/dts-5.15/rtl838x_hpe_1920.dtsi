@@ -50,43 +50,43 @@
 				read-only;
 			};
 
-			partition@0x60000 {
+			partition@60000 {
 				label = "bootware_data";
 				reg = <0x60000 0x30000>;
 				read-only;
 			};
 
-			partition@0x90000 {
+			partition@90000 {
 				label = "bootware_extend";
 				reg = <0x90000 0x40000>;
 				read-only;
 			};
 
-			partition@0x100000 {
+			partition@100000 {
 				label = "bootware_basic_backup";
 				reg = <0x100000 0x50000>;
 				read-only;
 			};
 
-			partition@0x160000 {
+			partition@160000 {
 				label = "bootware_data_backup";
 				reg = <0x160000 0x30000>;
 				read-only;
 			};
 
-			partition@0x190000 {
+			partition@190000 {
 				label = "bootware_extend_backup";
 				reg = <0x190000 0x40000>;
 				read-only;
 			};
 
-			partition@0x300000 {
+			partition@300000 {
 				label = "firmware";
 				compatible = "h3c,vfs-firmware";
 				reg = <0x300000 0x1cf0000>;
 			};
 
-			partition@0x1ff0000 {
+			partition@1ff0000 {
 				label = "factory";
 				reg = <0x1ff0000 0x10000>;
 				read-only;

@@ -72,6 +72,7 @@ platform_check_image() {
 	buffalo,wsr-3200ax4s)
 		buffalo_check_image "$board" "$magic" "$1" || return 1
 		;;
+pro-ai-r32-a1|\
 	elecom,wrc-x3200gst3|\
 	mediatek,mt7622-rfb1-ubi|\
 	netgear,wax206|\
