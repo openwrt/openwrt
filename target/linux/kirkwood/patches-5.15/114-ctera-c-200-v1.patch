@@ -49,3 +49,12 @@
  			function = LED_FUNCTION_STATUS;
  			color = <LED_COLOR_ID_GREEN>;
  			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+@@ -240,7 +252,7 @@
+ 	};
+ 
+ 	partition@7a00000 {
+-		label = "rootfs";
++		label = "ubi";
+ 		reg = <0x7a00000 0x8600000>;
+ 	};
+ };

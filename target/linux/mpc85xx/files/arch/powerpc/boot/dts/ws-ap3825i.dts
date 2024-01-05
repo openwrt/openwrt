@@ -9,6 +9,9 @@
 	model = "Extreme Networks WS-AP3825i";
 	compatible = "extreme-networks,ws-ap3825i";
 
+	#address-cells = <2>;
+	#size-cells = <2>;
+
 	aliases {
 		ethernet0 = &enet0;
 		ethernet1 = &enet2;
@@ -301,8 +304,18 @@
 	};
 
 	memory {
-		/* Reserve upper MB for second-core-bootpage */
-		reg = <0x0 0x0 0x0 0xff00000>;
+		reg = <0x0 0x0 0x0 0x10000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		cpu1-bootpage@e000000 {
+			/* Reserve upper 1 MB for second-core-bootpage */
+			reg = <0x0 0xff00000 0x0 0x100000>;
+		};
 	};
 
 	soc@ffe00000 {

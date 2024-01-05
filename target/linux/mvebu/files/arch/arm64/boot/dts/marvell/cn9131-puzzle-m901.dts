@@ -244,6 +244,10 @@
 	};
 };
 
+&cp0_rtc {
+	status = "disabled";
+};
+
 &cp0_syscon0 {
 	cp0_pinctrl: pinctrl {
 		compatible = "marvell,cp115-standalone-pinctrl";
@@ -365,6 +369,10 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&cp1_i2c0_pins>;
 	clock-frequency = <100000>;
+};
+
+&cp1_rtc {
+	status = "disabled";
 };
 
 &cp1_syscon0 {

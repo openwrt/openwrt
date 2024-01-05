@@ -1947,6 +1947,20 @@ define Device/renkforce_ws-wn530hp3-a
 endef
 TARGET_DEVICES += renkforce_ws-wn530hp3-a
 
+define Device/rostelecom_rt-fe-1a
+  $(Device/sercomm_dxx)
+  IMAGE_SIZE := 24576k
+  SERCOMM_HWID := CX4
+  SERCOMM_HWVER := 11300
+  SERCOMM_SWVER := 2010
+  DEVICE_VENDOR := Rostelecom
+  DEVICE_MODEL := RT-FE-1A
+  DEVICE_ALT0_VENDOR := Sercomm
+  DEVICE_ALT0_MODEL := RT-FE-1A
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware
+endef
+TARGET_DEVICES += rostelecom_rt-fe-1a
+
 define Device/rostelecom_rt-sf-1
   $(Device/sercomm_dxx)
   IMAGE_SIZE := 32768k
@@ -1973,6 +1987,7 @@ TARGET_DEVICES += samknows_whitebox-v8
 
 define Device/sercomm_na502
   $(Device/nand)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 20480k
   DEVICE_VENDOR := SERCOMM
   DEVICE_MODEL := NA502
@@ -2518,7 +2533,7 @@ define Device/wifire_s1500-nbn
   IMAGE_SIZE := 51200k
   IMAGE/factory.img := append-kernel | sercomm-kernel-factory | \
 	sercomm-reset-slot1-chksum | append-ubi | check-size | \
-	sercomm-factory-cqr | sercomm-fix-buc-pid | sercomm-mkhash | \
+	sercomm-factory-cqr | sercomm-pid-setbit 0x13 | sercomm-mkhash | \
 	sercomm-crypto
   SERCOMM_HWID := BUC
   SERCOMM_HWVER := 10000

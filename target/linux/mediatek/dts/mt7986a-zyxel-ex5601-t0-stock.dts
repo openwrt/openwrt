@@ -199,7 +199,7 @@
 			reg = <6>;
 		};
 
-		switch@0 {
+		switch@1f {
 			compatible = "mediatek,mt7531";
 			reg = <31>;
 			reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
@@ -445,8 +445,8 @@
 		compatible = "spi-nand";
 		reg = <1>;
 		spi-max-frequency = <10000000>;
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		partitions {
 			compatible = "fixed-partitions";

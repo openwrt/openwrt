@@ -81,7 +81,7 @@
 };
 
 &mdio_bus {
-	switch: switch@0 {
+	switch: switch@1f {
 		compatible = "mediatek,mt7531";
 		reg = <31>;
 		reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
@@ -104,8 +104,8 @@
 		reg = <0>;
 
 		spi-max-frequency = <52000000>;
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		partitions {
 			compatible = "fixed-partitions";
