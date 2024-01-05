@@ -104,7 +104,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 +obj-$(CONFIG_USB_FOTG210_UDC)	+= fotg210-udc.o
 --- a/drivers/usb/host/fotg210-hcd.c
 +++ /dev/null
-@@ -1,5727 +0,0 @@
+@@ -1,5724 +0,0 @@
 -// SPDX-License-Identifier: GPL-2.0+
 -/* Faraday FOTG210 EHCI-like driver
 - *
@@ -536,8 +536,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 -			temp = size;
 -		size -= temp;
 -		next += temp;
--		if (temp == size)
--			goto done;
 -	}
 -
 -	temp = snprintf(next, size, "\n");
@@ -547,7 +545,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 -	size -= temp;
 -	next += temp;
 -
--done:
 -	*sizep = size;
 -	*nextp = next;
 -}
