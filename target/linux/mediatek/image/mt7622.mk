@@ -37,9 +37,15 @@ define Build/bl31-uboot
 	cat $(STAGING_DIR_IMAGE)/mt7622_$1-u-boot.fip >> $@
 endef
 
-# Append header to a D-Link M32 Kernel 1 partition
-define Build/m32-recovery-header-kernel1
-	echo -en "DLK6E6010001\x00\x00\xCF\x33" > "$@.header"
+# Append header to a D-Link M32/R32 Kernel 1 partition
+define Build/m32-r32-recovery-header-kernel1
+	$(eval header_start=$(word 1,$(1)))
+# create $@.header without the checksum
+	echo -en "$(header_start)\x00\x00" > "$@.header"
+# Calculate checksum over data area ($@) and append it to the header.
+# The checksum is the 2byte-sum over the whole data area.
+# Every overflow during the checksum calculation must increment the current checksum value by 1.
+	od -v -w2 -tu2 -An --endian little "$@" | awk '{ s+=$$1; } END { s%=65535; printf "%c%c",s%256,s/256; }' >> "$@.header"
 	echo -en "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x8D\x57\x30\x0B" >> "$@.header"
 # Byte 0-3: Erase Start 0x002C0000
 # Byte 4-7: Erase Length 0x02D00000
@@ -48,9 +54,11 @@ define Build/m32-recovery-header-kernel1
 	echo -en "\x00\x00\x2C\x00\x00\x00\xD0\x02\x00\x00\x2C\x00\x00\x00\xD0\x02" >> "$@.header"
 # Only zeros
 	echo -en "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" >> "$@.header"
-# Note: The last 2 bytes of the following line are the checksum of the header
-# If any data in the header will be changed, the checksum must be re-calculated
-	echo -en "\x42\x48\x02\x00\x00\x00\x08\x00\x00\x00\x00\x00\x60\x6E\x68\x61" >> "$@.header"
+# Last 16 bytes, but without checksum
+	echo -en "\x42\x48\x02\x00\x00\x00\x08\x00\x00\x00\x00\x00\x60\x6E" >> "$@.header"
+# Calculate and append checksum: The checksum must be set so that the 2byte-sum of the whole header is 0.
+# Every overflow during the checksum calculation must increment the current checksum value by 1.
+	od -v -w2 -tu2 -An --endian little "$@.header" | awk '{s+=65535-$$1;}END{s%=65535;printf "%c%c",s%256,s/256;}' >> "$@.header"
 	cat "$@.header" "$@" > "$@.new"
 	mv "$@.new" "$@"
 	rm "$@.header"
@@ -168,12 +176,10 @@ define Device/buffalo_wsr-3200ax4s
 endef
 TARGET_DEVICES += buffalo_wsr-3200ax4s
 
-define Device/dlink_eagle-pro-ai-m32-a1
+define Device/dlink_eagle-pro-ai-ax3200-a1
   IMAGE_SIZE := 46080k
   DEVICE_VENDOR := D-Link
-  DEVICE_MODEL := EAGLE PRO AI M32
   DEVICE_VARIANT := A1
-  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-m32-a1
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915-firmware
   KERNEL_SIZE := 8192k
@@ -183,9 +189,23 @@ define Device/dlink_eagle-pro-ai-m32-a1
   IMAGES += tftp.bin recovery.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/tftp.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size
-  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | pad-to $$(IMAGE_SIZE) | m32-recovery-header-kernel1
+endef
+
+define Device/dlink_eagle-pro-ai-m32-a1
+  $(Device/dlink_eagle-pro-ai-ax3200-a1)
+  DEVICE_MODEL := EAGLE PRO AI M32
+  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-m32-a1
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | pad-to $$(IMAGE_SIZE) | m32-r32-recovery-header-kernel1 DLK6E6010001
 endef
 TARGET_DEVICES += dlink_eagle-pro-ai-m32-a1
+
+define Device/dlink_eagle-pro-ai-r32-a1
+  $(Device/dlink_eagle-pro-ai-ax3200-a1)
+  DEVICE_MODEL := EAGLE PRO AI R32
+  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-r32-a1
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | pad-to $$(IMAGE_SIZE) | m32-r32-recovery-header-kernel1 DLK6E6015001
+endef
+TARGET_DEVICES += dlink_eagle-pro-ai-r32-a1
 
 define Device/elecom_wrc-2533gent
   DEVICE_VENDOR := Elecom

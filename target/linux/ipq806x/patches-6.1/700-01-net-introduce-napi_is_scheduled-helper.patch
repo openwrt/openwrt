@@ -66,7 +66,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  /**
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -6591,7 +6591,7 @@ static int __napi_poll(struct napi_struc
+@@ -6594,7 +6594,7 @@ static int __napi_poll(struct napi_struc
  	 * accidentally calling ->poll() when NAPI is not scheduled.
  	 */
  	work = 0;

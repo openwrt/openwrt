@@ -359,8 +359,7 @@ define KernelPackage/fs-ksmbd
   DEPENDS:= \
 	  +kmod-nls-base \
 	  +kmod-nls-utf8 \
-	  +kmod-crypto-md4 \
-          +kmod-crypto-md5 \
+	  +kmod-crypto-md5 \
 	  +kmod-crypto-hmac \
 	  +kmod-crypto-ecb \
 	  +kmod-crypto-des \

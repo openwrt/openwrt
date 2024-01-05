@@ -411,8 +411,8 @@
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
 
-		resets = <&sysc 21>;
-		reset-names = "fe";
+		resets = <&sysc 21>, <&sysc 23>;
+		reset-names = "fe", "esw";
 
 		mediatek,switch = <&esw>;
 	};
@@ -421,8 +421,8 @@
 		compatible = "mediatek,mt7628-esw", "ralink,rt3050-esw";
 		reg = <0x10110000 0x8000>;
 
-		resets = <&sysc 23>, <&sysc 24>;
-		reset-names = "esw", "ephy";
+		resets = <&sysc 24>;
+		reset-names = "ephy";
 
 		interrupt-parent = <&intc>;
 		interrupts = <17>;
