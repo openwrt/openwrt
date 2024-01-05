@@ -720,7 +720,7 @@ define Device/linksys_whw03
 	IMAGE_SIZE := 131072k
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | linksys-image type=WHW03
-	DEVICE_PACKAGES := uboot-envtools ath10k-firmware-qca9888-ct ipq-wifi-linksys_whw03 kmod-leds-pca963x kmod-fs-ext4 kmod-fs-f2fs mkf2fs losetup
+	DEVICE_PACKAGES := uboot-envtools ath10k-firmware-qca9888-ct ipq-wifi-linksys_whw03 kmod-leds-pca963x kmod-bluetooth 
 endef
 TARGET_DEVICES += linksys_whw03
 
