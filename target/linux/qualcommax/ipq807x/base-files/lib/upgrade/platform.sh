@@ -73,6 +73,21 @@ platform_do_upgrade() {
 		fw_setenv upgrade_available 1
 		nand_do_upgrade "$1"
 		;;
+	linksys,mx4200v1|\
+	linksys,mx4200v2)
+		boot_part="$(fw_printenv -n boot_part)"
+		if [ "$boot_part" -eq "1" ]; then
+			fw_setenv boot_part 2
+			CI_KERNPART="alt_kernel"
+			CI_UBIPART="alt_rootfs"
+		else
+			fw_setenv boot_part 1
+			CI_UBIPART="rootfs"
+		fi
+		fw_setenv boot_part_ready 3
+		fw_setenv auto_recovery yes
+		nand_do_upgrade "$1"
+		;;
 	prpl,haze|\
 	qnap,301w)
 		kernelname="0:HLOS"

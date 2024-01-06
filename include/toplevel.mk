@@ -210,7 +210,9 @@ prereq:: prepare-tmpinfo .config
 	@+$(NO_TRACE_MAKE) -r -s $@
 
 check: .config FORCE
-check val.% var.%: FORCE
+	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= V=s
+
+val.% var.%: FORCE
 	@+$(NO_TRACE_MAKE) -r -s $@ QUIET= V=s
 
 WARN_PARALLEL_ERROR = $(if $(BUILD_LOG),,$(and $(filter -j,$(MAKEFLAGS)),$(findstring s,$(OPENWRT_VERBOSE))))

@@ -10,5 +10,9 @@ boot() {
 		# Unset changed flag after sysupgrade complete
 		fw_setenv changed
 	;;
+	linksys,mx4200v1|\
+	linksys,mx4200v2)
+		mtd resetbc s_env || true
+	;;
 	esac
 }

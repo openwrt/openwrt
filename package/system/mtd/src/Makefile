@@ -20,6 +20,7 @@ obj.mvebu = linksys_bootcount.o
 obj.kirkwood = linksys_bootcount.o
 obj.ipq806x = linksys_bootcount.o
 obj.ipq40xx = linksys_bootcount.o
+obj.qualcommax = linksys_bootcount.o
 
 ifdef FIS_SUPPORT
   obj += fis.o
