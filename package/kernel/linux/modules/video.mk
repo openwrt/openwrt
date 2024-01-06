@@ -246,11 +246,15 @@ define KernelPackage/drm
   HIDDEN:=1
   DEPENDS:=+kmod-dma-buf +kmod-i2c-core +PACKAGE_kmod-backlight:kmod-backlight \
 	+kmod-fb
-  KCONFIG:=CONFIG_DRM
+  KCONFIG:=CONFIG_DRM \
+	CONFIG_DRM_EXEC@ge6.6 \
+	CONFIG_DRM_SUBALLOC_HELPER@ge6.4
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/drm.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/drm_panel_orientation_quirks.ko
-  AUTOLOAD:=$(call AutoLoad,05,drm)
+	$(LINUX_DIR)/drivers/gpu/drm/drm_panel_orientation_quirks.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/drm_exec.ko@ge6.6 \
+	$(LINUX_DIR)/drivers/gpu/drm/drm_suballoc_helper.ko@ge6.4
+  AUTOLOAD:=$(call AutoLoad,05,drm_exec@ge6.6 drm_suballoc_helper@ge6.4 drm)
 endef
 
 define KernelPackage/drm/description
@@ -262,7 +266,7 @@ $(eval $(call KernelPackage,drm))
 define KernelPackage/drm-buddy
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=A page based buddy allocator
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm @LINUX_6_1
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm @LINUX_6_1||LINUX_6_6
   KCONFIG:=CONFIG_DRM_BUDDY
   FILES:= $(LINUX_DIR)/drivers/gpu/drm/drm_buddy.ko
   AUTOLOAD:=$(call AutoProbe,drm_buddy)
@@ -277,7 +281,7 @@ $(eval $(call KernelPackage,drm-buddy))
 define KernelPackage/drm-display-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=DRM helpers for display adapters drivers
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-kms-helper @LINUX_6_1
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-kms-helper @LINUX_6_1||LINUX_6_6
   KCONFIG:=CONFIG_DRM_DISPLAY_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/display/drm_display_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_display_helper)
@@ -349,7 +353,8 @@ define KernelPackage/drm-amdgpu
 	CONFIG_DRM_AMD_DC=y \
 	CONFIG_DEBUG_KERNEL_DC=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/amd/amdgpu/amdgpu.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/scheduler/gpu-sched.ko
+	$(LINUX_DIR)/drivers/gpu/drm/scheduler/gpu-sched.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/amd/amdxcp/amdxcp.ko@ge6.5
   AUTOLOAD:=$(call AutoProbe,amdgpu)
 endef
 
@@ -557,9 +562,10 @@ $(eval $(call KernelPackage,video-pwc))
 define KernelPackage/video-uvc
   TITLE:=USB Video Class (UVC) support
   DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-video-videobuf2 +kmod-input-core
-  KCONFIG:= CONFIG_USB_VIDEO_CLASS
-  FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_USB_DIR)/uvc/uvcvideo.ko
-  AUTOLOAD:=$(call AutoProbe,uvcvideo)
+  KCONFIG:= CONFIG_USB_VIDEO_CLASS CONFIG_UVC_COMMON@ge6.3
+  FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_USB_DIR)/uvc/uvcvideo.ko \
+	$(LINUX_DIR)/drivers/media/common/uvc.ko@ge6.3
+  AUTOLOAD:=$(call AutoProbe,uvc@ge6.3 uvcvideo)
   $(call AddDepends/camera)
 endef
 
