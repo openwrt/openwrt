@@ -399,7 +399,7 @@
 				0x9000 0 0 4 &pciintc 19
 			>;
 
-			pci1: pci@1 {
+			pci1: pci@1,0 {
 				reg = <0x0800 0 0 0 0>;
 				device_type = "pci";
 				#interrupt-cells = <1>;
@@ -421,6 +421,7 @@
 				#address-cells = <3>;
 				#size-cells = <2>;
 
+				interrupt-controller;
 				status = "disabled";
 			};
 
@@ -430,6 +431,7 @@
 				#address-cells = <3>;
 				#size-cells = <2>;
 
+				interrupt-controller;
 				status = "disabled";
 			};
 		};

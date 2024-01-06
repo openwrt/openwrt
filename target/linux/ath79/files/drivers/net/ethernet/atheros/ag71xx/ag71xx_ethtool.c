@@ -169,8 +169,7 @@ static void ag71xx_ethtool_get_strings(struct net_device *netdev, u32 sset,
 		int i;
 
 		for (i = 0; i < ARRAY_SIZE(ag71xx_statistics); i++)
-			memcpy(data + i * ETH_GSTRING_LEN,
-			       ag71xx_statistics[i].name, ETH_GSTRING_LEN);
+			ethtool_puts(&data, ag71xx_statistics[i].name);
 	}
 }
 

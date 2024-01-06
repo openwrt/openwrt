@@ -61,7 +61,7 @@
 };
 
 &pcie {
-	wifi@0,0,0 {
+	wifi@0,0 {
 		nvmem-cells = <&macaddr_art_0 (-1)>, <&calibration_art_5000>;
 		nvmem-cell-names = "mac-address", "calibration";
 	};

@@ -1953,7 +1953,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +	switch (stringset) {
 +	case ETH_SS_STATS:
 +		for (i = 0; i < ARRAY_SIZE(ipqess_stats); i++)
-+			ethtool_sprintf(&p, ipqess_stats[i].string);
++			ethtool_puts(&p, ipqess_stats[i].string);
 +		break;
 +	}
 +}

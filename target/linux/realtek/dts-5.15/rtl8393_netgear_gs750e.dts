@@ -107,7 +107,8 @@
 		compatible = "realtek,rtl838x-mdio";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		// Switch doesn't come back properly after a reset so don't.
+		// reset-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 
 		/* External phy RTL8218B #1 */
 		EXTERNAL_PHY(0)
@@ -190,7 +191,7 @@
 		SWITCH_PORT(7, 8, qsgmii)
 
 		SWITCH_PORT(8, 9, qsgmii)
-		SWITCH_PORT(9, 0, qsgmii)
+		SWITCH_PORT(9, 10, qsgmii)
 		SWITCH_PORT(10, 11, qsgmii)
 		SWITCH_PORT(11, 12, qsgmii)
 		SWITCH_PORT(12, 13, qsgmii)

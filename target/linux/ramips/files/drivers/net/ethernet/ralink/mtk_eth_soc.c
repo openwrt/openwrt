@@ -61,8 +61,6 @@
 #define NEXT_TX_DESP_IDX(X)	(((X) + 1) & (ring->tx_ring_size - 1))
 #define NEXT_RX_DESP_IDX(X)	(((X) + 1) & (ring->rx_ring_size - 1))
 
-#define SYSC_REG_RSTCTRL	0x34
-
 static int fe_msg_level = -1;
 module_param_named(msg_level, fe_msg_level, int, 0);
 MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
@@ -127,21 +125,7 @@ void fe_m32(struct fe_priv *eth, u32 clear, u32 set, unsigned reg)
 	spin_unlock(&eth->page_lock);
 }
 
-void fe_reset(u32 reset_bits)
-{
-	u32 t;
-
-	t = rt_sysc_r32(SYSC_REG_RSTCTRL);
-	t |= reset_bits;
-	rt_sysc_w32(t, SYSC_REG_RSTCTRL);
-	usleep_range(10, 20);
-
-	t &= ~reset_bits;
-	rt_sysc_w32(t, SYSC_REG_RSTCTRL);
-	usleep_range(10, 20);
-}
-
-void fe_reset_fe(struct fe_priv *priv)
+static void fe_reset_fe(struct fe_priv *priv)
 {
 	if (!priv->resets)
 		return;
@@ -1366,10 +1350,7 @@ static int __init fe_init(struct net_device *dev)
 	struct device_node *port;
 	int err;
 
-	if (priv->soc->reset_fe)
-		priv->soc->reset_fe(priv);
-	else
-		fe_reset_fe(priv);
+	fe_reset_fe(priv);
 
 	if (priv->soc->switch_init) {
 		err = priv->soc->switch_init(priv);

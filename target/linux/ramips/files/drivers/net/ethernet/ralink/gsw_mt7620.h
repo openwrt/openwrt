@@ -12,6 +12,8 @@
  *   Copyright (C) 2013-2015 Michael Lee <igvtee@gmail.com>
  */
 
+#include <linux/reset.h>
+
 #ifndef _RALINK_GSW_MT7620_H__
 #define _RALINK_GSW_MT7620_H__
 
@@ -90,6 +92,7 @@ enum {
 
 struct mt7620_gsw {
 	struct device		*dev;
+	struct reset_control	*rst_ephy;
 	void __iomem		*base;
 	int			irq;
 	bool			ephy_disable;

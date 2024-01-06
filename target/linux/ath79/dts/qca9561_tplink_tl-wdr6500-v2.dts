@@ -86,9 +86,9 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					macaddr_uboot_0fc00: macaddr@0fc00 {
+					macaddr_uboot_fc00: macaddr@fc00 {
 						compatible = "mac-base";
-						reg = <0x0fc00 0x6>;
+						reg = <0xfc00 0x6>;
 						#nvmem-cell-cells = <1>;
 					};
 				};
@@ -134,7 +134,7 @@
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
 
-		nvmem-cells = <&macaddr_uboot_0fc00 (-2)>, <&calibration_ath10k>;
+		nvmem-cells = <&macaddr_uboot_fc00 (-2)>, <&calibration_ath10k>;
 		nvmem-cell-names = "mac-address", "calibration";
 	};
 };
@@ -148,21 +148,21 @@
 
 	phy-handle = <&swphy4>;
 
-	nvmem-cells = <&macaddr_uboot_0fc00 1>;
+	nvmem-cells = <&macaddr_uboot_fc00 1>;
 	nvmem-cell-names = "mac-address";
 };
 
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_uboot_0fc00 0>;
+	nvmem-cells = <&macaddr_uboot_fc00 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_uboot_0fc00 (-1)>, <&calibration_ath9k>;
+	nvmem-cells = <&macaddr_uboot_fc00 (-1)>, <&calibration_ath9k>;
 	nvmem-cell-names = "mac-address", "calibration";
 };
 

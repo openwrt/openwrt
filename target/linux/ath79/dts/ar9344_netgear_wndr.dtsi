@@ -90,7 +90,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			ubi@ac0000 {
+			ubi@0 {
 				label = "ubi";
 				reg = <0x0 0x7500000>;
 			};
@@ -171,22 +171,23 @@
 			reg = <0x3c0000 0x300000>;
 		};
 
-		kernel@6c0000 {
-			label = "kernel";
-			reg = <0x6c0000 0x400000>;
-		};
-
-		ubiconcat0: partition@ac0000 {
-			label = "ubiconcat0";
-			reg = <0xac0000 0x1500000>;
-		};
-
 		partition@6c0000 {
 			label = "firmware";
 			reg = <0x6c0000 0x1900000>;
-			compatible = "openwrt,uimage", "denx,uimage";
-			openwrt,ih-magic = <0x33373033>;
-			openwrt,ih-type = <IH_TYPE_FILESYSTEM>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			kernel@0 {
+				label = "kernel";
+				reg = <0x0 0x400000>;
+			};
+
+			ubiconcat0: partition@400000 {
+				label = "ubiconcat0";
+				reg = <0x400000 0x1500000>;
+			};
 		};
 
 		partition@1fc0000 {
