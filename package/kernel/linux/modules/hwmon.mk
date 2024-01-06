@@ -436,9 +436,9 @@ define KernelPackage/hwmon-nct6775
   KCONFIG:=CONFIG_SENSORS_NCT6775
   FILES:= \
 	$(LINUX_DIR)/drivers/hwmon/nct6775.ko \
-	$(LINUX_DIR)/drivers/hwmon/nct6775-core.ko@ge5.19
+	$(LINUX_DIR)/drivers/hwmon/nct6775-core.ko
   AUTOLOAD:=$(call AutoProbe,nct6775)
-  $(call AddDepends/hwmon,@PCI_SUPPORT @TARGET_x86 +kmod-hwmon-vid +LINUX_6_1:kmod-regmap-core)
+  $(call AddDepends/hwmon,@PCI_SUPPORT @TARGET_x86 +kmod-hwmon-vid +kmod-regmap-core)
 endef
 
 define KernelPackage/hwmon-nct6775/description

@@ -13,7 +13,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
-@@ -951,42 +951,130 @@ mtk_wed_ring_reset(struct mtk_wed_ring *
+@@ -944,42 +944,130 @@ mtk_wed_ring_reset(struct mtk_wed_ring *
  }
  
  static u32
@@ -170,7 +170,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void
-@@ -1004,19 +1092,23 @@ mtk_wed_reset_dma(struct mtk_wed_device
+@@ -997,19 +1085,23 @@ mtk_wed_reset_dma(struct mtk_wed_device
  				   true);
  	}
  
@@ -201,7 +201,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	if (busy) {
  		mtk_wed_reset(dev, MTK_WED_RESET_WDMA_INT_AGENT);
-@@ -1033,6 +1125,9 @@ mtk_wed_reset_dma(struct mtk_wed_device
+@@ -1026,6 +1118,9 @@ mtk_wed_reset_dma(struct mtk_wed_device
  			MTK_WED_WDMA_GLO_CFG_RST_INIT_COMPLETE);
  	}
  
@@ -211,7 +211,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	for (i = 0; i < 100; i++) {
  		val = wed_r32(dev, MTK_WED_TX_BM_INTF);
  		if (FIELD_GET(MTK_WED_TX_BM_INTF_TKFIFO_FDEP, val) == 0x40)
-@@ -1040,8 +1135,19 @@ mtk_wed_reset_dma(struct mtk_wed_device
+@@ -1033,8 +1128,19 @@ mtk_wed_reset_dma(struct mtk_wed_device
  	}
  
  	mtk_wed_reset(dev, MTK_WED_RESET_TX_FREE_AGENT);
@@ -231,7 +231,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (busy) {
  		mtk_wed_reset(dev, MTK_WED_RESET_WPDMA_INT_AGENT);
  		mtk_wed_reset(dev, MTK_WED_RESET_WPDMA_TX_DRV);
-@@ -1052,6 +1158,17 @@ mtk_wed_reset_dma(struct mtk_wed_device
+@@ -1045,6 +1151,17 @@ mtk_wed_reset_dma(struct mtk_wed_device
  			MTK_WED_WPDMA_RESET_IDX_RX);
  		wed_w32(dev, MTK_WED_WPDMA_RESET_IDX, 0);
  	}
@@ -249,7 +249,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static int
-@@ -1274,6 +1391,9 @@ mtk_wed_start(struct mtk_wed_device *dev
+@@ -1267,6 +1384,9 @@ mtk_wed_start(struct mtk_wed_device *dev
  {
  	int i;
  
@@ -259,7 +259,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	for (i = 0; i < ARRAY_SIZE(dev->rx_wdma); i++)
  		if (!dev->rx_wdma[i].desc)
  			mtk_wed_wdma_rx_ring_setup(dev, i, 16);
-@@ -1362,10 +1482,6 @@ mtk_wed_attach(struct mtk_wed_device *de
+@@ -1355,10 +1475,6 @@ mtk_wed_attach(struct mtk_wed_device *de
  		goto out;
  
  	if (mtk_wed_get_rx_capa(dev)) {

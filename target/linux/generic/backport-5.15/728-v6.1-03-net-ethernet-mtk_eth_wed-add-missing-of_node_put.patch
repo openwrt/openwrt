@@ -15,7 +15,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
-@@ -1079,7 +1079,7 @@ void mtk_wed_add_hw(struct device_node *
+@@ -1072,7 +1072,7 @@ void mtk_wed_add_hw(struct device_node *
  
  	pdev = of_find_device_by_node(np);
  	if (!pdev)
@@ -24,7 +24,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	get_device(&pdev->dev);
  	irq = platform_get_irq(pdev, 0);
-@@ -1139,6 +1139,8 @@ unlock:
+@@ -1132,6 +1132,8 @@ unlock:
  	mutex_unlock(&hw_lock);
  err_put_device:
  	put_device(&pdev->dev);
@@ -33,7 +33,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  void mtk_wed_exit(void)
-@@ -1159,6 +1161,7 @@ void mtk_wed_exit(void)
+@@ -1152,6 +1154,7 @@ void mtk_wed_exit(void)
  		hw_list[i] = NULL;
  		debugfs_remove(hw->debugfs_dir);
  		put_device(hw->dev);

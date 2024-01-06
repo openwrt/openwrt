@@ -99,8 +99,8 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					macaddr_factory_0004: macaddr@0004 {
-						reg = <0x0004 0x6>;
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
 					};
 				};
 			};
@@ -128,7 +128,7 @@
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_0004>;
+	nvmem-cells = <&macaddr_factory_4>;
 	nvmem-cell-names = "mac-address";
 };
 

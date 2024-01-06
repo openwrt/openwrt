@@ -94,7 +94,7 @@ define UcodeModule
  define Package/ucode-mod-$(strip $(1))
   $(Package/ucode/default)
   TITLE+= ($(strip $(1)) module)
-  DEPENDS:=ucode $(3)
+  DEPENDS:=+ucode $(3)
  endef
 
  define Package/ucode-mod-$(strip $(1))/description

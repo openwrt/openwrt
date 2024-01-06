@@ -122,7 +122,7 @@
 			0x1 0x0 0x0 0xff800000 0x00010000
 			0x3 0x0 0x0 0xffb00000 0x00000020>;
 
-		nand@1,0 {
+		nand@100000000 {
 			compatible = "fsl,ifc-nand";
 			reg = <0x1 0x0 0x10000>;
 
@@ -165,19 +165,23 @@
 					read-only;
 				};
 
-				partition@300000 {
-					reg = <0x300000 0x800000>;
-					label = "kernel";
-				};
-
-				partition@b00000 {
-					reg = <0xb00000 0x7500000>;
-					label = "ubi";
-				};
-
 				oem-partition@300000 {
 					reg = <0x300000 0x1900000>;
 					label = "sophos-os1";
+
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						reg = <0x0 0x800000>;
+						label = "kernel";
+					};
+
+					partition@800000 {
+						reg = <0x800000 0x7500000>;
+						label = "ubi";
+					};
 				};
 
 				oem-partition@1c00000 {

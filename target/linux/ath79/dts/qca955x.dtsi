@@ -185,7 +185,7 @@
 			reg = <0x18070000 0x58>;
 		};
 
-		pcie0: pcie-controller@180c0000 {
+		pcie0: pcie@180c0000 {
 			compatible = "qcom,qca9550-pci", "qcom,ar7240-pci";
 			#address-cells = <3>;
 			#size-cells = <2>;
@@ -222,7 +222,7 @@
 			status = "disabled";
 		};
 
-		pcie1: pcie-controller@18250000 {
+		pcie1: pcie@18250000 {
 			compatible = "qcom,qca9550-pci", "qcom,ar7240-pci";
 			#address-cells = <3>;
 			#size-cells = <2>;
@@ -312,9 +312,6 @@
 			reset-names = "nand";
 
 			nand-ecc-mode = "hw";
-
-			#address-cells = <1>;
-			#size-cells = <0>;
 
 			status = "disabled";
 		};

@@ -74,9 +74,6 @@
 			compatible = "ralink,mt7620a-intc", "ralink,rt2880-intc";
 			reg = <0x200 0x100>;
 
-			resets = <&sysc 19>;
-			reset-names = "intc";
-
 			interrupt-controller;
 			#interrupt-cells = <1>;
 
@@ -87,9 +84,6 @@
 		memc: memc@300 {
 			compatible = "ralink,mt7620a-memc", "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
-
-			resets = <&sysc 20>;
-			reset-names = "mc";
 
 			interrupt-parent = <&intc>;
 			interrupts = <3>;
@@ -114,9 +108,6 @@
 		gpio0: gpio@600 {
 			compatible = "ralink,mt7620a-gpio", "ralink,rt2880-gpio";
 			reg = <0x600 0x34>;
-
-			resets = <&sysc 13>;
-			reset-names = "pio";
 
 			interrupt-parent = <&intc>;
 			interrupts = <6>;
@@ -284,9 +275,6 @@
 		systick: systick@d00 {
 			compatible = "ralink,mt7620a-systick", "ralink,cevt-systick";
 			reg = <0xd00 0x10>;
-
-			resets = <&sysc 28>;
-			reset-names = "intc";
 
 			interrupt-parent = <&cpuintc>;
 			interrupts = <7>;

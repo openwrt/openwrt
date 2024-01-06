@@ -55,9 +55,6 @@
 			compatible = "ralink,mt7628an-intc", "ralink,rt2880-intc";
 			reg = <0x200 0x100>;
 
-			resets = <&sysc 9>;
-			reset-names = "intc";
-
 			interrupt-controller;
 			#interrupt-cells = <1>;
 
@@ -72,9 +69,6 @@
 		memc: memc@300 {
 			compatible = "ralink,mt7620a-memc", "ralink,rt3050-memc";
 			reg = <0x300 0x100>;
-
-			resets = <&sysc 10>;
-			reset-names = "mc";
 
 			interrupt-parent = <&intc>;
 			interrupts = <3>;
@@ -219,9 +213,6 @@
 			compatible = "mediatek,mt7628-pwm";
 			reg = <0x5000 0x1000>;
 			#pwm-cells = <2>;
-
-			resets = <&sysc 31>;
-			reset-names = "pwm";
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&pwm0_pins>, <&pwm1_pins>;
@@ -420,8 +411,8 @@
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
 
-		resets = <&sysc 21>;
-		reset-names = "fe";
+		resets = <&sysc 21>, <&sysc 23>;
+		reset-names = "fe", "esw";
 
 		mediatek,switch = <&esw>;
 	};
@@ -430,8 +421,8 @@
 		compatible = "mediatek,mt7628-esw", "ralink,rt3050-esw";
 		reg = <0x10110000 0x8000>;
 
-		resets = <&sysc 23>, <&sysc 24>;
-		reset-names = "esw", "ephy";
+		resets = <&sysc 24>;
+		reset-names = "ephy";
 
 		interrupt-parent = <&intc>;
 		interrupts = <17>;

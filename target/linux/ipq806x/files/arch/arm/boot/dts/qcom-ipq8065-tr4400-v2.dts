@@ -204,6 +204,15 @@
 			stock_partition@1340000 {
 				label = "stock_rootfs";
 				reg = <0x1340000 0x4000000>;
+
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "extra";
+					reg = <0x0 0x4000000>;
+				};
 			};
 			partition@5340000 {
 				label = "0:BOOTCONFIG";
@@ -253,6 +262,42 @@
 			stock_partition@6400000 {
 				label = "stock_rootfs_1";
 				reg = <0x6400000 0x4000000>;
+
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "fw_env";
+					reg = <0x0 0x100000>;
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						macaddr_fw_env_0: macaddr@0 {
+							reg = <0x00 0x6>;
+						};
+						macaddr_fw_env_6: macaddr@6 {
+							reg = <0x06 0x6>;
+						};
+						macaddr_fw_env_c: macaddr@c {
+							reg = <0x0c 0x6>;
+						};
+						macaddr_fw_env_12: macaddr@12 {
+							reg = <0x12 0x6>;
+						};
+						macaddr_fw_env_18: macaddr@18 {
+							reg = <0x18 0x6>;
+						};
+					};
+				};
+
+				partition@100000 {
+					label = "ubi";
+					reg = <0x100000 0x9b00000>;
+				};
 			};
 			stock_partition@a400000 {
 				label = "stock_fw_env";
@@ -269,41 +314,6 @@
 			stock_partition@af00000 {
 				label = "stock_scfgmgr";
 				reg = <0xaf00000 0x0100000>;
-			};
-
-			partition@6400000 {
-				label = "fw_env";
-				reg = <0x6400000 0x0100000>;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					macaddr_fw_env_0: macaddr@0 {
-						reg = <0x00 0x6>;
-					};
-					macaddr_fw_env_6: macaddr@6 {
-						reg = <0x06 0x6>;
-					};
-					macaddr_fw_env_c: macaddr@c {
-						reg = <0x0c 0x6>;
-					};
-					macaddr_fw_env_12: macaddr@12 {
-						reg = <0x12 0x6>;
-					};
-					macaddr_fw_env_18: macaddr@18 {
-						reg = <0x18 0x6>;
-					};
-				};
-			};
-			partition@6500000 {
-				label = "ubi";
-				reg = <0x6500000 0x9b00000>;
-			};
-			partition@1340000 {
-				label = "extra";
-				reg = <0x1340000 0x4000000>;
 			};
 		};
 	};
@@ -467,7 +477,7 @@
 
 &pcie0 {
 	status = "okay";
-	reset-gpio = <&qcom_pinmux 3 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&qcom_pinmux 3 GPIO_ACTIVE_HIGH>;
 	pinctrl-0 = <&pcie0_pins>;
 	pinctrl-names = "default";
 
@@ -489,7 +499,7 @@
 
 &pcie1 {
 	status = "okay";
-	reset-gpio = <&qcom_pinmux 48 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&qcom_pinmux 48 GPIO_ACTIVE_HIGH>;
 	pinctrl-0 = <&pcie1_pins>;
 	pinctrl-names = "default";
 	max-link-speed = <1>;

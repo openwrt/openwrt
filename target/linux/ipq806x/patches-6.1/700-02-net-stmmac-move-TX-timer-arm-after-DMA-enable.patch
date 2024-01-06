@@ -17,7 +17,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
-@@ -2529,7 +2529,8 @@ static void stmmac_bump_dma_threshold(st
+@@ -2530,7 +2530,8 @@ static void stmmac_bump_dma_threshold(st
   * @queue: TX queue index
   * Description: it reclaims the transmit resources after transmission completes.
   */
@@ -27,7 +27,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  {
  	struct stmmac_tx_queue *tx_q = &priv->dma_conf.tx_queue[queue];
  	unsigned int bytes_compl = 0, pkts_compl = 0;
-@@ -2692,7 +2693,7 @@ static int stmmac_tx_clean(struct stmmac
+@@ -2693,7 +2694,7 @@ static int stmmac_tx_clean(struct stmmac
  
  	/* We still have pending packets, let's call for a new scheduling */
  	if (tx_q->dirty_tx != tx_q->cur_tx)
@@ -36,7 +36,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	__netif_tx_unlock_bh(netdev_get_tx_queue(priv->dev, queue));
  
-@@ -5475,12 +5476,13 @@ static int stmmac_napi_poll_tx(struct na
+@@ -5473,12 +5474,13 @@ static int stmmac_napi_poll_tx(struct na
  	struct stmmac_channel *ch =
  		container_of(napi, struct stmmac_channel, tx_napi);
  	struct stmmac_priv *priv = ch->priv_data;
@@ -51,7 +51,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	work_done = min(work_done, budget);
  
  	if (work_done < budget && napi_complete_done(napi, work_done)) {
-@@ -5491,6 +5493,10 @@ static int stmmac_napi_poll_tx(struct na
+@@ -5489,6 +5491,10 @@ static int stmmac_napi_poll_tx(struct na
  		spin_unlock_irqrestore(&ch->lock, flags);
  	}
  
@@ -62,7 +62,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	return work_done;
  }
  
-@@ -5500,11 +5506,12 @@ static int stmmac_napi_poll_rxtx(struct
+@@ -5498,11 +5504,12 @@ static int stmmac_napi_poll_rxtx(struct
  		container_of(napi, struct stmmac_channel, rxtx_napi);
  	struct stmmac_priv *priv = ch->priv_data;
  	int rx_done, tx_done, rxtx_done;
@@ -76,7 +76,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	tx_done = min(tx_done, budget);
  
  	rx_done = stmmac_rx_zc(priv, budget, chan);
-@@ -5529,6 +5536,10 @@ static int stmmac_napi_poll_rxtx(struct
+@@ -5527,6 +5534,10 @@ static int stmmac_napi_poll_rxtx(struct
  		spin_unlock_irqrestore(&ch->lock, flags);
  	}
  

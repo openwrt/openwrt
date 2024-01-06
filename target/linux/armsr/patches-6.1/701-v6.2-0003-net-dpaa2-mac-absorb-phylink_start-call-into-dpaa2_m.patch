@@ -21,7 +21,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
-@@ -2082,10 +2082,8 @@ static int dpaa2_eth_open(struct net_dev
+@@ -2080,10 +2080,8 @@ static int dpaa2_eth_open(struct net_dev
  		goto enable_err;
  	}
  
@@ -33,7 +33,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	return 0;
  
-@@ -2159,7 +2157,6 @@ static int dpaa2_eth_stop(struct net_dev
+@@ -2157,7 +2155,6 @@ static int dpaa2_eth_stop(struct net_dev
  	int retries = 10;
  
  	if (dpaa2_eth_is_type_phy(priv)) {

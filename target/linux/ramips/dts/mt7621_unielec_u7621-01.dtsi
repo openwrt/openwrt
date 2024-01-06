@@ -50,27 +50,26 @@
 	status = "okay";
 };
 
-&pcie0 {
+&pcie1 { // MT7603EN
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
-		ieee80211-freq-limit = <2400000 2500000>;
+
+		led {
+			led-active-low;
+		};
 	};
 };
 
-&pcie1 {
+&pcie2 { // MT7612E
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_8000>;
 		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
-
-		led {
-			led-sources = <2>;
-		};
 	};
 };
 

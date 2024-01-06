@@ -226,14 +226,14 @@
 
 &pcie0 {
 	status = "okay";
-	reset-gpio = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&pcie0_pins>;
 	pinctrl-names = "default";
 };
 
 &pcie1 {
 	status = "okay";
-	reset-gpio = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&pcie1_pins>;
 	pinctrl-names = "default";
 	max-link-speed = <1>;

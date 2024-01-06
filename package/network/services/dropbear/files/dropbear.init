@@ -155,6 +155,12 @@ dropbear_instance()
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 	local pid_file="/var/run/${NAME}.${PIDCOUNT}.pid"
 
+	# Increase default receive window size to increase
+	# throughput on high latency links
+	if [ "${RecvWindowSize}" -eq "0" ]; then
+		RecvWindowSize="262144"
+	fi
+
 	procd_open_instance
 	procd_set_param command "$PROG" -F -P "$pid_file"
 	[ "${PasswordAuth}" -eq 0 ] && procd_append_param command -s

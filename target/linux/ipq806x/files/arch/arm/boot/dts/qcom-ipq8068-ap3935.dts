@@ -181,41 +181,41 @@
 
 		flash@0 {
 			compatible = "jedec,spi-nor";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			spi-max-frequency = <50000000>;
 			reg = <0>;
 
 			partitions {
 				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-				cfg1@02a0000 {
+				cfg1@2a0000 {
 					compatible = "u-boot,env-redundant-bool";
 					label = "CFG1";
-					reg = <0x02a0000 0x0010000>;
+					reg = <0x2a0000 0x0010000>;
 
 					ethaddr: ethaddr {
 					};
 				};
 
-				bootpri@02b0000 {
+				bootpri@2b0000 {
 					label = "BootPRI";
-					reg = <0x02b0000 0x0080000>;
+					reg = <0x2b0000 0x0080000>;
 				};
 
-				cfg2@0330000 {
+				cfg2@330000 {
 					label = "CFG2";
-					reg = <0x0330000 0x0010000>;
+					reg = <0x330000 0x0010000>;
 				};
 
-				fs@0340000 {
+				fs@340000 {
 					label = "FS";
-					reg = <0x0340000 0x0080000>;
+					reg = <0x340000 0x0080000>;
 				};
 
-				priimg@03c0000 {
+				priimg@3c0000 {
 					label = "PriImg";
-					reg = <0x03c0000 0x0e10000>;
+					reg = <0x3c0000 0x0e10000>;
 				};
 
 				secimg@11d0000 {

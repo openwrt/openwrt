@@ -862,7 +862,7 @@ dnsmasq_start()
 {
 	local cfg="$1"
 	local disabled user_dhcpscript logfacility
-	local resolvfile resolvdir localuse=0
+	local resolvfile resolvdir localuse=1
 
 	config_get_bool disabled "$cfg" disabled 0
 	[ "$disabled" -gt 0 ] && return 0
@@ -1059,7 +1059,7 @@ dnsmasq_start()
 		config_get resolvfile "$cfg" resolvfile /tmp/resolv.conf.d/resolv.conf.auto
 		[ -n "$resolvfile" ] && [ ! -e "$resolvfile" ] && touch "$resolvfile"
 		xappend "--resolv-file=$resolvfile"
-		[ "$resolvfile" = "/tmp/resolv.conf.d/resolv.conf.auto" ] && localuse=1
+		[ "$resolvfile" != "/tmp/resolv.conf.d/resolv.conf.auto" ] && localuse=0
 		resolvdir="$(dirname "$resolvfile")"
 	fi
 	config_get_bool localuse "$cfg" localuse "$localuse"
@@ -1230,12 +1230,12 @@ dnsmasq_start()
 dnsmasq_stop()
 {
 	local cfg="$1"
-	local noresolv resolvfile localuse=0
+	local noresolv resolvfile localuse=1
 
 	config_get_bool noresolv "$cfg" noresolv 0
 	config_get resolvfile "$cfg" "resolvfile"
 
-	[ "$noresolv" = 0 ] && [ "$resolvfile" = "/tmp/resolv.conf.d/resolv.conf.auto" ] && localuse=1
+	[ "$noresolv" = 0 ] && [ "$resolvfile" != "/tmp/resolv.conf.d/resolv.conf.auto" ] && localuse=0
 	config_get_bool localuse "$cfg" localuse "$localuse"
 	[ "$localuse" -gt 0 ] && ln -sf "/tmp/resolv.conf.d/resolv.conf.auto" /tmp/resolv.conf
 

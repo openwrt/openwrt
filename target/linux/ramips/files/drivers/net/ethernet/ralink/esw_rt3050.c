@@ -237,7 +237,6 @@ struct rt305x_esw {
 	int			led_frequency;
 	struct esw_vlan vlans[RT305X_ESW_NUM_VLANS];
 	struct esw_port ports[RT305X_ESW_NUM_PORTS];
-	struct reset_control	*rst_esw;
 	struct reset_control	*rst_ephy;
 
 };
@@ -259,18 +258,6 @@ static inline void esw_rmw_raw(struct rt305x_esw *esw, unsigned reg,
 
 	t = __raw_readl(esw->base + reg) & ~mask;
 	__raw_writel(t | val, esw->base + reg);
-}
-
-static void esw_reset(struct rt305x_esw *esw)
-{
-	if (!esw->rst_esw)
-		return;
-
-	reset_control_assert(esw->rst_esw);
-	usleep_range(60, 120);
-	reset_control_deassert(esw->rst_esw);
-	/* the esw takes long to reset otherwise the board hang */
-	msleep(10);
 }
 
 static void esw_reset_ephy(struct rt305x_esw *esw)
@@ -465,8 +452,6 @@ static void esw_hw_init(struct rt305x_esw *esw)
 	int i;
 	u8 port_disable = 0;
 	u8 port_map = RT305X_ESW_PMAP_LLLLLL;
-
-	esw_reset(esw);
 
 	/* vodoo from original driver */
 	esw_w32(esw, 0xC8A07850, RT305X_ESW_REG_FCT0);
@@ -1441,12 +1426,11 @@ static int esw_probe(struct platform_device *pdev)
 	if (reg_init)
 		esw->reg_led_source = be32_to_cpu(*reg_init);
 
-	esw->rst_esw = devm_reset_control_get(&pdev->dev, "esw");
-	if (IS_ERR(esw->rst_esw))
-		esw->rst_esw = NULL;
-	esw->rst_ephy = devm_reset_control_get(&pdev->dev, "ephy");
-	if (IS_ERR(esw->rst_ephy))
+	esw->rst_ephy = devm_reset_control_get_exclusive(&pdev->dev, "ephy");
+	if (IS_ERR(esw->rst_ephy)) {
+		dev_err(esw->dev, "failed to get EPHY reset: %pe\n", esw->rst_ephy);
 		esw->rst_ephy = NULL;
+	}
 
 	spin_lock_init(&esw->reg_rw_lock);
 	platform_set_drvdata(pdev, esw);

@@ -120,17 +120,6 @@
 			status = "disabled";
 		};
 
-		systick: systick@500 {
-			compatible = "ralink,mt7621-systick", "ralink,cevt-systick";
-			reg = <0x500 0x10>;
-
-			resets = <&sysc MT7621_RST_AUX_STCK>;
-			reset-names = "intc";
-
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SHARED 5 IRQ_TYPE_LEVEL_HIGH>;
-		};
-
 		memc: memory-controller@5000 {
 			compatible = "mediatek,mt7621-memc", "syscon";
 			reg = <0x5000 0x1000>;

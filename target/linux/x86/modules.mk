@@ -18,6 +18,18 @@ endef
 $(eval $(call KernelPackage,amd-xgbe))
 
 
+define KernelPackage/dwmac-intel
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel GMAC support
+  DEPENDS:=@TARGET_x86_64 +kmod-stmmac-core
+  KCONFIG:=CONFIG_DWMAC_INTEL
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-intel.ko
+  AUTOLOAD=$(call AutoLoad,45,dwmac-intel)
+endef
+
+$(eval $(call KernelPackage,dwmac-intel))
+
+
 define KernelPackage/f71808e-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Fintek F718xx/F818xx Watchdog Timer

@@ -22,7 +22,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
-@@ -3613,7 +3613,7 @@ static int dpaa2_eth_setup_dpni(struct f
+@@ -3611,7 +3611,7 @@ static int dpaa2_eth_setup_dpni(struct f
  		dev_err(dev, "DPNI version %u.%u not supported, need >= %u.%u\n",
  			priv->dpni_ver_major, priv->dpni_ver_minor,
  			DPNI_VER_MAJOR, DPNI_VER_MINOR);

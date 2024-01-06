@@ -9,6 +9,7 @@ BOARD:=ixp4xx
 BOARDNAME:=Intel XScale IXP4xx
 FEATURES:=dt squashfs gpio
 CPU_TYPE:=xscale
+SUBTARGETS:=generic
 
 KERNEL_PATCHVER:=6.1
 

@@ -29,7 +29,7 @@
 	};
 
 	/* i2c of the SFP cage: port 12 */
-	i2c0: i2c-rtl9300 {
+	i2c0: i2c-rtl9300@1b00036c {
 		compatible = "realtek,rtl9300-i2c";
 		reg = <0x1b00036c 0x3c>;
 		#address-cells = <1>;
@@ -62,7 +62,7 @@
 		tx-disable-gpio = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 	};
 
-	led_set: led_set@0 {
+	led_set: led_set {
 		compatible = "realtek,rtl9300-leds";
 		active-low;
 

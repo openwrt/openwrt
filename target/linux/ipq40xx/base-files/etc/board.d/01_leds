@@ -20,8 +20,8 @@ asus,rt-ac42u)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan"
 	;;
 asus,rt-ac58u)
-	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
-	ucidef_set_led_switch "lan" "LAN" "blue:lan" "switch0" "0x1e"
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan"
+	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "br-lan"
 	;;
 avm,fritzbox-4040)
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt" "phy1tpt"
