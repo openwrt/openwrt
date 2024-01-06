@@ -42,6 +42,7 @@ endef
 Package/grub2=$(call Package/grub2/Default,x86,pc)
 Package/grub2-efi=$(call Package/grub2/Default,x86,efi)
 Package/grub2-efi-arm=$(call Package/grub2/Default,armsr,efi)
+Package/grub2-efi-loongarch64=$(call Package/grub2/Default,loongarch64,efi)
 
 define Package/grub2-editenv
   CATEGORY:=Utilities
@@ -191,6 +192,19 @@ define Package/grub2-efi-arm/install
 		reboot serial test efi_gop
 endef
 
+define Package/grub2-efi-loongarch64/install
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/grub2
+	cp ./files/grub-early-gpt.cfg $(PKG_BUILD_DIR)/grub-early.cfg
+	$(STAGING_DIR_HOST)/bin/grub-mkimage \
+		-d $(PKG_BUILD_DIR)/grub-core \
+		-p /boot/grub \
+		-O loongarch64-efi \
+		-c $(PKG_BUILD_DIR)/grub-early.cfg \
+		-o $(STAGING_DIR_IMAGE)/grub2/bootloongarch64.efi \
+		boot chain configfile fat linux ls lsefi minicmd part_gpt part_msdos reboot search \
+		search_fs_uuid search_label serial efi_gop all_video gfxterm ext2
+endef
+
 
 define Package/grub2-editenv/install
 	$(INSTALL_DIR) $(1)/usr/sbin
@@ -206,5 +220,6 @@ $(eval $(call HostBuild))
 $(eval $(call BuildPackage,grub2))
 $(eval $(call BuildPackage,grub2-efi))
 $(eval $(call BuildPackage,grub2-efi-arm))
+$(eval $(call BuildPackage,grub2-efi-loongarch64))
 $(eval $(call BuildPackage,grub2-editenv))
 $(eval $(call BuildPackage,grub2-bios-setup))
