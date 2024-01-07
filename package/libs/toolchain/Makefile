@@ -144,7 +144,7 @@ define Package/libtsan
 $(call Package/gcc/Default)
   NAME:=libtsan
   TITLE:=Runtime library for ThreadSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips @!mipsel @!mips64 @!mips64el @!arc
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!loongarch64 @!mips @!mipsel @!mips64 @!mips64el @!arc
   ABI_VERSION:=0
 endef
 
@@ -173,7 +173,7 @@ define Package/liblsan
 $(call Package/gcc/Default)
   NAME:=liblsan
   TITLE:=Runtime library for LeakSanitizer in GCC
-  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!mips @!mipsel @!mips64 @!mips64el @!arc
+  DEPENDS:=@USE_GLIBC +librt +libstdcpp @!loongarch64 @!mips @!mipsel @!mips64 @!mips64el @!arc
   ABI_VERSION:=0
 endef
 
