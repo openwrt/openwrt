@@ -201,7 +201,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
 
 --- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 +++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
-@@ -5640,17 +5640,19 @@ static void dm_update_crtc_active_planes
+@@ -5641,17 +5641,19 @@ static void dm_update_crtc_active_planes
  }
  
  static int dm_crtc_helper_atomic_check(struct drm_crtc *crtc,
@@ -225,7 +225,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  		WARN_ON(1);
  		return ret;
  	}
-@@ -5661,8 +5663,8 @@ static int dm_crtc_helper_atomic_check(s
+@@ -5662,8 +5664,8 @@ static int dm_crtc_helper_atomic_check(s
  	 * planes are disabled, which is not supported by the hardware. And there is legacy
  	 * userspace which stops using the HW cursor altogether in response to the resulting EINVAL.
  	 */
@@ -754,7 +754,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-1-max
  		/* Skip the writeback encoder. */
 --- a/drivers/gpu/drm/rockchip/rockchip_drm_vop.c
 +++ b/drivers/gpu/drm/rockchip/rockchip_drm_vop.c
-@@ -1416,8 +1416,10 @@ static void vop_wait_for_irq_handler(str
+@@ -1424,8 +1424,10 @@ static void vop_wait_for_irq_handler(str
  }
  
  static int vop_crtc_atomic_check(struct drm_crtc *crtc,

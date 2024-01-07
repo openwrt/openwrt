@@ -745,7 +745,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  	struct drm_device *dev = rcrtc->crtc.dev;
 --- a/drivers/gpu/drm/rockchip/rockchip_drm_vop.c
 +++ b/drivers/gpu/drm/rockchip/rockchip_drm_vop.c
-@@ -1247,8 +1247,10 @@ static void vop_crtc_gamma_set(struct vo
+@@ -1255,8 +1255,10 @@ static void vop_crtc_gamma_set(struct vo
  }
  
  static void vop_crtc_atomic_begin(struct drm_crtc *crtc,
@@ -757,7 +757,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  	struct vop *vop = to_vop(crtc);
  
  	/*
-@@ -1463,8 +1465,10 @@ static int vop_crtc_atomic_check(struct
+@@ -1471,8 +1473,10 @@ static int vop_crtc_atomic_check(struct
  }
  
  static void vop_crtc_atomic_flush(struct drm_crtc *crtc,

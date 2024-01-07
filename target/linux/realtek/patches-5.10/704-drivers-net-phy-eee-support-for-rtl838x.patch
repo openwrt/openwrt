@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1449,6 +1449,11 @@ int phylink_ethtool_ksettings_set(struct
+@@ -1450,6 +1450,11 @@ int phylink_ethtool_ksettings_set(struct
  		 *   the presence of a PHY, this should not be changed as that
  		 *   should be determined from the media side advertisement.
  		 */
@@ -12,7 +12,7 @@
  		return phy_ethtool_ksettings_set(pl->phydev, kset);
  	}
  
-@@ -1750,8 +1755,11 @@ int phylink_ethtool_get_eee(struct phyli
+@@ -1751,8 +1756,11 @@ int phylink_ethtool_get_eee(struct phyli
  
  	ASSERT_RTNL();
  
@@ -25,7 +25,7 @@
  
  	return ret;
  }
-@@ -1768,8 +1776,11 @@ int phylink_ethtool_set_eee(struct phyli
+@@ -1769,8 +1777,11 @@ int phylink_ethtool_set_eee(struct phyli
  
  	ASSERT_RTNL();
  

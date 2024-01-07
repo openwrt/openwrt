@@ -779,7 +779,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  	struct rcar_du_device *rcdu = rcrtc->dev;
 --- a/drivers/gpu/drm/rockchip/rockchip_drm_vop.c
 +++ b/drivers/gpu/drm/rockchip/rockchip_drm_vop.c
-@@ -693,7 +693,7 @@ static void rockchip_drm_set_win_enabled
+@@ -701,7 +701,7 @@ static void rockchip_drm_set_win_enabled
  }
  
  static void vop_crtc_atomic_disable(struct drm_crtc *crtc,
@@ -788,7 +788,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/845aa10ef171fc0ea060495efef1
  {
  	struct vop *vop = to_vop(crtc);
  
-@@ -1261,8 +1261,10 @@ static void vop_crtc_atomic_begin(struct
+@@ -1269,8 +1269,10 @@ static void vop_crtc_atomic_begin(struct
  }
  
  static void vop_crtc_atomic_enable(struct drm_crtc *crtc,

@@ -21,7 +21,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
 +++ b/drivers/gpu/drm/amd/display/amdgpu_dm/amdgpu_dm.c
-@@ -5511,25 +5511,6 @@ static int fill_hdr_info_packet(const st
+@@ -5512,25 +5512,6 @@ static int fill_hdr_info_packet(const st
  	return 0;
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static int
  amdgpu_dm_connector_atomic_check(struct drm_connector *conn,
  				 struct drm_atomic_state *state)
-@@ -5545,7 +5526,7 @@ amdgpu_dm_connector_atomic_check(struct
+@@ -5546,7 +5527,7 @@ amdgpu_dm_connector_atomic_check(struct
  	if (!crtc)
  		return 0;
  
