@@ -327,7 +327,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  {
  	struct atmel_pioctrl *atmel_pioctrl = pinctrl_dev_get_drvdata(pctldev);
  	u32 conf;
-@@ -1108,8 +1112,8 @@ static int atmel_pinctrl_probe(struct pl
+@@ -1115,8 +1119,8 @@ static int atmel_pinctrl_probe(struct pl
  		return -ENOMEM;
  	for (i = 0 ; i < atmel_pioctrl->npins; i++) {
  		struct atmel_group *group = atmel_pioctrl->groups + i;

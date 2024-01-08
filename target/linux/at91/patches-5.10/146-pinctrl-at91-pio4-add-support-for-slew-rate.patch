@@ -111,7 +111,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  };
  
  static const struct of_device_id atmel_pctrl_of_match[] = {
-@@ -1039,6 +1065,7 @@ static int atmel_pinctrl_probe(struct pl
+@@ -1046,6 +1072,7 @@ static int atmel_pinctrl_probe(struct pl
  		atmel_pioctrl->npins -= ATMEL_PIO_NPINS_PER_BANK;
  		atmel_pioctrl->npins += atmel_pioctrl_data->last_bank_count;
  	}

@@ -22,7 +22,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/net/bluetooth/smp.c
 +++ b/net/bluetooth/smp.c
-@@ -883,16 +883,9 @@ static int tk_request(struct l2cap_conn
+@@ -884,16 +884,9 @@ static int tk_request(struct l2cap_conn
  	    hcon->io_capability == HCI_IO_NO_INPUT_OUTPUT)
  		smp->method = JUST_WORKS;
  

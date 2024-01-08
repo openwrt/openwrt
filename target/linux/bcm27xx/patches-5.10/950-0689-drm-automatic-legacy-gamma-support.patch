@@ -357,7 +357,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201211114237.213288-2-tomi
  static const struct drm_plane_helper_funcs ingenic_drm_plane_helper_funcs = {
 --- a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
 +++ b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
-@@ -617,7 +617,6 @@ static const struct drm_crtc_funcs mtk_c
+@@ -622,7 +622,6 @@ static const struct drm_crtc_funcs mtk_c
  	.reset			= mtk_drm_crtc_reset,
  	.atomic_duplicate_state	= mtk_drm_crtc_duplicate_state,
  	.atomic_destroy_state	= mtk_drm_crtc_destroy_state,

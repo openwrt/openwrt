@@ -574,7 +574,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
  		if (drm_crtc_vblank_get(crtc) == 0)
 --- a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
 +++ b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
-@@ -578,24 +578,24 @@ static void mtk_drm_crtc_atomic_disable(
+@@ -578,29 +578,29 @@ static void mtk_drm_crtc_atomic_disable(
  }
  
  static void mtk_drm_crtc_atomic_begin(struct drm_crtc *crtc,
@@ -584,6 +584,7 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
 -	struct mtk_crtc_state *state = to_mtk_crtc_state(crtc->state);
 +	struct mtk_crtc_state *crtc_state = to_mtk_crtc_state(crtc->state);
  	struct mtk_drm_crtc *mtk_crtc = to_mtk_crtc(crtc);
+ 	unsigned long flags;
  
 -	if (mtk_crtc->event && state->base.event)
 +	if (mtk_crtc->event && crtc_state->base.event)
@@ -594,9 +595,13 @@ Link: https://patchwork.freedesktop.org/patch/msgid/20201028123222.1732139-2-max
 +	if (crtc_state->base.event) {
 +		crtc_state->base.event->pipe = drm_crtc_index(crtc);
  		WARN_ON(drm_crtc_vblank_get(crtc) != 0);
+ 
+ 		spin_lock_irqsave(&crtc->dev->event_lock, flags);
 -		mtk_crtc->event = state->base.event;
--		state->base.event = NULL;
 +		mtk_crtc->event = crtc_state->base.event;
+ 		spin_unlock_irqrestore(&crtc->dev->event_lock, flags);
+ 
+-		state->base.event = NULL;
 +		crtc_state->base.event = NULL;
  	}
  }

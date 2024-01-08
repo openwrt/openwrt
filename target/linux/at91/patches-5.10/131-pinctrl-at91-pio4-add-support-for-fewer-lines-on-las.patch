@@ -56,7 +56,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  };
  
  static const struct of_device_id atmel_pctrl_of_match[] = {
-@@ -1025,6 +1034,11 @@ static int atmel_pinctrl_probe(struct pl
+@@ -1032,6 +1041,11 @@ static int atmel_pinctrl_probe(struct pl
  	atmel_pioctrl_data = match->data;
  	atmel_pioctrl->nbanks = atmel_pioctrl_data->nbanks;
  	atmel_pioctrl->npins = atmel_pioctrl->nbanks * ATMEL_PIO_NPINS_PER_BANK;
