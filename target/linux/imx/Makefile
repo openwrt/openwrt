@@ -11,6 +11,7 @@ FEATURES:=audio display fpu gpio pcie rtc usb usbgadget squashfs targz nand ubif
 SUBTARGETS:=cortexa7 cortexa9
 
 KERNEL_PATCHVER:=5.15
+KERNEL_TESTING_PATCHVER:=6.1
 
 include $(INCLUDE_DIR)/target.mk
 
