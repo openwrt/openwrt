@@ -56,7 +56,7 @@
  	if (rxcb->is_mcbc) {
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -9224,7 +9224,7 @@ void cfg80211_bss_flush(struct wiphy *wi
+@@ -9228,7 +9228,7 @@ void cfg80211_bss_flush(struct wiphy *wi
   * @count: the number of TBTTs until the color change happens
   * @color_bitmap: representations of the colors that the local BSS is aware of
   */
@@ -65,7 +65,7 @@
  			      enum nl80211_commands cmd, u8 count,
  			      u64 color_bitmap);
  
-@@ -9234,9 +9234,9 @@ int cfg80211_bss_color_notify(struct net
+@@ -9238,9 +9238,9 @@ int cfg80211_bss_color_notify(struct net
   * @color_bitmap: representations of the colors that the local BSS is aware of
   */
  static inline int cfg80211_obss_color_collision_notify(struct net_device *dev,
@@ -77,7 +77,7 @@
  					 0, color_bitmap);
  }
  
-@@ -9250,7 +9250,7 @@ static inline int cfg80211_obss_color_co
+@@ -9254,7 +9254,7 @@ static inline int cfg80211_obss_color_co
  static inline int cfg80211_color_change_started_notify(struct net_device *dev,
  						       u8 count)
  {
@@ -86,7 +86,7 @@
  					 count, 0);
  }
  
-@@ -9262,7 +9262,7 @@ static inline int cfg80211_color_change_
+@@ -9266,7 +9266,7 @@ static inline int cfg80211_color_change_
   */
  static inline int cfg80211_color_change_aborted_notify(struct net_device *dev)
  {
@@ -95,7 +95,7 @@
  					 0, 0);
  }
  
-@@ -9274,7 +9274,7 @@ static inline int cfg80211_color_change_
+@@ -9278,7 +9278,7 @@ static inline int cfg80211_color_change_
   */
  static inline int cfg80211_color_change_notify(struct net_device *dev)
  {
@@ -106,7 +106,7 @@
  }
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -5239,6 +5239,10 @@ void ieee80211_tx_status_ext(struct ieee
+@@ -5241,6 +5241,10 @@ void ieee80211_tx_status_ext(struct ieee
   *	(NULL for multicast packets)
   * @info: tx status information
   */
@@ -119,7 +119,7 @@
  					     struct ieee80211_tx_info *info)
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -4775,7 +4775,7 @@ void ieee80211_color_collision_detection
+@@ -4777,7 +4777,7 @@ void ieee80211_color_collision_detection
  	struct ieee80211_sub_if_data *sdata = link->sdata;
  
  	sdata_lock(sdata);
@@ -141,7 +141,7 @@
  	sdata->debugfs.subdir_stations = debugfs_create_dir("stations",
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -1406,18 +1406,6 @@ static void __sta_info_destroy_part2(str
+@@ -1407,18 +1407,6 @@ static void __sta_info_destroy_part2(str
  		WARN_ON_ONCE(ret);
  	}
  
@@ -195,7 +195,7 @@
  	struct sta_info *sta = container_of(pubsta, struct sta_info, sta);
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -19406,7 +19406,7 @@ void cfg80211_ch_switch_started_notify(s
+@@ -19414,7 +19414,7 @@ void cfg80211_ch_switch_started_notify(s
  }
  EXPORT_SYMBOL(cfg80211_ch_switch_started_notify);
  
@@ -204,7 +204,7 @@
  			      enum nl80211_commands cmd, u8 count,
  			      u64 color_bitmap)
  {
-@@ -19420,7 +19420,7 @@ int cfg80211_bss_color_notify(struct net
+@@ -19428,7 +19428,7 @@ int cfg80211_bss_color_notify(struct net
  
  	trace_cfg80211_bss_color_notify(dev, cmd, count, color_bitmap);
  
@@ -213,7 +213,7 @@
  	if (!msg)
  		return -ENOMEM;
  
-@@ -19443,7 +19443,7 @@ int cfg80211_bss_color_notify(struct net
+@@ -19451,7 +19451,7 @@ int cfg80211_bss_color_notify(struct net
  	genlmsg_end(msg, hdr);
  
  	return genlmsg_multicast_netns(&nl80211_fam, wiphy_net(&rdev->wiphy),
