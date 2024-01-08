@@ -321,7 +321,7 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
   */
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1439,7 +1439,11 @@ ieee80211_tx_info_clear_status(struct ie
+@@ -1441,7 +1441,11 @@ ieee80211_tx_info_clear_status(struct ie
   *	known the frame shouldn't be reported.
   * @RX_FLAG_8023: the frame has an 802.3 header (decap offload performed by
   *	hardware or driver)
@@ -333,7 +333,7 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
  enum mac80211_rx_flags {
  	RX_FLAG_MMIC_ERROR		= BIT(0),
  	RX_FLAG_DECRYPTED		= BIT(1),
-@@ -1471,6 +1475,8 @@ enum mac80211_rx_flags {
+@@ -1473,6 +1477,8 @@ enum mac80211_rx_flags {
  	RX_FLAG_RADIOTAP_LSIG           = BIT(27),
  	RX_FLAG_NO_PSDU                 = BIT(28),
  	RX_FLAG_8023                    = BIT(29),
@@ -342,7 +342,7 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
  };
  
  /**
-@@ -1538,6 +1544,7 @@ enum mac80211_rx_encoding {
+@@ -1540,6 +1546,7 @@ enum mac80211_rx_encoding {
   *	HT or VHT is used (%RX_FLAG_HT/%RX_FLAG_VHT)
   * @nss: number of streams (VHT, HE and EHT only)
   * @flag: %RX_FLAG_\*
@@ -350,7 +350,7 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
   * @encoding: &enum mac80211_rx_encoding
   * @bw: &enum rate_info_bw
   * @enc_flags: uses bits from &enum mac80211_rx_encoding_flags
-@@ -1591,6 +1598,7 @@ struct ieee80211_rx_status {
+@@ -1593,6 +1600,7 @@ struct ieee80211_rx_status {
  	u8 ampdu_delimiter_crc;
  	u8 zero_length_psdu_type;
  	u8 link_valid:1, link_id:4;

@@ -29,7 +29,7 @@
  struct ath11k {
  	struct ath11k_base *ab;
  	struct ath11k_pdev *pdev;
-@@ -759,6 +769,8 @@ struct ath11k {
+@@ -760,6 +770,8 @@ struct ath11k {
  	struct ath11k_per_peer_tx_stats cached_stats;
  	u32 last_ppdu_id;
  	u32 cached_ppdu_id;
@@ -56,7 +56,7 @@
  #include "nss.h"
  
  #define CHAN2G(_channel, _freq, _flags) { \
-@@ -9282,6 +9284,91 @@ err_fallback:
+@@ -9286,6 +9288,91 @@ err_fallback:
  	return 0;
  }
  
@@ -148,7 +148,7 @@
  static const struct ieee80211_ops ath11k_ops = {
  	.tx				= ath11k_mac_op_tx,
  	.wake_tx_queue			= ieee80211_handle_wake_tx_queue,
-@@ -9521,6 +9608,56 @@ static int ath11k_mac_setup_iface_combin
+@@ -9525,6 +9612,56 @@ static int ath11k_mac_setup_iface_combin
  	return 0;
  }
  
@@ -205,7 +205,7 @@
  static const u8 ath11k_if_types_ext_capa[] = {
  	[0] = WLAN_EXT_CAPA1_EXT_CHANNEL_SWITCHING,
  	[2] = WLAN_EXT_CAPA3_MULTI_BSSID_SUPPORT,
-@@ -9782,6 +9919,7 @@ static int __ath11k_mac_register(struct
+@@ -9786,6 +9923,7 @@ static int __ath11k_mac_register(struct
  	ar->hw->wiphy->ema_max_profile_periodicity = TARGET_EMA_MAX_PROFILE_PERIOD;
  
  	ath11k_reg_init(ar);
@@ -213,7 +213,7 @@
  
  	if (!test_bit(ATH11K_FLAG_RAW_MODE, &ab->dev_flags)) {
  		ar->hw->netdev_features = NETIF_F_HW_CSUM;
-@@ -9944,6 +10082,7 @@ int ath11k_mac_allocate(struct ath11k_ba
+@@ -9948,6 +10086,7 @@ int ath11k_mac_allocate(struct ath11k_ba
  		 */
  		ath11k_wmi_pdev_attach(ab, i);
  
@@ -447,7 +447,7 @@
 +#endif /* QCA_VENDOR_H */
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -1697,6 +1697,71 @@ int ath11k_wmi_vdev_set_param_cmd(struct
+@@ -1743,6 +1743,71 @@ int ath11k_wmi_vdev_set_param_cmd(struct
  	return ret;
  }
  
@@ -521,7 +521,7 @@
  {
 --- a/drivers/net/wireless/ath/ath11k/wmi.h
 +++ b/drivers/net/wireless/ath/ath11k/wmi.h
-@@ -5303,6 +5303,79 @@ struct wmi_wmm_params_arg {
+@@ -5333,6 +5333,79 @@ struct wmi_wmm_params_arg {
  	u8 no_ack;
  };
  
@@ -601,7 +601,7 @@
  struct wmi_vdev_set_wmm_params_cmd {
  	u32 tlv_header;
  	u32 vdev_id;
-@@ -6520,6 +6593,8 @@ int ath11k_wmi_pdev_non_srg_obss_color_e
+@@ -6553,6 +6626,8 @@ int ath11k_wmi_pdev_non_srg_obss_color_e
  						     u32 *bitmap);
  int ath11k_wmi_pdev_non_srg_obss_bssid_enable_bitmap(struct ath11k *ar,
  						     u32 *bitmap);

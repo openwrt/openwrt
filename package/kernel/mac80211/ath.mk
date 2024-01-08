@@ -327,6 +327,8 @@ define KernelPackage/ath11k/config
 
        config ATH11K_NSS_SUPPORT
                bool "Enable NSS WiFi offload"
+               select NSS_DRV_WIFI_ENABLE
+               select NSS_DRV_WIFI_EXT_VDEV_ENABLE
                default y if TARGET_qualcommax
 
        config ATH11K_MEM_PROFILE_512M

@@ -19,7 +19,7 @@ Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -3483,7 +3483,10 @@ static void ath11k_mac_op_bss_info_chang
+@@ -3481,7 +3481,10 @@ static void ath11k_mac_op_bss_info_chang
  
  	if (changed & BSS_CHANGED_BEACON) {
  		param_id = WMI_PDEV_PARAM_BEACON_TX_MODE;
@@ -31,7 +31,7 @@ Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
  		ret = ath11k_wmi_pdev_set_param(ar, param_id,
  						param_value, ar->pdev->pdev_id);
  		if (ret)
-@@ -3491,8 +3494,9 @@ static void ath11k_mac_op_bss_info_chang
+@@ -3489,8 +3492,9 @@ static void ath11k_mac_op_bss_info_chang
  				    arvif->vdev_id);
  		else
  			ath11k_dbg(ar->ab, ATH11K_DBG_MAC,
