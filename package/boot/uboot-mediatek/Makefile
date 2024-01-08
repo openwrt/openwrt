@@ -57,6 +57,15 @@ define U-Boot/mt7620_mt7530_rfb
   UBOOT_IMAGE:=u-boot-with-spl.bin
 endef
 
+define U-Boot/mt7620_unbranded_lw-ip301
+  NAME:=Unbranded LW-IP301
+  UBOOT_CONFIG:=mt7620_unbranded_lw-ip301
+  BUILD_DEVICES:=unbranded_lw-ip301
+  BUILD_TARGET:=ramips
+  BUILD_SUBTARGET:=mt7620
+  UBOOT_IMAGE:=u-boot-with-spl.bin
+endef
+
 define U-Boot/mt7621_rfb
   NAME:=MT7621 Reference Board
   UBOOT_CONFIG:=mt7621_rfb
@@ -545,6 +554,7 @@ UBOOT_TARGETS := \
 	mt7620_rfb \
 	mt7621_nand_rfb \
 	mt7621_rfb \
+  mt7620_unbranded_lw-ip301 \
 	mt7622_bananapi_bpi-r64-emmc \
 	mt7622_bananapi_bpi-r64-sdmmc \
 	mt7622_bananapi_bpi-r64-snand \
