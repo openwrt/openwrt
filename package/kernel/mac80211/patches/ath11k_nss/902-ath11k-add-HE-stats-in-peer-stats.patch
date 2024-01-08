@@ -363,7 +363,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  /* HTT_H2T_MSG_TYPE_RX_RING_SELECTION_CFG Message
   *
   * details:
-@@ -1312,6 +1351,19 @@ enum htt_ppdu_stats_gi {
+@@ -1315,6 +1354,19 @@ enum htt_ppdu_stats_gi {
  #define HTT_PPDU_STATS_USER_RATE_INFO0_USER_POS_M	GENMASK(3, 0)
  #define HTT_PPDU_STATS_USER_RATE_INFO0_MU_GROUP_ID_M	GENMASK(11, 4)
  
@@ -383,7 +383,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  #define HTT_PPDU_STATS_USER_RATE_INFO1_RESP_TYPE_VALD_M	BIT(0)
  #define HTT_PPDU_STATS_USER_RATE_INFO1_PPDU_TYPE_M	GENMASK(5, 1)
  
-@@ -1339,6 +1391,12 @@ enum htt_ppdu_stats_gi {
+@@ -1342,6 +1394,12 @@ enum htt_ppdu_stats_gi {
  		FIELD_GET(HTT_PPDU_STATS_USER_RATE_FLAGS_GI_M, _val)
  #define HTT_USR_RATE_DCM(_val) \
  		FIELD_GET(HTT_PPDU_STATS_USER_RATE_FLAGS_DCM_M, _val)
@@ -396,7 +396,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  
  #define HTT_PPDU_STATS_USER_RATE_RESP_FLAGS_LTF_SIZE_M		GENMASK(1, 0)
  #define HTT_PPDU_STATS_USER_RATE_RESP_FLAGS_STBC_M		BIT(2)
-@@ -1442,6 +1500,21 @@ struct htt_ppdu_stats_usr_cmpltn_ack_ba_
+@@ -1445,6 +1503,21 @@ struct htt_ppdu_stats_usr_cmpltn_ack_ba_
  	u32 success_bytes;
  } __packed;
  
@@ -418,7 +418,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  struct htt_ppdu_stats_usr_cmn_array {
  	struct htt_tlv tlv_hdr;
  	u32 num_ppdu_stats;
-@@ -1455,14 +1528,16 @@ struct htt_ppdu_stats_usr_cmn_array {
+@@ -1458,14 +1531,16 @@ struct htt_ppdu_stats_usr_cmn_array {
  
  struct htt_ppdu_user_stats {
  	u16 peer_id;
@@ -436,7 +436,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  #define HTT_PPDU_DESC_MAX_DEPTH	16
  
  struct htt_ppdu_stats {
-@@ -1471,7 +1546,7 @@ struct htt_ppdu_stats {
+@@ -1474,7 +1549,7 @@ struct htt_ppdu_stats {
  };
  
  struct htt_ppdu_stats_info {
@@ -748,9 +748,9 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  #define RU_52  2
 --- a/drivers/net/wireless/ath/ath11k/peer.h
 +++ b/drivers/net/wireless/ath/ath11k/peer.h
-@@ -7,6 +7,17 @@
- #ifndef ATH11K_PEER_H
- #define ATH11K_PEER_H
+@@ -48,6 +48,17 @@ struct ath11k_ast_entry {
+ 	struct list_head ase_list;
+ };
  
 +struct ppdu_user_delayba {
 +	u8 reserved0;
@@ -766,7 +766,7 @@ Signed-off-by: Miles Hu <milehu@codeaurora.org>
  struct ath11k_peer {
  	struct list_head list;
  	struct ieee80211_sta *sta;
-@@ -38,6 +49,8 @@ struct ath11k_peer {
+@@ -83,6 +94,8 @@ struct ath11k_peer {
  	u16 sec_type_grp;
  	bool is_authorized;
  	bool dp_setup_done;
