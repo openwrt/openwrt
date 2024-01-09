@@ -327,6 +327,11 @@ mac80211_hostapd_setup_base() {
 		[ "$rx_stbc" -lt "$cap_rx_stbc" ] && cap_rx_stbc="$rx_stbc"
 		vht_cap="$(( ($vht_cap & ~(0x700)) | ($cap_rx_stbc << 8) ))"
 
+		[ "$vht_oper_chwidth" -lt 2 ] && {
+			vht160=0
+			short_gi_160=0
+		}
+
 		mac80211_add_capabilities vht_capab $vht_cap \
 			RXLDPC:0x10::$rxldpc \
 			SHORT-GI-80:0x20::$short_gi_80 \
