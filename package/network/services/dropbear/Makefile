@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
-PKG_VERSION:=2022.82
-PKG_RELEASE:=5
+PKG_VERSION:=2022.83
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	https://matt.ucc.asn.au/dropbear/releases/ \
 	https://dropbear.nl/mirror/releases/
-PKG_HASH:=3a038d2bbc02bf28bbdd20c012091f741a3ec5cbe460691811d714876aad75d1
+PKG_HASH:=bc5a121ffbc94b5171ad5ebe01be42746d50aa797c9549a4639894a16749443b
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
@@ -114,6 +114,7 @@ DB_OPT_COMMON = \
 	DEFAULT_PATH|"$(TARGET_INIT_PATH)" \
 	!!LOCAL_IDENT|"SSH-2.0-dropbear" \
 	DROPBEAR_CLI_NETCAT|0 \
+	!!DROPBEAR_DSS|0 \
 	DROPBEAR_DSS|0 \
 	DO_MOTD|0 \
 
@@ -181,10 +182,12 @@ endef
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
+		IGNORE_SPEED=1 \
 		PROGRAMS="dropbear $(if $(CONFIG_DROPBEAR_DBCLIENT),dbclient,) dropbearkey $(if $(CONFIG_DROPBEAR_SCP),scp,)" \
 		MULTI=1 SCPPROGRESS=1
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
+		IGNORE_SPEED=1 \
 		PROGRAMS="dropbearconvert"
 endef
 
