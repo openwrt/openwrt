@@ -5,6 +5,9 @@
 CONFIG_MODULE_COMPRESS_GZIP=y
 CONFIG_MODULE_DECOMPRESS=y
 
+# Enable /proc/sys/kernel/hotplug to be used with Busybox mdev
+CONFIG_UEVENT_HELPER=y
+
 # They are matching what was in the main branch before this change 
 #
 # Configuration splitted by SoC family.
