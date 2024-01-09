@@ -165,6 +165,11 @@ define Build/Configure/dropbear_headers
 	))
 endef
 
+define Build/Configure/dropbear_objects
+	grep -ERZl -e '($(subst $(space),|,$(strip $(sort $(patsubst !!%,%,$(foreach s,$(DB_OPT_COMMON) $(DB_OPT_CONFIG),$(word 1,$(subst $(comma),$(space),$(s)))))))))' \
+	$(PKG_BUILD_DIR)/ | sed -zE 's/^(.+)\.[^.]+$$$$/\1.o/' | sort -uV | xargs -0 -r rm -fv || :
+endef
+
 define Build/Configure
 	rm -f $(PKG_BUILD_DIR)/localoptions.h
 	$(Build/Configure/Default)
@@ -172,8 +177,8 @@ define Build/Configure
 	: > $(PKG_BUILD_DIR)/localoptions.h
 	$(Build/Configure/dropbear_headers)
 
-	# Enforce rebuild of svr-chansession.c
-	rm -f $(PKG_BUILD_DIR)/svr-chansession.o
+	# Enforce rebuild of files depending on configured options
+	$(Build/Configure/dropbear_objects)
 
 	# Rebuild them on config change
 	+$(MAKE) -C $(PKG_BUILD_DIR)/libtomcrypt clean
