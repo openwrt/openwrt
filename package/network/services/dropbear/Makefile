@@ -104,6 +104,8 @@ CONFIGURE_ARGS += \
 #
 ##############################################################################
 
+# adjust allowed shell list (if getusershell(3) is missing):
+# - COMPAT_USER_SHELLS
 # remove protocol idented software version number:
 # - LOCAL_IDENT
 # disable legacy/unsafe methods and unused functionality:
@@ -114,6 +116,7 @@ CONFIGURE_ARGS += \
 # - DROPBEAR_SHA1_HMAC
 DB_OPT_COMMON = \
 	!!LOCAL_IDENT,"SSH-2.0-dropbear" \
+	COMPAT_USER_SHELLS,"/bin/ash","/bin/sh" \
 	DEFAULT_PATH,"$(TARGET_INIT_PATH)" \
 	DEFAULT_ROOT_PATH,"$(TARGET_INIT_PATH)" \
 	DROPBEAR_DSS,0 \
