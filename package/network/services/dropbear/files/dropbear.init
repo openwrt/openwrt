@@ -178,7 +178,7 @@ validate_section_dropbear()
 		'SSHKeepAlive:uinteger:300' \
 		'IdleTimeout:uinteger:0' \
 		'MaxAuthTries:uinteger:3' \
-		'RecvWindowSize:uinteger:0' \
+		'RecvWindowSize:uinteger:262144' \
 		'mdns:bool:1'
 }
 
@@ -204,12 +204,6 @@ dropbear_instance()
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 	local pid_file="/var/run/${NAME}.${PIDCOUNT}.pid"
 
-	# Increase default receive window size to increase
-	# throughput on high latency links
-	if [ "${RecvWindowSize}" -eq "0" ]; then
-		RecvWindowSize="262144"
-	fi
-
 	procd_open_instance
 	procd_set_param command "$PROG" -F -P "$pid_file"
 	[ "${PasswordAuth}" -eq 0 ] && procd_append_param command -s
@@ -232,8 +226,23 @@ dropbear_instance()
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
 	[ "${SSHKeepAlive}" -ne 0 ] && procd_append_param command -K "${SSHKeepAlive}"
 	[ "${MaxAuthTries}" -ne 0 ] && procd_append_param command -T "${MaxAuthTries}"
-	[ "${RecvWindowSize}" -gt 0 -a "${RecvWindowSize}" -le 1048576 ] && \
+	[ "${RecvWindowSize}" -gt 0 ] && {
+		# NB: OpenWrt increases receive window size to increase throughput on high latency links
+		# ref: validate_section_dropbear()
+		# default receive window size is 24576 (DEFAULT_RECV_WINDOW in default_options.h)
+
+		# sysoptions.h
+		local MAX_RECV_WINDOW=10485760
+		if [ "${RecvWindowSize}" -gt ${MAX_RECV_WINDOW} ] ; then
+			# separate logging is required because syslog misses dropbear's message
+			#   Bad recv window '${RecvWindowSize}', using ${MAX_RECV_WINDOW}
+			# it's probably dropbear issue but we should handle this and notify user
+			logger -s -t "${NAME}" -p daemon.warn \
+			  "Option 'RecvWindowSize' is too high (${RecvWindowSize}), limiting to ${MAX_RECV_WINDOW}"
+			RecvWindowSize=${MAX_RECV_WINDOW}
+		fi
 		procd_append_param command -W "${RecvWindowSize}"
+	}
 	[ "${mdns}" -ne 0 ] && procd_add_mdns "ssh" "tcp" "$Port" "daemon=dropbear"
 	procd_set_param respawn
 	procd_close_instance
