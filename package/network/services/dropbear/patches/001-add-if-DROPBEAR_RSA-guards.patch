@@ -1,0 +1,104 @@
+From 36a03132634a17c667c0fac0a8e1519b3d1b71c6 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Mon, 28 Nov 2022 21:12:23 +0800
+Subject: Add #if DROPBEAR_RSA guards
+
+Fixes building with DROPBEAR_RSA disabled.
+Closes #197
+---
+ signkey.c    | 8 +++++++-
+ signkey.h    | 2 ++
+ sysoptions.h | 5 +----
+ 3 files changed, 10 insertions(+), 5 deletions(-)
+
+--- a/signkey.c
++++ b/signkey.c
+@@ -120,6 +120,7 @@ enum signkey_type signkey_type_from_name
+ /* Special case for rsa-sha2-256. This could be generalised if more 
+    signature names are added that aren't 1-1 with public key names */
+ const char* signature_name_from_type(enum signature_type type, unsigned int *namelen) {
++#if DROPBEAR_RSA
+ #if DROPBEAR_RSA_SHA256
+ 	if (type == DROPBEAR_SIGNATURE_RSA_SHA256) {
+ 		if (namelen) {
+@@ -136,11 +137,13 @@ const char* signature_name_from_type(enu
+ 		return SSH_SIGNKEY_RSA;
+ 	}
+ #endif
++#endif /* DROPBEAR_RSA */
+ 	return signkey_name_from_type((enum signkey_type)type, namelen);
+ }
+ 
+ /* Returns DROPBEAR_SIGNATURE_NONE if none match */
+ enum signature_type signature_type_from_name(const char* name, unsigned int namelen) {
++#if DROPBEAR_RSA
+ #if DROPBEAR_RSA_SHA256
+ 	if (namelen == strlen(SSH_SIGNATURE_RSA_SHA256) 
+ 		&& memcmp(name, SSH_SIGNATURE_RSA_SHA256, namelen) == 0) {
+@@ -153,10 +156,11 @@ enum signature_type signature_type_from_
+ 		return DROPBEAR_SIGNATURE_RSA_SHA1;
+ 	}
+ #endif
++#endif /* DROPBEAR_RSA */
+ 	return (enum signature_type)signkey_type_from_name(name, namelen);
+ }
+ 
+-/* Returns the signature type from a key type. Must not be called 
++/* Returns the signature type from a key type. Must not be called
+    with RSA keytype */
+ enum signature_type signature_type_from_signkey(enum signkey_type keytype) {
+ #if DROPBEAR_RSA
+@@ -167,6 +171,7 @@ enum signature_type signature_type_from_
+ }
+ 
+ enum signkey_type signkey_type_from_signature(enum signature_type sigtype) {
++#if DROPBEAR_RSA
+ #if DROPBEAR_RSA_SHA256
+ 	if (sigtype == DROPBEAR_SIGNATURE_RSA_SHA256) {
+ 		return DROPBEAR_SIGNKEY_RSA;
+@@ -177,6 +182,7 @@ enum signkey_type signkey_type_from_sign
+ 		return DROPBEAR_SIGNKEY_RSA;
+ 	}
+ #endif
++#endif /* DROPBEAR_RSA */
+ 	assert((int)sigtype < (int)DROPBEAR_SIGNKEY_NUM_NAMED);
+ 	return (enum signkey_type)sigtype;
+ }
+--- a/signkey.h
++++ b/signkey.h
+@@ -79,12 +79,14 @@ enum signature_type {
+ 	DROPBEAR_SIGNATURE_SK_ED25519 = DROPBEAR_SIGNKEY_SK_ED25519,
+ #endif
+ #endif
++#if DROPBEAR_RSA
+ #if DROPBEAR_RSA_SHA1
+ 	DROPBEAR_SIGNATURE_RSA_SHA1 = 100, /* ssh-rsa signature (sha1) */
+ #endif
+ #if DROPBEAR_RSA_SHA256
+ 	DROPBEAR_SIGNATURE_RSA_SHA256 = 101, /* rsa-sha2-256 signature. has a ssh-rsa key */
+ #endif
++#endif /* DROPBEAR_RSA */
+ 	DROPBEAR_SIGNATURE_NONE = DROPBEAR_SIGNKEY_NONE,
+ };
+ 
+--- a/sysoptions.h
++++ b/sysoptions.h
+@@ -137,7 +137,7 @@
+ 
+ /* Debian doesn't define this in system headers */
+ #if !defined(LTM_DESC) && (DROPBEAR_ECC)
+-#define LTM_DESC 
++#define LTM_DESC
+ #endif
+ 
+ #define DROPBEAR_ECC_256 (DROPBEAR_ECC)
+@@ -151,9 +151,6 @@
+  * signing operations slightly slower. */
+ #define DROPBEAR_RSA_BLINDING 1
+ 
+-#ifndef DROPBEAR_RSA_SHA1
+-#define DROPBEAR_RSA_SHA1 DROPBEAR_RSA
+-#endif
+ #ifndef DROPBEAR_RSA_SHA256
+ #define DROPBEAR_RSA_SHA256 DROPBEAR_RSA
+ #endif

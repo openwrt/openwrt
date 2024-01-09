@@ -1,0 +1,121 @@
+From 3b576d95dcf791d7b945e75f639da8f89c1685a2 Mon Sep 17 00:00:00 2001
+From: czurnieden <czurnieden@gmx.de>
+Date: Tue, 9 May 2023 17:17:12 +0200
+Subject: Fix possible integer overflow
+
+---
+ libtommath/bn_mp_2expt.c                | 4 ++++
+ libtommath/bn_mp_grow.c                 | 4 ++++
+ libtommath/bn_mp_init_size.c            | 5 +++++
+ libtommath/bn_mp_mul_2d.c               | 4 ++++
+ libtommath/bn_s_mp_mul_digs.c           | 4 ++++
+ libtommath/bn_s_mp_mul_digs_fast.c      | 4 ++++
+ libtommath/bn_s_mp_mul_high_digs.c      | 4 ++++
+ libtommath/bn_s_mp_mul_high_digs_fast.c | 4 ++++
+ 8 files changed, 33 insertions(+)
+
+--- a/libtommath/bn_mp_2expt.c
++++ b/libtommath/bn_mp_2expt.c
+@@ -12,6 +12,10 @@ mp_err mp_2expt(mp_int *a, int b)
+ {
+    mp_err    err;
+ 
++   if (b < 0) {
++      return MP_VAL;
++   }
++
+    /* zero a as per default */
+    mp_zero(a);
+ 
+--- a/libtommath/bn_mp_grow.c
++++ b/libtommath/bn_mp_grow.c
+@@ -9,6 +9,10 @@ mp_err mp_grow(mp_int *a, int size)
+    int     i;
+    mp_digit *tmp;
+ 
++   if (size < 0) {
++      return MP_VAL;
++   }
++
+    /* if the alloc size is smaller alloc more ram */
+    if (a->alloc < size) {
+       /* reallocate the array a->dp
+--- a/libtommath/bn_mp_init_size.c
++++ b/libtommath/bn_mp_init_size.c
+@@ -6,6 +6,11 @@
+ /* init an mp_init for a given size */
+ mp_err mp_init_size(mp_int *a, int size)
+ {
++
++   if (size < 0) {
++      return MP_VAL;
++   }
++
+    size = MP_MAX(MP_MIN_PREC, size);
+ 
+    /* alloc mem */
+--- a/libtommath/bn_mp_mul_2d.c
++++ b/libtommath/bn_mp_mul_2d.c
+@@ -9,6 +9,10 @@ mp_err mp_mul_2d(const mp_int *a, int b,
+    mp_digit d;
+    mp_err   err;
+ 
++   if (b < 0) {
++      return MP_VAL;
++   }
++
+    /* copy */
+    if (a != c) {
+       if ((err = mp_copy(a, c)) != MP_OKAY) {
+--- a/libtommath/bn_s_mp_mul_digs.c
++++ b/libtommath/bn_s_mp_mul_digs.c
+@@ -16,6 +16,10 @@ mp_err s_mp_mul_digs(const mp_int *a, co
+    mp_word r;
+    mp_digit tmpx, *tmpt, *tmpy;
+ 
++   if (digs < 0) {
++      return MP_VAL;
++   }
++
+    /* can we use the fast multiplier? */
+    if ((digs < MP_WARRAY) &&
+        (MP_MIN(a->used, b->used) < MP_MAXFAST)) {
+--- a/libtommath/bn_s_mp_mul_digs_fast.c
++++ b/libtommath/bn_s_mp_mul_digs_fast.c
+@@ -26,6 +26,10 @@ mp_err s_mp_mul_digs_fast(const mp_int *
+    mp_digit W[MP_WARRAY];
+    mp_word  _W;
+ 
++   if (digs < 0) {
++      return MP_VAL;
++   }
++
+    /* grow the destination as required */
+    if (c->alloc < digs) {
+       if ((err = mp_grow(c, digs)) != MP_OKAY) {
+--- a/libtommath/bn_s_mp_mul_high_digs.c
++++ b/libtommath/bn_s_mp_mul_high_digs.c
+@@ -15,6 +15,10 @@ mp_err s_mp_mul_high_digs(const mp_int *
+    mp_word  r;
+    mp_digit tmpx, *tmpt, *tmpy;
+ 
++   if (digs < 0) {
++      return MP_VAL;
++   }
++
+    /* can we use the fast multiplier? */
+    if (MP_HAS(S_MP_MUL_HIGH_DIGS_FAST)
+        && ((a->used + b->used + 1) < MP_WARRAY)
+--- a/libtommath/bn_s_mp_mul_high_digs_fast.c
++++ b/libtommath/bn_s_mp_mul_high_digs_fast.c
+@@ -19,6 +19,10 @@ mp_err s_mp_mul_high_digs_fast(const mp_
+    mp_digit W[MP_WARRAY];
+    mp_word  _W;
+ 
++   if (digs < 0) {
++      return MP_VAL;
++   }
++
+    /* grow the destination as required */
+    pa = a->used + b->used;
+    if (c->alloc < pa) {

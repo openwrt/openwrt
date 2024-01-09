@@ -1,0 +1,94 @@
+From a113381c12a2da3c9b7bd594f47a1b2657bdfdf2 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Sun, 12 Feb 2023 22:44:32 +0800
+Subject: Disable rsa signatures when no rsa hostkey
+
+Otherwise Dropbear will offer RSA as a hostkey signature option, but the
+session will exit with an assertion or NULL pointer dereference once
+that algorithm is negotiated.
+
+This likely regressed in 2020.79 when signature vs key type enums were
+split, for rsa-sha256.
+
+Fixes #219 on github
+---
+ svr-runopts.c | 21 +++++++++++----------
+ 1 file changed, 11 insertions(+), 10 deletions(-)
+
+--- a/svr-runopts.c
++++ b/svr-runopts.c
+@@ -505,11 +505,11 @@ static void addportandaddress(const char
+ 	svr_opts.portcount++;
+ }
+ 
+-static void disablekey(int type) {
++static void disablekey(enum signature_type type) {
+ 	int i;
+ 	TRACE(("Disabling key type %d", type))
+ 	for (i = 0; sigalgs[i].name != NULL; i++) {
+-		if (sigalgs[i].val == type) {
++		if ((int)sigalgs[i].val == (int)type) {
+ 			sigalgs[i].usable = 0;
+ 			break;
+ 		}
+@@ -624,7 +624,8 @@ void load_all_hostkeys() {
+ 
+ #if DROPBEAR_RSA
+ 	if (!svr_opts.delay_hostkey && !svr_opts.hostkey->rsakey) {
+-		disablekey(DROPBEAR_SIGNKEY_RSA);
++		disablekey(DROPBEAR_SIGNATURE_RSA_SHA256);
++		disablekey(DROPBEAR_SIGNATURE_RSA_SHA1);
+ 	} else {
+ 		any_keys = 1;
+ 	}
+@@ -632,7 +633,7 @@ void load_all_hostkeys() {
+ 
+ #if DROPBEAR_DSS
+ 	if (!svr_opts.delay_hostkey && !svr_opts.hostkey->dsskey) {
+-		disablekey(DROPBEAR_SIGNKEY_DSS);
++		disablekey(DROPBEAR_SIGNATURE_DSS);
+ 	} else {
+ 		any_keys = 1;
+ 	}
+@@ -666,35 +667,35 @@ void load_all_hostkeys() {
+ #if DROPBEAR_ECC_256
+ 	if (!svr_opts.hostkey->ecckey256
+ 		&& (!svr_opts.delay_hostkey || loaded_any_ecdsa || ECDSA_DEFAULT_SIZE != 256 )) {
+-		disablekey(DROPBEAR_SIGNKEY_ECDSA_NISTP256);
++		disablekey(DROPBEAR_SIGNATURE_ECDSA_NISTP256);
+ 	}
+ #endif
+ #if DROPBEAR_ECC_384
+ 	if (!svr_opts.hostkey->ecckey384
+ 		&& (!svr_opts.delay_hostkey || loaded_any_ecdsa || ECDSA_DEFAULT_SIZE != 384 )) {
+-		disablekey(DROPBEAR_SIGNKEY_ECDSA_NISTP384);
++		disablekey(DROPBEAR_SIGNATURE_ECDSA_NISTP384);
+ 	}
+ #endif
+ #if DROPBEAR_ECC_521
+ 	if (!svr_opts.hostkey->ecckey521
+ 		&& (!svr_opts.delay_hostkey || loaded_any_ecdsa || ECDSA_DEFAULT_SIZE != 521 )) {
+-		disablekey(DROPBEAR_SIGNKEY_ECDSA_NISTP521);
++		disablekey(DROPBEAR_SIGNATURE_ECDSA_NISTP521);
+ 	}
+ #endif
+ #endif /* DROPBEAR_ECDSA */
+ 
+ #if DROPBEAR_ED25519
+ 	if (!svr_opts.delay_hostkey && !svr_opts.hostkey->ed25519key) {
+-		disablekey(DROPBEAR_SIGNKEY_ED25519);
++		disablekey(DROPBEAR_SIGNATURE_ED25519);
+ 	} else {
+ 		any_keys = 1;
+ 	}
+ #endif
+ #if DROPBEAR_SK_ECDSA
+-	disablekey(DROPBEAR_SIGNKEY_SK_ECDSA_NISTP256);
++	disablekey(DROPBEAR_SIGNATURE_SK_ECDSA_NISTP256);
+ #endif 
+ #if DROPBEAR_SK_ED25519
+-	disablekey(DROPBEAR_SIGNKEY_SK_ED25519);
++	disablekey(DROPBEAR_SIGNATURE_SK_ED25519);
+ #endif
+ 
+ 	if (!any_keys) {

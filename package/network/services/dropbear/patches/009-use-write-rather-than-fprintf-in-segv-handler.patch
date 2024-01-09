@@ -1,0 +1,27 @@
+From 3292b8c6f1e5fcc405fa0f7a20e90a60f74037b2 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Sun, 12 Feb 2023 23:00:00 +0800
+Subject: Use write() rather than fprintf() in segv handler
+
+fprintf isn't guaranteed safe (though hasn't had any problems reported).
+---
+ svr-main.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/svr-main.c
++++ b/svr-main.c
+@@ -420,8 +420,12 @@ static void sigchld_handler(int UNUSED(u
+ 
+ /* catch any segvs */
+ static void sigsegv_handler(int UNUSED(unused)) {
+-	fprintf(stderr, "Aiee, segfault! You should probably report "
+-			"this as a bug to the developer\n");
++	int i;
++	const char *msg = "Aiee, segfault! You should probably report "
++			"this as a bug to the developer\n";
++	i = write(STDERR_FILENO, msg, strlen(msg));
++	/* ignore short writes */
++	(void)i;
+ 	_exit(EXIT_FAILURE);
+ }
+ 
