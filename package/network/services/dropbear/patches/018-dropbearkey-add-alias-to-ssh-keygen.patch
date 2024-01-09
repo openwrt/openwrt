@@ -1,0 +1,33 @@
+From 806586b585806cbe32013bcd3af3847278972060 Mon Sep 17 00:00:00 2001
+From: Sergey Ponomarev <stokito@gmail.com>
+Date: Sun, 10 Dec 2023 10:31:56 +0200
+Subject: dropbearkey: add alias to ssh-keygen
+
+The dropbearkey is partially compatible with ssh-keygen and can be used as an alias.
+
+Closes: #263
+---
+ dbmulti.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/dbmulti.c
++++ b/dbmulti.c
+@@ -41,7 +41,8 @@ static int runprog(const char *multipath
+ 		}
+ #endif
+ #ifdef DBMULTI_dropbearkey
+-		if (strcmp(progname, "dropbearkey") == 0) {
++		if (strcmp(progname, "dropbearkey") == 0
++				|| strcmp(progname, "ssh-keygen") == 0) {
+ 			return dropbearkey_main(argc, argv);
+ 		}
+ #endif
+@@ -88,7 +89,7 @@ int main(int argc, char ** argv) {
+ 			"'dbclient' or 'ssh' - the Dropbear client\n"
+ #endif
+ #ifdef DBMULTI_dropbearkey
+-			"'dropbearkey' - the key generator\n"
++			"'dropbearkey' or 'ssh-keygen' - the key generator\n"
+ #endif
+ #ifdef DBMULTI_dropbearconvert
+ 			"'dropbearconvert' - the key converter\n"
