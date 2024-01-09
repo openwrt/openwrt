@@ -12,28 +12,52 @@ PIDCOUNT=0
 
 extra_command "killclients" "Kill ${NAME} processes except servers and yourself"
 
+# most of time real_stat() will be failing
+# due to missing "stat" binary (by default)
+real_stat() { env stat -L "$@" 2>/dev/null ; }
+dumb_stat() { ls -Ldln "$1" | tr -s '\t ' ' ' ; }
+stat_perm()  { real_stat -c '%A' "$1" || dumb_stat "$1" | cut -d ' ' -f 1 ; }
+stat_owner() { real_stat -c '%u' "$1" || dumb_stat "$1" | cut -d ' ' -f 3 ; }
+
 _dropbearkey()
 {
-	/usr/bin/dropbearkey "$@" 0<&- 1>&- 2>&-
+	/usr/bin/dropbearkey "$@" </dev/null >/dev/null 2>&1
 }
 
-# $1 - host key file name
-hk_verify()
+# $1 - file name (host key or config)
+file_verify()
 {
 	[ -f "$1" ] || return 1
-	[ -s "$1" ] || return 2
-	_dropbearkey -y -f "$1" || return 3
+	# checking file ownership
+	[ "$(stat_owner "$1")" = "0" ] || {
+		chown 0 "$1"
+		[ "$(stat_owner "$1")" = "0" ] || return 2
+	}
+	# checking file permissions
+	[ "$(stat_perm "$1")" = "-rw-------" ] || {
+		chmod 0600 "$1"
+		[ "$(stat_perm "$1")" = "-rw-------" ] || return 3
+	}
+	# file is host key or not?
+	# if $2 is empty string - file is "host key"
+	# if $2 is non-empty string - file is "config"
+	[ -z "$2" ] || return 0
+	# checking file contents (finally)
+	[ -s "$1" ] || return 4
+	_dropbearkey -y -f "$1" || return 5
 	return 0
 }
 
-# $1 - hk_verify() return code
-hk_errmsg()
+# $1 - file_verify() return code
+file_errmsg()
 {
 	case "$1" in
 	0) ;;
 	1) echo "file does not exist" ;;
-	2) echo "file has zero length" ;;
-	3) echo "file is not valid host key or not supported" ;;
+	2) echo "file has wrong owner (must be owned by root)" ;;
+	3) echo "file has wrong permissions (must not have group/other write bit)" ;;
+	4) echo "file has zero length" ;;
+	5) echo "file is not valid host key or not supported" ;;
 	*) echo "unknown error" ;;
 	esac
 }
@@ -43,58 +67,83 @@ hk_errmsg()
 hk_config()
 {
 	local x m
-	hk_verify "$2"; x=$?
-	case "$x" in
-	0)	procd_append_param command -r "$2"
-		;;
-	*)	m=$(hk_errmsg "$x")
-		logger -t "${NAME}" -p daemon.warn \
-		  "option '$1', value '$2': $m, skipping"
-		;;
-	esac
+	file_verify "$2" ; x=$?
+	if [ "$x" = 0 ] ; then
+		procd_append_param command -r "$2"
+		return
+	fi
+	m=$(file_errmsg "$x")
+	logger -s -t "${NAME}" -p daemon.warn \
+	  "Option '$1', skipping '$2': $m"
 }
 
 # $1 - host key file name
-hk_config__keyfile()
-{
-	hk_config 'keyfile' "$1"
-}
+hk_config__keyfile() { hk_config keyfile "$1" ; }
+
+ktype_all='ed25519 ecdsa rsa'
 
 hk_generate_as_needed()
 {
-	local kdir kgen ktype tdir kcount tfile
-	kdir='/etc/dropbear'
+	local hk_cfg_dir kgen ktype kfile hk_tmp_dir
+	hk_cfg_dir='/etc/dropbear'
 
-	kgen=''
-	for ktype in ed25519 ecdsa rsa; do
-		hk_verify "${kdir}/dropbear_${ktype}_host_key" && continue
+	[ -d "${hk_cfg_dir}" ] || mkdir -p "${hk_cfg_dir}"
 
-		kgen="${kgen} ${ktype}"
+	kgen=
+	for ktype in ${ktype_all} ; do
+		kfile="${hk_cfg_dir}/dropbear_${ktype}_host_key"
+
+		if file_verify "${kfile}" ; then continue ; fi
+
+		kgen="${kgen}${kgen:+ }${ktype}"
 	done
 
-	[ -z "${kgen}" ] && return
+	# all keys are sane?
+	[ -n "${kgen}" ] || return 0
 
-	tdir=$(mktemp -d); chmod 0700 "${tdir}"
+	hk_tmp_dir=$(mktemp -d)
+	# system in bad state?
+	[ -n "${hk_tmp_dir}" ] || return 1
 
-	kcount=0
-	for ktype in ${kgen}; do
-		tfile="${tdir}/dropbear_${ktype}_host_key"
+	chmod 0700 "${hk_tmp_dir}"
 
-		if ! _dropbearkey -t ${ktype} -f "${tfile}"; then
+	for ktype in ${kgen} ; do
+		kfile="${hk_tmp_dir}/dropbear_${ktype}_host_key"
+
+		if ! _dropbearkey -t ${ktype} -f "${kfile}" ; then
 			# unsupported key type
-			rm -f "${tfile}"
+			rm -f "${kfile}"
 			continue
 		fi
 
-		kcount=$((kcount+1))
+		chmod 0600 "${kfile}"
 	done
 
-	if [ ${kcount} -ne 0 ]; then
-		mkdir -p "${kdir}"; chmod 0700 "${kdir}"; chown root "${kdir}"
-		mv -f "${tdir}/"* "${kdir}/"
+	kgen=
+	for ktype in ${ktype_all} ; do
+		kfile="${hk_tmp_dir}/dropbear_${ktype}_host_key"
+
+		[ -s "${kfile}" ] || continue
+
+		kgen="${kgen}${kgen:+ }${ktype}"
+	done
+
+	if [ -n "${kgen}" ] ; then
+		for ktype in ${kgen} ; do
+			kfile="${hk_tmp_dir}/dropbear_${ktype}_host_key"
+			[ -s "${kfile}" ] || continue
+			mv -f "${kfile}" "${hk_cfg_dir}/"
+		done
 	fi
 
-	rm -rf "${tdir}"
+	rm -rf "${hk_tmp_dir}"
+
+	# cleanup empty files
+	for ktype in ${ktype_all} ; do
+		kfile="${hk_cfg_dir}/dropbear_${ktype}_host_key"
+
+		[ -s "${kfile}" ] || rm -f "${kfile}"
+	done
 }
 
 append_ports()
@@ -207,6 +256,7 @@ boot()
 start_service()
 {
 	hk_generate_as_needed
+	file_verify /etc/dropbear/authorized_keys config
 
 	. /lib/functions.sh
 	. /lib/functions/network.sh
