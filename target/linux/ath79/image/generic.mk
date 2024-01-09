@@ -828,6 +828,16 @@ define Device/comfast_cf-e560ac
 endef
 TARGET_DEVICES += comfast_cf-e560ac
 
+define Device/comfast_cf-ew71-v2
+  SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-EW71
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-usb2 -uboot-envtools -swconfig
+  IMAGE_SIZE := 16192k
+endef
+TARGET_DEVICES += comfast_cf-ew71-v2
+
 define Device/comfast_cf-ew72
   SOC := qca9531
   DEVICE_VENDOR := COMFAST
