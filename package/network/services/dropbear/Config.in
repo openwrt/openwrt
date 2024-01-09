@@ -145,4 +145,25 @@ config DROPBEAR_AGENTFORWARD
 		Also see DROPBEAR_DBCLIENT_AGENTFORWARD (agent forwarding in
 		dropbear client) if DROPBEAR_DBCLIENT is selected.
 
+config DROPBEAR_MODERN_ONLY
+	bool "Use modern crypto only [BREAKS COMPATIBILITY]"
+	select DROPBEAR_ED25519
+	select DROPBEAR_CURVE25519
+	select DROPBEAR_CHACHA20POLY1305
+	help
+		This option enables:
+		 - Chacha20-Poly1305
+		 - Curve25519
+		 - Ed25519
+		and disables:
+		 - AES
+		 - RSA
+		 - SHA1
+
+		Reduces binary size by about 64 kB (MIPS) from default
+		configuration.
+
+		Consider enabling this option if you're building own OpenWrt
+		image and using modern SSH software everywhere.
+
 endmenu
