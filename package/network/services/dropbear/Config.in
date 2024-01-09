@@ -65,6 +65,34 @@ config DROPBEAR_CHACHA20POLY1305
 
 		Increases binary size by about 4 kB (MIPS).
 
+config DROPBEAR_U2F
+	bool "U2F/FIDO support"
+	default y
+	help
+		This option itself doesn't enable any support for U2F/FIDO
+		but subordinate options do:
+
+		- DROPBEAR_ECDSA_SK   - ecdsa-sk keys support
+		  depends on DROPBEAR_ECC ("Elliptic curve cryptography (ECC)")
+		- DROPBEAR_ED25519_SK - ed25519-sk keys support
+		  depends on DROPBEAR_ED25519 ("Ed25519 support")
+
+config DROPBEAR_ECDSA_SK
+	bool "ECDSA-SK support"
+	default y
+	depends on DROPBEAR_U2F && DROPBEAR_ECC
+	help
+		This enables the following public key algorithm:
+		  sk-ecdsa-sha2-nistp256@openssh.com
+
+config DROPBEAR_ED25519_SK
+	bool "Ed25519-SK support"
+	default y
+	depends on DROPBEAR_U2F && DROPBEAR_ED25519
+	help
+		This enables the following public key algorithm:
+		  sk-ssh-ed25519@openssh.com
+
 config DROPBEAR_ZLIB
 	bool "Enable compression"
 	help
