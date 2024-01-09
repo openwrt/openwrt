@@ -14,23 +14,24 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-START=20
+START=71
 
 apply_sysctl() {
-  [ $(sysctl -n -e dev.nss.general.redirect) = "0" ] && /etc/init.d/qca-nss-ecm start
+  [ $(sysctl -n -e dev.nss.general.redirect) -eq 0 ] && /etc/init.d/qca-nss-ecm start
+
   # Running this script multiple times is useless, as extra_pbuf_core0
   # can't be changed if it is allocated, assume it's already been run.
-  extra_pbuf_core0=$(sysctl -n -e dev.nss.n2hcfg.extra_pbuf_core0)
-
-  if [ "$extra_pbuf_core0" = "0" ]; then
+  if [ $(sysctl -n -e dev.nss.n2hcfg.extra_pbuf_core0) -eq 0 ]; then
     logger -t ath11k_nss "$board - setting dev.nss.n2hcfg.extra_pbuf_core0=$extra_pbuf_core0"
     sysctl -w dev.nss.n2hcfg.extra_pbuf_core0=$extra_pbuf_core0 > /dev/null 2> /dev/null
   else
     logger -t ath11k_nss "Sysctl key 'extra_pbuf_core0' already set to '"$extra_pbuf_core0"'. Skipping applying wifi nss configs"
   fi
 
+  sysctl -w dev.nss.n2hcfg.n2h_high_water_core0=$n2h_high_water_core0 > /dev/null 2>/dev/null
+
   logger -t ath11k_nss "$board - setting dev.nss.n2hcfg.n2h_wifi_pool_buf=$n2h_wifi_pool_buf"
-  sysctl -w dev.nss.n2hcfg.n2h_wifi_pool_buf=$n2h_wifi_pool_buf > /dev/null 2> /dev/null
+  sysctl -w dev.nss.n2hcfg.n2h_wifi_pool_buf=$n2h_wifi_pool_buf
 
   logger -t ath11k_nss "$board - setting dev.nss.n2hcfg.n2h_high_water_core0=$n2h_high_water_core0"
   sysctl -w dev.nss.n2hcfg.n2h_high_water_core0=$n2h_high_water_core0
