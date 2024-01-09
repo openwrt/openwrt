@@ -168,13 +168,16 @@ dropbear_instance()
 	[ -n "${ForceCommand}" ] && procd_append_param command -c "${ForceCommand}"
 	[ "${RootPasswordAuth}" -eq 0 ] && procd_append_param command -g
 	[ "${RootLogin}" -eq 0 ] && procd_append_param command -w
+	config_list_foreach "$1" 'keyfile' hk_config__keyfile
 	if [ -n "${rsakeyfile}" ]; then
-		logger -t ${NAME} -p daemon.warn \
-			"option 'rsakeyfile' is considered to be deprecated and" \
-			"will be removed in future releases, use 'keyfile' instead"
+		logger -s -t "${NAME}" -p daemon.crit \
+		  "Option 'rsakeyfile' is considered to be DEPRECATED and will be REMOVED in future releases, use 'keyfile' list instead"
+		sed -i.before-upgrade -E -e 's/option(\s+)rsakeyfile/list keyfile/' \
+		  "/etc/config/${NAME}"
+		logger -s -t "${NAME}" -p daemon.crit \
+		  "Auto-transition 'option rsakeyfile' => 'list keyfile' in /etc/config/${NAME} is done, please verify your configuration"
 		hk_config 'rsakeyfile' "${rsakeyfile}"
 	fi
-	config_list_foreach "$1" "keyfile" hk_config__keyfile
 	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
 	append_ports "${ipaddrs}" "${Port}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
