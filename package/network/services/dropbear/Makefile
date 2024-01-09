@@ -70,10 +70,11 @@ define Package/dropbear/description
 endef
 
 define Package/dropbear/conffiles
-$(if $(CONFIG_DROPBEAR_ED25519),/etc/dropbear/dropbear_ed25519_host_key)
-$(if $(CONFIG_DROPBEAR_ECC),/etc/dropbear/dropbear_ecdsa_host_key)
-/etc/dropbear/dropbear_rsa_host_key
 /etc/config/dropbear
+/etc/dropbear/authorized_keys
+/etc/dropbear/dropbear_ecdsa_host_key
+/etc/dropbear/dropbear_ed25519_host_key
+/etc/dropbear/dropbear_rsa_host_key
 endef
 
 define Package/dropbearconvert
@@ -227,9 +228,7 @@ define Package/dropbear/install
 	$(INSTALL_DIR) $(1)/etc/dropbear
 	$(INSTALL_DIR) $(1)/lib/preinit
 	$(INSTALL_DATA) ./files/dropbear.failsafe $(1)/lib/preinit/99_10_failsafe_dropbear
-	$(if $(CONFIG_DROPBEAR_ED25519),touch $(1)/etc/dropbear/dropbear_ed25519_host_key)
-	$(if $(CONFIG_DROPBEAR_ECC),touch $(1)/etc/dropbear/dropbear_ecdsa_host_key)
-	touch $(1)/etc/dropbear/dropbear_rsa_host_key
+	$(foreach f,$(filter /etc/dropbear/%,$(Package/dropbear/conffiles)),$(if $(wildcard $(TOPDIR)/files/$(f)),chmod 0600 $(TOPDIR)/files/$(f) || :; ))
 endef
 
 define Package/dropbearconvert/install
