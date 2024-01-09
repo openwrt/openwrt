@@ -13,6 +13,12 @@ mount_setup() {
 
 mount_setup
 
+# hotplug
+echo "/sbin/mdev" > /proc/sys/kernel/hotplug
+mdev -s
+find /sys/ -name modalias -print0 | xargs -0 sort -u -z | xargs -0 modprobe -abq
+echo "" > /proc/sys/kernel/hotplug
+
 NEW_ROOT=/new_root
 mkdir -p "${NEW_ROOT}"
 
