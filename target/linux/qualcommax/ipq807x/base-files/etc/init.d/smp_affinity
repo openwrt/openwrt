@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+
+START=93
+
+enable_affinity_ipq807x() {
+	set_affinity() {
+		irq=$(awk "/$1/{ print substr(\$1, 1, length(\$1)-1); exit }" /proc/interrupts)
+		[ -n "$irq" ] && echo $2 > /proc/irq/$irq/smp_affinity
+	}
+
+	# assign 4 rx interrupts to each core
+	set_affinity 'reo2host-destination-ring1' 1
+	set_affinity 'reo2host-destination-ring2' 2
+	set_affinity 'reo2host-destination-ring3' 4
+	set_affinity 'reo2host-destination-ring4' 8
+
+	# assign 3 tcl completions to last 3 CPUs
+	set_affinity 'wbm2host-tx-completions-ring1' 2
+	set_affinity 'wbm2host-tx-completions-ring2' 4
+	set_affinity 'wbm2host-tx-completions-ring3' 8
+
+	# assign 3 ppdu mac interrupts to last 3 cores
+	set_affinity 'ppdu-end-interrupts-mac1' 2
+	set_affinity 'ppdu-end-interrupts-mac2' 4
+	set_affinity 'ppdu-end-interrupts-mac3' 8
+
+	# assign lan/wan to core 4
+	set_affinity 'edma_txcmpl' 8
+	set_affinity 'edma_rxfill' 8
+	set_affinity 'edma_rxdesc' 8
+	set_affinity 'edma_misc' 8
+}
+
+boot() {
+	enable_affinity_ipq807x
+}
