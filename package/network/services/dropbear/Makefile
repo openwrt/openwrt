@@ -99,8 +99,8 @@ CONFIGURE_ARGS += \
 
 ##############################################################################
 #
-#   option|value - add option to localoptions.h
-# !!option|value - replace option in sysoptions.h
+#   option,value - add option to localoptions.h
+# !!option,value - replace option in sysoptions.h
 #
 ##############################################################################
 
@@ -111,63 +111,65 @@ CONFIGURE_ARGS += \
 # - DROPBEAR_DSS
 # - DO_MOTD
 DB_OPT_COMMON = \
-	DEFAULT_PATH|"$(TARGET_INIT_PATH)" \
-	!!LOCAL_IDENT|"SSH-2.0-dropbear" \
-	DROPBEAR_CLI_NETCAT|0 \
-	DROPBEAR_DSS|0 \
-	DO_MOTD|0 \
+	!!LOCAL_IDENT,"SSH-2.0-dropbear" \
+	DEFAULT_PATH,"$(TARGET_INIT_PATH)" \
+	DROPBEAR_DSS,0 \
+	DROPBEAR_CLI_NETCAT,0 \
+	DO_MOTD,0 \
 
 
 ##############################################################################
 #
-#   option|config|enabled|disabled = add option to localoptions.h
-# !!option|config|enabled|disabled = replace option in sysoptions.h
+#   option,config,enabled,disabled = add option to localoptions.h
+# !!option,config,enabled,disabled = replace option in sysoptions.h
 #
 #   option := (config) ? enabled : disabled
 #
 ##############################################################################
 
 DB_OPT_CONFIG = \
-	DROPBEAR_CURVE25519|CONFIG_DROPBEAR_CURVE25519|1|0 \
-	DROPBEAR_ED25519|CONFIG_DROPBEAR_ED25519|1|0 \
-	DROPBEAR_SK_ED25519|CONFIG_DROPBEAR_ED25519|1|0 \
-	DROPBEAR_CHACHA20POLY1305|CONFIG_DROPBEAR_CHACHA20POLY1305|1|0 \
-	DROPBEAR_ECDSA|CONFIG_DROPBEAR_ECC|1|0 \
-	DROPBEAR_SK_ECDSA|CONFIG_DROPBEAR_ECC|1|0 \
-	DROPBEAR_ECDH|CONFIG_DROPBEAR_ECC|1|0 \
-	!!DROPBEAR_ECC_384|CONFIG_DROPBEAR_ECC_FULL|1|0 \
-	!!DROPBEAR_ECC_521|CONFIG_DROPBEAR_ECC_FULL|1|0 \
-	DROPBEAR_CLI_ASKPASS_HELPER|CONFIG_DROPBEAR_ASKPASS|1|0 \
-	DROPBEAR_CLI_AGENTFWD|CONFIG_DROPBEAR_DBCLIENT_AGENTFORWARD|1|0 \
-	DROPBEAR_SVR_AGENTFWD|CONFIG_DROPBEAR_AGENTFORWARD|1|0 \
+	!!DROPBEAR_ECC_384,CONFIG_DROPBEAR_ECC_FULL,1,0 \
+	!!DROPBEAR_ECC_521,CONFIG_DROPBEAR_ECC_FULL,1,0 \
+	DROPBEAR_CURVE25519,CONFIG_DROPBEAR_CURVE25519,1,0 \
+	DROPBEAR_CHACHA20POLY1305,CONFIG_DROPBEAR_CHACHA20POLY1305,1,0 \
+	DROPBEAR_ED25519,CONFIG_DROPBEAR_ED25519,1,0 \
+	DROPBEAR_SK_ED25519,CONFIG_DROPBEAR_ED25519,1,0 \
+	DROPBEAR_ECDSA,CONFIG_DROPBEAR_ECC,1,0 \
+	DROPBEAR_SK_ECDSA,CONFIG_DROPBEAR_ECC,1,0 \
+	DROPBEAR_ECDH,CONFIG_DROPBEAR_ECC,1,0 \
+	DROPBEAR_CLI_ASKPASS_HELPER,CONFIG_DROPBEAR_ASKPASS,1,0 \
+	DROPBEAR_CLI_AGENTFWD,CONFIG_DROPBEAR_DBCLIENT_AGENTFORWARD,1,0 \
+	DROPBEAR_SVR_AGENTFWD,CONFIG_DROPBEAR_AGENTFORWARD,1,0 \
 
 
 TARGET_CFLAGS += -DARGTYPE=3
 
+xsedx:=$(shell printf '\027')
+
 db_opt_add     =echo '\#define $(1) $(2)' >> $(PKG_BUILD_DIR)/localoptions.h
-db_opt_replace =$(ESED) 's,^(\#define $(1)) .*$$$$,\1 $(2),g' $(PKG_BUILD_DIR)/sysoptions.h
+db_opt_replace =$(ESED) '/^\#define $(1) .*$$$$/{h;:a;$$$$!n;/^\#.+$$$$/bb;/^$$$$/bb;H;ba;:b;x;s$(xsedx)^.+$$$$$(xsedx)\#define $(1) $(2)$(xsedx)p;x};p' -n $(PKG_BUILD_DIR)/sysoptions.h
 
 define Build/Configure/dropbear_headers
 	$(strip $(foreach s,$(DB_OPT_COMMON), \
-	  $(if $(filter !!%,$(word 1,$(subst |, ,$(s)))), \
-	    $(call db_opt_replace,$(patsubst !!%,%,$(word 1,$(subst |, ,$(s)))),$(word 2,$(subst |, ,$(s)))), \
-	    $(call db_opt_add,$(word 1,$(subst |, ,$(s))),$(word 2,$(subst |, ,$(s)))) \
+	  $(if $(filter !!%,$(word 1,$(subst $(comma),$(space),$(s)))), \
+	    $(call db_opt_replace,$(patsubst !!%,%,$(word 1,$(subst $(comma),$(space),$(s)))),$(subst $(space),$(comma),$(wordlist 2,$(words $(subst $(comma),$(space),$(s))),$(subst $(comma),$(space),$(s))))), \
+	    $(call db_opt_add,$(word 1,$(subst $(comma),$(space),$(s))),$(subst $(space),$(comma),$(wordlist 2,$(words $(subst $(comma),$(space),$(s))),$(subst $(comma),$(space),$(s))))) \
 	  ) ; \
 	))
 
 	$(strip $(foreach s,$(DB_OPT_CONFIG), \
-	  $(if $(filter !!%,$(word 1,$(subst |, ,$(s)))), \
-	    $(call db_opt_replace,$(patsubst !!%,%,$(word 1,$(subst |, ,$(s)))),$(if $($(word 2,$(subst |, ,$(s)))),$(word 3,$(subst |, ,$(s))),$(word 4,$(subst |, ,$(s))))), \
-	    $(call db_opt_add,$(word 1,$(subst |, ,$(s))),$(if $($(word 2,$(subst |, ,$(s)))),$(word 3,$(subst |, ,$(s))),$(word 4,$(subst |, ,$(s))))) \
+	  $(if $(filter !!%,$(word 1,$(subst $(comma),$(space),$(s)))), \
+	    $(call db_opt_replace,$(patsubst !!%,%,$(word 1,$(subst $(comma),$(space),$(s)))),$(if $($(word 2,$(subst $(comma),$(space),$(s)))),$(word 3,$(subst $(comma),$(space),$(s))),$(word 4,$(subst $(comma),$(space),$(s))))), \
+	    $(call db_opt_add,$(word 1,$(subst $(comma),$(space),$(s))),$(if $($(word 2,$(subst $(comma),$(space),$(s)))),$(word 3,$(subst $(comma),$(space),$(s))),$(word 4,$(subst $(comma),$(space),$(s))))) \
 	  ) ; \
 	))
 endef
 
 define Build/Configure
-	: > $(PKG_BUILD_DIR)/localoptions.h
-
+	rm -f $(PKG_BUILD_DIR)/localoptions.h
 	$(Build/Configure/Default)
 
+	: > $(PKG_BUILD_DIR)/localoptions.h
 	$(Build/Configure/dropbear_headers)
 
 	# Enforce rebuild of svr-chansession.c
