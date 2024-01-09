@@ -110,12 +110,16 @@ CONFIGURE_ARGS += \
 # - DROPBEAR_CLI_NETCAT
 # - DROPBEAR_DSS
 # - DO_MOTD
+# - DROPBEAR_DH_GROUP14_SHA1
+# - DROPBEAR_SHA1_HMAC
 DB_OPT_COMMON = \
 	!!LOCAL_IDENT,"SSH-2.0-dropbear" \
 	DEFAULT_PATH,"$(TARGET_INIT_PATH)" \
 	DROPBEAR_DSS,0 \
 	DROPBEAR_CLI_NETCAT,0 \
 	DO_MOTD,0 \
+	DROPBEAR_DH_GROUP14_SHA1,0 \
+	DROPBEAR_SHA1_HMAC,0 \
 
 
 ##############################################################################
