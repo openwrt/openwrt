@@ -666,6 +666,18 @@ define Device/tplink_re305-v3
 endef
 TARGET_DEVICES += tplink_re305-v3
 
+define Device/tplink_re365-v1
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := RE365
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt76x2
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
+  IMAGE_SIZE := 7680k
+  KERNEL_SIZE := 6016k
+  TPLINK_BOARD_ID := RE365
+endef
+TARGET_DEVICES += tplink_re365-v1
+
 define Device/tplink_tl-mr3020-v3
   $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
