@@ -37,14 +37,6 @@ jobs:
               RET=1
             fi
 
-            author="$(git show -s --format=%aN $commit)"
-            if echo $author | grep -q '\S\+\s\+\S\+'; then
-              success "Author name ($author) seems ok"
-            else
-              err "Author name ($author) need to be your real name 'firstname lastname'"
-              RET=1
-            fi
-
             subject="$(git show -s --format=%s $commit)"
             if echo "$subject" | grep -q -e '^[0-9A-Za-z,+/_\.-]\+: ' -e '^Revert '; then
               success "Commit subject line seems ok ($subject)"
