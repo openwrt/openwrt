@@ -27,8 +27,13 @@ preinit_set_mac_address() {
 	linksys,ea8300|\
 	linksys,mr8300)
 		base_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		base_mac_la=$(macaddr_setbit "$base_mac" 7)
+		ip link set dev wan address "$base_mac"
 		ip link set dev lan1 address $(macaddr_add "$base_mac" 1)
-		ip link set dev eth0 address $(macaddr_setbit "$base_mac" 7)
+		ip link set dev lan2 address $(macaddr_add "$base_mac_la" 2)
+		ip link set dev lan3 address $(macaddr_add "$base_mac_la" 3)
+		ip link set dev lan4 address $(macaddr_add "$base_mac_la" 4)
+		ip link set dev eth0 address $(macaddr_add "$base_mac_la" 5)
 		;;
 	mikrotik,wap-ac|\
 	mikrotik,wap-ac-lte|\
