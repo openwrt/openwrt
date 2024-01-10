@@ -49,7 +49,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
-@@ -4441,9 +4441,8 @@ static int dpaa2_eth_connect_mac(struct
+@@ -4444,9 +4444,8 @@ static int dpaa2_eth_connect_mac(struct
  	err = dpaa2_mac_open(mac);
  	if (err)
  		goto err_free_mac;
@@ -60,7 +60,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		err = dpaa2_mac_connect(mac);
  		if (err && err != -EPROBE_DEFER)
  			netdev_err(priv->net_dev, "Error connecting to the MAC endpoint: %pe",
-@@ -4452,11 +4451,12 @@ static int dpaa2_eth_connect_mac(struct
+@@ -4455,11 +4454,12 @@ static int dpaa2_eth_connect_mac(struct
  			goto err_close_mac;
  	}
  
@@ -74,7 +74,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  err_free_mac:
  	kfree(mac);
  	return err;
-@@ -4464,15 +4464,18 @@ err_free_mac:
+@@ -4467,15 +4467,18 @@ err_free_mac:
  
  static void dpaa2_eth_disconnect_mac(struct dpaa2_eth_priv *priv)
  {

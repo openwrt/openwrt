@@ -33,7 +33,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
-@@ -4708,6 +4708,10 @@ static int dpaa2_eth_probe(struct fsl_mc
+@@ -4711,6 +4711,10 @@ static int dpaa2_eth_probe(struct fsl_mc
  	}
  #endif
  
@@ -44,7 +44,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	err = dpaa2_eth_setup_irqs(dpni_dev);
  	if (err) {
  		netdev_warn(net_dev, "Failed to set link interrupt, fall back to polling\n");
-@@ -4720,10 +4724,6 @@ static int dpaa2_eth_probe(struct fsl_mc
+@@ -4723,10 +4727,6 @@ static int dpaa2_eth_probe(struct fsl_mc
  		priv->do_link_poll = true;
  	}
  
@@ -55,7 +55,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	err = dpaa2_eth_dl_alloc(priv);
  	if (err)
  		goto err_dl_register;
-@@ -4759,13 +4759,13 @@ err_dl_port_add:
+@@ -4762,13 +4762,13 @@ err_dl_port_add:
  err_dl_trap_register:
  	dpaa2_eth_dl_free(priv);
  err_dl_register:
@@ -71,7 +71,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	dpaa2_eth_free_rings(priv);
  err_alloc_rings:
  err_csum:
-@@ -4813,9 +4813,6 @@ static int dpaa2_eth_remove(struct fsl_m
+@@ -4816,9 +4816,6 @@ static int dpaa2_eth_remove(struct fsl_m
  #endif
  
  	unregister_netdev(net_dev);
@@ -81,7 +81,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	dpaa2_eth_dl_port_del(priv);
  	dpaa2_eth_dl_traps_unregister(priv);
-@@ -4826,6 +4823,9 @@ static int dpaa2_eth_remove(struct fsl_m
+@@ -4829,6 +4826,9 @@ static int dpaa2_eth_remove(struct fsl_m
  	else
  		fsl_mc_free_irqs(ls_dev);
  
