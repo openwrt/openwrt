@@ -1165,7 +1165,8 @@ define KernelPackage/video-pxp
   TITLE:=i.MX PXP support
   DEPENDS:=@TARGET_imx +kmod-video-mem2mem +kmod-video-dma
   KCONFIG:= CONFIG_VIDEO_IMX_PXP
-  FILES:= $(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/imx-pxp.ko
+  FILES:= $(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/imx-pxp.ko@lt6.1 \
+	$(LINUX_DIR)/drivers/media/platform/nxp/imx-pxp.ko@ge6.1
   AUTOLOAD:=$(call AutoProbe,imx-pxp)
   $(call AddDepends/video)
 endef
