@@ -1069,7 +1069,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	/* create list containing all the subframes */
  	ieee80211_amsdu_to_8023s(skb, &subframe_list, NULL,
 -				 vif->type, 0, NULL, NULL);
-+				 vif->type, 0, NULL, NULL, false);
++				 vif->type, 0, NULL, NULL, 0);
  
  	/* This shouldn't happen, indicating error during defragmentation */
  	if (skb_queue_empty(&subframe_list))

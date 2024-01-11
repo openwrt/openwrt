@@ -251,7 +251,7 @@ Signed-off-by: Maharaja Kennadyrajan <mkenna@codeaurora.org>
 +
 +static ssize_t
 +ath11k_debug_write_enable_memory_stats(struct file *file,
-+				       char __user *ubuf,
++				       const char __user *ubuf,
 +				       size_t count, loff_t *ppos)
 +{
 +	struct ath11k_base *ab = file->private_data;

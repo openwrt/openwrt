@@ -66,6 +66,15 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
                          rcu_read_unlock();
                          return;
                  }
+@@ -4374,7 +4378,7 @@ void __ieee80211_subif_start_xmit(struct
+ 		if (info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) {
+ 		    	if (sta)
+ 				key = rcu_dereference(sta->ptk[sta->ptk_idx]);
+-			ieee80211_8023_xmit(sdata, dev, sta, key, skb);
++			ieee80211_8023_xmit(sdata, dev, sta, key, skb, info_flags, ctrl_flags, cookie);
+ 		} else {
+ 			ieee80211_tx_stats(dev, skb->len);
+ 			ieee80211_xmit(sdata, sta, skb);
 @@ -4657,19 +4663,29 @@ static bool ieee80211_tx_8023(struct iee
  
  static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,

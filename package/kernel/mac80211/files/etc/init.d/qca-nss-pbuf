@@ -43,7 +43,23 @@ apply_nss_config() {
   sysctl -w dev.nss.n2hcfg.n2h_queue_limit_core0=256 > /dev/null 2> /dev/null
   sysctl -w dev.nss.n2hcfg.n2h_queue_limit_core1=256 > /dev/null 2> /dev/null
 
-  board=$(board_name)
+  local memory_profile
+  if memory_profile=$(uci_get pbuf.opt.memory_profile); then
+    case "$memory_profile" in
+       1g*|512m*|256m*)
+          board=$memory_profile
+          logger -t ath11k_nss "Using custom memory profile - $board"
+          ;;
+        *)
+          logger -s -t ath11k_nss -p user.error "Unknown profile $memory_profile. Choose 1gb, 512mb, or 256mb"
+          board=$(board_name)
+          logger -s -t ath11k_nss -p user.warn "Falling back to: $board"
+          ;;
+    esac
+  else
+     board=$(board_name)
+     logger -t ath11k_nss "Setting n2hcfg values for board: $board"
+  fi
 
   case "$board" in
     # 1GB+ profile
@@ -60,7 +76,8 @@ apply_nss_config() {
     qnap,301w | \
     xiaomi,ax9000 | \
     yuncore,ax880 | \
-    zyxel,nbg7815)
+    zyxel,nbg7815 | \
+    1g*)
       extra_pbuf_core0=9000000 n2h_high_water_core0=67392 n2h_wifi_pool_buf=40960 apply_sysctl
       ;;
     # 512MB profile
@@ -69,11 +86,13 @@ apply_nss_config() {
     linksys,mx4200v1 | \
     redmi,ax6 | \
     xiaomi,ax3600 | \
-    zte,mf269) # 512MB profile
+    zte,mf269 | \
+    512m*)
       extra_pbuf_core0=3100000 n2h_high_water_core0=30624 n2h_wifi_pool_buf=8192 apply_sysctl
       ;;
     # 256MB profile
-    netgear,wax218)
+    netgear,wax218 | \
+    256m*)
       extra_pbuf_core0=3100000 n2h_high_water_core0=30258 n2h_wifi_pool_buf=4096 apply_sysctl
       ;;
   esac
@@ -88,7 +107,7 @@ start() {
   enable_nss_offload=$(cat /sys/module/ath11k/parameters/nss_offload)
 
   if [ "$enable_nss_offload" = "0" ]; then
-    logger -t ath11k_nss "Module parameter 'nss_offload=0'. Skipping applying wifi nss configs"
+    logger -t ath11k_nss -s user.warn "Module parameter 'nss_offload=0'. Skipping applying wifi nss configs"
     exit 1
   fi
 
