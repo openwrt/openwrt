@@ -754,10 +754,24 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/hw.h
 +++ b/drivers/net/wireless/ath/ath11k/hw.h
-@@ -22,6 +22,11 @@
+@@ -22,7 +22,11 @@
  #define ATH11K_DP_RXDMA_MON_STATUS_RING_SIZE	512
  #define ATH11K_DP_RXDMA_MONITOR_BUF_RING_SIZE	128
  #define ATH11K_DP_RXDMA_MONITOR_DST_RING_SIZE	128
+-
++#define ATH11K_DP_RXDMA_REFILL_RING_SIZE	2048
++/* 256b desc TLV + 4b(rounded) Pad + 30byte max nwifi header +
++ * 18byte mesh hdr + 8byte snap + 1500 eth payload
++ */
++#define ATH11K_DP_RXDMA_NSS_REFILL_RING_SIZE	1816
+ #elif defined(CPTCFG_ATH11K_MEM_PROFILE_512M)
+ #define TARGET_NUM_VDEVS(ab)	8
+ #define TARGET_NUM_PEERS_PDEV(ab)	(128 + TARGET_NUM_VDEVS(ab))
+@@ -34,7 +38,11 @@
+ #define ATH11K_DP_RXDMA_MON_STATUS_RING_SIZE	512
+ #define ATH11K_DP_RXDMA_MONITOR_BUF_RING_SIZE	128
+ #define ATH11K_DP_RXDMA_MONITOR_DST_RING_SIZE	128
+-
 +#define ATH11K_DP_RXDMA_REFILL_RING_SIZE	2048
 +/* 256b desc TLV + 4b(rounded) Pad + 30byte max nwifi header +
 + * 18byte mesh hdr + 8byte snap + 1500 eth payload
@@ -765,8 +779,8 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
 +#define ATH11K_DP_RXDMA_NSS_REFILL_RING_SIZE	1816
  #else
  /* Num VDEVS per radio */
- #define TARGET_NUM_VDEVS(ab)	(ab->hw_params.num_vdevs)
-@@ -34,6 +39,8 @@
+ #define TARGET_NUM_VDEVS(ab)	(ab->hw_params.num_vdevs_peers[ab->qmi.target_mem_mode].num_vdevs)
+@@ -47,6 +55,8 @@
  #define ATH11K_DP_RXDMA_MON_STATUS_RING_SIZE	1024
  #define ATH11K_DP_RXDMA_MONITOR_BUF_RING_SIZE	4096
  #define ATH11K_DP_RXDMA_MONITOR_DST_RING_SIZE	2048
@@ -775,7 +789,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  #endif
  
  /* Num of peers for Single Radio mode */
-@@ -129,6 +136,8 @@ enum ath11k_bus {
+@@ -142,6 +152,8 @@ enum ath11k_bus {
  
  struct hal_rx_desc;
  struct hal_tcl_data_cmd;
@@ -784,7 +798,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  
  struct ath11k_hw_ring_mask {
  	u8 tx[ATH11K_EXT_IRQ_GRP_NUM_MAX];
-@@ -218,6 +227,7 @@ struct ath11k_hw_params {
+@@ -231,6 +243,7 @@ struct ath11k_hw_params {
  	const struct ath11k_hw_hal_params *hal_params;
  	bool supports_dynamic_smps_6ghz;
  	bool alloc_cacheable_memory;
@@ -792,7 +806,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  	bool supports_rssi_stats;
  	bool fw_wmi_diag_event;
  	bool current_cc_support;
-@@ -285,6 +295,16 @@ struct ath11k_hw_ops {
+@@ -299,6 +312,16 @@ struct ath11k_hw_ops {
  	bool (*rx_desc_mac_addr2_valid)(struct hal_rx_desc *desc);
  	u8* (*rx_desc_mpdu_start_addr2)(struct hal_rx_desc *desc);
  	u32 (*get_ring_selector)(struct sk_buff *skb);

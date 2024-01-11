@@ -14,9 +14,10 @@ PKG_CONFIG_DEPENDS += \
 	CONFIG_ATH10K_THERMAL \
 	CONFIG_ATH11K_THERMAL \
 	CONFIG_ATH_USER_REGD \
+	CONFIG_ATH11K_MEM_PROFILE_1G \
 	CONFIG_ATH11K_MEM_PROFILE_512M \
-	CONFIG_ATH11K_NSS_SUPPORT \
-	CONFIG_ATH11K_SMART_ANT_ALG
+	CONFIG_ATH11K_MEM_PROFILE_256M \
+	CONFIG_ATH11K_NSS_SUPPORT
 
 ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
   config-y += \
@@ -59,9 +60,10 @@ config-$(CONFIG_ATH9K_UBNTHSR) += ATH9K_UBNTHSR
 config-$(CONFIG_ATH10K_LEDS) += ATH10K_LEDS
 config-$(CONFIG_ATH10K_THERMAL) += ATH10K_THERMAL
 config-$(CONFIG_ATH11K_THERMAL) += ATH11K_THERMAL
+config-$(CONFIG_ATH11K_MEM_PROFILE_1G) += ATH11K_MEM_PROFILE_1G
 config-$(CONFIG_ATH11K_MEM_PROFILE_512M) += ATH11K_MEM_PROFILE_512M
+config-$(CONFIG_ATH11K_MEM_PROFILE_256M) += ATH11K_MEM_PROFILE_256M
 config-$(CONFIG_ATH11K_NSS_SUPPORT) += ATH11K_NSS_SUPPORT
-config-$(CONFIG_ATH11K_SMART_ANT_ALG) += ATH11K_SMART_ANT_ALG
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k,regular) += ATH10K ATH10K_PCI
@@ -327,20 +329,41 @@ define KernelPackage/ath11k/config
 
        config ATH11K_NSS_SUPPORT
                bool "Enable NSS WiFi offload"
+               select ATH11K_MEM_PROFILE_512M if (TARGET_qualcommax_ipq807x_DEVICE_edimax_cax1800 || \
+               	 TARGET_qualcommax_ipq807x_DEVICE_compex_wpq873 || \
+               	 TARGET_qualcommax_ipq807x_DEVICE_linksys_mx4200v1 || \
+               	 TARGET_qualcommax_ipq807x_DEVICE_redmi_ax6 || \
+               	 TARGET_qualcommax_ipq807x_DEVICE_xiaomi_ax3600 || \
+               	 TARGET_qualcommax_ipq807x_DEVICE_zte_mf269 )
+               select ATH11K_MEM_PROFILE_256M if (TARGET_qualcommax_ipq807x_DEVICE_netgear_wax218)
                select NSS_DRV_WIFI_ENABLE
                select NSS_DRV_WIFI_EXT_VDEV_ENABLE
                default y if TARGET_qualcommax
 
-       config ATH11K_MEM_PROFILE_512M
-               bool "Use limits for the 512MB memory size"
-               default n
-               help
-                  This allows selecting the ath11k memory size profile to be used.
+       choice
+          prompt "ATH11K Memory Profile"
+            default ATH11K_MEM_PROFILE_1G
+            help
+            	This option allows you to select the memory profile.
+            	It should correspond to the total RAM of your board.
 
-       config ATH11K_SMART_ANT_ALG
-               bool "Enable smart antenna"
-               depends on PACKAGE_ATH_DEBUG
-               default n
+          config ATH11K_MEM_PROFILE_1G
+               bool "Use 1G memory profile"
+               help
+                  This allows configuring ath11k for boards with 1GB+ memory.
+
+          config ATH11K_MEM_PROFILE_512M
+               bool "Use 512MB memory profile"
+               help
+                  This allows configuring ath11k for boards with 512M memory.
+                  The default is 1GB if not selected
+
+          config ATH11K_MEM_PROFILE_256M
+               bool "Use 256MB memory profile"
+               help
+                  This allows configuring ath11k for boards with 256M memory.
+                  The default is 1GB if not selected
+       endchoice
 endef
 
 define KernelPackage/ath11k-ahb
