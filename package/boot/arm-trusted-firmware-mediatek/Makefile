@@ -33,6 +33,7 @@ define Trusted-Firmware-A/Default
   NAND_TYPE:=
   BOARD_QFN:=
   DRAM_USE_COMB:=
+  USE_UBI:=
 endef
 
 define Trusted-Firmware-A/mt7622-nor-1ddr
@@ -353,12 +354,30 @@ define Trusted-Firmware-A/mt7988-snand-comb
   DRAM_USE_COMB:=1
 endef
 
+define Trusted-Firmware-A/mt7988-snand-ubi-comb
+  NAME:=MediaTek MT7988 (SPI-NAND via SNFI, UBI)
+  BOOT_DEVICE:=snand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7988
+  DRAM_USE_COMB:=1
+  USE_UBI:=1
+endef
+
 define Trusted-Firmware-A/mt7988-spim-nand-comb
   NAME:=MediaTek MT7988 (SPI-NAND via SPIM)
   BOOT_DEVICE:=spim-nand
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7988
   DRAM_USE_COMB:=1
+endef
+
+define Trusted-Firmware-A/mt7988-spim-nand-ubi-comb
+  NAME:=MediaTek MT7988 (SPI-NAND via SPIM, UBI)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7988
+  DRAM_USE_COMB:=1
+  USE_UBI:=1
 endef
 
 TFA_TARGETS:= \
@@ -402,7 +421,9 @@ TFA_TARGETS:= \
 	mt7988-nor-comb \
 	mt7988-sdmmc-comb \
 	mt7988-snand-comb \
-	mt7988-spim-nand-comb
+	mt7988-snand-ubi-comb \
+	mt7988-spim-nand-comb \
+	mt7988-spim-nand-ubi-comb
 
 TFA_MAKE_FLAGS += \
 	BOOT_DEVICE=$(BOOT_DEVICE) \
@@ -413,6 +434,7 @@ TFA_MAKE_FLAGS += \
 	HAVE_DRAM_OBJ_FILE=yes \
 	$(if $(DDR3_FLYBY),DDR3_FLYBY=1) \
 	$(if $(DRAM_USE_COMB),DRAM_USE_COMB=1) \
+	$(if $(USE_UBI),UBI=1) \
 	all
 
 define Package/trusted-firmware-a/install
