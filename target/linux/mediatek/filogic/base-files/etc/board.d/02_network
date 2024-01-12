@@ -53,9 +53,7 @@ mediatek_setup_interfaces()
 	comfast,cf-e393ax)
 		ucidef_set_interfaces_lan_wan "lan1" eth1
 		;;
-	dlink,aquila-pro-ai-m30-a1)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" internet
-		;;
+	cudy,m3000-v1|\
 	cudy,tr3000-v1|\
 	glinet,gl-mt2500|\
 	glinet,gl-mt3000|\
@@ -63,6 +61,9 @@ mediatek_setup_interfaces()
 	glinet,gl-xe3000|\
 	openembed,som7981)
 		ucidef_set_interfaces_lan_wan eth1 eth0
+		;;
+	dlink,aquila-pro-ai-m30-a1)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" internet
 		;;
 	glinet,gl-mt6000|\
 	tplink,tl-xdr4288|\
@@ -134,6 +135,9 @@ mediatek_setup_macs()
 			label_mac=$wan_mac
 		;;
 		esac
+		;;
+	cudy,m3000-v1)
+		wan_mac=$(macaddr_add $(cat /sys/class/net/eth1/address) 1)
 		;;
 	h3c,magic-nx30-pro)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
