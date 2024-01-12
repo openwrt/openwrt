@@ -45,6 +45,7 @@ mediatek_setup_interfaces()
 	comfast,cf-e393ax)
 		ucidef_set_interfaces_lan_wan "lan1" eth1
 		;;
+	cudy,m3000-v1|\
 	cudy,tr3000-v1|\
 	glinet,gl-mt3000)
 		ucidef_set_interfaces_lan_wan eth1 eth0
@@ -133,6 +134,9 @@ mediatek_setup_macs()
 			label_mac=$wan_mac
 		;;
 		esac
+		;;
+	cudy,m3000-v1)
+		wan_mac=$(macaddr_add $(cat /sys/class/net/eth1/address) 1)
 		;;
 	glinet,gl-mt6000)
 		label_mac=$(mmc_get_mac_binary factory 0x0a)
