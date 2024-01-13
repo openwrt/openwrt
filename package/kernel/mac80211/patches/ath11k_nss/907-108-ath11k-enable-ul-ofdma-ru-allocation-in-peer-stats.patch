@@ -247,19 +247,20 @@
  int ath11k_dp_rx_process_mon_status(struct ath11k_base *ab, int mac_id,
  				    struct napi_struct *napi, int budget)
  {
-@@ -5919,8 +6084,13 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -5917,10 +6082,13 @@ int ath11k_dp_rx_process_mon_status(stru
+ 			goto next_skb;
+ 		}
  
- 		if ((ppdu_info->fc_valid) &&
- 		    (ppdu_info->ast_index != HAL_AST_IDX_INVALID)) {
--			arsta = (struct ath11k_sta *)peer->sta->drv_priv;
+-		if ((ppdu_info->fc_valid) &&
+-		    (ppdu_info->ast_index != HAL_AST_IDX_INVALID)) {
++		if (ppdu_info->reception_type == HAL_RX_RECEPTION_TYPE_SU) {
+ 			arsta = (struct ath11k_sta *)peer->sta->drv_priv;
 -			ath11k_dp_rx_update_peer_stats(arsta, ppdu_info);
-+			if (ppdu_info.reception_type == HAL_RX_RECEPTION_TYPE_SU) {
-+				arsta = (struct ath11k_sta *)peer->sta->drv_priv;
-+				ath11k_dp_rx_update_peer_su_stats(arsta, &ppdu_info);
-+			} else {
-+				ath11k_dp_rx_mon_process_ulofdma(&ppdu_info);
-+				ath11k_dp_rx_update_peer_mu_stats(ar, &ppdu_info);
-+			}
++			ath11k_dp_rx_update_peer_su_stats(arsta, ppdu_info);
++		} else if ((ppdu_info->fc_valid) &&
++			   (ppdu_info->ast_index != HAL_AST_IDX_INVALID)) {
++			ath11k_dp_rx_mon_process_ulofdma(ppdu_info);
++			ath11k_dp_rx_update_peer_mu_stats(ar, ppdu_info);
  		}
  
  		if (ath11k_debugfs_is_pktlog_peer_valid(ar, peer->addr))
