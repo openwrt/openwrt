@@ -1,0 +1,68 @@
+From 0ff455d1d446e34ae6c2596d4d8491f66fc61913 Mon Sep 17 00:00:00 2001
+From: Manish Dharanenthiran <quic_mdharane@quicinc.com>
+Date: Sat, 2 Dec 2023 03:38:31 +0530
+Subject: [PATCH] wifi: mac80211: Fix memory corruption during mesh beacon
+ update
+
+During mesh beacon update, u64 flag is used to check for
+bit set/unset for validation purpose. But, in
+'ieee80211_mbss_info_change_notify' API, unsigned long flag
+is modified using sizeof(u64). This leads to following issue:
+
+ > 'mbss_changed' flag in 'ieee80211_if_mesh' is declared as
+    unsigned_long which creates an architecture dependency
+    (32bit vs 64bit) while modifying it with u64 flag which
+    leads to memory corruption.
+
+Fix above mentioned issue by replacing unsigned long with u64
+for changed flag.
+
+Signed-off-by: Manish Dharanenthiran <quic_mdharane@quicinc.com>
+---
+ net/mac80211/ieee80211_i.h | 2 +-
+ net/mac80211/mesh.c        | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/net/mac80211/ieee80211_i.h
++++ b/net/mac80211/ieee80211_i.h
+@@ -683,7 +683,7 @@ struct ieee80211_if_mesh {
+ 	struct timer_list mesh_path_root_timer;
+ 
+ 	unsigned long wrkq_flags;
+-	unsigned long mbss_changed[64 / BITS_PER_LONG];
++	unsigned long mbss_changed;
+ 
+ 	bool userspace_handles_dfs;
+ 
+--- a/net/mac80211/mesh.c
++++ b/net/mac80211/mesh.c
+@@ -1183,7 +1183,7 @@ void ieee80211_mbss_info_change_notify(s
+ 
+ 	/* if we race with running work, worst case this work becomes a noop */
+ 	for_each_set_bit(bit, &bits, sizeof(changed) * BITS_PER_BYTE)
+-		set_bit(bit, ifmsh->mbss_changed);
++		set_bit(bit, &ifmsh->mbss_changed);
+ 	set_bit(MESH_WORK_MBSS_CHANGED, &ifmsh->wrkq_flags);
+ 	wiphy_work_queue(sdata->local->hw.wiphy, &sdata->work);
+ }
+@@ -1265,7 +1265,7 @@ void ieee80211_stop_mesh(struct ieee8021
+ 
+ 	/* clear any mesh work (for next join) we may have accrued */
+ 	ifmsh->wrkq_flags = 0;
+-	memset(ifmsh->mbss_changed, 0, sizeof(ifmsh->mbss_changed));
++	ifmsh->mbss_changed = 0;
+ 
+ 	local->fif_other_bss--;
+ 	atomic_dec(&local->iff_allmultis);
+@@ -1732,9 +1732,9 @@ static void mesh_bss_info_changed(struct
+ 	u32 bit;
+ 	u64 changed = 0;
+ 
+-	for_each_set_bit(bit, ifmsh->mbss_changed,
++	for_each_set_bit(bit, &ifmsh->mbss_changed,
+ 			 sizeof(changed) * BITS_PER_BYTE) {
+-		clear_bit(bit, ifmsh->mbss_changed);
++		clear_bit(bit, &ifmsh->mbss_changed);
+ 		changed |= BIT(bit);
+ 	}
+ 
