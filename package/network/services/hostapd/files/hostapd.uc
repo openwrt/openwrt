@@ -123,6 +123,14 @@ function iface_config_macaddr_list(config)
 	return macaddr_list;
 }
 
+function iface_update_supplicant_macaddr(phy, config)
+{
+	let macaddr_list = [];
+	for (let i = 0; i < length(config.bss); i++)
+		push(macaddr_list, config.bss[i].bssid);
+	ubus.defer("wpa_supplicant", "phy_set_macaddr_list", { phy: phy, macaddr: macaddr_list });
+}
+
 function __iface_pending_next(pending, state, ret, data)
 {
 	let config = pending.config;
