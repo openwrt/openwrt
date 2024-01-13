@@ -128,6 +128,7 @@ function __iface_pending_next(pending, state, ret, data)
 	let config = pending.config;
 	let phydev = pending.phydev;
 	let phy = pending.phy;
+	let bss = config.bss[0];
 
 	if (pending.defer)
 		pending.defer.abort();
@@ -140,7 +141,6 @@ function __iface_pending_next(pending, state, ret, data)
 		pending.call("wpa_supplicant", "phy_set_macaddr_list", { phy: phy, macaddr: macaddr_list });
 		return "create_bss";
 	case "create_bss":
-		let bss = config.bss[0];
 		let err = wdev_create(phy, bss.ifname, { mode: "ap" });
 		if (err) {
 			hostapd.printf(`Failed to create ${bss.ifname} on phy ${phy}: ${err}`);
