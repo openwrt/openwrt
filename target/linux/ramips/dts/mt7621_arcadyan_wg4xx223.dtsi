@@ -17,15 +17,13 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_status_green: led-1 {
-			label = "green:status";
+		led_status_green: led-0 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
-		led_status_red: led-2 {
-			label = "red:status";
+		led_status_red: led-1 {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
@@ -35,7 +33,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
+		button-0 {
 			label = "reset";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;

@@ -121,6 +121,13 @@ define Device/ubnt-xw
   UBNT_VERSION := 6.0.4
 endef
 
+define Device/ubnt_unifiac
+  DEVICE_VENDOR := Ubiquiti
+  SOC := qca9563
+  IMAGE_SIZE := 15488k
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+
 define Device/ubnt-unifi-jffs2
   $(Device/ubnt)
   KERNEL_SIZE := 3072k

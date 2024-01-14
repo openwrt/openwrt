@@ -171,6 +171,24 @@ define Device/netgear_nge
   DEVICE_VENDOR := NETGEAR
 endef
 
+# "NGG" refers to the uImage magic
+define Device/netgear_ngg
+  KERNEL := \
+	kernel-bin | \
+	append-dtb | \
+	lzma | \
+	uImage lzma
+  KERNEL_INITRAMFS := \
+	kernel-bin | \
+	append-dtb | \
+	lzma | \
+	uImage lzma
+  SOC := rtl8380
+  IMAGE_SIZE := 14848k
+  UIMAGE_MAGIC := 0x4e474720
+  DEVICE_VENDOR := NETGEAR
+endef
+
 define Device/netgear_gs108t-v3
   $(Device/netgear_nge)
   DEVICE_MODEL := GS108T
@@ -185,6 +203,14 @@ define Device/netgear_gs110tpp-v1
   DEVICE_PACKAGES += realtek-poe
 endef
 TARGET_DEVICES += netgear_gs110tpp-v1
+
+define Device/netgear_gs110tup-v1
+  $(Device/netgear_ngg)
+  DEVICE_MODEL := GS110TUP
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES += realtek-poe
+endef
+TARGET_DEVICES += netgear_gs110tup-v1
 
 define Device/netgear_gs308t-v1
   $(Device/netgear_nge)

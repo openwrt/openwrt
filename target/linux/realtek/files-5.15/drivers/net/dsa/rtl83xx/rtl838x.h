@@ -635,6 +635,7 @@ struct rtl838x_port {
 	bool is2G5;
 	int sds_num;
 	int led_set;
+	int leds_on_this_port;
 	const struct dsa_port *dp;
 };
 

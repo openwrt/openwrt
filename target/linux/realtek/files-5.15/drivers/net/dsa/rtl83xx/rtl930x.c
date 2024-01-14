@@ -24,6 +24,15 @@
 
 #define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
 
+#define RTL930X_LED_SETX_0_CTRL(x) (RTL930X_LED_SET0_0_CTRL - (x * 8))
+#define RTL930X_LED_SETX_1_CTRL(x) (RTL930X_LED_SETX_0_CTRL(x) - 4)
+
+/* get register for given set and led in the set */
+#define RTL930X_LED_SETX_LEDY(x,y) (RTL930X_LED_SETX_0_CTRL(x) - 4 * (y / 2))
+
+/* get shift for given led in any set */
+#define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
+
 extern struct mutex smi_lock;
 extern struct rtl83xx_soc_info soc_info;
 
@@ -249,9 +258,9 @@ static void rtl930x_vlan_fwd_on_inner(int port, bool is_set)
 {
 	/* Always set all tag modes to fwd based on either inner or outer tag */
 	if (is_set)
-		sw_w32_mask(0, 0xf, RTL930X_VLAN_PORT_FWD + (port << 2));
-	else
 		sw_w32_mask(0xf, 0, RTL930X_VLAN_PORT_FWD + (port << 2));
+	else
+		sw_w32_mask(0, 0xf, RTL930X_VLAN_PORT_FWD + (port << 2));
 }
 
 static void rtl930x_vlan_profile_setup(int profile)
@@ -2396,10 +2405,44 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		return;
 	}
 
+	for (int set = 0; set < 4; set++) {
+		char set_name[16] = {0};
+		u32 set_config[4];
+		int leds_in_this_set = 0;
+
+		/* Reset LED set configuration */
+		sw_w32(0, RTL930X_LED_SETX_0_CTRL(set));
+		sw_w32(0, RTL930X_LED_SETX_1_CTRL(set));
+
+		/**
+		 * Each led set has 4 number of leds, and each LED is configured with 16 bits
+		 * So each 32bit register holds configuration for 2 leds
+		 * And therefore each set requires 2 registers for configuring 4 LEDs
+		 *
+		*/
+		sprintf(set_name, "led_set%d", set);
+		leds_in_this_set = of_property_count_u32_elems(node, set_name);
+
+		if (leds_in_this_set == 0 || leds_in_this_set > sizeof(set_config)) {
+			pr_err("%s led_set configuration invalid skipping over this set\n", __func__);
+			continue;
+		}
+
+		if (of_property_read_u32_array(node, set_name, set_config, leds_in_this_set)) {
+			break;
+		}
+
+		/* Write configuration as per number of LEDs */
+		for (int i=0, led = leds_in_this_set-1; led >= 0; led--,i++) {
+			sw_w32_mask(0xffff << RTL930X_LED_SET_LEDX_SHIFT(led),
+						(0xffff & set_config[i]) << RTL930X_LED_SET_LEDX_SHIFT(led),
+						RTL930X_LED_SETX_LEDY(set, led));
+		}
+	}
+
 	for (int i = 0; i < priv->cpu_port; i++) {
 		int pos = (i << 1) % 32;
 		u32 set;
-		u32 v;
 
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
@@ -2407,34 +2450,14 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		if (!priv->ports[i].phy)
 			continue;
 
-		v = 0x1;
-		if (priv->ports[i].is10G)
-			v = 0x3;
-		if (priv->ports[i].phy_is_integrated)
-			v = 0x1;
-		sw_w32_mask(0x3 << pos, v << pos, RTL930X_LED_PORT_NUM_CTRL(i));
+		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
+		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port -1) << pos, RTL930X_LED_PORT_NUM_CTRL(i));
 
 		pm |= BIT(i);
 
 		set = priv->ports[i].led_set;
 		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
 		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
-	}
-
-	for (int i = 0; i < 4; i++) {
-		const __be32 *led_set;
-		char set_name[9];
-		u32 setlen;
-		u32 v;
-
-		sprintf(set_name, "led_set%d", i);
-		led_set = of_get_property(node, set_name, &setlen);
-		if (!led_set || setlen != 16)
-			break;
-		v = be32_to_cpup(led_set) << 16 | be32_to_cpup(led_set + 1);
-		sw_w32(v, RTL930X_LED_SET0_0_CTRL - 4 - i * 8);
-		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
-		sw_w32(v, RTL930X_LED_SET0_0_CTRL - i * 8);
 	}
 
 	/* Set LED mode to serial (0x1) */

@@ -28,14 +28,36 @@ define Device/mikrotik_routerboard-911-lite
 endef
 TARGET_DEVICES += mikrotik_routerboard-911-lite
 
+define Device/mikrotik_routerboard-911g-xhpnd
+  $(Device/mikrotik_nand)
+  SOC := ar9342
+  DEVICE_MODEL := RouterBOARD 911G-2HPnD
+  DEVICE_ALT0_VENDOR := Mikrotik
+  DEVICE_ALT0_MODEL := RouterBOARD 911G-5HPnD
+  DEVICE_PACKAGES += rssileds
+  SUPPORTED_DEVICES += rb-912uag-2hpnd
+endef
+TARGET_DEVICES += mikrotik_routerboard-911g-xhpnd
+
 define Device/mikrotik_routerboard-912uag-2hpnd
   $(Device/mikrotik_nand)
   SOC := ar9342
   DEVICE_MODEL := RouterBOARD 912UAG-2HPnD
-  DEVICE_PACKAGES += kmod-usb-ehci kmod-usb2
+  DEVICE_ALT0_VENDOR := Mikrotik
+  DEVICE_ALT0_MODEL := RouterBOARD 912UAG-5HPnD
+  DEVICE_PACKAGES += kmod-usb-ehci kmod-usb2 rssileds
   SUPPORTED_DEVICES += rb-912uag-2hpnd
 endef
 TARGET_DEVICES += mikrotik_routerboard-912uag-2hpnd
+
+define Device/mikrotik_routerboard-911g-5hpacd
+  $(Device/mikrotik_nand)
+  SOC := qca9558
+  DEVICE_MODEL := RouterBOARD 911G-5HPacD
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  SUPPORTED_DEVICES += rb-921gs-5hpacd-r2
+endef
+TARGET_DEVICES += mikrotik_routerboard-911g-5hpacd
 
 define Device/mikrotik_routerboard-921gs-5hpacd-15s
   $(Device/mikrotik_nand)

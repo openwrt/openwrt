@@ -48,10 +48,10 @@ rostelecom,rt-sf-1)
 	;;
 beeline,smartbox-pro|\
 wifire,s1500-nbn)
-	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1" "link tx rx"
-	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2" "link tx rx"
-	ucidef_set_led_netdev "lan3" "lan3" "green:lan3" "lan3" "link tx rx"
-	ucidef_set_led_netdev "lan4" "lan4" "green:lan4" "lan4" "link tx rx"
+	ucidef_set_led_netdev "lan1" "lan1" "green:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "green:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "lan3" "green:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "lan4" "lan4" "green:lan-4" "lan4" "link tx rx"
 	ucidef_set_led_netdev "wan"  "wan"  "green:wan"  "wan"  "link tx rx"
 	;;
 belkin,rt1800)
@@ -202,9 +202,9 @@ tplink,deco-m4r-v4)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan"
 	;;
 tplink,ec330-g5u-v1)
-	ucidef_set_led_netdev "lan" "Ethernet" "blue:ethernet" "br-lan" "link tx rx"
-	ucidef_set_led_netdev "wan" "Internet" "blue:internet" "wan" "link tx rx"
-	ucidef_set_led_netdev "wan-off" "Internet-off" "amber:internet" "wan" "link"
+	ucidef_set_led_netdev "lan" "Ethernet" "blue:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "Internet" "blue:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "Internet-off" "amber:wan" "wan" "link"
 	;;
 tplink,re350-v1)
 	ucidef_set_led_netdev "wifi2g" "Wifi 2.4G" "blue:wifi2G" "wlan0"
