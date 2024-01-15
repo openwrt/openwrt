@@ -146,19 +146,18 @@ hk_generate_as_needed()
 	done
 }
 
-append_ports()
+# $1 - list with whitespace-separated elements
+normalize_list()
 {
-	local ipaddrs="$1"
-	local port="$2"
+	printf '%s' "$1" | tr -s ' \r\n\t' ' ' | sed -E 's/^ //;s/ $//'
+}
 
-	[ -z "$ipaddrs" ] && {
-		procd_append_param command -p "$port"
-		return
-	}
-
-	for addr in $ipaddrs; do
-		procd_append_param command -p "$addr:$port"
-	done
+warn_multiple_interfaces()
+{
+	logger -t "${NAME}" -p daemon.warn \
+	  "Option '$1' should specify SINGLE interface but instead it lists interfaces: $2"
+	logger -t "${NAME}" -p daemon.warn \
+	  "Consider creating per-interface instances instead!"
 }
 
 validate_section_dropbear()
@@ -166,6 +165,7 @@ validate_section_dropbear()
 	uci_load_validate dropbear dropbear "$1" "$2" \
 		'PasswordAuth:bool:1' \
 		'enable:bool:1' \
+		'DirectInterface:string' \
 		'Interface:string' \
 		'GatewayPorts:bool:0' \
 		'ForceCommand:string' \
@@ -184,28 +184,139 @@ validate_section_dropbear()
 
 dropbear_instance()
 {
-	local ipaddrs
-
 	[ "$2" = 0 ] || {
 		echo "validation failed"
 		return 1
 	}
 
-	[ -n "${Interface}" ] && {
-		[ -n "${BOOT}" ] && return 0
+	[ "${enable}" = "1" ] || return 1
 
-		network_get_ipaddrs_all ipaddrs "${Interface}" || {
-			echo "interface ${Interface} has no physdev or physdev has no suitable ip"
-			return 1
-		}
-	}
+	local iface ndev ipaddrs
 
-	[ "${enable}" = "0" ] && return 1
+	# 'DirectInterface' should specify single interface
+	# but end users may misinterpret this setting
+	DirectInterface=$(normalize_list "${DirectInterface}")
+
+	# 'Interface' should specify single interface
+	# but end users are often misinterpret this setting
+	Interface=$(normalize_list "${Interface}")
+
+	if [ -n "${Interface}" ] ; then
+		if [ -n "${DirectInterface}" ] ; then
+			logger -t "${NAME}" -p daemon.warn \
+			  "Option 'DirectInterface' takes precedence over 'Interface'"
+		else
+			logger -t "${NAME}" -p daemon.info \
+			  "Option 'Interface' binds to address(es) but not to interface"
+			logger -t "${NAME}" -p daemon.info \
+			  "Consider using option 'DirectInterface' to bind directly to interface"
+		fi
+	fi
+
+	# handle 'DirectInterface'
+	iface=$(echo "${DirectInterface}" | awk '{print $1}')
+	case "${DirectInterface}" in
+	*\ *)
+		warn_multiple_interfaces DirectInterface "${DirectInterface}"
+		logger -t "${NAME}" -p daemon.warn \
+		  "Using network interface '${iface}' for direct binding"
+	;;
+	esac
+	while [ -n "${iface}" ] ; do
+		# if network is available (even during boot) - proceed
+		if network_is_up "${iface}" ; then break ; fi
+		# skip during boot
+		[ -z "${BOOT}" ] || return 0
+
+		logger -t "${NAME}" -p daemon.crit \
+		  "Network interface '${iface}' is not available!"
+		return 1
+	done
+	while [ -n "${iface}" ] ; do
+		# ${iface} is logical (higher level) interface name
+		# ${ndev} is 'real' interface name
+		# e.g.: if ${iface} is 'lan' (default LAN interface) then ${ndev} is 'br-lan'
+		network_get_device ndev "${iface}"
+		[ -z "${ndev}" ] || break
+
+		logger -t "${NAME}" -p daemon.crit \
+		  "Missing network device for network interface '${iface}'!"
+		return 1
+	done
+	if [ -n "${iface}" ] ; then
+		logger -t "${NAME}" -p daemon.info \
+		  "Using network interface '${iface}' (network device '${ndev}') for direct binding"
+	fi
+	# handle 'Interface'
+	while [ -z "${iface}" ] ; do
+		[ -n "${Interface}" ] || break
+
+		# skip during boot
+		[ -z "${BOOT}" ] || return 0
+
+		case "${Interface}" in
+		*\ *)
+			warn_multiple_interfaces Interface "${Interface}"
+		;;
+		esac
+
+		local c=0
+		# sysoptions.h
+		local DROPBEAR_MAX_PORTS=10
+
+		local a n if_ipaddrs
+		for n in ${Interface} ; do
+			[ -n "$n" ] || continue
+
+			if_ipaddrs=
+			network_get_ipaddrs_all if_ipaddrs "$n"
+			[ -n "${if_ipaddrs}" ] || {
+				logger -s -t "${NAME}" -p daemon.err \
+				  "Network interface '$n' has no suitable IP address(es)!"
+				continue
+			}
+
+			[ $c -le ${DROPBEAR_MAX_PORTS} ] || {
+				logger -s -t "${NAME}" -p daemon.err \
+				  "Network interface '$n' is NOT listened due to option limit exceed!"
+				continue
+			}
+
+			for a in ${if_ipaddrs} ; do
+				[ -n "$a" ] || continue
+
+				c=$((c+1))
+				if [ $c -le ${DROPBEAR_MAX_PORTS} ] ; then
+					ipaddrs="${ipaddrs} $a"
+					continue
+				fi
+
+				logger -t "${NAME}" -p daemon.err \
+				  "Endpoint '$a:${Port}' on network interface '$n' is NOT listened due to option limit exceed!"
+			done
+		done
+		break
+	done
+
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 	local pid_file="/var/run/${NAME}.${PIDCOUNT}.pid"
 
 	procd_open_instance
 	procd_set_param command "$PROG" -F -P "$pid_file"
+	if [ -n "${iface}" ] ; then
+		# if ${iface} is non-empty then ${ndev} is non-empty too
+		procd_append_param command -l "${ndev}" -p "${Port}"
+	else
+		if [ -z "${ipaddrs}" ] ; then
+			procd_append_param command -p "${Port}"
+		else
+			local a
+			for a in ${ipaddrs} ; do
+				[ -n "$a" ] || continue
+				procd_append_param command -p "$a:${Port}"
+			done
+		fi
+	fi
 	[ "${PasswordAuth}" -eq 0 ] && procd_append_param command -s
 	[ "${GatewayPorts}" -eq 1 ] && procd_append_param command -a
 	[ -n "${ForceCommand}" ] && procd_append_param command -c "${ForceCommand}"
@@ -222,7 +333,6 @@ dropbear_instance()
 		hk_config 'rsakeyfile' "${rsakeyfile}"
 	fi
 	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
-	append_ports "${ipaddrs}" "${Port}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
 	[ "${SSHKeepAlive}" -ne 0 ] && procd_append_param command -K "${SSHKeepAlive}"
 	[ "${MaxAuthTries}" -ne 0 ] && procd_append_param command -T "${MaxAuthTries}"
@@ -250,10 +360,21 @@ dropbear_instance()
 
 load_interfaces()
 {
-	config_get interface "$1" Interface
+	local enable
 	config_get enable "$1" enable 1
+	[ "${enable}" = "1" ] || return 0
 
-	[ "${enable}" = "1" ] && interfaces=" ${interface} ${interfaces}"
+	local direct_iface iface
+	config_get direct_iface "$1" DirectInterface
+	direct_iface=$(normalize_list "${direct_iface}")
+	# 'DirectInterface' takes precedence over 'Interface'
+	if [ -n "${direct_iface}" ] ; then
+		iface=$(echo "${direct_iface}" | awk '{print $1}')
+	else
+		config_get iface "$1" Interface
+		iface=$(normalize_list "${iface}")
+	fi
+	interfaces="${interfaces} ${iface}"
 }
 
 boot()
@@ -278,13 +399,14 @@ service_triggers()
 {
 	local interfaces
 
-	procd_add_config_trigger "config.change" "dropbear" /etc/init.d/dropbear reload
+	procd_add_config_trigger "config.change" "${NAME}" /etc/init.d/dropbear reload
 
 	config_load "${NAME}"
-	config_foreach load_interfaces dropbear
+	config_foreach load_interfaces "${NAME}"
 
 	[ -n "${interfaces}" ] && {
-		for n in $interfaces ; do
+		local n
+		for n in $(printf '%s\n' ${interfaces} | sort -u) ; do
 			procd_add_interface_trigger "interface.*" $n /etc/init.d/dropbear reload
 		done
 	}
