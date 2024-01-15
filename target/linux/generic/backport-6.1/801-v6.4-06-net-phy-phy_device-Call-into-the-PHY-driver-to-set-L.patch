@@ -59,7 +59,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	init_data.fwnode = of_fwnode_handle(led);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -765,15 +765,19 @@ struct phy_tdr_config {
+@@ -774,15 +774,19 @@ struct phy_tdr_config {
   * struct phy_led: An LED driven by the PHY
   *
   * @list: List of LEDs
@@ -79,7 +79,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  /**
   * struct phy_driver - Driver structure for a particular PHY type
   *
-@@ -988,6 +992,15 @@ struct phy_driver {
+@@ -997,6 +1001,15 @@ struct phy_driver {
  	int (*get_sqi)(struct phy_device *dev);
  	/** @get_sqi_max: Get the maximum signal quality indication */
  	int (*get_sqi_max)(struct phy_device *dev);

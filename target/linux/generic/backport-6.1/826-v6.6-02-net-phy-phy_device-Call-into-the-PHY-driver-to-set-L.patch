@@ -107,7 +107,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	init_data.fwnode = of_fwnode_handle(led);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -1013,6 +1013,39 @@ struct phy_driver {
+@@ -1022,6 +1022,39 @@ struct phy_driver {
  	int (*led_blink_set)(struct phy_device *dev, u8 index,
  			     unsigned long *delay_on,
  			     unsigned long *delay_off);
