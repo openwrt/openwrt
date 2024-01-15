@@ -880,6 +880,25 @@ endif
 endef
 TARGET_DEVICES += xiaomi_redmi-router-ax6000-ubootmod
 
+define Device/yuncore_ax835
+  DEVICE_VENDOR := YunCore
+  DEVICE_MODEL := AX835
+  DEVICE_DTS := mt7981b-yuncore-ax835
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGES := sysupgrade.bin
+  IMAGE_SIZE := 14336k
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-nor-rfb
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += yuncore_ax835
+
+
 define Device/zbtlink_zbt-z8102ax
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-Z8102AX

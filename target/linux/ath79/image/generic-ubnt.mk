@@ -229,6 +229,13 @@ define Device/ubnt_routerstation-pro
 endef
 TARGET_DEVICES += ubnt_routerstation-pro
 
+define Device/ubnt_uk-ultra
+  $(Device/ubnt_unifiac)
+  DEVICE_MODEL := UniFi Swiss Army Knife Ultra
+  DEVICE_PACKAGES += rssileds -swconfig
+endef
+TARGET_DEVICES += ubnt_uk-ultra
+
 define Device/ubnt_unifi-ap
   $(Device/ubnt-bz)
   DEVICE_MODEL := UniFi AP
@@ -243,13 +250,6 @@ define Device/ubnt_unifi-ap-lr
   SUPPORTED_DEVICES += unifi ubnt,unifi ubnt,unifi-ap
 endef
 TARGET_DEVICES += ubnt_unifi-ap-lr
-
-define Device/ubnt_unifiac
-  DEVICE_VENDOR := Ubiquiti
-  SOC := qca9563
-  IMAGE_SIZE := 15488k
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
-endef
 
 define Device/ubnt_unifiac-lite
   $(Device/ubnt_unifiac)

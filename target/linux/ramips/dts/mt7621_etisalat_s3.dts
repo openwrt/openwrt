@@ -23,21 +23,18 @@
 		compatible = "gpio-leds";
 
 		led-0 {
-			label = "blue:wan";
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_green: led-1 {
-			label = "green:status";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_red: led-2 {
-			label = "red:status";
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
@@ -47,13 +44,13 @@
 	keys {
 		compatible = "gpio-keys";
 
-		wps {
+		button-0 {
 			label = "wps";
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 
-		reset {
+		button-1 {
 			label = "reset";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;

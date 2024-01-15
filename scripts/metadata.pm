@@ -257,6 +257,7 @@ sub parse_package_metadata($) {
 		/^License: \s*(.+)\s*$/ and $pkg->{license} = $1;
 		/^LicenseFiles: \s*(.+)\s*$/ and $pkg->{licensefiles} = $1;
 		/^CPE-ID: \s*(.+)\s*$/ and $pkg->{cpe_id} = $1;
+		/^URL: \s*(.+)\s*$/ and $pkg->{url} = $1;
 		/^ABI-Version: \s*(.+)\s*$/ and $pkg->{abi_version} = $1;
 		/^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
 		/^Provides: \s*(.+)\s*$/ and do {
@@ -344,6 +345,7 @@ sub parse_package_manifest_metadata($) {
 		/^Section:\s*(.+)\s*$/ and $pkg->{section} = $1;
 		/^SourceDateEpoch: \s*(.+)\s*$/ and $pkg->{sourcedateepoch} = $1;
 		/^CPE-ID:\s*(.+)\s*$/ and $pkg->{cpe_id} = $1;
+		/^URL:\s*(.+)\s*$/ and $pkg->{url} = $1;
 		/^Architecture:\s*(.+)\s*$/ and $pkg->{architecture} = $1;
 		/^Installed-Size:\s*(.+)\s*$/ and $pkg->{installedsize} = $1;
 		/^Filename:\s*(.+)\s*$/ and $pkg->{filename} = $1;

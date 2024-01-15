@@ -11,7 +11,7 @@
 	};
 
 	keys {
-		switch_bt {
+		switch-0 {
 			label = "ROUT<->REP Switch_bt";
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			linux,input-type = <EV_SW>;
@@ -39,7 +39,6 @@
 };
 
 &led_wps {
-	label = "blue:wps";
 	color = <LED_COLOR_ID_BLUE>;
 };
 

@@ -181,7 +181,7 @@ for file_mode in $file_modes; do
 done
 $TAR -X "$tmp_dir"/tarX --format=gnu --numeric-owner --sort=name -cpf - --mtime="$TIMESTAMP" . | gzip -n - > "$tmp_dir"/data.tar.gz
 
-installed_size=$(stat -c "%s" "$tmp_dir"/data.tar.gz)
+installed_size=$(zcat < "$tmp_dir"/data.tar.gz | wc -c)
 sed -i -e "s/^Installed-Size: .*/Installed-Size: $installed_size/" \
 	"$pkg_dir"/$CONTROL/control
 

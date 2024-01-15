@@ -137,9 +137,9 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 		priv->r->vlan_set_tagged(i, &info);
 
 	/* reset PVIDs; defaults to 1 on reset */
-	for (int i = 0; i <= priv->ds->num_ports; i++) {
-		priv->r->vlan_port_pvid_set(i, PBVLAN_TYPE_INNER, 0);
-		priv->r->vlan_port_pvid_set(i, PBVLAN_TYPE_OUTER, 0);
+	for (int i = 0; i <= priv->cpu_port; i++) {
+		priv->r->vlan_port_pvid_set(i, PBVLAN_TYPE_INNER, 1);
+		priv->r->vlan_port_pvid_set(i, PBVLAN_TYPE_OUTER, 1);
 		priv->r->vlan_port_pvidmode_set(i, PBVLAN_TYPE_INNER, PBVLAN_MODE_UNTAG_AND_PRITAG);
 		priv->r->vlan_port_pvidmode_set(i, PBVLAN_TYPE_OUTER, PBVLAN_MODE_UNTAG_AND_PRITAG);
 	}
@@ -870,6 +870,8 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 
 	if (state->duplex == DUPLEX_FULL)
 		reg |= RTL930X_DUPLEX_MODE;
+	else
+		reg &= ~RTL930X_DUPLEX_MODE; /* Clear duplex bit otherwise */
 
 	if (priv->ports[port].phy_is_integrated)
 		reg &= ~RTL930X_FORCE_EN; /* Clear MAC_FORCE_EN to allow SDS-MAC link */
@@ -1357,10 +1359,15 @@ static int rtl83xx_vlan_filtering(struct dsa_switch *ds, int port,
 		 * 2: Trap packet to CPU port
 		 * The Egress filter used 1 bit per state (0: DISABLED, 1: ENABLED)
 		 */
-		if (port != priv->cpu_port)
+		if (port != priv->cpu_port) {
 			priv->r->set_vlan_igr_filter(port, IGR_DROP);
+			priv->r->set_vlan_egr_filter(port, EGR_ENABLE);
+		}
+		else {
+			priv->r->set_vlan_igr_filter(port, IGR_TRAP);
+			priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
+		}
 
-		priv->r->set_vlan_egr_filter(port, EGR_ENABLE);
 	} else {
 		/* Disable ingress and egress filtering */
 		if (port != priv->cpu_port)
@@ -1424,6 +1431,8 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 
 	pr_debug("%s port %d, vid %d, flags %x\n",
 		__func__, port, vlan->vid, vlan->flags);
+
+	if(!vlan->vid) return 0;
 
 	if (vlan->vid > 4095) {
 		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
