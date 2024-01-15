@@ -18,9 +18,9 @@ Link: https://lore.kernel.org/r/20230526125305.19626-4-quic_kathirav@quicinc.com
 
 --- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
-@@ -179,6 +179,13 @@
- 		dma-ranges;
- 		compatible = "simple-bus";
+@@ -312,6 +312,13 @@
+ 			status = "disabled";
+ 		};
  
 +		qfprom: efuse@a4000 {
 +			compatible = "qcom,ipq6018-qfprom", "qcom,qfprom";
@@ -29,6 +29,6 @@ Link: https://lore.kernel.org/r/20230526125305.19626-4-quic_kathirav@quicinc.com
 +			#size-cells = <1>;
 +		};
 +
- 		prng: qrng@e1000 {
+ 		prng: qrng@e3000 {
  			compatible = "qcom,prng-ee";
  			reg = <0x0 0x000e3000 0x0 0x1000>;

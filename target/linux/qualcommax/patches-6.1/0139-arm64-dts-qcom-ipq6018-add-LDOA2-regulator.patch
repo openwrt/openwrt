@@ -13,15 +13,15 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
 
 --- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
-@@ -841,6 +841,11 @@
- 					regulator-max-microvolt = <1062500>;
- 					regulator-always-on;
- 				};
+@@ -178,6 +178,11 @@
+ 						regulator-max-microvolt = <1062500>;
+ 						regulator-always-on;
+ 					};
 +
-+				ipq6018_l2: l2 {
-+					regulator-min-microvolt = <1800000>;
-+					regulator-max-microvolt = <3300000>;
-+				};
++					ipq6018_l2: l2 {
++						regulator-min-microvolt = <1800000>;
++						regulator-max-microvolt = <3300000>;
++					};
+ 				};
  			};
  		};
- 	};

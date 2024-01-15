@@ -17,7 +17,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 
 --- a/drivers/clk/qcom/gcc-ipq6018.c
 +++ b/drivers/clk/qcom/gcc-ipq6018.c
-@@ -3503,6 +3503,22 @@ static struct clk_branch gcc_prng_ahb_cl
+@@ -3523,6 +3523,22 @@ static struct clk_branch gcc_prng_ahb_cl
  	},
  };
  
@@ -40,7 +40,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  static struct clk_branch gcc_qdss_dap_clk = {
  	.halt_reg = 0x29084,
  	.clkr = {
-@@ -4341,6 +4357,7 @@ static struct clk_regmap *gcc_ipq6018_cl
+@@ -4362,6 +4378,7 @@ static struct clk_regmap *gcc_ipq6018_cl
  	[GCC_SYS_NOC_PCIE0_AXI_CLK] = &gcc_sys_noc_pcie0_axi_clk.clkr,
  	[GCC_PCIE0_PIPE_CLK] = &gcc_pcie0_pipe_clk.clkr,
  	[GCC_PRNG_AHB_CLK] = &gcc_prng_ahb_clk.clkr,

@@ -1,19 +1,21 @@
-From 946b1a565a60a04f8e5171a79a463f99485a3531 Mon Sep 17 00:00:00 2001
+From 0b17197055b528da22e9385200e61b847b499d48 Mon Sep 17 00:00:00 2001
 From: Mantas Pucka <mantas@8devices.com>
-Date: Wed, 24 Jan 2024 15:07:24 +0200
-Subject: [PATCH 2/3] arm64: dts: qcom: ipq6018: add tsens node
+Date: Thu, 25 Jan 2024 11:04:11 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq6018: add tsens node
 
 IPQ6018 has temperature sensing HW block compatible with IPQ8074. Add
 node for it.
 
 Signed-off-by: Mantas Pucka <mantas@8devices.com>
+Link: https://lore.kernel.org/r/1706173452-1017-3-git-send-email-mantas@8devices.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 ---
  arch/arm64/boot/dts/qcom/ipq6018.dtsi | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
 --- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
-@@ -193,6 +193,16 @@
+@@ -342,6 +342,16 @@
  			clock-names = "core";
  		};
  

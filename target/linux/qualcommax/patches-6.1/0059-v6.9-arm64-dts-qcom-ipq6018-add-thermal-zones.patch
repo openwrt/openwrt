@@ -1,14 +1,16 @@
-From 92c65f959ec2b8d1ab26efe246b29ed538b45c86 Mon Sep 17 00:00:00 2001
+From 8f053e5616352943e16966f195f5a7a161e6fe7d Mon Sep 17 00:00:00 2001
 From: Mantas Pucka <mantas@8devices.com>
-Date: Wed, 24 Jan 2024 15:10:43 +0200
-Subject: [PATCH 3/3] arm64: dts: qcom: ipq6018: add thermal zones
+Date: Thu, 25 Jan 2024 11:04:12 +0200
+Subject: [PATCH] arm64: dts: qcom: ipq6018: add thermal zones
 
 Add thermal zones to make use of thermal sensors data. For CPU zone,
 add cooling device that uses CPU frequency scaling.
 
 Signed-off-by: Mantas Pucka <mantas@8devices.com>
+Link: https://lore.kernel.org/r/1706173452-1017-4-git-send-email-mantas@8devices.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 ---
- arch/arm64/boot/dts/qcom/ipq6018.dtsi | 121 ++++++++++++++++++++++++++++++++++
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 121 ++++++++++++++++++++++++++
  1 file changed, 121 insertions(+)
 
 --- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
@@ -53,11 +55,10 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  		};
  
  		L2_0: l2-cache {
-@@ -808,6 +813,122 @@
- 			};
+@@ -888,6 +893,122 @@
  		};
  	};
-+
+ 
 +	thermal-zones {
 +		nss-top-thermal {
 +			polling-delay-passive = <250>;
@@ -173,6 +174,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
 +			};
 +		};
 +	};
- 
- 	wcss: wcss-smp2p {
- 		compatible = "qcom,smp2p";
++
+ 	timer {
+ 		compatible = "arm,armv8-timer";
+ 		interrupts = <GIC_PPI 2 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
