@@ -2,12 +2,13 @@
 
 #include "qcom-ipq8064-smb208.dtsi"
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Fortinet FAP-421E";
 	compatible = "fortinet,fap-421e", "qcom,ipq8064";
 
-	memory@0 {
+	memory@42000000 {
 		device_type = "memory";
 		reg = <0x42000000 0xe000000>;
 	};
@@ -52,42 +53,43 @@
 		pinctrl-0 = <&led_pins>;
 		pinctrl-names = "default";
 
-		eth1_amber {
+		eth1-amber {
 			label = "amber:eth1";
 			gpios = <&qcom_pinmux 27 GPIO_ACTIVE_LOW>;
 		};
 
-		eth1_yellow {
+		eth1-yellow {
 			label = "yellow:eth1";
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_LOW>;
 		};
 
-		eth2_amber {
+		eth2-amber {
 			label = "amber:eth2";
 			gpios = <&qcom_pinmux 29 GPIO_ACTIVE_LOW>;
 		};
 
-		eth2_yellow {
+		eth2-yellow {
 			label = "yellow:eth2";
 			gpios = <&qcom_pinmux 28 GPIO_ACTIVE_LOW>;
 		};
 
-		power_amber {
-			label = "amber:power";
+		power-amber {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_yellow: power_yellow {
+		led_power_yellow: power-yellow {
 			label = "yellow:power";
 			gpios = <&qcom_pinmux 58 GPIO_ACTIVE_LOW>;
 		};
 
-		2g_yellow {
+		2g-yellow {
 			label = "yellow:2g";
 			gpios = <&qcom_pinmux 30 GPIO_ACTIVE_LOW>;
 		};
 
-		5g_yellow {
+		5g-yellow {
 			label = "yellow:5g";
 			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_LOW>;
 		};
@@ -167,22 +169,22 @@
 };
 
 &gsbi7 {
-	status = "okay";
-
 	qcom,mode = <GSBI_PROT_I2C_UART>;
+
+	status = "okay";
 };
 
 &gsbi7_serial{
-	status = "okay";
-
 	pinctrl-0 = <&uart0_pins>;
 	pinctrl-names = "default";
+
+	status = "okay";
 };
 
 &gsbi5 {
-	status = "okay";
-
 	qcom,mode = <GSBI_PROT_SPI>;
+
+	status = "okay";
 
 	spi@1a280000 {
 		status = "okay";
