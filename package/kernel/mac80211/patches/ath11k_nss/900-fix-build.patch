@@ -104,19 +104,6 @@
  					 NL80211_CMD_COLOR_CHANGE_COMPLETED,
  					 0, 0);
  }
---- a/include/net/mac80211.h
-+++ b/include/net/mac80211.h
-@@ -5241,6 +5241,10 @@ void ieee80211_tx_status_ext(struct ieee
-  *	(NULL for multicast packets)
-  * @info: tx status information
-  */
-+void ieee80211_tx_status_8023(struct ieee80211_hw *hw,
-+                               struct ieee80211_vif *vif,
-+                               struct sk_buff *skb);
-+
- static inline void ieee80211_tx_status_noskb(struct ieee80211_hw *hw,
- 					     struct ieee80211_sta *sta,
- 					     struct ieee80211_tx_info *info)
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
 @@ -4777,7 +4777,7 @@ void ieee80211_color_collision_detection
@@ -160,39 +147,6 @@
  	/* now keys can no longer be reached */
  	ieee80211_free_sta_keys(local, sta);
  
---- a/net/mac80211/status.c
-+++ b/net/mac80211/status.c
-@@ -1244,6 +1244,30 @@ void ieee80211_tx_rate_update(struct iee
- }
- EXPORT_SYMBOL(ieee80211_tx_rate_update);
- 
-+void ieee80211_tx_status_8023(struct ieee80211_hw *hw,
-+                              struct ieee80211_vif *vif,
-+                              struct sk_buff *skb)
-+{
-+        struct ieee80211_sub_if_data *sdata;
-+        struct ieee80211_tx_status status = {
-+                .skb = skb,
-+                .info = IEEE80211_SKB_CB(skb),
-+        };
-+        struct sta_info *sta;
-+
-+        sdata = vif_to_sdata(vif);
-+
-+        rcu_read_lock();
-+
-+        if (!ieee80211_lookup_ra_sta(sdata, skb, &sta) && !IS_ERR(sta))
-+                status.sta = &sta->sta;
-+
-+        ieee80211_tx_status_ext(hw, &status);
-+
-+        rcu_read_unlock();
-+}
-+EXPORT_SYMBOL(ieee80211_tx_status_8023);
-+
- void ieee80211_report_low_ack(struct ieee80211_sta *pubsta, u32 num_packets)
- {
- 	struct sta_info *sta = container_of(pubsta, struct sta_info, sta);
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
 @@ -19414,7 +19414,7 @@ void cfg80211_ch_switch_started_notify(s

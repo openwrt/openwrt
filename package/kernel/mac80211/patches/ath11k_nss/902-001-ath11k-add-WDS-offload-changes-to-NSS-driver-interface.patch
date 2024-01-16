@@ -13,20 +13,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/nss.c
 +++ b/drivers/net/wireless/ath/ath11k/nss.c
-@@ -9,10 +9,12 @@
- #include "nss.h"
- #include "core.h"
- #include "peer.h"
-+#include "dp_tx.h"
- #include "dp_rx.h"
- #include "dp_tx.h"
- #include "hif.h"
- #include "wmi.h"
-+#include "wmi.h"
- #include "../../../../../net/mac80211/sta_info.h"
- 
- /*-----------------------------ATH11K-NSS Helpers--------------------------*/
-@@ -348,6 +350,22 @@ void ath11k_nss_wifili_event_receive(str
+@@ -348,6 +348,22 @@ void ath11k_nss_wifili_event_receive(str
  		ath11k_nss_wifili_link_desc_return(ab,
  						   (void *)&msg->msg.linkdescinfomsg);
  		break;
@@ -301,8 +288,8 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  			     __attribute__((unused)) struct napi_struct *napi)
  {
 -	enum ath11k_hw_txrx_mode decap_type;
- 	struct wireless_dev *wdev;
- 	struct ieee80211_vif *vif;
+ 	struct wireless_dev *wdev = NULL;
+ 	struct ieee80211_vif *vif = NULL;
  	struct ath11k_vif *arvif;
 @@ -632,28 +871,16 @@ ath11k_nss_vdev_data_receive(struct net_
  	ath11k_dbg_dump(ab, ATH11K_DBG_DP_RX, "", "dp rx msdu from nss: ",

@@ -557,15 +557,13 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  exit:
  	mutex_unlock(&ar->conf_mutex);
  	return ret;
-@@ -6216,10 +6279,16 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6216,10 +6279,14 @@ static void ath11k_mac_op_tx(struct ieee
  	if (control->sta)
  		arsta = ath11k_sta_to_arsta(control->sta);
  
 -	ret = ath11k_dp_tx(ar, arvif, arsta, skb);
-+	if (ar->ab->nss.enabled) {
-+		arvif->ar->ab->nss.debug_mode = true;
++	if (ar->ab->nss.enabled)
 +		ret = ath11k_nss_tx(arvif, skb);
-+  }
 +	else
 +		ret = ath11k_dp_tx(ar, arvif, arsta, skb);
  	if (unlikely(ret)) {

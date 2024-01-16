@@ -69,9 +69,9 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  	int ret = 0;
 +	struct ath11k_peer *ta_peer = NULL;
  
- 	if (!dev) {
- 		dev_kfree_skb_any(skb);
-@@ -834,15 +833,50 @@ ath11k_nss_vdev_special_data_receive(str
+ 	arvif = ath11k_nss_get_arvif_from_dev(dev);
+ 	if (!arvif) {
+@@ -843,15 +842,50 @@ ath11k_nss_vdev_special_data_receive(str
  		return;
  	}
  

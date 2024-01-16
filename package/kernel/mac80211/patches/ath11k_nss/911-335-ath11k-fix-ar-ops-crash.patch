@@ -1,0 +1,71 @@
+From: Karthikeyan Periyasamy <quic_periyasa@quicinc.com>
+Subject: [patch] ath11k: fix NULL pointer crash due to the radio ops
+
+Mac80211 callback ops variable not intialised in the radio structure.
+when the firmware not advertise the WMI_TLV_SERVICE_PEER_TID_CONFIGS_SUPPORT
+in the service bitmmap, driver try to set set_tid_config ops as NULL.
+Since ar->ops already NULL, it leads to NULL pointer access crash.
+So fix this crash by properly intialise the mac80211 callback ops
+in the radio structure.
+
+Tested-on: QCN6122 hw1.0 WLAN.HK.2.5.0.1-01100-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Karthikeyan Periyasamy <quic_periyasa@quicinc.com>
+---
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -10558,6 +10558,7 @@ int ath11k_mac_allocate(struct ath11k_ba
+ 	struct ieee80211_hw *hw;
+ 	struct ath11k *ar;
+ 	struct ath11k_pdev *pdev;
++	struct ieee80211_ops *ops;
+ 	int ret;
+ 	int i;
+ 
+@@ -10565,17 +10566,25 @@ int ath11k_mac_allocate(struct ath11k_ba
+ 		return 0;
+ 
+ 	for (i = 0; i < ab->num_radios; i++) {
++		ops = kmemdup(&ath11k_ops, sizeof(ath11k_ops), GFP_KERNEL);
++		if (!ops) {
++			ret = -ENOMEM;
++			goto err_free_mac;
++		}
++
+ 		pdev = &ab->pdevs[i];
+-		hw = ieee80211_alloc_hw(sizeof(struct ath11k), &ath11k_ops);
++		hw = ieee80211_alloc_hw(sizeof(struct ath11k), ops);
+ 		if (!hw) {
+ 			ath11k_warn(ab, "failed to allocate mac80211 hw device\n");
+ 			ret = -ENOMEM;
++			kfree(ops);
+ 			goto err_free_mac;
+ 		}
+ 
+ 		ar = hw->priv;
+ 		ar->hw = hw;
+ 		ar->ab = ab;
++		ar->ops = ops;
+ 		ar->pdev = pdev;
+ 		ar->pdev_idx = i;
+ 		ar->lmac_id = ath11k_hw_get_mac_from_pdev_id(&ab->hw_params, i);
+@@ -10636,6 +10645,7 @@ void ath11k_mac_destroy(struct ath11k_ba
+ {
+ 	struct ath11k *ar;
+ 	struct ath11k_pdev *pdev;
++	struct ieee80211_ops *ops;
+ 	int i;
+ 
+ 	for (i = 0; i < ab->num_radios; i++) {
+@@ -10644,8 +10654,9 @@ void ath11k_mac_destroy(struct ath11k_ba
+ 		if (!ar)
+ 			continue;
+ 
+-		ath11k_fw_stats_free(&ar->fw_stats);
++		ops = ar->ops;
+ 		ieee80211_free_hw(ar->hw);
++		kfree(ops);
+ 		pdev->ar = NULL;
+ 	}
+ }
