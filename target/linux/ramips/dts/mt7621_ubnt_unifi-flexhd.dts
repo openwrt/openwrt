@@ -61,6 +61,20 @@
 				label = "factory";
 				reg = <0x70000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x4da8>;
+					};
+				};
 			};
 
 			eeprom: partition@80000 {
@@ -128,22 +142,20 @@
 &pcie0 {
 	wifi@0,0 {
 		reg = <0x0 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
 		// On newer devices there is a MediaTek MAC in the above
 		// device EEPROM, so override it with a calculated one.
-		nvmem-cells = <&macaddr_eeprom_0 1>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_eeprom_0 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
 &pcie1 {
 	wifi@0,0 {
 		reg = <0x0 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
 		// On newer devices there is a MediaTek MAC in the above
 		// device EEPROM, so override it with a calculated one.
-		nvmem-cells = <&macaddr_eeprom_0 2>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_eeprom_0 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
