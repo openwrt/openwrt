@@ -105,7 +105,6 @@ TARGET_DEVICES += edimax_cax1800
 
 define Device/linksys_mx4200v1
 	$(call Device/FitImage)
-	$(call Device/UbiFit)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := MX4200
 	DEVICE_VARIANT := v1
@@ -114,7 +113,6 @@ define Device/linksys_mx4200v1
 	KERNEL_SIZE := 6144k
 	IMAGE_SIZE := 147456k
 	NAND_SIZE := 512m
-	KERNEL_IN_UBI :=
 	SOC := ipq8174
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MX4200
