@@ -50,11 +50,11 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  
  /* Target configuration defines */
 +#if defined(CPTCFG_ATH11K_MEM_PROFILE_256M)
-+#define TARGET_NUM_VDEVS	8
-+#define TARGET_NUM_PEERS_PDEV	(128 + TARGET_NUM_VDEVS)
++#define TARGET_NUM_VDEVS(ab)	8
++#define TARGET_NUM_PEERS_PDEV(ab)	(128 + TARGET_NUM_VDEVS(ab))
 +/* Max num of stations (per radio) */
-+#define TARGET_NUM_STATIONS	128
-+#define ATH11K_QMI_TARGET_MEM_MODE	ATH11K_QMI_TARGET_MEM_MODE_512M
++#define TARGET_NUM_STATIONS(ab)	128
++#define ATH11K_QMI_TARGET_MEM_MODE	ATH11K_QMI_TARGET_MEM_MODE_256M
 +#define ATH11K_DP_TX_COMP_RING_SIZE	2048
 +#define ATH11K_DP_RXDMA_BUF_RING_SIZE		1024
 +#define ATH11K_DP_RXDMA_MON_STATUS_RING_SIZE	512
@@ -138,7 +138,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  #endif
 --- a/local-symbols
 +++ b/local-symbols
-@@ -171,12 +171,13 @@ ATH11K=
+@@ -171,6 +171,8 @@ ATH11K=
  ATH11K_AHB=
  ATH11K_PCI=
  ATH11K_NSS_SUPPORT=
@@ -147,12 +147,6 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  ATH11K_DEBUG=
  ATH11K_DEBUGFS=
  ATH11K_TRACING=
- ATH11K_SPECTRAL=
- ATH11K_THERMAL=
--ATH11K_MEM_PROFILE_512M=
- ATH12K=
- ATH12K_DEBUG=
- ATH12K_TRACING=
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
 @@ -863,6 +863,11 @@ struct ath11k_msi_config {
@@ -282,17 +276,16 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  		.hal_params = &ath11k_hw_hal_params_ipq8074,
  		.supports_dynamic_smps_6ghz = false,
  		.alloc_cacheable_memory = true,
-@@ -127,7 +131,9 @@ static struct ath11k_hw_params ath11k_hw
+@@ -127,6 +131,9 @@ static struct ath11k_hw_params ath11k_hw
  		.tcl_ring_retry = true,
  		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
  		.smp2p_wow_exit = false,
--	},
 +		/* In addition to TCL ring use TCL_CMD ring also for tx */
 +		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
 +		.num_vdevs_peers = ath11k_vdevs_peers,
+ 	},
  	{
  		.hw_rev = ATH11K_HW_IPQ6018_HW10,
- 		.name = "ipq6018 hw1.0",
 @@ -177,7 +183,7 @@ static struct ath11k_hw_params ath11k_hw
  		.coldboot_cal_mm = true,
  		.coldboot_cal_ftm = true,
@@ -374,13 +367,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/debugfs.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs.c
-@@ -1592,10 +1592,13 @@ static ssize_t ath11k_dump_mgmt_stats(st
- 				      size_t count, loff_t *ppos)
- {
- 	struct ath11k *ar = file->private_data;
-+#ifndef CPTCFG_ATH11K_MEM_PROFILE_512M
-+	struct ath11k_base *ab = ar->ab;
-+#endif
+@@ -1595,7 +1595,7 @@ static ssize_t ath11k_dump_mgmt_stats(st
  	struct ath11k_vif *arvif = NULL;
  	struct ath11k_mgmt_frame_stats *mgmt_stats;
  	int len = 0, ret, i;

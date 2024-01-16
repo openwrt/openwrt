@@ -150,9 +150,9 @@ Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
  	spin_lock_bh(&tx_ring->tx_idr_lock);
  	idr_remove(&tx_ring->txbuf_idr,
  		   FIELD_GET(DP_TX_DESC_ID_MSDU_ID, ti.desc_id));
-@@ -358,6 +429,9 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
- 	flags = skb_cb->flags;
- 	vif = skb_cb->vif;
+@@ -348,6 +419,9 @@ ath11k_dp_tx_htt_tx_complete_buf(struct
+ 		return;
+ 	}
  
 +	if (skb_cb->pkt_offset)
 +		skb_pull(msdu, skb_cb->pkt_offset); /* removing the alignment and htt meta data */
