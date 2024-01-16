@@ -161,6 +161,20 @@
 				label = "radio";
 				reg = <0x90000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0xe00>;
+					};
+
+					precal_radio_e10: precal@e10 {
+						reg = <0xe10 0x19c10>;
+					};
+				};
 			};
 
 			partition@b0000 {
@@ -186,9 +200,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 0x0>;
-		nvmem-cells = <&macaddr_rom_file_f100 0>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_radio_0>, <&precal_radio_e10>, <&macaddr_rom_file_f100 0>;
+		nvmem-cell-names = "eeprom", "precal", "mac-address";
 		mediatek,disable-radar-background;
 	};
 };

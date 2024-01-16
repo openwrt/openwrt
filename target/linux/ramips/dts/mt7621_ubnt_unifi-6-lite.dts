@@ -49,6 +49,14 @@
 					eeprom_factory_0: eeprom@0 {
 						reg = <0x0 0x400>;
 					};
+
+					eeprom_factory_20000: eeprom@20000 {
+						reg = <0x20000 0xe00>;
+					};
+
+					precal_factory_20e10: precal@20e10 {
+						reg = <0x20e10 0x19c10>;
+					};
 				};
 			};
 
@@ -112,8 +120,6 @@
 &wlan_5g {
 	compatible = "mediatek,mt76";
 
-	mediatek,mtd-eeprom = <&factory 0x20000>;
-
 	/* This is a workaround.
 	 *
 	 * Ubiquiti uses a +2 offset in the first octet relative
@@ -126,8 +132,8 @@
 	 * mac80211 increases the first octet by two for each VAP, leading
 	 * to conflicting MAC addresses for subsequent interfaces.
 	 */
-	nvmem-cells = <&macaddr_eeprom_6 1>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_eeprom_6 1>, <&eeprom_factory_20000>, <&precal_factory_20e10>;
+	nvmem-cell-names = "mac-address", "eeprom", "precal";
 
 	ieee80211-freq-limit = <5000000 6000000>;
 
