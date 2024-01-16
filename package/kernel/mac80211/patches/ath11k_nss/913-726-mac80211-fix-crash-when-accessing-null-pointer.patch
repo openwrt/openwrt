@@ -1,0 +1,87 @@
+From 376306e1018974ded893d8fefb91fe69676392d9 Mon Sep 17 00:00:00 2001
+From: Karthikeyan Kathirvel <quic_kathirve@quicinc.com>
+Date: Mon, 1 May 2023 15:15:56 +0530
+Subject: [PATCH] mac80211: fix crash when accessing null pointer
+
+During MLD transmission, band will be zero, fetching 0th sband will be an
+invalid accessing of sband information and also facing crash when 2ghz
+radio is in different phy and other bands are in a single phy, this is
+due to 2.4 Ghz sband will be NULL for the phy which is having sbands other
+than 2.4 Ghz.
+
+Fix this by adding sband NULL check.
+
+[ 2125.764601] Unable to handle kernel read from unreadable memory at virtual address 0000000000000050
+[ 2125.764631] Mem abort info:
+[ 2125.772445]   ESR = 0x96000005
+[ 2125.775221]   EC = 0x25: DABT (current EL), IL = 32 bits
+[ 2125.778339]   SET = 0, FnV = 0
+[ 2125.783804]   EA = 0, S1PTW = 0
+[ 2125.786669] Data abort info:
+[ 2125.789707]   ISV = 0, ISS = 0x00000005
+[ 2125.792833]   CM = 0, WnR = 0
+[ 2125.796394] user pgtable: 4k pages, 39-bit VAs, pgdp=000000006432b000
+[ 2125.799520] [0000000000000050] pgd=0000000000000000, pud=0000000000000000
+[ 2125.805946] Internal error: Oops: 96000005 [#1] PREEMPT SMP
+[ 2126.082240] CPU: 0 PID: 0 Comm: swapper/0 Not tainted 5.4.213 #0
+[ 2126.110546] pstate: 40400005 (nZcv daif +PAN -UAO)
+[ 2126.117591] pc : ieee80211_tx_monitor+0x1ac/0x5d0 [mac80211]
+[ 2126.122360] lr : ieee80211_tx_monitor+0x14c/0x5d0 [mac80211]
+[ 2126.128163] sp : ffffff803e14ecc0
+[ 2126.133803] x29: ffffff803e14ecc0 x28: 000000000000000d
+[ 2126.137016] x27: 0000000000000000 x26: ffffff803892aa40
+[ 2126.142398] x25: 0000000000000009 x24: 0000000000000000
+[ 2126.147694] x23: 0000000000000001 x22: ffffff80250210e0
+[ 2126.152988] x21: ffffff803a0a5800 x20: ffffff803a0a5828
+[ 2126.158284] x19: ffffff803892aa33 x18: 0000000000000000
+[ 2126.163579] x17: 0000000000000000 x16: 0000000000000000
+[ 2126.168873] x15: 0000000000000000 x14: 020101f0fd8c13dd
+[ 2126.174169] x13: 00c0bf3d2d200706 x12: 3809ff36b83b03ff
+[ 2126.179464] x11: 0a5802c3fe1802c3 x10: 002f3262005e4342
+[ 2126.184759] x9 : 0000a4270000a403 x8 : ffffff803892aa3f
+[ 2126.190055] x7 : 0000000000000000 x6 : 0000000000000001
+[ 2126.195349] x5 : ffffff803e14edd8 x4 : 0000000000000001
+[ 2126.200644] x3 : 000000000000000c x2 : 0000000000000000
+[ 2126.205939] x1 : ffffff803892aa3b x0 : 0000000000000040
+[ 2126.211235] Call trace:
+[ 2126.216542]  ieee80211_tx_monitor+0x1ac/0x5d0 [mac80211]
+[ 2126.218714]  ieee80211_tx_status_ext+0x78c/0x7d0 [mac80211]
+[ 2126.224269]  ieee80211_tx_status+0x78/0xa0 [mac80211]
+[ 2126.229564]  ieee80211_restart_hw+0xe0/0x26c [mac80211]
+[ 2126.234763]  tasklet_action_common.isra.2+0xa4/0x11c
+[ 2126.239795]  tasklet_action+0x24/0x2c
+[ 2126.245002]  __do_softirq+0x10c/0x244
+[ 2126.248561]  irq_exit+0x64/0xb4
+[ 2126.252207]  __handle_domain_irq+0x88/0xac
+[ 2126.255158]  gic_handle_irq+0x74/0xbc
+[ 2126.259325]  el1_irq+0xf0/0x1c0
+[ 2126.263058]  arch_cpu_idle+0x10/0x18
+[ 2126.266009]  do_idle+0x104/0x248
+[ 2126.269827]  cpu_startup_entry+0x20/0x64
+[ 2126.273041]  rest_init+0xd0/0xdc
+[ 2126.276947]  arch_call_rest_init+0xc/0x14
+[ 2126.280159]  start_kernel+0x46c/0x4a4
+[ 2126.284070] Code: d37d0863 8b030042 52800183 f9449c42 (f9402842)
+[ 2126.287713] ---[ end trace 04f5d203895d53da ]---
+
+Signed-off-by: Karthikeyan Kathirvel <quic_kathirve@quicinc.com>
+---
+ net/mac80211/status.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/net/mac80211/status.c
++++ b/net/mac80211/status.c
+@@ -336,8 +336,11 @@ ieee80211_add_tx_radiotap_header(struct
+ 		struct ieee80211_supported_band *sband;
+ 
+ 		sband = local->hw.wiphy->bands[info->band];
+-		legacy_rate =
+-			sband->bitrates[info->status.rates[0].idx].bitrate;
++		//TODO: Incase of MLD, band will be 0 for tx pkts
++		//this has to be taken care during TX monitor support.
++		if (sband)
++			legacy_rate =
++				sband->bitrates[info->status.rates[0].idx].bitrate;
+ 	}
+ 
+ 	if (legacy_rate) {

@@ -1,0 +1,74 @@
+From 0ab84604de1db0f589f7303507f38148ba8f3f04 Mon Sep 17 00:00:00 2001
+From: Nagarajan Maran <quic_nmaran@quicinc.com>
+Date: Tue, 28 Jun 2022 11:31:50 +0530
+Subject: [PATCH] ath11k: Ignore frags from uninitialized peer in dp
+
+In certain scenario, fragmented packet is received for self peer,
+for which rx_tid and rx_frags are not initialized in datapath. 
+While handling this fragment, crash is observed as the 
+rx_frag list is uninitialised and when we walk in 
+ath11k_dp_rx_h_sort_frags, skb null leads to exception.
+
+To address this, before processing received fragments we
+check dp_setup_done flag is set to ensure that peer
+has completed its dp peer setup for fragment queue,
+else ignore processing the fragments.
+
+Also, __fls would have an undefined behavior if the argument
+is passed as "0". Hence, added changes to handle the same.
+
+Below is the call trace of the crash:
+
+  CPU: 0 PID: 0 Comm: swapper/0 Not tainted 5.4.164 #0
+  Hardware name: Qualcomm Technologies, Inc. IPQ6018/AP-CP01-C1 (DT)
+  pstate: a0400005 (NzCv daif +PAN -UAO)
+  pc : ath11k_dp_process_rx_err+0x550/0x1084 [ath11k]
+  lr : ath11k_dp_process_rx_err+0x4e0/0x1084 [ath11k]
+  
+  Call trace:
+  ath11k_dp_process_rx_err+0x550/0x1084 [ath11k]
+  ath11k_dp_service_srng+0x70/0x370 [ath11k]
+  0xffffffc009693a04
+  __napi_poll+0x30/0xa4
+  net_rx_action+0x118/0x270
+  __do_softirq+0x10c/0x244
+  irq_exit+0x64/0xb4
+  __handle_domain_irq+0x88/0xac
+  gic_handle_irq+0x74/0xbc
+  el1_irq+0xf0/0x1c0
+  arch_cpu_idle+0x10/0x18
+  do_idle+0x104/0x248
+  cpu_startup_entry+0x20/0x64
+  rest_init+0xd0/0xdc
+  arch_call_rest_init+0xc/0x14
+  start_kernel+0x480/0x4b8
+  Code: f9400281 f94066a2 91405021 b94a0023 (f9406401)
+
+Signed-off-by: Harshitha Prem <quic_hprem@quicinc.com>
+Signed-off-by: Nagarajan Maran <quic_nmaran@quicinc.com>
+---
+ drivers/net/wireless/ath/ath11k/dp.c    |  3 ++-
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 11 ++++++++++-
+ drivers/net/wireless/ath/ath11k/peer.h  |  2 ++
+ 3 files changed, 14 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dp.c
++++ b/drivers/net/wireless/ath/ath11k/dp.c
+@@ -38,6 +38,7 @@ void ath11k_dp_peer_cleanup(struct ath11
+ 	ath11k_peer_rx_tid_cleanup(ar, peer);
+ 	peer->dp_setup_done = false;
+ 	crypto_free_shash(peer->tfm_mmic);
++	peer->dp_setup_done = false;
+ 	spin_unlock_bh(&ab->base_lock);
+ }
+ 
+--- a/drivers/net/wireless/ath/ath11k/peer.h
++++ b/drivers/net/wireless/ath/ath11k/peer.h
+@@ -93,6 +93,7 @@ struct ath11k_peer {
+ 	u16 sec_type;
+ 	u16 sec_type_grp;
+ 	bool is_authorized;
++	/* Peer's datapath set flag */
+ 	bool dp_setup_done;
+ 	struct ppdu_user_delayba ppdu_stats_delayba;
+ 	bool delayba_flag;

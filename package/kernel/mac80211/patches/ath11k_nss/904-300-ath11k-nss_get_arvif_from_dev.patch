@@ -85,9 +85,9 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  		break;
  	}
  }
-@@ -786,24 +814,7 @@ ath11k_nss_vdev_special_data_receive(str
+@@ -785,24 +813,7 @@ ath11k_nss_vdev_special_data_receive(str
+ 	int data_offs = 0;
  	int ret = 0;
- 	struct ath11k_peer *ta_peer = NULL;
  
 -	if (!dev) {
 -		dev_kfree_skb_any(skb);

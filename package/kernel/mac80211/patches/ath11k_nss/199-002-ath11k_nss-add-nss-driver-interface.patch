@@ -600,8 +600,8 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 +			     __attribute__((unused)) struct napi_struct *napi)
 +{
 +	enum ath11k_hw_txrx_mode decap_type;
-+	struct wireless_dev *wdev;
-+	struct ieee80211_vif *vif;
++	struct wireless_dev *wdev = NULL;
++	struct ieee80211_vif *vif = NULL;
 +	struct ath11k_vif *arvif;
 +	struct ath11k_base *ab;
 +	bool eth_decap = false;
