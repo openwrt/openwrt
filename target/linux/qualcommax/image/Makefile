@@ -25,7 +25,7 @@ define Device/FitImageLzma
 endef
 
 define Device/EmmcImage
-	IMAGES += factory.bin sysupgrade.bin
+	IMAGES := factory.bin sysupgrade.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
