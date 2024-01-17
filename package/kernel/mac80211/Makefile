@@ -40,11 +40,13 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_MAC80211_NSS_REDIRECT \
 	CONFIG_PACKAGE_IWLWIFI_DEBUG \
 	CONFIG_PACKAGE_IWLWIFI_DEBUGFS \
-	CONFIG_PACKAGE_RTLWIFI_DEBUG \
+	CONFIG_PACKAGE_RTLWIFI_DEBUG
 
 include $(INCLUDE_DIR)/package.mk
 
 WMENU:=Wireless Drivers
+
+NSS_PATCH:= subsys ath10k ath11k
 
 define KernelPackage/mac80211/Default
   SUBMENU:=$(WMENU)
@@ -377,7 +379,11 @@ define Build/Patch
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath10k,ath10k/)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath11k,ath11k/)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath12k,ath12k/)
-	$(if $(CONFIG_ATH11K_NSS_SUPPORT),$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath11k_nss,ath11k_nss/))
+ifdef CONFIG_ATH11K_NSS_SUPPORT
+	$(foreach driver,$(NSS_PATCH),
+		$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/nss/$(driver),nss/$(driver)/)
+	)
+endif
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/rt2x00,rt2x00/)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/mt7601u,mt7601u/)
 	$(call PatchDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/mwl,mwl/)
@@ -395,7 +401,11 @@ define Quilt/Refresh/Package
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath10k,ath10k/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath11k,ath11k/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath12k,ath12k/)
-	$(if $(CONFIG_ATH11K_NSS_SUPPORT),$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/ath11k_nss,ath11k_nss/))
+ifdef CONFIG_ATH11K_NSS_SUPPORT
+	$(foreach driver,$(NSS_PATCH),
+		$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/nss/$(driver),nss/$(driver)/)
+	)
+endif
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/rt2x00,rt2x00/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/mt7601u,mt7601u/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR)/mwl,mwl/)
@@ -422,6 +432,13 @@ define Build/InstallDev
 	rm -f $(1)/usr/include/mac80211-backport/linux/module.h
 endef
 
+ifdef CONFIG_ATH11K_NSS_SUPPORT
+define KernelPackage/ath11k/install
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config
+	$(INSTALL_BIN) ./files/qca-nss-pbuf.init $(1)/etc/init.d/qca-nss-pbuf
+	$(INSTALL_BIN) ./files/pbuf.uci $(1)/etc/config/pbuf
+endef
+endif
 
 $(eval $(foreach drv,$(PKG_DRIVERS),$(call KernelPackage,$(drv))))
 $(eval $(call KernelPackage,cfg80211))
