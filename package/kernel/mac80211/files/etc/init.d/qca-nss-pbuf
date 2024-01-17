@@ -50,15 +50,21 @@ apply_nss_config() {
           board=$memory_profile
           logger -t ath11k_nss "Using custom memory profile - $board"
           ;;
-        *)
-          logger -s -t ath11k_nss -p user.error "Unknown profile $memory_profile. Choose 1gb, 512mb, or 256mb"
+        off*|false*|disable*|0)
+          logger -s -t ath11k_nss -p user.warn "NSS pbuf option 'memory_profile=off'. Not running. Enable if you have issues connecting more than 65 clients"
+          exit 0
+          ;;
+        auto)
           board=$(board_name)
-          logger -s -t ath11k_nss -p user.warn "Falling back to: $board"
+          logger -t ath11k_nss "Setting n2hcfg values for board: $board"
+          ;;
+          *)
+            logger -s -t ath11k_nss -p user.error "Unknown profile $memory_profile. Choose auto, 1gb, 512mb, or 256mb"
+          exit 1
           ;;
     esac
   else
-     board=$(board_name)
-     logger -t ath11k_nss "Setting n2hcfg values for board: $board"
+    exi 0
   fi
 
   case "$board" in
