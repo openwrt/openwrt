@@ -13,11 +13,14 @@ PKG_CONFIG_DEPENDS += \
 	CONFIG_ATH10K_LEDS \
 	CONFIG_ATH10K_THERMAL \
 	CONFIG_ATH11K_THERMAL \
+	CONFIG_ATH11K_DEBUGFS_STA \
+	CONFIG_ATH11K_DEBUGFS_HTT_STATS \
 	CONFIG_ATH_USER_REGD \
 	CONFIG_ATH11K_MEM_PROFILE_1G \
 	CONFIG_ATH11K_MEM_PROFILE_512M \
 	CONFIG_ATH11K_MEM_PROFILE_256M \
-	CONFIG_ATH11K_NSS_SUPPORT
+	CONFIG_ATH11K_NSS_SUPPORT \
+	CONFIG_ATH11K_NSS_MESH_SUPPORT
 
 ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
   config-y += \
@@ -64,6 +67,10 @@ config-$(CONFIG_ATH11K_MEM_PROFILE_1G) += ATH11K_MEM_PROFILE_1G
 config-$(CONFIG_ATH11K_MEM_PROFILE_512M) += ATH11K_MEM_PROFILE_512M
 config-$(CONFIG_ATH11K_MEM_PROFILE_256M) += ATH11K_MEM_PROFILE_256M
 config-$(CONFIG_ATH11K_NSS_SUPPORT) += ATH11K_NSS_SUPPORT
+config-$(CONFIG_ATH11K_NSS_MESH_SUPPORT) += ATH11K_NSS_MESH_SUPPORT
+config-$(CONFIG_ATH11K_DEBUGFS_STA) += ATH11K_DEBUGFS_STA
+config-$(CONFIG_ATH11K_DEBUGFS_HTT_STATS) += ATH11K_DEBUGFS_HTT_STATS
+config-$(CONFIG_ATH11K_NSS_MESH_SUPPORT) += ATH11K_NSS_MESH_SUPPORT
 
 config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k,regular) += ATH10K ATH10K_PCI
@@ -306,7 +313,10 @@ define KernelPackage/ath11k
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath11k
   DEPENDS+= +kmod-ath +@DRIVER_11AC_SUPPORT +@DRIVER_11AX_SUPPORT \
   +kmod-crypto-michael-mic +ATH11K_THERMAL:kmod-hwmon-core +ATH11K_THERMAL:kmod-thermal \
-  +ATH11K_NSS_SUPPORT:kmod-qca-nss-drv
+  +ATH11K_NSS_SUPPORT:kmod-qca-nss-drv \
+  +ATH11K_NSS_MESH_SUPPORT:kmod-qca-nss-drv-wifi-meshmgr \
+  +@(ATH11K_NSS_SUPPORT):NSS_DRV_WIFIOFFLOAD_ENABLE \
+  +@(ATH11K_NSS_SUPPORT):NSS_DRV_WIFI_EXT_VDEV_ENABLE
   FILES:=$(PKG_BUILD_DIR)/drivers/soc/qcom/qmi_helpers.ko \
   $(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath11k/ath11k.ko
 ifdef CONFIG_ATH11K_NSS_SUPPORT
@@ -320,12 +330,32 @@ This module adds support for Qualcomm Technologies 802.11ax family of
 chipsets.
 endef
 
+define KernelPackage/ath11k/conffiles
+/etc/config/pbuf
+endef
+
 define KernelPackage/ath11k/config
 
        config ATH11K_THERMAL
                bool "Enable thermal sensors and throttling support"
                depends on PACKAGE_kmod-ath11k
                default y if TARGET_qualcommax
+
+      config ATH11K_DEBUGFS_STA
+               bool "Enable ath11k station statistics"
+               depends on PACKAGE_kmod-ath11k
+               depends on PACKAGE_MAC80211_DEBUGFS
+               default y
+               help
+                  Say Y to enable access to the station statistics via debugfs.
+
+      config ATH11K_DEBUGFS_HTT_STATS
+               bool "Enable ath11k HTT statistics"
+               depends on PACKAGE_kmod-ath11k
+               depends on PACKAGE_MAC80211_DEBUGFS
+               default y
+               help
+                  Say Y to enable access to the HTT statistics via debugfs.
 
        config ATH11K_NSS_SUPPORT
                bool "Enable NSS WiFi offload"
@@ -335,13 +365,17 @@ define KernelPackage/ath11k/config
                	 TARGET_qualcommax_ipq807x_DEVICE_redmi_ax6 || \
                	 TARGET_qualcommax_ipq807x_DEVICE_xiaomi_ax3600 || \
                	 TARGET_qualcommax_ipq807x_DEVICE_zte_mf269 )
-               select ATH11K_MEM_PROFILE_256M if (TARGET_qualcommax_ipq807x_DEVICE_netgear_wax218)
-               select NSS_DRV_WIFI_ENABLE
-               select NSS_DRV_WIFI_EXT_VDEV_ENABLE
-               default y if TARGET_qualcommax
+               select ATH11K_MEM_PROFILE_256M if TARGET_qualcommax_ipq807x_DEVICE_netgear_wax218
+
+       config ATH11K_NSS_MESH_SUPPORT
+               bool "Enable NSS WiFi Mesh offload"
+               depends on ATH11K_NSS_SUPPORT
+               select PACKAGE_MAC80211_MESH
+               default n
 
        choice
-          prompt "ATH11K Memory Profile"
+            prompt "Memory Profile"
+            depends on PACKAGE_kmod-ath11k
             default ATH11K_MEM_PROFILE_1G
             help
             	This option allows you to select the memory profile.

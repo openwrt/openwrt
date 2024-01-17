@@ -1,0 +1,58 @@
+Received: from bqiang-Celadon-RN.qca.qualcomm.com (10.80.80.8) by
+From: Baochen Qiang <quic_bqiang@quicinc.com>
+To: <ath11k@lists.infradead.org>
+Subject: [PATCH 1/4] wifi: ath11k: remove invalid peer create logic
+Date: Tue, 23 Jan 2024 10:56:57 +0800
+
+In ath11k_mac_op_assign_vif_chanctx(), there is a logic to
+create peer using ar->mac_addr for a STA vdev. This is invalid
+because a STA vdev should have a peer created using AP's
+MAC address. Besides, if we run into that logic, it means a peer
+has already been created earlier, we should not create it again.
+So remove it.
+
+This is found during code review.
+
+Tested-on: QCA6390 hw2.0 PCI WLAN.HST.1.0.1-01740-QCAHSTSWPLZ_V2_TO_X86-1
+Tested-on: WCN6855 hw2.1 PCI WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3.6510.23
+Tested-on: QCN9074 hw1.0 PCI WLAN.HK.2.7.0.1-01744-QCAHKSWPL_SILICONZ-1
+Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.7.0.1-01744-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Baochen Qiang <quic_bqiang@quicinc.com>
+Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 16 ----------------
+ 1 file changed, 16 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8232,7 +8232,6 @@ ath11k_mac_op_assign_vif_chanctx(struct
+ 	struct ath11k_base *ab = ar->ab;
+ 	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
+ 	int ret;
+-	struct peer_create_params param;
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 
+@@ -8255,21 +8254,6 @@ ath11k_mac_op_assign_vif_chanctx(struct
+ 		goto out;
+ 	}
+ 
+-	if (ab->hw_params.vdev_start_delay &&
+-	    arvif->vdev_type != WMI_VDEV_TYPE_AP &&
+-	    arvif->vdev_type != WMI_VDEV_TYPE_MONITOR) {
+-		param.vdev_id = arvif->vdev_id;
+-		param.peer_type = WMI_PEER_TYPE_DEFAULT;
+-		param.peer_addr = ar->mac_addr;
+-
+-		ret = ath11k_peer_create(ar, arvif, NULL, &param);
+-		if (ret) {
+-			ath11k_warn(ab, "failed to create peer after vdev start delay: %d",
+-				    ret);
+-			goto out;
+-		}
+-	}
+-
+ 	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR) {
+ 		ret = ath11k_mac_monitor_start(ar);
+ 		if (ret) {

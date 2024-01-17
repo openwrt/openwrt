@@ -1,0 +1,11 @@
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -5898,6 +5898,8 @@ static int ath11k_mac_copy_he_cap(struct
+ 		memcpy(he_cap_elem->phy_cap_info, band_cap->he_cap_phy_info,
+ 		       sizeof(he_cap_elem->phy_cap_info));
+ 
++		he_cap_elem->mac_cap_info[0] &= ~IEEE80211_HE_MAC_CAP0_HTC_HE;
++
+ 		he_cap_elem->mac_cap_info[1] &=
+ 			IEEE80211_HE_MAC_CAP1_TF_MAC_PAD_DUR_MASK;
+ 

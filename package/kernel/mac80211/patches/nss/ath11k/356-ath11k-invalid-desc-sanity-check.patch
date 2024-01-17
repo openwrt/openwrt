@@ -1,0 +1,85 @@
+From c7e37aebbe19056eb7b61299e75c863263acf2b9 Mon Sep 17 00:00:00 2001
+From: Nagarajan Maran <quic_nmaran@quicinc.com>
+Date: Tue, 9 Aug 2022 13:22:43 +0530
+Subject: [PATCH] Fix SKB corruption in REO destination ring
+
+In the traffic cases, randomly, invalid RX descriptor
+from REO destination ring is received. This
+invalid descriptor causes wrong SKB to be fetched
+which in turn causes SKB memory corruption issue.
+
+Introduced Sanity check to validate the descriptor,
+before processing the SKB.
+
+During the failure scenario, invalid RX descriptor
+filled with values "0" is received which in-turn
+corrupts the SKB stored in the ldr lookup
+with buffer id "0". Changed the start id for
+idr allocation to "1" and the buffer id "0" is
+reserved for error validation.
+
+
+Crash Signature : 
+
+Unable to handle kernel paging request at virtual address 3f004900
+During the crash,
+PC points to "b15_dma_inv_range+0x30/0x50"
+LR points to "dma_cache_maint_page+0x8c/0x128".
+The Backtrace obtained is as follows:
+[<8031716c>] (b15_dma_inv_range) from [<80313a4c>] (dma_cache_maint_page+0x8c/0x128)
+[<80313a4c>] (dma_cache_maint_page) from [<80313b90>] (__dma_page_dev_to_cpu+0x28/0xcc)
+[<80313b90>] (__dma_page_dev_to_cpu) from [<7fb5dd68>] (ath11k_dp_process_rx+0x1e8/0x4a4 [ath11k])
+[<7fb5dd68>] (ath11k_dp_process_rx [ath11k]) from [<7fb53c20>] (ath11k_dp_service_srng+0xb0/0x2ac [ath11k])
+[<7fb53c20>] (ath11k_dp_service_srng [ath11k]) from [<7f67bba4>] (ath11k_pci_ext_grp_napi_poll+0x1c/0x78 [ath11k_pci])
+[<7f67bba4>] (ath11k_pci_ext_grp_napi_poll [ath11k_pci]) from [<807d5cf4>] (__napi_poll+0x28/0xb8)
+[<807d5cf4>] (__napi_poll) from [<807d5f28>] (net_rx_action+0xf0/0x280)
+[<807d5f28>] (net_rx_action) from [<80302148>] (__do_softirq+0xd0/0x280)
+[<80302148>] (__do_softirq) from [<80320408>] (irq_exit+0x74/0xd4)
+[<80320408>] (irq_exit) from [<803638a4>] (__handle_domain_irq+0x90/0xb4)
+[<803638a4>] (__handle_domain_irq) from [<805bedec>] (gic_handle_irq+0x58/0x90)
+[<805bedec>] (gic_handle_irq) from [<80301a78>] (__irq_svc+0x58/0x8c)
+
+Signed-off-by: Nagarajan Maran <quic_nmaran@quicinc.com>
+---
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 18 ++++++++++++++----
+ 1 file changed, 14 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -396,8 +396,8 @@ int ath11k_dp_rxbufs_replenish(struct at
+ 			goto fail_free_skb;
+ 
+ 		spin_lock_bh(&rx_ring->idr_lock);
+-		buf_id = idr_alloc(&rx_ring->bufs_idr, skb, 1,
+-				   (rx_ring->bufs_max * 3) + 1, GFP_ATOMIC);
++			buf_id = idr_alloc(&rx_ring->bufs_idr, skb, 1,
++					(rx_ring->bufs_max * 3) + 1, GFP_ATOMIC);
+ 		spin_unlock_bh(&rx_ring->idr_lock);
+ 		if (buf_id <= 0)
+ 			goto fail_dma_unmap;
+@@ -3134,6 +3134,16 @@ try_again:
+ 	while (likely(desc =
+ 	      (struct hal_reo_dest_ring *)ath11k_hal_srng_dst_get_next_entry(ab,
+ 									     srng))) {
++
++		push_reason = FIELD_GET(HAL_REO_DEST_RING_INFO0_PUSH_REASON,
++					desc->info0);
++		if (unlikely(push_reason ==
++		    HAL_REO_DEST_RING_PUSH_REASON_ERR_DETECTED)) {
++			ath11k_warn(ab,"Received invalid desc\n");
++			ab->soc_stats.hal_reo_error[dp->reo_dst_ring[ring_id].ring_id]++;
++			continue;
++		}
++
+ 		cookie = FIELD_GET(BUFFER_ADDR_INFO1_SW_COOKIE,
+ 				   desc->buf_addr_info.info1);
+ 		buf_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_BUF_ID,
+@@ -3164,8 +3174,6 @@ try_again:
+ 
+ 		num_buffs_reaped[mac_id]++;
+ 
+-		push_reason = FIELD_GET(HAL_REO_DEST_RING_INFO0_PUSH_REASON,
+-					desc->info0);
+ 		if (unlikely(push_reason !=
+ 			     HAL_REO_DEST_RING_PUSH_REASON_ROUTING_INSTRUCTION)) {
+ 			dev_kfree_skb_any(msdu);
