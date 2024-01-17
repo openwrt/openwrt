@@ -1,0 +1,32 @@
+--- a/ath10k-6.4/mac.c
++++ b/ath10k-6.4/mac.c
+@@ -6362,13 +6362,13 @@
+ 	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac set txbf conf, value: 0x%x\n",
+ 		   value);
+ 	return ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
+ 					 ar->wmi.vdev_param->txbf, value);
+ }
+
+-static void ath10k_update_vif_offload(struct ieee80211_hw *hw,
++static int ath10k_update_vif_offload(struct ieee80211_hw *hw,
+ 				      struct ieee80211_vif *vif)
+ {
+ 	struct ath10k_vif *arvif = (void *)vif->drv_priv;
+ 	struct ath10k *ar = hw->priv;
+ 	u32 vdev_param;
+ 	int ret;
+@@ -6384,14 +6384,16 @@
+ 					ATH10K_HW_TXRX_NATIVE_WIFI);
+ 	/* 10.X firmware does not support this VDEV parameter. Do not warn */
+ 	if (ret && ret != -EOPNOTSUPP) {
+ 		ath10k_warn(ar, "failed to set vdev %i TX encapsulation: %d\n",
+ 			    arvif->vdev_id, ret);
+ 	}
++
++	return ret;
+ }
+
+ /*
+  * TODO:
+  * Figure out how to handle WMI_VDEV_SUBTYPE_P2P_DEVICE,
+  * because we will send mgmt frames without CCK. This requirement

@@ -1,0 +1,115 @@
+From ea4988df80e62204c411a60bafadfbff23eaa773 Mon Sep 17 00:00:00 2001
+From: Rameshkumar Sundaram <quic_ramess@quicinc.com>
+Date: Thu, 15 Jun 2023 14:33:55 +0530
+Subject: [PATCH] wifi: ath11k: Fix BCCA counter for EMA
+
+Currently BCCA counter is updated to FW via csa counter offs and
+beacon with new countdown is updated for every beacon tx completion event.
+For EMA, all EMA beacons are updated in one shot, and counter update for
+every tx event will mess up the actual sequence of countdown sent over the air.
+
+Allow FW to update the countdown till 1 and finalize the color
+change.
+
+Signed-off-by: Rameshkumar Sundaram <quic_ramess@quicinc.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 21 ---------------------
+ drivers/net/wireless/ath/ath11k/mac.h |  1 -
+ drivers/net/wireless/ath/ath11k/wmi.c | 23 +++++++++++++++--------
+ 3 files changed, 15 insertions(+), 30 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -1601,27 +1601,6 @@ static int ath11k_mac_setup_bcn_tmpl(str
+ 	return ath11k_mac_setup_bcn_tmpl_mbssid(arvif);
+ }
+ 
+-void ath11k_mac_bcn_tx_event(struct ath11k_vif *arvif)
+-{
+-	struct ieee80211_vif *vif = arvif->vif;
+-
+-	if (!vif->bss_conf.color_change_active && !arvif->bcca_zero_sent)
+-		return;
+-
+-	if (vif->bss_conf.color_change_active &&
+-	    ieee80211_beacon_cntdwn_is_complete(vif)) {
+-		arvif->bcca_zero_sent = true;
+-		ieee80211_color_change_finish(vif);
+-		return;
+-	}
+-
+-	arvif->bcca_zero_sent = false;
+-
+-	if (vif->bss_conf.color_change_active)
+-		ieee80211_beacon_update_cntdwn(vif);
+-	ath11k_mac_setup_bcn_tmpl(arvif);
+-}
+-
+ static void ath11k_control_beaconing(struct ath11k_vif *arvif,
+ 				     struct ieee80211_bss_conf *info)
+ {
+--- a/drivers/net/wireless/ath/ath11k/mac.h
++++ b/drivers/net/wireless/ath/ath11k/mac.h
+@@ -170,7 +170,6 @@ enum ath11k_supported_bw ath11k_mac_mac8
+ enum hal_encrypt_type ath11k_dp_tx_get_encrypt_type(u32 cipher);
+ void ath11k_mac_handle_beacon(struct ath11k *ar, struct sk_buff *skb);
+ void ath11k_mac_handle_beacon_miss(struct ath11k *ar, u32 vdev_id);
+-void ath11k_mac_bcn_tx_event(struct ath11k_vif *arvif);
+ int ath11k_mac_wait_tx_complete(struct ath11k *ar);
+ int ath11k_mac_vif_set_keepalive(struct ath11k_vif *arvif,
+ 				 enum wmi_sta_keepalive_method method,
+--- a/drivers/net/wireless/ath/ath11k/wmi.c
++++ b/drivers/net/wireless/ath/ath11k/wmi.c
+@@ -1874,9 +1874,10 @@ int ath11k_wmi_bcn_tmpl(struct ath11k *a
+ 	cmd->vdev_id = vdev_id;
+ 	cmd->tim_ie_offset = offs->tim_offset;
+ 
+-	if (vif->bss_conf.csa_active) {
++	if (vif->bss_conf.csa_active || vif->bss_conf.color_change_active) {
+ 		cmd->csa_switch_count_offset = offs->cntdwn_counter_offs[0];
+ 		cmd->ext_csa_switch_count_offset = offs->cntdwn_counter_offs[1];
++		cmd->csa_event_bitmap = cpu_to_le32(0xFFFFFFFF);
+ 	}
+ 
+ 	cmd->buf_len = bcn->len;
+@@ -7586,7 +7587,6 @@ static void ath11k_bcn_tx_status_event(s
+ 		rcu_read_unlock();
+ 		return;
+ 	}
+-	ath11k_mac_bcn_tx_event(arvif);
+ 	rcu_read_unlock();
+ }
+ 
+@@ -8500,10 +8500,7 @@ ath11k_wmi_process_csa_switch_count_even
+ {
+ 	int i;
+ 	struct ath11k_vif *arvif;
+-
+-	/* Finish CSA once the switch count becomes NULL */
+-	if (ev->current_switch_count)
+-		return;
++	struct ieee80211_bss_conf *bss_conf;
+ 
+ 	rcu_read_lock();
+ 	for (i = 0; i < ev->num_vdevs; i++) {
+@@ -8515,8 +8512,18 @@ ath11k_wmi_process_csa_switch_count_even
+ 			continue;
+ 		}
+ 
+-		if (arvif->is_up && arvif->vif->bss_conf.csa_active)
+-			ieee80211_csa_finish(arvif->vif);
++		bss_conf = &arvif->vif->bss_conf;
++		if (arvif->is_up && (bss_conf->csa_active || bss_conf->color_change_active)) {
++			if (!ev->current_switch_count) {
++				if (bss_conf->csa_active)
++					ieee80211_csa_finish(arvif->vif);
++			} else if (ev->current_switch_count > 1) {
++				ieee80211_beacon_update_cntdwn(arvif->vif);
++			} else {
++				if (bss_conf->color_change_active)
++					ieee80211_color_change_finish(arvif->vif);
++			}
++		}
+ 	}
+ 	rcu_read_unlock();
+ }
