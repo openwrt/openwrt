@@ -112,6 +112,13 @@ define Kernel/Configure/Default
 ifdef CONFIG_TARGET_armsr_armv8
 	$(LINUX_CONF_CMD) > $(LINUX_DIR)/.config
 	rm -rf $(KERNEL_BUILD_DIR)/modules
+	$(SCRIPT_DIR)/package-metadata.pl kconfig $(TMP_DIR)/.packageinfo $(TOPDIR)/.config $(KERNEL_PATCHVER) | \
+		grep -v "^#" > $(LINUX_DIR)/.config.override
+	rm -f $(LINUX_DIR)/.config.add
+	while read -r c; do \
+		grep -q "$$$${c/=*/=}" $(LINUX_DIR)/.config || echo $$$$c >> $(LINUX_DIR)/.config.add; \
+	done < $(LINUX_DIR)/.config.override
+	$(LINUX_DIR)/scripts/kconfig/merge_config.sh -m -O $(LINUX_DIR) $(LINUX_DIR)/.config $(LINUX_DIR)/.config.add
 	$(call Kernel/Setolddefconfig)
 	$(call Kernel/Generate_vermagic,)
 else
@@ -178,6 +185,13 @@ define Kernel/InstallModules
 	$(KERNEL_MAKE) INSTALL_MOD_PATH=$(TARGET_DIR) modules_install
 	rm -f $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/source \
 		$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/build
+	mkdir -p $(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/kernel/openwrt
+	for m in $(STAGING_DIR_ROOT)/lib/modules/$(LINUX_VERSION)/*.ko; do \
+		if ! find $(TARGET_DIR)/lib/modules/$(LINUX_VERSION) -name "$$$$(basename $$$$m).*" -type f -print -quit | grep -q .; then \
+			$(CP) "$$$$m" "$(TARGET_DIR)/lib/modules/$(LINUX_VERSION)/kernel/openwrt"; \
+		fi; \
+	done
+	$(STAGING_DIR_HOST)/bin/depmod -b $(TARGET_DIR) $(LINUX_VERSION)
 endef
 else
 define Kernel/InstallModules
