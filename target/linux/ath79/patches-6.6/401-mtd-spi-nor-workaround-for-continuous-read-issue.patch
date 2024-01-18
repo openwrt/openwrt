@@ -1,0 +1,69 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 18 Jan 2024 10:10:39 +0000
+Subject: [PATCH] mtd: spi-nor: workaround for continuous read issue
+
+The ath79 SoC GPIO voltage is 2.5V. In order to be compatible with
+3.3V NOR Flash chips, most devices use resistors to match voltage.
+However, some devices use a coupling capacitor to connect the Flash
+and GPIO. This seems to have led to a strange behavior where the SPI
+bus is unable to continuously read correct data from Flash chips.
+This patch workaround this issue by limiting the data size of each
+SPI transfer and inserting some sleep time between each read cycle.
+User can add the property "no-continuous-read" to the flash dts node
+to enable this workaround.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/mtd/spi-nor/core.c | 14 +++++++++++++-
+ drivers/mtd/spi-nor/core.h |  1 +
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/spi-nor/core.c
++++ b/drivers/mtd/spi-nor/core.c
+@@ -2091,6 +2091,7 @@ static int spi_nor_read(struct mtd_info
+ 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
+ 	loff_t from_lock = from;
+ 	size_t len_lock = len;
++	size_t read_len = 16;
+ 	ssize_t ret;
+ 
+ 	dev_dbg(nor->dev, "from 0x%08x, len %zd\n", (u32)from, len);
+@@ -2102,9 +2103,17 @@ static int spi_nor_read(struct mtd_info
+ 	while (len) {
+ 		loff_t addr = from;
+ 
++		if (unlikely(nor->flags & SNOR_F_READ_WAIT)) {
++			if (unlikely(read_len > len))
++				read_len = len;
++			udelay(5);
++		} else {
++			read_len = len;
++		}
++
+ 		addr = spi_nor_convert_addr(nor, addr);
+ 
+-		ret = spi_nor_read_data(nor, addr, len, buf);
++		ret = spi_nor_read_data(nor, addr, read_len, buf);
+ 		if (ret == 0) {
+ 			/* We shouldn't see 0-length reads */
+ 			ret = -EIO;
+@@ -2856,6 +2865,9 @@ static void spi_nor_init_flags(struct sp
+ 	if (of_property_read_bool(np, "no-wp"))
+ 		nor->flags |= SNOR_F_NO_WP;
+ 
++	if (of_property_read_bool(np, "no-continuous-read"))
++		nor->flags |= SNOR_F_READ_WAIT;
++
+ 	if (flags & SPI_NOR_SWP_IS_VOLATILE)
+ 		nor->flags |= SNOR_F_SWP_IS_VOLATILE;
+ 
+--- a/drivers/mtd/spi-nor/core.h
++++ b/drivers/mtd/spi-nor/core.h
+@@ -133,6 +133,7 @@ enum spi_nor_option_flags {
+ 	SNOR_F_RWW		= BIT(14),
+ 	SNOR_F_ECC		= BIT(15),
+ 	SNOR_F_NO_WP		= BIT(16),
++	SNOR_F_READ_WAIT	= BIT(17),
+ };
+ 
+ struct spi_nor_read_command {
