@@ -584,6 +584,18 @@ define Device/cudy_wr1300-v2
 endef
 TARGET_DEVICES += cudy_wr1300-v2
 
+define Device/cudy_wr1300-v3
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := WR1300
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	-uboot-envtools
+  SUPPORTED_DEVICES += cudy,wr1300 R30
+endef
+TARGET_DEVICES += cudy_wr1300-v3
+
 define Device/cudy_wr2100
   $(Device/dsa-migration)
   DEVICE_VENDOR := Cudy

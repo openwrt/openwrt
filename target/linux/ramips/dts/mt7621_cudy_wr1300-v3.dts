@@ -3,11 +3,11 @@
 #include "mt7621_cudy_wr1300-v2v3.dtsi"
 
 / {
-	compatible = "cudy,wr1300-v2", "mediatek,mt7621-soc";
-	model = "Cudy WR1300 v2";
+	compatible = "cudy,wr1300-v3", "mediatek,mt7621-soc";
+	model = "Cudy WR1300 v3";
 };
 
-&pcie1 {
+&pcie0 {
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
@@ -15,10 +15,15 @@
 		nvmem-cells = <&macaddr_bdinfo_de00>;
 		nvmem-cell-names = "mac-address";
 		ieee80211-freq-limit = <2400000 2500000>;
+
+		led {
+			led-sources = <0>;
+			led-active-low;
+		};
 	};
 };
 
-&pcie0 {
+&pcie1 {
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
