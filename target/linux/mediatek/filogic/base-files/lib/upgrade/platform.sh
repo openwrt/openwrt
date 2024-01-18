@@ -95,26 +95,7 @@ platform_do_upgrade() {
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
 		;;
-	bananapi,bpi-r3)
-		local rootdev="$(cmdline_get_var root)"
-		rootdev="${rootdev##*/}"
-		rootdev="${rootdev%p[0-9]*}"
-		case "$rootdev" in
-		mmc*)
-			CI_ROOTDEV="$rootdev"
-			CI_KERNPART="production"
-			emmc_do_upgrade "$1"
-			;;
-		mtdblock*)
-			PART_NAME="fit"
-			default_do_upgrade "$1"
-			;;
-		ubiblock*)
-			CI_KERNPART="fit"
-			nand_do_upgrade "$1"
-			;;
-		esac
-		;;
+	bananapi,bpi-r3|\
 	bananapi,bpi-r4)
 		[ -e /dev/fit0 ] && fitblk /dev/fit0
 		[ -e /dev/fitrw ] && fitblk /dev/fitrw
@@ -123,6 +104,10 @@ platform_do_upgrade() {
 		mmcblk*)
 			EMMC_KERN_DEV="/dev/$bootdev"
 			emmc_do_upgrade "$1"
+			;;
+		mtdblock*)
+			PART_NAME="/dev/mtd${bootdev:8}"
+			default_do_upgrade "$1"
 			;;
 		ubiblock*)
 			CI_KERNPART="fit"
@@ -225,7 +210,6 @@ platform_check_image() {
 
 platform_copy_config() {
 	case "$(board_name)" in
-	bananapi,bpi-r3|\
 	cmcc,rax3000m)
 		case "$(cmdline_get_var root)" in
 		/dev/mmc*)
@@ -233,6 +217,7 @@ platform_copy_config() {
 			;;
 		esac
 		;;
+	bananapi,bpi-r3|\
 	bananapi,bpi-r4)
 		case "$(platform_get_bootdev)" in
 		mmcblk*)
