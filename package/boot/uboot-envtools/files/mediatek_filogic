@@ -36,22 +36,7 @@ case "$board" in
 asus,rt-ax59u)
 	ubootenv_add_uci_config "/dev/mtd0" "0x100000" "0x20000" "0x20000"
 	;;
-bananapi,bpi-r3)
-	rootdev="$(cmdline_get_var root)"
-	rootdev="${rootdev##*/}"
-	rootdev="${rootdev%%p[0-9]*}"
-	case "$rootdev" in
-	mmc*)
-		ubootenv_add_mmc_default
-		;;
-	mtd*)
-		ubootenv_add_nor_default
-		;;
-	ubi*)
-		ubootenv_add_ubi_default
-		;;
-	esac
-	;;
+bananapi,bpi-r3|\
 bananapi,bpi-r4)
 	. /lib/upgrade/platform.sh
 
@@ -62,6 +47,9 @@ bananapi,bpi-r4)
 		;;
 	mmc*)
 		ubootenv_add_mmc_default "${bootdev%%p[0-9]*}"
+		;;
+	mtd*)
+		ubootenv_add_nor_default
 		;;
 	esac
 	;;
