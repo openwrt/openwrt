@@ -504,7 +504,7 @@ define Device/Check
   KDIR_KERNEL_IMAGE := $(KDIR)/$(1)$$(KERNEL_SUFFIX)
   _TARGET := $$(if $$(_PROFILE_SET),install-images,install-disabled)
   ifndef IB
-    _COMPILE_TARGET := $$(if $(CONFIG_IB)$$(_PROFILE_SET),compile,compile-disabled)
+    _COMPILE_TARGET := $$(if $(CONFIG_IB)$$(_PROFILE_SET),compile-target,compile-disabled)
   endif
 endef
 
@@ -569,7 +569,10 @@ endif
 define Device/Build/compile
   $$(_COMPILE_TARGET): $(KDIR)/$(1)
   $(eval $(call Device/Export,$(KDIR)/$(1)))
-  $(KDIR)/$(1): FORCE
+
+  $(patsubst %$(1),%$(1):,$(call reverse,$(foreach compile,$(COMPILE),$(KDIR)/$(compile))))
+
+  $(KDIR)/$(1): $(if $(_PROFILE_SET),FORCE)
 	rm -f $(KDIR)/$(1)
 	$$(call concat_cmd,$(COMPILE/$(1)))
 
@@ -579,7 +582,7 @@ ifndef IB
 define Device/Build/dtb
   ifndef BUILD_DTS_$(1)
   BUILD_DTS_$(1) := 1
-  $(KDIR)/image-$(1).dtb: FORCE
+  $(KDIR)/image-$(1).dtb: $(if $(_PROFILE_SET),FORCE)
 	$(call Image/BuildDTB,$(strip $(2))/$(strip $(3)).dts,$$@)
 
   image_prepare: $(KDIR)/image-$(1).dtb
@@ -705,6 +708,9 @@ define Device/Build/artifact
 	  $(BUILD_DIR)/json_info_files/$(DEVICE_IMG_PREFIX)-$(1).json, \
 	  $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(1))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1)))
+
+  $(patsubst %$(1),%$(1):,$(call reverse,$(foreach artifact,$(ARTIFACTS),$(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(artifact))))
+
   $(KDIR)/tmp/$(DEVICE_IMG_PREFIX)-$(1): $$(KDIR_KERNEL_IMAGE) $(2)-images
 	@rm -f $$@
 	$$(call concat_cmd,$(ARTIFACT/$(1)))
@@ -841,6 +847,7 @@ define BuildImage
   download:
   prepare:
   compile:
+  compile-target:
   clean:
   image_prepare:
 
