@@ -1,0 +1,38 @@
+From 392b9849c8d147c25557fea5d6dbcddbcb9e72d5 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Thu, 12 Oct 2023 15:52:38 +0100
+Subject: [PATCH] Revert "bcm2708_fb: Hack out dma support"
+
+This reverts commit d60956f30586ced37e2152f2ba338f547e6c64f7.
+---
+ drivers/video/fbdev/bcm2708_fb.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/drivers/video/fbdev/bcm2708_fb.c
++++ b/drivers/video/fbdev/bcm2708_fb.c
+@@ -657,8 +657,6 @@ static long vc_mem_copy(struct bcm2708_f
+ 	long rc = 0;
+ 	size_t offset;
+ 
+-return -EFAULT;
+-
+ 	/* restrict this to root user */
+ 	if (!uid_eq(current_euid(), GLOBAL_ROOT_UID)) {
+ 		rc = -EFAULT;
+@@ -1111,7 +1109,6 @@ static int bcm2708_fb_probe(struct platf
+ 
+ 	dev_info(&dev->dev, "FB found %d display(s)\n", num_displays);
+ 
+-#if 0
+ 	/* Set up the DMA information. Note we have just one set of DMA
+ 	 * parameters to work with all the FB's so requires synchronising when
+ 	 * being used
+@@ -1144,7 +1141,7 @@ static int bcm2708_fb_probe(struct platf
+ 			"Failed to request DMA irq\n");
+ 		goto free_dma_chan;
+ 	}
+-#endif
++
+ 	rpi_firmware_property(fbdev->fw,
+ 			      RPI_FIRMWARE_GET_VC_MEMORY,
+ 			      &gpu_mem, sizeof(gpu_mem));

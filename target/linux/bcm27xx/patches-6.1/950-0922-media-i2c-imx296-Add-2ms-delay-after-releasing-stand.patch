@@ -1,0 +1,23 @@
+From ecbc04aa0c2e7c8879764c9d2c769ecc74fd9093 Mon Sep 17 00:00:00 2001
+From: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
+Date: Fri, 28 Jul 2023 11:59:28 +0100
+Subject: [PATCH] media: i2c: imx296: Add 2ms delay after releasing standby
+
+The delay seems to be required to reliably read model ID.
+(The same delay is already used when starting the camera.)
+
+Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
+---
+ drivers/media/i2c/imx296.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/media/i2c/imx296.c
++++ b/drivers/media/i2c/imx296.c
+@@ -1031,6 +1031,7 @@ static int imx296_identify_model(struct
+ 			"failed to get sensor out of standby (%d)\n", ret);
+ 		return ret;
+ 	}
++	usleep_range(2000, 5000);
+ 
+ 	usleep_range(2000, 5000);
+ 

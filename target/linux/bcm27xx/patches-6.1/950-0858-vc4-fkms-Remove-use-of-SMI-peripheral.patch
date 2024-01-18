@@ -1,0 +1,76 @@
+From 3fb20da9f3bff93f20b1a1fe2c950c6c8f4d1e1e Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Thu, 1 Jul 2021 19:21:10 +0100
+Subject: [PATCH] vc4/fkms: Remove use of SMI peripheral
+
+---
+ drivers/gpu/drm/vc4/vc4_firmware_kms.c | 24 +++++++-----------------
+ 1 file changed, 7 insertions(+), 17 deletions(-)
+
+--- a/drivers/gpu/drm/vc4/vc4_firmware_kms.c
++++ b/drivers/gpu/drm/vc4/vc4_firmware_kms.c
+@@ -255,13 +255,6 @@ static const struct vc_image_format *vc4
+ /* The firmware delivers a vblank interrupt to us through the SMI
+  * hardware, which has only this one register.
+  */
+-#define SMICS 0x0
+-#define SMIDSW0 0x14
+-#define SMIDSW1 0x1C
+-#define SMICS_INTERRUPTS (BIT(9) | BIT(10) | BIT(11))
+-
+-/* Flag to denote that the firmware is giving multiple display callbacks */
+-#define SMI_NEW 0xabcd0000
+ 
+ #define vc4_crtc vc4_kms_crtc
+ #define to_vc4_crtc to_vc4_kms_crtc
+@@ -1217,16 +1210,13 @@ static irqreturn_t vc4_crtc_irq_handler(
+ {
+ 	struct vc4_crtc **crtc_list = data;
+ 	int i;
+-	u32 stat = readl(crtc_list[0]->regs + SMICS);
+ 	irqreturn_t ret = IRQ_NONE;
+ 	u32 chan;
++	if (1) {
+ 
+-	if (stat & SMICS_INTERRUPTS) {
+-		writel(0, crtc_list[0]->regs + SMICS);
+-
+-		chan = readl(crtc_list[0]->regs + SMIDSW0);
++		chan = 0;
+ 
+-		if ((chan & 0xFFFF0000) != SMI_NEW) {
++		if (1) {
+ 			/* Older firmware. Treat the one interrupt as vblank/
+ 			 * complete for all crtcs.
+ 			 */
+@@ -1237,7 +1227,7 @@ static irqreturn_t vc4_crtc_irq_handler(
+ 			}
+ 		} else {
+ 			if (chan & 1) {
+-				writel(SMI_NEW, crtc_list[0]->regs + SMIDSW0);
++				//writel(SMI_NEW, crtc_list[0]->regs + SMIDSW0);
+ 				if (crtc_list[0]->vblank_enabled)
+ 					drm_crtc_handle_vblank(&crtc_list[0]->base);
+ 				vc4_crtc_handle_page_flip(crtc_list[0]);
+@@ -1245,10 +1235,10 @@ static irqreturn_t vc4_crtc_irq_handler(
+ 
+ 			if (crtc_list[1]) {
+ 				/* Check for the secondary display too */
+-				chan = readl(crtc_list[0]->regs + SMIDSW1);
++				//chan = readl(crtc_list[0]->regs + SMIDSW1);
+ 
+ 				if (chan & 1) {
+-					writel(SMI_NEW, crtc_list[0]->regs + SMIDSW1);
++					//writel(SMI_NEW, crtc_list[0]->regs + SMIDSW1);
+ 
+ 					if (crtc_list[1]->vblank_enabled)
+ 						drm_crtc_handle_vblank(&crtc_list[1]->base);
+@@ -1988,7 +1978,7 @@ static int vc4_fkms_bind(struct device *
+ 		if (IS_ERR(crtc_list[0]->regs))
+ 			DRM_ERROR("Oh dear, failed to map registers\n");
+ 
+-		writel(0, crtc_list[0]->regs + SMICS);
++		//writel(0, crtc_list[0]->regs + SMICS);
+ 		ret = devm_request_irq(dev, platform_get_irq(pdev, 0),
+ 				       vc4_crtc_irq_handler, 0,
+ 				       "vc4 firmware kms", crtc_list);

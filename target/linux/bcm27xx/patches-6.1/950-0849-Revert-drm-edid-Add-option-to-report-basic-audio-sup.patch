@@ -1,0 +1,119 @@
+From df4d584e66a660195422ca2b7ce1d68d1181f2a2 Mon Sep 17 00:00:00 2001
+From: Dom Cobley <popcornmix@gmail.com>
+Date: Wed, 20 Sep 2023 15:13:53 +0100
+Subject: [PATCH] Revert "drm/edid: Add option to report basic audio support
+ with a generic edid"
+
+This reverts commit 2bcf744dd2b4e7e861cc3d86bda8218cbdf7a3c4.
+---
+ drivers/gpu/drm/drm_edid.c      | 16 ---------------
+ drivers/gpu/drm/drm_edid_load.c | 36 ---------------------------------
+ include/drm/drm_edid.h          |  2 --
+ 3 files changed, 54 deletions(-)
+
+--- a/drivers/gpu/drm/drm_edid.c
++++ b/drivers/gpu/drm/drm_edid.c
+@@ -2091,22 +2091,6 @@ static struct edid *edid_filter_invalid_
+ 	return new;
+ }
+ 
+-/*
+- * add a CTA extension (block) comtaining audio support
+- * fix up the base extension to include the extra
+- * extension and report as digital (required for audio)
+- * and fix up checksums.
+- */
+-void drm_edid_add_audio_extension(void *block)
+-{
+-	struct edid *edid = block;
+-	edid->input = DRM_EDID_INPUT_DIGITAL;
+-	edid->extensions++;
+-	edid->checksum = edid_block_compute_checksum(edid);
+-	edid = block + EDID_LENGTH;
+-	edid->checksum = edid_block_compute_checksum(edid);
+-}
+-
+ #define DDC_SEGMENT_ADDR 0x30
+ /**
+  * drm_do_probe_ddc_edid() - get EDID information via I2C
+--- a/drivers/gpu/drm/drm_edid_load.c
++++ b/drivers/gpu/drm/drm_edid_load.c
+@@ -22,9 +22,6 @@ module_param_string(edid_firmware, edid_
+ MODULE_PARM_DESC(edid_firmware, "Do not probe monitor, use specified EDID blob "
+ 	"from built-in data or /lib/firmware instead. ");
+ 
+-static bool support_audio;
+-module_param(support_audio, bool, 0400);
+-
+ /* Use only for backward compatibility with drm_kms_helper.edid_firmware */
+ int __drm_set_edid_firmware_path(const char *path)
+ {
+@@ -170,29 +167,12 @@ static int edid_size(const u8 *edid, int
+ 	return (edid[0x7e] + 1) * EDID_LENGTH;
+ }
+ 
+-/* Minimal edid extension block that reports basic audio support */
+-static const u8 generic_edid_audio[] = {
+-	0x02, /* CTA extension block */
+-	0x03, /* version */
+-	0x12, /* 18 bytes are valid */
+-	0xc0, /* underscan | basic audio */
+-	0x23, /* Audio Data Block, length 3 */
+-	0x09, /* Linear PCM, 2 channel */
+-	0x07, /* Supported sample rates (kHz): 48 44.1 32 */
+-	0x07, /* Supported sample sizes (bits): 24 20 16 */
+-	0x83, /* Speaker Allocation Data Block, length 3 */
+-	0x01, 0x00, 0x00, /* FL/FR */
+-	0x65, /* Vendor-Specific Data Block, length 3 */
+-	0x03, 0x0c, 0x00, 0x00, 0x00, /* HDMI PA:0.0.0.0 */
+-};
+-
+ static void *edid_load(struct drm_connector *connector, const char *name,
+ 			const char *connector_name)
+ {
+ 	const struct firmware *fw = NULL;
+ 	const u8 *fwdata;
+ 	u8 *edid;
+-	u8 *fwdata2 = NULL;
+ 	int fwsize, builtin;
+ 	int i, valid_extensions = 0;
+ 	bool print_bad_edid = !connector->bad_edid_counter || drm_debug_enabled(DRM_UT_KMS);
+@@ -201,20 +181,6 @@ static void *edid_load(struct drm_connec
+ 	if (builtin >= 0) {
+ 		fwdata = generic_edid[builtin];
+ 		fwsize = sizeof(generic_edid[builtin]);
+-		if (support_audio) {
+-			fwdata2 = kzalloc(fwsize + EDID_LENGTH, GFP_KERNEL);
+-			if (!fwdata2) {
+-				drm_err(connector->dev,
+-					"[CONNECTOR:%d:%s] Failed to allocate combined EDID firmware \"%s\"\n",
+-					connector->base.id, connector->name, name);
+-				return ERR_PTR(-ENOMEM);
+-			}
+-			memcpy(fwdata2, fwdata, fwsize);
+-			memcpy(fwdata2 + fwsize, generic_edid_audio, sizeof generic_edid_audio);
+-			drm_edid_add_audio_extension(fwdata2);
+-			fwsize += EDID_LENGTH;
+-			fwdata = fwdata2;
+-		}
+ 	} else {
+ 		struct platform_device *pdev;
+ 		int err;
+@@ -294,8 +260,6 @@ static void *edid_load(struct drm_connec
+ 
+ out:
+ 	release_firmware(fw);
+-	if (fwdata2)
+-		kfree(fwdata2);
+ 	return edid;
+ }
+ 
+--- a/include/drm/drm_edid.h
++++ b/include/drm/drm_edid.h
+@@ -614,6 +614,4 @@ int drm_edid_connector_update(struct drm
+ const u8 *drm_find_edid_extension(const struct drm_edid *drm_edid,
+ 				  int ext_id, int *ext_index);
+ 
+-void drm_edid_add_audio_extension(void *block);
+-
+ #endif /* __DRM_EDID_H__ */

@@ -1,0 +1,21 @@
+From 3256af79fffeea5b6e506da5524c1482c4746d9a Mon Sep 17 00:00:00 2001
+From: Matthias Reichl <hias@horus.com>
+Date: Mon, 2 Oct 2023 17:30:47 +0200
+Subject: [PATCH] Revert "ASoC: hdmi-codec: Fix broken channel map reporting"
+
+This reverts commit a319c6c1a5661af2014b98cd0a02526e7f2f515a.
+---
+ sound/soc/codecs/hdmi-codec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sound/soc/codecs/hdmi-codec.c
++++ b/sound/soc/codecs/hdmi-codec.c
+@@ -520,7 +520,7 @@ static int hdmi_codec_fill_codec_params(
+ 	hp->sample_rate = sample_rate;
+ 	hp->channels = channels;
+ 
+-	hcp->chmap_idx = ca_id;
++	hcp->chmap_idx = idx;
+ 
+ 	return 0;
+ }
