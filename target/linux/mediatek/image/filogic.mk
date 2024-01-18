@@ -218,6 +218,7 @@ endef
 TARGET_DEVICES += asus_tuf-ax6000
 
 define Device/bananapi_bpi-r3
+  BROKEN := 1
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R3
   DEVICE_DTS := mt7986a-bananapi-bpi-r3
