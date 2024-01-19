@@ -19,6 +19,15 @@ mdev -s
 find /sys/ -name modalias -print0 | xargs -0 sort -u -z | xargs -0 modprobe -abq
 echo "" > /proc/sys/kernel/hotplug
 
+# Skip /etc/modules-boot.d/* because they are symlinks to /etc/modules.d/*
+echo "kmod: loading kernel modules from /etc/modules.d/*"
+for f in /etc/modules.d/*; do
+    # load modules per line taking in account the module parameters
+    while IFS= read -r m; do
+        modprobe -bq "${m}"
+    done < "${f}"
+done
+
 NEW_ROOT=/new_root
 mkdir -p "${NEW_ROOT}"
 
