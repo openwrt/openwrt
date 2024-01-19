@@ -1,0 +1,48 @@
+gengetopt: support c++17 compiler by cancelling usage of unary_operation
+
+std::unary_operation is considered as a useless tool of STL that defines
+ only two types. std::unary_function is deprecated starting from c++11
+ and removed in c++17. Many modern compilers (like gcc and clang) have
+ switched to c++17 as a default standard, so the compilation fails
+
+Let's decide not to use std::unary_function in gm_utils.h and just
+declare two types in each type that used to inherit std::unary_function
+
+Signed-off-by: Denis Pronin <dannftk@yandex.ru>
+
+--- a/src/gm_utils.h
++++ b/src/gm_utils.h
+@@ -117,8 +117,15 @@
+  * Function object to print something into a stream (to be used with for_each)
+  */
+ template<class T>
+-struct print_f : public std::unary_function<T, void>
++struct print_f
+ {
++#if __cplusplus < 201103L
++    typedef T argument_type;
++    typedef void result_type;
++#else
++    using argument_type = T;
++    using result_type = void;
++#endif
+     print_f(std::ostream& out, const string &s = ", ") : os(out), sep(s) {}
+     void operator() (T x) { os << x << sep; }
+     std::ostream& os;
+@@ -129,8 +136,15 @@
+  * Function object to print a pair into two streams (to be used with for_each)
+  */
+ template<class T>
+-struct pair_print_f : public std::unary_function<T, void>
++struct pair_print_f
+ {
++#if __cplusplus < 201103L
++    typedef T argument_type;
++    typedef void result_type;
++#else
++    using argument_type = T;
++    using result_type = void;
++#endif
+     pair_print_f(std::ostream& out1, std::ostream& out2, const string &s = ", ") :
+         os1(out1), os2(out2), sep(s) {}
+     void operator() (T x) { os1 << x.first << sep; os2 << x.second << sep;}
