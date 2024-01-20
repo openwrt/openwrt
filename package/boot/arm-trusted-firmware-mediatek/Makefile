@@ -58,12 +58,29 @@ define Trusted-Firmware-A/mt7622-snand-1ddr
   BOOT_DEVICE:=snand
 endef
 
+define Trusted-Firmware-A/mt7622-snand-ubi-1ddr
+  NAME:=MediaTek MT7622 (SPI-NAND using UBI, 1x DDR3)
+  BUILD_SUBTARGET:=mt7622
+  PLAT:=mt7622
+  BOOT_DEVICE:=snand
+  USE_UBI:=1
+endef
+
 define Trusted-Firmware-A/mt7622-snand-2ddr
   NAME:=MediaTek MT7622 (SPI-NAND, 2x DDR3)
   BUILD_SUBTARGET:=mt7622
   PLAT:=mt7622
   BOOT_DEVICE:=snand
   DDR3_FLYBY:=1
+endef
+
+define Trusted-Firmware-A/mt7622-snand-ubi-2ddr
+  NAME:=MediaTek MT7622 (SPI-NAND using UBI, 2x DDR3)
+  BUILD_SUBTARGET:=mt7622
+  PLAT:=mt7622
+  BOOT_DEVICE:=snand
+  DDR3_FLYBY:=1
+  USE_UBI:=1
 endef
 
 define Trusted-Firmware-A/mt7622-emmc-1ddr
@@ -394,7 +411,9 @@ TFA_TARGETS:= \
 	mt7622-nor-1ddr \
 	mt7622-nor-2ddr \
 	mt7622-snand-1ddr \
+	mt7622-snand-ubi-1ddr \
 	mt7622-snand-2ddr \
+	mt7622-snand-ubi-2ddr \
 	mt7622-emmc-1ddr \
 	mt7622-emmc-2ddr \
 	mt7622-sdmmc-1ddr \
@@ -445,7 +464,7 @@ TFA_MAKE_FLAGS += \
 	HAVE_DRAM_OBJ_FILE=yes \
 	$(if $(DDR3_FLYBY),DDR3_FLYBY=1) \
 	$(if $(DRAM_USE_COMB),DRAM_USE_COMB=1) \
-	$(if $(USE_UBI),UBI=1) \
+	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7622,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x80000)) \
 	all
 
 define Package/trusted-firmware-a/install
