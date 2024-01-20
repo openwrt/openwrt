@@ -142,6 +142,15 @@ define Device/fortinet_fg-50e
 endef
 TARGET_DEVICES += fortinet_fg-50e
 
+define Device/fortinet_fg-51e
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiGate 51E
+  DEVICE_DTS := armada-385-fortinet-fg-51e
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FGT51E
+endef
+TARGET_DEVICES += fortinet_fg-51e
+
 define Device/globalscale_mirabox
   $(Device/NAND-512K)
   DEVICE_VENDOR := Globalscale
