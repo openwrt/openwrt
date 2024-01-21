@@ -28,6 +28,9 @@ TARGET_DEVICES += ubnt_bullet-ac
 define Device/ubnt_bullet-m-xw
   $(Device/ubnt-xw)
   DEVICE_MODEL := Bullet M
+  DEVICE_ALT0_VENDOR := Ubiquiti
+  DEVICE_ALT0_MODEL := Rocket M
+  DEVICE_ALT0_VARIANT := XW
   DEVICE_PACKAGES += rssileds
   SUPPORTED_DEVICES += bullet-m-xw
 endef
