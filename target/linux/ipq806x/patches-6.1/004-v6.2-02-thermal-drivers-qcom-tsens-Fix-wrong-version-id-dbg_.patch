@@ -1,0 +1,29 @@
+From c7e077e921fa94e0c06c8d14af6c0504c8a5f4bd Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sat, 22 Oct 2022 14:56:56 +0200
+Subject: [PATCH 2/3] thermal/drivers/qcom/tsens: Fix wrong version id
+ dbg_version_show
+
+For VER_0 the version was incorrectly reported as 0.1.0.
+
+Fix that and correctly report the major version for this old tsens
+revision.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20221022125657.22530-3-ansuelsmth@gmail.com
+Signed-off-by: Daniel Lezcano <daniel.lezcano@kernel.org>
+---
+ drivers/thermal/qcom/tsens.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/thermal/qcom/tsens.c
++++ b/drivers/thermal/qcom/tsens.c
+@@ -692,7 +692,7 @@ static int dbg_version_show(struct seq_f
+ 			return ret;
+ 		seq_printf(s, "%d.%d.%d\n", maj_ver, min_ver, step_ver);
+ 	} else {
+-		seq_puts(s, "0.1.0\n");
++		seq_printf(s, "0.%d.0\n", priv->feat->ver_major);
+ 	}
+ 
+ 	return 0;
