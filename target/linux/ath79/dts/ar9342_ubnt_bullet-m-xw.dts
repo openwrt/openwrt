@@ -12,7 +12,6 @@
 
 	phy-mask = <4>;
 	phy4: ethernet-phy@4 {
-		phy-mode = "rgmii";
 		reg = <4>;
 		max-speed = <100>;
 	};
@@ -21,7 +20,7 @@
 &eth0 {
 	status = "okay";
 
-	phy-mode = "rgmii";
+	phy-mode = "rgmii-txid";
 	phy-handle = <&phy4>;
 
 	gmac-config {
