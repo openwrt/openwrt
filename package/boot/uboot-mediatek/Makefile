@@ -130,9 +130,9 @@ define U-Boot/mt7622_bananapi_bpi-r64-snand
   BUILD_DEVICES:=bananapi_bpi-r64
   BUILD_SUBTARGET:=mt7622
   UBOOT_IMAGE:=u-boot.fip
-  BL2_BOOTDEV:=snand
+  BL2_BOOTDEV:=snand-ubi
   BL2_DDRBLOB:=2
-  DEPENDS:=+trusted-firmware-a-mt7622-snand-2ddr
+  DEPENDS:=+trusted-firmware-a-mt7622-snand-ubi-2ddr
 endef
 
 define U-Boot/mt7622_ubnt_unifi-6-lr-v1
