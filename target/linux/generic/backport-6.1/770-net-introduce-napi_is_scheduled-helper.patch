@@ -1,7 +1,7 @@
-From b5532bdc6d09e6e789417f0c7a0b665b57b0e7be Mon Sep 17 00:00:00 2001
+From 7f3eb2174512fe6c9c0f062e96eccb0d3cc6d5cd Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Mon, 18 Sep 2023 14:21:56 +0200
-Subject: [PATCH 1/4] net: introduce napi_is_scheduled helper
+Date: Wed, 18 Oct 2023 14:35:47 +0200
+Subject: [PATCH] net: introduce napi_is_scheduled helper
 
 We currently have napi_if_scheduled_mark_missed that can be used to
 check if napi is scheduled but that does more thing than simply checking
@@ -15,12 +15,13 @@ Update any driver and code that implement a similar check and instead
 use this new helper.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 ---
- drivers/net/ethernet/chelsio/cxgb3/sge.c  | 8 --------
- drivers/net/wireless/realtek/rtw89/core.c | 2 +-
- include/linux/netdevice.h                 | 5 +++++
- net/core/dev.c                            | 2 +-
- 4 files changed, 7 insertions(+), 10 deletions(-)
+ drivers/net/ethernet/chelsio/cxgb3/sge.c  |  8 --------
+ drivers/net/wireless/realtek/rtw89/core.c |  2 +-
+ include/linux/netdevice.h                 | 23 +++++++++++++++++++++++
+ net/core/dev.c                            |  2 +-
+ 4 files changed, 25 insertions(+), 10 deletions(-)
 
 --- a/drivers/net/ethernet/chelsio/cxgb3/sge.c
 +++ b/drivers/net/ethernet/chelsio/cxgb3/sge.c
@@ -52,10 +53,28 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	rtw89_core_hw_to_sband_rate(rx_status);
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -468,6 +468,11 @@ static inline bool napi_prefer_busy_poll
+@@ -468,6 +468,29 @@ static inline bool napi_prefer_busy_poll
  	return test_bit(NAPI_STATE_PREFER_BUSY_POLL, &n->state);
  }
  
++/**
++ * napi_is_scheduled - test if NAPI is scheduled
++ * @n: NAPI context
++ *
++ * This check is "best-effort". With no locking implemented,
++ * a NAPI can be scheduled or terminate right after this check
++ * and produce not precise results.
++ *
++ * NAPI_STATE_SCHED is an internal state, napi_is_scheduled
++ * should not be used normally and napi_schedule should be
++ * used instead.
++ *
++ * Use only if the driver really needs to check if a NAPI
++ * is scheduled for example in the context of delayed timer
++ * that can be skipped if a NAPI is already scheduled.
++ *
++ * Return True if NAPI is scheduled, False otherwise.
++ */
 +static inline bool napi_is_scheduled(struct napi_struct *n)
 +{
 +	return test_bit(NAPI_STATE_SCHED, &n->state);
@@ -66,7 +85,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  /**
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -6594,7 +6594,7 @@ static int __napi_poll(struct napi_struc
+@@ -6533,7 +6533,7 @@ static int __napi_poll(struct napi_struc
  	 * accidentally calling ->poll() when NAPI is not scheduled.
  	 */
  	work = 0;
