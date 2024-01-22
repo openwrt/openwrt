@@ -21,7 +21,10 @@ platform_do_upgrade() {
 	local file_type=$(identify $1)
 
 	case "$board" in
-	bananapi,bpi-r64)
+	bananapi,bpi-r64|\
+	ubnt,unifi-6-lr-v1-ubootmod|\
+	ubnt,unifi-6-lr-v2-ubootmod|\
+	ubnt,unifi-6-lr-v3-ubootmod)
 		[ -e /dev/fit0 ] && fitblk /dev/fit0
 		[ -e /dev/fitrw ] && fitblk /dev/fitrw
 		bootdev="$(platform_get_bootdev)"
@@ -29,6 +32,10 @@ platform_do_upgrade() {
 		mmcblk*)
 			EMMC_KERN_DEV="/dev/$bootdev"
 			emmc_do_upgrade "$1"
+			;;
+		mtdblock*)
+			PART_NAME="/dev/mtd${bootdev:8}"
+			default_do_upgrade "$1"
 			;;
 		ubiblock*)
 			CI_KERNPART="fit"

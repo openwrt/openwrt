@@ -375,7 +375,7 @@ define Device/ubnt_unifi-6-lr-v1-ubootmod
   DEVICE_VARIANT := v1 U-Boot mod
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v1-ubootmod
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-leds-ubnt-ledbar
+  DEVICE_PACKAGES := fitblk kmod-mt7915-firmware kmod-leds-ubnt-ledbar
   KERNEL := kernel-bin | lzma
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
@@ -405,7 +405,7 @@ define Device/ubnt_unifi-6-lr-v2-ubootmod
   DEVICE_VARIANT := v2 U-Boot mod
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v2-ubootmod
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915-firmware
+  DEVICE_PACKAGES := fitblk kmod-mt7915-firmware
   KERNEL := kernel-bin | lzma
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
@@ -434,7 +434,7 @@ define Device/ubnt_unifi-6-lr-v3-ubootmod
   DEVICE_VARIANT := v3 U-Boot mod
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v3-ubootmod
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915-firmware
+  DEVICE_PACKAGES := fitblk kmod-mt7915-firmware
   KERNEL := kernel-bin | lzma
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
