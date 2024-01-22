@@ -256,7 +256,7 @@ define Device/linksys_e8450-ubi
   DEVICE_ALT0_VARIANT := UBI
   DEVICE_DTS := mt7622-linksys-e8450-ubi
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3
+  DEVICE_PACKAGES := fitblk kmod-mt7915-firmware kmod-usb3
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -270,8 +270,10 @@ define Device/linksys_e8450-ubi
   IMAGES := sysupgrade.itb
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
   ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := bl2 snand-1ddr
+  ARTIFACT/preloader.bin := bl2 snand-ubi-1ddr
   ARTIFACT/bl31-uboot.fip := bl31-uboot linksys_e8450
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := SPI-NAND flash layout changes require bootloader update
 endef
 TARGET_DEVICES += linksys_e8450-ubi
 

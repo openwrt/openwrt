@@ -97,9 +97,9 @@ define U-Boot/mt7622_linksys_e8450
   BUILD_DEVICES:=linksys_e8450-ubi
   BUILD_SUBTARGET:=mt7622
   UBOOT_IMAGE:=u-boot.fip
-  BL2_BOOTDEV:=snand
+  BL2_BOOTDEV:=snand-ubi
   BL2_DDRBLOB:=1
-  DEPENDS:=+trusted-firmware-a-mt7622-snand-1ddr
+  DEPENDS:=+trusted-firmware-a-mt7622-snand-ubi-1ddr
 endef
 
 define U-Boot/mt7622_bananapi_bpi-r64-emmc

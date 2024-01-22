@@ -9,6 +9,10 @@ case "$(board_name)" in
 	uci set system.@system[0].compat_version="1.1"
 	uci commit system
 	;;
+	linksys,e8450-ubi)
+	uci set system.@system[0].compat_version="2.0"
+	uci commit system
+	;;
 esac
 
 exit 0
