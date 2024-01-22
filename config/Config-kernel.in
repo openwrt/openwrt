@@ -1240,6 +1240,55 @@ if KERNEL_IP_PNP
 
 endif
 
+#
+# FS related symbols
+#
+config KERNEL_SQUASHFS
+	bool "Enable SquashFS Support"
+
+config KERNEL_SQUASHFS_DECOMP_MULTI_PERCPU
+	bool
+	default y if KERNEL_SQUASHFS
+
+config KERNEL_SQUASHFS_EMBEDDED
+	bool
+	default y if KERNEL_SQUASHFS
+	
+config KERNEL_SQUASHFS_FILE_DIRECT
+	bool
+	default y if KERNEL_SQUASHFS
+
+config KERNEL_SQUASHFS_XZ
+	bool
+	default y if KERNEL_SQUASHFS
+
+config KERNEL_JFFS2_FS
+	bool "Enable JFFS2 FS Support"
+
+config KERNEL_JFFS2_CMODE_PRIORITY
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_JFFS2_COMPRESSION_OPTIONS
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_JFFS2_FS_WRITEBUFFER
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_JFFS2_LZMA
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_JFFS2_RTIME
+	bool
+	default y if KERNEL_JFFS2_FS
+
+config KERNEL_JFFS2_SUMMARY
+	bool
+	default y if KERNEL_JFFS2_FS
+
 menu "Filesystem ACL and attr support options"
 	config USE_FS_ACL_ATTR
 		bool "Use filesystem ACL and attr support by default"
@@ -1335,10 +1384,17 @@ config KERNEL_DEVKMEM
 	  /dev/kmem device is rarely used, but can be used for certain
 	  kind of kernel debugging operations.
 
+config KERNEL_JFFS2_FS_DEBUG
+	int
+	default 0
+
 config KERNEL_SQUASHFS_FRAGMENT_CACHE_SIZE
 	int "Number of squashfs fragments cached"
 	default 2 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
 	default 3
+
+config KERNEL_JFFS2_FS_XATTR
+	bool "JFFS2 FS XATTR support"
 
 config KERNEL_SQUASHFS_XATTR
 	bool "Squashfs XATTR support"
