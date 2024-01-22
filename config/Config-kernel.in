@@ -1289,6 +1289,17 @@ config KERNEL_JFFS2_SUMMARY
 	bool
 	default y if KERNEL_JFFS2_FS
 
+config KERNEL_EROFS_FS
+	bool "Enable EroFS Support"
+
+config KERNEL_EROFS_FS_ZIP
+	bool
+	default y if KERNEL_EROFS_FS
+
+config KERNEL_EROFS_FS_ZIP_LZMA
+	bool
+	default y if KERNEL_EROFS_FS
+
 menu "Filesystem ACL and attr support options"
 	config USE_FS_ACL_ATTR
 		bool "Use filesystem ACL and attr support by default"
@@ -1305,6 +1316,11 @@ menu "Filesystem ACL and attr support options"
 
 	config KERNEL_BTRFS_FS_POSIX_ACL
 		bool "Enable POSIX ACL for BtrFS Filesystems"
+		select KERNEL_FS_POSIX_ACL
+		default y if USE_FS_ACL_ATTR
+
+	config KERNEL_EROFS_FS_POSIX_ACL
+		bool "Enable POSIX ACL for EroFS Filesystems"
 		select KERNEL_FS_POSIX_ACL
 		default y if USE_FS_ACL_ATTR
 
@@ -1393,6 +1409,9 @@ config KERNEL_SQUASHFS_FRAGMENT_CACHE_SIZE
 	default 2 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
 	default 3
 
+config KERNEL_EROFS_FS_XATTR
+	bool "EroFS XATTR support"
+
 config KERNEL_JFFS2_FS_XATTR
 	bool "JFFS2 FS XATTR support"
 
@@ -1464,6 +1483,9 @@ config KERNEL_LSM
 	string
 	default "lockdown,yama,loadpin,safesetid,integrity,selinux"
 	depends on KERNEL_SECURITY_SELINUX
+
+config KERNEL_EROFS_FS_SECURITY
+	bool "EroFS Security Labels"
 
 config KERNEL_EXT4_FS_SECURITY
 	bool "Ext4 Security Labels"
