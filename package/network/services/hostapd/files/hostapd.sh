@@ -920,7 +920,7 @@ hostapd_set_bss_options() {
 			set_default reassociation_deadline 1000
 
 			case "$auth_type" in
-				psk|sae|psk-sae)
+				psk)
 					set_default ft_psk_generate_local 1
 				;;
 				*)
