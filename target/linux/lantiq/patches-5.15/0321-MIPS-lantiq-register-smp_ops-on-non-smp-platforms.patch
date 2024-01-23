@@ -1,0 +1,33 @@
+From 6e8d8b183accefae42c62f1bd495a405ce454c7d Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Sun, 21 Jan 2024 18:36:23 +0100
+Subject: [PATCH] MIPS: lantiq: register smp_ops on non-smp platforms
+
+Lantiq uses a common kernel config for devices with 24Kc and 34Kc cores.
+The changes made previously to add support for interrupts on all cores
+work on 24Kc platforms with SMP disabled and 34Kc platforms with SMP
+enabled. This patch fixes boot issues on Danube (single core 24Kc) with
+SMP enabled.
+
+Fixes: 730320fd770d ("MIPS: lantiq: enable all hardware interrupts on second VPE")
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+---
+ arch/mips/lantiq/prom.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -123,10 +123,9 @@ void __init prom_init(void)
+ 	prom_init_cmdline();
+ 
+ #if defined(CONFIG_MIPS_MT_SMP)
+-	if (cpu_has_mipsmt) {
+-		lantiq_smp_ops = vsmp_smp_ops;
++	lantiq_smp_ops = vsmp_smp_ops;
++	if (cpu_has_mipsmt)
+ 		lantiq_smp_ops.init_secondary = lantiq_init_secondary;
+-		register_smp_ops(&lantiq_smp_ops);
+-	}
++	register_smp_ops(&lantiq_smp_ops);
+ #endif
+ }
