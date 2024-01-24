@@ -3,8 +3,9 @@ From: Robert Marko <robimarko@gmail.com>
 Date: Sat, 31 Dec 2022 13:03:41 +0100
 Subject: [PATCH] cpufreq: qcom-nvmem: add support for IPQ8074
 
-IPQ8074 comes in 2 families:
+IPQ8074 comes in 3 families:
 * IPQ8070A/IPQ8071A (Acorn) up to 1.4GHz
+* IPQ8172/IPQ8173/IPQ8174 (Oak) up to 1.4GHz
 * IPQ8072A/IPQ8074A/IPQ8076A/IPQ8078A (Hawkeye) up to 2.2GHz
 
 So, in order to be able to share one OPP table lets add support for IPQ8074
@@ -16,8 +17,8 @@ will get created by NVMEM CPUFreq driver.
 Signed-off-by: Robert Marko <robimarko@gmail.com>
 ---
  drivers/cpufreq/cpufreq-dt-platdev.c |  1 +
- drivers/cpufreq/qcom-cpufreq-nvmem.c | 39 ++++++++++++++++++++++++++++
- 2 files changed, 40 insertions(+)
+ drivers/cpufreq/qcom-cpufreq-nvmem.c | 42 ++++++++++++++++++++++++++++
+ 2 files changed, 43 insertions(+)
 
 --- a/drivers/cpufreq/cpufreq-dt-platdev.c
 +++ b/drivers/cpufreq/cpufreq-dt-platdev.c
@@ -41,7 +42,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  struct qcom_cpufreq_drv;
  
  struct qcom_cpufreq_match_data {
-@@ -217,6 +220,37 @@ len_error:
+@@ -217,6 +220,40 @@ len_error:
  	return ret;
  }
  
@@ -60,6 +61,9 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	switch (msm_id) {
 +	case QCOM_ID_IPQ8070A:
 +	case QCOM_ID_IPQ8071A:
++	case QCOM_ID_IPQ8172:
++	case QCOM_ID_IPQ8173:
++	case QCOM_ID_IPQ8174:
 +		drv->versions = IPQ8074_ACORN_VERSION;
 +		break;
 +	case QCOM_ID_IPQ8072A:
@@ -79,7 +83,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  static const struct qcom_cpufreq_match_data match_data_kryo = {
  	.get_version = qcom_cpufreq_kryo_name_version,
  };
-@@ -231,6 +265,10 @@ static const struct qcom_cpufreq_match_d
+@@ -231,6 +268,10 @@ static const struct qcom_cpufreq_match_d
  	.genpd_names = qcs404_genpd_names,
  };
  
@@ -90,7 +94,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  static int qcom_cpufreq_probe(struct platform_device *pdev)
  {
  	struct qcom_cpufreq_drv *drv;
-@@ -430,6 +468,7 @@ static const struct of_device_id qcom_cp
+@@ -430,6 +471,7 @@ static const struct of_device_id qcom_cp
  	{ .compatible = "qcom,msm8996", .data = &match_data_kryo },
  	{ .compatible = "qcom,qcs404", .data = &match_data_qcs404 },
  	{ .compatible = "qcom,ipq8064", .data = &match_data_krait },
