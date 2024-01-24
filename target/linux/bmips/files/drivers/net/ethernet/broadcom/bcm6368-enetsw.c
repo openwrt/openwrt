@@ -22,10 +22,19 @@
 #include <linux/reset.h>
 #include <linux/version.h>
 
-/* MTU */
-#define ENETSW_TAG_SIZE			(6 + VLAN_HLEN)
-#define ENETSW_MTU_OVERHEAD		(VLAN_ETH_HLEN + VLAN_HLEN + \
-					 ENETSW_TAG_SIZE)
+/* TODO: Bigger frames may work but we do not trust that they are safe on all
+ * platforms so more research is needed, a max frame size of 2048 has been
+ * tested. We use the safe frame size 1542 which is 1532 plus DSA and VLAN
+ * overhead.
+ */
+#define ENETSW_MAX_FRAME		1542
+#define ENETSW_DSA_TAG_SIZE		6
+/* The MTU in Linux does not include ethernet or VLAN headers, but it DOES
+ * include the DSA overhead (the framework will increase the MTU to fit
+ * any DSA header).
+ */
+#define ENETSW_MAX_MTU			(ENETSW_MAX_FRAME - VLAN_ETH_HLEN - \
+					 VLAN_HLEN)
 #define ENETSW_FRAG_SIZE(x)		(SKB_DATA_ALIGN(NET_SKB_PAD + x + \
 					 SKB_DATA_ALIGN(sizeof(struct skb_shared_info))))
 
@@ -1006,7 +1015,7 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 		dev_info(dev, "random mac\n");
 	}
 
-	priv->rx_buf_size = ALIGN(ndev->mtu + ENETSW_MTU_OVERHEAD,
+	priv->rx_buf_size = ALIGN(ENETSW_MAX_FRAME,
 				  ENETSW_DMA_MAXBURST * 4);
 
 	priv->rx_frag_size = ENETSW_FRAG_SIZE(priv->rx_buf_size);
@@ -1066,8 +1075,8 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	/* register netdevice */
 	ndev->netdev_ops = &bcm6368_enetsw_ops;
 	ndev->min_mtu = ETH_ZLEN;
-	ndev->mtu = ETH_DATA_LEN + ENETSW_TAG_SIZE;
-	ndev->max_mtu = ETH_DATA_LEN + ENETSW_TAG_SIZE;
+	ndev->mtu = ETH_DATA_LEN;
+	ndev->max_mtu = ENETSW_MAX_MTU;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
 	netif_napi_add(ndev, &priv->napi, bcm6368_enetsw_poll);
 #else
