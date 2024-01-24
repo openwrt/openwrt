@@ -89,7 +89,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		/* Set FE to PDMAv2 if necessary */
  		val = mtk_r32(eth, MTK_FE_GLO_MISC);
  		mtk_w32(eth,  val | BIT(4), MTK_FE_GLO_MISC);
-@@ -5295,11 +5295,11 @@ static const struct mtk_soc_data mt7981_
+@@ -5298,11 +5298,11 @@ static const struct mtk_soc_data mt7981_
  		.dma_len_offset = 8,
  	},
  	.rx = {
@@ -105,7 +105,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	},
  };
  
-@@ -5321,11 +5321,11 @@ static const struct mtk_soc_data mt7986_
+@@ -5324,11 +5324,11 @@ static const struct mtk_soc_data mt7986_
  		.dma_len_offset = 8,
  	},
  	.rx = {
