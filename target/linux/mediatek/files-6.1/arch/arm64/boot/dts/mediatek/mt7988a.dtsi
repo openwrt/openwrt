@@ -218,9 +218,8 @@
 
 		phyfw: phy-firmware@f000000 {
 			compatible = "mediatek,2p5gphy-fw";
-			reg = <0 0x0f000000 0 0x8000>,
-			      <0 0x0f100000 0 0x20000>,
-			      <0 0x0f0f0000 0 0x200>;
+			reg = <0 0x0f100000 0 0x20000>,
+			      <0 0x0f0f0018 0 0x20>;
 		};
 
 		infracfg: infracfg@10001000 {
