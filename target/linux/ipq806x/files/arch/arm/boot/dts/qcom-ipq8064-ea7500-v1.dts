@@ -89,3 +89,29 @@
 		reg = <0x6080000 0x1f80000>;
 	};
 };
+
+&mdio0 {
+	switch@10 {
+		ports {
+			port@1 {
+				label = "wan";
+			};
+
+			port@2 {
+				label = "lan1";
+			};
+
+			port@3 {
+				label = "lan2";
+			};
+
+			port@4 {
+				label = "lan3";
+			};
+
+			port@5 {
+				label = "lan4";
+			};
+		};
+	};
+};

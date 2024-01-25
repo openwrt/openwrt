@@ -1,13 +1,14 @@
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-sdmmc_defconfig
-@@ -0,0 +1,159 @@
+@@ -0,0 +1,164 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
 +CONFIG_TARGET_MT7622=y
-+CONFIG_SYS_TEXT_BASE=0x41e00000
++CONFIG_TEXT_BASE=0x41e00000
 +CONFIG_SYS_MALLOC_F_LEN=0x4000
 +CONFIG_SYS_LOAD_ADDR=0x40080000
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y
@@ -160,6 +161,10 @@
 +CONFIG_USB_XHCI_HCD=y
 +CONFIG_USB_XHCI_MTK=y
 +CONFIG_USB_STORAGE=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/bananapi_bpi-r64-sdmmc_env
 @@ -0,0 +1,82 @@
@@ -168,9 +173,9 @@
 +loadaddr=0x48000000
 +bootargs=root=/dev/mmcblk1p65
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_sdmmc ; fi
-+bootconf=config-mt7622-bananapi-bpi-r64-pcie1
-+bootconf_pcie=config-mt7622-bananapi-bpi-r64-pcie1
-+bootconf_sata=config-mt7622-bananapi-bpi-r64-sata
++bootconf=config-1#mt7622-bananapi-bpi-r64-pcie1
++bootconf_pcie=config-1#mt7622-bananapi-bpi-r64-pcie1
++bootconf_sata=config-1#mt7622-bananapi-bpi-r64-sata
 +bootdelay=0
 +bootfile=openwrt-mediatek-mt7622-bananapi_bpi-r64-initramfs-recovery.itb
 +bootfile_emmcbl2=openwrt-mediatek-mt7622-bananapi_bpi-r64-emmc-preloader.bin
@@ -214,7 +219,7 @@
 +emmc_write_hdr=mmc dev 0 0 && mmc erase 0x0 0x40 && mmc write $loadaddr 0x0 0x40
 +emmc_write_production=mmc dev 0 && part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=mmc dev 0 && part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
-+mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$part_size && mmc write $loadaddr 0x$part_addr 0x$image_size
++mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
 +mmc_read_vol=mmc read $loadaddr $part_addr 0x8 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size && setexpr filesize $image_size * 0x200
 +part_default=production
 +part_recovery=recovery
@@ -247,14 +252,15 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-emmc_defconfig
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,151 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
 +CONFIG_TARGET_MT7622=y
-+CONFIG_SYS_TEXT_BASE=0x41e00000
++CONFIG_TEXT_BASE=0x41e00000
 +CONFIG_SYS_MALLOC_F_LEN=0x4000
 +CONFIG_SYS_LOAD_ADDR=0x40080000
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y
@@ -394,6 +400,10 @@
 +CONFIG_USB_XHCI_HCD=y
 +CONFIG_USB_XHCI_MTK=y
 +CONFIG_USB_STORAGE=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
 --- /dev/null
 +++ b/bananapi_bpi-r64-emmc_env
 @@ -0,0 +1,56 @@
@@ -402,9 +412,9 @@
 +loadaddr=0x48000000
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_emmc ; fi
 +bootargs=root=/dev/mmcblk0p65
-+bootconf=config-mt7622-bananapi-bpi-r64-pcie1
-+bootconf_pcie=config-mt7622-bananapi-bpi-r64-pcie1
-+bootconf_sata=config-mt7622-bananapi-bpi-r64-sata
++bootconf=config-1#mt7622-bananapi-bpi-r64-pcie1
++bootconf_pcie=config-1#mt7622-bananapi-bpi-r64-pcie1
++bootconf_sata=config-1#mt7622-bananapi-bpi-r64-sata
 +bootdelay=0
 +bootfile=openwrt-mediatek-mt7622-bananapi_bpi-r64-initramfs-recovery.itb
 +bootfile_upg=openwrt-mediatek-mt7622-bananapi_bpi-r64-squashfs-sysupgrade.itb
@@ -444,7 +454,7 @@
 +emmc_write_fip=mmc dev 0 0 && mmc erase 0x1000 0x1000 && mmc write $loadaddr 0x1000 0x1000 && mmc erase 0x2000 0x800
 +emmc_read_production=mmc dev 0 && part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_read_vol
 +emmc_read_recovery=mmc dev 0 && part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_read_vol
-+mmc_write_vol=imszb $fileaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$part_size && mmc write $fileaddr 0x$part_addr 0x$image_size
++mmc_write_vol=imszb $fileaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $fileaddr 0x$part_addr 0x$image_size
 +mmc_read_vol=mmc read $loadaddr $part_addr 0x8 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size
 +part_default=production
 +part_recovery=recovery
@@ -455,13 +465,14 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/configs/mt7622_bananapi_bpi-r64-snand_defconfig
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,145 @@
 +CONFIG_ARM=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
-+CONFIG_SYS_TEXT_BASE=0x41e00000
++CONFIG_TEXT_BASE=0x41e00000
 +CONFIG_SYS_MALLOC_F_LEN=0x4000
 +CONFIG_SYS_LOAD_ADDR=0x40080000
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y
@@ -596,6 +607,10 @@
 +CONFIG_USB_XHCI_HCD=y
 +CONFIG_USB_XHCI_MTK=y
 +CONFIG_USB_STORAGE=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.3"
 --- /dev/null
 +++ b/bananapi_bpi-r64-snand_env
 @@ -0,0 +1,57 @@
@@ -604,9 +619,9 @@
 +loadaddr=0x48000000
 +bootargs=root=/dev/ubiblock0_2p1
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_ubi ; fi
-+bootconf=config-mt7622-bananapi-bpi-r64-pcie1
-+bootconf_pcie=config-mt7622-bananapi-bpi-r64-pcie1
-+bootconf_sata=config-mt7622-bananapi-bpi-r64-sata
++bootconf=config-1#mt7622-bananapi-bpi-r64-pcie1
++bootconf_pcie=config-1#mt7622-bananapi-bpi-r64-pcie1
++bootconf_sata=config-1#mt7622-bananapi-bpi-r64-sata
 +bootdelay=0
 +bootfile=openwrt-mediatek-mt7622-bananapi_bpi-r64-initramfs-recovery.itb
 +bootfile_fip=openwrt-mediatek-mt7622-bananapi_bpi-r64-snand-bl31-uboot.fip
@@ -643,7 +658,7 @@
 +boot_write_bl2=mtd erase bl2 && mtd write spi-nand0 $loadaddr 0x0 0x20000 && mtd write spi-nand0 $loadaddr 0x20000 0x20000 && mtd write spi-nand0 $loadaddr 0x40000 0x20000 && mtd write spi-nand0 $loadaddr 0x60000 0x20000
 +boot_write_fip=mtd erase fip && mtd write fip $loadaddr
 +check_ubi=ubi part ubi || run ubi_format
-+reset_factory=ubi part ubi ; ubi write 0x0 ubootenv 0x0 ; ubi write 0x0 ubootenv2 0x0 ; ubi remove rootfs_data
++reset_factory=mw $loadaddr 0x0 0x100000 ; ubi part ubi ; ubi write $loadaddr ubootenv 0x100000 ; ubi write $loadaddr ubootenv2 0x100000 ; ubi remove rootfs_data
 +ubi_format=ubi detach ; mtd erase ubi && ubi part ubi ; reset
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
 +ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs

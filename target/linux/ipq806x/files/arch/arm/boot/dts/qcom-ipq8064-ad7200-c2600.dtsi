@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "qcom-ipq8064-v2.0.dtsi"
+#include "qcom-ipq8064-v2.0-smb208.dtsi"
 
 #include <dt-bindings/input/input.h>
 
@@ -8,6 +8,17 @@
 	memory@0 {
 		reg = <0x42000000 0x1e000000>;
 		device_type = "memory";
+	};
+
+	reserved-memory {
+		ramoops@42100000 {
+			compatible = "ramoops";
+			reg = <0x42100000 0x40000>;
+			record-size = <0x4000>;
+			console-size = <0x4000>;
+			ftrace-size = <0x4000>;
+			pmsg-size = <0x4000>;
+		};
 	};
 
 	aliases {
@@ -151,16 +162,19 @@
 					label = "radio";
 					reg = <0x1b0000 0x40000>;
 					read-only;
-					compatible = "nvmem-cells";
-					#address-cells = <1>;
-					#size-cells = <1>;
 
-					precal_radio_1000: precal@1000 {
-						reg = <0x1000 0x2f20>;
-					};
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
 
-					precal_radio_5000: precal@5000 {
-						reg = <0x5000 0x2f20>;
+						precal_radio_1000: precal@1000 {
+							reg = <0x1000 0x2f20>;
+						};
+
+						precal_radio_5000: precal@5000 {
+							reg = <0x5000 0x2f20>;
+						};
 					};
 				};
 
@@ -178,6 +192,18 @@
 					label = "default-mac";
 					reg = <0x1ef0000 0x00200>;
 					read-only;
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						macaddr_defaultmac_8: macaddr@8 {
+							compatible = "mac-base";
+							reg = <0x8 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
+					};
 				};
 
 				partition@1ef0200 {
@@ -250,11 +276,27 @@
 	};
 };
 
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
+	status = "okay";
+};
+
 &usb3_0 {
 	status = "okay";
 
 	pinctrl-0 = <&usb0_pwr_en_pin>;
 	pinctrl-names = "default";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
+	status = "okay";
 };
 
 &usb3_1 {
@@ -277,9 +319,8 @@
 			compatible = "pci168c,0040";
 			reg = <0x00010000 0 0 0 0>;
 
-			nvmem-cells = <&macaddr_defaultmac_8>, <&precal_radio_1000>;
+			nvmem-cells = <&macaddr_defaultmac_8 (-1)>, <&precal_radio_1000>;
 			nvmem-cell-names = "mac-address", "pre-calibration";
-			mac-address-increment = <(-1)>;
 		};
 	};
 };
@@ -298,7 +339,7 @@
 			compatible = "pci168c,0040";
 			reg = <0x00010000 0 0 0 0>;
 
-			nvmem-cells = <&macaddr_defaultmac_8>, <&precal_radio_5000>;
+			nvmem-cells = <&macaddr_defaultmac_8 0>, <&precal_radio_5000>;
 			nvmem-cell-names = "mac-address", "pre-calibration";
 		};
 	};
@@ -310,21 +351,103 @@
 	pinctrl-0 = <&mdio0_pins>;
 	pinctrl-names = "default";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		qca,ar8327-initvals = <
-			0x00004 0x7600000   /* PAD0_MODE */
-			0x00008 0x1000000   /* PAD5_MODE */
-			0x0000c 0x80        /* PAD6_MODE */
-			0x000e4 0x6a545     /* MAC_POWER_SEL */
-			0x000e0 0xc74164de  /* SGMII_CTRL */
-			0x0007c 0x4e        /* PORT0_STATUS */
-			0x00094 0x4e        /* PORT6_STATUS */
-			>;
-	};
+	switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10>;
 
-	phy4: ethernet-phy@4 {
-		reg = <4>;
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "rgmii";
+				tx-internal-delay-ps = <1000>;
+				rx-internal-delay-ps = <1000>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac2>;
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
 	};
 };
 
@@ -336,9 +459,8 @@
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
 
-	nvmem-cells = <&macaddr_defaultmac_8>;
+	nvmem-cells = <&macaddr_defaultmac_8 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 
 	fixed-link {
 		speed = <1000>;
@@ -351,7 +473,7 @@
 	phy-mode = "sgmii";
 	qcom,id = <2>;
 
-	nvmem-cells = <&macaddr_defaultmac_8>;
+	nvmem-cells = <&macaddr_defaultmac_8 0>;
 	nvmem-cell-names = "mac-address";
 
 	fixed-link {
@@ -362,14 +484,4 @@
 
 &adm_dma {
 	status = "okay";
-};
-
-&defaultmac {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_defaultmac_8: macaddr@8 {
-		reg = <0x8 0x6>;
-	};
 };

@@ -41,7 +41,7 @@
 		regulator-name = "usb_vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&gpio 8 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -63,6 +63,16 @@
 				reg = <0x0 0x20000>;
 				label = "u-boot";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_1fc00: macaddr@1fc00 {
+						reg = <0x1fc00 0x6>;
+					};
+				};
 			};
 
 			firmware: partition@20000 {
@@ -114,14 +124,4 @@
 	mtd-cal-data = <&art 0x1000>;
 	nvmem-cells = <&macaddr_uboot_1fc00>;
 	nvmem-cell-names = "mac-address";
-};
-
-&uboot {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_uboot_1fc00: macaddr@1fc00 {
-		reg = <0x1fc00 0x6>;
-	};
 };

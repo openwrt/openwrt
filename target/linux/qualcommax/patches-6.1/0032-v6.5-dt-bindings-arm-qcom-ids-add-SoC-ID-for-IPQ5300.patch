@@ -1,0 +1,25 @@
+From b3c72f2795467e3d43ee429b0ebd5f523ec08f60 Mon Sep 17 00:00:00 2001
+From: Kathiravan T <quic_kathirav@quicinc.com>
+Date: Mon, 5 Jun 2023 13:35:28 +0530
+Subject: [PATCH] dt-bindings: arm: qcom,ids: add SoC ID for IPQ5300
+
+Add the SoC ID for IPQ5300, which belong to the family of IPQ5332 SoC.
+
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Kathiravan T <quic_kathirav@quicinc.com>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20230605080531.3879-2-quic_kathirav@quicinc.com
+---
+ include/dt-bindings/arm/qcom,ids.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/dt-bindings/arm/qcom,ids.h
++++ b/include/dt-bindings/arm/qcom,ids.h
+@@ -153,6 +153,7 @@
+ #define QCOM_ID_IPQ5322			593
+ #define QCOM_ID_IPQ5312			594
+ #define QCOM_ID_IPQ5302			595
++#define QCOM_ID_IPQ5300			624
+ 
+ /*
+  * The board type and revision information, used by Qualcomm bootloaders and

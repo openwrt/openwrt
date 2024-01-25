@@ -86,6 +86,24 @@
 				label = "radio";
 				reg = <0x34000 0x4000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_radio_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					eeprom_radio_2000: eeprom@2000 {
+						reg = <0x2000 0x200>;
+					};
+				};
 			};
 
 			factory: partition@38000 {
@@ -114,13 +132,23 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_radio_4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
 &switch0 {
 	ports {
-		port@0 {
-			status = "okay";
-			label = "wan";
-		};
-
 		port@1 {
 			status = "okay";
 			label = "lan4";
@@ -153,7 +181,8 @@
 &pcie0 {
 	wifi0: mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 0x2000>;
+		nvmem-cells = <&eeprom_radio_2000>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };
@@ -161,7 +190,8 @@
 &pcie1 {
 	wifi1: mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&radio 0x0>;
+		nvmem-cells = <&eeprom_radio_0>;
+		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
@@ -170,15 +200,5 @@
 	gpio {
 		groups = "uart3", "jtag", "wdt";
 		function = "gpio";
-	};
-};
-
-&radio {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_radio_4: macaddr@4 {
-		reg = <0x4 0x6>;
 	};
 };

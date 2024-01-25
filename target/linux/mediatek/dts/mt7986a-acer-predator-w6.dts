@@ -1,0 +1,503 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+#include "mt7986a.dtsi"
+
+/ {
+	model = "Acer Predator W6";
+	compatible = "acer,predator-w6", "mediatek,mt7986a";
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "dm-mod.create=\"dm-verity,,,ro,0 31544 verity 1 PARTLABEL=rootfs PARTLABEL=rootfs 4096 4096 3943 3944 sha256 2f969fa9e9e4e20b37746f22633e85b178f5db7c143e11f92733a704299cc933 2dd56e34b15c6c84573cf26c4392028421061d2c808975217b45e9a5b49d2087\" rootfstype=squashfs,ext4 rootwait root=/dev/mmcblk0p6 fstools_ignore_partname=1";
+	};
+
+	memory {
+		reg = <0 0x40000000 0 0x20000000>;
+	};
+
+	reg_1p8v: regulator-1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_5v: regulator-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-5V";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		factory {
+			label = "factory";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status: led@0 {
+			label = "ant0:red";
+			gpios = <&pio 1 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@1 {
+			label = "ant0:green";
+			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@2 {
+			label = "ant0:blue";
+			gpios = <&pio 36 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@3 {
+			label = "ant1:red";
+			gpios = <&pio 35 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@4 {
+			label = "ant1:green";
+			gpios = <&pio 34 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@5 {
+			label = "ant1:blue";
+			gpios = <&pio 33 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@6 {
+			label = "ant2:red";
+			gpios = <&pio 38 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@7 {
+			label = "ant2:green";
+			gpios = <&pio 37 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@8 {
+			label = "ant2:blue";
+			gpios = <&pio 26 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@9 {
+			label = "ant3:red";
+			gpios = <&pio 25 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@10 {
+			label = "ant3:green";
+			gpios = <&pio 24 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@11 {
+			label = "ant3:blue";
+			gpios = <&pio 23 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@12 {
+			label = "ant4:red";
+			gpios = <&pio 28 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@13 {
+			label = "ant4:green";
+			gpios = <&pio 27 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@14 {
+			label = "ant4:blue";
+			gpios = <&pio 32 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@15 {
+			label = "ant5:red";
+			gpios = <&pio 45 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@16 {
+			label = "ant5:green";
+			gpios = <&pio 44 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+
+		led@17 {
+			label = "ant5:blue";
+			gpios = <&pio 43 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+
+};
+
+&eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		/* LAN */
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	gmac1: mac@1 {
+		/* WAN */
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy6>;
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&mdio {
+	phy6: phy@6 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <6>;
+
+		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <10000>;
+
+		/* LED0: nc ; LED1: nc ; LED2: Amber ; LED3: Green */
+		mxl,led-config = <0x0 0x0 0x370 0x80>;
+	};
+
+	switch: switch@1f {
+		compatible = "mediatek,mt7531";
+		reg = <31>;
+
+		reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <10000>;
+	};
+};
+
+&pio {
+	mmc0_pins_default: mmc0-pins {
+		mux {
+			function = "emmc";
+			groups = "emmc_51";
+		};
+		conf-cmd-dat {
+			pins = "EMMC_DATA_0", "EMMC_DATA_1", "EMMC_DATA_2",
+			       "EMMC_DATA_3", "EMMC_DATA_4", "EMMC_DATA_5",
+			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
+			input-enable;
+			drive-strength = <4>;
+			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+		};
+		conf-clk {
+			pins = "EMMC_CK";
+			drive-strength = <6>;
+			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+		};
+		conf-ds {
+			pins = "EMMC_DSL";
+			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+		};
+		conf-rst {
+			pins = "EMMC_RSTB";
+			drive-strength = <4>;
+			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+		};
+	};
+
+	mmc0_pins_uhs: mmc0-uhs-pins {
+		mux {
+			function = "emmc";
+			groups = "emmc_51";
+		};
+		conf-cmd-dat {
+			pins = "EMMC_DATA_0", "EMMC_DATA_1", "EMMC_DATA_2",
+			       "EMMC_DATA_3", "EMMC_DATA_4", "EMMC_DATA_5",
+			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
+			input-enable;
+			drive-strength = <4>;
+			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+		};
+		conf-clk {
+			pins = "EMMC_CK";
+			drive-strength = <6>;
+			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+		};
+		conf-ds {
+			pins = "EMMC_DSL";
+			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+		};
+		conf-rst {
+			pins = "EMMC_RSTB";
+			drive-strength = <4>;
+			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+		};
+	};
+
+	pcie_pins: pcie-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie_pereset";
+		};
+	};
+
+	wf_2g_5g_pins: wf_2g_5g-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_2g", "wf_5g";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+			       "WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <4>;
+		};
+	};
+
+	wf_dbdc_pins: wf-dbdc-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_dbdc";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+				"WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+				"WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+				"WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+				"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+				"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+				"WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <4>;
+		};
+	};
+};
+
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "game";
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan1";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan3";
+		};
+
+		port@6 {
+			reg = <6>;
+			label = "cpu";
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		phy@0 {
+			reg = <0>;
+
+			mediatek,led-config = <
+				0x21 0x8009 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0xc001 /* LED0_ON_CTRL */
+				0x25 0x0000 /* LED0_BLINK_CTRL */
+				0x26 0xc007 /* LED1_ON_CTRL */
+				0x27 0x003f /* LED1_BLINK_CTRL */
+			>;
+		};
+
+		phy@1 {
+			reg = <1>;
+
+			mediatek,led-config = <
+				0x21 0x8009 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0xc001 /* LED0_ON_CTRL */
+				0x25 0x0000 /* LED0_BLINK_CTRL */
+				0x26 0xc007 /* LED1_ON_CTRL */
+				0x27 0x003f /* LED1_BLINK_CTRL */
+			>;
+		};
+
+		phy@2 {
+			reg = <2>;
+
+			mediatek,led-config = <
+				0x21 0x8009 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0xc001 /* LED0_ON_CTRL */
+				0x25 0x0000 /* LED0_BLINK_CTRL */
+				0x26 0xc007 /* LED1_ON_CTRL */
+				0x27 0x003f /* LED1_BLINK_CTRL */
+			>;
+		};
+
+		phy@3 {
+			reg = <3>;
+
+			mediatek,led-config = <
+				0x21 0x8009 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0xc001 /* LED0_ON_CTRL */
+				0x25 0x0000 /* LED0_BLINK_CTRL */
+				0x26 0xc007 /* LED1_ON_CTRL */
+				0x27 0x003f /* LED1_BLINK_CTRL */
+			>;
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+	pinctrl-names = "default", "dbdc";
+	pinctrl-0 = <&wf_2g_5g_pins>;
+	pinctrl-1 = <&wf_dbdc_pins>;
+};
+
+&trng {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&ssusb {
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_5v>;
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&mmc0 {
+	status = "okay";
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&mmc0_pins_default>;
+	pinctrl-1 = <&mmc0_pins_uhs>;
+	bus-width = <0x08>;
+	max-frequency = <200000000>;
+	cap-mmc-highspeed;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	hs400-ds-delay = <0x14014>;
+	vmmc-supply = <&reg_3p3v>;
+	vqmmc-supply = <&reg_1p8v>;
+	non-removable;
+	no-sd;
+	no-sdio;
+};
+
+&pcie {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie_pins>;
+	status = "okay";
+};
+
+&pcie_phy {
+	status = "okay";
+};

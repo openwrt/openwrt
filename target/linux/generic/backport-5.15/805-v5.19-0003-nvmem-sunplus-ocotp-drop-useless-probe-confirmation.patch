@@ -1,0 +1,27 @@
+From 874dfbcf219ccc42a2cbd187d087c7db82c3024b Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Mon, 21 Mar 2022 12:03:26 +0100
+Subject: [PATCH] nvmem: sunplus-ocotp: drop useless probe confirmation
+
+Printing probe success is discouraged, because we can use tracing for
+this purpose.  Remove useless print message after Sunplus OCOTP driver
+probe.
+
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Link: https://lore.kernel.org/r/20220321110326.44652-3-krzk@kernel.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/sunplus-ocotp.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/nvmem/sunplus-ocotp.c
++++ b/drivers/nvmem/sunplus-ocotp.c
+@@ -202,8 +202,6 @@ static int sp_ocotp_probe(struct platfor
+ 		(int)QAC628_OTP_NUM_BANKS, (int)OTP_WORDS_PER_BANK,
+ 		(int)OTP_WORD_SIZE, (int)QAC628_OTP_SIZE);
+ 
+-	dev_info(dev, "by Sunplus (C) 2020");
+-
+ 	return 0;
+ }
+ 

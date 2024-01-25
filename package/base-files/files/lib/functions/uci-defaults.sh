@@ -96,7 +96,7 @@ ucidef_set_interfaces_lan_wan() {
 
 ucidef_set_bridge_device() {
 	json_select_object bridge
-	json_add_string name "${1:switch0}"
+	json_add_string name "${1:-switch0}"
 	json_select ..
 }
 
@@ -106,12 +106,28 @@ ucidef_set_bridge_mac() {
 	json_select ..
 }
 
-ucidef_set_network_device_mac() {
-	json_select_object "network-device"
+_ucidef_set_network_device_common() {
+	json_select_object "network_device"
 	json_select_object "${1}"
-	json_add_string macaddr "${2}"
+	json_add_string "${2}" "${3}"
 	json_select ..
 	json_select ..
+}
+
+ucidef_set_network_device_mac() {
+	_ucidef_set_network_device_common $1 macaddr $2
+}
+
+ucidef_set_network_device_path() {
+	_ucidef_set_network_device_common $1 path $2
+}
+
+ucidef_set_network_device_gro() {
+	_ucidef_set_network_device_common $1 gro $2
+}
+
+ucidef_set_network_device_conduit() {
+	_ucidef_set_network_device_common $1 conduit $2
 }
 
 _ucidef_add_switch_port() {
@@ -636,6 +652,21 @@ ucidef_set_ntpserver() {
 			done
 		json_select ..
 	json_select ..
+}
+
+ucidef_add_wlan() {
+	local path="$1"; shift
+
+	ucidef_wlan_idx=${ucidef_wlan_idx:-0}
+
+	json_select_object wlan
+	json_select_object "wl$ucidef_wlan_idx"
+	json_add_string path "$path"
+	json_add_fields "$@"
+	json_select ..
+	json_select ..
+
+	ucidef_wlan_idx="$((ucidef_wlan_idx + 1))"
 }
 
 board_config_update() {

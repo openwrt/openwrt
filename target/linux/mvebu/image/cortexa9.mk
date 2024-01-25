@@ -3,6 +3,36 @@
 # Copyright (C) 2012-2016 OpenWrt.org
 # Copyright (C) 2016 LEDE-project.org
 
+define Build/fortigate-header
+  ( \
+    dd if=/dev/zero bs=384 count=1 2>/dev/null; \
+    datalen=$$(wc -c $@ | cut -d' ' -f1); \
+    datalen=$$(printf "%08x" $$datalen); \
+    datalen="$${datalen:6:2}$${datalen:4:2}$${datalen:2:2}$${datalen:0:2}"; \
+    printf $$(echo "00020000$${datalen}ffff0000ffff0000" | sed 's/../\\x&/g'); \
+    dd if=/dev/zero bs=112 count=1 2>/dev/null; \
+    cat $@; \
+  ) > $@.new
+  mv $@.new $@
+endef
+
+define Build/seil-header
+  ( \
+    data_size_crc="$$(gzip -c $@ | tail -c8 | \
+        od -An -tx8 --endian little | tr -d ' \n')"; \
+    printf "SEIL2015"; \
+    printf "$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION)" | \
+        dd bs=80 count=1 conv=sync 2>/dev/null; \
+    printf "$$(echo $${data_size_crc:8:8} | sed 's/../\\x&/g')"; \
+    printf "\x00\x00\x00\x01\x00\x00\x00\x09\x00\x00\x00\x63"; \
+    printf "$(REVISION)" | dd bs=32 count=1 conv=sync 2>/dev/null; \
+    printf "\x00\x00\x00\x00"; \
+    printf "$$(echo $${data_size_crc:0:8} | sed 's/../\\x&/g')"; \
+    cat $@; \
+  ) > $@.new
+  mv $@.new $@
+endef
+
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
   DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
@@ -13,6 +43,21 @@ define Device/kernel-size-migration
   DEVICE_COMPAT_MESSAGE := Partition design has changed compared to older versions (up to 19.07) due to kernel size restrictions. \
 	Upgrade via sysupgrade mechanism is not possible, so new installation via factory style image is required.
 endef
+
+define Device/buffalo_ls220de
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := LinkStation LS220DE
+  KERNEL_UBIFS_OPTS = -m $$(PAGESIZE) -e 124KiB -c 172 -x none
+  KERNEL := kernel-bin | append-dtb | uImage none | buffalo-kernel-ubifs
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  DEVICE_DTS := armada-370-buffalo-ls220de
+  DEVICE_PACKAGES :=  \
+    kmod-hwmon-gpiofan kmod-hwmon-drivetemp kmod-linkstation-poweroff \
+    kmod-md-mod kmod-md-raid0 kmod-md-raid1 kmod-md-raid10 kmod-fs-xfs \
+    mdadm mkf2fs e2fsprogs partx-utils
+endef
+TARGET_DEVICES += buffalo_ls220de
 
 define Device/buffalo_ls421de
   $(Device/NAND-128K)
@@ -58,16 +103,44 @@ define Device/cznic_turris-omnia
   KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
   DEVICE_PACKAGES :=  \
     mkf2fs e2fsprogs kmod-fs-vfat kmod-nls-cp437 kmod-nls-iso8859-1 \
-    wpad-basic-wolfssl kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    wpad-basic-mbedtls kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
     partx-utils kmod-i2c-mux-pca954x kmod-leds-turris-omnia
-  IMAGES := $$(DEVICE_IMG_PREFIX)-sysupgrade.img.gz omnia-medkit-$$(DEVICE_IMG_PREFIX)-initramfs.tar.gz
-  IMAGE/$$(DEVICE_IMG_PREFIX)-sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
-  IMAGE/omnia-medkit-$$(DEVICE_IMG_PREFIX)-initramfs.tar.gz := omnia-medkit-initramfs | gzip
-  DEVICE_IMG_NAME = $$(2)
+  IMAGES := sysupgrade.img.gz
+  IMAGE/sysupgrade.img.gz := boot-scr | boot-img | sdcard-img | gzip | append-metadata
   SUPPORTED_DEVICES += armada-385-turris-omnia
   BOOT_SCRIPT := turris-omnia
 endef
 TARGET_DEVICES += cznic_turris-omnia
+
+define Device/fortinet_fg-30e
+  DEVICE_VENDOR := Fortinet
+  DEVICE_MODEL := FortiGate 30E
+  SOC := armada-385
+  KERNEL := kernel-bin | append-dtb
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FGT30E
+  KERNEL_SIZE := 6144k
+  DEVICE_DTS := armada-385-fortinet-fg-30e
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
+    sysupgrade-tar rootfs=$$$$@ | append-metadata
+  DEVICE_PACKAGES := kmod-hwmon-nct7802
+endef
+TARGET_DEVICES += fortinet_fg-30e
+
+define Device/fortinet_fg-50e
+  DEVICE_VENDOR := Fortinet
+  DEVICE_MODEL := FortiGate 50E
+  SOC := armada-385
+  KERNEL := kernel-bin | append-dtb
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FGT50E
+  KERNEL_SIZE := 6144k
+  DEVICE_DTS := armada-385-fortinet-fg-50e
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | \
+    sysupgrade-tar rootfs=$$$$@ | append-metadata
+  DEVICE_PACKAGES := kmod-hwmon-nct7802
+endef
+TARGET_DEVICES += fortinet_fg-50e
 
 define Device/globalscale_mirabox
   $(Device/NAND-512K)
@@ -77,6 +150,20 @@ define Device/globalscale_mirabox
   SUPPORTED_DEVICES += mirabox
 endef
 TARGET_DEVICES += globalscale_mirabox
+
+define Device/iij_sa-w2
+  DEVICE_VENDOR := IIJ
+  DEVICE_MODEL := SA-W2
+  SOC := armada-380
+  KERNEL := kernel-bin | append-dtb | seil-header
+  DEVICE_DTS := armada-380-iij-sa-w2
+  IMAGE_SIZE := 15360k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | \
+    append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-ath9k kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+    wpad-basic-mbedtls
+endef
+TARGET_DEVICES += iij_sa-w2
 
 define Device/iptime_nas1dual
   DEVICE_VENDOR := ipTIME
@@ -101,7 +188,7 @@ define Device/kobol_helios4
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   SOC := armada-388
-  UBOOT := helios4-u-boot-spl.kwb
+  UBOOT := helios4-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
 endef
 TARGET_DEVICES += kobol_helios4
@@ -109,7 +196,7 @@ TARGET_DEVICES += kobol_helios4
 define Device/linksys
   $(Device/NAND-128K)
   DEVICE_VENDOR := Linksys
-  DEVICE_PACKAGES := kmod-mwlwifi wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-mwlwifi wpad-basic-mbedtls
   IMAGES += factory.img
   IMAGE/factory.img := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
 	append-ubi | pad-to $$$$(PAGESIZE)
@@ -278,7 +365,7 @@ define Device/solidrun_clearfog-base-a1
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-base armada-388-clearfog-pro
-  UBOOT := clearfog-u-boot-spl.kwb
+  UBOOT := clearfog-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
   SUPPORTED_DEVICES += armada-388-clearfog-base
   DEVICE_COMPAT_VERSION := 1.1
@@ -296,8 +383,27 @@ define Device/solidrun_clearfog-pro-a1
   IMAGES := sdcard.img.gz
   IMAGE/sdcard.img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
   DEVICE_DTS := armada-388-clearfog-pro armada-388-clearfog-base
-  UBOOT := clearfog-u-boot-spl.kwb
+  UBOOT := clearfog-u-boot-with-spl.kwb
   BOOT_SCRIPT := clearfog
   SUPPORTED_DEVICES += armada-388-clearfog armada-388-clearfog-pro
 endef
 TARGET_DEVICES += solidrun_clearfog-pro-a1
+
+define Device/synology_ds213j
+  DEVICE_VENDOR := Synology
+  DEVICE_MODEL := DS213j
+  KERNEL_SIZE := 6912k
+  IMAGE_SIZE := 7168k
+  FILESYSTEMS := squashfs ubifs
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  DEVICE_DTS := armada-370-synology-ds213j
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | \
+                          check-size | append-metadata
+  DEVICE_PACKAGES := \
+    kmod-rtc-s35390a kmod-hwmon-gpiofan kmod-hwmon-drivetemp \
+    kmod-md-raid0 kmod-md-raid1 kmod-md-mod e2fsprogs mdadm \
+    -ppp -kmod-nft-offload -firewall4 -dnsmasq -odhcpd-ipv6only
+endef
+TARGET_DEVICES += synology_ds213j

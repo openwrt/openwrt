@@ -73,6 +73,30 @@
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+
+					macaddr_factory_8004: macaddr@8004 {
+						compatible = "mac-base";
+						reg = <0x8004 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_factory_e000: macaddr@e000 {
+						reg = <0xe000 0x6>;
+					};
+				};
 			};
 
 			partition@50000 {
@@ -92,10 +116,9 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		mtd-mac-address = < 0x8004>;
-		mac-address-increment = <2>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_8004 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
@@ -110,14 +133,6 @@
 
 &wmac {
 	status = "okay";
-	mediatek,mtd-eeprom = <&factory 0x0>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-	macaddr_factory_e000: macaddr@4 {
-		reg = <0xe000 0x6>;
-	};
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };

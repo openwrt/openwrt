@@ -1,0 +1,24 @@
+#
+# Copyright (C) 2021 OpenWrt.org
+#
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+iptime,a6004mx|\
+netgear,ex6250-v2)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0

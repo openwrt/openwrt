@@ -35,7 +35,7 @@
 		reg = <0 0xffe05000 0 0x1000>;
 		ranges = <0x0 0x0 0x0 0xec000000 0x4000000>;
 
-		nor@0,0 {
+		nor@0 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "cfi-flash";
@@ -76,12 +76,16 @@
 					label = "hw-info";
 					read-only;
 
-					compatible = "nvmem-cells";
-					#address-cells = <1>;
-					#size-cells = <1>;
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
 
-					macaddr_hwinfo_0: macaddr@0 {
-						reg = <0x0 0x6>;
+						macaddr_hwinfo_0: macaddr@0 {
+							compatible = "mac-base";
+							reg = <0x0 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
 					};
 				};
 
@@ -207,12 +211,12 @@
 
 		mdio@24000 {
 			phy0: ethernet-phy@0 {
-				interrupts = <3 1 0 0>;
+				/* interrupts = <3 1 0 0>; */
 				reg = <0x1>;
 			};
 
 			phy1: ethernet-phy@1 {
-				interrupts = <2 1 0 0>;
+				/* interrupts = <2 1 0 0>; */
 				reg = <0x2>;
 			};
 		};
@@ -229,7 +233,7 @@
 			status = "okay";
 			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
-			nvmem-cells = <&macaddr_hwinfo_0>;
+			nvmem-cells = <&macaddr_hwinfo_0 0>;
 			nvmem-cell-names = "mac-address";
 		};
 
@@ -241,9 +245,8 @@
 			status = "okay";
 			phy-handle = <&phy1>;
 			phy-connection-type = "rgmii-id";
-			nvmem-cells = <&macaddr_hwinfo_0>;
+			nvmem-cells = <&macaddr_hwinfo_0 1>;
 			nvmem-cell-names = "mac-address";
-			mac-address-increment = <1>;
 		};
 
 		gpio0: gpio-controller@fc00 {
@@ -300,3 +303,16 @@
 	};
 };
 /include/ "fsl/p1020si-post.dtsi"
+
+/*
+ * For the OpenWrt 22.03 release, since Linux 5.10.138 now uses
+ * aliases to determine PCI domain numbers, drop aliases so as not to
+ * change the sysfs path of our wireless netdevs.
+ */
+
+/ {
+	aliases {
+		/delete-property/ pci0;
+		/delete-property/ pci1;
+	};
+};

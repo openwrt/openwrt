@@ -29,11 +29,9 @@ EXCLUDE_DIRS:= \
 	*/man \
 	*/info \
 	*/root-* \
-	initial \
 	*.install.clean \
 	*.install.flags \
 	*.install \
-	*/doc \
 	*/share/locale
 
 SDK_DIRS = \
@@ -46,10 +44,10 @@ GIT_COMMIT:=$(shell git rev-parse HEAD 2>/dev/null)
 GIT_BRANCH:=$(filter-out master HEAD,$(shell git rev-parse --abbrev-ref HEAD 2>/dev/null))
 GIT_TAGNAME:=$(shell git show-ref --tags --dereference 2>/dev/null | sed -ne '/^$(GIT_COMMIT) / { s|^.*/||; s|\^.*||; p }')
 
-BASE_FEED:=$(if $(GIT_URL),src-git base $(GIT_URL)$(if $(GIT_BRANCH),;$(GIT_BRANCH),$(if $(GIT_TAGNAME),;$(GIT_TAGNAME))))
+BASE_FEED:=$(if $(GIT_URL),src-git-full base $(GIT_URL)$(if $(GIT_BRANCH),;$(GIT_BRANCH),$(if $(GIT_TAGNAME),;$(GIT_TAGNAME))))
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C git svn info 2>/dev/null | sed -ne 's/^URL: /src-gitsvn base /p'))
 BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C svn info 2>/dev/null | sed -ne 's/^URL: /src-svn base /p'))
-BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),src-git base $(PROJECT_GIT)/openwrt/openwrt.git$(if $(GIT_BRANCH),;$(GIT_BRANCH),$(if $(GIT_TAGNAME),;$(GIT_TAGNAME))))
+BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),src-git-full base $(PROJECT_GIT)/openwrt/openwrt.git$(if $(GIT_BRANCH),;$(GIT_BRANCH),$(if $(GIT_TAGNAME),;$(GIT_TAGNAME))))
 
 KDIR_BASE = $(patsubst $(TOPDIR)/%,%,$(LINUX_DIR))
 KDIR_ARCHES = $(LINUX_KARCH)
@@ -88,9 +86,12 @@ KERNEL_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(
 #
 USERSPACE_UTILS_FILES := \
 	tools/build \
+	tools/leds \
+	tools/power/cpupower \
 	tools/scripts \
-	tools/usb/usbip \
-	tools/spi
+	tools/spi \
+	tools/thermal/tmon \
+	tools/usb/usbip
 
 USERSPACE_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(USERSPACE_UTILS_FILES))))
 
@@ -147,7 +148,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		./files/Config.in \
 		./files/Makefile \
 		./files/include/prepare.mk \
-		./files/README.SDK \
+		./files/README.md \
 		$(SDK_BUILD_DIR)/
 	mkdir -p $(SDK_BUILD_DIR)/package/kernel
 	$(CP) \
@@ -159,6 +160,8 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		$(SDK_BUILD_DIR)/package/kernel/
 
 	-rm -rf $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/.prereq-build
+	-rm -rf $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/doc
+	-rm -rf $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/share/doc
 
 	-rm -f $(SDK_BUILD_DIR)/feeds.conf.default
 	$(if $(BASE_FEED),echo "$(BASE_FEED)" > $(SDK_BUILD_DIR)/feeds.conf.default)

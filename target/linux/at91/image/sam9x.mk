@@ -35,7 +35,7 @@ define Build/at91-sdcard
   ./gen_at91_sdcard_img.sh \
 	$@.img \
 	$@.boot \
-	$(KDIR)/root.ext4 \
+	$(IMAGE_ROOTFS) \
 	$(AT91_SD_BOOT_PARTSIZE) \
 	$(CONFIG_TARGET_ROOTFS_PARTSIZE)
 
@@ -126,7 +126,8 @@ define Device/calamp_lmu5000
   DEVICE_VENDOR := CalAmp
   DEVICE_MODEL := LMU5000
   DEVICE_PACKAGES := kmod-rtc-pcf2123 kmod-usb-acm \
-	kmod-usb-serial-option kmod-usb-serial-sierrawireless kmod-gpio-mcp23s08
+	kmod-usb-serial-option kmod-usb-serial-sierrawireless \
+	kmod-pinctrl-mcp23s08-spi
 endef
 TARGET_DEVICES += calamp_lmu5000
 

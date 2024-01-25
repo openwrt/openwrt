@@ -1,0 +1,238 @@
+// SPDX-License-Identifier: GPL-2.0
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include "mt7629.dtsi"
+
+/ {
+	model = "Netgear EX6250 v2";
+	compatible = "netgear,ex6250-v2", "mediatek,mt7629";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-override = "console=ttyS0,115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&pio 60 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&pio 58 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		ap_mode {
+			label = "ap_mode";
+			gpios = <&pio 54 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+		};
+
+		extender_mode {
+			label = "extender_mode";
+			gpios = <&pio 53 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_green: power_green {
+			label = "green:power";
+			gpios = <&pio 21 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: power_red {
+			label = "red:power";
+			gpios = <&pio 61 GPIO_ACTIVE_LOW>;
+		};
+
+		client_green {
+			label = "green:client";
+			gpios = <&pio 59 GPIO_ACTIVE_LOW>;
+		};
+
+		client_red {
+			label = "red:client";
+			gpios = <&pio 24 GPIO_ACTIVE_LOW>;
+		};
+
+		router_green {
+			label = "green:router";
+			gpios = <&pio 55 GPIO_ACTIVE_LOW>;
+		};
+
+		router_red {
+			label = "red:router";
+			gpios = <&pio 56 GPIO_ACTIVE_LOW>;
+		};
+
+		wps_green {
+			label = "green:wps";
+			gpios = <&pio 57 GPIO_ACTIVE_LOW>;
+		};
+
+		eth_green {
+			label = "green:eth";
+			gpios = <&pio 16 GPIO_ACTIVE_LOW>;
+		};
+
+		eth_yellow {
+			label = "yellow:eth";
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&eth_pins>;
+	pinctrl-1 = <&ephy_leds_pins>;
+	status = "okay";
+
+	mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&phy0>;
+	};
+
+	mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		phy0: ethernet-phy@0 {
+			reg = <0>;
+		};
+	};
+};
+
+&qspi {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&qspi_pins>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Bootloader";
+				reg = <0x0 0x60000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "Config";
+				reg = <0x60000 0x10000>;
+				read-only;
+			};
+
+			partition@70000 {
+				label = "Factory";
+				reg = <0x70000 0x10000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "firmware";
+				reg = <0x80000 0xcd0000>;
+				compatible = "denx,fit";
+			};
+
+			partition@d50000 {
+				label = "CFG";
+				reg = <0xd50000 0x80000>;
+				read-only;
+			};
+
+			partition@dd0000 {
+				label = "RAE";
+				reg = <0xdd0000 0x200000>;
+				read-only;
+			};
+
+			partition@fd0000 {
+				label = "POT";
+				reg = <0xfd0000 0x10000>;
+				read-only;
+			};
+
+			partition@fe0000 {
+				label = "LOG";
+				reg = <0xfe0000 0x20000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&pio {
+	eth_pins: eth-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio";
+		};
+	};
+
+	ephy_leds_pins: ephy-leds-pins {
+		mux {
+			function = "led";
+			groups = "ephy_leds";
+		};
+	};
+
+	qspi_pins: qspi-pins {
+		mux {
+			function = "flash";
+			groups = "spi_nor";
+		};
+	};
+
+	uart0_pins: uart0-pins {
+		mux {
+			function = "uart";
+			groups = "uart0_txd_rxd" ;
+		};
+	};
+
+	watchdog_pins: watchdog-pins {
+		mux {
+			function = "watchdog";
+			groups = "watchdog";
+		};
+	};
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+&watchdog {
+	pinctrl-names = "default";
+	pinctrl-0 = <&watchdog_pins>;
+	status = "okay";
+};

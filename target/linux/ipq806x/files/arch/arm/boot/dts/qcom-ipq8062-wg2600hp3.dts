@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "qcom-ipq8062.dtsi"
+#include "qcom-ipq8062-smb208.dtsi"
 #include <dt-bindings/input/input.h>
-
-/delete-node/ &nand_pins;
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "NEC Platforms Aterm WG2600HP3";
@@ -132,6 +131,15 @@
 			gpios = <&qcom_pinmux 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
+};
+
+/* nand_pins are used for leds_pins, empty the node
+ * from ipq8064.dtsi
+ */
+&nand_pins {
+	/delete-property/ disable;
+	/delete-property/ pullups;
+	/delete-property/ hold;
 };
 
 &qcom_pinmux {
@@ -311,22 +319,47 @@
 					label = "PRODUCTDATA";
 					reg = <0x02b0000 0x0030000>;
 					read-only;
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						macaddr_factory_0: macaddr@0 {
+							reg = <0x0 0x6>;
+						};
+
+						macaddr_factory_6: macaddr@6 {
+							reg = <0x6 0x6>;
+						};
+
+						macaddr_PRODUCTDATA_c: macaddr@c {
+							reg = <0xc 0x6>;
+						};
+
+						macaddr_PRODUCTDATA_12: macaddr@12 {
+							reg = <0x12 0x6>;
+						};
+					};
 				};
 
 				partition@2e0000 {
 					label = "ART";
 					reg = <0x02e0000 0x0040000>;
 					read-only;
-					compatible = "nvmem-cells";
-					#address-cells = <1>;
-					#size-cells = <1>;
 
-					precal_ART_1000: precal@1000 {
-						reg = <0x1000 0x2f20>;
-					};
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
 
-					precal_ART_5000: precal@5000 {
-						reg = <0x5000 0x2f20>;
+						precal_ART_1000: precal@1000 {
+							reg = <0x1000 0x2f20>;
+						};
+
+						precal_ART_5000: precal@5000 {
+							reg = <0x5000 0x2f20>;
+						};
 					};
 				};
 
@@ -406,21 +439,248 @@
 	pinctrl-0 = <&mdio0_pins>;
 	pinctrl-names = "default";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		qca,ar8327-initvals = <
-			0x04 0x80080080  /* PAD0_MODE */
-			0x0c 0x06000000  /* PAD6_MODE */
-			0x10 0x002613a0  /* PWS_REG */
-			0x50 0xcc36cc36  /* LED_CTRL0 */
-			0x54 0xca36ca36  /* LED_CTRL1 */
-			0x58 0xc936c936  /* LED_CTRL2 */
-			0x5c 0x03ffff00  /* LED_CTRL3 */
-			0x7c 0x0000004e  /* PORT0_STATUS */
-			0x94 0x0000004e  /* PORT6_STATUS */
-			0xe0 0xc74164de  /* SGMII_CTRL */
-			0xe4 0x0006a545  /* MAC_PWR_SEL */
-			>;
+	switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "rgmii";
+				tx-internal-delay-ps = <1000>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_WAN;
+						function-enumerator = <1>;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_WAN;
+						function-enumerator = <2>;
+						default-state = "keep";
+					};
+
+					led@2 {
+						reg = <2>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_WAN;
+						function-enumerator = <3>;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <1>;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <2>;
+						default-state = "keep";
+					};
+
+					led@2 {
+						reg = <2>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <3>;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <1>;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <2>;
+						default-state = "keep";
+					};
+
+					led@2 {
+						reg = <2>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <3>;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <1>;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <2>;
+						default-state = "keep";
+					};
+
+					led@2 {
+						reg = <2>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <3>;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <1>;
+						default-state = "keep";
+					};
+
+					led@1 {
+						reg = <1>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <2>;
+						default-state = "keep";
+					};
+
+					led@2 {
+						reg = <2>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						function-enumerator = <3>;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac2>;
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+				qca,sgmii-rxclk-falling-edge;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
 	};
 };
 
@@ -456,24 +716,26 @@
 	};
 };
 
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
+&hs_phy_0 {
+	status = "okay";
+};
 
-	macaddr_factory_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
+&ss_phy_0 {
+	status = "okay";
+};
 
-	macaddr_factory_6: macaddr@6 {
-		reg = <0x6 0x6>;
-	};
+&usb3_0 {
+	status = "okay";
+};
 
-	macaddr_PRODUCTDATA_c: macaddr@c {
-		reg = <0xc 0x6>;
-	};
+&hs_phy_1 {
+	status = "okay";
+};
 
-	macaddr_PRODUCTDATA_12: macaddr@12 {
-		reg = <0x12 0x6>;
-	};
+&ss_phy_1 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
 };

@@ -31,12 +31,18 @@ proto_ncm_setup() {
 	local device ifname  apn auth username password pincode delay mode pdptype profile $PROTO_DEFAULT_OPTIONS
 	json_get_vars device ifname apn auth username password pincode delay mode pdptype profile $PROTO_DEFAULT_OPTIONS
 
+	local context_type
+
 	[ "$metric" = "" ] && metric="0"
 
 	[ -n "$profile" ] || profile=1
 
 	pdptype=$(echo "$pdptype" | awk '{print toupper($0)}')
 	[ "$pdptype" = "IP" -o "$pdptype" = "IPV6" -o "$pdptype" = "IPV4V6" ] || pdptype="IP"
+
+	[ "$pdptype" = "IPV4V6" ] && context_type=3
+	[ -z "$context_type" -a "$pdptype" = "IPV6" ] && context_type=2
+	[ -n "$context_type" ] || context_type=1
 
 	[ -n "$ctl_device" ] && device=$ctl_device
 
@@ -80,10 +86,25 @@ proto_ncm_setup() {
 		return 1
 	}
 
-	[ -n "$delay" ] && sleep "$delay"
-
-	manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }')
-	[ $? -ne 0 -o -z "$manufacturer" ] && {
+	start=$(date +%s)
+	while true; do
+		manufacturer=$(gcom -d "$device" -s /etc/gcom/getcardinfo.gcom | awk 'NF && $0 !~ /AT\+CGMI/ { sub(/\+CGMI: /,""); print tolower($1); exit; }')
+		[ "$manufacturer" = "error" ] && {
+			manufacturer=""
+		}
+		[ -n "$manufacturer" ] && {
+			break
+		}
+		[ -z "$delay" ] && {
+			break
+		}
+		sleep 1
+		elapsed=$(($(date +%s) - start))
+		[ "$elapsed" -gt "$delay" ] && {
+			break
+		}
+	done
+	[ -z "$manufacturer" ] && {
 		echo "Failed to get modem information"
 		proto_notify_error "$interface" GETINFO_FAILED
 		return 1

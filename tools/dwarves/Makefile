@@ -3,15 +3,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dwarves
+PKG_VERSION:=1.25
+PKG_RELEASE:=1
 
-PKG_SOURCE_VERSION:=v1.23
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/devel/pahole/pahole.git
-PKG_MIRROR_HASH:=6ab1bb1dbdf6c73ffcf485d909229dc1da1a3d24efd213e92c56489b58d6a4bd
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_SOURCE_URL:=https://fedorapeople.org/~acme/dwarves/
+PKG_HASH:=e7d45955f6f4eca25a4c8c3bd6611059b35dc217e45976681d7db170fccdec4a
+
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
-
-HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/cmake.mk

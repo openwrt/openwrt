@@ -11,7 +11,7 @@
 		led-failsafe = &led_power_green;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
-		label-mac-device = &wan;
+		label-mac-device = &gmac1;
 	};
 
 	leds: leds {
@@ -83,13 +83,20 @@
 	};
 };
 
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+};
+
+&mdio {
+	ethphy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
 &switch0 {
 	ports {
-		wan: port@0 {
-			status = "okay";
-			label = "wan";
-		};
-
 		port@1 {
 			status = "okay";
 			label = "lan4";
@@ -141,6 +148,20 @@
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x4da8>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x4da8>;
+					};
+				};
 			};
 		};
 	};

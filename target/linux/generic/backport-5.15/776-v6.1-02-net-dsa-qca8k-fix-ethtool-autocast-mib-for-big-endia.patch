@@ -1,0 +1,81 @@
+From 0d4636f7d72df3179b20a2d32b647881917a5e2a Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 12 Oct 2022 19:18:37 +0200
+Subject: [PATCH 2/2] net: dsa: qca8k: fix ethtool autocast mib for big-endian
+ systems
+
+The switch sends autocast mib in little-endian. This is problematic for
+big-endian system as the values needs to be converted.
+
+Fix this by converting each mib value to cpu byte order.
+
+Fixes: 5c957c7ca78c ("net: dsa: qca8k: add support for mib autocast in Ethernet packet")
+Tested-by: Pawel Dembicki <paweldembicki@gmail.com>
+Tested-by: Lech Perczak <lech.perczak@gmail.com>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/qca/qca8k-8xxx.c | 20 ++++++++------------
+ include/linux/dsa/tag_qca.h      |  2 +-
+ 2 files changed, 9 insertions(+), 13 deletions(-)
+
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1668,9 +1668,9 @@ static void qca8k_mib_autocast_handler(s
+ 	struct qca8k_priv *priv = ds->priv;
+ 	const struct qca8k_mib_desc *mib;
+ 	struct mib_ethhdr *mib_ethhdr;
+-	int i, mib_len, offset = 0;
+-	u64 *data;
++	__le32 *data2;
+ 	u8 port;
++	int i;
+ 
+ 	mib_ethhdr = (struct mib_ethhdr *)skb_mac_header(skb);
+ 	mib_eth_data = &priv->mib_eth_data;
+@@ -1682,28 +1682,24 @@ static void qca8k_mib_autocast_handler(s
+ 	if (port != mib_eth_data->req_port)
+ 		goto exit;
+ 
+-	data = mib_eth_data->data;
++	data2 = (__le32 *)skb->data;
+ 
+ 	for (i = 0; i < priv->info->mib_count; i++) {
+ 		mib = &ar8327_mib[i];
+ 
+ 		/* First 3 mib are present in the skb head */
+ 		if (i < 3) {
+-			data[i] = mib_ethhdr->data[i];
++			mib_eth_data->data[i] = get_unaligned_le32(mib_ethhdr->data + i);
+ 			continue;
+ 		}
+ 
+-		mib_len = sizeof(uint32_t);
+-
+ 		/* Some mib are 64 bit wide */
+ 		if (mib->size == 2)
+-			mib_len = sizeof(uint64_t);
+-
+-		/* Copy the mib value from packet to the */
+-		memcpy(data + i, skb->data + offset, mib_len);
++			mib_eth_data->data[i] = get_unaligned_le64((__le64 *)data2);
++		else
++			mib_eth_data->data[i] = get_unaligned_le32(data2);
+ 
+-		/* Set the offset for the next mib */
+-		offset += mib_len;
++		data2 += mib->size;
+ 	}
+ 
+ exit:
+--- a/include/linux/dsa/tag_qca.h
++++ b/include/linux/dsa/tag_qca.h
+@@ -68,7 +68,7 @@ enum mdio_cmd {
+ };
+ 
+ struct mib_ethhdr {
+-	u32 data[3];		/* first 3 mib counter */
++	__le32 data[3];		/* first 3 mib counter */
+ 	__be16 hdr;		/* qca hdr */
+ } __packed;
+ 

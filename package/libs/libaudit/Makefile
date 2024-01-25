@@ -11,7 +11,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_NAME:=audit
 PKG_SOURCE:=$(PKG_SOURCE_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://people.redhat.com/sgrubb/audit
+PKG_SOURCE_URL:=https://people.redhat.com/sgrubb/audit
 PKG_HASH:=0e5d4103646e00f8d1981e1cd2faea7a2ae28e854c31a803e907a383c5e2ecb7
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_SOURCE_NAME)-$(PKG_VERSION)
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_SOURCE_NAME)-$(PKG_VERSION)
@@ -22,7 +22,7 @@ PKG_CPE_ID:=cpe:/a:linux_audit_project:linux_audit
 
 PKG_FIXUP:=autoreconf
 
-PKG_USE_MIPS16:=0
+PKG_BUILD_FLAGS:=no-mips16
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk

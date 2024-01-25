@@ -65,16 +65,18 @@ TARGET_DEVICES += marvell_clearfog-gt-8k
 
 define Device/iei_puzzle-m901
   $(call Device/Default-arm64)
+  SOC := cn9131
   DEVICE_VENDOR := iEi
   DEVICE_MODEL := Puzzle-M901
-  SOC := cn9131
+  DEVICE_PACKAGES += kmod-rtc-ds1307
 endef
 TARGET_DEVICES += iei_puzzle-m901
 
 define Device/iei_puzzle-m902
   $(call Device/Default-arm64)
+  SOC := cn9132
   DEVICE_VENDOR := iEi
   DEVICE_MODEL := Puzzle-M902
-  SOC := cn9132
+  DEVICE_PACKAGES += kmod-rtc-ds1307
 endef
 TARGET_DEVICES += iei_puzzle-m902

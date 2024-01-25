@@ -16,7 +16,7 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -211,3 +211,12 @@ config MTD_SERCOMM_PARTS
+@@ -226,3 +226,12 @@ config MTD_SERCOMM_PARTS
  	  partition map. This partition table contains real partition
  	  offsets, which may differ from device to device depending on the
  	  number and location of bad blocks on NAND.
@@ -31,7 +31,7 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 +	 formatted DTS.
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -15,3 +15,4 @@ obj-$(CONFIG_MTD_SERCOMM_PARTS)		+= scpa
+@@ -16,3 +16,4 @@ obj-$(CONFIG_MTD_SERCOMM_PARTS)		+= scpa
  obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o
  obj-$(CONFIG_MTD_QCOMSMEM_PARTS)	+= qcomsmempart.o

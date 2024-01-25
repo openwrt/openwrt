@@ -1,0 +1,14 @@
+--- a/driver/aiutils.c
++++ b/driver/aiutils.c
+@@ -228,9 +228,10 @@ ai_scan(si_t *sih, void *regs, uint devid)
+ 		do {
+ 			asd = get_asd(sih, &eromptr, 0, j, AD_ST_SLAVE, &addrl, &addrh,
+ 			              &sizel, &sizeh);
+-			if ((asd != 0) && (j == 1) && (sizel == SI_CORE_SIZE))
++			if ((asd != 0) && (j == 1) && (sizel == SI_CORE_SIZE)) {
+ 				sii->coresba2[idx] = addrl;
+ 				sii->coresba2_size[idx] = sizel;
++			}
+ 			j++;
+ 		} while (asd != 0);
+ 

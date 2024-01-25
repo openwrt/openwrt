@@ -3,12 +3,18 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-KERNEL_LOADADDR = 0x80000000
-KERNEL_ENTRY = 0x80000400
+KERNEL_LOADADDR = 0x80100000
 
-DEVICE_VARS += ZYXEL_VERS DLINK_KERNEL_PART_SIZE
-DEVICE_VARS += CAMEO_KERNEL_PART CAMEO_ROOTFS_PART CAMEO_CUSTOMER_SIGNATURE CAMEO_BOARD_VERSION
-DEVICE_VARS += H3C_PRODUCT_ID H3C_DEVICE_ID
+DEVICE_VARS += \
+        CAMEO_BOARD_MODEL \
+        CAMEO_BOARD_VERSION \
+        CAMEO_CUSTOMER_SIGNATURE \
+        CAMEO_KERNEL_PART \
+        CAMEO_KERNEL_PART_SIZE \
+        CAMEO_ROOTFS_PART \
+        H3C_DEVICE_ID \
+        H3C_PRODUCT_ID \
+        ZYXEL_VERS
 
 define Build/zyxel-vers
        ( echo VERS;\
@@ -18,25 +24,25 @@ define Build/zyxel-vers
        done ) >> $@
 endef
 
-define Build/dlink-cameo
-	$(SCRIPT_DIR)/cameo-tag.py $@ $(DLINK_KERNEL_PART_SIZE)
+define Build/cameo-tag
+	$(SCRIPT_DIR)/cameo-tag.py $@ $(CAMEO_KERNEL_PART_SIZE)
 endef
 
-define Build/dlink-version
+define Build/cameo-version
 	echo -n "OpenWrt" >> $@
 	dd if=/dev/zero bs=25 count=1 >> $@
 endef
 
-define Build/dlink-headers
-        dd if=$@ bs=$(DLINK_KERNEL_PART_SIZE) count=1 of=$@.kernel_part; \
-        dd if=$@ bs=$(DLINK_KERNEL_PART_SIZE) skip=1 of=$@.rootfs_part; \
+define Build/cameo-headers
+        dd if=$@ bs=$(CAMEO_KERNEL_PART_SIZE) count=1 of=$@.kernel_part; \
+        dd if=$@ bs=$(CAMEO_KERNEL_PART_SIZE) skip=1 of=$@.rootfs_part; \
         $(SCRIPT_DIR)/cameo-imghdr.py $@.kernel_part $@.kernel_part.hex \
-                "$(DEVICE_MODEL)" os $(CAMEO_KERNEL_PART) \
+                "$(CAMEO_BOARD_MODEL)" os $(CAMEO_KERNEL_PART) \
                 $(CAMEO_CUSTOMER_SIGNATURE) \
                 $(CAMEO_BOARD_VERSION) \
                 $(KERNEL_LOADADDR); \
         $(SCRIPT_DIR)/cameo-imghdr.py $@.rootfs_part $@.rootfs_part.hex \
-                "$(DEVICE_MODEL)" squashfs $(CAMEO_ROOTFS_PART) \
+                "$(CAMEO_BOARD_MODEL)" squashfs $(CAMEO_ROOTFS_PART) \
                 $(CAMEO_CUSTOMER_SIGNATURE) \
                 $(CAMEO_BOARD_VERSION); \
         cat $@.kernel_part.hex $@.rootfs_part.hex > $@
@@ -65,50 +71,28 @@ define Build/h3c-vfs
 	mv $@.new $@
 endef
 
-define Build/relocate-kernel
-	rm -rf $@.relocate
-	$(CP) ../../generic/image/relocate $@.relocate
-	$(MAKE) -j1 -C $@.relocate KERNEL_ADDR=$(KERNEL_LOADADDR) LZMA_TEXT_START=0x82000000 \
-		CROSS_COMPILE=$(TARGET_CROSS)
-	( \
-		dd if=$@.relocate/loader.bin bs=32 conv=sync && \
-		perl -e '@s = stat("$@"); print pack("N", @s[7])' && \
-		cat "$@" \
-	) > "$@.new"
-	mv "$@.new" "$@"
-	rm -rf $@.relocate
-endef
-
 define Device/Default
   PROFILES = Default
-  KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | gzip | uImage gzip
+  KERNEL := \
+	kernel-bin | \
+	append-dtb | \
+	libdeflate-gzip | \
+	uImage gzip
+  KERNEL_INITRAMFS := \
+	kernel-bin | \
+	append-dtb | \
+	libdeflate-gzip | \
+	uImage gzip
   DEVICE_DTS_DIR := ../dts-$(KERNEL_PATCHVER)
   DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | \
-	check-size | append-metadata
-endef
-
-define Device/hpe_1920
-  DEVICE_VENDOR := HPE
-  IMAGE_SIZE := 29632k
-  BLOCKSIZE := 64k
-  H3C_PRODUCT_ID := 0x3c010501
-  KERNEL := kernel-bin | append-dtb | relocate-kernel | 7z | h3c-image | h3c-vfs
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | relocate-kernel | 7z | h3c-image
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
-  	pad-rootfs | check-size | append-metadata
-endef
-
-# "NGE" refers to the uImage magic
-define Device/netgear_nge
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
-  SOC := rtl8380
-  IMAGE_SIZE := 14848k
-  UIMAGE_MAGIC := 0x4e474520
-  DEVICE_VENDOR := NETGEAR
+  IMAGE/sysupgrade.bin := \
+	append-kernel | \
+	pad-to 64k | \
+	append-rootfs | \
+	pad-rootfs | \
+	check-size | \
+	append-metadata
 endef
 
 include $(SUBTARGET).mk

@@ -36,6 +36,16 @@
 				label = "devdata";
 				reg = <0x30000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_devdata_4000: eeprom@4000 {
+						reg = <0x4000 0x200>;
+					};
+				};
 			};
 
 			partition@40000 {
@@ -105,7 +115,8 @@
 };
 
 &wmac {
-	ralink,mtd-eeprom = <&devdata 0x4000>;
+	nvmem-cells = <&eeprom_devdata_4000>;
+	nvmem-cell-names = "eeprom";
 };
 
 &state_default {

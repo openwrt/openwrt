@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "qcom-ipq8064-v2.0.dtsi"
+#include "qcom-ipq8064-v2.0-smb208.dtsi"
 
 #include <dt-bindings/input/input.h>
 
@@ -12,7 +12,35 @@
 	};
 };
 
+&qcom_pinmux {
+	/* eax500 routers reuse the pcie2 reset pin for switch reset pin */
+	switch_reset: switch_reset_pins {
+		mux {
+			pins = "gpio63";
+			function = "gpio";
+			drive-strength = <12>;
+			bias-pull-up;
+		};
+	};
+};
+
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
+	status = "okay";
+};
+
 &usb3_0 {
+	status = "okay";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
 	status = "okay";
 };
 
@@ -30,15 +58,8 @@
 	status = "okay";
 };
 
-&pcie2 {
-	status = "okay";
-};
-
 &nand {
 	status = "okay";
-
-	pinctrl-0 = <&nand_pins>;
-	pinctrl-names = "default";
 
 	nand@0 {
 		reg = <0>;
@@ -49,7 +70,7 @@
 		nand-ecc-step-size = <512>;
 
 		nand-is-boot-medium;
-		qcom,boot_pages_size = <0x0c80000>;
+		qcom,boot-partitions = <0x0 0x0c80000>;
 
 		partitions: partitions {
 			compatible = "fixed-partitions";
@@ -160,18 +181,107 @@
 	pinctrl-0 = <&mdio0_pins>;
 	pinctrl-names = "default";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		qca,ar8327-initvals = <
-			0x00004 0x7600000   /* PAD0_MODE */
-			0x00008 0x1000000   /* PAD5_MODE */
-			0x0000c 0x80        /* PAD6_MODE */
-			0x00010 0x2613a0    /* PWS_REG */
-			0x000e4 0x6a545     /* MAC_POWER_SEL */
-			0x000e0 0xc74164de  /* SGMII_CTRL */
-			0x0007c 0x4e        /* PORT0_STATUS */
-			0x00094 0x4e        /* PORT6_STATUS */
-			>;
+	/* Switch from documentation require at least 10ms for reset */
+	reset-gpios = <&qcom_pinmux 63 GPIO_ACTIVE_HIGH>;
+	reset-post-delay-us = <12000>;
+
+	switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&gmac1>;
+				phy-mode = "rgmii";
+				tx-internal-delay-ps = <1000>;
+				rx-internal-delay-ps = <1000>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gmac2>;
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
 	};
 };
 

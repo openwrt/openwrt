@@ -1,0 +1,82 @@
+From 5008062f1c3f5af3acf86164aa6fcc77b0c7bdce Mon Sep 17 00:00:00 2001
+From: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Date: Wed, 13 Oct 2021 14:19:56 +0100
+Subject: [PATCH] nvmem: core: add nvmem cell post processing callback
+
+Some NVMEM providers have certain nvmem cells encoded, which requires
+post processing before actually using it.
+
+For example mac-address is stored in either in ascii or delimited or reverse-order.
+
+Having a post-process callback hook to provider drivers would enable them to
+do this vendor specific post processing before nvmem consumers see it.
+
+Tested-by: Joakim Zhang <qiangqing.zhang@nxp.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20211013131957.30271-3-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/core.c           | 9 +++++++++
+ include/linux/nvmem-provider.h | 5 +++++
+ 2 files changed, 14 insertions(+)
+
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -38,6 +38,7 @@ struct nvmem_device {
+ 	unsigned int		nkeepout;
+ 	nvmem_reg_read_t	reg_read;
+ 	nvmem_reg_write_t	reg_write;
++	nvmem_cell_post_process_t cell_post_process;
+ 	struct gpio_desc	*wp_gpio;
+ 	void *priv;
+ };
+@@ -799,6 +800,7 @@ struct nvmem_device *nvmem_register(cons
+ 	nvmem->type = config->type;
+ 	nvmem->reg_read = config->reg_read;
+ 	nvmem->reg_write = config->reg_write;
++	nvmem->cell_post_process = config->cell_post_process;
+ 	nvmem->keepout = config->keepout;
+ 	nvmem->nkeepout = config->nkeepout;
+ 	if (config->of_node)
+@@ -1441,6 +1443,13 @@ static int __nvmem_cell_read(struct nvme
+ 	if (cell->bit_offset || cell->nbits)
+ 		nvmem_shift_read_buffer_in_place(cell, buf);
+ 
++	if (nvmem->cell_post_process) {
++		rc = nvmem->cell_post_process(nvmem->priv, id,
++					      cell->offset, buf, cell->bytes);
++		if (rc)
++			return rc;
++	}
++
+ 	if (len)
+ 		*len = cell->bytes;
+ 
+--- a/include/linux/nvmem-provider.h
++++ b/include/linux/nvmem-provider.h
+@@ -19,6 +19,9 @@ typedef int (*nvmem_reg_read_t)(void *pr
+ 				void *val, size_t bytes);
+ typedef int (*nvmem_reg_write_t)(void *priv, unsigned int offset,
+ 				 void *val, size_t bytes);
++/* used for vendor specific post processing of cell data */
++typedef int (*nvmem_cell_post_process_t)(void *priv, const char *id, unsigned int offset,
++					  void *buf, size_t bytes);
+ 
+ enum nvmem_type {
+ 	NVMEM_TYPE_UNKNOWN = 0,
+@@ -62,6 +65,7 @@ struct nvmem_keepout {
+  * @no_of_node:	Device should not use the parent's of_node even if it's !NULL.
+  * @reg_read:	Callback to read data.
+  * @reg_write:	Callback to write data.
++ * @cell_post_process:	Callback for vendor specific post processing of cell data
+  * @size:	Device size.
+  * @word_size:	Minimum read/write access granularity.
+  * @stride:	Minimum read/write access stride.
+@@ -92,6 +96,7 @@ struct nvmem_config {
+ 	bool			no_of_node;
+ 	nvmem_reg_read_t	reg_read;
+ 	nvmem_reg_write_t	reg_write;
++	nvmem_cell_post_process_t cell_post_process;
+ 	int	size;
+ 	int	word_size;
+ 	int	stride;

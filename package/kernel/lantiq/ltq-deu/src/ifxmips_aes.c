@@ -257,7 +257,7 @@ void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 {
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
-    struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
+    //struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
     unsigned long flag;
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     int i = 0;
@@ -699,7 +699,7 @@ void ifx_deu_aes_xts (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 {
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     volatile struct aes_t *aes = (volatile struct aes_t *) AES_START;
-    struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
+    //struct aes_ctx *ctx = (struct aes_ctx *)ctx_arg;
     unsigned long flag;
     /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     u8 oldiv[16];

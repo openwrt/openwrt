@@ -1,0 +1,133 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x_senao_loader.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "engenius,ews660ap", "qca,qca9558";
+	model = "EnGenius EWS660AP";
+
+	aliases {
+		label-mac-device = &eth0;
+		led-boot = &led_wifi5g;
+		led-failsafe = &led_wifi5g;
+		led-upgrade = &led_wifi5g;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wifi2g {
+			label = "green:wifi2g";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led_wifi5g: wifi5g {
+			label = "green:wifi5g";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};
+
+&partitions {
+	partition@ff0000 {
+		label = "art";
+		reg = <0xff0000 0x010000>;
+		read-only;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			macaddr_art_0: macaddr@0 {
+				compatible = "mac-base";
+				reg = <0x0 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+
+			calibration_art_1000: calibration@1000 {
+				reg = <0x1000 0x440>;
+			};
+
+			calibration_art_5000: calibration@5000 {
+				reg = <0x5000 0x844>;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy1: ethernet-phy@1 {
+		reg = <1>;
+		eee-broken-100tx;
+		eee-broken-1000t;
+	};
+
+	phy2: ethernet-phy@2 {
+		reg = <2>;
+		eee-broken-100tx;
+		eee-broken-1000t;
+		at803x-override-sgmii-link-check;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_0 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy-handle = <&phy1>;
+	phy-mode = "rgmii-id";
+
+	pll-data = <0x82000000 0x80000101 0x80001313>;
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_0 1>;
+	nvmem-cell-names = "mac-address";
+
+	phy-handle = <&phy2>;
+
+	pll-data = <0x03000000 0x00000101 0x00001313>;
+
+	qca955x-sgmii-fixup;
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_0 2>, <&calibration_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&ath10k_1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_0 3>, <&calibration_art_5000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&pcie1 {
+	status = "okay";
+};

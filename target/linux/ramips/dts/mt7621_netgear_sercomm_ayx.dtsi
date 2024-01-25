@@ -91,17 +91,31 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&eeprom1>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
-&pcie1 {
+&pcie2 {
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
 		ieee80211-freq-limit = <2400000 2500000>;
+		nvmem-cells = <&eeprom0>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+};
+
+&mdio {
+	ethphy4: ethernet-phy@4 {
+		reg = <4>;
 	};
 };
 
@@ -125,11 +139,6 @@
 		port@3 {
 			status = "okay";
 			label = "lan1";
-		};
-
-		wan: port@4 {
-			status = "okay";
-			label = "wan";
 		};
 	};
 };

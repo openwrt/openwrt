@@ -15,6 +15,7 @@
 		led-failsafe = &led_status;
 		led-running = &led_status;
 		led-upgrade = &led_upgrade;
+		ethernet1 = &swport5;
 	};
 
 	soc {
@@ -27,10 +28,6 @@
 
 			pinctrl-0 = <&mdio_pins>;
 			pinctrl-names = "default";
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
 		};
 
 		counter@4a1000 {
@@ -77,14 +74,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -284,16 +273,19 @@
 				label = "ART";
 				reg = <0x00170000 0x00010000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 			partition@180000 {
@@ -341,6 +333,34 @@
 		#size-cells = <2>;
 		ranges;
 	};
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+};
+
+&swport3 {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+};
+
+&swport5 {
+	status = "okay";
 };
 
 &wifi0 {

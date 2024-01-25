@@ -1,0 +1,10 @@
+--- a/driver/wl_linux.c
++++ b/driver/wl_linux.c
+@@ -1109,6 +1109,7 @@ wl_module_exit(void)
+ 
+ module_init(wl_module_init);
+ module_exit(wl_module_exit);
++MODULE_LICENSE("Proprietary");
+ 
+ /** 
+  * This function frees the WL per-device resources.

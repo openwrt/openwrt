@@ -18,6 +18,7 @@
 };
 
 &wmac {
-	pinctrl-names = "default";
+	pinctrl-names = "default", "pa_gpio";
 	pinctrl-0 = <&pa_pins>;
+	pinctrl-1 = <&pa_gpio_pins>;
 };

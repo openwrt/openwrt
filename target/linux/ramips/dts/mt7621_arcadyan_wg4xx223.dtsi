@@ -17,15 +17,13 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_status_green: led-1 {
-			label = "green:status";
+		led_status_green: led-0 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
-		led_status_red: led-2 {
-			label = "red:status";
+		led_status_red: led-1 {
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
@@ -35,7 +33,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
+		button-0 {
 			label = "reset";
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
@@ -83,18 +81,24 @@
 			reg = <0x200000 0x100000>;
 			read-only;
 
-			compatible = "nvmem-cells";
-			#address-cells = <1>;
-			#size-cells = <1>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			/* We keep the block below to prevent eth0 MAC
-			 * from randomization. Unique WAN, LAN, WLAN MACs
-			 * are stored in u-boot-env.
-			 */
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x4da8>;
+				};
 
-			/* Default Ralink MAC (00:0c:43:28:80:xx) */
-			macaddr_factory_fff0: macaddr@fff0 {
-				reg = <0xfff0 0x6>;
+				/* We keep the block below to prevent eth0 MAC
+				 * from randomization. Unique WAN, LAN, WLAN MACs
+				 * are stored in u-boot-env.
+				 */
+
+				/* Default Ralink MAC (00:0c:43:28:80:xx) */
+				macaddr_factory_fff0: macaddr@fff0 {
+					reg = <0xfff0 0x6>;
+				};
 			};
 		};
 
@@ -158,17 +162,33 @@
 	status = "okay";
 };
 
-&pcie0 {
+&pcie1 {
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
 &gmac0 {
 	nvmem-cells = <&macaddr_factory_fff0>;
 	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_factory_fff0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy4: ethernet-phy@4 {
+		reg = <4>;
+	};
 };
 
 &switch0 {
@@ -181,11 +201,6 @@
 		port@3 {
 			status = "okay";
 			label = "lan1";
-		};
-
-		port@4 {
-			status = "okay";
-			label = "wan";
 		};
 	};
 };

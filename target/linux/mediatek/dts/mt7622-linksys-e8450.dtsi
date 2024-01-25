@@ -110,10 +110,6 @@
 	};
 };
 
-&btif {
-	status = "okay";
-};
-
 &cir {
 	pinctrl-names = "default";
 	pinctrl-0 = <&irrx_pins>;
@@ -181,7 +177,6 @@
 
 				port@6 {
 					reg = <6>;
-					label = "cpu";
 					ethernet = <&gmac0>;
 					phy-mode = "2500base-x";
 
@@ -336,9 +331,11 @@
 };
 
 &slot0 {
-	wmac1: mt7915@0,0 {
+	wmac1: wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
+		mediatek,disable-radar-background;
 	};
 };
 

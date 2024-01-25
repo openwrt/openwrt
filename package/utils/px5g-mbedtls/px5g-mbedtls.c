@@ -20,6 +20,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/random.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,8 +30,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include <mbedtls/bignum.h>
+#include <mbedtls/entropy.h>
 #include <mbedtls/x509_crt.h>
 #include <mbedtls/ecp.h>
 #include <mbedtls/rsa.h>
@@ -40,19 +43,26 @@
 #define PX5G_COPY "Copyright (c) 2009 Steven Barth <steven@midlink.org>"
 #define PX5G_LICENSE "Licensed under the GNU Lesser General Public License v2.1"
 
-static int urandom_fd;
 static char buf[16384];
 
 static int _urandom(void *ctx, unsigned char *out, size_t len)
 {
-	read(urandom_fd, out, len);
+	ssize_t ret;
+
+	ret = getrandom(out, len, 0);
+	if (ret < 0 || (size_t)ret != len)
+		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+
 	return 0;
 }
 
-static void write_file(const char *path, int len, bool pem)
+static void write_file(const char *path, size_t len, bool pem, bool cert)
 {
-	FILE *f = stdout;
+	mode_t mode = S_IRUSR | S_IWUSR;
 	const char *buf_start = buf;
+	int fd = STDERR_FILENO;
+	ssize_t written;
+	int err;
 
 	if (!pem)
 		buf_start += sizeof(buf) - len;
@@ -61,17 +71,30 @@ static void write_file(const char *path, int len, bool pem)
 		fprintf(stderr, "No data to write\n");
 		exit(1);
 	}
+	
+	if (cert)
+		mode |= S_IRGRP | S_IROTH;
 
-	if (!f) {
+	if (path)
+		fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
+
+	if (fd < 0) {
 		fprintf(stderr, "error: I/O error\n");
 		exit(1);
 	}
 
+	written = write(fd, buf_start, len);
+	if (written != len) {
+		fprintf(stderr, "writing key failed with: %s\n", strerror(errno));
+		exit(1);
+	}
+	err = fsync(fd);
+	if (err < 0) {
+		fprintf(stderr, "syncing key failed with: %s\n", strerror(errno));
+		exit(1);
+	}
 	if (path)
-		f = fopen(path, "w");
-
-	fwrite(buf_start, 1, len, f);
-	fclose(f);
+		close(fd);
 }
 
 static mbedtls_ecp_group_id ecp_curve(const char *name)
@@ -104,7 +127,7 @@ static void write_key(mbedtls_pk_context *key, const char *path, bool pem)
 			len = 0;
 	}
 
-	write_file(path, len, pem);
+	write_file(path, len, pem, false);
 }
 
 static void gen_key(mbedtls_pk_context *key, bool rsa, int ksize, int exp,
@@ -295,7 +318,7 @@ int selfsigned(char **arg)
 			return 1;
 		}
 	}
-	write_file(certpath, len, pem);
+	write_file(certpath, len, pem, true);
 
 	mbedtls_x509write_crt_free(&cert);
 	mbedtls_mpi_free(&serial);
@@ -306,8 +329,6 @@ int selfsigned(char **arg)
 
 int main(int argc, char *argv[])
 {
-	urandom_fd = open("/dev/urandom", O_RDONLY);
-
 	if (!argv[1]) {
 		//Usage
 	} else if (!strcmp(argv[1], "eckey")) {

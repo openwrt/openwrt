@@ -47,6 +47,18 @@
 				reg = <0x0 0x40000>;
 				label = "urlader";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_urlader_a91: macaddr@a91 {
+						compatible = "mac-base";
+						reg = <0xa91 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@40000 {
@@ -104,9 +116,8 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_urlader_a91>;
+	nvmem-cells = <&macaddr_urlader_a91 (-2)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-2)>;
 };
 
 &phy0 {
@@ -115,14 +126,4 @@
 
 &phy1 {
 	reset-gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
-};
-
-&urlader {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_urlader_a91: macaddr@a91 {
-		reg = <0xa91 0x6>;
-	};
 };

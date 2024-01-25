@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_sercomm_dxx_nand_256m.dtsi"
+
+/ {
+	compatible = "rostelecom,rt-sf-1", "mediatek,mt7621-soc";
+	model = "Rostelecom RT-SF-1";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		nvmem-cells = <&macaddr_factory_21000 3>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		nvmem-cells = <&macaddr_factory_21000 2>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_21000 11>;
+	nvmem-cell-names = "mac-address";
+};

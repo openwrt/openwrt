@@ -8,19 +8,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uhttpd
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/uhttpd.git
-PKG_SOURCE_DATE:=2022-06-01
-PKG_SOURCE_VERSION:=d59d732a10a4a2b9f18af6dfc3facf696108f31e
-PKG_MIRROR_HASH:=31caa46ca025a1a7657bd5252d59d4a67d0f1c4b87c15a1bc94663ba3cc899ee
+PKG_SOURCE_DATE:=2023-06-25
+PKG_SOURCE_VERSION:=34a8a74dbdec3c0de38abc1b08f6a73c51263792
+PKG_MIRROR_HASH:=8206885eebed5d1827763bcc5bcf9ca3510ae22b0ad1f6432114f1136c32dde2
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=ISC
 
 PKG_ASLR_PIE_REGULAR:=1
 PKG_BUILD_DEPENDS = ustream-ssl
-PKG_CONFIG_DEPENDS:= CONFIG_uhttpd_lua CONFIG_uhttpd_ucode
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -42,18 +41,6 @@ define Package/uhttpd/description
  uHTTPd is a tiny single threaded HTTP server with TLS, CGI and Lua
  support. It is intended as a drop-in replacement for the Busybox
  HTTP daemon.
-endef
-
-define Package/uhttpd/config
-  config uhttpd_lua
-    depends on PACKAGE_uhttpd-mod-lua
-    bool "Enable Integrated Lua interpreter"
-	default y
-
-  config uhttpd_ucode
-    depends on PACKAGE_uhttpd-mod-ucode
-    bool "Enable Integrated ucode interpreter"
-	default y
 endef
 
 define Package/uhttpd/conffiles
@@ -101,17 +88,11 @@ ifneq ($(CONFIG_USE_GLIBC),)
   TARGET_CFLAGS += -D_DEFAULT_SOURCE
 endif
 
-TARGET_LDFLAGS += -lcrypt
-
-CMAKE_OPTIONS += -DTLS_SUPPORT=on
-
 define Package/uhttpd/install
-	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/uhttpd.init $(1)/etc/init.d/uhttpd
-	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_CONF) ./files/uhttpd.config $(1)/etc/config/uhttpd
 	$(VERSION_SED_SCRIPT) $(1)/etc/config/uhttpd
-	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uhttpd $(1)/usr/sbin/uhttpd
 endef
 
@@ -124,6 +105,13 @@ define Package/uhttpd-mod-ubus/install
 	$(INSTALL_DIR) $(1)/usr/lib $(1)/etc/uci-defaults
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uhttpd_ubus.so $(1)/usr/lib/
 	$(INSTALL_DATA) ./files/ubus.default $(1)/etc/uci-defaults/00_uhttpd_ubus
+endef
+
+define Package/uhttpd-mod-ubus/postinst
+#!/bin/sh
+if [ -z "$${IPKG_INSTROOT}" ]; then
+	/etc/init.d/uhttpd reload
+fi
 endef
 
 define Package/uhttpd-mod-ucode/install

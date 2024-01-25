@@ -1,0 +1,113 @@
+From 4ea2faf5bb13d9ba9f07e996d495c4cbe34a4236 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Tue, 29 Nov 2022 16:12:21 +0200
+Subject: [PATCH 14/14] net: dpaa2-mac: move rtnl_lock() only around
+ phylink_{,dis}connect_phy()
+
+After the introduction of a private mac_lock that serializes access to
+priv->mac (and port_priv->mac in the switch), the only remaining purpose
+of rtnl_lock() is to satisfy the locking requirements of
+phylink_fwnode_phy_connect() and phylink_disconnect_phy().
+
+But the functions these live in, dpaa2_mac_connect() and
+dpaa2_mac_disconnect(), have contradictory locking requirements.
+While phylink_fwnode_phy_connect() wants rtnl_lock() to be held,
+phylink_create() wants it to not be held.
+
+Move the rtnl_lock() from top-level (in the dpaa2-eth and dpaa2-switch
+drivers) to only surround the phylink calls that require it, in the
+dpaa2-mac library code.
+
+This is possible because dpaa2_mac_connect() and dpaa2_mac_disconnect()
+run unlocked, and there isn't any danger of an AB/BA deadlock between
+the rtnl_mutex and other private locks.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Reviewed-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Tested-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c    | 4 ----
+ drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c    | 5 +++++
+ drivers/net/ethernet/freescale/dpaa2/dpaa2-switch.c | 4 ----
+ 3 files changed, 5 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
+@@ -4530,7 +4530,6 @@ static irqreturn_t dpni_irq0_handler_thr
+ 		dpaa2_eth_set_mac_addr(netdev_priv(net_dev));
+ 		dpaa2_eth_update_tx_fqids(priv);
+ 
+-		rtnl_lock();
+ 		/* We can avoid locking because the "endpoint changed" IRQ
+ 		 * handler is the only one who changes priv->mac at runtime,
+ 		 * so we are not racing with anyone.
+@@ -4540,7 +4539,6 @@ static irqreturn_t dpni_irq0_handler_thr
+ 			dpaa2_eth_disconnect_mac(priv);
+ 		else
+ 			dpaa2_eth_connect_mac(priv);
+-		rtnl_unlock();
+ 	}
+ 
+ 	return IRQ_HANDLED;
+@@ -4859,9 +4857,7 @@ static int dpaa2_eth_remove(struct fsl_m
+ 	else
+ 		fsl_mc_free_irqs(ls_dev);
+ 
+-	rtnl_lock();
+ 	dpaa2_eth_disconnect_mac(priv);
+-	rtnl_unlock();
+ 	dpaa2_eth_free_rings(priv);
+ 	free_percpu(priv->fd);
+ 	free_percpu(priv->sgt_cache);
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
+@@ -428,7 +428,9 @@ int dpaa2_mac_connect(struct dpaa2_mac *
+ 	}
+ 	mac->phylink = phylink;
+ 
++	rtnl_lock();
+ 	err = phylink_fwnode_phy_connect(mac->phylink, dpmac_node, 0);
++	rtnl_unlock();
+ 	if (err) {
+ 		netdev_err(net_dev, "phylink_fwnode_phy_connect() = %d\n", err);
+ 		goto err_phylink_destroy;
+@@ -446,7 +448,10 @@ err_pcs_destroy:
+ 
+ void dpaa2_mac_disconnect(struct dpaa2_mac *mac)
+ {
++	rtnl_lock();
+ 	phylink_disconnect_phy(mac->phylink);
++	rtnl_unlock();
++
+ 	phylink_destroy(mac->phylink);
+ 	dpaa2_pcs_destroy(mac);
+ 	of_phy_put(mac->serdes_phy);
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch.c
+@@ -1530,7 +1530,6 @@ static irqreturn_t dpaa2_switch_irq0_han
+ 	}
+ 
+ 	if (status & DPSW_IRQ_EVENT_ENDPOINT_CHANGED) {
+-		rtnl_lock();
+ 		/* We can avoid locking because the "endpoint changed" IRQ
+ 		 * handler is the only one who changes priv->mac at runtime,
+ 		 * so we are not racing with anyone.
+@@ -1540,7 +1539,6 @@ static irqreturn_t dpaa2_switch_irq0_han
+ 			dpaa2_switch_port_disconnect_mac(port_priv);
+ 		else
+ 			dpaa2_switch_port_connect_mac(port_priv);
+-		rtnl_unlock();
+ 	}
+ 
+ out:
+@@ -2951,9 +2949,7 @@ static void dpaa2_switch_remove_port(str
+ {
+ 	struct ethsw_port_priv *port_priv = ethsw->ports[port_idx];
+ 
+-	rtnl_lock();
+ 	dpaa2_switch_port_disconnect_mac(port_priv);
+-	rtnl_unlock();
+ 	free_netdev(port_priv->netdev);
+ 	ethsw->ports[port_idx] = NULL;
+ }

@@ -40,6 +40,22 @@
 				reg = <0x00040000 0x00010000>;
 				label = "factory";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@50000 {
@@ -95,7 +111,7 @@
 };
 
 &ethernet {
-	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cells = <&macaddr_factory_4 0>;
 	nvmem-cell-names = "mac-address";
 
 	port@0 {
@@ -114,20 +130,7 @@
 };
 
 &wmac {
-	status = "okay";
-	ralink,mtd-eeprom = <&factory 0x0>;
 	ralink,5ghz = <0>;
-	nvmem-cells = <&macaddr_factory_4>;
-	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
-};
-
-&factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_factory_4: macaddr@4 {
-		reg = <0x4 0x6>;
-	};
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4 1>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };

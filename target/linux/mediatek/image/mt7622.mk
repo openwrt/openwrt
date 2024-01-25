@@ -1,10 +1,6 @@
 DTS_DIR := $(DTS_DIR)/mediatek
 
-ifdef CONFIG_LINUX_5_4
-  KERNEL_LOADADDR := 0x44080000
-else
-  KERNEL_LOADADDR := 0x44000000
-endif
+DEVICE_VARS += BUFFALO_TRX_MAGIC
 
 define Image/Prepare
 	# For UBI we want only one extra block
@@ -12,19 +8,24 @@ define Image/Prepare
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
 endef
 
-define Build/buffalo-kernel-trx
+define Build/buffalo-trx
 	$(eval magic=$(word 1,$(1)))
-	$(eval dummy=$(word 2,$(1)))
+	$(eval kern_bin=$(if $(1),$(IMAGE_KERNEL),$@))
+	$(eval rtfs_bin=$(word 2,$(1)))
+	$(eval apnd_bin=$(word 3,$(1)))
 	$(eval kern_size=$(if $(KERNEL_SIZE),$(KERNEL_SIZE),0x400000))
 
-	$(if $(dummy),touch $(dummy))
+	$(if $(rtfs_bin),touch $(rtfs_bin))
 	$(STAGING_DIR_HOST)/bin/otrx create $@.new \
 		$(if $(magic),-M $(magic),) \
-		-f $@ \
-		$(if $(dummy),\
+		-f $(kern_bin) \
+		$(if $(rtfs_bin),\
 			-a 0x20000 \
-			-b $$(( $(subst k, * 1024,$(kern_size)) )) \
-			-f $(dummy),)
+			-b $$(( $(call exp_units,$(kern_size)) )) \
+			-f $(rtfs_bin),) \
+		$(if $(apnd_bin),\
+			-A $(apnd_bin) \
+			-a 0x20000)
 	mv $@.new $@
 endef
 
@@ -34,6 +35,33 @@ endef
 
 define Build/bl31-uboot
 	cat $(STAGING_DIR_IMAGE)/mt7622_$1-u-boot.fip >> $@
+endef
+
+# Append header to a D-Link M32/R32 Kernel 1 partition
+define Build/m32-r32-recovery-header-kernel1
+	$(eval header_start=$(word 1,$(1)))
+# create $@.header without the checksum
+	echo -en "$(header_start)\x00\x00" > "$@.header"
+# Calculate checksum over data area ($@) and append it to the header.
+# The checksum is the 2byte-sum over the whole data area.
+# Every overflow during the checksum calculation must increment the current checksum value by 1.
+	od -v -w2 -tu2 -An --endian little "$@" | awk '{ s+=$$1; } END { s%=65535; printf "%c%c",s%256,s/256; }' >> "$@.header"
+	echo -en "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x8D\x57\x30\x0B" >> "$@.header"
+# Byte 0-3: Erase Start 0x002C0000
+# Byte 4-7: Erase Length 0x02D00000
+# Byte 8-11: Data offset: 0x002C0000
+# Byte 12-15: Data Length: 0x02D00000
+	echo -en "\x00\x00\x2C\x00\x00\x00\xD0\x02\x00\x00\x2C\x00\x00\x00\xD0\x02" >> "$@.header"
+# Only zeros
+	echo -en "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" >> "$@.header"
+# Last 16 bytes, but without checksum
+	echo -en "\x42\x48\x02\x00\x00\x00\x08\x00\x00\x00\x00\x00\x60\x6E" >> "$@.header"
+# Calculate and append checksum: The checksum must be set so that the 2byte-sum of the whole header is 0.
+# Every overflow during the checksum calculation must increment the current checksum value by 1.
+	od -v -w2 -tu2 -An --endian little "$@.header" | awk '{s+=65535-$$1;}END{s%=65535;printf "%c%c",s%256,s/256;}' >> "$@.header"
+	cat "$@.header" "$@" > "$@.new"
+	mv "$@.new" "$@"
+	rm "$@.header"
 endef
 
 define Build/mt7622-gpt
@@ -57,25 +85,14 @@ define Build/mt7622-gpt
 	rm $@.tmp
 endef
 
-define Build/trx-nand
-	# kernel: always use 4 MiB (-28 B or TRX header) to allow upgrades even
-	#	  if it grows up between releases
-	# root: UBI with one extra block containing UBI mark to trigger erasing
-	#	rest of partition
-	$(STAGING_DIR_HOST)/bin/otrx create $@.new \
-		-M 0x32504844 \
-		-f $(IMAGE_KERNEL) -a 0x20000 -b 0x400000 \
-		-f $@ \
-		-A $(KDIR)/ubi_mark -a 0x20000
-	mv $@.new $@
-endef
-
 define Device/bananapi_bpi-r64
   DEVICE_VENDOR := Bananapi
   DEVICE_MODEL := BPi-R64
   DEVICE_DTS := mt7622-bananapi-bpi-r64
   DEVICE_DTS_OVERLAY := mt7622-bananapi-bpi-r64-pcie1 mt7622-bananapi-bpi-r64-sata
   DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3 e2fsprogs mkf2fs f2fsck
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
   ARTIFACTS := emmc-preloader.bin emmc-bl31-uboot.fip sdcard.img.gz snand-preloader.bin snand-bl31-uboot.fip
   IMAGES := sysupgrade.itb
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
@@ -86,54 +103,116 @@ define Device/bananapi_bpi-r64
   ARTIFACT/sdcard.img.gz	:= mt7622-gpt sdmmc |\
 				   pad-to 512k | bl2 sdmmc-2ddr |\
 				   pad-to 2048k | bl31-uboot bananapi_bpi-r64-sdmmc |\
-				   pad-to 6144k | append-image-stage initramfs-recovery.itb |\
+				$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
+				   pad-to 6144k | append-image-stage initramfs-recovery.itb | check-size 38912k |\
+				) \
 				   pad-to 38912k | mt7622-gpt emmc |\
 				   pad-to 39424k | bl2 emmc-2ddr |\
 				   pad-to 40960k | bl31-uboot bananapi_bpi-r64-emmc |\
 				   pad-to 43008k | bl2 snand-2ddr |\
 				   pad-to 43520k | bl31-uboot bananapi_bpi-r64-snand |\
-				   pad-to 46080k | append-image squashfs-sysupgrade.itb | gzip
+				$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS), \
+				   pad-to 46080k | append-image squashfs-sysupgrade.itb | check-size |\
+				) \
+				  gzip
+ifeq ($(DUMP),)
+  IMAGE_SIZE := $$(shell expr 45 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
+endif
   KERNEL			:= kernel-bin | gzip
   KERNEL_INITRAMFS		:= kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb with-initrd | pad-to 128k
   IMAGE/sysupgrade.itb		:= append-kernel | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb external-static-with-rootfs | append-metadata
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Device tree overlay mechanism needs bootloader update
 endef
 TARGET_DEVICES += bananapi_bpi-r64
 
-define Device/buffalo_wsr-2533dhp2
+define Device/buffalo_wsr
   DEVICE_VENDOR := Buffalo
-  DEVICE_MODEL := WSR-2533DHP2
-  DEVICE_DTS := mt7622-buffalo-wsr-2533dhp2
   DEVICE_DTS_DIR := ../dts
-  IMAGE_SIZE := 59392k
-  KERNEL_SIZE := 4096k
+  KERNEL_SIZE := 6144k
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  SUBPAGESIZE := 512
   UBINIZE_OPTS := -E 5
   BUFFALO_TAG_PLATFORM := MTK
   BUFFALO_TAG_VERSION := 9.99
   BUFFALO_TAG_MINOR := 9.99
   IMAGES += factory.bin factory-uboot.bin
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
-	buffalo-kernel-trx
-  IMAGE/factory.bin := append-ubi | trx-nand | \
-	buffalo-enc WSR-2533DHP2 $$(BUFFALO_TAG_VERSION) -l | \
-	buffalo-tag-dhp WSR-2533DHP2 JP JP | buffalo-enc-tag -l | buffalo-dhp-image
-  IMAGE/factory-uboot.bin := append-ubi | trx-nand
-  IMAGE/sysupgrade.bin := append-kernel | \
-	buffalo-kernel-trx 0x32504844 $(KDIR)/tmp/$$(DEVICE_NAME).null | \
+	buffalo-trx
+  IMAGE/factory.bin = append-ubi | \
+	buffalo-trx $$$$(BUFFALO_TRX_MAGIC) $$$$@ $(KDIR)/ubi_mark | \
+	buffalo-enc $$(DEVICE_MODEL) $$(BUFFALO_TAG_VERSION) -l | \
+	buffalo-tag-dhp $$(DEVICE_MODEL) JP JP | buffalo-enc-tag -l | buffalo-dhp-image
+  IMAGE/factory-uboot.bin := append-ubi | \
+	buffalo-trx $$$$(BUFFALO_TRX_MAGIC) $$$$@ $(KDIR)/ubi_mark
+  IMAGE/sysupgrade.bin := \
+	buffalo-trx $$$$(BUFFALO_TRX_MAGIC) $(KDIR)/tmp/$$(DEVICE_NAME).null | \
 	sysupgrade-tar kernel=$$$$@ | append-metadata
-  DEVICE_PACKAGES := swconfig
+endef
+
+define Device/buffalo_wsr-2533dhp2
+  $(Device/buffalo_wsr)
+  DEVICE_MODEL := WSR-2533DHP2
+  DEVICE_DTS := mt7622-buffalo-wsr-2533dhp2
+  IMAGE_SIZE := 59392k
+  SUBPAGESIZE := 512
+  BUFFALO_TRX_MAGIC := 0x32504844
+  DEVICE_PACKAGES := kmod-mt7615-firmware swconfig
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Partition table has been changed due to kernel size restrictions. \
+	Please upgrade via sysupgrade with factory-uboot.bin image and '-F' option. \
+	(Warning: your configurations will be erased!)
 endef
 TARGET_DEVICES += buffalo_wsr-2533dhp2
+
+define Device/buffalo_wsr-3200ax4s
+  $(Device/buffalo_wsr)
+  DEVICE_MODEL := WSR-3200AX4S
+  DEVICE_DTS := mt7622-buffalo-wsr-3200ax4s
+  IMAGE_SIZE := 24576k
+  BUFFALO_TRX_MAGIC := 0x33504844
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+endef
+TARGET_DEVICES += buffalo_wsr-3200ax4s
+
+define Device/dlink_eagle-pro-ai-ax3200-a1
+  IMAGE_SIZE := 46080k
+  DEVICE_VENDOR := D-Link
+  DEVICE_VARIANT := A1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  KERNEL_SIZE := 8192k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  IMAGES += tftp.bin recovery.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/tftp.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size
+endef
+
+define Device/dlink_eagle-pro-ai-m32-a1
+  $(Device/dlink_eagle-pro-ai-ax3200-a1)
+  DEVICE_MODEL := EAGLE PRO AI M32
+  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-m32-a1
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | pad-to $$(IMAGE_SIZE) | m32-r32-recovery-header-kernel1 DLK6E6010001
+endef
+TARGET_DEVICES += dlink_eagle-pro-ai-m32-a1
+
+define Device/dlink_eagle-pro-ai-r32-a1
+  $(Device/dlink_eagle-pro-ai-ax3200-a1)
+  DEVICE_MODEL := EAGLE PRO AI R32
+  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-r32-a1
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | pad-to $$(IMAGE_SIZE) | m32-r32-recovery-header-kernel1 DLK6E6015001
+endef
+TARGET_DEVICES += dlink_eagle-pro-ai-r32-a1
 
 define Device/elecom_wrc-2533gent
   DEVICE_VENDOR := Elecom
   DEVICE_MODEL := WRC-2533GENT
   DEVICE_DTS := mt7622-elecom-wrc-2533gent
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-btmtkuart kmod-usb3 swconfig
+  DEVICE_PACKAGES := kmod-btmtkuart kmod-mt7615-firmware kmod-usb3 swconfig
 endef
 TARGET_DEVICES += elecom_wrc-2533gent
 
@@ -153,7 +232,7 @@ define Device/elecom_wrc-x3200gst3
 	elecom-wrc-gs-factory WRC-X3200GST3 0.00 -N | \
 	append-string MT7622_ELECOM_WRC-X3200GST3
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += elecom_wrc-x3200gst3
 
@@ -164,7 +243,7 @@ define Device/linksys_e8450
   DEVICE_ALT0_MODEL := RT3200
   DEVICE_DTS := mt7622-linksys-e8450
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3
 endef
 TARGET_DEVICES += linksys_e8450
 
@@ -177,7 +256,7 @@ define Device/linksys_e8450-ubi
   DEVICE_ALT0_VARIANT := UBI
   DEVICE_DTS := mt7622-linksys-e8450-ubi
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -223,21 +302,57 @@ define Device/mediatek_mt7622-rfb1-ubi
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 
+define Device/netgear_wax206
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := WAX206
+  DEVICE_DTS := mt7622-netgear-wax206
+  DEVICE_DTS_DIR := ../dts
+  NETGEAR_ENC_MODEL := WAX206
+  NETGEAR_ENC_REGION := US
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 6144k
+  IMAGE_SIZE := 32768k
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+	append-squashfs4-fakeroot
+# recovery can also be used with stock firmware web-ui, hence the padding...
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | netgear-encrypted-factory
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += netgear_wax206
+
 define Device/ruijie_rg-ew3200gx-pro
   DEVICE_VENDOR := Ruijie
   DEVICE_MODEL := RG-EW3200GX PRO
   DEVICE_DTS := mt7622-ruijie-rg-ew3200gx-pro
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += ruijie_rg-ew3200gx-pro
+
+define Device/reyee_ax3200-e5
+  DEVICE_VENDOR := reyee
+  DEVICE_MODEL := AX3200 E5
+  DEVICE_DTS := mt7622-reyee-ax3200-e5
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+endef
+TARGET_DEVICES += reyee_ax3200-e5
 
 define Device/totolink_a8000ru
   DEVICE_VENDOR := TOTOLINK
   DEVICE_MODEL := A8000RU
   DEVICE_DTS := mt7622-totolink-a8000ru
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := swconfig
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 swconfig
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += totolink_a8000ru
@@ -249,7 +364,7 @@ define Device/ubnt_unifi-6-lr-v1
   DEVICE_DTS_CONFIG := config@1
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v1
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-leds-ubnt-ledbar
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-leds-ubnt-ledbar
   SUPPORTED_DEVICES += ubnt,unifi-6-lr
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr-v1
@@ -260,7 +375,7 @@ define Device/ubnt_unifi-6-lr-v1-ubootmod
   DEVICE_VARIANT := v1 U-Boot mod
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v1-ubootmod
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-leds-ubnt-ledbar
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-leds-ubnt-ledbar
   KERNEL := kernel-bin | lzma
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
@@ -268,7 +383,7 @@ define Device/ubnt_unifi-6-lr-v1-ubootmod
   IMAGE/sysupgrade.itb := append-kernel | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
   ARTIFACTS := preloader.bin bl31-uboot.fip
   ARTIFACT/preloader.bin := bl2 nor-2ddr
-  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr
+  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr-v1
   SUPPORTED_DEVICES += ubnt,unifi-6-lr-ubootmod
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr-v1-ubootmod
@@ -280,7 +395,7 @@ define Device/ubnt_unifi-6-lr-v2
   DEVICE_DTS_CONFIG := config@1
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v2
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr-v2
 
@@ -290,7 +405,7 @@ define Device/ubnt_unifi-6-lr-v2-ubootmod
   DEVICE_VARIANT := v2 U-Boot mod
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v2-ubootmod
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
   KERNEL := kernel-bin | lzma
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
@@ -298,9 +413,38 @@ define Device/ubnt_unifi-6-lr-v2-ubootmod
   IMAGE/sysupgrade.itb := append-kernel | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
   ARTIFACTS := preloader.bin bl31-uboot.fip
   ARTIFACT/preloader.bin := bl2 nor-2ddr
-  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr
+  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr-v2
 endef
 TARGET_DEVICES += ubnt_unifi-6-lr-v2-ubootmod
+
+define Device/ubnt_unifi-6-lr-v3
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi 6 LR
+  DEVICE_VARIANT := v3
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+endef
+TARGET_DEVICES += ubnt_unifi-6-lr-v3
+
+define Device/ubnt_unifi-6-lr-v3-ubootmod
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := UniFi 6 LR
+  DEVICE_VARIANT := v3 U-Boot mod
+  DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v3-ubootmod
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  KERNEL := kernel-bin | lzma
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := bl2 nor-2ddr
+  ARTIFACT/bl31-uboot.fip := bl31-uboot ubnt_unifi-6-lr-v3
+endef
+TARGET_DEVICES += ubnt_unifi-6-lr-v3-ubootmod
 
 define Device/xiaomi_redmi-router-ax6s
   DEVICE_VENDOR := Xiaomi
@@ -310,7 +454,7 @@ define Device/xiaomi_redmi-router-ax6s
   DEVICE_DTS := mt7622-xiaomi-redmi-router-ax6s
   DEVICE_DTS_DIR := ../dts
   BOARD_NAME := xiaomi,redmi-router-ax6s
-  DEVICE_PACKAGES := kmod-mt7915e
+  DEVICE_PACKAGES := kmod-mt7915-firmware
   UBINIZE_OPTS := -E 5
   IMAGES += factory.bin
   BLOCKSIZE := 128k

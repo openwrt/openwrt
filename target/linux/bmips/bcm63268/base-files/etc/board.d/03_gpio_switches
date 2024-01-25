@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+sercomm,h500-s-lowi |\
+sercomm,h500-s-vfes)
+	ucidef_add_gpio_switch "qtn_power" "Quantenna Module Power" "480" "1"
+	;;
+esac
+
+board_config_flush
+
+exit 0

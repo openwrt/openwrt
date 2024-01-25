@@ -1,0 +1,23 @@
+--- a/src/drv_mei_cpe_linux.c
++++ b/src/drv_mei_cpe_linux.c
+@@ -4530,7 +4530,6 @@ module_exit (MEI_module_exit);
+ #ifdef MODULE
+ MODULE_AUTHOR("www.lantiq.com");
+ MODULE_DESCRIPTION("MEI CPE Driver - www.lantiq.com");
+-MODULE_SUPPORTED_DEVICE("MEI CPE Interface");
+ MODULE_LICENSE ("GPL");
+ #endif /* #ifdef MODULE*/
+ 
+--- a/src/drv_mei_cpe_linux.h
++++ b/src/drv_mei_cpe_linux.h
+@@ -110,6 +110,10 @@ typedef irqreturn_t (*usedIsrHandler_t)(
+ #  endif
+ #endif
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0))
++#define PDE_DATA pde_data
++#endif
++
+ /**
+    Function typedef for the Linux request_threaded_irq()
+ */

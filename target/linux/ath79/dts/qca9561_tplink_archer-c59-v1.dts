@@ -16,19 +16,12 @@
 		label = "green:usb";
 		gpios = <&led_gpio 7 GPIO_ACTIVE_LOW>;
 		linux,default-trigger = "usbport";
-		trigger-sources = <&hub_port>;
+		trigger-sources = <&hub_port0>;
 	};
 };
 
 &usb0 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
-
-	hub_port: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &usb_phy0 {
@@ -58,6 +51,18 @@
 				label = "info";
 				reg = <0x010000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_info_8: macaddr@8 {
+						compatible = "mac-base";
+						reg = <0x8 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@20000 {
@@ -82,29 +87,18 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cells = <&macaddr_info_8 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &eth1 {
-	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cells = <&macaddr_info_8 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
 	mtd-cal-data = <&art 0x1000>;
 
-	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cells = <&macaddr_info_8 0>;
 	nvmem-cell-names = "mac-address";
-};
-
-&info {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_info_8: macaddr@8 {
-		reg = <0x8 0x6>;
-	};
 };

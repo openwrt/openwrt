@@ -36,13 +36,11 @@
 };
 
 &wifi0 {
-	nvmem-cells = <&macaddr_art_6>, <&precal_art_1000>;
+	nvmem-cells = <&macaddr_art_6 1>, <&precal_art_1000>;
 	nvmem-cell-names = "mac-address", "pre-calibration";
-	mac-address-increment = <(1)>;
 };
 
 &wifi1 {
-	nvmem-cells = <&macaddr_art_6>, <&precal_art_5000>;
+	nvmem-cells = <&macaddr_art_6 2>, <&precal_art_5000>;
 	nvmem-cell-names = "mac-address", "pre-calibration";
-	mac-address-increment = <(2)>;
 };

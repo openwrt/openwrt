@@ -29,10 +29,6 @@
 			reset-delay-us = <5000>;
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -62,14 +58,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -211,24 +199,26 @@
 				reg = <0x00170000 0x00010000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_art_0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
 
-				macaddr_art_6: macaddr@6 {
-					reg = <0x6 0x6>;
-				};
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 
@@ -251,6 +241,42 @@
 	status = "okay";
 };
 
+&gmac {
+	status = "okay";
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+	label = "lan3";
+};
+
+&swport3 {
+	status = "okay";
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan1";
+};
+
+&swport5 {
+	status = "okay";
+	label = "wan";
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "ezviz-cs-w3-wd1200g-eup";
@@ -263,14 +289,4 @@
 	qcom,ath10k-calibration-variant = "ezviz-cs-w3-wd1200g-eup";
 	nvmem-cell-names = "pre-calibration";
 	nvmem-cells = <&precal_art_5000>;
-};
-
-&gmac0 {
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_art_6>;
-};
-
-&gmac1 {
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_art_0>;
 };

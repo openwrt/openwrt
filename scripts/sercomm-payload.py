@@ -12,11 +12,21 @@ def create_output(args):
 	in_bytes = in_f.read(in_size)
 	in_f.close()
 
+	if (args.pid_file):
+		pid_st = os.stat(args.pid_file)
+		pid_size = pid_st.st_size
+
+		pid_f = open(args.pid_file, 'r+b')
+		pid_bytes = pid_f.read(pid_size)
+		pid_f.close()
+	else:
+		pid_bytes = bytes.fromhex(args.pid)
+
 	sha256 = hashlib.sha256()
 	sha256.update(in_bytes)
 
 	out_f = open(args.output_file, 'w+b')
-	out_f.write(bytes.fromhex(args.pid))
+	out_f.write(pid_bytes)
 	out_f.write(sha256.digest())
 	out_f.write(in_bytes)
 	out_f.close()
@@ -38,6 +48,12 @@ def main():
 		type=str,
 		help='Output file')
 
+	parser.add_argument('--pid-file',
+		dest='pid_file',
+		action='store',
+		type=str,
+		help='Sercomm PID file')
+
 	parser.add_argument('--pid',
 		dest='pid',
 		action='store',
@@ -48,7 +64,7 @@ def main():
 
 	if ((not args.input_file) or
 	    (not args.output_file) or
-	    (not args.pid)):
+	    (not args.pid_file and not args.pid)):
 		parser.print_help()
 
 	create_output(args)

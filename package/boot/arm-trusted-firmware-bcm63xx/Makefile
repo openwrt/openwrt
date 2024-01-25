@@ -3,7 +3,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=2.2
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/bcm63xx/atf.git
@@ -13,6 +13,7 @@ PKG_MIRROR_HASH:=9d5d04f572b1b6ddc6eb3064b9cb09f5fe982e82d350790041d35316349af12
 
 PKG_MAINTAINER:=Rafał Miłecki <rafal@milecki.pl>
 
+include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/trusted-firmware-a.mk
 include $(INCLUDE_DIR)/package.mk
 

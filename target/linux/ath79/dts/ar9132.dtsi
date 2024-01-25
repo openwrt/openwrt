@@ -24,6 +24,13 @@
 		};
 	};
 
+	extosc: ref {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-output-names = "ref";
+		clock-frequency = <40000000>;
+	};
+
 	cpuintc: interrupt-controller {
 		compatible = "qca,ar9132-cpu-intc", "qca,ar7100-cpu-intc";
 
@@ -94,8 +101,8 @@
 						"qca,ar9130-pll", "syscon";
 				reg = <0x18050000 0x20>;
 
+				clocks = <&extosc>;
 				clock-names = "ref";
-				/* The board must provides the ref clock */
 
 				#clock-cells = <1>;
 				clock-output-names = "cpu", "ddr", "ahb";
@@ -145,6 +152,14 @@
 			phys = <&usb_phy>;
 
 			status = "disabled";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			hub_port: port@1 {
+				reg = <1>;
+				#trigger-source-cells = <0>;
+			};
 		};
 
 		spi: spi@1f000000 {

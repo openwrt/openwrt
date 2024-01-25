@@ -1,0 +1,31 @@
+From d4d432670f7dee0a5432fcffcfc8699b25181ace Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 16 Sep 2022 13:20:57 +0100
+Subject: [PATCH] nvmem: u-boot-env: find Device Tree nodes for NVMEM cells
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+DT binding allows specifying NVMEM cells as NVMEM device (provider)
+subnodes. Looks for such subnodes when building NVMEM cells.
+
+This allows NVMEM consumers to use U-Boot environment variables.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20220916122100.170016-11-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/u-boot-env.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/nvmem/u-boot-env.c
++++ b/drivers/nvmem/u-boot-env.c
+@@ -92,6 +92,7 @@ static int u_boot_env_add_cells(struct u
+ 			return -ENOMEM;
+ 		priv->cells[idx].offset = data_offset + value - data;
+ 		priv->cells[idx].bytes = strlen(value);
++		priv->cells[idx].np = of_get_child_by_name(dev->of_node, priv->cells[idx].name);
+ 	}
+ 
+ 	if (WARN_ON(idx != priv->ncells))

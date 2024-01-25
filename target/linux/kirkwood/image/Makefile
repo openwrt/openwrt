@@ -93,7 +93,7 @@ define Device/checkpoint_l-50
   DEVICE_VENDOR := Check Point
   DEVICE_MODEL := L-50
   DEVICE_PACKAGES := kmod-ath9k kmod-gpio-button-hotplug kmod-mvsdio \
-	kmod-rtc-s35390a kmod-usb-ledtrig-usbport wpad-basic-wolfssl
+	kmod-rtc-s35390a kmod-usb-ledtrig-usbport wpad-basic-mbedtls
   IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += checkpoint_l-50
@@ -145,7 +145,7 @@ define Device/endian_4i-edge-200
   DEVICE_MODEL := 4i Edge 200
   DEVICE_ALT0_VENDOR := Endian
   DEVICE_ALT0_MODEL := UTM Mini Firewall
-  DEVICE_PACKAGES := kmod-ath9k kmod-mvsdio wpad-basic-wolfssl
+  DEVICE_PACKAGES := kmod-ath9k kmod-mvsdio wpad-basic-mbedtls
   KERNEL_SIZE := 4096k
   IMAGES := sysupgrade.bin
 endef
@@ -184,6 +184,24 @@ define Device/iom_ix2-200
 endef
 TARGET_DEVICES += iom_ix2-200
 
+define Device/iom_ix4-200d
+  DEVICE_VENDOR := Iomega
+  DEVICE_MODEL := StorCenter ix4-200d
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
+	kmod-gpio-button-hotplug kmod-gpio-nxp-74hc164 \
+	kmod-hwmon-adt7475 kmod-mvsdio kmod-spi-gpio
+  PAGESIZE := 512
+  SUBPAGESIZE := 256
+  BLOCKSIZE := 16k
+  KERNEL_SIZE := 3072k
+  KERNEL_IN_UBI :=
+  UBINIZE_OPTS := -E 5
+  IMAGE_SIZE := 31744k
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
+	check-size
+endef
+TARGET_DEVICES += iom_ix4-200d
+
 define Device/iptime_nas1
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := NAS1
@@ -201,7 +219,7 @@ TARGET_DEVICES += iptime_nas1
 
 define Device/linksys
   DEVICE_VENDOR := Linksys
-  DEVICE_PACKAGES := kmod-mwl8k wpad-basic-wolfssl kmod-gpio-button-hotplug
+  DEVICE_PACKAGES := kmod-mwl8k wpad-basic-mbedtls kmod-gpio-button-hotplug
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi

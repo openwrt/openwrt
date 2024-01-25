@@ -63,7 +63,6 @@
 };
 
 &eth1 {
-	nvmem-cells = <&macaddr_uboot_1fc00>;
+	nvmem-cells = <&macaddr_uboot_1fc00 (-1)>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(-1)>;
 };

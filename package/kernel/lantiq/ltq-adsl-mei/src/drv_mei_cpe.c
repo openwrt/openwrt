@@ -28,6 +28,7 @@
 
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/mod_devicetable.h>
 #include <linux/version.h>
 #include <generated/utsrelease.h>
 #include <linux/types.h>
@@ -1619,7 +1620,9 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * pDev, const char *buf,
 			IFX_MEI_EMSG ("Firmware size is too small!\n");
 			return retval;
 		}
-		copy_from_user ((char *) &img_hdr_tmp, buf, sizeof (img_hdr_tmp));
+		if (copy_from_user ((char *) &img_hdr_tmp, buf, sizeof (img_hdr_tmp)))
+			return -EFAULT;
+
 		// header of image_size and crc are not included.
 		DSL_DEV_PRIVATE(pDev)->image_size = le32_to_cpu (img_hdr_tmp.size) + 8;
 
@@ -1697,7 +1700,9 @@ DSL_BSP_FWDownload (DSL_DEV_Device_t * pDev, const char *buf,
 			nCopy = SDRAM_SEGMENT_SIZE - offset;
 		else
 			nCopy = size - nRead;
-		copy_from_user (mem_ptr, buf + nRead, nCopy);
+		if (copy_from_user (mem_ptr, buf + nRead, nCopy))
+			return -EFAULT;
+
 		for (offset = 0; offset < (nCopy / 4); offset++) {
 			((unsigned long *) mem_ptr)[offset] = le32_to_cpu (((unsigned long *) mem_ptr)[offset]);
 		}

@@ -1,0 +1,96 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "mt7622-ruijie-rg-ew3200.dtsi"
+
+/ {
+	model = "reyee AX3200 E5";
+	compatible = "reyee,ax3200-e5", "mediatek,mt7622";
+};
+
+&nor_flash {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_nor_pins>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Preloader";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
+
+			partition@20000 {
+				label = "ATF";
+				reg = <0x20000 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot";
+				reg = <0x30000 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "u-boot-env";
+				reg = <0x80000 0x90000>;
+			};
+
+			factory: partition@90000 {
+				label = "Factory";
+				reg = <0x90000 0xd0000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "product_info";
+				reg = <0xd0000 0xe0000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "kdump";
+				reg = <0xe0000 0xf0000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				compatible = "denx,fit";
+				label = "firmware";
+				reg = <0xf0000 0x1000000>;
+			};
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&epa_elna_pins>;
+	mediatek,mtd-eeprom = <&factory 0x0>;
+};
+
+&slot0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x5000>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		mediatek,disable-radar-background;
+	};
+};

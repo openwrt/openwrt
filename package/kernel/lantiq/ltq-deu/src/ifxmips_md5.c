@@ -143,7 +143,7 @@ static inline void md5_transform_helper(struct md5_ctx *ctx)
 static int md5_init(struct shash_desc *desc)
 {
     struct md5_ctx *mctx = shash_desc_ctx(desc);
-    volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
+    //volatile struct deu_hash_t *hash = (struct deu_hash_t *) HASH_START;
 
     mctx->byte_count = 0;
     mctx->started = 0;
@@ -200,8 +200,8 @@ static int md5_final(struct shash_desc *desc, u8 *out)
     const unsigned int offset = mctx->byte_count & 0x3f;
     char *p = (char *)mctx->block + offset;
     int padding = 56 - (offset + 1);
-    volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
-    unsigned long flag;
+    //volatile struct deu_hash_t *hashs = (struct deu_hash_t *) HASH_START;
+    //unsigned long flag;
 
     *p++ = 0x80;
     if (padding < 0) {

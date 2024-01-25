@@ -1,0 +1,243 @@
+#include "mt7621.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "meig,slt866", "mediatek,mt7621-soc";
+	model = "MeiG SLT866";
+
+	aliases {
+		led-boot = &led_internet;
+		led-failsafe = &led_internet;
+		led-upgrade = &led_internet;
+		label-mac-device = &gmac1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		signal4 {
+			label = "blue:signal4";
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		lanwan {
+			label = "blue:lanwan";
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_internet: internet {
+			label = "blue:internet";
+			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		wifi {
+			label = "blue:wifi";
+			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		signal3 {
+			label = "blue:signal3";
+			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+		};
+
+		signal2 {
+			label = "blue:signal2";
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		};
+
+		signal1 {
+			label = "blue:signal1";
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+
+	regulator-pa-5g {
+		compatible = "regulator-fixed";
+		regulator-name = "pa-5g";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "jtag", "uart2", "uart3", "wdt";
+		function = "gpio";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <20000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Bootloader";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "Config";
+				reg = <0x30000 0x10000>;
+			};
+
+			partition@40000 {
+				label = "Factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x4da8>;
+					};
+				};
+			};
+
+			partition@50000 {
+				label = "firmware";
+				compatible = "denx,uimage";
+				reg = <0x50000 0xf90000>;
+			};
+
+			partition@fe0000 {
+				label = "m_custom";
+				reg = <0xfe0000 0x20000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_custom_0: macaddr@0 {
+						reg = <0x0 0xc>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_custom_40: macaddr@40 {
+						reg = <0x40 0xc>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_custom_100: macaddr@100 {
+						reg = <0x100 0xc>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_custom_140: macaddr@140 {
+						reg = <0x140 0xc>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@1000000 {
+				label = "fota_bak";
+				reg = <0x1000000 0x1000000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_custom_40 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_custom_0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+&switch0 {
+	ports {
+		port@3 {
+			status = "okay";
+			label = "lan";
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	mt76@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_custom_100 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+&pcie1 {
+	mt76@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_custom_140 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};

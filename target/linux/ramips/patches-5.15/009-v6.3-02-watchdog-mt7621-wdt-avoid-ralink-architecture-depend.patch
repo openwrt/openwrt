@@ -1,0 +1,104 @@
+From ff8ec4ac39ad413b580d611dbf68e1d8a82eba56 Mon Sep 17 00:00:00 2001
+From: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Date: Tue, 14 Feb 2023 11:39:36 +0100
+Subject: [PATCH 2/2] watchdog: mt7621-wdt: avoid ralink architecture dependent code
+
+MT7621 SoC has a system controller node. Watchdog need to access to reset
+status register. Ralink architecture and related driver are old and from
+the beggining they are using some architecture dependent operations for
+accessing this shared registers through 'asm/mach-ralink/ralink_regs.h'
+header file. However this is not ideal from a driver perspective which can
+just access to the system controller registers in an arch independent way
+using regmap syscon APIs. Update Kconfig accordingly to select new added
+dependencies and allow driver to be compile tested.
+
+Signed-off-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+Link: https://lore.kernel.org/r/20230214103936.1061078-6-sergio.paracuellos@gmail.com
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Signed-off-by: Wim Van Sebroeck <wim@linux-watchdog.org>
+---
+ drivers/watchdog/Kconfig      |  4 +++-
+ drivers/watchdog/mt7621_wdt.c | 22 +++++++++++++++++-----
+ 2 files changed, 20 insertions(+), 6 deletions(-)
+
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -1799,7 +1799,9 @@ config RALINK_WDT
+ config MT7621_WDT
+ 	tristate "Mediatek SoC watchdog"
+ 	select WATCHDOG_CORE
+-	depends on SOC_MT7620 || SOC_MT7621
++	select REGMAP_MMIO
++	select MFD_SYSCON
++	depends on SOC_MT7620 || SOC_MT7621 || COMPILE_TEST
+ 	help
+ 	  Hardware driver for the Mediatek/Ralink MT7621/8 SoC Watchdog Timer.
+ 
+--- a/drivers/watchdog/mt7621_wdt.c
++++ b/drivers/watchdog/mt7621_wdt.c
+@@ -15,8 +15,8 @@
+ #include <linux/moduleparam.h>
+ #include <linux/platform_device.h>
+ #include <linux/mod_devicetable.h>
+-
+-#include <asm/mach-ralink/ralink_regs.h>
++#include <linux/mfd/syscon.h>
++#include <linux/regmap.h>
+ 
+ #define SYSC_RSTSTAT			0x38
+ #define WDT_RST_CAUSE			BIT(1)
+@@ -34,6 +34,7 @@
+ struct mt7621_wdt_data {
+ 	void __iomem *base;
+ 	struct reset_control *rst;
++	struct regmap *sysc;
+ 	struct watchdog_device wdt;
+ };
+ 
+@@ -104,9 +105,12 @@ static int mt7621_wdt_stop(struct watchd
+ 	return 0;
+ }
+ 
+-static int mt7621_wdt_bootcause(void)
++static int mt7621_wdt_bootcause(struct mt7621_wdt_data *d)
+ {
+-	if (rt_sysc_r32(SYSC_RSTSTAT) & WDT_RST_CAUSE)
++	u32 val;
++
++	regmap_read(d->sysc, SYSC_RSTSTAT, &val);
++	if (val & WDT_RST_CAUSE)
+ 		return WDIOF_CARDRESET;
+ 
+ 	return 0;
+@@ -134,6 +138,7 @@ static const struct watchdog_ops mt7621_
+ 
+ static int mt7621_wdt_probe(struct platform_device *pdev)
+ {
++	struct device_node *np = pdev->dev.of_node;
+ 	struct device *dev = &pdev->dev;
+ 	struct watchdog_device *mt7621_wdt;
+ 	struct mt7621_wdt_data *drvdata;
+@@ -143,6 +148,13 @@ static int mt7621_wdt_probe(struct platf
+ 	if (!drvdata)
+ 		return -ENOMEM;
+ 
++	drvdata->sysc = syscon_regmap_lookup_by_phandle(np, "mediatek,sysctl");
++	if (IS_ERR(drvdata->sysc)) {
++		drvdata->sysc = syscon_regmap_lookup_by_compatible("mediatek,mt7621-sysc");
++		if (IS_ERR(drvdata->sysc))
++			return PTR_ERR(drvdata->sysc);
++	}
++
+ 	drvdata->base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(drvdata->base))
+ 		return PTR_ERR(drvdata->base);
+@@ -158,7 +170,7 @@ static int mt7621_wdt_probe(struct platf
+ 	mt7621_wdt->max_timeout = 0xfffful / 1000;
+ 	mt7621_wdt->parent = dev;
+ 
+-	mt7621_wdt->bootstatus = mt7621_wdt_bootcause();
++	mt7621_wdt->bootstatus = mt7621_wdt_bootcause(drvdata);
+ 
+ 	watchdog_init_timeout(mt7621_wdt, mt7621_wdt->max_timeout, dev);
+ 	watchdog_set_nowayout(mt7621_wdt, nowayout);

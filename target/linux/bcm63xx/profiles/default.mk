@@ -4,7 +4,7 @@
 
 define Profile/Default
   NAME:=Default Profile
-  PACKAGES:=kmod-b43 wpad-basic-wolfssl
+  PACKAGES:=kmod-b43 wpad-basic-mbedtls
   PRIORITY:=1
 endef
 

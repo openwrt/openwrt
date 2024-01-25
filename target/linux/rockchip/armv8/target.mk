@@ -1,6 +1,6 @@
 ARCH:=aarch64
 SUBTARGET:=armv8
-BOARDNAME:=RK33xx boards (64 bit)
+BOARDNAME:=RK33xx/RK356x boards (64 bit)
 
 define Target/Description
 	Build firmware image for Rockchip RK33xx devices.

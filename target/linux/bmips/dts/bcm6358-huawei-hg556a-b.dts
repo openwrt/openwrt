@@ -3,22 +3,19 @@
 #include "bcm6358.dtsi"
 
 / {
-	compatible = "huawei,hg556a-b", "brcm,bcm6358";
 	model = "Huawei EchoLife HG556a (version B)";
+	compatible = "huawei,hg556a-b", "brcm,bcm6358";
 
 	aliases {
 		led-boot = &led_power_red;
 		led-failsafe = &led_power_red;
 		led-running = &led_power_red;
 		led-upgrade = &led_power_red;
-
-		led-dsl = &led_dsl_red;
-		led-usb = &led_hspa_red;
 	};
 
 	keys {
 		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		poll-interval = <100>;
 
 		help {
 			label = "help";
@@ -57,12 +54,12 @@
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
-		led_hspa_red: led@1 {
+		led@1 {
 			label = "red:hspa";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
-		led_dsl_red: led@2 {
+		led@2 {
 			label = "red:dsl";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
@@ -119,24 +116,36 @@
 		};
 	};
 
-	ath9k-fixup {
-		compatible = "brcm,ath9k-fixup";
-		reg = <0x30000000 0x8000000>;
+	ath9k-leds {
+		compatible = "gpio-leds";
 
-		pci-dev = <1>;
-
-		nvmem-cells = <&macaddr_cfe_6a0>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
-
-		ath,eeprom = <&cal_data 0x1e000>;
-		ath,endian-check;
-		ath,led-pin = <2>;
-		ath,led-active-high;
+		wlan {
+			label = "red:wlan";
+			gpios = <&ath9k 2 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
 	};
 };
 
 &ehci {
+	status = "okay";
+};
+
+&ethernet1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy-mode = "mii";
+
+	fixed-link {
+		speed = <100>;
+		full-duplex;
+	};
+};
+
+&iudma {
 	status = "okay";
 };
 
@@ -146,6 +155,19 @@
 
 &pci {
 	status = "okay";
+
+	ath9k: wifi@1,0 {
+		compatible = "pci168c,0029";
+		reg = <0x0800 0 0 0 0>;
+
+		qca,no-eeprom;
+
+		nvmem-cells = <&macaddr_cfe_6a0 1>;
+		nvmem-cell-names = "mac-address";
+
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
 };
 
 &pflash {
@@ -156,10 +178,22 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		cfe: partition@0 {
+		partition@0 {
 			label = "cfe";
 			reg = <0x000000 0x020000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_cfe_6a0: macaddr@6a0 {
+					compatible = "mac-base";
+					reg = <0x6a0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		partition@20000 {
@@ -172,6 +206,16 @@
 			label = "cal_data";
 			reg = <0xee0000 0x100000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_data_1e000: cal@1e000 {
+					reg = <0x1e000 0xeb8>;
+				};
+			};
 		};
 
 		partition@fe0000 {
@@ -187,14 +231,4 @@
 
 &usbh {
 	status = "okay";
-};
-
-&cfe {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_cfe_6a0: macaddr@6a0 {
-		reg = <0x6a0 0x6>;
-	};
 };

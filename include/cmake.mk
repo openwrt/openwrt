@@ -22,7 +22,7 @@ HOST_CMAKE_BINARY_DIR = $(HOST_BUILD_DIR)$(if $(CMAKE_BINARY_SUBDIR),/$(CMAKE_BI
 MAKE_PATH = $(firstword $(CMAKE_BINARY_SUBDIR) .)
 
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
-  cmake_tool=$(TOOLCHAIN_DIR)/bin/$(1)
+  cmake_tool=$(firstword $(TOOLCHAIN_BIN_DIRS))/$(1)
 else
   cmake_tool=$(shell command -v $(1))
 endif
@@ -49,7 +49,7 @@ CMAKE_AR:=$(call cmake_tool,$(TARGET_AR))
 CMAKE_NM:=$(call cmake_tool,$(TARGET_NM))
 CMAKE_RANLIB:=$(call cmake_tool,$(TARGET_RANLIB))
 
-CMAKE_FIND_ROOT_PATH:=$(STAGING_DIR)/usr;$(TOOLCHAIN_DIR)$(if $(CONFIG_EXTERNAL_TOOLCHAIN),;$(CONFIG_TOOLCHAIN_ROOT))
+CMAKE_FIND_ROOT_PATH:=$(STAGING_DIR)/usr;$(TOOLCHAIN_ROOT_DIR)
 CMAKE_HOST_FIND_ROOT_PATH:=$(STAGING_DIR)/host;$(STAGING_DIR_HOSTPKG);$(STAGING_DIR_HOST)
 CMAKE_SHARED_LDFLAGS:=-Wl,-Bsymbolic-functions
 CMAKE_HOST_INSTALL_PREFIX = $(HOST_BUILD_PREFIX)
@@ -89,6 +89,7 @@ define Build/Configure/Default
 		CXXFLAGS="$(TARGET_CXXFLAGS) $(EXTRA_CXXFLAGS)" \
 		LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)" \
 		cmake \
+			--no-warn-unused-cli \
 			-DCMAKE_SYSTEM_NAME=Linux \
 			-DCMAKE_SYSTEM_VERSION=1 \
 			-DCMAKE_SYSTEM_PROCESSOR=$(ARCH) \
@@ -141,6 +142,7 @@ define Host/Configure/Default
 		CXXFLAGS="$(HOST_CFLAGS)" \
 		LDFLAGS="$(HOST_LDFLAGS)" \
 		cmake \
+			--no-warn-unused-cli \
 			-DCMAKE_BUILD_TYPE=Release \
 			-DCMAKE_C_COMPILER_LAUNCHER="$(CMAKE_C_COMPILER_LAUNCHER)" \
 			-DCMAKE_C_COMPILER="$(CMAKE_HOST_C_COMPILER)" \

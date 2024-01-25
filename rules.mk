@@ -109,7 +109,7 @@ $(foreach t,$(DEFAULT_SUBDIR_TARGETS) $(1),
 )
 endef
 
-DL_DIR:=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)
+DL_DIR=$(if $(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(call qstrip,$(CONFIG_DOWNLOAD_FOLDER)),$(TOPDIR)/dl)$(if $(DL_SUBDIR),/$(DL_SUBDIR))
 OUTPUT_DIR:=$(if $(call qstrip,$(CONFIG_BINARY_FOLDER)),$(call qstrip,$(CONFIG_BINARY_FOLDER)),$(TOPDIR)/bin)
 BIN_DIR:=$(OUTPUT_DIR)/targets/$(BOARD)/$(SUBTARGET)
 INCLUDE_DIR:=$(TOPDIR)/include
@@ -156,8 +156,8 @@ BUILD_LOG_DIR:=$(if $(call qstrip,$(CONFIG_BUILD_LOG_DIR)),$(call qstrip,$(CONFI
 PKG_INFO_DIR := $(STAGING_DIR)/pkginfo
 
 BUILD_DIR_HOST:=$(if $(IS_PACKAGE_BUILD),$(BUILD_DIR_BASE)/hostpkg,$(BUILD_DIR_BASE)/host)
-STAGING_DIR_HOST:=$(TOPDIR)/staging_dir/host
-STAGING_DIR_HOSTPKG:=$(TOPDIR)/staging_dir/hostpkg
+STAGING_DIR_HOST:=$(abspath $(STAGING_DIR)/../host)
+STAGING_DIR_HOSTPKG:=$(abspath $(STAGING_DIR)/../hostpkg)
 
 TARGET_PATH:=$(subst $(space),:,$(filter-out .,$(filter-out ./,$(subst :,$(space),$(PATH)))))
 TARGET_INIT_PATH:=$(call qstrip,$(CONFIG_TARGET_INIT_PATH))
@@ -184,14 +184,14 @@ ifndef DUMP
     -include $(TOOLCHAIN_DIR)/info.mk
     export GCC_HONOUR_COPTS:=0
     TARGET_CROSS:=$(if $(TARGET_CROSS),$(TARGET_CROSS),$(OPTIMIZE_FOR_CPU)-openwrt-linux$(if $(TARGET_SUFFIX),-$(TARGET_SUFFIX))-)
-    TARGET_CFLAGS+= -fhonour-copts -Wno-error=unused-but-set-variable -Wno-error=unused-result
-    TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/usr/include
+    TOOLCHAIN_ROOT_DIR:=$(TOPDIR)/staging_dir/$(TOOLCHAIN_DIR_NAME)
+    TOOLCHAIN_BIN_DIRS:=$(TOOLCHAIN_ROOT_DIR)/bin
+    TOOLCHAIN_INC_DIRS:=$(TOOLCHAIN_ROOT_DIR)/usr/include $(TOOLCHAIN_ROOT_DIR)/include
+    TOOLCHAIN_LIB_DIRS:=$(TOOLCHAIN_ROOT_DIR)/usr/lib $(TOOLCHAIN_ROOT_DIR)/lib
+    TARGET_CFLAGS+= -fhonour-copts
     ifeq ($(CONFIG_USE_MUSL),y)
-      TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/include/fortify
+      TOOLCHAIN_INC_DIRS+= $(TOOLCHAIN_DIR)/include/fortify
     endif
-    TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/include
-    TARGET_LDFLAGS+= -L$(TOOLCHAIN_DIR)/usr/lib -L$(TOOLCHAIN_DIR)/lib
-    TARGET_PATH:=$(TOOLCHAIN_DIR)/bin:$(TARGET_PATH)
   else
     ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
       TARGET_CROSS:=$(call qstrip,$(CONFIG_TOOLCHAIN_PREFIX))
@@ -199,18 +199,22 @@ ifndef DUMP
       TOOLCHAIN_BIN_DIRS:=$(patsubst ./%,$(TOOLCHAIN_ROOT_DIR)/%,$(call qstrip,$(CONFIG_TOOLCHAIN_BIN_PATH)))
       TOOLCHAIN_INC_DIRS:=$(patsubst ./%,$(TOOLCHAIN_ROOT_DIR)/%,$(call qstrip,$(CONFIG_TOOLCHAIN_INC_PATH)))
       TOOLCHAIN_LIB_DIRS:=$(patsubst ./%,$(TOOLCHAIN_ROOT_DIR)/%,$(call qstrip,$(CONFIG_TOOLCHAIN_LIB_PATH)))
-      ifneq ($(TOOLCHAIN_BIN_DIRS),)
-        TARGET_PATH:=$(subst $(space),:,$(TOOLCHAIN_BIN_DIRS)):$(TARGET_PATH)
-      endif
-      ifneq ($(TOOLCHAIN_INC_DIRS),)
-        TARGET_CPPFLAGS+= $(patsubst %,-I%,$(TOOLCHAIN_INC_DIRS))
-      endif
-      ifneq ($(TOOLCHAIN_LIB_DIRS),)
-        TARGET_LDFLAGS+= $(patsubst %,-L%,$(TOOLCHAIN_LIB_DIRS))
-      endif
     endif
   endif
+  ifneq ($(TOOLCHAIN_BIN_DIRS),)
+    TARGET_PATH:=$(subst $(space),:,$(TOOLCHAIN_BIN_DIRS)):$(TARGET_PATH)
+  endif
+  ifneq ($(TOOLCHAIN_INC_DIRS),)
+    TARGET_CPPFLAGS+= $(patsubst %,-I%,$(TOOLCHAIN_INC_DIRS))
+  endif
+  ifneq ($(TOOLCHAIN_LIB_DIRS),)
+    TARGET_LDFLAGS+= $(patsubst %,-L%,$(TOOLCHAIN_LIB_DIRS))
+  endif
 endif
+
+TARGET_LINKER?=bfd
+TARGET_LDFLAGS+= -fuse-ld=$(TARGET_LINKER)
+
 TARGET_PATH_PKG:=$(STAGING_DIR)/host/bin:$(STAGING_DIR_HOSTPKG)/bin:$(TARGET_PATH)
 
 ifeq ($(CONFIG_SOFT_FLOAT),y)
@@ -227,6 +231,7 @@ else
   endif
 endif
 
+export ORIG_PATH:=$(if $(ORIG_PATH),$(ORIG_PATH),$(PATH))
 export PATH:=$(TARGET_PATH)
 export STAGING_DIR STAGING_DIR_HOST STAGING_DIR_HOSTPKG
 export SH_FUNC:=. $(INCLUDE_DIR)/shell.sh;
@@ -235,8 +240,8 @@ PKG_CONFIG:=$(STAGING_DIR_HOST)/bin/pkg-config
 
 export PKG_CONFIG
 
-HOSTCC:=gcc
-HOSTCXX:=g++
+HOSTCC:=$(STAGING_DIR_HOST)/bin/gcc
+HOSTCXX:=$(STAGING_DIR_HOST)/bin/g++
 HOST_CPPFLAGS:=-I$(STAGING_DIR_HOST)/include $(if $(IS_PACKAGE_BUILD),-I$(STAGING_DIR_HOSTPKG)/include -I$(STAGING_DIR)/host/include)
 HOST_CXXFLAGS:=
 HOST_CFLAGS:=-O2 $(HOST_CPPFLAGS)
@@ -251,7 +256,9 @@ TARGET_RANLIB:=$(TARGET_CROSS)gcc-ranlib
 TARGET_NM:=$(TARGET_CROSS)gcc-nm
 TARGET_CC:=$(TARGET_CROSS)gcc
 TARGET_CXX:=$(TARGET_CROSS)g++
+TARGET_LD:=$(TARGET_CROSS)ld.$(TARGET_LINKER)
 KPATCH:=$(SCRIPT_DIR)/patch-kernel.sh
+FILECMD:=$(STAGING_DIR_HOST)/bin/file
 SED:=$(STAGING_DIR_HOST)/bin/sed -i -e
 ESED:=$(STAGING_DIR_HOST)/bin/sed -E -i -e
 MKHASH:=$(STAGING_DIR_HOST)/bin/mkhash
@@ -266,6 +273,14 @@ TAR:=tar
 FIND:=find
 PATCH:=patch
 PYTHON:=python3
+
+ifeq ($(HOST_OS),Darwin)
+  TRUE:=/usr/bin/env gtrue
+  FALSE:=/usr/bin/env gfalse
+else
+  TRUE:=/usr/bin/env true
+  FALSE:=/usr/bin/env false
+endif
 
 INSTALL_BIN:=install -m0755
 INSTALL_SUID:=install -m4755
@@ -283,8 +298,8 @@ export HOSTCC_NOCACHE
 export HOSTCXX_NOCACHE
 
 ifneq ($(CONFIG_CCACHE),)
-  TARGET_CC:= ccache_cc
-  TARGET_CXX:= ccache_cxx
+  TARGET_CC:= ccache $(TARGET_CC)
+  TARGET_CXX:= ccache $(TARGET_CXX)
   HOSTCC:= ccache $(HOSTCC)
   HOSTCXX:= ccache $(HOSTCXX)
   export CCACHE_BASEDIR:=$(TOPDIR)
@@ -295,7 +310,7 @@ endif
 TARGET_CONFIGURE_OPTS = \
   AR="$(TARGET_AR)" \
   AS="$(TARGET_CC) -c $(TARGET_ASFLAGS)" \
-  LD=$(TARGET_CROSS)ld \
+  LD="$(TARGET_LD)" \
   NM="$(TARGET_NM)" \
   CC="$(TARGET_CC)" \
   GCC="$(TARGET_CC)" \
@@ -315,7 +330,7 @@ else
     STRIP:=$(TARGET_CROSS)strip $(call qstrip,$(CONFIG_STRIP_ARGS))
   else
     ifneq ($(CONFIG_USE_SSTRIP),)
-      STRIP:=$(STAGING_DIR_HOST)/bin/sstrip $(call qstrip,$(CONFIG_SSTRIP_ARGS))
+      STRIP:=$(STAGING_DIR_HOST)/bin/sstrip $(if $(CONFIG_SSTRIP_DISCARD_TRAILING_ZEROES),-z)
     endif
   endif
   RSTRIP= \
@@ -349,6 +364,7 @@ ifeq ($(CONFIG_BUILD_LOG),y)
 endif
 
 export BISON_PKGDATADIR:=$(STAGING_DIR_HOST)/share/bison
+export HOST_GNULIB_SRCDIR:=$(STAGING_DIR_HOST)/share/gnulib
 export M4:=$(STAGING_DIR_HOST)/bin/m4
 
 define shvar
@@ -409,7 +425,7 @@ $(shell \
   if git log -1 >/dev/null 2>/dev/null; then \
     if [ -n "$(1)" ]; then \
       last_bump="$$(git log --pretty=format:'%h %s' . | \
-        grep --max-count=1 -e ': [uU]pdate to ' -e ': [bB]ump to ' | \
+        grep -m 1 -e ': [uU]pdate to ' -e ': [bB]ump to ' | \
         cut -f 1 -d ' ')"; \
     fi; \
     if [ -n "$$last_bump" ]; then \

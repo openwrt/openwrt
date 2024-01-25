@@ -46,7 +46,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
 --- a/arch/mips/bcm63xx/clk.c
 +++ b/arch/mips/bcm63xx/clk.c
-@@ -289,7 +289,9 @@ static void hsspi_set(struct clk *clk, i
+@@ -303,7 +303,9 @@ static void hsspi_set(struct clk *clk, i
  {
  	u32 mask;
  
@@ -57,7 +57,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  		mask = CKCTL_6328_HSSPI_EN;
  	else if (BCMCPU_IS_6362())
  		mask = CKCTL_6362_HSSPI_EN;
-@@ -456,6 +458,19 @@ static struct clk_lookup bcm3368_clks[]
+@@ -472,6 +474,19 @@ static struct clk_lookup bcm3368_clks[]
  	CLKDEV_INIT("bcm63xx_enet.1", "enet", &clk_enet1),
  };
  
@@ -77,7 +77,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  static struct clk_lookup bcm6328_clks[] = {
  	/* fixed rate clocks */
  	CLKDEV_INIT(NULL, "periph", &clk_periph),
-@@ -577,6 +592,7 @@ static struct clk_lookup bcm63268_clks[]
+@@ -593,6 +608,7 @@ static struct clk_lookup bcm63268_clks[]
  	CLKDEV_INIT(NULL, "pcie", &clk_pcie),
  };
  
@@ -85,7 +85,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  #define HSSPI_PLL_HZ_6328	133333333
  #define HSSPI_PLL_HZ_6362	400000000
  
-@@ -586,6 +602,10 @@ static int __init bcm63xx_clk_init(void)
+@@ -602,6 +618,10 @@ static int __init bcm63xx_clk_init(void)
  	case BCM3368_CPU_ID:
  		clkdev_add_table(bcm3368_clks, ARRAY_SIZE(bcm3368_clks));
  		break;
@@ -599,7 +599,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  #define TIMER_CTL0_REG			0x4
  #define TIMER_CTL1_REG			0x8
  #define TIMER_CTL2_REG			0xC
-@@ -1254,6 +1326,8 @@
+@@ -1259,6 +1331,8 @@
  #define SDRAM_CFG_32B_MASK		(1 << SDRAM_CFG_32B_SHIFT)
  #define SDRAM_CFG_BANK_SHIFT		13
  #define SDRAM_CFG_BANK_MASK		(1 << SDRAM_CFG_BANK_SHIFT)

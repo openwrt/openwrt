@@ -1,0 +1,59 @@
+From 44609bfc974bdafc0316d069aabf5e2903efa805 Mon Sep 17 00:00:00 2001
+From: pali <7141871+pali@users.noreply.github.com>
+Date: Tue, 9 Aug 2022 11:20:15 +0200
+Subject: [PATCH] pppd: Workaround for generating ppp unit id on Linux (#355)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Linux kernel has nasty bug / feature. If PPPIOCNEWUNIT is called with
+negative ppp unit id (which is default option when command line argument
+"unit" is not specified; and tells kernel to choose some free ppp unit id)
+and the lowest unused/free ppp unit id is present in some existing network
+interface name prefixed by "ppp" string then this PPPIOCNEWUNIT ioctl
+fails. In this case kernel is basically unable to create a new ppp
+interface via PPPIOCNEWUNIT ioctl when user does not specify some unused
+and non-conflicted unit id.
+
+Linux kernel should be fixed to choose usable ppp unit id when was
+requested via PPPIOCNEWUNIT parameter -1.
+
+Until this happens, add a workaround for pppd to help choosing some random
+ppp unit id when kernel returns this error.
+
+Simple test case (run on system when there is no ppp interface):
+
+    sudo ./pppd ifname ppp1 nodefaultroute noauth nolock local nodetach pty "./pppd nodefaultroute noauth nolock local nodetach notty"
+
+Second pppd process without this patch prints into syslog following error:
+
+    pppd 2.4.10-dev started by pali, uid 0
+    Couldn't create new ppp unit: File exists
+    Exit.
+
+With this patch it falls back to random ppp unit id and succeeds:
+
+    pppd 2.4.10-dev started by pali, uid 0
+    Using interface ppp1361
+    Connect: ppp1361 <--> /dev/pts/14
+    ...
+
+Signed-off-by: Pali Rohár <pali@kernel.org>
+---
+ pppd/sys-linux.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/pppd/sys-linux.c
++++ b/pppd/sys-linux.c
+@@ -873,6 +873,11 @@ static int make_ppp_unit(void)
+ 		ifunit = -1;
+ 		x = ioctl(ppp_dev_fd, PPPIOCNEWUNIT, &ifunit);
+ 	}
++	if (x < 0 && errno == EEXIST) {
++		srand(time(NULL) * getpid());
++		ifunit = rand() % 10000;
++		x = ioctl(ppp_dev_fd, PPPIOCNEWUNIT, &ifunit);
++	}
+ 	if (x < 0)
+ 		error("Couldn't create new ppp unit: %m");
+ 

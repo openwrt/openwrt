@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9342_zyxel_nwa11xx.dtsi"
+
+/ {
+	compatible = "zyxel,nwa1123-ac", "qca,ar9342";
+	model = "Zyxel NWA1123-AC";
+
+	aliases {
+		label-mac-device = &eth0;
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_amber;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_amber;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: status_green {
+			label = "green:status";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_status_amber: status_amber {
+			label = "amber:status";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};

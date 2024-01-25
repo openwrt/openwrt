@@ -10,14 +10,12 @@ if AG71XX
 
 config AG71XX_DEBUG
 	bool "Atheros AR71xx built-in ethernet driver debugging"
-	default n
 	help
 	  Atheros AR71xx built-in ethernet driver debugging messages.
 
 config AG71XX_DEBUG_FS
 	bool "Atheros AR71xx built-in ethernet driver debugfs support"
 	depends on DEBUG_FS
-	default n
 	help
 	  Say Y, if you need access to various statistics provided by
 	  the ag71xx driver.

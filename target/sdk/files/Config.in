@@ -18,12 +18,28 @@ menu "Global build settings"
 		bool "Cryptographically sign package lists"
 		default y
 
+	comment "General build options"
+
+	config BUILD_PATENTED
+		default n
+		bool "Compile with support for patented functionality"
+		help
+		  When this option is disabled, software which provides patented functionality
+		  will not be built.  In case software provides optional support for patented
+		  functionality, this optional support will get disabled for this package.
+
+	config BUILD_NLS
+		default n
+		bool "Compile with full language support"
+		help
+		  When this option is enabled, packages are built with the full versions of
+		  iconv and GNU gettext instead of the default OpenWrt stubs.
+
 	comment "Package build options"
 
 	config DEBUG
 		bool
 		prompt "Compile packages with debugging info"
-		default n
 		help
 		  Adds -g3 to the CFLAGS.
 
@@ -31,7 +47,6 @@ menu "Global build settings"
 
 	choice
 		prompt "Binary stripping method"
-		default USE_STRIP   if EXTERNAL_TOOLCHAIN
 		default USE_STRIP   if USE_GLIBC
 		default USE_SSTRIP
 		help
@@ -70,7 +85,6 @@ menu "Advanced configuration options (for developers)"
 
 	config BROKEN
 		bool "Show broken packages"
-		default n
 
 	config DOWNLOAD_FOLDER
 		string "Download folder"
@@ -102,19 +116,23 @@ menu "Advanced configuration options (for developers)"
 
 	config CCACHE
 		bool "Use ccache"
-		default n
 		help
 		  Compiler cache; see https://ccache.samba.org/
 
+	config CCACHE_DIR
+		string "Set ccache directory" if CCACHE
+		default ""
+		help
+		  Store ccache in this directory.
+		  If not set, uses './.ccache'
+
 	config BUILD_LOG
 		bool "Enable log files during build process"
-		default n
 		help
 		  If enabled, log files will be written to the ./log directory.
 
 	config SRC_TREE_OVERRIDE
 		bool "Enable package source tree override"
-		default n
 		help
 		  If enabled, you can force a package to use a git tree as source
 		  code instead of the normal tarball. Create a symlink 'git-src'

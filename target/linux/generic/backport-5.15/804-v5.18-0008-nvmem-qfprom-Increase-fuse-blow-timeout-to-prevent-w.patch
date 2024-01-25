@@ -1,0 +1,32 @@
+From bc5c75e0a5a9400f81a987cc720100ac475fa4d8 Mon Sep 17 00:00:00 2001
+From: Knox Chiou <knoxchiou@chromium.org>
+Date: Wed, 23 Feb 2022 22:35:00 +0000
+Subject: [PATCH] nvmem: qfprom: Increase fuse blow timeout to prevent write
+ fail
+
+sc7180 blow fuses got slightly chances to hit qfprom_reg_write timeout.
+Current timeout is simply too low. Since blowing fuses is a
+very rare operation, so the risk associated with overestimating this
+number is low.
+Increase fuse blow timeout from 1ms to 10ms.
+
+Reviewed-by: Douglas Anderson <dianders@chromium.org>
+Signed-off-by: Knox Chiou <knoxchiou@chromium.org>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20220223223502.29454-2-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/qfprom.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/nvmem/qfprom.c
++++ b/drivers/nvmem/qfprom.c
+@@ -22,7 +22,7 @@
+ 
+ /* Amount of time required to hold charge to blow fuse in micro-seconds */
+ #define QFPROM_FUSE_BLOW_POLL_US	100
+-#define QFPROM_FUSE_BLOW_TIMEOUT_US	1000
++#define QFPROM_FUSE_BLOW_TIMEOUT_US	10000
+ 
+ #define QFPROM_BLOW_STATUS_OFFSET	0x048
+ #define QFPROM_BLOW_STATUS_BUSY		0x1

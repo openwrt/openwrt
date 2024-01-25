@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0 OR MIT
 
-#include "qcom-ipq8064-v2.0.dtsi"
+#include "qcom-ipq8064-v2.0-smb208.dtsi"
 
 / {
 	memory {
@@ -140,9 +140,6 @@
 &nand {
 	status = "okay";
 
-	pinctrl-0 = <&nand_pins>;
-	pinctrl-names = "default";
-
 	nand@0 {
 		compatible = "qcom,nandcs";
 
@@ -153,7 +150,7 @@
 		nand-ecc-step-size = <512>;
 
 		nand-is-boot-medium;
-		qcom,boot_pages_size = <0x2140000>;
+		qcom,boot-partitions = <0x0 0x2140000>;
 
 		partitions {
 			compatible = "fixed-partitions";

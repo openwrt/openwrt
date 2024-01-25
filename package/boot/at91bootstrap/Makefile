@@ -13,6 +13,7 @@ PKG_VERSION:=v4.0.3
 PKG_MIRROR_HASH:=1ecdc31a13350fcdcaa3f77ed8ad73906f79fc668dbb2f337e1d5dd877bf9882
 PKG_SOURCE_VERSION:=1d9e673698d9db4a4f2301559f481274de2e75ae
 BINARIES_DIR:=build/binaries
+PKG_CPE_ID:=cpe:/a:linux4sam:at91bootstrap
 
 AT91BOOTSTRAP_V4=y
 ifdef CONFIG_PACKAGE_at91bootstrap-sama5d4_xplaineddf_uboot_secure
@@ -136,12 +137,6 @@ define AT91Bootstrap/sama5d27_som1_eksd_uboot
   BUILD_DEVICES:=microchip_sama5d27-som1-ek
 endef
 
-define AT91Bootstrap/sama5d27_som1_eksd1_uboot
-  TITLE:=AT91Bootstrap for SAMA5D27 SOM1 Ek (SDcard1)
-  BUILD_SUBTARGET:=sama5
-  BUILD_DEVICES:=microchip_sama5d27-som1-ek
-endef
-
 define AT91Bootstrap/sama5d27_som1_ekqspi_uboot
   TITLE:=AT91Bootstrap for SAMA5D27 SOM1 Ek (QSPI Flash)
   BUILD_SUBTARGET:=sama5
@@ -193,7 +188,7 @@ AT91BOOTSTRAP_TARGETS := \
 	sama5d4_xplainednf_uboot_secure \
 	sama5d4_xplaineddf_uboot_secure \
 	sama5d4_xplainedsd_uboot_secure \
-	sama5d27_som1_eksd1_uboot \
+	sama5d27_som1_eksd_uboot \
 	sama5d27_som1_ekqspi_uboot \
 	sama5d27_wlsom1_eksd_uboot \
 	sama5d27_wlsom1_ekdf_qspi_uboot \

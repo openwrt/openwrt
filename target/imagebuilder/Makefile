@@ -27,7 +27,7 @@ all: compile
 $(BIN_DIR)/$(IB_NAME).tar.xz: clean
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/host/lib \
-		$(PKG_BUILD_DIR)/target $(PKG_BUILD_DIR)/scripts $(IB_DTSDIR)
+		$(PKG_BUILD_DIR)/target/linux $(PKG_BUILD_DIR)/scripts $(IB_DTSDIR)
 	-cp $(TOPDIR)/.config $(PKG_BUILD_DIR)/.config
 	$(SED) 's/^CONFIG_BINARY_FOLDER=.*/# CONFIG_BINARY_FOLDER is not set/' $(PKG_BUILD_DIR)/.config
 	$(SED) 's/^CONFIG_DOWNLOAD_FOLDER=.*/# CONFIG_DOWNLOAD_FOLDER is not set/' $(PKG_BUILD_DIR)/.config
@@ -78,7 +78,9 @@ ifneq ($(CONFIG_SIGNATURE_CHECK),)
 	$(CP) -L $(STAGING_DIR_ROOT)/usr/sbin/opkg-key $(PKG_BUILD_DIR)/scripts/
 endif
 
-	$(CP) -L $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
+	$(CP) -L $(TOPDIR)/target/linux/Makefile $(PKG_BUILD_DIR)/target/linux
+	$(CP) -L $(TOPDIR)/target/linux/generic $(PKG_BUILD_DIR)/target/linux
+	$(CP) -L $(TOPDIR)/target/linux/$(BOARD) $(PKG_BUILD_DIR)/target/linux
 	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
 		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
 	fi

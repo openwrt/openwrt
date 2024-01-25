@@ -33,23 +33,23 @@
 		};
 
 		rssilow {
-			label = "red:signal1";
+			label = "red:rssilow";
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimediumlow {
-			label = "red:signal2";
+			label = "red:rssimediumlow";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
 		rssimediumhigh {
-			label = "green:signal3";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			label = "green:rssimediumhigh";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		led_rssihigh: rssihigh {
-			label = "green:signal4";
-			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			label = "green:rssihigh";
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
@@ -108,6 +108,20 @@
 				label = "art";
 				reg = <0x010000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+				};
 			};
 
 			partition@20000 {
@@ -148,18 +162,4 @@
 &wmac {
 	status = "okay";
 	mtd-cal-data = <&art 0x1000>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_art_6: macaddr@6 {
-		reg = <0x6 0x6>;
-	};
 };

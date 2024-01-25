@@ -16,13 +16,6 @@
 		led-upgrade = &led_power_orange;
 	};
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-output-names = "ref";
-		clock-frequency = <40000000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -77,31 +70,25 @@
 &pcie0 {
 	status = "okay";
 
-	ath9k0: wifi@0,11 { /* 2.4 GHz */
+	ath9k0: wifi@11,0 { /* 2.4 GHz */
 		compatible = "pci168c,0029";
 		reg = <0x8800 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_config_66>;
+		nvmem-cells = <&macaddr_config_66 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
 
-	ath9k1: wifi@0,12 { /* 5 GHz */
+	ath9k1: wifi@12,0 { /* 5 GHz */
 		compatible = "pci168c,0029";
 		reg = <0x9000 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_config_66>;
+		nvmem-cells = <&macaddr_config_66 2>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <2>;
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
-};
-
-&pll {
-	clocks = <&extosc>;
 };
 
 &mdio0 {
@@ -114,7 +101,7 @@
 
 &eth0 {
 	status = "okay";
-	nvmem-cells = <&macaddr_config_66>;
+	nvmem-cells = <&macaddr_config_66 0>;
 	nvmem-cell-names = "mac-address";
 
 	pll-data = <0x00110000 0x00001099 0x00991099>;
@@ -152,6 +139,18 @@
 				label = "config";
 				reg = <0x80000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_66: macaddr@66 {
+						compatible = "mac-base";
+						reg = <0x66 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@a0000 {
@@ -166,15 +165,5 @@
 				read-only;
 			};
 		};
-	};
-};
-
-&config {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_config_66: macaddr@66 {
-		reg = <0x66 0x6>;
 	};
 };

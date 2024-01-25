@@ -1,0 +1,39 @@
+From b9cff8783439ff1803709128af3a0e04c5f5f047 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ar=C4=B1n=C3=A7=20=C3=9CNAL?= <arinc.unal@arinc9.com>
+Date: Sun, 10 Apr 2022 12:44:55 +0300
+Subject: [PATCH] ARM: dts: BCM5301X: Disable gmac0 and enable port@8 on Asus
+ RT-AC88U
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Disable gmac0 which is not connected to any switch MAC. Enable port@8 of
+the Broadcom switch which is connected to gmac2.
+
+Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm/boot/dts/bcm47094-asus-rt-ac88u.dts | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/bcm47094-asus-rt-ac88u.dts
++++ b/arch/arm/boot/dts/bcm47094-asus-rt-ac88u.dts
+@@ -232,7 +232,6 @@
+ 			reg = <8>;
+ 			ethernet = <&gmac2>;
+ 			label = "cpu";
+-			status = "disabled";
+ 
+ 			fixed-link {
+ 				speed = <1000>;
+@@ -242,6 +241,10 @@
+ 	};
+ };
+ 
++&gmac0 {
++	status = "disabled";
++};
++
+ &gmac1 {
+ 	nvmem-cells = <&et1macaddr>;
+ 	nvmem-cell-names = "mac-address";

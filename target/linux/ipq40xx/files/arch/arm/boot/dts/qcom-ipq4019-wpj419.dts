@@ -206,16 +206,19 @@
 						label = "0:ART";
 						reg = <0x170000 0x010000>;
 						read-only;
-						compatible = "nvmem-cells";
-						#address-cells = <1>;
-						#size-cells = <1>;
 
-						precal_art_1000: precal@1000 {
-							reg = <0x1000 0x2f20>;
-						};
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
 
-						precal_art_5000: precal@5000 {
-							reg = <0x5000 0x2f20>;
+							precal_art_1000: precal@1000 {
+								reg = <0x1000 0x2f20>;
+							};
+
+							precal_art_5000: precal@5000 {
+								reg = <0x5000 0x2f20>;
+							};
 						};
 					};
 				};
@@ -251,10 +254,6 @@
 			pinctrl-names = "default";
 			reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
 			reset-delay-us = <5000>;
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
 		};
 
 		tcsr@194b000 {
@@ -333,16 +332,6 @@
 			status = "okay";
 		};
 
-		ess-switch@c000000 {
-			switch_lan_bmp = <0x1e>;
-			switch_wan_bmp = <0x20>;
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-		};
-
 		qpic_bam: dma@7984000 {
 			status = "okay";
 		};
@@ -369,22 +358,6 @@
 	pinctrl-0 = <&nand_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-};
-
-&gmac0 {
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <2 0x20>;
-};
-
-&gmac1 {
-	qcom,phy_mdio_addr = <3>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <1 0x10>;
 };
 
 &wifi0 {

@@ -1,0 +1,910 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -20,6 +20,7 @@ dnl  You should have received a copy of
+ dnl  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ AC_INIT([elfutils],[0.189],[https://sourceware.org/bugzilla],[elfutils],[http://elfutils.org/])
+ 
++AC_CONFIG_MACRO_DIRS([m4])
+ dnl Workaround for older autoconf < 2.64
+ m4_ifndef([AC_PACKAGE_URL],
+          [AC_DEFINE([PACKAGE_URL], ["http://elfutils.org/"],
+@@ -43,16 +44,17 @@ elif test "x$program_prefix" = "x"; then
+ fi
+ 
+ AC_CONFIG_AUX_DIR([config])
+-AC_CONFIG_FILES([config/Makefile])
++AC_CONFIG_FILES([config/Makefile libgnu/Makefile])
+ 
+ AC_COPYRIGHT([Copyright (C) 1996-2023 The elfutils developers.])
+-AC_PREREQ(2.63)			dnl Minimum Autoconf version required.
++AC_PREREQ(2.64)			dnl Minimum Autoconf version required.
+ 
+ dnl We use GNU make extensions; automake 1.10 defaults to -Wportability.
+ AM_INIT_AUTOMAKE([gnits 1.11 -Wno-portability dist-bzip2 no-dist-gzip parallel-tests])
+ AM_MAINTAINER_MODE
+ 
+ AM_SILENT_RULES([yes])
++AC_USE_SYSTEM_EXTENSIONS()
+ 
+ AC_CONFIG_SRCDIR([libelf/libelf.h])
+ AC_CONFIG_FILES([Makefile])
+@@ -89,12 +91,14 @@ AS_IF([test "$use_locks" = yes],
+ AH_TEMPLATE([USE_LOCKS], [Defined if libraries should be thread-safe.])
+ 
+ m4_version_prereq([2.70], [AC_PROG_CC], [AC_PROG_CC_C99])
++gl_EARLY
++gl_INIT
+ AC_PROG_CXX
+-AC_PROG_RANLIB
+ AC_PROG_YACC
+ AC_PROG_LEX([noyywrap])
+ # Only available since automake 1.12
+ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
++LT_INIT()
+ AC_CHECK_TOOL([READELF], [readelf])
+ AC_CHECK_TOOL([NM], [nm])
+ 
+@@ -195,7 +199,6 @@ AC_CACHE_CHECK([whether the compiler gen
+ AC_LINK_IFELSE([AC_LANG_PROGRAM()],[ac_cv_buildid=yes; $READELF -n conftest$EXEEXT | grep -q NT_GNU_BUILD_ID || ac_cv_buildid=no],AC_MSG_FAILURE([unexpected compile failure]))])
+ if test "$ac_cv_buildid" = "no"; then
+ 	AC_MSG_WARN([compiler doesn't generate build-id by default])
+-	LDFLAGS="$LDFLAGS -Wl,--build-id"
+ fi
+ 
+ ZRELRO_LDFLAGS="-Wl,-z,relro"
+@@ -635,36 +638,6 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],
+ CFLAGS="$old_CFLAGS"])
+ AS_IF([test "x$ac_cv_fno_addrsig" = "xyes"], CFLAGS="$CFLAGS -fno-addrsig")
+ 
+-saved_LIBS="$LIBS"
+-AC_SEARCH_LIBS([argp_parse], [argp])
+-LIBS="$saved_LIBS"
+-case "$ac_cv_search_argp_parse" in
+-        no) AC_MSG_FAILURE([failed to find argp_parse]) ;;
+-        -l*) argp_LDADD="$ac_cv_search_argp_parse" ;;
+-        *) argp_LDADD= ;;
+-esac
+-AC_SUBST([argp_LDADD])
+-
+-saved_LIBS="$LIBS"
+-AC_SEARCH_LIBS([fts_close], [fts])
+-LIBS="$saved_LIBS"
+-case "$ac_cv_search_fts_close" in
+-        no) AC_MSG_FAILURE([failed to find fts_close]) ;;
+-        -l*) fts_LIBS="$ac_cv_search_fts_close" ;;
+-        *) fts_LIBS= ;;
+-esac
+-AC_SUBST([fts_LIBS])
+-
+-saved_LIBS="$LIBS"
+-AC_SEARCH_LIBS([_obstack_free], [obstack])
+-LIBS="$saved_LIBS"
+-case "$ac_cv_search__obstack_free" in
+-        no) AC_MSG_FAILURE([failed to find _obstack_free]) ;;
+-        -l*) obstack_LIBS="$ac_cv_search__obstack_free" ;;
+-        *) obstack_LIBS= ;;
+-esac
+-AC_SUBST([obstack_LIBS])
+-
+ dnl The directories with content.
+ 
+ dnl Documentation.
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -26,11 +26,11 @@ AM_MAKEFLAGS = --no-print-directory
+ 
+ pkginclude_HEADERS = version.h
+ 
+-SUBDIRS = config lib libelf libcpu backends libebl libdwelf libdwfl libdw \
+-	  libasm debuginfod src po doc tests
++SUBDIRS = libgnu config lib libelf libcpu backends libebl libdwelf libdwfl libdw
+ 
+ EXTRA_DIST = elfutils.spec GPG-KEY NOTES CONTRIBUTING \
+-	     COPYING COPYING-GPLV2 COPYING-LGPLV3
++	     COPYING COPYING-GPLV2 COPYING-LGPLV3 \
++		 m4/gnulib-cache.m4
+ 
+ # Make sure the test install uses lib64 when $LIB will yield lib64.
+ # Make sure the test build uses the same compiler, which on e.g. ppc64
+--- a/libelf/elf_update.c
++++ b/libelf/elf_update.c
+@@ -37,6 +37,33 @@
+ 
+ #include "libelfP.h"
+ 
++#include "elf_fill.c"
++
++#ifdef __APPLE__
++static int posix_fallocate(int fd, off_t offset, off_t len)
++{
++     off_t c_test;
++     int ret;
++     if (!__builtin_saddll_overflow(offset, len, &c_test)) {
++         fstore_t store = {F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, offset + len, 0};
++         // Try to get a continuous chunk of disk space
++         ret = fcntl(fd, F_PREALLOCATE, &store);
++         if (ret < 0) {
++             // OK, perhaps we are too fragmented, allocate non-continuous
++             store.fst_flags = F_ALLOCATEALL;
++             ret = fcntl(fd, F_PREALLOCATE, &store);
++             if (ret < 0) {
++                 return ret;
++             }
++         }
++         ret = ftruncate(fd, offset + len);
++     } else {
++         // offset+len would overflow.
++         ret = -1;
++     }
++     return ret;
++}
++#endif
+ 
+ static int64_t
+ write_file (Elf *elf, int64_t size, int change_bo, size_t shnum)
+--- a/lib/eu-config.h
++++ b/lib/eu-config.h
+@@ -52,14 +52,18 @@
+ # define rwlock_unlock(lock) ((void) (lock))
+ #endif	/* USE_LOCKS */
+ 
+-#include <libintl.h>
++#include <gettext.h>
+ /* gettext helper macros.  */
+ #define N_(Str) Str
+ #define _(Str) dgettext ("elfutils", Str)
+ 
+ /* Compiler-specific definitions.  */
++#ifdef __APPLE__
++#define strong_alias(name, aliasname)
++#else
+ #define strong_alias(name, aliasname) \
+   extern __typeof (name) aliasname __attribute__ ((alias (#name)));
++#endif
+ 
+ #ifdef __i386__
+ # define internal_function __attribute__ ((regparm (3), stdcall))
+@@ -70,12 +74,7 @@
+ #define internal_strong_alias(name, aliasname) \
+   extern __typeof (name) aliasname __attribute__ ((alias (#name))) internal_function;
+ 
+-#ifdef HAVE_VISIBILITY
+-#define attribute_hidden \
+-  __attribute__ ((visibility ("hidden")))
+-#else
+ #define attribute_hidden /* empty */
+-#endif
+ 
+ #ifdef HAVE_GCC_STRUCT
+ #define attribute_packed \
+@@ -159,7 +158,7 @@ asm (".section predict_data, \"aw\"; .pr
+ #endif
+ 
+ /* Avoid PLT entries.  */
+-#ifdef PIC
++#if defined(PIC) && !defined(__APPLE__)
+ # define INTUSE(name) _INTUSE(name)
+ # define _INTUSE(name) __##name##_internal
+ # define INTDEF(name) _INTDEF(name)
+--- a/config/eu.am
++++ b/config/eu.am
+@@ -31,7 +31,7 @@
+ ##
+ 
+ DEFS = -D_GNU_SOURCE -DHAVE_CONFIG_H -DLOCALEDIR='"${localedir}"'
+-AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I..
++AM_CPPFLAGS = -I$(top_builddir)/libgnu -I$(top_srcdir)/libgnu -I. -I$(srcdir) -I$(top_srcdir)/lib -I..
+ 
+ # Drop the 'u' flag that automake adds by default. It is incompatible
+ # with deterministic archives.
+--- a/libelf/Makefile.am
++++ b/libelf/Makefile.am
+@@ -34,9 +34,7 @@ endif
+ 
+ VERSION = 1
+ 
+-lib_LIBRARIES = libelf.a
+-noinst_LIBRARIES = libelf_pic.a
+-noinst_DATA = $(noinst_LIBRARIES:_pic.a=.so)
++lib_LTLIBRARIES = libelf.la
+ include_HEADERS = libelf.h gelf.h nlist.h
+ 
+ noinst_HEADERS = abstract.h common.h exttypes.h gelf_xlate.h libelfP.h \
+@@ -51,7 +49,8 @@ endif
+ 
+ pkginclude_HEADERS = elf-knowledge.h
+ 
+-libelf_a_SOURCES = elf_version.c elf_hash.c elf_error.c elf_fill.c \
++libelf_la_LIBADD = ../libgnu/libgnu.la ../lib/libeu.la -lz $(zstd_LIBS) -lpthread
++libelf_la_SOURCES = elf_version.c elf_hash.c elf_error.c \
+ 		   elf_begin.c elf_next.c elf_rand.c elf_end.c elf_kind.c \
+ 		   gelf_getclass.c elf_getbase.c elf_getident.c \
+ 		   elf32_fsize.c elf64_fsize.c gelf_fsize.c \
+@@ -102,37 +101,9 @@ libelf_a_SOURCES = elf_version.c elf_has
+ 		   elf32_getchdr.c elf64_getchdr.c gelf_getchdr.c \
+ 		   elf_compress.c elf_compress_gnu.c
+ 
+-libelf_pic_a_SOURCES =
+-am_libelf_pic_a_OBJECTS = $(libelf_a_SOURCES:.c=.os)
+-
+-libelf_so_DEPS = ../lib/libeu.a
+-libelf_so_LDLIBS = $(libelf_so_DEPS) -lz $(zstd_LIBS)
+-if USE_LOCKS
+-libelf_so_LDLIBS += -lpthread
+-endif
+-
+-libelf_so_LIBS = libelf_pic.a
+-libelf.so: $(srcdir)/libelf.map $(libelf_so_LIBS) $(libelf_so_DEPS)
+-	$(AM_V_CCLD)$(LINK) $(dso_LDFLAGS) -o $@ \
+-		-Wl,--soname,$@.$(VERSION) \
+-		-Wl,--version-script,$< \
+-		$(NO_UNDEFINED) \
+-		-Wl,--whole-archive $(libelf_so_LIBS) -Wl,--no-whole-archive \
+-		$(libelf_so_LDLIBS)
+-	@$(textrel_check)
+-	$(AM_V_at)ln -fs $@ $@.$(VERSION)
+-
+-install: install-am libelf.so
++install: install-am
+ 	$(mkinstalldirs) $(DESTDIR)$(libdir)
+-	$(INSTALL_PROGRAM) libelf.so $(DESTDIR)$(libdir)/libelf-$(PACKAGE_VERSION).so
+-	ln -fs libelf-$(PACKAGE_VERSION).so $(DESTDIR)$(libdir)/libelf.so.$(VERSION)
+-	ln -fs libelf.so.$(VERSION) $(DESTDIR)$(libdir)/libelf.so
+ 
+ uninstall: uninstall-am
+-	rm -f $(DESTDIR)$(libdir)/libelf-$(PACKAGE_VERSION).so
+-	rm -f $(DESTDIR)$(libdir)/libelf.so.$(VERSION)
+-	rm -f $(DESTDIR)$(libdir)/libelf.so
+ 
+ EXTRA_DIST = libelf.map
+-
+-CLEANFILES += $(am_libelf_pic_a_OBJECTS) libelf.so libelf.so.$(VERSION)
+--- a/backends/i386_auxv.c
++++ b/backends/i386_auxv.c
+@@ -48,5 +48,4 @@ EBLHOOK(auxv_info) (GElf_Xword a_type, c
+   return 1;
+ }
+ 
+-__typeof (i386_auxv_info) x86_64_auxv_info
+-			  __attribute__ ((alias ("i386_auxv_info")));
++auxv_info_alias(x86_64)
+--- a/backends/ppc_regs.c
++++ b/backends/ppc_regs.c
+@@ -204,5 +204,11 @@ ppc_register_info (Ebl *ebl __attribute_
+   return namelen;
+ }
+ 
+-__typeof (ppc_register_info)
+-     ppc64_register_info __attribute__ ((alias ("ppc_register_info")));
++ssize_t
++ppc64_register_info (Ebl *ebl,
++		     int regno, char *name, size_t namelen,
++		     const char **prefix, const char **setname,
++		     int *bits, int *type)
++{
++  return ppc_register_info(ebl, regno, name, namelen, prefix, setname, bits, type);
++}
+--- a/backends/libebl_CPU.h
++++ b/backends/libebl_CPU.h
+@@ -97,4 +97,10 @@ dwarf_is_pointer (int tag)
+   case DW_TAG_reference_type: \
+   case DW_TAG_rvalue_reference_type
+ 
++#define auxv_info_alias(arch) \
++	int EBLHOOK_1(arch ## _, auxv_info) (GElf_Xword a_type, const char **name, const char **format) \
++	{ \
++		return EBLHOOK(auxv_info)(a_type, name, format); \
++	}
++
+ #endif	/* libebl_CPU.h */
+--- a/backends/ppc_auxv.c
++++ b/backends/ppc_auxv.c
+@@ -51,5 +51,4 @@ EBLHOOK(auxv_info) (GElf_Xword a_type, c
+   return 1;
+ }
+ 
+-__typeof (ppc_auxv_info) ppc64_auxv_info
+-			 __attribute__ ((alias ("ppc_auxv_info")));
++auxv_info_alias(ppc64)
+--- a/backends/ppc_cfi.c
++++ b/backends/ppc_cfi.c
+@@ -72,6 +72,7 @@ ppc_abi_cfi (Ebl *ebl __attribute__ ((un
+   return 0;
+ }
+ 
+-__typeof (ppc_abi_cfi)
+-     ppc64_abi_cfi
+-     __attribute__ ((alias ("ppc_abi_cfi")));
++int ppc64_abi_cfi(Ebl *ebl, Dwarf_CIE *abi_info)
++{
++  return ppc_abi_cfi(ebl, abi_info);
++}
+--- a/backends/ppc_initreg.c
++++ b/backends/ppc_initreg.c
+@@ -68,9 +68,10 @@ ppc_dwarf_to_regno (Ebl *ebl __attribute
+   abort ();
+ }
+ 
+-__typeof (ppc_dwarf_to_regno)
+-     ppc64_dwarf_to_regno
+-     __attribute__ ((alias ("ppc_dwarf_to_regno")));
++bool ppc64_dwarf_to_regno (Ebl *ebl, unsigned *regno)
++{
++  return ppc_dwarf_to_regno(ebl, regno);
++}
+ 
+ bool
+ ppc_set_initial_registers_tid (pid_t tid __attribute__ ((unused)),
+@@ -127,6 +128,7 @@ ppc_set_initial_registers_tid (pid_t tid
+ #endif /* __powerpc__ */
+ }
+ 
+-__typeof (ppc_set_initial_registers_tid)
+-     ppc64_set_initial_registers_tid
+-     __attribute__ ((alias ("ppc_set_initial_registers_tid")));
++bool ppc64_set_initial_registers_tid(pid_t tid, ebl_tid_registers_t *setfunc, void *arg)
++{
++  return ppc_set_initial_registers_tid(tid, setfunc, arg);
++}
+--- a/backends/ppc_attrs.c
++++ b/backends/ppc_attrs.c
+@@ -81,6 +81,9 @@ ppc_check_object_attribute (Ebl *ebl __a
+   return false;
+ }
+ 
+-__typeof (ppc_check_object_attribute)
+-     ppc64_check_object_attribute
+-     __attribute__ ((alias ("ppc_check_object_attribute")));
++bool ppc64_check_object_attribute(Ebl *ebl,
++				  const char *vendor, int tag, uint64_t value,
++				  const char **tag_name, const char **value_name)
++{
++  return ppc_check_object_attribute(ebl, vendor, tag, value, tag_name, value_name);
++}
+--- a/lib/libeu.h
++++ b/lib/libeu.h
+@@ -45,4 +45,11 @@ extern char *xasprintf(const char *fmt,
+ extern uint32_t crc32 (uint32_t crc, unsigned char *buf, size_t len);
+ extern int crc32_file (int fd, uint32_t *resp);
+ 
++#ifdef __APPLE__
++static inline void tdestroy(void *root __attribute__ ((unused)),
++			    void (*freekey)(void *) __attribute__ ((unused)))
++{
++}
++#endif
++
+ #endif
+--- a/libdwfl/libdwflP.h
++++ b/libdwfl/libdwflP.h
+@@ -31,6 +31,8 @@
+ 
+ #include <libdwfl.h>
+ #include <libebl.h>
++#include <libeu.h>
++#include <libgen.h>
+ #include <assert.h>
+ #include <dirent.h>
+ #include <errno.h>
+--- /dev/null
++++ b/lib/stdio_ext.h
+@@ -0,0 +1,6 @@
++#include <stdio.h>
++#ifndef __APPLE__
++#include_next <stdio_ext.h>
++#else
++#define __fsetlocking(...) 0
++#endif
+--- a/libdw/libdwP.h
++++ b/libdw/libdwP.h
+@@ -32,8 +32,10 @@
+ #include <stdbool.h>
+ #include <pthread.h>
+ 
++#include <libeu.h>
+ #include <libdw.h>
+ #include <dwarf.h>
++#include <libgen.h>
+ 
+ 
+ /* Known location expressions already decoded.  */
+--- a/libdw/Makefile.am
++++ b/libdw/Makefile.am
+@@ -34,14 +34,12 @@ endif
+ AM_CPPFLAGS += -I$(srcdir)/../libebl -I$(srcdir)/../libelf -I$(srcdir)/../libdwelf -pthread
+ VERSION = 1
+ 
+-lib_LIBRARIES = libdw.a
+-noinst_LIBRARIES = libdw_pic.a
+-noinst_DATA = $(noinst_LIBRARIES:_pic.a=.so)
++lib_LTLIBRARIES = libdw.la
+ 
+ include_HEADERS = dwarf.h
+ pkginclude_HEADERS = libdw.h known-dwarf.h
+ 
+-libdw_a_SOURCES = dwarf_begin.c dwarf_begin_elf.c dwarf_end.c dwarf_getelf.c \
++libdw_la_SOURCES = dwarf_begin.c dwarf_begin_elf.c dwarf_end.c dwarf_getelf.c \
+ 		  dwarf_getpubnames.c dwarf_getabbrev.c dwarf_tag.c \
+ 		  dwarf_error.c dwarf_nextcu.c dwarf_diename.c dwarf_offdie.c \
+ 		  dwarf_attr.c dwarf_formstring.c \
+@@ -103,50 +101,12 @@ $(srcdir)/known-dwarf.h: $(top_srcdir)/c
+ 	mv -f $@.new $@
+ endif
+ 
+-libdw_pic_a_SOURCES =
+-am_libdw_pic_a_OBJECTS = $(libdw_a_SOURCES:.c=.os)
+-
+-libdw_so_LIBS = ../libebl/libebl_pic.a ../backends/libebl_backends_pic.a \
+-		../libcpu/libcpu_pic.a libdw_pic.a ../libdwelf/libdwelf_pic.a \
+-		../libdwfl/libdwfl_pic.a
+-libdw_so_DEPS = ../lib/libeu.a ../libelf/libelf.so
+-libdw_so_LDLIBS = $(libdw_so_DEPS) -ldl -lz $(argp_LDADD) $(fts_LIBS) $(obstack_LIBS) $(zip_LIBS) -pthread
+-libdw.so: $(srcdir)/libdw.map $(libdw_so_LIBS) $(libdw_so_DEPS)
+-	$(AM_V_CCLD)$(LINK) $(dso_LDFLAGS) -o $@ \
+-		-Wl,--soname,$@.$(VERSION),--enable-new-dtags \
+-		-Wl,--version-script,$< \
+-		$(NO_UNDEFINED) \
+-		-Wl,--whole-archive $(libdw_so_LIBS) -Wl,--no-whole-archive \
+-		$(libdw_so_LDLIBS)
+-	@$(textrel_check)
+-	$(AM_V_at)ln -fs $@ $@.$(VERSION)
+-
+-install: install-am libdw.so
+-	$(mkinstalldirs) $(DESTDIR)$(libdir)
+-	$(INSTALL_PROGRAM) libdw.so $(DESTDIR)$(libdir)/libdw-$(PACKAGE_VERSION).so
+-	ln -fs libdw-$(PACKAGE_VERSION).so $(DESTDIR)$(libdir)/libdw.so.$(VERSION)
+-	ln -fs libdw.so.$(VERSION) $(DESTDIR)$(libdir)/libdw.so
+-
+-uninstall: uninstall-am
+-	rm -f $(DESTDIR)$(libdir)/libdw-$(PACKAGE_VERSION).so
+-	rm -f $(DESTDIR)$(libdir)/libdw.so.$(VERSION)
+-	rm -f $(DESTDIR)$(libdir)/libdw.so
+-	rmdir --ignore-fail-on-non-empty $(DESTDIR)$(includedir)/elfutils
+-
+-libdwfl_objects = $(shell $(AR) t ../libdwfl/libdwfl.a)
+-libdw_a_LIBADD = $(addprefix ../libdwfl/,$(libdwfl_objects))
+-
+-libdwelf_objects = $(shell $(AR) t ../libdwelf/libdwelf.a)
+-libdw_a_LIBADD += $(addprefix ../libdwelf/,$(libdwelf_objects))
+-
+-libebl_objects = $(shell $(AR) t ../libebl/libebl.a)
+-libdw_a_LIBADD += $(addprefix ../libebl/,$(libebl_objects))
+-
+-backends_objects = $(shell $(AR) t ../backends/libebl_backends.a)
+-libdw_a_LIBADD += $(addprefix ../backends/,$(backends_objects))
+-
+-libcpu_objects = $(shell $(AR) t ../libcpu/libcpu.a)
+-libdw_a_LIBADD += $(addprefix ../libcpu/,$(libcpu_objects))
++libdw_la_LIBADD = \
++	../libdwfl/libdwfl.la \
++	../libdwelf/libdwelf.la \
++	../libebl/libebl.la \
++	../backends/libebl_backends.la \
++	../libcpu/libcpu.la
+ 
+ noinst_HEADERS = libdwP.h memory-access.h dwarf_abbrev_hash.h \
+ 		 dwarf_sig8_hash.h cfi.h encoded-value.h
+--- a/libasm/Makefile.am
++++ b/libasm/Makefile.am
+@@ -32,12 +32,10 @@ AM_CPPFLAGS += -I$(top_srcdir)/libelf -I
+ 
+ VERSION = 1
+ 
+-lib_LIBRARIES = libasm.a
+-noinst_LIBRARIES = libasm_pic.a
+-noinst_DATA = $(noinst_LIBRARIES:_pic.a=.so)
++lib_LTLIBRARIES = libasm.la
+ pkginclude_HEADERS = libasm.h
+ 
+-libasm_a_SOURCES = asm_begin.c asm_abort.c asm_end.c asm_error.c \
++libasm_la_SOURCES = asm_begin.c asm_abort.c asm_end.c asm_error.c \
+ 		   asm_getelf.c asm_newscn.c asm_newscn_ingrp.c \
+ 		   asm_newsubscn.c asm_newsym.c asm_newcomsym.c \
+ 		   asm_newabssym.c \
+@@ -51,38 +49,6 @@ libasm_a_SOURCES = asm_begin.c asm_abort
+ 		   disasm_begin.c disasm_cb.c disasm_end.c disasm_str.c \
+ 		   symbolhash.c
+ 
+-libasm_pic_a_SOURCES =
+-am_libasm_pic_a_OBJECTS = $(libasm_a_SOURCES:.c=.os)
+-
+-libasm_so_DEPS = ../lib/libeu.a ../libebl/libebl_pic.a ../libelf/libelf.so ../libdw/libdw.so
+-libasm_so_LDLIBS = $(libasm_so_DEPS)
+-if USE_LOCKS
+-libasm_so_LDLIBS += -lpthread
+-endif
+-
+-libasm_so_LIBS = libasm_pic.a
+-libasm.so: $(srcdir)/libasm.map $(libasm_so_LIBS) $(libasm_so_DEPS)
+-	$(AM_V_CCLD)$(LINK) $(dso_LDFLAGS) -o $@ \
+-		-Wl,--soname,$@.$(VERSION) \
+-		-Wl,--version-script,$< \
+-		$(NO_UNDEFINED) \
+-		-Wl,--whole-archive $(libasm_so_LIBS) -Wl,--no-whole-archive \
+-		$(libasm_so_LDLIBS)
+-	@$(textrel_check)
+-	$(AM_V_at)ln -fs $@ $@.$(VERSION)
+-
+-install: install-am libasm.so
+-	$(mkinstalldirs) $(DESTDIR)$(libdir)
+-	$(INSTALL_PROGRAM) libasm.so $(DESTDIR)$(libdir)/libasm-$(PACKAGE_VERSION).so
+-	ln -fs libasm-$(PACKAGE_VERSION).so $(DESTDIR)$(libdir)/libasm.so.$(VERSION)
+-	ln -fs libasm.so.$(VERSION) $(DESTDIR)$(libdir)/libasm.so
+-
+-uninstall: uninstall-am
+-	rm -f $(DESTDIR)$(libdir)/libasm-$(PACKAGE_VERSION).so
+-	rm -f $(DESTDIR)$(libdir)/libasm.so.$(VERSION)
+-	rm -f $(DESTDIR)$(libdir)/libasm.so
+-	rmdir --ignore-fail-on-non-empty $(DESTDIR)$(includedir)/elfutils
+-
+ noinst_HEADERS = libasmP.h symbolhash.h
+ EXTRA_DIST = libasm.map
+ 
+--- a/libdwfl/Makefile.am
++++ b/libdwfl/Makefile.am
+@@ -34,13 +34,11 @@ AM_CPPFLAGS += -I$(srcdir) -I$(srcdir)/.
+ 	   -I$(srcdir)/../libdw -I$(srcdir)/../libdwelf -I$(builddir)/../debuginfod
+ VERSION = 1
+ 
+-noinst_LIBRARIES = libdwfl.a
+-noinst_LIBRARIES += libdwfl_pic.a
++noinst_LTLIBRARIES = libdwfl.la
+ 
+ pkginclude_HEADERS = libdwfl.h
+ 
+-
+-libdwfl_a_SOURCES = dwfl_begin.c dwfl_end.c dwfl_error.c dwfl_version.c \
++libdwfl_la_SOURCES = dwfl_begin.c dwfl_end.c dwfl_error.c dwfl_version.c \
+ 		    dwfl_module.c dwfl_report_elf.c relocate.c \
+ 		    dwfl_module_build_id.c dwfl_module_report_build_id.c \
+ 		    derelocate.c offline.c segment.c \
+@@ -73,24 +71,14 @@ libdwfl_a_SOURCES = dwfl_begin.c dwfl_en
+ 		    gzip.c debuginfod-client.c
+ 
+ if BZLIB
+-libdwfl_a_SOURCES += bzip2.c
++libdwfl_la_SOURCES += bzip2.c
+ endif
+ if LZMA
+-libdwfl_a_SOURCES += lzma.c
++libdwfl_la_SOURCES += lzma.c
+ endif
+ if ZSTD
+-libdwfl_a_SOURCES += zstd.c
++libdwfl_la_SOURCES += zstd.c
+ endif
+ 
+-libdwfl = $(libdw)
+-libdw = ../libdw/libdw.so
+-libelf = ../libelf/libelf.so
+-libebl = ../libebl/libebl.a
+-libeu = ../lib/libeu.a
+-
+-libdwfl_pic_a_SOURCES =
+-am_libdwfl_pic_a_OBJECTS = $(libdwfl_a_SOURCES:.c=.os)
+-
+ noinst_HEADERS = libdwflP.h
+ 
+-CLEANFILES += $(am_libdwfl_pic_a_OBJECTS)
+--- a/backends/Makefile.am
++++ b/backends/Makefile.am
+@@ -34,7 +34,7 @@ endif
+ AM_CPPFLAGS += -I$(top_srcdir)/libebl -I$(top_srcdir)/libasm \
+ 	   -I$(top_srcdir)/libelf -I$(top_srcdir)/libdw
+ 
+-noinst_LIBRARIES = libebl_backends.a libebl_backends_pic.a
++noinst_LTLIBRARIES = libebl_backends.la
+ 
+ modules = i386 sh x86_64 ia64 alpha arm aarch64 sparc ppc ppc64 s390 \
+ 	  m68k bpf riscv csky loongarch arc
+@@ -100,17 +100,13 @@ loongarch_SRCS = loongarch_init.c loonga
+ 
+ arc_SRCS = arc_init.c arc_symbol.c
+ 
+-libebl_backends_a_SOURCES = $(i386_SRCS) $(sh_SRCS) $(x86_64_SRCS) \
++libebl_backends_la_SOURCES = $(i386_SRCS) $(sh_SRCS) $(x86_64_SRCS) \
+ 			    $(ia64_SRCS) $(alpha_SRCS) $(arm_SRCS) \
+ 			    $(aarch64_SRCS) $(sparc_SRCS) $(ppc_SRCS) \
+ 			    $(ppc64_SRCS) $(s390_SRCS) \
+ 			    $(m68k_SRCS) $(bpf_SRCS) $(riscv_SRCS) $(csky_SRCS) \
+ 			    $(loongarch_SRCS) $(arc_SRCS)
+ 
+-libebl_backends_pic_a_SOURCES =
+-am_libebl_backends_pic_a_OBJECTS = $(libebl_backends_a_SOURCES:.c=.os)
+ 
+ noinst_HEADERS = libebl_CPU.h common-reloc.c linux-core-note.c x86_corenote.c
+ EXTRA_DIST = $(modules:=_reloc.def)
+-
+-MOSTLYCLEANFILES = $(am_libebl_backends_pic_a_OBJECTS)
+--- a/libdwelf/Makefile.am
++++ b/libdwelf/Makefile.am
+@@ -34,24 +34,12 @@ AM_CPPFLAGS += -I$(srcdir)/../libelf -I$
+ 	       -I$(srcdir)/../libdwfl -I$(srcdir)/../libebl
+ VERSION = 1
+ 
+-noinst_LIBRARIES = libdwelf.a libdwelf_pic.a
++noinst_LTLIBRARIES = libdwelf.la
+ 
+ pkginclude_HEADERS = libdwelf.h
+ noinst_HEADERS = libdwelfP.h
+ 
+-libdwelf_a_SOURCES = dwelf_elf_gnu_debuglink.c dwelf_dwarf_gnu_debugaltlink.c \
++libdwelf_la_SOURCES = dwelf_elf_gnu_debuglink.c dwelf_dwarf_gnu_debugaltlink.c \
+ 		     dwelf_elf_gnu_build_id.c dwelf_scn_gnu_compressed_size.c \
+ 		     dwelf_strtab.c dwelf_elf_begin.c \
+ 		     dwelf_elf_e_machine_string.c
+-
+-libdwelf = $(libdw)
+-
+-libdw = ../libdw/libdw.so
+-libelf = ../libelf/libelf.so
+-libebl = ../libebl/libebl.a
+-libeu = ../lib/libeu.a
+-
+-libdwelf_pic_a_SOURCES =
+-am_libdwelf_pic_a_OBJECTS = $(libdwelf_a_SOURCES:.c=.os)
+-
+-CLEANFILES += $(am_libdwelf_pic_a_OBJECTS)
+--- a/libebl/Makefile.am
++++ b/libebl/Makefile.am
+@@ -34,9 +34,9 @@ endif
+ AM_CPPFLAGS += -I$(srcdir)/../libelf -I$(srcdir)/../libdw -I$(srcdir)/../libasm
+ VERSION = 1
+ 
+-noinst_LIBRARIES = libebl.a libebl_pic.a
++noinst_LTLIBRARIES = libebl.la
+ 
+-libebl_a_SOURCES = eblopenbackend.c eblclosebackend.c eblreloctypename.c \
++libebl_la_SOURCES = eblopenbackend.c eblclosebackend.c eblreloctypename.c \
+ 		   eblsegmenttypename.c eblsectiontypename.c \
+ 		   eblmachineflagname.c eblsymboltypename.c \
+ 		   ebldynamictagname.c eblsectionname.c \
+@@ -56,9 +56,4 @@ libebl_a_SOURCES = eblopenbackend.c eblc
+ 		   eblresolvesym.c eblcheckreloctargettype.c \
+ 		   ebl_data_marker_symbol.c
+ 
+-libebl_pic_a_SOURCES =
+-am_libebl_pic_a_OBJECTS = $(libebl_a_SOURCES:.c=.os)
+-
+ noinst_HEADERS = libebl.h libeblP.h ebl-hooks.h
+-
+-MOSTLYCLEANFILES = $(am_libebl_pic_a_OBJECTS)
+--- a/debuginfod/Makefile.am
++++ b/debuginfod/Makefile.am
+@@ -40,23 +40,12 @@ AM_CPPFLAGS += -I$(srcdir) -I$(srcdir)/.
+ program_prefix=
+ program_transform_name = s,x,x,
+ 
+-if BUILD_STATIC
+-libasm = ../libasm/libasm.a
+-libdw = ../libdw/libdw.a -lz $(zip_LIBS) $(libelf) $(libebl) -ldl -lpthread
+-libelf = ../libelf/libelf.a -lz
+-if DUMMY_LIBDEBUGINFOD
+-libdebuginfod = ./libdebuginfod.a
+-else
+-libdebuginfod = ./libdebuginfod.a -lpthread $(libcurl_LIBS)
+-endif
+-else
+-libasm = ../libasm/libasm.so
+-libdw = ../libdw/libdw.so
+-libelf = ../libelf/libelf.so
+-libdebuginfod = ./libdebuginfod.so
+-endif
+-libebl = ../libebl/libebl.a
+-libeu = ../lib/libeu.a
++libasm = ../libasm/libasm.la
++libdw = ../libdw/libdw.la -lz $(zip_LIBS) $(libelf) $(libebl) -ldl -lpthread
++libelf = ../libelf/libelf.la
++libdebuginfod = ./libdebuginfod.la
++libebl = ../libebl/libebl.la
++libeu = ../lib/libeu.la
+ 
+ AM_LDFLAGS = -Wl,-rpath-link,../libelf:../libdw:.
+ 
+@@ -76,14 +65,10 @@ debuginfod_find_SOURCES = debuginfod-fin
+ debuginfod_find_LDADD = $(libdw) $(libelf) $(libeu) $(libdebuginfod) $(argp_LDADD) $(fts_LIBS)
+ 
+ if LIBDEBUGINFOD
+-noinst_LIBRARIES = libdebuginfod.a
+-noinst_LIBRARIES += libdebuginfod_pic.a
++libdebuginfod_la_SOURCES = debuginfod-client.c
++noinst_LTLIBRARIES = libdebuginfod.la
+ endif
+ 
+-libdebuginfod_a_SOURCES = debuginfod-client.c
+-libdebuginfod_pic_a_SOURCES = debuginfod-client.c
+-am_libdebuginfod_pic_a_OBJECTS = $(libdebuginfod_a_SOURCES:.c=.os)
+-
+ if DUMMY_LIBDEBUGINFOD
+ AM_CPPFLAGS += -Wno-unused-parameter
+ endif
+@@ -92,42 +77,7 @@ if LIBDEBUGINFOD
+ pkginclude_HEADERS = debuginfod.h
+ endif
+ 
+-if LIBDEBUGINFOD
+-libdebuginfod_so_LIBS = libdebuginfod_pic.a
+-if DUMMY_LIBDEBUGINFOD
+-libdebuginfod_so_LDLIBS =
+-else
+-libdebuginfod_so_LDLIBS = -lpthread $(libcurl_LIBS) $(fts_LIBS) $(libelf)
+-endif
+-$(LIBDEBUGINFOD_SONAME): $(srcdir)/libdebuginfod.map $(libdebuginfod_so_LIBS)
+-	$(AM_V_CCLD)$(LINK) $(dso_LDFLAGS) -o $@ \
+-		-Wl,--soname,$(LIBDEBUGINFOD_SONAME) \
+-		-Wl,--version-script,$< \
+-		$(NO_UNDEFINED) \
+-		-Wl,--whole-archive $(libdebuginfod_so_LIBS) -Wl,--no-whole-archive \
+-		$(libdebuginfod_so_LDLIBS)
+-	@$(textrel_check)
+-
+-libdebuginfod.so: $(LIBDEBUGINFOD_SONAME)
+-	ln -fs $< $@
+-
+-install: install-am libdebuginfod.so
+-	$(mkinstalldirs) $(DESTDIR)$(libdir)
+-	$(INSTALL_PROGRAM) $(LIBDEBUGINFOD_SONAME) \
+-		$(DESTDIR)$(libdir)/libdebuginfod-$(PACKAGE_VERSION).so
+-	ln -fs libdebuginfod-$(PACKAGE_VERSION).so $(DESTDIR)$(libdir)/$(LIBDEBUGINFOD_SONAME)
+-	ln -fs libdebuginfod-$(PACKAGE_VERSION).so $(DESTDIR)$(libdir)/libdebuginfod.so
+-
+-uninstall: uninstall-am
+-	rm -f $(DESTDIR)$(libdir)/libdebuginfod-$(PACKAGE_VERSION).so
+-	rm -f $(DESTDIR)$(libdir)/$(LIBDEBUGINFOD_SONAME)
+-	rm -f $(DESTDIR)$(libdir)/libdebuginfod.so
+-	rmdir --ignore-fail-on-non-empty $(DESTDIR)$(includedir)/elfutils
+-endif
+-
+ EXTRA_DIST = libdebuginfod.map
+-MOSTLYCLEANFILES = $(am_libdebuginfod_pic_a_OBJECTS) $(LIBDEBUGINFOD_SONAME)
+-CLEANFILES += $(am_libdebuginfod_pic_a_OBJECTS) libdebuginfod.so
+ 
+ # automake std-options override: arrange to pass LD_LIBRARY_PATH
+ installcheck-binPROGRAMS: $(bin_PROGRAMS)
+--- a/lib/Makefile.am
++++ b/lib/Makefile.am
+@@ -31,9 +31,9 @@ include $(top_srcdir)/config/eu.am
+ AM_CFLAGS += $(fpic_CFLAGS)
+ AM_CPPFLAGS += -I$(srcdir)/../libelf
+ 
+-noinst_LIBRARIES = libeu.a
++noinst_LTLIBRARIES = libeu.la
+ 
+-libeu_a_SOURCES = xasprintf.c xstrdup.c xstrndup.c xmalloc.c next_prime.c \
++libeu_la_SOURCES = xasprintf.c xstrdup.c xstrndup.c xmalloc.c next_prime.c \
+ 		  crc32.c crc32_file.c \
+ 		  color.c error.c printversion.c
+ 
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -29,9 +29,9 @@ bin_PROGRAMS = readelf nm size strip elf
+ 	       elfcmp objdump ranlib strings ar unstrip stack elfcompress \
+ 	       elfclassify
+ 
+-noinst_LIBRARIES = libar.a
++noinst_LTLIBRARIES = libar.la
+ 
+-libar_a_SOURCES = arlib.c arlib2.c arlib-argp.c
++libar_la_SOURCES = arlib.c arlib2.c arlib-argp.c
+ 
+ EXTRA_DIST = arlib.h debugpred.h
+ 
+@@ -39,17 +39,11 @@ bin_SCRIPTS = make-debug-archive
+ EXTRA_DIST += make-debug-archive.in
+ CLEANFILES += make-debug-archive
+ 
+-if BUILD_STATIC
+-libasm = ../libasm/libasm.a
+-libdw = ../libdw/libdw.a -lz $(zip_LIBS) $(libelf) -ldl -lpthread
+-libelf = ../libelf/libelf.a -lz
+-else
+-libasm = ../libasm/libasm.so
+-libdw = ../libdw/libdw.so
+-libelf = ../libelf/libelf.so
+-endif
+-libebl = ../libebl/libebl.a ../backends/libebl_backends.a ../libcpu/libcpu.a
+-libeu = ../lib/libeu.a
++libasm = ../libasm/libasm.la
++libdw = ../libdw/libdw.la -lz $(zip_LIBS) $(libelf) -ldl -lpthread
++libelf = ../libelf/libelf.la
++libebl = ../libebl/libebl.la ../backends/libebl_backends.la ../libcpu/libcpu.la
++libeu = ../lib/libeu.la
+ 
+ if DEMANGLE
+ demanglelib = -lstdc++
+@@ -77,9 +71,9 @@ findtextrel_LDADD = $(libdw) $(libelf) $
+ addr2line_LDADD = $(libdw) $(libelf) $(libeu) $(argp_LDADD) $(demanglelib)
+ elfcmp_LDADD = $(libebl) $(libdw) $(libelf) $(libeu) $(argp_LDADD)
+ objdump_LDADD  = $(libasm) $(libebl) $(libdw) $(libelf) $(libeu) $(argp_LDADD)
+-ranlib_LDADD = libar.a $(libelf) $(libeu) $(argp_LDADD) $(obstack_LIBS)
++ranlib_LDADD = libar.la $(libelf) $(libeu) $(argp_LDADD) $(obstack_LIBS)
+ strings_LDADD = $(libelf) $(libeu) $(argp_LDADD)
+-ar_LDADD = libar.a $(libelf) $(libeu) $(argp_LDADD) $(obstack_LIBS)
++ar_LDADD = libar.la $(libelf) $(libeu) $(argp_LDADD) $(obstack_LIBS)
+ unstrip_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD)
+ stack_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD) $(demanglelib)
+ elfcompress_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD)
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -662,17 +662,11 @@ installcheck-local:
+ 		TESTS_ENVIRONMENT="$(installed_TESTS_ENVIRONMENT)" \
+ 		LOG_COMPILER="$(installed_LOG_COMPILER)" check-TESTS
+ 
+-if BUILD_STATIC
+-libdw = ../libdw/libdw.a -lz $(zip_LIBS) $(libelf) $(libebl) -ldl -lpthread
+-libelf = ../libelf/libelf.a -lz
+-libasm = ../libasm/libasm.a
+-else
+-libdw = ../libdw/libdw.so
+-libelf = ../libelf/libelf.so
+-libasm = ../libasm/libasm.so
+-endif
+-libebl = ../libebl/libebl.a ../backends/libebl_backends.a ../libcpu/libcpu.a
+-libeu = ../lib/libeu.a
++libdw = ../libdw/libdw.la -lz $(zip_LIBS) $(libelf) $(libebl) -ldl -lpthread
++libelf = ../libelf/libelf.la
++libasm = ../libasm/libasm.la
++libebl = ../libebl/libebl.la ../backends/libebl_backends.la ../libcpu/libcpu.la
++libeu = ../lib/libeu.la
+ 
+ arextract_LDADD = $(libelf)
+ arsymtest_LDADD = $(libelf)
+--- a/libcpu/Makefile.am
++++ b/libcpu/Makefile.am
+@@ -38,19 +38,16 @@ LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAG
+ LEX_OUTPUT_ROOT = lex.$(<F:lex.l=)
+ AM_YFLAGS = -p$(<F:parse.y=)
+ 
+-noinst_LIBRARIES = libcpu.a libcpu_pic.a
++noinst_LTLIBRARIES = libcpu.la
+ 
+ noinst_HEADERS = i386_dis.h i386_mne.h x86_64_dis.h
+ 
+-libcpu_a_SOURCES = i386_disasm.c x86_64_disasm.c bpf_disasm.c riscv_disasm.c
+-
+-libcpu_pic_a_SOURCES =
+-am_libcpu_pic_a_OBJECTS = $(libcpu_a_SOURCES:.c=.os)
++libcpu_la_SOURCES = i386_disasm.c x86_64_disasm.c bpf_disasm.c riscv_disasm.c
+ 
+ i386_gendis_SOURCES = i386_gendis.c i386_lex.l i386_parse.y
+ 
+-i386_disasm.o: i386.mnemonics $(srcdir)/i386_dis.h
+-x86_64_disasm.o: x86_64.mnemonics $(srcdir)/x86_64_dis.h
++$(libcpu_la_OBJECTS): i386.mnemonics $(srcdir)/i386_dis.h
++$(libcpu_la_OBJECTS): x86_64.mnemonics $(srcdir)/x86_64_dis.h
+ 
+ %_defs: $(srcdir)/defs/i386
+ 	$(AM_V_GEN)m4 -D$* -DDISASSEMBLER $< > $@T
+@@ -87,20 +84,15 @@ endif
+ 
+ i386_lex_no_Werror = yes
+ 
+-libeu = ../lib/libeu.a
++libeu = ../lib/libeu.la
+ 
+ i386_lex_CFLAGS = -Wno-unused-label -Wno-unused-function -Wno-sign-compare \
+ 		  -Wno-implicit-fallthrough
+-i386_parse.o: i386_parse.c i386.mnemonics
+-i386_lex.o: i386_parse.h
+ i386_gendis_LDADD = $(libeu) -lm $(obstack_LIBS)
+ 
+-i386_parse.h: i386_parse.c ;
+-
+ bpf_disasm_CFLAGS = -Wno-format-nonliteral
+ 
+ EXTRA_DIST = defs/i386
+ 
+-MOSTLYCLEANFILES = $(am_libcpu_pic_a_OBJECTS)
+ CLEANFILES += $(foreach P,i386 x86_64,$P_defs $P.mnemonics)
+ MAINTAINERCLEANFILES = $(foreach P,i386 x86_64, $P_dis.h)
+--- a/config/libelf.pc.in
++++ b/config/libelf.pc.in
+@@ -8,7 +8,7 @@ Description: elfutils libelf library to
+ Version: @VERSION@
+ URL: http://elfutils.org/
+ 
+-Libs: -L${libdir} -lelf
++Libs: -L${libdir} -lelf -lz
+ Cflags: -I${includedir}
+ 
+ Requires.private: zlib @LIBZSTD@

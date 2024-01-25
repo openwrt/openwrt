@@ -1,0 +1,39 @@
+From 7889a2f0256c55e0184dffd0001d0782f9e4cb83 Mon Sep 17 00:00:00 2001
+From: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+Date: Mon, 14 Nov 2022 21:38:04 +0100
+Subject: [PATCH 12/29] usb: fotg210-udc: Remove a useless assignment
+
+There is no need to use an intermediate array for these memory allocations,
+so, axe it.
+
+While at it, turn a '== NULL' into a shorter '!' when testing memory
+allocation failure.
+
+Signed-off-by: Christophe JAILLET <christophe.jaillet@wanadoo.fr>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/deab9696fc4000499470e7ccbca7c36fca17bd4e.1668458274.git.christophe.jaillet@wanadoo.fr
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+--- a/drivers/usb/fotg210/fotg210-udc.c
++++ b/drivers/usb/fotg210/fotg210-udc.c
+@@ -1159,7 +1159,6 @@ int fotg210_udc_probe(struct platform_de
+ {
+ 	struct resource *res;
+ 	struct fotg210_udc *fotg210 = NULL;
+-	struct fotg210_ep *_ep[FOTG210_MAX_NUM_EP];
+ 	struct device *dev = &pdev->dev;
+ 	int irq;
+ 	int ret = 0;
+@@ -1218,10 +1217,9 @@ int fotg210_udc_probe(struct platform_de
+ 	}
+ 
+ 	for (i = 0; i < FOTG210_MAX_NUM_EP; i++) {
+-		_ep[i] = kzalloc(sizeof(struct fotg210_ep), GFP_KERNEL);
+-		if (_ep[i] == NULL)
++		fotg210->ep[i] = kzalloc(sizeof(struct fotg210_ep), GFP_KERNEL);
++		if (!fotg210->ep[i])
+ 			goto err_alloc;
+-		fotg210->ep[i] = _ep[i];
+ 	}
+ 
+ 	fotg210->reg = ioremap(res->start, resource_size(res));

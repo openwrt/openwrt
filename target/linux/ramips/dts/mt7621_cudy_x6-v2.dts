@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_cudy_x6.dtsi"
+
+/ {
+	compatible = "cudy,x6-v2", "mediatek,mt7621-soc";
+	model = "CUDY X6 v2";
+};
+
+&partitions {
+	partition@50000 {
+		compatible = "denx,uimage";
+		label = "firmware";
+		reg = <0x50000 0xf80000>;
+	};
+
+	partition@fd0000 {
+		label = "debug";
+		reg = <0xfd0000 0x10000>;
+		read-only;
+	};
+
+	partition@fe0000 {
+		label = "backup";
+		reg = <0xfe0000 0x10000>;
+		read-only;
+	};
+
+	partition@ff0000 {
+		label = "bdinfo";
+		reg = <0xff0000 0x10000>;
+		read-only;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			macaddr_bdinfo_de00: macaddr@de00 {
+				compatible = "mac-base";
+				reg = <0xde00 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_bdinfo_de00 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_bdinfo_de00 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wifi {
+	nvmem-cells = <&macaddr_bdinfo_de00 0>;
+	nvmem-cell-names = "mac-address";
+};

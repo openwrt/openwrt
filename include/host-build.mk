@@ -21,11 +21,12 @@ include $(INCLUDE_DIR)/depends.mk
 include $(INCLUDE_DIR)/quilt.mk
 
 BUILD_TYPES += host
-HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared$(if $(HOST_QUILT)$(DUMP),,$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPENDS),))_$(call confvar,CONFIG_AUTOREMOVE $(HOST_PREPARED_DEPENDS)))
+HOST_STAMP_PREPARED=$(HOST_BUILD_DIR)/.prepared$(if $(HOST_QUILT)$(DUMP),,$(shell $(call $(if $(CONFIG_AUTOREMOVE),find_md5_reproducible,find_md5),${CURDIR} $(PKG_FILE_DEPENDS),))_$(call confvar,CONFIG_AUTOREMOVE $(HOST_PREPARED_DEPENDS)))
 HOST_STAMP_CONFIGURED:=$(HOST_BUILD_DIR)/.configured
 HOST_STAMP_BUILT:=$(HOST_BUILD_DIR)/.built
 HOST_BUILD_PREFIX?=$(if $(IS_PACKAGE_BUILD),$(STAGING_DIR_HOSTPKG),$(STAGING_DIR_HOST))
 HOST_STAMP_INSTALLED:=$(HOST_BUILD_PREFIX)/stamp/.$(PKG_NAME)_installed
+HOST_STAMP_PROGRAMS:=$(foreach program,$(PKG_PROGRAMS),$(subst $(PKG_NAME),$(program),$(HOST_STAMP_INSTALLED)) )
 
 override MAKEFLAGS=
 
@@ -59,6 +60,7 @@ HOST_CONFIGURE_ARGS = \
 	--target=$(GNU_HOST_NAME) \
 	--host=$(GNU_HOST_NAME) \
 	--build=$(GNU_HOST_NAME) \
+	--disable-dependency-tracking \
 	--program-prefix="" \
 	--program-suffix="" \
 	--prefix=$(HOST_BUILD_PREFIX) \
@@ -130,6 +132,7 @@ define Host/Exports/Default
   $(1) : export STAGING_PREFIX=$$(HOST_BUILD_PREFIX)
   $(1) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig:$$(HOST_BUILD_PREFIX)/lib/pkgconfig
   $(1) : export PKG_CONFIG_LIBDIR=$$(HOST_BUILD_PREFIX)/lib/pkgconfig
+  $(1) : export GIT_CEILING_DIRECTORIES=$$(BUILD_DIR_HOST)
   $(if $(HOST_CONFIG_SITE),$(1) : export CONFIG_SITE:=$(HOST_CONFIG_SITE))
   $(if $(IS_PACKAGE_BUILD),$(1) : export PATH=$$(TARGET_PATH_PKG))
 endef
@@ -170,7 +173,7 @@ ifndef DUMP
 		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
 		mkdir -p $$(shell dirname $$@)
 		touch $(HOST_STAMP_BUILT)
-		touch $$@
+		touch $$@ $(HOST_STAMP_PROGRAMS)
 
   $(call DefaultTargets,$(patsubst %,host-%,$(DEFAULT_SUBDIR_TARGETS)))
   ifndef STAMP_BUILT
@@ -185,7 +188,7 @@ ifndef DUMP
 
   $(_host_target)host-prepare: $(HOST_STAMP_PREPARED)
   $(_host_target)host-configure: $(HOST_STAMP_CONFIGURED)
-  $(_host_target)host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED)
+  $(_host_target)host-compile: $(HOST_STAMP_BUILT) $(HOST_STAMP_INSTALLED) $(HOST_STAMP_PROGRAMS)
   host-install: host-compile
 
   host-clean-build: FORCE
@@ -194,17 +197,21 @@ ifndef DUMP
 
   host-clean: host-clean-build
 	$(call Host/Clean)
-	rm -rf $(HOST_STAMP_INSTALLED)
+	rm -rf $(HOST_STAMP_INSTALLED) $(HOST_STAMP_PROGRAMS)
 
     ifneq ($(CONFIG_AUTOREMOVE),)
       host-compile:
-		$(FIND) $(HOST_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' | \
-			$(XARGS) rm -rf
+		$(FIND) $(HOST_BUILD_DIR) -mindepth 1 -maxdepth 1 -not '(' -type f -and -name '.*' -and -size 0 ')' -print0 | \
+			$(XARGS) -0 rm -rf
     endif
   endef
 endif
 
 define HostBuild
   $(HostBuild/Core)
-  $(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default)))
+  $(if $(if $(PKG_HOST_ONLY),,$(if $(and $(filter host-%,$(MAKECMDGOALS)),$(PKG_SKIP_DOWNLOAD)),,$(STAMP_PREPARED))),,
+	$(if $(and $(CONFIG_AUTOREMOVE), $(wildcard $(HOST_STAMP_INSTALLED), $(wildcard $(HOST_STAMP_BUILT)))),,
+		$(if $(strip $(PKG_SOURCE_URL)),$(call Download,default))
+	)
+  )
 endef

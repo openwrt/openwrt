@@ -10,7 +10,7 @@
  
  /*************************************************************************
   * _REG relative to RSET_WDT
-@@ -1534,6 +1537,11 @@
+@@ -1539,6 +1542,11 @@
  #define STRAPBUS_63268_FCVO_SHIFT	21
  #define STRAPBUS_63268_FCVO_MASK	(0xf << STRAPBUS_63268_FCVO_SHIFT)
  
@@ -24,7 +24,7 @@
  #define STRAPBUS_6328_FCVO_MASK		(0x1f << STRAPBUS_6328_FCVO_SHIFT)
 --- a/arch/mips/bcm63xx/clk.c
 +++ b/arch/mips/bcm63xx/clk.c
-@@ -64,6 +64,26 @@ static void bcm_ub_hwclock_set(u32 mask,
+@@ -76,6 +76,26 @@ static void bcm_ub_hwclock_set(u32 mask,
  	bcm_perf_writel(reg, PERF_UB_CKCTL_REG);
  }
  
@@ -51,7 +51,7 @@
  /*
   * Ethernet MAC "misc" clock: dma clocks and main clock on 6348
   */
-@@ -236,7 +256,17 @@ static void usbh_set(struct clk *clk, in
+@@ -250,7 +270,17 @@ static void usbh_set(struct clk *clk, in
  	} else if (BCMCPU_IS_6368()) {
  		bcm_hwclock_set(CKCTL_6368_USBH_EN, enable);
  	} else if (BCMCPU_IS_63268()) {

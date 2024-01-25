@@ -1,0 +1,30 @@
+From 1066f8156351fcd997125257cea47cf805ba4f6d Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Date: Mon, 21 Mar 2022 12:03:25 +0100
+Subject: [PATCH] nvmem: sunplus-ocotp: staticize sp_otp_v0
+
+The "sp_otp_v0" file scope variable is not used outside, so make it
+static to fix warning:
+
+  drivers/nvmem/sunplus-ocotp.c:74:29: sparse:
+    sparse: symbol 'sp_otp_v0' was not declared. Should it be static?
+
+Reported-by: kernel test robot <lkp@intel.com>
+Signed-off-by: Krzysztof Kozlowski <krzk@kernel.org>
+Link: https://lore.kernel.org/r/20220321110326.44652-2-krzk@kernel.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/sunplus-ocotp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/nvmem/sunplus-ocotp.c
++++ b/drivers/nvmem/sunplus-ocotp.c
+@@ -71,7 +71,7 @@ struct sp_ocotp_data {
+ 	int size;
+ };
+ 
+-const struct sp_ocotp_data  sp_otp_v0 = {
++static const struct sp_ocotp_data sp_otp_v0 = {
+ 	.size = QAC628_OTP_SIZE,
+ };
+ 

@@ -46,16 +46,37 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
 --- a/arch/mips/bcm63xx/clk.c
 +++ b/arch/mips/bcm63xx/clk.c
-@@ -169,6 +169,8 @@ static void enetsw_set(struct clk *clk,
+@@ -52,6 +52,18 @@ static void bcm_hwclock_set(u32 mask, in
+ 	bcm_perf_writel(reg, PERF_CKCTL_REG);
+ }
+ 
++static void bcm_gpiorobosw_set(u32 mask, int enable)
++{
++	u32 reg;
++
++	reg = bcm_gpio_readl(GPIO_ROBOSW_SW_CTRL_REG);
++	if (enable)
++		reg |= mask;
++	else
++		reg &= ~mask;
++	bcm_gpio_writel(reg, GPIO_ROBOSW_SW_CTRL_REG);
++}
++
+ /*
+  * Ethernet MAC "misc" clock: dma clocks and main clock on 6348
+  */
+@@ -169,6 +181,10 @@ static void enetsw_set(struct clk *clk,
  			clk_disable_unlocked(&clk_swpkt_sar);
  		}
  		bcm_hwclock_set(CKCTL_6368_ROBOSW_EN, enable);
 +	} else if (BCMCPU_IS_63268()) {
++		bcm_gpiorobosw_set(GPIO_ROBOSW_MII_DUMB_FWDG_EN |
++				   GPIO_ROBOSW_HW_FWDG_EN, enable);
 +		bcm_hwclock_set(CKCTL_63268_ROBOSW_EN, enable);
  	} else {
  		return;
  	}
-@@ -214,6 +216,8 @@ static void usbh_set(struct clk *clk, in
+@@ -214,6 +230,8 @@ static void usbh_set(struct clk *clk, in
  		bcm_hwclock_set(CKCTL_6362_USBH_EN, enable);
  	else if (BCMCPU_IS_6368())
  		bcm_hwclock_set(CKCTL_6368_USBH_EN, enable);
@@ -64,7 +85,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	else
  		return;
  
-@@ -236,6 +240,8 @@ static void usbd_set(struct clk *clk, in
+@@ -236,6 +254,8 @@ static void usbd_set(struct clk *clk, in
  		bcm_hwclock_set(CKCTL_6362_USBD_EN, enable);
  	else if (BCMCPU_IS_6368())
  		bcm_hwclock_set(CKCTL_6368_USBD_EN, enable);
@@ -73,7 +94,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	else
  		return;
  
-@@ -262,9 +268,13 @@ static void spi_set(struct clk *clk, int
+@@ -262,9 +282,13 @@ static void spi_set(struct clk *clk, int
  		mask = CKCTL_6358_SPI_EN;
  	else if (BCMCPU_IS_6362())
  		mask = CKCTL_6362_SPI_EN;
@@ -89,7 +110,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	bcm_hwclock_set(mask, enable);
  }
  
-@@ -283,6 +293,8 @@ static void hsspi_set(struct clk *clk, i
+@@ -283,6 +307,8 @@ static void hsspi_set(struct clk *clk, i
  		mask = CKCTL_6328_HSSPI_EN;
  	else if (BCMCPU_IS_6362())
  		mask = CKCTL_6362_HSSPI_EN;
@@ -98,7 +119,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	else
  		return;
  
-@@ -352,6 +364,8 @@ static void pcie_set(struct clk *clk, in
+@@ -352,6 +378,8 @@ static void pcie_set(struct clk *clk, in
  		bcm_hwclock_set(CKCTL_6328_PCIE_EN, enable);
  	else if (BCMCPU_IS_6362())
  		bcm_hwclock_set(CKCTL_6362_PCIE_EN, enable);
@@ -107,7 +128,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  }
  
  static struct clk clk_pcie = {
-@@ -548,6 +562,21 @@ static struct clk_lookup bcm6368_clks[]
+@@ -550,6 +578,21 @@ static struct clk_lookup bcm6368_clks[]
  	CLKDEV_INIT(NULL, "ipsec", &clk_ipsec),
  };
  
@@ -129,7 +150,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #define HSSPI_PLL_HZ_6328	133333333
  #define HSSPI_PLL_HZ_6362	400000000
  
-@@ -580,6 +609,10 @@ static int __init bcm63xx_clk_init(void)
+@@ -582,6 +625,10 @@ static int __init bcm63xx_clk_init(void)
  	case BCM6368_CPU_ID:
  		clkdev_add_table(bcm6368_clks, ARRAY_SIZE(bcm6368_clks));
  		break;
@@ -663,7 +684,19 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  /* MIPS PLL control register */
  #define PERF_MIPSPLLCTL_REG		0x34
  #define MIPSPLLCTL_N1_SHIFT		20
-@@ -1367,6 +1439,13 @@
+@@ -559,6 +631,11 @@
+ #define STRAPBUS_6368_BOOT_SEL_SERIAL	1
+ #define STRAPBUS_6368_BOOT_SEL_PARALLEL 3
+ 
++/* BCM6318 BCM6328 BCM6362 BCM63268 */
++#define GPIO_ROBOSW_SW_CTRL_REG		0x40
++#define GPIO_ROBOSW_MII_DUMB_FWDG_EN	(1 << 0)
++#define GPIO_ROBOSW_HW_FWDG_EN		(1 << 3)
++
+ 
+ /*************************************************************************
+  * _REG relative to RSET_ENET
+@@ -1367,6 +1444,13 @@
  #define STRAPBUS_6362_BOOT_SEL_SERIAL	(1 << 15)
  #define STRAPBUS_6362_BOOT_SEL_NAND	(0 << 15)
  

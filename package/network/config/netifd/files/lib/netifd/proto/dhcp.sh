@@ -67,7 +67,7 @@ proto_dhcp_setup() {
 		-p /var/run/udhcpc-$iface.pid \
 		-s /lib/netifd/dhcp.script \
 		-f -t 0 -i "$iface" \
-		${ipaddr:+-r $ipaddr} \
+		${ipaddr:+-r ${ipaddr/\/*/}} \
 		${hostname:+-x "hostname:$hostname"} \
 		${vendorid:+-V "$vendorid"} \
 		$clientid $defaultreqopts $broadcast $norelease $dhcpopts

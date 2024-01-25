@@ -33,10 +33,6 @@
 			status = "okay";
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -62,15 +58,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		ess-switch@c000000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
-			status = "okay";
-			qcom,num_gmac = <1>;
-		};
 	};
 
 	aliases {
@@ -78,7 +65,7 @@
 		led-failsafe = &power_amber;
 		led-running = &power_green;
 		led-upgrade = &power_amber;
-		label-mac-device = &gmac0;
+		label-mac-device = &gmac;
 	};
 
 	keys {
@@ -253,17 +240,20 @@
 			partition7@170000 {
 				label = "ART";
 				reg = <0x00170000 0x00010000>;
-				compatible = "nvmem-cells";
 				read-only;
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 
@@ -280,20 +270,22 @@
 			};
 
 			partition10@1a0000 {
-				compatible = "nvmem-cells";
 				label = "dnidata";
 				reg = <0x001a0000 0x00010000>;
 				read-only;
 
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				macaddr_dnidata_0: macaddr@0 {
-					reg = <0x0 0x6>;
-				};
+					macaddr_dnidata_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
 
-				macaddr_dnidata_c: macaddr@c {
-					reg = <0xc 0x6>;
+					macaddr_dnidata_c: macaddr@c {
+						reg = <0xc 0x6>;
+					};
 				};
 			};
 
@@ -336,4 +328,17 @@
 	status = "okay";
 	nvmem-cell-names = "pre-calibration", "mac-address";
 	nvmem-cells = <&precal_art_5000>, <&macaddr_dnidata_c>;
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan";
 };

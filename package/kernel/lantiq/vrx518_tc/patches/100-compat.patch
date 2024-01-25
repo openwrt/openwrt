@@ -1,0 +1,917 @@
+--- a/dcdp/atm_tc.c
++++ b/dcdp/atm_tc.c
+@@ -44,9 +44,9 @@
+ #include <linux/atmioc.h>
+ #include <linux/skbuff.h>
+ #include "inc/dsl_tc.h"
+-#include <net/datapath_proc_api.h>
++// #include <net/datapath_proc_api.h>
+ #include <linux/atm.h>
+-#include <net/datapath_api.h>
++// #include <net/datapath_api.h>
+ #include <net/dc_ep.h>
+ #include<linux/sched.h>
+ #include<linux/kthread.h>
+@@ -730,20 +730,16 @@ static void atm_aca_init(struct atm_priv
+ 		ACA_TXOUT_EN | ACA_RXIN_EN | ACA_RXOUT_EN, 1);
+ }
+ 
+-static int print_datetime(char *buffer, const struct timespec *datetime)
++static int print_datetime(char *buffer, const struct timespec64 *datetime)
+ {
+-	struct timeval tv;
+ 	struct tm nowtm;
+ 	char tmbuf[64];
+-	s64 nsec;
+ 
+ 	if (buffer == NULL || datetime == NULL) {
+ 		pr_err("%s : Invalid arguments\n", __func__);
+ 		return -1;
+ 	}
+-	nsec = timespec_to_ns(datetime);
+-	tv = ns_to_timeval(nsec);
+-	time_to_tm(tv.tv_sec, 0, &nowtm);
++	time64_to_tm(datetime->tv_sec, 0, &nowtm);
+ 	memset(tmbuf, 0, 64);
+ 
+ 	snprintf(tmbuf, sizeof(tmbuf), "%ld-%d-%d %d:%d:%d",
+@@ -753,7 +749,7 @@ static int print_datetime(char *buffer,
+ 			nowtm.tm_hour,
+ 			nowtm.tm_min,
+ 			nowtm.tm_sec);
+-	snprintf(buffer, sizeof(buffer), "%s.%06d", tmbuf, (int)tv.tv_usec);
++	snprintf(buffer, sizeof(buffer), "%s.%06d", tmbuf, (int)datetime->tv_nsec / 1000);
+ 
+ 	return 0;
+ }
+@@ -1313,7 +1309,7 @@ static int ppe_send(struct atm_vcc *vcc,
+ 	/* assume LLC header + Ethernet ID: 6+2 */
+     if ((priv->conn[conn].mpoa_type == MPOA_TYPE_EOA_WO_FCS) ||
+ 		(priv->conn[conn].mpoa_type == MPOA_TYPE_EOA_W_FCS)) {
+-        if (__skb_put_padto(skb, ETH_ZLEN + 8))
++        if (__skb_put_padto(skb, ETH_ZLEN + 8, false))
+ 		    goto CHECK_SHOWTIME_FAIL;
+ 	}
+ 
+@@ -1418,7 +1414,7 @@ int ppe_send_oam(struct atm_vcc *vcc, vo
+ 	struct atm_priv *priv = g_atm_tc;
+ 	struct sk_buff *skb;
+ 	unsigned int conn;
+-	dp_subif_t dp_id;
++// 	dp_subif_t dp_id;
+ #ifdef OAM_FIX_GRX750
+ 	unsigned char *dest_cell;
+ #endif
+@@ -1465,8 +1461,8 @@ int ppe_send_oam(struct atm_vcc *vcc, vo
+ 		priv->tc_priv->param.oam_prio = 0;
+ 	qid = priv->conn[conn].prio_queue_map[priv->tc_priv->param.oam_prio];
+ 	vid = priv->conn[conn].subif_id;
+-	dp_id.subif = (vid & (~0x7f)) |
+-		ATM_DESC_SUBIF_ID(qid, mpoa_pt, mpoa_type);
++// 	dp_id.subif = (vid & (~0x7f)) |
++// 		ATM_DESC_SUBIF_ID(qid, mpoa_pt, mpoa_type);
+ #ifdef OAM_FIX_GRX750
+ 	dest_cell = kmalloc(CELL_SIZE, GFP_KERNEL);
+ 	if (dest_cell == NULL) {
+@@ -1494,18 +1490,18 @@ int ppe_send_oam(struct atm_vcc *vcc, vo
+ #else
+ 	memcpy(skb->data, cell, CELL_SIZE);
+ #endif
+-	/* SET SUBIFID */
+-	skb->DW0 = (skb->DW0 & ~0x7FFF) | dp_id.subif;
+-	skb->dev = priv->conn[conn].dev;
+-	tc_dbg(priv->tc_priv, MSG_TX, "conn: %d, dev name: %s, qid: 0x%x len:%d\n",
+-		conn, skb->dev->name, dp_id.subif, skb->len);
+-	#ifdef OAM_FIX_GRX750
+-	if (priv->tc_priv->tc_ops.send(NULL,
+-			skb, dp_id.subif, ATM_OAM_PKT) == 0) {
+-	#else
++// 	/* SET SUBIFID */
++// 	skb->DW0 = (skb->DW0 & ~0x7FFF) | dp_id.subif;
++// 	skb->dev = priv->conn[conn].dev;
++// 	tc_dbg(priv->tc_priv, MSG_TX, "conn: %d, dev name: %s, qid: 0x%x len:%d\n",
++// 		conn, skb->dev->name, dp_id.subif, skb->len);
++// 	#ifdef OAM_FIX_GRX750
++// 	if (priv->tc_priv->tc_ops.send(NULL,
++// 			skb, dp_id.subif, ATM_OAM_PKT) == 0) {
++// 	#else
+ 	if (priv->tc_priv->tc_ops.send(NULL,
+ 			skb, qid, ATM_OAM_PKT) == 0) {
+-	#endif
++// 	#endif
+ 		priv->stats.oam_tx_pkts++;
+ 		priv->stats.oam_tx_bytes += skb->len;
+ 		priv->conn[conn].stats.oam_tx_pkts++;
+@@ -1604,7 +1600,7 @@ static void oam_push(struct atm_priv *pr
+ 		conn = -1; /* invalid */
+ 	if (conn_valid(conn) && priv->conn[conn].vcc != NULL) {
+ 		vcc = priv->conn[conn].vcc;
+-		priv->conn[conn].access_time = current_kernel_time();
++		ktime_get_coarse_ts64(&priv->conn[conn].access_time);
+ 
+ 		tc_dbg(priv->tc_priv, MSG_OAM_RX, "conn=%d, vpi: %d, vci:%d\n",
+ 			conn, header->vpi, header->vci);
+@@ -2547,30 +2543,29 @@ static void ppe_atm_fw_hw_init(struct at
+ static int atm_dev_init(struct atm_priv *atm_priv, int ep_id)
+ {
+ 	int i, err;
+-	struct atm_dev *dev;
+-	dev = atm_dev_register(g_atm_dev_name,
+-		atm_priv->tc_priv->ep_dev[ep_id].dev,
+-		&g_ppe_atm_ops, -1, NULL);
+-	if (!dev) {
+-		err = -EIO;
+-		goto ATM_DEV_REGISTER_FAIL;
+-	}
+-	dev->ci_range.vpi_bits = 8;
+-	dev->ci_range.vci_bits = 16;
+-	/* assume 3200 cell rate
+-	 * before get real information
+-	 */
+-	dev->link_rate =
+-		DEFAULT_CELL_RATE;
+-	dev->dev_data = atm_priv;
+-	dev->phy_data =
+-		(void *)(unsigned long)0;
+ 
+ 	for (i = 0; i < ATM_PORT_NUMBER; i++) {
+ 		if (atm_priv->port[i].dev)
+ 			continue;
+ 		atm_priv->port[i].tx_max_cell_rate = DEFAULT_CELL_RATE;
+-		atm_priv->port[i].dev = dev;
++		atm_priv->port[i].dev = atm_dev_register(g_atm_dev_name,
++				atm_priv->tc_priv->ep_dev[ep_id].dev,
++				&g_ppe_atm_ops, -1, NULL);
++		if (!atm_priv->port[i].dev) {
++			err = -EIO;
++			goto ATM_DEV_REGISTER_FAIL;
++		} else {
++			atm_priv->port[i].dev->ci_range.vpi_bits = 8;
++			atm_priv->port[i].dev->ci_range.vci_bits = 16;
++			/* assume 3200 cell rate
++			 * before get real information
++			 */
++			atm_priv->port[i].dev->link_rate =
++				DEFAULT_CELL_RATE;
++			atm_priv->port[i].dev->dev_data = atm_priv;
++			atm_priv->port[i].dev->phy_data =
++				(void *)(unsigned long)i;
++		}
+ 	}
+ 	//TODO : check for SoC PMAC, current fix
+ #ifdef CONFIG_SOC_TYPE_XWAY
+@@ -2985,7 +2980,8 @@ static unsigned int atm_get_pvc_id(struc
+ 		return -EINVAL;
+ 	}
+ 
+-	return (skb->DW0 >> 3) & 0xF;
++// 	return (skb->DW0 >> 3) & 0xF;
++	return 1;
+ }
+ 
+ static int atm_get_qid_by_vcc(struct net_device *dev, struct sk_buff *skb,
+@@ -3292,7 +3288,7 @@ static void atm_push(struct net_device *
+ 					+= skb->len;
+ 			} else
+ 				priv->stats.aal5_rx_errors++;
+-			priv->conn[conn].access_time = current_kernel_time();
++			ktime_get_coarse_ts64(&priv->conn[conn].access_time);
+ 			spin_unlock_bh(&priv->atm_lock);
+ 
+ 			vcc->push(vcc, skb);
+--- a/dcdp/inc/atm_tc.h
++++ b/dcdp/inc/atm_tc.h
+@@ -449,7 +449,7 @@ struct atm_port {
+ struct atm_pvc {
+ 	struct atm_vcc *vcc; /* opened VCC */
+ 	struct net_device *dev; /* net device associated with atm VCC */
+-	struct timespec access_time; /* time when last user cell arrived */
++	struct timespec64 access_time; /* time when last user cell arrived */
+ 	int prio_queue_map[ATM_PRIO_Q_NUM];
+ 	unsigned int prio_tx_packets[ATM_PRIO_Q_NUM];
+ 	struct atm_stats stats;
+--- a/dcdp/inc/tc_api.h
++++ b/dcdp/inc/tc_api.h
+@@ -196,19 +196,6 @@ static inline void aca_ring_addr_init(st
+ 	ring->aca_cnt_phyaddr = ep_dev->phy_membase + addr;
+ }
+ 
+-static inline int __skb_put_padto(struct sk_buff *skb, unsigned int len)
+-{
+-	unsigned int size = skb->len;
+-
+-	if (unlikely(size < len)) {
+-		len -= size;
+-		if (skb_pad(skb, len))
+-			return -ENOMEM;
+-		__skb_put(skb, len);
+-	}
+-	return 0;
+-}
+-
+ extern int showtime_stat(struct tc_priv *);
+ extern void dump_skb_info(struct tc_priv *, struct sk_buff *, u32);
+ extern void *tc_buf_alloc(void *, size_t, u32 *,
+--- a/dcdp/inc/tc_proc.h
++++ b/dcdp/inc/tc_proc.h
+@@ -23,6 +23,8 @@
+ #ifndef __TC_PROC_H__
+ #define __TC_PROC_H__
+ 
++#include <linux/version.h>
++
+ #define TC_PROC_DIR "driver/vrx518"
+ #define TC_PROC_ATM_DIR "atm"
+ #define TC_PROC_PTM_DIR "ptm"
+@@ -41,7 +43,7 @@ enum {
+ struct tc_proc_list {
+ 	char proc_name[32];
+ 	umode_t mode;
+-	const struct file_operations *fops;
++	const struct proc_ops *fops;
+ 	int is_folder;
+ };
+ 
+--- a/dcdp/ptm_tc.c
++++ b/dcdp/ptm_tc.c
+@@ -39,7 +39,7 @@
+ #include <linux/seq_file.h>
+ #include <linux/printk.h>
+ #include <linux/etherdevice.h>
+-#include <net/datapath_proc_api.h>
++// #include <net/datapath_proc_api.h>
+ 
+ #include "inc/tc_main.h"
+ #include "inc/reg_addr.h"
+@@ -62,6 +62,9 @@
+ #include "inc/fw/vrx518_addr_def.h"
+ #include "inc/fw/vrx518_ppe_fw.h"
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0))
++#define PDE_DATA pde_data
++#endif
+ 
+ static struct ptm_priv *g_ptm_priv;
+ static struct ptm_ep_priv g_ep_priv[BOND_MAX];
+@@ -84,6 +87,7 @@ static int ptm_erb_addr_get(const unsign
+ 	unsigned int *data_addr, unsigned int *desc_addr);
+ 
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,16,0))
+ static inline void tc_ether_addr_copy(u8 *dst, const u8 *src)
+ {
+ #if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)
+@@ -98,6 +102,7 @@ static inline void tc_ether_addr_copy(u8
+ 	a[2] = b[2];
+ #endif
+ }
++#endif
+ 
+ static inline int is_ptm_sl(struct ptm_ep_priv *priv)
+ {
+@@ -182,8 +187,8 @@ static int ptm_get_qid(struct net_device
+ 	return qid;
+ }
+ 
+-static struct rtnl_link_stats64 *ptm_get_stats(struct net_device *dev,
+-					struct rtnl_link_stats64 *storage)
++static void ptm_get_stats(struct net_device *dev,
++			  struct rtnl_link_stats64 *storage)
+ {
+ 	struct ptm_priv *ptm_tc = netdev_priv(dev);
+ 
+@@ -191,8 +196,6 @@ static struct rtnl_link_stats64 *ptm_get
+ 		memcpy(storage, &ptm_tc->stats64, sizeof(ptm_tc->stats64));
+ 	else
+ 		storage->tx_errors += ptm_tc->stats64.tx_errors;
+-
+-	return storage;
+ }
+ 
+ static int ptm_set_mac_address(struct net_device *dev, void *p)
+@@ -204,12 +207,16 @@ static int ptm_set_mac_address(struct ne
+ 		return -EBUSY;
+ 
+ 	tc_info(ptm_tc->tc_priv, MSG_EVENT, "ptm mac address update!\n");
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,16,0))
++	eth_hw_addr_set(dev, addr->sa_data);
++#else
+ 	tc_ether_addr_copy(dev->dev_addr, addr->sa_data);
++#endif
+ 
+ 	return 0;
+ }
+ 
+-static void ptm_tx_timeout(struct net_device *dev)
++static void ptm_tx_timeout(struct net_device *dev, unsigned int txqueue)
+ {
+ 	struct ptm_priv *ptm_tc = netdev_priv(dev);
+ 
+@@ -503,7 +510,7 @@ static int ptm_xmit(struct sk_buff *skb,
+ 	if (!showtime_stat(ptm_tc->tc_priv))
+ 		goto PTM_XMIT_DROP;
+ 
+-	if (__skb_put_padto(skb, ETH_ZLEN))
++	if (__skb_put_padto(skb, ETH_ZLEN, false))
+ 		goto PTM_XMIT_DROP;
+ 
+ 	dump_skb_info(ptm_tc->tc_priv, skb, (MSG_TX | MSG_TXDATA));
+@@ -632,11 +639,8 @@ static int ptm_dev_init(struct tc_priv *
+ 	struct ptm_priv *ptm_tc;
+ 	const char macaddr[ETH_ALEN]
+ 		= {0xAC, 0x9A, 0x96, 0x11, 0x22, 0x33};
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
+-	dev = alloc_netdev_mq(sizeof(*ptm_tc), "ptm%d", ptm_setup, 4);
+-#else
+-	dev = alloc_netdev_mq(sizeof(*ptm_tc), "ptm%d",  NET_NAME_ENUM, ptm_setup, 4);
+-#endif
++
++	dev = alloc_netdev_mq(sizeof(*ptm_tc), "dsl%d",  NET_NAME_ENUM, ptm_setup, 4);
+ 	if (!dev) {
+ 		tc_dbg(tc_priv, MSG_INIT, "Cannot alloc net device\n");
+ 		return -ENOMEM;
+@@ -644,7 +648,11 @@ static int ptm_dev_init(struct tc_priv *
+ 	ptm_tc = netdev_priv(dev);
+ 	ptm_tc->dev = dev;
+ 	ptm_tc->tc_priv = tc_priv;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,16,0))
++	eth_hw_addr_set(dev, macaddr);
++#else
+ 	tc_ether_addr_copy(dev->dev_addr, macaddr);
++#endif
+ 	spin_lock_init(&ptm_tc->ptm_lock);
+ 	memcpy(ptm_tc->outq_map, def_outq_map, sizeof(def_outq_map));
+ 	SET_NETDEV_DEV(ptm_tc->dev, tc_priv->ep_dev[id].dev);
+@@ -2103,7 +2111,6 @@ static int ptm_showtime_exit(const unsig
+ 	struct ptm_ep_priv *priv = tc_ep_priv(idx);
+ 	u32 stop = ACA_TXIN_EN;
+ 	struct dc_ep_dev *ep;
+-	int i = 0;
+ 
+ 	tc_info(priv->tc_priv, MSG_EVENT, "Line[%d]: show time exit!\n", idx);
+ 	ep = priv->ep;
+--- a/dcdp/tc_api.c
++++ b/dcdp/tc_api.c
+@@ -52,18 +52,24 @@ static const char ppe_fw_name[] = "ppe_f
+ #define VRX518_PPE_FW_ID		0xB
+ #define MD5_LEN				16
+ 
++enum tc_multicast_groups {
++	TC_MCGRP,
++};
++
++/* TC message multicast group */
++static const struct genl_multicast_group tc_ml_grps[] = {
++	[TC_MCGRP] = { .name = TC_MCAST_GRP_NAME, },
++};
++
+ /* TC message genelink family */
+ static struct genl_family tc_gnl_family = {
+-	.id = GENL_ID_GENERATE,	/* To generate an id for the family*/
++// 	.id = GENL_ID_GENERATE,	/* To generate an id for the family*/
+ 	.hdrsize = 0,
+ 	.name = TC_FAMILY_NAME,	/*family name, used by userspace application*/
+ 	.version = 1,		/*version number  */
+ 	.maxattr = TC_A_MAX - 1,
+-};
+-
+-/* TC message multicast group */
+-static struct genl_multicast_group tc_ml_grp = {
+-	.name = TC_MCAST_GRP_NAME,
++	.mcgrps = tc_ml_grps,
++	.n_mcgrps = ARRAY_SIZE(tc_ml_grps),
+ };
+ 
+ /**
+@@ -568,7 +574,8 @@ int tc_ntlk_msg_send(struct tc_priv *pri
+ 	nla_put_u32(skb, TC_A_LINENO, ln_no);
+ 
+ 	genlmsg_end(skb, msg_head);
+-	ret = genlmsg_multicast(skb, pid, tc_ml_grp.id, GFP_KERNEL);
++	ret = genlmsg_multicast(&tc_gnl_family, skb, pid, TC_MCGRP,
++				GFP_KERNEL);
+ 	if (ret) {
+ 		tc_err(priv, MSG_EVENT, "Sent TC multicast message Fail!\n");
+ 		goto err1;
+@@ -590,21 +597,11 @@ int tc_gentlk_init(struct tc_priv *priv)
+ 		return ret;
+ 	}
+ 
+-	ret = genl_register_mc_group(&tc_gnl_family, &tc_ml_grp);
+-	if (ret) {
+-		tc_err(priv, MSG_EVENT, "register mc group fail: %i, grp name: %s\n",
+-			ret, tc_ml_grp.name);
+-		genl_unregister_family(&tc_gnl_family);
+-		return ret;
+-	}
+-
+ 	return 0;
+ }
+ 
+ void tc_gentlk_exit(void)
+ {
+-	/* unregister mc groups */
+-	genl_unregister_mc_group(&tc_gnl_family, &tc_ml_grp);
+ 	/*unregister the family*/
+ 	genl_unregister_family(&tc_gnl_family);
+ }
+@@ -666,7 +663,7 @@ void dump_skb_info(struct tc_priv *tcpri
+ 		(u32)skb->end, skb->len);
+ 	tc_dbg(tcpriv, type,
+ 		"skb: clone: %d, users: %d\n",
+-		skb->cloned, atomic_read(&skb->users));
++		skb->cloned, refcount_read(&skb->users));
+ 	tc_dbg(tcpriv, type,
+ 		"skb: nfrag: %d\n", skb_shinfo(skb)->nr_frags);
+ 
+@@ -936,7 +933,6 @@ static int fw_md5_check(struct tc_priv *
+ 	}
+ 
+ 	desc->tfm = md5;
+-	desc->flags = 0;
+ 
+ 	ret = crypto_shash_init(desc);
+ 	if (ret) {
+--- a/dcdp/tc_proc.c
++++ b/dcdp/tc_proc.c
+@@ -22,7 +22,9 @@
+ *******************************************************************************/
+ #include <linux/fs.h>
+ #include <linux/seq_file.h>
+-#include <net/datapath_api.h>
++// #include <net/datapath_api.h>
++#include <linux/etherdevice.h>
++#include <linux/atmdev.h>
+ #include <net/genetlink.h>
+ #include <linux/time.h>
+ #include "inc/tc_main.h"
+@@ -35,6 +37,10 @@
+ #include "inc/platform.h"
+ #include "inc/dsl_tc.h"
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0))
++#define PDE_DATA pde_data
++#endif
++
+ #define ATM_HEADER_SIZE (ATM_CELL_SIZE - ATM_CELL_PAYLOAD)
+ static char *dbg_flag_str[] = {
+ 	"rx",
+@@ -353,7 +359,7 @@ static ssize_t mem_proc_write(struct fil
+ 	}
+ 	addr = set_val = repeat_cnt = 0;
+ 
+-	if (!access_ok(VERIFY_READ, buf, count))
++	if (!access_ok(buf, count))
+ 		return -EFAULT;
+ 
+ 	len = count < sizeof(str) ? count : sizeof(str) - 1;
+@@ -450,13 +456,12 @@ static int proc_read_mem_seq_open(struct
+ 	return single_open(file, proc_read_mem, NULL);
+ }
+ 
+-static const struct file_operations mem_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_mem_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
+-	.write		= mem_proc_write,
++static const struct proc_ops mem_proc_fops = {
++	.proc_open	= proc_read_mem_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
++	.proc_write	= mem_proc_write,
+ };
+ 
+ static ssize_t pp32_proc_write(struct file *file, const char __user *buf,
+@@ -748,13 +753,12 @@ static int proc_read_pp32_seq_open(struc
+ 	return single_open(file, proc_read_pp32, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations pp32_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_pp32_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
+-	.write		= pp32_proc_write,
++static const struct proc_ops pp32_proc_fops = {
++	.proc_open	= proc_read_pp32_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
++	.proc_write	= pp32_proc_write,
+ };
+ 
+ static int proc_read_tc_cfg(struct seq_file *seq, void *v)
+@@ -865,13 +869,12 @@ static int proc_read_tc_cfg_seq_open(str
+ 	return single_open(file, proc_read_tc_cfg, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations tc_cfg_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_tc_cfg_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
+-	.write		= proc_write_cfg,
++static const struct proc_ops tc_cfg_proc_fops = {
++	.proc_open	= proc_read_tc_cfg_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
++	.proc_write	= proc_write_cfg,
+ };
+ 
+ static ssize_t proc_write_dbg(struct file *file, const char __user *buf,
+@@ -951,13 +954,12 @@ static int proc_read_dbg_seq_open(struct
+ 	return single_open(file, proc_read_dbg, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations tc_dbg_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_dbg_seq_open,
+-	.read		= seq_read,
+-	.write		= proc_write_dbg,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
++static const struct proc_ops tc_dbg_proc_fops = {
++	.proc_open	= proc_read_dbg_seq_open,
++	.proc_read	= seq_read,
++	.proc_write	= proc_write_dbg,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
+ };
+ 
+ static ssize_t proc_write_tc_switch(struct file *file, const char __user *buf,
+@@ -1018,11 +1020,11 @@ proc_tc_switch_help:
+ 	return count;
+ }
+ 
+-static const struct file_operations tc_switch_proc_fops = {
+-	.owner      = THIS_MODULE,
+-	.write      = proc_write_tc_switch,
+-	.llseek     = noop_llseek,
++static const struct proc_ops tc_switch_proc_fops = {
++	.proc_write = proc_write_tc_switch,
++	.proc_lseek = noop_llseek,
+ };
++
+ static ssize_t proc_write_show_time(struct file *file, const char __user *buf,
+ 			size_t count, loff_t *data)
+ {
+@@ -1077,10 +1079,9 @@ proc_show_time_help:
+ 	return count;
+ }
+ 
+-static const struct file_operations tc_show_time_proc_fops = {
+-	.owner      = THIS_MODULE,
+-	.write      = proc_write_show_time,
+-	.llseek     = noop_llseek,
++static const struct proc_ops tc_show_time_proc_fops = {
++	.proc_write = proc_write_show_time,
++	.proc_lseek = noop_llseek,
+ };
+ 
+ static int proc_read_ver(struct seq_file *seq, void *v)
+@@ -1128,12 +1129,11 @@ static int proc_read_ver_seq_open(struct
+ 	return single_open(file, proc_read_ver, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations tc_ver_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_ver_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
++static const struct proc_ops tc_ver_proc_fops = {
++	.proc_open	= proc_read_ver_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
+ };
+ 
+ static int proc_read_soc(struct seq_file *seq, void *v)
+@@ -1142,20 +1142,18 @@ static int proc_read_soc(struct seq_file
+ 
+ 	tcpriv = (struct tc_priv *)seq->private;
+ 
+-#if 0
+ 	seq_printf(seq, "TXIN Base: 0x%08x, TXIN num: %d\n",
+-			tcpriv->cfg.txin_dbase,
+-			tcpriv->cfg.txin_dnum);
++			tcpriv->cfg.txin.soc_phydbase,
++			tcpriv->cfg.txin.soc_dnum);
+ 	seq_printf(seq, "TXOUT Base: 0x%08x, TXOUT num: %d\n",
+-			tcpriv->cfg.txout_dbase,
+-			tcpriv->cfg.txout_dnum);
++			tcpriv->cfg.txout.soc_phydbase,
++			tcpriv->cfg.txout.soc_dnum);
+ 	seq_printf(seq, "RXIN Base: 0x%08x, RXIN num: %d\n",
+-			tcpriv->cfg.rxin_dbase,
+-			tcpriv->cfg.rxin_dnum);
++			tcpriv->cfg.rxin.soc_phydbase,
++			tcpriv->cfg.rxin.soc_dnum);
+ 	seq_printf(seq, "RXOUT Base: 0x%08x, RXOUT num: %d\n",
+-			tcpriv->cfg.rxout_dbase,
+-			tcpriv->cfg.rxout_dnum);
+-#endif
++			tcpriv->cfg.rxout.soc_phydbase,
++			tcpriv->cfg.rxout.soc_dnum);
+ 
+ 	return 0;
+ }
+@@ -1165,15 +1163,13 @@ static int proc_read_soc_seq_open(struct
+ 	return single_open(file, proc_read_soc, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations tc_soc_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_soc_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
++static const struct proc_ops tc_soc_proc_fops = {
++	.proc_open	= proc_read_soc_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
+ };
+ 
+-
+ static struct tc_proc_list tc_procs[] = {
+ 	{TC_PROC_DIR,	0,	NULL,			1},
+ 	{"cfg",		0644, &tc_cfg_proc_fops,	0},
+@@ -1241,13 +1237,12 @@ static int proc_read_ptm_wanmib_seq_open
+ 	return single_open(file, proc_read_ptm_wanmib, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations ptm_wanmib_proc_fops = {
+-	.owner      = THIS_MODULE,
+-	.open       = proc_read_ptm_wanmib_seq_open,
+-	.read       = seq_read,
+-	.write      = proc_write_ptm_wanmib,
+-	.llseek     = seq_lseek,
+-	.release    = single_release,
++static const struct proc_ops ptm_wanmib_proc_fops = {
++	.proc_open    = proc_read_ptm_wanmib_seq_open,
++	.proc_read    = seq_read,
++	.proc_write   = proc_write_ptm_wanmib,
++	.proc_lseek   = seq_lseek,
++	.proc_release = single_release,
+ };
+ 
+ static int proc_ptm_read_cfg(struct seq_file *seq, void *v)
+@@ -1300,7 +1295,7 @@ static ssize_t ptm_cfg_proc_write(struct
+ 		return -EINVAL;
+ 	}
+ 
+-	if (!access_ok(VERIFY_READ, buf, count))
++	if (!access_ok(buf, count))
+ 		return -EFAULT;
+ 
+ 	len = count < sizeof(str) ? count : sizeof(str) - 1;
+@@ -1343,13 +1338,12 @@ proc_ptm_cfg_help:
+ }
+ 
+ 
+-static const struct file_operations ptm_cfg_proc_fops = {
+-	.owner = THIS_MODULE,
+-	.open = proc_read_cfg_seq_open,
+-	.read = seq_read,
+-	.llseek = seq_lseek,
+-	.write = ptm_cfg_proc_write,
+-	.release = single_release,
++static const struct proc_ops ptm_cfg_proc_fops = {
++	.proc_open = proc_read_cfg_seq_open,
++	.proc_read = seq_read,
++	.proc_lseek = seq_lseek,
++	.proc_write = ptm_cfg_proc_write,
++	.proc_release = single_release,
+ };
+ 
+ static ssize_t proc_ptm_write_prio(struct file *file, const char __user *buf,
+@@ -1455,13 +1449,12 @@ static int proc_ptm_read_prio_seq_open(s
+ 	return single_open(file, proc_ptm_read_prio, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations ptm_prio_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_ptm_read_prio_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.write		= proc_ptm_write_prio,
+-	.release	= single_release,
++static const struct proc_ops ptm_prio_proc_fops = {
++	.proc_open	= proc_ptm_read_prio_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_write	= proc_ptm_write_prio,
++	.proc_release	= single_release,
+ };
+ 
+ static int proc_ptm_read_bond_seq_open(struct inode *inode, struct file *file)
+@@ -1469,12 +1462,11 @@ static int proc_ptm_read_bond_seq_open(s
+ 	return single_open(file, proc_ptm_read_bond, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations ptm_bond_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_ptm_read_bond_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
++static const struct proc_ops ptm_bond_proc_fops = {
++	.proc_open	= proc_ptm_read_bond_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
+ };
+ 
+ static int proc_ptm_read_bondmib_seq_open(struct inode *inode,
+@@ -1483,13 +1475,12 @@ static int proc_ptm_read_bondmib_seq_ope
+ 	return single_open(file, proc_ptm_read_bondmib, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations ptm_bondmib_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_ptm_read_bondmib_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.write		= proc_ptm_write_bondmib,
+-	.release	= single_release,
++static const struct proc_ops ptm_bondmib_proc_fops = {
++	.proc_open	= proc_ptm_read_bondmib_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_write	= proc_ptm_write_bondmib,
++	.proc_release	= single_release,
+ };
+ 
+ struct fwdbg_t {
+@@ -1910,14 +1901,14 @@ static int proc_read_fwdbg_seq_open(stru
+ {
+ 	return single_open(file, proc_read_fwdbg, NULL);
+ }
+-static const struct file_operations fwdbg_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_fwdbg_seq_open,
+-	.read		= seq_read,
+-	.write		= proc_write_fwdbg_seq,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
++static const struct proc_ops fwdbg_proc_fops = {
++	.proc_open	= proc_read_fwdbg_seq_open,
++	.proc_read	= seq_read,
++	.proc_write	= proc_write_fwdbg_seq,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
+ };
++
+ static struct tc_proc_list ptm_sl_procs[] = {
+ 	{TC_PROC_PTM_DIR, 0,	NULL,			1},
+ 	{"mem",		0644,	&mem_proc_fops,		0},
+@@ -2077,7 +2068,7 @@ static ssize_t atm_cfg_proc_write(struct
+ 
+ 	priv = (struct atm_priv *)PDE_DATA(file_inode(file));
+ 
+-	if (!access_ok(VERIFY_READ, buf, count))
++	if (!access_ok(buf, count))
+ 		return -EFAULT;
+ 
+ 	len = count < sizeof(str) ? count : sizeof(str) - 1;
+@@ -2119,13 +2110,12 @@ proc_atm_cfg_help:
+ 	return count;
+ }
+ 
+-static const struct file_operations atm_cfg_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_atm_cfg_seq_open,
+-	.read		= seq_read,
+-	.write		= atm_cfg_proc_write,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
++static const struct proc_ops atm_cfg_proc_fops = {
++	.proc_open	= proc_read_atm_cfg_seq_open,
++	.proc_read	= seq_read,
++	.proc_write	= atm_cfg_proc_write,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
+ };
+ 
+ static ssize_t proc_write_atm_wanmib(struct file *file, const char __user *buf,
+@@ -2173,13 +2163,12 @@ static int proc_read_atm_wanmib_seq_open
+ 
+ 
+ 
+-static const struct file_operations atm_wanmib_proc_fops = {
+-	.owner      = THIS_MODULE,
+-	.open       = proc_read_atm_wanmib_seq_open,
+-	.read       = seq_read,
+-	.write      = proc_write_atm_wanmib,
+-	.llseek     = seq_lseek,
+-	.release    = single_release,
++static const struct proc_ops atm_wanmib_proc_fops = {
++	.proc_open    = proc_read_atm_wanmib_seq_open,
++	.proc_read    = seq_read,
++	.proc_write   = proc_write_atm_wanmib,
++	.proc_lseek   = seq_lseek,
++	.proc_release = single_release,
+ };
+ 
+ static int proc_read_htu_seq_open(struct inode *inode, struct file *file)
+@@ -2187,12 +2176,11 @@ static int proc_read_htu_seq_open(struct
+ 	return single_open(file, proc_read_htu, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations htu_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_htu_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
++static const struct proc_ops htu_proc_fops = {
++	.proc_open	= proc_read_htu_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
+ };
+ 
+ static int proc_read_queue_seq_open(struct inode *inode, struct file *file)
+@@ -2200,12 +2188,11 @@ static int proc_read_queue_seq_open(stru
+ 	return single_open(file, proc_read_queue, PDE_DATA(inode));
+ }
+ 
+-static const struct file_operations queue_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_queue_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
++static const struct proc_ops queue_proc_fops = {
++	.proc_open	= proc_read_queue_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
+ };
+ 
+ static void set_q_prio(struct atm_priv *priv,
+@@ -2428,13 +2415,12 @@ static const struct seq_operations pvc_m
+ 	.show = pvc_mib_seq_show,
+ };
+ 
+-static const struct file_operations atm_prio_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_atm_read_prio_seq_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.write		= proc_atm_write_prio,
+-	.release	= single_release,
++static const struct proc_ops atm_prio_proc_fops = {
++	.proc_open	= proc_atm_read_prio_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_write	= proc_atm_write_prio,
++	.proc_release	= single_release,
+ };
+ 
+ static int proc_read_pvc_mib_seq_open(struct inode *inode, struct file *file)
+@@ -2447,12 +2433,11 @@ static int proc_read_pvc_mib_seq_open(st
+ 	return ret;
+ }
+ 
+-static const struct file_operations atm_pvc_mib_proc_fops = {
+-	.owner	= THIS_MODULE,
+-	.open	= proc_read_pvc_mib_seq_open,
+-	.read	= seq_read,
+-	.llseek	= seq_lseek,
+-	.release = seq_release,
++static const struct proc_ops atm_pvc_mib_proc_fops = {
++	.proc_open	= proc_read_pvc_mib_seq_open,
++	.proc_read	= seq_read,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= seq_release,
+ };
+ 
+ static ssize_t proc_write_cell(struct file *file,
+@@ -2592,13 +2577,12 @@ static int proc_read_cell_seq_open(struc
+ 	return single_open(file, proc_read_cell, NULL);
+ }
+ 
+-static const struct file_operations atm_cell_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= proc_read_cell_seq_open,
+-	.read		= seq_read,
+-	.write		= proc_write_cell,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
++static const struct proc_ops atm_cell_proc_fops = {
++	.proc_open	= proc_read_cell_seq_open,
++	.proc_read	= seq_read,
++	.proc_write	= proc_write_cell,
++	.proc_lseek	= seq_lseek,
++	.proc_release	= single_release,
+ };
+ 
+ static struct tc_proc_list atm_procs[] = {

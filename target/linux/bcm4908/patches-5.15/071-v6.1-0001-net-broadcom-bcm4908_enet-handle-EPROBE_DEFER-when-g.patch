@@ -1,0 +1,53 @@
+From e93a766da57fff3273bcb618edf5dfca1fb86b89 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Thu, 15 Sep 2022 15:30:13 +0200
+Subject: [PATCH] net: broadcom: bcm4908_enet: handle -EPROBE_DEFER when
+ getting MAC
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Reading MAC from OF may return -EPROBE_DEFER if underlaying NVMEM device
+isn't ready yet. In such case pass that error code up and "wait" to be
+probed later.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Link: https://lore.kernel.org/r/20220915133013.2243-1-zajec5@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/broadcom/bcm4908_enet.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm4908_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm4908_enet.c
+@@ -720,6 +720,8 @@ static int bcm4908_enet_probe(struct pla
+ 
+ 	SET_NETDEV_DEV(netdev, &pdev->dev);
+ 	err = of_get_ethdev_address(dev->of_node, netdev);
++	if (err == -EPROBE_DEFER)
++		goto err_dma_free;
+ 	if (err)
+ 		eth_hw_addr_random(netdev);
+ 	netdev->netdev_ops = &bcm4908_enet_netdev_ops;
+@@ -730,14 +732,17 @@ static int bcm4908_enet_probe(struct pla
+ 	netif_napi_add(netdev, &enet->rx_ring.napi, bcm4908_enet_poll_rx, NAPI_POLL_WEIGHT);
+ 
+ 	err = register_netdev(netdev);
+-	if (err) {
+-		bcm4908_enet_dma_free(enet);
+-		return err;
+-	}
++	if (err)
++		goto err_dma_free;
+ 
+ 	platform_set_drvdata(pdev, enet);
+ 
+ 	return 0;
++
++err_dma_free:
++	bcm4908_enet_dma_free(enet);
++
++	return err;
+ }
+ 
+ static int bcm4908_enet_remove(struct platform_device *pdev)

@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: GPL-2.0-only
+
+START=99
+
+boot() {
+	case $(board_name) in
+	iptime,a6004mx)
+		if [ `fw_printenv boot_sector` = "boot_sector=B" ]; then
+			echo "bootcount: boot_sector must be A. Rebooting..."
+			fw_setenv boot_sector A
+			reboot
+			exit 1
+		fi
+		;;
+	esac
+}

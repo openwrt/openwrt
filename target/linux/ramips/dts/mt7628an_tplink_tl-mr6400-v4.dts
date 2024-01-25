@@ -93,11 +93,13 @@
 };
 
 &factory {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-	macaddr_factory_1f100: macaddr@1f100 {
-		reg = <0x1f100 0x6>;
+		macaddr_factory_1f100: macaddr@1f100 {
+			reg = <0x1f100 0x6>;
+		};
 	};
 };

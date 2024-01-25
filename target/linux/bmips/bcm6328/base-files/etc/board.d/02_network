@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+arcadyan,ar7516)
+	ucidef_set_bridge_device switch
+	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+	;;
+comtrend,ar-5381u |\
+comtrend,ar-5387un |\
+innacomm,w3400v6 |\
+nucom,r5010unv2)
+	ucidef_set_bridge_device switch
+	ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+	;;
+sercomm,ad1018)
+	ucidef_set_bridge_device switch
+	ucidef_set_interface_lan "lan1 lan2 lan3 fibre"
+	;;
+esac
+
+board_config_flush
+
+exit 0

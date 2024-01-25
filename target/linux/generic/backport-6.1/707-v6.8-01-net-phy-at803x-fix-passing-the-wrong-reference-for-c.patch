@@ -1,0 +1,45 @@
+From f8fdbf3389f44c7026f16e36cb1f2ff017f7f5b2 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 8 Dec 2023 15:51:48 +0100
+Subject: [PATCH 01/13] net: phy: at803x: fix passing the wrong reference for
+ config_intr
+
+Fix passing the wrong reference for config_initr on passing the function
+pointer, drop the wrong & from at803x_config_intr in the PHY struct.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/phy/at803x.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/phy/at803x.c
++++ b/drivers/net/phy/at803x.c
+@@ -2104,7 +2104,7 @@ static struct phy_driver at803x_driver[]
+ 	.write_page		= at803x_write_page,
+ 	.get_features		= at803x_get_features,
+ 	.read_status		= at803x_read_status,
+-	.config_intr		= &at803x_config_intr,
++	.config_intr		= at803x_config_intr,
+ 	.handle_interrupt	= at803x_handle_interrupt,
+ 	.get_tunable		= at803x_get_tunable,
+ 	.set_tunable		= at803x_set_tunable,
+@@ -2134,7 +2134,7 @@ static struct phy_driver at803x_driver[]
+ 	.resume			= at803x_resume,
+ 	.flags			= PHY_POLL_CABLE_TEST,
+ 	/* PHY_BASIC_FEATURES */
+-	.config_intr		= &at803x_config_intr,
++	.config_intr		= at803x_config_intr,
+ 	.handle_interrupt	= at803x_handle_interrupt,
+ 	.cable_test_start	= at803x_cable_test_start,
+ 	.cable_test_get_status	= at803x_cable_test_get_status,
+@@ -2150,7 +2150,7 @@ static struct phy_driver at803x_driver[]
+ 	.resume			= at803x_resume,
+ 	.flags			= PHY_POLL_CABLE_TEST,
+ 	/* PHY_BASIC_FEATURES */
+-	.config_intr		= &at803x_config_intr,
++	.config_intr		= at803x_config_intr,
+ 	.handle_interrupt	= at803x_handle_interrupt,
+ 	.cable_test_start	= at803x_cable_test_start,
+ 	.cable_test_get_status	= at803x_cable_test_get_status,

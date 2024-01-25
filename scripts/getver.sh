@@ -21,7 +21,7 @@ try_git() {
 	r*)
 		GET_REV="$(echo $GET_REV | tr -d 'r')"
 		BASE_REV="$(git rev-list ${REBOOT}..HEAD 2>/dev/null | wc -l | awk '{print $1}')"
-		REV="$(git rev-parse HEAD~$((BASE_REV - GET_REV)))"
+		[ $((BASE_REV - GET_REV)) -ge 0 ] && REV="$(git rev-parse HEAD~$((BASE_REV - GET_REV)))"
 		;;
 	*)
 		BRANCH="$(git rev-parse --abbrev-ref HEAD)"

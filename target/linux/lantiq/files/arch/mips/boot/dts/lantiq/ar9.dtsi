@@ -44,8 +44,8 @@
 			#interrupt-cells = <1>;
 			interrupt-controller;
 			compatible = "lantiq,icu";
-			/* TODO: AR9 should have ICU1 (like VR9) too */
-			reg = <0x80200 0xc8>;
+			reg = <0x80200 0xc8	/* icu0 */
+				0x80300 0xc8>;	/* icu1 */
 		};
 
 		watchdog@803f0 {

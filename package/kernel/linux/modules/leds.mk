@@ -115,6 +115,22 @@ endef
 $(eval $(call KernelPackage,ledtrig-pattern))
 
 
+define KernelPackage/ledtrig-tty
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED Trigger for TTY devices
+  KCONFIG:=CONFIG_LEDS_TRIGGER_TTY
+  FILES:=$(LED_TRIGGER_DIR)/ledtrig-tty.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-tty)
+endef
+
+define KernelPackage/ledtrig-tty/description
+  This allows LEDs to be controlled by activity on ttys which includes
+  serial devices like '/dev/ttyS0'.
+endef
+
+$(eval $(call KernelPackage,ledtrig-tty))
+
+
 define KernelPackage/leds-apu
   SUBMENU:=$(LEDS_MENU)
   TITLE:=PC Engines APU1 LED support
@@ -129,6 +145,22 @@ define KernelPackage/leds-apu/description
 endef
 
 $(eval $(call KernelPackage,leds-apu))
+
+
+define KernelPackage/leds-mlxcpld
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED support for the Mellanox boards
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-mlxcpld.ko
+  KCONFIG:=CONFIG_LEDS_MLXCPLD
+  AUTOLOAD:=$(call AutoProbe,leds-mlxcpld)
+endef
+
+define KernelPackage/leds-mlxcpld/description
+  This option enables support for the LEDs on the Mellanox
+  boards.
+endef
+
+$(eval $(call KernelPackage,leds-mlxcpld))
 
 
 define KernelPackage/leds-pca955x
@@ -229,3 +261,37 @@ define KernelPackage/input-leds/description
 endef
 
 $(eval $(call KernelPackage,input-leds))
+
+
+define KernelPackage/leds-lp55xx-common
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED common driver for LP5521/LP5523/LP55231/LP5562 controllers
+  DEPENDS:=+kmod-i2c-core
+  KCONFIG:=CONFIG_LEDS_LP55XX_COMMON
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-lp55xx-common.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-lp55xx-common,1)
+endef
+
+define KernelPackage/leds-lp55xx-common/description
+ This option enables support for Texas Instruments
+ LP5521/LP5523/LP55231/LP5562 common driver.
+endef
+
+$(eval $(call KernelPackage,leds-lp55xx-common))
+
+
+define KernelPackage/leds-lp5562
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED driver for LP5562 controllers
+  DEPENDS:=+kmod-i2c-core +kmod-leds-lp55xx-common
+  KCONFIG:=CONFIG_LEDS_LP5562
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-lp5562.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-lp5562,1)
+endef
+
+define KernelPackage/leds-lp5562/description
+ This option enables support for Texas Instruments LP5562
+ LED controllers.
+endef
+
+$(eval $(call KernelPackage,leds-lp5562))

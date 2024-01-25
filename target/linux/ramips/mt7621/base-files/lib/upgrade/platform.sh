@@ -33,6 +33,7 @@ platform_do_upgrade() {
 			fw_setenv --lock / bootImage 0 || exit 1
 		fi
 		;;
+	mikrotik,ltap-2hnd|\
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m11g|\
@@ -51,24 +52,36 @@ platform_do_upgrade() {
 	case "$board" in
 	ampedwireless,ally-00x19k|\
 	ampedwireless,ally-r1900k|\
+	arcadyan,we420223-99|\
 	asus,rt-ac65p|\
 	asus,rt-ac85p|\
 	asus,rt-ax53u|\
+	asus,rt-ax54|\
 	beeline,smartbox-flash|\
 	beeline,smartbox-giga|\
+	beeline,smartbox-pro|\
+	beeline,smartbox-turbo|\
+	beeline,smartbox-turbo-plus|\
+	belkin,rt1800|\
+	dlink,covr-x1860-a1|\
+	dlink,dap-x1860-a1|\
 	dlink,dir-1960-a1|\
 	dlink,dir-2640-a1|\
 	dlink,dir-2660-a1|\
+	dlink,dir-3060-a1|\
 	dlink,dir-853-a3|\
+	etisalat,s3|\
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
 	h3c,tx1806|\
+	haier,har-20s2u1|\
 	hiwifi,hc5962|\
 	iptime,a3004t|\
 	iptime,ax2004m|\
 	iptime,t5004|\
 	jcg,q20|\
 	linksys,e5600|\
+	linksys,e7350|\
 	linksys,ea6350-v4|\
 	linksys,ea7300-v1|\
 	linksys,ea7300-v2|\
@@ -76,6 +89,7 @@ platform_do_upgrade() {
 	linksys,ea8100-v1|\
 	linksys,ea8100-v2|\
 	mts,wg430223|\
+	netgear,eax12|\
 	netgear,r6220|\
 	netgear,r6260|\
 	netgear,r6350|\
@@ -90,8 +104,13 @@ platform_do_upgrade() {
 	netgear,wax202|\
 	netis,wf2881|\
 	raisecom,msg1500-x-00|\
+	rostelecom,rt-fe-1a|\
+	rostelecom,rt-sf-1|\
 	sercomm,na502|\
 	sercomm,na502s|\
+	sim,simax1800t|\
+	tplink,ec330-g5u-v1|\
+	wifire,s1500-nbn|\
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-4|\
@@ -108,17 +127,31 @@ platform_do_upgrade() {
 	iodata,wn-ax2033gr|\
 	iodata,wn-dx1167r|\
 	iodata,wn-dx2033gr)
-		iodata_mstc_upgrade_prepare "0xfe75"
+		iodata_mstc_set_flag "debugflag" "factory" "0xfe75" "0,1" "1"
+		iodata_mstc_set_flag "bootnum" "persist" "0x4" "1,2" "1"
+		nand_do_upgrade "$1"
+		;;
+	iodata,wn-deax1800gr)
+		iodata_mstc_set_flag "bootnum" "working" "0x4" "0,1" "0"
 		nand_do_upgrade "$1"
 		;;
 	iodata,wn-dx1200gr)
-		iodata_mstc_upgrade_prepare "0x1fe75"
+		iodata_mstc_set_flag "debugflag" "factory" "0x1fe75" "0,1" "1"
+		iodata_mstc_set_flag "bootnum" "persist" "0x4" "1,2" "1"
+		nand_do_upgrade "$1"
+		;;
+	tplink,er605-v2)
+		echo "Upgrading tplink,er605-v2"
+		CI_UBIPART="firmware"
+		CI_KERNPART="kernel"
 		nand_do_upgrade "$1"
 		;;
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
 		;;
+	zyxel,lte3301-plus|\
+	zyxel,lte5398-m904|\
 	zyxel,nr7101)
 		fw_setenv CheckBypass 0
 		fw_setenv Image1Stable 0
@@ -133,6 +166,10 @@ platform_do_upgrade() {
 		dd bs=4 count=1 seek=26 conv=notrunc if=/dev/zero of=$kernel2_mtd 2>/dev/null &&\
 		echo "Kernel2 sequence number was reset to 0"
 		CI_KERNPART="Kernel"
+		nand_do_upgrade "$1"
+		;;
+	zyxel,wsm20)
+		zyxel_mstc_upgrade_prepare
 		nand_do_upgrade "$1"
 		;;
 	*)

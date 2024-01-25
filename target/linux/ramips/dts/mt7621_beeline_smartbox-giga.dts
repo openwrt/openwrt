@@ -23,21 +23,18 @@
 		compatible = "gpio-leds";
 
 		led_status_green: led-0 {
-			label = "green:status";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-1 {
-			label = "blue:wan";
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_red: led-2 {
-			label = "red:status";
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
@@ -47,7 +44,7 @@
 	keys {
 		compatible = "gpio-keys";
 
-		reset {
+		button-0 {
 			label = "reset";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
@@ -99,12 +96,24 @@
 			sercomm,scpart-id = <2>;
 			read-only;
 
-			compatible = "nvmem-cells";
-			#address-cells = <1>;
-			#size-cells = <1>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			macaddr_factory_21000: macaddr@21000 {
-				reg = <0x21000 0x6>;
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x4da8>;
+				};
+
+				macaddr_factory_21000: macaddr@21000 {
+					compatible = "mac-base";
+					reg = <0x21000 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
 			};
 		};
 
@@ -175,12 +184,10 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x8000>;
 		ieee80211-freq-limit = <5000000 6000000>;
 
-		nvmem-cells = <&macaddr_factory_21000>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(5)>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_21000 5>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
@@ -188,31 +195,35 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
 		ieee80211-freq-limit = <2400000 2500000>;
 
-		nvmem-cells = <&macaddr_factory_21000>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(4)>;
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_21000 4>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_21000>;
+	nvmem-cells = <&macaddr_factory_21000 0>;
 	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_factory_21000 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	ethphy0: ethernet-phy@0 {
+		reg = <0>;
+	};
 };
 
 &switch0 {
 	ports {
-		port@0 {
-			status = "okay";
-			label = "wan";
-
-			nvmem-cells = <&macaddr_factory_21000>;
-			nvmem-cell-names = "mac-address";
-			mac-address-increment = <(1)>;
-		};
-
 		port@1 {
 			status = "okay";
 			label = "lan1";

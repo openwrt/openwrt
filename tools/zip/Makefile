@@ -17,6 +17,7 @@ PKG_HASH:=f0e8bb1f9b7eb0b01285495a2699df3a4b766784c1765a8f1aeedf63c0806369
 
 PKG_LICENSE:=BSD-4-Clause
 PKG_LICENSE_FILES:=LICENSE
+PKG_CPE_ID:=cpe:/a:zip_project:zip
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)/zip$(PKG_REV)
 HOST_BUILD_PARALLEL:=1
@@ -32,5 +33,8 @@ define Host/Install
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/zip $(STAGING_DIR_HOST)/bin/
 endef
 
+define Host/Clean
+	rm -rf $(STAGING_DIR_HOST)/bin/zip
+endef
+
 $(eval $(call HostBuild))
-#$(eval $(call BuildPackage,zip))

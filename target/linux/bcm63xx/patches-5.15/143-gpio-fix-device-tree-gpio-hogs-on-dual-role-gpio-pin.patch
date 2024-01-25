@@ -99,7 +99,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (ret < 0) {
  			pr_err("%s: failed to add hogs for %pOF\n", __func__,
  			       rd->dn);
-@@ -1035,9 +1045,11 @@ int of_gpiochip_add(struct gpio_chip *ch
+@@ -1037,9 +1047,11 @@ int of_gpiochip_add(struct gpio_chip *ch
  
  	of_node_get(chip->of_node);
  
@@ -116,7 +116,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  }
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -1768,7 +1768,8 @@ int gpiochip_add_pingroup_range(struct g
+@@ -1815,7 +1815,8 @@ int gpiochip_add_pingroup_range(struct g
  
  	list_add_tail(&pin_range->node, &gdev->pin_ranges);
  
@@ -126,7 +126,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  }
  EXPORT_SYMBOL_GPL(gpiochip_add_pingroup_range);
  
-@@ -1825,7 +1826,7 @@ int gpiochip_add_pin_range(struct gpio_c
+@@ -1872,7 +1873,7 @@ int gpiochip_add_pin_range(struct gpio_c
  
  	list_add_tail(&pin_range->node, &gdev->pin_ranges);
  

@@ -1,0 +1,26 @@
+From 9fd5a49f6da9de5da83f4a53eccefad647ab15ed Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 11 Oct 2021 14:27:18 +0300
+Subject: [PATCH 246/247] clk: at91: sama7g5: set low limit for mck0 at 32KHz
+
+MCK0 could go as low as 32KHz. Set this limit.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20211011112719.3951784-15-claudiu.beznea@microchip.com
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+---
+ drivers/clk/at91/sama7g5.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/at91/sama7g5.c
++++ b/drivers/clk/at91/sama7g5.c
+@@ -849,7 +849,7 @@ static const struct {
+ 
+ /* MCK0 characteristics. */
+ static const struct clk_master_characteristics mck0_characteristics = {
+-	.output = { .min = 50000000, .max = 200000000 },
++	.output = { .min = 32768, .max = 200000000 },
+ 	.divisors = { 1, 2, 4, 3, 5 },
+ 	.have_div3_pres = 1,
+ };

@@ -44,7 +44,6 @@
 };
 
 &wifi5 {
-	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cells = <&macaddr_factory_4 2>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <(2)>;
 };

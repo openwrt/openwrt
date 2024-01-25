@@ -1,0 +1,66 @@
+From 4fdcbde682291fba2c3f45a41decd656d92a314f Mon Sep 17 00:00:00 2001
+From: William Zhang <william.zhang@broadcom.com>
+Date: Wed, 3 Aug 2022 10:54:49 -0700
+Subject: [PATCH] arm64: dts: bcmbca: update BCM4908 board dts files
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Append "brcm,bcmbca" to compatible strings based on the new bcmbca
+binding rule for BCM4908 family based boards.
+
+Signed-off-by: William Zhang <william.zhang@broadcom.com>
+Acked-by: Rafał Miłecki <rafal@milecki.pl>
+Link: https://lore.kernel.org/r/20220803175455.47638-4-william.zhang@broadcom.com
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-netgear-r8000p.dts | 2 +-
+ .../dts/broadcom/bcmbca/bcm4906-tplink-archer-c2300-v1.dts     | 2 +-
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm4908-asus-gt-ac5300.dts | 2 +-
+ .../arm64/boot/dts/broadcom/bcmbca/bcm4908-netgear-raxe500.dts | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-netgear-r8000p.dts
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-netgear-r8000p.dts
+@@ -7,7 +7,7 @@
+ #include "bcm4906.dtsi"
+ 
+ / {
+-	compatible = "netgear,r8000p", "brcm,bcm4906", "brcm,bcm4908";
++	compatible = "netgear,r8000p", "brcm,bcm4906", "brcm,bcm4908", "brcm,bcmbca";
+ 	model = "Netgear R8000P";
+ 
+ 	memory@0 {
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-tplink-archer-c2300-v1.dts
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-tplink-archer-c2300-v1.dts
+@@ -7,7 +7,7 @@
+ #include "bcm4906.dtsi"
+ 
+ / {
+-	compatible = "tplink,archer-c2300-v1", "brcm,bcm4906", "brcm,bcm4908";
++	compatible = "tplink,archer-c2300-v1", "brcm,bcm4906", "brcm,bcm4908", "brcm,bcmbca";
+ 	model = "TP-Link Archer C2300 V1";
+ 
+ 	memory@0 {
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908-asus-gt-ac5300.dts
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908-asus-gt-ac5300.dts
+@@ -7,7 +7,7 @@
+ #include "bcm4908.dtsi"
+ 
+ / {
+-	compatible = "asus,gt-ac5300", "brcm,bcm4908";
++	compatible = "asus,gt-ac5300", "brcm,bcm4908", "brcm,bcmbca";
+ 	model = "Asus GT-AC5300";
+ 
+ 	memory@0 {
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908-netgear-raxe500.dts
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908-netgear-raxe500.dts
+@@ -3,7 +3,7 @@
+ #include "bcm4908.dtsi"
+ 
+ / {
+-	compatible = "netgear,raxe500", "brcm,bcm4908";
++	compatible = "netgear,raxe500", "brcm,bcm4908", "brcm,bcmbca";
+ 	model = "Netgear RAXE500";
+ 
+ 	memory@0 {

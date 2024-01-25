@@ -24,7 +24,7 @@ endif
 
 PKG_EXTMOD_SUBDIRS:=driver driver-mini glue
 
-PKG_USE_MIPS16:=0
+PKG_BUILD_FLAGS:=no-mips16
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -40,7 +40,7 @@ endef
 define KernelPackage/brcm-wl/Default
   $(call Package/broadcom-wl/Default)
   SECTION:=kernel
-  DEPENDS:=@(TARGET_bcm47xx||TARGET_bcm63xx) +wireless-tools
+  DEPENDS:=@(TARGET_bcm47xx||TARGET_bcm63xx) +wireless-tools +@KERNEL_WIRELESS_EXT
   TITLE:=Kernel driver for BCM43xx chipsets
   FILES:=$(PKG_BUILD_DIR)/driver$(1)/wl.ko $(PKG_BUILD_DIR)/glue/wl_glue.ko
   AUTOLOAD:=$(call AutoProbe,wl)
@@ -99,13 +99,21 @@ define Package/nas/description
  proprietary Broadcom wl driver.
 endef
 
-MAKE_KMOD := $(MAKE) -C "$(LINUX_DIR)" \
-		$(KERNEL_MAKE_FLAGS) \
+MAKE_KMOD := $(KERNEL_MAKE) \
 		PATH="$(TARGET_PATH)" \
 		M="$(PKG_BUILD_DIR)/kmod" \
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
+
+	# New kernel version changed the sysmbol exported from printk to _printk
+	# The object file provided by broadcom require modification to correctly
+	# modprobe and generate a .ko
+	$(TARGET_CROSS)objcopy $(PKG_BUILD_DIR)/driver/wl_apsta/wl_prebuilt.o \
+	  --redefine-sym printk=_printk
+	$(TARGET_CROSS)objcopy $(PKG_BUILD_DIR)/driver/wl_apsta_mini/wl_prebuilt.o \
+	  --redefine-sym printk=_printk
+
 	$(CP) $(PKG_BUILD_DIR)/driver $(PKG_BUILD_DIR)/driver-mini
 	$(CP) ./src/glue $(PKG_BUILD_DIR)/glue
 endef

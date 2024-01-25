@@ -8,13 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=intel-microcode
-PKG_VERSION:=20220510
+PKG_VERSION:=20230808
 PKG_RELEASE:=1
 
 PKG_SOURCE:=intel-microcode_3.$(PKG_VERSION).1.tar.xz
-PKG_SOURCE_URL:=@DEBIAN/pool/non-free/i/intel-microcode/
-PKG_HASH:=49752447c1b905dd130699cdef09fb2bba47b6f413d27787c98a5569273e283e
+PKG_SOURCE_URL:=@DEBIAN/pool/non-free-firmware/i/intel-microcode/
+PKG_HASH:=29e77c275b3f60a691832c0844f70effbd94a4594d04af21e0c2e6e0c1ac1894
 PKG_BUILD_DIR:=$(BUILD_DIR)/intel-microcode-3.$(PKG_VERSION).1
+PKG_CPE_ID:=cpe:/a:intel:microcode
 
 PKG_BUILD_DEPENDS:=iucode-tool/host
 

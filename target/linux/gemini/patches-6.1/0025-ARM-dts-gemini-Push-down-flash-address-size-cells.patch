@@ -1,0 +1,62 @@
+From 6b84aa39a063eec883d410a9893cec70fce56163 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Sun, 4 Dec 2022 20:02:28 +0100
+Subject: [PATCH 25/29] ARM: dts: gemini: Push down flash address/size cells
+
+The platforms not defining any OF partions complain like
+this:
+
+../arch/arm/boot/dts/gemini.dtsi:19.25-28.5: Warning
+ (avoid_unnecessary_addr_size): /soc/flash@30000000: unnecessary
+ #address-cells/#size-cells without "ranges" or child "reg" property
+
+Get rid of this by only defining the address-cells and
+size-cells where it is actually used by OF partitions.
+
+Link: https://lore.kernel.org/r/20221204190230.3345590-1-linus.walleij@linaro.org
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+--- a/arch/arm/boot/dts/gemini-dlink-dns-313.dts
++++ b/arch/arm/boot/dts/gemini-dlink-dns-313.dts
+@@ -164,6 +164,8 @@
+ 			compatible = "cortina,gemini-flash", "jedec-flash";
+ 			status = "okay";
+ 			reg = <0x30000000 0x00080000>;
++			#address-cells = <1>;
++			#size-cells = <1>;
+ 
+ 			/*
+ 			 * This "RedBoot" is the Storlink derivative.
+--- a/arch/arm/boot/dts/gemini-wbd111.dts
++++ b/arch/arm/boot/dts/gemini-wbd111.dts
+@@ -86,6 +86,8 @@
+ 			status = "okay";
+ 			/* 8MB of flash */
+ 			reg = <0x30000000 0x00800000>;
++			#address-cells = <1>;
++			#size-cells = <1>;
+ 
+ 			partition@0 {
+ 				label = "RedBoot";
+--- a/arch/arm/boot/dts/gemini-wbd222.dts
++++ b/arch/arm/boot/dts/gemini-wbd222.dts
+@@ -90,6 +90,8 @@
+ 			status = "okay";
+ 			/* 8MB of flash */
+ 			reg = <0x30000000 0x00800000>;
++			#address-cells = <1>;
++			#size-cells = <1>;
+ 
+ 			partition@0 {
+ 				label = "RedBoot";
+--- a/arch/arm/boot/dts/gemini.dtsi
++++ b/arch/arm/boot/dts/gemini.dtsi
+@@ -22,8 +22,6 @@
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&pflash_default_pins>;
+ 			bank-width = <2>;
+-			#address-cells = <1>;
+-			#size-cells = <1>;
+ 			status = "disabled";
+ 		};
+ 

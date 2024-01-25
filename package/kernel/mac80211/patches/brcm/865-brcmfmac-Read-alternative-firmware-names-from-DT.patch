@@ -24,7 +24,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  #include "of.h"
  
  static int brcmf_of_get_country_codes(struct device *dev,
-@@ -153,3 +154,38 @@ void brcmf_of_probe(struct device *dev,
+@@ -175,3 +176,38 @@ void brcmf_of_probe(struct device *dev,
  	sdio->oob_irq_nr = irq;
  	sdio->oob_irq_flags = irqf;
  }
@@ -65,22 +65,26 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 +}
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/of.h
-@@ -5,9 +5,16 @@
+@@ -5,9 +5,20 @@
  #ifdef CONFIG_OF
  void brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
  		    struct brcmf_mp_device *settings);
++#ifdef CPTCFG_BRCMFMAC_SDIO
 +struct brcmf_firmware_mapping *
 +brcmf_of_fwnames(struct device *dev, u32 *map_count);
++#endif
  #else
  static void brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
  			   struct brcmf_mp_device *settings)
  {
  }
++#ifdef CPTCFG_BRCMFMAC_SDIO
 +static struct brcmf_firmware_mapping *
 +brcmf_of_fwnames(struct device *dev, u32 *map_count)
 +{
 +	return NULL;
 +}
++#endif
  #endif /* CONFIG_OF */
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
@@ -92,7 +96,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  #define DCMD_RESP_TIMEOUT	msecs_to_jiffies(2500)
  #define CTL_DONE_TIMEOUT	msecs_to_jiffies(2500)
-@@ -633,7 +634,7 @@ MODULE_FIRMWARE(BRCMF_FW_DEFAULT_PATH "b
+@@ -632,7 +633,7 @@ MODULE_FIRMWARE(BRCMF_FW_DEFAULT_PATH "b
  /* per-board firmware binaries */
  MODULE_FIRMWARE(BRCMF_FW_DEFAULT_PATH "brcmfmac*-sdio.*.bin");
  
@@ -101,7 +105,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	BRCMF_FW_ENTRY(BRCM_CC_43143_CHIP_ID, 0xFFFFFFFF, 43143),
  	BRCMF_FW_ENTRY(BRCM_CC_43241_CHIP_ID, 0x0000001F, 43241B0),
  	BRCMF_FW_ENTRY(BRCM_CC_43241_CHIP_ID, 0x00000020, 43241B4),
-@@ -659,6 +660,9 @@ static const struct brcmf_firmware_mappi
+@@ -660,6 +661,9 @@ static const struct brcmf_firmware_mappi
  	BRCMF_FW_ENTRY(CY_CC_43752_CHIP_ID, 0xFFFFFFFF, 43752)
  };
  
@@ -111,18 +115,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  #define TXCTL_CREDITS	2
  
  static void pkt_align(struct sk_buff *p, int len, int align)
-@@ -4140,7 +4144,7 @@ int brcmf_sdio_get_fwname(struct device
- 
- 	fwreq = brcmf_fw_alloc_request(bus_if->chip, bus_if->chiprev,
- 				       brcmf_sdio_fwnames,
--				       ARRAY_SIZE(brcmf_sdio_fwnames),
-+				       brcmf_sdio_fwnames_count,
- 				       fwnames, ARRAY_SIZE(fwnames));
- 	if (!fwreq)
- 		return -ENOMEM;
-@@ -4196,6 +4200,9 @@ static const struct brcmf_bus_ops brcmf_
- #define BRCMF_SDIO_FW_CODE	0
+@@ -4201,6 +4205,9 @@ static const struct brcmf_bus_ops brcmf_
  #define BRCMF_SDIO_FW_NVRAM	1
+ #define BRCMF_SDIO_FW_CLM	2
  
 +static struct brcmf_fw_request *
 +brcmf_sdio_prepare_fw_request(struct brcmf_sdio *bus);
@@ -130,7 +125,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  static void brcmf_sdio_firmware_callback(struct device *dev, int err,
  					 struct brcmf_fw_request *fwreq)
  {
-@@ -4211,6 +4218,22 @@ static void brcmf_sdio_firmware_callback
+@@ -4216,6 +4223,22 @@ static void brcmf_sdio_firmware_callback
  
  	brcmf_dbg(TRACE, "Enter: dev=%s, err=%d\n", dev_name(dev), err);
  
@@ -153,7 +148,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	if (err)
  		goto fail;
  
-@@ -4419,7 +4442,7 @@ brcmf_sdio_prepare_fw_request(struct brc
+@@ -4426,7 +4449,7 @@ brcmf_sdio_prepare_fw_request(struct brc
  
  	fwreq = brcmf_fw_alloc_request(bus->ci->chip, bus->ci->chiprev,
  				       brcmf_sdio_fwnames,
@@ -162,7 +157,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  				       fwnames, ARRAY_SIZE(fwnames));
  	if (!fwreq)
  		return NULL;
-@@ -4437,6 +4460,9 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
+@@ -4446,6 +4469,9 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
  	struct brcmf_sdio *bus;
  	struct workqueue_struct *wq;
  	struct brcmf_fw_request *fwreq;
@@ -172,7 +167,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  	brcmf_dbg(TRACE, "Enter\n");
  
-@@ -4519,6 +4545,21 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
+@@ -4528,6 +4554,21 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
  
  	brcmf_dbg(INFO, "completed!!\n");
  

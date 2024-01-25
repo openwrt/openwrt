@@ -1,0 +1,30 @@
+From b0576ade3aaf24b376ea1a4406ae138e2a22b0c0 Mon Sep 17 00:00:00 2001
+From: Jiasheng Jiang <jiasheng@iscas.ac.cn>
+Date: Fri, 27 Jan 2023 10:40:06 +0000
+Subject: [PATCH] nvmem: brcm_nvram: Add check for kzalloc
+
+Add the check for the return value of kzalloc in order to avoid
+NULL pointer dereference.
+
+Fixes: 6e977eaa8280 ("nvmem: brcm_nvram: parse NVRAM content into NVMEM cells")
+Cc: stable@vger.kernel.org
+Signed-off-by: Jiasheng Jiang <jiasheng@iscas.ac.cn>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20230127104015.23839-2-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/brcm_nvram.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/nvmem/brcm_nvram.c
++++ b/drivers/nvmem/brcm_nvram.c
+@@ -97,6 +97,9 @@ static int brcm_nvram_parse(struct brcm_
+ 	len = le32_to_cpu(header.len);
+ 
+ 	data = kzalloc(len, GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++
+ 	memcpy_fromio(data, priv->base, len);
+ 	data[len - 1] = '\0';
+ 

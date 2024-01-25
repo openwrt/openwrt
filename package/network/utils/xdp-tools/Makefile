@@ -1,9 +1,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xdp-tools
-PKG_RELEASE:=$(AUTORELEASE)
-PKG_VERSION:=1.2.5
-PKG_HASH:=140c9bdffe4f2b15bc2973b5f975d0fa5cc011f5a699c7bcdcb698b724b97d4d
+PKG_RELEASE:=1
+PKG_VERSION:=1.2.9
+PKG_HASH:=159ed8d3c8195d812ec3cde83bd736245a72743af372998320d39c2ba69ab142
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/xdp-project/xdp-tools/tar.gz/v$(PKG_VERSION)?
@@ -85,13 +85,17 @@ CONFIGURE_VARS += \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	CLANG="$(CLANG)" \
-	BPF_CFLAGS="$(BPF_CFLAGS)" \
 	BPF_TARGET="$(BPF_TARGET)" \
 	LLC="$(LLVM_LLC)"
 
 MAKE_VARS += \
 	PREFIX=/usr \
 	RUNDIR=/tmp/run
+
+define Build/Configure
+	$(call Build/Configure/Default)
+	echo "BPF_CFLAGS += -I$(BPF_HEADERS_DIR)/tools/lib -fno-stack-protector" >> $(PKG_BUILD_DIR)/config.mk
+endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/xdp

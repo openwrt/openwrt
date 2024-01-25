@@ -1,5 +1,5 @@
 fdtaddr=0x8f000000
-loadaddr=0x81000000
+loadaddr=0x88000000
 bootm_size=0x10000000
 hwconfig=fsl_ddr:bank_intlv=auto
 mc_init=sf probe 0:0;sf read 80000000 a00000 300000;sf read 80300000 e00000 100000;fsl_mc start mc 80000000 80300000;sf read 80400000 d00000 100000;fsl_mc apply dpl 80400000

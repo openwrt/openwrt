@@ -107,7 +107,7 @@
 
 &gsw {
 	phy-mode = "mii";
-	nvmem-cells = <&macaddr_art_16>;
+	nvmem-cells = <&macaddr_art_16 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -143,6 +143,18 @@
 				label = "art";
 				reg = <0x7f0000 0x10000>;       /* 64 KiB*/
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_16: macaddr@16 {
+						compatible = "mac-base";
+						reg = <0x16 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
@@ -160,9 +172,8 @@
 		compatible = "pci168c,0029";
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
-		nvmem-cells = <&macaddr_art_16>;
+		nvmem-cells = <&macaddr_art_16 1>;
 		nvmem-cell-names = "mac-address";
-		mac-address-increment = <1>;
 	};
 };
 
@@ -178,14 +189,4 @@
 &vmmc {
 	status = "okay";
 	gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_16: macaddr@16 {
-		reg = <0x16 0x6>;
-	};
 };

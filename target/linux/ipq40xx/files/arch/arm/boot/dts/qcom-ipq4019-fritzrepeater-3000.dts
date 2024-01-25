@@ -25,10 +25,6 @@
 			status = "okay";
 		};
 
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -53,18 +49,6 @@
 
 		watchdog@b017000 {
 			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-
-			switch_lan_bmp = <0x30>;
-			switch_wan_bmp = <0x02>;
-		};
-
-		edma@c080000 {
-			status = "okay";
-			qcom,num_gmac = <1>;
 		};
 	};
 
@@ -137,6 +121,9 @@
 	status = "okay";
 
 	nand@0 {
+		/delete-property/ nand-ecc-strength;
+		/delete-property/ nand-ecc-step-size;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -210,10 +197,6 @@
 	};
 };
 
-&gmac0 {
-	vlan_tag = <1 0x30>;
-};
-
 &cryptobam {
 	status = "okay";
 };
@@ -266,4 +249,24 @@
 			/* Uses the reference BDF */
 		};
 	};
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan2";
 };

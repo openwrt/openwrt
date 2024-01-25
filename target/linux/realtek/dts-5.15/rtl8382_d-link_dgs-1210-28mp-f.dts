@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "rtl838x.dtsi"
+#include "rtl83xx_d-link_dgs-1210_common.dtsi"
+#include "rtl83xx_d-link_dgs-1210_gpio.dtsi"
+#include "rtl8382_d-link_dgs-1210-28_common.dtsi"
+
+/ {
+	compatible = "d-link,dgs-1210-28mp-f", "realtek,rtl8382-soc", "realtek,rtl838x-soc";
+	model = "D-Link DGS-1210-28MP F";
+};
+
+&leds {
+	link_act {
+		label = "green:link_act";
+		gpios = <&gpio1 28 GPIO_ACTIVE_LOW>;
+	};
+
+	poe {
+		label = "green:poe";
+		gpios = <&gpio1 29 GPIO_ACTIVE_LOW>;
+	};
+
+	poe_max {
+		label = "yellow:poe_max";
+		gpios = <&gpio1 27 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&keys {
+	mode {
+		label = "mode";
+		gpios = <&gpio1 30 GPIO_ACTIVE_LOW>;
+		linux,code = <BTN_0>;
+	};
+};
+
+&uart1 {
+	status = "okay";
+};

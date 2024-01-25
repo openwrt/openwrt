@@ -44,7 +44,7 @@ if itest.s "x${dtype}" == "xnand" ; then
 	setenv root "ubi0:ubi ubi.mtd=2 rootfstype=squashfs,ubifs"
 else
 	setenv fsload "${fs}load ${dtype} ${disk}:1"
-	part uuid ${dtype} ${disk}:1 uuid
+	part uuid ${dtype} ${disk}:2 uuid
 	if test -z "${uuid}"; then
 		# fallback to bootdev
 		if test -n "$bootdev" ; then
@@ -60,7 +60,7 @@ else
 	else
 		setenv root "root=PARTUUID=${uuid}"
 	fi
-	setenv root "$root rootfstype=${fs} rootwait rw"
+	setenv root "$root rootfstype=squashfs rootwait"
 fi
 
 setenv bootargs "${bootargs}" "${root}" "${video}" "${extra}"

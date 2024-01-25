@@ -32,7 +32,6 @@
 		led-failsafe = &led_power_orange;
 		led-running = &led_power_white;
 		led-upgrade = &led_power_blue;
-		label-mac-device = &gmac0;
 	};
 
 	soc {
@@ -70,19 +69,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			status = "okay";
-			switch_lan_bmp = <0x1c>;
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 
@@ -345,20 +331,23 @@
 				label = "ART";
 				reg = <0x0b00000 0x0080000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
-				};
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
 
-				precal_art_9000: precal@9000 {
-					reg = <0x5000 0x2f20>;
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					precal_art_9000: precal@9000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 
@@ -372,21 +361,24 @@
 				label = "ORGDATA";
 				reg = <0x0c00000 0x0080000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				macaddr_orgdata_20: macaddr@20 {
-					reg = <0x20 0x6>;
-				};
-				macaddr_orgdata_26: macaddr@26 {
-					reg = <0x26 0x6>;
-				};
-				macaddr_orgdata_2c: macaddr@2c {
-					reg = <0x2c 0x6>;
-				};
-				macaddr_orgdata_32: macaddr@32 {
-					reg = <0x32 0x6>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_orgdata_20: macaddr@20 {
+						reg = <0x20 0x6>;
+					};
+					macaddr_orgdata_26: macaddr@26 {
+						reg = <0x26 0x6>;
+					};
+					macaddr_orgdata_2c: macaddr@2c {
+						reg = <0x2c 0x6>;
+					};
+					macaddr_orgdata_32: macaddr@32 {
+						reg = <0x32 0x6>;
+					};
 				};
 			};
 
@@ -431,21 +423,40 @@
 	qcom,ath10k-calibration-variant = "Buffalo-WTR-M2133HP";
 };
 
+&switch {
+	status = "okay";
+};
+
+&swport2 {
+	status = "okay";
+	label = "lan3";
+};
+
+&swport3 {
+	status = "okay";
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan1";
+};
+
+&swport5 {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_orgdata_20>;
+};
+
 &mdio {
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 47 GPIO_ACTIVE_LOW>;
-};
-
-&gmac0 {
-	nvmem-cells = <&macaddr_orgdata_20>;
-	nvmem-cell-names = "mac-address";
-};
-
-&gmac1 {
-	nvmem-cells = <&macaddr_orgdata_20>;
-	nvmem-cell-names = "mac-address";
 };
 
 &usb3_ss_phy {

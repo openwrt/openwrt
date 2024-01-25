@@ -100,7 +100,7 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_romfile_f100>;
+	nvmem-cells = <&macaddr_romfile_f100 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -192,9 +192,8 @@
 			mediatek,mtd-eeprom = <&radio 0x0000>;
 			big-endian;
 			ieee80211-freq-limit = <5000000 6000000>;
-			nvmem-cells = <&macaddr_romfile_f100>;
+			nvmem-cells = <&macaddr_romfile_f100 2>;
 			nvmem-cell-names = "mac-address";
-			mac-address-increment = <2>;
 		};
 	};
 };
@@ -245,6 +244,18 @@
 				reg = <0xfd0000 0x10000>;
 				label = "romfile";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_romfile_f100: macaddr@f100 {
+						compatible = "mac-base";
+						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@fe0000 {
@@ -278,14 +289,4 @@
 &usb1 {
 	status = "okay";
 	vbus-supply = <&usb_vbus>;
-};
-
-&romfile {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_romfile_f100: macaddr@f100 {
-		reg = <0xf100 0x6>;
-	};
 };

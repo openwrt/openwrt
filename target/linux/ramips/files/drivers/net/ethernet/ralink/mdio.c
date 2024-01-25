@@ -64,11 +64,7 @@ int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node, int 
 {
 	const __be32 *_phy_addr = NULL;
 	struct phy_device *phydev;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
-	int phy_mode;
-#else
 	phy_interface_t phy_mode = PHY_INTERFACE_MODE_NA;
-#endif
 
 	_phy_addr = of_get_property(phy_node, "reg", NULL);
 
@@ -77,13 +73,8 @@ int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node, int 
 		return -EINVAL;
 	}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0)
-	phy_mode = of_get_phy_mode(phy_node);
-	if (phy_mode < 0) {
-#else
 	of_get_phy_mode(phy_node, &phy_mode);
 	if (phy_mode == PHY_INTERFACE_MODE_NA) {
-#endif
 		dev_err(priv->dev, "incorrect phy-mode %d\n", phy_mode);
 		priv->phy->phy_node[port] = NULL;
 		return -EINVAL;
@@ -266,7 +257,7 @@ err_free_bus:
 err_put_node:
 	of_node_put(mii_np);
 err_no_bus:
-	dev_err(priv->dev, "%s disabled", "mdio-bus");
+	dev_info(priv->dev, "%s disabled", "mdio-bus");
 	priv->mii_bus = NULL;
 	return err;
 }

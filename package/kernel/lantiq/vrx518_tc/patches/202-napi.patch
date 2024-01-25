@@ -1,0 +1,428 @@
+--- a/dcdp/platform/sw_plat.c
++++ b/dcdp/platform/sw_plat.c
+@@ -208,6 +208,8 @@ struct plat_priv {
+ 	struct tc_req req_work;
+ 	struct aca_ring_grp soc_rings;
+ 	struct net_device *netdev;
++	struct napi_struct *napi_tx;
++	struct napi_struct *napi_rx;
+ 	DECLARE_HASHTABLE(mem_map, 8);
+ };
+ 
+@@ -472,7 +474,7 @@ err2:
+ 	return -1;
+ }
+ 
+-static void txout_action(struct tc_priv *priv, struct aca_ring *txout)
++static int txout_action(struct tc_priv *priv, struct aca_ring *txout, int budget)
+ {
+ 	struct aca_ring *txin = &g_plat_priv->soc_rings.txin;
+ 	struct tx_list *txlist = &g_plat_priv->soc_rings.txlist;
+@@ -490,7 +492,10 @@ static void txout_action(struct tc_priv
+ 		spin_lock_irqsave(&tx_spinlock, flags);
+ 	}
+ 
+-	for (i = 0; i < txout->dnum; i++) {
++	if (budget == 0 || budget > txout->dnum)
++		budget = txout->dnum;
++
++	for (i = 0; i < budget; i++) {
+ 		desc = txout->dbase_mem;
+ 		desc += txout->idx;
+ 
+@@ -540,6 +545,8 @@ static void txout_action(struct tc_priv
+ 	if (cnt && g_plat_priv->netdev && netif_queue_stopped(g_plat_priv->netdev)) {
+ 		netif_wake_queue(g_plat_priv->netdev);
+ 	}
++
++	return cnt;
+ }
+ 
+ static void rxin_action(struct tc_priv *priv,
+@@ -549,7 +556,7 @@ static void rxin_action(struct tc_priv *
+ 	writel(cnt, rxin->umt_dst);
+ }
+ 
+-static int rxout_action(struct tc_priv *priv, struct aca_ring *rxout)
++static int rxout_action(struct tc_priv *priv, struct aca_ring *rxout, int budget)
+ {
+ 	struct device *pdev = priv->ep_dev[0].dev;
+ 	int i, cnt;
+@@ -559,8 +566,11 @@ static int rxout_action(struct tc_priv *
+ 	size_t len;
+ 	struct sk_buff *skb;
+ 
++	if (budget == 0 || budget > rxout->dnum)
++		budget = rxout->dnum;
++
+ 	cnt = 0;
+-	for (i = 0; i < rxout->dnum; i++) {
++	for (i = 0; i < budget; i++) {
+ 		desc = rxout->dbase_mem;
+ 		desc += rxout->idx;
+ 
+@@ -593,14 +603,30 @@ static int rxout_action(struct tc_priv *
+ 		ring_idx_inc(rxout);
+ 	}
+ 
+-	if (!cnt)
+-		tc_err(priv, MSG_RX, "RXOUT spurious interrupt\n");
+-	else
++	if (cnt)
+ 		writel(cnt, rxout->umt_dst+0x28); // RXOUT_HD_ACCUM_SUB instead of RXOUT_HD_ACCUM_ADD
+ 
+ 	return cnt;
+ }
+ 
++static int plat_txout_napi(struct napi_struct *napi, int budget)
++{
++	struct plat_priv *priv = g_plat_priv;
++	struct tc_priv *tcpriv = plat_to_tcpriv();
++	struct aca_ring *txout = &priv->soc_rings.txout;
++	struct dc_ep_dev *ep_dev = &tcpriv->ep_dev[txout->ep_dev_idx];
++	int cnt;
++
++	cnt = txout_action(tcpriv, txout, budget);
++
++	if (cnt < budget) {
++		if (napi_complete_done(napi, cnt))
++			ep_dev->hw_ops->icu_en(ep_dev, ACA_HOSTIF_TX);
++	}
++
++	return cnt;
++}
++
+ static void plat_txout_tasklet(unsigned long arg)
+ {
+ 	struct plat_priv *priv = g_plat_priv;
+@@ -608,12 +634,33 @@ static void plat_txout_tasklet(unsigned
+ 	struct aca_ring *txout = &priv->soc_rings.txout;
+ 	struct dc_ep_dev *ep_dev = &tcpriv->ep_dev[txout->ep_dev_idx];
+ 
+-	txout_action(tcpriv, txout);
++	txout_action(tcpriv, txout, 0);
+ 
+ 	/* Enable interrupt */
+ 	ep_dev->hw_ops->icu_en(ep_dev, ACA_HOSTIF_TX);
+ }
+ 
++static int plat_rxout_napi(struct napi_struct *napi, int budget)
++{
++	struct plat_priv *priv = g_plat_priv;
++	struct tc_priv *tcpriv = plat_to_tcpriv();
++	struct aca_ring *rxout = &priv->soc_rings.rxout;
++	struct aca_ring *rxin = &priv->soc_rings.rxin;
++	struct dc_ep_dev *ep_dev = &tcpriv->ep_dev[rxout->ep_dev_idx];
++	int cnt;
++
++	cnt = rxout_action(tcpriv, rxout, budget);
++	if (cnt)
++		rxin_action(tcpriv, rxin, DMA_PACKET_SZ, cnt);
++
++	if (cnt < budget) {
++		if (napi_complete_done(napi, cnt))
++			ep_dev->hw_ops->icu_en(ep_dev, ACA_HOSTIF_RX);
++	}
++
++	return cnt;
++}
++
+ static void plat_rxout_tasklet(unsigned long arg)
+ {
+ 	struct plat_priv *priv = g_plat_priv;
+@@ -623,7 +670,7 @@ static void plat_rxout_tasklet(unsigned
+ 	struct dc_ep_dev *ep_dev = &tcpriv->ep_dev[rxout->ep_dev_idx];
+ 	int cnt;
+ 
+-	cnt = rxout_action(tcpriv, rxout);
++	cnt = rxout_action(tcpriv, rxout, 0);
+ 	if (cnt)
+ 		rxin_action(tcpriv, rxin, DMA_PACKET_SZ, cnt);
+ 
+@@ -783,11 +830,22 @@ static irqreturn_t aca_rx_irq_handler(in
+ {
+ 	struct dc_ep_dev *ep_dev = dev_id;
+ 
+-	/* Disable IRQ in IMCU */
+-	ep_dev->hw_ops->icu_mask(ep_dev, ACA_HOSTIF_RX);
++	if (g_plat_priv->napi_rx) {
++
++		if (napi_schedule_prep(g_plat_priv->napi_rx)) {
++			ep_dev->hw_ops->icu_mask(ep_dev, ACA_HOSTIF_RX);
++			__napi_schedule(g_plat_priv->napi_rx);
++		}
++
++	} else {
++
++		/* Disable IRQ in IMCU */
++		ep_dev->hw_ops->icu_mask(ep_dev, ACA_HOSTIF_RX);
+ 
+-	/* Start tasklet */
+-	tasklet_schedule(&rxout_task);
++		/* Start tasklet */
++		tasklet_schedule(&rxout_task);
++
++	}
+ 
+ 	return IRQ_HANDLED;
+ }
+@@ -796,15 +854,62 @@ static irqreturn_t aca_tx_irq_handler(in
+ {
+ 	struct dc_ep_dev *ep_dev = dev_id;
+ 
+-	/* Disable IRQ in IMCU */
+-	ep_dev->hw_ops->icu_mask(ep_dev, ACA_HOSTIF_TX);
++	if (g_plat_priv->napi_tx) {
+ 
+-	/* Start tasklet */
+-	tasklet_schedule(&txout_task);
++		if (napi_schedule_prep(g_plat_priv->napi_tx)) {
++			ep_dev->hw_ops->icu_mask(ep_dev, ACA_HOSTIF_TX);
++			__napi_schedule(g_plat_priv->napi_tx);
++		}
++
++	} else {
++
++		/* Disable IRQ in IMCU */
++		ep_dev->hw_ops->icu_mask(ep_dev, ACA_HOSTIF_TX);
++
++		/* Start tasklet */
++		tasklet_schedule(&txout_task);
++
++	}
+ 
+ 	return IRQ_HANDLED;
+ }
+ 
++static void plat_net_open(void)
++{
++	struct plat_priv *priv = g_plat_priv;
++	struct tc_priv *tcpriv = plat_to_tcpriv();
++	struct aca_ring *rxout = &priv->soc_rings.rxout;
++	struct aca_ring *txout = &priv->soc_rings.txout;
++	struct dc_ep_dev *ep_dev_rx = &tcpriv->ep_dev[rxout->ep_dev_idx];
++	struct dc_ep_dev *ep_dev_tx = &tcpriv->ep_dev[txout->ep_dev_idx];
++
++	if (priv->napi_rx)
++		napi_enable(priv->napi_rx);
++	ep_dev_rx->hw_ops->icu_en(ep_dev_rx, ACA_HOSTIF_RX);
++
++	if (priv->napi_tx)
++		napi_enable(priv->napi_tx);
++	ep_dev_tx->hw_ops->icu_en(ep_dev_tx, ACA_HOSTIF_TX);
++}
++
++static void plat_net_stop(void)
++{
++	struct plat_priv *priv = g_plat_priv;
++	struct tc_priv *tcpriv = plat_to_tcpriv();
++	struct aca_ring *rxout = &priv->soc_rings.rxout;
++	struct aca_ring *txout = &priv->soc_rings.txout;
++	struct dc_ep_dev *ep_dev_rx = &tcpriv->ep_dev[rxout->ep_dev_idx];
++	struct dc_ep_dev *ep_dev_tx = &tcpriv->ep_dev[txout->ep_dev_idx];
++
++	if (priv->napi_tx)
++		napi_disable(priv->napi_tx);
++	ep_dev_tx->hw_ops->icu_mask(ep_dev_tx, ACA_HOSTIF_TX);
++
++	if (priv->napi_rx)
++		napi_disable(priv->napi_rx);
++	ep_dev_rx->hw_ops->icu_mask(ep_dev_rx, ACA_HOSTIF_RX);
++}
++
+ static void plat_irq_init(struct tc_priv *priv, const char *dev_name)
+ {
+ 	int ret;
+@@ -988,17 +1093,49 @@ static int plat_soc_cfg_get(struct soc_c
+ }
+ 
+ static int plat_open(struct net_device *pdev, const char *dev_name,
++		struct napi_struct *napi_tx, struct napi_struct *napi_rx,
+ 		int id, int flag)
+ {
++	struct tc_priv *priv = g_plat_priv->tc_priv;
++	int i;
++
++	for (i = 0; i < EP_MAX_NUM && i < priv->ep_num; i++) {
++		disable_irq(priv->ep_dev[i].aca_rx_irq);
++		disable_irq(priv->ep_dev[i].aca_tx_irq);
++	}
++
+ 	g_plat_priv->netdev = pdev;
++	g_plat_priv->napi_tx = napi_tx;
++	g_plat_priv->napi_rx = napi_rx;
++
++	for (i = 0; i < EP_MAX_NUM && i < priv->ep_num; i++) {
++		enable_irq(priv->ep_dev[i].aca_rx_irq);
++		enable_irq(priv->ep_dev[i].aca_tx_irq);
++	}
+ 
+ 	return 0;
+ }
+ 
+ static void plat_close(struct net_device *pdev, const char *dev_name,
++		struct napi_struct *napi_tx, struct napi_struct *napi_rx,
+ 		int flag)
+ {
++	struct tc_priv *priv = g_plat_priv->tc_priv;
++	int i;
++
++	for (i = 0; i < EP_MAX_NUM && i < priv->ep_num; i++) {
++		disable_irq(priv->ep_dev[i].aca_rx_irq);
++		disable_irq(priv->ep_dev[i].aca_tx_irq);
++	}
++
+ 	g_plat_priv->netdev = NULL;
++	g_plat_priv->napi_tx = NULL;
++	g_plat_priv->napi_rx = NULL;
++
++	for (i = 0; i < EP_MAX_NUM && i < priv->ep_num; i++) {
++		enable_irq(priv->ep_dev[i].aca_rx_irq);
++		enable_irq(priv->ep_dev[i].aca_tx_irq);
++	}
+ 
+ 	return;
+ }
+@@ -1084,6 +1221,10 @@ static void plat_tc_ops_setup(struct tc_
+ 	priv->tc_ops.free = plat_mem_free;
+ 	priv->tc_ops.dev_reg = plat_open;
+ 	priv->tc_ops.dev_unreg = plat_close;
++	priv->tc_ops.net_open = plat_net_open;
++	priv->tc_ops.net_stop = plat_net_stop;
++	priv->tc_ops.napi_tx = plat_txout_napi;
++	priv->tc_ops.napi_rx = plat_rxout_napi;
+ 	priv->tc_ops.umt_init = plat_umt_init;
+ 	priv->tc_ops.umt_exit = plat_umt_exit;
+ 	priv->tc_ops.umt_start = plat_umt_start;
+--- a/dcdp/atm_tc.c
++++ b/dcdp/atm_tc.c
+@@ -3650,7 +3650,7 @@ static void atm_aca_ring_config_init(str
+ static int atm_ring_init(struct atm_priv *priv)
+ {
+ 	atm_aca_ring_config_init(priv);
+-	return priv->tc_priv->tc_ops.dev_reg(NULL, g_atm_dev_name, 0, 0);
++	return priv->tc_priv->tc_ops.dev_reg(NULL, g_atm_dev_name, NULL, NULL, 0, 0);
+ }
+ 
+ static int atm_init(struct tc_priv *tcpriv, u32 ep_id)
+@@ -4020,7 +4020,7 @@ void atm_tc_unload(void)
+ 	/* unregister device */
+ 	if (priv->tc_priv->tc_ops.dev_unreg != NULL)
+ 		priv->tc_priv->tc_ops.dev_unreg(NULL,
+-			g_atm_dev_name, 0);
++			g_atm_dev_name, NULL, NULL, 0);
+ 
+ 	/* atm_dev_deinit(priv); */
+ 	/* modem module power off */
+--- a/dcdp/inc/tc_main.h
++++ b/dcdp/inc/tc_main.h
+@@ -209,9 +209,15 @@ struct tc_hw_ops {
+ 	void (*subif_unreg)(struct net_device *pdev, const char *dev_name,
+ 			int subif_id, int flag);
+ 	int (*dev_reg)(struct net_device *pdev, const char *dev_name,
++			struct napi_struct *napi_tx, struct napi_struct *napi_rx,
+ 			int id, int flag);
+ 	void (*dev_unreg)(struct net_device *pdev, const char *dev_name,
++			struct napi_struct *napi_tx, struct napi_struct *napi_rx,
+ 			int flag);
++	void (*net_open)(void);
++	void (*net_stop)(void);
++	int (*napi_tx)(struct napi_struct *napi, int budget);
++	int (*napi_rx)(struct napi_struct *napi, int budget);
+ 
+ 	/*umt init/exit including the corresponding DMA init/exit */
+ 	int (*umt_init)(u32 umt_id, u32 umt_period, u32 umt_dst);
+--- a/dcdp/ptm_tc.c
++++ b/dcdp/ptm_tc.c
+@@ -146,7 +146,11 @@ static int ptm_open(struct net_device *d
+ 	struct ptm_priv *ptm_tc = netdev_priv(dev);
+ 
+ 	tc_info(ptm_tc->tc_priv, MSG_EVENT, "ptm open\n");
++
++	ptm_tc->tc_priv->tc_ops.net_open();
++
+ 	netif_tx_start_all_queues(dev);
++
+ #ifdef CONFIG_SOC_TYPE_XWAY
+ 	xet_phy_wan_port(7, NULL, 1, 1);
+ 	if (ppa_hook_ppa_phys_port_add_fn)
+@@ -163,7 +167,11 @@ static int ptm_stop(struct net_device *d
+ 	struct ptm_priv *ptm_tc = netdev_priv(dev);
+ 
+ 	tc_info(ptm_tc->tc_priv, MSG_EVENT, "ptm stop\n");
++
+ 	netif_tx_stop_all_queues(dev);
++
++	ptm_tc->tc_priv->tc_ops.net_stop();
++
+ #ifdef CONFIG_SOC_TYPE_XWAY
+     if (ppa_drv_datapath_mac_entry_setting)
+         ppa_drv_datapath_mac_entry_setting(dev->dev_addr, 0, 6, 10, 1, 2);
+@@ -564,7 +572,7 @@ static void ptm_rx(struct net_device *de
+ 	ptm_tc->stats64.rx_packets++;
+ 	ptm_tc->stats64.rx_bytes += skb->len;
+ 
+-	if (netif_rx(skb) == NET_RX_DROP)
++	if (netif_receive_skb(skb) == NET_RX_DROP)
+ 		ptm_tc->stats64.rx_dropped++;
+ 
+ 	return;
+@@ -664,6 +672,14 @@ static int ptm_dev_init(struct tc_priv *
+ 	memcpy(ptm_tc->outq_map, def_outq_map, sizeof(def_outq_map));
+ 	SET_NETDEV_DEV(ptm_tc->dev, tc_priv->ep_dev[id].dev);
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5,17,0))
++	netif_napi_add(ptm_tc->dev, &ptm_tc->napi_rx, tc_priv->tc_ops.napi_rx);
++	netif_napi_add_tx(ptm_tc->dev, &ptm_tc->napi_tx, tc_priv->tc_ops.napi_tx);
++#else
++	netif_napi_add(ptm_tc->dev, &ptm_tc->napi_rx, tc_priv->tc_ops.napi_rx, NAPI_POLL_WEIGHT);
++	netif_tx_napi_add(ptm_tc->dev, &ptm_tc->napi_tx, tc_priv->tc_ops.napi_tx, NAPI_POLL_WEIGHT);
++
++#endif
+ 	err = register_netdev(ptm_tc->dev);
+ 	if (err)
+ 		goto err1;
+@@ -2618,7 +2634,9 @@ static int ptm_ring_init(struct ptm_ep_p
+ {
+ 	ptm_aca_ring_config_init(priv, id, bonding);
+ 	return priv->tc_priv->tc_ops.dev_reg(priv->ptm_tc->dev,
+-		priv->ptm_tc->dev->name, id, bonding);
++		priv->ptm_tc->dev->name,
++		&priv->ptm_tc->napi_tx, &priv->ptm_tc->napi_rx,
++		id, bonding);
+ }
+ 
+ /**
+@@ -2973,7 +2991,9 @@ void ptm_tc_unload(enum dsl_tc_mode tc_m
+ 	/* unregister device */
+ 	if (ptm_tc->tc_priv->tc_ops.dev_unreg != NULL)
+ 		ptm_tc->tc_priv->tc_ops.dev_unreg(ptm_tc->dev,
+-			ptm_tc->dev->name, 0);
++			ptm_tc->dev->name,
++			&priv->ptm_tc->napi_tx, &priv->ptm_tc->napi_rx,
++			0);
+ 
+ 	/* remove PTM callback function */
+ 	ptm_cb_setup(ptm_tc, 0);
+@@ -2991,6 +3011,10 @@ void ptm_exit(void)
+ 
+ 	if (!priv)
+ 		return;
++
++	netif_napi_del(&priv->napi_tx);
++	netif_napi_del(&priv->napi_rx);
++
+ 	unregister_netdev(priv->dev);
+ 	free_netdev(priv->dev);
+ 
+--- a/dcdp/inc/ptm_tc.h
++++ b/dcdp/inc/ptm_tc.h
+@@ -119,6 +119,8 @@ struct ptm_priv {
+ 	u32 ep_id;
+ 	struct ppe_fw fw;
+ 	struct net_device *dev;
++	struct napi_struct napi_tx;
++	struct napi_struct napi_rx;
+ 	spinlock_t ptm_lock;
+ 	struct rtnl_link_stats64 stats64;
+ 	int subif_id;

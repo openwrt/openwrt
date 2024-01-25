@@ -23,6 +23,8 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
+	mikrotik,routerboard-911-lite|\
+	mikrotik,routerboard-911g-xhpnd|\
 	mikrotik,routerboard-912uag-2hpnd|\
 	mikrotik,routerboard-lhg-2nd|\
 	mikrotik,routerboard-lhg-5nd|\
@@ -44,6 +46,10 @@ case "$FIRMWARE" in
 		;;
 	mikrotik,routerboard-962uigs-5hact2hnt)
 		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 7)
+		;;
+	mikrotik,routerboard-951g-2hnd|\
+	mikrotik,routerboard-951ui-2hnd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" +11)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"

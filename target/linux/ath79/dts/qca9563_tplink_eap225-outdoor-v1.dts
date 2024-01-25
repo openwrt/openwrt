@@ -30,8 +30,14 @@
 };
 
 &art {
-	precalibration_ath10k: pre-calibration@5000 {
-		reg = <0x5000 0x2f20>;
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		precalibration_ath10k: pre-calibration@5000 {
+			reg = <0x5000 0x2f20>;
+		};
 	};
 };
 
@@ -52,9 +58,7 @@
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
 
-		mac-address-increment = <1>;
-
-		nvmem-cells = <&macaddr_info_8>, <&precalibration_ath10k>;
+		nvmem-cells = <&macaddr_info_8 1>, <&precalibration_ath10k>;
 		nvmem-cell-names = "mac-address", "pre-calibration";
 	};
 };

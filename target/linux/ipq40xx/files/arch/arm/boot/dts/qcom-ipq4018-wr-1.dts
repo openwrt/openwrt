@@ -1,0 +1,292 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Pakedge WR-1";
+	compatible = "pakedge,wr-1";
+
+	aliases {
+		label-mac-device = &gmac;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&key_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 59 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_power: power {
+			label = "blue:power";
+			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		wlan2g {
+			label = "blue:wlan2g";
+			gpios = <&tlmm 1 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan5g {
+			label = "blue:wlan5g";
+			gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	soc {
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	status = "okay";
+
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0000000 0x0040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x0040000 0x0020000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:QSEE";
+				reg = <0x0060000 0x0060000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:CDT";
+				reg = <0x00c0000 0x0010000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:DDRPARAMS";
+				reg = <0x00d0000 0x0010000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "0:APPSBLENV";
+				reg = <0x00e0000 0x0010000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "0:APPSBL";
+				reg = <0x00f0000 0x0080000>;
+				read-only;
+			};
+
+			partition@170000 {
+				label = "0:ART";
+				reg = <0x0170000 0x0010000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "firmware";
+				reg = <0x0180000 0x1e80000>;
+			};
+		};
+	};
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport1 {
+	status = "okay";
+
+	label = "lan4";
+};
+
+&swport2 {
+	status = "okay";
+
+	label = "lan3";
+};
+
+&swport3 {
+	status = "okay";
+
+	label = "lan2";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "lan1";
+};
+
+&swport5 {
+	status = "okay";
+};
+
+&tlmm {
+	key_pins: key_pinmux {
+		mux {
+			function = "gpio";
+			pins = "gpio59";
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led_pinmux {
+		mux {
+			function = "gpio";
+			pins = "gpio0", "gpio1", "gpio2";
+			bias-none;
+			drive-strength = <2>;
+			output-low;
+		};
+	};
+
+	serial_pins: serial_pinmux {
+		mux {
+			function = "blsp_uart0";
+			pins = "gpio60", "gpio61";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		mux {
+			function = "blsp_spi0";
+			pins = "gpio55", "gpio56", "gpio57";
+			bias-disable;
+			drive-strength = <12>;
+		};
+
+		mux_cs {
+			function = "gpio";
+			pins = "gpio54";
+			bias-disable;
+			drive-strength = <2>;
+			output-high;
+		};
+	};
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+
+	qcom,ath10k-calibration-variant = "Pakedge-WR-1";
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,ath10k-calibration-variant = "Pakedge-WR-1";
+};

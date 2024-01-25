@@ -14,13 +14,6 @@
 		led-upgrade = &led_rf;
 	};
 
-	extosc: ref {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-output-names = "ref";
-		clock-frequency = <40000000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -106,22 +99,8 @@
 
 &usb1 {
 	status = "okay";
-	#address-cells = <1>;
-	#size-cells = <0>;
-
-	usb_ohci_port: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &usb2 {
 	status = "okay";
-	#address-cells = <1>;
-	#size-cells = <0>;
-
-	usb_ehci_port: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };

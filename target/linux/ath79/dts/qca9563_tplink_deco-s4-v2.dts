@@ -1,0 +1,131 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+#include "qca956x.dtsi"
+
+/ {
+	compatible = "tplink,deco-s4-v2", "qca,qca9563";
+	model = "TP-Link Deco S4 v2";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan2g {
+			label = "red:wlan2g";
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led_power: power {
+			label = "green:power";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		wlan5g {
+			label = "blue:wlan5g";
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "sgmii";
+		qca,mib-poll-interval = <500>;
+
+		qca,ar8327-initvals = <
+			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
+			0x7c 0x0000007e /* PORT0_STATUS */
+			>;
+	};
+};
+
+&spi {
+	status = "okay";
+	num-cs = <1>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			uboot: partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x080000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "product-info";
+				reg = <0x80000 0x05000>;
+				read-only;
+			};
+
+			config: partition@85000 {
+				label = "config";
+				reg = <0x85000 0x16b000>;
+				read-only;
+			};
+
+			art: partition@1f0000 {
+				label = "art";
+				reg = <0x1f0000 0x10000>;
+				read-only;
+			};
+
+			partition@200000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x200000 0xe00000>;
+			};
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy0>;
+};
+
+&wmac {
+	status = "okay";
+
+	qca,no-eeprom;
+};

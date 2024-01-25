@@ -1,0 +1,84 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"mediatek/mt7915_eeprom.bin")
+	case "$board" in
+	smartrg,sdg-8622)
+		caldata_extract_mmc "factory" 0xa0000 0x1000
+		;;
+	esac
+	;;
+"mediatek/mt7916_eeprom.bin")
+	case "$board" in
+	acer,predator-w6|\
+	smartrg,sdg-8632)
+		caldata_extract_mmc "factory" 0xa0000 0x1000
+		;;
+	esac
+	;;
+"mediatek/mt7981_eeprom_mt7976_dbdc.bin")
+	case "$board" in
+	cmcc,rax3000m)
+		case "$(cmdline_get_var root)" in
+		/dev/mmc*)
+			caldata_extract_mmc "factory" 0x0 0x1000
+			;;
+		esac
+		;;
+	ubnt,unifi-6-plus)
+		caldata_extract_mmc "factory" 0x0 0x1000
+		;;
+	esac
+	;;
+"mediatek/mt7986_eeprom_mt7975_dual.bin")
+	case "$board" in
+	mercusys,mr90x-v1)
+		ln -sf /tmp/tp_data/MT7986_EEPROM.bin \
+			/lib/firmware/$FIRMWARE
+		;;
+	smartrg,sdg-8612|\
+	smartrg,sdg-8614|\
+	smartrg,sdg-8622|\
+	smartrg,sdg-8632)
+		caldata_extract_mmc "factory" 0x0 0x1000
+		;;
+	esac
+	;;
+"mediatek/mt7986_eeprom_mt7976.bin")
+	case "$board" in
+	acer,predator-w6)
+		caldata_extract_mmc "factory" 0x0 0x1000
+		;;
+	esac
+	;;
+"mediatek/mt7986_eeprom_mt7976_dbdc.bin")
+	case "$board" in
+	asus,rt-ax59u|\
+	asus,tuf-ax4200)
+		CI_UBIPART="UBI_DEV"
+		caldata_extract_ubi "Factory" 0x0 0x1000
+		;;
+	esac
+	;;
+"mediatek/mt7986_eeprom_mt7976_dual.bin")
+	case "$board" in
+	asus,tuf-ax6000)
+		CI_UBIPART="UBI_DEV"
+		caldata_extract_ubi "Factory" 0x0 0x1000
+		;;
+	glinet,gl-mt6000|\
+	jdcloud,re-cp-03)
+		caldata_extract_mmc "factory" 0x0 0x1000
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac

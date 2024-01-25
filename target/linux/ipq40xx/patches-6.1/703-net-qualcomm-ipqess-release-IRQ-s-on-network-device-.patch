@@ -1,0 +1,75 @@
+From 5f15f7f170c76220dfd36cb9037d7848d1fc4aaf Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Tue, 15 Aug 2023 14:30:50 +0200
+Subject: [PATCH] net: qualcomm: ipqess: release IRQ-s on network device stop
+
+Currently, IPQESS driver is obtaining the IRQ-s during ndo_open, but they
+are never freed as they are device managed.
+
+However, it is not enough for them to be released when device is removed
+as the same network device can be stopped and started multiple times which
+on the second start would lead to IRQ request to fail with -EBUSY as they
+have already been requested before and are not of the shared type with:
+[   34.480769] ipqess-edma c080000.ethernet eth0: Link is Down
+[   34.488070] ipqess-edma c080000.ethernet eth0: ipqess_open
+[   34.488131] genirq: Flags mismatch irq 37. 00000001 (c080000.ethernet:txq0) vs. 00000001 (c080000.ethernet:txq0)
+[   34.494527] ipqess-edma c080000.ethernet eth0: ipqess_open
+[   34.502892] genirq: Flags mismatch irq 37. 00000001 (c080000.ethernet:txq0) vs. 00000001 (c080000.ethernet:txq0)
+[   34.508137] qca8k-ipq4019 c000000.switch lan1: failed to open master eth0
+[   34.518966] br-lan: port 1(lan1) entered blocking state
+[   34.525165] br-lan: port 1(lan1) entered disabled state
+[   34.530633] device lan1 entered promiscuous mode
+[   34.548598] ipqess-edma c080000.ethernet eth0: ipqess_open
+[   34.548660] genirq: Flags mismatch irq 37. 00000001 (c080000.ethernet:txq0) vs. 00000001 (c080000.ethernet:txq0)
+[   34.553111] qca8k-ipq4019 c000000.switch lan2: failed to open master eth0
+[   34.563841] br-lan: port 2(lan2) entered blocking state
+[   34.570083] br-lan: port 2(lan2) entered disabled state
+[   34.575530] device lan2 entered promiscuous mode
+[   34.587067] ipqess-edma c080000.ethernet eth0: ipqess_open
+[   34.587132] genirq: Flags mismatch irq 37. 00000001 (c080000.ethernet:txq0) vs. 00000001 (c080000.ethernet:txq0)
+[   34.591579] qca8k-ipq4019 c000000.switch lan3: failed to open master eth0
+[   34.602451] br-lan: port 3(lan3) entered blocking state
+[   34.608496] br-lan: port 3(lan3) entered disabled state
+[   34.614084] device lan3 entered promiscuous mode
+[   34.626405] ipqess-edma c080000.ethernet eth0: ipqess_open
+[   34.626468] genirq: Flags mismatch irq 37. 00000001 (c080000.ethernet:txq0) vs. 00000001 (c080000.ethernet:txq0)
+[   34.630871] qca8k-ipq4019 c000000.switch lan4: failed to open master eth0
+[   34.641689] br-lan: port 4(lan4) entered blocking state
+[   34.647834] br-lan: port 4(lan4) entered disabled state
+[   34.653455] device lan4 entered promiscuous mode
+[   34.667282] ipqess-edma c080000.ethernet eth0: ipqess_open
+[   34.667364] genirq: Flags mismatch irq 37. 00000001 (c080000.ethernet:txq0) vs. 00000001 (c080000.ethernet:txq0)
+[   34.671830] qca8k-ipq4019 c000000.switch wan: failed to open master eth0
+
+So, lets free the IRQ-s on ndo_stop after stopping NAPI and HW IRQ-s.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/net/ethernet/qualcomm/ipqess/ipqess.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
++++ b/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
+@@ -636,9 +636,22 @@ static int ipqess_stop(struct net_device
+ 	netif_tx_stop_all_queues(netdev);
+ 	phylink_stop(ess->phylink);
+ 	ipqess_irq_disable(ess);
++
+ 	for (i = 0; i < IPQESS_NETDEV_QUEUES; i++) {
++		int qid;
++
+ 		napi_disable(&ess->tx_ring[i].napi_tx);
+ 		napi_disable(&ess->rx_ring[i].napi_rx);
++
++		qid = ess->tx_ring[i].idx;
++		devm_free_irq(&netdev->dev,
++			      ess->tx_irq[qid],
++			      &ess->tx_ring[i]);
++
++		qid = ess->rx_ring[i].idx;
++		devm_free_irq(&netdev->dev,
++			      ess->rx_irq[qid],
++			      &ess->rx_ring[i]);
+ 	}
+ 
+ 	return 0;

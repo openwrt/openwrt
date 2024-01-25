@@ -9,8 +9,8 @@ CPU_TYPE:=464fp
 FEATURES:=fpu dt gpio ramdisk squashfs usb
 SUBTARGETS:=nand sata
 
-KERNEL_PATCHVER:=5.10
-KERNEL_TESTING_PATCHVER:=5.15
+KERNEL_PATCHVER:=5.15
+KERNEL_TESTING_PATCHVER:=6.1
 
 define Target/Description
 	Build images for AppliedMicro APM821xx based boards.
@@ -21,6 +21,7 @@ include $(INCLUDE_DIR)/target.mk
 KERNELNAME:=uImage
 
 DEFAULT_PACKAGES += \
-	kmod-leds-gpio kmod-i2c-core kmod-gpio-button-hotplug uboot-envtools
+	kmod-leds-gpio kmod-i2c-core kmod-gpio-button-hotplug uboot-envtools \
+	kmod-hw-crypto-4xx
 
 $(eval $(call BuildTarget))

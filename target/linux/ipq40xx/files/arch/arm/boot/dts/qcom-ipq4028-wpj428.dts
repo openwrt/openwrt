@@ -25,6 +25,15 @@
 	model = "Compex WPJ428";
 	compatible = "compex,wpj428";
 
+	chosen {
+		/*
+		 * There's a chance that SPI reads fail even though the data itself is alright.
+		 * The read result is cached and squashfs can't recover.
+		 * Just panic when that happens and hope that next time it doesn't.
+		 */
+		bootargs-append = " rootflags=errors=panic";
+	};
+
 	soc {
 		rng@22000 {
 			status = "okay";
@@ -36,10 +45,6 @@
 			pinctrl-names = "default";
 			reset-gpios = <&tlmm 59 GPIO_ACTIVE_LOW>;
 			reset-delay-us = <2000>;
-		};
-
-		ess-psgmii@98000 {
-			status = "okay";
 		};
 
 		tcsr@194b000 {
@@ -81,17 +86,6 @@
 		};
 
 		watchdog@b017000 {
-			status = "okay";
-		};
-
-		ess-switch@c000000 {
-			switch_lan_bmp = <0x10>;
-			switch_wan_bmp = <0x20>;
-
-			status = "okay";
-		};
-
-		edma@c080000 {
 			status = "okay";
 		};
 	};
@@ -231,16 +225,27 @@
 				label = "0:ART";
 				reg = <0x00170000 0x00010000>;
 				read-only;
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
 
-				precal_art_1000: precal@1000 {
-					reg = <0x1000 0x2f20>;
-				};
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				precal_art_5000: precal@5000 {
-					reg = <0x5000 0x2f20>;
+					macaddr_art_e010: mac-address@e010 {
+						reg = <0xe010 0x6>;
+					};
+
+					macaddr_art_e018: mac-address@e018 {
+						reg = <0xe018 0x6>;
+					};
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 			partition6@180000 {
@@ -262,20 +267,28 @@
 	status = "okay";
 };
 
-&gmac0 {
-	qcom,phy_mdio_addr = <4>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <2 0x20>;
+&gmac {
+	status = "okay";
 };
 
-&gmac1 {
-	qcom,phy_mdio_addr = <3>;
-	qcom,poll_required = <1>;
-	qcom,forced_speed = <1000>;
-	qcom,forced_duplex = <1>;
-	vlan_tag = <1 0x10>;
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan1";
+
+	nvmem-cells = <&macaddr_art_e018>;
+	nvmem-cell-names = "mac-address";
+};
+
+&swport5 {
+	status = "okay";
+	label = "lan2";
+
+	nvmem-cells = <&macaddr_art_e010>;
+	nvmem-cell-names = "mac-address";
 };
 
 &usb3_ss_phy {

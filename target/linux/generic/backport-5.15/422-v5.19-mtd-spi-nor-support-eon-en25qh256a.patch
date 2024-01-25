@@ -1,0 +1,49 @@
+From 6abef37d16d0c570ef5a149e63762fba2a30804b Mon Sep 17 00:00:00 2001
+From: "Leon M. George" <leon@georgemail.eu>
+Date: Wed, 30 Mar 2022 16:16:56 +0200
+Subject: [PATCH] mtd: spi-nor: support eon en25qh256a variant
+
+The EN25QH256A variant of the EN25QH256 doesn't initialize correctly from SFDP
+alone and only accesses memory below 8m (addr_width is 4 but read_opcode takes
+only 3 bytes).
+
+Set SNOR_F_4B_OPCODES if the flash chip variant was detected using hwcaps.
+
+The fix submitted upstream uses the PARSE_SFDP initializer that is not
+available in the kernel used with Openwrt.
+
+Signed-off-by: Leon M. George <leon@georgemail.eu>
+---
+ drivers/mtd/spi-nor/eon.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/drivers/mtd/spi-nor/eon.c
++++ b/drivers/mtd/spi-nor/eon.c
+@@ -8,6 +8,16 @@
+ 
+ #include "core.h"
+ 
++static void en25qh256_post_sfdp_fixups(struct spi_nor *nor)
++{
++	if (nor->params->hwcaps.mask & SNOR_HWCAPS_READ_1_1_4)
++		nor->flags |= SNOR_F_4B_OPCODES;
++}
++
++static const struct spi_nor_fixups en25qh256_fixups = {
++	.post_sfdp = en25qh256_post_sfdp_fixups,
++};
++
+ static const struct flash_info eon_parts[] = {
+ 	/* EON -- en25xxx */
+ 	{ "en25f32",    INFO(0x1c3116, 0, 64 * 1024,   64, SECT_4K) },
+@@ -23,7 +33,9 @@ static const struct flash_info eon_parts
+ 	{ "en25qh64",   INFO(0x1c7017, 0, 64 * 1024,  128,
+ 			     SECT_4K | SPI_NOR_DUAL_READ) },
+ 	{ "en25qh128",  INFO(0x1c7018, 0, 64 * 1024,  256, 0) },
+-	{ "en25qh256",  INFO(0x1c7019, 0, 64 * 1024,  512, 0) },
++	{ "en25qh256",  INFO(0x1c7019, 0, 64 * 1024,  512,
++		SPI_NOR_DUAL_READ)
++		.fixups = &en25qh256_fixups },
+ 	{ "en25s64",	INFO(0x1c3817, 0, 64 * 1024,  128, SECT_4K) },
+ };
+ 

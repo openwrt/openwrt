@@ -1,0 +1,196 @@
+From fb8e1e8dbc47e7aff7624b47adaa0a84d2983802 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 18 Jan 2023 08:09:18 +0100
+Subject: [PATCH 18/29] usb: fotg210: Move clock handling to core
+
+Grab the optional silicon block clock, prepare and enable it in
+the core before proceeding to prepare the host or peripheral
+driver. This saves duplicate code and also uses the simple
+devm_clk_get_optional_enabled() to do everything we really
+want to do.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/20230103-gemini-fotg210-usb-v2-4-100388af9810@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+--- a/drivers/usb/fotg210/fotg210-core.c
++++ b/drivers/usb/fotg210/fotg210-core.c
+@@ -6,6 +6,7 @@
+  * driver.
+  */
+ #include <linux/bitops.h>
++#include <linux/clk.h>
+ #include <linux/device.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/module.h>
+@@ -109,6 +110,10 @@ static int fotg210_probe(struct platform
+ 	if (!fotg->base)
+ 		return -ENOMEM;
+ 
++	fotg->pclk = devm_clk_get_optional_enabled(dev, "PCLK");
++	if (IS_ERR(fotg->pclk))
++		return PTR_ERR(fotg->pclk);
++
+ 	mode = usb_get_dr_mode(dev);
+ 
+ 	if (of_device_is_compatible(dev->of_node, "cortina,gemini-usb")) {
+--- a/drivers/usb/fotg210/fotg210-hcd.c
++++ b/drivers/usb/fotg210/fotg210-hcd.c
+@@ -33,7 +33,6 @@
+ #include <linux/platform_device.h>
+ #include <linux/io.h>
+ #include <linux/iopoll.h>
+-#include <linux/clk.h>
+ 
+ #include <asm/byteorder.h>
+ #include <asm/irq.h>
+@@ -5594,44 +5593,22 @@ int fotg210_hcd_probe(struct platform_de
+ 	fotg210->fotg = fotg;
+ 	fotg210->caps = hcd->regs;
+ 
+-	/* It's OK not to supply this clock */
+-	fotg210->pclk = clk_get(dev, "PCLK");
+-	if (!IS_ERR(fotg210->pclk)) {
+-		retval = clk_prepare_enable(fotg210->pclk);
+-		if (retval) {
+-			dev_err(dev, "failed to enable PCLK\n");
+-			goto failed_put_hcd;
+-		}
+-	} else if (PTR_ERR(fotg210->pclk) == -EPROBE_DEFER) {
+-		/*
+-		 * Percolate deferrals, for anything else,
+-		 * just live without the clocking.
+-		 */
+-		retval = PTR_ERR(fotg210->pclk);
+-		goto failed_dis_clk;
+-	}
+-
+ 	retval = fotg210_setup(hcd);
+ 	if (retval)
+-		goto failed_dis_clk;
++		goto failed_put_hcd;
+ 
+ 	fotg210_init(fotg210);
+ 
+ 	retval = usb_add_hcd(hcd, irq, IRQF_SHARED);
+ 	if (retval) {
+ 		dev_err(dev, "failed to add hcd with err %d\n", retval);
+-		goto failed_dis_clk;
++		goto failed_put_hcd;
+ 	}
+ 	device_wakeup_enable(hcd->self.controller);
+ 	platform_set_drvdata(pdev, hcd);
+ 
+ 	return retval;
+ 
+-failed_dis_clk:
+-	if (!IS_ERR(fotg210->pclk)) {
+-		clk_disable_unprepare(fotg210->pclk);
+-		clk_put(fotg210->pclk);
+-	}
+ failed_put_hcd:
+ 	usb_put_hcd(hcd);
+ fail_create_hcd:
+@@ -5647,12 +5624,6 @@ fail_create_hcd:
+ int fotg210_hcd_remove(struct platform_device *pdev)
+ {
+ 	struct usb_hcd *hcd = platform_get_drvdata(pdev);
+-	struct fotg210_hcd *fotg210 = hcd_to_fotg210(hcd);
+-
+-	if (!IS_ERR(fotg210->pclk)) {
+-		clk_disable_unprepare(fotg210->pclk);
+-		clk_put(fotg210->pclk);
+-	}
+ 
+ 	usb_remove_hcd(hcd);
+ 	usb_put_hcd(hcd);
+--- a/drivers/usb/fotg210/fotg210-udc.c
++++ b/drivers/usb/fotg210/fotg210-udc.c
+@@ -15,7 +15,6 @@
+ #include <linux/platform_device.h>
+ #include <linux/usb/ch9.h>
+ #include <linux/usb/gadget.h>
+-#include <linux/clk.h>
+ #include <linux/usb/otg.h>
+ #include <linux/usb/phy.h>
+ 
+@@ -1147,9 +1146,6 @@ int fotg210_udc_remove(struct platform_d
+ 	for (i = 0; i < FOTG210_MAX_NUM_EP; i++)
+ 		kfree(fotg210->ep[i]);
+ 
+-	if (!IS_ERR(fotg210->pclk))
+-		clk_disable_unprepare(fotg210->pclk);
+-
+ 	kfree(fotg210);
+ 
+ 	return 0;
+@@ -1177,34 +1173,17 @@ int fotg210_udc_probe(struct platform_de
+ 	fotg210->dev = dev;
+ 	fotg210->fotg = fotg;
+ 
+-	/* It's OK not to supply this clock */
+-	fotg210->pclk = devm_clk_get(dev, "PCLK");
+-	if (!IS_ERR(fotg210->pclk)) {
+-		ret = clk_prepare_enable(fotg210->pclk);
+-		if (ret) {
+-			dev_err(dev, "failed to enable PCLK\n");
+-			goto err;
+-		}
+-	} else if (PTR_ERR(fotg210->pclk) == -EPROBE_DEFER) {
+-		/*
+-		 * Percolate deferrals, for anything else,
+-		 * just live without the clocking.
+-		 */
+-		ret = -EPROBE_DEFER;
+-		goto err;
+-	}
+-
+ 	fotg210->phy = devm_usb_get_phy_by_phandle(dev, "usb-phy", 0);
+ 	if (IS_ERR(fotg210->phy)) {
+ 		ret = PTR_ERR(fotg210->phy);
+ 		if (ret == -EPROBE_DEFER)
+-			goto err_pclk;
++			goto err_free;
+ 		dev_info(dev, "no PHY found\n");
+ 		fotg210->phy = NULL;
+ 	} else {
+ 		ret = usb_phy_init(fotg210->phy);
+ 		if (ret)
+-			goto err_pclk;
++			goto err_free;
+ 		dev_info(dev, "found and initialized PHY\n");
+ 	}
+ 
+@@ -1303,11 +1282,8 @@ err_map:
+ err_alloc:
+ 	for (i = 0; i < FOTG210_MAX_NUM_EP; i++)
+ 		kfree(fotg210->ep[i]);
+-err_pclk:
+-	if (!IS_ERR(fotg210->pclk))
+-		clk_disable_unprepare(fotg210->pclk);
+ 
+-err:
++err_free:
+ 	kfree(fotg210);
+ 	return ret;
+ }
+--- a/drivers/usb/fotg210/fotg210-udc.h
++++ b/drivers/usb/fotg210/fotg210-udc.h
+@@ -231,7 +231,6 @@ struct fotg210_ep {
+ struct fotg210_udc {
+ 	spinlock_t		lock; /* protect the struct */
+ 	void __iomem		*reg;
+-	struct clk		*pclk;
+ 
+ 	unsigned long		irq_trigger;
+ 
+--- a/drivers/usb/fotg210/fotg210.h
++++ b/drivers/usb/fotg210/fotg210.h
+@@ -12,6 +12,7 @@ struct fotg210 {
+ 	struct device *dev;
+ 	struct resource *res;
+ 	void __iomem *base;
++	struct clk *pclk;
+ 	struct regmap *map;
+ 	enum gemini_port port;
+ };

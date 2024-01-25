@@ -1,0 +1,32 @@
+From fe07791494a78d5a4be1363385e6ba7940740644 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 11 Oct 2021 14:27:19 +0300
+Subject: [PATCH 247/247] clk: use clk_core_get_rate_recalc() in clk_rate_get()
+
+In case clock flags contains CLK_GET_RATE_NOCACHE the clk_rate_get()
+will return the cached rate. Thus, use clk_core_get_rate_recalc() which
+takes proper action when clock flags contains CLK_GET_RATE_NOCACHE.
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20211011112719.3951784-16-claudiu.beznea@microchip.com
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+[sboyd@kernel.org: Grab prepare lock around operation]
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+---
+ drivers/clk/clk.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -3131,7 +3131,10 @@ static int clk_rate_get(void *data, u64
+ {
+ 	struct clk_core *core = data;
+ 
+-	*val = core->rate;
++	clk_prepare_lock();
++	*val = clk_core_get_rate_recalc(core);
++	clk_prepare_unlock();
++
+ 	return 0;
+ }
+ 

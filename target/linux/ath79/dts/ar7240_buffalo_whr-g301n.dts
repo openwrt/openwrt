@@ -147,22 +147,33 @@
 				reg = <0x3f0000 0x10000>;
 				label = "art";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_120c: macaddr@120c {
+						compatible = "mac-base";
+						reg = <0x120c 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_art_120c>;
+	nvmem-cells = <&macaddr_art_120c 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &eth1 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_art_120c>;
+	nvmem-cells = <&macaddr_art_120c 1>;
 	nvmem-cell-names = "mac-address";
-	mac-address-increment = <1>;
 };
 
 &pcie {
@@ -172,7 +183,7 @@
 		compatible = "pci168c,002a";
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
-		nvmem-cells = <&macaddr_art_120c>;
+		nvmem-cells = <&macaddr_art_120c 0>;
 		nvmem-cell-names = "mac-address";
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -182,15 +193,5 @@
 &pinmux {
 	switch_led_pins: switch_led_pins {
 		pinctrl-single,bits = <0x0 0x0 0xf8>;
-	};
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_120c: macaddr@120c {
-		reg = <0x120c 0x6>;
 	};
 };

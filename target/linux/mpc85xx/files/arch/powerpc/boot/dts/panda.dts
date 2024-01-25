@@ -31,7 +31,7 @@
 			  0x2 0x0 0x0 0xffa00000 0x00020000
 			  0x3 0x0 0x0 0xffb00000 0x00020000>;
 
-		nand@1,0 {
+		nand@100000000 {
 			compatible = "fsl,p1020-fcm-nand", "fsl,elbc-fcm-nand";
 			reg = <0x1 0x0 0x40000>;
 
@@ -265,3 +265,17 @@
 	};
 };
 /include/ "fsl/p1020si-post.dtsi"
+
+/*
+ * For the OpenWrt 22.03 release, since Linux 5.10.138 now uses
+ * aliases to determine PCI domain numbers, drop aliases so as not to
+ * change the sysfs path of our wireless netdevs.
+ */
+
+/ {
+	aliases {
+		/delete-property/ pci0;
+		/delete-property/ pci1;
+	};
+};
+

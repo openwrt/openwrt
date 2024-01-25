@@ -1,0 +1,58 @@
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case $board in
+confiabits,mt7981)
+	ucidef_set_led_netdev "lan1" "lan1" "blue:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan2" "blue:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan3" "lan3" "blue:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
+	;;
+cudy,wr3000-v1)
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
+	;;
+mercusys,mr90x-v1)
+	ucidef_set_led_netdev "lan-0" "lan-0" "green:lan-0" "lan0" "link tx rx"
+	ucidef_set_led_netdev "lan-1" "lan-1" "green:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "green:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
+	;;
+netgear,wax220)
+	ucidef_set_led_netdev "eth0" "LAN" "green:lan" "eth0"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan2g" "phy0-ap0"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan5g" "phy1-ap0"
+	;;
+routerich,ax3000)
+	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan-3" "lan-3" "blue:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	;;
+xiaomi,mi-router-wr30u-stock|\
+xiaomi,mi-router-wr30u-ubootmod)
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
+	;;
+xiaomi,redmi-router-ax6000-stock|\
+xiaomi,redmi-router-ax6000-ubootmod)
+	ucidef_set_led_netdev "wan" "wan" "rgb:network" "wan"
+	;;
+zbtlink,zbt-z8103ax)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
+	;;
+zyxel_ex5601-t0-stock|\
+zyxel,ex5601-t0-ubootmod)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0" "link tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "green:inet" "eth1" "link tx rx"
+	ucidef_set_led_netdev "wifi-24g" "WIFI-2.4G" "green:wifi24g" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wifi-5g" "WIFI-5G" "green:wifi5g" "phy1-ap0" "link tx rx"
+        ;;
+esac
+
+board_config_flush
+
+exit 0

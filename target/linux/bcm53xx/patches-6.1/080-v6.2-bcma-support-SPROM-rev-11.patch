@@ -1,0 +1,28 @@
+From b9457a04eb89645049fdf427c13e6a18d5501895 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 11 Oct 2022 14:24:40 +0200
+Subject: [PATCH] bcma: support SPROM rev 11
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Rev 11 works fine for me to set the MAC address of gmac0 and
+gmac1 in the D-Link DWL-8610AP.
+
+Cc: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/bcma/sprom.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/bcma/sprom.c
++++ b/drivers/bcma/sprom.c
+@@ -170,7 +170,7 @@ static int bcma_sprom_valid(struct bcma_
+ 		return err;
+ 
+ 	revision = sprom[words - 1] & SSB_SPROM_REVISION_REV;
+-	if (revision != 8 && revision != 9 && revision != 10) {
++	if (revision < 8 || revision > 11) {
+ 		pr_err("Unsupported SPROM revision: %d\n", revision);
+ 		return -ENOENT;
+ 	}

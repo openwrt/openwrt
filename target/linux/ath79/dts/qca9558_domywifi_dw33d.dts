@@ -76,14 +76,7 @@
 };
 
 &usb0 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
-
-	hub_port0: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &usb_phy1 {
@@ -91,14 +84,7 @@
 };
 
 &usb1 {
-	#address-cells = <1>;
-	#size-cells = <0>;
 	status = "okay";
-
-	hub_port1: port@1 {
-		reg = <1>;
-		#trigger-source-cells = <0>;
-	};
 };
 
 &spi {
@@ -134,6 +120,24 @@
 				label = "art";
 				reg = <0xff0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					macaddr_art_c: macaddr@c {
+						reg = <0xc 0x6>;
+					};
+				};
 			};
 		};
 	};
@@ -206,22 +210,4 @@
 	mtd-cal-data = <&art 0x1000>;
 	nvmem-cells = <&macaddr_art_c>;
 	nvmem-cell-names = "mac-address";
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
-
-	macaddr_art_6: macaddr@6 {
-		reg = <0x6 0x6>;
-	};
-
-	macaddr_art_c: macaddr@c {
-		reg = <0xc 0x6>;
-	};
 };

@@ -40,6 +40,20 @@
 			label = "factory";
 			reg = <0x100000 0x80000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+
+				precal_factory_e10: precal@e10 {
+					reg = <0xe10 0x19c10>;
+				};
+			};
 		};
 
 		partition@180000 {
@@ -96,6 +110,16 @@
 			label = "mrd";
 			reg = <0x7780000 0x80000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_mrd_1fff8: macaddr@1fff8 {
+					reg = <0x1fff8 0x6>;
+				};
+			};
 		};
 	};
 };
@@ -108,9 +132,8 @@
 	wlan_5g: wifi@0,0 {
 		reg = <0x0 0 0 0 0>;
 		compatible = "mediatek,mt76";
-
-		mediatek,mtd-eeprom = <&factory 0x0>;
-
+		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
+		nvmem-cell-names = "eeprom", "precal";
 		/* MAC-Address set in userspace */
 	};
 };
@@ -129,23 +152,9 @@
 	};
 };
 
-&mrd {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_mrd_1fff8: macaddr@1fff8 {
-		reg = <0x1fff8 0x6>;
-	};
-};
-
 &state_default {
 	gpio {
-		groups = "uart3", "rgmii2";
+		groups = "uart3";
 		function = "gpio";
 	};
-};
-
-&ethernet {
-	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
 };

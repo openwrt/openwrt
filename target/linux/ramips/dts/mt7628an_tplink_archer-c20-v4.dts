@@ -78,7 +78,10 @@
 };
 
 &wmac {
-	mac-address-increment = <(-2)>;
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_factory_f100 (-2)>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
 
 &esw {
@@ -99,10 +102,8 @@
 &pcie0 {
 	mt76@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x28000>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		nvmem-cells = <&macaddr_factory_f100>;
-		nvmem-cell-names = "mac-address";
-		mac-address-increment = <(-1)>;
+		nvmem-cells = <&eeprom_factory_28000>, <&macaddr_factory_f100 (-1)>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };

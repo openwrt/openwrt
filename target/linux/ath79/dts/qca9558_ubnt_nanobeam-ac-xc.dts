@@ -5,7 +5,7 @@
  * Copyright (C) 2022 Daniel González Cabanelas <dgcbueu@gmail.com>
  * based on device tree from qca9558_ubnt_powerbeam-5ac-500.dts
  */
- 
+
 #include "qca955x_ubnt_xc.dtsi"
 
 / {
@@ -97,14 +97,4 @@
 	nvmem-cell-names = "mac-address";
 	phy-mode = "sgmii";
 	phy-handle = <&phy4>;
-};
-
-&art {
-	compatible = "nvmem-cells";
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	macaddr_art_0: macaddr@0 {
-		reg = <0x0 0x6>;
-	};
 };

@@ -1,0 +1,109 @@
+From 943eadbdb11314b41eacbcc484dfb7f93e271ff4 Mon Sep 17 00:00:00 2001
+From: Sean Anderson <sean.anderson@seco.com>
+Date: Fri, 29 Apr 2022 17:27:00 +0100
+Subject: [PATCH] nvmem: sfp: Use regmap
+
+This converts the SFP driver to use regmap. This will allow easily
+supporting devices with different endians. We disallow byte-level
+access, as regmap_bulk_read doesn't support it (and it's unclear what
+the correct result would be when we have an endianness difference).
+
+Signed-off-by: Sean Anderson <sean.anderson@seco.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+Link: https://lore.kernel.org/r/20220429162701.2222-16-srinivas.kandagatla@linaro.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/nvmem/Kconfig          |  1 +
+ drivers/nvmem/layerscape-sfp.c | 30 ++++++++++++++++++++++--------
+ 2 files changed, 23 insertions(+), 8 deletions(-)
+
+--- a/drivers/nvmem/Kconfig
++++ b/drivers/nvmem/Kconfig
+@@ -304,6 +304,7 @@ config NVMEM_LAYERSCAPE_SFP
+ 	tristate "Layerscape SFP (Security Fuse Processor) support"
+ 	depends on ARCH_LAYERSCAPE || COMPILE_TEST
+ 	depends on HAS_IOMEM
++	select REGMAP_MMIO
+ 	help
+ 	  This driver provides support to read the eFuses on Freescale
+ 	  Layerscape SoC's. For example, the vendor provides a per part
+--- a/drivers/nvmem/layerscape-sfp.c
++++ b/drivers/nvmem/layerscape-sfp.c
+@@ -13,15 +13,17 @@
+ #include <linux/nvmem-provider.h>
+ #include <linux/platform_device.h>
+ #include <linux/property.h>
++#include <linux/regmap.h>
+ 
+ #define LAYERSCAPE_SFP_OTP_OFFSET	0x0200
+ 
+ struct layerscape_sfp_priv {
+-	void __iomem *base;
++	struct regmap *regmap;
+ };
+ 
+ struct layerscape_sfp_data {
+ 	int size;
++	enum regmap_endian endian;
+ };
+ 
+ static int layerscape_sfp_read(void *context, unsigned int offset, void *val,
+@@ -29,15 +31,16 @@ static int layerscape_sfp_read(void *con
+ {
+ 	struct layerscape_sfp_priv *priv = context;
+ 
+-	memcpy_fromio(val, priv->base + LAYERSCAPE_SFP_OTP_OFFSET + offset,
+-		      bytes);
+-
+-	return 0;
++	return regmap_bulk_read(priv->regmap,
++				LAYERSCAPE_SFP_OTP_OFFSET + offset, val,
++				bytes / 4);
+ }
+ 
+ static struct nvmem_config layerscape_sfp_nvmem_config = {
+ 	.name = "fsl-sfp",
+ 	.reg_read = layerscape_sfp_read,
++	.word_size = 4,
++	.stride = 4,
+ };
+ 
+ static int layerscape_sfp_probe(struct platform_device *pdev)
+@@ -45,16 +48,26 @@ static int layerscape_sfp_probe(struct p
+ 	const struct layerscape_sfp_data *data;
+ 	struct layerscape_sfp_priv *priv;
+ 	struct nvmem_device *nvmem;
++	struct regmap_config config = { 0 };
++	void __iomem *base;
+ 
+ 	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
+-	priv->base = devm_platform_ioremap_resource(pdev, 0);
+-	if (IS_ERR(priv->base))
+-		return PTR_ERR(priv->base);
++	base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
+ 
+ 	data = device_get_match_data(&pdev->dev);
++	config.reg_bits = 32;
++	config.reg_stride = 4;
++	config.val_bits = 32;
++	config.val_format_endian = data->endian;
++	config.max_register = LAYERSCAPE_SFP_OTP_OFFSET + data->size - 4;
++	priv->regmap = devm_regmap_init_mmio(&pdev->dev, base, &config);
++	if (IS_ERR(priv->regmap))
++		return PTR_ERR(priv->regmap);
+ 
+ 	layerscape_sfp_nvmem_config.size = data->size;
+ 	layerscape_sfp_nvmem_config.dev = &pdev->dev;
+@@ -67,6 +80,7 @@ static int layerscape_sfp_probe(struct p
+ 
+ static const struct layerscape_sfp_data ls1028a_data = {
+ 	.size = 0x88,
++	.endian = REGMAP_ENDIAN_LITTLE,
+ };
+ 
+ static const struct of_device_id layerscape_sfp_dt_ids[] = {

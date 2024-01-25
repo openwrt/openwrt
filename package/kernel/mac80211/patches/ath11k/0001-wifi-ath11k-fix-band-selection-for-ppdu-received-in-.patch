@@ -1,0 +1,37 @@
+From 72c8caf904aed2caed5d6e75233294b6159ddb5d Mon Sep 17 00:00:00 2001
+From: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Date: Wed, 26 Jul 2023 10:16:24 +0530
+Subject: [PATCH 1/5] wifi: ath11k: fix band selection for ppdu received in
+ channel 177 of 5 GHz
+
+5 GHz band channel 177 support was added with the commit e5e94d10c856 ("wifi:
+ath11k: add channel 177 into 5 GHz channel list"). However, during processing
+for the received ppdu in ath11k_dp_rx_h_ppdu(), channel number is checked only
+till 173. This leads to driver code checking for channel and then fetching the
+band from it which is extra effort since firmware has already given the channel
+number in the metadata.
+
+Fix this issue by checking the channel number till 177 since we support
+it now.
+
+Found via code review. Compile tested only.
+
+Fixes: e5e94d10c856 ("wifi: ath11k: add channel 177 into 5 GHz channel list")
+Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
+Signed-off-by: Kalle Valo <quic_kvalo@quicinc.com>
+Link: https://lore.kernel.org/r/20230726044624.20507-1-quic_adisi@quicinc.com
+---
+ drivers/net/wireless/ath/ath11k/dp_rx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -2408,7 +2408,7 @@ static void ath11k_dp_rx_h_ppdu(struct a
+ 		rx_status->freq = center_freq;
+ 	} else if (channel_num >= 1 && channel_num <= 14) {
+ 		rx_status->band = NL80211_BAND_2GHZ;
+-	} else if (channel_num >= 36 && channel_num <= 173) {
++	} else if (channel_num >= 36 && channel_num <= 177) {
+ 		rx_status->band = NL80211_BAND_5GHZ;
+ 	} else {
+ 		spin_lock_bh(&ar->data_lock);

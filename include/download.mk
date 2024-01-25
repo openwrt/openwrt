@@ -18,6 +18,10 @@ endif
 
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
+# Export options for download.pl
+export DOWNLOAD_CHECK_CERTIFICATE:=$(CONFIG_DOWNLOAD_CHECK_CERTIFICATE)
+export DOWNLOAD_TOOL_CUSTOM:=$(CONFIG_DOWNLOAD_TOOL_CUSTOM)
+
 define dl_method_git
 $(if $(filter https://github.com/% git://github.com/%,$(1)),github_archive,git)
 endef
@@ -183,7 +187,7 @@ define DownloadMethod/svn
 		svn export --non-interactive --trust-server-cert -r$(VERSION) $(URL) $(SUBDIR) || \
 		svn export --non-interactive -r$(VERSION) $(URL) $(SUBDIR) ) && \
 		echo "Packing checkout..." && \
-		export TAR_TIMESTAMP="" && \
+		export TAR_TIMESTAMP="`svn info -r$(VERSION) --show-item last-changed-date $(URL)`" && \
 		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
 		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
 		rm -rf $(SUBDIR); \
@@ -205,6 +209,7 @@ define DownloadMethod/github_archive
 			--subdir="$(SUBDIR)" \
 			--source="$(FILE)" \
 			--hash="$(MIRROR_HASH)" \
+			--submodules $(SUBMODULES) \
 		|| ( $(call DownloadMethod/rawgit) ); \
 	)
 endef
@@ -218,7 +223,7 @@ define DownloadMethod/rawgit
 	[ \! -d $(SUBDIR) ] && \
 	git clone $(OPTS) $(URL) $(SUBDIR) && \
 	(cd $(SUBDIR) && git checkout $(VERSION) && \
-	git submodule update --init --recursive) && \
+	$(if $(filter skip,$(SUBMODULES)),true,git submodule update --init --recursive -- $(SUBMODULES))) && \
 	echo "Packing checkout..." && \
 	export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --format='@%ct'` && \
 	rm -rf $(SUBDIR)/.git && \
@@ -297,6 +302,7 @@ define Download/Defaults
   MIRROR_MD5SUM:=x
   VERSION:=
   OPTS:=
+  SUBMODULES:=
 endef
 
 define Download/default
@@ -305,6 +311,7 @@ define Download/default
   URL_FILE:=$(PKG_SOURCE_URL_FILE)
   SUBDIR:=$(PKG_SOURCE_SUBDIR)
   PROTO:=$(PKG_SOURCE_PROTO)
+  SUBMODULES:=$(PKG_SOURCE_SUBMODULES)
   $(if $(PKG_SOURCE_MIRROR),MIRROR:=$(filter 1,$(PKG_MIRROR)))
   $(if $(PKG_MIRROR_MD5SUM),MIRROR_MD5SUM:=$(PKG_MIRROR_MD5SUM))
   $(if $(PKG_MIRROR_HASH),MIRROR_HASH:=$(PKG_MIRROR_HASH))

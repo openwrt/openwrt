@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7986a-xiaomi-redmi-router-ax6000.dtsi"
+
+/ {
+	model = "Xiaomi Redmi Router AX6000 (OpenWrt U-Boot layout)";
+	compatible = "xiaomi,redmi-router-ax6000-ubootmod", "mediatek,mt7986a";
+};
+
+&partitions {
+	partition@580000 {
+		label = "ubi";
+		reg = <0x580000 0x7a80000>;
+	};
+};
