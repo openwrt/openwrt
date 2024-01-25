@@ -277,13 +277,12 @@ define Image/mkfs/ext4
 endef
 
 define Image/Manifest
-ifdef CONFIG_USE_APK
-	$(call apk,$(TARGET_DIR_ORIG)) list --quiet --manifest | sort > \
-		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest
-else
-	$(call opkg,$(TARGET_DIR_ORIG)) list-installed > \
-		$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest
-endif
+	$(if $(CONFIG_USE_APK), \
+		$(call apk,$(TARGET_DIR_ORIG)) list --quiet --manifest | sort > \
+			$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest, \
+		$(call opkg,$(TARGET_DIR_ORIG)) list-installed > \
+			$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest \
+	)
 ifndef IB
 	$(if $(CONFIG_JSON_CYCLONEDX_SBOM), \
 		$(SCRIPT_DIR)/package-metadata.pl imgcyclonedxsbom \

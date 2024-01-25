@@ -19,14 +19,16 @@ endef
 
 # 1: package name
 # 2: candidate ipk files
-define remove_ipkg_files
 ifdef CONFIG_USE_APK
+define remove_ipkg_files
 for pkg in $(2); do \
   $(STAGING_DIR_HOST)/bin/apk adbdump "$$pkg" | grep "^  name: $(1)" && rm "$$pkg" || true; \
 done
-else
-endif
 endef
+else
+define remove_ipkg_files
+endef
+endif
 
 # 1: package name
 # 2: variable name

@@ -60,7 +60,11 @@ $(curdir)/merge-index: $(curdir)/merge
 
 ifndef SDK
   $(curdir)//compile = $(STAGING_DIR)/.prepared $(BIN_DIR)
+ifneq ($(CONFIG_USE_APK),)
+  $(curdir)/compile: $(curdir)/system/apk/host/compile
+else
   $(curdir)/compile: $(curdir)/system/opkg/host/compile
+endif
 endif
 
 $(curdir)/install: $(TMP_DIR)/.build $(curdir)/merge $(if $(CONFIG_TARGET_PER_DEVICE_ROOTFS),$(curdir)/merge-index)
