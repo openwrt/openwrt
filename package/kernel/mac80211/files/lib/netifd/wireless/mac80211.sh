@@ -1038,7 +1038,7 @@ mac80211_set_noscan() {
 }
 
 drv_mac80211_cleanup() {
-	hostapd_common_cleanup
+	:
 }
 
 mac80211_reset_config() {
