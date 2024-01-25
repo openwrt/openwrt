@@ -116,6 +116,13 @@ define Build/Compile/Default
 endef
 Build/Compile = $(Build/Compile/Default)
 
+ifdef CONFIG_USE_APK
+  define Build/Configure
+	[ -s $(BUILD_KEY_APK_SEC) -a -s $(BUILD_KEY_APK_PUB) ] || \
+		$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC); \
+		$(STAGING_DIR_HOST)/bin/openssl ec -in $(BUILD_KEY_APK_SEC) -pubout > $(BUILD_KEY_APK_PUB)
+  endef
+else
 ifdef CONFIG_SIGNED_PACKAGES
   define Build/Configure
 	[ -s $(BUILD_KEY) -a -s $(BUILD_KEY).pub ] || \
@@ -123,10 +130,6 @@ ifdef CONFIG_SIGNED_PACKAGES
 
 	[ -s $(BUILD_KEY).ucert ] || \
 		$(STAGING_DIR_HOST)/bin/ucert -I -c $(BUILD_KEY).ucert -p $(BUILD_KEY).pub -s $(BUILD_KEY)
-
-	[ -s $(BUILD_KEY_APK_SEC) -a -s $(BUILD_KEY_APK_PUB) ] || \
-		$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC); \
-		$(STAGING_DIR_HOST)/bin/openssl ec -in $(BUILD_KEY_APK_SEC) -pubout > $(BUILD_KEY_APK_PUB)
 
   endef
 
@@ -139,6 +142,7 @@ ifndef CONFIG_BUILDBOT
 	$(CP) $(BUILD_KEY_APK_PUB) $(1)/etc/apk/keys/
 
   endef
+endif
 endif
 endif
 

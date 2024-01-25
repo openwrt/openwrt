@@ -1,0 +1,69 @@
+From 091488909354d3f6aabb3fe98379be9025ad04c1 Mon Sep 17 00:00:00 2001
+From: Paul Spooren <mail@aparcar.org>
+Date: Tue, 1 Feb 2022 09:30:20 +0100
+Subject: [PATCH 2/4] change naming to <name>_<version>_<arch>.apk
+
+OpenWrt allows dashes in package names but no underlines. The current
+cleanup mechanism in the build system uses those underlines to find
+suiting packages to cleanup via `<pkgname>_*.apk`.
+
+Also add the package architecture to package filenames. This allows a
+better overview when downloading packages manually i.e. from a CI.
+
+Signed-off-by: Paul Spooren <mail@aparcar.org>
+---
+ src/apk_package.h | 4 ++--
+ src/app_mkpkg.c   | 2 +-
+ src/database.c    | 6 ++++--
+ 3 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/src/apk_package.h b/src/apk_package.h
+index 8d9cba4..8cd33d8 100644
+--- a/src/apk_package.h
++++ b/src/apk_package.h
+@@ -102,8 +102,8 @@ APK_ARRAY(apk_package_array, struct apk_package *);
+ #define APK_PROVIDER_FROM_PACKAGE(pkg)	  (struct apk_provider){(pkg),(pkg)->version}
+ #define APK_PROVIDER_FROM_PROVIDES(pkg,p) (struct apk_provider){(pkg),(p)->version}
+ 
+-#define PKG_VER_FMT		"%s-" BLOB_FMT
+-#define PKG_VER_PRINTF(pkg)	pkg->name->name, BLOB_PRINTF(*pkg->version)
++#define PKG_VER_FMT		"%s_" BLOB_FMT "_" BLOB_FMT
++#define PKG_VER_PRINTF(pkg)	pkg->name->name, BLOB_PRINTF(*pkg->version), BLOB_PRINTF(*pkg->arch)
+ #define PKG_FILE_FMT		PKG_VER_FMT ".apk"
+ #define PKG_FILE_PRINTF(pkg)	PKG_VER_PRINTF(pkg)
+ 
+diff --git a/src/app_mkpkg.c b/src/app_mkpkg.c
+index e085090..a238250 100644
+--- a/src/app_mkpkg.c
++++ b/src/app_mkpkg.c
+@@ -213,7 +213,7 @@ static char *pkgi_filename(struct adb_obj *pkgi, char *buf, size_t n)
+ {
+ 	apk_blob_t to = APK_BLOB_PTR_LEN(buf, n);
+ 	apk_blob_push_blob(&to, adb_ro_blob(pkgi, ADBI_PI_NAME));
+-	apk_blob_push_blob(&to, APK_BLOB_STR("-"));
++	apk_blob_push_blob(&to, APK_BLOB_STR("_"));
+ 	apk_blob_push_blob(&to, adb_ro_blob(pkgi, ADBI_PI_VERSION));
+ 	apk_blob_push_blob(&to, APK_BLOB_STR(".apk"));
+ 	apk_blob_push_blob(&to, APK_BLOB_PTR_LEN("", 1));
+diff --git a/src/database.c b/src/database.c
+index d8bcdfa..8fbcd25 100644
+--- a/src/database.c
++++ b/src/database.c
+@@ -561,10 +561,12 @@ struct apk_package *apk_db_pkg_add(struct apk_database *db, struct apk_package *
+ 
+ static int apk_pkg_format_cache_pkg(apk_blob_t to, struct apk_package *pkg)
+ {
+-	/* pkgname-1.0_alpha1.12345678.apk */
++	/* pkgname_1.0_alpha1.12345678.apk */
+ 	apk_blob_push_blob(&to, APK_BLOB_STR(pkg->name->name));
+-	apk_blob_push_blob(&to, APK_BLOB_STR("-"));
++	apk_blob_push_blob(&to, APK_BLOB_STR("_"));
+ 	apk_blob_push_blob(&to, *pkg->version);
++	apk_blob_push_blob(&to, APK_BLOB_STR("_"));
++	apk_blob_push_blob(&to, *pkg->arch);
+ 	apk_blob_push_blob(&to, APK_BLOB_STR("."));
+ 	apk_blob_push_hexdump(&to, APK_BLOB_PTR_LEN((char *) pkg->csum.data,
+ 						    APK_CACHE_CSUM_BYTES));
+-- 
+2.35.1
+
