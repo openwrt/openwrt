@@ -8,7 +8,6 @@ ath79_setup_interfaces()
 
 	case "$board" in
 	aerohive,hiveap-121|\
-	glinet,gl-e750|\
 	meraki,mr18)
 		ucidef_set_interface_lan "eth0"
 		;;
@@ -25,6 +24,11 @@ ath79_setup_interfaces()
 	glinet,gl-ar750s-nor-nand)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:2" "3:lan:1" "1:wan"
+		;;
+	glinet,gl-e750|\
+	zte,mf282)
+		ucidef_set_interface_lan "eth0"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
 	glinet,gl-xe300)
 		ucidef_set_interface_wan "eth1"
@@ -68,10 +72,6 @@ ath79_setup_interfaces()
 	zte,mf281)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:lan"
-		;;
-	zte,mf282)
-		ucidef_set_interface_lan "eth0"
-		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
 	zte,mf286|\
 	zte,mf286a|\
