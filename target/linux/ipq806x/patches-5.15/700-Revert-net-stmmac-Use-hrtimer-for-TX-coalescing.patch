@@ -98,7 +98,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  	}
  
  	for (chan = 0; chan < rx_channel_count; chan++)
-@@ -3903,7 +3896,7 @@ irq_error:
+@@ -3904,7 +3897,7 @@ irq_error:
  	phylink_stop(priv->phylink);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -107,7 +107,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	stmmac_hw_teardown(dev);
  init_error:
-@@ -3959,7 +3952,7 @@ static int stmmac_release(struct net_dev
+@@ -3960,7 +3953,7 @@ static int stmmac_release(struct net_dev
  	stmmac_disable_all_queues(priv);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -116,7 +116,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	netif_tx_disable(dev);
  
-@@ -6654,7 +6647,7 @@ void stmmac_xdp_release(struct net_devic
+@@ -6655,7 +6648,7 @@ void stmmac_xdp_release(struct net_devic
  	stmmac_disable_all_queues(priv);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -125,7 +125,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	/* Free the IRQ lines */
  	stmmac_free_irq(dev, REQ_IRQ_ERR_ALL, 0);
-@@ -6749,8 +6742,7 @@ int stmmac_xdp_open(struct net_device *d
+@@ -6750,8 +6743,7 @@ int stmmac_xdp_open(struct net_device *d
  		stmmac_set_tx_tail_ptr(priv, priv->ioaddr,
  				       tx_q->tx_tail_addr, chan);
  
@@ -135,7 +135,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  	}
  
  	/* Enable the MAC Rx/Tx */
-@@ -6773,7 +6765,7 @@ int stmmac_xdp_open(struct net_device *d
+@@ -6774,7 +6766,7 @@ int stmmac_xdp_open(struct net_device *d
  
  irq_error:
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -144,7 +144,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	stmmac_hw_teardown(dev);
  init_error:
-@@ -7497,7 +7489,7 @@ int stmmac_suspend(struct device *dev)
+@@ -7498,7 +7490,7 @@ int stmmac_suspend(struct device *dev)
  	stmmac_disable_all_queues(priv);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
