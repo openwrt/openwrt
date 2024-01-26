@@ -416,6 +416,30 @@ define U-Boot/mt7986_bananapi_bpi-r3-nor
   FIP_COMPRESS:=1
 endef
 
+define U-Boot/mt7986_bananapi_bpi-r3-mini-emmc
+  NAME:=BananaPi BPi-R3
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=bananapi_bpi-r3-mini
+  UBOOT_CONFIG:=mt7986a_bpi-r3-mini-emmc
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7986-emmc-ddr4
+endef
+
+define U-Boot/mt7986_bananapi_bpi-r3-mini-snand
+  NAME:=BananaPi BPi-R3
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=bananapi_bpi-r3-mini
+  UBOOT_CONFIG:=mt7986a_bpi-r3-mini-snand
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ubi-ddr4
+endef
+
 define U-Boot/mt7986_glinet_gl-mt6000
   NAME:=GL.iNet GL-MT6000
   BUILD_SUBTARGET:=filogic
@@ -632,6 +656,8 @@ UBOOT_TARGETS := \
 	mt7986_bananapi_bpi-r3-sdmmc \
 	mt7986_bananapi_bpi-r3-snand \
 	mt7986_bananapi_bpi-r3-nor \
+	mt7986_bananapi_bpi-r3-mini-emmc \
+	mt7986_bananapi_bpi-r3-mini-snand \
 	mt7986_glinet_gl-mt6000 \
 	mt7986_jdcloud_re-cp-03 \
 	mt7986_tplink_tl-xdr4288 \
