@@ -1,4 +1,4 @@
-From b642f64d629df5515f3a01fc5b2e17c3fa7b404c Mon Sep 17 00:00:00 2001
+From e079555a4c68356e58249cfc041b28f6eb455bd5 Mon Sep 17 00:00:00 2001
 From: Stefan Wahren <wahrenst@gmx.net>
 Date: Sat, 4 May 2019 17:06:15 +0200
 Subject: [PATCH] hwrng: iproc-rng200: Add BCM2838 support
@@ -17,8 +17,8 @@ Fixes: "hwrng: iproc-rng200: Add BCM2838 support"
 Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 ---
  drivers/char/hw_random/Kconfig        |  2 +-
- drivers/char/hw_random/iproc-rng200.c | 78 +++++++++++++++++++++++++--
- 2 files changed, 76 insertions(+), 4 deletions(-)
+ drivers/char/hw_random/iproc-rng200.c | 79 ++++++++++++++++++++++++++-
+ 2 files changed, 77 insertions(+), 4 deletions(-)
 
 --- a/drivers/char/hw_random/Kconfig
 +++ b/drivers/char/hw_random/Kconfig
@@ -33,7 +33,15 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	  module will be called iproc-rng200
 --- a/drivers/char/hw_random/iproc-rng200.c
 +++ b/drivers/char/hw_random/iproc-rng200.c
-@@ -21,6 +21,7 @@
+@@ -14,6 +14,7 @@
+ #include <linux/module.h>
+ #include <linux/of_address.h>
+ #include <linux/of_platform.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ 
+@@ -21,6 +22,7 @@
  #define RNG_CTRL_OFFSET					0x00
  #define RNG_CTRL_RNG_RBGEN_MASK				0x00001FFF
  #define RNG_CTRL_RNG_RBGEN_ENABLE			0x00000001
@@ -41,7 +49,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  #define RNG_SOFT_RESET_OFFSET				0x04
  #define RNG_SOFT_RESET					0x00000001
-@@ -28,16 +29,23 @@
+@@ -28,16 +30,23 @@
  #define RBG_SOFT_RESET_OFFSET				0x08
  #define RBG_SOFT_RESET					0x00000001
  
@@ -65,7 +73,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  struct iproc_rng200_dev {
  	struct hwrng rng;
-@@ -158,6 +166,64 @@ static int iproc_rng200_init(struct hwrn
+@@ -158,6 +167,64 @@ static int iproc_rng200_init(struct hwrn
  	return 0;
  }
  
@@ -130,7 +138,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  static void iproc_rng200_cleanup(struct hwrng *rng)
  {
  	struct iproc_rng200_dev *priv = to_rng_priv(rng);
-@@ -184,11 +250,17 @@ static int iproc_rng200_probe(struct pla
+@@ -184,11 +251,17 @@ static int iproc_rng200_probe(struct pla
  
  	dev_set_drvdata(dev, priv);
  
