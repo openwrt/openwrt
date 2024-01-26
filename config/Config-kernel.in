@@ -1184,21 +1184,6 @@ config KERNEL_XDP_SOCKETS
 	  XDP sockets allows a channel between XDP programs and
 	  userspace applications.
 
-config KERNEL_WIRELESS_EXT
-	def_bool n
-
-config KERNEL_WEXT_CORE
-	def_bool KERNEL_WIRELESS_EXT
-
-config KERNEL_WEXT_PRIV
-	def_bool KERNEL_WIRELESS_EXT
-
-config KERNEL_WEXT_PROC
-	def_bool KERNEL_WIRELESS_EXT
-
-config KERNEL_WEXT_SPY
-	def_bool KERNEL_WIRELESS_EXT
-
 config KERNEL_PAGE_POOL
 	def_bool n
 
