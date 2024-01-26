@@ -43,7 +43,10 @@ define Package/netifd/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/netifd $(1)/sbin/
 	$(CP) ./files/* $(1)/
 	$(INSTALL_DIR) $(1)/etc/udhcpc.user.d/
-	$(CP) $(PKG_BUILD_DIR)/scripts/* $(1)/lib/netifd/
+	$(CP) \
+		$(PKG_BUILD_DIR)/scripts/utils.sh \
+		$(PKG_BUILD_DIR)/scripts/netifd-proto.sh \
+		$(1)/lib/netifd/
 endef
 
 $(eval $(call BuildPackage,netifd))
