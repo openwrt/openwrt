@@ -35,7 +35,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	bool mac_link_dropped;
  	bool using_mac_select_pcs;
-@@ -795,6 +800,22 @@ static void phylink_mac_pcs_an_restart(s
+@@ -798,6 +803,22 @@ static void phylink_mac_pcs_an_restart(s
  	}
  }
  
@@ -58,7 +58,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static void phylink_major_config(struct phylink *pl, bool restart,
  				  const struct phylink_link_state *state)
  {
-@@ -832,12 +853,16 @@ static void phylink_major_config(struct
+@@ -835,12 +856,16 @@ static void phylink_major_config(struct
  	 * for the change.
  	 */
  	if (pcs_changed) {
@@ -75,7 +75,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (pl->pcs_ops) {
  		err = pl->pcs_ops->pcs_config(pl->pcs, pl->cur_link_an_mode,
  					      state->interface,
-@@ -1261,6 +1286,7 @@ struct phylink *phylink_create(struct ph
+@@ -1264,6 +1289,7 @@ struct phylink *phylink_create(struct ph
  	pl->link_config.speed = SPEED_UNKNOWN;
  	pl->link_config.duplex = DUPLEX_UNKNOWN;
  	pl->link_config.an_enabled = true;
@@ -83,7 +83,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	pl->mac_ops = mac_ops;
  	__set_bit(PHYLINK_DISABLE_STOPPED, &pl->phylink_disable_state);
  	timer_setup(&pl->link_poll, phylink_fixed_poll, 0);
-@@ -1652,6 +1678,8 @@ void phylink_start(struct phylink *pl)
+@@ -1655,6 +1681,8 @@ void phylink_start(struct phylink *pl)
  	if (pl->netdev)
  		netif_carrier_off(pl->netdev);
  
@@ -92,7 +92,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* Apply the link configuration to the MAC when starting. This allows
  	 * a fixed-link to start with the correct parameters, and also
  	 * ensures that we set the appropriate advertisement for Serdes links.
-@@ -1662,6 +1690,8 @@ void phylink_start(struct phylink *pl)
+@@ -1665,6 +1693,8 @@ void phylink_start(struct phylink *pl)
  	 */
  	phylink_mac_initial_config(pl, true);
  
@@ -101,7 +101,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	clear_bit(PHYLINK_DISABLE_STOPPED, &pl->phylink_disable_state);
  	phylink_run_resolve(pl);
  
-@@ -1681,16 +1711,9 @@ void phylink_start(struct phylink *pl)
+@@ -1684,16 +1714,9 @@ void phylink_start(struct phylink *pl)
  			poll = true;
  	}
  
@@ -120,7 +120,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (poll)
  		mod_timer(&pl->link_poll, jiffies + HZ);
  	if (pl->phydev)
-@@ -1727,6 +1750,10 @@ void phylink_stop(struct phylink *pl)
+@@ -1730,6 +1753,10 @@ void phylink_stop(struct phylink *pl)
  	}
  
  	phylink_run_resolve_and_disable(pl, PHYLINK_DISABLE_STOPPED);

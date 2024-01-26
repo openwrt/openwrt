@@ -1,0 +1,294 @@
+From 0c3e10cb44232833a50cb8e3e784c432906a60c1 Mon Sep 17 00:00:00 2001
+From: Sean Anderson <sean.anderson@seco.com>
+Date: Tue, 20 Sep 2022 18:12:31 -0400
+Subject: [PATCH] net: phy: Add support for rate matching
+
+This adds support for rate matching (also known as rate adaptation) to
+the phy subsystem. The general idea is that the phy interface runs at
+one speed, and the MAC throttles the rate at which it sends packets to
+the link speed. There's a good overview of several techniques for
+achieving this at [1]. This patch adds support for three: pause-frame
+based (such as in Aquantia phys), CRS-based (such as in 10PASS-TS and
+2BASE-TL), and open-loop-based (such as in 10GBASE-W).
+
+This patch makes a few assumptions and a few non assumptions about the
+types of rate matching available. First, it assumes that different phys
+may use different forms of rate matching. Second, it assumes that phys
+can use rate matching for any of their supported link speeds (e.g. if a
+phy supports 10BASE-T and XGMII, then it can adapt XGMII to 10BASE-T).
+Third, it does not assume that all interface modes will use the same
+form of rate matching. Fourth, it does not assume that all phy devices
+will support rate matching (even if some do). Relaxing or strengthening
+these (non-)assumptions could result in a different API. For example, if
+all interface modes were assumed to use the same form of rate matching,
+then a bitmask of interface modes supportting rate matching would
+suffice.
+
+For some better visibility into the process, the current rate matching
+mode is exposed as part of the ethtool ksettings. For the moment, only
+read access is supported. I'm not sure what userspace might want to
+configure yet (disable it altogether, disable just one mode, specify the
+mode to use, etc.). For the moment, since only pause-based rate
+adaptation support is added in the next few commits, rate matching can
+be disabled altogether by adjusting the advertisement.
+
+802.3 calls this feature "rate adaptation" in clause 49 (10GBASE-R) and
+"rate matching" in clause 61 (10PASS-TL and 2BASE-TS). Aquantia also calls
+this feature "rate adaptation". I chose "rate matching" because it is
+shorter, and because Russell doesn't think "adaptation" is correct in this
+context.
+
+Signed-off-by: Sean Anderson <sean.anderson@seco.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ Documentation/networking/ethtool-netlink.rst |  2 ++
+ drivers/net/phy/phy-core.c                   | 21 +++++++++++++++
+ drivers/net/phy/phy.c                        | 28 ++++++++++++++++++++
+ include/linux/phy.h                          | 22 ++++++++++++++-
+ include/uapi/linux/ethtool.h                 | 18 +++++++++++--
+ include/uapi/linux/ethtool_netlink.h         |  1 +
+ net/ethtool/ioctl.c                          |  1 +
+ net/ethtool/linkmodes.c                      |  5 ++++
+ 8 files changed, 95 insertions(+), 3 deletions(-)
+
+--- a/Documentation/networking/ethtool-netlink.rst
++++ b/Documentation/networking/ethtool-netlink.rst
+@@ -418,6 +418,7 @@ Kernel response contents:
+   ``ETHTOOL_A_LINKMODES_DUPLEX``              u8      duplex mode
+   ``ETHTOOL_A_LINKMODES_MASTER_SLAVE_CFG``    u8      Master/slave port mode
+   ``ETHTOOL_A_LINKMODES_MASTER_SLAVE_STATE``  u8      Master/slave port state
++  ``ETHTOOL_A_LINKMODES_RATE_MATCHING``       u8      PHY rate matching
+   ==========================================  ======  ==========================
+ 
+ For ``ETHTOOL_A_LINKMODES_OURS``, value represents advertised modes and mask
+@@ -441,6 +442,7 @@ Request contents:
+   ``ETHTOOL_A_LINKMODES_SPEED``               u32     link speed (Mb/s)
+   ``ETHTOOL_A_LINKMODES_DUPLEX``              u8      duplex mode
+   ``ETHTOOL_A_LINKMODES_MASTER_SLAVE_CFG``    u8      Master/slave port mode
++  ``ETHTOOL_A_LINKMODES_RATE_MATCHING``       u8      PHY rate matching
+   ``ETHTOOL_A_LINKMODES_LANES``               u32     lanes
+   ==========================================  ======  ==========================
+ 
+--- a/drivers/net/phy/phy-core.c
++++ b/drivers/net/phy/phy-core.c
+@@ -75,6 +75,27 @@ const char *phy_duplex_to_str(unsigned i
+ EXPORT_SYMBOL_GPL(phy_duplex_to_str);
+ 
+ /**
++ * phy_rate_matching_to_str - Return a string describing the rate matching
++ *
++ * @rate_matching: Type of rate matching to describe
++ */
++const char *phy_rate_matching_to_str(int rate_matching)
++{
++	switch (rate_matching) {
++	case RATE_MATCH_NONE:
++		return "none";
++	case RATE_MATCH_PAUSE:
++		return "pause";
++	case RATE_MATCH_CRS:
++		return "crs";
++	case RATE_MATCH_OPEN_LOOP:
++		return "open-loop";
++	}
++	return "Unsupported (update phy-core.c)";
++}
++EXPORT_SYMBOL_GPL(phy_rate_matching_to_str);
++
++/**
+  * phy_interface_num_ports - Return the number of links that can be carried by
+  *			     a given MAC-PHY physical link. Returns 0 if this is
+  *			     unknown, the number of links else.
+--- a/drivers/net/phy/phy.c
++++ b/drivers/net/phy/phy.c
+@@ -127,6 +127,33 @@ void phy_print_status(struct phy_device
+ EXPORT_SYMBOL(phy_print_status);
+ 
+ /**
++ * phy_get_rate_matching - determine if rate matching is supported
++ * @phydev: The phy device to return rate matching for
++ * @iface: The interface mode to use
++ *
++ * This determines the type of rate matching (if any) that @phy supports
++ * using @iface. @iface may be %PHY_INTERFACE_MODE_NA to determine if any
++ * interface supports rate matching.
++ *
++ * Return: The type of rate matching @phy supports for @iface, or
++ *         %RATE_MATCH_NONE.
++ */
++int phy_get_rate_matching(struct phy_device *phydev,
++			  phy_interface_t iface)
++{
++	int ret = RATE_MATCH_NONE;
++
++	if (phydev->drv->get_rate_matching) {
++		mutex_lock(&phydev->lock);
++		ret = phydev->drv->get_rate_matching(phydev, iface);
++		mutex_unlock(&phydev->lock);
++	}
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(phy_get_rate_matching);
++
++/**
+  * phy_config_interrupt - configure the PHY device for the requested interrupts
+  * @phydev: the phy_device struct
+  * @interrupts: interrupt flags to configure for this @phydev
+@@ -268,6 +295,7 @@ void phy_ethtool_ksettings_get(struct ph
+ 	cmd->base.duplex = phydev->duplex;
+ 	cmd->base.master_slave_cfg = phydev->master_slave_get;
+ 	cmd->base.master_slave_state = phydev->master_slave_state;
++	cmd->base.rate_matching = phydev->rate_matching;
+ 	if (phydev->interface == PHY_INTERFACE_MODE_MOCA)
+ 		cmd->base.port = PORT_BNC;
+ 	else
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -280,7 +280,6 @@ static inline const char *phy_modes(phy_
+ 	}
+ }
+ 
+-
+ #define PHY_INIT_TIMEOUT	100000
+ #define PHY_FORCE_TIMEOUT	10
+ 
+@@ -573,6 +572,7 @@ struct macsec_ops;
+  * @lp_advertising: Current link partner advertised linkmodes
+  * @eee_broken_modes: Energy efficient ethernet modes which should be prohibited
+  * @autoneg: Flag autoneg being used
++ * @rate_matching: Current rate matching mode
+  * @link: Current link state
+  * @autoneg_complete: Flag auto negotiation of the link has completed
+  * @mdix: Current crossover
+@@ -639,6 +639,8 @@ struct phy_device {
+ 	unsigned irq_suspended:1;
+ 	unsigned irq_rerun:1;
+ 
++	int rate_matching;
++
+ 	enum phy_state state;
+ 
+ 	u32 dev_flags;
+@@ -801,6 +803,21 @@ struct phy_driver {
+ 	 */
+ 	int (*get_features)(struct phy_device *phydev);
+ 
++	/**
++	 * @get_rate_matching: Get the supported type of rate matching for a
++	 * particular phy interface. This is used by phy consumers to determine
++	 * whether to advertise lower-speed modes for that interface. It is
++	 * assumed that if a rate matching mode is supported on an interface,
++	 * then that interface's rate can be adapted to all slower link speeds
++	 * supported by the phy. If iface is %PHY_INTERFACE_MODE_NA, and the phy
++	 * supports any kind of rate matching for any interface, then it must
++	 * return that rate matching mode (preferring %RATE_MATCH_PAUSE to
++	 * %RATE_MATCH_CRS). If the interface is not supported, this should
++	 * return %RATE_MATCH_NONE.
++	 */
++	int (*get_rate_matching)(struct phy_device *phydev,
++				   phy_interface_t iface);
++
+ 	/* PHY Power Management */
+ 	/** @suspend: Suspend the hardware, saving state if needed */
+ 	int (*suspend)(struct phy_device *phydev);
+@@ -967,6 +984,7 @@ struct phy_fixup {
+ 
+ const char *phy_speed_to_str(int speed);
+ const char *phy_duplex_to_str(unsigned int duplex);
++const char *phy_rate_matching_to_str(int rate_matching);
+ 
+ int phy_interface_num_ports(phy_interface_t interface);
+ 
+@@ -1675,6 +1693,8 @@ int phy_disable_interrupts(struct phy_de
+ void phy_request_interrupt(struct phy_device *phydev);
+ void phy_free_interrupt(struct phy_device *phydev);
+ void phy_print_status(struct phy_device *phydev);
++int phy_get_rate_matching(struct phy_device *phydev,
++			    phy_interface_t iface);
+ int phy_set_max_speed(struct phy_device *phydev, u32 max_speed);
+ void phy_remove_link_mode(struct phy_device *phydev, u32 link_mode);
+ void phy_advertise_supported(struct phy_device *phydev);
+--- a/include/uapi/linux/ethtool.h
++++ b/include/uapi/linux/ethtool.h
+@@ -1809,6 +1809,20 @@ static inline int ethtool_validate_duple
+ #define MASTER_SLAVE_STATE_SLAVE		3
+ #define MASTER_SLAVE_STATE_ERR			4
+ 
++/* These are used to throttle the rate of data on the phy interface when the
++ * native speed of the interface is higher than the link speed. These should
++ * not be used for phy interfaces which natively support multiple speeds (e.g.
++ * MII or SGMII).
++ */
++/* No rate matching performed. */
++#define RATE_MATCH_NONE		0
++/* The phy sends pause frames to throttle the MAC. */
++#define RATE_MATCH_PAUSE	1
++/* The phy asserts CRS to prevent the MAC from transmitting. */
++#define RATE_MATCH_CRS		2
++/* The MAC is programmed with a sufficiently-large IPG. */
++#define RATE_MATCH_OPEN_LOOP	3
++
+ /* Which connector port. */
+ #define PORT_TP			0x00
+ #define PORT_AUI		0x01
+@@ -2002,8 +2016,8 @@ enum ethtool_reset_flags {
+  *	reported consistently by PHYLIB.  Read-only.
+  * @master_slave_cfg: Master/slave port mode.
+  * @master_slave_state: Master/slave port state.
++ * @rate_matching: Rate adaptation performed by the PHY
+  * @reserved: Reserved for future use; see the note on reserved space.
+- * @reserved1: Reserved for future use; see the note on reserved space.
+  * @link_mode_masks: Variable length bitmaps.
+  *
+  * If autonegotiation is disabled, the speed and @duplex represent the
+@@ -2054,7 +2068,7 @@ struct ethtool_link_settings {
+ 	__u8	transceiver;
+ 	__u8	master_slave_cfg;
+ 	__u8	master_slave_state;
+-	__u8	reserved1[1];
++	__u8	rate_matching;
+ 	__u32	reserved[7];
+ 	__u32	link_mode_masks[0];
+ 	/* layout of link_mode_masks fields:
+--- a/include/uapi/linux/ethtool_netlink.h
++++ b/include/uapi/linux/ethtool_netlink.h
+@@ -238,6 +238,7 @@ enum {
+ 	ETHTOOL_A_LINKMODES_MASTER_SLAVE_CFG,	/* u8 */
+ 	ETHTOOL_A_LINKMODES_MASTER_SLAVE_STATE,	/* u8 */
+ 	ETHTOOL_A_LINKMODES_LANES,		/* u32 */
++	ETHTOOL_A_LINKMODES_RATE_MATCHING,	/* u8 */
+ 
+ 	/* add new constants above here */
+ 	__ETHTOOL_A_LINKMODES_CNT,
+--- a/net/ethtool/ioctl.c
++++ b/net/ethtool/ioctl.c
+@@ -559,6 +559,7 @@ static int ethtool_get_link_ksettings(st
+ 		= __ETHTOOL_LINK_MODE_MASK_NU32;
+ 	link_ksettings.base.master_slave_cfg = MASTER_SLAVE_CFG_UNSUPPORTED;
+ 	link_ksettings.base.master_slave_state = MASTER_SLAVE_STATE_UNSUPPORTED;
++	link_ksettings.base.rate_matching = RATE_MATCH_NONE;
+ 
+ 	return store_link_ksettings_for_user(useraddr, &link_ksettings);
+ }
+--- a/net/ethtool/linkmodes.c
++++ b/net/ethtool/linkmodes.c
+@@ -70,6 +70,7 @@ static int linkmodes_reply_size(const st
+ 		+ nla_total_size(sizeof(u32)) /* LINKMODES_SPEED */
+ 		+ nla_total_size(sizeof(u32)) /* LINKMODES_LANES */
+ 		+ nla_total_size(sizeof(u8)) /* LINKMODES_DUPLEX */
++		+ nla_total_size(sizeof(u8)) /* LINKMODES_RATE_MATCHING */
+ 		+ 0;
+ 	ret = ethnl_bitset_size(ksettings->link_modes.advertising,
+ 				ksettings->link_modes.supported,
+@@ -143,6 +144,10 @@ static int linkmodes_fill_reply(struct s
+ 		       lsettings->master_slave_state))
+ 		return -EMSGSIZE;
+ 
++	if (nla_put_u8(skb, ETHTOOL_A_LINKMODES_RATE_MATCHING,
++		       lsettings->rate_matching))
++		return -EMSGSIZE;
++
+ 	return 0;
+ }
+ 
