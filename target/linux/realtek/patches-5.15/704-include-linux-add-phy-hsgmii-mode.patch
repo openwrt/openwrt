@@ -13,6 +13,16 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  include/linux/phy.h                           | 3 +++
  2 file changed, 5 insertions(+)
 
+--- a/drivers/net/phy/phy-core.c
++++ b/drivers/net/phy/phy-core.c
+@@ -124,6 +124,7 @@ int phy_interface_num_ports(phy_interfac
+ 	case PHY_INTERFACE_MODE_MOCA:
+ 	case PHY_INTERFACE_MODE_TRGMII:
+ 	case PHY_INTERFACE_MODE_USXGMII:
++	case PHY_INTERFACE_MODE_HSGMII:
+ 	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_SMII:
+ 	case PHY_INTERFACE_MODE_1000BASEX:
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
 @@ -410,6 +410,7 @@ void phylink_get_linkmodes(unsigned long
