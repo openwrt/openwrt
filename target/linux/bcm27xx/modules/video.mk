@@ -8,7 +8,7 @@ define KernelPackage/camera-bcm2835
     CONFIG_VIDEO_BCM2835
   FILES:= \
     $(LINUX_DIR)/drivers/staging/vc04_services/bcm2835-camera/bcm2835-v4l2.ko
-  AUTOLOAD:=$(call AutoLoad,65,bcm2835-v4l2)
+  AUTOLOAD:=$(call AutoLoad,66,bcm2835-v4l2)
   $(call AddDepends/video,@TARGET_bcm27xx +kmod-vchiq-mmal-bcm2835 +kmod-video-videobuf2)
 endef
 
