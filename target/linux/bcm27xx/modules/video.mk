@@ -20,6 +20,24 @@ endef
 $(eval $(call KernelPackage,camera-bcm2835))
 
 
+define KernelPackage/codec-bcm2835
+  TITLE:=BCM2835 Video Codec
+  KCONFIG:= \
+    CONFIG_VIDEO_CODEC_BCM2835
+  FILES:= \
+    $(LINUX_DIR)/drivers/staging/vc04_services/bcm2835-codec/bcm2835-codec.ko
+  AUTOLOAD:=$(call AutoLoad,67,bcm2835-codec)
+  $(call AddDepends/video,@TARGET_bcm27xx +kmod-vchiq-mmal-bcm2835 +kmod-video-dma +kmod-video-mem2mem)
+endef
+
+define KernelPackage/codec-bcm2835/description
+  V4L2 video codecs for Broadcom BCM2835 SoC.
+  This operates over the VCHIQ interface to a service running on VideoCore.
+endef
+
+$(eval $(call KernelPackage,codec-bcm2835))
+
+
 define KernelPackage/drm-vc4
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Broadcom VC4 Graphics
