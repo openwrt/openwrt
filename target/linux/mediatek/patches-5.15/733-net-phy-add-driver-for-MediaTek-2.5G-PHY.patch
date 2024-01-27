@@ -13,7 +13,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -305,6 +305,13 @@ config MEDIATEK_GE_SOC_PHY
+@@ -302,6 +302,13 @@ config MEDIATEK_GE_SOC_PHY
  	  present in the SoCs efuse and will dynamically calibrate VCM
  	  (common-mode voltage) during startup.
  
@@ -29,7 +29,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	help
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -80,6 +80,7 @@ obj-$(CONFIG_MARVELL_10G_PHY)	+= marvell
+@@ -76,6 +76,7 @@ obj-$(CONFIG_MARVELL_10G_PHY)	+= marvell
  obj-$(CONFIG_MARVELL_PHY)	+= marvell.o
  obj-$(CONFIG_MARVELL_88X2222_PHY)	+= marvell-88x2222.o
  obj-$(CONFIG_MAXLINEAR_GPHY)	+= mxl-gpy.o

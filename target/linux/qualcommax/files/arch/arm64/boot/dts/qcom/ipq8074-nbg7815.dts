@@ -234,6 +234,15 @@
 				label = "0:ethphyfw";
 				reg = <0x650000 0x80000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+
+					aqr_fw: aqr-fw@0 {
+						/* Skip the QCOM MBN Header of 40 bytes */
+						reg = <0x28 0x5f402>;
+					};
+				};
 			};
 
 			partition@6d0000 {
@@ -292,6 +301,9 @@
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <8>;
 		reset-gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+
+		nvmem-cells = <&aqr_fw>;
+		nvmem-cell-names = "firmware";
 	};
 };
 

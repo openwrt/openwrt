@@ -41,7 +41,6 @@ define Package/bcm27xx-userland
   CATEGORY:=Utilities
   DEPENDS:=@TARGET_bcm27xx
   TITLE:=BCM27xx userland tools
-  DEFAULT:=y if TARGET_bcm27xx
 endef
 
 define Package/bcm27xx-userland/description
