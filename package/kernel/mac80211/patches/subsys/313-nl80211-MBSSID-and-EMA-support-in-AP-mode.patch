@@ -22,7 +22,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -1046,6 +1046,36 @@ struct cfg80211_crypto_settings {
+@@ -1049,6 +1049,36 @@ struct cfg80211_crypto_settings {
  };
  
  /**
@@ -59,7 +59,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * struct cfg80211_beacon_data - beacon data
   * @head: head portion of beacon (before TIM IE)
   *	or %NULL if not changed
-@@ -1063,6 +1093,7 @@ struct cfg80211_crypto_settings {
+@@ -1066,6 +1096,7 @@ struct cfg80211_crypto_settings {
   * @assocresp_ies_len: length of assocresp_ies in octets
   * @probe_resp_len: length of probe response template (@probe_resp)
   * @probe_resp: probe response template (AP mode only)
@@ -67,7 +67,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   * @ftm_responder: enable FTM responder functionality; -1 for no change
   *	(which also implies no change in LCI/civic location data)
   * @lci: Measurement Report element content, starting with Measurement Token
-@@ -1080,6 +1111,7 @@ struct cfg80211_beacon_data {
+@@ -1083,6 +1114,7 @@ struct cfg80211_beacon_data {
  	const u8 *probe_resp;
  	const u8 *lci;
  	const u8 *civicloc;
@@ -75,7 +75,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	s8 ftm_responder;
  
  	size_t head_len, tail_len;
-@@ -1194,6 +1226,7 @@ enum cfg80211_ap_settings_flags {
+@@ -1197,6 +1229,7 @@ enum cfg80211_ap_settings_flags {
   * @he_oper: HE operation IE (or %NULL if HE isn't enabled)
   * @fils_discovery: FILS discovery transmission parameters
   * @unsol_bcast_probe_resp: Unsolicited broadcast probe response parameters
@@ -83,7 +83,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   */
  struct cfg80211_ap_settings {
  	struct cfg80211_chan_def chandef;
-@@ -1226,6 +1259,7 @@ struct cfg80211_ap_settings {
+@@ -1229,6 +1262,7 @@ struct cfg80211_ap_settings {
  	struct cfg80211_he_bss_color he_bss_color;
  	struct cfg80211_fils_discovery fils_discovery;
  	struct cfg80211_unsol_bcast_probe_resp unsol_bcast_probe_resp;
@@ -91,7 +91,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /**
-@@ -4986,6 +5020,13 @@ struct wiphy_iftype_akm_suites {
+@@ -4989,6 +5023,13 @@ struct wiphy_iftype_akm_suites {
   *	%NL80211_TID_CONFIG_ATTR_RETRY_LONG attributes
   * @sar_capa: SAR control capabilities
   * @rfkill: a pointer to the rfkill structure
@@ -105,7 +105,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   */
  struct wiphy {
  	struct mutex mtx;
-@@ -5133,6 +5174,9 @@ struct wiphy {
+@@ -5136,6 +5177,9 @@ struct wiphy {
  
  	struct rfkill *rfkill;
  
@@ -221,7 +221,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  #endif /* __LINUX_NL80211_H */
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -442,6 +442,16 @@ sar_policy[NL80211_SAR_ATTR_MAX + 1] = {
+@@ -443,6 +443,16 @@ sar_policy[NL80211_SAR_ATTR_MAX + 1] = {
  	[NL80211_SAR_ATTR_SPECS] = NLA_POLICY_NESTED_ARRAY(sar_specs_policy),
  };
  
@@ -238,7 +238,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
  	[0] = { .strict_start_type = NL80211_ATTR_HE_OBSS_PD },
  	[NL80211_ATTR_WIPHY] = { .type = NLA_U32 },
-@@ -788,6 +798,9 @@ static const struct nla_policy nl80211_p
+@@ -789,6 +799,9 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_COLOR_CHANGE_COUNT] = { .type = NLA_U8 },
  	[NL80211_ATTR_COLOR_CHANGE_COLOR] = { .type = NLA_U8 },
  	[NL80211_ATTR_COLOR_CHANGE_ELEMS] = NLA_POLICY_NESTED(nl80211_policy),
@@ -248,7 +248,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -2236,6 +2249,35 @@ fail:
+@@ -2237,6 +2250,35 @@ fail:
  	return -ENOBUFS;
  }
  
@@ -284,7 +284,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  struct nl80211_dump_wiphy_state {
  	s64 filter_wiphy;
  	long start;
-@@ -2821,6 +2863,9 @@ static int nl80211_send_wiphy(struct cfg
+@@ -2822,6 +2864,9 @@ static int nl80211_send_wiphy(struct cfg
  		if (nl80211_put_sar_specs(rdev, msg))
  			goto nla_put_failure;
  
@@ -294,7 +294,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		/* done */
  		state->split_start = 0;
  		break;
-@@ -5020,6 +5065,96 @@ static int validate_beacon_tx_rate(struc
+@@ -5021,6 +5066,96 @@ static int validate_beacon_tx_rate(struc
  	return 0;
  }
  
@@ -391,7 +391,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static int nl80211_parse_beacon(struct cfg80211_registered_device *rdev,
  				struct nlattr *attrs[],
  				struct cfg80211_beacon_data *bcn)
-@@ -5100,6 +5235,17 @@ static int nl80211_parse_beacon(struct c
+@@ -5101,6 +5236,17 @@ static int nl80211_parse_beacon(struct c
  		bcn->ftm_responder = -1;
  	}
  
@@ -409,7 +409,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	return 0;
  }
  
-@@ -5556,6 +5702,17 @@ static int nl80211_start_ap(struct sk_bu
+@@ -5557,6 +5703,17 @@ static int nl80211_start_ap(struct sk_bu
  			goto out;
  	}
  
@@ -427,7 +427,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	nl80211_calculate_ap_params(&params);
  
  	if (info->attrs[NL80211_ATTR_EXTERNAL_AUTH_SUPPORT])
-@@ -5577,6 +5734,11 @@ static int nl80211_start_ap(struct sk_bu
+@@ -5578,6 +5735,11 @@ static int nl80211_start_ap(struct sk_bu
  
  out:
  	kfree(params.acl);
@@ -439,7 +439,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	return err;
  }
-@@ -5601,12 +5763,14 @@ static int nl80211_set_beacon(struct sk_
+@@ -5602,12 +5764,14 @@ static int nl80211_set_beacon(struct sk_
  
  	err = nl80211_parse_beacon(rdev, info->attrs, &params);
  	if (err)
@@ -455,7 +455,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	return err;
  }
  
-@@ -9283,12 +9447,14 @@ static int nl80211_channel_switch(struct
+@@ -9284,12 +9448,14 @@ static int nl80211_channel_switch(struct
  
  	err = nl80211_parse_beacon(rdev, info->attrs, &params.beacon_after);
  	if (err)
@@ -473,7 +473,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	err = nla_parse_nested_deprecated(csa_attrs, NL80211_ATTR_MAX,
  					  info->attrs[NL80211_ATTR_CSA_IES],
-@@ -9407,6 +9573,8 @@ skip_beacons:
+@@ -9408,6 +9574,8 @@ skip_beacons:
  	wdev_unlock(wdev);
  
  free:
@@ -482,7 +482,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	kfree(csa_attrs);
  	return err;
  }
-@@ -14959,6 +15127,8 @@ static int nl80211_color_change(struct s
+@@ -14960,6 +15128,8 @@ static int nl80211_color_change(struct s
  	wdev_unlock(wdev);
  
  out:

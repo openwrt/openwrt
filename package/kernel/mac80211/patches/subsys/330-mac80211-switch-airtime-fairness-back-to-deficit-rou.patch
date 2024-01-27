@@ -627,7 +627,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	for (i = 0; i < IEEE80211_NUM_TIDS; i++)
-@@ -1889,59 +1893,24 @@ void ieee80211_sta_set_buffered(struct i
+@@ -1890,59 +1894,24 @@ void ieee80211_sta_set_buffered(struct i
  }
  EXPORT_SYMBOL(ieee80211_sta_set_buffered);
  
@@ -699,7 +699,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  EXPORT_SYMBOL(ieee80211_sta_register_airtime);
  
-@@ -2385,7 +2354,7 @@ void sta_set_sinfo(struct sta_info *sta,
+@@ -2386,7 +2355,7 @@ void sta_set_sinfo(struct sta_info *sta,
  	}
  
  	if (!(sinfo->filled & BIT_ULL(NL80211_STA_INFO_AIRTIME_WEIGHT))) {
@@ -791,7 +791,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/net_namespace.h>
  #include <net/ieee80211_radiotap.h>
  #include <net/cfg80211.h>
-@@ -1480,7 +1479,7 @@ void ieee80211_txq_init(struct ieee80211
+@@ -1481,7 +1480,7 @@ void ieee80211_txq_init(struct ieee80211
  	codel_vars_init(&txqi->def_cvars);
  	codel_stats_init(&txqi->cstats);
  	__skb_queue_head_init(&txqi->frags);
@@ -800,7 +800,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	txqi->txq.vif = &sdata->vif;
  
-@@ -1524,7 +1523,9 @@ void ieee80211_txq_purge(struct ieee8021
+@@ -1525,7 +1524,9 @@ void ieee80211_txq_purge(struct ieee8021
  	ieee80211_purge_tx_queue(&local->hw, &txqi->frags);
  	spin_unlock_bh(&fq->lock);
  
@@ -811,7 +811,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  void ieee80211_txq_set_params(struct ieee80211_local *local)
-@@ -3819,259 +3820,102 @@ EXPORT_SYMBOL(ieee80211_tx_dequeue);
+@@ -3820,259 +3821,102 @@ EXPORT_SYMBOL(ieee80211_tx_dequeue);
  struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
  {
  	struct ieee80211_local *local = hw_to_local(hw);
@@ -1133,7 +1133,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_local *local = hw_to_local(hw);
  
  	if (!wiphy_ext_feature_isset(local->hw.wiphy, NL80211_EXT_FEATURE_AQL))
-@@ -4086,12 +3930,15 @@ bool ieee80211_txq_airtime_check(struct
+@@ -4087,12 +3931,15 @@ bool ieee80211_txq_airtime_check(struct
  	if (unlikely(txq->tid == IEEE80211_NUM_TIDS))
  		return true;
  
@@ -1151,7 +1151,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return true;
  
  	return false;
-@@ -4101,59 +3948,60 @@ EXPORT_SYMBOL(ieee80211_txq_airtime_chec
+@@ -4102,59 +3949,60 @@ EXPORT_SYMBOL(ieee80211_txq_airtime_chec
  bool ieee80211_txq_may_transmit(struct ieee80211_hw *hw,
  				struct ieee80211_txq *txq)
  {

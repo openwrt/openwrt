@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3817,6 +3817,13 @@ out:
+@@ -3818,6 +3818,13 @@ out:
  }
  EXPORT_SYMBOL(ieee80211_tx_dequeue);
  
@@ -28,7 +28,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
  {
  	struct ieee80211_local *local = hw_to_local(hw);
-@@ -3847,7 +3854,7 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -3848,7 +3855,7 @@ struct ieee80211_txq *ieee80211_next_txq
  		struct sta_info *sta = container_of(txqi->txq.sta,
  						    struct sta_info, sta);
  		bool aql_check = ieee80211_txq_airtime_check(hw, &txqi->txq);
@@ -37,7 +37,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		if (aql_check)
  			found_eligible_txq = true;
-@@ -3972,7 +3979,7 @@ bool ieee80211_txq_may_transmit(struct i
+@@ -3973,7 +3980,7 @@ bool ieee80211_txq_may_transmit(struct i
  			continue;
  		}
  		sta = container_of(iter->txq.sta, struct sta_info, sta);

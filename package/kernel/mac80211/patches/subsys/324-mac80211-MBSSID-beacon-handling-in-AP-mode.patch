@@ -120,7 +120,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	/* turn off carrier for this interface and dependent VLANs */
  	list_for_each_entry(vlan, &sdata->u.ap.vlans, u.vlan.list)
-@@ -3126,12 +3166,24 @@ cfg80211_beacon_dup(struct cfg80211_beac
+@@ -3130,12 +3170,24 @@ cfg80211_beacon_dup(struct cfg80211_beac
  
  	len = beacon->head_len + beacon->tail_len + beacon->beacon_ies_len +
  	      beacon->proberesp_ies_len + beacon->assocresp_ies_len +
@@ -146,7 +146,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	pos = (u8 *)(new_beacon + 1);
  	if (beacon->head_len) {
  		new_beacon->head_len = beacon->head_len;
-@@ -3169,6 +3221,10 @@ cfg80211_beacon_dup(struct cfg80211_beac
+@@ -3173,6 +3225,10 @@ cfg80211_beacon_dup(struct cfg80211_beac
  		memcpy(pos, beacon->probe_resp, beacon->probe_resp_len);
  		pos += beacon->probe_resp_len;
  	}
@@ -157,7 +157,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	/* might copy -1, meaning no changes requested */
  	new_beacon->ftm_responder = beacon->ftm_responder;
-@@ -3206,8 +3262,11 @@ static int ieee80211_set_after_csa_beaco
+@@ -3210,8 +3266,11 @@ static int ieee80211_set_after_csa_beaco
  	case NL80211_IFTYPE_AP:
  		err = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon,
  					      NULL, NULL);
@@ -171,7 +171,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  		if (err < 0)
  			return err;
-@@ -3362,8 +3421,12 @@ static int ieee80211_set_csa_beacon(stru
+@@ -3366,8 +3425,12 @@ static int ieee80211_set_csa_beacon(stru
  		if ((params->n_counter_offsets_beacon >
  		     IEEE80211_MAX_CNTDWN_COUNTERS_NUM) ||
  		    (params->n_counter_offsets_presp >
@@ -185,7 +185,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  		csa.counter_offsets_beacon = params->counter_offsets_beacon;
  		csa.counter_offsets_presp = params->counter_offsets_presp;
-@@ -3373,7 +3436,9 @@ static int ieee80211_set_csa_beacon(stru
+@@ -3377,7 +3440,9 @@ static int ieee80211_set_csa_beacon(stru
  
  		err = ieee80211_assign_beacon(sdata, &params->beacon_csa, &csa, NULL);
  		if (err < 0) {
@@ -195,7 +195,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			return err;
  		}
  		*changed |= err;
-@@ -3460,8 +3525,11 @@ static int ieee80211_set_csa_beacon(stru
+@@ -3464,8 +3529,11 @@ static int ieee80211_set_csa_beacon(stru
  static void ieee80211_color_change_abort(struct ieee80211_sub_if_data  *sdata)
  {
  	sdata->vif.color_change_active = false;
@@ -209,7 +209,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	cfg80211_color_change_aborted_notify(sdata->dev);
  }
-@@ -4199,8 +4267,11 @@ ieee80211_set_after_color_change_beacon(
+@@ -4203,8 +4271,11 @@ ieee80211_set_after_color_change_beacon(
  
  		ret = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon,
  					      NULL, NULL);
@@ -223,7 +223,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  		if (ret < 0)
  			return ret;
-@@ -4243,7 +4314,11 @@ ieee80211_set_color_change_beacon(struct
+@@ -4247,7 +4318,11 @@ ieee80211_set_color_change_beacon(struct
  		err = ieee80211_assign_beacon(sdata, &params->beacon_color_change,
  					      NULL, &color_change);
  		if (err < 0) {
@@ -269,7 +269,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	IEEE80211_TX_STATUS_MSG	= 2,
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -5041,6 +5041,19 @@ ieee80211_beacon_get_finish(struct ieee8
+@@ -5042,6 +5042,19 @@ ieee80211_beacon_get_finish(struct ieee8
  		       IEEE80211_TX_CTL_FIRST_FRAGMENT;
  }
  
@@ -289,7 +289,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static struct sk_buff *
  ieee80211_beacon_get_ap(struct ieee80211_hw *hw,
  			struct ieee80211_vif *vif,
-@@ -5054,6 +5067,7 @@ ieee80211_beacon_get_ap(struct ieee80211
+@@ -5055,6 +5068,7 @@ ieee80211_beacon_get_ap(struct ieee80211
  	struct ieee80211_if_ap *ap = &sdata->u.ap;
  	struct sk_buff *skb = NULL;
  	u16 csa_off_base = 0;
@@ -297,7 +297,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	if (beacon->cntdwn_counter_offsets[0]) {
  		if (!is_template)
-@@ -5063,11 +5077,12 @@ ieee80211_beacon_get_ap(struct ieee80211
+@@ -5064,11 +5078,12 @@ ieee80211_beacon_get_ap(struct ieee80211
  	}
  
  	/* headroom, head length,
@@ -312,7 +312,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	if (!skb)
  		return NULL;
  
-@@ -5081,6 +5096,11 @@ ieee80211_beacon_get_ap(struct ieee80211
+@@ -5082,6 +5097,11 @@ ieee80211_beacon_get_ap(struct ieee80211
  		offs->tim_length = skb->len - beacon->head_len;
  		offs->cntdwn_counter_offs[0] = beacon->cntdwn_counter_offsets[0];
  

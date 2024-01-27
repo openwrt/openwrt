@@ -12,7 +12,7 @@ Reviewed-by: Greenman, Gregory <gregory.greenman@intel.com>
 
 --- a/drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c
 +++ b/drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c
-@@ -4817,9 +4817,6 @@ static void iwl_mvm_mac_flush(struct iee
+@@ -4820,9 +4820,6 @@ static void iwl_mvm_mac_flush(struct iee
  		return;
  	}
  
@@ -22,7 +22,7 @@ Reviewed-by: Greenman, Gregory <gregory.greenman@intel.com>
  	/* Make sure we're done with the deferred traffic before flushing */
  	flush_work(&mvm->add_stream_wk);
  
-@@ -4837,9 +4834,6 @@ static void iwl_mvm_mac_flush(struct iee
+@@ -4840,9 +4837,6 @@ static void iwl_mvm_mac_flush(struct iee
  		if (mvmsta->vif != vif)
  			continue;
  

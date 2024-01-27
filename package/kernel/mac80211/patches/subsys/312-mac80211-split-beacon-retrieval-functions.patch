@@ -14,7 +14,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4987,6 +4987,115 @@ static int ieee80211_beacon_protect(stru
+@@ -4988,6 +4988,115 @@ static int ieee80211_beacon_protect(stru
  	return 0;
  }
  
@@ -130,7 +130,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static struct sk_buff *
  __ieee80211_beacon_get(struct ieee80211_hw *hw,
  		       struct ieee80211_vif *vif,
-@@ -4996,12 +5105,8 @@ __ieee80211_beacon_get(struct ieee80211_
+@@ -4997,12 +5106,8 @@ __ieee80211_beacon_get(struct ieee80211_
  	struct ieee80211_local *local = hw_to_local(hw);
  	struct beacon_data *beacon = NULL;
  	struct sk_buff *skb = NULL;
@@ -143,7 +143,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	rcu_read_lock();
  
-@@ -5018,48 +5123,11 @@ __ieee80211_beacon_get(struct ieee80211_
+@@ -5019,48 +5124,11 @@ __ieee80211_beacon_get(struct ieee80211_
  		struct ieee80211_if_ap *ap = &sdata->u.ap;
  
  		beacon = rcu_dereference(ap->beacon);
@@ -196,7 +196,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	} else if (sdata->vif.type == NL80211_IFTYPE_ADHOC) {
  		struct ieee80211_if_ibss *ifibss = &sdata->u.ibss;
  		struct ieee80211_hdr *hdr;
-@@ -5085,6 +5153,9 @@ __ieee80211_beacon_get(struct ieee80211_
+@@ -5086,6 +5154,9 @@ __ieee80211_beacon_get(struct ieee80211_
  		hdr = (struct ieee80211_hdr *) skb->data;
  		hdr->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
  						 IEEE80211_STYPE_BEACON);
@@ -206,7 +206,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	} else if (ieee80211_vif_is_mesh(&sdata->vif)) {
  		struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
  
-@@ -5124,51 +5195,13 @@ __ieee80211_beacon_get(struct ieee80211_
+@@ -5125,51 +5196,13 @@ __ieee80211_beacon_get(struct ieee80211_
  		}
  
  		skb_put_data(skb, beacon->tail, beacon->tail_len);

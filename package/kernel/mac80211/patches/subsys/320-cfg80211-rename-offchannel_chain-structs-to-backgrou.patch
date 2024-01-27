@@ -21,7 +21,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -4058,14 +4058,14 @@ struct mgmt_frame_regs {
+@@ -4061,14 +4061,14 @@ struct mgmt_frame_regs {
   *
   * @color_change: Initiate a color change.
   *
@@ -39,7 +39,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   */
  struct cfg80211_ops {
  	int	(*suspend)(struct wiphy *wiphy, struct cfg80211_wowlan *wow);
-@@ -4396,8 +4396,8 @@ struct cfg80211_ops {
+@@ -4399,8 +4399,8 @@ struct cfg80211_ops {
  	int	(*color_change)(struct wiphy *wiphy,
  				struct net_device *dev,
  				struct cfg80211_color_change_settings *params);
@@ -50,7 +50,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /*
-@@ -7601,9 +7601,9 @@ cfg80211_radar_event(struct wiphy *wiphy
+@@ -7604,9 +7604,9 @@ cfg80211_radar_event(struct wiphy *wiphy
  }
  
  static inline void
@@ -63,7 +63,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	__cfg80211_radar_event(wiphy, chandef, true, gfp);
  }
-@@ -7638,13 +7638,13 @@ void cfg80211_cac_event(struct net_devic
+@@ -7641,13 +7641,13 @@ void cfg80211_cac_event(struct net_devic
  			enum nl80211_radar_event event, gfp_t gfp);
  
  /**
@@ -156,7 +156,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	NUM_NL80211_EXT_FEATURES,
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -4342,15 +4342,15 @@ out:
+@@ -4346,15 +4346,15 @@ out:
  }
  
  static int
@@ -176,7 +176,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
  
  const struct cfg80211_ops mac80211_config_ops = {
-@@ -4457,5 +4457,5 @@ const struct cfg80211_ops mac80211_confi
+@@ -4461,5 +4461,5 @@ const struct cfg80211_ops mac80211_confi
  	.reset_tid_config = ieee80211_reset_tid_config,
  	.set_sar_specs = ieee80211_set_sar_specs,
  	.color_change = ieee80211_color_change,
@@ -204,7 +204,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  bool cfg80211_any_wiphy_oper_chan(struct wiphy *wiphy,
 --- a/net/wireless/core.c
 +++ b/net/wireless/core.c
-@@ -543,9 +543,10 @@ use_default_name:
+@@ -545,9 +545,10 @@ use_default_name:
  	INIT_WORK(&rdev->rfkill_block, cfg80211_rfkill_block_work);
  	INIT_WORK(&rdev->conn_work, cfg80211_conn_work);
  	INIT_WORK(&rdev->event_work, cfg80211_event_work);
@@ -218,7 +218,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	init_waitqueue_head(&rdev->dev_wait);
  
-@@ -1055,13 +1056,13 @@ void wiphy_unregister(struct wiphy *wiph
+@@ -1057,13 +1058,13 @@ void wiphy_unregister(struct wiphy *wiph
  	cancel_work_sync(&rdev->conn_work);
  	flush_work(&rdev->event_work);
  	cancel_delayed_work_sync(&rdev->dfs_update_channels_wk);
@@ -234,7 +234,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  #ifdef CONFIG_PM
  	if (rdev->wiphy.wowlan_config && rdev->ops->set_wakeup)
-@@ -1210,7 +1211,7 @@ void __cfg80211_leave(struct cfg80211_re
+@@ -1212,7 +1213,7 @@ void __cfg80211_leave(struct cfg80211_re
  
  	cfg80211_pmsr_wdev_down(wdev);
  
@@ -472,7 +472,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -801,7 +801,7 @@ static const struct nla_policy nl80211_p
+@@ -802,7 +802,7 @@ static const struct nla_policy nl80211_p
  	[NL80211_ATTR_MBSSID_CONFIG] =
  			NLA_POLICY_NESTED(nl80211_mbssid_config_policy),
  	[NL80211_ATTR_MBSSID_ELEMS] = { .type = NLA_NESTED },
@@ -481,7 +481,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -9306,9 +9306,9 @@ static int nl80211_start_radar_detection
+@@ -9307,9 +9307,9 @@ static int nl80211_start_radar_detection
  		goto unlock;
  	}
  

@@ -15,7 +15,7 @@ Reviewed-by: Peer, Ilan <ilan.peer@intel.com>
 
 --- a/drivers/net/wireless/intel/iwlwifi/mvm/tx.c
 +++ b/drivers/net/wireless/intel/iwlwifi/mvm/tx.c
-@@ -551,8 +551,9 @@ static void iwl_mvm_skb_prepare_status(s
+@@ -555,8 +555,9 @@ static void iwl_mvm_skb_prepare_status(s
  
  static int iwl_mvm_get_ctrl_vif_queue(struct iwl_mvm *mvm,
  				      struct ieee80211_tx_info *info,
@@ -26,7 +26,7 @@ Reviewed-by: Peer, Ilan <ilan.peer@intel.com>
  	struct iwl_mvm_vif *mvmvif =
  		iwl_mvm_vif_from_mac80211(info->control.vif);
  	__le16 fc = hdr->frame_control;
-@@ -571,7 +572,7 @@ static int iwl_mvm_get_ctrl_vif_queue(st
+@@ -575,7 +576,7 @@ static int iwl_mvm_get_ctrl_vif_queue(st
  		 * reason 7 ("Class 3 frame received from nonassociated STA").
  		 */
  		if (ieee80211_is_mgmt(fc) &&
@@ -35,7 +35,7 @@ Reviewed-by: Peer, Ilan <ilan.peer@intel.com>
  		     ieee80211_is_deauth(fc) || ieee80211_is_disassoc(fc)))
  			return mvm->probe_queue;
  
-@@ -689,7 +690,7 @@ int iwl_mvm_tx_skb_non_sta(struct iwl_mv
+@@ -693,7 +694,7 @@ int iwl_mvm_tx_skb_non_sta(struct iwl_mv
  			else
  				sta_id = mvmvif->mcast_sta.sta_id;
  
@@ -123,7 +123,7 @@ Reviewed-by: Peer, Ilan <ilan.peer@intel.com>
  			info->flags |= IEEE80211_TX_CTL_NO_PS_BUFFER;
  			return TX_CONTINUE;
  		}
-@@ -1282,7 +1282,7 @@ static struct txq_info *ieee80211_get_tx
+@@ -1283,7 +1283,7 @@ static struct txq_info *ieee80211_get_tx
  	if (!(info->flags & IEEE80211_TX_CTL_HW_80211_ENCAP) &&
  	    unlikely(!ieee80211_is_data_present(hdr->frame_control))) {
  		if ((!ieee80211_is_mgmt(hdr->frame_control) ||

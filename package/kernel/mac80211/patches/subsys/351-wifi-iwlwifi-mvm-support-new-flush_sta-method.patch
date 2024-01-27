@@ -11,7 +11,7 @@ Reviewed-by: Greenman, Gregory <gregory.greenman@intel.com>
 
 --- a/drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c
 +++ b/drivers/net/wireless/intel/iwlwifi/mvm/mac80211.c
-@@ -4853,6 +4853,31 @@ static void iwl_mvm_mac_flush(struct iee
+@@ -4856,6 +4856,31 @@ static void iwl_mvm_mac_flush(struct iee
  		iwl_trans_wait_tx_queues_empty(mvm->trans, msk);
  }
  
@@ -43,7 +43,7 @@ Reviewed-by: Greenman, Gregory <gregory.greenman@intel.com>
  static int iwl_mvm_mac_get_survey(struct ieee80211_hw *hw, int idx,
  				  struct survey_info *survey)
  {
-@@ -5366,6 +5391,7 @@ const struct ieee80211_ops iwl_mvm_hw_op
+@@ -5369,6 +5394,7 @@ const struct ieee80211_ops iwl_mvm_hw_op
  	.mgd_prepare_tx = iwl_mvm_mac_mgd_prepare_tx,
  	.mgd_protect_tdls_discover = iwl_mvm_mac_mgd_protect_tdls_discover,
  	.flush = iwl_mvm_mac_flush,
