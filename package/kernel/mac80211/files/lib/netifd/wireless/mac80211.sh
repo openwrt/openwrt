@@ -559,7 +559,7 @@ get_board_phy_name() (
 		local ref_path="$3"
 
 		json_select "$key"
-		json_get_values path
+		json_get_vars path
 		json_select ..
 
 		[ "${ref_path%+*}" = "$path" ] && fallback_phy=$key
@@ -591,7 +591,7 @@ rename_board_phy_by_name() (
 	json_load_file /etc/board.json
 	json_select wlan
 	json_select "${phy%.*}" || return 0
-	json_get_values path
+	json_get_vars path
 
 	prev_phy="$(iwinfo nl80211 phyname "path=$path${suffix:++$suffix}")"
 	[ -n "$prev_phy" ] || return 0
