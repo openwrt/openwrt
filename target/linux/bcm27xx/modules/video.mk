@@ -5,15 +5,7 @@
 define KernelPackage/camera-bcm2835
   TITLE:=BCM2835 Camera
   KCONFIG:= \
-    CONFIG_VIDEO_BCM2835 \
-    CONFIG_VIDEO_BCM2835_MMAL \
-    CONFIG_VIDEO_ARDUCAM_64MP=n \
-    CONFIG_VIDEO_ARDUCAM_PIVARIETY=n \
-    CONFIG_VIDEO_BCM2835_UNICAM=n \
-    CONFIG_VIDEO_IMX296=n \
-    CONFIG_VIDEO_IMX519=n \
-    CONFIG_VIDEO_IMX708=n \
-    CONFIG_VIDEO_ISP_BCM2835=n
+    CONFIG_VIDEO_BCM2835
   FILES:= \
     $(LINUX_DIR)/drivers/staging/vc04_services/bcm2835-camera/bcm2835-v4l2.ko
   AUTOLOAD:=$(call AutoLoad,65,bcm2835-v4l2)
@@ -37,10 +29,7 @@ define KernelPackage/drm-vc4
     +kmod-sound-soc-core
   KCONFIG:= \
     CONFIG_DRM_VC4 \
-    CONFIG_DRM_VC4_HDMI_CEC=y \
-    CONFIG_DRM_GUD=n \
-    CONFIG_DRM_V3D=n \
-    CONFIG_DRM_TVE200=n
+    CONFIG_DRM_VC4_HDMI_CEC=y
   FILES:= \
     $(LINUX_DIR)/drivers/gpu/drm/display/drm_display_helper.ko \
     $(LINUX_DIR)/drivers/gpu/drm/drm_dma_helper.ko \
@@ -78,8 +67,7 @@ $(eval $(call KernelPackage,vc-sm-cma))
 define KernelPackage/vchiq-mmal-bcm2835
   TITLE:=BCM2835 MMAL VCHIQ service
   KCONFIG:= \
-    CONFIG_BCM2835_VCHIQ_MMAL \
-    CONFIG_VIDEO_CODEC_BCM2835=n
+    CONFIG_BCM2835_VCHIQ_MMAL
   FILES:= \
     $(LINUX_DIR)/drivers/staging/vc04_services/vchiq-mmal/bcm2835-mmal-vchiq.ko
   $(call AddDepends/video,@TARGET_bcm27xx +kmod-vc-sm-cma)
