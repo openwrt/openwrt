@@ -65,6 +65,24 @@ endef
 $(eval $(call KernelPackage,drm-vc4))
 
 
+define KernelPackage/isp-bcm2835
+  TITLE:=BCM2835 ISP
+  KCONFIG:= \
+    CONFIG_VIDEO_ISP_BCM2835
+  FILES:= \
+    $(LINUX_DIR)/drivers/staging/vc04_services/bcm2835-isp/bcm2835-isp.ko
+  AUTOLOAD:=$(call AutoLoad,67,bcm2835-isp)
+  $(call AddDepends/video,@TARGET_bcm27xx +kmod-vchiq-mmal-bcm2835 +kmod-video-dma)
+endef
+
+define KernelPackage/isp-bcm2835/description
+  V4L2 driver for the Broadcom BCM2835 ISP hardware.
+  This operates over the VCHIQ interface to a service running on VideoCore.
+endef
+
+$(eval $(call KernelPackage,isp-bcm2835))
+
+
 define KernelPackage/vc-sm-cma
   TITLE:=VideoCore Shared Memory (CMA) driver
   KCONFIG:= \
