@@ -1586,9 +1586,9 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, v << pos, RTL931X_LED_PORT_NUM_CTRL(i));
 
 		if (priv->ports[i].phy_is_integrated)
-		pm_fiber |= BIT_ULL(i);
-			else
-		pm_copper |= BIT_ULL(i);
+			pm_fiber |= BIT_ULL(i);
+		else
+			pm_copper |= BIT_ULL(i);
 
 		set = priv->ports[i].led_set;
 		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));

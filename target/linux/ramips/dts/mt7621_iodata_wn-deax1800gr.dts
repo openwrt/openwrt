@@ -137,6 +137,10 @@
 					reg = <0x4 0x6>;
 					#nvmem-cell-cells = <1>;
 				};
+
+				precal: precal@e10 {
+					reg = <0xe10 0x19c10>;
+				};
 			};
 		};
 
@@ -221,8 +225,8 @@
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 
-		nvmem-cells = <&eeprom>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom>, <&precal>;
+		nvmem-cell-names = "eeprom", "precal";
 	};
 };
 

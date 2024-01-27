@@ -6,3 +6,8 @@
 	compatible = "linksys,ea7300-v2", "mediatek,mt7621-soc";
 	model = "Linksys EA7300 v2";
 };
+
+/* override EEPROM size to 0x400 for MT7603 */
+&eeprom_factory_0 {
+	reg = <0x0 0x400>;
+};

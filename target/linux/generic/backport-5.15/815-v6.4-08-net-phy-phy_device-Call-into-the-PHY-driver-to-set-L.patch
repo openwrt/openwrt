@@ -52,7 +52,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	init_data.fwnode = of_fwnode_handle(led);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -966,6 +966,18 @@ struct phy_driver {
+@@ -991,6 +991,18 @@ struct phy_driver {
  	 */
  	int (*led_brightness_set)(struct phy_device *dev,
  				  u8 index, enum led_brightness value);

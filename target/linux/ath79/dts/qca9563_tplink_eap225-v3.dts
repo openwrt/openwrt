@@ -35,12 +35,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		macaddr_info_8: macaddr@8 {
-			compatible = "mac-base";
-			reg = <0x8 0x6>;
-			#nvmem-cell-cells = <1>;
-		};
-
 		precalibration_ath10k: pre-calibration@5000 {
 			reg = <0x5000 0x2f20>;
 		};

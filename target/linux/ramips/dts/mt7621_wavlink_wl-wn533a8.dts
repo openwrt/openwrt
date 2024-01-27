@@ -7,6 +7,11 @@
 	model = "Wavlink WL-WN533A8";
 };
 
+/* override EEPROM size to 0x4da8 for MT7615 */
+&eeprom_factory_0 {
+	reg = <0x0 0x4da8>;
+};
+
 &wifi0{
 	ieee80211-freq-limit = <2400000 5490000>;
 };

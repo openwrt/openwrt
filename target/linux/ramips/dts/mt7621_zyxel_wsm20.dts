@@ -112,6 +112,14 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+
+				precal_factory_e10: precal@e10 {
+					reg = <0xe10 0x19c10>;
+				};
+
 				macaddr_factory_1fdfa: macaddr@1fdfa {
 					reg = <0x1fdfa 0x6>;
 				};
@@ -199,7 +207,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		mediatek,mtd-eeprom = <&factory 0x0>;
+		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
+		nvmem-cell-names = "eeprom", "precal";
 		mediatek,disable-radar-background;
 	};
 };

@@ -10,18 +10,18 @@ This is a 5GbE chip but it reports support for 10G. Implement config_init()
 to set max speed to 5G.
 
 Signed-off-by: Thomas Kupper <thomas.kupper@gmail.com>
---- a/drivers/net/phy/aquantia_main.c
-+++ b/drivers/net/phy/aquantia_main.c
-@@ -20,6 +20,8 @@
- #define PHY_ID_AQR105	0x03a1b4a2
- #define PHY_ID_AQR106	0x03a1b4d0
- #define PHY_ID_AQR107	0x03a1b4e0
+--- a/drivers/net/phy/aquantia/aquantia_main.c
++++ b/drivers/net/phy/aquantia/aquantia_main.c
+@@ -24,6 +24,8 @@
+ #define PHY_ID_AQR405	0x03a1b4b0
+ #define PHY_ID_AQR113C	0x31c31c12
+ #define PHY_ID_AQR813	0x31c31cb2
 +#define PHY_ID_AQR111	0x03a1b610
 +#define PHY_ID_AQR111B0	0x03a1b612
  #define PHY_ID_AQR112	0x03a1b662
- #define PHY_ID_AQR112C	0x03a1b790
- #define PHY_ID_AQR112R	0x31c31d12
-@@ -686,6 +688,33 @@ static int aqcs109_config_init(struct ph
+ #define PHY_ID_AQR412	0x03a1b712
+ #define PHY_ID_AQR113	0x31c31c40
+@@ -676,6 +678,33 @@ static int aqcs109_config_init(struct ph
  	return aqr107_set_downshift(phydev, MDIO_AN_VEND_PROV_DOWNSHIFT_DFLT);
  }
  
@@ -55,7 +55,7 @@ Signed-off-by: Thomas Kupper <thomas.kupper@gmail.com>
  static void aqr107_link_change_notify(struct phy_device *phydev)
  {
  	u8 fw_major, fw_minor;
-@@ -905,6 +934,42 @@ static struct phy_driver aqr_driver[] =
+@@ -914,6 +943,42 @@ static struct phy_driver aqr_driver[] =
  	.link_change_notify = aqr107_link_change_notify,
  },
  {
@@ -98,12 +98,12 @@ Signed-off-by: Thomas Kupper <thomas.kupper@gmail.com>
  	PHY_ID_MATCH_MODEL(PHY_ID_AQR112),
  	.name		= "Aquantia AQR112",
  	.probe		= aqr107_probe,
-@@ -970,6 +1035,8 @@ static struct mdio_device_id __maybe_unu
- 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR105) },
- 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR106) },
- 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR107) },
+@@ -983,6 +1048,8 @@ static struct mdio_device_id __maybe_unu
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR405) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113C) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR813) },
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR111) },
 +	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR111B0) },
  	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112) },
- 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112C) },
- 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR112R) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR412) },
+ 	{ PHY_ID_MATCH_MODEL(PHY_ID_AQR113) },

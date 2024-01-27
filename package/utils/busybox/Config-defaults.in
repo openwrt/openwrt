@@ -1333,7 +1333,7 @@ config BUSYBOX_DEFAULT_USE_BB_CRYPT
 	default n
 config BUSYBOX_DEFAULT_USE_BB_CRYPT_SHA
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_ADD_SHELL
 	bool
 	default n
@@ -1366,7 +1366,7 @@ config BUSYBOX_DEFAULT_CHPASSWD
 	default n
 config BUSYBOX_DEFAULT_FEATURE_DEFAULT_PASSWD_ALGO
 	string
-	default "md5"
+	default "sha256"
 config BUSYBOX_DEFAULT_CRYPTPW
 	bool
 	default n

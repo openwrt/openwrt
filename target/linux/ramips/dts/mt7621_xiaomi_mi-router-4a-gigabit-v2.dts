@@ -35,6 +35,11 @@
 	};
 };
 
+/* override EEPROM size to 0x4da8 for MT7613 */
+&eeprom_factory_8000 {
+	reg = <0x8000 0x4da8>;
+};
+
 &partitions {
 	partition@180000 {
 		// size changed against to the common dtsi
@@ -49,12 +54,14 @@
 };
 
 &wifi0 {
-	mediatek,mtd-eeprom = <&factory 0x0000>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 	ieee80211-freq-limit = <2400000 2500000>;
 };
 
 &wifi1 {
-	mediatek,mtd-eeprom = <&factory 0x8000>;
+	nvmem-cells = <&eeprom_factory_8000>;
+	nvmem-cell-names = "eeprom";
 	ieee80211-freq-limit = <5000000 6000000>;
 };
 

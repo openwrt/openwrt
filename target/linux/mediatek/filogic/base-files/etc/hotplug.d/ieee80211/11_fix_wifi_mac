@@ -80,6 +80,9 @@ case "$board" in
 		# addresses on multiple VIFs with the other radio. Use label mac to set LA bit.
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(get_mac_label) > /sys${DEVPATH}/macaddress
 		;;
+	jdcloud,re-cp-03)
+		[ "$PHYNBR" = "1" ] && mmc_get_mac_binary factory 0xa > /sys${DEVPATH}/macaddress
+		;;
 	mercusys,mr90x-v1)
 		addr=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress

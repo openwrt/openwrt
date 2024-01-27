@@ -36,6 +36,11 @@ ifdef CONFIG_PKG_CC_STACKPROTECTOR_STRONG
     TARGET_CFLAGS += -fstack-protector-strong
   endif
 endif
+ifdef CONFIG_PKG_CC_STACKPROTECTOR_ALL
+  ifeq ($(strip $(PKG_SSP)),1)
+    TARGET_CFLAGS += -fstack-protector-all
+  endif
+endif
 ifdef CONFIG_PKG_FORTIFY_SOURCE_1
   ifeq ($(strip $(PKG_FORTIFY_SOURCE)),1)
     TARGET_CFLAGS += -D_FORTIFY_SOURCE=1

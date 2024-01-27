@@ -352,7 +352,7 @@ define Device/totolink_a8000ru
   DEVICE_MODEL := A8000RU
   DEVICE_DTS := mt7622-totolink-a8000ru
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7615-firmware swconfig
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 swconfig
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += totolink_a8000ru

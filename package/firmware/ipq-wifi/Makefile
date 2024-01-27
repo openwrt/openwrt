@@ -34,7 +34,7 @@ ALLWIFIBOARDS:= \
 	dynalink_dl-wrx36 \
 	edgecore_eap102 \
 	edimax_cax1800 \
-        linksys_mx4200 \
+	linksys_mx4200 \
 	netgear_rax120v2 \
 	netgear_wax218 \
 	netgear_wax620 \

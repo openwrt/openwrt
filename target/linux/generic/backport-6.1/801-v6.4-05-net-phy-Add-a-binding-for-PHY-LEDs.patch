@@ -153,7 +153,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #include <linux/linkmode.h>
  #include <linux/netlink.h>
  #include <linux/mdio.h>
-@@ -593,6 +594,7 @@ struct macsec_ops;
+@@ -602,6 +603,7 @@ struct macsec_ops;
   * @phy_num_led_triggers: Number of triggers in @phy_led_triggers
   * @led_link_trigger: LED trigger for link up/down
   * @last_triggered: last LED trigger for link speed
@@ -161,7 +161,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
   * @master_slave_set: User requested master/slave configuration
   * @master_slave_get: Current master/slave advertisement
   * @master_slave_state: Current master/slave configuration
-@@ -685,6 +687,7 @@ struct phy_device {
+@@ -694,6 +696,7 @@ struct phy_device {
  
  	struct phy_led_trigger *led_link_trigger;
  #endif
@@ -169,7 +169,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/*
  	 * Interrupt number for this PHY
-@@ -759,6 +762,19 @@ struct phy_tdr_config {
+@@ -768,6 +771,19 @@ struct phy_tdr_config {
  #define PHY_PAIR_ALL -1
  
  /**

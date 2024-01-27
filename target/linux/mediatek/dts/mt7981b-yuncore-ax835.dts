@@ -84,6 +84,9 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_factory_2a>;
+
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
@@ -147,8 +150,8 @@
 		reg = <0>;
 
 		spi-max-frequency = <52000000>;
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -172,24 +175,26 @@
 				reg = <0x50000 0x10000>;
 				read-only;
 
-				compatible = "nvmem-cells";
-				#address-cells = <1>;
-				#size-cells = <1>;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				eeprom_factory: eeprom@0 {
-					reg = <0x0 0x1000>;
-				};
+					eeprom_factory: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
 
-				macaddr_factory_4: macaddr@4 {
-					reg = <0x4 0x6>;
-				};
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
 
-				macaddr_factory_24: macaddr@24 {
-					reg = <0x24 0x6>;
-				};
+					macaddr_factory_24: macaddr@24 {
+						reg = <0x24 0x6>;
+					};
 
-				macaddr_factory_2a: macaddr@2a {
-					reg = <0x2a 0x6>;
+					macaddr_factory_2a: macaddr@2a {
+						reg = <0x2a 0x6>;
+					};
 				};
 			};
 
@@ -213,20 +218,14 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		lan: port@3 {
+		port@3 {
 			reg = <3>;
 			label = "lan";
-
-			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_factory_2a 0>;
 		};
 
 		port@4 {
 			reg = <4>;
 			label = "wan";
-
-			nvmem-cell-names = "mac-address";
-			nvmem-cells = <&macaddr_factory_2a 0>;
 		};
 
 		port@6 {

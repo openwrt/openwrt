@@ -177,6 +177,18 @@ define Device/extreme_ap3935
 endef
 TARGET_DEVICES += extreme_ap3935
 
+define Device/fortinet_fap-421e
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Fortinet
+	DEVICE_MODEL := FAP-421E
+	SOC := qcom-ipq8064
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	BOARD_NAME := fap-421e
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
+endef
+TARGET_DEVICES += fortinet_fap-421e
+
 define Device/linksys_ea7500-v1
 	$(call Device/LegacyImage)
 	$(Device/kernel-size-migration)
@@ -228,7 +240,7 @@ define Device/meraki_mr42
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	KERNEL_LOADADDR = 0x44208000
-	DEVICE_PACKAGES := -swconfig -kmod-ata-ahci -kmod-ata-ahci-platform \
+	DEVICE_PACKAGES := -kmod-ata-ahci -kmod-ata-ahci-platform \
 		-kmod-usb-ohci -kmod-usb2 -kmod-usb-ledtrig-usbport \
 		-kmod-phy-qcom-ipq806x-usb -kmod-usb3 -kmod-usb-dwc3-qcom \
 		-uboot-envtools ath10k-firmware-qca9887-ct \
@@ -246,7 +258,7 @@ define Device/meraki_mr52
 	PAGESIZE := 2048
 	KERNEL_LOADADDR = 0x44208000
 	DEVICE_DTS_CONFIG := config@2
-	DEVICE_PACKAGES := -swconfig -kmod-ata-ahci -kmod-ata-ahci-platform \
+	DEVICE_PACKAGES := -kmod-ata-ahci -kmod-ata-ahci-platform \
 		-kmod-usb-ohci -kmod-usb2 -kmod-usb-ledtrig-usbport \
 		-kmod-phy-qcom-ipq806x-usb -kmod-usb3 -kmod-usb-dwc3-qcom \
 		-uboot-envtools ath10k-firmware-qca9887-ct \

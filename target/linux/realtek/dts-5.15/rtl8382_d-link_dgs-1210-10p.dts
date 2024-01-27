@@ -7,6 +7,42 @@
 	compatible = "d-link,dgs-1210-10p", "realtek,rtl838x-soc";
 	model = "D-Link DGS-1210-10P";
 
+	/* i2c of the left SFP cage: port 9 */
+	i2c0: i2c-gpio-0 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio1 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio1 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp0: sfp-p9 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+		los-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 8 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* i2c of the right SFP cage: port 10 */
+	i2c1: i2c-gpio-1 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio1 1 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp1: sfp-p10 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1>;
+		los-gpio = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio1 3 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+	};
+
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <20>;
@@ -86,8 +122,24 @@
 		SWITCH_PORT(13, 6, internal)
 		SWITCH_PORT(14, 7, internal)
 		SWITCH_PORT(15, 8, internal)
-		SWITCH_SFP_PORT(24, 9, rgmii-id)
-		SWITCH_SFP_PORT(26, 10, rgmii-id)
+
+		port@24 {
+			reg = <24>;
+			label = "lan9";
+			phy-handle = <&phy24>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp0>;
+		};
+
+		port@26 {
+			reg = <26>;
+			label = "lan10";
+			phy-handle = <&phy26>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp1>;
+		};
 
 		port@28 {
 			ethernet = <&ethernet0>;

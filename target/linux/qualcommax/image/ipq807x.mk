@@ -119,24 +119,24 @@ define Device/linksys_mx4200v1
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := Linksys
-        DEVICE_MODEL := MX4200
-        DEVICE_VARIANT := v1
+	DEVICE_MODEL := MX4200
+	DEVICE_VARIANT := v1
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-        KERNEL_SIZE := 6144k
+	KERNEL_SIZE := 6144k
 	IMAGE_SIZE := 147456k
 	NAND_SIZE := 512m
 	KERNEL_IN_UBI :=
 	SOC := ipq8174
 	IMAGES += factory.bin
-	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MX4200
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MX4200
 	DEVICE_PACKAGES := kmod-leds-pca963x ipq-wifi-linksys_mx4200 kmod-bluetooth
 endef
 TARGET_DEVICES += linksys_mx4200v1
 
 define Device/linksys_mx4200v2
 	$(call Device/linksys_mx4200v1)
-        DEVICE_VARIANT := v2
+	DEVICE_VARIANT := v2
 endef
 TARGET_DEVICES += linksys_mx4200v2
 
@@ -220,7 +220,7 @@ define Device/prpl_haze
 	DEVICE_DTS_CONFIG := config@hk09
 	SOC := ipq8072
 	DEVICE_PACKAGES += ath11k-firmware-qcn9074 ipq-wifi-prpl_haze kmod-ath11k-pci \
-		mkf2fs f2fsck kmod-fs-f2fs
+		mkf2fs f2fsck kmod-fs-f2fs kmod-leds-lp5562
 endef
 TARGET_DEVICES += prpl_haze
 

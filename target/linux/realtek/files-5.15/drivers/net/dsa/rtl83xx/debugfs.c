@@ -8,16 +8,6 @@
 
 #define RTL838X_DRIVER_NAME "rtl838x"
 
-#define RTL8380_LED_GLB_CTRL			(0xA000)
-#define RTL8380_LED_MODE_SEL			(0x1004)
-#define RTL8380_LED_MODE_CTRL			(0xA004)
-#define RTL8380_LED_P_EN_CTRL			(0xA008)
-#define RTL8380_LED_SW_CTRL			(0xA00C)
-#define RTL8380_LED0_SW_P_EN_CTRL		(0xA010)
-#define RTL8380_LED1_SW_P_EN_CTRL		(0xA014)
-#define RTL8380_LED2_SW_P_EN_CTRL		(0xA018)
-#define RTL8380_LED_SW_P_CTRL(p)		(0xA01C + (((p) << 2)))
-
 #define RTL8390_LED_GLB_CTRL			(0x00E4)
 #define RTL8390_LED_SET_2_3_CTRL		(0x00E8)
 #define RTL8390_LED_SET_0_1_CTRL		(0x00EC)
@@ -520,28 +510,28 @@ static int rtl838x_dbgfs_leds(struct dentry *parent, struct rtl838x_switch_priv 
 
 	if (priv->family_id == RTL8380_FAMILY_ID) {
 		debugfs_create_x32("led_glb_ctrl", 0644, led_dir,
-				(u32 *)(RTL838X_SW_BASE + RTL8380_LED_GLB_CTRL));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_LED_GLB_CTRL));
 		debugfs_create_x32("led_mode_sel", 0644, led_dir,
-				(u32 *)(RTL838X_SW_BASE + RTL8380_LED_MODE_SEL));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_LED_MODE_SEL));
 		debugfs_create_x32("led_mode_ctrl", 0644, led_dir,
-				(u32 *)(RTL838X_SW_BASE + RTL8380_LED_MODE_CTRL));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_LED_MODE_CTRL));
 		debugfs_create_x32("led_p_en_ctrl", 0644, led_dir,
-				(u32 *)(RTL838X_SW_BASE + RTL8380_LED_P_EN_CTRL));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_LED_P_EN_CTRL));
 		debugfs_create_x32("led_sw_ctrl", 0644, led_dir,
-				(u32 *)(RTL838X_SW_BASE + RTL8380_LED_SW_CTRL));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_LED_SW_CTRL));
 		debugfs_create_x32("led0_sw_p_en_ctrl", 0644, led_dir,
-				(u32 *)(RTL838X_SW_BASE + RTL8380_LED0_SW_P_EN_CTRL));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_LED0_SW_P_EN_CTRL));
 		debugfs_create_x32("led1_sw_p_en_ctrl", 0644, led_dir,
-				(u32 *)(RTL838X_SW_BASE + RTL8380_LED1_SW_P_EN_CTRL));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_LED1_SW_P_EN_CTRL));
 		debugfs_create_x32("led2_sw_p_en_ctrl", 0644, led_dir,
-				(u32 *)(RTL838X_SW_BASE + RTL8380_LED2_SW_P_EN_CTRL));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_LED2_SW_P_EN_CTRL));
 		for (int p = 0; p < 28; p++) {
 			char led_sw_p_ctrl_name[20];
 
 			snprintf(led_sw_p_ctrl_name, sizeof(led_sw_p_ctrl_name),
 				 "led_sw_p_ctrl.%02d", p);
 			debugfs_create_x32(led_sw_p_ctrl_name, 0644, led_dir,
-				(u32 *)(RTL838X_SW_BASE + RTL8380_LED_SW_P_CTRL(p)));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_LED_SW_P_CTRL_PORT(p)));
 		}
 	} else if (priv->family_id == RTL8390_FAMILY_ID) {
 		char port_led_name[20];
