@@ -14,8 +14,8 @@ include $(INCLUDE_DIR)/netfilter.mk
 define KernelPackage/nf-reject
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter IPv4 reject support
+  DEPENDS:=CONFIG_NETFILTER
   KCONFIG:= \
-	CONFIG_NETFILTER=y \
 	CONFIG_NETFILTER_ADVANCED=y \
 	$(KCONFIG_NF_REJECT)
   FILES:=$(foreach mod,$(NF_REJECT-m),net/$(mod).ko)
@@ -29,10 +29,9 @@ define KernelPackage/nf-reject6
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter IPv6 reject support
   KCONFIG:= \
-	CONFIG_NETFILTER=y \
 	CONFIG_NETFILTER_ADVANCED=y \
 	$(KCONFIG_NF_REJECT6)
-  DEPENDS:=@IPV6
+  DEPENDS:=CONFIG_NETFILTER @IPV6
   FILES:=$(foreach mod,$(NF_REJECT6-m),net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_REJECT6-m)))
 endef
@@ -102,8 +101,8 @@ $(eval $(call KernelPackage,ipt-core))
 define KernelPackage/nf-conntrack
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter connection tracking
+  DEPENDS:=CONFIG_NETFILTER
   KCONFIG:= \
-        CONFIG_NETFILTER=y \
         CONFIG_NETFILTER_ADVANCED=y \
         CONFIG_NF_CONNTRACK_MARK=y \
         CONFIG_NF_CONNTRACK_ZONES=y \
