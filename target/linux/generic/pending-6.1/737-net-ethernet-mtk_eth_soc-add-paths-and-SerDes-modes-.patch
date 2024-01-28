@@ -476,9 +476,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +}
 +
  static const struct phylink_mac_ops mtk_phylink_ops = {
- 	.validate = phylink_generic_validate,
  	.mac_select_pcs = mtk_mac_select_pcs,
-@@ -4617,8 +4731,21 @@ static int mtk_add_mac(struct mtk_eth *e
+ 	.mac_config = mtk_mac_config,
+@@ -4616,8 +4730,21 @@ static int mtk_add_mac(struct mtk_eth *e
  		phy_interface_zero(mac->phylink_config.supported_interfaces);
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
  			  mac->phylink_config.supported_interfaces);
@@ -500,7 +500,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	phylink = phylink_create(&mac->phylink_config,
  				 of_fwnode_handle(mac->of_node),
  				 phy_mode, &mtk_phylink_ops);
-@@ -4811,6 +4938,13 @@ static int mtk_probe(struct platform_dev
+@@ -4810,6 +4937,13 @@ static int mtk_probe(struct platform_dev
  
  		if (err)
  			return err;

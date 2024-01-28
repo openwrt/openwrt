@@ -1,7 +1,7 @@
-From 9c5a170677c3c8facc83e931a57f4c99c0511ae0 Mon Sep 17 00:00:00 2001
+From f8fc363bf0c023e4736a0328174b4a24b44ab23a Mon Sep 17 00:00:00 2001
 From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
 Date: Thu, 27 Oct 2022 14:10:37 +0100
-Subject: [PATCH] net: phylink: add phylink_get_link_timer_ns() helper
+Subject: [PATCH 06/21] net: phylink: add phylink_get_link_timer_ns() helper
 
 Add a helper to convert the PHY interface mode to the required link
 timer setting as stated by the appropriate standard. Inappropriate
@@ -15,7 +15,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/include/linux/phylink.h
 +++ b/include/linux/phylink.h
-@@ -614,6 +614,30 @@ int phylink_speed_up(struct phylink *pl)
+@@ -617,6 +617,30 @@ int phylink_speed_up(struct phylink *pl)
  
  void phylink_set_port_modes(unsigned long *bits);
  

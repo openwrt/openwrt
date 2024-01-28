@@ -40,14 +40,14 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	phylink_mii_c22_pcs_decode_state(state, bmsr, FIELD_GET(SGMII_LPA, adv));
  }
  
- static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int mode,
-@@ -134,7 +143,8 @@ static int mtk_pcs_lynxi_config(struct p
- 		/* 1000base-X or 2500base-X autoneg */
- 		sgm_mode = SGMII_REMOTE_FAULT_DIS;
- 		use_an = linkmode_test_bit(ETHTOOL_LINK_MODE_Autoneg_BIT,
--					   advertising);
-+					   advertising) &&
-+			 !(interface == PHY_INTERFACE_MODE_2500BASEX);
- 	} else {
- 		/* 1000base-X or 2500base-X without autoneg */
- 		sgm_mode = 0;
+ static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+@@ -130,7 +139,8 @@ static int mtk_pcs_lynxi_config(struct p
+ 	if (neg_mode & PHYLINK_PCS_NEG_INBAND)
+ 		sgm_mode |= SGMII_REMOTE_FAULT_DIS;
+ 
+-	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED) {
++	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED &&
++	    interface != PHY_INTERFACE_MODE_2500BASEX) {
+ 		if (interface == PHY_INTERFACE_MODE_SGMII)
+ 			sgm_mode |= SGMII_SPEED_DUPLEX_AN;
+ 		bmcr = BMCR_ANENABLE;
