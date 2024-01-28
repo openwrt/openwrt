@@ -138,6 +138,15 @@
 		clock-output-names = "clkxtal";
 	};
 
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		/* cooling level (0, 1, 2) : (0% duty, 50% duty, 100% duty) */
+		cooling-levels = <0 128 255>;
+		#cooling-cells = <2>;
+		#thermal-sensor-cells = <1>;
+		status = "disabled";
+	};
+
 	pmu {
 		compatible = "arm,cortex-a73-pmu";
 		interrupt-parent = <&gic>;
@@ -679,22 +688,15 @@
 			status = "disabled";
 		};
 
-		fan: pwm-fan {
-			compatible = "pwm-fan";
-			/* cooling level (0, 1, 2) : (0% duty, 50% duty, 100% duty) */
-			cooling-levels = <0 128 255>;
-			#cooling-cells = <2>;
-			#thermal-sensor-cells = <1>;
-			status = "disabled";
-		};
-
 		lvts: lvts@1100a000 {
-			compatible = "mediatek,mt7988-lvts";
+			compatible = "mediatek,mt7988-lvts-ap";
 			reg = <0 0x1100a000 0 0x1000>;
 			clocks = <&infracfg CLK_INFRA_26M_THERM_SYSTEM>;
 			clock-names = "lvts_clk";
+			interrupts = <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;
+			resets = <&infracfg MT7988_INFRA_RST1_THERM_CTRL_SWRST>;
 			nvmem-cells = <&lvts_calibration>;
-			nvmem-cell-names = "e_data1";
+			nvmem-cell-names = "lvts-calib-data-1";
 			#thermal-sensor-cells = <1>;
 		};
 
