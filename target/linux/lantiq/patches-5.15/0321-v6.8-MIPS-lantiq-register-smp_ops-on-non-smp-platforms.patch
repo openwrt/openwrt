@@ -1,6 +1,6 @@
-From 6e8d8b183accefae42c62f1bd495a405ce454c7d Mon Sep 17 00:00:00 2001
+From 4bf2a626dc4bb46f0754d8ac02ec8584ff114ad5 Mon Sep 17 00:00:00 2001
 From: Aleksander Jan Bajkowski <olek2@wp.pl>
-Date: Sun, 21 Jan 2024 18:36:23 +0100
+Date: Mon, 22 Jan 2024 19:47:09 +0100
 Subject: [PATCH] MIPS: lantiq: register smp_ops on non-smp platforms
 
 Lantiq uses a common kernel config for devices with 24Kc and 34Kc cores.
@@ -11,6 +11,7 @@ SMP enabled.
 
 Fixes: 730320fd770d ("MIPS: lantiq: enable all hardware interrupts on second VPE")
 Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 ---
  arch/mips/lantiq/prom.c | 7 +++----
  1 file changed, 3 insertions(+), 4 deletions(-)
