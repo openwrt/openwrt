@@ -13,7 +13,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/pcs/pcs-mtk-lynxi.c
 +++ b/drivers/net/pcs/pcs-mtk-lynxi.c
-@@ -92,14 +92,23 @@ static void mtk_pcs_lynxi_get_state(stru
+@@ -114,14 +114,23 @@ static void mtk_pcs_lynxi_get_state(stru
  				    struct phylink_link_state *state)
  {
  	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
@@ -40,8 +40,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	phylink_mii_c22_pcs_decode_state(state, bmsr, FIELD_GET(SGMII_LPA, adv));
  }
  
- static int mtk_pcs_lynxi_config(struct phylink_pcs *pcs, unsigned int neg_mode,
-@@ -130,7 +139,8 @@ static int mtk_pcs_lynxi_config(struct p
+ static void mtk_sgmii_reset(struct mtk_pcs_lynxi *mpcs)
+@@ -163,7 +172,8 @@ static int mtk_pcs_lynxi_config(struct p
  	if (neg_mode & PHYLINK_PCS_NEG_INBAND)
  		sgm_mode |= SGMII_REMOTE_FAULT_DIS;
  
