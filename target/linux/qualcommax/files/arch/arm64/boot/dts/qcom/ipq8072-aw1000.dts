@@ -267,6 +267,7 @@
 	qca8081: ethernet-phy@28 {
 		compatible = "ethernet-phy-id004d.d101";
 		reg = <28>;
+		reset-deassert-us = <10000>;
 		reset-gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
 	};
 };

@@ -388,12 +388,14 @@
 	qca8081_24: ethernet-phy@24 {
 		compatible = "ethernet-phy-id004d.d101";
 		reg = <24>;
+		reset-deassert-us = <10000>;
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 	};
 
 	qca8081_28: ethernet-phy@28 {
 		compatible = "ethernet-phy-id004d.d101";
 		reg = <28>;
+		reset-deassert-us = <10000>;
 		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
 	};
 };
