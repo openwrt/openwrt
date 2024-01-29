@@ -279,12 +279,6 @@ macaddr_random() {
 	echo "$(macaddr_unsetbit_mc "$(macaddr_setbit_la "${randsrc}")")"
 }
 
-macaddr_2bin() {
-	local mac=$1
-
-	echo -ne \\x${mac//:/\\x}
-}
-
 macaddr_canonicalize() {
 	local mac="$1"
 	local canon=""
