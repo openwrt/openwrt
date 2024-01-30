@@ -280,6 +280,19 @@
 		reg = <28>;
 		reset-deassert-us = <10000>;
 		reset-gpios = <&tlmm 64 GPIO_ACTIVE_LOW>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@2 {
+				reg = <2>;
+				active-low;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				default-state = "keep";
+			};
+		};
 	};
 };
 
