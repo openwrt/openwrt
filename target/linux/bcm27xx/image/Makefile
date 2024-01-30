@@ -49,6 +49,7 @@ define Build/boot-2711
 endef
 
 define Build/sdcard-img
+	SIGNATURE="$(IMG_PART_SIGNATURE)" \
 	./gen_rpi_sdcard_img.sh $@ $@.boot $(IMAGE_ROOTFS) \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
