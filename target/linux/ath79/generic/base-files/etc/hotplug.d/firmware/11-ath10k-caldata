@@ -115,6 +115,10 @@ case "$FIRMWARE" in
 		caldata_extract "radiocfg" 0x5000 0x844
 		ath10k_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
 		;;
+	ruckus,r500)
+		caldata_extract "art" 0x45000 0x844
+		ath10k_patch_mac $(mtd_get_mac_binary "art" 0x76)
+		;;
 	tplink,archer-a7-v5|\
 	tplink,archer-c2-v3|\
 	tplink,archer-c7-v4|\
