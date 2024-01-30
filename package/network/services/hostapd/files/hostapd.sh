@@ -304,7 +304,7 @@ hostapd_common_add_bss_config() {
 
 	config_add_string 'key1:wepkey' 'key2:wepkey' 'key3:wepkey' 'key4:wepkey' 'password:wpakey'
 
-	config_add_string wpa_psk_file
+	config_add_string wpa_psk_file sae_password_file
 
 	config_add_int multi_ap
 
@@ -672,7 +672,7 @@ hostapd_set_bss_options() {
 			wps_not_configured=1
 		;;
 		psk|sae|psk-sae)
-			json_get_vars key wpa_psk_file
+			json_get_vars key wpa_psk_file sae_password_file
 			if [ "$auth_type" = "psk" ] && [ "$ppsk" -ne 0 ] ; then
 				json_get_vars auth_secret auth_port
 				set_default auth_port 1812
@@ -683,15 +683,31 @@ hostapd_set_bss_options() {
 				append bss_conf "wpa_psk=$key" "$N"
 			elif [ ${#key} -ge 8 ] && [ ${#key} -le 63 ]; then
 				append bss_conf "wpa_passphrase=$key" "$N"
-			elif [ -n "$key" ] || [ -z "$wpa_psk_file" ]; then
-				wireless_setup_vif_failed INVALID_WPA_PSK
-				return 1
+			elif [ -n "$key" ] || [ -z "$wpa_psk_file" -o -z "$sae_password_file" ]; then
+				case "$auth_type" in
+					psk|psk-sae)
+						[ -z "$wpa_psk_file" ] && {
+							wireless_setup_vif_failed INVALID_WPA_PSK
+							return 1
+						} ;;
+					sae)
+						[ -z "$sae_password_file" ] && {
+							wireless_setup_vif_failed INVALID_SAE_PASSWORD
+							return 1
+						} ;;
+				esac
+
+				[ -n "$key" ] && {
+					wireless_setup_vif_failed INVALID_WPA_PSK
+					return 1
+				}
 			fi
 			[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
 			[ -n "$wpa_psk_file" ] && {
 				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
 				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
 			}
+			[ -n "$sae_password_file" ] && append bss_conf "sae_password_file=$sae_password_file" "$N"
 			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"
 
 			set_default dynamic_vlan 0
