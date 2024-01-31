@@ -307,7 +307,11 @@ if [ -n "$CONF_RESTORE" ]; then
 
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
 	v "Restoring config files..."
-	tar -C / -x${TAR_V}zf "$CONF_RESTORE"
+	if [ "$(type -t platform_restore_backup)" == 'platform_restore_backup' ]; then
+		platform_restore_backup "$TAR_V"
+	else
+		tar -C / -x${TAR_V}zf "$CONF_RESTORE"
+	fi
 	exit $?
 fi
 
