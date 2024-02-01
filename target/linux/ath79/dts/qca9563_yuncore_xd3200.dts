@@ -30,3 +30,10 @@
 		};
 	};
 };
+
+&pcie {
+	wifi@0,0 {
+		/delete-property/ nvmem-cells;
+		/delete-property/ nvmem-cell-names;
+	};
+};

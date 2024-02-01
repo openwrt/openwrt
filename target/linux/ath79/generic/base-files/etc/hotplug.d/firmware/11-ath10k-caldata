@@ -173,13 +173,6 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0000:00:00.0.bin")
 	case $board in
-	asus,rp-ac51|\
-	yuncore,a782|\
-	yuncore,xd4200)
-		caldata_extract "art" 0x5000 0x2f20
-		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
-			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		;;
 	comfast,cf-e313ac)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_binary art 0x6)
@@ -236,11 +229,6 @@ case "$FIRMWARE" in
 		ath10k_patch_mac $(mtd_get_mac_binary info 0x8)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		;;
-	xiaomi,aiot-ac2350)
-		caldata_extract "art" 0x5000 0x2f20
-		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
-			/lib/firmware/ath10k/QCA9984/hw1.0/board.bin
 		;;
 	tplink,deco-m4r-v1)
 		caldata_extract "art" 0x5000 0x2f20
