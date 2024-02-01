@@ -33,7 +33,7 @@
 
 &pcie {
 	wifi@0,0 {
-		/delete-property/ nvmem-cells;
-		/delete-property/ nvmem-cell-names;
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
 	};
 };
