@@ -173,21 +173,6 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-pci-0000:00:00.0.bin")
 	case $board in
-	comfast,cf-e313ac)
-		caldata_extract "art" 0x5000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_binary art 0x6)
-		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
-			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		;;
-	comfast,cf-e375ac|\
-	comfast,cf-e560ac|\
-	comfast,cf-ew72|\
-	comfast,cf-wr752ac-v1)
-		caldata_extract "art" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) 2)
-		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
-			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		;;
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
 	dlink,dir-842-c3)
@@ -207,32 +192,6 @@ case "$FIRMWARE" in
 	phicomm,k2t)
 		caldata_extract "art" 0x5000 0x2f20
 		ath10k_patch_mac $(k2t_get_mac "5g_mac")
-		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
-			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		;;
-	tplink,archer-c58-v1|\
-	tplink,archer-c59-v1|\
-	tplink,archer-c59-v2|\
-	tplink,archer-c60-v1|\
-	tplink,archer-c60-v2|\
-	tplink,archer-c60-v3|\
-	tplink,archer-c6-v2|\
-	tplink,archer-c6-v2-us|\
-	tplink,tl-wa1201-v2)
-		caldata_extract "art" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) -1)
-		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
-			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		;;
-	tplink,cpe710-v1)
-		caldata_extract "art" 0x5000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_binary info 0x8)
-		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
-			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		;;
-	tplink,deco-m4r-v1)
-		caldata_extract "art" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary config 0x8) -1)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
 		;;
