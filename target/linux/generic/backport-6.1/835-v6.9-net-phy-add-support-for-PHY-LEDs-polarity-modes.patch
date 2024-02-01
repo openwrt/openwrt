@@ -28,7 +28,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -3034,6 +3034,7 @@ static int of_phy_led(struct phy_device
+@@ -3037,6 +3037,7 @@ static int of_phy_led(struct phy_device
  	struct device *dev = &phydev->mdio.dev;
  	struct led_init_data init_data = {};
  	struct led_classdev *cdev;
@@ -36,7 +36,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	struct phy_led *phyled;
  	u32 index;
  	int err;
-@@ -3051,6 +3052,21 @@ static int of_phy_led(struct phy_device
+@@ -3054,6 +3055,21 @@ static int of_phy_led(struct phy_device
  	if (index > U8_MAX)
  		return -EINVAL;
  
@@ -60,7 +60,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		cdev->brightness_set_blocking = phy_led_set_brightness;
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -787,6 +787,15 @@ struct phy_led {
+@@ -788,6 +788,15 @@ struct phy_led {
  
  #define to_phy_led(d) container_of(d, struct phy_led, led_cdev)
  
@@ -76,7 +76,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  /**
   * struct phy_driver - Driver structure for a particular PHY type
   *
-@@ -1055,6 +1064,19 @@ struct phy_driver {
+@@ -1056,6 +1065,19 @@ struct phy_driver {
  	int (*led_hw_control_get)(struct phy_device *dev, u8 index,
  				  unsigned long *rules);
  
