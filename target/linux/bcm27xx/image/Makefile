@@ -48,7 +48,15 @@ define Build/boot-2711
 	mcopy -i $@.boot $(KDIR)/fixup4x.dat ::
 endef
 
+BOOT_FILES:=$(call qstrip,$(CONFIG_BCM27XX_BOOT_FILES_PARTNAME))
+
 define Build/sdcard-img
+  $(if $(BOOT_FILES), \
+  	if [ -d $(BOOT_FILES) ]; then \
+		  mcopy -D o -i $@.boot $(BOOT_FILES)/* ::; \
+	  fi; \
+  ,)
+	
 	./gen_rpi_sdcard_img.sh $@ $@.boot $(IMAGE_ROOTFS) \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
