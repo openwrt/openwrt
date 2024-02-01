@@ -185,7 +185,6 @@ case "$FIRMWARE" in
 		ath10k_patch_mac $(mtd_get_mac_binary art 0x6)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		rm /lib/firmware/ath10k/QCA9888/hw2.0/board-2.bin
 		;;
 	comfast,cf-e375ac|\
 	comfast,cf-e560ac|\
@@ -195,7 +194,6 @@ case "$FIRMWARE" in
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) 2)
 		ln -sf /lib/firmware/ath10k/pre-cal-pci-0000\:00\:00.0.bin \
 			/lib/firmware/ath10k/QCA9888/hw2.0/board.bin
-		rm /lib/firmware/ath10k/QCA9888/hw2.0/board-2.bin
 		;;
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
