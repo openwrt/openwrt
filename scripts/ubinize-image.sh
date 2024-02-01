@@ -12,15 +12,16 @@ err=""
 ubinize_seq=""
 
 ubivol() {
-	volid=$1
-	name=$2
-	image=$3
-	autoresize=$4
-	size="$5"
+	local volid=$1
+	local name=$2
+	local image=$3
+	local autoresize=$4
+	local size="$5"
+	local voltype="${6:-dynamic}"
 	echo "[$name]"
 	echo "mode=ubi"
 	echo "vol_id=$volid"
-	echo "vol_type=dynamic"
+	echo "vol_type=$voltype"
 	echo "vol_name=$name"
 	if [ "$image" ]; then
 		echo "image=$image"
@@ -38,6 +39,7 @@ ubilayout() {
 	local rootsize=
 	local autoresize=
 	local rootfs_type="$( get_fs_type "$2" )"
+	local voltype
 
 	if [ "$1" = "ubootenv" ]; then
 		ubivol $vol_id ubootenv
@@ -49,16 +51,26 @@ ubilayout() {
 		name="${part%%=*}"
 		prev="$part"
 		part="${part#*=}"
+		voltype=dynamic
 		[ "$prev" = "$part" ] && part=
 
 		image="${part%%=*}"
+		if [ "${image:0:1}" = ":" ]; then
+			voltype=static
+			image="${image:1}"
+		fi
 		prev="$part"
 		part="${part#*=}"
 		[ "$prev" = "$part" ] && part=
 
 		size="$part"
+		if [ -z "$size" ]; then
+			size="$( round_up "$( stat -c%s "$image" )" 1024 )"
+		else
+			size="${size}MiB"
+		fi
 
-		ubivol $vol_id "$name" "$image" "" "${size}MiB"
+		ubivol $vol_id "$name" "$image" "" "${size}" "$voltype"
 		vol_id=$(( $vol_id + 1 ))
 	done
 	if [ "$3" ]; then
@@ -77,10 +89,10 @@ ubilayout() {
 			rootsize="$( round_up "$( stat -c%s "$2" )" 1024 )"
 			;;
 		esac
-		ubivol $vol_id rootfs "$2" "$autoresize" "$rootsize"
+		ubivol $vol_id rootfs "$2" "$autoresize" "$rootsize" dynamic
 
 		vol_id=$(( $vol_id + 1 ))
-		[ "$rootfs_type" = "ubifs" ] || ubivol $vol_id rootfs_data "" 1
+		[ "$rootfs_type" = "ubifs" ] || ubivol $vol_id rootfs_data "" 1 dymamic
 	fi
 }
 
