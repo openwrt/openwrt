@@ -78,6 +78,8 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
 	};
 };
 
@@ -193,6 +195,16 @@
 				label = "art";
 				reg = <0x3fc0000 0x40000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
 			};
 		};
 	};

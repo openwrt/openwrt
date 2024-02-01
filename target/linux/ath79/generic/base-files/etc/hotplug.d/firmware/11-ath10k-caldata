@@ -7,46 +7,6 @@
 board=$(board_name)
 
 case "$FIRMWARE" in
-"ath10k/cal-pci-0000:00:00.0.bin")
-	case $board in
-	engenius,ecb1200|\
-	engenius,ecb1750)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(mtd_get_mac_ascii u-boot-env athaddr)
-		;;
-	engenius,ews511ap)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) 1)
-		;;
-	extreme-networks,ws-ap3805i)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(mtd_get_mac_ascii cfg1 RADIOADDR0)
-		;;
-	iodata,wn-ac1167dgr|\
-	iodata,wn-ac1600dgr2|\
-	sitecom,wlr-7100|\
-	zyxel,nbg6616)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 1)
-		;;
-	nec,wg800hp)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(mtd_get_mac_text board_data 0x880)
-		;;
-	qihoo,c301)
-		caldata_extract "radiocfg" 0x5000 0x844
-		ath10k_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
-		;;
-	esac
-	;;
-"ath10k/cal-pci-0000:01:00.0.bin")
-	case $board in
-	sitecom,wlr-8100)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 1)
-		;;
-	esac
-	;;
 "ath10k/pre-cal-pci-0000:00:00.0.bin")
 	case $board in
 	dlink,dir-842-c1|\
