@@ -49,11 +49,18 @@ load_led() {
 	[ -e /sys/class/leds/${sysfs}/brightness ] && {
 		echo "setting up led ${name}"
 
-		printf "%s %s %d\n" \
+		printf "%s %s %d" \
 			"$sysfs" \
 			"$(sed -ne 's/^.*\[\(.*\)\].*$/\1/p' /sys/class/leds/${sysfs}/trigger)" \
 			"$(cat /sys/class/leds/${sysfs}/brightness)" \
 				>> /var/run/led.state
+		# Save default color if supported
+		[ -e /sys/class/leds/${sysfs}/multi_intensity ] && {
+			printf " %s" \
+				"$(sed 's/\ /:/g' /sys/class/leds/${sysfs}/multi_intensity)" \
+				>> /var/run/led.state
+		}
+		printf "\n" >> /var/run/led.state
 
 		[ "$default" = 0 ] &&
 			echo 0 >/sys/class/leds/${sysfs}/brightness
@@ -128,13 +135,17 @@ load_led() {
 start() {
 	[ -e /sys/class/leds/ ] && {
 		[ -s /var/run/led.state ] && {
-			local led trigger brightness
-			while read led trigger brightness; do
+			local led trigger brightness color
+			while read led trigger brightness color; do
 				[ -e "/sys/class/leds/$led/trigger" ] && \
 					echo "$trigger" > "/sys/class/leds/$led/trigger"
 
 				[ -e "/sys/class/leds/$led/brightness" ] && \
 					echo "$brightness" > "/sys/class/leds/$led/brightness"
+
+				[ -e "/sys/class/leds/$led/multi_intensity" ] && \
+					echo "$color" | sed 's/:/\ /g' > \
+						"/sys/class/leds/$led/multi_intensity"
 			done < /var/run/led.state
 			rm /var/run/led.state
 		}
