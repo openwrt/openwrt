@@ -102,7 +102,13 @@
 					#size-cells = <1>;
 
 					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
 					};
 				};
 			};
@@ -133,7 +139,7 @@
 	status = "okay";
 
 	phy-handle = <&phy0>;
-	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -161,6 +167,13 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_art_0 1>;
+		nvmem-cell-names = "calibration", "mac-address";
+	};
 };
 
 &usb0 {

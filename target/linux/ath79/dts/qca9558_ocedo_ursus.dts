@@ -28,6 +28,13 @@
 
 &pcie1 {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_art_c>;
+		nvmem-cell-names = "calibration", "mac-address";
+	};
 };
 
 &spi {
@@ -91,8 +98,16 @@
 						reg = <0x6 0x6>;
 					};
 
+					macaddr_art_c: macaddr@c {
+						reg = <0xc 0x6>;
+					};
+
 					macaddr_art_12: macaddr@12 {
 						reg = <0x12 0x6>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
 					};
 				};
 			};

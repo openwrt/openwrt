@@ -126,6 +126,10 @@
 					macaddr_art_6: macaddr@6 {
 						reg = <0x6 0x6>;
 					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
 				};
 			};
 		};
@@ -193,4 +197,11 @@
 
 &pcie0 {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_art_0 16>;
+		nvmem-cell-names = "calibration", "mac-address";
+	};
 };

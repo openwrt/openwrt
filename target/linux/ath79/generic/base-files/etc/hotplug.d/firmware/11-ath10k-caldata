@@ -9,25 +9,6 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
-	allnet,all-wap02860ac|\
-	araknis,an-500-ap-i-ac|\
-	araknis,an-700-ap-i-ac|\
-	comfast,cf-e380ac-v2|\
-	engenius,enstationac-v1|\
-	glinet,gl-x750|\
-	watchguard,ap300)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) 2)
-		;;
-	devolo,dvl1200e|\
-	devolo,dvl1200i|\
-	devolo,dvl1750c|\
-	devolo,dvl1750e|\
-	devolo,dvl1750i|\
-	devolo,dvl1750x)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) -1)
-		;;
 	engenius,ecb1200|\
 	engenius,ecb1750)
 		caldata_extract "art" 0x5000 0x844
@@ -41,10 +22,6 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(mtd_get_mac_ascii cfg1 RADIOADDR0)
 		;;
-	glinet,gl-ar750)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary art 0x0) 1)
-		;;
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr2|\
 	sitecom,wlr-7100|\
@@ -56,73 +33,14 @@ case "$FIRMWARE" in
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(mtd_get_mac_text board_data 0x880)
 		;;
-	ocedo,koala|\
-	ocedo,ursus)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(mtd_get_mac_binary art 0xc)
-		;;
-	openmesh,a40|\
-	openmesh,a60|\
-	openmesh,mr1750-v1|\
-	openmesh,mr1750-v2|\
-	openmesh,om5p-ac-v2)
-		caldata_extract "ART" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) 16)
-		;;
 	qihoo,c301)
 		caldata_extract "radiocfg" 0x5000 0x844
 		ath10k_patch_mac $(mtd_get_mac_ascii devdata wlan5mac)
-		;;
-	tplink,archer-a7-v5|\
-	tplink,archer-c2-v3|\
-	tplink,archer-c7-v4|\
-	tplink,archer-c7-v5|\
-	tplink,archer-c25-v1|\
-	tplink,tl-wr902ac-v1)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) -1)
-		;;
-	tplink,archer-c5-v1|\
-	tplink,tl-wdr7500-v3)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary u-boot 0x1fc00) -1)
-		;;
-	tplink,archer-d50-v1)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary romfile 0xf100) 2)
-		;;
-	tplink,archer-d7-v1|\
-	tplink,archer-d7b-v1)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary romfs 0xf100) 2)
-		;;
-	tplink,re350k-v1)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) 2)
-		;;
-	tplink,re355-v1|\
-	tplink,re450-v1)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
-		;;
-	tplink,re450-v2|\
-	tplink,re450-v3|\
-	tplink,re455-v1)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary info 0x8) 1)
-		;;
-	tplink,tl-wpa8630-v1)
-		caldata_extract "art" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary u-boot 0x0fc00) 1)
 		;;
 	esac
 	;;
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case $board in
-	openmesh,om5p-ac-v1)
-		caldata_extract "ART" 0x5000 0x844
-		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) +16)
-		;;
 	sitecom,wlr-8100)
 		caldata_extract "art" 0x5000 0x844
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 1)
