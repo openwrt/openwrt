@@ -1,10 +1,10 @@
 --- a/src/ccache.cpp
 +++ b/src/ccache.cpp
-@@ -1815,6 +1815,7 @@ get_manifest_key(Context& ctx, Hash& has
-                            "CPLUS_INCLUDE_PATH",
-                            "OBJC_INCLUDE_PATH",
-                            "OBJCPLUS_INCLUDE_PATH", // clang
-+                           "GCC_HONOUR_COPTS",
-                            nullptr};
+@@ -1843,6 +1843,7 @@ get_manifest_key(Context& ctx, Hash& has
+     "OBJCPLUS_INCLUDE_PATH",        // Clang
+     "CLANG_CONFIG_FILE_SYSTEM_DIR", // Clang
+     "CLANG_CONFIG_FILE_USER_DIR",   // Clang
++    "GCC_HONOUR_COPTS",
+     nullptr,
+   };
    for (const char** p = envvars; *p; ++p) {
-     const char* v = getenv(*p);
