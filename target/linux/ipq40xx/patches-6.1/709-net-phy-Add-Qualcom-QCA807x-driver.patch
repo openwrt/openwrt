@@ -23,11 +23,11 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  drivers/net/phy/Makefile | 1 +
  2 files changed, 8 insertions(+)
 
---- a/drivers/net/phy/Kconfig
-+++ b/drivers/net/phy/Kconfig
-@@ -366,6 +366,13 @@ config AT803X_PHY
- 	  Currently supports the AR8030, AR8031, AR8033, AR8035 and internal
- 	  QCA8337(Internal qca8k PHY) model
+--- a/drivers/net/phy/qcom/Kconfig
++++ b/drivers/net/phy/qcom/Kconfig
+@@ -15,6 +15,13 @@ config QCA83XX_PHY
+ 	help
+ 	  Currently supports the internal QCA8337(Internal qca8k PHY) model
  
 +config QCA807X_PHY
 +	tristate "Qualcomm QCA807x PHYs"
@@ -36,16 +36,14 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	  Currently supports the Qualcomm QCA8072, QCA8075 and the PSGMII
 +	  control PHY.
 +
- config QSEMI_PHY
- 	tristate "Quality Semiconductor PHYs"
- 	help
---- a/drivers/net/phy/Makefile
-+++ b/drivers/net/phy/Makefile
-@@ -90,6 +90,7 @@ obj-$(CONFIG_MOTORCOMM_PHY)	+= motorcomm
- obj-$(CONFIG_NATIONAL_PHY)	+= national.o
- obj-$(CONFIG_NXP_C45_TJA11XX_PHY)	+= nxp-c45-tja11xx.o
- obj-$(CONFIG_NXP_TJA11XX_PHY)	+= nxp-tja11xx.o
+ config QCA808X_PHY
+ 	tristate "Qualcomm QCA808x PHYs"
+ 	select QCOM_NET_PHYLIB
+--- a/drivers/net/phy/qcom/Makefile
++++ b/drivers/net/phy/qcom/Makefile
+@@ -2,4 +2,5 @@
+ obj-$(CONFIG_QCOM_NET_PHYLIB)	+= qcom-phy-lib.o
+ obj-$(CONFIG_AT803X_PHY)	+= at803x.o
+ obj-$(CONFIG_QCA83XX_PHY)	+= qca83xx.o
 +obj-$(CONFIG_QCA807X_PHY)		+= qca807x.o
- obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
- obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
- obj-$(CONFIG_RENESAS_PHY)	+= uPD60620.o
+ obj-$(CONFIG_QCA808X_PHY)	+= qca808x.o

@@ -23,6 +23,10 @@
 	};
 };
 
+&pcie0 {
+	/delete-node/ wifi@0,0;
+};
+
 &usb_phy {
 	status = "okay";
 };

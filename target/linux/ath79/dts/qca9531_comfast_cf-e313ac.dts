@@ -103,8 +103,16 @@
 						reg = <0x0 0x6>;
 					};
 
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
 					macaddr_art_1002: macaddr@1002 {
 						reg = <0x1002 0x6>;
+					};
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
 					};
 				};
 			};
@@ -155,5 +163,7 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>, <&macaddr_art_6>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
 	};
 };

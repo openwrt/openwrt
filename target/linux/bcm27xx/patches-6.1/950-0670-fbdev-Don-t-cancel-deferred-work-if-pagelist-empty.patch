@@ -1,4 +1,4 @@
-From a25b0ea78e73b699e89c6d5589ba43cd0a22f97e Mon Sep 17 00:00:00 2001
+From cf40d2d8c44a659d09d5c20189aab02f20263e81 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.com>
 Date: Wed, 29 Mar 2023 09:49:36 +0100
 Subject: [PATCH] fbdev: Don't cancel deferred work if pagelist empty
@@ -24,13 +24,13 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/video/fbdev/core/fb_defio.c
 +++ b/drivers/video/fbdev/core/fb_defio.c
-@@ -321,7 +321,8 @@ static void fb_deferred_io_lastclose(str
+@@ -317,7 +317,8 @@ static void fb_deferred_io_lastclose(str
  	struct page *page;
  	int i;
  
--	cancel_delayed_work_sync(&info->deferred_work);
+-	flush_delayed_work(&info->deferred_work);
 +	if (!list_empty(&info->fbdefio->pagereflist))
-+		cancel_delayed_work_sync(&info->deferred_work);
++		flush_delayed_work(&info->deferred_work);
  
  	/* clear out the mapping that we setup */
  	for (i = 0 ; i < info->fix.smem_len; i += PAGE_SIZE) {

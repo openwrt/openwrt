@@ -134,7 +134,9 @@
 					#size-cells = <1>;
 
 					macaddr_info_8: macaddr@8 {
+						compatible = "mac-base";
 						reg = <0x8 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -143,6 +145,16 @@
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
 			};
 		};
 	};
@@ -165,12 +177,19 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_info_8 (-1)>;
+		nvmem-cell-names = "calibration", "mac-address";
+	};
 };
 
 &eth0 {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cells = <&macaddr_info_8 0>;
 	nvmem-cell-names = "mac-address";
 	phy-mode = "sgmii";
 	phy-handle = <&phy0>;
@@ -180,6 +199,6 @@
 	status = "okay";
 
 	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_info_8>;
+	nvmem-cells = <&macaddr_info_8 0>;
 	nvmem-cell-names = "mac-address";
 };

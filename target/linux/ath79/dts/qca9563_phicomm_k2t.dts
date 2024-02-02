@@ -48,6 +48,13 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>;
+		nvmem-cell-names = "pre-calibration";
+	};
 };
 
 &spi {
@@ -91,6 +98,16 @@
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
 			};
 		};
 	};

@@ -59,6 +59,13 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>, <&macaddr_art_0 2>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+	};
 };
 
 &spi {
@@ -94,6 +101,10 @@
 						compatible = "mac-base";
 						reg = <0x0 0x6>;
 						#nvmem-cell-cells = <1>;
+					};
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
 					};
 				};
 			};
