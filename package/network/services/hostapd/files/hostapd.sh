@@ -305,6 +305,7 @@ hostapd_common_add_bss_config() {
 	config_add_string 'key1:wepkey' 'key2:wepkey' 'key3:wepkey' 'key4:wepkey' 'password:wpakey'
 
 	config_add_string wpa_psk_file
+	config_add_string sae_password_file
 
 	config_add_int multi_ap
 
@@ -408,7 +409,7 @@ hostapd_set_psk_file() {
 	json_get_vars mac vid key
 	set_default mac "00:00:00:00:00:00"
 	[ -n "$vid" ] && vlan_id="vlanid=$vid "
-	echo "${vlan_id} ${mac} ${key}" >> /var/run/hostapd-${ifname}.psk
+	echo "${vlan_id}${mac} ${key}" >> /var/run/hostapd-${ifname}.psk
 }
 
 hostapd_set_psk() {
@@ -416,6 +417,25 @@ hostapd_set_psk() {
 
 	rm -f /var/run/hostapd-${ifname}.psk
 	for_each_station hostapd_set_psk_file ${ifname}
+}
+
+hostapd_set_sae_password_file() {
+	local ifname="$1"
+	local vlan="$2"
+
+	json_get_vars mac vid key
+	local sae_password="${key}"
+	[ -n "$mac" ] && sae_password="${sae_password}|${mac}"
+	[ -n "$vid" ] && sae_password="${sae_password}|vlanid=${vid}"
+	echo "${sae_password}" >> /var/run/hostapd-${ifname}.sae_passwords
+}
+
+hostapd_set_sae_password() {
+	local ifname="$1"
+
+	rm -f /var/run/hostapd-${ifname}.sae_passwords
+	for_each_station hostapd_set_sae_password_file ${ifname}
+	touch /var/run/hostapd-${ifname}.sae_passwords
 }
 
 append_iw_roaming_consortium() {
@@ -672,7 +692,8 @@ hostapd_set_bss_options() {
 			wps_not_configured=1
 		;;
 		psk|sae|psk-sae)
-			json_get_vars key wpa_psk_file
+			json_get_vars key wpa_psk_file sae_password_file
+			local invalid_psk=0
 			if [ "$auth_type" = "psk" ] && [ "$ppsk" -ne 0 ] ; then
 				json_get_vars auth_secret auth_port
 				set_default auth_port 1812
@@ -683,15 +704,39 @@ hostapd_set_bss_options() {
 				append bss_conf "wpa_psk=$key" "$N"
 			elif [ ${#key} -ge 8 ] && [ ${#key} -le 63 ]; then
 				append bss_conf "wpa_passphrase=$key" "$N"
-			elif [ -n "$key" ] || [ -z "$wpa_psk_file" ]; then
-				wireless_setup_vif_failed INVALID_WPA_PSK
-				return 1
+			elif [ -n "$key" ] && [ "$auth_type" = "sae" ]; then
+				append bss_conf "sae_password=$key" "$N"
+				invalid_psk=1
+			else
+				invalid_psk=2
 			fi
-			[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
-			[ -n "$wpa_psk_file" ] && {
-				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
-				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
-			}
+
+			if [[ "$auth_type" == "psk"* ]]; then
+				if [ $invalid_psk -ge 1 ] && [ -z "$wpa_psk_file" ]; then
+					wireless_setup_vif_failed INVALID_WPA_PSK
+					return 1
+				fi
+				[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
+				[ -n "$wpa_psk_file" ] && {
+					[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
+					append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
+				}
+			fi
+			if [[ "$auth_type" == *"sae" ]]; then
+				if [ $invalid_psk -ge 2 ] && [ -z "$sae_password_file" ]; then
+					wireless_setup_vif_failed INVALID_WPA_PSK
+					return 1
+				fi
+				[ -z "$sae_password_file" ] && set_default sae_password_file /var/run/hostapd-$ifname.sae_passwords
+				if [ -n "$sae_password_file" ] && [ -e "$sae_password_file" ]; then
+					# Packaged hostapd version does not support `sae_password_file` entry.
+					# Here we parse file to sae_password entries to work around limitation.
+					while IFS= read -r line; do
+						[ -z "$line" ] || [ "${line:0:1}" = "#" ] && continue
+						append bss_conf "sae_password=$line" "$N"
+					done < "$sae_password_file"
+				fi
+			fi
 			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"
 
 			set_default dynamic_vlan 0
