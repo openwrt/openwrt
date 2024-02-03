@@ -77,7 +77,7 @@ hostapd_append_wpa_key_mgmt() {
 
 	[ "$fils" -gt 0 ] && {
 		case "$auth_type" in
-			eap-192)
+			eap192)
 				append wpa_key_mgmt FILS-SHA384
 				[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt FT-FILS-SHA384
 			;;
