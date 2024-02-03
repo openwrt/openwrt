@@ -1,8 +1,7 @@
-From eacf1d2505dfecd3599d558cdade1a2da47fe06d Mon Sep 17 00:00:00 2001
+From bdce82e960d1205d118662f575cec39379984e34 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Wed, 24 Jan 2024 18:52:33 +0100
-Subject: [PATCH 2/3] net: mdio: ipq4019: add support for clock-frequency
- property
+Date: Wed, 31 Jan 2024 03:26:04 +0100
+Subject: [PATCH] net: mdio: ipq4019: add support for clock-frequency property
 
 The IPQ4019 MDIO internally divide the clock feed by AHB based on the
 MDIO_MODE reg. On reset or power up, the default value for the
@@ -44,6 +43,8 @@ Documentation of some BITs is skipped as they are marked as reserved and
 their usage is not clear (RES 11:9 GENPHY 16:13 RES1 19:17)
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  drivers/net/mdio/mdio-ipq4019.c | 109 ++++++++++++++++++++++++++++++--
  1 file changed, 103 insertions(+), 6 deletions(-)
@@ -167,7 +168,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	/* div is not set to the default value of /256
 +	 * Probably someone changed that (bootloader, other drivers)
-+	 * Keep this and doesn't overwrite it.
++	 * Keep this and don't overwrite it.
 +	 */
 +	if (div != MDIO_MODE_DIV_256) {
 +		priv->mdc_rate = DIV_ROUND_UP(ahb_rate, div + 1);
