@@ -1,0 +1,59 @@
+#!/bin/sh
+
+_LOGIN_TIME="$(date "+%Y-%m-%d %H:%M:%S")"
+CONFIG="pppoe-server"
+CONFIG_PATH=/var/etc/${CONFIG}
+SESSION_PATH=${CONFIG_PATH}/session
+
+_USERNAME=${PEERNAME}
+_IFACE=${1}
+_TTY=${2}
+_SPEED=${3}
+_LOCALIP=${4}
+_PEERIP=${5}
+_REMOTEIP=${6}
+
+_PID="$(cat /var/run/${_IFACE}.pid 2>/dev/null)"
+_MAC=$(top -bn1 | grep -v grep | grep "${CONFIG}" | grep "${_PID}" | grep -E -o "[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}")
+
+mkdir -p ${SESSION_PATH}
+
+cat <<-EOF > ${SESSION_PATH}/${_USERNAME}.${_IFACE}
+	{
+	    "username": "${_USERNAME}",
+	    "interface": "${_IFACE}",
+	    "tty": "${_TTY}",
+	    "speed": "${_SPEED}",
+	    "ip": "${_PEERIP}",
+	    "mac": "${_MAC}",
+	    "pid": "${_PID}",
+	    "login_time": "${_LOGIN_TIME}"
+	}
+EOF
+
+#只能单用户使用
+cfgid=$(uci show ${CONFIG} | grep "@user" | grep "\.username='${_USERNAME}'" | cut -d '.' -sf 2)
+[ -n "$cfgid" ] && {
+	HAS_LOGIN=$(ls ${SESSION_PATH} | grep "^${_USERNAME}\.ppp" | grep -v "${_IFACE}")
+	[ -n "$HAS_LOGIN" ] && {
+		#踢出之前的用户
+		KO_IFACE=$(echo $HAS_LOGIN | awk -F '.' '{print $2}')
+		KO_PID=$(cat /var/run/${KO_IFACE}.pid 2>/dev/null)
+		[ -n "$KO_PID" ] && kill -9 ${KO_PID} >/dev/null 2>&1
+		rm -f ${SESSION_PATH}/${HAS_LOGIN}
+		rm -f /var/run/${KO_IFACE}.pid
+	}
+	routes=$(uci -q get ${CONFIG}.${cfgid}.routes)
+	[ -n "$routes" ] && {
+		for router in ${routes}; do
+			route add -net ${router} dev ${_IFACE} >/dev/null 2>&1
+		done
+	}
+}
+
+#可根据登录的账号自定义脚本，如组网、日志、限速、权限等特殊待遇。
+SCRIPT="/usr/share/${CONFIG}/ip-up.d/${_USERNAME}"
+[ -s "$SCRIPT" ] && {
+	[ ! -x "$SCRIPT" ] && chmod 0755 "$SCRIPT"
+	"$SCRIPT" "$@"
+}

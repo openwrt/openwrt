@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# needed for "Save and Apply" to restart iptvhelper
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@iptvhelper[-1]
+	add ucitrack iptvhelper
+	set ucitrack.@iptvhelper[-1].init="iptvhelper"
+	commit ucitrack
+EOF
+
+rm -f /tmp/luci-indexcache
+exit 0

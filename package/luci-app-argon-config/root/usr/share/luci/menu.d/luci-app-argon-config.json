@@ -1,0 +1,14 @@
+{
+	"admin/system/argon-config": {
+		"title": "Argon Config",
+		"order": 90,
+		"action": {
+			"type": "view",
+			"path": "argon-config"
+		},
+		"depends": {
+			"acl": [ "luci-app-argon-config" ],
+			"uci": { "argon": true }
+		}
+	}
+}

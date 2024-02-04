@@ -1,0 +1,82 @@
+#!/bin/sh /etc/rc.common
+#
+# Copyright (C) 2021-2023  sirpdboy  <herboy2008@gmail.com> https://github.com/sirpdboy/luci-app-ddns-go 
+#
+# This file is part of ddns-go .
+# 
+# This is free software, licensed under the Apache License, Version 2.0 .
+#
+
+
+START=99
+USE_PROCD=1
+NAME=ddns-go
+PROG=/usr/bin/ddns-go
+CONFDIR=/etc/ddns-go
+CONF=$CONFDIR/ddns-go-config.yaml
+
+get_tz()
+{
+	SET_TZ=""
+
+	[ -e "/etc/localtime" ] && return
+
+	for tzfile in /etc/TZ /var/etc/TZ
+	do
+		[ -e "$tzfile" ] || continue
+		tz="$(cat $tzfile 2>/dev/null)"
+	done
+
+	[ -z "$tz" ] && return
+
+	SET_TZ=$tz
+}
+
+init_yaml(){
+	[ -d $CONFDIR ] || mkdir -p $CONFDIR 2>/dev/null
+	cat /usr/share/ddns-go/ddns-go-default.yaml  > $CONF
+}
+
+xappend() { param="$param $1"; }
+
+append_parm() {
+	local section="$1"
+	local option="$2"
+	local switch="$3"
+	local default="$4"
+	local _tmp
+	config_get _tmp "$section" "$option" "$default"
+	[[ -z "$_tmp" ]] && return
+	[[ x$default = x && x$_tmp = x0 ]] && return
+	[[ x$default = x && x$_tmp = x1 ]] && xappend "$switch" || xappend "$switch $_tmp"
+}
+
+start_instance() {
+	local cfg="$1" param
+	config_get_bool enabled $cfg enabled 1
+	[[ x$enabled = x1 ]] || return 1
+	[[ -s ${CONF} ]] || init_yaml
+	config_get_bool logger $cfg logger 1
+	config_get port $cfg port '9876'
+	append_parm "$cfg" 'time' '-f' '300'
+	append_parm "$cfg" 'ctimes' '-cacheTimes' '5'
+	append_parm "$cfg" 'dns' '-dns' '223.5.5.5'
+	append_parm "$cfg" 'noweb' '-noweb'
+	append_parm "$cfg" 'skipverify' '-skipVerify'
+	procd_open_instance
+	get_tz
+	[[ -z "$SET_TZ" ]] || procd_set_param env TZ="$SET_TZ"
+	procd_set_param command ${PROG} -l :$port -c "$CONF" ${param} 
+	[[ "x$logger" == x1 ]] && procd_set_param stderr 1
+	procd_set_param respawn
+	procd_close_instance
+}
+
+start_service() {
+	config_load 'ddns-go'
+	config_foreach start_instance 'basic'
+}
+
+service_triggers() {
+      procd_add_reload_trigger "ddns-go"
+}

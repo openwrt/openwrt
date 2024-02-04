@@ -1,0 +1,22 @@
+<%#
+ Copyright 2021-2022 sirpdboy Wich <sirpdboy@qq.com>
+ https://github.com/sirpdboy/luci-app-ddns-go
+ Licensed to the public under the Apache License 2.0.
+-%>
+
+<%+header%>
+<div class="cbi-map">
+
+<iframe  id="ddnsgo" style="width: 100%; min-height: 780px; border: none; border-radius: .375rem;box-shadow: rgba(0, 0, 0, 0.75) 0px 0px 15px -5px;"><br/><em style=\"color:red\">
+<p ><em><%:The DDNS-GO service is not running.%></em></p>
+</iframe>
+
+</div>
+<script type="text/javascript">
+        document.getElementById("ddnsgo").src = window.location.protocol + "//" + window.location.hostname + ":<%=luci.model.uci.cursor():get_first("ddns-go", "basic", "port") %>";
+ 		document.getElementById("ddnsgo").height = document.documentElement.clientHeight;
+        window.onresize = function(){
+            document.getElementById("ddnsgo").height = document.documentElement.clientHeight;
+        }
+</script>
+<%+footer%>

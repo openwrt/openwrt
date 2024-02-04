@@ -1,0 +1,33 @@
+<%
+protocol="http://"
+%>
+
+<script type="text/javascript">//<![CDATA[
+	XHR.poll(3, '<%=url([[admin]], [[services]], [[ddnsgo_status]])%>', null,
+		function(x, data) {
+			var tb = document.getElementById('ddnsgo_status');
+			if (data && tb)
+			{
+				if (data.running)
+				{
+					var URL = "<%=protocol%>" + window.location.hostname +":<%=luci.model.uci.cursor():get_first("ddns-go", "basic", "port") %>";
+					tb.innerHTML = '<em><b style=\"color:green\"><%:The DDNS-GO service is running.%></b></em>';
+					tb.innerHTML +='<em> <br/><br/>' + ' <b > <%:Click the new page to open ddns-go%> </em>';
+					tb.innerHTML += "<input class=\"cbi-button cbi-button-reload \" type=\"button\" value=\" "+ URL+ "\" onclick=\"window.open('"+ URL+ "/')\"/>";
+
+				}
+				else
+				{
+					tb.innerHTML = '<em style=\"color:red\"><%:The DDNS-GO service is not running.%></em><br/>';
+				}
+			}
+		}
+	);
+//]]></script>
+<style>.mar-10 {margin-left: 50px; margin-right: 10px;}</style>
+<fieldset class="cbi-section">
+	<legend><%:DDNS-GO Status%></legend>
+	<p id="ddnsgo_status">
+		<em><%:Collecting data...%></em>
+	</p>
+</fieldset>

@@ -1,0 +1,42 @@
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1,5 +1,5 @@
+ 
+-SUBDIRS = src doc contrib
++SUBDIRS = src contrib
+ 
+ EXTRA_DIST = version ChangeLog.old COPYING.BSD README.par README.par.old PKGBUILD
+ 
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -196,7 +196,7 @@ threadlib = @threadlib@
+ top_build_prefix = @top_build_prefix@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+-SUBDIRS = src doc contrib
++SUBDIRS = src contrib
+ EXTRA_DIST = version ChangeLog.old COPYING.BSD README.par README.par.old PKGBUILD
+ all: config.h
+ 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -15,7 +15,7 @@ EXTRA_DIST = make_rr_types_h.pl rr_types
+ 
+ ## Try to do this last
+ 
+-SUBDIRS = . pdnsd-ctl rc test
++SUBDIRS = . pdnsd-ctl
+ 
+ $(pdnsd_OBJECTS): rr_types.h
+ 
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -215,7 +215,7 @@ pdnsd_SOURCES = conf-parser.c conff.c co
+ 	freebsd_netinet_ip_icmp.h
+ 
+ EXTRA_DIST = make_rr_types_h.pl rr_types.in
+-SUBDIRS = . pdnsd-ctl rc test
++SUBDIRS = . pdnsd-ctl
+ all: all-recursive
+ 
+ .SUFFIXES:

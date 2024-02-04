@@ -1,0 +1,75 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	set dhcp.@dnsmasq[0].localuse=1
+	commit dhcp
+	delete ucitrack.@passwall2[-1]
+	add ucitrack passwall2
+	set ucitrack.@passwall2[-1].init=passwall2
+	commit ucitrack
+	delete firewall.passwall2
+	set firewall.passwall2=include
+	set firewall.passwall2.type=script
+	set firewall.passwall2.path=/var/etc/passwall2.include
+	set firewall.passwall2.reload=1
+	commit firewall
+	delete ucitrack.@passwall2_server[-1]
+	add ucitrack passwall2_server
+	set ucitrack.@passwall2_server[-1].init=passwall2_server
+	commit ucitrack
+	delete firewall.passwall2_server
+	set firewall.passwall2_server=include
+	set firewall.passwall2_server.type=script
+	set firewall.passwall2_server.path=/var/etc/passwall2_server.include
+	set firewall.passwall2_server.reload=1
+	commit firewall
+	set uhttpd.main.max_requests=50
+	commit uhttpd
+EOF
+
+touch /etc/config/passwall2_show >/dev/null 2>&1
+[ ! -s "/etc/config/passwall2" ] && cp -f /usr/share/passwall2/0_default_config /etc/config/passwall2
+
+use_nft=$(uci -q get passwall2.@global_forwarding[0].use_nft || echo "0")
+[ "${use_nft}" = "0" ] && {
+	if [ -z "$(command -v iptables-legacy || command -v iptables)" ] || [ -z "$(command -v ipset)" ] || [ -z "$(dnsmasq --version | grep 'Compile time options:.* ipset')" ]; then
+		[ "$(opkg list-installed | grep "firewall4")" ] && [ "$(opkg list-installed | grep "nftables")" ] && {
+			[ "$(opkg list-installed | grep "kmod\-nft\-socket")" ] && [ "$(opkg list-installed | grep "kmod\-nft\-tproxy")" ] && [ "$(opkg list-installed | grep "kmod\-nft\-nat")" ] && {
+				uci -q set passwall2.@global_forwarding[0].use_nft=1
+				uci -q commit passwall2
+				sed -i "s#use_nft '0'#use_nft '1'#g" /usr/share/passwall2/0_default_config
+			}
+		}
+	fi
+}
+
+global_xray=$(uci -q get passwall2.@global_xray[0])
+[ -z "${global_xray}" ] && {
+	cfgid=$(uci add passwall2 global_xray)
+	uci -q set passwall2.${cfgid}.sniffing=$(uci -q get passwall2.@global_forwarding[0].sniffing || echo "1")
+	uci -q set passwall2.${cfgid}.route_only=$(uci -q get passwall2.@global_forwarding[0].route_only || echo "0")
+	uci -q set passwall2.${cfgid}.buffer_size=$(uci -q get passwall2.@global_forwarding[0].buffer_size || echo "")
+	
+	uci -q delete passwall2.@global_forwarding[0].sniffing
+	uci -q delete passwall2.@global_forwarding[0].route_only
+	uci -q delete passwall2.@global_forwarding[0].buffer_size
+	uci -q commit passwall2
+}
+
+global_singbox=$(uci -q get passwall2.@global_singbox[0])
+[ -z "${global_singbox}" ] && {
+	cfgid=$(uci add passwall2 global_singbox)
+	uci -q set passwall2.${cfgid}.sniff_override_destination=0
+	uci -q set passwall2.${cfgid}.geoip_path="/tmp/singbox/geoip.db"
+	uci -q set passwall2.${cfgid}.geoip_url="https://github.com/SagerNet/sing-geoip/releases/latest/download/geoip.db"
+	uci -q set passwall2.${cfgid}.geosite_path="/tmp/singbox/geosite.db"
+	uci -q set passwall2.${cfgid}.geosite_url="https://github.com/SagerNet/sing-geosite/releases/latest/download/geosite.db"
+	uci -q commit passwall2
+}
+
+chmod +x /usr/share/passwall2/*.sh
+
+rm -f /tmp/luci-indexcache
+rm -rf /tmp/luci-modulecache/
+killall -HUP rpcd 2>/dev/null
+exit 0

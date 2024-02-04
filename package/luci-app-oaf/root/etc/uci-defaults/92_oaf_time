@@ -1,0 +1,8 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	set appfilter.time.time_mode="0"
+	set appfilter.time.start_time2=""
+	set appfilter.time.end_time2=""
+	commit appfilter
+EOF

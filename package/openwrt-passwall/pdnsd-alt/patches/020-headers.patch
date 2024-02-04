@@ -1,0 +1,66 @@
+--- a/src/conff.h
++++ b/src/conff.h
+@@ -32,7 +32,7 @@
+ #include <stdio.h>
+ #include <pthread.h>
+ #include <sys/socket.h>
+-#include <net/if.h>
++#include <linux/if.h>
+ #include "ipvers.h"
+ #include "list.h"
+ 
+--- a/src/dns.h
++++ b/src/dns.h
+@@ -27,7 +27,7 @@
+ #include <config.h>
+ #include <arpa/inet.h>
+ #include <sys/socket.h>
+-#include <net/if.h>
++#include <linux/if.h>
+ #include <sys/types.h>
+ #include <inttypes.h>
+ #include "rr_types.h"
+--- a/src/dns_answer.c
++++ b/src/dns_answer.c
+@@ -37,7 +37,7 @@
+ #include <sys/uio.h>
+ #include <sys/types.h>
+ #ifdef HAVE_SYS_POLL_H
+-#include <sys/poll.h>
++#include <poll.h>
+ #endif
+ #include <sys/param.h>
+ #include <netdb.h>
+--- a/src/dns_query.c
++++ b/src/dns_query.c
+@@ -23,7 +23,7 @@
+ #include <config.h>
+ #include <sys/types.h>
+ #ifdef HAVE_SYS_POLL_H
+-#include <sys/poll.h>
++#include <poll.h>
+ #endif
+ #include <stdlib.h>
+ #include <netdb.h>
+--- a/src/icmp.c
++++ b/src/icmp.c
+@@ -28,7 +28,7 @@
+ 
+ #include <config.h>
+ #ifdef HAVE_SYS_POLL_H
+-#include <sys/poll.h>
++#include <poll.h>
+ #endif
+ #include <sys/time.h>
+ #include <stdlib.h>
+--- a/src/netdev.c
++++ b/src/netdev.c
+@@ -59,7 +59,7 @@
+ #include "ipvers.h"
+ #include <sys/stat.h>
+ #include <sys/ioctl.h>
+-#include <net/if.h>
++#include <linux/if.h>
+ #include <netdb.h>
+ #include <string.h>
+ #include <unistd.h>

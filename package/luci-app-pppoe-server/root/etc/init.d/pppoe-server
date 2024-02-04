@@ -1,0 +1,118 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2018-2021 Lienol <lawlienol@gmail.com>
+
+START=99
+
+CONFIG="pppoe-server"
+CONFIG_PATH=/var/etc/${CONFIG}
+OPTIONS_FILE=${CONFIG_PATH}/options
+CHAP_SECRETS=/etc/ppp/chap-secrets
+
+ipt_flag="PPPoE Server"
+
+config_t_get() {
+	local index=0
+	[ -n "$4" ] && index=$4
+	local ret=$(uci -q get ${CONFIG}.@$1[$index].$2 2>/dev/null)
+	echo ${ret:=$3}
+}
+
+localip=$(config_t_get service localip 10.0.1.1)
+
+ipt_rule() {
+	if [ "$1" = "add" ]; then
+		iptables -t nat -I POSTROUTING -s ${localip%.*}.0/24 -m comment --comment "${ipt_flag}" -j MASQUERADE 2>/dev/null
+		iptables -I forwarding_rule -s ${localip%.*}.0/24 -m comment --comment "${ipt_flag}" -j ACCEPT 2>/dev/null
+	else
+		ipt_del() {
+			for i in $(seq 1 $($1 -nL $2 | grep -c "${ipt_flag}")); do
+				local index=$($1 --line-number -nL $2 | grep "${ipt_flag}" | head -1 | awk '{print $1}')
+				$1 -w -D $2 $index 2>/dev/null
+			done
+		}
+		ipt_del "iptables" "forwarding_rule"
+		ipt_del "iptables -t nat" "POSTROUTING"
+	fi
+}
+
+gen_include() {
+	echo '#!/bin/sh' > /var/etc/${CONFIG}.include
+	extract_rules() {
+		echo "*$1"
+		iptables-save -t $1 | grep "${ipt_flag}" | \
+		sed -e "s/^-A \(INPUT\)/-I \1 1/"
+		echo 'COMMIT'
+	}
+	cat <<-EOF >> /var/etc/${CONFIG}.include
+		iptables-save -c | grep -v "${ipt_flag}" | iptables-restore -c
+		iptables-restore -n <<-EOT
+		$(extract_rules filter)
+		$(extract_rules nat)
+		EOT
+	EOF
+	return 0
+}
+
+start() {
+	local enabled=$(config_t_get service enabled)
+	[ "$enabled" -eq 1 ]  || return 1
+	touch ${CHAP_SECRETS}
+	mkdir -p ${CONFIG_PATH}
+	local ms_dns1=""
+	local dns1=$(config_t_get service dns1)
+	[ -n "${dns1}" ] && ms_dns1="ms-dns ${dns1}"
+	local ms_dns2=""
+	local dns2=$(config_t_get service dns2)
+	[ -n "${dns2}" ] && ms_dns2="ms-dns ${dns2}"
+	
+	cat <<-EOF >> ${OPTIONS_FILE}
+		# PPP options for the PPPoE server
+		# LIC: GPL
+		name $CONFIG
+		login
+		require-mschap-v2
+		refuse-chap
+		require-pap
+		lcp-echo-interval 10
+		lcp-echo-failure 2
+		mru 1492
+		mtu 1492
+		${ms_dns1}
+		${ms_dns2}
+		logfile ${CONFIG_PATH}/log.log
+		ip-up-script /usr/share/pppoe-server/ip-up
+		ip-down-script /usr/share/pppoe-server/ip-down
+	EOF
+	
+	local _users=$(uci show ${CONFIG} | grep "=user" | cut -d '.' -sf 2 | cut -d '=' -sf 1)
+	[ -n "${_users}" ] && {
+		for _user in ${_users}; do
+			local u_enabled=$(uci -q get ${CONFIG}.${_user}.enabled)
+			[ "${u_enabled}" -eq 1 ] || continue
+			
+			local u_username=$(uci -q get ${CONFIG}.${_user}.username)
+			[ -n "${u_username}" ] || continue
+			
+			local u_password=$(uci -q get ${CONFIG}.${_user}.password)
+			[ -n "${u_password}" ] || continue
+			
+			local u_ipaddress=$(uci -q get ${CONFIG}.${_user}.ipaddress)
+			[ -n "${u_ipaddress}" ] || u_ipaddress="*"
+			
+			echo "${u_username} ${CONFIG} ${u_password} ${u_ipaddress}" >> ${CHAP_SECRETS}
+		done
+	}
+	
+	/usr/sbin/pppoe-server -O ${OPTIONS_FILE} -k -I $(config_t_get service client_interface) -L ${localip} -R $(config_t_get service remoteip) -N $(config_t_get service count)
+	
+	ipt_rule add
+	gen_include
+}
+
+stop() {
+	sed -i "/${CONFIG}/d" ${CHAP_SECRETS}
+	top -bn1 | grep "${CONFIG_PATH}" | grep -v "grep" | awk '{print $1}' | xargs kill -9 >/dev/null 2>&1
+	ipt_rule del
+	rm -rf /var/etc/${CONFIG}.include
+	rm -rf ${CONFIG_PATH}
+}

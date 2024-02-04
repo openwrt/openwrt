@@ -1,0 +1,236 @@
+
+config global
+	option enabled '0'
+	option node_socks_port '1070'
+	option localhost_proxy '1'
+	option socks_enabled '0'
+	option acl_enable '0'
+	option node 'myshunt'
+	option direct_dns_protocol 'auto'
+	option direct_dns_query_strategy 'UseIP'
+	option remote_dns_protocol 'tcp'
+	option remote_dns '1.1.1.1'
+	option remote_dns_query_strategy 'UseIPv4'
+	option dns_hosts 'cloudflare-dns.com 1.1.1.1
+dns.google.com 8.8.8.8'
+	option close_log '0'
+	option loglevel 'error'
+	
+config global_haproxy
+	option balancing_enable '0'
+
+config global_delay
+	option auto_on '0'
+	option start_daemon '1'
+	option start_delay '60'
+
+config global_forwarding
+	option tcp_no_redir_ports 'disable'
+	option udp_no_redir_ports 'disable'
+	option tcp_redir_ports '22,25,53,143,465,587,853,993,995,80,443'
+	option udp_redir_ports '1:65535'
+	option accept_icmp '0'
+	option use_nft '0'
+	option tcp_proxy_way 'redirect'
+	option ipv6_tproxy '0'
+
+config global_xray
+	option sniffing '1'
+	option route_only '0'
+
+config global_other
+	option auto_detection_time 'tcping'
+	option show_node_info '0'
+
+config global_rules
+	option auto_update '0'
+	option geosite_update '1'
+	option geoip_update '1'
+	option v2ray_location_asset '/usr/share/v2ray/'
+
+config global_app
+	option xray_file '/usr/bin/xray'
+	option brook_file '/usr/bin/brook'
+	option hysteria_file '/usr/bin/hysteria'
+	option singbox_file '/usr/bin/sing-box'
+
+config global_subscribe
+	option filter_keyword_mode '1'
+	list filter_discard_list '过期时间'
+	list filter_discard_list '剩余流量'
+	list filter_discard_list 'QQ群'
+	list filter_discard_list '官网'
+	
+config global_singbox
+	option sniff_override_destination '0'
+	option geoip_path '/usr/share/singbox/geoip.db'
+	option geoip_url 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.db'
+	option geosite_path '/usr/share/singbox/geosite.db'
+	option geosite_url 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.db'
+
+config nodes 'myshunt'
+	option remarks '分流总节点'
+	option type 'Xray'
+	option protocol '_shunt'
+	option DirectGame '_direct'
+	option ProxyGame '_default'
+	option Direct '_direct'
+	option GooglePlay '_default'
+	option Netflix 'nil'
+	option OpenAI 'nil'
+	option Proxy '_default'
+	option China '_direct'
+	option QUIC '_blackhole'
+	option UDP 'nil'
+	option default_node 'nil'
+	option domainStrategy 'IPOnDemand'
+	option domainMatcher 'hybrid'
+
+config shunt_rules 'DirectGame'
+	option remarks 'DirectGame'
+	option network 'tcp,udp'
+	option domain_list 'api.steampowered.com
+regexp:\.cm.steampowered.com$
+regexp:\.steamserver.net$
+geosite:category-games@cn
+'
+
+	option ip_list '103.10.124.0/24
+103.10.125.0/24
+103.28.54.0/24
+146.66.152.0/24
+146.66.155.0/24
+153.254.86.0/24
+155.133.224.0/23
+155.133.226.0/24
+155.133.227.0/24
+155.133.230.0/24
+155.133.232.0/24
+155.133.233.0/24
+155.133.234.0/24
+155.133.236.0/23
+155.133.238.0/24
+155.133.239.0/24
+155.133.240.0/23
+155.133.245.0/24
+155.133.246.0/24
+155.133.248.0/24
+155.133.249.0/24
+155.133.250.0/24
+155.133.251.0/24
+155.133.252.0/24
+155.133.253.0/24
+155.133.254.0/24
+155.133.255.0/24
+162.254.192.0/24
+162.254.193.0/24
+162.254.194.0/23
+162.254.195.0/24
+162.254.196.0/24
+162.254.197.0/24
+162.254.198.0/24
+162.254.199.0/24
+185.25.182.0/24
+185.25.183.0/24
+190.217.33.0/24
+192.69.96.0/22
+205.185.194.0/24
+205.196.6.0/24
+208.64.200.0/24
+208.64.201.0/24
+208.64.202.0/24
+208.64.203.0/24
+208.78.164.0/22'
+
+config shunt_rules 'ProxyGame'
+	option remarks 'ProxyGame'
+	option domain_list 'geosite:category-games
+domain:store.steampowered.com
+'
+
+config shunt_rules 'Direct'
+	option network 'tcp,udp'
+	option remarks 'Direct'
+	option ip_list 'geoip:private
+114.114.114.114
+114.114.115.115
+223.5.5.5
+223.6.6.6
+119.29.29.29
+180.76.76.76
+'
+	option domain_list 'apple.com
+microsoft.com
+dyndns.com
+steamcontent.com
+dl.steam.clngaa.com
+dl.steam.ksyna.com
+st.dl.bscstorage.net
+st.dl.eccdnx.com
+st.dl.pinyuncloud.com
+cdn.mileweb.cs.steampowered.com.8686c.com
+cdn-ws.content.steamchina.com
+cdn-qc.content.steamchina.com
+cdn-ali.content.steamchina.com
+epicgames-download1-1251447533.file.myqcloud.com'
+
+config shunt_rules 'GooglePlay'
+	option remarks 'GooglePlay'
+	option network 'tcp,udp'
+	option domain_list 'domain:googleapis.cn
+domain:googleapis.com
+domain:xn--ngstr-lra8j.com'
+
+config shunt_rules 'Netflix'
+	option remarks 'Netflix'
+	option network 'tcp,udp'
+	option domain_list 'geosite:netflix'
+	
+config shunt_rules 'OpenAI'
+	option remarks 'OpenAI'
+	option network 'tcp,udp'
+	option domain_list 'geosite:openai'
+
+config shunt_rules 'Proxy'
+	option network 'tcp,udp'
+	option remarks 'Proxy'
+	option domain_list 'geosite:geolocation-!cn'
+	option ip_list '149.154.160.0/20
+91.108.4.0/22
+91.108.56.0/24
+109.239.140.0/24
+67.198.55.0/24
+8.8.4.4
+8.8.8.8
+208.67.222.222
+208.67.220.220
+1.1.1.1
+1.1.1.2
+1.0.0.1
+9.9.9.9
+149.112.112.112
+2001:67c:4e8::/48
+2001:b28:f23c::/48
+2001:b28:f23d::/48
+2001:b28:f23f::/48
+2001:b28:f242::/48
+2001:4860:4860::8888
+2001:4860:4860::8844
+2606:4700:4700::1111
+2606:4700:4700::1001
+'
+
+config shunt_rules 'China'
+	option remarks 'China'
+	option network 'tcp,udp'
+	option ip_list 'geoip:cn'
+	option domain_list 'geosite:cn'
+
+config shunt_rules 'QUIC'
+	option remarks 'QUIC'
+	option port '443'
+	option network 'udp'
+
+config shunt_rules 'UDP'
+	option remarks 'UDP'
+	option network 'udp'

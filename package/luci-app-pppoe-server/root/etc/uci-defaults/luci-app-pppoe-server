@@ -1,0 +1,19 @@
+#!/bin/sh
+
+uci -q batch <<-EOF >/dev/null
+	delete firewall.pppoe_server
+	set firewall.pppoe_server=include
+	set firewall.pppoe_server.type=script
+	set firewall.pppoe_server.path=/var/etc/pppoe-server.include
+	set firewall.pppoe_server.reload=1
+EOF
+
+uci -q batch <<-EOF >/dev/null
+	delete ucitrack.@pppoe-server[-1]
+	add ucitrack pppoe-server
+	set ucitrack.@pppoe-server[-1].init=pppoe-server
+	commit ucitrack
+EOF
+
+rm -rf /tmp/luci-*cache
+exit 0

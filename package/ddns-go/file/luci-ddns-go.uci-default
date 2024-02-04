@@ -1,0 +1,7 @@
+#!/bin/sh
+
+[ -s "/etc/ddns-go/localtime" ] && mv -f /etc/ddns-go/localtime /etc/localtime
+/etc/init.d/ddns-go enable
+/etc/init.d/ddns-go start
+rm -f /tmp/luci*
+exit 0

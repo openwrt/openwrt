@@ -1,0 +1,296 @@
+{
+  "log": {
+    "disabled": false,
+    "level": "warn",
+    "output": "/tmp/sing-box.log",
+    "timestamp": true
+  },
+  "experimental": {
+    "clash_api": {
+      "external_controller": "0.0.0.0:9090",
+      "external_ui": "",
+      "secret": "********",
+      "default_mode": "rule",
+      "store_selected": true,
+      "cache_file": "cache.db"
+    }
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "foreign",
+        "address": "https://1.1.1.1/dns-query"
+      },
+      {
+        "tag": "local",
+        "address": "tls://1.12.12.12",
+        "detour": "direct"
+      },
+      {
+        "tag": "block",
+        "address": "rcode://success"
+      }
+    ],
+    "rules": [
+      {
+        "geosite": "category-ads-all",
+        "server": "block",
+        "disable_cache": true
+      },
+      {
+        "domain": "mydomain.com",
+        "geosite": "cn",
+        "server": "local"
+      }
+    ],
+    "strategy": "ipv4_only"
+  },
+  "ntp": {
+    "enabled": false,
+    "server": "ntp.aliyun.com",
+    "server_port": 123,
+    "interval": "30m",
+    "detour": "direct"
+  },
+  "inbounds": [
+    {
+      "type": "tun",
+      "tag": "TUN-in",
+      "interface_name": "sb-tun0",
+      "inet4_address": "172.19.0.1/30",
+      "auto_route": false,
+      "endpoint_independent_nat": true,
+      "stack": "system",
+      "sniff": true
+    },
+    {
+      "type": "mixed",
+      "tag": "SOCKS-in",
+      "listen": "::",
+      "listen_port": *****
+    },
+    {
+      "type": "redirect",
+      "tag": "REDIRECT-in",
+      "listen": "::",
+      "listen_port": *****,
+      "sniff": true
+    },
+    {
+      "type": "tproxy",
+      "tag": "TPROXY-in",
+      "listen": "::",
+      "listen_port": *****,
+      "sniff": true
+    },
+    {
+      "type": "direct",
+      "tag": "DNS-in",
+      "listen": "::",
+      "listen_port": *****,
+      "network": "udp",
+      "sniff": true
+    },
+    {
+      "type": "shadowsocks",
+      "tag": "SS-in",
+      "listen": "::",
+      "listen_port": *****,
+      "sniff": true,
+      "method": "2022-blake3-aes-128-gcm",
+      "password": "bZzjl2DAXUs02L2Sosgu7A==",
+      "users": [
+        {
+          "name": "User1",
+          "password": "SGEFjWc+VgNGBXe1JhoRfg=="
+        },
+        {
+          "name": "User2",
+          "password": "XoXhbj4V9cMXfuUXF/C+cg=="
+        }
+      ]
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "selector",
+      "tag": "Proxy-out",
+      "outbounds": [
+        "URL-Test",
+        "direct",
+        "Shadowsocks-ShadowTLS-out",
+        "Trojan-GRPC-out",
+        "Trojan-WebSocket-out",
+        "Hysteria-out"
+      ],
+      "default": "URL-Test"
+    },
+    {
+      "type": "urltest",
+      "tag": "URL-Test",
+      "outbounds": [
+        "Shadowsocks-ShadowTLS-out",
+        "Trojan-GRPC-out",
+        "Trojan-WebSocket-out",
+        "Hysteria-out"
+      ],
+      "url": "https://cp.cloudflare.com",
+      "interval": "1m",
+      "tolerance": 50
+    },
+    {
+      "type": "shadowsocks",
+      "tag": "Shadowsocks-ShadowTLS-out",
+      "detour": "Shadowsocks-ShadowTLS",
+      "method": "2022-blake3-aes-128-gcm",
+      "password": "F7cx1ASHX/eqQwed+pISzw==:CB8sXcYLzf1P5dUizIzYVg==",
+      "udp_over_tcp": true,
+      "multiplex": {
+        "enabled": false,
+        "max_connections": 4,
+        "min_streams": 4,
+        "max_streams": 0
+      }
+    },
+    {
+      "type": "shadowtls",
+      "tag": "Shadowsocks-ShadowTLS",
+      "server": "***.***.***.***",
+      "server_port": *****,
+      "version": 3,
+      "password": "************",
+      "tls": {
+        "enabled": true,
+        "server_name": "something.example.org",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      }
+    },
+    {
+      "type": "trojan",
+      "tag": "Trojan-GRPC-out",
+      "server": "***.***.***.***",
+      "server_port": *****,
+      "password": "************",
+      "transport": {
+        "type": "grpc",
+        "service_name": "************"
+      },
+      "tls": {
+        "enabled": true,
+        "disable_sni": false,
+        "server_name": "yours.example.org",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      }
+    },
+    {
+      "type": "trojan",
+      "tag": "WebSocket-out",
+      "server": "***.***.***.***",
+      "server_port": *****,
+      "password": "************",
+      "transport": {
+        "type": "ws",
+        "path": "/************",
+        "early_data_header_name": "Sec-WebSocket-Protocol"
+      },
+      "tls": {
+        "enabled": true,
+        "disable_sni": false,
+        "server_name": "yours.example.org",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "chrome"
+        }
+      },
+      "multiplex": {
+        "enabled": true,
+        "max_connections": 4,
+        "min_streams": 4,
+        "max_streams": 0
+      }
+    },
+    {
+      "type": "hysteria",
+      "tag": "Hysteria-out",
+      "server": "***.***.***.***",
+      "server_port": *****,
+      "up_mbps": 100,
+      "down_mbps": ,
+      "obfs": "************",
+      "auth_str": "************",
+      "tls": {
+        "enabled": true,
+        "disable_sni": false,
+        "server_name": "yours.example.org",
+        "alpn": [
+          "h3"
+        ]
+      }
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    },
+    {
+      "type": "dns",
+      "tag": "dns-out"
+    }
+  ],
+  "route": {
+    "geoip": {
+      "path": "/tmp/geoip.db",
+      "download_url": "https://github.com/1715173329/sing-geoip/releases/latest/download/geoip.db",
+      "download_detour": ""
+    },
+    "geosite": {
+      "path": "/tmp/geosite.db",
+      "download_url": "https://github.com/1715173329/sing-geosite/releases/latest/download/geosite.db",
+      "download_detour": ""
+    },
+    "rules": [
+      {
+        "protocol": "dns",
+        "outbound": "dns-out"
+      },
+      {
+        "protocol": "quic",
+        "outbound": "block"
+      },
+      {
+        "geosite": "category-ads-all",
+        "outbound": "block"
+      },
+      {
+        "geoip": [
+          "telegram"
+        ],
+        "outbound": "Trojan-GRPC-out"
+      },
+      {
+        "inbound": [
+          "SOCKS-in"
+        ],
+        "outbound": "Proxy-out"
+      },
+      {
+        "geosite": "cn",
+        "geoip": [
+          "cn",
+          "private"
+        ],
+        "outbound": "direct"
+      }
+    ],
+    "auto_detect_interface": true
+  }
+}

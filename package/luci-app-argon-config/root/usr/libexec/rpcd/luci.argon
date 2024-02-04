@@ -1,0 +1,65 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+readonly bg_path="/www/luci-static/argon/background"
+readonly tmp_path="/tmp/argon_background.tmp"
+
+case "$1" in
+"list")
+	json_init
+	json_add_object "avail"
+	json_close_object
+	json_add_object "remove"
+		json_add_string "filename" "filename"
+	json_close_object
+	json_add_object "rename"
+		json_add_string "newname" "filename"
+	json_close_object
+	json_dump
+	json_cleanup
+	;;
+"call")
+	case "$2" in
+	"avail")
+		json_init
+		json_add_int "avail" "$(df | grep -E '/$' | awk '{print $4}')"
+		json_dump
+		json_cleanup
+		;;
+	"remove")
+		read -r input
+		json_load "$input"
+		json_get_var filename "filename"
+		json_cleanup
+
+		if dirname "$filename" | grep -q ".."; then
+			echo '{ "result": 255 }'
+			exit 255
+		fi
+
+		rm -f "$bg_path/$filename"
+		echo '{ "result": 0 }'
+		;;
+	"rename")
+		read -r input
+		json_load "$input"
+		json_get_var newname "newname"
+		json_cleanup
+
+		if dirname "$newname" | grep -q ".."; then
+			echo '{ "result": 255 }'
+			exit 255
+		fi
+
+		if mv "$tmp_path" "$bg_path/$newname" 2>"/dev/null"; then
+			chmod 0644 "$bg_path/$newname"
+			echo '{ "result": 0 }'
+		else
+			echo '{ "result": 1 }'
+		fi
+		;;
+	esac
+	;;
+esac

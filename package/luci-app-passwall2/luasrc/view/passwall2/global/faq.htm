@@ -1,0 +1,74 @@
+<%
+local api = require "luci.passwall2.api"
+-%>
+<style>
+    .dns-con {
+      padding: 1rem;
+    }
+    .faq-title {
+      color: var(--primary);
+      font-weight: bolder;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+    }
+    .reset-title {
+     color: var(--primary)；
+     font-weight: bolder;
+     margin-bottom: 0.3rem;
+     display: inline-block;
+     margin-top: 1.2rem;
+     text-decoration: underline;
+    }
+    .dns-item {
+     margin-bottom: 0.8rem;
+     line-height:1.2rem;
+    }
+    .dns-list {
+		text-indent:1rem;
+		line-height: 1.2rem;
+}
+</style>
+<div class="cbi-section cbi-tblsection dns-con">
+	<div id="faq_dns">
+		<ul>
+            <b class="faq-title"><%:DNS related issues:%></b>
+			<li class="dns-item">1. <span><%:Certain browsers such as Chrome have built-in DNS service, which may affect DNS resolution settings. You can go to 'Settings -> Privacy and security -> Use secure DNS' menu to turn it off.%></span></li>
+			<li class="dns-item">2. <span><%:If you are unable to access the internet after reboot, please try clearing the cache of your terminal devices (make sure to close all open browser application windows first, this step is especially important):%></span>
+			    <ul><li class="dns-list"> ◦ <span><%:For Windows systems, open Command Prompt and run the command 'ipconfig /flushdns'.%></span></li>
+			        <li class="dns-list"> ◦ <span><%:For Mac systems, open Terminal and run the command 'sudo killall -HUP mDNSResponder'.%></span></li>
+			        <li class="dns-list"> ◦ <span><%:For mobile devices, you can clear it by reconnecting to the network, such as toggling Airplane Mode and reconnecting to WiFi.%></span></li>
+			    </ul>
+			</li>
+			<li class="dns-item">3. <span><%:Please make sure your device's network settings point both the DNS server and default gateway to this router, to ensure DNS queries are properly routed.%></span></li>
+		</ul>
+	</div>
+	<div id="faq_reset"></div>
+</div>
+
+<script>
+	var origin = window.location.origin;
+	var reset_url = origin + "<%=api.url("reset_config")%>";
+	var hide_url = origin + "<%=api.url("hide")%>";
+	var show_url = origin + "<%=api.url("show")%>";
+	
+	function reset(url) {
+		if (confirm('<%:Are you sure to reset?%>') == true) {
+			window.location.href = reset_url;
+		}
+	}
+	
+	function hide(url) {
+		if (confirm('<%:Are you sure to hide?%>') == true) {
+			window.location.href = hide_url;
+		}
+	}
+	
+	var dom = document.getElementById("faq_reset");
+    if (dom) {
+		var li = "";
+		li += "<a href='#' class='reset-title' onclick='reset()'>" + "<%: Restore to default configuration:%>"+ "</a>" + "<br />" + " <%: Browser access: %>" + "<a href='#' onclick='reset()'>" + reset_url + "</a>" + "<br />";
+		li += "<a href='#' class='reset-title' onclick='hide()'>" + "<%: Hide in main menu:%>"+ "</a>" + "<br />" + "<%: Browser access: %>" + "<a href='#' onclick='hide()'>" + hide_url + "</a>" + "<br />";
+		li += "<a href='#' class='reset-title'>" + "<%: Show in main menu:%>"+ "</a>" + "<br />" +"<%: Browser access: %>" + "<a href='#'>" + show_url + "</a>" + "<br />";
+		dom.innerHTML = li;
+	}
+</script>
