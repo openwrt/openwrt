@@ -497,7 +497,7 @@ define Device/belkin_rt1800
   DEVICE_MODEL := RT1800
   DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	append-squashfs4-fakeroot
   IMAGES += factory.bin
@@ -673,7 +673,7 @@ define Device/dlink_covr-x1860-a1
   DEVICE_PACKAGES := kmod-mt7915-firmware
   UBINIZE_OPTS := -E 5
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	append-squashfs4-fakeroot
   IMAGES += factory.bin recovery.bin
@@ -712,7 +712,7 @@ define Device/dlink_dap-x1860-a1
   DEVICE_VARIANT := A1
   KERNEL_SIZE := 8192k
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
@@ -1166,7 +1166,7 @@ define Device/h3c_tx180x
   KERNEL_SIZE := 8192k
   IMAGE_SIZE := 120832k
   KERNEL_LOADADDR := 0x82000000
-  KERNEL_INITRAMFS := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL_INITRAMFS := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL := $$(KERNEL_INITRAMFS) | h3c-blank-header
   DEVICE_VENDOR := H3C
@@ -1195,7 +1195,7 @@ define Device/haier-sim_wr1800k
   $(Device/nand)
   IMAGE_SIZE := 125440k
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   ARTIFACTS := initramfs-factory.bin
@@ -1321,7 +1321,7 @@ define Device/iodata_wn-deax1800gr
   IMAGE_SIZE := 47104k
   UBINIZE_OPTS := -E 5
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   ARTIFACTS := initramfs-factory.bin
@@ -1453,7 +1453,7 @@ define Device/iptime_ax2004m
   $(Device/nand)
   IMAGE_SIZE := 121344k
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGES += recovery.bin
   IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
@@ -1798,7 +1798,7 @@ define Device/netgear_eax12
   NETGEAR_ENC_MODEL_LIST := EAX12;EAX11v2;EAX15v2
   IMAGE_SIZE := 57344k
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	append-squashfs4-fakeroot
   IMAGES += factory.img
@@ -1985,7 +1985,7 @@ define Device/netgear_wax202
   NETGEAR_ENC_REGION := US
   IMAGE_SIZE := 38912k
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
 	append-squashfs4-fakeroot
   IMAGES += factory.img
@@ -2395,7 +2395,8 @@ define Device/tplink_er605-v2
   DEVICE_PACKAGES := -wpad-basic-mbedtls kmod-usb3 -uboot-envtools
   KERNEL_IN_UBI := 1
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGES += sysupgrade.tar
   IMAGE_SIZE := 127744k
 endef
@@ -2409,7 +2410,7 @@ define Device/tplink_ex220-v1
   DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
   TPLINK_BOARD_ID := EX220-V1
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE_SIZE := 15744k
 endef
@@ -2642,7 +2643,7 @@ define Device/wavlink_ws-wn572hp3-4g
   DEVICE_VARIANT := 4G
   IMAGE_SIZE := 15040k
   KERNEL_LOADADDR := 0x82000000
-  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size | append-metadata
