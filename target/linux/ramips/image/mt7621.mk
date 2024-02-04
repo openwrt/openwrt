@@ -1455,8 +1455,8 @@ define Device/iptime_ax2004m
   KERNEL_LOADADDR := 0x82000000
   KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  IMAGES += recovery.bin
-  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
 	check-size | iptime-crc32 ax2004m
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := AX2004M
@@ -1464,7 +1464,7 @@ define Device/iptime_ax2004m
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := NMBM has been newly enabled, and its flash block \
 	mapping might be incompatible with existing installation. \
-	New installation via recovery mode is recommended.
+	New installation with factory image via recovery mode is recommended.
 endef
 TARGET_DEVICES += iptime_ax2004m
 

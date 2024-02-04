@@ -33,6 +33,11 @@ platform_do_upgrade() {
 			fw_setenv --lock / bootImage 0 || exit 1
 		fi
 		;;
+	iptime,ax2004m)
+		if [ "$(fw_printenv -n boot_from 2>/dev/null)" != "firmware1" ]; then
+			fw_setenv boot_from firmware1 || exit 1
+		fi
+		;;
 	mikrotik,ltap-2hnd|\
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-760igs|\
