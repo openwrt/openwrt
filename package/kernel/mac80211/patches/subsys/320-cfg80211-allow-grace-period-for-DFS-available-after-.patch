@@ -113,7 +113,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
 --- a/net/wireless/core.h
 +++ b/net/wireless/core.h
-@@ -474,6 +474,8 @@ void cfg80211_set_dfs_state(struct wiphy
+@@ -481,6 +481,8 @@ void cfg80211_set_dfs_state(struct wiphy
  			    enum nl80211_dfs_state dfs_state);
  
  void cfg80211_dfs_channels_update_work(struct work_struct *work);
@@ -124,7 +124,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/wireless/mlme.c
 +++ b/net/wireless/mlme.c
-@@ -915,6 +915,8 @@ void cfg80211_dfs_channels_update_work(s
+@@ -930,6 +930,8 @@ void cfg80211_dfs_channels_update_work(s
  			if (c->dfs_state == NL80211_DFS_UNAVAILABLE) {
  				time_dfs_update = IEEE80211_DFS_MIN_NOP_TIME_MS;
  				radar_event = NL80211_RADAR_NOP_FINISHED;
@@ -133,7 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			} else {
  				if (regulatory_pre_cac_allowed(wiphy) ||
  				    cfg80211_any_wiphy_oper_chan(wiphy, c))
-@@ -922,11 +924,10 @@ void cfg80211_dfs_channels_update_work(s
+@@ -937,11 +939,10 @@ void cfg80211_dfs_channels_update_work(s
  
  				time_dfs_update = REG_PRE_CAC_EXPIRY_GRACE_MS;
  				radar_event = NL80211_RADAR_PRE_CAC_EXPIRED;
