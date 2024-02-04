@@ -10,14 +10,15 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=6.5
-PKG_RELEASE:=2
+PKG_VERSION:=6.5.13
+PKG_RELEASE:=1
 # PKG_SOURCE_URL:=@KERNEL/linux/kernel/projects/backports/stable/v5.15.58/
-PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
-PKG_HASH:=908c22dceba185eab83caa5a1e58ce6b3ebdc58f099c3fd3e11c7352ebfab2d7
+PKG_SOURCE_URL:=https://github.com/robimarko/wireless-backport-releases.git
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_DATE:=2024-02-19
+PKG_SOURCE_VERSION:=ca9c0bbb06e3725647fb4f6d99e609dfa663896d
+PKG_MIRROR_HASH:=56ceb21df044d01c687acfc897f7a6439c933eff724a59c63e61379902072490
 
-PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/backports-$(PKG_VERSION)
 PKG_BUILD_PARALLEL:=1
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>

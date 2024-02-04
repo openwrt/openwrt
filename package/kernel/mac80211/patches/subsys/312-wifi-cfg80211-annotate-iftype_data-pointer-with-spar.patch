@@ -70,7 +70,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		iwl_nvm_fixup_sband_iftd(trans, data, sband, &iftype_data[i],
 --- a/drivers/net/wireless/mediatek/mt76/mt7915/init.c
 +++ b/drivers/net/wireless/mediatek/mt76/mt7915/init.c
-@@ -1119,8 +1119,7 @@ void mt7915_set_stream_he_caps(struct mt
+@@ -1124,8 +1124,7 @@ void mt7915_set_stream_he_caps(struct mt
  		n = mt7915_init_he_caps(phy, NL80211_BAND_2GHZ, data);
  
  		band = &phy->mt76->sband_2g.sband;
@@ -80,7 +80,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	if (phy->mt76->cap.has_5ghz) {
-@@ -1128,8 +1127,7 @@ void mt7915_set_stream_he_caps(struct mt
+@@ -1133,8 +1132,7 @@ void mt7915_set_stream_he_caps(struct mt
  		n = mt7915_init_he_caps(phy, NL80211_BAND_5GHZ, data);
  
  		band = &phy->mt76->sband_5g.sband;
@@ -90,7 +90,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	if (phy->mt76->cap.has_6ghz) {
-@@ -1137,8 +1135,7 @@ void mt7915_set_stream_he_caps(struct mt
+@@ -1142,8 +1140,7 @@ void mt7915_set_stream_he_caps(struct mt
  		n = mt7915_init_he_caps(phy, NL80211_BAND_6GHZ, data);
  
  		band = &phy->mt76->sband_6g.sband;
@@ -133,7 +133,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
 --- a/drivers/net/wireless/mediatek/mt76/mt7996/init.c
 +++ b/drivers/net/wireless/mediatek/mt76/mt7996/init.c
-@@ -823,8 +823,7 @@ __mt7996_set_stream_he_eht_caps(struct m
+@@ -824,8 +824,7 @@ __mt7996_set_stream_he_eht_caps(struct m
  		n++;
  	}
  
@@ -230,7 +230,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/drivers/net/wireless/virtual/mac80211_hwsim.c
 +++ b/drivers/net/wireless/virtual/mac80211_hwsim.c
-@@ -4900,25 +4900,19 @@ static const struct ieee80211_sband_ifty
+@@ -4899,25 +4899,19 @@ static const struct ieee80211_sband_ifty
  
  static void mac80211_hwsim_sband_capab(struct ieee80211_supported_band *sband)
  {
@@ -362,7 +362,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -1055,6 +1055,7 @@ int ieee80211_register_hw(struct ieee802
+@@ -1052,6 +1052,7 @@ int ieee80211_register_hw(struct ieee802
  	supp_he = false;
  	supp_eht = false;
  	for (band = 0; band < NUM_NL80211_BANDS; band++) {
@@ -370,7 +370,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		struct ieee80211_supported_band *sband;
  
  		sband = local->hw.wiphy->bands[band];
-@@ -1101,11 +1102,7 @@ int ieee80211_register_hw(struct ieee802
+@@ -1098,11 +1099,7 @@ int ieee80211_register_hw(struct ieee802
  		supp_ht = supp_ht || sband->ht_cap.ht_supported;
  		supp_vht = supp_vht || sband->vht_cap.vht_supported;
  
@@ -441,7 +441,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			if (WARN_ON(types & iftd->types_mask))
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -1906,20 +1906,20 @@ static int nl80211_send_band_rateinfo(st
+@@ -1907,20 +1907,20 @@ static int nl80211_send_band_rateinfo(st
  		struct nlattr *nl_iftype_data =
  			nla_nest_start_noflag(msg,
  					      NL80211_BAND_ATTR_IFTYPE_DATA);
