@@ -11,7 +11,7 @@ define Device/zyxel_xgs1250-12
 	kernel-bin | \
 	append-dtb | \
 	gzip | \
-	zyxel-vers $$$$(ZYXEL_VERS) | \
+	zyxel-vers | \
 	uImage gzip
 endef
 TARGET_DEVICES += zyxel_xgs1250-12
