@@ -1,0 +1,53 @@
+background=YES
+max_clients=|MAX_CLIENTS|
+listen=YES
+# Low version's vsftpd not support ipv6
+# listen_ipv6=|LISTEN_IPV6|
+pasv_enable=|PASV_ENABLE|
+max_per_ip=|MAX_PER_IP|
+
+########## connection config ##########
+connect_from_port_20=|CONNECT_FROM_PORT_20|
+async_abor_enable=|ASYNC_ABOR_ENABLE|
+ls_recurse_enable=|LS_RECURSE_ENABLE|
+ascii_download_enable=|ASCII_DOWNLOAD_ENABLE|
+ascii_upload_enable=|ASCII_UPLOAD_ENABLE|
+idle_session_timeout=|IDLE_SESSION_TIMEOUT|
+data_connection_timeout=|DATA_CONNECTION_TIMEOUT|
+
+########## anonymous config ##########
+anonymous_enable=|ANONYMOUS_ENABLE|
+anon_upload_enable=|ANON_UPLOAD_ENABLE|
+anon_mkdir_write_enable=|ANON_MKDIR_WRITE_ENABLE|
+anon_root=|ANON_ROOT|
+
+########## config for local user ##########
+local_enable=|LOACL_ENABLE|
+write_enable=|WRITE_ENABLE|
+local_umask=|LOCAL_UMASK|
+
+chown_uploads=|CHOWN_UPLOADS|
+chroot_local_user=|CHROOT_LOCAL_USER|
+
+check_shell=NO
+dirmessage_enable=|DIRMESSAGE_ENABLE|
+ftpd_banner=|FTPD_BANNER|
+session_support=NO
+userlist_enable=|USERLIST_ENABLE|
+userlist_deny=|USERLIST_DENY|
+userlist_file=/var/etc/vsftpd/users.txt
+
+##########       misc config       ##########
+#syslog_enable=YES
+xferlog_enable=|XFERLOG_ENABLE|
+xferlog_file=|LOG_PATH|
+setproctitle_enable=|PROCTITLE_ENABLE|
+
+########## config for virtual user ##########
+guest_enable=|GUEST_ENABLE|
+pam_service_name=vsftpd
+guest_username=|GUEST_USERNAME|
+virtual_use_local_privs=YES
+user_config_dir=/var/etc/vsftpd/vconfig
+
+########## addition config ##########
