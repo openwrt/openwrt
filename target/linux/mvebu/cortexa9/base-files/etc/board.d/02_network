@@ -20,6 +20,7 @@ mvebu_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 lan4" "eth2"
 		;;
 	fortinet,fg-30e|\
+	fortinet,fwf-30e|\
 	linksys,wrt1200ac|\
 	linksys,wrt1900ac-v1|\
 	linksys,wrt1900ac-v2|\
@@ -28,7 +29,11 @@ mvebu_setup_interfaces()
 	linksys,wrt32x)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
-	fortinet,fg-50e)
+	fortinet,fg-50e|\
+	fortinet,fg-51e|\
+	fortinet,fg-52e|\
+	fortinet,fwf-50e-2r|\
+	fortinet,fwf-51e)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "eth1 eth2"
 		;;
 	iij,sa-w2)

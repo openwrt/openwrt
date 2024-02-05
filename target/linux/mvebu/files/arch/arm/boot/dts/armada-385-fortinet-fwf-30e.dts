@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "armada-385-fortinet-fg-3xe.dtsi"
+
+/ {
+	model = "Fortinet FortiWiFi 30E";
+	compatible = "fortinet,fwf-30e", "marvell,armada385", "marvell,armada380";
+};
+
+&gpio_leds {
+	/* unknown gpio
+	led-16 {
+		label = "green:wifi";
+		gpios = <>;
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_WLAN;
+		linux,default-trigger = "phy0tpt";
+	};*/
+};
+
+&pciec {
+	status = "okay";
+};
+
+&pcie2 {
+	status = "okay";
+};
