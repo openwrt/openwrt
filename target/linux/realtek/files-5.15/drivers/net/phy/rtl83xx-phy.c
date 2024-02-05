@@ -2724,22 +2724,21 @@ int rtl9300_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
 	errors2 = rtl9300_sds_sym_err_get(sds_num, phy_mode);
 
 	switch (phy_mode) {
-		case PHY_INTERFACE_MODE_XGMII:
-
-			if ((errors2 - errors1 > 100) ||
-			    (errors1 >= 0xffff00) || (errors2 >= 0xffff00)) {
-				pr_info("%s XSGMII error rate too high\n", __func__);
-				return 1;
-			}
-			break;
-		case PHY_INTERFACE_MODE_10GBASER:
-			if (errors2 > 0) {
-				pr_info("%s 10GBASER error rate too high\n", __func__);
-				return 1;
-			}
-			break;
-		default:
+	case PHY_INTERFACE_MODE_XGMII:
+		if ((errors2 - errors1 > 100) ||
+		    (errors1 >= 0xffff00) || (errors2 >= 0xffff00)) {
+			pr_info("%s XSGMII error rate too high\n", __func__);
 			return 1;
+		}
+		break;
+	case PHY_INTERFACE_MODE_10GBASER:
+		if (errors2 > 0) {
+			pr_info("%s 10GBASER error rate too high\n", __func__);
+			return 1;
+		}
+		break;
+	default:
+		return 1;
 	}
 
 	return 0;
