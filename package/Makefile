@@ -95,13 +95,13 @@ else
 	  $(call opkg_package_files,\
 	    $(foreach pkg,$(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null),$(pkg)$(call GetABISuffix,$(pkg)))))
 	$(call opkg,$(TARGET_DIR)) install $$(cat $(TMP_DIR)/opkg_install_list)
-endif
 	@for file in $(PACKAGE_INSTALL_FILES); do \
 		[ -s $$file.flags ] || continue; \
 		for flag in `cat $$file.flags`; do \
 			$(call opkg,$(TARGET_DIR)) flag $$flag `cat $$file`; \
 		done; \
 	done || true
+endif
 
 	$(CP) $(TARGET_DIR) $(TARGET_DIR_ORIG)
 
