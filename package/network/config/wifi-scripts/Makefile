@@ -24,7 +24,7 @@ define Package/wifi-scripts
   PKGARCH:=all
 endef
 
-define Package/qos-scripts/description
+define Package/wifi-scripts/description
  A set of scripts that handle setup and configuration of Wi-Fi devices.
 endef
 
