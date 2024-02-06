@@ -6,6 +6,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/thermal/thermal.h>
 
 / {
 	compatible = "zyxel,xgs1250-12", "realtek,rtl838x-soc";
@@ -69,6 +70,107 @@
 		led_set1 = <0x0a0b 0x0a28 0x0a82 0x0a0b>; // LED set 1: (10G, 5G, 2.5G) (2.5G, 1G)
 							  // (5G, 10/100) (10G, 5G, 2.5G)
 		led_set2 = <0x0a20 0x0a01>; // LED set 2: 1000MBit, 10GBit
+	};
+
+	thermal-zones {
+		phy24-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy24>;
+
+			trips {
+				phy24_trip0: phy24-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy24_trip1: phy24-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy24_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		phy25-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy25>;
+
+			trips {
+				phy25_trip0: phy25-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy25_trip1: phy25-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy25_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		phy26-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy26>;
+
+			trips {
+				phy26_trip0: phy26-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy26_trip1: phy26-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy26_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+	};
+
+	/* YEN SUN TECHNOLOGY FD122510LL-N fan */
+	chassis_fan: gpio-fan {
+		compatible = "gpio-fan";
+		gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		gpio-fan,speed-map = <0    0
+				      7000 1>;
+		#cooling-cells = <2>;
 	};
 };
 
@@ -180,6 +282,7 @@
 			sds = < 6 >;
 			// Disabled because we do not know how to bring up again
 			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			#thermal-sensor-cells = <0>;
 		};
 
 		phy25: ethernet-phy@25 {
@@ -189,6 +292,7 @@
 			sds = < 7 >;
 			// Disabled because we do not know how to bring up again
 			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			#thermal-sensor-cells = <0>;
 		};
 
 		phy26: ethernet-phy@26 {
@@ -198,6 +302,7 @@
 			sds = < 8 >;
 			// Disabled because we do not know how to bring up again
 			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			#thermal-sensor-cells = <0>;
 		};
 
 		/* SFP Ports */
