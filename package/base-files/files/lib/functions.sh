@@ -186,7 +186,11 @@ config_list_foreach() {
 }
 
 default_prerm() {
-	update_alternatives remove
+	local root="${IPKG_INSTROOT}"
+	local pkgname="$(basename ${1%.*})"
+	local ret=0
+
+	update_alternatives remove "$pkgname"
 
 	local shell="$(command -v bash)"
 	for i in $(grep -s "^/etc/init.d/" "$root/lib/apk/packages/${pkgname}.list"); do
@@ -258,6 +262,7 @@ add_group_and_user() {
 
 update_alternatives() {
 	local action="$1"
+	local pkgname="$2"
 
 	if [ -f "$root/lib/apk/packages/${pkgname}.alternatives" ]; then
 		for pkg_alt in $(cat $root/lib/apk/packages/${pkgname}.alternatives); do
@@ -314,7 +319,7 @@ default_postinst() {
 		add_group_and_user "${pkgname}"
 	else
 		filelist="${root}/lib/apk/packages/${pkgname}.list"
-		update_alternatives install
+		update_alternatives install "${pkgname}"
 	fi
 
 	if [ -d "$root/rootfs-overlay" ]; then

@@ -88,8 +88,7 @@ $(curdir)/install: $(TMP_DIR)/.build $(curdir)/merge $(curdir)/merge-index
 ifneq ($(CONFIG_USE_APK),)
 	$(file >$(TMP_DIR)/apk_install_list,\
 	    $(foreach pkg,$(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null),$(pkg)$(call GetABISuffix,$(pkg))))
-
-	$(call apk,$(TARGET_DIR)) add --initdb --arch $(ARCH_PACKAGES) $$(cat $(TMP_DIR)/apk_install_list)
+	$(call apk,$(TARGET_DIR)) add --no-scripts --initdb --arch $(ARCH_PACKAGES) $$(cat $(TMP_DIR)/apk_install_list)
 else
 	$(file >$(TMP_DIR)/opkg_install_list,\
 	  $(call opkg_package_files,\
