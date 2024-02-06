@@ -8,8 +8,6 @@ Signed-off-by: Paul Spooren <mail@aparcar.org>
  src/version.c | 70 +++++++++++++++++++++++++++++++++++++++++++++++++--
  1 file changed, 68 insertions(+), 2 deletions(-)
 
-diff --git a/src/version.c b/src/version.c
-index f93e4c5..9e0a84c 100644
 --- a/src/version.c
 +++ b/src/version.c
 @@ -12,6 +12,70 @@
@@ -83,7 +81,7 @@ index f93e4c5..9e0a84c 100644
  /* Gentoo version: {digit}{.digit}...{letter}{_suf{#}}...{-r#} */
  
  enum PARTS {
-@@ -192,6 +256,7 @@ int apk_version_result_mask(const char *op)
+@@ -192,6 +256,7 @@ int apk_version_result_mask(const char *
  
  int apk_version_validate(apk_blob_t ver)
  {
@@ -91,7 +89,7 @@ index f93e4c5..9e0a84c 100644
  	int t = TOKEN_DIGIT;
  
  	while (t != TOKEN_END && t != TOKEN_INVALID)
-@@ -251,10 +316,11 @@ int apk_version_compare_blob_fuzzy(apk_blob_t a, apk_blob_t b, int fuzzy)
+@@ -251,10 +316,11 @@ int apk_version_compare_blob_fuzzy(apk_b
  
  int apk_version_compare_blob(apk_blob_t a, apk_blob_t b)
  {
@@ -105,6 +103,3 @@ index f93e4c5..9e0a84c 100644
 -	return apk_version_compare_blob(APK_BLOB_STR(str1), APK_BLOB_STR(str2));
 +	return verrevcmp(APK_BLOB_STR(str1), APK_BLOB_STR(str2));
  }
--- 
-2.35.1
-
