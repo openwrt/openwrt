@@ -50,7 +50,6 @@ apk = \
 	--keys-dir $(TOPDIR) \
 	--no-cache \
 	--no-logfile \
-	--no-scripts \
 	--preserve-env \
 	--repository file://$(PACKAGE_DIR_ALL)/packages.adb
 
@@ -92,6 +91,12 @@ define prepare_rootfs
 				exit 1; \
 			fi; \
 		done; \
+		$(if $(IB),,awk -i inplace \
+			'/^Status:/ { \
+				if ($$3 == "user") { $$3 = "ok" } \
+				else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
+			}1' $(1)/usr/lib/opkg/status)
+		$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
 		fi; \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
