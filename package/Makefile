@@ -53,10 +53,24 @@ $(curdir)/cleanup: $(TMP_DIR)/.build
 $(curdir)/merge:
 	rm -rf $(PACKAGE_DIR_ALL)
 	mkdir -p $(PACKAGE_DIR_ALL)
+ifneq ($(CONFIG_USE_APK),)
+	-$(foreach pdir,$(PACKAGE_SUBDIRS),$(if $(wildcard $(pdir)/*.apk),ln -s $(pdir)/*.apk $(PACKAGE_DIR_ALL);))
+else
 	-$(foreach pdir,$(PACKAGE_SUBDIRS),$(if $(wildcard $(pdir)/*.ipk),ln -s $(pdir)/*.ipk $(PACKAGE_DIR_ALL);))
+endif
 
 $(curdir)/merge-index: $(curdir)/merge
+ifneq ($(CONFIG_USE_APK),)
+	(cd $(PACKAGE_DIR_ALL) && $(STAGING_DIR_HOST)/bin/apk mkndx \
+			--root $(TOPDIR) \
+			--keys-dir $(TOPDIR) \
+			--sign $(BUILD_KEY_APK_SEC) \
+			--output packages.adb \
+			*.apk; \
+	)
+else
 	(cd $(PACKAGE_DIR_ALL) && $(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages; )
+endif
 
 ifndef SDK
   $(curdir)//compile = $(STAGING_DIR)/.prepared $(BIN_DIR)
@@ -67,14 +81,21 @@ else
 endif
 endif
 
-$(curdir)/install: $(TMP_DIR)/.build $(curdir)/merge $(if $(CONFIG_TARGET_PER_DEVICE_ROOTFS),$(curdir)/merge-index)
+$(curdir)/install: $(TMP_DIR)/.build $(curdir)/merge $(curdir)/merge-index
 	- find $(STAGING_DIR_ROOT) -type d | $(XARGS) chmod 0755
 	rm -rf $(TARGET_DIR) $(TARGET_DIR_ORIG)
 	mkdir -p $(TARGET_DIR)/tmp
+ifneq ($(CONFIG_USE_APK),)
+	$(file >$(TMP_DIR)/apk_install_list,\
+	    $(foreach pkg,$(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null),$(pkg)$(call GetABISuffix,$(pkg))))
+
+	$(call apk,$(TARGET_DIR)) add --initdb --arch $(ARCH_PACKAGES) $$(cat $(TMP_DIR)/apk_install_list)
+else
 	$(file >$(TMP_DIR)/opkg_install_list,\
 	  $(call opkg_package_files,\
 	    $(foreach pkg,$(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null),$(pkg)$(call GetABISuffix,$(pkg)))))
 	$(call opkg,$(TARGET_DIR)) install $$(cat $(TMP_DIR)/opkg_install_list)
+endif
 	@for file in $(PACKAGE_INSTALL_FILES); do \
 		[ -s $$file.flags ] || continue; \
 		for flag in `cat $$file.flags`; do \
@@ -88,6 +109,18 @@ $(curdir)/install: $(TMP_DIR)/.build $(curdir)/merge $(if $(CONFIG_TARGET_PER_DE
 
 $(curdir)/index: FORCE
 	@echo Generating package index...
+ifneq ($(CONFIG_USE_APK),)
+	-for d in $(PACKAGE_SUBDIRS); do ( \
+		mkdir -p $$d; \
+		cd $$d || continue; \
+		$(STAGING_DIR_HOST)/bin/apk mkndx \
+			--root $(TOPDIR) \
+			--keys-dir $(TOPDIR) \
+			--sign $(BUILD_KEY_APK_SEC) \
+			--output packages.adb \
+			*.apk; \
+	); done
+else
 	@for d in $(PACKAGE_SUBDIRS); do ( \
 		mkdir -p $$d; \
 		cd $$d || continue; \
@@ -109,6 +142,7 @@ $(curdir)/index: FORCE
 			--output packages.adb \
 			*.apk; \
 	); done
+endif
 ifdef CONFIG_SIGNED_PACKAGES
 	@echo Signing package index...
 	@for d in $(PACKAGE_SUBDIRS); do ( \
