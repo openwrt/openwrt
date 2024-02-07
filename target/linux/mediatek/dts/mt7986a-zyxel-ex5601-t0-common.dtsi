@@ -7,6 +7,7 @@
 #include "mt7986a.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -140,7 +141,8 @@
 		};
 
 		led_green_lan {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 20 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
 		};

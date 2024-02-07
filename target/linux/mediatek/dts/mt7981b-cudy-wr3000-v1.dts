@@ -2,6 +2,8 @@
 
 /dts-v1/;
 
+#include <dt-bindings/leds/common.h>
+
 #include "mt7981.dtsi"
 
 / {
@@ -42,7 +44,8 @@
 		compatible = "gpio-leds";
 
 		led_status: led@0 {
-			label = "blue:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 		};
 
@@ -52,12 +55,14 @@
 		};
 
 		led@2 {
-			label = "blue:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		led@3 {
-			label = "blue:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 
