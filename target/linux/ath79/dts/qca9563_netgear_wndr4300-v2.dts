@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qca9563_netgear_wndr.dtsi"
 
 / {
@@ -9,7 +11,8 @@
 
 &leds {
 	usb_green {
-		label = "green:usb";
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		trigger-sources = <&hub_port0>;
 		linux,default-trigger = "usbport";

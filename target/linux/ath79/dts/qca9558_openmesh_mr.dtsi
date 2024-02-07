@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	chosen {
@@ -33,7 +34,8 @@
 		compatible = "gpio-leds";
 
 		lan_blue {
-			label = "blue:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
@@ -43,17 +45,20 @@
 		};
 
 		status_green {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 		};
 
 		status_red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_blue: power_blue {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};

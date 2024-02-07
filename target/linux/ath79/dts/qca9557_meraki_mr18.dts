@@ -22,12 +22,14 @@
 		compatible = "gpio-leds";
 
 		white: white {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 		};
 
 		orange: orange {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};

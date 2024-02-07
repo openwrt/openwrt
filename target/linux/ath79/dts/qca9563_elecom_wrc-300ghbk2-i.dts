@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qca9563_elecom_wrc-ghbk2-i.dtsi"
 
 / {
@@ -9,7 +11,8 @@
 
 &leds {
 	led_power: power {
-		label = "white:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_WHITE>;
 		gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		default-state = "on";
 	};

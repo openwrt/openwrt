@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -19,7 +20,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
@@ -46,12 +48,14 @@
 		};
 
 		wps_blue {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
 		};
 
 		wps_red {
-			label = "red:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
 		};
 	};

@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "PowerCloud Systems CR5000";
@@ -41,20 +42,23 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>,
 				<&gpio 4 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		wlan2g {
-			label = "blue:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wps_white {
-			label = "white:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 	};

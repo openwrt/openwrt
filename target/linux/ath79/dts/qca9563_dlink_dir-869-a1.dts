@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qca9563_dlink_dir-8x9-a1.dtsi"
 
 / {
@@ -17,12 +19,14 @@
 		compatible = "gpio-leds";
 
 		led_power_orange: power_orange {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_white: power_white {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 	};
