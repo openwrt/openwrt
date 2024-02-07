@@ -48,20 +48,17 @@
 		compatible = "gpio-leds";
 
 		led_system: system {
-			label = "system";
 			color = "red";
 			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan2g {
-			label = "wlan2g";
 			color = "green";
 			linux,default-trigger = "phy0tpt";
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
 		};
 
 		wlan5g {
-			label = "wlan5g";
 			color = "blue";
 			linux,default-trigger = "phy1tpt";
 			gpios = <&tlmm 9 GPIO_ACTIVE_HIGH>;

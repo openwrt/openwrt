@@ -47,31 +47,26 @@
 		compatible = "gpio-leds";
 
 		led_power_red: power-red {
-			label = "red:power";
 			gpios = <&tlmm 42 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		led_power_blue: power-blue {
-			label = "blue:power";
 			gpios = <&tlmm 43 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 		};
 
 		led_system_red: system-red {
-			label = "red:system";
 			gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		led_system_green: system-green {
-			label = "green:system";
 			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led_system_blue: system-blue {
-			label = "blue:system";
 			gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 		};
