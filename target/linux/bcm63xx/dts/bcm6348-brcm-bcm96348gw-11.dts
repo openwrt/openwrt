@@ -1,6 +1,7 @@
 #include "bcm6348.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Broadcom BCM96348GW-11 reference board";
@@ -36,7 +37,8 @@
 		compatible = "gpio-leds";
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 0 1>;
 			default-state = "on";
 		};

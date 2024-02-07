@@ -3,6 +3,7 @@
 #include "bcm63268.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Comtrend VG-8050";
@@ -60,20 +61,23 @@
 	led@3 {
 		reg = <3>;
 		active-low;
-		label = "red:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_RED>;
 	};
 
 	led_power_green: led@6 {
 		reg = <6>;
 		active-low;
-		label = "green:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
 		default-state = "on";
 	};
 
 	led@7 {
 		reg = <7>;
 		active-low;
-		label = "green:wps";
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 
 	led@8 {
@@ -97,7 +101,8 @@
 	led@14 {
 		reg = <14>;
 		active-low;
-		label = "red:wps";
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_RED>;
 	};
 };
 

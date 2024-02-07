@@ -1,6 +1,7 @@
 #include "bcm6348.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Sagem F@st 2604";
@@ -29,12 +30,14 @@
 		compatible = "gpio-leds";
 
 		power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 0 1>;
 			default-state = "on";
 		};
 		power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 1 1>;
 		};
 		inet_red {
@@ -42,7 +45,8 @@
 			gpios = <&pinctrl 4 1>;
 		};
 		wps_green {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 5 1>;
 		};
 	};

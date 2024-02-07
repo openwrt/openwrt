@@ -1,6 +1,7 @@
 #include "bcm6358.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Broadcom BCM96358VW2 reference board";
@@ -19,7 +20,8 @@
 			gpios = <&pinctrl 4 1>;
 		};
 		power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 5 1>;
 			default-state = "on";
 		};

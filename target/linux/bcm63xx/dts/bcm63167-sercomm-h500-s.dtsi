@@ -8,6 +8,7 @@
 #include "bcm63268.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -62,7 +63,8 @@
 
 	led_power_red: power_red {
 		reg = <8>;
-		label = "red:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_RED>;
 	};
 
 	wifi_green {
@@ -97,7 +99,8 @@
 
 	led_power_green: power_green {
 		reg = <17>;
-		label = "green:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
 		default-state = "on";
 	};
 
