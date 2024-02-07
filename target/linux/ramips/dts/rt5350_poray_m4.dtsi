@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "poray,m4", "ralink,rt5350-soc";
@@ -17,7 +18,8 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "blue:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 	};

@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "sparklan,wcr-150gn", "ralink,rt3050-soc";
@@ -76,7 +77,8 @@
 		};
 
 		led_power: power {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 	};

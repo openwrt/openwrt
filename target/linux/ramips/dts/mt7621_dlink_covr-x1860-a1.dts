@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "dlink,covr-x1860-a1", "mediatek,mt7621-soc";
@@ -40,18 +41,21 @@
 		compatible = "gpio-leds";
 
 		status_white: power {
-			label = "white:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		status_orange: status_orange {
-			label = "orange:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		status_red: status_red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 	};

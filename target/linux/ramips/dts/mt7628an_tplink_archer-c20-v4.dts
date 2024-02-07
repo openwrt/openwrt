@@ -15,22 +15,26 @@
 		compatible = "gpio-leds";
 
 		lan {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_orange {
-			label = "orange:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
@@ -47,7 +51,8 @@
 		};
 
 		wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -106,4 +111,6 @@
 		nvmem-cells = <&eeprom_factory_28000>, <&macaddr_factory_f100 (-1)>;
 		nvmem-cell-names = "eeprom", "mac-address";
 	};
+#include <dt-bindings/leds/common.h>
+
 };

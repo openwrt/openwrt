@@ -17,7 +17,8 @@
 		compatible = "gpio-leds";
 
 		led_indicator: indicator {
-			label = "blue:indicator";
+			function = LED_FUNCTION_INDICATOR;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -106,4 +107,6 @@
 		groups = "ephy", "wled", "pa", "i2c", "wdt", "uartf", "spi refclk";
 		function = "gpio";
 	};
+#include <dt-bindings/leds/common.h>
+
 };

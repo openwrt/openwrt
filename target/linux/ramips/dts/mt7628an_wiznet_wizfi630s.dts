@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "wiznet,wizfi630s", "mediatek,mt7628an-soc";
@@ -31,7 +32,8 @@
 		};
 
 		ledwps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
 

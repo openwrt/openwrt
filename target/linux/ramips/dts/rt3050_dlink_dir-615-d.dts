@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "dlink,dir-615-d", "ralink,rt3050-soc";
@@ -83,28 +84,33 @@
 		compatible = "gpio-leds";
 
 		status_amber {
-			label = "amber:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_green: status_green {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		wan_amber {
-			label = "amber:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_green {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 	};

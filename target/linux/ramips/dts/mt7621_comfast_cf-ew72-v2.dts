@@ -70,7 +70,8 @@
 		};
 
 		wlan_blue {
-			label = "blue:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 	};

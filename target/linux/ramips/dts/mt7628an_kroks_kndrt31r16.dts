@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "mt7628an_kroks.dtsi"
 
 / {
@@ -8,7 +10,8 @@
 
 	leds {
 		status {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
 		};
 
