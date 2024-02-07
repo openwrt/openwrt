@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <dt-bindings/leds/common.h>
+
 #include "bcm6318.dtsi"
 
 / {
@@ -128,19 +130,22 @@
 	led@0 {
 		reg = <0>;
 		active-low;
-		label = "green:wps";
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 
 	led_power_green: led@1 {
 		reg = <1>;
 		active-low;
-		label = "green:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 
 	led@2 {
 		reg = <2>;
 		active-low;
-		label = "green:usb";
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 
 	led@4 {
@@ -192,7 +197,8 @@
 	led_power_red: led@11 {
 		reg = <11>;
 		active-low;
-		label = "red:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_RED>;
 		panic-indicator;
 	};
 };

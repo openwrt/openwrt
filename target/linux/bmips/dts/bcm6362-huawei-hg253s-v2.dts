@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <dt-bindings/leds/common.h>
+
 #include "bcm6362.dtsi"
 
 / {
@@ -47,7 +49,8 @@
 		};
 
 		led@30 {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
 		};
 	};

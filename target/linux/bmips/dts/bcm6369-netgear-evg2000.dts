@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <dt-bindings/leds/common.h>
+
 #include "bcm6368.dtsi"
 
 / {
@@ -56,28 +58,33 @@
 		};
 
 		led@15 {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_green: led@22 {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_red: led@23 {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
 
 		led@24 {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 24 GPIO_ACTIVE_LOW>;
 		};
 
 		led@27 {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
 		};
 	};

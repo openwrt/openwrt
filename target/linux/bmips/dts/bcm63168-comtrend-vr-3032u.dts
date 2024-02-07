@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <dt-bindings/leds/common.h>
+
 #include "bcm63268.dtsi"
 
 / {
@@ -83,13 +85,15 @@
 	led@4 {
 		reg = <4>;
 		active-low;
-		label = "green:usb";
+		function = LED_FUNCTION_USB;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 
 	led@7 {
 		reg = <7>;
 		active-low;
-		label = "green:wps";
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 
 	led@8 {
@@ -143,7 +147,8 @@
 	led_power_green: led@20 {
 		reg = <20>;
 		active-low;
-		label = "green:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 };
 
