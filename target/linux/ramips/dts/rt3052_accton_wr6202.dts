@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "accton,wr6202", "ralink,rt3052-soc";
@@ -15,7 +16,8 @@
 		compatible = "gpio-leds";
 
 		wps {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 		};
 

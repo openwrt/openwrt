@@ -15,7 +15,8 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -23,4 +24,6 @@
 
 &firmware {
 	reg = <0x50000 0x7b0000>;
+#include <dt-bindings/leds/common.h>
+
 };

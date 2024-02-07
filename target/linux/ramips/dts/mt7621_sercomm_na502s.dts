@@ -3,6 +3,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "sercomm,na502s", "mediatek,mt7621-soc";
@@ -19,7 +20,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
@@ -40,7 +42,8 @@
 		};
 
 		bluetooth {
-			label = "green:bluetooth";
+			function = LED_FUNCTION_BLUETOOTH;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio_expander1 3 GPIO_ACTIVE_LOW>;
 		};
 

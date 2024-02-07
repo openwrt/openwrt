@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "asiarf,awm002-evb", "ralink,rt5350-soc";
@@ -10,17 +11,20 @@
 		compatible = "gpio-leds";
 
 		tx {
-			label = "green:tx";
+			function = LED_FUNCTION_TX;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		};
 
 		rx {
-			label = "green:rx";
+			function = LED_FUNCTION_RX;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		};
 	};

@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "d-team,pbr-d1", "mediatek,mt7628an-soc";
@@ -26,14 +27,16 @@
 		compatible = "gpio-leds";
 
 		usb {
-			label = "orange:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
 
 		led_power: power {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
