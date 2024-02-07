@@ -1,3 +1,5 @@
+#include <dt-bindings/leds/common.h>
+
 #include "vr9_tplink_vr200.dtsi"
 
 / {
@@ -23,6 +25,4 @@
 		color = <LED_COLOR_ID_BLUE>;
 		gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 	};
-#include <dt-bindings/leds/common.h>
-
 };
