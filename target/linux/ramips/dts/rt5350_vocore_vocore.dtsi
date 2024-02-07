@@ -1,6 +1,7 @@
 #include "rt5350.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "vocore,vocore", "ralink,rt5350-soc";
@@ -249,6 +250,4 @@
 		spi-max-frequency = <10000000>;
 		reg = <0>;
 	};
-#include <dt-bindings/leds/common.h>
-
 };

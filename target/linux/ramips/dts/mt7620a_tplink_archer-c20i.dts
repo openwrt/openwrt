@@ -1,3 +1,5 @@
+#include <dt-bindings/leds/common.h>
+
 #include "mt7620a_tplink_archer.dtsi"
 
 / {
@@ -65,6 +67,4 @@
 &wifi {
 	nvmem-cells = <&macaddr_rom_f100 (-1)>;
 	nvmem-cell-names = "mac-address";
-#include <dt-bindings/leds/common.h>
-
 };

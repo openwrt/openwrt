@@ -1,6 +1,7 @@
 #include "mt7620n.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "wrtnode,wrtnode", "ralink,mt7620n-soc";
@@ -107,6 +108,4 @@
 		groups = "ephy", "wled", "pa", "i2c", "wdt", "uartf", "spi refclk";
 		function = "gpio";
 	};
-#include <dt-bindings/leds/common.h>
-
 };

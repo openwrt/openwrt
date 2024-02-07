@@ -1,3 +1,5 @@
+#include <dt-bindings/leds/common.h>
+
 #include "mt7628an_tplink_8m.dtsi"
 
 / {
@@ -107,6 +109,4 @@
 		nvmem-cells = <&eeprom_factory_28000>, <&macaddr_factory_f100 (-1)>;
 		nvmem-cell-names = "eeprom", "mac-address";
 	};
-#include <dt-bindings/leds/common.h>
-
 };
