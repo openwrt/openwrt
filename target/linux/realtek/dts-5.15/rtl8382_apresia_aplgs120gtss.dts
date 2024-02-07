@@ -26,14 +26,12 @@
 		compatible = "gpio-leds";
 
 		led_power: led-0 {
-			label = "green:pwr";
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
 		};
 
 		led-1 {
-			label = "red:loop";
 			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_FAULT;
@@ -41,7 +39,6 @@
 
 		/* LED chip is soldered, but no hole on the case */
 		led-2 {
-			label = "green:unused";
 			gpios = <&gpio1 36 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
