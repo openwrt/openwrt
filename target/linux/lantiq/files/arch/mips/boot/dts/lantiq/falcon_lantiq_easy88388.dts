@@ -47,7 +47,8 @@
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		};
 		STATUS {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 		};
 		ERROR {
@@ -89,4 +90,6 @@
 		};
 	};
 };
+#include <dt-bindings/leds/common.h>
+
 

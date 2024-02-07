@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "vr9_avm_fritzxx90.dtsi"
 
 / {
@@ -25,7 +27,8 @@
 	};
 
 	led_wifi: wifi {
-		label = "green:wlan";
+		function = LED_FUNCTION_WLAN;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 	};
 };
