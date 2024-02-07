@@ -14,6 +14,11 @@ load_led() {
 	local delayon
 	local delayoff
 	local interval
+	local brightness
+
+	# The UCI brightness configuration is based on a 0 - 1000 scale
+	# in order to provide enough resolution to properly configure RGB leds.
+	local uci_max_brightness=1000
 
 	config_get sysfs $1 sysfs
 	config_get name $1 name "$sysfs"
@@ -30,6 +35,7 @@ load_led() {
 	config_get message $1 message ""
 	config_get gpio $1 gpio "0"
 	config_get_bool inverted $1 inverted "0"
+	config_get uci_brightness $1 brightness "${uci_max_brightness}"
 
 	# execute application led trigger
 	[ -f "/usr/libexec/led-trigger/${trigger}" ] && {
@@ -49,6 +55,14 @@ load_led() {
 	[ -e /sys/class/leds/${sysfs}/brightness ] && {
 		echo "setting up led ${name}"
 
+		[ "${uci_brightness}" -lt 0 ] || [ "${uci_brightness}" -gt "${uci_max_brightness}" ] &&
+			uci_brightness="${uci_max_brightness}"
+
+		# Convert UCI brightness by doing a cross product (uci_brightness / uci_max_brightness) = (x / sysfs_max_brightness).
+		# The cross product is rounded up to avoid turning off the led even if there is a valid positive brightness configured.
+		read sysfs_max_brightness < "/sys/class/leds/${sysfs}/max_brightness"
+		sysfs_brightness=$(( ( $uci_brightness * $sysfs_max_brightness + $uci_max_brightness - 1 ) / $uci_max_brightness ))
+
 		printf "%s %s %d\n" \
 			"$sysfs" \
 			"$(sed -ne 's/^.*\[\(.*\)\].*$/\1/p' /sys/class/leds/${sysfs}/trigger)" \
@@ -58,11 +72,15 @@ load_led() {
 		[ "$default" = 0 ] &&
 			echo 0 >/sys/class/leds/${sysfs}/brightness
 
+		[ $sysfs_brightness = 0 ] && {
+			echo >&2 "Skipping trigger '$trigger' for led '$name' because brightness is set to 0"
+			trigger="none"
+		}
 		echo $trigger > /sys/class/leds/${sysfs}/trigger 2> /dev/null
 		ret="$?"
 
-		[ $default = 1 ] &&
-			cat /sys/class/leds/${sysfs}/max_brightness > /sys/class/leds/${sysfs}/brightness
+		[ $default = 1 ] || [ ! "${trigger}" = "none" ] &&
+			echo "${sysfs_brightness}" > /sys/class/leds/${sysfs}/brightness
 
 		[ $ret = 0 ] || {
 			echo >&2 "Skipping trigger '$trigger' for led '$name' due to missing kernel module"
