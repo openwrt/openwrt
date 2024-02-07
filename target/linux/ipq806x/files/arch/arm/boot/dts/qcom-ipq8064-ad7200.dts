@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qcom-ipq8064-ad7200-c2600.dtsi"
 
 / {
@@ -57,7 +59,8 @@
 		pinctrl-names = "default";
 
 		lan {
-			label = "blue:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&qcom_pinmux 2 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -82,17 +85,20 @@
 		};
 
 		wan_orange {
-			label = "orange:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_blue {
-			label = "blue:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&qcom_pinmux 33 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&qcom_pinmux 55 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -102,7 +108,8 @@
 		};
 
 		led_status: status {
-			label = "blue:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&qcom_pinmux 66 GPIO_ACTIVE_HIGH>;
 		};
 	};
