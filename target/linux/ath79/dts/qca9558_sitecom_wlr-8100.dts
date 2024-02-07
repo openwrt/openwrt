@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Sitecom WLR-8100 (X8 AC1750)";
@@ -36,7 +37,8 @@
 		compatible = "gpio-leds";
 
 		led_status_amber: status_amber {
-			label = "amber:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};

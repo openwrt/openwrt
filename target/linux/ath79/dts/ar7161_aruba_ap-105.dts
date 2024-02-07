@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "aruba,ap-105", "qca,ar7161";
@@ -25,12 +26,14 @@
 		compatible = "gpio-leds";
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_red: power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};

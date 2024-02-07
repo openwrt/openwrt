@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Netgear R6100";
@@ -57,34 +58,40 @@
 		compatible = "gpio-leds";
 
 		led_power_amber: power_amber {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "blue:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port>;
 			linux,default-trigger = "usbport";
 		};
 
 		wan_amber {
-			label = "amber:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_green {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "blue:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};

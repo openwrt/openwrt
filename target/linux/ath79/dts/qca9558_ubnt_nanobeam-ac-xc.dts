@@ -6,6 +6,8 @@
  * based on device tree from qca9558_ubnt_powerbeam-5ac-500.dts
  */
 
+#include <dt-bindings/leds/common.h>
+
 #include "qca955x_ubnt_xc.dtsi"
 
 / {
@@ -71,7 +73,8 @@
 			gpios = <&led_gpio 3 GPIO_ACTIVE_LOW>;
 		};
 		led_power: power {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&led_gpio 4 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};

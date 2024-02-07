@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "sophos,ap15", "qca,qca9558";
@@ -25,13 +26,15 @@
 		compatible = "gpio-leds";
 
 		led_status_green: status_green {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		led_status_yellow: status_yellow {
-			label = "yellow:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_YELLOW>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 	};

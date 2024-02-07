@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qca9561_tplink_archer-c6x.dtsi"
 
 / {
@@ -13,12 +15,14 @@
 
 &leds {
 	wan_amber {
-		label = "amber:wan";
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_AMBER>;
 		gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 	};
 
 	wps {
-		label = "green:wps";
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 	};
 };

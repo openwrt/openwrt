@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,archer-c7-v4", "qca,qca9563";
@@ -89,12 +90,14 @@
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&led_gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_fail {
-			label = "orange:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&led_gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
@@ -119,7 +122,8 @@
 		};
 
 		wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&led_gpio 0 GPIO_ACTIVE_LOW>;
 		};
 	};
