@@ -19,7 +19,10 @@
 
 &leds {
 	wps {
-		label = "blue:wps";
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_BLUE>;
 		gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 	};
+#include <dt-bindings/leds/common.h>
+
 };

@@ -42,7 +42,8 @@
 			default-state = "keep";
 		};
 		LED_5 {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
@@ -107,4 +108,6 @@
 		compatible = "at,24c02";
 		reg = <0x51>;
 	};
+#include <dt-bindings/leds/common.h>
+
 };
