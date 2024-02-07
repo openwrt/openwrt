@@ -25,28 +25,24 @@
 		compatible = "gpio-leds";
 
 		led_status_green: led-0 {
-			label = "green:status";
 			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 		};
 
 		led_status_red: led-1 {
-			label = "red:status";
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_STATUS;
 		};
 
 		led-2 {
-			label = "green:wps_wifi";
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WPS;
 		};
 
 		led-3 {
-			label = "green:power";
 			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
@@ -54,14 +50,12 @@
 		};
 
 		led-4 {
-			label = "green:router";
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_INDICATOR;
 		};
 
 		led-5 {
-			label = "green:internet";
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WAN;

@@ -13,14 +13,12 @@
 		compatible = "gpio-leds";
 
 		led_sys: led-0 {
-			label = "green:sys";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_vpn: led-1 {
-			label = "green:vpn";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;

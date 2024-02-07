@@ -27,14 +27,12 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "blue:power";
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		led_usb {
-			label = "blue:usb";
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_USB;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
