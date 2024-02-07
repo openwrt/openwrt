@@ -3,6 +3,7 @@
 /dts-v1/;
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include "armada-372x.dtsi"
 
 / {
@@ -63,12 +64,14 @@
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpionb 12 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpionb 13 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
