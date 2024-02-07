@@ -1,6 +1,7 @@
 #include "bcm6368.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Actiontec R1000H";
@@ -48,28 +49,33 @@
 		};
 
 		usb_green {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 21 1>;
 		};
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 22 0>;
 			default-state = "on";
 		};
 
 		wps_green {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 23 1>;
 		};
 
 		power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 24 0>;
 		};
 
 		wps_red {
-			label = "red:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 30 1>;
 		};
 

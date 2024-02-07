@@ -3,6 +3,7 @@
 #include "bcm6328.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Innacomm W3400V6";
@@ -88,20 +89,23 @@
 	led_power_green: led@4 {
 		reg = <4>;
 		active-low;
-		label = "green:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
 		default-state = "on";
 	};
 
 	led_power_red: led@5 {
 		reg = <5>;
 		active-low;
-		label = "red:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_RED>;
 	};
 
 	led@11 {
 		reg = <11>;
 		active-low;
-		label = "green:wps";
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 };
 

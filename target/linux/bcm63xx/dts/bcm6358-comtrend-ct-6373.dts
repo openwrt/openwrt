@@ -1,6 +1,7 @@
 #include "bcm6358.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Comtrend CT-6373";
@@ -29,16 +30,19 @@
 		compatible = "gpio-leds";
 
 		power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 0 0>;
 			default-state = "on";
 		};
 		usb_green {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 3 1>;
 		};
 		wlan_green {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 9 1>;
 		};
 	};

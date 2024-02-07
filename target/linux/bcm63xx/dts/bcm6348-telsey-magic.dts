@@ -1,6 +1,7 @@
 #include "bcm6348.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Alice W-Gate";
@@ -15,7 +16,8 @@
 		compatible = "gpio-leds";
 
 		power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 0 1>;
 			default-state = "on";
 		};
@@ -46,7 +48,8 @@
 		};
 
 		usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 35 1>;
 		};
 	};

@@ -1,6 +1,7 @@
 #include "bcm6328.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "ADB P.DG A4001N";
@@ -47,16 +48,19 @@
 			gpios = <&pinctrl 1 0>;
 		};
 		power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 4 0>;
 		};
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 8 0>;
 			default-state = "on";
 		};
 		usb_green {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 10 1>;
 		};
 		dsl_green {

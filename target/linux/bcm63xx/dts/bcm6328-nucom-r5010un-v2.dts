@@ -1,6 +1,7 @@
 #include "bcm6328.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "NuCom R5010UN v2";
@@ -55,7 +56,8 @@
 			gpios = <&pinctrl 3 1>;
 		};
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 4 1>;
 			default-state = "on";
 		};
@@ -64,11 +66,13 @@
 			gpios = <&pinctrl 5 1>;
 		};
 		wps_green {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 10 1>;
 		};
 		usb_green {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 11 1>;
 		};
 	};
