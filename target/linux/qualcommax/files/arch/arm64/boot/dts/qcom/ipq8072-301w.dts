@@ -61,97 +61,81 @@
 		pinctrl-names = "default";
 
 		led_system_green: led-system-green {
-			label = "green:system";
 			gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led_system_red: led-system-red {
-			label = "red:system";
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		led_pwr_green: led-pwr-green {
-			label = "green:pwr";
 			gpios = <&tlmm 4 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led-wifi-green {
-			label = "green:wifi";
 			gpios = <&tlmm 42 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led-lan4-green {
-			label = "green:lan4";
 			gpios = <&tlmm 6 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led-lan4-amber {
-			label = "amber:lan4";
 			gpios = <&tlmm 7 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
 		};
 
 		led-lan3-green {
-			label = "green:lan3";
 			gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led-lan3-amber {
-			label = "amber:lan3";
 			gpios = <&tlmm 11 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
 		};
 
 		led-lan2-green {
-			label = "green:lan2";
 			gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led-lan2-amber {
-			label = "amber:lan2";
 			gpios = <&tlmm 13 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
 		};
 
 		led-lan1-green {
-			label = "green:lan1";
 			gpios = <&tlmm 14 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led-lan1-amber {
-			label = "amber:lan1";
 			gpios = <&tlmm 15 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
 		};
 
 		led-10g-1-green {
-			label = "green:10g_1";
 			gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led-10g-1-amber {
-			label = "amber:10g_1";
 			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
 		};
 
 		led-10g-2-green {
-			label = "green:10g_2";
 			gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led-10g-2-amber {
-			label = "amber:10g_2";
 			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
 		};

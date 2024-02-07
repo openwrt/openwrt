@@ -54,13 +54,11 @@
 		compatible = "gpio-leds";
 
 		led_system_blue: system-blue {
-			label = "blue:system";
 			gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 		};
 
 		led_system_red: system-red {
-			label = "red:system";
 			gpios = <&tlmm 25 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 		};

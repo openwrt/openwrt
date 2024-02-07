@@ -31,52 +31,44 @@
 		compatible = "gpio-leds";
 
 		led-0 {
-			label = "white:router";
 			gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led-1 {
-			label = "red:router";
 			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		led_power_red: led-2 {
-			label = "red:power";
 			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_POWER;
 		};
 
 		led_power_white: led-3 {
-			label = "white:power";
 			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_POWER;
 		};
 
 		led-4 {
-			label = "white:internet";
 			gpios = <&tlmm 43 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led-5 {
-			label = "red:internet";
 			gpios = <&tlmm 44 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		led-6 {
-			label = "red:wireless";
 			gpios = <&tlmm 55 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_WLAN;
 		};
 
 		led-7 {
-			label = "white:wireless";
 			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_WLAN;

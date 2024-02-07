@@ -48,45 +48,38 @@
 		compatible = "gpio-leds";
 
 		led_system_blue: system-blue {
-			label = "blue:system";
 			gpios = <&tlmm 48 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 		};
 
 		led_system_yellow: system-yellow {
-			label = "yellow:system";
 			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_YELLOW>;
 		};
 
 		network-yellow {
-			label = "yellow:network";
 			gpios = <&tlmm 50 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_YELLOW>;
 		};
 
 		network-blue {
-			label = "blue:network";
 			gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 		};
 
 		top-red {
-			label = "red:top";
 			gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 			default-state = "keep";
 		};
 
 		top-green {
-			label = "green:top";
 			gpios = <&tlmm 64 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 			default-state = "keep";
 		};
 
 		top-blue {
-			label = "blue:top";
 			gpios = <&tlmm 66 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 			default-state = "keep";
