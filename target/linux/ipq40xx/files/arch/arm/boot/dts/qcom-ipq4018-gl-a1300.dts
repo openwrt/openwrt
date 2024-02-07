@@ -3,6 +3,7 @@
 #include "qcom-ipq4019.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
@@ -69,12 +70,14 @@
 		compatible = "gpio-leds";
 
 		led_run: blue {
-			label = "blue:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
 		};
 
 		white {
-			label = "white:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
 		};
 	};
