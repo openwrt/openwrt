@@ -102,7 +102,8 @@
 		compatible = "gpio-leds";
 
 		power_orange: power {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
