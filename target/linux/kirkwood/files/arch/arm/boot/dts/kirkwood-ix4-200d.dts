@@ -112,21 +112,18 @@
 			compatible = "gpio-leds";
 
 			led_status_white: led-0 {
-				label = "status:white";
 				function = LED_FUNCTION_STATUS;
 				color = <LED_COLOR_ID_WHITE>;
 				gpios = <&gpio_spi 4 GPIO_ACTIVE_LOW>;
 			};
 
 			led_status_red: led-1 {
-				label = "status:red";
 				function = LED_FUNCTION_STATUS;
 				color = <LED_COLOR_ID_RED>;
 				gpios = <&gpio_spi 5 GPIO_ACTIVE_LOW>;
 			};
 
 			led_power_white: led-2 {
-				label = "power:white";
 				function = LED_FUNCTION_POWER;
 				color = <LED_COLOR_ID_WHITE>;
 				gpios = <&gpio_spi 7 GPIO_ACTIVE_HIGH>;
