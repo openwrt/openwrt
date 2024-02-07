@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <dt-bindings/leds/common.h>
+
 #include "bcm6328.dtsi"
 
 / {
@@ -117,7 +119,8 @@
 	led@6 {
 		reg = <6>;
 		active-low;
-		label = "green:wan";
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 
 	led@7 {

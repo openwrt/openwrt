@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <dt-bindings/leds/common.h>
+
 #include "bcm6328.dtsi"
 
 / {
@@ -129,21 +131,24 @@
 	led_power_green: led@4 {
 		reg = <4>;
 		active-low;
-		label = "green:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
 		default-state = "on";
 	};
 
 	led_power_red: led@5 {
 		reg = <5>;
 		active-low;
-		label = "red:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_RED>;
 		panic-indicator;
 	};
 
 	led@11 {
 		reg = <11>;
 		active-low;
-		label = "green:wps";
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 };
 
