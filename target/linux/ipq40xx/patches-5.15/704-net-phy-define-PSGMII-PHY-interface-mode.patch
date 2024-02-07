@@ -30,6 +30,17 @@ Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
        - qsgmii
        - tbi
        - rev-mii
+--- a/drivers/net/phy/phy-core.c
++++ b/drivers/net/phy/phy-core.c
+@@ -140,6 +140,8 @@ int phy_interface_num_ports(phy_interfac
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_QUSGMII:
+ 		return 4;
++	case PHY_INTERFACE_MODE_PSGMII:
++		return 5;
+ 	case PHY_INTERFACE_MODE_MAX:
+ 		WARN_ONCE(1, "PHY_INTERFACE_MODE_MAX isn't a valid interface mode");
+ 		return 0;
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
 @@ -371,6 +371,7 @@ void phylink_get_linkmodes(unsigned long
