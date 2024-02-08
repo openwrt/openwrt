@@ -34,9 +34,9 @@ endif
 # 2: variable name
 # 3: variable suffix
 # 4: file is a script
-define BuildIPKGVariable
+define BuildPackVariable
 ifdef Package/$(1)/$(2)
-  $$(APK_$(1)) : VAR_$(2)$(3)=$$(Package/$(1)/$(2))
+  $$(PACK_$(1)) : VAR_$(2)$(3)=$$(Package/$(1)/$(2))
   $(call shexport,Package/$(1)/$(2))
   $(1)_COMMANDS += echo "$$$$$$$$$(call shvar,Package/$(1)/$(2))" > $(2)$(3); $(if $(4),chmod 0755 $(2)$(3);)
 endif
@@ -57,7 +57,7 @@ strip_deps=$(strip $(subst +,,$(filter-out @%,$(1))))
 filter_deps=$(foreach dep,$(call strip_deps,$(1)),$(if $(findstring :,$(dep)),$(call dep_if,$(dep)),$(dep)))
 
 define AddDependency
-  $$(if $(1),$$(if $(2),$$(foreach pkg,$(1),$$(APK_$$(pkg))): $$(foreach pkg,$(2),$$(APK_$$(pkg)))))
+  $$(if $(1),$$(if $(2),$$(foreach pkg,$(1),$$(PACK_$$(pkg))): $$(foreach pkg,$(2),$$(PACK_$$(pkg)))))
 endef
 
 define FixupReverseDependencies
@@ -108,7 +108,7 @@ ifeq ($(DUMP),)
   define BuildTarget/ipkg
     ABIV_$(1):=$(call FormatABISuffix,$(1),$(ABI_VERSION))
     PDIR_$(1):=$(call FeedPackageDir,$(1))
-    APK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).apk
+    PACK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).apk
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     ADIR_$(1):=$(PKG_BUILD_DIR)/apk-$(PKGARCH)/$(1)
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
@@ -125,8 +125,8 @@ ifeq ($(DUMP),)
     ifdef do_install
       ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
         IPKGS += $(1)
-        $(_pkg_target)compile: $$(APK_$(1)) $(PKG_INFO_DIR)/$(1).provides $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
-        prepare-package-install: $$(APK_$(1))
+        $(_pkg_target)compile: $$(PACK_$(1)) $(PKG_INFO_DIR)/$(1).provides $(PKG_BUILD_DIR)/.pkgdir/$(1).installed
+        prepare-package-install: $$(PACK_$(1))
         compile: $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
       else
         $(if $(CONFIG_PACKAGE_$(1)),$$(info WARNING: skipping $(1) -- package not selected))
@@ -149,11 +149,11 @@ ifeq ($(DUMP),)
     $(FixupDependencies)
     $(FixupReverseDependencies)
 
-    $(eval $(call BuildIPKGVariable,$(1),conffiles))
-    $(eval $(call BuildIPKGVariable,$(1),preinst,,1))
-    $(eval $(call BuildIPKGVariable,$(1),postinst,-pkg,1))
-    $(eval $(call BuildIPKGVariable,$(1),prerm,-pkg,1))
-    $(eval $(call BuildIPKGVariable,$(1),postrm,,1))
+    $(eval $(call BuildPackVariable,$(1),conffiles))
+    $(eval $(call BuildPackVariable,$(1),preinst,,1))
+    $(eval $(call BuildPackVariable,$(1),postinst,-pkg,1))
+    $(eval $(call BuildPackVariable,$(1),prerm,-pkg,1))
+    $(eval $(call BuildPackVariable,$(1),postrm,,1))
 
     $(PKG_BUILD_DIR)/.pkgdir/$(1).installed : export PATH=$$(TARGET_PATH_PKG)
     $(PKG_BUILD_DIR)/.pkgdir/$(1).installed: $(STAMP_BUILT)
@@ -203,11 +203,11 @@ $$(call addfield,Depends,$$(Package/$(1)/DEPENDS)
 Installed-Size: 0
 $(_endef)
 
-    $$(APK_$(1)) : export CONTROL=$$(Package/$(1)/CONTROL)
-    $$(APK_$(1)) : export DESCRIPTION=$$(Package/$(1)/description)
-    $$(APK_$(1)) : export PATH=$$(TARGET_PATH_PKG)
-    $$(APK_$(1)) : export PKG_SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
-    $(PKG_INFO_DIR)/$(1).provides $$(APK_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-pack.mk
+    $$(PACK_$(1)) : export CONTROL=$$(Package/$(1)/CONTROL)
+    $$(PACK_$(1)) : export DESCRIPTION=$$(Package/$(1)/description)
+    $$(PACK_$(1)) : export PATH=$$(TARGET_PATH_PKG)
+    $$(PACK_$(1)) : export PKG_SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
+    $(PKG_INFO_DIR)/$(1).provides $$(PACK_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-pack.mk
 	rm -rf $$(IDIR_$(1)); \
 		$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_ipkg_wildcard,$(1))))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1)) $(PKG_INFO_DIR)
@@ -296,10 +296,10 @@ $(_endef)
 	  --script "pre-deinstall:$$(ADIR_$(1))/pre-deinstall" \
 	  --info "depends:$$(foreach depends,$$(subst $$(comma),,$$(subst $$(paren_right),,$$(subst $$(space)$$(paren_left),,$$(Package/$(1)/DEPENDS)))),$$(depends))" \
 	  --files "$$(IDIR_$(1))" \
-	  --output "$$(APK_$(1))" \
+	  --output "$$(PACK_$(1))" \
 	  --sign "$(BUILD_KEY_APK_SEC)"
 
-	@[ -f $$(APK_$(1)) ]
+	@[ -f $$(PACK_$(1)) ]
 
     $(1)-clean:
 	$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_ipkg_wildcard,$(1))))
