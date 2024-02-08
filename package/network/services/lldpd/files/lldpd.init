@@ -114,6 +114,10 @@ write_lldpd_conf()
 
 		local lldpmed_fast_start_tx_interval
 		config_get lldpmed_fast_start_tx_interval 'config' 'lldpmed_fast_start_tx_interval' 0
+
+		local lldp_location
+		config_get lldp_location 'config' 'lldp_location'
+
 	fi
 
 	local lldp_agenttype
@@ -145,8 +149,15 @@ write_lldpd_conf()
 			echo "configure med fast-start enable" >> "$LLDPD_CONF"
 		fi
 	fi
-	[ -n "$lldp_agenttype" ] && echo "configure lldp agent-type $lldp_agenttype" >> "$LLDPD_CONF"
-	[ -n "$lldp_portidsubtype" ] && echo "configure lldp portidsubtype $lldp_portidsubtype" >> "$LLDPD_CONF"
+	if [ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ]; then
+		# other 'configure med xxx' statements go here
+
+		[ -n "$lldp_location" ] && echo "configure med location" "$lldp_location" >> "$LLDPD_CONF"
+
+	fi
+
+	[ -n "$lldp_agenttype" ] && echo "configure lldp agent-type" "\"$lldp_agenttype\"" >> "$LLDPD_CONF"
+	[ -n "$lldp_portidsubtype" ] && echo "configure lldp portidsubtype" "\"$lldp_portidsubtype\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_platform" ] && echo "configure system platform" "\"$lldp_platform\"" >> "$LLDPD_CONF"
 	[ -n $lldp_tx_interval ] && echo "configure lldp tx-interval $lldp_tx_interval" >> "$LLDPD_CONF"
 	[ $lldp_tx_hold -gt 0 ] && echo "configure lldp tx-hold $lldp_tx_hold" >> "$LLDPD_CONF"
@@ -170,7 +181,6 @@ start_service() {
 	local enable_edp
 	local force_edp
 	local lldp_class
-	local lldp_location
 	local lldp_no_version
 	local lldpmed_no_inventory
 	local readonly_mode
@@ -199,7 +209,6 @@ start_service() {
 		config_get_bool force_edp 'config' 'force_edp' 0
 	fi
 	config_get lldp_class 'config' 'lldp_class'
-	config_get lldp_location 'config' 'lldp_location'
 	config_get_bool lldp_no_version 'config' 'lldp_no_version' 0
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ]; then
 		config_get_bool lldpmed_no_inventory 'config' 'lldpmed_no_inventory' 0
