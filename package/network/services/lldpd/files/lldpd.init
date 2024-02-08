@@ -290,7 +290,7 @@ start_service() {
 	fi
 
 	[ $readonly_mode -gt 0 ] && procd_append_param command '-r'
-	[ $lldp_no_version -gt 0 ] && procd_append_param commanpackage/network/services/lldpd/Makefile package/network/services/lldpd/files/lldpd.initd '-k'
+	[ $lldp_no_version -gt 0 ] && procd_append_param command '-k'
 	[ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ] && [ $lldpmed_no_inventory -gt 0 ] && procd_append_param command '-i'
 	[ -n "$lldp_class" ] && procd_append_param command -M "$lldp_class"
 	[ "$CONFIG_LLDPD_WITH_SNMP" == "y" ] && [ -n "$agentxsocket" ] && procd_append_param command -x -X "$agentxsocket"
