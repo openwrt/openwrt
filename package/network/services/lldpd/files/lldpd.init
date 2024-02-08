@@ -148,7 +148,7 @@ write_lldpd_conf()
 	[ -n "$lldp_syscapabilities" ] && echo "configure system capabilities enabled" "\"$lldp_syscapabilities\"" >> "$LLDPD_CONF"
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" == "y" ] && [ $lldpmed_fast_start -gt 0 ]; then
 		if [ $lldpmed_fast_start_tx_interval -gt 0 ]; then
-			echo "configure med fast-start tx-interval" "\"$lldpmed_fast_start_tx_interval\"" >> "$LLDPD_CONF"
+			echo "configure med fast-start tx-interval $lldpmed_fast_start_tx_interval" >> "$LLDPD_CONF"
 		else
 			echo "configure med fast-start" "enable" >> "$LLDPD_CONF"
 		fi
