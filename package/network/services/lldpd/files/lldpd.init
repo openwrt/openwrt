@@ -154,7 +154,7 @@ write_lldpd_conf()
 		fi
 	fi
 	[ -n "$lldp_agenttype" ] && echo "configure lldp agent-type $lldp_agenttype" >> "$LLDPD_CONF"
-	[ -n "$lldp_portidsubtype" ] && echo "configure lldp portidsubtype" "\"$lldp_portidsubtype\"" >> "$LLDPD_CONF"
+	[ -n "$lldp_portidsubtype" ] && echo "configure lldp portidsubtype $lldp_portidsubtype" >> "$LLDPD_CONF"
 	[ -n "$lldp_platform" ] && echo "configure system platform" "\"$lldp_platform\"" >> "$LLDPD_CONF"
 	[ $lldp_tx_interval -gt 0 ] && echo "configure lldp tx-interval" "$lldp_tx_interval" >> "$LLDPD_CONF"
 	[ $lldp_tx_hold -gt 0 ] && echo "configure lldp tx-hold" "$lldp_tx_hold" >> "$LLDPD_CONF"
