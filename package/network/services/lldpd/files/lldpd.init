@@ -75,7 +75,8 @@ get_config_restart_hash() {
 }
 
 get_config_cid_ifaces() {
-	local _ifacesCONFIG_LLDPD_WITH_FDP
+	local _ifaces
+	config_get _ifaces 'config' 'cid_interface'
 
 	local _iface _ifnames=""
 	for _iface in $_ifaces; do
