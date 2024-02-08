@@ -60,7 +60,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SND_RALINK_SOC_I2S) += snd-soc-ralink-i2s.o
 --- /dev/null
 +++ b/sound/soc/ralink/ralink-i2s.c
-@@ -0,0 +1,970 @@
+@@ -0,0 +1,968 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *  Copyright (C) 2016 Michael Lee <igvtee@gmail.com>
@@ -512,7 +512,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	dma_data->addr = res->start + I2S_REG_WREG;
 +	dma_data->addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
 +	dma_data->maxburst = 1;
-+	dma_data->slave_id = i2s->txdma_req;
 +
 +	if (i2s->flags & RALINK_FLAGS_TXONLY)
 +		return;
@@ -522,7 +521,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	dma_data->addr = res->start + I2S_REG_RREG;
 +	dma_data->addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
 +	dma_data->maxburst = 1;
-+	dma_data->slave_id = i2s->rxdma_req;
 +}
 +
 +static int ralink_i2s_dai_probe(struct snd_soc_dai *dai)
