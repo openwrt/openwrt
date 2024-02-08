@@ -152,7 +152,7 @@ static inline void fe_int_enable(u32 mask)
 	fe_reg_r32(FE_REG_FE_INT_ENABLE);
 }
 
-static inline void fe_hw_set_macaddr(struct fe_priv *priv, unsigned char *mac)
+static inline void fe_hw_set_macaddr(struct fe_priv *priv, const unsigned char *mac)
 {
 	unsigned long flags;
 
