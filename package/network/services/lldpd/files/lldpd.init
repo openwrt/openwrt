@@ -156,8 +156,8 @@ write_lldpd_conf()
 	[ -n "$lldp_agenttype" ] && echo "configure lldp agent-type $lldp_agenttype" >> "$LLDPD_CONF"
 	[ -n "$lldp_portidsubtype" ] && echo "configure lldp portidsubtype $lldp_portidsubtype" >> "$LLDPD_CONF"
 	[ -n "$lldp_platform" ] && echo "configure system platform" "\"$lldp_platform\"" >> "$LLDPD_CONF"
-	[ $lldp_tx_interval -gt 0 ] && echo "configure lldp tx-interval" "$lldp_tx_interval" >> "$LLDPD_CONF"
-	[ $lldp_tx_hold -gt 0 ] && echo "configure lldp tx-hold" "$lldp_tx_hold" >> "$LLDPD_CONF"
+	[ $lldp_tx_interval -gt 0 ] && echo "configure lldp tx-interval $lldp_tx_interval" >> "$LLDPD_CONF"
+	[ $lldp_tx_hold -gt 0 ] && echo "configure lldp tx-hold $lldp_tx_hold" >> "$LLDPD_CONF"
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e $LLDPD_CONFS_DIR ] || ln -s /etc/lldpd.d $LLDPD_CONFS_DIR
