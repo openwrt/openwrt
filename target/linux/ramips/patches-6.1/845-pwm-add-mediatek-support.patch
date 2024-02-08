@@ -41,7 +41,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_PWM_NTXEC)		+= pwm-ntxec.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-mediatek-ramips.c
-@@ -0,0 +1,175 @@
+@@ -0,0 +1,197 @@
 +/*
 + * Mediatek Pulse Width Modulator driver
 + *
@@ -146,10 +146,32 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	iowrite32(val, pc->mmio_base);
 +}
 +
++static int mtk_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
++			 const struct pwm_state *state)
++{
++	int err;
++	bool enabled = pwm->state.enabled;
++
++	if (!state->enabled) {
++		if (enabled)
++			mtk_pwm_disable(chip, pwm);
++
++		return 0;
++	}
++
++	err = mtk_pwm_config(pwm->chip, pwm,
++			     state->duty_cycle, state->period);
++	if (err)
++		return err;
++
++	if (!enabled)
++		err = mtk_pwm_enable(chip, pwm);
++
++	return err;
++}
++
 +static const struct pwm_ops mtk_pwm_ops = {
-+	.config = mtk_pwm_config,
-+	.enable = mtk_pwm_enable,
-+	.disable = mtk_pwm_disable,
++	.apply = mtk_pwm_apply,
 +	.owner = THIS_MODULE,
 +};
 +
