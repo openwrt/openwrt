@@ -310,7 +310,7 @@ update_alternatives() {
 
 default_postinst() {
 	local root="${IPKG_INSTROOT}"
-	local pkgname="$(basename ${1%.*})"
+	[ -z "$pkgname" ] && local pkgname="$(basename ${1%.*})"
 	local filelist
 	local ret=0
 
