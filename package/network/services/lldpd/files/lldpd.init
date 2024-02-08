@@ -150,7 +150,7 @@ write_lldpd_conf()
 		if [ $lldpmed_fast_start_tx_interval -gt 0 ]; then
 			echo "configure med fast-start tx-interval $lldpmed_fast_start_tx_interval" >> "$LLDPD_CONF"
 		else
-			echo "configure med fast-start" "enable" >> "$LLDPD_CONF"
+			echo "configure med fast-start enable" >> "$LLDPD_CONF"
 		fi
 	fi
 	[ -n "$lldp_agenttype" ] && echo "configure lldp agent-type" "\"$lldp_agenttype\"" >> "$LLDPD_CONF"
