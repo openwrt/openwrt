@@ -339,8 +339,8 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	if (spi->mode & SPI_CS_HIGH)
 +		enable = !enable;
 +
-+	if (spi->cs_gpio >= 0)
-+		gpio_set_value(spi->cs_gpio, !enable);
++	if (spi->cs_gpiod)
++		gpiod_set_value(spi->cs_gpiod, !enable);
 +	else if (spi->master->set_cs)
 +		spi->master->set_cs(spi, !enable);
 +}
