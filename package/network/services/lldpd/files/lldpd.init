@@ -261,7 +261,7 @@ start_service() {
 
 	if [ "$CONFIG_LLDPD_WITH_FDP" == "y" ] && [ $enable_fdp -gt 0 ]; then
 		if [ $force_fdp -gt 0 ]; then
-			# FDP enbled and forced
+			# FDP enabled and forced
 			procd_append_param command '-ff'
 		else
 			# FDP enabled
@@ -281,10 +281,10 @@ start_service() {
 
 	if [ "$CONFIG_LLDPD_WITH_EDP" == "y" ] && [ $enable_edp -gt 0 ]; then
 		if [ $force_edp -gt 0 ]; then
-			# EDP enbled and forced
+			# EDP enabled and forced
 			procd_append_param command '-ee'
 		else
-			# EDP enbled
+			# EDP enabled
 			procd_append_param command '-e'
 		fi
 	fi
