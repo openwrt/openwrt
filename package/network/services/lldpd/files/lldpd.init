@@ -76,7 +76,7 @@ get_config_restart_hash() {
 
 get_config_cid_ifaces() {
 	local _ifaces
-	config_get _ifaces 'config' 'cid_interface'
+	config_get _ifaces 'config' "$2"
 
 	local _iface _ifnames=""
 	for _iface in $_ifaces; do
@@ -99,16 +99,8 @@ write_lldpd_conf()
 	local lldp_hostname
 	config_get lldp_hostname 'config' 'lldp_hostname' "$(cat /proc/sys/kernel/hostname)"
 
-	local ifaces
-	config_get ifaces 'config' 'interface'
-
-	local iface ifnames=""
-	for iface in $ifaces; do
-		local ifname=""
-		if network_get_device ifname "$iface" || [ -e "/sys/class/net/$iface" ]; then
-			append ifnames "${ifname:-$iface}" ","
-		fi
-	done
+	local ifnames
+	get_config_cid_ifaces ifnames "interface"
 
 	local lldp_mgmt_ip
 	config_get lldp_mgmt_ip 'config' 'lldp_mgmt_ip'
@@ -141,7 +133,7 @@ write_lldpd_conf()
 
 	# Clear out the config file first
 	echo -n > "$LLDPD_CONF"
-	[ -n "$ifnames" ] && echo "configure system interface pattern" "$ifnames" >> "$LLDPD_CONF"
+	[ -n "$ifnames" ] && echo "configure system interface pattern $ifnames" >> "$LLDPD_CONF"
 	[ -n "$lldp_description" ] && echo "configure system description" "\"$lldp_description\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_hostname" ] && echo "configure system hostname" "\"$lldp_hostname\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_mgmt_ip" ] && echo "configure system ip management pattern" "\"$lldp_mgmt_ip\"" >> "$LLDPD_CONF"
@@ -299,7 +291,8 @@ start_service() {
 
     # ChassisID interfaces
 	local ifnames
-	get_config_cid_ifaces ifnames
+	get_config_cid_ifaces ifnames "cid_interface"
+
 	[ -n "$ifnames" ] && procd_append_param command -C "$ifnames"
 
     # Overwrite default configuration locations processed by lldpcli at start
