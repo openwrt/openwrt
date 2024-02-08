@@ -373,7 +373,7 @@ sub and_condition($) {
 
 sub gen_condition ($) {
 	my $condition = shift;
-	# remove '!()', just as include/package-ipkg.mk does
+	# remove '!()', just as include/package-pack.mk does
 	$condition =~ s/[()!]//g;
 	return join("", map(and_condition($_), split('\|\|', $condition)));
 }

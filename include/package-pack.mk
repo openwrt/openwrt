@@ -207,7 +207,7 @@ $(_endef)
     $$(APK_$(1)) : export DESCRIPTION=$$(Package/$(1)/description)
     $$(APK_$(1)) : export PATH=$$(TARGET_PATH_PKG)
     $$(APK_$(1)) : export PKG_SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
-    $(PKG_INFO_DIR)/$(1).provides $$(APK_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk
+    $(PKG_INFO_DIR)/$(1).provides $$(APK_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-pack.mk
 	rm -rf $$(IDIR_$(1)); \
 		$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_ipkg_wildcard,$(1))))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1)) $(PKG_INFO_DIR)
