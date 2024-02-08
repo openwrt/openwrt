@@ -78,7 +78,7 @@ pipeline {
                     option = "dpdk"
                     buildDir = buildDir + "-dpdk"
                     toolsDir = toolsDir + "-dpdk"
-                    // startClean = "true" // always start clean for dpdk, otherwise we tend to fail.
+                    artifactsDir = artifactsDir + "/dpdk"
                   }
 
                   if (buildBranch =~ /^mfw\+owrt/) {
@@ -100,7 +100,7 @@ pipeline {
                       stash(name:"rootfs-${myDevice}", includes:"bin/targets/**/*generic-rootfs.tar.gz")
                     }
 
-                    archiveMFW(myDevice, myRegion, toolsDir, "${env.WORKSPACE}/${artifactsDir}/${option}")
+                    archiveMFW(myDevice, myRegion, toolsDir, "${env.WORKSPACE}/${artifactsDir}")
                   }
                   archiveArtifacts artifacts:"${artifactsDir}/**/*", fingerprint:true
                 }
