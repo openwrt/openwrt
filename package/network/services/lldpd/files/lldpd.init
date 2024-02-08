@@ -118,6 +118,12 @@ write_lldpd_conf()
 		local lldp_location
 		config_get lldp_location 'config' 'lldp_location'
 
+		local lldp_class
+		config_get lldp_class 'config' 'lldp_class'
+
+		local lldp_policy
+		config_get lldp_policy 'config' 'lldp_policy'
+
 	fi
 
 	local lldp_agenttype
@@ -153,6 +159,12 @@ write_lldpd_conf()
 		# other 'configure med xxx' statements go here
 
 		[ -n "$lldp_location" ] && echo "configure med location" "$lldp_location" >> "$LLDPD_CONF"
+
+		# Manual states that if Class (-M) is 2 or 3, at least one network policy must be defined
+		case "$lldp_class" in
+			2 | 3 ) [ -n "$lldp_policy" ] && echo "configure med policy $lldp_policy" >> "$LLDPD_CONF"
+			;;
+		esac
 
 	fi
 
