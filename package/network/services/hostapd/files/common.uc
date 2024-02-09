@@ -49,7 +49,7 @@ function __phy_is_fullmac(phyidx)
 {
 	let data = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, 0, { wiphy: phyidx });
 
-	return !data.software_iftypes.ap_vlan;
+	return !data.software_iftypes.monitor;
 }
 
 function phy_is_fullmac(phy)
