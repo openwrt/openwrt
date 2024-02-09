@@ -261,6 +261,7 @@ add_group_and_user() {
 }
 
 update_alternatives() {
+	local root="${IPKG_INSTROOT}"
 	local action="$1"
 	local pkgname="$2"
 
@@ -314,10 +315,12 @@ default_postinst() {
 	local filelist
 	local ret=0
 
-	if [ -e "$root/usr/lib/opkg/info" ]; then
+	if [ -e "${root}/usr/lib/opkg/info/${pkgname}.list" ]; then
 		filelist="${root}/usr/lib/opkg/info/${pkgname}.list"
 		add_group_and_user "${pkgname}"
-	else
+	fi
+
+	if [ -e "${root}/lib/apk/packages/${pkgname}.list" ]; then
 		filelist="${root}/lib/apk/packages/${pkgname}.list"
 		update_alternatives install "${pkgname}"
 	fi
