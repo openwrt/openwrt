@@ -294,7 +294,7 @@ $(_endef)
 		$(1) $(foreach provide,$(PROVIDES),$(provide)$$(ABIV_$(1))))),$$(prov)=0 )" \
 	  --script "post-install:$$(ADIR_$(1))/post-install" \
 	  --script "pre-deinstall:$$(ADIR_$(1))/pre-deinstall" \
-	  --info "depends:$$(foreach depends,$$(subst $$(comma),,$$(subst $$(paren_right),,$$(subst $$(space)$$(paren_left),,$$(Package/$(1)/DEPENDS)))),$$(depends))" \
+	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \
 	  --files "$$(IDIR_$(1))" \
 	  --output "$$(PACK_$(1))" \
 	  --sign "$(BUILD_KEY_APK_SEC)"
