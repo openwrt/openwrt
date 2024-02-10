@@ -152,7 +152,7 @@ static inline void fe_int_enable(u32 mask)
 	fe_reg_r32(FE_REG_FE_INT_ENABLE);
 }
 
-static inline void fe_hw_set_macaddr(struct fe_priv *priv, unsigned char *mac)
+static inline void fe_hw_set_macaddr(struct fe_priv *priv, const unsigned char *mac)
 {
 	unsigned long flags;
 
@@ -1365,10 +1365,8 @@ static int __init fe_init(struct net_device *dev)
 
 	fe_reset_phy(priv);
 
-	of_get_mac_address(priv->dev->of_node, dev->dev_addr);
-
-	/* If the mac address is invalid, use random mac address  */
-	if (!is_valid_ether_addr(dev->dev_addr)) {
+	/* Set the MAC address if it is correct, if not use a random MAC address  */
+	if (of_get_ethdev_address(priv->dev->of_node, dev)) {
 		eth_hw_addr_random(dev);
 		dev_err(priv->dev, "generated random MAC address %pM\n",
 			dev->dev_addr);
@@ -1638,7 +1636,11 @@ static int fe_probe(struct platform_device *pdev)
 		priv->tx_ring.tx_ring_size *= 4;
 		priv->rx_ring.rx_ring_size *= 4;
 	}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+	netif_napi_add_weight(netdev, &priv->rx_napi, fe_poll, napi_weight);
+#else
 	netif_napi_add(netdev, &priv->rx_napi, fe_poll, napi_weight);
+#endif
 	fe_set_ethtool_ops(netdev);
 
 	err = register_netdev(netdev);

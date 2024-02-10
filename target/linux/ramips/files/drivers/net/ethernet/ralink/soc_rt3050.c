@@ -76,7 +76,7 @@ static void rt5350_init_data(struct fe_soc_data *data,
 	netdev->hw_features = NETIF_F_SG | NETIF_F_RXCSUM;
 }
 
-static void rt5350_set_mac(struct fe_priv *priv, unsigned char *mac)
+static void rt5350_set_mac(struct fe_priv *priv, const unsigned char *mac)
 {
 	unsigned long flags;
 
