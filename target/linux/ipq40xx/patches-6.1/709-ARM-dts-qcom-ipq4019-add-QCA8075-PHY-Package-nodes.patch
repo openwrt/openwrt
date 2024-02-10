@@ -1,0 +1,67 @@
+From 5ac078c8fe18f3e8318547b8ed0ed782730c5039 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sat, 10 Feb 2024 22:28:27 +0100
+Subject: [PATCH] ARM: dts: qcom: ipq4019: add QCA8075 PHY Package nodes
+
+Add QCA8075 PHY Package nodes. The PHY nodes that were previously
+defined never worked and actually never had a driver to correctly setup
+these PHY. Now that we have a correct driver, correctly add the PHY
+Package node and set the default value of 300mw for tx driver strength
+following specification of ipq4019 SoC.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ arch/arm/boot/dts//qcom-ipq4019.dtsi | 35 +++++++++++++++---------
+ 1 file changed, 22 insertions(+), 13 deletions(-)
+
+--- a/arch/arm/boot/dts/qcom-ipq4019.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq4019.dtsi
+@@ -725,24 +725,33 @@
+ 			reg = <0x90000 0x64>;
+ 			status = "disabled";
+ 
+-			ethphy0: ethernet-phy@0 {
++			ethernet-phy-package@0 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "qcom,qca8075-package";
+ 				reg = <0>;
+-			};
+-
+-			ethphy1: ethernet-phy@1 {
+-				reg = <1>;
+-			};
+ 
+-			ethphy2: ethernet-phy@2 {
+-				reg = <2>;
+-			};
+-
+-			ethphy3: ethernet-phy@3 {
+-				reg = <3>;
+-			};
++				qcom,tx-drive-strength-milliwatt = <300>;
+ 
+-			ethphy4: ethernet-phy@4 {
+-				reg = <4>;
++				ethphy0: ethernet-phy@0 {
++					reg = <0>;
++				};
++
++				ethphy1: ethernet-phy@1 {
++					reg = <1>;
++				};
++
++				ethphy2: ethernet-phy@2 {
++					reg = <2>;
++				};
++
++				ethphy3: ethernet-phy@3 {
++					reg = <3>;
++				};
++
++				ethphy4: ethernet-phy@4 {
++					reg = <4>;
++				};
+ 			};
+ 		};
+ 
