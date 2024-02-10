@@ -20,7 +20,7 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -3564,6 +3564,8 @@ int hostapd_remove_iface(struct hapd_int
+@@ -3670,6 +3670,8 @@ int hostapd_remove_iface(struct hapd_int
  void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
  			   int reassoc)
  {
@@ -29,14 +29,14 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
  	if (hapd->tkip_countermeasures) {
  		hostapd_drv_sta_deauth(hapd, sta->addr,
  				       WLAN_REASON_MICHAEL_MIC_FAILURE);
-@@ -3571,10 +3573,16 @@ void hostapd_new_assoc_sta(struct hostap
+@@ -3677,10 +3679,16 @@ void hostapd_new_assoc_sta(struct hostap
  	}
  
  #ifdef CONFIG_IEEE80211BE
--	if (hapd->conf->mld_ap && sta->mld_info.mld_sta &&
+-	if (ap_sta_is_mld(hapd, sta) &&
 -	    sta->mld_assoc_link_id != hapd->mld_link_id)
 -		return;
-+	if (hapd->conf->mld_ap && sta->mld_info.mld_sta) {
++	if (ap_sta_is_mld(hapd, sta)) {
 +		if (sta->mld_assoc_link_id == hapd->mld_link_id) {
 +			mld_assoc_link_id = sta->mld_assoc_link_id;
 +		} else {
@@ -51,7 +51,7 @@ Signed-off-by: Stijn Tintel <stijn@linux-ipv6.be>
  	sta->post_csa_sa_query = 0;
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -1318,9 +1318,6 @@ void ap_sta_set_authorized(struct hostap
+@@ -1414,9 +1414,6 @@ bool ap_sta_set_authorized_flag(struct h
  				mld_assoc_link_id = -2;
  		}
  #endif /* CONFIG_IEEE80211BE */

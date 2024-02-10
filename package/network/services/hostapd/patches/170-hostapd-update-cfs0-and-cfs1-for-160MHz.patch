@@ -21,15 +21,15 @@ operation information element instead.
 Signed-off-by: P Praneesh <ppranees@codeaurora.org>
 ---
  hostapd/config_file.c           |  2 ++
- src/ap/ieee802_11_ht.c          |  7 +++++++
- src/ap/ieee802_11_vht.c         | 16 ++++++++++++++++
+ src/ap/ieee802_11_ht.c          |  9 +++++++++
+ src/ap/ieee802_11_vht.c         | 17 +++++++++++++++++
  src/common/hw_features_common.c |  1 +
- src/common/ieee802_11_defs.h    |  1 +
- 5 files changed, 27 insertions(+)
+ src/common/ieee802_11_defs.h    |  2 ++
+ 5 files changed, 31 insertions(+)
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1153,6 +1153,8 @@ static int hostapd_config_vht_capab(stru
+@@ -1229,6 +1229,8 @@ static int hostapd_config_vht_capab(stru
  		conf->vht_capab |= VHT_CAP_RX_ANTENNA_PATTERN;
  	if (os_strstr(capab, "[TX-ANTENNA-PATTERN]"))
  		conf->vht_capab |= VHT_CAP_TX_ANTENNA_PATTERN;
@@ -120,7 +120,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		 * Convert 80+80 MHz channel width to new style as interop
 --- a/src/common/hw_features_common.c
 +++ b/src/common/hw_features_common.c
-@@ -811,6 +811,7 @@ int ieee80211ac_cap_check(u32 hw, u32 co
+@@ -815,6 +815,7 @@ int ieee80211ac_cap_check(u32 hw, u32 co
  	VHT_CAP_CHECK(VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB);
  	VHT_CAP_CHECK(VHT_CAP_RX_ANTENNA_PATTERN);
  	VHT_CAP_CHECK(VHT_CAP_TX_ANTENNA_PATTERN);
@@ -130,7 +130,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  #undef VHT_CAP_CHECK_MAX
 --- a/src/common/ieee802_11_defs.h
 +++ b/src/common/ieee802_11_defs.h
-@@ -1349,6 +1349,8 @@ struct ieee80211_ampe_ie {
+@@ -1397,6 +1397,8 @@ struct ieee80211_ampe_ie {
  #define VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB     ((u32) BIT(26) | BIT(27))
  #define VHT_CAP_RX_ANTENNA_PATTERN                  ((u32) BIT(28))
  #define VHT_CAP_TX_ANTENNA_PATTERN                  ((u32) BIT(29))

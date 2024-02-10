@@ -34,7 +34,7 @@
  #define STA_HASH_SIZE 256
 --- a/src/ap/wnm_ap.c
 +++ b/src/ap/wnm_ap.c
-@@ -386,6 +386,7 @@ static int ieee802_11_send_bss_trans_mgm
+@@ -410,6 +410,7 @@ static int ieee802_11_send_bss_trans_mgm
  	mgmt->u.action.u.bss_tm_req.validity_interval = 1;
  	pos = mgmt->u.action.u.bss_tm_req.variable;
  
@@ -42,7 +42,7 @@
  	wpa_printf(MSG_DEBUG, "WNM: Send BSS Transition Management Request to "
  		   MACSTR " dialog_token=%u req_mode=0x%x disassoc_timer=%u "
  		   "validity_interval=%u",
-@@ -790,10 +791,12 @@ int ieee802_11_rx_wnm_action_ap(struct h
+@@ -814,10 +815,12 @@ int ieee802_11_rx_wnm_action_ap(struct h
  					       plen);
  		return 0;
  	case WNM_BSS_TRANS_MGMT_QUERY:
@@ -55,7 +55,7 @@
  		ieee802_11_rx_bss_trans_mgmt_resp(hapd, mgmt->sa, payload,
  						  plen);
  		return 0;
-@@ -840,6 +843,7 @@ int wnm_send_disassoc_imminent(struct ho
+@@ -865,6 +868,7 @@ int wnm_send_disassoc_imminent(struct ho
  
  	pos = mgmt->u.action.u.bss_tm_req.variable;
  
@@ -63,7 +63,7 @@
  	wpa_printf(MSG_DEBUG, "WNM: Send BSS Transition Management Request frame to indicate imminent disassociation (disassoc_timer=%d) to "
  		   MACSTR, disassoc_timer, MAC2STR(sta->addr));
  	if (hostapd_drv_send_mlme(hapd, buf, pos - buf, 0, NULL, 0, 0) < 0) {
-@@ -921,6 +925,7 @@ int wnm_send_ess_disassoc_imminent(struc
+@@ -947,6 +951,7 @@ int wnm_send_ess_disassoc_imminent(struc
  		return -1;
  	}
  
@@ -71,14 +71,14 @@
  	if (disassoc_timer) {
  		/* send disassociation frame after time-out */
  		set_disassoc_timer(hapd, sta, disassoc_timer);
-@@ -1001,6 +1006,7 @@ int wnm_send_bss_tm_req(struct hostapd_d
+@@ -1028,6 +1033,7 @@ int wnm_send_bss_tm_req(struct hostapd_d
  	}
  	os_free(buf);
  
 +	hapd->openwrt_stats.wnm.bss_transition_request_tx++;
  	if (disassoc_timer) {
- 		/* send disassociation frame after time-out */
- 		set_disassoc_timer(hapd, sta, disassoc_timer);
+ #ifdef CONFIG_IEEE80211BE
+ 		if (ap_sta_is_mld(hapd, sta)) {
 --- a/src/ap/rrm.c
 +++ b/src/ap/rrm.c
 @@ -269,6 +269,8 @@ static void hostapd_send_nei_report_resp

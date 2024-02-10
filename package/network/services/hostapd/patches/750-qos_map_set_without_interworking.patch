@@ -1,6 +1,6 @@
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -1604,6 +1604,8 @@ static int parse_anqp_elem(struct hostap
+@@ -1680,6 +1680,8 @@ static int parse_anqp_elem(struct hostap
  	return 0;
  }
  
@@ -9,7 +9,7 @@
  
  static int parse_qos_map_set(struct hostapd_bss_config *bss,
  			     char *buf, int line)
-@@ -1645,8 +1647,6 @@ static int parse_qos_map_set(struct host
+@@ -1721,8 +1723,6 @@ static int parse_qos_map_set(struct host
  	return 0;
  }
  
@@ -18,7 +18,7 @@
  
  #ifdef CONFIG_HS20
  static int hs20_parse_conn_capab(struct hostapd_bss_config *bss, char *buf,
-@@ -4062,10 +4062,10 @@ static int hostapd_config_fill(struct ho
+@@ -4220,10 +4220,10 @@ static int hostapd_config_fill(struct ho
  		bss->gas_frag_limit = val;
  	} else if (os_strcmp(buf, "gas_comeback_delay") == 0) {
  		bss->gas_comeback_delay = atoi(pos);
@@ -32,7 +32,7 @@
  		os_free(bss->dump_msk_file);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1486,6 +1486,7 @@ int hostapd_setup_bss(struct hostapd_dat
+@@ -1567,6 +1567,7 @@ int hostapd_setup_bss(struct hostapd_dat
  		wpa_printf(MSG_ERROR, "GAS server initialization failed");
  		return -1;
  	}
@@ -40,7 +40,7 @@
  
  	if (conf->qos_map_set_len &&
  	    hostapd_drv_set_qos_map(hapd, conf->qos_map_set,
-@@ -1493,7 +1494,6 @@ int hostapd_setup_bss(struct hostapd_dat
+@@ -1574,7 +1575,6 @@ int hostapd_setup_bss(struct hostapd_dat
  		wpa_printf(MSG_ERROR, "Failed to initialize QoS Map");
  		return -1;
  	}
@@ -50,7 +50,7 @@
  		wpa_printf(MSG_ERROR, "BSS Load initialization failed");
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -2683,8 +2683,6 @@ void wnm_bss_keep_alive_deinit(struct wp
+@@ -2935,8 +2935,6 @@ void wnm_bss_keep_alive_deinit(struct wp
  }
  
  
@@ -59,7 +59,7 @@
  static int wpas_qos_map_set(struct wpa_supplicant *wpa_s, const u8 *qos_map,
  			    size_t len)
  {
-@@ -2717,8 +2715,6 @@ static void interworking_process_assoc_r
+@@ -2969,8 +2967,6 @@ static void interworking_process_assoc_r
  	}
  }
  
@@ -68,7 +68,7 @@
  
  static void wpa_supplicant_set_4addr_mode(struct wpa_supplicant *wpa_s)
  {
-@@ -3098,10 +3094,8 @@ static int wpa_supplicant_event_associnf
+@@ -3350,10 +3346,8 @@ static int wpa_supplicant_event_associnf
  		wnm_process_assoc_resp(wpa_s, data->assoc_info.resp_ies,
  				       data->assoc_info.resp_ies_len);
  #endif /* CONFIG_WNM */
@@ -81,7 +81,7 @@
  			   data->assoc_info.resp_ies_len, WLAN_EID_VHT_CAP))
 --- a/src/ap/ieee802_11_shared.c
 +++ b/src/ap/ieee802_11_shared.c
-@@ -1116,13 +1116,11 @@ u8 * hostapd_eid_rsnxe(struct hostapd_da
+@@ -1138,13 +1138,11 @@ u8 * hostapd_eid_rsnxe(struct hostapd_da
  u16 check_ext_capab(struct hostapd_data *hapd, struct sta_info *sta,
  		    const u8 *ext_capab_ie, size_t ext_capab_ie_len)
  {

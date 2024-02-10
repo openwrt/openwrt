@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -569,6 +569,7 @@ static void sta_track_deinit(struct host
+@@ -650,6 +650,7 @@ static void sta_track_deinit(struct host
  void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
  {
  	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);
@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #ifdef NEED_AP_MLME
  	hostapd_stop_setup_timers(iface);
  #endif /* NEED_AP_MLME */
-@@ -598,7 +599,6 @@ void hostapd_cleanup_iface_partial(struc
+@@ -679,7 +680,6 @@ void hostapd_cleanup_iface_partial(struc
  static void hostapd_cleanup_iface(struct hostapd_iface *iface)
  {
  	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);

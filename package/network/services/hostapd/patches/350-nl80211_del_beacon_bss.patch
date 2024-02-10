@@ -1,6 +1,6 @@
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -3008,12 +3008,12 @@ static int wpa_driver_nl80211_del_beacon
+@@ -3072,12 +3072,12 @@ static int wpa_driver_nl80211_del_beacon
  		return 0;
  
  	wpa_printf(MSG_DEBUG, "nl80211: Remove beacon (ifindex=%d)",
@@ -15,16 +15,17 @@
  	if (!msg)
  		return -ENOBUFS;
  
-@@ -6100,7 +6100,7 @@ static void nl80211_teardown_ap(struct i
+@@ -6200,8 +6200,7 @@ static void nl80211_teardown_ap(struct i
  		nl80211_mgmt_unsubscribe(bss, "AP teardown");
  
  	nl80211_put_wiphy_data_ap(bss);
--	bss->flink->beacon_set = 0;
+-	if (bss->flink)
+-		bss->flink->beacon_set = 0;
 +	wpa_driver_nl80211_del_beacon_all(bss);
  }
  
  
-@@ -8859,8 +8859,6 @@ static int wpa_driver_nl80211_if_remove(
+@@ -9034,8 +9033,6 @@ static int wpa_driver_nl80211_if_remove(
  	} else {
  		wpa_printf(MSG_DEBUG, "nl80211: First BSS - reassign context");
  		nl80211_teardown_ap(bss);

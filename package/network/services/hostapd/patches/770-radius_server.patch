@@ -1,6 +1,6 @@
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -63,6 +63,10 @@ endif
+@@ -64,6 +64,10 @@ endif
  OBJS += main.o
  OBJS += config_file.o
  
@@ -21,7 +21,7 @@
  
  #ifndef CONFIG_NO_HOSTAPD_LOGGER
  static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
-@@ -771,6 +772,11 @@ int main(int argc, char *argv[])
+@@ -778,6 +779,11 @@ int main(int argc, char *argv[])
  	if (os_program_init())
  		return -1;
  

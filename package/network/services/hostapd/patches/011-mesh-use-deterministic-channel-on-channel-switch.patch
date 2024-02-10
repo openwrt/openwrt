@@ -64,11 +64,11 @@ Signed-off-by: Markus Theil <markus.theil@tu-ilmenau.de>
  		return NULL;
 +
  	chan_idx = _rand % num_available_chandefs;
- 	dfs_find_channel(iface, &chan, chan_idx, type);
- 	if (!chan) {
+ 	wpa_printf(MSG_DEBUG, "DFS: Picked random entry from the list: %d/%d",
+ 		   chan_idx, num_available_chandefs);
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -11017,6 +11017,10 @@ static int nl80211_switch_channel(void *
+@@ -11254,6 +11254,10 @@ static int nl80211_switch_channel(void *
  	if (ret)
  		goto error;
  
