@@ -841,6 +841,24 @@ define Device/netgear_orbi
 	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct e2fsprogs kmod-fs-ext4 losetup
 endef
 
+define Device/netgear_lbr20
+	$(call Device/netgear_orbi)
+	DEVICE_MODEL := LBR20
+	NETGEAR_BOARD_ID := LBR20
+	NETGEAR_HW_ID := 29766182+0+256+512+2x2+2x2+2x2+1
+	KERNEL_SIZE := 7340032
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	IMAGE/factory.img := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
+		append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | \
+		append-ubi | netgear-dni
+	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
+		append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | \
+		append-metadata
+	DEVICE_PACKAGES := ipq-wifi-netgear_lbr20 ath10k-firmware-qca9888-ct kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += netgear_lbr20
+
 define Device/netgear_rbx40
 	$(call Device/netgear_orbi)
 	NETGEAR_HW_ID := 29765515+0+4096+512+2x2+2x2+2x2
