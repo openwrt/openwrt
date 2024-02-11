@@ -1101,6 +1101,18 @@ define Device/sky_sr102
 endef
 TARGET_DEVICES += sky_sr102
 
+define Device/smartrg_sr505n
+  $(Device/bcm63xx)
+  DEVICE_VENDOR := SmartRG
+  DEVICE_MODEL := SR505n
+  CFE_BOARD_ID := 963168MBV_17AZZ
+  CHIP_ID := 63268
+  CFE_EXTRAS += --rsa-signature "$(VERSION_DIST)-$(firstword $(subst -,$(space),$(REVISION)))"
+  SOC := bcm63168
+  DEVICE_PACKAGES := $(USB2_PACKAGES)
+endef
+TARGET_DEVICES += smartrg_sr505n
+
 ### T-Com ###
 define Device/t-com_speedport-w-303v
   $(Device/bcm63xx-legacy)

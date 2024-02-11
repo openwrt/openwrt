@@ -1,12 +1,47 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -2697,6 +2697,273 @@ static struct board_info __initdata boar
+@@ -2697,6 +2697,308 @@ static struct board_info __initdata boar
  #endif /* CONFIG_BCM63XX_CPU_6368 */
  
  /*
 + * known 63268/63269 boards
 + */
 +#ifdef CONFIG_BCM63XX_CPU_63268
++static struct board_info __initdata board_963168MBV_17AZZ = {
++	.name = "963168MBV_17AZZ",
++	.expected_cpu_id = 0x63268,
++
++	.has_ohci0 = 1,
++	.has_ehci0 = 1,
++	.num_usbh_ports = 1,
++
++	.has_enetsw = 1,
++	.enetsw = {
++		.used_ports = {
++			[0] = {
++				.used = 1,
++				.phy_id = 1,
++				.name = "Port 2",
++			},
++			[1] = {
++				.used = 1,
++				.phy_id = 2,
++				.name = "Port 3",
++			},
++			[2] = {
++				.used = 1,
++				.phy_id = 3,
++				.name = "Port 4",
++			},
++			[3] = {
++				.used = 1,
++				.phy_id = 4,
++				.name = "Port 1",
++			},
++		},
++	},
++};
++
 +static struct board_info __initdata board_963268bu_p300 = {
 +	.name = "963268BU_P300",
 +	.expected_cpu_id = 0x63268,
@@ -274,11 +309,12 @@
   * all boards
   */
  static const struct board_info __initconst *bcm963xx_boards[] = {
-@@ -2801,6 +3068,15 @@ static const struct board_info __initcon
+@@ -2801,6 +3103,16 @@ static const struct board_info __initcon
  	&board_VR3026e,
  	&board_WAP5813n,
  #endif /* CONFIG_BCM63XX_CPU_6368 */
 +#ifdef CONFIG_BCM63XX_CPU_63268
++	&board_963168MBV_17AZZ,
 +	&board_963268bu_p300,
 +	&board_963269bhr,
 +	&board_BSKYB_63168,
@@ -290,7 +326,7 @@
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
-@@ -2918,6 +3194,14 @@ static struct of_device_id const bcm963x
+@@ -2918,6 +3230,15 @@ static struct of_device_id const bcm963x
  	{ .compatible = "zyxel,p870hw-51a-v2", .data = &board_P870HW51A_V2, },
  #endif /* CONFIG_BCM63XX_CPU_6368 */
  #ifdef CONFIG_BCM63XX_CPU_63268
@@ -302,6 +338,7 @@
 +	{ .compatible = "sercomm,h500-s-lowi", .data = &board_H500s, },
 +	{ .compatible = "sercomm,h500-s-vfes", .data = &board_H500s, },
 +	{ .compatible = "sky,sr102", .data = &board_BSKYB_63168, },
++	{ .compatible = "smartrg,sr505n", .data = &board_963168MBV_17AZZ, },
  #endif /* CONFIG_BCM63XX_CPU_63268 */
  #endif /* CONFIG_OF */
  	{ },
