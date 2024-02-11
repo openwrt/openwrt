@@ -1021,6 +1021,16 @@ define Device/dlink_covr
 	append-loader-okli-uimage $(1) | pad-to 15616k
 endef
 
+define Device/dlink_covr-c1200-a1
+  $(Device/dlink_covr)
+  DEVICE_MODEL := COVR-C1200
+  DEVICE_VARIANT := A1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/recovery.bin) | \
+	dlink-sge-signature COVR-C1200 | dlink-sge-image COVR-C1200
+endef
+TARGET_DEVICES += dlink_covr-c1200-a1
+
 define Device/dlink_covr-p2500-a1
   $(Device/dlink_covr)
   DEVICE_MODEL := COVR-P2500
