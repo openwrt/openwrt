@@ -11,6 +11,9 @@ ipq807x_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	asus,rt-ax89x)
+		ucidef_set_interfaces_lan_wan "10g-sfp 10g-copper lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8" "wan"
+		;;
 	arcadyan,aw1000|\
 	buffalo,wxr-5950ax12|\
 	dynalink,dl-wrx36|\

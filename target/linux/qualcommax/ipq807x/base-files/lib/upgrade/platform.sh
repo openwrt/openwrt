@@ -27,12 +27,23 @@ xiaomi_initramfs_prepare() {
 	ubiformat /dev/mtd$kern_mtdnum -y
 }
 
+asus_initial_setup() {
+	# Remove existing linux and jffs2 volumes
+	[ "$(rootfs_type)" = "tmpfs" ] || return 0
+
+	ubirmvol /dev/ubi0 -N linux
+	ubirmvol /dev/ubi0 -N jffs2
+}
+
 platform_check_image() {
 	return 0;
 }
 
 platform_pre_upgrade() {
 	case "$(board_name)" in
+	asus,rt-ax89x)
+		asus_initial_setup
+		;;
 	redmi,ax6|\
 	xiaomi,ax3600|\
 	xiaomi,ax9000)
@@ -54,6 +65,12 @@ platform_do_upgrade() {
 	netgear,wax218|\
 	netgear,wax620|\
 	netgear,wax630)
+		nand_do_upgrade "$1"
+		;;
+	asus,rt-ax89x)
+		CI_UBIPART="UBI_DEV"
+		CI_KERNPART="linux"
+		CI_ROOTPART="jffs2"
 		nand_do_upgrade "$1"
 		;;
 	buffalo,wxr-5950ax12)
