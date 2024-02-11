@@ -42,13 +42,14 @@ static void show_usage(void)
 int main(int argc, char **argv)
 {
 	int timeout = 3;
-	int opt;
+	int opt, gret;
 	char ipaddr[INET6_ADDRSTRLEN];
 	void *addr;
 	struct addrinfo *res, *rp;
 	struct sigaction sa = {	.sa_handler = &abort_query };
 	timer_t timerid;
 	struct itimerspec its;
+	struct timespec ts;
 	struct sigevent sev;
 	struct addrinfo hints = {
 		.ai_family   = AF_UNSPEC,
@@ -101,7 +102,18 @@ int main(int argc, char **argv)
 	if (timer_settime(timerid, 0, &its, NULL) == -1)
 		exit(ERROR_IN_TIMER);
 
-	if (getaddrinfo(argv[optind], NULL, &hints, &res))
+	/* retry getaddrinfo on temporary failures */
+	do
+	{
+		gret = getaddrinfo(argv[optind], NULL, &hints, &res);
+		if (gret == EAI_AGAIN) {
+			ts.tv_nsec = 0;
+			ts.tv_sec = 1;
+			nanosleep(&ts, NULL);
+		}
+	} while (gret == EAI_AGAIN);
+
+	if (gret)
 		exit(ERROR_IN_GETADDRINFO);
 
 	/* disarm timer */
