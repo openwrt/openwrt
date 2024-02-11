@@ -1,5 +1,5 @@
---- a/Makefile	2019-07-02 09:24:57.554332875 -0600
-+++ b/Makefile	2019-07-02 09:25:42.626694604 -0600
+--- a/Makefile
++++ b/Makefile
 @@ -41,7 +41,7 @@ PLATS= aix bsd c89 freebsd generic linux
  # What to install.
  TO_BIN= lua$V luac$V
@@ -19,8 +19,8 @@
  	cd doc && $(INSTALL_DATA) $(TO_MAN) $(INSTALL_MAN)
  
  uninstall:
---- a/src/ldo.h	2017-04-19 11:20:42.000000000 -0600
-+++ b/src/ldo.h	2019-07-02 09:25:42.626694604 -0600
+--- a/src/ldo.h
++++ b/src/ldo.h
 @@ -47,8 +47,8 @@ LUAI_FUNC int luaD_pcall (lua_State *L,
  LUAI_FUNC int luaD_poscall (lua_State *L, CallInfo *ci, StkId firstResult,
                                            int nres);
@@ -32,8 +32,8 @@
  LUAI_FUNC void luaD_inctop (lua_State *L);
  
  LUAI_FUNC l_noret luaD_throw (lua_State *L, int errcode);
---- a/src/lfunc.h	2017-04-19 11:39:34.000000000 -0600
-+++ b/src/lfunc.h	2019-07-02 09:25:42.630694635 -0600
+--- a/src/lfunc.h
++++ b/src/lfunc.h
 @@ -47,14 +47,14 @@ struct UpVal {
  #define upisopen(up)	((up)->v != &(up)->u.value)
  
@@ -55,8 +55,8 @@
                                           int pc);
  
  
---- a/src/lgc.h	2017-04-19 11:39:34.000000000 -0600
-+++ b/src/lgc.h	2019-07-02 09:25:42.634694666 -0600
+--- a/src/lgc.h
++++ b/src/lgc.h
 @@ -133,11 +133,11 @@
  
  LUAI_FUNC void luaC_fix (lua_State *L, GCObject *o);
@@ -71,8 +71,8 @@
  LUAI_FUNC void luaC_barrierback_ (lua_State *L, Table *o);
  LUAI_FUNC void luaC_upvalbarrier_ (lua_State *L, UpVal *uv);
  LUAI_FUNC void luaC_checkfinalizer (lua_State *L, GCObject *o, Table *mt);
---- a/src/llex.h	2017-04-19 11:20:42.000000000 -0600
-+++ b/src/llex.h	2019-07-02 09:25:42.630694635 -0600
+--- a/src/llex.h
++++ b/src/llex.h
 @@ -73,13 +73,13 @@ typedef struct LexState {
  
  
@@ -92,8 +92,8 @@
  
  
  #endif
---- a/src/lmem.h	2017-04-19 11:20:42.000000000 -0600
-+++ b/src/lmem.h	2019-07-02 09:25:42.630694635 -0600
+--- a/src/lmem.h
++++ b/src/lmem.h
 @@ -56,12 +56,12 @@
  #define luaM_reallocvector(L, v,oldn,n,t) \
     ((v)=cast(t *, luaM_reallocv(L, v, oldn, n, sizeof(t))))
@@ -110,8 +110,8 @@
                                 size_t size_elem, int limit,
                                 const char *what);
  
---- a/src/lobject.h	2017-04-19 11:39:34.000000000 -0600
-+++ b/src/lobject.h	2019-07-02 09:25:42.630694635 -0600
+--- a/src/lobject.h
++++ b/src/lobject.h
 @@ -525,7 +525,7 @@ typedef struct Table {
  #define luaO_nilobject		(&luaO_nilobject_)
  
@@ -141,8 +141,8 @@
  
  
  #endif
---- a/src/lopcodes.h	2017-04-19 11:20:42.000000000 -0600
-+++ b/src/lopcodes.h	2019-07-02 09:25:42.630694635 -0600
+--- a/src/lopcodes.h
++++ b/src/lopcodes.h
 @@ -278,7 +278,7 @@ enum OpArgMask {
    OpArgK   /* argument is a constant or register/constant */
  };
@@ -161,8 +161,8 @@
  
  
  /* number of list items to accumulate before a SETLIST instruction */
---- a/src/lstate.h	2017-04-19 11:39:34.000000000 -0600
-+++ b/src/lstate.h	2019-07-02 09:25:42.630694635 -0600
+--- a/src/lstate.h
++++ b/src/lstate.h
 @@ -244,9 +244,9 @@ union GCUnion {
  
  LUAI_FUNC void luaE_setdebt (global_State *g, l_mem debt);
@@ -176,8 +176,8 @@
  
  
  #endif
---- a/src/lstring.h	2017-04-19 11:20:42.000000000 -0600
-+++ b/src/lstring.h	2019-07-02 09:25:42.630694635 -0600
+--- a/src/lstring.h
++++ b/src/lstring.h
 @@ -35,15 +35,15 @@
  
  LUAI_FUNC unsigned int luaS_hash (const char *str, size_t l, unsigned int seed);
@@ -198,8 +198,8 @@
  
  
  #endif
---- a/src/ltable.h	2018-05-24 13:39:05.000000000 -0600
-+++ b/src/ltable.h	2019-07-02 09:25:42.630694635 -0600
+--- a/src/ltable.h
++++ b/src/ltable.h
 @@ -41,14 +41,14 @@
  
  
@@ -218,8 +218,8 @@
  LUAI_FUNC void luaH_resize (lua_State *L, Table *t, unsigned int nasize,
                                                      unsigned int nhsize);
  LUAI_FUNC void luaH_resizearray (lua_State *L, Table *t, unsigned int nasize);
---- a/src/ltm.h	2017-04-19 11:20:42.000000000 -0600
-+++ b/src/ltm.h	2019-07-02 09:25:42.634694666 -0600
+--- a/src/ltm.h
++++ b/src/ltm.h
 @@ -55,10 +55,10 @@ typedef enum {
  LUAI_DDEC const char *const luaT_typenames_[LUA_TOTALTAGS];
  
@@ -245,8 +245,8 @@
                                  const TValue *p2, TMS event);
  
  
---- a/src/lundump.h	2017-04-19 11:20:42.000000000 -0600
-+++ b/src/lundump.h	2019-07-02 09:25:42.634694666 -0600
+--- a/src/lundump.h
++++ b/src/lundump.h
 @@ -23,10 +23,10 @@
  #define LUAC_FORMAT	0	/* this is the official format */
  
@@ -260,8 +260,8 @@
                           void* data, int strip);
  
  #endif
---- a/src/lzio.h	2017-04-19 11:20:42.000000000 -0600
-+++ b/src/lzio.h	2019-07-02 09:25:42.634694666 -0600
+--- a/src/lzio.h
++++ b/src/lzio.h
 @@ -61,6 +61,6 @@ struct Zio {
  };
  
@@ -270,8 +270,8 @@
 +LUA_API int luaZ_fill (ZIO *z);
  
  #endif
---- a/src/Makefile	2019-07-02 09:24:57.554332875 -0600
-+++ b/src/Makefile	2019-07-02 09:25:42.630694635 -0600
+--- a/src/Makefile
++++ b/src/Makefile
 @@ -29,6 +29,7 @@ MYOBJS=
  PLATS= aix bsd c89 freebsd generic linux macosx mingw posix solaris
  
