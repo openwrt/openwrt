@@ -1,6 +1,6 @@
-From 9e2a0a8bd7a392b5af6bf2cfa0b07d96d1fb6719 Mon Sep 17 00:00:00 2001
+From 12ce20e02e532f101b725d71c52a36c5cc8ad1e6 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Sun, 4 Feb 2024 00:32:04 +0100
+Date: Sun, 4 Feb 2024 00:54:01 +0100
 Subject: [PATCH] leds: trigger: netdev: Fix kernel panic on interface rename
  trig notify
 
@@ -29,6 +29,9 @@ case) and correctly parse the new dev.
 Fixes: d5e01266e7f5 ("leds: trigger: netdev: add additional specific link speed mode")
 Cc: stable@vger.kernel.org
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://lore.kernel.org/r/20240203235413.1146-1-ansuelsmth@gmail.com
+Signed-off-by: Lee Jones <lee@kernel.org>
 ---
  drivers/leds/trigger/ledtrig-netdev.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
