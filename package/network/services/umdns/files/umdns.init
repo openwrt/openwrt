@@ -8,7 +8,7 @@ PROG=/usr/sbin/umdns
 IFACES=""
 
 load_ifaces() {
-	local network="$(uci get umdns.@umdns[-1].network)"
+	local network="$(uci -q get umdns.@umdns[-1].network)"
 	for n in $network; do
 		local device
 		json_load "$(ifstatus $n)"
@@ -29,7 +29,7 @@ reload_service() {
 }
 
 start_service() {
-	local network="$(uci get umdns.@umdns[-1].network)"
+	local network="$(uci -q get umdns.@umdns[-1].network)"
 
 	procd_open_instance
 	procd_set_param command "$PROG"
@@ -42,7 +42,7 @@ start_service() {
 	done
 	procd_add_raw_trigger "instance.update" 5000 "/bin/ubus" "call" "umdns" "reload"
 	procd_close_trigger
-	[ "$(uci get umdns.@umdns[-1].jail)" = 1 ] && procd_add_jail umdns ubus log
+	[ "$(uci -q get umdns.@umdns[-1].jail)" = 1 ] && procd_add_jail umdns ubus log
 	procd_close_instance
 }
 
