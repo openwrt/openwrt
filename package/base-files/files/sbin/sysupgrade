@@ -24,7 +24,6 @@ export NEED_IMAGE=
 export HELP=0
 export FORCE=0
 export TEST=0
-export UMOUNT_ETCBACKUP_DIR=0
 
 # parse options
 while [ -n "$1" ]; do
@@ -225,6 +224,8 @@ include /lib/upgrade
 do_save_conffiles() {
 	local conf_tar="$1"
 
+	local umount_etcbackup_dir=0
+
 	[ "$(rootfs_type)" = "tmpfs" ] && {
 		echo "Cannot save config while running from ramdisk." >&2
 		ask_bool 0 "Abort" && exit
@@ -241,7 +242,7 @@ do_save_conffiles() {
 		RAMFS="$(mktemp -d -t sysupgrade.XXXXXX)"
 		mkdir -p "$RAMFS/upper" "$RAMFS/work"
 		mount -t overlay overlay -o lowerdir=$ETCBACKUP_DIR,upperdir=$RAMFS/upper,workdir=$RAMFS/work $ETCBACKUP_DIR &&
-			UMOUNT_ETCBACKUP_DIR=1 || {
+			umount_etcbackup_dir=1 || {
 				echo "Cannot mount '$ETCBACKUP_DIR' as tmpfs to avoid touching disk while saving the list of installed packages." >&2
 				ask_bool 0 "Abort" && exit
 			}
@@ -265,7 +266,7 @@ do_save_conffiles() {
 		rm -f "$conf_tar"
 	fi
 
-	[ "$UMOUNT_ETCBACKUP_DIR" -eq 1 ] && {
+	[ "$umount_etcbackup_dir" -eq 1 ] && {
 		umount "$ETCBACKUP_DIR"
 		rm -rf "$RAMFS"
 	}
