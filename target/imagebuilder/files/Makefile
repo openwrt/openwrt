@@ -106,8 +106,7 @@ PROFILE_LIST = $(foreach p,$(PROFILE_NAMES), \
 	@$(SCRIPT_DIR)/target-metadata.pl profile_mk $< '$(BOARD)$(if $(SUBTARGET),/$(SUBTARGET))' > $@
 
 staging_dir/host/.prereq-build: include/prereq-build.mk
-	mkdir -p tmp feeds
-	ln -sf $(TOPDIR)/package $(TOPDIR)/feeds/base
+	mkdir -p tmp
 	@$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f $(TOPDIR)/include/prereq-build.mk prereq IB=1 2>/dev/null || { \
 		echo "Prerequisite check failed. Use FORCE=1 to override."; \
 		false; \
