@@ -109,7 +109,7 @@ endif
 $(curdir)/index: FORCE
 	@echo Generating package index...
 ifneq ($(CONFIG_USE_APK),)
-	-for d in $(PACKAGE_SUBDIRS); do ( \
+	@for d in $(PACKAGE_SUBDIRS); do ( \
 		mkdir -p $$d; \
 		cd $$d || continue; \
 		$(STAGING_DIR_HOST)/bin/apk mkndx \
@@ -134,12 +134,6 @@ else
 		echo '}}' >> index.json; \
 		sed -i 's/, }}/}}/' index.json; \
 		gzip -9nc Packages > Packages.gz; \
-		$(STAGING_DIR_HOST)/bin/apk mkndx \
-			--root $(TOPDIR) \
-			--keys-dir $(TOPDIR) \
-			--sign $(BUILD_KEY_APK_SEC) \
-			--output packages.adb \
-			*.apk; \
 	); done
 endif
 ifdef CONFIG_SIGNED_PACKAGES
