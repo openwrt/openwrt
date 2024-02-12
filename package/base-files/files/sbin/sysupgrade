@@ -155,7 +155,7 @@ list_static_conffiles() {
 		\( -type f -o -type l \) $filter 2>/dev/null
 }
 
-add_conffiles() {
+build_list_of_backup_config_files() {
 	local file="$1"
 
 	( list_static_conffiles "$find_filter"; list_changed_conffiles ) |
@@ -163,7 +163,7 @@ add_conffiles() {
 	return 0
 }
 
-add_overlayfiles() {
+build_list_of_backup_overlay_files() {
 	local file="$1"
 
 	local packagesfiles=$1.packagesfiles
@@ -218,9 +218,9 @@ if [ $SAVE_OVERLAY = 1 ]; then
 		echo "Cannot find '/overlay/upper/etc', required for '-c' or '-o'" >&2
 		exit 1
 	}
-	sysupgrade_init_conffiles="add_overlayfiles"
+	sysupgrade_init_conffiles="build_list_of_backup_overlay_files"
 else
-	sysupgrade_init_conffiles="add_conffiles"
+	sysupgrade_init_conffiles="build_list_of_backup_config_files"
 fi
 
 find_filter=""
