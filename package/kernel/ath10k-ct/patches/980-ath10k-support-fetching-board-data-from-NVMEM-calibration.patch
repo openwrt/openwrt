@@ -1,0 +1,52 @@
+--- a/ath10k-6.4/core.c
++++ b/ath10k-6.4/core.c
+@@ -1000,6 +1000,35 @@ static const struct firmware *ath10k_fet
+ 	return fw;
+ }
+ 
++static struct firmware *ath10k_fetch_fw_nvmem(struct ath10k *ar,
++					      const char *cell_name)
++{
++	struct firmware *fw;
++	struct nvmem_cell *cell;
++	void *buf;
++	size_t len;
++
++	cell = devm_nvmem_cell_get(ar->dev, cell_name);
++	if (IS_ERR(cell))
++		return ERR_PTR(-ENOENT);
++
++	buf = nvmem_cell_read(cell, &len);
++	nvmem_cell_put(cell);
++	if (IS_ERR(buf))
++		return ERR_PTR(-ENOMEM);
++
++	fw = kzalloc(sizeof(*fw), GFP_KERNEL);
++	if (!fw) {
++		kfree(buf);
++		return ERR_PTR(-ENOMEM);
++	}
++
++	fw->data = (u8 *)buf;
++	fw->size = len;
++
++	return fw;
++}
++
+ static int ath10k_push_board_ext_data(struct ath10k *ar, const void *data,
+ 				      size_t data_len)
+ {
+@@ -1625,6 +1654,13 @@ static int ath10k_core_fetch_board_data_
+ 			ar->normal_mode_fw.board = fw;
+ 		}
+ 
++		if (IS_ERR(ar->normal_mode_fw.board)) {
++			WARN_ONCE(1, "fetch board data from nvmem pre-calibration\n");
++
++			fw = ath10k_fetch_fw_nvmem(ar, "pre-calibration");
++			ar->normal_mode_fw.board = fw;
++		}
++
+ 		if (IS_ERR(ar->normal_mode_fw.board))
+ 			return PTR_ERR(ar->normal_mode_fw.board);
+ 
