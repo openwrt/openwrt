@@ -5,82 +5,30 @@ Subject: [PATCH] arm64: dts: rockchip: Update LED properties for NanoPi R5
  series
 
 Add OpenWrt's LED aliases for showing system status.
-Also replace function/color with legacy label as OpenWrt relys on it
-to update LED settings.
 
 Signed-off-by: Tianling Shen <cnsztl@gmail.com>
 ---
 
 --- a/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5c.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5c.dts
-@@ -32,27 +32,22 @@
- 		pinctrl-0 = <&lan_led_pin>, <&power_led_pin>, <&wan_led_pin>, <&wlan_led_pin>;
- 
- 		led-lan {
--			color = <LED_COLOR_ID_GREEN>;
--			function = LED_FUNCTION_LAN;
-+			label = "green:lan";
- 			gpios = <&gpio3 RK_PA3 GPIO_ACTIVE_HIGH>;
- 		};
- 
+@@ -40,7 +40,6 @@
  		power_led: led-power {
--			color = <LED_COLOR_ID_RED>;
--			function = LED_FUNCTION_POWER;
+ 			color = <LED_COLOR_ID_RED>;
+ 			function = LED_FUNCTION_POWER;
 -			linux,default-trigger = "heartbeat";
-+			label = "red:power";
  			gpios = <&gpio3 RK_PA2 GPIO_ACTIVE_HIGH>;
  		};
  
- 		led-wan {
--			color = <LED_COLOR_ID_GREEN>;
--			function = LED_FUNCTION_WAN;
-+			label = "green:wan";
- 			gpios = <&gpio3 RK_PA4 GPIO_ACTIVE_HIGH>;
- 		};
- 
- 		led-wlan {
--			color = <LED_COLOR_ID_GREEN>;
--			function = LED_FUNCTION_WLAN;
-+			label = "green:wlan";
- 			gpios = <&gpio3 RK_PA5 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
 --- a/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts
-@@ -23,29 +23,22 @@
- 		pinctrl-0 = <&lan1_led_pin>, <&lan2_led_pin>, <&power_led_pin>, <&wan_led_pin>;
- 
- 		led-lan1 {
--			color = <LED_COLOR_ID_GREEN>;
--			function = LED_FUNCTION_LAN;
--			function-enumerator = <1>;
-+			label = "green:lan1";
- 			gpios = <&gpio3 RK_PD6 GPIO_ACTIVE_HIGH>;
- 		};
- 
- 		led-lan2 {
--			color = <LED_COLOR_ID_GREEN>;
--			function = LED_FUNCTION_LAN;
--			function-enumerator = <2>;
-+			label = "green:lan2";
- 			gpios = <&gpio3 RK_PD7 GPIO_ACTIVE_HIGH>;
- 		};
- 
+@@ -39,7 +39,6 @@
  		power_led: led-power {
--			color = <LED_COLOR_ID_RED>;
--			function = LED_FUNCTION_POWER;
+ 			color = <LED_COLOR_ID_RED>;
+ 			function = LED_FUNCTION_POWER;
 -			linux,default-trigger = "heartbeat";
-+			label = "red:power";
  			gpios = <&gpio4 RK_PD2 GPIO_ACTIVE_HIGH>;
  		};
  
- 		led-wan {
--			color = <LED_COLOR_ID_GREEN>;
--			function = LED_FUNCTION_WAN;
-+			label = "green:wan";
- 			gpios = <&gpio2 RK_PC1 GPIO_ACTIVE_HIGH>;
- 		};
- 	};
 --- a/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dtsi
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dtsi
 @@ -18,6 +18,11 @@
