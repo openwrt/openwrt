@@ -20,7 +20,7 @@ define Package/Default
   PROVIDES:=
   EXTRA_DEPENDS:=
   MAINTAINER:=$(PKG_MAINTAINER)
-  SOURCE:=$(patsubst $(TOPDIR)/%,%,$(CURDIR))
+  SOURCE:=$(patsubst $(TOPDIR)/%,%,$(patsubst $(TOPDIR)/package/%,feeds/base/%,$(CURDIR)))
   ifneq ($(PKG_VERSION),)
     ifneq ($(PKG_RELEASE),)
       VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
