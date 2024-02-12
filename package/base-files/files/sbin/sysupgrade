@@ -4,26 +4,35 @@
 . /lib/functions/system.sh
 . /usr/share/libubox/jshn.sh
 
-# initialize defaults
+# File-local constants
+CONF_TAR=/tmp/sysupgrade.tgz
+ETCBACKUP_DIR=/etc/backup
+INSTALLED_PACKAGES=${ETCBACKUP_DIR}/installed_packages.txt
+COMMAND=/lib/upgrade/do_stage2
+
+# File-local globals
+SAVE_OVERLAY=0
+SAVE_OVERLAY_PATH=
+SAVE_PARTITIONS=1
+SAVE_INSTALLED_PKGS=0
+SKIP_UNCHANGED=0
+CONF_IMAGE=
+CONF_BACKUP_LIST=0
+CONF_BACKUP=
+CONF_RESTORE=
+NEED_IMAGE=
+HELP=0
+TEST=0
+
+# Globals accessed in other files
 export MTD_ARGS=""
 export MTD_CONFIG_ARGS=""
 export INTERACTIVE=0
 export VERBOSE=1
 export SAVE_CONFIG=1
-export SAVE_OVERLAY=0
-export SAVE_OVERLAY_PATH=
-export SAVE_PARTITIONS=1
-export SAVE_INSTALLED_PKGS=0
-export SKIP_UNCHANGED=0
-export CONF_IMAGE=
-export CONF_BACKUP_LIST=0
-export CONF_BACKUP=
-export CONF_RESTORE=
 export IGNORE_MINOR_COMPAT=0
-export NEED_IMAGE=
-export HELP=0
 export FORCE=0
-export TEST=0
+export CONFFILES=/tmp/sysupgrade.conffiles
 
 # parse options
 while [ -n "$1" ]; do
@@ -32,18 +41,18 @@ while [ -n "$1" ]; do
 		-v) export VERBOSE="$(($VERBOSE + 1))";;
 		-q) export VERBOSE="$(($VERBOSE - 1))";;
 		-n) export SAVE_CONFIG=0;;
-		-c) export SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/etc;;
-		-o) export SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/;;
-		-p) export SAVE_PARTITIONS=0;;
-		-k) export SAVE_INSTALLED_PKGS=1;;
-		-u) export SKIP_UNCHANGED=1;;
-		-b|--create-backup) export CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
-		-r|--restore-backup) export CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
-		-l|--list-backup) export CONF_BACKUP_LIST=1;;
-		-f) export CONF_IMAGE="$2"; shift;;
+		-c) SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/etc;;
+		-o) SAVE_OVERLAY=1 SAVE_OVERLAY_PATH=/;;
+		-p) SAVE_PARTITIONS=0;;
+		-k) SAVE_INSTALLED_PKGS=1;;
+		-u) SKIP_UNCHANGED=1;;
+		-b|--create-backup) CONF_BACKUP="$2" NEED_IMAGE=1; shift;;
+		-r|--restore-backup) CONF_RESTORE="$2" NEED_IMAGE=1; shift;;
+		-l|--list-backup) CONF_BACKUP_LIST=1;;
+		-f) CONF_IMAGE="$2"; shift;;
 		-F|--force) export FORCE=1;;
-		-T|--test) export TEST=1;;
-		-h|--help) export HELP=1; break;;
+		-T|--test) TEST=1;;
+		-h|--help) HELP=1; break;;
 		--ignore-minor-compat-version) export IGNORE_MINOR_COMPAT=1;;
 		-*)
 			echo "Invalid option: $1" >&2
@@ -53,11 +62,6 @@ while [ -n "$1" ]; do
 	esac
 	shift;
 done
-
-export CONFFILES=/tmp/sysupgrade.conffiles
-export CONF_TAR=/tmp/sysupgrade.tgz
-export ETCBACKUP_DIR=/etc/backup
-export INSTALLED_PACKAGES=${ETCBACKUP_DIR}/installed_packages.txt
 
 IMAGE="$1"
 
@@ -367,8 +371,6 @@ fi
 
 install_bin /sbin/upgraded
 v "Commencing upgrade. Closing all shell sessions."
-
-COMMAND='/lib/upgrade/do_stage2'
 
 if [ -n "$FAILSAFE" ]; then
 	printf '%s\x00%s\x00%s' "$RAM_ROOT" "$IMAGE" "$COMMAND" >/tmp/sysupgrade
