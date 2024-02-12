@@ -63,9 +63,7 @@ while [ -n "$1" ]; do
 	shift;
 done
 
-IMAGE="$1"
-
-[ -z "$IMAGE" -a -z "$NEED_IMAGE" -a $CONF_BACKUP_LIST -eq 0 -o $HELP -gt 0 ] && {
+print_help() {
 	cat <<EOF
 Usage: $0 [<upgrade-option>...] <image file or URL>
        $0 [-q] [-i] [-c] [-u] [-o] [-k] <backup-command> <file>
@@ -105,8 +103,19 @@ backup-command:
 	             sysupgrade -b. Does not create a backup file.
 
 EOF
-	exit 1
 }
+
+IMAGE="$1"
+
+if [ $HELP -gt 0 ]; then
+	print_help
+	exit 0
+fi
+
+if [ -z "$IMAGE" -a -z "$NEED_IMAGE" -a $CONF_BACKUP_LIST -eq 0 ]; then
+	print_help
+	exit 1
+fi
 
 [ -n "$IMAGE" -a -n "$NEED_IMAGE" ] && {
 	cat <<-EOF
