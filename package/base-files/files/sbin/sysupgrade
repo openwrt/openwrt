@@ -234,7 +234,7 @@ fi
 
 include /lib/upgrade
 
-do_save_conffiles() {
+create_backup_archive() {
 	local conf_tar="$1"
 
 	local umount_etcbackup_dir=0
@@ -297,7 +297,7 @@ if [ $CONF_BACKUP_LIST -eq 1 ]; then
 fi
 
 if [ -n "$CONF_BACKUP" ]; then
-	do_save_conffiles "$CONF_BACKUP"
+	create_backup_archive "$CONF_BACKUP"
 	exit
 fi
 
@@ -367,7 +367,7 @@ if [ -n "$CONF_IMAGE" ]; then
 	get_image "$CONF_IMAGE" "cat" > "$CONF_TAR"
 	export SAVE_CONFIG=1
 elif ask_bool $SAVE_CONFIG "Keep config files over reflash"; then
-	[ $TEST -eq 1 ] || do_save_conffiles "$CONF_TAR" || exit
+	[ $TEST -eq 1 ] || create_backup_archive "$CONF_TAR" || exit
 	export SAVE_CONFIG=1
 else
 	[ $TEST -eq 1 ] || rm -f "$CONF_TAR"
