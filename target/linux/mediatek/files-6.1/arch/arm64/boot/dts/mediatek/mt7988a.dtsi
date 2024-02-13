@@ -423,6 +423,69 @@
 				};
 			};
 
+			uart1_0_pins: uart1-0-pins {
+				mux {
+					function = "uart";
+					groups =  "uart1_0";
+				};
+			};
+
+			uart1_1_pins: uart1-1-pins {
+				mux {
+					function = "uart";
+					groups =  "uart1_1";
+				};
+			};
+
+			uart1_2_pins: uart1-2-pins {
+				mux {
+					function = "uart";
+					groups =  "uart1_2";
+				};
+			};
+
+			uart1_2_lite_pins: uart1-2-lite-pins {
+				mux {
+					function = "uart";
+					groups =  "uart1_2_lite";
+				};
+			};
+
+			uart2_pins: uart2-pins {
+				mux {
+					function = "uart";
+					groups =  "uart2";
+				};
+			};
+
+			uart2_0_pins: uart2-0-pins {
+				mux {
+					function = "uart";
+					groups =  "uart2_0";
+				};
+			};
+
+			uart2_1_pins: uart2-1-pins {
+				mux {
+					function = "uart";
+					groups =  "uart2_1";
+				};
+			};
+
+			uart2_2_pins: uart2-2-pins {
+				mux {
+					function = "uart";
+					groups =  "uart2_2";
+				};
+			};
+
+			uart2_3_pins: uart2-3-pins {
+				mux {
+					function = "uart";
+					groups =  "uart2_3";
+				};
+			};
+
 			snfi_pins: snfi-pins {
 				mux {
 					function = "flash";
@@ -592,6 +655,46 @@
 						 <&topckgen CLK_TOP_UART_SEL>;
 			pinctrl-names = "default";
 			pinctrl-0 = <&uart0_pins>;
+			status = "disabled";
+		};
+
+		uart1: serial@11000100 {
+			compatible = "mediatek,mt7986-uart",
+				     "mediatek,mt6577-uart";
+			reg = <0 0x11000100 0 0x100>;
+			interrupts = <GIC_SPI 124 IRQ_TYPE_LEVEL_HIGH>;
+			/*
+			 * 8250-mtk driver don't control "baud" clock since commit
+			 * e32a83c70cf9 (kernel v5.7), but both "baud" and "bus" clocks
+			 * still need to be passed to the driver to prevent probe fail
+			 */
+			clocks = <&topckgen CLK_TOP_UART_SEL>,
+				 <&infracfg CLK_INFRA_52M_UART1_CK>;
+			clock-names = "baud", "bus";
+			assigned-clocks = <&topckgen CLK_TOP_UART_SEL>,
+					  <&infracfg CLK_INFRA_MUX_UART1_SEL>;
+			assigned-clock-parents = <&topckgen CLK_TOP_XTAL>,
+						 <&topckgen CLK_TOP_UART_SEL>;
+			status = "disabled";
+		};
+
+		uart2: serial@11000200 {
+			compatible = "mediatek,mt7986-uart",
+				     "mediatek,mt6577-uart";
+			reg = <0 0x11000200 0 0x100>;
+			interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>;
+			/*
+			 * 8250-mtk driver don't control "baud" clock since commit
+			 * e32a83c70cf9 (kernel v5.7), but both "baud" and "bus" clocks
+			 * still need to be passed to the driver to prevent probe fail
+			 */
+			clocks = <&topckgen CLK_TOP_UART_SEL>,
+				 <&infracfg CLK_INFRA_52M_UART2_CK>;
+			clock-names = "baud", "bus";
+			assigned-clocks = <&topckgen CLK_TOP_UART_SEL>,
+					  <&infracfg CLK_INFRA_MUX_UART2_SEL>;
+			assigned-clock-parents = <&topckgen CLK_TOP_XTAL>,
+						 <&topckgen CLK_TOP_UART_SEL>;
 			status = "disabled";
 		};
 
