@@ -1037,11 +1037,11 @@ static int mt7988_uart2_3_funcs[] = { 3, 3, 3, 3 };
 static int mt7988_uart1_2_pins[] = { 80, 81, 82, 83 };
 static int mt7988_uart1_2_funcs[] = { 1, 1, 1, 1 };
 
+static int mt7988_uart1_2_lite_pins[] = { 80, 81 };
+static int mt7988_uart1_2_lite_funcs[] = { 1, 1 };
+
 static int mt7988_tops_uart1_2_pins[] = { 80, 81 };
-static int mt7988_tops_uart1_2_funcs[] = {
-	4,
-	4,
-};
+static int mt7988_tops_uart1_2_funcs[] = { 4, 4, };
 
 static int mt7988_net_wo0_uart_txd_1_pins[] = { 80 };
 static int mt7988_net_wo0_uart_txd_1_funcs[] = { 3 };
@@ -1299,6 +1299,8 @@ static const struct group_desc mt7988_groups[] = {
 	PINCTRL_PIN_GROUP("pcie_wake_n2_1", mt7988_pcie_wake_n2_1),
 	/*  @GPIO(80,81,82,83) uart1_2 */
 	PINCTRL_PIN_GROUP("uart1_2", mt7988_uart1_2),
+	/*  @GPIO(80,81) uart1_2_lite */
+	PINCTRL_PIN_GROUP("uart1_2_lite", mt7988_uart1_2_lite),
 	/*  @GPIO(80) pwm2 */
 	PINCTRL_PIN_GROUP("pwm2", mt7988_pwm2),
 	/*  @GPIO(81) pwm3 */
@@ -1408,6 +1410,7 @@ static const char * const mt7988_uart_groups[] = {
 	"uart1_1",
 	"uart2_3",
 	"uart1_2",
+	"uart1_2_lite",
 	"tops_uart1_2",
 	"net_wo0_uart_txd_1",
 	"net_wo1_uart_txd_1",
