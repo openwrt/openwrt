@@ -24,7 +24,7 @@ BUNDLER_COMMAND := PATH=$(BUNDLER_PATH) $(XARGS) $(SCRIPT_DIR)/bundle-libraries.
 
 all: compile
 
-$(BIN_DIR)/$(IB_NAME).tar.xz: clean
+$(BIN_DIR)/$(IB_NAME).tar.zst: clean
 	rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/host/lib \
 		$(PKG_BUILD_DIR)/target/linux $(PKG_BUILD_DIR)/scripts $(IB_DTSDIR)
@@ -118,15 +118,16 @@ endif
 		$(BUNDLER_COMMAND))
 	$(CP) $(TOPDIR)/staging_dir/host/lib/libfakeroot* $(PKG_BUILD_DIR)/staging_dir/host/lib
 	STRIP=$(STAGING_DIR_HOST)/bin/sstrip $(SCRIPT_DIR)/rstrip.sh $(PKG_BUILD_DIR)/staging_dir/host/bin/
+
 	(cd $(BUILD_DIR); \
-		tar -I '$(STAGING_DIR_HOST)/bin/xz -7e -T$(if $(filter 1,$(NPROC)),2,0)' -cf $@ $(IB_NAME) \
+		tar -I '$(STAGING_DIR_HOST)/bin/zstd -T0 --ultra -20' -cf $@ $(IB_NAME) \
 		--mtime="$(shell date --date=@$(SOURCE_DATE_EPOCH))"; \
 	)
 
 download:
 prepare:
-compile: $(BIN_DIR)/$(IB_NAME).tar.xz
+compile: $(BIN_DIR)/$(IB_NAME).tar.zst
 install: compile
 
 clean: FORCE
-	rm -rf $(PKG_BUILD_DIR) $(BIN_DIR)/$(IB_NAME).tar.xz
+	rm -rf $(PKG_BUILD_DIR) $(BIN_DIR)/$(IB_NAME).tar.zst
