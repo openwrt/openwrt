@@ -1,3 +1,22 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 27 Jul 2021 20:28:58 +0200
+Subject: [PATCH] hostapd: make the snooping interface (for proxyarp)
+ configurable
+
+Use the VLAN interface instead of the bridge, to ensure that hostapd receives
+untagged DHCP packets
+
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -2451,6 +2451,8 @@ static int hostapd_config_fill(struct ho
+ 			os_strlcpy(bss->wds_bridge, pos, sizeof(bss->wds_bridge));
+ 	} else if (os_strcmp(buf, "bridge_hairpin") == 0) {
+ 		bss->bridge_hairpin = atoi(pos);
++	} else if (os_strcmp(buf, "snoop_iface") == 0) {
++		os_strlcpy(bss->snoop_iface, pos, sizeof(bss->snoop_iface));
+ 	} else if (os_strcmp(buf, "vlan_bridge") == 0) {
+ 		os_strlcpy(bss->vlan_bridge, pos, sizeof(bss->vlan_bridge));
+ 	} else if (os_strcmp(buf, "wds_bridge") == 0) {
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
 @@ -284,6 +284,7 @@ struct hostapd_bss_config {
@@ -8,6 +27,23 @@
  	char vlan_bridge[IFNAMSIZ + 1];
  	char wds_bridge[IFNAMSIZ + 1];
  	int bridge_hairpin; /* hairpin_mode on bridge members */
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
+@@ -366,12 +366,12 @@ static inline int hostapd_drv_br_port_se
+ 
+ static inline int hostapd_drv_br_set_net_param(struct hostapd_data *hapd,
+ 					       enum drv_br_net_param param,
+-					       unsigned int val)
++					       const char *ifname, unsigned int val)
+ {
+ 	if (hapd->driver == NULL || hapd->drv_priv == NULL ||
+ 	    hapd->driver->br_set_net_param == NULL)
+ 		return -1;
+-	return hapd->driver->br_set_net_param(hapd->drv_priv, param, val);
++	return hapd->driver->br_set_net_param(hapd->drv_priv, param, ifname, val);
+ }
+ 
+ static inline int hostapd_drv_vendor_cmd(struct hostapd_data *hapd,
 --- a/src/ap/x_snoop.c
 +++ b/src/ap/x_snoop.c
 @@ -33,28 +33,31 @@ int x_snoop_init(struct hostapd_data *ha
@@ -74,34 +110,6 @@
  	hostapd_drv_br_port_set_attr(hapd, DRV_BR_PORT_ATTR_PROXYARP, 0);
  	hostapd_drv_br_port_set_attr(hapd, DRV_BR_PORT_ATTR_HAIRPIN_MODE, 0);
  	hapd->x_snoop_initialized = false;
---- a/hostapd/config_file.c
-+++ b/hostapd/config_file.c
-@@ -2451,6 +2451,8 @@ static int hostapd_config_fill(struct ho
- 			os_strlcpy(bss->wds_bridge, pos, sizeof(bss->wds_bridge));
- 	} else if (os_strcmp(buf, "bridge_hairpin") == 0) {
- 		bss->bridge_hairpin = atoi(pos);
-+	} else if (os_strcmp(buf, "snoop_iface") == 0) {
-+		os_strlcpy(bss->snoop_iface, pos, sizeof(bss->snoop_iface));
- 	} else if (os_strcmp(buf, "vlan_bridge") == 0) {
- 		os_strlcpy(bss->vlan_bridge, pos, sizeof(bss->vlan_bridge));
- 	} else if (os_strcmp(buf, "wds_bridge") == 0) {
---- a/src/ap/ap_drv_ops.h
-+++ b/src/ap/ap_drv_ops.h
-@@ -366,12 +366,12 @@ static inline int hostapd_drv_br_port_se
- 
- static inline int hostapd_drv_br_set_net_param(struct hostapd_data *hapd,
- 					       enum drv_br_net_param param,
--					       unsigned int val)
-+					       const char *ifname, unsigned int val)
- {
- 	if (hapd->driver == NULL || hapd->drv_priv == NULL ||
- 	    hapd->driver->br_set_net_param == NULL)
- 		return -1;
--	return hapd->driver->br_set_net_param(hapd->drv_priv, param, val);
-+	return hapd->driver->br_set_net_param(hapd->drv_priv, param, ifname, val);
- }
- 
- static inline int hostapd_drv_vendor_cmd(struct hostapd_data *hapd,
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
 @@ -4269,7 +4269,7 @@ struct wpa_driver_ops {

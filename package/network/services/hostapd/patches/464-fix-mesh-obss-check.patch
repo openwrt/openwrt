@@ -1,3 +1,8 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 14 Nov 2017 12:38:08 +0100
+Subject: [PATCH] Fix issues with disabling obss scan when using fixed_freq on
+ mesh
+
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
 @@ -3092,6 +3092,10 @@ void ibss_mesh_setup_freq(struct wpa_sup

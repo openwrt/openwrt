@@ -1,6 +1,11 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 10 Jul 2018 13:48:17 +0200
+Subject: [PATCH] hostapd: build with LTO enabled (using jobserver for parallel
+ build)
+
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -1399,7 +1399,7 @@ hostapd_multi.a: $(BCHECK) $(OBJS)
+@@ -1397,7 +1397,7 @@ hostapd_multi.a: $(BCHECK) $(OBJS)
  	@$(AR) cr $@ hostapd_multi.o $(OBJS)
  
  hostapd: $(OBJS)
@@ -9,7 +14,7 @@
  	@$(E) "  LD " $@
  
  ifdef CONFIG_WPA_TRACE
-@@ -1410,7 +1410,7 @@ _OBJS_VAR := OBJS_c
+@@ -1408,7 +1408,7 @@ _OBJS_VAR := OBJS_c
  include ../src/objs.mk
  
  hostapd_cli: $(OBJS_c)
@@ -20,7 +25,7 @@
  NOBJS = nt_password_hash.o ../src/crypto/ms_funcs.o $(SHA1OBJS)
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -2091,31 +2091,31 @@ wpa_supplicant_multi.a: .config $(BCHECK
+@@ -2090,31 +2090,31 @@ wpa_supplicant_multi.a: .config $(BCHECK
  	@$(AR) cr $@ wpa_supplicant_multi.o $(OBJS)
  
  wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)

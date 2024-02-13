@@ -1,3 +1,21 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 15 Dec 2022 13:57:04 +0100
+Subject: [PATCH] hostapd: add support for automatically setting RADIUS own-ip
+ dynamically
+
+Some servers use the NAS-IP-Address attribute as a destination address
+
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -2819,6 +2819,8 @@ static int hostapd_config_fill(struct ho
+ 	} else if (os_strcmp(buf, "iapp_interface") == 0) {
+ 		wpa_printf(MSG_INFO, "DEPRECATED: iapp_interface not used");
+ #endif /* CONFIG_IAPP */
++	} else if (os_strcmp(buf, "dynamic_own_ip_addr") == 0) {
++		bss->dynamic_own_ip_addr = atoi(pos);
+ 	} else if (os_strcmp(buf, "own_ip_addr") == 0) {
+ 		if (hostapd_parse_ip_addr(pos, &bss->own_ip_addr)) {
+ 			wpa_printf(MSG_ERROR,
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
 @@ -310,6 +310,7 @@ struct hostapd_bss_config {
@@ -8,6 +26,19 @@
  	char *nas_identifier;
  	struct hostapd_radius_servers *radius;
  	int acct_interim_interval;
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
+@@ -601,6 +601,10 @@ int add_common_radius_attr(struct hostap
+ 	struct hostapd_radius_attr *attr;
+ 	int len;
+ 
++	if (hapd->conf->dynamic_own_ip_addr)
++		radius_client_get_local_addr(hapd->radius,
++					     &hapd->conf->own_ip_addr);
++
+ 	if (!hostapd_config_get_radius_attr(req_attr,
+ 					    RADIUS_ATTR_NAS_IP_ADDRESS) &&
+ 	    hapd->conf->own_ip_addr.af == AF_INET &&
 --- a/src/radius/radius_client.c
 +++ b/src/radius/radius_client.c
 @@ -163,6 +163,8 @@ struct radius_client_data {
@@ -83,27 +114,3 @@
  int radius_client_send(struct radius_client_data *radius,
  		       struct radius_msg *msg,
  		       RadiusType msg_type, const u8 *addr);
---- a/src/ap/ieee802_1x.c
-+++ b/src/ap/ieee802_1x.c
-@@ -601,6 +601,10 @@ int add_common_radius_attr(struct hostap
- 	struct hostapd_radius_attr *attr;
- 	int len;
- 
-+	if (hapd->conf->dynamic_own_ip_addr)
-+		radius_client_get_local_addr(hapd->radius,
-+					     &hapd->conf->own_ip_addr);
-+
- 	if (!hostapd_config_get_radius_attr(req_attr,
- 					    RADIUS_ATTR_NAS_IP_ADDRESS) &&
- 	    hapd->conf->own_ip_addr.af == AF_INET &&
---- a/hostapd/config_file.c
-+++ b/hostapd/config_file.c
-@@ -2819,6 +2819,8 @@ static int hostapd_config_fill(struct ho
- 	} else if (os_strcmp(buf, "iapp_interface") == 0) {
- 		wpa_printf(MSG_INFO, "DEPRECATED: iapp_interface not used");
- #endif /* CONFIG_IAPP */
-+	} else if (os_strcmp(buf, "dynamic_own_ip_addr") == 0) {
-+		bss->dynamic_own_ip_addr = atoi(pos);
- 	} else if (os_strcmp(buf, "own_ip_addr") == 0) {
- 		if (hostapd_parse_ip_addr(pos, &bss->own_ip_addr)) {
- 			wpa_printf(MSG_ERROR,

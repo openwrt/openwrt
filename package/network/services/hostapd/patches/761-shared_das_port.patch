@@ -1,13 +1,10 @@
---- a/src/radius/radius_das.h
-+++ b/src/radius/radius_das.h
-@@ -44,6 +44,7 @@ struct radius_das_attrs {
- struct radius_das_conf {
- 	int port;
- 	const u8 *shared_secret;
-+	const u8 *nas_identifier;
- 	size_t shared_secret_len;
- 	const struct hostapd_ip_addr *client_addr;
- 	unsigned int time_window;
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 16 Dec 2022 13:32:48 +0100
+Subject: [PATCH] hostapd: allow sharing the incoming DAS port across multiple
+ interfaces
+
+Use the NAS identifier to find the right receiver context on incoming messages
+
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
 @@ -1504,6 +1504,7 @@ int hostapd_setup_bss(struct hostapd_dat
@@ -296,3 +293,13 @@
  	os_free(das->shared_secret);
  	os_free(das);
  }
+--- a/src/radius/radius_das.h
++++ b/src/radius/radius_das.h
+@@ -44,6 +44,7 @@ struct radius_das_attrs {
+ struct radius_das_conf {
+ 	int port;
+ 	const u8 *shared_secret;
++	const u8 *nas_identifier;
+ 	size_t shared_secret_len;
+ 	const struct hostapd_ip_addr *client_addr;
+ 	unsigned int time_window;

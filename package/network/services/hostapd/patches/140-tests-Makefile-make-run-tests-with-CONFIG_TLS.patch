@@ -61,7 +61,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -698,6 +698,7 @@ CFLAGS += -DCONFIG_TLSV12
+@@ -697,6 +697,7 @@ CFLAGS += -DCONFIG_TLSV12
  endif
  
  ifeq ($(CONFIG_TLS), wolfssl)
@@ -69,7 +69,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  CONFIG_CRYPTO=wolfssl
  ifdef TLS_FUNCS
  OBJS += ../src/crypto/tls_wolfssl.o
-@@ -718,6 +719,7 @@ endif
+@@ -717,6 +718,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), openssl)
@@ -77,7 +77,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
  CONFIG_CRYPTO=openssl
  ifdef TLS_FUNCS
-@@ -748,6 +750,7 @@ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONF
+@@ -747,6 +749,7 @@ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONF
  endif
  
  ifeq ($(CONFIG_TLS), mbedtls)
@@ -85,7 +85,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  CONFIG_CRYPTO=mbedtls
  endif
-@@ -778,6 +781,7 @@ endif
+@@ -777,6 +780,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), gnutls)
@@ -93,7 +93,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  # default to libgcrypt
  CONFIG_CRYPTO=gnutls
-@@ -808,6 +812,7 @@ endif
+@@ -807,6 +811,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), internal)
@@ -101,7 +101,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  CONFIG_CRYPTO=internal
  endif
-@@ -886,6 +891,7 @@ endif
+@@ -885,6 +890,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), linux)
@@ -1294,7 +1294,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  		if (need_more_data) {
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -1176,6 +1176,7 @@ CFLAGS += -DCONFIG_TLSV12
+@@ -1175,6 +1175,7 @@ CFLAGS += -DCONFIG_TLSV12
  endif
  
  ifeq ($(CONFIG_TLS), wolfssl)
@@ -1302,7 +1302,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifdef TLS_FUNCS
  CFLAGS += -DWOLFSSL_DER_LOAD
  OBJS += ../src/crypto/tls_wolfssl.o
-@@ -1191,6 +1192,7 @@ LIBS_p += -lwolfssl -lm
+@@ -1190,6 +1191,7 @@ LIBS_p += -lwolfssl -lm
  endif
  
  ifeq ($(CONFIG_TLS), openssl)
@@ -1310,7 +1310,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
  ifdef TLS_FUNCS
  CFLAGS += -DEAP_TLS_OPENSSL
-@@ -1218,6 +1220,7 @@ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONF
+@@ -1217,6 +1219,7 @@ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONF
  endif
  
  ifeq ($(CONFIG_TLS), mbedtls)
@@ -1318,7 +1318,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  CONFIG_CRYPTO=mbedtls
  endif
-@@ -1237,6 +1240,7 @@ endif
+@@ -1236,6 +1239,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), gnutls)
@@ -1326,7 +1326,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  # default to libgcrypt
  CONFIG_CRYPTO=gnutls
-@@ -1267,6 +1271,7 @@ endif
+@@ -1266,6 +1270,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), internal)
@@ -1334,7 +1334,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  CONFIG_CRYPTO=internal
  endif
-@@ -1347,6 +1352,7 @@ endif
+@@ -1346,6 +1351,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), linux)

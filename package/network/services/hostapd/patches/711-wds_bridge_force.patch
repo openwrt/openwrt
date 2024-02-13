@@ -1,3 +1,14 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 20 Oct 2021 21:13:10 +0200
+Subject: [PATCH] hostpad: fix a race condition on adding AP mode wds sta
+ interfaces
+
+Both hostapd and netifd attempt to add a VLAN device to a bridge.
+Depending on which one wins the race, bridge vlan settings might be incomplete,
+or hostapd might run into an error and refuse to service the client.
+Fix this by preventing hostapd from adding interfaces to the bridge and
+instead rely entirely on netifd handling this properly
+
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
 @@ -2447,6 +2447,8 @@ static int hostapd_config_fill(struct ho

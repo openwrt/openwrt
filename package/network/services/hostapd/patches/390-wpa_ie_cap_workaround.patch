@@ -1,3 +1,8 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sun, 4 Sep 2011 18:23:36 +0000
+Subject: [PATCH] hostapd: add a workaround for driver issues in various
+ android devices with texas instruments wifi
+
 --- a/src/common/wpa_common.c
 +++ b/src/common/wpa_common.c
 @@ -2856,6 +2856,31 @@ u32 wpa_akm_to_suite(int akm)

@@ -1,3 +1,10 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 23 Dec 2021 19:18:33 +0100
+Subject: [PATCH] hostapd: only attempt to set qos map if supported by the
+ driver
+
+Fixes issues with brcmfmac
+
 --- a/src/ap/ap_drv_ops.c
 +++ b/src/ap/ap_drv_ops.c
 @@ -997,7 +997,8 @@ int hostapd_start_dfs_cac(struct hostapd

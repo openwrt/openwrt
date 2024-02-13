@@ -1,3 +1,11 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 4 Jun 2021 09:12:07 +0200
+Subject: [PATCH] hostapd: configure inter-AP communication interface for
+ 802.11r
+
+In setups using VLAN bridge filtering, hostapd may need to communicate using
+a VLAN interface on top of the bridge, instead of using the bridge directly
+
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
 @@ -3138,6 +3138,8 @@ static int hostapd_config_fill(struct ho

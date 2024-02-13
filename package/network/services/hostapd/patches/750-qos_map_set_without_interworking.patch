@@ -1,3 +1,9 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 4 Nov 2021 11:45:18 +0100
+Subject: [PATCH] hostapd: support qos_map_set without CONFIG_INTERWORKING
+
+This feature is useful on its own even without full interworking support
+
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
 @@ -1680,6 +1680,8 @@ static int parse_anqp_elem(struct hostap
@@ -48,6 +54,22 @@
  
  	if (conf->bss_load_update_period && bss_load_update_init(hapd)) {
  		wpa_printf(MSG_ERROR, "BSS Load initialization failed");
+--- a/src/ap/ieee802_11_shared.c
++++ b/src/ap/ieee802_11_shared.c
+@@ -1138,13 +1138,11 @@ u8 * hostapd_eid_rsnxe(struct hostapd_da
+ u16 check_ext_capab(struct hostapd_data *hapd, struct sta_info *sta,
+ 		    const u8 *ext_capab_ie, size_t ext_capab_ie_len)
+ {
+-#ifdef CONFIG_INTERWORKING
+ 	/* check for QoS Map support */
+ 	if (ext_capab_ie_len >= 5) {
+ 		if (ext_capab_ie[4] & 0x01)
+ 			sta->qos_map_enabled = 1;
+ 	}
+-#endif /* CONFIG_INTERWORKING */
+ 
+ 	if (ext_capab_ie_len > 0) {
+ 		sta->ecsa_supported = !!(ext_capab_ie[0] & BIT(2));
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
 @@ -2935,8 +2935,6 @@ void wnm_bss_keep_alive_deinit(struct wp
@@ -79,19 +101,3 @@
  		if (wpa_s->hw_capab == CAPAB_VHT &&
  		    get_ie(data->assoc_info.resp_ies,
  			   data->assoc_info.resp_ies_len, WLAN_EID_VHT_CAP))
---- a/src/ap/ieee802_11_shared.c
-+++ b/src/ap/ieee802_11_shared.c
-@@ -1138,13 +1138,11 @@ u8 * hostapd_eid_rsnxe(struct hostapd_da
- u16 check_ext_capab(struct hostapd_data *hapd, struct sta_info *sta,
- 		    const u8 *ext_capab_ie, size_t ext_capab_ie_len)
- {
--#ifdef CONFIG_INTERWORKING
- 	/* check for QoS Map support */
- 	if (ext_capab_ie_len >= 5) {
- 		if (ext_capab_ie[4] & 0x01)
- 			sta->qos_map_enabled = 1;
- 	}
--#endif /* CONFIG_INTERWORKING */
- 
- 	if (ext_capab_ie_len > 0) {
- 		sta->ecsa_supported = !!(ext_capab_ie[0] & BIT(2));

@@ -1,3 +1,7 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 25 May 2021 10:50:16 +0200
+Subject: [PATCH] fix adding back stations after a missed deauth/disassoc
+
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
 @@ -4653,6 +4653,13 @@ static int add_associated_sta(struct hos
