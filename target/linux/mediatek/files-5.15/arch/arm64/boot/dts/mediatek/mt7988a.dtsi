@@ -32,10 +32,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a73";
-			enable-method = "psci";
 			reg = <0x0>;
+			device_type = "cpu";
+			enable-method = "psci";
 			clocks = <&mcusys CLK_MCU_ARM_DIV_SEL>,
 				 <&topckgen CLK_TOP_XTAL>;
 			clock-names = "cpu", "intermediate";
@@ -44,10 +44,10 @@
 		};
 
 		cpu1: cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a73";
-			enable-method = "psci";
 			reg = <0x1>;
+			device_type = "cpu";
+			enable-method = "psci";
 			clocks = <&mcusys CLK_MCU_ARM_DIV_SEL>,
 				 <&topckgen CLK_TOP_XTAL>;
 			clock-names = "cpu", "intermediate";
@@ -56,10 +56,10 @@
 		};
 
 		cpu2: cpu@2 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a73";
-			enable-method = "psci";
 			reg = <0x2>;
+			device_type = "cpu";
+			enable-method = "psci";
 			clocks = <&mcusys CLK_MCU_ARM_DIV_SEL>,
 				 <&topckgen CLK_TOP_XTAL>;
 			clock-names = "cpu", "intermediate";
@@ -68,10 +68,10 @@
 		};
 
 		cpu3: cpu@3 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a73";
-			enable-method = "psci";
 			reg = <0x3>;
+			device_type = "cpu";
+			enable-method = "psci";
 			clocks = <&mcusys CLK_MCU_ARM_DIV_SEL>,
 				 <&topckgen CLK_TOP_XTAL>;
 			clock-names = "cpu", "intermediate";
@@ -159,9 +159,9 @@
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <2>;
 		#size-cells = <2>;
-		ranges;
 
 		/* 320 KiB reserved for ARM Trusted Firmware (BL31 and BL32) */
 		secmon_reserved: secmon@43000000 {
@@ -171,23 +171,22 @@
 	};
 
 	soc {
-		#address-cells = <2>;
-		#size-cells = <2>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <2>;
+		#size-cells = <2>;
 
 		gic: interrupt-controller@c000000 {
 			compatible = "arm,gic-v3";
-			#interrupt-cells = <3>;
-			interrupt-parent = <&gic>;
-			interrupt-controller;
 			reg = <0 0x0c000000 0 0x40000>,  /* GICD */
 			      <0 0x0c080000 0 0x200000>, /* GICR */
 			      <0 0x0c400000 0 0x2000>,   /* GICC */
 			      <0 0x0c410000 0 0x1000>,   /* GICH */
 			      <0 0x0c420000 0 0x2000>;   /* GICV */
-
+			interrupt-parent = <&gic>;
 			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
 		};
 
 		phyfw: phy-firmware@f000000 {
@@ -682,12 +681,12 @@
 
 		lvts: lvts@1100a000 {
 			compatible = "mediatek,mt7988-lvts";
-			#thermal-sensor-cells = <1>;
 			reg = <0 0x1100a000 0 0x1000>;
 			clocks = <&infracfg CLK_INFRA_26M_THERM_SYSTEM>;
 			clock-names = "lvts_clk";
 			nvmem-cells = <&lvts_calibration>;
 			nvmem-cell-names = "e_data1";
+			#thermal-sensor-cells = <1>;
 		};
 
 		ssusb0: usb@11190000 {
@@ -795,18 +794,16 @@
 			compatible = "mediatek,mt7988-pcie",
 				     "mediatek,mt7986-pcie",
 				     "mediatek,mt8192-pcie";
-			device_type = "pci";
-			#address-cells = <3>;
-			#size-cells = <2>;
 			reg = <0 0x11280000 0 0x2000>;
 			reg-names = "pcie-mac";
-			linux,pci-domain = <3>;
-			interrupts = <GIC_SPI 170 IRQ_TYPE_LEVEL_HIGH>;
-			bus-range = <0x00 0xff>;
 			ranges = <0x81000000 0x00 0x20000000 0x00
 				  0x20000000 0x00 0x00200000>,
 				 <0x82000000 0x00 0x20200000 0x00
 				  0x20200000 0x00 0x07e00000>;
+			device_type = "pci";
+			linux,pci-domain = <3>;
+			interrupts = <GIC_SPI 170 IRQ_TYPE_LEVEL_HIGH>;
+			bus-range = <0x00 0xff>;
 			clocks = <&infracfg CLK_INFRA_PCIE_PIPE_P2>,
 				 <&infracfg CLK_INFRA_PCIE_GFMUX_TL_P2>,
 				 <&infracfg CLK_INFRA_PCIE_PERI_26M_CK_P2>,
@@ -815,17 +812,18 @@
 				      "top_133m";
 			pinctrl-names = "default";
 			pinctrl-0 = <&pcie2_pins>;
-			status = "disabled";
-
 			phys = <&xphyu3port0 PHY_TYPE_PCIE>;
 			phy-names = "pcie-phy";
-
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;
 			interrupt-map = <0 0 0 1 &pcie_intc2 0>,
 					<0 0 0 2 &pcie_intc2 1>,
 					<0 0 0 3 &pcie_intc2 2>,
 					<0 0 0 4 &pcie_intc2 3>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			status = "disabled";
+
 			pcie_intc2: interrupt-controller {
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
@@ -837,18 +835,16 @@
 			compatible = "mediatek,mt7988-pcie",
 				     "mediatek,mt7986-pcie",
 				     "mediatek,mt8192-pcie";
-			device_type = "pci";
-			#address-cells = <3>;
-			#size-cells = <2>;
 			reg = <0 0x11290000 0 0x2000>;
 			reg-names = "pcie-mac";
-			linux,pci-domain = <2>;
-			interrupts = <GIC_SPI 171 IRQ_TYPE_LEVEL_HIGH>;
-			bus-range = <0x00 0xff>;
 			ranges = <0x81000000 0x00 0x28000000 0x00
 				  0x28000000 0x00 0x00200000>,
 				 <0x82000000 0x00 0x28200000 0x00
 				  0x28200000 0x00 0x07e00000>;
+			device_type = "pci";
+			linux,pci-domain = <2>;
+			interrupts = <GIC_SPI 171 IRQ_TYPE_LEVEL_HIGH>;
+			bus-range = <0x00 0xff>;
 			clocks = <&infracfg CLK_INFRA_PCIE_PIPE_P3>,
 				 <&infracfg CLK_INFRA_PCIE_GFMUX_TL_P3>,
 				 <&infracfg CLK_INFRA_PCIE_PERI_26M_CK_P3>,
@@ -857,14 +853,16 @@
 				      "top_133m";
 			pinctrl-names = "default";
 			pinctrl-0 = <&pcie3_pins>;
-			status = "disabled";
-
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;
 			interrupt-map = <0 0 0 1 &pcie_intc3 0>,
 					<0 0 0 2 &pcie_intc3 1>,
 					<0 0 0 3 &pcie_intc3 2>,
 					<0 0 0 4 &pcie_intc3 3>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			status = "disabled";
+
 			pcie_intc3: interrupt-controller {
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
@@ -876,18 +874,16 @@
 			compatible = "mediatek,mt7988-pcie",
 				     "mediatek,mt7986-pcie",
 				     "mediatek,mt8192-pcie";
-			device_type = "pci";
-			#address-cells = <3>;
-			#size-cells = <2>;
 			reg = <0 0x11300000 0 0x2000>;
 			reg-names = "pcie-mac";
-			linux,pci-domain = <0>;
-			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL_HIGH>;
-			bus-range = <0x00 0xff>;
 			ranges = <0x81000000 0x00 0x30000000 0x00
 				  0x30000000 0x00 0x00200000>,
 				 <0x82000000 0x00 0x30200000 0x00
 				  0x30200000 0x00 0x07e00000>;
+			device_type = "pci";
+			linux,pci-domain = <0>;
+			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL_HIGH>;
+			bus-range = <0x00 0xff>;
 			clocks = <&infracfg CLK_INFRA_PCIE_PIPE_P0>,
 				 <&infracfg CLK_INFRA_PCIE_GFMUX_TL_P0>,
 				 <&infracfg CLK_INFRA_PCIE_PERI_26M_CK_P0>,
@@ -896,14 +892,16 @@
 				      "top_133m";
 			pinctrl-names = "default";
 			pinctrl-0 = <&pcie0_pins>;
-			status = "disabled";
-
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;
 			interrupt-map = <0 0 0 1 &pcie_intc0 0>,
 					<0 0 0 2 &pcie_intc0 1>,
 					<0 0 0 3 &pcie_intc0 2>,
 					<0 0 0 4 &pcie_intc0 3>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			status = "disabled";
+
 			pcie_intc0: interrupt-controller {
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
@@ -915,18 +913,16 @@
 			compatible = "mediatek,mt7988-pcie",
 				     "mediatek,mt7986-pcie",
 				     "mediatek,mt8192-pcie";
-			device_type = "pci";
-			#address-cells = <3>;
-			#size-cells = <2>;
 			reg = <0 0x11310000 0 0x2000>;
 			reg-names = "pcie-mac";
-			linux,pci-domain = <1>;
-			interrupts = <GIC_SPI 169 IRQ_TYPE_LEVEL_HIGH>;
-			bus-range = <0x00 0xff>;
 			ranges = <0x81000000 0x00 0x38000000 0x00
 				  0x38000000 0x00 0x00200000>,
 				 <0x82000000 0x00 0x38200000 0x00
 				  0x38200000 0x00 0x07e00000>;
+			device_type = "pci";
+			linux,pci-domain = <1>;
+			interrupts = <GIC_SPI 169 IRQ_TYPE_LEVEL_HIGH>;
+			bus-range = <0x00 0xff>;
 			clocks = <&infracfg CLK_INFRA_PCIE_PIPE_P1>,
 				 <&infracfg CLK_INFRA_PCIE_GFMUX_TL_P1>,
 				 <&infracfg CLK_INFRA_PCIE_PERI_26M_CK_P1>,
@@ -935,14 +931,16 @@
 				      "top_133m";
 			pinctrl-names = "default";
 			pinctrl-0 = <&pcie1_pins>;
-			status = "disabled";
-
 			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 0x7>;
 			interrupt-map = <0 0 0 1 &pcie_intc1 0>,
 					<0 0 0 2 &pcie_intc1 1>,
 					<0 0 0 3 &pcie_intc1 2>,
 					<0 0 0 4 &pcie_intc1 3>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			status = "disabled";
+
 			pcie_intc1: interrupt-controller {
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
@@ -953,9 +951,9 @@
 		tphy: tphy@11c50000 {
 			compatible = "mediatek,mt7988",
 				     "mediatek,generic-tphy-v2";
+			ranges;
 			#address-cells = <2>;
 			#size-cells = <2>;
-			ranges;
 			status = "disabled";
 			tphyu2port0: usb-phy@11c50000 {
 				reg = <0 0x11c50000 0 0x700>;
@@ -986,9 +984,9 @@
 		xphy: xphy@11e10000 {
 			compatible = "mediatek,mt7988",
 				     "mediatek,xsphy";
+			ranges;
 			#address-cells = <2>;
 			#size-cells = <2>;
-			ranges;
 			status = "disabled";
 
 			xphyu2port0: usb-phy@11e10000 {
@@ -1056,17 +1054,15 @@
 		};
 
 		ethsys: syscon@15000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
 			compatible = "mediatek,mt7988-ethsys", "syscon";
 			reg = <0 0x15000000 0 0x1000>;
 			#clock-cells = <1>;
 			#reset-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		switch: switch@15020000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
 			compatible = "mediatek,mt7988-switch";
 			reg = <0 0x15020000 0 0x8000>;
 			interrupt-controller;
@@ -1074,6 +1070,8 @@
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 209 IRQ_TYPE_LEVEL_HIGH>;
 			resets = <&ethrst 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			ports {
 				#address-cells = <1>;
@@ -1352,8 +1350,8 @@
 
 				/* internal 2.5G PHY */
 				int_2p5g_phy: ethernet-phy@15 {
-					reg = <15>;
 					compatible = "ethernet-phy-ieee802.3-c45";
+					reg = <15>;
 					phy-mode = "internal";
 				};
 			};
