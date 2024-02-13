@@ -1,3 +1,7 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 15 Jun 2016 17:31:48 +0200
+Subject: [PATCH] hostapd: implement fallback for incomplete survey data
+
 --- a/src/ap/acs.c
 +++ b/src/ap/acs.c
 @@ -467,17 +467,17 @@ static int acs_get_bw_center_chan(int fr
