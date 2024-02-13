@@ -31,6 +31,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-a73";
 			reg = <0x0>;
@@ -82,18 +83,22 @@
 		cluster0_opp: opp_table0 {
 			compatible = "operating-points-v2";
 			opp-shared;
+
 			opp00 {
 				opp-hz = /bits/ 64 <800000000>;
 				opp-microvolt = <850000>;
 			};
+
 			opp01 {
 				opp-hz = /bits/ 64 <1100000000>;
 				opp-microvolt = <850000>;
 			};
+
 			opp02 {
 				opp-hz = /bits/ 64 <1500000000>;
 				opp-microvolt = <850000>;
 			};
+
 			opp03 {
 				opp-hz = /bits/ 64 <1800000000>;
 				opp-microvolt = <900000>;
@@ -104,18 +109,22 @@
 	cci_opp: opp_table_cci {
 		compatible = "operating-points-v2";
 		opp-shared;
+
 		opp00 {
 			opp-hz = /bits/ 64 <480000000>;
 			opp-microvolt = <850000>;
 		};
+
 		opp01 {
 			opp-hz = /bits/ 64 <660000000>;
 			opp-microvolt = <850000>;
 		};
+
 		opp02 {
 			opp-hz = /bits/ 64 <900000000>;
 			opp-microvolt = <850000>;
 		};
+
 		opp03 {
 			opp-hz = /bits/ 64 <1080000000>;
 			opp-microvolt = <900000>;
@@ -136,8 +145,8 @@
 	};
 
 	psci {
-		compatible  = "arm,psci-0.2";
-		method      = "smc";
+		compatible = "arm,psci-0.2";
+		method = "smc";
 	};
 
 	reg_1p8v: regulator-1p8v {
@@ -226,12 +235,12 @@
 		pio: pinctrl@1001f000 {
 			compatible = "mediatek,mt7988-pinctrl", "syscon";
 			reg = <0 0x1001f000 0 0x1000>,
-			<0 0x11c10000 0 0x1000>,
-			<0 0x11d00000 0 0x1000>,
-			<0 0x11d20000 0 0x1000>,
-			<0 0x11e00000 0 0x1000>,
-			<0 0x11f00000 0 0x1000>,
-			<0 0x1000b000 0 0x1000>;
+			      <0 0x11c10000 0 0x1000>,
+			      <0 0x11d00000 0 0x1000>,
+			      <0 0x11d20000 0 0x1000>,
+			      <0 0x11e00000 0 0x1000>,
+			      <0 0x11f00000 0 0x1000>,
+			      <0 0x1000b000 0 0x1000>;
 			reg-names = "gpio_base", "iocfg_tr_base",
 				    "iocfg_br_base", "iocfg_rb_base",
 				    "iocfg_lb_base", "iocfg_tl_base", "eint";
@@ -955,12 +964,14 @@
 			#address-cells = <2>;
 			#size-cells = <2>;
 			status = "disabled";
+
 			tphyu2port0: usb-phy@11c50000 {
 				reg = <0 0x11c50000 0 0x700>;
 				clocks = <&infracfg CLK_INFRA_USB_UTMI_CK_P1>;
 				clock-names = "ref";
 				#phy-cells = <1>;
 			};
+
 			tphyu3port0: usb-phy@11c50700 {
 				reg = <0 0x11c50700 0 0x900>;
 				clocks = <&infracfg CLK_INFRA_USB_PIPE_CK_P1>;
@@ -1036,18 +1047,23 @@
 			lvts_calibration: calib@918 {
 				reg = <0x918 0x28>;
 			};
+
 			phy_calibration_p0: calib@940 {
 				reg = <0x940 0x10>;
 			};
+
 			phy_calibration_p1: calib@954 {
 				reg = <0x954 0x10>;
 			};
+
 			phy_calibration_p2: calib@968 {
 				reg = <0x968 0x10>;
 			};
+
 			phy_calibration_p3: calib@97c {
 				reg = <0x97c 0x10>;
 			};
+
 			cpufreq_calibration: calib@278 {
 				reg = <0x278 0x1>;
 			};
@@ -1374,6 +1390,7 @@
 			polling-delay-passive = <1000>;
 			polling-delay = <1000>;
 			thermal-sensors = <&lvts 0>;
+
 			trips {
 				cpu_trip_crit: crit {
 					temperature = <125000>;
