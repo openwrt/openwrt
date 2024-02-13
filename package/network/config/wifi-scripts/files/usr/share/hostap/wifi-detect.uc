@@ -39,8 +39,9 @@ function cleanup() {
 }
 
 function wiphy_get_entry(phy, path) {
-	let wlan = board_data.wlan;
+	board_data.wlan ??= {};
 
+	let wlan = board_data.wlan;
 	for (let name in wlan)
 		if (wlan[name].path == path)
 			return wlan[name];
