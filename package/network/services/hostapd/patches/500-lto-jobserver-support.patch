@@ -1,6 +1,6 @@
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -1409,7 +1409,7 @@ hostapd_multi.a: $(BCHECK) $(OBJS)
+@@ -1408,7 +1408,7 @@ hostapd_multi.a: $(BCHECK) $(OBJS)
  	@$(AR) cr $@ hostapd_multi.o $(OBJS)
  
  hostapd: $(OBJS)
@@ -9,7 +9,7 @@
  	@$(E) "  LD " $@
  
  ifdef CONFIG_WPA_TRACE
-@@ -1420,7 +1420,7 @@ _OBJS_VAR := OBJS_c
+@@ -1419,7 +1419,7 @@ _OBJS_VAR := OBJS_c
  include ../src/objs.mk
  
  hostapd_cli: $(OBJS_c)
@@ -20,7 +20,7 @@
  NOBJS = nt_password_hash.o ../src/crypto/ms_funcs.o $(SHA1OBJS)
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -2107,31 +2107,31 @@ wpa_supplicant_multi.a: .config $(BCHECK
+@@ -2106,31 +2106,31 @@ wpa_supplicant_multi.a: .config $(BCHECK
  	@$(AR) cr $@ wpa_supplicant_multi.o $(OBJS)
  
  wpa_supplicant: $(BCHECK) $(OBJS) $(EXTRA_progs)
