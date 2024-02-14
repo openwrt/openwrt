@@ -336,7 +336,7 @@
  ifdef CONFIG_CODE_COVERAGE
  CFLAGS += -O0 -fprofile-arcs -ftest-coverage -U_FORTIFY_SOURCE
  LIBS += -lgcov
-@@ -1043,6 +1050,9 @@ ifdef CONFIG_CTRL_IFACE_MIB
+@@ -1042,6 +1049,9 @@ ifdef CONFIG_CTRL_IFACE_MIB
  CFLAGS += -DCONFIG_CTRL_IFACE_MIB
  endif
  OBJS += ../src/ap/ctrl_iface_ap.o
