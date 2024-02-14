@@ -260,6 +260,16 @@ do_save_conffiles() {
 			\) | sed -e 's,.*/,,;s/\.control /\t/' > "$dir/${INSTALLED_PACKAGES}"
 	fi
 
+	mkdir -p $dir/etc/uci-defaults/
+	touch $dir/etc/uci-defaults/10_disable_services
+	for service in /etc/init.d/*; do
+		if ! $service enabled; then
+			echo "$service disable" >> $dir/etc/uci-defaults/10_disable_services
+		fi
+	done
+	echo "exit 0" >> $dir/etc/uci-defaults/10_disable_services
+	echo "/etc/uci-defaults/10_disable_services" >> "$CONFFILES"
+
 	v "Saving config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
 	sed -i -e 's,^/,,' "$CONFFILES"
