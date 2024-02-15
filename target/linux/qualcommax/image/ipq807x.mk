@@ -30,8 +30,6 @@ define Device/buffalo_wxr-5950ax12
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@hk01
 	SOC := ipq8074
-	IMAGES := sysupgrade.bin
-	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 	DEVICE_PACKAGES := ipq-wifi-buffalo_wxr-5950ax12
 endef
 TARGET_DEVICES += buffalo_wxr-5950ax12
@@ -45,7 +43,7 @@ define Device/cmcc_rm2-6
 	PAGESIZE := 2048
 	DEVICE_DTS_CONFIG := config@ac02
 	SOC := ipq8070
-	IMAGES := factory.bin sysupgrade.bin
+	IMAGES += factory.bin
 	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
 	DEVICE_PACKAGES := ipq-wifi-cmcc_rm2-6 kmod-hwmon-gpiofan
 endef
@@ -144,7 +142,7 @@ define Device/netgear_rax120v2
 	NETGEAR_HW_ID := 29765589+0+512+1024+4x4+8x8
 	DEVICE_PACKAGES := ipq-wifi-netgear_rax120v2 kmod-spi-gpio \
 		kmod-spi-bitbang kmod-gpio-nxp-74hc164 kmod-hwmon-g761
-	IMAGES := web-ui-factory.img sysupgrade.bin
+	IMAGES += web-ui-factory.img
 	IMAGE/web-ui-factory.img := append-image initramfs-uImage.itb | \
 		pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakehdr filesystem | \
 		netgear-dni
@@ -196,7 +194,7 @@ define Device/netgear_wax630
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := ipq8074
-	IMAGES := ui-factory.tar factory.ubi sysupgrade.bin
+	IMAGES += ui-factory.tar
 	IMAGE/ui-factory.tar := append-ubi | wax6xx-netgear-tar
 	DEVICE_PACKAGES := kmod-spi-gpio ipq-wifi-netgear_wax630
 endef

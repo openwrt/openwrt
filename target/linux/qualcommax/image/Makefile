@@ -25,16 +25,15 @@ define Device/FitImageLzma
 endef
 
 define Device/EmmcImage
-	IMAGES := factory.bin sysupgrade.bin
+	IMAGES += factory.bin
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 64k
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 
 define Device/UbiFit
 	KERNEL_IN_UBI := 1
-	IMAGES := factory.ubi sysupgrade.bin
+	IMAGES += factory.ubi
 	IMAGE/factory.ubi := append-ubi
-	IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 
 include $(SUBTARGET).mk
