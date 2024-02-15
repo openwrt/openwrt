@@ -1244,10 +1244,11 @@ dnsmasq_stop()
 
 add_interface_trigger()
 {
-	local interface ignore
+	local interface ifname ignore
 
 	config_get interface "$1" interface
 	config_get_bool ignore "$1" ignore 0
+	network_get_device ifname "$interface" || ignore=0
 
 	[ -n "$interface" ] && [ $ignore -eq 0 ] && procd_add_interface_trigger "interface.*" "$interface" /etc/init.d/dnsmasq reload
 }
