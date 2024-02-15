@@ -6,18 +6,4 @@
 / {
 	compatible = "dlink,dir-867-a1", "mediatek,mt7621-soc";
 	model = "D-Link DIR-867 A1";
-
-	aliases {
-		label-mac-device = &gmac0;
-	};
-};
-
-&gmac0 {
-	nvmem-cells = <&macaddr_factory_e000>;
-	nvmem-cell-names = "mac-address";
-};
-
-&gmac1 {
-	nvmem-cells = <&macaddr_factory_e006>;
-	nvmem-cell-names = "mac-address";
 };

@@ -101,10 +101,6 @@
 					reg = <0xe000 0x6>;
 					#nvmem-cell-cells = <1>;
 				};
-
-				macaddr_factory_e006: macaddr@e006 {
-					reg = <0xe006 0x6>;
-				};
 			};
 		};
 
@@ -154,8 +150,8 @@
 	wifi0: wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_factory_e000 1>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_e000 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <2400000 2500000>;
 
 		led {
@@ -168,8 +164,8 @@
 	wifi1: wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_factory_e000 2>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_e000 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <5000000 6000000>;
 
 		led {
@@ -188,7 +184,7 @@
 	label = "wan";
 	phy-handle = <&ethphy4>;
 
-	nvmem-cells = <&macaddr_factory_e006>;
+	nvmem-cells = <&macaddr_factory_e000 3>;
 	nvmem-cell-names = "mac-address";
 };
 

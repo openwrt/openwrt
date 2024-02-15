@@ -8,6 +8,7 @@
 
 / {
 	aliases {
+		label-mac-device = &gmac0;
 		led-boot = &led_power_orange;
 		led-failsafe = &led_power_green;
 		led-running = &led_power_green;
@@ -71,8 +72,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_0>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_e000 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <2400000 2500000>;
 
 		led {
@@ -85,8 +86,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_8000>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_e000 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <5000000 6000000>;
 
 		led {
@@ -95,10 +96,18 @@
 	};
 };
 
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_e000 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_factory_e006 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &mdio {
