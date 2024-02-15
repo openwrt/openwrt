@@ -24,6 +24,7 @@ HOSTCC := $(HOSTCC_NOCACHE)
 HOST_CONFIGURE_ARGS += \
 	--disable-shared \
 	--without-docbook \
+	--without-tests \
 	--with-pic
 
 define Host/Uninstall
