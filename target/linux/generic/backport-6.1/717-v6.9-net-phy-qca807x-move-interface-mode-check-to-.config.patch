@@ -1,7 +1,7 @@
-From 824d6c9747fb46eadf763b879fb1c072e541a65a Mon Sep 17 00:00:00 2001
+From 3be0d950b62852a693182cb678948f481de02825 Mon Sep 17 00:00:00 2001
 From: Robert Marko <robimarko@gmail.com>
-Date: Mon, 12 Feb 2024 12:26:41 +0100
-Subject: [PATCH net-next] net: phy: qca807x: move interface mode check to
+Date: Mon, 12 Feb 2024 12:49:34 +0100
+Subject: [PATCH] net: phy: qca807x: move interface mode check to
  .config_init_once
 
 Currently, we are checking whether the PHY package mode matches the
@@ -16,6 +16,9 @@ PHY interface modes should be populated.
 
 Fixes: d1cb613efbd3 ("net: phy: qcom: add support for QCA807x PHY Family")
 Signed-off-by: Robert Marko <robimarko@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://lore.kernel.org/r/20240212115043.1725918-1-robimarko@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 ---
  drivers/net/phy/qcom/qca807x.c | 10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)
