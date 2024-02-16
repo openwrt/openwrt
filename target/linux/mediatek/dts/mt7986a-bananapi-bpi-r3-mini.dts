@@ -507,13 +507,13 @@
 
 			partition@0 {
 				label = "bl2";
-				reg = <0x00000 0x100000>;
+				reg = <0x0 0x200000>;
 				read-only;
 			};
 
-			partition@100000 {
+			partition@200000 {
 				label = "ubi";
-				reg = <0x100000 0x7f00000>;
+				reg = <0x200000 0x7e00000>;
 				compatible = "linux,ubi";
 
 				volumes {

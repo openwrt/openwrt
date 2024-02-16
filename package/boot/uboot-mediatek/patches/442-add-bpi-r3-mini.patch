@@ -758,12 +758,12 @@
 +
 +			partition@0 {
 +				label = "bl2";
-+				reg = <0x0 0x80000>;
++				reg = <0x0 0x200000>;
 +			};
 +
-+			partition@80000 {
++			partition@200000 {
 +				label = "ubi";
-+				reg = <0x80000 0x7f80000>;
++				reg = <0x200000 0x7e00000>;
 +			};
 +		};
 +	};
