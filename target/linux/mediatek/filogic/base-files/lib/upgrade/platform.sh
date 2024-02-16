@@ -106,7 +106,8 @@ platform_do_upgrade() {
 			;;
 		esac
 		;;
-	cudy,wr3000-v1)
+	cudy,wr3000-v1|\
+	cudy,re3000-v1)
 		default_do_upgrade "$1"
 		;;
 	glinet,gl-mt6000)
