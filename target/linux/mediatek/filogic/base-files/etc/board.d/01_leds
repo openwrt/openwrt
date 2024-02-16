@@ -26,6 +26,9 @@ bananapi,bpi-r4)
 	ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:02:green:lan" "lan2" "link tx rx"
 	ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:03:green:lan" "lan3" "link tx rx"
 	;;
+cudy,re3000-v1)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0" "link tx rx"
+	;;
 cudy,wr3000-v1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;

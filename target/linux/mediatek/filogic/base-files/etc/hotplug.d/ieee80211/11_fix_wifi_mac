@@ -61,6 +61,11 @@ case "$board" in
 		addr=$(mtd_get_mac_binary "Factory" 0x8000)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
+	cudy,re3000-v1)
+		addr=$(mtd_get_mac_binary bdinfo 0xde00)
+		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr 1) > /sys${DEVPATH}/macaddress
+		;;
 	cudy,wr3000-v1)
 		addr=$(mtd_get_mac_binary bdinfo 0xde00)
 		# Originally, phy0 is phy1 mac with LA bit set. However, this would conflict
