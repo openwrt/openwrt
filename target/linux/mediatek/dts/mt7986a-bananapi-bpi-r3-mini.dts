@@ -50,17 +50,22 @@
 		compatible = "gpio-leds";
 
 		status_led: led-0 {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 19 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-1 {
-			label = "blue:wlan2g";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
+			function-enumerator = <1>;
 			gpios = <&pio 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		led-2 {
-			label = "blue:wlan5g";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
+			function-enumerator = <2>;
 			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
 		};
 	};
