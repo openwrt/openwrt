@@ -1,0 +1,29 @@
+From 71066545b48e4259f89481199a0bbc7c35457738 Mon Sep 17 00:00:00 2001
+From: Saravana Kannan <saravanak@google.com>
+Date: Wed, 1 Jun 2022 00:07:03 -0700
+Subject: [PATCH] driver core: Set fw_devlink.strict=1 by default
+
+Now that deferred_probe_timeout is non-zero by default, fw_devlink will
+never permanently block the probing of devices. It'll try its best to
+probe the devices in the right order and then finally let devices probe
+even if their suppliers don't have any drivers.
+
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Saravana Kannan <saravanak@google.com>
+Link: https://lore.kernel.org/r/20220601070707.3946847-8-saravanak@google.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/base/core.c
++++ b/drivers/base/core.c
+@@ -1743,7 +1743,7 @@ static int __init fw_devlink_setup(char
+ }
+ early_param("fw_devlink", fw_devlink_setup);
+ 
+-static bool fw_devlink_strict;
++static bool fw_devlink_strict = true;
+ static int __init fw_devlink_strict_setup(char *arg)
+ {
+ 	return strtobool(arg, &fw_devlink_strict);

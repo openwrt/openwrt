@@ -1,0 +1,58 @@
+From 8f486cab263ca1b761c1aab9b36975afd355b799 Mon Sep 17 00:00:00 2001
+From: Saravana Kannan <saravanak@google.com>
+Date: Thu, 23 Jun 2022 01:03:42 -0700
+Subject: [PATCH] driver core: fw_devlink: Allow firmware to mark devices as
+ best effort
+
+When firmware sets the FWNODE_FLAG_BEST_EFFORT flag for a fwnode,
+fw_devlink will do a best effort ordering for that device where it'll
+only enforce the probe/suspend/resume ordering of that device with
+suppliers that have drivers. The driver of that device can then decide
+if it wants to defer probe or probe without the suppliers.
+
+This will be useful for avoid probe delays of the console device that
+were caused by commit 71066545b48e ("driver core: Set
+fw_devlink.strict=1 by default").
+
+Fixes: 71066545b48e ("driver core: Set fw_devlink.strict=1 by default")
+Reported-by: Sascha Hauer <sha@pengutronix.de>
+Reported-by: Peng Fan <peng.fan@nxp.com>
+Tested-by: Peng Fan <peng.fan@nxp.com>
+Signed-off-by: Saravana Kannan <saravanak@google.com>
+Link: https://lore.kernel.org/r/20220623080344.783549-2-saravanak@google.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/core.c    | 3 ++-
+ include/linux/fwnode.h | 4 ++++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+--- a/drivers/base/core.c
++++ b/drivers/base/core.c
+@@ -968,7 +968,8 @@ static void device_links_missing_supplie
+ 
+ static bool dev_is_best_effort(struct device *dev)
+ {
+-	return fw_devlink_best_effort && dev->can_match;
++	return (fw_devlink_best_effort && dev->can_match) ||
++		(dev->fwnode && (dev->fwnode->flags & FWNODE_FLAG_BEST_EFFORT));
+ }
+ 
+ /**
+--- a/include/linux/fwnode.h
++++ b/include/linux/fwnode.h
+@@ -26,11 +26,15 @@ struct device;
+  *			     driver needs its child devices to be bound with
+  *			     their respective drivers as soon as they are
+  *			     added.
++ * BEST_EFFORT: The fwnode/device needs to probe early and might be missing some
++ *		suppliers. Only enforce ordering with suppliers that have
++ *		drivers.
+  */
+ #define FWNODE_FLAG_LINKS_ADDED			BIT(0)
+ #define FWNODE_FLAG_NOT_DEVICE			BIT(1)
+ #define FWNODE_FLAG_INITIALIZED			BIT(2)
+ #define FWNODE_FLAG_NEEDS_CHILD_BOUND_ON_ADD	BIT(3)
++#define FWNODE_FLAG_BEST_EFFORT			BIT(4)
+ 
+ struct fwnode_handle {
+ 	struct fwnode_handle *secondary;

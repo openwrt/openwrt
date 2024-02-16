@@ -1,0 +1,42 @@
+From 38dfa56b3db354b4bd399fc686c3e74ad32ffa57 Mon Sep 17 00:00:00 2001
+From: Saravana Kannan <saravanak@google.com>
+Date: Mon, 6 Feb 2023 17:41:56 -0800
+Subject: [PATCH] gpiolib: Clear the gpio_device's fwnode initialized flag
+ before adding
+
+Registering an irqdomain sets the flag for the fwnode. But having the
+flag set when a device is added is interpreted by fw_devlink to mean the
+device has already been initialized and will never probe. This prevents
+fw_devlink from creating device links with the gpio_device as a
+supplier. So, clear the flag before adding the device.
+
+Signed-off-by: Saravana Kannan <saravanak@google.com>
+Acked-by: Bartosz Golaszewski <brgl@bgdev.pl>
+Tested-by: Colin Foster <colin.foster@in-advantage.com>
+Tested-by: Sudeep Holla <sudeep.holla@arm.com>
+Reviewed-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Tested-by: Douglas Anderson <dianders@chromium.org>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Luca Weiss <luca.weiss@fairphone.com> # qcom/sm7225-fairphone-fp4
+Link: https://lore.kernel.org/r/20230207014207.1678715-5-saravanak@google.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/gpio/gpiolib.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/gpio/gpiolib.c
++++ b/drivers/gpio/gpiolib.c
+@@ -522,6 +522,13 @@ static int gpiochip_setup_dev(struct gpi
+ {
+ 	int ret;
+ 
++	/*
++	 * If fwnode doesn't belong to another device, it's safe to clear its
++	 * initialized flag.
++	 */
++	if (gdev->dev.fwnode && !gdev->dev.fwnode->dev)
++		fwnode_dev_initialized(gdev->dev.fwnode, false);
++
+ 	ret = gcdev_register(gdev, gpio_devt);
+ 	if (ret)
+ 		return ret;

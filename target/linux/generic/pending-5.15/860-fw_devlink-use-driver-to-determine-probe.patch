@@ -1,0 +1,20 @@
+--- a/drivers/base/core.c
++++ b/drivers/base/core.c
+@@ -224,7 +224,7 @@ static void __fwnode_links_move_consumer
+  * @new_sup: fwnode of new supplier
+  *
+  * If the @fwnode has a corresponding struct device and the device supports
+- * probing (that is, added to a bus), then we want to let fw_devlink create
++ * probing (that is, bound to a driver), then we want to let fw_devlink create
+  * MANAGED device links to this device, so leave @fwnode and its descendant's
+  * fwnode links alone.
+  *
+@@ -235,7 +235,7 @@ static void __fw_devlink_pickup_dangling
+ {
+ 	struct fwnode_handle *child;
+ 
+-	if (fwnode->dev && fwnode->dev->bus)
++	if (fwnode->dev && fwnode->dev->driver)
+ 		return;
+ 
+ 	fwnode->flags |= FWNODE_FLAG_NOT_DEVICE;

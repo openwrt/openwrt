@@ -1,0 +1,81 @@
+From 411c0d58ca6faa9bc4b9f5382118a31c7bb92a6f Mon Sep 17 00:00:00 2001
+From: Saravana Kannan <saravanak@google.com>
+Date: Mon, 6 Feb 2023 17:41:54 -0800
+Subject: [PATCH] driver core: fw_devlink: Improve check for fwnode with no
+ device/driver
+
+fw_devlink shouldn't defer the probe of a device to wait on a supplier
+that'll never have a struct device or will never be probed by a driver.
+We currently check if a supplier falls into this category, but don't
+check its ancestors. We need to check the ancestors too because if the
+ancestor will never probe, then the supplier will never probe either.
+
+Signed-off-by: Saravana Kannan <saravanak@google.com>
+Tested-by: Colin Foster <colin.foster@in-advantage.com>
+Tested-by: Sudeep Holla <sudeep.holla@arm.com>
+Tested-by: Douglas Anderson <dianders@chromium.org>
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Tested-by: Luca Weiss <luca.weiss@fairphone.com> # qcom/sm7225-fairphone-fp4
+Link: https://lore.kernel.org/r/20230207014207.1678715-3-saravanak@google.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/core.c | 40 ++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 38 insertions(+), 2 deletions(-)
+
+--- a/drivers/base/core.c
++++ b/drivers/base/core.c
+@@ -1855,6 +1855,35 @@ static int fw_devlink_relax_cycle(struct
+ 	return ret;
+ }
+ 
++static bool fwnode_init_without_drv(struct fwnode_handle *fwnode)
++{
++	struct device *dev;
++	bool ret;
++
++	if (!(fwnode->flags & FWNODE_FLAG_INITIALIZED))
++		return false;
++
++	dev = get_dev_from_fwnode(fwnode);
++	ret = !dev || dev->links.status == DL_DEV_NO_DRIVER;
++	put_device(dev);
++
++	return ret;
++}
++
++static bool fwnode_ancestor_init_without_drv(struct fwnode_handle *fwnode)
++{
++	struct fwnode_handle *parent;
++
++	fwnode_for_each_parent_node(fwnode, parent) {
++		if (fwnode_init_without_drv(parent)) {
++			fwnode_handle_put(parent);
++			return true;
++		}
++	}
++
++	return false;
++}
++
+ /**
+  * fw_devlink_create_devlink - Create a device link from a consumer to fwnode
+  * @con: consumer device for the device link
+@@ -1936,9 +1965,16 @@ static int fw_devlink_create_devlink(str
+ 		goto out;
+ 	}
+ 
+-	/* Supplier that's already initialized without a struct device. */
+-	if (sup_handle->flags & FWNODE_FLAG_INITIALIZED)
++	/*
++	 * Supplier or supplier's ancestor already initialized without a struct
++	 * device or being probed by a driver.
++	 */
++	if (fwnode_init_without_drv(sup_handle) ||
++	    fwnode_ancestor_init_without_drv(sup_handle)) {
++		dev_dbg(con, "Not linking %pfwP - Might never probe\n",
++			sup_handle);
+ 		return -EINVAL;
++	}
+ 
+ 	/*
+ 	 * DL_FLAG_SYNC_STATE_ONLY doesn't block probing and supports

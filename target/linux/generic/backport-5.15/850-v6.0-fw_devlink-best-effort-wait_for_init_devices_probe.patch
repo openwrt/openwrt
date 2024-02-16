@@ -1,0 +1,275 @@
+From 2f8c3ae8288e4a4018330ed5c4e758b878d9c555 Mon Sep 17 00:00:00 2001
+From: Saravana Kannan <saravanak@google.com>
+Date: Wed, 1 Jun 2022 00:07:00 -0700
+Subject: [PATCH] driver core: Add wait_for_init_devices_probe helper function
+
+Some devices might need to be probed and bound successfully before the
+kernel boot sequence can finish and move on to init/userspace. For
+example, a network interface might need to be bound to be able to mount
+a NFS rootfs.
+
+With fw_devlink=on by default, some of these devices might be blocked
+from probing because they are waiting on a optional supplier that
+doesn't have a driver. While fw_devlink will eventually identify such
+devices and unblock the probing automatically, it might be too late by
+the time it unblocks the probing of devices. For example, the IP4
+autoconfig might timeout before fw_devlink unblocks probing of the
+network interface.
+
+This function is available to temporarily try and probe all devices that
+have a driver even if some of their suppliers haven't been added or
+don't have drivers.
+
+The drivers can then decide which of the suppliers are optional vs
+mandatory and probe the device if possible. By the time this function
+returns, all such "best effort" probes are guaranteed to be completed.
+If a device successfully probes in this mode, we delete all fw_devlink
+discovered dependencies of that device where the supplier hasn't yet
+probed successfully because they have to be optional dependencies.
+
+This also means that some devices that aren't needed for init and could
+have waited for their optional supplier to probe (when the supplier's
+module is loaded later on) would end up probing prematurely with limited
+functionality.  So call this function only when boot would fail without
+it.
+
+Tested-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Signed-off-by: Saravana Kannan <saravanak@google.com>
+Link: https://lore.kernel.org/r/20220601070707.3946847-5-saravanak@google.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/base.h           |   1 +
+ drivers/base/core.c           | 100 ++++++++++++++++++++++++++++++++--
+ drivers/base/dd.c             |  19 +++++--
+ include/linux/device/driver.h |   1 +
+ 4 files changed, 110 insertions(+), 11 deletions(-)
+
+--- a/drivers/base/base.h
++++ b/drivers/base/base.h
+@@ -160,6 +160,7 @@ extern int devres_release_all(struct dev
+ extern void device_block_probing(void);
+ extern void device_unblock_probing(void);
+ extern void deferred_probe_extend_timeout(void);
++extern void driver_deferred_probe_trigger(void);
+ 
+ /* /sys/devices directory */
+ extern struct kset *devices_kset;
+--- a/drivers/base/core.c
++++ b/drivers/base/core.c
+@@ -53,6 +53,7 @@ static unsigned int defer_sync_state_cou
+ static DEFINE_MUTEX(fwnode_link_lock);
+ static bool fw_devlink_is_permissive(void);
+ static bool fw_devlink_drv_reg_done;
++static bool fw_devlink_best_effort;
+ 
+ /**
+  * fwnode_link_add - Create a link between two fwnode_handles.
+@@ -965,6 +966,11 @@ static void device_links_missing_supplie
+ 	}
+ }
+ 
++static bool dev_is_best_effort(struct device *dev)
++{
++	return fw_devlink_best_effort && dev->can_match;
++}
++
+ /**
+  * device_links_check_suppliers - Check presence of supplier drivers.
+  * @dev: Consumer device.
+@@ -984,7 +990,7 @@ static void device_links_missing_supplie
+ int device_links_check_suppliers(struct device *dev)
+ {
+ 	struct device_link *link;
+-	int ret = 0;
++	int ret = 0, fwnode_ret = 0;
+ 	struct fwnode_handle *sup_fw;
+ 
+ 	/*
+@@ -997,12 +1003,17 @@ int device_links_check_suppliers(struct
+ 		sup_fw = list_first_entry(&dev->fwnode->suppliers,
+ 					  struct fwnode_link,
+ 					  c_hook)->supplier;
+-		dev_err_probe(dev, -EPROBE_DEFER, "wait for supplier %pfwP\n",
+-			      sup_fw);
+-		mutex_unlock(&fwnode_link_lock);
+-		return -EPROBE_DEFER;
++		if (!dev_is_best_effort(dev)) {
++			fwnode_ret = -EPROBE_DEFER;
++			dev_err_probe(dev, -EPROBE_DEFER,
++				    "wait for supplier %pfwP\n", sup_fw);
++		} else {
++			fwnode_ret = -EAGAIN;
++		}
+ 	}
+ 	mutex_unlock(&fwnode_link_lock);
++	if (fwnode_ret == -EPROBE_DEFER)
++		return fwnode_ret;
+ 
+ 	device_links_write_lock();
+ 
+@@ -1012,6 +1023,14 @@ int device_links_check_suppliers(struct
+ 
+ 		if (link->status != DL_STATE_AVAILABLE &&
+ 		    !(link->flags & DL_FLAG_SYNC_STATE_ONLY)) {
++
++			if (dev_is_best_effort(dev) &&
++			    link->flags & DL_FLAG_INFERRED &&
++			    !link->supplier->can_match) {
++				ret = -EAGAIN;
++				continue;
++			}
++
+ 			device_links_missing_supplier(dev);
+ 			dev_err_probe(dev, -EPROBE_DEFER,
+ 				      "supplier %s not ready\n",
+@@ -1024,7 +1043,8 @@ int device_links_check_suppliers(struct
+ 	dev->links.status = DL_DEV_PROBING;
+ 
+ 	device_links_write_unlock();
+-	return ret;
++
++	return ret ? ret : fwnode_ret;
+ }
+ 
+ /**
+@@ -1289,6 +1309,18 @@ void device_links_driver_bound(struct de
+ 			 * save to drop the managed link completely.
+ 			 */
+ 			device_link_drop_managed(link);
++		} else if (dev_is_best_effort(dev) &&
++			   link->flags & DL_FLAG_INFERRED &&
++			   link->status != DL_STATE_CONSUMER_PROBE &&
++			   !link->supplier->can_match) {
++			/*
++			 * When dev_is_best_effort() is true, we ignore device
++			 * links to suppliers that don't have a driver.  If the
++			 * consumer device still managed to probe, there's no
++			 * point in maintaining a device link in a weird state
++			 * (consumer probed before supplier). So delete it.
++			 */
++			device_link_drop_managed(link);
+ 		} else {
+ 			WARN_ON(link->status != DL_STATE_CONSUMER_PROBE);
+ 			WRITE_ONCE(link->status, DL_STATE_ACTIVE);
+@@ -1655,6 +1687,62 @@ void fw_devlink_drivers_done(void)
+ 	device_links_write_unlock();
+ }
+ 
++/**
++ * wait_for_init_devices_probe - Try to probe any device needed for init
++ *
++ * Some devices might need to be probed and bound successfully before the kernel
++ * boot sequence can finish and move on to init/userspace. For example, a
++ * network interface might need to be bound to be able to mount a NFS rootfs.
++ *
++ * With fw_devlink=on by default, some of these devices might be blocked from
++ * probing because they are waiting on a optional supplier that doesn't have a
++ * driver. While fw_devlink will eventually identify such devices and unblock
++ * the probing automatically, it might be too late by the time it unblocks the
++ * probing of devices. For example, the IP4 autoconfig might timeout before
++ * fw_devlink unblocks probing of the network interface.
++ *
++ * This function is available to temporarily try and probe all devices that have
++ * a driver even if some of their suppliers haven't been added or don't have
++ * drivers.
++ *
++ * The drivers can then decide which of the suppliers are optional vs mandatory
++ * and probe the device if possible. By the time this function returns, all such
++ * "best effort" probes are guaranteed to be completed. If a device successfully
++ * probes in this mode, we delete all fw_devlink discovered dependencies of that
++ * device where the supplier hasn't yet probed successfully because they have to
++ * be optional dependencies.
++ *
++ * Any devices that didn't successfully probe go back to being treated as if
++ * this function was never called.
++ *
++ * This also means that some devices that aren't needed for init and could have
++ * waited for their optional supplier to probe (when the supplier's module is
++ * loaded later on) would end up probing prematurely with limited functionality.
++ * So call this function only when boot would fail without it.
++ */
++void __init wait_for_init_devices_probe(void)
++{
++	if (!fw_devlink_flags || fw_devlink_is_permissive())
++		return;
++
++	/*
++	 * Wait for all ongoing probes to finish so that the "best effort" is
++	 * only applied to devices that can't probe otherwise.
++	 */
++	wait_for_device_probe();
++
++	pr_info("Trying to probe devices needed for running init ...\n");
++	fw_devlink_best_effort = true;
++	driver_deferred_probe_trigger();
++
++	/*
++	 * Wait for all "best effort" probes to finish before going back to
++	 * normal enforcement.
++	 */
++	wait_for_device_probe();
++	fw_devlink_best_effort = false;
++}
++
+ static void fw_devlink_unblock_consumers(struct device *dev)
+ {
+ 	struct device_link *link;
+--- a/drivers/base/dd.c
++++ b/drivers/base/dd.c
+@@ -171,7 +171,7 @@ static bool driver_deferred_probe_enable
+  * changes in the midst of a probe, then deferred processing should be triggered
+  * again.
+  */
+-static void driver_deferred_probe_trigger(void)
++void driver_deferred_probe_trigger(void)
+ {
+ 	if (!driver_deferred_probe_enable)
+ 		return;
+@@ -555,7 +555,7 @@ static int really_probe(struct device *d
+ {
+ 	bool test_remove = IS_ENABLED(CONFIG_DEBUG_TEST_DRIVER_REMOVE) &&
+ 			   !drv->suppress_bind_attrs;
+-	int ret;
++	int ret, link_ret;
+ 
+ 	if (defer_all_probes) {
+ 		/*
+@@ -567,9 +567,9 @@ static int really_probe(struct device *d
+ 		return -EPROBE_DEFER;
+ 	}
+ 
+-	ret = device_links_check_suppliers(dev);
+-	if (ret)
+-		return ret;
++	link_ret = device_links_check_suppliers(dev);
++	if (link_ret == -EPROBE_DEFER)
++		return link_ret;
+ 
+ 	pr_debug("bus: '%s': %s: probing driver %s with device %s\n",
+ 		 drv->bus->name, __func__, drv->name, dev_name(dev));
+@@ -609,6 +609,15 @@ re_probe:
+ 	ret = call_driver_probe(dev, drv);
+ 	if (ret) {
+ 		/*
++		 * If fw_devlink_best_effort is active (denoted by -EAGAIN), the
++		 * device might actually probe properly once some of its missing
++		 * suppliers have probed. So, treat this as if the driver
++		 * returned -EPROBE_DEFER.
++		 */
++		if (link_ret == -EAGAIN)
++			ret = -EPROBE_DEFER;
++
++		/*
+ 		 * Return probe errors as positive values so that the callers
+ 		 * can distinguish them from other errors.
+ 		 */
+--- a/include/linux/device/driver.h
++++ b/include/linux/device/driver.h
+@@ -128,6 +128,7 @@ extern struct device_driver *driver_find
+ 					 struct bus_type *bus);
+ extern int driver_probe_done(void);
+ extern void wait_for_device_probe(void);
++void __init wait_for_init_devices_probe(void);
+ 
+ /* sysfs interface for exporting driver attributes */
+ 
