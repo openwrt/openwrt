@@ -295,16 +295,20 @@ define Device/bananapi_bpi-r3-mini
 ifeq ($(DUMP),)
   IMAGE_SIZE := $$(shell expr 64 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
 endif
-  IMAGE/snand-factory.bin := append-ubi fit
   IMAGE/sysupgrade.itb := append-kernel | \
     fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
     pad-rootfs | append-metadata
   ARTIFACTS := \
        emmc-gpt.bin emmc-preloader.bin emmc-bl31-uboot.fip \
-       snand-preloader.bin snand-bl31-uboot.fip
+       snand-factory.bin snand-preloader.bin snand-bl31-uboot.fip
   ARTIFACT/emmc-gpt.bin := mt798x-gpt emmc
   ARTIFACT/emmc-preloader.bin := mt7986-bl2 emmc-ddr4
   ARTIFACT/emmc-bl31-uboot.fip := mt7986-bl31-uboot bananapi_bpi-r3-mini-emmc
+  ARTIFACT/snand-factory.bin := mt7986-bl2 spim-nand-ubi-ddr4 | pad-to 256k | \
+				mt7986-bl2 spim-nand-ubi-ddr4 | pad-to 512k | \
+				mt7986-bl2 spim-nand-ubi-ddr4 | pad-to 768k | \
+				mt7986-bl2 spim-nand-ubi-ddr4 | pad-to 2048k | \
+				ubinize-image fit squashfs-sysupgrade.itb
   ARTIFACT/snand-preloader.bin := mt7986-bl2 spim-nand-ubi-ddr4
   ARTIFACT/snand-bl31-uboot.fip := mt7986-bl31-uboot bananapi_bpi-r3-mini-snand
   UBINIZE_PARTS := fip=:$(STAGING_DIR_IMAGE)/mt7986_bananapi_bpi-r3-mini-snand-u-boot.fip
