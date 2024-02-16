@@ -503,7 +503,7 @@
 +bootmenu_3=Boot recovery system from eMMC.=run boot_recovery ; run bootmenu_confirm_return
 +bootmenu_4=Load production system via TFTP then write to eMMC.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_production ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
 +bootmenu_5=Load recovery system via TFTP then write to eMMC.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
-+bootmenu_6=[31mLoad Airoha EN8811H firmware via TFTP then write to NAND.[0m=run boot_tftp_write_en8811h_fw ; run bootmenu_confirm_return
++bootmenu_6=[31mLoad Airoha EN8811H firmware via TFTP then write to eMMC.[0m=run boot_tftp_write_en8811h_fw ; run bootmenu_confirm_return
 +bootmenu_7=[31mLoad BL31+U-Boot FIP via TFTP then write to eMMC.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
 +bootmenu_8=[31mLoad BL2 preloader via TFTP then write to eMMC.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
 +bootmenu_9=Reboot.=reset
