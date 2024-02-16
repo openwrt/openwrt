@@ -157,11 +157,13 @@ define Build/ubinize-image
 		$(if $(UBOOTENV_IN_UBI),--uboot-env) \
 		$(foreach part,$(UBINIZE_PARTS),--part $(part)) \
 		--part $(word 1,$(1))="$(BIN_DIR)/$(DEVICE_IMG_PREFIX)-$(word 2,$(1))" \
-		$@ \
+		$@.tmp \
 		-p $(BLOCKSIZE:%k=%KiB) -m $(PAGESIZE) \
 		$(if $(SUBPAGESIZE),-s $(SUBPAGESIZE)) \
 		$(if $(VID_HDR_OFFSET),-O $(VID_HDR_OFFSET)) \
 		$(UBINIZE_OPTS)
+	cat $@.tmp >> $@
+	rm $@.tmp
 endef
 
 define Build/ubinize-kernel
