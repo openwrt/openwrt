@@ -12,10 +12,10 @@ err=""
 ubinize_seq=""
 
 ubivol() {
-	local volid=$1
-	local name=$2
-	local image=$3
-	local autoresize=$4
+	local volid="$1"
+	local name="$2"
+	local image="$3"
+	local autoresize="$4"
 	local size="$5"
 	local voltype="${6:-dynamic}"
 	echo "[$name]"
@@ -36,16 +36,17 @@ ubivol() {
 
 ubilayout() {
 	local vol_id=0
-	local rootsize=
-	local autoresize=
-	local rootfs_type="$( get_fs_type "$2" )"
+	local rootsize
+	local autoresize
+	local rootfs_type
 	local voltype
 
+	rootfs_type="$( get_fs_type "$2" )"
 	if [ "$1" = "ubootenv" ]; then
 		ubivol $vol_id ubootenv
-		vol_id=$(( $vol_id + 1 ))
+		vol_id=$(( vol_id + 1 ))
 		ubivol $vol_id ubootenv2
-		vol_id=$(( $vol_id + 1 ))
+		vol_id=$(( vol_id + 1 ))
 	fi
 	for part in $parts; do
 		name="${part%%=*}"
@@ -55,9 +56,9 @@ ubilayout() {
 		[ "$prev" = "$part" ] && part=
 
 		image="${part%%=*}"
-		if [ "${image:0:1}" = ":" ]; then
+		if [ "${image#:}" != "$image" ]; then
 			voltype=static
-			image="${image:1}"
+			image="${image#:}"
 		fi
 		prev="$part"
 		part="${part#*=}"
@@ -71,11 +72,11 @@ ubilayout() {
 		fi
 
 		ubivol $vol_id "$name" "$image" "" "${size}" "$voltype"
-		vol_id=$(( $vol_id + 1 ))
+		vol_id=$(( vol_id + 1 ))
 	done
 	if [ "$3" ]; then
 		ubivol $vol_id kernel "$3"
-		vol_id=$(( $vol_id + 1 ))
+		vol_id=$(( vol_id + 1 ))
 	fi
 
 	if [ "$2" ]; then
@@ -91,7 +92,7 @@ ubilayout() {
 		esac
 		ubivol $vol_id rootfs "$2" "$autoresize" "$rootsize" dynamic
 
-		vol_id=$(( $vol_id + 1 ))
+		vol_id=$(( vol_id + 1 ))
 		[ "$rootfs_type" = "ubifs" ] || ubivol $vol_id rootfs_data "" 1 dymamic
 	fi
 }
@@ -128,7 +129,7 @@ while [ "$1" ]; do
 		continue
 		;;
 	"-"*)
-		ubinize_param="$@"
+		ubinize_param="$*"
 		break
 		;;
 	*)
@@ -141,7 +142,7 @@ while [ "$1" ]; do
 	esac
 done
 
-if [ ! -r "$rootfs" -a ! -r "$kernel" -a ! "$outfile" ]; then
+if [ ! -r "$rootfs" ] && [ ! -r "$kernel" ] && [ ! "$parts" ] && [ ! "$outfile" ]; then
 	echo "syntax: $0 [--uboot-env] [--part <name>=<file>] [--kernel kernelimage] [--rootfs rootfsimage] out [ubinize opts]"
 	exit 1
 fi
