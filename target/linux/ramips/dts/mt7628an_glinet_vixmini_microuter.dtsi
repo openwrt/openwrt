@@ -75,7 +75,7 @@
 		reg = <0>;
 		spi-max-frequency = <10000000>;
 
-		partitions: partitions {
+		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -92,7 +92,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

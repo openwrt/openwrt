@@ -105,7 +105,7 @@
 				reg = <0x40000 0xf20000>;
 			};
 
-			factory: partition@f60000 {
+			partition@f60000 {
 				label = "factory";
 				reg = <0xf60000 0x10000>;
 				read-only;
@@ -121,7 +121,7 @@
 				};
 			};
 
-			board_data: partition@f70000 {
+			partition@f70000 {
 				label = "board_data";
 				reg = <0xf70000 0x10000>;
 				read-only;
