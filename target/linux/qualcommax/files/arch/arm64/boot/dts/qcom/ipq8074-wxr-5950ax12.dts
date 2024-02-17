@@ -327,6 +327,7 @@
 
 &dp5_syn {
 	status = "okay";
+	phy-mode = "usxgmii";
 	phy-handle = <&aqr113c_1>;
 	label = "wan";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
@@ -335,6 +336,7 @@
 
 &dp6_syn {
 	status = "okay";
+	phy-mode = "usxgmii";
 	phy-handle = <&aqr113c_2>;
 	label = "lan1";
 	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
