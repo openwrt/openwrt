@@ -485,12 +485,14 @@
 &dp5 {
 	status = "okay";
 	qcom,mactype = <1>;
+	phy-mode = "usxgmii";
 	phy-handle = <&aqr113c_8>;
 	label = "10g-1";
 };
 
 &dp6_syn {
 	status = "okay";
+	phy-mode = "usxgmii";
 	phy-handle = <&aqr113c_0>;
 	label = "10g-2";
 };
