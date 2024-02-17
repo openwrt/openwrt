@@ -302,7 +302,7 @@ define Device/mediatek_mt7622-rfb1-ubi
                 check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
-TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
+# TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 
 define Device/netgear_wax206
   $(Device/dsa-migration)
