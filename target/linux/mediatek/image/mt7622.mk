@@ -466,4 +466,4 @@ define Device/xiaomi_redmi-router-ax6s
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
-TARGET_DEVICES += xiaomi_redmi-router-ax6s
+# TARGET_DEVICES += xiaomi_redmi-router-ax6s
