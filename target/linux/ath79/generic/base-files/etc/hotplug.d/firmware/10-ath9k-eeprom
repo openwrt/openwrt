@@ -25,32 +25,9 @@ case "$FIRMWARE" in
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
-	meraki,mr12)
-		caldata_extract "art" 0x11000 0xeb8
-		;;
 	wd,mynet-wifi-rangeextender)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(nvram get wl0_hwaddr)
-		;;
-	*)
-		caldata_die "board $board is not supported yet"
-		;;
-	esac
-	;;
-"ath9k-eeprom-pci-0000:00:11.0.bin")
-	case $board in
-	meraki,mr16)
-		caldata_extract "art" 0x11000 0xeb8
-		;;
-	*)
-		caldata_die "board $board is not supported yet"
-		;;
-	esac
-	;;
-"ath9k-eeprom-pci-0000:00:12.0.bin")
-	case $board in
-	meraki,mr16)
-		caldata_extract "art" 0x15000 0xeb8
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
