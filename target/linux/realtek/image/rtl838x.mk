@@ -166,6 +166,7 @@ define Device/netgear_nge
   SOC := rtl8380
   IMAGE_SIZE := 14848k
   UIMAGE_MAGIC := 0x4e474520
+  UIMAGE_NAME := 9.9.9.9
   DEVICE_VENDOR := NETGEAR
 endef
 
