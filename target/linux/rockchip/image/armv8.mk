@@ -55,6 +55,16 @@ define Device/friendlyarm_nanopi-r4s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r4s
 
+define Device/friendlyarm_nanopi-r4s-enterprise
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi R4S Enterprise Edition
+  DEVICE_VARIANT := 4GB LPDDR4
+  SOC := rk3399
+  UBOOT_DEVICE_NAME := nanopi-r4s-rk3399
+  DEVICE_PACKAGES := kmod-r8168
+endef
+TARGET_DEVICES += friendlyarm_nanopi-r4s-enterprise
+
 define Device/friendlyarm_nanopi-r5c
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPi R5C
