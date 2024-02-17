@@ -54,6 +54,7 @@
 		led-1 {
 			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_RED>;
+			function = "ha";
 		};
 
 		led_status_green: led-2 {
@@ -65,6 +66,7 @@
 		led-3 {
 			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = "ha";
 		};
 
 		led-4 {
@@ -82,48 +84,64 @@
 		led-6 {
 			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <4>;
 			linux,default-trigger = "mv88e6xxx-1:01:1Gbps";
 		};
 
 		led-7 {
 			gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <4>;
 			linux,default-trigger = "mv88e6xxx-1:01:100Mbps";
 		};
 
 		led-8 {
 			gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <3>;
 			linux,default-trigger = "mv88e6xxx-1:02:100Mbps";
 		};
 
 		led-9 {
 			gpios = <&gpio2 7 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <3>;
 			linux,default-trigger = "mv88e6xxx-1:02:1Gbps";
 		};
 
 		led-10 {
 			gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <1>;
 			linux,default-trigger = "mv88e6xxx-1:04:1Gbps";
 		};
 
 		led-11 {
 			gpios = <&gpio2 13 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <1>;
 			linux,default-trigger = "mv88e6xxx-1:04:100Mbps";
 		};
 
 		led-12 {
 			gpios = <&gpio2 14 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <2>;
 			linux,default-trigger = "mv88e6xxx-1:03:1Gbps";
 		};
 
 		led-13 {
 			gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_SPEED_LAN;
+			function-enumerator = <2>;
 			linux,default-trigger = "mv88e6xxx-1:03:100Mbps";
 		};
 	};
