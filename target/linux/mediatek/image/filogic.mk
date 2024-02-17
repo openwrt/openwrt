@@ -280,8 +280,8 @@ define Device/bananapi_bpi-r3-mini
   DEVICE_DTS_CONFIG := config-mt7986a-bananapi-bpi-r3-mini
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x43f00000
-  DEVICE_PACKAGES := fitblk kmod-hwmon-pwmfan kmod-mt7986-firmware kmod-usb3 \
-		     e2fsprogs f2fsck mkf2fs mt7986-wo-firmware
+  DEVICE_PACKAGES := fitblk kmod-hwmon-pwmfan kmod-mt7986-firmware kmod-phy-airoha-en8811h \
+		     kmod-usb3 e2fsprogs f2fsck mkf2fs mt7986-wo-firmware
   KERNEL_LOADADDR := 0x44000000
   KERNEL := kernel-bin | gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
