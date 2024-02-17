@@ -134,11 +134,6 @@ mediatek_setup_macs()
 		wan_mac="$label_mac"
 		lan_mac="$(macaddr_add $label_mac 1)"
 		;;
-	glinet,gl-mt6000)
-		label_mac=$(mmc_get_mac_binary factory 0x0a)
-		wan_mac=$label_mac
-		lan_mac=$(macaddr_add "$label_mac" 2)
-		;;
 	h3c,magic-nx30-pro)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
