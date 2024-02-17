@@ -111,7 +111,7 @@
 				read-only;
 			};
 
-			art: partition@ff0000 {
+			partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
@@ -133,6 +133,10 @@
 						reg = <0xc 0x6>;
 					};
 
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
 					cal_art_5000: calibration@5000 {
 						reg = <0x5000 0x844>;
 					};
@@ -145,9 +149,8 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_art_6>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_6>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
 
 &mdio0 {

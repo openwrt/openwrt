@@ -92,7 +92,7 @@
 				read-only;
 			};
 
-			art: partition@10000 {
+			partition@10000 {
 				label = "art";
 				reg = <0x010000 0x010000>;
 				read-only;
@@ -108,6 +108,10 @@
 
 					macaddr_art_6: macaddr@6 {
 						reg = <0x6 0x6>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
 					};
 				};
 			};
@@ -144,7 +148,8 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
 };
 
 &pinmux {
