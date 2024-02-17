@@ -165,6 +165,14 @@
 						reg = <0x520c 0x6>;
 						#nvmem-cell-cells = <1>;
 					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0xeb8>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0xeb8>;
+					};
 				};
 			};
 
@@ -201,7 +209,8 @@
 	ath9k0: wifi@11,0 {
 		compatible = "pci168c,0029";
 		reg = <0x8800 0 0 0 0>;
-		qca,no-eeprom;
+		nvmem-cells = <&cal_art_1000>;
+		nvmem-cell-names = "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
@@ -209,7 +218,8 @@
 	ath9k1: wifi@12,0 {
 		compatible = "pci168c,0029";
 		reg = <0x9000 0 0 0 0>;
-		qca,no-eeprom;
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
