@@ -68,12 +68,14 @@
 		led-0 {
 			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		led-1 {
 			gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN_5GHZ;
 		};
 
 		led-2 {
@@ -91,37 +93,45 @@
 		led-4 {
 			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
 		};
 
 		led-5 {
 			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_MOBILE;
 		};
 
 		led-6 {
 			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
 			linux,default-trigger = "phy1tpt";
 		};
 
 		led-7 {
 			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN_2GHZ;
 		};
 
 		led_power_green: led-8 {
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 		};
 
 		led_power_red: led-9 {
 			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
 		};
 
 		led-10 {
 			gpios = <&gpio1 22 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			function-enumerator = <1>;
 			linux,default-trigger = "usbport";
 			trigger-sources = <&hub_port2>;
 		};
@@ -129,6 +139,8 @@
 		led-11 {
 			gpios = <&gpio1 23 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_USB;
+			function-enumerator = <0>;
 			linux,default-trigger = "usbport";
 			trigger-sources = <&hub_port1>;
 		};
