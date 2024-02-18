@@ -20,11 +20,6 @@ case "$FIRMWARE" in
 	avm,fritzdvbc)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
-	wd,mynet-n600|\
-	wd,mynet-n750)
-		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan24mac")
-		;;
 	engenius,ecb1200|\
 	engenius,ecb1750)
 		caldata_extract "art" 0x1000 0x440
@@ -70,11 +65,6 @@ case "$FIRMWARE" in
 	ubnt,powerbridge-m|\
 	ubnt,rocket-m)
 		caldata_extract "art" 0x1000 0x1000
-		;;
-	wd,mynet-n600|\
-	wd,mynet-n750)
-		caldata_extract "art" 0x5000 0x440
-		ath9k_patch_mac $(mtd_get_mac_ascii devdata "wlan5mac")
 		;;
 	wd,mynet-wifi-rangeextender)
 		caldata_extract "art" 0x1000 0x440
