@@ -746,9 +746,6 @@ ath79_setup_macs()
 		ucidef_set_interface "eth0" ifname "eth0" protocol "none" macaddr "$lan_mac"
 		ucidef_set_interface "eth1" ifname "eth1" protocol "none" macaddr "$eth1_mac"
 		;;
-	enterasys,ws-ap3705i)
-		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
-		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)
 		label_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
