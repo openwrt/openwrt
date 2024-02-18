@@ -23,7 +23,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct mmc_blk_data *md;
  	int devidx, ret;
  	char cap_str[10];
-@@ -2580,6 +2582,12 @@ static struct mmc_blk_data *mmc_blk_allo
+@@ -2580,6 +2582,13 @@ static struct mmc_blk_data *mmc_blk_allo
  
  	blk_queue_write_cache(md->queue.queue, cache_enabled, fua_enabled);
  
@@ -31,7 +31,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	fwnode = device_get_named_child_node(subname ? md->parent->parent :
 +						       md->parent,
 +					     subname ? subname : "block");
-+	ddev->fwnode = fwnode;
++	if (fwnode)
++		device_set_node(ddev, fwnode);
 +
  	string_get_size((u64)size, 512, STRING_UNITS_2,
  			cap_str, sizeof(cap_str));
