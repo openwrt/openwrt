@@ -82,7 +82,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	struct ieee80211_fast_tx fast_tx;
  	u8 hdr[sizeof(struct ieee80211s_hdr) + sizeof(rfc1042_header)];
-@@ -334,7 +358,8 @@ void mesh_path_tx_root_frame(struct ieee
+@@ -333,7 +357,8 @@ void mesh_path_tx_root_frame(struct ieee
  
  bool mesh_action_is_path_sel(struct ieee80211_mgmt *mgmt);
  struct ieee80211_mesh_fast_tx *
