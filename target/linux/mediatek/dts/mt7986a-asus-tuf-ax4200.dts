@@ -13,6 +13,7 @@
 
 	aliases {
 		serial0 = &uart0;
+		label-mac-device = &gmac0;
 		led-boot = &led_system;
 		led-failsafe = &led_system;
 		led-running = &led_system;
@@ -21,7 +22,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs-override = "ubi.mtd=UBI_DEV";
+		bootargs-override = "";
 	};
 
 	memory {
@@ -101,6 +102,8 @@
 		/* LAN */
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
+		nvmem-cells = <&macaddr_factory_4>;
+		nvmem-cell-names = "mac-address";
 		phy-mode = "2500base-x";
 
 		fixed-link {
@@ -215,21 +218,62 @@
 		spi-tx-bus-width = <4>;
 		spi-rx-bus-width = <4>;
 
-		partitions: partitions {
+		/*
+		 * ASUS bootloader tries to replace the partitions defined in
+		 * Device Tree and by that also deletes all additional properties
+		 * needed for UBI and NVMEM-on-UBI.
+		 * Prevent this from happening by tricking the loader to delete and
+		 * replace a bait node instead.
+		 */
+		partitions: dummy {
+			compatible = "u-boot-dummy-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x0>;
+				label = "remove_me";
+			};
+		};
+
+		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			partition@0 {
-				label = "bootloader";
 				reg = <0x0 0x400000>;
+				label = "bootloader";
 				read-only;
 			};
 
 			partition@400000 {
-				label = "UBI_DEV";
+				compatible = "linux,ubi";
 				reg = <0x400000 0xfc00000>;
+				label = "UBI_DEV";
+
+				volumes {
+					ubi_factory: ubi-volume-factory {
+						volname = "Factory";
+					};
+				};
 			};
+		};
+	};
+};
+
+&ubi_factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom_factory_0: eeprom@0 {
+			reg = <0x0 0x1000>;
+		};
+
+		macaddr_factory_4: macaddr@4 {
+			reg = <0x4 0x6>;
 		};
 	};
 };
@@ -340,10 +384,12 @@
 };
 
 &wifi {
-	status = "okay";
-	pinctrl-names = "default", "dbdc";
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 	pinctrl-0 = <&wf_2g_5g_pins>;
 	pinctrl-1 = <&wf_dbdc_pins>;
+	pinctrl-names = "default", "dbdc";
+	status = "okay";
 };
 
 &trng {
