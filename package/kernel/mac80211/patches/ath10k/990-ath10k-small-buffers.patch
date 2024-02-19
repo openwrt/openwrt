@@ -1,64 +1,124 @@
---- a/drivers/net/wireless/ath/ath10k/htt.h
-+++ b/drivers/net/wireless/ath/ath10k/htt.h
-@@ -235,7 +235,11 @@ enum htt_rx_ring_flags {
+From f7577ba99558a8f088816b401cdfe3dfde300038 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Fri, 28 Apr 2023 12:58:51 +0200
+Subject: [PATCH] wifi: ath10k: add buffers_mode module parameter
+
+The oom-killer gets triggered frequently by devices with small
+RAM (64 or 128 MB). This patch introduces a new module parameter
+"buffers_mode (1: normal, 2: reduced)". Setting the mode to reduced
+reduces the buffer sizes used by the driver resulting in overall less
+memory usage.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ drivers/net/wireless/ath/ath10k/core.c   |  5 +++++
+ drivers/net/wireless/ath/ath10k/core.h   |  6 +++++
+ drivers/net/wireless/ath/ath10k/htt_rx.c |  2 +-
+ drivers/net/wireless/ath/ath10k/pci.c    | 28 ++++++++++++++++++++++++
+ 4 files changed, 40 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -37,6 +37,9 @@ static bool uart_print;
+ static bool skip_otp;
+ static bool fw_diag_log;
+ 
++unsigned int ath10k_buffers_mode = ATH10K_NORMAL_BUFFERS;
++EXPORT_SYMBOL(ath10k_buffers_mode);
++
+ /* frame mode values are mapped as per enum ath10k_hw_txrx_mode */
+ unsigned int ath10k_frame_mode = ATH10K_HW_TXRX_NATIVE_WIFI;
+ 
+@@ -44,6 +47,7 @@ unsigned long ath10k_coredump_mask = BIT
+ 				     BIT(ATH10K_FW_CRASH_DUMP_CE_DATA);
+ 
+ /* FIXME: most of these should be readonly */
++module_param_named(buffers_mode, ath10k_buffers_mode, uint, 0644);
+ module_param_named(debug_mask, ath10k_debug_mask, uint, 0644);
+ module_param_named(cryptmode, ath10k_cryptmode_param, uint, 0644);
+ module_param(uart_print, bool, 0644);
+@@ -52,6 +56,7 @@ module_param(fw_diag_log, bool, 0644);
+ module_param_named(frame_mode, ath10k_frame_mode, uint, 0644);
+ module_param_named(coredump_mask, ath10k_coredump_mask, ulong, 0444);
+ 
++MODULE_PARM_DESC(buffers_mode, "Buffer mode (1: normal, 2: reduced)");
+ MODULE_PARM_DESC(debug_mask, "Debugging mask");
+ MODULE_PARM_DESC(uart_print, "Uart target debugging");
+ MODULE_PARM_DESC(skip_otp, "Skip otp failure for calibration in testmode");
+--- a/drivers/net/wireless/ath/ath10k/core.h
++++ b/drivers/net/wireless/ath/ath10k/core.h
+@@ -889,6 +889,11 @@ enum ath10k_crypt_mode {
+ 	ATH10K_CRYPT_MODE_SW,
  };
  
- #define HTT_RX_RING_SIZE_MIN 128
-+#ifndef CONFIG_ATH10K_SMALLBUFFERS
- #define HTT_RX_RING_SIZE_MAX 2048
-+#else
-+#define HTT_RX_RING_SIZE_MAX 512
-+#endif
- #define HTT_RX_RING_SIZE HTT_RX_RING_SIZE_MAX
- #define HTT_RX_RING_FILL_LEVEL (((HTT_RX_RING_SIZE) / 2) - 1)
- #define HTT_RX_RING_FILL_LEVEL_DUAL_MAC (HTT_RX_RING_SIZE - 1)
++enum ath10k_buffers_mode {
++	ATH10K_NORMAL_BUFFERS = 1,
++	ATH10K_REDUCED_BUFFERS = 2,
++};
++
+ static inline const char *ath10k_cal_mode_str(enum ath10k_cal_mode mode)
+ {
+ 	switch (mode) {
+@@ -1326,6 +1331,7 @@ static inline bool ath10k_peer_stats_ena
+ 	return false;
+ }
+ 
++extern unsigned int ath10k_buffers_mode;
+ extern unsigned int ath10k_frame_mode;
+ extern unsigned long ath10k_coredump_mask;
+ 
+--- a/drivers/net/wireless/ath/ath10k/htt_rx.c
++++ b/drivers/net/wireless/ath/ath10k/htt_rx.c
+@@ -792,7 +792,7 @@ int ath10k_htt_rx_alloc(struct ath10k_ht
+ 	/* XXX: The fill level could be changed during runtime in response to
+ 	 * the host processing latency. Is this really worth it?
+ 	 */
+-	htt->rx_ring.size = HTT_RX_RING_SIZE;
++	htt->rx_ring.size = (ath10k_buffers_mode == ATH10K_REDUCED_BUFFERS) ? 512 : HTT_RX_RING_SIZE;
+ 	htt->rx_ring.size_mask = htt->rx_ring.size - 1;
+ 	htt->rx_ring.fill_level = ar->hw_params.rx_ring_fill_level;
+ 
 --- a/drivers/net/wireless/ath/ath10k/pci.c
 +++ b/drivers/net/wireless/ath/ath10k/pci.c
-@@ -131,7 +131,11 @@ static const struct ce_attr pci_host_ce_
- 		.flags = CE_ATTR_FLAGS,
- 		.src_nentries = 0,
- 		.src_sz_max = 2048,
-+#ifndef CONFIG_ATH10K_SMALLBUFFERS
- 		.dest_nentries = 512,
-+#else
-+		.dest_nentries = 128,
-+#endif
- 		.recv_cb = ath10k_pci_htt_htc_rx_cb,
- 	},
+@@ -2484,6 +2484,32 @@ static void ath10k_pci_override_ce_confi
+ 	ar_pci->serv_to_pipe[15].pipenum = __cpu_to_le32(1);
+ }
  
-@@ -140,7 +144,11 @@ static const struct ce_attr pci_host_ce_
- 		.flags = CE_ATTR_FLAGS,
- 		.src_nentries = 0,
- 		.src_sz_max = 2048,
-+#ifndef CONFIG_ATH10K_SMALLBUFFERS
- 		.dest_nentries = 128,
-+#else
-+		.dest_nentries = 64,
-+#endif
- 		.recv_cb = ath10k_pci_htc_rx_cb,
- 	},
++static void ath10k_pci_reduce_ce_config_buffersize(struct ath10k *ar)
++{
++	struct ce_attr *attr;
++	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
++
++	/* Override Host's Copy Engine 1 configuration */
++	attr = &ar_pci->attr[1];
++	attr->dest_nentries = 128;
++
++	/* Override Host's Copy Engine 2 configuration */
++	attr = &ar_pci->attr[2];
++	attr->dest_nentries = 64;
++
++	/* Override Host's Copy Engine 2 configuration */
++	attr = &ar_pci->attr[2];
++	attr->dest_nentries = 64;
++
++	/* Override Host's Copy Engine 5 configuration */
++	attr = &ar_pci->attr[5];
++	attr->dest_nentries = 128;
++
++	/* Override Host's Copy Engine 8 configuration */
++	attr = &ar_pci->attr[8];
++	attr->dest_nentries = 96;
++}
++
+ int ath10k_pci_alloc_pipes(struct ath10k *ar)
+ {
+ 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+@@ -3487,6 +3513,8 @@ int ath10k_pci_setup_resource(struct ath
+ 		ret = -ENOMEM;
+ 		goto err_free_pipe_config;
+ 	}
++	if (ath10k_buffers_mode == ATH10K_REDUCED_BUFFERS)
++		ath10k_pci_reduce_ce_config_buffersize(ar);
  
-@@ -167,7 +175,11 @@ static const struct ce_attr pci_host_ce_
- 		.flags = CE_ATTR_FLAGS,
- 		.src_nentries = 0,
- 		.src_sz_max = 512,
-+#ifndef CONFIG_ATH10K_SMALLBUFFERS
- 		.dest_nentries = 512,
-+#else
-+		.dest_nentries = 128,
-+#endif
- 		.recv_cb = ath10k_pci_htt_rx_cb,
- 	},
- 
-@@ -192,7 +204,11 @@ static const struct ce_attr pci_host_ce_
- 		.flags = CE_ATTR_FLAGS,
- 		.src_nentries = 0,
- 		.src_sz_max = 2048,
-+#ifndef CONFIG_ATH10K_SMALLBUFFERS
- 		.dest_nentries = 128,
-+#else
-+		.dest_nentries = 96,
-+#endif
- 		.recv_cb = ath10k_pci_pktlog_rx_cb,
- 	},
- 
+ 	if (QCA_REV_6174(ar) || QCA_REV_9377(ar))
+ 		ath10k_pci_override_ce_config(ar);
