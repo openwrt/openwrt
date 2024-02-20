@@ -1,0 +1,32 @@
+From 477ed3ade6a46e445b4e2348b710c51df4f6f4b1 Mon Sep 17 00:00:00 2001
+From: Manoj Sai <abbaraju.manojsai@amarulasolutions.com>
+Date: Thu, 23 Feb 2023 19:29:29 +0530
+Subject: [PATCH] arm64: dts: rockchip: Enable USB OTG for rk3566 Radxa CM3
+
+Enable USB OTG support for Radxa Compute Module 3 IO Board
+
+Signed-off-by: Manoj Sai <abbaraju.manojsai@amarulasolutions.com>
+Signed-off-by: Jagan Teki <jagan@amarulasolutions.com>
+Link: https://lore.kernel.org/r/20230223135929.630787-1-abbaraju.manojsai@amarulasolutions.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3-io.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3-io.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3-io.dts
+@@ -254,6 +254,14 @@
+ 	status = "okay";
+ };
+ 
++&usb2phy0_otg {
++	status = "okay";
++};
++
++&usb_host0_xhci {
++	status = "okay";
++};
++
+ &vop {
+ 	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
+ 	assigned-clock-parents = <&pmucru PLL_HPLL>, <&cru PLL_VPLL>;
