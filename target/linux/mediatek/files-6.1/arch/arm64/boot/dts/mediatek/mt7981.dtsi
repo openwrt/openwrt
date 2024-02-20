@@ -42,8 +42,7 @@
 	};
 
 	ice: ice_debug {
-		compatible = "mediatek,mt7981-ice_debug",
-			   "mediatek,mt2701-ice_debug";
+		compatible = "mediatek,mt7981-ice_debug", "mediatek,mt2701-ice_debug";
 		clocks = <&infracfg CLK_INFRA_DBG_CK>;
 		clock-names = "ice_dbg";
 	};
@@ -56,8 +55,8 @@
 	};
 
 	psci {
-		compatible  = "arm,psci-0.2";
-		method      = "smc";
+		compatible = "arm,psci-0.2";
+		method = "smc";
 	};
 
 	fan: pwm-fan {
@@ -144,9 +143,9 @@
 			reg = <0 0x10003000 0 0x10>;
 		};
 
-		topckgen: topckgen@1001B000 {
+		topckgen: topckgen@1001b000 {
 			compatible = "mediatek,mt7981-topckgen", "syscon";
-			reg = <0 0x1001B000 0 0x1000>;
+			reg = <0 0x1001b000 0 0x1000>;
 			#clock-cells = <1>;
 		};
 
@@ -159,9 +158,9 @@
 			status = "disabled";
 		};
 
-		apmixedsys: apmixedsys@1001E000 {
+		apmixedsys: apmixedsys@1001e000 {
 			compatible = "mediatek,mt7981-apmixedsys", "syscon";
-			reg = <0 0x1001E000 0 0x1000>;
+			reg = <0 0x1001e000 0 0x1000>;
 			#clock-cells = <1>;
 		};
 
@@ -209,7 +208,7 @@
 			reg = <0 0x11002000 0 0x400>;
 			interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&infracfg CLK_INFRA_UART0_SEL>,
-				<&infracfg CLK_INFRA_UART0_CK>;
+				 <&infracfg CLK_INFRA_UART0_CK>;
 			clock-names = "baud", "bus";
 			assigned-clocks = <&topckgen CLK_TOP_UART_SEL>,
 					  <&infracfg CLK_INFRA_UART0_SEL>;
@@ -225,7 +224,7 @@
 			reg = <0 0x11003000 0 0x400>;
 			interrupts = <GIC_SPI 124 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&infracfg CLK_INFRA_UART1_SEL>,
-				<&infracfg CLK_INFRA_UART1_CK>;
+				 <&infracfg CLK_INFRA_UART1_CK>;
 			clock-names = "baud", "bus";
 			assigned-clocks = <&topckgen CLK_TOP_UART_SEL>,
 					  <&infracfg CLK_INFRA_UART1_SEL>;
@@ -239,7 +238,7 @@
 			reg = <0 0x11004000 0 0x400>;
 			interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&infracfg CLK_INFRA_UART2_SEL>,
-				<&infracfg CLK_INFRA_UART2_CK>;
+				 <&infracfg CLK_INFRA_UART2_CK>;
 			clock-names = "baud", "bus";
 			assigned-clocks = <&topckgen CLK_TOP_UART_SEL>,
 					  <&infracfg CLK_INFRA_UART2_SEL>;
@@ -304,7 +303,6 @@
 				 <&topckgen CLK_TOP_SPI_SEL>,
 				 <&infracfg CLK_INFRA_SPI0_CK>,
 				 <&infracfg CLK_INFRA_SPI0_HCK_CK>;
-
 			clock-names = "parent-clk", "sel-clk", "spi-clk", "hclk";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -401,8 +399,7 @@
 		};
 
 		mmc0: mmc@11230000 {
-			compatible = "mediatek,mt7986-mmc",
-						"mediatek,mt7981-mmc";
+			compatible = "mediatek,mt7986-mmc", "mediatek,mt7981-mmc";
 			reg = <0 0x11230000 0 0x1000>, <0 0x11c20000 0 0x1000>;
 			interrupts = <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&infracfg CLK_INFRA_MSDC_CK>,
@@ -427,15 +424,12 @@
 			device_type = "pci";
 			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL_HIGH>;
 			bus-range = <0x00 0xff>;
-
 			clocks = <&infracfg CLK_INFRA_IPCIE_CK>,
 				 <&infracfg CLK_INFRA_IPCIE_PIPE_CK>,
 				 <&infracfg CLK_INFRA_IPCIER_CK>,
 				 <&infracfg CLK_INFRA_IPCIEB_CK>;
-
 			phys = <&u3port0 PHY_TYPE_PCIE>;
 			phy-names = "pcie-phy";
-
 			interrupt-map-mask = <0 0 0 7>;
 			interrupt-map = <0 0 0 1 &pcie_intc 0>,
 					<0 0 0 2 &pcie_intc 1>,
@@ -445,6 +439,7 @@
 			#address-cells = <3>;
 			#size-cells = <2>;
 			status = "disabled";
+
 			pcie_intc: interrupt-controller {
 				interrupt-controller;
 				#interrupt-cells = <1>;
@@ -493,6 +488,7 @@
 					function = "eth";
 					groups = "wf0_mode1";
 				};
+
 				conf {
 					pins = "WF_HB1", "WF_HB2", "WF_HB3", "WF_HB4",
 					       "WF_HB0", "WF_HB0_B", "WF_HB5", "WF_HB6",
@@ -742,6 +738,7 @@
 			polling-delay-passive = <1000>;
 			polling-delay = <1000>;
 			thermal-sensors = <&thermal 0>;
+
 			trips {
 				cpu_trip_active_highest: active-highest {
 					temperature = <70000>;
