@@ -41,6 +41,76 @@
 		};
 	};
 
+	ice: ice_debug {
+		compatible = "mediatek,mt7981-ice_debug",
+			   "mediatek,mt2701-ice_debug";
+		clocks = <&infracfg CLK_INFRA_DBG_CK>;
+		clock-names = "ice_dbg";
+	};
+
+	clk40m: oscillator@0 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <40000000>;
+		clock-output-names = "clkxtal";
+	};
+
+	psci {
+		compatible  = "arm,psci-0.2";
+		method      = "smc";
+	};
+
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		/* cooling level (0, 1, 2, 3, 4, 5, 6, 7) : (0%/25%/37.5%/50%/62.5%/75%/87.5%/100% duty) */
+		cooling-levels = <0 63 95 127 159 191 223 255>;
+		#cooling-cells = <2>;
+		status = "disabled";
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		/* 64 KiB reserved for ramoops/pstore */
+		ramoops@42ff0000 {
+			compatible = "ramoops";
+			reg = <0 0x42ff0000 0 0x10000>;
+			record-size = <0x1000>;
+		};
+
+		/* 192 KiB reserved for ARM Trusted Firmware (BL31) */
+		secmon_reserved: secmon@43000000 {
+			reg = <0 0x43000000 0 0x30000>;
+			no-map;
+		};
+
+		wmcpu_emi: wmcpu-reserved@47c80000 {
+			reg = <0 0x47c80000 0 0x100000>;
+			no-map;
+		};
+
+		wo_emi0: wo-emi@47d80000 {
+			reg = <0 0x47d80000 0 0x40000>;
+			no-map;
+		};
+
+		wo_data: wo-data@47dc0000 {
+			reg = <0 0x47dc0000 0 0x240000>;
+			no-map;
+		};
+	};
+
 	soc {
 		compatible = "simple-bus";
 		ranges;
@@ -668,14 +738,6 @@
 		};
 	};
 
-	fan: pwm-fan {
-		compatible = "pwm-fan";
-		/* cooling level (0, 1, 2, 3, 4, 5, 6, 7) : (0%/25%/37.5%/50%/62.5%/75%/87.5%/100% duty) */
-		cooling-levels = <0 63 95 127 159 191 223 255>;
-		#cooling-cells = <2>;
-		status = "disabled";
-	};
-
 	thermal-zones {
 		cpu_thermal: cpu-thermal {
 			polling-delay-passive = <1000>;
@@ -747,56 +809,6 @@
 		};
 	};
 
-	reserved-memory {
-		#address-cells = <2>;
-		#size-cells = <2>;
-		ranges;
-
-		/* 64 KiB reserved for ramoops/pstore */
-		ramoops@42ff0000 {
-			compatible = "ramoops";
-			reg = <0 0x42ff0000 0 0x10000>;
-			record-size = <0x1000>;
-		};
-
-		/* 192 KiB reserved for ARM Trusted Firmware (BL31) */
-		secmon_reserved: secmon@43000000 {
-			reg = <0 0x43000000 0 0x30000>;
-			no-map;
-		};
-
-		wmcpu_emi: wmcpu-reserved@47c80000 {
-			reg = <0 0x47c80000 0 0x100000>;
-			no-map;
-		};
-
-		wo_emi0: wo-emi@47d80000 {
-			reg = <0 0x47d80000 0 0x40000>;
-			no-map;
-		};
-
-		wo_data: wo-data@47dc0000 {
-			reg = <0 0x47dc0000 0 0x240000>;
-			no-map;
-		};
-	};
-
-	psci {
-		compatible  = "arm,psci-0.2";
-		method      = "smc";
-	};
-
-	trng {
-		compatible = "mediatek,mt7981-rng";
-	};
-
-	clk40m: oscillator@0 {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <40000000>;
-		clock-output-names = "clkxtal";
-	};
-
 	timer {
 		compatible = "arm,armv8-timer";
 		interrupt-parent = <&gic>;
@@ -808,19 +820,7 @@
 
 	};
 
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
-
-	ice: ice_debug {
-		compatible = "mediatek,mt7981-ice_debug",
-			   "mediatek,mt2701-ice_debug";
-		clocks = <&infracfg CLK_INFRA_DBG_CK>;
-		clock-names = "ice_dbg";
+	trng {
+		compatible = "mediatek,mt7981-rng";
 	};
 };
