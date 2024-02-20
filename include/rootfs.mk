@@ -87,11 +87,11 @@ define prepare_rootfs
 			fi; \
 		done || true \
 	)
-	awk -i inplace \
+	$(if $(IB),,awk -i inplace \
 		'/^Status:/ { \
 			if ($$3 == "user") { $$3 = "ok" } \
 			else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
-		}1' $(1)/usr/lib/opkg/status
+		}1' $(1)/usr/lib/opkg/status)
 	$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
 	@-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
 	rm -rf \
