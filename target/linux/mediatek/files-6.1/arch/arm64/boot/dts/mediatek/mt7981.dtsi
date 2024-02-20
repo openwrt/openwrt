@@ -27,17 +27,17 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
-			enable-method = "psci";
 			reg = <0x0>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
-			enable-method = "psci";
 			reg = <0x1>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 	};
 
@@ -50,9 +50,9 @@
 
 	clk40m: oscillator@0 {
 		compatible = "fixed-clock";
-		#clock-cells = <0>;
 		clock-frequency = <40000000>;
 		clock-output-names = "clkxtal";
+		#clock-cells = <0>;
 	};
 
 	psci {
@@ -78,9 +78,9 @@
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <2>;
 		#size-cells = <2>;
-		ranges;
 
 		/* 64 KiB reserved for ramoops/pstore */
 		ramoops@42ff0000 {
@@ -119,13 +119,12 @@
 
 		gic: interrupt-controller@c000000 {
 			compatible = "arm,gic-v3";
-			#interrupt-cells = <3>;
-			interrupt-parent = <&gic>;
-			interrupt-controller;
 			reg = <0 0x0c000000 0 0x40000>,  /* GICD */
 			      <0 0x0c080000 0 0x200000>; /* GICR */
-
+			interrupt-parent = <&gic>;
 			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
 		};
 
 		consys: consys@10000000 {
@@ -169,13 +168,13 @@
 		pwm: pwm@10048000 {
 			compatible = "mediatek,mt7981-pwm";
 			reg = <0 0x10048000 0 0x1000>;
-			#pwm-cells = <2>;
 			clocks = <&infracfg CLK_INFRA_PWM_STA>,
 				 <&infracfg CLK_INFRA_PWM_HCK>,
 				 <&infracfg CLK_INFRA_PWM1_CK>,
 				 <&infracfg CLK_INFRA_PWM2_CK>,
 				 <&infracfg CLK_INFRA_PWM3_CK>;
 			clock-names = "top", "main", "pwm1", "pwm2", "pwm3";
+			#pwm-cells = <2>;
 		};
 
 		sgmiisys0: syscon@10060000 {
@@ -285,8 +284,6 @@
 
 		spi2: spi@11009000 {
 			compatible = "mediatek,mt7986-spi-ipm", "mediatek,spi-ipm";
-			#address-cells = <1>;
-			#size-cells = <0>;
 			reg = <0 0x11009000 0 0x100>;
 			interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&topckgen CLK_TOP_CB_M_D2>,
@@ -294,13 +291,13 @@
 				 <&infracfg CLK_INFRA_SPI2_CK>,
 				 <&infracfg CLK_INFRA_SPI2_HCK_CK>;
 			clock-names = "parent-clk", "sel-clk", "spi-clk", "hclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
 		spi0: spi@1100a000 {
 			compatible = "mediatek,mt7986-spi-ipm", "mediatek,spi-ipm";
-			#address-cells = <1>;
-			#size-cells = <0>;
 			reg = <0 0x1100a000 0 0x100>;
 			interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&topckgen CLK_TOP_CB_M_D2>,
@@ -309,13 +306,13 @@
 				 <&infracfg CLK_INFRA_SPI0_HCK_CK>;
 
 			clock-names = "parent-clk", "sel-clk", "spi-clk", "hclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
 		spi1: spi@1100b000 {
 			compatible = "mediatek,mt7986-spi-ipm", "mediatek,spi-ipm";
-			#address-cells = <1>;
-			#size-cells = <0>;
 			reg = <0 0x1100b000 0 0x100>;
 			interrupts = <GIC_SPI 141 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&topckgen CLK_TOP_CB_M_D2>,
@@ -323,21 +320,23 @@
 				 <&infracfg CLK_INFRA_SPI1_CK>,
 				 <&infracfg CLK_INFRA_SPI1_HCK_CK>;
 			clock-names = "parent-clk", "sel-clk", "spi-clk", "hclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
 		thermal: thermal@1100c800 {
-			#thermal-sensor-cells = <1>;
 			compatible = "mediatek,mt7981-thermal", "mediatek,mt7986-thermal";
 			reg = <0 0x1100c800 0 0x800>;
 			interrupts = <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&infracfg CLK_INFRA_THERM_CK>,
 				 <&infracfg CLK_INFRA_ADC_26M_CK>;
 			clock-names = "therm", "auxadc";
-			mediatek,auxadc = <&auxadc>;
-			mediatek,apmixedsys = <&apmixedsys>;
 			nvmem-cells = <&thermal_calibration>;
 			nvmem-cell-names = "calibration-data";
+			#thermal-sensor-cells = <1>;
+			mediatek,auxadc = <&auxadc>;
+			mediatek,apmixedsys = <&apmixedsys>;
 		};
 
 		auxadc: adc@1100d000 {
@@ -421,16 +420,13 @@
 		pcie: pcie@11280000 {
 			compatible = "mediatek,mt7981-pcie",
 				     "mediatek,mt7986-pcie";
-			device_type = "pci";
 			reg = <0 0x11280000 0 0x4000>;
 			reg-names = "pcie-mac";
-			#address-cells = <3>;
-			#size-cells = <2>;
-			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL_HIGH>;
-			bus-range = <0x00 0xff>;
 			ranges = <0x82000000 0 0x20000000
 				  0x0 0x20000000 0 0x10000000>;
-			status = "disabled";
+			device_type = "pci";
+			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL_HIGH>;
+			bus-range = <0x00 0xff>;
 
 			clocks = <&infracfg CLK_INFRA_IPCIE_CK>,
 				 <&infracfg CLK_INFRA_IPCIE_PIPE_CK>,
@@ -440,16 +436,19 @@
 			phys = <&u3port0 PHY_TYPE_PCIE>;
 			phy-names = "pcie-phy";
 
-			#interrupt-cells = <1>;
 			interrupt-map-mask = <0 0 0 7>;
 			interrupt-map = <0 0 0 1 &pcie_intc 0>,
 					<0 0 0 2 &pcie_intc 1>,
 					<0 0 0 3 &pcie_intc 2>,
 					<0 0 0 4 &pcie_intc 3>;
+			#interrupt-cells = <1>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			status = "disabled";
 			pcie_intc: interrupt-controller {
 				interrupt-controller;
-				#address-cells = <0>;
 				#interrupt-cells = <1>;
+				#address-cells = <0>;
 			};
 		};
 
@@ -528,9 +527,9 @@
 		usb_phy: usb-phy@11e10000 {
 			compatible = "mediatek,mt7981",
 				     "mediatek,generic-tphy-v2";
+			ranges = <0 0 0x11e10000 0x1700>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0 0 0x11e10000 0x1700>;
 			status = "disabled";
 
 			u2port0: usb-phy@0 {
@@ -583,13 +582,13 @@
 		};
 
 		ethsys: syscon@15000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
 			compatible = "mediatek,mt7981-ethsys",
 				     "syscon";
 			reg = <0 0x15000000 0 0x1000>;
 			#clock-cells = <1>;
 			#reset-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		wed: wed@15010000 {
@@ -653,8 +652,8 @@
 				#size-cells = <0>;
 
 				int_gbe_phy: ethernet-phy@0 {
-					reg = <0>;
 					compatible = "ethernet-phy-ieee802.3-c22";
+					reg = <0>;
 					phy-mode = "gmii";
 					phy-is-integrated;
 					nvmem-cells = <&phy_calibration>;
@@ -719,6 +718,9 @@
 
 		wifi: wifi@18000000 {
 			compatible = "mediatek,mt7981-wmac";
+			reg = <0 0x18000000 0 0x1000000>,
+			      <0 0x10003000 0 0x1000>,
+			      <0 0x11d10000 0 0x1000>;
 			resets = <&watchdog MT7986_TOPRGU_CONSYS_SW_RST>;
 			reset-names = "consys";
 			pinctrl-0 = <&wifi_dbdc_pins>;
@@ -726,9 +728,6 @@
 			clocks = <&topckgen CLK_TOP_NETSYS_MCU_SEL>,
 				 <&topckgen CLK_TOP_AP2CNN_HOST_SEL>;
 			clock-names = "mcu", "ap2conn";
-			reg = <0 0x18000000 0 0x1000000>,
-			      <0 0x10003000 0 0x1000>,
-			      <0 0x11d10000 0 0x1000>;
 			interrupts = <GIC_SPI 213 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 214 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 215 IRQ_TYPE_LEVEL_HIGH>,
