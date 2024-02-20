@@ -352,6 +352,7 @@ hostapd_common_add_bss_config() {
 	config_add_string iw_hessid iw_network_auth_type iw_qos_map_set
 	config_add_array iw_roaming_consortium iw_domain_name iw_anqp_3gpp_cell_net iw_nai_realm
 	config_add_array iw_anqp_elem iw_venue_name iw_venue_url
+	config_add_string iw_rcois iw_realm
 
 	config_add_boolean hs20 disable_dgaf osen
 	config_add_int anqp_domain_id
@@ -428,6 +429,10 @@ append_iw_domain_name() {
 	else
 		iw_domain_name_conf="$iw_domain_name_conf,$1"
 	fi
+}
+
+append_iw_domain() {
+	[ -n "$1" ] && append cred_data "domain=\"$1\"" "$N"
 }
 
 append_iw_anqp_3gpp_cell_net() {
@@ -1302,6 +1307,7 @@ wpa_supplicant_add_network() {
 	wireless_vif_parse_encryption
 
 	json_get_vars \
+		iw_enabled iw_rcois iw_realm iw_domain_name \
 		ssid bssid key \
 		basic_rate mcast_rate \
 		ieee80211w ieee80211r fils ocv \
@@ -1323,6 +1329,7 @@ wpa_supplicant_add_network() {
 
 	local key_mgmt='NONE'
 	local network_data=
+	local cred_data=
 	local T="	"
 
 	local scan_ssid="scan_ssid=1"
@@ -1398,13 +1405,20 @@ wpa_supplicant_add_network() {
 
 			json_get_vars eap_type identity anonymous_identity ca_cert ca_cert_usesystem
 
+			[ -n "$iw_rcois" ] && append cred_data "roaming_consortiums=\"$iw_rcois\"" "$N$T"
+			[ -n "$iw_realm" ] && append cred_data "realm=\"$iw_realm\"" "$N$T"
+			json_for_each_item append_iw_domain iw_domain_name
+
 			[ "$fils" -gt 0 ] && append network_data "erp=1" "$N$T"
 			if [ "$ca_cert_usesystem" -eq "1" -a -f "/etc/ssl/certs/ca-certificates.crt" ]; then
 				append network_data "ca_cert=\"/etc/ssl/certs/ca-certificates.crt\"" "$N$T"
+				append cred_data "ca_cert=\"/etc/ssl/certs/ca-certificates.crt\"" "$N$T"
 			else
 				[ -n "$ca_cert" ] && append network_data "ca_cert=\"$ca_cert\"" "$N$T"
+				[ -n "$ca_cert" ] && append cred_data "ca_cert=\"$ca_cert\"" "$N$T"
 			fi
 			[ -n "$identity" ] && append network_data "identity=\"$identity\"" "$N$T"
+			[ -n "$identity" ] && append cred_data "username=\"$identity\"" "$N$T"
 			[ -n "$anonymous_identity" ] && append network_data "anonymous_identity=\"$anonymous_identity\"" "$N$T"
 			case "$eap_type" in
 				tls)
@@ -1412,6 +1426,9 @@ wpa_supplicant_add_network() {
 					append network_data "client_cert=\"$client_cert\"" "$N$T"
 					append network_data "private_key=\"$priv_key\"" "$N$T"
 					append network_data "private_key_passwd=\"$priv_key_pwd\"" "$N$T"
+					[ -n "$client_cert" ] && append cred_data "client_cert=\"$client_cert\"" "$N$T"
+					append cred_data "private_key=\"$priv_key\"" "$N$T"
+					append cred_data "private_key_passwd=\"$priv_key_pwd\"" "$N$T"
 
 					json_get_vars subject_match
 					[ -n "$subject_match" ] && append network_data "subject_match=\"$subject_match\"" "$N$T"
@@ -1441,6 +1458,7 @@ wpa_supplicant_add_network() {
 							append list "$x" ";"
 						done
 						append network_data "domain_suffix_match=\"$list\"" "$N$T"
+						append cred_data "domain_suffix_match=\"$list\"" "$N$T"
 					fi
 				;;
 				fast|peap|ttls)
@@ -1458,6 +1476,7 @@ wpa_supplicant_add_network() {
 						append network_data "private_key2_passwd=\"$priv_key2_pwd\"" "$N$T"
 					else
 						append network_data "password=\"$password\"" "$N$T"
+						append cred_data "password=\"$password\"" "$N$T"
 					fi
 
 					json_get_vars subject_match
@@ -1479,6 +1498,7 @@ wpa_supplicant_add_network() {
 							append list "$x" ";"
 						done
 						append network_data "domain_match=\"$list\"" "$N$T"
+						append cred_data "domain_match=\"$list\"" "$N$T"
 					fi
 
 					json_get_values domain_suffix_match domain_suffix_match
@@ -1488,6 +1508,7 @@ wpa_supplicant_add_network() {
 							append list "$x" ";"
 						done
 						append network_data "domain_suffix_match=\"$list\"" "$N$T"
+						append cred_data "domain_suffix_match=\"$list\"" "$N$T"
 					fi
 
 					phase2proto="auth="
@@ -1531,9 +1552,11 @@ wpa_supplicant_add_network() {
 						;;
 					esac
 					append network_data "phase2=\"$phase2proto$auth\"" "$N$T"
+					append cred_data "phase2=\"$phase2proto$auth\"" "$N$T"
 				;;
 			esac
 			append network_data "eap=$(echo $eap_type | tr 'a-z' 'A-Z')" "$N$T"
+			append cred_data "eap=$(echo $eap_type | tr 'a-z' 'A-Z')" "$N$T"
 		;;
 	esac
 
@@ -1585,6 +1608,19 @@ wpa_supplicant_add_network() {
 	if [ "$key_mgmt" = "WPS" ]; then
 		echo "wps_cred_processing=1" >> "$_config"
 	else
+		if [ "$iw_enabled" = "1" ]; then
+			cat >> "$_config" <<EOF
+interworking=1
+hs20=1
+auto_interworking=1
+
+cred={
+	$cred_data
+}
+
+EOF
+		fi
+
 		cat >> "$_config" <<EOF
 network={
 	$scan_ssid
