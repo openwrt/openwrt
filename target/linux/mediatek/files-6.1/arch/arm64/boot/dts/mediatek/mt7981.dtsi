@@ -47,7 +47,7 @@
 		clock-names = "ice_dbg";
 	};
 
-	clk40m: oscillator@0 {
+	clk40m: oscillator-40m {
 		compatible = "fixed-clock";
 		clock-frequency = <40000000>;
 		clock-output-names = "clkxtal";
@@ -132,7 +132,7 @@
 			memory-region = <&wmcpu_emi>;
 		};
 
-		infracfg: infracfg@10001000 {
+		infracfg: clock-controller@10001000 {
 			compatible = "mediatek,mt7981-infracfg", "syscon";
 			reg = <0 0x10001000 0 0x1000>;
 			#clock-cells = <1>;
@@ -143,7 +143,7 @@
 			reg = <0 0x10003000 0 0x10>;
 		};
 
-		topckgen: topckgen@1001b000 {
+		topckgen: clock-controller@1001b000 {
 			compatible = "mediatek,mt7981-topckgen", "syscon";
 			reg = <0 0x1001b000 0 0x1000>;
 			#clock-cells = <1>;
@@ -158,7 +158,7 @@
 			status = "disabled";
 		};
 
-		apmixedsys: apmixedsys@1001e000 {
+		apmixedsys: clock-controller@1001e000 {
 			compatible = "mediatek,mt7981-apmixedsys", "syscon";
 			reg = <0 0x1001e000 0 0x1000>;
 			#clock-cells = <1>;
@@ -577,7 +577,7 @@
 			};
 		};
 
-		ethsys: syscon@15000000 {
+		ethsys: clock-controller@15000000 {
 			compatible = "mediatek,mt7981-ethsys",
 				     "syscon";
 			reg = <0 0x15000000 0 0x1000>;
