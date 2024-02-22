@@ -24,7 +24,6 @@ export NEED_IMAGE=
 export HELP=0
 export FORCE=0
 export TEST=0
-export UMOUNT_ETCBACKUP_DIR=0
 
 # parse options
 while [ -n "$1" ]; do
@@ -224,6 +223,8 @@ include /lib/upgrade
 
 do_save_conffiles() {
 	local conf_tar="$1"
+	local tmp
+	local dir
 
 	[ "$(rootfs_type)" = "tmpfs" ] && {
 		echo "Cannot save config while running from ramdisk." >&2
@@ -234,17 +235,21 @@ do_save_conffiles() {
 	run_hooks "$CONFFILES" $sysupgrade_init_conffiles
 	ask_bool 0 "Edit config file list" && vi "$CONFFILES"
 
+	# Mount root directory with temporary overlay on top of it.
+	# This allows including extra (temporary) files in backup archive
+	# without messing actual rootfs.
+	tmp="$(mktemp -d -t overlay.XXXXXX)"
+	mkdir -p "$tmp/upper" "$tmp/work" "$tmp/backup"
+	dir="$tmp/backup"
+	if ! mount -t overlay overlay -o lowerdir=/,upperdir="$tmp/upper",workdir="$tmp/work" "$dir"; then
+		echo "Cannot mount backup overlay to $dir." >&2
+		ask_bool 0 "Abort" && exit
+		dir=""
+	fi
+
 	if [ "$SAVE_INSTALLED_PKGS" -eq 1 ]; then
 		echo "${INSTALLED_PACKAGES}" >> "$CONFFILES"
-		mkdir -p "$ETCBACKUP_DIR"
-		# Avoid touching filesystem on each backup
-		RAMFS="$(mktemp -d -t sysupgrade.XXXXXX)"
-		mkdir -p "$RAMFS/upper" "$RAMFS/work"
-		mount -t overlay overlay -o lowerdir=$ETCBACKUP_DIR,upperdir=$RAMFS/upper,workdir=$RAMFS/work $ETCBACKUP_DIR &&
-			UMOUNT_ETCBACKUP_DIR=1 || {
-				echo "Cannot mount '$ETCBACKUP_DIR' as tmpfs to avoid touching disk while saving the list of installed packages." >&2
-				ask_bool 0 "Abort" && exit
-			}
+		mkdir -p "$dir/$ETCBACKUP_DIR"
 
 		# Format: pkg-name<TAB>{rom,overlay,unkown}
 		# rom is used for pkgs in /rom, even if updated later
@@ -252,23 +257,35 @@ do_save_conffiles() {
 			\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
 			\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
 			\( -exec echo {} unknown \; \) \
-			\) | sed -e 's,.*/,,;s/\.control /\t/' > ${INSTALLED_PACKAGES}
+			\) | sed -e 's,.*/,,;s/\.control /\t/' > "$dir/${INSTALLED_PACKAGES}"
 	fi
+
+	mkdir -p $dir/etc/uci-defaults/
+	touch $dir/etc/uci-defaults/10_disable_services
+	for service in /etc/init.d/*; do
+		if ! $service enabled; then
+			echo "$service disable" >> $dir/etc/uci-defaults/10_disable_services
+		fi
+	done
+	echo "exit 0" >> $dir/etc/uci-defaults/10_disable_services
+	echo "/etc/uci-defaults/10_disable_services" >> "$CONFFILES"
 
 	v "Saving config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
-	tar c${TAR_V}zf "$conf_tar" -T "$CONFFILES" 2>/dev/null
-	if [ "$?" -ne 0 ]; then
+	sed -i -e 's,^/,,' "$CONFFILES"
+	tar c${TAR_V}zf "$conf_tar" -C "${dir:-/}" -T "$CONFFILES"
+	local err=$?
+	if [ "$err" -ne 0 ]; then
 		echo "Failed to create the configuration backup."
 		rm -f "$conf_tar"
-		exit 1
 	fi
 
-	[ "$UMOUNT_ETCBACKUP_DIR" -eq 1 ] && {
-		umount "$ETCBACKUP_DIR"
-		rm -rf "$RAMFS"
-	}
+	umount "$dir"
+	rm -rf "$tmp"
+
 	rm -f "$CONFFILES"
+
+	return "$err"
 }
 
 if [ $CONF_BACKUP_LIST -eq 1 ]; then
@@ -281,7 +298,7 @@ fi
 
 if [ -n "$CONF_BACKUP" ]; then
 	do_save_conffiles "$CONF_BACKUP"
-	exit $?
+	exit
 fi
 
 if [ -n "$CONF_RESTORE" ]; then
@@ -350,7 +367,7 @@ if [ -n "$CONF_IMAGE" ]; then
 	get_image "$CONF_IMAGE" "cat" > "$CONF_TAR"
 	export SAVE_CONFIG=1
 elif ask_bool $SAVE_CONFIG "Keep config files over reflash"; then
-	[ $TEST -eq 1 ] || do_save_conffiles "$CONF_TAR"
+	[ $TEST -eq 1 ] || do_save_conffiles "$CONF_TAR" || exit
 	export SAVE_CONFIG=1
 else
 	[ $TEST -eq 1 ] || rm -f "$CONF_TAR"

@@ -23,24 +23,6 @@
 		switch_access_mode = "local bus";
 		switch_cpu_bmp = <ESS_PORT0>;  /* cpu port bitmap */
 		switch_inner_bmp = <ESS_PORT7>; /*inner port bitmap*/
-		/* This is a special binding that controls how the malibu PHY are
-		 * init. This value reflect the PHY addr of the first malibu PHY.
-		 * Malibu PHY are in a bundle of 5 PHY.
-		 * Some device might have some port not connected.
-		 * SSDK still needs the addrs of the first PHY (even if not connected)
-		 * to correctly setup the malibu PHY.
-		 *
-		 * This is needed as previously SSDK based this on the port bmp, but
-		 * this can be problematic now that we specify correct bmp.
-		 *
-		 * Most common configuration have the malibu PHY placed at 0.
-		 * But some device might have it placed at address 16.
-		 * To drive the correct value, check the port id of the malibu PHY
-		 * and try to understand what is the first one in devices where some
-		 * port are missing. port_phyinfo is normally the way to go to derive
-		 * this value in the few special cases.
-		 */
-		malibu_first_phy_addr = <0>;
 		clocks = <&gcc GCC_CMN_12GPLL_AHB_CLK>,
 			 <&gcc GCC_CMN_12GPLL_SYS_CLK>,
 			 <&gcc GCC_UNIPHY0_AHB_CLK>,
@@ -476,7 +458,7 @@
 		reg = <0x3a001000 0x200>;
 		qcom,mactype = <0>;
 		local-mac-address = [000000000000];
-		phy-mode = "sgmii";
+		phy-mode = "psgmii";
 		status = "disabled";
 	};
 
@@ -487,7 +469,7 @@
 		reg = <0x3a001200 0x200>;
 		qcom,mactype = <0>;
 		local-mac-address = [000000000000];
-		phy-mode = "sgmii";
+		phy-mode = "psgmii";
 		status = "disabled";
 	};
 
@@ -498,7 +480,7 @@
 		reg = <0x3a001400 0x200>;
 		qcom,mactype = <0>;
 		local-mac-address = [000000000000];
-		phy-mode = "sgmii";
+		phy-mode = "psgmii";
 		status = "disabled";
 	};
 
@@ -509,7 +491,7 @@
 		reg = <0x3a001600 0x200>;
 		qcom,mactype = <0>;
 		local-mac-address = [000000000000];
-		phy-mode = "sgmii";
+		phy-mode = "psgmii";
 		status = "disabled";
 	};
 
@@ -520,7 +502,7 @@
 		reg = <0x3a001800 0x200>;
 		qcom,mactype = <0>;
 		local-mac-address = [000000000000];
-		phy-mode = "sgmii";
+		phy-mode = "psgmii";
 		status = "disabled";
 	};
 

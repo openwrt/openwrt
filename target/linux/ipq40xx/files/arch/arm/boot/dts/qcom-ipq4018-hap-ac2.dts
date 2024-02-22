@@ -4,6 +4,7 @@
 #include "qcom-ipq4019.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
@@ -100,7 +101,8 @@
 		compatible = "gpio-leds";
 
 		power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 			panic-indicator;

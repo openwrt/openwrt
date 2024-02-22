@@ -22,7 +22,6 @@
 		compatible = "gpio-leds";
 
 		led_status: led-0 {
-			label = "blue:status";
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
@@ -81,7 +80,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

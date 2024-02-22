@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,re650-v2", "mediatek,mt7621-soc";
@@ -53,7 +54,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 
@@ -70,12 +72,14 @@
 		};
 
 		wps_red {
-			label = "red:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 26 GPIO_ACTIVE_HIGH>;
 		};
 
 		wps_blue {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 27 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -116,7 +120,7 @@
 				reg = <0x20000 0x7a0000>;
 			};
 
-			config: partition@7c0000 {
+			partition@7c0000 {
 				label = "config";
 				reg = <0x7c0000 0x2d440>;
 				read-only;
@@ -134,7 +138,7 @@
 				};
 			};
 
-			radio: partition@7f0000 {
+			partition@7f0000 {
 				label = "radio";
 				reg = <0x7f0000 0x10000>;
 				read-only;

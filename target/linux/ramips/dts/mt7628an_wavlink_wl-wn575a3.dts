@@ -1,6 +1,7 @@
 #include "mt7628an.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -42,7 +43,8 @@
 		};
 
 		wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -93,7 +95,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

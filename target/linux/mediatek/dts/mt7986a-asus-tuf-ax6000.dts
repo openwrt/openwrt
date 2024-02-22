@@ -48,7 +48,8 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "white:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy1tpt";
 		};
@@ -59,7 +60,8 @@
 		};
 
 		wan-red {
-			label = "red:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
 		};
 

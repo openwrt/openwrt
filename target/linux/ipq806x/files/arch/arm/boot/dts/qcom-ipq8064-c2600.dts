@@ -1,3 +1,5 @@
+#include <dt-bindings/leds/common.h>
+
 #include "qcom-ipq8064-ad7200-c2600.dtsi"
 
 / {
@@ -55,7 +57,8 @@
 		pinctrl-names = "default";
 
 		lan {
-			label = "white:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -70,22 +73,26 @@
 		};
 
 		wps {
-			label = "white:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan_amber {
-			label = "amber:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_white {
-			label = "white:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&qcom_pinmux 33 GPIO_ACTIVE_LOW>;
 		};
 
 		power: power {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};

@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -45,12 +46,14 @@
 		compatible = "gpio-leds";
 
 		led_status_blue: status_blue {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_red: status_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -91,7 +94,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

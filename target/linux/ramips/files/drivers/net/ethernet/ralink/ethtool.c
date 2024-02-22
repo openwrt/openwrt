@@ -125,8 +125,15 @@ out_get_link:
 	return ethtool_op_get_link(dev);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+static int fe_set_ringparam(struct net_device *dev,
+			    struct ethtool_ringparam *ring,
+			    struct kernel_ethtool_ringparam *kernel_rp,
+			    struct netlink_ext_ack *extack)
+#else
 static int fe_set_ringparam(struct net_device *dev,
 			    struct ethtool_ringparam *ring)
+#endif
 {
 	struct fe_priv *priv = netdev_priv(dev);
 
@@ -146,8 +153,15 @@ static int fe_set_ringparam(struct net_device *dev,
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+static void fe_get_ringparam(struct net_device *dev,
+			     struct ethtool_ringparam *ring,
+			     struct kernel_ethtool_ringparam *kernel_rp,
+			     struct netlink_ext_ack *extack)
+#else
 static void fe_get_ringparam(struct net_device *dev,
 			     struct ethtool_ringparam *ring)
+#endif
 {
 	struct fe_priv *priv = netdev_priv(dev);
 

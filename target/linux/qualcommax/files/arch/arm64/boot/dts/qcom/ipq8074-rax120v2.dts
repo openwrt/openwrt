@@ -72,63 +72,53 @@
 		compatible = "gpio-leds";
 
 		led_system_white: system-white {
-			label = "white:system";
 			gpios = <&led_gpio 0 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led_24g_white {
-			label = "white:24g";
 			gpios = <&led_gpio 1 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 			linux,default-trigger = "phy1radio";
 		};
 
 		led_5g_white {
-			label = "white:5g";
 			gpios = <&led_gpio 2 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 			linux,default-trigger = "phy0radio";
 		};
 
 		led_usb1_white {
-			label = "white:usb1";
 			gpios = <&led_gpio 3 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led_usb2_white {
-			label = "white:usb2";
 			gpios = <&led_gpio 4 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led_wan_white: wan-white {
-			label = "white:wan";
 			gpios = <&led_gpio 5 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led_aqr_green {
-			label = "green:aqr";
 			gpios = <&led_gpio 6 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led_aqr_red {
-			label = "red:aqr";
 			gpios = <&led_gpio 10 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		led_aqr_white {
-			label = "white:aqr";
 			gpios = <&led_gpio 11 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
 
 		led_wps_white {
-			label = "white:wps";
 			gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
 		};
@@ -160,29 +150,37 @@
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
 
-	qca8075_0: ethernet-phy@0 {
-		compatible = "ethernet-phy-ieee802.3-c22";
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
 		reg = <0>;
-	};
 
-	qca8075_1: ethernet-phy@1 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <1>;
-	};
+		compatible = "qcom,qca8075-package";
 
-	qca8075_2: ethernet-phy@2 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <2>;
-	};
+		qca8075_0: ethernet-phy@0 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <0>;
+		};
 
-	qca8075_3: ethernet-phy@3 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <3>;
-	};
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
 
-	qca8075_4: ethernet-phy@4 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <4>;
+		qca8075_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
+
+		qca8075_4: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+		};
 	};
 
 	aqr111b0: ethernet-phy@7 {
@@ -276,6 +274,7 @@
 
 &dp6_syn {
 	status = "okay";
+	phy-mode = "usxgmii";
 	phy-handle = <&aqr111b0>;
 	label = "lan5";
 	nvmem-cells = <&macaddr_dp6_syn>;

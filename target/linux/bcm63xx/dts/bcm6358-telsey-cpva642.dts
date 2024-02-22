@@ -1,6 +1,7 @@
 #include "bcm6358.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Telsey CPVA642-type (CPA-ZNTE60T)";
@@ -51,7 +52,8 @@
 			gpios = <&pinctrl 2 1>;
 		};
 		usb_green {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 3 1>;
 		};
 		phone1_green {
@@ -71,12 +73,14 @@
 			gpios = <&pinctrl 10 1>;
 		};
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 11 1>;
 			default-state = "on";
 		};
 		power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 14 1>;
 		};
 		wifi_green {

@@ -17,6 +17,9 @@ ipq807x_setup_interfaces()
 	xiaomi,ax9000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
+	cmcc,rm2-6)
+		ucidef_set_interfaces_lan_wan "lan plc" "wan"
+		;;
 	compex,wpq873|\
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\

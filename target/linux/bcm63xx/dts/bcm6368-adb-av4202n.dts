@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "ADB P.DG AV4202N";
@@ -44,20 +45,24 @@
 		compatible = "gpio-leds";
 
 		led_power_white: power_white {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 		power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
 		};
 		wan_white {
-			label = "white:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
 		};
 		wan_red {
-			label = "red:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
 		};
 		phone_white {

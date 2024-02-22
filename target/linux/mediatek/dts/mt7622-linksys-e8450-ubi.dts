@@ -10,6 +10,11 @@
 	aliases {
 		label-mac-device = &wan;
 	};
+
+	chosen {
+		rootdisk = <&ubi_rootfs>;
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n1 swiotlb=512 ubi.block=0,fit root=/dev/fit0";
+	};
 };
 
 &snand {
@@ -25,45 +30,70 @@
 		};
 
 		partition@80000 {
-			label = "fip";
-			reg = <0x80000 0x140000>;
-			read-only;
-		};
+			label = "ubi";
+			reg = <0x80000 0x7f80000>;
+			compatible = "linux,ubi";
 
-		factory: partition@1c0000 {
-			label = "factory";
-			reg = <0x1c0000 0x100000>;
-			read-only;
-
-			nvmem-layout {
-				compatible = "fixed-layout";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				macaddr_factory_7fff4: macaddr@7fff4 {
-					reg = <0x7fff4 0x6>;
+			volumes {
+				ubi-volume-ubootenv {
+					volname = "ubootenv";
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool-layout";
+					};
 				};
 
-				macaddr_factory_7fffa: macaddr@7fffa {
-					reg = <0x7fffa 0x6>;
+				ubi-volume-ubootenv2 {
+					volname = "ubootenv2";
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool-layout";
+					};
+				};
+
+				ubi_rootfs: ubi-volume-fit {
+					volname = "fit";
+				};
+
+				ubi_factory: ubi-volume-factory {
+					volname = "factory";
 				};
 			};
 		};
+	};
+};
 
-		partition@300000 {
-			label = "ubi";
-			reg = <0x300000 0x7d00000>;
+&ubi_factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom_factory_0: eeprom@0 {
+			reg = <0x0 0x4da8>; /* actual length 0x400 */
+		};
+
+		eeprom_factory_5000: eeprom@5000 {
+			reg = <0x5000 0xe00>;
+		};
+
+		macaddr_factory_7fff4: macaddr@7fff4 {
+			reg = <0x7fff4 0x6>;
+		};
+
+		macaddr_factory_7fffa: macaddr@7fffa {
+			reg = <0x7fffa 0x6>;
 		};
 	};
 };
 
 &wmac {
-	mediatek,mtd-eeprom = <&factory 0x0>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 	status = "okay";
 };
 
 &wmac1 {
-	mediatek,mtd-eeprom = <&factory 0x5000>;
+	nvmem-cells = <&eeprom_factory_5000>;
+	nvmem-cell-names = "eeprom";
 };
 
 &gmac0 {

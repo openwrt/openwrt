@@ -53,6 +53,23 @@ extern struct mutex smi_lock;
 
 #define RTL9300_PHY_ID_MASK 0xf0ffffff
 
+/* RTL930X SerDes supports the following modes:
+ * 0x02: SGMII		0x04: 1000BX_FIBER	0x05: FIBER100
+ * 0x06: QSGMII		0x09: RSGMII		0x0d: USXGMII
+ * 0x10: XSGMII		0x12: HISGMII		0x16: 2500Base_X
+ * 0x17: RXAUI_LITE	0x19: RXAUI_PLUS	0x1a: 10G Base-R
+ * 0x1b: 10GR1000BX_AUTO			0x1f: OFF
+ */
+#define RTL930X_SDS_MODE_SGMII		0x02
+#define RTL930X_SDS_MODE_1000BASEX	0x04
+#define RTL930X_SDS_MODE_USXGMII	0x0d
+#define RTL930X_SDS_MODE_XGMII		0x10
+#define RTL930X_SDS_MODE_HSGMII		0x12
+#define RTL930X_SDS_MODE_2500BASEX	0x16
+#define RTL930X_SDS_MODE_10GBASER	0x1a
+#define RTL930X_SDS_OFF			0x1f
+#define RTL930X_SDS_MASK		0x1f
+
 /* This lock protects the state of the SoC automatically polling the PHYs over the SMI
  * bus to detect e.g. link and media changes. For operations on the PHYs such as
  * patching or other configuration changes such as EEE, polling needs to be disabled
@@ -147,13 +164,8 @@ u16 rtl9300_sds_regs[] = { 0x0194, 0x0194, 0x0194, 0x0194, 0x02a0, 0x02a0, 0x02a
 			   0x02A4, 0x02A4, 0x0198, 0x0198 };
 u8  rtl9300_sds_lsb[]  = { 0, 6, 12, 18, 0, 6, 12, 18, 0, 6, 0, 6};
 
-/* Reset the SerDes by powering it off and set a new operations mode
- * of the SerDes. 0x1f is off. Other modes are
- * 0x02: SGMII		0x04: 1000BX_FIBER	0x05: FIBER100
- * 0x06: QSGMII		0x09: RSGMII		0x0d: USXGMII
- * 0x10: XSGMII		0x12: HISGMII		0x16: 2500Base_X
- * 0x17: RXAUI_LITE	0x19: RXAUI_PLUS	0x1a: 10G Base-R
- * 0x1b: 10GR1000BX_AUTO			0x1f: OFF
+/* Reset the SerDes by powering it off and set a new operation mode
+ * of the SerDes.
  */
 void rtl9300_sds_rst(int sds_num, u32 mode)
 {
@@ -163,11 +175,12 @@ void rtl9300_sds_rst(int sds_num, u32 mode)
 		return;
 	}
 
-	sw_w32_mask(0x1f << rtl9300_sds_lsb[sds_num], 0x1f << rtl9300_sds_lsb[sds_num],
+	sw_w32_mask(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num],
+		    RTL930X_SDS_OFF << rtl9300_sds_lsb[sds_num],
 		    rtl9300_sds_regs[sds_num]);
 	mdelay(10);
 
-	sw_w32_mask(0x1f << rtl9300_sds_lsb[sds_num], mode << rtl9300_sds_lsb[sds_num],
+	sw_w32_mask(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num], mode << rtl9300_sds_lsb[sds_num],
 		    rtl9300_sds_regs[sds_num]);
 	mdelay(10);
 
@@ -183,7 +196,7 @@ void rtl9300_sds_set(int sds_num, u32 mode)
 		return;
 	}
 
-	sw_w32_mask(0x1f << rtl9300_sds_lsb[sds_num], mode << rtl9300_sds_lsb[sds_num],
+	sw_w32_mask(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num], mode << rtl9300_sds_lsb[sds_num],
 		    rtl9300_sds_regs[sds_num]);
 	mdelay(10);
 
@@ -203,7 +216,7 @@ u32 rtl9300_sds_mode_get(int sds_num)
 	v = sw_r32(rtl9300_sds_regs[sds_num]);
 	v >>= rtl9300_sds_lsb[sds_num];
 
-	return v & 0x1f;
+	return v & RTL930X_SDS_MASK;
 }
 
 /* On the RTL839x family of SoCs with inbuilt SerDes, these SerDes are accessed through
@@ -273,6 +286,8 @@ int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v)
 
 	sw_w32(v, RTL930X_SDS_INDACS_DATA);
 	cmd = phy_addr << 2 | page << 7 | phy_reg << 13 | 0x3;
+
+	sw_w32(cmd, RTL930X_SDS_INDACS_CMD);
 
 	for (i = 0; i < 100; i++) {
 		if (!(sw_r32(RTL930X_SDS_INDACS_CMD) & 0x1))
@@ -1631,7 +1646,9 @@ static int rtl9300_read_status(struct phy_device *phydev)
 
 	mode = rtl9300_sds_mode_get(sds_num);
 	pr_info("%s got SDS mode %02x\n", __func__, mode);
-	if (mode == 0x1a) { /* 10GR mode */
+	if (mode == RTL930X_SDS_OFF)
+		mode = rtl9300_sds_field_r(sds_num, 0x1f, 9, 11, 7);
+	if (mode == RTL930X_SDS_MODE_10GBASER) { /* 10GR mode */
 		status = rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
 		latch_status = rtl9300_sds_field_r(sds_num, 0x4, 1, 2, 2);
 		status |= rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
@@ -1647,10 +1664,13 @@ static int rtl9300_read_status(struct phy_device *phydev)
 
 	if (latch_status) {
 		phydev->link = true;
-		if (mode == 0x1a)
+		if (mode == RTL930X_SDS_MODE_10GBASER) {
 			phydev->speed = SPEED_10000;
-		else
+			phydev->interface = PHY_INTERFACE_MODE_10GBASER;
+		} else {
 			phydev->speed = SPEED_1000;
+			phydev->interface = PHY_INTERFACE_MODE_1000BASEX;
+		}
 
 		phydev->duplex = DUPLEX_FULL;
 	}
@@ -1683,37 +1703,37 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 	pr_info("%s: SDS: %d, mode %d\n", __func__, sds, phy_if);
 	switch (phy_if) {
 	case PHY_INTERFACE_MODE_SGMII:
-		sds_mode = 0x2;
+		sds_mode = RTL930X_SDS_MODE_SGMII;
 		lc_on = false;
 		lc_value = 0x1;
 		break;
 
 	case PHY_INTERFACE_MODE_HSGMII:
-		sds_mode = 0x12;
+		sds_mode = RTL930X_SDS_MODE_HSGMII;
 		lc_value = 0x3;
 		/* Configure LC */
 		break;
 
 	case PHY_INTERFACE_MODE_1000BASEX:
-		sds_mode = 0x04;
+		sds_mode = RTL930X_SDS_MODE_1000BASEX;
 		lc_on = false;
 		break;
 
 	case PHY_INTERFACE_MODE_2500BASEX:
-		sds_mode = 0x16;
+		sds_mode = RTL930X_SDS_MODE_2500BASEX;
 		lc_value = 0x3;
 		/* Configure LC */
 		break;
 
 	case PHY_INTERFACE_MODE_10GBASER:
-		sds_mode = 0x1a;
+		sds_mode = RTL930X_SDS_MODE_10GBASER;
 		lc_on = true;
 		lc_value = 0x5;
 		break;
 
 	case PHY_INTERFACE_MODE_NA:
 		/* This will disable SerDes */
-		sds_mode = 0x1f;
+		sds_mode = RTL930X_SDS_OFF;
 		break;
 
 	default:
@@ -1733,7 +1753,7 @@ void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
 	if (sds == 5) pr_info("%s b %x\n", __func__, rtl930x_read_sds_phy(sds, 0x1f, 9));
 
 	/* SerDes off */
-	rtl9300_sds_field_w(sds, 0x1f, 9, 11, 7, 0x1f);
+	rtl9300_sds_field_w(sds, 0x1f, 9, 11, 7, RTL930X_SDS_OFF);
 
 	if (phy_if == PHY_INTERFACE_MODE_NA)
 		return;
@@ -1846,13 +1866,26 @@ void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 
 	switch(phy_if) {
 	case PHY_INTERFACE_MODE_1000BASEX:
+		pre_amp = 0x1;
+		main_amp = 0x9;
+		post_amp = 0x1;
 		page = 0x25;
 		break;
 	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_2500BASEX:
+		pre_amp = 0;
+		post_amp = 0x8;
+		pre_en = 0;
 		page = 0x29;
 		break;
 	case PHY_INTERFACE_MODE_10GBASER:
+	case PHY_INTERFACE_MODE_USXGMII:
+	case PHY_INTERFACE_MODE_XGMII:
+		pre_en = 0;
+		pre_amp = 0;
+		main_amp = 0x10;
+		post_amp = 0;
+		post_en	= 0;
 		page = 0x2f;
 		break;
 	default:
@@ -2651,7 +2684,7 @@ void rtl9300_do_rx_calibration(int sds, phy_interface_t phy_mode)
 	mdelay(20);
 
 	/* Do this only for 10GR mode, SDS active in mode 0x1a */
-	if (rtl9300_sds_field_r(sds, 0x1f, 9, 11, 7) == 0x1a) {
+	if (rtl9300_sds_field_r(sds, 0x1f, 9, 11, 7) == RTL930X_SDS_MODE_10GBASER) {
 		pr_info("%s: SDS enabled\n", __func__);
 		latch_sts = rtl9300_sds_field_r(sds, 0x4, 1, 2, 2);
 		mdelay(1);
@@ -2698,6 +2731,7 @@ u32 rtl9300_sds_sym_err_get(int sds_num, phy_interface_t phy_mode)
 	case PHY_INTERFACE_MODE_XGMII:
 		break;
 
+	case PHY_INTERFACE_MODE_1000BASEX:
 	case PHY_INTERFACE_MODE_10GBASER:
 		v = rtl930x_read_sds_phy(sds_num, 5, 1);
 		return v & 0xff;
@@ -2722,22 +2756,22 @@ int rtl9300_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
 	errors2 = rtl9300_sds_sym_err_get(sds_num, phy_mode);
 
 	switch (phy_mode) {
-		case PHY_INTERFACE_MODE_XGMII:
-
-			if ((errors2 - errors1 > 100) ||
-			    (errors1 >= 0xffff00) || (errors2 >= 0xffff00)) {
-				pr_info("%s XSGMII error rate too high\n", __func__);
-				return 1;
-			}
-			break;
-		case PHY_INTERFACE_MODE_10GBASER:
-			if (errors2 > 0) {
-				pr_info("%s 10GBASER error rate too high\n", __func__);
-				return 1;
-			}
-			break;
-		default:
+	case PHY_INTERFACE_MODE_1000BASEX:
+	case PHY_INTERFACE_MODE_XGMII:
+		if ((errors2 - errors1 > 100) ||
+		    (errors1 >= 0xffff00) || (errors2 >= 0xffff00)) {
+			pr_info("%s XSGMII error rate too high\n", __func__);
 			return 1;
+		}
+		break;
+	case PHY_INTERFACE_MODE_10GBASER:
+		if (errors2 > 0) {
+			pr_info("%s 10GBASER error rate too high\n", __func__);
+			return 1;
+		}
+		break;
+	default:
+		return 1;
 	}
 
 	return 0;
@@ -2769,51 +2803,81 @@ void rtl9300_phy_enable_10g_1g(int sds_num)
 	pr_info("%s set medium after: %08x\n", __func__, v);
 }
 
+static int rtl9300_sds_10g_idle(int sds_num);
+static void rtl9300_serdes_patch(int sds_num);
+
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
-/* phy_mode = PHY_INTERFACE_MODE_10GBASER, sds_mode = 0x1a */
-int rtl9300_serdes_setup(int sds_num, phy_interface_t phy_mode)
+int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
 {
-	int sds_mode;
 	int calib_tries = 0;
 
-	switch (phy_mode) {
-	case PHY_INTERFACE_MODE_HSGMII:
-		sds_mode = 0x12;
-		break;
-	case PHY_INTERFACE_MODE_1000BASEX:
-		sds_mode = 0x04;
-		break;
-	case PHY_INTERFACE_MODE_XGMII:
-		sds_mode = 0x10;
-		break;
-	case PHY_INTERFACE_MODE_10GBASER:
-		sds_mode = 0x1a;
-		break;
-	case PHY_INTERFACE_MODE_USXGMII:
-		sds_mode = 0x0d;
-		break;
-	default:
-		pr_err("%s: unknown serdes mode: %s\n", __func__, phy_modes(phy_mode));
-		return -EINVAL;
-	}
+	/* Turn Off Serdes */
+	rtl9300_sds_rst(sds_num, RTL930X_SDS_OFF);
+
+	/* Apply serdes patches */
+	rtl9300_serdes_patch(sds_num);
 
 	/* Maybe use dal_longan_sds_init */
 
 	/* dal_longan_construct_serdesConfig_init */ /* Serdes Construct */
 	rtl9300_phy_enable_10g_1g(sds_num);
 
-	/* Set Serdes Mode */
-	rtl9300_sds_set(sds_num, 0x1a); /* 0x1b: RTK_MII_10GR1000BX_AUTO */
+	/* Disable MAC */
+	sw_w32_mask(0, 1, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port);
+	mdelay(20);
 
-	/* Do RX calibration */
+	/* ----> dal_longan_sds_mode_set */
+	pr_info("%s: Configuring RTL9300 SERDES %d\n", __func__, sds_num);
+
+	/* Configure link to MAC */
+	rtl9300_serdes_mac_link_config(sds_num, true, true);	/* MAC Construct */
+
+	/* Re-Enable MAC */
+	sw_w32_mask(1, 0, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port);
+
+	/* Enable SDS in desired mode */
+	rtl9300_force_sds_mode(sds_num, phy_mode);
+
+	/* Enable Fiber RX */
+	rtl9300_sds_field_w(sds_num, 0x20, 2, 12, 12, 0);
+
+	/* Calibrate SerDes receiver in loopback mode */
+	rtl9300_sds_10g_idle(sds_num);
 	do {
 		rtl9300_do_rx_calibration(sds_num, phy_mode);
 		calib_tries++;
 		mdelay(50);
 	} while (rtl9300_sds_check_calibration(sds_num, phy_mode) && calib_tries < 3);
+	if (calib_tries >= 3)
+		pr_warn("%s: SerDes RX calibration failed\n", __func__);
 
+	/* Leave loopback mode */
+	rtl9300_sds_tx_config(sds_num, phy_mode);
 
 	return 0;
+}
+
+static int rtl9300_sds_10g_idle(int sds_num)
+{
+	bool busy;
+	int i = 0;
+
+	do {
+		if (sds_num % 2) {
+			rtl9300_sds_field_w(sds_num - 1, 0x1f, 0x2, 15, 0, 53);
+			busy = !!rtl9300_sds_field_r(sds_num - 1, 0x1f, 0x14, 1, 1);
+		} else {
+			rtl9300_sds_field_w(sds_num, 0x1f, 0x2, 15, 0, 53);
+			busy = !!rtl9300_sds_field_r(sds_num, 0x1f, 0x14, 0, 0);
+		}
+		i++;
+	} while (busy && i < 100);
+
+	if (i < 100)
+		return 0;
+
+	pr_warn("%s WARNING: Waiting for RX idle timed out, SDS %d\n", __func__, sds_num);
+	return -EIO;
 }
 
 typedef struct {
@@ -2913,6 +2977,23 @@ sds_config rtl9300_a_sds_10gr_lane1[] =
 	{0x2B, 0x14, 0x3108}, {0x2D, 0x13, 0x3C87}, {0x2D, 0x14, 0x1808},
 };
 
+static void rtl9300_serdes_patch(int sds_num)
+{
+	if (sds_num % 2) {
+		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane1) / sizeof(sds_config); ++i) {
+			rtl930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane1[i].page,
+					      rtl9300_a_sds_10gr_lane1[i].reg,
+					      rtl9300_a_sds_10gr_lane1[i].data);
+		}
+	} else {
+		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane0) / sizeof(sds_config); ++i) {
+			rtl930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane0[i].page,
+					      rtl9300_a_sds_10gr_lane0[i].reg,
+					      rtl9300_a_sds_10gr_lane0[i].data);
+		}
+	}
+}
+
 int rtl9300_sds_cmu_band_get(int sds)
 {
 	u32 page;
@@ -2936,113 +3017,6 @@ int rtl9300_sds_cmu_band_get(int sds)
 	}
 
 	return cmu_band;
-}
-
-int rtl9300_configure_serdes(struct phy_device *phydev)
-{
-	int phy_mode = PHY_INTERFACE_MODE_10GBASER;
-	struct device *dev = &phydev->mdio.dev;
-	int calib_tries = 0;
-	u32 sds_num = 0;
-	int sds_mode;
-
-	if (dev->of_node) {
-		struct device_node *dn = dev->of_node;
-		int phy_addr = phydev->mdio.addr;
-
-		if (of_property_read_u32(dn, "sds", &sds_num))
-			sds_num = -1;
-		pr_info("%s: Port %d, SerDes is %d\n", __func__, phy_addr, sds_num);
-	} else {
-		dev_err(dev, "No DT node.\n");
-		return -EINVAL;
-	}
-
-	if (sds_num < 0)
-		return 0;
-
-	if (phy_mode != PHY_INTERFACE_MODE_10GBASER) /* TODO: for now we only patch 10GR SerDes */
-		return 0;
-
-	switch (phy_mode) {
-	case PHY_INTERFACE_MODE_HSGMII:
-		sds_mode = 0x12;
-		break;
-	case PHY_INTERFACE_MODE_1000BASEX:
-		sds_mode = 0x04;
-		break;
-	case PHY_INTERFACE_MODE_XGMII:
-		sds_mode = 0x10;
-		break;
-	case PHY_INTERFACE_MODE_10GBASER:
-		sds_mode = 0x1a;
-		break;
-	case PHY_INTERFACE_MODE_USXGMII:
-		sds_mode = 0x0d;
-		break;
-	default:
-		pr_err("%s: unknown serdes mode: %s\n", __func__, phy_modes(phy_mode));
-		return -EINVAL;
-	}
-
-	pr_info("%s CMU BAND is %d\n", __func__, rtl9300_sds_cmu_band_get(sds_num));
-
-	/* Turn Off Serdes */
-	rtl9300_sds_rst(sds_num, 0x1f);
-
-	pr_info("%s PATCHING SerDes %d\n", __func__, sds_num);
-	if (sds_num % 2) {
-		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane1) / sizeof(sds_config); ++i) {
-			rtl930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane1[i].page,
-			                      rtl9300_a_sds_10gr_lane1[i].reg,
-			                      rtl9300_a_sds_10gr_lane1[i].data);
-		}
-	} else {
-		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane0) / sizeof(sds_config); ++i) {
-			rtl930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane0[i].page,
-			                      rtl9300_a_sds_10gr_lane0[i].reg,
-			                      rtl9300_a_sds_10gr_lane0[i].data);
-		}
-	}
-
-	rtl9300_phy_enable_10g_1g(sds_num);
-
-	/* Disable MAC */
-	sw_w32_mask(0, 1, RTL930X_MAC_FORCE_MODE_CTRL);
-	mdelay(20);
-
-	/* ----> dal_longan_sds_mode_set */
-	pr_info("%s: Configuring RTL9300 SERDES %d, mode %02x\n", __func__, sds_num, sds_mode);
-
-	/* Configure link to MAC */
-	rtl9300_serdes_mac_link_config(sds_num, true, true);	/* MAC Construct */
-
-	/* Disable MAC */
-	sw_w32_mask(0, 1, RTL930X_MAC_FORCE_MODE_CTRL);
-	mdelay(20);
-
-	rtl9300_force_sds_mode(sds_num, PHY_INTERFACE_MODE_NA);
-
-	/* Re-Enable MAC */
-	sw_w32_mask(1, 0, RTL930X_MAC_FORCE_MODE_CTRL);
-
-	rtl9300_force_sds_mode(sds_num, phy_mode);
-
-	/* Do RX calibration */
-	do {
-		rtl9300_do_rx_calibration(sds_num, phy_mode);
-		calib_tries++;
-		mdelay(50);
-	} while (rtl9300_sds_check_calibration(sds_num, phy_mode) && calib_tries < 3);
-
-	if (calib_tries >= 3)
-		pr_err("%s CALIBTRATION FAILED\n", __func__);
-
-	rtl9300_sds_tx_config(sds_num, phy_mode);
-
-	/* The clock needs only to be configured on the FPGA implementation */
-
-	return 0;
 }
 
 void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
@@ -3856,7 +3830,7 @@ static int rtl9300_serdes_probe(struct phy_device *phydev)
 
 	phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
 
-	return rtl9300_configure_serdes(phydev);
+	return 0;
 }
 
 static struct phy_driver rtl83xx_phy_driver[] = {

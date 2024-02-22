@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,698 @@
+@@ -0,0 +1,699 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -574,6 +574,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!net)
 +		write_pnet(&table->ft.net, xt_net(par));
 +
++	__set_bit(NF_FLOW_HW_BIDIRECTIONAL, &flow->flags);
 +	if (flow_offload_add(&table->ft, flow) < 0)
 +		goto err_flow_add;
 +

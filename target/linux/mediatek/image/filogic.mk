@@ -227,7 +227,8 @@ define Device/bananapi_bpi-r3
 		       mt7986a-bananapi-bpi-r3-respeaker-2mics
   DEVICE_DTS_DIR := $(DTS_DIR)/
   DEVICE_DTS_LOADADDR := 0x43f00000
-  DEVICE_PACKAGES := kmod-hwmon-pwmfan kmod-i2c-gpio kmod-mt7986-firmware kmod-sfp kmod-usb3 e2fsprogs f2fsck mkf2fs mt7986-wo-firmware
+  DEVICE_PACKAGES := fitblk kmod-hwmon-pwmfan kmod-i2c-gpio kmod-mt7986-firmware kmod-sfp kmod-usb3 \
+		     e2fsprogs f2fsck mkf2fs mt7986-wo-firmware
   IMAGES := sysupgrade.itb
   KERNEL_LOADADDR := 0x44000000
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
@@ -240,7 +241,7 @@ define Device/bananapi_bpi-r3
   ARTIFACT/emmc-bl31-uboot.fip	:= mt7986-bl31-uboot bananapi_bpi-r3-emmc
   ARTIFACT/nor-preloader.bin	:= mt7986-bl2 nor-ddr4
   ARTIFACT/nor-bl31-uboot.fip	:= mt7986-bl31-uboot bananapi_bpi-r3-nor
-  ARTIFACT/snand-preloader.bin	:= mt7986-bl2 spim-nand-ddr4
+  ARTIFACT/snand-preloader.bin	:= mt7986-bl2 spim-nand-ubi-ddr4
   ARTIFACT/snand-bl31-uboot.fip	:= mt7986-bl31-uboot bananapi_bpi-r3-snand
   ARTIFACT/sdcard.img.gz	:= mt798x-gpt sdmmc |\
 				   pad-to 17k | mt7986-bl2 sdmmc-ddr4 |\
@@ -248,7 +249,7 @@ define Device/bananapi_bpi-r3
 				$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
 				   pad-to 12M | append-image-stage initramfs-recovery.itb | check-size 44m |\
 				) \
-				   pad-to 44M | mt7986-bl2 spim-nand-ddr4 |\
+				   pad-to 44M | mt7986-bl2 spim-nand-ubi-ddr4 |\
 				   pad-to 45M | mt7986-bl31-uboot bananapi_bpi-r3-snand |\
 				   pad-to 49M | mt7986-bl2 nor-ddr4 |\
 				   pad-to 50M | mt7986-bl31-uboot bananapi_bpi-r3-nor |\
@@ -267,10 +268,100 @@ endif
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | pad-rootfs | append-metadata
   DEVICE_DTC_FLAGS := --pad 4096
-  DEVICE_COMPAT_VERSION := 1.1
-  DEVICE_COMPAT_MESSAGE := Device tree overlay mechanism needs bootloader update
+  DEVICE_COMPAT_VERSION := 1.2
+  DEVICE_COMPAT_MESSAGE := SPI-NAND flash layout changes require bootloader update
 endef
 TARGET_DEVICES += bananapi_bpi-r3
+
+define Device/bananapi_bpi-r3-mini
+  DEVICE_VENDOR := Bananapi
+  DEVICE_MODEL := BPi-R3 Mini
+  DEVICE_DTS := mt7986a-bananapi-bpi-r3-mini
+  DEVICE_DTS_CONFIG := config-mt7986a-bananapi-bpi-r3-mini
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := fitblk kmod-hwmon-pwmfan kmod-mt7986-firmware kmod-phy-airoha-en8811h \
+		     kmod-usb3 e2fsprogs f2fsck mkf2fs mt7986-wo-firmware
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+    fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := snand-factory.bin sysupgrade.itb
+ifeq ($(DUMP),)
+  IMAGE_SIZE := $$(shell expr 64 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
+endif
+  IMAGE/sysupgrade.itb := append-kernel | \
+    fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+    pad-rootfs | append-metadata
+  ARTIFACTS := \
+       emmc-gpt.bin emmc-preloader.bin emmc-bl31-uboot.fip \
+       snand-factory.bin snand-preloader.bin snand-bl31-uboot.fip
+  ARTIFACT/emmc-gpt.bin := mt798x-gpt emmc
+  ARTIFACT/emmc-preloader.bin := mt7986-bl2 emmc-ddr4
+  ARTIFACT/emmc-bl31-uboot.fip := mt7986-bl31-uboot bananapi_bpi-r3-mini-emmc
+  ARTIFACT/snand-factory.bin := mt7986-bl2 spim-nand-ubi-ddr4 | pad-to 256k | \
+				mt7986-bl2 spim-nand-ubi-ddr4 | pad-to 512k | \
+				mt7986-bl2 spim-nand-ubi-ddr4 | pad-to 768k | \
+				mt7986-bl2 spim-nand-ubi-ddr4 | pad-to 2048k | \
+				ubinize-image fit squashfs-sysupgrade.itb
+  ARTIFACT/snand-preloader.bin := mt7986-bl2 spim-nand-ubi-ddr4
+  ARTIFACT/snand-bl31-uboot.fip := mt7986-bl31-uboot bananapi_bpi-r3-mini-snand
+  UBINIZE_PARTS := fip=:$(STAGING_DIR_IMAGE)/mt7986_bananapi_bpi-r3-mini-snand-u-boot.fip
+ifneq ($(CONFIG_PACKAGE_airoha-en8811h-firmware),)
+  UBINIZE_PARTS += en8811h-fw=:$(STAGING_DIR_IMAGE)/EthMD32.bin
+endif
+endef
+TARGET_DEVICES += bananapi_bpi-r3-mini
+
+define Device/bananapi_bpi-r4
+  DEVICE_VENDOR := Bananapi
+  DEVICE_MODEL := BPi-R4
+  DEVICE_DTS := mt7988a-bananapi-bpi-r4
+  DEVICE_DTS_CONFIG := config-mt7988a-bananapi-bpi-r4
+  DEVICE_DTS_DIR := $(DTS_DIR)/
+  DEVICE_DTS_LOADADDR := 0x45f00000
+  DEVICE_DTS_OVERLAY:= mt7988a-bananapi-bpi-r4-emmc mt7988a-bananapi-bpi-r4-rtc mt7988a-bananapi-bpi-r4-sd mt7988a-bananapi-bpi-r4-wifi-mt7996a
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_PACKAGES := fitblk kmod-hwmon-pwmfan kmod-i2c-mux-pca954x kmod-eeprom-at24 kmod-mt7996-firmware \
+		     kmod-rtc-pcf8563 kmod-sfp kmod-usb3 e2fsprogs f2fsck mkf2fs
+  IMAGES := sysupgrade.itb
+  KERNEL_LOADADDR := 0x46000000
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  ARTIFACTS := \
+	       emmc-preloader.bin emmc-bl31-uboot.fip \
+	       sdcard.img.gz \
+	       snand-preloader.bin snand-bl31-uboot.fip
+  ARTIFACT/emmc-preloader.bin	:= mt7988-bl2 emmc-comb
+  ARTIFACT/emmc-bl31-uboot.fip	:= mt7988-bl31-uboot bananapi_bpi-r4-emmc
+  ARTIFACT/snand-preloader.bin	:= mt7988-bl2 spim-nand-ubi-comb
+  ARTIFACT/snand-bl31-uboot.fip	:= mt7988-bl31-uboot bananapi_bpi-r4-snand
+  ARTIFACT/sdcard.img.gz	:= mt798x-gpt sdmmc |\
+				   pad-to 17k | mt7988-bl2 sdmmc-comb |\
+				   pad-to 6656k | mt7988-bl31-uboot bananapi_bpi-r4-sdmmc |\
+				$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
+				   pad-to 12M | append-image-stage initramfs-recovery.itb | check-size 44m |\
+				) \
+				   pad-to 44M | mt7988-bl2 spim-nand-ubi-comb |\
+				   pad-to 45M | mt7988-bl31-uboot bananapi_bpi-r4-snand |\
+				   pad-to 51M | mt7988-bl2 emmc-comb |\
+				   pad-to 52M | mt7988-bl31-uboot bananapi_bpi-r4-emmc |\
+				   pad-to 56M | mt798x-gpt emmc |\
+				$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS),\
+				   pad-to 64M | append-image squashfs-sysupgrade.itb | check-size |\
+				) \
+				  gzip
+  IMAGE_SIZE := $$(shell expr 64 + $$(CONFIG_TARGET_ROOTFS_PARTSIZE))m
+  KERNEL			:= kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += bananapi_bpi-r4
 
 define Device/cetron_ct3003
   DEVICE_VENDOR := Cetron
@@ -321,6 +412,30 @@ define Device/cmcc_rax3000m
   ARTIFACT/nand-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-nand
 endef
 TARGET_DEVICES += cmcc_rax3000m
+
+define Device/comfast_cf-e393ax
+  DEVICE_VENDOR := Comfast
+  DEVICE_MODEL := CF-E393AX
+  DEVICE_DTS := mt7981a-comfast-cf-e393ax
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL = kernel-bin | lzma | \
+       fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
+       fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_IN_UBI := 1
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += comfast_cf-e393ax
 
 define Device/confiabits_mt7981
   DEVICE_VENDOR := Confiabits
@@ -591,7 +706,7 @@ define Device/mediatek_mt7988a-rfb
   DEVICE_DTS_DIR := $(DTS_DIR)/
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x45f00000
-  DEVICE_PACKAGES := kmod-sfp
+  DEVICE_PACKAGES := mt7988-2p5g-phy-firmware kmod-sfp
   KERNEL_LOADADDR := 0x46000000
   KERNEL := kernel-bin | gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \

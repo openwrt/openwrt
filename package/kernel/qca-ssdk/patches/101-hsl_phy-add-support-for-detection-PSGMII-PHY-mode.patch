@@ -1,0 +1,25 @@
+From e3763fd77e41b2f2495672c6a5898d69892fbf9f Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 15 Nov 2023 00:57:41 +0100
+Subject: [PATCH] hsl_phy: add support for detection PSGMII PHY mode
+
+Add support for detection of PSGMII PHY mode to correctly detect qca807x
+PHY upstream driver.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ src/hsl/phy/hsl_phy.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/src/hsl/phy/hsl_phy.c
++++ b/src/hsl/phy/hsl_phy.c
+@@ -1335,6 +1335,9 @@ hsl_port_phydev_interface_mode_status_ge
+ 		case PHY_INTERFACE_MODE_10GKR:
+ 			*interface_mode_status = PORT_10GBASE_R;
+ 			break;
++		case PHY_INTERFACE_MODE_PSGMII:
++			*interface_mode_status = PHY_PSGMII_BASET;
++			break;
+ 		case PHY_INTERFACE_MODE_QSGMII:
+ 			*interface_mode_status = PORT_QSGMII;
+ 			break;

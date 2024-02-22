@@ -7,6 +7,7 @@
 #include "ipq8074-ess.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "ZTE MF269";
@@ -48,7 +49,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpio = <&tlmm 56 GPIO_ACTIVE_HIGH>;
 		};
 	};

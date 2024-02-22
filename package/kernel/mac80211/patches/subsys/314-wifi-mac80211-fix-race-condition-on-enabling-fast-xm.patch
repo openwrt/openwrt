@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -911,6 +911,7 @@ static int sta_info_insert_finish(struct
+@@ -914,6 +914,7 @@ static int sta_info_insert_finish(struct
  
  	if (ieee80211_vif_is_mesh(&sdata->vif))
  		mesh_accept_plinks_update(sdata);
@@ -23,7 +23,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   out_remove:
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3033,7 +3033,7 @@ void ieee80211_check_fast_xmit(struct st
+@@ -3034,7 +3034,7 @@ void ieee80211_check_fast_xmit(struct st
  	    sdata->vif.type == NL80211_IFTYPE_STATION)
  		goto out;
  

@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	keys {
@@ -21,7 +22,8 @@
 		compatible = "gpio-leds";
 
 		wps {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
 		};
 

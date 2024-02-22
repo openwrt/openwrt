@@ -1,6 +1,7 @@
 #include "mt7620n.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "wrtnode,wrtnode", "ralink,mt7620n-soc";
@@ -17,7 +18,8 @@
 		compatible = "gpio-leds";
 
 		led_indicator: indicator {
-			label = "blue:indicator";
+			function = LED_FUNCTION_INDICATOR;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -52,7 +54,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

@@ -1,6 +1,7 @@
 #include "bcm6358.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	chosen {
@@ -45,16 +46,19 @@
 			gpios = <&pinctrl 2 1>;
 		};
 		usb_green {
-			label = "green:USB";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 3 1>;
 		};
 		power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pinctrl 4 1>;
 			default-state = "on";
 		};
 		power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 5 1>;
 		};
 		inet_red {
@@ -78,7 +82,8 @@
 			gpios = <&pinctrl 10 1>;
 		};
 		usb_red {
-			label = "red:USB";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 11 1>;
 		};
 		dsl_red {

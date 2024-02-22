@@ -82,7 +82,6 @@
 		};
 
 		led_power: led-power {
-			label = "green:power"; // to be removed once #13837 is merged
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
@@ -157,7 +156,7 @@
 				read-only;
 			};
 
-			radio: partition@90000 {
+			partition@90000 {
 				label = "radio";
 				reg = <0x90000 0x20000>;
 				read-only;

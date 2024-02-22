@@ -103,6 +103,8 @@
 
 	gmac0: mac@0 {
 		compatible = "mediatek,eth-mac";
+		nvmem-cells = <&macaddr_boot1_a 0>;
+		nvmem-cell-names = "mac-address";
 		reg = <0>;
 
 		phy-mode = "2500base-x";
@@ -111,6 +113,8 @@
 
 	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
+		nvmem-cells = <&macaddr_boot1_a 1>;
+		nvmem-cell-names = "mac-address";
 		reg = <1>;
 		phy-mode = "gmii";
 		phy-handle = <&int_gbe_phy>;
@@ -148,4 +152,54 @@
 	vmmc-supply = <&reg_3p3v>;
 	cap-mmc-highspeed;
 	non-removable;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+
+			partitions {
+				block-partition-u-boot-env {
+					partname = "u-boot-env";
+					nvmem-layout {
+						compatible = "u-boot,env-layout";
+					};
+				};
+			};
+		};
+
+		boot1 {
+			compatible = "block-device";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_boot1_a: macaddr@a {
+					compatible = "mac-base";
+					reg = <0xa 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				ddns@10 {
+					reg = <0x10 0x10>;
+				};
+
+				sn-bak@20 {
+					reg = <0x20 0x10>;
+				};
+
+				sn@30 {
+					reg = <0x30 0x10>;
+				};
+
+				country-code@88 {
+					reg = <0x88 0x10>;
+				};
+			};
+		};
+	};
 };

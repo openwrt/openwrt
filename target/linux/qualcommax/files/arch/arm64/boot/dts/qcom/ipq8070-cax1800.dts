@@ -262,9 +262,16 @@
 
 	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
 
-	qca8075: ethernet-phy@4 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <4>;
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qca8075_4: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+		};
 	};
 };
 
@@ -288,7 +295,7 @@
 
 &dp5 {
 	status = "okay";
-	phy-handle = <&qca8075>;
+	phy-handle = <&qca8075_4>;
 	label = "lan";
 };
 

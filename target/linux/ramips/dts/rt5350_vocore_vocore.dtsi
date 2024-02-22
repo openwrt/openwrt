@@ -1,6 +1,7 @@
 #include "rt5350.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "vocore,vocore", "ralink,rt5350-soc";
@@ -144,7 +145,8 @@
 
 		led_status: status {
 			/* UARTF_RXD */
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -181,7 +183,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

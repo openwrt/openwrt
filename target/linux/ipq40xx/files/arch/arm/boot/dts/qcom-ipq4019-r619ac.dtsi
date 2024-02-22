@@ -74,14 +74,12 @@
 		compatible = "gpio-leds";
 
 		led_sys: led-0 {
-			label = "blue:sys";
 			gpios = <&tlmm 39 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_POWER;
 		};
 
 		led-1 {
-			label = "blue:wlan2g";
 			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 			color = <LED_COLOR_ID_BLUE>;
@@ -90,7 +88,6 @@
 		};
 
 		led-2 {
-			label = "blue:wlan5g";
 			gpios = <&tlmm 50 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy1tpt";
 			color = <LED_COLOR_ID_BLUE>;

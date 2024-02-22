@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -34,7 +35,8 @@
 		compatible = "gpio-leds";
 
 		led_wps: wps {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 
@@ -55,7 +57,7 @@
 		spi-max-frequency = <58000000>;
 		m25p,fast-read;
 
-		partitions: partitions {
+		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -72,7 +74,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

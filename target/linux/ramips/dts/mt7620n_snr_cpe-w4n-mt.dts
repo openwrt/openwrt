@@ -21,7 +21,6 @@
 		compatible = "gpio-leds";
 
 		led_sys: sys {
-			label = "green:sys";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>; // GPIO#38
@@ -29,14 +28,12 @@
 		};
 
 		led_wps: wps {
-			label = "green:wps";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WPS;
 			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>; // GPIO#39
 		};
 
 		wlan {
-			label = "green:wlan";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN;
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>; // GPIO#72
@@ -90,7 +87,7 @@
 				reg = <0x30000 0x10000>;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "Factory";
 				reg = <0x40000 0x10000>;
 				read-only;

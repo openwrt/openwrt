@@ -1,6 +1,7 @@
 #include "bcm63268.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "SKY SR102";
@@ -40,7 +41,8 @@
 			gpios = <&pinctrl 1 1>;
 		};
 		power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 2 1>;
 		};
 		wifi_red {
@@ -56,7 +58,8 @@
 			gpios = <&pinctrl 5 0>;
 		};
 		led_power_white: power_white {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&pinctrl 6 0>;
 			default-state = "on";
 		};

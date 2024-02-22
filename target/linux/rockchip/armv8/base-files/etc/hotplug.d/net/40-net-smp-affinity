@@ -30,13 +30,16 @@ set_interface_core() {
 
 case "$(board_name)" in
 friendlyarm,nanopi-r2c|\
+friendlyarm,nanopi-r2c-plus|\
 friendlyarm,nanopi-r2s|\
+radxa,cm3-io|\
 xunlong,orangepi-r1-plus|\
 xunlong,orangepi-r1-plus-lts)
 	set_interface_core 2 "eth0"
 	set_interface_core 4 "eth1" "xhci-hcd:usb[0-9]+"
 	;;
-friendlyarm,nanopi-r4s)
+friendlyarm,nanopi-r4s|\
+friendlyarm,nanopi-r4s-enterprise)
 	set_interface_core 10 "eth0"
 	set_interface_core 20 "eth1"
 	;;

@@ -31,14 +31,12 @@
 		compatible = "gpio-leds";
 
 		wifi_led: 2.4g {
-			label = "green:wlan";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN;
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;	// #72
 		};
 
 		wps_led: wps {
-			label = "green:wps";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WPS;
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;	// #39
@@ -90,7 +88,7 @@
 				reg = <0x30000 0x10000>;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "Factory";
 				reg = <0x40000 0x10000>;
 				read-only;

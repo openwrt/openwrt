@@ -66,7 +66,7 @@ Link: https://lore.kernel.org/r/20211103085102.1656081-2-horatiu.vultur@microchi
 +EXPORT_SYMBOL_GPL(__devm_clk_hw_register_gate);
 --- a/include/linux/clk-provider.h
 +++ b/include/linux/clk-provider.h
-@@ -490,6 +490,13 @@ struct clk_hw *__clk_hw_register_gate(st
+@@ -517,6 +517,13 @@ struct clk_hw *__clk_hw_register_gate(st
  		unsigned long flags,
  		void __iomem *reg, u8 bit_idx,
  		u8 clk_gate_flags, spinlock_t *lock);
@@ -80,7 +80,7 @@ Link: https://lore.kernel.org/r/20211103085102.1656081-2-horatiu.vultur@microchi
  struct clk *clk_register_gate(struct device *dev, const char *name,
  		const char *parent_name, unsigned long flags,
  		void __iomem *reg, u8 bit_idx,
-@@ -544,6 +551,22 @@ struct clk *clk_register_gate(struct dev
+@@ -571,6 +578,22 @@ struct clk *clk_register_gate(struct dev
  	__clk_hw_register_gate((dev), NULL, (name), NULL, NULL, (parent_data), \
  			       (flags), (reg), (bit_idx),		      \
  			       (clk_gate_flags), (lock))

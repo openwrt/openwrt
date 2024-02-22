@@ -1,6 +1,7 @@
 #include "bcm6368.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Observa VH4032N";
@@ -59,12 +60,14 @@
 			gpios = <&pinctrl 12 1>;
 		};
 		led_power_blue: power_blue {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&pinctrl 22 0>;
 			default-state = "on";
 		};
 		power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pinctrl 24 0>;
 		};
 		voice_blue {

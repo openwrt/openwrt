@@ -8,6 +8,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "hnet,c108", "ralink,mt7620a-soc";
@@ -54,12 +55,14 @@
 		};
 
 		lan_red {
-			label = "red:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_lan_green: lan_green {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -108,7 +111,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

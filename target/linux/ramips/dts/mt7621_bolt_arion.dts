@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "bolt,arion", "mediatek,mt7621-soc";
@@ -21,12 +22,14 @@
 		compatible = "gpio-leds";
 
 		led_wlan_blue: wlan_blue {
-			label = "blue:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wlan_red: wlan_red {
-			label = "red:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 86 GPIO_ACTIVE_LOW>;
 		};
 
@@ -99,7 +102,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

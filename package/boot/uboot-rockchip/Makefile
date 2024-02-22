@@ -39,6 +39,13 @@ define U-Boot/nanopi-r2c-rk3328
     friendlyarm_nanopi-r2c
 endef
 
+define U-Boot/nanopi-r2c-plus-rk3328
+  $(U-Boot/rk3328/Default)
+  NAME:=NanoPi R2C Plus
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-r2c-plus
+endef
+
 define U-Boot/nanopi-r2s-rk3328
   $(U-Boot/rk3328/Default)
   NAME:=NanoPi R2S
@@ -100,7 +107,8 @@ define U-Boot/nanopi-r4s-rk3399
   $(U-Boot/rk3399/Default)
   NAME:=NanoPi R4S
   BUILD_DEVICES:= \
-    friendlyarm_nanopi-r4s
+    friendlyarm_nanopi-r4s \
+    friendlyarm_nanopi-r4s-enterprise
 endef
 
 define U-Boot/rock-pi-4-rk3399
@@ -117,6 +125,22 @@ define U-Boot/rockpro64-rk3399
     pine64_rockpro64
 endef
 
+
+# RK3566 boards
+
+define U-Boot/rk3566/Default
+  BUILD_SUBTARGET:=armv8
+  DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3566
+  ATF:=rk3568_bl31_v1.43.elf
+  TPL:=rk3566_ddr_1056MHz_v1.18.bin
+endef
+
+define U-Boot/radxa-cm3-io-rk3566
+  $(U-Boot/rk3566/Default)
+  NAME:=CM3 IO
+  BUILD_DEVICES:= \
+    radxa_cm3-io
+endef
 
 # RK3568 boards
 
@@ -147,12 +171,14 @@ UBOOT_TARGETS := \
   rock-pi-4-rk3399 \
   rockpro64-rk3399 \
   nanopi-r2c-rk3328 \
+  nanopi-r2c-plus-rk3328 \
   nanopi-r2s-rk3328 \
   orangepi-r1-plus-rk3328 \
   orangepi-r1-plus-lts-rk3328 \
   roc-cc-rk3328 \
   rock64-rk3328 \
   rock-pi-e-rk3328 \
+  radxa-cm3-io-rk3566 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568
 

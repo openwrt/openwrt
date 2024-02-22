@@ -1,0 +1,25 @@
+From c043efb47c3173072fa636ca0da0d19875d4511f Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Tue, 6 Dec 2022 22:34:11 +0800
+Subject: Fix so DROPBEAR_DSS is only forced for fuzzing
+
+Regression from 787391ea3b5af2acf5e3c83372510f0c79477ad7,
+was missing fuzzing conditional
+---
+ sysoptions.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/sysoptions.h
++++ b/sysoptions.h
+@@ -380,9 +380,11 @@
+ #endif
+ 
+ /* Fuzzing expects all key types to be enabled */
++#if DROPBEAR_FUZZ
+ #if defined(DROPBEAR_DSS)
+ #undef DROPBEAR_DSS
+ #endif
+ #define DROPBEAR_DSS 1
++#endif
+ 
+ /* no include guard for this file */

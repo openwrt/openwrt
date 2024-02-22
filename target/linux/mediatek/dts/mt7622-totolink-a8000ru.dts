@@ -2,6 +2,7 @@
 
 /dts-v1/;
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
 
 #include "mt7622.dtsi"
@@ -57,7 +58,8 @@
 		compatible = "gpio-leds";
 
 		led_status: status_red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 81 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};

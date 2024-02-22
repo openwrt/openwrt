@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Xiaomi AIoT AC2350";
@@ -42,12 +43,14 @@
 		};
 
 		wan_blue {
-			label = "blue:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_orange {
-			label = "orange:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -118,6 +121,10 @@
 					macaddr_art_0: macaddr@0 {
 						reg = <0x0 0x6>;
 					};
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
 				};
 			};
 
@@ -183,4 +190,11 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>;
+		nvmem-cell-names = "pre-calibration";
+	};
 };

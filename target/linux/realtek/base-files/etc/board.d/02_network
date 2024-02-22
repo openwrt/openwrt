@@ -3,25 +3,26 @@
 . /lib/functions/uci-defaults.sh
 . /lib/functions/system.sh
 
-ucidef_set_poe() {
-	json_select_object poe
-		json_add_string "budget" "$1"
-		json_select_array ports
-			for port in $2; do
-				if [ -n "$3" -a -n "$(expr "$3" : "\(.\+[[:space:]]\)\{0,1\}$port\([[:space:]].*\|\$\)")" ]; then
-					continue # skip ports passed via $3
-				fi
-				json_add_string "" "$port"
-			done
-		json_select ..
-	json_select ..
+_filter_port_list_ordered() {
+	local ports="$1"
+	local excluded="$2"
+	local sort_opts="$3"
+	echo $ports $excluded | xargs -n1 basename | sort -V $sort_opts | uniq -u | xargs
+}
+
+filter_port_list() {
+	_filter_port_list_ordered "$1" "$2"
+}
+
+filter_port_list_reverse() {
+	_filter_port_list_ordered "$1" "$2" "-r"
 }
 
 board=$(board_name)
 board_config_update
 
 lan_list=$(ls -1 -v -d /sys/class/net/lan* | xargs -n1 basename | xargs)
-lan_list_rev=$(ls -1 -v -d -r /sys/class/net/lan* | xargs -n1 basename | xargs)
+
 ucidef_set_bridge_device switch
 ucidef_set_interface_lan "$lan_list"
 
@@ -70,35 +71,35 @@ done
 
 case $board in
 d-link,dgs-1210-10mp-f)
-	ucidef_set_poe 130 "$lan_list" "lan9 lan10"
+	ucidef_set_poe 130 "$(filter_port_list "$lan_list" "lan9 lan10")"
 	;;
 d-link,dgs-1210-10p)
-	ucidef_set_poe 65 "$lan_list" "lan9 lan10"
+	ucidef_set_poe 65 "$(filter_port_list "$lan_list" "lan9 lan10")"
 	;;
 d-link,dgs-1210-28mp-f)
 	ucidef_set_poe 370 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23
-			lan22 lan21 lan20 lan19 lan18 lan17" "lan25 lan26 lan27 lan28"
+			lan22 lan21 lan20 lan19 lan18 lan17"
 	;;
 engenius,ews2910p)
-	ucidef_set_poe 60 "$lan_list" "lan9 lan10"
+	ucidef_set_poe 60 "$(filter_port_list "$lan_list" "lan9 lan10")"
 	;;
 hpe,1920-8g-poe-65w)
-	ucidef_set_poe 65 "$lan_list_rev" "lan9 lan10"
+	ucidef_set_poe 65 "$(filter_port_list_reversed "$lan_list" "lan9 lan10")"
 	;;
 hpe,1920-8g-poe-180w)
-	ucidef_set_poe 180 "$lan_list_rev" "lan9 lan10"
+	ucidef_set_poe 180 "$(filter_port_list_reversed "$lan_list" "lan9 lan10")"
 	;;
 netgear,gs110tpp-v1)
-	ucidef_set_poe 130 "$lan_list" "lan9 lan10"
+	ucidef_set_poe 130 "$(filter_port_list "$lan_list" "lan9 lan10")"
 	;;
 netgear,gs110tup-v1)
-	ucidef_set_poe 240 "$lan_list" "lan9 lan10"
+	ucidef_set_poe 240 "$(filter_port_list "$lan_list" "lan9 lan10")"
 	;;
 netgear,gs310tp-v1)
-	ucidef_set_poe 55 "$lan_list" "lan9 lan10"
+	ucidef_set_poe 55 "$(filter_port_list "$lan_list" "lan9 lan10")"
 	;;
 zyxel,gs1900-10hp)
-	ucidef_set_poe 77 "$lan_list" "lan9 lan10"
+	ucidef_set_poe 77 "$(filter_port_list "$lan_list" "lan9 lan10")"
 	;;
 zyxel,gs1900-8hp-v1|\
 zyxel,gs1900-8hp-v2)
@@ -106,7 +107,7 @@ zyxel,gs1900-8hp-v2)
 	;;
 zyxel,gs1900-24hp-v1|\
 zyxel,gs1900-24hp-v2)
-	ucidef_set_poe 170 "$lan_list" "lan25 lan26"
+	ucidef_set_poe 170 "$(filter_port_list "$lan_list" "lan25 lan26")"
 	;;
 esac
 

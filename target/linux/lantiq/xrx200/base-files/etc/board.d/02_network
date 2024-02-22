@@ -18,6 +18,10 @@ lantiq_setup_interfaces()
 	arcadyan,arv7519rw22)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
+	avm,fritz5490|\
+	avm,fritz5490-micron)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
+		;;
 	arcadyan,vgv7510kw22-brn|\
 	arcadyan,vgv7510kw22-nor|\
 	arcadyan,vgv7519-brn|\
@@ -32,10 +36,14 @@ lantiq_setup_interfaces()
 	avm,fritz3370-rev2-hynix|\
 	avm,fritz3370-rev2-micron|\
 	avm,fritz3390|\
+	avm,fritz3490|\
+	avm,fritz3490-micron|\
 	avm,fritz7360sl|\
 	avm,fritz7360-v2|\
 	avm,fritz7362sl|\
 	avm,fritz7430|\
+	avm,fritz7490|\
+	avm,fritz7490-micron|\
 	buffalo,wbmr-300hpd|\
 	tplink,tdw8970|\
 	tplink,tdw8980|\
@@ -64,10 +72,14 @@ lantiq_setup_dsl()
 	avm,fritz3370-rev2-hynix|\
 	avm,fritz3370-rev2-micron|\
 	avm,fritz3390|\
+	avm,fritz3490|\
+	avm,fritz3490-micron|\
 	avm,fritz7360sl|\
 	avm,fritz7362sl|\
 	avm,fritz7412|\
-	avm,fritz7430)
+	avm,fritz7430|\
+	avm,fritz7490|\
+	avm,fritz7490-micron)
 		annex="b"
 		;;
 	esac
@@ -114,7 +126,13 @@ lantiq_setup_macs()
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
 		;;
 	avm,fritz3390|\
-	avm,fritz7362sl)
+	avm,fritz3490|\
+	avm,fritz3490-micron|\
+	avm,fritz5490|\
+	avm,fritz5490-micron|\
+	avm,fritz7362sl|\
+	avm,fritz7490|\
+	avm,fritz7490-micron)
 		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
 		wan_mac=$(fritz_tffs -n macdsl -i $(find_mtd_part "tffs (1)"))
 		;;

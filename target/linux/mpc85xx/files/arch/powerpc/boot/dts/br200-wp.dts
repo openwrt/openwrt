@@ -293,14 +293,12 @@
 
 		led_attention: led-0 {
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
-			label = "amber:status";
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_STATUS;
 		};
 
 		led_status: led-1 {
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-			label = "white:status";
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_STATUS;
 		};

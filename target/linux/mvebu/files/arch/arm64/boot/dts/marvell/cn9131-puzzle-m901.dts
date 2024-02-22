@@ -10,6 +10,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "iEi Puzzle-M901";
@@ -96,7 +97,8 @@
 
 			led_power: led@3 {
 				reg = <3>;
-				label = "yellow:power";
+				function = LED_FUNCTION_POWER;
+				color = <LED_COLOR_ID_YELLOW>;
 				active-low;
 				default-state = "on";
 			};

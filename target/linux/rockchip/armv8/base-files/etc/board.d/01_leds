@@ -9,8 +9,10 @@ board_config_update
 
 case $board in
 friendlyarm,nanopi-r2c|\
+friendlyarm,nanopi-r2c-plus|\
 friendlyarm,nanopi-r2s|\
 friendlyarm,nanopi-r4s|\
+friendlyarm,nanopi-r4s-enterprise|\
 xunlong,orangepi-r1-plus|\
 xunlong,orangepi-r1-plus-lts)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"

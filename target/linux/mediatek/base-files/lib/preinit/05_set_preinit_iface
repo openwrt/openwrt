@@ -9,7 +9,8 @@ set_preinit_iface() {
 		ip link set eth1 up
 		ifname=eth1
 		;;
-	ubnt,unifi-6-lr)
+	ubnt,unifi-6-lr|\
+	zyxel,nwa50ax-pro)
 		ip link set eth0 up
 		ifname=eth0
 		;;

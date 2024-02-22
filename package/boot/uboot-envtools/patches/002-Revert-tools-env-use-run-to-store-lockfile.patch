@@ -10,8 +10,6 @@ This reverts upstream commit
  tools/env/fw_env_main.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/tools/env/fw_env_main.c b/tools/env/fw_env_main.c
-index 0b201b9e62..1d193bd437 100644
 --- a/tools/env/fw_env_main.c
 +++ b/tools/env/fw_env_main.c
 @@ -73,7 +73,7 @@ void usage_printenv(void)
@@ -32,7 +30,7 @@ index 0b201b9e62..1d193bd437 100644
  		" -s, --script         batch mode to minimize writes\n"
  		"\n"
  		"Examples:\n"
-@@ -206,7 +206,7 @@ int parse_setenv_args(int argc, char *argv[])
+@@ -206,7 +206,7 @@ int parse_setenv_args(int argc, char *ar
  
  int main(int argc, char *argv[])
  {
@@ -41,4 +39,3 @@ index 0b201b9e62..1d193bd437 100644
  	int lockfd = -1;
  	int retval = EXIT_SUCCESS;
  	char *_cmdname;
-
