@@ -144,6 +144,7 @@ ath79_setup_interfaces()
 	alfa-network,n5q|\
 	devolo,dvl1200e|\
 	devolo,dvl1750e|\
+	elecom,wab-i1750-ps|\
 	elecom,wab-s1167-ps|\
 	elecom,wab-s600-ps|\
 	engenius,enstationac-v1|\
@@ -704,6 +705,7 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
 		;;
+	elecom,wab-i1750-ps|\
 	elecom,wab-s1167-ps|\
 	elecom,wab-s600-ps|\
 	engenius,ecb1200|\
