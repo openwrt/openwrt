@@ -24,6 +24,7 @@ export NEED_IMAGE=
 export HELP=0
 export FORCE=0
 export TEST=0
+export UMOUNT_ETCBACKUP_DIR=0
 
 # parse options
 while [ -n "$1" ]; do
@@ -223,8 +224,6 @@ include /lib/upgrade
 
 do_save_conffiles() {
 	local conf_tar="$1"
-	local tmp
-	local dir
 
 	[ "$(rootfs_type)" = "tmpfs" ] && {
 		echo "Cannot save config while running from ramdisk." >&2
@@ -235,21 +234,17 @@ do_save_conffiles() {
 	run_hooks "$CONFFILES" $sysupgrade_init_conffiles
 	ask_bool 0 "Edit config file list" && vi "$CONFFILES"
 
-	# Mount root directory with temporary overlay on top of it.
-	# This allows including extra (temporary) files in backup archive
-	# without messing actual rootfs.
-	tmp="$(mktemp -d -t overlay.XXXXXX)"
-	mkdir -p "$tmp/upper" "$tmp/work" "$tmp/backup"
-	dir="$tmp/backup"
-	if ! mount -t overlay overlay -o lowerdir=/,upperdir="$tmp/upper",workdir="$tmp/work" "$dir"; then
-		echo "Cannot mount backup overlay to $dir." >&2
-		ask_bool 0 "Abort" && exit
-		dir=""
-	fi
-
 	if [ "$SAVE_INSTALLED_PKGS" -eq 1 ]; then
 		echo "${INSTALLED_PACKAGES}" >> "$CONFFILES"
-		mkdir -p "$dir/$ETCBACKUP_DIR"
+		mkdir -p "$ETCBACKUP_DIR"
+		# Avoid touching filesystem on each backup
+		RAMFS="$(mktemp -d -t sysupgrade.XXXXXX)"
+		mkdir -p "$RAMFS/upper" "$RAMFS/work"
+		mount -t overlay overlay -o lowerdir=$ETCBACKUP_DIR,upperdir=$RAMFS/upper,workdir=$RAMFS/work $ETCBACKUP_DIR &&
+			UMOUNT_ETCBACKUP_DIR=1 || {
+				echo "Cannot mount '$ETCBACKUP_DIR' as tmpfs to avoid touching disk while saving the list of installed packages." >&2
+				ask_bool 0 "Abort" && exit
+			}
 
 		# Format: pkg-name<TAB>{rom,overlay,unkown}
 		# rom is used for pkgs in /rom, even if updated later
@@ -257,22 +252,23 @@ do_save_conffiles() {
 			\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
 			\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
 			\( -exec echo {} unknown \; \) \
-			\) | sed -e 's,.*/,,;s/\.control /\t/' > "$dir/${INSTALLED_PACKAGES}"
+			\) | sed -e 's,.*/,,;s/\.control /\t/' > ${INSTALLED_PACKAGES}
 	fi
 
 	v "Saving config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
 	sed -i -e 's,^/,,' "$CONFFILES"
-	tar c${TAR_V}zf "$conf_tar" -C "${dir:-/}" -T "$CONFFILES"
+	tar c${TAR_V}zf "$conf_tar" -C / -T "$CONFFILES"
 	local err=$?
 	if [ "$err" -ne 0 ]; then
 		echo "Failed to create the configuration backup."
 		rm -f "$conf_tar"
 	fi
 
-	umount "$dir"
-	rm -rf "$tmp"
-
+	[ "$UMOUNT_ETCBACKUP_DIR" -eq 1 ] && {
+		umount "$ETCBACKUP_DIR"
+		rm -rf "$RAMFS"
+	}
 	rm -f "$CONFFILES"
 
 	return "$err"
