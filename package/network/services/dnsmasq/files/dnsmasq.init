@@ -502,7 +502,7 @@ dhcp_boot_add() {
 
 	[ -n "$serveraddress" ] && [ ! -n "$servername" ] && return 0
 
-	xappend "--dhcp-boot=${networkid:+net:$networkid,}${filename}${servername:+,$servername}${serveraddress:+,$serveraddress}"
+	xappend "--dhcp-boot=${networkid:+tag:$networkid,}${filename}${servername:+,$servername}${serveraddress:+,$serveraddress}"
 
 	config_get_bool force "$cfg" force 0
 
