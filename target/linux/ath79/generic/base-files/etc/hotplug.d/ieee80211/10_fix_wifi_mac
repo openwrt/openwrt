@@ -41,6 +41,7 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii bdcfg "wlanmac" > /sys${DEVPATH}/macaddress
 		;;
+	elecom,wab-s1167-ps|\
 	elecom,wab-s600-ps)
 		# set the 5G MAC address (= ethaddr + 1)
 		[ "$PHYNBR" -eq 0 ] && \
