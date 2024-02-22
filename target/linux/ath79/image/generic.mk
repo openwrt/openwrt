@@ -9,6 +9,7 @@ DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX DAP_SIGNATURE
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
+DEVICE_VARS += ELECOM_HWID
 DEVICE_VARS += MOXA_MAGIC MOXA_HWID
 DEVICE_VARS += OPENMESH_CE_TYPE ZYXEL_MODEL_STRING
 DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
@@ -1315,6 +1316,24 @@ define Device/dlink_dir-869-a1
   SUPPORTED_DEVICES += dir-869-a1
 endef
 TARGET_DEVICES += dlink_dir-869-a1
+
+define Device/elecom_wab
+  DEVICE_VENDOR := ELECOM
+  IMAGE_SIZE := 14336k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
+	pad-rootfs | check-size | elx-header $$$$(ELECOM_HWID) 8844A2D168B45A2D
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct kmod-gpio-beeper \
+	kmod-usb2 kmod-usb-ledtrig-usbport
+endef
+
+define Device/elecom_wab-s600-ps
+  $(Device/elecom_wab)
+  SOC := qca9557
+  DEVICE_MODEL := WAB-S600-PS
+  ELECOM_HWID := 01070028
+endef
+TARGET_DEVICES += elecom_wab-s600-ps
 
 define Device/elecom_wrc-1750ghbk2-i
   SOC := qca9563
