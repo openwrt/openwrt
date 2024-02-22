@@ -144,6 +144,7 @@ ath79_setup_interfaces()
 	alfa-network,n5q|\
 	devolo,dvl1200e|\
 	devolo,dvl1750e|\
+	elecom,wab-s600-ps|\
 	engenius,enstationac-v1|\
 	engenius,ews511ap|\
 	engenius,ews660ap|\
@@ -702,15 +703,16 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
 		;;
-	elecom,wrc-1750ghbk2-i|\
-	elecom,wrc-300ghbk2-i)
-		wan_mac=$(mtd_get_mac_ascii hwconfig "HW.WAN.MAC.Address")
-		label_mac=$wan_mac
-		;;
+	elecom,wab-s600-ps|\
 	engenius,ecb1200|\
 	engenius,ecb1750)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		label_mac=$lan_mac
+		;;
+	elecom,wrc-1750ghbk2-i|\
+	elecom,wrc-300ghbk2-i)
+		wan_mac=$(mtd_get_mac_ascii hwconfig "HW.WAN.MAC.Address")
+		label_mac=$wan_mac
 		;;
 	engenius,epg5000|\
 	engenius,esr1200|\
