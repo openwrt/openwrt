@@ -1327,6 +1327,14 @@ define Device/elecom_wab
 	kmod-usb2 kmod-usb-ledtrig-usbport
 endef
 
+define Device/elecom_wab-i1750-ps
+  $(Device/elecom_wab)
+  SOC := qca9558
+  DEVICE_MODEL := WAB-I1750-PS
+  ELECOM_HWID := 0107000d
+endef
+TARGET_DEVICES += elecom_wab-i1750-ps
+
 define Device/elecom_wab-s1167-ps
   $(Device/elecom_wab)
   SOC := qca9557

@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x_elecom_wab.dtsi"
+
+/ {
+	compatible = "elecom,wab-i1750-ps", "qca,qca9558";
+	model = "ELECOM WAB-I1750-PS";
+
+	ahb {
+		apb {
+			/* "SERIAL" port (RJ-45) on the case */
+			uart1: uart@18500000 {
+				compatible = "qca,ar9330-uart";
+				reg = <0x18500000 0x14>;
+
+				pinctrl-names = "default";
+				pinctrl-0 = <&pmx_uart1_in_pins &pmx_uart1_out_pins
+					     &jtag_disable_pins>;
+
+				interrupts = <6>;
+				interrupt-parent = <&miscintc>;
+
+				clocks = <&pll ATH79_CLK_UART1>;
+				clock-names = "uart";
+
+				/* QCA955x HS UART is not supported */
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&gpio {
+	uart1-out {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>,	/* UART1_TD */
+			<2 GPIO_ACTIVE_HIGH>;	/* UART1_RTS */
+		output-low;
+	};
+
+	uart1-in {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>,	/* UART1_RD */
+			<3 GPIO_ACTIVE_HIGH>;	/* UART1_CTS */
+		input;
+	};
+};
+
+&pinmux {
+	pmx_uart1_out_pins: uart1-out-pins {
+		/*
+		 * mux as uart1 output
+		 *
+		 * GPIO0: UART1_TD (sel:18)
+		 * GPIO2: UART1_RTS (sel:19)
+		 */
+		pinctrl-single,bits = <0x0 0x130012 0xff00ff>;
+	};
+
+	pmx_uart1_in_pins: uart1-in-pins {
+		/*
+		 * mux as uart1 input
+		 *
+		 * GPIO1: UART1_RD
+		 * GPIO3: UART1_CTS
+		 */
+		pinctrl-single,bits = <0x3c 0x3010000 0xffff0000>;
+	};
+};
