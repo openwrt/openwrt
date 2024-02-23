@@ -578,6 +578,23 @@ endef
 $(eval $(call KernelPackage,rtc-isl1208))
 
 
+define KernelPackage/rtc-mv
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Marvell SoC RTC support
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  KCONFIG:=CONFIG_RTC_DRV_MV \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-mv.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-mv)
+endef
+
+define KernelPackage/rtc-mv/description
+ Kernel module for Marvell SoC RTC.
+endef
+
+$(eval $(call KernelPackage,rtc-mv))
+
+
 define KernelPackage/rtc-pcf8563
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF8563/Epson RTC8564 RTC support

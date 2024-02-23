@@ -105,7 +105,7 @@ define Device/cisco_on100
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
-  DEVICE_PACKAGES := kmod-mvsdio
+  DEVICE_PACKAGES := kmod-mvsdio kmod-rtc-mv
   SUPPORTED_DEVICES += on100
 endef
 TARGET_DEVICES += cisco_on100
@@ -114,6 +114,7 @@ define Device/cloudengines_pogoe02
   DEVICE_VENDOR := Cloud Engines
   DEVICE_MODEL := Pogoplug E02
   DEVICE_DTS := kirkwood-pogo_e02
+  DEVICE_PACKAGES := kmod-rtc-mv
   SUPPORTED_DEVICES += pogo_e02
 endef
 TARGET_DEVICES += cloudengines_pogoe02
@@ -123,7 +124,7 @@ define Device/cloudengines_pogoplugv4
   DEVICE_MODEL := Pogoplug V4
   DEVICE_DTS := kirkwood-pogoplug-series-4
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 kmod-mvsdio kmod-usb3 \
-	kmod-gpio-button-hotplug
+	kmod-gpio-button-hotplug kmod-rtc-mv
 endef
 TARGET_DEVICES += cloudengines_pogoplugv4
 
@@ -145,7 +146,7 @@ define Device/endian_4i-edge-200
   DEVICE_MODEL := 4i Edge 200
   DEVICE_ALT0_VENDOR := Endian
   DEVICE_ALT0_MODEL := UTM Mini Firewall
-  DEVICE_PACKAGES := kmod-ath9k kmod-mvsdio wpad-basic-mbedtls
+  DEVICE_PACKAGES := kmod-ath9k kmod-mvsdio wpad-basic-mbedtls kmod-rtc-mv
   KERNEL_SIZE := 4096k
   IMAGES := sysupgrade.bin
 endef
@@ -154,13 +155,14 @@ TARGET_DEVICES += endian_4i-edge-200
 define Device/globalscale_sheevaplug
   DEVICE_VENDOR := Globalscale
   DEVICE_MODEL := Sheevaplug
-  DEVICE_PACKAGES := kmod-mvsdio
+  DEVICE_PACKAGES := kmod-mvsdio kmod-rtc-mv
 endef
 TARGET_DEVICES += globalscale_sheevaplug
 
 define Device/iom_iconnect-1.1
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := Iconnect
+  DEVICE_PACKAGES := kmod-rtc-mv
   DEVICE_DTS := kirkwood-iconnect
   SUPPORTED_DEVICES += iconnect
 endef
@@ -171,7 +173,7 @@ define Device/iom_ix2-200
   DEVICE_MODEL := StorCenter ix2-200
   DEVICE_DTS := kirkwood-iomega_ix2_200
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
-	kmod-gpio-button-hotplug kmod-hwmon-lm63
+	kmod-gpio-button-hotplug kmod-hwmon-lm63 kmod-rtc-mv
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
@@ -189,7 +191,7 @@ define Device/iom_ix4-200d
   DEVICE_MODEL := StorCenter ix4-200d
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
 	kmod-gpio-button-hotplug kmod-gpio-nxp-74hc164 \
-	kmod-hwmon-adt7475 kmod-mvsdio kmod-spi-gpio
+	kmod-hwmon-adt7475 kmod-mvsdio kmod-spi-gpio kmod-rtc-mv
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
@@ -207,7 +209,7 @@ define Device/iptime_nas1
   DEVICE_MODEL := NAS1
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
 	kmod-gpio-button-hotplug kmod-gpio-pca953x kmod-hwmon-drivetemp \
-	kmod-hwmon-gpiofan kmod-usb-ledtrig-usbport -uboot-envtools
+	kmod-hwmon-gpiofan kmod-usb-ledtrig-usbport kmod-rtc-mv -uboot-envtools
   KERNEL := $$(KERNEL) | iptime-naspkg nas1
   BLOCKSIZE := 256k
   IMAGE_SIZE := 15872k
@@ -219,7 +221,8 @@ TARGET_DEVICES += iptime_nas1
 
 define Device/linksys
   DEVICE_VENDOR := Linksys
-  DEVICE_PACKAGES := kmod-mwl8k wpad-basic-mbedtls kmod-gpio-button-hotplug
+  DEVICE_PACKAGES := kmod-mwl8k wpad-basic-mbedtls kmod-gpio-button-hotplug \
+	kmod-rtc-mv
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
@@ -272,7 +275,7 @@ define Device/raidsonic_ib-nas62x0
   DEVICE_VENDOR := RaidSonic
   DEVICE_MODEL := ICY BOX IB-NAS62x0
   DEVICE_DTS := kirkwood-ib62x0
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 kmod-rtc-mv
   SUPPORTED_DEVICES += ib62x0
 endef
 TARGET_DEVICES += raidsonic_ib-nas62x0
@@ -281,7 +284,7 @@ define Device/seagate_blackarmor-nas220
   DEVICE_VENDOR := Seagate
   DEVICE_MODEL := Blackarmor NAS220
   DEVICE_PACKAGES := kmod-hwmon-adt7475 kmod-fs-ext4 kmod-ata-marvell-sata \
-	mdadm kmod-gpio-button-hotplug
+	mdadm kmod-gpio-button-hotplug kmod-rtc-mv
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
@@ -292,6 +295,7 @@ TARGET_DEVICES += seagate_blackarmor-nas220
 define Device/seagate_dockstar
   DEVICE_VENDOR := Seagate
   DEVICE_MODEL := FreeAgent Dockstar
+  DEVICE_PACKAGES := kmod-rtc-mv
   SUPPORTED_DEVICES += dockstar
 endef
 TARGET_DEVICES += seagate_dockstar
@@ -299,7 +303,7 @@ TARGET_DEVICES += seagate_dockstar
 define Device/seagate_goflexnet
   DEVICE_VENDOR := Seagate
   DEVICE_MODEL := GoFlexNet
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 kmod-rtc-mv
   SUPPORTED_DEVICES += goflexnet
 endef
 TARGET_DEVICES += seagate_goflexnet
@@ -307,7 +311,7 @@ TARGET_DEVICES += seagate_goflexnet
 define Device/seagate_goflexhome
   DEVICE_VENDOR := Seagate
   DEVICE_MODEL := GoFlexHome
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 kmod-rtc-mv
   SUPPORTED_DEVICES += goflexhome
 endef
 TARGET_DEVICES += seagate_goflexhome
@@ -316,7 +320,7 @@ define Device/zyxel_nsa310b
   DEVICE_VENDOR := ZyXEL
   DEVICE_MODEL := NSA310b
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-r8169 kmod-fs-ext4 \
-	kmod-gpio-button-hotplug kmod-hwmon-lm85
+	kmod-gpio-button-hotplug kmod-hwmon-lm85 kmod-rtc-mv
   SUPPORTED_DEVICES += nsa310b
 endef
 TARGET_DEVICES += zyxel_nsa310b
