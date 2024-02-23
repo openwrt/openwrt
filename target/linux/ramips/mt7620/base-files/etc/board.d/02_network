@@ -235,6 +235,12 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan:3" "2:lan:4" "3:lan:1" "4:lan:2" "0:wan" "6@eth0"
 		;;
+	tplink,archer-c5-v4)
+		ucidef_add_switch "switch0"
+		ucidef_add_switch_attr "switch0" "enable" "0"
+		ucidef_add_switch "switch1" \
+			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "7@eth0"
+		;;
 	tplink,archer-mr200)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
@@ -407,6 +413,7 @@ ramips_setup_macs()
 	tplink,archer-c2-v1|\
 	tplink,archer-c20-v1|\
 	tplink,archer-c20i|\
+	tplink,archer-c5-v4|\
 	tplink,archer-c50-v1|\
 	tplink,archer-mr200)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary rom 0xf100)" 1)
