@@ -60,11 +60,11 @@
 };
 
 &wmac {
-	nvmem-cells = <&macaddr_rom_f100 0>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_radio_0>, <&macaddr_rom_f100 0>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
 
 &wifi {
-	nvmem-cells = <&macaddr_rom_f100 (-1)>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_radio_8000>, <&macaddr_rom_f100 (-1)>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
