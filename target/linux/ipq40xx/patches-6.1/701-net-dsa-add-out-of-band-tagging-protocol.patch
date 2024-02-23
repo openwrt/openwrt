@@ -136,7 +136,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  #include <net/dst.h>
  #include <net/sock.h>
  #include <net/checksum.h>
-@@ -4516,6 +4520,9 @@ static const u8 skb_ext_type_len[] = {
+@@ -4517,6 +4521,9 @@ static const u8 skb_ext_type_len[] = {
  #if IS_ENABLED(CONFIG_MCTP_FLOWS)
  	[SKB_EXT_MCTP] = SKB_EXT_CHUNKSIZEOF(struct mctp_flow),
  #endif
@@ -146,7 +146,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  };
  
  static __always_inline unsigned int skb_ext_total_length(void)
-@@ -4536,6 +4543,9 @@ static __always_inline unsigned int skb_
+@@ -4537,6 +4544,9 @@ static __always_inline unsigned int skb_
  #if IS_ENABLED(CONFIG_MCTP_FLOWS)
  		skb_ext_type_len[SKB_EXT_MCTP] +
  #endif
