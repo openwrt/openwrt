@@ -370,7 +370,7 @@
  	mt7981-rfb.dtb \
 --- /dev/null
 +++ b/linksys_e8450_env
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,55 @@
 +ethaddr_factory=ubi read 0x40080000 factory && env readmem -b ethaddr 0x400ffff4 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
