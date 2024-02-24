@@ -60,9 +60,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  /* Initialize serial flash access */
  int bcma_sflash_init(struct bcma_drv_cc *cc)
  {
-@@ -115,6 +141,10 @@ int bcma_sflash_init(struct bcma_drv_cc
- 		case 0x13:
- 			return -ENOTSUPP;
+@@ -113,6 +139,10 @@ int bcma_sflash_init(struct bcma_drv_cc
+ 			}
+ 			break;
  		default:
 +			e = bcma_sflash_shrink_flash(id);
 +			if (e)
