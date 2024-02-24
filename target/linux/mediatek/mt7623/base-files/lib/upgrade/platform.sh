@@ -1,5 +1,20 @@
 REQUIRE_IMAGE_METADATA=1
 
+platform_get_bootdev() {
+	local rootdisk="$(cat /sys/firmware/devicetree/base/chosen/rootdisk)"
+	local handle bootdev
+	for handle in /sys/class/block/*/of_node/phandle /sys/class/block/*/device/of_node/phandle; do
+		[ ! -e "$handle" ] && continue
+		if [ "$rootdisk" = "$(cat $handle)" ]; then
+			bootdev="${handle%/of_node/phandle}"
+			bootdev="${bootdev%/device}"
+			bootdev="${bootdev#/sys/class/block/}"
+			echo "$bootdev"
+			break
+		fi
+	done
+}
+
 # Legacy full system upgrade including preloader for MediaTek SoCs on eMMC or SD
 legacy_mtk_mmc_full_upgrade() {
 	local diskdev partdev diff oldrecovery
@@ -83,10 +98,10 @@ platform_do_upgrade() {
 	case "$board" in
 	bananapi,bpi-r2|\
 	unielec,u7623-02)
-		export_bootdevice
-		export_partdevice fitpart 3
-		[ "$fitpart" ] || return 1
-		EMMC_KERN_DEV="/dev/$fitpart"
+		[ -e /dev/fit0 ] && fitblk /dev/fit0
+		[ -e /dev/fitrw ] && fitblk /dev/fitrw
+		bootdev="$(platform_get_bootdev)"
+		EMMC_KERN_DEV="/dev/$bootdev"
 		emmc_do_upgrade "$1"
 		;;
 	unielec,u7623-02-emmc-512m)

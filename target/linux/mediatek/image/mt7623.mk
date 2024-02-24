@@ -116,6 +116,8 @@ endif
 			    gzip
   ARTIFACTS := u-boot.bin preloader.bin sdcard.img.gz
   SUPPORTED_DEVICES := bananapi,bpi-r2
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Bootloader update required for switch to fitblk
 endef
 TARGET_DEVICES += bananapi_bpi-r2
 

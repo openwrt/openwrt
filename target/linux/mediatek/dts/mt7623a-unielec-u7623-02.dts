@@ -9,4 +9,26 @@
 / {
 	model = "UniElec U7623-02 eMMC";
 	compatible = "unielec,u7623-02", "mediatek,mt7623";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon=uart8250,mmio32,0x11004000 root=/dev/fit0";
+		rootdisk = <&emmc_rootdisk>;
+	};
+};
+
+&mmc0 {
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+			partitions {
+				emmc_rootdisk: block-partition-env {
+					partno = <3>;
+				};
+			};
+		};
+	};
 };
