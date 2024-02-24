@@ -326,6 +326,16 @@ define Device/linksys_e4200-v1
 endef
 TARGET_DEVICES += linksys_e4200-v1
 
+define Device/linksys_ea6500-v1
+  DEVICE_MODEL := EA6500
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+  $(Device/standard-noloader-gz)
+  DEVICE_ID := 6500
+  VERSION := 1.0.0
+endef
+TARGET_DEVICES += linksys_ea6500-v1
+
 define Device/netgear_r6200-v1
   DEVICE_MODEL := R6200
   DEVICE_VARIANT := v1
