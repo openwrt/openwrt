@@ -1,3 +1,26 @@
+This branch is dedicated to porting TP-Link Archer C5-v4 (rtl8367s variant) to
+DSA switch.  There are two C5-v4 variant in the market: one with the switch
+rtl8367s, which this branch is targeting, and a newer one using rtl8367s-vb.
+The new one is not supported by the upstream Realtek DSA driver and it **will
+not work with this branch**.
+
+It is mainly used as a platform to develop Realtek DSA Switch driver. However, it might
+work as a normal device.
+
+There is some drawbacks caused by DSA in this device:
+- Checksum offload does not work as the mediatek SoC does not know the Realtek CPU tag.
+
+Improvements to OpenWrt device support
+- Migrate to DSA switching (the other internal switch)
+
+Improvements to Linux Upstream Realtek DSA Switch driver:
+- vlan and forwarding offload support: better performance between L2 cable clients
+- add support to rtl8367s-vb (used in newer TP-Link Archer C5-v4 devices)
+
+--
+Luiz
+
+
 ![OpenWrt logo](include/logo.png)
 
 OpenWrt Project is a Linux operating system targeting embedded devices. Instead

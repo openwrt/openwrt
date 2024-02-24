@@ -240,10 +240,9 @@ ramips_setup_interfaces()
 			"1:lan:3" "2:lan:4" "3:lan:1" "4:lan:2" "0:wan" "6@eth0"
 		;;
 	tplink,archer-c5-v4)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		ucidef_add_switch "switch0"
 		ucidef_add_switch_attr "switch0" "enable" "0"
-		ucidef_add_switch "switch1" \
-			"0:lan:4" "1:lan:3" "2:lan:2" "3:lan:1" "4:wan" "7@eth0"
 		;;
 	tplink,archer-mr200)
 		ucidef_add_switch "switch0" \
