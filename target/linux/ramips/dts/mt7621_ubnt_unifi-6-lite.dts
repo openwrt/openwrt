@@ -71,7 +71,9 @@
 					#size-cells = <1>;
 
 					macaddr_eeprom_0: macaddr@0 {
+						compatible = "mac-base";
 						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					macaddr_eeprom_6: macaddr@6 {
@@ -108,12 +110,12 @@
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_eeprom_0>;
+	nvmem-cells = <&macaddr_eeprom_0 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &wlan_2g {
-	nvmem-cells = <&eeprom_factory_0>, <&macaddr_eeprom_0>;
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_eeprom_0 0>;
 	nvmem-cell-names = "eeprom", "mac-address";
 };
 
@@ -138,4 +140,51 @@
 	ieee80211-freq-limit = <5000000 6000000>;
 
 	mediatek,disable-radar-background;
+};
+
+// Change the driver for uart1 so that it gets detected before uart3, and still becomes console.
+
+&uartlite {
+	compatible = "mediatek,mt6577-uart";
+};
+
+&uartlite3 {
+	compatible = "mediatek,mt6577-uart";
+
+	/* The btmtkuart driver uses "runtime" not "default"
+	 * use runtime here so that there isn't a clash when
+	 * btmtkuart requests "runtime"
+	 */
+
+	pinctrl-names = "runtime";
+	pinctrl-0 = <&uart3_pins>;
+
+	// STP/H4 requires a FIFO at 921600 baud
+	uart-type = "16550A";
+	no-loopback-test;
+
+	status = "okay";
+
+	bluetooth {
+		compatible = "mediatek,mt7915-bluetooth";
+
+		current-speed = <921600>;
+
+		pinctrl-names = "runtime";
+		pinctrl-0 = <&uart3_pins>;
+
+		/* The bootloader uses this as the "boot" gpio
+		 * it doesn't appear to do anything when the system
+		 * is running, but omitting it causes the driver to
+		 * attempt the same using the serial lines as gpio
+		 * which causes pinctrl woe
+		 */
+		boot-gpios=<&gpio 16 GPIO_ACTIVE_LOW>;
+
+		// Reset is shared between wifi and bt.
+		// reset-gpios=<&gpio 19 GPIO_ACTIVE_LOW>;
+
+		nvmem-cells = <&macaddr_eeprom_0 3>;
+		nvmem-cell-names = "bd-address";
+	};
 };

@@ -133,3 +133,18 @@ define KernelPackage/sound-mt7620/description
 endef
 
 $(eval $(call KernelPackage,sound-mt7620))
+
+define KernelPackage/btmtkuart
+  SUBMENU:=Other modules
+  TITLE:=MediaTek HCI UART driver
+  DEPENDS:=@(TARGET_ramips) +kmod-bluetooth
+  KCONFIG:= \
+	CONFIG_SERIAL_DEV_BUS=y \
+	CONFIG_SERIAL_DEV_CTRL_TTYPORT=y \
+	CONFIG_BT_MTKUART=m
+  FILES:= \
+	$(LINUX_DIR)/drivers/bluetooth/btmtkuart.ko
+  AUTOLOAD:=$(call AutoProbe,btmtkuart)
+endef
+
+$(eval $(call KernelPackage,btmtkuart))
