@@ -13,8 +13,8 @@ board=$(board_name)
 
 case "$board" in
 bananapi,bpi-r2)
-	. /lib/upgrade/platform.sh
-	bootdev="$(platform_get_bootdev)"
+	. /lib/upgrade/common.sh
+	bootdev="$(fitblk_get_bootdev)"
 	ubootenv_add_uci_config "/dev/${bootdev%p[0-9]*}p1" "0xb0000" "0x10000" "0x10000" "1"
 	;;
 unielec,u7623-02)

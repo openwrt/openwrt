@@ -35,8 +35,8 @@ linksys,e8450-ubi)
 	ubootenv_add_ubi_default
 	;;
 bananapi,bpi-r64)
-	. /lib/upgrade/platform.sh
-	bootdev="$(platform_get_bootdev)"
+	. /lib/upgrade/common.sh
+	bootdev="$(fitblk_get_bootdev)"
 	case "$bootdev" in
 	mmc*)
 		ubootenv_add_mmc_default "${bootdev%p[0-9]*}"

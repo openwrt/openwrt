@@ -39,9 +39,9 @@ asus,rt-ax59u)
 bananapi,bpi-r3|\
 bananapi,bpi-r3-mini|\
 bananapi,bpi-r4)
-	. /lib/upgrade/platform.sh
+	. /lib/upgrade/common.sh
 
-	bootdev="$(platform_get_bootdev)"
+	bootdev="$(fitblk_get_bootdev)"
 	case "$bootdev" in
 	ubi*)
 		ubootenv_add_ubi_default
