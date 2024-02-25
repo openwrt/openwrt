@@ -165,6 +165,23 @@ part_magic_fat() {
 	[ "$magic" = "FAT" ] || [ "$magic_fat32" = "FAT32" ]
 }
 
+fitblk_get_bootdev() {
+	[ -e /sys/firmware/devicetree/base/chosen/rootdisk ] || return
+
+	local rootdisk="$(cat /sys/firmware/devicetree/base/chosen/rootdisk)"
+	local handle bootdev
+	for handle in /sys/class/block/*/of_node/phandle /sys/class/block/*/device/of_node/phandle; do
+		[ ! -e "$handle" ] && continue
+		if [ "$rootdisk" = "$(cat $handle)" ]; then
+			bootdev="${handle%/of_node/phandle}"
+			bootdev="${bootdev%/device}"
+			bootdev="${bootdev#/sys/class/block/}"
+			echo "$bootdev"
+			break
+		fi
+	done
+}
+
 export_bootdevice() {
 	local cmdline uuid blockdev uevent line class
 	local MAJOR MINOR DEVNAME DEVTYPE
@@ -196,7 +213,11 @@ export_bootdevice() {
 			done
 		;;
 		/dev/*)
-			uevent="/sys/class/block/${rootpart##*/}/../uevent"
+			if [ "$rootpart" = "/dev/fit0" ]; then
+				uevent="/sys/class/block/$(fitblk_get_bootdev)/uevent"
+			else
+				uevent="/sys/class/block/${rootpart##*/}/../uevent"
+			fi
 		;;
 		0x[a-f0-9][a-f0-9][a-f0-9] | 0x[a-f0-9][a-f0-9][a-f0-9][a-f0-9] | \
 		[a-f0-9][a-f0-9][a-f0-9] | [a-f0-9][a-f0-9][a-f0-9][a-f0-9])
