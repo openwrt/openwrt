@@ -53,8 +53,8 @@
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -143,6 +143,13 @@ config GPIO_AMDPT
- 	  driver for GPIO functionality on Promontory IOHub
- 	  Require ACPI ASL code to enumerate as a platform device.
+ 	  Driver for GPIO functionality on Promontory IOHub.
+ 	  Requires ACPI ASL code to enumerate as a platform device.
  
 +config GPIO_AR5312
 +	bool "AR5312 SoC GPIO support"
@@ -68,7 +68,7 @@
  	depends on (ARCH_ASPEED || COMPILE_TEST) && OF_GPIO
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -32,6 +32,7 @@ obj-$(CONFIG_GPIO_ALTERA)  		+= gpio-alt
+@@ -31,6 +31,7 @@ obj-$(CONFIG_GPIO_ALTERA)  		+= gpio-alt
  obj-$(CONFIG_GPIO_AMD8111)		+= gpio-amd8111.o
  obj-$(CONFIG_GPIO_AMD_FCH)		+= gpio-amd-fch.o
  obj-$(CONFIG_GPIO_AMDPT)		+= gpio-amdpt.o
@@ -202,7 +202,7 @@
 +subsys_initcall(ar5312_gpio_init);
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -232,6 +232,7 @@ config ATH25
+@@ -231,6 +231,7 @@ config ATH25
  	select CEVT_R4K
  	select CSRC_R4K
  	select DMA_NONCOHERENT

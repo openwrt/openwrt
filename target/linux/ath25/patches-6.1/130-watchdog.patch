@@ -212,7 +212,7 @@
 +MODULE_ALIAS("platform:" DRIVER_NAME);
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -1829,6 +1829,13 @@ config PIC32_DMT
+@@ -1895,6 +1895,13 @@ config PIC32_DMT
  	  To compile this driver as a loadable module, choose M here.
  	  The module will be called pic32-dmt.
  
@@ -228,7 +228,7 @@
  # POWERPC Architecture
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -161,6 +161,7 @@ obj-$(CONFIG_JZ4740_WDT) += jz4740_wdt.o
+@@ -166,6 +166,7 @@ obj-$(CONFIG_JZ4740_WDT) += jz4740_wdt.o
  obj-$(CONFIG_WDT_MTX1) += mtx-1_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
