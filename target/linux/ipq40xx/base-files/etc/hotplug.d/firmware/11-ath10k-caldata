@@ -58,8 +58,7 @@ case "$FIRMWARE" in
 "ath10k/pre-cal-ahb-a000000.wifi.bin")
 	case "$board" in
 	asus,map-ac2200|\
-	asus,rt-ac42u|\
-	asus,rt-ac58u)
+	asus,rt-ac42u)
 		caldata_extract_ubi "Factory" 0x1000 0x2f20
 		;;
 	avm,fritzbox-4040)
@@ -158,8 +157,7 @@ case "$FIRMWARE" in
 	;;
 "ath10k/pre-cal-ahb-a800000.wifi.bin")
 	case "$board" in
-	asus,map-ac2200|\
-	asus,rt-ac58u)
+	asus,map-ac2200)
 		caldata_extract_ubi "Factory" 0x5000 0x2f20
 		;;
 	avm,fritzbox-4040)
