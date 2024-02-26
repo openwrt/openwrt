@@ -80,3 +80,13 @@ define Device/iei_puzzle-m902
   DEVICE_PACKAGES += kmod-rtc-ds1307
 endef
 TARGET_DEVICES += iei_puzzle-m902
+
+define Device/solidrun_clearfog-pro
+  $(call Device/Default-arm64)
+  SOC := cn9130
+  DEVICE_VENDOR := SolidRun
+  DEVICE_MODEL := ClearFog Pro
+  DEVICE_PACKAGES += kmod-i2c-mux-pca954x
+  BOOT_SCRIPT := clearfog-pro
+endef
+TARGET_DEVICES += solidrun_clearfog-pro
