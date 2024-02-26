@@ -213,11 +213,8 @@ export_bootdevice() {
 			done
 		;;
 		/dev/*)
-			if [ "$rootpart" = "/dev/fit0" ]; then
-				uevent="/sys/class/block/$(fitblk_get_bootdev)/uevent"
-			else
-				uevent="/sys/class/block/${rootpart##*/}/../uevent"
-			fi
+			[ "$rootpart" = "/dev/fit0" ] && rootpart="$(fitblk_get_bootdev)"
+			uevent="/sys/class/block/${rootpart##*/}/../uevent"
 		;;
 		0x[a-f0-9][a-f0-9][a-f0-9] | 0x[a-f0-9][a-f0-9][a-f0-9][a-f0-9] | \
 		[a-f0-9][a-f0-9][a-f0-9] | [a-f0-9][a-f0-9][a-f0-9][a-f0-9])
