@@ -235,6 +235,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan:3" "2:lan:4" "3:lan:1" "4:lan:2" "0:wan" "6@eth0"
 		;;
+	mercusys,ac12g-v1-8m|\
 	tplink,archer-c5-v4)
 		ucidef_add_switch "switch0"
 		ucidef_add_switch_attr "switch0" "enable" "0"

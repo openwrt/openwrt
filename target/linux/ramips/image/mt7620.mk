@@ -774,6 +774,23 @@ define Device/linksys_e1700
 endef
 TARGET_DEVICES += linksys_e1700
 
+define Device/mercusys_ac12g-v1-8m
+  $(Device/tplink-v2)
+  SOC := mt7620a
+  IMAGE_SIZE := 7808k
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x04da857c
+  TPLINK_HWREV := 0x0c000600
+  TPLINK_HWREVADD := 0x04000000
+  IMAGES += tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+  DEVICE_VENDOR := Mercusys
+  DEVICE_MODEL := AC12G
+  DEVICE_VARIANT := v1 (8M)
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-switch-rtl8367b
+endef
+TARGET_DEVICES += mercusys_ac12g-v1-8m
+
 define Device/microduino_microwrt
   SOC := mt7620a
   IMAGE_SIZE := 16128k
