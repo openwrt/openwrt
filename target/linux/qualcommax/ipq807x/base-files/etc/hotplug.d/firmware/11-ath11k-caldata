@@ -29,7 +29,8 @@ case "$FIRMWARE" in
 	zte,mf269)
 		caldata_extract "0:art" 0x1000 0x20000
 		;;
-	linksys,mx4200v1)
+	linksys,mx4200v1|\
+	linksys,mx8500)
 		caldata_extract "0:art" 0x1000 0x20000
 		ath11k_remove_regdomain
 		;;
@@ -66,6 +67,10 @@ case "$FIRMWARE" in
 "ath11k/QCN9074/hw1.0/cal-pci-0000:01:00.0.bin"|\
 "ath11k/QCN9074/hw1.0/cal-pci-0001:01:00.0.bin")
 	case "$board" in
+	linksys,mx8500)
+		caldata_extract "0:art" 0x26800 0x20000
+		ath11k_remove_regdomain
+		;;
 	prpl,haze)
 		caldata_extract_mmc "0:ART" 0x26800 0x20000
 		;;

@@ -140,6 +140,14 @@ define Device/linksys_mx5300
 endef
 TARGET_DEVICES += linksys_mx5300
 
+define Device/linksys_mx8500
+	$(call Device/linksys_mx)
+	DEVICE_MODEL := MX8500
+	DEVICE_PACKAGES += ipq-wifi-linksys_mx8500 kmod-ath11k-pci \
+		ath11k-firmware-qcn9074 kmod-bluetooth
+endef
+TARGET_DEVICES += linksys_mx8500
+
 define Device/netgear_rax120v2
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

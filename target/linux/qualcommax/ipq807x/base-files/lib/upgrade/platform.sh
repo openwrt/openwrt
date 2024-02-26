@@ -77,7 +77,8 @@ platform_do_upgrade() {
 		;;
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\
-	linksys,mx5300)
+	linksys,mx5300|\
+	linksys,mx8500)
 		boot_part="$(fw_printenv -n boot_part)"
 		if [ "$boot_part" -eq "1" ]; then
 			fw_setenv boot_part 2
