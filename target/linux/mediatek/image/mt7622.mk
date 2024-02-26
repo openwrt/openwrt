@@ -90,7 +90,7 @@ define Device/bananapi_bpi-r64
   DEVICE_MODEL := BPi-R64
   DEVICE_DTS := mt7622-bananapi-bpi-r64
   DEVICE_DTS_OVERLAY := mt7622-bananapi-bpi-r64-pcie1 mt7622-bananapi-bpi-r64-sata
-  DEVICE_PACKAGES := fitblk kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3 e2fsprogs mkf2fs f2fsck
+  DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3 e2fsprogs mkf2fs f2fsck
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x43f00000
   ARTIFACTS := emmc-preloader.bin emmc-bl31-uboot.fip sdcard.img.gz snand-preloader.bin snand-bl31-uboot.fip
@@ -256,7 +256,7 @@ define Device/linksys_e8450-ubi
   DEVICE_ALT0_VARIANT := UBI
   DEVICE_DTS := mt7622-linksys-e8450-ubi
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := fitblk kmod-mt7915-firmware kmod-usb3
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
@@ -377,7 +377,7 @@ define Device/ubnt_unifi-6-lr-v1-ubootmod
   DEVICE_VARIANT := v1 U-Boot mod
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v1-ubootmod
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := fitblk kmod-mt7915-firmware kmod-leds-ubnt-ledbar
+  DEVICE_PACKAGES := kmod-mt7915-firmware kmod-leds-ubnt-ledbar
   KERNEL := kernel-bin | lzma
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
@@ -407,7 +407,7 @@ define Device/ubnt_unifi-6-lr-v2-ubootmod
   DEVICE_VARIANT := v2 U-Boot mod
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v2-ubootmod
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := fitblk kmod-mt7915-firmware
+  DEVICE_PACKAGES := kmod-mt7915-firmware
   KERNEL := kernel-bin | lzma
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
@@ -436,7 +436,7 @@ define Device/ubnt_unifi-6-lr-v3-ubootmod
   DEVICE_VARIANT := v3 U-Boot mod
   DEVICE_DTS := mt7622-ubnt-unifi-6-lr-v3-ubootmod
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := fitblk kmod-mt7915-firmware
+  DEVICE_PACKAGES := kmod-mt7915-firmware
   KERNEL := kernel-bin | lzma
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
