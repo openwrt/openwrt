@@ -1,0 +1,38 @@
+Aqara ZHWG11LM is a is a wall-mounted zigbee-to-internet gateway.
+Device specifications:
+* SoC: Freescale iMX6ULL
+* RAM: 256MiB
+* Flash: 256MiB NAND flash
+* Wireless 2.4GHz (RTL8189ES): b/g/n
+* Zigbee Chip: NXP jn5169
+* Ring of RGB leds
+* BTN0 button
+* Sound chip TFA9882 + speaker
+
+Tested on: Aqara Gateway ZHWG11LM
+
+Signed-off-by: Ivan Belokobylskiy <belokobylskij@gmail.com>
+
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -673,6 +673,7 @@ dtb-$(CONFIG_SOC_IMX6UL) += \
+ 	imx6ul-tx6ul-mainboard.dtb \
+ 	imx6ull-14x14-evk.dtb \
+ 	imx6ull-xiaomi-dgnwg05lm.dtb \
++	imx6ull-aqara-zhwg11lm.dtb \
+ 	imx6ull-colibri-eval-v3.dtb \
+ 	imx6ull-colibri-wifi-eval-v3.dtb \
+ 	imx6ull-myir-mys-6ulx-eval.dtb \
+--- /dev/null
++++ b/arch/arm/boot/dts/imx6ull-aqara-zhwg11lm.dts
+@@ -0,0 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++/dts-v1/;
++
++#include "imx6ull-xiaomi-lumi.dtsi"
++
++/ {
++	model = "Aqara Gateway ZHWG11LM";
++	compatible = "aqara,zhwg11lm", "xiaomi,gateway-lumi", "fsl,imx6ull";
++};
