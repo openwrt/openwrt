@@ -1,9 +1,14 @@
+From: Felix Fietkau <nbd@nbd.name>
+Subject: mvneta: tx queue workaround
+
 The hardware queue scheduling is apparently configured with fixed
 priorities, which creates a nasty fairness issue where traffic from one
 CPU can starve traffic from all other CPUs.
 
 Work around this issue by forcing all tx packets to go through one CPU,
 until this issue is fixed properly.
+
+Ref: https://github.com/openwrt/openwrt/issues/5411
 
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
 ---
