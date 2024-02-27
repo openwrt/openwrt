@@ -210,6 +210,19 @@ define Device/dlink_dir-510l
 endef
 TARGET_DEVICES += dlink_dir-510l
 
+define Device/dlink_dir-806a-b1
+  SOC := mt7620a
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-806A
+  DEVICE_VARIANT := B1
+  DEVICE_PACKAGES += kmod-mt76x0e
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size | \
+	sign-dlink-ru cef285a2e29e40b2baab31277d44298b
+endef
+TARGET_DEVICES += dlink_dir-806a-b1
+
 define Device/dlink_dir-810l
   SOC := mt7620a
   DEVICE_PACKAGES := kmod-mt76x0e
