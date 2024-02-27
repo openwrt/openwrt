@@ -55,7 +55,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  int phy_init_hw(struct phy_device *phydev)
  {
  	int ret = 0;
-@@ -1259,6 +1290,12 @@ int phy_init_hw(struct phy_device *phyde
+@@ -1261,6 +1292,12 @@ int phy_init_hw(struct phy_device *phyde
  			return ret;
  	}
  
@@ -68,7 +68,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	return 0;
  }
  EXPORT_SYMBOL(phy_init_hw);
-@@ -3204,7 +3241,6 @@ static int of_phy_led(struct phy_device
+@@ -3206,7 +3243,6 @@ static int of_phy_led(struct phy_device
  	struct device *dev = &phydev->mdio.dev;
  	struct led_init_data init_data = {};
  	struct led_classdev *cdev;
@@ -76,7 +76,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	struct phy_led *phyled;
  	u32 index;
  	int err;
-@@ -3222,21 +3258,6 @@ static int of_phy_led(struct phy_device
+@@ -3224,21 +3260,6 @@ static int of_phy_led(struct phy_device
  	if (index > U8_MAX)
  		return -EINVAL;
  
