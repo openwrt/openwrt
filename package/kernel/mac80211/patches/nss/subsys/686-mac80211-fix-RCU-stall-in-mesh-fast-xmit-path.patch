@@ -72,7 +72,7 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
 
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2373,7 +2373,7 @@ static void mpath_set_pinfo(struct mesh_
+@@ -2350,7 +2350,7 @@ static void mpath_set_pinfo(struct mesh_
  	if (mpath->flags & MESH_PATH_RESOLVED)
  		pinfo->flags |= NL80211_MPATH_FLAG_RESOLVED;
  	pinfo->hop_count = mpath->hop_count;
@@ -94,7 +94,7 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
  #define MESH_FAST_TX_CACHE_MAX_SIZE		512
 --- a/net/mac80211/mesh_hwmp.c
 +++ b/net/mac80211/mesh_hwmp.c
-@@ -510,7 +510,7 @@ static u32 hwmp_route_info_get(struct ie
+@@ -504,7 +504,7 @@ static u32 hwmp_route_info_get(struct ie
  			if (next_hop)
  				ether_addr_copy(old_next_hop_addr, next_hop->sta.addr);
  			if (next_hop != sta) {
@@ -103,7 +103,7 @@ Signed-off-by: P Praneesh <quic_ppranees@quicinc.com>
  				flush_mpath = true;
  			}
  			mesh_path_assign_nexthop(mpath, sta);
-@@ -571,7 +571,7 @@ static u32 hwmp_route_info_get(struct ie
+@@ -565,7 +565,7 @@ static u32 hwmp_route_info_get(struct ie
  			if (next_hop)
  				ether_addr_copy(old_next_hop_addr, next_hop->sta.addr);
  			if (next_hop != sta) {

@@ -21,11 +21,9 @@ Signed-off-by: Aaradhana Sahu <quic_aarasahu@quicinc.com>
  drivers/net/wireless/ath/ath11k/dp_tx.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/wireless/ath/ath11k/dp_tx.c b/drivers/net/wireless/ath/ath11k/dp_tx.c
-index 3d8417d..5c034e6 100644
 --- a/drivers/net/wireless/ath/ath11k/dp_tx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
-@@ -347,7 +347,8 @@ tcl_ring_sel:
+@@ -221,7 +221,8 @@ tcl_ring_sel:
  
  	switch (ti.encap_type) {
  	case HAL_TCL_ENCAP_TYPE_NATIVE_WIFI:
@@ -35,7 +33,7 @@ index 3d8417d..5c034e6 100644
  			is_diff_encap = true;
  		else
  			ath11k_dp_tx_encap_nwifi(skb);
-@@ -375,7 +376,7 @@ tcl_ring_sel:
+@@ -247,7 +248,7 @@ tcl_ring_sel:
  	if ((!test_bit(ATH11K_FLAG_HW_CRYPTO_DISABLED, &ar->ab->dev_flags) &&
  	    !(info->control.flags & IEEE80211_TX_CTL_HW_80211_ENCAP) &&
  	    !info->control.hw_key && ieee80211_has_protected(hdr->frame_control)) ||
@@ -44,6 +42,3 @@ index 3d8417d..5c034e6 100644
  		/* HW requirement is that metadata should always point to a
  		 * 8-byte aligned address. So we add alignment pad to start of
  		 * buffer. HTT Metadata should be ensured to be multiple of 8-bytes
--- 
-2.17.1
-

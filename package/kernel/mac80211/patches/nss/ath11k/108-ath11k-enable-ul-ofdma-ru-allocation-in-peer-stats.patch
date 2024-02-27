@@ -15,7 +15,7 @@
  
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -2893,11 +2893,12 @@ exit:
+@@ -2901,11 +2901,12 @@ exit:
  static void
  ath11k_dp_rx_update_peer_rate_table_stats(struct ath11k_rx_peer_stats *rx_stats,
  					  struct hal_rx_mon_ppdu_info *ppdu_info,
@@ -30,7 +30,7 @@
  	u32 bw_idx = ppdu_info->bw;
  	u32 gi_idx = ppdu_info->gi;
  
-@@ -2919,10 +2920,13 @@ ath11k_dp_rx_update_peer_rate_table_stat
+@@ -2927,10 +2928,13 @@ ath11k_dp_rx_update_peer_rate_table_stat
  	}
  
  	rx_stats->pkt_stats.rx_rate[rate_idx] += num_msdu;
@@ -46,7 +46,7 @@
  					   struct hal_rx_mon_ppdu_info *ppdu_info)
  {
  	struct ath11k_rx_peer_stats *rx_stats = arsta->rx_stats;
-@@ -2980,7 +2984,6 @@ static void ath11k_dp_rx_update_peer_sta
+@@ -2988,7 +2992,6 @@ static void ath11k_dp_rx_update_peer_sta
  	rx_stats->num_mpdu_fcs_ok += ppdu_info->num_mpdu_fcs_ok;
  	rx_stats->num_mpdu_fcs_err += ppdu_info->num_mpdu_fcs_err;
  	rx_stats->dcm_count += ppdu_info->dcm;
@@ -54,7 +54,7 @@
  
  	BUILD_BUG_ON(ARRAY_SIZE(arsta->chain_signal) >
  			     ARRAY_SIZE(ppdu_info->rssi_chain_pri20));
-@@ -2998,10 +3001,10 @@ static void ath11k_dp_rx_update_peer_sta
+@@ -3006,10 +3009,10 @@ static void ath11k_dp_rx_update_peer_sta
  
  	if (ppdu_info->preamble_type == HAL_RX_PREAMBLE_11N &&
  	    ppdu_info->mcs <= HAL_RX_MAX_MCS_HT) {
@@ -69,7 +69,7 @@
  	}
  
  	if (ppdu_info->preamble_type == HAL_RX_PREAMBLE_11AC &&
-@@ -3034,7 +3037,120 @@ static void ath11k_dp_rx_update_peer_sta
+@@ -3042,7 +3045,120 @@ static void ath11k_dp_rx_update_peer_sta
  		rx_stats->byte_stats.bw_count[ppdu_info->bw] += ppdu_info->mpdu_len;
  	}
  
@@ -191,7 +191,7 @@
  
  }
  
-@@ -5372,6 +5488,55 @@ static void ath11k_dp_rx_mon_dest_proces
+@@ -5380,6 +5496,55 @@ static void ath11k_dp_rx_mon_dest_proces
  	}
  }
  
@@ -247,7 +247,7 @@
  int ath11k_dp_rx_process_mon_status(struct ath11k_base *ab, int mac_id,
  				    struct napi_struct *napi, int budget)
  {
-@@ -5445,8 +5610,13 @@ int ath11k_dp_rx_process_mon_status(stru
+@@ -5453,8 +5618,13 @@ int ath11k_dp_rx_process_mon_status(stru
  
  		if ((ppdu_info->fc_valid) &&
  		    (ppdu_info->ast_index != HAL_AST_IDX_INVALID)) {

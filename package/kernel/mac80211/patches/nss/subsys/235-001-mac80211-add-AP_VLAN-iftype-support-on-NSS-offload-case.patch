@@ -21,7 +21,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -5095,6 +5095,17 @@ void ieee80211_sta_pspoll(struct ieee802
+@@ -5098,6 +5098,17 @@ void ieee80211_sta_pspoll(struct ieee802
   */
  void ieee80211_sta_uapsd_trigger(struct ieee80211_sta *sta, u8 tid);
  
@@ -41,7 +41,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
   * This is enough for the radiotap header.
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -2176,7 +2176,13 @@ static int ieee80211_change_station(stru
+@@ -2180,7 +2180,13 @@ static int ieee80211_change_station(stru
  
  			rcu_assign_pointer(vlansdata->u.vlan.sta, sta);
  			__ieee80211_check_fast_rx_iface(vlansdata);
@@ -137,8 +137,8 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  {
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4298,8 +4298,13 @@ void __ieee80211_subif_start_xmit(struct
- 		atomic_inc(&sta->tx_netif_pkts);
+@@ -4297,8 +4297,13 @@ void __ieee80211_subif_start_xmit(struct
+ 		sta = NULL;
  
          if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
 -                ap_sdata = container_of(sdata->bss,
@@ -153,7 +153,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
                  if (ap_sdata->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED &&
                      !is_multicast_ether_addr(skb->data)) {
                          if (sta)
-@@ -4692,7 +4692,8 @@ static void ieee80211_8023_xmit(struct i
+@@ -4688,7 +4693,8 @@ static void ieee80211_8023_xmit(struct i
  
  	info->hw_queue = sdata->vif.hw_queue[queue];
  
@@ -197,7 +197,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  				drv_remove_interface(local, sdata);
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -5218,7 +5218,8 @@ static bool ieee80211_assoc_success(stru
+@@ -5259,7 +5259,8 @@ static bool ieee80211_assoc_success(stru
  	 * If we're using 4-addr mode, let the AP know that we're
  	 * doing so, so that it can create the STA VLAN on its side
  	 */

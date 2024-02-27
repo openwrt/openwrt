@@ -28,7 +28,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  enum nl80211_he_ru_alloc ath11k_mac_phy_he_ru_to_nl80211_he_ru_alloc(u16 ru_phy)
  {
  	enum nl80211_he_ru_alloc ret;
-@@ -5253,100 +5250,6 @@ static void ath11k_mac_dec_num_stations(
+@@ -5249,100 +5246,6 @@ static void ath11k_mac_dec_num_stations(
  	ar->num_stations--;
  }
  
@@ -129,7 +129,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static u32 ath11k_mac_ieee80211_sta_bw_to_wmi(struct ath11k *ar,
  					      struct ieee80211_sta *sta)
  {
-@@ -5402,187 +5305,6 @@ static int ath11k_mac_cfg_dyn_vlan(struc
+@@ -5398,187 +5301,6 @@ static int ath11k_mac_cfg_dyn_vlan(struc
  	return ret;
  }
  
@@ -317,7 +317,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static int ath11k_mac_op_sta_set_txpwr(struct ieee80211_hw *hw,
  				       struct ieee80211_vif *vif,
  				       struct ieee80211_sta *sta)
-@@ -9735,6 +9457,281 @@ ath11k_mac_op_config_mesh_offload_path(s
+@@ -9739,6 +9461,281 @@ ath11k_mac_op_config_mesh_offload_path(s
  }
  #endif
  

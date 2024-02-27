@@ -16,7 +16,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/nss.c
 +++ b/drivers/net/wireless/ath/ath11k/nss.c
-@@ -72,6 +72,43 @@ static void ath11k_nss_wifili_stats_sync
+@@ -101,6 +101,43 @@ static void ath11k_nss_wifili_stats_sync
  	spin_unlock_bh(&ab->base_lock);
  }
  
@@ -60,9 +60,9 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  static void ath11k_nss_get_peer_stats(struct ath11k_base *ab, struct nss_wifili_peer_stats *stats)
  {
  	struct ath11k_peer *peer;
-@@ -333,6 +370,10 @@ void ath11k_nss_wifili_event_receive(str
- 		ath11k_dbg(ab, ATH11K_DBG_NSS_WDS, "nss wifili peer 4addr event received %d response %d error %d\n",
- 			   msg_type, response, error);
+@@ -369,6 +406,10 @@ void ath11k_nss_wifili_event_receive(str
+ 		ath11k_dbg(ab, ATH11K_DBG_NSS_MESH, "nss wifili mesh capability response %d\n",
+ 			   ab->nss.mesh_nss_offload_enabled);
  		break;
 +	case NSS_WIFILI_LINK_DESC_INFO_MSG:
 +		ath11k_nss_wifili_link_desc_return(ab,

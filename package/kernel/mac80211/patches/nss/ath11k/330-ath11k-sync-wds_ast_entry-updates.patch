@@ -56,7 +56,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  static void ath11k_ahb_free_resources(struct ath11k_base *ab)
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -2235,6 +2235,7 @@ struct ath11k_base *ath11k_core_alloc(st
+@@ -2212,6 +2212,7 @@ struct ath11k_base *ath11k_core_alloc(st
  
  	mutex_init(&ab->core_lock);
  	mutex_init(&ab->tbl_mtx_lock);
@@ -64,7 +64,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  	spin_lock_init(&ab->base_lock);
  	mutex_init(&ab->vdev_id_11d_lock);
  	init_completion(&ab->reset_complete);
-@@ -2248,6 +2249,8 @@ struct ath11k_base *ath11k_core_alloc(st
+@@ -2225,6 +2226,8 @@ struct ath11k_base *ath11k_core_alloc(st
  	INIT_WORK(&ab->restart_work, ath11k_core_restart);
  	INIT_WORK(&ab->update_11d_work, ath11k_update_11d);
  	INIT_WORK(&ab->reset_work, ath11k_core_reset);
@@ -159,7 +159,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  	msg_cb = (nss_wifili_msg_callback_t)ath11k_nss_wifili_event_receive;
 --- a/drivers/net/wireless/ath/ath11k/nss.h
 +++ b/drivers/net/wireless/ath/ath11k/nss.h
-@@ -288,8 +288,8 @@ int ath11k_nss_update_wds_peer(struct at
+@@ -290,8 +290,8 @@ int ath11k_nss_update_wds_peer(struct at
  			       u8 *dest_mac);
  int ath11k_nss_map_wds_peer(struct ath11k *ar, struct ath11k_peer *peer,
  			    u8 *dest_mac, enum ath11k_ast_entry_type type);
@@ -170,7 +170,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  int ath11k_nss_ext_vdev_cfg_wds_peer(struct ath11k_vif *arvif,
  				     u8 *wds_addr, u32 wds_peer_id);
  int ath11k_nss_ext_vdev_wds_4addr_allow(struct ath11k_vif *arvif,
-@@ -409,8 +409,8 @@ static inline int ath11k_nss_map_wds_pee
+@@ -413,8 +413,8 @@ static inline int ath11k_nss_map_wds_pee
  	return 0;
  }
  
@@ -183,7 +183,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  }
 --- a/drivers/net/wireless/ath/ath11k/pci.c
 +++ b/drivers/net/wireless/ath/ath11k/pci.c
-@@ -970,6 +970,7 @@ static void ath11k_pci_remove(struct pci
+@@ -972,6 +972,7 @@ static void ath11k_pci_remove(struct pci
  	}
  
  	set_bit(ATH11K_FLAG_UNREGISTERING, &ab->dev_flags);

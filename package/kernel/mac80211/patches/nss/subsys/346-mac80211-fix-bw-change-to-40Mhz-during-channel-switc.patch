@@ -19,11 +19,9 @@ Signed-off-by: Hari Chandrakanthan <quic_haric@quicinc.com>
  net/mac80211/spectmgmt.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/net/mac80211/spectmgmt.c b/net/mac80211/spectmgmt.c
-index 7ddfb96..15c7ac3 100644
 --- a/net/mac80211/spectmgmt.c
 +++ b/net/mac80211/spectmgmt.c
-@@ -136,6 +136,10 @@ int ieee80211_parse_ch_switch_ie(struct ieee80211_sub_if_data *sdata,
+@@ -136,6 +136,10 @@ int ieee80211_parse_ch_switch_ie(struct
  	}
  
  	if (wide_bw_chansw_ie) {
@@ -34,6 +32,3 @@ index 7ddfb96..15c7ac3 100644
  		new_seg1 = wide_bw_chansw_ie->new_center_freq_seg1;
  		vht_oper.chan_width = wide_bw_chansw_ie->new_channel_width;
  		vht_oper.center_freq_seg0_idx = wide_bw_chansw_ie->new_center_freq_seg0;
--- 
-2.7.4
-

@@ -13,7 +13,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/nss.c
 +++ b/drivers/net/wireless/ath/ath11k/nss.c
-@@ -306,6 +306,22 @@ void ath11k_nss_wifili_event_receive(str
+@@ -307,6 +307,22 @@ void ath11k_nss_wifili_event_receive(str
  	case NSS_WIFILI_TID_REOQ_SETUP_MSG:
  		/* TODO setup tidq */
  		break;
@@ -36,7 +36,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	default:
  		ath11k_dbg(ab, ATH11K_DBG_NSS, "unhandled event %d\n", msg_type);
  		break;
-@@ -416,13 +432,6 @@ static void ath11k_nss_vdev_event_receiv
+@@ -417,13 +433,6 @@ static void ath11k_nss_vdev_event_receiv
  	/*TODO*/
  }
  
@@ -50,7 +50,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  /* TODO: move to mac80211 after cleanups/refactoring required after feature completion */
  static int ath11k_nss_deliver_rx(struct ieee80211_vif *vif, struct sk_buff *skb,
  				 bool eth,  int data_offs, struct napi_struct *napi)
-@@ -546,11 +555,239 @@ static int ath11k_nss_undecap_nwifi(stru
+@@ -547,11 +556,239 @@ static int ath11k_nss_undecap_nwifi(stru
  	return 0;
  }
  
@@ -291,7 +291,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	struct wireless_dev *wdev = NULL;
  	struct ieee80211_vif *vif = NULL;
  	struct ath11k_vif *arvif;
-@@ -590,28 +827,16 @@ ath11k_nss_vdev_data_receive(struct net_
+@@ -591,28 +828,16 @@ ath11k_nss_vdev_data_receive(struct net_
  	ath11k_dbg_dump(ab, ATH11K_DBG_DP_RX, "", "dp rx msdu from nss: ",
  			skb->data, skb->len);
  
@@ -327,7 +327,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		dev_kfree_skb_any(skb);
  		return;
  	}
-@@ -1320,7 +1545,7 @@ void ath11k_nss_update_sta_rxrate(struct
+@@ -1321,7 +1546,7 @@ void ath11k_nss_update_sta_rxrate(struct
  	peer->nss.nss_stats->rxrate.bw = ath11k_mac_bw_to_mac80211_bw(ppdu_info->bw);
  }
  
@@ -336,7 +336,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  {
  	struct nss_wifili_peer_msg *peer_msg;
  	struct nss_wifili_msg *wlmsg = NULL;
-@@ -1334,9 +1559,10 @@ int ath11k_nss_peer_delete(struct ath11k
+@@ -1335,9 +1560,10 @@ int ath11k_nss_peer_delete(struct ath11k
  
  	spin_lock_bh(&ab->base_lock);
  
@@ -349,7 +349,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		spin_unlock_bh(&ab->base_lock);
  		return -EINVAL;
  	}
-@@ -1409,8 +1635,9 @@ free_peer:
+@@ -1410,8 +1636,9 @@ free_peer:
  	return ret;
  }
  
@@ -360,7 +360,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	struct nss_wifili_peer_msg *peer_msg;
  	struct nss_wifili_msg *wlmsg = NULL;
  	nss_wifili_msg_callback_t msg_cb;
-@@ -1467,17 +1694,23 @@ int ath11k_nss_peer_create(struct ath11k
+@@ -1468,17 +1695,23 @@ int ath11k_nss_peer_create(struct ath11k
  	status = nss_wifili_tx_msg(ab->nss.ctx, wlmsg);
  	if (status != NSS_TX_SUCCESS) {
  		ret = -EINVAL;
@@ -387,7 +387,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	peer->nss.nss_stats = kzalloc(sizeof(*peer->nss.nss_stats), GFP_ATOMIC);
  	if (!peer->nss.nss_stats) {
  		ret = -ENOMEM;
-@@ -1496,6 +1729,199 @@ msg_free:
+@@ -1497,6 +1730,199 @@ msg_free:
  	return ret;
  }
  
@@ -587,7 +587,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  /*-------------------------------INIT/DEINIT---------------------------------*/
  
  static int ath11k_nss_radio_buf_cfg(struct ath11k *ar, int range, int buf_sz)
-@@ -1886,7 +2312,7 @@ static int ath11k_nss_init(struct ath11k
+@@ -1890,7 +2316,7 @@ static int ath11k_nss_init(struct ath11k
  
  	status = nss_wifili_tx_msg(nss_contex, wlmsg);
  	if (status != NSS_TX_SUCCESS) {
@@ -596,7 +596,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		goto unregister;
  	}
  
-@@ -1940,7 +2366,8 @@ static int ath11k_nss_stats_cfg(struct a
+@@ -1944,7 +2370,8 @@ static int ath11k_nss_stats_cfg(struct a
  
  	status = nss_wifili_tx_msg(ar->nss.ctx, wlmsg);
  	if (status != NSS_TX_SUCCESS) {

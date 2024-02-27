@@ -1,8 +1,8 @@
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -1048,6 +1049,7 @@ struct ath11k_base {
- 	} testmode;
- #endif
+@@ -1076,6 +1076,7 @@ struct ath11k_base {
+ 	u32 max_ast_index;
+ 	u32 num_ast_entries;
  
 +  bool stats_disable;
  	/* must be last */
@@ -99,4 +99,3 @@
  
  	ret = 0;
  
-

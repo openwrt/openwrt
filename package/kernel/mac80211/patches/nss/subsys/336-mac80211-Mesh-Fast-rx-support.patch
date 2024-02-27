@@ -20,7 +20,7 @@ Signed-off-by: Sriram R <quic_srirrama@quicinc.com>
 
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1747,6 +1747,8 @@ static void sta_apply_mesh_params(struct
+@@ -1750,6 +1750,8 @@ static void sta_apply_mesh_params(struct
  			/* init at low value */
  			ewma_mesh_tx_rate_avg_add(&sta->mesh->tx_rate_avg, 10);
  
@@ -29,7 +29,7 @@ Signed-off-by: Sriram R <quic_srirrama@quicinc.com>
  			break;
  		case NL80211_PLINK_LISTEN:
  		case NL80211_PLINK_BLOCKED:
-@@ -1761,6 +1763,7 @@ static void sta_apply_mesh_params(struct
+@@ -1764,6 +1766,7 @@ static void sta_apply_mesh_params(struct
  			ieee80211_mps_sta_status_update(sta);
  			changed |= ieee80211_mps_set_sta_local_pm(sta,
  					NL80211_MESH_POWER_UNKNOWN);
@@ -121,7 +121,7 @@ Signed-off-by: Sriram R <quic_srirrama@quicinc.com>
  
  	offload_flags = get_bss_sdata(sdata)->vif.offload_flags;
  	offload = offload_flags & IEEE80211_OFFLOAD_DECAP_ENABLED;
-@@ -4876,6 +4881,10 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4875,6 +4880,10 @@ static bool ieee80211_invoke_fast_rx(str
  		u8 sa[ETH_ALEN];
  	} addrs __aligned(2);
  	struct ieee80211_sta_rx_stats *stats;
@@ -132,7 +132,7 @@ Signed-off-by: Sriram R <quic_srirrama@quicinc.com>
  
  	/* for parallel-rx, we need to have DUP_VALIDATED, otherwise we write
  	 * to a common data structure; drivers can implement that per queue
-@@ -4925,6 +4934,37 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4924,6 +4933,37 @@ static bool ieee80211_invoke_fast_rx(str
  		snap_offs += IEEE80211_CCMP_HDR_LEN;
  	}
  
@@ -170,7 +170,7 @@ Signed-off-by: Sriram R <quic_srirrama@quicinc.com>
  	if (!ieee80211_vif_is_mesh(&rx->sdata->vif) &&
  	    !(status->rx_flags & IEEE80211_RX_AMSDU)) {
  		if (!pskb_may_pull(skb, snap_offs + sizeof(*payload)))
-@@ -4962,9 +5002,33 @@ static bool ieee80211_invoke_fast_rx(str
+@@ -4961,9 +5001,33 @@ static bool ieee80211_invoke_fast_rx(str
  		return true;
  	}
  

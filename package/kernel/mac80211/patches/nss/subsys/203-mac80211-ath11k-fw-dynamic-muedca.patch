@@ -31,7 +31,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -9229,4 +9229,15 @@ bool cfg80211_valid_disable_subchannel_b
+@@ -9327,4 +9327,15 @@ bool cfg80211_valid_disable_subchannel_b
   */
  void cfg80211_links_removed(struct net_device *dev, u16 link_mask);
  
@@ -49,7 +49,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  #endif /* __NET_CFG80211_H */
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -7353,6 +7353,20 @@ u32 ieee80211_calc_rx_airtime(struct iee
+@@ -7361,6 +7361,20 @@ u32 ieee80211_calc_rx_airtime(struct iee
  			      int len);
  
  /**
@@ -91,18 +91,18 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	/* add new commands above here */
  
  	/* used to define NL80211_CMD_MAX below */
-@@ -2818,6 +2823,8 @@ enum nl80211_commands {
-  * @NL80211_ATTR_WIPHY_ANTENNA_GAIN: Configured antenna gain. Used to reduce
-  *	transmit power to stay within regulatory limits. u32, dBi.
+@@ -2815,6 +2820,8 @@ enum nl80211_commands {
+  * @NL80211_ATTR_MLO_LINK_DISABLED: Flag attribute indicating that the link is
+  *	disabled.
   *
 + * @NL80211_ATTR_HE_MUEDCA_PARAMS: MU-EDCA AC parameters for the
 + *	%NL80211_CMD_UPDATE_HE_MUEDCA_PARAMS command.
   * @NUM_NL80211_ATTR: total number of nl80211_attrs available
   * @NL80211_ATTR_MAX: highest attribute number currently defined
   * @__NL80211_ATTR_AFTER_LAST: internal use
-@@ -3358,6 +3365,8 @@ enum nl80211_attrs {
+@@ -3353,6 +3360,8 @@ enum nl80211_attrs {
  
- 	NL80211_ATTR_WIPHY_ANTENNA_GAIN,
+ 	NL80211_ATTR_MLO_LINK_DISABLED,
  
 +	NL80211_ATTR_HE_MUEDCA_PARAMS,
 +
@@ -111,7 +111,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  	__NL80211_ATTR_AFTER_LAST,
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -7910,3 +7910,15 @@ void ieee80211_disable_rssi_reports(stru
+@@ -7954,3 +7954,15 @@ void ieee80211_disable_rssi_reports(stru
  	_ieee80211_enable_rssi_reports(sdata, 0, 0);
  }
  EXPORT_SYMBOL(ieee80211_disable_rssi_reports);
@@ -129,7 +129,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
 +EXPORT_SYMBOL(ieee80211_update_muedca_params);
 --- a/net/mac80211/trace.h
 +++ b/net/mac80211/trace.h
-@@ -3085,6 +3085,26 @@ TRACE_EVENT(stop_queue,
+@@ -3092,6 +3092,26 @@ TRACE_EVENT(stop_queue,
  	)
  );
  
@@ -158,7 +158,7 @@ Signed-off-by: Muna Sinada <msinada@codeaurora.org>
  #undef TRACE_INCLUDE_PATH
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -20170,6 +20170,42 @@ nla_put_failure:
+@@ -20199,6 +20199,42 @@ nla_put_failure:
  }
  EXPORT_SYMBOL(cfg80211_update_owe_info_event);
  

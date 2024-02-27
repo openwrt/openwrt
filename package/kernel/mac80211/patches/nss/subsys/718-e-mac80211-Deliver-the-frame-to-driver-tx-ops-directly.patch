@@ -19,7 +19,7 @@ Signed-off-by: Ramanathan Choodamani <quic_rchoodam@quicinc.com>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4572,6 +4572,7 @@ netdev_tx_t ieee80211_subif_start_xmit(s
+@@ -4571,6 +4571,7 @@ netdev_tx_t ieee80211_subif_start_xmit(s
  #ifdef CPTCFG_MAC80211_NSS_SUPPORT
  	ieee80211_xmit_nss_fixup(skb, dev);
  #endif
@@ -27,7 +27,7 @@ Signed-off-by: Ramanathan Choodamani <quic_rchoodam@quicinc.com>
  
  	if (likely(!is_multicast_ether_addr(eth->h_dest)))
  		goto normal;
-@@ -4844,7 +4845,43 @@ void ieee80211_8023_xmit_ap(struct ieee8
+@@ -4834,7 +4835,43 @@ void ieee80211_8023_xmit_ap(struct ieee8
  netdev_tx_t ieee80211_subif_start_xmit_8023(struct sk_buff *skb,
  					    struct net_device *dev)
  {

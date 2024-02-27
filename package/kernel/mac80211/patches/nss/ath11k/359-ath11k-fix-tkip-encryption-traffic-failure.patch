@@ -13,7 +13,7 @@ Signed-off-by: Ramya Gnanasekar <quic_rgnanase@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -2515,7 +2515,8 @@ static void ath11k_dp_rx_h_undecap(struc
+@@ -2564,7 +2564,8 @@ static void ath11k_dp_rx_h_undecap(struc
  		ehdr = (struct ethhdr *)msdu->data;
  
  		/* mac80211 allows fast path only for authorized STA */

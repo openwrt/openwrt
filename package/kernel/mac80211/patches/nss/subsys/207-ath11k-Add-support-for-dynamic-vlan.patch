@@ -29,7 +29,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  /* misc utils */
  
  static __le16 ieee80211_duration(struct ieee80211_tx_data *tx,
-@@ -4268,6 +4271,8 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4270,6 +4273,8 @@ void __ieee80211_subif_start_xmit(struct
  	struct sta_info *sta;
  	struct sk_buff *next;
  	int len = skb->len;
@@ -38,7 +38,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  
  	if (unlikely(!ieee80211_sdata_running(sdata) || skb->len < ETH_HLEN)) {
  		kfree_skb(skb);
-@@ -4289,6 +4294,19 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4291,6 +4296,19 @@ void __ieee80211_subif_start_xmit(struct
  	if (IS_ERR(sta))
  		sta = NULL;
  

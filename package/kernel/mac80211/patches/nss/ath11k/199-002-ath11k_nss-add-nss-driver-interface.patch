@@ -2803,7 +2803,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  static inline void ath11k_pci_select_window(struct ath11k_pci *ab_pci, u32 offset)
  {
  	struct ath11k_base *ab = ab_pci->ab;
-@@ -708,6 +722,7 @@ static const struct ath11k_hif_ops ath11
+@@ -710,6 +724,7 @@ static const struct ath11k_hif_ops ath11
  	.map_service_to_pipe = ath11k_pcic_map_service_to_pipe,
  	.ce_irq_enable = ath11k_pci_hif_ce_irq_enable,
  	.ce_irq_disable = ath11k_pci_hif_ce_irq_disable,
@@ -2845,7 +2845,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  			     enum hal_pn_type pn_type)
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -1166,6 +1166,44 @@ int ath11k_wmi_send_pdev_set_regdomain(s
+@@ -1164,6 +1164,44 @@ int ath11k_wmi_send_pdev_set_regdomain(s
  	return ret;
  }
  
@@ -2995,7 +2995,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  int ath11k_dp_pdev_reo_setup(struct ath11k_base *ab);
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6370,6 +6370,16 @@ static int ath11k_mac_op_start(struct ie
+@@ -6367,6 +6367,16 @@ static int ath11k_mac_op_start(struct ie
  		goto err;
  	}
  

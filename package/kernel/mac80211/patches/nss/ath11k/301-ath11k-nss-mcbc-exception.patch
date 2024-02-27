@@ -16,7 +16,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
 
 --- a/drivers/net/wireless/ath/ath11k/nss.c
 +++ b/drivers/net/wireless/ath/ath11k/nss.c
-@@ -568,7 +568,7 @@ static int ath11k_nss_undecap_nwifi(stru
+@@ -606,7 +606,7 @@ static int ath11k_nss_undecap_nwifi(stru
  
  static void ath11k_nss_wds_type_rx(struct ath11k *ar, struct net_device *dev,
  				   u8* src_mac, u8 is_sa_valid, u8 addr4_valid,
@@ -25,7 +25,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  {
  	struct ath11k_base *ab = ar->ab;
  	struct ath11k_ast_entry *ast_entry = NULL;
-@@ -604,8 +604,6 @@ static void ath11k_nss_wds_type_rx(struc
+@@ -642,8 +642,6 @@ static void ath11k_nss_wds_type_rx(struc
  			}
  		}
  
@@ -34,7 +34,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  	}
  
  	spin_unlock_bh(&ab->base_lock);
-@@ -649,8 +647,7 @@ static void ath11k_nss_mec_handler(struc
+@@ -687,8 +685,7 @@ static void ath11k_nss_mec_handler(struc
  
  static void ath11k_nss_vdev_spl_receive_ext_wdsdata(struct ath11k_vif *arvif,
  						    struct sk_buff *skb,
@@ -44,7 +44,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  {
  	struct ath11k *ar = arvif->ar;
  	struct ath11k_base *ab = ar->ab;
-@@ -672,7 +669,7 @@ static void ath11k_nss_vdev_spl_receive_
+@@ -710,7 +707,7 @@ static void ath11k_nss_vdev_spl_receive_
  	switch (wds_type) {
  		case NSS_WIFI_VDEV_WDS_TYPE_RX:
  			ath11k_nss_wds_type_rx(ar, skb->dev, src_mac, is_sa_valid,
@@ -53,8 +53,8 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  			break;
  		case NSS_WIFI_VDEV_WDS_TYPE_MEC:
  			ath11k_nss_mec_handler(ar, (u8 *)(skb->data));
-@@ -739,10 +736,12 @@ ath11k_nss_vdev_special_data_receive(str
- 	struct ieee80211_vif *vif;
+@@ -775,10 +772,12 @@ ath11k_nss_vdev_special_data_receive(str
+ 	struct nss_wifi_vdev_wds_per_packet_metadata *wds_metadata = NULL;
  	struct ath11k_vif *arvif;
  	struct ath11k_base *ab;
 -	bool drop = false;
@@ -65,9 +65,9 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
 +	struct ath11k_skb_rxcb *rxcb;
 +	struct ath11k_peer *ta_peer = NULL;
  
- 	if (!dev) {
- 		dev_kfree_skb_any(skb);
-@@ -791,15 +790,50 @@ ath11k_nss_vdev_special_data_receive(str
+ 	arvif = ath11k_nss_get_arvif_from_dev(dev);
+ 	if (!arvif) {
+@@ -810,15 +809,50 @@ ath11k_nss_vdev_special_data_receive(str
  		return;
  	}
  
@@ -126,7 +126,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  }
  
  static void
-@@ -1006,6 +1040,9 @@ int ath11k_nss_vdev_set_cmd(struct ath11
+@@ -2129,6 +2163,9 @@ int ath11k_nss_vdev_set_cmd(struct ath11
  	case ATH11K_NSS_WIFI_VDEV_CFG_WDS_BACKHAUL_CMD:
  		cmd = NSS_WIFI_VDEV_CFG_WDS_BACKHAUL_CMD;
  		break;
@@ -136,7 +136,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  	default:
  		return -EINVAL;
  	}
-@@ -1247,12 +1284,31 @@ int ath11k_nss_vdev_create(struct ath11k
+@@ -2651,12 +2688,31 @@ int ath11k_nss_vdev_create(struct ath11k
  		goto free_vdev;
  
  	switch (arvif->vif->type) {
@@ -167,9 +167,9 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
 +			goto unregister_vdev;
 +		}
  		break;
- 	default:
- 		ret = -ENOTSUPP;
-@@ -1526,7 +1582,6 @@ static int ath11k_nss_ext_vdev_register(
+ #ifdef CPTCFG_ATH11K_NSS_MESH_SUPPORT
+ 	case NL80211_IFTYPE_MESH_POINT:
+@@ -2987,7 +3043,6 @@ static int ath11k_nss_ext_vdev_register(
  {
  	struct ath11k *ar = arvif->ar;
  	struct ath11k_base *ab = ar->ab;
@@ -177,7 +177,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  	u32 features = 0;
  
  	if (arvif->vif->type != NL80211_IFTYPE_AP_VLAN || arvif->nss.ctx)
-@@ -1540,7 +1595,7 @@ static int ath11k_nss_ext_vdev_register(
+@@ -3001,7 +3056,7 @@ static int ath11k_nss_ext_vdev_register(
  
  	if (!arvif->nss.ctx) {
  		ath11k_warn(ab, "failed to register nss vdev if_num %d nss_err:%d\n",
@@ -188,7 +188,7 @@ Change-Id: I4a6ac67a1c2cf3ab7a219d0953907191606a5e70
  
 --- a/drivers/net/wireless/ath/ath11k/nss.h
 +++ b/drivers/net/wireless/ath/ath11k/nss.h
-@@ -109,8 +109,12 @@ enum ath11k_nss_vdev_cmd {
+@@ -115,8 +115,12 @@ enum ath11k_nss_vdev_cmd {
  	ATH11K_NSS_WIFI_VDEV_ENCAP_TYPE_CMD,
  	ATH11K_NSS_WIFI_VDEV_DECAP_TYPE_CMD,
  	ATH11K_NSS_WIFI_VDEV_CFG_WDS_BACKHAUL_CMD,

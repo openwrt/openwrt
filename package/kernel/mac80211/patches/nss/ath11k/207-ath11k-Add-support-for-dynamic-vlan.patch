@@ -21,7 +21,7 @@ Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -117,6 +117,7 @@ struct ath11k_skb_cb {
+@@ -119,6 +119,7 @@ struct ath11k_skb_cb {
  	u32 cipher;
  	struct ath11k *ar;
  	struct ieee80211_vif *vif;
@@ -369,7 +369,7 @@ Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
  int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -9763,6 +9763,9 @@ static int __ath11k_mac_register(struct
+@@ -9770,6 +9770,9 @@ static int __ath11k_mac_register(struct
  		 */
  		ar->hw->wiphy->interface_modes &= ~BIT(NL80211_IFTYPE_MONITOR);
  

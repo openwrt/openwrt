@@ -11,11 +11,9 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  drivers/net/wireless/ath/ath11k/mac.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
-index 3e79e07..32ff5c9 100644
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -13034,6 +13034,7 @@ static int __ath11k_mac_register(struct ath11k *ar)
+@@ -10141,6 +10141,7 @@ static int __ath11k_mac_register(struct
  	ieee80211_hw_set(ar->hw, QUEUE_CONTROL);
  	ieee80211_hw_set(ar->hw, SUPPORTS_TX_FRAG);
  	ieee80211_hw_set(ar->hw, REPORTS_LOW_ACK);
@@ -23,6 +21,3 @@ index 3e79e07..32ff5c9 100644
  
  	if (ath11k_frame_mode == ATH11K_HW_TXRX_ETHERNET) {
  		ieee80211_hw_set(ar->hw, SUPPORTS_TX_ENCAP_OFFLOAD);
--- 
-2.34.1
-

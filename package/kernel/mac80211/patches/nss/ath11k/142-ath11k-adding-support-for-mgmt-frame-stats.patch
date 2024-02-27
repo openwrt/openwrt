@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -312,6 +312,16 @@ struct ath11k_rekey_data {
+@@ -314,6 +314,16 @@ struct ath11k_rekey_data {
  	bool enable_offload;
  };
  
@@ -17,7 +17,7 @@
  struct ath11k_vif {
  	u32 vdev_id;
  	enum wmi_vdev_type vdev_type;
-@@ -370,6 +380,8 @@ struct ath11k_vif {
+@@ -372,6 +382,8 @@ struct ath11k_vif {
  #ifdef CPTCFG_ATH11K_DEBUGFS
  	struct dentry *debugfs_twt;
  #endif /* CPTCFG_ATH11K_DEBUGFS */
@@ -128,7 +128,7 @@
  		debugfs_create_file("dfs_simulate_radar", 0200,
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -6151,9 +6151,9 @@ static int ath11k_mac_mgmt_tx(struct ath
+@@ -6148,9 +6148,9 @@ static int ath11k_mac_mgmt_tx(struct ath
  	 */
  	if (is_prb_rsp &&
  	    atomic_read(&ar->num_pending_mgmt_tx) > ATH11K_PRB_RSP_DROP_THRESHOLD) {
@@ -140,7 +140,7 @@
  	}
  
  	if (skb_queue_len_lockless(q) >= ATH11K_TX_MGMT_NUM_PENDING_MAX) {
-@@ -6179,9 +6179,11 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6176,9 +6176,11 @@ static void ath11k_mac_op_tx(struct ieee
  	struct ath11k_vif *arvif = ath11k_vif_to_arvif(vif);
  	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
  	struct ieee80211_key_conf *key = info->control.hw_key;
@@ -152,7 +152,7 @@
  	int ret;
  
  	memset(skb_cb, 0, sizeof(*skb_cb));
-@@ -6195,12 +6197,21 @@ static void ath11k_mac_op_tx(struct ieee
+@@ -6192,12 +6194,21 @@ static void ath11k_mac_op_tx(struct ieee
  	if (info_flags & IEEE80211_TX_CTL_HW_80211_ENCAP) {
  		skb_cb->flags |= ATH11K_SKB_HW_80211_ENCAP;
  	} else if (ieee80211_is_mgmt(hdr->frame_control)) {
@@ -178,7 +178,7 @@
  	}
 --- a/drivers/net/wireless/ath/ath11k/peer.c
 +++ b/drivers/net/wireless/ath/ath11k/peer.c
-@@ -444,6 +444,7 @@ int ath11k_peer_create(struct ath11k *ar
+@@ -458,6 +458,7 @@ int ath11k_peer_create(struct ath11k *ar
  
  	peer->sec_type = HAL_ENCRYPT_TYPE_OPEN;
  	peer->sec_type_grp = HAL_ENCRYPT_TYPE_OPEN;
@@ -198,7 +198,7 @@
  	int peer_id;
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -5825,6 +5825,12 @@ static int wmi_process_mgmt_tx_comp(stru
+@@ -5823,6 +5823,12 @@ static int wmi_process_mgmt_tx_comp(stru
  	struct sk_buff *msdu;
  	struct ieee80211_tx_info *info;
  	struct ath11k_skb_cb *skb_cb;
@@ -211,7 +211,7 @@
  	int num_mgmt;
  
  	spin_lock_bh(&ar->txmgmt_idr_lock);
-@@ -5852,6 +5858,31 @@ static int wmi_process_mgmt_tx_comp(stru
+@@ -5850,6 +5856,31 @@ static int wmi_process_mgmt_tx_comp(stru
  			info->status.ack_signal = tx_compl_param->ack_rssi;
  	}
  
@@ -243,7 +243,7 @@
  	ieee80211_tx_status_irqsafe(ar->hw, msdu);
  
  	num_mgmt = atomic_dec_if_positive(&ar->num_pending_mgmt_tx);
-@@ -7521,6 +7552,11 @@ static void ath11k_mgmt_rx_event(struct
+@@ -7519,6 +7550,11 @@ static void ath11k_mgmt_rx_event(struct
  	struct ieee80211_hdr *hdr;
  	u16 fc;
  	struct ieee80211_supported_band *sband;
@@ -255,7 +255,7 @@
  
  	if (ath11k_pull_mgmt_rx_params_tlv(ab, skb, &rx_ev) != 0) {
  		ath11k_warn(ab, "failed to extract mgmt rx event");
-@@ -7586,7 +7622,34 @@ static void ath11k_mgmt_rx_event(struct
+@@ -7584,7 +7620,34 @@ static void ath11k_mgmt_rx_event(struct
  
  	hdr = (struct ieee80211_hdr *)skb->data;
  	fc = le16_to_cpu(hdr->frame_control);

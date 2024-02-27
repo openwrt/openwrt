@@ -16,7 +16,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -2728,6 +2728,8 @@ struct ieee80211_txq {
+@@ -2731,6 +2731,8 @@ struct ieee80211_txq {
   *
   *  @IEEE80211_HW_SUPPORTS_NSS_OFFLOAD: Hardware/driver supports NSS offload
   *
@@ -25,7 +25,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2787,6 +2789,7 @@ enum ieee80211_hw_flags {
+@@ -2790,6 +2792,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_MLO_MCAST_MULTI_LINK_TX,
  	IEEE80211_HW_SUPPORTS_NSS_OFFLOAD,
  	IEEE80211_HW_SUPPORTS_MESH_NSS_OFFLOAD,
@@ -35,7 +35,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	NUM_IEEE80211_HW_FLAGS
 --- a/net/mac80211/debugfs.c
 +++ b/net/mac80211/debugfs.c
-@@ -498,6 +498,7 @@ static const char *hw_flag_names[] = {
+@@ -507,6 +507,7 @@ static const char *hw_flag_names[] = {
  	FLAG(MLO_MCAST_MULTI_LINK_TX),
  	FLAG(SUPPORTS_NSS_OFFLOAD),
  	FLAG(SUPPORTS_MESH_NSS_OFFLOAD),

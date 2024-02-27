@@ -34,7 +34,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  #endif
  	struct ath11k_pdev_dp dp;
  	u8 mac_addr[ETH_ALEN];
-@@ -1042,6 +1043,9 @@ struct ath11k_base {
+@@ -1047,6 +1048,9 @@ struct ath11k_base {
  	} testmode;
  #endif
  
@@ -67,7 +67,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  struct htt_resp_msg {
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -1849,6 +1849,8 @@ void ath11k_dp_htt_htc_t2h_msg_handler(s
+@@ -1857,6 +1857,8 @@ void ath11k_dp_htt_htc_t2h_msg_handler(s
  	u16 peer_mac_h16;
  	u16 ast_hash;
  	u16 hw_peer_id;
@@ -76,7 +76,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  
  	ath11k_dbg(ab, ATH11K_DBG_DP_HTT, "dp_htt rx msg type :0x%0x\n", type);
  
-@@ -1884,15 +1886,29 @@ void ath11k_dp_htt_htc_t2h_msg_handler(s
+@@ -1892,15 +1894,29 @@ void ath11k_dp_htt_htc_t2h_msg_handler(s
  				     resp->peer_map_ev.info2);
  		hw_peer_id = FIELD_GET(HTT_T2H_PEER_MAP_INFO1_HW_PEER_ID,
  				       resp->peer_map_ev.info1);
@@ -776,7 +776,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  #endif /* _PEER_H_ */
 --- a/drivers/net/wireless/ath/ath11k/wmi.c
 +++ b/drivers/net/wireless/ath/ath11k/wmi.c
-@@ -154,6 +154,8 @@ static const struct wmi_tlv_policy wmi_t
+@@ -156,6 +156,8 @@ static const struct wmi_tlv_policy wmi_t
  		.min_len = sizeof(struct wmi_per_chain_rssi_stats) },
  	[WMI_TAG_TWT_ADD_DIALOG_COMPLETE_EVENT] = {
  		.min_len = sizeof(struct wmi_twt_add_dialog_event) },
@@ -837,7 +837,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  int ath11k_wmi_send_pdev_set_regdomain(struct ath11k *ar,
  				       struct pdev_set_regdomain_params *param)
  {
-@@ -6362,6 +6409,36 @@ static int ath11k_pull_peer_assoc_conf_e
+@@ -6363,6 +6410,36 @@ static int ath11k_pull_peer_assoc_conf_e
  	return 0;
  }
  
@@ -874,7 +874,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  static void ath11k_wmi_pull_pdev_stats_base(const struct wmi_pdev_stats_base *src,
  					    struct ath11k_fw_stats_pdev *dst)
  {
-@@ -7277,6 +7354,7 @@ static int ath11k_wmi_tlv_rdy_parse(stru
+@@ -7278,6 +7355,7 @@ static int ath11k_wmi_tlv_rdy_parse(stru
  
  		ether_addr_copy(ab->mac_addr,
  				fixed_param.ready_event_min.mac_addr.addr);
@@ -882,7 +882,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		ab->pktlog_defs_checksum = fixed_param.pktlog_defs_checksum;
  		break;
  	case WMI_TAG_ARRAY_FIXED_STRUCT:
-@@ -8717,6 +8795,22 @@ static void ath11k_wmi_gtk_offload_statu
+@@ -8797,6 +8875,22 @@ exit:
  	kfree(tb);
  }
  
@@ -905,7 +905,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  static void ath11k_wmi_tlv_op_rx(struct ath11k_base *ab, struct sk_buff *skb)
  {
  	struct wmi_cmd_hdr *cmd_hdr;
-@@ -8844,6 +8938,9 @@ static void ath11k_wmi_tlv_op_rx(struct
+@@ -8927,6 +9021,9 @@ static void ath11k_wmi_tlv_op_rx(struct
  	case WMI_GTK_OFFLOAD_STATUS_EVENTID:
  		ath11k_wmi_gtk_offload_status_event(ab, skb);
  		break;
@@ -917,7 +917,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		break;
 --- a/drivers/net/wireless/ath/ath11k/wmi.h
 +++ b/drivers/net/wireless/ath/ath11k/wmi.h
-@@ -3009,6 +3009,21 @@ struct wmi_peer_delete_cmd {
+@@ -3011,6 +3011,21 @@ struct wmi_peer_delete_cmd {
  	struct wmi_mac_addr peer_macaddr;
  } __packed;
  
@@ -939,7 +939,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  struct wmi_peer_reorder_queue_setup_cmd {
  	u32 tlv_header;
  	u32 vdev_id;
-@@ -4611,6 +4626,21 @@ struct wmi_probe_resp_tx_status_event {
+@@ -4613,6 +4628,21 @@ struct wmi_probe_resp_tx_status_event {
  	u32 tx_status;
  } __packed;
  
@@ -961,7 +961,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  /*
   * PDEV statistics
   */
-@@ -6400,6 +6430,9 @@ int ath11k_wmi_set_sta_ps_param(struct a
+@@ -6412,6 +6442,9 @@ int ath11k_wmi_set_sta_ps_param(struct a
  int ath11k_wmi_force_fw_hang_cmd(struct ath11k *ar, u32 type, u32 delay_time_ms);
  int ath11k_wmi_send_peer_delete_cmd(struct ath11k *ar,
  				    const u8 *peer_addr, u8 vdev_id);

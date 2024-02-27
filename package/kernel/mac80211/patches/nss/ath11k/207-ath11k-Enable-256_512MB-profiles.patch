@@ -246,8 +246,8 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  	{
  		.hw_rev = ATH11K_HW_IPQ6018_HW10,
 @@ -177,7 +180,7 @@ static struct ath11k_hw_params ath11k_hw
- 		.coldboot_cal_mm = true,
- 		.coldboot_cal_ftm = true,
+ 		.coldboot_cal_mm = false,
+ 		.coldboot_cal_ftm = false,
  		.cbcal_restart_fw = true,
 -		.fw_mem_mode = 0,
 +		.fw_mem_mode = ATH11K_QMI_TARGET_MEM_MODE,

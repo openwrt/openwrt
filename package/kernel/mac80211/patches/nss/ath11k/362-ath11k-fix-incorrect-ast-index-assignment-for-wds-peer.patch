@@ -19,7 +19,7 @@ Signed-off-by: Raj Kumar Bhagat <quic_rajkbhag@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/nss.c
 +++ b/drivers/net/wireless/ath/ath11k/nss.c
-@@ -2410,13 +2410,14 @@ msg_free:
+@@ -3871,13 +3871,14 @@ msg_free:
  }
  
  int ath11k_nss_map_wds_peer(struct ath11k *ar, struct ath11k_peer *peer,
@@ -35,7 +35,7 @@ Signed-off-by: Raj Kumar Bhagat <quic_rajkbhag@quicinc.com>
  	int ret = 0;
  
  	wlmsg = kzalloc(sizeof(struct nss_wifili_msg), GFP_ATOMIC);
-@@ -2426,7 +2427,7 @@ int ath11k_nss_map_wds_peer(struct ath11
+@@ -3887,7 +3888,7 @@ int ath11k_nss_map_wds_peer(struct ath11
  	wds_peer_map_msg = &wlmsg->msg.wdspeermapmsg;
  
  	wds_peer_map_msg->vdev_id = peer->vdev_id;
@@ -46,7 +46,7 @@ Signed-off-by: Raj Kumar Bhagat <quic_rajkbhag@quicinc.com>
  		wds_peer_map_msg->peer_id = NSS_WIFILI_MEC_PEER_ID;
 --- a/drivers/net/wireless/ath/ath11k/nss.h
 +++ b/drivers/net/wireless/ath/ath11k/nss.h
-@@ -16,6 +16,7 @@ struct ath11k;
+@@ -20,6 +20,7 @@ struct ath11k;
  struct ath11k_base;
  struct ath11k_vif;
  struct ath11k_peer;
@@ -54,7 +54,7 @@ Signed-off-by: Raj Kumar Bhagat <quic_rajkbhag@quicinc.com>
  struct ath11k_sta;
  enum ath11k_ast_entry_type;
  struct hal_rx_mon_ppdu_info;
-@@ -241,7 +242,7 @@ int ath11k_nss_add_wds_peer(struct ath11
+@@ -289,7 +290,7 @@ int ath11k_nss_add_wds_peer(struct ath11
  int ath11k_nss_update_wds_peer(struct ath11k *ar, struct ath11k_peer *peer,
  			       u8 *dest_mac);
  int ath11k_nss_map_wds_peer(struct ath11k *ar, struct ath11k_peer *peer,
@@ -63,7 +63,7 @@ Signed-off-by: Raj Kumar Bhagat <quic_rajkbhag@quicinc.com>
  int ath11k_nss_del_wds_peer(struct ath11k *ar, u8 *peer_addr,
  			    int peer_id, u8 *dest_mac);
  int ath11k_nss_ext_vdev_cfg_wds_peer(struct ath11k_vif *arvif,
-@@ -337,7 +338,8 @@ static inline int ath11k_nss_update_wds_
+@@ -408,7 +409,8 @@ static inline int ath11k_nss_update_wds_
  }
  
  static inline int ath11k_nss_map_wds_peer(struct ath11k *ar, struct ath11k_peer *peer,
@@ -75,7 +75,7 @@ Signed-off-by: Raj Kumar Bhagat <quic_rajkbhag@quicinc.com>
  }
 --- a/drivers/net/wireless/ath/ath11k/peer.c
 +++ b/drivers/net/wireless/ath/ath11k/peer.c
-@@ -359,8 +359,7 @@ void ath11k_peer_map_ast(struct ath11k *
+@@ -373,8 +373,7 @@ void ath11k_peer_map_ast(struct ath11k *
  
  		if ((ast_entry->type == ATH11K_AST_TYPE_WDS) ||
  		    (ast_entry->type == ATH11K_AST_TYPE_MEC))
