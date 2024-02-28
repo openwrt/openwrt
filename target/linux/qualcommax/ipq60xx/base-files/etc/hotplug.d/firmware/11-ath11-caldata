@@ -15,6 +15,9 @@ case "$FIRMWARE" in
 	netgear,wax214)
 		caldata_extract "0:art" 0x1000 0x10000
 		;;
+	yuncore,fap650)
+		caldata_extract "0:art" 0x1000 0x20000
+		;;
 	esac
 	;;
 *)
