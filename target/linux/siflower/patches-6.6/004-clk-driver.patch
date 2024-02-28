@@ -1,0 +1,24 @@
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -42,6 +42,11 @@ config COMMON_CLK_WM831X
+ 
+ source "drivers/clk/versatile/Kconfig"
+ 
++config CLK_SF
++	bool "CLK driver for sf21a6826p"
++	help
++	  This driver is for sf21a6826p.
++
+ config CLK_HSDK
+ 	bool "PLL Driver for HSDK platform"
+ 	depends on ARC_SOC_HSDK || COMPILE_TEST
+--- a/drivers/clk/Makefile
++++ b/drivers/clk/Makefile
+@@ -61,6 +61,7 @@ obj-$(CONFIG_COMMON_CLK_HI655X)		+= clk-
+ obj-$(CONFIG_COMMON_CLK_S2MPS11)	+= clk-s2mps11.o
+ obj-$(CONFIG_COMMON_CLK_SCMI)           += clk-scmi.o
+ obj-$(CONFIG_COMMON_CLK_SCPI)           += clk-scpi.o
++obj-$(CONFIG_CLK_SF)			+= clk-sf21a6826p.o
+ obj-$(CONFIG_COMMON_CLK_SI5341)		+= clk-si5341.o
+ obj-$(CONFIG_COMMON_CLK_SI5351)		+= clk-si5351.o
+ obj-$(CONFIG_COMMON_CLK_SI514)		+= clk-si514.o
