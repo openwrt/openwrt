@@ -236,6 +236,7 @@ include /lib/upgrade
 
 create_backup_archive() {
 	local conf_tar="$1"
+	local disabled
 
 	[ "$(rootfs_type)" = "tmpfs" ] && {
 		echo "Cannot save config while running from ramdisk." >&2
@@ -250,6 +251,14 @@ create_backup_archive() {
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
 	sed -i -e 's,^/,,' "$CONFFILES"
 	{
+		for service in /etc/init.d/*; do
+			if ! $service enabled; then
+				disabled="$disabled$service disable\n"
+			fi
+		done
+		disabled="$disabled\nexit 0"
+		tar_print_member "/etc/uci-defaults/10_disable_services" "$(echo -e $disabled)"
+
 		# Part of archive with installed packages info
 		if [ "$SAVE_INSTALLED_PKGS" -eq 1 ]; then
 			# Format: pkg-name<TAB>{rom,overlay,unknown}
