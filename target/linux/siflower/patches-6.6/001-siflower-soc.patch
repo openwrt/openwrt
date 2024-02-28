@@ -1,0 +1,16 @@
+--- a/arch/riscv/Kconfig.socs
++++ b/arch/riscv/Kconfig.socs
+@@ -111,4 +111,13 @@ config SOC_CANAAN_K210_DTB_SOURCE
+ 
+ endif # ARCH_CANAAN
+ 
++config SOC_SIFLOWER
++	bool "Siflower RISC-V SoCs"
++	select ARM_AMBA if TTY
++	select OF
++	select PINCTRL
++	select SIFIVE_PLIC
++	help
++	  This enables support for Siflower SoC platform hardware.
++
+ endmenu # "SoC selection"
