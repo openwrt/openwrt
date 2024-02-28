@@ -295,14 +295,14 @@ define Device/mediatek_mt7622-rfb1-ubi
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  KERNEL_SIZE := 4194304
+  KERNEL_SIZE := 6291456
   IMAGE_SIZE := 32768k
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
                 check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
-# TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
+TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 
 define Device/netgear_wax206
   $(Device/dsa-migration)
