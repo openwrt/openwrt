@@ -26,20 +26,7 @@ endef
 
 # RK3568 boards
 
-define U-Boot/rock-3a-rk3568
-  BUILD_SUBTARGET:=armv8
-  NAME:=Rock 3A
-  BOOT_SOC:=rk3568
-  BUILD_DEVICES:= \
-    radxa_rock-3a
-  DEPENDS:=+PACKAGE_u-boot-rock-3a-rk3568:arm-trusted-firmware-rk3568
-  PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip-legacy
-  DDR_BLOB:=rk35/rk3568_ddr_1560MHz_v1.13.bin
-  BL31_BLOB:=rk35/rk3568_bl31_v1.34.elf
-endef
-
 UBOOT_TARGETS := \
-  rock-3a-rk3568
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
