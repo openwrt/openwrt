@@ -2112,7 +2112,7 @@ TARGET_DEVICES += rostelecom_rt-sf-1
 define Device/ruijie_rg-ew1200g-pro
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
-  IMAGE_SIZE := 20480k
+  IMAGE_SIZE := 16384k
   DEVICE_VENDOR := Ruijie
   DEVICE_MODEL := RG-EW1200G PRO
    DEVICE_PACKAGES := kmod-mt7615e kmod-mt7615-firmware
