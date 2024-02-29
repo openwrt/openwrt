@@ -161,7 +161,7 @@ ramips_setup_interfaces()
 		;;
 	ruijie,rg-ew1200g-pro)
 		ucidef_set_interfaces_lan_wan "lan3 lan2 lan1" "wan"
-    ;;
+                ;;
 	comfast,cf-e390ax|\
 	comfast,cf-ew72-v2|\
 	meig,slt866)
@@ -310,7 +310,7 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii product_info ethaddr)
 		wan_mac=$(macaddr_add "$lan_mac" 8)
 		label_mac=$lan_mac
-    ;;
+                ;;
 	mts,wg430223)
 		wan_mac=$(mtd_get_mac_encrypted_arcadyan "board_data")
 		label_mac=$wan_mac
