@@ -1,0 +1,10 @@
+. /lib/functions.sh
+
+case "$(board_name)" in
+	tplink,archer-c5-v4)
+		uci set wireless.default_radio1.ieee80211w="0"
+		uci commit wireless
+		;;
+esac
+
+exit 0
