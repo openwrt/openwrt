@@ -95,8 +95,8 @@ define prepare_rootfs
 			'/^Status:/ { \
 				if ($$3 == "user") { $$3 = "ok" } \
 				else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
-			}1' $(1)/usr/lib/opkg/status)
-		$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
+			}1' $(1)/usr/lib/opkg/status) ; \
+		$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status ;) \
 		fi; \
 		for script in ./etc/init.d/*; do \
 			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
@@ -108,13 +108,8 @@ define prepare_rootfs
 				echo "Disabling" $$(basename $$script); \
 			fi; \
 		done || true \
-		awk -i inplace \
-			'/^Status:/ { \
-				if ($$3 == "user") { $$3 = "ok" } \
-				else { sub(/,\<user\>|\<user\>,/, "", $$3) } \
-			}1' $(1)/usr/lib/opkg/status
-		$(if $(SOURCE_DATE_EPOCH),sed -i "s/Installed-Time: .*/Installed-Time: $(SOURCE_DATE_EPOCH)/" $(1)/usr/lib/opkg/status)
 	)
+
 	@-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
 	@-find $(1)/usr/cache/apk/ -name '*.apk' -delete
 	rm -rf \
