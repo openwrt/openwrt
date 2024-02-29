@@ -418,7 +418,7 @@
 +ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs
 +ubi_read_recovery=ubi check recovery && ubi read $loadaddr recovery
 +ubi_remove_rootfs=ubi check rootfs_data && ubi remove rootfs_data
-+ubi_write_fip=ubi check fip || ubi create fip 0x200000 static ; ubi write $loadaddr fip 0x200000
++ubi_write_fip=run ubi_remove_rootfs ; ubi check fip && ubi remove fip ; ubi create fip 0x200000 static ; ubi write $loadaddr fip 0x200000
 +ubi_write_production=ubi check fit && env exists replacevol && ubi remove fit ; if ubi check fit ; then else run ubi_remove_rootfs ; ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize ; fi
 +ubi_write_recovery=ubi check recovery && env exists replacevol && ubi remove recovery ; if ubi check recovery ; then else run ubi_remove_rootfs ; ubi create recovery $filesize dynamic && ubi write $loadaddr recovery $filesize ; fi
 +_create_env=ubi create ubootenv 0x1f000 dynamic ; ubi create ubootenv2 0x1f000 dynamic

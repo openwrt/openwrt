@@ -610,7 +610,7 @@
 +ubi_init_emmc_install=run sdmmc_read_emmc_install && run ubi_write_emmc_install
 +ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
 +ubi_remove_rootfs=ubi check rootfs_data && ubi remove rootfs_data
-+ubi_write_fip=ubi check fip && ubi remove fip ; ubi create fip 0x200000 static ; ubi write $loadaddr fip 0x200000
++ubi_write_fip=run ubi_remove_rootfs ; ubi check fip && ubi remove fip ; ubi create fip 0x200000 static ; ubi write $loadaddr fip 0x200000
 +ubi_write_emmc_install=ubi check emmc_install && ubi remove emmc_install ; ubi create emmc_install 0x800000 dynamic ; ubi write $loadaddr emmc_install 0x800000
 +ubi_write_production=ubi check fit && ubi remove fit ; run ubi_remove_rootfs ; ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize
 +ubi_write_recovery=ubi check recovery && ubi remove recovery ; run ubi_remove_rootfs ; ubi create recovery $filesize dynamic && ubi write $loadaddr recovery $filesize
@@ -672,7 +672,7 @@
 +ubi_read_recovery=ubi check recovery && ubi read $loadaddr recovery
 +ubi_read_emmc_install=ubi check emmc_install && ubi read $loadaddr emmc_install
 +ubi_remove_rootfs=ubi check rootfs_data && ubi remove rootfs_data
-+ubi_write_fip=ubi check fip && ubi remove fip ; ubi create fip 0x200000 static ; ubi write $loadaddr fip 0x200000
++ubi_write_fip=run ubi_remove_rootfs ; ubi check fip && ubi remove fip ; ubi create fip 0x200000 static ; ubi write $loadaddr fip 0x200000
 +ubi_write_production=ubi check fit && ubi remove fit ; run ubi_remove_rootfs ; ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize
 +ubi_write_recovery=ubi check recovery && ubi remove recovery ; run ubi_remove_rootfs ; ubi create recovery $filesize dynamic && ubi write $loadaddr recovery $filesize
 +mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
