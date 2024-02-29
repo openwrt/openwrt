@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2020 Tobias Maedel
 
+
 # define Device/friendlyarm_nanopi-r2s
 #   DEVICE_VENDOR := FriendlyARM
 #   DEVICE_MODEL := NanoPi R2S
@@ -41,6 +42,16 @@
 #   IMAGE/sysupgrade.img.gz := boot-common | boot-script | pine64-img | gzip | append-metadata
 # endef
 # TARGET_DEVICES += radxa_rock-pi-4a
+
+define Device/ariaboard_photonicat
+  DEVICE_VENDOR := Ariaboard
+  DEVICE_MODEL := Photonicat
+  SOC := rk3568
+  UBOOT_DEVICE_NAME := photonicat-rk3568
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script nanopi-r5s | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := ar3k-firmware pcat-manager
+endef
+TARGET_DEVICES += ariaboard_photonicat
 
 define Device/radxa_rock-3a
   DEVICE_VENDOR := Radxa
