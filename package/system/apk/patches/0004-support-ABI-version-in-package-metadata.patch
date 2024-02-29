@@ -1,0 +1,121 @@
+From 06a989ab2d8d3091203646a659502307548a4d32 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 29 Feb 2024 00:40:02 +0000
+Subject: [PATCH] support ABI version in package metadata
+
+Storing the ABI version allows stripping it from the package name,
+which can be a useful feature.
+---
+ src/apk_adb.c     | 2 ++
+ src/apk_adb.h     | 3 ++-
+ src/apk_package.h | 1 +
+ src/database.c    | 5 +++++
+ src/package.c     | 9 +++++++++
+ 5 files changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/src/apk_adb.c b/src/apk_adb.c
+index ed7265f..b625c0a 100644
+--- a/src/apk_adb.c
++++ b/src/apk_adb.c
+@@ -72,6 +72,7 @@ unsigned int adb_pkg_field_index(char f)
+ 		MAP('t', ADBI_PI_BUILD_TIME),
+ 		MAP('c', ADBI_PI_REPO_COMMIT),
+ 		MAP('r', ADBI_PI_REPLACES),
++		MAP('x', ADBI_PI_ABIVERSION),
+ 	};
+ 	if (f < 'A' || f-'A' >= ARRAY_SIZE(map)) return 0;
+ 	return map[(unsigned char)f - 'A'];
+@@ -449,6 +450,7 @@ const struct adb_object_schema schema_pkginfo = {
+ 		ADB_FIELD(ADBI_PI_INSTALL_IF,	"install-if",	schema_dependency_array),
+ 		ADB_FIELD(ADBI_PI_RECOMMENDS,	"recommends",	schema_dependency_array),
+ 		ADB_FIELD(ADBI_PI_LAYER,	"layer",	scalar_int),
++		ADB_FIELD(ADBI_PI_ABIVERSION,	"abiversion",	scalar_string),
+ 	},
+ };
+ 
+diff --git a/src/apk_adb.h b/src/apk_adb.h
+index 74b0577..5c29612 100644
+--- a/src/apk_adb.h
++++ b/src/apk_adb.h
+@@ -32,7 +32,8 @@
+ #define ADBI_PI_INSTALL_IF	0x12
+ #define ADBI_PI_RECOMMENDS	0x13
+ #define ADBI_PI_LAYER		0x14
+-#define ADBI_PI_MAX		0x15
++#define ADBI_PI_ABIVERSION	0x15
++#define ADBI_PI_MAX		0x16
+ 
+ /* ACL entries */
+ #define ADBI_ACL_MODE		0x01
+diff --git a/src/apk_package.h b/src/apk_package.h
+index d54e9cf..e00d836 100644
+--- a/src/apk_package.h
++++ b/src/apk_package.h
+@@ -84,6 +84,7 @@ struct apk_package {
+ 	struct apk_installed_package *ipkg;
+ 	apk_blob_t *version, *arch, *license;
+ 	apk_blob_t *origin, *maintainer;
++	apk_blob_t *abiversion;
+ 	char *url, *description, *commit;
+ 	char *filename;
+ 	struct apk_dependency_array *depends, *install_if, *provides;
+diff --git a/src/database.c b/src/database.c
+index b3eeadb..0ffcb87 100644
+--- a/src/database.c
++++ b/src/database.c
+@@ -987,6 +987,11 @@ static int apk_db_fdb_write(struct apk_database *db, struct apk_installed_packag
+ 		apk_blob_push_blob(&bbuf, db->repo_tags[ipkg->repository_tag].plain_name);
+ 		apk_blob_push_blob(&bbuf, APK_BLOB_STR("\n"));
+ 	}
++	if (pkg->abiversion) {
++		apk_blob_push_blob(&bbuf, APK_BLOB_STR("x:"));
++		apk_blob_push_blob(&bbuf, *pkg->abiversion);
++		apk_blob_push_blob(&bbuf, APK_BLOB_STR("\n"));
++	}
+ 	if (ipkg->broken_files || ipkg->broken_script || ipkg->broken_xattr || ipkg->sha256_160) {
+ 		apk_blob_push_blob(&bbuf, APK_BLOB_STR("f:"));
+ 		if (ipkg->broken_files)
+diff --git a/src/package.c b/src/package.c
+index 6c6ad54..35bf742 100644
+--- a/src/package.c
++++ b/src/package.c
+@@ -565,6 +565,9 @@ int apk_pkg_add_info(struct apk_database *db, struct apk_package *pkg,
+ 	case 'k':
+ 		pkg->provider_priority = apk_blob_pull_uint(&value, 10);
+ 		break;
++	case 'x':
++		pkg->abiversion = apk_atomize_dup(&db->atoms, value);
++		break;
+ 	case 'F': case 'M': case 'R': case 'Z': case 'r': case 'q':
+ 	case 'a': case 's': case 'f':
+ 		/* installed db entries which are handled in database.c */
+@@ -619,6 +622,7 @@ void apk_pkg_from_adb(struct apk_database *db, struct apk_package *pkg, struct a
+ 	pkg->build_time = adb_ro_int(pkginfo, ADBI_PI_BUILD_TIME);
+ 	pkg->commit = commit_id(adb_ro_blob(pkginfo, ADBI_PI_REPO_COMMIT));
+ 	pkg->layer = adb_ro_int(pkginfo, ADBI_PI_LAYER);
++	pkg->abiversion = apk_atomize_dup(&db->atoms, adb_ro_blob(pkginfo, ADBI_PI_ABIVERSION));
+ 
+ 	apk_deps_from_adb(&pkg->depends, db, adb_ro_obj(pkginfo, ADBI_PI_DEPENDS, &obj));
+ 	apk_deps_from_adb(&pkg->provides, db, adb_ro_obj(pkginfo, ADBI_PI_PROVIDES, &obj));
+@@ -645,6 +649,7 @@ static int read_info_line(struct read_info_ctx *ri, apk_blob_t line)
+ 		{ "maintainer",	'm' },
+ 		{ "builddate",	't' },
+ 		{ "commit",	'c' },
++		{ "abiversion",	'x' },
+ 		{ "provider_priority", 'k' },
+ 	};
+ 	apk_blob_t l, r;
+@@ -953,6 +958,10 @@ int apk_pkg_write_index_header(struct apk_package *info, struct apk_ostream *os)
+ 		apk_blob_push_blob(&bbuf, APK_BLOB_STR("\nk:"));
+ 		apk_blob_push_uint(&bbuf, info->provider_priority, 10);
+ 	}
++	if (info->abiversion) {
++		apk_blob_push_blob(&bbuf, APK_BLOB_STR("\nx:"));
++		apk_blob_push_blob(&bbuf, *info->abiversion);
++	}
+ 	apk_blob_push_blob(&bbuf, APK_BLOB_STR("\n"));
+ 
+ 	if (APK_BLOB_IS_NULL(bbuf))
+-- 
+2.44.0
+

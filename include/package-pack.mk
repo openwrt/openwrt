@@ -285,6 +285,7 @@ $(_endef)
 
 	$(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk mkpkg \
 	  --info "name:$(1)$$(ABIV_$(1))" \
+	  $(if $$(ABIV_$(1)),--info "abiversion:$$(ABIV_$(1))") \
 	  --info "version:$(VERSION)" \
 	  --info "description:" \
 	  --info "arch:$(PKGARCH)" \
