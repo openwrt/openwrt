@@ -1,0 +1,11 @@
+--- a/core/rtw_bt_mp.c
++++ b/core/rtw_bt_mp.c
+@@ -169,7 +169,7 @@ mptbt_CheckBtRspStatus(
+     PBT_EXT_C2H			pExtC2h
+ )
+ {
+-	BT_CTRL_STATUS	retStatus=BT_OP_STATUS_SUCCESS;
++	BT_CTRL_STATUS	retStatus=BT_STATUS_SUCCESS;
+ 
+ 	switch(pExtC2h->statusCode) {
+ 	case BT_OP_STATUS_SUCCESS:
