@@ -41,16 +41,13 @@ if [ "$ACTION" == "build" ]; then
 		;;
 	esac
 elif [ "$ACTION" == "install" ]; then
-	mkdir -p "$STAGING_DIR_IMAGE"
-	cp -fp "$PKG_BUILD_DIR/bin/$ATF" "$STAGING_DIR_IMAGE"/
+	mkdir -p "$STAGING_DIR_IMAGE/"
+	cp -rf "$PKG_BUILD_DIR/bin"/* "$STAGING_DIR_IMAGE/$VARIANT_ARCH"/
 	case "$VARIANT" in
 	rk33*)
 		cp -fp "$PKG_BUILD_DIR/tools/loaderimage" "$STAGING_DIR_IMAGE"/
 		cp -fp "$PKG_BUILD_DIR/$VARIANT-idbloader.bin" "$STAGING_DIR_IMAGE"/
 		cp -fp "$PKG_BUILD_DIR/$VARIANT-trust.bin" "$STAGING_DIR_IMAGE"/
-		;;
-	rk35*)
-		cp -fp "$PKG_BUILD_DIR/bin/$DDR" "$STAGING_DIR_IMAGE"/
 		;;
 	esac
 else

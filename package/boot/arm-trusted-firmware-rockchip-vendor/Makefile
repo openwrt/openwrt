@@ -8,10 +8,10 @@ PKG_NAME:=arm-trusted-firmware-rockchip-vendor
 PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL=https://github.com/rockchip-linux/rkbin.git
+PKG_SOURCE_URL=https://github.com/pengphei/rkbin.git
 PKG_SOURCE_DATE:=2022-08-01
-PKG_SOURCE_VERSION:=b0c100f1a260d807df450019774993c761beb79d
-PKG_MIRROR_HASH:=17723ac8f6ec446c759444ee29ba4fe544cebb3785e26d8e10c91c54b9df3f1a
+PKG_SOURCE_VERSION:=061a2292bd792c8b6cb7172c1fa8a61ebbe9eb40
+PKG_MIRROR_HASH:=cef01ef5b8ba986ce9bd078711b771e32ae2d9b4ca2d3ac0146cd2cad55522b2
 
 PKG_MAINTAINER:=Tianling Shen <cnsztl@immortalwrt.org>
 
@@ -56,11 +56,11 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(CURDIR)/pack-firmware.sh build $(BUILD_VARIANT) '$(PKG_BUILD_DIR)'
+	$(CURDIR)/pack-firmware.sh build '$(BUILD_VARIANT)' '$(PKG_BUILD_DIR)'
 endef
 
 define Build/InstallDev
-	$(CURDIR)/pack-firmware.sh install $(BUILD_VARIANT) '$(PKG_BUILD_DIR)' '$(STAGING_DIR_IMAGE)'
+	$(CURDIR)/pack-firmware.sh install '$(BUILD_VARIANT)' '$(PKG_BUILD_DIR)' '$(STAGING_DIR_IMAGE)'
 endef
 
 define Package/arm-trusted-firmware-rk3328/install
