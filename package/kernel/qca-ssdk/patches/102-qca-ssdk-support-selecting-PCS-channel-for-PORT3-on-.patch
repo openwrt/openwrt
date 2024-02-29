@@ -22,8 +22,6 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  src/init/ssdk_dts.c                | 27 +++++++++++++++++++++++++++
  4 files changed, 32 insertions(+), 8 deletions(-)
 
-diff --git a/include/init/ssdk_dts.h b/include/init/ssdk_dts.h
-index 00fa4c1..210c788 100755
 --- a/include/init/ssdk_dts.h
 +++ b/include/init/ssdk_dts.h
 @@ -101,6 +101,7 @@ typedef struct
@@ -34,7 +32,7 @@ index 00fa4c1..210c788 100755
  } ssdk_dt_cfg;
  
  #define SSDK_MAX_NR_ETH 6
-@@ -163,6 +164,7 @@ a_uint32_t ssdk_device_id_get(a_uint32_t index);
+@@ -162,6 +163,7 @@ a_uint32_t ssdk_device_id_get(a_uint32_t
  struct device_node *ssdk_dts_node_get(a_uint32_t dev_id);
  struct clk *ssdk_dts_essclk_get(a_uint32_t dev_id);
  struct clk *ssdk_dts_cmnclk_get(a_uint32_t dev_id);
@@ -42,8 +40,6 @@ index 00fa4c1..210c788 100755
  
  int ssdk_switch_device_num_init(void);
  void ssdk_switch_device_num_exit(void);
-diff --git a/src/adpt/cppe/adpt_cppe_portctrl.c b/src/adpt/cppe/adpt_cppe_portctrl.c
-index 00d0404..6b32f79 100755
 --- a/src/adpt/cppe/adpt_cppe_portctrl.c
 +++ b/src/adpt/cppe/adpt_cppe_portctrl.c
 @@ -33,6 +33,7 @@
@@ -54,7 +50,7 @@ index 00d0404..6b32f79 100755
  #include "adpt.h"
  #include "adpt_hppe.h"
  #include "adpt_cppe_portctrl.h"
-@@ -60,8 +61,7 @@ _adpt_cppe_port_mux_mac_set(a_uint32_t dev_id, fal_port_t port_id,
+@@ -60,8 +61,7 @@ _adpt_cppe_port_mux_mac_set(a_uint32_t d
  		case SSDK_PHYSICAL_PORT3:
  		case SSDK_PHYSICAL_PORT4:
  			if (mode0 == PORT_WRAPPER_PSGMII) {
@@ -64,11 +60,9 @@ index 00d0404..6b32f79 100755
  					cppe_port_mux_ctrl.bf.port3_pcs_sel =
  						CPPE_PORT3_PCS_SEL_PCS0_CHANNEL4;
  					cppe_port_mux_ctrl.bf.port4_pcs_sel =
-diff --git a/src/adpt/hppe/adpt_hppe_uniphy.c b/src/adpt/hppe/adpt_hppe_uniphy.c
-index 5e36602..bad1eab 100644
 --- a/src/adpt/hppe/adpt_hppe_uniphy.c
 +++ b/src/adpt/hppe/adpt_hppe_uniphy.c
-@@ -1122,9 +1122,6 @@ __adpt_hppe_uniphy_psgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index)
+@@ -1122,9 +1122,6 @@ __adpt_hppe_uniphy_psgmii_mode_set(a_uin
  {
  	a_uint32_t i;
  	sw_error_t rv = SW_OK;
@@ -78,7 +72,7 @@ index 5e36602..bad1eab 100644
  
  	union uniphy_mode_ctrl_u uniphy_mode_ctrl;
  
-@@ -1134,9 +1131,7 @@ __adpt_hppe_uniphy_psgmii_mode_set(a_uint32_t dev_id, a_uint32_t uniphy_index)
+@@ -1134,9 +1131,7 @@ __adpt_hppe_uniphy_psgmii_mode_set(a_uin
  	SSDK_DEBUG("uniphy %d is psgmii mode\n", uniphy_index);
  #if defined(CPPE)
  	if (adpt_ppe_type_get(dev_id) == CPPE_TYPE) {
@@ -89,11 +83,9 @@ index 5e36602..bad1eab 100644
  			SSDK_INFO("cypress uniphy %d is qca8072 psgmii mode\n", uniphy_index);
  			rv = __adpt_cppe_uniphy_mode_set(dev_id, uniphy_index,
  				PORT_WRAPPER_PSGMII);
-diff --git a/src/init/ssdk_dts.c b/src/init/ssdk_dts.c
-index 686b6d2..70b0a09 100644
 --- a/src/init/ssdk_dts.c
 +++ b/src/init/ssdk_dts.c
-@@ -279,6 +279,13 @@ struct clk *ssdk_dts_cmnclk_get(a_uint32_t dev_id)
+@@ -272,6 +272,13 @@ struct clk *ssdk_dts_cmnclk_get(a_uint32
  	return cfg->cmnblk_clk;
  }
  
@@ -107,7 +99,7 @@ index 686b6d2..70b0a09 100644
  #ifndef BOARD_AR71XX
  #if defined(CONFIG_OF) && (LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0))
  static void ssdk_dt_parse_mac_mode(a_uint32_t dev_id,
-@@ -313,6 +320,25 @@ static void ssdk_dt_parse_mac_mode(a_uint32_t dev_id,
+@@ -306,6 +313,25 @@ static void ssdk_dt_parse_mac_mode(a_uin
  
  	return;
  }
@@ -133,7 +125,7 @@ index 686b6d2..70b0a09 100644
  #ifdef IN_UNIPHY
  static void ssdk_dt_parse_uniphy(a_uint32_t dev_id)
  {
-@@ -1307,6 +1333,7 @@ sw_error_t ssdk_dt_parse(ssdk_init_cfg *cfg, a_uint32_t num, a_uint32_t *dev_id)
+@@ -1292,6 +1318,7 @@ sw_error_t ssdk_dt_parse(ssdk_init_cfg *
  	rv = ssdk_dt_parse_access_mode(switch_node, ssdk_dt_priv);
  	SW_RTN_ON_ERROR(rv);
  	ssdk_dt_parse_mac_mode(*dev_id, switch_node, cfg);
@@ -141,6 +133,3 @@ index 686b6d2..70b0a09 100644
  	ssdk_dt_parse_mdio(*dev_id, switch_node, cfg);
  	ssdk_dt_parse_port_bmp(*dev_id, switch_node, cfg);
  	ssdk_dt_parse_interrupt(*dev_id, switch_node);
--- 
-2.7.4
-
