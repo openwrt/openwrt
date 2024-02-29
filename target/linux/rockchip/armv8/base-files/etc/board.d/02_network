@@ -11,6 +11,20 @@ rockchip_setup_interfaces()
 	friendlyarm,nanopi-r4s)
 		ucidef_set_interfaces_lan_wan 'eth1' 'eth0'
 		;;
+	hinlink,opc-h68k)
+		ucidef_set_interfaces_lan_wan 'eth1 eth2 eth3' 'eth0'
+		;;
+	fastrhino,r66s|\
+	firefly,rk3568-roc-pc|\
+	radxa,e25)
+		ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
+		;;
+	fastrhino,r68s)
+		ucidef_set_interfaces_lan_wan 'eth0 eth2 eth3' 'eth1'
+		;;
+	friendlyarm,nanopi-r5s)
+		ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
+		;;
 	*)
 		ucidef_set_interface_lan 'eth0'
 		;;
