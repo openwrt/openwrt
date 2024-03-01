@@ -950,7 +950,7 @@ rtk_api_ret_t rtk_vlan_protoAndPortBasedVlan_add(rtk_port_t port, rtk_vlan_proto
     {
         if ((retVal = rtl8367c_getAsicVlanProtocolBasedGroupData(i, &ppb_data_cfg)) != RT_ERR_OK)
             return retVal;
-        tmp = pInfo->frame_type;
+        tmp = (rtl8367c_provlan_frametype)pInfo->frame_type;
         if (ppb_data_cfg.etherType == pInfo->proto_type && ppb_data_cfg.frameType == tmp)
         {
             /*Already exist*/
@@ -976,7 +976,7 @@ rtk_api_ret_t rtk_vlan_protoAndPortBasedVlan_add(rtk_port_t port, rtk_vlan_proto
     else if (empty<RTL8367C_PROTOVLAN_GROUPNO)
     {
         /*No exist index, but have empty index*/
-        ppb_data_cfg.frameType = pInfo->frame_type;
+        ppb_data_cfg.frameType = (rtl8367c_provlan_frametype)pInfo->frame_type;
         ppb_data_cfg.etherType = pInfo->proto_type;
         if ((retVal = rtl8367c_setAsicVlanProtocolBasedGroupData(empty, &ppb_data_cfg)) != RT_ERR_OK)
             return retVal;
@@ -1267,7 +1267,7 @@ rtk_api_ret_t rtk_vlan_tagMode_set(rtk_port_t port, rtk_vlan_tagMode_t tag_mode)
     if (tag_mode >= VLAN_TAG_MODE_END)
         return RT_ERR_PORT_ID;
 
-    if ((retVal = rtl8367c_setAsicVlanEgressTagMode(rtk_switch_port_L2P_get(port), tag_mode)) != RT_ERR_OK)
+    if ((retVal = rtl8367c_setAsicVlanEgressTagMode(rtk_switch_port_L2P_get(port), (rtl8367c_egtagmode)tag_mode)) != RT_ERR_OK)
         return retVal;
 
     return RT_ERR_OK;
