@@ -675,6 +675,7 @@ sub gen_image_cyclonedxsbom() {
 		license => "GPL-2.0",
 		cpe_id  => "cpe:/o:linux:linux_kernel",
 		name    => "kernel",
+		category  => "operating-system",
 	};
 
 	my %abimap;
@@ -703,6 +704,7 @@ sub gen_image_cyclonedxsbom() {
 		if ($pkg->{category}) {
 			my $category = $pkg->{category};
 			my %cat_type = (
+				"operating-system"        => "operating-system",
 				"Firmware"        => "firmware",
 				"Libraries"       => "library"
 			);
