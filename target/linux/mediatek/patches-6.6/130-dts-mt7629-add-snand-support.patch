@@ -5,13 +5,13 @@ Subject: [PATCH] spi: spi-mem: Mediatek: Add SPI Nand support for MT7629
 
 Signed-off-by: Xiangsheng Hou <xiangsheng.hou@mediatek.com>
 ---
- arch/arm/boot/dts/mt7629-rfb.dts | 45 ++++++++++++++++++++++++++++++++
- arch/arm/boot/dts/mt7629.dtsi    | 22 ++++++++++++++++
+ arch/arm/boot/dts/mediatek/mt7629-rfb.dts | 45 ++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/mediatek/mt7629.dtsi    | 22 ++++++++++++++++
  3 files changed, 79 insertions(+)
 
---- a/arch/arm/boot/dts/mt7629.dtsi
-+++ b/arch/arm/boot/dts/mt7629.dtsi
-@@ -272,6 +272,27 @@
+--- a/arch/arm/boot/dts/mediatek/mt7629.dtsi
++++ b/arch/arm/boot/dts/mediatek/mt7629.dtsi
+@@ -271,6 +271,27 @@
  			status = "disabled";
  		};
  
@@ -39,8 +39,8 @@ Signed-off-by: Xiangsheng Hou <xiangsheng.hou@mediatek.com>
  		spi: spi@1100a000 {
  			compatible = "mediatek,mt7629-spi",
  				     "mediatek,mt7622-spi";
---- a/arch/arm/boot/dts/mt7629-rfb.dts
-+++ b/arch/arm/boot/dts/mt7629-rfb.dts
+--- a/arch/arm/boot/dts/mediatek/mt7629-rfb.dts
++++ b/arch/arm/boot/dts/mediatek/mt7629-rfb.dts
 @@ -255,6 +255,50 @@
  	};
  };

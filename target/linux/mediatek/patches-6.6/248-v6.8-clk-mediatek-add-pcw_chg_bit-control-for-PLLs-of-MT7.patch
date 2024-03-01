@@ -28,7 +28,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  
  #define AUDPLL_TUNER_EN		BIT(31)
  
-@@ -141,7 +141,8 @@ static void mtk_pll_set_rate_regs(struct
+@@ -114,7 +114,8 @@ static void mtk_pll_set_rate_regs(struct
  			pll->data->pcw_shift);
  	val |= pcw << pll->data->pcw_shift;
  	writel(val, pll->pcw_addr);
@@ -40,11 +40,11 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  		writel(val + 1, pll->tuner_addr);
 --- a/drivers/clk/mediatek/clk-pll.h
 +++ b/drivers/clk/mediatek/clk-pll.h
-@@ -46,6 +46,7 @@ struct mtk_pll_data {
+@@ -48,6 +48,7 @@ struct mtk_pll_data {
  	const char *parent_name;
  	u32 en_reg;
  	u8 pll_en_bit; /* Assume 0, indicates BIT(0) by default */
 +	u8 pcw_chg_bit;
  };
  
- int mtk_clk_register_plls(struct device_node *node,
+ /*

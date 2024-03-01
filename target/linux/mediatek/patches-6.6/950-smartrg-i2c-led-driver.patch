@@ -5,7 +5,7 @@
 
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -874,6 +874,16 @@ source "drivers/leds/flash/Kconfig"
+@@ -901,6 +901,16 @@ source "drivers/leds/flash/Kconfig"
  comment "RGB LED drivers"
  source "drivers/leds/rgb/Kconfig"
  
@@ -24,9 +24,9 @@
  
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -76,6 +76,7 @@ obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
+@@ -78,6 +78,7 @@ obj-$(CONFIG_LEDS_POWERNV)		+= leds-powe
+ obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
  obj-$(CONFIG_LEDS_REGULATOR)		+= leds-regulator.o
- obj-$(CONFIG_LEDS_S3C24XX)		+= leds-s3c24xx.o
  obj-$(CONFIG_LEDS_SC27XX_BLTC)		+= leds-sc27xx-bltc.o
 +obj-$(CONFIG_LEDS_SMARTRG_LED)		+= leds-smartrg-system.o
  obj-$(CONFIG_LEDS_SUNFIRE)		+= leds-sunfire.o

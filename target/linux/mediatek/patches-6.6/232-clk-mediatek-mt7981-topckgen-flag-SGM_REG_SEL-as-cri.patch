@@ -16,7 +16,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/clk/mediatek/clk-mt7981-topckgen.c
 +++ b/drivers/clk/mediatek/clk-mt7981-topckgen.c
-@@ -359,8 +359,9 @@ static const struct mtk_mux top_muxes[]
+@@ -357,8 +357,9 @@ static const struct mtk_mux top_muxes[]
  	MUX_GATE_CLR_SET_UPD(CLK_TOP_SGM_325M_SEL, "sgm_325m_sel",
  			     sgm_325m_parents, 0x050, 0x054, 0x058, 8, 1, 15,
  			     0x1C0, 21),

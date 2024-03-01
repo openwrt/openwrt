@@ -37,7 +37,7 @@
  };
  
  &mmc1 {
-@@ -249,6 +272,26 @@
+@@ -248,6 +271,26 @@
  	vqmmc-supply = <&reg_3p3v>;
  	assigned-clocks = <&topckgen CLK_TOP_MSDC30_1_SEL>;
  	assigned-clock-parents = <&topckgen CLK_TOP_UNIV48M>;
@@ -64,16 +64,18 @@
  };
  
  &nandc {
-@@ -283,14 +326,29 @@
+@@ -281,15 +324,30 @@
+ 				read-only;
  			};
  
- 			partition@80000 {
+-			partition@80000 {
 -				label = "fip";
 -				reg = <0x80000 0x200000>;
 -				read-only;
 -			};
 -
 -			ubi: partition@280000 {
++			ubi: partition@80000 {
  				label = "ubi";
 -				reg = <0x280000 0x7d80000>;
 +				reg = <0x80000 0x7f80000>;

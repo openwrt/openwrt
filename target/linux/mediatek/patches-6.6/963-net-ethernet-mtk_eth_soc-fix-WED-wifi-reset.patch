@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
-@@ -1071,13 +1071,13 @@ mtk_wed_dma_disable(struct mtk_wed_devic
+@@ -1072,13 +1072,13 @@ mtk_wed_dma_disable(struct mtk_wed_devic
  static void
  mtk_wed_stop(struct mtk_wed_device *dev)
  {
@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (!mtk_wed_get_rx_capa(dev))
  		return;
-@@ -1090,7 +1090,6 @@ static void
+@@ -1091,7 +1091,6 @@ static void
  mtk_wed_deinit(struct mtk_wed_device *dev)
  {
  	mtk_wed_stop(dev);
@@ -37,7 +37,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	wed_clr(dev, MTK_WED_CTRL,
  		MTK_WED_CTRL_WDMA_INT_AGENT_EN |
-@@ -2621,9 +2620,6 @@ mtk_wed_irq_get(struct mtk_wed_device *d
+@@ -2622,9 +2621,6 @@ mtk_wed_irq_get(struct mtk_wed_device *d
  static void
  mtk_wed_irq_set_mask(struct mtk_wed_device *dev, u32 mask)
  {

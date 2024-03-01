@@ -94,9 +94,9 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
 -	if (!spi->controller_data)
 -		spi->controller_data = (void *)&mtk_default_chip_info;
 -
- 	if (mdata->dev_comp->need_pad_sel && spi->cs_gpiod)
+ 	if (mdata->dev_comp->need_pad_sel && spi_get_csgpiod(spi, 0))
  		/* CS de-asserted, gpiolib will handle inversion */
- 		gpiod_direction_output(spi->cs_gpiod, 0);
+ 		gpiod_direction_output(spi_get_csgpiod(spi, 0), 0);
 @@ -1138,6 +1126,10 @@ static int mtk_spi_probe(struct platform
  	mdata = spi_master_get_devdata(master);
  	mdata->dev_comp = device_get_match_data(dev);
