@@ -10,7 +10,7 @@ Signed-off-by: Samuel Holland <samuel@sholland.org>
 
 --- a/drivers/irqchip/irq-sifive-plic.c
 +++ b/drivers/irqchip/irq-sifive-plic.c
-@@ -187,7 +187,8 @@ static struct irq_chip plic_edge_chip =
+@@ -193,7 +193,8 @@ static struct irq_chip plic_edge_chip =
  	.irq_set_affinity = plic_set_affinity,
  #endif
  	.irq_set_type	= plic_irq_set_type,
@@ -20,7 +20,7 @@ Signed-off-by: Samuel Holland <samuel@sholland.org>
  };
  
  static struct irq_chip plic_chip = {
-@@ -201,7 +202,8 @@ static struct irq_chip plic_chip = {
+@@ -207,7 +208,8 @@ static struct irq_chip plic_chip = {
  	.irq_set_affinity = plic_set_affinity,
  #endif
  	.irq_set_type	= plic_irq_set_type,

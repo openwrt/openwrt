@@ -75,7 +75,7 @@ Signed-off-by: Samuel Holland <samuel@sholland.org>
  	.reg_dac_txdata = SUN8I_SPDIF_TXFIFO,
  	.val_fctl_ftx   = SUN50I_H6_SPDIF_FCTL_FTX,
  };
-@@ -586,7 +592,7 @@ static int sun4i_spdif_runtime_suspend(s
+@@ -591,7 +597,7 @@ static int sun4i_spdif_runtime_suspend(s
  {
  	struct sun4i_spdif_dev *host  = dev_get_drvdata(dev);
  
@@ -84,7 +84,7 @@ Signed-off-by: Samuel Holland <samuel@sholland.org>
  	clk_disable_unprepare(host->apb_clk);
  
  	return 0;
-@@ -597,12 +603,12 @@ static int sun4i_spdif_runtime_resume(st
+@@ -602,12 +608,12 @@ static int sun4i_spdif_runtime_resume(st
  	struct sun4i_spdif_dev *host  = dev_get_drvdata(dev);
  	int ret;
  
@@ -99,7 +99,7 @@ Signed-off-by: Samuel Holland <samuel@sholland.org>
  
  	return ret;
  }
-@@ -650,10 +656,10 @@ static int sun4i_spdif_probe(struct plat
+@@ -655,10 +661,10 @@ static int sun4i_spdif_probe(struct plat
  		return PTR_ERR(host->apb_clk);
  	}
  
