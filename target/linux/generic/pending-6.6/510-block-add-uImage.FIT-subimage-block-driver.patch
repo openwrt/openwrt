@@ -81,7 +81,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  swim_mod-y	:= swim.o swim_asm.o
 --- /dev/null
 +++ b/drivers/block/fitblk.c
-@@ -0,0 +1,636 @@
+@@ -0,0 +1,659 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * uImage.FIT virtual block device driver.
@@ -199,9 +199,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	bool			dead;
 +};
 +
-+static int fitblk_open(struct block_device *bdev, fmode_t mode)
++static int fitblk_open(struct gendisk *disk, fmode_t mode)
 +{
-+	struct fitblk *fitblk = bdev->bd_disk->private_data;
++	struct fitblk *fitblk = disk->private_data;
 +
 +	if (fitblk->dead)
 +		return -ENOENT;
@@ -209,7 +209,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	return 0;
 +}
 +
-+static void fitblk_release(struct gendisk *disk, fmode_t mode)
++static void fitblk_release(struct gendisk *disk)
 +{
 +	return;
 +}
@@ -283,7 +283,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +	if (refcount_dec_if_one(&num_devs)) {
 +		sysfs_remove_link(&pdev->dev.kobj, "lower_dev");
-+		blkdev_put(fitblk->lower_bdev, FMODE_READ | FMODE_EXCL);
++		blkdev_put(fitblk->lower_bdev, &_fitblk_claim_ptr);
 +	}
 +
 +	kfree(fitblk);
@@ -373,6 +373,29 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	return err;
 +}
 +
++static void fitblk_mark_dead(struct block_device *bdev, bool surprise)
++{
++	struct list_head *n, *tmp;
++	struct fitblk *fitblk;
++
++	mutex_lock(&devices_mutex);
++	list_for_each_safe(n, tmp, &fitblk_devices) {
++		fitblk = list_entry(n, struct fitblk, list);
++		if (fitblk->lower_bdev != bdev)
++			continue;
++
++		fitblk->dead = true;
++		list_del(&fitblk->list);
++		/* removal needs to be deferred to avoid deadlock */
++		schedule_work(&fitblk->remove_work);
++	}
++	mutex_unlock(&devices_mutex);
++}
++
++static const struct blk_holder_ops fitblk_hops = {
++	.mark_dead = fitblk_mark_dead,
++};
++
 +static int parse_fit_on_dev(struct device *dev)
 +{
 +	struct block_device *bdev;
@@ -401,7 +424,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	unsigned int slot = 0;
 +
 +	/* Exclusive open the block device to receive holder notifications */
-+	bdev = blkdev_get_by_dev(dev->devt, FMODE_READ | FMODE_EXCL, &_fitblk_claim_ptr);
++	bdev = blkdev_get_by_dev(dev->devt, BLK_OPEN_READ, &_fitblk_claim_ptr, &fitblk_hops);
 +	if (!bdev)
 +		return -ENODEV;
 +
@@ -653,7 +676,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	kfree(fit);
 +out_blkdev:
 +	if (!found || ret)
-+		blkdev_put(bdev, FMODE_READ | FMODE_EXCL);
++		blkdev_put(bdev, &_fitblk_claim_ptr);
 +
 +	return ret;
 +}
