@@ -144,7 +144,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	stmmac_hw_teardown(dev);
  init_error:
-@@ -7498,7 +7490,7 @@ int stmmac_suspend(struct device *dev)
+@@ -7501,7 +7493,7 @@ int stmmac_suspend(struct device *dev)
  	stmmac_disable_all_queues(priv);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)

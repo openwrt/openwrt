@@ -126,7 +126,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  		devfreq->stats.total_trans++;
  	}
  
-@@ -835,6 +831,9 @@ struct devfreq *devfreq_add_device(struc
+@@ -855,6 +851,9 @@ struct devfreq *devfreq_add_device(struc
  		if (err < 0)
  			goto err_dev;
  		mutex_lock(&devfreq->lock);
@@ -136,7 +136,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  	}
  
  	devfreq->scaling_min_freq = find_available_min_freq(devfreq);
-@@ -870,8 +869,8 @@ struct devfreq *devfreq_add_device(struc
+@@ -890,8 +889,8 @@ struct devfreq *devfreq_add_device(struc
  
  	devfreq->stats.trans_table = devm_kzalloc(&devfreq->dev,
  			array3_size(sizeof(unsigned int),
@@ -147,7 +147,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  			GFP_KERNEL);
  	if (!devfreq->stats.trans_table) {
  		mutex_unlock(&devfreq->lock);
-@@ -880,7 +879,7 @@ struct devfreq *devfreq_add_device(struc
+@@ -900,7 +899,7 @@ struct devfreq *devfreq_add_device(struc
  	}
  
  	devfreq->stats.time_in_state = devm_kcalloc(&devfreq->dev,
@@ -156,7 +156,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  			sizeof(*devfreq->stats.time_in_state),
  			GFP_KERNEL);
  	if (!devfreq->stats.time_in_state) {
-@@ -1638,9 +1637,9 @@ static ssize_t available_frequencies_sho
+@@ -1658,9 +1657,9 @@ static ssize_t available_frequencies_sho
  
  	mutex_lock(&df->lock);
  
@@ -168,7 +168,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  
  	mutex_unlock(&df->lock);
  	/* Truncate the trailing space */
-@@ -1663,7 +1662,7 @@ static ssize_t trans_stat_show(struct de
+@@ -1683,7 +1682,7 @@ static ssize_t trans_stat_show(struct de
  
  	if (!df->profile)
  		return -EINVAL;
@@ -176,33 +176,35 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
 +	max_state = df->max_state;
  
  	if (max_state == 0)
- 		return sprintf(buf, "Not Supported.\n");
-@@ -1680,19 +1679,17 @@ static ssize_t trans_stat_show(struct de
- 	len += sprintf(buf + len, "           :");
- 	for (i = 0; i < max_state; i++)
- 		len += sprintf(buf + len, "%10lu",
--				df->profile->freq_table[i]);
-+				df->freq_table[i]);
- 
- 	len += sprintf(buf + len, "   time(ms)\n");
- 
+ 		return scnprintf(buf, PAGE_SIZE, "Not Supported.\n");
+@@ -1702,7 +1701,7 @@ static ssize_t trans_stat_show(struct de
+ 		if (len >= PAGE_SIZE - 1)
+ 			break;
+ 		len += scnprintf(buf + len, PAGE_SIZE - len, "%10lu",
+-				 df->profile->freq_table[i]);
++				 df->freq_table[i]);
+ 	}
+ 	if (len >= PAGE_SIZE - 1)
+ 		return PAGE_SIZE - 1;
+@@ -1712,7 +1711,7 @@ static ssize_t trans_stat_show(struct de
  	for (i = 0; i < max_state; i++) {
+ 		if (len >= PAGE_SIZE - 1)
+ 			break;
 -		if (df->profile->freq_table[i]
--					== df->previous_freq) {
-+		if (df->freq_table[i] == df->previous_freq)
- 			len += sprintf(buf + len, "*");
--		} else {
-+		else
- 			len += sprintf(buf + len, " ");
--		}
--		len += sprintf(buf + len, "%10lu:",
--				df->profile->freq_table[i]);
-+
-+		len += sprintf(buf + len, "%10lu:", df->freq_table[i]);
- 		for (j = 0; j < max_state; j++)
- 			len += sprintf(buf + len, "%10u",
- 				df->stats.trans_table[(i * max_state) + j]);
-@@ -1716,7 +1713,7 @@ static ssize_t trans_stat_store(struct d
++		if (df->freq_table[i]
+ 					== df->previous_freq) {
+ 			len += scnprintf(buf + len, PAGE_SIZE - len, "*");
+ 		} else {
+@@ -1722,7 +1721,7 @@ static ssize_t trans_stat_show(struct de
+ 			break;
+ 
+ 		len += scnprintf(buf + len, PAGE_SIZE - len, "%10lu:",
+-				 df->profile->freq_table[i]);
++				 df->freq_table[i]);
+ 		for (j = 0; j < max_state; j++) {
+ 			if (len >= PAGE_SIZE - 1)
+ 				break;
+@@ -1757,7 +1756,7 @@ static ssize_t trans_stat_store(struct d
  	if (!df->profile)
  		return -EINVAL;
  
@@ -211,7 +213,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  		return count;
  
  	err = kstrtoint(buf, 10, &value);
-@@ -1724,11 +1721,11 @@ static ssize_t trans_stat_store(struct d
+@@ -1765,11 +1764,11 @@ static ssize_t trans_stat_store(struct d
  		return -EINVAL;
  
  	mutex_lock(&df->lock);
