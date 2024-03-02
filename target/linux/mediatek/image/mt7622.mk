@@ -461,9 +461,13 @@ define Device/xiaomi_redmi-router-ax6s
   IMAGES += factory.bin
   BLOCKSIZE := 128k
   PAGESIZE := 2048
-  KERNEL_SIZE := 4096k
+  KERNEL_SIZE := 6144k
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Partition table has been changed due to kernel size restrictions. \
+	Please upgrade firmware manually using factory.bin image! \
+	(Warning: your configurations will be erased!)
 endef
-# TARGET_DEVICES += xiaomi_redmi-router-ax6s
+TARGET_DEVICES += xiaomi_redmi-router-ax6s
