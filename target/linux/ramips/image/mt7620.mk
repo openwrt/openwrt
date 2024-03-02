@@ -189,6 +189,14 @@ define Device/dch-m225
 endef
 TARGET_DEVICES += dch-m225
 
+define Device/dlink_dir-615-p1
+  DTS := DIR-615-P1
+  SUPPORTED_DEVICES := dir-615-p1
+  DEVICE_TITLE := D-Link DIR-615 P1
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += dlink_dir-615-p1
+
 define Device/dir-810l
   DTS := DIR-810L
   DEVICE_PACKAGES := kmod-mt76x0e
