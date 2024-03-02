@@ -327,7 +327,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 +		.of_match_table = of_match_clk_mt7988_eth,
 +	},
 +	.probe = mtk_clk_simple_probe,
-+	.remove = mtk_clk_simple_remove,
++	.remove_new = mtk_clk_simple_remove,
 +};
 +module_platform_driver(clk_mt7988_eth_drv);
 +
@@ -607,7 +607,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 +		.of_match_table = of_match_clk_mt7988_infracfg,
 +	},
 +	.probe = mtk_clk_simple_probe,
-+	.remove = mtk_clk_simple_remove,
++	.remove_new = mtk_clk_simple_remove,
 +};
 +module_platform_driver(clk_mt7988_infracfg_drv);
 +MODULE_LICENSE("GPL");
@@ -931,7 +931,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 +
 +static struct platform_driver clk_mt7988_topckgen_drv = {
 +	.probe = mtk_clk_simple_probe,
-+	.remove = mtk_clk_simple_remove,
++	.remove_new = mtk_clk_simple_remove,
 +	.driver = {
 +		.name = "clk-mt7988-topckgen",
 +		.of_match_table = of_match_clk_mt7988_topckgen,
@@ -1018,7 +1018,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
 +		.of_match_table = of_match_clk_mt7988_xfipll,
 +	},
 +	.probe = clk_mt7988_xfipll_probe,
-+	.remove = mtk_clk_simple_remove,
++	.remove_new = mtk_clk_simple_remove,
 +};
 +module_platform_driver(clk_mt7988_xfipll_drv);
 +
