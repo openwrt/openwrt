@@ -251,6 +251,11 @@ yuncore,ax820)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
+z-router,zr-2660)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	;;
 zyxel,lte3301-plus)
 	ucidef_set_led_netdev "internet" "internet" "white:internet" "wwan0"
 	;;

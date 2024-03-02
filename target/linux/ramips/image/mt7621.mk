@@ -2928,6 +2928,21 @@ define Device/yuncore_g720
 endef
 TARGET_DEVICES += yuncore_g720
 
+define Device/z-router_zr-2660
+  $(Device/dsa-migration)
+  $(Device/nand)
+  DEVICE_VENDOR := Z-ROUTER
+  DEVICE_MODEL := ZR-2660
+  DEVICE_ALT0_VENDOR := Routerich
+  DEVICE_ALT0_MODEL := AX1800
+  IMAGE_SIZE := 90112k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  DEVICE_PACKAGES += kmod-mt7915-firmware kmod-usb3 -uboot-envtools
+endef
+TARGET_DEVICES += z-router_zr-2660
+
 define Device/zbtlink_zbt-we1326
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
