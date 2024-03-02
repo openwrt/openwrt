@@ -531,6 +531,17 @@ define Device/buffalo_wsr-2533dhpl
 endef
 TARGET_DEVICES += buffalo_wsr-2533dhpl
 
+define Device/buffalo_wsr-2533dhpls
+  $(Device/nand)
+  IMAGE_SIZE := 24576k
+  DEVICE_VENDOR := Buffalo
+  DEVICE_MODEL := WSR-2533DHPLS
+  DEVICE_PACKAGES := kmod-mt7615-firmware -uboot-envtools
+  IMAGE/sysupgrade.bin := trx -M 0x534c4844 | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += buffalo_wsr-2533dhpls
+
+
 define Device/buffalo_wsr-600dhp
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)

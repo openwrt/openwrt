@@ -212,6 +212,7 @@ ramips_setup_macs()
 		label_mac=$(macaddr_add "$wan_mac" 3)
 		lan_mac=$label_mac
 		;;
+	buffalo,wsr-2533dhpls|\
 	buffalo,wsr-1166dhp)
 		wan_mac=$(mtd_get_mac_ascii board_data "mac")
 		lan_mac=$wan_mac
