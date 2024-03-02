@@ -166,7 +166,7 @@ Signed-off-by: chuanjia.liu <Chuanjia.Liu@mediatek.com>
  	struct clk *free_ck;
  
  	struct list_head ports;
-@@ -650,7 +654,7 @@ static int mtk_pcie_setup_irq(struct mtk
+@@ -656,7 +660,7 @@ static int mtk_pcie_setup_irq(struct mtk
  		return err;
  	}
  
@@ -175,7 +175,7 @@ Signed-off-by: chuanjia.liu <Chuanjia.Liu@mediatek.com>
  	if (port->irq < 0)
  		return port->irq;
  
-@@ -676,12 +680,11 @@ static int mtk_pcie_startup_port_v2(stru
+@@ -682,12 +686,11 @@ static int mtk_pcie_startup_port_v2(stru
  	if (!mem)
  		return -EINVAL;
  
@@ -193,7 +193,7 @@ Signed-off-by: chuanjia.liu <Chuanjia.Liu@mediatek.com>
  	}
  
  	/* Assert all reset signals */
-@@ -985,6 +988,7 @@ static int mtk_pcie_subsys_powerup(struc
+@@ -991,6 +994,7 @@ static int mtk_pcie_subsys_powerup(struc
  	struct device *dev = pcie->dev;
  	struct platform_device *pdev = to_platform_device(dev);
  	struct resource *regs;
@@ -201,7 +201,7 @@ Signed-off-by: chuanjia.liu <Chuanjia.Liu@mediatek.com>
  	int err;
  
  	/* get shared registers, which are optional */
-@@ -997,6 +1001,13 @@ static int mtk_pcie_subsys_powerup(struc
+@@ -1003,6 +1007,13 @@ static int mtk_pcie_subsys_powerup(struc
  		}
  	}
  
