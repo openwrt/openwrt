@@ -35,8 +35,8 @@ Acked-by: Miquel Raynal <miquel.raynal@bootlin.com>
 -	AHCI_HFLAG_IGN_NOTSUPP_POWER_ON	= BIT(27), /* ignore -EOPNOTSUPP
 -						      from phy_power_on() */
  	AHCI_HFLAG_NO_SXS		= BIT(28), /* SXS not supported */
+ 	AHCI_HFLAG_43BIT_ONLY		= BIT(29), /* 43bit DMA addr limit */
  
- 	/* ap->flags bits */
 --- a/drivers/ata/ahci_mvebu.c
 +++ b/drivers/ata/ahci_mvebu.c
 @@ -227,7 +227,7 @@ static const struct ahci_mvebu_plat_data
