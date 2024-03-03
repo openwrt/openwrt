@@ -39,7 +39,8 @@ define KernelPackage/crypto-aead
   TITLE:=CryptoAPI AEAD support
   KCONFIG:= \
 	CONFIG_CRYPTO_AEAD \
-	CONFIG_CRYPTO_AEAD2
+	CONFIG_CRYPTO_AEAD2 \
+	CONFIG_CRYPTO_GENIV
   FILES:= \
 	  $(LINUX_DIR)/crypto/aead.ko \
 	  $(LINUX_DIR)/crypto/geniv.ko
@@ -216,7 +217,7 @@ $(eval $(call KernelPackage,crypto-ecb))
 
 define KernelPackage/crypto-ecdh
   TITLE:=ECDH algorithm
-  DEPENDS:=+kmod-crypto-kpp
+  DEPENDS:=+kmod-crypto-kpp +kmod-crypto-rng
   KCONFIG:= CONFIG_CRYPTO_ECDH
   FILES:= \
 	$(LINUX_DIR)/crypto/ecdh_generic.ko \
@@ -846,7 +847,8 @@ define KernelPackage/crypto-rsa
   KCONFIG:= CONFIG_CRYPTO_RSA
   HIDDEN:=1
   FILES:= \
-	$(LINUX_DIR)/lib/mpi/mpi.ko \
+	$(LINUX_DIR)/lib/mpi/mpi.ko@lt6.5 \
+	$(LINUX_DIR)/lib/crypto/mpi/mpi.ko@ge6.5 \
 	$(LINUX_DIR)/crypto/akcipher.ko \
 	$(LINUX_DIR)/crypto/rsa_generic.ko
   AUTOLOAD:=$(call AutoLoad,10,rsa_generic)
@@ -870,7 +872,7 @@ $(eval $(call KernelPackage,crypto-rmd160))
 
 define KernelPackage/crypto-rng
   TITLE:=CryptoAPI random number generation
-  DEPENDS:=+kmod-crypto-hash +kmod-crypto-hmac +kmod-crypto-sha512
+  DEPENDS:=+kmod-crypto-hash +kmod-crypto-hmac +kmod-crypto-sha512 +LINUX_6_6:kmod-crypto-sha3
   KCONFIG:= \
 	CONFIG_CRYPTO_DRBG \
 	CONFIG_CRYPTO_DRBG_HMAC=y \
