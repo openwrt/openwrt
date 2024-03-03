@@ -29,6 +29,7 @@ define KernelPackage/ltq-vmmc
   DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_xrx200) +kmod-ltq-tapi
   FILES:=$(PKG_BUILD_DIR)/src/drv_vmmc.ko
   AUTOLOAD:=$(call AutoProbe,drv_vmmc)
+  USERID:=:vmmc=386
 endef
 
 define KernelPackage/ltq-vmmc/description
