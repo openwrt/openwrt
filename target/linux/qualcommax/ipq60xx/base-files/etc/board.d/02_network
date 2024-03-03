@@ -14,6 +14,9 @@ ipq60xx_setup_interfaces()
 	8devices,mango-dvk)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	netgear,wax214)
+		ucidef_set_interfaces_lan_wan "lan"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;

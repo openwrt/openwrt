@@ -40,6 +40,7 @@ ALLWIFIBOARDS:= \
 	linksys_mx5300 \
 	netgear_lbr20 \
 	netgear_rax120v2 \
+	netgear_wax214 \
 	netgear_wax218 \
 	netgear_wax620 \
 	netgear_wax630 \
@@ -157,6 +158,7 @@ $(eval $(call generate-ipq-wifi-package,linksys_mx4200,Linksys MX4200))
 $(eval $(call generate-ipq-wifi-package,linksys_mx5300,Linksys MX5300))
 $(eval $(call generate-ipq-wifi-package,netgear_lbr20,Netgear LBR20))
 $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
+$(eval $(call generate-ipq-wifi-package,netgear_wax214,Netgear WAX214))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))
 $(eval $(call generate-ipq-wifi-package,netgear_wax620,Netgear WAX620))
 $(eval $(call generate-ipq-wifi-package,netgear_wax630,Netgear WAX630))
