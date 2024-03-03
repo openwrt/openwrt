@@ -116,7 +116,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	netif_tx_disable(dev);
  
-@@ -6655,7 +6648,7 @@ void stmmac_xdp_release(struct net_devic
+@@ -6635,7 +6628,7 @@ void stmmac_xdp_release(struct net_devic
  	stmmac_disable_all_queues(priv);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -125,7 +125,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	/* Free the IRQ lines */
  	stmmac_free_irq(dev, REQ_IRQ_ERR_ALL, 0);
-@@ -6750,8 +6743,7 @@ int stmmac_xdp_open(struct net_device *d
+@@ -6730,8 +6723,7 @@ int stmmac_xdp_open(struct net_device *d
  		stmmac_set_tx_tail_ptr(priv, priv->ioaddr,
  				       tx_q->tx_tail_addr, chan);
  
@@ -135,7 +135,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  	}
  
  	/* Enable the MAC Rx/Tx */
-@@ -6774,7 +6766,7 @@ int stmmac_xdp_open(struct net_device *d
+@@ -6754,7 +6746,7 @@ int stmmac_xdp_open(struct net_device *d
  
  irq_error:
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)
@@ -144,7 +144,7 @@ Signed-off-by: Oskari Lemmela <oskari@lemmela.net>
  
  	stmmac_hw_teardown(dev);
  init_error:
-@@ -7501,7 +7493,7 @@ int stmmac_suspend(struct device *dev)
+@@ -7481,7 +7473,7 @@ int stmmac_suspend(struct device *dev)
  	stmmac_disable_all_queues(priv);
  
  	for (chan = 0; chan < priv->plat->tx_queues_to_use; chan++)

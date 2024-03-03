@@ -23,7 +23,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -1757,6 +1757,23 @@ static void clk_core_update_orphan_statu
+@@ -1768,6 +1768,23 @@ static void clk_core_update_orphan_statu
  		clk_core_update_orphan_status(child, is_orphan);
  }
  
@@ -47,7 +47,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static void clk_reparent(struct clk_core *core, struct clk_core *new_parent)
  {
  	bool was_orphan = core->orphan;
-@@ -1781,6 +1798,7 @@ static void clk_reparent(struct clk_core
+@@ -1792,6 +1809,7 @@ static void clk_reparent(struct clk_core
  	}
  
  	core->parent = new_parent;
