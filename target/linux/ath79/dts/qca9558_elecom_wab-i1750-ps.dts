@@ -5,29 +5,6 @@
 / {
 	compatible = "elecom,wab-i1750-ps", "qca,qca9558";
 	model = "ELECOM WAB-I1750-PS";
-
-	ahb {
-		apb {
-			/* "SERIAL" port (RJ-45) on the case */
-			uart1: uart@18500000 {
-				compatible = "qca,ar9330-uart";
-				reg = <0x18500000 0x14>;
-
-				pinctrl-names = "default";
-				pinctrl-0 = <&pmx_uart1_in_pins &pmx_uart1_out_pins
-					     &jtag_disable_pins>;
-
-				interrupts = <6>;
-				interrupt-parent = <&miscintc>;
-
-				clocks = <&pll ATH79_CLK_UART1>;
-				clock-names = "uart";
-
-				/* QCA955x HS UART is not supported */
-				status = "disabled";
-			};
-		};
-	};
 };
 
 &gpio {
@@ -66,4 +43,12 @@
 		 */
 		pinctrl-single,bits = <0x3c 0x3010000 0xffff0000>;
 	};
+};
+
+/* "SERIAL" port (RJ-45) on the case */
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmx_uart1_in_pins &pmx_uart1_out_pins
+		     &jtag_disable_pins>;
+	status = "okay";
 };
