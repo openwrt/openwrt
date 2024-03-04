@@ -16,7 +16,6 @@
 
 	aliases {
 		serial0 = &blsp1_uart3;
-		sdhc2 = &sdhc_1;
 		ethernet0 = &dp5;
 		ethernet1 = &dp4;
 		label-mac-device = &dp5;
@@ -172,7 +171,7 @@
 	};
 };
 
-&sdhc_1 {
+&sdhc {
 	pinctrl-0 = <&sd_pins>;
 	pinctrl-names = "default";
 	status = "okay";
