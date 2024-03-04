@@ -17,7 +17,6 @@ case "$FIRMWARE" in
 	edgecore,eap102|\
 	edimax,cax1800|\
 	linksys,mx5300|\
-	netgear,rax120v2|\
 	netgear,wax218|\
 	netgear,wax620|\
 	netgear,wax630|\
@@ -42,6 +41,13 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 1) 1
 		ath11k_patch_mac $(macaddr_add $label_mac 3) 2
 		ath11k_remove_regdomain
+		ath11k_set_macflag
+		;;
+	netgear,rax120v2)
+		caldata_extract "0:art" 0x1000 0x20000
+		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0xc) 0
+		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0x0) 1
+		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0x6) 2
 		ath11k_set_macflag
 		;;
 	prpl,haze|\
