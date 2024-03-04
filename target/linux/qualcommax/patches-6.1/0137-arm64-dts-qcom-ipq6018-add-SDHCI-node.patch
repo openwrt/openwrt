@@ -1,28 +1,31 @@
-From e4d7544ce092807e8c5aeb618cec30e2eb9b40c2 Mon Sep 17 00:00:00 2001
-From: Mantas Pucka <mantas@8devices.com>
-Date: Mon, 24 Apr 2023 15:13:32 +0300
-Subject: [PATCH 3/3] arm64: dts: qcom: ipq6018: add SDHCI node
+From 2a89fd2e8f55a6e8516d233a44f80f2a314c87a5 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Sun, 10 Dec 2023 23:19:38 +0800
+Subject: [PATCH] arm64: dts: qcom: ipq6018: add sdhci node
 
-IPQ6018 has one SD/eMMC controller, add node for it.
+Add node to support mmc controller inside of IPQ6018.
+This controller supports both eMMC and SD cards.
 
-Signed-off-by: Mantas Pucka <mantas@8devices.com>
-Tested-by: Robert Marko <robimarko@gmail.com>
+Tested with:
+  eMMC (HS200)
+  SD Card (SDR50/SDR104)
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
 ---
- arch/arm64/boot/dts/qcom/ipq6018.dtsi | 23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
 --- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
-@@ -482,6 +482,29 @@
+@@ -482,6 +482,25 @@
  			};
  		};
  
-+		sdhc_1: mmc@7804000 {
++		sdhc: mmc@7804000 {
 +			compatible = "qcom,ipq6018-sdhci", "qcom,sdhci-msm-v5";
 +			reg = <0x0 0x07804000 0x0 0x1000>,
-+			      <0x0 0x07805000 0x0 0x1000>,
-+			      <0x0 0x07808000 0x0 0x2000>;
-+			reg-names = "hc", "cqhci", "ice";
++			      <0x0 0x07805000 0x0 0x1000>;
++			reg-names = "hc", "cqhci";
 +
 +			interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>,
 +				     <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;
@@ -30,13 +33,10 @@ Tested-by: Robert Marko <robimarko@gmail.com>
 +
 +			clocks = <&gcc GCC_SDCC1_AHB_CLK>,
 +				 <&gcc GCC_SDCC1_APPS_CLK>,
-+				 <&xo>,
-+				 <&gcc GCC_SDCC1_ICE_CORE_CLK>;
-+			clock-names = "iface", "core", "xo", "ice";
-+
++				 <&xo>;
++			clock-names = "iface", "core", "xo";
 +			resets = <&gcc GCC_SDCC1_BCR>;
-+			supports-cqe;
-+			bus-width = <8>;
++			max-frequency = <192000000>;
 +			status = "disabled";
 +		};
 +
