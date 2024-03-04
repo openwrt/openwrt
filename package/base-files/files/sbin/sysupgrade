@@ -237,6 +237,7 @@ include /lib/upgrade
 create_backup_archive() {
 	local conf_tar="$1"
 	local disabled
+	local err
 
 	[ "$(rootfs_type)" = "tmpfs" ] && {
 		echo "Cannot save config while running from ramdisk." >&2
@@ -251,31 +252,43 @@ create_backup_archive() {
 	v "Saving config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
 	sed -i -e 's,^/,,' "$CONFFILES"
+	set -o pipefail
 	{
-		for service in /etc/init.d/*; do
-			if ! $service enabled; then
+		local ret=0
+
+		if [ $ret -eq 0 ]; then
+			for service in /etc/init.d/*; do
+				if ! $service enabled; then
 				disabled="$disabled$service disable\n"
-			fi
-		done
-		disabled="$disabled\nexit 0"
-		tar_print_member "/etc/uci-defaults/10_disable_services" "$(echo -e $disabled)"
+				fi
+			done
+			disabled="$disabled\nexit 0"
+			tar_print_member "/etc/uci-defaults/10_disable_services" "$(echo -e $disabled)" || ret=1
+		fi
 
 		# Part of archive with installed packages info
-		if [ "$SAVE_INSTALLED_PKGS" -eq 1 ]; then
-			# Format: pkg-name<TAB>{rom,overlay,unknown}
-			# rom is used for pkgs in /rom, even if updated later
-			tar_print_member "$INSTALLED_PACKAGES" "$(find /usr/lib/opkg/info -name "*.control" \( \
-				\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
-				\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
-				\( -exec echo {} unknown \; \) \
-				\) | sed -e 's,.*/,,;s/\.control /\t/')"
+		if [ $ret -eq 0 ]; then
+			if [ "$SAVE_INSTALLED_PKGS" -eq 1 ]; then
+				# Format: pkg-name<TAB>{rom,overlay,unknown}
+				# rom is used for pkgs in /rom, even if updated later
+				tar_print_member "$INSTALLED_PACKAGES" "$(find /usr/lib/opkg/info -name "*.control" \( \
+					\( -exec test -f /rom/{} \; -exec echo {} rom \; \) -o \
+					\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
+					\( -exec echo {} unknown \; \) \
+					\) | sed -e 's,.*/,,;s/\.control /\t/')" || ret=1
+			fi
 		fi
 
 		# Rest of archive with config files and ending padding
-		tar c${TAR_V} -C / -T "$CONFFILES"
-	} | gzip > "${conf_tar:-/proc/self/fd/1}"
+		if [ $ret -eq 0 ]; then
+			tar c${TAR_V} -C / -T "$CONFFILES" || ret=1
+		fi
 
-	local err=$?
+		[ $ret -eq 0 ]
+	} | gzip > "${conf_tar:-/proc/self/fd/1}"
+	err=$?
+	set +o pipefail
+
 	if [ "$err" -ne 0 ]; then
 		echo "Failed to create the configuration backup."
 		[ -f "$conf_tar" ] && rm -f "$conf_tar"
