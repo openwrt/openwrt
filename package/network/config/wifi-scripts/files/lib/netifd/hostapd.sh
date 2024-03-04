@@ -689,7 +689,10 @@ hostapd_set_bss_options() {
 			fi
 			[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
 			[ -n "$wpa_psk_file" ] && {
-				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
+				[ -e "$wpa_psk_file" ] || {
+					touch "$wpa_psk_file"
+					chown network:network "$wpa_psk_file"
+				}
 				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
 			}
 			[ -n "$wps_psk_file" ] && append bss_conf "#uci_wps_psk_file=/etc/hostapd/$wps_psk_file" "$N"
