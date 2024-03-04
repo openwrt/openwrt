@@ -241,11 +241,12 @@ create_backup_archive() {
 	[ "$(rootfs_type)" = "tmpfs" ] && {
 		echo "Cannot save config while running from ramdisk." >&2
 		ask_bool 0 "Abort" && exit
-		rm -f "$conf_tar"
 		return 0
 	}
 	run_hooks "$CONFFILES" $sysupgrade_init_conffiles
 	ask_bool 0 "Edit config file list" && vi "$CONFFILES"
+
+	[ "$conf_tar" != "-" ] || conf_tar=""
 
 	v "Saving config files..."
 	[ "$VERBOSE" -gt 1 ] && TAR_V="v" || TAR_V=""
@@ -272,12 +273,12 @@ create_backup_archive() {
 
 		# Rest of archive with config files and ending padding
 		tar c${TAR_V} -C / -T "$CONFFILES"
-	} | gzip > "$conf_tar"
+	} | gzip > "${conf_tar:-/proc/self/fd/1}"
 
 	local err=$?
 	if [ "$err" -ne 0 ]; then
 		echo "Failed to create the configuration backup."
-		rm -f "$conf_tar"
+		[ -f "$conf_tar" ] && rm -f "$conf_tar"
 	fi
 
 	rm -f "$CONFFILES"
