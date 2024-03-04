@@ -1,0 +1,30 @@
+From fe662f92252439772330b9315f21cf74ac279bc1 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Wed, 6 Mar 2024 21:25:20 +0800
+Subject: [PATCH] arm64: dts: qcom: ipq6018: add 1.2GHz CPU Frequency
+
+The final version of IPQ6000 (SoC id: IPQ6000, SBL version:
+BOOT.XF.0.3-00086-IPQ60xxLZB-1) has a max design frequency
+of 1.2GHz, so add this CPU frequency.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -119,6 +119,13 @@
+ 			clock-latency-ns = <200000>;
+ 		};
+ 
++		opp-1200000000 {
++			opp-hz = /bits/ 64 <1200000000>;
++			opp-microvolt = <850000>;
++			opp-supported-hw = <0x4>;
++			clock-latency-ns = <200000>;
++		};
++
+ 		opp-1320000000 {
+ 			opp-hz = /bits/ 64 <1320000000>;
+ 			opp-microvolt = <862500>;
