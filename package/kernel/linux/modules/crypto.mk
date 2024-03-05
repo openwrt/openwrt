@@ -958,6 +958,18 @@ endif
 $(eval $(call KernelPackage,crypto-sha1))
 
 
+define KernelPackage/crypto-sha3
+  TITLE:=SHA3 digest CryptoAPI module
+  DEPENDS:=+kmod-crypto-hash
+  KCONFIG:= CONFIG_CRYPTO_SHA3
+  FILES:=$(LINUX_DIR)/crypto/sha3_generic.ko
+  AUTOLOAD:=$(call AutoLoad,09,sha3_generic)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-sha3))
+
+
 define KernelPackage/crypto-sha256
   TITLE:=SHA224 SHA256 digest CryptoAPI module
   DEPENDS:=+kmod-crypto-hash
