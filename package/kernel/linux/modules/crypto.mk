@@ -984,12 +984,18 @@ define KernelPackage/crypto-sha256
 	CONFIG_CRYPTO_SHA256 \
 	CONFIG_CRYPTO_SHA256_OCTEON \
 	CONFIG_CRYPTO_SHA256_PPC_SPE \
+	CONFIG_CRYPTO_SHA256_ARM64 \
 	CONFIG_CRYPTO_SHA256_SSSE3
   FILES:= \
 	$(LINUX_DIR)/crypto/sha256_generic.ko \
 	$(LINUX_DIR)/lib/crypto/libsha256.ko
   AUTOLOAD:=$(call AutoLoad,09,sha256_generic)
   $(call AddDepends/crypto)
+endef
+
+define KernelPackage/crypto-sha256/aarch64
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha256-arm64.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha256-arm64)
 endef
 
 define KernelPackage/crypto-sha256/octeon
