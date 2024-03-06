@@ -1027,7 +1027,12 @@ define KernelPackage/crypto-sha256/x86_64
 endef
 endif
 
+KernelPackage/crypto-sha256/mediatek/filogic=$(KernelPackage/crypto-sha256/aarch64-ce)
+KernelPackage/crypto-sha256/mediatek/mt7622=$(KernelPackage/crypto-sha256/aarch64-ce)
+KernelPackage/crypto-sha256/mvebu/cortexa53=$(KernelPackage/crypto-sha256/aarch64-ce)
+KernelPackage/crypto-sha256/mvebu/cortexa72=$(KernelPackage/crypto-sha256/aarch64-ce)
 KernelPackage/crypto-sha256/qualcommax=$(KernelPackage/crypto-sha256/aarch64-ce)
+KernelPackage/crypto-sha256/rockchip/armv8=$(KernelPackage/crypto-sha256/aarch64-ce)
 
 ifdef KernelPackage/crypto-sha256/$(ARCH)
   KernelPackage/crypto-sha256/$(CRYPTO_TARGET)=\
