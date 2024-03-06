@@ -15,6 +15,7 @@ case "$board" in
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x10000" "0x10000"
 	;;
 glinet,gl-ax1800|\
+glinet,gl-axt1800|\
 netgear,wax214)
 	idx="$(find_mtd_index 0:appsblenv)"
 	[ -n "$idx" ] && \
