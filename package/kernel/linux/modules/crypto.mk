@@ -985,6 +985,7 @@ define KernelPackage/crypto-sha256
 	CONFIG_CRYPTO_SHA256_OCTEON \
 	CONFIG_CRYPTO_SHA256_PPC_SPE \
 	CONFIG_CRYPTO_SHA256_ARM64 \
+	CONFIG_CRYPTO_SHA2_ARM64_CE \
 	CONFIG_CRYPTO_SHA256_SSSE3
   FILES:= \
 	$(LINUX_DIR)/crypto/sha256_generic.ko \
@@ -996,6 +997,12 @@ endef
 define KernelPackage/crypto-sha256/aarch64
   FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha256-arm64.ko
   AUTOLOAD+=$(call AutoLoad,09,sha256-arm64)
+endef
+
+define KernelPackage/crypto-sha256/aarch64-ce
+  $(call KernelPackage/crypto-sha256/aarch64)
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha2-ce.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha2-ce)
 endef
 
 define KernelPackage/crypto-sha256/octeon
@@ -1014,6 +1021,8 @@ define KernelPackage/crypto-sha256/x86_64
   AUTOLOAD+=$(call AutoLoad,09,sha256-ssse3)
 endef
 endif
+
+KernelPackage/crypto-sha256/qualcommax=$(KernelPackage/crypto-sha256/aarch64-ce)
 
 ifdef KernelPackage/crypto-sha256/$(ARCH)
   KernelPackage/crypto-sha256/$(CRYPTO_TARGET)=\
