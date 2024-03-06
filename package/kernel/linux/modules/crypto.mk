@@ -908,6 +908,7 @@ define KernelPackage/crypto-sha1
 	CONFIG_CRYPTO_SHA1 \
 	CONFIG_CRYPTO_SHA1_ARM \
 	CONFIG_CRYPTO_SHA1_ARM_NEON \
+	CONFIG_CRYPTO_SHA1_ARM64_CE \
 	CONFIG_CRYPTO_SHA1_OCTEON \
 	CONFIG_CRYPTO_SHA1_PPC_SPE \
 	CONFIG_CRYPTO_SHA1_SSSE3
@@ -927,9 +928,15 @@ define KernelPackage/crypto-sha1/arm-neon
   AUTOLOAD+=$(call AutoLoad,09,sha1-arm-neon)
 endef
 
+define KernelPackage/crypto-sha1/aarch64-ce
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha1-ce.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha1-ce)
+endef
+
 KernelPackage/crypto-sha1/imx=$(KernelPackage/crypto-sha1/arm-neon)
 KernelPackage/crypto-sha1/ipq40xx=$(KernelPackage/crypto-sha1/arm-neon)
 KernelPackage/crypto-sha1/mvebu/cortexa9=$(KernelPackage/crypto-sha1/arm-neon)
+KernelPackage/crypto-sha1/qualcommax=$(KernelPackage/crypto-sha1/aarch64-ce)
 
 define KernelPackage/crypto-sha1/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha1.ko
