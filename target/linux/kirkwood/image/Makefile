@@ -209,7 +209,8 @@ define Device/iptime_nas1
   DEVICE_MODEL := NAS1
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
 	kmod-gpio-button-hotplug kmod-gpio-pca953x kmod-hwmon-drivetemp \
-	kmod-hwmon-gpiofan kmod-usb-ledtrig-usbport kmod-rtc-mv -uboot-envtools
+	kmod-hwmon-gpiofan kmod-usb-ledtrig-usbport kmod-rtc-mv kmod-thermal \
+  -uboot-envtools
   KERNEL := $$(KERNEL) | iptime-naspkg nas1
   BLOCKSIZE := 256k
   IMAGE_SIZE := 15872k
