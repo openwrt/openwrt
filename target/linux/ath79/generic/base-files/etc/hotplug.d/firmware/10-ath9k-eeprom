@@ -86,6 +86,10 @@ case "$FIRMWARE" in
 	;;
 "ath9k-eeprom-pci-0000:00:00.0.bin")
 	case $board in
+	adtran,bsap1920|\
+	adtran,bsap1925)
+		caldata_extract "art" 0x1000 0x440
+		;;	
 	aruba,ap-115)
 		caldata_extract "oemdata" 0x5000 0x440
 		;;
