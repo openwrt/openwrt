@@ -1,0 +1,32 @@
+From 7f44756c1017df36785a0f01c882c65cb74be5fb Mon Sep 17 00:00:00 2001
+From: Stephan Gerhold <stephan@gerhold.net>
+Date: Thu, 14 Oct 2021 20:55:42 +0200
+Subject: [PATCH 2/4] arm64: dts: qcom: msm8916: Reduce reserved memory for
+ venus
+
+According to the ELF headers of the venus firmware binaries, only
+~ 5 MiB (0x500000) of the venus memory region will actually end up
+being used. Reduce the size of the reserved-memory region to make
+slightly more RAM available for Linux.
+
+Signed-off-by: Stephan Gerhold <stephan@gerhold.net>
+---
+ arch/arm64/boot/dts/qcom/msm8916.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/msm8916.dtsi b/arch/arm64/boot/dts/qcom/msm8916.dtsi
+index a831064700ee..445a1a819c0d 100644
+--- a/arch/arm64/boot/dts/qcom/msm8916.dtsi
++++ b/arch/arm64/boot/dts/qcom/msm8916.dtsi
+@@ -89,7 +89,7 @@ wcnss_mem: wcnss@89300000 {
+ 		};
+ 
+ 		venus_mem: venus@89900000 {
+-			reg = <0x0 0x89900000 0x0 0x600000>;
++			reg = <0x0 0x89900000 0x0 0x500000>;
+ 			no-map;
+ 		};
+ 
+-- 
+2.38.1
+

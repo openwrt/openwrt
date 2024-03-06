@@ -1,0 +1,105 @@
+From 3d660ce5dcc7eab1fe0a469d282e30f1dada8b28 Mon Sep 17 00:00:00 2001
+From: Nikita Travkin <nikita@trvn.ru>
+Date: Mon, 27 Feb 2023 21:45:21 +0500
+Subject: [PATCH] net: wwan: qcom_bam_dmux: Track the device stats
+
+Signed-off-by: Nikita Travkin <nikita@trvn.ru>
+---
+ drivers/net/wwan/qcom_bam_dmux.c | 22 ++++++++++++++++++++--
+ 1 file changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wwan/qcom_bam_dmux.c b/drivers/net/wwan/qcom_bam_dmux.c
+index 17d46f4d2913..d2be8534d46d 100644
+--- a/drivers/net/wwan/qcom_bam_dmux.c
++++ b/drivers/net/wwan/qcom_bam_dmux.c
+@@ -21,6 +21,7 @@
+ #include <linux/wait.h>
+ #include <linux/workqueue.h>
+ #include <net/pkt_sched.h>
++#include <linux/u64_stats_sync.h>
+ 
+ #define BAM_DMUX_BUFFER_SIZE		SZ_2K
+ #define BAM_DMUX_HDR_SIZE		sizeof(struct bam_dmux_hdr)
+@@ -359,6 +360,7 @@ static netdev_tx_t bam_dmux_netdev_start_xmit(struct sk_buff *skb,
+ 		if (!atomic_long_fetch_or(BIT(skb_dma - dmux->tx_skbs),
+ 					  &dmux->tx_deferred_skb))
+ 			queue_pm_work(&dmux->tx_wakeup_work);
++		dev_sw_netstats_tx_add(netdev, 1, skb->len);
+ 		return NETDEV_TX_OK;
+ 	}
+ 
+@@ -366,9 +368,11 @@ static netdev_tx_t bam_dmux_netdev_start_xmit(struct sk_buff *skb,
+ 		goto drop;
+ 
+ 	dma_async_issue_pending(dmux->tx);
++	dev_sw_netstats_tx_add(netdev, 1, skb->len);
+ 	return NETDEV_TX_OK;
+ 
+ drop:
++	netdev->stats.tx_dropped++;
+ 	bam_dmux_tx_done(skb_dma);
+ 	dev_kfree_skb_any(skb);
+ 	return NETDEV_TX_OK;
+@@ -404,6 +408,7 @@ static void bam_dmux_tx_wakeup_work(struct work_struct *work)
+ static const struct net_device_ops bam_dmux_ops = {
+ 	.ndo_open	= bam_dmux_netdev_open,
+ 	.ndo_stop	= bam_dmux_netdev_stop,
++	.ndo_get_stats64= dev_get_tstats64,
+ 	.ndo_start_xmit	= bam_dmux_netdev_start_xmit,
+ };
+ 
+@@ -453,6 +458,13 @@ static void bam_dmux_register_netdev_work(struct work_struct *work)
+ 		bndev->dmux = dmux;
+ 		bndev->ch = ch;
+ 
++		netdev->tstats = netdev_alloc_pcpu_stats(struct pcpu_sw_netstats);
++		if (!netdev->tstats) {
++			dev_err(dmux->dev, "Failed to allocate stats for channel %u.\n", ch);
++			free_netdev(netdev);
++			return;
++		}
++
+ 		ret = register_netdev(netdev);
+ 		if (ret) {
+ 			dev_err(dmux->dev, "Failed to register netdev for channel %u: %d\n",
+@@ -508,12 +520,14 @@ static void bam_dmux_cmd_data(struct bam_dmux_skb_dma *skb_dma)
+ 
+ 	if (!netdev || !netif_running(netdev)) {
+ 		dev_warn(dmux->dev, "Data for inactive channel %u\n", hdr->ch);
++		netdev->stats.rx_dropped++;
+ 		return;
+ 	}
+ 
+ 	if (hdr->len > BAM_DMUX_MAX_DATA_SIZE) {
+ 		dev_err(dmux->dev, "Data larger than buffer? (%u > %u)\n",
+ 			hdr->len, (u16)BAM_DMUX_MAX_DATA_SIZE);
++		netdev->stats.rx_dropped++;
+ 		return;
+ 	}
+ 
+@@ -536,6 +550,7 @@ static void bam_dmux_cmd_data(struct bam_dmux_skb_dma *skb_dma)
+ 		break;
+ 	}
+ 
++	dev_sw_netstats_rx_add(netdev, skb->len);
+ 	netif_receive_skb(skb);
+ }
+ 
+@@ -856,9 +871,12 @@ static int bam_dmux_remove(struct platform_device *pdev)
+ 	/* Unregister network interfaces */
+ 	cancel_work_sync(&dmux->register_netdev_work);
+ 	rtnl_lock();
+-	for (i = 0; i < BAM_DMUX_NUM_CH; ++i)
+-		if (dmux->netdevs[i])
++	for (i = 0; i < BAM_DMUX_NUM_CH; ++i) {
++		if (dmux->netdevs[i]) {
+ 			unregister_netdevice_queue(dmux->netdevs[i], &list);
++			free_percpu(dmux->netdevs[i]->tstats);
++		}
++	}
+ 	unregister_netdevice_many(&list);
+ 	rtnl_unlock();
+ 	cancel_work_sync(&dmux->tx_wakeup_work);
+-- 
+2.39.2
+
