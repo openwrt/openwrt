@@ -1,0 +1,25 @@
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+linksys,mr7350)
+	ucidef_set_led_netdev "lan1-port-activity" "LAN1-PORT-ACTIVITY" "amber:lan1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan1-port-link" "LAN1-PORT-LINK" "green:lan1" "lan1" "link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan2-port-activity" "LAN2-PORT-ACTIVITY" "amber:lan2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan2-port-link" "LAN2-PORT-LINK" "green:lan2" "lan2" "link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan3-port-activity" "LAN3-PORT-ACTIVITY" "amber:lan3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "lan3-port-link" "LAN3-PORT-LINK" "green:lan3" "lan3" "link_10 link_100 link_1000"
+	ucidef_set_led_netdev "lan4-port-activity" "LAN4-PORT-ACTIVITY" "amber:lan4" "lan4" "link tx rx"
+	ucidef_set_led_netdev "lan4-port-link" "LAN4-PORT-LINK" "green:lan4" "lan4" "link_10 link_100 link_1000"
+	ucidef_set_led_netdev "wan-port-activity" "WAN-PORT-ACTIVITY" "amber:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "green:wan" "wan" "link_10 link_100 link_1000"
+	;;
+esac
+
+board_config_flush
+
+exit 0
