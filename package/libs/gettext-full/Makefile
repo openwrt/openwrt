@@ -25,7 +25,7 @@ PKG_INSTALL:=1
 PKG_BUILD_DEPENDS:=gettext-full/host libunistring libxml2
 PKG_BUILD_PARALLEL:=0
 
-HOST_BUILD_DEPENDS:=gperf/host libunistring/host libxml2/host
+HOST_BUILD_DEPENDS:=gperf/host libiconv-full/host libunistring/host libxml2/host
 HOST_BUILD_PARALLEL:=0
 
 PKG_SUBDIRS:= \
@@ -99,14 +99,12 @@ HOST_CONFIGURE_ARGS += \
 	--disable-java \
 	--disable-openmp \
 	--without-emacs \
+	--with-libiconv-prefix=$(STAGING_DIR_HOSTPKG) \
 	--with-libunistring-prefix=$(STAGING_DIR_HOSTPKG) \
 	--with-libxml2-prefix=$(STAGING_DIR_HOSTPKG)
 
 HOST_CONFIGURE_VARS += \
 	EMACS="no" \
-	am_cv_lib_iconv=no \
-	am_cv_func_iconv=no \
-	ac_cv_header_iconv_h=no \
 
 HOST_CFLAGS += $(HOST_FPIC)
 
