@@ -23,6 +23,7 @@ ipq60xx_setup_interfaces()
 	qihoo,360v6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
+	linksys,mr7350|\
 	yuncore,fap650)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
@@ -39,7 +40,12 @@ ipq60xx_setup_macs()
 	local wan_mac=""
 	local label_mac=""
 
-	case "$board" in
+	case $board in
+	linksys,mr7350)
+		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		lan_mac=$label_mac
+		wan_mac=$label_mac
+		;;
 	qihoo,360v6)
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
