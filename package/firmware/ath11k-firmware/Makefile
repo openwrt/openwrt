@@ -55,7 +55,7 @@ QCN9074_BOARD_REV:=8e140c65f36137714b6d8934e09dcd73cb05c2f6
 QCN9074_BOARD_FILE:=board-2.bin.$(QCN9074_BOARD_REV)
 
 define Download/qcn9074-board
-  URL:=https://github.com/kvalo/ath11k-firmware/raw/master/QCN9074/hw1.0/
+  URL:=https://git.codelinaro.org/clo/ath-firmware/ath11k-firmware/-/raw/main/QCN9074/hw1.0/
   URL_FILE:=board-2.bin
   FILE:=$(QCN9074_BOARD_FILE)
   HASH:=dbf0ca14aa1229eccd48f26f1026901b9718b143bd30b51b8ea67c84ba6207f1
@@ -63,7 +63,7 @@ endef
 $(eval $(call Download,qcn9074-board))
 
 define Download/ath11k-firmware-old
-  URL:=https://github.com/kvalo/ath11k-firmware.git
+  URL:=https://git.codelinaro.org/clo/ath-firmware/ath11k-firmware.git
   VERSION:=540105aa5c0903b5f773d4e80b8501e8da5217e7
   PROTO:=git
   FILE:=ath11k-firmware-old.tar.xz
