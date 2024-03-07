@@ -863,6 +863,23 @@ define Device/netgear_wax220
 endef
 TARGET_DEVICES += netgear_wax220
 
+define Device/openembed_som7981
+  DEVICE_VENDOR := OpenEmbed
+  DEVICE_MODEL := SOM7981
+  DEVICE_DTS := mt7981b-openembed-som7981
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 244224k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += openembed_som7981
+
 define Device/qihoo_360t7
   DEVICE_VENDOR := Qihoo
   DEVICE_MODEL := 360T7
