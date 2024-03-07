@@ -1161,6 +1161,17 @@ define Device/unielec_u7981-01-nand
 endef
 TARGET_DEVICES += unielec_u7981-01-nand
 
+define Device/wavlink_wl-wn586x3
+  DEVICE_VENDOR := WAVLINK
+  DEVICE_MODEL := WL-WN586X3
+  DEVICE_DTS := mt7981b-wavlink-wl-wn586x3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  IMAGE_SIZE := 15424k
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += wavlink_wl-wn586x3
+
 define Device/xiaomi_mi-router-ax3000t
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router AX3000T

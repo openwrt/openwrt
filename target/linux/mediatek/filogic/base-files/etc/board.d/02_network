@@ -96,7 +96,8 @@ mediatek_setup_interfaces()
 	yuncore,ax835)
 		ucidef_set_interfaces_lan_wan lan wan
 		;;
-	tplink,tl-xdr6086)
+	tplink,tl-xdr6086|\
+	wavlink,wl-wn586x3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
 		;;
 	xiaomi,mi-router-ax3000t|\
