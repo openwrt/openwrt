@@ -103,7 +103,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  int gpiod_export_link(struct device *dev, const char *name,
  		      struct gpio_desc *desc);
  void gpiod_unexport(struct gpio_desc *desc);
-@@ -653,12 +656,26 @@ void gpiod_unexport(struct gpio_desc *de
+@@ -653,11 +656,25 @@ void gpiod_unexport(struct gpio_desc *de
  
  #include <asm/errno.h>
  
@@ -119,17 +119,16 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	return -ENOSYS;
  }
- 
++
 +static inline int gpio_export_with_name(struct gpio_desc *desc,
 +					bool direction_may_change,
 +					const char *name)
 +{
 +	return -ENOSYS;
 +}
-+
+ 
  static inline int gpiod_export_link(struct device *dev, const char *name,
  				    struct gpio_desc *desc)
- {
 --- a/drivers/gpio/gpiolib-sysfs.c
 +++ b/drivers/gpio/gpiolib-sysfs.c
 @@ -557,7 +557,7 @@ static struct class gpio_class = {
@@ -150,7 +149,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	dev = device_create_with_groups(&gpio_class, &gdev->dev,
  					MKDEV(0, 0), data, gpio_groups,
-@@ -640,8 +642,21 @@ int gpiod_export(struct gpio_desc *desc,
+@@ -640,8 +642,21 @@ err_unlock:
  	gpiod_dbg(desc, "%s: status %d\n", __func__, status);
  	return status;
  }

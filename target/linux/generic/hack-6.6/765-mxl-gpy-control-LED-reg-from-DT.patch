@@ -31,7 +31,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  #include <linux/phy.h>
  #include <linux/polynomial.h>
  #include <linux/property.h>
-@@ -33,6 +34,7 @@
+@@ -38,6 +39,7 @@
  #define PHY_MIISTAT		0x18	/* MII state */
  #define PHY_IMASK		0x19	/* interrupt mask */
  #define PHY_ISTAT		0x1A	/* interrupt status */
@@ -39,7 +39,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  #define PHY_FWV			0x1E	/* firmware version */
  
  #define PHY_MIISTAT_SPD_MASK	GENMASK(2, 0)
-@@ -56,10 +58,15 @@
+@@ -61,10 +63,15 @@
  				 PHY_IMASK_ADSC | \
  				 PHY_IMASK_ANC)
  
@@ -55,7 +55,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  #define PHY_PMA_MGBT_POLARITY	0x82
  #define PHY_MDI_MDI_X_MASK	GENMASK(1, 0)
  #define PHY_MDI_MDI_X_NORMAL	0x3
-@@ -241,6 +248,35 @@ out:
+@@ -260,6 +267,35 @@ out:
  	return ret;
  }
  
@@ -91,7 +91,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  static int gpy_config_init(struct phy_device *phydev)
  {
  	int ret;
-@@ -252,7 +288,10 @@ static int gpy_config_init(struct phy_de
+@@ -271,7 +307,10 @@ static int gpy_config_init(struct phy_de
  
  	/* Clear all pending interrupts */
  	ret = phy_read(phydev, PHY_ISTAT);

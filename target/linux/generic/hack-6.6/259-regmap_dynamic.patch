@@ -137,7 +137,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/mutex.h>
  #include <linux/err.h>
  #include <linux/property.h>
-@@ -3513,3 +3514,5 @@ static int __init regmap_initcall(void)
+@@ -3433,3 +3434,5 @@ static int __init regmap_initcall(void)
  	return 0;
  }
  postcore_initcall(regmap_initcall);
@@ -145,7 +145,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +MODULE_LICENSE("GPL");
 --- a/include/linux/regmap.h
 +++ b/include/linux/regmap.h
-@@ -180,7 +180,7 @@ struct reg_sequence {
+@@ -197,7 +197,7 @@ struct reg_sequence {
  	__ret ?: __tmp; \
  })
  

@@ -83,7 +83,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	unsigned long flags;
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -32,6 +32,7 @@
+@@ -33,6 +33,7 @@
  
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
@@ -91,7 +91,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #include "mtdcore.h"
  
-@@ -1098,6 +1099,8 @@ int mtd_device_parse_register(struct mtd
+@@ -1125,6 +1126,8 @@ int mtd_device_parse_register(struct mtd
  		register_reboot_notifier(&mtd->reboot_notifier);
  	}
  

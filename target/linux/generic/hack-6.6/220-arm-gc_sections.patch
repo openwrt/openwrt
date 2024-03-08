@@ -12,7 +12,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -124,6 +124,7 @@ config ARM
+@@ -128,6 +128,7 @@ config ARM
  	select HOTPLUG_CORE_SYNC_DEAD if HOTPLUG_CPU
  	select IRQ_FORCED_THREADING
  	select LOCK_MM_AND_FIND_VMA
@@ -22,7 +22,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	select OF_EARLY_FLATTREE if OF
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
-@@ -91,6 +91,7 @@ endif
+@@ -92,6 +92,7 @@ endif
  ifeq ($(CONFIG_USE_OF),y)
  OBJS	+= $(libfdt_objs) fdt_check_mem_start.o
  endif
@@ -32,7 +32,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
 --- a/arch/arm/kernel/vmlinux.lds.S
 +++ b/arch/arm/kernel/vmlinux.lds.S
-@@ -75,7 +75,7 @@ SECTIONS
+@@ -74,7 +74,7 @@ SECTIONS
  	. = ALIGN(4);
  	__ex_table : AT(ADDR(__ex_table) - LOAD_OFFSET) {
  		__start___ex_table = .;
@@ -41,7 +41,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		__stop___ex_table = .;
  	}
  
-@@ -100,24 +100,24 @@ SECTIONS
+@@ -99,24 +99,24 @@ SECTIONS
  	}
  	.init.arch.info : {
  		__arch_info_begin = .;
@@ -88,7 +88,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		__idmap_text_end = .;					\
  
  #define ARM_DISCARD							\
-@@ -109,12 +109,12 @@
+@@ -108,12 +108,12 @@
  	. = ALIGN(8);							\
  	.ARM.unwind_idx : {						\
  		__start_unwind_idx = .;					\
@@ -103,7 +103,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		__stop_unwind_tab = .;					\
  	}
  
-@@ -126,7 +126,7 @@
+@@ -125,7 +125,7 @@
  	__vectors_lma = .;						\
  	OVERLAY 0xffff0000 : NOCROSSREFS AT(__vectors_lma) {		\
  		.vectors {						\
@@ -112,7 +112,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		}							\
  		.vectors.bhb.loop8 {					\
  			*(.vectors.bhb.loop8)				\
-@@ -144,7 +144,7 @@
+@@ -143,7 +143,7 @@
  									\
  	__stubs_lma = .;						\
  	.stubs ADDR(.vectors) + 0x1000 : AT(__stubs_lma) {		\

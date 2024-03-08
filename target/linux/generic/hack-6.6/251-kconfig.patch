@@ -34,7 +34,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_AEAD2
  	select CRYPTO_ALGAPI
  
-@@ -75,7 +75,7 @@ config CRYPTO_AEAD2
+@@ -82,7 +82,7 @@ config CRYPTO_SIG2
  	select CRYPTO_ALGAPI2
  
  config CRYPTO_SKCIPHER
@@ -43,7 +43,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_SKCIPHER2
  	select CRYPTO_ALGAPI
  
-@@ -85,7 +85,7 @@ config CRYPTO_SKCIPHER2
+@@ -91,7 +91,7 @@ config CRYPTO_SKCIPHER2
  	select CRYPTO_ALGAPI2
  
  config CRYPTO_HASH
@@ -52,7 +52,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	select CRYPTO_HASH2
  	select CRYPTO_ALGAPI
  
-@@ -94,7 +94,7 @@ config CRYPTO_HASH2
+@@ -100,7 +100,7 @@ config CRYPTO_HASH2
  	select CRYPTO_ALGAPI2
  
  config CRYPTO_RNG
@@ -92,7 +92,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -457,16 +457,16 @@ config BCH_CONST_T
+@@ -460,16 +460,16 @@ config BCH_CONST_T
  # Textsearch support is select'ed if needed
  #
  config TEXTSEARCH
@@ -135,7 +135,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
  config SND_SEQ_DEVICE
  	tristate
-@@ -27,7 +27,7 @@ config SND_RAWMIDI
+@@ -40,7 +40,7 @@ config SND_UMP_LEGACY_RAWMIDI
  	  The device contains 16 substreams corresponding to UMP groups.
  
  config SND_COMPRESS_OFFLOAD
@@ -146,7 +146,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -430,7 +430,7 @@ config NET_DEVLINK
+@@ -467,7 +467,7 @@ config NET_DEVLINK
  	default n
  
  config PAGE_POOL

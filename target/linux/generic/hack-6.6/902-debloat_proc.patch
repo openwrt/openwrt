@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -2909,6 +2909,8 @@ static const struct seq_operations locks
+@@ -2897,6 +2897,8 @@ static const struct seq_operations locks
  
  static int __init proc_locks_init(void)
  {
@@ -54,7 +54,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	depends on PROC_FS
 --- a/fs/proc/consoles.c
 +++ b/fs/proc/consoles.c
-@@ -92,6 +92,9 @@ static const struct seq_operations conso
+@@ -107,6 +107,9 @@ static const struct seq_operations conso
  
  static int __init proc_consoles_init(void)
  {
@@ -235,7 +235,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!pe)
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -4205,6 +4205,8 @@ static const struct seq_operations vmall
+@@ -4439,6 +4439,8 @@ static const struct seq_operations vmall
  
  static int __init proc_vmalloc_init(void)
  {
@@ -246,7 +246,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				&vmalloc_op,
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
-@@ -2109,10 +2109,12 @@ void __init init_mm_internals(void)
+@@ -2135,10 +2135,12 @@ void __init init_mm_internals(void)
  	start_shepherd_timer();
  #endif
  #ifdef CONFIG_PROC_FS
@@ -286,7 +286,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto err;
 --- a/net/core/net-procfs.c
 +++ b/net/core/net-procfs.c
-@@ -319,10 +319,12 @@ static int __net_init dev_proc_net_init(
+@@ -327,10 +327,12 @@ static int __net_init dev_proc_net_init(
  	if (!proc_create_net("dev", 0444, net->proc_net, &dev_seq_ops,
  			sizeof(struct seq_net_private)))
  		goto out;
@@ -301,7 +301,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			sizeof(struct seq_net_private)))
  		goto out_softnet;
  
-@@ -332,9 +334,11 @@ static int __net_init dev_proc_net_init(
+@@ -340,9 +342,11 @@ static int __net_init dev_proc_net_init(
  out:
  	return rc;
  out_ptype:
@@ -315,7 +315,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  out_dev:
  	remove_proc_entry("dev", net->proc_net);
  	goto out;
-@@ -344,8 +348,10 @@ static void __net_exit dev_proc_net_exit
+@@ -352,8 +356,10 @@ static void __net_exit dev_proc_net_exit
  {
  	wext_proc_exit(net);
  
@@ -330,7 +330,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -4114,6 +4114,8 @@ static __net_initdata struct pernet_oper
+@@ -4144,6 +4144,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
@@ -385,7 +385,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/proc.c
 +++ b/net/ipv4/proc.c
-@@ -553,5 +553,8 @@ static __net_initdata struct pernet_oper
+@@ -556,5 +556,8 @@ static __net_initdata struct pernet_oper
  
  int __init ip_misc_proc_init(void)
  {
@@ -408,7 +408,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/inet_timewait_sock.c
 +++ b/net/ipv4/inet_timewait_sock.c
-@@ -269,7 +269,7 @@ void __inet_twsk_schedule(struct inet_ti
+@@ -266,7 +266,7 @@ void __inet_twsk_schedule(struct inet_ti
  	 */
  
  	if (!rearm) {
