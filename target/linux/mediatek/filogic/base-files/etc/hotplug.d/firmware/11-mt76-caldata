@@ -34,6 +34,17 @@ case "$FIRMWARE" in
 	ubnt,unifi-6-plus)
 		caldata_extract_mmc "factory" 0x0 0x1000
 		;;
+	unielec,u7981-01*)
+		case "$(cmdline_get_var root)" in
+		/dev/mmc*)
+			caldata_extract_mmc "factory" 0x0 0x1000
+			;;
+		*)
+			CI_UBIPART="UBI_DEV"
+			caldata_extract_ubi "factory" 0x0 0x1000
+			;;
+		esac
+		;;
 	esac
 	;;
 "mediatek/mt7986_eeprom_mt7975_dual.bin")
