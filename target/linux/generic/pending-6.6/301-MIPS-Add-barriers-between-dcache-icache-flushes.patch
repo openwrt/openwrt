@@ -26,7 +26,7 @@ Cc: James Hogan <james.hogan@imgtec.com>
 
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -514,6 +514,7 @@ static inline void local_r4k___flush_cac
+@@ -403,6 +403,7 @@ static inline void local_r4k___flush_cac
  
  	default:
  		r4k_blast_dcache();
@@ -34,7 +34,7 @@ Cc: James Hogan <james.hogan@imgtec.com>
  		r4k_blast_icache();
  		break;
  	}
-@@ -594,8 +595,10 @@ static inline void local_r4k_flush_cache
+@@ -483,8 +484,10 @@ static inline void local_r4k_flush_cache
  	if (cpu_has_dc_aliases || (exec && !cpu_has_ic_fills_f_dc))
  		r4k_blast_dcache();
  	/* If executable, blast stale lines from icache */
@@ -46,7 +46,7 @@ Cc: James Hogan <james.hogan@imgtec.com>
  }
  
  static void r4k_flush_cache_range(struct vm_area_struct *vma,
-@@ -696,8 +699,13 @@ static inline void local_r4k_flush_cache
+@@ -586,8 +589,13 @@ static inline void local_r4k_flush_cache
  	if (cpu_has_dc_aliases || (exec && !cpu_has_ic_fills_f_dc)) {
  		vaddr ? r4k_blast_dcache_page(addr) :
  			r4k_blast_dcache_user_page(addr);
@@ -61,7 +61,7 @@ Cc: James Hogan <james.hogan@imgtec.com>
  	}
  	if (exec) {
  		if (vaddr && cpu_has_vtag_icache && mm == current->active_mm) {
-@@ -764,6 +772,7 @@ static inline void __local_r4k_flush_ica
+@@ -654,6 +662,7 @@ static inline void __local_r4k_flush_ica
  			else
  				blast_dcache_range(start, end);
  		}

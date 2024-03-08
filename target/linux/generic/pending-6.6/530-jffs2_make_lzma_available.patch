@@ -85,7 +85,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  exit_dynrubin:
  	jffs2_dynrubin_exit();
  exit_runinmips:
-@@ -417,6 +422,7 @@ int __init jffs2_compressors_init(void)
+@@ -417,6 +422,7 @@ exit:
  int jffs2_compressors_exit(void)
  {
  /* Unregistering compressors */
@@ -1097,7 +1097,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  #define JFFS2_NODE_ACCURATE 0x2000
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -354,6 +354,12 @@ config ZSTD_DECOMPRESS
+@@ -356,6 +356,12 @@ config ZSTD_DECOMPRESS
  
  source "lib/xz/Kconfig"
  
@@ -1112,7 +1112,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  # ZLIB_INFLATE; DECOMPRESS_GZIP is just a wrapper.)
 --- a/lib/Makefile
 +++ b/lib/Makefile
-@@ -140,6 +140,16 @@ CFLAGS_kobject.o += -DDEBUG
+@@ -145,6 +145,16 @@ CFLAGS_kobject.o += -DDEBUG
  CFLAGS_kobject_uevent.o += -DDEBUG
  endif
  
@@ -1129,7 +1129,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  obj-$(CONFIG_DEBUG_INFO_REDUCED) += debug_info.o
  CFLAGS_debug_info.o += $(call cc-option, -femit-struct-debug-detailed=any)
  
-@@ -200,6 +210,8 @@ obj-$(CONFIG_ZSTD_COMPRESS) += zstd/
+@@ -205,6 +215,8 @@ obj-$(CONFIG_ZSTD_COMPRESS) += zstd/
  obj-$(CONFIG_ZSTD_DECOMPRESS) += zstd/
  obj-$(CONFIG_XZ_DEC) += xz/
  obj-$(CONFIG_RAID6_PQ) += raid6/

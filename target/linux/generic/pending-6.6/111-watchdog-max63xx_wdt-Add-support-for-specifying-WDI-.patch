@@ -17,7 +17,7 @@ Signed-off-by: Pali Rohár <pali@kernel.org>
 
 --- a/drivers/watchdog/max63xx_wdt.c
 +++ b/drivers/watchdog/max63xx_wdt.c
-@@ -27,6 +27,7 @@
+@@ -24,6 +24,7 @@
  #include <linux/io.h>
  #include <linux/slab.h>
  #include <linux/property.h>
@@ -25,7 +25,7 @@ Signed-off-by: Pali Rohár <pali@kernel.org>
  
  #define DEFAULT_HEARTBEAT 60
  #define MAX_HEARTBEAT     60
-@@ -53,6 +54,9 @@ struct max63xx_wdt {
+@@ -50,6 +51,9 @@ struct max63xx_wdt {
  	void __iomem *base;
  	spinlock_t lock;
  
@@ -35,7 +35,7 @@ Signed-off-by: Pali Rohár <pali@kernel.org>
  	/* WDI and WSET bits write access routines */
  	void (*ping)(struct max63xx_wdt *wdt);
  	void (*set)(struct max63xx_wdt *wdt, u8 set);
-@@ -158,6 +162,17 @@ static const struct watchdog_info max63x
+@@ -155,6 +159,17 @@ static const struct watchdog_info max63x
  	.identity = "max63xx Watchdog",
  };
  
@@ -53,7 +53,7 @@ Signed-off-by: Pali Rohár <pali@kernel.org>
  static void max63xx_mmap_ping(struct max63xx_wdt *wdt)
  {
  	u8 val;
-@@ -225,10 +240,19 @@ static int max63xx_wdt_probe(struct plat
+@@ -222,10 +237,19 @@ static int max63xx_wdt_probe(struct plat
  		return -EINVAL;
  	}
  

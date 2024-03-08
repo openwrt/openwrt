@@ -14,7 +14,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
-@@ -59,6 +59,7 @@ struct br_ip_list {
+@@ -61,6 +61,7 @@ struct br_ip_list {
  #define BR_PORT_LOCKED		BIT(21)
  #define BR_PORT_MAB		BIT(22)
  #define BR_NEIGH_VLAN_SUPPRESS	BIT(23)
@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/bridge/br_forward.c
 +++ b/net/bridge/br_forward.c
-@@ -199,6 +199,7 @@ out:
+@@ -201,6 +201,7 @@ void br_flood(struct net_bridge *br, str
  	      enum br_pkt_type pkt_type, bool local_rcv, bool local_orig,
  	      u16 vid)
  {
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct net_bridge_port *prev = NULL;
  	struct net_bridge_port *p;
  
-@@ -214,6 +215,10 @@ void br_flood(struct net_bridge *br, str
+@@ -218,6 +219,10 @@ void br_flood(struct net_bridge *br, str
  		case BR_PKT_MULTICAST:
  			if (!(p->flags & BR_MCAST_FLOOD) && skb->dev != br->dev)
  				continue;
@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			if (!(p->flags & BR_BCAST_FLOOD) && skb->dev != br->dev)
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -344,6 +344,8 @@ static rx_handler_result_t br_handle_fra
+@@ -362,6 +362,8 @@ static rx_handler_result_t br_handle_fra
  		fwd_mask |= p->group_fwd_mask;
  		switch (dest[5]) {
  		case 0x00:	/* Bridge Group Address */
@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/include/uapi/linux/if_link.h
 +++ b/include/uapi/linux/if_link.h
-@@ -561,6 +561,7 @@ enum {
+@@ -571,6 +571,7 @@ enum {
  	IFLA_BRPORT_MCAST_MAX_GROUPS,
  	IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
  	IFLA_BRPORT_BACKUP_NHID,
@@ -116,7 +116,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define IFLA_BRPORT_MAX (__IFLA_BRPORT_MAX - 1)
 --- a/net/bridge/br_netlink.c
 +++ b/net/bridge/br_netlink.c
-@@ -188,6 +188,7 @@ static inline size_t br_port_info_size(v
+@@ -190,6 +190,7 @@ static inline size_t br_port_info_size(v
  		+ nla_total_size(1)	/* IFLA_BRPORT_LOCKED */
  		+ nla_total_size(1)	/* IFLA_BRPORT_MAB */
  		+ nla_total_size(1)	/* IFLA_BRPORT_NEIGH_VLAN_SUPPRESS */
@@ -124,7 +124,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		+ nla_total_size(sizeof(struct ifla_bridge_id))	/* IFLA_BRPORT_ROOT_ID */
  		+ nla_total_size(sizeof(struct ifla_bridge_id))	/* IFLA_BRPORT_BRIDGE_ID */
  		+ nla_total_size(sizeof(u16))	/* IFLA_BRPORT_DESIGNATED_PORT */
-@@ -274,7 +275,8 @@ static int br_port_fill_attrs(struct sk_
+@@ -282,7 +283,8 @@ static int br_port_fill_attrs(struct sk_
  	    nla_put_u8(skb, IFLA_BRPORT_LOCKED, !!(p->flags & BR_PORT_LOCKED)) ||
  	    nla_put_u8(skb, IFLA_BRPORT_MAB, !!(p->flags & BR_PORT_MAB)) ||
  	    nla_put_u8(skb, IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
@@ -134,7 +134,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return -EMSGSIZE;
  
  	timerval = br_timer_value(&p->message_age_timer);
-@@ -878,6 +880,7 @@ static const struct nla_policy br_port_p
+@@ -901,6 +903,7 @@ static const struct nla_policy br_port_p
  	[IFLA_BRPORT_MCAST_MAX_GROUPS] = { .type = NLA_U32 },
  	[IFLA_BRPORT_NEIGH_VLAN_SUPPRESS] = NLA_POLICY_MAX(NLA_U8, 1),
  	[IFLA_BRPORT_BACKUP_NHID] = { .type = NLA_U32 },
@@ -142,7 +142,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  /* Change the state of the port and notify spanning tree */
-@@ -943,6 +946,7 @@ static int br_setport(struct net_bridge_
+@@ -969,6 +972,7 @@ static int br_setport(struct net_bridge_
  	br_set_port_flag(p, tb, IFLA_BRPORT_MAB, BR_PORT_MAB);
  	br_set_port_flag(p, tb, IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
  			 BR_NEIGH_VLAN_SUPPRESS);
@@ -152,7 +152,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	    (!(p->flags & BR_PORT_LOCKED) || !(p->flags & BR_LEARNING))) {
 --- a/net/core/rtnetlink.c
 +++ b/net/core/rtnetlink.c
-@@ -57,7 +57,7 @@
+@@ -61,7 +61,7 @@
  #include "dev.h"
  
  #define RTNL_MAX_TYPE		50
@@ -161,7 +161,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  struct rtnl_link {
  	rtnl_doit_func		doit;
-@@ -4840,7 +4840,9 @@ int ndo_dflt_bridge_getlink(struct sk_bu
+@@ -4949,7 +4949,9 @@ int ndo_dflt_bridge_getlink(struct sk_bu
  	    brport_nla_put_flag(skb, flags, mask,
  				IFLA_BRPORT_MCAST_FLOOD, BR_MCAST_FLOOD) ||
  	    brport_nla_put_flag(skb, flags, mask,

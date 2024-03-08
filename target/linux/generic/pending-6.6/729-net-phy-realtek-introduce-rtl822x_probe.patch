@@ -13,7 +13,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/realtek.c
 +++ b/drivers/net/phy/realtek.c
-@@ -62,6 +62,10 @@
+@@ -63,6 +63,10 @@
  #define RTL8221B_SERDES_OPTION_MODE_2500BASEX		2
  #define RTL8221B_SERDES_OPTION_MODE_HISGMII		3
  
@@ -24,7 +24,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
  
-@@ -750,6 +754,25 @@ static int rtl8226_match_phy_device(stru
+@@ -778,6 +782,25 @@ static int rtl8226_match_phy_device(stru
  	       rtlgen_supports_2_5gbps(phydev);
  }
  
@@ -50,7 +50,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtlgen_resume(struct phy_device *phydev)
  {
  	int ret = genphy_resume(phydev);
-@@ -1061,6 +1084,7 @@ static struct phy_driver realtek_drvs[]
+@@ -1091,6 +1114,7 @@ static struct phy_driver realtek_drvs[]
  		.name           = "RTL8226-CG 2.5Gbps PHY",
  		.get_features   = rtl822x_get_features,
  		.config_aneg    = rtl822x_config_aneg,
@@ -58,7 +58,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		.read_status    = rtl822x_read_status,
  		.suspend        = genphy_suspend,
  		.resume         = rtlgen_resume,
-@@ -1072,6 +1096,7 @@ static struct phy_driver realtek_drvs[]
+@@ -1102,6 +1126,7 @@ static struct phy_driver realtek_drvs[]
  		.name           = "RTL8226B-CG_RTL8221B-CG 2.5Gbps PHY",
  		.get_features   = rtl822x_get_features,
  		.config_aneg    = rtl822x_config_aneg,
@@ -66,7 +66,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		.read_status    = rtl822x_read_status,
  		.suspend        = genphy_suspend,
  		.resume         = rtlgen_resume,
-@@ -1084,6 +1109,7 @@ static struct phy_driver realtek_drvs[]
+@@ -1114,6 +1139,7 @@ static struct phy_driver realtek_drvs[]
  		.get_features   = rtl822x_get_features,
  		.config_init    = rtl8221b_config_init,
  		.config_aneg    = rtl822x_config_aneg,
@@ -74,7 +74,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		.read_status    = rtl822x_read_status,
  		.suspend        = genphy_suspend,
  		.resume         = rtlgen_resume,
-@@ -1096,6 +1122,7 @@ static struct phy_driver realtek_drvs[]
+@@ -1126,6 +1152,7 @@ static struct phy_driver realtek_drvs[]
  		.get_features   = rtl822x_get_features,
  		.config_aneg    = rtl822x_config_aneg,
  		.config_init    = rtl8221b_config_init,

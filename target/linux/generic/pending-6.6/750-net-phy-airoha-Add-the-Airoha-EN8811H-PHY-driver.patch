@@ -82,7 +82,7 @@ Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -69,6 +69,11 @@ config SFP
+@@ -68,6 +68,11 @@ config SFP
  
  comment "MII PHY device drivers"
  
@@ -96,7 +96,7 @@ Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
  	help
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -32,6 +32,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
+@@ -34,6 +34,7 @@ obj-y				+= $(sfp-obj-y) $(sfp-obj-m)
  
  obj-$(CONFIG_ADIN_PHY)		+= adin.o
  obj-$(CONFIG_ADIN1100_PHY)	+= adin1100.o

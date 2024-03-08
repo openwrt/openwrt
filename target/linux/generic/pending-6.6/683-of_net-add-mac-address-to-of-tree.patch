@@ -17,7 +17,7 @@ property. This way, the MAC address can be accessed using procfs.
 
 --- a/net/core/of_net.c
 +++ b/net/core/of_net.c
-@@ -95,6 +95,27 @@ static int of_get_mac_addr_nvmem(struct
+@@ -97,6 +97,27 @@ int of_get_mac_address_nvmem(struct devi
  }
  EXPORT_SYMBOL(of_get_mac_address_nvmem);
  
@@ -45,7 +45,7 @@ property. This way, the MAC address can be accessed using procfs.
  /**
   * of_get_mac_address()
   * @np:		Caller's Device Node
-@@ -130,17 +151,23 @@ int of_get_mac_address(struct device_nod
+@@ -132,17 +153,23 @@ int of_get_mac_address(struct device_nod
  
  	ret = of_get_mac_addr(np, "mac-address", addr);
  	if (!ret)

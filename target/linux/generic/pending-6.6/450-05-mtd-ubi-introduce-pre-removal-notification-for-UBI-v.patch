@@ -23,7 +23,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -568,6 +568,29 @@ static int ubiblock_resize(struct ubi_vo
+@@ -533,6 +533,29 @@ static int ubiblock_resize(struct ubi_vo
  	return 0;
  }
  
@@ -53,7 +53,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static bool
  match_volume_desc(struct ubi_volume_info *vi, const char *name, int ubi_num, int vol_id)
  {
-@@ -659,6 +682,9 @@ static int ubiblock_notify(struct notifi
+@@ -624,6 +647,9 @@ static int ubiblock_notify(struct notifi
  	case UBI_VOLUME_REMOVED:
  		ubiblock_remove(&nt->vi);
  		break;
@@ -65,7 +65,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		break;
 --- a/drivers/mtd/ubi/build.c
 +++ b/drivers/mtd/ubi/build.c
-@@ -89,7 +89,7 @@ static struct ubi_device *ubi_devices[UB
+@@ -91,7 +91,7 @@ static struct ubi_device *ubi_devices[UB
  /* Serializes UBI devices creations and removals */
  DEFINE_MUTEX(ubi_devices_mutex);
  
@@ -74,7 +74,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static DEFINE_SPINLOCK(ubi_devices_lock);
  
  /* "Show" method for files in '/<sysfs>/class/ubi/' */
-@@ -258,6 +258,9 @@ struct ubi_device *ubi_get_device(int ub
+@@ -259,6 +259,9 @@ struct ubi_device *ubi_get_device(int ub
  
  	spin_lock(&ubi_devices_lock);
  	ubi = ubi_devices[ubi_num];
@@ -84,7 +84,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (ubi) {
  		ubi_assert(ubi->ref_count >= 0);
  		ubi->ref_count += 1;
-@@ -295,7 +298,7 @@ struct ubi_device *ubi_get_by_major(int
+@@ -296,7 +299,7 @@ struct ubi_device *ubi_get_by_major(int
  	spin_lock(&ubi_devices_lock);
  	for (i = 0; i < UBI_MAX_DEVICES; i++) {
  		ubi = ubi_devices[i];
@@ -93,7 +93,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			ubi_assert(ubi->ref_count >= 0);
  			ubi->ref_count += 1;
  			get_device(&ubi->dev);
-@@ -324,7 +327,7 @@ int ubi_major2num(int major)
+@@ -325,7 +328,7 @@ int ubi_major2num(int major)
  	for (i = 0; i < UBI_MAX_DEVICES; i++) {
  		struct ubi_device *ubi = ubi_devices[i];
  
@@ -102,7 +102,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			ubi_num = ubi->ubi_num;
  			break;
  		}
-@@ -511,7 +514,7 @@ static void ubi_free_volumes_from(struct
+@@ -512,7 +515,7 @@ static void ubi_free_volumes_from(struct
  	int i;
  
  	for (i = from; i < ubi->vtbl_slots + UBI_INT_VOL_COUNT; i++) {
@@ -111,7 +111,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			continue;
  		ubi_eba_replace_table(ubi->volumes[i], NULL);
  		ubi_fastmap_destroy_checkmap(ubi->volumes[i]);
-@@ -1094,10 +1097,10 @@ int ubi_detach_mtd_dev(int ubi_num, int
+@@ -1095,10 +1098,10 @@ int ubi_detach_mtd_dev(int ubi_num, int
  		return -EINVAL;
  
  	spin_lock(&ubi_devices_lock);
@@ -123,7 +123,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  			spin_unlock(&ubi_devices_lock);
  			return -EBUSY;
  		}
-@@ -1105,6 +1108,13 @@ int ubi_detach_mtd_dev(int ubi_num, int
+@@ -1106,6 +1109,13 @@ int ubi_detach_mtd_dev(int ubi_num, int
  		ubi_err(ubi, "%s reference count %d, destroy anyway",
  			ubi->ubi_name, ubi->ref_count);
  	}

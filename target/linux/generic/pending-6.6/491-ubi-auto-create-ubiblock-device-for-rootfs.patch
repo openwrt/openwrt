@@ -8,7 +8,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -644,10 +644,47 @@ match_volume_desc(struct ubi_volume_info
+@@ -609,10 +609,47 @@ match_volume_desc(struct ubi_volume_info
  	return true;
  }
  
@@ -56,7 +56,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	struct ubiblock_param *p;
  
  	/*
-@@ -660,6 +697,7 @@ ubiblock_create_from_param(struct ubi_vo
+@@ -625,6 +662,7 @@ ubiblock_create_from_param(struct ubi_vo
  		if (!match_volume_desc(vi, p->name, p->ubi_num, p->vol_id))
  			continue;
  
@@ -64,7 +64,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		ret = ubiblock_create(vi);
  		if (ret) {
  			pr_err(
-@@ -668,6 +706,10 @@ ubiblock_create_from_param(struct ubi_vo
+@@ -633,6 +671,10 @@ ubiblock_create_from_param(struct ubi_vo
  		}
  		break;
  	}

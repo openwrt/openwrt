@@ -14,7 +14,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/realtek.c
 +++ b/drivers/net/phy/realtek.c
-@@ -68,10 +68,6 @@
+@@ -69,10 +69,6 @@
  #define RTL_SUPPORTS_5000FULL			BIT(14)
  #define RTL_SUPPORTS_2500FULL			BIT(13)
  #define RTL_SUPPORTS_10000FULL			BIT(0)
@@ -25,7 +25,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #define RTL9000A_GINMR				0x14
  #define RTL9000A_GINMR_LINK_STATUS		BIT(4)
-@@ -671,14 +667,11 @@ static int rtl822x_config_aneg(struct ph
+@@ -699,14 +695,11 @@ static int rtl822x_config_aneg(struct ph
  	int ret = 0;
  
  	if (phydev->autoneg == AUTONEG_ENABLE) {
@@ -44,7 +44,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		if (ret < 0)
  			return ret;
  	}
-@@ -715,12 +708,7 @@ static int rtl822x_read_status(struct ph
+@@ -743,12 +736,7 @@ static int rtl822x_read_status(struct ph
  		if (lpadv < 0)
  			return lpadv;
  

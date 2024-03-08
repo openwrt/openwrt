@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/dsa/tag_mtk.c
 +++ b/net/dsa/tag_mtk.c
-@@ -27,6 +27,13 @@ static struct sk_buff *mtk_tag_xmit(stru
+@@ -29,6 +29,13 @@ static struct sk_buff *mtk_tag_xmit(stru
  
  	skb_set_queue_mapping(skb, dp->index);
  

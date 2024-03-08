@@ -25,7 +25,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/slab.h>
  #include <linux/major.h>
  #include "ubi.h"
-@@ -1071,6 +1072,7 @@ out_free:
+@@ -1072,6 +1073,7 @@ out_free:
   * ubi_detach_mtd_dev - detach an MTD device.
   * @ubi_num: UBI device number to detach from
   * @anyway: detach MTD even if device reference count is not zero
@@ -33,7 +33,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   *
   * This function destroys an UBI device number @ubi_num and detaches the
   * underlying MTD device. Returns zero in case of success and %-EBUSY if the
-@@ -1080,7 +1082,7 @@ out_free:
+@@ -1081,7 +1083,7 @@ out_free:
   * Note, the invocations of this function has to be serialized by the
   * @ubi_devices_mutex.
   */
@@ -42,7 +42,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  	struct ubi_device *ubi;
  
-@@ -1136,7 +1138,11 @@ int ubi_detach_mtd_dev(int ubi_num, int
+@@ -1137,7 +1139,11 @@ int ubi_detach_mtd_dev(int ubi_num, int
  	vfree(ubi->peb_buf);
  	vfree(ubi->fm_buf);
  	ubi_msg(ubi, "mtd%d is detached", ubi->mtd->index);
@@ -55,7 +55,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	put_device(&ubi->dev);
  	return 0;
  }
-@@ -1213,43 +1219,43 @@ static struct mtd_info * __init open_mtd
+@@ -1214,43 +1220,43 @@ static struct mtd_info * __init open_mtd
  	return mtd;
  }
  
@@ -128,7 +128,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* Attach MTD devices */
  	for (i = 0; i < mtd_devs; i++) {
-@@ -1297,25 +1303,79 @@ static int __init ubi_init(void)
+@@ -1298,25 +1304,79 @@ static int __init ubi_init(void)
  		}
  	}
  
@@ -217,7 +217,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  out_slab:
  	kmem_cache_destroy(ubi_wl_entry_slab);
  out_dev_unreg:
-@@ -1325,18 +1385,20 @@ out:
+@@ -1326,18 +1386,20 @@ out:
  	pr_err("UBI error: cannot initialize UBI, error %d\n", err);
  	return err;
  }

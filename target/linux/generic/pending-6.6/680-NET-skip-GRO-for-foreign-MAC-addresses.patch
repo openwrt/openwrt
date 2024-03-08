@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -2157,6 +2157,8 @@ struct net_device {
+@@ -2210,6 +2210,8 @@ struct net_device {
  	struct netdev_hw_addr_list	mc;
  	struct netdev_hw_addr_list	dev_addrs;
  
@@ -22,7 +22,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #endif
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -972,6 +972,7 @@ struct sk_buff {
+@@ -964,6 +964,7 @@ struct sk_buff {
  #ifdef CONFIG_IPV6_NDISC_NODETYPE
  	__u8			ndisc_nodetype:2;
  #endif
@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	__u8			ipvs_property:1;
 --- a/net/core/gro.c
 +++ b/net/core/gro.c
-@@ -491,6 +491,9 @@ static enum gro_result dev_gro_receive(s
+@@ -445,6 +445,9 @@ static enum gro_result dev_gro_receive(s
  	enum gro_result ret;
  	int same_flow;
  
@@ -44,7 +44,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -7625,6 +7625,48 @@ static void __netdev_adjacent_dev_unlink
+@@ -7686,6 +7686,48 @@ static void __netdev_adjacent_dev_unlink
  					   &upper_dev->adj_list.lower);
  }
  
@@ -93,7 +93,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static int __netdev_upper_dev_link(struct net_device *dev,
  				   struct net_device *upper_dev, bool master,
  				   void *upper_priv, void *upper_info,
-@@ -7676,6 +7718,7 @@ static int __netdev_upper_dev_link(struc
+@@ -7737,6 +7779,7 @@ static int __netdev_upper_dev_link(struc
  	if (ret)
  		return ret;
  
@@ -101,7 +101,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ret = call_netdevice_notifiers_info(NETDEV_CHANGEUPPER,
  					    &changeupper_info.info);
  	ret = notifier_to_errno(ret);
-@@ -7772,6 +7815,7 @@ static void __netdev_upper_dev_unlink(st
+@@ -7833,6 +7876,7 @@ static void __netdev_upper_dev_unlink(st
  
  	__netdev_adjacent_dev_unlink_neighbour(dev, upper_dev);
  
@@ -109,7 +109,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER,
  				      &changeupper_info.info);
  
-@@ -8821,6 +8865,7 @@ int dev_set_mac_address(struct net_devic
+@@ -8889,6 +8933,7 @@ int dev_set_mac_address(struct net_devic
  			return err;
  	}
  	dev->addr_assign_type = NET_ADDR_SET;

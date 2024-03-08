@@ -26,7 +26,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/slab.h>
  #include <linux/mtd/ubi.h>
  #include <linux/blkdev.h>
-@@ -67,10 +68,10 @@ struct ubiblock_pdu {
+@@ -65,10 +66,10 @@ struct ubiblock_pdu {
  };
  
  /* Numbers of elements set in the @ubiblock_param array */
@@ -39,7 +39,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  struct ubiblock {
  	struct ubi_volume_desc *desc;
-@@ -504,7 +505,7 @@ int ubiblock_remove(struct ubi_volume_in
+@@ -469,7 +470,7 @@ int ubiblock_remove(struct ubi_volume_in
  	}
  
  	/* Found a device, let's lock it so we can check if it's busy */
@@ -48,7 +48,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (dev->refcnt > 0) {
  		ret = -EBUSY;
  		goto out_unlock_dev;
-@@ -567,6 +568,85 @@ static int ubiblock_resize(struct ubi_vo
+@@ -532,6 +533,85 @@ static int ubiblock_resize(struct ubi_vo
  	return 0;
  }
  
@@ -134,7 +134,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int ubiblock_notify(struct notifier_block *nb,
  			 unsigned long notification_type, void *ns_ptr)
  {
-@@ -574,10 +654,7 @@ static int ubiblock_notify(struct notifi
+@@ -539,10 +619,7 @@ static int ubiblock_notify(struct notifi
  
  	switch (notification_type) {
  	case UBI_VOLUME_ADDED:
@@ -146,7 +146,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		break;
  	case UBI_VOLUME_REMOVED:
  		ubiblock_remove(&nt->vi);
-@@ -603,56 +680,6 @@ static struct notifier_block ubiblock_no
+@@ -568,56 +645,6 @@ static struct notifier_block ubiblock_no
  	.notifier_call = ubiblock_notify,
  };
  
@@ -203,7 +203,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static void ubiblock_remove_all(void)
  {
  	struct ubiblock *next;
-@@ -678,18 +705,7 @@ int __init ubiblock_init(void)
+@@ -643,18 +670,7 @@ int __init ubiblock_init(void)
  	if (ubiblock_major < 0)
  		return ubiblock_major;
  
