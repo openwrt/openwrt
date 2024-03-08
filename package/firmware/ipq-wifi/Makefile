@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/version.mk
 
 PKG_NAME:=ipq-wifi
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
@@ -53,7 +53,6 @@ ALLWIFIBOARDS:= \
 	yyets_le1 \
 	yuncore_ax880 \
 	zte_mf269 \
-	zte_mf289f \
 	zte_mf287 \
 	zte_mf287plus \
 	zyxel_nbg7815
@@ -171,7 +170,6 @@ $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
 $(eval $(call generate-ipq-wifi-package,yyets_le1,YYeTs LE1))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax880,Yuncore AX880))
 $(eval $(call generate-ipq-wifi-package,zte_mf269,ZTE MF269))
-$(eval $(call generate-ipq-wifi-package,zte_mf289f,ZTE MF289F))
 $(eval $(call generate-ipq-wifi-package,zte_mf287,ZTE MF287))
 $(eval $(call generate-ipq-wifi-package,zte_mf287plus,ZTE MF287Plus))
 $(eval $(call generate-ipq-wifi-package,zyxel_nbg7815,Zyxel NBG7815))
