@@ -272,6 +272,7 @@ foreach my $mirror (@ARGV) {
 			push @mirrors, "https://raw.githubusercontent.com/$1";
 		}
 	} elsif ($mirror =~ /^\@GNU\/(.+)$/) {
+		push @mirrors, "https://ftpmirror.gnu.org/$1";
 		push @mirrors, "https://mirror.csclub.uwaterloo.ca/gnu/$1";
 		push @mirrors, "https://mirror.netcologne.de/gnu/$1";
 		push @mirrors, "https://ftp.kddilabs.jp/GNU/gnu/$1";
