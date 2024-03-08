@@ -122,4 +122,16 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
+	unielec,u7981-01*)
+		case "$(cmdline_get_var root)" in
+		/dev/mmc*)
+			addr=$(mmc_get_mac_binary factory 0x4)
+			;;
+		*)
+			addr=$(mtd_get_mac_binary factory 0x4)
+			;;
+		esac
+		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		;;
 esac

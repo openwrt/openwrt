@@ -25,6 +25,7 @@ mediatek_setup_interfaces()
 		;;
 	asus,tuf-ax4200|\
 	mediatek,mt7981-rfb|\
+	unielec,u7981-01*|\
 	zbtlink,zbt-z8102ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
 		;;
@@ -147,6 +148,22 @@ mediatek_setup_macs()
 	xiaomi,redmi-router-ax6000-ubootmod)
 		wan_mac=$(mtd_get_mac_ascii Bdata ethaddr_wan)
 		label_mac=$wan_mac
+		;;
+	unielec,u7981-01*)
+		case "$(cmdline_get_var root)" in
+		/dev/mmc*)
+			addr=$(mmc_get_mac_binary factory 0x1000)
+			lan_mac="${addr}"
+			wan_mac=$(macaddr_add "$lan_mac" 1)
+			label_mac=$lan_mac
+			;;
+		*)
+			addr=$(mtd_get_mac_binary factory 0x1000)
+			lan_mac="${addr}"
+			wan_mac=$(macaddr_add "$lan_mac" 1)
+			label_mac=$lan_mac
+			;;
+		esac
 		;;
 	esac
 

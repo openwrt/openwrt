@@ -694,6 +694,26 @@ define Device/ubnt_unifi-6-plus
 endef
 TARGET_DEVICES += ubnt_unifi-6-plus
 
+define Device/unielec_u7981-01-emmc
+  DEVICE_VENDOR := Unielec
+  DEVICE_MODEL := U7981-01 (EMMC)
+  DEVICE_DTS := mt7981b-unielec-u7981-01-emmc
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 e2fsprogs f2fsck mkf2fs fdisk partx-utils
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += unielec_u7981-01-emmc
+
+define Device/unielec_u7981-01-nand
+  DEVICE_VENDOR := Unielec
+  DEVICE_MODEL := U7981-01 (NAND)
+  DEVICE_DTS := mt7981b-unielec-u7981-01-nand
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 e2fsprogs f2fsck mkf2fs fdisk partx-utils
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += unielec_u7981-01-nand
+
 define Device/xiaomi_mi-router-wr30u-112m-nmbm
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router WR30U (112M UBI with NMBM-Enabled layout)
