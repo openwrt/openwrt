@@ -26,7 +26,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/phy/broadcom.c
 +++ b/drivers/net/phy/broadcom.c
-@@ -609,10 +609,11 @@ static int bcm54616s_config_aneg(struct
+@@ -665,10 +665,11 @@ static int bcm54616s_config_aneg(struct
  static int bcm54616s_read_status(struct phy_device *phydev)
  {
  	struct bcm54616s_phy_priv *priv = phydev->priv;
@@ -41,7 +41,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -2549,12 +2549,15 @@ EXPORT_SYMBOL(genphy_read_status);
+@@ -2607,12 +2607,15 @@ EXPORT_SYMBOL(genphy_read_status);
  /**
   * genphy_c37_read_status - check the link status and update current link state
   * @phydev: target phy_device struct
@@ -58,7 +58,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  {
  	int lpa, err, old_link = phydev->link;
  
-@@ -2564,9 +2567,13 @@ int genphy_c37_read_status(struct phy_de
+@@ -2622,9 +2625,13 @@ int genphy_c37_read_status(struct phy_de
  		return err;
  
  	/* why bother the PHY if nothing can have changed */
@@ -89,7 +89,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -1688,7 +1688,7 @@ int genphy_write_mmd_unsupported(struct
+@@ -1849,7 +1849,7 @@ int genphy_write_mmd_unsupported(struct
  
  /* Clause 37 */
  int genphy_c37_config_aneg(struct phy_device *phydev);

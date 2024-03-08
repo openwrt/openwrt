@@ -15,7 +15,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_ppe.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
-@@ -438,7 +438,8 @@ int mtk_foe_entry_set_pppoe(struct mtk_e
+@@ -439,7 +439,8 @@ int mtk_foe_entry_set_pppoe(struct mtk_e
  }
  
  int mtk_foe_entry_set_wdma(struct mtk_eth *eth, struct mtk_foe_entry *entry,
@@ -25,7 +25,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  {
  	struct mtk_foe_mac_info *l2 = mtk_foe_entry_l2(eth, entry);
  	u32 *ib2 = mtk_foe_entry_ib2(eth, entry);
-@@ -450,6 +451,7 @@ int mtk_foe_entry_set_wdma(struct mtk_et
+@@ -451,6 +452,7 @@ int mtk_foe_entry_set_wdma(struct mtk_et
  			 MTK_FOE_IB2_WDMA_WINFO_V2;
  		l2->w3info = FIELD_PREP(MTK_FOE_WINFO_WCID_V3, wcid) |
  			     FIELD_PREP(MTK_FOE_WINFO_BSS_V3, bss);
@@ -96,7 +96,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			case 0:
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
-@@ -29,6 +29,8 @@
+@@ -30,6 +30,8 @@
  #define MTK_WED_RX_PAGE_BUF_PER_PAGE	(PAGE_SIZE / 128)
  #define MTK_WED_RX_RING_SIZE		1536
  #define MTK_WED_RX_PG_BM_CNT		8192
@@ -105,7 +105,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  #define MTK_WED_TX_RING_SIZE		2048
  #define MTK_WED_WDMA_RING_SIZE		1024
-@@ -172,6 +174,23 @@ mtk_wdma_rx_reset(struct mtk_wed_device
+@@ -173,6 +175,23 @@ mtk_wdma_rx_reset(struct mtk_wed_device
  	return ret;
  }
  
@@ -129,7 +129,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static void
  mtk_wdma_tx_reset(struct mtk_wed_device *dev)
  {
-@@ -335,6 +354,118 @@ out:
+@@ -336,6 +355,118 @@ out:
  }
  
  static int
@@ -248,7 +248,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  mtk_wed_tx_buffer_alloc(struct mtk_wed_device *dev)
  {
  	u32 desc_size = dev->hw->soc->tx_ring_desc_size;
-@@ -708,6 +839,7 @@ __mtk_wed_detach(struct mtk_wed_device *
+@@ -709,6 +840,7 @@ __mtk_wed_detach(struct mtk_wed_device *
  
  	mtk_wdma_rx_reset(dev);
  	mtk_wed_reset(dev, MTK_WED_RESET_WED);
@@ -256,7 +256,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	mtk_wed_free_tx_buffer(dev);
  	mtk_wed_free_tx_rings(dev);
  
-@@ -1128,23 +1260,6 @@ mtk_wed_ring_reset(struct mtk_wed_ring *
+@@ -1129,23 +1261,6 @@ mtk_wed_ring_reset(struct mtk_wed_ring *
  	}
  }
  
@@ -280,7 +280,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static int
  mtk_wed_rx_reset(struct mtk_wed_device *dev)
  {
-@@ -1691,6 +1806,7 @@ mtk_wed_start(struct mtk_wed_device *dev
+@@ -1692,6 +1807,7 @@ mtk_wed_start(struct mtk_wed_device *dev
  	}
  
  	mtk_wed_set_512_support(dev, dev->wlan.wcid_512);
@@ -288,7 +288,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	mtk_wed_dma_enable(dev);
  	dev->running = true;
-@@ -1747,6 +1863,10 @@ mtk_wed_attach(struct mtk_wed_device *de
+@@ -1748,6 +1864,10 @@ mtk_wed_attach(struct mtk_wed_device *de
  	if (ret)
  		goto out;
  
@@ -416,7 +416,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  #define MTK_WED_PCIE_BASE1			0x11310000
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -928,6 +928,7 @@ struct net_device_path {
+@@ -917,6 +917,7 @@ struct net_device_path {
  			u8 queue;
  			u16 wcid;
  			u8 bss;
@@ -426,7 +426,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  };
 --- a/include/linux/soc/mediatek/mtk_wed.h
 +++ b/include/linux/soc/mediatek/mtk_wed.h
-@@ -129,6 +129,7 @@ struct mtk_wed_device {
+@@ -128,6 +128,7 @@ struct mtk_wed_device {
  		enum mtk_wed_bus_tye bus_type;
  		void __iomem *base;
  		u32 phy_base;
@@ -434,7 +434,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  		u32 wpdma_phys;
  		u32 wpdma_int;
-@@ -147,10 +148,12 @@ struct mtk_wed_device {
+@@ -146,10 +147,12 @@ struct mtk_wed_device {
  		unsigned int rx_nbuf;
  		unsigned int rx_npkt;
  		unsigned int rx_size;
@@ -447,7 +447,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  		u32 (*init_buf)(void *ptr, dma_addr_t phys, int token_id);
  		int (*offload_enable)(struct mtk_wed_device *wed);
-@@ -224,6 +227,15 @@ static inline bool mtk_wed_get_rx_capa(s
+@@ -223,6 +226,15 @@ static inline bool mtk_wed_get_rx_capa(s
  #else
  	return false;
  #endif

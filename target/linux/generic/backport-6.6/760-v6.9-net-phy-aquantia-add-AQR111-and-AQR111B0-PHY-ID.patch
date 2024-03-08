@@ -29,7 +29,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  #define PHY_ID_AQR112	0x03a1b662
  #define PHY_ID_AQR412	0x03a1b712
  #define PHY_ID_AQR113C	0x31c31c12
-@@ -670,6 +672,16 @@ static int aqr107_probe(struct phy_devic
+@@ -672,6 +674,16 @@ static int aqr107_probe(struct phy_devic
  	return aqr_hwmon_probe(phydev);
  }
  
@@ -46,7 +46,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static struct phy_driver aqr_driver[] = {
  {
  	PHY_ID_MATCH_MODEL(PHY_ID_AQ1202),
-@@ -744,6 +756,44 @@ static struct phy_driver aqr_driver[] =
+@@ -746,6 +758,44 @@ static struct phy_driver aqr_driver[] =
  	.link_change_notify = aqr107_link_change_notify,
  },
  {

@@ -13,7 +13,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
-@@ -26,7 +26,7 @@
+@@ -27,7 +27,7 @@
  #define MTK_WED_BUF_SIZE		2048
  #define MTK_WED_PAGE_BUF_SIZE		128
  #define MTK_WED_BUF_PER_PAGE		(PAGE_SIZE / 2048)
@@ -22,7 +22,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  #define MTK_WED_RX_RING_SIZE		1536
  #define MTK_WED_RX_PG_BM_CNT		8192
  #define MTK_WED_AMSDU_BUF_SIZE		(PAGE_SIZE << 4)
-@@ -596,6 +596,68 @@ free_pagelist:
+@@ -597,6 +597,68 @@ free_pagelist:
  }
  
  static int
@@ -91,7 +91,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  mtk_wed_rx_buffer_alloc(struct mtk_wed_device *dev)
  {
  	struct mtk_wed_bm_desc *desc;
-@@ -612,7 +674,42 @@ mtk_wed_rx_buffer_alloc(struct mtk_wed_d
+@@ -613,7 +675,42 @@ mtk_wed_rx_buffer_alloc(struct mtk_wed_d
  	dev->rx_buf_ring.desc_phys = desc_phys;
  	dev->wlan.init_rx_buf(dev, dev->wlan.rx_npkt);
  
@@ -135,7 +135,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void
-@@ -626,6 +723,28 @@ mtk_wed_free_rx_buffer(struct mtk_wed_de
+@@ -627,6 +724,28 @@ mtk_wed_free_rx_buffer(struct mtk_wed_de
  	dev->wlan.release_rx_buf(dev);
  	dma_free_coherent(dev->hw->dev, dev->rx_buf_ring.size * sizeof(*desc),
  			  desc, dev->rx_buf_ring.desc_phys);
@@ -164,7 +164,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void
-@@ -639,6 +758,8 @@ mtk_wed_rx_buffer_hw_init(struct mtk_wed
+@@ -640,6 +759,8 @@ mtk_wed_rx_buffer_hw_init(struct mtk_wed
  	wed_w32(dev, MTK_WED_RX_BM_DYN_ALLOC_TH,
  		FIELD_PREP(MTK_WED_RX_BM_DYN_ALLOC_TH_H, 0xffff));
  	wed_set(dev, MTK_WED_CTRL, MTK_WED_CTRL_WED_RX_BM_EN);
@@ -173,7 +173,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void
-@@ -934,6 +1055,8 @@ mtk_wed_bus_init(struct mtk_wed_device *
+@@ -935,6 +1056,8 @@ mtk_wed_bus_init(struct mtk_wed_device *
  static void
  mtk_wed_set_wpdma(struct mtk_wed_device *dev)
  {
@@ -182,7 +182,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (mtk_wed_is_v1(dev->hw)) {
  		wed_w32(dev, MTK_WED_WPDMA_CFG_BASE,  dev->wlan.wpdma_phys);
  		return;
-@@ -951,6 +1074,15 @@ mtk_wed_set_wpdma(struct mtk_wed_device
+@@ -952,6 +1075,15 @@ mtk_wed_set_wpdma(struct mtk_wed_device
  
  	wed_w32(dev, MTK_WED_WPDMA_RX_GLO_CFG, dev->wlan.wpdma_rx_glo);
  	wed_w32(dev, dev->hw->soc->regmap.wpdma_rx_ring0, dev->wlan.wpdma_rx);
@@ -198,7 +198,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void
-@@ -1762,6 +1894,165 @@ mtk_wed_dma_enable(struct mtk_wed_device
+@@ -1763,6 +1895,165 @@ mtk_wed_dma_enable(struct mtk_wed_device
  }
  
  static void
@@ -364,7 +364,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  mtk_wed_start(struct mtk_wed_device *dev, u32 irq_mask)
  {
  	int i;
-@@ -2215,6 +2506,10 @@ void mtk_wed_add_hw(struct device_node *
+@@ -2216,6 +2507,10 @@ void mtk_wed_add_hw(struct device_node *
  		.detach = mtk_wed_detach,
  		.ppe_check = mtk_wed_ppe_check,
  		.setup_tc = mtk_wed_setup_tc,
@@ -395,7 +395,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	struct {
  		int size;
-@@ -120,6 +124,13 @@ struct mtk_wed_device {
+@@ -119,6 +123,13 @@ struct mtk_wed_device {
  		dma_addr_t fdbk_phys;
  	} rro;
  
@@ -409,7 +409,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	/* filled by driver: */
  	struct {
  		union {
-@@ -138,6 +149,8 @@ struct mtk_wed_device {
+@@ -137,6 +148,8 @@ struct mtk_wed_device {
  		u32 wpdma_txfree;
  		u32 wpdma_rx_glo;
  		u32 wpdma_rx;
@@ -418,7 +418,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  		bool wcid_512;
  		bool hw_rro;
-@@ -152,9 +165,20 @@ struct mtk_wed_device {
+@@ -151,9 +164,20 @@ struct mtk_wed_device {
  
  		u8 tx_tbit[MTK_WED_TX_QUEUES];
  		u8 rx_tbit[MTK_WED_RX_QUEUES];
@@ -439,7 +439,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		u32 (*init_buf)(void *ptr, dma_addr_t phys, int token_id);
  		int (*offload_enable)(struct mtk_wed_device *wed);
  		void (*offload_disable)(struct mtk_wed_device *wed);
-@@ -193,6 +217,14 @@ struct mtk_wed_ops {
+@@ -192,6 +216,14 @@ struct mtk_wed_ops {
  	void (*irq_set_mask)(struct mtk_wed_device *dev, u32 mask);
  	int (*setup_tc)(struct mtk_wed_device *wed, struct net_device *dev,
  			enum tc_setup_type type, void *type_data);
@@ -454,7 +454,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  };
  
  extern const struct mtk_wed_ops __rcu *mtk_soc_wed_ops;
-@@ -264,6 +296,15 @@ static inline bool mtk_wed_is_amsdu_supp
+@@ -263,6 +295,15 @@ static inline bool mtk_wed_is_amsdu_supp
  #define mtk_wed_device_dma_reset(_dev) (_dev)->ops->reset_dma(_dev)
  #define mtk_wed_device_setup_tc(_dev, _netdev, _type, _type_data) \
  	(_dev)->ops->setup_tc(_dev, _netdev, _type, _type_data)
@@ -470,7 +470,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  #else
  static inline bool mtk_wed_device_active(struct mtk_wed_device *dev)
  {
-@@ -283,6 +324,10 @@ static inline bool mtk_wed_device_active
+@@ -282,6 +323,10 @@ static inline bool mtk_wed_device_active
  #define mtk_wed_device_stop(_dev) do {} while (0)
  #define mtk_wed_device_dma_reset(_dev) do {} while (0)
  #define mtk_wed_device_setup_tc(_dev, _netdev, _type, _type_data) -EOPNOTSUPP

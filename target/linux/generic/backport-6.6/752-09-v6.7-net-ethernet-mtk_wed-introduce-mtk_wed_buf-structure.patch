@@ -15,7 +15,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
-@@ -299,9 +299,9 @@ out:
+@@ -300,9 +300,9 @@ out:
  static int
  mtk_wed_tx_buffer_alloc(struct mtk_wed_device *dev)
  {
@@ -26,7 +26,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	int token = dev->wlan.token_start;
  	int ring_size;
  	int n_pages;
-@@ -342,7 +342,8 @@ mtk_wed_tx_buffer_alloc(struct mtk_wed_d
+@@ -343,7 +343,8 @@ mtk_wed_tx_buffer_alloc(struct mtk_wed_d
  			return -ENOMEM;
  		}
  
@@ -36,7 +36,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		dma_sync_single_for_cpu(dev->hw->dev, page_phys, PAGE_SIZE,
  					DMA_BIDIRECTIONAL);
  
-@@ -386,8 +387,8 @@ mtk_wed_tx_buffer_alloc(struct mtk_wed_d
+@@ -387,8 +388,8 @@ mtk_wed_tx_buffer_alloc(struct mtk_wed_d
  static void
  mtk_wed_free_tx_buffer(struct mtk_wed_device *dev)
  {
@@ -46,7 +46,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	int page_idx;
  	int i;
  
-@@ -399,13 +400,12 @@ mtk_wed_free_tx_buffer(struct mtk_wed_de
+@@ -400,13 +401,12 @@ mtk_wed_free_tx_buffer(struct mtk_wed_de
  
  	for (i = 0, page_idx = 0; i < dev->tx_buf_ring.size;
  	     i += MTK_WED_BUF_PER_PAGE) {

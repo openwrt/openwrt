@@ -14,7 +14,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/ethernet/mediatek/mtk_wed.c
 +++ b/drivers/net/ethernet/mediatek/mtk_wed.c
-@@ -585,22 +585,15 @@ mtk_wed_set_512_support(struct mtk_wed_d
+@@ -586,22 +586,15 @@ mtk_wed_set_512_support(struct mtk_wed_d
  	}
  }
  
@@ -41,7 +41,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		if (cur_idx == MTK_WED_RX_RING_SIZE - 1)
  			break;
  
-@@ -609,12 +602,10 @@ mtk_wed_check_wfdma_rx_fill(struct mtk_w
+@@ -610,12 +603,10 @@ mtk_wed_check_wfdma_rx_fill(struct mtk_w
  
  	if (i == 3) {
  		dev_err(dev->hw->dev, "rx dma enable failed\n");
@@ -56,7 +56,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static void
-@@ -1545,6 +1536,7 @@ mtk_wed_configure_irq(struct mtk_wed_dev
+@@ -1546,6 +1537,7 @@ mtk_wed_configure_irq(struct mtk_wed_dev
  	wed_w32(dev, MTK_WED_INT_MASK, irq_mask);
  }
  
@@ -64,7 +64,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static void
  mtk_wed_dma_enable(struct mtk_wed_device *dev)
  {
-@@ -1632,8 +1624,26 @@ mtk_wed_dma_enable(struct mtk_wed_device
+@@ -1633,8 +1625,26 @@ mtk_wed_dma_enable(struct mtk_wed_device
  		wdma_set(dev, MTK_WDMA_WRBK_TX_CFG, MTK_WDMA_WRBK_TX_CFG_WRBK_EN);
  	}
  

@@ -67,7 +67,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -523,6 +523,7 @@ static int mtd_nvmem_add(struct mtd_info
+@@ -552,6 +552,7 @@ static int mtd_nvmem_add(struct mtd_info
  	config.dev = &mtd->dev;
  	config.name = dev_name(&mtd->dev);
  	config.owner = THIS_MODULE;
@@ -75,7 +75,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	config.reg_read = mtd_nvmem_reg_read;
  	config.size = mtd->size;
  	config.word_size = 1;
-@@ -891,6 +892,7 @@ static struct nvmem_device *mtd_otp_nvme
+@@ -898,6 +899,7 @@ static struct nvmem_device *mtd_otp_nvme
  	config.name = compatible;
  	config.id = NVMEM_DEVID_AUTO;
  	config.owner = THIS_MODULE;
@@ -95,7 +95,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  		.stride = sizeof(u32),
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -998,9 +998,11 @@ struct nvmem_device *nvmem_register(cons
+@@ -1003,9 +1003,11 @@ struct nvmem_device *nvmem_register(cons
  	if (rval)
  		goto err_remove_cells;
  
@@ -122,7 +122,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	.stride = 1,
 --- a/drivers/nvmem/imx-ocotp.c
 +++ b/drivers/nvmem/imx-ocotp.c
-@@ -616,6 +616,7 @@ static int imx_ocotp_probe(struct platfo
+@@ -615,6 +615,7 @@ static int imx_ocotp_probe(struct platfo
  		return PTR_ERR(priv->clk);
  
  	priv->params = of_device_get_match_data(&pdev->dev);
@@ -142,7 +142,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	econfig->reg_read = meson_efuse_read;
 --- a/drivers/nvmem/meson-mx-efuse.c
 +++ b/drivers/nvmem/meson-mx-efuse.c
-@@ -211,6 +211,7 @@ static int meson_mx_efuse_probe(struct p
+@@ -210,6 +210,7 @@ static int meson_mx_efuse_probe(struct p
  	efuse->config.owner = THIS_MODULE;
  	efuse->config.dev = &pdev->dev;
  	efuse->config.priv = efuse;
@@ -212,7 +212,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	.read_only = true,
 --- a/drivers/nvmem/sc27xx-efuse.c
 +++ b/drivers/nvmem/sc27xx-efuse.c
-@@ -248,6 +248,7 @@ static int sc27xx_efuse_probe(struct pla
+@@ -247,6 +247,7 @@ static int sc27xx_efuse_probe(struct pla
  	econfig.reg_read = sc27xx_efuse_read;
  	econfig.priv = efuse;
  	econfig.dev = &pdev->dev;
@@ -262,7 +262,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	.size = QAC628_OTP_SIZE,
 --- a/drivers/nvmem/sunxi_sid.c
 +++ b/drivers/nvmem/sunxi_sid.c
-@@ -154,6 +154,7 @@ static int sunxi_sid_probe(struct platfo
+@@ -153,6 +153,7 @@ static int sunxi_sid_probe(struct platfo
  	nvmem_cfg->dev = dev;
  	nvmem_cfg->name = "sunxi-sid";
  	nvmem_cfg->type = NVMEM_TYPE_OTP;

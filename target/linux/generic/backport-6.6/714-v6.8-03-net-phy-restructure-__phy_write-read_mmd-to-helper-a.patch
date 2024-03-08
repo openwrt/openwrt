@@ -20,7 +20,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/phy/phy-core.c
 +++ b/drivers/net/phy/phy-core.c
-@@ -528,6 +528,28 @@ static void mmd_phy_indirect(struct mii_
+@@ -540,6 +540,28 @@ static void mmd_phy_indirect(struct mii_
  			devad | MII_MMD_CTRL_NOINCR);
  }
  
@@ -49,7 +49,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  /**
   * __phy_read_mmd - Convenience function for reading a register
   * from an MMD on a given PHY.
-@@ -539,26 +561,14 @@ static void mmd_phy_indirect(struct mii_
+@@ -551,26 +573,14 @@ static void mmd_phy_indirect(struct mii_
   */
  int __phy_read_mmd(struct phy_device *phydev, int devad, u32 regnum)
  {
@@ -81,7 +81,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  EXPORT_SYMBOL(__phy_read_mmd);
  
-@@ -595,28 +605,14 @@ EXPORT_SYMBOL(phy_read_mmd);
+@@ -607,28 +617,14 @@ EXPORT_SYMBOL(phy_read_mmd);
   */
  int __phy_write_mmd(struct phy_device *phydev, int devad, u32 regnum, u16 val)
  {

@@ -22,7 +22,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/of/device.c
 +++ b/drivers/of/device.c
-@@ -395,3 +395,44 @@ int of_device_uevent_modalias(struct dev
+@@ -304,3 +304,44 @@ int of_device_uevent_modalias(const stru
  	return 0;
  }
  EXPORT_SYMBOL_GPL(of_device_uevent_modalias);
@@ -69,7 +69,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 +EXPORT_SYMBOL_GPL(of_device_make_bus_id);
 --- a/drivers/of/platform.c
 +++ b/drivers/of/platform.c
-@@ -64,46 +64,6 @@ EXPORT_SYMBOL(of_find_device_by_node);
+@@ -98,46 +98,6 @@ static const struct of_device_id of_skip
   */
  
  /**
@@ -118,7 +118,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
   * @bus_id: Name to assign to the device.  May be null to use default name.
 --- a/include/linux/of_device.h
 +++ b/include/linux/of_device.h
-@@ -56,6 +56,9 @@ static inline int of_dma_configure(struc
+@@ -40,6 +40,9 @@ static inline int of_dma_configure(struc
  {
  	return of_dma_configure_id(dev, np, force_dma, NULL);
  }
@@ -128,7 +128,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  #else /* CONFIG_OF */
  
  static inline int of_driver_match_device(struct device *dev,
-@@ -113,6 +116,9 @@ static inline int of_dma_configure(struc
+@@ -82,6 +85,9 @@ static inline int of_dma_configure(struc
  {
  	return 0;
  }

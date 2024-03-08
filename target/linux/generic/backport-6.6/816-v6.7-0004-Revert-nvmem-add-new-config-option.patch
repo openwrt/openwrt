@@ -38,7 +38,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -531,7 +531,6 @@ static int mtd_nvmem_add(struct mtd_info
+@@ -560,7 +560,6 @@ static int mtd_nvmem_add(struct mtd_info
  	config.read_only = true;
  	config.root_only = true;
  	config.ignore_wp = true;
@@ -48,7 +48,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	mtd->nvmem = nvmem_register(&config);
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -936,7 +936,7 @@ struct nvmem_device *nvmem_register(cons
+@@ -941,7 +941,7 @@ struct nvmem_device *nvmem_register(cons
  	nvmem->nkeepout = config->nkeepout;
  	if (config->of_node)
  		nvmem->dev.of_node = config->of_node;
