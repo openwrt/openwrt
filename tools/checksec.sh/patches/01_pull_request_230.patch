@@ -1,0 +1,45 @@
+From 751578067682cb6d48e9dd35da4abdd2b99a3ece Mon Sep 17 00:00:00 2001
+From: Cedric DOURLENT <cedric.dourlent@softathome.com>
+Date: Fri, 8 Dec 2023 09:40:59 +0100
+Subject: [PATCH] add result N/A for fortify when fortifiable value is 0
+
+---
+ checksec                  | 6 +++++-
+ tests/hardening-checks.sh | 7 +++++++
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/checksec b/checksec
+index 52bd3c4..0de23b3 100755
+--- a/checksec
++++ b/checksec
+@@ -828,7 +828,11 @@ filecheck() {
+   if grep -q '_chk$' <<< "$FS_func"; then
+     echo_message '\033[32mYes\033[m' 'Yes,' ' fortify_source="yes" ' '"fortify_source":"yes",'
+   else
+-    echo_message "\033[31mNo\033[m" "No," ' fortify_source="no" ' '"fortify_source":"no",'
++    if [[ "${FS_cnt_total}" == "0" ]]; then
++      echo_message "\033[31mN/A\033[m" "N/A," ' fortify_source="n/a" ' '"fortify_source":"n/a",'
++    else
++      echo_message "\033[31mNo\033[m" "No," ' fortify_source="no" ' '"fortify_source":"no",'
++    fi
+   fi
+   echo_message "\t${FS_cnt_checked}\t" "${FS_cnt_checked}", "fortified=\"${FS_cnt_checked}\" " "\"fortified\":\"${FS_cnt_checked}\","
+   echo_message "\t${FS_cnt_total}\t\t" "${FS_cnt_total}" "fortify-able=\"${FS_cnt_total}\"" "\"fortify-able\":\"${FS_cnt_total}\""
+diff --git a/tests/hardening-checks.sh b/tests/hardening-checks.sh
+index ba3f252..da254b0 100755
+--- a/tests/hardening-checks.sh
++++ b/tests/hardening-checks.sh
+@@ -267,6 +267,13 @@ for bin in none none32 none_cl none_cl32; do
+     exit 1
+   fi
+ done
++# N/A
++for bin in rel.o rel32.o rel_cl.o rel_cl32.o; do
++  if [[ $("${PARENT}"/checksec --file="${DIR}/binaries/${bin}" --format=csv | cut -d, -f8) != "N/A" ]]; then
++    echo "No Fortify validation failed on \"${bin}\": $("${PARENT}"/checksec --file="${DIR}/binaries/${bin}" --format=csv | cut -d, -f8)"
++    exit 1
++  fi
++done
+ echo "Fortify validation tests passed"
+ 
+ #============================================
