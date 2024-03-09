@@ -67,15 +67,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  #endif /* _ASM_VPE_H */
 --- a/arch/mips/kernel/vpe-mt.c
 +++ b/arch/mips/kernel/vpe-mt.c
-@@ -29,6 +29,7 @@ int vpe_run(struct vpe *v)
- 	struct vpe_notifications *notifier;
- 	unsigned int vpeflags;
- 	struct tc *t;
-+	unsigned long physical_memsize = 0L;
- 
- 	/* check we are the Master VPE */
- 	local_irq_save(flags);
-@@ -415,6 +416,8 @@ int __init vpe_module_init(void)
+@@ -415,6 +415,8 @@ int __init vpe_module_init(void)
  			}
  
  			v->ntcs = hw_tcs - aprp_cpu_index();
@@ -84,7 +76,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  
  			/* add the tc to the list of this vpe's tc's. */
  			list_add(&t->tc, &v->tc);
-@@ -518,3 +521,47 @@ void __exit vpe_module_exit(void)
+@@ -518,3 +520,47 @@ void __exit vpe_module_exit(void)
  			release_vpe(v);
  	}
  }
