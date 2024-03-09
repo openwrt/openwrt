@@ -105,7 +105,7 @@ apply_nss_config() {
     yuncore,ax880 | \
     zyxel,nbg7815 | \
     1g*)
-      extra_pbuf_core0=9000000 n2h_high_water_core0=67392 n2h_wifi_pool_buf=40960 apply_sysctl
+      extra_pbuf_core0=10000000 n2h_high_water_core0=72512 n2h_wifi_pool_buf=36864 apply_sysctl
       ;;
     # 512MB profile
     edimax,cax1800 | \
@@ -115,12 +115,12 @@ apply_nss_config() {
     xiaomi,ax3600 | \
     zte,mf269 | \
     512m*)
-      extra_pbuf_core0=3100000 n2h_high_water_core0=30624 n2h_wifi_pool_buf=8192 apply_sysctl
+      extra_pbuf_core0=3100000  n2h_high_water_core0=30624 n2h_wifi_pool_buf=8192 apply_sysctl
       ;;
     # 256MB profile
     netgear,wax218 | \
     256m*)
-      extra_pbuf_core0=3100000 n2h_high_water_core0=30258 n2h_wifi_pool_buf=4096 apply_sysctl
+      extra_pbuf_core0=3100000  n2h_high_water_core0=30258 n2h_wifi_pool_buf=4096 apply_sysctl
       ;;
   esac
 }
