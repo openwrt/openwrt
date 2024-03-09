@@ -10,6 +10,7 @@
 
 &chosen {
 	rootdisk = <&ubi_rootdisk>;
+	bootargs-append = " root=/dev/fit0 rootwait";
 };
 
 &partitions {

@@ -8,7 +8,7 @@
 
 	chosen {
 		rootdisk = <&rootdisk>;
-		bootargs = "earlycon=uart8250,mmio32,0x11002000 swiotlb=512 console=ttyS0,115200n8 root=/dev/fit0";
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 swiotlb=512 console=ttyS0,115200n8 root=/dev/fit0 rootwait";
 	};
 };
 
