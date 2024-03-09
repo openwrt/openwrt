@@ -802,7 +802,7 @@
 +serverip=192.168.1.254
 +loadaddr=0x46000000
 +console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
-+bootargs=root=/dev/fit0
++bootargs=root=/dev/fit0 rootwait
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_sdmmc ; fi
 +bootconf=config-mt7986a-bananapi-bpi-r3
 +bootconf_base=config-mt7986a-bananapi-bpi-r3
@@ -886,7 +886,7 @@
 +serverip=192.168.1.254
 +loadaddr=0x46000000
 +console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
-+bootargs=root=/dev/fit0
++bootargs=root=/dev/fit0 rootwait
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_nor ; fi
 +bootconf=config-mt7986a-bananapi-bpi-r3
 +bootconf_base=config-mt7986a-bananapi-bpi-r3
@@ -949,7 +949,7 @@
 +serverip=192.168.1.254
 +loadaddr=0x46000000
 +console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
-+bootargs=root=/dev/fit0
++bootargs=root=/dev/fit0 rootwait
 +bootconf=config-mt7986a-bananapi-bpi-r3
 +bootconf_base=config-mt7986a-bananapi-bpi-r3
 +bootconf_nor=mt7986a-bananapi-bpi-r3-nor
@@ -1025,7 +1025,7 @@
 +serverip=192.168.1.254
 +loadaddr=0x46000000
 +console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
-+bootargs=root=/dev/fit0
++bootargs=root=/dev/fit0 rootwait
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_emmc ; fi
 +bootconf=config-mt7986a-bananapi-bpi-r3
 +bootconf_base=config-mt7986a-bananapi-bpi-r3

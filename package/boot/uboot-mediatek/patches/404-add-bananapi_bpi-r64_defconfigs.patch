@@ -171,7 +171,7 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x48000000
-+bootargs=root=/dev/fit0
++bootargs=root=/dev/fit0 rootwait
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_sdmmc ; fi
 +bootconf=config-1#mt7622-bananapi-bpi-r64-pcie1
 +bootconf_pcie=config-1#mt7622-bananapi-bpi-r64-pcie1
@@ -411,7 +411,7 @@
 +serverip=192.168.1.254
 +loadaddr=0x48000000
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_emmc ; fi
-+bootargs=root=/dev/fit0
++bootargs=root=/dev/fit0 rootwait
 +bootconf=config-1#mt7622-bananapi-bpi-r64-pcie1
 +bootconf_pcie=config-1#mt7622-bananapi-bpi-r64-pcie1
 +bootconf_sata=config-1#mt7622-bananapi-bpi-r64-sata
@@ -617,7 +617,7 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x48000000
-+bootargs=ubi.block=0,fit root=/dev/fit0
++bootargs=ubi.block=0,fit root=/dev/fit0 rootwait
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_ubi ; fi
 +bootconf=config-1#mt7622-bananapi-bpi-r64-pcie1
 +bootconf_pcie=config-1#mt7622-bananapi-bpi-r64-pcie1
