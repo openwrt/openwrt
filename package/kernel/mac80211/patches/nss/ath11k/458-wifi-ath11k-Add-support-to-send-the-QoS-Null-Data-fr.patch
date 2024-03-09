@@ -18,13 +18,13 @@ Signed-off-by: Karthikeyan Periyasamy <quic_periyasa@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/dp_tx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
-@@ -222,7 +222,8 @@ tcl_ring_sel:
+@@ -221,7 +221,8 @@ tcl_ring_sel:
+ 
  	switch (ti.encap_type) {
  	case HAL_TCL_ENCAP_TYPE_NATIVE_WIFI:
- 		if ((arvif->vif->offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED) &&
--		     skb->protocol == cpu_to_be16(ETH_P_PAE))
-+		    (skb->protocol == cpu_to_be16(ETH_P_PAE) ||
-+		     ieee80211_is_qos_nullfunc(hdr->frame_control)))
+-		if (arvif->vif->offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED)
++		if ((arvif->vif->offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED) &&
++		    ieee80211_is_qos_nullfunc(hdr->frame_control))
  			is_diff_encap = true;
  		else
  			ath11k_dp_tx_encap_nwifi(skb);

@@ -454,7 +454,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		ieee80211_free_txskb(ar->hw, skb);
  		return;
  	}
-@@ -7623,7 +7633,7 @@ err_vdev_del:
+@@ -7622,7 +7632,7 @@ err_vdev_del:
  	idr_for_each(&ar->txmgmt_idr,
  		     ath11k_mac_vif_txmgmt_idr_remove, vif);
  
@@ -465,7 +465,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  			     ath11k_mac_vif_unref, vif);
 --- a/drivers/net/wireless/ath/ath11k/debugfs.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs.c
-@@ -833,10 +833,22 @@ static ssize_t ath11k_debugfs_dump_soc_d
+@@ -832,10 +832,22 @@ static ssize_t ath11k_debugfs_dump_soc_d
  		len += scnprintf(buf + len, size - len, "ring%d: %u\n",
  				 i, soc_stats->tx_err.desc_na[i]);
  
@@ -490,15 +490,6 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  	if (len > size)
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -105,7 +105,7 @@ static struct ath11k_hw_params ath11k_hw
- 		.supports_regdb = false,
- 		.fix_l1ss = true,
- 		.credit_flow = false,
--		.max_tx_ring = DP_TCL_NUM_RING_MAX,
-+		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
- 		.hal_params = &ath11k_hw_hal_params_ipq8074,
- 		.supports_dynamic_smps_6ghz = false,
- 		.alloc_cacheable_memory = true,
 @@ -188,7 +188,6 @@ static struct ath11k_hw_params ath11k_hw
  		.supports_regdb = false,
  		.fix_l1ss = true,
@@ -513,7 +504,6 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  		.support_fw_mac_sequence = false,
 +		/* In addition to TCL ring use TCL_CMD ring also for tx */
 +		.max_tx_ring = DP_TCL_NUM_RING_MAX + 1,
- 		.num_vdevs_peers = ath11k_vdevs_peers,
  	},
  	{
  		.name = "qca6390 hw2.0",

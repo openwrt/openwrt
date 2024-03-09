@@ -245,15 +245,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  		.num_vdevs = 16 + 1,
  		.num_peers = 512,
  		.supports_suspend = false,
-@@ -210,6 +213,7 @@ static struct ath11k_hw_params ath11k_hw
- 		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
- 		.smp2p_wow_exit = false,
- 		.support_fw_mac_sequence = false,
-+		.num_vdevs_peers = ath11k_vdevs_peers,
- 	},
- 	{
- 		.name = "qca6390 hw2.0",
-@@ -259,7 +263,7 @@ static struct ath11k_hw_params ath11k_hw
+@@ -259,7 +262,7 @@ static struct ath11k_hw_params ath11k_hw
  		.coldboot_cal_mm = false,
  		.coldboot_cal_ftm = false,
  		.cbcal_restart_fw = false,
@@ -262,7 +254,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  		.num_vdevs = 16 + 1,
  		.num_peers = 512,
  		.supports_suspend = true,
-@@ -426,7 +430,7 @@ static struct ath11k_hw_params ath11k_hw
+@@ -426,7 +429,7 @@ static struct ath11k_hw_params ath11k_hw
  		.coldboot_cal_mm = false,
  		.coldboot_cal_ftm = false,
  		.cbcal_restart_fw = false,
@@ -271,7 +263,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  		.num_vdevs = 16 + 1,
  		.num_peers = 512,
  		.supports_suspend = true,
-@@ -462,6 +466,7 @@ static struct ath11k_hw_params ath11k_hw
+@@ -462,6 +465,7 @@ static struct ath11k_hw_params ath11k_hw
  		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
  		.smp2p_wow_exit = false,
  		.support_fw_mac_sequence = true,
@@ -279,7 +271,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  	},
  	{
  		.name = "wcn6855 hw2.1",
-@@ -509,7 +514,7 @@ static struct ath11k_hw_params ath11k_hw
+@@ -509,7 +513,7 @@ static struct ath11k_hw_params ath11k_hw
  		.coldboot_cal_mm = false,
  		.coldboot_cal_ftm = false,
  		.cbcal_restart_fw = false,
@@ -288,7 +280,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  		.num_vdevs = 16 + 1,
  		.num_peers = 512,
  		.supports_suspend = true,
-@@ -545,6 +550,7 @@ static struct ath11k_hw_params ath11k_hw
+@@ -545,6 +549,7 @@ static struct ath11k_hw_params ath11k_hw
  		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
  		.smp2p_wow_exit = false,
  		.support_fw_mac_sequence = true,
@@ -296,7 +288,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  	},
  	{
  		.name = "wcn6750 hw1.0",
-@@ -593,7 +599,7 @@ static struct ath11k_hw_params ath11k_hw
+@@ -593,7 +598,7 @@ static struct ath11k_hw_params ath11k_hw
  		.coldboot_cal_mm = true,
  		.coldboot_cal_ftm = true,
  		.cbcal_restart_fw = false,
@@ -305,15 +297,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  		.num_vdevs = 16 + 1,
  		.num_peers = 512,
  		.supports_suspend = false,
-@@ -626,6 +632,7 @@ static struct ath11k_hw_params ath11k_hw
- 		.tx_ring_size = DP_TCL_DATA_RING_SIZE_WCN6750,
- 		.smp2p_wow_exit = true,
- 		.support_fw_mac_sequence = true,
-+		.num_vdevs_peers = ath11k_vdevs_peers,
- 	},
- 	{
- 		.hw_rev = ATH11K_HW_IPQ5018_HW10,
-@@ -672,7 +679,7 @@ static struct ath11k_hw_params ath11k_hw
+@@ -672,7 +677,7 @@ static struct ath11k_hw_params ath11k_hw
  		.supports_monitor = false,
  		.supports_sta_ps = false,
  		.supports_shadow_regs = false,
@@ -322,7 +306,7 @@ Signed-off-by: Ramya Gnanasekar <rgnanase@codeaurora.org>
  		.num_vdevs = 16 + 1,
  		.num_peers = 512,
  		.supports_regdb = false,
-@@ -707,6 +714,22 @@ static struct ath11k_hw_params ath11k_hw
+@@ -707,6 +712,22 @@ static struct ath11k_hw_params ath11k_hw
  		.tx_ring_size = DP_TCL_DATA_RING_SIZE,
  		.smp2p_wow_exit = false,
  		.support_fw_mac_sequence = false,

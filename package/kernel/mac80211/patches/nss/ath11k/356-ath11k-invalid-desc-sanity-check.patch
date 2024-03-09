@@ -46,7 +46,7 @@ Signed-off-by: Nagarajan Maran <quic_nmaran@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -431,8 +431,8 @@ int ath11k_dp_rxbufs_replenish(struct at
+@@ -396,8 +396,8 @@ int ath11k_dp_rxbufs_replenish(struct at
  			goto fail_free_skb;
  
  		spin_lock_bh(&rx_ring->idr_lock);
@@ -57,7 +57,7 @@ Signed-off-by: Nagarajan Maran <quic_nmaran@quicinc.com>
  		spin_unlock_bh(&rx_ring->idr_lock);
  		if (buf_id <= 0)
  			goto fail_dma_unmap;
-@@ -3263,6 +3263,16 @@ try_again:
+@@ -3141,6 +3141,16 @@ try_again:
  	while (likely(desc =
  	      (struct hal_reo_dest_ring *)ath11k_hal_srng_dst_get_next_entry(ab,
  									     srng))) {
@@ -74,7 +74,7 @@ Signed-off-by: Nagarajan Maran <quic_nmaran@quicinc.com>
  		cookie = FIELD_GET(BUFFER_ADDR_INFO1_SW_COOKIE,
  				   desc->buf_addr_info.info1);
  		buf_id = FIELD_GET(DP_RXDMA_BUF_COOKIE_BUF_ID,
-@@ -3293,8 +3303,6 @@ try_again:
+@@ -3171,8 +3181,6 @@ try_again:
  
  		num_buffs_reaped[mac_id]++;
  

@@ -130,25 +130,24 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  
  	srng = &ab->hal.srng_list[dp->reo_dst_ring[ring_id].ring_id];
  
-@@ -3383,8 +3405,16 @@ try_again:
+@@ -3385,8 +3407,15 @@ try_again:
  
  		ar = ab->pdevs[mac_id].ar;
  		rx_ring = &ar->dp.rx_refill_buf_ring;
 +		i = num_buffs_reaped[mac_id];
 +
  		spin_lock_bh(&rx_ring->idr_lock);
--		msdu = idr_find(&rx_ring->bufs_idr, buf_id);
+-		msdu = idr_remove(&rx_ring->bufs_idr, buf_id);
 +		if (rx_buf_id[mac_id] && i < DP_RX_MAX_IDR_BUF) {
 +			msdu = idr_find(&rx_ring->bufs_idr, buf_id);
 +			rx_buf_id[mac_id][i] = buf_id;
 +		} else {
 +			msdu = idr_remove(&rx_ring->bufs_idr, buf_id);
 +		}
-+		spin_unlock_bh(&rx_ring->idr_lock);
+ 		spin_unlock_bh(&rx_ring->idr_lock);
  		if (unlikely(!msdu)) {
  			ath11k_warn(ab, "frame rx with invalid buf_id %d\n",
- 				    buf_id);
-@@ -3464,9 +3494,12 @@ try_again:
+@@ -3464,9 +3493,12 @@ try_again:
  		rx_ring = &ar->dp.rx_refill_buf_ring;
  
  		ath11k_dp_rxbufs_replenish(ab, i, rx_ring, num_buffs_reaped[i],
@@ -190,7 +189,24 @@ Signed-off-by: Tamizh Chelvam <quic_tamizhr@quicinc.com>
  
  	srng = &ab->hal.srng_list[dp->rx_rel_ring.ring_id];
  
-@@ -5129,7 +5165,7 @@ int ath11k_dp_rx_process_wbm_err(struct
+@@ -5077,9 +5112,15 @@ int ath11k_dp_rx_process_wbm_err(struct
+ 
+ 		ar = ab->pdevs[mac_id].ar;
+ 		rx_ring = &ar->dp.rx_refill_buf_ring;
++		i = num_buffs_reaped[mac_id];
+ 
+ 		spin_lock_bh(&rx_ring->idr_lock);
+- 		msdu = idr_remove(&rx_ring->bufs_idr, buf_id);
++		if (wbm_err_buf_id[mac_id] && i < DP_RX_MAX_IDR_BUF) {
++			msdu = idr_find(&rx_ring->bufs_idr, buf_id);
++			wbm_err_buf_id[mac_id][i] = buf_id;
++		} else {
++			msdu = idr_remove(&rx_ring->bufs_idr, buf_id);
++		}
+ 		spin_unlock_bh(&rx_ring->idr_lock);
+ 		if (!msdu) {
+ 			ath11k_warn(ab, "frame rx with invalid buf_id %d pdev %d\n",
+@@ -5124,7 +5165,7 @@ int ath11k_dp_rx_process_wbm_err(struct
  		rx_ring = &ar->dp.rx_refill_buf_ring;
  
  		ath11k_dp_rxbufs_replenish(ab, i, rx_ring, num_buffs_reaped[i],

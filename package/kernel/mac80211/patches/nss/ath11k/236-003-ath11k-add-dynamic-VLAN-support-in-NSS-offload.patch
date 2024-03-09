@@ -423,7 +423,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		}
  	} else if (old_state == IEEE80211_STA_AUTHORIZED &&
  		   new_state == IEEE80211_STA_ASSOC) {
-@@ -7019,7 +7248,7 @@ static int ath11k_mac_op_add_interface(s
+@@ -7018,7 +7247,7 @@ static int ath11k_mac_op_add_interface(s
  	if ((vif->type == NL80211_IFTYPE_AP_VLAN ||
  	     vif->type == NL80211_IFTYPE_STATION) && ab->nss.enabled) {
  		if (ath11k_frame_mode == ATH11K_HW_TXRX_ETHERNET &&
@@ -432,7 +432,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  			vif->offload_flags |= IEEE80211_OFFLOAD_ENCAP_4ADDR;
  			arvif->nss.encap = ATH11K_HW_TXRX_ETHERNET;
  			arvif->nss.decap = ATH11K_HW_TXRX_ETHERNET;
-@@ -7032,6 +7261,7 @@ static int ath11k_mac_op_add_interface(s
+@@ -7031,6 +7260,7 @@ static int ath11k_mac_op_add_interface(s
  					    vif->addr, ret);
  				goto err;
  			}
@@ -440,7 +440,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  			mutex_unlock(&ar->conf_mutex);
  			return ret;
  		}
-@@ -7056,6 +7286,20 @@ static int ath11k_mac_op_add_interface(s
+@@ -7055,6 +7285,20 @@ static int ath11k_mac_op_add_interface(s
  	arvif->vdev_id = bit;
  	arvif->vdev_subtype = WMI_VDEV_SUBTYPE_NONE;
  
@@ -461,7 +461,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	switch (vif->type) {
  	case NL80211_IFTYPE_UNSPECIFIED:
  	case NL80211_IFTYPE_STATION:
-@@ -7096,7 +7340,7 @@ static int ath11k_mac_op_add_interface(s
+@@ -7095,7 +7339,7 @@ static int ath11k_mac_op_add_interface(s
  	if (ret) {
  		ath11k_warn(ab, "failed to create WMI vdev %d: %d\n",
  			    arvif->vdev_id, ret);
@@ -470,7 +470,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	}
  
  	ar->num_created_vdevs++;
-@@ -7255,7 +7499,7 @@ err_peer_del:
+@@ -7254,7 +7498,7 @@ err_peer_del:
  		if (fbret) {
  			ath11k_warn(ar->ab, "fallback fail to delete peer addr %pM vdev_id %d ret %d\n",
  				    vif->addr, arvif->vdev_id, fbret);
@@ -479,7 +479,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  		}
  	}
  
-@@ -7266,6 +7510,8 @@ err_vdev_del:
+@@ -7265,6 +7509,8 @@ err_vdev_del:
  	list_del(&arvif->list);
  	spin_unlock_bh(&ar->data_lock);
  
@@ -488,7 +488,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  err:
  	mutex_unlock(&ar->conf_mutex);
  
-@@ -7363,6 +7609,7 @@ err_vdev_del:
+@@ -7362,6 +7608,7 @@ err_vdev_del:
  	list_del(&arvif->list);
  	spin_unlock_bh(&ar->data_lock);
  
@@ -496,7 +496,7 @@ Signed-off-by: Sathishkumar Muruganandam <murugana@codeaurora.org>
  	ath11k_peer_cleanup(ar, arvif->vdev_id);
  
  	idr_for_each(&ar->txmgmt_idr,
-@@ -9961,8 +10208,11 @@ static int __ath11k_mac_register(struct
+@@ -9960,8 +10207,11 @@ static int __ath11k_mac_register(struct
  	    ab->hw_params.bios_sar_capa)
  		ar->hw->wiphy->sar_capa = ab->hw_params.bios_sar_capa;
  
