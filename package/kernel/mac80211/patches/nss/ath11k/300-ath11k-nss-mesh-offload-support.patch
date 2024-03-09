@@ -1014,7 +1014,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
 +#endif
 --- a/drivers/net/wireless/ath/ath11k/dp.h
 +++ b/drivers/net/wireless/ath/ath11k/dp.h
-@@ -1453,15 +1453,29 @@ struct htt_ppdu_stats_usr_cmn_array {
+@@ -1529,15 +1529,29 @@ struct htt_ppdu_stats_usr_cmn_array {
  	struct htt_tx_ppdu_stats_info tx_ppdu_info[];
  } __packed;
  
@@ -1046,7 +1046,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  #define HTT_PPDU_STATS_MAX_USERS	37
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -1409,6 +1409,71 @@ static int ath11k_htt_tlv_ppdu_stats_par
+@@ -1444,6 +1444,71 @@ static int ath11k_htt_tlv_ppdu_stats_par
  	return 0;
  }
  
@@ -1118,7 +1118,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  static void
  ath11k_update_per_peer_tx_stats(struct ath11k *ar,
  				struct htt_ppdu_stats *ppdu_stats, u8 user)
-@@ -1432,6 +1497,9 @@ ath11k_update_per_peer_tx_stats(struct a
+@@ -1467,6 +1532,9 @@ ath11k_update_per_peer_tx_stats(struct a
  	if (!(usr_stats->tlv_flags & BIT(HTT_PPDU_STATS_TAG_USR_RATE)))
  		return;
  
@@ -1128,7 +1128,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  	if (usr_stats->tlv_flags & BIT(HTT_PPDU_STATS_TAG_USR_COMPLTN_COMMON))
  		is_ampdu =
  			HTT_USR_CMPLTN_IS_AMPDU(usr_stats->cmpltn_cmn.flags);
-@@ -1565,6 +1633,8 @@ ath11k_update_per_peer_tx_stats(struct a
+@@ -1600,6 +1668,8 @@ ath11k_update_per_peer_tx_stats(struct a
  			ath11k_debugfs_sta_add_tx_stats(arsta, peer_stats, rate_idx);
  	}
  
@@ -1137,7 +1137,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  	spin_unlock_bh(&ab->base_lock);
  	rcu_read_unlock();
  }
-@@ -1685,6 +1755,69 @@ int ath11k_dp_htt_tlv_iter(struct ath11k
+@@ -1720,6 +1790,69 @@ int ath11k_dp_htt_tlv_iter(struct ath11k
  	return 0;
  }
  
@@ -1207,7 +1207,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  static int ath11k_htt_pull_ppdu_stats(struct ath11k_base *ab,
  				      struct sk_buff *skb)
  {
-@@ -1703,6 +1836,15 @@ static int ath11k_htt_pull_ppdu_stats(st
+@@ -1738,6 +1871,15 @@ static int ath11k_htt_pull_ppdu_stats(st
  	pdev_id = FIELD_GET(HTT_T2H_PPDU_STATS_INFO_PDEV_ID, msg->info);
  	ppdu_id = msg->ppdu_id;
  
@@ -1223,7 +1223,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  	rcu_read_lock();
  	ar = ath11k_mac_get_ar_by_pdev_id(ab, pdev_id);
  	if (!ar) {
-@@ -1770,6 +1912,12 @@ static int ath11k_htt_pull_ppdu_stats(st
+@@ -1805,6 +1947,12 @@ static int ath11k_htt_pull_ppdu_stats(st
  		}
  	}
  
@@ -1257,7 +1257,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  	mutex_unlock(&ar->conf_mutex);
  }
  
-@@ -9714,6 +9726,28 @@ err_fallback:
+@@ -9715,6 +9727,28 @@ err_fallback:
  	return 0;
  }
  
@@ -1286,7 +1286,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  static const struct ieee80211_ops ath11k_ops = {
  	.tx				= ath11k_mac_op_tx,
  	.wake_tx_queue			= ieee80211_handle_wake_tx_queue,
-@@ -9771,6 +9805,9 @@ static const struct ieee80211_ops ath11k
+@@ -9772,6 +9806,9 @@ static const struct ieee80211_ops ath11k
  	.set_sar_specs			= ath11k_mac_op_set_bios_sar_specs,
  	.remain_on_channel		= ath11k_mac_op_remain_on_channel,
  	.cancel_remain_on_channel	= ath11k_mac_op_cancel_remain_on_channel,
@@ -1296,7 +1296,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  };
  
  static void ath11k_mac_update_ch_list(struct ath11k *ar,
-@@ -10231,6 +10268,8 @@ static int __ath11k_mac_register(struct
+@@ -10232,6 +10269,8 @@ static int __ath11k_mac_register(struct
  		ieee80211_hw_set(ar->hw, SUPPORTS_NSS_OFFLOAD);
  		wiphy_ext_feature_set(ar->hw->wiphy,
  				      NL80211_EXT_FEATURE_VLAN_OFFLOAD);

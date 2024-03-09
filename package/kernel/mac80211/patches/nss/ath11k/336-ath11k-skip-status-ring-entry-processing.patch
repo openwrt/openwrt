@@ -35,7 +35,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -3660,6 +3660,46 @@ ath11k_dp_rx_mon_update_status_buf_state
+@@ -3782,6 +3782,46 @@ ath11k_dp_rx_mon_update_status_buf_state
  	}
  }
  
@@ -82,7 +82,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  static int ath11k_dp_rx_reap_mon_status_ring(struct ath11k_base *ab, int mac_id,
  					     int *budget, struct sk_buff_head *skb_list)
  {
-@@ -3673,6 +3713,7 @@ static int ath11k_dp_rx_reap_mon_status_
+@@ -3795,6 +3835,7 @@ static int ath11k_dp_rx_reap_mon_status_
  	struct sk_buff *skb;
  	struct ath11k_skb_rxcb *rxcb;
  	struct hal_tlv_hdr *tlv;
@@ -90,7 +90,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  	u32 cookie;
  	int buf_id, srng_id;
  	dma_addr_t paddr;
-@@ -3692,8 +3733,7 @@ static int ath11k_dp_rx_reap_mon_status_
+@@ -3814,8 +3855,7 @@ static int ath11k_dp_rx_reap_mon_status_
  	ath11k_hal_srng_access_begin(ab, srng);
  	while (*budget) {
  		*budget -= 1;
@@ -100,7 +100,7 @@ Signed-off-by: Venkateswara Naralasetty <quic_vnaralas@quicinc.com>
  		if (!rx_mon_status_desc) {
  			pmon->buf_state = DP_MON_STATUS_REPLINISH;
  			break;
-@@ -3724,18 +3764,43 @@ static int ath11k_dp_rx_reap_mon_status_
+@@ -3846,18 +3886,43 @@ static int ath11k_dp_rx_reap_mon_status_
  			tlv = (struct hal_tlv_hdr *)skb->data;
  			if (FIELD_GET(HAL_TLV_HDR_TAG, tlv->tl) !=
  					HAL_RX_STATUS_BUFFER_DONE) {

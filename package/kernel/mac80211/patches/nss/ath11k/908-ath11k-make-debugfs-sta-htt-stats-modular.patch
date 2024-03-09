@@ -40,7 +40,7 @@
  ath11k-$(CPTCFG_ATH11K_THERMAL) += thermal.o
 --- a/drivers/net/wireless/ath/ath11k/debugfs.c
 +++ b/drivers/net/wireless/ath/ath11k/debugfs.c
-@@ -1875,7 +1875,9 @@ int ath11k_debugfs_register(struct ath11
+@@ -1877,7 +1877,9 @@ int ath11k_debugfs_register(struct ath11
  	snprintf(buf, 100, "../../ath11k/%pd2", ar->debug.debugfs_pdev);
  	debugfs_create_symlink("ath11k", ar->hw->wiphy->debugfsdir, buf);
  
@@ -120,7 +120,7 @@
  			    &fops_peer_ps_state);
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -1723,8 +1723,10 @@ ath11k_update_per_peer_tx_stats(struct a
+@@ -1758,8 +1758,10 @@ ath11k_update_per_peer_tx_stats(struct a
  		peer_stats->mu_pos   = mu_pos;
  		peer_stats->ru_tones = arsta->txrate.he_ru_alloc;
  
@@ -131,7 +131,7 @@
  	}
  
  	usr_stats->rate_stats_updated = true;
-@@ -2170,7 +2172,9 @@ void ath11k_dp_htt_htc_t2h_msg_handler(s
+@@ -2205,7 +2207,9 @@ void ath11k_dp_htt_htc_t2h_msg_handler(s
  		ath11k_htt_pull_ppdu_stats(ab, skb);
  		break;
  	case HTT_T2H_MSG_TYPE_EXT_STATS_CONF:
@@ -176,7 +176,7 @@
  	spin_unlock_bh(&ab->base_lock);
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -9812,7 +9812,7 @@ static const struct ieee80211_ops ath11k
+@@ -9813,7 +9813,7 @@ static const struct ieee80211_ops ath11k
  	.set_wakeup			= ath11k_wow_op_set_wakeup,
  #endif
  
