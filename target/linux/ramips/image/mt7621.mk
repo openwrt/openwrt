@@ -2190,7 +2190,9 @@ TARGET_DEVICES += snr_snr-cpe-me2-sfp
 
 define Device/storylink_sap-g3200u3
   $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 7872k
+  UIMAGE_NAME := SAP-G3200
   DEVICE_VENDOR := STORYLiNK
   DEVICE_MODEL := SAP-G3200U3
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb3 kmod-usb-ledtrig-usbport \
