@@ -1,0 +1,98 @@
+From 9475cc7ac31503521af95e38151e9d856e8ff30b Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sun, 31 Dec 2023 00:45:54 +0200
+Subject: [PATCH 1/2] wifi: rtl8xxxu: Fix LED control code of RTL8192FU
+
+Some devices, like the Comfast CF-826F, use LED1, which already works.
+Others, like Asus USB-N13 C1, use LED0, which doesn't work correctly.
+
+Write the right values to the LED control registers to make LED0 work
+as well.
+
+This is unfortunately tested only with the Comfast CF-826F.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/7a2c3158-3a45-4466-b11e-fc09802b20e2@gmail.com
+---
+ .../realtek/rtl8xxxu/rtl8xxxu_8192f.c         | 32 +++++++++++++------
+ .../wireless/realtek/rtl8xxxu/rtl8xxxu_regs.h | 15 +++++++++
+ 2 files changed, 38 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192f.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8192f.c
+@@ -2014,26 +2014,40 @@ static int rtl8192fu_led_brightness_set(
+ 	struct rtl8xxxu_priv *priv = container_of(led_cdev,
+ 						  struct rtl8xxxu_priv,
+ 						  led_cdev);
+-	u16 ledcfg;
++	u32 ledcfg;
+ 
+ 	/* Values obtained by observing the USB traffic from the Windows driver. */
+ 	rtl8xxxu_write32(priv, REG_SW_GPIO_SHARE_CTRL_0, 0x20080);
+ 	rtl8xxxu_write32(priv, REG_SW_GPIO_SHARE_CTRL_1, 0x1b0000);
+ 
+-	ledcfg = rtl8xxxu_read16(priv, REG_LEDCFG0);
++	ledcfg = rtl8xxxu_read32(priv, REG_LEDCFG0);
++
++	/* Comfast CF-826F uses LED1. Asus USB-N13 C1 uses LED0. Set both. */
++
++	u32p_replace_bits(&ledcfg, LED_GPIO_ENABLE, LEDCFG0_LED2EN);
++	u32p_replace_bits(&ledcfg, LED_IO_MODE_OUTPUT, LEDCFG0_LED0_IO_MODE);
++	u32p_replace_bits(&ledcfg, LED_IO_MODE_OUTPUT, LEDCFG0_LED1_IO_MODE);
+ 
+ 	if (brightness == LED_OFF) {
+-		/* Value obtained like above. */
+-		ledcfg = BIT(1) | BIT(7);
++		u32p_replace_bits(&ledcfg, LED_MODE_SW_CTRL, LEDCFG0_LED0CM);
++		u32p_replace_bits(&ledcfg, LED_SW_OFF, LEDCFG0_LED0SV);
++		u32p_replace_bits(&ledcfg, LED_MODE_SW_CTRL, LEDCFG0_LED1CM);
++		u32p_replace_bits(&ledcfg, LED_SW_OFF, LEDCFG0_LED1SV);
+ 	} else if (brightness == LED_ON) {
+-		/* Value obtained like above. */
+-		ledcfg = BIT(1) | BIT(7) | BIT(11);
++		u32p_replace_bits(&ledcfg, LED_MODE_SW_CTRL, LEDCFG0_LED0CM);
++		u32p_replace_bits(&ledcfg, LED_SW_ON, LEDCFG0_LED0SV);
++		u32p_replace_bits(&ledcfg, LED_MODE_SW_CTRL, LEDCFG0_LED1CM);
++		u32p_replace_bits(&ledcfg, LED_SW_ON, LEDCFG0_LED1SV);
+ 	} else if (brightness == RTL8XXXU_HW_LED_CONTROL) {
+-		/* Value obtained by brute force. */
+-		ledcfg = BIT(8) | BIT(9);
++		u32p_replace_bits(&ledcfg, LED_MODE_TX_OR_RX_EVENTS,
++				  LEDCFG0_LED0CM);
++		u32p_replace_bits(&ledcfg, LED_SW_OFF, LEDCFG0_LED0SV);
++		u32p_replace_bits(&ledcfg, LED_MODE_TX_OR_RX_EVENTS,
++				  LEDCFG0_LED1CM);
++		u32p_replace_bits(&ledcfg, LED_SW_OFF, LEDCFG0_LED1SV);
+ 	}
+ 
+-	rtl8xxxu_write16(priv, REG_LEDCFG0, ledcfg);
++	rtl8xxxu_write32(priv, REG_LEDCFG0, ledcfg);
+ 
+ 	return 0;
+ }
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_regs.h
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_regs.h
+@@ -146,6 +146,21 @@
+ #define  GPIO_INTM_EDGE_TRIG_IRQ	BIT(9)
+ 
+ #define REG_LEDCFG0			0x004c
++#define  LEDCFG0_LED0CM			GENMASK(2, 0)
++#define  LEDCFG0_LED1CM			GENMASK(10, 8)
++#define   LED_MODE_SW_CTRL		0x0
++#define   LED_MODE_TX_OR_RX_EVENTS	0x3
++#define  LEDCFG0_LED0SV			BIT(3)
++#define  LEDCFG0_LED1SV			BIT(11)
++#define   LED_SW_OFF			0x0
++#define   LED_SW_ON			0x1
++#define  LEDCFG0_LED0_IO_MODE		BIT(7)
++#define  LEDCFG0_LED1_IO_MODE		BIT(15)
++#define   LED_IO_MODE_OUTPUT		0x0
++#define   LED_IO_MODE_INPUT		0x1
++#define  LEDCFG0_LED2EN			BIT(21)
++#define   LED_GPIO_DISABLE		0x0
++#define   LED_GPIO_ENABLE		0x1
+ #define  LEDCFG0_DPDT_SELECT		BIT(23)
+ #define REG_LEDCFG1			0x004d
+ #define  LEDCFG1_HW_LED_CONTROL		BIT(1)

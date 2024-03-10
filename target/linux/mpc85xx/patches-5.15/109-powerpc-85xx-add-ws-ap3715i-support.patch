@@ -30,9 +30,9 @@
  obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -346,6 +346,7 @@ image-$(CONFIG_TQM8555)			+= cuImage.tqm
- image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
+@@ -348,6 +348,7 @@ image-$(CONFIG_TQM8560)			+= cuImage.tqm
  image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
+ image-$(CONFIG_HIVEAP_330)		+= simpleImage.hiveap-330
  image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
 +image-$(CONFIG_WS_AP3715I)		+= simpleImage.ws-ap3715i
  image-$(CONFIG_WS_AP3825I)		+= simpleImage.ws-ap3825i
@@ -40,10 +40,10 @@
  image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
-@@ -339,6 +339,7 @@ adder875-redboot)
-     platformo="$object/fixed-head.o $object/redboot-8xx.o"
+@@ -340,6 +340,7 @@ adder875-redboot)
      binary=y
      ;;
+ simpleboot-hiveap-330|\
 +simpleboot-ws-ap3715i|\
  simpleboot-ws-ap3825i|\
  simpleboot-tl-wdr4900-v1)

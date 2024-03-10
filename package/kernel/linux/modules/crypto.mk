@@ -908,6 +908,7 @@ define KernelPackage/crypto-sha1
 	CONFIG_CRYPTO_SHA1 \
 	CONFIG_CRYPTO_SHA1_ARM \
 	CONFIG_CRYPTO_SHA1_ARM_NEON \
+	CONFIG_CRYPTO_SHA1_ARM64_CE \
 	CONFIG_CRYPTO_SHA1_OCTEON \
 	CONFIG_CRYPTO_SHA1_PPC_SPE \
 	CONFIG_CRYPTO_SHA1_SSSE3
@@ -927,9 +928,20 @@ define KernelPackage/crypto-sha1/arm-neon
   AUTOLOAD+=$(call AutoLoad,09,sha1-arm-neon)
 endef
 
+define KernelPackage/crypto-sha1/aarch64-ce
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha1-ce.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha1-ce)
+endef
+
 KernelPackage/crypto-sha1/imx=$(KernelPackage/crypto-sha1/arm-neon)
 KernelPackage/crypto-sha1/ipq40xx=$(KernelPackage/crypto-sha1/arm-neon)
+KernelPackage/crypto-sha1/mediatek/filogic=$(KernelPackage/crypto-sha1/aarch64-ce)
+KernelPackage/crypto-sha1/mediatek/mt7622=$(KernelPackage/crypto-sha1/aarch64-ce)
 KernelPackage/crypto-sha1/mvebu/cortexa9=$(KernelPackage/crypto-sha1/arm-neon)
+KernelPackage/crypto-sha1/mvebu/cortexa53=$(KernelPackage/crypto-sha1/aarch64-ce)
+KernelPackage/crypto-sha1/mvebu/cortexa72=$(KernelPackage/crypto-sha1/aarch64-ce)
+KernelPackage/crypto-sha1/qualcommax=$(KernelPackage/crypto-sha1/aarch64-ce)
+KernelPackage/crypto-sha1/rockchip/armv8=$(KernelPackage/crypto-sha1/aarch64-ce)
 
 define KernelPackage/crypto-sha1/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha1.ko
@@ -977,12 +989,25 @@ define KernelPackage/crypto-sha256
 	CONFIG_CRYPTO_SHA256 \
 	CONFIG_CRYPTO_SHA256_OCTEON \
 	CONFIG_CRYPTO_SHA256_PPC_SPE \
+	CONFIG_CRYPTO_SHA256_ARM64 \
+	CONFIG_CRYPTO_SHA2_ARM64_CE \
 	CONFIG_CRYPTO_SHA256_SSSE3
   FILES:= \
 	$(LINUX_DIR)/crypto/sha256_generic.ko \
 	$(LINUX_DIR)/lib/crypto/libsha256.ko
   AUTOLOAD:=$(call AutoLoad,09,sha256_generic)
   $(call AddDepends/crypto)
+endef
+
+define KernelPackage/crypto-sha256/aarch64
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha256-arm64.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha256-arm64)
+endef
+
+define KernelPackage/crypto-sha256/aarch64-ce
+  $(call KernelPackage/crypto-sha256/aarch64)
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha2-ce.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha2-ce)
 endef
 
 define KernelPackage/crypto-sha256/octeon
@@ -1002,6 +1027,13 @@ define KernelPackage/crypto-sha256/x86_64
 endef
 endif
 
+KernelPackage/crypto-sha256/mediatek/filogic=$(KernelPackage/crypto-sha256/aarch64-ce)
+KernelPackage/crypto-sha256/mediatek/mt7622=$(KernelPackage/crypto-sha256/aarch64-ce)
+KernelPackage/crypto-sha256/mvebu/cortexa53=$(KernelPackage/crypto-sha256/aarch64-ce)
+KernelPackage/crypto-sha256/mvebu/cortexa72=$(KernelPackage/crypto-sha256/aarch64-ce)
+KernelPackage/crypto-sha256/qualcommax=$(KernelPackage/crypto-sha256/aarch64-ce)
+KernelPackage/crypto-sha256/rockchip/armv8=$(KernelPackage/crypto-sha256/aarch64-ce)
+
 ifdef KernelPackage/crypto-sha256/$(ARCH)
   KernelPackage/crypto-sha256/$(CRYPTO_TARGET)=\
 	  $(KernelPackage/crypto-sha256/$(ARCH))
@@ -1016,6 +1048,7 @@ define KernelPackage/crypto-sha512
   KCONFIG:= \
 	CONFIG_CRYPTO_SHA512 \
 	CONFIG_CRYPTO_SHA512_ARM \
+	CONFIG_CRYPTO_SHA512_ARM64 \
 	CONFIG_CRYPTO_SHA512_OCTEON \
 	CONFIG_CRYPTO_SHA512_SSSE3
   FILES:=$(LINUX_DIR)/crypto/sha512_generic.ko
@@ -1026,6 +1059,11 @@ endef
 define KernelPackage/crypto-sha512/arm
   FILES+=$(LINUX_DIR)/arch/arm/crypto/sha512-arm.ko
   AUTOLOAD+=$(call AutoLoad,09,sha512-arm)
+endef
+
+define KernelPackage/crypto-sha512/aarch64
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha512-arm64.ko
+  AUTOLOAD+=$(call AutoLoad,09,sha512-arm64)
 endef
 
 KernelPackage/crypto-sha512/imx=$(KernelPackage/crypto-sha512/arm)

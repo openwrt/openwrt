@@ -260,7 +260,7 @@ ramips_setup_macs()
 		label_mac=$wan_mac
 		;;
 	iptime,t5004)
-		lan_mac=$(mtd_get_mac_ascii config ethaddr)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	linksys,e5600|\

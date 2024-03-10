@@ -1,0 +1,40 @@
+From 513c559ca9f05394da79fbf20a8f89eec5f53dce Mon Sep 17 00:00:00 2001
+From: Ping-Ke Shih <pkshih@realtek.com>
+Date: Fri, 16 Feb 2024 11:39:23 +0800
+Subject: [PATCH] wifi: rtl8xxxu: check vif before using in rtl8xxxu_tx()
+
+The 'vif' is from tx_info of SKB, and other codes check 'vif' before using,
+which raises smatch warnings:
+
+drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c:5656 rtl8xxxu_tx()
+   warn: variable dereferenced before check 'vif' (see line 5553)
+
+Compile tested only.
+
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20240216033923.34683-1-pkshih@realtek.com
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -5550,7 +5550,7 @@ static void rtl8xxxu_tx(struct ieee80211
+ 	struct rtl8xxxu_tx_urb *tx_urb;
+ 	struct ieee80211_sta *sta = NULL;
+ 	struct ieee80211_vif *vif = tx_info->control.vif;
+-	struct rtl8xxxu_vif *rtlvif = (struct rtl8xxxu_vif *)vif->drv_priv;
++	struct rtl8xxxu_vif *rtlvif = vif ? (struct rtl8xxxu_vif *)vif->drv_priv : NULL;
+ 	struct device *dev = &priv->udev->dev;
+ 	u32 queue, rts_rate;
+ 	u16 pktlen = skb->len;
+@@ -5621,7 +5621,7 @@ static void rtl8xxxu_tx(struct ieee80211
+ 		default:
+ 			break;
+ 		}
+-		if (bmc && rtlvif->hw_key_idx != 0xff) {
++		if (bmc && rtlvif && rtlvif->hw_key_idx != 0xff) {
+ 			tx_desc->txdw1 |= cpu_to_le32(TXDESC_EN_DESC_ID);
+ 			macid = rtlvif->hw_key_idx;
+ 		}

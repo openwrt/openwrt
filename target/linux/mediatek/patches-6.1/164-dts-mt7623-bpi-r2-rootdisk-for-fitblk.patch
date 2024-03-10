@@ -5,7 +5,7 @@
  	chosen {
  		stdout-path = "serial2:115200n8";
 -		bootargs = "earlycon=uart8250,mmio32,0x11004000 console=ttyS2,115200n8 console=tty1";
-+		bootargs = "root=/dev/fit0 earlycon=uart8250,mmio32,0x11004000 console=ttyS2,115200n8 console=tty1";
++		bootargs = "root=/dev/fit0 rootwait earlycon=uart8250,mmio32,0x11004000 console=ttyS2,115200n8 console=tty1";
 +		rootdisk-emmc = <&emmc_rootdisk>;
 +		rootdisk-sd = <&sd_rootdisk>;
  	};

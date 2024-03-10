@@ -144,7 +144,7 @@ config KERNEL_UBSAN_TRAP
 config KERNEL_KASAN
 	bool "Compile the kernel with KASan: runtime memory debugger"
 	select KERNEL_SLUB_DEBUG
-	depends on (x86_64 || aarch64)
+	depends on (x86_64 || aarch64 || arm || powerpc || riscv64)
 	help
 	  Enables kernel address sanitizer - runtime memory debugger,
 	  designed to find out-of-bounds accesses and use-after-free bugs.

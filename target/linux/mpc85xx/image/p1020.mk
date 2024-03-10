@@ -18,9 +18,14 @@ define Device/aerohive_hiveap-330
   DEVICE_PACKAGES := kmod-tpm-i2c-atmel kmod-hwmon-lm70
   BLOCKSIZE := 128k
   KERNEL := kernel-bin | uImage none
-  KERNEL_INITRAMFS := kernel-bin | MultiImage none
+  KERNEL_INITRAMFS := kernel-bin | uImage none
+  KERNEL_NAME := simpleImage.hiveap-330
   KERNEL_SIZE := 16m
   IMAGES := sysupgrade.bin
+  KERNEL_ENTRY := 0x1500000
+  KERNEL_LOADADDR := 0x1500000
+  # append-dtb is still needed, as otherwise u-boot bootm complains
+  # about not having a FDT to edit.
   IMAGE/sysupgrade.bin := append-dtb | pad-to 256k | append-kernel | \
 	append-rootfs | pad-rootfs | check-size | append-metadata
   IMAGE_SIZE = 63m

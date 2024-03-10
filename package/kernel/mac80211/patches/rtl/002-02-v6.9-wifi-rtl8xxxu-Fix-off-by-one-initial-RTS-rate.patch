@@ -1,0 +1,36 @@
+From 80850ca041f2c7ee28fa5e47c5c1b106415f099f Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Tue, 2 Jan 2024 21:33:07 +0200
+Subject: [PATCH 2/2] wifi: rtl8xxxu: Fix off by one initial RTS rate
+
+rtl8xxxu_set_basic_rates() sets the wrong initial RTS rate. It sets the
+next higher rate than the one it should set, e.g. 36M instead of 24M.
+
+The while loop was supposed to find the index of the most significant
+bit which is 1, but it was copied incorrectly from the vendor driver.
+Use __fls() instead.
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/761e6836-6cd6-4930-91b6-0446834655c5@gmail.com
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -4870,10 +4870,9 @@ static void rtl8xxxu_set_basic_rates(str
+ 
+ 	dev_dbg(&priv->udev->dev, "%s: rates %08x\n", __func__,	rate_cfg);
+ 
+-	while (rate_cfg) {
+-		rate_cfg = (rate_cfg >> 1);
+-		rate_idx++;
+-	}
++	if (rate_cfg)
++		rate_idx = __fls(rate_cfg);
++
+ 	rtl8xxxu_write8(priv, REG_INIRTS_RATE_SEL, rate_idx);
+ }
+ 

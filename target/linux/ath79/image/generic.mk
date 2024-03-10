@@ -1007,21 +1007,35 @@ define Device/devolo_magic-2-wifi
 endef
 TARGET_DEVICES += devolo_magic-2-wifi
 
-define Device/dlink_covr-p2500-a1
+define Device/dlink_covr
   $(Device/loader-okli-uimage)
   SOC := qca9563
   DEVICE_VENDOR := D-Link
-  DEVICE_MODEL := COVR-P2500
-  DEVICE_VARIANT := A1
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct
   LOADER_FLASH_OFFS := 0x050000
   LOADER_KERNEL_MAGIC := 0x68737173
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x68737173
   IMAGE_SIZE := 14528k
-  IMAGES += factory.bin recovery.bin
   IMAGE/recovery.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
 	append-rootfs | pad-rootfs | check-size | pad-to 14528k | \
 	append-loader-okli-uimage $(1) | pad-to 15616k
+endef
+
+define Device/dlink_covr-c1200-a1
+  $(Device/dlink_covr)
+  DEVICE_MODEL := COVR-C1200
+  DEVICE_VARIANT := A1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/recovery.bin) | \
+	dlink-sge-signature COVR-C1200 | dlink-sge-image COVR-C1200
+endef
+TARGET_DEVICES += dlink_covr-c1200-a1
+
+define Device/dlink_covr-p2500-a1
+  $(Device/dlink_covr)
+  DEVICE_MODEL := COVR-P2500
+  DEVICE_VARIANT := A1
+  IMAGES += factory.bin recovery.bin
   IMAGE/factory.bin := $$(IMAGE/recovery.bin) | \
 	dlink-sge-image COVR-P2500 | dlink-sge-signature COVR-P2500
 endef

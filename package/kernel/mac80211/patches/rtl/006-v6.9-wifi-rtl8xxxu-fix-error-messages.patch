@@ -1,0 +1,37 @@
+From 17903a283593c1dbf9da041f836004163ca30f7b Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@linaro.org>
+Date: Wed, 31 Jan 2024 10:10:07 +0300
+Subject: [PATCH] wifi: rtl8xxxu: fix error messages
+
+The first parameter of WARN_ONCE() is a condition so this code will end
+up printing the function name instead of the proper message.
+
+Fixes: 3ff7a05996f9 ("wifi: rtl8xxxu: support setting bssid register for multiple interfaces")
+Signed-off-by: Dan Carpenter <dan.carpenter@linaro.org>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/7b144531-a8da-4725-8911-9b614a525a35@moroto.mountain
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -3593,7 +3593,7 @@ static int rtl8xxxu_set_mac(struct rtl8x
+ 		reg = REG_MACID1;
+ 		break;
+ 	default:
+-		WARN_ONCE("%s: invalid port_num\n", __func__);
++		WARN_ONCE(1, "%s: invalid port_num\n", __func__);
+ 		return -EINVAL;
+ 	}
+ 
+@@ -3618,7 +3618,7 @@ static int rtl8xxxu_set_bssid(struct rtl
+ 		reg = REG_BSSID1;
+ 		break;
+ 	default:
+-		WARN_ONCE("%s: invalid port_num\n", __func__);
++		WARN_ONCE(1, "%s: invalid port_num\n", __func__);
+ 		return -EINVAL;
+ 	}
+ 
