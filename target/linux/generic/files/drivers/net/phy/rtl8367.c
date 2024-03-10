@@ -1641,7 +1641,7 @@ static int rtl8367_switch_init(struct rtl8366_smi *smi)
 	int err;
 
 	dev->name = "RTL8367";
-	dev->cpu_port = RTL8367_CPU_PORT_NUM;
+	dev->cpu_port = smi->cpu_port;
 	dev->ports = RTL8367_NUM_PORTS;
 	dev->vlans = RTL8367_NUM_VIDS;
 	dev->ops = &rtl8367_sw_ops;
@@ -1750,6 +1750,7 @@ static int rtl8367_probe(struct platform_device *pdev)
 {
 	struct rtl8366_smi *smi;
 	int err;
+	int size;
 
 	smi = rtl8366_smi_probe(pdev);
 	if (IS_ERR(smi))
@@ -1759,7 +1760,14 @@ static int rtl8367_probe(struct platform_device *pdev)
 	smi->cmd_read = 0xb9;
 	smi->cmd_write = 0xb8;
 	smi->ops = &rtl8367_smi_ops;
-	smi->cpu_port = RTL8367_CPU_PORT_NUM;
+
+	if (of_get_property(smi->parent->of_node, "realtek,extif1", &size))
+		smi->cpu_port = RTL8367_CPU_PORT_NUM - 1;
+	else
+		smi->cpu_port = RTL8367_CPU_PORT_NUM;
+
+	dev_info(smi->parent, "CPU port: %u\n", smi->cpu_port);
+
 	smi->num_ports = RTL8367_NUM_PORTS;
 	smi->num_vlan_mc = RTL8367_NUM_VLANS;
 	smi->mib_counters = rtl8367_mib_counters;
