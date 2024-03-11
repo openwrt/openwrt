@@ -8,10 +8,10 @@ board=$(board_name)
 
 case "$board" in
 iei,puzzle-m901)
-	ucidef_set_led_netdev "wan" "WAN" "white:network" "eth0" "link"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0" "link"
 	;;
 iei,puzzle-m902)
-	ucidef_set_led_netdev "wan" "WAN" "white:network" "eth2" "link"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth2" "link"
 	;;
 esac
 
