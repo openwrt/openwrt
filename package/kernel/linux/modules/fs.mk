@@ -344,8 +344,8 @@ define KernelPackage/fs-jfs
   KCONFIG:=CONFIG_JFS_FS
   FILES:=$(LINUX_DIR)/fs/jfs/jfs.ko
   AUTOLOAD:=$(call AutoLoad,30,jfs,1)
-  $(call AddDepends/nls)
   DEPENDS:=+LINUX_6_6:kmod-nls-ucs2-utils
+  $(call AddDepends/nls)
 endef
 
 define KernelPackage/fs-jfs/description
