@@ -3052,6 +3052,19 @@ define Device/zio_freezio
 endef
 TARGET_DEVICES += zio_freezio
 
+define Device/zte_mf286c3
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  VID_HDR_OFFSET := 2048
+  IMAGE_SIZE := 41984k
+  KERNEL_SIZE := 5120k
+  DEVICE_VENDOR := ZTE
+  DEVICE_MODEL := MF286C3
+  DEVICE_PACKAGES := kmod-mt7603 kmod-usb3 kmod-mt7615e \
+	kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += zte_mf286c3
+
 define Device/zyxel_lte3301-plus
   $(Device/nand)
   DEVICE_VENDOR := ZyXEL

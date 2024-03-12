@@ -1,0 +1,219 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "zte,mf286c3", "mediatek,mt7621-soc";
+	model = "ZTE MF286C3";
+
+	chosen {
+		bootargs-override = "console=ttyS0,57600n8";
+	};
+
+	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <50>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&button_pins>;
+
+		key-wps {
+			gpios = <&aw9523 14 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		key-wlan {
+			gpios = <&aw9523 15 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WLAN>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "Bootloader";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "Config";
+			reg = <0x80000 0x80000>;
+			read-only;
+		};
+
+		partition@100000 {
+			label = "Factory";
+			reg = <0x100000 0x100000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				eeprom1: eeprom@8000 {
+					reg = <0x8000 0x4da8>;
+				};
+
+				macaddr_factory_e000: macaddr@e000 {
+					reg = <0xe000 0x6>;
+				};
+
+				macaddr_factory_e006: macaddr@e006 {
+					reg = <0xe006 0x6>;
+				};
+			};
+		};
+
+		partition@200000 {
+			label = "inventory";
+			reg = <0x200000 0x100000>;
+			read-only;
+		};
+
+		partition@300000 {
+			label = "customer";
+			reg = <0x300000 0x100000>;
+			read-only;
+		};
+
+		partition@400000 {
+			label = "zone";
+			reg = <0x400000 0x100000>;
+			read-only;
+		};
+
+		partition@500000 {
+			label = "reserved0";
+			reg = <0x500000 0x500000>;
+			read-only;
+		};
+
+		partition@a00000 {
+			label = "kernel";
+			reg = <0xa00000 0x500000>;
+		};
+
+		partition@f00000 {
+			label = "ubi";
+			reg = <0xf00000 0x7100000>;
+		};
+	};
+};
+
+&i2c {
+	status = "okay";
+
+	aw9523: gpio-expander@5b {
+		compatible = "awinic,aw9523-pinctrl";
+		reg = <0x5b>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&aw9523 0 0 16>;
+
+		reset-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+
+		button_pins: button-pins {
+			pins = "gpio4", "gpio7", "gpio13", "gpio14";
+			function = "gpio";
+			input-enable;
+		};
+
+		led_pins: led-pins {
+			pins = "gpio0", "gpio1", "gpio2", "gpio3", "gpio5", "gpio6",
+				"gpio8", "gpio9", "gpio10", "gpio11", "gpio12";
+			function = "gpio";
+			input-disable;
+			output-low;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+		ieee80211-freq-limit = <2400000 2500000>;
+		nvmem-cells = <&eeprom0>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+		nvmem-cells = <&eeprom1>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_e006>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+};
+
+&mdio {
+	ethphy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@1 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
