@@ -8,7 +8,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -1023,6 +1023,15 @@ config NETFILTER_XT_TARGET_NOTRACK
+@@ -726,7 +726,6 @@ config NF_FLOW_TABLE
+ 	tristate "Netfilter flow table module"
+ 	depends on NETFILTER_INGRESS
+ 	depends on NF_CONNTRACK
+-	depends on NF_TABLES
+ 	help
+ 	  This option adds the flow table core infrastructure.
+ 
+@@ -1023,6 +1022,15 @@ config NETFILTER_XT_TARGET_NOTRACK
  	depends on NETFILTER_ADVANCED
  	select NETFILTER_XT_TARGET_CT
  
