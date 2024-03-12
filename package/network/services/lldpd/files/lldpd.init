@@ -104,6 +104,21 @@ get_interface_csv_pattern() {
 	set +o noglob
 }
 
+add_custom_tlv_callback()
+{
+	# syntax: configure [ports ethX [,…]] lldp custom-tlv [add | replace] oui OUI subtype SUBTYPE [oui-info content]
+	# lldpd and lldpcli warn about entries with invalid syntax - assume user provided data is OK.
+	# handle specific ports also, if that functionality lands one day
+	local _lldp_custom_tlv
+	local _ports
+	# example: configure lldp custom-tlv [add|replace] oui XX,XX,XX subtype XX oui-info XX[,XX,...]
+	config_get _lldp_custom_tlv "$1" 'lldp_custom_tlv'
+	# CSV of layer 3 device ports
+	get_interface_csv_pattern _ports "$1" 'ports'
+
+	echo "configure ${_ports:+ports $_ports }lldp custom-tlv $_lldp_custom_tlv" >> "$LLDPD_CONF"
+}
+
 write_lldpd_conf()
 {
 	local lldp_description
@@ -200,6 +215,9 @@ write_lldpd_conf()
 	[ "$lldp_tx_hold" -gt 0 ] && echo "configure lldp tx-hold $lldp_tx_hold" >> "$LLDPD_CONF"
 	[ "$lldp_capadv" -gt 0 ] && echo "configure lldp capabilities-advertisements" >> "$LLDPD_CONF"
 	[ "$lldp_maddradv" -gt 0 ] && echo "configure lldp management-addresses-advertisements" >> "$LLDPD_CONF"
+
+	# Custom TLV handling
+	config_foreach add_custom_tlv_callback 'custom-tlv'
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e "$LLDPD_CONFS_DIR" ] || ln -s /etc/lldpd.d "$LLDPD_CONFS_DIR"
