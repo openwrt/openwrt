@@ -1636,11 +1636,7 @@ static int fe_probe(struct platform_device *pdev)
 		priv->tx_ring.tx_ring_size *= 4;
 		priv->rx_ring.rx_ring_size *= 4;
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
 	netif_napi_add_weight(netdev, &priv->rx_napi, fe_poll, napi_weight);
-#else
-	netif_napi_add(netdev, &priv->rx_napi, fe_poll, napi_weight);
-#endif
 	fe_set_ethtool_ops(netdev);
 
 	err = register_netdev(netdev);
