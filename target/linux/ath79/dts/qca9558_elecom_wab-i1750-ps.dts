@@ -5,6 +5,10 @@
 / {
 	compatible = "elecom,wab-i1750-ps", "qca,qca9558";
 	model = "ELECOM WAB-I1750-PS";
+
+	chosen {
+		bootargs = "console=ttyATH1,115200n8 console=ttyS0,115200n8";
+	};
 };
 
 &gpio {
