@@ -290,8 +290,12 @@ $(eval $(call KernelPackage,crypto-xcbc))
 
 define KernelPackage/crypto-gf128
   TITLE:=GF(2^128) multiplication functions CryptoAPI module
-  KCONFIG:=CONFIG_CRYPTO_GF128MUL
-  FILES:=$(LINUX_DIR)/crypto/gf128mul.ko
+  KCONFIG:= \
+	CONFIG_CRYPTO_GF128MUL \
+	CONFIG_CRYPTO_LIB_GF128MUL
+  FILES:= \
+	$(LINUX_DIR)/crypto/gf128mul.ko@lt6.2 \
+	$(LINUX_DIR)/lib/crypto/gf128mul.ko@ge6.2
   AUTOLOAD:=$(call AutoLoad,09,gf128mul)
   $(call AddDepends/crypto)
 endef
