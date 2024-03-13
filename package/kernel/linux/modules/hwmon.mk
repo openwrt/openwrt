@@ -82,7 +82,7 @@ define KernelPackage/hwmon-coretemp
   KCONFIG:=CONFIG_SENSORS_CORETEMP
   FILES:=$(LINUX_DIR)/drivers/hwmon/coretemp.ko
   AUTOLOAD:=$(call AutoProbe,coretemp)
-  $(call AddDepends/hwmon,)
+  $(call AddDepends/hwmon,@TARGET_x86)
 endef
 
 define KernelPackage/hwmon-coretemp/description
