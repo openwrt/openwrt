@@ -527,7 +527,7 @@ $(eval $(call KernelPackage,video-videobuf2))
 
 define KernelPackage/video-cpia2
   TITLE:=CPIA2 video driver
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core @LINUX_5_15
   KCONFIG:=CONFIG_VIDEO_CPIA2
   FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_USB_DIR)/cpia2/cpia2.ko
   AUTOLOAD:=$(call AutoProbe,cpia2)
