@@ -171,6 +171,7 @@ endef
 define Build/zytrx-header
 	$(eval board=$(word 1,$(1)))
 	$(eval version=$(word 2,$(1)))
+	$(eval version=$(shell echo $(version) | cut -c 1-31))
 	$(STAGING_DIR_HOST)/bin/zytrx -B '$(board)' -v '$(version)' -i $@ -o $@.new
 	mv $@.new $@
 endef
