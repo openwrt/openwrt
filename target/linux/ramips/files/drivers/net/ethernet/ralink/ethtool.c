@@ -199,12 +199,20 @@ static void fe_get_ethtool_stats(struct net_device *dev,
 	do {
 		data_src = &hwstats->tx_bytes;
 		data_dst = data;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+		start = u64_stats_fetch_begin(&hwstats->syncp);
+#else
 		start = u64_stats_fetch_begin_irq(&hwstats->syncp);
+#endif
 
 		for (i = 0; i < ARRAY_SIZE(fe_gdma_str); i++)
 			*data_dst++ = *data_src++;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	} while (u64_stats_fetch_retry(&hwstats->syncp, start));
+#else
 	} while (u64_stats_fetch_retry_irq(&hwstats->syncp, start));
+#endif
 }
 
 static struct ethtool_ops fe_ethtool_ops = {
