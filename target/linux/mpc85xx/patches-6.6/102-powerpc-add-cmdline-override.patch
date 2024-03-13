@@ -1,6 +1,6 @@
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
-@@ -954,6 +954,14 @@ config CMDLINE_FORCE
+@@ -1005,6 +1005,14 @@ config CMDLINE_FORCE
  
  endchoice
  
@@ -17,7 +17,7 @@
  	help
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
-@@ -1187,6 +1187,17 @@ int __init early_init_dt_scan_chosen(cha
+@@ -1189,6 +1189,17 @@ int __init early_init_dt_scan_chosen(cha
  	if (p != NULL && l > 0)
  		strlcat(cmdline, p, min_t(int, strlen(cmdline) + (int)l, COMMAND_LINE_SIZE));
  

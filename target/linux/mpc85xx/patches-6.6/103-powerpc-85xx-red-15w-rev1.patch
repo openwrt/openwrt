@@ -1,6 +1,6 @@
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
-@@ -166,6 +166,16 @@ config XES_MPC85xx
+@@ -179,6 +179,16 @@ config XES_MPC85xx
  	  Manufacturer: Extreme Engineering Solutions, Inc.
  	  URL: <https://www.xes-inc.com/>
  
@@ -19,7 +19,7 @@
  	help
 --- a/arch/powerpc/platforms/85xx/Makefile
 +++ b/arch/powerpc/platforms/85xx/Makefile
-@@ -27,6 +27,7 @@ obj-$(CONFIG_P1023_RDB)   += p1023_rdb.o
+@@ -26,6 +26,7 @@ obj-$(CONFIG_PPC_P2020)   += p2020.o $(o
  obj-$(CONFIG_TWR_P102x)   += twr_p102x.o
  obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
  obj-$(CONFIG_FB_FSL_DIU)	+= t1042rdb_diu.o

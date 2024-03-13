@@ -27,8 +27,8 @@ WS-AP3825i AP.
  	select DEFAULT_UIMAGE
 --- a/arch/powerpc/platforms/85xx/Makefile
 +++ b/arch/powerpc/platforms/85xx/Makefile
-@@ -27,6 +27,7 @@ obj-$(CONFIG_P1023_RDB)   += p1023_rdb.o
- obj-$(CONFIG_PANDA)       += panda.o
+@@ -26,6 +26,7 @@ obj-$(CONFIG_PANDA)       += panda.o
+ obj-$(CONFIG_PPC_P2020)   += p2020.o $(obj8259-y)
  obj-$(CONFIG_TWR_P102x)   += twr_p102x.o
  obj-$(CONFIG_WS_AP3710I)  += ws-ap3710i.o
 +obj-$(CONFIG_WS_AP3825I)  += ws-ap3825i.o
@@ -37,7 +37,7 @@ WS-AP3825i AP.
  obj-$(CONFIG_RED_15W_REV1)	+= red15w_rev1.o
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -181,6 +181,7 @@ src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) +=
+@@ -183,6 +183,7 @@ src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) +=
  src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
  src-plat-$(CONFIG_HIVEAP_330) += simpleboot.c fixed-head.S
  src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
@@ -45,7 +45,7 @@ WS-AP3825i AP.
  
  src-plat-$(CONFIG_PPC_MICROWATT) += fixed-head.S microwatt.c
  
-@@ -363,6 +364,7 @@ image-$(CONFIG_TQM8560)			+= cuImage.tqm
+@@ -355,6 +356,7 @@ image-$(CONFIG_TQM8560)			+= cuImage.tqm
  image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
  image-$(CONFIG_HIVEAP_330)		+= simpleImage.hiveap-330
  image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
@@ -55,7 +55,7 @@ WS-AP3825i AP.
  
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
-@@ -342,6 +342,7 @@ adder875-redboot)
+@@ -346,6 +346,7 @@ adder875-redboot)
      binary=y
      ;;
  simpleboot-hiveap-330|\
