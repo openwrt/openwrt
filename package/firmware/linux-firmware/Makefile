@@ -30,6 +30,8 @@ define Package/firmware-default
   URL:=http://git.kernel.org/cgit/linux/kernel/git/firmware/linux-firmware.git
   TITLE:=$(1)
   DEPENDS:=$(2)
+  LICENSE_FILES:=$(3)
+  LICENSE:=$(4)
 endef
 
 define Build/Compile
