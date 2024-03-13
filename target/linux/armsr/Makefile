@@ -10,6 +10,7 @@ FEATURES:=fpu pci pcie rtc usb boot-part rootfs-part
 FEATURES+=cpiogz ext4 ramdisk squashfs targz vmdk
 
 KERNEL_PATCHVER:=6.1
+KERNEL_TESTING_PATCHVER:=6.6
 
 include $(INCLUDE_DIR)/target.mk
 
