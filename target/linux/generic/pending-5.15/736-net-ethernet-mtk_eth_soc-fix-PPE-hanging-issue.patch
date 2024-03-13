@@ -1,0 +1,59 @@
+From c8262ebbf7ca546dd5ead3c0383a89eb401627ff Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 13 Mar 2024 17:55:02 +0000
+Subject: [PATCH] net: ethernet: mtk_eth_soc: fix PPE hanging issue
+
+A patch to resolve an issue was found in MediaTek's GPL-licensed SDK:
+In the mtk_ppe_stop() function, the PPE scan mode is not disabled before
+disabling the PPE. This can potentially lead to a hang during the process
+of disabling the PPE.
+
+Without this patch, the PPE may experience a hang during the reboot test.
+
+Reference: https://git01.mediatek.com/plugins/gitiles/openwrt/feeds/mtk-openwrt-feeds/+/b40da332dfe763932a82f9f62a4709457a15dd6c
+
+Suggested-by: Bc-bocun Chen <bc-bocun.chen@mediatek.com>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/ethernet/mediatek/mtk_ppe.c | 18 +++++++++++-------
+ 1 file changed, 11 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/ethernet/mediatek/mtk_ppe.c
++++ b/drivers/net/ethernet/mediatek/mtk_ppe.c
+@@ -1008,7 +1008,7 @@ void mtk_ppe_start(struct mtk_ppe *ppe)
+ 			 MTK_PPE_KEEPALIVE_DISABLE) |
+ 	      FIELD_PREP(MTK_PPE_TB_CFG_HASH_MODE, 1) |
+ 	      FIELD_PREP(MTK_PPE_TB_CFG_SCAN_MODE,
+-			 MTK_PPE_SCAN_MODE_KEEPALIVE_AGE) |
++			 MTK_PPE_SCAN_MODE_CHECK_AGE) |
+ 	      FIELD_PREP(MTK_PPE_TB_CFG_ENTRY_NUM,
+ 			 MTK_PPE_ENTRIES_SHIFT);
+ 	if (mtk_is_netsys_v2_or_greater(ppe->eth))
+@@ -1104,17 +1104,21 @@ int mtk_ppe_stop(struct mtk_ppe *ppe)
+ 
+ 	mtk_ppe_cache_enable(ppe, false);
+ 
+-	/* disable offload engine */
+-	ppe_clear(ppe, MTK_PPE_GLO_CFG, MTK_PPE_GLO_CFG_EN);
+-	ppe_w32(ppe, MTK_PPE_FLOW_CFG, 0);
+-
+ 	/* disable aging */
+ 	val = MTK_PPE_TB_CFG_AGE_NON_L4 |
+ 	      MTK_PPE_TB_CFG_AGE_UNBIND |
+ 	      MTK_PPE_TB_CFG_AGE_TCP |
+ 	      MTK_PPE_TB_CFG_AGE_UDP |
+-	      MTK_PPE_TB_CFG_AGE_TCP_FIN;
++	      MTK_PPE_TB_CFG_AGE_TCP_FIN |
++		  MTK_PPE_TB_CFG_SCAN_MODE;
+ 	ppe_clear(ppe, MTK_PPE_TB_CFG, val);
+ 
+-	return mtk_ppe_wait_busy(ppe);
++	if (mtk_ppe_wait_busy(ppe))
++		return -ETIMEDOUT;
++
++	/* disable offload engine */
++	ppe_clear(ppe, MTK_PPE_GLO_CFG, MTK_PPE_GLO_CFG_EN);
++	ppe_w32(ppe, MTK_PPE_FLOW_CFG, 0);
++
++	return 0;
+ }
