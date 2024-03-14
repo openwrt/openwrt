@@ -9,12 +9,12 @@ the group function flag when requesting a different function.
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 ---
- drivers/pinctrl/ralink/pinctrl-ralink.c | 21 +++++++++++++++++----
+ drivers/pinctrl/mediatek/pinctrl-mtmips.c | 21 +++++++++++++++++----
  1 file changed, 17 insertions(+), 4 deletions(-)
 
---- a/drivers/pinctrl/ralink/pinctrl-ralink.c
-+++ b/drivers/pinctrl/ralink/pinctrl-ralink.c
-@@ -123,11 +123,24 @@ static int ralink_pmx_group_enable(struc
+--- a/drivers/pinctrl/mediatek/pinctrl-mtmips.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mtmips.c
+@@ -123,11 +123,24 @@ static int mtmips_pmx_group_enable(struc
  	int i;
  	int shift;
  
