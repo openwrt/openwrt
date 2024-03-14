@@ -36,6 +36,9 @@ gw,imx6q-gw54xx|\
 gw,imx6q-gw552x)
 	ucidef_set_interfaces_lan_wan 'eth1' 'eth0'
 	;;
+versalogic,imx6q-swordtail)
+	ucidef_set_interface_lan "eth0" "dhcp"
+	;;
 wand,imx6dl-wandboard)
 	ucidef_set_interface_wan 'eth0'
 	;;

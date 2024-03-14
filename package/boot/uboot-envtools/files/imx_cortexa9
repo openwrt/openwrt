@@ -53,6 +53,9 @@ toradex,apalis_imx6q-ixora|\
 toradex,apalis_imx6q-ixora-v1.1)
 	ubootenv_add_uci_config $(bootdev_from_uuid)boot0 -0x2200 0x2000 0x200 10
 	;;
+versalogic,imx6q-swordtail)
+	ubootenv_add_uci_config /dev/mtd1 0x0 0x2000 0x10000
+	;;
 wand,imx6dl-wandboard)
 	ubootenv_add_uci_config "/dev/mmcblk0" "0x60000" "0x2000" "0x2000"
 	;;

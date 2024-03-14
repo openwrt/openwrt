@@ -76,6 +76,27 @@ define Build/ventana-img
 	$(Build/imx-combined-image-clean)
 endef
 
+FAT32_BLOCKS=$(shell echo $$(($(CONFIG_TARGET_KERNEL_PARTSIZE)*1024)))
+define Build/versalogic-sdcard-img
+	$(RM) "$@.boot"
+	$(STAGING_DIR_HOST)/bin/mkfs.fat -n boot -C $@.boot $(FAT32_BLOCKS)
+	$(STAGING_DIR_HOST)/bin/mcopy -i $@.boot $(IMAGE_KERNEL) ::zImage
+
+	$(foreach dts,$(DEVICE_DTS), \
+		$(STAGING_DIR_HOST)/bin/mcopy -i $@.boot \
+			$(KDIR)/image-$(dts).dtb ::$(dts).dtb
+	)
+
+	cp $@ $@.fs
+
+	./gen_fat_sdcard_img.sh $@ \
+		$(CONFIG_TARGET_KERNEL_PARTSIZE) \
+		$@.boot \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
+		$@.fs \
+		4096
+endef
+
 define Device/Default
   PROFILES := Default
   FILESYSTEMS := squashfs ext4
@@ -185,6 +206,22 @@ define Device/toradex_apalis
   ARTIFACT/recovery.scr := recovery-scr
 endef
 TARGET_DEVICES += toradex_apalis
+
+define Device/versalogic_swordtail
+  DEVICE_VENDOR := VersaLogic
+  DEVICE_MODEL := Swordtail
+  SUPPORTED_DEVICES := versalogic,imx6q-swordtail
+  KERNEL_SUFFIX := -zImage
+  KERNEL := kernel-bin
+  DEVICE_DTS_DIR := ../dts-$(KERNEL_PATCHVER)
+  DEVICE_DTS := imx6q-swordtail
+  DEVICE_PACKAGES := brcmfmac-nvram-43430-sdio-swordtail \
+	cypress-firmware-43430-sdio kmod-brcmfmac kmod-fs-vfat
+  IMAGES := sdcard.img sysupgrade.bin
+  IMAGE/sdcard.img := append-rootfs | versalogic-sdcard-img
+  IMAGE/sysupgrade.bin := append-rootfs | versalogic-sdcard-img | gzip | append-metadata
+endef
+TARGET_DEVICES += versalogic_swordtail
 
 define Device/wandboard_dual
   DEVICE_VENDOR := Wandboard

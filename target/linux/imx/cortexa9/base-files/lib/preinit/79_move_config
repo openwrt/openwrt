@@ -2,6 +2,19 @@
 . /lib/functions.sh
 . /lib/upgrade/common.sh
 
+fat_sdcard_move_config() {
+        local partdev
+
+	if export_bootdevice && export_partdevice partdev 1; then
+		insmod fat
+		insmod vfat
+		mkdir -p /boot
+		mount -o rw,noatime "/dev/$partdev" /boot
+		[ -f "/boot/$BACKUP_FILE" ] && mv -f "/boot/$BACKUP_FILE" /
+		umount /boot
+        fi
+}
+
 move_config() {
 	local board=$(board_name)
 
@@ -10,6 +23,9 @@ move_config() {
 	toradex,apalis_imx6q-ixora|\
 	toradex,apalis_imx6q-ixora-v1.1)
 		imx_sdcard_move_config
+		;;
+	versalogic,imx6q-swordtail)
+		fat_sdcard_move_config
 		;;
 	esac
 }
