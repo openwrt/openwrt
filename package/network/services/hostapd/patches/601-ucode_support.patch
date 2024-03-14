@@ -34,7 +34,7 @@ as adding/removing interfaces.
  ifdef CONFIG_CODE_COVERAGE
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -5176,6 +5176,7 @@ try_again:
+@@ -5487,6 +5487,7 @@ try_again:
  		return -1;
  	}
  
@@ -42,7 +42,7 @@ as adding/removing interfaces.
  	wpa_msg_register_cb(hostapd_ctrl_iface_msg_cb);
  
  	return 0;
-@@ -5277,6 +5278,7 @@ fail:
+@@ -5588,6 +5589,7 @@ fail:
  	os_free(fname);
  
  	interface->global_ctrl_sock = s;
@@ -70,8 +70,8 @@ as adding/removing interfaces.
  	for (i = 0; i < interfaces.count; i++) {
 --- a/src/ap/ap_drv_ops.h
 +++ b/src/ap/ap_drv_ops.h
-@@ -393,6 +393,23 @@ static inline int hostapd_drv_stop_ap(st
- 	return hapd->driver->stop_ap(hapd->drv_priv);
+@@ -399,6 +399,23 @@ static inline int hostapd_drv_stop_ap(st
+ 	return hapd->driver->stop_ap(hapd->drv_priv, link_id);
  }
  
 +static inline int hostapd_drv_if_rename(struct hostapd_data *hapd,
@@ -96,7 +96,7 @@ as adding/removing interfaces.
  {
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -252,6 +252,8 @@ int hostapd_reload_config(struct hostapd
+@@ -255,6 +255,8 @@ int hostapd_reload_config(struct hostapd
  	struct hostapd_config *newconf, *oldconf;
  	size_t j;
  
@@ -105,7 +105,7 @@ as adding/removing interfaces.
  	if (iface->config_fname == NULL) {
  		/* Only in-memory config in use - assume it has been updated */
  		hostapd_clear_old(iface);
-@@ -490,6 +492,7 @@ void hostapd_free_hapd_data(struct hosta
+@@ -493,6 +495,7 @@ void hostapd_free_hapd_data(struct hosta
  	hapd->beacon_set_done = 0;
  
  	wpa_printf(MSG_DEBUG, "%s(%s)", __func__, hapd->conf->iface);
@@ -113,7 +113,7 @@ as adding/removing interfaces.
  	hostapd_ubus_free_bss(hapd);
  	accounting_deinit(hapd);
  	hostapd_deinit_wpa(hapd);
-@@ -681,6 +684,7 @@ void hostapd_cleanup_iface_partial(struc
+@@ -687,6 +690,7 @@ void hostapd_cleanup_iface_partial(struc
  static void hostapd_cleanup_iface(struct hostapd_iface *iface)
  {
  	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);
@@ -121,7 +121,7 @@ as adding/removing interfaces.
  	eloop_cancel_timeout(hostapd_interface_setup_failure_handler, iface,
  			     NULL);
  
-@@ -1270,6 +1274,7 @@ static int hostapd_start_beacon(struct h
+@@ -1276,6 +1280,7 @@ static int hostapd_start_beacon(struct h
  		hapd->driver->set_operstate(hapd->drv_priv, 1);
  
  	hostapd_ubus_add_bss(hapd);
@@ -129,7 +129,7 @@ as adding/removing interfaces.
  
  	return 0;
  }
-@@ -1292,8 +1297,7 @@ static int hostapd_start_beacon(struct h
+@@ -1298,8 +1303,7 @@ static int hostapd_start_beacon(struct h
   * initialized. Most of the modules that are initialized here will be
   * deinitialized in hostapd_cleanup().
   */
@@ -139,7 +139,7 @@ as adding/removing interfaces.
  {
  	struct hostapd_bss_config *conf = hapd->conf;
  	u8 ssid[SSID_MAX_LEN + 1];
-@@ -2779,7 +2783,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -2790,7 +2794,7 @@ hostapd_alloc_bss_data(struct hostapd_if
  }
  
  
@@ -148,7 +148,7 @@ as adding/removing interfaces.
  {
  	if (!hapd)
  		return;
-@@ -3597,7 +3601,8 @@ int hostapd_remove_iface(struct hapd_int
+@@ -3608,7 +3612,8 @@ int hostapd_remove_iface(struct hapd_int
  		hapd_iface = interfaces->iface[i];
  		if (hapd_iface == NULL)
  			return -1;
@@ -187,7 +187,7 @@ as adding/removing interfaces.
  	int interface_added; /* virtual interface added for this BSS */
  	unsigned int started:1;
  	unsigned int disabled:1;
-@@ -513,6 +519,7 @@ struct hostapd_sta_info {
+@@ -518,6 +524,7 @@ struct hostapd_sta_info {
   */
  struct hostapd_iface {
  	struct hapd_interfaces *interfaces;
@@ -195,7 +195,7 @@ as adding/removing interfaces.
  	void *owner;
  	char *config_fname;
  	struct hostapd_config *conf;
-@@ -713,6 +720,8 @@ struct hostapd_iface * hostapd_init(stru
+@@ -718,6 +725,8 @@ struct hostapd_iface * hostapd_init(stru
  struct hostapd_iface *
  hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
  			   const char *config_fname, int debug);
@@ -206,7 +206,7 @@ as adding/removing interfaces.
  void hostapd_interface_deinit_free(struct hostapd_iface *iface);
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -3847,6 +3847,25 @@ struct wpa_driver_ops {
+@@ -3853,6 +3853,25 @@ struct wpa_driver_ops {
  			 const char *ifname);
  
  	/**
@@ -232,7 +232,7 @@ as adding/removing interfaces.
  	 * set_sta_vlan - Bind a station into a specific interface (AP only)
  	 * @priv: Private driver interface data
  	 * @ifname: Interface (main or virtual BSS or VLAN)
-@@ -6500,6 +6519,7 @@ union wpa_event_data {
+@@ -6507,6 +6526,7 @@ union wpa_event_data {
  
  	/**
  	 * struct ch_switch
@@ -240,7 +240,7 @@ as adding/removing interfaces.
  	 * @freq: Frequency of new channel in MHz
  	 * @ht_enabled: Whether this is an HT channel
  	 * @ch_offset: Secondary channel offset
-@@ -6510,6 +6530,7 @@ union wpa_event_data {
+@@ -6517,6 +6537,7 @@ union wpa_event_data {
  	 * @punct_bitmap: Puncturing bitmap
  	 */
  	struct ch_switch {
@@ -338,7 +338,7 @@ as adding/removing interfaces.
  	nl_cb_set(bss->nl_cb, NL_CB_SEQ_CHECK, NL_CB_CUSTOM,
  		  no_seq_check, NULL);
  	nl_cb_set(bss->nl_cb, NL_CB_VALID, NL_CB_CUSTOM,
-@@ -8606,6 +8627,7 @@ static void *i802_init(struct hostapd_da
+@@ -8554,6 +8575,7 @@ static void *i802_init(struct hostapd_da
  	char master_ifname[IFNAMSIZ];
  	int ifindex, br_ifindex = 0;
  	int br_added = 0;
@@ -346,7 +346,7 @@ as adding/removing interfaces.
  
  	bss = wpa_driver_nl80211_drv_init(hapd, params->ifname,
  					  params->global_priv, 1,
-@@ -8665,21 +8687,17 @@ static void *i802_init(struct hostapd_da
+@@ -8613,21 +8635,17 @@ static void *i802_init(struct hostapd_da
  	    (params->num_bridge == 0 || !params->bridge[0]))
  		add_ifidx(drv, br_ifindex, drv->ifindex);
  
@@ -378,7 +378,7 @@ as adding/removing interfaces.
  	}
  
  	if (drv->capa.flags2 & WPA_DRIVER_FLAGS2_CONTROL_PORT_RX) {
-@@ -9049,6 +9067,50 @@ static int wpa_driver_nl80211_if_remove(
+@@ -8992,6 +9010,50 @@ static int wpa_driver_nl80211_if_remove(
  	return 0;
  }
  
@@ -429,7 +429,7 @@ as adding/removing interfaces.
  
  static int cookie_handler(struct nl_msg *msg, void *arg)
  {
-@@ -10744,6 +10806,37 @@ static int driver_nl80211_if_remove(void
+@@ -10688,6 +10750,37 @@ static int driver_nl80211_if_remove(void
  }
  
  
@@ -467,7 +467,7 @@ as adding/removing interfaces.
  static int driver_nl80211_send_mlme(void *priv, const u8 *data,
  				    size_t data_len, int noack,
  				    unsigned int freq,
-@@ -13945,6 +14038,8 @@ const struct wpa_driver_ops wpa_driver_n
+@@ -13881,6 +13974,8 @@ const struct wpa_driver_ops wpa_driver_n
  	.set_acl = wpa_driver_nl80211_set_acl,
  	.if_add = wpa_driver_nl80211_if_add,
  	.if_remove = driver_nl80211_if_remove,
@@ -478,7 +478,7 @@ as adding/removing interfaces.
  	.sta_add = wpa_driver_nl80211_sta_add,
 --- a/src/drivers/driver_nl80211_event.c
 +++ b/src/drivers/driver_nl80211_event.c
-@@ -1204,6 +1204,7 @@ static void mlme_event_ch_switch(struct
+@@ -1196,6 +1196,7 @@ static void mlme_event_ch_switch(struct
  				 struct nlattr *bw, struct nlattr *cf1,
  				 struct nlattr *cf2,
  				 struct nlattr *punct_bitmap,
@@ -486,7 +486,7 @@ as adding/removing interfaces.
  				 int finished)
  {
  	struct i802_bss *bss;
-@@ -1267,6 +1268,8 @@ static void mlme_event_ch_switch(struct
+@@ -1259,6 +1260,8 @@ static void mlme_event_ch_switch(struct
  		data.ch_switch.cf1 = nla_get_u32(cf1);
  	if (cf2)
  		data.ch_switch.cf2 = nla_get_u32(cf2);
@@ -495,7 +495,7 @@ as adding/removing interfaces.
  
  	if (finished)
  		bss->flink->freq = data.ch_switch.freq;
-@@ -3970,6 +3973,7 @@ static void do_process_drv_event(struct
+@@ -3961,6 +3964,7 @@ static void do_process_drv_event(struct
  				     tb[NL80211_ATTR_CENTER_FREQ1],
  				     tb[NL80211_ATTR_CENTER_FREQ2],
  				     tb[NL80211_ATTR_PUNCT_BITMAP],
@@ -503,7 +503,7 @@ as adding/removing interfaces.
  				     0);
  		break;
  	case NL80211_CMD_CH_SWITCH_NOTIFY:
-@@ -3982,6 +3986,7 @@ static void do_process_drv_event(struct
+@@ -3973,6 +3977,7 @@ static void do_process_drv_event(struct
  				     tb[NL80211_ATTR_CENTER_FREQ1],
  				     tb[NL80211_ATTR_CENTER_FREQ2],
  				     tb[NL80211_ATTR_PUNCT_BITMAP],
@@ -584,7 +584,7 @@ as adding/removing interfaces.
  endif
  
  ifdef CONFIG_CODE_COVERAGE
-@@ -1046,6 +1058,9 @@ OBJS += ../src/ap/ctrl_iface_ap.o
+@@ -1052,6 +1064,9 @@ OBJS += ../src/ap/ctrl_iface_ap.o
  ifdef CONFIG_UBUS
  OBJS += ../src/ap/ubus.o
  endif
@@ -596,7 +596,7 @@ as adding/removing interfaces.
  CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -5956,6 +5956,7 @@ void supplicant_event(void *ctx, enum wp
+@@ -5955,6 +5955,7 @@ void supplicant_event(void *ctx, enum wp
  		event_to_string(event), event);
  #endif /* CONFIG_NO_STDOUT_DEBUG */
  
@@ -606,7 +606,7 @@ as adding/removing interfaces.
  #ifdef CONFIG_FST
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1057,6 +1057,7 @@ void wpa_supplicant_set_state(struct wpa
+@@ -1060,6 +1060,7 @@ void wpa_supplicant_set_state(struct wpa
  		sme_sched_obss_scan(wpa_s, 0);
  	}
  	wpa_s->wpa_state = state;
@@ -614,7 +614,7 @@ as adding/removing interfaces.
  
  #ifdef CONFIG_BGSCAN
  	if (state == WPA_COMPLETED && wpa_s->current_ssid != wpa_s->bgscan_ssid)
-@@ -7704,6 +7705,7 @@ struct wpa_supplicant * wpa_supplicant_a
+@@ -7717,6 +7718,7 @@ struct wpa_supplicant * wpa_supplicant_a
  #endif /* CONFIG_P2P */
  
  	wpas_ubus_add_bss(wpa_s);
@@ -622,7 +622,7 @@ as adding/removing interfaces.
  
  	return wpa_s;
  }
-@@ -7731,6 +7733,7 @@ int wpa_supplicant_remove_iface(struct w
+@@ -7744,6 +7746,7 @@ int wpa_supplicant_remove_iface(struct w
  	struct wpa_supplicant *parent = wpa_s->parent;
  #endif /* CONFIG_MESH */
  
@@ -630,7 +630,7 @@ as adding/removing interfaces.
  	wpas_ubus_free_bss(wpa_s);
  
  	/* Remove interface from the global list of interfaces */
-@@ -8041,6 +8044,7 @@ struct wpa_global * wpa_supplicant_init(
+@@ -8054,6 +8057,7 @@ struct wpa_global * wpa_supplicant_init(
  
  	eloop_register_timeout(WPA_SUPPLICANT_CLEANUP_INTERVAL, 0,
  			       wpas_periodic, global, NULL);
@@ -638,7 +638,7 @@ as adding/removing interfaces.
  
  	return global;
  }
-@@ -8079,12 +8083,8 @@ int wpa_supplicant_run(struct wpa_global
+@@ -8092,12 +8096,8 @@ int wpa_supplicant_run(struct wpa_global
  	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
  	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
  
@@ -651,7 +651,7 @@ as adding/removing interfaces.
  	return 0;
  }
  
-@@ -8117,6 +8117,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+@@ -8130,6 +8130,8 @@ void wpa_supplicant_deinit(struct wpa_gl
  
  	wpas_notify_supplicant_deinitialized(global);
  

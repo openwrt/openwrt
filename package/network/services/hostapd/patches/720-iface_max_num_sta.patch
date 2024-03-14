@@ -8,7 +8,7 @@ full device, e.g. in order to deal with hardware/driver limitations
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2979,6 +2979,14 @@ static int hostapd_config_fill(struct ho
+@@ -3041,6 +3041,14 @@ static int hostapd_config_fill(struct ho
  				   line, bss->max_num_sta, MAX_STA_COUNT);
  			return 1;
  		}
@@ -47,7 +47,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  			   " since no room for additional STA",
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -244,6 +244,29 @@ static int hostapd_iface_conf_changed(st
+@@ -247,6 +247,29 @@ static int hostapd_iface_conf_changed(st
  	return 0;
  }
  
@@ -79,7 +79,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  {
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -749,6 +749,7 @@ void hostapd_cleanup_cs_params(struct ho
+@@ -754,6 +754,7 @@ void hostapd_cleanup_cs_params(struct ho
  void hostapd_periodic_iface(struct hostapd_iface *iface);
  int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
  void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);

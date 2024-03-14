@@ -5,7 +5,7 @@ Subject: [PATCH] Add noscan, no_ht_coex config options
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -3594,6 +3594,10 @@ static int hostapd_config_fill(struct ho
+@@ -3656,6 +3656,10 @@ static int hostapd_config_fill(struct ho
  		if (bss->ocv && !bss->ieee80211w)
  			bss->ieee80211w = 1;
  #endif /* CONFIG_OCV */
@@ -29,7 +29,7 @@ Subject: [PATCH] Add noscan, no_ht_coex config options
  	int no_pri_sec_switch;
 --- a/src/ap/hw_features.c
 +++ b/src/ap/hw_features.c
-@@ -546,7 +546,8 @@ static int ieee80211n_check_40mhz(struct
+@@ -544,7 +544,8 @@ static int ieee80211n_check_40mhz(struct
  	int ret;
  
  	/* Check that HT40 is used and PRI / SEC switch is allowed */
