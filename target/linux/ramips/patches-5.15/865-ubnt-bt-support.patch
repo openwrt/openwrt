@@ -1,0 +1,249 @@
+--- a/drivers/tty/serial/8250/Kconfig
++++ b/drivers/tty/serial/8250/Kconfig
+@@ -449,7 +449,7 @@ config SERIAL_8250_LPC18XX
+ config SERIAL_8250_MT6577
+ 	tristate "Mediatek serial port support"
+ 	depends on SERIAL_8250
+-	depends on ARCH_MEDIATEK || COMPILE_TEST
++	depends on ARCH_MEDIATEK || SOC_MT7621 || COMPILE_TEST
+ 	help
+ 	  If you have a Mediatek based board and want to use the
+ 	  serial port, say Y to this option. If unsure, say N.
+--- a/drivers/bluetooth/btmtkuart.c
++++ b/drivers/bluetooth/btmtkuart.c
+@@ -21,6 +21,7 @@
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/regulator/consumer.h>
++#include <linux/nvmem-consumer.h>
+ #include <linux/serdev.h>
+ #include <linux/skbuff.h>
+ 
+@@ -34,6 +35,7 @@
+ #define FIRMWARE_MT7622		"mediatek/mt7622pr2h.bin"
+ #define FIRMWARE_MT7663		"mediatek/mt7663pr2h.bin"
+ #define FIRMWARE_MT7668		"mediatek/mt7668pr2h.bin"
++#define FIRMWARE_MT7915		"mediatek/mt7915dan-bt.bin"
+ 
+ #define MTK_STP_TLR_SIZE	2
+ 
+@@ -43,6 +45,7 @@
+ #define BTMTKUART_REQUIRED_WAKEUP	4
+ 
+ #define BTMTKUART_FLAG_STANDALONE_HW	 BIT(0)
++#define BTMTKUART_FLAG_USE_FLOW_CONTROL	 BIT(1)
+ 
+ enum {
+ 	MTK_WMT_PATCH_DWNLD = 0x1,
+@@ -138,6 +141,9 @@ struct btmtkuart_dev {
+ 	u8	stp_cursor;
+ 	u16	stp_dlen;
+ 
++	int have_bdaddr;
++	bdaddr_t bdaddr;
++
+ 	const struct btmtkuart_data *data;
+ };
+ 
+@@ -145,6 +151,8 @@ struct btmtkuart_dev {
+ 	((bdev)->data->flags & BTMTKUART_FLAG_STANDALONE_HW)
+ #define btmtkuart_is_builtin_soc(bdev)	\
+ 	!((bdev)->data->flags & BTMTKUART_FLAG_STANDALONE_HW)
++#define btmtkuart_use_flow_control(bdev)	\
++	!!((bdev)->data->flags & BTMTKUART_FLAG_USE_FLOW_CONTROL)
+ 
+ static int mtk_hci_wmt_sync(struct hci_dev *hdev,
+ 			    struct btmtk_hci_wmt_params *wmt_params)
+@@ -555,6 +563,10 @@ static int btmtkuart_open(struct hci_dev
+ 		goto err_open;
+ 	}
+ 
++	/* sadly there's no serdev_device_get_baudrate, whilst curr_speed handles the case
++	 * where we reset whilst running, it doesn't cope unloading/reloading this module.
++	 */
++
+ 	if (btmtkuart_is_standalone(bdev)) {
+ 		if (bdev->curr_speed != bdev->desired_speed)
+ 			err = serdev_device_set_baudrate(bdev->serdev,
+@@ -569,7 +581,7 @@ static int btmtkuart_open(struct hci_dev
+ 			goto  err_serdev_close;
+ 		}
+ 
+-		serdev_device_set_flow_control(bdev->serdev, false);
++		serdev_device_set_flow_control(bdev->serdev, btmtkuart_use_flow_control(bdev));
+ 	}
+ 
+ 	bdev->stp_cursor = 2;
+@@ -687,7 +699,7 @@ static int btmtkuart_change_baudrate(str
+ 		return err;
+ 	}
+ 
+-	serdev_device_set_flow_control(bdev->serdev, false);
++	serdev_device_set_flow_control(bdev->serdev, btmtkuart_use_flow_control(bdev));
+ 
+ 	/* Send a dummy byte 0xff to activate the new baudrate */
+ 	param = 0xff;
+@@ -719,6 +731,24 @@ static int btmtkuart_change_baudrate(str
+ 	return 0;
+ }
+ 
++static int btmtkuart_set_bdaddr(struct hci_dev *hdev)
++{
++	struct btmtkuart_dev *bdev = hci_get_drvdata(hdev);
++	struct sk_buff *skb = 0;
++
++
++	if (!bdev->have_bdaddr)
++		set_bit(HCI_QUIRK_INVALID_BDADDR, &hdev->quirks);
++	 else
++		skb = __hci_cmd_sync(hdev, 0xfc1a, sizeof(bdaddr_t),
++				     &bdev->bdaddr, HCI_INIT_TIMEOUT);
++
++	if (!IS_ERR(skb))
++		kfree_skb(skb);
++
++	return PTR_ERR_OR_ZERO(skb);
++}
++
+ static int btmtkuart_setup(struct hci_dev *hdev)
+ {
+ 	struct btmtkuart_dev *bdev = hci_get_drvdata(hdev);
+@@ -825,6 +855,10 @@ ignore_func_on:
+ 	}
+ 	kfree_skb(skb);
+ 
++	err = btmtkuart_set_bdaddr(hdev);
++	if (err)
++		return err;
++
+ 	rettime = ktime_get();
+ 	delta = ktime_sub(rettime, calltime);
+ 	duration = (unsigned long long)ktime_to_ns(delta) >> 10;
+@@ -895,6 +929,7 @@ static int btmtkuart_parse_dt(struct ser
+ 	struct btmtkuart_dev *bdev = serdev_device_get_drvdata(serdev);
+ 	struct device_node *node = serdev->dev.of_node;
+ 	u32 speed = 921600;
++	struct nvmem_cell *bdaddr_cell;
+ 	int err;
+ 
+ 	if (btmtkuart_is_standalone(bdev)) {
+@@ -955,6 +990,32 @@ static int btmtkuart_parse_dt(struct ser
+ 			return PTR_ERR(bdev->clk);
+ 	}
+ 
++	bdaddr_cell = nvmem_cell_get(&serdev->dev, "bd-address");
++	if (!IS_ERR(bdaddr_cell)) {
++		bdaddr_t *bdaddr;
++		size_t len;
++
++		bdaddr = nvmem_cell_read(bdaddr_cell, &len);
++		nvmem_cell_put(bdaddr_cell);
++		if (IS_ERR(bdaddr)) {
++			dev_err(&serdev->dev, "Failed to read nvmem bd-address\n");
++			return PTR_ERR(bdaddr);
++		}
++		if (len != sizeof(bdaddr_t)) {
++			dev_err(&serdev->dev, "Invalid nvmem bd-address length\n");
++			kfree(bdaddr);
++			return -EINVAL;
++		}
++
++		/* As per the device tree bindings, the value from nvmem is
++		 * expected to be MSB first, but in the kernel it is expected
++		 * that bdaddr_t is LSB first.
++		 */
++		bdev->have_bdaddr = 1;
++		baswap(&bdev->bdaddr, bdaddr);
++		kfree(bdaddr);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -1101,11 +1162,18 @@ static const struct btmtkuart_data mt766
+ 	.fwname = FIRMWARE_MT7668,
+ };
+ 
++static const struct btmtkuart_data mt7915_data = {
++	.flags = BTMTKUART_FLAG_STANDALONE_HW | BTMTKUART_FLAG_USE_FLOW_CONTROL,
++	.fwname = FIRMWARE_MT7915,
++};
++
++
+ #ifdef CONFIG_OF
+ static const struct of_device_id mtk_of_match_table[] = {
+ 	{ .compatible = "mediatek,mt7622-bluetooth", .data = &mt7622_data},
+ 	{ .compatible = "mediatek,mt7663u-bluetooth", .data = &mt7663_data},
+ 	{ .compatible = "mediatek,mt7668u-bluetooth", .data = &mt7668_data},
++	{ .compatible = "mediatek,mt7915-bluetooth", .data = &mt7915_data},
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, mtk_of_match_table);
+--- a/drivers/tty/serial/8250/8250_mtk.c
++++ b/drivers/tty/serial/8250/8250_mtk.c
+@@ -475,10 +475,27 @@ static bool mtk8250_dma_filter(struct dm
+ static int mtk8250_probe_of(struct platform_device *pdev, struct uart_port *p,
+ 			   struct mtk8250_data *data)
+ {
++	const char *type;
+ #ifdef CONFIG_SERIAL_8250_DMA
+ 	int dmacnt;
+ #endif
+ 
++	if (of_property_read_bool(pdev->dev.of_node, "no-loopback-test"))
++		p->flags |= UPF_SKIP_TEST;
++
++	if (!of_property_read_string(pdev->dev.of_node, "uart-type", &type)) {
++		p->flags |= UPF_FIXED_TYPE;
++		if (!strcmp(type, "16550"))
++			p->type = PORT_16550;
++		else if (!strcmp(type, "16550A"))
++			p->type = PORT_16550A;
++		else {
++			dev_err(&pdev->dev, "unknown uart type %s\n", type);
++			return -EINVAL;
++		}
++
++	}
++
+ 	data->uart_clk = devm_clk_get(&pdev->dev, "baud");
+ 	if (IS_ERR(data->uart_clk)) {
+ 		/*
+@@ -521,12 +538,15 @@ static int mtk8250_probe(struct platform
+ {
+ 	struct uart_8250_port uart = {};
+ 	struct mtk8250_data *data;
+-	struct resource *regs;
+-	int irq, err;
++	struct resource *regs, *irq;
++	int err;
++
++	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
++	if (!irq) {
++		dev_err(&pdev->dev, "no irq defined\n");
++		return -EINVAL;
++	}
+ 
+-	irq = platform_get_irq(pdev, 0);
+-	if (irq < 0)
+-		return irq;
+ 
+ 	regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!regs) {
+@@ -554,10 +574,13 @@ static int mtk8250_probe(struct platform
+ 
+ 	spin_lock_init(&uart.port.lock);
+ 	uart.port.mapbase = regs->start;
+-	uart.port.irq = irq;
++	uart.port.irq = irq->start;
++	if (irq->flags & IORESOURCE_IRQ_SHAREABLE)
++		uart.port.flags |= UPF_SHARE_IRQ;
+ 	uart.port.pm = mtk8250_do_pm;
+-	uart.port.type = PORT_16550;
+-	uart.port.flags = UPF_BOOT_AUTOCONF | UPF_FIXED_PORT;
++	if (!uart.port.type)
++		uart.port.type = PORT_16550;
++	uart.port.flags |= UPF_BOOT_AUTOCONF | UPF_FIXED_PORT;
+ 	uart.port.dev = &pdev->dev;
+ 	uart.port.iotype = UPIO_MEM32;
+ 	uart.port.regshift = 2;
