@@ -1,0 +1,44 @@
+From 568fb02449a8b43cce7c8da212558ecf022a5f40 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Mon, 13 Nov 2023 22:08:08 +0000
+Subject: Fix use-after-free in cache_remove_uid().
+
+Thanks to Kevin Darbyshire-Bryant for the bug report.
+---
+ src/cache.c | 23 +++++++++++++----------
+ 1 file changed, 13 insertions(+), 10 deletions(-)
+
+--- a/src/cache.c
++++ b/src/cache.c
+@@ -412,18 +412,21 @@ unsigned int cache_remove_uid(const unsi
+ {
+   int i;
+   unsigned int removed = 0;
+-  struct crec *crecp, **up;
++  struct crec *crecp, *tmp, **up;
+ 
+   for (i = 0; i < hash_size; i++)
+-    for (crecp = hash_table[i], up = &hash_table[i]; crecp; crecp = crecp->hash_next)
+-      if ((crecp->flags & (F_HOSTS | F_DHCP | F_CONFIG)) && crecp->uid == uid)
+-	{
+-	  *up = crecp->hash_next;
+-	  free(crecp);
+-	  removed++;
+-	}
+-      else
+-	up = &crecp->hash_next;
++    for (crecp = hash_table[i], up = &hash_table[i]; crecp; crecp = tmp)
++      {
++	tmp = crecp->hash_next;
++	if ((crecp->flags & (F_HOSTS | F_DHCP | F_CONFIG)) && crecp->uid == uid)
++	  {
++	    *up = tmp;
++	    free(crecp);
++	    removed++;
++	  }
++	else
++	  up = &crecp->hash_next;
++      }
+   
+   return removed;
+ }
