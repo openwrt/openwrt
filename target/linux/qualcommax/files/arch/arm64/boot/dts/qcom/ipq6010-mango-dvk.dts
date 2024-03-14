@@ -261,6 +261,8 @@
 		compatible = "ethernet-phy-id004d.d101";
 		reg = <24>;
 		reset-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <50000>;
 	};
 };
 
