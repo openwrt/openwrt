@@ -3260,17 +3260,17 @@
 +#endif
 --- a/drivers/crypto/Kconfig
 +++ b/drivers/crypto/Kconfig
-@@ -824,4 +824,6 @@ config CRYPTO_DEV_SA2UL
- source "drivers/crypto/keembay/Kconfig"
+@@ -797,4 +797,6 @@ config CRYPTO_DEV_SA2UL
  source "drivers/crypto/aspeed/Kconfig"
+ source "drivers/crypto/starfive/Kconfig"
  
 +source "drivers/crypto/mtk-eip93/Kconfig"
 +
  endif # CRYPTO_HW
 --- a/drivers/crypto/Makefile
 +++ b/drivers/crypto/Makefile
-@@ -53,3 +53,4 @@ obj-y += xilinx/
- obj-y += hisilicon/
+@@ -51,3 +51,4 @@ obj-y += hisilicon/
  obj-$(CONFIG_CRYPTO_DEV_AMLOGIC_GXL) += amlogic/
- obj-y += keembay/
+ obj-y += intel/
+ obj-y += starfive/
 +obj-$(CONFIG_CRYPTO_DEV_EIP93) += mtk-eip93/

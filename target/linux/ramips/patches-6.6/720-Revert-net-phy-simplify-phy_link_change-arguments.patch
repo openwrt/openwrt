@@ -16,7 +16,7 @@ still required by target/linux/ramips/files/drivers/net/ethernet/ralink/mdio.c
 
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -71,13 +71,13 @@ static void phy_process_state_change(str
+@@ -72,13 +72,13 @@ static void phy_process_state_change(str
  
  static void phy_link_up(struct phy_device *phydev)
  {
@@ -31,9 +31,9 @@ still required by target/linux/ramips/files/drivers/net/ethernet/ralink/mdio.c
 -	phydev->phy_link_change(phydev, false);
 +	phydev->phy_link_change(phydev, false, do_carrier);
  	phy_led_trigger_change_speed(phydev);
+ 	WRITE_ONCE(phydev->link_down_events, phydev->link_down_events + 1);
  }
- 
-@@ -595,7 +595,7 @@ int phy_start_cable_test(struct phy_devi
+@@ -823,7 +823,7 @@ int phy_start_cable_test(struct phy_devi
  		goto out;
  
  	/* Mark the carrier down until the test is complete */
@@ -42,7 +42,7 @@ still required by target/linux/ramips/files/drivers/net/ethernet/ralink/mdio.c
  
  	netif_testing_on(dev);
  	err = phydev->drv->cable_test_start(phydev);
-@@ -666,7 +666,7 @@ int phy_start_cable_test_tdr(struct phy_
+@@ -894,7 +894,7 @@ int phy_start_cable_test_tdr(struct phy_
  		goto out;
  
  	/* Mark the carrier down until the test is complete */
@@ -51,7 +51,7 @@ still required by target/linux/ramips/files/drivers/net/ethernet/ralink/mdio.c
  
  	netif_testing_on(dev);
  	err = phydev->drv->cable_test_tdr_start(phydev, config);
-@@ -738,7 +738,7 @@ static int phy_check_link_status(struct
+@@ -966,7 +966,7 @@ static int phy_check_link_status(struct
  		phy_link_up(phydev);
  	} else if (!phydev->link && phydev->state != PHY_NOLINK) {
  		phydev->state = PHY_NOLINK;
@@ -60,8 +60,8 @@ still required by target/linux/ramips/files/drivers/net/ethernet/ralink/mdio.c
  	}
  
  	return 0;
-@@ -1224,7 +1224,7 @@ void phy_state_machine(struct work_struc
- 	case PHY_HALTED:
+@@ -1485,7 +1485,7 @@ void phy_state_machine(struct work_struc
+ 	case PHY_ERROR:
  		if (phydev->link) {
  			phydev->link = 0;
 -			phy_link_down(phydev);
@@ -71,7 +71,7 @@ still required by target/linux/ramips/files/drivers/net/ethernet/ralink/mdio.c
  		break;
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1037,14 +1037,16 @@ struct phy_device *phy_find_first(struct
+@@ -1069,14 +1069,16 @@ struct phy_device *phy_find_first(struct
  }
  EXPORT_SYMBOL(phy_find_first);
  
@@ -95,7 +95,7 @@ still required by target/linux/ramips/files/drivers/net/ethernet/ralink/mdio.c
  		phydev->mii_ts->link_state(phydev->mii_ts, phydev);
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1687,7 +1687,8 @@ bool phylink_expects_phy(struct phylink
+@@ -1724,7 +1724,8 @@ bool phylink_expects_phy(struct phylink
  }
  EXPORT_SYMBOL_GPL(phylink_expects_phy);
  
@@ -107,9 +107,9 @@ still required by target/linux/ramips/files/drivers/net/ethernet/ralink/mdio.c
  	bool tx_pause, rx_pause;
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -739,7 +739,7 @@ struct phy_device {
+@@ -758,7 +758,7 @@ struct phy_device {
  
- 	int pma_extable;
+ 	unsigned int link_down_events;
  
 -	void (*phy_link_change)(struct phy_device *phydev, bool up);
 +	void (*phy_link_change)(struct phy_device *, bool up, bool do_carrier);

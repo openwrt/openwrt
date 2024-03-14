@@ -11,7 +11,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/net/phy/phy.c
 +++ b/drivers/net/phy/phy.c
-@@ -738,7 +738,10 @@ static int phy_check_link_status(struct
+@@ -966,7 +966,10 @@ static int phy_check_link_status(struct
  		phy_link_up(phydev);
  	} else if (!phydev->link && phydev->state != PHY_NOLINK) {
  		phydev->state = PHY_NOLINK;
@@ -23,8 +23,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	}
  
  	return 0;
-@@ -1224,7 +1227,10 @@ void phy_state_machine(struct work_struc
- 	case PHY_HALTED:
+@@ -1485,7 +1488,10 @@ void phy_state_machine(struct work_struc
+ 	case PHY_ERROR:
  		if (phydev->link) {
  			phydev->link = 0;
 -			phy_link_down(phydev, true);
@@ -37,11 +37,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		break;
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -647,6 +647,7 @@ struct phy_device {
+@@ -659,6 +659,7 @@ struct phy_device {
  	unsigned downshifted_rate:1;
  	unsigned is_on_sfp_module:1;
  	unsigned mac_managed_pm:1;
 +	unsigned no_auto_carrier_off:1;
+ 	unsigned wol_enabled:1;
  
  	unsigned autoneg:1;
- 	/* The most recently read link state */

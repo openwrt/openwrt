@@ -16,7 +16,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -823,6 +823,12 @@ config SPI_QCOM_GENI
+@@ -895,6 +895,12 @@ config SPI_QCOM_GENI
  	  This driver can also be built as a module.  If so, the module
  	  will be called spi-geni-qcom.
  
@@ -26,19 +26,19 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	help
 +	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
 +
- config SPI_S3C24XX
- 	tristate "Samsung S3C24XX series SPI"
- 	depends on ARCH_S3C24XX
+ config SPI_S3C64XX
+ 	tristate "Samsung S3C64XX/Exynos SoC series type SPI"
+ 	depends on (PLAT_SAMSUNG || ARCH_S5PV210 || ARCH_EXYNOS || COMPILE_TEST)
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -110,6 +110,7 @@ obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
+@@ -117,6 +117,7 @@ obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
  obj-$(CONFIG_MACH_REALTEK_RTL)		+= spi-realtek-rtl.o
  obj-$(CONFIG_SPI_RPCIF)			+= spi-rpc-if.o
  obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o
 +obj-$(CONFIG_SPI_RT2880)		+= spi-rt2880.o
- obj-$(CONFIG_SPI_S3C24XX)		+= spi-s3c24xx-hw.o
- spi-s3c24xx-hw-y			:= spi-s3c24xx.o
+ obj-$(CONFIG_SPI_RZV2M_CSI)		+= spi-rzv2m-csi.o
  obj-$(CONFIG_SPI_S3C64XX)		+= spi-s3c64xx.o
+ obj-$(CONFIG_SPI_SC18IS602)		+= spi-sc18is602.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
 @@ -0,0 +1,535 @@

@@ -47,7 +47,7 @@ Cc: linux-gpio@vger.kernel.org
 +#endif /* __ASM_MACH_RALINK_GPIO_H */
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -585,6 +585,12 @@ config GPIO_SNPS_CREG
+@@ -594,6 +594,12 @@ config GPIO_SNPS_CREG
  	  where only several fields in register belong to GPIO lines and
  	  each GPIO line owns a field with different length and on/off value.
  
@@ -62,7 +62,7 @@ Cc: linux-gpio@vger.kernel.org
  	depends on PLAT_SPEAR
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -122,6 +122,7 @@ obj-$(CONFIG_GPIO_PISOSR)		+= gpio-pisos
+@@ -130,6 +130,7 @@ obj-$(CONFIG_GPIO_PISOSR)		+= gpio-pisos
  obj-$(CONFIG_GPIO_PL061)		+= gpio-pl061.o
  obj-$(CONFIG_GPIO_PMIC_EIC_SPRD)	+= gpio-pmic-eic-sprd.o
  obj-$(CONFIG_GPIO_PXA)			+= gpio-pxa.o
@@ -84,7 +84,7 @@ Cc: linux-gpio@vger.kernel.org
 +
 +#include <linux/module.h>
 +#include <linux/io.h>
-+#include <linux/gpio.h>
++#include <linux/gpio/driver.h>
 +#include <linux/spinlock.h>
 +#include <linux/platform_device.h>
 +#include <linux/of_irq.h>
@@ -373,7 +373,7 @@ Cc: linux-gpio@vger.kernel.org
 +
 +	rg->chip.parent = &pdev->dev;
 +	rg->chip.label = dev_name(&pdev->dev);
-+	rg->chip.of_node = np;
++	rg->chip.fwnode = of_node_to_fwnode(np);
 +	rg->chip.ngpio = be32_to_cpu(*ngpio);
 +	rg->chip.direction_input = ralink_gpio_direction_input;
 +	rg->chip.direction_output = ralink_gpio_direction_output;
