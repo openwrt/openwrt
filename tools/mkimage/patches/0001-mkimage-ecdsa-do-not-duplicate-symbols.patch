@@ -1,0 +1,86 @@
+From 06ab3c4754f14ee60178240a0a1c5722ce969003 Mon Sep 17 00:00:00 2001
+From: Linhui Liu <liulinhui36@gmail.com>
+Date: Sun, 11 Feb 2024 17:51:23 +0800
+Subject: [PATCH] mkimage: ecdsa: do not duplicate symbols
+
+Fixes:
+duplicate symbol '_ecdsa_verify' in:
+    /Users/linhui/openwrt/build_dir/host/u-boot-2024.01/tools/generated/lib/ecdsa/ecdsa-libcrypto.o
+    /Users/linhui/openwrt/staging_dir/host/lib/libcrypto.a[249](libcrypto_la-ecdsa.o)
+duplicate symbol '_ecdsa_sign' in:
+    /Users/linhui/openwrt/build_dir/host/u-boot-2024.01/tools/generated/lib/ecdsa/ecdsa-libcrypto.o
+    /Users/linhui/openwrt/staging_dir/host/lib/libcrypto.a[249](libcrypto_la-ecdsa.o)
+ld: 2 duplicate symbols
+
+Signed-off-by: Linhui Liu <liulinhui36@gmail.com>
+---
+ include/u-boot/ecdsa.h      | 6 ++++++
+ lib/ecdsa/ecdsa-libcrypto.c | 6 ++++++
+ 2 files changed, 12 insertions(+)
+
+--- a/include/u-boot/ecdsa.h
++++ b/include/u-boot/ecdsa.h
+@@ -10,6 +10,8 @@
+ #include <image.h>
+ #include <linux/kconfig.h>
+ 
++#ifndef __ECDSA_SIGN__
++#define __ECDSA_SIGN__
+ /**
+  * crypto_algo API impementation for ECDSA;
+  * @see "struct crypto_algo"
+@@ -34,6 +36,7 @@
+  */
+ int ecdsa_sign(struct image_sign_info *info, const struct image_region region[],
+ 	       int region_count, uint8_t **sigp, uint *sig_len);
++#endif
+ 
+ /**
+  * add_verify_data() - Add verification information to FDT
+@@ -50,6 +53,8 @@ int ecdsa_sign(struct image_sign_info *i
+  */
+ int ecdsa_add_verify_data(struct image_sign_info *info, void *keydest);
+ 
++#ifndef __ECDSA_VERIFY__
++#define __ECDSA_VERIFY__
+ /**
+  * verify() - Verify a signature against some data
+  *
+@@ -64,6 +69,7 @@ int ecdsa_verify(struct image_sign_info
+ 		 const struct image_region region[], int region_count,
+ 		 uint8_t *sig, uint sig_len);
+ /** @} */
++#endif
+ 
+ #define ECDSA256_BYTES	(256 / 8)
+ 
+--- a/lib/ecdsa/ecdsa-libcrypto.c
++++ b/lib/ecdsa/ecdsa-libcrypto.c
+@@ -238,6 +238,8 @@ static int do_verify(struct signer *ctx,
+ 	return ecdsa_check_signature(ctx, info);
+ }
+ 
++#ifndef __ECDSA_SIGN__
++#define __ECDSA_SIGN__
+ int ecdsa_sign(struct image_sign_info *info, const struct image_region region[],
+ 	       int region_count, uint8_t **sigp, uint *sig_len)
+ {
+@@ -256,7 +258,10 @@ int ecdsa_sign(struct image_sign_info *i
+ 	free_ctx(&ctx);
+ 	return ret;
+ }
++#endif
+ 
++#ifndef __ECDSA_VERIFY__
++#define __ECDSA_VERIFY__
+ int ecdsa_verify(struct image_sign_info *info,
+ 		 const struct image_region region[], int region_count,
+ 		 uint8_t *sig, uint sig_len)
+@@ -271,6 +276,7 @@ int ecdsa_verify(struct image_sign_info
+ 	free_ctx(&ctx);
+ 	return ret;
+ }
++#endif
+ 
+ static int do_add(struct signer *ctx, void *fdt, const char *key_node_name)
+ {
