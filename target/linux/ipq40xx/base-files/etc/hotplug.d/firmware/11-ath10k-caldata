@@ -133,6 +133,7 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(get_mac_label) 2)
 		;;
+	tel,x1pro |\
 	teltonika,rutx10|\
 	teltonika,rutx50)
 		caldata_extract "0:ART" 0x1000 0x2f20
@@ -230,6 +231,7 @@ case "$FIRMWARE" in
 		caldata_extract "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(get_mac_label) 4)
 		;;
+	tel,x1pro |\
 	teltonika,rutx10|\
 	teltonika,rutx50)
 		caldata_extract "0:ART" 0x5000 0x2f20
