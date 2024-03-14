@@ -1,0 +1,249 @@
+From 5668d088ee4ea05db9daaae0645d1d1f579b20f9 Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Mon, 3 Oct 2022 09:34:43 +0200
+Subject: ARM: dts: kirkwood: Add Endian 4i Edge 200 board
+
+Add Endian 4i Edge 200 is 5-port firewall.
+It have also clone: Endian UTM Mini (The same hardware, with added WLAN
+card).
+
+Hardware:
+  - SoC: Marvell 88F6281-A1 ARMv5TE Processor 1.2GHz
+  - Ram: 512MB (4x Nanya NT5TU128M8GE-AC)
+  - NAND Flash: 512MB (Micron 29F4G08AAC)
+  - Lan 1-4: 4x GBE (Marvell 88E6171R-TFJ2)
+  - Lan 5: 1x GBE (Marvell 88E1116R-NNC1)
+  - Storage: MicroSD Slot
+  - MCPIE: MiniPCIe Slot present [fitted with SparkLan WPEA-110N/E
+          (Atheros AR9280 chipset) in Endian UTM Mini WLAN only]
+  - USB: 1x USB 2.0 port
+  - Console: RJ-45 port
+  - LEDs: 3x GPIO controlled
+
+Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Gregory CLEMENT <gregory.clement@bootlin.com>
+---
+ arch/arm/boot/dts/Makefile                 |   1 +
+ arch/arm/boot/dts/kirkwood-4i-edge-200.dts | 205 +++++++++++++++++++++++++++++
+ 2 files changed, 206 insertions(+)
+ create mode 100644 arch/arm/boot/dts/kirkwood-4i-edge-200.dts
+
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -300,6 +300,7 @@ dtb-$(CONFIG_ARCH_KEYSTONE) += \
+ 	keystone-k2g-evm.dtb \
+ 	keystone-k2g-ice.dtb
+ dtb-$(CONFIG_MACH_KIRKWOOD) += \
++	kirkwood-4i-edge-200.dtb \
+ 	kirkwood-b3.dtb \
+ 	kirkwood-blackarmor-nas220.dtb \
+ 	kirkwood-c200-v1.dtb \
+--- /dev/null
++++ b/arch/arm/boot/dts/kirkwood-4i-edge-200.dts
+@@ -0,0 +1,205 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Endian 4i Edge 200 Board Description
++ * Note: Endian UTM Mini is hardware clone of Endian Edge 200
++ * Copyright 2021-2022 Pawel Dembicki <paweldembicki@gmail.com>
++ */
++
++/dts-v1/;
++
++#include "kirkwood.dtsi"
++#include "kirkwood-6281.dtsi"
++#include <dt-bindings/leds/common.h>
++
++/ {
++	model = "Endian 4i Edge 200";
++	compatible = "endian,4i-edge-200", "marvell,kirkwood-88f6281", "marvell,kirkwood";
++
++	memory {
++		device_type = "memory";
++		reg = <0x00000000 0x20000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200n8";
++		stdout-path = &uart0;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		pinctrl-0 = <&pmx_led>;
++		pinctrl-names = "default";
++
++		led-1 {
++			function = LED_FUNCTION_SD;
++			color = <LED_COLOR_ID_AMBER>;
++			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "mmc0";
++		};
++
++		led-2 {
++			function = LED_FUNCTION_STATUS;
++			color = <LED_COLOR_ID_AMBER>;
++			gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
++		};
++
++		led-3 {
++			function = LED_FUNCTION_STATUS;
++			color = <LED_COLOR_ID_GREEN>;
++			gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&eth0 {
++	status = "okay";
++};
++
++&eth0port {
++	speed = <1000>;
++	duplex = <1>;
++};
++
++&eth1 {
++	status = "okay";
++};
++
++&eth1port {
++	phy-handle = <&ethphyb>;
++};
++
++&mdio {
++	status = "okay";
++
++	ethphyb: ethernet-phy@b {
++		reg = <0x0b>;
++
++		marvell,reg-init =
++			/* link-activity, bi-color mode 4 */
++			<3 0x10 0xfff0 0xf>; /* Reg 3,16 <- 0xzzzf */
++	};
++
++	switch0: switch@11 {
++		compatible = "marvell,mv88e6085";
++		reg = <0x11>;
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@0 {
++				reg = <0>;
++				label = "port1";
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "port2";
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "port3";
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "port4";
++			};
++
++			port@5 {
++				reg = <5>;
++				phy-mode = "rgmii-id";
++				ethernet = <&eth0port>;
++
++				fixed-link {
++					speed = <1000>;
++					full-duplex;
++				};
++			};
++		};
++	};
++};
++
++&nand {
++	status = "okay";
++	pinctrl-0 = <&pmx_nand>;
++	pinctrl-names = "default";
++
++	partition@0 {
++		label = "u-boot";
++		reg = <0x00000000 0x000a0000>;
++		read-only;
++	};
++
++	partition@a0000 {
++		label = "u-boot-env";
++		reg = <0x000a0000 0x00060000>;
++		read-only;
++	};
++
++	partition@100000 {
++		label = "kernel";
++		reg = <0x00100000 0x00400000>;
++	};
++
++	partition@500000 {
++		label = "ubi";
++		reg = <0x00500000 0x1fb00000>;
++	};
++};
++
++&pciec {
++	status = "okay";
++};
++
++&pcie0 {
++	status = "okay";
++};
++
++&pinctrl {
++	pinctrl-0 = <&pmx_sysrst>;
++	pinctrl-names = "default";
++
++	pmx_sysrst: pmx-sysrst {
++		marvell,pins = "mpp6";
++		marvell,function = "sysrst";
++	};
++
++	pmx_sdio_cd: pmx-sdio-cd {
++		marvell,pins = "mpp28";
++		marvell,function = "gpio";
++	};
++
++	pmx_led: pmx-led {
++		marvell,pins = "mpp34", "mpp35", "mpp49";
++		marvell,function = "gpio";
++	};
++};
++
++&rtc {
++	status = "okay";
++};
++
++&sata_phy0 {
++	status = "disabled";
++};
++
++&sata_phy1 {
++	status = "disabled";
++};
++
++&sdio {
++	pinctrl-0 = <&pmx_sdio_cd>;
++	pinctrl-names = "default";
++	status = "okay";
++	cd-gpios = <&gpio0 28 9>;
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&usb0 {
++	status = "okay";
++};
