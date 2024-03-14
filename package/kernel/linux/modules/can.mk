@@ -119,7 +119,9 @@ $(eval $(call KernelPackage,can-c-can-platform))
 define KernelPackage/can-flexcan
   TITLE:=Support for Freescale FLEXCAN based chips
   KCONFIG:=CONFIG_CAN_FLEXCAN
-  FILES:=$(LINUX_DIR)/drivers/net/can/flexcan.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/can/flexcan.ko@lt5.17 \
+	$(LINUX_DIR)/drivers/net/can/flexcan/flexcan.ko@ge5.17
   AUTOLOAD:=$(call AutoProbe,flexcan)
   $(call AddDepends/can,@TARGET_imx)
 endef
