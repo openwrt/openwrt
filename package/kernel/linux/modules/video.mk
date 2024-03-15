@@ -353,6 +353,22 @@ endef
 
 $(eval $(call KernelPackage,drm-kms-helper))
 
+define KernelPackage/drm-suballoc-helper
+  SUBMENU:=$(VIDEO_MENU)
+  HIDDEN:=1
+  TITLE:=DRM suballocation helper
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm @LINUX_6_6
+  KCONFIG:=CONFIG_DRM_SUBALLOC_HELPER
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_suballoc_helper.ko
+  AUTOLOAD:=$(call AutoProbe,drm_suballoc_helper)
+endef
+
+define KernelPackage/drm-suballoc-helper/description
+  DRM suballocation helper.
+endef
+
+$(eval $(call KernelPackage,drm-suballoc-helper))
+
 define KernelPackage/drm-amdgpu
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=AMDGPU DRM support
