@@ -27,7 +27,7 @@ define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
   URL:=http://gcc.gnu.org/
-  VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
+  VERSION:=$(LIBGCC_VERSION)-r$(PKG_RELEASE)
 endef
 
 define Package/libgcc
@@ -230,7 +230,7 @@ endef
 define Package/libc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  VERSION:=$(LIBC_VERSION)-$(PKG_RELEASE)
+  VERSION:=$(LIBC_VERSION)-r$(PKG_RELEASE)
   DEPENDS:=+libgcc
   URL:=$(LIBC_URL)
 endef
