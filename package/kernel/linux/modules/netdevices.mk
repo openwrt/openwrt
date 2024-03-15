@@ -408,6 +408,52 @@ endef
 $(eval $(call KernelPackage,phy-aquantia))
 
 
+define KernelPackage/dsa
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Distributed Switch Architecture (DSA) subsystem
+  DEPENDS:=+kmod-phylink
+  KCONFIG:=CONFIG_NET_DSA
+  FILES:=$(LINUX_DIR)/net/dsa/dsa_core.ko
+  AUTOLOAD:=$(call AutoProbe,dsa_core)
+endef
+
+define KernelPackage/dsa/description
+ Distributed Switch Architecture (DSA) subsystem
+endef
+
+$(eval $(call KernelPackage,dsa))
+
+define KernelPackage/switch-b53
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Broadcom BCM53xx managed switch DSA support
+  DEPENDS:=+kmod-dsa
+  KCONFIG:=CONFIG_B53
+  FILES:=$(LINUX_DIR)/drivers/net/dsa/b53/b53_common.ko
+  AUTOLOAD:=$(call AutoProbe,b53_common)
+endef
+
+define KernelPackage/switch-b53/description
+  Broadcom BCM53xx managed switch support
+endef
+
+$(eval $(call KernelPackage,switch-b53))
+
+define KernelPackage/switch-b53-mdio
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=B53 MDIO connected switch DSA driver
+  DEPENDS:=+kmod-switch-b53
+  KCONFIG:=CONFIG_B53_MDIO_DRIVER
+  FILES:=$(LINUX_DIR)/drivers/net/dsa/b53/b53_mdio.ko
+  AUTOLOAD:=$(call AutoProbe,b53_mdio)
+endef
+
+define KernelPackage/switch-b53-mdio/description
+  B53 MDIO connected switch driver
+endef
+
+$(eval $(call KernelPackage,switch-b53-mdio))
+
+
 define KernelPackage/swconfig
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=switch configuration API
