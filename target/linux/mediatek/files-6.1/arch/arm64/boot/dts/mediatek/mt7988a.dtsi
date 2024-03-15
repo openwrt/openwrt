@@ -948,9 +948,10 @@
 			clocks = <&infracfg CLK_INFRA_PCIE_PIPE_P2>,
 				 <&infracfg CLK_INFRA_PCIE_GFMUX_TL_P2>,
 				 <&infracfg CLK_INFRA_PCIE_PERI_26M_CK_P2>,
-				 <&infracfg CLK_INFRA_133M_PCIE_CK_P2>;
+				 <&infracfg CLK_INFRA_133M_PCIE_CK_P2>,
+				 <&topckgen CLK_TOP_PEXTP_P2_SEL>;
 			clock-names = "pl_250m", "tl_26m", "peri_26m",
-				      "top_133m";
+				      "top_133m", "pextp_clk";
 			pinctrl-names = "default";
 			pinctrl-0 = <&pcie2_pins>;
 			phys = <&xphyu3port0 PHY_TYPE_PCIE>;
@@ -989,9 +990,10 @@
 			clocks = <&infracfg CLK_INFRA_PCIE_PIPE_P3>,
 				 <&infracfg CLK_INFRA_PCIE_GFMUX_TL_P3>,
 				 <&infracfg CLK_INFRA_PCIE_PERI_26M_CK_P3>,
-				 <&infracfg CLK_INFRA_133M_PCIE_CK_P3>;
+				 <&infracfg CLK_INFRA_133M_PCIE_CK_P3>,
+				 <&topckgen CLK_TOP_PEXTP_P3_SEL>;
 			clock-names = "pl_250m", "tl_26m", "peri_26m",
-				      "top_133m";
+				      "top_133m", "pextp_clk";
 			pinctrl-names = "default";
 			pinctrl-0 = <&pcie3_pins>;
 			#interrupt-cells = <1>;
@@ -1028,9 +1030,10 @@
 			clocks = <&infracfg CLK_INFRA_PCIE_PIPE_P0>,
 				 <&infracfg CLK_INFRA_PCIE_GFMUX_TL_P0>,
 				 <&infracfg CLK_INFRA_PCIE_PERI_26M_CK_P0>,
-				 <&infracfg CLK_INFRA_133M_PCIE_CK_P0>;
+				 <&infracfg CLK_INFRA_133M_PCIE_CK_P0>,
+				 <&topckgen CLK_TOP_PEXTP_P0_SEL>;
 			clock-names = "pl_250m", "tl_26m", "peri_26m",
-				      "top_133m";
+				      "top_133m", "pextp_clk";
 			pinctrl-names = "default";
 			pinctrl-0 = <&pcie0_pins>;
 			#interrupt-cells = <1>;
@@ -1067,9 +1070,10 @@
 			clocks = <&infracfg CLK_INFRA_PCIE_PIPE_P1>,
 				 <&infracfg CLK_INFRA_PCIE_GFMUX_TL_P1>,
 				 <&infracfg CLK_INFRA_PCIE_PERI_26M_CK_P1>,
-				 <&infracfg CLK_INFRA_133M_PCIE_CK_P1>;
+				 <&infracfg CLK_INFRA_133M_PCIE_CK_P1>,
+				 <&topckgen CLK_TOP_PEXTP_P1_SEL>;
 			clock-names = "pl_250m", "tl_26m", "peri_26m",
-				      "top_133m";
+				      "top_133m", "pextp_clk";
 			pinctrl-names = "default";
 			pinctrl-0 = <&pcie1_pins>;
 			#interrupt-cells = <1>;
