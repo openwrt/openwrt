@@ -289,6 +289,22 @@ endef
 
 $(eval $(call KernelPackage,drm-display-helper))
 
+define KernelPackage/drm-exec
+  SUBMENU:=$(VIDEO_MENU)
+  HIDDEN:=1
+  TITLE:=Execution context for command submissions
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm @LINUX_6_6
+  KCONFIG:=CONFIG_DRM_EXEC
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_exec.ko
+  AUTOLOAD:=$(call AutoProbe,drm_exec)
+endef
+
+define KernelPackage/drm-exec/description
+  Execution context for command submissions.
+endef
+
+$(eval $(call KernelPackage,drm-exec))
+
 define KernelPackage/drm-ttm
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=GPU memory management subsystem
