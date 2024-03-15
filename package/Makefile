@@ -136,7 +136,6 @@ else
 		sed -i 's/, }}/}}/' index.json; \
 		gzip -9nc Packages > Packages.gz; \
 	); done
-endif
 ifdef CONFIG_SIGNED_PACKAGES
 	@echo Signing package index...
 	@for d in $(PACKAGE_SUBDIRS); do ( \
@@ -152,6 +151,7 @@ ifdef CONFIG_JSON_CYCLONEDX_SBOM
 			cd $$d || continue; \
 		$(SCRIPT_DIR)/package-metadata.pl pkgcyclonedxsbom Packages.manifest > Packages.bom.cdx.json || true; \
 	); done
+endif
 endif
 
 $(curdir)/flags-install:= -j1
