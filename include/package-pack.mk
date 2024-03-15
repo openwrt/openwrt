@@ -251,6 +251,9 @@ $(_endef)
     endif
 
 	$(INSTALL_DIR) $$(PDIR_$(1))/tmp
+ifeq ($(CONFIG_USE_APK),)
+	$(FAKEROOT) $(STAGING_DIR_HOST)/bin/bash $(SCRIPT_DIR)/ipkg-build -m "$(FILE_MODES)" $$(IDIR_$(1)) $$(PDIR_$(1))
+else
 	mkdir -p $$(ADIR_$(1))/
 	mkdir -p $$(IDIR_$(1))/lib/apk/packages/
 
@@ -298,6 +301,7 @@ $(_endef)
 	  --files "$$(IDIR_$(1))" \
 	  --output "$$(PACK_$(1))" \
 	  --sign "$(BUILD_KEY_APK_SEC)"
+endif
 
 	@[ -f $$(PACK_$(1)) ]
 
