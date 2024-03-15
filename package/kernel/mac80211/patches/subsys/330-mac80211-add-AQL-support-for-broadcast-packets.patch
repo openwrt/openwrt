@@ -95,56 +95,48 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		spin_lock_init(&local->active_txq_lock[i]);
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -2341,29 +2341,33 @@ void ieee80211_sta_update_pending_airtim
+@@ -2343,13 +2343,28 @@ EXPORT_SYMBOL(ieee80211_sta_recalc_aggre
+ 
+ void ieee80211_sta_update_pending_airtime(struct ieee80211_local *local,
  					  struct sta_info *sta, u8 ac,
- 					  u16 tx_airtime, bool tx_completed)
+-					  u16 tx_airtime, bool tx_completed)
++					  u16 tx_airtime, bool tx_completed,
++					  bool mcast)
  {
--	int tx_pending;
-+	int tx_pending = 0;
-+	atomic_t *counter;
+ 	int tx_pending;
  
  	if (!wiphy_ext_feature_isset(local->hw.wiphy, NL80211_EXT_FEATURE_AQL))
  		return;
  
--	if (!tx_completed) {
--		if (sta)
--			atomic_add(tx_airtime,
--				   &sta->airtime[ac].aql_tx_pending);
-+	if (sta)
-+		counter = &sta->airtime[ac].aql_tx_pending;
-+	else
-+		counter = &local->aql_bc_pending_airtime;
++	if (mcast) {
++		if (!tx_completed) {
++			atomic_add(tx_airtime, &local->aql_bc_pending_airtime);
++			return;
++		}
 +
-+	if (!tx_completed)
-+		atomic_add(tx_airtime, counter);
-+	else
-+		tx_pending = atomic_sub_return(tx_airtime, counter);
-+	if (tx_pending < 0)
-+		atomic_cmpxchg(counter, tx_pending, 0);
-+
-+	if (!sta)
++		tx_pending = atomic_sub_return(tx_airtime,
++					       &local->aql_bc_pending_airtime);
++		if (tx_pending < 0)
++			atomic_cmpxchg(&local->aql_bc_pending_airtime,
++				       tx_pending, 0);
 +		return;
- 
-+	if (!tx_completed) {
- 		atomic_add(tx_airtime, &local->aql_total_pending_airtime);
- 		atomic_add(tx_airtime, &local->aql_ac_pending_airtime[ac]);
- 		return;
- 	}
- 
--	if (sta) {
--		tx_pending = atomic_sub_return(tx_airtime,
--					       &sta->airtime[ac].aql_tx_pending);
--		if (tx_pending < 0)
--			atomic_cmpxchg(&sta->airtime[ac].aql_tx_pending,
--				       tx_pending, 0);
--	}
--
- 	atomic_sub(tx_airtime, &local->aql_total_pending_airtime);
- 	tx_pending = atomic_sub_return(tx_airtime,
- 				       &local->aql_ac_pending_airtime[ac]);
++	}
++
+ 	if (!tx_completed) {
+ 		if (sta)
+ 			atomic_add(tx_airtime,
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3958,9 +3958,8 @@ begin:
+@@ -2536,7 +2536,7 @@ static u16 ieee80211_store_ack_skb(struc
+ 
+ 		spin_lock_irqsave(&local->ack_status_lock, flags);
+ 		id = idr_alloc(&local->ack_status_frames, ack_skb,
+-			       1, 0x2000, GFP_ATOMIC);
++			       1, 0x1000, GFP_ATOMIC);
+ 		spin_unlock_irqrestore(&local->ack_status_lock, flags);
+ 
+ 		if (id >= 0) {
+@@ -3958,20 +3958,20 @@ begin:
  encap_out:
  	IEEE80211_SKB_CB(skb)->control.vif = vif;
  
@@ -156,7 +148,26 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		u32 airtime;
  
  		airtime = ieee80211_calc_expected_tx_airtime(hw, vif, txq->sta,
-@@ -4026,6 +4025,7 @@ struct ieee80211_txq *ieee80211_next_txq
+ 							     skb->len, ampdu);
+-		if (airtime) {
+-			airtime = ieee80211_info_set_tx_time_est(info, airtime);
+-			ieee80211_sta_update_pending_airtime(local, tx.sta,
+-							     txq->ac,
+-							     airtime,
+-							     false);
+-		}
++		if (!airtime)
++			return skb;
++
++		airtime = ieee80211_info_set_tx_time_est(info, airtime);
++		info->tx_time_mc = !tx.sta;
++		ieee80211_sta_update_pending_airtime(local, tx.sta, txq->ac,
++						     airtime, false,
++						     info->tx_time_mc);
+ 	}
+ 
+ 	return skb;
+@@ -4026,6 +4026,7 @@ struct ieee80211_txq *ieee80211_next_txq
  	struct ieee80211_txq *ret = NULL;
  	struct txq_info *txqi = NULL, *head = NULL;
  	bool found_eligible_txq = false;
@@ -164,7 +175,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	spin_lock_bh(&local->active_txq_lock[ac]);
  
-@@ -4049,26 +4049,26 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -4049,26 +4050,26 @@ struct ieee80211_txq *ieee80211_next_txq
  	if (!head)
  		head = txqi;
  
@@ -203,7 +214,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (txqi->schedule_round == local->schedule_round[ac])
  		goto out;
  
-@@ -4133,7 +4133,8 @@ bool ieee80211_txq_airtime_check(struct
+@@ -4133,7 +4134,8 @@ bool ieee80211_txq_airtime_check(struct
  		return true;
  
  	if (!txq->sta)
@@ -213,7 +224,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (unlikely(txq->tid == IEEE80211_NUM_TIDS))
  		return true;
-@@ -4182,15 +4183,15 @@ bool ieee80211_txq_may_transmit(struct i
+@@ -4182,15 +4184,15 @@ bool ieee80211_txq_may_transmit(struct i
  
  	spin_lock_bh(&local->active_txq_lock[ac]);
  
@@ -232,3 +243,60 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	list_for_each_entry_safe(iter, tmp, &local->active_txqs[ac],
  				 schedule_order) {
  		if (iter == txqi)
+--- a/include/net/mac80211.h
++++ b/include/net/mac80211.h
+@@ -1116,6 +1116,7 @@ ieee80211_rate_get_vht_nss(const struct
+  *	link the frame will be transmitted on
+  * @hw_queue: HW queue to put the frame on, skb_get_queue_mapping() gives the AC
+  * @ack_frame_id: internal frame ID for TX status, used internally
++ * @tx_time_mc: TX time is for a multicast packet
+  * @tx_time_est: TX time estimate in units of 4us, used internally
+  * @control: union part for control data
+  * @control.rates: TX rates array to try
+@@ -1155,8 +1156,9 @@ struct ieee80211_tx_info {
+ 	/* common information */
+ 	u32 flags;
+ 	u32 band:3,
+-	    ack_frame_id:13,
++	    ack_frame_id:12,
+ 	    hw_queue:4,
++	    tx_time_mc:1,
+ 	    tx_time_est:10;
+ 	/* 2 free bits */
+ 
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -147,7 +147,8 @@ struct airtime_info {
+ 
+ void ieee80211_sta_update_pending_airtime(struct ieee80211_local *local,
+ 					  struct sta_info *sta, u8 ac,
+-					  u16 tx_airtime, bool tx_completed);
++					  u16 tx_airtime, bool tx_completed,
++					  bool mcast);
+ 
+ struct sta_info;
+ 
+--- a/net/mac80211/status.c
++++ b/net/mac80211/status.c
+@@ -716,7 +716,7 @@ static void ieee80211_report_used_skb(st
+ 		ieee80211_sta_update_pending_airtime(local, sta,
+ 						     skb_get_queue_mapping(skb),
+ 						     tx_time_est,
+-						     true);
++						     true, info->tx_time_mc);
+ 		rcu_read_unlock();
+ 	}
+ 
+@@ -1127,10 +1127,11 @@ void ieee80211_tx_status_ext(struct ieee
+ 		/* Do this here to avoid the expensive lookup of the sta
+ 		 * in ieee80211_report_used_skb().
+ 		 */
++		bool mcast = IEEE80211_SKB_CB(skb)->tx_time_mc;
+ 		ieee80211_sta_update_pending_airtime(local, sta,
+ 						     skb_get_queue_mapping(skb),
+ 						     tx_time_est,
+-						     true);
++						     true, mcast);
+ 		ieee80211_info_set_tx_time_est(IEEE80211_SKB_CB(skb), 0);
+ 	}
+ 
