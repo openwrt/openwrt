@@ -106,12 +106,27 @@ endif
 	  | $(XARGS) rm -rf
 	$(INSTALL_DIR) $(IB_IDIR)
 	-$(CP) $(STAGING_DIR_IMAGE)/* $(IB_IDIR)/
+	# install staging_dir/host/bin
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/staging_dir/host/bin
 	$(CP) $(STAGING_DIR_HOST)/bin/* $(PKG_BUILD_DIR)/staging_dir/host/bin/
 	(cd $(PKG_BUILD_DIR); find staging_dir/host/bin/ $(IB_LDIR)/scripts/dtc/ -type f | \
 		$(BUNDLER_COMMAND))
 	$(CP) $(TOPDIR)/staging_dir/host/lib/libfakeroot* $(PKG_BUILD_DIR)/staging_dir/host/lib
 	STRIP=$(STAGING_DIR_HOST)/bin/sstrip $(SCRIPT_DIR)/rstrip.sh $(PKG_BUILD_DIR)/staging_dir/host/bin/
+	# install staging_dir/hostpkg/bin
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/staging_dir/hostpkg/bin
+	$(CP) $(STAGING_DIR_HOSTPKG)/bin/* $(PKG_BUILD_DIR)/staging_dir/hostpkg/bin/
+	(cd $(PKG_BUILD_DIR); find staging_dir/hostpkg/bin/ $(IB_LDIR)/scripts/dtc/ -type f | \
+		$(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/hostpkg)
+	STRIP=sstrip $(SCRIPT_DIR)/rstrip.sh $(PKG_BUILD_DIR)/staging_dir/hostpkg/bin/
+	# install lua libs
+	if [ -d $(STAGING_DIR_HOSTPKG)/lib/lua ]; then \
+		$(INSTALL_DIR) $(PKG_BUILD_DIR)/staging_dir/hostpkg/lib/lua; \
+		$(CP) $(STAGING_DIR_HOSTPKG)/lib/lua $(PKG_BUILD_DIR)/staging_dir/hostpkg/lib/; \
+		(cd $(PKG_BUILD_DIR); find staging_dir/hostpkg/lib/lua/ -type f | \
+			$(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/hostpkg); \
+	fi
+	# bundle
 	(cd $(BUILD_DIR); \
 		tar -I '$(STAGING_DIR_HOST)/bin/xz -7e -T$(if $(filter 1,$(NPROC)),2,0)' -cf $@ $(IB_NAME) \
 		--mtime="$(shell date --date=@$(SOURCE_DATE_EPOCH))"; \
