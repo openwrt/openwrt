@@ -112,7 +112,7 @@ ifneq ($(CONFIG_USE_APK),)
 	@for d in $(PACKAGE_SUBDIRS); do \
 		mkdir -p $$d; \
 		cd $$d || continue; \
-		ls *.apk >/dev/null 2>&1 || continue;
+		ls *.apk >/dev/null 2>&1 || continue; \
 		$(STAGING_DIR_HOST)/bin/apk mkndx \
 			--root $(TOPDIR) \
 			--keys-dir $(TOPDIR) \
