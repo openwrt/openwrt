@@ -246,15 +246,11 @@ define KernelPackage/drm
   HIDDEN:=1
   DEPENDS:=+kmod-dma-buf +kmod-i2c-core +PACKAGE_kmod-backlight:kmod-backlight \
 	+kmod-fb
-  KCONFIG:=CONFIG_DRM \
-	CONFIG_DRM_EXEC@ge6.6 \
-	CONFIG_DRM_SUBALLOC_HELPER@ge6.4
+  KCONFIG:=CONFIG_DRM
   FILES:= \
 	$(LINUX_DIR)/drivers/gpu/drm/drm.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/drm_panel_orientation_quirks.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/drm_exec.ko@ge6.6 \
-	$(LINUX_DIR)/drivers/gpu/drm/drm_suballoc_helper.ko@ge6.4
-  AUTOLOAD:=$(call AutoLoad,05,drm_exec@ge6.6 drm_suballoc_helper@ge6.4 drm)
+	$(LINUX_DIR)/drivers/gpu/drm/drm_panel_orientation_quirks.ko
+  AUTOLOAD:=$(call AutoLoad,05,drm)
 endef
 
 define KernelPackage/drm/description
