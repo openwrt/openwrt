@@ -545,12 +545,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.shutdown = ralink_i2s_shutdown,
 +	.hw_params = ralink_i2s_hw_params,
 +	.trigger = ralink_i2s_trigger,
++	.probe = ralink_i2s_dai_probe,
++	.remove = ralink_i2s_dai_remove,
 +};
 +
 +static struct snd_soc_dai_driver ralink_i2s_dai = {
 +	.name = DRV_NAME,
-+	.probe = ralink_i2s_dai_probe,
-+	.remove = ralink_i2s_dai_remove,
 +	.ops = &ralink_i2s_dai_ops,
 +	.capture = {
 +		.stream_name = "I2S Capture",
