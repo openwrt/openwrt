@@ -109,16 +109,17 @@ endif
 $(curdir)/index: FORCE
 	@echo Generating package index...
 ifneq ($(CONFIG_USE_APK),)
-	@for d in $(PACKAGE_SUBDIRS); do ( \
+	@for d in $(PACKAGE_SUBDIRS); do \
 		mkdir -p $$d; \
 		cd $$d || continue; \
+		ls *.apk >/dev/null 2>&1 || continue;
 		$(STAGING_DIR_HOST)/bin/apk mkndx \
 			--root $(TOPDIR) \
 			--keys-dir $(TOPDIR) \
 			--sign $(BUILD_KEY_APK_SEC) \
 			--output packages.adb \
 			*.apk; \
-	); done
+	done
 else
 	@for d in $(PACKAGE_SUBDIRS); do ( \
 		mkdir -p $$d; \
