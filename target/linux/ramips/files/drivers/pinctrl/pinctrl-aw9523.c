@@ -810,7 +810,11 @@ static int aw9523_init_gpiochip(struct aw9523 *awi, unsigned int npins)
 	gpiochip->set_multiple = aw9523_gpio_set_multiple;
 	gpiochip->set_config = gpiochip_generic_config;
 	gpiochip->parent = dev;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	gpiochip->fwnode = dev->fwnode;
+#else
 	gpiochip->of_node = dev->of_node;
+#endif
 	gpiochip->owner = THIS_MODULE;
 	gpiochip->can_sleep = true;
 
@@ -984,8 +988,12 @@ static int aw9523_hw_init(struct aw9523 *awi)
 	return regmap_reinit_cache(awi->regmap, &aw9523_regmap);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+static int aw9523_probe(struct i2c_client *client)
+#else
 static int aw9523_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
+#endif
 {
 	struct device *dev = &client->dev;
 	struct pinctrl_desc *pdesc;
