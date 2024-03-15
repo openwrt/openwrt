@@ -1,0 +1,51 @@
+From: Alexander Wetzel <alexander@wetzel-home.de>
+Subject: [PATCH] wifi: mac80211: Proper mark iTXQs for resumption
+Date: Fri, 30 Dec 2022 13:18:49 +0100
+
+When a running wake_tx_queue() call is aborted due to a hw queue stop
+the corresponding iTXQ is not always correctly marked for resumption:
+wake_tx_push_queue() can stops the queue run without setting
+@IEEE80211_TXQ_STOP_NETIF_TX.
+
+Without the @IEEE80211_TXQ_STOP_NETIF_TX flag __ieee80211_wake_txqs()
+will not schedule a new queue run and remaining frames in the queue get
+stuck till another frame is queued to it.
+
+Fix the issue for all drivers - also the ones with custom wake_tx_queue
+callbacks - by moving the logic into ieee80211_tx_dequeue() and drop the
+redundant @txqs_stopped.
+
+@IEEE80211_TXQ_STOP_NETIF_TX is also renamed to @IEEE80211_TXQ_DIRTY to
+better describe the flag.
+
+Fixes: c850e31f79f0 ("wifi: mac80211: add internal handler for wake_tx_queue")
+Signed-off-by: Alexander Wetzel <alexander@wetzel-home.de>
+Tested-by: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+Tested-by: Bryan O'Donoghue <bryan.odonoghue@linaro.org>
+---
+
+--- a/net/mac80211/util.c
++++ b/net/mac80211/util.c
+@@ -292,22 +292,12 @@ static void wake_tx_push_queue(struct ie
+ 			       struct ieee80211_sub_if_data *sdata,
+ 			       struct ieee80211_txq *queue)
+ {
+-	int q = sdata->vif.hw_queue[queue->ac];
+ 	struct ieee80211_tx_control control = {
+ 		.sta = queue->sta,
+ 	};
+ 	struct sk_buff *skb;
+-	unsigned long flags;
+-	bool q_stopped;
+ 
+ 	while (1) {
+-		spin_lock_irqsave(&local->queue_stop_reason_lock, flags);
+-		q_stopped = local->queue_stop_reasons[q];
+-		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
+-
+-		if (q_stopped)
+-			break;
+-
+ 		skb = ieee80211_tx_dequeue(&local->hw, queue);
+ 		if (!skb)
+ 			break;
