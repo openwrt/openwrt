@@ -1,0 +1,56 @@
+From 6e68dae946e3a0333fbde5487ce163142ca10ae0 Mon Sep 17 00:00:00 2001
+From: Nathan Chancellor <nathan@kernel.org>
+Date: Thu, 22 Jun 2023 15:56:19 +0000
+Subject: clk: ralink: mtmips: Fix uninitialized use of ret in
+ mtmips_register_{fixed,factor}_clocks()
+
+Clang warns:
+
+  drivers/clk/ralink/clk-mtmips.c:309:9: error: variable 'ret' is uninitialized when used here [-Werror,-Wuninitialized]
+    309 |         return ret;
+        |                ^~~
+  drivers/clk/ralink/clk-mtmips.c:285:9: note: initialize the variable 'ret' to silence this warning
+    285 |         int ret, i;
+        |                ^
+        |                 = 0
+  drivers/clk/ralink/clk-mtmips.c:359:9: error: variable 'ret' is uninitialized when used here [-Werror,-Wuninitialized]
+    359 |         return ret;
+        |                ^~~
+  drivers/clk/ralink/clk-mtmips.c:335:9: note: initialize the variable 'ret' to silence this warning
+    335 |         int ret, i;
+        |                ^
+        |                 = 0
+  2 errors generated.
+
+Set ret to the return value of clk_hw_register_fixed_rate() using the
+PTR_ERR() macro, which ensures ret is not used uninitialized, clearing
+up the warning.
+
+Fixes: 6f3b15586eef ("clk: ralink: add clock and reset driver for MTMIPS SoCs")
+Closes: https://github.com/ClangBuiltLinux/linux/issues/1879
+Signed-off-by: Nathan Chancellor <nathan@kernel.org>
+Reviewed-by: Nick Desaulniers <ndesaulniers@google.com>
+Acked-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ drivers/clk/ralink/clk-mtmips.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/clk/ralink/clk-mtmips.c
++++ b/drivers/clk/ralink/clk-mtmips.c
+@@ -292,6 +292,7 @@ static int mtmips_register_fixed_clocks(
+ 						      sclk->parent, 0,
+ 						      sclk->rate);
+ 		if (IS_ERR(sclk->hw)) {
++			ret = PTR_ERR(sclk->hw);
+ 			pr_err("Couldn't register fixed clock %d\n", idx);
+ 			goto err_clk_unreg;
+ 		}
+@@ -342,6 +343,7 @@ static int mtmips_register_factor_clocks
+ 						  sclk->parent, sclk->flags,
+ 						  sclk->mult, sclk->div);
+ 		if (IS_ERR(sclk->hw)) {
++			ret = PTR_ERR(sclk->hw);
+ 			pr_err("Couldn't register factor clock %d\n", idx);
+ 			goto err_clk_unreg;
+ 		}

@@ -1,0 +1,121 @@
+From 201ddc05777cd8e084b508bcdda22214bfe2895e Mon Sep 17 00:00:00 2001
+From: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Date: Mon, 19 Jun 2023 06:09:39 +0200
+Subject: [PATCH 7/9] mips: ralink: remove reset related code
+
+A proper clock driver for ralink SoCs has been added. This driver is also
+a reset provider for the SoC. Hence there is no need to have reset related
+code in 'arch/mips/ralink' folder anymore. The only code that remains is
+the one related with mips_reboot_setup where a PCI reset is performed.
+We maintain this because I cannot test old ralink board with PCI to be
+sure all works if we remove also this code.
+
+Signed-off-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/ralink/common.h |  2 --
+ arch/mips/ralink/of.c     |  4 ----
+ arch/mips/ralink/reset.c  | 61 -----------------------------------------------
+ 3 files changed, 67 deletions(-)
+
+--- a/arch/mips/ralink/common.h
++++ b/arch/mips/ralink/common.h
+@@ -23,8 +23,6 @@ extern struct ralink_soc_info soc_info;
+ 
+ extern void ralink_of_remap(void);
+ 
+-extern void ralink_rst_init(void);
+-
+ extern void __init prom_soc_init(struct ralink_soc_info *soc_info);
+ 
+ __iomem void *plat_of_remap_node(const char *node);
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -81,10 +81,6 @@ static int __init plat_of_setup(void)
+ {
+ 	__dt_register_buses(soc_info.compatible, "palmbus");
+ 
+-	/* make sure that the reset controller is setup early */
+-	if (ralink_soc != MT762X_SOC_MT7621AT)
+-		ralink_rst_init();
+-
+ 	return 0;
+ }
+ 
+--- a/arch/mips/ralink/reset.c
++++ b/arch/mips/ralink/reset.c
+@@ -10,7 +10,6 @@
+ #include <linux/io.h>
+ #include <linux/of.h>
+ #include <linux/delay.h>
+-#include <linux/reset-controller.h>
+ 
+ #include <asm/reboot.h>
+ 
+@@ -22,66 +21,6 @@
+ #define RSTCTL_RESET_PCI	BIT(26)
+ #define RSTCTL_RESET_SYSTEM	BIT(0)
+ 
+-static int ralink_assert_device(struct reset_controller_dev *rcdev,
+-				unsigned long id)
+-{
+-	u32 val;
+-
+-	if (id == 0)
+-		return -1;
+-
+-	val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
+-	val |= BIT(id);
+-	rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
+-
+-	return 0;
+-}
+-
+-static int ralink_deassert_device(struct reset_controller_dev *rcdev,
+-				  unsigned long id)
+-{
+-	u32 val;
+-
+-	if (id == 0)
+-		return -1;
+-
+-	val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
+-	val &= ~BIT(id);
+-	rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
+-
+-	return 0;
+-}
+-
+-static int ralink_reset_device(struct reset_controller_dev *rcdev,
+-			       unsigned long id)
+-{
+-	ralink_assert_device(rcdev, id);
+-	return ralink_deassert_device(rcdev, id);
+-}
+-
+-static const struct reset_control_ops reset_ops = {
+-	.reset = ralink_reset_device,
+-	.assert = ralink_assert_device,
+-	.deassert = ralink_deassert_device,
+-};
+-
+-static struct reset_controller_dev reset_dev = {
+-	.ops			= &reset_ops,
+-	.owner			= THIS_MODULE,
+-	.nr_resets		= 32,
+-	.of_reset_n_cells	= 1,
+-};
+-
+-void ralink_rst_init(void)
+-{
+-	reset_dev.of_node = of_find_compatible_node(NULL, NULL,
+-						"ralink,rt2880-reset");
+-	if (!reset_dev.of_node)
+-		pr_err("Failed to find reset controller node");
+-	else
+-		reset_controller_register(&reset_dev);
+-}
+-
+ static void ralink_restart(char *command)
+ {
+ 	if (IS_ENABLED(CONFIG_PCI)) {

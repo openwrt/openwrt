@@ -1,0 +1,39 @@
+From 89ec9bbe60b61cc6ae3eddd6d4f43e128f8a88de Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Tue, 20 Jun 2023 18:43:23 +0800
+Subject: [PATCH 2/2] mips: pci-mt7620: use dev_info() to log PCIe device
+ detection result
+
+Usually, We only need to print the error log when there is a PCIe card but
+initialization fails. Whether the driver finds the PCIe card or not is the
+expected behavior. So it's better to log these information with dev_info().
+
+Tested on MT7628AN router Motorola MWR03.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Reviewed-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/pci/pci-mt7620.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/pci/pci-mt7620.c
++++ b/arch/mips/pci/pci-mt7620.c
+@@ -331,7 +331,7 @@ static int mt7620_pci_probe(struct platf
+ 		rt_sysc_m32(RALINK_PCIE0_CLK_EN, 0, RALINK_CLKCFG1);
+ 		if (ralink_soc == MT762X_SOC_MT7620A)
+ 			rt_sysc_m32(LC_CKDRVPD, PDRV_SW_SET, PPLL_DRV);
+-		dev_err(&pdev->dev, "PCIE0 no card, disable it(RST&CLK)\n");
++		dev_info(&pdev->dev, "PCIE0 no card, disable it(RST&CLK)\n");
+ 		return -1;
+ 	}
+ 
+@@ -374,7 +374,7 @@ int pcibios_map_irq(const struct pci_dev
+ 			dev->bus->number, slot);
+ 		return 0;
+ 	}
+-	dev_err(&dev->dev, "card - bus=0x%x, slot = 0x%x irq=%d\n",
++	dev_info(&dev->dev, "card - bus=0x%x, slot = 0x%x irq=%d\n",
+ 		dev->bus->number, slot, irq);
+ 
+ 	/* configure the cache line size to 0x14 */
