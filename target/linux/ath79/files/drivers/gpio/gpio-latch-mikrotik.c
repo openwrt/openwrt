@@ -15,7 +15,7 @@
 #include <linux/of_platform.h>
 #include <linux/of_gpio.h>
 
-#define GPIO_LATCH_DRIVER_NAME  "gpio-latch"
+#define GPIO_LATCH_DRIVER_NAME  "gpio-latch-mikrotik"
 #define GPIO_LATCH_LINES 9
 
 struct gpio_latch_chip {
