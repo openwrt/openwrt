@@ -209,7 +209,11 @@ $(_endef)
     $$(PACK_$(1)) : export PKG_SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
     $(PKG_INFO_DIR)/$(1).provides $$(PACK_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-pack.mk
 	rm -rf $$(IDIR_$(1)); \
+ifneq ($$(CONFIG_USE_APK),)
+		$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
+else
 		$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_ipkg_wildcard,$(1))))
+endif
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1)) $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	$(if $(Package/$(1)/install-overlay),mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/rootfs-overlay)
@@ -251,7 +255,31 @@ $(_endef)
     endif
 
 	$(INSTALL_DIR) $$(PDIR_$(1))/tmp
+
 ifeq ($(CONFIG_USE_APK),)
+	(cd $$(IDIR_$(1))/CONTROL; \
+		( \
+			echo "$$$$CONTROL"; \
+			printf "Description: "; echo "$$$$DESCRIPTION" | sed -e 's,^[[:space:]]*, ,g'; \
+		) > control; \
+		chmod 644 control; \
+		( \
+			echo "#!/bin/sh"; \
+			echo "[ \"\$$$${IPKG_NO_SCRIPT}\" = \"1\" ] && exit 0"; \
+			echo "[ -s "\$$$${IPKG_INSTROOT}/lib/functions.sh" ] || exit 0"; \
+			echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
+			echo "default_postinst \$$$$0 \$$$$@"; \
+		) > postinst; \
+		( \
+			echo "#!/bin/sh"; \
+			echo "[ -s "\$$$${IPKG_INSTROOT}/lib/functions.sh" ] || exit 0"; \
+			echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
+			echo "default_prerm \$$$$0 \$$$$@"; \
+		) > prerm; \
+		chmod 0755 postinst prerm; \
+		$($(1)_COMMANDS) \
+	)
+
 	$(FAKEROOT) $(STAGING_DIR_HOST)/bin/bash $(SCRIPT_DIR)/ipkg-build -m "$(FILE_MODES)" $$(IDIR_$(1)) $$(PDIR_$(1))
 else
 	mkdir -p $$(ADIR_$(1))/
@@ -306,7 +334,12 @@ endif
 	@[ -f $$(PACK_$(1)) ]
 
     $(1)-clean:
+ifneq ($(CONFIG_USE_APK),)
+	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
+else
 	$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_ipkg_wildcard,$(1))))
+endif
+
 
     clean: $(1)-clean
 
