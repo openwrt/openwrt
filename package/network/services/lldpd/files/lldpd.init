@@ -76,18 +76,32 @@ get_config_restart_hash() {
 }
 
 get_config_cid_ifaces() {
+	set -o noglob
 	local _ifaces
 	config_get _ifaces 'config' "$2"
 
 	local _iface _ifnames=""
 	for _iface in $_ifaces; do
-		local _ifname=""
-		if network_get_device _ifname "$_iface" || [ -e "/sys/class/net/$_iface" ]; then
-			append _ifnames "${_ifname:-$_iface}" ","
+		local _l3dev=""
+		# save any "!" or "!!" prefix from the interface name
+		_suffix=${_iface##*"!"}
+		_prefix=${_iface%%"$_suffix"}
+
+		if network_get_device _l3dev "$_suffix" || [ -e "/sys/class/net/$_suffix" ]; then
+			# prepend the stripped "!" or "!!" prefix here if we had one
+			append _ifnames "$_prefix${_l3dev:-$_suffix}" ","
+		else
+			case $_iface in 
+				*"*"*)
+				# Append any interface names including a glob '*' pattern
+				append _ifnames "$_iface" ","
+				;;
+			esac
 		fi
 	done
 
 	export -n "${1}=$_ifnames"
+	set +o noglob
 }
 
 write_lldpd_conf()
