@@ -63,81 +63,109 @@
 		led_system_green: led-system-green {
 			gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
 		};
 
 		led_system_red: led-system-red {
 			gpios = <&tlmm 3 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
 		};
 
 		led_pwr_green: led-pwr-green {
 			gpios = <&tlmm 4 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 		};
 
 		led-wifi-green {
 			gpios = <&tlmm 42 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
 		};
 
 		led-lan4-green {
 			gpios = <&tlmm 6 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
 		};
 
 		led-lan4-amber {
 			gpios = <&tlmm 7 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
 		};
 
 		led-lan3-green {
 			gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
 		};
 
 		led-lan3-amber {
 			gpios = <&tlmm 11 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
 		};
 
 		led-lan2-green {
 			gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
 		};
 
 		led-lan2-amber {
 			gpios = <&tlmm 13 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
 		};
 
 		led-lan1-green {
 			gpios = <&tlmm 14 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
 		};
 
 		led-lan1-amber {
 			gpios = <&tlmm 15 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
 		};
 
 		led-10g-1-green {
 			gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = "10g";
+			function-enumerator = <1>;
 		};
 
 		led-10g-1-amber {
 			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
+			function = "10g";
+			function-enumerator = <1>;
 		};
 
 		led-10g-2-green {
 			gpios = <&tlmm 51 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
+			function = "10g";
+			function-enumerator = <2>;
 		};
 
 		led-10g-2-amber {
 			gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_AMBER>;
+			function = "10g";
+			function-enumerator = <2>;
 		};
 	};
 };
