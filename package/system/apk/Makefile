@@ -3,9 +3,9 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=apk
 PKG_RELEASE:=1
 
-PKG_SOURCE_DATE:=2024-03-15
-PKG_SOURCE_VERSION:=bb9de38039d1e6eb2445662d02af1ccbac098de7
-PKG_HASH:=02c5a597489d5219f167b32ce60cee1719209a09f76e5560d063c909c2947a63
+PKG_SOURCE_DATE:=2024-03-16
+PKG_SOURCE_VERSION:=f2f10d7e851ed3ff2a239c89c1a6a3612adbd63f
+PKG_HASH:=964bbc71462630a5418a20ccd3e725eb0b065a6232d4aee16db745d95a04c1ff
 
 PKG_VERSION:=3.0.0_pre0
 PKG_SOURCE:=apk-tools-v$(PKG_SOURCE_VERSION).tar.gz
@@ -37,11 +37,13 @@ endef
 MESON_HOST_ARGS += \
 	-Dlua_version=5.1 \
 	-Dcompressed-help=false \
-	-Ddocs=disabled
+	-Ddocs=disabled \
+	-Dzstd=False
 MESON_ARGS += \
 	-Dlua_version=5.1 \
 	-Dcompressed-help=false \
-	-Ddocs=disabled
+	-Ddocs=disabled \
+	-Dzstd=False
 	
 HOST_LDFLAGS += \
 	-Wl,-rpath $(STAGING_DIR_HOST)/lib \
