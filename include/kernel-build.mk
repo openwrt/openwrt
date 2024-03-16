@@ -30,7 +30,7 @@ endef
 
 define Kernel/CompileImage
 	$(call Kernel/CompileImage/Default)
-	$(call Kernel/CompileImage/Initramfs)
+	$(call Kernel/CompileImage/Initramfs,$(TARGET_DIR))
 endef
 
 define Kernel/Clean
