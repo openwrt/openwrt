@@ -10,7 +10,7 @@ Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
 
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
-@@ -2964,12 +2964,19 @@ static void spi_nor_set_mtd_info(struct
+@@ -3420,12 +3420,19 @@ static void spi_nor_set_mtd_info(struct
  {
  	struct mtd_info *mtd = &nor->mtd;
  	struct device *dev = nor->dev;
@@ -33,7 +33,7 @@ Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
  	mtd->flags = MTD_CAP_NORFLASH;
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -863,6 +863,17 @@ out_error:
+@@ -870,6 +870,17 @@ out_error:
   */
  static void mtd_set_dev_defaults(struct mtd_info *mtd)
  {

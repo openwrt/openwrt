@@ -12,16 +12,12 @@ SVN-Revision: 28422
 
 --- a/drivers/net/mdio/mdio-bitbang.c
 +++ b/drivers/net/mdio/mdio-bitbang.c
-@@ -152,7 +152,7 @@ static int mdiobb_cmd_addr(struct mdiobb
- int mdiobb_read(struct mii_bus *bus, int phy, int reg)
+@@ -148,23 +148,11 @@ static void mdiobb_cmd_addr(struct mdiob
+ static int mdiobb_read_common(struct mii_bus *bus, int phy)
  {
  	struct mdiobb_ctrl *ctrl = bus->priv;
 -	int ret, i;
 +	int ret;
- 
- 	if (reg & MII_ADDR_C45) {
- 		reg = mdiobb_cmd_addr(ctrl, phy, reg);
-@@ -162,19 +162,7 @@ int mdiobb_read(struct mii_bus *bus, int
  
  	ctrl->ops->set_mdio_dir(ctrl, 0);
  

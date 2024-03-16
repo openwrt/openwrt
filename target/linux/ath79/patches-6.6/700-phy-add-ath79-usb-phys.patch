@@ -15,7 +15,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
-@@ -24,6 +24,22 @@ config GENERIC_PHY_MIPI_DPHY
+@@ -25,6 +25,22 @@ config GENERIC_PHY_MIPI_DPHY
  	  Provides a number of helpers a core functions for MIPI D-PHY
  	  drivers to us.
  
@@ -154,15 +154,15 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +		return PTR_ERR(priv->phy);
 +	}
 +
-+	priv->gpio = of_get_gpio(pdev->dev.of_node, 0);
-+	if (priv->gpio >= 0) {
++	priv->gpio = of_get_named_gpio(pdev->dev.of_node, "gpios", 0);
++	if (gpio_is_valid(priv->gpio)) {
 +		int ret = devm_gpio_request(&pdev->dev, priv->gpio, dev_name(&pdev->dev));
 +
 +		if (ret) {
 +			dev_err(&pdev->dev, "failed to request gpio\n");
 +			return ret;
 +		}
-+		gpio_export_with_name(priv->gpio, 0, dev_name(&pdev->dev));
++		gpio_export_with_name(gpio_to_desc(priv->gpio), 0, dev_name(&pdev->dev));
 +		gpio_set_value(priv->gpio, 1);
 +	}
 +
@@ -294,15 +294,15 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +		return PTR_ERR(priv->phy);
 +	}
 +
-+	priv->gpio = of_get_gpio(pdev->dev.of_node, 0);
-+	if (priv->gpio >= 0) {
++	priv->gpio = of_get_named_gpio(pdev->dev.of_node, "gpios", 0);
++	if (gpio_is_valid(priv->gpio)) {
 +		int ret = devm_gpio_request(&pdev->dev, priv->gpio, dev_name(&pdev->dev));
 +
 +		if (ret) {
 +			dev_err(&pdev->dev, "failed to request gpio\n");
 +			return ret;
 +		}
-+		gpio_export_with_name(priv->gpio, 0, dev_name(&pdev->dev));
++		gpio_export_with_name(gpio_to_desc(priv->gpio), 0, dev_name(&pdev->dev));
 +		gpio_set_value(priv->gpio, 1);
 +	}
 +

@@ -15,7 +15,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -257,6 +257,8 @@ config ATH79
+@@ -255,6 +255,8 @@ config ATH79
  	select SYS_SUPPORTS_BIG_ENDIAN
  	select SYS_SUPPORTS_MIPS16
  	select SYS_SUPPORTS_ZBOOT_UART_PROM
@@ -26,7 +26,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	help
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -1,48 +1,14 @@
+@@ -1,32 +1,14 @@
  # SPDX-License-Identifier: GPL-2.0
  if ATH79
  
@@ -59,22 +59,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	def_bool n
  
  config PCI_AR724X
--	def_bool n
--
--config ATH79_DEV_GPIO_BUTTONS
--	def_bool n
--
--config ATH79_DEV_LEDS_GPIO
--	def_bool n
--
--config ATH79_DEV_SPI
--	def_bool n
--
--config ATH79_DEV_USB
--	def_bool n
--
--config ATH79_DEV_WMAC
--	depends on (SOC_AR913X || SOC_AR933X || SOC_AR934X || SOC_QCA955X)
 +	bool "PCI support for AR724x type SoCs"
 +	depends on PCI
  	def_bool n
