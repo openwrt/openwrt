@@ -1,0 +1,77 @@
+From 35dcae535afc153fa83f2fe51c0812536c192c58 Mon Sep 17 00:00:00 2001
+From: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Date: Mon, 6 Feb 2023 09:33:05 +0100
+Subject: [PATCH] clk: ralink: fix 'mt7621_gate_is_enabled()' function
+
+Compiling clock driver with CONFIG_UBSAN enabled shows the following trace:
+
+UBSAN: shift-out-of-bounds in drivers/clk/ralink/clk-mt7621.c:121:15
+shift exponent 131072 is too large for 32-bit type 'long unsigned int'
+CPU: 1 PID: 1 Comm: swapper/0 Not tainted 5.15.86 #0
+Stack : ...
+
+Call Trace:
+[<80009a58>] show_stack+0x38/0x118
+[<8045ce04>] dump_stack_lvl+0x60/0x80
+[<80458868>] ubsan_epilogue+0x10/0x54
+[<804590e0>] __ubsan_handle_shift_out_of_bounds+0x118/0x190
+[<804c9a10>] mt7621_gate_is_enabled+0x98/0xa0
+[<804bb774>] clk_core_is_enabled+0x34/0x90
+[<80aad73c>] clk_disable_unused_subtree+0x98/0x1e4
+[<80aad6d4>] clk_disable_unused_subtree+0x30/0x1e4
+[<80aad6d4>] clk_disable_unused_subtree+0x30/0x1e4
+[<80aad900>] clk_disable_unused+0x78/0x120
+[<80002030>] do_one_initcall+0x54/0x1f0
+[<80a922a4>] kernel_init_freeable+0x280/0x31c
+[<808047c4>] kernel_init+0x20/0x118
+[<80003e58>] ret_from_kernel_thread+0x14/0x1c
+
+Shifting a value (131032) larger than the type (32 bit unsigned integer)
+is undefined behaviour in C.
+
+The problem is in 'mt7621_gate_is_enabled()' function which is using the
+'BIT()' kernel macro with the bit index for the clock gate to check if the
+bit is set. When the clock gates structure is created driver is already
+setting 'bit_idx' using 'BIT()' macro, so we are wrongly applying an extra
+'BIT()' mask here. Removing it solve the problem and makes this function
+correct. However when clock gating is correctly working, the kernel starts
+disabling those clocks that are not requested. Some drivers for this SoC
+are older than this clock driver itself. So to avoid the kernel to disable
+clocks that have been enabled until now, we must apply 'CLK_IS_CRITICAL'
+flag on gates initialization code.
+
+Fixes: 48df7a26f470 ("clk: ralink: add clock driver for mt7621 SoC")
+Signed-off-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Link: https://lore.kernel.org/r/20230206083305.147582-1-sergio.paracuellos@gmail.com
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+---
+ drivers/clk/ralink/clk-mt7621.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/drivers/clk/ralink/clk-mt7621.c
++++ b/drivers/clk/ralink/clk-mt7621.c
+@@ -121,7 +121,7 @@ static int mt7621_gate_is_enabled(struct
+ 	if (regmap_read(sysc, SYSC_REG_CLKCFG1, &val))
+ 		return 0;
+ 
+-	return val & BIT(clk_gate->bit_idx);
++	return val & clk_gate->bit_idx;
+ }
+ 
+ static const struct clk_ops mt7621_gate_ops = {
+@@ -133,8 +133,14 @@ static const struct clk_ops mt7621_gate_
+ static int mt7621_gate_ops_init(struct device *dev,
+ 				struct mt7621_gate *sclk)
+ {
++	/*
++	 * There are drivers for this SoC that are older
++	 * than clock driver and are not prepared for the clock.
++	 * We don't want the kernel to disable anything so we
++	 * add CLK_IS_CRITICAL flag here.
++	 */
+ 	struct clk_init_data init = {
+-		.flags = CLK_SET_RATE_PARENT,
++		.flags = CLK_SET_RATE_PARENT | CLK_IS_CRITICAL,
+ 		.num_parents = 1,
+ 		.parent_names = &sclk->parent_name,
+ 		.ops = &mt7621_gate_ops,
