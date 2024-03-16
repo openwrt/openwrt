@@ -108,7 +108,11 @@ ifeq ($(DUMP),)
   define BuildTarget/ipkg
     ABIV_$(1):=$(call FormatABISuffix,$(1),$(ABI_VERSION))
     PDIR_$(1):=$(call FeedPackageDir,$(1))
-    PACK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).apk
+ifeq ($(CONFIG_USE_APK),)
+    PACK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).ipk
+else
+	PACK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).apk
+endif
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     ADIR_$(1):=$(PKG_BUILD_DIR)/apk-$(PKGARCH)/$(1)
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
@@ -257,6 +261,7 @@ endif
 	$(INSTALL_DIR) $$(PDIR_$(1))/tmp
 
 ifeq ($(CONFIG_USE_APK),)
+	mkdir -p $$(IDIR_$(1))/CONTROL
 	(cd $$(IDIR_$(1))/CONTROL; \
 		( \
 			echo "$$$$CONTROL"; \
