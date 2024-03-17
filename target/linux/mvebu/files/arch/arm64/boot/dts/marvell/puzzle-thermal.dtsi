@@ -1,4 +1,7 @@
 #define PUZZLE_FAN_THERMAL(_cname, _fan)					\
+	polling-delay-passive = <500>;						\
+	polling-delay = <1000>;							\
+										\
 	trips {									\
 		_cname##_active_high: cpu-active-high {				\
 			temperature = <80000>;					\
@@ -28,14 +31,14 @@
 		};								\
 		cpu-active-med {						\
 			trip = <&_cname##_active_med>;				\
-			cooling-device = <_fan 2 THERMAL_NO_LIMIT>;		\
+			cooling-device = <_fan 2 3>;				\
 		};								\
 		cpu-active-low {						\
 			trip = <&_cname##_active_low>;				\
-			cooling-device = <_fan 1 THERMAL_NO_LIMIT>;		\
+			cooling-device = <_fan 1 2>;				\
 		};								\
 		cpu-active-idle {						\
 			trip = <&_cname##_active_idle>;				\
-			cooling-device = <_fan 0 THERMAL_NO_LIMIT>;		\
+			cooling-device = <_fan 0 0>;				\
 		};								\
 	}
