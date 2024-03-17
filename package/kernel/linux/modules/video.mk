@@ -8,9 +8,6 @@
 
 VIDEO_MENU:=Video Support
 
-V4L2_DIR=v4l2-core
-V4L2_MEM2MEM_DIR=platform
-
 #
 # Video Display
 #
@@ -605,7 +602,7 @@ define KernelPackage/video-mem2mem
   KCONFIG:= \
     CONFIG_V4L_MEM2MEM_DRIVERS=y \
     CONFIG_V4L2_MEM2MEM_DEV
-  FILES:= $(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-mem2mem.ko
+  FILES:= $(LINUX_DIR)/drivers/media/v4l2-core/v4l2-mem2mem.ko
   AUTOLOAD:=$(call AutoLoad,66,v4l2-mem2mem)
   $(call AddDepends/video)
 endef
@@ -655,12 +652,12 @@ define KernelPackage/video-coda
   TITLE:=i.MX VPU support
   DEPENDS:=@(TARGET_imx&&TARGET_imx_cortexa9) +kmod-video-mem2mem +kmod-video-dma-contig
   KCONFIG:= \
-  	CONFIG_VIDEO_CODA \
-  	CONFIG_VIDEO_IMX_VDOA
+	CONFIG_VIDEO_CODA \
+	CONFIG_VIDEO_IMX_VDOA
   FILES:= \
-  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/coda-vpu.ko \
-  	$(LINUX_DIR)/drivers/media/$(V4L2_MEM2MEM_DIR)/chips-media/imx-vdoa.ko \
- 	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-jpeg.ko
+	$(LINUX_DIR)/drivers/media/platform/chips-media/coda-vpu.ko \
+	$(LINUX_DIR)/drivers/media/platform/chips-media/imx-vdoa.ko \
+	$(LINUX_DIR)/drivers/media/v4l2-core/v4l2-jpeg.ko
   AUTOLOAD:=$(call AutoProbe,coda-vpu imx-vdoa v4l2-jpeg)
   $(call AddDepends/video)
 endef
