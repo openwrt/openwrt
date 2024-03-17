@@ -1,0 +1,320 @@
+From 5e448a17dfa2e95166534df7f677a3694ef6187d Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Tue, 29 Nov 2022 16:12:19 +0200
+Subject: [PATCH 12/14] net: dpaa2-eth: serialize changes to priv->mac with a
+ mutex
+
+The dpaa2 architecture permits dynamic connections between objects on
+the fsl-mc bus, specifically between a DPNI object (represented by a
+struct net_device) and a DPMAC object (represented by a struct phylink).
+
+The DPNI driver is notified when those connections are created/broken
+through the dpni_irq0_handler_thread() method. To ensure that ethtool
+operations, as well as netdev up/down operations serialize with the
+connection/disconnection of the DPNI with a DPMAC,
+dpni_irq0_handler_thread() takes the rtnl_lock() to block those other
+operations from taking place.
+
+There is code called by dpaa2_mac_connect() which wants to acquire the
+rtnl_mutex once again, see phylink_create() -> phylink_register_sfp() ->
+sfp_bus_add_upstream() -> rtnl_lock(). So the strategy doesn't quite
+work out, even though it's fairly simple.
+
+Create a different strategy, where all code paths in the dpaa2-eth
+driver access priv->mac only while they are holding priv->mac_lock.
+The phylink instance is not created or connected to the PHY under the
+priv->mac_lock, but only assigned to priv->mac then. This will eliminate
+the reliance on the rtnl_mutex.
+
+Add lockdep annotations and put comments where holding the lock is not
+necessary, and priv->mac can be dereferenced freely.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Reviewed-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Tested-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ .../net/ethernet/freescale/dpaa2/dpaa2-eth.c  | 43 ++++++++++++--
+ .../net/ethernet/freescale/dpaa2/dpaa2-eth.h  |  6 ++
+ .../ethernet/freescale/dpaa2/dpaa2-ethtool.c  | 58 +++++++++++++++----
+ 3 files changed, 91 insertions(+), 16 deletions(-)
+
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.c
+@@ -2021,8 +2021,11 @@ static int dpaa2_eth_link_state_update(s
+ 
+ 	/* When we manage the MAC/PHY using phylink there is no need
+ 	 * to manually update the netif_carrier.
++	 * We can avoid locking because we are called from the "link changed"
++	 * IRQ handler, which is the same as the "endpoint changed" IRQ handler
++	 * (the writer to priv->mac), so we cannot race with it.
+ 	 */
+-	if (dpaa2_eth_is_type_phy(priv))
++	if (dpaa2_mac_is_type_phy(priv->mac))
+ 		goto out;
+ 
+ 	/* Chech link state; speed / duplex changes are not treated yet */
+@@ -2061,6 +2064,8 @@ static int dpaa2_eth_open(struct net_dev
+ 			   priv->dpbp_dev->obj_desc.id, priv->bpid);
+ 	}
+ 
++	mutex_lock(&priv->mac_lock);
++
+ 	if (!dpaa2_eth_is_type_phy(priv)) {
+ 		/* We'll only start the txqs when the link is actually ready;
+ 		 * make sure we don't race against the link up notification,
+@@ -2079,6 +2084,7 @@ static int dpaa2_eth_open(struct net_dev
+ 
+ 	err = dpni_enable(priv->mc_io, 0, priv->mc_token);
+ 	if (err < 0) {
++		mutex_unlock(&priv->mac_lock);
+ 		netdev_err(net_dev, "dpni_enable() failed\n");
+ 		goto enable_err;
+ 	}
+@@ -2086,6 +2092,8 @@ static int dpaa2_eth_open(struct net_dev
+ 	if (dpaa2_eth_is_type_phy(priv))
+ 		dpaa2_mac_start(priv->mac);
+ 
++	mutex_unlock(&priv->mac_lock);
++
+ 	return 0;
+ 
+ enable_err:
+@@ -2157,6 +2165,8 @@ static int dpaa2_eth_stop(struct net_dev
+ 	int dpni_enabled = 0;
+ 	int retries = 10;
+ 
++	mutex_lock(&priv->mac_lock);
++
+ 	if (dpaa2_eth_is_type_phy(priv)) {
+ 		dpaa2_mac_stop(priv->mac);
+ 	} else {
+@@ -2164,6 +2174,8 @@ static int dpaa2_eth_stop(struct net_dev
+ 		netif_carrier_off(net_dev);
+ 	}
+ 
++	mutex_unlock(&priv->mac_lock);
++
+ 	/* On dpni_disable(), the MC firmware will:
+ 	 * - stop MAC Rx and wait for all Rx frames to be enqueued to software
+ 	 * - cut off WRIOP dequeues from egress FQs and wait until transmission
+@@ -2489,12 +2501,20 @@ static int dpaa2_eth_ts_ioctl(struct net
+ static int dpaa2_eth_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
+ {
+ 	struct dpaa2_eth_priv *priv = netdev_priv(dev);
++	int err;
+ 
+ 	if (cmd == SIOCSHWTSTAMP)
+ 		return dpaa2_eth_ts_ioctl(dev, rq, cmd);
+ 
+-	if (dpaa2_eth_is_type_phy(priv))
+-		return phylink_mii_ioctl(priv->mac->phylink, rq, cmd);
++	mutex_lock(&priv->mac_lock);
++
++	if (dpaa2_eth_is_type_phy(priv)) {
++		err = phylink_mii_ioctl(priv->mac->phylink, rq, cmd);
++		mutex_unlock(&priv->mac_lock);
++		return err;
++	}
++
++	mutex_unlock(&priv->mac_lock);
+ 
+ 	return -EOPNOTSUPP;
+ }
+@@ -4454,7 +4474,9 @@ static int dpaa2_eth_connect_mac(struct
+ 			goto err_close_mac;
+ 	}
+ 
++	mutex_lock(&priv->mac_lock);
+ 	priv->mac = mac;
++	mutex_unlock(&priv->mac_lock);
+ 
+ 	return 0;
+ 
+@@ -4467,9 +4489,12 @@ err_free_mac:
+ 
+ static void dpaa2_eth_disconnect_mac(struct dpaa2_eth_priv *priv)
+ {
+-	struct dpaa2_mac *mac = priv->mac;
++	struct dpaa2_mac *mac;
+ 
++	mutex_lock(&priv->mac_lock);
++	mac = priv->mac;
+ 	priv->mac = NULL;
++	mutex_unlock(&priv->mac_lock);
+ 
+ 	if (!mac)
+ 		return;
+@@ -4488,6 +4513,7 @@ static irqreturn_t dpni_irq0_handler_thr
+ 	struct fsl_mc_device *dpni_dev = to_fsl_mc_device(dev);
+ 	struct net_device *net_dev = dev_get_drvdata(dev);
+ 	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
++	bool had_mac;
+ 	int err;
+ 
+ 	err = dpni_get_irq_status(dpni_dev->mc_io, 0, dpni_dev->mc_handle,
+@@ -4505,7 +4531,12 @@ static irqreturn_t dpni_irq0_handler_thr
+ 		dpaa2_eth_update_tx_fqids(priv);
+ 
+ 		rtnl_lock();
+-		if (dpaa2_eth_has_mac(priv))
++		/* We can avoid locking because the "endpoint changed" IRQ
++		 * handler is the only one who changes priv->mac at runtime,
++		 * so we are not racing with anyone.
++		 */
++		had_mac = !!priv->mac;
++		if (had_mac)
+ 			dpaa2_eth_disconnect_mac(priv);
+ 		else
+ 			dpaa2_eth_connect_mac(priv);
+@@ -4606,6 +4637,8 @@ static int dpaa2_eth_probe(struct fsl_mc
+ 	priv = netdev_priv(net_dev);
+ 	priv->net_dev = net_dev;
+ 
++	mutex_init(&priv->mac_lock);
++
+ 	priv->iommu_domain = iommu_get_domain_for_dev(dev);
+ 
+ 	priv->tx_tstamp_type = HWTSTAMP_TX_OFF;
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.h
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-eth.h
+@@ -580,6 +580,8 @@ struct dpaa2_eth_priv {
+ #endif
+ 
+ 	struct dpaa2_mac *mac;
++	/* Serializes changes to priv->mac */
++	struct mutex		mac_lock;
+ 	struct workqueue_struct	*dpaa2_ptp_wq;
+ 	struct work_struct	tx_onestep_tstamp;
+ 	struct sk_buff_head	tx_skbs;
+@@ -733,11 +735,15 @@ static inline unsigned int dpaa2_eth_rx_
+ 
+ static inline bool dpaa2_eth_is_type_phy(struct dpaa2_eth_priv *priv)
+ {
++	lockdep_assert_held(&priv->mac_lock);
++
+ 	return dpaa2_mac_is_type_phy(priv->mac);
+ }
+ 
+ static inline bool dpaa2_eth_has_mac(struct dpaa2_eth_priv *priv)
+ {
++	lockdep_assert_held(&priv->mac_lock);
++
+ 	return priv->mac ? true : false;
+ }
+ 
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-ethtool.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-ethtool.c
+@@ -86,11 +86,16 @@ static void dpaa2_eth_get_drvinfo(struct
+ static int dpaa2_eth_nway_reset(struct net_device *net_dev)
+ {
+ 	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
++	int err = -EOPNOTSUPP;
++
++	mutex_lock(&priv->mac_lock);
+ 
+ 	if (dpaa2_eth_is_type_phy(priv))
+-		return phylink_ethtool_nway_reset(priv->mac->phylink);
++		err = phylink_ethtool_nway_reset(priv->mac->phylink);
++
++	mutex_unlock(&priv->mac_lock);
+ 
+-	return -EOPNOTSUPP;
++	return err;
+ }
+ 
+ static int
+@@ -98,10 +103,18 @@ dpaa2_eth_get_link_ksettings(struct net_
+ 			     struct ethtool_link_ksettings *link_settings)
+ {
+ 	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
++	int err;
+ 
+-	if (dpaa2_eth_is_type_phy(priv))
+-		return phylink_ethtool_ksettings_get(priv->mac->phylink,
+-						     link_settings);
++	mutex_lock(&priv->mac_lock);
++
++	if (dpaa2_eth_is_type_phy(priv)) {
++		err = phylink_ethtool_ksettings_get(priv->mac->phylink,
++						    link_settings);
++		mutex_unlock(&priv->mac_lock);
++		return err;
++	}
++
++	mutex_unlock(&priv->mac_lock);
+ 
+ 	link_settings->base.autoneg = AUTONEG_DISABLE;
+ 	if (!(priv->link_state.options & DPNI_LINK_OPT_HALF_DUPLEX))
+@@ -116,11 +129,17 @@ dpaa2_eth_set_link_ksettings(struct net_
+ 			     const struct ethtool_link_ksettings *link_settings)
+ {
+ 	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
++	int err = -EOPNOTSUPP;
+ 
+-	if (!dpaa2_eth_is_type_phy(priv))
+-		return -EOPNOTSUPP;
++	mutex_lock(&priv->mac_lock);
++
++	if (dpaa2_eth_is_type_phy(priv))
++		err = phylink_ethtool_ksettings_set(priv->mac->phylink,
++						    link_settings);
+ 
+-	return phylink_ethtool_ksettings_set(priv->mac->phylink, link_settings);
++	mutex_unlock(&priv->mac_lock);
++
++	return err;
+ }
+ 
+ static void dpaa2_eth_get_pauseparam(struct net_device *net_dev,
+@@ -129,11 +148,16 @@ static void dpaa2_eth_get_pauseparam(str
+ 	struct dpaa2_eth_priv *priv = netdev_priv(net_dev);
+ 	u64 link_options = priv->link_state.options;
+ 
++	mutex_lock(&priv->mac_lock);
++
+ 	if (dpaa2_eth_is_type_phy(priv)) {
+ 		phylink_ethtool_get_pauseparam(priv->mac->phylink, pause);
++		mutex_unlock(&priv->mac_lock);
+ 		return;
+ 	}
+ 
++	mutex_unlock(&priv->mac_lock);
++
+ 	pause->rx_pause = dpaa2_eth_rx_pause_enabled(link_options);
+ 	pause->tx_pause = dpaa2_eth_tx_pause_enabled(link_options);
+ 	pause->autoneg = AUTONEG_DISABLE;
+@@ -152,9 +176,17 @@ static int dpaa2_eth_set_pauseparam(stru
+ 		return -EOPNOTSUPP;
+ 	}
+ 
+-	if (dpaa2_eth_is_type_phy(priv))
+-		return phylink_ethtool_set_pauseparam(priv->mac->phylink,
+-						      pause);
++	mutex_lock(&priv->mac_lock);
++
++	if (dpaa2_eth_is_type_phy(priv)) {
++		err = phylink_ethtool_set_pauseparam(priv->mac->phylink,
++						     pause);
++		mutex_unlock(&priv->mac_lock);
++		return err;
++	}
++
++	mutex_unlock(&priv->mac_lock);
++
+ 	if (pause->autoneg)
+ 		return -EOPNOTSUPP;
+ 
+@@ -307,8 +339,12 @@ static void dpaa2_eth_get_ethtool_stats(
+ 	}
+ 	*(data + i++) = buf_cnt;
+ 
++	mutex_lock(&priv->mac_lock);
++
+ 	if (dpaa2_eth_has_mac(priv))
+ 		dpaa2_mac_get_ethtool_stats(priv->mac, data + i);
++
++	mutex_unlock(&priv->mac_lock);
+ }
+ 
+ static int dpaa2_eth_prep_eth_rule(struct ethhdr *eth_value, struct ethhdr *eth_mask,

@@ -1,0 +1,203 @@
+From 80d12452a5f160c39d63efc1be07df36f9d07133 Mon Sep 17 00:00:00 2001
+From: Vladimir Oltean <vladimir.oltean@nxp.com>
+Date: Tue, 29 Nov 2022 16:12:20 +0200
+Subject: [PATCH 13/14] net: dpaa2-switch: serialize changes to priv->mac with
+ a mutex
+
+The dpaa2-switch driver uses a DPMAC in the same way as the dpaa2-eth
+driver, so we need to duplicate the locking solution established by the
+previous change to the switch driver as well.
+
+Signed-off-by: Vladimir Oltean <vladimir.oltean@nxp.com>
+Reviewed-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Tested-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ .../freescale/dpaa2/dpaa2-switch-ethtool.c    | 32 +++++++++++++++----
+ .../ethernet/freescale/dpaa2/dpaa2-switch.c   | 31 ++++++++++++++++--
+ .../ethernet/freescale/dpaa2/dpaa2-switch.h   |  2 ++
+ 3 files changed, 55 insertions(+), 10 deletions(-)
+
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch-ethtool.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch-ethtool.c
+@@ -60,11 +60,18 @@ dpaa2_switch_get_link_ksettings(struct n
+ {
+ 	struct ethsw_port_priv *port_priv = netdev_priv(netdev);
+ 	struct dpsw_link_state state = {0};
+-	int err = 0;
++	int err;
+ 
+-	if (dpaa2_switch_port_is_type_phy(port_priv))
+-		return phylink_ethtool_ksettings_get(port_priv->mac->phylink,
+-						     link_ksettings);
++	mutex_lock(&port_priv->mac_lock);
++
++	if (dpaa2_switch_port_is_type_phy(port_priv)) {
++		err = phylink_ethtool_ksettings_get(port_priv->mac->phylink,
++						    link_ksettings);
++		mutex_unlock(&port_priv->mac_lock);
++		return err;
++	}
++
++	mutex_unlock(&port_priv->mac_lock);
+ 
+ 	err = dpsw_if_get_link_state(port_priv->ethsw_data->mc_io, 0,
+ 				     port_priv->ethsw_data->dpsw_handle,
+@@ -99,9 +106,16 @@ dpaa2_switch_set_link_ksettings(struct n
+ 	bool if_running;
+ 	int err = 0, ret;
+ 
+-	if (dpaa2_switch_port_is_type_phy(port_priv))
+-		return phylink_ethtool_ksettings_set(port_priv->mac->phylink,
+-						     link_ksettings);
++	mutex_lock(&port_priv->mac_lock);
++
++	if (dpaa2_switch_port_is_type_phy(port_priv)) {
++		err = phylink_ethtool_ksettings_set(port_priv->mac->phylink,
++						    link_ksettings);
++		mutex_unlock(&port_priv->mac_lock);
++		return err;
++	}
++
++	mutex_unlock(&port_priv->mac_lock);
+ 
+ 	/* Interface needs to be down to change link settings */
+ 	if_running = netif_running(netdev);
+@@ -189,8 +203,12 @@ static void dpaa2_switch_ethtool_get_sta
+ 				   dpaa2_switch_ethtool_counters[i].name, err);
+ 	}
+ 
++	mutex_lock(&port_priv->mac_lock);
++
+ 	if (dpaa2_switch_port_has_mac(port_priv))
+ 		dpaa2_mac_get_ethtool_stats(port_priv->mac, data + i);
++
++	mutex_unlock(&port_priv->mac_lock);
+ }
+ 
+ const struct ethtool_ops dpaa2_switch_port_ethtool_ops = {
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch.c
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch.c
+@@ -603,8 +603,11 @@ static int dpaa2_switch_port_link_state_
+ 
+ 	/* When we manage the MAC/PHY using phylink there is no need
+ 	 * to manually update the netif_carrier.
++	 * We can avoid locking because we are called from the "link changed"
++	 * IRQ handler, which is the same as the "endpoint changed" IRQ handler
++	 * (the writer to port_priv->mac), so we cannot race with it.
+ 	 */
+-	if (dpaa2_switch_port_is_type_phy(port_priv))
++	if (dpaa2_mac_is_type_phy(port_priv->mac))
+ 		return 0;
+ 
+ 	/* Interrupts are received even though no one issued an 'ifconfig up'
+@@ -684,6 +687,8 @@ static int dpaa2_switch_port_open(struct
+ 	struct ethsw_core *ethsw = port_priv->ethsw_data;
+ 	int err;
+ 
++	mutex_lock(&port_priv->mac_lock);
++
+ 	if (!dpaa2_switch_port_is_type_phy(port_priv)) {
+ 		/* Explicitly set carrier off, otherwise
+ 		 * netif_carrier_ok() will return true and cause 'ip link show'
+@@ -697,6 +702,7 @@ static int dpaa2_switch_port_open(struct
+ 			     port_priv->ethsw_data->dpsw_handle,
+ 			     port_priv->idx);
+ 	if (err) {
++		mutex_unlock(&port_priv->mac_lock);
+ 		netdev_err(netdev, "dpsw_if_enable err %d\n", err);
+ 		return err;
+ 	}
+@@ -706,6 +712,8 @@ static int dpaa2_switch_port_open(struct
+ 	if (dpaa2_switch_port_is_type_phy(port_priv))
+ 		dpaa2_mac_start(port_priv->mac);
+ 
++	mutex_unlock(&port_priv->mac_lock);
++
+ 	return 0;
+ }
+ 
+@@ -715,6 +723,8 @@ static int dpaa2_switch_port_stop(struct
+ 	struct ethsw_core *ethsw = port_priv->ethsw_data;
+ 	int err;
+ 
++	mutex_lock(&port_priv->mac_lock);
++
+ 	if (dpaa2_switch_port_is_type_phy(port_priv)) {
+ 		dpaa2_mac_stop(port_priv->mac);
+ 	} else {
+@@ -722,6 +732,8 @@ static int dpaa2_switch_port_stop(struct
+ 		netif_carrier_off(netdev);
+ 	}
+ 
++	mutex_unlock(&port_priv->mac_lock);
++
+ 	err = dpsw_if_disable(port_priv->ethsw_data->mc_io, 0,
+ 			      port_priv->ethsw_data->dpsw_handle,
+ 			      port_priv->idx);
+@@ -1461,7 +1473,9 @@ static int dpaa2_switch_port_connect_mac
+ 		}
+ 	}
+ 
++	mutex_lock(&port_priv->mac_lock);
+ 	port_priv->mac = mac;
++	mutex_unlock(&port_priv->mac_lock);
+ 
+ 	return 0;
+ 
+@@ -1474,9 +1488,12 @@ err_free_mac:
+ 
+ static void dpaa2_switch_port_disconnect_mac(struct ethsw_port_priv *port_priv)
+ {
+-	struct dpaa2_mac *mac = port_priv->mac;
++	struct dpaa2_mac *mac;
+ 
++	mutex_lock(&port_priv->mac_lock);
++	mac = port_priv->mac;
+ 	port_priv->mac = NULL;
++	mutex_unlock(&port_priv->mac_lock);
+ 
+ 	if (!mac)
+ 		return;
+@@ -1495,6 +1512,7 @@ static irqreturn_t dpaa2_switch_irq0_han
+ 	struct ethsw_port_priv *port_priv;
+ 	u32 status = ~0;
+ 	int err, if_id;
++	bool had_mac;
+ 
+ 	err = dpsw_get_irq_status(ethsw->mc_io, 0, ethsw->dpsw_handle,
+ 				  DPSW_IRQ_INDEX_IF, &status);
+@@ -1513,7 +1531,12 @@ static irqreturn_t dpaa2_switch_irq0_han
+ 
+ 	if (status & DPSW_IRQ_EVENT_ENDPOINT_CHANGED) {
+ 		rtnl_lock();
+-		if (dpaa2_switch_port_has_mac(port_priv))
++		/* We can avoid locking because the "endpoint changed" IRQ
++		 * handler is the only one who changes priv->mac at runtime,
++		 * so we are not racing with anyone.
++		 */
++		had_mac = !!port_priv->mac;
++		if (had_mac)
+ 			dpaa2_switch_port_disconnect_mac(port_priv);
+ 		else
+ 			dpaa2_switch_port_connect_mac(port_priv);
+@@ -3249,6 +3272,8 @@ static int dpaa2_switch_probe_port(struc
+ 	port_priv->netdev = port_netdev;
+ 	port_priv->ethsw_data = ethsw;
+ 
++	mutex_init(&port_priv->mac_lock);
++
+ 	port_priv->idx = port_idx;
+ 	port_priv->stp_state = BR_STATE_FORWARDING;
+ 
+--- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch.h
++++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-switch.h
+@@ -161,6 +161,8 @@ struct ethsw_port_priv {
+ 
+ 	struct dpaa2_switch_filter_block *filter_block;
+ 	struct dpaa2_mac	*mac;
++	/* Protects against changes to port_priv->mac */
++	struct mutex		mac_lock;
+ };
+ 
+ /* Switch data */
