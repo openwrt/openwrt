@@ -335,8 +335,9 @@
 				/* Renesas uPD720202 */
 				compatible = "pci1912,0015";
 				reg = <0x1000 0 0 0 0>;
-				#address-cells = <3>;
-				#size-cells = <2>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
 
 				usb1_port: port@1 {
 					reg = <1>;
@@ -381,7 +382,7 @@
 
 	pmx_pcie: pmx-pcie {
 		marvell,pins = "mpp59";
-		marvell,function = "gpio";
+		marvell,function = "gpo";
 	};
 
 	/* this gpio is connected to the pin of buzzer
