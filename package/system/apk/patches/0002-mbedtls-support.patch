@@ -1,0 +1,917 @@
+From 74ea482102e1a7c1845b3eec19cbdb21264836d4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Timo=20Ter=C3=A4s?= <timo.teras@iki.fi>
+Date: Fri, 5 Apr 2024 12:06:56 +0300
+Subject: [PATCH 1/4] add alternate url wget implementation
+
+---
+ .gitlab-ci.yml    |  16 ++++-
+ meson.build       |   6 +-
+ meson_options.txt |   1 +
+ src/io_url_wget.c | 150 ++++++++++++++++++++++++++++++++++++++++++++++
+ src/meson.build   |   4 +-
+ 5 files changed, 173 insertions(+), 4 deletions(-)
+ create mode 100644 src/io_url_wget.c
+
+diff --git a/.gitlab-ci.yml b/.gitlab-ci.yml
+index 7fc86563..b7e00008 100644
+--- a/.gitlab-ci.yml
++++ b/.gitlab-ci.yml
+@@ -24,7 +24,19 @@ test:alpine:
+     script:
+         - apk update
+         - apk add make gcc git musl-dev openssl-dev linux-headers zlib-dev zstd-dev lua5.3-dev lua5.3-lzlib meson zlib-static zstd-static openssl-libs-static
+-        - meson build
++        - meson setup build -Dstatic_apk=true
++        - ninja -C build
++    tags:
++        - docker-alpine
++        - x86_64
++
++test:alpine-alt-config:
++    image: alpine
++    stage: test
++    script:
++        - apk update
++        - apk add make gcc git musl-dev openssl-dev linux-headers zlib-dev lua5.3-dev lua5.3-lzlib meson
++        - meson setup build -Durl_backend=wget -Dzstd=false
+         - ninja -C build
+     tags:
+         - docker-alpine
+@@ -38,7 +50,7 @@ test:debian:
+         - apt-get install -y make gcc git libssl-dev zlib1g-dev libzstd-dev lua5.3-dev lua5.2 lua-zlib-dev sudo meson
+         - unlink /bin/sh
+         - ln -s /bin/bash /bin/sh
+-        - meson build
++        - meson setup build
+         - ninja -C build
+     tags:
+         - docker-alpine
+diff --git a/meson.build b/meson.build
+index 1a44c11f..9a14cac0 100644
+--- a/meson.build
++++ b/meson.build
+@@ -33,6 +33,10 @@ subproject = meson.is_subproject()
+ 
+ subdir('doc')
+ subdir('portability')
+-subdir('libfetch')
++if get_option('url_backend') == 'libfetch'
++	subdir('libfetch')
++else
++	libfetch_dep = dependency('', required: false)
++endif
+ subdir('src')
+ subdir('tests')
+diff --git a/meson_options.txt b/meson_options.txt
+index 693f46ec..940fe9a4 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -5,5 +5,6 @@ option('help', description: 'Build help into apk binaries, needs lua', type: 'fe
+ option('lua', description: 'Build luaapk (lua bindings)', type: 'feature', value: 'auto')
+ option('lua_version', description: 'Lua version to build against', type: 'string', value: '5.3')
+ option('static_apk', description: 'Also build apk.static', type: 'boolean', value: false)
++option('url_backend', description: 'URL backend', type: 'combo', choices: ['libfetch', 'wget'], value: 'libfetch')
+ option('uvol_db_target', description: 'Default target for uvol database layer', type: 'string')
+ option('zstd', description: 'Build with zstd support', type: 'boolean', value: true)
+diff --git a/src/io_url_wget.c b/src/io_url_wget.c
+new file mode 100644
+index 00000000..9a929222
+--- /dev/null
++++ b/src/io_url_wget.c
+@@ -0,0 +1,150 @@
++/* io_url_wget.c - Alpine Package Keeper (APK)
++ *
++ * Copyright (C) 2005-2008 Natanael Copa <n@tanael.org>
++ * Copyright (C) 2008-2011 Timo TerÃ¤s <timo.teras@iki.fi>
++ * All rights reserved.
++ *
++ * SPDX-License-Identifier: GPL-2.0-only
++ */
++
++#include <spawn.h>
++#include <unistd.h>
++#include <sys/wait.h>
++#include "apk_io.h"
++
++static char wget_timeout[16];
++static char wget_no_check_certificate;
++
++static int wget_translate_status(int status)
++{
++	if (!WIFEXITED(status)) return -EFAULT;
++	switch (WEXITSTATUS(status)) {
++	case 0: return 0;
++	case 3: return -EIO;
++	case 4: return -ENETUNREACH;
++	case 5: return -EACCES;
++	case 6: return -EACCES;
++	case 7: return -EPROTO;
++	default: return -APKE_REMOTE_IO;
++	}
++}
++
++struct apk_wget_istream {
++	struct apk_istream is;
++	int fd;
++	pid_t pid;
++};
++
++static int wget_spawn(const char *url, pid_t *pid, int *fd)
++{
++	int i = 0, r, pipefds[2];
++	posix_spawn_file_actions_t act;
++	char *argv[16];
++
++	argv[i++] = "wget";
++	argv[i++] = "-q";
++	argv[i++] = "-T";
++	argv[i++] = wget_timeout;
++	if (wget_no_check_certificate) argv[i++] = "--no-check-certificate";
++	argv[i++] = (char *) url;
++	argv[i++] = "-O";
++	argv[i++] = "-";
++	argv[i++] = 0;
++
++	if (pipe2(pipefds, O_CLOEXEC) != 0) return -errno;
++
++	posix_spawn_file_actions_init(&act);
++	posix_spawn_file_actions_adddup2(&act, pipefds[1], STDOUT_FILENO);
++	r = posix_spawnp(pid, "wget", &act, 0, argv, environ);
++	posix_spawn_file_actions_destroy(&act);
++	if (r != 0) return -r;
++	close(pipefds[1]);
++	*fd = pipefds[0];
++	return 0;
++}
++
++static int wget_check_exit(struct apk_wget_istream *wis)
++{
++	int status;
++
++	if (wis->pid == 0) return apk_istream_error(&wis->is, 0);
++	if (waitpid(wis->pid, &status, 0) == wis->pid) {
++		wis->pid = 0;
++		return apk_istream_error(&wis->is, wget_translate_status(status));
++	}
++	return 0;
++}
++
++static void wget_get_meta(struct apk_istream *is, struct apk_file_meta *meta)
++{
++}
++
++static ssize_t wget_read(struct apk_istream *is, void *ptr, size_t size)
++{
++	struct apk_wget_istream *wis = container_of(is, struct apk_wget_istream, is);
++	ssize_t r;
++
++	r = read(wis->fd, ptr, size);
++	if (r < 0) return -errno;
++	if (r == 0) return wget_check_exit(wis);
++	return r;
++}
++
++static int wget_close(struct apk_istream *is)
++{
++	int r = is->err;
++	struct apk_wget_istream *wis = container_of(is, struct apk_wget_istream, is);
++
++	while (wis->pid != 0)
++		wget_check_exit(wis);
++
++	close(wis->fd);
++	free(wis);
++	return r < 0 ? r : 0;
++}
++
++static const struct apk_istream_ops wget_istream_ops = {
++	.get_meta = wget_get_meta,
++	.read = wget_read,
++	.close = wget_close,
++};
++
++struct apk_istream *apk_io_url_istream(const char *url, time_t since)
++{
++	struct apk_wget_istream *wis;
++	int r;
++
++	wis = malloc(sizeof(*wis) + apk_io_bufsize);
++	if (wis == NULL) return ERR_PTR(-ENOMEM);
++
++	*wis = (struct apk_wget_istream) {
++		.is.ops = &wget_istream_ops,
++		.is.buf = (uint8_t *)(wis + 1),
++		.is.buf_size = apk_io_bufsize,
++	};
++	r = wget_spawn(url, &wis->pid, &wis->fd);
++	if (r != 0) {
++		free(wis);
++		return ERR_PTR(r);
++	}
++
++	return &wis->is;
++}
++
++void apk_io_url_no_check_certificate(void)
++{
++	wget_no_check_certificate = 1;
++}
++
++void apk_io_url_set_timeout(int timeout)
++{
++	snprintf(wget_timeout, sizeof wget_timeout, "%d", timeout);
++}
++
++void apk_io_url_set_redirect_callback(void (*cb)(int, const char *))
++{
++}
++
++void apk_io_url_init(void)
++{
++}
+diff --git a/src/meson.build b/src/meson.build
+index c1aae550..38e9d3b0 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -1,3 +1,5 @@
++url_backend = get_option('url_backend')
++
+ libapk_so_version = '2.99.0'
+ libapk_src = [
+ 	'adb.c',
+@@ -22,8 +24,8 @@ libapk_src = [
+ 	'fs_uvol.c',
+ 	'hash.c',
+ 	'io.c',
+-	'io_url_libfetch.c',
+ 	'io_gunzip.c',
++	'io_url_@0@.c'.format(url_backend),
+ 	'package.c',
+ 	'pathbuilder.c',
+ 	'print.c',
+-- 
+GitLab
+
+
+From b9fe78fbf19bb10e1d0b8eb1cb1de123bee2ed7e Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 16 Apr 2024 17:55:15 +0200
+Subject: [PATCH 2/4] add option to configure url backend in legacy make build
+ system
+
+Can be configured by setting URL_BACKEND. If not set libfetch is
+selected by default.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ src/Makefile | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/src/Makefile b/src/Makefile
+index f7873cb1..efdc68df 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -9,8 +9,8 @@ else
+ $(error Lua interpreter not found. Please specify LUA interpreter, or use LUA=no to build without help.)
+ endif
+ 
+-OPENSSL_CFLAGS		:= $(shell $(PKG_CONFIG) --cflags openssl)
+-OPENSSL_LIBS		:= $(shell $(PKG_CONFIG) --libs openssl)
++OPENSSL_CFLAGS         := $(shell $(PKG_CONFIG) --cflags openssl)
++OPENSSL_LIBS           := $(shell $(PKG_CONFIG) --libs openssl)
+ 
+ ZLIB_CFLAGS		:= $(shell $(PKG_CONFIG) --cflags zlib)
+ ZLIB_LIBS		:= $(shell $(PKG_CONFIG) --libs zlib)
+@@ -21,10 +21,18 @@ libapk_so		:= $(obj)/libapk.so.$(libapk_soname)
+ libapk.so.$(libapk_soname)-objs := \
+ 	adb.o adb_comp.o adb_walk_adb.o adb_walk_genadb.o adb_walk_gentext.o adb_walk_text.o apk_adb.o \
+ 	atom.o blob.o commit.o common.o context.o crypto.o crypto_openssl.o ctype.o database.o hash.o \
+-	extract_v2.o extract_v3.o fs_fsys.o fs_uvol.o io.o io_gunzip.o io_url_libfetch.o \
+-	tar.o package.o pathbuilder.o print.o solver.o trust.o version.o
++	extract_v2.o extract_v3.o fs_fsys.o fs_uvol.o io.o io_gunzip.o tar.o package.o pathbuilder.o \
++	print.o solver.o trust.o version.o
+ 
+-libapk.so.$(libapk_soname)-libs := libfetch/libfetch.a
++libapk.so.$(libapk_soname)-libs :=
++
++ifeq ($(URL_BACKEND),wget)
++libapk.so.$(libapk_soname)-objs += io_url_wget.o
++else
++CFLAGS_ALL += -Ilibfetch
++libapk.so.$(libapk_soname)-objs += io_url_libfetch.o
++libapk.so.$(libapk_soname)-libs += libfetch/libfetch.a
++endif
+ 
+ # ZSTD support can be disabled
+ ifneq ($(ZSTD),no)
+@@ -79,7 +87,7 @@ LIBS_apk		:= -lapk
+ LIBS_apk-test		:= -lapk
+ LIBS_apk.so		:= -L$(obj) -lapk
+ 
+-CFLAGS_ALL		+= -D_ATFILE_SOURCE -Ilibfetch -Iportability
++CFLAGS_ALL		+= -D_ATFILE_SOURCE -Iportability
+ CFLAGS_apk.o		:= -DAPK_VERSION=\"$(VERSION)\"
+ CFLAGS_apk-static.o	:= -DAPK_VERSION=\"$(VERSION)\" -DOPENSSL_NO_ENGINE
+ CFLAGS_apk-test.o	:= -DAPK_VERSION=\"$(VERSION)\" -DOPENSSL_NO_ENGINE -DTEST_MODE
+-- 
+GitLab
+
+
+From 0418b684898403c49905c1f0e4b7c5ca522b2d50 Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jelonek.jonas@gmail.com>
+Date: Sun, 14 Apr 2024 00:20:14 +0200
+Subject: [PATCH 3/4] crypto: add support for mbedtls as backend
+
+backend is selected at compile-time with crypto_backend option
+
+Co-developed-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+---
+ libfetch/meson.build     |   2 +-
+ meson.build              |  14 +-
+ meson_options.txt        |   1 +
+ portability/getrandom.c  |  19 +++
+ portability/meson.build  |   3 +-
+ portability/sys/random.h |   6 +
+ src/apk_crypto.h         |   5 +
+ src/apk_crypto_mbedtls.h |  30 +++++
+ src/crypto_mbedtls.c     | 285 +++++++++++++++++++++++++++++++++++++++
+ src/meson.build          |  21 ++-
+ 10 files changed, 373 insertions(+), 13 deletions(-)
+ create mode 100644 portability/getrandom.c
+ create mode 100644 portability/sys/random.h
+ create mode 100644 src/apk_crypto_mbedtls.h
+ create mode 100644 src/crypto_mbedtls.c
+
+diff --git a/libfetch/meson.build b/libfetch/meson.build
+index 431ba197..e24f95eb 100644
+--- a/libfetch/meson.build
++++ b/libfetch/meson.build
+@@ -40,7 +40,7 @@ libfetch = static_library(
+ 	c_args: libfetch_cargs,
+ 	dependencies: [
+ 		libportability_dep.partial_dependency(compile_args: true, includes: true),
+-		openssl_dep.partial_dependency(compile_args: true, includes: true)
++		crypto_dep.partial_dependency(compile_args: true, includes: true)
+ 	],
+ )
+ 
+diff --git a/meson.build b/meson.build
+index 9a14cac0..3a83f4e1 100644
+--- a/meson.build
++++ b/meson.build
+@@ -13,15 +13,21 @@ apk_libdir = get_option('libdir')
+ lua_bin = find_program('lua' + get_option('lua_version'), required: get_option('help'))
+ lua_dep = dependency('lua' + get_option('lua_version'), required: get_option('lua'))
+ scdoc_dep = dependency('scdoc', version: '>=1.10', required: get_option('docs'))
+-openssl_dep = dependency('openssl')
+-openssl_static_dep = dependency('openssl', static: true)
+ zlib_dep = dependency('zlib')
+ zlib_static_dep = dependency('zlib', static: true)
+ libzstd_dep = dependency('libzstd', required: get_option('zstd'))
+ libzstd_static_dep = dependency('libzstd', required: get_option('zstd'), static: true)
+ 
+-shared_deps = [ openssl_dep, zlib_dep, libzstd_dep ]
+-static_deps = [ openssl_static_dep, zlib_static_dep, libzstd_static_dep ]
++if get_option('crypto_backend') == 'openssl'
++	crypto_dep = dependency('openssl')
++	crypto_static_dep = dependency('openssl', static: true)
++elif get_option('crypto_backend') == 'mbedtls'
++	crypto_dep = [ dependency('mbedtls'), dependency('mbedcrypto') ]
++	crypto_static_dep = [ dependency('mbedtls', static: true), dependency('mbedcrypto', static: true) ]
++endif
++
++shared_deps = [ crypto_dep, zlib_dep, libzstd_dep ]
++static_deps = [ crypto_static_dep, zlib_static_dep, libzstd_static_dep ]
+ 
+ add_project_arguments('-D_GNU_SOURCE', language: 'c')
+ 
+diff --git a/meson_options.txt b/meson_options.txt
+index 940fe9a4..df0b07dc 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -1,4 +1,5 @@
+ option('arch_prefix', description: 'Define a custom arch prefix for default arch', type: 'string')
++option('crypto_backend', description: 'Crypto backend', type: 'combo', choices: ['openssl', 'mbedtls'], value: 'openssl')
+ option('compressed-help', description: 'Compress help database, needs lua-zlib', type: 'boolean', value: true)
+ option('docs', description: 'Build manpages with scdoc', type: 'feature', value: 'auto')
+ option('help', description: 'Build help into apk binaries, needs lua', type: 'feature', value: 'auto')
+diff --git a/portability/getrandom.c b/portability/getrandom.c
+new file mode 100644
+index 00000000..b2f4a07c
+--- /dev/null
++++ b/portability/getrandom.c
+@@ -0,0 +1,19 @@
++#include <sys/random.h>
++#include <sys/types.h>
++#include <unistd.h>
++#include <fcntl.h>
++
++ssize_t getrandom(void *buf, size_t buflen, unsigned int flags)
++{
++	int fd;
++	ssize_t ret;
++
++	fd = open("/dev/urandom", O_RDONLY|O_CLOEXEC);
++	if (fd < 0)
++		return -1;
++
++	ret = read(fd, buf, buflen);
++	close(fd);
++	return ret;
++}
++
+diff --git a/portability/meson.build b/portability/meson.build
+index 89957c3c..3172044e 100644
+--- a/portability/meson.build
++++ b/portability/meson.build
+@@ -3,7 +3,8 @@ cc = meson.get_compiler('c')
+ libportability_src = []
+ 
+ check_symbols = [
+-	['memrchr', 'memrchr.c', 'NEED_MEMRCHR', 'string.h'],
++	['getrandom', 'getrandom.c', 'NEED_GETRANDOM', 'sys/random.h'],
++        ['memrchr', 'memrchr.c', 'NEED_MEMRCHR', 'string.h'],
+ 	['mknodat', 'mknodat.c', 'NEED_MKNODAT', 'sys/stat.h'],
+ 	['pipe2', 'pipe2.c', 'NEED_PIPE2', 'unistd.h'],
+ 	['qsort_r', 'qsort_r.c', 'NEED_QSORT_R', 'stdlib.h'],
+diff --git a/portability/sys/random.h b/portability/sys/random.h
+new file mode 100644
+index 00000000..02d5b1ca
+--- /dev/null
++++ b/portability/sys/random.h
+@@ -0,0 +1,6 @@
++#include_next <sys/random.h>
++#include <sys/types.h>
++
++#ifdef NEED_GETRANDOM
++ssize_t getrandom(void *buf, size_t buflen, unsigned int flags);
++#endif
+diff --git a/src/apk_crypto.h b/src/apk_crypto.h
+index 7de88dfc..5cae3bfe 100644
+--- a/src/apk_crypto.h
++++ b/src/apk_crypto.h
+@@ -12,7 +12,12 @@
+ #include <string.h>
+ #include "apk_defines.h"
+ #include "apk_blob.h"
++
++#if defined(CRYPTO_USE_OPENSSL)
+ #include "apk_crypto_openssl.h"
++#elif defined(CRYPTO_USE_MBEDTLS)
++#include "apk_crypto_mbedtls.h"
++#endif
+ 
+ // Digest
+ 
+diff --git a/src/apk_crypto_mbedtls.h b/src/apk_crypto_mbedtls.h
+new file mode 100644
+index 00000000..5481d149
+--- /dev/null
++++ b/src/apk_crypto_mbedtls.h
+@@ -0,0 +1,30 @@
++/* apk_crypto_mbedtls.h - Alpine Package Keeper (APK)
++ *
++ * Copyright (C) 2024
++ * All rights reserved.
++ *
++ * SPDX-License-Identifier: GPL-2.0-only
++ */
++
++#ifndef APK_CRYPTO_MBEDTLS_H
++#define APK_CRYPTO_MBEDTLS_H
++
++#include <mbedtls/md.h>
++#include <mbedtls/pk.h>
++#include <mbedtls/bignum.h>
++
++struct apk_pkey {
++	uint8_t id[16];
++	mbedtls_pk_context key;
++};
++
++struct apk_digest_ctx {
++	mbedtls_md_context_t mdctx;
++	struct apk_pkey *sigver_key;
++	uint8_t alg;
++};
++
++/* based on mbedtls' internal pkwrite.h calculations */
++#define APK_ENC_KEY_MAX_LENGTH          (38 + 2 * MBEDTLS_MPI_MAX_SIZE)
++
++#endif
+diff --git a/src/crypto_mbedtls.c b/src/crypto_mbedtls.c
+new file mode 100644
+index 00000000..73d60e9d
+--- /dev/null
++++ b/src/crypto_mbedtls.c
+@@ -0,0 +1,285 @@
++#include <errno.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <fcntl.h>
++#include <sys/random.h>
++#include <sys/stat.h>
++#include <unistd.h>
++
++#include <mbedtls/platform.h>
++#include <mbedtls/md.h>
++#include <mbedtls/pk.h>
++#include <mbedtls/entropy.h>
++
++#ifdef MBEDTLS_PSA_CRYPTO_C
++#include <psa/crypto.h>
++#endif
++
++#include "apk_crypto.h"
++
++static inline const mbedtls_md_type_t apk_digest_alg_to_mbedtls_type(uint8_t alg) {
++	switch (alg) {
++	case APK_DIGEST_NONE:	return MBEDTLS_MD_NONE;
++	case APK_DIGEST_MD5:	return MBEDTLS_MD_MD5;
++	case APK_DIGEST_SHA1:	return MBEDTLS_MD_SHA1;
++	case APK_DIGEST_SHA256_160:
++	case APK_DIGEST_SHA256:	return MBEDTLS_MD_SHA256;
++	case APK_DIGEST_SHA512:	return MBEDTLS_MD_SHA512;
++	default:
++		assert(alg);
++		return MBEDTLS_MD_NONE;
++	}
++}
++
++static inline const mbedtls_md_info_t *apk_digest_alg_to_mdinfo(uint8_t alg)
++{
++	return mbedtls_md_info_from_type(
++		apk_digest_alg_to_mbedtls_type(alg)
++	);
++}
++
++int apk_digest_calc(struct apk_digest *d, uint8_t alg, const void *ptr, size_t sz)
++{
++	if (mbedtls_md(apk_digest_alg_to_mdinfo(alg), ptr, sz, d->data))
++		return -APKE_CRYPTO_ERROR;
++
++	apk_digest_set(d, alg);
++	return 0;
++}
++
++int apk_digest_ctx_init(struct apk_digest_ctx *dctx, uint8_t alg)
++{
++	dctx->alg = alg;
++
++	mbedtls_md_init(&dctx->mdctx);
++	if (alg == APK_DIGEST_NONE) return 0;
++	if (mbedtls_md_setup(&dctx->mdctx, apk_digest_alg_to_mdinfo(alg), 0) ||
++		mbedtls_md_starts(&dctx->mdctx))
++		return -APKE_CRYPTO_ERROR;
++
++	return 0;
++}
++
++int apk_digest_ctx_reset(struct apk_digest_ctx *dctx)
++{
++	if (dctx->alg == APK_DIGEST_NONE) return 0;
++	if (mbedtls_md_starts(&dctx->mdctx)) return -APKE_CRYPTO_ERROR;
++	return 0;
++}
++
++int apk_digest_ctx_reset_alg(struct apk_digest_ctx *dctx, uint8_t alg)
++{
++	mbedtls_md_free(&dctx->mdctx);
++
++	dctx->alg = alg;
++	if (alg == APK_DIGEST_NONE) return 0;
++	if (mbedtls_md_setup(&dctx->mdctx, apk_digest_alg_to_mdinfo(alg), 0) ||
++		mbedtls_md_starts(&dctx->mdctx))
++		return -APKE_CRYPTO_ERROR;
++
++	return 0;
++}
++
++void apk_digest_ctx_free(struct apk_digest_ctx *dctx)
++{
++	mbedtls_md_free(&dctx->mdctx);
++}
++
++int apk_digest_ctx_update(struct apk_digest_ctx *dctx, const void *ptr, size_t sz)
++{
++	if (dctx->alg == APK_DIGEST_NONE) return 0;
++	return mbedtls_md_update(&dctx->mdctx, ptr, sz) == 0 ? 0 : -APKE_CRYPTO_ERROR;
++}
++
++int apk_digest_ctx_final(struct apk_digest_ctx *dctx, struct apk_digest *d)
++{
++	if (mbedtls_md_finish(&dctx->mdctx, d->data)) {
++		apk_digest_reset(d);
++		return -APKE_CRYPTO_ERROR;
++	}
++
++	d->alg = dctx->alg;
++	d->len = apk_digest_alg_len(d->alg);
++	return 0;
++}
++
++static int apk_load_file_at(int dirfd, const char *fn, unsigned char **buf, size_t *n)
++{
++	struct stat stats;
++	size_t size;
++	int fd;
++
++	if ((fd = openat(dirfd, fn, O_RDONLY|O_CLOEXEC)) < 0)
++		return -errno;
++
++	if (fstat(fd, &stats)) {
++		close(fd);
++		return -errno;
++	}
++
++	size = (size_t)stats.st_size;
++	*n = size;
++
++	if (size == 0 || (*buf = mbedtls_calloc(1, size + 1)) == NULL)
++		return MBEDTLS_ERR_PK_ALLOC_FAILED;
++
++	if (read(fd, *buf, size) != size) {
++		close(fd);
++
++		mbedtls_platform_zeroize(*buf, size);
++		mbedtls_free(*buf);
++
++		return MBEDTLS_ERR_PK_FILE_IO_ERROR;
++	}
++	close(fd);
++
++	(*buf)[size] = '\0';
++
++	if (strstr((const char *) *buf, "-----BEGIN ") != NULL) {
++		++*n;
++	}
++
++	return 0;
++}
++
++static int apk_pkey_init(struct apk_pkey *pkey)
++{
++	unsigned char dig[APK_DIGEST_MAX_LENGTH];
++	unsigned char pub[APK_ENC_KEY_MAX_LENGTH] = {};
++	unsigned char *c;
++	int len, r = -APKE_CRYPTO_ERROR;
++
++	c = pub + APK_ENC_KEY_MAX_LENGTH;
++
++	// key is written backwards into pub starting at c!
++	if ((len = mbedtls_pk_write_pubkey(&c, pub, &pkey->key)) < 0) return -APKE_CRYPTO_ERROR;
++	if (!mbedtls_md(apk_digest_alg_to_mdinfo(APK_DIGEST_SHA512), c, len, dig)) {
++		memcpy(pkey->id, dig, sizeof pkey->id);
++		r = 0;
++	}
++
++	return r;
++}
++
++void apk_pkey_free(struct apk_pkey *pkey)
++{
++	mbedtls_pk_free(&pkey->key);
++}
++
++static int apk_random(void *ctx, unsigned char *out, size_t len)
++{
++	return (int)getrandom(out, len, 0);
++}
++
++#if MBEDTLS_VERSION_NUMBER >= 0x03000000
++static inline int apk_mbedtls_parse_privkey(struct apk_pkey *pkey, const unsigned char *buf, size_t blen)
++{
++	return mbedtls_pk_parse_key(&pkey->key, buf, blen, NULL, 0, apk_random, NULL);
++}
++static inline int apk_mbedtls_sign(struct apk_digest_ctx *dctx, struct apk_digest *dig,
++				   unsigned char *sig, size_t *sig_len)
++{
++	return mbedtls_pk_sign(&dctx->sigver_key->key, apk_digest_alg_to_mbedtls_type(dctx->alg),
++			       (const unsigned char *)&dig->data, dig->len, sig, sizeof *sig, sig_len,
++			       apk_random, NULL);
++}
++#else
++static inline int apk_mbedtls_parse_privkey(struct apk_pkey *pkey, const unsigned char *buf, size_t blen)
++{
++	return mbedtls_pk_parse_key(&pkey->key, buf, blen, NULL, 0);
++}
++static inline int apk_mbedtls_sign(struct apk_digest_ctx *dctx, struct apk_digest *dig,
++				   unsigned char *sig, size_t *sig_len)
++{
++	return mbedtls_pk_sign(&dctx->sigver_key->key, apk_digest_alg_to_mbedtls_type(dctx->alg),
++			       (const unsigned char *)&dig->data, dig->len, sig, sig_len, apk_random, NULL);
++}
++#endif
++
++int apk_pkey_load(struct apk_pkey *pkey, int dirfd, const char *fn)
++{
++	unsigned char *buf = NULL;
++	size_t blen = 0;
++	int ret;
++
++	if (apk_load_file_at(dirfd, fn, &buf, &blen))
++		return -APKE_CRYPTO_ERROR;
++
++	mbedtls_pk_init(&pkey->key);
++	if ((ret = mbedtls_pk_parse_public_key(&pkey->key, buf, blen)) != 0)
++		ret = apk_mbedtls_parse_privkey(pkey, buf, blen);
++
++	mbedtls_platform_zeroize(buf, blen);
++	mbedtls_free(buf);
++	if (ret != 0)
++		return -APKE_CRYPTO_KEY_FORMAT;
++
++	return apk_pkey_init(pkey);
++}
++
++int apk_sign_start(struct apk_digest_ctx *dctx, uint8_t alg, struct apk_pkey *pkey)
++{
++	if (apk_digest_ctx_reset_alg(dctx, alg))
++		return -APKE_CRYPTO_ERROR;
++
++	dctx->sigver_key = pkey;
++
++	return 0;
++}
++
++int apk_sign(struct apk_digest_ctx *dctx, void *sig, size_t *len)
++{
++	struct apk_digest dig;
++	int r = 0;
++
++	if (apk_digest_ctx_final(dctx, &dig))
++		return -APKE_SIGNATURE_GEN_FAILURE;
++
++	if (apk_mbedtls_sign(dctx, &dig, sig, len))
++		r = -APKE_SIGNATURE_GEN_FAILURE;
++
++	dctx->sigver_key = NULL;
++	return r;
++}
++
++int apk_verify_start(struct apk_digest_ctx *dctx, uint8_t alg, struct apk_pkey *pkey)
++{
++	if (apk_digest_ctx_reset_alg(dctx, alg))
++		return -APKE_CRYPTO_ERROR;
++
++	dctx->sigver_key = pkey;
++
++	return 0;
++}
++
++int apk_verify(struct apk_digest_ctx *dctx, void *sig, size_t len)
++{
++	struct apk_digest dig;
++	int r = 0;
++
++	if (apk_digest_ctx_final(dctx, &dig))
++		return -APKE_SIGNATURE_GEN_FAILURE;
++
++	if (mbedtls_pk_verify(&dctx->sigver_key->key, apk_digest_alg_to_mbedtls_type(dctx->alg),
++			      (const unsigned char *)&dig.data, dig.len, sig, len))
++		r = -APKE_SIGNATURE_INVALID;
++
++	dctx->sigver_key = NULL;
++	return r;
++}
++
++static void apk_crypto_cleanup(void)
++{
++#ifdef MBEDTLS_PSA_CRYPTO_C
++	mbedtls_psa_crypto_free();
++#endif
++}
++
++void apk_crypto_init(void)
++{
++	atexit(apk_crypto_cleanup);
++	
++#ifdef MBEDTLS_PSA_CRYPTO_C
++	psa_crypto_init();
++#endif
++}
+diff --git a/src/meson.build b/src/meson.build
+index 38e9d3b0..e1204fc0 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -1,3 +1,4 @@
++crypto_backend = get_option('crypto_backend')
+ url_backend = get_option('url_backend')
+ 
+ libapk_so_version = '2.99.0'
+@@ -15,7 +16,7 @@ libapk_src = [
+ 	'common.c',
+ 	'context.c',
+ 	'crypto.c',
+-	'crypto_openssl.c',
++        'crypto_@0@.c'.format(crypto_backend),
+ 	'ctype.c',
+ 	'database.c',
+ 	'extract_v2.c',
+@@ -40,7 +41,7 @@ libapk_headers = [
+ 	'apk_atom.h',
+ 	'apk_blob.h',
+ 	'apk_crypto.h',
+-	'apk_crypto_openssl.h',
++        'apk_crypto_@0@.h'.format(crypto_backend),
+ 	'apk_ctype.h',
+ 	'apk_database.h',
+ 	'apk_defines.h',
+@@ -89,6 +90,17 @@ apk_src = [
+ 	'applet.c',
+ ]
+ 
++apk_cargs = [
++	'-DAPK_VERSION="' + meson.project_version() + '"',
++	'-D_ATFILE_SOURCE',
++]
++
++if crypto_backend == 'openssl'
++	apk_cargs += [ '-DCRYPTO_USE_OPENSSL' ]
++elif crypto_backend == 'mbedtls'
++	apk_cargs += [ '-DCRYPTO_USE_MBEDTLS' ]
++endif
++
+ if lua_bin.found()
+ 	genhelp_script = files('genhelp.lua')
+ 	genhelp_args = [lua_bin, genhelp_script, '@INPUT@']
+@@ -115,11 +127,6 @@ endif
+ 
+ apk_src += [ generated_help ]
+ 
+-apk_cargs = [
+-	'-DAPK_VERSION="' + meson.project_version() + '"',
+-	'-D_ATFILE_SOURCE',
+-]
+-
+ apk_arch_prefix = get_option('arch_prefix')
+ if apk_arch_prefix != ''
+ 	apk_cargs += ['-DAPK_ARCH_PREFIX="@0@"'.format(apk_arch_prefix)]
+-- 
+GitLab
+
+
+From 34bb1021284dccbf97f02b0a0bb9e751b8887cad Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 16 Apr 2024 17:56:45 +0200
+Subject: [PATCH 4/4] add option to configure crypto backend in legacy make
+ build system
+
+Define CRYPTO to select mbedtls as alternative crypto backend. By
+default openssl is used.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ src/Makefile | 20 +++++++++++++++-----
+ 1 file changed, 15 insertions(+), 5 deletions(-)
+
+diff --git a/src/Makefile b/src/Makefile
+index efdc68df..97db0e72 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -20,9 +20,9 @@ libapk_soname		:= 2.99.0
+ libapk_so		:= $(obj)/libapk.so.$(libapk_soname)
+ libapk.so.$(libapk_soname)-objs := \
+ 	adb.o adb_comp.o adb_walk_adb.o adb_walk_genadb.o adb_walk_gentext.o adb_walk_text.o apk_adb.o \
+-	atom.o blob.o commit.o common.o context.o crypto.o crypto_openssl.o ctype.o database.o hash.o \
+-	extract_v2.o extract_v3.o fs_fsys.o fs_uvol.o io.o io_gunzip.o tar.o package.o pathbuilder.o \
+-	print.o solver.o trust.o version.o
++	atom.o blob.o commit.o common.o context.o crypto.o ctype.o database.o hash.o extract_v2.o \
++	extract_v3.o fs_fsys.o fs_uvol.o io.o io_gunzip.o tar.o package.o pathbuilder.o print.o \
++	solver.o trust.o version.o
+ 
+ libapk.so.$(libapk_soname)-libs :=
+ 
+@@ -34,6 +34,16 @@ libapk.so.$(libapk_soname)-objs += io_url_libfetch.o
+ libapk.so.$(libapk_soname)-libs += libfetch/libfetch.a
+ endif
+ 
++ifeq ($(CRYPTO),mbedtls)
++CRYPTO_CFLAGS		:= $(shell $(PKG_CONFIG) --cflags mbedtls mbedcrypto) -DCRYPTO_USE_MBEDTLS
++CRYPTO_LIBS		:= $(shell $(PKG_CONFIG) --libs mbedtls mbedcrypto)
++libapk.so.$(libapk_soname)-objs += crypto_mbedtls.o
++else
++CRYPTO_CFLAGS		:= $(shell $(PKG_CONFIG) --cflags openssl) -DCRYPTO_USE_OPENSSL
++CRYPTO_LIBS		:= $(shell $(PKG_CONFIG) --libs openssl)
++libapk.so.$(libapk_soname)-objs += crypto_openssl.o
++endif
++
+ # ZSTD support can be disabled
+ ifneq ($(ZSTD),no)
+ ZSTD_CFLAGS		:= $(shell $(PKG_CONFIG) --cflags libzstd)
+@@ -100,9 +110,9 @@ LIBS_apk.static		:= -Wl,--as-needed -ldl -Wl,--no-as-needed
+ LDFLAGS_apk		+= -L$(obj)
+ LDFLAGS_apk-test	+= -L$(obj)
+ 
+-CFLAGS_ALL		+= $(OPENSSL_CFLAGS) $(ZLIB_CFLAGS) $(ZSTD_CFLAGS)
++CFLAGS_ALL		+= $(CRYPTO_CFLAGS) $(ZLIB_CFLAGS) $(ZSTD_CFLAGS)
+ LIBS			:= -Wl,--as-needed \
+-				$(OPENSSL_LIBS) $(ZLIB_LIBS) $(ZSTD_LIBS) \
++				$(CRYPTO_LIBS) $(ZLIB_LIBS) $(ZSTD_LIBS) \
+ 			   -Wl,--no-as-needed
+ 
+ # Help generation
+-- 
+GitLab
