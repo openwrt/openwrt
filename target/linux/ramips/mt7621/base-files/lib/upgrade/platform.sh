@@ -73,6 +73,7 @@ platform_do_upgrade() {
 	linksys,ea8100-v1|\
 	linksys,ea8100-v2|\
 	mts,wg430223|\
+	netgear,eax12|\
 	netgear,r6220|\
 	netgear,r6260|\
 	netgear,r6350|\
@@ -130,6 +131,10 @@ platform_do_upgrade() {
 		dd bs=4 count=1 seek=26 conv=notrunc if=/dev/zero of=$kernel2_mtd 2>/dev/null &&\
 		echo "Kernel2 sequence number was reset to 0"
 		CI_KERNPART="Kernel"
+		nand_do_upgrade "$1"
+		;;
+	zyxel,wsm20)
+		zyxel_mstc_upgrade_prepare
 		nand_do_upgrade "$1"
 		;;
 	*)

@@ -59,6 +59,29 @@ define Build/iodata-mstc-header
 	)
 endef
 
+define Build/znet-header
+	$(eval version=$(word 1,$(1)))
+	( \
+		data_size_crc="$$(dd if=$@ 2>/dev/null | gzip -c | \
+			tail -c 8 | od -An -N4 -tx4 --endian big | tr -d ' \n')"; \
+		payload_len="$$(dd if=$@ bs=4 count=1 skip=1 2>/dev/null | od -An -tdI --endian big | tr -d ' \n')"; \
+		payload_size_crc="$$(dd if=$@ ibs=1 count=$$payload_len 2>/dev/null | gzip -c | \
+			tail -c 8 | od -An -N4 -tx4 --endian big | tr -d ' \n')"; \
+		echo -ne "\x5A\x4E\x45\x54" | dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "$$(printf '%08x' $$(stat -c%s $@) | fold -s2 | xargs -I {} echo \\x{} | tac | tr -d '\n')" | \
+			dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "$$(echo $$data_size_crc | sed 's/../\\x&/g')" | \
+			dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "$$(echo $$payload_size_crc | sed 's/../\\x&/g')" | \
+			dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "\x12\x34\x56\x78" | dd bs=4 count=1 conv=sync 2>/dev/null; \
+		echo -ne "$(version)" | dd bs=28 count=1 conv=sync 2>/dev/null; \
+		dd if=/dev/zero bs=262096 count=1 conv=sync 2>/dev/null | tr "\000" "\377"; \
+		cat $@; \
+	) > $@.new
+	mv $@.new $@
+endef
+
 define Build/ubnt-erx-factory-image
 	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) -a "$$(stat -c%s $@)" -lt "$(KERNEL_SIZE)" ]; then \
 		echo '21001:7' > $(1).compat; \
@@ -1285,6 +1308,37 @@ define Device/mts_wg430223
 endef
 TARGET_DEVICES += mts_wg430223
 
+define Device/netgear_eax12
+  $(Device/dsa-migration)
+  BLOCKSIZE := 128k
+  KERNEL_SIZE := 4096k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  DEVICE_VENDOR := NETGEAR
+  DEVICE_MODEL := EAX12
+  DEVICE_ALT0_VENDOR := NETGEAR
+  DEVICE_ALT0_MODEL := EAX11
+  DEVICE_ALT0_VARIANT := v2
+  DEVICE_ALT1_VENDOR := NETGEAR
+  DEVICE_ALT1_MODEL := EAX15
+  DEVICE_ALT1_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt7915e
+  NETGEAR_ENC_MODEL := EAX12
+  NETGEAR_ENC_REGION := US
+  NETGEAR_ENC_HW_ID_LIST := 1010000004540000_NETGEAR
+  NETGEAR_ENC_MODEL_LIST := EAX12;EAX11v2;EAX15v2
+  IMAGE_SIZE := 57344k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel 0x80001000 | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+	append-squashfs4-fakeroot
+  IMAGES += factory.img
+  IMAGE/factory.img := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | netgear-encrypted-factory
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += netgear_eax12
+
 define Device/netgear_ex6150
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -1749,6 +1803,19 @@ define Device/tplink_eap235-wall-v1
 endef
 TARGET_DEVICES += tplink_eap235-wall-v1
 
+define Device/tplink_eap613-v1
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := EAP613
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := kmod-mt7915e
+  TPLINK_BOARD_ID := EAP610-V3
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-to 64k
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  IMAGE_SIZE := 13248k
+endef
+TARGET_DEVICES += tplink_eap613-v1
+
 define Device/tplink_eap615-wall-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
@@ -1761,6 +1828,24 @@ define Device/tplink_eap615-wall-v1
   IMAGE_SIZE := 13248k
 endef
 TARGET_DEVICES += tplink_eap615-wall-v1
+
+define Device/tplink_mr600-v2-eu
+  $(Device/dsa-migration)
+  $(Device/tplink-v2)
+  DEVICE_MODEL := MR600
+  DEVICE_VARIANT := v2 (EU)
+  TPLINK_FLASHLAYOUT := 16Mltq
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-usb-net-qmi-wwan uqmi kmod-usb3
+  IMAGE/factory.bin := tplink-v2-image -e -a 0x10000
+  IMAGE/sysupgrade.bin := tplink-v2-image -s -e -a 0x10000 | check-size | \
+	append-metadata
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  KERNEL_INITRAMFS := $$(KERNEL) | tplink-v2-header
+  TPLINK_BOARD_ID := MR600-V2-EU
+  IMAGE_SIZE := 16384k
+endef
+TARGET_DEVICES += tplink_mr600-v2-eu
 
 define Device/tplink_re350-v1
   $(Device/dsa-migration)
@@ -2076,6 +2161,17 @@ define Device/xiaomi_mi-router-4a-gigabit
 endef
 TARGET_DEVICES += xiaomi_mi-router-4a-gigabit
 
+define Device/xiaomi_mi-router-4a-gigabit-v2
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 14784k
+  DEVICE_VENDOR := Xiaomi
+  DEVICE_MODEL := Mi Router 4A
+  DEVICE_VARIANT := Gigabit Edition v2
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap
+endef
+TARGET_DEVICES += xiaomi_mi-router-4a-gigabit-v2
+
 define Device/xiaomi_mi-router-ac2100
   $(Device/xiaomi_nand_separate)
   DEVICE_MODEL := Mi Router AC2100
@@ -2327,3 +2423,19 @@ define Device/zyxel_wap6805
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zyxel_wap6805
+
+define Device/zyxel_wsm20
+  $(Device/dsa-migration)
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 8192k
+  IMAGE_SIZE := 41943040
+  UBINIZE_OPTS := -E 5
+  DEVICE_VENDOR := ZyXEL
+  DEVICE_MODEL := WSM20
+  DEVICE_PACKAGES := kmod-mt7915e
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | znet-header V1.00(ABZF.0)C0
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | znet-header V1.00(ABZF.0)C0
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zyxel_wsm20

@@ -12,10 +12,12 @@ ramips_setup_interfaces()
 	dlink,dap-x1860-a1|\
 	edimax,re23s|\
 	mikrotik,routerboard-m11g|\
+	netgear,eax12|\
 	netgear,ex6150|\
 	sercomm,na502|\
 	sercomm,na502s|\
 	thunder,timecloud|\
+	tplink,eap613-v1|\
 	tplink,re350-v1|\
 	tplink,re500-v1|\
 	tplink,re650-v1|\
@@ -37,7 +39,8 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-cr6606|\
 	xiaomi,mi-router-cr6608|\
 	xiaomi,mi-router-cr6609|\
-	xiaomi,redmi-router-ac2100)
+	xiaomi,redmi-router-ac2100|\
+	zyxel,wsm20)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	asiarf,ap7621-001|\
@@ -59,7 +62,8 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-3g|\
 	xiaomi,mi-router-3g-v2|\
 	xiaomi,mi-router-4|\
-	xiaomi,mi-router-4a-gigabit)
+	xiaomi,mi-router-4a-gigabit|\
+	xiaomi,mi-router-4a-gigabit-v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
 	bolt,arion)
@@ -91,6 +95,9 @@ ramips_setup_interfaces()
 		;;
 	tplink,tl-wpa8631p-v3)
 		ucidef_set_interface_lan "lan1 lan2 lan3 plc0"
+		;;
+	tplink,mr600-v2-eu)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
 	ubnt,edgerouter-x)
 		ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4" "eth0"
@@ -195,6 +202,11 @@ ramips_setup_macs()
 		wan_mac=$lan_mac
 		label_mac=$lan_mac
 		;;
+	tplink,mr600-v2-eu)
+		label_mac=$(cat "/sys/class/net/eth0/address")
+		wwan_mac=$(macaddr_add $label_mac 1)
+		ucidef_set_interface "wwan0" device "/dev/cdc-wdm0" protocol "qmi" macaddr "$wwan_mac"
+		;;
 	mikrotik,routerboard-750gr3|\
 	mikrotik,routerboard-760igs|\
 	mikrotik,routerboard-m11g|\
@@ -207,6 +219,10 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_encrypted_arcadyan "board_data")
 		label_mac=$wan_mac
 		lan_mac=$(macaddr_add "$wan_mac" 2)
+		;;
+	netgear,eax12)
+		lan_mac=$(mtd_get_mac_ascii Config mac)
+		label_mac=$lan_mac
 		;;
 	netgear,wax202)
 		lan_mac=$(mtd_get_mac_ascii Config mac)

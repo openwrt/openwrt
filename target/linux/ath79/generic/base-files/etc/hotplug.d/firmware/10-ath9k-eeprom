@@ -12,6 +12,9 @@ case "$FIRMWARE" in
 	8dev,lima)
 		caldata_extract "art" 0x1000 0x800
 		;;
+	aruba,ap-115)
+		caldata_extract "oemdata" 0x1000 0x440
+		;;
 	asus,rp-ac66)
 		caldata_extract "art" 0x1000 0x440
 		;;
@@ -92,6 +95,9 @@ case "$FIRMWARE" in
 	winchannel,wb2000)
 		caldata_extract "art" 0x5000 0x440
 		;;
+	aruba,ap-115)
+		caldata_extract "oemdata" 0x5000 0x440
+		;;
 	avm,fritz300e)
 		caldata_extract_reverse "urloader" 0x1541 0x440
 		;;
@@ -129,6 +135,10 @@ case "$FIRMWARE" in
 		;;
 	openmesh,om2p-v1)
 		caldata_extract "ART" 0x1000 0x440
+		;;
+	ubnt,powerbridge-m|\
+	ubnt,rocket-m)
+		caldata_extract "art" 0x1000 0x1000
 		;;
 	wd,mynet-n600|\
 	wd,mynet-n750)

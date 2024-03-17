@@ -63,21 +63,3 @@ define Device/ubnt_nanostation-loco-m
   SUPPORTED_DEVICES += bullet-m
 endef
 TARGET_DEVICES += ubnt_nanostation-loco-m
-
-define Device/ubnt_powerbridge-m
-  $(Device/ubnt-xm)
-  SOC := ar7241
-  DEVICE_MODEL := PowerBridge M
-  DEVICE_PACKAGES += rssileds
-  SUPPORTED_DEVICES += bullet-m
-endef
-TARGET_DEVICES += ubnt_powerbridge-m
-
-define Device/ubnt_rocket-m
-  $(Device/ubnt-xm)
-  SOC := ar7241
-  DEVICE_MODEL := Rocket M
-  DEVICE_PACKAGES += rssileds
-  SUPPORTED_DEVICES += rocket-m
-endef
-TARGET_DEVICES += ubnt_rocket-m

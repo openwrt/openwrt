@@ -382,6 +382,21 @@ define Device/aruba_ap-105
 endef
 TARGET_DEVICES += aruba_ap-105
 
+define Device/aruba_ap-115
+  SOC := qca9558
+  DEVICE_VENDOR := Aruba
+  DEVICE_MODEL := AP-115
+  IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES := kmod-usb2
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x102000
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 8128 | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel
+endef
+TARGET_DEVICES += aruba_ap-115
+
 define Device/asus_rp-ac66
   SOC := qca9563
   DEVICE_VENDOR := ASUS

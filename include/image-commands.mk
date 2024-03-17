@@ -391,6 +391,8 @@ define Build/netgear-encrypted-factory
 		--output-file $@ \
 		--model $(NETGEAR_ENC_MODEL) \
 		--region $(NETGEAR_ENC_REGION) \
+		$(if $(NETGEAR_ENC_HW_ID_LIST),--hw-id-list "$(NETGEAR_ENC_HW_ID_LIST)") \
+		$(if $(NETGEAR_ENC_MODEL_LIST),--model-list "$(NETGEAR_ENC_MODEL_LIST)") \
 		--version V1.0.0.0.$(shell cat $(VERSION_DIST)| sed -e 's/[[:space:]]/-/g').$(firstword $(subst -, ,$(REVISION))) \
 		--encryption-block-size 0x20000 \
 		--openssl-bin "$(STAGING_DIR_HOST)/bin/openssl" \

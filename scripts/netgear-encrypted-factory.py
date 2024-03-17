@@ -14,6 +14,8 @@ def main():
     parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--region', type=str, required=True)
     parser.add_argument('--version', type=str, required=True)
+    parser.add_argument('--hw-id-list', type=str)
+    parser.add_argument('--model-list', type=str)
     parser.add_argument('--encryption-block-size', type=str, required=True)
     parser.add_argument('--openssl-bin', type=str, required=True)
     parser.add_argument('--key', type=str, required=True)
@@ -25,6 +27,10 @@ def main():
     encryption_block_size = int(args.encryption_block_size, 0)
     assert (encryption_block_size > 0 and encryption_block_size % 16 ==
             0), 'Encryption block size must be a multiple of the AES block size (16)'
+
+    hw_id_list = args.hw_id_list.split(';') if args.hw_id_list else []
+    model_list = args.model_list.split(';') if args.model_list else []
+    hw_info = ';'.join(hw_id_list + model_list)
 
     image = open(args.input_file, 'rb').read()
     image_enc = []
@@ -45,13 +51,18 @@ def main():
     image_enc = b''.join(image_enc)
 
     image_with_header = struct.pack(
-        '>32s32s64s64s64s256s12sII',
+        '>32s32s64s64sIBBB13s200s100s12sII',
         args.model.encode('ascii'),
         args.region.encode('ascii'),
         args.version.encode('ascii'),
         b'Thu Jan 1 00:00:00 1970',  # static date for reproducibility
+        0,  # product hw model
+        0,  # model index
+        len(hw_id_list),
+        len(model_list),
         b'',  # reserved
-        b'',  # RSA signature - omitted for now
+        hw_info.encode('ascii'),
+        b'',  # reserved
         b'encrpted_img',
         len(image_enc),
         encryption_block_size,

@@ -6,6 +6,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+DEVICE_VARS += NETGEAR_ENC_MODEL NETGEAR_ENC_REGION NETGEAR_ENC_HW_ID_LIST NETGEAR_ENC_MODEL_LIST
+
 # default all platform image(fit) build
 define Device/Default
   PROFILES = Default $$(DEVICE_NAME)
@@ -16,6 +18,10 @@ define Device/Default
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
   FILESYSTEMS := squashfs
   DEVICE_DTS_DIR := $(DTS_DIR)
+  NETGEAR_ENC_MODEL :=
+  NETGEAR_ENC_REGION :=
+  NETGEAR_ENC_HW_ID_LIST :=
+  NETGEAR_ENC_MODEL_LIST :=
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
 	pad-rootfs | append-metadata
