@@ -414,7 +414,7 @@ endef
 TARGET_DEVICES += cmcc_rax3000m
 
 define Device/comfast_cf-e393ax
-  DEVICE_VENDOR := Comfast
+  DEVICE_VENDOR := COMFAST
   DEVICE_MODEL := CF-E393AX
   DEVICE_DTS := mt7981a-comfast-cf-e393ax
   DEVICE_DTS_DIR := ../dts
