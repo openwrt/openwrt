@@ -134,7 +134,7 @@ bump_kernel()
 		--signoff \
 		--message "kernel/${platform_name}: Create kernel files for v${target_version} (from v${source_version})" \
 		--message 'This is an automatically generated commit.' \
-		--message 'During a `git bisect` session, `git bisect --skip` is recommended.'
+		--message 'When doing `git bisect`, consider `git bisect --skip`.'
 
 	git checkout 'HEAD~' "${_target_dir}"
 	git commit \
