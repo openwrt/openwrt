@@ -9,11 +9,11 @@ define KernelPackage/video-core
   TITLE=Video4Linux support
   DEPENDS:=+PACKAGE_kmod-i2c-core:kmod-i2c-core
   KCONFIG:= \
-	CONFIG_MEDIA_SUPPORT \
-	CONFIG_MEDIA_CAMERA_SUPPORT=y \
-	CONFIG_VIDEO_DEV \
-	CONFIG_V4L_PLATFORM_DRIVERS=y \
-	CONFIG_MEDIA_PLATFORM_DRIVERS=y
+    CONFIG_MEDIA_SUPPORT \
+    CONFIG_MEDIA_CAMERA_SUPPORT=y \
+    CONFIG_VIDEO_DEV \
+    CONFIG_V4L_PLATFORM_DRIVERS=y \
+    CONFIG_MEDIA_PLATFORM_DRIVERS=y
   FILES:= \
 	$(LINUX_DIR)/drivers/media/v4l2-core/videodev.ko
   AUTOLOAD:=$(call AutoLoad,60,videodev)
@@ -664,3 +664,185 @@ define KernelPackage/video-gspca-konica/description
 endef
 
 $(eval $(call KernelPackage,video-gspca-konica))
+
+#
+# Tuners, radio, DVB
+#
+
+define KernelPackage/dvb-core
+  SUBMENU:=$(MMEDIA_MENU)
+  TITLE:=DVB & analog TV support
+  DEPENDS:=@USB_SUPPORT +kmod-i2c-core
+  KCONFIG:= \
+    CONFIG_MEDIA_SUPPORT \
+    CONFIG_MEDIA_USB_SUPPORT=y \
+    CONFIG_MEDIA_ANALOG_TV_SUPPORT=y \
+    CONFIG_MEDIA_DIGITAL_TV_SUPPORT=y \
+    CONFIG_DVB_CORE \
+    CONFIG_DVB_NET=n \
+    CONFIG_DVB_MAX_ADAPTERS=8 \
+    CONFIG_DVB_DYNAMIC_MINORS=n \
+    CONFIG_DVB_PLATFORM_DRIVERS=n
+  FILES:=$(LINUX_DIR)/drivers/media/dvb-core/dvb-core.ko
+  AUTOLOAD:=$(call AutoLoad,81,dvb-core)
+endef
+define KernelPackage/dvb-core/description
+  Kernel module for generic DVB support.
+endef
+$(eval $(call KernelPackage,dvb-core))
+
+define KernelPackage/dvb-usb-v2
+  SUBMENU:=$(MMEDIA_MENU)
+  TITLE:=DVB USB v2 support
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core kmod-dvb-core
+  KCONFIG:=CONFIG_DVB_USB_V2
+  FILES:=$(LINUX_DIR)/drivers/media/usb/dvb-usb-v2/dvb_usb_v2.ko
+  AUTOLOAD:=$(call AutoLoad,82,dvb_usb_v2)
+endef
+define KernelPackage/dvb-usb-v2/description
+  Kernel module for DVB USB v2 support
+endef
+$(eval $(call KernelPackage,dvb-usb-v2))
+
+#### DVB TUNERS
+
+define KernelPackage/dvb-tuner-r820t
+  SUBMENU:=$(MMEDIA_MENU)
+  TITLE:=Rafael Micro R820T tuner
+  KCONFIG:=CONFIG_MEDIA_TUNER_R820T
+  DEPENDS:=kmod-dvb-usb-v2
+  FILES:=$(LINUX_DIR)/drivers/media/tuners/r820t.ko
+  AUTOLOAD:=$(call AutoLoad,83,r820t)
+endef
+define KernelPackage/dvb-tuner-r820t/description
+  Kernel module for Rafael Micro R820T/R820T2 tuner
+endef
+$(eval $(call KernelPackage,dvb-tuner-r820t))
+
+define KernelPackage/dvb-tuner-si2157
+  SUBMENU:=$(MMEDIA_MENU)
+  TITLE:=Silicon Labs Si2157 tuner
+  DEPENDS:=kmod-dvb-core
+  KCONFIG:=CONFIG_MEDIA_TUNER_SI2157
+  FILES:=$(LINUX_DIR)/drivers/media/tuners/si2157.ko
+  AUTOLOAD:=$(call AutoLoad,83,si2157)
+endef
+define KernelPackage/dvb-tuner-si2157/description
+  Kernel module for Silicon Labs Si2157 tuner.
+endef
+$(eval $(call KernelPackage,dvb-tuner-si2157))
+
+### DVB FRONTENDS
+
+define KernelPackage/dvb-frontend-mn88472
+  SUBMENU:=$(MMEDIA_MENU)
+  TITLE:=Panasonic MN88472 DVB-C/T/T2 frontend
+  DEPENDS:=kmod-dvb-core +kmod-regmap-i2c
+  KCONFIG:=CONFIG_DVB_MN88472
+  FILES:=$(LINUX_DIR)/drivers/media/dvb-frontends/mn88472.ko
+  AUTOLOAD:=$(call AutoLoad,84,mn88472)
+endef
+define KernelPackage/dvb-frontend-mn88472/description
+  Kernel module for Panasonic MN88472 DVB-C/T/T2 frontend
+
+  This chip requires firmware! It is not included due to missing license.
+  Firmware file: dvb-demod-mn88472-02.fw
+  Install in: /lib/firmware
+endef
+$(eval $(call KernelPackage,dvb-frontend-mn88472))
+
+define KernelPackage/dvb-frontend-mn88473
+  SUBMENU:=$(MMEDIA_MENU)
+  TITLE:=Panasonic MN88473 DVB-C/T/T2 frontend
+  DEPENDS:=kmod-dvb-core +kmod-regmap-i2c
+  KCONFIG:=CONFIG_DVB_MN88473
+  FILES:=$(LINUX_DIR)/drivers/media/dvb-frontends/mn88473.ko
+  AUTOLOAD:=$(call AutoLoad,84,mn88473)
+endef
+define KernelPackage/dvb-frontend-mn88473/description
+  Kernel module for Panasonic MN88473 DVB-C/T/T2 frontend
+
+  This chip requires firmware! It is not included due to missing license.
+  Firmware file: dvb-demod-mn88473-01.fw
+  Install in: /lib/firmware
+endef
+$(eval $(call KernelPackage,dvb-frontend-mn88473))
+
+define KernelPackage/dvb-frontend-si2168
+  SUBMENU:=$(MMEDIA_MENU)
+  TITLE:=Silicon Labs Si2168 DVB-C/T/T2 frontend
+  DEPENDS:=kmod-dvb-core +kmod-regmap-i2c +kmod-i2c-mux
+  KCONFIG:=CONFIG_DVB_SI2168
+  FILES:=$(LINUX_DIR)/drivers/media/dvb-frontends/si2168.ko
+  AUTOLOAD:=$(call AutoLoad,84,si2168)
+endef
+define KernelPackage/dvb-frontend-si2168/description
+  Kernel module for Silicon Labs Si2168 DVB-C/T/T2 frontend
+
+  This chip requires firmware! It is not included due to missing license.
+  Firmware file: dvb-demod-si2168-b40-01.fw
+  Install in: /lib/firmware
+endef
+$(eval $(call KernelPackage,dvb-frontend-si2168))
+
+define KernelPackage/dvb-frontend-cxd2841er
+  SUBMENU:=$(MMEDIA_MENU)
+  TITLE:=Sony CXD2841ER DVB-C/S/S2/T/T2 frontend
+  DEPENDS:=kmod-dvb-core +kmod-regmap-i2c
+  KCONFIG:=CONFIG_DVB_CXD2841ER
+  FILES:=$(LINUX_DIR)/drivers/media/dvb-frontends/cxd2841er.ko
+  AUTOLOAD:=$(call AutoLoad,84,cxd2841er)
+endef
+define KernelPackage/dvb-frontend-cxd2841er/description
+  Kernel module for Sony CXD2841ER DVB-C/S/S2/T/T2 frontend
+endef
+$(eval $(call KernelPackage,dvb-frontend-cxd2841er))
+
+#### DVB to USB INTERFACES
+
+define KernelPackage/dvb-usb-rtl28xx
+  SUBMENU:=$(MMEDIA_MENU)
+  TITLE:=Realtek RTL28xx DVB-T/T2 frontends & USB interface
+  DEPENDS:=kmod-dvb-usb-v2 +kmod-regmap-i2c +kmod-i2c-mux
+  KCONFIG:= \
+    CONFIG_DVB_USB_RTL28XXU \
+    CONFIG_DVB_RTL2830 \
+    CONFIG_DVB_RTL2832
+  FILES:= \
+    $(LINUX_DIR)/drivers/media/dvb-frontends/rtl2830.ko \
+    $(LINUX_DIR)/drivers/media/dvb-frontends/rtl2832.ko \
+    $(LINUX_DIR)/drivers/media/usb/dvb-usb-v2/dvb-usb-rtl28xxu.ko
+  AUTOLOAD:=$(call AutoLoad,84,rtl2830)
+  AUTOLOAD:=$(call AutoLoad,84,rtl2832)
+  AUTOLOAD:=$(call AutoLoad,89,dvb-usb-rtl28xxu)
+# rtl28xxu must load after these frontends: MN88472, MN88473, CXD2841ER, RTL2830, RTL2832, R820T, SI2157 and others not yet added in OpenWrt (see dependencies in kernel_menuconfig help for this module)
+endef
+define KernelPackage/dvb-usb-rtl28xx/description
+  Kernel modules for RTL2830 & RTL2832 DVB-T frontends and RTL28xxU USB interface chip
+endef
+$(eval $(call KernelPackage,dvb-usb-rtl28xx))
+
+define KernelPackage/dvb-usb-em28xx
+  SUBMENU:=$(MMEDIA_MENU)
+  TITLE:=DVB USB Empia EM28xx
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core kmod-dvb-core +kmod-video-core
+  KCONFIG:= \
+    CONFIG_VIDEO_TVEEPROM \
+    CONFIG_VIDEO_EM28XX \
+    CONFIG_VIDEO_EM28XX_DVB \
+    CONFIG_VIDEO_EM28XX_V4L2=n \
+    CONFIG_VIDEO_EM28XX_ALSA=n \
+    CONFIG_VIDEO_EM28XX_RC=n
+  FILES:= \
+    $(LINUX_DIR)/drivers/media/common/tveeprom.ko \
+    $(LINUX_DIR)/drivers/media/usb/em28xx/em28xx.ko \
+    $(LINUX_DIR)/drivers/media/usb/em28xx/em28xx-dvb.ko
+  AUTOLOAD:=$(call AutoLoad,87,tveeprom)
+  AUTOLOAD:=$(call AutoLoad,88,em28xx)
+  AUTOLOAD:=$(call AutoLoad,89,em28xx-dvb)
+# tveeprom should be a separate package, but for now, this is the only module that uses it.
+endef
+define KernelPackage/dvb-usb-em28xx/description
+  Kernel modules for Empia EM28xx DVB-USB interface chip
+endef
+$(eval $(call KernelPackage,dvb-usb-em28xx))
