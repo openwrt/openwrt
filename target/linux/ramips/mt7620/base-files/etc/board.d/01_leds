@@ -40,6 +40,13 @@ asus,rt-n14u)
 bdcom,wap2100-sk)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wlan2g" "wlan0"
 	;;
+bolt,bl100)
+	ucidef_set_led_default "power" "power" "blue:power" "1"
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0.1"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth0.2"
+	ucidef_set_led_netdev "wifi5" "wifi5" "blue:wifi5" "phy0-ap0"
+	ucidef_set_led_netdev "wifi2" "wifi2" "blue:wifi2" "phy1-ap0"
+	;;
 comfast,cf-wr800n)
 	ucidef_set_led_netdev "lan" "lan" "white:ethernet" eth0.1
 	ucidef_set_led_netdev "wifi_led" "wifi" "white:wifi" "wlan0"
