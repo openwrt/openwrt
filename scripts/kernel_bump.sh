@@ -137,9 +137,15 @@ bump_kernel()
 		done
 	fi
 
-	find "${_target_dir}" -iname "config-${source_version}" | while read -r _config; do
-		_path="${_config%%"/config-${source_version}"}"
-		git mv "${_config}" "${_path}/config-${target_version}"
+	for _config in $(git ls-files "${_target_dir}" |
+	                 sed -n "s|^\(.*config-${source_version}\).*|\1|p" |
+	                 sort -u); do
+		if [ ! -e "${_config}" ]; then
+			continue
+		fi
+
+		_subtarget="${_config%%"/config-${source_version}"}"
+		git mv "${_config}" "${_subtarget}/config-${target_version}"
 	done
 
 	git commit \
