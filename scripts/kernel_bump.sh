@@ -80,13 +80,6 @@ init()
 	trap cleanup EXIT HUP INT QUIT ABRT ALRM TERM
 }
 
-do_source_target()
-{
-	_target_dir="${1:?Missing argument to function}"
-	_op="${2:?Missing argument to function}"
-
-}
-
 bump_kernel()
 {
 	platform_name="${platform_name##*'/'}"
