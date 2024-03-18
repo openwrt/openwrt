@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uboot-layerscape
-PKG_VERSION:=lf-6.1.1-1.0.0
+PKG_VERSION:=6.6.3.1.0.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/nxp-qoriq/u-boot
-PKG_SOURCE_VERSION:=lf-6.1.1-1.0.0
-PKG_MIRROR_HASH:=6cb3cd569f11f582375eb3af475a2a0d77fe602813337b64883ef01344be7bf6
+PKG_SOURCE_VERSION:=lf-6.6.3-1.0.0
+PKG_MIRROR_HASH:=dec5b6e4fe328b930f201fbf06a0a7b71a9dd72f38f16c9570188c0a7fea916a
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -30,19 +30,16 @@ endef
 define U-Boot/fsl_ls1012a-frdm
   NAME:=NXP LS1012AFRDM
   UBOOT_CONFIG:=ls1012afrdm_tfa
-  ENV_SIZE:=0x40000
 endef
 
 define U-Boot/fsl_ls1012a-rdb
   NAME:=NXP LS1012ARDB
   UBOOT_CONFIG:=ls1012ardb_tfa
-  ENV_SIZE:=0x40000
 endef
 
 define U-Boot/fsl_ls1012a-frwy-sdboot
   NAME:=NXP LS1012AFRWY
   UBOOT_CONFIG:=ls1012afrwy_tfa
-  ENV_SIZE:=0x10000
 endef
 
 define U-Boot/fsl_ls1028a-rdb
