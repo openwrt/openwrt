@@ -1,0 +1,42 @@
+From eb57941154e2ad142c07d47e874a221328467349 Mon Sep 17 00:00:00 2001
+From: Ioana Ciornei <ioana.ciornei@nxp.com>
+Date: Thu, 2 Jun 2022 12:11:11 +0300
+Subject: [PATCH] net: phylink: treat PHY_INTERFACE_MODE_2500SGMII in
+ phylink_get_linkmodes
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+There is a downstream patch which adds a new interface type -
+PHY_INTERFACE_MODE_2500SGMII (which is really the same one as
+PHY_INTERFACE_MODE_2500BASEX).
+
+We backported from upstream the following phylink patch which, of
+course, does not treat the PHY_INTERFACE_MODE_2500SGMII interface mode
+in a switch case statement.
+	34ae2c09d46a ("net: phylink: add generic validate implementation")
+
+Because of this, we get the following build warning.
+
+drivers/net/phy/phylink.c: In function ‘phylink_get_linkmodes’:
+drivers/net/phy/phylink.c:322:2: warning: enumeration value ‘PHY_INTERFACE_MODE_2500SGMII’ not handled in switch [-Wswitch]
+  322 |  switch (interface) {
+      |  ^~~~~~
+
+Fix it by treating the new interface mode in the switch-case statement.
+
+Signed-off-by: Ioana Ciornei <ioana.ciornei@nxp.com>
+---
+ drivers/net/phy/phylink.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -505,6 +505,7 @@ unsigned long phylink_get_capabilities(p
+ 		break;
+ 
+ 	case PHY_INTERFACE_MODE_2500BASEX:
++	case PHY_INTERFACE_MODE_2500SGMII:
+ 		caps |= MAC_2500FD;
+ 		break;
+ 
