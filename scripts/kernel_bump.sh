@@ -54,6 +54,7 @@ usage()
 {
 	echo "Usage: ${0}"
 	echo 'Helper script to bump the target kernel version, whilst keeping history.'
+	echo '    -c  Migrate config files (e.g. subtargets) only.'
 	echo "    -p  Optional Platform name (e.g. 'ath79' [PLATFORM_NAME]"
 	echo "    -s  Source version of kernel (e.g. 'v6.1' [SOURCE_VERSION])"
 	echo "    -t  Target version of kernel (e.g. 'v6.6' [TARGET_VERSION]')"
@@ -113,22 +114,24 @@ bump_kernel()
 
 	git switch --force-create '__openwrt_kernel_files_mover'
 
-	for _path in "${_target_dir}/"*; do
-		if [ ! -s "${_path}" ] || \
-		   [ "${_path}" = "${_path%%"-${source_version}"}" ]; then
-			continue
-		fi
+	if [ "${config_only:-false}" != 'true' ]; then
+		for _path in "${_target_dir}/"*; do
+			if [ ! -e "${_path}" ] || \
+			   [ "${_path}" = "${_path%%"-${source_version}"}" ]; then
+				continue
+			fi
 
-		_target_path="${_path%%"-${source_version}"}-${target_version}"
-		if [ -s "${_target_path}" ]; then
-			e_err "Target '${_target_path}' already exists!"
-			exit 1
-		fi
+			_target_path="${_path%%"-${source_version}"}-${target_version}"
+			if [ -e "${_target_path}" ]; then
+				e_err "Target '${_target_path}' already exists!"
+				exit 1
+			fi
 
-		git mv \
-			"${_path}" \
-			"${_target_path}"
-	done
+			git mv \
+				"${_path}" \
+				"${_target_path}"
+		done
+	fi
 
 	find "${_target_dir}" -iname "config-${source_version}" | while read -r _config; do
 		_path="${_config%%"/config-${source_version}"}"
@@ -182,8 +185,11 @@ check_requirements()
 
 main()
 {
-	while getopts 'hp:s:t:' _options; do
+	while getopts 'chp:s:t:' _options; do
 		case "${_options}" in
+		'c')
+			config_only='true'
+			;;
 		'h')
 			usage
 			exit 0
