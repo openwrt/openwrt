@@ -1,4 +1,4 @@
-From 4bb50554937246443767e89d32e54df7a12396ca Mon Sep 17 00:00:00 2001
+From 9ee016f90af0bbcac576af881f1760ee9d9e38e0 Mon Sep 17 00:00:00 2001
 From: Calvin Johnson <calvin.johnson@nxp.com>
 Date: Sat, 16 Sep 2017 07:05:49 +0530
 Subject: [PATCH] staging: add fsl_ppfe driver
@@ -6,10 +6,8 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-This is squash of all commits with ppfe driver taken from NXP 6.1 tree:
-https://github.com/nxp-qoriq/linux/tree/lf-6.1.y
-
-List of original commits:
+This is squash of all commits with ppfe driver taken from NXP 6.6 tree:
+https://github.com/nxp-qoriq/linux/tree/lf-6.6.y
 
 net: fsl_ppfe: dts binding for ppfe
 
@@ -577,7 +575,38 @@ staging: fsl_ppfe: Addressed build warnings
 
 Signed-off-by: Chaitanya Sakinam <chaitanya.sakinam@nxp.com>
 
-Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
+staging: fsl_ppfe: Remove C45 check and related code in driver
+
+The MDIO core will not pass a C45 request via the C22 API call any
+more. So, removed the code. The old way of C45 muxed addresses is
+removed from the upstream kernel after clear seperation of C45 and
+C22.
+Upstream kernel commit details for reference:
+99d5fe9c7f3d net: mdio: Remove support for building C45 muxed addresses
+
+Signed-off-by: Chaitanya Sakinam <chaitanya.sakinam@nxp.com>
+
+staging: fsl_ppfe: update class_create() usage
+
+Cope with API change:
+1aaba11da9aa ("driver core: class: remove module * from class_create()")
+
+Signed-off-by: Krishna Chaitanya Sakinam <chaitanya.sakinam@nxp.com>
+
+LF-10777-2 staging: fsl_ppfe: remove unused pfe_eth_mdio_write_addr
+
+Fix the following build warning:
+drivers/staging/fsl_ppfe/pfe_eth.c:887:12: warning: ‘pfe_eth_mdio_write_addr’ defined but not used [-Wunused-function]
+  887 | static int pfe_eth_mdio_write_addr(struct mii_bus *bus, int mii_id,
+
+The only user of this API is MII_ADDR_C45 checking logic which
+was removed since the commit 9d95b13bd084 ("staging: fsl_ppfe: Remove
+C45 check and related code in driver"). So this API should be removed
+together as no users anymore.
+
+Fixes: 9d95b13bd084 ("staging: fsl_ppfe: Remove C45 check and related code in driver")
+Reviewed-by: Jason Liu <jason.hui.liu@nxp.com>
+Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
 ---
  .../devicetree/bindings/net/fsl_ppfe/pfe.txt  |  199 ++
  MAINTAINERS                                   |    8 +
@@ -602,7 +631,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  drivers/staging/fsl_ppfe/pfe_ctrl.h           |  100 +
  drivers/staging/fsl_ppfe/pfe_debugfs.c        |   99 +
  drivers/staging/fsl_ppfe/pfe_debugfs.h        |   13 +
- drivers/staging/fsl_ppfe/pfe_eth.c            | 2588 +++++++++++++++++
+ drivers/staging/fsl_ppfe/pfe_eth.c            | 2550 +++++++++++++++++
  drivers/staging/fsl_ppfe/pfe_eth.h            |  175 ++
  drivers/staging/fsl_ppfe/pfe_firmware.c       |  398 +++
  drivers/staging/fsl_ppfe/pfe_firmware.h       |   21 +
@@ -619,7 +648,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  drivers/staging/fsl_ppfe/pfe_perfmon.h        |   26 +
  drivers/staging/fsl_ppfe/pfe_sysfs.c          |  840 ++++++
  drivers/staging/fsl_ppfe/pfe_sysfs.h          |   17 +
- 40 files changed, 11015 insertions(+)
+ 40 files changed, 10977 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/net/fsl_ppfe/pfe.txt
  create mode 100644 drivers/staging/fsl_ppfe/Kconfig
  create mode 100644 drivers/staging/fsl_ppfe/Makefile
@@ -862,7 +891,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +};
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -8255,6 +8255,14 @@ F:	drivers/ptp/ptp_qoriq.c
+@@ -8359,6 +8359,14 @@ F:	drivers/ptp/ptp_qoriq.c
  F:	drivers/ptp/ptp_qoriq_debugfs.c
  F:	include/linux/fsl/ptp_qoriq.h
  
@@ -879,7 +908,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  L:	linux-spi@vger.kernel.org
 --- a/drivers/staging/Kconfig
 +++ b/drivers/staging/Kconfig
-@@ -80,4 +80,6 @@ source "drivers/staging/qlge/Kconfig"
+@@ -78,4 +78,6 @@ source "drivers/staging/qlge/Kconfig"
  
  source "drivers/staging/vme_user/Kconfig"
  
@@ -888,7 +917,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  endif # STAGING
 --- a/drivers/staging/Makefile
 +++ b/drivers/staging/Makefile
-@@ -29,3 +29,4 @@ obj-$(CONFIG_PI433)		+= pi433/
+@@ -28,3 +28,4 @@ obj-$(CONFIG_PI433)		+= pi433/
  obj-$(CONFIG_XIL_AXIS_FIFO)	+= axis-fifo/
  obj-$(CONFIG_FIELDBUS_DEV)     += fieldbus/
  obj-$(CONFIG_QLGE)		+= qlge/
@@ -2678,7 +2707,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +	pr_debug("PFE CDEV assigned major number: %d\n", pfe_majno);
 +
 +	/* Register the class for the device */
-+	pfe_char_class = class_create(THIS_MODULE, PFE_CLASS_NAME);
++	pfe_char_class = class_create(PFE_CLASS_NAME);
 +	if (IS_ERR(pfe_char_class)) {
 +		pr_err(
 +		"Failed to init class for PFE CDEV. PFE CDEV not available.\n");
@@ -3233,7 +3262,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +#endif /* _PFE_DEBUGFS_H_ */
 --- /dev/null
 +++ b/drivers/staging/fsl_ppfe/pfe_eth.c
-@@ -0,0 +1,2588 @@
+@@ -0,0 +1,2550 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright 2015-2016 Freescale Semiconductor, Inc.
@@ -4120,24 +4149,6 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +	return 0;
 +}
 +
-+static int pfe_eth_mdio_write_addr(struct mii_bus *bus, int mii_id,
-+				   int dev_addr, int regnum)
-+{
-+	struct pfe_mdio_priv_s *priv = (struct pfe_mdio_priv_s *)bus->priv;
-+
-+	__raw_writel(EMAC_MII_DATA_PA(mii_id) |
-+		     EMAC_MII_DATA_RA(dev_addr) |
-+		     EMAC_MII_DATA_TA | EMAC_MII_DATA(regnum),
-+		     priv->mdio_base + EMAC_MII_DATA_REG);
-+
-+	if (pfe_eth_mdio_timeout(priv, EMAC_MDIO_TIMEOUT)) {
-+		dev_err(&bus->dev, "phy MDIO address write timeout\n");
-+		return -1;
-+	}
-+
-+	return 0;
-+}
-+
 +static int pfe_eth_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 +			      u16 value)
 +{
@@ -4147,22 +4158,12 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +	if ((mii_id) && (pfe->mdio_muxval[mii_id]))
 +		pfe_eth_mdio_mux(pfe->mdio_muxval[mii_id]);
 +
-+	if (regnum & MII_ADDR_C45) {
-+		pfe_eth_mdio_write_addr(bus, mii_id, (regnum >> 16) & 0x1f,
-+					regnum & 0xffff);
-+		__raw_writel(EMAC_MII_DATA_OP_CL45_WR |
-+			     EMAC_MII_DATA_PA(mii_id) |
-+			     EMAC_MII_DATA_RA((regnum >> 16) & 0x1f) |
-+			     EMAC_MII_DATA_TA | EMAC_MII_DATA(value),
-+			     priv->mdio_base + EMAC_MII_DATA_REG);
-+	} else {
-+		/* start a write op */
-+		__raw_writel(EMAC_MII_DATA_ST | EMAC_MII_DATA_OP_WR |
-+			     EMAC_MII_DATA_PA(mii_id) |
-+			     EMAC_MII_DATA_RA(regnum) |
-+			     EMAC_MII_DATA_TA | EMAC_MII_DATA(value),
-+			     priv->mdio_base + EMAC_MII_DATA_REG);
-+	}
++	/* start a write op */
++	__raw_writel(EMAC_MII_DATA_ST | EMAC_MII_DATA_OP_WR |
++		     EMAC_MII_DATA_PA(mii_id) |
++		     EMAC_MII_DATA_RA(regnum) |
++		     EMAC_MII_DATA_TA | EMAC_MII_DATA(value),
++		     priv->mdio_base + EMAC_MII_DATA_REG);
 +
 +	if (pfe_eth_mdio_timeout(priv, EMAC_MDIO_TIMEOUT)) {
 +		dev_err(&bus->dev, "%s: phy MDIO write timeout\n", __func__);
@@ -4180,22 +4181,12 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
 +	if ((mii_id) && (pfe->mdio_muxval[mii_id]))
 +		pfe_eth_mdio_mux(pfe->mdio_muxval[mii_id]);
 +
-+	if (regnum & MII_ADDR_C45) {
-+		pfe_eth_mdio_write_addr(bus, mii_id, (regnum >> 16) & 0x1f,
-+					regnum & 0xffff);
-+		__raw_writel(EMAC_MII_DATA_OP_CL45_RD |
-+			     EMAC_MII_DATA_PA(mii_id) |
-+			     EMAC_MII_DATA_RA((regnum >> 16) & 0x1f) |
-+			     EMAC_MII_DATA_TA,
-+			     priv->mdio_base + EMAC_MII_DATA_REG);
-+	} else {
-+		/* start a read op */
-+		__raw_writel(EMAC_MII_DATA_ST | EMAC_MII_DATA_OP_RD |
-+			     EMAC_MII_DATA_PA(mii_id) |
-+			     EMAC_MII_DATA_RA(regnum) |
-+			     EMAC_MII_DATA_TA, priv->mdio_base +
-+			     EMAC_MII_DATA_REG);
-+	}
++	/* start a read op */
++	__raw_writel(EMAC_MII_DATA_ST | EMAC_MII_DATA_OP_RD |
++		     EMAC_MII_DATA_PA(mii_id) |
++		     EMAC_MII_DATA_RA(regnum) |
++		     EMAC_MII_DATA_TA, priv->mdio_base +
++		     EMAC_MII_DATA_REG);
 +
 +	if (pfe_eth_mdio_timeout(priv, EMAC_MDIO_TIMEOUT)) {
 +		dev_err(&bus->dev, "%s: phy MDIO read timeout\n", __func__);
