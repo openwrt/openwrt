@@ -1,4 +1,4 @@
-From 20b1193c8c1d81a8d44ae36e579f70e6fbab45b9 Mon Sep 17 00:00:00 2001
+From bd3fa0b0ed51dd6a6564c01d37b36ff475f87ed4 Mon Sep 17 00:00:00 2001
 From: Han Xu <han.xu@nxp.com>
 Date: Tue, 14 Apr 2020 11:58:44 -0500
 Subject: [PATCH] LF-20-3 mtd: spi-nor: Use 1 bit mode of spansion(s25fs512s)
@@ -15,7 +15,7 @@ Signed-off-by: Kuldeep Singh <kuldeep.singh@nxp.com>
 
 --- a/drivers/mtd/spi-nor/spansion.c
 +++ b/drivers/mtd/spi-nor/spansion.c
-@@ -398,8 +398,8 @@ static const struct flash_info spansion_
+@@ -798,8 +798,8 @@ static const struct flash_info spansion_
  		MFR_FLAGS(USE_CLSR)
  	},
  	{ "s25fs512s",  INFO6(0x010220, 0x4d0081, 256 * 1024, 256)
