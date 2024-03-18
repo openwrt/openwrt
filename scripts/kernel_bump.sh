@@ -171,6 +171,8 @@ bump_kernel()
 	git switch "${initial_branch:?Unable to switch back to original branch. Quitting.}"
 	GIT_EDITOR=true git merge --no-ff '__openwrt_kernel_files_mover'
 	git branch --delete '__openwrt_kernel_files_mover'
+	echo "Deleting merge commit ($(git rev-parse HEAD))."
+	git rebase HEAD~1
 
 	echo "Original commitish was '${initial_commitish}'."
 	echo 'Kernel bump complete. Remember to use `git log --follow`.'
