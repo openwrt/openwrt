@@ -77,6 +77,11 @@ init()
 	initial_branch="$(git rev-parse --abbrev-ref HEAD)"
 	initial_commitish="$(git rev-parse HEAD)"
 
+	if [ -n "$(git status --porcelain | grep -v '^?? .*')" ]; then
+		echo 'Git respository not in a clean state, will not continue.'
+		exit 1
+	fi
+
 	source_version="${source_version#v}"
 	target_version="${target_version#v}"
 
