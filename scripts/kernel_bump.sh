@@ -58,6 +58,7 @@ usage()
 	echo 'Helper script to bump the target kernel version, whilst keeping history.'
 	echo '    -c  Migrate config files (e.g. subtargets) only.'
 	echo "    -p  Optional Platform name (e.g. 'ath79' [PLATFORM_NAME]"
+	echo "    -r  Optional comma separated list of sub-targets (e.g. 'rtl930x' [SUBTARGET_NAMES]"
 	echo "    -s  Source version of kernel (e.g. 'v6.1' [SOURCE_VERSION])"
 	echo "    -t  Target version of kernel (e.g. 'v6.6' [TARGET_VERSION]')"
 	echo
@@ -145,7 +146,15 @@ bump_kernel()
 		fi
 
 		_subtarget="${_config%%"/config-${source_version}"}"
-		git mv "${_config}" "${_subtarget}/config-${target_version}"
+		if [ -n "${subtarget_names:-}" ]; then
+			echo "${subtarget_names:-}" | while IFS=',' read -r _subtarget_name; do
+				if [ "${_subtarget_name}" = "${_subtarget##*'/'}" ]; then
+					git mv "${_config}" "${_subtarget}/config-${target_version}"
+				fi
+			done
+		else
+			git mv "${_config}" "${_subtarget}/config-${target_version}"
+		fi
 	done
 
 	git commit \
@@ -195,7 +204,7 @@ check_requirements()
 
 main()
 {
-	while getopts 'chp:s:t:' _options; do
+	while getopts 'chp:r:s:t:' _options; do
 		case "${_options}" in
 		'c')
 			config_only='true'
@@ -206,6 +215,9 @@ main()
 			;;
 		'p')
 			platform_name="${OPTARG}"
+			;;
+		'r')
+			subtarget_names="${OPTARG}"
 			;;
 		's')
 			source_version="${OPTARG}"
@@ -226,6 +238,7 @@ main()
 	shift "$((OPTIND - 1))"
 
 	platform_name="${platform_name:-${PLATFORM_NAME:-}}"
+	subtarget_names="${subtarget_names:-${SUBTARGET_NAMES:-}}"
 	source_version="${source_version:-${SOURCE_VERSION:-}}"
 	target_version="${target_version:-${TARGET_VERSION:-}}"
 
