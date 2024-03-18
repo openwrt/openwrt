@@ -18,8 +18,10 @@ REQUIRED_COMMANDS='
 	exit
 	git
 	printf
+	sed
 	set
 	shift
+	sort
 '
 
 _msg()
@@ -115,7 +117,9 @@ bump_kernel()
 	git switch --force-create '__openwrt_kernel_files_mover'
 
 	if [ "${config_only:-false}" != 'true' ]; then
-		for _path in "${_target_dir}/"*; do
+		for _path in $(git ls-tree -d -r --name-only '__openwrt_kernel_files_mover' "${_target_dir}" |
+			       sed -n "s|^\(.*-${source_version}\).*|\1|p" |
+			       sort -u); do
 			if [ ! -e "${_path}" ] || \
 			   [ "${_path}" = "${_path%%"-${source_version}"}" ]; then
 				continue
