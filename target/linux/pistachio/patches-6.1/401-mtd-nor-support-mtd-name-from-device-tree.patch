@@ -10,19 +10,18 @@ Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
 
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
-@@ -3108,6 +3108,7 @@ int spi_nor_scan(struct spi_nor *nor, co
- 	struct device *dev = nor->dev;
+@@ -2942,12 +2942,20 @@ static void spi_nor_set_mtd_info(struct
+ {
  	struct mtd_info *mtd = &nor->mtd;
- 	struct device_node *np = spi_nor_get_flash_node(nor);
+ 	struct device *dev = nor->dev;
++ 	struct device_node *np = spi_nor_get_flash_node(nor);
 +	const char __maybe_unused *of_mtd_name = NULL;
- 	int ret;
- 	int i;
  
-@@ -3162,7 +3163,12 @@ int spi_nor_scan(struct spi_nor *nor, co
- 	if (ret)
- 		return ret;
+ 	spi_nor_set_mtd_locking_ops(nor);
+ 	spi_nor_set_mtd_otp_ops(nor);
  
--	if (!mtd->name)
+ 	mtd->dev.parent = dev;
+ 	if (!mtd->name)
 +#ifdef CONFIG_MTD_OF_PARTS
 +	of_property_read_string(np, "linux,mtd-name", &of_mtd_name);
 +#endif
@@ -30,11 +29,11 @@ Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
 +		mtd->name = of_mtd_name;
 +	else if (!mtd->name)
  		mtd->name = dev_name(dev);
- 	mtd->priv = nor;
  	mtd->type = MTD_NORFLASH;
+ 	mtd->flags = MTD_CAP_NORFLASH;
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -870,6 +870,17 @@ out_error:
+@@ -863,6 +863,17 @@ out_error:
   */
  static void mtd_set_dev_defaults(struct mtd_info *mtd)
  {
