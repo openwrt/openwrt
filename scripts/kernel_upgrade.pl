@@ -44,12 +44,27 @@ sub getlistmatch($$$)
 
 	local $/="\0";
 	open(my $fd, '-| :raw :bytes', 'git', 'ls-tree', '-trz', '--full-tree',
-'--name-only', $commit.':', '--', $target)||die("failed to read git tree");
+'--name-only', $commit.':', '--', @$target)||die("failed to read git tree");
 
 	while(<$fd>) {
 		chop($_);
 		push(@$ret, substr($_, 0, -length($from)))
 if(substr($_, -length($from)) eq $from);
+	}
+
+	check: foreach my $entr (@$target) {
+		my ($lo, $hi)=(0, scalar(@$ret));
+		while($lo!=$hi) {
+			$_=substr($ret->[($lo+$hi)>>1], 0, length($entr)) cmp $entr;
+			if($_<0) {
+				$lo=(($lo+$hi)>>1)+1;
+			} elsif($_>0) {
+				$hi=($lo+$hi)>>1;
+			} else {
+				next check;
+			}
+		}
+		die("no files matching \"$from\" found in $entr");
 	}
 
 	@$ret=sort({length($b)-length($a)} @$ret);
@@ -209,8 +224,8 @@ sub DESTROY()
 } # end of interface to git fast-import
 
 
-die(<<"__USAGE__") if(@ARGV!=2);
-Usage: $0 <old-version> <new-version>
+die(<<"__USAGE__") if(@ARGV<2);
+Usage: $0 <old-version> <new-version> [<board(s)...>]
 
 Copies all kernel configuration files and patches from the old version
 to the new version.  Git history is preserved on the copies by using a
@@ -225,6 +240,12 @@ extraneous files are left untouched.
 Note, the two strings are non-optional, but completely free-form.
 There are no limitations besides whether they can be used in a
 file-name (\\0 is the only invalid character).
+
+One or more boards can be specified to update a subset of boards.  This
+can include "generic", this can also include a subdirectory for a device.
+
+The end merge commit /can/ be amended to remove files which should not
+be included during an update.
 __USAGE__
 
 my $from=shift(@ARGV);
@@ -238,9 +259,13 @@ my $start=gethead();
 die('git failed, likely not inside OpenWRT git repository?') unless($start||
 ($0=~m/^(.*)\// and chdir($1) and $start=gethead()));
 
-my $list=getlistmatch('HEAD', $target, $from);
-
-die("no files matching \"$from\" found") unless(@$list);
+my $list;
+unless(@ARGV) {
+	$list=getlistmatch('HEAD', [$target], $from);
+} else {
+	$_=$target.$_ foreach(@ARGV);
+	$list=getlistmatch('HEAD', \@ARGV, $from);
+}
 
 
 my $git=GitImporter->new();
