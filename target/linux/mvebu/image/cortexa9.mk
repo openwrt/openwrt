@@ -3,6 +3,10 @@
 # Copyright (C) 2012-2016 OpenWrt.org
 # Copyright (C) 2016 LEDE-project.org
 
+ifneq ($(KERNEL),6.1)
+DTS_DIR := $(DTS_DIR)/marvell
+endif
+
 define Build/fortigate-header
   ( \
     dd if=/dev/zero bs=384 count=1 2>/dev/null; \
