@@ -6,7 +6,6 @@ include ./common-yuncore.mk
 include ./common-ubnt.mk
 
 DEVICE_VARS += ADDPATTERN_ID ADDPATTERN_VERSION
-DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += KERNEL_INITRAMFS_PREFIX DAP_SIGNATURE
 DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
 DEVICE_VARS += ELECOM_HWID
@@ -192,23 +191,6 @@ define Build/zyxel-tar-bz2
 	cp $(KDIR)/loader-$(DEVICE_NAME).uImage $@.tmp/$(word 1,$(1)).lzma.uImage
 	$(TAR) -cjf $@ -C $@.tmp .
 	rm -rf $@.tmp
-endef
-
-define Device/seama
-  KERNEL := kernel-bin | append-dtb | relocate-kernel | lzma
-  KERNEL_INITRAMFS := $$(KERNEL) | seama
-  IMAGES += factory.bin
-  SEAMA_MTDBLOCK := 1
-
-  # 64 bytes offset:
-  # - 28 bytes seama_header
-  # - 36 bytes of META data (4-bytes aligned)
-  IMAGE/default := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | append-rootfs
-  IMAGE/sysupgrade.bin := $$(IMAGE/default) | seama | pad-rootfs | \
-	check-size | append-metadata
-  IMAGE/factory.bin := $$(IMAGE/default) | pad-rootfs -x 64 | seama | \
-	seama-seal | check-size
-  SEAMA_SIGNATURE :=
 endef
 
 
