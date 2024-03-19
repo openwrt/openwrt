@@ -56,6 +56,11 @@ qnap,301w)
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x20000" "0x20000" "1"
 	;;
+spectrum,sax1v1k)
+	mmcpart="$(find_mmc_part 0:APPSBLENV)"
+	[ -n "$mmcpart" ] && \
+		ubootenv_add_uci_config "$mmcpart" "0x0" "0x40000" "0x40000" "1"
+	;;
 esac
 
 config_load ubootenv

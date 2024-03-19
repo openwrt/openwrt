@@ -92,7 +92,8 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	prpl,haze|\
-	qnap,301w)
+	qnap,301w|\
+	spectrum,sax1v1k)
 		kernelname="0:HLOS"
 		rootfsname="rootfs"
 		mmc_do_upgrade "$1"

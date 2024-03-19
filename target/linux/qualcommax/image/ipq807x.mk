@@ -247,6 +247,18 @@ define Device/redmi_ax6
 endef
 TARGET_DEVICES += redmi_ax6
 
+define Device/spectrum_sax1v1k
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Spectrum
+	DEVICE_MODEL := SAX1V1K
+	DEVICE_DTS_CONFIG := config@rt5010w-d187-rev6
+	SOC := ipq8072
+	IMAGES := sysupgrade.bin
+	DEVICE_PACKAGES := ipq-wifi-spectrum_sax1v1k
+endef
+TARGET_DEVICES += spectrum_sax1v1k
+
 define Device/xiaomi_ax3600
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
