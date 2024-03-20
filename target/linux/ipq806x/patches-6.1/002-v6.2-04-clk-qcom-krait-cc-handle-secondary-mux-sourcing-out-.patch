@@ -1,0 +1,48 @@
+From e5dc1a4c01510da8438dddfdf4200b79d73990dc Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 9 Nov 2022 01:56:29 +0100
+Subject: [PATCH 4/6] clk: qcom: krait-cc: handle secondary mux sourcing out of
+ acpu_aux
+
+Some bootloader may leave the system in an even more undefined state
+with the secondary mux of L2 or other cores sourcing out of the acpu_aux
+parent. This results in the clk set to the PXO rate or a PLL8 rate.
+
+The current logic to reset the mux and set them to a defined state only
+handle if the mux are configured to source out of QSB. Change this and
+force a new and defined state if the current clk is lower than the aux
+rate. This way we can handle any wrong configuration where the mux is
+sourcing out of QSB (rate 225MHz, currently set to a virtual rate of 1),
+PXO rate (rate 25MHz) or PLL8 (needs to be configured to run at 384Mhz).
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20221109005631.3189-3-ansuelsmth@gmail.com
+---
+ drivers/clk/qcom/krait-cc.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/clk/qcom/krait-cc.c
++++ b/drivers/clk/qcom/krait-cc.c
+@@ -383,8 +383,8 @@ static int krait_cc_probe(struct platfor
+ 	 */
+ 	cur_rate = clk_get_rate(l2_pri_mux_clk);
+ 	aux_rate = 384000000;
+-	if (cur_rate == 1) {
+-		pr_info("L2 @ QSB rate. Forcing new rate.\n");
++	if (cur_rate < aux_rate) {
++		pr_info("L2 @ Undefined rate. Forcing new rate.\n");
+ 		cur_rate = aux_rate;
+ 	}
+ 	clk_set_rate(l2_pri_mux_clk, aux_rate);
+@@ -394,8 +394,8 @@ static int krait_cc_probe(struct platfor
+ 	for_each_possible_cpu(cpu) {
+ 		clk = clks[cpu];
+ 		cur_rate = clk_get_rate(clk);
+-		if (cur_rate == 1) {
+-			pr_info("CPU%d @ QSB rate. Forcing new rate.\n", cpu);
++		if (cur_rate < aux_rate) {
++			pr_info("CPU%d @ Undefined rate. Forcing new rate.\n", cpu);
+ 			cur_rate = aux_rate;
+ 		}
+ 

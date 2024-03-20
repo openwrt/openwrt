@@ -1,0 +1,46 @@
+From 8e456411abcbf899c04740b9dbb3dcefcd61c946 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 9 Nov 2022 01:56:27 +0100
+Subject: [PATCH 2/6] clk: qcom: krait-cc: fix wrong parent order for secondary
+ mux
+
+The secondary mux parent order is swapped.
+This currently doesn't cause problems as the secondary mux is used for idle
+clk and as a safe clk source while reprogramming the hfpll.
+
+Each mux have 2 or more output but he always have a safe source to
+switch while reprogramming the connected pll. We use a clk notifier to
+switch to the correct parent before clk core can apply the correct rate.
+The parent to switch is hardcoded in the mux struct.
+
+For the secondary mux the safe source to use is the qsb parent as it's
+the only fixed clk as the acpus_aux is a pll that can source from pxo or
+from pll8.
+
+The hardcoded safe parent for the secondary mux is set to index 0 that
+in the secondary mux map is set to 2.
+
+But the index 0 is actually acpu_aux in the parent list.
+
+Fix the swapped parents to correctly handle idle frequency and output a
+sane clk_summary report.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+Link: https://lore.kernel.org/r/20221109005631.3189-1-ansuelsmth@gmail.com
+---
+ drivers/clk/qcom/krait-cc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/qcom/krait-cc.c
++++ b/drivers/clk/qcom/krait-cc.c
+@@ -116,8 +116,8 @@ krait_add_sec_mux(struct device *dev, in
+ 	int ret;
+ 	struct krait_mux_clk *mux;
+ 	static const char *sec_mux_list[] = {
+-		"acpu_aux",
+ 		"qsb",
++		"acpu_aux",
+ 	};
+ 	struct clk_init_data init = {
+ 		.parent_names = sec_mux_list,
