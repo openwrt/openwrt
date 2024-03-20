@@ -188,6 +188,8 @@ $$(call addfield,Depends,$$(Package/$(1)/DEPENDS)
 )$$(call addfield,URL,$(URL)
 )$$(if $$(ABIV_$(1)),ABIVersion: $$(ABIV_$(1))
 )$(if $(PKG_CPE_ID),CPE-ID: $(PKG_CPE_ID)
+)$(if $(PKG_CVE_FIXED),CVE-FIXED: $(PKG_CVE_FIXED)
+)$(if $(PKG_CVE_IGNORE),CVE-IGNORE: $(PKG_CVE_IGNORE)
 )$(if $(filter hold,$(PKG_FLAGS)),Status: unknown hold not-installed
 )$(if $(filter essential,$(PKG_FLAGS)),Essential: yes
 )$(if $(MAINTAINER),Maintainer: $(MAINTAINER)
