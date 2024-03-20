@@ -42,7 +42,10 @@ start_service() {
 	done
 	procd_add_raw_trigger "instance.update" 5000 "/bin/ubus" "call" "umdns" "reload"
 	procd_close_trigger
-	[ "$(uci -q get umdns.@umdns[-1].jail)" = 1 ] && procd_add_jail umdns ubus log
+	[ "$(uci get umdns.@umdns[-1].jail)" = 1 ] && {
+		procd_add_jail umdns ubus log
+		[ -d /etc/umdns ] && procd_add_jail_mount "/etc/umdns"
+	}
 	procd_close_instance
 }
 
