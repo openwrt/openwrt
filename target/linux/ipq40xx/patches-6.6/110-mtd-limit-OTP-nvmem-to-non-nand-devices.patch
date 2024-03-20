@@ -45,11 +45,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/mtd/mtdcore.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/mtdcore.c b/drivers/mtd/mtdcore.c
-index 5887feb347a4..6872477a5129 100644
 --- a/drivers/mtd/mtdcore.c
 +++ b/drivers/mtd/mtdcore.c
-@@ -900,7 +900,7 @@ static struct nvmem_device *mtd_otp_nvmem_register(struct mtd_info *mtd,
+@@ -933,7 +933,7 @@ static struct nvmem_device *mtd_otp_nvme
  	config.name = compatible;
  	config.id = NVMEM_DEVID_AUTO;
  	config.owner = THIS_MODULE;
@@ -58,6 +56,3 @@ index 5887feb347a4..6872477a5129 100644
  	config.type = NVMEM_TYPE_OTP;
  	config.root_only = true;
  	config.ignore_wp = true;
--- 
-2.43.0
-
