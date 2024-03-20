@@ -30,7 +30,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	req->best_parent_rate = clk_hw_round_rate(clk_hw_get_parent(hw),
 +						  req->rate * d->divisor);
 +	req->rate = DIV_ROUND_UP(req->best_parent_rate, d->divisor);
-	return 0;
+ 	return 0;
  }
  
 -static int krait_div2_set_rate(struct clk_hw *hw, unsigned long rate,

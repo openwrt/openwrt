@@ -24,7 +24,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1599,6 +1599,16 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
+@@ -1578,6 +1578,16 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEN
  	  The command-line arguments provided by the boot loader will be
  	  appended to the the device tree bootargs property.
  
@@ -43,9 +43,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  config CMDLINE_OVERRIDE
 --- a/arch/arm/boot/compressed/atags_to_fdt.c
 +++ b/arch/arm/boot/compressed/atags_to_fdt.c
-@@ -3,7 +3,8 @@
- #include <asm/setup.h>
+@@ -4,7 +4,8 @@
  #include <libfdt.h>
+ #include "misc.h"
  
 -#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND)
 +#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND) || \
@@ -53,7 +53,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #define do_extend_cmdline 1
  #else
  #define do_extend_cmdline 0
-@@ -69,6 +70,83 @@ static uint32_t get_cell_size(const void
+@@ -70,6 +71,83 @@ static uint32_t get_cell_size(const void
  	return cell_size;
  }
  
@@ -137,7 +137,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
  {
  	char cmdline[COMMAND_LINE_SIZE];
-@@ -86,13 +164,23 @@ static void merge_fdt_bootargs(void *fdt
+@@ -87,13 +165,23 @@ static void merge_fdt_bootargs(void *fdt
  			ptr += len - 1;
  		}
  
@@ -177,7 +177,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #include <linux/bootconfig.h>
  #include <linux/console.h>
  #include <linux/nmi.h>
-@@ -995,6 +996,17 @@ asmlinkage __visible void __init __no_sa
+@@ -929,6 +930,17 @@ void start_kernel(void)
  	pr_notice("Kernel command line: %s\n", saved_command_line);
  	/* parameters may set static keys */
  	jump_label_init();

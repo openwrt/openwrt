@@ -20,7 +20,7 @@ Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -1570,6 +1570,18 @@ config ARM_ATAG_DTB_COMPAT
+@@ -1549,6 +1549,18 @@ config ARM_ATAG_DTB_COMPAT
  	  bootloaders, this option allows zImage to extract the information
  	  from the ATAG list and store it at run time into the appended DTB.
  
@@ -41,7 +41,7 @@ Acked-by: Linus Walleij <linus.walleij@linaro.org>
  	default ARM_ATAG_DTB_COMPAT_CMDLINE_FROM_BOOTLOADER
 --- a/arch/arm/boot/compressed/atags_to_fdt.c
 +++ b/arch/arm/boot/compressed/atags_to_fdt.c
-@@ -169,6 +169,10 @@ int atags_to_fdt(void *atag_list, void *
+@@ -170,6 +170,10 @@ int atags_to_fdt(void *atag_list, void *
  				setprop_string(fdt, "/chosen", "bootargs",
  					       atag->u.cmdline.cmdline);
  		} else if (atag->hdr.tag == ATAG_MEM) {
