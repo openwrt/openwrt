@@ -64,7 +64,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -17081,6 +17081,7 @@ L:	netdev@vger.kernel.org
+@@ -17714,6 +17714,7 @@ L:	netdev@vger.kernel.org
  S:	Maintained
  F:	Documentation/devicetree/bindings/net/qcom,ipq4019-ess-edma.yaml
  F:	drivers/net/ethernet/qualcomm/ipqess/
@@ -93,7 +93,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +#endif
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -4588,6 +4588,9 @@ enum skb_ext_id {
+@@ -4627,6 +4627,9 @@ enum skb_ext_id {
  #if IS_ENABLED(CONFIG_MCTP_FLOWS)
  	SKB_EXT_MCTP,
  #endif
@@ -105,7 +105,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -55,6 +55,7 @@ struct phylink_link_state;
+@@ -56,6 +56,7 @@ struct phylink_link_state;
  #define DSA_TAG_PROTO_RTL8_4T_VALUE		25
  #define DSA_TAG_PROTO_RZN1_A5PSW_VALUE		26
  #define DSA_TAG_PROTO_LAN937X_VALUE		27
@@ -113,7 +113,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  
  enum dsa_tag_protocol {
  	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
-@@ -85,6 +86,7 @@ enum dsa_tag_protocol {
+@@ -86,6 +87,7 @@ enum dsa_tag_protocol {
  	DSA_TAG_PROTO_RTL8_4T		= DSA_TAG_PROTO_RTL8_4T_VALUE,
  	DSA_TAG_PROTO_RZN1_A5PSW	= DSA_TAG_PROTO_RZN1_A5PSW_VALUE,
  	DSA_TAG_PROTO_LAN937X		= DSA_TAG_PROTO_LAN937X_VALUE,
@@ -123,7 +123,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  struct dsa_switch;
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -62,8 +62,12 @@
+@@ -63,8 +63,12 @@
  #include <linux/mpls.h>
  #include <linux/kcov.h>
  #include <linux/if.h>
@@ -136,7 +136,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  #include <net/dst.h>
  #include <net/sock.h>
  #include <net/checksum.h>
-@@ -4517,6 +4521,9 @@ static const u8 skb_ext_type_len[] = {
+@@ -4812,6 +4816,9 @@ static const u8 skb_ext_type_len[] = {
  #if IS_ENABLED(CONFIG_MCTP_FLOWS)
  	[SKB_EXT_MCTP] = SKB_EXT_CHUNKSIZEOF(struct mctp_flow),
  #endif
@@ -148,7 +148,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  static __always_inline unsigned int skb_ext_total_length(void)
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
-@@ -113,6 +113,15 @@ config NET_DSA_TAG_OCELOT_8021Q
+@@ -119,6 +119,15 @@ config NET_DSA_TAG_OCELOT_8021Q
  	  this mode, less TCAM resources (VCAP IS1, IS2, ES0) are available for
  	  use with tc-flower.
  
@@ -166,8 +166,8 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  	help
 --- a/net/dsa/Makefile
 +++ b/net/dsa/Makefile
-@@ -22,6 +22,7 @@ obj-$(CONFIG_NET_DSA_TAG_LAN9303) += tag
- obj-$(CONFIG_NET_DSA_TAG_MTK) += tag_mtk.o
+@@ -31,6 +31,7 @@ obj-$(CONFIG_NET_DSA_TAG_MTK) += tag_mtk
+ obj-$(CONFIG_NET_DSA_TAG_NONE) += tag_none.o
  obj-$(CONFIG_NET_DSA_TAG_OCELOT) += tag_ocelot.o
  obj-$(CONFIG_NET_DSA_TAG_OCELOT_8021Q) += tag_ocelot_8021q.o
 +obj-$(CONFIG_NET_DSA_TAG_OOB) += tag_oob.o
