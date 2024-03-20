@@ -18,11 +18,11 @@ Opp-level is set based on the logic of
 Signed-off-by: Ansuel Smith <ansuelsmth@gmail.com>
 Tested-by: Jonathan McDowell <noodles@earth.li>
 ---
- arch/arm/boot/dts/qcom-ipq8064.dtsi | 99 +++++++++++++++++++++++++++++
+ arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi | 99 +++++++++++++++++++++++++++++
  1 file changed, 99 insertions(+)
 
---- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
 @@ -48,6 +48,105 @@
  		};
  	};
@@ -129,8 +129,8 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
  	thermal-zones {
  		sensor0-thermal {
  			polling-delay-passive = <0>;
---- a/arch/arm/boot/dts/qcom-ipq8065.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq8065.dtsi
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8065.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8065.dtsi
 @@ -6,3 +6,92 @@
  	model = "Qualcomm Technologies, Inc. IPQ8065";
  	compatible = "qcom,ipq8065", "qcom,ipq8064";
@@ -224,8 +224,8 @@ Tested-by: Jonathan McDowell <noodles@earth.li>
 +		opp-level = <2>;
 +	};
 +};
---- a/arch/arm/boot/dts/qcom-ipq8062.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq8062.dtsi
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8062.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8062.dtsi
 @@ -6,3 +6,39 @@
  	model = "Qualcomm Technologies, Inc. IPQ8062";
  	compatible = "qcom,ipq8062", "qcom,ipq8064";
