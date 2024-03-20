@@ -75,6 +75,7 @@ endif
 ifndef SDK
   $(curdir)//compile = $(STAGING_DIR)/.prepared $(BIN_DIR)
 ifneq ($(CONFIG_USE_APK),)
+  .NOTPARALLEL: $(curdir)/compile
   $(curdir)/compile: $(curdir)/system/apk/host/compile
 else
   $(curdir)/compile: $(curdir)/system/opkg/host/compile
