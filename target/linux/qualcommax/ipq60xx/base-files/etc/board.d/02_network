@@ -11,11 +11,17 @@ ipq60xx_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	8devices,mango-dvk)
+	8devices,mango-dvk|\
+	glinet,gl-axt1800)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
 	cambiumnetworks,xe3-4)
 		ucidef_set_interface_lan "lan1 lan2" "dhcp"
+		;;
+	glinet,gl-ax1800|\
+	linksys,mr7350|\
+	yuncore,fap650)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	netgear,wax214)
 		ucidef_set_interfaces_lan_wan "lan"
@@ -25,10 +31,6 @@ ipq60xx_setup_interfaces()
 		;;
 	tplink,eap610-outdoor)
 		ucidef_set_interface_lan "lan" "dhcp"
-		;;
-	linksys,mr7350|\
-	yuncore,fap650)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"

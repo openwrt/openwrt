@@ -24,6 +24,34 @@ define Device/cambiumnetworks_xe3-4
 endef
 TARGET_DEVICES += cambiumnetworks_xe3-4
 
+define Device/glinet_gl-common
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := GL.iNet
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@cp03-c1
+	SOC := ipq6000
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | append-gl-metadata
+endef
+
+define Device/glinet_gl-ax1800
+	$(call Device/glinet_gl-common)
+	DEVICE_MODEL := GL-AX1800
+	DEVICE_PACKAGES := ipq-wifi-glinet_gl-ax1800
+	SUPPORTED_DEVICES += glinet,ax1800
+endef
+TARGET_DEVICES += glinet_gl-ax1800
+
+define Device/glinet_gl-axt1800
+	$(call Device/glinet_gl-common)
+	DEVICE_MODEL := GL-AXT1800
+	DEVICE_PACKAGES := ipq-wifi-glinet_gl-axt1800 kmod-hwmon-pwmfan
+	SUPPORTED_DEVICES += glinet,axt1800
+endef
+TARGET_DEVICES += glinet_gl-axt1800
+
 define Device/linksys_mr7350
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Linksys
