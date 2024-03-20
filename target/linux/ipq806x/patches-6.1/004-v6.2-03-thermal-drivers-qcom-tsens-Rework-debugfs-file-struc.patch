@@ -1,0 +1,54 @@
+From 89992d95ed1046338c7866ef7bbe6de543a2af91 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sat, 22 Oct 2022 14:56:57 +0200
+Subject: [PATCH 3/3] thermal/drivers/qcom/tsens: Rework debugfs file structure
+
+The current tsens debugfs structure is composed by:
+- a tsens dir in debugfs with a version file
+- a directory for each tsens istance with sensors file to dump all the
+  sensors value.
+
+This works on the assumption that we have the same version for each
+istance but this assumption seems fragile and with more than one tsens
+istance results in the version file not tracking each of them.
+
+A better approach is to just create a subdirectory for each tsens
+istance and put there version and sensors debugfs file.
+
+Using this new implementation results in less code since debugfs entry
+are created only on successful tsens probe.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Link: https://lore.kernel.org/r/20221022125657.22530-4-ansuelsmth@gmail.com
+Signed-off-by: Daniel Lezcano <daniel.lezcano@kernel.org>
+---
+ drivers/thermal/qcom/tsens.c | 13 +++----------
+ 1 file changed, 3 insertions(+), 10 deletions(-)
+
+--- a/drivers/thermal/qcom/tsens.c
++++ b/drivers/thermal/qcom/tsens.c
+@@ -704,21 +704,14 @@ DEFINE_SHOW_ATTRIBUTE(dbg_sensors);
+ static void tsens_debug_init(struct platform_device *pdev)
+ {
+ 	struct tsens_priv *priv = platform_get_drvdata(pdev);
+-	struct dentry *root, *file;
+ 
+-	root = debugfs_lookup("tsens", NULL);
+-	if (!root)
++	priv->debug_root = debugfs_lookup("tsens", NULL);
++	if (!priv->debug_root)
+ 		priv->debug_root = debugfs_create_dir("tsens", NULL);
+-	else
+-		priv->debug_root = root;
+-
+-	file = debugfs_lookup("version", priv->debug_root);
+-	if (!file)
+-		debugfs_create_file("version", 0444, priv->debug_root,
+-				    pdev, &dbg_version_fops);
+ 
+ 	/* A directory for each instance of the TSENS IP */
+ 	priv->debug = debugfs_create_dir(dev_name(&pdev->dev), priv->debug_root);
++	debugfs_create_file("version", 0444, priv->debug, pdev, &dbg_version_fops);
+ 	debugfs_create_file("sensors", 0444, priv->debug, pdev, &dbg_sensors_fops);
+ }
+ #else
