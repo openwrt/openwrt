@@ -1,0 +1,358 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq8064-v2.0.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Extreme Networks AP3935";
+	compatible = "extreme,ap3935", "qcom,ipq8064";
+
+	memory@0 {
+		reg = <0x41400000 0x3ec00000>;
+		device_type = "memory";
+	};
+
+	aliases {
+		serial0 = &gsbi7_serial;
+		serial1 = &gsbi2_serial;
+		mdio-gpio0 = &mdio0;
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac2;
+
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_orange;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-override = "ubi.block=0,0 root=/dev/ubiblock0_0";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 56 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_power_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_orange: power_orange { 
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan2g_green {
+			label = "green:wlan2g";
+			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_wlan5g_green {
+			label = "green:wlan5g";
+			gpios = <&qcom_pinmux 25 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led_lan1_green {
+			label = "green:lan1";
+			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan1_orange {
+			label = "orange:lan1";
+			gpios = <&qcom_pinmux 27 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan2_green {
+			label = "green:lan2";
+			gpios = <&qcom_pinmux 28 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan2_orange {
+			label = "orange:lan2";
+			gpios = <&qcom_pinmux 29 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+
+&qcom_pinmux {
+	spi_pins: spi_pins {
+		mux {
+			pins = "gpio18", "gpio19";
+			function = "gsbi5";
+			drive-strength = <10>;
+			bias-pull-down;
+		};
+
+		clk {
+			pins = "gpio21";
+			function = "gsbi5";
+			drive-strength = <12>;
+			bias-pull-down;
+		};
+
+		cs {
+			pins = "gpio20";
+			function = "gpio";
+			drive-strength = <10>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led_pins {
+		mux {
+			pins = "gpio22", "gpio23", "gpio24", "gpio25",
+				    "gpio26", "gpio27", "gpio28", "gpio29";
+			function = "gpio";
+			drive-strength = <10>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button_pins {
+		mux {
+			pins = "gpio56";
+			function = "gpio";
+			bias-pull-up;
+		};
+	};
+};
+
+&gsbi2 {
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+	status = "okay";
+
+	gsbi2_serial: serial@12490000 {
+		status = "okay";
+	};
+};
+
+&gsbi4 {
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+	status = "okay";
+
+	serial@16340000 {
+		status = "disabled";
+	};
+};
+
+&gsbi7 {
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+	status = "okay";
+
+	gsbi7_serial: serial@16640000 {
+		status = "okay";
+	};
+};
+
+&gsbi5 {
+	qcom,mode = <GSBI_PROT_SPI>;
+	status = "okay";
+
+	spi4: spi@1a280000 {
+		status = "okay";
+		spi-max-frequency = <50000000>;
+
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
+
+		flash@0 {
+			compatible = "jedec,spi-nor";
+			spi-max-frequency = <50000000>;
+			reg = <0>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cfg1@2a0000 {
+					compatible = "u-boot,env-redundant-bool";
+					label = "CFG1";
+					reg = <0x2a0000 0x0010000>;
+
+					ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
+
+				bootpri@2b0000 {
+					label = "BootPRI";
+					reg = <0x2b0000 0x0080000>;
+				};
+
+				cfg2@330000 {
+					label = "CFG2";
+					reg = <0x330000 0x0010000>;
+				};
+
+				fs@340000 {
+					label = "FS";
+					reg = <0x340000 0x0080000>;
+				};
+
+				priimg@3c0000 {
+					label = "PriImg";
+					reg = <0x3c0000 0x0e10000>;
+				};
+
+				secimg@11d0000 {
+					label = "SecImg";
+					reg = <0x11d0000 0x0e10000>;
+				};
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "qcom,ath10k";
+			status = "okay";
+			reg = <0x00010000 0 0 0 0>;
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi@1,0 {
+			compatible = "qcom,ath10k";
+			status = "okay";
+			reg = <0x00010000 0 0 0 0>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+
+	nand@0 {
+		compatible = "qcom,nandcs";
+
+		reg = <0>;
+
+		nand-ecc-strength = <8>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			
+			ubi@0 {
+				label = "ubi";
+				reg = <0x0000000 0x20000000>;
+			};
+		};
+	};
+};
+
+&soc {
+	mdio1: mdio {
+		compatible = "virtual,mdio-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "okay";
+
+		pinctrl-0 = <&mdio0_pins>;
+		pinctrl-names = "default";
+
+		gpios = <&qcom_pinmux 1 GPIO_ACTIVE_HIGH &qcom_pinmux 0 GPIO_ACTIVE_HIGH>;
+
+		phy1: ethernet-phy@1 {
+			reg = <1>;
+		};
+
+		phy2: ethernet-phy@2 {
+			reg = <2>;
+		};
+	};
+};
+
+&gmac0 {
+	status = "okay";
+
+	qcom,id = <0>;
+	mdiobus = <&mdio1>;
+
+	phy-mode = "rgmii";
+	phy-handle = <&phy1>;
+
+	nvmem-cells = <&ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+
+	qcom,id = <2>;
+	mdiobus = <&mdio1>;
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy2>;
+
+	nvmem-cells = <&ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&adm_dma {
+	status = "okay";
+};
