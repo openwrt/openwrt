@@ -6,6 +6,7 @@ include $(INCLUDE_DIR)/image.mk
 define Device/Default
 	PROFILES := Default
 	KERNEL_LOADADDR = 0x42208000
+	DEVICE_DTS_DIR = $(if $(CONFIG_TESTING_KERNEL),$$(DTS_DIR)/qcom,$$(DTS_DIR))
 	DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
 	DEVICE_DTS_CONFIG := config@1
 	IMAGES := sysupgrade.bin

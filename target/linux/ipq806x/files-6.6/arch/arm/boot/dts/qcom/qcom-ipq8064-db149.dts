@@ -1,0 +1,263 @@
+#include "qcom-ipq8064-v1.0.dtsi"
+
+/ {
+	model = "Qualcomm IPQ8064/DB149";
+	compatible = "qcom,ipq8064-db149", "qcom,ipq8064";
+
+	aliases {
+		serial0 = &gsbi2_serial;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		rsvd@41200000 {
+			reg = <0x41200000 0x300000>;
+			no-map;
+		};
+	};
+};
+
+&qcom_pinmux {
+	rgmii0_pins: rgmii0_pins {
+		mux {
+			pins = "gpio2", "gpio66";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+};
+
+&gsbi2 {
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+	status = "okay";
+
+	gsbi2_serial: serial@12490000 {
+		status = "okay";
+	};
+};
+
+&gsbi4 {
+	status = "disabled";
+};
+
+&gsbi4_serial {
+	status = "disabled";
+};
+
+&flash {
+	m25p,fast-read;
+
+	partition@0 {
+		label = "lowlevel_init";
+		reg = <0x0 0x1b0000>;
+	};
+
+	partition@1 {
+		label = "u-boot";
+		reg = <0x1b0000 0x80000>;
+	};
+
+	partition@2 {
+		label = "u-boot-env";
+		reg = <0x230000 0x40000>;
+	};
+
+	partition@3 {
+		label = "caldata";
+		reg = <0x270000 0x40000>;
+	};
+
+	partition@4 {
+		label = "firmware";
+		reg = <0x2b0000 0x1d50000>;
+	};
+};
+
+&hs_phy_0 {
+	status = "okay";
+};
+
+&ss_phy_0 {
+	status = "okay";
+};
+
+&usb3_0 {
+	status = "okay";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&pcie2 {
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+	switch@10 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&gmac0>;
+				phy-mode = "rgmii";
+				tx-internal-delay-ps = <1000>;
+				rx-internal-delay-ps = <1000>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+			};
+
+			/*
+			port@6 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&gmac2>;
+				phy-mode = "rgmii";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+					pause;
+					asym-pause;
+				};
+			};
+			*/
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
+	};
+
+	phy6: ethernet-phy@6 {
+		reg = <6>;
+	};
+
+	phy7: ethernet-phy@7 {
+		reg = <7>;
+	};
+};
+
+&gmac0 {
+	status = "okay";
+	phy-mode = "rgmii";
+	qcom,id = <0>;
+
+	pinctrl-0 = <&rgmii0_pins>;
+	pinctrl-names = "default";
+};
+
+&gmac1 {
+	status = "okay";
+	phy-mode = "sgmii";
+	qcom,id = <1>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+	phy-mode = "sgmii";
+	qcom,id = <2>;
+	phy-handle = <&phy6>;
+};
+
+&gmac3 {
+	status = "okay";
+	phy-mode = "sgmii";
+	qcom,id = <3>;
+	phy-handle = <&phy7>;
+};
