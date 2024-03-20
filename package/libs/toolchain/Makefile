@@ -519,7 +519,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/glibc/install
 	$(CP) ./glibc-files/* $(1)/
 	rm -f $(1)/etc/localtime
-	$(LN) /tmp/localtime $(1)/etc/localtime
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
