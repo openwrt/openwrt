@@ -87,7 +87,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))
 --- /dev/null
 +++ b/drivers/net/dsa/qca/qca8k-ipq4019.c
-@@ -0,0 +1,948 @@
+@@ -0,0 +1,946 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
@@ -256,8 +256,6 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +
 +	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
 +		MAC_10 | MAC_100 | MAC_1000FD;
-+
-+	config->legacy_pre_march2020 = false;
 +}
 +
 +static void
