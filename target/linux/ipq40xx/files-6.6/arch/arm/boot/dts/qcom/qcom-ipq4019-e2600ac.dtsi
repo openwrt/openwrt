@@ -57,20 +57,6 @@
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
 
-		usb2: usb2@60f8800 {
-			status = "okay";
-
-			dwc3@6000000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				usb2_port1: port@1 {
-					reg = <1>;
-					#trigger-source-cells = <0>;
-				};
-			};
-		};
-
 		serial@78af000 {
 			pinctrl-0 = <&serial_0_pins>;
 			pinctrl-names = "default";
@@ -88,25 +74,6 @@
 			pinctrl-names = "default";
 
 			status = "okay";
-		};
-
-		usb3: usb3@8af8800 {
-			status = "okay";
-
-			dwc3@8a00000 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				usb3_port1: port@1 {
-					reg = <1>;
-					#trigger-source-cells = <0>;
-				};
-
-				usb3_port2: port@2 {
-					reg = <2>;
-					#trigger-source-cells = <0>;
-				};
-			};
 		};
 
 		crypto@8e3a000 {
@@ -233,12 +200,45 @@
 	};
 };
 
+&usb3 {
+	status = "okay";
+
+	dwc3@8a00000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		usb3_port1: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
+
+		usb3_port2: port@2 {
+			reg = <2>;
+			#trigger-source-cells = <0>;
+		};
+	};
+};
+
 &usb3_ss_phy {
 	status = "okay";
 };
 
 &usb3_hs_phy {
 	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+
+	dwc3@6000000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		usb2_port1: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
+	};
 };
 
 &usb2_hs_phy {
