@@ -16,7 +16,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 @@ -2451,7 +2451,7 @@ MODULE_DEVICE_TABLE(of, sdhci_msm_dt_mat
  
  static const struct sdhci_ops sdhci_msm_ops = {
- 	.reset = sdhci_msm_reset,
+ 	.reset = sdhci_and_cqhci_reset,
 -	.set_clock = sdhci_msm_set_clock,
 +	.set_clock = sdhci_set_clock,
  	.get_min_clock = sdhci_msm_get_min_clock,

@@ -146,16 +146,6 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  };
  
  static __always_inline unsigned int skb_ext_total_length(void)
-@@ -4537,6 +4544,9 @@ static __always_inline unsigned int skb_
- #if IS_ENABLED(CONFIG_MCTP_FLOWS)
- 		skb_ext_type_len[SKB_EXT_MCTP] +
- #endif
-+#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
-+		skb_ext_type_len[SKB_EXT_DSA_OOB] +
-+#endif
- 		0;
- }
- 
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
 @@ -113,6 +113,15 @@ config NET_DSA_TAG_OCELOT_8021Q
@@ -186,7 +176,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  obj-$(CONFIG_NET_DSA_TAG_RTL8_4) += tag_rtl8_4.o
 --- /dev/null
 +++ b/net/dsa/tag_oob.c
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,51 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +
 +/* Copyright (c) 2022, Maxime Chevallier <maxime.chevallier@bootlin.com> */
@@ -195,7 +185,9 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +#include <linux/dsa/oob.h>
 +#include <linux/skbuff.h>
 +
-+#include "dsa_priv.h"
++#include "tag.h"
++
++#define OOB_NAME "oob"
 +
 +static struct sk_buff *oob_tag_xmit(struct sk_buff *skb,
 +				    struct net_device *dev)
@@ -224,7 +216,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +}
 +
 +static const struct dsa_device_ops oob_tag_dsa_ops = {
-+	.name	= "oob",
++	.name	= OOB_NAME,
 +	.proto	= DSA_TAG_PROTO_OOB,
 +	.xmit	= oob_tag_xmit,
 +	.rcv	= oob_tag_rcv,
@@ -233,6 +225,6 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("DSA tag driver for out-of-band tagging");
 +MODULE_AUTHOR("Maxime Chevallier <maxime.chevallier@bootlin.com>");
-+MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_OOB);
++MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_OOB, OOB_NAME);
 +
 +module_dsa_tag_driver(oob_tag_dsa_ops);
