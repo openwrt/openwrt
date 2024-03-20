@@ -9,12 +9,12 @@ driver correctly probe.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
- arch/arm/boot/dts/qcom-ipq8064.dtsi | 22 +++++++++++-----------
+ arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi | 22 +++++++++++-----------
  1 file changed, 11 insertions(+), 11 deletions(-)
 
---- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -69,16 +69,6 @@
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
+@@ -69,17 +69,6 @@
  				min-residency-us = <3000>;
  			};
  		};
@@ -22,6 +22,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 -		L2: l2-cache {
 -			compatible = "cache";
 -			cache-level = <2>;
+-			cache-unified;
 -			qcom,saw = <&saw_l2>;
 -
 -			clocks = <&kraitcc 4>;
@@ -31,13 +32,14 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	};
  
  	opp_table_l2: opp_table_l2 {
-@@ -1409,6 +1399,16 @@
+@@ -1409,6 +1399,17 @@
  			#reset-cells = <1>;
  		};
  
 +		L2: l2-cache {
 +			compatible = "cache", "qcom,krait-cache";
 +			cache-level = <2>;
++			cache-unified;
 +			qcom,saw = <&saw_l2>;
 +
 +			clocks = <&kraitcc 4>;

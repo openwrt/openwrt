@@ -9,13 +9,13 @@ correctly use the new tag.
 
 Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
 ---
- arch/arm/boot/dts/qcom-ipq8064-rb3011.dts | 134 +++++++++++-----------
- arch/arm/boot/dts/qcom-ipq8064.dtsi       |  14 +++
+ arch/arm/boot/dts/qcom/qcom-ipq8064-rb3011.dts | 134 +++++++++++-----------
+ arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi       |  14 +++
  2 files changed, 81 insertions(+), 67 deletions(-)
 
---- a/arch/arm/boot/dts/qcom-ipq8064-rb3011.dts
-+++ b/arch/arm/boot/dts/qcom-ipq8064-rb3011.dts
-@@ -25,73 +25,6 @@
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064-rb3011.dts
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064-rb3011.dts
+@@ -25,131 +25,6 @@
  		device_type = "memory";
  	};
  
@@ -32,8 +32,6 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
 -
 -		switch0: switch@10 {
 -			compatible = "qca,qca8337";
--			#address-cells = <1>;
--			#size-cells = <0>;
 -
 -			dsa,member = <0 0>;
 -
@@ -61,26 +59,86 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
 -				port@1 {
 -					reg = <1>;
 -					label = "sw1";
+-
+-					leds {
+-						#address-cells = <1>;
+-						#size-cells = <0>;
+-
+-						led@0 {
+-							reg = <0>;
+-							color = <LED_COLOR_ID_GREEN>;
+-							function = LED_FUNCTION_LAN;
+-							default-state = "keep";
+-						};
+-					};
 -				};
 -
 -				port@2 {
 -					reg = <2>;
 -					label = "sw2";
+-
+-					leds {
+-						#address-cells = <1>;
+-						#size-cells = <0>;
+-
+-						led@0 {
+-							reg = <0>;
+-							color = <LED_COLOR_ID_GREEN>;
+-							function = LED_FUNCTION_LAN;
+-							default-state = "keep";
+-						};
+-					};
 -				};
 -
 -				port@3 {
 -					reg = <3>;
 -					label = "sw3";
+-
+-					leds {
+-						#address-cells = <1>;
+-						#size-cells = <0>;
+-
+-						led@0 {
+-							reg = <0>;
+-							color = <LED_COLOR_ID_GREEN>;
+-							function = LED_FUNCTION_LAN;
+-							default-state = "keep";
+-						};
+-					};
 -				};
 -
 -				port@4 {
 -					reg = <4>;
 -					label = "sw4";
+-
+-					leds {
+-						#address-cells = <1>;
+-						#size-cells = <0>;
+-
+-						led@0 {
+-							reg = <0>;
+-							color = <LED_COLOR_ID_GREEN>;
+-							function = LED_FUNCTION_LAN;
+-							default-state = "keep";
+-						};
+-					};
 -				};
 -
 -				port@5 {
 -					reg = <5>;
 -					label = "sw5";
+-
+-					leds {
+-						#address-cells = <1>;
+-						#size-cells = <0>;
+-
+-						led@0 {
+-							reg = <0>;
+-							color = <LED_COLOR_ID_GREEN>;
+-							function = LED_FUNCTION_LAN;
+-							default-state = "keep";
+-						};
+-					};
 -				};
 -			};
 -		};
@@ -89,7 +147,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  	mdio1: mdio-1 {
  		status = "okay";
  		compatible = "virtual,mdio-gpio";
-@@ -222,6 +155,73 @@
+@@ -222,6 +155,131 @@
  	status = "okay";
  };
  
@@ -106,8 +164,6 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
 +
 +	switch0: switch@10 {
 +		compatible = "qca,qca8337";
-+		#address-cells = <1>;
-+		#size-cells = <0>;
 +
 +		dsa,member = <0 0>;
 +
@@ -135,26 +191,86 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
 +			port@1 {
 +				reg = <1>;
 +				label = "sw1";
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
 +			};
 +
 +			port@2 {
 +				reg = <2>;
 +				label = "sw2";
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
 +			};
 +
 +			port@3 {
 +				reg = <3>;
 +				label = "sw3";
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
 +			};
 +
 +			port@4 {
 +				reg = <4>;
 +				label = "sw4";
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
 +			};
 +
 +			port@5 {
 +				reg = <5>;
 +				label = "sw5";
++
++				leds {
++					#address-cells = <1>;
++					#size-cells = <0>;
++
++					led@0 {
++						reg = <0>;
++						color = <LED_COLOR_ID_GREEN>;
++						function = LED_FUNCTION_LAN;
++						default-state = "keep";
++					};
++				};
 +			};
 +		};
 +	};
@@ -163,10 +279,10 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  &gmac0 {
  	status = "okay";
  
---- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
 @@ -476,6 +476,20 @@
- 			snps,blen = <16 0 0 0 0 0 0>;
+ 			status = "disabled";
  		};
  
 +		mdio0: mdio@37000000 {
@@ -183,6 +299,6 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
 +			status = "disabled";
 +		};
 +
- 		vsdcc_fixed: vsdcc-regulator {
- 			compatible = "regulator-fixed";
- 			regulator-name = "SDCC Power";
+ 		gmac0: ethernet@37000000 {
+ 			device_type = "network";
+ 			compatible = "qcom,ipq806x-gmac", "snps,dwmac";
