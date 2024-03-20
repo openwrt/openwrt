@@ -1,0 +1,518 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Linksys WHW03 V2 (Velop)";
+	compatible = "linksys,whw03v2", "qcom,ipq4019";
+
+	aliases {
+		led-boot = &led_blue;
+		led-failsafe = &led_red;
+		led-running = &led_green;
+		led-upgrade = &led_red;
+	};
+
+	// The arguments rootfstype and ro are needed
+	// to override the default bootargs
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_0 rootfstype=squashfs ro";
+		stdout-path = &blsp1_uart1;
+	};
+
+	soc {
+		ess-tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+
+&tlmm {
+	mdio_pins: mdio-pinmux {
+		mux-1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+
+		mux-2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	i2c_0_pins: i2c-0-pinmux {
+		mux {
+			function = "blsp_i2c0";
+			pins = "gpio20", "gpio21";
+			bias-disable;
+		};
+	};
+
+	serial_0_pins: serial0-pinmux {
+		mux {
+			pins = "gpio16", "gpio17";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	serial_1_pins: serial1-pinmux {
+		mux {
+			pins = "gpio8", "gpio9", "gpio10", "gpio11";
+			function = "blsp_uart1";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi-0-pinmux {
+		mux {
+			function = "blsp_spi0";
+			pins = "gpio13", "gpio14", "gpio15";
+			drive-strength = <12>;
+			bias-disable;
+		};
+
+		mux-cs {
+			pins = "gpio12";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	spi_1_pins: spi-1-pinmux {
+		mux-1 {
+			function = "blsp_spi1";
+			pins = "gpio44", "gpio46","gpio47";
+			bias-disable;
+		};
+
+		mux-2 {
+			pins = "gpio31", "gpio45", "gpio49";
+			function = "gpio";
+			bias-pull-up;
+			output-high;
+		};
+
+		host-interrupt {
+			pins = "gpio42";
+			function = "gpio";
+			input;
+		};
+	};
+
+	wifi_0_pins: wifi0-pinmux {
+		btcoexist {
+			bias-pull-up;
+			drive-strength = <6>;
+			function = "gpio";
+			output-high;
+			pins = "gpio52";
+		};
+	};
+
+	zigbee-0 {
+		gpio-hog;
+		gpios = <29 GPIO_ACTIVE_HIGH>;
+		bias-disable;
+		output-low;
+	};
+
+	zigbee-1 {
+		gpio-hog;
+		gpios = <50 GPIO_ACTIVE_HIGH>;
+		bias-disable;
+		input;
+	};
+
+	bluetooth-enable {
+		gpio-hog;
+		gpios = <32 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	phy-reset-gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy2 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	reg = <0x1b>;
+};
+
+&ethphy4 {
+	reg = <0x1c>;
+};
+
+&psgmiiphy {
+	reg = <0x1d>;
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&cryptobam {
+	num-channels = <4>;
+	qcom,num-ees = <2>;
+
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&blsp1_uart1 {
+	status = "okay";
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&blsp1_uart2 {
+	status = "okay";
+	pinctrl-0 = <&serial_1_pins>;
+	pinctrl-names = "default";
+
+	bluetooth {
+		compatible = "csr,8811";
+
+		enable-gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&blsp1_spi2 {
+	pinctrl-0 = <&spi_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cs-gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
+
+	zigbee@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "silabs,em3581";
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+	};
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	// RGB LEDs
+	pca9633: led-controller@62 {
+		compatible = "nxp,pca9633";
+		nxp,hw-blink;
+		reg = <0x62>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led_red: red@0 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_INDICATOR;
+			linux,default-trigger = "none";
+			reg = <0>;
+		};
+
+		led_green: green@1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			linux,default-trigger = "none";
+			reg = <1>;
+		};
+
+		led_blue: blue@2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_INDICATOR;
+			linux,default-trigger = "default-on";
+			reg = <2>;
+		};
+	};
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&nand {
+	status = "okay";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "SBL1";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "MIBIB";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "QSEE";
+				reg = <0x200000 0x100000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "CDT";
+				reg = <0x300000 0x80000>;
+				read-only;
+			};
+
+			partition@380000 {
+				label = "APPSBL";
+				reg = <0x380000 0x200000>;
+				read-only;
+			};
+
+			partition@580000 {
+				label = "ART";
+				reg = <0x580000 0x80000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_gmac0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_gmac1: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					precal_art_9000: precal@9000 {
+						reg = <0x9000 0x2f20>;
+					};
+				};
+			};
+
+			partition@600000 {
+				label = "u_env";
+				reg = <0x600000 0x80000>;
+			};
+
+			partition@680000 {
+				label = "s_env";
+				reg = <0x680000 0x40000>;
+			};
+
+			partition@6c0000 {
+				label = "devinfo";
+				reg = <0x6c0000 0x40000>;
+				read-only;
+			};
+
+			partition@700000 {
+				label = "kernel";
+				reg = <0x700000 0xa100000>;
+			};
+
+			partition@d00000 {
+				label = "rootfs";
+				reg = <0xd00000 0x9b00000>;
+			};
+
+			partition@a800000 {
+				label = "alt_kernel";
+				reg = <0xa800000 0xa100000>;
+			};
+
+			partition@ae00000 {
+				label = "alt_rootfs";
+				reg = <0xae00000 0x9b00000>;
+			};
+
+			partition@14900000 {
+				label = "sysdiag";
+				reg = <0x14900000 0x200000>;
+				read-only;
+			};
+
+			partition@14b00000 {
+				label = "syscfg";
+				reg = <0x14b00000 0xb500000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 40 GPIO_ACTIVE_LOW>;
+	clkreq-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi2: wifi@1,0 {
+			compatible = "qcom,ath10k";
+			reg = <0x00010000 0 0 0 0>;
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac1>;
+};
+
+&swport5 {
+	status = "okay";
+	label = "wan";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0 0>;
+};
+
+&wifi0 {
+	pinctrl-0 = <&wifi_0_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	qcom,coexist-support = <1>;
+	qcom,coexist-gpio-pin = <0x34>;
+
+	ieee80211-freq-limit = <2401000 2473000>;
+	qcom,ath10k-calibration-variant = "linksys-whw03v2";
+
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&macaddr_gmac0 1>;
+};
+
+&wifi1 {
+	status = "okay";
+
+	ieee80211-freq-limit = <5170000 5250000>;
+	qcom,ath10k-calibration-variant = "linksys-whw03v2";
+
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&macaddr_gmac0 2>;
+};
+
+&wifi2 {
+	status = "okay";
+
+	ieee80211-freq-limit = <5735000 5835000>;
+	qcom,ath10k-calibration-variant = "linksys-whw03v2";
+
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_9000>, <&macaddr_gmac0 3>;
+};
