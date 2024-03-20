@@ -1,0 +1,30 @@
+From be59072c6eeb7535bf9a339fb9d5a8bfae17ac22 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 14 Aug 2023 12:40:23 +0200
+Subject: [PATCH] dt-bindings: clock: qcom: ipq4019: add missing networking
+ resets
+
+Add bindings for the missing networking resets found in IPQ4019 GCC.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20230814104119.96858-1-robert.marko@sartura.hr
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ include/dt-bindings/clock/qcom,gcc-ipq4019.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/include/dt-bindings/clock/qcom,gcc-ipq4019.h
++++ b/include/dt-bindings/clock/qcom,gcc-ipq4019.h
+@@ -165,5 +165,11 @@
+ #define GCC_QDSS_BCR					69
+ #define GCC_MPM_BCR					70
+ #define GCC_SPDM_BCR					71
++#define ESS_MAC1_ARES					72
++#define ESS_MAC2_ARES					73
++#define ESS_MAC3_ARES					74
++#define ESS_MAC4_ARES					75
++#define ESS_MAC5_ARES					76
++#define ESS_PSGMII_ARES					77
+ 
+ #endif
