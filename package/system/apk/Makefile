@@ -30,7 +30,7 @@ define Package/apk
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=apk package manager
-  DEPENDS:=+zlib +libopenssl +libpthread @!arc
+  DEPENDS:=+zlib +libopenssl +libpthread
   URL:=$(PKG_SOURCE_URL)
 endef
 
