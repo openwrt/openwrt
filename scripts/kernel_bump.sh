@@ -205,7 +205,9 @@ main()
 	target_version="${target_version:-${TARGET_VERSION:-}}"
 
 	if [ -z "${source_version:-}" ] || [ -z "${target_version:-}" ]; then
-		e_err "Source (${source_version}) and target (${target_version}) versions need to be defined."
+		e_err "Source (${source_version:-missing source version}) and target (${target_version:-missing target version}) versions need to be defined."
+		echo
+		usage
 		exit 1
 	fi
 
