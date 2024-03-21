@@ -3,15 +3,18 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=apk
 PKG_RELEASE:=1
 
-PKG_SOURCE_DATE:=2024-03-16
-PKG_SOURCE_VERSION:=f2f10d7e851ed3ff2a239c89c1a6a3612adbd63f
-PKG_HASH:=964bbc71462630a5418a20ccd3e725eb0b065a6232d4aee16db745d95a04c1ff
+PKG_SOURCE_URL=https://gitlab.alpinelinux.org/alpine/apk-tools.git
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_DATE:=2024-03-21
+PKG_SOURCE_VERSION:=e14c02ceefc96a8c620f90b3682daa8332eff199
+PKG_MIRROR_HASH:=9217cc21ef4a568f2c02d736d1549716fd0a9db2ae250a18d921886887559154
 
-PKG_VERSION:=3.0.0_pre0
-PKG_SOURCE:=apk-tools-v$(PKG_SOURCE_VERSION).tar.gz
-PKG_SOURCE_URL:=https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/$(PKG_SOURCE_VERSION)
-PKG_BUILD_DIR:=$(BUILD_DIR)/apk-tools-$(PKG_SOURCE_VERSION)
-HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/apk-tools-$(PKG_SOURCE_VERSION)
+PKG_VERSION=3.0.0_pre$(subst -,,$(PKG_SOURCE_DATE))
+
+PKG_MAINTAINER:=Paul Spooren <mail@aparcar.org>
+PKG_LICENSE:=GPL-2.0-only
+PKG_LICENSE_FILES:=LICENSE
+PKG_INSTALL:=1
 
 PKG_MAINTAINER:=Paul Spooren <mail@aparcar.org>
 PKG_LICENSE:=GPL-2.0-only
@@ -26,11 +29,13 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/meson.mk
 
+MESON_HOST_VARS+=VERSION=3.0.0_pre$(subst -,,$(PKG_SOURCE_DATE))
+
 define Package/apk
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=apk package manager
-  DEPENDS:=+zlib +libopenssl +libpthread
+  DEPENDS:=+zlib +libopenssl
   URL:=$(PKG_SOURCE_URL)
 endef
 
@@ -38,19 +43,14 @@ MESON_HOST_ARGS += \
 	-Dlua_version=5.1 \
 	-Dcompressed-help=false \
 	-Ddocs=disabled \
-	-Dzstd=False
+	-Dzstd=false
+
 MESON_ARGS += \
 	-Dlua_version=5.1 \
 	-Dcompressed-help=false \
 	-Ddocs=disabled \
-	-Dzstd=False
-	
-HOST_LDFLAGS += \
-	-Wl,-rpath $(STAGING_DIR_HOST)/lib \
-	-lpthread
+	-Dzstd=false
 
-TARGET_CFLAGS += $(FPIC)
-HOST_CFLAGS += $(HOST_FPIC)
 
 define Package/apk/install
 	$(INSTALL_DIR) $(1)/lib/apk/db
