@@ -59,6 +59,7 @@ usage()
 	echo "    -t  Target version of kernel (e.g. 'v6.6' [TARGET_VERSION]')"
 	echo
 	echo 'All options can also be passed in environment variables (listed between [BRACKETS]).'
+	echo 'Note that this script must be run from within the OpenWrt git repository.'
 	echo 'Example: scripts/kernel_bump.sh -p realtek -s v6.1 -t v6.6'
 }
 
@@ -74,11 +75,18 @@ cleanup()
 
 init()
 {
+	src_file="$(readlink -f "${0}")"
+	src_dir="${src_file%%"${src_file##*'/'}"}"
 	initial_branch="$(git rev-parse --abbrev-ref HEAD)"
 	initial_commitish="$(git rev-parse HEAD)"
 
 	if [ -n "$(git status --porcelain | grep -v '^?? .*')" ]; then
 		echo 'Git respository not in a clean state, will not continue.'
+		exit 1
+	fi
+
+	if [ -n "${src_dir##*'/scripts/'}" ]; then
+		echo "This script '${src_file}' is not in the scripts subdirectory, this is unexpected, cannot continue."
 		exit 1
 	fi
 
@@ -90,20 +98,16 @@ init()
 
 bump_kernel()
 {
+	if [ -z "${platform_name}" ] || \
+	   [ -d "${PWD}/image" ]; then
+		platform_name="${PWD}"
+	fi
 	platform_name="${platform_name##*'/'}"
 
-	if [ -z "${platform_name:-}" ]; then
-		platform_name="${PWD##*'/'}"
-	fi
-
-	if [ "${PWD##*'/'}" = "${platform_name}" ]; then
-		_target_dir='./'
-	else
-		_target_dir="target/linux/${platform_name}"
-	fi
+	_target_dir="${src_dir}/../target/linux/${platform_name}"
 
 	if [ ! -d "${_target_dir}/image" ]; then
-		e_err 'Cannot find target linux directory.'
+		e_err "Cannot find target linux directory '${_target_dir:-not defined}'. Not in a platform directory, or -p not set."
 		exit 1
 	fi
 
