@@ -45,6 +45,7 @@ ramips_setup_interfaces()
 	mikrotik,routerboard-m11g|\
 	netgear,eax12|\
 	netgear,ex6150|\
+	netgear,wax214v2|\
 	sercomm,na502|\
 	sercomm,na502s|\
 	thunder,timecloud|\
@@ -316,6 +317,10 @@ ramips_setup_macs()
 	netgear,wax202)
 		lan_mac=$(mtd_get_mac_ascii Config mac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
+		label_mac=$lan_mac
+		;;
+	netgear,wax214v2)
+		lan_mac=$(mtd_get_mac_ascii Config ethaddr)
 		label_mac=$lan_mac
 		;;
 	yuncore,ax820)
