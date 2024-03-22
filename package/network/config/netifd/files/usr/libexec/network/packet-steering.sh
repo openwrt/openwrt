@@ -29,7 +29,7 @@ set_hex_val() {
 	local val="$2"
 	val="$(printf %x "$val")"
 	[ -n "$DEBUG" ] && echo "$file = $val"
-	echo "$val" > "$file"
+	cat "$file" 2>/dev/null >"$file" && echo "$val" > "$file"
 }
 
 packet_steering="$(uci get "network.@globals[0].packet_steering")"
