@@ -77,6 +77,9 @@ init()
 	initial_branch="$(git rev-parse --abbrev-ref HEAD)"
 	initial_commitish="$(git rev-parse HEAD)"
 
+	source_version="${source_version#v}"
+	target_version="${target_version#v}"
+
 	trap cleanup EXIT HUP INT QUIT ABRT ALRM TERM
 }
 
@@ -180,10 +183,10 @@ main()
 			platform_name="${OPTARG}"
 			;;
 		's')
-			source_version="${OPTARG#v}"
+			source_version="${OPTARG}"
 			;;
 		't')
-			target_version="${OPTARG#v}"
+			target_version="${OPTARG}"
 			;;
 		':')
 			e_err "Option -${OPTARG} requires an argument."
