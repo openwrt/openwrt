@@ -22,7 +22,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  };
  
  static int q6v5_wcss_reset(struct q6v5_wcss *wcss)
-@@ -1150,6 +1151,7 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1149,6 +1150,7 @@ static int q6v5_wcss_probe(struct platfo
  						      desc->sysmon_name,
  						      desc->ssctl_id);
  
@@ -30,7 +30,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	ret = rproc_add(rproc);
  	if (ret)
  		goto free_rproc;
-@@ -1188,6 +1190,7 @@ static const struct wcss_data wcss_ipq80
+@@ -1185,6 +1187,7 @@ static const struct wcss_data wcss_ipq80
  	.ops = &q6v5_wcss_ipq8074_ops,
  	.requires_force_stop = true,
  	.need_mem_protection = true,
@@ -38,7 +38,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  };
  
  static const struct wcss_data wcss_qcs404_res_init = {
-@@ -1204,6 +1207,7 @@ static const struct wcss_data wcss_qcs40
+@@ -1201,6 +1204,7 @@ static const struct wcss_data wcss_qcs40
  	.ssctl_id = 0x12,
  	.ops = &q6v5_wcss_qcs404_ops,
  	.requires_force_stop = false,

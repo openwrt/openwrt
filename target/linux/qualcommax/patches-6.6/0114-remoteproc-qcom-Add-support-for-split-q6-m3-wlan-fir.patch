@@ -65,7 +65,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	if (wcss->need_mem_protection)
  		ret = qcom_mdt_load(wcss->dev, fw, rproc->firmware,
  				    WCNSS_PAS_ID, wcss->mem_region,
-@@ -1072,7 +1095,7 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1071,7 +1094,7 @@ static int q6v5_wcss_probe(struct platfo
  		return -EPROBE_DEFER;
  
  	rproc = rproc_alloc(&pdev->dev, pdev->name, desc->ops,
@@ -74,7 +74,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	if (!rproc) {
  		dev_err(&pdev->dev, "failed to allocate rproc\n");
  		return -ENOMEM;
-@@ -1085,6 +1108,7 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1084,6 +1107,7 @@ static int q6v5_wcss_probe(struct platfo
  	wcss->version = desc->version;
  	wcss->requires_force_stop = desc->requires_force_stop;
  	wcss->need_mem_protection = desc->need_mem_protection;
@@ -82,7 +82,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  
  	ret = q6v5_wcss_init_mmio(wcss, pdev);
  	if (ret)
-@@ -1150,7 +1174,8 @@ static int q6v5_wcss_remove(struct platf
+@@ -1147,7 +1171,8 @@ static void q6v5_wcss_remove(struct plat
  
  static const struct wcss_data wcss_ipq8074_res_init = {
  	.init_clock = ipq8074_init_clock,
@@ -92,7 +92,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	.crash_reason_smem = WCSS_CRASH_REASON,
  	.aon_reset_required = true,
  	.wcss_q6_reset_required = true,
-@@ -1163,7 +1188,7 @@ static const struct wcss_data wcss_qcs40
+@@ -1160,7 +1185,7 @@ static const struct wcss_data wcss_qcs40
  	.init_clock = qcs404_init_clock,
  	.init_regulator = qcs404_init_regulator,
  	.crash_reason_smem = WCSS_CRASH_REASON,

@@ -40,7 +40,7 @@ Signed-off-by: Mantas Pucka <mantas@8devices.com>
  	clk_disable_unprepare(wcss->prng_clk);
  	qcom_q6v5_unprepare(&wcss->q6v5);
  
-@@ -981,6 +987,12 @@ static int ipq_init_clock(struct q6v5_wc
+@@ -980,6 +986,12 @@ static int ipq_init_clock(struct q6v5_wc
  			dev_err(wcss->dev, "Failed to get prng clock\n");
  		return ret;
  	}

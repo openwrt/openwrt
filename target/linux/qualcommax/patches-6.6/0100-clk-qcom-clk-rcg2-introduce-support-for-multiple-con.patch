@@ -176,7 +176,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	return 0;
  }
-@@ -351,6 +408,7 @@ static int __clk_rcg2_set_rate(struct cl
+@@ -353,6 +410,7 @@ static int __clk_rcg2_set_rate(struct cl
  {
  	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
  	const struct freq_tbl *f;
@@ -184,7 +184,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	switch (policy) {
  	case FLOOR:
-@@ -366,7 +424,15 @@ static int __clk_rcg2_set_rate(struct cl
+@@ -368,7 +426,15 @@ static int __clk_rcg2_set_rate(struct cl
  	if (!f)
  		return -EINVAL;
  

@@ -12,15 +12,10 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq8074.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq8074.dtsi
-@@ -343,6 +343,113 @@
- 			status = "disabled";
- 		};
- 
-+		qfprom: efuse@a4000 {
-+			compatible = "qcom,ipq8074-qfprom", "qcom,qfprom";
-+			reg = <0x000a4000 0x1000>;
-+			#address-cells = <1>;
-+			#size-cells = <1>;
+@@ -349,6 +349,106 @@
+ 			reg = <0x000a4000 0x2000>;
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
 +
 +			cpr_efuse_speedbin: speedbin@125 {
 +				reg = <0x125 0x1>;
@@ -121,8 +116,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +				reg = <0x23c 0x1>;
 +				bits = <0 7>;
 +			};
-+		};
-+
+ 		};
+ 
  		prng: rng@e3000 {
- 			compatible = "qcom,prng-ee";
- 			reg = <0x000e3000 0x1000>;

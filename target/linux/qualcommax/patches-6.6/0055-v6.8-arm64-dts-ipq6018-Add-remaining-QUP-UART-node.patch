@@ -15,7 +15,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 
 --- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
-@@ -458,6 +458,26 @@
+@@ -459,6 +459,26 @@
  			qcom,ee = <0>;
  		};
  
@@ -42,7 +42,7 @@ Signed-off-by: Bjorn Andersson <andersson@kernel.org>
  		blsp1_uart3: serial@78b1000 {
  			compatible = "qcom,msm-uartdm-v1.4", "qcom,msm-uartdm";
  			reg = <0x0 0x078b1000 0x0 0x200>;
-@@ -466,6 +486,36 @@
+@@ -467,6 +487,36 @@
  				 <&gcc GCC_BLSP1_AHB_CLK>;
  			clock-names = "core", "iface";
  			status = "disabled";

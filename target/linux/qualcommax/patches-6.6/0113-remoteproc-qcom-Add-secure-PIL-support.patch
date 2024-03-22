@@ -115,7 +115,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	if (ret)
  		return ret;
  
-@@ -1036,6 +1068,9 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1035,6 +1067,9 @@ static int q6v5_wcss_probe(struct platfo
  	if (!desc)
  		return -EINVAL;
  
@@ -125,7 +125,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	rproc = rproc_alloc(&pdev->dev, pdev->name, desc->ops,
  			    desc->firmware_name, sizeof(*wcss));
  	if (!rproc) {
-@@ -1049,6 +1084,7 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1048,6 +1083,7 @@ static int q6v5_wcss_probe(struct platfo
  
  	wcss->version = desc->version;
  	wcss->requires_force_stop = desc->requires_force_stop;
@@ -133,7 +133,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  
  	ret = q6v5_wcss_init_mmio(wcss, pdev);
  	if (ret)
-@@ -1120,6 +1156,7 @@ static const struct wcss_data wcss_ipq80
+@@ -1117,6 +1153,7 @@ static const struct wcss_data wcss_ipq80
  	.wcss_q6_reset_required = true,
  	.ops = &q6v5_wcss_ipq8074_ops,
  	.requires_force_stop = true,

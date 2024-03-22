@@ -86,7 +86,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	qcom_q6v5_unprepare(&wcss->q6v5);
  
  	return 0;
-@@ -900,7 +910,21 @@ static int q6v5_alloc_memory_region(stru
+@@ -899,7 +909,21 @@ static int q6v5_alloc_memory_region(stru
  	return 0;
  }
  
@@ -109,7 +109,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  {
  	int ret;
  
-@@ -990,7 +1014,7 @@ static int q6v5_wcss_init_clock(struct q
+@@ -989,7 +1013,7 @@ static int q6v5_wcss_init_clock(struct q
  	return 0;
  }
  
@@ -118,7 +118,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  {
  	wcss->cx_supply = devm_regulator_get(wcss->dev, "cx");
  	if (IS_ERR(wcss->cx_supply))
-@@ -1034,12 +1058,14 @@ static int q6v5_wcss_probe(struct platfo
+@@ -1033,12 +1057,14 @@ static int q6v5_wcss_probe(struct platfo
  	if (ret)
  		goto free_rproc;
  
@@ -136,7 +136,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  		if (ret)
  			goto free_rproc;
  	}
-@@ -1087,6 +1113,7 @@ static int q6v5_wcss_remove(struct platf
+@@ -1084,6 +1110,7 @@ static void q6v5_wcss_remove(struct plat
  }
  
  static const struct wcss_data wcss_ipq8074_res_init = {
@@ -144,7 +144,7 @@ Signed-off-by: Nikhil Prakash V <nprakash@codeaurora.org>
  	.firmware_name = "IPQ8074/q6_fw.mdt",
  	.crash_reason_smem = WCSS_CRASH_REASON,
  	.aon_reset_required = true,
-@@ -1096,6 +1123,8 @@ static const struct wcss_data wcss_ipq80
+@@ -1093,6 +1120,8 @@ static const struct wcss_data wcss_ipq80
  };
  
  static const struct wcss_data wcss_qcs404_res_init = {
