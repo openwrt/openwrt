@@ -1870,6 +1870,8 @@ static int rtl83xx_port_mirror_add(struct dsa_switch *ds, int port,
 	if (priv->family_id == RTL8380_FAMILY_ID) {
 		/* Enable mirroring to port across VLANs (bit 11) */
 		sw_w32(1 << 11 | (mirror->to_local_port << 4) | 1, ctrl_reg);
+	} else if (priv->family_id == RTL9300_FAMILY_ID) {
+		sw_w32((mirror->to_local_port << 9) | 1, ctrl_reg);
 	} else {
 		/* Enable mirroring to destination port */
 		sw_w32((mirror->to_local_port << 4) | 1, ctrl_reg);
