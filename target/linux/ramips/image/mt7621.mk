@@ -769,6 +769,14 @@ define Device/dlink_dir-1960-a1
 endef
 TARGET_DEVICES += dlink_dir-1960-a1
 
+define Device/dlink_dir-2150-a1
+  $(Device/dlink_dir-xx60-a1)
+  DEVICE_MODEL := DIR-2150
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES += kmod-mt7603
+endef
+TARGET_DEVICES += dlink_dir-2150-a1
+
 define Device/dlink_dir-2640-a1
   $(Device/dlink_dir-xx60-a1)
   DEVICE_MODEL := DIR-2640
