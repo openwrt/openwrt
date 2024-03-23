@@ -523,6 +523,22 @@ define Package/ip6tables-mod-nat/description
 iptables extensions for IPv6-NAT targets.
 endef
 
+define Package/iptables-mod-ipvs
+$(call Package/iptables/Module, +kmod-nf-ipvs)
+  TITLE:=IPVS extension
+endef
+
+define Package/iptables-mod-ipvs/description
+iptables extension for matching an IPVS connection
+
+ Matches:
+  - ipvs
+
+ If you select it, it enables kmod-nf-ipvs.
+
+ see `iptables -m ipvs --help` for more information.
+endef
+
 define Package/libip4tc
 $(call Package/iptables/Default)
   SECTION:=libs
@@ -726,6 +742,11 @@ define Package/libxtables/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxtables.so.* $(1)/usr/lib/
 endef
 
+define Package/iptables-mod-ipvs/install
+	$(INSTALL_DIR) $(1)/usr/lib/iptables
+	$(CP) $(PKG_BUILD_DIR)/extensions/libxt_ipvs.so $(1)/usr/lib/iptables/
+endef
+
 define BuildPlugin
   define Package/$(1)/install
 	$(INSTALL_DIR) $$(1)/usr/lib/iptables
@@ -774,6 +795,7 @@ $(eval $(call BuildPlugin,iptables-mod-nflog,$(IPT_NFLOG-m)))
 $(eval $(call BuildPlugin,iptables-mod-trace,$(IPT_DEBUG-m)))
 $(eval $(call BuildPlugin,iptables-mod-nfqueue,$(IPT_NFQUEUE-m)))
 $(eval $(call BuildPlugin,iptables-mod-checksum,$(IPT_CHECKSUM-m)))
+$(eval $(call BuildPackage,iptables-mod-ipvs))
 $(eval $(call BuildPackage,ip6tables-nft))
 $(eval $(call BuildPackage,ip6tables-zz-legacy))
 $(eval $(call BuildPlugin,ip6tables-extra,$(IPT_IPV6_EXTRA-m)))
