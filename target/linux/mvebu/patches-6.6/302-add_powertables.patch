@@ -1,5 +1,5 @@
---- a/arch/arm/boot/dts/armada-385-linksys.dtsi
-+++ b/arch/arm/boot/dts/armada-385-linksys.dtsi
+--- a/arch/arm/boot/dts/marvell/armada-385-linksys.dtsi
++++ b/arch/arm/boot/dts/marvell/armada-385-linksys.dtsi
 @@ -214,11 +214,19 @@
  &pcie1 {
  	/* Marvell 88W8864, 5GHz-only */
@@ -20,8 +20,8 @@
  };
  
  &pinctrl {
---- a/arch/arm/boot/dts/armada-385-linksys-caiman.dts
-+++ b/arch/arm/boot/dts/armada-385-linksys-caiman.dts
+--- a/arch/arm/boot/dts/marvell/armada-385-linksys-caiman.dts
++++ b/arch/arm/boot/dts/marvell/armada-385-linksys-caiman.dts
 @@ -142,3 +142,205 @@
  		};
  	};
@@ -228,8 +228,8 @@
 +		};
 +	};
 +};
---- a/arch/arm/boot/dts/armada-385-linksys-cobra.dts
-+++ b/arch/arm/boot/dts/armada-385-linksys-cobra.dts
+--- a/arch/arm/boot/dts/marvell/armada-385-linksys-cobra.dts
++++ b/arch/arm/boot/dts/marvell/armada-385-linksys-cobra.dts
 @@ -142,3 +142,205 @@
  		};
  	};
@@ -436,8 +436,8 @@
 +		};
 +	};
 +};
---- a/arch/arm/boot/dts/armada-385-linksys-shelby.dts
-+++ b/arch/arm/boot/dts/armada-385-linksys-shelby.dts
+--- a/arch/arm/boot/dts/marvell/armada-385-linksys-shelby.dts
++++ b/arch/arm/boot/dts/marvell/armada-385-linksys-shelby.dts
 @@ -142,3 +142,205 @@
  		};
  	};
@@ -644,8 +644,8 @@
 +		};
 +	};
 +};
---- a/arch/arm/boot/dts/armada-385-linksys-rango.dts
-+++ b/arch/arm/boot/dts/armada-385-linksys-rango.dts
+--- a/arch/arm/boot/dts/marvell/armada-385-linksys-rango.dts
++++ b/arch/arm/boot/dts/marvell/armada-385-linksys-rango.dts
 @@ -157,6 +157,18 @@
  	};
  };
@@ -665,8 +665,8 @@
  &sdhci {
  	pinctrl-names = "default";
  	pinctrl-0 = <&sdhci_pins>;
---- a/arch/arm/boot/dts/armada-xp-linksys-mamba.dts
-+++ b/arch/arm/boot/dts/armada-xp-linksys-mamba.dts
+--- a/arch/arm/boot/dts/marvell/armada-xp-linksys-mamba.dts
++++ b/arch/arm/boot/dts/marvell/armada-xp-linksys-mamba.dts
 @@ -223,12 +223,100 @@
  	pcie@2,0 {
  		/* Port 0, Lane 1 */
