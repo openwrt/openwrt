@@ -1,0 +1,690 @@
+From 7eae1f00c8c1fcac65cd806834a39fe8627269cf Mon Sep 17 00:00:00 2001
+From: Wenli Looi <wlooi@ucalgary.ca>
+Date: Tue, 11 Apr 2023 07:09:55 +0000
+Subject: [PATCH v3 11/11] wifi: ath9k: add QCN550x eeprom
+
+This adds support for the 4-chain eeprom used by QCN550x.
+
+Signed-off-by: Wenli Looi <wlooi@ucalgary.ca>
+---
+ .../net/wireless/ath/ath9k/ar9003_eeprom.c    | 294 +++++++++++++-----
+ .../net/wireless/ath/ath9k/ar9003_eeprom.h    | 112 +++++++
+ drivers/net/wireless/ath/ath9k/hw.h           |   1 +
+ 3 files changed, 337 insertions(+), 70 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+index 669506884b..f28ebc9953 100644
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -2984,12 +2984,14 @@ static int ath9k_hw_ar9300_get_eeprom_rev(struct ath_hw *ah)
+ 
+ static struct ar9300_base_eep_hdr *ar9003_base_header(struct ath_hw *ah)
+ {
+-	return &ah->eeprom.ar9300_eep.baseEepHeader;
++	return AR_SREV_5502(ah) ? &ah->eeprom.qcn5502.baseEepHeader :
++				  &ah->eeprom.ar9300_eep.baseEepHeader;
+ }
+ 
+ static struct ar9300_BaseExtension_1 *ar9003_base_ext1(struct ath_hw *ah)
+ {
+-	return &ah->eeprom.ar9300_eep.base_ext1;
++	return AR_SREV_5502(ah) ? &ah->eeprom.qcn5502.base_ext1 :
++				  &ah->eeprom.ar9300_eep.base_ext1;
+ }
+ 
+ static struct ar9300_modal_eep_header *ar9003_modal_header(struct ath_hw *ah,
+@@ -3003,206 +3005,338 @@ static struct ar9300_modal_eep_header *ar9003_modal_header(struct ath_hw *ah,
+ 		return &eep->modalHeader5G;
+ }
+ 
++static struct qcn5502_modal_eep_header *qcn5502_modal_header(struct ath_hw *ah,
++							     bool is2ghz)
++{
++	struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++
++	if (is2ghz)
++		return &eep->modalHeader2G;
++	else
++		return &eep->modalHeader5G;
++}
++
+ static int8_t ar9003_ant_gain(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->antennaGain;
++	return AR_SREV_5502(ah) ?
++		       qcn5502_modal_header(ah, is2ghz)->antennaGain :
++		       ar9003_modal_header(ah, is2ghz)->antennaGain;
+ }
+ 
+ static u8 ar9003_cal_freq_pier(struct ath_hw *ah, int idx, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? eep->calFreqPier2G[idx] : eep->calFreqPier5G[idx];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ? eep->calFreqPier2G[idx] :
++				eep->calFreqPier5G[idx];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ? eep->calFreqPier2G[idx] :
++				eep->calFreqPier5G[idx];
++	}
+ }
+ 
+ static struct ar9300_cal_data_per_freq_op_loop *
+ ar9003_cal_pier_data(struct ath_hw *ah, int chain, int idx, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? &eep->calPierData2G[chain][idx] :
+-			      &eep->calPierData5G[chain][idx];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ? &eep->calPierData2G[chain][idx] :
++				&eep->calPierData5G[chain][idx];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ? &eep->calPierData2G[chain][idx] :
++				&eep->calPierData5G[chain][idx];
++	}
+ }
+ 
+ static u8 ar9003_cal_target_freqbin(struct ath_hw *ah, int idx, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? eep->calTarget_freqbin_2G[idx] :
+-			      eep->calTarget_freqbin_5G[idx];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ? eep->calTarget_freqbin_2G[idx] :
++				eep->calTarget_freqbin_5G[idx];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ? eep->calTarget_freqbin_2G[idx] :
++				eep->calTarget_freqbin_5G[idx];
++	}
+ }
+ 
+ static u8 ar9003_cal_target_freqbin_cck(struct ath_hw *ah, int idx)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return eep->calTarget_freqbin_Cck[idx];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return eep->calTarget_freqbin_Cck[idx];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return eep->calTarget_freqbin_Cck[idx];
++	}
+ }
+ 
+ static u8 ar9003_cal_target_freqbin_ht20(struct ath_hw *ah, int idx,
+ 					 bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? eep->calTarget_freqbin_2GHT20[idx] :
+-			      eep->calTarget_freqbin_5GHT20[idx];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ? eep->calTarget_freqbin_2GHT20[idx] :
++				eep->calTarget_freqbin_5GHT20[idx];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ? eep->calTarget_freqbin_2GHT20[idx] :
++				eep->calTarget_freqbin_5GHT20[idx];
++	}
+ }
+ 
+ static u8 ar9003_cal_target_freqbin_ht40(struct ath_hw *ah, int idx,
+ 					 bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? eep->calTarget_freqbin_2GHT40[idx] :
+-			      eep->calTarget_freqbin_5GHT40[idx];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ? eep->calTarget_freqbin_2GHT40[idx] :
++				eep->calTarget_freqbin_5GHT40[idx];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ? eep->calTarget_freqbin_2GHT40[idx] :
++				eep->calTarget_freqbin_5GHT40[idx];
++	}
+ }
+ 
+ static u8 ar9003_cal_target_power(struct ath_hw *ah, int idx, int rateIndex,
+ 				  bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? eep->calTargetPower2G[idx].tPow2x[rateIndex] :
+-			      eep->calTargetPower5G[idx].tPow2x[rateIndex];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ? eep->calTargetPower2G[idx].tPow2x[rateIndex] :
++				eep->calTargetPower5G[idx].tPow2x[rateIndex];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ? eep->calTargetPower2G[idx].tPow2x[rateIndex] :
++				eep->calTargetPower5G[idx].tPow2x[rateIndex];
++	}
+ }
+ 
+ static u8 ar9003_cal_target_power_cck(struct ath_hw *ah, int idx, int rateIndex)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return eep->calTargetPowerCck[idx].tPow2x[rateIndex];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return eep->calTargetPowerCck[idx].tPow2x[rateIndex];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return eep->calTargetPowerCck[idx].tPow2x[rateIndex];
++	}
+ }
+ 
+ static u8 ar9003_cal_target_power_ht20(struct ath_hw *ah, int idx,
+ 				       int rateIndex, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? eep->calTargetPower2GHT20[idx].tPow2x[rateIndex] :
+-			      eep->calTargetPower5GHT20[idx].tPow2x[rateIndex];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ?
++			       eep->calTargetPower2GHT20[idx].tPow2x[rateIndex] :
++			       eep->calTargetPower5GHT20[idx].tPow2x[rateIndex];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ?
++			       eep->calTargetPower2GHT20[idx].tPow2x[rateIndex] :
++			       eep->calTargetPower5GHT20[idx].tPow2x[rateIndex];
++	}
+ }
+ 
+ static u8 ar9003_cal_target_power_ht40(struct ath_hw *ah, int idx,
+ 				       int rateIndex, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? eep->calTargetPower2GHT40[idx].tPow2x[rateIndex] :
+-			      eep->calTargetPower5GHT40[idx].tPow2x[rateIndex];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ?
++			       eep->calTargetPower2GHT40[idx].tPow2x[rateIndex] :
++			       eep->calTargetPower5GHT40[idx].tPow2x[rateIndex];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ?
++			       eep->calTargetPower2GHT40[idx].tPow2x[rateIndex] :
++			       eep->calTargetPower5GHT40[idx].tPow2x[rateIndex];
++	}
+ }
+ 
+ static u8 ar9003_ctl_freqbin(struct ath_hw *ah, int idx, int edge, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? eep->ctl_freqbin_2G[idx][edge] :
+-			      eep->ctl_freqbin_5G[idx][edge];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ? eep->ctl_freqbin_2G[idx][edge] :
++				eep->ctl_freqbin_5G[idx][edge];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ? eep->ctl_freqbin_2G[idx][edge] :
++				eep->ctl_freqbin_5G[idx][edge];
++	}
+ }
+ 
+ static u8 ar9003_ctl_index(struct ath_hw *ah, int idx, bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? eep->ctlIndex_2G[idx] : eep->ctlIndex_5G[idx];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ? eep->ctlIndex_2G[idx] : eep->ctlIndex_5G[idx];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ? eep->ctlIndex_2G[idx] : eep->ctlIndex_5G[idx];
++	}
+ }
+ 
+ static u8 ar9003_ctl_power_data(struct ath_hw *ah, int idx, int edge,
+ 				bool is2ghz)
+ {
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-	return is2ghz ? eep->ctlPowerData_2G[idx].ctlEdges[edge] :
+-			      eep->ctlPowerData_5G[idx].ctlEdges[edge];
++	if (AR_SREV_5502(ah)) {
++		struct qcn5502_eeprom *eep = &ah->eeprom.qcn5502;
++		return is2ghz ? eep->ctlPowerData_2G[idx].ctlEdges[edge] :
++				eep->ctlPowerData_5G[idx].ctlEdges[edge];
++	} else {
++		struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++		return is2ghz ? eep->ctlPowerData_2G[idx].ctlEdges[edge] :
++				eep->ctlPowerData_5G[idx].ctlEdges[edge];
++	}
+ }
+ 
+ static u16 ar9003_hw_ant_ctrl_chain_get(struct ath_hw *ah, int chain,
+ 					bool is2ghz)
+ {
+-	__le16 val = ar9003_modal_header(ah, is2ghz)->antCtrlChain[chain];
++	__le16 val =
++		AR_SREV_5502(ah) ?
++			qcn5502_modal_header(ah, is2ghz)->antCtrlChain[chain] :
++			ar9003_modal_header(ah, is2ghz)->antCtrlChain[chain];
+ 	return le16_to_cpu(val);
+ }
+ 
+ u32 ar9003_hw_ant_ctrl_common_get(struct ath_hw *ah, bool is2ghz)
+ {
+-	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->antCtrlCommon);
++	__le32 val = AR_SREV_5502(ah) ?
++			     qcn5502_modal_header(ah, is2ghz)->antCtrlCommon :
++			     ar9003_modal_header(ah, is2ghz)->antCtrlCommon;
++	return le32_to_cpu(val);
+ }
+ 
+ u32 ar9003_hw_ant_ctrl_common_2_get(struct ath_hw *ah, bool is2ghz)
+ {
+-	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->antCtrlCommon2);
++	__le32 val = AR_SREV_5502(ah) ?
++			     qcn5502_modal_header(ah, is2ghz)->antCtrlCommon2 :
++			     ar9003_modal_header(ah, is2ghz)->antCtrlCommon2;
++	return le32_to_cpu(val);
+ }
+ 
+ static int8_t ar9003_noise_floor_thres(struct ath_hw *ah, int chain,
+ 				       bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->noiseFloorThreshCh[chain];
++	return AR_SREV_5502(ah) ? qcn5502_modal_header(ah, is2ghz)
++					  ->noiseFloorThreshCh[chain] :
++				  ar9003_modal_header(ah, is2ghz)
++					  ->noiseFloorThreshCh[chain];
+ }
+ 
+ static int8_t ar9003_quick_drop(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->quick_drop;
++	return AR_SREV_5502(ah) ? qcn5502_modal_header(ah, is2ghz)->quick_drop :
++				  ar9003_modal_header(ah, is2ghz)->quick_drop;
+ }
+ 
+ static int8_t ar9003_temp_slope(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->tempSlope;
++	return AR_SREV_5502(ah) ? qcn5502_modal_header(ah, is2ghz)->tempSlope :
++				  ar9003_modal_header(ah, is2ghz)->tempSlope;
+ }
+ 
+ static int8_t ar9003_temp_slope_high(struct ath_hw *ah)
+ {
+-	return ah->eeprom.ar9300_eep.base_ext2.tempSlopeHigh;
++	return AR_SREV_5502(ah) ? ah->eeprom.qcn5502.base_ext2.tempSlopeHigh :
++				  ah->eeprom.ar9300_eep.base_ext2.tempSlopeHigh;
+ }
+ 
+ static int8_t ar9003_temp_slope_low(struct ath_hw *ah)
+ {
+-	return ah->eeprom.ar9300_eep.base_ext2.tempSlopeLow;
++	return AR_SREV_5502(ah) ? ah->eeprom.qcn5502.base_ext2.tempSlopeLow :
++				  ah->eeprom.ar9300_eep.base_ext2.tempSlopeLow;
+ }
+ 
+ static u8 ar9003_tx_end_to_xpa_off(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->txEndToXpaOff;
++	return AR_SREV_5502(ah) ?
++		       qcn5502_modal_header(ah, is2ghz)->txEndToXpaOff :
++		       ar9003_modal_header(ah, is2ghz)->txEndToXpaOff;
+ }
+ 
+ static u8 ar9003_tx_frame_to_xpa_on(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->txFrameToXpaOn;
++	return AR_SREV_5502(ah) ?
++		       qcn5502_modal_header(ah, is2ghz)->txFrameToXpaOn :
++		       ar9003_modal_header(ah, is2ghz)->txFrameToXpaOn;
+ }
+ 
+ static u8 ar9003_xatten1_db_high(struct ath_hw *ah, int chain)
+ {
+-	return ah->eeprom.ar9300_eep.base_ext2.xatten1DBHigh[chain];
++	return AR_SREV_5502(ah) ?
++		       ah->eeprom.qcn5502.base_ext2.xatten1DBHigh[chain] :
++		       ah->eeprom.ar9300_eep.base_ext2.xatten1DBHigh[chain];
+ }
+ 
+ static u8 ar9003_xatten1_db_low(struct ath_hw *ah, int chain)
+ {
+-	return ah->eeprom.ar9300_eep.base_ext2.xatten1DBLow[chain];
++	return AR_SREV_5502(ah) ?
++		       ah->eeprom.qcn5502.base_ext2.xatten1DBLow[chain] :
++		       ah->eeprom.ar9300_eep.base_ext2.xatten1DBLow[chain];
+ }
+ 
+ static u8 ar9003_xatten1_db_margin_high(struct ath_hw *ah, int chain)
+ {
+-	return ah->eeprom.ar9300_eep.base_ext2.xatten1MarginHigh[chain];
++	return AR_SREV_5502(ah) ?
++		       ah->eeprom.qcn5502.base_ext2.xatten1MarginHigh[chain] :
++		       ah->eeprom.ar9300_eep.base_ext2.xatten1MarginHigh[chain];
+ }
+ 
+ static u8 ar9003_xatten1_db_margin_low(struct ath_hw *ah, int chain)
+ {
+-	return ah->eeprom.ar9300_eep.base_ext2.xatten1MarginLow[chain];
++	return AR_SREV_5502(ah) ?
++		       ah->eeprom.qcn5502.base_ext2.xatten1MarginLow[chain] :
++		       ah->eeprom.ar9300_eep.base_ext2.xatten1MarginLow[chain];
+ }
+ 
+ static u8 ar9003_xatten1_db(struct ath_hw *ah, int chain, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->xatten1DB[chain];
++	return AR_SREV_5502(ah) ?
++		       qcn5502_modal_header(ah, is2ghz)->xatten1DB[chain] :
++		       ar9003_modal_header(ah, is2ghz)->xatten1DB[chain];
+ }
+ 
+ static u8 ar9003_xatten1_margin(struct ath_hw *ah, int chain, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->xatten1Margin[chain];
++	return AR_SREV_5502(ah) ?
++		       qcn5502_modal_header(ah, is2ghz)->xatten1Margin[chain] :
++		       ar9003_modal_header(ah, is2ghz)->xatten1Margin[chain];
+ }
+ 
+ static u8 ar9003_xlna_bias_strength(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->xlna_bias_strength;
++	return AR_SREV_5502(ah) ?
++		       qcn5502_modal_header(ah, is2ghz)->xlna_bias_strength :
++		       ar9003_modal_header(ah, is2ghz)->xlna_bias_strength;
+ }
+ 
+ static u8 ar9003_xpa_bias_lvl(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->xpaBiasLvl;
++	return AR_SREV_5502(ah) ? qcn5502_modal_header(ah, is2ghz)->xpaBiasLvl :
++				  ar9003_modal_header(ah, is2ghz)->xpaBiasLvl;
+ }
+ 
+ static u8 *ar9003_mac_addr(struct ath_hw *ah)
+ {
+-	return ah->eeprom.ar9300_eep.macAddr;
++	return AR_SREV_5502(ah) ? ah->eeprom.qcn5502.macAddr :
++				  ah->eeprom.ar9300_eep.macAddr;
+ }
+ 
+ static u16 ar9003_switch_com_spdt_get(struct ath_hw *ah, bool is2ghz)
+ {
+-	return le16_to_cpu(ar9003_modal_header(ah, is2ghz)->switchcomspdt);
++	__le16 val = AR_SREV_5502(ah) ?
++			     qcn5502_modal_header(ah, is2ghz)->switchcomspdt :
++			     ar9003_modal_header(ah, is2ghz)->switchcomspdt;
++	return le16_to_cpu(val);
+ }
+ 
+ static u32 ath9k_hw_ar9300_get_eeprom(struct ath_hw *ah,
+@@ -3614,10 +3748,11 @@ static int ar9300_eeprom_restore_internal(struct ath_hw *ah,
+  */
+ static bool ath9k_hw_ar9300_fill_eeprom(struct ath_hw *ah)
+ {
+-	u8 *mptr = (u8 *) &ah->eeprom.ar9300_eep;
++	u8 *mptr = (u8 *)&ah->eeprom;
++	int mdata_size = AR_SREV_5502(ah) ? sizeof(struct qcn5502_eeprom) :
++					    sizeof(struct ar9300_eeprom);
+ 
+-	if (ar9300_eeprom_restore_internal(ah, mptr,
+-			sizeof(struct ar9300_eeprom)) < 0)
++	if (ar9300_eeprom_restore_internal(ah, mptr, mdata_size) < 0)
+ 		return false;
+ 
+ 	return true;
+@@ -3627,32 +3762,42 @@ static bool ath9k_hw_ar9300_fill_eeprom(struct ath_hw *ah)
+ 
+ static int8_t ar9003_adc_desired_size(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->adcDesiredSize;
++	return AR_SREV_5502(ah) ?
++		       qcn5502_modal_header(ah, is2ghz)->adcDesiredSize :
++		       ar9003_modal_header(ah, is2ghz)->adcDesiredSize;
+ }
+ 
+ static u8 ar9003_switch_settling(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->switchSettling;
++	return AR_SREV_5502(ah) ?
++		       qcn5502_modal_header(ah, is2ghz)->switchSettling :
++		       ar9003_modal_header(ah, is2ghz)->switchSettling;
+ }
+ 
+ static u8 ar9003_tx_clip(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->txClip;
++	return AR_SREV_5502(ah) ? qcn5502_modal_header(ah, is2ghz)->txClip :
++				  ar9003_modal_header(ah, is2ghz)->txClip;
+ }
+ 
+ static u8 ar9003_tx_frame_to_data_start(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->txFrameToDataStart;
++	return AR_SREV_5502(ah) ?
++		       qcn5502_modal_header(ah, is2ghz)->txFrameToDataStart :
++		       ar9003_modal_header(ah, is2ghz)->txFrameToDataStart;
+ }
+ 
+ static u8 ar9003_tx_frame_to_pa_on(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->txFrameToPaOn;
++	return AR_SREV_5502(ah) ?
++		       qcn5502_modal_header(ah, is2ghz)->txFrameToPaOn :
++		       ar9003_modal_header(ah, is2ghz)->txFrameToPaOn;
+ }
+ 
+ static int8_t ar9003_volt_slope(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->voltSlope;
++	return AR_SREV_5502(ah) ? qcn5502_modal_header(ah, is2ghz)->voltSlope :
++				  ar9003_modal_header(ah, is2ghz)->voltSlope;
+ }
+ 
+ static u32 ar9003_dump_modal_eeprom(struct ath_hw *ah, char *buf, u32 len,
+@@ -5769,17 +5914,26 @@ s32 ar9003_hw_get_rx_gain_idx(struct ath_hw *ah)
+ 
+ u8 *ar9003_get_spur_chan_ptr(struct ath_hw *ah, bool is2ghz)
+ {
+-	return ar9003_modal_header(ah, is2ghz)->spurChans;
++	return AR_SREV_5502(ah) ? qcn5502_modal_header(ah, is2ghz)->spurChans :
++				  ar9003_modal_header(ah, is2ghz)->spurChans;
+ }
+ 
+ u32 ar9003_get_paprd_rate_mask_ht20(struct ath_hw *ah, bool is2ghz)
+ {
+-	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->papdRateMaskHt20);
++	__le32 val =
++		AR_SREV_5502(ah) ?
++			qcn5502_modal_header(ah, is2ghz)->papdRateMaskHt20 :
++			ar9003_modal_header(ah, is2ghz)->papdRateMaskHt20;
++	return le32_to_cpu(val);
+ }
+ 
+ u32 ar9003_get_paprd_rate_mask_ht40(struct ath_hw *ah, bool is2ghz)
+ {
+-	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->papdRateMaskHt40);
++	__le32 val =
++		AR_SREV_5502(ah) ?
++			qcn5502_modal_header(ah, is2ghz)->papdRateMaskHt40 :
++			ar9003_modal_header(ah, is2ghz)->papdRateMaskHt40;
++	return le32_to_cpu(val);
+ }
+ 
+ unsigned int ar9003_get_paprd_scale_factor(struct ath_hw *ah,
+diff --git a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
+index b91ef1250b..dad67eefba 100644
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.h
+@@ -42,6 +42,7 @@
+ #define AR9300_CUSTOMER_DATA_SIZE    20
+ 
+ #define AR9300_MAX_CHAINS            3
++#define QCN5502_MAX_CHAINS           4
+ #define AR9300_ANT_16S               25
+ #define AR9300_FUTURE_MODAL_SZ       6
+ 
+@@ -252,6 +253,51 @@ struct ar9300_modal_eep_header {
+ 	u8 futureModal[7];
+ } __packed;
+ 
++struct qcn5502_modal_eep_header {
++	/* 4 idle, t1, t2, b (4 bits per setting) */
++	__le32 antCtrlCommon;
++	/* 4 ra1l1, ra2l1, ra1l2, ra2l2, ra12 */
++	__le32 antCtrlCommon2;
++	/* 6 idle, t, r, rx1, rx12, b (2 bits each) */
++	__le16 antCtrlChain[QCN5502_MAX_CHAINS];
++	/* 3 xatten1_db for AR9280 (0xa20c/b20c 5:0) */
++	u8 xatten1DB[QCN5502_MAX_CHAINS];
++	/* 3  xatten1_margin for merlin (0xa20c/b20c 16:12 */
++	u8 xatten1Margin[QCN5502_MAX_CHAINS];
++	int8_t tempSlope;
++	int8_t voltSlope;
++	/* spur channels in usual fbin coding format */
++	u8 spurChans[AR_EEPROM_MODAL_SPURS];
++	/* 3  Check if the register is per chain */
++	int8_t noiseFloorThreshCh[QCN5502_MAX_CHAINS];
++	u8 reserved[13];
++	int8_t quick_drop;
++	u8 xpaBiasLvl;
++	u8 txFrameToDataStart;
++	u8 txFrameToPaOn;
++	u8 txClip;
++	int8_t antennaGain;
++	u8 switchSettling;
++	int8_t adcDesiredSize;
++	u8 txEndToXpaOff;
++	u8 txEndToRxOn;
++	u8 txFrameToXpaOn;
++	u8 thresh62;
++	__le32 papdRateMaskHt20;
++	__le32 papdRateMask4ssHt20;
++	__le32 papdRateMaskHt40;
++	__le32 papdRateMask4ssHt40;
++	__le16 switchcomspdt;
++	u8 xlna_bias_strength;
++	u8 rf_gain_cap;
++	u8 tx_gain_cap;
++	u8 futureModal[1];
++	int8_t xtal_ppm_target;
++	int8_t xtal_ppm_tolerance;
++	int8_t temp_slope_high_3;
++	int8_t eep_iqmask;
++} __packed;
++
+ struct ar9300_cal_data_per_freq_op_loop {
+ 	int8_t refPower;
+ 	/* pdadc voltage at power measurement */
+@@ -274,6 +320,10 @@ struct cal_tgt_pow_ht {
+ 	u8 tPow2x[14];
+ } __packed;
+ 
++struct qcn5502_cal_tgt_pow_ht {
++	u8 tPow2x[18];
++} __packed;
++
+ struct cal_ctl_data_2g {
+ 	u8 ctlEdges[AR9300_NUM_BAND_EDGES_2G];
+ } __packed;
+@@ -309,6 +359,15 @@ struct ar9300_BaseExtension_2 {
+ 	u8   xatten1MarginHigh[AR9300_MAX_CHAINS];
+ } __packed;
+ 
++struct qcn5502_BaseExtension_2 {
++	int8_t    tempSlopeLow;
++	int8_t    tempSlopeHigh;
++	u8   xatten1DBLow[QCN5502_MAX_CHAINS];
++	u8   xatten1MarginLow[QCN5502_MAX_CHAINS];
++	u8   xatten1DBHigh[QCN5502_MAX_CHAINS];
++	u8   xatten1MarginHigh[QCN5502_MAX_CHAINS];
++} __packed;
++
+ struct ar9300_eeprom {
+ 	u8 eepromVersion;
+ 	u8 templateVersion;
+@@ -356,6 +415,59 @@ struct ar9300_eeprom {
+ 	struct cal_ctl_data_5g ctlPowerData_5G[AR9300_NUM_CTLS_5G];
+ } __packed;
+ 
++static_assert(sizeof(struct ar9300_eeprom) == 0x440);
++
++struct qcn5502_eeprom {
++	u8 eepromVersion;
++	u8 templateVersion;
++	u8 macAddr[6];
++	u8 custData[AR9300_CUSTOMER_DATA_SIZE];
++
++	struct ar9300_base_eep_hdr baseEepHeader;
++
++	struct qcn5502_modal_eep_header modalHeader2G;
++	struct ar9300_BaseExtension_1 base_ext1;
++	u8 calFreqPier2G[AR9300_NUM_2G_CAL_PIERS];
++	struct ar9300_cal_data_per_freq_op_loop
++	 calPierData2G[QCN5502_MAX_CHAINS][AR9300_NUM_2G_CAL_PIERS];
++	u8 calTarget_freqbin_Cck[AR9300_NUM_2G_CCK_TARGET_POWERS];
++	u8 calTarget_freqbin_2G[AR9300_NUM_2G_20_TARGET_POWERS];
++	u8 calTarget_freqbin_2GHT20[AR9300_NUM_2G_20_TARGET_POWERS];
++	u8 calTarget_freqbin_2GHT40[AR9300_NUM_2G_40_TARGET_POWERS];
++	struct cal_tgt_pow_legacy
++	 calTargetPowerCck[AR9300_NUM_2G_CCK_TARGET_POWERS];
++	struct cal_tgt_pow_legacy
++	 calTargetPower2G[AR9300_NUM_2G_20_TARGET_POWERS];
++	struct qcn5502_cal_tgt_pow_ht
++	 calTargetPower2GHT20[AR9300_NUM_2G_20_TARGET_POWERS];
++	struct qcn5502_cal_tgt_pow_ht
++	 calTargetPower2GHT40[AR9300_NUM_2G_40_TARGET_POWERS];
++	u8 ctlIndex_2G[AR9300_NUM_CTLS_2G];
++	u8 ctl_freqbin_2G[AR9300_NUM_CTLS_2G][AR9300_NUM_BAND_EDGES_2G];
++	struct cal_ctl_data_2g ctlPowerData_2G[AR9300_NUM_CTLS_2G];
++	struct qcn5502_modal_eep_header modalHeader5G;
++	struct qcn5502_BaseExtension_2 base_ext2;
++	u8 calFreqPier5G[AR9300_NUM_5G_CAL_PIERS];
++	struct ar9300_cal_data_per_freq_op_loop
++	 calPierData5G[QCN5502_MAX_CHAINS][AR9300_NUM_5G_CAL_PIERS];
++	u8 calTarget_freqbin_5G[AR9300_NUM_5G_20_TARGET_POWERS];
++	u8 calTarget_freqbin_5GHT20[AR9300_NUM_5G_20_TARGET_POWERS];
++	u8 calTarget_freqbin_5GHT40[AR9300_NUM_5G_40_TARGET_POWERS];
++	struct cal_tgt_pow_legacy
++	 calTargetPower5G[AR9300_NUM_5G_20_TARGET_POWERS];
++	struct qcn5502_cal_tgt_pow_ht
++	 calTargetPower5GHT20[AR9300_NUM_5G_20_TARGET_POWERS];
++	struct qcn5502_cal_tgt_pow_ht
++	 calTargetPower5GHT40[AR9300_NUM_5G_40_TARGET_POWERS];
++	u8 ctlIndex_5G[AR9300_NUM_CTLS_5G];
++	u8 ctl_freqbin_5G[AR9300_NUM_CTLS_5G][AR9300_NUM_BAND_EDGES_5G];
++	struct cal_ctl_data_5g ctlPowerData_5G[AR9300_NUM_CTLS_5G];
++
++	u8 unknown[68];
++} __packed;
++
++static_assert(sizeof(struct qcn5502_eeprom) == 0x540);
++
+ s32 ar9003_hw_get_tx_gain_idx(struct ath_hw *ah);
+ s32 ar9003_hw_get_rx_gain_idx(struct ath_hw *ah);
+ u32 ar9003_hw_ant_ctrl_common_get(struct ath_hw *ah, bool is2ghz);
+diff --git a/drivers/net/wireless/ath/ath9k/hw.h b/drivers/net/wireless/ath/ath9k/hw.h
+index 2349d0e93c..20ece9eb9a 100644
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -790,6 +790,7 @@ struct ath_hw {
+ 		struct ar5416_eeprom_4k map4k;
+ 		struct ar9287_eeprom map9287;
+ 		struct ar9300_eeprom ar9300_eep;
++		struct qcn5502_eeprom qcn5502;
+ 	} eeprom;
+ 	const struct eeprom_ops *eep_ops;
+ 
+-- 
+2.34.1
+
