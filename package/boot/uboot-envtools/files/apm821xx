@@ -19,6 +19,10 @@ netgear,wndap620|\
 netgear,wndap660)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x4000" "0x4000" "4"
 	;;
+netgear,wndr4700)
+	ubootenv_add_uci_config "/dev/mtd0" "0x40000" "0x20000" "0x20000" "1"
+	ubootenv_add_uci_config "/dev/mtd0" "0x60000" "0x20000" "0x20000" "1"
+	;;
 wd,mybooklive)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x1000" "1"
 	ubootenv_add_uci_config "/dev/mtd1" "0x1000" "0x1000" "0x1000" "1"
