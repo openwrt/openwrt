@@ -1,0 +1,10 @@
+--- a/trace/trace.c
++++ b/trace/trace.c
+@@ -26,6 +26,7 @@
+ #include <string.h>
+ #include <syslog.h>
+ #include <limits.h>
++#include <libgen.h>
+ 
+ #ifndef PTRACE_EVENT_STOP
+ /* PTRACE_EVENT_STOP is defined in linux/ptrace.h, but this header

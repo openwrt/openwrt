@@ -19,17 +19,21 @@ V4L2_MEM2MEM_DIR=platform
 define KernelPackage/acpi-video
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=ACPI Extensions For Display Adapters
-  DEPENDS:=@TARGET_x86 +kmod-backlight
+  DEPENDS:=@TARGET_x86||TARGET_loongarch64 +kmod-backlight
   HIDDEN:=1
-  KCONFIG:=CONFIG_ACPI_VIDEO \
-	CONFIG_ACPI_WMI
-  FILES:=$(LINUX_DIR)/drivers/acpi/video.ko \
-	$(LINUX_DIR)/drivers/platform/x86/wmi.ko
-  AUTOLOAD:=$(call AutoProbe,wmi video)
+  KCONFIG:=CONFIG_ACPI_VIDEO
+  FILES:=$(LINUX_DIR)/drivers/acpi/video.ko
+  AUTOLOAD:=$(call AutoProbe,video)
 endef
 
 define KernelPackage/acpi-video/description
   Kernel support for integrated graphics devices.
+endef
+
+define KernelPackage/acpi-video/x86
+  KCONFIG+=CONFIG_ACPI_WMI
+  FILES+=$(LINUX_DIR)/drivers/platform/x86/wmi.ko
+  AUTOLOAD:=$(call AutoProbe,wmi video)
 endef
 
 $(eval $(call KernelPackage,acpi-video))
@@ -372,7 +376,7 @@ $(eval $(call KernelPackage,drm-suballoc-helper))
 define KernelPackage/drm-amdgpu
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=AMDGPU DRM support
-  DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-ttm \
+  DEPENDS:=@TARGET_x86||TARGET_loongarch64 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-ttm \
 	+kmod-drm-ttm-helper +kmod-drm-kms-helper +kmod-i2c-algo-bit +amdgpu-firmware \
 	+kmod-drm-display-helper +kmod-drm-buddy +kmod-acpi-video \
 	+LINUX_6_6:kmod-drm-exec +LINUX_6_6:kmod-drm-suballoc-helper
@@ -389,6 +393,13 @@ endef
 
 define KernelPackage/drm-amdgpu/description
   Direct Rendering Manager (DRM) support for AMDGPU Cards
+endef
+
+define KernelPackage/drm-amdgpu/loongarch64
+  KCONFIG+=CONFIG_DRM_AMDGPU_USERPTR=y \
+	CONFIG_DRM_AMD_DC=y \
+	CONFIG_DRM_AMD_DC_FP=y \
+	CONFIG_DRM_AMD_DC_SI=y
 endef
 
 $(eval $(call KernelPackage,drm-amdgpu))
