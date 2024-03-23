@@ -134,7 +134,7 @@ Applies to vanilla kernel 3.9.4.
  static DEFINE_SPINLOCK(devices_lock);
 --- a/kernel/umh.c
 +++ b/kernel/umh.c
-@@ -357,12 +357,12 @@ static void helper_unlock(void)
+@@ -354,12 +354,12 @@ static void helper_unlock(void)
  }
  
  int call_usermodehelper_stdoutpipe(struct subprocess_info *sub_info,

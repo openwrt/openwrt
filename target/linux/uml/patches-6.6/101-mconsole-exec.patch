@@ -161,7 +161,7 @@
  
  #include <trace/events/module.h>
  
-@@ -74,6 +75,28 @@ static int call_usermodehelper_exec_asyn
+@@ -71,6 +72,28 @@ static int call_usermodehelper_exec_asyn
  	flush_signal_handlers(current, 1);
  	spin_unlock_irq(&current->sighand->siglock);
  
@@ -190,7 +190,7 @@
  	/*
  	 * Initial kernel threads share ther FS with init, in order to
  	 * get the init root directory. But we've now created a new
-@@ -333,6 +356,20 @@ static void helper_unlock(void)
+@@ -330,6 +353,20 @@ static void helper_unlock(void)
  		wake_up(&running_helpers_waitq);
  }
  
