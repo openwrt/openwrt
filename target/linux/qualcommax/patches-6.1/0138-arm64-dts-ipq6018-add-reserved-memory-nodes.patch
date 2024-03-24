@@ -1,0 +1,33 @@
+From 04c85d394a80ea98b14821c991f63ed1b5a06dbe Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Wed, 20 Jan 2023 23:25:30 +0800
+Subject: [PATCH] arm64: dts: ipq6018: add reserved memory nodes
+
+Same as IPQ8074, add more reserved memory nodes for WLAN and PCI.
+The default memory layout of upstream dtsi is 1GB. This allows us
+to override the reserved memory setting.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+---
+ arch/arm64/boot/dts/qcom/ipq6018.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -217,6 +217,16 @@
+ 			reg = <0x0 0x4ab00000 0x0 0x5500000>;
+ 			no-map;
+ 		};
++
++		q6_etr_region: q6_etr_dump@50000000 {
++			reg = <0x0 0x50000000 0x0 0x100000>;
++			no-map;
++		};
++
++		m3_dump_region: m3_dump@50100000 {
++			reg = <0x0 0x50100000 0x0 0x100000>;
++			no-map;
++		};
+ 	};
+ 
+ 	smem {

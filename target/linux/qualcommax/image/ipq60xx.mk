@@ -11,6 +11,30 @@ define Device/8devices_mango-dvk
 endef
 TARGET_DEVICES += 8devices_mango-dvk
 
+define Device/glinet_gl-common
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := GL.iNet
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@cp03-c1
+	SOC := ipq6000
+endef
+
+define Device/glinet_gl-ax1800
+	$(call Device/glinet_gl-common)
+	DEVICE_MODEL := GL-AX1800
+	DEVICE_PACKAGES := ipq-wifi-glinet_gl-ax1800
+endef
+TARGET_DEVICES += glinet_gl-ax1800
+
+define Device/glinet_gl-axt1800
+	$(call Device/glinet_gl-common)
+	DEVICE_MODEL := GL-AXT1800
+	DEVICE_PACKAGES := ipq-wifi-glinet_gl-axt1800 kmod-hwmon-gpiofan
+endef
+TARGET_DEVICES += glinet_gl-axt1800
+
 define Device/netgear_wax214
        $(call Device/FitImage)
        $(call Device/UbiFit)
