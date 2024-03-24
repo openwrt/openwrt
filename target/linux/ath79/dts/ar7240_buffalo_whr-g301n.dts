@@ -146,7 +146,7 @@
 				read-only;
 			};
 
-			art: partition@3f0000 {
+			partition@3f0000 {
 				reg = <0x3f0000 0x10000>;
 				label = "art";
 				read-only;
@@ -160,6 +160,10 @@
 						compatible = "mac-base";
 						reg = <0x120c 0x6>;
 						#nvmem-cell-cells = <1>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0xeb8>;
 					};
 				};
 			};
@@ -185,9 +189,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,002a";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_art_120c 0>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_art_120c 0>, <&cal_art_1000>;
+		nvmem-cell-names = "mac-address", "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};

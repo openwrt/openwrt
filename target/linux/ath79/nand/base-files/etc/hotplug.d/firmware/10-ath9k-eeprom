@@ -9,9 +9,6 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
-	8dev,rambutan)
-		caldata_extract "caldata" 0x1000 0x800
-		;;
 	meraki,mr18)
 		. /lib/upgrade/nand.sh
 

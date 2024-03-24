@@ -108,12 +108,32 @@
 				label = "art";
 				reg = <0x10000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 
-			mac: partition@20000 {
+			partition@20000 {
 				label = "mac";
 				reg = <0x20000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_mac_4: calibration@4 {
+						reg = <0x4 0x11>;
+					};
+				};
 			};
 
 			partition@30000 {
@@ -139,5 +159,7 @@
 
 &wmac {
 	status = "okay";
-	qca,no-eeprom;
+
+	nvmem-cells = <&cal_art_1000>, <&macaddr_mac_4>;
+	nvmem-cell-names = "calibration", "mac-address";
 };

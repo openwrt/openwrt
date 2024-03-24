@@ -32,6 +32,10 @@
 	};
 };
 
+&cal_art_1000 {
+	reg = <0x1000 0x1000>;
+};
+
 &eth0 {
 	nvmem-cells = <&macaddr_uboot_1fc00 (-1)>;
 	nvmem-cell-names = "mac-address";
@@ -44,4 +48,6 @@
 
 &ath9k {
 	compatible = "pci168c,002b";
+	nvmem-cells = <&macaddr_uboot_1fc00 0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
