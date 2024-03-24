@@ -23,17 +23,20 @@
 		pinctrl-0 = <&jtag_disable_pins>;
 
 		lan {
-			label = "blue:lan";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
-		};
+		}
 
 		led_wan: wan {
-			label = "blue:wan";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "blue:wlan";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
