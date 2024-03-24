@@ -54,6 +54,11 @@ netgear,wax220)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan2g" "phy0-ap0"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan5g" "phy1-ap0"
 	;;
+nokia,ea0326gmp)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan" "link"
+	ucidef_set_led_netdev "wlan" "WLAN" "green:wlan" "phy1-ap0" "link"
+	;;
 routerich,ax3000)
 	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
