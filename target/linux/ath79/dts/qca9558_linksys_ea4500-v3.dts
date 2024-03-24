@@ -123,7 +123,7 @@
 
 		partition@2c0000 {
 			label = "firmware";
-			reg = <0x2c0000 0x5000000>;
+			reg = <0x2c0000 0x7d40000>;
 
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -136,7 +136,7 @@
 
 			partition@400000 {
 				label = "ubi";
-				reg = <0x400000 0x4c00000>;
+				reg = <0x400000 0x7940000>;
 			};
 
 			/* Original layout for secondary partitions */
@@ -151,11 +151,11 @@
 			}; */
 		};
 
-		partition@52c0000 {
+		/* Original layout for user data partition */
+		/* partition@52c0000 {
 			label = "syscfg";
 			reg = <0x52c0000 0x2d40000>;
-			read-only;
-		};
+		}; */
 	};
 };
 

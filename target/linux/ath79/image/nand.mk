@@ -281,6 +281,10 @@ TARGET_DEVICES += glinet_gl-x1200-nor
 
 define Device/linksys_ea4500-v3
   SOC := qca9558
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Partition table has been changed. Please \
+	install kmod-mtd-rw and erase mtd8 (syscfg) before upgrade, \
+	and use tftp to downgrade!
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA4500
   DEVICE_VARIANT := v3
