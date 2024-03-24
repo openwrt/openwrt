@@ -1,0 +1,51 @@
+From f86dd8eaf8da84ee5b803d90b8c311d7e2725d0b Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Fri, 22 Dec 2023 11:14:29 +0100
+Subject: [PATCH 08/21] wifi: rtl8xxxu: don't parse CFO, if both interfaces are
+ connected in STA mode
+
+If both interfaces are in STATION mode and both are connected to an AP,
+there might be conflicting CFO values for the two connections. Ignore
+the CFO information in this case.
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20231222101442.626837-9-martin.kaistra@linutronix.de
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -5716,6 +5716,14 @@ static inline bool rtl8xxxu_is_packet_ma
+ 	       ether_addr_equal(priv->vifs[port_num]->bss_conf.bssid, hdr->addr2);
+ }
+ 
++static inline bool rtl8xxxu_is_sta_sta(struct rtl8xxxu_priv *priv)
++{
++	return (priv->vifs[0] && priv->vifs[0]->cfg.assoc &&
++		priv->vifs[0]->type == NL80211_IFTYPE_STATION) &&
++	       (priv->vifs[1] && priv->vifs[1]->cfg.assoc &&
++		priv->vifs[1]->type == NL80211_IFTYPE_STATION);
++}
++
+ void rtl8723au_rx_parse_phystats(struct rtl8xxxu_priv *priv,
+ 				 struct ieee80211_rx_status *rx_status,
+ 				 struct rtl8723au_phy_stats *phy_stats,
+@@ -5734,6 +5742,7 @@ void rtl8723au_rx_parse_phystats(struct
+ 		bool parse_cfo = priv->fops->set_crystal_cap &&
+ 				 !crc_icv_err &&
+ 				 !ieee80211_is_ctl(hdr->frame_control) &&
++				 !rtl8xxxu_is_sta_sta(priv) &&
+ 				 (rtl8xxxu_is_packet_match_bssid(priv, hdr, 0) ||
+ 				  rtl8xxxu_is_packet_match_bssid(priv, hdr, 1));
+ 
+@@ -5772,6 +5781,7 @@ static void jaguar2_rx_parse_phystats_ty
+ 	bool parse_cfo = priv->fops->set_crystal_cap &&
+ 			 !crc_icv_err &&
+ 			 !ieee80211_is_ctl(hdr->frame_control) &&
++			 !rtl8xxxu_is_sta_sta(priv) &&
+ 			 (rtl8xxxu_is_packet_match_bssid(priv, hdr, 0) ||
+ 			  rtl8xxxu_is_packet_match_bssid(priv, hdr, 1));
+ 	u8 pwdb_max = 0;

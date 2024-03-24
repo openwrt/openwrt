@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "asus,rt-n14u", "ralink,mt7620n-soc";
@@ -18,24 +19,28 @@
 		compatible = "gpio-leds";
 
 		wan {
-			label = "blue:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
-			label = "blue:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "blue:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
 
 		led_power: power {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
 		};
 
@@ -95,7 +100,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

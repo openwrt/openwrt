@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "wavlink,wl-wn535k1", "ralink,mt7620a-soc";
@@ -37,12 +38,14 @@
 		compatible = "gpio-leds";
 
 		led_status_blue: status_blue {
-			label = "blue:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_red: status_red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -57,7 +60,8 @@
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -92,7 +96,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

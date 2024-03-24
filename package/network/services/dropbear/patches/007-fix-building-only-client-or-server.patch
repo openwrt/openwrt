@@ -1,0 +1,29 @@
+From 7a53c7f0f4b3eb23e002819553cb45558642c01d Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Wed, 4 Jan 2023 20:32:23 +0800
+Subject: Fix building only client or server
+
+Regressed when -Wundef was added
+
+Fixes #210
+---
+ sysoptions.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/sysoptions.h
++++ b/sysoptions.h
+@@ -10,6 +10,14 @@
+ #define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEAR_VERSION
+ #define PROGNAME "dropbear"
+ 
++#ifndef DROPBEAR_CLIENT
++#define DROPBEAR_CLIENT 0
++#endif
++
++#ifndef DROPBEAR_SERVER
++#define DROPBEAR_SERVER 0
++#endif
++
+ /* Spec recommends after one hour or 1 gigabyte of data. One hour
+  * is a bit too verbose, so we try 8 hours */
+ #ifndef KEX_REKEY_TIMEOUT

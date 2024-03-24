@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "zte,q7", "ralink,mt7620a-soc";
@@ -18,12 +19,14 @@
 		compatible = "gpio-leds";
 
 		statred {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_blue: statblue {
-			label = "blue:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -68,7 +71,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

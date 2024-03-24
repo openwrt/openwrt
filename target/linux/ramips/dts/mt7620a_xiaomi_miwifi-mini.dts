@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "xiaomi,miwifi-mini", "ralink,mt7620a-soc";
@@ -23,22 +24,26 @@
 		compatible = "gpio-leds";
 
 		led_blue: blue {
-			label = "blue:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
 		};
 
 		led_yellow: yellow {
-			label = "yellow:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_YELLOW>;
 			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
 		};
 
 		led_red: red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 		};
 
@@ -97,7 +102,7 @@
 				reg = <0x30000 0x10000>;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

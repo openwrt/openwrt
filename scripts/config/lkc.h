@@ -77,7 +77,7 @@ struct gstr str_new(void);
 void str_free(struct gstr *gs);
 void str_append(struct gstr *gs, const char *s);
 void str_printf(struct gstr *gs, const char *fmt, ...);
-const char *str_get(struct gstr *gs);
+char *str_get(struct gstr *gs);
 
 /* menu.c */
 void _menu_init(void);
@@ -100,10 +100,10 @@ bool menu_is_empty(struct menu *menu);
 bool menu_is_visible(struct menu *menu);
 bool menu_has_prompt(struct menu *menu);
 const char *menu_get_prompt(struct menu *menu);
-struct menu *menu_get_root_menu(struct menu *menu);
 struct menu *menu_get_parent_menu(struct menu *menu);
 bool menu_has_help(struct menu *menu);
 const char *menu_get_help(struct menu *menu);
+int get_jump_key_char(void);
 struct gstr get_relations_str(struct symbol **sym_arr, struct list_head *head);
 void menu_get_ext_help(struct menu *menu, struct gstr *help);
 
@@ -124,11 +124,6 @@ static inline tristate sym_get_tristate_value(struct symbol *sym)
 static inline struct symbol *sym_get_choice_value(struct symbol *sym)
 {
 	return (struct symbol *)sym->curr.val;
-}
-
-static inline bool sym_set_choice_value(struct symbol *ch, struct symbol *chval)
-{
-	return sym_set_tristate_value(chval, yes);
 }
 
 static inline bool sym_is_choice(struct symbol *sym)

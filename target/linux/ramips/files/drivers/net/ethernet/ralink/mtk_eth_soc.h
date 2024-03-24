@@ -378,7 +378,7 @@ struct fe_soc_data {
 	const u16 *reg_table;
 
 	void (*init_data)(struct fe_soc_data *data, struct net_device *netdev);
-	void (*set_mac)(struct fe_priv *priv, unsigned char *mac);
+	void (*set_mac)(struct fe_priv *priv, const unsigned char *mac);
 	int (*fwd_config)(struct fe_priv *priv);
 	void (*tx_dma)(struct fe_tx_dma *txd);
 	int (*switch_init)(struct fe_priv *priv);

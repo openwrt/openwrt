@@ -1,0 +1,60 @@
+From ec26975d442163b66d1646a48e022bc8c2f1607a Mon Sep 17 00:00:00 2001
+From: Sergey Ponomarev <stokito@gmail.com>
+Date: Sun, 27 Aug 2023 00:07:05 +0300
+Subject: dropbearkey.c Ignore unsupported command line options
+
+To generate non interactively a key with OpenSSH the simplest command is:
+
+ssh-keygen -t ed25519 -q -N '' -f ~/.ssh/id_ed25519
+
+The command has two options -q quiet and -N passphrase which aren't supported by the dropbearkey.
+
+To improve interoperability add explicit ignoring of the -q and -N with empty passphrase.
+Also ignore the -v even if the DEBUG_TRACE is not set.
+
+Signed-off-by: Sergey Ponomarev <stokito@gmail.com>
+---
+ dropbearkey.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+--- a/dropbearkey.c
++++ b/dropbearkey.c
+@@ -159,6 +159,7 @@ int main(int argc, char ** argv) {
+ 	enum signkey_type keytype = DROPBEAR_SIGNKEY_NONE;
+ 	char * typetext = NULL;
+ 	char * sizetext = NULL;
++	char * passphrase = NULL;
+ 	unsigned int bits = 0, genbits;
+ 	int printpub = 0;
+ 
+@@ -194,11 +195,16 @@ int main(int argc, char ** argv) {
+ 					printhelp(argv[0]);
+ 					exit(EXIT_SUCCESS);
+ 					break;
+-#if DEBUG_TRACE
+ 				case 'v':
++#if DEBUG_TRACE
+ 					debug_trace = DROPBEAR_VERBOSE_LEVEL;
+-					break;
+ #endif
++					break;
++				case 'q':
++					break;  /* quiet is default */
++				case 'N':
++					next = &passphrase;
++					break;
+ 				default:
+ 					fprintf(stderr, "Unknown argument %s\n", argv[i]);
+ 					printhelp(argv[0]);
+@@ -266,6 +272,11 @@ int main(int argc, char ** argv) {
+ 		check_signkey_bits(keytype, bits);;
+ 	}
+ 
++	if (passphrase && *passphrase != '\0') {
++		fprintf(stderr, "Only empty passphrase is supported\n");
++		exit(EXIT_FAILURE);
++	}
++
+ 	genbits = signkey_generate_get_bits(keytype, bits);
+ 	fprintf(stderr, "Generating %u bit %s key, this may take a while...\n", genbits, typetext);
+ 	if (signkey_generate(keytype, bits, filename, 0) == DROPBEAR_FAILURE)

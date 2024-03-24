@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "mt7620a_zbtlink_zbt-we1026.dtsi"
 
 / {
@@ -10,12 +12,14 @@
 		compatible = "gpio-leds";
 
 		lan {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";

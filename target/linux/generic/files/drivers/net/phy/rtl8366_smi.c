@@ -256,7 +256,7 @@ static int __rtl8366_smi_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data)
 
 int __rtl8366_mdio_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data)
 {
-	u32 phy_id = MDC_REALTEK_PHY_ADDR;
+	u32 phy_id = smi->phy_id;
 	struct mii_bus *mbus = smi->ext_mbus;
 
 	BUG_ON(in_interrupt());
@@ -293,7 +293,7 @@ int __rtl8366_mdio_read_reg(struct rtl8366_smi *smi, u32 addr, u32 *data)
 
 static int __rtl8366_mdio_write_reg(struct rtl8366_smi *smi, u32 addr, u32 data)
 {
-	u32 phy_id = MDC_REALTEK_PHY_ADDR;
+	u32 phy_id = smi->phy_id;
 	struct mii_bus *mbus = smi->ext_mbus;
 
 	BUG_ON(in_interrupt());
@@ -1547,6 +1547,9 @@ int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi *smi)
 		goto try_gpio;
 	}
 
+	if (of_property_read_u32(np, "phy-id", &smi->phy_id))
+		smi->phy_id = MDC_REALTEK_PHY_ADDR;
+
 	return 0;
 
 try_gpio:
@@ -1586,6 +1589,7 @@ int rtl8366_smi_probe_plat(struct platform_device *pdev, struct rtl8366_smi *smi
 	smi->gpio_sda = pdata->gpio_sda;
 	smi->gpio_sck = pdata->gpio_sck;
 	smi->hw_reset = pdata->hw_reset;
+	smi->phy_id = MDC_REALTEK_PHY_ADDR;
 
 	return 0;
 }

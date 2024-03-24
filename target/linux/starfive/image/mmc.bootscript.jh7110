@@ -1,0 +1,5 @@
+fatload mmc 1:3 0xa0000000 Image
+fatload mmc 1:3 0x46000000 dtb
+run chipa_set_linux
+setenv bootargs "earlyprintk console=ttyS0,115200 debug rootwait earlycon=sbi root=/dev/mmcblk1p4"
+booti 0xa0000000 - 0x46000000

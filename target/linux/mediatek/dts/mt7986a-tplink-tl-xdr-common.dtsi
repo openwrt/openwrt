@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 #include "mt7986a.dtsi"
 
@@ -67,12 +68,14 @@
 		compatible = "gpio-leds";
 
 		led_status_red: status_red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_green: status_green {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&pio 8 GPIO_ACTIVE_HIGH>;
 		};
 

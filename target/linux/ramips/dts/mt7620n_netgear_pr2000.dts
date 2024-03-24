@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "netgear,pr2000", "ralink,mt7620n-soc";
@@ -28,7 +29,8 @@
 		};
 
 		usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
@@ -103,7 +105,7 @@
 				reg = <0x40000 0xf20000>;
 			};
 
-			factory: partition@f60000 {
+			partition@f60000 {
 				label = "factory";
 				reg = <0xf60000 0x10000>;
 				read-only;
@@ -119,7 +121,7 @@
 				};
 			};
 
-			board_data: partition@f70000 {
+			partition@f70000 {
 				label = "board_data";
 				reg = <0xf70000 0x10000>;
 				read-only;

@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/mtd/partitions/uimage.h>
 
 / {
@@ -18,12 +19,14 @@
 		compatible = "gpio-leds";
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -49,7 +52,8 @@
 		};
 
 		led_wps: wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 	};

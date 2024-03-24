@@ -1,0 +1,47 @@
+From f6c0115daaac586740e873a3b8145c5370a73dce Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Sat, 17 Feb 2024 13:02:31 +0100
+Subject: [PATCH] config: identify kernel 6.6
+
+Identify kernel 6.6 so it can be compiled against.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ config            | 5 +++++
+ make/linux_opt.mk | 4 ++--
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+--- a/config
++++ b/config
+@@ -27,6 +27,11 @@ endif
+ ifeq ($(KVER),$(filter 6.1%,$(KVER)))
+ 	OS_VER=6_1
+ endif
++
++ifeq ($(KVER),$(filter 6.6%,$(KVER)))
++	OS_VER=6_6
++endif
++
+ ifeq ($(KVER), 3.4.0)
+ 	OS_VER=3_4
+ endif
+--- a/make/linux_opt.mk
++++ b/make/linux_opt.mk
+@@ -450,7 +450,7 @@ ifeq (KSLIB, $(MODULE_TYPE))
+       KASAN_SHADOW_SCALE_SHIFT := 3
+   endif
+ 
+-  ifeq ($(OS_VER),$(filter 5_4 6_1, $(OS_VER)))
++  ifeq ($(OS_VER),$(filter 5_4 6_1 6_6, $(OS_VER)))
+       ifeq ($(ARCH), arm64)
+           KASAN_OPTION += -DKASAN_SHADOW_SCALE_SHIFT=$(KASAN_SHADOW_SCALE_SHIFT)
+        endif
+@@ -481,7 +481,7 @@ ifeq (KSLIB, $(MODULE_TYPE))
+ 
+   endif
+ 
+-  ifeq ($(OS_VER),$(filter 4_4 5_4 6_1, $(OS_VER)))
++  ifeq ($(OS_VER),$(filter 4_4 5_4 6_1 6_6, $(OS_VER)))
+                 MODULE_CFLAG += -DKVER34
+                 MODULE_CFLAG += -DKVER32
+             MODULE_CFLAG += -DLNX26_22

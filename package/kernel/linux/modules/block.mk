@@ -65,7 +65,7 @@ define KernelPackage/ata-ahci-platform
     $(LINUX_DIR)/drivers/ata/ahci_platform.ko \
     $(LINUX_DIR)/drivers/ata/libahci_platform.ko
   AUTOLOAD:=$(call AutoLoad,40,libahci libahci_platform ahci_platform,1)
-  $(call AddDepends/ata,@TARGET_ipq806x||TARGET_layerscape||TARGET_sunxi)
+  $(call AddDepends/ata,@TARGET_ipq806x||TARGET_layerscape||TARGET_rockchip||TARGET_sunxi)
 endef
 
 define KernelPackage/ata-ahci-platform/description
@@ -263,7 +263,7 @@ define KernelPackage/iscsi-initiator
 	CONFIG_INET \
 	CONFIG_SCSI_LOWLEVEL=y \
 	CONFIG_ISCSI_TCP \
-	CONFIG_SCSI_ISCSI_ATTRS=y
+	CONFIG_SCSI_ISCSI_ATTRS
   FILES:= \
 	$(LINUX_DIR)/drivers/scsi/iscsi_tcp.ko \
 	$(LINUX_DIR)/drivers/scsi/libiscsi.ko \

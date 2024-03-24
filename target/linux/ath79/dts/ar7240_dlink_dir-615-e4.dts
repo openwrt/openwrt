@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "D-Link DIR-615 E4";
@@ -40,17 +41,20 @@
 		pinctrl-0 = <&switch_led_pins>;
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_amber: power_amber {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
 		wps {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
 
@@ -75,12 +79,14 @@
 		};
 
 		wan_amber {
-			label = "amber:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan_green {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -89,7 +95,8 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&ath9k 1 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};

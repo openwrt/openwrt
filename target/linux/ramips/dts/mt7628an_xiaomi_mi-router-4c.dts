@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "mt7628an_xiaomi_mi-router-4.dtsi"
 
 / {
@@ -18,17 +20,20 @@
 		compatible = "gpio-leds";
 
 		led_power_blue: power_blue {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_yellow: power_yellow {
-			label = "yellow:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_YELLOW>;
 			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "blue:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 

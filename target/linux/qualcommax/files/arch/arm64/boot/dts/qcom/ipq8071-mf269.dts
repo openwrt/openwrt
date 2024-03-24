@@ -7,6 +7,7 @@
 #include "ipq8074-ess.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "ZTE MF269";
@@ -48,7 +49,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpio = <&tlmm 56 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -388,12 +390,14 @@
 	qca8081_24: ethernet-phy@24 {
 		compatible = "ethernet-phy-id004d.d101";
 		reg = <24>;
+		reset-deassert-us = <10000>;
 		reset-gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
 	};
 
 	qca8081_28: ethernet-phy@28 {
 		compatible = "ethernet-phy-id004d.d101";
 		reg = <28>;
+		reset-deassert-us = <10000>;
 		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
 	};
 };

@@ -26,9 +26,9 @@ Link: https://lore.kernel.org/r/20230912051857.2284-4-quic_adisi@quicinc.com
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -9060,6 +9060,14 @@ static int ath11k_mac_op_get_txpower(str
- 	if (ar->state != ATH11K_STATE_ON)
- 		goto err_fallback;
+@@ -9068,6 +9068,14 @@ static int ath11k_mac_op_get_txpower(str
+ 		return -EAGAIN;
+ 	}
  
 +	/* Firmware doesn't provide Tx power during CAC hence no need to fetch
 +	 * the stats.

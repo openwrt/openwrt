@@ -37,17 +37,17 @@ WS-AP3825i AP.
  obj-$(CONFIG_RED_15W_REV1)	+= red15w_rev1.o
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -164,6 +164,7 @@ src-plat-$(CONFIG_PPC_POWERNV) += pserie
- src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) += pseries-head.S
+@@ -165,6 +165,7 @@ src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) +=
  src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
+ src-plat-$(CONFIG_HIVEAP_330) += simpleboot.c fixed-head.S
  src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
 +src-plat-$(CONFIG_WS_AP3825I) += simpleboot.c fixed-head.S
  
  src-plat-$(CONFIG_PPC_MICROWATT) += fixed-head.S microwatt.c
  
-@@ -345,6 +346,7 @@ image-$(CONFIG_TQM8555)			+= cuImage.tqm
- image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
+@@ -347,6 +348,7 @@ image-$(CONFIG_TQM8560)			+= cuImage.tqm
  image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
+ image-$(CONFIG_HIVEAP_330)		+= simpleImage.hiveap-330
  image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
 +image-$(CONFIG_WS_AP3825I)		+= simpleImage.ws-ap3825i
  # Board ports in arch/powerpc/platform/86xx/Kconfig
@@ -55,11 +55,11 @@ WS-AP3825i AP.
  
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
-@@ -339,6 +339,7 @@ adder875-redboot)
-     platformo="$object/fixed-head.o $object/redboot-8xx.o"
+@@ -340,6 +340,7 @@ adder875-redboot)
      binary=y
      ;;
+ simpleboot-hiveap-330|\
 +simpleboot-ws-ap3825i|\
  simpleboot-tl-wdr4900-v1)
      platformo="$object/fixed-head.o $object/simpleboot.o"
-     link_address='0x1000000'
+     link_address='0x1500000'

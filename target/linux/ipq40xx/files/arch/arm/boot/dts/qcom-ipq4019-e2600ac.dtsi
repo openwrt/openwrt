@@ -7,6 +7,7 @@
 #include "qcom-ipq4019.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
@@ -130,7 +131,8 @@
 			};
 
 			led3 {
-				label = "green:usb";
+				function = LED_FUNCTION_USB;
+				color = <LED_COLOR_ID_GREEN>;
 				gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
 				trigger-sources = <&usb2_port1>, <&usb3_port1>, <&usb3_port2>;
 				linux,default-trigger = "usbport";

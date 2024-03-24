@@ -7,6 +7,7 @@
 #include <dt-bindings/soc/qcom,tcsr.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Cell C RTL30VW";
@@ -48,13 +49,15 @@
 
 		led_power_blue: power_blue {
 			gpios = <&led_gpio 0 GPIO_ACTIVE_HIGH>;
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			default-state = "on";
 		};
 
 		led_power_red: power_red {
 			gpios = <&led_gpio 1 GPIO_ACTIVE_HIGH>;
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 		};
 
 		tp28 {
@@ -83,7 +86,8 @@
 
 		wps {
 			gpios = <&led_gpio 10 GPIO_ACTIVE_HIGH>;
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 		};
 
 		voip {

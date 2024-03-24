@@ -1,6 +1,7 @@
 #include "qcom-ipq8065-smb208.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	memory@0 {
@@ -71,23 +72,27 @@
 		pinctrl-names = "default";
 
 		power_white: power_white {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 
 		power_amber: power_amber {
-			label = "amber:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan_white {
-			label = "white:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_HIGH>;
 		};
 
 		wan_amber {
-			label = "amber:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -97,7 +102,8 @@
 		};
 
 		wps {
-			label = "white:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_HIGH>;
 		};
 	};

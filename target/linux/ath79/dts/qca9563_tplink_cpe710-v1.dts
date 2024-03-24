@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "TP-Link CPE710 v1";
@@ -20,7 +21,8 @@
 		compatible = "gpio-leds";
 
 		led_lan: lan {
-			label = "blue:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
@@ -45,6 +47,13 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>, <&macaddr_info_8>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+	};
 };
 
 &spi {
@@ -109,6 +118,16 @@
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
 			};
 		};
 	};

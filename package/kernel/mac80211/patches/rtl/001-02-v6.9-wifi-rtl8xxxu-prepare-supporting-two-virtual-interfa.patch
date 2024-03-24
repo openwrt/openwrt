@@ -1,0 +1,61 @@
+From 2bbd7d584046038ce655e476628bb15e1460fac6 Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Fri, 22 Dec 2023 11:14:23 +0100
+Subject: [PATCH 02/21] wifi: rtl8xxxu: prepare supporting two virtual
+ interfaces
+
+To prepare for concurrent mode, add an array ("vifs") to rtl8xxxu_priv
+to keep track of both interfaces.
+
+Keep the old priv->vif as long there are still users of it and let
+priv->vifs[0] point to the same location.
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20231222101442.626837-3-martin.kaistra@linutronix.de
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h      |  2 ++
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 10 +++++++---
+ 2 files changed, 9 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
+@@ -1897,6 +1897,8 @@ struct rtl8xxxu_priv {
+ 	 * is supported and no iface_combinations are provided.
+ 	 */
+ 	struct ieee80211_vif *vif;
++
++	struct ieee80211_vif *vifs[2];
+ 	struct delayed_work ra_watchdog;
+ 	struct work_struct c2hcmd_work;
+ 	struct sk_buff_head c2hcmd_queue;
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -6569,10 +6569,12 @@ static int rtl8xxxu_add_interface(struct
+ 	int ret;
+ 	u8 val8;
+ 
+-	if (!priv->vif)
++	if (!priv->vif) {
+ 		priv->vif = vif;
+-	else
++		priv->vifs[0] = vif;
++	} else {
+ 		return -EOPNOTSUPP;
++	}
+ 
+ 	switch (vif->type) {
+ 	case NL80211_IFTYPE_STATION:
+@@ -6622,8 +6624,10 @@ static void rtl8xxxu_remove_interface(st
+ 
+ 	dev_dbg(&priv->udev->dev, "%s\n", __func__);
+ 
+-	if (priv->vif)
++	if (priv->vif) {
+ 		priv->vif = NULL;
++		priv->vifs[0] = NULL;
++	}
+ }
+ 
+ static int rtl8xxxu_config(struct ieee80211_hw *hw, u32 changed)

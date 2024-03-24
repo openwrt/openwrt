@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qcom-ipq4019-xx8300.dtsi"
 
 / {
@@ -19,25 +21,29 @@
 		compatible = "gpio-leds";
 
 		led_red: red {
-			label = "red:alarm";
+			function = LED_FUNCTION_ALARM;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&tlmm 47 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_amber: amber {
-			label = "amber:programming";
+			function = LED_FUNCTION_PROGRAMMING;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};
 
 		led_blue: blue {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
 		};
 
 		// On back panel, above USB socket
 
 		led_usb: usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&usb3_port1>, <&usb3_port2>,
 					  <&usb2_port1>;

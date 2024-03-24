@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 # A little script I whipped up to make it easy to
 # patch source trees and have sane error handling
 # -Erik

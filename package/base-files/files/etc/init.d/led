@@ -3,6 +3,39 @@
 
 START=96
 
+led_color_set() {
+	local cfg="$1"
+	local sysfs="$2"
+
+	local max_b
+	local colors
+	local color
+	local multi_intensity
+	local value
+	local write
+
+	[ -e /sys/class/leds/${sysfs}/multi_intensity ] || return
+	[ -e /sys/class/leds/${sysfs}/multi_index ] || return
+
+	max_b="$(cat /sys/class/leds/${sysfs}/max_brightness)"
+	colors="$(cat /sys/class/leds/${sysfs}/multi_index | tr " " "\n")"
+	multi_intensity=""
+	for color in $colors; do
+		config_get value $1 "color_${color}" "0"
+		[ "$value" -gt 0 ] && write=1
+		[ "$value" -gt "$max_b" ] && value="$max_b"
+		multi_intensity="${multi_intensity}${value} "
+	done
+
+	# Check if any color is configured
+	[ "$write" = 1 ] || return
+	# Remove last whitespace
+	multi_intensity="${multi_intensity:0:-1}"
+
+	echo "setting '${name}' led color to '${multi_intensity}'"
+	echo "${multi_intensity}" > /sys/class/leds/${sysfs}/multi_intensity
+}
+
 load_led() {
 	local name
 	local sysfs
@@ -49,21 +82,29 @@ load_led() {
 	[ -e /sys/class/leds/${sysfs}/brightness ] && {
 		echo "setting up led ${name}"
 
-		printf "%s %s %d\n" \
+		printf "%s %s %d" \
 			"$sysfs" \
 			"$(sed -ne 's/^.*\[\(.*\)\].*$/\1/p' /sys/class/leds/${sysfs}/trigger)" \
 			"$(cat /sys/class/leds/${sysfs}/brightness)" \
 				>> /var/run/led.state
+		# Save default color if supported
+		[ -e /sys/class/leds/${sysfs}/multi_intensity ] && {
+			printf " %s" \
+				"$(sed 's/\ /:/g' /sys/class/leds/${sysfs}/multi_intensity)" \
+				>> /var/run/led.state
+		}
+		printf "\n" >> /var/run/led.state
 
 		[ "$default" = 0 ] &&
 			echo 0 >/sys/class/leds/${sysfs}/brightness
 
-		echo $trigger > /sys/class/leds/${sysfs}/trigger 2> /dev/null
-		ret="$?"
-
 		[ $default = 1 ] &&
 			cat /sys/class/leds/${sysfs}/max_brightness > /sys/class/leds/${sysfs}/brightness
 
+		led_color_set "$1" "$sysfs"
+
+		echo $trigger > /sys/class/leds/${sysfs}/trigger 2> /dev/null
+		ret="$?"
 		[ $ret = 0 ] || {
 			echo >&2 "Skipping trigger '$trigger' for led '$name' due to missing kernel module"
 			return 1
@@ -128,13 +169,17 @@ load_led() {
 start() {
 	[ -e /sys/class/leds/ ] && {
 		[ -s /var/run/led.state ] && {
-			local led trigger brightness
-			while read led trigger brightness; do
+			local led trigger brightness color
+			while read led trigger brightness color; do
 				[ -e "/sys/class/leds/$led/trigger" ] && \
 					echo "$trigger" > "/sys/class/leds/$led/trigger"
 
 				[ -e "/sys/class/leds/$led/brightness" ] && \
 					echo "$brightness" > "/sys/class/leds/$led/brightness"
+
+				[ -e "/sys/class/leds/$led/multi_intensity" ] && \
+					echo "$color" | sed 's/:/\ /g' > \
+						"/sys/class/leds/$led/multi_intensity"
 			done < /var/run/led.state
 			rm /var/run/led.state
 		}

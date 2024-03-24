@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "omnima,hpm", "ralink,rt3662-soc", "ralink,rt3883-soc";
@@ -33,13 +34,15 @@
 		compatible = "gpio-leds";
 
 		power {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		led_status: status {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
@@ -109,7 +112,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				reg = <0x00040000 0x00010000>;
 				label = "factory";
 				read-only;

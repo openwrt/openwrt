@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qca9531_alfa-network_r36a.dtsi"
 
 / {
@@ -19,7 +21,8 @@
 		pinctrl-0 = <&enable_gpio4 &enable_gpio16>;
 
 		lan {
-			label = "blue:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 

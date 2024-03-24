@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 /include/ "fsl/p1010si-pre.dtsi"
 
@@ -42,12 +43,14 @@
 
 		led_power_green: power_green {
 			gpios = <&spi_gpio 0 GPIO_ACTIVE_HIGH>;
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led_power_red: power_red {
 			gpios = <&spi_gpio 1 GPIO_ACTIVE_HIGH>;
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 		};
 
 		lan1_red {

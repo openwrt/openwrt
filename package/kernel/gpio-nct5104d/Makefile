@@ -17,7 +17,7 @@ PKG_LICENSE:=GPL-2.0
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/gpio-nct5104d
-  SUBMENU:=Other modules
+  SUBMENU:=GPIO support
   TITLE:= GPIO nct5104d support
   DEPENDS:= @GPIO_SUPPORT @TARGET_x86
   FILES:=$(PKG_BUILD_DIR)/gpio-nct5104d.ko

@@ -43,20 +43,22 @@
 		};
 
 		led_power: led-1 {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&tlmm 48 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 
 		led-2 {
 			function = LED_FUNCTION_WLAN;
-			label = "blue:wlan";
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		led-3 {
-			label = "red:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&tlmm 26 GPIO_ACTIVE_HIGH>;
 		};
 

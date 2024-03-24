@@ -41,7 +41,6 @@
 		compatible = "gpio-leds";
 
 		led_power: led-power {
-			label = "green:power";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
@@ -108,7 +107,7 @@
 				reg = <0x40000 0xf60000>;
 			};
 
-			config: partition@fa0000 {
+			partition@fa0000 {
 				label = "config";
 				reg = <0xfa0000 0x50000>;
 				read-only;
@@ -126,7 +125,7 @@
 				};
 			};
 
-			radio: partition@ff0000 {
+			partition@ff0000 {
 				label = "radio";
 				reg = <0xff0000 0x10000>;
 				read-only;

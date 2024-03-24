@@ -3,6 +3,7 @@
 #include "qcom-ipq4019.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
@@ -98,7 +99,8 @@
 			pinctrl-names = "default";
 
 			led_status: status {
-				label = "green:status";
+				function = LED_FUNCTION_STATUS;
+				color = <LED_COLOR_ID_GREEN>;
 				gpios = <&tlmm 68 GPIO_ACTIVE_LOW>;
 			};
 		};

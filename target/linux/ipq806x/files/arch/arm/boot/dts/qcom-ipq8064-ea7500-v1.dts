@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qcom-ipq8064-eax500.dtsi"
 
 / {
@@ -51,7 +53,8 @@
 		pinctrl-names = "default";
 
 		led_power: power {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};

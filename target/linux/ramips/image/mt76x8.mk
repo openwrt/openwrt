@@ -493,7 +493,7 @@ define Device/ravpower_rp-wd009
   IMAGE_SIZE := 14272k
   DEVICE_VENDOR := RAVPower
   DEVICE_MODEL := RP-WD009
-  UBOOT_PATH := $(STAGING_DIR_IMAGE)/ravpower_rp-wd009-u-boot.bin
+  UBOOT_PATH := $(STAGING_DIR_IMAGE)/mt7628_ravpower_rp-wd009-u-boot.bin
   DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-ohci \
 	kmod-sdhci-mt7620 kmod-i2c-mt7628 ravpower-mcu
   IMAGES += factory.bin
@@ -635,6 +635,16 @@ define Device/tplink_re200-v4
   TPLINK_BOARD_ID := RE200-V4
 endef
 TARGET_DEVICES += tplink_re200-v4
+
+define Device/tplink_re205-v3
+  $(Device/tplink-safeloader)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := RE205
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-mt76x0e
+  TPLINK_BOARD_ID := RE205-V3
+endef
+TARGET_DEVICES += tplink_re205-v3
 
 define Device/tplink_re220-v2
   $(Device/tplink-safeloader)

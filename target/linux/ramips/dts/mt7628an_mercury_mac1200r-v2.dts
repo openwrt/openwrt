@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "mercury,mac1200r-v2", "mediatek,mt7628an-soc";
@@ -18,7 +19,8 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -42,7 +44,7 @@
 				reg = <0x0 0x1d800>;
 			};
 
-			factory: partition@1d800 {
+			partition@1d800 {
 				label = "factory_info";
 				reg = <0x1d800 0x800>;
 				read-only;
@@ -62,7 +64,7 @@
 				};
 			};
 
-			art: partition@1e000 {
+			partition@1e000 {
 				label = "art";
 				reg = <0x1e000 0x2000>;
 				read-only;

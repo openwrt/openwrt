@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1472,6 +1472,7 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1432,6 +1432,7 @@ int ath9k_init_debug(struct ath_hw *ah)
  	ath9k_cmn_debug_base_eeprom(sc->debug.debugfs_phy, sc->sc_ah);
  	ath9k_cmn_debug_modal_eeprom(sc->debug.debugfs_phy, sc->sc_ah);
  	ath9k_cmn_debug_eeprom(sc->debug.debugfs_phy, sc->sc_ah);
@@ -137,7 +137,7 @@
 +EXPORT_SYMBOL(ath9k_cmn_debug_chanbw);
 --- a/drivers/net/wireless/ath/ath9k/htc_drv_debug.c
 +++ b/drivers/net/wireless/ath/ath9k/htc_drv_debug.c
-@@ -520,6 +520,7 @@ int ath9k_htc_init_debug(struct ath_hw *
+@@ -515,6 +515,7 @@ int ath9k_htc_init_debug(struct ath_hw *
  	ath9k_cmn_debug_base_eeprom(priv->debug.debugfs_phy, priv->ah);
  	ath9k_cmn_debug_modal_eeprom(priv->debug.debugfs_phy, priv->ah);
  	ath9k_cmn_debug_eeprom(priv->debug.debugfs_phy, priv->ah);

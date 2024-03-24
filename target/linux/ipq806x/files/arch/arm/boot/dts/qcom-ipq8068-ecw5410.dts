@@ -1,6 +1,7 @@
 #include "qcom-ipq8064-v2.0-smb208.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
@@ -67,7 +68,8 @@
 		pinctrl-names = "default";
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&qcom_pinmux 16 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -87,7 +89,8 @@
 		};
 
 		led_power_red: power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&qcom_pinmux 28 GPIO_ACTIVE_LOW>;
 		};
 

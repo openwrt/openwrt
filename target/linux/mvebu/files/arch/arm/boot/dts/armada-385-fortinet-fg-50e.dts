@@ -14,28 +14,24 @@
 
 &gpio_leds {
 	led-14 {
-		label = "green:speed_wan1";
 		gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
 		color = <LED_COLOR_ID_GREEN>;
 		linux,default-trigger = "f1072004.mdio-mii:00:1Gbps";
 	};
 
 	led-15 {
-		label = "green:speed_wan2";
 		gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
 		color = <LED_COLOR_ID_GREEN>;
 		linux,default-trigger = "f1072004.mdio-mii:01:1Gbps";
 	};
 
 	led-16 {
-		label = "amber:speed_lan5";
 		gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
 		color = <LED_COLOR_ID_AMBER>;
 		linux,default-trigger = "mv88e6xxx-1:00:100Mbps";
 	};
 
 	led-17 {
-		label = "green:speed_lan5";
 		gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
 		color = <LED_COLOR_ID_GREEN>;
 		linux,default-trigger = "mv88e6xxx-1:00:1Gbps";

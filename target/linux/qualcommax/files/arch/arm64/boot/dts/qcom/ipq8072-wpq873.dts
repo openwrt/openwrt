@@ -47,31 +47,26 @@
 		compatible = "gpio-leds";
 
 		led_power_red: power-red {
-			label = "red:power";
 			gpios = <&tlmm 42 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		led_power_blue: power-blue {
-			label = "blue:power";
 			gpios = <&tlmm 43 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 		};
 
 		led_system_red: system-red {
-			label = "red:system";
 			gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		led_system_green: system-green {
-			label = "green:system";
 			gpios = <&tlmm 18 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
 
 		led_system_blue: system-blue {
-			label = "blue:system";
 			gpios = <&tlmm 19 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 		};
@@ -355,26 +350,32 @@
 	status = "okay";
 };
 
-
 &mdio {
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
 
-	qca8075_1: ethernet-phy@1 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <1>;
-	};
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
 
-	qca8075_2: ethernet-phy@2 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <2>;
-	};
+		qca8075_1: ethernet-phy@1 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <1>;
+		};
 
-	qca8075_3: ethernet-phy@3 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <3>;
+		qca8075_2: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
+
+		qca8075_3: ethernet-phy@3 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <3>;
+		};
 	};
 
 	qca8081: ethernet-phy@28 {
@@ -382,7 +383,6 @@
 		reg = <28>;
 		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
 	};
-
 };
 
 &switch {
@@ -420,27 +420,27 @@
 };
 
 &dp2 {
-        status = "okay";
-        phy-handle = <&qca8075_1>;
-        label = "lan1";
+	status = "okay";
+	phy-handle = <&qca8075_1>;
+	label = "lan1";
 };
 
 &dp3 {
-        status = "okay";
-        phy-handle = <&qca8075_2>;
-        label = "lan2";
+	status = "okay";
+	phy-handle = <&qca8075_2>;
+	label = "lan2";
 };
 
 &dp4 {
-        status = "okay";
-        phy-handle = <&qca8075_3>;
-        label = "lan3";
+	status = "okay";
+	phy-handle = <&qca8075_3>;
+	label = "lan3";
 };
 
 &dp6 {
-        status = "okay";
-        phy-handle = <&qca8081>;
-        label = "wan";
+	status = "okay";
+	phy-handle = <&qca8081>;
+	label = "wan";
 };
 
 &pcie_qmp0 {

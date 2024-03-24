@@ -1,6 +1,7 @@
 #include "qcom-ipq8064-v2.0-smb208.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "NEC Aterm WG2600HP";
@@ -71,7 +72,8 @@
 		};
 
 		power_red: power_red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -86,7 +88,8 @@
 		};
 
 		power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&qcom_pinmux 14 GPIO_ACTIVE_HIGH>;
 		};
 

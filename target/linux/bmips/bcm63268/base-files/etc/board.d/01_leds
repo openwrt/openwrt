@@ -9,6 +9,9 @@ case "$(board_name)" in
 comtrend,vr-3032u)
 	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
 	;;
+smartrg,sr505n)
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1"
+	;;
 sercomm,h500-s-lowi |\
 sercomm,h500-s-vfes)
 	ucidef_set_led_netdev "wan" "WAN" "green:internet" "wan"

@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,tl-mr6400-v1", "qca,qca9531";
@@ -22,7 +23,8 @@
 
 		/* D12 */
 		wan {
-			label = "white:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -34,26 +36,30 @@
 
 		/* D5 */
 		wps {
-			label = "white:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
 		};
 
 		/* D3 */
 		wlan {
-			label = "white:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		/* D2 */
 		led_power: power {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
 		};
 
 		/* D4 */
 		lan {
-			label = "white:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		};
 	};

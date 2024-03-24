@@ -9,6 +9,17 @@ board=$(board_name)
 board_config_update
 
 case "$board" in
+gw,gw610x|\
+gw,gw6903)
+	ucidef_set_interfaces_lan 'eth0'
+	;;
+gw,gw620x|\
+gw,gw630x)
+	ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
+	;;
+gw,gw640x)
+	ucidef_set_interfaces_lan_wan 'eth0 eth1 eth2 eth3' 'eth4'
+	;;
 esac
 
 board_config_flush

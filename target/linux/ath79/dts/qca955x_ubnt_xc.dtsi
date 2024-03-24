@@ -7,6 +7,13 @@
 
 &pcie0 {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
+	};
 };
 
 &spi {
@@ -58,6 +65,10 @@
 
 					macaddr_art_0: macaddr@0 {
 						reg = <0x0 0x6>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
 					};
 				};
 			};

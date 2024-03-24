@@ -1,3 +1,5 @@
+#include <dt-bindings/leds/common.h>
+
 #include "mt7628an_vocore_vocore2.dtsi"
 
 / {
@@ -15,7 +17,8 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
 		};
 	};

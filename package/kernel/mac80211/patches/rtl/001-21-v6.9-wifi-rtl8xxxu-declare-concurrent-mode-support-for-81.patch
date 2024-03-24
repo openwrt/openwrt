@@ -1,0 +1,76 @@
+From 1cd165adf314f6bf25cde58f02f4ff51d01730b0 Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Fri, 22 Dec 2023 11:14:42 +0100
+Subject: [PATCH 21/21] wifi: rtl8xxxu: declare concurrent mode support for
+ 8188f
+
+Everything is in place now for concurrent mode, we can tell the system
+that we support it.
+We will allow a maximum of 2 virtual interfaces, one of them can be in
+AP mode.
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20231222101442.626837-22-martin.kaistra@linutronix.de
+---
+ .../net/wireless/realtek/rtl8xxxu/rtl8xxxu.h  |  1 +
+ .../realtek/rtl8xxxu/rtl8xxxu_8188f.c         |  1 +
+ .../wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 19 +++++++++++++++++++
+ 3 files changed, 21 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
+@@ -1992,6 +1992,7 @@ struct rtl8xxxu_fileops {
+ 	u8 init_reg_rxfltmap:1;
+ 	u8 init_reg_pkt_life_time:1;
+ 	u8 init_reg_hmtfr:1;
++	u8 supports_concurrent:1;
+ 	u8 ampdu_max_time;
+ 	u8 ustime_tsf_edca;
+ 	u16 max_aggr_num;
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188f.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_8188f.c
+@@ -1752,6 +1752,7 @@ struct rtl8xxxu_fileops rtl8188fu_fops =
+ 	.supports_ap = 1,
+ 	.max_macid_num = 16,
+ 	.max_sec_cam_num = 16,
++	.supports_concurrent = 1,
+ 	.adda_1t_init = 0x03c00014,
+ 	.adda_1t_path_on = 0x03c00014,
+ 	.trxff_boundary = 0x3f7f,
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -7665,6 +7665,20 @@ static void rtl8xxxu_deinit_led(struct r
+ 	led_classdev_unregister(led);
+ }
+ 
++struct ieee80211_iface_limit rtl8xxxu_limits[] = {
++	{ .max = 2, .types = BIT(NL80211_IFTYPE_STATION), },
++	{ .max = 1, .types = BIT(NL80211_IFTYPE_AP), },
++};
++
++struct ieee80211_iface_combination rtl8xxxu_combinations[] = {
++	{
++		.limits = rtl8xxxu_limits,
++		.n_limits = ARRAY_SIZE(rtl8xxxu_limits),
++		.max_interfaces = 2,
++		.num_different_channels = 1,
++	},
++};
++
+ static int rtl8xxxu_probe(struct usb_interface *interface,
+ 			  const struct usb_device_id *id)
+ {
+@@ -7810,6 +7824,11 @@ static int rtl8xxxu_probe(struct usb_int
+ 		hw->wiphy->interface_modes |= BIT(NL80211_IFTYPE_AP);
+ 	hw->queues = 4;
+ 
++	if (priv->fops->supports_concurrent) {
++		hw->wiphy->iface_combinations = rtl8xxxu_combinations;
++		hw->wiphy->n_iface_combinations = ARRAY_SIZE(rtl8xxxu_combinations);
++	}
++
+ 	sband = &rtl8xxxu_supported_band;
+ 	sband->ht_cap.ht_supported = true;
+ 	sband->ht_cap.ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;

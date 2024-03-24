@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "meraki,mr16", "qca,ar7161";
@@ -40,18 +41,21 @@
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_orange: power_orange {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
 
 		led_power_green: power_green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 	};

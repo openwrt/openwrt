@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qca9531_glinet_gl-ar300m.dtsi"
 
 / {
@@ -22,10 +24,12 @@
 };
 
 &led_status {
-	label = "red:status";
+	function = LED_FUNCTION_STATUS;
+	color = <LED_COLOR_ID_RED>;
 };
 
 &led_wlan {
-	label = "green:wlan";
+	function = LED_FUNCTION_WLAN;
+	color = <LED_COLOR_ID_GREEN>;
 };
 

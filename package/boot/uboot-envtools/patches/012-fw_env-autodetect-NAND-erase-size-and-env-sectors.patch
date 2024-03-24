@@ -1,0 +1,49 @@
+From d73a6641868029b5cae53ed00c5766921c9d8b1f Mon Sep 17 00:00:00 2001
+From: Anthony Loiseau <anthony.loiseau@allcircuits.com>
+Date: Thu, 21 Dec 2023 23:44:38 +0100
+Subject: [PATCH] fw_env: autodetect NAND erase size and env sectors
+
+As already done for NOR chips, if device ESIZE and ENVSECTORS static
+configurations are both zero, then autodetect them at runtime.
+
+Cc: Joe Hershberger <joe.hershberger@ni.com>
+cc: Stefan Agner <stefan@agner.ch>
+cc: Rasmus Villemoes <rasmus.villemoes@prevas.dk>
+Signed-off-by: Anthony Loiseau <anthony.loiseau@allcircuits.com>
+---
+ tools/env/README   |  3 +++
+ tools/env/fw_env.c | 11 +++++++++--
+ 2 files changed, 12 insertions(+), 2 deletions(-)
+
+--- a/tools/env/README
++++ b/tools/env/README
+@@ -58,6 +58,9 @@ DEVICEx_ENVSECTORS defines the number of
+ this environment instance. On NAND this is used to limit the range
+ within which bad blocks are skipped, on NOR it is not used.
+ 
++If DEVICEx_ESIZE and DEVICEx_ENVSECTORS are both zero, then a runtime
++detection is attempted for NOR and NAND mtd types.
++
+ To prevent losing changes to the environment and to prevent confusing the MTD
+ drivers, a lock file at /run/fw_printenv.lock is used to serialize access
+ to the environment.
+--- a/tools/env/fw_env.c
++++ b/tools/env/fw_env.c
+@@ -1655,8 +1655,15 @@ static int check_device_config(int dev)
+ 		}
+ 		DEVTYPE(dev) = mtdinfo.type;
+ 		if (DEVESIZE(dev) == 0 && ENVSECTORS(dev) == 0 &&
+-		    mtdinfo.type == MTD_NORFLASH)
+-			DEVESIZE(dev) = mtdinfo.erasesize;
++		    mtdinfo.erasesize > 0) {
++			if (mtdinfo.type == MTD_NORFLASH)
++				DEVESIZE(dev) = mtdinfo.erasesize;
++			else if (mtdinfo.type == MTD_NANDFLASH) {
++				DEVESIZE(dev) = mtdinfo.erasesize;
++				ENVSECTORS(dev) =
++				    mtdinfo.size / mtdinfo.erasesize;
++			}
++		}
+ 		if (DEVESIZE(dev) == 0)
+ 			/* Assume the erase size is the same as the env-size */
+ 			DEVESIZE(dev) = ENVSIZE(dev);

@@ -18,14 +18,12 @@
 		compatible = "gpio-leds";
 
 		led-0 {
-			label = "amber:any_col";
 			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_FAULT;
 		};
 
 		led-1 {
-			label = "green:giga";
 			gpios = <&gpio2 8 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_INDICATOR;
@@ -33,7 +31,6 @@
 		};
 
 		led-2 {
-			label = "green:100m";
 			gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_INDICATOR;
@@ -41,7 +38,6 @@
 		};
 
 		led-3 {
-			label = "green:full";
 			gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_INDICATOR;
@@ -49,7 +45,6 @@
 		};
 
 		led-4 {
-			label = "green:loop_history";
 			gpios = <&gpio2 11 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_INDICATOR;

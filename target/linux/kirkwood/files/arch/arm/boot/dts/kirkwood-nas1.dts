@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /dts-v1/;
 
+#include <dt-bindings/leds/common.h>
+
 #include "kirkwood.dtsi"
 #include "kirkwood-6281.dtsi"
 
@@ -43,7 +45,8 @@
 		};
 
 		usb {
-			label = "blue:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ehci_port1>;
 			linux,default-trigger = "usbport";

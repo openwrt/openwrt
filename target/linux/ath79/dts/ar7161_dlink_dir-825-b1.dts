@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "dlink,dir-825-b1", "qca,ar7161";
@@ -20,25 +21,29 @@
 		compatible = "gpio-leds";
 
 		usb {
-			label = "blue:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&usb_ohci_port>, <&usb_ehci_port>;
 			linux,default-trigger = "usbport";
 		};
 
 		led_power_orange: power_orange {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		led_power_blue: power_blue {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 		};
 
 		wps {
-			label = "blue:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 

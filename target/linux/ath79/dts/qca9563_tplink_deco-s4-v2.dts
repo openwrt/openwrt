@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 #include "qca956x.dtsi"
 
@@ -26,7 +27,8 @@
 		};
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
@@ -53,6 +55,13 @@
 
 &pcie {
 	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>;
+		nvmem-cell-names = "pre-calibration";
+	};
 };
 
 &mdio0 {
@@ -106,6 +115,16 @@
 				label = "art";
 				reg = <0x1f0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
 			};
 
 			partition@200000 {

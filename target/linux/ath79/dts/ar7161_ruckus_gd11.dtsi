@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "ruckus,gd11", "qca,ar7161";
@@ -40,13 +41,15 @@
 		};
 
 		led_power_green: power-green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		led_power_red: power-red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};

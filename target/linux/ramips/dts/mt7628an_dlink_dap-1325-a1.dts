@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "dlink,dap-1325-a1", "mediatek,mt7628an-soc";
@@ -20,12 +21,14 @@
 		compatible = "gpio-leds";
 
 		led_status_red: status_red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_green: status_green {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
@@ -114,7 +117,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

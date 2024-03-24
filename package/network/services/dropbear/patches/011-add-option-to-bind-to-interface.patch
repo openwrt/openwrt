@@ -1,0 +1,147 @@
+From fb64db9eac3fdc6434f2dc7b5ea407fe5df76e6f Mon Sep 17 00:00:00 2001
+From: Diederik De Coninck <diederik.deconinck_ext@softathome.com>
+Date: Tue, 11 Apr 2023 15:38:04 +0200
+Subject: Add option to bind to interface
+
+---
+ netio.c       | 13 +++++++++++--
+ netio.h       |  2 +-
+ runopts.h     |  1 +
+ svr-main.c    |  2 +-
+ svr-runopts.c |  9 +++++++++
+ svr-tcpfwd.c  |  1 +
+ tcp-accept.c  |  2 +-
+ tcpfwd.h      |  1 +
+ 8 files changed, 26 insertions(+), 5 deletions(-)
+
+--- a/netio.c
++++ b/netio.c
+@@ -467,7 +467,7 @@ int get_sock_port(int sock) {
+  * failure, if errstring wasn't NULL, it'll be a newly malloced error
+  * string.*/
+ int dropbear_listen(const char* address, const char* port,
+-		int *socks, unsigned int sockcount, char **errstring, int *maxfd) {
++		int *socks, unsigned int sockcount, char **errstring, int *maxfd, const char* interface) {
+ 
+ 	struct addrinfo hints, *res = NULL, *res0 = NULL;
+ 	int err;
+@@ -497,7 +497,11 @@ int dropbear_listen(const char* address,
+ 		TRACE(("dropbear_listen: local loopback"))
+ 	} else {
+ 		if (address[0] == '\0') {
+-			TRACE(("dropbear_listen: all interfaces"))
++			if (interface) {
++				TRACE(("dropbear_listen: %s", interface))
++			} else {
++				TRACE(("dropbear_listen: all interfaces"))
++			}
+ 			address = NULL;
+ 		}
+ 		hints.ai_flags = AI_PASSIVE;
+@@ -551,6 +555,11 @@ int dropbear_listen(const char* address,
+ 		/* set to reuse, quick timeout */
+ 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void*) &val, sizeof(val));
+ 
++		if(interface && setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interface, strlen(interface)) < 0) {
++			dropbear_log(LOG_WARNING, "Couldn't set SO_BINDTODEVICE");
++			TRACE(("Failed setsockopt with errno failure, %d %s", errno, strerror(errno)))
++		}
++
+ #if defined(IPPROTO_IPV6) && defined(IPV6_V6ONLY)
+ 		if (res->ai_family == AF_INET6) {
+ 			int on = 1;
+--- a/netio.h
++++ b/netio.h
+@@ -19,7 +19,7 @@ void get_socket_address(int fd, char **l
+ void getaddrstring(struct sockaddr_storage* addr, 
+ 		char **ret_host, char **ret_port, int host_lookup);
+ int dropbear_listen(const char* address, const char* port,
+-		int *socks, unsigned int sockcount, char **errstring, int *maxfd);
++		int *socks, unsigned int sockcount, char **errstring, int *maxfd, const char* interface);
+ 
+ struct dropbear_progress_connection;
+ 
+--- a/runopts.h
++++ b/runopts.h
+@@ -128,6 +128,7 @@ typedef struct svr_runopts {
+ 	char * pidfile;
+ 
+ 	char * forced_command;
++	char* interface;
+ 
+ #if DROPBEAR_PLUGIN 
+ 	/* malloced */
+--- a/svr-main.c
++++ b/svr-main.c
+@@ -488,7 +488,7 @@ static size_t listensockets(int *socks,
+ 
+ 		nsock = dropbear_listen(svr_opts.addresses[i], svr_opts.ports[i], &socks[sockpos], 
+ 				sockcount - sockpos,
+-				&errstring, maxfd);
++				&errstring, maxfd, svr_opts.interface);
+ 
+ 		if (nsock < 0) {
+ 			dropbear_log(LOG_WARNING, "Failed listening on '%s': %s", 
+--- a/svr-runopts.c
++++ b/svr-runopts.c
+@@ -98,6 +98,8 @@ static void printhelp(const char * progn
+ 					"		(default port is %s if none specified)\n"
+ 					"-P PidFile	Create pid file PidFile\n"
+ 					"		(default %s)\n"
++					"-l <interface>\n"
++					"		interface to bind on\n"
+ #if INETD_MODE
+ 					"-i		Start for inetd\n"
+ #endif
+@@ -265,6 +267,9 @@ void svr_getopts(int argc, char ** argv)
+ 				case 'P':
+ 					next = &svr_opts.pidfile;
+ 					break;
++				case 'l':
++					next = &svr_opts.interface;
++					break;
+ #if DO_MOTD
+ 				/* motd is displayed by default, -m turns it off */
+ 				case 'm':
+@@ -438,6 +443,10 @@ void svr_getopts(int argc, char ** argv)
+ 		dropbear_log(LOG_INFO, "Forced command set to '%s'", svr_opts.forced_command);
+ 	}
+ 
++	if (svr_opts.interface) {
++		dropbear_log(LOG_INFO, "Binding to interface '%s'", svr_opts.interface);
++	}
++
+ 	if (reexec_fd_arg) {
+ 		if (m_str_to_uint(reexec_fd_arg, &svr_opts.reexec_childpipe) == DROPBEAR_FAILURE
+ 			|| svr_opts.reexec_childpipe < 0) {
+--- a/svr-tcpfwd.c
++++ b/svr-tcpfwd.c
+@@ -205,6 +205,7 @@ static int svr_remotetcpreq(int *allocat
+ 	tcpinfo->listenport = port;
+ 	tcpinfo->chantype = &svr_chan_tcpremote;
+ 	tcpinfo->tcp_type = forwarded;
++	tcpinfo->interface = svr_opts.interface;
+ 
+ 	tcpinfo->request_listenaddr = request_addr;
+ 	if (!opts.listen_fwd_all || (strcmp(request_addr, "localhost") == 0) ) {
+--- a/tcp-accept.c
++++ b/tcp-accept.c
+@@ -117,7 +117,7 @@ int listen_tcpfwd(struct TCPListener* tc
+ 	snprintf(portstring, sizeof(portstring), "%u", tcpinfo->listenport);
+ 
+ 	nsocks = dropbear_listen(tcpinfo->listenaddr, portstring, socks, 
+-			DROPBEAR_MAX_SOCKS, &errstring, &ses.maxfd);
++			DROPBEAR_MAX_SOCKS, &errstring, &ses.maxfd, tcpinfo->interface);
+ 	if (nsocks < 0) {
+ 		dropbear_log(LOG_INFO, "TCP forward failed: %s", errstring);
+ 		m_free(errstring);
+--- a/tcpfwd.h
++++ b/tcpfwd.h
+@@ -42,6 +42,7 @@ struct TCPListener {
+ 	unsigned int listenport;
+ 	/* The address that the remote host asked to listen on */
+ 	char *request_listenaddr;
++	char* interface;
+ 
+ 	const struct ChanType *chantype;
+ 	enum {direct, forwarded} tcp_type;

@@ -1,0 +1,23 @@
+From a5f12fe4b640281c04a9b8b6ad676df9eeba9aa6 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Wed, 6 Oct 2021 20:42:34 +0200
+Subject: [PATCH 1001/1024] dt-bindings: mfd: syscon: Add StarFive JH7100
+ sysmain compatible
+
+Document StarFive JH7100 SoC compatible for sysmain registers.
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ Documentation/devicetree/bindings/mfd/syscon.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/mfd/syscon.yaml
++++ b/Documentation/devicetree/bindings/mfd/syscon.yaml
+@@ -69,6 +69,7 @@ properties:
+               - samsung,exynos5433-sysreg
+               - samsung,exynos850-sysreg
+               - samsung,exynosautov9-sysreg
++              - starfive,jh7100-sysmain
+ 
+           - const: syscon
+ 

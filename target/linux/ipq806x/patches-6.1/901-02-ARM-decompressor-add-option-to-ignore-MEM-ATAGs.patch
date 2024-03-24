@@ -1,0 +1,54 @@
+From 781d7cd4c3364e9d38fa12a342c5ad4c7e33a5ba Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 19 Jan 2024 20:33:10 +0100
+Subject: [PATCH v2 2/2] ARM: decompressor: add option to ignore MEM ATAGs
+
+Some bootloaders can pass broken MEM ATAGs that provide hardcoded
+information about mounted RAM size and physical location.
+Example booloader provide RAM of size 1.7Gb but actual mounted RAM
+size is 512Mb causing kernel panic.
+
+Add option CONFIG_ARM_ATAG_DTB_COMPAT_IGNORE_MEM to ignore these ATAG
+and not augument appended DTB memory node.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/Kconfig                        | 12 ++++++++++++
+ arch/arm/boot/compressed/atags_to_fdt.c |  4 ++++
+ 2 files changed, 16 insertions(+)
+
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1570,6 +1570,18 @@ config ARM_ATAG_DTB_COMPAT
+ 	  bootloaders, this option allows zImage to extract the information
+ 	  from the ATAG list and store it at run time into the appended DTB.
+ 
++config ARM_ATAG_DTB_COMPAT_IGNORE_MEM
++	bool "Ignore MEM ATAG information from bootloader"
++	depends on ARM_ATAG_DTB_COMPAT
++	help
++	  Some bootloaders can pass broken MEM ATAGs that provide hardcoded
++	  information about mounted RAM size and physical location.
++	  Example booloader provide RAM of size 1.7Gb but actual mounted RAM
++	  size is 512Mb causing kernel panic.
++
++	  Enable this option if MEM ATAGs should be ignored and the memory
++	  node in the appended DTB should NOT be augumented.
++
+ choice
+ 	prompt "Kernel command line type" if ARM_ATAG_DTB_COMPAT
+ 	default ARM_ATAG_DTB_COMPAT_CMDLINE_FROM_BOOTLOADER
+--- a/arch/arm/boot/compressed/atags_to_fdt.c
++++ b/arch/arm/boot/compressed/atags_to_fdt.c
+@@ -169,6 +169,10 @@ int atags_to_fdt(void *atag_list, void *
+ 				setprop_string(fdt, "/chosen", "bootargs",
+ 					       atag->u.cmdline.cmdline);
+ 		} else if (atag->hdr.tag == ATAG_MEM) {
++			/* Bootloader MEM ATAG are broken and should be ignored */
++			if (IS_ENABLED(CONFIG_ARM_ATAG_DTB_COMPAT_IGNORE_MEM))
++				continue;
++
+ 			if (memcount >= sizeof(mem_reg_property)/4)
+ 				continue;
+ 			if (!atag->u.mem.size)

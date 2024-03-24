@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,tl-wpa8631p-v3", "mediatek,mt7621-soc";
@@ -53,12 +54,14 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 		};
 
 		lan {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
 		};
 
@@ -111,7 +114,7 @@
 				reg = <0x20000 0x710000>;
 			};
 
-			config: partition@730000 {
+			partition@730000 {
 				label = "config";
 				reg = <0x730000 0xc0000>;
 				read-only;
@@ -129,7 +132,7 @@
 				};
 			};
 
-			radio: partition@7f0000 {
+			partition@7f0000 {
 				label = "radio";
 				reg = <0x7f0000 0x10000>;
 				read-only;

@@ -14,7 +14,6 @@ include $(INCLUDE_DIR)/package.mk
 define Package/leds/default
   SECTION:=devel
   CATEGORY:=Development
-  VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
   URL:=http://www.kernel.org
 endef
 

@@ -60,7 +60,7 @@
 				read-only;
 			};
 
-			factory: partition@50000 {
+			partition@50000 {
 				label = "factory";
 				reg = <0x50000 0x10000>;
 				read-only;
@@ -106,7 +106,7 @@
 				read-only;
 			};
 
-			firmware: partition@180000 {
+			partition@180000 {
 				compatible = "denx,uimage";
 				label = "firmware";
 				reg = <0x180000 0xe80000>;

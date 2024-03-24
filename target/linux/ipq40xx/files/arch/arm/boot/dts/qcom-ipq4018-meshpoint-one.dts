@@ -3,6 +3,8 @@
  * Author: Robert Marko <robert@meshpoint.me>
  */
 
+#include <dt-bindings/leds/common.h>
+
 #include "qcom-ipq4018-jalapeno.dtsi"
 
 / {
@@ -74,7 +76,8 @@
 		compatible = "gpio-leds";
 
 		led_status: status {
-			label = "blue:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&tlmm 63 GPIO_ACTIVE_HIGH>;
 		};
 	};

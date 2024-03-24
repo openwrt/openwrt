@@ -1097,6 +1097,11 @@ static int aw9523_remove(struct i2c_client *client)
 	return 0;
 }
 
+static void aw9523_remove_void(struct i2c_client *client)
+{
+	aw9523_remove(client);
+}
+
 static const struct i2c_device_id aw9523_i2c_id_table[] = {
 	{ "aw9523_i2c", 0 },
 	{ }
@@ -1114,7 +1119,7 @@ static struct i2c_driver aw9523_driver = {
 		.of_match_table = of_aw9523_i2c_match,
 	},
 	.probe = aw9523_probe,
-	.remove = aw9523_remove,
+	.remove = aw9523_remove_void,
 	.id_table = aw9523_i2c_id_table,
 };
 module_i2c_driver(aw9523_driver);

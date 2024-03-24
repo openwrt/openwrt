@@ -12,6 +12,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include "armada-385.dtsi"
 
 / {
@@ -86,7 +87,8 @@
 		};
 
 		usb {
-			label = "blue:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
 			trigger-sources = <&usb3_0_port1 &usb3_0_port2>;
 			linux,default-trigger = "usbport";

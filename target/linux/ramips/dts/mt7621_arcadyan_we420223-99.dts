@@ -42,7 +42,6 @@
 		compatible = "gpio-leds";
 
 		led_power_green: power_green {
-			label = "green:power";
 			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
@@ -50,48 +49,41 @@
 		};
 
 		led_power_red: power_red {
-			label = "red:power";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_FAULT;
 		};
 
 		led_wifi_blue: wifi_blue {
-			label = "blue:wifi";
 			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WLAN;
 		};
 
 		led_wifi_green: wifi_green {
-			label = "green:wifi";
 			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN;
 		};
 
 		led_wps_red: wps_red {
-			label = "red:wps";
 			gpios = <&gpio 45 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_WPS;
 		};
 
 		led_wps_green: wps_green {
-			label = "green:wps";
 			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WPS;
 		};
 
 		led_followme_r: followme_red {
-			label = "red:followme";
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_RED>;
 		};
 
 		led_followme_g: followme_green {
-			label = "green:followme";
 			gpios = <&gpio 48 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 		};
@@ -129,7 +121,7 @@
 				reg = <0x30000 0x10000>;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "Factory";
 				reg = <0x40000 0x10000>;
 				read-only;

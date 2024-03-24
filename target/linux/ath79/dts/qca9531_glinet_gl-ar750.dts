@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "glinet,gl-ar750", "qca,qca9531";
@@ -40,7 +41,8 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
@@ -72,6 +74,8 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_art_0 1>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };
 
@@ -122,6 +126,10 @@
 						compatible = "mac-base";
 						reg = <0x0 0x6>;
 						#nvmem-cell-cells = <1>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
 					};
 				};
 			};

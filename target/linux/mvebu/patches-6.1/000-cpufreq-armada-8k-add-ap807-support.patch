@@ -1,0 +1,59 @@
+From 8eec6e740b564ec5e1da59ab7070b89aa23c9973 Mon Sep 17 00:00:00 2001
+From: "Russell King (Oracle)" <rmk+kernel@armlinux.org.uk>
+Date: Fri, 16 Jun 2023 12:41:30 +0100
+Subject: [PATCH] cpufreq: armada-8k: add ap807 support
+
+Add support for the Armada AP807 die to armada-8k. This uses a
+different compatible for the CPU clock which needs to be added to
+the cpufreq driver.
+
+This commit takes a different approach to the WindRiver patch
+"cpufreq: armada: enable ap807-cpu-clk" in that rather than calling
+of_find_compatible_node() for each compatible, we use a table of
+IDs instead.
+
+Signed-off-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
+---
+ drivers/cpufreq/armada-8k-cpufreq.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+--- a/drivers/cpufreq/armada-8k-cpufreq.c
++++ b/drivers/cpufreq/armada-8k-cpufreq.c
+@@ -21,6 +21,13 @@
+ #include <linux/pm_opp.h>
+ #include <linux/slab.h>
+ 
++static const struct of_device_id __maybe_unused armada_8k_cpufreq_of_match[] = {
++	{ .compatible = "marvell,ap806-cpu-clock" },
++	{ .compatible = "marvell,ap807-cpu-clock" },
++	{ },
++};
++MODULE_DEVICE_TABLE(of, armada_8k_cpufreq_of_match);
++
+ /*
+  * Setup the opps list with the divider for the max frequency, that
+  * will be filled at runtime.
+@@ -127,7 +134,8 @@ static int __init armada_8k_cpufreq_init
+ 	struct device_node *node;
+ 	struct cpumask cpus;
+ 
+-	node = of_find_compatible_node(NULL, NULL, "marvell,ap806-cpu-clock");
++	node = of_find_matching_node_and_match(NULL, armada_8k_cpufreq_of_match,
++					       NULL);
+ 	if (!node || !of_device_is_available(node)) {
+ 		of_node_put(node);
+ 		return -ENODEV;
+@@ -204,12 +212,6 @@ static void __exit armada_8k_cpufreq_exi
+ }
+ module_exit(armada_8k_cpufreq_exit);
+ 
+-static const struct of_device_id __maybe_unused armada_8k_cpufreq_of_match[] = {
+-	{ .compatible = "marvell,ap806-cpu-clock" },
+-	{ },
+-};
+-MODULE_DEVICE_TABLE(of, armada_8k_cpufreq_of_match);
+-
+ MODULE_AUTHOR("Gregory Clement <gregory.clement@bootlin.com>");
+ MODULE_DESCRIPTION("Armada 8K cpufreq driver");
+ MODULE_LICENSE("GPL");

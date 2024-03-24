@@ -2,6 +2,7 @@
 #include "qcom-ipq8064-v2.0-smb208.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/soc/qcom,tcsr.h>
 
 / {
@@ -34,17 +35,20 @@
 		 */
 
 		status_yellow {
-			label = "yellow:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_YELLOW>;
 			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_amber: status_amber {
-			label = "amber:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_status_blue: status_blue {
-			label = "blue:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -54,7 +58,8 @@
 		 * about the LED being white.
 
 		status_white {
-			label = "white:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
 		};
 		*/

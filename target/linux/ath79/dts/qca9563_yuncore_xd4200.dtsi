@@ -57,6 +57,8 @@
 	wifi@0,0 {
 		compatible = "pci168c,0056";
 		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>;
+		nvmem-cell-names = "pre-calibration";
 	};
 };
 
@@ -102,6 +104,14 @@
 
 					macaddr_art_0: macaddr@0 {
 						reg = <0x0 0x6>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
 					};
 				};
 			};

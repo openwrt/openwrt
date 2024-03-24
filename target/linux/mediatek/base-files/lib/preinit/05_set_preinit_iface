@@ -9,9 +9,20 @@ set_preinit_iface() {
 		ip link set eth1 up
 		ifname=eth1
 		;;
-	ubnt,unifi-6-lr)
+	cudy,re3000-v1|\
+	ubnt,unifi-6-lr|\
+	zyxel,nwa50ax-pro)
 		ip link set eth0 up
 		ifname=eth0
+		;;
+	xiaomi,mi-router-ax3000t|\
+	xiaomi,mi-router-ax3000t-ubootmod|\
+	xiaomi,mi-router-wr30u-stock|\
+	xiaomi,mi-router-wr30u-ubootmod|\
+	xiaomi,redmi-router-ax6000-stock|\
+	xiaomi,redmi-router-ax6000-ubootmod)
+		ip link set eth0 up
+		ifname=lan4
 		;;
 	*)
 		ip link set eth0 up

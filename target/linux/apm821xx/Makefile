@@ -9,8 +9,7 @@ CPU_TYPE:=464fp
 FEATURES:=fpu dt gpio ramdisk squashfs usb
 SUBTARGETS:=nand sata
 
-KERNEL_PATCHVER:=5.15
-KERNEL_TESTING_PATCHVER:=6.1
+KERNEL_PATCHVER:=6.1
 
 define Target/Description
 	Build images for AppliedMicro APM821xx based boards.

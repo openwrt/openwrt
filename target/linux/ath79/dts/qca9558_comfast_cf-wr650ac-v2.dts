@@ -7,6 +7,17 @@
 	model = "Comfast CF-WR650AC v2";
 };
 
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
 &spi {
 	status = "okay";
 
@@ -46,6 +57,10 @@
 
 					macaddr_art_18: macaddr@18 {
 						reg = <0x18 0x6>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
 					};
 				};
 			};

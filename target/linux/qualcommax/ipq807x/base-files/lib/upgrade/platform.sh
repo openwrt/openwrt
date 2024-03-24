@@ -44,6 +44,7 @@ platform_pre_upgrade() {
 platform_do_upgrade() {
 	case "$(board_name)" in
 	arcadyan,aw1000|\
+	cmcc,rm2-6|\
 	compex,wpq873|\
 	dynalink,dl-wrx36|\
 	edimax,cax1800|\
@@ -74,7 +75,8 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	linksys,mx4200v1|\
-	linksys,mx4200v2)
+	linksys,mx4200v2|\
+	linksys,mx5300)
 		boot_part="$(fw_printenv -n boot_part)"
 		if [ "$boot_part" -eq "1" ]; then
 			fw_setenv boot_part 2

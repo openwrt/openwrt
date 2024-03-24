@@ -128,7 +128,7 @@ Link: https://lore.kernel.org/r/20220118173504.2867523-2-michael@walle.cc
  
  /**
   * of_parse_phandle_with_args_map() - Find a node pointed by phandle in a list and remap it
-@@ -1684,47 +1612,6 @@ free:
+@@ -1685,47 +1613,6 @@ free:
  EXPORT_SYMBOL(of_parse_phandle_with_args_map);
  
  /**
@@ -200,7 +200,7 @@ Link: https://lore.kernel.org/r/20220118173504.2867523-2-michael@walle.cc
  extern int of_count_phandle_with_args(const struct device_node *np,
  	const char *list_name, const char *cells_name);
  
-@@ -864,18 +858,12 @@ static inline int of_property_read_strin
+@@ -714,18 +708,12 @@ static inline int of_property_read_strin
  	return -ENOSYS;
  }
  
@@ -225,7 +225,7 @@ Link: https://lore.kernel.org/r/20220118173504.2867523-2-michael@walle.cc
  {
  	return -ENOSYS;
  }
-@@ -889,13 +877,6 @@ static inline int of_parse_phandle_with_
+@@ -739,13 +727,6 @@ static inline int of_parse_phandle_with_
  	return -ENOSYS;
  }
  
@@ -239,7 +239,7 @@ Link: https://lore.kernel.org/r/20220118173504.2867523-2-michael@walle.cc
  static inline int of_count_phandle_with_args(const struct device_node *np,
  					     const char *list_name,
  					     const char *cells_name)
-@@ -1077,6 +1058,117 @@ static inline bool of_node_is_type(const
+@@ -927,6 +908,117 @@ static inline bool of_node_is_type(const
  }
  
  /**

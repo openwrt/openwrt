@@ -134,7 +134,6 @@
 		};
 
 		led_power: power_white {
-			label = "white:power";
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
@@ -142,21 +141,18 @@
 		};
 
 		led_failsafe: power_red {
-			label = "red:power";
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_upgrade: power_orange {
-			label = "amber:power";
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio1 25 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_boot: indicator_white {
-			label = "white:indicator";
 			function = LED_FUNCTION_INDICATOR;
 			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio1 27 GPIO_ACTIVE_HIGH>;

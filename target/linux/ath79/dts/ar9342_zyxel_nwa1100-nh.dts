@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "ar9342_zyxel_nwa11xx.dtsi"
 
 / {
@@ -17,29 +19,34 @@
 		compatible = "gpio-leds";
 
 		led_status_green: status_green {
-			label = "green:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
 
 		led_status_red: status_red {
-			label = "red:status";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wlan_green: wlan_green {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		led_lan_green: lan_green {
-			label = "green:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		led_lan_amber: lan_amber {
-			label = "amber:lan";
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 	};

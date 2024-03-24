@@ -1,0 +1,34 @@
+From 2d146c6e550a4fb7f24ca44739cf14594cc2f892 Mon Sep 17 00:00:00 2001
+From: Samin Guo <samin.guo@starfivetech.com>
+Date: Tue, 25 Apr 2023 18:51:15 +0800
+Subject: [PATCH 049/122] dt-bindings: net: motorcomm: Add pad driver strength
+ cfg
+
+The motorcomm phy (YT8531) supports the ability to adjust the drive
+strength of the rx_clk/rx_data, the value range of pad driver
+strength is 0 to 7.
+
+Signed-off-by: Samin Guo <samin.guo@starfivetech.com>
+---
+ .../devicetree/bindings/net/motorcomm,yt8xxx.yaml      | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/Documentation/devicetree/bindings/net/motorcomm,yt8xxx.yaml
++++ b/Documentation/devicetree/bindings/net/motorcomm,yt8xxx.yaml
+@@ -18,6 +18,16 @@ properties:
+       - ethernet-phy-id4f51.e91a
+       - ethernet-phy-id4f51.e91b
+ 
++  rx-clk-driver-strength:
++    description: drive strength of rx_clk pad.
++    enum: [ 0, 1, 2, 3, 4, 5, 6, 7 ]
++    default: 3
++
++  rx-data-driver-strength:
++    description: drive strength of rxd/rx_ctl rgmii pad.
++    enum: [ 0, 1, 2, 3, 4, 5, 6, 7 ]
++    default: 3
++
+   rx-internal-delay-ps:
+     description: |
+       RGMII RX Clock Delay used only when PHY operates in RGMII mode with

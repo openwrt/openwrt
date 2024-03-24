@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qcom-ipq4019-xx8300.dtsi"
 
 / {
@@ -34,12 +36,14 @@
 		};
 
 		led_wps: wps {
-			label = "white:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_wps_amber: wps_amber {
-			label = "amber:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_AMBER>;
 			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
 		};
@@ -52,7 +56,8 @@
 		// On back panel, above USB socket
 
 		led_usb: usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&usb3_port1>, <&usb3_port2>,
 					  <&usb2_port1>;

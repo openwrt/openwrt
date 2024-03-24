@@ -1,0 +1,45 @@
+From 8f19828844f20b22182719cf53be64f8c955aee8 Mon Sep 17 00:00:00 2001
+From: Jagan Teki <jagan@amarulasolutions.com>
+Date: Mon, 23 Jan 2023 12:46:50 +0530
+Subject: [PATCH] arm64: dts: rockchip: Fix compatible for Radxa CM3
+
+The compatible string "radxa,radxa-cm3" referring the product name
+as "Radxa Radxa CM3" but the actual product name is "Radxa CM3".
+
+Fix the compatible strings.
+
+Fixes: 24a28d3eb07d ("dt-bindings: arm: rockchip: Add Radxa Compute Module 3")
+Fixes: 7469ab529bca ("arm64: dts: rockchip: Add rk3566 based Radxa Compute Module 3")
+Fixes: 096ebfb74b19 ("arm64: dts: rockchip: Add Radxa Compute Module 3 IO board")
+Suggested-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Jagan Teki <jagan@amarulasolutions.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20230123071654.73139-1-jagan@amarulasolutions.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3-io.dts | 2 +-
+ arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3.dtsi   | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3-io.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3-io.dts
+@@ -11,7 +11,7 @@
+ 
+ / {
+ 	model = "Radxa Compute Module 3(CM3) IO Board";
+-	compatible = "radxa,radxa-cm3-io", "radxa,radxa-cm3", "rockchip,rk3566";
++	compatible = "radxa,cm3-io", "radxa,cm3", "rockchip,rk3566";
+ 
+ 	aliases {
+ 		mmc1 = &sdmmc0;
+--- a/arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3566-radxa-cm3.dtsi
+@@ -8,7 +8,7 @@
+ #include <dt-bindings/leds/common.h>
+ 
+ / {
+-	compatible = "radxa,radxa-cm3", "rockchip,rk3566";
++	compatible = "radxa,cm3", "rockchip,rk3566";
+ 
+ 	aliases {
+ 		mmc0 = &sdhci;

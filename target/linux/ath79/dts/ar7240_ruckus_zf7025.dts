@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 
 / {
@@ -71,25 +72,29 @@
 		};
 
 		led_power_red: power-red {
-			label = "red:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
 
 		led_power_green: power-green {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		wlan-green {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0assoc";
 		};
 
 		wlan-yellow {
-			label = "yellow:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_YELLOW>;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};

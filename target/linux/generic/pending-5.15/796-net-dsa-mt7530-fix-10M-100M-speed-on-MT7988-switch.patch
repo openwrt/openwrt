@@ -1,0 +1,45 @@
+From a444877c10a665cd8a869e6d37facdb89fd95f79 Mon Sep 17 00:00:00 2001
+Message-ID: <a444877c10a665cd8a869e6d37facdb89fd95f79.1706070008.git.daniel@makrotopia.org>
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 24 Jan 2024 04:17:11 +0000
+Subject: [PATCH net] net: dsa: mt7530: fix 10M/100M speed on MT7988 switch
+To: Arınç ÜNAL <arinc.unal@arinc9.com>,
+    Daniel Golle <daniel@makrotopia.org>,
+    DENG Qingfang <dqfext@gmail.com>,
+    Sean Wang <sean.wang@mediatek.com>,
+    Andrew Lunn <andrew@lunn.ch>,
+    Florian Fainelli <f.fainelli@gmail.com>,
+    Vladimir Oltean <olteanv@gmail.com>,
+    David S. Miller <davem@davemloft.net>,
+    Eric Dumazet <edumazet@google.com>,
+    Jakub Kicinski <kuba@kernel.org>,
+    Paolo Abeni <pabeni@redhat.com>,
+    Matthias Brugger <matthias.bgg@gmail.com>,
+    AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>,
+    netdev@vger.kernel.org,
+    linux-kernel@vger.kernel.org,
+    linux-arm-kernel@lists.infradead.org,
+    linux-mediatek@lists.infradead.org
+
+Setup PMCR port register for actual speed and duplex on internally
+connected PHYs of the MT7988 built-in switch. This fixes links with
+speeds other than 1000M.
+
+Fixes: ("110c18bfed414 net: dsa: mt7530: introduce driver for MT7988 built-in switch")
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/dsa/mt7530.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -2832,8 +2832,7 @@ static void mt753x_phylink_mac_link_up(s
+ 	/* MT753x MAC works in 1G full duplex mode for all up-clocked
+ 	 * variants.
+ 	 */
+-	if (interface == PHY_INTERFACE_MODE_INTERNAL ||
+-	    interface == PHY_INTERFACE_MODE_TRGMII ||
++	if (interface == PHY_INTERFACE_MODE_TRGMII ||
+ 	    (phy_interface_mode_is_8023z(interface))) {
+ 		speed = SPEED_1000;
+ 		duplex = DUPLEX_FULL;

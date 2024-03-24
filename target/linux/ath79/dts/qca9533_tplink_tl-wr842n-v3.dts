@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,tl-wr842n-v3", "qca,qca9533";
@@ -21,13 +22,15 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
 
 		wifi {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -38,12 +41,14 @@
 		};
 
 		wan_green {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_red {
-			label = "red:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
@@ -68,7 +73,8 @@
 		};
 
 		usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "usbport";
 			trigger-sources = <&hub_port0>;

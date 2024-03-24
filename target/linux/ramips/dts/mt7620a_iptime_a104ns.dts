@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "mt7620a_iptime.dtsi"
 
 / {
@@ -17,14 +19,16 @@
 		compatible = "gpio-leds";
 
 		usb {
-			label = "blue:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ohci_port1>, <&ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
 
 		led_cpu: cpu {
-			label = "blue:cpu";
+			function = LED_FUNCTION_CPU;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
 		};
 	};

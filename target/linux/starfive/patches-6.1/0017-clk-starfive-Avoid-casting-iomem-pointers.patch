@@ -1,0 +1,128 @@
+From d9d4e0fb44a50cace195e1639cfb23e518e17e88 Mon Sep 17 00:00:00 2001
+From: Stephen Boyd <sboyd@kernel.org>
+Date: Thu, 13 Apr 2023 13:55:28 -0700
+Subject: [PATCH 017/122] clk: starfive: Avoid casting iomem pointers
+
+Let's use a wrapper struct for the auxiliary_device made in
+jh7110_reset_controller_register() so that we can stop casting iomem
+pointers. The casts trip up tools like sparse, and make for some awkward
+casts that are largely unnecessary. While we're here, change the
+allocation from devm and actually free the auxiliary_device memory in
+the release function. This avoids any use after free problems where the
+parent device driver is unbound from the device but the
+auxiliuary_device is still in use accessing devm freed memory.
+
+Cc: Tommaso Merciai <tomm.merciai@gmail.com>
+Cc: Emil Renner Berthing <emil.renner.berthing@canonical.com>
+Cc: Hal Feng <hal.feng@starfivetech.com>
+Cc: Conor Dooley <conor.dooley@microchip.com>
+Cc: Xingyu Wu <xingyu.wu@starfivetech.com>
+Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
+Fixes: edab7204afe5 ("clk: starfive: Add StarFive JH7110 system clock driver")
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+Link: https://lore.kernel.org/r/20230413205528.4044216-1-sboyd@kernel.org
+---
+ drivers/clk/starfive/clk-starfive-jh7110-sys.c | 15 ++++++++++++---
+ drivers/reset/starfive/reset-starfive-jh7110.c |  9 ++++++---
+ include/soc/starfive/reset-starfive-jh71x0.h   | 17 +++++++++++++++++
+ 3 files changed, 35 insertions(+), 6 deletions(-)
+ create mode 100644 include/soc/starfive/reset-starfive-jh71x0.h
+
+--- a/drivers/clk/starfive/clk-starfive-jh7110-sys.c
++++ b/drivers/clk/starfive/clk-starfive-jh7110-sys.c
+@@ -11,6 +11,9 @@
+ #include <linux/init.h>
+ #include <linux/io.h>
+ #include <linux/platform_device.h>
++#include <linux/slab.h>
++
++#include <soc/starfive/reset-starfive-jh71x0.h>
+ 
+ #include <dt-bindings/clock/starfive,jh7110-crg.h>
+ 
+@@ -335,26 +338,32 @@ static void jh7110_reset_unregister_adev
+ 	struct auxiliary_device *adev = _adev;
+ 
+ 	auxiliary_device_delete(adev);
++	auxiliary_device_uninit(adev);
+ }
+ 
+ static void jh7110_reset_adev_release(struct device *dev)
+ {
+ 	struct auxiliary_device *adev = to_auxiliary_dev(dev);
++	struct jh71x0_reset_adev *rdev = to_jh71x0_reset_adev(adev);
+ 
+-	auxiliary_device_uninit(adev);
++	kfree(rdev);
+ }
+ 
+ int jh7110_reset_controller_register(struct jh71x0_clk_priv *priv,
+ 				     const char *adev_name,
+ 				     u32 adev_id)
+ {
++	struct jh71x0_reset_adev *rdev;
+ 	struct auxiliary_device *adev;
+ 	int ret;
+ 
+-	adev = devm_kzalloc(priv->dev, sizeof(*adev), GFP_KERNEL);
+-	if (!adev)
++	rdev = kzalloc(sizeof(*rdev), GFP_KERNEL);
++	if (!rdev)
+ 		return -ENOMEM;
+ 
++	rdev->base = priv->base;
++
++	adev = &rdev->adev;
+ 	adev->name = adev_name;
+ 	adev->dev.parent = priv->dev;
+ 	adev->dev.release = jh7110_reset_adev_release;
+--- a/drivers/reset/starfive/reset-starfive-jh7110.c
++++ b/drivers/reset/starfive/reset-starfive-jh7110.c
+@@ -7,6 +7,8 @@
+ 
+ #include <linux/auxiliary_bus.h>
+ 
++#include <soc/starfive/reset-starfive-jh71x0.h>
++
+ #include "reset-starfive-jh71x0.h"
+ 
+ #include <dt-bindings/reset/starfive,jh7110-crg.h>
+@@ -33,14 +35,15 @@ static int jh7110_reset_probe(struct aux
+ 			      const struct auxiliary_device_id *id)
+ {
+ 	struct jh7110_reset_info *info = (struct jh7110_reset_info *)(id->driver_data);
+-	void __iomem **base = (void __iomem **)dev_get_drvdata(adev->dev.parent);
++	struct jh71x0_reset_adev *rdev = to_jh71x0_reset_adev(adev);
++	void __iomem *base = rdev->base;
+ 
+ 	if (!info || !base)
+ 		return -ENODEV;
+ 
+ 	return reset_starfive_jh71x0_register(&adev->dev, adev->dev.parent->of_node,
+-					      *base + info->assert_offset,
+-					      *base + info->status_offset,
++					      base + info->assert_offset,
++					      base + info->status_offset,
+ 					      NULL,
+ 					      info->nr_resets,
+ 					      NULL);
+--- /dev/null
++++ b/include/soc/starfive/reset-starfive-jh71x0.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef __SOC_STARFIVE_RESET_JH71X0_H
++#define __SOC_STARFIVE_RESET_JH71X0_H
++
++#include <linux/auxiliary_bus.h>
++#include <linux/compiler_types.h>
++#include <linux/container_of.h>
++
++struct jh71x0_reset_adev {
++	void __iomem *base;
++	struct auxiliary_device adev;
++};
++
++#define to_jh71x0_reset_adev(_adev) \
++	container_of((_adev), struct jh71x0_reset_adev, adev)
++
++#endif

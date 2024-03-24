@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "asus,rp-ac56", "mediatek,mt7621-soc";
@@ -53,17 +54,20 @@
 		};
 
 		led_power_white: power_white {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 48 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_orange: power_orange {
-			label = "orange:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 47 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power_blue: power_blue {
-			label = "blue:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio 46 GPIO_ACTIVE_HIGH>;
 		};
 	};
@@ -135,7 +139,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;
@@ -165,7 +169,7 @@
 				reg = <0x50000 0xfa0000>;
 			};
 
-			radio: partition@ff0000 {
+			partition@ff0000 {
 				label = "radio";
 				reg = <0xff0000 0x10000>;
 				read-only;

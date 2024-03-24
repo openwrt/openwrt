@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include <dt-bindings/leds/common.h>
+
 #include "qca9561_tplink_archer-c6x.dtsi"
 
 / {
@@ -13,13 +15,24 @@
 
 &leds {
 	wan_amber {
-		label = "amber:wan";
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_AMBER>;
 		gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 	};
 
 	wps {
-		label = "green:wps";
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
 		gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pcie {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&precal_art_5000>, <&macaddr_info_8 (-1)>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
 	};
 };
 
@@ -76,6 +89,16 @@
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
 			};
 		};
 	};

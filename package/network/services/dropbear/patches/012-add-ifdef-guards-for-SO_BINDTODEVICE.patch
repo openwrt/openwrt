@@ -1,0 +1,50 @@
+From 031d09b47912b2401f4934667c0b6f857ede61ee Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Tue, 18 Jul 2023 23:20:16 +0800
+Subject: Add ifdef guards for SO_BINDTODEVICE
+
+---
+ netio.c       | 2 ++
+ svr-runopts.c | 4 ++++
+ 2 files changed, 6 insertions(+)
+
+--- a/netio.c
++++ b/netio.c
+@@ -555,10 +555,12 @@ int dropbear_listen(const char* address,
+ 		/* set to reuse, quick timeout */
+ 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void*) &val, sizeof(val));
+ 
++#ifdef SO_BINDTODEVICE
+ 		if(interface && setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, interface, strlen(interface)) < 0) {
+ 			dropbear_log(LOG_WARNING, "Couldn't set SO_BINDTODEVICE");
+ 			TRACE(("Failed setsockopt with errno failure, %d %s", errno, strerror(errno)))
+ 		}
++#endif
+ 
+ #if defined(IPPROTO_IPV6) && defined(IPV6_V6ONLY)
+ 		if (res->ai_family == AF_INET6) {
+--- a/svr-runopts.c
++++ b/svr-runopts.c
+@@ -98,8 +98,10 @@ static void printhelp(const char * progn
+ 					"		(default port is %s if none specified)\n"
+ 					"-P PidFile	Create pid file PidFile\n"
+ 					"		(default %s)\n"
++#ifdef SO_BINDTODEVICE
+ 					"-l <interface>\n"
+ 					"		interface to bind on\n"
++#endif
+ #if INETD_MODE
+ 					"-i		Start for inetd\n"
+ #endif
+@@ -267,9 +269,11 @@ void svr_getopts(int argc, char ** argv)
+ 				case 'P':
+ 					next = &svr_opts.pidfile;
+ 					break;
++#ifdef SO_BINDTODEVICE
+ 				case 'l':
+ 					next = &svr_opts.interface;
+ 					break;
++#endif
+ #if DO_MOTD
+ 				/* motd is displayed by default, -m turns it off */
+ 				case 'm':

@@ -1,6 +1,7 @@
 #include "mt7621.dtsi"
 
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -18,12 +19,14 @@
 		compatible = "gpio-leds";
 
 		led_wps: wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 		};
 
 		usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&xhci_ehci_port1>, <&ehci_port2>;
 			linux,default-trigger = "usbport";
@@ -71,7 +74,7 @@
 				reg = <0x30000 0x10000>;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

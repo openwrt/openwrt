@@ -1,0 +1,34 @@
+From 383cc8c97a9420aad9cf93d88e77ec636b183a9d Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Mon, 11 Dec 2023 23:18:09 +0800
+Subject: Allow inetd with non-syslog
+
+An inetd-alike should be able to distinguish stdout and stderr, so
+it's a valid configuration.
+
+Fixes #218 on github
+---
+ svr-runopts.c | 12 ------------
+ 1 file changed, 12 deletions(-)
+
+--- a/svr-runopts.c
++++ b/svr-runopts.c
+@@ -443,18 +443,6 @@ void svr_getopts(int argc, char ** argv)
+ 		}
+ 	}
+ 
+-#if INETD_MODE
+-	if (svr_opts.inetdmode && (
+-		opts.usingsyslog == 0
+-#if DEBUG_TRACE
+-		|| debug_trace
+-#endif
+-		)) {
+-		/* log output goes to stderr which would get sent over the inetd network socket */
+-		dropbear_exit("Dropbear inetd mode is incompatible with debug -v or non-syslog");
+-	}
+-#endif
+-
+ 	if (svr_opts.multiauthmethod && svr_opts.noauthpass) {
+ 		dropbear_exit("-t and -s are incompatible");
+ 	}

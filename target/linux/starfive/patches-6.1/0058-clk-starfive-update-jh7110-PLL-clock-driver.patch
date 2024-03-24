@@ -1,0 +1,819 @@
+From 758c8c4c30f495465f34735aef2458c0cc255a75 Mon Sep 17 00:00:00 2001
+From: "shanlong.li" <shanlong.li@starfivetech.com>
+Date: Wed, 31 May 2023 01:03:02 -0700
+Subject: [PATCH 058/122] clk: starfive: update jh7110 PLL clock driver
+
+Update the StarFive JH7110 PLL clock controller
+and they work by reading and setting syscon registers.
+
+Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
+---
+ .../clk/starfive/clk-starfive-jh7110-pll.c    | 269 +++++-------------
+ .../clk/starfive/clk-starfive-jh7110-pll.h    | 264 +++++++++--------
+ 2 files changed, 227 insertions(+), 306 deletions(-)
+
+--- a/drivers/clk/starfive/clk-starfive-jh7110-pll.c
++++ b/drivers/clk/starfive/clk-starfive-jh7110-pll.c
+@@ -24,11 +24,29 @@
+ #include <linux/mfd/syscon.h>
+ #include <linux/platform_device.h>
+ #include <linux/regmap.h>
++#include <linux/of_platform.h>
+ 
+ #include <dt-bindings/clock/starfive,jh7110-crg.h>
+ 
+ #include "clk-starfive-jh7110-pll.h"
+ 
++struct jh7110_pll_conf_variant {
++	unsigned int pll_nums;
++	struct jh7110_pll_syscon_conf conf[];
++};
++
++static const struct jh7110_pll_conf_variant jh7110_pll_variant = {
++	.pll_nums = JH7110_PLLCLK_END,
++	.conf = {
++		JH7110_PLL(JH7110_CLK_PLL0_OUT, "pll0_out",
++			   JH7110_PLL0_FREQ_MAX, jh7110_pll0_syscon_val_preset),
++		JH7110_PLL(JH7110_CLK_PLL1_OUT, "pll1_out",
++			   JH7110_PLL1_FREQ_MAX, jh7110_pll1_syscon_val_preset),
++		JH7110_PLL(JH7110_CLK_PLL2_OUT, "pll2_out",
++			   JH7110_PLL2_FREQ_MAX, jh7110_pll2_syscon_val_preset),
++	},
++};
++
+ static struct jh7110_clk_pll_data *jh7110_pll_data_from(struct clk_hw *hw)
+ {
+ 	return container_of(hw, struct jh7110_clk_pll_data, hw);
+@@ -44,10 +62,9 @@ static unsigned long jh7110_pll_get_freq
+ 					 unsigned long parent_rate)
+ {
+ 	struct jh7110_clk_pll_priv *priv = jh7110_pll_priv_from(data);
+-	struct jh7110_pll_syscon_offset *offset = &data->offset;
+-	struct jh7110_pll_syscon_mask *mask = &data->mask;
+-	struct jh7110_pll_syscon_shift *shift = &data->shift;
+-	unsigned long freq = 0;
++	struct jh7110_pll_syscon_offset *offset = &data->conf.offsets;
++	struct jh7110_pll_syscon_mask *mask = &data->conf.masks;
++	struct jh7110_pll_syscon_shift *shift = &data->conf.shifts;
+ 	unsigned long frac_cal;
+ 	u32 dacpd;
+ 	u32 dsmpd;
+@@ -57,32 +74,23 @@ static unsigned long jh7110_pll_get_freq
+ 	u32 frac;
+ 	u32 reg_val;
+ 
+-	if (regmap_read(priv->syscon_regmap, offset->dacpd, &reg_val))
+-		goto read_error;
++	regmap_read(priv->syscon_regmap, offset->dacpd, &reg_val);
+ 	dacpd = (reg_val & mask->dacpd) >> shift->dacpd;
+ 
+-	if (regmap_read(priv->syscon_regmap, offset->dsmpd, &reg_val))
+-		goto read_error;
++	regmap_read(priv->syscon_regmap, offset->dsmpd, &reg_val);
+ 	dsmpd = (reg_val & mask->dsmpd) >> shift->dsmpd;
+ 
+-	if (regmap_read(priv->syscon_regmap, offset->fbdiv, &reg_val))
+-		goto read_error;
++	regmap_read(priv->syscon_regmap, offset->fbdiv, &reg_val);
+ 	fbdiv = (reg_val & mask->fbdiv) >> shift->fbdiv;
+-	/* fbdiv value should be 8 to 4095 */
+-	if (fbdiv < 8)
+-		goto read_error;
+ 
+-	if (regmap_read(priv->syscon_regmap, offset->prediv, &reg_val))
+-		goto read_error;
++	regmap_read(priv->syscon_regmap, offset->prediv, &reg_val);
+ 	prediv = (reg_val & mask->prediv) >> shift->prediv;
+ 
+-	if (regmap_read(priv->syscon_regmap, offset->postdiv1, &reg_val))
+-		goto read_error;
++	regmap_read(priv->syscon_regmap, offset->postdiv1, &reg_val);
+ 	/* postdiv1 = 2 ^ reg_val */
+ 	postdiv1 = 1 << ((reg_val & mask->postdiv1) >> shift->postdiv1);
+ 
+-	if (regmap_read(priv->syscon_regmap, offset->frac, &reg_val))
+-		goto read_error;
++	regmap_read(priv->syscon_regmap, offset->frac, &reg_val);
+ 	frac = (reg_val & mask->frac) >> shift->frac;
+ 
+ 	/*
+@@ -95,14 +103,11 @@ static unsigned long jh7110_pll_get_freq
+ 	else if (dacpd == 0 && dsmpd == 0)
+ 		frac_cal = (unsigned long)frac * STARFIVE_PLL_FRAC_PATR_SIZE / (1 << 24);
+ 	else
+-		goto read_error;
++		return 0;
+ 
+ 	/* Fvco = Fref * (NI + NF) / M / Q1 */
+-	freq = parent_rate / STARFIVE_PLL_FRAC_PATR_SIZE *
+-	       (fbdiv * STARFIVE_PLL_FRAC_PATR_SIZE + frac_cal) / prediv / postdiv1;
+-
+-read_error:
+-	return freq;
++	return (parent_rate / STARFIVE_PLL_FRAC_PATR_SIZE *
++		(fbdiv * STARFIVE_PLL_FRAC_PATR_SIZE + frac_cal) / prediv / postdiv1);
+ }
+ 
+ static unsigned long jh7110_pll_rate_sub_fabs(unsigned long rate1, unsigned long rate2)
+@@ -114,40 +119,27 @@ static unsigned long jh7110_pll_rate_sub
+ static void jh7110_pll_select_near_freq_id(struct jh7110_clk_pll_data *data,
+ 					   unsigned long rate)
+ {
+-	const struct starfive_pll_syscon_value *syscon_val;
++	const struct jh7110_pll_syscon_val *val;
+ 	unsigned int id;
+-	unsigned int pll_arry_size;
+ 	unsigned long rate_diff;
+ 
+-	if (data->idx == JH7110_CLK_PLL0_OUT)
+-		pll_arry_size = ARRAY_SIZE(jh7110_pll0_syscon_freq);
+-	else if (data->idx == JH7110_CLK_PLL1_OUT)
+-		pll_arry_size = ARRAY_SIZE(jh7110_pll1_syscon_freq);
+-	else
+-		pll_arry_size = ARRAY_SIZE(jh7110_pll2_syscon_freq);
+-
+ 	/* compare the frequency one by one from small to large in order */
+-	for (id = 0; id < pll_arry_size; id++) {
+-		if (data->idx == JH7110_CLK_PLL0_OUT)
+-			syscon_val = &jh7110_pll0_syscon_freq[id];
+-		else if (data->idx == JH7110_CLK_PLL1_OUT)
+-			syscon_val = &jh7110_pll1_syscon_freq[id];
+-		else
+-			syscon_val = &jh7110_pll2_syscon_freq[id];
++	for (id = 0; id < data->conf.preset_val_nums; id++) {
++		val = &data->conf.preset_val[id];
+ 
+-		if (rate == syscon_val->freq)
++		if (rate == val->freq)
+ 			goto match_end;
+ 
+ 		/* select near frequency */
+-		if (rate < syscon_val->freq) {
++		if (rate < val->freq) {
+ 			/* The last frequency is closer to the target rate than this time. */
+ 			if (id > 0)
+-				if (rate_diff < jh7110_pll_rate_sub_fabs(rate, syscon_val->freq))
++				if (rate_diff < jh7110_pll_rate_sub_fabs(rate, val->freq))
+ 					id--;
+ 
+ 			goto match_end;
+ 		} else {
+-			rate_diff = jh7110_pll_rate_sub_fabs(rate, syscon_val->freq);
++			rate_diff = jh7110_pll_rate_sub_fabs(rate, val->freq);
+ 		}
+ 	}
+ 
+@@ -158,54 +150,34 @@ match_end:
+ static int jh7110_pll_set_freq_syscon(struct jh7110_clk_pll_data *data)
+ {
+ 	struct jh7110_clk_pll_priv *priv = jh7110_pll_priv_from(data);
+-	struct jh7110_pll_syscon_offset *offset = &data->offset;
+-	struct jh7110_pll_syscon_mask *mask = &data->mask;
+-	struct jh7110_pll_syscon_shift *shift = &data->shift;
+-	unsigned int freq_idx = data->freq_select_idx;
+-	const struct starfive_pll_syscon_value *syscon_val;
+-	int ret;
++	struct jh7110_pll_syscon_offset *offset = &data->conf.offsets;
++	struct jh7110_pll_syscon_mask *mask = &data->conf.masks;
++	struct jh7110_pll_syscon_shift *shift = &data->conf.shifts;
++	const struct jh7110_pll_syscon_val *val = &data->conf.preset_val[data->freq_select_idx];
+ 
+-	if (data->idx == JH7110_CLK_PLL0_OUT)
+-		syscon_val = &jh7110_pll0_syscon_freq[freq_idx];
+-	else if (data->idx == JH7110_CLK_PLL1_OUT)
+-		syscon_val = &jh7110_pll1_syscon_freq[freq_idx];
+-	else
+-		syscon_val = &jh7110_pll2_syscon_freq[freq_idx];
++	/* frac: Integer Mode (Both 1) or Fraction Mode (Both 0) */
++	if (val->dacpd == 0 && val->dsmpd == 0)
++		regmap_update_bits(priv->syscon_regmap, offset->frac, mask->frac,
++				   (val->frac << shift->frac));
++	else if (val->dacpd != val->dsmpd)
++		return -EINVAL;
+ 
+-	ret = regmap_update_bits(priv->syscon_regmap, offset->dacpd, mask->dacpd,
+-				 (syscon_val->dacpd << shift->dacpd));
+-	if (ret)
+-		goto set_failed;
+-
+-	ret = regmap_update_bits(priv->syscon_regmap, offset->dsmpd, mask->dsmpd,
+-				 (syscon_val->dsmpd << shift->dsmpd));
+-	if (ret)
+-		goto set_failed;
+-
+-	ret = regmap_update_bits(priv->syscon_regmap, offset->prediv, mask->prediv,
+-				 (syscon_val->prediv << shift->prediv));
+-	if (ret)
+-		goto set_failed;
+-
+-	ret = regmap_update_bits(priv->syscon_regmap, offset->fbdiv, mask->fbdiv,
+-				 (syscon_val->fbdiv << shift->fbdiv));
+-	if (ret)
+-		goto set_failed;
+-
+-	ret = regmap_update_bits(priv->syscon_regmap, offset->postdiv1, mask->postdiv1,
+-				 ((syscon_val->postdiv1 >> 1) << shift->postdiv1));
+-	if (ret)
+-		goto set_failed;
++	/* fbdiv value should be 8 to 4095 */
++	if (val->fbdiv < 8)
++		return -EINVAL;
+ 
+-	/* frac: Integer Mode (Both 1) or Fraction Mode (Both 0) */
+-	if (syscon_val->dacpd == 0 && syscon_val->dsmpd == 0)
+-		ret = regmap_update_bits(priv->syscon_regmap, offset->frac, mask->frac,
+-					 (syscon_val->frac << shift->frac));
+-	else if (syscon_val->dacpd != syscon_val->dsmpd)
+-		ret = -EINVAL;
++	regmap_update_bits(priv->syscon_regmap, offset->dacpd, mask->dacpd,
++			   (val->dacpd << shift->dacpd));
++	regmap_update_bits(priv->syscon_regmap, offset->dsmpd, mask->dsmpd,
++			   (val->dsmpd << shift->dsmpd));
++	regmap_update_bits(priv->syscon_regmap, offset->prediv, mask->prediv,
++			   (val->prediv << shift->prediv));
++	regmap_update_bits(priv->syscon_regmap, offset->fbdiv, mask->fbdiv,
++			   (val->fbdiv << shift->fbdiv));
++	regmap_update_bits(priv->syscon_regmap, offset->postdiv1, mask->postdiv1,
++			   ((val->postdiv1 >> 1) << shift->postdiv1));
+ 
+-set_failed:
+-	return ret;
++	return 0;
+ }
+ 
+ static unsigned long jh7110_pll_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
+@@ -220,13 +192,7 @@ static int jh7110_pll_determine_rate(str
+ 	struct jh7110_clk_pll_data *data = jh7110_pll_data_from(hw);
+ 
+ 	jh7110_pll_select_near_freq_id(data, req->rate);
+-
+-	if (data->idx == JH7110_CLK_PLL0_OUT)
+-		req->rate = jh7110_pll0_syscon_freq[data->freq_select_idx].freq;
+-	else if (data->idx == JH7110_CLK_PLL1_OUT)
+-		req->rate = jh7110_pll1_syscon_freq[data->freq_select_idx].freq;
+-	else
+-		req->rate = jh7110_pll2_syscon_freq[data->freq_select_idx].freq;
++	req->rate = data->conf.preset_val[data->freq_select_idx].freq;
+ 
+ 	return 0;
+ }
+@@ -270,92 +236,12 @@ static const struct clk_ops jh7110_pll_o
+ 	.debug_init = jh7110_pll_debug_init,
+ };
+ 
+-/* get offset, mask and shift of PLL(x) syscon */
+-static int jh7110_pll_data_get(struct jh7110_clk_pll_data *data, int index)
+-{
+-	struct jh7110_pll_syscon_offset *offset = &data->offset;
+-	struct jh7110_pll_syscon_mask *mask = &data->mask;
+-	struct jh7110_pll_syscon_shift *shift = &data->shift;
+-
+-	if (index == JH7110_CLK_PLL0_OUT) {
+-		offset->dacpd = STARFIVE_JH7110_PLL0_DACPD_OFFSET;
+-		offset->dsmpd = STARFIVE_JH7110_PLL0_DSMPD_OFFSET;
+-		offset->fbdiv = STARFIVE_JH7110_PLL0_FBDIV_OFFSET;
+-		offset->frac = STARFIVE_JH7110_PLL0_FRAC_OFFSET;
+-		offset->prediv = STARFIVE_JH7110_PLL0_PREDIV_OFFSET;
+-		offset->postdiv1 = STARFIVE_JH7110_PLL0_POSTDIV1_OFFSET;
+-
+-		mask->dacpd = STARFIVE_JH7110_PLL0_DACPD_MASK;
+-		mask->dsmpd = STARFIVE_JH7110_PLL0_DSMPD_MASK;
+-		mask->fbdiv = STARFIVE_JH7110_PLL0_FBDIV_MASK;
+-		mask->frac = STARFIVE_JH7110_PLL0_FRAC_MASK;
+-		mask->prediv = STARFIVE_JH7110_PLL0_PREDIV_MASK;
+-		mask->postdiv1 = STARFIVE_JH7110_PLL0_POSTDIV1_MASK;
+-
+-		shift->dacpd = STARFIVE_JH7110_PLL0_DACPD_SHIFT;
+-		shift->dsmpd = STARFIVE_JH7110_PLL0_DSMPD_SHIFT;
+-		shift->fbdiv = STARFIVE_JH7110_PLL0_FBDIV_SHIFT;
+-		shift->frac = STARFIVE_JH7110_PLL0_FRAC_SHIFT;
+-		shift->prediv = STARFIVE_JH7110_PLL0_PREDIV_SHIFT;
+-		shift->postdiv1 = STARFIVE_JH7110_PLL0_POSTDIV1_SHIFT;
+-
+-	} else if (index == JH7110_CLK_PLL1_OUT) {
+-		offset->dacpd = STARFIVE_JH7110_PLL1_DACPD_OFFSET;
+-		offset->dsmpd = STARFIVE_JH7110_PLL1_DSMPD_OFFSET;
+-		offset->fbdiv = STARFIVE_JH7110_PLL1_FBDIV_OFFSET;
+-		offset->frac = STARFIVE_JH7110_PLL1_FRAC_OFFSET;
+-		offset->prediv = STARFIVE_JH7110_PLL1_PREDIV_OFFSET;
+-		offset->postdiv1 = STARFIVE_JH7110_PLL1_POSTDIV1_OFFSET;
+-
+-		mask->dacpd = STARFIVE_JH7110_PLL1_DACPD_MASK;
+-		mask->dsmpd = STARFIVE_JH7110_PLL1_DSMPD_MASK;
+-		mask->fbdiv = STARFIVE_JH7110_PLL1_FBDIV_MASK;
+-		mask->frac = STARFIVE_JH7110_PLL1_FRAC_MASK;
+-		mask->prediv = STARFIVE_JH7110_PLL1_PREDIV_MASK;
+-		mask->postdiv1 = STARFIVE_JH7110_PLL1_POSTDIV1_MASK;
+-
+-		shift->dacpd = STARFIVE_JH7110_PLL1_DACPD_SHIFT;
+-		shift->dsmpd = STARFIVE_JH7110_PLL1_DSMPD_SHIFT;
+-		shift->fbdiv = STARFIVE_JH7110_PLL1_FBDIV_SHIFT;
+-		shift->frac = STARFIVE_JH7110_PLL1_FRAC_SHIFT;
+-		shift->prediv = STARFIVE_JH7110_PLL1_PREDIV_SHIFT;
+-		shift->postdiv1 = STARFIVE_JH7110_PLL1_POSTDIV1_SHIFT;
+-
+-	} else if (index == JH7110_CLK_PLL2_OUT) {
+-		offset->dacpd = STARFIVE_JH7110_PLL2_DACPD_OFFSET;
+-		offset->dsmpd = STARFIVE_JH7110_PLL2_DSMPD_OFFSET;
+-		offset->fbdiv = STARFIVE_JH7110_PLL2_FBDIV_OFFSET;
+-		offset->frac = STARFIVE_JH7110_PLL2_FRAC_OFFSET;
+-		offset->prediv = STARFIVE_JH7110_PLL2_PREDIV_OFFSET;
+-		offset->postdiv1 = STARFIVE_JH7110_PLL2_POSTDIV1_OFFSET;
+-
+-		mask->dacpd = STARFIVE_JH7110_PLL2_DACPD_MASK;
+-		mask->dsmpd = STARFIVE_JH7110_PLL2_DSMPD_MASK;
+-		mask->fbdiv = STARFIVE_JH7110_PLL2_FBDIV_MASK;
+-		mask->frac = STARFIVE_JH7110_PLL2_FRAC_MASK;
+-		mask->prediv = STARFIVE_JH7110_PLL2_PREDIV_MASK;
+-		mask->postdiv1 = STARFIVE_JH7110_PLL2_POSTDIV1_MASK;
+-
+-		shift->dacpd = STARFIVE_JH7110_PLL2_DACPD_SHIFT;
+-		shift->dsmpd = STARFIVE_JH7110_PLL2_DSMPD_SHIFT;
+-		shift->fbdiv = STARFIVE_JH7110_PLL2_FBDIV_SHIFT;
+-		shift->frac = STARFIVE_JH7110_PLL2_FRAC_SHIFT;
+-		shift->prediv = STARFIVE_JH7110_PLL2_PREDIV_SHIFT;
+-		shift->postdiv1 = STARFIVE_JH7110_PLL2_POSTDIV1_SHIFT;
+-
+-	} else {
+-		return -ENOENT;
+-	}
+-
+-	return 0;
+-}
+-
+ static struct clk_hw *jh7110_pll_get(struct of_phandle_args *clkspec, void *data)
+ {
+ 	struct jh7110_clk_pll_priv *priv = data;
+ 	unsigned int idx = clkspec->args[0];
+ 
+-	if (idx < JH7110_PLLCLK_END)
++	if (idx < priv->pll_nums)
+ 		return &priv->data[idx].hw;
+ 
+ 	return ERR_PTR(-EINVAL);
+@@ -363,17 +249,17 @@ static struct clk_hw *jh7110_pll_get(str
+ 
+ static int jh7110_pll_probe(struct platform_device *pdev)
+ {
+-	const char *pll_name[JH7110_PLLCLK_END] = {
+-		"pll0_out",
+-		"pll1_out",
+-		"pll2_out"
+-	};
++	const struct jh7110_pll_conf_variant *variant;
+ 	struct jh7110_clk_pll_priv *priv;
+ 	struct jh7110_clk_pll_data *data;
+ 	int ret;
+ 	unsigned int idx;
+ 
+-	priv = devm_kzalloc(&pdev->dev, struct_size(priv, data, JH7110_PLLCLK_END),
++	variant = of_device_get_match_data(&pdev->dev);
++	if (!variant)
++		return -ENOMEM;
++
++	priv = devm_kzalloc(&pdev->dev, struct_size(priv, data, variant->pll_nums),
+ 			    GFP_KERNEL);
+ 	if (!priv)
+ 		return -ENOMEM;
+@@ -383,12 +269,13 @@ static int jh7110_pll_probe(struct platf
+ 	if (IS_ERR(priv->syscon_regmap))
+ 		return PTR_ERR(priv->syscon_regmap);
+ 
+-	for (idx = 0; idx < JH7110_PLLCLK_END; idx++) {
++	priv->pll_nums = variant->pll_nums;
++	for (idx = 0; idx < priv->pll_nums; idx++) {
+ 		struct clk_parent_data parents = {
+ 			.index = 0,
+ 		};
+ 		struct clk_init_data init = {
+-			.name = pll_name[idx],
++			.name = variant->conf[idx].name,
+ 			.ops = &jh7110_pll_ops,
+ 			.parent_data = &parents,
+ 			.num_parents = 1,
+@@ -396,11 +283,7 @@ static int jh7110_pll_probe(struct platf
+ 		};
+ 
+ 		data = &priv->data[idx];
+-
+-		ret = jh7110_pll_data_get(data, idx);
+-		if (ret)
+-			return ret;
+-
++		data->conf = variant->conf[idx];
+ 		data->hw.init = &init;
+ 		data->idx = idx;
+ 
+@@ -413,7 +296,7 @@ static int jh7110_pll_probe(struct platf
+ }
+ 
+ static const struct of_device_id jh7110_pll_match[] = {
+-	{ .compatible = "starfive,jh7110-pll" },
++	{ .compatible = "starfive,jh7110-pll", .data = &jh7110_pll_variant },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, jh7110_pll_match);
+--- a/drivers/clk/starfive/clk-starfive-jh7110-pll.h
++++ b/drivers/clk/starfive/clk-starfive-jh7110-pll.h
+@@ -13,62 +13,93 @@
+ /* The decimal places are counted by expanding them by a factor of STARFIVE_PLL_FRAC_PATR_SIZE */
+ #define STARFIVE_PLL_FRAC_PATR_SIZE		1000
+ 
+-#define STARFIVE_JH7110_PLL0_DACPD_OFFSET	0x18
+-#define STARFIVE_JH7110_PLL0_DACPD_SHIFT	24
+-#define STARFIVE_JH7110_PLL0_DACPD_MASK		BIT(24)
+-#define STARFIVE_JH7110_PLL0_DSMPD_OFFSET	0x18
+-#define STARFIVE_JH7110_PLL0_DSMPD_SHIFT	25
+-#define STARFIVE_JH7110_PLL0_DSMPD_MASK		BIT(25)
+-#define STARFIVE_JH7110_PLL0_FBDIV_OFFSET	0x1c
+-#define STARFIVE_JH7110_PLL0_FBDIV_SHIFT	0
+-#define STARFIVE_JH7110_PLL0_FBDIV_MASK		GENMASK(11, 0)
+-#define STARFIVE_JH7110_PLL0_FRAC_OFFSET	0x20
+-#define STARFIVE_JH7110_PLL0_FRAC_SHIFT		0
+-#define STARFIVE_JH7110_PLL0_FRAC_MASK		GENMASK(23, 0)
+-#define STARFIVE_JH7110_PLL0_POSTDIV1_OFFSET	0x20
+-#define STARFIVE_JH7110_PLL0_POSTDIV1_SHIFT	28
+-#define STARFIVE_JH7110_PLL0_POSTDIV1_MASK	GENMASK(29, 28)
+-#define STARFIVE_JH7110_PLL0_PREDIV_OFFSET	0x24
+-#define STARFIVE_JH7110_PLL0_PREDIV_SHIFT	0
+-#define STARFIVE_JH7110_PLL0_PREDIV_MASK	GENMASK(5, 0)
+-
+-#define STARFIVE_JH7110_PLL1_DACPD_OFFSET	0x24
+-#define STARFIVE_JH7110_PLL1_DACPD_SHIFT	15
+-#define STARFIVE_JH7110_PLL1_DACPD_MASK		BIT(15)
+-#define STARFIVE_JH7110_PLL1_DSMPD_OFFSET	0x24
+-#define STARFIVE_JH7110_PLL1_DSMPD_SHIFT	16
+-#define STARFIVE_JH7110_PLL1_DSMPD_MASK		BIT(16)
+-#define STARFIVE_JH7110_PLL1_FBDIV_OFFSET	0x24
+-#define STARFIVE_JH7110_PLL1_FBDIV_SHIFT	17
+-#define STARFIVE_JH7110_PLL1_FBDIV_MASK		GENMASK(28, 17)
+-#define STARFIVE_JH7110_PLL1_FRAC_OFFSET	0x28
+-#define STARFIVE_JH7110_PLL1_FRAC_SHIFT		0
+-#define STARFIVE_JH7110_PLL1_FRAC_MASK		GENMASK(23, 0)
+-#define STARFIVE_JH7110_PLL1_POSTDIV1_OFFSET	0x28
+-#define STARFIVE_JH7110_PLL1_POSTDIV1_SHIFT	28
+-#define STARFIVE_JH7110_PLL1_POSTDIV1_MASK	GENMASK(29, 28)
+-#define STARFIVE_JH7110_PLL1_PREDIV_OFFSET	0x2c
+-#define STARFIVE_JH7110_PLL1_PREDIV_SHIFT	0
+-#define STARFIVE_JH7110_PLL1_PREDIV_MASK	GENMASK(5, 0)
+-
+-#define STARFIVE_JH7110_PLL2_DACPD_OFFSET	0x2c
+-#define STARFIVE_JH7110_PLL2_DACPD_SHIFT	15
+-#define STARFIVE_JH7110_PLL2_DACPD_MASK		BIT(15)
+-#define STARFIVE_JH7110_PLL2_DSMPD_OFFSET	0x2c
+-#define STARFIVE_JH7110_PLL2_DSMPD_SHIFT	16
+-#define STARFIVE_JH7110_PLL2_DSMPD_MASK		BIT(16)
+-#define STARFIVE_JH7110_PLL2_FBDIV_OFFSET	0x2c
+-#define STARFIVE_JH7110_PLL2_FBDIV_SHIFT	17
+-#define STARFIVE_JH7110_PLL2_FBDIV_MASK		GENMASK(28, 17)
+-#define STARFIVE_JH7110_PLL2_FRAC_OFFSET	0x30
+-#define STARFIVE_JH7110_PLL2_FRAC_SHIFT		0
+-#define STARFIVE_JH7110_PLL2_FRAC_MASK		GENMASK(23, 0)
+-#define STARFIVE_JH7110_PLL2_POSTDIV1_OFFSET	0x30
+-#define STARFIVE_JH7110_PLL2_POSTDIV1_SHIFT	28
+-#define STARFIVE_JH7110_PLL2_POSTDIV1_MASK	GENMASK(29, 28)
+-#define STARFIVE_JH7110_PLL2_PREDIV_OFFSET	0x34
+-#define STARFIVE_JH7110_PLL2_PREDIV_SHIFT	0
+-#define STARFIVE_JH7110_PLL2_PREDIV_MASK	GENMASK(5, 0)
++#define STARFIVE_JH7110_CLK_PLL0_OUT_DACPD_OFFSET	0x18
++#define STARFIVE_JH7110_CLK_PLL0_OUT_DACPD_SHIFT	24
++#define STARFIVE_JH7110_CLK_PLL0_OUT_DACPD_MASK		BIT(24)
++#define STARFIVE_JH7110_CLK_PLL0_OUT_DSMPD_OFFSET	0x18
++#define STARFIVE_JH7110_CLK_PLL0_OUT_DSMPD_SHIFT	25
++#define STARFIVE_JH7110_CLK_PLL0_OUT_DSMPD_MASK		BIT(25)
++#define STARFIVE_JH7110_CLK_PLL0_OUT_FBDIV_OFFSET	0x1c
++#define STARFIVE_JH7110_CLK_PLL0_OUT_FBDIV_SHIFT	0
++#define STARFIVE_JH7110_CLK_PLL0_OUT_FBDIV_MASK		GENMASK(11, 0)
++#define STARFIVE_JH7110_CLK_PLL0_OUT_FRAC_OFFSET	0x20
++#define STARFIVE_JH7110_CLK_PLL0_OUT_FRAC_SHIFT		0
++#define STARFIVE_JH7110_CLK_PLL0_OUT_FRAC_MASK		GENMASK(23, 0)
++#define STARFIVE_JH7110_CLK_PLL0_OUT_POSTDIV1_OFFSET	0x20
++#define STARFIVE_JH7110_CLK_PLL0_OUT_POSTDIV1_SHIFT	28
++#define STARFIVE_JH7110_CLK_PLL0_OUT_POSTDIV1_MASK	GENMASK(29, 28)
++#define STARFIVE_JH7110_CLK_PLL0_OUT_PREDIV_OFFSET	0x24
++#define STARFIVE_JH7110_CLK_PLL0_OUT_PREDIV_SHIFT	0
++#define STARFIVE_JH7110_CLK_PLL0_OUT_PREDIV_MASK	GENMASK(5, 0)
++
++#define STARFIVE_JH7110_CLK_PLL1_OUT_DACPD_OFFSET	0x24
++#define STARFIVE_JH7110_CLK_PLL1_OUT_DACPD_SHIFT	15
++#define STARFIVE_JH7110_CLK_PLL1_OUT_DACPD_MASK		BIT(15)
++#define STARFIVE_JH7110_CLK_PLL1_OUT_DSMPD_OFFSET	0x24
++#define STARFIVE_JH7110_CLK_PLL1_OUT_DSMPD_SHIFT	16
++#define STARFIVE_JH7110_CLK_PLL1_OUT_DSMPD_MASK		BIT(16)
++#define STARFIVE_JH7110_CLK_PLL1_OUT_FBDIV_OFFSET	0x24
++#define STARFIVE_JH7110_CLK_PLL1_OUT_FBDIV_SHIFT	17
++#define STARFIVE_JH7110_CLK_PLL1_OUT_FBDIV_MASK		GENMASK(28, 17)
++#define STARFIVE_JH7110_CLK_PLL1_OUT_FRAC_OFFSET	0x28
++#define STARFIVE_JH7110_CLK_PLL1_OUT_FRAC_SHIFT		0
++#define STARFIVE_JH7110_CLK_PLL1_OUT_FRAC_MASK		GENMASK(23, 0)
++#define STARFIVE_JH7110_CLK_PLL1_OUT_POSTDIV1_OFFSET	0x28
++#define STARFIVE_JH7110_CLK_PLL1_OUT_POSTDIV1_SHIFT	28
++#define STARFIVE_JH7110_CLK_PLL1_OUT_POSTDIV1_MASK	GENMASK(29, 28)
++#define STARFIVE_JH7110_CLK_PLL1_OUT_PREDIV_OFFSET	0x2c
++#define STARFIVE_JH7110_CLK_PLL1_OUT_PREDIV_SHIFT	0
++#define STARFIVE_JH7110_CLK_PLL1_OUT_PREDIV_MASK	GENMASK(5, 0)
++
++#define STARFIVE_JH7110_CLK_PLL2_OUT_DACPD_OFFSET	0x2c
++#define STARFIVE_JH7110_CLK_PLL2_OUT_DACPD_SHIFT	15
++#define STARFIVE_JH7110_CLK_PLL2_OUT_DACPD_MASK		BIT(15)
++#define STARFIVE_JH7110_CLK_PLL2_OUT_DSMPD_OFFSET	0x2c
++#define STARFIVE_JH7110_CLK_PLL2_OUT_DSMPD_SHIFT	16
++#define STARFIVE_JH7110_CLK_PLL2_OUT_DSMPD_MASK		BIT(16)
++#define STARFIVE_JH7110_CLK_PLL2_OUT_FBDIV_OFFSET	0x2c
++#define STARFIVE_JH7110_CLK_PLL2_OUT_FBDIV_SHIFT	17
++#define STARFIVE_JH7110_CLK_PLL2_OUT_FBDIV_MASK		GENMASK(28, 17)
++#define STARFIVE_JH7110_CLK_PLL2_OUT_FRAC_OFFSET	0x30
++#define STARFIVE_JH7110_CLK_PLL2_OUT_FRAC_SHIFT		0
++#define STARFIVE_JH7110_CLK_PLL2_OUT_FRAC_MASK		GENMASK(23, 0)
++#define STARFIVE_JH7110_CLK_PLL2_OUT_POSTDIV1_OFFSET	0x30
++#define STARFIVE_JH7110_CLK_PLL2_OUT_POSTDIV1_SHIFT	28
++#define STARFIVE_JH7110_CLK_PLL2_OUT_POSTDIV1_MASK	GENMASK(29, 28)
++#define STARFIVE_JH7110_CLK_PLL2_OUT_PREDIV_OFFSET	0x34
++#define STARFIVE_JH7110_CLK_PLL2_OUT_PREDIV_SHIFT	0
++#define STARFIVE_JH7110_CLK_PLL2_OUT_PREDIV_MASK	GENMASK(5, 0)
++
++#define JH7110_PLL(_idx, _name, _nums, _val)			\
++[_idx] = {							\
++	.name = _name,						\
++	.offsets = {						\
++		.dacpd = STARFIVE_##_idx##_DACPD_OFFSET,	\
++		.dsmpd = STARFIVE_##_idx##_DSMPD_OFFSET,	\
++		.fbdiv = STARFIVE_##_idx##_FBDIV_OFFSET,	\
++		.frac = STARFIVE_##_idx##_FRAC_OFFSET,		\
++		.prediv = STARFIVE_##_idx##_PREDIV_OFFSET,	\
++		.postdiv1 = STARFIVE_##_idx##_POSTDIV1_OFFSET,	\
++	},							\
++	.masks = {						\
++		.dacpd = STARFIVE_##_idx##_DACPD_MASK,		\
++		.dsmpd = STARFIVE_##_idx##_DSMPD_MASK,		\
++		.fbdiv = STARFIVE_##_idx##_FBDIV_MASK,		\
++		.frac = STARFIVE_##_idx##_FRAC_MASK,		\
++		.prediv = STARFIVE_##_idx##_PREDIV_MASK,	\
++		.postdiv1 = STARFIVE_##_idx##_POSTDIV1_MASK,	\
++	},							\
++	.shifts = {						\
++		.dacpd = STARFIVE_##_idx##_DACPD_SHIFT,		\
++		.dsmpd = STARFIVE_##_idx##_DSMPD_SHIFT,		\
++		.fbdiv = STARFIVE_##_idx##_FBDIV_SHIFT,		\
++		.frac = STARFIVE_##_idx##_FRAC_SHIFT,		\
++		.prediv = STARFIVE_##_idx##_PREDIV_SHIFT,	\
++		.postdiv1 = STARFIVE_##_idx##_POSTDIV1_SHIFT,	\
++	},							\
++	.preset_val_nums = _nums,				\
++	.preset_val = _val,					\
++}
+ 
+ struct jh7110_pll_syscon_offset {
+ 	unsigned int dacpd;
+@@ -97,23 +128,7 @@ struct jh7110_pll_syscon_shift {
+ 	char postdiv1;
+ };
+ 
+-struct jh7110_clk_pll_data {
+-	struct clk_hw hw;
+-	unsigned int idx;
+-	unsigned int freq_select_idx;
+-
+-	struct jh7110_pll_syscon_offset offset;
+-	struct jh7110_pll_syscon_mask mask;
+-	struct jh7110_pll_syscon_shift shift;
+-};
+-
+-struct jh7110_clk_pll_priv {
+-	struct device *dev;
+-	struct regmap *syscon_regmap;
+-	struct jh7110_clk_pll_data data[];
+-};
+-
+-struct starfive_pll_syscon_value {
++struct jh7110_pll_syscon_val {
+ 	unsigned long freq;
+ 	u32 prediv;
+ 	u32 fbdiv;
+@@ -126,31 +141,54 @@ struct starfive_pll_syscon_value {
+ 	u32 frac;
+ };
+ 
+-enum starfive_pll0_freq_index {
+-	PLL0_FREQ_375 = 0,
+-	PLL0_FREQ_500,
+-	PLL0_FREQ_625,
+-	PLL0_FREQ_750,
+-	PLL0_FREQ_875,
+-	PLL0_FREQ_1000,
+-	PLL0_FREQ_1250,
+-	PLL0_FREQ_1375,
+-	PLL0_FREQ_1500,
+-	PLL0_FREQ_MAX
+-};
+-
+-enum starfive_pll1_freq_index {
+-	PLL1_FREQ_1066 = 0,
+-	PLL1_FREQ_1200,
+-	PLL1_FREQ_1400,
+-	PLL1_FREQ_1600,
+-	PLL1_FREQ_MAX
+-};
+-
+-enum starfive_pll2_freq_index {
+-	PLL2_FREQ_1188 = 0,
+-	PLL2_FREQ_12288,
+-	PLL2_FREQ_MAX
++struct jh7110_pll_syscon_conf {
++	char *name;
++	struct jh7110_pll_syscon_offset offsets;
++	struct jh7110_pll_syscon_mask masks;
++	struct jh7110_pll_syscon_shift shifts;
++	unsigned int preset_val_nums;
++	const struct jh7110_pll_syscon_val *preset_val;
++};
++
++struct jh7110_clk_pll_data {
++	struct clk_hw hw;
++	unsigned int idx;
++	unsigned int freq_select_idx;
++	struct jh7110_pll_syscon_conf conf;
++};
++
++struct jh7110_clk_pll_priv {
++	unsigned int pll_nums;
++	struct device *dev;
++	struct regmap *syscon_regmap;
++	struct jh7110_clk_pll_data data[];
++};
++
++enum jh7110_pll0_freq_index {
++	JH7110_PLL0_FREQ_375 = 0,
++	JH7110_PLL0_FREQ_500,
++	JH7110_PLL0_FREQ_625,
++	JH7110_PLL0_FREQ_750,
++	JH7110_PLL0_FREQ_875,
++	JH7110_PLL0_FREQ_1000,
++	JH7110_PLL0_FREQ_1250,
++	JH7110_PLL0_FREQ_1375,
++	JH7110_PLL0_FREQ_1500,
++	JH7110_PLL0_FREQ_MAX
++};
++
++enum jh7110_pll1_freq_index {
++	JH7110_PLL1_FREQ_1066 = 0,
++	JH7110_PLL1_FREQ_1200,
++	JH7110_PLL1_FREQ_1400,
++	JH7110_PLL1_FREQ_1600,
++	JH7110_PLL1_FREQ_MAX
++};
++
++enum jh7110_pll2_freq_index {
++	JH7110_PLL2_FREQ_1188 = 0,
++	JH7110_PLL2_FREQ_12288,
++	JH7110_PLL2_FREQ_MAX
+ };
+ 
+ /*
+@@ -158,9 +196,9 @@ enum starfive_pll2_freq_index {
+  * it cannot be set arbitrarily, so it needs a specific configuration.
+  * PLL0 frequency should be multiple of 125MHz (USB frequency).
+  */
+-static const struct starfive_pll_syscon_value
+-	jh7110_pll0_syscon_freq[PLL0_FREQ_MAX] = {
+-	[PLL0_FREQ_375] = {
++static const struct jh7110_pll_syscon_val
++	jh7110_pll0_syscon_val_preset[] = {
++	[JH7110_PLL0_FREQ_375] = {
+ 		.freq = 375000000,
+ 		.prediv = 8,
+ 		.fbdiv = 125,
+@@ -168,7 +206,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL0_FREQ_500] = {
++	[JH7110_PLL0_FREQ_500] = {
+ 		.freq = 500000000,
+ 		.prediv = 6,
+ 		.fbdiv = 125,
+@@ -176,7 +214,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL0_FREQ_625] = {
++	[JH7110_PLL0_FREQ_625] = {
+ 		.freq = 625000000,
+ 		.prediv = 24,
+ 		.fbdiv = 625,
+@@ -184,7 +222,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL0_FREQ_750] = {
++	[JH7110_PLL0_FREQ_750] = {
+ 		.freq = 750000000,
+ 		.prediv = 4,
+ 		.fbdiv = 125,
+@@ -192,7 +230,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL0_FREQ_875] = {
++	[JH7110_PLL0_FREQ_875] = {
+ 		.freq = 875000000,
+ 		.prediv = 24,
+ 		.fbdiv = 875,
+@@ -200,7 +238,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL0_FREQ_1000] = {
++	[JH7110_PLL0_FREQ_1000] = {
+ 		.freq = 1000000000,
+ 		.prediv = 3,
+ 		.fbdiv = 125,
+@@ -208,7 +246,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL0_FREQ_1250] = {
++	[JH7110_PLL0_FREQ_1250] = {
+ 		.freq = 1250000000,
+ 		.prediv = 12,
+ 		.fbdiv = 625,
+@@ -216,7 +254,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL0_FREQ_1375] = {
++	[JH7110_PLL0_FREQ_1375] = {
+ 		.freq = 1375000000,
+ 		.prediv = 24,
+ 		.fbdiv = 1375,
+@@ -224,7 +262,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL0_FREQ_1500] = {
++	[JH7110_PLL0_FREQ_1500] = {
+ 		.freq = 1500000000,
+ 		.prediv = 2,
+ 		.fbdiv = 125,
+@@ -234,9 +272,9 @@ static const struct starfive_pll_syscon_
+ 	},
+ };
+ 
+-static const struct starfive_pll_syscon_value
+-	jh7110_pll1_syscon_freq[PLL1_FREQ_MAX] = {
+-	[PLL1_FREQ_1066] = {
++static const struct jh7110_pll_syscon_val
++	jh7110_pll1_syscon_val_preset[] = {
++	[JH7110_PLL1_FREQ_1066] = {
+ 		.freq = 1066000000,
+ 		.prediv = 12,
+ 		.fbdiv = 533,
+@@ -244,7 +282,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL1_FREQ_1200] = {
++	[JH7110_PLL1_FREQ_1200] = {
+ 		.freq = 1200000000,
+ 		.prediv = 1,
+ 		.fbdiv = 50,
+@@ -252,7 +290,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL1_FREQ_1400] = {
++	[JH7110_PLL1_FREQ_1400] = {
+ 		.freq = 1400000000,
+ 		.prediv = 6,
+ 		.fbdiv = 350,
+@@ -260,7 +298,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL1_FREQ_1600] = {
++	[JH7110_PLL1_FREQ_1600] = {
+ 		.freq = 1600000000,
+ 		.prediv = 3,
+ 		.fbdiv = 200,
+@@ -270,9 +308,9 @@ static const struct starfive_pll_syscon_
+ 	},
+ };
+ 
+-static const struct starfive_pll_syscon_value
+-	jh7110_pll2_syscon_freq[PLL2_FREQ_MAX] = {
+-	[PLL2_FREQ_1188] = {
++static const struct jh7110_pll_syscon_val
++	jh7110_pll2_syscon_val_preset[] = {
++	[JH7110_PLL2_FREQ_1188] = {
+ 		.freq = 1188000000,
+ 		.prediv = 2,
+ 		.fbdiv = 99,
+@@ -280,7 +318,7 @@ static const struct starfive_pll_syscon_
+ 		.dacpd = 1,
+ 		.dsmpd = 1,
+ 	},
+-	[PLL2_FREQ_12288] = {
++	[JH7110_PLL2_FREQ_12288] = {
+ 		.freq = 1228800000,
+ 		.prediv = 5,
+ 		.fbdiv = 256,

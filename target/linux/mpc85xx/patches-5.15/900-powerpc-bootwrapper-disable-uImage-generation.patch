@@ -16,7 +16,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -274,7 +274,6 @@ image-$(CONFIG_PPC_CHRP)		+= zImage.chrp
+@@ -275,7 +275,6 @@ image-$(CONFIG_PPC_CHRP)		+= zImage.chrp
  image-$(CONFIG_PPC_EFIKA)		+= zImage.chrp
  image-$(CONFIG_PPC_PMAC)		+= zImage.pmac
  image-$(CONFIG_PPC_HOLLY)		+= dtbImage.holly
@@ -24,7 +24,7 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
  image-$(CONFIG_EPAPR_BOOT)		+= zImage.epapr
  
  #
-@@ -409,15 +408,6 @@ $(obj)/dtbImage.%: vmlinux $(wrapperbits
+@@ -411,15 +410,6 @@ $(obj)/dtbImage.%: vmlinux $(wrapperbits
  $(obj)/vmlinux.strip: vmlinux
  	$(STRIP) -s -R .comment $< -o $@
  

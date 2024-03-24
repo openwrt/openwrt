@@ -80,7 +80,8 @@
 		};
 
 		led_power_yellow: power-yellow {
-			label = "yellow:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_YELLOW>;
 			gpios = <&qcom_pinmux 58 GPIO_ACTIVE_LOW>;
 		};
 

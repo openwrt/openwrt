@@ -1,3 +1,5 @@
+#include <dt-bindings/leds/common.h>
+
 #include "qcom-ipq8064-eax500.dtsi"
 
 / {
@@ -54,12 +56,14 @@
 		pinctrl-names = "default";
 
 		wps {
-			label = "green:wps";
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power: power {
-			label = "white:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};

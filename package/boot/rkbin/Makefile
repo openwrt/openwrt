@@ -25,6 +25,12 @@ define Trusted-Firmware-A/Default
   BUILD_TARGET:=rockchip
 endef
 
+define Trusted-Firmware-A/rk3566
+  BUILD_SUBTARGET:=armv8
+  ATF:=rk35/rk3568_bl31_v1.43.elf
+  TPL:=rk35/rk3566_ddr_1056MHz_v1.18.bin
+endef
+
 define Trusted-Firmware-A/rk3568
   BUILD_SUBTARGET:=armv8
   ATF:=rk35/rk3568_bl31_v1.43.elf
@@ -32,6 +38,7 @@ define Trusted-Firmware-A/rk3568
 endef
 
 TFA_TARGETS:= \
+	rk3566 \
 	rk3568
 
 define Build/Compile

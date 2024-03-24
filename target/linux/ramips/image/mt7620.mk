@@ -1214,6 +1214,23 @@ define Device/tplink_archer-c2-v1
 endef
 TARGET_DEVICES += tplink_archer-c2-v1
 
+define Device/tplink_archer-c5-v4
+  $(Device/tplink-v2)
+  SOC := mt7620a
+  IMAGE_SIZE := 7808k
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x04da857c
+  TPLINK_HWREV := 0x0c000600
+  TPLINK_HWREVADD := 0x04000000
+  IMAGES += tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+  DEVICE_MODEL := Archer C5
+  DEVICE_VARIANT := v4
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
+	kmod-mt76x2 kmod-switch-rtl8367b
+endef
+TARGET_DEVICES += tplink_archer-c5-v4
+
 define Device/tplink_archer-c50-v1
   $(Device/tplink-v2)
   SOC := mt7620a

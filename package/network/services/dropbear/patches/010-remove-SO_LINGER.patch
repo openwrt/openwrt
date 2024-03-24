@@ -1,0 +1,39 @@
+From 5040f21cb4ee6ade966e60c6d5a3c270d03de1f1 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Mon, 1 May 2023 22:05:43 +0800
+Subject: Remove SO_LINGER
+
+It could cause channels to take up to 5 seconds to close(), which would block
+the entire process. On busy TCP forwarding sessions this would result in
+channels seeming stuck and new connections not being accepted.
+
+We don't need to monitor for flushing failures since we can't report errors, so
+SO_LINGER wasn't useful.
+
+Thanks to GektorUA for reporting and testing
+
+Fixes #230
+---
+ netio.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+--- a/netio.c
++++ b/netio.c
+@@ -472,7 +472,6 @@ int dropbear_listen(const char* address,
+ 	struct addrinfo hints, *res = NULL, *res0 = NULL;
+ 	int err;
+ 	unsigned int nsock;
+-	struct linger linger;
+ 	int val;
+ 	int sock;
+ 	uint16_t *allocated_lport_p = NULL;
+@@ -551,9 +550,6 @@ int dropbear_listen(const char* address,
+ 		val = 1;
+ 		/* set to reuse, quick timeout */
+ 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void*) &val, sizeof(val));
+-		linger.l_onoff = 1;
+-		linger.l_linger = 5;
+-		setsockopt(sock, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof(linger));
+ 
+ #if defined(IPPROTO_IPV6) && defined(IPV6_V6ONLY)
+ 		if (res->ai_family == AF_INET6) {

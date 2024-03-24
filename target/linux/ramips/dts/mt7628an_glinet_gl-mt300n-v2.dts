@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 /{
 	compatible = "glinet,gl-mt300n-v2", "mediatek,mt7628an-soc";
@@ -23,18 +24,21 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			label = "green:power";
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
 			default-state = "on";
 			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "red:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -117,7 +121,7 @@
 				read-only;
 			};
 
-			factory: partition@40000 {
+			partition@40000 {
 				label = "factory";
 				reg = <0x40000 0x10000>;
 				read-only;

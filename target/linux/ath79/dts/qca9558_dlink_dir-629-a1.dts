@@ -16,7 +16,6 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
-		serial0 = &uart;
 	};
 
 	keys {
@@ -46,7 +45,6 @@
 		};
 
 		led_power: led-1 {
-			label = "green:power";
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;

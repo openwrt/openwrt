@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 // Copyright (c) 2021 Cezary Jackiewicz
+
+#include <dt-bindings/leds/common.h>
 // Copyright (c) 2021, 2022 Lech Perczak
 #include "qca9563_zte_mf286.dtsi"
 
@@ -27,7 +29,8 @@
 	 * and slightly through the case below signal state LEDs
 	 */
 	color = <LED_COLOR_ID_BLUE>;
-	label = "blue:debug";
+	function = LED_FUNCTION_DEBUG;
+	color = <LED_COLOR_ID_BLUE>;
 };
 
 &boot_flash {

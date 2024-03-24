@@ -2,6 +2,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "aigale,ai-br100", "ralink,mt7620a-soc";
@@ -18,12 +19,14 @@
 		compatible = "gpio-leds";
 
 		wan {
-			label = "blue:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
 		};
 
 		led_wlan: wlan {
-			label = "blue:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -72,7 +75,7 @@
 				read-only;
 			};
 
-			factory: partition@30000 {
+			partition@30000 {
 				label = "factory";
 				reg = <0x30000 0x10000>;
 				read-only;

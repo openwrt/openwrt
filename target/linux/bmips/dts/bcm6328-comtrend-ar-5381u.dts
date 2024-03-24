@@ -114,7 +114,8 @@
 	led_alarm_red: led@2 {
 		reg = <2>;
 		active-low;
-		label = "red:alarm";
+		function = LED_FUNCTION_ALARM;
+		color = <LED_COLOR_ID_RED>;
 		panic-indicator;
 	};
 
@@ -127,7 +128,8 @@
 	led_power_green: led@4 {
 		reg = <4>;
 		active-low;
-		label = "green:power";
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
 	};
 };
 

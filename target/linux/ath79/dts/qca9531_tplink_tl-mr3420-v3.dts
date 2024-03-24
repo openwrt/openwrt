@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "tplink,tl-mr3420-v3", "qca,qca9531";
@@ -84,23 +85,27 @@
 		};
 
 		wan {
-			label = "green:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&led_gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_fail {
-			label = "orange:wan";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&led_gpio 5 GPIO_ACTIVE_LOW>;
 		};
 
 		wlan {
-			label = "green:wlan";
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&led_gpio 6 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		usb {
-			label = "green:usb";
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&led_gpio 7 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port0>;
 			linux,default-trigger = "usbport";

@@ -30,7 +30,8 @@ asus,rt-ax53u)
 	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "mt76-phy0" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "mt76-phy1" "phy1tpt"
 	;;
-asus,rt-ax54)
+asus,rt-ax54|\
+yuncore,g720)
 	ucidef_set_led_wlan "wlan2g" "WiFi 2.4GHz" "mt76-phy0" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "mt76-phy1" "phy1tpt"
 	;;
@@ -249,6 +250,11 @@ yuncore,fap690)
 yuncore,ax820)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	;;
+z-router,zr-2660)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
 	;;
 zyxel,lte3301-plus)
 	ucidef_set_led_netdev "internet" "internet" "white:internet" "wwan0"
