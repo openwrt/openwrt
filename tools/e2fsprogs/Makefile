@@ -30,7 +30,8 @@ HOST_CONFIGURE_ARGS += \
 	--enable-libuuid \
 	--disable-tls \
 	--disable-nls \
-	--enable-threads=pth
+	--enable-threads=pth \
+	--disable-fuse2fs
 
 define Host/Prepare
 	$(call Host/Prepare/Default)
