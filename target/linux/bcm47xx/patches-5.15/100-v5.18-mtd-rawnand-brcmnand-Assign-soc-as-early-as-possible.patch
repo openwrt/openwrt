@@ -1,0 +1,33 @@
+From: Florian Fainelli <f.fainelli@gmail.com>
+Subject: [PATCH v3 1/9] mtd: rawnand: brcmnand: Assign soc as early as possible
+Date: Fri, 07 Jan 2022 10:46:06 -0800
+Content-Type: text/plain; charset="utf-8"
+
+In order to key off the brcmnand_probe() code in subsequent changes
+depending upon ctrl->soc, assign that variable as early as possible,
+instead of much later when we have checked that it is non-NULL.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ drivers/mtd/nand/raw/brcmnand/brcmnand.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/mtd/nand/raw/brcmnand/brcmnand.c
++++ b/drivers/mtd/nand/raw/brcmnand/brcmnand.c
+@@ -3059,6 +3059,7 @@ int brcmnand_probe(struct platform_devic
+ 
+ 	dev_set_drvdata(dev, ctrl);
+ 	ctrl->dev = dev;
++	ctrl->soc = soc;
+ 
+ 	/* Enable the static key if the soc provides I/O operations indicating
+ 	 * that a non-memory mapped IO access path must be used
+@@ -3205,8 +3206,6 @@ int brcmnand_probe(struct platform_devic
+ 	 * interesting ways
+ 	 */
+ 	if (soc) {
+-		ctrl->soc = soc;
+-
+ 		ret = devm_request_irq(dev, ctrl->irq, brcmnand_irq, 0,
+ 				       DRV_NAME, ctrl);
+ 
