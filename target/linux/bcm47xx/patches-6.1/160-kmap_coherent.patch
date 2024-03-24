@@ -20,7 +20,7 @@ This fixes OpenWrt ticket #1485: https://dev.openwrt.org/ticket/1485
   * I-Cache snoops remote store.	 This only matters on SMP.  Some multiprocessors
 --- a/arch/mips/include/asm/mach-bcm47xx/cpu-feature-overrides.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/cpu-feature-overrides.h
-@@ -80,4 +80,6 @@
+@@ -79,4 +79,6 @@
  #define cpu_scache_line_size()		0
  #define cpu_has_vz			0
  
@@ -29,7 +29,7 @@ This fixes OpenWrt ticket #1485: https://dev.openwrt.org/ticket/1485
  #endif /* __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H */
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -702,7 +702,7 @@ static inline void local_r4k_flush_cache
+@@ -701,7 +701,7 @@ static inline void local_r4k_flush_cache
  		map_coherent = (cpu_has_dc_aliases &&
  				page_mapcount(page) &&
  				!Page_dcache_dirty(page));
@@ -38,7 +38,7 @@ This fixes OpenWrt ticket #1485: https://dev.openwrt.org/ticket/1485
  			vaddr = kmap_coherent(page, addr);
  		else
  			vaddr = kmap_atomic(page);
-@@ -729,7 +729,7 @@ static inline void local_r4k_flush_cache
+@@ -728,7 +728,7 @@ static inline void local_r4k_flush_cache
  	}
  
  	if (vaddr) {

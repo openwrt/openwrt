@@ -43,12 +43,12 @@
  
  	if (bp->flags & B44_FLAG_EXTERNAL_PHY)
  		return 0;
-@@ -2175,6 +2200,8 @@ static int b44_get_invariants(struct b44
+@@ -2179,6 +2204,8 @@ static int b44_get_invariants(struct b44
  	 * valid PHY address. */
  	bp->phy_addr &= 0x1F;
  
 +	b44_bcm47xx_workarounds(bp);
 +
- 	memcpy(bp->dev->dev_addr, addr, ETH_ALEN);
+ 	eth_hw_addr_set(bp->dev, addr);
  
  	if (!is_valid_ether_addr(&bp->dev->dev_addr[0])){
