@@ -9,8 +9,8 @@ PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/pengphei/rockchip-uboot.git
-PKG_SOURCE_DATE:=2022-11-15
-PKG_SOURCE_VERSION:=26d3b6963ed2d2215348f1baba8b9646ed3dc6ea
+PKG_SOURCE_DATE:=2023-01-05
+PKG_SOURCE_VERSION:=35e111f13e906f1dbd60ae7269a9f23a113e5a5d
 PKG_MIRROR_HASH:=c72bc8c267663fe36bcb7edac43ee45fec1b566a943f1084a4689fbb2affefaf
 
 PKG_MAINTAINER:=Han Pengfei <pengphei@qq.com>
@@ -32,7 +32,7 @@ define U-Boot/rock-3a-rk3568
   BOOT_SOC:=rk3568
   BUILD_DEVICES:= \
     radxa_rock-3a
-  DEPENDS:=+PACKAGE_u-boot-rock-3a-rk3568:arm-trusted-firmware-rockchip-legacy
+  DEPENDS:=+PACKAGE_u-boot-rock-3a-rk3568:arm-trusted-firmware-rk3568
   PKG_BUILD_DEPENDS:=arm-trusted-firmware-rockchip-legacy
   DDR_BLOB:=rk35/rk3568_ddr_1560MHz_v1.13.bin
   BL31_BLOB:=rk35/rk3568_bl31_v1.34.elf
