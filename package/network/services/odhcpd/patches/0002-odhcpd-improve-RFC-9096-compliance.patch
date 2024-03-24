@@ -1,0 +1,319 @@
+From 76a9c73853cb86e1ff0dde7f1d6cfdf5bfd530f7 Mon Sep 17 00:00:00 2001
+Date: Sat, 16 Sep 2023 15:04:12 +0000
+Subject: [PATCH 2/2] odhcpd: improve RFC 9096 compliance
+
+and allow configuring upper limit for preferred and valid lifetime.
+
+Signed-off-by: Aviana Cruz <gwencroft@proton.me>
+---
+ README          | 12 ++++++------
+ src/config.c    | 36 ++++++++++++++++++++++-------------
+ src/dhcpv6-ia.c | 50 ++++++++++++++++++++++++++++++-------------------
+ src/odhcpd.h    |  8 ++++++--
+ src/router.c    | 17 ++++++++---------
+ 5 files changed, 74 insertions(+), 49 deletions(-)
+
+--- a/README
++++ b/README
+@@ -116,7 +116,9 @@ domain			list	<local search domain>	Sear
+ leasetime		string	12h			DHCPv4 address leasetime
+ start			integer	100			DHCPv4 pool start
+ limit			integer	150			DHCPv4 pool size
+-preferred_lifetime	string	12h			Value for the preferred lifetime
++max_preferred_lifetime	string	45m			Upper limit for the preferred lifetime
++							for a prefix
++max_valid_lifetime	string	90m			Upper limit for the valid lifetime
+ 							for a prefix
+ ra_default		integer	0			Override default route
+ 			0: default, 1: ignore no public address, 2: ignore all
+@@ -131,11 +133,9 @@ ra_maxinterval		integer	600			Maximum ti
+ 							sending unsolicited RA
+ ra_mininterval		integer	200			Minimum time allowed between
+ 							sending unsolicited RA
+-ra_lifetime		integer	1800			Value to be placed in Router
+-							Lifetime field of RA
+-ra_useleasetime		bool	0			Use configured leasetime as
+-							limit for the preferred and
+-							valid lifetime of a prefix
++ra_lifetime		integer	2700			Value to be placed in Router
++							Lifetime field of RA. Not recommended to be
++							more than 2700 (RFC9096).
+ ra_reachabletime	integer	0			Reachable Time in milliseconds to be
+ 							advertised in RA messages
+ ra_retranstime		integer	0			Retransmit Time in milliseconds to be
+--- a/src/config.c
++++ b/src/config.c
+@@ -79,7 +79,6 @@ enum {
+ 	IFACE_ATTR_RA_MININTERVAL,
+ 	IFACE_ATTR_RA_MAXINTERVAL,
+ 	IFACE_ATTR_RA_LIFETIME,
+-	IFACE_ATTR_RA_USELEASETIME,
+ 	IFACE_ATTR_RA_REACHABLETIME,
+ 	IFACE_ATTR_RA_RETRANSTIME,
+ 	IFACE_ATTR_RA_HOPLIMIT,
+@@ -91,7 +90,8 @@ enum {
+ 	IFACE_ATTR_NDPROXY_ROUTING,
+ 	IFACE_ATTR_NDPROXY_SLAVE,
+ 	IFACE_ATTR_PREFIX_FILTER,
+-	IFACE_ATTR_PREFERRED_LIFETIME,
++	IFACE_ATTR_MAX_PREFERRED_LIFETIME,
++	IFACE_ATTR_MAX_VALID_LIFETIME,
+ 	IFACE_ATTR_NTP,
+ 	IFACE_ATTR_MAX
+ };
+@@ -134,7 +134,6 @@ static const struct blobmsg_policy iface
+ 	[IFACE_ATTR_RA_MININTERVAL] = { .name = "ra_mininterval", .type = BLOBMSG_TYPE_INT32 },
+ 	[IFACE_ATTR_RA_MAXINTERVAL] = { .name = "ra_maxinterval", .type = BLOBMSG_TYPE_INT32 },
+ 	[IFACE_ATTR_RA_LIFETIME] = { .name = "ra_lifetime", .type = BLOBMSG_TYPE_INT32 },
+-	[IFACE_ATTR_RA_USELEASETIME] = { .name = "ra_useleasetime", .type = BLOBMSG_TYPE_BOOL },
+ 	[IFACE_ATTR_RA_REACHABLETIME] = { .name = "ra_reachabletime", .type = BLOBMSG_TYPE_INT32 },
+ 	[IFACE_ATTR_RA_RETRANSTIME] = { .name = "ra_retranstime", .type = BLOBMSG_TYPE_INT32 },
+ 	[IFACE_ATTR_RA_HOPLIMIT] = { .name = "ra_hoplimit", .type = BLOBMSG_TYPE_INT32 },
+@@ -144,7 +143,8 @@ static const struct blobmsg_policy iface
+ 	[IFACE_ATTR_NDPROXY_ROUTING] = { .name = "ndproxy_routing", .type = BLOBMSG_TYPE_BOOL },
+ 	[IFACE_ATTR_NDPROXY_SLAVE] = { .name = "ndproxy_slave", .type = BLOBMSG_TYPE_BOOL },
+ 	[IFACE_ATTR_PREFIX_FILTER] = { .name = "prefix_filter", .type = BLOBMSG_TYPE_STRING },
+-	[IFACE_ATTR_PREFERRED_LIFETIME] = { .name = "preferred_lifetime", .type = BLOBMSG_TYPE_STRING },
++	[IFACE_ATTR_MAX_PREFERRED_LIFETIME] = { .name = "max_preferred_lifetime", .type = BLOBMSG_TYPE_STRING },
++	[IFACE_ATTR_MAX_VALID_LIFETIME] = { .name = "max_valid_lifetime", .type = BLOBMSG_TYPE_STRING },
+ 	[IFACE_ATTR_NTP] = { .name = "ntp", .type = BLOBMSG_TYPE_ARRAY },
+ };
+ 
+@@ -214,7 +214,8 @@ static void set_interface_defaults(struc
+ 	iface->ra = MODE_DISABLED;
+ 	iface->ndp = MODE_DISABLED;
+ 	iface->learn_routes = 1;
+-	iface->preferred_lifetime = 43200;
++	iface->max_preferred_lifetime = ND_PREFERRED_LIMIT;
++	iface->max_valid_lifetime = ND_VALID_LIMIT;
+ 	iface->dhcpv4_leasetime = 43200;
+ 	iface->dhcpv4_start.s_addr = htonl(START_DEFAULT);
+ 	iface->dhcpv4_end.s_addr = htonl(START_DEFAULT + LIMIT_DEFAULT - 1);
+@@ -636,14 +637,26 @@ int config_parse_interface(void *data, s
+ 	if ((c = tb[IFACE_ATTR_DYNAMICDHCP]))
+ 		iface->no_dynamic_dhcp = !blobmsg_get_bool(c);
+ 
+-	if ((c = tb[IFACE_ATTR_PREFERRED_LIFETIME])) {
++	if ((c = tb[IFACE_ATTR_MAX_PREFERRED_LIFETIME])) {
+ 		double time = parse_leasetime(c);
+ 
+-		if (time >= 0)
+-			iface->preferred_lifetime = time;
+-		else
++		if (time >= 0) {
++			iface->max_preferred_lifetime = time;
++		} else {
++			syslog(LOG_ERR, "Invalid %s value configured for interface '%s'",
++			       iface_attrs[IFACE_ATTR_MAX_PREFERRED_LIFETIME].name, iface->name);
++		}
++	}
++
++	if ((c = tb[IFACE_ATTR_MAX_VALID_LIFETIME])) {
++		double time = parse_leasetime(c);
++
++		if (time >= 0) {
++			iface->max_valid_lifetime = time;
++		} else {
+ 			syslog(LOG_ERR, "Invalid %s value configured for interface '%s'",
+-			       iface_attrs[IFACE_ATTR_PREFERRED_LIFETIME].name, iface->name);
++			       iface_attrs[IFACE_ATTR_MAX_VALID_LIFETIME].name, iface->name);
++		}
+ 	}
+ 
+ 	if ((c = tb[IFACE_ATTR_LEASETIME])) {
+@@ -976,9 +989,6 @@ int config_parse_interface(void *data, s
+ 	if ((c = tb[IFACE_ATTR_RA_LIFETIME]))
+ 		iface->ra_lifetime = blobmsg_get_u32(c);
+ 
+-	if ((c = tb[IFACE_ATTR_RA_USELEASETIME]))
+-		iface->ra_useleasetime = blobmsg_get_bool(c);
+-
+ 	if ((c = tb[IFACE_ATTR_RA_DNS]))
+ 		iface->ra_dns = blobmsg_get_bool(c);
+ 
+--- a/src/dhcpv6-ia.c
++++ b/src/dhcpv6-ia.c
+@@ -120,7 +120,7 @@ static inline bool valid_prefix_length(c
+ 
+ static inline bool valid_addr(const struct odhcpd_ipaddr *addr, time_t now)
+ {
+-	return (addr->prefix <= 96 && addr->preferred > (uint32_t)now);
++	return (addr->prefix <= 96 && addr->valid > (uint32_t)now && addr->preferred > (uint32_t)now);
+ }
+ 
+ static size_t get_preferred_addr(const struct odhcpd_ipaddr *addrs, const size_t addrlen)
+@@ -1037,17 +1037,27 @@ static size_t build_ia(uint8_t *buf, siz
+ 	}
+ 
+ 	if (a) {
+-		uint32_t leasetime, pref;
++		uint32_t leasetime;
+ 
+ 		if (a->leasetime) {
+ 			leasetime = a->leasetime;
+-			pref = a->leasetime;
+ 		} else {
+ 			leasetime = iface->dhcpv4_leasetime; // fallback
+-			pref = iface->preferred_lifetime;
+ 		}
+ 
+-		uint32_t valid = leasetime;
++		uint32_t floor_preferred_lifetime, floor_valid_lifetime; /* For calculating T1 / T2 */
++
++		if (iface->max_preferred_lifetime && iface->max_preferred_lifetime < leasetime) {
++			floor_preferred_lifetime = iface->max_preferred_lifetime;
++		} else {
++			floor_preferred_lifetime = leasetime;
++		}
++
++		if (iface->max_valid_lifetime && iface->max_valid_lifetime < leasetime) {
++			floor_valid_lifetime = iface->max_valid_lifetime;
++		} else {
++			floor_valid_lifetime = leasetime;
++		}
+ 
+ 		struct odhcpd_ipaddr *addrs = (a->managed) ? a->managed : iface->addr6;
+ 		size_t addrlen = (a->managed) ? (size_t)a->managed_size : iface->addr6_len;
+@@ -1071,17 +1081,19 @@ static size_t build_ia(uint8_t *buf, siz
+ 			prefix_pref = addrs[i].preferred;
+ 			prefix_valid = addrs[i].valid;
+ 
+-			if (prefix_pref != UINT32_MAX)
++			if (prefix_pref != UINT32_MAX) {
+ 				prefix_pref -= now;
+ 
+-			if (prefix_pref > pref)
+-				prefix_pref = pref;
++				if (iface->max_preferred_lifetime && prefix_pref > iface->max_preferred_lifetime)
++					prefix_pref = iface->max_preferred_lifetime;
++			}
+ 
+-			if (prefix_valid != UINT32_MAX)
++			if (prefix_valid != UINT32_MAX) {
+ 				prefix_valid -= now;
+ 
+-			if (prefix_valid > leasetime)
+-				prefix_valid = leasetime;
++				if (iface->max_valid_lifetime && prefix_valid > iface->max_valid_lifetime)
++					prefix_valid = iface->max_valid_lifetime;
++			}
+ 
+ 			if (prefix_pref > prefix_valid)
+ 				prefix_pref = prefix_valid;
+@@ -1133,24 +1145,24 @@ static size_t build_ia(uint8_t *buf, siz
+ 
+ 			/* Calculate T1 / T2 based on non-deprecated addresses */
+ 			if (prefix_pref > 0) {
+-				if (prefix_pref < pref)
+-					pref = prefix_pref;
++				if (floor_preferred_lifetime > prefix_pref)
++					floor_preferred_lifetime = prefix_pref;
+ 
+-				if (prefix_valid < valid)
+-					valid = prefix_valid;
++				if (floor_valid_lifetime > prefix_valid)
++					floor_valid_lifetime = prefix_valid;
+ 			}
+ 		}
+ 
+ 		if (!INFINITE_VALID(a->valid_until))
+ 			/* UINT32_MAX is considered as infinite leasetime */
+-			a->valid_until = (valid == UINT32_MAX) ? 0 : valid + now;
++			a->valid_until = (floor_valid_lifetime == UINT32_MAX) ? 0 : floor_valid_lifetime + now;
+ 
+ 		if (!INFINITE_VALID(a->preferred_until))
+ 			/* UINT32_MAX is considered as infinite leasetime */
+-			a->preferred_until = (pref == UINT32_MAX) ? 0 : pref + now;
++			a->preferred_until = (floor_preferred_lifetime == UINT32_MAX) ? 0 : floor_preferred_lifetime + now;
+ 
+-		o_ia.t1 = htonl((pref == UINT32_MAX) ? pref : pref * 5 / 10);
+-		o_ia.t2 = htonl((pref == UINT32_MAX) ? pref : pref * 8 / 10);
++		o_ia.t1 = htonl((floor_preferred_lifetime == UINT32_MAX) ? floor_preferred_lifetime : floor_preferred_lifetime * 5 / 10);
++		o_ia.t2 = htonl((floor_preferred_lifetime == UINT32_MAX) ? floor_preferred_lifetime : floor_preferred_lifetime * 8 / 10);
+ 
+ 		if (!o_ia.t1)
+ 			o_ia.t1 = htonl(1);
+--- a/src/odhcpd.h
++++ b/src/odhcpd.h
+@@ -37,6 +37,10 @@
+ // RFC 8781 defines PREF64 option
+ #define ND_OPT_PREF64 38
+ 
++// RFC 9096 defines recommended option lifetimes configuration values
++#define ND_PREFERRED_LIMIT 2700
++#define ND_VALID_LIMIT 5400
++
+ #define INFINITE_VALID(x) ((x) == 0)
+ 
+ #define _unused __attribute__((unused))
+@@ -302,7 +306,6 @@ struct interface {
+ 	bool ra_slaac;
+ 	bool ra_not_onlink;
+ 	bool ra_advrouter;
+-	bool ra_useleasetime;
+ 	bool ra_dns;
+ 	uint8_t pref64_length;
+ 	struct in6_addr pref64_addr;
+@@ -319,7 +322,8 @@ struct interface {
+ 	uint32_t ra_retranstime;
+ 	uint32_t ra_hoplimit;
+ 	int ra_mtu;
+-	uint32_t preferred_lifetime;
++	uint32_t max_preferred_lifetime;
++	uint32_t max_valid_lifetime;
+ 
+ 	// DHCPv4
+ 	struct in_addr dhcpv4_start;
+--- a/src/router.c
++++ b/src/router.c
+@@ -371,7 +371,7 @@ static int calc_adv_interval(struct inte
+ 
+ static uint32_t calc_ra_lifetime(struct interface *iface, uint32_t maxival)
+ {
+-	uint32_t lifetime = 3*maxival;
++	uint32_t lifetime = maxival * 3;
+ 
+ 	if (iface->ra_lifetime >= 0) {
+ 		lifetime = iface->ra_lifetime;
+@@ -590,16 +590,15 @@ static int send_router_advert(struct int
+ 		if (addr->preferred > (uint32_t)now) {
+ 			preferred = TIME_LEFT(addr->preferred, now);
+ 
+-			if (iface->ra_useleasetime &&
+-			    preferred > iface->preferred_lifetime)
+-				preferred = iface->preferred_lifetime;
++			if (iface->max_preferred_lifetime && preferred > iface->max_preferred_lifetime)
++				preferred = iface->max_preferred_lifetime;
+ 		}
+ 
+ 		if (addr->valid > (uint32_t)now) {
+ 			valid = TIME_LEFT(addr->valid, now);
+ 
+-			if (iface->ra_useleasetime && valid > iface->dhcpv4_leasetime)
+-				valid = iface->dhcpv4_leasetime;
++			if (iface->max_valid_lifetime && valid > iface->max_valid_lifetime)
++				valid = iface->max_valid_lifetime;
+ 		}
+ 
+ 		if (minvalid > valid)
+@@ -643,9 +642,9 @@ static int send_router_advert(struct int
+ 
+ 		if (default_route) {
+ 			syslog(LOG_WARNING, "A default route is present but there is no public prefix "
+-					    "on %s thus we don't announce a default route by overriding ra_lifetime!", iface->name);
++					    "on %s thus we don't announce a default route by setting ra_lifetime to zero!", iface->name);
+ 		} else {
+-			syslog(LOG_WARNING, "No default route present, overriding ra_lifetime!");
++			syslog(LOG_WARNING, "No default route present, setting ra_lifetime to zero!");
+ 		}
+ 	}
+ 
+@@ -710,7 +709,7 @@ static int send_router_advert(struct int
+ 
+ 	if (iface->pref64_length) {
+ 		/* RFC 8781 § 4.1 rounding up lifetime to multiply of 8 */
+-		uint16_t pref64_lifetime = lifetime < (UINT16_MAX - 7) ? lifetime + 7 : UINT16_MAX;
++		uint16_t pref64_lifetime = lifetime < (UINT16_MAX - 7) ? lifetime + 7 : (UINT16_MAX - 7);
+ 		uint8_t prefix_length_code;
+ 		uint32_t mask_a1, mask_a2;
+ 
