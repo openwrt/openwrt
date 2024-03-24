@@ -118,6 +118,10 @@
 						#nvmem-cell-cells = <1>;
 					};
 
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
 					precal_art_5000: pre-calibration@5000 {
 						reg = <0x5000 0x2f20>;
 					};
@@ -181,7 +185,6 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_art_0 10>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_0 10>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
