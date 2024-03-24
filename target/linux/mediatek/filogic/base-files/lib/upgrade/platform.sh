@@ -150,6 +150,12 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
+	nokia,ea0326gmp)
+		[ -e /dev/fit0 ] && fitblk /dev/fit0
+		[ -e /dev/fitrw ] && fitblk /dev/fitrw
+		CI_KERNPART="fit"
+		nand_do_upgrade "$1"
+		;;
 	ubnt,unifi-6-plus)
 		CI_KERNPART="kernel0"
 		EMMC_ROOT_DEV="$(cmdline_get_var root)"
