@@ -153,7 +153,7 @@
  #include "hw.h"
  #include "peer.h"
  #include "mac.h"
-@@ -551,7 +553,9 @@ static void ath11k_dp_tx_cache_peer_stat
+@@ -550,7 +552,9 @@ static void ath11k_dp_tx_cache_peer_stat
  void ath11k_dp_tx_update_txcompl(struct ath11k *ar, struct hal_tx_status *ts)
  {
  	struct ath11k_base *ab = ar->ab;
@@ -163,7 +163,7 @@
  	enum hal_tx_rate_stats_pkt_type pkt_type;
  	enum hal_tx_rate_stats_sgi sgi;
  	enum hal_tx_rate_stats_bw bw;
-@@ -640,8 +644,10 @@ void ath11k_dp_tx_update_txcompl(struct
+@@ -639,8 +643,10 @@ void ath11k_dp_tx_update_txcompl(struct
  			ath11k_mac_he_ru_tones_to_nl80211_he_ru_alloc(ru_tones);
  	}
  
@@ -176,7 +176,7 @@
  	spin_unlock_bh(&ab->base_lock);
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -9812,7 +9812,7 @@ static const struct ieee80211_ops ath11k
+@@ -9811,7 +9811,7 @@ static const struct ieee80211_ops ath11k
  	.set_wakeup			= ath11k_wow_op_set_wakeup,
  #endif
  

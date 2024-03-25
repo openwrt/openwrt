@@ -25,7 +25,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath11k/dp_rx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
-@@ -5994,6 +5994,7 @@ static void ath11k_update_radiotap(struc
+@@ -5995,6 +5995,7 @@ static void ath11k_update_radiotap(struc
  {
  	struct ieee80211_supported_band *sband;
  	u8 *ptr = NULL;
@@ -33,7 +33,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  
  	rxs->flag |= RX_FLAG_MACTIME_START;
  	rxs->signal = ppduinfo->rssi_comb + ATH11K_DEFAULT_NOISE_FLOOR;
-@@ -6001,6 +6002,11 @@ static void ath11k_update_radiotap(struc
+@@ -6002,6 +6003,11 @@ static void ath11k_update_radiotap(struc
  	if (ppduinfo->nss)
  		rxs->nss = ppduinfo->nss;
  
@@ -128,7 +128,7 @@ Signed-off-by: P Praneesh <ppranees@codeaurora.org>
  struct hal_rx_rxpcu_classification_overview {
 --- a/drivers/net/wireless/ath/ath11k/hw.h
 +++ b/drivers/net/wireless/ath/ath11k/hw.h
-@@ -306,6 +306,7 @@ struct ath11k_hw_ops {
+@@ -307,6 +307,7 @@ struct ath11k_hw_ops {
  	void (*rx_desc_get_crypto_header)(struct hal_rx_desc *desc,
  					  u8 *crypto_hdr,
  					  enum hal_encrypt_type enctype);

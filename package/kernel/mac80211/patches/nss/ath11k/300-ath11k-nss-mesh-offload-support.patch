@@ -1238,7 +1238,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -3474,6 +3474,18 @@ static void ath11k_mac_op_nss_bss_info_c
+@@ -3469,6 +3469,18 @@ static void ath11k_mac_op_nss_bss_info_c
  			ath11k_warn(ar->ab, "failed to set ap_isolate in nss %d\n", ret);
  	}
  
@@ -1257,7 +1257,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  	mutex_unlock(&ar->conf_mutex);
  }
  
-@@ -9714,6 +9726,28 @@ err_fallback:
+@@ -9709,6 +9721,28 @@ err_fallback:
  	return 0;
  }
  
@@ -1286,7 +1286,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  static const struct ieee80211_ops ath11k_ops = {
  	.tx				= ath11k_mac_op_tx,
  	.wake_tx_queue			= ieee80211_handle_wake_tx_queue,
-@@ -9771,6 +9805,9 @@ static const struct ieee80211_ops ath11k
+@@ -9766,6 +9800,9 @@ static const struct ieee80211_ops ath11k
  	.set_sar_specs			= ath11k_mac_op_set_bios_sar_specs,
  	.remain_on_channel		= ath11k_mac_op_remain_on_channel,
  	.cancel_remain_on_channel	= ath11k_mac_op_cancel_remain_on_channel,
@@ -1296,7 +1296,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@codeaurora.org>
  };
  
  static void ath11k_mac_update_ch_list(struct ath11k *ar,
-@@ -10231,6 +10268,8 @@ static int __ath11k_mac_register(struct
+@@ -10227,6 +10264,8 @@ static int __ath11k_mac_register(struct
  		ieee80211_hw_set(ar->hw, SUPPORTS_NSS_OFFLOAD);
  		wiphy_ext_feature_set(ar->hw->wiphy,
  				      NL80211_EXT_FEATURE_VLAN_OFFLOAD);

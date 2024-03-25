@@ -18,7 +18,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -261,9 +261,6 @@ static const u32 ath11k_smps_map[] = {
+@@ -256,9 +256,6 @@ static const u32 ath11k_smps_map[] = {
  	[WLAN_HT_CAP_SM_PS_DISABLED] = WMI_PEER_SMPS_PS_NONE,
  };
  
@@ -28,7 +28,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  enum nl80211_he_ru_alloc ath11k_mac_phy_he_ru_to_nl80211_he_ru_alloc(u16 ru_phy)
  {
  	enum nl80211_he_ru_alloc ret;
-@@ -5249,100 +5246,6 @@ static void ath11k_mac_dec_num_stations(
+@@ -5244,100 +5241,6 @@ static void ath11k_mac_dec_num_stations(
  	ar->num_stations--;
  }
  
@@ -129,7 +129,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static u32 ath11k_mac_ieee80211_sta_bw_to_wmi(struct ath11k *ar,
  					      struct ieee80211_sta *sta)
  {
-@@ -5398,187 +5301,6 @@ static int ath11k_mac_cfg_dyn_vlan(struc
+@@ -5393,187 +5296,6 @@ static int ath11k_mac_cfg_dyn_vlan(struc
  	return ret;
  }
  
@@ -317,7 +317,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static int ath11k_mac_op_sta_set_txpwr(struct ieee80211_hw *hw,
  				       struct ieee80211_vif *vif,
  				       struct ieee80211_sta *sta)
-@@ -9739,6 +9461,281 @@ ath11k_mac_op_config_mesh_offload_path(s
+@@ -9738,6 +9460,281 @@ ath11k_mac_op_config_mesh_offload_path(s
  }
  #endif
  

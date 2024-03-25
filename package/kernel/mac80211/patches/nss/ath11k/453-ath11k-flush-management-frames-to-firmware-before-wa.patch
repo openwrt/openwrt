@@ -25,11 +25,9 @@ Signed-off-by: Hari Chandrakanthan <quic_haric@quicinc.com>
  drivers/net/wireless/ath/ath11k/mac.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/net/wireless/ath/ath11k/mac.c b/drivers/net/wireless/ath/ath11k/mac.c
-index 28c9908ef816..dbdb7aa5c498 100644
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -10266,6 +10266,8 @@ static int ath11k_mac_flush_tx_complete(struct ath11k *ar)
+@@ -8464,6 +8464,8 @@ static int ath11k_mac_flush_tx_complete(
  		ret = -ETIMEDOUT;
  	}
  
@@ -38,6 +36,3 @@ index 28c9908ef816..dbdb7aa5c498 100644
  	time_left = wait_event_timeout(ar->txmgmt_empty_waitq,
  				       (atomic_read(&ar->num_pending_mgmt_tx) == 0),
  				       ATH11K_FLUSH_TIMEOUT);
--- 
-2.7.4
-

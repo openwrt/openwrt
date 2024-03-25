@@ -217,7 +217,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  	memcpy(skb_push(msdu, hdr_len), hdr, hdr_len);
  }
  
-@@ -2890,7 +2954,7 @@ static void ath11k_dp_rx_h_mpdu(struct a
+@@ -2889,7 +2953,7 @@ static void ath11k_dp_rx_h_mpdu(struct a
  				struct ieee80211_rx_status *rx_status,
  				bool *fast_rx)
  {
@@ -226,7 +226,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  	enum hal_encrypt_type enctype;
  	bool is_decrypted = false;
  	struct ath11k_skb_rxcb *rxcb;
-@@ -3123,10 +3187,16 @@ static void ath11k_dp_rx_deliver_msdu(st
+@@ -3122,10 +3186,16 @@ static void ath11k_dp_rx_deliver_msdu(st
  	u8 decap = DP_RX_DECAP_TYPE_RAW;
  	bool is_mcbc = rxcb->is_mcbc;
  	bool is_eapol = rxcb->is_eapol;
@@ -243,7 +243,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  		he = skb_push(msdu, sizeof(known));
  		memcpy(he, &known, sizeof(known));
  		status->flag |= RX_FLAG_RADIOTAP_HE;
-@@ -3182,6 +3252,7 @@ static void ath11k_dp_rx_deliver_msdu(st
+@@ -3181,6 +3251,7 @@ static void ath11k_dp_rx_deliver_msdu(st
  	    !(is_mcbc && rx_status->flag & RX_FLAG_DECRYPTED))
  		rx_status->flag |= RX_FLAG_8023;
  

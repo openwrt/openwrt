@@ -56,7 +56,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  static void ath11k_ahb_free_resources(struct ath11k_base *ab)
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -2212,6 +2212,7 @@ struct ath11k_base *ath11k_core_alloc(st
+@@ -2211,6 +2211,7 @@ struct ath11k_base *ath11k_core_alloc(st
  
  	mutex_init(&ab->core_lock);
  	mutex_init(&ab->tbl_mtx_lock);
@@ -64,7 +64,7 @@ Signed-off-by: Rameshkumar Sundaram <ramess@codeaurora.org>
  	spin_lock_init(&ab->base_lock);
  	mutex_init(&ab->vdev_id_11d_lock);
  	init_completion(&ab->reset_complete);
-@@ -2225,6 +2226,8 @@ struct ath11k_base *ath11k_core_alloc(st
+@@ -2224,6 +2225,8 @@ struct ath11k_base *ath11k_core_alloc(st
  	INIT_WORK(&ab->restart_work, ath11k_core_restart);
  	INIT_WORK(&ab->update_11d_work, ath11k_update_11d);
  	INIT_WORK(&ab->reset_work, ath11k_core_reset);

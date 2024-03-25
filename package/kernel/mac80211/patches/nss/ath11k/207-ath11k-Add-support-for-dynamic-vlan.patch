@@ -369,7 +369,7 @@ Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
  int ath11k_dp_tx(struct ath11k *ar, struct ath11k_vif *arvif,
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -9770,6 +9770,9 @@ static int __ath11k_mac_register(struct
+@@ -9771,6 +9771,9 @@ static int __ath11k_mac_register(struct
  		 */
  		ar->hw->wiphy->interface_modes &= ~BIT(NL80211_IFTYPE_MONITOR);
  

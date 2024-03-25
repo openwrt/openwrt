@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=mac80211
 
 PKG_VERSION:=6.6.15
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
 
@@ -433,9 +433,9 @@ endef
 
 ifdef CONFIG_ATH11K_NSS_SUPPORT
 define KernelPackage/ath11k/install
-       $(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config
-       $(INSTALL_BIN) ./files/qca-nss-pbuf.init $(1)/etc/init.d/qca-nss-pbuf
-       $(INSTALL_BIN) ./files/pbuf.uci $(1)/etc/config/pbuf
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/etc/config
+	$(INSTALL_BIN) ./files/qca-nss-pbuf.init $(1)/etc/init.d/qca-nss-pbuf
+	$(INSTALL_BIN) ./files/pbuf.uci $(1)/etc/config/pbuf
 endef
 endif
 

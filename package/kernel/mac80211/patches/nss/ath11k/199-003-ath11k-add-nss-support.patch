@@ -747,7 +747,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	.configure_filter		= ath11k_mac_op_configure_filter,
  	.hw_scan                        = ath11k_mac_op_hw_scan,
  	.cancel_hw_scan                 = ath11k_mac_op_cancel_hw_scan,
-@@ -9529,7 +9637,8 @@ static int __ath11k_mac_register(struct
+@@ -9530,7 +9638,8 @@ static int __ath11k_mac_register(struct
  		ieee80211_hw_set(ar->hw, TX_AMPDU_SETUP_IN_HW);
  		ieee80211_hw_set(ar->hw, SUPPORTS_REORDERING_BUFFER);
  		ieee80211_hw_set(ar->hw, SUPPORTS_AMSDU_IN_AMPDU);
@@ -757,7 +757,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	}
  
  	ar->hw->wiphy->features |= NL80211_FEATURE_STATIC_SMPS;
-@@ -9644,6 +9753,9 @@ static int __ath11k_mac_register(struct
+@@ -9645,6 +9754,9 @@ static int __ath11k_mac_register(struct
  	    ab->hw_params.bios_sar_capa)
  		ar->hw->wiphy->sar_capa = ab->hw_params.bios_sar_capa;
  

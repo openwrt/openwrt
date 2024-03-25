@@ -19,7 +19,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -261,8 +261,8 @@ static const u32 ath11k_smps_map[] = {
+@@ -256,8 +256,8 @@ static const u32 ath11k_smps_map[] = {
  	[WLAN_HT_CAP_SM_PS_DISABLED] = WMI_PEER_SMPS_PS_NONE,
  };
  
@@ -30,7 +30,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  enum nl80211_he_ru_alloc ath11k_mac_phy_he_ru_to_nl80211_he_ru_alloc(u16 ru_phy)
  {
-@@ -5319,7 +5319,7 @@ static int ath11k_mac_station_add(struct
+@@ -5314,7 +5314,7 @@ static int ath11k_mac_station_add(struct
  	if (ab->hw_params.vdev_start_delay &&
  	    !arvif->is_started &&
  	    arvif->vdev_type != WMI_VDEV_TYPE_AP) {
@@ -39,7 +39,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		if (ret) {
  			ath11k_warn(ab, "failed to delay vdev start: %d\n", ret);
  			goto free_tx_stats;
-@@ -8164,8 +8164,8 @@ unlock:
+@@ -8161,8 +8161,8 @@ unlock:
  	mutex_unlock(&ar->conf_mutex);
  }
  

@@ -17,7 +17,7 @@ Signed-off-by: Karthikeyan Kathirvel <quic_kathirve@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -4899,12 +4899,6 @@ static int ath11k_station_disassoc(struc
+@@ -4894,12 +4894,6 @@ static int ath11k_station_disassoc(struc
  			return ret;
  	}
  
@@ -30,7 +30,7 @@ Signed-off-by: Karthikeyan Kathirvel <quic_kathirve@quicinc.com>
  	return 0;
  }
  
-@@ -5495,6 +5489,17 @@ static int ath11k_mac_op_sta_state(struc
+@@ -5490,6 +5484,17 @@ static int ath11k_mac_op_sta_state(struc
  		arsta->bw = ath11k_mac_ieee80211_sta_bw_to_wmi(ar, sta);
  		arsta->bw_prev = arsta->bw;
  		spin_unlock_bh(&ar->data_lock);

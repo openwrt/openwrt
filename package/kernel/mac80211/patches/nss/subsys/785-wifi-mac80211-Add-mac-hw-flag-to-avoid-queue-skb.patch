@@ -23,7 +23,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -2730,6 +2730,9 @@ struct ieee80211_txq {
+@@ -2732,6 +2732,9 @@ struct ieee80211_txq {
   *
   * @IEEE80211_HW_SUPPORTS_TID_CLASS_OFFLOAD: Hardware suports tid calssification offload.
   *
@@ -33,7 +33,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
   * @NUM_IEEE80211_HW_FLAGS: number of hardware flags, used for sizing arrays
   */
  enum ieee80211_hw_flags {
-@@ -2790,6 +2793,7 @@ enum ieee80211_hw_flags {
+@@ -2792,6 +2795,7 @@ enum ieee80211_hw_flags {
  	IEEE80211_HW_SUPPORTS_NSS_OFFLOAD,
  	IEEE80211_HW_SUPPORTS_MESH_NSS_OFFLOAD,
  	IEEE80211_HW_SUPPORTS_TID_CLASS_OFFLOAD,
@@ -83,7 +83,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  		return false;
  
  	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
-@@ -4328,7 +4335,8 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4329,7 +4336,8 @@ void __ieee80211_subif_start_xmit(struct
                  }
          }
  
@@ -93,7 +93,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  	ieee80211_aggr_check(sdata, sta, skb);
  
  	if (sta) {
-@@ -4680,8 +4688,10 @@ static void ieee80211_8023_xmit(struct i
+@@ -4681,8 +4689,10 @@ static void ieee80211_8023_xmit(struct i
  	bool multicast;
  	u8 tid;
  
@@ -106,7 +106,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  
  	multicast = is_multicast_ether_addr(ra);
  
-@@ -6416,9 +6426,12 @@ int ieee80211_tx_control_port(struct wip
+@@ -6379,9 +6389,12 @@ int ieee80211_tx_control_port(struct wip
  	}
  
  	if (!IS_ERR(sta)) {
@@ -123,7 +123,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  		 * for MLO STA, the SA should be the AP MLD address, but
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -4525,6 +4525,9 @@ static int ieee80211_get_txq_stats(struc
+@@ -4524,6 +4524,9 @@ static int ieee80211_get_txq_stats(struc
  	struct ieee80211_sub_if_data *sdata;
  	int ret = 0;
  
@@ -205,7 +205,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  	int i;
  
  	sta = kzalloc(sizeof(*sta) + hw->sta_data_size, gfp);
-@@ -607,18 +609,22 @@ __sta_info_alloc(struct ieee80211_sub_if
+@@ -611,18 +613,22 @@ __sta_info_alloc(struct ieee80211_sub_if
  
  	sta->last_connected = ktime_get_seconds();
  
@@ -237,7 +237,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  	}
  
  	if (sta_prepare_rate_control(local, sta, gfp))
-@@ -692,7 +698,8 @@ __sta_info_alloc(struct ieee80211_sub_if
+@@ -696,7 +702,8 @@ __sta_info_alloc(struct ieee80211_sub_if
  	return sta;
  
  free_txq:
@@ -247,7 +247,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  free:
  	sta_info_free_link(&sta->deflink);
  #ifdef CPTCFG_MAC80211_MESH
-@@ -1687,11 +1694,13 @@ void ieee80211_sta_ps_deliver_wakeup(str
+@@ -1691,11 +1698,13 @@ void ieee80211_sta_ps_deliver_wakeup(str
  	if (!ieee80211_hw_check(&local->hw, AP_LINK_PS))
  		drv_sta_notify(local, sdata, STA_NOTIFY_AWAKE, &sta->sta);
  
@@ -265,7 +265,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  	}
  
  	skb_queue_head_init(&pending);
-@@ -2106,6 +2115,9 @@ ieee80211_sta_ps_deliver_response(struct
+@@ -2110,6 +2119,9 @@ ieee80211_sta_ps_deliver_response(struct
  		 * TIM recalculation.
  		 */
  
@@ -275,7 +275,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  		for (tid = 0; tid < ARRAY_SIZE(sta->sta.txq); tid++) {
  			if (!sta->sta.txq[tid] ||
  			    !(driver_release_tids & BIT(tid)) ||
-@@ -2521,7 +2533,7 @@ static void sta_set_tidstats(struct sta_
+@@ -2546,7 +2558,7 @@ static void sta_set_tidstats(struct sta_
  		tidstats->tx_msdu_failed = sta->deflink.status_stats.msdu_failed[tid];
  	}
  
@@ -284,7 +284,7 @@ Signed-off-by: Yuvasree Sivasankaran <quic_ysivasan@quicinc.com>
  		spin_lock_bh(&local->fq.lock);
  		rcu_read_lock();
  
-@@ -2849,6 +2861,9 @@ unsigned long ieee80211_sta_last_active(
+@@ -2874,6 +2886,9 @@ unsigned long ieee80211_sta_last_active(
  
  static void sta_update_codel_params(struct sta_info *sta, u32 thr)
  {

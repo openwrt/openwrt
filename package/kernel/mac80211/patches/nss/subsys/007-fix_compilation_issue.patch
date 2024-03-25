@@ -50,7 +50,7 @@
  }
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -4780,7 +4780,7 @@ void ieee80211_color_collision_detection
+@@ -4779,7 +4779,7 @@ void ieee80211_color_collision_detection
  	struct ieee80211_sub_if_data *sdata = link->sdata;
  
  	sdata_lock(sdata);
@@ -72,7 +72,7 @@
  	sdata->debugfs.subdir_stations = debugfs_create_dir("stations",
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -1410,18 +1410,6 @@ static void __sta_info_destroy_part2(str
+@@ -1414,18 +1414,6 @@ static void __sta_info_destroy_part2(str
  		WARN_ON_ONCE(ret);
  	}
  
@@ -93,7 +93,7 @@
  
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -19472,7 +19472,7 @@ void cfg80211_ch_switch_started_notify(s
+@@ -19484,7 +19484,7 @@ void cfg80211_ch_switch_started_notify(s
  }
  EXPORT_SYMBOL(cfg80211_ch_switch_started_notify);
  
@@ -102,7 +102,7 @@
  			      enum nl80211_commands cmd, u8 count,
  			      u64 color_bitmap)
  {
-@@ -19486,7 +19486,7 @@ int cfg80211_bss_color_notify(struct net
+@@ -19498,7 +19498,7 @@ int cfg80211_bss_color_notify(struct net
  
  	trace_cfg80211_bss_color_notify(dev, cmd, count, color_bitmap);
  
@@ -111,7 +111,7 @@
  	if (!msg)
  		return -ENOMEM;
  
-@@ -19509,7 +19509,7 @@ int cfg80211_bss_color_notify(struct net
+@@ -19521,7 +19521,7 @@ int cfg80211_bss_color_notify(struct net
  	genlmsg_end(msg, hdr);
  
  	return genlmsg_multicast_netns(&nl80211_fam, wiphy_net(&rdev->wiphy),

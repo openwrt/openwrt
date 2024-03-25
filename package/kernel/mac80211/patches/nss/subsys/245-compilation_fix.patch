@@ -18,17 +18,6 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  net/mac80211/tx.c                        | 54 ++++++++++++++++++++++----------
  7 files changed, 40 insertions(+), 23 deletions(-)
 
---- a/include/linux/backport-refcount.h
-+++ b/include/linux/backport-refcount.h
-@@ -247,7 +247,7 @@ static inline __must_check bool refcount
- 
- static inline void __refcount_inc(refcount_t *r, int *oldp)
- {
--	__refcount_add(1, r, oldp);
-+	refcount_add(1, r);
- }
- 
- /**
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
 @@ -207,6 +207,7 @@ enum ieee80211_rx_flags {
@@ -39,45 +28,9 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	struct list_head *list;
  	struct sk_buff *skb;
  	struct ieee80211_local *local;
-@@ -292,6 +293,7 @@ struct unsol_bcast_probe_resp_data {
- 	u8 data[];
- };
- 
-+
- struct ps_data {
- 	/* yes, this looks ugly, but guarantees that we can later use
- 	 * bitmap_empty :)
---- a/net/mac80211/iface.c
-+++ b/net/mac80211/iface.c
-@@ -1705,7 +1705,6 @@ static void ieee80211_iface_work(struct
- 
- 	/* first process frames */
- 	while ((skb = skb_dequeue(&sdata->skb_queue))) {
--		kcov_remote_start_common(skb_get_kcov_handle(skb));
- 
- 		if (skb->protocol == cpu_to_be16(ETH_P_TDLS))
- 			ieee80211_process_tdls_channel_switch(sdata, skb);
-@@ -1713,17 +1712,14 @@ static void ieee80211_iface_work(struct
- 			ieee80211_iface_process_skb(local, sdata, skb);
- 
- 		kfree_skb(skb);
--		kcov_remote_stop();
- 	}
- 
- 	/* process status queue */
- 	while ((skb = skb_dequeue(&sdata->status_queue))) {
--		kcov_remote_start_common(skb_get_kcov_handle(skb));
- 
- 		ieee80211_iface_process_status(sdata, skb);
- 		kfree_skb(skb);
- 
--		kcov_remote_stop();
- 	}
- 
- 	/* then other type-dependent work */
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4678,19 +4678,21 @@ static void ieee80211_8023_xmit(struct i
+@@ -4679,19 +4679,21 @@ static void ieee80211_8023_xmit(struct i
  
  	ieee80211_aggr_check(sdata, sta, skb);
  
@@ -111,7 +64,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	}
  
  	skb = ieee80211_tx_skb_fixup(skb, ieee80211_sdata_netdev_features(sdata));
-@@ -4747,7 +4749,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4748,7 +4750,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
  	struct ethhdr *ehdr = (struct ethhdr *)skb->data;
@@ -120,7 +73,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	struct sta_info *sta;
  
  #ifdef CPTCFG_MAC80211_NSS_SUPPORT
-@@ -4765,9 +4767,13 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4766,9 +4768,13 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  		goto out;
  	}
  
@@ -137,7 +90,7 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  		goto skip_offload;
  
  	key = rcu_dereference(sta->ptk[sta->ptk_idx]);
-@@ -4778,6 +4784,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
+@@ -4779,6 +4785,7 @@ netdev_tx_t ieee80211_subif_start_xmit_8
  		goto skip_offload;
  
  	sk_pacing_shift_update(skb->sk, sdata->local->hw.tx_sk_pacing_shift);
@@ -145,47 +98,18 @@ Signed-off-by: Gautham Kumar Senthilkumaran <quic_gauthamk@quicinc.com>
  	ieee80211_8023_xmit(sdata, dev, sta, key, skb);
  	goto out;
  
-@@ -6284,13 +6291,7 @@ start_xmit:
+@@ -6285,13 +6292,7 @@ start_xmit:
  	mutex_lock(&local->mtx);
  
- 	if (pubsta) {
- 		sta = container_of(pubsta, struct sta_info, sta);
--		if (sta && napi) {
-+		if (sta) {
- 			if (!(status->flag & RX_FLAG_ONLY_MONITOR))
- 				atomic_inc(&sta->rx_drv_pkts);
- 		}
-@@ -5442,8 +5442,6 @@ void ieee80211_rx_list(struct ieee80211_
- 
- 	status->rx_flags = 0;
- 
--	kcov_remote_start_common(skb_get_kcov_handle(skb));
+ 	local_bh_disable();
 -
- 	/*
- 	 * Frames with failed FCS/PLCP checksum are not returned,
- 	 * all other frames are returned without radiotap header
-@@ -5463,7 +5461,6 @@ void ieee80211_rx_list(struct ieee80211_
- 			__ieee80211_rx_handle_packet(hw, pubsta, skb, list);
- 	}
- 
--	kcov_remote_stop();
- 	return;
-  drop:
- 	kfree_skb(skb);
---- a/backport-include/linux/skbuff.h
-+++ b/backport-include/linux/skbuff.h
-@@ -24,14 +24,6 @@ static inline void *backport___skb_push(
- }
- #define __skb_push LINUX_BACKPORT(__skb_push)
- 
--static inline void *__skb_put_zero(struct sk_buff *skb, unsigned int len)
--{
--	void *tmp = __skb_put(skb, len);
+-	/* added hardware encap check for ethernet mode */
+-	if (sdata->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED)
+-		ieee80211_subif_start_xmit_8023(skb, skb->dev);
+-	else
+-		__ieee80211_subif_start_xmit(skb, skb->dev, flags, ctrl_flags, cookie);
 -
--	memset(tmp, 0, len);
--	return tmp;
--}
--
- static inline void *skb_put_zero(struct sk_buff *skb, unsigned int len)
- {
- 	void *tmp = skb_put(skb, len);
++	__ieee80211_subif_start_xmit(skb, skb->dev, flags, ctrl_flags, cookie);
+ 	local_bh_enable();
+ 
+ 	mutex_unlock(&local->mtx);

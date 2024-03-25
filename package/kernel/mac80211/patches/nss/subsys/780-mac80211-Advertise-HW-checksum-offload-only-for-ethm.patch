@@ -58,7 +58,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  	if (!skb)
  		return true;
  
-@@ -4343,7 +4345,7 @@ void __ieee80211_subif_start_xmit(struct
+@@ -4344,7 +4346,7 @@ void __ieee80211_subif_start_xmit(struct
  	 * things so we cannot really handle checksum or GSO offload.
  	 * fix it up in software before we handle anything else.
  	 */
@@ -67,7 +67,7 @@ Signed-off-by: Tamizh Chelvam Raja <quic_tamizhr@quicinc.com>
  	if (!skb) {
  		len = 0;
  		goto out;
-@@ -4714,7 +4716,7 @@ static void ieee80211_8023_xmit(struct i
+@@ -4715,7 +4717,7 @@ static void ieee80211_8023_xmit(struct i
  		}
  	}
  
