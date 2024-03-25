@@ -37,7 +37,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	ret = lan78xx_write_reg(dev, HW_CFG, buf);
  	if (ret < 0)
  		return ret;
-@@ -2870,6 +2879,9 @@ static int lan78xx_reset(struct lan78xx_
+@@ -2871,6 +2880,9 @@ static int lan78xx_reset(struct lan78xx_
  			buf |= MAC_CR_AUTO_DUPLEX_ | MAC_CR_AUTO_SPEED_;
  		}
  	}
