@@ -1,0 +1,54 @@
+# Breaking apart the hunks to figure out what is going on better
+# Erik Beck, sept 9 2023
+
+# Signoff header was:
+From 3cc8cd2d25954ed5794df2d190b81c7325c584e3 Mon Sep 17 00:00:00 2001
+From: Yifeng Zhao <yifeng.zhao@rock-chips.com>
+Date: Tue, 8 Feb 2022 17:13:26 +0800
+Subject: [PATCH] arm64: dts: rockchip: add naneng combo phy nodes for rk3568
+
+Add the core dt-node for the rk3568's naneng combo phys.
+
+Signed-off-by: Yifeng Zhao <yifeng.zhao@rock-chips.com>
+Signed-off-by: Johan Jonker <jbx6244@gmail.com>
+Tested-by: Frank Wunderlich <frank-w@public-files.de>
+Link: https://lore.kernel.org/r/20220208091326.12495-5-yifeng.zhao@rock-chips.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3568.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3568.dtsi
+@@ -8,6 +8,11 @@
+ / {
+ 	compatible = "rockchip,rk3568";
+ 
++	pipe_phy_grf0: syscon@fdc70000 {
++		compatible = "rockchip,rk3568-pipe-phy-grf", "syscon";
++		reg = <0x0 0xfdc70000 0x0 0x1000>;
++	};
++
+ 	qos_pcie3x1: qos@fe190080 {
+ 		compatible = "rockchip,rk3568-qos", "syscon";
+ 		reg = <0x0 0xfe190080 0x0 0x20>;
+@@ -69,6 +74,22 @@
+ 			queue0 {};
+ 		};
+ 	};
++
++	combphy0: phy@fe820000 {
++		compatible = "rockchip,rk3568-naneng-combphy";
++		reg = <0x0 0xfe820000 0x0 0x100>;
++		clocks = <&pmucru CLK_PCIEPHY0_REF>,
++			 <&cru PCLK_PIPEPHY0>,
++			 <&cru PCLK_PIPE>;
++		clock-names = "ref", "apb", "pipe";
++		assigned-clocks = <&pmucru CLK_PCIEPHY0_REF>;
++		assigned-clock-rates = <100000000>;
++		resets = <&cru SRST_PIPEPHY0>;
++		rockchip,pipe-grf = <&pipegrf>;
++		rockchip,pipe-phy-grf = <&pipe_phy_grf0>;
++		#phy-cells = <1>;
++		status = "disabled";
++	};
+ };
+ 
+ &cpu0_opp_table {
