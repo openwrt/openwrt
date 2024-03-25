@@ -328,6 +328,7 @@ $(eval $(call KernelPackage,ipt-offload))
 define KernelPackage/ipt-ipopt
   TITLE:=Modules for matching/changing IP packet options
   KCONFIG:=$(KCONFIG_IPT_IPOPT)
+  DEPENDS:=+PACKAGE_kmod-nf-conntrack:kmod-nf-conntrack
   FILES:=$(foreach mod,$(IPT_IPOPT-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_IPOPT-m)))
   $(call AddDepends/ipt)
