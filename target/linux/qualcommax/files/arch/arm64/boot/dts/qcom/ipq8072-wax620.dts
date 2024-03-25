@@ -7,6 +7,7 @@
 #include "ipq8074-ess.dtsi"
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Netgear WAX620";
@@ -63,46 +64,49 @@
 		compatible = "gpio-leds";
 
 		led_system_red: system-red {
-			label = "system:red";
+			function = LED_FUNCTION_FAULT;
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_system_green: system-green {
-			label = "system:green";
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&tlmm 55 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_system_blue: system-blue {
-			label = "system:blue";
+			function = LED_FUNCTION_BOOT;
+			color = <LED_COLOR_ID_BLUE>;
 			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_lan_g {
+		led-lan-green {
 			label = "lan:green";
 			gpios = <&led_gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_lan_o {
+		led-lan-orange {
 			label = "lan:orange";
 			gpios = <&led_gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_2g_b {
+		led-2g-blue {
 			label = "wlan2g:blue";
 			gpios = <&led_gpio 2 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_2g_g {
+		led-2g-green {
 			label = "wlan2g:green";
 			gpios = <&led_gpio 3 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_5g_b {
+		led-5g-blue {
 			label = "wlan5g:blue";
 			gpios = <&led_gpio 4 GPIO_ACTIVE_HIGH>;
 		};
 
-		led_5g_g {
+		led-5g-green {
 			label = "wlan5g:green";
 			gpios = <&led_gpio 5 GPIO_ACTIVE_HIGH>;
 		};
