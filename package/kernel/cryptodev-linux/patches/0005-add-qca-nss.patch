@@ -1,0 +1,99 @@
+--- a/ioctl.c
++++ b/ioctl.c
+@@ -829,29 +829,37 @@ static inline void tfm_info_to_alg_info(
+ 			"%s", crypto_tfm_alg_driver_name(tfm));
+ }
+ 
+-#ifndef CRYPTO_ALG_KERN_DRIVER_ONLY
++#if defined(QCANSS) || defined(QCA) || defined(MT7621) || defined(MT7622) || defined(LANTIQ) || defined(BCM675X) || defined(BCM49XX) || defined(MT798X)
+ static unsigned int is_known_accelerated(struct crypto_tfm *tfm)
+ {
+ 	const char *name = crypto_tfm_alg_driver_name(tfm);
+ 
+ 	if (name == NULL)
+-		return 1; /* assume accelerated */
++		return 0;
+ 
+ 	/* look for known crypto engine names */
+-	if (strstr(name, "-talitos")	||
+-	    !strncmp(name, "mv-", 3)	||
+-	    !strncmp(name, "atmel-", 6)	||
+-	    strstr(name, "geode")	||
+-	    strstr(name, "hifn")	||
+-	    strstr(name, "-ixp4xx")	||
+-	    strstr(name, "-omap")	||
+-	    strstr(name, "-picoxcell")	||
+-	    strstr(name, "-s5p")	||
+-	    strstr(name, "-ppc4xx")	||
+-	    strstr(name, "-caam")	||
+-	    strstr(name, "-n2"))
++#if defined(QCANSS)
++	if (!strncmp(name, "nss-", 4))
+ 		return 1;
+-
++#elif defined(QCA)
++	if (!strncmp(name, "qcrypto", 7))
++		return 1;
++#elif defined(MT7621)
++	if (strstr(name, "eip93"))
++		return 1;
++#elif defined(MT7622)
++	if (strstr(name, "mtk"))
++		return 1;
++#elif defined(MT798X)
++	if (strstr(name, "safexcel-"))
++		return 1;
++#elif defined(LANTIQ)
++	if (strstr(name, "ltq-crypto"))
++		return 1;
++#elif defined(BCM675X) || defined(BCM49XX)
++	if (strstr(name, "-iproc"))
++		return 1;
++#endif
+ 	return 0;
+ }
+ #endif
+@@ -876,22 +884,22 @@ static int get_session_info(struct fcryp
+ 		else
+ 			tfm = crypto_aead_tfm(ses_ptr->cdata.async.as);
+ 		tfm_info_to_alg_info(&siop->cipher_info, tfm);
+-#ifdef CRYPTO_ALG_KERN_DRIVER_ONLY
+-		if (tfm->__crt_alg->cra_flags & CRYPTO_ALG_KERN_DRIVER_ONLY)
++#if defined(QCANSS) || defined(QCA) || defined(MT7621) || defined(MT7622) || defined(LANTIQ) || defined(BCM675X) || defined(BCM49XX) || defined(MT798X)
++		if (is_known_accelerated(tfm))
+ 			siop->flags |= SIOP_FLAG_KERNEL_DRIVER_ONLY;
+ #else
+-		if (is_known_accelerated(tfm))
++		if (tfm->__crt_alg->cra_flags & CRYPTO_ALG_KERN_DRIVER_ONLY)
+ 			siop->flags |= SIOP_FLAG_KERNEL_DRIVER_ONLY;
+ #endif
+ 	}
+ 	if (ses_ptr->hdata.init) {
+ 		tfm = crypto_ahash_tfm(ses_ptr->hdata.async.s);
+ 		tfm_info_to_alg_info(&siop->hash_info, tfm);
+-#ifdef CRYPTO_ALG_KERN_DRIVER_ONLY
+-		if (tfm->__crt_alg->cra_flags & CRYPTO_ALG_KERN_DRIVER_ONLY)
++#if defined(QCANSS) || defined(QCA) || defined(MT7621) || defined(MT7622) || defined(LANTIQ) || defined(BCM675X) || defined(BCM49XX) || defined(MT798X)
++		if (is_known_accelerated(tfm))
+ 			siop->flags |= SIOP_FLAG_KERNEL_DRIVER_ONLY;
+ #else
+-		if (is_known_accelerated(tfm))
++		if (tfm->__crt_alg->cra_flags & CRYPTO_ALG_KERN_DRIVER_ONLY)
+ 			siop->flags |= SIOP_FLAG_KERNEL_DRIVER_ONLY;
+ #endif
+ 	}
+--- a/main.c
++++ b/main.c
+@@ -168,6 +168,12 @@ __crypto_run_zc(struct csession *ses_ptr
+ 	struct crypt_op *cop = &kcop->cop;
+ 	int ret = 0;
+ 
++#if defined(QCANSS)
++//openssl bug!!!
++	if (unlikely(cop->src != cop->dst)) {
++		return __crypto_run_std(ses_ptr, cop);
++	}
++#endif
+ 	ret = get_userbuf(ses_ptr, cop->src, cop->len, cop->dst, cop->len,
+ 	                  kcop->task, kcop->mm, &src_sg, &dst_sg);
+ 	if (unlikely(ret)) {
