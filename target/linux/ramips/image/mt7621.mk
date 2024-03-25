@@ -998,6 +998,14 @@ define Device/elecom_wmc-m1267gst2
 endef
 TARGET_DEVICES += elecom_wmc-m1267gst2
 
+define Device/elecom_wmc-s1267gs2
+  $(Device/elecom_wrc-gs)
+  IMAGE_SIZE := 24576k
+  DEVICE_MODEL := WMC-S1267GS2
+  ELECOM_HWNAME := WMC-DLGST2
+endef
+TARGET_DEVICES += elecom_wmc-s1267gs2
+
 define Device/elecom_wrc-1167ghbk2-s
   $(Device/dsa-migration)
   IMAGE_SIZE := 15488k

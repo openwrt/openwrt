@@ -102,16 +102,17 @@ ramips_setup_interfaces()
 	dlink,covr-x1860-a1)
 		ucidef_set_interfaces_lan_wan "ethernet" "internet"
 		;;
+	elecom,wmc-s1267gs2|\
+	linksys,re6500|\
+	netgear,wac104|\
+	zyxel,lte3301-plus)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+		;;
 	gnubee,gb-pc1)
 		ucidef_set_interface_lan "ethblack ethblue"
 		;;
 	gnubee,gb-pc2)
 		ucidef_set_interface_lan "ethblack ethblue ethyellow"
-		;;
-	linksys,re6500|\
-	netgear,wac104|\
-	zyxel,lte3301-plus)
-		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	mikrotik,routerboard-750gr3)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
