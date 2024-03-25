@@ -1,0 +1,44 @@
+force a73 optimizations + some more
+--- a/Makefile
++++ b/Makefile
+@@ -449,7 +449,7 @@ HOSTRUSTC = rustc
+ HOSTPKG_CONFIG	= pkg-config
+ 
+ KBUILD_USERHOSTCFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes \
+-			 -O2 -fomit-frame-pointer -std=gnu11
++			 -O3 -fomit-frame-pointer -std=gnu11
+ KBUILD_USERCFLAGS  := $(KBUILD_USERHOSTCFLAGS) $(USERCFLAGS)
+ KBUILD_USERLDFLAGS := $(USERLDFLAGS)
+ 
+@@ -471,7 +471,7 @@ export rust_common_flags := --edition=20
+ 			    -Wclippy::dbg_macro
+ 
+ KBUILD_HOSTCFLAGS   := $(KBUILD_USERHOSTCFLAGS) $(HOST_LFS_CFLAGS) $(HOSTCFLAGS)
+-KBUILD_HOSTCXXFLAGS := -Wall -O2 $(HOST_LFS_CFLAGS) $(HOSTCXXFLAGS)
++KBUILD_HOSTCXXFLAGS := -Wall -O3 $(HOST_LFS_CFLAGS) $(HOSTCXXFLAGS)
+ KBUILD_HOSTRUSTFLAGS := $(rust_common_flags) -O -Cstrip=debuginfo \
+ 			-Zallow-features= $(HOSTRUSTFLAGS)
+ KBUILD_HOSTLDFLAGS  := $(HOST_LFS_LDFLAGS) $(HOSTLDFLAGS)
+@@ -817,13 +817,21 @@ endif # need-config
+ KBUILD_CFLAGS	+= -fno-delete-null-pointer-checks
+ 
+ ifdef CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE
+-KBUILD_CFLAGS += -O2
++KBUILD_CFLAGS += -O3
+ KBUILD_RUSTFLAGS += -Copt-level=2
+ else ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+ KBUILD_CFLAGS += -Os
+ KBUILD_RUSTFLAGS += -Copt-level=s
+ endif
+ 
++ifdef CONFIG_PINCTRL_IPQ6018
++KBUILD_CFLAGS += -pipe -mcpu=cortex-a73+fp+simd+crc+crypto -mtune=cortex-a73 
++KBUILD_AFLAGS += -pipe -mcpu=cortex-a73+fp+simd+crc+crypto -mtune=cortex-a73 
++KBUILD_CFLAGS += -funroll-loops -funswitch-loops -fsplit-loops -fsection-anchors
++KBUILD_AFLAGS += -funroll-loops -funswitch-loops -fsplit-loops -fsection-anchors
++endif
++KBUILD_CFLAGS	+= -ftrivial-auto-var-init=zero
++
+ # Always set `debug-assertions` and `overflow-checks` because their default
+ # depends on `opt-level` and `debug-assertions`, respectively.
+ KBUILD_RUSTFLAGS += -Cdebug-assertions=$(if $(CONFIG_RUST_DEBUG_ASSERTIONS),y,n)

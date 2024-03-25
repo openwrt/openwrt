@@ -1,0 +1,48 @@
+idk if this matters
+--- a/arch/arm64/boot/dts/qcom/ipq6018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq6018.dtsi
+@@ -36,7 +36,7 @@
+ 
+ 		CPU0: cpu@0 {
+ 			device_type = "cpu";
+-			compatible = "arm,cortex-a53";
++			compatible = "arm,cortex-a73";
+ 			reg = <0x0>;
+ 			enable-method = "psci";
+ 			next-level-cache = <&L2_0>;
+@@ -48,7 +48,7 @@
+ 
+ 		CPU1: cpu@1 {
+ 			device_type = "cpu";
+-			compatible = "arm,cortex-a53";
++			compatible = "arm,cortex-a73";
+ 			enable-method = "psci";
+ 			reg = <0x1>;
+ 			next-level-cache = <&L2_0>;
+@@ -60,7 +60,7 @@
+ 
+ 		CPU2: cpu@2 {
+ 			device_type = "cpu";
+-			compatible = "arm,cortex-a53";
++			compatible = "arm,cortex-a73";
+ 			enable-method = "psci";
+ 			reg = <0x2>;
+ 			next-level-cache = <&L2_0>;
+@@ -72,7 +72,7 @@
+ 
+ 		CPU3: cpu@3 {
+ 			device_type = "cpu";
+-			compatible = "arm,cortex-a53";
++			compatible = "arm,cortex-a73";
+ 			enable-method = "psci";
+ 			reg = <0x3>;
+ 			next-level-cache = <&L2_0>;
+@@ -159,7 +159,7 @@
+ 	};
+ 
+ 	pmuv8: pmu {
+-		compatible = "arm,cortex-a53-pmu";
++		compatible = "arm,cortex-a73-pmu";
+ 		interrupts = <GIC_PPI 7 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
+ 	};
+ 
