@@ -1,0 +1,10 @@
+--- a/crypto/algapi.c
++++ b/crypto/algapi.c
+@@ -341,7 +341,6 @@ __crypto_register_alg(struct crypto_alg
+ 		}
+ 
+ 		if (!strcmp(q->cra_driver_name, alg->cra_name) ||
+-		    !strcmp(q->cra_driver_name, alg->cra_driver_name) ||
+ 		    !strcmp(q->cra_name, alg->cra_driver_name))
+ 			goto err;
+ 	}

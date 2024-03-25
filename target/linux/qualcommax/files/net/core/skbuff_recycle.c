@@ -18,6 +18,7 @@
 #include "skbuff_recycle.h"
 #include <linux/proc_fs.h>
 #include <linux/string.h>
+#include <linux/version.h>
 
 #include "skbuff_debug.h"
 
@@ -279,7 +280,11 @@ static void skb_recycler_free_skb(struct sk_buff_head *list)
 		skbuff_debugobj_activate(skb);
 		next = skb->next;
 		__skb_unlink(skb, list);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,2,0)
+		skb_release_data(skb, SKB_CONSUMED, false);
+#else
 		skb_release_data(skb);
+#endif
 		kfree_skbmem(skb);
 		/*
 		 * Update the skb->sum for next due to skb_link operation
