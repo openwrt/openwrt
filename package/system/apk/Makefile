@@ -51,6 +51,8 @@ MESON_ARGS += \
 	-Ddocs=disabled \
 	-Dzstd=false
 
+HOST_LDFLAGS += \
+	-Wl,-rpath $(STAGING_DIR_HOST)/lib
 
 define Package/apk/install
 	$(INSTALL_DIR) $(1)/lib/apk/db
