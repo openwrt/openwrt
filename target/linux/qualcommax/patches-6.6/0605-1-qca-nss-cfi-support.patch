@@ -1,6 +1,6 @@
 --- a/crypto/authenc.c
 +++ b/crypto/authenc.c
-@@ -415,6 +415,8 @@ static int crypto_authenc_create(struct
+@@ -417,6 +417,8 @@ static int crypto_authenc_create(struct
  		     enc->base.cra_driver_name) >= CRYPTO_MAX_ALG_NAME)
  		goto err_free_inst;
  
@@ -11,7 +11,7 @@
  	inst->alg.base.cra_blocksize = enc->base.cra_blocksize;
 --- a/include/linux/crypto.h
 +++ b/include/linux/crypto.h
-@@ -86,6 +86,11 @@
+@@ -101,6 +101,11 @@
  #define CRYPTO_NOLOAD			0x00008000
  
  /*
@@ -25,6 +25,14 @@
   * flag unset if they can't handle memory allocation failures.
 --- a/net/ipv4/esp4.c
 +++ b/net/ipv4/esp4.c
+@@ -3,6 +3,7 @@
+
+ #include <crypto/aead.h>
+ #include <crypto/authenc.h>
++#include <crypto/algapi.h>
+ #include <linux/err.h>
+ #include <linux/module.h>
+ #include <net/ip.h>
 @@ -658,6 +658,7 @@ static int esp_output(struct xfrm_state
  	struct ip_esp_hdr *esph;
  	struct crypto_aead *aead;
@@ -68,6 +76,14 @@
  
 --- a/net/ipv6/esp6.c
 +++ b/net/ipv6/esp6.c
+@@ -15,6 +15,7 @@
+
+ #include <crypto/aead.h>
+ #include <crypto/authenc.h>
++#include <crypto/algapi.h>
+ #include <linux/err.h>
+ #include <linux/module.h>
+ #include <net/ip.h>
 @@ -696,6 +696,7 @@ static int esp6_output(struct xfrm_state
  	struct ip_esp_hdr *esph;
  	struct crypto_aead *aead;

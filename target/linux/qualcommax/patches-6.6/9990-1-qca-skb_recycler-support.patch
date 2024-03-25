@@ -1,5 +1,3 @@
-diff --git a/include/linux/cpuhotplug.h b/include/linux/cpuhotplug.h
-index 624d4a3..5aa8808 100644
 --- a/include/linux/cpuhotplug.h
 +++ b/include/linux/cpuhotplug.h
 @@ -94,6 +94,7 @@ enum cpuhp_state {
@@ -10,8 +8,6 @@ index 624d4a3..5aa8808 100644
  	CPUHP_PCI_XGENE_DEAD,
  	CPUHP_IOMMU_IOVA_DEAD,
  	CPUHP_LUSTRE_CFS_DEAD,
-diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index 83cced8..b6ee509 100644
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
 @@ -1065,6 +1065,10 @@ struct sk_buff {
@@ -44,8 +40,6 @@ index 83cced8..b6ee509 100644
  
  void kfree_skb_partial(struct sk_buff *skb, bool head_stolen);
  bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,
-diff --git a/net/Kconfig b/net/Kconfig
-index 61eac93..e0c8bf0 100644
 --- a/net/Kconfig
 +++ b/net/Kconfig
 @@ -369,6 +369,27 @@ config NET_FLOW_LIMIT
@@ -76,8 +70,6 @@ index 61eac93..e0c8bf0 100644
  menu "Network testing"
  
  config NET_PKTGEN
-diff --git a/net/core/Makefile b/net/core/Makefile
-index 5c9fc1f..e90878c 100644
 --- a/net/core/Makefile
 +++ b/net/core/Makefile
 @@ -41,3 +41,4 @@ obj-$(CONFIG_NET_SOCK_MSG) += skmsg.o
@@ -85,8 +77,6 @@ index 5c9fc1f..e90878c 100644
  obj-$(CONFIG_BPF_SYSCALL) += bpf_sk_storage.o
  obj-$(CONFIG_OF)	+= of_net.o
 +obj-$(CONFIG_SKB_RECYCLER) += skbuff_recycle.o
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 85a1038..c6994ab 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -6016,10 +6016,16 @@ static int process_backlog(struct napi_struct *napi, int quota)
@@ -107,8 +97,6 @@ index 85a1038..c6994ab 100644
  			__netif_receive_skb(skb);
  			rcu_read_unlock();
  			input_queue_head_incr(sd);
-diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index bcfa460..eaf8bcb 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -87,6 +87,31 @@
