@@ -61,6 +61,17 @@ static irqreturn_t gsw_interrupt_mt7620(int irq, void *_priv)
 	return IRQ_HANDLED;
 }
 
+static void gsw_reset_ephy(struct mt7620_gsw *gsw)
+{
+	if (!gsw->rst_ephy)
+		return;
+
+	reset_control_assert(gsw->rst_ephy);
+	usleep_range(10, 20);
+	reset_control_deassert(gsw->rst_ephy);
+	usleep_range(10, 20);
+}
+
 static void mt7620_ephy_init(struct mt7620_gsw *gsw)
 {
 	u32 i;
@@ -79,7 +90,7 @@ static void mt7620_ephy_init(struct mt7620_gsw *gsw)
 		mtk_switch_w32(gsw, mtk_switch_r32(gsw, GSW_REG_GPC1) |
 			(gsw->ephy_base << 16),
 			GSW_REG_GPC1);
-		fe_reset(MT7620A_RESET_EPHY);
+		gsw_reset_ephy(gsw);
 
 		pr_info("gsw: ephy base address: %d\n", gsw->ephy_base);
 	}
@@ -262,6 +273,12 @@ static int mt7620_gsw_probe(struct platform_device *pdev)
 	gsw->dev = &pdev->dev;
 
 	gsw->irq = platform_get_irq(pdev, 0);
+
+	gsw->rst_ephy = devm_reset_control_get_exclusive(&pdev->dev, "ephy");
+	if (IS_ERR(gsw->rst_ephy)) {
+		dev_err(gsw->dev, "failed to get EPHY reset: %pe\n", gsw->rst_ephy);
+		gsw->rst_ephy = NULL;
+	}
 
 	platform_set_drvdata(pdev, gsw);
 
