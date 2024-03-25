@@ -41,13 +41,22 @@ define KernelPackage/cryptodev/description
   via a "/dev/crypto" device.
 endef
 
+ifneq ($(CONFIG_PACKAGE_kmod-crypto-qce),)
+EXTRA_CFLAGS+=-DQCA
+endif
+
+ifneq ($(CONFIG_PACKAGE_kmod-qca-nss-crypto),)
+EXTRA_CFLAGS+=-DQCANSS
+endif
+
 define Build/Configure
 endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(KERNEL_MAKE_FLAGS) \
-		KERNEL_DIR="$(LINUX_DIR)"
+		KERNEL_DIR="$(LINUX_DIR)" \
+		EXTRA_CFLAGS="$(EXTRA_CFLAGS)"
 endef
 
 define Build/InstallDev
