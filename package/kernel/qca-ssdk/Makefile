@@ -10,6 +10,7 @@ PKG_SOURCE_VERSION:=23a5aa4a4d5834da7a07efb58baebfbee91786b0
 PKG_MIRROR_HASH:=2310cdad1ebc424c534aa3a2c71e72e0ab3635295653a88d17dfc64c402cd151
 
 PKG_FLAGS:=nonshared
+PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-lto
 
 include $(INCLUDE_DIR)/kernel.mk
@@ -21,7 +22,7 @@ define KernelPackage/qca-ssdk
   SUBMENU:=Network Devices
   TITLE:=Qualcom SSDK switch driver
   DEPENDS:=@(TARGET_qualcommax)
-  FILES:=$(PKG_BUILD_DIR)/build/bin/qca-ssdk.ko
+  FILES:=$(PKG_BUILD_DIR)/qca-ssdk.ko
   AUTOLOAD:=$(call AutoLoad,30,qca-ssdk)
 endef
 
@@ -31,7 +32,7 @@ endef
 
 GCC_VERSION=$(shell echo "$(CONFIG_GCC_VERSION)" | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 
-LNX_CONFIG_OPTS = LNX_MAKEOPTS='$(KERNEL_MAKEOPTS)' MODULE_TYPE=KSLIB modules
+LNX_CONFIG_OPTS = LNX_MAKEOPTS='$(KERNEL_MAKEOPTS)' PRJ_PATH=$(PKG_BUILD_DIR) MODULE_TYPE=KSLIB modules
 
 MAKE_FLAGS+= \
 	TARGET_NAME=$(CONFIG_TARGET_NAME) \
@@ -42,7 +43,7 @@ MAKE_FLAGS+= \
 	ARCH=$(LINUX_KARCH) \
 	TARGET_SUFFIX=$(CONFIG_TARGET_SUFFIX) \
 	GCC_VERSION=$(GCC_VERSION) \
-	EXTRA_CFLAGS=-fno-stack-protector -I$(STAGING_DIR)/usr/include \
+	EXTRA_CFLAGS="-fno-stack-protector -I$(STAGING_DIR)/usr/include" \
 	SoC=$(CONFIG_TARGET_SUBTARGET) \
 	PTP_FEATURE=disable SWCONFIG_FEATURE=disable \
 	ISISC_ENABLE=disable IN_QCA803X_PHY=FALSE \
@@ -56,6 +57,11 @@ endif
 ifeq ($(CONFIG_TARGET_SUBTARGET), "ipq60xx")
     MAKE_FLAGS+= CHIP_TYPE=CPPE
 endif
+
+
+define Build/Compile
+	+$(MAKE) $(PKG_JOBS) $(MAKE_FLAGS) -C $(PKG_BUILD_DIR) $(LNX_CONFIG_OPTS)
+endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/qca-ssdk
