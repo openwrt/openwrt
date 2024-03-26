@@ -7,6 +7,11 @@ USE_PROCD=1
 PROG=/usr/sbin/umdns
 IFACES=""
 
+is_disabled() {
+	local disabled="$(uci -q get umdns.@umdns[-1].disabled)"
+	[ "$disabled" = "1" ]
+}
+
 load_ifaces() {
 	local network="$(uci -q get umdns.@umdns[-1].network)"
 	for n in $network; do
@@ -29,6 +34,8 @@ do_reload_service() {
 }
 
 start_service() {
+	is_disabled && return 1
+
 	local network="$(uci -q get umdns.@umdns[-1].network)"
 
 	procd_open_instance
@@ -67,11 +74,21 @@ start_service() {
 }
 
 reload_service() {
+	if is_disabled; then
+		rc_procd stop_service
+		return 0
+	fi
 	rc_procd start_service
 	do_reload_service
 }
 
 service_running() {
+	is_disabled && return 1
 	ubus -t 10 wait_for umdns
 	[ $? = 0 ] && do_reload_service
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger umdns
 }
