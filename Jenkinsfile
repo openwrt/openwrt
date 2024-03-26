@@ -2,8 +2,6 @@ def builds = [
               x86_64_us: ['device': 'x86_64', 'libc': 'musl', 'region': 'us', 'dpdk': 'false'],
               x86_64_eu: ['device': 'x86_64', 'libc': 'musl', 'region': 'eu', 'dpdk': 'false'],
               x86_64_us_dpdk: ['device': 'x86_64', 'libc': 'glibc', 'region': 'us', 'dpdk': 'true'],
-              espressobin_us: ['device': 'espressobin', 'libc': 'musl', 'region': 'us', 'dpdk': 'false'],
-              espressobin_eu: ['device': 'espressobin', 'libc': 'musl', 'region': 'eu', 'dpdk': 'false'],
 ] 
 
 def jobs = [:] // dynamically populated later on
