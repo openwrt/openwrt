@@ -16,12 +16,12 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/sound/usb/quirks.c
 +++ b/sound/usb/quirks.c
-@@ -1892,6 +1892,8 @@ static const struct usb_audio_quirk_flag
- 		   QUIRK_FLAG_GENERIC_IMPLICIT_FB),
- 	DEVICE_FLG(0x2b53, 0x0031, /* Fiero SC-01 (firmware v1.1.0) */
- 		   QUIRK_FLAG_GENERIC_IMPLICIT_FB),
+@@ -1808,6 +1808,8 @@ static const struct usb_audio_quirk_flag
+ 		   QUIRK_FLAG_IGNORE_CTL_ERROR),
+ 	DEVICE_FLG(0x0951, 0x16ad, /* Kingston HyperX */
+ 		   QUIRK_FLAG_CTL_MSG_DELAY_1M),
 +	DEVICE_FLG(0x09da, 0x2695, /* A4Tech FHD 1080p webcam */
 +		   QUIRK_FLAG_DISABLE_AUTOSUSPEND | QUIRK_FLAG_GET_SAMPLE_RATE),
- 	DEVICE_FLG(0x0525, 0xa4ad, /* Hamedal C20 usb camero */
- 		   QUIRK_FLAG_IFACE_SKIP_CLOSE),
- 
+ 	DEVICE_FLG(0x0b0e, 0x0349, /* Jabra 550a */
+ 		   QUIRK_FLAG_CTL_MSG_DELAY_1M),
+ 	DEVICE_FLG(0x0ecb, 0x205c, /* JBL Quantum610 Wireless */
