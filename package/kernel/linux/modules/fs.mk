@@ -653,6 +653,7 @@ $(eval $(call KernelPackage,fs-udf))
 define KernelPackage/fs-vfat
   SUBMENU:=$(FS_MENU)
   TITLE:=VFAT filesystem support
+  DEPENDS:=@!TARGET_armsr_armv8
   KCONFIG:= \
 	CONFIG_FAT_FS \
 	CONFIG_VFAT_FS

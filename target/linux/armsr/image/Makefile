@@ -33,13 +33,14 @@ GRUB_TITLE:=$(call qstrip,$(CONFIG_GRUB_TITLE))
 BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 
 define Build/combined
-  $(INSTALL_DIR) $@.boot/
+	$(INSTALL_DIR) $@.boot/
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/efi/openwrt/
 	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
 	$(if $(filter $(1),efi),
 		$(INSTALL_DIR) $@.boot/efi/boot
 		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_aarch64),aa64,arm).efi $@.boot/efi/openwrt/
 		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_aarch64),aa64,arm).efi $@.boot/efi/boot/
+		$(CP) $(KERNEL_BUILD_DIR)/initrd.cpio.xz $@.boot/efi/openwrt/
 	)
 	KERNELPARTTYPE=ef FAT_TYPE="32" PADDING="1" SIGNATURE="$(IMG_PART_SIGNATURE)" \
 		$(if $(filter $(1),efi),GUID="$(IMG_PART_DISKGUID)") $(SCRIPT_DIR)/gen_image_generic.sh \
@@ -102,13 +103,7 @@ define Device/generic
   GRUB2_VARIANT := generic
   FILESYSTEMS := ext4 squashfs
   UBOOT := $(if $(CONFIG_aarch64),qemu_armv8,qemu_armv7)
-  DEVICE_PACKAGES += kmod-amazon-ena kmod-e1000e kmod-vmxnet3 kmod-rtc-rx8025 \
-	kmod-i2c-mux-pca954x kmod-gpio-pca953x partx-utils kmod-wdt-sp805 \
-	kmod-mvneta kmod-mvpp2 kmod-fsl-dpaa1-net kmod-fsl-dpaa2-net \
-	kmod-fsl-enetc-net kmod-dwmac-imx kmod-fsl-fec kmod-thunderx-net \
-	kmod-dwmac-rockchip kmod-dwmac-sun8i kmod-phy-aquantia kmod-phy-broadcom \
-	kmod-phy-marvell kmod-phy-marvell-10g kmod-sfp kmod-atlantic \
-	kmod-bcmgenet kmod-octeontx2-net
+  DEVICE_PACKAGES += partx-utils kmod
 endef
 TARGET_DEVICES += generic
 

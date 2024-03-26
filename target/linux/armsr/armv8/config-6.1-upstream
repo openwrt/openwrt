@@ -1,0 +1,198 @@
+#
+# Extra modules additions on top of arch/arm64/configs/defconfig
+#
+# Avoid increasing rootfs size by compressing the modules
+CONFIG_MODULE_COMPRESS_GZIP=y
+CONFIG_MODULE_DECOMPRESS=y
+
+# Enable /proc/sys/kernel/hotplug to be used with Busybox mdev
+CONFIG_UEVENT_HELPER=y
+
+# They are matching what was in the main branch before this change 
+#
+# Configuration splitted by SoC family.
+#
+# Actions SoC Family. All enabled by default
+
+# Allwinner SoC Family
+CONFIG_PHY_SUN50I_USB3=y
+CONFIG_PHY_SUN9I_USB=y
+CONFIG_PINCTRL_SUN4I_A10=y
+CONFIG_PINCTRL_SUN5I=y
+CONFIG_SUN50I_IOMMU=y
+
+# Alpine SoC Family. All enabled by default
+
+# Apple SoC Family. Untouched as it's not a SystemReady platform
+
+# Broadcom SoC Family
+CONFIG_BCMA_DRIVER_GMAC_CMN=y
+CONFIG_BCMA_DRIVER_GPIO=y
+CONFIG_BCMA_HOST_SOC=y
+CONFIG_BCMA_SFLASH=y
+CONFIG_MTD_SPLIT=y
+CONFIG_MTD_SPLIT_BCM63XX_FW=y
+CONFIG_MTD_SPLIT_BCM_WFI_FW=y
+CONFIG_SSB_DRIVER_PCICORE=y
+
+# Broadcom BCM2837 and BCM2711 SoC Family. All enabled by default
+
+# Broadcom Broadband BCMBCA SoC Family. All enabled by default
+
+# Broadcom iProc SoC Family
+
+# Marvell Berlin SoC Family
+CONFIG_ARMADA_37XX_WATCHDOG=y
+CONFIG_OCTEONTX2_AF=m
+CONFIG_OCTEONTX2_MBOX=m
+CONFIG_OCTEONTX2_PF=m
+CONFIG_OCTEONTX2_VF=m
+
+# Broadcom's ARMv8 Set Top Box SoC Family. All enabled by default
+
+# Samsung Exynos SoC family
+CONFIG_EXYNOS_IOMMU=y
+CONFIG_PCI_EXYNOS=y
+CONFIG_PHY_EXYNOS_PCIE=y
+
+# Texas Instruments' K3 multicore SoC Family
+
+# Freescale Layerscape SoC Family
+CONFIG_CRYPTO_DEV_FSL_CAAM_INTC=y
+CONFIG_FSL_MC_UAPI_SUPPORT=y
+CONFIG_PCIE_DW_EP=y
+CONFIG_PCI_LAYERSCAPE_EP=y
+CONFIG_USB_EHCI_FSL=y
+
+# LG Electronics LG1K SoC Family. All Enabled by default
+
+# Hisilicon ARMv8 SoC Family
+CONFIG_PHY_HI3660_USB=y
+CONFIG_PHY_HI3670_PCIE=y
+CONFIG_PHY_HI3670_USB=y
+CONFIG_POWER_RESET_HISI=y
+CONFIG_USB_XHCI_HISTB=y
+
+# Intel Movidius SoC code-named Keem Bay Family
+
+# MediaTek MT27xx, MT65xx, MT76xx & MT81xx ARMv8 SoCs Family
+
+# Amlogic SoCs s905, S905X/D, S912, A113X/D or S905X/D2 Family
+
+# Marvell EBU Family
+# - Armada 3700 SoC Family
+# - Armada 7K SoC Family
+# - Armada 8K SoC Family
+# - 98DX2530 SoC Family
+CONFIG_PHY_MVEBU_A38X_COMPHY=y
+CONFIG_RTC_DRV_MV=y
+CONFIG_USB_XHCI_MVEBU=y
+
+# NXP SoC Family
+CONFIG_SERIAL_SCCNXP=y
+CONFIG_SERIAL_SCCNXP_CONSOLE=y
+
+# NXP i.MX SoCs Family
+CONFIG_AHCI_IMX=y
+CONFIG_IMX7ULP_WDT=m
+CONFIG_INTERCONNECT_IMX8MP=m
+
+# NPCM8xx BMC (Arbel) SoC Family
+# Nuvoton NPCM8xx BMC based on the Cortex A35 NPCM
+
+# Qualcomm SoC Family
+
+# Renesas SoCs Family
+
+# Rockchip SoC Family, like the RK3368
+CONFIG_KGDB=y
+
+# NXP S32 SoC Family. All enabled by default
+
+# AMD Seattle SoC Family
+
+# Intel's SoCFPGA ARMv8 SoCs Family. All enabled by default
+# Stratix 10 (ex. Altera), Stratix10 Software Virtual Platform,
+# Agilex and eASIC N5X
+CONFIG_I2C_ALTERA=y
+
+# Socionext SynQuacer SoC Family
+CONFIG_I2C_SYNQUACER=y
+
+# NVIDIA Tegra SoC Family
+
+# Tesla SoC Family. All Enabled by default
+
+# Spreadtrum ARM based SoCs Family
+
+# Cavium's Thunder Family of SoCs Family
+CONFIG_GPIO_THUNDERX=y
+CONFIG_GPIO_XLP=y
+CONFIG_I2C_THUNDERX=y
+CONFIG_MMC_CAVIUM_THUNDERX=y
+CONFIG_SPI_THUNDERX=y
+CONFIG_THUNDER_NIC_VF=y
+
+# Cavium's ThunderX2 CN99XX SoC family of server processors. All Enabled by default
+
+# Socionext UniPhier SoC Family
+CONFIG_PCIE_UNIPHIER=y
+CONFIG_PCIE_UNIPHIER_EP=y
+CONFIG_PINCTRL_UNIPHIER_LD4=y
+CONFIG_PINCTRL_UNIPHIER_LD6B=y
+CONFIG_PINCTRL_UNIPHIER_PRO4=y
+CONFIG_PINCTRL_UNIPHIER_PRO5=y
+CONFIG_PINCTRL_UNIPHIER_PXS2=y
+CONFIG_PINCTRL_UNIPHIER_SLD8=y
+
+# Versatile Express (VExpress) SoC Family
+CONFIG_POWER_RESET_VEXPRESS=y
+
+# Toshiba Visconti SoCs Family
+
+# AppliedMicro X-Gene SOC Family
+
+# Xilinx ZynqMP SoCs Family
+CONFIG_GPIO_ZYNQ=y
+CONFIG_PCIE_XILINX_CPM=y
+CONFIG_PCIE_XILINX_NWL=y
+CONFIG_ZYNQMP_FIRMWARE_DEBUG=y
+
+#
+# Virtual platforms
+#
+CONFIG_ARM_SCMI_TRANSPORT_VIRTIO=y
+CONFIG_DRM_VIRTIO_GPU=y
+CONFIG_HW_RANDOM_VIRTIO=y
+CONFIG_SCSI_VIRTIO=y
+CONFIG_VIRTIO_MEM=y
+CONFIG_VIRTIO_MMIO_CMDLINE_DEVICES=y
+CONFIG_XEN_VIRTIO=y
+
+# VMWare
+CONFIG_INFINIBAND=y
+CONFIG_INFINIBAND_USER_ACCESS=y
+CONFIG_VIRTIO_VSOCKETS=y
+CONFIG_VMWARE_VMCI=y
+CONFIG_VMWARE_VMCI_VSOCKETS=y
+CONFIG_VMXNET3=m
+CONFIG_VSOCKETS=y
+
+#
+# Networking features and Network Vendor drivers
+#
+CONFIG_SFP=m
+CONFIG_RTC_DRV_RX8025=m
+
+# Amazon
+CONFIG_ENA_ETHERNET=m
+
+# Aquantia
+CONFIG_AQTION=m
+
+#
+# NXP DPAA2 platforms (LS1088,2088,LX2160) need it to avoid an IOMMU fault
+# issue at startup. Pending patches to fix this problem:
+# https://patchwork.ozlabs.org/project/uboot/cover/20230927153049.12786-1-laurentiu.tudor@nxp.com/
+#
+# CONFIG_ARM_SMMU_DISABLE_BYPASS_BY_DEFAULT is not set

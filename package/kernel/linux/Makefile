@@ -11,6 +11,8 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=kernel
 PKG_FLAGS:=hold
 
+PKG_BUILD_DEPENDS := TARGET_armsr:kmod/host
+
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/packages
 SUBTARGETS = $(sort $(filter-out feeds,$(notdir $(wildcard $(TOPDIR)/target/linux/* $(TOPDIR)/target/linux/feeds/*))))
 SUBTARGET_MODULES = $(foreach t,$(SUBTARGETS),$(firstword $(wildcard $(TOPDIR)/target/linux/feeds/$(t)/modules.mk $(TOPDIR)/target/linux/$(t)/modules.mk)))

@@ -184,6 +184,7 @@ $(eval $(call KernelPackage,can-raw))
 
 define KernelPackage/can-slcan
   TITLE:=Serial / USB serial CAN Adaptors (slcan)
+  DEPENDS:=@!TARGET_armsr_armv8
   KCONFIG:=CONFIG_CAN_SLCAN
   FILES:= \
 	$(LINUX_DIR)/drivers/net/can/slcan.ko@lt6.0 \
