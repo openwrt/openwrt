@@ -127,6 +127,7 @@ menu "Target Images"
 		config TARGET_EXT4_JOURNAL
 			bool "Create a journaling filesystem"
 			depends on TARGET_ROOTFS_EXT4FS
+			default y
 			help
 			  Create an ext4 filesystem with a journal.
 
