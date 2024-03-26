@@ -205,7 +205,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		xhci_err(xhci, "Tried to move enqueue past ring segment\n");
  		return;
  	}
-@@ -3165,7 +3168,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd
+@@ -3215,7 +3218,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd
  	 * that clears the EHB.
  	 */
  	while (xhci_handle_event(xhci) > 0) {
@@ -214,7 +214,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			continue;
  		xhci_update_erst_dequeue(xhci, event_ring_deq);
  		event_ring_deq = xhci->event_ring->dequeue;
-@@ -3307,7 +3310,8 @@ static int prepare_ring(struct xhci_hcd
+@@ -3357,7 +3360,8 @@ static int prepare_ring(struct xhci_hcd
  		}
  	}
  
@@ -248,7 +248,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	 * when the cycle bit is set to 1.
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1635,6 +1635,7 @@ struct xhci_ring {
+@@ -1636,6 +1636,7 @@ struct xhci_ring {
  	unsigned int		num_trbs_free;
  	unsigned int		num_trbs_free_temp;
  	unsigned int		bounce_buf_len;
