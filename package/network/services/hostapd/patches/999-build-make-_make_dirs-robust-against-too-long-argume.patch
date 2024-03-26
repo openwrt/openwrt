@@ -1,0 +1,27 @@
+From beeef79701082a82b2581a674e702ea60a358ce7 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Sun, 24 Mar 2024 20:47:06 +0100
+Subject: [PATCH] build: make _make_dirs robust against too long argument error
+
+_make_dirs currently can fail as _DIRS can be really long and thus go over
+the MAX_ARG_STRLEN limit so it will fail with:
+/bin/sh: Argument list too long
+
+Lets avoid this by stripping the $(BUILDDIR) prefix and then restoring it.
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ src/build.rules | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/build.rules
++++ b/src/build.rules
+@@ -80,7 +80,7 @@ endif
+ _DIRS := $(BUILDDIR)/$(PROJ)
+ .PHONY: _make_dirs
+ _make_dirs:
+-	@mkdir -p $(_DIRS)
++	@printf '$(BUILDDIR)/%s ' $(patsubst $(BUILDDIR)/%,%,$(_DIRS)) | xargs mkdir -p
+ 
+ $(BUILDDIR)/$(PROJ)/src/%.o: $(ROOTDIR)src/%.c $(CONFIG_FILE) | _make_dirs
+ 	$(Q)$(CC) -c -o $@ $(CFLAGS) $<

@@ -64,12 +64,50 @@ define Build/ctera-firmware
 	rm -rf $@.tmp
 endef
 
-define Device/kernel-size-migration
+define Device/kernel-size-migration-iomega
   DEVICE_COMPAT_VERSION := 2.0
-  DEVICE_COMPAT_MESSAGE := Partition design has changed compared to \
-	older versions (up to 21.02) due to kernel size restrictions. \
+  DEVICE_COMPAT_MESSAGE := \n$\
+   !The partitioning of the router has changed! \n$\
+  Partition design has changed compared to \
+	older versions (up to 23.05) due to kernel size restrictions. \
 	Upgrade via sysupgrade mechanism is not possible, so new \
-	installation via factory style image is required.
+	installation via initramfs image is required.\n$\
+  Please adjust bootcmd in u-boot console:\n$\
+  setenv bootcmd \
+  'setenv bootargs $$$${console} $$$${mtdparts} $$$${bootargs_root}; \
+  nand read.e 0x800000 0x100000 0x400000; bootm 0x00800000'\n$\
+  saveenv\n$\
+  or use OpenWrt shell:\n$\
+  fw_setenv bootcmd \
+  "setenv bootargs $$$${console} $$$${mtdparts} $$$${bootargs_root};\
+  nand read.e 0x800000 0x100000 0x400000; bootm 0x00800000"\n$\
+  and reinstall image with initramfs image. \
+  Please see original instructions for more details.
+endef
+
+define Device/kernel-size-migration-linksys
+  DEVICE_COMPAT_VERSION := 3.0
+  DEVICE_COMPAT_MESSAGE := \n$\
+    !The partitioning of the router has changed! \n$\
+    Partition design has changed compared to \
+	  older versions (up to 23.05) due to kernel size restrictions. \n$\
+	  Upgrade via sysupgrade mechanism is not possible, so u-boot args \
+    adjustment and new installation via factory style image is required. \n$\
+    Upgrade instructions: \n$\
+    2. Run folowing commands in console (ssh or serial): \n$\
+    \t fw_printenv \n$\
+    \t fw_setenv nandboot \
+    "$$$$(fw_printenv nandboot | awk -F= '{sub(/^nandboot=/, "");print}' \
+    | sed 's/0x300000/0x400000/g')"\n$\
+    \t fw_setenv altnandboot \
+    "$$$$(fw_printenv altnandboot | awk -F= '{sub(/^altnandboot=/, "");print}' \
+    | sed 's/0x300000/0x400000/g')"\n$\
+    3. Test if envs are ok by 'fw_printenv'. \
+    It should be the same except last argument of\
+    'nand read.e' in 'nandboot' and 'altnandboot'.\n$\
+    4. If envs are ok, please apply FACTORY image with command:\n$\
+    \t sysupgrade -F -n OPENWRT_FACTORY_IMAGE.bin \n$\
+    5. System should start normally. If not, serial console will be required.
 endef
 
 define Device/Default
@@ -169,6 +207,7 @@ endef
 TARGET_DEVICES += iom_iconnect-1.1
 
 define Device/iom_ix2-200
+  $(Device/kernel-size-migration-iomega)
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := StorCenter ix2-200
   DEVICE_DTS := kirkwood-iomega_ix2_200
@@ -177,7 +216,7 @@ define Device/iom_ix2-200
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
-  KERNEL_SIZE := 3072k
+  KERNEL_SIZE := 4096k
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
   IMAGE_SIZE := 31744k
@@ -187,6 +226,7 @@ endef
 TARGET_DEVICES += iom_ix2-200
 
 define Device/iom_ix4-200d
+  $(Device/kernel-size-migration-iomega)
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := StorCenter ix4-200d
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
@@ -195,7 +235,7 @@ define Device/iom_ix4-200d
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
-  KERNEL_SIZE := 3072k
+  KERNEL_SIZE := 4096k
   KERNEL_IN_UBI :=
   UBINIZE_OPTS := -E 5
   IMAGE_SIZE := 31744k
@@ -209,7 +249,8 @@ define Device/iptime_nas1
   DEVICE_MODEL := NAS1
   DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
 	kmod-gpio-button-hotplug kmod-gpio-pca953x kmod-hwmon-drivetemp \
-	kmod-hwmon-gpiofan kmod-usb-ledtrig-usbport kmod-rtc-mv -uboot-envtools
+	kmod-hwmon-gpiofan kmod-usb-ledtrig-usbport kmod-rtc-mv kmod-thermal \
+  -uboot-envtools
   KERNEL := $$(KERNEL) | iptime-naspkg nas1
   BLOCKSIZE := 256k
   IMAGE_SIZE := 15872k
@@ -220,41 +261,37 @@ endef
 TARGET_DEVICES += iptime_nas1
 
 define Device/linksys
+  $(Device/kernel-size-migration-linksys)
   DEVICE_VENDOR := Linksys
   DEVICE_PACKAGES := kmod-mwl8k wpad-basic-mbedtls kmod-gpio-button-hotplug \
 	kmod-rtc-mv
   KERNEL_IN_UBI :=
+  KERNEL_SIZE := 4096k
   UBINIZE_OPTS := -E 5
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
 endef
 
 define Device/linksys_e4200-v2
   $(Device/linksys)
-  $(Device/kernel-size-migration)
   DEVICE_MODEL := E4200
   DEVICE_VARIANT := v2
-  KERNEL_SIZE := 3072k
   SUPPORTED_DEVICES += linksys,viper linksys-viper
 endef
 TARGET_DEVICES += linksys_e4200-v2
 
 define Device/linksys_ea3500
   $(Device/linksys)
-  $(Device/kernel-size-migration)
   DEVICE_MODEL := EA3500
   PAGESIZE := 512
   SUBPAGESIZE := 256
   BLOCKSIZE := 16k
-  KERNEL_SIZE := 3072k
   SUPPORTED_DEVICES += linksys,audi linksys-audi
 endef
 TARGET_DEVICES += linksys_ea3500
 
 define Device/linksys_ea4500
   $(Device/linksys)
-  $(Device/kernel-size-migration)
   DEVICE_MODEL := EA4500
-  KERNEL_SIZE := 3072k
   SUPPORTED_DEVICES += linksys,viper linksys-viper
 endef
 TARGET_DEVICES += linksys_ea4500

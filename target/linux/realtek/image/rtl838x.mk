@@ -313,6 +313,10 @@ define Device/zyxel_gs1900-8
   $(Device/zyxel_gs1900)
   SOC := rtl8380
   DEVICE_MODEL := GS1900-8
+  DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := ZyXEL
+  DEVICE_ALT0_MODEL := GS1900-8
+  DEVICE_ALT0_VARIANT := v2
   ZYXEL_VERS := AAHH
 endef
 TARGET_DEVICES += zyxel_gs1900-8
