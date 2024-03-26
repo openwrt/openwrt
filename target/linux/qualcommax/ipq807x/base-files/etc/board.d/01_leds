@@ -62,6 +62,9 @@ yuncore,ax880)
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:18:green:wan" "wan" "tx rx link_10 link_100 link_1000 link_2500"
 	ucidef_set_led_netdev "lan-port-link" "LAN-PORT-LINK" "90000.mdio-1:1c:green:lan" "lan" "tx rx link_10 link_100 link_1000 link_2500"
 	;;
+zbtlink,zbt-z800ax)
+	ucidef_set_led_netdev "internet" "Internet" "green:wan-online" "wan"
+	;;
 esac
 
 board_config_flush

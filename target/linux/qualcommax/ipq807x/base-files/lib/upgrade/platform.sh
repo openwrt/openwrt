@@ -51,7 +51,8 @@ platform_do_upgrade() {
 	netgear,rax120v2|\
 	netgear,wax218|\
 	netgear,wax620|\
-	netgear,wax630)
+	netgear,wax630|\
+	zbtlink,zbt-z800ax)
 		nand_do_upgrade "$1"
 		;;
 	buffalo,wxr-5950ax12)

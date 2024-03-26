@@ -299,6 +299,21 @@ define Device/yuncore_ax880
 endef
 TARGET_DEVICES += yuncore_ax880
 
+define Device/zbtlink_zbt-z800ax
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Zbtlink
+	DEVICE_MODEL := ZBT-Z800AX
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk09
+	SOC := ipq8072
+	DEVICE_PACKAGES := ipq-wifi-zbtlink_zbt-z800ax
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
+endef
+TARGET_DEVICES += zbtlink_zbt-z800ax
+
 define Device/zte_mf269
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
