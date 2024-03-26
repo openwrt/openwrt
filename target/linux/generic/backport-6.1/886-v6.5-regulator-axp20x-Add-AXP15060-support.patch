@@ -1,30 +1,35 @@
-From 1b017f3376a5df4a2cd5a120c16723e777fc9a36 Mon Sep 17 00:00:00 2001
-From: "ziv.xu" <ziv.xu@starfive.com>
-Date: Fri, 4 Aug 2023 13:55:23 +0800
-Subject: [PATCH 118/122] driver: regulator: axp20x: Support AXP15060 variant.
+From 9e72869d0fe12aba8cd489e485d93912b3f5c248 Mon Sep 17 00:00:00 2001
+From: Shengyu Qu <wiagn233@outlook.com>
+Date: Wed, 24 May 2023 01:00:12 +0100
+Subject: [PATCH] regulator: axp20x: Add AXP15060 support
 
-Add axp15060 variant support to axp20x
+The AXP15060 is a typical I2C-controlled PMIC, seen on multiple boards
+with different default register value. Current driver is tested on
+Starfive Visionfive 2.
 
-Signed-off-by: ziv.xu <ziv.xu@starfive.com>
+The RTCLDO is fixed, and cannot even be turned on or off. On top of
+that, its voltage is customisable (either 1.8V or 3.3V). We pretend it's
+a fixed 1.8V regulator since other AXP driver also do like this. Also,
+BSP code ignores this regulator and it's not used according to VF2
+schematic.
+
+Describe the AXP15060's voltage settings and switch registers, how the
+voltages are encoded, and connect this to the MFD device via its
+regulator ID.
+
+Signed-off-by: Shengyu Qu <wiagn233@outlook.com>
+Signed-off-by: Andre Przywara <andre.przywara@arm.com>
+Reviewed-by: Mark Brown <broonie@kernel.org>
+Tested-by: Shengyu Qu <wiagn233@outlook.com>
+Link: https://lore.kernel.org/r/20230524000012.15028-4-andre.przywara@arm.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
- drivers/regulator/axp20x-regulator.c | 291 ++++++++++++++++++++++++++-
- 1 file changed, 283 insertions(+), 8 deletions(-)
+ drivers/regulator/axp20x-regulator.c | 232 +++++++++++++++++++++++++--
+ 1 file changed, 223 insertions(+), 9 deletions(-)
 
 --- a/drivers/regulator/axp20x-regulator.c
 +++ b/drivers/regulator/axp20x-regulator.c
-@@ -134,6 +134,11 @@
- #define AXP22X_PWR_OUT_DLDO4_MASK	BIT_MASK(6)
- #define AXP22X_PWR_OUT_ALDO3_MASK	BIT_MASK(7)
- 
-+#define AXP313A_DCDC1_NUM_VOLTAGES	107
-+#define AXP313A_DCDC23_NUM_VOLTAGES	88
-+#define AXP313A_DCDC_V_OUT_MASK		GENMASK(6, 0)
-+#define AXP313A_LDO_V_OUT_MASK		GENMASK(4, 0)
-+
- #define AXP803_PWR_OUT_DCDC1_MASK	BIT_MASK(0)
- #define AXP803_PWR_OUT_DCDC2_MASK	BIT_MASK(1)
- #define AXP803_PWR_OUT_DCDC3_MASK	BIT_MASK(2)
-@@ -270,6 +275,74 @@
+@@ -275,6 +275,74 @@
  
  #define AXP813_PWR_OUT_DCDC7_MASK	BIT_MASK(6)
  
@@ -99,56 +104,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  #define AXP_DESC_IO(_family, _id, _match, _supply, _min, _max, _step, _vreg,	\
  		    _vmask, _ereg, _emask, _enable_val, _disable_val)		\
  	[_family##_##_id] = {							\
-@@ -638,6 +711,48 @@ static const struct regulator_desc axp22
- 	.ops		= &axp20x_ops_sw,
- };
- 
-+static const struct linear_range axp313a_dcdc1_ranges[] = {
-+	REGULATOR_LINEAR_RANGE(500000,   0,  70,  10000),
-+	REGULATOR_LINEAR_RANGE(1220000, 71,  87,  20000),
-+	REGULATOR_LINEAR_RANGE(1600000, 88, 106, 100000),
-+};
-+
-+static const struct linear_range axp313a_dcdc2_ranges[] = {
-+	REGULATOR_LINEAR_RANGE(500000,   0, 70, 10000),
-+	REGULATOR_LINEAR_RANGE(1220000, 71, 87, 20000),
-+};
-+
-+/*
-+ * This is deviating from the datasheet. The values here are taken from the
-+ * BSP driver and have been confirmed by measurements.
-+ */
-+static const struct linear_range axp313a_dcdc3_ranges[] = {
-+	REGULATOR_LINEAR_RANGE(500000,   0,  70, 10000),
-+	REGULATOR_LINEAR_RANGE(1220000, 71, 102, 20000),
-+};
-+
-+static const struct regulator_desc axp313a_regulators[] = {
-+	AXP_DESC_RANGES(AXP313A, DCDC1, "dcdc1", "vin1",
-+			axp313a_dcdc1_ranges, AXP313A_DCDC1_NUM_VOLTAGES,
-+			AXP313A_DCDC1_CONRTOL, AXP313A_DCDC_V_OUT_MASK,
-+			AXP313A_OUTPUT_CONTROL, BIT(0)),
-+	AXP_DESC_RANGES(AXP313A, DCDC2, "dcdc2", "vin2",
-+			axp313a_dcdc2_ranges, AXP313A_DCDC23_NUM_VOLTAGES,
-+			AXP313A_DCDC2_CONRTOL, AXP313A_DCDC_V_OUT_MASK,
-+			AXP313A_OUTPUT_CONTROL, BIT(1)),
-+	AXP_DESC_RANGES(AXP313A, DCDC3, "dcdc3", "vin3",
-+			axp313a_dcdc3_ranges, AXP313A_DCDC23_NUM_VOLTAGES,
-+			AXP313A_DCDC3_CONRTOL, AXP313A_DCDC_V_OUT_MASK,
-+			AXP313A_OUTPUT_CONTROL, BIT(2)),
-+	AXP_DESC(AXP313A, ALDO1, "aldo1", "vin1", 500, 3500, 100,
-+		 AXP313A_ALDO1_CONRTOL, AXP313A_LDO_V_OUT_MASK,
-+		 AXP313A_OUTPUT_CONTROL, BIT(3)),
-+	AXP_DESC(AXP313A, DLDO1, "dldo1", "vin1", 500, 3500, 100,
-+		 AXP313A_DLDO1_CONRTOL, AXP313A_LDO_V_OUT_MASK,
-+		 AXP313A_OUTPUT_CONTROL, BIT(4)),
-+	AXP_DESC_FIXED(AXP313A, RTC_LDO, "rtc-ldo", "vin1", 1800),
-+};
-+
- /* DCDC ranges shared with AXP813 */
- static const struct linear_range axp803_dcdc234_ranges[] = {
- 	REGULATOR_LINEAR_RANGE(500000,
-@@ -1001,6 +1116,104 @@ static const struct regulator_desc axp81
+@@ -1048,6 +1116,104 @@ static const struct regulator_desc axp81
  		    AXP22X_PWR_OUT_CTRL2, AXP22X_PWR_OUT_DC1SW_MASK),
  };
  
@@ -253,24 +209,20 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  static int axp20x_set_dcdc_freq(struct platform_device *pdev, u32 dcdcfreq)
  {
  	struct axp20x_dev *axp20x = dev_get_drvdata(pdev->dev.parent);
-@@ -1040,6 +1253,16 @@ static int axp20x_set_dcdc_freq(struct p
- 		def = 3000;
+@@ -1088,10 +1254,11 @@ static int axp20x_set_dcdc_freq(struct p
  		step = 150;
  		break;
-+	case AXP313A_ID:
+ 	case AXP313A_ID:
 +	case AXP15060_ID:
-+		/* The DCDC PWM frequency seems to be fixed to 3 MHz. */
-+		if (dcdcfreq != 0) {
-+			dev_err(&pdev->dev,
+ 		/* The DCDC PWM frequency seems to be fixed to 3 MHz. */
+ 		if (dcdcfreq != 0) {
+ 			dev_err(&pdev->dev,
+-				"DCDC frequency on AXP313a is fixed to 3 MHz.\n");
 +				"DCDC frequency on this PMIC is fixed to 3 MHz.\n");
-+			return -EINVAL;
-+		}
-+
-+		return 0;
- 	default:
- 		dev_err(&pdev->dev,
- 			"Setting DCDC frequency for unsupported AXP variant\n");
-@@ -1145,6 +1368,15 @@ static int axp20x_set_dcdc_workmode(stru
+ 			return -EINVAL;
+ 		}
+ 
+@@ -1201,6 +1368,15 @@ static int axp20x_set_dcdc_workmode(stru
  		workmode <<= id - AXP813_DCDC1;
  		break;
  
@@ -286,7 +238,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  	default:
  		/* should not happen */
  		WARN_ON(1);
-@@ -1164,7 +1396,7 @@ static bool axp20x_is_polyphase_slave(st
+@@ -1220,7 +1396,7 @@ static bool axp20x_is_polyphase_slave(st
  
  	/*
  	 * Currently in our supported AXP variants, only AXP803, AXP806,
@@ -295,7 +247,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  	 */
  	switch (axp20x->variant) {
  	case AXP803_ID:
-@@ -1196,6 +1428,17 @@ static bool axp20x_is_polyphase_slave(st
+@@ -1252,6 +1428,17 @@ static bool axp20x_is_polyphase_slave(st
  		}
  		break;
  
@@ -313,7 +265,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  	default:
  		return false;
  	}
-@@ -1217,6 +1460,7 @@ static int axp20x_regulator_probe(struct
+@@ -1273,6 +1460,7 @@ static int axp20x_regulator_probe(struct
  	u32 workmode;
  	const char *dcdc1_name = axp22x_regulators[AXP22X_DCDC1].name;
  	const char *dcdc5_name = axp22x_regulators[AXP22X_DCDC5].name;
@@ -321,18 +273,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  	bool drivevbus = false;
  
  	switch (axp20x->variant) {
-@@ -1232,6 +1476,10 @@ static int axp20x_regulator_probe(struct
- 		drivevbus = of_property_read_bool(pdev->dev.parent->of_node,
- 						  "x-powers,drive-vbus-en");
- 		break;
-+	case AXP313A_ID:
-+		regulators = axp313a_regulators;
-+		nregulators = AXP313A_REG_ID_MAX;
-+		break;
- 	case AXP803_ID:
- 		regulators = axp803_regulators;
- 		nregulators = AXP803_REG_ID_MAX;
-@@ -1252,6 +1500,10 @@ static int axp20x_regulator_probe(struct
+@@ -1312,6 +1500,10 @@ static int axp20x_regulator_probe(struct
  		drivevbus = of_property_read_bool(pdev->dev.parent->of_node,
  						  "x-powers,drive-vbus-en");
  		break;
@@ -343,7 +284,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  	default:
  		dev_err(&pdev->dev, "Unsupported AXP variant: %ld\n",
  			axp20x->variant);
-@@ -1278,8 +1530,9 @@ static int axp20x_regulator_probe(struct
+@@ -1338,8 +1530,9 @@ static int axp20x_regulator_probe(struct
  			continue;
  
  		/*
@@ -355,7 +296,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  		 *
  		 * We always register the regulators in proper sequence,
  		 * so the supply names are correctly read. See the last
-@@ -1288,7 +1541,8 @@ static int axp20x_regulator_probe(struct
+@@ -1348,7 +1541,8 @@ static int axp20x_regulator_probe(struct
  		 */
  		if ((regulators == axp22x_regulators && i == AXP22X_DC1SW) ||
  		    (regulators == axp803_regulators && i == AXP803_DC1SW) ||
@@ -365,7 +306,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  			new_desc = devm_kzalloc(&pdev->dev, sizeof(*desc),
  						GFP_KERNEL);
  			if (!new_desc)
-@@ -1300,7 +1554,8 @@ static int axp20x_regulator_probe(struct
+@@ -1360,7 +1554,8 @@ static int axp20x_regulator_probe(struct
  		}
  
  		if ((regulators == axp22x_regulators && i == AXP22X_DC5LDO) ||
@@ -375,7 +316,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  			new_desc = devm_kzalloc(&pdev->dev, sizeof(*desc),
  						GFP_KERNEL);
  			if (!new_desc)
-@@ -1311,6 +1566,18 @@ static int axp20x_regulator_probe(struct
+@@ -1371,6 +1566,18 @@ static int axp20x_regulator_probe(struct
  			desc = new_desc;
  		}
  
@@ -394,7 +335,7 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  		rdev = devm_regulator_register(&pdev->dev, desc, &config);
  		if (IS_ERR(rdev)) {
  			dev_err(&pdev->dev, "Failed to register %s\n",
-@@ -1329,19 +1596,26 @@ static int axp20x_regulator_probe(struct
+@@ -1389,19 +1596,26 @@ static int axp20x_regulator_probe(struct
  		}
  
  		/*
@@ -424,11 +365,3 @@ Signed-off-by: ziv.xu <ziv.xu@starfive.com>
  	}
  
  	if (drivevbus) {
-@@ -1364,6 +1638,7 @@ static struct platform_driver axp20x_reg
- 	.probe	= axp20x_regulator_probe,
- 	.driver	= {
- 		.name		= "axp20x-regulator",
-+		.probe_type	= PROBE_PREFER_ASYNCHRONOUS,
- 	},
- };
- 
