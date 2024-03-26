@@ -123,6 +123,14 @@ preinit_config_board() {
 
 	[ -n "$device" -o -n "$ports" ] || return
 
+	# rename mixed eth_XY interfaces to match labels from dts
+	for i in /sys/class/net/eth*; do
+	        test -e "$i" || continue
+		new="$( cat "$i/of_node/label" )"
+		old="${i##*/}"
+		ip link set "$old" name "$new"
+	done
+
 	# swconfig uses $device and DSA uses ports
 	[ -z "$ports" ] && {
 		ports="$device"
