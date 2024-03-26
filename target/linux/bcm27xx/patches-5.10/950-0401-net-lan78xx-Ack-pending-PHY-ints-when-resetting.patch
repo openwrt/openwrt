@@ -20,9 +20,9 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/net/usb/lan78xx.c
 +++ b/drivers/net/usb/lan78xx.c
-@@ -1179,6 +1179,9 @@ static int lan78xx_link_reset(struct lan
+@@ -1208,6 +1208,9 @@ static int lan78xx_link_reset(struct lan
  	if (unlikely(ret < 0))
- 		return -EIO;
+ 		return ret;
  
 +	/* Acknowledge any pending PHY interrupt, lest it be the last */
 +	phy_read(phydev, LAN88XX_INT_STS);
