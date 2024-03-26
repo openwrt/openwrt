@@ -788,6 +788,29 @@ dhcp_hostrecord_add() {
 	xappend "--host-record=$record"
 }
 
+dhcp_dnsrr_add() {
+	#This adds arbitrary resource record types (of IN class) whose optional data must be hex
+	local cfg="$1"
+	local rrname rrnumber hexdata
+
+	config_get rrname "$cfg" rrname
+	[ -n "$rrname" ] || return 0
+
+	config_get rrnumber "$cfg" rrnumber
+	[ -n "$rrnumber" ] && [ "$rrnumber" -gt 0 ] || return 0
+
+	config_get hexdata "$cfg" hexdata
+
+	# dnsmasq accepts colon XX:XX:.., space XX XX .., or contiguous XXXX.. hex forms or mixtures thereof
+	if [ -n "${hexdata//[0-9a-fA-F\:\ ]/}" ]; then
+		# is invalid hex literal
+		echo "dnsmasq: \"$hexdata\" is malformed hexadecimal (separate hex with colon, space or not at all)." >&2
+		return 1
+	fi
+
+	xappend "--dns-rr=${rrname},${rrnumber}${hexdata:+,$hexdata}"
+}
+
 dhcp_relay_add() {
 	local cfg="$1"
 	local local_addr server_addr interface
@@ -1161,6 +1184,7 @@ dnsmasq_start()
 	config_foreach filter_dnsmasq match dhcp_match_add "$cfg"
 	config_foreach filter_dnsmasq domain dhcp_domain_add "$cfg"
 	config_foreach filter_dnsmasq hostrecord dhcp_hostrecord_add "$cfg"
+	config_foreach filter_dnsmasq dnsrr dhcp_dnsrr_add "$cfg"
 	[ -n "$BOOT" ] || config_foreach filter_dnsmasq relay dhcp_relay_add "$cfg"
 
 	echo >> "$CONFIGFILE_TMP"
