@@ -8,27 +8,6 @@ define Image/Prepare
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
 endef
 
-define Build/buffalo-trx
-	$(eval magic=$(word 1,$(1)))
-	$(eval kern_bin=$(if $(1),$(IMAGE_KERNEL),$@))
-	$(eval rtfs_bin=$(word 2,$(1)))
-	$(eval apnd_bin=$(word 3,$(1)))
-	$(eval kern_size=$(if $(KERNEL_SIZE),$(KERNEL_SIZE),0x400000))
-
-	$(if $(rtfs_bin),touch $(rtfs_bin))
-	$(STAGING_DIR_HOST)/bin/otrx create $@.new \
-		$(if $(magic),-M $(magic),) \
-		-f $(kern_bin) \
-		$(if $(rtfs_bin),\
-			-a 0x20000 \
-			-b $$(( $(call exp_units,$(kern_size)) )) \
-			-f $(rtfs_bin),) \
-		$(if $(apnd_bin),\
-			-A $(apnd_bin) \
-			-a 0x20000)
-	mv $@.new $@
-endef
-
 define Build/bl2
 	cat $(STAGING_DIR_IMAGE)/mt7622-$1-bl2.img >> $@
 endef
