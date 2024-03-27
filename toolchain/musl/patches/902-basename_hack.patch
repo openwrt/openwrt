@@ -1,0 +1,47 @@
+Revert the upstream commit 725e17ed6dff4d0cd22487bb64470881e86a92e7
+"remove non-prototype declaration of basename from string.h"
+
+At least elfutils and rpcd-mod-luci need the declaration.
+
+
+Upstream explanation of the reasons for the removal:
+
+> From 725e17ed6dff4d0cd22487bb64470881e86a92e7 Mon Sep 17 00:00:00 2001
+> From: Rich Felker <dalias@aerifal.cx>
+> Date: Mon, 6 Nov 2023 08:26:19 -0500
+> Subject: remove non-prototype declaration of basename from string.h
+> 
+> commit 37bb3cce4598c19288628e675eaf1cda6e96958f suppressed the
+> declaration for C++, where it is wrongly interpreted as declaring the
+> function as taking no arguments. with C23 removing non-prototype
+> declarations, that problem is now also relevant to C.
+> 
+> the non-prototype declaration for basename originates with commit
+> 06aec8d7152dfb8360cb7ed9b3d7215ca0b0b500, where it was designed to
+> avoid conflicts with programs which declare basename with the GNU
+> signature taking const char *. that change was probably misguided, as
+> it represents not only misaligned expectations with the caller, but
+> also undefined behavior (calling a function that's been declared with
+> the wrong type).
+> 
+> we could opt to fix the declaration, but since glibc, with the
+> gratuitously incompatible GNU-basename function, seems to be the only
+> implementation that declares it in string.h, it seems better to just
+> remove the declaration. this provides some warning if applications are
+> being built expecting the GNU behavior but not getting it. if we
+> declared it here, it would only produce a warning if the caller also
+> declares it themselves (rare) or if the caller attempts to pass a
+> const-qualified pointer.
+
+--- a/include/string.h
++++ b/include/string.h
+@@ -95,6 +95,9 @@ char *strchrnul(const char *, int);
+ char *strcasestr(const char *, const char *);
+ void *memrchr(const void *, int, size_t);
+ void *mempcpy(void *, const void *, size_t);
++#ifndef __cplusplus
++char *basename();
++#endif
+ #endif
+ 
+ #ifdef __cplusplus
