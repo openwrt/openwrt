@@ -34,7 +34,6 @@ ath79_setup_interfaces()
 	devolo,dvl1750x|\
 	dlink,dap-1330-a1|\
 	dlink,dap-1365-a1|\
-	dlink,dap-1720-a1|\
 	dlink,dap-2230-a1|\
 	dlink,dap-2660-a1|\
 	dlink,dap-2680-a1|\
@@ -318,9 +317,6 @@ ath79_setup_interfaces()
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
 	dlink,dir-842-c3|\
-	dlink,dir-859-a1|\
-	dlink,dir-859-a3|\
-	dlink,dir-869-a1|\
 	engenius,epg5000|\
 	engenius,esr1200|\
 	engenius,esr1750|\
@@ -698,15 +694,6 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii devdata "lanmac")
 		wan_mac=$(mtd_get_mac_ascii devdata "wanmac")
 		label_mac=$lan_mac
-		;;
-	dlink,dir-859-a1|\
-	dlink,dir-869-a1)
-		lan_mac=$(mtd_get_mac_text "devdata" 0xc9)
-		wan_mac=$(mtd_get_mac_text "devdata" 0x79)
-		;;
-	dlink,dir-859-a3)
-		lan_mac=$(get_mac_label)
-		wan_mac=$(macaddr_add "$lan_mac" 3)
 		;;
 	qihoo,c301|\
 	wd,mynet-n600|\

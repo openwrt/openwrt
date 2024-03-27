@@ -12,6 +12,19 @@ define Device/buffalo_whr-g301n
 endef
 TARGET_DEVICES += buffalo_whr-g301n
 
+define Device/dlink_dap-1720-a1
+  $(Device/seama)
+  SOC := qca9563
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DAP-1720
+  DEVICE_VARIANT := A1
+  IMAGE_SIZE := 15872k
+  SEAMA_SIGNATURE := wapac28_dlink.2015_dap1720
+  DEVICE_PACKAGES := -swconfig ath10k-firmware-qca988x-ct \
+	kmod-ath10k-ct-smallbuffers rssileds
+endef
+TARGET_DEVICES += dlink_dap-1720-a1
+
 define Device/dlink_dir-615-e4
   SOC := ar7240
   DEVICE_VENDOR := D-Link
@@ -30,6 +43,41 @@ define Device/dlink_dir-615-e4
 endef
 TARGET_DEVICES += dlink_dir-615-e4
 
+define Device/dlink_dir-859-a
+  $(Device/seama)
+  SOC := qca9563
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-859
+  IMAGE_SIZE := 15872k
+  SEAMA_SIGNATURE := wrgac37_dlink.2013gui_dir859
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct-smallbuffers
+endef
+
+define Device/dlink_dir-859-a1
+  $(Device/dlink_dir-859-a)
+  DEVICE_VARIANT := A1
+endef
+TARGET_DEVICES += dlink_dir-859-a1
+
+define Device/dlink_dir-859-a3
+  $(Device/dlink_dir-859-a)
+  DEVICE_VARIANT := A3
+endef
+TARGET_DEVICES += dlink_dir-859-a3
+
+define Device/dlink_dir-869-a1
+  $(Device/seama)
+  SOC := qca9563
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-869
+  DEVICE_VARIANT := A1
+  IMAGE_SIZE := 15872k
+  SEAMA_SIGNATURE := wrgac54_dlink.2015_dir869
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct-smallbuffers
+  SUPPORTED_DEVICES += dir-869-a1
+endef
+TARGET_DEVICES += dlink_dir-869-a1
+
 define Device/engenius_eap350-v1
   $(Device/senao_loader_okli)
   BLOCKSIZE := 4k
@@ -40,6 +88,7 @@ define Device/engenius_eap350-v1
   IMAGE_SIZE := 4928k
   LOADER_FLASH_OFFS := 0x1a0000
   SENAO_IMGNAME := senao-eap350
+  DEFAULT := n
 endef
 TARGET_DEVICES += engenius_eap350-v1
 
@@ -53,6 +102,7 @@ define Device/engenius_ecb350-v1
   IMAGE_SIZE := 4928k
   LOADER_FLASH_OFFS := 0x1a0000
   SENAO_IMGNAME := senao-ecb350
+  DEFAULT := n
 endef
 TARGET_DEVICES += engenius_ecb350-v1
 
@@ -66,6 +116,7 @@ define Device/engenius_enh202-v1
   IMAGE_SIZE := 4928k
   LOADER_FLASH_OFFS := 0x1a0000
   SENAO_IMGNAME := senao-enh202
+  DEFAULT := n
 endef
 TARGET_DEVICES += engenius_enh202-v1
 
