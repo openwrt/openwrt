@@ -601,7 +601,7 @@ procd_add_mdns_service() {
 	json_add_int port "$port"
 	[ -n "$1" ] && {
 		json_add_array txt
-		for txt in "$@"; do json_add_string "" "$txt"; done
+		for txt in "$@"; do [ -n "$txt" ] && json_add_string "" "$txt"; done
 		json_select ..
 	}
 	json_select ..
