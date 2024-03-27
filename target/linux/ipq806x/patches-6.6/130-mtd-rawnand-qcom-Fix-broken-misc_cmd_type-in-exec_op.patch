@@ -1,0 +1,46 @@
+From 9732c4f2d93a4a39ffc903c88ab7d531a8bb2e74 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 20 Mar 2024 00:47:58 +0100
+Subject: [PATCH] mtd: rawnand: qcom: Fix broken misc_cmd_type in exec_op
+
+misc_cmd_type in exec_op have multiple problems. With commit a82990c8a409
+("mtd: rawnand: qcom: Add read/read_start ops in exec_op path") it was
+reworked and generalized but actually dropped the handling of the
+RESET_DEVICE command.
+
+Also additional logic was added without clear explaination causing the
+erase command to be broken on testing it on a ipq806x nandc.
+
+Add some additional logic to restore RESET_DEVICE command handling and
+fix erase command.
+
+Fixes: a82990c8a409 ("mtd: rawnand: qcom: Add read/read_start ops in exec_op path")
+Cc: stable@vger.kernel.org
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/mtd/nand/raw/qcom_nandc.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+--- a/drivers/mtd/nand/raw/qcom_nandc.c
++++ b/drivers/mtd/nand/raw/qcom_nandc.c
+@@ -2815,7 +2815,7 @@ static int qcom_misc_cmd_type_exec(struc
+ 			      host->cfg0_raw & ~(7 << CW_PER_PAGE));
+ 		nandc_set_reg(chip, NAND_DEV0_CFG1, host->cfg1_raw);
+ 		instrs = 3;
+-	} else {
++	} else if (q_op.cmd_reg != OP_RESET_DEVICE) {
+ 		return 0;
+ 	}
+ 
+@@ -2830,9 +2830,8 @@ static int qcom_misc_cmd_type_exec(struc
+ 	nandc_set_reg(chip, NAND_EXEC_CMD, 1);
+ 
+ 	write_reg_dma(nandc, NAND_FLASH_CMD, instrs, NAND_BAM_NEXT_SGL);
+-	(q_op.cmd_reg == OP_BLOCK_ERASE) ? write_reg_dma(nandc, NAND_DEV0_CFG0,
+-	2, NAND_BAM_NEXT_SGL) : read_reg_dma(nandc,
+-	NAND_FLASH_STATUS, 1, NAND_BAM_NEXT_SGL);
++	if (q_op.cmd_reg == OP_BLOCK_ERASE)
++		write_reg_dma(nandc, NAND_DEV0_CFG0, 2, NAND_BAM_NEXT_SGL);
+ 
+ 	write_reg_dma(nandc, NAND_EXEC_CMD, 1, NAND_BAM_NEXT_SGL);
+ 	read_reg_dma(nandc, NAND_FLASH_STATUS, 1, NAND_BAM_NEXT_SGL);
