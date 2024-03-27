@@ -30,7 +30,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			msi-parent = <&gic_v2m0>;
  			#interrupt-cells = <1>;
  			interrupt-map-mask = <0 0 0 0x7>;
- 			interrupt-map = <0 0 0 1 &intc 0 142
+ 			interrupt-map = <0 0 0 1 &intc 0 0 142
 @@ -930,8 +929,7 @@
  			ranges = <0x81000000 0x0 0x00000000 0x20200000 0x0 0x10000>,   /* I/O */
  				 <0x82000000 0x0 0x20220000 0x20220000 0x0 0xfde0000>; /* MEM */
@@ -40,4 +40,4 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			msi-parent = <&gic_v2m0>;
  			#interrupt-cells = <1>;
  			interrupt-map-mask = <0 0 0 0x7>;
- 			interrupt-map = <0 0 0 1 &intc 0 75
+ 			interrupt-map = <0 0 0 1 &intc 0 0 75

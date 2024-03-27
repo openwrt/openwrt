@@ -1,0 +1,27 @@
+From: Ezra Buehler <ezra.buehler@husqvarnagroup.com>
+
+E.g. ESMT chips will return an identification code with a length of 5
+bytes. In order to prevent ambiguity, flash chips would actually need to
+return IDs that are up to 17 or more bytes long due to JEDEC's
+continuation scheme. I understand that if a manufacturer ID is located
+in bank N of JEDEC's database (there are currently 16 banks), N - 1
+continuation codes (7Fh) need to be added to the identification code
+(comprising of manufacturer ID and device ID). However, most flash chip
+manufacturers don't seem to implement this (correctly).
+
+Signed-off-by: Ezra Buehler <ezra.buehler@husqvarnagroup.com>
+---
+ include/linux/mtd/spinand.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/include/linux/mtd/spinand.h
++++ b/include/linux/mtd/spinand.h
+@@ -169,7 +169,7 @@
+ struct spinand_op;
+ struct spinand_device;
+ 
+-#define SPINAND_MAX_ID_LEN	4
++#define SPINAND_MAX_ID_LEN	5
+ /*
+  * For erase, write and read operation, we got the following timings :
+  * tBERS (erase) 1ms to 4ms
