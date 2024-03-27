@@ -24,7 +24,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	};
  
  	timer {
-@@ -544,10 +538,11 @@
+@@ -543,10 +537,11 @@
  			interrupt-parent = <&gic>;
  			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL_HIGH>;
  			memory-region = <&wo_emi0>, <&wo_ilm0>, <&wo_dlm0>,
@@ -38,7 +38,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		};
  
  		wed1: wed@15011000 {
-@@ -557,10 +552,11 @@
+@@ -556,10 +551,11 @@
  			interrupt-parent = <&gic>;
  			interrupts = <GIC_SPI 206 IRQ_TYPE_LEVEL_HIGH>;
  			memory-region = <&wo_emi1>, <&wo_ilm1>, <&wo_dlm1>,
@@ -52,7 +52,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		};
  
  		wo_ccif0: syscon@151a5000 {
-@@ -577,6 +573,11 @@
+@@ -576,6 +572,11 @@
  			interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL_HIGH>;
  		};
  
