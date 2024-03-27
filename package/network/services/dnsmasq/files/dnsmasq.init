@@ -461,16 +461,17 @@ dhcp_tag_add() {
 	# NOTE: dnsmasq has explicit "option6:" prefix for DHCPv6 so no collisions
 	local cfg="$1"
 
-	tag="$cfg"
-
-	[ -n "$tag" ] || return 0
+	config_get match_tag "$cfg" match_tag
+	[ -n "$match_tag" ] || match_tag="$cfg"
+	# Try older 'named' tag syntax
+	[ -n "$match_tag" ] || return 0
 
 	config_get_bool force "$cfg" force 0
 	[ "$force" = "0" ] && force=
 
 	config_get option "$cfg" dhcp_option
 	for o in $option; do
-		xappend "--dhcp-option${force:+-force}=tag:$tag,$o"
+		xappend "--dhcp-option${force:+-force}=tag:$match_tag,$o"
 	done
 }
 
