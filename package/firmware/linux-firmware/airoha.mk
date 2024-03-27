@@ -1,4 +1,4 @@
-Package/airoha-en8811h-firmware = $(call Package/firmware-default,Airoha EN8811H 2.5G Ethernet PHY firmware)
+Package/airoha-en8811h-firmware = $(call Package/firmware-default,Airoha EN8811H 2.5G Ethernet PHY firmware,,LICENSE.airoha)
 define Package/airoha-en8811h-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/airoha
 	$(CP) \

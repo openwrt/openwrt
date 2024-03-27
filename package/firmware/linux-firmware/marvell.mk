@@ -1,4 +1,4 @@
-Package/mwl8k-firmware = $(call Package/firmware-default,Marvell 8366/8687 firmware)
+Package/mwl8k-firmware = $(call Package/firmware-default,Marvell 8366/8687 firmware,,LICENCE.Marvell)
 define Package/mwl8k-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mwl8k
 	$(INSTALL_DATA) \
@@ -11,7 +11,7 @@ define Package/mwl8k-firmware/install
 endef
 $(eval $(call BuildPackage,mwl8k-firmware))
 
-Package/mwifiex-pcie-firmware = $(call Package/firmware-default,Marvell 8897 firmware)
+Package/mwifiex-pcie-firmware = $(call Package/firmware-default,Marvell 8897 firmware,,LICENCE.Marvell)
 define Package/mwifiex-pcie-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mrvl
 	$(INSTALL_DATA) \
@@ -20,7 +20,7 @@ define Package/mwifiex-pcie-firmware/install
 endef
 $(eval $(call BuildPackage,mwifiex-pcie-firmware))
 
-Package/mwifiex-sdio-firmware = $(call Package/firmware-default,Marvell 8887/8997 firmware)
+Package/mwifiex-sdio-firmware = $(call Package/firmware-default,Marvell 8887/8997 firmware,,LICENCE.Marvell)
 define Package/mwifiex-sdio-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mrvl
 	$(INSTALL_DATA) \
@@ -31,7 +31,7 @@ define Package/mwifiex-sdio-firmware/install
 endef
 $(eval $(call BuildPackage,mwifiex-sdio-firmware))
 
-Package/libertas-usb-firmware = $(call Package/firmware-default,Marvell 8388/8682 USB firmware)
+Package/libertas-usb-firmware = $(call Package/firmware-default,Marvell 8388/8682 USB firmware,,LICENCE.Marvell)
 define Package/libertas-usb-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/libertas
 	$(INSTALL_DATA) \
@@ -41,7 +41,7 @@ define Package/libertas-usb-firmware/install
 endef
 $(eval $(call BuildPackage,libertas-usb-firmware))
 
-Package/libertas-sdio-firmware = $(call Package/firmware-default,Marvell 8385/8686/8688 SDIO firmware)
+Package/libertas-sdio-firmware = $(call Package/firmware-default,Marvell 8385/8686/8688 SDIO firmware,,LICENCE.Marvell)
 define Package/libertas-sdio-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/libertas
 	$(INSTALL_DATA) \
@@ -60,7 +60,7 @@ define Package/libertas-sdio-firmware/install
 endef
 $(eval $(call BuildPackage,libertas-sdio-firmware))
 
-Package/libertas-spi-firmware = $(call Package/firmware-default,Marvell 8686 SPI firmware)
+Package/libertas-spi-firmware = $(call Package/firmware-default,Marvell 8686 SPI firmware,,LICENCE.Marvell)
 define Package/libertas-spi-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/libertas
 	$(INSTALL_DATA) \
