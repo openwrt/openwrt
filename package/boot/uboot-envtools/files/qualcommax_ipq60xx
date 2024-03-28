@@ -19,6 +19,9 @@ netgear,wax214)
 	[ -n "$idx" ] && \
 		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x40000" "0x20000" "2"
 	;;
+tplink,eap610-outdoor)
+	ubootenv_add_uci_config "/dev/mtd8" "0x0" "0x40000" "0x20000"
+	;;
 esac
 
 config_load ubootenv
