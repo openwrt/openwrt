@@ -58,6 +58,25 @@ menuconfig DEVEL
 
 	config BUILD_ALL_HOST_TOOLS
 		bool "Compile all host tools" if DEVEL
+		select TOOLS_BUILD_7z
+		select TOOLS_BUILD_b43-tools
+		select TOOLS_BUILD_bzip2
+		select TOOLS_BUILD_cbootimage
+		select TOOLS_BUILD_dwarves
+		select TOOLS_BUILD_elftosb-sdimage
+		select TOOLS_BUILD_genext2fs
+		select TOOLS_BUILD_gmp
+		select TOOLS_BUILD_isl
+		select TOOLS_BUILD_kernel2minor
+		select TOOLS_BUILD_liblzo
+		select TOOLS_BUILD_llvm-bpf
+		select TOOLS_BUILD_lz4
+		select TOOLS_BUILD_lzop
+		select TOOLS_BUILD_mold
+		select TOOLS_BUILD_mpc
+		select TOOLS_BUILD_mpfr
+		select TOOLS_BUILD_sparse
+		select TOOLS_BUILD_squashfs3-lzma
 		help
 		  Compile all host host tools even if not needed. This is needed to prepare a
 		  universal precompiled host tools archive to use in another buildroot.
