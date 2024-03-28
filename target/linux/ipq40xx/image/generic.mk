@@ -38,6 +38,13 @@ define Device/DniImage
 		append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 
+define Device/ZyXELImageLzma
+	$(call Device/FitImageLzma)
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to $$$$(BLOCKSIZE) | zyxel-ras-image separate-kernel
+	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to $$$$(BLOCKSIZE) | sysupgrade-tar rootfs=$$$$@ | append-metadata
+endef
+
 define Build/append-rootfshdr
 	mkimage -A $(LINUX_KARCH) \
 		-O linux -T filesystem \
@@ -1291,3 +1298,18 @@ define Device/zyxel_wre6606
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += zyxel_wre6606
+
+define Device/zyxel_wsq50
+	$(call Device/ZyXELImageLzma)
+	DEVICE_VENDOR := ZyXEL
+	DEVICE_MODEL := WSQ50
+	SOC := qcom-ipq4019
+	BLOCKSIZE := 64k
+	RAS_BOARD := WSQ50
+	RAS_ROOTFS_SIZE := 20934k
+	RAS_VERSION := "$(VERSION_DIST) $(REVISION)"
+	DEVICE_PACKAGES := \
+		ath10k-firmware-qca9984-ct kmod-fs-ext4 tune2fs \
+		e2fsprogs losetup blockd kmod-ath3k kmod-bluetooth
+endef
+TARGET_DEVICES += zyxel_wsq50
