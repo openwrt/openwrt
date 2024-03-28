@@ -8,6 +8,8 @@
 #ifndef __HOSTAPD_UBUS_H
 #define __HOSTAPD_UBUS_H
 
+#include "sta_info.h"
+
 enum hostapd_ubus_event_type {
 	HOSTAPD_UBUS_PROBE_REQ,
 	HOSTAPD_UBUS_AUTH_REQ,
@@ -27,6 +29,7 @@ struct hostapd_iface;
 struct hostapd_data;
 struct hapd_interfaces;
 struct rrm_measurement_beacon_report;
+struct sta_info;
 
 #ifdef UBUS_SUPPORT
 

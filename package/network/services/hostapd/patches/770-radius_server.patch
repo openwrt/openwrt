@@ -1,3 +1,11 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 16 Mar 2023 11:35:50 +0100
+Subject: [PATCH] hostapd: add experimental radius server
+
+This can be used to run a standalone EAP server that can be used from
+other APs. It uses json as user database format and can automatically
+handle reload.
+
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
 @@ -63,6 +63,10 @@ endif
@@ -21,7 +29,7 @@
  
  #ifndef CONFIG_NO_HOSTAPD_LOGGER
  static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
-@@ -771,6 +772,11 @@ int main(int argc, char *argv[])
+@@ -778,6 +779,11 @@ int main(int argc, char *argv[])
  	if (os_program_init())
  		return -1;
  

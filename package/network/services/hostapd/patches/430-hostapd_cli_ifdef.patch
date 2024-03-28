@@ -1,3 +1,8 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Thu, 13 Sep 2012 12:39:14 +0000
+Subject: [PATCH] hostapd: support wps in hostapd_cli even when built from the
+ mini variant
+
 --- a/hostapd/hostapd_cli.c
 +++ b/hostapd/hostapd_cli.c
 @@ -401,7 +401,6 @@ static int hostapd_cli_cmd_disassociate(
@@ -32,7 +37,7 @@
  
  
  static int hostapd_cli_cmd_disassoc_imminent(struct wpa_ctrl *ctrl, int argc,
-@@ -1610,13 +1606,10 @@ static const struct hostapd_cli_cmd host
+@@ -1670,13 +1666,10 @@ static const struct hostapd_cli_cmd host
  	{ "disassociate", hostapd_cli_cmd_disassociate,
  	  hostapd_complete_stations,
  	  "<addr> = disassociate a station" },
@@ -46,7 +51,7 @@
  	{ "wps_pin", hostapd_cli_cmd_wps_pin, NULL,
  	  "<uuid> <pin> [timeout] [addr] = add WPS Enrollee PIN" },
  	{ "wps_check_pin", hostapd_cli_cmd_wps_check_pin, NULL,
-@@ -1641,7 +1634,6 @@ static const struct hostapd_cli_cmd host
+@@ -1701,7 +1694,6 @@ static const struct hostapd_cli_cmd host
  	  "<SSID> <auth> <encr> <key> = configure AP" },
  	{ "wps_get_status", hostapd_cli_cmd_wps_get_status, NULL,
  	  "= show current WPS status" },
