@@ -298,8 +298,8 @@
  #endif
 --- a/arch/mips/kernel/genex.S
 +++ b/arch/mips/kernel/genex.S
-@@ -22,6 +22,19 @@
- #include <asm/war.h>
+@@ -21,6 +21,19 @@
+ #include <asm/sync.h>
  #include <asm/thread_info.h>
  
 +#ifdef CONFIG_BCM47XX
@@ -318,7 +318,7 @@
  	__INIT
  
  /*
-@@ -33,6 +46,9 @@
+@@ -32,6 +45,9 @@
  NESTED(except_vec3_generic, 0, sp)
  	.set	push
  	.set	noat
@@ -328,7 +328,7 @@
  	mfc0	k1, CP0_CAUSE
  	andi	k1, k1, 0x7c
  #ifdef CONFIG_64BIT
-@@ -53,6 +69,9 @@ NESTED(except_vec3_r4000, 0, sp)
+@@ -52,6 +68,9 @@ NESTED(except_vec3_r4000, 0, sp)
  	.set	push
  	.set	arch=r4000
  	.set	noat
@@ -340,7 +340,7 @@
  	andi	k1, k1, 0x7c
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -38,6 +38,9 @@
+@@ -37,6 +37,9 @@
  #include <asm/traps.h>
  #include <asm/mips-cps.h>
  
@@ -350,27 +350,27 @@
  /*
   * Bits describing what cache ops an SMP callback function may perform.
   *
-@@ -190,6 +193,9 @@ static void r4k_blast_dcache_user_page_s
+@@ -144,6 +147,9 @@ static void r4k_blast_dcache_page_setup(
  {
  	unsigned long  dc_lsize = cpu_dcache_line_size();
  
 +	if (bcm4710)
 +		r4k_blast_dcache_page = blast_dcache_page;
 +	else
+ 	switch (dc_lsize) {
+ 	case 0:
+ 		r4k_blast_dcache_page = (void *)cache_noop;
+@@ -175,6 +181,9 @@ static void r4k_blast_dcache_user_page_s
+ {
+ 	unsigned long  dc_lsize = cpu_dcache_line_size();
+ 
++	if (bcm4710)
++		r4k_blast_dcache_user_page = blast_dcache_user_page;
++	else
  	if (dc_lsize == 0)
  		r4k_blast_dcache_user_page = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -208,6 +214,9 @@ static void r4k_blast_dcache_page_indexe
- {
- 	unsigned long dc_lsize = cpu_dcache_line_size();
- 
-+	if (bcm4710)
-+		r4k_blast_dcache_page_indexed = blast_dcache_page_indexed;
-+	else
- 	if (dc_lsize == 0)
- 		r4k_blast_dcache_page_indexed = (void *)cache_noop;
- 	else if (dc_lsize == 16)
-@@ -227,6 +236,9 @@ static void r4k_blast_dcache_setup(void)
+@@ -194,6 +203,9 @@ static void r4k_blast_dcache_setup(void)
  {
  	unsigned long dc_lsize = cpu_dcache_line_size();
  
@@ -380,7 +380,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -1826,6 +1838,17 @@ static void coherency_setup(void)
+@@ -1669,6 +1681,17 @@ static void coherency_setup(void)
  	 * silly idea of putting something else there ...
  	 */
  	switch (current_cpu_type()) {
@@ -398,7 +398,7 @@
  	case CPU_R4000PC:
  	case CPU_R4000SC:
  	case CPU_R4000MC:
-@@ -1872,6 +1895,15 @@ void r4k_cache_init(void)
+@@ -1715,6 +1738,15 @@ void r4k_cache_init(void)
  	extern void build_copy_page(void);
  	struct cpuinfo_mips *c = &current_cpu_data;
  
@@ -414,7 +414,7 @@
  	probe_pcache();
  	probe_vcache();
  	setup_scache();
-@@ -1944,7 +1976,15 @@ void r4k_cache_init(void)
+@@ -1777,7 +1809,15 @@ void r4k_cache_init(void)
  	 */
  	local_r4k___flush_cache_all(NULL);
  
@@ -432,7 +432,7 @@
  	/*
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -985,6 +985,9 @@ void build_get_pgde32(u32 **p, unsigned
+@@ -958,6 +958,9 @@ void build_get_pgde32(u32 **p, unsigned
  		uasm_i_srl(p, ptr, ptr, SMP_CPUID_PTRSHIFT);
  		uasm_i_addu(p, ptr, tmp, ptr);
  #else
@@ -442,7 +442,7 @@
  		UASM_i_LA_mostly(p, ptr, pgdc);
  #endif
  		uasm_i_mfc0(p, tmp, C0_BADVADDR); /* get faulting address */
-@@ -1347,6 +1350,9 @@ static void build_r4000_tlb_refill_handl
+@@ -1304,6 +1307,9 @@ static void build_r4000_tlb_refill_handl
  #ifdef CONFIG_64BIT
  		build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
  #else
@@ -452,7 +452,7 @@
  		build_get_pgde32(&p, K0, K1); /* get pgd in K1 */
  #endif
  
-@@ -1358,6 +1364,9 @@ static void build_r4000_tlb_refill_handl
+@@ -1315,6 +1321,9 @@ static void build_r4000_tlb_refill_handl
  		build_update_entries(&p, K0, K1);
  		build_tlb_write_entry(&p, &l, &r, tlb_random);
  		uasm_l_leave(&l, p);
@@ -462,7 +462,7 @@
  		uasm_i_eret(&p); /* return from trap */
  	}
  #ifdef CONFIG_MIPS_HUGE_TLB_SUPPORT
-@@ -2059,6 +2068,9 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -2016,6 +2025,9 @@ build_r4000_tlbchange_handler_head(u32 *
  #ifdef CONFIG_64BIT
  	build_get_pmde64(p, l, r, wr.r1, wr.r2); /* get pmd in ptr */
  #else
@@ -472,7 +472,7 @@
  	build_get_pgde32(p, wr.r1, wr.r2); /* get pgd in ptr */
  #endif
  
-@@ -2105,6 +2117,9 @@ build_r4000_tlbchange_handler_tail(u32 *
+@@ -2062,6 +2074,9 @@ build_r4000_tlbchange_handler_tail(u32 *
  	build_tlb_write_entry(p, l, r, tlb_indexed);
  	uasm_l_leave(l, *p);
  	build_restore_work_registers(p);
