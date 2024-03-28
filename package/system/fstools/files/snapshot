@@ -37,17 +37,21 @@ do_config_push() {
 }
 
 do_snapshot_upgrade() {
-	opkg update
-	[ $? -eq 0 ] || exit 1
+	if command -v opkg; then
+		opkg update
+		[ $? -eq 0 ] || exit 1
 
-	opkg list-upgradable
-	[ $? -eq 0 ] || exit 2
+		opkg list-upgradable
+		[ $? -eq 0 ] || exit 2
 
-	UPDATES=`opkg list-upgradable | cut -d" " -f1`
-	[ -z "${UPDATES}" ] && exit 0
+		UPDATES=`opkg list-upgradable | cut -d" " -f1`
+		[ -z "${UPDATES}" ] && exit 0
 
-	opkg upgrade ${UPDATES}
-	[ $? -eq 0 ] || exit 3
+		opkg upgrade ${UPDATES}
+		[ $? -eq 0 ] || exit 3
+	else
+		apk upgrade
+	fi
 
 	do_snapshot_push
 	sleep 5

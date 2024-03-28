@@ -25,7 +25,7 @@ BUNDLER_COMMAND := PATH=$(BUNDLER_PATH) $(XARGS) $(SCRIPT_DIR)/bundle-libraries.
 all: compile
 
 $(BIN_DIR)/$(IB_NAME).tar.xz: clean
-	rm -rf $(PKG_BUILD_DIR)
+	#rm -rf $(PKG_BUILD_DIR)
 	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/host/lib \
 		$(PKG_BUILD_DIR)/target/linux $(PKG_BUILD_DIR)/scripts $(IB_DTSDIR)
 	-cp $(TOPDIR)/.config $(PKG_BUILD_DIR)/.config
@@ -35,15 +35,13 @@ $(BIN_DIR)/$(IB_NAME).tar.xz: clean
 		$(INCLUDE_DIR) $(SCRIPT_DIR) \
 		$(TOPDIR)/rules.mk \
 		./files/Makefile \
-		./files/repositories.conf \
 		$(TMP_DIR)/.targetinfo \
 		$(TMP_DIR)/.packageinfo \
 		$(PKG_BUILD_DIR)/
 
 ifeq ($(CONFIG_IB_STANDALONE),)
-	echo '## Remote package repositories' >> $(PKG_BUILD_DIR)/repositories.conf
-	$(call FeedSourcesAppend,$(PKG_BUILD_DIR)/repositories.conf)
-	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories.conf
+	$(call FeedSourcesAppend,$(PKG_BUILD_DIR)/repositories)
+	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories
 endif
 
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/packages
@@ -58,15 +56,15 @@ endif
 ifeq ($(CONFIG_BUILDBOT),)
   ifeq ($(CONFIG_IB_STANDALONE),)
 	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc_*.ipk' -or -name 'kernel_*.ipk' -or -name 'kmod-*.ipk' \) \
+		\( -name 'libc_*.apk' -or -name 'kernel_*.apk' -or -name 'kmod-*.apk' \) \
 		-exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
   else
-	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.ipk' \
+	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.apk' \
 		-exec $(CP) -t $(PKG_BUILD_DIR)/packages/ {} +
   endif
 else
 	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc_*.ipk' -or -name 'kernel_*.ipk' \) \
+		\( -name 'libc_*.apk' -or -name 'kernel_*.apk' \) \
 		-exec $(CP) -t $(IB_LDIR)/ {} +
 endif
 
@@ -110,8 +108,11 @@ endif
 	$(CP) $(STAGING_DIR_HOST)/bin/* $(PKG_BUILD_DIR)/staging_dir/host/bin/
 	(cd $(PKG_BUILD_DIR); find staging_dir/host/bin/ $(IB_LDIR)/scripts/dtc/ -type f | \
 		$(BUNDLER_COMMAND))
+
+	$(INSTALL_DIR) $(PKG_BUILD_DIR)/staging_dir/hostpkg/bin
 	$(CP) $(TOPDIR)/staging_dir/host/lib/libfakeroot* $(PKG_BUILD_DIR)/staging_dir/host/lib
 	STRIP=$(STAGING_DIR_HOST)/bin/sstrip $(SCRIPT_DIR)/rstrip.sh $(PKG_BUILD_DIR)/staging_dir/host/bin/
+
 	(cd $(BUILD_DIR); \
 		tar -I '$(STAGING_DIR_HOST)/bin/xz -7e -T$(if $(filter 1,$(NPROC)),2,0)' -cf $@ $(IB_NAME) \
 		--mtime="$(shell date --date=@$(SOURCE_DATE_EPOCH))"; \
