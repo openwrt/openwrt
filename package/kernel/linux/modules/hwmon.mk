@@ -125,6 +125,21 @@ endef
 $(eval $(call KernelPackage,hwmon-drivetemp))
 
 
+define KernelPackage/hwmon-emc2305
+  TITLE:=Microchip EMC2301/2/3/5 fan controller
+  KCONFIG:=CONFIG_SENSORS_EMC2305
+  FILES:=$(LINUX_DIR)/drivers/hwmon/emc2305.ko
+  AUTOLOAD:=$(call AutoProbe,emc2305)
+  $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal +kmod-regmap-i2c @LINUX_6_1||LINUX_6_6)
+endef
+
+define KernelPackage/hwmon-emc2305/description
+ Kernel module for Microchip EMC2301/EMC2302/EMC2303/EMC2305 fan controllers
+endef
+
+$(eval $(call KernelPackage,hwmon-emc2305))
+
+
 define KernelPackage/hwmon-gsc
   TITLE:=Gateworks System Controller support
   KCONFIG:=CONFIG_MFD_GATEWORKS_GSC \
