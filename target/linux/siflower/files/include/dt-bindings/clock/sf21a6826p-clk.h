@@ -1,0 +1,27 @@
+#ifndef __DT_BINDINGS_CLK_SF21A6826P_H
+#define __DT_BINDINGS_CLK_SF21A6826P_H
+
+#define DEFAULT_PBUS		0
+#define GPCLK_I2C_SEL0 		1
+#define GPCLK_I2C_SEL1 		2
+#define GPCLK_I2C_SEL2 		3
+#define GPCLK_SPI_SEL0 		1
+#define GSSPCLK_SPI_SEL0 	2
+#define GPCLK_SPI_SEL1 		3
+#define GSSPCLK_SPI_SEL1 	4
+#define GPCLK_SPI_SEL2 		5
+#define GSSPCLK_SPI_SEL2 	6
+#define GPCLK_UART_SEL0 	1
+#define GPCLK_UART_SEL1 	2
+#define GPCLK_UART_SEL2 	3
+#define GPCLK_UART_SEL3 	4
+#define GUECLK_UART_SEL0 	5
+#define GUECLK_UART_SEL1 	6
+#define GUECLK_UART_SEL2 	7
+#define GUECLK_UART_SEL3 	8
+#define GPCLK_PWM_SEL		1
+#define GPCLK_TIMER_SEL 	1
+#define GPCLK_WDT_SEL 		1
+#define GPCLK_GPIO_SEL 		1
+
+#endif
