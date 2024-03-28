@@ -19,6 +19,7 @@ case "$FIRMWARE" in
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\
 	linksys,mx5300|\
+	linksys,mx8500|\
 	netgear,rax120v2|\
 	netgear,wax218|\
 	netgear,wax620|\
@@ -43,6 +44,7 @@ case "$FIRMWARE" in
 	prpl,haze)
 		caldata_extract_mmc "0:ART" 0x26800 0x20000
 		;;
+	linksys,mx8500|\
 	xiaomi,ax9000)
 		caldata_extract "0:art" 0x26800 0x20000
 		;;
