@@ -129,6 +129,9 @@ platform_do_upgrade() {
 	zyxel,nwa55axe)
 		nand_do_upgrade "$1"
 		;;
+	dna,valokuitu-plus-ex400)
+		dna_do_upgrade "$1"
+		;;
 	iodata,wn-ax1167gr2|\
 	iodata,wn-ax2033gr|\
 	iodata,wn-dx1167r|\
