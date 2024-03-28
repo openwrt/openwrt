@@ -487,7 +487,11 @@ static void fe_get_stats64(struct net_device *dev,
 	}
 
 	do {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+		start = u64_stats_fetch_begin(&hwstats->syncp);
+#else
 		start = u64_stats_fetch_begin_irq(&hwstats->syncp);
+#endif
 		storage->rx_packets = hwstats->rx_packets;
 		storage->tx_packets = hwstats->tx_packets;
 		storage->rx_bytes = hwstats->rx_bytes;
@@ -499,7 +503,11 @@ static void fe_get_stats64(struct net_device *dev,
 		storage->rx_crc_errors = hwstats->rx_fcs_errors;
 		storage->rx_errors = hwstats->rx_checksum_errors;
 		storage->tx_aborted_errors = hwstats->tx_skip;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+	} while (u64_stats_fetch_retry(&hwstats->syncp, start));
+#else
 	} while (u64_stats_fetch_retry_irq(&hwstats->syncp, start));
+#endif
 
 	storage->tx_errors = priv->netdev->stats.tx_errors;
 	storage->rx_dropped = priv->netdev->stats.rx_dropped;
