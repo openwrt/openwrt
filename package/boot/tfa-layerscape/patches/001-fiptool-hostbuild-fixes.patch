@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -914,10 +914,6 @@ CRTTOOL			?=	${CRTTOOLPATH}/cert_create$
+@@ -953,10 +953,6 @@ CRTTOOL			?=	${CRTTOOLPATH}/cert_create$
  ENCTOOLPATH		?=	tools/encrypt_fw
  ENCTOOL			?=	${ENCTOOLPATH}/encrypt_fw${BIN_EXT}
  
@@ -10,8 +10,8 @@
 -
  # Variables for use with sptool
  SPTOOLPATH		?=	tools/sptool
- SPTOOL			?=	${SPTOOLPATH}/sptool${BIN_EXT}
-@@ -1322,13 +1318,6 @@ endif
+ SPTOOL			?=	${SPTOOLPATH}/sptool.py
+@@ -1409,13 +1405,6 @@ endif
  clean:
  	@echo "  CLEAN"
  	$(call SHELL_REMOVE_DIR,${BUILD_PLAT})
@@ -25,7 +25,7 @@
  	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${CRTTOOLPATH} clean
  	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${ENCTOOLPATH} clean
  	${Q}${MAKE} --no-print-directory -C ${ROMLIBPATH} clean
-@@ -1337,13 +1326,6 @@ realclean distclean:
+@@ -1424,13 +1413,6 @@ realclean distclean:
  	@echo "  REALCLEAN"
  	$(call SHELL_REMOVE_DIR,${BUILD_BASE})
  	$(call SHELL_DELETE_ALL, ${CURDIR}/cscope.*)
@@ -36,28 +36,28 @@
 -# to pass the gnumake flags to nmake.
 -	${Q}set MAKEFLAGS= && ${MSVC_NMAKE} /nologo /f ${FIPTOOLPATH}/Makefile.msvc FIPTOOLPATH=$(subst /,\,$(FIPTOOLPATH)) FIPTOOL=$(subst /,\,$(FIPTOOL)) realclean
 -endif
- 	${Q}${MAKE} --no-print-directory -C ${SPTOOLPATH} clean
- 	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${CRTTOOLPATH} clean
+ 	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${CRTTOOLPATH} realclean
  	${Q}${MAKE} PLAT=${PLAT} --no-print-directory -C ${ENCTOOLPATH} realclean
-@@ -1400,7 +1382,7 @@ certificates: ${CRT_DEPS} ${CRTTOOL}
+ 	${Q}${MAKE} --no-print-directory -C ${ROMLIBPATH} clean
+@@ -1486,7 +1468,7 @@ certificates: ${CRT_DEPS} ${CRTTOOL}
  	@${ECHO_BLANK_LINE}
  endif
  
 -${BUILD_PLAT}/${FIP_NAME}: ${FIP_DEPS} ${FIPTOOL}
 +${BUILD_PLAT}/${FIP_NAME}: ${FIP_DEPS}
-	$(eval ${CHECK_FIP_CMD})
-	${Q}${FIPTOOL} create ${FIP_ARGS} $@
-	${Q}${FIPTOOL} info $@
-@@ -1417,7 +1399,7 @@ fwu_certificates: ${FWU_CRT_DEPS} ${CRTT
+ 	$(eval ${CHECK_FIP_CMD})
+ 	${Q}${FIPTOOL} create ${FIP_ARGS} $@
+ 	${Q}${FIPTOOL} info $@
+@@ -1503,7 +1485,7 @@ fwu_certificates: ${FWU_CRT_DEPS} ${CRTT
  	@${ECHO_BLANK_LINE}
  endif
  
 -${BUILD_PLAT}/${FWU_FIP_NAME}: ${FWU_FIP_DEPS} ${FIPTOOL}
 +${BUILD_PLAT}/${FWU_FIP_NAME}: ${FWU_FIP_DEPS}
-	$(eval ${CHECK_FWU_FIP_CMD})
-	${Q}${FIPTOOL} create ${FWU_FIP_ARGS} $@
-	${Q}${FIPTOOL} info $@
-@@ -1425,19 +1407,9 @@ ${BUILD_PLAT}/${FWU_FIP_NAME}: ${FWU_FIP
+ 	$(eval ${CHECK_FWU_FIP_CMD})
+ 	${Q}${FIPTOOL} create ${FWU_FIP_ARGS} $@
+ 	${Q}${FIPTOOL} info $@
+@@ -1511,19 +1493,9 @@ ${BUILD_PLAT}/${FWU_FIP_NAME}: ${FWU_FIP
  	@echo "Built $@ successfully"
  	@${ECHO_BLANK_LINE}
  
@@ -67,29 +67,29 @@
  
 -${FIPTOOL}: FORCE
 -ifdef UNIX_MK
--	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" FIPTOOL=${FIPTOOL} --no-print-directory -C ${FIPTOOLPATH}
+-	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" FIPTOOL=${FIPTOOL} OPENSSL_DIR=${OPENSSL_DIR} DEBUG=${DEBUG} V=${V} --no-print-directory -C ${FIPTOOLPATH} all
 -else
 -# Clear the MAKEFLAGS as we do not want
 -# to pass the gnumake flags to nmake.
 -	${Q}set MAKEFLAGS= && ${MSVC_NMAKE} /nologo /f ${FIPTOOLPATH}/Makefile.msvc FIPTOOLPATH=$(subst /,\,$(FIPTOOLPATH)) FIPTOOL=$(subst /,\,$(FIPTOOL))
 -endif
 -
- sptool: ${SPTOOL}
- ${SPTOOL}: FORCE
-	${Q}${MAKE} CPPFLAGS="-DVERSION='\"${VERSION_STRING}\"'" SPTOOL=${SPTOOL} --no-print-directory -C ${SPTOOLPATH}
+ romlib.bin: libraries FORCE
+ 	${Q}${MAKE} PLAT_DIR=${PLAT_DIR} BUILD_PLAT=${BUILD_PLAT} ENABLE_BTI=${ENABLE_BTI} ARM_ARCH_MINOR=${ARM_ARCH_MINOR} INCLUDES='${INCLUDES}' DEFINES='${DEFINES}' --no-print-directory -C ${ROMLIBPATH} all
+ 
 --- a/tools/fiptool/Makefile
 +++ b/tools/fiptool/Makefile
-@@ -48,7 +48,7 @@ all: ${PROJECT}
+@@ -67,7 +67,7 @@ all: ${PROJECT}
  
- ${PROJECT}: ${OBJECTS} Makefile
+ ${PROJECT}: --openssl ${OBJECTS} Makefile
  	@echo "  HOSTLD  $@"
 -	${Q}${HOSTCC} ${OBJECTS} -o $@ ${LDLIBS}
 +	${Q}${HOSTCC} ${OBJECTS} -o $@ ${LDLIBS} $(LDFLAGS)
  	@${ECHO_BLANK_LINE}
  	@echo "Built $@ successfully"
  	@${ECHO_BLANK_LINE}
---- a/tools/nxp/plat_fiptool/plat_fiptool.mk	2023-05-20 22:28:28.079945619 +0200
-+++ b/tools/nxp/plat_fiptool/plat_fiptool.mk	2023-05-20 22:26:59.443307771 +0200
+--- a/tools/nxp/plat_fiptool/plat_fiptool.mk
++++ b/tools/nxp/plat_fiptool/plat_fiptool.mk
 @@ -22,11 +22,11 @@ INCLUDE_PATHS += -I${PLAT_DEF_UUID_OID_C
  $(shell rm ${PLAT_DEF_UUID_CONFIG_FILE_PATH}/${PLAT_DEF_UUID_CONFIG_FILE_NAME}.o)
  

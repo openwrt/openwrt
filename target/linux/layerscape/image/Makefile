@@ -33,7 +33,7 @@ define Build/ls-append
 endef
 
 define Build/ls-append-dtb
-	dd if=$(DTS_DIR)/$(1).dtb >> $@
+	dd if=$(DEVICE_DTS_DIR)/$(1).dtb >> $@
 endef
 
 define Build/ls-append-kernel
