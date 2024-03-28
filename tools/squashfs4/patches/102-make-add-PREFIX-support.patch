@@ -1,0 +1,11 @@
+--- a/squashfs-tools/Makefile
++++ b/squashfs-tools/Makefile
+@@ -152,7 +152,7 @@
+ # To skip building and installing manpages,
+ # unset INSTALL_MANPAGES_DIR or set to ""
+ #
+-INSTALL_PREFIX = /usr/local
++INSTALL_PREFIX ?= /usr/local
+ INSTALL_DIR = $(INSTALL_PREFIX)/bin
+ INSTALL_MANPAGES_DIR = $(INSTALL_PREFIX)/man/man1
+ 
