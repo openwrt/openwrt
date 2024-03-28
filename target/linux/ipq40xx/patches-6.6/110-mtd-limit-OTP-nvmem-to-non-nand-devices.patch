@@ -1,0 +1,58 @@
+From 540dcef6f39d6356d2a65230a8d4e9738ee2d25b Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 20 Mar 2024 16:43:01 +0100
+Subject: [PATCH] mtd: limit OTP nvmem to non nand devices
+
+MTD OTP logic is very fragile and can be problematic with some specific
+kind of devices.
+
+NVMEM across the years had various iteration on how Cells could be
+declared in DT and MTD OTP probably was left behind and
+add_legacy_fixed_of_cells was enabled without thinking of the consequences.
+
+That option enables NVMEM to scan the provided of_node and treat each
+child as a NVMEM Cell, this was to support legacy NVMEM implementation
+and don't cause regression.
+
+This is problematic if we have devices like Nand where the OTP is
+triggered by setting a special mode in the flash. In this context real
+partitions declared in the Nand node are registered as OTP Cells and
+this cause probe fail with -EINVAL error.
+
+This was never notice due to the fact that till now, no Nand supported
+the OTP feature. With commit e87161321a40 ("mtd: rawnand: macronix: OTP
+access for MX30LFxG18AC") this changed and coincidentally this Nand is
+used on an FritzBox 7530 supported on OpenWrt.
+
+Alternative and more robust way to declare OTP Cells are already
+prossible by using the fixed-layout node or by declaring a child node
+with the compatible set to "otp-user" or "otp-factory".
+
+To fix this and limit any regression with other MTD that makes use of
+declaring OTP as direct child of the dev node, disable
+add_legacy_fixed_of_cells if we have a node called nand since it's the
+standard property name to identify Nand devices attached to a Nand
+Controller.
+
+With the following logic, the OTP NVMEM entry is correctly created with
+no Cells and the MTD Nand is correctly probed and partitions are
+correctly exposed.
+
+Fixes: 2cc3b37f5b6d ("nvmem: add explicit config option to read old syntax fixed OF cells")
+Cc: <stable@vger.kernel.org>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/mtd/mtdcore.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mtd/mtdcore.c
++++ b/drivers/mtd/mtdcore.c
+@@ -933,7 +933,7 @@ static struct nvmem_device *mtd_otp_nvme
+ 	config.name = compatible;
+ 	config.id = NVMEM_DEVID_AUTO;
+ 	config.owner = THIS_MODULE;
+-	config.add_legacy_fixed_of_cells = true;
++	config.add_legacy_fixed_of_cells = !of_node_name_eq(mtd->dev.of_node, "nand");
+ 	config.type = NVMEM_TYPE_OTP;
+ 	config.root_only = true;
+ 	config.ignore_wp = true;
