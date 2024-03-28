@@ -347,7 +347,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	mtk_w32(eth, 0x21021000, MTK_FE_INT_GRP);
  
  	if (mtk_is_netsys_v3_or_greater(eth)) {
-@@ -5270,11 +5270,15 @@ static const struct mtk_soc_data mt2701_
+@@ -5305,11 +5305,15 @@ static const struct mtk_soc_data mt2701_
  	.required_clks = MT7623_CLKS_BITMAP,
  	.required_pctl = true,
  	.version = 1,
@@ -368,7 +368,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5290,11 +5294,15 @@ static const struct mtk_soc_data mt7621_
+@@ -5325,11 +5329,15 @@ static const struct mtk_soc_data mt7621_
  	.offload_version = 1,
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
@@ -389,7 +389,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5312,11 +5320,15 @@ static const struct mtk_soc_data mt7622_
+@@ -5347,11 +5355,15 @@ static const struct mtk_soc_data mt7622_
  	.hash_offset = 2,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
@@ -410,7 +410,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5333,11 +5345,15 @@ static const struct mtk_soc_data mt7623_
+@@ -5368,11 +5380,15 @@ static const struct mtk_soc_data mt7623_
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.disable_pll_modes = true,
@@ -431,7 +431,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5352,11 +5368,15 @@ static const struct mtk_soc_data mt7629_
+@@ -5387,11 +5403,15 @@ static const struct mtk_soc_data mt7629_
  	.required_pctl = false,
  	.has_accounting = true,
  	.version = 1,
@@ -452,7 +452,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5374,11 +5394,15 @@ static const struct mtk_soc_data mt7981_
+@@ -5409,11 +5429,15 @@ static const struct mtk_soc_data mt7981_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
@@ -473,7 +473,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5396,11 +5420,15 @@ static const struct mtk_soc_data mt7986_
+@@ -5431,11 +5455,15 @@ static const struct mtk_soc_data mt7986_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
@@ -494,7 +494,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5418,11 +5446,15 @@ static const struct mtk_soc_data mt7988_
+@@ -5453,11 +5481,15 @@ static const struct mtk_soc_data mt7988_
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V3_SIZE,
@@ -515,7 +515,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN_V2,
  		.dma_len_offset = 8,
  	},
-@@ -5435,11 +5467,15 @@ static const struct mtk_soc_data rt5350_
+@@ -5470,11 +5502,15 @@ static const struct mtk_soc_data rt5350_
  	.required_clks = MT7628_CLKS_BITMAP,
  	.required_pctl = false,
  	.version = 1,
