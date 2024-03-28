@@ -665,6 +665,28 @@ ucidef_set_poe() {
 	json_select ..
 }
 
+ucidef_set_ssid() {
+	local obj="$1"
+	local ssid="$2"
+
+	json_select_object wireless
+		json_select_object "$obj"
+			json_add_string ssid "$ssid"
+		json_select ..
+	json_select ..
+}
+
+ucidef_set_reg_domain() {
+	local obj="$1"
+	local reg_domain="$2"
+
+	json_select_object wireless
+		json_select_object "$obj"
+			json_add_string country "$reg_domain"
+		json_select ..
+	json_select ..
+}
+
 ucidef_add_wlan() {
 	local path="$1"; shift
 
