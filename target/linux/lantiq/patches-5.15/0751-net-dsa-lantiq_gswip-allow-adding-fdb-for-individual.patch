@@ -1,0 +1,40 @@
+From a115138421020267291668e7a0937be96197110a Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 30 Jul 2023 23:38:25 +0200
+Subject: net: dsa: lantiq_gswip: allow adding fdb for individual ports
+
+This allows adding a MAC address into the forwarding database (fdb) for
+ports which are not part of a bridge. This is happening since kernel
+5.15 and the driver rejected it previously with an error message.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/net/dsa/lantiq_gswip.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -1353,14 +1353,16 @@ static int gswip_port_fdb(struct dsa_swi
+ 	int i;
+ 	int err;
+ 
+-	if (!bridge)
+-		return -EINVAL;
+-
+-	for (i = max_ports; i < ARRAY_SIZE(priv->vlans); i++) {
+-		if (priv->vlans[i].bridge == bridge) {
+-			fid = priv->vlans[i].fid;
+-			break;
++	if (bridge) {
++		for (i = max_ports; i < ARRAY_SIZE(priv->vlans); i++) {
++			if (priv->vlans[i].bridge == bridge) {
++				fid = priv->vlans[i].fid;
++				break;
++			}
+ 		}
++	} else {
++		/* FID of a standalone port (single port bridge) */
++		fid = port + 1;
+ 	}
+ 
+ 	if (fid == -1) {

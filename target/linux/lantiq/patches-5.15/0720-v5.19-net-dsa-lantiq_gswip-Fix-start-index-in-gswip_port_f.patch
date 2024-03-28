@@ -1,0 +1,40 @@
+From 7b4149bdee6a6363cb4eca3599296d41a7b3700d Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Thu, 19 May 2022 00:00:50 +0200
+Subject: net: dsa: lantiq_gswip: Fix start index in gswip_port_fdb()
+
+The first N entries in priv->vlans are reserved for managing ports which
+are not part of a bridge. Use priv->hw_info->max_ports to consistently
+access per-bridge entries at index 7. Starting at
+priv->hw_info->cpu_port (6) is harmless in this case because
+priv->vlan[6].bridge is always NULL so the comparison result is always
+false (which results in this entry being skipped).
+
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/dsa/lantiq_gswip.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -1339,7 +1339,7 @@ static int gswip_port_fdb(struct dsa_swi
+ 	struct gswip_priv *priv = ds->priv;
+ 	struct net_device *bridge = dsa_to_port(ds, port)->bridge_dev;
+ 	struct gswip_pce_table_entry mac_bridge = {0,};
+-	unsigned int cpu_port = priv->hw_info->cpu_port;
++	unsigned int max_ports = priv->hw_info->max_ports;
+ 	int fid = -1;
+ 	int i;
+ 	int err;
+@@ -1347,7 +1347,7 @@ static int gswip_port_fdb(struct dsa_swi
+ 	if (!bridge)
+ 		return -EINVAL;
+ 
+-	for (i = cpu_port; i < ARRAY_SIZE(priv->vlans); i++) {
++	for (i = max_ports; i < ARRAY_SIZE(priv->vlans); i++) {
+ 		if (priv->vlans[i].bridge == bridge) {
+ 			fid = priv->vlans[i].fid;
+ 			break;
