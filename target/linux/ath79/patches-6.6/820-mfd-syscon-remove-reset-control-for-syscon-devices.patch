@@ -1,0 +1,67 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Wed, 13 Mar 2024 22:36:31 +0800
+Subject: [PATCH] mfd: syscon: remove reset control for syscon devices
+
+Some platform device drivers(e.g. ag71xx) expect exclusive reset
+control. Fetching reset controller for syscon[1] will break these
+drivers.
+
+[1] https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit?id=7d1e3bd94828ad9fc86f55253cd6fec8edd65394
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/mfd/syscon.c | 14 --------------
+ 1 file changed, 14 deletions(-)
+
+--- a/drivers/mfd/syscon.c
++++ b/drivers/mfd/syscon.c
+@@ -20,7 +20,6 @@
+ #include <linux/platform_data/syscon.h>
+ #include <linux/platform_device.h>
+ #include <linux/regmap.h>
+-#include <linux/reset.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/slab.h>
+ 
+@@ -32,7 +31,6 @@ static LIST_HEAD(syscon_list);
+ struct syscon {
+ 	struct device_node *np;
+ 	struct regmap *regmap;
+-	struct reset_control *reset;
+ 	struct list_head list;
+ };
+ 
+@@ -52,7 +50,6 @@ static struct syscon *of_syscon_register
+ 	int ret;
+ 	struct regmap_config syscon_config = syscon_regmap_config;
+ 	struct resource res;
+-	struct reset_control *reset;
+ 
+ 	syscon = kzalloc(sizeof(*syscon), GFP_KERNEL);
+ 	if (!syscon)
+@@ -133,16 +130,6 @@ static struct syscon *of_syscon_register
+ 			if (ret)
+ 				goto err_attach_clk;
+ 		}
+-
+-		reset = of_reset_control_get_optional_exclusive(np, NULL);
+-		if (IS_ERR(reset)) {
+-			ret = PTR_ERR(reset);
+-			goto err_attach_clk;
+-		}
+-
+-		ret = reset_control_deassert(reset);
+-		if (ret)
+-			goto err_reset;
+ 	}
+ 
+ 	syscon->regmap = regmap;
+@@ -154,8 +141,6 @@ static struct syscon *of_syscon_register
+ 
+ 	return syscon;
+ 
+-err_reset:
+-	reset_control_put(reset);
+ err_attach_clk:
+ 	if (!IS_ERR(clk))
+ 		clk_put(clk);
