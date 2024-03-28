@@ -18,6 +18,7 @@ sercomm,h500-s-vfes)
 	uci add_list firewall.@zone[0].network='qtn'
 	;;
 comtrend,vg-8050 |\
+sagem,fast-3864-op |\
 sercomm,shg2500)
 	ucidef_set_bridge_device switch
 	ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
