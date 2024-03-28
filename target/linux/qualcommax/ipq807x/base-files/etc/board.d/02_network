@@ -40,6 +40,10 @@ ipq807x_setup_interfaces()
 	netgear,rax120v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
 		;;
+	netgear,sxr80|\
+	netgear,sxs80)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
+		;;
 	netgear,wax218|\
 	netgear,wax620)
 		ucidef_set_interface_lan "lan" "dhcp"

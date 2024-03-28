@@ -30,4 +30,21 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && macaddr_add $label_mac 1 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "2" ] && macaddr_add $label_mac 3 > /sys${DEVPATH}/macaddress
 		;;
+	netgear,sxr80|\
+	netgear,sxs80)
+		[ "$PHYNBR" = "0" ] && mtd_get_mac_binary boarddata1 0x0c > /sys${DEVPATH}/macaddress
+		if [ "$PHYNBR" = "1" ]; then
+			label_mac=$(get_mac_label)
+
+			#Stock firmware increments the first octet of label_mac by 6
+			#extract the first octet
+			first=${label_mac%%:*}
+			rest=${label_mac#*:}
+
+			#Increment by 6 and re-join to the rest
+			updated_octet=$(printf "%02x" $((0x${first} + 6)))
+			echo "$updated_octet:$rest" > /sys${DEVPATH}/macaddress
+		fi
+		[ "$PHYNBR" = "2" ] && mtd_get_mac_binary boarddata1 0x12 > /sys${DEVPATH}/macaddress
+		;;
 esac
