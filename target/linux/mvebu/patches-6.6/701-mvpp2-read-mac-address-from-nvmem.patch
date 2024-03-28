@@ -12,16 +12,16 @@ Signed-off-by: Tobias Schramm <tobias@t-sys.eu>
 ---
 --- a/drivers/net/ethernet/marvell/mvpp2/mvpp2_main.c
 +++ b/drivers/net/ethernet/marvell/mvpp2/mvpp2_main.c
-@@ -6134,6 +6134,12 @@ static void mvpp2_port_copy_mac_addr(str
- 		}
+@@ -6153,6 +6153,12 @@ static int mvpp2_port_copy_mac_addr(stru
+ 		return 0;
  	}
  
 +	if (!of_get_mac_address(to_of_node(fwnode), hw_mac_addr)) {
 +		*mac_from = "nvmem cell";
 +		eth_hw_addr_set(dev, hw_mac_addr);
-+		return;
++		return 0;
 +	}
 +
  	*mac_from = "random";
  	eth_hw_addr_random(dev);
- }
+ 

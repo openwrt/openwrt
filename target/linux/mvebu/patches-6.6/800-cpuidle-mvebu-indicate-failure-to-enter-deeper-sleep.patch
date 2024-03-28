@@ -24,8 +24,8 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
 
 --- a/drivers/cpuidle/cpuidle-mvebu-v7.c
 +++ b/drivers/cpuidle/cpuidle-mvebu-v7.c
-@@ -39,8 +39,12 @@ static int mvebu_v7_enter_idle(struct cp
- 	ret = mvebu_v7_cpu_suspend(deepidle);
+@@ -42,8 +42,12 @@ static __cpuidle int mvebu_v7_enter_idle
+ 
  	cpu_pm_exit();
  
 +	/*
