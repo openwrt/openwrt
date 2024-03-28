@@ -1,0 +1,182 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "oraybox,p5", "mediatek,mt7621-soc";
+	model = "OrayBox P5";
+
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_blue;
+		led-upgrade = &led_status_green;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_blue: led-status-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red: led-status-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+
+		led_status_green: led-status-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	reg_usb_vbus: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&gpio 12 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	ubi-concat {
+		compatible = "mtd-concat";
+		devices = <&ubiconcat0 &ubiconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0x78c0000>;
+			};
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "kpanic";
+			reg = <0x80000 0x20000>;
+		};
+
+		partition@100000 {
+			label = "factory";
+			reg = <0x100000 0x40000>;
+			read-only;
+		};
+
+		partition@140000 {
+			label = "kernel";
+			reg = <0x140000 0x400000>;
+			read-only;
+		};
+
+		ubiconcat0: partition@540000 {
+			label = "ubi file system 0";
+			reg = <0x540000 0x1c00000>;
+		};
+		
+		partition@2140000 {
+			label = "debug";
+			reg = <0x2140000 0x80000>;
+		};
+
+		partition@21c0000 {
+			label = "bdinfo";
+			reg = <0x21c0000 0x80000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_bdinfo_9: macaddr@9 {
+					reg = <0x9 0x6>;
+				};
+			};
+		};
+
+		partition@2240000 {
+			label = "reserve";
+			reg = <0x2240000 0x80000>;
+			read-only;
+		};
+
+		ubiconcat1: partition@22c0000 {
+			label = "ubi file system 1";
+			reg = <0x22c0000 0x5cc0000>;
+		};	
+
+		partition@7f80000 {
+			label = "opt";
+			reg = <0x7f80000 0x80000>;
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_bdinfo_9>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	ports {
+		port@3 {
+			status = "okay";
+			label = "lan";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "jtag", "wdt", "uart3";
+		function = "gpio";
+	};
+};
+
+&xhci {
+	vbus-supply = <&reg_usb_vbus>;
+};
