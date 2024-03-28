@@ -10,6 +10,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://fedorapeople.org/~acme/dwarves/
 PKG_HASH:=ad4c08339850e404609e2808012580b7e98366d2b91054bb93fe6dca94651fb4
 
+PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
 
