@@ -1611,6 +1611,7 @@ static int  rtl8367b_probe(struct platform_device *pdev)
 {
 	struct rtl8366_smi *smi;
 	int err;
+	int size;
 
 	smi = rtl8366_smi_probe(pdev);
 	if (IS_ERR(smi))
@@ -1621,9 +1622,16 @@ static int  rtl8367b_probe(struct platform_device *pdev)
 	smi->cmd_write = 0xb8;
 	smi->ops = &rtl8367b_smi_ops;
 	smi->num_ports = RTL8367B_NUM_PORTS;
-	if (of_property_read_u32(pdev->dev.of_node, "cpu_port", &smi->cpu_port)
-	    || smi->cpu_port >= smi->num_ports)
+
+	if (of_get_property(smi->parent->of_node, "realtek,extif2", &size))
+		smi->cpu_port = RTL8367B_CPU_PORT_NUM + 2;
+	else if (of_get_property(smi->parent->of_node, "realtek,extif1", &size))
+		smi->cpu_port = RTL8367B_CPU_PORT_NUM + 1;
+	else
 		smi->cpu_port = RTL8367B_CPU_PORT_NUM;
+
+	dev_info(smi->parent, "CPU port: %u\n", smi->cpu_port);
+
 	smi->num_vlan_mc = RTL8367B_NUM_VLANS;
 	smi->mib_counters = rtl8367b_mib_counters;
 	smi->num_mib_counters = ARRAY_SIZE(rtl8367b_mib_counters);
