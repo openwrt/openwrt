@@ -547,6 +547,28 @@ define Device/ubnt_unifi-ac-hd
 endef
 TARGET_DEVICES += ubnt_unifi-ac-hd
 
+define Device/xiaomi_mi-router-hd
+	$(call Device/LegacyImage)
+	$(Device/dsa-migration)
+	DEVICE_VENDOR := Xiaomi
+	DEVICE_MODEL := Mi Router HD (R3D)
+	SOC := qcom-ipq8064
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	KERNEL_SIZE := 4096k
+	IMAGE_SIZE := 86016k
+	BOARD_NAME := mi-router-hd
+	SUPPORTED_DEVICES += xiaomi,r3d
+	UBINIZE_OPTS := -E 5
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+		append-ubi | pad-to $$$$(BLOCKSIZE) | check-size
+	DEVICE_PACKAGES := kmod-i2c-gpio kmod-hwmon-lm75 kmod-hwmon-emc2305 \
+		hwmon-drivetemp kmod-usb-storage-uas kmod-ramoops \
+		ath10k-firmware-qca9984-ct ath10k-firmware-qca99x0-ct
+endef
+TARGET_DEVICES += xiaomi_mi-router-hd
+
 define Device/zyxel_nbg6817
 	$(Device/dsa-migration)
 	DEVICE_VENDOR := ZyXEL

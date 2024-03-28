@@ -1,0 +1,20 @@
+#!/bin/sh /etc/rc.common
+
+START=98
+
+boot() {
+	local path_to_hwmon
+	# configuring onboard temp/fan controller to run the fan on its own
+	# for more information, please read https://www.kernel.org/doc/Documentation/hwmon/sysfs-interface
+
+	case $(board_name) in
+	xiaomi,mi-router-hd)
+		path_to_hwmon="$( grep -l emc230 /sys/class/hwmon/hwmon*/name )"
+		if [ -n "$path_to_hwmon" ]; then
+			path_to_hwmon=$( dirname "$path_to_hwmon" 2>/dev/null )
+			# Set FAN speed to 80%
+			echo "204" > "$path_to_hwmon/pwm1"
+		fi
+		;;
+	esac
+}

@@ -56,6 +56,9 @@ case "$FIRMWARE" in
 		caldata_extract "0:art" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) +2)
 		;;
+	xiaomi,mi-router-hd)
+		caldata_extract "ART" 0x1000 0x2f20
+		;;
 	zyxel,nbg6817)
 		caldata_extract "0:art" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 1)
@@ -91,6 +94,9 @@ case "$FIRMWARE" in
 	nokia,ac400i)
 		caldata_extract "0:art" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) +3)
+		;;
+	xiaomi,mi-router-hd)
+		caldata_extract "ART" 0x5000 0x2f20
 		;;
 	zyxel,nbg6817)
 		caldata_extract "0:art" 0x5000 0x2f20
