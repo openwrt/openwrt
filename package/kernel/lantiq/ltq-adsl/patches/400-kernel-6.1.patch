@@ -1,0 +1,14 @@
+--- a/src/common/drv_dsl_cpe_os_linux.c
++++ b/src/common/drv_dsl_cpe_os_linux.c
+@@ -556,7 +556,11 @@ static int DSL_DRV_KernelThreadStartup(v
+    retVal = pThrCntrl->pThrFct(&pThrCntrl->thrParams);
+    pThrCntrl->thrParams.bRunning = 0;
+ 
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,17,0))
+    complete_and_exit(&pThrCntrl->thrCompletion, (long)retVal);
++#else
++   kthread_complete_and_exit(&pThrCntrl->thrCompletion, (long)retVal);
++#endif
+ 
+    DSL_DEBUG( DSL_DBG_MSG,
+       (DSL_NULL, "EXIT - Kernel Thread Startup <%s>" DSL_DRV_CRLF,

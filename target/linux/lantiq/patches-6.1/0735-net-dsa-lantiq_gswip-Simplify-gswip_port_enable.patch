@@ -1,0 +1,59 @@
+From 2fcd57556ffe21b1af92742cd104ebb3ac710ae9 Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Sat, 30 Jul 2022 19:20:09 +0200
+Subject: [PATCH 735/768] net: dsa: lantiq_gswip: Simplify gswip_port_enable()
+
+Instead of checking multiple times whether the port to be enabled is a
+CPU or user port this can be simplified. Only the learning/unicast
+flood/broadcast flood settings can be applied on all ports. Everything
+else cannot be applied to the CPU port.
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+---
+ drivers/net/dsa/lantiq_gswip.c | 23 +++++++++--------------
+ 1 file changed, 9 insertions(+), 14 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -686,16 +686,15 @@ static int gswip_port_enable(struct dsa_
+ 			     struct phy_device *phydev)
+ {
+ 	struct gswip_priv *priv = ds->priv;
++	u32 mdio_phy = 0;
+ 	int err;
+ 
+-	if (!dsa_is_user_port(ds, port))
++	if (dsa_is_cpu_port(ds, port))
+ 		return 0;
+ 
+-	if (!dsa_is_cpu_port(ds, port)) {
+-		err = gswip_add_single_port_br(priv, port, true);
+-		if (err)
+-			return err;
+-	}
++	err = gswip_add_single_port_br(priv, port, true);
++	if (err)
++		return err;
+ 
+ 	/* RMON Counter Enable for port */
+ 	gswip_switch_w(priv, GSWIP_BM_PCFG_CNTEN, GSWIP_BM_PCFGp(port));
+@@ -707,15 +706,11 @@ static int gswip_port_enable(struct dsa_
+ 	gswip_switch_mask(priv, 0, GSWIP_SDMA_PCTRL_EN,
+ 			  GSWIP_SDMA_PCTRLp(port));
+ 
+-	if (!dsa_is_cpu_port(ds, port)) {
+-		u32 mdio_phy = 0;
++	if (phydev)
++		mdio_phy = phydev->mdio.addr & GSWIP_MDIO_PHY_ADDR_MASK;
+ 
+-		if (phydev)
+-			mdio_phy = phydev->mdio.addr & GSWIP_MDIO_PHY_ADDR_MASK;
+-
+-		gswip_mdio_mask(priv, GSWIP_MDIO_PHY_ADDR_MASK, mdio_phy,
+-				GSWIP_MDIO_PHYp(port));
+-	}
++	gswip_mdio_mask(priv, GSWIP_MDIO_PHY_ADDR_MASK, mdio_phy,
++			GSWIP_MDIO_PHYp(port));
+ 
+ 	return 0;
+ }

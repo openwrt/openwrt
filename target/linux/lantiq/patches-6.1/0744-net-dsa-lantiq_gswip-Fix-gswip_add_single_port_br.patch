@@ -1,0 +1,45 @@
+From c8c4db06e84159cf91218fe6ba5daabd92b41c74 Mon Sep 17 00:00:00 2001
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Mon, 1 Aug 2022 22:04:59 +0200
+Subject: [PATCH 744/768] net: dsa: lantiq_gswip: Fix
+ gswip_add_single_port_br()
+
+gswip_add_single_port_br() has to process two steps:
+1. Adding an entry to GSWIP_TABLE_ACTIVE_VLAN
+2. Adding an entry to GSWIP_TABLE_VLAN_MAPPING
+
+Mark the GSWIP_TABLE_VLAN_MAPPING entry as "valid" so it's considered
+by the hardware.
+Also remove the GSWIP_TABLE_ACTIVE_VLAN entry (from the first step) if
+the second step fails.
+
+Fixes: 8206e0ce96b3 ("net: dsa: lantiq: Add VLAN unaware bridge offloading")
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+---
+ drivers/net/dsa/lantiq_gswip.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/dsa/lantiq_gswip.c
++++ b/drivers/net/dsa/lantiq_gswip.c
+@@ -668,16 +668,18 @@ static int gswip_add_single_port_br(stru
+ 		return err;
+ 	}
+ 
+-	if (!add)
+-		return 0;
+-
+ 	vlan_mapping.index = port + 1;
+ 	vlan_mapping.table = GSWIP_TABLE_VLAN_MAPPING;
+ 	vlan_mapping.val[0] = 0 /* vid */;
+ 	vlan_mapping.val[1] = BIT(port) | BIT(cpu_port);
+ 	vlan_mapping.val[2] = 0;
++	vlan_mapping.valid = add;
+ 	err = gswip_pce_table_entry_write(priv, &vlan_mapping);
+ 	if (err) {
++		/* remove the previously created GSWIP_TABLE_ACTIVE_VLAN */
++		vlan_active.valid = false;
++		gswip_pce_table_entry_write(priv, &vlan_active);
++
+ 		dev_err(priv->dev, "failed to write VLAN mapping: %d\n", err);
+ 		return err;
+ 	}
