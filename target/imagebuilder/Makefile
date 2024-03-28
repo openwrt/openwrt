@@ -80,7 +80,13 @@ endif
 
 	$(CP) -L $(TOPDIR)/target/linux/Makefile $(PKG_BUILD_DIR)/target/linux
 	$(CP) -L $(TOPDIR)/target/linux/generic $(PKG_BUILD_DIR)/target/linux
-	$(CP) -L $(TOPDIR)/target/linux/$(BOARD) $(PKG_BUILD_DIR)/target/linux
+	# check if board is installed from a feeds subdirectory
+	if [ -d $(TOPDIR)/target/linux/feeds/$(BOARD) ]; then \
+		mkdir -p $(PKG_BUILD_DIR)/target/linux/feeds; \
+		$(CP) -L $(TOPDIR)/target/linux/feeds/$(BOARD) $(PKG_BUILD_DIR)/target/linux/feeds; \
+	else \
+		$(CP) -L $(TOPDIR)/target/linux/$(BOARD) $(PKG_BUILD_DIR)/target/linux; \
+	fi
 	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
 		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
 	fi
