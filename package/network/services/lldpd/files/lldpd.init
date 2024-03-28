@@ -75,19 +75,33 @@ get_config_restart_hash() {
 	export -n "$var=$_hash"
 }
 
-get_config_cid_ifaces() {
+get_interface_csv_pattern() {
+	set -o noglob
 	local _ifaces
-	config_get _ifaces 'config' "$2"
+	config_get _ifaces "$2" "$3"
 
 	local _iface _ifnames=""
 	for _iface in $_ifaces; do
-		local _ifname=""
-		if network_get_device _ifname "$_iface" || [ -e "/sys/class/net/$_iface" ]; then
-			append _ifnames "${_ifname:-$_iface}" ","
+		local _l3dev=""
+		# save any "!" or "!!" prefix from the interface name
+		_suffix=${_iface##*"!"}
+		_prefix=${_iface%%"$_suffix"}
+
+		if network_get_device _l3dev "$_suffix" || [ -e "/sys/class/net/$_suffix" ]; then
+			# prepend the stripped "!" or "!!" prefix here if we had one
+			append _ifnames "$_prefix${_l3dev:-$_suffix}" ","
+		else
+			case $_iface in 
+				*"*"*)
+				# Append any interface names including a glob '*' pattern
+				append _ifnames "$_iface" ","
+				;;
+			esac
 		fi
 	done
 
 	export -n "${1}=$_ifnames"
+	set +o noglob
 }
 
 write_lldpd_conf()
@@ -101,13 +115,22 @@ write_lldpd_conf()
 	config_get lldp_hostname 'config' 'lldp_hostname' "$(cat /proc/sys/kernel/hostname)"
 
 	local ifnames
-	get_config_cid_ifaces ifnames "interface"
+	get_interface_csv_pattern ifnames 'config' "interface"
 
 	local lldp_mgmt_ip
 	config_get lldp_mgmt_ip 'config' 'lldp_mgmt_ip'
 
+	# Configurable capabilities in lldpd >= v1.0.15
 	local lldp_syscapabilities
 	config_get lldp_syscapabilities 'config' 'lldp_syscapabilities'
+
+	# Configurable capabilities in lldpd >= v1.0.15
+	local lldp_capadv
+	config_get_bool lldp_capadv 'config' 'lldp_capadv' 0
+
+	# Broadcast management address in lldpd >= 0.7.15
+	local lldp_maddradv
+	config_get_bool lldp_maddradv 'config' 'lldp_maddradv' 0
 
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
 		local lldpmed_fast_start
@@ -149,6 +172,7 @@ write_lldpd_conf()
 	[ -n "$lldp_hostname" ] && echo "configure system hostname" "\"$lldp_hostname\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_mgmt_ip" ] && echo "configure system ip management pattern" "\"$lldp_mgmt_ip\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_syscapabilities" ] && echo "configure system capabilities enabled $lldp_syscapabilities" >> "$LLDPD_CONF"
+
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ] && [ "$lldpmed_fast_start" -gt 0 ]; then
 		if [ "$lldpmed_fast_start_tx_interval" -gt 0 ]; then
 			echo "configure med fast-start tx-interval $lldpmed_fast_start_tx_interval" >> "$LLDPD_CONF"
@@ -174,6 +198,8 @@ write_lldpd_conf()
 	[ -n "$lldp_platform" ] && echo "configure system platform" "\"$lldp_platform\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_tx_interval" ] && echo "configure lldp tx-interval $lldp_tx_interval" >> "$LLDPD_CONF"
 	[ "$lldp_tx_hold" -gt 0 ] && echo "configure lldp tx-hold $lldp_tx_hold" >> "$LLDPD_CONF"
+	[ "$lldp_capadv" -gt 0 ] && echo "configure lldp capabilities-advertisements" >> "$LLDPD_CONF"
+	[ "$lldp_maddradv" -gt 0 ] && echo "configure lldp management-addresses-advertisements" >> "$LLDPD_CONF"
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e "$LLDPD_CONFS_DIR" ] || ln -s /etc/lldpd.d "$LLDPD_CONFS_DIR"
@@ -313,7 +339,7 @@ start_service() {
 
     # ChassisID interfaces
 	local ifnames
-	get_config_cid_ifaces ifnames "cid_interface"
+	get_interface_csv_pattern ifnames 'config' "cid_interface"
 
 	[ -n "$ifnames" ] && procd_append_param command -C "$ifnames"
 
@@ -349,9 +375,11 @@ reload_service() {
 		return 0
 	fi
 
-	$LLDPCLI -u "$LLDPSOCKET" 2>&1 /dev/null <<-EOF
+	$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
 		pause
 		unconfigure lldp custom-tlv
+		unconfigure lldp capabilities-advertisements
+		unconfigure lldp management-addresses-advertisements
 		unconfigure system interface pattern
 		unconfigure system description
 		unconfigure system hostname
@@ -359,7 +387,7 @@ reload_service() {
 		unconfigure system platform
 	EOF
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
-		$LLDPCLI -u "$LLDPSOCKET" 2>&1 /dev/null <<-EOF
+		$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
 			unconfigure med fast-start
 		EOF
 
@@ -367,9 +395,9 @@ reload_service() {
 	# Rewrite lldpd.conf
 	# If something changed it should be included by the lldpcli call
 	write_lldpd_conf
-	$LLDPCLI -u "$LLDPSOCKET" -c "$LLDPD_CONF" -c "$LLDPD_CONFS_DIR" 2>&1 /dev/null
+	$LLDPCLI -u "$LLDPSOCKET" -c "$LLDPD_CONF" -c "$LLDPD_CONFS_DIR" >/dev/null 2>&1 
 	# Broadcast update over the wire
-	$LLDPCLI -u "$LLDPSOCKET" 2>&1 /dev/null <<-EOF
+	$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
 		resume
 		update
 	EOF
@@ -377,6 +405,6 @@ reload_service() {
 }
 
 stop_service() {
-	rm -rf ${LLDPD_RUN} "$LLDPSOCKET" 2> /dev/null
+	rm -rf ${LLDPD_RUN} "$LLDPSOCKET" >/dev/null 2>&1
 }
 
