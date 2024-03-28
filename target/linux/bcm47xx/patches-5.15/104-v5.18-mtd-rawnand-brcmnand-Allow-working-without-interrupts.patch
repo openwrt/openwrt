@@ -32,7 +32,7 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  		/* switch to interrupt polling and PIO mode */
  		disable_ctrl_irqs(ctrl);
  		sts = bcmnand_ctrl_poll_status(ctrl, NAND_CTRL_RDY,
-@@ -3187,33 +3187,29 @@ int brcmnand_probe(struct platform_devic
+@@ -3191,33 +3191,29 @@ int brcmnand_probe(struct platform_devic
  	}
  
  	/* IRQ */
