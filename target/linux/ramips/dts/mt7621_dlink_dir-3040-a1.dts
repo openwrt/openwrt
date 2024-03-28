@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_dlink_dir-xx60-a1.dtsi"
+
+/ {
+	compatible = "dlink,dir-3040-a1", "mediatek,mt7621-soc";
+	model = "D-Link DIR-3040 A1";
+};
+
+&wps {
+	gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+};
+
+&leds {
+	usb2_white {
+		label = "white:usb2";
+		gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		trigger-sources = <&ehci_port2>;
+		linux,default-trigger = "usbport";
+	};
+
+	usb3_white {
+		label = "white:usb3";
+		gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		trigger-sources = <&xhci_ehci_port1>;
+		linux,default-trigger = "usbport";
+	};
+
+	wlan2g {
+		label = "white:wlan2g";
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		linux,default-trigger = "phy0radio";
+	};
+
+	wlan5glb {
+		label = "white:wlan5glb";
+		gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		linux,default-trigger = "phy1radio";
+	};
+
+	wlan5ghb {
+		label = "white:wlan5ghb";
+		gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		linux,default-trigger = "phy2radio";
+	};
+};
+
+&wifi0 {
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_e000 1>;
+	nvmem-cell-names = "eeprom", "mac-address";
+	ieee80211-freq-limit = <2400000 6000000>;
+};
+
+&wifi1 {
+	nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_e000 3>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
