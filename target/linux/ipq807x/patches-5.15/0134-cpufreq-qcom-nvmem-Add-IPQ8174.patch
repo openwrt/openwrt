@@ -1,0 +1,20 @@
+From 26aae1fb78eae7984f590a7f67b58869dbfc850d Mon Sep 17 00:00:00 2001
+From: Manuel Fombuena <mfombuena@innovara.co.uk>
+Date: Sun, 28 Jan 2024 16:50:48 +0000
+Subject: [PATCH] cpufreq: qcom-nvmem: Add IPQ8174
+
+Signed-off-by: Manuel Fombuena <mfombuena@innovara.co.uk>
+---
+ drivers/cpufreq/qcom-cpufreq-nvmem.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/cpufreq/qcom-cpufreq-nvmem.c
++++ b/drivers/cpufreq/qcom-cpufreq-nvmem.c
+@@ -236,6 +236,7 @@ static int qcom_cpufreq_ipq8074_name_ver
+ 	switch (msm_id) {
+ 	case QCOM_ID_IPQ8070A:
+ 	case QCOM_ID_IPQ8071A:
++	case QCOM_ID_IPQ8174:
+ 		drv->versions = IPQ8074_ACORN_VERSION;
+ 		break;
+ 	case QCOM_ID_IPQ8072A:
