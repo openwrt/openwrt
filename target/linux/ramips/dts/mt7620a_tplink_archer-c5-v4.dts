@@ -26,17 +26,15 @@
 		};
 
 		led-1 {
-			function = LED_FUNCTION_WLAN;
+			function = LED_FUNCTION_WLAN_2GHZ;
 			color = <LED_COLOR_ID_GREEN>;
-			function-enumerator = <2>;
 			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 
 		led-2 {
-			function = LED_FUNCTION_WLAN;
+			function = LED_FUNCTION_WLAN_5GHZ;
 			color = <LED_COLOR_ID_GREEN>;
-			function-enumerator = <5>;
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
