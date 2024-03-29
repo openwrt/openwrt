@@ -12,7 +12,7 @@
  static int cfe_env;
 --- a/arch/mips/mm/cache.c
 +++ b/arch/mips/mm/cache.c
-@@ -63,6 +63,9 @@ void (*_dma_cache_wback_inv)(unsigned lo
+@@ -80,6 +80,9 @@ void (*_dma_cache_wback_inv)(unsigned lo
  void (*_dma_cache_wback)(unsigned long start, unsigned long size);
  void (*_dma_cache_inv)(unsigned long start, unsigned long size);
  

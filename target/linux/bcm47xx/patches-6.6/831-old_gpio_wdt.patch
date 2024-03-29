@@ -4,7 +4,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -1728,6 +1728,15 @@ config WDT_MTX1
+@@ -1755,6 +1755,15 @@ config WDT_MTX1
  	  Hardware driver for the MTX-1 boards. This is a watchdog timer that
  	  will reboot the machine after a 100 seconds timer expired.
  
@@ -22,7 +22,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
  	depends on CPU_SB1
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -164,6 +164,7 @@ obj-$(CONFIG_RC32434_WDT) += rc32434_wdt
+@@ -167,6 +167,7 @@ obj-$(CONFIG_RC32434_WDT) += rc32434_wdt
  obj-$(CONFIG_INDYDOG) += indydog.o
  obj-$(CONFIG_JZ4740_WDT) += jz4740_wdt.o
  obj-$(CONFIG_WDT_MTX1) += mtx-1_wdt.o
