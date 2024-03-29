@@ -1,0 +1,20 @@
+From: Gabor Juhos <juhosg@openwrt.org>
+Subject: [PATCH] ar71xx: Link SPI before MTD
+
+SVN-Revision: 22863
+---
+ drivers/Makefile                              |   2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -80,8 +80,8 @@ obj-y				+= scsi/
+ obj-y				+= nvme/
+ obj-$(CONFIG_ATA)		+= ata/
+ obj-$(CONFIG_TARGET_CORE)	+= target/
+-obj-$(CONFIG_MTD)		+= mtd/
+ obj-$(CONFIG_SPI)		+= spi/
++obj-$(CONFIG_MTD)		+= mtd/
+ obj-$(CONFIG_SPMI)		+= spmi/
+ obj-$(CONFIG_HSI)		+= hsi/
+ obj-$(CONFIG_SLIMBUS)		+= slimbus/

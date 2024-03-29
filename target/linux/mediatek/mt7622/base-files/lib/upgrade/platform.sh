@@ -10,8 +10,7 @@ platform_do_upgrade() {
 	linksys,e8450-ubi|\
 	ubnt,unifi-6-lr-v1-ubootmod|\
 	ubnt,unifi-6-lr-v2-ubootmod|\
-	ubnt,unifi-6-lr-v3-ubootmod|\
-	xiaomi,redmi-router-ax6s)
+	ubnt,unifi-6-lr-v3-ubootmod)
 		[ -e /dev/fit0 ] && fitblk /dev/fit0
 		[ -e /dev/fitrw ] && fitblk /dev/fitrw
 		bootdev="$(fitblk_get_bootdev)"
@@ -49,7 +48,8 @@ platform_do_upgrade() {
 	elecom,wrc-x3200gst3|\
 	mediatek,mt7622-rfb1-ubi|\
 	netgear,wax206|\
-	totolink,a8000ru)
+	totolink,a8000ru|\
+	xiaomi,redmi-router-ax6s)
 		nand_do_upgrade "$1"
 		;;
 	linksys,e8450)
@@ -84,7 +84,8 @@ platform_check_image() {
 	elecom,wrc-x3200gst3|\
 	mediatek,mt7622-rfb1-ubi|\
 	netgear,wax206|\
-	totolink,a8000ru)
+	totolink,a8000ru|\
+	xiaomi,redmi-router-ax6s)
 		nand_do_platform_check "$board" "$1"
 		return $?
 		;;

@@ -26,7 +26,6 @@ mediatek_setup_interfaces()
 	asus,tuf-ax4200|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
-	unielec,u7981-01*|\
 	zbtlink,zbt-z8102ax)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" eth1
 		;;
@@ -51,9 +50,7 @@ mediatek_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1" eth1
 		;;
 	glinet,gl-mt2500|\
-	glinet,gl-mt3000|\
-	glinet,gl-x3000|\
-	glinet,gl-xe3000)
+	glinet,gl-mt3000)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
 	glinet,gl-mt6000|\

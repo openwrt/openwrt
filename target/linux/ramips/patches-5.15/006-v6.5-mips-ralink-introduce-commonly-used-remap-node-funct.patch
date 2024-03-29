@@ -1,0 +1,189 @@
+From fd99ac5055d4705e91c73d1adba18bc71c8511a8 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Tue, 20 Jun 2023 19:44:32 +0800
+Subject: [PATCH] mips: ralink: introduce commonly used remap node function
+
+The ralink_of_remap() function is repeated several times on SoC specific
+source files. They have the same structure, but just differ in compatible
+strings. In order to make commonly use of these codes, this patch
+introduces a newly designed mtmips_of_remap_node() function to match and
+remap all supported system controller and memory controller nodes.
+
+Build and run tested on MT7620 and MT7628.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Reviewed-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/ralink/common.h |  2 --
+ arch/mips/ralink/mt7620.c |  9 ---------
+ arch/mips/ralink/mt7621.c |  9 ---------
+ arch/mips/ralink/of.c     | 42 +++++++++++++++++++++++++++++++++++-------
+ arch/mips/ralink/rt288x.c |  9 ---------
+ arch/mips/ralink/rt305x.c |  9 ---------
+ arch/mips/ralink/rt3883.c |  9 ---------
+ 7 files changed, 35 insertions(+), 54 deletions(-)
+
+--- a/arch/mips/ralink/common.h
++++ b/arch/mips/ralink/common.h
+@@ -25,6 +25,4 @@ extern void ralink_of_remap(void);
+ 
+ extern void __init prom_soc_init(struct ralink_soc_info *soc_info);
+ 
+-__iomem void *plat_of_remap_node(const char *node);
+-
+ #endif /* _RALINK_COMMON_H__ */
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -43,15 +43,6 @@
+ /* does the board have sdram or ddram */
+ static int dram_type;
+ 
+-void __init ralink_of_remap(void)
+-{
+-	rt_sysc_membase = plat_of_remap_node("ralink,mt7620a-sysc");
+-	rt_memc_membase = plat_of_remap_node("ralink,mt7620a-memc");
+-
+-	if (!rt_sysc_membase || !rt_memc_membase)
+-		panic("Failed to remap core resources");
+-}
+-
+ static __init void
+ mt7620_dram_init(struct ralink_soc_info *soc_info)
+ {
+--- a/arch/mips/ralink/mt7621.c
++++ b/arch/mips/ralink/mt7621.c
+@@ -58,15 +58,6 @@ static void __init mt7621_memory_detect(
+ 	memblock_add(MT7621_HIGHMEM_BASE, MT7621_HIGHMEM_SIZE);
+ }
+ 
+-void __init ralink_of_remap(void)
+-{
+-	rt_sysc_membase = plat_of_remap_node("mediatek,mt7621-sysc");
+-	rt_memc_membase = plat_of_remap_node("mediatek,mt7621-memc");
+-
+-	if (!rt_sysc_membase || !rt_memc_membase)
+-		panic("Failed to remap core resources");
+-}
+-
+ static unsigned int __init mt7621_get_soc_name0(void)
+ {
+ 	return __raw_readl(MT7621_SYSC_BASE + SYSC_REG_CHIP_NAME0);
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -29,26 +29,56 @@ __iomem void *rt_sysc_membase;
+ __iomem void *rt_memc_membase;
+ EXPORT_SYMBOL_GPL(rt_sysc_membase);
+ 
+-__iomem void *plat_of_remap_node(const char *node)
++static const struct of_device_id mtmips_memc_match[] = {
++	{ .compatible = "mediatek,mt7621-memc" },
++	{ .compatible = "ralink,mt7620a-memc" },
++	{ .compatible = "ralink,rt2880-memc" },
++	{ .compatible = "ralink,rt3050-memc" },
++	{ .compatible = "ralink,rt3883-memc" },
++	{}
++};
++
++static const struct of_device_id mtmips_sysc_match[] = {
++	{ .compatible = "mediatek,mt7621-sysc" },
++	{ .compatible = "ralink,mt7620a-sysc" },
++	{ .compatible = "ralink,rt2880-sysc" },
++	{ .compatible = "ralink,rt3050-sysc" },
++	{ .compatible = "ralink,rt3883-sysc" },
++	{}
++};
++
++static __iomem void *
++mtmips_of_remap_node(const struct of_device_id *match, const char *type)
+ {
+ 	struct resource res;
+ 	struct device_node *np;
+ 
+-	np = of_find_compatible_node(NULL, NULL, node);
++	np = of_find_matching_node(NULL, match);
+ 	if (!np)
+-		panic("Failed to find %s node", node);
++		panic("Failed to find %s controller node", type);
+ 
+ 	if (of_address_to_resource(np, 0, &res))
+-		panic("Failed to get resource for %s", node);
++		panic("Failed to get resource for %s node", np->name);
+ 
+ 	if (!request_mem_region(res.start,
+ 				resource_size(&res),
+ 				res.name))
+-		panic("Failed to request resources for %s", node);
++		panic("Failed to request resources for %s node", np->name);
++
++	of_node_put(np);
+ 
+ 	return ioremap(res.start, resource_size(&res));
+ }
+ 
++void __init ralink_of_remap(void)
++{
++	rt_sysc_membase = mtmips_of_remap_node(mtmips_sysc_match, "system");
++	rt_memc_membase = mtmips_of_remap_node(mtmips_memc_match, "memory");
++
++	if (!rt_sysc_membase || !rt_memc_membase)
++		panic("Failed to remap core resources");
++}
++
+ void __init device_tree_init(void)
+ {
+ 	unflatten_and_copy_device_tree();
+--- a/arch/mips/ralink/rt288x.c
++++ b/arch/mips/ralink/rt288x.c
+@@ -17,15 +17,6 @@
+ 
+ #include "common.h"
+ 
+-void __init ralink_of_remap(void)
+-{
+-	rt_sysc_membase = plat_of_remap_node("ralink,rt2880-sysc");
+-	rt_memc_membase = plat_of_remap_node("ralink,rt2880-memc");
+-
+-	if (!rt_sysc_membase || !rt_memc_membase)
+-		panic("Failed to remap core resources");
+-}
+-
+ void __init prom_soc_init(struct ralink_soc_info *soc_info)
+ {
+ 	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT2880_SYSC_BASE);
+--- a/arch/mips/ralink/rt305x.c
++++ b/arch/mips/ralink/rt305x.c
+@@ -53,15 +53,6 @@ static unsigned long rt5350_get_mem_size
+ 	return ret;
+ }
+ 
+-void __init ralink_of_remap(void)
+-{
+-	rt_sysc_membase = plat_of_remap_node("ralink,rt3050-sysc");
+-	rt_memc_membase = plat_of_remap_node("ralink,rt3050-memc");
+-
+-	if (!rt_sysc_membase || !rt_memc_membase)
+-		panic("Failed to remap core resources");
+-}
+-
+ void __init prom_soc_init(struct ralink_soc_info *soc_info)
+ {
+ 	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT305X_SYSC_BASE);
+--- a/arch/mips/ralink/rt3883.c
++++ b/arch/mips/ralink/rt3883.c
+@@ -17,15 +17,6 @@
+ 
+ #include "common.h"
+ 
+-void __init ralink_of_remap(void)
+-{
+-	rt_sysc_membase = plat_of_remap_node("ralink,rt3883-sysc");
+-	rt_memc_membase = plat_of_remap_node("ralink,rt3883-memc");
+-
+-	if (!rt_sysc_membase || !rt_memc_membase)
+-		panic("Failed to remap core resources");
+-}
+-
+ void __init prom_soc_init(struct ralink_soc_info *soc_info)
+ {
+ 	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT3883_SYSC_BASE);

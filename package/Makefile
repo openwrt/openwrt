@@ -59,7 +59,6 @@ $(curdir)/merge-index: $(curdir)/merge
 	(cd $(PACKAGE_DIR_ALL) && $(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages; )
 
 ifndef SDK
-  $(curdir)//compile = $(STAGING_DIR)/.prepared $(BIN_DIR)
   $(curdir)/compile: $(curdir)/system/opkg/host/compile
 endif
 
@@ -117,6 +116,8 @@ ifdef CONFIG_JSON_CYCLONEDX_SBOM
 endif
 
 $(curdir)/flags-install:= -j1
+
+$(curdir)//compile = $(STAGING_DIR)/.prepared $(BIN_DIR)
 
 $(eval $(call stampfile,$(curdir),package,prereq,.config))
 $(eval $(call stampfile,$(curdir),package,cleanup,$(TMP_DIR)/.build))
