@@ -57,11 +57,6 @@
 &nand {
 	status = "okay";
 
-	mediatek,nmbm;
-	mediatek,bmt-max-ratio = <1>;
-	mediatek,bmt-max-reserved-blocks = <64>;
-	mediatek,bmt-remap-range = <0x000000 0x580000>;
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -74,8 +69,9 @@
 		};
 
 		partition@80000 {
-			label = "u-boot-env";
+			label = "config";
 			reg = <0x80000 0x80000>;
+			read-only;
 		};
 
 		partition@100000 {
@@ -122,8 +118,6 @@
 				reg = <0x400000 0x7280000>;
 			};
 		};
-
-		/* last 8 MiB is reserved for NMBM bad block table */
 	};
 };
 

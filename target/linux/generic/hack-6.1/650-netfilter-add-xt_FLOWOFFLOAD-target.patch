@@ -8,15 +8,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -726,7 +726,6 @@ config NF_FLOW_TABLE
- 	tristate "Netfilter flow table module"
- 	depends on NETFILTER_INGRESS
- 	depends on NF_CONNTRACK
--	depends on NF_TABLES
- 	help
- 	  This option adds the flow table core infrastructure.
- 
-@@ -1023,6 +1022,15 @@ config NETFILTER_XT_TARGET_NOTRACK
+@@ -1023,6 +1023,15 @@ config NETFILTER_XT_TARGET_NOTRACK
  	depends on NETFILTER_ADVANCED
  	select NETFILTER_XT_TARGET_CT
  
@@ -44,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  obj-$(CONFIG_NETFILTER_XT_TARGET_LED) += xt_LED.o
 --- /dev/null
 +++ b/net/netfilter/xt_FLOWOFFLOAD.c
-@@ -0,0 +1,702 @@
+@@ -0,0 +1,699 @@
 +/*
 + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
 + *
@@ -490,14 +482,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		break;
 +	}
 +
-+	if (!dst_hold_safe(this_dst))
-+		return -ENOENT;
-+
 +	nf_route(xt_net(par), &other_dst, &fl, false, xt_family(par));
-+	if (!other_dst) {
-+		dst_release(this_dst);
++	if (!other_dst)
 +		return -ENOENT;
-+	}
 +
 +	nf_default_forward_path(route, this_dst, dir, devs);
 +	nf_default_forward_path(route, other_dst, !dir, devs);
@@ -555,8 +542,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!nf_ct_is_confirmed(ct))
 +		return XT_CONTINUE;
 +
-+	dir = CTINFO2DIR(ctinfo);
-+
 +	devs[dir] = xt_out(par);
 +	devs[!dir] = xt_in(par);
 +
@@ -566,6 +551,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (test_and_set_bit(IPS_OFFLOAD_BIT, &ct->status))
 +		return XT_CONTINUE;
 +
++	dir = CTINFO2DIR(ctinfo);
++
 +	if (xt_flowoffload_route(skb, ct, par, &route, dir, devs) < 0)
 +		goto err_flow_route;
 +
@@ -573,7 +560,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!flow)
 +		goto err_flow_alloc;
 +
-+	flow_offload_route_init(flow, &route);
++	if (flow_offload_route_init(flow, &route) < 0)
++		goto err_flow_add;
 +
 +	if (tcph) {
 +		ct->proto.tcp.seen[0].flags |= IP_CT_TCP_FLAG_BE_LIBERAL;
@@ -593,12 +581,13 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	xt_flowoffload_check_device(table, devs[0]);
 +	xt_flowoffload_check_device(table, devs[1]);
 +
++	dst_release(route.tuple[!dir].dst);
++
 +	return XT_CONTINUE;
 +
 +err_flow_add:
 +	flow_offload_free(flow);
 +err_flow_alloc:
-+	dst_release(route.tuple[dir].dst);
 +	dst_release(route.tuple[!dir].dst);
 +err_flow_route:
 +	clear_bit(IPS_OFFLOAD_BIT, &ct->status);
@@ -757,7 +746,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/netfilter/nf_flow_table.h>
  #include <net/netfilter/nf_conntrack.h>
  #include <net/netfilter/nf_conntrack_core.h>
-@@ -374,8 +373,7 @@ flow_offload_lookup(struct nf_flowtable
+@@ -381,8 +380,7 @@ flow_offload_lookup(struct nf_flowtable
  }
  EXPORT_SYMBOL_GPL(flow_offload_lookup);
  
@@ -767,7 +756,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		      void (*iter)(struct nf_flowtable *flowtable,
  				   struct flow_offload *flow, void *data),
  		      void *data)
-@@ -436,6 +434,7 @@ static void nf_flow_offload_gc_step(stru
+@@ -443,6 +441,7 @@ static void nf_flow_offload_gc_step(stru
  		nf_flow_offload_stats(flow_table, flow);
  	}
  }

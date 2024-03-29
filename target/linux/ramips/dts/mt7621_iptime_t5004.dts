@@ -53,8 +53,9 @@
 		};
 
 		partition@80000 {
-			label = "u-boot-env";
+			label = "config";
 			reg = <0x80000 0xc0000>;
+			read-only;
 		};
 
 		partition@140000 {

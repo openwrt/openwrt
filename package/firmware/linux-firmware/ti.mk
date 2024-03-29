@@ -1,4 +1,4 @@
-Package/wl12xx-firmware = $(call Package/firmware-default,TI WL12xx firmware,,LICENCE.ti-connectivity)
+Package/wl12xx-firmware = $(call Package/firmware-default,TI WL12xx firmware)
 define Package/wl12xx-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
 	$(INSTALL_DATA) \
@@ -15,7 +15,7 @@ define Package/wl12xx-firmware/install
 endef
 $(eval $(call BuildPackage,wl12xx-firmware))
 
-Package/wl18xx-firmware = $(call Package/firmware-default,TI WL18xx firmware,,LICENCE.ti-connectivity)
+Package/wl18xx-firmware = $(call Package/firmware-default,TI WL18xx firmware)
 define Package/wl18xx-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
 	$(INSTALL_DATA) \

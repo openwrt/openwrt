@@ -26,7 +26,6 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-cr6608|\
 	xiaomi,mi-router-cr6609|\
 	xiaomi,redmi-router-ac2100|\
-	z-router,zr-2660|\
 	zyxel,wsm20)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
@@ -264,7 +263,7 @@ ramips_setup_macs()
 		label_mac=$wan_mac
 		;;
 	iptime,t5004)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		lan_mac=$(mtd_get_mac_ascii config ethaddr)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	linksys,e5600|\
