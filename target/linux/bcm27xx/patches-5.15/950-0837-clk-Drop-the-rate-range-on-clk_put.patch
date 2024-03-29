@@ -29,7 +29,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -2341,19 +2341,15 @@ int clk_set_rate_exclusive(struct clk *c
+@@ -2344,19 +2344,15 @@ int clk_set_rate_exclusive(struct clk *c
  }
  EXPORT_SYMBOL_GPL(clk_set_rate_exclusive);
  
@@ -54,7 +54,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (!clk)
  		return 0;
  
-@@ -2366,8 +2362,6 @@ int clk_set_rate_range(struct clk *clk,
+@@ -2369,8 +2365,6 @@ int clk_set_rate_range(struct clk *clk,
  		return -EINVAL;
  	}
  
@@ -63,7 +63,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	if (clk->exclusive_count)
  		clk_core_rate_unprotect(clk->core);
  
-@@ -2411,6 +2405,28 @@ out:
+@@ -2414,6 +2408,28 @@ out:
  	if (clk->exclusive_count)
  		clk_core_rate_protect(clk->core);
  
@@ -92,7 +92,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	clk_prepare_unlock();
  
  	return ret;
-@@ -4373,9 +4389,10 @@ void __clk_put(struct clk *clk)
+@@ -4376,9 +4392,10 @@ void __clk_put(struct clk *clk)
  	}
  
  	hlist_del(&clk->clks_node);

@@ -24,7 +24,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -553,6 +553,9 @@ static bool mux_is_better_rate(unsigned
+@@ -556,6 +556,9 @@ static bool mux_is_better_rate(unsigned
  	return now <= rate && now > best;
  }
  
@@ -34,7 +34,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  int clk_mux_determine_rate_flags(struct clk_hw *hw,
  				 struct clk_rate_request *req,
  				 unsigned long flags)
-@@ -566,8 +569,12 @@ int clk_mux_determine_rate_flags(struct
+@@ -569,8 +572,12 @@ int clk_mux_determine_rate_flags(struct
  	if (core->flags & CLK_SET_RATE_NO_REPARENT) {
  		parent = core->parent;
  		if (core->flags & CLK_SET_RATE_PARENT) {
@@ -49,7 +49,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  			if (ret)
  				return ret;
  
-@@ -590,7 +597,7 @@ int clk_mux_determine_rate_flags(struct
+@@ -593,7 +600,7 @@ int clk_mux_determine_rate_flags(struct
  
  		if (core->flags & CLK_SET_RATE_PARENT) {
  			parent_req = *req;

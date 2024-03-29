@@ -13,7 +13,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/drivers/cpufreq/qcom-cpufreq-nvmem.c
 +++ b/drivers/cpufreq/qcom-cpufreq-nvmem.c
-@@ -30,12 +30,7 @@
+@@ -29,12 +29,7 @@
  #include <linux/soc/qcom/smem.h>
  #include <linux/soc/qcom/socinfo.h>
  
@@ -27,7 +27,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
  enum _msm8996_version {
  	MSM8996_V3,
-@@ -152,12 +147,12 @@ static enum _msm8996_version qcom_cpufre
+@@ -151,12 +146,12 @@ static enum _msm8996_version qcom_cpufre
  		return NUM_OF_MSM8996_VERSIONS;
  
  	switch (info->id) {

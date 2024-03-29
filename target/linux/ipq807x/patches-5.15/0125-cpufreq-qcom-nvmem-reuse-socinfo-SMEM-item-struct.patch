@@ -16,7 +16,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 
 --- a/drivers/cpufreq/qcom-cpufreq-nvmem.c
 +++ b/drivers/cpufreq/qcom-cpufreq-nvmem.c
-@@ -28,8 +28,7 @@
+@@ -27,8 +27,7 @@
  #include <linux/pm_opp.h>
  #include <linux/slab.h>
  #include <linux/soc/qcom/smem.h>
@@ -26,7 +26,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  
  enum _msm_id {
  	MSM8996V3 = 0xF6ul,
-@@ -145,17 +144,14 @@ static void get_krait_bin_format_b(struc
+@@ -144,17 +143,14 @@ static void get_krait_bin_format_b(struc
  static enum _msm8996_version qcom_cpufreq_get_msm_id(void)
  {
  	size_t len;

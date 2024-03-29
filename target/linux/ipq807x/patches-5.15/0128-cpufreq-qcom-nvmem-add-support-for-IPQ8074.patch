@@ -31,7 +31,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	{ .compatible = "qcom,msm8960", },
 --- a/drivers/cpufreq/qcom-cpufreq-nvmem.c
 +++ b/drivers/cpufreq/qcom-cpufreq-nvmem.c
-@@ -32,6 +32,9 @@
+@@ -31,6 +31,9 @@
  
  #include <dt-bindings/arm/qcom,ids.h>
  
@@ -41,7 +41,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  struct qcom_cpufreq_drv;
  
  struct qcom_cpufreq_match_data {
-@@ -218,6 +221,37 @@ len_error:
+@@ -217,6 +220,37 @@ len_error:
  	return ret;
  }
  
@@ -79,7 +79,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  static const struct qcom_cpufreq_match_data match_data_kryo = {
  	.get_version = qcom_cpufreq_kryo_name_version,
  };
-@@ -232,6 +266,10 @@ static const struct qcom_cpufreq_match_d
+@@ -231,6 +265,10 @@ static const struct qcom_cpufreq_match_d
  	.genpd_names = qcs404_genpd_names,
  };
  
@@ -90,7 +90,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  static int qcom_cpufreq_probe(struct platform_device *pdev)
  {
  	struct qcom_cpufreq_drv *drv;
-@@ -431,6 +469,7 @@ static const struct of_device_id qcom_cp
+@@ -430,6 +468,7 @@ static const struct of_device_id qcom_cp
  	{ .compatible = "qcom,msm8996", .data = &match_data_kryo },
  	{ .compatible = "qcom,qcs404", .data = &match_data_qcs404 },
  	{ .compatible = "qcom,ipq8064", .data = &match_data_krait },
