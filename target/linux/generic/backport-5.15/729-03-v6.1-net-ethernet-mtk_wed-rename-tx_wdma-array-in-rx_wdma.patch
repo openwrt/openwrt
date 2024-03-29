@@ -23,7 +23,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static void
-@@ -695,10 +695,10 @@ mtk_wed_ring_alloc(struct mtk_wed_device
+@@ -688,10 +688,10 @@ mtk_wed_ring_alloc(struct mtk_wed_device
  }
  
  static int
@@ -36,7 +36,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	if (mtk_wed_ring_alloc(dev, wdma, MTK_WED_WDMA_RING_SIZE, desc_size))
  		return -ENOMEM;
-@@ -812,9 +812,9 @@ mtk_wed_start(struct mtk_wed_device *dev
+@@ -805,9 +805,9 @@ mtk_wed_start(struct mtk_wed_device *dev
  {
  	int i;
  
@@ -49,7 +49,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	mtk_wed_hw_init(dev);
  	mtk_wed_configure_irq(dev, irq_mask);
-@@ -923,7 +923,7 @@ mtk_wed_tx_ring_setup(struct mtk_wed_dev
+@@ -916,7 +916,7 @@ mtk_wed_tx_ring_setup(struct mtk_wed_dev
  			       sizeof(*ring->desc)))
  		return -ENOMEM;
  

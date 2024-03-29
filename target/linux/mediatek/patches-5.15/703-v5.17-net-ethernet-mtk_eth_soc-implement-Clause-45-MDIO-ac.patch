@@ -20,7 +20,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -323,13 +323,35 @@ static int _mtk_mdio_write(struct mtk_et
+@@ -324,13 +324,35 @@ static int _mtk_mdio_write(struct mtk_et
  	if (ret < 0)
  		return ret;
  
@@ -63,7 +63,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	ret = mtk_mdio_busy_wait(eth);
  	if (ret < 0)
-@@ -346,12 +368,33 @@ static int _mtk_mdio_read(struct mtk_eth
+@@ -347,12 +369,33 @@ static int _mtk_mdio_read(struct mtk_eth
  	if (ret < 0)
  		return ret;
  
@@ -103,7 +103,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	ret = mtk_mdio_busy_wait(eth);
  	if (ret < 0)
-@@ -898,6 +941,7 @@ static int mtk_mdio_init(struct mtk_eth
+@@ -899,6 +942,7 @@ static int mtk_mdio_init(struct mtk_eth
  	eth->mii_bus->name = "mdio";
  	eth->mii_bus->read = mtk_mdio_read;
  	eth->mii_bus->write = mtk_mdio_write;

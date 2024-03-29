@@ -82,7 +82,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  
  	if (!hw_list[!hw->index]->wed_dev &&
  	    hw->eth->dma_dev != hw->eth->dev)
-@@ -356,40 +380,54 @@ mtk_wed_detach(struct mtk_wed_device *de
+@@ -356,40 +380,47 @@ mtk_wed_detach(struct mtk_wed_device *de
  static void
  mtk_wed_bus_init(struct mtk_wed_device *dev)
  {
@@ -97,7 +97,6 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +	case MTK_WED_BUS_PCIE: {
 +		struct device_node *np = dev->hw->eth->dev->of_node;
 +		struct regmap *regs;
-+		u32 val;
 +
 +		regs = syscon_regmap_lookup_by_phandle(np,
 +						       "mediatek,wed-pcie");
@@ -139,20 +138,14 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +			FIELD_PREP(MTK_WED_PCIE_INT_CTRL_SRC_SEL, 1));
 +		wed_r32(dev, MTK_WED_PCIE_INT_CTRL);
 +
-+		val = wed_r32(dev, MTK_WED_PCIE_CFG_INTM);
-+		val = wed_r32(dev, MTK_WED_PCIE_CFG_BASE);
 +		wed_w32(dev, MTK_WED_PCIE_CFG_INTM, PCIE_BASE_ADDR0 | 0x180);
 +		wed_w32(dev, MTK_WED_PCIE_CFG_BASE, PCIE_BASE_ADDR0 | 0x184);
-+
-+		val = wed_r32(dev, MTK_WED_PCIE_CFG_INTM);
-+		val = wed_r32(dev, MTK_WED_PCIE_CFG_BASE);
 +
 +		/* pcie interrupt status trigger register */
 +		wed_w32(dev, MTK_WED_PCIE_INT_TRIGGER, BIT(24));
 +		wed_r32(dev, MTK_WED_PCIE_INT_TRIGGER);
 +
 +		/* pola setting */
-+		val = wed_r32(dev, MTK_WED_PCIE_INT_CTRL);
 +		wed_set(dev, MTK_WED_PCIE_INT_CTRL,
 +			MTK_WED_PCIE_INT_CTRL_MSK_EN_POLA);
 +		break;
@@ -168,7 +161,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  }
  
  static void
-@@ -800,12 +838,14 @@ mtk_wed_attach(struct mtk_wed_device *de
+@@ -800,12 +831,14 @@ mtk_wed_attach(struct mtk_wed_device *de
  	__releases(RCU)
  {
  	struct mtk_wed_hw *hw;
@@ -184,7 +177,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  	    !try_module_get(THIS_MODULE))
  		ret = -ENODEV;
  
-@@ -823,8 +863,10 @@ mtk_wed_attach(struct mtk_wed_device *de
+@@ -823,8 +856,10 @@ mtk_wed_attach(struct mtk_wed_device *de
  		goto out;
  	}
  
