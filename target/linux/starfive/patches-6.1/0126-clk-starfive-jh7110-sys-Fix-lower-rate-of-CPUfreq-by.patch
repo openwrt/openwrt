@@ -1,0 +1,92 @@
+From 8a2d9c6decdbd042b3475d5ab69c1a79f0fd54aa Mon Sep 17 00:00:00 2001
+From: Xingyu Wu <xingyu.wu@starfivetech.com>
+Date: Mon, 21 Aug 2023 23:29:15 +0800
+Subject: [PATCH] clk: starfive: jh7110-sys: Fix lower rate of CPUfreq by
+ setting PLL0 rate to 1.5GHz
+
+CPUfreq supports 4 cpu frequency loads on 375/500/750/1500MHz.
+But now PLL0 rate is 1GHz and the cpu frequency loads become
+333/500/500/1000MHz in fact.
+
+So PLL0 rate should be set to 1.5GHz. Change the parent of cpu_root clock
+and the divider of cpu_core before the setting.
+
+Reviewed-by: Hal Feng <hal.feng@starfivetech.com>
+Fixes: e2c510d6d630 ("riscv: dts: starfive: Add cpu scaling for JH7110 SoC")
+Signed-off-by: Xingyu Wu <xingyu.wu@starfivetech.com>
+---
+ .../clk/starfive/clk-starfive-jh7110-sys.c    | 49 ++++++++++++++++++-
+ 1 file changed, 48 insertions(+), 1 deletion(-)
+
+--- a/drivers/clk/starfive/clk-starfive-jh7110-sys.c
++++ b/drivers/clk/starfive/clk-starfive-jh7110-sys.c
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include <linux/auxiliary_bus.h>
++#include <linux/clk.h>
+ #include <linux/clk-provider.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
+@@ -389,6 +390,7 @@ static int __init jh7110_syscrg_probe(st
+ 	struct jh71x0_clk_priv *priv;
+ 	unsigned int idx;
+ 	int ret;
++	struct clk *pllclk;
+ 
+ 	priv = devm_kzalloc(&pdev->dev,
+ 			    struct_size(priv, reg, JH7110_SYSCLK_END),
+@@ -462,7 +464,52 @@ static int __init jh7110_syscrg_probe(st
+ 	if (ret)
+ 		return ret;
+ 
+-	return jh7110_reset_controller_register(priv, "rst-sys", 0);
++	ret = jh7110_reset_controller_register(priv, "rst-sys", 0);
++	if (ret)
++		return ret;
++
++	/*
++	 * Set PLL0 rate to 1.5GHz
++	 * In order to not affect the cpu when the PLL0 rate is changing,
++	 * we need to switch the parent of cpu_root clock to osc clock first,
++	 * and then switch back after setting the PLL0 rate.
++	 */
++	pllclk = clk_get(priv->dev, "pll0_out");
++	if (!IS_ERR(pllclk)) {
++		struct clk *osc = clk_get(&pdev->dev, "osc");
++		struct clk *cpu_root = priv->reg[JH7110_SYSCLK_CPU_ROOT].hw.clk;
++		struct clk *cpu_core = priv->reg[JH7110_SYSCLK_CPU_CORE].hw.clk;
++
++		if (IS_ERR(osc)) {
++			clk_put(pllclk);
++			return PTR_ERR(osc);
++		}
++
++		/*
++		 * CPU need voltage regulation by CPUfreq if set 1.5GHz.
++		 * So in this driver, cpu_core need to be set the divider to be 2 first
++		 * and will be 750M after setting parent.
++		 */
++		ret = clk_set_rate(cpu_core, clk_get_rate(cpu_core) / 2);
++		if (ret)
++			goto failed_set;
++
++		ret = clk_set_parent(cpu_root, osc);
++		if (ret)
++			goto failed_set;
++
++		ret = clk_set_rate(pllclk, 1500000000);
++		if (ret)
++			goto failed_set;
++
++		ret = clk_set_parent(cpu_root, pllclk);
++
++failed_set:
++		clk_put(pllclk);
++		clk_put(osc);
++	}
++
++	return ret;
+ }
+ 
+ static const struct of_device_id jh7110_syscrg_match[] = {

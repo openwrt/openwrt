@@ -43,7 +43,8 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <50000000>;
+		m25p,fast-read;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -86,10 +87,12 @@
 						reg = <0x8000 0x200>;
 					};
 
+					macaddr_factory_e000: macaddr@e000 {
+						reg = <0xe000 0x6>;
+					};
+
 					macaddr_factory_e006: macaddr@e006 {
-						compatible = "mac-base";
 						reg = <0xe006 0x6>;
-						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -108,25 +111,37 @@
 };
 
 &pcie0 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_8000>;
 		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
+
+		led {
+			led-sources = <2>;
+			led-active-low;
+		};
 	};
 };
 
 &pcie1 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
 		ieee80211-freq-limit = <2400000 2500000>;
+
+		led {
+			led-sources = <2>;
+			led-active-low;
+		};
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_e006 0>;
+	nvmem-cells = <&macaddr_factory_e000>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -135,7 +150,7 @@
 	label = "wan";
 	phy-handle = <&ethphy4>;
 
-	nvmem-cells = <&macaddr_factory_e006 1>;
+	nvmem-cells = <&macaddr_factory_e006>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -149,22 +164,22 @@
 	ports {
 		port@0 {
 			status = "okay";
-			label = "lan1";
+			label = "lan4";
 		};
 
 		port@1 {
 			status = "okay";
-			label = "lan2";
+			label = "lan3";
 		};
 
 		port@2 {
 			status = "okay";
-			label = "lan3";
+			label = "lan2";
 		};
 
 		port@3 {
 			status = "okay";
-			label = "lan4";
+			label = "lan1";
 		};
 	};
 };

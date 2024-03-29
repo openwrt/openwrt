@@ -350,7 +350,6 @@
 	status = "okay";
 };
 
-
 &mdio {
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
@@ -384,7 +383,6 @@
 		reg = <28>;
 		reset-gpios = <&tlmm 44 GPIO_ACTIVE_LOW>;
 	};
-
 };
 
 &switch {
@@ -422,27 +420,27 @@
 };
 
 &dp2 {
-        status = "okay";
-        phy-handle = <&qca8075_1>;
-        label = "lan1";
+	status = "okay";
+	phy-handle = <&qca8075_1>;
+	label = "lan1";
 };
 
 &dp3 {
-        status = "okay";
-        phy-handle = <&qca8075_2>;
-        label = "lan2";
+	status = "okay";
+	phy-handle = <&qca8075_2>;
+	label = "lan2";
 };
 
 &dp4 {
-        status = "okay";
-        phy-handle = <&qca8075_3>;
-        label = "lan3";
+	status = "okay";
+	phy-handle = <&qca8075_3>;
+	label = "lan3";
 };
 
 &dp6 {
-        status = "okay";
-        phy-handle = <&qca8081>;
-        label = "wan";
+	status = "okay";
+	phy-handle = <&qca8081>;
+	label = "wan";
 };
 
 &pcie_qmp0 {

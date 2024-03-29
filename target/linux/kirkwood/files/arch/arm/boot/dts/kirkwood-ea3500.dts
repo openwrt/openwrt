@@ -125,6 +125,7 @@
 
 			port@5 {
 				reg = <5>;
+				phy-mode = "rgmii-id";
 				ethernet = <&eth0port>;
 				fixed-link {
 					speed = <1000>;
@@ -167,9 +168,9 @@
 			reg = <0x200000 0x1400000>;
 		};
 
-		partition@500000 {
+		partition@600000 {
 			label = "rootfs1";
-			reg = <0x500000 0x1100000>;
+			reg = <0x600000 0x1000000>;
 		};
 
 		partition@1600000 {
@@ -177,9 +178,9 @@
 			reg = <0x1600000 0x1400000>;
 		};
 
-		partition@1900000 {
+		partition@1a00000 {
 			label = "rootfs2";
-			reg = <0x1900000 0x1100000>;
+			reg = <0x1a00000 0x1000000>;
 		};
 
 		partition@2a00000 {
@@ -223,6 +224,7 @@
 	ethernet0-port@0 {
 		speed = <1000>;
 		duplex = <1>;
+		phy-mode = "rgmii";
 	};
 };
 

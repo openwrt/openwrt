@@ -10,7 +10,7 @@ FS_MENU:=Filesystems
 define KernelPackage/fs-9p
   SUBMENU:=$(FS_MENU)
   TITLE:=Plan 9 Resource Sharing Support
-  DEPENDS:=+kmod-9pnet +LINUX_6_1:kmod-fs-netfs
+  DEPENDS:=+kmod-9pnet +LINUX_6_1:kmod-fs-netfs +LINUX_6_6:kmod-fs-netfs
   KCONFIG:=\
 	CONFIG_9P_FS \
 	CONFIG_9P_FS_POSIX_ACL=n \
@@ -87,6 +87,7 @@ define KernelPackage/fs-smbfs-common
   SUBMENU:=$(FS_MENU)
   TITLE:=SMBFS common dependencies support
   HIDDEN:=1
+  DEPENDS:=+LINUX_6_6:kmod-fs-netfs +LINUX_6_6:kmod-nls-ucs2-utils
   KCONFIG:=\
 	CONFIG_SMBFS_COMMON@lt6.1 \
 	CONFIG_SMBFS@ge6.1
@@ -343,6 +344,7 @@ define KernelPackage/fs-jfs
   KCONFIG:=CONFIG_JFS_FS
   FILES:=$(LINUX_DIR)/fs/jfs/jfs.ko
   AUTOLOAD:=$(call AutoLoad,30,jfs,1)
+  DEPENDS:=+LINUX_6_6:kmod-nls-ucs2-utils
   $(call AddDepends/nls)
 endef
 
@@ -470,8 +472,7 @@ define KernelPackage/fs-nfs-common
   FILES:= \
 	$(LINUX_DIR)/fs/lockd/lockd.ko \
 	$(LINUX_DIR)/net/sunrpc/sunrpc.ko \
-	$(LINUX_DIR)/fs/nfs_common/grace.ko \
-	$(LINUX_DIR)/fs/nfs_common/nfs_ssc.ko
+	$(LINUX_DIR)/fs/nfs_common/grace.ko
   AUTOLOAD:=$(call AutoLoad,30,grace sunrpc lockd)
 endef
 
@@ -712,6 +713,7 @@ define KernelPackage/pstore
 	CONFIG_PSTORE_DEFLATE_COMPRESS_DEFAULT=y
   FILES:= $(LINUX_DIR)/fs/pstore/pstore.ko
   AUTOLOAD:=$(call AutoLoad,30,pstore,1)
+  DEPENDS:=+LINUX_6_6:kmod-lib-zlib-deflate +LINUX_6_6:kmod-lib-zlib-inflate
 endef
 
 define KernelPackage/pstore/description

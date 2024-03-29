@@ -33,11 +33,13 @@
 		led-0 {
 			gpios = <&tlmm 21 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
+			function = "router";
 		};
 
 		led-1 {
 			gpios = <&tlmm 22 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
+			function = "router";
 		};
 
 		led_power_red: led-2 {
@@ -55,11 +57,13 @@
 		led-4 {
 			gpios = <&tlmm 43 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_WHITE>;
+			function = "internet";
 		};
 
 		led-5 {
 			gpios = <&tlmm 44 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_RED>;
+			function = "internet";
 		};
 
 		led-6 {

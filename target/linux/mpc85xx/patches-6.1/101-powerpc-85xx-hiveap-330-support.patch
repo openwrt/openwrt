@@ -1,0 +1,58 @@
+--- a/arch/powerpc/platforms/85xx/Kconfig
++++ b/arch/powerpc/platforms/85xx/Kconfig
+@@ -40,6 +40,17 @@ config BSC9132_QDS
+ 	  and dual StarCore SC3850 DSP cores.
+ 	  Manufacturer : Freescale Semiconductor, Inc
+ 
++config HIVEAP_330
++    bool "Aerohive HiveAP-330"
++    select DEFAULT_UIMAGE
++    select ARCH_REQUIRE_GPIOLIB
++    select GPIO_MPC8XXX
++    help
++      This option enables support for the Aerohive HiveAP-330 board.
++
++      This board is a Concurrent Dual-Band wireless access point with a
++      Freescale P1020 SoC.
++
+ config MPC8540_ADS
+ 	bool "Freescale MPC8540 ADS"
+ 	select DEFAULT_UIMAGE
+--- a/arch/powerpc/platforms/85xx/Makefile
++++ b/arch/powerpc/platforms/85xx/Makefile
+@@ -12,6 +12,7 @@ obj-y += common.o
+ obj-$(CONFIG_BSC9131_RDB) += bsc913x_rdb.o
+ obj-$(CONFIG_BSC9132_QDS) += bsc913x_qds.o
+ obj-$(CONFIG_C293_PCIE)   += c293pcie.o
++obj-$(CONFIG_HIVEAP_330) += hiveap-330.o
+ obj-$(CONFIG_MPC8540_ADS) += mpc85xx_ads.o
+ obj-$(CONFIG_MPC8560_ADS) += mpc85xx_ads.o
+ obj-$(CONFIG_MPC85xx_CDS) += mpc85xx_cds.o
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -179,6 +179,7 @@ src-plat-$(CONFIG_PPC_PSERIES) += pserie
+ src-plat-$(CONFIG_PPC_POWERNV) += pseries-head.S
+ src-plat-$(CONFIG_PPC_IBM_CELL_BLADE) += pseries-head.S
+ src-plat-$(CONFIG_MVME7100) += motload-head.S mvme7100.c
++src-plat-$(CONFIG_HIVEAP_330) += simpleboot.c fixed-head.S
+ src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
+ 
+ src-plat-$(CONFIG_PPC_MICROWATT) += fixed-head.S microwatt.c
+@@ -360,6 +361,7 @@ image-$(CONFIG_TQM8548)			+= cuImage.tqm
+ image-$(CONFIG_TQM8555)			+= cuImage.tqm8555
+ image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
+ image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
++image-$(CONFIG_HIVEAP_330)		+= simpleImage.hiveap-330
+ image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
+ # Board ports in arch/powerpc/platform/86xx/Kconfig
+ image-$(CONFIG_MVME7100)                += dtbImage.mvme7100
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -341,6 +341,7 @@ adder875-redboot)
+     platformo="$object/fixed-head.o $object/redboot-8xx.o"
+     binary=y
+     ;;
++simpleboot-hiveap-330|\
+ simpleboot-tl-wdr4900-v1)
+     platformo="$object/fixed-head.o $object/simpleboot.o"
+     link_address='0x1500000'

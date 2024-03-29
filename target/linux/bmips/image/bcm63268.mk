@@ -100,3 +100,17 @@ define Device/sercomm_shg2500
   SERCOMM_SWVER := 3207
 endef
 TARGET_DEVICES += sercomm_shg2500
+
+define Device/smartrg_sr505n
+  $(Device/bcm63xx-cfe)
+  DEVICE_VENDOR := SmartRG
+  DEVICE_MODEL := SR505n
+  DEVICE_LOADADDR := $(KERNEL_LOADADDR)
+  CHIP_ID := 63268
+  SOC := bcm63168
+  CFE_BOARD_ID := 963168MBV_17AZZ
+  FLASH_MB := 16
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    kmod-leds-bcm6328
+endef
+TARGET_DEVICES += smartrg_sr505n

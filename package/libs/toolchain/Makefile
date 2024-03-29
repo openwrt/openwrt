@@ -27,7 +27,7 @@ define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
   URL:=http://gcc.gnu.org/
-  VERSION:=$(LIBGCC_VERSION)-$(PKG_RELEASE)
+  VERSION:=$(LIBGCC_VERSION)-r$(PKG_RELEASE)
 endef
 
 define Package/libgcc
@@ -230,7 +230,7 @@ endef
 define Package/libc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  VERSION:=$(LIBC_VERSION)-$(PKG_RELEASE)
+  VERSION:=$(LIBC_VERSION)-r$(PKG_RELEASE)
   DEPENDS:=+libgcc
   URL:=$(LIBC_URL)
 endef
@@ -519,7 +519,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/glibc/install
 	$(CP) ./glibc-files/* $(1)/
 	rm -f $(1)/etc/localtime
-	$(LN) /tmp/localtime $(1)/etc/localtime
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \

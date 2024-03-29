@@ -378,7 +378,7 @@ $(eval $(call KernelPackage,phy-smsc))
 define KernelPackage/phy-airoha-en8811h
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Airoha EN8811H 2.5G Ethernet PHY
-  DEPENDS:=+airoha-en8811h-firmware +kmod-libphy @LINUX_6_1
+  DEPENDS:=+airoha-en8811h-firmware +kmod-libphy @!LINUX_5_15
   KCONFIG:=CONFIG_AIR_EN8811H_PHY
   FILES:= \
    $(LINUX_DIR)/drivers/net/phy/air_en8811h.ko
@@ -1360,7 +1360,7 @@ $(eval $(call KernelPackage,mlx4-core))
 define KernelPackage/mlx5-core
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Mellanox ConnectX(R) mlx5 core Network Driver
-  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-mlxfw
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-mlxfw +LINUX_6_6:kmod-hwmon-core
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/mellanox/mlx5/core/mlx5_core.ko
   KCONFIG:= CONFIG_MLX5_CORE \
 	CONFIG_MLX5_CORE_EN=y \
@@ -1573,7 +1573,7 @@ $(eval $(call KernelPackage,pcs-xpcs))
 define KernelPackage/stmmac-core
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Synopsis Ethernet Controller core (NXP,STMMicro,others)
-  DEPENDS:=@TARGET_x86_64||TARGET_armsr_armv8 +kmod-pcs-xpcs +kmod-ptp
+  DEPENDS:=@TARGET_x86_64||TARGET_armsr_armv8 +kmod-pcs-xpcs +LINUX_6_6:kmod-of-mdio +kmod-ptp
   KCONFIG:=CONFIG_STMMAC_ETH \
     CONFIG_STMMAC_SELFTESTS=n \
     CONFIG_STMMAC_PLATFORM \
@@ -1705,6 +1705,23 @@ define KernelPackage/mhi-wwan-mbim/description
 endef
 
 $(eval $(call KernelPackage,mhi-wwan-mbim))
+
+
+define KernelPackage/mtk-t7xx
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=MediaTek T7xx 5G modem
+  DEPENDS:=@!LINUX_5_15 @PCI_SUPPORT +kmod-wwan
+  KCONFIG:=CONFIG_MTK_T7XX
+  FILES:=$(LINUX_DIR)/drivers/net/wwan/t7xx/mtk_t7xx.ko
+  AUTOLOAD:=$(call AutoProbe,mtk_t7xx)
+endef
+
+define KernelPackage/mtk-t7xx/description
+ Driver for MediaTek PCIe 5G WWAN modem T7xx device
+endef
+
+$(eval $(call KernelPackage,mtk-t7xx))
+
 
 define KernelPackage/atlantic
   SUBMENU:=$(NETWORK_DEVICES_MENU)

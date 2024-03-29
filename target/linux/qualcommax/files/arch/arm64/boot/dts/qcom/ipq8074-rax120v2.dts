@@ -19,7 +19,7 @@
 		led-running = &led_system_white;
 		led-upgrade = &led_system_white;
 		led-internet = &led_wan_white;
-		label-mac-device = &dp1;
+		label-mac-device = &dp5;
 	};
 
 	chosen {
@@ -236,7 +236,7 @@
 	status = "okay";
 	phy-handle = <&qca8075_0>;
 	label = "lan4";
-	nvmem-cells = <&macaddr_dp1>;
+	nvmem-cells = <&macaddr_lan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -244,7 +244,7 @@
 	status = "okay";
 	phy-handle = <&qca8075_1>;
 	label = "lan3";
-	nvmem-cells = <&macaddr_dp2>;
+	nvmem-cells = <&macaddr_lan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -252,7 +252,7 @@
 	status = "okay";
 	phy-handle = <&qca8075_2>;
 	label = "lan2";
-	nvmem-cells = <&macaddr_dp3>;
+	nvmem-cells = <&macaddr_lan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -260,7 +260,7 @@
 	status = "okay";
 	phy-handle = <&qca8075_3>;
 	label = "lan1";
-	nvmem-cells = <&macaddr_dp4>;
+	nvmem-cells = <&macaddr_lan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -268,7 +268,7 @@
 	status = "okay";
 	phy-handle = <&qca8075_4>;
 	label = "wan";
-	nvmem-cells = <&macaddr_dp5>;
+	nvmem-cells = <&macaddr_wan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -277,7 +277,7 @@
 	phy-mode = "usxgmii";
 	phy-handle = <&aqr111b0>;
 	label = "lan5";
-	nvmem-cells = <&macaddr_dp6_syn>;
+	nvmem-cells = <&macaddr_lan>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -445,28 +445,16 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					macaddr_dp1: macaddr@0 {
+					macaddr_lan: macaddr@0 {
 						reg = <0x0 0x6>;
 					};
 
-					macaddr_dp2: macaddr@1 {
+					macaddr_wan: macaddr@1 {
 						reg = <0x6 0x6>;
 					};
 
-					macaddr_dp3: macaddr@2 {
+					macaddr_wlan5g: macaddr@2 {
 						reg = <0xc 0x6>;
-					};
-
-					macaddr_dp4: macaddr@3 {
-						reg = <0x12 0x6>;
-					};
-
-					macaddr_dp5: macaddr@4 {
-						reg = <0x18 0x6>;
-					};
-
-					macaddr_dp6_syn: macaddr@5 {
-						reg = <0x1e 0x6>;
 					};
 				};
 			};

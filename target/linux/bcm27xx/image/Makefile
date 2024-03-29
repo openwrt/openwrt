@@ -15,13 +15,19 @@ endef
 
 ### Image scripts ###
 define Build/boot-common
+	echo $(IMG_PART_SIGNATURE) > $@-partuuid.txt
+	sed \
+		-e 's#@ROOT@#PARTUUID=$(IMG_PART_SIGNATURE)-02#g' \
+		cmdline.txt > $@-cmdline.txt
+
 	rm -f $@.boot
 	mkfs.fat -n boot -C $@.boot $(FAT32_BLOCKS)
 	mcopy -i $@.boot $(KDIR)/COPYING.linux ::
 	mcopy -i $@.boot $(KDIR)/LICENCE.broadcom ::
-	mcopy -i $@.boot cmdline.txt ::
+	mcopy -i $@.boot $@-cmdline.txt ::cmdline.txt
 	mcopy -i $@.boot config.txt ::
 	mcopy -i $@.boot distroconfig.txt ::
+	mcopy -i $@.boot $@-partuuid.txt ::partuuid.txt
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::$(KERNEL_IMG)
 	$(foreach dts,$(shell echo $(DEVICE_DTS)),mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb ::;)
 	mmd -i $@.boot ::/overlays
@@ -49,6 +55,7 @@ define Build/boot-2711
 endef
 
 define Build/sdcard-img
+	SIGNATURE="$(IMG_PART_SIGNATURE)" \
 	./gen_rpi_sdcard_img.sh $@ $@.boot $(IMAGE_ROOTFS) \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef

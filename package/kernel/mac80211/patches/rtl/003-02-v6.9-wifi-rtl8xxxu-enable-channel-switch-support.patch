@@ -1,0 +1,100 @@
+From ece90a8622320bf5a24d3326da1f8e109891573c Mon Sep 17 00:00:00 2001
+From: Martin Kaistra <martin.kaistra@linutronix.de>
+Date: Thu, 11 Jan 2024 17:36:28 +0100
+Subject: [PATCH 2/2] wifi: rtl8xxxu: enable channel switch support
+
+The CSA countdown in the beacon frames, which are sent out by firmware,
+needs to get updated by the driver. To achieve this, convert
+update_beacon_work to delayed_work and schedule it with the beacon
+interval in case CSA is active and the countdown is not complete.
+
+Signed-off-by: Martin Kaistra <martin.kaistra@linutronix.de>
+Reviewed-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20240111163628.320697-3-martin.kaistra@linutronix.de
+---
+ .../net/wireless/realtek/rtl8xxxu/rtl8xxxu.h  |  2 +-
+ .../wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 19 +++++++++++++++----
+ 2 files changed, 16 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.h
+@@ -1900,7 +1900,7 @@ struct rtl8xxxu_priv {
+ 	struct delayed_work ra_watchdog;
+ 	struct work_struct c2hcmd_work;
+ 	struct sk_buff_head c2hcmd_queue;
+-	struct work_struct update_beacon_work;
++	struct delayed_work update_beacon_work;
+ 	struct rtl8xxxu_btcoex bt_coex;
+ 	struct rtl8xxxu_ra_report ra_report;
+ 	struct rtl8xxxu_cfo_tracking cfo_tracking;
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -4605,7 +4605,7 @@ static int rtl8xxxu_set_tim(struct ieee8
+ {
+ 	struct rtl8xxxu_priv *priv = hw->priv;
+ 
+-	schedule_work(&priv->update_beacon_work);
++	schedule_delayed_work(&priv->update_beacon_work, 0);
+ 
+ 	return 0;
+ }
+@@ -5107,7 +5107,7 @@ rtl8xxxu_bss_info_changed(struct ieee802
+ 	}
+ 
+ 	if (changed & BSS_CHANGED_BEACON)
+-		schedule_work(&priv->update_beacon_work);
++		schedule_delayed_work(&priv->update_beacon_work, 0);
+ 
+ error:
+ 	return;
+@@ -5726,7 +5726,7 @@ static void rtl8xxxu_send_beacon_frame(s
+ static void rtl8xxxu_update_beacon_work_callback(struct work_struct *work)
+ {
+ 	struct rtl8xxxu_priv *priv =
+-		container_of(work, struct rtl8xxxu_priv, update_beacon_work);
++		container_of(work, struct rtl8xxxu_priv, update_beacon_work.work);
+ 	struct ieee80211_hw *hw = priv->hw;
+ 	struct ieee80211_vif *vif = priv->vifs[0];
+ 
+@@ -5735,6 +5735,14 @@ static void rtl8xxxu_update_beacon_work_
+ 		return;
+ 	}
+ 
++	if (vif->bss_conf.csa_active) {
++		if (ieee80211_beacon_cntdwn_is_complete(vif)) {
++			ieee80211_csa_finish(vif);
++			return;
++		}
++		schedule_delayed_work(&priv->update_beacon_work,
++				      msecs_to_jiffies(vif->bss_conf.beacon_int));
++	}
+ 	rtl8xxxu_send_beacon_frame(hw, vif);
+ }
+ 
+@@ -7482,6 +7490,7 @@ static void rtl8xxxu_stop(struct ieee802
+ 
+ 	cancel_work_sync(&priv->c2hcmd_work);
+ 	cancel_delayed_work_sync(&priv->ra_watchdog);
++	cancel_delayed_work_sync(&priv->update_beacon_work);
+ 
+ 	rtl8xxxu_free_rx_resources(priv);
+ 	rtl8xxxu_free_tx_resources(priv);
+@@ -7763,7 +7772,7 @@ static int rtl8xxxu_probe(struct usb_int
+ 	spin_lock_init(&priv->rx_urb_lock);
+ 	INIT_WORK(&priv->rx_urb_wq, rtl8xxxu_rx_urb_work);
+ 	INIT_DELAYED_WORK(&priv->ra_watchdog, rtl8xxxu_watchdog_callback);
+-	INIT_WORK(&priv->update_beacon_work, rtl8xxxu_update_beacon_work_callback);
++	INIT_DELAYED_WORK(&priv->update_beacon_work, rtl8xxxu_update_beacon_work_callback);
+ 	skb_queue_head_init(&priv->c2hcmd_queue);
+ 
+ 	usb_set_intfdata(interface, hw);
+@@ -7824,6 +7833,8 @@ static int rtl8xxxu_probe(struct usb_int
+ 		hw->wiphy->interface_modes |= BIT(NL80211_IFTYPE_AP);
+ 	hw->queues = 4;
+ 
++	hw->wiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
++
+ 	if (priv->fops->supports_concurrent) {
+ 		hw->wiphy->iface_combinations = rtl8xxxu_combinations;
+ 		hw->wiphy->n_iface_combinations = ARRAY_SIZE(rtl8xxxu_combinations);

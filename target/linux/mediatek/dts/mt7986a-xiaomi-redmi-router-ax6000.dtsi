@@ -16,7 +16,7 @@
 		led-upgrade = &led_status_rgb;
 	};
 
-	chosen {
+	chosen: chosen {
 		stdout-path = "serial0:115200n8";
 	};
 
@@ -202,11 +202,18 @@
 
 		led_status_rgb: led@0 {
 			reg = <0>;
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RGB>;
 			color-index = <LED_COLOR_ID_RED LED_COLOR_ID_GREEN LED_COLOR_ID_BLUE>;
 		};
 
 		led_network_rgb: led@1 {
 			reg = <1>;
+
+			/* Hardcoding here for backward compatibility */
+			function = "network";
+
+			color = <LED_COLOR_ID_RGB>;
 			color-index = <LED_COLOR_ID_RED LED_COLOR_ID_GREEN LED_COLOR_ID_BLUE>;
 		};
 	};

@@ -1,0 +1,105 @@
+From d30b864417ea3ad1bc4fcf675ea072cb19011930 Mon Sep 17 00:00:00 2001
+From: Emil Renner Berthing <kernel@esmil.dk>
+Date: Sat, 12 Jun 2021 16:48:31 -0700
+Subject: [PATCH 1016/1024] riscv: Implement non-coherent DMA support via
+ SiFive cache flushing
+
+This variant is used on the StarFive JH7100 SoC.
+
+Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
+---
+ arch/riscv/Kconfig              |  6 ++++--
+ arch/riscv/mm/dma-noncoherent.c | 37 +++++++++++++++++++++++++++++++--
+ 2 files changed, 39 insertions(+), 4 deletions(-)
+
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -225,12 +225,14 @@ config LOCKDEP_SUPPORT
+ 	def_bool y
+ 
+ config RISCV_DMA_NONCOHERENT
+-	bool
++	bool "Support non-coherent DMA"
++	default SOC_STARFIVE
+ 	select ARCH_HAS_DMA_PREP_COHERENT
++	select ARCH_HAS_DMA_SET_UNCACHED
++	select ARCH_HAS_DMA_CLEAR_UNCACHED
+ 	select ARCH_HAS_SYNC_DMA_FOR_DEVICE
+ 	select ARCH_HAS_SYNC_DMA_FOR_CPU
+ 	select ARCH_HAS_SETUP_DMA_OPS
+-	select DMA_DIRECT_REMAP
+ 
+ config AS_HAS_INSN
+ 	def_bool $(as-instr,.insn r 51$(comma) 0$(comma) 0$(comma) t0$(comma) t0$(comma) zero)
+--- a/arch/riscv/mm/dma-noncoherent.c
++++ b/arch/riscv/mm/dma-noncoherent.c
+@@ -9,14 +9,21 @@
+ #include <linux/dma-map-ops.h>
+ #include <linux/mm.h>
+ #include <asm/cacheflush.h>
++#include <soc/sifive/sifive_ccache.h>
+ 
+ static bool noncoherent_supported;
+ 
+ void arch_sync_dma_for_device(phys_addr_t paddr, size_t size,
+ 			      enum dma_data_direction dir)
+ {
+-	void *vaddr = phys_to_virt(paddr);
++	void *vaddr;
+ 
++	if (sifive_ccache_handle_noncoherent()) {
++		sifive_ccache_flush_range(paddr, size);
++		return;
++	}
++
++	vaddr = phys_to_virt(paddr);
+ 	switch (dir) {
+ 	case DMA_TO_DEVICE:
+ 		ALT_CMO_OP(clean, vaddr, size, riscv_cbom_block_size);
+@@ -35,8 +42,14 @@ void arch_sync_dma_for_device(phys_addr_
+ void arch_sync_dma_for_cpu(phys_addr_t paddr, size_t size,
+ 			   enum dma_data_direction dir)
+ {
+-	void *vaddr = phys_to_virt(paddr);
++	void *vaddr;
++
++	if (sifive_ccache_handle_noncoherent()) {
++		sifive_ccache_flush_range(paddr, size);
++		return;
++	}
+ 
++	vaddr = phys_to_virt(paddr);
+ 	switch (dir) {
+ 	case DMA_TO_DEVICE:
+ 		break;
+@@ -49,10 +62,30 @@ void arch_sync_dma_for_cpu(phys_addr_t p
+ 	}
+ }
+ 
++void *arch_dma_set_uncached(void *addr, size_t size)
++{
++	if (sifive_ccache_handle_noncoherent())
++		return sifive_ccache_set_uncached(addr, size);
++
++	return addr;
++}
++
++void arch_dma_clear_uncached(void *addr, size_t size)
++{
++	if (sifive_ccache_handle_noncoherent())
++		sifive_ccache_clear_uncached(addr, size);
++}
++
+ void arch_dma_prep_coherent(struct page *page, size_t size)
+ {
+ 	void *flush_addr = page_address(page);
+ 
++	if (sifive_ccache_handle_noncoherent()) {
++		memset(flush_addr, 0, size);
++		sifive_ccache_flush_range(__pa(flush_addr), size);
++		return;
++	}
++
+ 	ALT_CMO_OP(flush, flush_addr, size, riscv_cbom_block_size);
+ }
+ 

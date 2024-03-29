@@ -1,0 +1,36 @@
+From 92c7428f942da7dfcdc629b05b5114f80822d7a4 Mon Sep 17 00:00:00 2001
+From: Ping-Ke Shih <pkshih@realtek.com>
+Date: Tue, 16 Jan 2024 16:09:45 +0800
+Subject: [PATCH 2/2] wifi: rtl8xxxu: make instances of iface limit and
+ combination to be static const
+
+rtl8xxxu_limits and rtl8xxxu_combinations can be static const, so add
+modifiers as desire. Otherwise, Sparse reports warnings
+
+rtl8xxxu_core.c:7677:30: warning: symbol 'rtl8xxxu_limits' was not declared. Should it be static?
+rtl8xxxu_core.c:7682:36: warning: symbol 'rtl8xxxu_combinations' was not declared. Should it be static?
+
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://msgid.link/20240116080945.20172-2-pkshih@realtek.com
+---
+ drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu_core.c
+@@ -7674,12 +7674,12 @@ static void rtl8xxxu_deinit_led(struct r
+ 	led_classdev_unregister(led);
+ }
+ 
+-struct ieee80211_iface_limit rtl8xxxu_limits[] = {
++static const struct ieee80211_iface_limit rtl8xxxu_limits[] = {
+ 	{ .max = 2, .types = BIT(NL80211_IFTYPE_STATION), },
+ 	{ .max = 1, .types = BIT(NL80211_IFTYPE_AP), },
+ };
+ 
+-struct ieee80211_iface_combination rtl8xxxu_combinations[] = {
++static const struct ieee80211_iface_combination rtl8xxxu_combinations[] = {
+ 	{
+ 		.limits = rtl8xxxu_limits,
+ 		.n_limits = ARRAY_SIZE(rtl8xxxu_limits),

@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lldpd
 PKG_VERSION:=1.0.17
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/lldpd/lldpd/releases/download/$(PKG_VERSION)/
@@ -31,7 +31,7 @@ define Package/lldpd
   CATEGORY:=Network
   SUBMENU:=Routing and Redirection
   TITLE:=Link Layer Discovery Protocol daemon
-  URL:=https://vincentbernat.github.io/lldpd/
+  URL:=https://lldpd.github.io/
   DEPENDS:=+libcap +libevent2 +USE_GLIBC:libbsd +LLDPD_WITH_JSON:libjson-c +LLDPD_WITH_SNMP:libnetsnmp
   USERID:=lldp=121:lldp=129
   MENU:=1

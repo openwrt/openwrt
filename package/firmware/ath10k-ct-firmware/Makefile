@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ath10k-ct-firmware
-PKG_VERSION:=2020-11-08
+PKG_VERSION:=2020.11.08
 PKG_RELEASE:=1
 
 DL_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)

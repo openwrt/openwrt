@@ -292,6 +292,10 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:wan" "3:lan" "4:lan"
 		;;
+	dlink,covr-c1200-a1)
+		ucidef_add_switch "switch0" \
+			"0@eth0" "1:wan" "2:lan"
+		;;
 	dlink,covr-p2500-a1)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan" "2:lan" "3:wan" "4:plc"
@@ -643,6 +647,11 @@ ath79_setup_macs()
 	devolo,dlan-pro-1200plus-ac|\
 	devolo,magic-2-wifi)
 		label_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" 3)
+		;;
+	dlink,covr-c1200-a1)
+		lan_mac=$(mtd_get_mac_ascii art "protest_lan_mac")
+		wan_mac=$(mtd_get_mac_ascii art "protest_wan_mac")
+		label_mac=$lan_mac
 		;;
 	dlink,covr-p2500-a1)
 		lan_mac=$(mtd_get_mac_ascii art "protest_lan_mac")
