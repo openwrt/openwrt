@@ -177,7 +177,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #include <linux/bootconfig.h>
  #include <linux/console.h>
  #include <linux/nmi.h>
-@@ -995,6 +996,17 @@ asmlinkage __visible void __init __no_sa
+@@ -996,6 +997,17 @@ asmlinkage __visible void __init __no_sa
  	pr_notice("Kernel command line: %s\n", saved_command_line);
  	/* parameters may set static keys */
  	jump_label_init();
