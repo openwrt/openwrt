@@ -1,39 +1,32 @@
-From ac6b1e263b5147075f247f717ec5f24fbf264286 Mon Sep 17 00:00:00 2001
+From 6c180dd2f0d2b07def401c5db43a343b67bc7687 Mon Sep 17 00:00:00 2001
 From: Paul Spooren <mail@aparcar.org>
 Date: Sun, 24 Mar 2024 23:15:48 +0100
-Subject: [PATCH] change naming to <name>_<version>_<arch>.apk
+Subject: [PATCH] change naming to <name>_<version>.apk
 
 OpenWrt allows dashes in package names but no underlines. The current
 cleanup mechanism in the build system uses those underlines to find
 suiting packages to cleanup via `<pkgname>_*.apk`.
 
-Also add the package architecture to package filenames. This allows a
-better overview when downloading packages manually i.e. from a
-
 Signed-off-by: Paul Spooren <mail@aparcar.org>
 ---
- src/apk_package.h | 6 +++---
+ src/apk_package.h | 2 +-
  src/app_mkpkg.c   | 2 +-
- src/database.c    | 6 ++++--
- 3 files changed, 8 insertions(+), 6 deletions(-)
+ src/database.c    | 4 ++--
+ 3 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/src/apk_package.h b/src/apk_package.h
-index c6a036d..2a8495e 100644
+index c6a036d..7b4ed68 100644
 --- a/src/apk_package.h
 +++ b/src/apk_package.h
-@@ -102,9 +102,9 @@ APK_ARRAY(apk_package_array, struct apk_package *);
+@@ -102,7 +102,7 @@ APK_ARRAY(apk_package_array, struct apk_package *);
  #define APK_PROVIDER_FROM_PACKAGE(pkg)	  (struct apk_provider){(pkg),(pkg)->version}
  #define APK_PROVIDER_FROM_PROVIDES(pkg,p) (struct apk_provider){(pkg),(p)->version}
  
 -#define PKG_VER_FMT		"%s-" BLOB_FMT
--#define PKG_VER_PRINTF(pkg)	(pkg)->name->name, BLOB_PRINTF(*(pkg)->version)
--#define PKG_VER_STRLEN(pkg)	(strlen(pkg->name->name) + 1 + pkg->version->len)
-+#define PKG_VER_FMT		"%s_" BLOB_FMT "_" BLOB_FMT
-+#define PKG_VER_PRINTF(pkg)	(pkg)->name->name, BLOB_PRINTF(*(pkg)->version), BLOB_PRINTF(*(pkg)->arch)
-+#define PKG_VER_STRLEN(pkg)	(strlen(pkg->name->name) + 1 + pkg->version->len + 1 + pkg->arch->len + 1)
++#define PKG_VER_FMT		"%s_" BLOB_FMT
+ #define PKG_VER_PRINTF(pkg)	(pkg)->name->name, BLOB_PRINTF(*(pkg)->version)
+ #define PKG_VER_STRLEN(pkg)	(strlen(pkg->name->name) + 1 + pkg->version->len)
  #define PKG_FILE_FMT		PKG_VER_FMT ".apk"
- #define PKG_FILE_PRINTF(pkg)	PKG_VER_PRINTF(pkg)
- 
 diff --git a/src/app_mkpkg.c b/src/app_mkpkg.c
 index 2d9b9d7..305a99d 100644
 --- a/src/app_mkpkg.c
@@ -48,27 +41,24 @@ index 2d9b9d7..305a99d 100644
  	apk_blob_push_blob(&to, APK_BLOB_STR(".apk"));
  	apk_blob_push_blob(&to, APK_BLOB_PTR_LEN("", 1));
 diff --git a/src/database.c b/src/database.c
-index d2f8bdc..c3932dd 100644
+index d2f8bdc..b586318 100644
 --- a/src/database.c
 +++ b/src/database.c
-@@ -590,8 +590,10 @@ static int apk_pkg_format_cache_pkg(apk_blob_t to, struct apk_package *pkg)
+@@ -590,7 +590,7 @@ static int apk_pkg_format_cache_pkg(apk_blob_t to, struct apk_package *pkg)
  {
  	/* pkgname-1.0_alpha1.12345678.apk */
  	apk_blob_push_blob(&to, APK_BLOB_STR(pkg->name->name));
 -	apk_blob_push_blob(&to, APK_BLOB_STR("-"));
 +	apk_blob_push_blob(&to, APK_BLOB_STR("_"));
  	apk_blob_push_blob(&to, *pkg->version);
-+	apk_blob_push_blob(&to, APK_BLOB_STR("_"));
-+	apk_blob_push_blob(&to, *pkg->arch);
  	apk_blob_push_blob(&to, APK_BLOB_STR("."));
  	apk_blob_push_hexdump(&to, APK_BLOB_PTR_LEN((char *) pkg->csum.data,
- 						    APK_CACHE_CSUM_BYTES));
-@@ -1073,7 +1075,7 @@ static int apk_db_scriptdb_write(struct apk_database *db, struct apk_installed_p
+@@ -1073,7 +1073,7 @@ static int apk_db_scriptdb_write(struct apk_database *db, struct apk_installed_p
  		 * pkg-version.<hexdump of package checksum>.action */
  		bfn = APK_BLOB_BUF(filename);
  		apk_blob_push_blob(&bfn, APK_BLOB_STR(pkg->name->name));
 -		apk_blob_push_blob(&bfn, APK_BLOB_STR("-"));
-+		apk_blob_push_blob(&bfn, APK_BLOB_STR(""));
++		apk_blob_push_blob(&bfn, APK_BLOB_STR("_"));
  		apk_blob_push_blob(&bfn, *pkg->version);
  		apk_blob_push_blob(&bfn, APK_BLOB_STR("."));
  		apk_blob_push_csum(&bfn, &pkg->csum);
