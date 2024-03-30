@@ -15,6 +15,7 @@ platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
 	case "$board" in
+	buffalo,wsr-2533dhpl2|\
 	buffalo,wsr-2533dhpls)
 		buffalo_check_image "$board" "$magic" "$1" || return 1
 		;;
@@ -143,6 +144,7 @@ platform_do_upgrade() {
 	zyxel,nwa55axe)
 		nand_do_upgrade "$1"
 		;;
+	buffalo,wsr-2533dhpl2|\
 	buffalo,wsr-2533dhpls)
 		buffalo_do_upgrade "$1"
 		;;

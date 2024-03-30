@@ -17,6 +17,9 @@
 
 # TRX magic numbers of each model
 case "$(board_name)" in
+buffalo,wsr-2533dhpl2)
+	BUFFALO_TRX_MAGIC="50484c32" # "PHL2"
+	;;
 buffalo,wsr-2533dhpls)
 	BUFFALO_TRX_MAGIC="44484c53" # "DHLS"
 	;;

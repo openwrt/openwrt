@@ -563,6 +563,14 @@ define Device/buffalo_wsr-2533dhplx
 	sysupgrade-tar kernel=$$$$@ | append-metadata
 endef
 
+define Device/buffalo_wsr-2533dhpl2
+  $(Device/buffalo_wsr-2533dhplx)
+  DEVICE_MODEL := WSR-2533DHPL2
+  BUFFALO_TRX_MAGIC := 0x324c4850
+  IMAGE_SIZE := 62592k
+endef
+TARGET_DEVICES += buffalo_wsr-2533dhpl2
+
 define Device/buffalo_wsr-2533dhpls
   $(Device/buffalo_wsr-2533dhplx)
   DEVICE_MODEL := WSR-2533DHPLS

@@ -13,6 +13,9 @@ fixup_trx_crc() {
 }
 
 case "$(board_name)" in
+buffalo,wsr-2533dhpl2)
+	fixup_trx_crc 0x50484c32
+	;;
 buffalo,wsr-2533dhpls)
 	fixup_trx_crc 0x44484C53
 	;;
