@@ -27,6 +27,13 @@ case "$board" in
 		hw_mac_addr=$(macaddr_unsetbit $hw_mac_addr 28)
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $hw_mac_addr > /sys${DEVPATH}/macaddress
 		;;
+	buffalo,wsr-2533dhpls)
+		lan_mac_addr=$(mtd_get_mac_ascii board_data "mac")
+		[ "$PHYNBR" = "0" ] && \
+			macaddr_add $lan_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_add $lan_mac_addr 8 > /sys${DEVPATH}/macaddress
+		;;
 	comfast,cf-e390ax)
 		[ "$PHYNBR" = "0" ] && echo -n "$(mtd_get_mac_binary factory 0x0004)" > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && echo -n "$(mtd_get_mac_binary factory 0x8004)" > /sys${DEVPATH}/macaddress
