@@ -124,13 +124,6 @@ menu "Target Images"
 			default 1024 if TARGET_EXT4_BLOCKSIZE_1K
 			depends on TARGET_ROOTFS_EXT4FS
 
-		config TARGET_EXT4_JOURNAL
-			bool "Create a journaling filesystem"
-			depends on TARGET_ROOTFS_EXT4FS
-			default y
-			help
-			  Create an ext4 filesystem with a journal.
-
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
 		depends on USES_JFFS2
