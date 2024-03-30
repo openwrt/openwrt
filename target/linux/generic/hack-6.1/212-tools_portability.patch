@@ -340,3 +340,21 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  else ifneq ($(CROSS_COMPILE),)
  # Allow userspace to override CLANG_CROSS_FLAGS to specify their own
+--- a/tools/lib/string.c
++++ b/tools/lib/string.c
+@@ -100,6 +100,7 @@ int strtobool(const char *s, bool *res)
+ #pragma clang diagnostic push
+ #pragma clang diagnostic ignored "-Wignored-attributes"
+ #endif
++#ifndef __APPLE__
+ size_t __weak strlcpy(char *dest, const char *src, size_t size)
+ {
+ 	size_t ret = strlen(src);
+@@ -111,6 +112,7 @@ size_t __weak strlcpy(char *dest, const
+ 	}
+ 	return ret;
+ }
++#endif
+ #ifdef __clang__
+ #pragma clang diagnostic pop
+ #endif
