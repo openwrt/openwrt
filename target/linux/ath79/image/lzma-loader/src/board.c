@@ -182,34 +182,40 @@ static inline void mr18_init(void)
 static inline void mr18_init(void) { }
 #endif
 
-#ifdef CONFIG_BOARD_HUAWEI_AP5030DN
-static inline void ap5030dn_init(void)
+#if defined(CONFIG_BOARD_HUAWEI_AP5030DN) || defined(CONFIG_BOARD_HUAWEI_AP6010DN)
+static inline void huawei_ap_init(void)
 {
-	const unsigned int ap5030dn_watchdog_gpio = 15;
+	const unsigned int watchdog_gpio = 15;
 	unsigned int gpiobase, reg;
 
 	gpiobase = KSEG1ADDR(AR71XX_GPIO_BASE);
 
-	printf("Huawei AP5030DN\n");
+	printf("Huawei AP\n");
 
 	reg = READREG(gpiobase + AR71XX_GPIO_REG_OE);
 	WRITEREG(gpiobase + AR71XX_GPIO_REG_OE,
-			reg & ~(1 << ap5030dn_watchdog_gpio));
+			reg & ~(1 << watchdog_gpio));
 
 	/* Set GPIO15 MUX to output CLK_OBS5 (= CPU_CLK/4)
-	 * to keep the watchdog happy until wdt-gpio takes over
+	 * or CLK_OBS4 (= AHB_CLK/2) to keep the watchdog happy
+	 * until wdt-gpio takes over
 	 */
 	reg = READREG(gpiobase + AR934X_GPIO_REG_OUT_FUNC3);
+#if defined(CONFIG_BOARD_HUAWEI_AP5030DN)
 	WRITEREG(gpiobase + AR934X_GPIO_REG_OUT_FUNC3,
 			reg | (QCA955X_GPIO_OUTSEL_CLK_OBS5 << 24));
+#else if defined(CONFIG_BOARD_HUAWEI_AP6010DN)
+	WRITEREG(gpiobase + AR934X_GPIO_REG_OUT_FUNC3,
+			reg | (AR934X_GPIO_OUTSEL_CLK_OBS4 << 24));
+#endif
 }
 #else
-static inline void ap5030dn_init(void) { }
+static inline void huawei_ap_init(void) {}
 #endif
 
 void board_init(void)
 {
 	tlwr1043nd_init();
 	mr18_init();
-	ap5030dn_init();
+	huawei_ap_init();
 }
