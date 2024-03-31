@@ -143,6 +143,7 @@ ath79_setup_interfaces()
 	engenius,enstationac-v1|\
 	engenius,ews511ap|\
 	engenius,ews660ap|\
+	huawei,ap5030dn|\
 	ocedo,ursus|\
 	ruckus,zf7363|\
 	ruckus,zf7372|\
@@ -708,6 +709,9 @@ ath79_setup_macs()
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)
 		label_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
+		;;
+	huawei,ap5030dn)
+		label_mac=$(mtd_get_mac_binary art 0x2005b)
 		;;
 	iodata,etg3-r)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
