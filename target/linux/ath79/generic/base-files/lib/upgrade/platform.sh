@@ -67,6 +67,14 @@ platform_do_upgrade() {
 		ROOTFS_FILE="root.squashfs"
 		platform_do_upgrade_failsafe_datachk "$1"
 		;;
+	huawei,ap5030dn)
+		# Store beginning address of the "firmware" partition
+		# as KernelA address and KernelB address, each to BootupA & BootupB
+		# This is the address from which the bootloader will try to load the kernel.
+		echo -n -e "\x9e\x10\x00\x00\x9e\x10\x00\x00" | dd of=$(find_mtd_part BootupA) bs=1 seek=$((0x254)) conv=notrunc
+		echo -n -e "\x9e\x10\x00\x00\x9e\x10\x00\x00" | dd of=$(find_mtd_part BootupB) bs=1 seek=$((0x254)) conv=notrunc
+		default_do_upgrade "$1"
+		;;
 	jjplus,ja76pf2)
 		platform_do_upgrade_redboot_fis "$1" linux
 		;;
