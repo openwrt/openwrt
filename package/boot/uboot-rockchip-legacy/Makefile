@@ -31,7 +31,7 @@ UBOOT_TARGETS := \
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
 UBOOT_MAKE_FLAGS += \
-  BL31=$(STAGING_DIR_IMAGE)/$(BL31_BLOB) \
+  BL31=$(STAGING_DIR_IMAGE)/bin/$(BL31_BLOB) \
   spl/u-boot-spl.bin \
   u-boot.dtb \
   u-boot.itb
@@ -47,7 +47,7 @@ define Build/Compile
 		CROSS_COMPILE=$(TARGET_CROSS) \
 		$(if $(DTC),DTC="$(DTC)") \
 		$(UBOOT_MAKE_FLAGS)
-	mkimage -n $(BOOT_SOC) -T rksd -d $(STAGING_DIR_IMAGE)/$(DDR_BLOB):$(PKG_BUILD_DIR)/spl/u-boot-spl.bin $(PKG_BUILD_DIR)/idbloader.img
+	mkimage -n $(BOOT_SOC) -T rksd -d $(STAGING_DIR_IMAGE)/bin/$(DDR_BLOB):$(PKG_BUILD_DIR)/spl/u-boot-spl.bin $(PKG_BUILD_DIR)/idbloader.img
 endef
 
 define Build/InstallDev
