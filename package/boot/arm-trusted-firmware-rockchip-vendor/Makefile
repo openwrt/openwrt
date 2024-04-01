@@ -10,8 +10,8 @@ PKG_RELEASE:=$(AUTORELEASE)
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/pengphei/rkbin.git
 PKG_SOURCE_DATE:=2022-08-01
-PKG_SOURCE_VERSION:=061a2292bd792c8b6cb7172c1fa8a61ebbe9eb40
-PKG_MIRROR_HASH:=cef01ef5b8ba986ce9bd078711b771e32ae2d9b4ca2d3ac0146cd2cad55522b2
+PKG_SOURCE_VERSION:=c99ad10789499fabdad3c7741f3bc4de02392246
+PKG_MIRROR_HASH:=96991ae7429027e000dd1ee39ecdb5de0dd841133e9d4cb2440e2f5299346b9d
 
 PKG_MAINTAINER:=Tianling Shen <cnsztl@immortalwrt.org>
 
@@ -49,6 +49,18 @@ define Package/arm-trusted-firmware-rk3588
     VARIANT:=rk3588
 endef
 
+define Package/arm-trusted-firmware-rv1103
+    $(Package/arm-trusted-firmware-rockchip-vendor)
+    DEPENDS:=@TARGET_rockchip_cortexa7
+    VARIANT:=rv1103
+endef
+
+define Package/arm-trusted-firmware-rv1106
+    $(Package/arm-trusted-firmware-rockchip-vendor)
+    DEPENDS:=@TARGET_rockchip_cortexa7
+    VARIANT:=rv1106
+endef
+
 define Build/Configure
 	$(SED) 's,$$$$(PKG_BUILD_DIR),$(PKG_BUILD_DIR),g' $(PKG_BUILD_DIR)/trust.ini
 	$(SED) 's,$$$$(VARIANT),$(BUILD_VARIANT),g' $(PKG_BUILD_DIR)/trust.ini
@@ -75,7 +87,15 @@ endef
 define Package/arm-trusted-firmware-rk3588/install
 endef
 
+define Package/arm-trusted-firmware-rv1103/install
+endef
+
+define Package/arm-trusted-firmware-rv1106/install
+endef
+
 $(eval $(call BuildPackage,arm-trusted-firmware-rk3328))
 $(eval $(call BuildPackage,arm-trusted-firmware-rk3399))
 $(eval $(call BuildPackage,arm-trusted-firmware-rk3568))
 $(eval $(call BuildPackage,arm-trusted-firmware-rk3588))
+$(eval $(call BuildPackage,arm-trusted-firmware-rv1103))
+$(eval $(call BuildPackage,arm-trusted-firmware-rv1106))

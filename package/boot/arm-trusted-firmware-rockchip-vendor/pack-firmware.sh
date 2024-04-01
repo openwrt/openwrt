@@ -25,6 +25,10 @@ case "$VARIANT" in
 	ATF="rk35/rk3588_bl31_v1.27.elf"
 	DDR="rk35/rk3588_ddr_lp4_2112MHz_lp5_2736MHz_v1.08.bin"
 	;;
+"rv1106")
+	ATF="rv11/rv1106_spl_v1.01.bin"
+	DDR="rv11/rv1106_ddr_924MHz_v1.10.bin"
+	;;
 *)
 	echo -e "Not compatible with your platform: $VARIANT."
 	exit 1
@@ -42,7 +46,7 @@ if [ "$ACTION" == "build" ]; then
 	esac
 elif [ "$ACTION" == "install" ]; then
 	mkdir -p "$STAGING_DIR_IMAGE/"
-	cp -rf "$PKG_BUILD_DIR/bin"/* "$STAGING_DIR_IMAGE/$VARIANT_ARCH"/
+	cp -rf "$PKG_BUILD_DIR"/* "$STAGING_DIR_IMAGE"/
 	case "$VARIANT" in
 	rk33*)
 		cp -fp "$PKG_BUILD_DIR/tools/loaderimage" "$STAGING_DIR_IMAGE"/
