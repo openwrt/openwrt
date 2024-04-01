@@ -51,6 +51,18 @@ endef
 $(eval $(call KernelPackage,crypto-aead))
 
 
+define KernelPackage/crypto-adiantum
+  TITLE:=Adiantum encryption mode
+  DEPENDS:=+kmod-crypto-manager +kmod-crypto-nhpoly1305
+  KCONFIG:=CONFIG_CRYPTO_ADIANTUM
+  FILES:=$(LINUX_DIR)/crypto/adiantum.ko
+  AUTOLOAD:=$(call AutoLoad,09,adiantum)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-adiantum))
+
+
 define KernelPackage/crypto-arc4
   TITLE:=ARC4 cipher CryptoAPI module
   DEPENDS:=+kmod-crypto-user
@@ -821,6 +833,20 @@ ifdef KernelPackage/crypto-misc/$(ARCH)
 endif
 
 $(eval $(call KernelPackage,crypto-misc))
+
+
+define KernelPackage/crypto-nhpoly1305
+  TITLE:=Hash function for Adiantum
+  DEPENDS:=+kmod-crypto-hash
+  KCONFIG:= CONFIG_CRYPTO_NHPOLY1305
+  FILES:= \
+        $(LINUX_DIR)/crypto/nhpoly1305.ko \
+        $(LINUX_DIR)/lib/crypto/libpoly1305.ko
+  AUTOLOAD:=$(call AutoLoad,09,nhpoly1305)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-nhpoly1305))
 
 
 define KernelPackage/crypto-null
