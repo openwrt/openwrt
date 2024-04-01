@@ -132,6 +132,7 @@ platform_do_upgrade() {
 	mediatek,mt7981-rfb|\
 	netcore,n60|\
 	qihoo,360t7|\
+	qihoo,360t7-108m|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\

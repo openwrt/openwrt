@@ -20,6 +20,7 @@ mediatek_setup_interfaces()
 	cudy,wr3000-v1|\
 	jcg,q30-pro|\
 	qihoo,360t7|\
+	qihoo,360t7-108m|\
 	routerich,ax3000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
 		;;
@@ -148,7 +149,8 @@ mediatek_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii u-boot-env mac)
 		label_mac=$lan_mac
 		;;
-	qihoo,360t7)
+	qihoo,360t7|\
+	qihoo,360t7-108m)
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$wan_mac
