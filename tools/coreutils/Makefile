@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=coreutils
 PKG_CPE_ID:=cpe:/a:gnu:coreutils
-PKG_VERSION:=9.4
+PKG_VERSION:=9.5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/coreutils
-PKG_HASH:=5f600d9093973b0afe25393d9bc18c44f2232657f4ca0d95ea31c702eb66b739
+PKG_HASH:=767ae6a22950ec42f3ba5f7c1de79dd27800ee8e9b8642da5dedb5974a1741e5
 
 HOST_BUILD_PARALLEL := 1
 
@@ -23,13 +23,9 @@ include $(INCLUDE_DIR)/host-build.mk
 export GNULIB_SRCDIR:=$(HOST_GNULIB_SRCDIR)
 
 HOST_GNULIB_SKIP := \
-	lib/math.in.h \
-	lib/stdlib.in.h \
-	lib/string.in.h \
-	lib/uchar.in.h \
-	lib/unistd.in.h \
-	lib/wchar.in.h \
-	lib/wctype.in.h
+	lib/nstrftime.c \
+	lib/fprintftime.c \
+	lib/locale.in.h
 
 HOST_CONFIGURE_ARGS += \
 	--disable-year2038 \
