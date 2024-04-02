@@ -83,6 +83,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
+	jdcloud,re-cp-03|\
 	tplink,tl-xdr4288|\
 	tplink,tl-xdr6086|\
 	tplink,tl-xdr6088|\
@@ -139,10 +140,6 @@ platform_do_upgrade() {
 	xiaomi,mi-router-wr30u-ubootmod)
 		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
-		;;
-	jdcloud,re-cp-03)
-		CI_KERNPART="production"
-		emmc_do_upgrade "$1"
 		;;
 	mercusys,mr90x-v1)
 		CI_UBIPART="ubi0"
