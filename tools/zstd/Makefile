@@ -11,25 +11,33 @@ PKG_LICENSE:=BSD-3-Clause
 PKG_LICENSE_FILES:=LICENSE
 PKG_CPE_ID:=cpe:/a:facebook:zstandard
 
-include $(INCLUDE_DIR)/host-build.mk
-include $(INCLUDE_DIR)/meson.mk
+HOST_BUILD_PARALLEL:=1
 
-MESON_HOST_BUILD_DIR:=$(HOST_BUILD_DIR)/build/meson/openwrt-build
+include $(INCLUDE_DIR)/host-build.mk
 
 HOSTCC:= $(HOSTCC_NOCACHE)
 
-MESON_HOST_ARGS += \
-	-Ddefault_library=static \
-	-Dlegacy_level=7 \
-	-Ddebug_level=0 \
-	-Dbacktrace=disabled \
-	-Dstatic_runtime=false \
-	-Dbin_programs=true \
-	-Dbin_tests=false \
-	-Dbin_contrib=false \
-	-Dmulti_thread=enabled \
-	-Dzlib=disabled \
-	-Dlzma=disabled \
-	-Dlz4=disabled
+HOST_MAKE_FLAGS += \
+	ZSTD_LEGACY_SUPPORT=7 \
+	BACKTRACE=0 \
+	HAVE_THREAD=1 \
+	HAVE_ZLIB=0 \
+	HAVE_LZMA=0 \
+	HAVE_LZ4=0 \
+	PREFIX=$(HOST_BUILD_PREFIX)
+
+define Host/Compile
+	$(call Host/Compile/Default,lib-mt)
+	$(call Host/Compile/Default,zstd)
+endef
+
+define Host/Install
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/lib install-pc install-static PREFIX=$(HOST_BUILD_PREFIX)
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/programs install PREFIX=$(HOST_BUILD_PREFIX)
+endef
+
+define Host/Uninstall
+	-$(call Host/Compile/Default,uninstall)
+endef
 
 $(eval $(call HostBuild))
