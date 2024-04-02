@@ -153,6 +153,11 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0:wan" "1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
+	tplink,archer-mr200-v5)
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
+		;;
 	tplink,tl-mr3020-v3)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
