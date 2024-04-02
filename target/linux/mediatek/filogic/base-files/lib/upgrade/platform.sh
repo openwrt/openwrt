@@ -86,6 +86,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-poe|\
+	cmcc,rax3000m|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7988a-rfb|\
 	nokia,ea0326gmp|\
@@ -95,18 +96,6 @@ platform_do_upgrade() {
 	tplink,tl-xdr6088|\
 	xiaomi,redmi-router-ax6000-ubootmod)
 		fit_do_upgrade "$1"
-		;;
-	cmcc,rax3000m)
-		case "$(cmdline_get_var root)" in
-		/dev/mmc*)
-			CI_KERNPART="production"
-			emmc_do_upgrade "$1"
-			;;
-		*)
-			CI_KERNPART="fit"
-			nand_do_upgrade "$1"
-			;;
-		esac
 		;;
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\
@@ -207,17 +196,11 @@ platform_check_image() {
 
 platform_copy_config() {
 	case "$(board_name)" in
-	cmcc,rax3000m)
-		case "$(cmdline_get_var root)" in
-		/dev/mmc*)
-			emmc_copy_config
-			;;
-		esac
-		;;
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
-	bananapi,bpi-r4-poe)
+	bananapi,bpi-r4-poe|\
+	cmcc,rax3000m)
 		if [ "$CI_METHOD" = "emmc" ]; then
 			emmc_copy_config
 		fi

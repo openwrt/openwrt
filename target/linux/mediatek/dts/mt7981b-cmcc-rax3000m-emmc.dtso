@@ -7,6 +7,13 @@
 	compatible = "cmcc,rax3000m", "mediatek,mt7981";
 
 	fragment@0 {
+		target = <&chosen>;
+		__overlay__ {
+			rootdisk = <&emmc_rootdisk>;
+		};
+	};
+
+	fragment@1 {
 		target = <&gmac0>;
 		__overlay__ {
 			nvmem-cells = <&macaddr_factory_2a 0>;
@@ -14,7 +21,7 @@
 		};
 	};
 
-	fragment@1 {
+	fragment@2 {
 		target = <&gmac1>;
 		__overlay__ {
 			nvmem-cells = <&macaddr_factory_24 0>;
@@ -22,7 +29,7 @@
 		};
 	};
 
-	fragment@2 {
+	fragment@3 {
 		target = <&mmc0>;
 		__overlay__ {
 			bus-width = <8>;
@@ -69,13 +76,17 @@
 								};
 							};
 						};
+
+						emmc_rootdisk: block-partition-production {
+							partname = "production";
+						};
 					};
 				};
 			};
 		};
 	};
 
-	fragment@3 {
+	fragment@4 {
 		target = <&pio>;
 		__overlay__ {
 			mmc0_pins_default: mmc0-pins {
@@ -94,7 +105,7 @@
 		};
 	};
 
-	fragment@4 {
+	fragment@5 {
 		target = <&wifi>;
 		__overlay__ {
 			nvmem-cells = <&eeprom_factory_0>;

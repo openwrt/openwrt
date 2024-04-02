@@ -40,6 +40,7 @@ bananapi,bpi-r3|\
 bananapi,bpi-r3-mini|\
 bananapi,bpi-r4|\
 bananapi,bpi-r4-poe|\
+cmcc,rax3000m|\
 jdcloud,re-cp-03)
 	. /lib/upgrade/fit.sh
 	export_fitblk_bootdev
@@ -53,16 +54,6 @@ jdcloud,re-cp-03)
 		;;
 	default)
 		ubootenv_add_nor_default
-		;;
-	esac
-	;;
-cmcc,rax3000m)
-	case "$(cmdline_get_var root)" in
-	/dev/mmc*)
-		ubootenv_add_mmc_default
-		;;
-	*)
-		ubootenv_add_ubi_default
 		;;
 	esac
 	;;
