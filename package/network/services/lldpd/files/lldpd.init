@@ -114,6 +114,10 @@ write_lldpd_conf()
 	local lldp_capability_advertisements
 	config_get_bool lldp_capability_advertisements 'config' 'lldp_capability_advertisements' 0
 
+	# Broadcast management address in lldpd >= 0.7.15
+	local lldp_mgmt_addr_advertisements
+	config_get_bool lldp_mgmt_addr_advertisements 'config' 'lldp_mgmt_addr_advertisements' 0
+
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
 		local lldpmed_fast_start
 		config_get_bool lldpmed_fast_start 'config' 'lldpmed_fast_start' 0
@@ -181,6 +185,7 @@ write_lldpd_conf()
 	[ -n "$lldp_tx_interval" ] && echo "configure lldp tx-interval $lldp_tx_interval" >> "$LLDPD_CONF"
 	[ "$lldp_tx_hold" -gt 0 ] && echo "configure lldp tx-hold $lldp_tx_hold" >> "$LLDPD_CONF"
 	[ "$lldp_capability_advertisements" -gt 0 ] && echo "configure lldp capabilities-advertisements" >> "$LLDPD_CONF"
+	[ "$lldp_mgmt_addr_advertisements" -gt 0 ] && echo "configure lldp management-addresses-advertisements" >> "$LLDPD_CONF"
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e "$LLDPD_CONFS_DIR" ] || ln -s /etc/lldpd.d "$LLDPD_CONFS_DIR"
@@ -360,6 +365,7 @@ reload_service() {
 		pause
 		unconfigure lldp custom-tlv
 		unconfigure lldp capabilities-advertisements
+		unconfigure lldp management-addresses-advertisements
 		unconfigure system interface pattern
 		unconfigure system description
 		unconfigure system hostname
