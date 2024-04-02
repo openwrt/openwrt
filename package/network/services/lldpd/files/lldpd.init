@@ -106,6 +106,7 @@ write_lldpd_conf()
 	local lldp_mgmt_ip
 	config_get lldp_mgmt_ip 'config' 'lldp_mgmt_ip'
 
+	# Configurable capabilities in lldpd >= v1.0.15
 	local lldp_syscapabilities
 	config_get lldp_syscapabilities 'config' 'lldp_syscapabilities'
 
