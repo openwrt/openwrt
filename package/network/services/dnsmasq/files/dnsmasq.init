@@ -973,8 +973,10 @@ dnsmasq_start()
 	append_bool "$cfg" rapidcommit "--dhcp-rapid-commit"
 	append_bool "$cfg" scriptarp "--script-arp"
 
+	# deprecate or remove filter-X in favor of filter-rr?
 	append_bool "$cfg" filter_aaaa "--filter-AAAA"
 	append_bool "$cfg" filter_a "--filter-A"
+	append_parm "$cfg" filter_rr "--filter-rr"
 
 	append_parm "$cfg" logfacility "--log-facility"
 	config_get logfacility "$cfg" "logfacility"
