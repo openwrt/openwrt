@@ -687,9 +687,19 @@ hostapd_set_bss_options() {
 				wireless_setup_vif_failed INVALID_WPA_PSK
 				return 1
 			fi
-			[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
+			[ -z "$wpa_psk_file" ] && {
+				[ -d /etc/hostapd ] || {
+					mkdir /etc/hostapd
+					chown network:netwrok /etc/hostapd
+				}
+				set_default wpa_psk_file /etc/hostapd/hostapd-$ifname.psk
+				ln -s /etc/hostapd/hostapd-$ifname.psk /var/run/hostapd-$ifname.psk
+			}
 			[ -n "$wpa_psk_file" ] && {
-				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
+				[ -e "$wpa_psk_file" ] || {
+					touch "$wpa_psk_file"
+					chown network:network "$wpa_psk_file"
+				}
 				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
 			}
 			[ "$eapol_version" -ge "1" -a "$eapol_version" -le "2" ] && append bss_conf "eapol_version=$eapol_version" "$N"

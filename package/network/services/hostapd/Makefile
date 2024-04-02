@@ -5,7 +5,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 
 PKG_SOURCE_URL:=http://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
@@ -679,23 +679,39 @@ define Install/hostapd/full
 	$(INSTALL_DATA) ./files/radius.users $(1)/etc/radius/users
 endef
 
+define Package/hostapd/conffiles
+/etc/hostapd
+endef
+
+Package/wpad-mesh-openssl/conffiles = $(Package/hostapd/conffiles)
+Package/wpad-mesh-wolfssl/conffiles = $(Package/hostapd/conffiles)
+Package/wpad-mesh-mbedtls/conffiles = $(Package/hostapd/conffiles)
+Package/wpad/conffiles = $(Package/hostapd/conffiles)
+Package/wpad-openssl/conffiles = $(Package/hostapd/conffiles)
+Package/wpad-wolfssl/conffiles = $(Package/hostapd/conffiles)
+Package/wpad-mbedtls/conffiles = $(Package/hostapd/conffiles)
+Package/hostapd-openssl/conffiles = $(Package/hostapd/conffiles)
+Package/hostapd-wolfssl/conffiles = $(Package/hostapd/conffiles)
+Package/hostapd-mbedtls/conffiles = $(Package/hostapd/conffiles)
+
 define Package/hostapd-full/conffiles
+$(Package/hostapd/conffiles)
 /etc/config/radius
 /etc/radius
 endef
 
 ifeq ($(CONFIG_VARIANT),full)
-Package/wpad-mesh-openssl/conffiles = $(Package/hostapd-full/conffiles)
-Package/wpad-mesh-wolfssl/conffiles = $(Package/hostapd-full/conffiles)
-Package/wpad-mesh-mbedtls/conffiles = $(Package/hostapd-full/conffiles)
-Package/wpad/conffiles = $(Package/hostapd-full/conffiles)
-Package/wpad-openssl/conffiles = $(Package/hostapd-full/conffiles)
-Package/wpad-wolfssl/conffiles = $(Package/hostapd-full/conffiles)
-Package/wpad-mbedtls/conffiles = $(Package/hostapd-full/conffiles)
-Package/hostapd/conffiles = $(Package/hostapd-full/conffiles)
-Package/hostapd-openssl/conffiles = $(Package/hostapd-full/conffiles)
-Package/hostapd-wolfssl/conffiles = $(Package/hostapd-full/conffiles)
-Package/hostapd-mbedtls/conffiles = $(Package/hostapd-full/conffiles)
+Package/wpad-mesh-openssl/conffiles += $(Package/hostapd-full/conffiles)
+Package/wpad-mesh-wolfssl/conffiles += $(Package/hostapd-full/conffiles)
+Package/wpad-mesh-mbedtls/conffiles += $(Package/hostapd-full/conffiles)
+Package/wpad/conffiles += $(Package/hostapd-full/conffiles)
+Package/wpad-openssl/conffiles += $(Package/hostapd-full/conffiles)
+Package/wpad-wolfssl/conffiles += $(Package/hostapd-full/conffiles)
+Package/wpad-mbedtls/conffiles += $(Package/hostapd-full/conffiles)
+Package/hostapd/conffiles += $(Package/hostapd-full/conffiles)
+Package/hostapd-openssl/conffiles += $(Package/hostapd-full/conffiles)
+Package/hostapd-wolfssl/conffiles += $(Package/hostapd-full/conffiles)
+Package/hostapd-mbedtls/conffiles += $(Package/hostapd-full/conffiles)
 endif
 
 define Install/hostapd
