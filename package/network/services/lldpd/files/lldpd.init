@@ -349,7 +349,7 @@ reload_service() {
 		return 0
 	fi
 
-	$LLDPCLI -u "$LLDPSOCKET" 2>&1 /dev/null <<-EOF
+	$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
 		pause
 		unconfigure lldp custom-tlv
 		unconfigure system interface pattern
@@ -359,7 +359,7 @@ reload_service() {
 		unconfigure system platform
 	EOF
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
-		$LLDPCLI -u "$LLDPSOCKET" 2>&1 /dev/null <<-EOF
+		$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
 			unconfigure med fast-start
 		EOF
 
@@ -367,9 +367,9 @@ reload_service() {
 	# Rewrite lldpd.conf
 	# If something changed it should be included by the lldpcli call
 	write_lldpd_conf
-	$LLDPCLI -u "$LLDPSOCKET" -c "$LLDPD_CONF" -c "$LLDPD_CONFS_DIR" 2>&1 /dev/null
+	$LLDPCLI -u "$LLDPSOCKET" -c "$LLDPD_CONF" -c "$LLDPD_CONFS_DIR" >/dev/null 2>&1 
 	# Broadcast update over the wire
-	$LLDPCLI -u "$LLDPSOCKET" 2>&1 /dev/null <<-EOF
+	$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
 		resume
 		update
 	EOF
@@ -377,6 +377,6 @@ reload_service() {
 }
 
 stop_service() {
-	rm -rf ${LLDPD_RUN} "$LLDPSOCKET" 2> /dev/null
+	rm -rf ${LLDPD_RUN} "$LLDPSOCKET" >/dev/null 2>&1
 }
 
