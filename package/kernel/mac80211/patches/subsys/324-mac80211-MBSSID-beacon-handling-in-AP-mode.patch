@@ -269,7 +269,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	IEEE80211_TX_STATUS_MSG	= 2,
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -5042,6 +5042,19 @@ ieee80211_beacon_get_finish(struct ieee8
+@@ -5043,6 +5043,19 @@ ieee80211_beacon_get_finish(struct ieee8
  		       IEEE80211_TX_CTL_FIRST_FRAGMENT;
  }
  
@@ -289,7 +289,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static struct sk_buff *
  ieee80211_beacon_get_ap(struct ieee80211_hw *hw,
  			struct ieee80211_vif *vif,
-@@ -5055,6 +5068,7 @@ ieee80211_beacon_get_ap(struct ieee80211
+@@ -5056,6 +5069,7 @@ ieee80211_beacon_get_ap(struct ieee80211
  	struct ieee80211_if_ap *ap = &sdata->u.ap;
  	struct sk_buff *skb = NULL;
  	u16 csa_off_base = 0;
@@ -297,7 +297,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	if (beacon->cntdwn_counter_offsets[0]) {
  		if (!is_template)
-@@ -5064,11 +5078,12 @@ ieee80211_beacon_get_ap(struct ieee80211
+@@ -5065,11 +5079,12 @@ ieee80211_beacon_get_ap(struct ieee80211
  	}
  
  	/* headroom, head length,
@@ -312,7 +312,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	if (!skb)
  		return NULL;
  
-@@ -5082,6 +5097,11 @@ ieee80211_beacon_get_ap(struct ieee80211
+@@ -5083,6 +5098,11 @@ ieee80211_beacon_get_ap(struct ieee80211
  		offs->tim_length = skb->len - beacon->head_len;
  		offs->cntdwn_counter_offs[0] = beacon->cntdwn_counter_offsets[0];
  

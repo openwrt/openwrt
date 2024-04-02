@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -1901,6 +1901,7 @@ void ieee80211_sta_register_airtime(stru
+@@ -1903,6 +1903,7 @@ void ieee80211_sta_register_airtime(stru
  	struct ieee80211_local *local = sta->sdata->local;
  	u8 ac = ieee80211_ac_from_tid(tid);
  	u32 airtime = 0;
@@ -21,7 +21,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	if (sta->local->airtime_flags & AIRTIME_USE_TX)
  		airtime += tx_airtime;
-@@ -1910,7 +1911,11 @@ void ieee80211_sta_register_airtime(stru
+@@ -1912,7 +1913,11 @@ void ieee80211_sta_register_airtime(stru
  	spin_lock_bh(&local->active_txq_lock[ac]);
  	sta->airtime[ac].tx_airtime += tx_airtime;
  	sta->airtime[ac].rx_airtime += rx_airtime;

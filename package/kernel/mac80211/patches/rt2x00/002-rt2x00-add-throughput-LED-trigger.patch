@@ -42,7 +42,7 @@ Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00dev.c
-@@ -1094,6 +1094,19 @@ static void rt2x00lib_remove_hw(struct r
+@@ -1095,6 +1095,19 @@ static void rt2x00lib_remove_hw(struct r
  	kfree(rt2x00dev->chan_survey);
  }
  
@@ -62,7 +62,7 @@ Acked-by: Stanislaw Gruszka <stf_xl@wp.pl>
  static int rt2x00lib_probe_hw(struct rt2x00_dev *rt2x00dev)
  {
  	struct hw_mode_spec *spec = &rt2x00dev->spec;
-@@ -1175,6 +1188,11 @@ static int rt2x00lib_probe_hw(struct rt2
+@@ -1176,6 +1189,11 @@ static int rt2x00lib_probe_hw(struct rt2
  
  #undef RT2X00_TASKLET_INIT
  

@@ -294,7 +294,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		/* done */
  		state->split_start = 0;
  		break;
-@@ -5021,6 +5066,96 @@ static int validate_beacon_tx_rate(struc
+@@ -5024,6 +5069,96 @@ static int validate_beacon_tx_rate(struc
  	return 0;
  }
  
@@ -391,7 +391,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static int nl80211_parse_beacon(struct cfg80211_registered_device *rdev,
  				struct nlattr *attrs[],
  				struct cfg80211_beacon_data *bcn)
-@@ -5101,6 +5236,17 @@ static int nl80211_parse_beacon(struct c
+@@ -5104,6 +5239,17 @@ static int nl80211_parse_beacon(struct c
  		bcn->ftm_responder = -1;
  	}
  
@@ -409,7 +409,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	return 0;
  }
  
-@@ -5557,6 +5703,17 @@ static int nl80211_start_ap(struct sk_bu
+@@ -5560,6 +5706,17 @@ static int nl80211_start_ap(struct sk_bu
  			goto out;
  	}
  
@@ -427,7 +427,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	nl80211_calculate_ap_params(&params);
  
  	if (info->attrs[NL80211_ATTR_EXTERNAL_AUTH_SUPPORT])
-@@ -5578,6 +5735,11 @@ static int nl80211_start_ap(struct sk_bu
+@@ -5581,6 +5738,11 @@ static int nl80211_start_ap(struct sk_bu
  
  out:
  	kfree(params.acl);
@@ -439,7 +439,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	return err;
  }
-@@ -5602,12 +5764,14 @@ static int nl80211_set_beacon(struct sk_
+@@ -5605,12 +5767,14 @@ static int nl80211_set_beacon(struct sk_
  
  	err = nl80211_parse_beacon(rdev, info->attrs, &params);
  	if (err)
@@ -455,7 +455,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	return err;
  }
  
-@@ -9284,12 +9448,14 @@ static int nl80211_channel_switch(struct
+@@ -9287,12 +9451,14 @@ static int nl80211_channel_switch(struct
  
  	err = nl80211_parse_beacon(rdev, info->attrs, &params.beacon_after);
  	if (err)
@@ -473,7 +473,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	err = nla_parse_nested_deprecated(csa_attrs, NL80211_ATTR_MAX,
  					  info->attrs[NL80211_ATTR_CSA_IES],
-@@ -9408,6 +9574,8 @@ skip_beacons:
+@@ -9411,6 +9577,8 @@ skip_beacons:
  	wdev_unlock(wdev);
  
  free:
@@ -482,7 +482,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	kfree(csa_attrs);
  	return err;
  }
-@@ -14960,6 +15128,8 @@ static int nl80211_color_change(struct s
+@@ -14963,6 +15131,8 @@ static int nl80211_color_change(struct s
  	wdev_unlock(wdev);
  
  out:

@@ -37,7 +37,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u32 aql_limit_low;
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3825,6 +3825,36 @@ static inline s32 ieee80211_sta_deficit(
+@@ -3826,6 +3826,36 @@ static inline s32 ieee80211_sta_deficit(
  	return air_info->deficit - atomic_read(&air_info->aql_tx_pending);
  }
  
@@ -74,7 +74,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  struct ieee80211_txq *ieee80211_next_txq(struct ieee80211_hw *hw, u8 ac)
  {
  	struct ieee80211_local *local = hw_to_local(hw);
-@@ -3871,7 +3901,6 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -3872,7 +3902,6 @@ struct ieee80211_txq *ieee80211_next_txq
  		}
  	}
  
@@ -82,7 +82,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (txqi->schedule_round == local->schedule_round[ac])
  		goto out;
  
-@@ -3891,12 +3920,13 @@ void __ieee80211_schedule_txq(struct iee
+@@ -3892,12 +3921,13 @@ void __ieee80211_schedule_txq(struct iee
  {
  	struct ieee80211_local *local = hw_to_local(hw);
  	struct txq_info *txqi = to_txq_info(txq);
@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		/* If airtime accounting is active, always enqueue STAs at the
  		 * head of the list to ensure that they only get moved to the
  		 * back by the airtime DRR scheduler once they have a negative
-@@ -3904,7 +3934,7 @@ void __ieee80211_schedule_txq(struct iee
+@@ -3905,7 +3935,7 @@ void __ieee80211_schedule_txq(struct iee
  		 * get immediately moved to the back of the list on the next
  		 * call to ieee80211_next_txq().
  		 */
@@ -107,7 +107,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		    wiphy_ext_feature_isset(local->hw.wiphy,
  					    NL80211_EXT_FEATURE_AIRTIME_FAIRNESS))
  			list_add(&txqi->schedule_order,
-@@ -3912,6 +3942,8 @@ void __ieee80211_schedule_txq(struct iee
+@@ -3913,6 +3943,8 @@ void __ieee80211_schedule_txq(struct iee
  		else
  			list_add_tail(&txqi->schedule_order,
  				      &local->active_txqs[txq->ac]);

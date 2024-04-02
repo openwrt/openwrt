@@ -41,7 +41,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u32 aql_limit_high;
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3848,7 +3848,7 @@ struct ieee80211_txq *ieee80211_next_txq
+@@ -3849,7 +3849,7 @@ struct ieee80211_txq *ieee80211_next_txq
  		struct sta_info *sta = container_of(txqi->txq.sta,
  						    struct sta_info, sta);
  		bool aql_check = ieee80211_txq_airtime_check(hw, &txqi->txq);

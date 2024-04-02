@@ -19,9 +19,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -3793,7 +3793,7 @@ begin:
+@@ -3794,7 +3794,7 @@ begin:
  encap_out:
- 	IEEE80211_SKB_CB(skb)->control.vif = vif;
+ 	info->control.vif = vif;
  
 -	if (vif &&
 +	if (tx.sta &&

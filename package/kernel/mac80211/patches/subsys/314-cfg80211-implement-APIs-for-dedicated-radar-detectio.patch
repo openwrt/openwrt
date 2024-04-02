@@ -294,7 +294,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  };
  
  /* policy for the key attributes */
-@@ -9288,12 +9289,6 @@ static int nl80211_start_radar_detection
+@@ -9291,12 +9292,6 @@ static int nl80211_start_radar_detection
  	if (err)
  		return err;
  
@@ -307,7 +307,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	err = cfg80211_chandef_dfs_required(wiphy, &chandef, wdev->iftype);
  	if (err < 0)
  		return err;
-@@ -9304,6 +9299,16 @@ static int nl80211_start_radar_detection
+@@ -9307,6 +9302,16 @@ static int nl80211_start_radar_detection
  	if (!cfg80211_chandef_dfs_usable(wiphy, &chandef))
  		return -EINVAL;
  
