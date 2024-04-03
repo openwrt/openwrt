@@ -164,8 +164,10 @@ tools-core += zstd
 $(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
 tools-y += $(tools-core)
 
-# make core tools depend on sed and flock
-$(foreach tool, $(filter-out zstd,$(tools-core)), $(eval $(curdir)/$(tool)/compile += $(curdir)/sed/compile))
+# make some core tools depend on sed and flock
+$(curdir)/patch/compile += $(curdir)/sed/compile
+$(curdir)/tar/compile += $(curdir)/sed/compile
+$(curdir)/zstd/compile += $(curdir)/libdeflate/compile
 
 $(curdir)/sed/compile := $(curdir)/flock/compile $(curdir)/zstd/compile
 tools-y += flock sed
