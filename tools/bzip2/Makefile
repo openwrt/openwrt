@@ -22,31 +22,11 @@ PKG_CPE_ID:=cpe:/a:bzip:bzip2
 HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/cmake.mk
 
 HOSTCC := $(HOSTCC_NOCACHE)
 HOST_CFLAGS += $(HOST_FPIC)
 
-HOST_MAKE_FLAGS+= \
-	CFLAGS="$(HOST_CFLAGS)" \
-	LDFLAGS="$(HOST_LDFLAGS)" \
-	ENABLE_BIN_SHARED=1 \
-	ENABLE_BIN_STATIC=0 \
-	ENABLE_LIB_SHARED=1 \
-	ENABLE_LIB_STATIC=1 \
-	ENABLE_DEV=1 \
-	ENABLE_DOCS=1 \
-	ENABLE_TESTS=0 \
-	PREFIX="$(HOST_BUILD_PREFIX)"
-
-define Host/Configure
-endef
-
-define Host/Uninstall
-	$(call Host/Compile/Default,uninstall)
-	$(call Host/Compile/Default,clean)
-endef
-
-define Host/Clean
-endef
+CMAKE_HOST_OPTIONS += -DENABLE_EXAMPLES=off
 
 $(eval $(call HostBuild))
