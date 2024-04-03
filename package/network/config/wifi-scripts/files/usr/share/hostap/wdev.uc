@@ -35,7 +35,7 @@ function iface_start(wdev)
 	if (wdev.freq)
 		system(`iw dev ${ifname} set freq ${wdev.freq} ${wdev.htmode}`);
 	if (wdev.mode == "adhoc") {
-		let cmd = ["iw", "dev", ifname, "ibss", "join", wdev.ssid, wdev.freq, wdev.htmode, "fixed-freq" ];
+		let cmd = ["iw", "dev", ifname, "ibss", "join", wdev.ssid, wdev.freq, wdev.htmode || "NOHT", "fixed-freq" ];
 		if (wdev.bssid)
 			push(cmd, wdev.bssid);
 		for (let key in [ "beacon-interval", "basic-rates", "mcast-rate", "keys" ])
