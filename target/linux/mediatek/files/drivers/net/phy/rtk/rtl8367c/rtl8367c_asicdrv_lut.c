@@ -207,7 +207,7 @@ static void _rtl8367c_fdbStSmi2User( rtl8367c_luttb *pLutSt, rtk_uint16 *pFdbSmi
 /* Function Name:
  *      rtl8367c_setAsicLutIpMulticastLookup
  * Description:
- *      Set Lut IP multicast lookup function
+ *      Set LUT IP multicast lookup function
  * Input:
  *      enabled - 1: enabled, 0: disabled
  * Output:
@@ -225,7 +225,7 @@ ret_t rtl8367c_setAsicLutIpMulticastLookup(rtk_uint32 enabled)
 /* Function Name:
  *      rtl8367c_getAsicLutIpMulticastLookup
  * Description:
- *      Get Lut IP multicast lookup function
+ *      Get LUT IP multicast lookup function
  * Input:
  *      pEnabled - 1: enabled, 0: disabled
  * Output:
@@ -244,7 +244,7 @@ ret_t rtl8367c_getAsicLutIpMulticastLookup(rtk_uint32* pEnabled)
 /* Function Name:
  *      rtl8367c_setAsicLutIpMulticastLookup
  * Description:
- *      Set Lut IP multicast + VID lookup function
+ *      Set LUT IP multicast + VID lookup function
  * Input:
  *      enabled - 1: enabled, 0: disabled
  * Output:
@@ -263,7 +263,7 @@ ret_t rtl8367c_setAsicLutIpMulticastVidLookup(rtk_uint32 enabled)
 /* Function Name:
  *      rtl8367c_getAsicLutIpMulticastVidLookup
  * Description:
- *      Get Lut IP multicast lookup function
+ *      Get LUT IP multicast lookup function
  * Input:
  *      pEnabled - 1: enabled, 0: disabled
  * Output:
@@ -282,7 +282,7 @@ ret_t rtl8367c_getAsicLutIpMulticastVidLookup(rtk_uint32* pEnabled)
 /* Function Name:
  *      rtl8367c_setAsicLutIpLookupMethod
  * Description:
- *      Set Lut IP lookup hash with DIP or {DIP,SIP} pair
+ *      Set LUT IP lookup hash with DIP or {DIP,SIP} pair
  * Input:
  *      type - 1: When DIP can be found in IPMC_GROUP_TABLE, use DIP+SIP Hash, otherwise, use DIP+(SIP=0.0.0.0) Hash.
  *             0: When DIP can be found in IPMC_GROUP_TABLE, use DIP+(SIP=0.0.0.0) Hash, otherwise use DIP+SIP Hash.
@@ -301,7 +301,7 @@ ret_t rtl8367c_setAsicLutIpLookupMethod(rtk_uint32 type)
 /* Function Name:
  *      rtl8367c_getAsicLutIpLookupMethod
  * Description:
- *      Get Lut IP lookup hash with DIP or {DIP,SIP} pair
+ *      Get LUT IP lookup hash with DIP or {DIP,SIP} pair
  * Input:
  *      pType - 1: When DIP can be found in IPMC_GROUP_TABLE, use DIP+SIP Hash, otherwise, use DIP+(SIP=0.0.0.0) Hash.
  *              0: When DIP can be found in IPMC_GROUP_TABLE, use DIP+(SIP=0.0.0.0) Hash, otherwise use DIP+SIP Hash.
@@ -320,10 +320,10 @@ ret_t rtl8367c_getAsicLutIpLookupMethod(rtk_uint32* pType)
 /* Function Name:
  *      rtl8367c_setAsicLutAgeTimerSpeed
  * Description:
- *      Set LUT agging out speed
+ *      Set LUT ageing out speed
  * Input:
- *      timer - Agging out timer 0:Has been aged out
- *      speed - Agging out speed 0-fastest 3-slowest
+ *      timer - Ageing out timer 0:Has been aged out
+ *      speed - Ageing out speed 0-fastest 3-slowest
  * Output:
  *      None
  * Return:
@@ -346,10 +346,10 @@ ret_t rtl8367c_setAsicLutAgeTimerSpeed(rtk_uint32 timer, rtk_uint32 speed)
 /* Function Name:
  *      rtl8367c_getAsicLutAgeTimerSpeed
  * Description:
- *      Get LUT agging out speed
+ *      Get LUT ageing out speed
  * Input:
- *      pTimer - Agging out timer 0:Has been aged out
- *      pSpeed - Agging out speed 0-fastest 3-slowest
+ *      pTimer - Ageing out timer 0:Has been aged out
+ *      pSpeed - Ageing out speed 0-fastest 3-slowest
  * Output:
  *      None
  * Return:
@@ -378,7 +378,7 @@ ret_t rtl8367c_getAsicLutAgeTimerSpeed(rtk_uint32* pTimer, rtk_uint32* pSpeed)
 /* Function Name:
  *      rtl8367c_setAsicLutCamTbUsage
  * Description:
- *      Configure Lut CAM table usage
+ *      Configure LUT CAM table usage
  * Input:
  *      enabled - L2 CAM table usage 1: enabled, 0: disabled
  * Output:
@@ -400,7 +400,7 @@ ret_t rtl8367c_setAsicLutCamTbUsage(rtk_uint32 enabled)
 /* Function Name:
  *      rtl8367c_getAsicLutCamTbUsage
  * Description:
- *      Get Lut CAM table usage
+ *      Get LUT CAM table usage
  * Input:
  *      pEnabled - L2 CAM table usage 1: enabled, 0: disabled
  * Output:
@@ -1142,7 +1142,7 @@ ret_t rtl8367c_getAsicLutFlushMode(rtk_uint32* pMode)
  * Description:
  *      Get L2 LUT flush type
  * Input:
- *      type    - 0: dynamice unicast; 1: both dynamic and static unicast entry
+ *      type    - 0: dynamic unicast; 1: both dynamic and static unicast entry
  * Output:
  *      None
  * Return:
@@ -1160,7 +1160,7 @@ ret_t rtl8367c_setAsicLutFlushType(rtk_uint32 type)
  * Description:
  *      Set L2 LUT flush type
  * Input:
- *      pType   - 0: dynamice unicast; 1: both dynamic and static unicast entry
+ *      pType   - 0: dynamic unicast; 1: both dynamic and static unicast entry
  * Output:
  *      None
  * Return:
@@ -1504,9 +1504,9 @@ ret_t rtl8367c_getAsicLutLinkDownForceAging(rtk_uint32 *pEnable)
 /* Function Name:
  *      rtl8367c_setAsicLutIpmcFwdRouterPort
  * Description:
- *       Set IPMC packet forward to rounter port also or not
+ *       Set IPMC packet forward to router port also or not
  * Input:
- *      enable      - 1: Inlcude router port, 0, exclude router port
+ *      enable      - 1: Include router port, 0, exclude router port
  * Output:
  *      None
  * Return:
@@ -1527,11 +1527,11 @@ ret_t rtl8367c_setAsicLutIpmcFwdRouterPort(rtk_uint32 enable)
 /* Function Name:
  *      rtl8367c_getAsicLutIpmcFwdRouterPort
  * Description:
- *       Get IPMC packet forward to rounter port also or not
+ *       Get IPMC packet forward to router port also or not
  * Input:
  *      None
  * Output:
- *      pEnable         - 1: Inlcude router port, 0, exclude router port
+ *      pEnable         - 1: Include router port, 0, exclude router port
  * Return:
  *      RT_ERR_OK               - Success
  *      RT_ERR_SMI              - SMI access error

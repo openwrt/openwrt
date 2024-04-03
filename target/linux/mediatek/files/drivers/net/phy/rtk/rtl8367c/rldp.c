@@ -404,7 +404,7 @@ rtk_api_ret_t rtk_rldp_portStatus_get(rtk_port_t port, rtk_rldp_portStatus_t *pP
  *      RT_ERR_NULL_POINTER
  * Note:
  *      Clear operation effect loop_enter and loop_leave only, other field in
- *      the structure are don't care. Loop status cab't be clean.
+ *      the structure are don't care. Loop status can't be clean.
  */
 rtk_api_ret_t rtk_rldp_portStatus_set(rtk_port_t port, rtk_rldp_portStatus_t *pPortStatus)
 {

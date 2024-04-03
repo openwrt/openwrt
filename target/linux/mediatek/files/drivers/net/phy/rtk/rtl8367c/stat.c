@@ -265,7 +265,7 @@ static rtk_api_ret_t _get_asic_mib_idx(rtk_stat_port_type_t cnt_idx, RTL8367C_MI
  *      port        - port id.
  *      cntr_idx    - port counter index.
  * Output:
- *      pCntr - MIB retrived counter.
+ *      pCntr - MIB retrieved counter.
  * Return:
  *      RT_ERR_OK           - OK
  *      RT_ERR_FAILED       - Failed
@@ -592,7 +592,7 @@ rtk_api_ret_t rtk_stat_lengthMode_set(rtk_stat_lengthMode_t txMode, rtk_stat_len
 /* Function Name:
  *      rtk_stat_lengthMode_get
  * Description:
- *      Get Legnth mode.
+ *      Get Length mode.
  * Input:
  *      None.
  * Output:

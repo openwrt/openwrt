@@ -106,7 +106,7 @@ rtk_api_ret_t rtk_vlan_init(void)
             return retVal;
     }
 
-    /* Updata Databse */
+    /* Update Database */
     vlan_mbrCfgUsage[0] = MBRCFG_USED_BY_VLAN;
     vlan_mbrCfgVid[0] = 1;
 
@@ -1576,7 +1576,7 @@ rtk_api_ret_t rtk_vlan_stg_get(rtk_vlan_t vid, rtk_stp_msti_id_t *pStg)
  *      Set port-based filtering database
  * Input:
  *      port - Port id.
- *      enable - ebable port-based FID
+ *      enable - enable port-based FID
  *      fid - Specified filtering database.
  * Output:
  *      None
@@ -1624,7 +1624,7 @@ rtk_api_ret_t rtk_vlan_portFid_set(rtk_port_t port, rtk_enable_t enable, rtk_fid
  * Input:
  *      port - Port id.
  * Output:
- *      pEnable - ebable port-based FID
+ *      pEnable - enable port-based FID
  *      pFid - Specified filtering database.
  * Return:
  *      RT_ERR_OK              - OK
