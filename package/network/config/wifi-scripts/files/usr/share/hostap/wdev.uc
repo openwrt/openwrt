@@ -32,10 +32,11 @@ function iface_start(wdev)
 		wdev_config.macaddr = phydev.macaddr_next();
 	wdev_create(phy, ifname, wdev_config);
 	wdev_set_up(ifname, true);
+	let htmode = wdev.htmode || "NOHT";
 	if (wdev.freq)
-		system(`iw dev ${ifname} set freq ${wdev.freq} ${wdev.htmode}`);
+		system(`iw dev ${ifname} set freq ${wdev.freq} ${htmode}`);
 	if (wdev.mode == "adhoc") {
-		let cmd = ["iw", "dev", ifname, "ibss", "join", wdev.ssid, wdev.freq, wdev.htmode, "fixed-freq" ];
+		let cmd = ["iw", "dev", ifname, "ibss", "join", wdev.ssid, wdev.freq, htmode, "fixed-freq" ];
 		if (wdev.bssid)
 			push(cmd, wdev.bssid);
 		for (let key in [ "beacon-interval", "basic-rates", "mcast-rate", "keys" ])
@@ -43,7 +44,7 @@ function iface_start(wdev)
 				push(cmd, key, wdev[key]);
 		system(cmd);
 	} else if (wdev.mode == "mesh") {
-		let cmd = [ "iw", "dev", ifname, "mesh", "join", wdev.ssid, "freq", wdev.freq, wdev.htmode ];
+		let cmd = [ "iw", "dev", ifname, "mesh", "join", wdev.ssid, "freq", wdev.freq, htmode ];
 		for (let key in [ "mcast-rate", "beacon-interval" ])
 			if (wdev[key])
 				push(cmd, key, wdev[key]);
