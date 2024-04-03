@@ -11,9 +11,9 @@ PKG_CPE_ID:=cpe:/a:gnu:automake
 PKG_VERSION:=1.16.5
 PKG_API_VERSION:=$(word 2,$(subst ., ,$(PKG_VERSION)))
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/automake
-PKG_HASH:=f01d58cd6d9d77fbdca9eb4bbd5ead1988228fdb73d6f7a201f5f8d6b118b469
+PKG_HASH:=07bd24ad08a64bc17250ce09ec56e921d6343903943e99ccf63bbf0705e34605
 
 include $(INCLUDE_DIR)/host-build.mk
 

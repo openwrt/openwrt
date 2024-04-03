@@ -11,8 +11,8 @@ PKG_NAME:=expat
 PKG_CPE_ID:=cpe:/a:libexpat:expat
 PKG_VERSION:=2.6.2
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_HASH:=ee14b4c5d8908b1bec37ad937607eab183d4d9806a08adee472c3c3121d27364
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_HASH:=d4cf38d26e21a56654ffe4acd9cd5481164619626802328506a2869afab29ab3
 PKG_SOURCE_URL:=https://github.com/libexpat/libexpat/releases/download/R_$(subst .,_,$(PKG_VERSION))
 
 HOST_BUILD_PARALLEL:=1
