@@ -110,6 +110,10 @@ write_lldpd_conf()
 	local lldp_syscapabilities
 	config_get lldp_syscapabilities 'config' 'lldp_syscapabilities'
 
+	# Configurable capabilities in lldpd >= v1.0.15
+	local lldp_capability_advertisements
+	config_get_bool lldp_capability_advertisements 'config' 'lldp_capability_advertisements' 0
+
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
 		local lldpmed_fast_start
 		config_get_bool lldpmed_fast_start 'config' 'lldpmed_fast_start' 0
@@ -150,6 +154,7 @@ write_lldpd_conf()
 	[ -n "$lldp_hostname" ] && echo "configure system hostname" "\"$lldp_hostname\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_mgmt_ip" ] && echo "configure system ip management pattern" "\"$lldp_mgmt_ip\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_syscapabilities" ] && echo "configure system capabilities enabled $lldp_syscapabilities" >> "$LLDPD_CONF"
+
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ] && [ "$lldpmed_fast_start" -gt 0 ]; then
 		if [ "$lldpmed_fast_start_tx_interval" -gt 0 ]; then
 			echo "configure med fast-start tx-interval $lldpmed_fast_start_tx_interval" >> "$LLDPD_CONF"
@@ -175,6 +180,7 @@ write_lldpd_conf()
 	[ -n "$lldp_platform" ] && echo "configure system platform" "\"$lldp_platform\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_tx_interval" ] && echo "configure lldp tx-interval $lldp_tx_interval" >> "$LLDPD_CONF"
 	[ "$lldp_tx_hold" -gt 0 ] && echo "configure lldp tx-hold $lldp_tx_hold" >> "$LLDPD_CONF"
+	[ "$lldp_capability_advertisements" -gt 0 ] && echo "configure lldp capabilities-advertisements" >> "$LLDPD_CONF"
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e "$LLDPD_CONFS_DIR" ] || ln -s /etc/lldpd.d "$LLDPD_CONFS_DIR"
@@ -353,6 +359,7 @@ reload_service() {
 	$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
 		pause
 		unconfigure lldp custom-tlv
+		unconfigure lldp capabilities-advertisements
 		unconfigure system interface pattern
 		unconfigure system description
 		unconfigure system hostname
