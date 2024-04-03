@@ -429,8 +429,8 @@ ret_t rtl8367c_setAsicIGMPRobVar(rtk_uint32 rob_var)
     if(rob_var > RTL8367C_MAX_ROB_VAR)
         return RT_ERR_OUT_OF_RANGE;
 
-    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_ROBURSTNESS_VAR_MASK, rob_var);
     /* Robustness variable */
+    retVal = rtl8367c_setAsicRegBits(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_ROBUSTNESS_VAR_MASK, rob_var);
     if(retVal != RT_ERR_OK)
         return retVal;
 
@@ -456,8 +456,8 @@ ret_t rtl8367c_getAsicIGMPRobVar(rtk_uint32 *prob_var)
     ret_t   retVal;
     rtk_uint32  value;
 
-    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_ROBURSTNESS_VAR_MASK, &value);
     /* Robustness variable */
+    retVal = rtl8367c_getAsicRegBits(RTL8367C_REG_IGMP_MLD_CFG0, RTL8367C_ROBUSTNESS_VAR_MASK, &value);
     if(retVal != RT_ERR_OK)
         return retVal;
 

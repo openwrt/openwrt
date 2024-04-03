@@ -259,9 +259,9 @@ ret_t rtl8367c_getAsicCputagPriorityRemapping(rtk_uint32 srcPri, rtk_uint32 *pNe
  * Note:
  *     None
  */
-ret_t rtl8367c_setAsicCputagPosition(rtk_uint32 postion)
+ret_t rtl8367c_setAsicCputagPosition(rtk_uint32 position)
 {
-    return rtl8367c_setAsicRegBit(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_TAG_POSITION_OFFSET, postion);
+    return rtl8367c_setAsicRegBit(RTL8367C_REG_CPU_CTRL, RTL8367C_CPU_TAG_POSITION_OFFSET, position);
 }
 /* Function Name:
  *      rtl8367c_getAsicCputagPosition
