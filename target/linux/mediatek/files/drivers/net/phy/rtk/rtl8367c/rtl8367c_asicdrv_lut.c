@@ -439,7 +439,7 @@ ret_t rtl8367c_getAsicLutCamTbUsage(rtk_uint32* pEnabled)
  * Note:
  *      None
  */
-   /*修改: RTL8367C_PORTIDMAX, RTL8367C_LUT_LEARNLIMITMAX, RTL8367C_LUT_PORT_LEARN_LIMITNO_REG*/
+   /*modification: RTL8367C_PORTIDMAX, RTL8367C_LUT_LEARNLIMITMAX, RTL8367C_LUT_PORT_LEARN_LIMITNO_REG*/
 ret_t rtl8367c_setAsicLutLearnLimitNo(rtk_uint32 port, rtk_uint32 number)
 {
     if(port > RTL8367C_PORTIDMAX)
@@ -470,7 +470,7 @@ ret_t rtl8367c_setAsicLutLearnLimitNo(rtk_uint32 port, rtk_uint32 number)
  * Note:
  *      None
  */
-  /*修改: RTL8367C_PORTIDMAX, RTL8367C_LUT_PORT_LEARN_LIMITNO_REG*/
+  /*modification: RTL8367C_PORTIDMAX, RTL8367C_LUT_PORT_LEARN_LIMITNO_REG*/
 ret_t rtl8367c_getAsicLutLearnLimitNo(rtk_uint32 port, rtk_uint32* pNumber)
 {
     if(port > RTL8367C_PORTIDMAX)
@@ -498,7 +498,7 @@ ret_t rtl8367c_getAsicLutLearnLimitNo(rtk_uint32 port, rtk_uint32* pNumber)
  * Note:
  *      None
  */
-  /*修改: RTL8367C_LUT_LEARNLIMITMAX*/
+  /*modification: RTL8367C_LUT_LEARNLIMITMAX*/
 ret_t rtl8367c_setAsicSystemLutLearnLimitNo(rtk_uint32 number)
 {
     if(number > RTL8367C_LUT_LEARNLIMITMAX)
@@ -632,7 +632,7 @@ ret_t rtl8367c_getAsicSystemLutLearnOverAct(rtk_uint32 *pAction)
  * Note:
  *      None
  */
-  /*修改: RTL8367C_LUT_SYSTEM_LEARN_PMASK_MASK*/
+  /*modification: RTL8367C_LUT_SYSTEM_LEARN_PMASK_MASK*/
 ret_t rtl8367c_setAsicSystemLutLearnPortMask(rtk_uint32 portmask)
 {
     ret_t retVal;
@@ -666,7 +666,7 @@ ret_t rtl8367c_setAsicSystemLutLearnPortMask(rtk_uint32 portmask)
  * Note:
  *      None
  */
- /*修改: RTL8367C_LUT_SYSTEM_LEARN_PMASK_MASK*/
+ /*modification: RTL8367C_LUT_SYSTEM_LEARN_PMASK_MASK*/
 ret_t rtl8367c_getAsicSystemLutLearnPortMask(rtk_uint32 *pPortmask)
 {
     rtk_uint32 tmpmask;
@@ -966,7 +966,7 @@ ret_t rtl8367c_getAsicL2LookupTb(rtk_uint32 method, rtl8367c_luttb *pL2Table)
  * Note:
  *      None
  */
- /*修改RTL8367C_PORTIDMAX, RTL8367C_REG_L2_LRN_CNT_REG, port10 reg is not contnious, wait for updating of base.h*/
+ /*modification:RTL8367C_PORTIDMAX, RTL8367C_REG_L2_LRN_CNT_REG, port10 reg is not continuous, wait for updating of base.h*/
 ret_t rtl8367c_getAsicLutLearnNo(rtk_uint32 port, rtk_uint32* pNumber)
 {
     ret_t retVal;
@@ -1047,7 +1047,7 @@ ret_t rtl8367c_getAsicLutFlushAllStatus(rtk_uint32 *pBusyStatus)
  * Note:
  *      None
  */
- /*port8~port10的设置在另外一个register, wait for updating of base.h, reg.h*/
+ /*port8~port10 setup is done in a separate register, wait for updating of base.h, reg.h*/
 ret_t rtl8367c_setAsicLutForceFlush(rtk_uint32 portmask)
 {
     ret_t retVal;
@@ -1079,7 +1079,7 @@ ret_t rtl8367c_setAsicLutForceFlush(rtk_uint32 portmask)
  * Note:
  *      None
  */
- /*port8~port10的设置在另外一个register, wait for updating of base.h, reg.h*/
+ /*port8~port10 setup is done in a separate register, wait for updating of base.h, reg.h*/
 ret_t rtl8367c_getAsicLutForceFlushStatus(rtk_uint32 *pPortmask)
 {
     rtk_uint32 tmpMask;
@@ -1271,7 +1271,7 @@ ret_t rtl8367c_getAsicLutFlushFid(rtk_uint32* pFid)
  * Note:
  *      None
  */
- /*修改RTL8367C_PORTIDMAX*/
+ /*modification:RTL8367C_PORTIDMAX*/
 ret_t rtl8367c_setAsicLutDisableAging(rtk_uint32 port, rtk_uint32 disabled)
 {
     if(port > RTL8367C_PORTIDMAX)
@@ -1295,7 +1295,7 @@ ret_t rtl8367c_setAsicLutDisableAging(rtk_uint32 port, rtk_uint32 disabled)
  * Note:
  *      None
  */
- /*修改RTL8367C_PORTIDMAX*/
+ /*modification:RTL8367C_PORTIDMAX*/
 ret_t rtl8367c_getAsicLutDisableAging(rtk_uint32 port, rtk_uint32 *pDisabled)
 {
     if(port > RTL8367C_PORTIDMAX)
