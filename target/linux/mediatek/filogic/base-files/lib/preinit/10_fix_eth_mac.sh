@@ -10,6 +10,7 @@ preinit_set_mac_address() {
 		ip link set dev game address "$(cat $key_path/LANMAC)"
 		ip link set dev eth1 address "$(cat $key_path/WANMAC)"
 		;;
+	asus,rt-ax57go|\
 	asus,tuf-ax4200|\
 	asus,tuf-ax6000)
 		CI_UBIPART="UBI_DEV"

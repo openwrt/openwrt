@@ -1,0 +1,267 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7981.dtsi"
+/ {
+	model = "RT-AX57GO";
+	compatible = "asus,rt-ax57go", "mediatek,mt7981";
+	
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-override = "ubi.mtd=UBI_DEV";
+	};
+
+	memory {
+		// fpga ddr2: 128MB*2
+		reg = <0 0x40000000 0 0x10000000>;
+	};
+
+	reserved-memory {
+		/* 24 KiB reserved for PWM[ch0,ch1,ch2] */
+		pwm_reserved: pwmbuf@4C7FA000 {
+			reg = <0 0x4C7FA000 0 0x6000>;
+			no-map;
+		};
+	};
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_green;
+	};
+
+	timer {
+		clock-frequency = <12996791>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red: led-1 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_blue: led-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 2 GPIO_ACTIVE_LOW>;
+		};
+		
+		led_status_white: led-3 {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&eth {
+        status = "okay";
+	/* lan */
+        gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "sgmii";
+		phy-handle = <&phy1>;
+	};
+	/* wan */
+	gmac1: mac@1 {
+                compatible = "mediatek,eth-mac";
+                reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&phy0>;
+        };
+
+        mdio: mdio-bus {
+                #address-cells = <1>;
+                #size-cells = <0>;
+
+                phy0: ethernet-phy@0 {
+			compatible = "ethernet-phy-id03a2.9461";
+			reg = <0>;
+			phy-mode = "gmii";
+			nvmem-cells = <&phy_calibration>;
+			nvmem-cell-names = "phy-cal-data";
+                };
+		phy1: ethernet-phy@1 {
+			compatible = "ethernet-phy-id03a2.9471";
+			reg = <24>;
+			reset-gpios = <&pio 39 1>;
+			reset-assert-us = <600>;
+			reset-deassert-us = <20000>;
+			phy-mode = "sgmii";
+		};
+        };
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+	spi_nand: spi_nand@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+		partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bootloader";
+				reg = <0x0 0x400000>;
+				read-only;
+			};
+
+			partition@400000 {
+				label = "UBI_DEV";
+				reg = <0x400000 0x7c00000>;
+			};
+
+		};
+	};
+};
+
+&spi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spic_pins>;
+	status = "disabled";
+};
+
+&pio {
+
+	i2c_pins: i2c-pins-g0 {
+                mux {
+                        function = "i2c";
+                        groups = "i2c0_0";
+                };
+        };
+
+        pcm_pins: pcm-pins-g0 {
+                mux {
+                        function = "pcm";
+                        groups = "pcm";
+                };
+        };
+
+        pwm0_pin: pwm0-pin-g0 {
+                mux {
+                        function = "pwm";
+                        groups = "pwm0_0";  // GPIO 13
+                };
+        };
+
+        pwm1_pin: pwm1-pin-g1 {
+                mux {
+                        function = "pwm";
+                        groups = "pwm1_0";  // GPIO 14
+                };
+        };
+
+        pwm2_pin: pwm2-pin {
+                mux {
+                        function = "pwm";
+                        groups = "pwm2";   // GPIO 7
+                };
+        };
+
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+
+		conf-pu {
+			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
+		};
+
+		conf-pd {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
+		};
+	};
+
+	spic_pins: spi1-pins {
+		mux {
+			function = "spi";
+			groups = "spi1_1";
+		};
+	};
+
+	uart1_pins: uart1-pins-g1 {
+                mux {
+                        function = "uart";
+                        groups = "uart1_1";
+                };
+        };
+
+	uart2_pins: uart2-pins-g1 {
+		mux {
+                        function = "uart";
+                        groups = "uart2_1";
+                };
+        };
+};
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm0_pin &pwm1_pin &pwm2_pin>;
+	interrupts = <GIC_SPI 137 IRQ_TYPE_LEVEL_HIGH>;
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&xhci {
+	mediatek,u3p-dis-msk = <0x0>;
+	phys = <&u2port0 PHY_TYPE_USB2>,
+	       <&u3port0 PHY_TYPE_USB3>;
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};

@@ -374,6 +374,20 @@ endef
 
 $(eval $(call KernelPackage,phy-smsc))
 
+define KernelPackage/phy-airoha-en8801sc
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Airoha EN8801SC Ethernet PHY
+  KCONFIG:=CONFIG_AIROHA_EN8801SC_PHY
+  FILES:= \
+   $(LINUX_DIR)/drivers/net/phy/en8801sc.ko
+  AUTOLOAD:=$(call AutoLoad,18,en8801sc,1)
+endef
+
+define KernelPackage/phy-airoha-en8801sc/description
+  Kernel modules for Airoha EN8801SC Ethernet PHY
+endef
+
+$(eval $(call KernelPackage,phy-airoha-en8801sc))
 
 define KernelPackage/phy-airoha-en8811h
   SUBMENU:=$(NETWORK_DEVICES_MENU)

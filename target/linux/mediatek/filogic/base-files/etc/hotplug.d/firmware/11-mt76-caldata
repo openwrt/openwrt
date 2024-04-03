@@ -24,6 +24,10 @@ case "$FIRMWARE" in
 	;;
 "mediatek/mt7981_eeprom_mt7976_dbdc.bin")
 	case "$board" in
+	asus,rt-ax57go)
+		CI_UBIPART="UBI_DEV"
+		caldata_extract_ubi "Factory" 0x0 0x1000
+		;;
 	cmcc,rax3000m)
 		case "$(cmdline_get_var root)" in
 		/dev/mmc*)

@@ -1,0 +1,97 @@
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -4896,31 +4896,25 @@ void mtk_eth_set_dma_device(struct mtk_e
+ 	rtnl_unlock();
+ }
+ 
+-static int mtk_sgmii_init(struct mtk_eth *eth)
++int mtk_sgmii_init(struct mtk_xgmii *ss, struct device_node *r, u32 ana_rgc3)
+ {
+ 	struct device_node *np;
+-	struct regmap *regmap;
+-	u32 flags;
+ 	int i;
+ 
++	ss->ana_rgc3 = ana_rgc3;
++
+ 	for (i = 0; i < MTK_MAX_DEVS; i++) {
+-		np = of_parse_phandle(eth->dev->of_node, "mediatek,sgmiisys", i);
++		np = of_parse_phandle(r, "mediatek,sgmiisys", i);
+ 		if (!np)
+ 			break;
+ 
+-		regmap = syscon_node_to_regmap(np);
+-		flags = 0;
+-		if (of_property_read_bool(np, "mediatek,pnswap"))
+-			flags |= MTK_SGMII_FLAG_PN_SWAP;
+-
+-		of_node_put(np);
+-
+-		if (IS_ERR(regmap))
+-			return PTR_ERR(regmap);
+-
+-		eth->sgmii_pcs[i] = mtk_pcs_lynxi_create(eth->dev, regmap,
+-							 eth->soc->ana_rgc3,
+-							 flags);
++		ss->regmap_sgmii[i] = syscon_node_to_regmap(np);
++		if (IS_ERR(ss->regmap_sgmii[i]))
++			return PTR_ERR(ss->regmap_sgmii[i]);
++
++		ss->flags[i] &= ~(MTK_SGMII_PN_SWAP);
++		if (of_property_read_bool(np, "pn_swap"))
++			ss->flags[i] |= MTK_SGMII_PN_SWAP;
+ 	}
+ 
+ 	return 0;
+@@ -5015,7 +5009,14 @@ static int mtk_probe(struct platform_dev
+ 
+ 	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SGMII) &&
+ 	    !mtk_is_netsys_v3_or_greater(eth)) {
+-		err = mtk_sgmii_init(eth);
++		eth->xgmii = devm_kzalloc(eth->dev, sizeof(*eth->xgmii),
++					  GFP_KERNEL);
++		if (!eth->xgmii)
++			return -ENOMEM;
++
++		eth->xgmii->eth = eth;
++		err = mtk_sgmii_init(eth->xgmii, pdev->dev.of_node,
++				     eth->soc->ana_rgc3);
+ 
+ 		if (err)
+ 			return err;
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.h
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
+@@ -90,6 +90,7 @@
+ #define MTK_FE_INT_TSO_FAIL	BIT(12)
+ #define MTK_FE_INT_TSO_ILLEGAL	BIT(13)
+ #define MTK_FE_INT_TSO_ALIGN	BIT(14)
++#define MTK_SGMII_PN_SWAP	       BIT(16)
+ #define MTK_FE_INT_RFIFO_OV	BIT(18)
+ #define MTK_FE_INT_RFIFO_UF	BIT(19)
+ #define MTK_GDM1_AF		BIT(28)
+@@ -1247,6 +1248,15 @@ struct mtk_soc_data {
+ /* currently no SoC has more than 3 macs */
+ #define MTK_MAX_DEVS	3
+ 
++struct mtk_xgmii {
++	struct mtk_eth	*eth;
++	struct regmap   *regmap_sgmii[MTK_MAX_DEVS];
++	struct regmap   *regmap_usxgmii[MTK_MAX_DEVS];
++	struct regmap   *regmap_pextp[MTK_MAX_DEVS];
++	struct regmap	*regmap_pll;
++	u32             flags[MTK_MAX_DEVS];
++	u32             ana_rgc3;
++};
+ /* struct mtk_eth -	This is the main datasructure for holding the state
+  *			of the driver
+  * @dev:		The device pointer
+@@ -1322,7 +1332,8 @@ struct mtk_eth {
+ 	dma_addr_t			phy_scratch_ring;
+ 	void				*scratch_head;
+ 	struct clk			*clks[MTK_CLK_MAX];
+-
++	
++	struct mtk_xgmii                *xgmii;
+ 	struct mii_bus			*mii_bus;
+ 	struct work_struct		pending_work;
+ 	unsigned long			state;

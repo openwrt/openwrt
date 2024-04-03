@@ -14,6 +14,9 @@ mediatek_setup_interfaces()
 	acer,predator-w6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 game" eth1
 		;;
+	asus,rt-ax57go)
+		ucidef_set_interfaces_lan_wan eth0 eth1
+		;;
 	asus,rt-ax59u|\
 	cetron,ct3003|\
 	confiabits,mt7981|\
@@ -113,6 +116,12 @@ mediatek_setup_macs()
 	local label_mac=""
 
 	case $board in
+	asus,rt-ax57go)
+		CI_UBIPART="UBI_DEV"
+		addr=$(mtd_get_mac_binary_ubi "Factory" 0x4)
+		wan_mac="${addr}"
+		lan_mac="${addr}"
+		;;
 	bananapi,bpi-r3)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
 		;;
