@@ -247,7 +247,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  }
 --- a/init/main.c
 +++ b/init/main.c
-@@ -111,6 +111,10 @@
+@@ -112,6 +112,10 @@
  
  #include <kunit/test.h>
  
@@ -258,7 +258,7 @@ Signed-off-by: Michael Gray <michael.gray@lantisproject.com>
  static int kernel_init(void *);
  
  /*
-@@ -927,6 +931,18 @@ void start_kernel(void)
+@@ -928,6 +932,18 @@ void start_kernel(void)
  	boot_cpu_hotplug_init();
  
  	pr_notice("Kernel command line: %s\n", saved_command_line);
