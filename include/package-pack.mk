@@ -6,29 +6,27 @@ ifndef DUMP
   include $(INCLUDE_DIR)/feeds.mk
 endif
 
-IPKG_REMOVE:= \
-  $(SCRIPT_DIR)/ipkg-remove
-
 IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
 
 # Generates a make statement to return a wildcard for candidate ipkg files
 # 1: package name
-define gen_ipkg_wildcard
+define gen_package_wildcard
   $(1)$$(if $$(filter -%,$$(ABIV_$(1))),,[^a-z-])*
 endef
 
 # 1: package name
 # 2: candidate ipk files
-ifdef CONFIG_USE_APK
 define remove_ipkg_files
+  $(if $(strip $(2)),$(SCRIPT_DIR)/ipkg-remove $(1) $(2))
+endef
+
+# 1: package name
+# 2: candidate apk files
+define remove_apk_files
 for pkg in $(2); do \
   $(STAGING_DIR_HOST)/bin/apk adbdump "$$pkg" | grep "^  name: $(1)" && rm "$$pkg" || true; \
 done
 endef
-else
-define remove_ipkg_files
-endef
-endif
 
 # 1: package name
 # 2: variable name
@@ -214,9 +212,9 @@ $(_endef)
     $(PKG_INFO_DIR)/$(1).provides $$(PACK_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-pack.mk
 	rm -rf $$(IDIR_$(1));
 ifeq ($$(CONFIG_USE_APK),)
-	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
+	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_package_wildcard,$(1))))
 else
-	$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_ipkg_wildcard,$(1))))
+	$$(call remove_apk_files,$(1),$$(call apk_package_files,$(call gen_package_wildcard,$(1))))
 endif
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1)) $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
@@ -340,9 +338,9 @@ endif
 
     $(1)-clean:
 ifeq ($(CONFIG_USE_APK),)
-	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_ipkg_wildcard,$(1))))
+	$$(call remove_ipkg_files,$(1),$$(call opkg_package_files,$(call gen_package_wildcard,$(1))))
 else
-	$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_ipkg_wildcard,$(1))))
+	$$(call remove_ipkg_files,$(1),$$(call apk_package_files,$(call gen_package_wildcard,$(1))))
 endif
 
 
