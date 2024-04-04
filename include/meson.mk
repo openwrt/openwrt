@@ -85,6 +85,10 @@ define Meson/CreateCrossFile
 		-e "s|@PKGCONFIG@|$(PKG_CONFIG)|" \
 		-e "s|@CMAKE@|$(STAGING_DIR_HOST)/bin/cmake|" \
 		-e "s|@PYTHON@|$(STAGING_DIR_HOST)/bin/python3|" \
+		-e "s|@CODEGEN@|$(STAGING_DIR_HOSTPKG)/bin/gdbus-codegen|" \
+		-e "s|@COMPRES@|$(STAGING_DIR_HOSTPKG)/bin/glib-compile-resources|" \
+		-e "s|@GENMARSHAL@|$(STAGING_DIR_HOSTPKG)/bin/glib-genmarshal|" \
+		-e "s|@MKENUMS@|$(STAGING_DIR_HOSTPKG)/bin/glib-mkenums|" \
 		-e "s|@CFLAGS@|$(foreach FLAG,$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS),'$(FLAG)',)|" \
 		-e "s|@CXXFLAGS@|$(foreach FLAG,$(TARGET_CXXFLAGS) $(EXTRA_CXXFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS),'$(FLAG)',)|" \
 		-e "s|@LDFLAGS@|$(foreach FLAG,$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS),'$(FLAG)',)|" \
