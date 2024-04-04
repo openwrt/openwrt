@@ -27,6 +27,8 @@ void hostapd_ucode_free_bss(struct hostapd_data *hapd);
 void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type);
 int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta);
 void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta);
+int hostapd_ucode_afc_request(struct hostapd_iface *iface, const char *request,
+			      char *buf, size_t len);
 
 #ifdef CONFIG_APUP
 void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname);

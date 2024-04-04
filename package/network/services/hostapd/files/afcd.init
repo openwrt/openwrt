@@ -1,0 +1,30 @@
+#!/bin/sh /etc/rc.common
+
+START=19
+
+USE_PROCD=1
+NAME=afcd
+
+add_afc() {
+	config_get_bool disabled "$1" disabled 0
+	[ "$disabled" -gt 0 ] && return
+
+	config_get url "$1" url
+	config_get cert "$1" cert
+	[ -n "$cert" -a -n "$url" ] || return
+
+	procd_open_instance afcd
+	procd_set_param command /usr/bin/ucode /usr/share/hostap/afcd.uc -u "$url" -c "$cert"
+	procd_set_param respawn
+	procd_close_instance
+}
+
+start_service() {
+	config_load wireless
+	config_foreach add_afc afc-server
+}
+
+service_triggers()
+{
+	procd_add_reload_trigger wireless
+}

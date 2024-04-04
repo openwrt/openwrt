@@ -1,0 +1,149 @@
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Wed, 7 Feb 2024 00:08:18 +0100
+Subject: [PATCH] hostapd: update TPE IE according to AFC
+
+Update Transmit Power Envelope (TPE) IE according to the reply from AFC
+coordinator on UNII-5 or UNII-7 6GHz bands.
+
+Tested-by: Allen Ye <allen.ye@mediatek.com>
+---
+
+--- a/src/ap/afc.c
++++ b/src/ap/afc.c
+@@ -977,3 +977,40 @@ void hostap_afc_disable_channels(struct
+ 		chan->flag |= HOSTAPD_CHAN_DISABLED;
+ 	}
+ }
++
++
++int hostap_afc_get_chan_max_eirp_power(struct hostapd_iface *iface, bool psd,
++				       int *power)
++{
++	int i;
++
++	if (!he_reg_is_sp(iface->conf->he_6ghz_reg_pwr_type))
++		return -EINVAL;
++
++	if (!iface->afc.data_valid)
++		return -EINVAL;
++
++	if (psd) {
++		for (i = 0; i < iface->afc.num_freq_range; i++) {
++			struct afc_freq_range_elem *f;
++
++			f = &iface->afc.freq_range[i];
++			if (iface->freq >= f->low_freq &&
++			    iface->freq <= f->high_freq) {
++				*power = 2 * f->max_psd;
++				return 0;
++			}
++		}
++	} else {
++		for (i = 0; i < iface->afc.num_chan_info; i++) {
++			struct afc_chan_info_elem *c;
++
++			c = &iface->afc.chan_info_list[i];
++			if (c->chan == iface->conf->channel) {
++				*power = 2 * c->power;
++				return 0;
++			}
++		}
++	}
++	return -EINVAL;
++}
+--- a/src/ap/hostapd.h
++++ b/src/ap/hostapd.h
+@@ -801,10 +801,19 @@ struct hostapd_iface {
+ 
+ /* hostapd.c */
+ #ifdef CONFIG_AFC
++int hostap_afc_get_chan_max_eirp_power(struct hostapd_iface *iface, bool psd,
++				       int *power);
+ int hostapd_afc_handle_request(struct hostapd_iface *iface);
+ void hostapd_afc_stop(struct hostapd_iface *iface);
+ void hostap_afc_disable_channels(struct hostapd_iface *iface);
+ #else
++static inline int
++hostap_afc_get_chan_max_eirp_power(struct hostapd_iface *iface, bool psd,
++				   int *power)
++{
++	return -EINVAL;
++}
++
+ static inline int hostapd_afc_handle_request(struct hostapd_iface *iface)
+ {
+ 	return 1;
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -7375,42 +7375,53 @@ u8 * hostapd_eid_txpower_envelope(struct
+ 	 */
+ 	if (is_6ghz_op_class(iconf->op_class)) {
+ 		enum max_tx_pwr_interpretation tx_pwr_intrpn;
++		int err, max_eirp_psd, max_eirp_power;
+ 
+ 		/* Same Maximum Transmit Power for all 20 MHz bands */
+ 		tx_pwr_count = 0;
+ 		tx_pwr_intrpn = REGULATORY_CLIENT_EIRP_PSD;
+ 
+ 		/* Default Transmit Power Envelope for Global Operating Class */
+-		if (hapd->iconf->reg_def_cli_eirp_psd != -1)
+-			tx_pwr = hapd->iconf->reg_def_cli_eirp_psd;
+-		else
+-			tx_pwr = REG_PSD_MAX_TXPOWER_FOR_DEFAULT_CLIENT * 2;
++		err = hostap_afc_get_chan_max_eirp_power(iface, true,
++							 &max_eirp_psd);
++		if (err < 0) {
++			if (hapd->iconf->reg_def_cli_eirp_psd != -1)
++				max_eirp_psd = hapd->iconf->reg_def_cli_eirp_psd;
++			else
++				max_eirp_psd = REG_PSD_MAX_TXPOWER_FOR_DEFAULT_CLIENT * 2;
++		}
+ 
+ 		eid = hostapd_add_tpe_info(eid, tx_pwr_count, tx_pwr_intrpn,
+-					   REG_DEFAULT_CLIENT, tx_pwr);
++					   REG_DEFAULT_CLIENT, max_eirp_psd);
+ 
+ 		/* Indoor Access Point must include an additional TPE for
+ 		 * subordinate devices */
+ 		if (he_reg_is_indoor(iconf->he_6ghz_reg_pwr_type)) {
+-			/* TODO: Extract PSD limits from channel data */
+-			if (hapd->iconf->reg_sub_cli_eirp_psd != -1)
+-				tx_pwr = hapd->iconf->reg_sub_cli_eirp_psd;
+-			else
+-				tx_pwr = REG_PSD_MAX_TXPOWER_FOR_SUBORDINATE_CLIENT * 2;
++			if (err < 0) {
++				/* non-AFC connection */
++				if (hapd->iconf->reg_sub_cli_eirp_psd != -1)
++					max_eirp_psd = hapd->iconf->reg_sub_cli_eirp_psd;
++				else
++					max_eirp_psd = REG_PSD_MAX_TXPOWER_FOR_SUBORDINATE_CLIENT * 2;
++			}
+ 			eid = hostapd_add_tpe_info(eid, tx_pwr_count,
+ 						   tx_pwr_intrpn,
+ 						   REG_SUBORDINATE_CLIENT,
+-						   tx_pwr);
++						   max_eirp_psd);
+ 		}
+ 
+-		if (iconf->reg_def_cli_eirp != -1 &&
+-		    he_reg_is_sp(iconf->he_6ghz_reg_pwr_type))
+-			eid = hostapd_add_tpe_info(
+-				eid, tx_pwr_count, REGULATORY_CLIENT_EIRP,
+-				REG_DEFAULT_CLIENT,
+-				hapd->iconf->reg_def_cli_eirp);
++		if (hostap_afc_get_chan_max_eirp_power(iface, false,
++						       &max_eirp_power)) {
++			max_eirp_power = iconf->reg_def_cli_eirp;
++			if (max_eirp_power == -1 ||
++			    !he_reg_is_sp(iconf->he_6ghz_reg_pwr_type))
++				return eid;
++		}
+ 
+-		return eid;
++		return hostapd_add_tpe_info(eid, tx_pwr_count,
++					    REGULATORY_CLIENT_EIRP,
++					    REG_DEFAULT_CLIENT,
++					    max_eirp_power);
+ 	}
+ #endif /* CONFIG_IEEE80211AX */
+ 

@@ -1,0 +1,43 @@
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 12 Mar 2024 11:03:55 +0100
+Subject: [PATCH] hostapd: export hostapd_is_usable_chans utility routine
+
+This is a preliminary patch to introduce AFC support.
+
+Tested-by: Allen Ye <allen.ye@mediatek.com>
+---
+
+--- a/src/ap/hw_features.c
++++ b/src/ap/hw_features.c
+@@ -1020,7 +1020,7 @@ static bool hostapd_is_usable_punct_bitm
+  * 0 = not usable
+  * -1 = not currently usable due to 6 GHz NO-IR
+  */
+-static int hostapd_is_usable_chans(struct hostapd_iface *iface)
++int hostapd_is_usable_chans(struct hostapd_iface *iface)
+ {
+ 	int secondary_freq;
+ 	struct hostapd_channel_data *pri_chan;
+--- a/src/ap/hw_features.h
++++ b/src/ap/hw_features.h
+@@ -32,6 +32,7 @@ int hostapd_hw_skip_mode(struct hostapd_
+ int hostapd_determine_mode(struct hostapd_iface *iface);
+ void hostapd_free_multi_hw_info(struct hostapd_multi_hw_info *multi_hw_info);
+ int hostapd_set_current_hw_info(struct hostapd_iface *iface, int oper_freq);
++int hostapd_is_usable_chans(struct hostapd_iface *iface);
+ #else /* NEED_AP_MLME */
+ static inline void
+ hostapd_free_hw_features(struct hostapd_hw_modes *hw_features,
+@@ -115,6 +116,12 @@ static inline int hostapd_set_current_hw
+ {
+ 	return 0;
+ }
++
++static inline int hostapd_is_usable_chans(struct hostapd_iface *iface)
++{
++	return 1;
++}
++
+ #endif /* NEED_AP_MLME */
+ 
+ #endif /* HW_FEATURES_H */

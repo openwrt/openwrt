@@ -1,0 +1,23 @@
+--- a/src/ap/afc.c
++++ b/src/ap/afc.c
+@@ -737,6 +737,20 @@ static int hostapd_afc_send_receive(stru
+ 		return 0;
+ 	}
+ 
++#ifdef UCODE_SUPPORT
++	request_obj = hostapd_afc_build_request(iface);
++	if (!request_obj)
++		return -ENOMEM;
++
++	request = json_object_to_json_string(request_obj);
++	ret = hostapd_ucode_afc_request(iface, request, buf, sizeof(buf));
++	json_object_put(request_obj);
++	if (ret < 0)
++		return ret;
++
++	return hostapd_afc_parse_reply(iface, buf);
++#endif
++
+ 	if (!iconf->afc.socket) {
+ 		wpa_printf(MSG_ERROR, "Missing AFC socket string");
+ 		return -EINVAL;

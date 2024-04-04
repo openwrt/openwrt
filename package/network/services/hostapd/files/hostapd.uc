@@ -1094,6 +1094,12 @@ return {
 		hostapd.udebug_set(null);
 		hostapd.ubus.disconnect();
 	},
+	afc_request: function(iface, data) {
+		let ret = ubus.call("afc", "request", { data });
+		if (type(ret) != "object")
+			return;
+		return ret.data;
+	},
 	bss_create: function(phy, name, obj) {
 		phy = hostapd.data.config[phy];
 		if (!phy)

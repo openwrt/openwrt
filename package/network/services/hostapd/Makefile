@@ -96,6 +96,7 @@ DRIVER_MAKEOPTS= \
 	CONFIG_IEEE80211AC=$(HOSTAPD_IEEE80211AC) \
 	CONFIG_IEEE80211AX=$(HOSTAPD_IEEE80211AX) \
 	CONFIG_IEEE80211BE=$(HOSTAPD_IEEE80211BE) \
+	CONFIG_AFC=$(HOSTAPD_IEEE80211AX) \
 	CONFIG_MBO=$(CONFIG_WPA_MBO_SUPPORT) \
 	CONFIG_UCODE=y CONFIG_APUP=y
 
@@ -152,6 +153,13 @@ endif
 
 DRV_DEPENDS:=+libnl-tiny
 
+define Package/afcd
+  SECTION:=net
+  CATEGORY:=Network
+  SUBMENU:=WirelessAPD
+  TITLE:=AFC communication daemon
+  DEPENDS:=+ucode +ucode-mod-uclient +ucode-mod-uloop
+endef
 
 define Package/hostapd/Default
   SECTION:=net
@@ -595,7 +603,7 @@ TARGET_CPPFLAGS := \
 	-D_GNU_SOURCE \
 	$(if $(CONFIG_WPA_MSG_MIN_PRIORITY),-DCONFIG_MSG_MIN_PRIORITY=$(CONFIG_WPA_MSG_MIN_PRIORITY))
 
-TARGET_LDFLAGS += -lubox -lubus -lblobmsg_json -lucode -lm -lnl-tiny -ludebug
+TARGET_LDFLAGS += -lubox -lubus -lblobmsg_json -lucode -lm -lnl-tiny -ludebug -ljson-c
 
 ifdef CONFIG_WPA_ENABLE_WEP
     DRIVER_MAKEOPTS += CONFIG_WEP=y
@@ -707,6 +715,12 @@ Package/hostapd-openssl/conffiles = $(Package/hostapd-full/conffiles)
 Package/hostapd-wolfssl/conffiles = $(Package/hostapd-full/conffiles)
 Package/hostapd-mbedtls/conffiles = $(Package/hostapd-full/conffiles)
 endif
+
+define Package/afcd/install
+	$(INSTALL_DIR) $(1)/usr/share/hostap $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/afcd.init $(1)/etc/init.d/afcd
+	$(INSTALL_DATA) ./files/afcd.uc $(1)/usr/share/hostap/
+endef
 
 define Install/hostapd
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/hostap
@@ -824,6 +838,7 @@ endif
 
 # Build hostapd-common before its dependents, to avoid
 # spurious rebuilds when building multiple variants.
+$(eval $(call BuildPackage,afcd))
 $(eval $(call BuildPackage,hostapd-common))
 $(eval $(call BuildPackage,hostapd))
 $(eval $(call BuildPackage,hostapd-basic))

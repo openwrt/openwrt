@@ -129,7 +129,28 @@ hostapd_common_add_device_config() {
 	config_add_int airtime_mode
 	config_add_int mbssid
 
+	config_add_boolean afc
+	config_add_string \
+		afc_request_version afc_request_id afc_serial_number \
+		afc_location_type afc_location afc_height afc_height_type
+	config_add_array afc_cert_ids afc_freq_range afc_op_class
+	config_add_int \
+		afc_min_power afc_major_axis afc_minor_axis afc_orientation \
+		afc_vertical_tolerance
+
 	hostapd_add_log_config
+}
+
+
+hostapd_get_list() {
+	local var="$1"
+	local field="$2"
+
+	local cur __val_list
+	json_get_values __val_list "$field"
+	for cur in $__val_list; do
+		append "$var" "$cur" ","
+	done
 }
 
 hostapd_prepare_device_config() {
@@ -141,7 +162,7 @@ hostapd_prepare_device_config() {
 	json_get_vars country country3 country_ie beacon_int:100 doth require_mode legacy_rates \
 		acs_chan_bias local_pwr_constraint spectrum_mgmt_required airtime_mode cell_density \
 		rts_threshold beacon_rate rssi_reject_assoc_rssi rssi_ignore_probe_request maxassoc \
-		mbssid:0 band reg_power_type stationary_ap
+		mbssid:0 band reg_power_type stationary_ap afc
 
 	hostapd_set_log_options base_cfg
 
@@ -243,6 +264,43 @@ hostapd_prepare_device_config() {
 	[ "$airtime_mode" -gt 0 ] && append base_cfg "airtime_mode=$airtime_mode" "$N"
 	[ -n "$maxassoc" ] && append base_cfg "iface_max_num_sta=$maxassoc" "$N"
 	[ "$mbssid" -gt 0 ] && [ "$mbssid" -le 2 ] && append base_cfg "mbssid=$mbssid" "$N"
+
+	set_default afc 0
+	if [ "$band" != "6g" ]; then
+		afc=0
+	fi
+
+	[ "$afc" -gt 0 ] && {
+		for v in afc_request_version afc_request_id afc_serial_number afc_min_power afc_height afc_height_type afc_vertical_tolerance \
+				 afc_major_axis afc_minor_axis afc_orientation; do
+			json_get_var val $v
+			append base_cfg "$v=$val" "$N"
+		done
+
+		for v in afc_cert_ids afc_op_class afc_freq_range; do
+			val=
+			hostapd_get_list val $v
+			append base_cfg "$v=$val" "$N"
+		done
+
+		json_get_vars afc_location_type afc_location
+		case "$afc_location_type" in
+			ellipse)
+				append base_cfg "afc_location_type=0" "$N"
+				append base_cfg "afc_linear_polygon=$afc_location" "$N"
+			;;
+			linear_polygon)
+				append base_cfg "afc_location_type=1" "$N"
+				append base_cfg "afc_linear_polygon=$afc_location" "$N"
+			;;
+			radial_polygon)
+				append base_cfg "afc_location_type=2" "$N"
+				append base_cfg "afc_radial_polygon=$afc_location" "$N"
+			;;
+		esac
+
+		reg_power_type=1
+	}
 
 	[ "$band" = "6g" ] && {
 		set_default reg_power_type 0
