@@ -11,6 +11,7 @@ PKG_HASH:=a972796696afd38073e0f59c283c3a2f5a560b5268b4babc391b286166526b21
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
 PKG_CPE_ID:=cpe:/a:xmlsoft:libxml2
+HOST_BUILD_DEPENDS := libiconv-full/host
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
