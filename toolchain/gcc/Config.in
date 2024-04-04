@@ -2,6 +2,7 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
+	# don't forget to adjust dependency for KERNEL_WERROR
 	default GCC_USE_VERSION_13
 	help
 	  Select the version of gcc you wish to use.
