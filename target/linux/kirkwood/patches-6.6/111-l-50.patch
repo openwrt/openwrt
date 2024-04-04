@@ -14,7 +14,7 @@
  	chosen {
  		bootargs = "console=ttyS0,115200n8";
  		stdout-path = &uart0;
-@@ -95,12 +102,12 @@
+@@ -97,12 +104,12 @@
  	leds {
  		compatible = "gpio-leds";
  
@@ -29,7 +29,7 @@
  			label = "l-50:red:status";
  			gpios = <&gpio3 2 GPIO_ACTIVE_LOW>;
  		};
-@@ -349,13 +356,8 @@
+@@ -351,13 +358,8 @@
  	};
  
  	partition@100000 {
