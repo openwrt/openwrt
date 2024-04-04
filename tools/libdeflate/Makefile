@@ -10,12 +10,13 @@ PKG_NAME:=libdeflate
 PKG_VERSION:=1.19
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=https://github.com/ebiggers/libdeflate.git
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=v$(PKG_VERSION)
-PKG_MIRROR_HASH:=5aac9801815384a5e417c8345d25d07547648e28403566ef73a46295ec26b6c4
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://github.com/ebiggers/libdeflate/releases/download/v$(PKG_VERSION)
+PKG_HASH:=d9bb9bdd8cc5a8c1f7f6226fa0053dd72861e15f366e7ff7d0d191eac16d66f3
 
 include $(INCLUDE_DIR)/host-build.mk
+
+DECOMPRESS_CMD:=$(STAGING_DIR_HOST)/bin/gzip -dc $(DL_DIR)/$(PKG_SOURCE) |
 
 define Host/Compile
 	$(HOSTCC_NOCACHE) $(HOST_CFLAGS) $(HOST_LDFLAGS) \
