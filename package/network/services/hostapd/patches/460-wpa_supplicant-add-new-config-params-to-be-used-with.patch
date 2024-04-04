@@ -14,15 +14,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
 
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -19,6 +19,7 @@
- 
- #define WPA_SUPPLICANT_DRIVER_VERSION 4
- 
-+#include "ap/sta_info.h"
- #include "common/defs.h"
- #include "common/ieee802_11_defs.h"
- #include "common/wpa_common.h"
-@@ -971,6 +972,9 @@ struct wpa_driver_associate_params {
+@@ -971,6 +971,9 @@ struct wpa_driver_associate_params {
  	 * responsible for selecting with which BSS to associate. */
  	const u8 *bssid;
  
@@ -151,18 +143,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  	{ INT_RANGE(macsec_integ_only, 0, 1) },
 --- a/wpa_supplicant/config_ssid.h
 +++ b/wpa_supplicant/config_ssid.h
-@@ -10,8 +10,10 @@
- #define CONFIG_SSID_H
- 
- #include "common/defs.h"
-+#include "ap/sta_info.h"
- #include "utils/list.h"
- #include "eap_peer/eap_config.h"
-+#include "drivers/nl80211_copy.h"
- 
- 
- #define DEFAULT_EAP_WORKAROUND ((unsigned int) -1)
-@@ -879,6 +881,9 @@ struct wpa_ssid {
+@@ -879,6 +879,9 @@ struct wpa_ssid {
  	 */
  	void *parent_cred;
  

@@ -112,7 +112,7 @@ untagged DHCP packets
  	hapd->x_snoop_initialized = false;
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -4275,7 +4275,7 @@ struct wpa_driver_ops {
+@@ -4278,7 +4278,7 @@ struct wpa_driver_ops {
  	 * Returns: 0 on success, negative (<0) on failure
  	 */
  	int (*br_set_net_param)(void *priv, enum drv_br_net_param param,

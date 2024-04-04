@@ -206,7 +206,7 @@ as adding/removing interfaces.
  void hostapd_interface_deinit_free(struct hostapd_iface *iface);
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
-@@ -3853,6 +3853,25 @@ struct wpa_driver_ops {
+@@ -3856,6 +3856,25 @@ struct wpa_driver_ops {
  			 const char *ifname);
  
  	/**
@@ -232,7 +232,7 @@ as adding/removing interfaces.
  	 * set_sta_vlan - Bind a station into a specific interface (AP only)
  	 * @priv: Private driver interface data
  	 * @ifname: Interface (main or virtual BSS or VLAN)
-@@ -6507,6 +6526,7 @@ union wpa_event_data {
+@@ -6510,6 +6529,7 @@ union wpa_event_data {
  
  	/**
  	 * struct ch_switch
@@ -240,7 +240,7 @@ as adding/removing interfaces.
  	 * @freq: Frequency of new channel in MHz
  	 * @ht_enabled: Whether this is an HT channel
  	 * @ch_offset: Secondary channel offset
-@@ -6517,6 +6537,7 @@ union wpa_event_data {
+@@ -6520,6 +6540,7 @@ union wpa_event_data {
  	 * @punct_bitmap: Puncturing bitmap
  	 */
  	struct ch_switch {
@@ -596,7 +596,7 @@ as adding/removing interfaces.
  CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -5955,6 +5955,7 @@ void supplicant_event(void *ctx, enum wp
+@@ -5949,6 +5949,7 @@ void supplicant_event(void *ctx, enum wp
  		event_to_string(event), event);
  #endif /* CONFIG_NO_STDOUT_DEBUG */
  

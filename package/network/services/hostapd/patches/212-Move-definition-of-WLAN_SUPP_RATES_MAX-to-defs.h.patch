@@ -54,23 +54,3 @@ Signed-off-by: Eneas U de Queiroz <cotequeiroz@gmail.com>
  static inline int wpa_key_mgmt_wpa_ieee8021x(int akm)
  {
  	return !!(akm & (WPA_KEY_MGMT_IEEE8021X |
---- a/src/drivers/driver.h
-+++ b/src/drivers/driver.h
-@@ -19,7 +19,6 @@
- 
- #define WPA_SUPPLICANT_DRIVER_VERSION 4
- 
--#include "ap/sta_info.h"
- #include "common/defs.h"
- #include "common/ieee802_11_defs.h"
- #include "common/wpa_common.h"
---- a/wpa_supplicant/config_ssid.h
-+++ b/wpa_supplicant/config_ssid.h
-@@ -10,7 +10,6 @@
- #define CONFIG_SSID_H
- 
- #include "common/defs.h"
--#include "ap/sta_info.h"
- #include "utils/list.h"
- #include "eap_peer/eap_config.h"
- #include "drivers/nl80211_copy.h"

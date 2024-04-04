@@ -24,7 +24,7 @@ This feature is useful on its own even without full interworking support
  
  #ifdef CONFIG_HS20
  static int hs20_parse_conn_capab(struct hostapd_bss_config *bss, char *buf,
-@@ -4282,10 +4282,10 @@ static int hostapd_config_fill(struct ho
+@@ -4260,10 +4260,10 @@ static int hostapd_config_fill(struct ho
  		bss->gas_frag_limit = val;
  	} else if (os_strcmp(buf, "gas_comeback_delay") == 0) {
  		bss->gas_comeback_delay = atoi(pos);
@@ -38,7 +38,7 @@ This feature is useful on its own even without full interworking support
  		os_free(bss->dump_msk_file);
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -1578,6 +1578,7 @@ int hostapd_setup_bss(struct hostapd_dat
+@@ -1548,6 +1548,7 @@ static int hostapd_setup_bss(struct host
  		wpa_printf(MSG_ERROR, "GAS server initialization failed");
  		return -1;
  	}
@@ -46,7 +46,7 @@ This feature is useful on its own even without full interworking support
  
  	if (conf->qos_map_set_len &&
  	    hostapd_drv_set_qos_map(hapd, conf->qos_map_set,
-@@ -1585,7 +1586,6 @@ int hostapd_setup_bss(struct hostapd_dat
+@@ -1555,7 +1556,6 @@ static int hostapd_setup_bss(struct host
  		wpa_printf(MSG_ERROR, "Failed to initialize QoS Map");
  		return -1;
  	}
