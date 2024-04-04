@@ -59,6 +59,12 @@ openembed,som7981)
 	ucidef_set_led_netdev "lanact" "LANACT" "green:lan" "eth1" "rx tx"
 	ucidef_set_led_netdev "lanlink" "LANLINK" "amber:lan" "eth1" "link"
 	;;
+openwrt,one)
+	ucidef_set_led_netdev "wanact" "WANACT" "mdio-bus:0f:green:wan" "eth0" "rx tx"
+	ucidef_set_led_netdev "wanlink" "WANLINK" "mdio-bus:0f:amber:wan" "eth0" "link"
+	ucidef_set_led_netdev "lanact" "LANACT" "green:lan" "eth1" "rx tx"
+	ucidef_set_led_netdev "lanlink" "LANLINK" "amber:lan" "eth1" "link"
+	;;
 routerich,ax3000)
 	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
