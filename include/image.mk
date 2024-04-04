@@ -336,7 +336,7 @@ apk_target = $(call apk,$(mkfs_cur_target_dir)) --no-scripts
 
 
 target-dir-%: FORCE
-ifdef CONFIG_USE_APK
+ifneq ($(CONFIG_USE_APK),)
 	rm -rf $(mkfs_cur_target_dir)
 	$(CP) $(TARGET_DIR_ORIG) $(mkfs_cur_target_dir)
 	mv $(mkfs_cur_target_dir)/etc/apk/repositories $(mkfs_cur_target_dir).repositories

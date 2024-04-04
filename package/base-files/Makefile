@@ -116,7 +116,7 @@ define Build/Compile/Default
 endef
 Build/Compile = $(Build/Compile/Default)
 
-ifdef CONFIG_USE_APK
+ifneq ($(CONFIG_USE_APK),)
   define Build/Configure
 	[ -s $(BUILD_KEY_APK_SEC) -a -s $(BUILD_KEY_APK_PUB) ] || \
 		$(STAGING_DIR_HOST)/bin/openssl ecparam -name prime256v1 -genkey -noout -out $(BUILD_KEY_APK_SEC); \
@@ -248,7 +248,7 @@ endif
 	$(if $(CONFIG_TARGET_PREINIT_DISABLE_FAILSAFE), \
 		rm -f $(1)/etc/banner.failsafe,)
 
-ifdef CONFIG_USE_APK
+ifneq ($(CONFIG_USE_APK),)
 	mkdir -p $(1)/etc/apk/
 	$(call FeedSourcesAppendAPK,$(1)/etc/apk/repositories)
 	$(VERSION_SED_SCRIPT) $(1)/etc/apk/repositories
