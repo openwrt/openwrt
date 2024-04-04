@@ -12,6 +12,7 @@ include $(INCLUDE_DIR)/feeds.mk
 
 override MAKEFLAGS=
 
+PACKAGE_SUFFIX:=ipk
 IB_NAME:=$(VERSION_DIST_SANITIZED)-imagebuilder-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)-$(SUBTARGET).$(HOST_OS)-$(HOST_ARCH)
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(IB_NAME)
 IB_KDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(KERNEL_BUILD_DIR))
@@ -40,8 +41,14 @@ $(BIN_DIR)/$(IB_NAME).tar.zst: clean
 		$(PKG_BUILD_DIR)/
 
 ifeq ($(CONFIG_IB_STANDALONE),)
+ifneq ($(CONFIG_USE_APK),)
 	$(call FeedSourcesAppend,$(PKG_BUILD_DIR)/repositories)
 	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories
+else
+	echo '## Remote package repositories' >> $(PKG_BUILD_DIR)/repositories.conf
+	$(call FeedSourcesAppend,$(PKG_BUILD_DIR)/repositories.conf)
+	$(VERSION_SED_SCRIPT) $(PKG_BUILD_DIR)/repositories.conf
+endif
 endif
 
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/packages
@@ -56,24 +63,26 @@ endif
 ifeq ($(CONFIG_BUILDBOT),)
   ifeq ($(CONFIG_IB_STANDALONE),)
 	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc_*.apk' -or -name 'kernel_*.apk' -or -name 'kmod-*.apk' \) \
+		\( -name 'libc_*.$(PACKAGE_SUFFIX)' -or -name 'kernel_*.$(PACKAGE_SUFFIX)' -or -name 'kmod-*.$(PACKAGE_SUFFIX)' \) \
 		-exec $(CP) -t $(PKG_BUILD_DIR)/packages {} +
   else
-	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.apk' \
+	$(FIND) $(wildcard $(PACKAGE_SUBDIRS)) -type f -name '*.$(PACKAGE_SUFFIX)' \
 		-exec $(CP) -t $(PKG_BUILD_DIR)/packages/ {} +
   endif
 else
 	$(FIND) $(call FeedPackageDir,libc) -type f \
-		\( -name 'libc_*.apk' -or -name 'kernel_*.apk' \) \
+		\( -name 'libc_*.$(PACKAGE_SUFFIX)' -or -name 'kernel_*.$(PACKAGE_SUFFIX)' \) \
 		-exec $(CP) -t $(IB_LDIR)/ {} +
 endif
 
+ifneq ($(CONFIG_USE_APK),)
 ifneq ($(CONFIG_SIGNATURE_CHECK),)
 	echo ''                                                        >> $(PKG_BUILD_DIR)/repositories.conf
 	echo 'option check_signature'                                  >> $(PKG_BUILD_DIR)/repositories.conf
 	$(INSTALL_DIR) $(PKG_BUILD_DIR)/keys
 	$(CP) -L $(STAGING_DIR_ROOT)/etc/opkg/keys/ $(PKG_BUILD_DIR)/
 	$(CP) -L $(STAGING_DIR_ROOT)/usr/sbin/opkg-key $(PKG_BUILD_DIR)/scripts/
+endif
 endif
 
 	$(CP) -L $(TOPDIR)/target/linux/Makefile $(PKG_BUILD_DIR)/target/linux
@@ -115,10 +124,8 @@ endif
 	(cd $(PKG_BUILD_DIR); find staging_dir/host/bin/ $(IB_LDIR)/scripts/dtc/ -type f | \
 		$(BUNDLER_COMMAND))
 
-	$(INSTALL_DIR) $(PKG_BUILD_DIR)/staging_dir/hostpkg/bin
 	$(CP) $(TOPDIR)/staging_dir/host/lib/libfakeroot* $(PKG_BUILD_DIR)/staging_dir/host/lib
 	STRIP=$(STAGING_DIR_HOST)/bin/sstrip $(SCRIPT_DIR)/rstrip.sh $(PKG_BUILD_DIR)/staging_dir/host/bin/
-
 	(cd $(BUILD_DIR); \
 		tar -I '$(STAGING_DIR_HOST)/bin/zstd -T0 --ultra -20' -cf $@ $(IB_NAME) \
 		--mtime="$(shell date --date=@$(SOURCE_DATE_EPOCH))"; \
