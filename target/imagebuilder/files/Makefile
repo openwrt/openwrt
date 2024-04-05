@@ -159,15 +159,14 @@ _call_manifest: FORCE
 	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR) $(DL_DIR)
 	$(MAKE) package_reload >/dev/null
 	$(MAKE) package_install >/dev/null
-	$(APK) list --manifest 
+	$(APK) list --quiet --manifest --no-network
 
 package_index: FORCE
 	@echo >&2
 	@echo Building package index... >&2
 	@mkdir -p $(TMP_DIR) $(TARGET_DIR)/tmp
 ifneq ($(CONFIG_USE_APK),)
-	$(APK) add --initdb >&2 || true
-	$(APK) update >&2 || true
+	(cd $(PACKAGE_DIR); $(APK) mkndx --output packages.adb *.apk) >&2
 else
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
 		gzip -9nc Packages > Packages.gz; \
@@ -209,9 +208,9 @@ package_install: FORCE
 	@echo
 	@echo Installing packages...
 ifneq ($(CONFIG_USE_APK),)
-	$(APK) add $(firstword $(wildcard $(LINUX_DIR)/libc-*.apk $(PACKAGE_DIR)/libc_*.apk))
-	$(APK) add $(firstword $(wildcard $(LINUX_DIR)/kernel-*.apk $(PACKAGE_DIR)/kernel_*.apk))
-	$(APK) add $(BUILD_PACKAGES)
+	$(APK) add --initdb --no-scripts $(firstword $(wildcard $(LINUX_DIR)/libc-*.apk $(PACKAGE_DIR)/libc_*.apk))
+	$(APK) add --no-scripts $(firstword $(wildcard $(LINUX_DIR)/kernel-*.apk $(PACKAGE_DIR)/kernel_*.apk))
+	$(APK) add --no-scripts $(BUILD_PACKAGES)
 else
 	$(OPKG) install $(firstword $(wildcard $(LINUX_DIR)/libc_*.ipk $(PACKAGE_DIR)/libc_*.ipk))
 	$(OPKG) install $(firstword $(wildcard $(LINUX_DIR)/kernel_*.ipk $(PACKAGE_DIR)/kernel_*.ipk))
