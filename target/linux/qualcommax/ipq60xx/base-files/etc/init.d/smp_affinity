@@ -1,0 +1,35 @@
+#!/bin/sh /etc/rc.common
+
+START=93
+
+set_affinity () {
+	irq=$(awk "/$1/{ print substr(\$1, 1, length(\$1)-1); exit }" /proc/interrupts)
+	[ -n "$irq" ] && echo $2 > /proc/irq/$irq/smp_affinity
+	echo "smp_affinity: $1 pinned to $2" >> /dev/kmsg
+}
+spread_affinity () {
+	# spread_affinity pattern
+	cpu=8 ; for name in $(grep $1 /proc/interrupts | awk {'print $9'} ) ; 
+	do set_affinity $name $cpu 
+	cpu=$((cpu >> 1)) 
+	[ $cpu = 0 ] && cpu=8
+	done
+}
+pin_affinity () {
+	# pin_affinity pattern cpu_bitmask
+	for name in $(grep $1 /proc/interrupts | awk {'print $9'} ) ; 
+	do set_affinity $name $2
+	done	
+}
+	
+boot() {
+	# keep ce[0-9] on the same core
+	# do not move edma interrupts
+	# do not spread them, shit crashes
+       	spread_affinity 'reo2host-destination-ring'
+	spread_affinity 'wbm2host-tx-completions-ring'
+	spread_affinity 'ppdu-end-interrupts-mac'
+	pin_affinity 'ce[0-9]' 2
+	set_affinity 'xhci-hcd:usb1' 4
+	
+}
