@@ -23,7 +23,8 @@ mediatek_setup_interfaces()
 	zbtlink,zbt-z8103ax-c)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" eth1
 		;;
-	acelink,ew-7886cax)
+	acelink,ew-7886cax|\
+	tplink,eap683-lr)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
 	acer,predator-w6|\
@@ -276,6 +277,10 @@ mediatek_setup_macs()
 		label_mac=$(mtd_get_mac_ascii product_info ethaddr)
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 1)
+		;;
+	tplink,eap683-lr)
+		label_mac=$(get_mac_binary "/tmp/factory/default-mac" 0)
+		lan_mac=$label_mac
 		;;
 	tplink,fr365-v1)
 		lan_mac=$(strings /dev/mtd11 | grep 'option macaddr' | awk -F"'" '{print $2}')
