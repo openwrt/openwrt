@@ -1,0 +1,53 @@
+From 04bf1fe478d81868308bc91b4a1bce50d693f203 Mon Sep 17 00:00:00 2001
+From: Thierry Reding <treding@nvidia.com>
+Date: Fri, 9 Jun 2023 14:44:08 +0200
+Subject: [PATCH] thermal: Allow selecting the bang-bang governor as default
+
+For many setups the bang-bang governor is exactly what we want. Many
+ARM SoC-based devices use fans to cool down the entire SoC and that
+works well only with the bang-bang governor because it uses the
+hysteresis in order to let the fan run for a while to cool the SoC
+down below the trip point before switching it off again.
+
+The step-wise governor will behave strangely in these situations. It
+doesn't use the hysteresis, so it can lead to situations where the fan
+is turned on for only a very brief period and then is switched back off,
+only to get switched back on again very quickly because the SoC hasn't
+cooled down very much.
+
+Signed-off-by: Thierry Reding <treding@nvidia.com>
+Link: https://lore.kernel.org/r/20230609124408.3788680-1-thierry.reding@gmail.com
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ drivers/thermal/Kconfig        | 8 ++++++++
+ drivers/thermal/thermal_core.h | 2 ++
+ 2 files changed, 10 insertions(+)
+
+--- a/drivers/thermal/Kconfig
++++ b/drivers/thermal/Kconfig
+@@ -126,6 +126,14 @@ config THERMAL_DEFAULT_GOV_POWER_ALLOCAT
+ 	  system and device power allocation. This governor can only
+ 	  operate on cooling devices that implement the power API.
+ 
++config THERMAL_DEFAULT_GOV_BANG_BANG
++	bool "bang_bang"
++	depends on THERMAL_GOV_BANG_BANG
++	help
++	  Use the bang_bang governor as default. This throttles the
++	  devices one step at the time, taking into account the trip
++	  point hysteresis.
++
+ endchoice
+ 
+ config THERMAL_GOV_FAIR_SHARE
+--- a/drivers/thermal/thermal_core.h
++++ b/drivers/thermal/thermal_core.h
+@@ -23,6 +23,8 @@
+ #define DEFAULT_THERMAL_GOVERNOR       "user_space"
+ #elif defined(CONFIG_THERMAL_DEFAULT_GOV_POWER_ALLOCATOR)
+ #define DEFAULT_THERMAL_GOVERNOR       "power_allocator"
++#elif defined(CONFIG_THERMAL_DEFAULT_GOV_BANG_BANG)
++#define DEFAULT_THERMAL_GOVERNOR       "bang_bang"
+ #endif
+ 
+ /* Initial state of a cooling device during binding */
