@@ -33,6 +33,9 @@ case "$FIRMWARE" in
 		ln -sf /tmp/tp_data/MT7986_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
 		;;
+	tplink,eap683-lr)
+		caldata_from_file_ubifs "factory" "ubi_factory_data" "radio" 0x0 0x1000
+		;;
 	esac
 	;;
 *)
