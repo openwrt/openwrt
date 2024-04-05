@@ -29,6 +29,24 @@ PKG_SUBDIRS := \
 	libdwfl \
 	libdw
 
+PKG_GNULIB_BASE:=libgnu
+
+PKG_GNULIB_ARGS = \
+	--dir=$(HOST_BUILD_DIR) \
+	--local-dir=$(STAGING_DIR_HOST)/share/gnulib \
+	--source-base=$(PKG_GNULIB_BASE) \
+	--libtool \
+	--import
+
+PKG_GNULIB_MODS = \
+	argp \
+	dirname \
+	fts \
+	obstack \
+	progname \
+	strchrnul \
+	tsearch
+
 include $(INCLUDE_DIR)/host-build.mk
 
 ifeq ($(HOST_OS),Darwin)
@@ -55,7 +73,7 @@ endif
 
 Hooks/HostConfigure/Pre := Host/Gnulib $(Hooks/HostConfigure/Pre)
 define Host/Gnulib
-	cd $(HOST_BUILD_DIR); $(STAGING_DIR_HOST)/bin/gnulib-tool --libtool --source-base=libgnu --import argp dirname fts obstack progname strchrnul tsearch;
+	$(STAGING_DIR_HOST)/bin/gnulib-tool $(PKG_GNULIB_ARGS) $(PKG_GNULIB_MODS);
 	ln -sf ../lib/eu-config.h $(HOST_BUILD_DIR)/libgnu/;
 endef
 
