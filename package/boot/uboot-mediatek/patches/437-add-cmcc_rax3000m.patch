@@ -585,7 +585,7 @@
 +serverip=192.168.1.254
 +loadaddr=0x46000000
 +console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
-+bootargs=root=/dev/mmcblk0p65
++bootargs=root=/dev/mmcblk0p65 rootwait
 +bootcmd=if pstore check ; then run boot_recovery ; else run boot_emmc ; fi
 +bootconf=config-1#mt7981b-cmcc-rax3000m-emmc
 +bootdelay=0

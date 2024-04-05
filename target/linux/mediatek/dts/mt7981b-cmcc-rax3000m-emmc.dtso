@@ -7,6 +7,13 @@
 	compatible = "cmcc,rax3000m", "mediatek,mt7981";
 
 	fragment@0 {
+		target = <&chosen>;
+		__overlay_ {
+			bootargs-append = " rootwait";
+		};
+	};
+
+	fragment@1 {
 		target = <&mmc0>;
 		__overlay__ {
 			bus-width = <8>;
@@ -22,7 +29,7 @@
 		};
 	};
 
-	fragment@1 {
+	fragment@2 {
 		target = <&pio>;
 		__overlay__ {
 			mmc0_pins_default: mmc0-pins {
