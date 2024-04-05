@@ -105,6 +105,9 @@ zyxel,gs1900-8hp-v1|\
 zyxel,gs1900-8hp-v2)
 	ucidef_set_poe 70 "$lan_list"
 	;;
+zyxel,gs1900-24ep)
+	ucidef_set_poe 130 "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12"
+	;;
 zyxel,gs1900-24hp-v1|\
 zyxel,gs1900-24hp-v2)
 	ucidef_set_poe 170 "$(filter_port_list "$lan_list" "lan25 lan26")"
