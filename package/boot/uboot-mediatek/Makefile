@@ -267,6 +267,31 @@ define U-Boot/mt7981_jcg_q30-pro
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_openwrt_one-snand
+  NAME:=OpenWrt One NAND
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=openwrt_one
+  UBOOT_CONFIG:=mt7981_openwrt-one-spi-nand
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ubi-ddr4
+endef
+
+define U-Boot/mt7981_openwrt_one-nor
+  NAME:=OpenWrt One NOR
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=openwrt_one
+  UBOOT_CONFIG:=mt7981_openwrt-one-nor
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  FIP_COMPRESS:=1
+  DEPENDS:=+trusted-firmware-a-mt7981-nor-ddr4
+endef
+
 define U-Boot/mt7981_rfb-spim-nand
   NAME:=MT7981 Reference Board
   BUILD_SUBTARGET:=filogic
@@ -701,6 +726,8 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-nand \
 	mt7981_h3c_magic-nx30-pro \
 	mt7981_jcg_q30-pro \
+	mt7981_openwrt_one-snand \
+	mt7981_openwrt_one-nor \
 	mt7981_rfb-spim-nand \
 	mt7981_rfb-emmc \
 	mt7981_rfb-nor \
