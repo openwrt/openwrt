@@ -1,0 +1,97 @@
+From 5886e6a45b3c20c8d8f837657d1506b580434136 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sat, 6 Apr 2024 14:41:54 +0200
+Subject: [PATCH] Provide variant pkg-config file for multi-threaded static lib
+
+Multi-threaded static library require -pthread to correctly link and works.
+The pkg-config we provide tho only works with dynamic multi-threaded library
+and won't provide the correct libs and cflags values if lib-mt is used.
+
+To handle this, introduce a variant of libzstd.pc.in, mt-libzstd.pc.in
+and intoduce a new make target, install-mt-pc to permit advanced user to
+install and generate a correct pkg-config file for lib-mt.
+
+This was notice while migrating from meson to make build system where
+meson generates a correct .pc file while make doesn't.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ lib/Makefile         | 16 ++++++++++++++++
+ lib/README.md        |  4 ++++
+ lib/mt-libzstd.pc.in | 15 +++++++++++++++
+ 3 files changed, 35 insertions(+)
+ create mode 100644 lib/mt-libzstd.pc.in
+
+diff --git a/lib/Makefile b/lib/Makefile
+index 8bfdade9..4933f0e9 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -319,6 +319,17 @@ libzstd.pc: libzstd.pc.in
+ 	        -e 's|@LIBS_PRIVATE@|$(LDFLAGS_DYNLIB)|' \
+ 	        $< >$@
+ 
++mt-libzstd.pc: mt-libzstd.pc.in
++	@echo creating pkgconfig
++	@sed \
++	        -e 's|@PREFIX@|$(PREFIX)|' \
++	        -e 's|@EXEC_PREFIX@|$(PCEXEC_PREFIX)|' \
++	        -e 's|@INCLUDEDIR@|$(PCINCPREFIX)$(PCINCDIR)|' \
++	        -e 's|@LIBDIR@|$(PCLIBPREFIX)$(PCLIBDIR)|' \
++	        -e 's|@VERSION@|$(VERSION)|' \
++	        -e 's|@LIBS_PRIVATE@|$(LDFLAGS_DYNLIB)|' \
++	        $< >$@
++
+ .PHONY: install
+ install: install-pc install-static install-shared install-includes
+ 	@echo zstd static and shared library installed
+@@ -328,6 +339,11 @@ install-pc: libzstd.pc
+ 	[ -e $(DESTDIR)$(PKGCONFIGDIR) ] || $(INSTALL) -d -m 755 $(DESTDIR)$(PKGCONFIGDIR)/
+ 	$(INSTALL_DATA) libzstd.pc $(DESTDIR)$(PKGCONFIGDIR)/
+ 
++.PHONY: install-mt-pc
++install-mt-pc: mt-libzstd.pc
++	[ -e $(DESTDIR)$(PKGCONFIGDIR) ] || $(INSTALL) -d -m 755 $(DESTDIR)$(PKGCONFIGDIR)/
++	$(INSTALL_DATA) mt-libzstd.pc $(DESTDIR)$(PKGCONFIGDIR)/libzstd.pc
++
+ .PHONY: install-static
+ install-static:
+ 	# only generate libzstd.a if it's not already present
+diff --git a/lib/README.md b/lib/README.md
+index a560f06c..3038bc7a 100644
+--- a/lib/README.md
++++ b/lib/README.md
+@@ -33,6 +33,10 @@ For convenience, we provide a build target to generate multi and single threaded
+ When linking a POSIX program with a multithreaded version of `libzstd`,
+ note that it's necessary to invoke the `-pthread` flag during link stage.
+ 
++The `.pc` generated from `make install` or `make install-pc` always assume a single-threaded static library
++is compiled. If `make lib-mt` is used, to correctly generate a `.pc` for the multi-threaded static library,
++`make install-mt-pc` is needed.
++
+ Multithreading capabilities are exposed
+ via the [advanced API defined in `lib/zstd.h`](https://github.com/facebook/zstd/blob/v1.4.3/lib/zstd.h#L351).
+ 
+diff --git a/lib/mt-libzstd.pc.in b/lib/mt-libzstd.pc.in
+new file mode 100644
+index 00000000..cd93301a
+--- /dev/null
++++ b/lib/mt-libzstd.pc.in
+@@ -0,0 +1,15 @@
++#   ZSTD - standard compression algorithm
++#   Copyright (c) Meta Platforms, Inc. and affiliates.
++#   BSD 2-Clause License (https://opensource.org/licenses/bsd-license.php)
++
++prefix=@PREFIX@
++exec_prefix=@EXEC_PREFIX@
++includedir=@INCLUDEDIR@
++libdir=@LIBDIR@
++
++Name: zstd
++Description: fast lossless compression algorithm library
++URL: https://facebook.github.io/zstd/
++Version: @VERSION@
++Libs: -L${libdir} -lzstd @LIBS_PRIVATE@
++Cflags: -I${includedir} @LIBS_PRIVATE@
+-- 
+2.43.0
+
