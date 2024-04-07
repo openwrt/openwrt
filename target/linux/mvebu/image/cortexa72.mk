@@ -33,6 +33,24 @@ define Device/checkpoint_v-80
 endef
 TARGET_DEVICES += checkpoint_v-80
 
+define Device/checkpoint_v-81
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := Check Point
+  DEVICE_MODEL := V-81
+  SOC := armada-8040
+  BOOT_SCRIPT := v-80
+  IMAGES += sysupgrade.gz
+  IMAGE/sysupgrade.gz := boot-scr eMMC | append-bootscript | pad-to 2048 | \
+	append-kernel | \
+	sysupgrade-tar kernel=$$$$@ dtb=$$(KDIR)/image-$$(DEVICE_DTS).dtb | \
+	gzip | append-metadata
+  ARTIFACTS := initramfs.dtb initramfs.scr
+  ARTIFACT/initramfs.dtb := append-dtb
+  ARTIFACT/initramfs.scr := boot-scr INIT | append-bootscript
+  DEVICE_PACKAGES := kmod-dsa-mv88e6xxx kmod-hwmon-nct7802 kmod-rtc-ds1307
+endef
+TARGET_DEVICES += checkpoint_v-81
+
 define Device/globalscale_mochabin
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Globalscale
