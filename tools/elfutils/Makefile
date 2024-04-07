@@ -17,6 +17,18 @@ PKG_CPE_ID:=cpe:/a:elfutils_project:elfutils
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
+PKG_SUBDIRS := \
+	libgnu \
+	config \
+	lib \
+	libelf \
+	libcpu \
+	backends \
+	libebl \
+	libdwelf \
+	libdwfl \
+	libdw
+
 include $(INCLUDE_DIR)/host-build.mk
 
 ifeq ($(HOST_OS),Darwin)
@@ -45,6 +57,14 @@ Hooks/HostConfigure/Pre := Host/Gnulib $(Hooks/HostConfigure/Pre)
 define Host/Gnulib
 	cd $(HOST_BUILD_DIR); $(STAGING_DIR_HOST)/bin/gnulib-tool --libtool --source-base=libgnu --import argp dirname fts obstack progname strchrnul tsearch;
 	ln -sf ../lib/eu-config.h $(HOST_BUILD_DIR)/libgnu/;
+endef
+
+define Host/Compile
+	$(call Host/Compile/Default,SUBDIRS='$$$$(wildcard $(PKG_SUBDIRS))')
+endef
+
+define Host/Install
+	$(call Host/Compile/Default,install SUBDIRS='$$$$(wildcard $(PKG_SUBDIRS))')
 endef
 
 define Host/Uninstall
