@@ -8,10 +8,10 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_RELEASE:=$(AUTORELEASE)
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/pengphei/rockchip-uboot.git
+PKG_SOURCE_URL:=https://github.com/pengphei/rockchip-uboot-luckfox.git
 PKG_SOURCE_DATE:=2024-03-22
-PKG_SOURCE_VERSION:=cd3882b8453e0d94e107683b03f169ab387c1cae
-PKG_MIRROR_HASH:=bf943cc68d7347760ecf5d394431b1b378e2a0fb60293b9ae0c2a2a18054c938
+PKG_SOURCE_VERSION:=6cc11e3073238d0da03303d3cd71693221c01a44
+PKG_MIRROR_HASH:=7c747c676cfe58f44ed856b4b42ab771d5d2ef2f1ca3735797f090843ad4c2c4
 
 PKG_MAINTAINER:=Han Pengfei <pengphei@qq.com>
 
@@ -71,9 +71,10 @@ endif
 endef
 
 define Build/Compile
+	rm -rf $(PKG_BUILD_DIR)/../rkbin
 	ln -s $(STAGING_DIR_IMAGE) $(PKG_BUILD_DIR)/../rkbin
 	cd $(PKG_BUILD_DIR)
-	pushd $(PKG_BUILD_DIR);$(PKG_BUILD_DIR)/make.sh --spl-new CROSS_COMPILE=$(TARGET_CROSS) RKBIN_PATH=${STAGING_DIR_IMAGE} "$(UBOOT_CONFIG)";popd
+	pushd $(PKG_BUILD_DIR);$(PKG_BUILD_DIR)/make.sh --spl-new CROSS_COMPILE=$(TARGET_CROSS) "$(UBOOT_CONFIG)";popd
 endef
 
 define Build/InstallDev
