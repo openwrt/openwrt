@@ -1418,8 +1418,6 @@ config KERNEL_JFFS2_FS_SECURITY
 
 config KERNEL_WERROR
 	bool "Compile the kernel with warnings as errors"
-	default BUILDBOT
-	default y if GCC_USE_VERSION_12
 	help
 	  A kernel build should not cause any compiler warnings, and this
 	  enables the '-Werror' (for C) and '-Dwarnings' (for Rust) flags
