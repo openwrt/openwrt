@@ -85,12 +85,12 @@ int main(int argc, char *argv[])
 	}
     }
     if (ivlen != get_cipher_ivsize(cipher)) {
-	fprintf(stderr, "Error: IV must be %d bytes; given IV is %zd bytes.\n",
+	fprintf(stderr, "Error: IV must be %d bytes; given IV is %ld bytes.\n",
 		get_cipher_ivsize(cipher), ivlen);
 	exit(EXIT_FAILURE);
     }
     if (keylen != get_cipher_keysize(cipher)) {
-	fprintf(stderr, "Error: key must be %d bytes; given key is %zd bytes.\n",
+	fprintf(stderr, "Error: key must be %d bytes; given key is %ld bytes.\n",
 		get_cipher_keysize(cipher), keylen);
 	exit(EXIT_FAILURE);
     }
