@@ -6,6 +6,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=aarch64
 BOARDNAME:=RK33xx boards (64 bit)
+KERNELNAME:=Image dtbs
 
 define Target/Description
 	Build firmware image for Rockchip RK33xx devices.

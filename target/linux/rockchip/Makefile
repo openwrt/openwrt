@@ -9,6 +9,7 @@ FEATURES:=ext4 audio usb usbgadget display gpio fpu pci pcie rootfs-part boot-pa
 SUBTARGETS:=armv8 cortexa7
 
 KERNEL_PATCHVER=5.10
+KERNELNAME:=zImage dtbs
 
 define Target/Description
 	Build firmware image for Rockchip SoC devices.
@@ -17,7 +18,5 @@ endef
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += uboot-envtools partx-utils e2fsprogs mkf2fs kmod-gpio-button-hotplug
-
-KERNELNAME:=Image dtbs
 
 $(eval $(call BuildTarget))
