@@ -1147,16 +1147,19 @@ dnsmasq_start()
 
 	# Create a dnsmasq.d dir for each instance
 	config_get dnsmasqconfdir "$cfg" confdir "/tmp/dnsmasq${cfg:+.$cfg}.d"
-	xappend "--conf-dir=$dnsmasqconfdir"
-	dnsmasqconfdir="${dnsmasqconfdir%%,*}"
-	[ ! -d "$dnsmasqconfdir" ] && mkdir -p "$dnsmasqconfdir"
-	xappend "--user=dnsmasq"
-	xappend "--group=dnsmasq"
-	echo >> "$CONFIGFILE_TMP"
+	# Ensure dnsmasqconfdir is an absolute path
+	[ "${dnsmasqconfdir:0:1}" = '/' ] && {
+		xappend "--conf-dir=$dnsmasqconfdir"
+		dnsmasqconfdir="${dnsmasqconfdir%%,*}"
+		[ ! -d "$dnsmasqconfdir" ] && mkdir -p "$dnsmasqconfdir"
+		xappend "--user=dnsmasq"
+		xappend "--group=dnsmasq"
+		echo >> "$CONFIGFILE_TMP"
 
-	# EXTRACONFFILE allows new dnsmasq parameters before they are natively handled in this init file
-	config_get extraconftext "$cfg" extraconftext
-	[ -n "$extraconftext" ] && echo -e "$extraconftext" > "$dnsmasqconfdir"/"$EXTRACONFFILE"
+		# EXTRACONFFILE allows new dnsmasq parameters before they are natively handled in this init file
+		config_get extraconftext "$cfg" extraconftext
+		[ -n "$extraconftext" ] && echo -e "$extraconftext" > "$dnsmasqconfdir"/"$EXTRACONFFILE"
+	}
 
 	config_get_bool enable_tftp "$cfg" enable_tftp 0
 	[ "$enable_tftp" -gt 0 ] && {
