@@ -4,7 +4,7 @@ ARCH:=aarch64
 BOARD:=qualcommax
 BOARDNAME:=Qualcomm Atheros 802.11ax WiSoC-s
 FEATURES:=squashfs ramdisk fpu nand rtc emmc
-KERNELNAME:=Image dtbs
+KERNELNAME:=Image
 CPU_TYPE:=cortex-a53
 SUBTARGETS:=ipq807x ipq60xx
 
