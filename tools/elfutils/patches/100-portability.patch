@@ -351,7 +351,7 @@
  #include <libdwfl.h>
  #include <libebl.h>
 +#include <libeu.h>
-+#include <libgen.h>
++#include <dirname.h>
  #include <assert.h>
  #include <dirent.h>
  #include <errno.h>
@@ -373,7 +373,7 @@
 +#include <libeu.h>
  #include <libdw.h>
  #include <dwarf.h>
-+#include <libgen.h>
++#include <dirname.h>
  
  
  /* Known location expressions already decoded.  */
@@ -893,32 +893,8 @@
 @@ -27,6 +27,7 @@
     the GNU Lesser General Public License along with this program.  If
     not, see <http://www.gnu.org/licenses/>.  */
-
+ 
 +#include <config.h>
  #include <stddef.h>
-
-
---- a/libdw/libdwP.h
-+++ b/libdw/libdwP.h
-@@ -35,7 +35,7 @@
- #include <libeu.h>
- #include <libdw.h>
- #include <dwarf.h>
--#include <libgen.h>
-+#include <dirname.h>
-
-
- /* Known location expressions already decoded.  */
-
---- a/libdwfl/libdwflP.h
-+++ b/libdwfl/libdwflP.h
-@@ -32,7 +32,7 @@
- #include <libdwfl.h>
- #include <libebl.h>
- #include <libeu.h>
--#include <libgen.h>
-+#include <dirname.h>
- #include <assert.h>
- #include <dirent.h>
- #include <errno.h>
-
+ 
+ 
