@@ -46,7 +46,7 @@ endef
 
 ifdef IB
 define Build/append-image-stage
-	dd if=$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1) >> $@
+	dd if=$(STAGING_DIR_IMAGE)/$(BOARD)-$(SUBTARGET)-$(DEVICE_NAME)-$(1) >> $@
 endef
 else
 define Build/append-image-stage
@@ -54,7 +54,7 @@ define Build/append-image-stage
 	fwtool -s /dev/null -t "$@.stripmeta" || :
 	fwtool -i /dev/null -t "$@.stripmeta" || :
 	mkdir -p "$(STAGING_DIR_IMAGE)"
-	dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))-$(DEVICE_NAME)-$(1)"
+	dd if="$@.stripmeta" of="$(STAGING_DIR_IMAGE)/$(BOARD)-$(SUBTARGET)-$(DEVICE_NAME)-$(1)"
 	dd if="$@.stripmeta" >> "$@"
 	rm "$@.stripmeta"
 endef

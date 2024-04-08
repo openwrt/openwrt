@@ -103,7 +103,7 @@ PROFILE_LIST = $(foreach p,$(PROFILE_NAMES), \
 
 
 .profiles.mk: .targetinfo
-	@$(SCRIPT_DIR)/target-metadata.pl profile_mk $< '$(BOARD)$(if $(SUBTARGET),/$(SUBTARGET))' > $@
+	@$(SCRIPT_DIR)/target-metadata.pl profile_mk $< '$(BOARD)/$(SUBTARGET)' > $@
 
 staging_dir/host/.prereq-build: include/prereq-build.mk
 	mkdir -p tmp

@@ -11,7 +11,7 @@ CRYPTO_MODULES = \
 	ALGAPI2=crypto_algapi \
 	BLKCIPHER2=crypto_blkcipher
 
-CRYPTO_TARGET = $(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic)
+CRYPTO_TARGET = $(BOARD)/$(SUBTARGET)
 
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
 crypto_file=$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).ko
