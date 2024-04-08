@@ -36,6 +36,7 @@ PKG_GNULIB_ARGS = \
 	--local-dir=$(STAGING_DIR_HOST)/share/gnulib \
 	--source-base=$(PKG_GNULIB_BASE) \
 	--libtool \
+	--avoid=reallocarray \
 	--import
 
 PKG_GNULIB_MODS = \
