@@ -344,20 +344,6 @@
 +{
 +  return ppc_check_object_attribute(ebl, vendor, tag, value, tag_name, value_name);
 +}
---- a/lib/libeu.h
-+++ b/lib/libeu.h
-@@ -45,4 +45,11 @@ extern char *xasprintf(const char *fmt,
- extern uint32_t crc32 (uint32_t crc, unsigned char *buf, size_t len);
- extern int crc32_file (int fd, uint32_t *resp);
- 
-+#ifdef __APPLE__
-+static inline void tdestroy(void *root __attribute__ ((unused)),
-+			    void (*freekey)(void *) __attribute__ ((unused)))
-+{
-+}
-+#endif
-+
- #endif
 --- a/libdwfl/libdwflP.h
 +++ b/libdwfl/libdwflP.h
 @@ -31,6 +31,8 @@
