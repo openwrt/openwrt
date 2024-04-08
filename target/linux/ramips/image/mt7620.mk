@@ -1340,6 +1340,15 @@ define Device/wavlink_wl-wn530hg4
 endef
 TARGET_DEVICES += wavlink_wl-wn530hg4
 
+define Device/wavlink_wl-wn531g3
+  SOC := mt7620a
+  IMAGE_SIZE := 7808k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN531G3
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-phy-realtek kmod-usb2 kmod-usb-ohci
+endef
+TARGET_DEVICES += wavlink_wl-wn531g3
+
 define Device/wavlink_wl-wn535k1
   SOC := mt7620a
   IMAGE_SIZE := 7360k
