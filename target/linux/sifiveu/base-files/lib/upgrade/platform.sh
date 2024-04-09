@@ -6,12 +6,12 @@ platform_check_image() {
 		return 1
 	}
 
-	get_partitions "/dev/$diskdev" bootdisk
+	get_partitions "/dev/$diskdev" bootdisk || return 1
 
 	#extract the boot sector from the image
 	get_image "$@" | dd of=/tmp/image.bs count=1 bs=512b 2>/dev/null
 
-	get_partitions /tmp/image.bs image
+	get_partitions /tmp/image.bs image || return 1
 
 	#compare tables
 	diff="$(grep -F -x -v -f /tmp/partmap.bootdisk /tmp/partmap.image)"
