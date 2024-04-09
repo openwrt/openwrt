@@ -14,6 +14,16 @@ define Device/firefly_roc-rk3328-cc
 endef
 TARGET_DEVICES += firefly_roc-rk3328-cc
 
+
+define Device/sinovoip_bananapi-r2-pro
+  DEVICE_VENDOR := Sinovoip
+  DEVICE_MODEL := BPI-R2-PRO-RK3568
+  SOC := rk3568
+  DEVICE_DTS := rockchip/rk3568-bpi-r2-pro
+  UBOOT_DEVICE_NAME := bpi-r2-pro-rk3568
+endef
+TARGET_DEVICES += sinovoip_bananapi-r2-pro
+
 define Device/friendlyarm_nanopc-t4
   DEVICE_VENDOR := FriendlyARM
   DEVICE_MODEL := NanoPC T4
