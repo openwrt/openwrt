@@ -2,6 +2,7 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+# Add bpi-r2-pro
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
@@ -172,6 +173,14 @@ define U-Boot/radxa-e25-rk3568
     radxa_e25
 endef
 
+define U-Boot/bpi-r2-pro-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=BananaPi R2Pro
+  BUILD_DEVICES:= \
+    sinovoip_bananapi-r2-pro
+endef
+
+
 UBOOT_TARGETS := \
   nanopc-t4-rk3399 \
   nanopi-r4s-rk3399 \
@@ -188,7 +197,8 @@ UBOOT_TARGETS := \
   radxa-cm3-io-rk3566 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
-  radxa-e25-rk3568
+  radxa-e25-rk3568 \
+  bananapi-r2-pro-rk3568
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
