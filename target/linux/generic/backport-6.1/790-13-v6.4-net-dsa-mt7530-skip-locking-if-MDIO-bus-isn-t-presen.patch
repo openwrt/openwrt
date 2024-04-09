@@ -1,7 +1,7 @@
-From a52cadbf76593f8fcb2f4f62cb006e3f2a22ad06 Mon Sep 17 00:00:00 2001
+From 86e1168a214b7ab0883acf1e7a6885a7a949e3e7 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Mon, 3 Apr 2023 02:19:28 +0100
-Subject: [PATCH 11/13] net: dsa: mt7530: skip locking if MDIO bus isn't
+Subject: [PATCH 13/48] net: dsa: mt7530: skip locking if MDIO bus isn't
  present
 
 As MT7530 and MT7531 internally use 32-bit wide registers, each access

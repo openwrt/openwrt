@@ -1,7 +1,7 @@
-From 69b838d2629e6b82bcd9e0ab3c1c03f46e5e01d3 Mon Sep 17 00:00:00 2001
+From a7783b0b6f3b38abd34cecf515811691714dee57 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Mon, 3 Apr 2023 02:18:50 +0100
-Subject: [PATCH 09/13] net: dsa: mt7530: introduce mt7530_remove_common helper
+Subject: [PATCH 11/48] net: dsa: mt7530: introduce mt7530_remove_common helper
  function
 
 Move commonly used parts from mt7530_remove into new
@@ -17,7 +17,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -3295,6 +3295,17 @@ mt7530_probe(struct mdio_device *mdiodev
+@@ -3328,6 +3328,17 @@ mt7530_probe(struct mdio_device *mdiodev
  }
  
  static void
@@ -35,7 +35,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  mt7530_remove(struct mdio_device *mdiodev)
  {
  	struct mt7530_priv *priv = dev_get_drvdata(&mdiodev->dev);
-@@ -3313,15 +3324,10 @@ mt7530_remove(struct mdio_device *mdiode
+@@ -3346,15 +3357,10 @@ mt7530_remove(struct mdio_device *mdiode
  		dev_err(priv->dev, "Failed to disable io pwr: %d\n",
  			ret);
  

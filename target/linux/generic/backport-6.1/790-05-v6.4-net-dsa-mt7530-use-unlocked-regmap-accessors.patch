@@ -1,7 +1,7 @@
-From 33396408776385f3d2f6069646169a6b5b28e3b3 Mon Sep 17 00:00:00 2001
+From efb41b8e9b7bbb08ace1930373bff63d4f5cc6e2 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Mon, 3 Apr 2023 02:17:40 +0100
-Subject: [PATCH 03/13] net: dsa: mt7530: use unlocked regmap accessors
+Subject: [PATCH 05/48] net: dsa: mt7530: use unlocked regmap accessors
 
 Instead of wrapping the locked register accessor functions, use the
 unlocked variants and add locking wrapper functions to let regmap
@@ -19,7 +19,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -2941,7 +2941,7 @@ static int mt7530_regmap_read(void *cont
+@@ -2974,7 +2974,7 @@ static int mt7530_regmap_read(void *cont
  {
  	struct mt7530_priv *priv = context;
  
@@ -28,7 +28,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return 0;
  };
  
-@@ -2949,23 +2949,25 @@ static int mt7530_regmap_write(void *con
+@@ -2982,23 +2982,25 @@ static int mt7530_regmap_write(void *con
  {
  	struct mt7530_priv *priv = context;
  
@@ -62,7 +62,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static int
-@@ -2991,6 +2993,9 @@ mt7531_create_sgmii(struct mt7530_priv *
+@@ -3024,6 +3026,9 @@ mt7531_create_sgmii(struct mt7530_priv *
  		mt7531_pcs_config[i]->reg_stride = 4;
  		mt7531_pcs_config[i]->reg_base = MT7531_SGMII_REG_BASE(5 + i);
  		mt7531_pcs_config[i]->max_register = 0x17c;

@@ -1,7 +1,7 @@
-From 0d7ae94a0c581f86939bebec0b6ccd66e640d1d8 Mon Sep 17 00:00:00 2001
+From dbef24b66807eef7498740fa8b8441bee64a96c4 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Mon, 3 Apr 2023 02:18:28 +0100
-Subject: [PATCH 07/13] net: dsa: mt7530: move p5_intf_modes() function to
+Subject: [PATCH 09/48] net: dsa: mt7530: move p5_intf_modes() function to
  mt7530.c
 
 In preparation of splitting mt7530.c into a driver for MDIO-connected
@@ -48,7 +48,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct mt7530_priv *priv = ds->priv;
 --- a/drivers/net/dsa/mt7530.h
 +++ b/drivers/net/dsa/mt7530.h
-@@ -689,24 +689,6 @@ enum p5_interface_select {
+@@ -709,24 +709,6 @@ enum p5_interface_select {
  	P5_INTF_SEL_GMAC5_SGMII,
  };
  
