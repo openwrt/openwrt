@@ -101,7 +101,7 @@ ifeq ($(DUMP),)
 ifeq ($(CONFIG_USE_APK),)
     PACK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION)_$(PKGARCH).ipk
 else
-	PACK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))_$(VERSION).apk
+	PACK_$(1):=$$(PDIR_$(1))/$(1)$$(ABIV_$(1))-$(VERSION).apk
 endif
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     ADIR_$(1):=$(PKG_BUILD_DIR)/apk-$(PKGARCH)/$(1)
