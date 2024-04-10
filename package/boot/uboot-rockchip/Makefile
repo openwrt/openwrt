@@ -131,8 +131,8 @@ endef
 define U-Boot/rk3566/Default
   BUILD_SUBTARGET:=armv8
   DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3566
-  ATF:=rk3568_bl31_v1.43.elf
-  TPL:=rk3566_ddr_1056MHz_v1.18.bin
+  ATF:=rk3568_bl31_v1.44.elf
+  TPL:=rk3566_ddr_1056MHz_v1.21.bin
 endef
 
 define U-Boot/radxa-cm3-io-rk3566
@@ -147,8 +147,8 @@ endef
 define U-Boot/rk3568/Default
   BUILD_SUBTARGET:=armv8
   DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3568
-  ATF:=rk3568_bl31_v1.43.elf
-  TPL:=rk3568_ddr_1560MHz_v1.18.bin
+  ATF:=rk3568_bl31_v1.44.elf
+  TPL:=rk3568_ddr_1560MHz_v1.21.bin
 endef
 
 define U-Boot/nanopi-r5c-rk3568
