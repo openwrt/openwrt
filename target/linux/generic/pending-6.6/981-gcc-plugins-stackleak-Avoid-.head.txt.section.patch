@@ -1,0 +1,31 @@
+From e7d24c0aa8e678f41457d1304e2091cac6fd1a2e Mon Sep 17 00:00:00 2001
+From: Ard Biesheuvel <ardb@kernel.org>
+Date: Thu, 28 Mar 2024 07:42:57 +0100
+Subject: gcc-plugins/stackleak: Avoid .head.text section
+
+The .head.text section carries the startup code that runs with the MMU
+off or with a translation of memory that deviates from the ordinary one.
+So avoid instrumentation with the stackleak plugin, which already avoids
+.init.text and .noinstr.text entirely.
+
+Fixes: 48204aba801f1b51 ("x86/sme: Move early SME kernel encryption handling into .head.text")
+Reported-by: kernel test robot <oliver.sang@intel.com>
+Closes: https://lore.kernel.org/oe-lkp/202403221630.2692c998-oliver.sang@intel.com
+Signed-off-by: Ard Biesheuvel <ardb@kernel.org>
+Link: https://lore.kernel.org/r/20240328064256.2358634-2-ardb+git@google.com
+Signed-off-by: Kees Cook <keescook@chromium.org>
+---
+ scripts/gcc-plugins/stackleak_plugin.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/scripts/gcc-plugins/stackleak_plugin.c
++++ b/scripts/gcc-plugins/stackleak_plugin.c
+@@ -467,6 +467,8 @@ static bool stackleak_gate(void)
+ 			return false;
+ 		if (STRING_EQUAL(section, ".entry.text"))
+ 			return false;
++		if (STRING_EQUAL(section, ".head.text"))
++			return false;
+ 	}
+ 
+ 	return track_frame_size >= 0;
