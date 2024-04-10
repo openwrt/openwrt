@@ -16,11 +16,6 @@ choice
 		bool "gcc 13.x"
 endchoice
 
-config GCC_USE_DEFAULT_VERSION
-	bool
-	default y if !TOOLCHAINOPTS || GCC_USE_VERSION_13
-	imply KERNEL_WERROR
-
 config GCC_USE_GRAPHITE
 	bool
 	prompt "Compile in support for the new Graphite framework in GCC 4.4+" if TOOLCHAINOPTS

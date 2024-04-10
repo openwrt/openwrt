@@ -68,6 +68,10 @@ KERNEL_FILES_ARCH = \
 	kernel/asm-offsets.s \
 	kernel/module.lds
 
+ifeq ($(LINUX_KARCH),powerpc)
+  KERNEL_FILES_ARCH += lib/crtsavres.o
+endif
+
 KERNEL_FILES_BASE := \
 	.config \
 	Makefile \

@@ -1,0 +1,92 @@
+From ef972fc9f5743da589ce9546dd565d6c56e679b8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ar=C4=B1n=C3=A7=20=C3=9CNAL?= <arinc.unal@arinc9.com>
+Date: Mon, 8 Apr 2024 10:08:53 +0300
+Subject: [PATCH 1/2] net: dsa: mt7530: fix enabling EEE on MT7531 switch on
+ all boards
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The commit 40b5d2f15c09 ("net: dsa: mt7530: Add support for EEE features")
+brought EEE support but did not enable EEE on MT7531 switch MACs. EEE is
+enabled on MT7531 switch MACs by pulling the LAN2LED0 pin low on the board
+(bootstrapping), unsetting the EEE_DIS bit on the trap register, or setting
+the internal EEE switch bit on the CORE_PLL_GROUP4 register. Thanks to
+SkyLake Huang (黃啟澤) from MediaTek for providing information on the
+internal EEE switch bit.
+
+There are existing boards that were not designed to pull the pin low.
+Because of that, the EEE status currently depends on the board design.
+
+The EEE_DIS bit on the trap pertains to the LAN2LED0 pin which is usually
+used to control an LED. Once the bit is unset, the pin will be low. That
+will make the active low LED turn on. The pin is controlled by the switch
+PHY. It seems that the PHY controls the pin in the way that it inverts the
+pin state. That means depending on the wiring of the LED connected to
+LAN2LED0 on the board, the LED may be on without an active link.
+
+To not cause this unwanted behaviour whilst enabling EEE on all boards, set
+the internal EEE switch bit on the CORE_PLL_GROUP4 register.
+
+My testing on MT7531 shows a certain amount of traffic loss when EEE is
+enabled. That said, I haven't come across a board that enables EEE. So
+enable EEE on the switch MACs but disable EEE advertisement on the switch
+PHYs. This way, we don't change the behaviour of the majority of the boards
+that have this switch. The mediatek-ge PHY driver already disables EEE
+advertisement on the switch PHYs but my testing shows that it is somehow
+enabled afterwards. Disabling EEE advertisement before the PHY driver
+initialises keeps it off.
+
+With this change, EEE can now be enabled using ethtool.
+
+Fixes: 40b5d2f15c09 ("net: dsa: mt7530: Add support for EEE features")
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
+---
+ drivers/net/dsa/mt7530.c | 17 ++++++++++++-----
+ drivers/net/dsa/mt7530.h |  1 +
+ 2 files changed, 13 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -2505,18 +2505,25 @@ mt7531_setup(struct dsa_switch *ds)
+ 	mt7530_rmw(priv, MT7531_GPIO_MODE0, MT7531_GPIO0_MASK,
+ 		   MT7531_GPIO0_INTERRUPT);
+ 
+-	/* Enable PHY core PLL, since phy_device has not yet been created
+-	 * provided for phy_[read,write]_mmd_indirect is called, we provide
+-	 * our own mt7531_ind_mmd_phy_[read,write] to complete this
+-	 * function.
++	/* Enable Energy-Efficient Ethernet (EEE) and PHY core PLL, since
++	 * phy_device has not yet been created provided for
++	 * phy_[read,write]_mmd_indirect is called, we provide our own
++	 * mt7531_ind_mmd_phy_[read,write] to complete this function.
+ 	 */
+ 	val = mt7531_ind_c45_phy_read(priv, MT753X_CTRL_PHY_ADDR,
+ 				      MDIO_MMD_VEND2, CORE_PLL_GROUP4);
+-	val |= MT7531_PHY_PLL_BYPASS_MODE;
++	val |= MT7531_RG_SYSPLL_DMY2 | MT7531_PHY_PLL_BYPASS_MODE;
+ 	val &= ~MT7531_PHY_PLL_OFF;
+ 	mt7531_ind_c45_phy_write(priv, MT753X_CTRL_PHY_ADDR, MDIO_MMD_VEND2,
+ 				 CORE_PLL_GROUP4, val);
+ 
++	/* Disable EEE advertisement on the switch PHYs. */
++	for (i = MT753X_CTRL_PHY_ADDR;
++	     i < MT753X_CTRL_PHY_ADDR + MT7530_NUM_PHYS; i++) {
++		mt7531_ind_c45_phy_write(priv, i, MDIO_MMD_AN, MDIO_AN_EEE_ADV,
++					 0);
++	}
++
+ 	mt7531_setup_common(ds);
+ 
+ 	/* Setup VLAN ID 0 for VLAN-unaware bridges */
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -616,6 +616,7 @@ enum mt7531_clk_skew {
+ #define  RG_SYSPLL_DDSFBK_EN		BIT(12)
+ #define  RG_SYSPLL_BIAS_EN		BIT(11)
+ #define  RG_SYSPLL_BIAS_LPF_EN		BIT(10)
++#define  MT7531_RG_SYSPLL_DMY2		BIT(6)
+ #define  MT7531_PHY_PLL_OFF		BIT(5)
+ #define  MT7531_PHY_PLL_BYPASS_MODE	BIT(4)
+ 

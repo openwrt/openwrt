@@ -17,6 +17,8 @@
 	};
 
 	chosen {
+		bootargs = "root=/dev/fit0 rootwait";
+		rootdisk = <&ubi_rootdisk>;
 		stdout-path = "serial0:115200n8";
 	};
 
@@ -217,8 +219,15 @@
 			};
 
 			partition@580000 {
-				label = "ubi";
+				compatible = "linux,ubi";
 				reg = <0x580000 0x7800000>;
+				label = "ubi";
+
+				volumes {
+					ubi_rootdisk: ubi-volume-fit {
+						volname = "fit";
+					};
+				};
 			};
 		};
 	};

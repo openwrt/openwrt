@@ -1,0 +1,79 @@
+From 4b11e3eb0eb7245a0d22a5dc4161c54eea42910c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ar=C4=B1n=C3=A7=20=C3=9CNAL?= <arinc.unal@arinc9.com>
+Date: Sat, 17 Jun 2023 09:26:44 +0300
+Subject: [PATCH 16/48] net: dsa: mt7530: set all CPU ports in MT7531_CPU_PMAP
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+MT7531_CPU_PMAP represents the destination port mask for trapped-to-CPU
+frames (further restricted by PCR_MATRIX).
+
+Currently the driver sets the first CPU port as the single port in this bit
+mask, which works fine regardless of whether the device tree defines port
+5, 6 or 5+6 as CPU ports. This is because the logic coincides with DSA's
+logic of picking the first CPU port as the CPU port that all user ports are
+affine to, by default.
+
+An upcoming change would like to influence DSA's selection of the default
+CPU port to no longer be the first one, and in that case, this logic needs
+adaptation.
+
+Since there is no observed leakage or duplication of frames if all CPU
+ports are defined in this bit mask, simply include them all.
+
+Suggested-by: Russell King (Oracle) <linux@armlinux.org.uk>
+Suggested-by: Vladimir Oltean <olteanv@gmail.com>
+Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
+Reviewed-by: Vladimir Oltean <olteanv@gmail.com>
+Reviewed-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/mt7530.c | 15 +++++++--------
+ drivers/net/dsa/mt7530.h |  1 +
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -1069,6 +1069,13 @@ mt753x_cpu_port_enable(struct dsa_switch
+ 	if (priv->id == ID_MT7530 || priv->id == ID_MT7621)
+ 		mt7530_rmw(priv, MT7530_MFC, CPU_MASK, CPU_EN | CPU_PORT(port));
+ 
++	/* Add the CPU port to the CPU port bitmap for MT7531 and the switch on
++	 * the MT7988 SoC. Trapped frames will be forwarded to the CPU port that
++	 * is affine to the inbound user port.
++	 */
++	if (priv->id == ID_MT7531 || priv->id == ID_MT7988)
++		mt7530_set(priv, MT7531_CFC, MT7531_CPU_PMAP(BIT(port)));
++
+ 	/* CPU port gets connected to all user ports of
+ 	 * the switch.
+ 	 */
+@@ -2411,16 +2418,8 @@ static int
+ mt7531_setup_common(struct dsa_switch *ds)
+ {
+ 	struct mt7530_priv *priv = ds->priv;
+-	struct dsa_port *cpu_dp;
+ 	int ret, i;
+ 
+-	/* BPDU to CPU port */
+-	dsa_switch_for_each_cpu_port(cpu_dp, ds) {
+-		mt7530_rmw(priv, MT7531_CFC, MT7531_CPU_PMAP_MASK,
+-			   BIT(cpu_dp->index));
+-		break;
+-	}
+-
+ 	mt753x_trap_frames(priv);
+ 
+ 	/* Enable and reset MIB counters */
+--- a/drivers/net/dsa/mt7530.h
++++ b/drivers/net/dsa/mt7530.h
+@@ -54,6 +54,7 @@ enum mt753x_id {
+ #define  MT7531_MIRROR_PORT_GET(x)	(((x) >> 16) & MIRROR_MASK)
+ #define  MT7531_MIRROR_PORT_SET(x)	(((x) & MIRROR_MASK) << 16)
+ #define  MT7531_CPU_PMAP_MASK		GENMASK(7, 0)
++#define  MT7531_CPU_PMAP(x)		FIELD_PREP(MT7531_CPU_PMAP_MASK, x)
+ 
+ #define MT753X_MIRROR_REG(id)		((((id) == ID_MT7531) || ((id) == ID_MT7988)) ?	\
+ 					 MT7531_CFC : MT7530_MFC)

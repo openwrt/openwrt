@@ -12,3 +12,8 @@ config GCC_VERSION
 	default "11.3.0"	if GCC_VERSION_11
 	default "12.3.0"	if GCC_VERSION_12
 	default "13.2.0"
+
+config GCC_USE_DEFAULT_VERSION
+	bool
+	default y if !TOOLCHAINOPTS || GCC_USE_VERSION_13
+	imply KERNEL_WERROR
