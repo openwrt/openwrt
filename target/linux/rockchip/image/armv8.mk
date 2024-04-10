@@ -86,7 +86,7 @@ define Device/sinovoip_bananapi-r2-pro
   DEVICE_MODEL := BananaPi R2Pro
   SOC := rk3568
   DEVICE_DTS := rockchip/rk3568-bpi-r2-pro
-#  UBOOT_DEVICE_NAME := bpi-r2-pro-rk3568
+  UBOOT_DEVICE_NAME := bpi-r2-pro-rk3568
   DEVICE_PACKAGES := kmod-r8169
 endef
 TARGET_DEVICES += sinovoip_bananapi-r2-pro
