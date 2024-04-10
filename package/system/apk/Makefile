@@ -30,6 +30,7 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/meson.mk
 
 MESON_HOST_VARS+=VERSION=$(PKG_VERSION)
+MESON_VARS+=VERSION=$(PKG_VERSION)
 
 define Package/apk
   SECTION:=base
