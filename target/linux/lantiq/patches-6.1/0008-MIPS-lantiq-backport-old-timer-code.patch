@@ -186,7 +186,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-y += vmmc.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/timer.c
-@@ -0,0 +1,852 @@
+@@ -0,0 +1,887 @@
 +#ifndef CONFIG_SOC_AMAZON_SE
 +
 +#include <linux/kernel.h>
@@ -202,6 +202,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/interrupt.h>
 +#include <linux/sched.h>
 +#include <linux/sched/signal.h>
++
++#include <linux/of_platform.h>
 +
 +#include <asm/irq.h>
 +#include <asm/div64.h>
@@ -978,7 +980,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return 0;
 +}
 +
-+int __init lq_gptu_init(void)
++static int gptu_probe(struct platform_device *pdev)
 +{
 +	int ret;
 +	int i;
@@ -1005,21 +1007,54 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	for (i = 0; i < timer_dev.number_of_timers; i++) {
-+		ret = request_irq(TIMER_INTERRUPT + i, timer_irq_handler, IRQF_TIMER, gptu_miscdev.name, &timer_dev.timer[i]);
++		int irq = platform_get_irq(pdev, i);
++		if (irq < 0) {
++			printk(KERN_ERR "gptu: failed in getting irq (%d), get error %d\n", i, irq);
++			for (i--; i >= 0; i--)
++				free_irq(timer_dev.timer[i].irq, &timer_dev.timer[i]);
++			misc_deregister(&gptu_miscdev);
++			return irq;
++		}
++
++		ret = request_irq(irq, timer_irq_handler, IRQF_TIMER, gptu_miscdev.name, &timer_dev.timer[i]);
 +		if (ret) {
 +			printk(KERN_ERR "gptu: failed in requesting irq (%d), get error %d\n", i, -ret);
 +			for (i--; i >= 0; i--)
-+				free_irq(TIMER_INTERRUPT + i, &timer_dev.timer[i]);
++				free_irq(timer_dev.timer[i].irq, &timer_dev.timer[i]);
 +			misc_deregister(&gptu_miscdev);
 +			return ret;
 +		} else {
-+			timer_dev.timer[i].irq = TIMER_INTERRUPT + i;
++			timer_dev.timer[i].irq = irq;
 +			disable_irq(timer_dev.timer[i].irq);
 +			printk(KERN_INFO "gptu: succeeded to request irq %d\n", timer_dev.timer[i].irq);
 +		}
 +	}
 +
 +	return 0;
++}
++
++static const struct of_device_id gptu_match[] = {
++	{ .compatible = "lantiq,gptu-xway" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, gptu_match);
++
++static struct platform_driver gptu_driver = {
++	.probe = gptu_probe,
++	.driver = {
++		.name = "gptu-xway",
++		.owner = THIS_MODULE,
++		.of_match_table = gptu_match,
++	},
++};
++
++int __init lq_gptu_init(void)
++{
++	int ret = platform_driver_register(&gptu_driver);
++
++	if (ret)
++		pr_info("gptu: Error registering platform driver\n");
++	return ret;
 +}
 +
 +void __exit lq_gptu_exit(void)
