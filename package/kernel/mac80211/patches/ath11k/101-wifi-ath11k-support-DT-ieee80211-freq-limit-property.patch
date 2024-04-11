@@ -1,0 +1,24 @@
+From 7f39c2a87ca211165cc81fbe1955e78e24251350 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robimarko@gmail.com>
+Date: Thu, 11 Apr 2024 21:03:14 +0200
+Subject: [PATCH] wifi: ath11k: support DT ieee80211-freq-limit property to
+ limit channels
+
+The common DT property can be used to limit the available channels
+but ath11k has to manually call wiphy_read_of_freq_limits().
+
+Signed-off-by: Robert Marko <robimarko@gmail.com>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -9455,6 +9455,7 @@ static int __ath11k_mac_register(struct
+ 	if (ret)
+ 		goto err;
+ 
++	wiphy_read_of_freq_limits(ar->hw->wiphy);
+ 	ath11k_mac_setup_ht_vht_cap(ar, cap, &ht_cap);
+ 	ath11k_mac_setup_he_cap(ar, cap);
+ 
