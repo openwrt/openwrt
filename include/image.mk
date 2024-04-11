@@ -278,7 +278,7 @@ endef
 
 define Image/Manifest
 	$(if $(CONFIG_USE_APK), \
-		$(call apk,$(TARGET_DIR_ORIG)) list --quiet --manifest --no-network | sort > \
+		$(call apk,$(TARGET_DIR_ORIG)) list --quiet --manifest --no-network | sort | sed 's/ / - /'  > \
 			$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest, \
 		$(call opkg,$(TARGET_DIR_ORIG)) list-installed > \
 			$(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE_SANITIZED),-$(PROFILE_SANITIZED)).manifest \
