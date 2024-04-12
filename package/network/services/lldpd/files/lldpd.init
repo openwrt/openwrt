@@ -80,12 +80,20 @@ get_config_cid_ifaces() {
 	config_get _ifaces 'config' "$2"
 
 	local _iface _ifnames=""
+	# Set noglob to prevent '*' capturing diverse file names in the for ... in
+	set -o noglob
 	for _iface in $_ifaces; do
-		local _ifname=""
-		if network_get_device _ifname "$_iface" || [ -e "/sys/class/net/$_iface" ]; then
-			append _ifnames "${_ifname:-$_iface}" ","
+
+		local _l2device=""
+		if network_get_physdev _l2device "$_iface" || [ -e "/sys/class/net/$_iface" ]; then
+			append _ifnames "${_l2device:-$_iface}" ","
+		else
+			# Glob case (interface is e.g. '!eth1' or 'eth*' or '*')
+			append _ifnames "$_iface" ","
 		fi
 	done
+	# Turn noglob off i.e. enable glob again
+	set +o noglob
 
 	export -n "${1}=$_ifnames"
 }
