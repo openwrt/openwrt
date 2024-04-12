@@ -14,5 +14,10 @@ service_triggers() {
 }
 
 reload_service() {
-	/usr/libexec/network/packet-steering.sh
+	packet_steering="$(uci get "network.@globals[0].packet_steering")"
+	if [ -e "/usr/libexec/platform/packet-steering.sh" ]; then
+		/usr/libexec/platform/packet-steering.sh "$packet_steering"
+	else
+		/usr/libexec/network/packet-steering.uc "$packet_steering"
+	fi
 }
