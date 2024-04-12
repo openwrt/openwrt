@@ -109,7 +109,11 @@ static int gca230718_set_brightness(struct led_classdev *led_cdev, enum led_brig
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,3,0)
+static int gca230718_probe(struct i2c_client *client)
+#else
 static int gca230718_probe(struct i2c_client *client, const struct i2c_device_id *id)
+#endif
 {
 	int status = 0;
 	struct gca230718_private* gca230718_privateData;
