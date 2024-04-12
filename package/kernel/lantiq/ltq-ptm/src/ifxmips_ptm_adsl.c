@@ -1491,8 +1491,14 @@ static int ltq_ptm_probe(struct platform_device *pdev)
             goto REGISTER_NETDEV_FAIL;
     }
 
+    g_ptm_priv_data.irq = platform_get_irq(pdev, 0);
+    if (g_ptm_priv_data.irq < 0) {
+        err("platform_get_irq fail");
+        goto REQUEST_IRQ_PPE_MAILBOX_IGU1_INT_FAIL;
+    }
+
     /*  register interrupt handler  */
-    ret = request_irq(PPE_MAILBOX_IGU1_INT, mailbox_irq_handler, 0, "ptm_mailbox_isr", &g_ptm_priv_data);
+    ret = request_irq(g_ptm_priv_data.irq, mailbox_irq_handler, 0, "ptm_mailbox_isr", &g_ptm_priv_data);
     if ( ret ) {
         if ( ret == -EBUSY ) {
             err("IRQ may be occupied by other driver, please reconfig to disable it.");
@@ -1502,7 +1508,7 @@ static int ltq_ptm_probe(struct platform_device *pdev)
         }
         goto REQUEST_IRQ_PPE_MAILBOX_IGU1_INT_FAIL;
     }
-    disable_irq(PPE_MAILBOX_IGU1_INT);
+    disable_irq(g_ptm_priv_data.irq);
 
     ret = ifx_pp32_start(0);
     if ( ret ) {
@@ -1512,7 +1518,7 @@ static int ltq_ptm_probe(struct platform_device *pdev)
     IFX_REG_W32(0, MBOX_IGU1_IER);
     IFX_REG_W32(~0, MBOX_IGU1_ISRC);
 
-    enable_irq(PPE_MAILBOX_IGU1_INT);
+    enable_irq(g_ptm_priv_data.irq);
 
 
     proc_file_create();
@@ -1534,7 +1540,7 @@ static int ltq_ptm_probe(struct platform_device *pdev)
     return 0;
 
 PP32_START_FAIL:
-    free_irq(PPE_MAILBOX_IGU1_INT, &g_ptm_priv_data);
+    free_irq(g_ptm_priv_data.irq, &g_ptm_priv_data);
 REQUEST_IRQ_PPE_MAILBOX_IGU1_INT_FAIL:
     i = ARRAY_SIZE(g_net_dev);
 REGISTER_NETDEV_FAIL:
@@ -1572,7 +1578,7 @@ static int ltq_ptm_remove(struct platform_device *pdev)
 
     ifx_pp32_stop(0);
 
-    free_irq(PPE_MAILBOX_IGU1_INT, &g_ptm_priv_data);
+    free_irq(g_ptm_priv_data.irq, &g_ptm_priv_data);
 
     for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ )
         unregister_netdev(g_net_dev[i]);
