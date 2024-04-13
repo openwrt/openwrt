@@ -19,6 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define U-Boot/Default
   BUILD_TARGET:=d1
+  BUILD_SUBTARGET:=generic
   UBOOT_IMAGE:=u-boot-sunxi-with-spl.bin
   UENV:=default
   DTS_DIR:=arch/riscv/dts
