@@ -13,7 +13,8 @@ rockchip_setup_interfaces()
 	friendlyarm,nanopi-r4s|\
 	friendlyarm,nanopi-r4s-enterprise|\
 	xunlong,orangepi-r1-plus|\
-	xunlong,orangepi-r1-plus-lts)
+	xunlong,orangepi-r1-plus-lts|\
+	sinovoip,bananapi-r2-pro)
 		ucidef_set_interfaces_lan_wan 'eth1' 'eth0'
 		;;
 	friendlyarm,nanopi-r5c|\
@@ -59,6 +60,10 @@ rockchip_setup_macs()
 	xunlong,orangepi-r1-plus|\
 	xunlong,orangepi-r1-plus-lts)
 		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth1/address)" -1)
+		;;
+	sinovoip,bananapi-r2-pro)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" -1)
+		lan_mac=$(macaddr_add "$(cat /sys/class/net/eth1/address)" -1)
 		;;
 	esac
 
