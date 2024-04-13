@@ -234,7 +234,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  /* deals with receipt of buffer to host message */
  static void buffer_to_host_cb(struct vchiq_mmal_instance *instance,
  			      struct mmal_msg *msg, u32 msg_len)
-@@ -1332,6 +1425,7 @@ static int port_disable(struct vchiq_mma
+@@ -1333,6 +1426,7 @@ static int port_disable(struct vchiq_mma
  				mmalbuf->mmal_flags = 0;
  				mmalbuf->dts = MMAL_TIME_UNKNOWN;
  				mmalbuf->pts = MMAL_TIME_UNKNOWN;
@@ -242,7 +242,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  				port->buffer_cb(instance,
  						port, 0, mmalbuf);
  			}
-@@ -1633,6 +1727,43 @@ int mmal_vchi_buffer_cleanup(struct mmal
+@@ -1634,6 +1728,43 @@ int mmal_vchi_buffer_cleanup(struct mmal
  }
  EXPORT_SYMBOL_GPL(mmal_vchi_buffer_cleanup);
  
@@ -286,7 +286,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  /* Initialise a mmal component and its ports
   *
   */
-@@ -1682,6 +1813,7 @@ int vchiq_mmal_component_init(struct vch
+@@ -1683,6 +1814,7 @@ int vchiq_mmal_component_init(struct vch
  	ret = port_info_get(instance, &component->control);
  	if (ret < 0)
  		goto release_component;
@@ -294,7 +294,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  
  	for (idx = 0; idx < component->inputs; idx++) {
  		component->input[idx].type = MMAL_PORT_TYPE_INPUT;
-@@ -1692,6 +1824,7 @@ int vchiq_mmal_component_init(struct vch
+@@ -1693,6 +1825,7 @@ int vchiq_mmal_component_init(struct vch
  		ret = port_info_get(instance, &component->input[idx]);
  		if (ret < 0)
  			goto release_component;
@@ -302,7 +302,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  	}
  
  	for (idx = 0; idx < component->outputs; idx++) {
-@@ -1703,6 +1836,7 @@ int vchiq_mmal_component_init(struct vch
+@@ -1704,6 +1837,7 @@ int vchiq_mmal_component_init(struct vch
  		ret = port_info_get(instance, &component->output[idx]);
  		if (ret < 0)
  			goto release_component;
@@ -310,7 +310,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  	}
  
  	for (idx = 0; idx < component->clocks; idx++) {
-@@ -1714,6 +1848,7 @@ int vchiq_mmal_component_init(struct vch
+@@ -1715,6 +1849,7 @@ int vchiq_mmal_component_init(struct vch
  		ret = port_info_get(instance, &component->clock[idx]);
  		if (ret < 0)
  			goto release_component;
@@ -318,7 +318,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  	}
  
  	*component_out = component;
-@@ -1739,7 +1874,7 @@ EXPORT_SYMBOL_GPL(vchiq_mmal_component_i
+@@ -1740,7 +1875,7 @@ EXPORT_SYMBOL_GPL(vchiq_mmal_component_i
  int vchiq_mmal_component_finalise(struct vchiq_mmal_instance *instance,
  				  struct vchiq_mmal_component *component)
  {
@@ -327,7 +327,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  
  	if (mutex_lock_interruptible(&instance->vchiq_mutex))
  		return -EINTR;
-@@ -1751,6 +1886,13 @@ int vchiq_mmal_component_finalise(struct
+@@ -1752,6 +1887,13 @@ int vchiq_mmal_component_finalise(struct
  
  	component->in_use = 0;
  

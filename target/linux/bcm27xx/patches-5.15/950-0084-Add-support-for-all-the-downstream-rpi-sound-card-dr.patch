@@ -16797,7 +16797,7 @@ Signed-off-by: Joerg Schambacher <joerg@hifiberry.com>
 +#endif  /* _TAS5713_H */
 --- a/sound/soc/soc-core.c
 +++ b/sound/soc/soc-core.c
-@@ -1231,7 +1231,7 @@ found:
+@@ -1234,7 +1234,7 @@ found:
   * Returns 0 on success, otherwise a negative error code.
   */
  int snd_soc_runtime_set_dai_fmt(struct snd_soc_pcm_runtime *rtd,
@@ -16806,7 +16806,7 @@ Signed-off-by: Joerg Schambacher <joerg@hifiberry.com>
  {
  	struct snd_soc_dai *cpu_dai;
  	struct snd_soc_dai *codec_dai;
-@@ -1240,7 +1240,15 @@ int snd_soc_runtime_set_dai_fmt(struct s
+@@ -1243,7 +1243,15 @@ int snd_soc_runtime_set_dai_fmt(struct s
  	int ret;
  
  	for_each_rtd_codec_dais(rtd, i, codec_dai) {
@@ -16823,7 +16823,7 @@ Signed-off-by: Joerg Schambacher <joerg@hifiberry.com>
  		if (ret != 0 && ret != -ENOTSUPP)
  			return ret;
  	}
-@@ -1249,8 +1257,21 @@ int snd_soc_runtime_set_dai_fmt(struct s
+@@ -1252,8 +1260,21 @@ int snd_soc_runtime_set_dai_fmt(struct s
  	 * Flip the polarity for the "CPU" end of a CODEC<->CODEC link
  	 * the component which has non_legacy_dai_naming is Codec
  	 */
