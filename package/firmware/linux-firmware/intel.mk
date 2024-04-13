@@ -199,6 +199,14 @@ define Package/iwlwifi-firmware-ax210/install
 endef
 $(eval $(call BuildPackage,iwlwifi-firmware-ax210))
 
+Package/iwlwifi-firmware-ax411 = $(call Package/firmware-default,Intel AX411 firmware)
+define Package/iwlwifi-firmware-ax411/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-so-a0-gf4-a0-89.ucode $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/iwlwifi-so-a0-gf4-a0.pnvm $(1)/lib/firmware
+endef
+$(eval $(call BuildPackage,iwlwifi-firmware-ax411))
+
 Package/iwlwifi-firmware-be200 = $(call Package/firmware-default,Intel BE200 firmware)
 define Package/iwlwifi-firmware-be200/install
 	$(INSTALL_DIR) $(1)/lib/firmware
