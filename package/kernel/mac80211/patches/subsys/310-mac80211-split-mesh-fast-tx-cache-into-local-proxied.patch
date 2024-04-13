@@ -38,7 +38,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/mesh.h
 +++ b/net/mac80211/mesh.h
-@@ -134,9 +134,33 @@ struct mesh_path {
+@@ -134,9 +134,38 @@ struct mesh_path {
  #define MESH_FAST_TX_CACHE_TIMEOUT		8000 /* msecs */
  
  /**
@@ -47,12 +47,17 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 + * @MESH_FAST_TX_TYPE_LOCAL: tx from the local vif address as SA
 + * @MESH_FAST_TX_TYPE_PROXIED: local tx with a different SA (e.g. bridged)
 + * @MESH_FAST_TX_TYPE_FORWARDED: forwarded from a different mesh point
++ * @NUM_MESH_FAST_TX_TYPE: number of entry types
 + */
 +enum ieee80211_mesh_fast_tx_type {
 +	MESH_FAST_TX_TYPE_LOCAL,
 +	MESH_FAST_TX_TYPE_PROXIED,
 +	MESH_FAST_TX_TYPE_FORWARDED,
++
++	/* must be last */
++	NUM_MESH_FAST_TX_TYPE
 +};
++
 +
 +/**
 + * struct ieee80211_mesh_fast_tx_key - cached mesh fast tx entry key
@@ -62,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 + */
 +struct ieee80211_mesh_fast_tx_key {
 +	u8 addr[ETH_ALEN] __aligned(2);
-+	enum ieee80211_mesh_fast_tx_type type;
++	u16 type;
 +};
 +
 +/**
@@ -73,7 +78,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @fast_tx: base fast_tx data
   * @hdr: cached mesh and rfc1042 headers
   * @hdrlen: length of mesh + rfc1042
-@@ -147,7 +171,7 @@ struct mesh_path {
+@@ -147,7 +176,7 @@ struct mesh_path {
   */
  struct ieee80211_mesh_fast_tx {
  	struct rhash_head rhash;
@@ -82,7 +87,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	struct ieee80211_fast_tx fast_tx;
  	u8 hdr[sizeof(struct ieee80211s_hdr) + sizeof(rfc1042_header)];
-@@ -333,7 +357,8 @@ void mesh_path_tx_root_frame(struct ieee
+@@ -333,7 +362,8 @@ void mesh_path_tx_root_frame(struct ieee
  
  bool mesh_action_is_path_sel(struct ieee80211_mgmt *mgmt);
  struct ieee80211_mesh_fast_tx *
@@ -178,7 +183,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	entry = rhashtable_lookup_fast(&cache->rht, addr, fast_tx_rht_params);
 -	if (entry)
 -		mesh_fast_tx_entry_free(cache, entry);
-+	for (i = MESH_FAST_TX_TYPE_LOCAL; i < MESH_FAST_TX_TYPE_FORWARDED; i++) {
++	for (i = 0; i < NUM_MESH_FAST_TX_TYPE; i++) {
 +		key.type = i;
 +		entry = rhashtable_lookup_fast(&cache->rht, &key, fast_tx_rht_params);
 +		if (entry)
