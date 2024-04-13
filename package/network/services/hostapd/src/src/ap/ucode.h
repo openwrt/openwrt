@@ -26,6 +26,11 @@ void hostapd_ucode_free_iface(struct hostapd_iface *iface);
 void hostapd_ucode_add_bss(struct hostapd_data *hapd);
 void hostapd_ucode_free_bss(struct hostapd_data *hapd);
 void hostapd_ucode_reload_bss(struct hostapd_data *hapd);
+#ifdef CONFIG_WPS
+void hostapd_ucode_wps_psk_file_notify(struct hostapd_data *hapd,
+				      const u8 *mac_addr, const u8 *psk,
+				      size_t psk_len);
+#endif /* CONFIG_WPS */
 
 #else
 
@@ -48,6 +53,13 @@ static inline void hostapd_ucode_add_bss(struct hostapd_data *hapd)
 static inline void hostapd_ucode_free_bss(struct hostapd_data *hapd)
 {
 }
+#ifdef CONFIG_WPS
+static inline void
+hostapd_ucode_wps_psk_file_notify(struct hostapd_data *hapd, const u8 *mac_addr,
+				 const u8 *psk, size_t psk_len)
+{
+}
+#endif /* CONFIG_WPS */
 
 #endif
 

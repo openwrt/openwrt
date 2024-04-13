@@ -204,6 +204,17 @@ as adding/removing interfaces.
  void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
  			   int reassoc);
  void hostapd_interface_deinit_free(struct hostapd_iface *iface);
+ --- a/src/ap/wps_hostapd.c
++++ b/src/ap/wps_hostapd.c
+@@ -135,6 +135,8 @@ static int hostapd_wps_new_psk_cb(void *
+ 	p->next = ssid->wpa_psk;
+ 	ssid->wpa_psk = p;
+ 
++	hostapd_ucode_wps_psk_file_notify(hapd, mac_addr, psk, psk_len);
++
+ 	if (ssid->wpa_psk_file) {
+ 		FILE *f;
+ 		char hex[PMK_LEN * 2 + 1];
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
 @@ -3856,6 +3856,25 @@ struct wpa_driver_ops {

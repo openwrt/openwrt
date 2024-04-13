@@ -682,6 +682,7 @@ endef
 define Package/hostapd-full/conffiles
 /etc/config/radius
 /etc/radius
+/etc/hostapd
 endef
 
 ifeq ($(CONFIG_VARIANT),full)
@@ -699,7 +700,7 @@ Package/hostapd-mbedtls/conffiles = $(Package/hostapd-full/conffiles)
 endif
 
 define Install/hostapd
-	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/hostap
+	$(INSTALL_DIR) $(1)/usr/sbin $(1)/usr/share/hostap $(1)/etc/hostapd
 	$(INSTALL_DATA) ./files/hostapd.uc $(1)/usr/share/hostap/
 	$(if $(findstring full,$(CONFIG_VARIANT)),$(Install/hostapd/full))
 endef
