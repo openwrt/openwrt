@@ -14,7 +14,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
 
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -25,6 +25,7 @@
+@@ -26,6 +26,7 @@
  #include <linux/ktime.h>
  #include <linux/mm.h>
  #include <linux/nvme.h>
@@ -22,10 +22,10 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  #include <linux/platform_data/x86/apple.h>
  #include <linux/pm_runtime.h>
  #include <linux/suspend.h>
-@@ -5900,3 +5901,34 @@ static void nvidia_ion_ahci_fixup(struct
- 	pdev->dev_flags |= PCI_DEV_FLAGS_HAS_MSI_MASKING;
- }
- DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_NVIDIA, 0x0ab8, nvidia_ion_ahci_fixup);
+@@ -6000,3 +6001,34 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_I
+ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0xa73f, dpc_log_size);
+ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0xa76e, dpc_log_size);
+ #endif
 +
 +#ifdef CONFIG_PCI_HOST_THUNDER_PEM
 +/*
