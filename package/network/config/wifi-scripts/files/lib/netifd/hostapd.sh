@@ -418,6 +418,14 @@ hostapd_set_psk() {
 	for_each_station hostapd_set_psk_file ${ifname}
 }
 
+hostapd_set_wps_psk() {
+	local ifname="$1"
+	local wps_psk_file="$2"
+
+	[ -f /etc/hostapd/${wps_psk_file} ] && \
+		cat /etc/hostapd/${wps_psk_file} >> /var/run/hostapd-${ifname}.psk
+}
+
 append_iw_roaming_consortium() {
 	[ -n "$1" ] && append bss_conf "roaming_consortium=$1" "$N"
 }
