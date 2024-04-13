@@ -11,7 +11,6 @@
 rockchip_setup_interfaces()
 {
 	local board="$1"
-
 	case "$board" in
 	friendlyarm,nanopi-r2c|\
 	friendlyarm,nanopi-r2c-plus|\
@@ -19,8 +18,7 @@ rockchip_setup_interfaces()
 	friendlyarm,nanopi-r4s|\
 	friendlyarm,nanopi-r4s-enterprise|\
 	xunlong,orangepi-r1-plus|\
-	xunlong,orangepi-r1-plus-lts|\
-	rockchip,bananapi-r2-pro)
+	xunlong,orangepi-r1-plus-lts)
 		ucidef_set_interfaces_lan_wan 'eth1' 'eth0'
 		;;
 	friendlyarm,nanopi-r5c|\
@@ -29,6 +27,12 @@ rockchip_setup_interfaces()
 		;;
 	friendlyarm,nanopi-r5s)
 		ucidef_set_interfaces_lan_wan 'eth1 eth2' 'eth0'
+		;;
+	rockchip,bananapi-r2-pro|\
+	sinovoip,bananapi-r2-pro|\
+	rockchip,rk3568-bpi-r2pro)
+		ucidef_set_interface_wan 'eth0'	
+		ucidef_set_interface_lan 'eth1'
 		;;
 	*)
 		ucidef_set_interface_lan 'eth0'
