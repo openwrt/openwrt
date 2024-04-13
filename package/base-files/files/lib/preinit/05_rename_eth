@@ -1,0 +1,65 @@
+_preinit_find_eth_from_node() {
+	local devnode
+	local netdev
+
+	for netdev in $(ls -d /sys/class/net/*); do
+		# "br-lan", "lo", etc...
+		[ -L "$netdev/of_node" ] || continue
+
+		devnode="$(readlink -f "$netdev/of_node")"
+		[ "$devnode" = "$1" ] && \
+			basename $netdev && \
+			return 0
+	done
+
+	return 1
+}
+
+preinit_rename_eth_with_label() {
+	local basepath="/sys/firmware/devicetree/base"
+	local aliases="$basepath/aliases"
+	local ethlist eth _eth
+	local node
+	local label
+	local netdev
+	local exists
+	local state
+
+	[ -d "$aliases" ] || return
+
+	ethlist="$(ls $aliases/ethernet[0-9] 2>/dev/null)"
+
+	for eth in $ethlist; do
+		node="${basepath}$(cat $eth)"
+		# skip disabled devices
+		[ "$(cat $node/status)" = "disabled" ] && continue
+
+		_eth="$(_preinit_find_eth_from_node "$node")" || continue
+
+		[ ! -r "$node/label" ] && continue
+		label="$(cat $node/label)"
+		[ "$label" = "$_eth" ] && continue
+
+		# check duplicates
+		exists=0
+		for netdev in $(ls -d /sys/class/net/*); do
+			[ "${netdev/*\//}" = "$label" ] && \
+				exists=1 && break
+		done
+		if [ "$exists" = "1" ]; then
+			echo "\"$label\" already exists! (cannot rename from \"$_eth\")"
+			continue
+		fi
+
+		state="$(ip link show dev $_eth | grep -o "state \(UP\|DOWN\)")"
+		[ "${state#* }" = "UP" ] && \
+			ip link set $_eth down
+		if ip link set $_eth name $label; then
+			[ "${state#* }" = "UP" ] && ip link set $label up
+		else
+			[ "${state#* }" = "UP" ] && ip link set $_eth up
+		fi
+	done
+}
+
+boot_hook_add preinit_main preinit_rename_eth_with_label
