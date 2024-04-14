@@ -5,8 +5,8 @@
 #include "mt7620a_tplink_8m.dtsi"
 
 / {
-	compatible = "tplink,archer-c5-v4", "ralink,mt7620a-soc";
-	model = "TP-Link Archer C5 v4";
+	compatible = "tplink,ec220-g5-v2", "ralink,mt7620a-soc";
+	model = "TP-Link EC220-G5 v2";
 
 	aliases {
 		led-boot = &led_power;
@@ -26,49 +26,57 @@
 		};
 
 		led-1 {
-			function = LED_FUNCTION_WLAN_2GHZ;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 		};
 
 		led-2 {
-			function = LED_FUNCTION_WLAN_5GHZ;
+			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
+			gpios = <&gpio2 13 GPIO_ACTIVE_LOW>;
 		};
 
 		led-3 {
-			function = LED_FUNCTION_WAN;
+			function = LED_FUNCTION_LAN;
 			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
 		};
 
 		led-4 {
-			function = LED_FUNCTION_WAN;
-			color = <LED_COLOR_ID_ORANGE>;
-			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 
 		led-5 {
-			function = LED_FUNCTION_LAN;
+			function = LED_FUNCTION_WLAN_5GHZ;
 			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		led-6 {
-			function = LED_FUNCTION_USB;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
-			trigger-sources = <&ohci_port1>, <&ehci_port1>;
-			linux,default-trigger = "usbport";
-		};
-
-		led-7 {
 			function = LED_FUNCTION_WPS;
 			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
 		};
 	};
 
@@ -112,6 +120,14 @@
 	};
 };
 
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};
+
 &wmac {
 	pinctrl-names = "default", "pa_gpio";
 	pinctrl-0 = <&pa_pins>;
@@ -120,6 +136,7 @@
 	nvmem-cells = <&eeprom_radio_0>, <&macaddr_rom_f100 0>;
 	nvmem-cell-names = "eeprom", "mac-address";
 };
+
 
 &wifi {
 	nvmem-cells = <&eeprom_radio_8000>, <&macaddr_rom_f100 2>;
