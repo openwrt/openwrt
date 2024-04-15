@@ -1,0 +1,22 @@
+--- a/libelf/libelf.h
++++ b/libelf/libelf.h
+@@ -73,15 +73,15 @@
+  /* So RELR defines/typedefs can be used even with an old system elf.h.  */
+  #define SHT_RELR       19      /* RELR relative relocations */
+ 
+- /* RELR relocation table entry */
+- typedef Elf32_Word     Elf32_Relr;
+- typedef Elf64_Xword    Elf64_Relr;
+-
+  #define DT_RELRSZ      35      /* Total size of RELR relative relocations */
+  #define DT_RELR        36      /* Address of RELR relative relocations */
+  #define DT_RELRENT     37      /* Size of one RELR relative relocaction */
+ #endif
+ 
++/* RELR relocation table entry */
++typedef Elf32_Word     Elf32_Relr;
++typedef Elf64_Xword    Elf64_Relr;
++
+ #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)
+ # define __nonnull_attribute__(...) __attribute__ ((__nonnull__ (__VA_ARGS__)))
+ # define __deprecated_attribute__ __attribute__ ((__deprecated__))
