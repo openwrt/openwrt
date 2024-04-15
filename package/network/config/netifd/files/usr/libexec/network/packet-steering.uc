@@ -27,6 +27,8 @@ for (let arg in ARGV) {
 function task_name(pid)
 {
 	let stat = open(`/proc/${pid}/status`, "r");
+	if (!stat)
+		return;
 	let line = stat.read("line");
 	stat.close();
 	return trim(split(line, "\t", 2)[1]);
@@ -35,8 +37,11 @@ function task_name(pid)
 function set_task_cpu(pid, cpu) {
 	if (disable)
 		cpu = join(",", map(cpus, (cpu) => cpu.id));
+	let name = task_name(pid);
+	if (!name)
+		return;
 	if (debug || do_nothing)
-		warn(`taskset -p -c ${cpu} ${task_name(pid)}\n`);
+		warn(`taskset -p -c ${cpu} ${name}\n`);
 	if (!do_nothing)
 		system(`taskset -p -c ${cpu} ${pid}`);
 }
