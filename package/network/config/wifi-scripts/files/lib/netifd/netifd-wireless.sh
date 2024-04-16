@@ -387,7 +387,7 @@ _wdev_common_vlan_config() {
 }
 
 _wdev_common_station_config() {
-	config_add_string mac key vid iface
+	config_add_string mac key vid pwid iface
 }
 
 init_wireless_driver() {
