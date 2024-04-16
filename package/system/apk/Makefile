@@ -3,10 +3,10 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=apk
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL=https://gitlab.alpinelinux.org/jonasjelonek1/apk-tools.git
+PKG_SOURCE_URL=https://gitlab.alpinelinux.org/alpine/apk-tools.git
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_DATE:=2024-04-16
-PKG_SOURCE_VERSION:=dc7ff789a45522eb847118a29b60b896de55d083
+PKG_SOURCE_VERSION:=ba6c31a5469ef74fb85119508e55de9631ffef41
 PKG_MIRROR_HASH:=42dabe78f8c11365f56e7e05ae6ffaaeba92a0b7b5845cfec95dc7adc79c2b12
 
 PKG_VERSION=3.0.0_pre$(subst -,,$(PKG_SOURCE_DATE))
