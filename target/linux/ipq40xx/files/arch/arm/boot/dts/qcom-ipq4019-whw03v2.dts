@@ -488,7 +488,6 @@
 	qcom,coexist-support = <1>;
 	qcom,coexist-gpio-pin = <0x34>;
 
-	ieee80211-freq-limit = <2401000 2473000>;
 	qcom,ath10k-calibration-variant = "linksys-whw03v2";
 
 	nvmem-cell-names = "pre-calibration", "mac-address";
@@ -499,7 +498,7 @@
 &wifi1 {
 	status = "okay";
 
-	ieee80211-freq-limit = <5170000 5250000>;
+	ieee80211-freq-limit = <5170000 5330000>;
 	qcom,ath10k-calibration-variant = "linksys-whw03v2";
 
 	nvmem-cell-names = "pre-calibration", "mac-address";
@@ -510,7 +509,7 @@
 &wifi2 {
 	status = "okay";
 
-	ieee80211-freq-limit = <5735000 5835000>;
+	ieee80211-freq-limit = <5490000 5835000>;
 	qcom,ath10k-calibration-variant = "linksys-whw03v2";
 
 	nvmem-cell-names = "pre-calibration", "mac-address";
