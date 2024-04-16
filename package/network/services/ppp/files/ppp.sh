@@ -222,9 +222,6 @@ proto_pppoe_setup() {
 
 	/sbin/modprobe -qa slhc ppp_generic pppox pppoe
 
-	json_get_var mtu mtu
-	mtu="${mtu:-1492}"
-
 	json_get_var ac ac
 	json_get_var service service
 	json_get_var host_uniq host_uniq
