@@ -3,10 +3,10 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=apk
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL=https://github.com/Ansuel/apk-tools.git
+PKG_SOURCE_URL=https://gitlab.alpinelinux.org/jonasjelonek1/apk-tools.git
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_DATE:=2024-04-16
-PKG_SOURCE_VERSION:=5d20199422504a96f0b4c0bbbb85766f49dfff06
+PKG_SOURCE_VERSION:=03d88cd7a7fd4f030db69f6609b09c39038d208f
 PKG_MIRROR_HASH:=b6fa1b61c9821adeb48851bacc6596750011cbe832f45d335b9c7fc6973e8fcf
 
 PKG_VERSION=3.0.0_pre$(subst -,,$(PKG_SOURCE_DATE))
@@ -29,16 +29,32 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/meson.mk
 
-MESON_HOST_VARS+=VERSION=$(PKG_VERSION)
-MESON_VARS+=VERSION=$(PKG_VERSION)
-
-define Package/apk
+define Package/apk/default
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=apk package manager
-  DEPENDS:=+zlib +libmbedtls
+  DEPENDS:=+zlib
   URL:=$(PKG_SOURCE_URL)
 endef
+
+define Package/apk-mbedtls
+  $(Package/apk/default)
+  TITLE += (mbedtls)
+  DEPENDS +=+libmbedtls
+  VARIANT:=mbedtls
+  DEFAULT_VARIANT:=1
+  CONFLICTS:=apk-openssl
+endef
+
+define Package/apk-openssl
+  $(Package/apk/default)
+  TITLE += (openssl)
+  DEPENDS +=+libopenssl
+  VARIANT:=openssl
+endef
+
+MESON_HOST_VARS+=VERSION=$(PKG_VERSION)
+MESON_VARS+=VERSION=$(PKG_VERSION)
 
 MESON_HOST_ARGS += \
 	-Dlua_version=5.1 \
@@ -52,13 +68,13 @@ MESON_ARGS += \
 	-Dcompressed-help=false \
 	-Ddocs=disabled \
 	-Durl_backend=wget \
-	-Dcrypto_backend=mbedtls \
+	-Dcrypto_backend=$(BUILD_VARIANT) \
 	-Dzstd=false
 
 HOST_LDFLAGS += \
 	-Wl,-rpath $(STAGING_DIR_HOST)/lib
 
-define Package/apk/install
+define Package/apk/default/install
 	$(INSTALL_DIR) $(1)/lib/apk/db
 
 	$(INSTALL_DIR) $(1)/usr/bin
@@ -68,5 +84,9 @@ define Package/apk/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libapk.so.* $(1)/usr/lib/
 endef
 
-$(eval $(call BuildPackage,apk))
+Package/apk-mbedtls/install = $(Package/apk/default/install)
+Package/apk-openssl/install = $(Package/apk/default/install)
+
+$(eval $(call BuildPackage,apk-mbedtls))
+$(eval $(call BuildPackage,apk-openssl))
 $(eval $(call HostBuild))
