@@ -3,11 +3,11 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=apk
 PKG_RELEASE:=1
 
-PKG_SOURCE_URL=https://gitlab.alpinelinux.org/alpine/apk-tools.git
+PKG_SOURCE_URL=https://github.com/Ansuel/apk-tools.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2024-04-10
-PKG_SOURCE_VERSION:=1a17367a2301b63ec88a2cbc62560fd832a3fc93
-PKG_MIRROR_HASH:=b9cdb2499374902b43137ee4040a03eda722b97818aa8ec62feb5cbc6901b463
+PKG_SOURCE_DATE:=2024-04-16
+PKG_SOURCE_VERSION:=5d20199422504a96f0b4c0bbbb85766f49dfff06
+PKG_MIRROR_HASH:=b6fa1b61c9821adeb48851bacc6596750011cbe832f45d335b9c7fc6973e8fcf
 
 PKG_VERSION=3.0.0_pre$(subst -,,$(PKG_SOURCE_DATE))
 
@@ -36,7 +36,7 @@ define Package/apk
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=apk package manager
-  DEPENDS:=+zlib +libopenssl
+  DEPENDS:=+zlib +libmbedtls
   URL:=$(PKG_SOURCE_URL)
 endef
 
@@ -44,6 +44,7 @@ MESON_HOST_ARGS += \
 	-Dlua_version=5.1 \
 	-Dcompressed-help=false \
 	-Ddocs=disabled \
+	-Dcrypto_backend=openssl \
 	-Dzstd=false
 
 MESON_ARGS += \
@@ -51,6 +52,7 @@ MESON_ARGS += \
 	-Dcompressed-help=false \
 	-Ddocs=disabled \
 	-Durl_backend=wget \
+	-Dcrypto_backend=mbedtls \
 	-Dzstd=false
 
 HOST_LDFLAGS += \
