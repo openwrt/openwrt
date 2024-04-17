@@ -1,0 +1,40 @@
+From 17b53ad1574cb5f41789993289d3d94f7a50f0ce Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Mon, 11 Oct 2021 14:27:09 +0300
+Subject: [PATCH 238/247] clk: at91: clk-master: improve readability by using
+ local variables
+
+Improve readability in clk_sama7g5_master_set() by using local
+variables.
+
+Suggested-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Link: https://lore.kernel.org/r/20211011112719.3951784-6-claudiu.beznea@microchip.com
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+---
+ drivers/clk/at91/clk-master.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/clk/at91/clk-master.c
++++ b/drivers/clk/at91/clk-master.c
+@@ -680,6 +680,8 @@ static void clk_sama7g5_master_set(struc
+ 	unsigned long flags;
+ 	unsigned int val, cparent;
+ 	unsigned int enable = status ? AT91_PMC_MCR_V2_EN : 0;
++	unsigned int parent = master->parent << PMC_MCR_CSS_SHIFT;
++	unsigned int div = master->div << MASTER_DIV_SHIFT;
+ 
+ 	spin_lock_irqsave(master->lock, flags);
+ 
+@@ -689,9 +691,7 @@ static void clk_sama7g5_master_set(struc
+ 	regmap_update_bits(master->regmap, AT91_PMC_MCR_V2,
+ 			   enable | AT91_PMC_MCR_V2_CSS | AT91_PMC_MCR_V2_DIV |
+ 			   AT91_PMC_MCR_V2_CMD | AT91_PMC_MCR_V2_ID_MSK,
+-			   enable | (master->parent << PMC_MCR_CSS_SHIFT) |
+-			   (master->div << MASTER_DIV_SHIFT) |
+-			   AT91_PMC_MCR_V2_CMD |
++			   enable | parent | div | AT91_PMC_MCR_V2_CMD |
+ 			   AT91_PMC_MCR_V2_ID(master->id));
+ 
+ 	cparent = (val & AT91_PMC_MCR_V2_CSS) >> PMC_MCR_CSS_SHIFT;
