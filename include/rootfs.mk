@@ -60,6 +60,12 @@ ifdef CONFIG_CLEAN_IPKG
   endef
 endif
 
+# Remove not needed information from the control file
+# 1: roofs base path
+define clean_control_file
+	-sed -i '/^Maintainer: /d' $(1)/usr/lib/opkg/info/*.control
+endef
+
 define prepare_rootfs
 	$(if $(2),@if [ -d '$(2)' ]; then \
 		$(call file_copy,$(2)/.,$(1)); \
@@ -101,6 +107,7 @@ define prepare_rootfs
 		$(1)/usr/lib/opkg/lists/* \
 		$(1)/var/lock/*.lock
 	$(call clean_ipkg,$(1))
+	$(call clean_control_file,$(1))
 	$(call mklibs,$(1))
 	$(if $(SOURCE_DATE_EPOCH),find $(1)/ -mindepth 1 -execdir touch -hcd "@$(SOURCE_DATE_EPOCH)" "{}" +)
 endef
