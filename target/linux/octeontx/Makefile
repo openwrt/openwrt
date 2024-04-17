@@ -11,6 +11,7 @@ FEATURES:=squashfs ramdisk targz pcie gpio rtc usb fpu
 SUBTARGETS:=generic
 
 KERNEL_PATCHVER:=5.15
+KERNEL_TESTING_PATCHVER:=6.1
 
 define Target/Description
 	Build images for Octeon-TX CN80XX/CN81XX based boards
