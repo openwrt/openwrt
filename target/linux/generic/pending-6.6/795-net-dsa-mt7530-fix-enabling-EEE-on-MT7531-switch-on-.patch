@@ -49,7 +49,7 @@ Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -2505,18 +2505,25 @@ mt7531_setup(struct dsa_switch *ds)
+@@ -2666,18 +2666,25 @@ mt7531_setup(struct dsa_switch *ds)
  	mt7530_rmw(priv, MT7531_GPIO_MODE0, MT7531_GPIO0_MASK,
  		   MT7531_GPIO0_INTERRUPT);
  
@@ -82,7 +82,7 @@ Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
  	/* Setup VLAN ID 0 for VLAN-unaware bridges */
 --- a/drivers/net/dsa/mt7530.h
 +++ b/drivers/net/dsa/mt7530.h
-@@ -616,6 +616,7 @@ enum mt7531_clk_skew {
+@@ -621,6 +621,7 @@ enum mt7531_clk_skew {
  #define  RG_SYSPLL_DDSFBK_EN		BIT(12)
  #define  RG_SYSPLL_BIAS_EN		BIT(11)
  #define  RG_SYSPLL_BIAS_LPF_EN		BIT(10)

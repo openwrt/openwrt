@@ -53,7 +53,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -2274,8 +2274,6 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -2435,8 +2435,6 @@ mt7530_setup(struct dsa_switch *ds)
  		     SYS_CTRL_PHY_RST | SYS_CTRL_SW_RST |
  		     SYS_CTRL_REG_RST);
  
@@ -62,7 +62,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	/* Lower Tx driving for TRGMII path */
  	for (i = 0; i < NUM_TRGMII_CTRL; i++)
  		mt7530_write(priv, MT7530_TRGMII_TD_ODT(i),
-@@ -2291,6 +2289,9 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -2452,6 +2450,9 @@ mt7530_setup(struct dsa_switch *ds)
  	val |= MHWTRAP_MANUAL;
  	mt7530_write(priv, MT7530_MHWTRAP, val);
  

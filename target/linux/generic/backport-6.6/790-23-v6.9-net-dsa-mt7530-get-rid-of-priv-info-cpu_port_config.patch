@@ -57,8 +57,8 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -1002,18 +1002,10 @@ mt753x_trap_frames(struct mt7530_priv *p
- 		   MT753X_BPDU_CPU_ONLY);
+@@ -1163,18 +1163,10 @@ mt753x_trap_frames(struct mt7530_priv *p
+ 			   MT753X_BPDU_CPU_ONLY);
  }
  
 -static int
@@ -77,7 +77,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	/* Enable Mediatek header mode on the cpu port */
  	mt7530_write(priv, MT7530_PVC_P(port),
-@@ -1039,8 +1031,6 @@ mt753x_cpu_port_enable(struct dsa_switch
+@@ -1200,8 +1192,6 @@ mt753x_cpu_port_enable(struct dsa_switch
  	/* Set to fallback mode for independent VLAN learning */
  	mt7530_rmw(priv, MT7530_PCR_P(port), PCR_PORT_VLAN_MASK,
  		   MT7530_PORT_FALLBACK_MODE);
@@ -86,7 +86,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  }
  
  static int
-@@ -2297,8 +2287,6 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -2458,8 +2448,6 @@ mt7530_setup(struct dsa_switch *ds)
  	val |= MHWTRAP_MANUAL;
  	mt7530_write(priv, MT7530_MHWTRAP, val);
  
@@ -95,7 +95,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	mt753x_trap_frames(priv);
  
  	/* Enable and reset MIB counters */
-@@ -2313,9 +2301,7 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -2474,9 +2462,7 @@ mt7530_setup(struct dsa_switch *ds)
  		mt7530_set(priv, MT7530_PSC_P(i), SA_DIS);
  
  		if (dsa_is_cpu_port(ds, i)) {
@@ -106,7 +106,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		} else {
  			mt7530_port_disable(ds, i);
  
-@@ -2419,9 +2405,7 @@ mt7531_setup_common(struct dsa_switch *d
+@@ -2580,9 +2566,7 @@ mt7531_setup_common(struct dsa_switch *d
  		mt7530_set(priv, MT7531_DBG_CNT(i), MT7531_DIS_CLR);
  
  		if (dsa_is_cpu_port(ds, i)) {
@@ -117,7 +117,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		} else {
  			mt7530_port_disable(ds, i);
  
-@@ -2510,10 +2494,6 @@ mt7531_setup(struct dsa_switch *ds)
+@@ -2671,10 +2655,6 @@ mt7531_setup(struct dsa_switch *ds)
  	mt7530_rmw(priv, MT7531_GPIO_MODE0, MT7531_GPIO0_MASK,
  		   MT7531_GPIO0_INTERRUPT);
  
@@ -128,7 +128,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	/* Enable PHY core PLL, since phy_device has not yet been created
  	 * provided for phy_[read,write]_mmd_indirect is called, we provide
  	 * our own mt7531_ind_mmd_phy_[read,write] to complete this
-@@ -2725,26 +2705,9 @@ mt753x_phylink_mac_config(struct dsa_swi
+@@ -2886,26 +2866,9 @@ mt753x_phylink_mac_config(struct dsa_swi
  	struct mt7530_priv *priv = ds->priv;
  	u32 mcr_cur, mcr_new;
  
@@ -156,7 +156,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	mcr_cur = mt7530_read(priv, MT7530_PMCR_P(port));
  	mcr_new = mcr_cur;
  	mcr_new &= ~PMCR_LINK_SETTINGS_MASK;
-@@ -2780,17 +2743,10 @@ static void mt753x_phylink_mac_link_up(s
+@@ -2941,17 +2904,10 @@ static void mt753x_phylink_mac_link_up(s
  
  	mcr = PMCR_RX_EN | PMCR_TX_EN | PMCR_FORCE_LNK;
  
@@ -176,7 +176,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		mcr |= PMCR_FORCE_SPEED_1000;
  		break;
  	case SPEED_100:
-@@ -2808,6 +2764,7 @@ static void mt753x_phylink_mac_link_up(s
+@@ -2969,6 +2925,7 @@ static void mt753x_phylink_mac_link_up(s
  	if (mode == MLO_AN_PHY && phydev && phy_init_eee(phydev, false) >= 0) {
  		switch (speed) {
  		case SPEED_1000:
@@ -184,7 +184,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			mcr |= PMCR_FORCE_EEE1G;
  			break;
  		case SPEED_100:
-@@ -2819,61 +2776,6 @@ static void mt753x_phylink_mac_link_up(s
+@@ -2980,61 +2937,6 @@ static void mt753x_phylink_mac_link_up(s
  	mt7530_set(priv, MT7530_PMCR_P(port), mcr);
  }
  
@@ -246,7 +246,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static void mt753x_phylink_get_caps(struct dsa_switch *ds, int port,
  				    struct phylink_config *config)
  {
-@@ -3132,7 +3034,6 @@ const struct mt753x_info mt753x_table[]
+@@ -3293,7 +3195,6 @@ const struct mt753x_info mt753x_table[]
  		.phy_write_c22 = mt7531_ind_c22_phy_write,
  		.phy_read_c45 = mt7531_ind_c45_phy_read,
  		.phy_write_c45 = mt7531_ind_c45_phy_write,
@@ -254,7 +254,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		.mac_port_get_caps = mt7531_mac_port_get_caps,
  		.mac_port_config = mt7531_mac_config,
  	},
-@@ -3144,7 +3045,6 @@ const struct mt753x_info mt753x_table[]
+@@ -3305,7 +3206,6 @@ const struct mt753x_info mt753x_table[]
  		.phy_write_c22 = mt7531_ind_c22_phy_write,
  		.phy_read_c45 = mt7531_ind_c45_phy_read,
  		.phy_write_c45 = mt7531_ind_c45_phy_write,
@@ -264,7 +264,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  };
 --- a/drivers/net/dsa/mt7530.h
 +++ b/drivers/net/dsa/mt7530.h
-@@ -331,13 +331,6 @@ enum mt7530_vlan_port_acc_frm {
+@@ -336,13 +336,6 @@ enum mt7530_vlan_port_acc_frm {
  					 PMCR_TX_FC_EN | PMCR_RX_FC_EN | \
  					 PMCR_FORCE_FDX | PMCR_FORCE_LNK | \
  					 PMCR_FORCE_EEE1G | PMCR_FORCE_EEE100)
@@ -278,7 +278,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  #define MT7530_PMEEECR_P(x)		(0x3004 + (x) * 0x100)
  #define  WAKEUP_TIME_1000(x)		(((x) & 0xFF) << 24)
-@@ -744,7 +737,6 @@ struct mt753x_info {
+@@ -749,7 +742,6 @@ struct mt753x_info {
  			    int regnum);
  	int (*phy_write_c45)(struct mt7530_priv *priv, int port, int devad,
  			     int regnum, u16 val);
@@ -286,7 +286,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	void (*mac_port_get_caps)(struct dsa_switch *ds, int port,
  				  struct phylink_config *config);
  	void (*mac_port_validate)(struct dsa_switch *ds, int port,
-@@ -770,7 +762,6 @@ struct mt753x_info {
+@@ -775,7 +767,6 @@ struct mt753x_info {
   * @ports:		Holding the state among ports
   * @reg_mutex:		The lock for protecting among process accessing
   *			registers
@@ -294,7 +294,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
   * @p5_intf_sel:	Holding the current port 5 interface select
   * @p5_sgmii:		Flag for distinguishing if port 5 of the MT7531 switch
   *			has got SGMII
-@@ -792,8 +783,6 @@ struct mt7530_priv {
+@@ -797,8 +788,6 @@ struct mt7530_priv {
  	const struct mt753x_info *info;
  	unsigned int		id;
  	bool			mcm;

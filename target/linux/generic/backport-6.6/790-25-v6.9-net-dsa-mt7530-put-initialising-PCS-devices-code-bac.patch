@@ -20,7 +20,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -2848,17 +2848,9 @@ static int
+@@ -3009,17 +3009,9 @@ static int
  mt753x_setup(struct dsa_switch *ds)
  {
  	struct mt7530_priv *priv = ds->priv;
@@ -40,7 +40,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (ret)
  		return ret;
  
-@@ -2870,6 +2862,14 @@ mt753x_setup(struct dsa_switch *ds)
+@@ -3031,6 +3023,14 @@ mt753x_setup(struct dsa_switch *ds)
  	if (ret && priv->irq)
  		mt7530_free_irq_common(priv);
  
