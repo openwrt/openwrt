@@ -31,7 +31,8 @@ define Host/Compile
 endef
 
 define Host/Install
-	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/lib install-mt-pc install-static install-includes PREFIX=$(HOST_BUILD_PREFIX)
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/lib install-static install-includes PREFIX=$(HOST_BUILD_PREFIX)
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/lib install-pc MT=1 PREFIX=$(HOST_BUILD_PREFIX)
 	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR)/programs install PREFIX=$(HOST_BUILD_PREFIX)
 endef
 
