@@ -36,7 +36,7 @@ Link: https://lore.kernel.org/r/20240123-thermal-sun8i-registration-v3-1-3e5771b
 
 --- a/drivers/thermal/sun8i_thermal.c
 +++ b/drivers/thermal/sun8i_thermal.c
-@@ -197,6 +197,9 @@ static irqreturn_t sun8i_irq_thread(int
+@@ -195,6 +195,9 @@ static irqreturn_t sun8i_irq_thread(int
  	int i;
  
  	for_each_set_bit(i, &irq_bitmap, tmdev->chip->sensor_num) {
@@ -64,5 +64,5 @@ Link: https://lore.kernel.org/r/20240123-thermal-sun8i-registration-v3-1-3e5771b
 +			continue;
 +		}
  
- 		if (devm_thermal_add_hwmon_sysfs(tmdev->sensor[i].tzd))
- 			dev_warn(tmdev->dev,
+ 		devm_thermal_add_hwmon_sysfs(tmdev->dev, tmdev->sensor[i].tzd);
+ 	}

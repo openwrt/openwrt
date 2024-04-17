@@ -19,7 +19,7 @@ Link: https://lore.kernel.org/r/20240219153639.179814-7-andre.przywara@arm.com
 
 --- a/drivers/thermal/sun8i_thermal.c
 +++ b/drivers/thermal/sun8i_thermal.c
-@@ -688,6 +688,20 @@ static const struct ths_thermal_chip sun
+@@ -684,6 +684,20 @@ static const struct ths_thermal_chip sun
  	.calc_temp = sun8i_ths_calc_temp,
  };
  
@@ -40,7 +40,7 @@ Link: https://lore.kernel.org/r/20240219153639.179814-7-andre.przywara@arm.com
  static const struct of_device_id of_ths_match[] = {
  	{ .compatible = "allwinner,sun8i-a83t-ths", .data = &sun8i_a83t_ths },
  	{ .compatible = "allwinner,sun8i-h3-ths", .data = &sun8i_h3_ths },
-@@ -697,6 +711,7 @@ static const struct of_device_id of_ths_
+@@ -693,6 +707,7 @@ static const struct of_device_id of_ths_
  	{ .compatible = "allwinner,sun50i-h5-ths", .data = &sun50i_h5_ths },
  	{ .compatible = "allwinner,sun50i-h6-ths", .data = &sun50i_h6_ths },
  	{ .compatible = "allwinner,sun20i-d1-ths", .data = &sun20i_d1_ths },
