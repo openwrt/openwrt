@@ -14,7 +14,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
 
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -26,6 +26,7 @@
+@@ -27,6 +27,7 @@
  #include <linux/ktime.h>
  #include <linux/mm.h>
  #include <linux/nvme.h>
@@ -22,11 +22,10 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
  #include <linux/platform_data/x86/apple.h>
  #include <linux/pm_runtime.h>
  #include <linux/suspend.h>
-@@ -6000,3 +6001,34 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_I
- DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0xa73f, dpc_log_size);
+@@ -6089,6 +6090,37 @@ DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_I
  DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0xa76e, dpc_log_size);
  #endif
-+
+ 
 +#ifdef CONFIG_PCI_HOST_THUNDER_PEM
 +/*
 + * fixup for PLX PEX8909 bridge to configure GPIO1-7 as output High
@@ -57,3 +56,7 @@ Signed-off-by: Tim Harvey <tharvey@gateworks.com>
 +DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8606, newport_pciesw_early_fixup);
 +DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8604, newport_pciesw_early_fixup);
 +#endif /* CONFIG_PCI_HOST_THUNDER_PEM */
++
+ /*
+  * Devices known to require a longer delay before first config space access
+  * after reset recovery or resume from D3cold:
