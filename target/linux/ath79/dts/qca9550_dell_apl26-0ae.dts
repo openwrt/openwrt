@@ -1,0 +1,228 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+#include "qca955x.dtsi"
+
+/ {
+	model = "Dell SonicPoint ACe (APL26-0AE)";
+	compatible = "dell,apl26-0ae", "qca,qca9550", "qca,qca9558";
+
+	aliases {
+		label-mac-device = &eth0;
+		led-boot = &led_wrench;
+		led-failsafe = &led_wrench;
+		led-upgrade = &led_wrench;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		/* Accessible only after disassembling the casing */
+		button-service {
+			label = "service";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&jtag_disable_pins>;
+
+		led-lan1-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan1-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2-amber {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			linux,default-trigger = "phy1tpt";
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan5g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			linux,default-trigger = "phy0tpt";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wrench: led-wrench {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_sysinfo_50 0>;
+	nvmem-cell-names = "mac-address";
+	phy-handle = <&phy0>;
+	pll-data = <0xa6000000 0x00000101 0x00001616>;
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_sysinfo_50 1>;
+	nvmem-cell-names = "mac-address";
+	pll-data = <0x03000101 0x00000101 0x00001616>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+
+		qca,ar8327-initvals = <
+			0x04 0x07680000 /* PORT0 PAD MODE CTRL */
+			0x0c 0x00000080 /* PORT6 PAD MODE CTRL */
+			0x10 0x40000000 /* POWER_ON_STRAP */
+			0x50 0xffb7c405 /* LED0 CTRL */
+			0x54 0xffb7c305 /* LED1 CTRL */
+			0x58 0xffb7c033 /* LED2 CTRL */
+			0x5c 0x03ffff00 /* LED3 CTRL */
+			0x7c 0x0000007e /* PORT0_STATUS */
+			0x94 0x0000007e /* PORT6_STATUS */
+		>;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+
+		/* OEM overwrites EEPROM stored adress and so do we */
+		nvmem-cells = <&macaddr_sysinfo_50 2>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+		broken-flash-reset;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0000000 0x0080000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "u-boot-env";
+				reg = <0x0080000 0x0040000>;
+			};
+
+			partition@c0000 {
+				label = "sysinfo";
+				reg = <0x00c0000 0x0040000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_sysinfo_50: macaddr@50 {
+						compatible = "mac-base";
+						reg = <0x50 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@100000 {
+				label = "art";
+				reg = <0x0100000 0x0010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
+			};
+
+			partition@110000 {
+				label = "firmware";
+				reg = <0x0110000 0x1ef0000>;
+				compatible = "denx,uimage";
+			};
+		};
+	};
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_sysinfo_50 10>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
