@@ -28,12 +28,12 @@ Link: https://lore.kernel.org/r/20240219153639.179814-6-andre.przywara@arm.com
 @@ -15,6 +15,7 @@
  #include <linux/module.h>
  #include <linux/nvmem-consumer.h>
- #include <linux/of_device.h>
+ #include <linux/of.h>
 +#include <linux/of_platform.h>
  #include <linux/platform_device.h>
  #include <linux/regmap.h>
  #include <linux/reset.h>
-@@ -68,6 +69,7 @@ struct tsensor {
+@@ -66,6 +67,7 @@ struct tsensor {
  struct ths_thermal_chip {
  	bool            has_mod_clk;
  	bool            has_bus_clk_reset;
@@ -41,7 +41,7 @@ Link: https://lore.kernel.org/r/20240219153639.179814-6-andre.przywara@arm.com
  	int		sensor_num;
  	int		offset;
  	int		scale;
-@@ -85,12 +87,16 @@ struct ths_device {
+@@ -83,12 +85,16 @@ struct ths_device {
  	const struct ths_thermal_chip		*chip;
  	struct device				*dev;
  	struct regmap				*regmap;

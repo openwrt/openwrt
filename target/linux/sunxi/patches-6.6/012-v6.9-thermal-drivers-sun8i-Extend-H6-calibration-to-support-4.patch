@@ -25,7 +25,7 @@ Link: https://lore.kernel.org/r/20240219153639.179814-5-andre.przywara@arm.com
 
 --- a/drivers/thermal/sun8i_thermal.c
 +++ b/drivers/thermal/sun8i_thermal.c
-@@ -224,16 +224,21 @@ static int sun50i_h6_ths_calibrate(struc
+@@ -222,16 +222,21 @@ static int sun50i_h6_ths_calibrate(struc
  	struct device *dev = tmdev->dev;
  	int i, ft_temp;
  
@@ -52,7 +52,7 @@ Link: https://lore.kernel.org/r/20240219153639.179814-5-andre.przywara@arm.com
  	 *
  	 * The calibration data on the H6 is the ambient temperature and
  	 * sensor values that are filled during the factory test stage.
-@@ -246,9 +251,16 @@ static int sun50i_h6_ths_calibrate(struc
+@@ -244,9 +249,16 @@ static int sun50i_h6_ths_calibrate(struc
  	ft_temp = (caldata[0] & FT_TEMP_MASK) * 100;
  
  	for (i = 0; i < tmdev->chip->sensor_num; i++) {
