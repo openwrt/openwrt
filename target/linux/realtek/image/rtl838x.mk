@@ -102,6 +102,15 @@ define Device/engenius_ews2910p-v1
 endef
 TARGET_DEVICES += engenius_ews2910p-v1
 
+define Device/engenius_ews2910p-v3
+  $(Device/engenius_ews2910p)
+  SOC := rtl8380
+  DEVICE_MODEL := EWS2910P
+  DEVICE_VARIANT := v3
+  UIMAGE_MAGIC := 0x03010500
+endef
+TARGET_DEVICES += engenius_ews2910p-v3
+
 define Device/hpe_1920-8g
   $(Device/hpe_1920)
   SOC := rtl8380
