@@ -8,6 +8,7 @@ FEATURES:=gpio ramdisk rtc squashfs
 DEVICE_TYPE:=nas
 
 KERNEL_PATCHVER:=5.15
+KERNEL_TESTING_PATCHVER:=6.1
 
 include $(INCLUDE_DIR)/target.mk
 
