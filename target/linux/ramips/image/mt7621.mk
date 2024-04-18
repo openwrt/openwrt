@@ -2869,7 +2869,6 @@ define Device/ubnt_edgerouter_common
   DEVICE_COMPAT_MESSAGE :=  Partition table has been changed due to kernel size restrictions. \
     Refer to the wiki page for instructions to migrate to the new layout: \
     https://openwrt.org/toh/ubiquiti/edgerouter_x_er-x_ka
-  DEFAULT := n
 endef
 
 define Device/ubnt_edgerouter-x
