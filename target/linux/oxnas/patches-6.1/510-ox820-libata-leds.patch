@@ -1,8 +1,8 @@
 --- a/arch/arm/mach-oxnas/Kconfig
 +++ b/arch/arm/mach-oxnas/Kconfig
-@@ -2,6 +2,7 @@
- menuconfig ARCH_OXNAS
+@@ -3,6 +3,7 @@ menuconfig ARCH_OXNAS
  	bool "Oxford Semiconductor OXNAS Family SoCs"
+ 	depends on (ARCH_MULTI_V5 && CPU_LITTLE_ENDIAN) || ARCH_MULTI_V6
  	select ARCH_HAS_RESET_CONTROLLER
 +	select ARCH_WANT_LIBATA_LEDS
  	select COMMON_CLK_OXNAS
