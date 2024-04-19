@@ -722,7 +722,7 @@ sub gen_image_cyclonedxsbom() {
 		if ($image_packages{$name}) {
 			$version = $image_packages{$name};
 		}
-		$version =~ s/-\d+$// if $version;
+		$version =~ s/-r\d+$// if $version;
 		if ($name =~ /^(kernel|kmod-)/ and $version =~ /^(\d+\.\d+\.\d+)/) {
 			$version = $1;
 		}
@@ -775,7 +775,7 @@ sub gen_package_cyclonedxsbom() {
 		}
 
 		my $version = $pkg->{version};
-		$version =~ s/-\d+$// if $version;
+		$version =~ s/-r\d+$// if $version;
 		if ($name =~ /^(kernel|kmod-)/ and $version =~ /^(\d+\.\d+\.\d+)/) {
 			$version = $1;
 		}
