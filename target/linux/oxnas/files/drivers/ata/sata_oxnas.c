@@ -33,6 +33,12 @@
 #include <linux/sizes.h>
 #include <linux/version.h>
 
+#ifdef DEBUG
+#define DPRINTK(format,args...) printk(KERN_DEBUG format,##args)
+#else
+#define DPRINTK(format,args...)
+#endif
+
 static inline void oxnas_register_clear_mask(void __iomem *p, unsigned mask)
 {
 	u32 val = readl_relaxed(p);
@@ -1355,11 +1361,11 @@ void sata_oxnas_set_mode(struct ata_host *ah, u32 mode, u32 force)
 		switch (mode) {
 		case OXNASSATA_RAID1:
 		case OXNASSATA_RAID0:
-			VPRINTK("Loading RAID micro-code\n");
+			DPRINTK("Loading RAID micro-code\n");
 			src = (unsigned int *)&raid[1];
 			break;
 		case OXNASSATA_NOTRAID:
-			VPRINTK("Loading JBOD micro-code\n");
+			DPRINTK("Loading JBOD micro-code\n");
 			src = (unsigned int *)&jbod[1];
 			break;
 		default:
@@ -1953,7 +1959,7 @@ static void sata_oxnas_post_reset_init(struct ata_port *ap)
 
 	/* clean up any remaining errors */
 	sata_oxnas_scr_write_port(ap, SCR_ERROR, ~0);
-	VPRINTK("done\n");
+	DPRINTK("done\n");
 }
 
 /**
@@ -2159,7 +2165,7 @@ static void sata_oxnas_port_irq(struct ata_port *ap, int force_error)
 		local_irq_restore(flags);
 		ata_qc_complete(qc);
 	} else {
-		VPRINTK("Ignoring interrupt, can't find the command tag="
+		DPRINTK("Ignoring interrupt, can't find the command tag="
 			"%d %08x\n", ap->link.active_tag, ap->qc_active);
 	}
 
