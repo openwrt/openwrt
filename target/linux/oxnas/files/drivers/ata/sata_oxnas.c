@@ -2456,7 +2456,8 @@ static int sata_oxnas_suspend(struct platform_device *op, pm_message_t state)
 {
 	struct ata_host *host = dev_get_drvdata(&op->dev);
 
-	return ata_host_suspend(host, state);
+	ata_host_suspend(host, state);
+	return 0;
 }
 
 static int sata_oxnas_resume(struct platform_device *op)
