@@ -1,0 +1,70 @@
+From 004589ff9df5b75672a78b6c3c4cba93202b14c9 Mon Sep 17 00:00:00 2001
+From: Tianling Shen <cnsztl@gmail.com>
+Date: Sat, 25 Mar 2023 15:40:20 +0800
+Subject: [PATCH] arm64: dts: rockchip: Add FriendlyARM NanoPi R2C
+
+The NanoPi R2C is a minor variant of NanoPi R2S with the on-board NIC
+chip changed from rtl8211e to yt8521s, and otherwise identical to R2S.
+
+Signed-off-by: Tianling Shen <cnsztl@gmail.com>
+Link: https://lore.kernel.org/r/20230325074022.9818-3-cnsztl@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/Makefile         |  1 +
+ .../boot/dts/rockchip/rk3328-nanopi-r2c.dts   | 40 +++++++++++++++++++
+ 2 files changed, 41 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2c.dts
+
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -10,6 +10,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3318-a9
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3326-odroid-go2.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-a1.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-evb.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-nanopi-r2c.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-nanopi-r2s.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-rock64.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-rock-pi-e.dtb
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2c.dts
+@@ -0,0 +1,40 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * Copyright (c) 2021 FriendlyElec Computer Tech. Co., Ltd.
++ * (http://www.friendlyarm.com)
++ *
++ * Copyright (c) 2021-2023 Tianling Shen <cnsztl@gmail.com>
++ */
++
++/dts-v1/;
++#include "rk3328-nanopi-r2s.dts"
++
++/ {
++	model = "FriendlyElec NanoPi R2C";
++	compatible = "friendlyarm,nanopi-r2c", "rockchip,rk3328";
++};
++
++&gmac2io {
++	phy-handle = <&yt8521s>;
++	tx_delay = <0x22>;
++	rx_delay = <0x12>;
++
++	mdio {
++		/delete-node/ ethernet-phy@1;
++
++		yt8521s: ethernet-phy@3 {
++			compatible = "ethernet-phy-ieee802.3-c22";
++			reg = <3>;
++
++			motorcomm,clk-out-frequency-hz = <125000000>;
++			motorcomm,keep-pll-enabled;
++			motorcomm,auto-sleep-disabled;
++
++			pinctrl-0 = <&eth_phy_reset_pin>;
++			pinctrl-names = "default";
++			reset-assert-us = <10000>;
++			reset-deassert-us = <50000>;
++			reset-gpios = <&gpio1 RK_PC2 GPIO_ACTIVE_LOW>;
++		};
++	};
++};

@@ -1,0 +1,33 @@
+From 433d54818f64a2fe0562f8c04c7a81f562368515 Mon Sep 17 00:00:00 2001
+From: Jose Ignacio Tornos Martinez <jtornosm@redhat.com>
+Date: Tue, 5 Mar 2024 15:32:18 +0100
+Subject: [PATCH] arm64: dts: rockchip: regulator for sd needs to be always on
+ for BPI-R2Pro
+
+With default dts configuration for BPI-R2Pro, the regulator for sd card is
+powered off when reboot is commanded, and the only solution to detect the
+sd card again, and therefore, allow rebooting from there, is to do a
+hardware reset.
+
+Configure the regulator for sd to be always on for BPI-R2Pro in order to
+avoid this issue.
+
+Fixes: f901aaadaa2a ("arm64: dts: rockchip: Add Bananapi R2 Pro")
+Signed-off-by: Jose Ignacio Tornos Martinez <jtornosm@redhat.com>
+Link: https://lore.kernel.org/r/20240305143222.189413-1-jtornosm@redhat.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3568-bpi-r2-pro.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3568-bpi-r2-pro.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-bpi-r2-pro.dts
+@@ -412,6 +412,8 @@
+ 
+ 			vccio_sd: LDO_REG5 {
+ 				regulator-name = "vccio_sd";
++				regulator-always-on;
++				regulator-boot-on;
+ 				regulator-min-microvolt = <1800000>;
+ 				regulator-max-microvolt = <3300000>;
+ 

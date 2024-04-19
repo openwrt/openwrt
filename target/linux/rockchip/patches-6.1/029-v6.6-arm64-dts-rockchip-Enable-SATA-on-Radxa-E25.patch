@@ -1,0 +1,41 @@
+From 2bdfe84fbd57a4ed9fd65a67210442559ce078f0 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Mon, 24 Jul 2023 14:52:16 +0000
+Subject: [PATCH] arm64: dts: rockchip: Enable SATA on Radxa E25
+
+The M.2 KEY B port can be used for WWAN USB2 modules or SATA drives.
+
+Enable sata1 node to fix use of SATA drives on the M.2 slot.
+
+Fixes: 2bf2f4d9f673 ("arm64: dts: rockchip: Add Radxa CM3I E25")
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20230724145213.3833099-1-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3568-radxa-e25.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3568-radxa-e25.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-radxa-e25.dts
+@@ -99,6 +99,10 @@
+ 	};
+ };
+ 
++&combphy1 {
++	phy-supply = <&vcc3v3_pcie30x1>;
++};
++
+ &pcie2x1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie20_reset_h>;
+@@ -178,6 +182,10 @@
+ 	status = "okay";
+ };
+ 
++&sata1 {
++	status = "okay";
++};
++
+ &sdmmc0 {
+ 	bus-width = <4>;
+ 	cap-sd-highspeed;
