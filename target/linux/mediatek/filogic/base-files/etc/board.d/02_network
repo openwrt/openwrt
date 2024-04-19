@@ -166,7 +166,9 @@ mediatek_setup_macs()
 	smartrg,sdg-8612|\
 	smartrg,sdg-8614|\
 	smartrg,sdg-8622|\
-	smartrg,sdg-8632)
+	smartrg,sdg-8632|\
+	smartrg,sdg-8733|\
+	smartrg,sdg-8734)
 		label_mac=$(mmc_get_mac_ascii mfginfo MFG_MAC)
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 1)

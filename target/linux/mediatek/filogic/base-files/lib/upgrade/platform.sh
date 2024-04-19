@@ -68,7 +68,9 @@ platform_do_upgrade() {
 	smartrg,sdg-8612|\
 	smartrg,sdg-8614|\
 	smartrg,sdg-8622|\
-	smartrg,sdg-8632)
+	smartrg,sdg-8632|\
+	smartrg,sdg-8733|\
+	smartrg,sdg-8734)
 		CI_KERNPART="kernel"
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
@@ -245,6 +247,8 @@ platform_copy_config() {
 	smartrg,sdg-8614|\
 	smartrg,sdg-8622|\
 	smartrg,sdg-8632|\
+	smartrg,sdg-8733|\
+	smartrg,sdg-8734|\
 	ubnt,unifi-6-plus)
 		emmc_copy_config
 		;;

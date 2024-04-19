@@ -72,6 +72,21 @@ routerich,ax3000)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
 	;;
+smartrg,sdg-8733|\
+smartrg,sdg-8734)
+	ucidef_set_led_netdev "lan-1-green" "LAN1" "mdio-bus:08:green:lan" "lan1" "link_2500 link_5000"
+	ucidef_set_led_netdev "lan-1-orange" "LAN1" "mdio-bus:08:orange:lan" "lan1" "link_100 link_1000"
+	ucidef_set_led_netdev "lan-1-white" "LAN1" "mdio-bus:08:white:lan" "lan1" "link_10000"
+	ucidef_set_led_netdev "lan-2-green" "LAN2" "mt7530-0:01:green:lan" "lan2" "link_1000"
+	ucidef_set_led_netdev "lan-2-amber" "LAN2" "mt7530-0:01:amber:lan" "lan2" "link_100 link_10"
+	ucidef_set_led_netdev "lan-3-green" "LAN3" "mt7530-0:02:green:lan" "lan3" "link_1000"
+	ucidef_set_led_netdev "lan-3-amber" "LAN3" "mt7530-0:02:amber:lan" "lan3" "link_100 link_10"
+	ucidef_set_led_netdev "lan-4-green" "LAN4" "mt7530-0:03:green:lan" "lan4" "link_1000"
+	ucidef_set_led_netdev "lan-4-amber" "LAN4" "mt7530-0:03:amber:lan" "lan4" "link_100 link_10"
+	ucidef_set_led_netdev "wan-green" "WAN" "mdio-bus:00:green:wan" "wan" "link_2500 link_5000"
+	ucidef_set_led_netdev "wan-orange" "WAN" "mdio-bus:00:orange:wan" "wan" "link_100 link_1000"
+	ucidef_set_led_netdev "wan-white" "WAN" "mdio-bus:00:white:wan" "wan" "link_10000"
+	;;
 xiaomi,mi-router-wr30u-stock|\
 xiaomi,mi-router-wr30u-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"

@@ -22,7 +22,9 @@ preinit_set_mac_address() {
 		ip link set dev eth1 address "$(macaddr_add $addr 1)"
 		;;
 	smartrg,sdg-8612|\
-	smartrg,sdg-8614)
+	smartrg,sdg-8614|\
+	smartrg,sdg-8733|\
+	smartrg,sdg-8734)
 		addr=$(mmc_get_mac_ascii mfginfo MFG_MAC)
 		lan_addr=$(macaddr_add $addr 1)
 		ip link set dev wan address "$addr"
