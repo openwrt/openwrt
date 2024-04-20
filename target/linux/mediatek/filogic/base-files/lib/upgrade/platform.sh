@@ -241,6 +241,10 @@ platform_copy_config() {
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
 	jdcloud,re-cp-03|\
+	smartrg,sdg-8612|\
+	smartrg,sdg-8614|\
+	smartrg,sdg-8622|\
+	smartrg,sdg-8632|\
 	ubnt,unifi-6-plus)
 		emmc_copy_config
 		;;
