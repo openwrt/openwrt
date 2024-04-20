@@ -38,9 +38,13 @@ jobs:
           fi
           JSON='['
           FIRST=1
-          for TARGET in $TARGETS; do
+          for TARGET_SUBTARGET in $TARGETS; do
+            TARGET=$(echo $TARGET_SUBTARGET | cut -d "/" -f 1)
+            SUBTARGET=$(echo $TARGET_SUBTARGET | cut -d "/" -f 2)
+
+            TUPLE='{"target":"'"$TARGET"'","subtarget":"'"$SUBTARGET"'","os":"ubuntu-latest"}'
             [[ $FIRST -ne 1 ]] && JSON="$JSON"','
-            JSON="$JSON"'"'"${TARGET}"'"'
+            JSON="$JSON""$TUPLE"
             FIRST=0
           done
           JSON="$JSON"']'
@@ -50,14 +54,15 @@ jobs:
           echo "target=$JSON" >> $GITHUB_OUTPUT
 
   build:
-    name: Build ${{ matrix.os }}/${{ matrix.target }}
+    name: Build ${{ matrix.os }}/${{ matrix.target }}/${{ matrix.subtarget }}
     needs: determine_targets
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest]
-        target: ${{fromJson(needs.determine_targets.outputs.target)}}
+        include: ${{fromJson(needs.determine_targets.outputs.target)}}
+
+    container: ghcr.io/openwrt/toolchain:${{ matrix.target }}-${{ matrix.subtarget }}-latest
 
     steps:
       - name: Checkout
@@ -66,44 +71,38 @@ jobs:
           fetch-depth: 0
           path: openwrt
 
-      - name: Setup Ubuntu
-        env:
-          DEBIAN_FRONTEND: noninteractive
+      - name: Fix permission
         run: |
-          sudo apt-get update
-          sudo apt-get -y install libncurses-dev qemu-utils clang-12 \
-            build-essential ccache ecj fastjar file g++ gawk \
-            gettext git java-propose-classpath libelf-dev libncurses5-dev \
-            libncursesw5-dev libssl-dev python3 unzip wget \
-            python3-distutils python3-setuptools python3-dev rsync subversion \
-            swig time xsltproc zlib1g-dev mkisofs
-          echo "WORKPATH=$GITHUB_WORKSPACE/openwrt/" >> "$GITHUB_ENV"
-          cd "$WORKPATH"
-          pwd
+          chown -R buildbot:buildbot openwrt
 
-      - name: Make prereq
+      - name: Prepare prebuilt tools
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
           cd "$WORKPATH"
-          pwd
-          make defconfig
+          mkdir -p staging_dir build_dir
+          ln -s /prebuilt_tools/staging_dir/host staging_dir/host
+          ln -s /prebuilt_tools/build_dir/host build_dir/host
+
+          ./scripts/ext-tools.sh --refresh
 
       - name: Initialization environment
         run: |
-          TARGET=$(echo ${{ matrix.target }} | cut -d "/" -f 1)
-          SUBTARGET=$(echo ${{ matrix.target }} | cut -d "/" -f 2)
-          echo "TARGET=$TARGET" >> "$GITHUB_ENV"
-          echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
+          echo "TARGET=${{ matrix.target }}" >> "$GITHUB_ENV"
+          echo "SUBTARGET=${{ matrix.subtarget }}" >> "$GITHUB_ENV"
 
       - name: Update & Install feeds
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           ./scripts/feeds update -a
           ./scripts/feeds install -a -p base -d m
           ./scripts/feeds install -a
 
       - name: Set configuration
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           curl "https://downloads.openwrt.org/snapshots/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/config.buildinfo" > .config
           for CONFIG in ${{ github.event.inputs.config }}; do
             echo "CONFIG_$CONFIG" >> .config
@@ -126,27 +125,49 @@ jobs:
           echo "${{ secrets.PUBLIC_KEY_PEM }}" > public-key.pem
           echo "${{ secrets.PRIVATE_KEY_PEM }}" > private-key.pem
 
-      - name: Build tools
+      - name: Setup reusable
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
+          echo CONFIG_DEVEL=y >> .config
+          echo CONFIG_AUTOREMOVE=y >> .config
+
+          make defconfig
+
+      - name: Configure external toolchain in container
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
+          ./scripts/ext-toolchain.sh \
+            --toolchain /external-toolchain/$(ls /external-toolchain/ | grep openwrt-toolchain)/toolchain-* \
+            --overwrite-config \
+            --config ${{ env.TARGET }}/${{ env.SUBTARGET }}
+
+      - name: Build tools
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
+        run: |
           make tools/install -j$(nproc) || \
             make tools/install V=s
 
       - name: Build toolchain
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           make toolchain/install -j$(nproc) || \
             make toolchain/install V=s
 
       - name: Build target
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           make target/compile -j$(nproc) IGNORE_ERRORS='n m' || \
             make target/compile IGNORE_ERRORS='n m' V=s
 
       - name: Build packages
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           make package/apk/host/compile -j$(nproc) || \
             make package/apk/host/compile V=s
           make package/compile -j$(nproc) IGNORE_ERRORS='n m' || \
@@ -154,8 +175,8 @@ jobs:
           make package/index V=s
 
       - name: Determine Kernel version
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           export TOPDIR=$(pwd)
           KERNEL_VERSION="$(make --no-print-directory -C target/linux \
             val.LINUX_VERSION val.LINUX_RELEASE val.LINUX_VERMAGIC | \
@@ -163,8 +184,8 @@ jobs:
           echo "KERNEL_VERSION=$KERNEL_VERSION" >> "$GITHUB_ENV"
 
       - name: Determine architecutre
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           echo "ARCH=$(make val.ARCH_PACKAGES)" >> "$GITHUB_ENV"
 
       - name: Upload packages
@@ -181,9 +202,10 @@ jobs:
           DEST_DIR: packages/${{ env.ARCH }}/
 
       - name: Prepare upload of kmods
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         continue-on-error: true
         run: |
-          cd "$WORKPATH"
           KMOD_DIR="bin/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/kmods/${{ env.KERNEL_VERSION }}/"
           mkdir -p "$KMOD_DIR"
           cp bin/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}//packages/kmod-*.apk "$KMOD_DIR"
@@ -204,35 +226,41 @@ jobs:
           DEST_DIR: targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/kmods/${{ env.KERNEL_VERSION }}/
 
       - name: Install packages
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           make package/install -j$(nproc) || \
             make package/install V=s
 
       - name: Build firmware
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           make target/install -j$(nproc) || \
             make target/install V=s
 
       - name: Buildinfo
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           make buildinfo V=s
 
       - name: JSON overview
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           make json_overview_image_info V=s
 
       - name: Checksum
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           make checksum V=s
 
       - name: Clean build
+        shell: su buildbot -c "sh -e {0}"
+        working-directory: openwrt
         run: |
-          cd "$WORKPATH"
           rm -rf staging_dir/ build_dir
 
       - name: Upload target
