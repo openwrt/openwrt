@@ -194,6 +194,7 @@ ifndef DUMP
     endif
   else
     ifeq ($(CONFIG_NATIVE_TOOLCHAIN),)
+      -include $(TOOLCHAIN_DIR)/info.mk
       TARGET_CROSS:=$(call qstrip,$(CONFIG_TOOLCHAIN_PREFIX))
       TOOLCHAIN_ROOT_DIR:=$(call qstrip,$(CONFIG_TOOLCHAIN_ROOT))
       TOOLCHAIN_BIN_DIRS:=$(patsubst ./%,$(TOOLCHAIN_ROOT_DIR)/%,$(call qstrip,$(CONFIG_TOOLCHAIN_BIN_PATH)))
