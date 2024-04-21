@@ -75,9 +75,9 @@ get_config_restart_hash() {
 	export -n "$var=$_hash"
 }
 
-get_config_cid_ifaces() {
+get_interface_csv() {
 	local _ifaces
-	config_get _ifaces 'config' "$2"
+	config_get _ifaces "$2" "$3"
 
 	local _iface _ifnames=""
 	# Set noglob to prevent '*' capturing diverse file names in the for ... in
@@ -109,7 +109,7 @@ write_lldpd_conf()
 	config_get lldp_hostname 'config' 'lldp_hostname' "$(cat /proc/sys/kernel/hostname)"
 
 	local ifnames
-	get_config_cid_ifaces ifnames "interface"
+	get_interface_csv ifnames 'config' "interface"
 
 	local lldp_mgmt_ip
 	config_get lldp_mgmt_ip 'config' 'lldp_mgmt_ip'
@@ -335,7 +335,7 @@ start_service() {
 
     # ChassisID interfaces
 	local ifnames
-	get_config_cid_ifaces ifnames "cid_interface"
+	get_interface_csv ifnames 'config' "cid_interface"
 
 	[ -n "$ifnames" ] && procd_append_param command -C "$ifnames"
 
