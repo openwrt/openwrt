@@ -44,8 +44,8 @@ Signed-off-by: David Bauer <mail@david-bauer.net>
 +
 +static const struct flash_info bohong_parts[] = {
 +	/* BoHong Microelectronics */
-+	{ "bh25q128as", INFO(0x684018, 0, 64 * 1024, 256)
-+		NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++	{ "bh25q128as", INFO(0x684018, 0, 64 * 1024, 256,
++			     SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
 +};
 +
 +const struct spi_nor_manufacturer spi_nor_bohong = {
