@@ -346,6 +346,16 @@ define Device/alfa-network_tube-2hq
 endef
 TARGET_DEVICES += alfa-network_tube-2hq
 
+define Device/alfa-network_wifi-camppro-nano-duo
+  SOC := qca9531
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := WiFi CampPro Nano Duo
+  DEVICE_PACKAGES := kmod-usb2 kmod-mt76x0u -swconfig
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += campnano-duo
+endef
+TARGET_DEVICES += alfa-network_wifi-camppro-nano-duo
+
 define Device/allnet_all-wap02860ac
   $(Device/senao_loader_okli)
   SOC := qca9558
