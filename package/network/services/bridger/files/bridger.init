@@ -16,8 +16,11 @@ get_defaults() {
 	done
 	json_close_array
 
-	config_get_bool bridge_local "$cfg" bridge_local 0
-	json_add_boolean bridge_local "$bridge_local"
+	config_get_bool bridge_local_tx "$cfg" bridge_local_tx 1
+	json_add_boolean bridge_local_tx "$bridge_local_tx"
+
+	config_get_bool bridge_local_rx "$cfg" bridge_local_rx 0
+	json_add_boolean bridge_local_rx "$bridge_local_rx"
 }
 
 reload_service() {
