@@ -213,9 +213,74 @@ static inline void huawei_ap_init(void)
 static inline void huawei_ap_init(void) {}
 #endif
 
+#if defined(CONFIG_BOARD_NEC_WR8750N)
+
+#define AR934X_PLL_SWITCH_CLK_CTRL_REG			0x24
+#define AR934X_PLL_SWITCH_CLK_CTRL_SWITCHCLK_SEL	BIT(0)
+
+static inline void nec_aterm_init(void)
+{
+	unsigned int reg, val;
+
+	printf("NEC Aterm series (AR9344)\n");
+
+	/* set REFCLK=40MHz to switch PLL */
+	reg = KSEG1ADDR(AR71XX_PLL_BASE);
+	val = READREG(reg + AR934X_PLL_SWITCH_CLK_CTRL_REG);
+	val &= ~AR934X_PLL_SWITCH_CLK_CTRL_SWITCHCLK_SEL;
+	WRITEREG(reg + AR934X_PLL_SWITCH_CLK_CTRL_REG, val);
+
+	reg = KSEG1ADDR(AR71XX_RESET_BASE);
+#ifndef LOADADDR
+	/*
+	 * This is for initramfs-factory image.
+	 * When the system was reset by power source or FULL_CHIP_RESET
+	 * and started from the OEM bootloader with a dummy tp data
+	 * (this loader), reset again by timeout of the watchdog timer
+	 * to load an actual OpenWrt initramfs image in firmware block
+	 * in a factory image.
+	 * Note: On the stock firmware, TP block contains a POST function
+	 *       and sub commands of "tp" command.
+	 *
+	 * Behaviors of OEM bootloader:
+	 *
+	 * - reset by watchdog (ex.: rebooting on the stock firmware):
+	 *   called as "SOFT-RESET", boot a firmware without POST
+	 *
+	 * - reset by FULL_CHIP_RESET (or powering on):
+	 *   called as "HARD-RESET", run POST and boot a firmware
+	 */
+	printf("\n## booted with dummy tp (lzma-loader),"
+	       " waiting reset... (count: 0x%08x) ##\n",
+	       READREG(reg + AR71XX_RESET_REG_WDOG));
+	while (1);
+#endif
+	/*
+	 * set maximum watchdog count to avoid reset while
+	 * booting from stock bootloader
+	 */
+	WRITEREG(reg + AR71XX_RESET_REG_WDOG, 0xffffffff);
+
+	/*
+	 * deassert some RESET bits not handled by drivers
+	 * and mainline U-Boot
+	 *
+	 * - ETH_SWITCH(_ANALOG): eth0
+	 * - RTC                : wmac
+	 */
+	val = READREG(reg + AR934X_RESET_REG_RESET_MODULE);
+	val &= ~(AR934X_RESET_ETH_SWITCH | AR934X_RESET_ETH_SWITCH_ANALOG |
+		 AR934X_RESET_RTC);
+	WRITEREG(reg + AR934X_RESET_REG_RESET_MODULE, val);
+}
+#else
+static inline void nec_aterm_init(void) {}
+#endif
+
 void board_init(void)
 {
 	tlwr1043nd_init();
 	mr18_init();
 	huawei_ap_init();
+	nec_aterm_init();
 }
