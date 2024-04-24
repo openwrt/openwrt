@@ -34,7 +34,6 @@ endef
 
 TARGET_CFLAGS += \
 	-I$(STAGING_DIR)/usr/include \
-	-Wno-error=dangling-pointer \
 	-Wno-error=maybe-uninitialized
 
 CMAKE_OPTIONS += \
