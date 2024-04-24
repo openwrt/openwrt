@@ -12,7 +12,8 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
-	nec,wr8750n)
+	nec,wr8750n|\
+	nec,wr9500n)
 		local uboot_mtd=$(find_mtd_part "bootloader")
 
 		# check "U-Boot <year>.<month>" string in the "bootloader" partition

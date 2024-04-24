@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344_nec_aterm.dtsi"
+
+/ {
+	compatible = "nec,wr9500n", "qca,ar9344";
+	model = "NEC Aterm WR9500N";
+};
+
+&keys {
+	switch-converter {
+		label = "cnv";
+		gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		linux,code = <BTN_2>;
+		debounce-interval = <60>;
+	};
+};
+
+&ath9k_leds {
+	led-10 {
+		gpios = <&ath9k 14 GPIO_ACTIVE_LOW>;
+		color = <LED_COLOR_ID_GREEN>;
+		function = "converter";
+	};
+
+	led-11 {
+		gpios = <&ath9k 15 GPIO_ACTIVE_LOW>;
+		color = <LED_COLOR_ID_RED>;
+		function = "converter";
+	};
+};
+
+&partitions {
+	partition@40000 {
+		compatible = "denx,uimage";
+		label = "firmware";
+		reg = <0x040000 0xfc0000>;
+	};
+};
