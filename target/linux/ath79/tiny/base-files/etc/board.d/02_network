@@ -69,6 +69,7 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "4:lan:1"
 		;;
+	nec,wg600hp|\
 	nec,wr8750n|\
 	nec,wr9500n|\
 	tplink,tl-wr941n-v7-cn)
@@ -154,6 +155,7 @@ ath79_setup_macs()
 	ubnt,picostation-m)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
+	nec,wg600hp|\
 	nec,wr8750n|\
 	nec,wr9500n)
 		wan_mac=$(mtd_get_mac_binary config 0xc)

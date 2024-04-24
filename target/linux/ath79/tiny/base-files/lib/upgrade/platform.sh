@@ -12,6 +12,7 @@ platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
+	nec,wg600hp|\
 	nec,wr8750n|\
 	nec,wr9500n)
 		local uboot_mtd=$(find_mtd_part "bootloader")
