@@ -121,6 +121,16 @@ define Device/engenius_enh202-v1
 endef
 TARGET_DEVICES += engenius_enh202-v1
 
+define Device/nec_wg600hp
+  DEVICE_MODEL := Aterm WG600HP
+  SOC := ar9344
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7936k
+  NEC_FW_TYPE := H044
+  $(Device/nec-netbsd-aterm)
+endef
+TARGET_DEVICES += nec_wg600hp
+
 define Device/nec_wr8750n
   SOC := ar9344
   DEVICE_MODEL := Aterm WR8750N
