@@ -9,6 +9,7 @@ let eth_bias = 2.0;
 let debug = 0, do_nothing = 0;
 let disable;
 let cpus;
+let all_cpus;
 
 for (let arg in ARGV) {
 	switch (arg) {
@@ -20,6 +21,9 @@ for (let arg in ARGV) {
 		break;
 	case '0':
 		disable = true;
+		break;
+	case '2':
+		all_cpus = true;
 		break;
 	}
 }
@@ -46,9 +50,19 @@ function set_task_cpu(pid, cpu) {
 		system(`taskset -p -c ${cpu} ${pid}`);
 }
 
+function cpu_mask(cpu)
+{
+	let mask;
+	if (cpu < 0)
+		mask = (1 << length(cpus)) - 1;
+	else
+		mask = (1 << int(cpu));
+	return sprintf("%x", mask);
+}
+
 function set_netdev_cpu(dev, cpu) {
 	let queues = glob(`/sys/class/net/${dev}/queues/rx-*/rps_cpus`);
-	let val = sprintf("%x", (1 << int(cpu)));
+	let val = cpu_mask(cpu);
 	if (disable)
 		val = 0;
 	for (let queue in queues) {
@@ -173,7 +187,12 @@ function assign_dev_cpu(dev) {
 	}
 
 	if (length(dev.netdev) > 0) {
-		let cpu = dev.rx_cpu = get_next_cpu(rx_weight, dev.napi_cpu);
+		let cpu;
+		if (all_cpus)
+			cpu = -1;
+		else
+			cpu = get_next_cpu(rx_weight, dev.napi_cpu);
+		dev.rx_cpu = cpu;
 		for (let netdev in dev.netdev)
 			set_netdev_cpu(netdev, cpu);
 	}
