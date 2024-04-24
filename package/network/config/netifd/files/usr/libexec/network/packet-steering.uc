@@ -10,8 +10,10 @@ let debug = 0, do_nothing = 0;
 let disable;
 let cpus;
 let all_cpus;
+let local_flows = 0;
 
-for (let arg in ARGV) {
+while (length(ARGV) > 0) {
+	let arg = shift(ARGV);
 	switch (arg) {
 	case "-d":
 		debug++;
@@ -24,6 +26,9 @@ for (let arg in ARGV) {
 		break;
 	case '2':
 		all_cpus = true;
+		break;
+	case '-l':
+		local_flows = +shift(ARGV);
 		break;
 	}
 }
@@ -70,6 +75,13 @@ function set_netdev_cpu(dev, cpu) {
 			warn(`echo ${val} > ${queue}\n`);
 		if (!do_nothing)
 			writefile(queue, `${val}`);
+	}
+	queues = glob(`/sys/class/net/${dev}/queues/rx-*/rps_flow_cnt`);
+	for (let queue in queues) {
+		if (debug || do_nothing)
+			warn(`echo ${local_flows} > ${queue}\n`);
+		if (!do_nothing)
+			writefile(queue, `${local_flows}`);
 	}
 }
 
