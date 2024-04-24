@@ -131,6 +131,16 @@ define Device/nec_wr8750n
 endef
 TARGET_DEVICES += nec_wr8750n
 
+define Device/nec_wr9500n
+  SOC := ar9344
+  DEVICE_MODEL := Aterm WR9500N
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 16128k
+  NEC_FW_TYPE := H033
+  $(Device/nec-netbsd-aterm)
+endef
+TARGET_DEVICES += nec_wr9500n
+
 define Device/pqi_air-pen
   SOC := ar9330
   DEVICE_VENDOR := PQI
