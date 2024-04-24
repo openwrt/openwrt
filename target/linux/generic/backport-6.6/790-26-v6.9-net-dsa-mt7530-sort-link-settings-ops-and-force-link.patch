@@ -40,7 +40,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	mutex_unlock(&priv->reg_mutex);
  }
-@@ -2454,6 +2452,12 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -2457,6 +2455,12 @@ mt7530_setup(struct dsa_switch *ds)
  	mt7530_mib_reset(ds);
  
  	for (i = 0; i < MT7530_NUM_PORTS; i++) {
@@ -53,7 +53,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		/* Disable forwarding by default on all ports */
  		mt7530_rmw(priv, MT7530_PCR_P(i), PCR_MATRIX_MASK,
  			   PCR_MATRIX_CLR);
-@@ -2556,6 +2560,12 @@ mt7531_setup_common(struct dsa_switch *d
+@@ -2562,6 +2566,12 @@ mt7531_setup_common(struct dsa_switch *d
  		     UNU_FFP_MASK);
  
  	for (i = 0; i < MT7530_NUM_PORTS; i++) {
