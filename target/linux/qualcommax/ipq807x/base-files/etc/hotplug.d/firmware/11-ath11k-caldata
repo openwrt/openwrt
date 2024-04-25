@@ -26,8 +26,7 @@ case "$FIRMWARE" in
 	xiaomi,ax9000|\
 	yuncore,ax880|\
 	zbtlink,zbt-z800ax|\
-	zte,mf269|\
-	zyxel,nbg7815)
+	zte,mf269)
 		caldata_extract "0:art" 0x1000 0x20000
 		;;
 	linksys,mx4200v1)
@@ -53,6 +52,14 @@ case "$FIRMWARE" in
 	prpl,haze|\
 	spectrum,sax1v1k)
 		caldata_extract_mmc "0:ART" 0x1000 0x20000
+		;;
+	zyxel,nbg7815)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 4) 2
+		ath11k_set_macflag
 		;;
 	esac
 	;;
