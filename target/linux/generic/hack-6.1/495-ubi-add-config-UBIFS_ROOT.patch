@@ -1,0 +1,50 @@
+From: Tony Butler <spudz76@gmail.com>
+Date: Mon, 22 Apr 2024 03:56:21 -0700
+Subject: kernel: ubifs: automount ubifs root only when CONFIG_UBIFS_ROOT is set
+
+Kernel patches in generic/hack for 5.5, 6.1, and 6.6 that add
+`CONFIG_UBIFS_ROOT` option to automount rootfs as ubifs rather than
+using `CONFIG_MTD_ROOTFS_ROOT_DEV` which should only select the
+appropriate MTD partition and not force any filesystem type or mounting.
+
+Signed-off-by: Tony Butler <spudz76@gmail.com>
+---
+ fs/ubifs/Kconfig            | 8 ++++++++
+ init/do_mounts.c            | 4 ++--
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+--- a/fs/ubifs/Kconfig
++++ b/fs/ubifs/Kconfig
+@@ -98,4 +98,12 @@ config UBIFS_FS_AUTHENTICATION
+ 	  sha256, these are not selected automatically since there are many
+ 	  different options.
+ 
++config UBIFS_ROOT
++	bool "UBIFS root file system"
++	depends on UBIFS_FS=y
++	help
++	  Enables root file system support using UBIFS.
++
++	  Most people say N here.
++
+ endif # UBIFS_FS
+--- a/init/do_mounts.c
++++ b/init/do_mounts.c
+@@ -447,7 +447,7 @@ out:
+ 	put_page(page);
+ }
+ 
+-#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
++#ifdef CONFIG_UBIFS_ROOT
+ static int __init mount_ubi_rootfs(void)
+ {
+ 	int flags = MS_SILENT;
+@@ -602,7 +602,7 @@ void __init mount_root(void)
+ 		return;
+ 	}
+ #endif
+-#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
++#ifdef CONFIG_UBIFS_ROOT
+ 	if (!mount_ubi_rootfs())
+ 		return;
+ #endif
