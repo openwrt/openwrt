@@ -19,7 +19,7 @@ PKG_HASH:=bc5a121ffbc94b5171ad5ebe01be42746d50aa797c9549a4639894a16749443b
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
-PKG_CPE_ID:=cpe:/a:matt_johnston:dropbear_ssh_server
+PKG_CPE_ID:=cpe:/a:dropbear_ssh_project:dropbear_ssh
 
 PKG_BUILD_PARALLEL:=1
 PKG_ASLR_PIE_REGULAR:=1
