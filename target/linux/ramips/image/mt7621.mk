@@ -2834,7 +2834,7 @@ define Device/ubnt_edgerouter_common
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
   DEVICE_VENDOR := Ubiquiti
-  IMAGE_SIZE := 256768k
+  IMAGE_SIZE := 259840k
   FILESYSTEMS := squashfs
   KERNEL_SIZE := 6144k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
