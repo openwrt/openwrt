@@ -17,7 +17,7 @@ PKG_HASH:=9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
 
 PKG_LICENSE:=Zlib
 PKG_LICENSE_FILES:=README
-PKG_CPE_ID:=cpe:/a:gnu:zlib
+PKG_CPE_ID:=cpe:/a:zlib:zlib
 
 HOST_BUILD_PARALLEL:=1
 
