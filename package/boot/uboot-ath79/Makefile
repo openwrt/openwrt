@@ -1,0 +1,30 @@
+include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
+
+PKG_VERSION:=2024.04
+PKG_HASH:=18a853fe39fad7ad03a90cc2d4275aeaed6da69735defac3492b80508843dd4a
+
+UBOOT_USE_INTREE_DTC:=1
+
+include $(INCLUDE_DIR)/u-boot.mk
+include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
+
+define U-Boot/Default
+  BUILD_TARGET:=ath79
+  BUILD_SUBTARGET:=generic
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=ap121
+  HIDDEN:=1
+endef
+
+# don't stage files to bindir, let target/linux/ath79/image/*.mk do that
+define Package/u-boot/install
+endef
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(UBOOT_IMAGE)
+endef
+
+$(eval $(call BuildPackage/U-Boot))
