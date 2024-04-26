@@ -1,0 +1,287 @@
+From 80a7688c478a6a372083c29ff0b1826db4dae5b2 Mon Sep 17 00:00:00 2001
+From: INAGAKI Hiroshi <musashino.open@gmail.com>
+Date: Wed, 24 Apr 2024 23:54:46 +0900
+Subject: [PATCH] ath79: add support for NEC AR9344 Aterm series
+
+---
+ arch/mips/dts/Makefile                |  1 +
+ arch/mips/dts/nec,ar9344-aterm.dts    | 35 +++++++++++++++
+ arch/mips/mach-ath79/Kconfig          |  5 +++
+ board/nec/ar9344_aterm/Kconfig        | 30 +++++++++++++
+ board/nec/ar9344_aterm/Makefile       |  3 ++
+ board/nec/ar9344_aterm/ar9344_aterm.c | 59 ++++++++++++++++++++++++++
+ configs/nec_ar9344_aterm_defconfig    | 61 +++++++++++++++++++++++++++
+ include/configs/nec_ar9344_aterm.h    | 28 ++++++++++++
+ 8 files changed, 222 insertions(+)
+ create mode 100644 arch/mips/dts/nec,ar9344-aterm.dts
+ create mode 100644 board/nec/ar9344_aterm/Kconfig
+ create mode 100644 board/nec/ar9344_aterm/Makefile
+ create mode 100644 board/nec/ar9344_aterm/ar9344_aterm.c
+ create mode 100644 configs/nec_ar9344_aterm_defconfig
+ create mode 100644 include/configs/nec_ar9344_aterm.h
+
+--- a/arch/mips/dts/Makefile
++++ b/arch/mips/dts/Makefile
+@@ -24,6 +24,7 @@ dtb-$(CONFIG_BOARD_GARDENA_SMART_GATEWAY
+ dtb-$(CONFIG_BOARD_LINKIT_SMART_7688) += linkit-smart-7688.dtb
+ dtb-$(CONFIG_TARGET_OCTEON_EBB7304) += mrvl,octeon-ebb7304.dtb
+ dtb-$(CONFIG_TARGET_OCTEON_NIC23) += mrvl,octeon-nic23.dtb
++dtb-$(CONFIG_BOARD_NEC_AR9344_ATERM) += nec,ar9344-aterm.dtb
+ dtb-$(CONFIG_BOARD_NETGEAR_CG3100D) += netgear,cg3100d.dtb
+ dtb-$(CONFIG_BOARD_NETGEAR_DGND3700V2) += netgear,dgnd3700v2.dtb
+ dtb-$(CONFIG_BOARD_SAGEM_FAST1704) += sagem,f@st1704.dtb
+--- /dev/null
++++ b/arch/mips/dts/nec,ar9344-aterm.dts
+@@ -0,0 +1,35 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
++ */
++
++/dts-v1/;
++#include "ar934x.dtsi"
++
++/ {
++	model = "NEC Aterm series (AR9344)";
++	compatible = "nec,ar9344-aterm", "qca,ar934x";
++
++	aliases {
++		serial0 = &uart0;
++	};
++
++	chosen {
++		stdout-path = "serial0:9600n8";
++	};
++};
++
++&uart0 {
++	clock-frequency = <40000000>;
++	status = "okay";
++};
++
++&xtal {
++	clock-frequency = <40000000>;
++};
++
++/* delete unused nodes to reduce dtb size */
++/delete-node/ &ehci0;
++/delete-node/ &gmac0;
++/delete-node/ &gmac1;
++/delete-node/ &spi0;
+--- a/arch/mips/mach-ath79/Kconfig
++++ b/arch/mips/mach-ath79/Kconfig
+@@ -58,6 +58,10 @@ config TARGET_AP152
+ 	bool "AP152 Reference Board"
+ 	select SOC_QCA956X
+ 
++config BOARD_NEC_AR9344_ATERM
++	bool "NEC Aterm series Boards (AR9344)"
++	select SOC_AR934X
++
+ config BOARD_TPLINK_WDR4300
+ 	bool "TP-Link WDR4300 Board"
+ 	select SOC_AR934X
+@@ -67,6 +71,7 @@ endchoice
+ source "board/qca/ap121/Kconfig"
+ source "board/qca/ap143/Kconfig"
+ source "board/qca/ap152/Kconfig"
++source "board/nec/ar9344_aterm/Kconfig"
+ source "board/tplink/wdr4300/Kconfig"
+ 
+ endmenu
+--- /dev/null
++++ b/board/nec/ar9344_aterm/Kconfig
+@@ -0,0 +1,30 @@
++if BOARD_NEC_AR9344_ATERM
++
++config SYS_VENDOR
++	default "nec"
++
++config SYS_SOC
++	default "ath79"
++
++config SYS_BOARD
++	default "ar9344_aterm"
++
++config SYS_CONFIG_NAME
++	default "nec_ar9344_aterm"
++
++config TEXT_BASE
++	default 0x9f000000
++
++config SYS_DCACHE_SIZE
++	default 32768
++
++config SYS_DCACHE_LINE_SIZE
++	default 32
++
++config SYS_ICACHE_SIZE
++	default 65536
++
++config SYS_ICACHE_LINE_SIZE
++	default 32
++
++endif
+--- /dev/null
++++ b/board/nec/ar9344_aterm/Makefile
+@@ -0,0 +1,3 @@
++# SPDX-License-Identifier: GPL-2.0+
++
++obj-y	= ar9344_aterm.o
+--- /dev/null
++++ b/board/nec/ar9344_aterm/ar9344_aterm.c
+@@ -0,0 +1,59 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
++ */
++
++#include <init.h>
++#include <asm/io.h>
++#include <asm/addrspace.h>
++#include <asm/types.h>
++#include <mach/ath79.h>
++#include <mach/ar71xx_regs.h>
++#include <mach/ddr.h>
++#include <debug_uart.h>
++
++static void aterm_pinmux_config(void)
++{
++	void __iomem *regs;
++
++	regs = map_physmem(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE,
++			   MAP_NOCACHE);
++
++	/* Disable JTAG */
++	writel(0x2, regs + AR934X_GPIO_REG_FUNC);
++
++	/* Configure default GPIO OE/SET regs */
++	writel(0x3db1f, regs + AR71XX_GPIO_REG_OE);
++	writel(0x142000, regs + AR71XX_GPIO_REG_SET);
++
++	/* Configure pin multiplexing */
++	writel(0x00000000, regs + AR934X_GPIO_REG_OUT_FUNC0);
++	writel(0x0b0a0900, regs + AR934X_GPIO_REG_OUT_FUNC1);
++	writel(0x00180000, regs + AR934X_GPIO_REG_OUT_FUNC2);
++	writel(0x00000000, regs + AR934X_GPIO_REG_OUT_FUNC3);
++	writel(0x2f2e0000, regs + AR934X_GPIO_REG_OUT_FUNC4);
++	writel(0x00000000, regs + AR934X_GPIO_REG_OUT_FUNC5);
++}
++
++#ifdef CONFIG_DEBUG_UART_BOARD_INIT
++void board_debug_uart_init(void)
++{
++	aterm_pinmux_config();
++}
++#endif
++
++#ifdef CONFIG_BOARD_EARLY_INIT_F
++int board_early_init_f(void)
++{
++#ifndef CONFIG_DEBUG_UART_BOARD_INIT
++	aterm_pinmux_config();
++#endif
++
++#if !CONFIG_IS_ENABLED(SKIP_LOWLEVEL_INIT)
++	ar934x_pll_init(560, 480, 240);
++	ar934x_ddr_init(560, 480, 240);
++#endif
++
++	return 0;
++}
++#endif
+--- /dev/null
++++ b/configs/nec_ar9344_aterm_defconfig
+@@ -0,0 +1,61 @@
++CONFIG_MIPS=y
++CONFIG_SYS_MALLOC_LEN=0x40000
++CONFIG_HAS_CUSTOM_SYS_INIT_SP_ADDR=y
++CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0xbd007fff
++CONFIG_ENV_SIZE=0x1000
++CONFIG_DEFAULT_DEVICE_TREE="nec,ar9344-aterm"
++CONFIG_SYS_LOAD_ADDR=0x83000000
++CONFIG_ARCH_ATH79=y
++CONFIG_BOARD_NEC_AR9344_ATERM=y
++CONFIG_SYS_MIPS_TIMER_FREQ=280000000
++CONFIG_MIPS_RELOCATION_TABLE_SIZE=0x4000
++# CONFIG_LOCALVERSION_AUTO is not set
++CONFIG_TIMESTAMP=y
++CONFIG_BOOTDELAY=3
++# CONFIG_ARCH_FIXUP_FDT_MEMORY is not set
++CONFIG_USE_BOOTARGS=y
++CONFIG_BOOTARGS="console=ttyS0,115200"
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="bootm 0x9f040000"
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_BOARD_EARLY_INIT_F=y
++CONFIG_SYS_MALLOC_BOOTPARAMS=y
++# CONFIG_CMDLINE_EDITING is not set
++# CONFIG_AUTO_COMPLETE is not set
++# CONFIG_SYS_LONGHELP is not set
++CONFIG_SYS_MAXARGS=32
++# CONFIG_SYS_XTRACE is not set
++# CONFIG_CMD_BDI is not set
++# CONFIG_CMD_CONSOLE is not set
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++# CONFIG_CMD_ELF is not set
++# CONFIG_CMD_FDT is not set
++# CONFIG_CMD_RUN is not set
++# CONFIG_CMD_XIMG is not set
++# CONFIG_CMD_EXPORTENV is not set
++# CONFIG_CMD_IMPORTENV is not set
++# CONFIG_CMD_EDITENV is not set
++# CONFIG_CMD_SAVEENV is not set
++# CONFIG_CMD_ENV_EXISTS is not set
++# CONFIG_CMD_CRC32 is not set
++# CONFIG_CMD_DM is not set
++# CONFIG_CMD_LOADS is not set
++# CONFIG_CMD_ECHO is not set
++# CONFIG_CMD_ITEST is not set
++# CONFIG_CMD_SOURCE is not set
++# CONFIG_CMD_SETEXPR is not set
++# CONFIG_CMD_SLEEP is not set
++# CONFIG_ISO_PARTITION is not set
++# CONFIG_OF_TAG_MIGRATE is not set
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++# CONFIG_NET is not set
++CONFIG_CLK=y
++# CONFIG_GPIO is not set
++# CONFIG_I2C is not set
++# CONFIG_INPUT is not set
++# CONFIG_POWER is not set
++CONFIG_DM_SERIAL=y
++CONFIG_SYS_NS16550=y
++# CONFIG_GZIP is not set
+--- /dev/null
++++ b/include/configs/nec_ar9344_aterm.h
+@@ -0,0 +1,28 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Copyright (C) 2024 INAGAKI Hiroshi <musashino.open@gmail.com>
++ */
++
++#ifndef __NEC_AR9344_ATERM_H
++#define __NEC_AR9344_ATERM_H
++
++#define CFG_SYS_SDRAM_BASE		0x80000000
++
++#define CFG_SYS_INIT_RAM_ADDR	0xbd000000
++#define CFG_SYS_INIT_RAM_SIZE	0x8000
++
++/*
++ * Serial Port
++ */
++#define CFG_SYS_NS16550_CLK		40000000
++
++/*
++ * Command
++ */
++/* Miscellaneous configurable options */
++
++/*
++ * Diagnostics
++ */
++
++#endif  /* __NEC_AR9344_ATERM_H */

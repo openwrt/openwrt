@@ -18,6 +18,15 @@ define U-Boot/Default
   HIDDEN:=1
 endef
 
+define U-Boot/ar9344_nec_aterm
+  NAME:=NEC Aterm series (AR9344)
+  BUILD_SUBTARGET:= tiny
+  BUILD_DEVICES:=nec_wg600hp nec_wr8750n nec_wr9500n
+  UBOOT_CONFIG:=nec_ar9344_aterm
+endef
+
+UBOOT_TARGETS := ar9344_nec_aterm
+
 # don't stage files to bindir, let target/linux/ath79/image/*.mk do that
 define Package/u-boot/install
 endef
