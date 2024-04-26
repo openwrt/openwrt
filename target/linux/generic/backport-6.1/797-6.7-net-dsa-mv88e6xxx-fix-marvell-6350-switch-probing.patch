@@ -51,7 +51,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int mv88e6352_get_port4_serdes_cmode(struct mv88e6xxx_chip *chip)
  {
  	u16 reg, val;
-@@ -4498,7 +4510,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -4489,7 +4501,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.vtu_loadpurge = mv88e6352_g1_vtu_loadpurge,
  	.stu_getnext = mv88e6352_g1_stu_getnext,
  	.stu_loadpurge = mv88e6352_g1_stu_loadpurge,
@@ -60,7 +60,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct mv88e6xxx_ops mv88e6172_ops = {
-@@ -4599,7 +4611,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -4590,7 +4602,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.vtu_loadpurge = mv88e6352_g1_vtu_loadpurge,
  	.stu_getnext = mv88e6352_g1_stu_getnext,
  	.stu_loadpurge = mv88e6352_g1_stu_loadpurge,
@@ -69,7 +69,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct mv88e6xxx_ops mv88e6176_ops = {
-@@ -5256,7 +5268,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -5247,7 +5259,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.vtu_loadpurge = mv88e6352_g1_vtu_loadpurge,
  	.stu_getnext = mv88e6352_g1_stu_getnext,
  	.stu_loadpurge = mv88e6352_g1_stu_loadpurge,
@@ -78,7 +78,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  };
  
  static const struct mv88e6xxx_ops mv88e6351_ops = {
-@@ -5302,7 +5314,7 @@ static const struct mv88e6xxx_ops mv88e6
+@@ -5293,7 +5305,7 @@ static const struct mv88e6xxx_ops mv88e6
  	.stu_loadpurge = mv88e6352_g1_stu_loadpurge,
  	.avb_ops = &mv88e6352_avb_ops,
  	.ptp_ops = &mv88e6352_ptp_ops,
