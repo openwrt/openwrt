@@ -18,7 +18,7 @@ PKG_HASH:=8df3b66597333dd365762cab2de2ff68e41e3808a04b692e696e0550648eefaa
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
-PKG_CPE_ID:=cpe:/a:json-c_project:json-c
+PKG_CPE_ID:=cpe:/a:json-c:json-c
 
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 
