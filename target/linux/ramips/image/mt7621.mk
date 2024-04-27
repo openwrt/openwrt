@@ -742,7 +742,7 @@ define Device/dlink_dir-8xx-r1
 	check-size | append-metadata
 endef
 
-define Device/dlink_dir-xx60-a1
+define Device/dlink_dir_nand_128m
   $(Device/nand)
   IMAGE_SIZE := 40960k
   DEVICE_VENDOR := D-Link
@@ -763,35 +763,35 @@ endef
 TARGET_DEVICES += dlink_dir-1935-a1
 
 define Device/dlink_dir-1960-a1
-  $(Device/dlink_dir-xx60-a1)
+  $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-1960
   DEVICE_VARIANT := A1
 endef
 TARGET_DEVICES += dlink_dir-1960-a1
 
 define Device/dlink_dir-2640-a1
-  $(Device/dlink_dir-xx60-a1)
+  $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-2640
   DEVICE_VARIANT := A1
 endef
 TARGET_DEVICES += dlink_dir-2640-a1
 
 define Device/dlink_dir-2660-a1
-  $(Device/dlink_dir-xx60-a1)
+  $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-2660
   DEVICE_VARIANT := A1
 endef
 TARGET_DEVICES += dlink_dir-2660-a1
 
 define Device/dlink_dir-3040-a1
-  $(Device/dlink_dir-xx60-a1)
+  $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-3040
   DEVICE_VARIANT := A1
 endef
 TARGET_DEVICES += dlink_dir-3040-a1
 
 define Device/dlink_dir-3060-a1
-  $(Device/dlink_dir-xx60-a1)
+  $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-3060
   DEVICE_VARIANT := A1
 endef
@@ -806,7 +806,7 @@ endef
 TARGET_DEVICES += dlink_dir-853-a1
 
 define Device/dlink_dir-853-a3
-  $(Device/dlink_dir-xx60-a1)
+  $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-853
   DEVICE_VARIANT := A3
   IMAGES += factory.bin
