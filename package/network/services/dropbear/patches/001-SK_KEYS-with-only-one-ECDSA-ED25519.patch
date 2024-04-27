@@ -1,0 +1,27 @@
+From 6d23139c411a6fbea6bf85223104115a7f5b05a9 Mon Sep 17 00:00:00 2001
+From: Marius Dinu <m95d+git@psihoexpert.ro>
+Date: Thu, 2 May 2024 05:06:55 +0300
+Subject: [PATCH] Fix building SK_KEYS with just one of ECDSA or ED25519
+
+Fixes bug #295.
+
+Signed-off-by: Marius Dinu <m95d+git@psihoexpert.ro>
+---
+ src/sysoptions.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/src/sysoptions.h
++++ b/src/sysoptions.h
+@@ -198,10 +198,10 @@
+ #define DROPBEAR_NORMAL_DH ((DROPBEAR_DH_GROUP1) || (DROPBEAR_DH_GROUP14) || (DROPBEAR_DH_GROUP16))
+ 
+ #ifndef DROPBEAR_SK_ECDSA
+-#define DROPBEAR_SK_ECDSA DROPBEAR_SK_KEYS
++#define DROPBEAR_SK_ECDSA ((DROPBEAR_SK_KEYS) && (DROPBEAR_ECDSA))
+ #endif
+ #ifndef DROPBEAR_SK_ED25519
+-#define DROPBEAR_SK_ED25519 DROPBEAR_SK_KEYS
++#define DROPBEAR_SK_ED25519 ((DROPBEAR_SK_KEYS) && (DROPBEAR_ED25519))
+ #endif
+ 
+ /* Dropbear only uses server-sig-algs, only needed if we have rsa-sha256 pubkey auth */
