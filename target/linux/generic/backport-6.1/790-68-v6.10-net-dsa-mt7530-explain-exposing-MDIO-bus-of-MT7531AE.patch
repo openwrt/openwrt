@@ -1,4 +1,4 @@
-From e7a9cc3cc00b40e0bc2bae40bd2ece0e48fa51d5 Mon Sep 17 00:00:00 2001
+From c45832fe783f468aaaace09ae95a30cbf0acf724 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Ar=C4=B1n=C3=A7=20=C3=9CNAL?= <arinc.unal@arinc9.com>
 Date: Mon, 22 Apr 2024 10:15:22 +0300
 Subject: [PATCH 15/15] net: dsa: mt7530: explain exposing MDIO bus of MT7531AE
@@ -19,7 +19,7 @@ Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
 
 --- a/drivers/net/dsa/mt7530.c
 +++ b/drivers/net/dsa/mt7530.c
-@@ -2619,7 +2619,10 @@ mt7531_setup(struct dsa_switch *ds)
+@@ -2626,7 +2626,10 @@ mt7531_setup(struct dsa_switch *ds)
  	if (!priv->p5_sgmii) {
  		mt7531_pll_setup(priv);
  	} else {
