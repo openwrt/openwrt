@@ -14,8 +14,8 @@ service_triggers() {
 }
 
 reload_service() {
-	packet_steering="$(uci get "network.@globals[0].packet_steering")"
-	steering_flows="$(uci get "network.@globals[0].steering_flows")"
+	packet_steering="$(uci -q get "network.@globals[0].packet_steering")"
+	steering_flows="$(uci -q get "network.@globals[0].steering_flows")"
 	[ "$steering_flows" -gt 0 ] && opts="-l $steering_flows"
 	if [ -e "/usr/libexec/platform/packet-steering.sh" ]; then
 		/usr/libexec/platform/packet-steering.sh "$packet_steering"
