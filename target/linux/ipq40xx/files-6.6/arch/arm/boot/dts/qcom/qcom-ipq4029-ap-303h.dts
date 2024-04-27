@@ -362,7 +362,9 @@
 					#size-cells = <1>;
 
 					macaddr_mfginfo_1d: macaddr@1d {
+						compatible = "mac-base";
 						reg = <0x1d 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 
 					macaddr_mfginfo_45: macaddr@45 {
@@ -434,6 +436,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_mfginfo_1d 1>;
 };
 
 &switch {
@@ -462,6 +467,8 @@
 	status = "okay";
 
 	label = "wan";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_mfginfo_1d 0>;
 };
 
 &wifi0 {
