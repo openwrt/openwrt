@@ -1,0 +1,21 @@
+From 0cc39712803ade7b2d4b89c36b143dad72404063 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Sun, 18 Oct 2020 14:37:13 +0200
+Subject: [PATCH] obstack: Fix a clang warning.
+
+* lib/obstack.c (print_and_abort): Mark as __attribute_noreturn__.
+---
+ lib/obstack.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/obstack.c
++++ b/lib/obstack.c
+@@ -326,7 +326,7 @@ int obstack_exit_failure = EXIT_FAILURE;
+ #   include <libio/iolibio.h>
+ #  endif
+ 
+-static _Noreturn void
++static __attribute_noreturn__ void
+ print_and_abort (void)
+ {
+   /* Don't change any of these strings.  Yes, it would be possible to add
