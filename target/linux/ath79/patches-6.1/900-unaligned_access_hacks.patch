@@ -858,16 +858,16 @@ SVN-Revision: 35130
  
 --- a/net/ipv4/tcp_offload.c
 +++ b/net/ipv4/tcp_offload.c
-@@ -60,7 +60,7 @@ static struct sk_buff *__tcpv4_gso_segme
+@@ -62,7 +62,7 @@ static struct sk_buff *__tcpv4_gso_segme
  	th2 = tcp_hdr(seg->next);
  	iph2 = ip_hdr(seg->next);
  
--	if (!(*(u32 *)&th->source ^ *(u32 *)&th2->source) &&
+-	if (!(*(const u32 *)&th->source ^ *(const u32 *)&th2->source) &&
 +	if (!(net_hdr_word(&th->source) ^ net_hdr_word(&th2->source)) &&
  	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr)
  		return segs;
  
-@@ -252,7 +252,7 @@ struct sk_buff *tcp_gro_lookup(struct li
+@@ -254,7 +254,7 @@ struct sk_buff *tcp_gro_lookup(struct li
  			continue;
  
  		th2 = tcp_hdr(p);
@@ -876,7 +876,7 @@ SVN-Revision: 35130
  			NAPI_GRO_CB(p)->same_flow = 0;
  			continue;
  		}
-@@ -318,8 +318,8 @@ struct sk_buff *tcp_gro_receive(struct l
+@@ -320,8 +320,8 @@ struct sk_buff *tcp_gro_receive(struct l
  		  ~(TCP_FLAG_CWR | TCP_FLAG_FIN | TCP_FLAG_PSH));
  	flush |= (__force int)(th->ack_seq ^ th2->ack_seq);
  	for (i = sizeof(*th); i < thlen; i += 4)
