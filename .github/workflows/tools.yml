@@ -16,7 +16,7 @@ permissions:
 jobs:
   build-macos-latest:
     if: github.event_name != 'push'
-    runs-on: macos-latest
+    runs-on: macos-14
 
     steps:
       - name: Checkout
@@ -35,43 +35,26 @@ jobs:
         working-directory: ${{ env.WORKPATH }}/openwrt
         run: |
           brew install \
-            autoconf \
             automake \
             coreutils \
             diffutils \
             findutils \
             gawk \
-            gettext \
             git-extras \
-            gmp \
             gnu-getopt \
             gnu-sed \
-            gnu-tar \
             grep \
-            libidn2 \
-            libunistring \
-            m4 \
-            make \
-            mpfr \
-            ncurses \
-            openssl@1.1 \
-            pcre \
-            pkg-config \
-            quilt \
-            readline \
-            wget \
-            zstd
+            gpatch \
+            make
 
             echo "/bin" >> "$GITHUB_PATH"
             echo "/sbin/Library/Apple/usr/bin" >> "$GITHUB_PATH"
             echo "/usr/bin" >> "$GITHUB_PATH"
-            echo "/usr/local/bin" >> "$GITHUB_PATH"
-            echo "/usr/local/opt/coreutils/bin" >> "$GITHUB_PATH"
-            echo "/usr/local/opt/findutils/libexec/gnubin" >> "$GITHUB_PATH"
-            echo "/usr/local/opt/gettext/bin" >> "$GITHUB_PATH"
-            echo "/usr/local/opt/gnu-getopt/bin" >> "$GITHUB_PATH"
-            echo "/usr/local/opt/make/libexec/gnubin" >> "$GITHUB_PATH"
-            echo "/usr/local/opt/make/libexec/gnubin" >> "$GITHUB_PATH"
+            echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+            echo "/opt/homebrew/opt/coreutils/bin" >> "$GITHUB_PATH"
+            echo "/opt/homebrew/opt/findutils/libexec/gnubin" >> "$GITHUB_PATH"
+            echo "/opt/homebrew/opt/gnu-getopt/bin" >> "$GITHUB_PATH"
+            echo "/opt/homebrew/opt/make/libexec/gnubin" >> "$GITHUB_PATH"
             echo "/usr/sbin" >> "$GITHUB_PATH"
 
       - name: Make prereq
