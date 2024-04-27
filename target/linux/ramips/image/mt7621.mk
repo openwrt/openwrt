@@ -769,6 +769,16 @@ define Device/dlink_dir-1960-a1
 endef
 TARGET_DEVICES += dlink_dir-1960-a1
 
+define Device/dlink_dir-2150-a1
+  $(Device/dlink_dir_nand_128m)
+  DEVICE_MODEL := DIR-2150
+  DEVICE_VARIANT := A1
+  DEVICE_PACKAGES += kmod-mt7603 -kmod-usb3 -kmod-usb-ledtrig-usbport
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(IMAGE/recovery.bin) | dlink-sge-image $$(DEVICE_MODEL)
+endef
+TARGET_DEVICES += dlink_dir-2150-a1
+
 define Device/dlink_dir-2640-a1
   $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-2640
