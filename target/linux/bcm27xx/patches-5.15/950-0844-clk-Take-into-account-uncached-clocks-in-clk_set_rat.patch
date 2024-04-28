@@ -22,7 +22,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -2379,6 +2379,10 @@ static int clk_set_rate_range_nolock(str
+@@ -2469,6 +2469,10 @@ static int clk_set_rate_range_nolock(str
  		goto out;
  	}
  
@@ -33,7 +33,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	/*
  	 * Since the boundaries have been changed, let's give the
  	 * opportunity to the provider to adjust the clock rate based on
-@@ -2396,7 +2400,7 @@ static int clk_set_rate_range_nolock(str
+@@ -2486,7 +2490,7 @@ static int clk_set_rate_range_nolock(str
  	 * - the determine_rate() callback does not really check for
  	 *   this corner case when determining the rate
  	 */

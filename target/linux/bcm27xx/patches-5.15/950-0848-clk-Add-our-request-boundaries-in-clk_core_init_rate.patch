@@ -26,7 +26,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -1394,6 +1394,8 @@ static void clk_core_init_rate_req(struc
+@@ -1484,6 +1484,8 @@ static void clk_core_init_rate_req(struc
  	if (WARN_ON(!core || !req))
  		return;
  
@@ -35,7 +35,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	parent = core->parent;
  	if (parent) {
  		req->best_parent_hw = parent->hw;
-@@ -1468,7 +1470,6 @@ unsigned long clk_hw_round_rate(struct c
+@@ -1558,7 +1560,6 @@ unsigned long clk_hw_round_rate(struct c
  	int ret;
  	struct clk_rate_request req;
  
@@ -43,7 +43,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	req.rate = rate;
  
  	ret = clk_core_round_rate_nolock(hw->core, &req);
-@@ -1501,7 +1502,6 @@ long clk_round_rate(struct clk *clk, uns
+@@ -1591,7 +1592,6 @@ long clk_round_rate(struct clk *clk, uns
  	if (clk->exclusive_count)
  		clk_core_rate_unprotect(clk->core);
  
@@ -51,7 +51,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	req.rate = rate;
  
  	ret = clk_core_round_rate_nolock(clk->core, &req);
-@@ -2008,8 +2008,6 @@ static struct clk_core *clk_calc_new_rat
+@@ -2098,8 +2098,6 @@ static struct clk_core *clk_calc_new_rat
  		struct clk_rate_request req;
  
  		req.rate = rate;

@@ -25,7 +25,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -2401,6 +2401,12 @@ static int clk_set_rate_range_nolock(str
+@@ -2491,6 +2491,12 @@ static int clk_set_rate_range_nolock(str
  	if (clk->core->flags & CLK_GET_RATE_NOCACHE)
  		rate = clk_core_get_rate_recalc(clk->core);
  

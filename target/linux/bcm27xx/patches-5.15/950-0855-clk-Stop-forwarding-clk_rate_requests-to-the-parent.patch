@@ -35,7 +35,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -556,6 +556,10 @@ static bool mux_is_better_rate(unsigned
+@@ -644,6 +644,10 @@ static bool mux_is_better_rate(unsigned
  	return now <= rate && now > best;
  }
  
@@ -46,7 +46,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  static int clk_core_round_rate_nolock(struct clk_core *core,
  				      struct clk_rate_request *req);
  
-@@ -579,6 +583,24 @@ static bool clk_core_has_parent(struct c
+@@ -667,6 +671,24 @@ static bool clk_core_has_parent(struct c
  	return false;
  }
  
@@ -71,7 +71,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  int clk_mux_determine_rate_flags(struct clk_hw *hw,
  				 struct clk_rate_request *req,
  				 unsigned long flags)
-@@ -586,17 +608,19 @@ int clk_mux_determine_rate_flags(struct
+@@ -674,17 +696,19 @@ int clk_mux_determine_rate_flags(struct
  	struct clk_core *core = hw->core, *parent, *best_parent = NULL;
  	int i, num_parents, ret;
  	unsigned long best = 0;
@@ -92,7 +92,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  			ret = clk_core_round_rate_nolock(parent, &parent_req);
  			if (ret)
  				return ret;
-@@ -614,23 +638,29 @@ int clk_mux_determine_rate_flags(struct
+@@ -702,23 +726,29 @@ int clk_mux_determine_rate_flags(struct
  	/* find the parent that can provide the fastest rate <= rate */
  	num_parents = core->num_parents;
  	for (i = 0; i < num_parents; i++) {
@@ -126,7 +126,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		}
  	}
  
-@@ -1463,6 +1493,8 @@ static bool clk_core_can_round(struct cl
+@@ -1553,6 +1583,8 @@ static bool clk_core_can_round(struct cl
  static int clk_core_round_rate_nolock(struct clk_core *core,
  				      struct clk_rate_request *req)
  {
@@ -135,7 +135,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  	lockdep_assert_held(&prepare_lock);
  
  	if (!core) {
-@@ -1472,8 +1504,20 @@ static int clk_core_round_rate_nolock(st
+@@ -1562,8 +1594,20 @@ static int clk_core_round_rate_nolock(st
  
  	if (clk_core_can_round(core))
  		return clk_core_determine_round_nolock(core, req);
