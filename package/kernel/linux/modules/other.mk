@@ -266,6 +266,70 @@ endef
 $(eval $(call KernelPackage,mlx_wdt))
 
 
+define KernelPackage/mlxreg
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Mellanox platform register access
+  DEPENDS:=@TARGET_x86 +kmod-i2c-mux-mlxcpld
+  KCONFIG:= \
+	CONFIG_MELLANOX_PLATFORM=y \
+	CONFIG_MLX_PLATFORM \
+	CONFIG_MLXREG_HOTPLUG \
+	CONFIG_MLXREG_IO \
+	CONFIG_SENSORS_MLXREG_FAN \
+	CONFIG_LEDS_MLXREG
+  FILES:= \
+	$(LINUX_DIR)/drivers/platform/x86/mlx-platform.ko \
+	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-hotplug.ko \
+	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-io.ko \
+	$(LINUX_DIR)/drivers/hwmon/mlxreg-fan.ko \
+	$(LINUX_DIR)/drivers/leds/leds-mlxreg.ko
+  AUTOLOAD:=$(call AutoProbe,mlx-platform mlxreg-hotplug mlxreg-io mlxreg-fan leds-mlxreg)
+endef
+
+define KernelPackage/mlxreg/description
+  Allows access to Mellanox programmable device register
+  space through sysfs interface. The sets of registers for sysfs access
+  are defined per system type bases and include the registers related
+  to system resets operation, system reset causes monitoring and some
+  kinds of mux selection.
+endef
+
+$(eval $(call KernelPackage,mlxreg))
+
+
+define KernelPackage/mlxreg-lc
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Mellanox line card platform support
+  DEPENDS:=kmod-mlxreg +kmod-regmap-i2c
+  KCONFIG:=CONFIG_MLXREG_LC
+  FILES:=$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-lc.ko
+  AUTOLOAD:=$(call AutoProbe,mlxreg-lc)
+endef
+
+define KernelPackage/mlxreg-lc/description
+  Provides support for the Mellanox MSN4800-XX line cards,
+  which are the part of MSN4800 Ethernet modular switch systems.
+endef
+
+$(eval $(call KernelPackage,mlxreg-lc))
+
+
+define KernelPackage/mlxreg-sn2201
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Nvidia SN2201 platform support
+  DEPENDS:=kmod-mlxreg +kmod-regmap-i2c
+  KCONFIG:=CONFIG_NVSW_SN2201
+  FILES:=$(LINUX_DIR)/drivers/platform/mellanox/nvsw-sn2201.ko
+  AUTOLOAD:=$(call AutoProbe,nvsw-sn2201)
+endef
+
+define KernelPackage/mlxreg-sn2201/description
+  Provides support for the Nvidia SN2201 platform.
+endef
+
+$(eval $(call KernelPackage,mlxreg-sn2201))
+
+
 define KernelPackage/pinctrl-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
