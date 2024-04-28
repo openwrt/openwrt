@@ -119,7 +119,8 @@ mediatek_setup_macs()
 	local label_mac=""
 
 	case $board in
-	bananapi,bpi-r3)
+	bananapi,bpi-r3|\
+	bananapi,bpi-r3-mini)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
 		;;
 	cmcc,rax3000m)
