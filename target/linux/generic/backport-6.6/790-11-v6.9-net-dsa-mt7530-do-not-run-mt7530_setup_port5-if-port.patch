@@ -40,7 +40,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	default:
  		dev_err(ds->dev, "Unsupported p5_intf_sel %d\n",
  			priv->p5_intf_sel);
-@@ -2528,8 +2525,6 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -2534,8 +2531,6 @@ mt7530_setup(struct dsa_switch *ds)
  		 * Set priv->p5_intf_sel to the appropriate value if PHY muxing
  		 * is detected.
  		 */
@@ -49,7 +49,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		for_each_child_of_node(dn, mac_np) {
  			if (!of_device_is_compatible(mac_np,
  						     "mediatek,eth-mac"))
-@@ -2561,7 +2556,9 @@ mt7530_setup(struct dsa_switch *ds)
+@@ -2567,7 +2562,9 @@ mt7530_setup(struct dsa_switch *ds)
  			break;
  		}
  
