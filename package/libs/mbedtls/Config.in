@@ -36,10 +36,6 @@ config MBEDTLS_RIPEMD160_C
 	bool "MBEDTLS_RIPEMD160_C"
 	default n
 
-config MBEDTLS_XTEA_C
-	bool "MBEDTLS_XTEA_C"
-	default n
-
 config MBEDTLS_RSA_NO_CRT
 	bool "MBEDTLS_RSA_NO_CRT"
 	default y
@@ -140,10 +136,6 @@ config MBEDTLS_ECP_DP_CURVE448_ENABLED
 
 comment "Build Options - unselect features to reduce binary size"
 
-config MBEDTLS_CERTS_C
-	bool "MBEDTLS_CERTS_C"
-	default n
-
 config MBEDTLS_CIPHER_MODE_OFB
 	bool "MBEDTLS_CIPHER_MODE_OFB"
 	default n
@@ -166,10 +158,6 @@ config MBEDTLS_PLATFORM_C
 
 config MBEDTLS_SELF_TEST
 	bool "MBEDTLS_SELF_TEST"
-	default n
-
-config MBEDTLS_SSL_TRUNCATED_HMAC
-	bool "MBEDTLS_SSL_TRUNCATED_HMAC"
 	default n
 
 config MBEDTLS_THREADING_C
