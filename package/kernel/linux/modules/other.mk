@@ -244,6 +244,28 @@ endef
 $(eval $(call KernelPackage,lkdtm))
 
 
+define KernelPackage/mlx_wdt
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Mellanox Watchdog
+  DEPENDS:=@TARGET_x86 +kmod-regmap-core
+  KCONFIG:= \
+	CONFIG_MELLANOX_PLATFORM=y \
+	CONFIG_MLX_WDT
+  FILES:=$(LINUX_DIR)/drivers/watchdog/mlx_wdt.ko
+  AUTOLOAD:=$(call AutoProbe,mlx_wdt)
+endef
+
+define KernelPackage/mlx_wdt/description
+  This is the driver for the hardware watchdog on Mellanox systems.
+  This driver can be used together with the watchdog daemon.
+  It can also watch your kernel to make sure it doesn't freeze,
+  and if it does, it reboots your system after a certain amount of
+  time.
+endef
+
+$(eval $(call KernelPackage,mlx_wdt))
+
+
 define KernelPackage/pinctrl-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
