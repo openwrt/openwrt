@@ -110,7 +110,7 @@ static int gpio_latch_probe(struct platform_device *pdev)
 	struct gpio_latch_chip *glc;
 	struct gpio_chip *gc;
 	struct device *dev = &pdev->dev;
-	struct device_node *of_node = dev->of_node;
+	struct fwnode_handle *fwnode = dev->fwnode;
 	int i, n;
 
 	glc = devm_kzalloc(dev, sizeof(*glc), GFP_KERNEL);
@@ -158,7 +158,7 @@ static int gpio_latch_probe(struct platform_device *pdev)
 	gc->get = gpio_latch_get;
 	gc->set = gpio_latch_set;
 	gc->direction_output = gpio_latch_direction_output;
-	gc->of_node = of_node;
+	gc->fwnode = fwnode;
 
 	platform_set_drvdata(pdev, glc);
 
