@@ -159,7 +159,7 @@ define Download/cryptopp
   PROTO:=git
   URL:=https://github.com/weidai11/cryptopp.git
   SOURCE_VERSION:=4d0cad5401d1a2c998b314bc89288c9620d3021d
-  MIRROR_HASH:=74ec9e48ee04b9f2d9a1d8c4f2392ed0ab52780d7af0f70405d7bbb23d1504fa
+  MIRROR_HASH:=6c53c8b4dfa07df0c5915a90c20f70c64d150b652cf5ac52e2eae08c5a9cc7cd
   SUBDIR:=$(CRYPTOPP_NAME)
 endef
 
