@@ -1,0 +1,34 @@
+From f63f87cd5b45c3779293e6062c6b26bdf57e851d Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sat, 9 Dec 2023 22:44:57 +0100
+Subject: [PATCH] wifi: mt76: mt7996: fix shift overflow warning on 32 bit
+ systems
+
+Fix additional shift overflow warning on 32 bit systems for mt7996 mac.c
+source.
+
+Fixes: 95c14207d2a9 ("wifi: mt76: mt7996: set DMA mask to 36 bits for boards with more than 4GB of RAM")
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ mt7996/mac.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -942,9 +942,13 @@ int mt7996_tx_prepare_skb(struct mt76_de
+ 
+ 	txp = (struct mt76_connac_txp_common *)(txwi + MT_TXD_SIZE);
+ 	for (i = 0; i < nbuf; i++) {
+-		u16 len = FIELD_PREP(MT_TXP_BUF_LEN, tx_info->buf[i + 1].len) |
+-			  FIELD_PREP(MT_TXP_DMA_ADDR_H,
+-				     tx_info->buf[i + 1].addr >> 32);
++		u16 len;
++
++		len = FIELD_PREP(MT_TXP_BUF_LEN, tx_info->buf[i + 1].len);
++#ifdef CONFIG_ARCH_DMA_ADDR_T_64BIT
++		len |= FIELD_PREP(MT_TXP_DMA_ADDR_H,
++				  tx_info->buf[i + 1].addr >> 32);
++#endif
+ 
+ 		txp->fw.buf[i] = cpu_to_le32(tx_info->buf[i + 1].addr);
+ 		txp->fw.len[i] = cpu_to_le16(len);

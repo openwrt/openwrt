@@ -1,0 +1,31 @@
+From bebd9cffc2aeb2cecb40aadbb8c6eab3bdf7971b Mon Sep 17 00:00:00 2001
+From: Ming Yen Hsieh <mingyen.hsieh@mediatek.com>
+Date: Mon, 30 Oct 2023 15:17:34 +0800
+Subject: [PATCH] wifi: mt76: mt7921: fix 6GHz disabled by the missing default
+ CLC config
+
+No matter CLC is enabled or disabled, the driver should initialize
+the default value 0xff for channel configuration of CLC. Otherwise,
+the zero value would disable channels.
+
+Reported-and-tested-by: Ben Greear <greearb@candelatech.com>
+Closes: https://lore.kernel.org/all/2fb78387-d226-3193-8ca7-90040561b9ad@candelatech.com/
+Fixes: 09382d8f8641 ("wifi: mt76: mt7921: update the channel usage when the regd domain changed")
+Signed-off-by: Ming Yen Hsieh <mingyen.hsieh@mediatek.com>
+Signed-off-by: Deren Wu <deren.wu@mediatek.com>
+Signed-off-by: Kalle Valo <kvalo@kernel.org>
+Link: https://lore.kernel.org/r/5a976ddf1f636b5cb809373501d3cfdc6d8de3e4.1698648737.git.deren.wu@mediatek.com
+---
+ mt7921/mcu.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/mt7921/mcu.c
++++ b/mt7921/mcu.c
+@@ -375,6 +375,7 @@ static int mt7921_load_clc(struct mt792x
+ 	int ret, i, len, offset = 0;
+ 	u8 *clc_base = NULL, hw_encap = 0;
+ 
++	dev->phy.clc_chan_conf = 0xff;
+ 	if (mt7921_disable_clc ||
+ 	    mt76_is_usb(&dev->mt76))
+ 		return 0;
