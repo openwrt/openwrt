@@ -1,16 +1,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mt76
-PKG_RELEASE=2
+PKG_RELEASE=1
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
 PKG_SOURCE_URL:=https://github.com/openwrt/mt76
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2023-09-11
-PKG_SOURCE_VERSION:=f1e1e67d97d1e9a8bb01b59ab20c45ebc985a958
-PKG_MIRROR_HASH:=41fde79de5bec3aaafdb64658475a1fa99bc483b8122e6aad9b2aa8aa8edfce6
+PKG_SOURCE_DATE:=2023-09-18
+PKG_SOURCE_VERSION:=2afc7285f75dca5a0583fd917285bf33f1429cc6
+PKG_MIRROR_HASH:=2c9556b298246277ac2d65415e4449f98e6d5fdb99e0d0a92262f162df772bbc
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_USE_NINJA:=0
@@ -315,6 +315,38 @@ define KernelPackage/mt7921e
   AUTOLOAD:=$(call AutoProbe,mt7921e)
 endef
 
+define KernelPackage/mt7996e
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7996E wireless driver
+  DEPENDS+=@PCI_SUPPORT +kmod-mt76-connac
+  FILES:= $(PKG_BUILD_DIR)/mt7996/mt7996e.ko
+  AUTOLOAD:=$(call AutoProbe,mt7996e)
+endef
+
+define KernelPackage/mt7925-common
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7925 wireless driver common code
+  HIDDEN:=1
+  DEPENDS+=+kmod-mt792x-common +@DRIVER_11AX_SUPPORT +kmod-hwmon-core
+  FILES:= $(PKG_BUILD_DIR)/mt7925/mt7925-common.ko
+endef
+
+define KernelPackage/mt7925u
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7925U wireless driver
+  DEPENDS+=+kmod-mt792x-usb +kmod-mt7925-common
+  FILES:= $(PKG_BUILD_DIR)/mt7925/mt7925u.ko
+  AUTOLOAD:=$(call AutoProbe,mt7921u)
+endef
+
+define KernelPackage/mt7925e
+  $(KernelPackage/mt76-default)
+  TITLE:=MediaTek MT7925e wireless driver
+  DEPENDS+=@PCI_SUPPORT +kmod-mt7925-common
+  FILES:= $(PKG_BUILD_DIR)/mt7925/mt7925e.ko
+  AUTOLOAD:=$(call AutoProbe,mt7921e)
+endef
+
 define Package/mt76-test
   SECTION:=devel
   CATEGORY:=Development
@@ -422,6 +454,18 @@ ifdef CONFIG_PACKAGE_kmod-mt7921s
 endif
 ifdef CONFIG_PACKAGE_kmod-mt7921e
   PKG_MAKE_FLAGS += CONFIG_MT7921E=m
+endif
+ifdef CONFIG_PACKAGE_kmod-mt7996e
+  PKG_MAKE_FLAGS += CONFIG_MT7996E=m
+endif
+ifdef CONFIG_PACKAGE_kmod-mt7925-common
+  PKG_MAKE_FLAGS += CONFIG_MT7925_COMMON=m
+endif
+ifdef CONFIG_PACKAGE_kmod-mt7925u
+  PKG_MAKE_FLAGS += CONFIG_MT7925U=m
+endif
+ifdef CONFIG_PACKAGE_kmod-mt7925e
+  PKG_MAKE_FLAGS += CONFIG_MT7925E=m
 endif
 
 define Build/Compile
@@ -603,8 +647,12 @@ $(eval $(call KernelPackage,mt7922-firmware))
 $(eval $(call KernelPackage,mt792x-common))
 $(eval $(call KernelPackage,mt792x-usb))
 $(eval $(call KernelPackage,mt7921-common))
+$(eval $(call KernelPackage,mt7925-common))
 $(eval $(call KernelPackage,mt7921u))
 $(eval $(call KernelPackage,mt7921s))
 $(eval $(call KernelPackage,mt7921e))
+$(eval $(call KernelPackage,mt7925u))
+$(eval $(call KernelPackage,mt7925e))
+$(eval $(call KernelPackage,mt7996e))
 $(eval $(call KernelPackage,mt76))
 $(eval $(call BuildPackage,mt76-test))
