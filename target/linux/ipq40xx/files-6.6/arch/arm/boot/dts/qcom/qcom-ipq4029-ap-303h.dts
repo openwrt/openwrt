@@ -71,25 +71,6 @@
 		watchdog@b017000 {
 			status = "okay";
 		};
-
-		i2c_0: i2c@78b7000 {
-			pinctrl-0 = <&i2c_0_pins>;
-			pinctrl-names = "default";
-			status = "okay";
-
-			tpm@29 {
-				/* No Driver */
-				compatible = "atmel,at97sc3203";
-				reg = <0x29>;
-				read-only;
-			};
-
-			power-monitor@40 {
-				/* No driver */
-				compatible = "isl,isl28022";
-				reg = <0x40>;
-			};
-		};
 	};
 
 	leds {
@@ -214,7 +195,7 @@
 			pins = "gpio20", "gpio21";
 			function = "blsp_i2c0";
 			drive-strength = <4>;
-			bias-disable;
+			bias-pull-up;
 		};
 	};
 
@@ -239,6 +220,28 @@
 		gpios = <23 GPIO_ACTIVE_HIGH>;
 		gpio-hog;
 		output-high;
+	};
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <400000>;
+
+	tpm@29 {
+		/* No Driver */
+		compatible = "atmel,at97sc3203";
+		reg = <0x29>;
+		read-only;
+	};
+
+	power-monitor@40 {
+		/* No driver */
+		/* Device also replies on address 0x3f, see   */
+		/* ISL28022 datasheet, "Broadcast Addressing" */
+		compatible = "isl,isl28022";
+		reg = <0x40>;
 	};
 };
 
