@@ -137,6 +137,11 @@ static int mt7988_2p5ge_phy_config_init(struct phy_device *phydev)
 	}
 
 	/* Setup LED */
+
+	/* Set polarity of led0 to active-high for BPI-R4 */
+	phy_set_bits_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED0_ON_CTRL,
+			 MTK_PHY_LED0_POLARITY);
+
 	phy_set_bits_mmd(phydev, MDIO_MMD_VEND2, MTK_PHY_LED0_ON_CTRL,
 			 MTK_PHY_LED0_ON_LINK10 |
 			 MTK_PHY_LED0_ON_LINK100 |

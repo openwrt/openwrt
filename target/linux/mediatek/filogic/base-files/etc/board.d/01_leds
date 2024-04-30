@@ -20,7 +20,8 @@ bananapi,bpi-r3-mini)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan-1" "phy0-ap0"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan-2" "phy1-ap0"
 	;;
-bananapi,bpi-r4)
+bananapi,bpi-r4|\
+bananapi,bpi-r4-poe)
 	ucidef_set_led_netdev "wan" "wan" "mt7530-0:00:green:lan" "wan" "link tx rx"
 	ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:01:green:lan" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:02:green:lan" "lan2" "link tx rx"
