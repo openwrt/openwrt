@@ -346,12 +346,11 @@
 +}
 --- a/libdwfl/libdwflP.h
 +++ b/libdwfl/libdwflP.h
-@@ -31,6 +31,8 @@
+@@ -31,6 +31,7 @@
  
  #include <libdwfl.h>
  #include <libebl.h>
 +#include <libeu.h>
-+#include <dirname.h>
  #include <assert.h>
  #include <dirent.h>
  #include <errno.h>
@@ -366,17 +365,18 @@
 +#endif
 --- a/libdw/libdwP.h
 +++ b/libdw/libdwP.h
-@@ -32,8 +32,10 @@
+@@ -32,10 +32,10 @@
  #include <stdbool.h>
  #include <pthread.h>
  
 +#include <libeu.h>
  #include <libdw.h>
  #include <dwarf.h>
-+#include <dirname.h>
  
- 
+-
  /* Known location expressions already decoded.  */
+ struct loc_s
+ {
 --- a/libdw/Makefile.am
 +++ b/libdw/Makefile.am
 @@ -34,14 +34,12 @@ endif
