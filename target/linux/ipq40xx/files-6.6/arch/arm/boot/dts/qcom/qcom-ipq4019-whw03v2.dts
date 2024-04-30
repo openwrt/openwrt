@@ -17,8 +17,7 @@
 		led-upgrade = &led_red;
 	};
 
-	// The arguments rootfstype and ro are needed
-	// to override the default bootargs
+	// Default bootargs include rootfstype=ext4 and need to be overriden.
 	chosen {
 		bootargs-append = " root=/dev/ubiblock0_0 rootfstype=squashfs ro";
 		stdout-path = &blsp1_uart1;
@@ -80,33 +79,27 @@
 	};
 
 	i2c_0_pins: i2c-0-pinmux {
-		mux {
-			function = "blsp_i2c0";
-			pins = "gpio20", "gpio21";
-			bias-disable;
-		};
+		pins = "gpio20", "gpio21";
+		function = "blsp_i2c0";
+		bias-disable;
 	};
 
 	serial_0_pins: serial0-pinmux {
-		mux {
-			pins = "gpio16", "gpio17";
-			function = "blsp_uart0";
-			bias-disable;
-		};
+		pins = "gpio16", "gpio17";
+		function = "blsp_uart0";
+		bias-disable;
 	};
 
 	serial_1_pins: serial1-pinmux {
-		mux {
-			pins = "gpio8", "gpio9", "gpio10", "gpio11";
-			function = "blsp_uart1";
-			bias-disable;
-		};
+		pins = "gpio8", "gpio9", "gpio10", "gpio11";
+		function = "blsp_uart1";
+		bias-disable;
 	};
 
 	spi_0_pins: spi-0-pinmux {
 		mux {
-			function = "blsp_spi0";
 			pins = "gpio13", "gpio14", "gpio15";
+			function = "blsp_spi0";
 			drive-strength = <12>;
 			bias-disable;
 		};
@@ -121,8 +114,8 @@
 
 	spi_1_pins: spi-1-pinmux {
 		mux-1 {
+			pins = "gpio44", "gpio46", "gpio47";
 			function = "blsp_spi1";
-			pins = "gpio44", "gpio46","gpio47";
 			bias-disable;
 		};
 
@@ -141,13 +134,11 @@
 	};
 
 	wifi_0_pins: wifi0-pinmux {
-		btcoexist {
-			bias-pull-up;
-			drive-strength = <6>;
-			function = "gpio";
-			output-high;
-			pins = "gpio52";
-		};
+		pins = "gpio52";
+		function = "gpio";
+		drive-strength = <6>;
+		bias-pull-up;
+		output-high;
 	};
 
 	zigbee-0 {
@@ -485,7 +476,7 @@
 	status = "okay";
 
 	qcom,coexist-support = <1>;
-	qcom,coexist-gpio-pin = <0x34>;
+	qcom,coexist-gpio-pin = <52>;
 
 	qcom,ath10k-calibration-variant = "linksys-whw03v2";
 
