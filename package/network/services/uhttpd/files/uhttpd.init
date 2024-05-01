@@ -56,7 +56,7 @@ generate_keys() {
 	[ -x "$PX5G_BIN" ] && GENKEY_CMD="$PX5G_BIN selfsigned -der"
 	[ -n "$GENKEY_CMD" ] && {
 		$GENKEY_CMD \
-			-days ${days:-730} -newkey ${KEY_OPTS} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
+			-days ${days:-397} -newkey ${KEY_OPTS} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
 			-subj /C="${country:-ZZ}"/ST="${state:-Somewhere}"/L="${location:-Unknown}"/O="${organization:-OpenWrt$UNIQUEID}"/CN="${commonname:-OpenWrt}" \
 			-addext extendedKeyUsage=serverAuth -addext subjectAltName=DNS:"${commonname:-OpenWrt}"
 		sync
