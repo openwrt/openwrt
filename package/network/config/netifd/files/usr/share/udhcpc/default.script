@@ -1,6 +1,9 @@
 #!/bin/sh
 [ -z "$1" ] && echo "Error: should be run by udhcpc" && exit 1
 
+# user rules
+[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
+
 set_classless_routes() {
 	local max=128
 	local type
@@ -50,8 +53,5 @@ case "$1" in
 		setup_interface ifup
 	;;
 esac
-
-# user rules
-[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
 
 exit 0
