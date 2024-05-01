@@ -17,6 +17,8 @@ PKG_CPE_ID:=cpe:/a:elfutils_project:elfutils
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
+PKG_PROGRAMS:=elflint findtextrel elfcmp unstrip stack elfcompress elfclassify srcfiles
+
 PKG_SUBDIRS := \
 	libgnu \
 	config \
@@ -27,7 +29,8 @@ PKG_SUBDIRS := \
 	libebl \
 	libdwelf \
 	libdwfl \
-	libdw
+	libdw \
+	src
 
 PKG_GNULIB_BASE:=libgnu
 
@@ -41,6 +44,7 @@ PKG_GNULIB_ARGS = \
 
 PKG_GNULIB_MODS = \
 	argp \
+	fnmatch-gnu \
 	fts \
 	obstack \
 	progname \
@@ -48,6 +52,10 @@ PKG_GNULIB_MODS = \
 	tsearch
 
 include $(INCLUDE_DIR)/host-build.mk
+
+HOST_MAKE_FLAGS += \
+	AM_LDFLAGS='$$$$(STACK_USAGE_NO_ERROR)' \
+	bin_PROGRAMS='$(PKG_PROGRAMS)' EXEEXT=
 
 ifeq ($(HOST_OS),Darwin)
   HOST_CFLAGS += -I/opt/homebrew/include

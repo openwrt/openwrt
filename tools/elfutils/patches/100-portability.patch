@@ -898,3 +898,46 @@
  #include <stddef.h>
  
  
+--- a/libebl/eblopenbackend.c
++++ b/libebl/eblopenbackend.c
+@@ -198,8 +198,6 @@ static bool default_object_note (const c
+ 				 uint32_t descsz, const char *desc);
+ static bool default_debugscn_p (const char *name);
+ static bool default_copy_reloc_p (int reloc);
+-static bool default_none_reloc_p (int reloc);
+-static bool default_relative_reloc_p (int reloc);
+ static bool default_check_special_symbol (Elf *elf,
+ 					  const GElf_Sym *sym,
+ 					  const char *name,
+@@ -251,8 +249,8 @@ fill_defaults (Ebl *result)
+   result->object_note = default_object_note;
+   result->debugscn_p = default_debugscn_p;
+   result->copy_reloc_p = default_copy_reloc_p;
+-  result->none_reloc_p = default_none_reloc_p;
+-  result->relative_reloc_p = default_relative_reloc_p;
++  result->none_reloc_p = default_copy_reloc_p;
++  result->relative_reloc_p = default_copy_reloc_p;
+   result->check_special_symbol = default_check_special_symbol;
+   result->data_marker_symbol = default_data_marker_symbol;
+   result->check_st_other_bits = default_check_st_other_bits;
+@@ -634,8 +632,6 @@ default_copy_reloc_p (int reloc __attrib
+ {
+   return false;
+ }
+-strong_alias (default_copy_reloc_p, default_none_reloc_p)
+-strong_alias (default_copy_reloc_p, default_relative_reloc_p)
+ 
+ static bool
+ default_check_special_symbol (Elf *elf __attribute__ ((unused)),
+--- a/src/srcfiles.cxx
++++ b/src/srcfiles.cxx
+@@ -78,7 +78,9 @@ ARGP_PROGRAM_VERSION_HOOK_DEF = print_ve
+ /* Bug report address.  */
+ ARGP_PROGRAM_BUG_ADDRESS_DEF = PACKAGE_BUGREPORT;
+ 
++#ifdef HAVE_LIBARCHIVE
+ constexpr size_t BUFFER_SIZE = 8192;
++#endif
+ 
+ /* Definitions of arguments for argp functions.  */
+ static const struct argp_option options[] =
