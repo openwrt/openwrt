@@ -1,0 +1,66 @@
+musl: restore normal utmp & wtmp paths.
+
+Musl does not implement utmp/wtmp functionality (see musl FAQ).
+utmp and wtmp file paths defined by musl point to /dev/null.
+This patch restores their normal paths.
+
+Effects (at this time):
+Dropbear can't write utmp due to a bug, but writing to wtmp is fixed by this patch.
+Busybox "last" applet is fixed by this patch and shows logins recorded by Dropbear.
+Busybox "w", "who" and "users" applets won't work and can't be fixed.
+Busybox "getty", "login" and "telnetd" won't record logins and can't be fixed.
+These Busybox applets and Drobear utmp/wtmp functionality are not enabled by default
+in OpenWrt, but they are available in menuconfig.
+
+Long explanation:
+Dropbear can write utmp and wtmp in one of these ways, configured at build time:
+
+. login() and logout() - they do not exist in musl.
+
+. pututline() - it's a stub in musl - it won't record anything.
+
+. using it's own implementation for utmp, but it depends on ttyslot(),
+. which is also missing in musl and build fails. IMO, this is a Dropbear bug.
+
+. using it's own implementation for wtmp which uses paths defined by musl.
+. If the paths are repaired by this patch, wtmp recording works.
+
+Busybox uses getutent() / pututline() from libc to read/write utmp.
+In musl, these functions are stubs, so Busybox won't read or write utmp.
+
+Busybox uses updwtmp() form libc to write to wtmp.
+In musl, this function is also a stub, so Busybox won't write wtmp.
+
+Busybox uses it's own implementation to read wtmp, which is used in "last" applet.
+It uses the file paths defined by musl. If the paths are repaired,
+"last" applet will actually show wtmp records (written by Dropbear).
+
+Signed-off-by: Marius Dinu <m95d+git@psihoexpert.ro>
+
+--- a/include/paths.h
++++ b/include/paths.h
+@@ -18,9 +18,9 @@
+ #define	_PATH_SHADOW	"/etc/shadow"
+ #define	_PATH_SHELLS	"/etc/shells"
+ #define	_PATH_TTY	"/dev/tty"
+-#define _PATH_UTMP	"/dev/null/utmp"
++#define _PATH_UTMP	"/var/run/utmp"
+ #define	_PATH_VI	"/usr/bin/vi"
+-#define _PATH_WTMP	"/dev/null/wtmp"
++#define _PATH_WTMP	"/var/log/wtmp"
+ 
+ #define	_PATH_DEV	"/dev/"
+ #define	_PATH_TMP	"/tmp/"
+--- a/include/utmp.h
++++ b/include/utmp.h
+@@ -37,8 +37,8 @@ int utmpname(const char *);
+ 
+ int login_tty(int);
+ 
+-#define _PATH_UTMP "/dev/null/utmp"
+-#define _PATH_WTMP "/dev/null/wtmp"
++#define _PATH_UTMP "/var/run/utmp"
++#define _PATH_WTMP "/var/log/wtmp"
+ 
+ #define UTMP_FILE _PATH_UTMP
+ #define WTMP_FILE _PATH_WTMP
