@@ -53,8 +53,14 @@ PKG_GNULIB_MODS = \
 
 include $(INCLUDE_DIR)/host-build.mk
 
+export $(PKG_GNULIB_BASE)=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE).la
+export $(PKG_GNULIB_BASE)_tsearch=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-tsearch.lo
+
 HOST_MAKE_FLAGS += \
 	AM_LDFLAGS='$$$$(STACK_USAGE_NO_ERROR)' \
+	LIBS+='$$$$(if $$$$(findstring $(lastword $(PKG_SUBDIRS)),$$$$(subdir)), $$$$($(PKG_GNULIB_BASE)))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_tsearch))' \
+	REPLACE_FCNTL=0 REPLACE_FREE=0 REPLACE_FSTAT=0 REPLACE_OPEN=0 \
 	bin_PROGRAMS='$(PKG_PROGRAMS)' EXEEXT=
 
 ifeq ($(HOST_OS),Darwin)

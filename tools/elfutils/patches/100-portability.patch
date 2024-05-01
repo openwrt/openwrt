@@ -198,7 +198,7 @@
  pkginclude_HEADERS = elf-knowledge.h
  
 -libelf_a_SOURCES = elf_version.c elf_hash.c elf_error.c elf_fill.c \
-+libelf_la_LIBADD = ../libgnu/libgnu.la ../lib/libeu.la -lz $(zstd_LIBS) -lpthread
++libelf_la_LIBADD = ../lib/libeu.la -lz $(zstd_LIBS) -lpthread
 +libelf_la_SOURCES = elf_version.c elf_hash.c elf_error.c \
  		   elf_begin.c elf_next.c elf_rand.c elf_end.c elf_kind.c \
  		   gelf_getclass.c elf_getbase.c elf_getident.c \
