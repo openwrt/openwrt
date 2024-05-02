@@ -99,6 +99,96 @@
 		tx-fault-gpio = <&cp2_module_expander1 8 GPIO_ACTIVE_HIGH>;
 		status = "disabled";
 	};
+
+	thermal-zones {
+		chassis-thermal {
+			polling-delay = <5000>;
+			thermal-sensors = <&puzzle_hwmon 0>, <&puzzle_hwmon 1>;
+
+			trips {
+				chassis_very_hot: trip-point2 {
+					temperature = <55000>;
+					hysteresis = <5000>;
+					type = "active";
+				};
+
+				chassis_hot: trip-point1 {
+					temperature = <50000>;
+					hysteresis = <5000>;
+					type = "active";
+				};
+
+				chassis_warm: trip-point0 {
+					temperature = <45000>;
+					hysteresis = <5000>;
+					type = "active";
+				};
+			};
+
+			cooling-maps {
+				map2 {
+					trip = <&chassis_very_hot>;
+					cooling-device = <&chassis_fan_group0 6 6>;
+				};
+
+				map1 {
+					trip = <&chassis_hot>;
+					cooling-device = <&chassis_fan_group0 3 3>;
+				};
+
+				map0 {
+					trip = <&chassis_warm>;
+					cooling-device = <&chassis_fan_group0 1 1>;
+				};
+			};
+		};
+
+		cp0-phy0-thermal {
+			thermal-sensors = <&cp0_nbaset_phy0>;
+			PUZZLE_FAN_THERMAL(cp0_phy0, &chassis_fan_group0);
+		};
+
+		cp0-phy1-thermal {
+			thermal-sensors = <&cp0_nbaset_phy1>;
+			PUZZLE_FAN_THERMAL(cp0_phy1, &chassis_fan_group0);
+		};
+
+		cp0-phy2-thermal {
+			thermal-sensors = <&cp0_nbaset_phy2>;
+			PUZZLE_FAN_THERMAL(cp0_phy2, &chassis_fan_group0);
+		};
+
+		cp1-phy0-thermal {
+			thermal-sensors = <&cp1_nbaset_phy0>;
+			PUZZLE_FAN_THERMAL(cp1_phy0, &chassis_fan_group0);
+		};
+
+		cp1-phy1-thermal {
+			thermal-sensors = <&cp1_nbaset_phy1>;
+			PUZZLE_FAN_THERMAL(cp1_phy1, &chassis_fan_group0);
+		};
+
+		cp1-phy2-thermal {
+			thermal-sensors = <&cp1_nbaset_phy2>;
+			PUZZLE_FAN_THERMAL(cp1_phy2, &chassis_fan_group0);
+		};
+
+		cp2-phy0-thermal {
+			thermal-sensors = <&cp2_nbaset_phy0>;
+			PUZZLE_FAN_THERMAL(cp2_phy0, &chassis_fan_group0);
+		};
+
+		cp2-phy1-thermal {
+			thermal-sensors = <&cp2_nbaset_phy1>;
+			PUZZLE_FAN_THERMAL(cp2_phy1, &chassis_fan_group0);
+		};
+
+		cp2-phy2-thermal {
+			thermal-sensors = <&cp2_nbaset_phy2>;
+			PUZZLE_FAN_THERMAL(cp2_phy2, &chassis_fan_group0);
+		};
+	};
+
 };
 
 &uart0 {
@@ -149,7 +239,7 @@
 			};
 		};
 
-		hwmon {
+		puzzle_hwmon: hwmon {
 			compatible = "iei,wt61p803-puzzle-hwmon";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -162,15 +252,6 @@
 		};
 	};
 };
-
-&ap_thermal_ic {
-	PUZZLE_FAN_THERMAL(ic, &chassis_fan_group0);
-};
-
-&cp0_thermal_ic {
-	PUZZLE_FAN_THERMAL(cp0, &chassis_fan_group0);
-};
-
 
 /* on-board eMMC - U9 */
 &ap_sdhci0 {
@@ -187,17 +268,20 @@
 
 &cp0_xmdio {
 	status = "okay";
-	cp0_nbaset_phy0: ethernet-phy@0 {
+	cp0_nbaset_phy0: ethernet-phy@2 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <2>;
+		#thermal-sensor-cells = <0>;
 	};
-	cp0_nbaset_phy1: ethernet-phy@1 {
+	cp0_nbaset_phy1: ethernet-phy@0 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <0>;
+		#thermal-sensor-cells = <0>;
 	};
-	cp0_nbaset_phy2: ethernet-phy@2 {
+	cp0_nbaset_phy2: ethernet-phy@8 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <8>;
+		#thermal-sensor-cells = <0>;
 	};
 };
 
@@ -374,17 +458,20 @@
 
 &cp1_xmdio {
 	status = "okay";
-	cp1_nbaset_phy0: ethernet-phy@3 {
+	cp1_nbaset_phy0: ethernet-phy@2 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <2>;
+		#thermal-sensor-cells = <0>;
 	};
-	cp1_nbaset_phy1: ethernet-phy@4 {
+	cp1_nbaset_phy1: ethernet-phy@0 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <0>;
+		#thermal-sensor-cells = <0>;
 	};
-	cp1_nbaset_phy2: ethernet-phy@5 {
+	cp1_nbaset_phy2: ethernet-phy@8 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <8>;
+		#thermal-sensor-cells = <0>;
 	};
 };
 
@@ -451,10 +538,6 @@
 	};
 };
 
-&cp1_thermal_ic {
-	PUZZLE_FAN_THERMAL(cp1, &chassis_fan_group0);
-};
-
 /*
  * Instantiate the second connected CP115
  */
@@ -487,17 +570,20 @@
 
 &cp2_xmdio {
 	status = "okay";
-	cp2_nbaset_phy0: ethernet-phy@6 {
+	cp2_nbaset_phy0: ethernet-phy@2 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <2>;
+		#thermal-sensor-cells = <0>;
 	};
-	cp2_nbaset_phy1: ethernet-phy@7 {
+	cp2_nbaset_phy1: ethernet-phy@0 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <0>;
+		#thermal-sensor-cells = <0>;
 	};
 	cp2_nbaset_phy2: ethernet-phy@8 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <8>;
+		#thermal-sensor-cells = <0>;
 	};
 };
 
@@ -573,8 +659,4 @@
 			marvell,function = "i2c0";
 		};
 	};
-};
-
-&cp2_thermal_ic {
-	PUZZLE_FAN_THERMAL(cp2, &chassis_fan_group0);
 };

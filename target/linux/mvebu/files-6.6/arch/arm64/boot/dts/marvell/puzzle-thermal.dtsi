@@ -1,68 +1,62 @@
-#define PUZZLE_FAN_THERMAL(_cname, _fan)					\
-	polling-delay-passive = <500>;						\
-	polling-delay = <1000>;							\
-										\
-	trips {									\
-		cpu-hot {							\
-			temperature = <75000>;					\
-			hysteresis = <5000>;					\
-			type = "hot";						\
-		};								\
-		_cname##_active_full: cpu-active-full {				\
-			temperature = <70000>;					\
-			hysteresis = <5000>;					\
-			type = "active";					\
-		};								\
-		_cname##_active_high: cpu-active-high {				\
-			temperature = <65000>;					\
-			hysteresis = <5000>;					\
-			type = "active";					\
-		};								\
-		_cname##_active_med: cpu-active-med {				\
-			temperature = <62500>;					\
-			hysteresis = <3000>;					\
-			type = "active";					\
-		};								\
-		_cname##_active_low: cpu-active-low {				\
-			temperature = <60000>;					\
-			hysteresis = <3000>;					\
-			type = "active";					\
-		};								\
-		_cname##_active_min: cpu-active-min {				\
-			temperature = <55000>;					\
-			hysteresis = <5000>;					\
-			type = "active";					\
-		};								\
-		_cname##_active_idle: cpu-active-idle {				\
-			temperature = <50000>;					\
-			hysteresis = <5000>;					\
-			type = "active";					\
-		};								\
-	};									\
-	cooling-maps {								\
-		cpu-active-full {						\
-			trip = <&_cname##_active_full>;				\
-			cooling-device = <_fan THERMAL_NO_LIMIT			\
-					       THERMAL_NO_LIMIT>;		\
-		};								\
-		cpu-active-high {						\
-			trip = <&_cname##_active_high>;				\
-			cooling-device = <_fan 4 5>;				\
-		};								\
-		cpu-active-med {						\
-			trip = <&_cname##_active_med>;				\
-			cooling-device = <_fan 3 4>;				\
-		};								\
-		cpu-active-low {						\
-			trip = <&_cname##_active_low>;				\
-			cooling-device = <_fan 2 3>;				\
-		};								\
-		cpu-active-min {						\
-			trip = <&_cname##_active_min>;				\
-			cooling-device = <_fan 1 2>;				\
-		};								\
-		cpu-active-idle {						\
-			trip = <&_cname##_active_idle>;				\
-			cooling-device = <_fan 0 0>;				\
-		};								\
+#define PUZZLE_FAN_THERMAL(_cname, _fan)				\
+	polling-delay-passive = <500>;					\
+	polling-delay = <1000>;						\
+									\
+	trips {								\
+		_cname##_active_full: trip-point5 {			\
+			temperature = <70000>;				\
+			hysteresis = <3000>;				\
+			type = "active";				\
+		};							\
+		_cname##_active_very_high: trip-point4 {		\
+			temperature = <67500>;				\
+			hysteresis = <3000>;				\
+			type = "active";				\
+		};							\
+		_cname##_active_high: trip-point3 {			\
+			temperature = <65000>;				\
+			hysteresis = <5000>;				\
+			type = "active";				\
+		};							\
+		_cname##_active_med: trip-point2 {			\
+			temperature = <62500>;				\
+			hysteresis = <3000>;				\
+			type = "active";				\
+		};							\
+		_cname##_active_low: trip-point1 {			\
+			temperature = <60000>;				\
+			hysteresis = <3000>;				\
+			type = "active";				\
+		};							\
+		_cname##_active_min: trip-point0 {			\
+			temperature = <55000>;				\
+			hysteresis = <5000>;				\
+			type = "active";				\
+		};							\
+	};								\
+	cooling-maps {							\
+		map5 {							\
+			trip = <&_cname##_active_full>;			\
+			cooling-device = <_fan 6 6>;			\
+		};							\
+		map4 {							\
+			trip = <&_cname##_active_very_high>;		\
+			cooling-device = <_fan 5 5>;			\
+		};							\
+		map3 {							\
+			trip = <&_cname##_active_high>;			\
+			cooling-device = <_fan 4 4>;			\
+		};							\
+		map2 {							\
+			trip = <&_cname##_active_med>;			\
+			cooling-device = <_fan 3 3>;			\
+		};							\
+		map1 {							\
+			trip = <&_cname##_active_low>;			\
+			cooling-device = <_fan 2 2>;			\
+		};							\
+		map0 {							\
+			trip = <&_cname##_active_min>;			\
+			cooling-device = <_fan 1 1>;			\
+		};							\
 	}
