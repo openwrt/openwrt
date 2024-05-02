@@ -23,8 +23,8 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 -
  	};
  
- 	timer {
-@@ -543,10 +537,11 @@
+ 	soc {
+@@ -532,10 +526,11 @@
  			interrupt-parent = <&gic>;
  			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL_HIGH>;
  			memory-region = <&wo_emi0>, <&wo_ilm0>, <&wo_dlm0>,
@@ -38,7 +38,7 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
  		};
  
  		wed1: wed@15011000 {
-@@ -556,10 +551,11 @@
+@@ -545,10 +540,11 @@
  			interrupt-parent = <&gic>;
  			interrupts = <GIC_SPI 206 IRQ_TYPE_LEVEL_HIGH>;
  			memory-region = <&wo_emi1>, <&wo_ilm1>, <&wo_dlm1>,
@@ -51,8 +51,8 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +			mediatek,wo-cpuboot = <&wo_cpuboot>;
  		};
  
- 		wo_ccif0: syscon@151a5000 {
-@@ -576,6 +572,11 @@
+ 		eth: ethernet@15100000 {
+@@ -606,6 +602,11 @@
  			interrupts = <GIC_SPI 212 IRQ_TYPE_LEVEL_HIGH>;
  		};
  
@@ -61,6 +61,6 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
 +			reg = <0 0x15194000 0 0x1000>;
 +		};
 +
- 		eth: ethernet@15100000 {
- 			compatible = "mediatek,mt7986-eth";
- 			reg = <0 0x15100000 0 0x80000>;
+ 		wifi: wifi@18000000 {
+ 			compatible = "mediatek,mt7986-wmac";
+ 			reg = <0 0x18000000 0 0x1000000>,
