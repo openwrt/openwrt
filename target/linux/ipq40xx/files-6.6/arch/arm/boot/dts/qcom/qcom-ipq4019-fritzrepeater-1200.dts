@@ -23,16 +23,6 @@
 			status = "okay";
 		};
 
-		mdio@90000 {
-			status = "okay";
-			pinctrl-0 = <&mdio_pins>;
-			pinctrl-names = "default";
-
-			ethphy: ethernet-phy@0 {
-				reg = <0x0>;
-			};
-		};
-
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
 			reg = <0x1949000 0x100>;
@@ -255,6 +245,16 @@
 	qcom,ath10k-calibration-variant = "AVM-FRITZRepeater-1200";
 };
 
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+
+	ethphy: ethernet-phy@0 {
+		reg = <0x0>;
+	};
+};
+
 &gmac {
 	status = "okay";
 };
@@ -271,6 +271,10 @@
 	label = "lan";
 	phy-handle = <&ethphy>;
 	phy-mode = "rgmii-id";
+};
+
+&qca807x {
+	status = "disabled";
 };
 
 &ethphy1 {
